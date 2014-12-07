@@ -3,8 +3,7 @@
 // found in the LICENSE file.
 
 /*
-Package infra/libs/gce provides functions useful when running on Google Compute
-Engine.
+Package gce provides functions useful when running on Google Compute Engine.
 */
 package gce
 
