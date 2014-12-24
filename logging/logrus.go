@@ -2,8 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-/*
-Package build provides information about environment where binary was build.
-*/
+// +build !appengine
 
-package build
+package logging
+
+import "github.com/Sirupsen/logrus"
+
+func init() {
+	DefaultLogger = logrus.New()
+	IsTerminal = logrus.IsTerminal()
+}
