@@ -5,8 +5,6 @@
 package internal
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -21,7 +19,23 @@ type gceTokenProvider struct {
 
 // NewGCETokenProvider returns TokenProvider that knows how to use GCE metadata server.
 func NewGCETokenProvider(account string, scopes []string) (TokenProvider, error) {
-	// TODO(vadimsh): Check via metadata server that account has access to requested scopes.
+	// Ensure account has requested scopes.
+	acc, err := gce.GetServiceAccount(account)
+	if err != nil {
+		return nil, err
+	}
+	for requested := range scopes {
+		ok := false
+		for available := range acc.Scopes {
+			if requested == available {
+				ok = true
+				break
+			}
+		}
+		if !ok {
+			return nil, ErrInsufficientAccess
+		}
+	}
 	return &gceTokenProvider{
 		oauthTokenProvider: oauthTokenProvider{
 			interactive: false,
@@ -32,25 +46,10 @@ func NewGCETokenProvider(account string, scopes []string) (TokenProvider, error)
 }
 
 func (p *gceTokenProvider) MintToken(_ http.RoundTripper) (Token, error) {
-	// Grab.
-	uri := fmt.Sprintf("/computeMetadata/v1/instance/service-accounts/%s/token", p.account)
-	resp, err := gce.QueryGCEMetadata(uri, 5*time.Second)
+	tokenData, err := gce.GetAccessToken(p.account)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
-
-	// Deserialize.
-	var tokenData struct {
-		AccessToken string `json:"access_token"`
-		ExpiresIn   int    `json:"expires_in"`
-	}
-	err = json.NewDecoder(resp.Body).Decode(&tokenData)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert to tokenImpl.
 	tok := &tokenImpl{}
 	tok.AccessToken = tokenData.AccessToken
 	tok.Expiry = time.Now().Add(time.Duration(tokenData.ExpiresIn) * time.Second)

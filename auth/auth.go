@@ -50,7 +50,7 @@ var (
 	// ErrInsufficientAccess is returned by Login() or Transport() if access_token
 	// can't be minted for given OAuth scopes. For example if GCE instance wasn't
 	// granted access to requested scopes when it was created.
-	ErrInsufficientAccess = errors.New("Can't get access token for given scopes")
+	ErrInsufficientAccess = internal.ErrInsufficientAccess
 
 	// ErrNoTerminal is returned by Login() if interaction with a user is
 	// required, but the process is not attached to a terminal.

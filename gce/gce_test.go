@@ -13,20 +13,36 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestIsRunningOnGCE(t *testing.T) {
+// resetIsGCECached clear process wide cache of IsRunningOnGCE().
+func resetIsGCECached() {
+	isGCELock.Lock()
+	isGCECached = nil
+	isGCELock.Unlock()
+}
+
+func mockIsRunningOnGCE() {
+	val := true
+	isGCELock.Lock()
+	isGCECached = &val
+	isGCELock.Unlock()
+}
+
+func TestGCE(t *testing.T) {
 	// TODO: This test is not concurrency safe, it mocks global gceMetadataServer.
 
-	// HTTP, "Metadata-Flavor" header to return from mocked GCE server.
+	// HTTP status to return from mocked GCE server.
 	mockedDataLock := sync.Mutex{}
+	mockedPath := ""
 	mockedStatus := 404
-	mockedFlavor := "Unknown"
+	mockedBody := ""
 
 	// mockResponse sets how to reply on the next request to mocked metadata server.
-	mockResponse := func(status int, flavor string) {
+	mockResponse := func(path string, status int, body string) {
 		mockedDataLock.Lock()
 		defer mockedDataLock.Unlock()
+		mockedPath = "/computeMetadata/v1" + path
 		mockedStatus = status
-		mockedFlavor = flavor
+		mockedBody = body
 	}
 
 	// Launch a server that mocks GCE metadata server.
@@ -34,8 +50,13 @@ func TestIsRunningOnGCE(t *testing.T) {
 	mux.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {
 		mockedDataLock.Lock()
 		defer mockedDataLock.Unlock()
-		resp.Header()["Metadata-Flavor"] = []string{mockedFlavor}
+		if req.RequestURI != mockedPath {
+			t.Errorf("Expecting request to %s, got %s", mockedPath, req.RequestURI)
+		}
 		resp.WriteHeader(mockedStatus)
+		if mockedBody != "" {
+			resp.Write([]byte(mockedBody))
+		}
 	})
 
 	// Pick a random port, start listenting.
@@ -53,7 +74,7 @@ func TestIsRunningOnGCE(t *testing.T) {
 
 	Convey("Given mocked server", t, func() {
 		resetIsGCECached()
-		mockResponse(404, "Unknown")
+		mockResponse("/", 404, "")
 
 		prevMetadataServer := gceMetadataServer
 		gceMetadataServer = "http://" + mockedAddress.String()
@@ -67,13 +88,8 @@ func TestIsRunningOnGCE(t *testing.T) {
 		})
 
 		Convey("On GCE", func() {
-			mockResponse(200, "Google")
+			mockResponse("/", 200, "")
 			So(IsRunningOnGCE(), ShouldBeTrue)
-		})
-
-		Convey("Not google", func() {
-			mockResponse(200, "Huh?")
-			So(IsRunningOnGCE(), ShouldBeFalse)
 		})
 
 		Convey("Not a valid host", func() {
@@ -85,6 +101,45 @@ func TestIsRunningOnGCE(t *testing.T) {
 			// Exercise code path that touches process cache.
 			So(IsRunningOnGCE(), ShouldBeFalse)
 			So(IsRunningOnGCE(), ShouldBeFalse)
+		})
+
+		Convey("Test GetAccessToken", func() {
+			mockIsRunningOnGCE()
+			mockResponse(
+				"/instance/service-accounts/default/token", 200,
+				`{"access_token": "123", "expires_in": 11111}`)
+			tok, err := GetAccessToken("default")
+			So(err, ShouldBeNil)
+			So(tok, ShouldResemble, &AccessToken{AccessToken: "123", ExpiresIn: 11111})
+		})
+
+		Convey("Test GetServiceAccount", func() {
+			mockIsRunningOnGCE()
+			mockResponse(
+				"/instance/service-accounts/default/?recursive=true", 200,
+				`{"email": "email@example.com", "scopes": ["scope1", "scope2"]}`)
+			acc, err := GetServiceAccount("default")
+			So(err, ShouldBeNil)
+			So(acc, ShouldResemble, &ServiceAccount{
+				Email:  "email@example.com",
+				Scopes: []string{"scope1", "scope2"},
+			})
+		})
+
+		Convey("Test GetInstanceAttribute present", func() {
+			mockIsRunningOnGCE()
+			mockResponse("/instance/attributes/key", 200, "value")
+			attr, err := GetInstanceAttribute("key")
+			So(err, ShouldBeNil)
+			So(attr, ShouldResemble, []byte("value"))
+		})
+
+		Convey("Test GetInstanceAttribute missing", func() {
+			mockIsRunningOnGCE()
+			mockResponse("/instance/attributes/key", 404, "???")
+			attr, err := GetInstanceAttribute("key")
+			So(err, ShouldBeNil)
+			So(attr, ShouldBeNil)
 		})
 	})
 }

@@ -12,12 +12,17 @@ package internal
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	"code.google.com/p/goauth2/oauth"
 )
+
+// ErrInsufficientAccess is can't be minted for given OAuth scopes. For example
+// if GCE instance wasn't granted access to requested scopes when it was created.
+var ErrInsufficientAccess = errors.New("Can't get access token for given scopes")
 
 // Token is immutable object that internally holds authentication credentials
 // (short term, long term, or both). Token knows how to modify http.Request to
