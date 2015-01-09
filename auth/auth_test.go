@@ -128,6 +128,30 @@ func TestLoginIfRequired(t *testing.T) {
 	})
 }
 
+func TestAuthenticatedClient(t *testing.T) {
+	Convey("Given mocked secrets dir", t, func() {
+		var tokenProvider internal.TokenProvider
+
+		mockTerminal()
+		mockSecretsDir()
+		mockTokenProvider(func() internal.TokenProvider { return tokenProvider })
+
+		Convey("Test login required", func() {
+			tokenProvider = &fakeTokenProvider{interactive: true}
+			c, err := AuthenticatedClient(true, NewAuthenticator(Options{}))
+			So(err, ShouldBeNil)
+			So(c, ShouldNotEqual, http.DefaultClient)
+		})
+
+		Convey("Test login not required", func() {
+			tokenProvider = &fakeTokenProvider{interactive: true}
+			c, err := AuthenticatedClient(false, NewAuthenticator(Options{}))
+			So(err, ShouldBeNil)
+			So(c, ShouldEqual, http.DefaultClient)
+		})
+	})
+}
+
 func TestRefreshToken(t *testing.T) {
 	Convey("Given mocked secrets dir", t, func() {
 		var tokenProvider *fakeTokenProvider
