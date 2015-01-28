@@ -230,15 +230,12 @@ func PurgeCredentialsCache() error {
 // AuthenticatedClient performs login (if requested) and returns http.Client. If
 // requireLogin is false and there's no cached credentials, AuthenticatedClient
 // returns default http.Client. Otherwise it runs interactive login flow and
-// returns http.Client that supports authentication. It also reports what
-// account is used to the log.
+// returns http.Client that supports authentication.
 func AuthenticatedClient(requireLogin bool, auth Authenticator) (*http.Client, error) {
 	if auth == nil {
 		auth = DefaultAuthenticator
 	}
 	log := logging.DefaultLogger
-
-	// Run login flow to get the transport.
 	transport, err := auth.Transport()
 	if err == ErrLoginRequired {
 		if !requireLogin {
@@ -256,13 +253,6 @@ func AuthenticatedClient(requireLogin bool, auth Authenticator) (*http.Client, e
 	} else if err != nil {
 		return nil, err
 	}
-
-	// Report the account used.
-	ident, err := FetchIdentity(transport)
-	if err != nil {
-		return nil, err
-	}
-	log.Infof("Authenticated as %s", ident)
 	return &http.Client{Transport: transport}, nil
 }
 
