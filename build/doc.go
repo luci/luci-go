@@ -7,3 +7,12 @@ Package build provides information about environment where binary was build.
 */
 
 package build
+
+// InfoString returns a string that can be put into CLI application help output
+// to identify how the executable was built.
+func InfoString() string {
+	if ReleaseBuild {
+		return ""
+	}
+	return "(testing build)"
+}

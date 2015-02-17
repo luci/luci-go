@@ -117,6 +117,11 @@ func NewGroupsService(serviceURL string, httpClient *http.Client, logger logging
 	return
 }
 
+// ServiceURL returns a string with root URL of a Groups backend.
+func (s *GroupsService) ServiceURL() string {
+	return s.serviceURL
+}
+
 // FetchCallerIdentity returns caller's own Identity as seen by the server.
 func (s *GroupsService) FetchCallerIdentity() (Identity, error) {
 	var response struct {

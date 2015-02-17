@@ -96,6 +96,18 @@ func (t *tokenImpl) Equals(another Token) bool {
 	return t.AccessToken == casted.AccessToken
 }
 
+func (t *tokenImpl) Expired() bool {
+	if t.AccessToken == "" {
+		return true
+	}
+	if t.Expiry.IsZero() {
+		return false
+	}
+	// Allow 5 min clock skew.
+	expiry := t.Expiry.Add(-5 * time.Minute)
+	return expiry.Before(time.Now())
+}
+
 func (t *tokenImpl) RequestHeaders() map[string]string {
 	ret := make(map[string]string)
 	if t.AccessToken != "" {
