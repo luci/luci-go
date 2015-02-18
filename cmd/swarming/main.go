@@ -1,22 +1,27 @@
-// Copyright (c) 2015 The Chromium Authors. All rights reserved.
+// Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 package main
 
 import (
-	"fmt"
+	"log"
 	"os"
+
+	"github.com/maruel/subcommands"
 )
 
-func mainImpl() error {
-	fmt.Printf("swarming communicates with the Swarming server.\n")
-	return nil
+var application = &subcommands.DefaultApplication{
+	Name:  "swarming",
+	Title: "Client tool to access a swarming server.",
+	// Keep in alphabetical order of their name.
+	Commands: []*subcommands.Command{
+		subcommands.CmdHelp,
+		cmdRequestShow,
+	},
 }
 
 func main() {
-	if err := mainImpl(); err != nil {
-		fmt.Fprintf(os.Stderr, "failure: %s\n", err)
-		os.Exit(1)
-	}
+	log.SetFlags(log.Lmicroseconds)
+	os.Exit(subcommands.Run(application, nil))
 }
