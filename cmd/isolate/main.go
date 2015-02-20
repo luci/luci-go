@@ -5,18 +5,23 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"os"
+
+	"github.com/maruel/subcommands"
 )
 
-func mainImpl() error {
-	fmt.Printf("isolate handles .isolate files.\n")
-	return nil
+var application = &subcommands.DefaultApplication{
+	Name:  "isolatego",
+	Title: "isolate.py but faster",
+	// Keep in alphabetical order of their name.
+	Commands: []*subcommands.Command{
+		cmdBatchArchive,
+		subcommands.CmdHelp,
+	},
 }
 
 func main() {
-	if err := mainImpl(); err != nil {
-		fmt.Fprintf(os.Stderr, "failure: %s\n", err)
-		os.Exit(1)
-	}
+	log.SetFlags(log.Lmicroseconds)
+	os.Exit(subcommands.Run(application, nil))
 }
