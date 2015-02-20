@@ -39,7 +39,7 @@ func (c *requestShowRun) main(a subcommands.Application, taskid string) error {
 	if err != nil {
 		return fmt.Errorf("failed to load task %s: %s", taskid, err)
 	}
-	_ = pretty.Println(r)
+	_, _ = pretty.Println(r)
 	return err
 }
 
