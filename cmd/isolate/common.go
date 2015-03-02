@@ -1,0 +1,93 @@
+// Copyright 2015 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+package main
+
+import (
+	"errors"
+
+	"chromium.googlesource.com/infra/swarming/client-go/internal/common"
+	"chromium.googlesource.com/infra/swarming/client-go/isolate"
+	"github.com/maruel/subcommands"
+)
+
+type commonFlags struct {
+	verbose bool
+	logFile string
+	noLog   bool
+}
+
+func (c *commonFlags) Init(b *subcommands.CommandRunBase) {
+	b.Flags.BoolVar(&c.verbose, "verbose", false, "Get more output")
+	b.Flags.StringVar(&c.logFile, "log", "", "Name of log file")
+}
+
+type commonServerFlags struct {
+	serverURL string
+	namespace string
+}
+
+func (c *commonServerFlags) Init(b *subcommands.CommandRunBase) {
+	b.Flags.StringVar(&c.serverURL, "isolate-server",
+		"https://isolateserver-dev.appspot.com/", "")
+	b.Flags.StringVar(&c.serverURL, "I",
+		"https://isolateserver-dev.appspot.com/", "")
+	b.Flags.StringVar(&c.namespace, "namespace", "testing", "")
+}
+
+func (c *commonServerFlags) Parse() error {
+	if c.serverURL == "" {
+		return errors.New("-isolate-server must be specified")
+	}
+	if s, err := common.URLToHTTPS(c.serverURL); err != nil {
+		return err
+	} else {
+		c.serverURL = s
+	}
+	if c.namespace == "" {
+		return errors.New("-namespace must be specified.")
+	}
+	return nil
+}
+
+type isolateFlags struct {
+	// TODO(tandrii): move ArchiveOptions from isolate pkg to here.
+	isolate.ArchiveOptions
+	blacklistCollector  common.StringsCollect
+	configVarsCollector common.NKVArgCollect
+	pathVarsCollector   common.NKVArgCollect
+	extraVarsCollector  common.NKVArgCollect
+}
+
+func (c *isolateFlags) Init(b *subcommands.CommandRunBase) {
+	c.ArchiveOptions.Init()
+	b.Flags.StringVar(&c.ArchiveOptions.Isolate, "isolate", "",
+		".isolate file to load the dependency data from")
+	b.Flags.StringVar(&c.ArchiveOptions.Isolated, "isolated", "",
+		".isolated file to generate or read")
+	c.blacklistCollector.Values = &c.Blacklist
+	b.Flags.Var(&c.blacklistCollector, "blacklist",
+		"List of regexp to use as blacklist filter when uploading directories")
+
+	c.configVarsCollector.SetAsFlag(&b.Flags, &c.ConfigVariables, "config-variable",
+		`Config variables are used to determine which
+		conditions should be matched when loading a .isolate
+		file, default: []. All 3 kinds of variables are
+		persistent accross calls, they are saved inside
+		<.isolated>.state`)
+
+	c.pathVarsCollector.SetAsFlag(&b.Flags, &c.PathVariables, "path-variable",
+		`Path variables are used to replace file paths when
+		loading a .isolate file, default: {}`)
+
+	// TODO(tandrii): add default ('EXECUTABLE_SUFFIX', '.exe') on win.
+	c.extraVarsCollector.SetAsFlag(&b.Flags, &c.ExtraVariables, "extra-variable",
+		`Extraneous variables are replaced on the 'command
+		entry and on paths in the .isolate file but are not
+		considered relative paths.`)
+}
+
+func (c *isolateFlags) Parse() error {
+	// TODO(tandrii): verify key against isolate format VALID_VARIABLE.
+	return nil
+}
