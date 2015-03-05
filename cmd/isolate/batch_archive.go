@@ -81,7 +81,7 @@ func parseArchiveCMD(args []string, cwd string) (*isolate.ArchiveOptions, error)
 	return &i.ArchiveOptions, nil
 }
 
-// hackArchiveCMDParsing converts kv-args from old python isolate into go variants.
+// convertPyToGoArchiveCMDArgs converts kv-args from old python isolate into go variants.
 // Essentially converts "--X key value" into "--X key=value".
 func convertPyToGoArchiveCMDArgs(args []string) []string {
 	kvars := map[string]bool{

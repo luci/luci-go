@@ -5,6 +5,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	"chromium.googlesource.com/infra/swarming/client-go/internal/common"
 	"chromium.googlesource.com/infra/swarming/client-go/isolate"
@@ -80,7 +81,9 @@ func (c *isolateFlags) Init(b *subcommands.CommandRunBase) {
 		`Path variables are used to replace file paths when
 		loading a .isolate file, default: {}`)
 
-	// TODO(tandrii): add default ('EXECUTABLE_SUFFIX', '.exe') on win.
+	if common.IsWindows() {
+		c.ExtraVariables["EXECUTABLE_SUFFIX"] = ".exe"
+	}
 	c.extraVarsCollector.SetAsFlag(&b.Flags, &c.ExtraVariables, "extra-variable",
 		`Extraneous variables are replaced on the 'command
 		entry and on paths in the .isolate file but are not
@@ -88,6 +91,13 @@ func (c *isolateFlags) Init(b *subcommands.CommandRunBase) {
 }
 
 func (c *isolateFlags) Parse() error {
-	// TODO(tandrii): verify key against isolate format VALID_VARIABLE.
+	varss := [](map[string]string){c.ConfigVariables, c.ExtraVariables, c.PathVariables}
+	for _, vars := range varss {
+		for k, _ := range vars {
+			if !isolate.IsValidVariable(k) {
+				return fmt.Errorf("invalid key %s", k)
+			}
+		}
+	}
 	return nil
 }

@@ -5,7 +5,16 @@
 // Package isolate implements the code to process '.isolate' files.
 package isolate
 
+import "regexp"
+
 const ISOLATED_GEN_JSON_VERSION = 1
+const VALID_VARIABLE = "[A-Za-z_][A-Za-z_0-9]*"
+
+var VALID_VARIABLE_MATCHER = regexp.MustCompile(VALID_VARIABLE)
+
+func IsValidVariable(variable string) bool {
+	return VALID_VARIABLE_MATCHER.MatchString(variable)
+}
 
 // Tree to be isolated.
 type Tree struct {

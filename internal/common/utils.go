@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/kr/pretty"
@@ -37,6 +38,10 @@ func URLToHTTPS(s string) (string, error) {
 func IsDirectory(path string) bool {
 	fileInfo, err := os.Stat(path)
 	return err == nil && fileInfo.IsDir()
+}
+
+func IsWindows() bool {
+	return runtime.GOOS == "windows"
 }
 
 // StringsCollect accumulates string values from repeated flags.
