@@ -8,7 +8,7 @@ import (
 	"errors"
 	"os"
 
-	"chromium.googlesource.com/infra/swarming/client-go/internal/common"
+	"github.com/luci/luci-go/client/internal/common"
 	"github.com/maruel/subcommands"
 )
 

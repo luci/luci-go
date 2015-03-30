@@ -7,8 +7,8 @@ package main
 import (
 	"fmt"
 
-	"chromium.googlesource.com/infra/swarming/client-go/swarming"
 	"github.com/kr/pretty"
+	"github.com/luci/luci-go/client/swarming"
 	"github.com/maruel/subcommands"
 )
 

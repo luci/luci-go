@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
-	"chromium.googlesource.com/infra/swarming/client-go/internal/common"
-	"chromium.googlesource.com/infra/swarming/client-go/isolate"
+	"github.com/luci/luci-go/client/internal/common"
+	"github.com/luci/luci-go/client/isolate"
 	"github.com/maruel/subcommands"
 )
 

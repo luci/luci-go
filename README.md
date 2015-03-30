@@ -1,15 +1,12 @@
-client-go: Swarming and Isolate servers clients in Go
-=====================================================
-
-See https://code.google.com/p/swarming/ for more details.
-
+luci-go: Swarming and Isolate servers in Go
+===========================================
 
 Installing
 ----------
 
-    go get -u chromium.googlesource.com/infra/swarming/client-go/cmd/isolate
-    go get chromium.googlesource.com/infra/swarming/client-go/cmd/isolateserver
-    go get chromium.googlesource.com/infra/swarming/client-go/cmd/swarming
+    go get -u github.com/luci/luci-go/client/cmd/isolate
+    go get github.com/luci/luci-go/client/cmd/isolateserver
+    go get github.com/luci/luci-go/client/cmd/swarming
 
 
 Code layout
@@ -37,7 +34,7 @@ Contributing
 
     git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git $HOME/src/depot_tools
     PATH="$PATH:`$HOME/src/depot_tools"
-    cd $GOROOT/chromium.googlesource.com/infra/swarming/client-go
+    cd $GOROOT/github.com/luci/luci-go
     git checkout -b work origin/master
     # hack hack
     git commit -a -m "This is awesome\nR=joe@example.com"

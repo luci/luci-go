@@ -1,5 +1,4 @@
 # This file is used by git-cl to get repository specific information.
 CODE_REVIEW_SERVER: https://codereview.chromium.org
-VIEW_VC: https://chromium.googlesource.com/infra/swarming/client-go/+/
 CC_LIST: chromium-reviews@chromium.org
-PROJECT: client-go
+VIEW_VC: https://github.com/luci/luci-go/commit/

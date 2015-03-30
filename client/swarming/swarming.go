@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"chromium.googlesource.com/infra/swarming/client-go/internal/common"
+	"github.com/luci/luci-go/client/internal/common"
 )
 
 // TaskID is a unique reference to a Swarming task.
