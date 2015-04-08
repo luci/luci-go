@@ -12,6 +12,22 @@ import (
 	"github.com/maruel/ut"
 )
 
+func TestAssert(t *testing.T) {
+	ok := func() (ok bool) {
+		ok = false
+		defer func() {
+			if e := recover(); e != nil {
+				ok = true
+			}
+		}()
+		assert(false)
+		return
+	}()
+	if !ok {
+		t.Fail()
+	}
+}
+
 func TestConditionJson(t *testing.T) {
 	c := condition{Condition: "OS == \"Linux\""}
 	c.Variables.ReadOnly = new(int)
@@ -65,5 +81,74 @@ func TestParseBadIsolate(t *testing.T) {
 	log.Printf("!!!!! END !!!!!! of expected Python errors.")
 	if _, err := parseIsolate([]byte("{'wrong_section': False, 'includes': 'must be a list'}")); err == nil {
 		t.Fail()
+	}
+}
+
+func makeVVs(ss ...string) []variableValue {
+	vs := make([]variableValue, len(ss))
+	for i, s := range ss {
+		vs[i] = createVariableValueTryInt(s)
+	}
+	return vs
+}
+
+func toVVs(vs []variableValue) []string {
+	ks := make([]string, len(vs))
+	for i, v := range vs {
+		ks[i] = v.String()
+	}
+	return ks
+}
+
+func toVVs2D(vs [][]variableValue) [][]string {
+	ks := make([][]string, len(vs))
+	for i, v := range vs {
+		ks[i] = toVVs(v)
+	}
+	return ks
+}
+
+func TestVerifyIsolate(t *testing.T) {
+	parsed, err := parseIsolate([]byte(sampleIsolateData))
+	if err != nil {
+		t.FailNow()
+		return
+	}
+	varsAndValues, err := parsed.verify()
+	if err != nil {
+		t.Fatalf("failed verification: %s", err)
+	}
+	vars, ok := varsAndValues.getSortedValues("OS")
+	ut.AssertEqual(t, true, ok)
+	ut.AssertEqual(t, []string{"linux", "mac", "win"}, toVVs(vars))
+}
+
+func TestMatchConfigs(t *testing.T) {
+	expectations := []struct {
+		cond string
+		conf []string
+		all  [][]variableValue
+		out  [][]variableValue
+	}{
+		{"OS==\"win\"", []string{"OS"},
+			[][]variableValue{makeVVs("win"), makeVVs("mac"), makeVVs("linux")},
+			[][]variableValue{makeVVs("win")},
+		},
+		{"(foo==1 or foo==2) and bar==\"b\"", []string{"foo", "bar"},
+			[][]variableValue{makeVVs("1", "a"), makeVVs("1", "b"), makeVVs("2", "a"), makeVVs("2", "b")},
+			[][]variableValue{makeVVs("1", "b"), makeVVs("2", "b")},
+		},
+		{"bar==\"b\"", []string{"foo", "bar"},
+			[][]variableValue{makeVVs("1", "a"), makeVVs("1", "b"), makeVVs("2", "a"), makeVVs("2", "b")},
+			[][]variableValue{makeVVs("1", "b"), makeVVs("2", "b"), makeVVs("", "b")},
+		},
+		{"foo==1 or bar==\"b\"", []string{"foo", "bar"},
+			[][]variableValue{makeVVs("1", "a"), makeVVs("1", "b"), makeVVs("2", "a"), makeVVs("2", "b")},
+			[][]variableValue{makeVVs("1", "a"), makeVVs("1", "b"), makeVVs("2", "b"), makeVVs("1", "")},
+		},
+	}
+	for _, one := range expectations {
+		out := matchConfigs(one.cond, one.conf, one.all)
+		ut.AssertEqual(t, toVVs2D(one.out), toVVs2D(out))
 	}
 }
