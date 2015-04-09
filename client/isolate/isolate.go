@@ -5,7 +5,11 @@
 // Package isolate implements the code to process '.isolate' files.
 package isolate
 
-import "regexp"
+import (
+	"regexp"
+
+	"github.com/luci/luci-go/client/internal/common"
+)
 
 const ISOLATED_GEN_JSON_VERSION = 1
 const VALID_VARIABLE = "[A-Za-z_][A-Za-z_0-9]*"
@@ -27,17 +31,17 @@ type ArchiveOptions struct {
 	Isolate         string            `json:"isolate"`
 	Isolated        string            `json:"isolated"`
 	Blacklist       []string          `json:"blacklist"`
-	PathVariables   map[string]string `json:"path_variables"`
-	ExtraVariables  map[string]string `json:"extra_variables"`
-	ConfigVariables map[string]string `json:"config_variables"`
+	PathVariables   common.KeyValVars `json:"path_variables"`
+	ExtraVariables  common.KeyValVars `json:"extra_variables"`
+	ConfigVariables common.KeyValVars `json:"config_variables"`
 }
 
 // NewArchiveOptions initializes with non-nil values
 func (a *ArchiveOptions) Init() {
 	a.Blacklist = []string{}
-	a.PathVariables = map[string]string{}
-	a.ExtraVariables = map[string]string{}
-	a.ConfigVariables = map[string]string{}
+	a.PathVariables = common.KeyValVars{}
+	a.ExtraVariables = common.KeyValVars{}
+	a.ConfigVariables = common.KeyValVars{}
 }
 
 func IsolateAndArchive(trees []Tree, namespace string, server string) (

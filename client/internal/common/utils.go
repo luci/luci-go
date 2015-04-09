@@ -63,12 +63,11 @@ func (c *StringsCollect) Set(value string) error {
 // The only supported form is --flag key=value .
 // If the same key appears several times, the value of last occurence is used.
 type NKVArgCollect struct {
-	Values  *map[string]string
+	Values  *KeyValVars
 	OptName string
 }
 
-func (c *NKVArgCollect) SetAsFlag(flags *flag.FlagSet, values *map[string]string,
-	name string, usage string) {
+func (c *NKVArgCollect) SetAsFlag(flags *flag.FlagSet, values *KeyValVars, name string, usage string) {
 	c.Values = values
 	c.OptName = name
 	flags.Var(c, name, usage)
