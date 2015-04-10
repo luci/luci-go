@@ -5,18 +5,24 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"os"
+
+	"github.com/maruel/subcommands"
 )
 
-func mainImpl() error {
-	fmt.Printf("isolateserver communicate with the Isolate server and handles .isolated files.\n")
-	return nil
+var application = &subcommands.DefaultApplication{
+	Name:  "isolateserver",
+	Title: "isolateserver.py but faster",
+	// Keep in alphabetical order of their name.
+	Commands: []*subcommands.Command{
+		cmdArchive,
+		cmdDownload,
+		subcommands.CmdHelp,
+	},
 }
 
 func main() {
-	if err := mainImpl(); err != nil {
-		fmt.Fprintf(os.Stderr, "failure: %s\n", err)
-		os.Exit(1)
-	}
+	log.SetFlags(log.Lmicroseconds)
+	os.Exit(subcommands.Run(application, nil))
 }
