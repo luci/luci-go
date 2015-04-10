@@ -93,7 +93,7 @@ func (c *isolateFlags) Init(b *subcommands.CommandRunBase) {
 func (c *isolateFlags) Parse() error {
 	varss := [](common.KeyValVars){c.ConfigVariables, c.ExtraVariables, c.PathVariables}
 	for _, vars := range varss {
-		for k, _ := range vars {
+		for k := range vars {
 			if !isolate.IsValidVariable(k) {
 				return fmt.Errorf("invalid key %s", k)
 			}

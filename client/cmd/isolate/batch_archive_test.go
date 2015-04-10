@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/luci/luci-go/client/internal/common"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -59,6 +60,6 @@ func TestArchiveCMDParsing(t *testing.T) {
 	args := strings.Split(argsString, " ")
 	opts, err := parseArchiveCMD(args, "")
 	assert.NoError(t, err)
-	assert.Equal(t, opts.ConfigVariables, map[string]string{"OS": "linux"})
-	assert.Equal(t, opts.ExtraVariables, map[string]string{"version_full": "42.0.2284.0"})
+	assert.Equal(t, opts.ConfigVariables, common.KeyValVars{"OS": "linux"})
+	assert.Equal(t, opts.ExtraVariables, common.KeyValVars{"version_full": "42.0.2284.0"})
 }

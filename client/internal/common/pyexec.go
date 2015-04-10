@@ -19,7 +19,7 @@ func execCommand(program string, stdin []byte, args ...string) ([]byte, error) {
 	}
 	go func() {
 		defer inwriter.Close()
-		inwriter.Write(stdin)
+		_, _ = inwriter.Write(stdin)
 	}()
 	out, err := cmd.Output()
 	if err != nil {

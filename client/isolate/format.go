@@ -83,7 +83,7 @@ func (v variablesAndValues) getSortedValues(varName string) ([]variableValue, bo
 		return nil, false
 	}
 	keys := make([]string, 0, len(valueSet))
-	for key, _ := range valueSet {
+	for key := range valueSet {
 		keys = append(keys, string(key))
 	}
 	sort.Strings(keys)

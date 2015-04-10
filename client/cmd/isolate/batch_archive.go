@@ -121,7 +121,7 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 		if err := common.ReadJSONFile(genJsonPath, data); err != nil {
 			return err
 		}
-		if data.Version != isolate.ISOLATED_GEN_JSON_VERSION {
+		if data.Version != isolate.IsolatedGenJSONVersion {
 			return fmt.Errorf("Invalid version %d in %s", data.Version, genJsonPath)
 		}
 		if !common.IsDirectory(data.Dir) {

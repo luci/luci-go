@@ -2,5 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Package isolate implements the code to process '.isolate' files.
+// Package isolate implements the code to process '.isolate' files to generate
+// '.isolated' files.
 package isolate

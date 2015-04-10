@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Package isolate implements the code to process '.isolate' files.
 package isolate
 
 import (
@@ -11,13 +10,19 @@ import (
 	"github.com/luci/luci-go/client/internal/common"
 )
 
-const ISOLATED_GEN_JSON_VERSION = 1
-const VALID_VARIABLE = "[A-Za-z_][A-Za-z_0-9]*"
+// IsolatedGenJSONVersion is used in the batcharchive json format.
+//
+// TODO(tandrii): Migrate to batch_archive.go.
+const IsolatedGenJSONVersion = 1
 
-var VALID_VARIABLE_MATCHER = regexp.MustCompile(VALID_VARIABLE)
+// ValidVariable is the regexp of valid isolate variable name.
+const ValidVariable = "[A-Za-z_][A-Za-z_0-9]*"
 
+var validVariableMatcher = regexp.MustCompile(ValidVariable)
+
+// IsValidVariable returns true if the variable is a valid symbol name.
 func IsValidVariable(variable string) bool {
-	return VALID_VARIABLE_MATCHER.MatchString(variable)
+	return validVariableMatcher.MatchString(variable)
 }
 
 // Tree to be isolated.
@@ -36,7 +41,7 @@ type ArchiveOptions struct {
 	ConfigVariables common.KeyValVars `json:"config_variables"`
 }
 
-// NewArchiveOptions initializes with non-nil values
+// Init initializes with non-nil values.
 func (a *ArchiveOptions) Init() {
 	a.Blacklist = []string{}
 	a.PathVariables = common.KeyValVars{}
