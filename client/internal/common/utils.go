@@ -45,7 +45,7 @@ func IsWindows() bool {
 }
 
 // StringsCollect accumulates string values from repeated flags.
-// Use with flag.Var to accumlate values from "-flag s1 -flag s2".
+// Use with flag.Var to accumulate values from "-flag s1 -flag s2".
 type StringsCollect struct {
 	Values *[]string
 }
