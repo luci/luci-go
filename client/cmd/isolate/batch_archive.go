@@ -15,7 +15,7 @@ import (
 )
 
 var cmdBatchArchive = &subcommands.Command{
-	UsageLine: "batcharchive file1 file2 ...",
+	UsageLine: "batcharchive <options> file1 file2 ...",
 	ShortDesc: "archives multiple isolated trees at once.",
 	LongDesc: `Archives multiple isolated trees at once.
 

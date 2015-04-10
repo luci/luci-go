@@ -35,7 +35,7 @@ type Tree struct {
 type ArchiveOptions struct {
 	Isolate         string            `json:"isolate"`
 	Isolated        string            `json:"isolated"`
-	Blacklist       []string          `json:"blacklist"`
+	Blacklist       common.Strings    `json:"blacklist"`
 	PathVariables   common.KeyValVars `json:"path_variables"`
 	ExtraVariables  common.KeyValVars `json:"extra_variables"`
 	ConfigVariables common.KeyValVars `json:"config_variables"`
@@ -43,7 +43,7 @@ type ArchiveOptions struct {
 
 // Init initializes with non-nil values.
 func (a *ArchiveOptions) Init() {
-	a.Blacklist = []string{}
+	a.Blacklist = common.Strings{}
 	a.PathVariables = common.KeyValVars{}
 	a.ExtraVariables = common.KeyValVars{}
 	a.ConfigVariables = common.KeyValVars{}

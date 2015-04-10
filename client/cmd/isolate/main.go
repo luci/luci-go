@@ -12,7 +12,7 @@ import (
 )
 
 var application = &subcommands.DefaultApplication{
-	Name:  "isolatego",
+	Name:  "isolate",
 	Title: "isolate.py but faster",
 	// Keep in alphabetical order of their name.
 	Commands: []*subcommands.Command{

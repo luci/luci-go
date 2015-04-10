@@ -12,7 +12,7 @@ import (
 )
 
 var cmdArchive = &subcommands.Command{
-	UsageLine: "archive options...",
+	UsageLine: "archive <options>",
 	ShortDesc: "creates a .isolated file and uploads the tree to an isolate server.",
 	LongDesc:  "All the files listed in the .isolated file are put in the isolate server cache via isolateserver.py.",
 	CommandRun: func() subcommands.CommandRun {
@@ -45,6 +45,14 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 }
 
 func (c *archiveRun) main(a subcommands.Application, args []string) error {
+	fmt.Printf("Server:    %s\n", c.serverURL)
+	fmt.Printf("Namespace: %s\n", c.namespace)
+	fmt.Printf("Isolate:   %s\n", c.Isolate)
+	fmt.Printf("Isolated:  %s\n", c.Isolated)
+	fmt.Printf("Blacklist: %s\n", c.Blacklist)
+	fmt.Printf("Config:    %s\n", c.ConfigVariables)
+	fmt.Printf("Path:      %s\n", c.PathVariables)
+	fmt.Printf("Extra:     %s\n", c.ExtraVariables)
 	return errors.New("TODO")
 }
 
