@@ -55,13 +55,27 @@ const sampleIsolateData = `
 			},
 		}],
 	],
+}`
+
+const sampleIsolateDataWithIncludes = `
+{
+	'conditions': [
+		['OS=="linux" or OS=="mac" or OS=="win"', {
+			'variables': {
+				'files': [
+					'../../testing/test_env.py',
+					'<(PRODUCT_DIR)/ui_touch_selection_unittests<(EXECUTABLE_SUFFIX)',
+				],
+			},
+		}],
+	],
 	'includes': [
 		'../../base/base.isolate',
 	],
 }`
 
 func TestParseIsolate(t *testing.T) {
-	parsed, err := parseIsolate([]byte(sampleIsolateData))
+	parsed, err := parseIsolate([]byte(sampleIsolateDataWithIncludes))
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, `OS=="linux" or OS=="mac" or OS=="win"`, parsed.Conditions[0].Condition)
 	ut.AssertEqual(t, 2, len(parsed.Conditions[0].Variables.Files))
@@ -151,4 +165,13 @@ func TestMatchConfigs(t *testing.T) {
 		out := matchConfigs(one.cond, one.conf, one.all)
 		ut.AssertEqual(t, toVVs2D(one.out), toVVs2D(out))
 	}
+}
+
+func TestLoadIsolateAsConfig(t *testing.T) {
+	isolate, err := LoadIsolateAsConfig("/s/swarming", []byte(sampleIsolateData), []byte("# filecomment"))
+	if err != nil {
+		t.Error(err)
+	}
+	ut.AssertEqual(t, isolate.FileComment, []byte("# filecomment"))
+	ut.AssertEqual(t, []string{"OS"}, isolate.ConfigVariables)
 }
