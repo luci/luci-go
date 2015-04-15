@@ -32,7 +32,7 @@ type LocalCache interface {
 	Evict(digest HexDigest)
 
 	// Read returns contents of the cached item.
-	Read(digest HexDigest) (io.Reader, error)
+	Read(digest HexDigest) (io.ReadCloser, error)
 
 	// Write reads data from src and stores it in cache.
 	Write(digest HexDigest, src io.Reader) error
@@ -46,17 +46,21 @@ type HashFactory func() hash.Hash
 
 // memoryLocalCache implements LocalCache in memory.
 type memoryLocalCache struct {
-	lock    sync.Mutex
-	data    map[HexDigest][]byte
+	// Immutable.
 	algo    hash.Hash
 	factory HashFactory
+
+	// Lock protected.
+	lock sync.Mutex
+	data map[HexDigest][]byte
 }
 
+// MakeMemoryCache creates a purely in-memory cache.
 func MakeMemoryCache(algo HashFactory) LocalCache {
 	return &memoryLocalCache{
-		data:    map[HexDigest][]byte{},
 		algo:    algo(),
 		factory: algo,
+		data:    map[HexDigest][]byte{},
 	}
 }
 
@@ -89,7 +93,7 @@ func (m *memoryLocalCache) Evict(digest HexDigest) {
 	delete(m.data, digest)
 }
 
-func (m *memoryLocalCache) Read(digest HexDigest) (io.Reader, error) {
+func (m *memoryLocalCache) Read(digest HexDigest) (io.ReadCloser, error) {
 	if !digest.Validate(m.algo) {
 		return nil, os.ErrInvalid
 	}
@@ -99,7 +103,7 @@ func (m *memoryLocalCache) Read(digest HexDigest) (io.Reader, error) {
 	if !ok {
 		return nil, os.ErrNotExist
 	}
-	return bytes.NewBuffer(content), nil
+	return ioutil.NopCloser(bytes.NewBuffer(content)), nil
 }
 
 func (m *memoryLocalCache) Write(digest HexDigest, src io.Reader) error {
