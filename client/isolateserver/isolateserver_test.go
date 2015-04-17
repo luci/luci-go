@@ -5,7 +5,6 @@
 package isolateserver
 
 import (
-	"crypto/sha1"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -16,30 +15,6 @@ import (
 
 	"github.com/maruel/ut"
 )
-
-func TestHexDigestValid(t *testing.T) {
-	valid := []string{
-		"0123456789012345678901234567890123456789",
-		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-	}
-	h := sha1.New()
-	for i, in := range valid {
-		ut.AssertEqualIndex(t, i, true, HexDigest(in).Validate(h))
-	}
-}
-
-func TestHexDigestInvalid(t *testing.T) {
-	invalid := []string{
-		"0123456789",
-		"AAAAAAAAAA",
-		"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-		"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-	}
-	h := sha1.New()
-	for i, in := range invalid {
-		ut.AssertEqualIndex(t, i, false, HexDigest(in).Validate(h))
-	}
-}
 
 type jsonAPI func(body io.Reader) interface{}
 
