@@ -34,7 +34,7 @@ func (s *Swarming) getJSON(resource string, v interface{}) error {
 }
 
 // NewSwarming returns a new Swarming client.
-func NewSwarming(host string) (*Swarming, error) {
+func New(host string) (*Swarming, error) {
 	host = strings.TrimRight(host, "/")
 	return &Swarming{host, http.DefaultClient}, nil
 }

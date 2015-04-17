@@ -31,7 +31,7 @@ func (c *requestShowRun) main(a subcommands.Application, taskid string) error {
 	if err := c.Parse(a); err != nil {
 		return err
 	}
-	s, err := swarming.NewSwarming(c.serverURL)
+	s, err := swarming.New(c.serverURL)
 	if err != nil {
 		return err
 	}
