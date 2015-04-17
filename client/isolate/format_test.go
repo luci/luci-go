@@ -6,6 +6,7 @@ package isolate
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"testing"
 
@@ -13,6 +14,7 @@ import (
 )
 
 func TestAssert(t *testing.T) {
+	log.SetOutput(ioutil.Discard)
 	ok := func() (ok bool) {
 		ok = false
 		defer func() {
@@ -20,7 +22,7 @@ func TestAssert(t *testing.T) {
 				ok = true
 			}
 		}()
-		assert(false)
+		assert(false, "SUCCESS")
 		return
 	}()
 	if !ok {
@@ -83,7 +85,6 @@ func TestParseIsolate(t *testing.T) {
 }
 
 func TestParseBadIsolate(t *testing.T) {
-	log.Printf("!!!!! NOTE !!!!! Python errors are expected now as part of unittests.")
 	// These tests make Python spill out errors into stderr, which might be confusing.
 	// However, when real isolate command runs, we want to see these errors.
 	if _, err := parseIsolate([]byte("statement = 'is not good'")); err == nil {
@@ -92,7 +93,6 @@ func TestParseBadIsolate(t *testing.T) {
 	if _, err := parseIsolate([]byte("{ python/isolate syntax error")); err == nil {
 		t.Fail()
 	}
-	log.Printf("!!!!! END !!!!!! of expected Python errors.")
 	if _, err := parseIsolate([]byte("{'wrong_section': False, 'includes': 'must be a list'}")); err == nil {
 		t.Fail()
 	}

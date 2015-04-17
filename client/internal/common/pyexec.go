@@ -6,13 +6,11 @@ package common
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 )
 
 func execCommand(program string, stdin []byte, args ...string) ([]byte, error) {
 	cmd := exec.Command(program, args...)
-	cmd.Stderr = os.Stderr
 	inwriter, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, fmt.Errorf("failed to open stdin pipe %s", err)
@@ -21,7 +19,7 @@ func execCommand(program string, stdin []byte, args ...string) ([]byte, error) {
 		defer inwriter.Close()
 		_, _ = inwriter.Write(stdin)
 	}()
-	out, err := cmd.Output()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return out, fmt.Errorf("failed to run %s: %s", program, err)
 	}
