@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/luci/luci-go/client/internal/common"
+	"github.com/luci/luci-go/client/isolateserver"
 	"github.com/maruel/subcommands"
 )
 
@@ -48,11 +49,18 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 }
 
 func (c *archiveRun) main(a subcommands.Application, args []string) error {
-	fmt.Printf("Server:    %s\n", c.serverURL)
-	fmt.Printf("Namespace: %s\n", c.namespace)
-	fmt.Printf("Dirs:      %s\n", c.dirs)
-	fmt.Printf("Files:     %s\n", c.files)
-	fmt.Printf("Blacklist: %s\n", c.blacklist)
+	i := isolateserver.New(c.serverURL, c.namespace, c.compression, c.hashing)
+	caps, err := i.ServerCapabilities()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Server:       %s\n", c.serverURL)
+	fmt.Printf("Capabilities: %#v\n", caps)
+	fmt.Printf("Namespace:    %s\n", c.namespace)
+	fmt.Printf("Dirs:         %s\n", c.dirs)
+	fmt.Printf("Files:        %s\n", c.files)
+	fmt.Printf("Blacklist:    %s\n", c.blacklist)
 	return errors.New("TODO")
 }
 

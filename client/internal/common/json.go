@@ -5,6 +5,7 @@
 package common
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,10 +13,12 @@ import (
 	"strings"
 )
 
+const jsonContentType = "application/json; charset=utf-8"
+
 // GetJSON does a simple HTTP GET on a JSON endpoint.
 //
 // Returns the status code and the error, if any.
-func GetJSON(c *http.Client, url string, v interface{}) (int, error) {
+func GetJSON(c *http.Client, url string, out interface{}) (int, error) {
 	if c == nil {
 		c = http.DefaultClient
 	}
@@ -23,14 +26,43 @@ func GetJSON(c *http.Client, url string, v interface{}) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("couldn't resolve %s: %s", url, err)
 	}
+	return decodeJSONResponse(resp, url, out)
+}
+
+// PostJSON does a HTTP POST on a JSON endpoint.
+//
+// Returns the status code and the error, if any.
+func PostJSON(c *http.Client, url string, in, out interface{}) (int, error) {
+	if c == nil {
+		c = http.DefaultClient
+	}
+	if in == nil {
+		in = map[string]string{}
+	}
+	encoded, err := json.Marshal(in)
+	if err != nil {
+		return 0, nil
+	}
+	resp, err := c.Post(url, jsonContentType, bytes.NewBuffer(encoded))
+	if err != nil {
+		return 0, fmt.Errorf("couldn't resolve %s: %s", url, err)
+	}
+	return decodeJSONResponse(resp, url, out)
+}
+
+func decodeJSONResponse(resp *http.Response, url string, out interface{}) (int, error) {
 	defer resp.Body.Close()
-	if err := json.NewDecoder(resp.Body).Decode(v); err != nil {
+	if out == nil {
+		// The client doesn't care about the response. Still ensure the response is
+		// valid json.
+		out = &map[string]interface{}{}
+	}
+	if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
 		return resp.StatusCode, fmt.Errorf("bad response %s: %s", url, err)
 	}
 	ct := strings.ToLower(resp.Header.Get("Content-Type"))
-	expected := "application/json; charset=utf-8"
-	if ct != expected {
-		return resp.StatusCode, fmt.Errorf("unexpected Content-Type, expected \"%s\", got \"%s\"", expected, ct)
+	if ct != jsonContentType {
+		return resp.StatusCode, fmt.Errorf("unexpected Content-Type, expected \"%s\", got \"%s\"", jsonContentType, ct)
 	}
 	if resp.StatusCode >= 400 {
 		return resp.StatusCode, fmt.Errorf("http status %d", resp.StatusCode)
