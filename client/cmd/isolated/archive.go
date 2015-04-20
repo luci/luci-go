@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"github.com/luci/luci-go/client/internal/common"
-	"github.com/luci/luci-go/client/isolateserver"
+	"github.com/luci/luci-go/client/isolatedclient"
 	"github.com/maruel/subcommands"
 )
 
@@ -49,7 +49,7 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 }
 
 func (c *archiveRun) main(a subcommands.Application, args []string) error {
-	i := isolateserver.New(c.serverURL, c.namespace, c.compression, c.hashing)
+	i := isolatedclient.New(c.serverURL, c.namespace)
 	caps, err := i.ServerCapabilities()
 	if err != nil {
 		return err

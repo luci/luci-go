@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package isolateserver
+package isolatedclient
 
 import (
 	"bytes"
@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/luci/luci-go/common/isolated"
 	"github.com/maruel/ut"
 )
 
@@ -21,20 +22,20 @@ func TestMemoryCache(t *testing.T) {
 	ut.AssertEqual(t, nil, err)
 	defer os.RemoveAll(td)
 
-	d := HexDigest("0123456789012345678901234567890123456789")
-	c := MakeMemoryCache(sha1.New)
-	ut.AssertEqual(t, []HexDigest{}, c.CachedSet())
+	d := isolated.HexDigest("0123456789012345678901234567890123456789")
+	c := MakeMemoryCache()
+	ut.AssertEqual(t, []isolated.HexDigest{}, c.CachedSet())
 	ut.AssertEqual(t, false, c.Touch(d, 0))
 	c.Evict(d)
 	r, err := c.Read(d)
 	ut.AssertEqual(t, nil, r)
 	ut.AssertEqual(t, os.ErrNotExist, err)
-	empty := HexDigest(hex.EncodeToString(sha1.New().Sum(nil)))
+	empty := isolated.HexDigest(hex.EncodeToString(sha1.New().Sum(nil)))
 	ut.AssertEqual(t, nil, c.Write(empty, bytes.NewBufferString("")))
 	content := []byte("foo")
 	h := sha1.New()
 	h.Write(content)
-	digest := HexDigest(hex.EncodeToString(h.Sum(nil)))
+	digest := isolated.HexDigest(hex.EncodeToString(h.Sum(nil)))
 	ut.AssertEqual(t, os.ErrInvalid, c.Write(empty, bytes.NewBuffer(content)))
 	ut.AssertEqual(t, nil, c.Write(digest, bytes.NewBuffer(content)))
 
@@ -44,7 +45,7 @@ func TestMemoryCache(t *testing.T) {
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, content, actual)
 
-	//[]HexDigest{digest, empty}
+	//[]isolated.HexDigest{digest, empty}
 	ut.AssertEqual(t, 2, len(c.CachedSet()))
 
 	dest := filepath.Join(td, "foo")

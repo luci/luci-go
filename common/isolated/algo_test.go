@@ -2,10 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package isolateserver
+package isolated
 
 import (
-	"crypto/sha1"
 	"testing"
 
 	"github.com/maruel/ut"
@@ -17,9 +16,8 @@ func TestHexDigestValid(t *testing.T) {
 		"0123456789012345678901234567890123456789",
 		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 	}
-	h := sha1.New()
 	for i, in := range valid {
-		ut.AssertEqualIndex(t, i, true, HexDigest(in).Validate(h))
+		ut.AssertEqualIndex(t, i, true, HexDigest(in).Validate())
 	}
 }
 
@@ -31,8 +29,7 @@ func TestHexDigestInvalid(t *testing.T) {
 		"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
 		"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
 	}
-	h := sha1.New()
 	for i, in := range invalid {
-		ut.AssertEqualIndex(t, i, false, HexDigest(in).Validate(h))
+		ut.AssertEqualIndex(t, i, false, HexDigest(in).Validate())
 	}
 }

@@ -12,7 +12,7 @@ import (
 )
 
 var application = &subcommands.DefaultApplication{
-	Name:  "isolateserver",
+	Name:  "isolated",
 	Title: "isolateserver.py but faster",
 	// Keep in alphabetical order of their name.
 	Commands: []*subcommands.Command{

@@ -21,6 +21,8 @@ Code layout
     https://golang.org/s/go14internal for more details.
   * `/client/...` not in any other of the category is an API package usable
     externally.
+  * `/common/...` contains code and structures shared between client and server.
+  * `/server/...` contains server code.
 
 
 Versioning
