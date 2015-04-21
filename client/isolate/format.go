@@ -46,28 +46,52 @@ func createVariableValueTryInt(s string) variableValue {
 
 func (v variableValue) String() string {
 	if v.S != nil {
-		return fmt.Sprintf("%v", *v.S)
+		return *v.S
 	} else if v.I != nil {
 		return fmt.Sprintf("%d", *v.I)
 	}
 	return ""
 }
 
+// compare returns 0 if equal, 1 if lhs < right, else -1.
+// Order: unbound < 1 < 2 < "abc" < "cde" .
 func (lhs variableValue) compare(rhs variableValue) int {
-	switch {
-	case lhs.isBound() && rhs.isBound():
-		l, r := lhs.String(), rhs.String()
-		if l < r {
-			return -1
-		} else if l > r {
+	if lhs.I != nil {
+		if rhs.I != nil {
+			// Both integers.
+			if *lhs.I < *rhs.I {
+				return 1
+			} else if *lhs.I > *rhs.I {
+				return -1
+			} else {
+				return 0
+			}
+		} else if rhs.S != nil {
+			// int vs string
 			return 1
+		} else {
+			// int vs Unbound.
+			return -1
 		}
-		return 0
-	case lhs.isBound():
-		return -1
-	case rhs.isBound():
+	} else if lhs.S != nil {
+		if rhs.S != nil {
+			// Both strings.
+			if *lhs.S < *rhs.S {
+				return 1
+			} else if *lhs.S > *rhs.S {
+				return -1
+			} else {
+				return 0
+			}
+		} else {
+			// string vs (int | unbound)
+			return -1
+		}
+	} else if rhs.isBound() {
+		// unbound vs (int|string)
 		return 1
-	default:
+	} else {
+		// unbound vs unbound
 		return 0
 	}
 }
@@ -81,7 +105,7 @@ type variableValueKey string
 
 func (v variableValue) key() variableValueKey {
 	if v.S != nil {
-		return variableValueKey("S" + *v.S)
+		return variableValueKey("~" + *v.S)
 	}
 	if v.I != nil {
 		return variableValueKey(string(*v.I))
@@ -114,7 +138,7 @@ func (v variablesAndValues) cartesianProductOfValues(orderedKeys []string) [][]v
 		return [][]variableValue{}
 	}
 	// Prepare ordered by orderedKeys list of variableValue
-	allValues := make([][]variableValue, 0, len(v))
+	allValues := make([][]variableValue, 0, len(orderedKeys))
 	for _, key := range orderedKeys {
 		valuesSet := v[key]
 		values := make([]variableValue, 0, len(valuesSet))
@@ -125,15 +149,15 @@ func (v variablesAndValues) cartesianProductOfValues(orderedKeys []string) [][]v
 	}
 	// Precompute length of output for alloc and for assertion at the end.
 	length := 1
-	for _, values := range v {
+	for _, values := range allValues {
 		length *= len(values)
 	}
 	assert(length > 0, "some variable had empty valuesSet?")
 	out := make([][]variableValue, 0, length)
 	// indices[i] points to index in allValues[i]; stop once indices[-1] == len(allValues[-1]).
-	indices := make([]int, len(v))
+	indices := make([]int, len(orderedKeys))
 	for {
-		next := make([]variableValue, len(v))
+		next := make([]variableValue, len(orderedKeys))
 		for i, values := range allValues {
 			if indices[i] == len(values) {
 				if i+1 == len(orderedKeys) {
@@ -300,10 +324,11 @@ def verify_ast(expr, variables_and_values):
 		rhs = expr.comparators[0]
 		assert isinstance(rhs, (ast.Str, ast.Num))
 		if isinstance(rhs, ast.Num):
-			val = {'I': rhs.n}
+			assert int(rhs.n) == rhs.n, "only ints are allowed, but %r given" % rhs.n
+			val = {'I': int(rhs.n)}  # Has to be int(), otherwise Go will fail to read it.
 		else:
 			val = {'S': rhs.s}
-			var_values.append(val)
+		var_values.append(val)
 
 test_ast = compile(sys.stdin.read(), '<condition>', 'eval', ast.PyCF_ONLY_AST)
 variables_and_values = {}
@@ -316,13 +341,14 @@ print json.dumps(variables_and_values)
 	}
 	tmpVarsAndValues := map[string][]variableValue{}
 	err = json.Unmarshal(jsonData, &tmpVarsAndValues)
-	assert(err == nil)
+	assertNoError(err)
 	p.variableNames = new([]string)
 	for varName, tmpValueList := range tmpVarsAndValues {
+		assert(len(tmpValueList) > 0, "var %s has empty valueSet", varName)
 		*p.variableNames = append(*p.variableNames, varName)
 		valueSet := varsAndValues[varName]
 		if valueSet == nil {
-			valueSet = make(map[variableValueKey]variableValue)
+			valueSet = map[variableValueKey]variableValue{}
 			varsAndValues[varName] = valueSet
 		}
 		for _, value := range tmpValueList {
@@ -339,7 +365,7 @@ print json.dumps(variables_and_values)
 type variables struct {
 	Command []string `json:"command"`
 	Files   []string `json:"files"`
-	// read_only has 1 as default, according to specs.
+	// ReadOnly has 1 as default, according to specs.
 	// Just as Python-isolate also uses None as default, this code uses nil.
 	ReadOnly *int `json:"read_only"`
 }
@@ -361,7 +387,20 @@ func parseIsolate(content []byte) (*parsedIsolate, error) {
 	// The isolate file contents is passed to Python's stdin, the resulting json is dumped into stdout.
 	// In case of exceptions during interpretation or json serialization,
 	// Python exists with non-0 return code, obtained here as err.
-	jsonData, err := common.RunPython(content, "-c", "import json, sys; print json.dumps(eval(sys.stdin.read()))")
+	pythonCode := `
+import json, sys
+globs = {'__builtins__': None}
+locs = {}
+try:
+	value = eval(sys.stdin.read(), globs, locs)
+except TypeError as e:
+	e.args = list(e.args) + [content]
+	raise
+assert locs == {}, locs
+assert globs == {'__builtins__': None}, globs
+print json.dumps(value)
+`
+	jsonData, err := common.RunPython(content, "-c", pythonCode)
 	if err != nil {
 		return nil, fmt.Errorf("failed to evaluate isolate: %s", err)
 	}
@@ -390,18 +429,13 @@ func (c configName) Equals(o configName) bool {
 	if len(c) != len(o) {
 		return false
 	}
-	for i, v := range c {
-		if v.compare(o[i]) != 0 {
-			return false
-		}
-	}
-	return true
+	return c.compare(o) == 0
 }
 
 func (c configName) key() string {
 	parts := make([]string, 0, len(c))
 	for _, v := range c {
-		if c == nil {
+		if !v.isBound() {
 			parts = append(parts, "∀")
 		} else {
 			parts = append(parts, "∃", v.String())
@@ -423,8 +457,7 @@ func (c configPairs) Len() int {
 }
 
 func (c configPairs) Less(i, j int) bool {
-	// Compare only bound values of .key
-	return c[i].key.compare(c[j].key) < 0
+	return c[i].key.compare(c[j].key) > 0
 }
 
 func (c configPairs) Swap(i, j int) {
@@ -438,12 +471,12 @@ func (c configPairs) Swap(i, j int) {
 // At this point, we don't know all the possibilities. So mount a partial view
 // that we have.
 //
-// This class doesn't hold isolate_dir, since it is dependent on the final
+// This class doesn't hold isolateDir, since it is dependent on the final
 // configuration selected. It is implicitly dependent on which .isolate defines
 // the 'command' that will take effect.
 type Configs struct {
 	FileComment []byte
-	// Contains names only, sorted by name; the order is same as in byConfig.
+	// ConfigVariables contains names only, sorted by name; the order is same as in byConfig.
 	ConfigVariables []string
 	// The config key are lists of values of vars in the same order as ConfigSettings.
 	byConfig map[string]configPair
@@ -478,8 +511,9 @@ func (c *Configs) getSortedConfigPairs() configPairs {
 // GetConfig returns all configs that matches this config as a single ConfigSettings.
 //
 // Returns nil if none apply.
-func (c *Configs) GetConfig(configName configName) (out *ConfigSettings, err error) {
+func (c *Configs) GetConfig(configName configName) (*ConfigSettings, error) {
 	// Order byConfig according to configNames ordering function.
+	out := &ConfigSettings{}
 	for _, pair := range c.getSortedConfigPairs() {
 		ok := true
 		for i, confKey := range configName {
@@ -489,12 +523,13 @@ func (c *Configs) GetConfig(configName configName) (out *ConfigSettings, err err
 			}
 		}
 		if ok {
+			var err error
 			if out, err = out.union(pair.value); err != nil {
-				return
+				return nil, err
 			}
 		}
 	}
-	return
+	return out, nil
 }
 
 // setConfig sets the ConfigSettings for this key.
@@ -512,26 +547,28 @@ func (c *Configs) setConfig(confName configName, value *ConfigSettings) {
 
 // union returns a new Configs instance, the union of variables from self and rhs.
 //
-// Uses lhs.file_comment if available, otherwise rhs.file_comment.
-// It keeps config_variables sorted in the output.
+// Uses lhs.FileComment if available, otherwise rhs.FileComment.
+// It keeps ConfigVariables sorted in the output.
 func (lhs *Configs) union(rhs *Configs) (*Configs, error) {
-	// Merge the keys of config_variables for each Configs instances. All the new
+	// Merge the keys of ConfigVariables for each Configs instances. All the new
 	// variables will become unbounded. This requires realigning the keys.
-	var out *Configs
+	configVariables := uniqueMergeSortedStrings(
+		lhs.ConfigVariables, rhs.ConfigVariables)
+	out := makeConfigs(lhs.FileComment, configVariables)
 	if len(lhs.FileComment) == 0 {
-		out = makeConfigs(rhs.FileComment, lhs.getConfigVarsUnion(rhs))
-	} else {
-		out = makeConfigs(lhs.FileComment, lhs.getConfigVarsUnion(rhs))
+		out.FileComment = rhs.FileComment
 	}
 
 	byConfig := configPairs(append(
-		lhs.expandConfigVariables(out.ConfigVariables),
-		rhs.expandConfigVariables(out.ConfigVariables)...))
+		lhs.expandConfigVariables(configVariables),
+		rhs.expandConfigVariables(configVariables)...))
 	if len(byConfig) == 0 {
 		return out, nil
 	}
-	// Take union of ConfigSettings with the same configName (key).
-	sort.Sort(byConfig)
+	// Take union of ConfigSettings with the same configName (key),
+	// in order left, right.
+	// Thus, preserve the order between left, right while sorting.
+	sort.Stable(byConfig)
 	last := byConfig[0]
 	for _, curr := range byConfig[1:] {
 		if last.key.compare(curr.key) == 0 {
@@ -549,34 +586,6 @@ func (lhs *Configs) union(rhs *Configs) (*Configs, error) {
 	return out, nil
 }
 
-// getConfigVarsUnion returns a sorted set of union of ConfigVariables of two Configs.
-func (lhs *Configs) getConfigVarsUnion(rhs *Configs) []string {
-	// Simple merge of two sorted ranges, eliminating same elements.
-	ls, rs := lhs.ConfigVariables, rhs.ConfigVariables
-	varSet := make([]string, len(ls)+len(rs))
-	for i := 0; ; i++ {
-		assert(i < len(varSet))
-		if len(ls) == 0 {
-			rs, ls = ls, rs
-		}
-		if len(rs) == 0 {
-			i += copy(varSet[i:], ls)
-			return varSet[:i]
-		}
-		assert(len(rs) > 0 && len(ls) > 0)
-		if ls[0] > rs[0] {
-			ls, rs = rs, ls
-		}
-		if ls[0] < rs[0] {
-			varSet[i] = ls[0]
-			ls = ls[1:]
-		} else {
-			varSet[i] = ls[0]
-			ls, rs = ls[1:], rs[1:]
-		}
-	}
-}
-
 // expandConfigVariables returns new configPair list for newConfigVars.
 func (c *Configs) expandConfigVariables(newConfigVars []string) []configPair {
 	// Get mapping from old config vars list to new one.
@@ -589,9 +598,9 @@ func (c *Configs) expandConfigVariables(newConfigVars []string) []configPair {
 			mapping[n] = i
 			i++
 		} else {
-			// Must never happens because newConfigVars and c.configVariables are sorted ASC,
+			// Must never happen because newConfigVars and c.configVariables are sorted ASC,
 			// and newConfigVars contain c.configVariables as a subset.
-			assert(c.ConfigVariables[i] >= nk)
+			panic("unreachable code")
 		}
 	}
 	// Expands configName to match newConfigVars.
@@ -621,23 +630,22 @@ func createReadOnlyValue(readOnly *int) ReadOnlyValue {
 
 // ConfigSettings represents the dependency variables for a single build configuration.
 //
-//  The structure is immutable.
-//
-//  .command and .isolate_dir describe how to run the command. .isolate_dir uses
-//      the OS' native path separator. It must be an absolute path, it's the path
-//      where to start the command from.
-//  .files is the list of dependencies. The items use '/' as a path separator.
-//  .readOnly describe how to map the files.
+// The structure is immutable.
 type ConfigSettings struct {
-	Files      []string
-	Command    []string
-	ReadOnly   ReadOnlyValue
+	// Files is the list of dependencies. The items use '/' as a path separator.
+	Files []string
+	// Command is the actual command to run.
+	Command []string
+	// ReadOnly describes how to map the files.
+	ReadOnly ReadOnlyValue
+	// IsolateDir is the path where to start the command from.
+	// It uses the OS' native path separator and it must be an absolute path.
 	IsolateDir string
 }
 
 func createConfigSettings(values variables, isolateDir string) *ConfigSettings {
 	if isolateDir == "" {
-		// It must be an empty object if isolate_dir is not set.
+		// It must be an empty object if isolateDir is not set.
 		assert(values.isEmpty(), values)
 	} else {
 		assert(filepath.IsAbs(isolateDir))
@@ -657,13 +665,13 @@ func createConfigSettings(values variables, isolateDir string) *ConfigSettings {
 // A new instance is not created and self or rhs is returned if the other
 // object is the empty object.
 //
-// self has priority over rhs for .command. Use the same .isolate_dir as the
-// one having a .command.
+// self has priority over rhs for Command. Use the same IsolateDir as the
+// one having a Command.
 //
 // Dependencies listed in rhs are patch adjusted ONLY if they don't start with
 // a path variable, e.g. the characters '<('.
 func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
-	// When an object has .isolate_dir == "", it means it is the empty object.
+	// When an object has IsolateDir == "", it means it is the empty object.
 	if lhs.IsolateDir == "" {
 		return rhs, nil
 	}
@@ -675,8 +683,8 @@ func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
 		assert(strings.ToLower(lhs.IsolateDir) == strings.ToLower(rhs.IsolateDir))
 	}
 
-	// Takes the difference between the two isolate_dir. Note that while
-	// isolate_dir is in native path case, all other references are in posix.
+	// Takes the difference between the two isolateDir. Note that while
+	// isolateDir is in native path case, all other references are in posix.
 	useRhs := false
 	var command []string
 	if len(lhs.Command) > 0 {
@@ -703,8 +711,7 @@ func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
 		lFiles, rFiles = rhs.Files, lhs.Files
 	}
 
-	// TODO(tandrii): implement path.Rel equivalent, as these paths are POSIX.
-	rebasePath, err := filepath.Rel(rRelCwd, lRelCwd)
+	rebasePath, err := posixRel(rRelCwd, lRelCwd)
 	if err != nil {
 		return nil, err
 	}
@@ -815,7 +822,7 @@ func LoadIsolateAsConfig(isolateDir string, content []byte, fileComment []byte) 
 
 func loadIncludedIsolate(isolateDir, include string) (*Configs, error) {
 	if filepath.IsAbs(include) {
-		return nil, fmt.Errorf("Failed to load configuration; absolute include path %s", include)
+		return nil, fmt.Errorf("failed to load configuration; absolute include path %s", include)
 	}
 	includedIsolate := filepath.Clean(filepath.Join(isolateDir, include))
 	if common.IsWindows() && (strings.ToLower(includedIsolate)[0] != strings.ToLower(isolateDir)[0]) {
@@ -832,7 +839,7 @@ func loadIncludedIsolate(isolateDir, include string) (*Configs, error) {
 // the information unprocessed but filtered for the specific OS.
 //
 // Returns:
-//   tuple of command, dependencies, read_only flag, isolate_dir.
+//   tuple of command, dependencies, readOnly flag, isolateDir.
 // The dependencies are fixed to use os.path.sep.
 func LoadIsolateForConfig(isolateDir string, content []byte, configVariables common.KeyValVars) (
 	[]string, []string, ReadOnlyValue, string, error) {

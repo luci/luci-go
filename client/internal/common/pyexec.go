@@ -13,7 +13,7 @@ func execCommand(program string, stdin []byte, args ...string) ([]byte, error) {
 	cmd := exec.Command(program, args...)
 	inwriter, err := cmd.StdinPipe()
 	if err != nil {
-		return nil, fmt.Errorf("failed to open stdin pipe %s", err)
+		return nil, fmt.Errorf("failed to open stdin pipe: %s", err)
 	}
 	go func() {
 		defer inwriter.Close()
@@ -21,7 +21,7 @@ func execCommand(program string, stdin []byte, args ...string) ([]byte, error) {
 	}()
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return out, fmt.Errorf("failed to run %s: %s", program, err)
+		return out, fmt.Errorf("failed to run %s: %s (output: %s)", program, err, out)
 	}
 	return out, nil
 }
