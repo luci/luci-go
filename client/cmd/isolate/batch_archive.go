@@ -122,13 +122,13 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 			return err
 		}
 		if data.Version != isolate.IsolatedGenJSONVersion {
-			return fmt.Errorf("Invalid version %d in %s", data.Version, genJsonPath)
+			return fmt.Errorf("invalid version %d in %s", data.Version, genJsonPath)
 		}
 		if !common.IsDirectory(data.Dir) {
-			return fmt.Errorf("Invalid dir %s in %s", data.Dir, genJsonPath)
+			return fmt.Errorf("invalid dir %s in %s", data.Dir, genJsonPath)
 		}
 		if opts, err := parseArchiveCMD(data.Args, data.Dir); err != nil {
-			return err
+			return fmt.Errorf("invalid archive command in %s: %s", genJsonPath, err)
 		} else {
 			trees = append(trees, isolate.Tree{data.Dir, *opts})
 		}
