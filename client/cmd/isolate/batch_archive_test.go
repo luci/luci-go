@@ -53,6 +53,11 @@ func TestConvertPyToGoArchiveCMDArgs(t *testing.T) {
 	}
 }
 
+func TestInvalidArchiveCMD(t *testing.T) {
+	_, err := parseArchiveCMD([]string{}, "")
+	assert.Equal(t, "-isolated must be specified", err.Error())
+}
+
 func TestArchiveCMDParsing(t *testing.T) {
 	argsString := ("--isolated .isolated --isolate .isolate --path-variable DEPTH ../.." +
 		" --path-variable PRODUCT_DIR ../../out/Release" +

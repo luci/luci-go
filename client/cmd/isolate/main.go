@@ -18,6 +18,7 @@ var application = &subcommands.DefaultApplication{
 	Commands: []*subcommands.Command{
 		cmdArchive,
 		cmdBatchArchive,
+		cmdCheck,
 		subcommands.CmdHelp,
 	},
 }

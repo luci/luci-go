@@ -87,7 +87,18 @@ func (c *isolateFlags) Init(b *subcommands.CommandRunBase) {
 		considered relative paths.`)
 }
 
-func (c *isolateFlags) Parse() error {
+// RequiredFlags specifies which flags are required on the command line being
+// parsed.
+type RequiredIsolateFlags uint
+
+const (
+	// If set, the --isolate flag is required.
+	RequireIsolateFile RequiredIsolateFlags = 1 << iota
+	// If set, the --isolated flag is required.
+	RequireIsolatedFile
+)
+
+func (c *isolateFlags) Parse(flags RequiredIsolateFlags) error {
 	varss := [](common.KeyValVars){c.ConfigVariables, c.ExtraVariables, c.PathVariables}
 	for _, vars := range varss {
 		for k := range vars {
@@ -96,5 +107,13 @@ func (c *isolateFlags) Parse() error {
 			}
 		}
 	}
+
+	if flags&RequireIsolateFile != 0 && c.Isolate == "" {
+		return errors.New("-isolate must be specified")
+	}
+	if flags&RequireIsolatedFile != 0 && c.Isolated == "" {
+		return errors.New("-isolated must be specified")
+	}
+
 	return nil
 }

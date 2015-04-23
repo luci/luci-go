@@ -35,7 +35,7 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 	if err := c.commonServerFlags.Parse(); err != nil {
 		return err
 	}
-	if err := c.isolateFlags.Parse(); err != nil {
+	if err := c.isolateFlags.Parse(RequireIsolatedFile); err != nil {
 		return err
 	}
 	if len(args) != 0 {
