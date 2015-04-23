@@ -5,6 +5,7 @@
 package isolate
 
 import (
+	"errors"
 	"regexp"
 
 	"github.com/luci/luci-go/client/internal/common"
@@ -19,6 +20,7 @@ const IsolatedGenJSONVersion = 1
 const ValidVariable = "[A-Za-z_][A-Za-z_0-9]*"
 
 var validVariableMatcher = regexp.MustCompile(ValidVariable)
+var variableSubstitutionMatcher = regexp.MustCompile("<\\(" + ValidVariable + "\\)")
 
 // IsValidVariable returns true if the variable is a valid symbol name.
 func IsValidVariable(variable string) bool {
@@ -47,6 +49,34 @@ func (a *ArchiveOptions) Init() {
 	a.PathVariables = common.KeyValVars{}
 	a.ExtraVariables = common.KeyValVars{}
 	a.ConfigVariables = common.KeyValVars{}
+}
+
+// ReplaceVariables replaces any occurrences of '<(FOO)' in 'str' with the
+// corresponding variable from 'opts'.
+//
+// If any substitution refers to a variable that is missing, the returned error will
+// refer to the first such variable. In the case of errors, the returned string will
+// still contain a valid result for any non-missing substitutions.
+func ReplaceVariables(str string, opts ArchiveOptions) (string, error) {
+	var err error
+	subst := variableSubstitutionMatcher.ReplaceAllStringFunc(str,
+		func(match string) string {
+			var_name := match[2 : len(match)-1]
+			if v, ok := opts.PathVariables[var_name]; ok {
+				return v
+			}
+			if v, ok := opts.ExtraVariables[var_name]; ok {
+				return v
+			}
+			if v, ok := opts.ConfigVariables[var_name]; ok {
+				return v
+			}
+			if err == nil {
+				err = errors.New("no value for variable '" + var_name + "'")
+			}
+			return match
+		})
+	return subst, err
 }
 
 func IsolateAndArchive(trees []Tree, namespace string, server string) (
