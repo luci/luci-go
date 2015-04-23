@@ -62,8 +62,10 @@ func (c *isolateFlags) Init(b *subcommands.CommandRunBase) {
 	c.ArchiveOptions.Init()
 	b.Flags.StringVar(&c.Isolate, "isolate", "",
 		".isolate file to load the dependency data from")
+	b.Flags.StringVar(&c.Isolate, "i", "", "Alias for --isolate")
 	b.Flags.StringVar(&c.Isolated, "isolated", "",
 		".isolated file to generate or read")
+	b.Flags.StringVar(&c.Isolated, "s", "", "Alias for --isolated")
 	b.Flags.Var(&c.Blacklist, "blacklist",
 		"List of regexp to use as blacklist filter when uploading directories")
 	b.Flags.Var(c.ConfigVariables, "config-variable",
