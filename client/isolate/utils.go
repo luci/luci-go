@@ -38,7 +38,6 @@ func assert(condition bool, info ...interface{}) {
 func uniqueMergeSortedStrings(ls, rs []string) []string {
 	varSet := make([]string, len(ls)+len(rs))
 	for i := 0; ; i++ {
-		assert(i < len(varSet))
 		if len(ls) == 0 {
 			rs, ls = ls, rs
 		}
@@ -46,6 +45,7 @@ func uniqueMergeSortedStrings(ls, rs []string) []string {
 			i += copy(varSet[i:], ls)
 			return varSet[:i]
 		}
+		assert(i < len(varSet))
 		assert(len(rs) > 0 && len(ls) > 0)
 		if ls[0] > rs[0] {
 			ls, rs = rs, ls

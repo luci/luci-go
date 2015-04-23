@@ -29,6 +29,11 @@ func TestUniqueMergeSortedStrings(t *testing.T) {
 		uniqueMergeSortedStrings(
 			[]string{"bar", "foo", "test"},
 			[]string{"foo", "toss", "xyz"}))
+
+	// Test degenerate cases (empty and single-element lists)
+	ut.AssertEqual(t, SS(""), uniqueMergeSortedStrings(SS(""), SS("")))
+	ut.AssertEqual(t, SS("x"), uniqueMergeSortedStrings(SS("x"), SS("")))
+	ut.AssertEqual(t, SS("x"), uniqueMergeSortedStrings(SS(""), SS("x")))
 }
 
 func TestAssert(t *testing.T) {
