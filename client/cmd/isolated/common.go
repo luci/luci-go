@@ -6,6 +6,8 @@ package main
 
 import (
 	"errors"
+	"io/ioutil"
+	"log"
 
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/maruel/subcommands"
@@ -19,7 +21,17 @@ type commonFlags struct {
 
 func (c *commonFlags) Init(b *subcommands.CommandRunBase) {
 	b.Flags.BoolVar(&c.verbose, "verbose", false, "Get more output")
-	b.Flags.StringVar(&c.logFile, "log", "", "Name of log file")
+	// TODO(maruel): Implement -log.
+	//b.Flags.StringVar(&c.logFile, "log", "", "Name of log file")
+}
+
+func (c *commonFlags) Parse() error {
+	if !c.verbose {
+		log.SetFlags(0)
+		log.SetOutput(ioutil.Discard)
+	}
+	// TODO(maruel): Implement -log.
+	return nil
 }
 
 type commonServerFlags struct {
@@ -32,7 +44,7 @@ type commonServerFlags struct {
 func (c *commonServerFlags) Init(b *subcommands.CommandRunBase) {
 	b.Flags.StringVar(&c.serverURL, "isolate-server", "", "Isolate server to use")
 	b.Flags.StringVar(&c.serverURL, "I", "", "Alias for -isolate-server")
-	b.Flags.StringVar(&c.namespace, "namespace", "testing", "")
+	b.Flags.StringVar(&c.namespace, "namespace", "default-gzip", "")
 }
 
 func (c *commonServerFlags) Parse() error {

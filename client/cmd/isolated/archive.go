@@ -7,9 +7,12 @@ package main
 import (
 	"errors"
 	"fmt"
+	"time"
 
+	"github.com/luci/luci-go/client/archiver"
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/client/isolatedclient"
+	"github.com/maruel/interrupt"
 	"github.com/maruel/subcommands"
 )
 
@@ -39,6 +42,9 @@ type archiveRun struct {
 }
 
 func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
+	if err := c.commonFlags.Parse(); err != nil {
+		return err
+	}
 	if err := c.commonServerFlags.Parse(); err != nil {
 		return err
 	}
@@ -49,19 +55,26 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 }
 
 func (c *archiveRun) main(a subcommands.Application, args []string) error {
-	i := isolatedclient.New(c.serverURL, c.namespace)
-	caps, err := i.ServerCapabilities()
-	if err != nil {
-		return err
+	if len(c.dirs) != 0 {
+		return errors.New("-dirs is not yet implemented")
 	}
+	start := time.Now()
+	interrupt.HandleCtrlC()
+	is := isolatedclient.New(c.serverURL, c.namespace)
 
-	fmt.Printf("Server:       %s\n", c.serverURL)
-	fmt.Printf("Capabilities: %#v\n", caps)
-	fmt.Printf("Namespace:    %s\n", c.namespace)
-	fmt.Printf("Dirs:         %s\n", c.dirs)
-	fmt.Printf("Files:        %s\n", c.files)
-	fmt.Printf("Blacklist:    %s\n", c.blacklist)
-	return errors.New("TODO")
+	archiver := archiver.New(is)
+	for _, file := range c.files {
+		archiver.PushFile(file)
+	}
+	err := archiver.Close()
+	duration := time.Now().Sub(start)
+	stats := archiver.Stats()
+
+	fmt.Printf("Hits    : %5d (%.1fkb)\n", len(stats.Hits), float64(stats.TotalHits())/1024.)
+	fmt.Printf("Misses  : %5d (%.1fkb)\n", len(stats.Misses), float64(stats.TotalMisses())/1024.)
+	fmt.Printf("Pushed  : %5d (%.1fkb)\n", len(stats.Pushed), float64(stats.TotalPushed())/1024.)
+	fmt.Printf("Duration: %s\n", duration)
+	return err
 }
 
 func (c *archiveRun) Run(a subcommands.Application, args []string) int {
