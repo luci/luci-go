@@ -23,7 +23,7 @@ func Hash(src io.Reader) (HexDigest, error) {
 // HashBytes hashes content and returns a HexDigest from it.
 func HashBytes(content []byte) HexDigest {
 	h := GetHash()
-	h.Write(content)
+	_, _ = h.Write(content)
 	return HexDigest(hex.EncodeToString(h.Sum(nil)))
 }
 

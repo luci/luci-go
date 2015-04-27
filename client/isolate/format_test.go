@@ -320,10 +320,15 @@ func TestLoadIsolateAsConfigWithIncludes(t *testing.T) {
 	t.Parallel()
 	tmpDir, err := ioutil.TempDir("", "test-isofmt-")
 	ut.AssertEqual(t, nil, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Fail()
+		}
+	}()
 	err = os.Mkdir(filepath.Join(tmpDir, "inc"), 0777)
 	ut.AssertEqual(t, nil, err)
-	ioutil.WriteFile(filepath.Join(tmpDir, "inc", "included.isolate"), []byte(sampleIncIsolateData), 0777)
+	err = ioutil.WriteFile(filepath.Join(tmpDir, "inc", "included.isolate"), []byte(sampleIncIsolateData), 0777)
+	ut.AssertEqual(t, nil, err)
 
 	// Test failures.
 	absIncData := addIncludesToSample(sampleIsolateData, "'includes':['/abs/path']")

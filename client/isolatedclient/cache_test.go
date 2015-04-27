@@ -20,7 +20,11 @@ import (
 func TestMemoryCache(t *testing.T) {
 	td, err := ioutil.TempDir("", "isolateserver")
 	ut.AssertEqual(t, nil, err)
-	defer os.RemoveAll(td)
+	defer func() {
+		if err := os.RemoveAll(td); err != nil {
+			t.Fail()
+		}
+	}()
 
 	d := isolated.HexDigest("0123456789012345678901234567890123456789")
 	c := MakeMemoryCache()
@@ -34,7 +38,7 @@ func TestMemoryCache(t *testing.T) {
 	ut.AssertEqual(t, nil, c.Write(empty, bytes.NewBufferString("")))
 	content := []byte("foo")
 	h := sha1.New()
-	h.Write(content)
+	_, _ = h.Write(content)
 	digest := isolated.HexDigest(hex.EncodeToString(h.Sum(nil)))
 	ut.AssertEqual(t, os.ErrInvalid, c.Write(empty, bytes.NewBuffer(content)))
 	ut.AssertEqual(t, nil, c.Write(digest, bytes.NewBuffer(content)))

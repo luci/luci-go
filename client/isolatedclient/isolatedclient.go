@@ -109,11 +109,14 @@ func (i *isolateServer) doPush(state *PushState, src io.Reader) error {
 	reader, writer := io.Pipe()
 	defer reader.Close()
 	compressor := isolated.GetCompressor(writer)
-
+	c := make(chan error)
 	go func() {
-		io.Copy(compressor, src)
-		compressor.Close()
+		_, err := io.Copy(compressor, src)
+		if err2 := compressor.Close(); err == nil {
+			err = err2
+		}
 		writer.Close()
+		c <- err
 	}()
 
 	// DB upload.
@@ -135,9 +138,14 @@ func (i *isolateServer) doPush(state *PushState, src io.Reader) error {
 	// TODO(maruel): For relatively small file, set request.ContentLength so the
 	// TCP connection can be reused.
 	resp, err := client.Do(request)
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(ioutil.Discard, resp.Body)
+	resp.Body.Close()
+	err2 := <-c
 	if err == nil {
-		io.Copy(ioutil.Discard, resp.Body)
-		resp.Body.Close()
+		return err2
 	}
 	return err
 }
