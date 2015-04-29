@@ -30,25 +30,7 @@ func init() {
 	InterruptCanceler = c
 }
 
-// TODO(tandrii): Make this fully private once the archiver is migrated to GoroutinePool.
-
-// Semaphore is a classic semaphore with ability to cancel waiting.
-type Semaphore interface {
-	// Wait waits for the Semaphore to have 1 item available.
-	//
-	// Returns interrupt.ErrInterrupted if interrupt was triggered.
-	// It may return nil even if the interrupt signal is set.
-	Wait() error
-	// Signal adds 1 to the semaphore.
-	Signal()
-}
-
 type semaphore chan bool
-
-// NewSemaphore returns a Semaphore of specified size.
-func NewSemaphore(size int) Semaphore {
-	return newSemaphore(size)
-}
 
 func newSemaphore(size int) semaphore {
 	s := make(semaphore, size)
@@ -58,19 +40,11 @@ func newSemaphore(size int) semaphore {
 	return s
 }
 
-// TODO(tandrii): refactor to use Canceler once Semaphore is not public any more.
-func (s semaphore) Wait() error {
-	// "select" randomly selects a channel when both channels are available. It
-	// is still possible that the other channel is also available.
-	select {
-	case <-interrupt.Channel:
-		return interrupt.ErrInterrupted
-	case <-s:
-		return nil
-	}
-}
-
-func (s semaphore) cWait(canceler Canceler) error {
+// wait waits for the Semaphore to have 1 item available.
+//
+// Returns ErrCanceled if canceled before 1 item was acquired.
+// It may return nil even if the cancelable was canceled.
+func (s semaphore) wait(canceler Canceler) error {
 	// "select" randomly selects a channel when both channels are available. It
 	// is still possible that the other channel is also available.
 	select {
@@ -81,7 +55,8 @@ func (s semaphore) cWait(canceler Canceler) error {
 	}
 }
 
-func (s semaphore) Signal() {
+// signal adds 1 to the semaphore.
+func (s semaphore) signal() {
 	s <- true
 }
 
@@ -218,8 +193,8 @@ func (c *goroutinePool) Schedule(job func()) {
 	c.wg.Add(1)
 	go func() {
 		defer c.wg.Done()
-		if c.sema.cWait(c.Canceler) == nil {
-			defer c.sema.Signal()
+		if c.sema.wait(c.Canceler) == nil {
+			defer c.sema.signal()
 			// Do not start a new job if canceled.
 			if c.CancelationReason() == nil {
 				job()

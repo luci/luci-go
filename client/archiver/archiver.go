@@ -30,6 +30,7 @@ type Future interface {
 // Archiver is an high level interface to an isolatedclient.IsolateServer.
 type Archiver interface {
 	io.Closer
+	common.Cancelable
 	PushFile(path string) Future
 	Stats() *Stats
 }
@@ -87,6 +88,7 @@ func (s *Stats) deepCopy() *Stats {
 // TODO(maruel): Cache hashes and server cache presence.
 func New(is isolatedclient.IsolateServer) Archiver {
 	a := &archiver{
+		canceler:              common.NewCanceler(),
 		is:                    is,
 		maxConcurrentHash:     5,
 		maxConcurrentContains: 16,
@@ -139,6 +141,7 @@ type archiver struct {
 	itemsToLookup         chan *archiverItem // Stage 2
 	itemsToUpload         chan *archiverItem // Stage 3
 	wg                    sync.WaitGroup
+	canceler              common.Canceler
 
 	// Mutable.
 	lock  sync.Mutex
@@ -210,9 +213,19 @@ func (a *archiver) Close() error {
 	close(a.filesToHash)
 	a.wg.Wait()
 
+	_ = a.canceler.Close()
+
 	a.lock.Lock()
 	defer a.lock.Unlock()
 	return a.err
+}
+
+func (a *archiver) Cancel(reason error) {
+	a.canceler.Cancel(reason)
+}
+
+func (a *archiver) CancelationReason() error {
+	return a.canceler.CancelationReason()
 }
 
 func (a *archiver) PushFile(path string) Future {
@@ -242,20 +255,12 @@ func (a *archiver) setErr(err error) {
 // hashLoop is stage 1.
 func (a *archiver) hashLoop() {
 	defer close(a.itemsToLookup)
-	var wg sync.WaitGroup
-	s := common.NewSemaphore(a.maxConcurrentHash)
+
+	pool := common.NewGoroutinePool(a.maxConcurrentHash, a.canceler)
 
 	for file := range a.filesToHash {
-		wg.Add(1)
-		go func(item *archiverItem) {
-			if err := s.Wait(); err != nil {
-				return
-			}
-			defer func() {
-				s.Signal()
-				wg.Done()
-			}()
-
+		item := file
+		pool.Schedule(func() {
 			d, err := isolated.HashFile(item.path)
 			if err != nil {
 				item.setErr(err)
@@ -264,16 +269,17 @@ func (a *archiver) hashLoop() {
 			}
 			item.setDigest(d)
 			a.itemsToLookup <- item
-		}(file)
+		})
 	}
-	wg.Wait()
+
+	_ = pool.Wait()
 }
 
 // containsLoop is stage 2.
 func (a *archiver) containsLoop() {
 	defer close(a.itemsToUpload)
-	var wg sync.WaitGroup
-	s := common.NewSemaphore(a.maxConcurrentContains)
+
+	pool := common.NewGoroutinePool(a.maxConcurrentContains, a.canceler)
 
 	items := []*archiverItem{}
 	never := make(<-chan time.Time)
@@ -282,17 +288,10 @@ func (a *archiver) containsLoop() {
 	for loop {
 		select {
 		case <-timer:
-			wg.Add(1)
-			go func(batch []*archiverItem) {
-				if err := s.Wait(); err != nil {
-					return
-				}
-				defer func() {
-					s.Signal()
-					wg.Done()
-				}()
+			batch := items
+			pool.Schedule(func() {
 				a.doContains(batch)
-			}(items)
+			})
 			items = []*archiverItem{}
 			timer = never
 
@@ -309,40 +308,25 @@ func (a *archiver) containsLoop() {
 	}
 
 	if len(items) != 0 {
-		wg.Add(1)
-		go func(batch []*archiverItem) {
-			if err := s.Wait(); err != nil {
-				return
-			}
-			defer func() {
-				s.Signal()
-				wg.Done()
-			}()
+		batch := items
+		pool.Schedule(func() {
 			a.doContains(batch)
-		}(items)
+		})
 	}
-	wg.Wait()
+	_ = pool.Wait()
 }
 
 // uploadLoop is stage 3.
 func (a *archiver) uploadLoop() {
-	var wg sync.WaitGroup
-	s := common.NewSemaphore(a.maxConcurrentUpload)
+	pool := common.NewGoroutinePool(a.maxConcurrentUpload, a.canceler)
 
-	for item := range a.itemsToUpload {
-		wg.Add(1)
-		go func(item *archiverItem) {
-			if err := s.Wait(); err != nil {
-				return
-			}
-			defer func() {
-				s.Signal()
-				wg.Done()
-			}()
+	for state := range a.itemsToUpload {
+		item := state
+		pool.Schedule(func() {
 			a.doUpload(item)
-		}(item)
+		})
 	}
-	wg.Wait()
+	_ = pool.Wait()
 }
 
 // doContains is scaled by stage 2.
