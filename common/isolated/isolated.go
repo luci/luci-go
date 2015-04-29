@@ -28,19 +28,19 @@ const (
 //
 // Either one of Size or Link can be set.
 type File struct {
-	Digest HexDigest `json:"h"`
-	Link   *string   `json:"l"`
-	Mode   *int      `json:"m"`
-	Size   *int64    `json:"s"`
+	Digest HexDigest `json:"h,omitempty"`
+	Link   *string   `json:"l,omitempty"`
+	Mode   *int      `json:"m,omitempty"`
+	Size   *int64    `json:"s,omitempty"`
 }
 
 // Isolated is the data from a JSON serialized .isolated file.
 type Isolated struct {
 	Algo        string          `json:"algo"` // Must be "sha-1"
-	Command     []string        `json:"command",omitempty`
-	Files       map[string]File `json:"files"`
-	Includes    []HexDigest     `json:"includes"`
-	ReadOnly    *ReadOnlyValue  `json:"read_only"`
-	RelativeCwd string          `json:"relative_cwd",omitempty`
+	Command     []string        `json:"command,omitempty"`
+	Files       map[string]File `json:"files,omitempty"`
+	Includes    []HexDigest     `json:"includes,omitempty"`
+	ReadOnly    *ReadOnlyValue  `json:"read_only,omitempty"`
+	RelativeCwd string          `json:"relative_cwd,omitempty"`
 	Version     string          `json:"version"`
 }

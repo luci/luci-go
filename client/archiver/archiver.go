@@ -5,6 +5,8 @@
 package archiver
 
 import (
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -31,6 +33,7 @@ type Future interface {
 type Archiver interface {
 	io.Closer
 	common.Cancelable
+	Push(displayName string, src io.ReadSeeker) Future
 	PushFile(path string) Future
 	Stats() *Stats
 }
@@ -121,6 +124,92 @@ func New(is isolatedclient.IsolateServer) Archiver {
 
 // Private details.
 
+// archiverItem is an item to process. Implements Future.
+//
+// It is caried over from pipeline stage to stage to do processing on it.
+type archiverItem struct {
+	// Immutable.
+	path        string         // Set when source is a file on disk
+	displayName string         // Name to use to qualify this item
+	wgHashed    sync.WaitGroup // Released once .digestItem.Digest is set
+
+	// Mutable.
+	lock       sync.Mutex
+	err        error               // Item specific error
+	digestItem isolated.DigestItem // Mutated by hashLoop(), used by doContains()
+
+	// Mutable but not accessible externally.
+	src   io.ReadSeeker             // Source of data
+	state *isolatedclient.PushState // Server-side push state for cache miss
+}
+
+func newArchiverItem(path, displayName string, src io.ReadSeeker) *archiverItem {
+	i := &archiverItem{path: path, displayName: displayName, src: src}
+	i.wgHashed.Add(1)
+	return i
+}
+
+func (i *archiverItem) WaitForHashed() {
+	i.wgHashed.Wait()
+}
+
+func (i *archiverItem) Error() error {
+	i.lock.Lock()
+	defer i.lock.Unlock()
+	return i.err
+}
+
+func (i *archiverItem) Digest() isolated.HexDigest {
+	i.lock.Lock()
+	defer i.lock.Unlock()
+	return i.digestItem.Digest
+}
+
+func (i *archiverItem) setErr(err error) {
+	if err == nil {
+		panic("internal error")
+	}
+	i.lock.Lock()
+	defer i.lock.Unlock()
+	if i.err == nil {
+		i.err = err
+	}
+	// TODO(maruel): Support Close().
+	i.src = nil
+}
+
+func (i *archiverItem) calcDigest() error {
+	defer i.wgHashed.Done()
+	var d isolated.DigestItem
+	if i.path != "" {
+		// Open and hash the file.
+		var err error
+		if d, err = isolated.HashFile(i.path); err != nil {
+			i.setErr(err)
+			return fmt.Errorf("hash(%s) failed: %s\n", i.displayName, err)
+		}
+	} else {
+		// Use src instead.
+		h := isolated.GetHash()
+		size, err := io.Copy(h, i.src)
+		if err != nil {
+			i.setErr(err)
+			return fmt.Errorf("read(%s) failed: %s\n", i.displayName, err)
+		}
+		_, err = i.src.Seek(0, os.SEEK_SET)
+		if err != nil {
+			i.setErr(err)
+			return fmt.Errorf("seek(%s) failed: %s\n", i.displayName, err)
+		}
+		digest := isolated.HexDigest(hex.EncodeToString(h.Sum(nil)))
+		d = isolated.DigestItem{digest, true, size}
+	}
+	i.lock.Lock()
+	defer i.lock.Unlock()
+	i.digestItem = d
+	return nil
+}
+
 // archiver archives content to an Isolate server.
 //
 // Uses a 3 stages pipeline:
@@ -145,79 +234,20 @@ type archiver struct {
 
 	// Mutable.
 	lock  sync.Mutex
-	err   error
 	stats Stats
-}
-
-// archiverItem is an item to process. Implements Future.
-//
-// It is caried over from pipeline stage to stage to do processing on it.
-type archiverItem struct {
-	// Immutable.
-	path     string         // Set when source is a file on disk
-	wgHashed sync.WaitGroup // Released once .digestItem.Digest is set
-
-	// Mutable.
-	lock       sync.Mutex
-	err        error               // Item specific error
-	digestItem isolated.DigestItem // Mutated by hashLoop(), used by doContains()
-
-	// Mutable but not accessible externally.
-	state *isolatedclient.PushState // Server-side push state for cache miss
-}
-
-func newArchiverItem(path string) *archiverItem {
-	i := &archiverItem{path: path}
-	i.wgHashed.Add(1)
-	return i
-}
-
-func (i *archiverItem) setDigest(d isolated.DigestItem) {
-	i.lock.Lock()
-	defer i.lock.Unlock()
-	i.digestItem = d
-	i.wgHashed.Done()
-}
-
-func (i *archiverItem) setErr(err error) {
-	if err == nil {
-		panic("internal error")
-	}
-	i.lock.Lock()
-	defer i.lock.Unlock()
-	if i.err == nil {
-		// No hashing will occur for this file.
-		i.wgHashed.Done()
-		i.err = err
-	}
-}
-
-func (i *archiverItem) WaitForHashed() {
-	i.wgHashed.Wait()
-}
-
-func (i *archiverItem) Error() error {
-	i.lock.Lock()
-	defer i.lock.Unlock()
-	return i.err
-}
-
-func (i *archiverItem) Digest() isolated.HexDigest {
-	i.lock.Lock()
-	defer i.lock.Unlock()
-	return i.digestItem.Digest
 }
 
 // Close waits for all pending files to be done.
 func (a *archiver) Close() error {
-	close(a.filesToHash)
-	a.wg.Wait()
-
-	_ = a.canceler.Close()
-
+	// This is done so asynchronously calling push() won't crash.
 	a.lock.Lock()
-	defer a.lock.Unlock()
-	return a.err
+	close(a.filesToHash)
+	a.filesToHash = nil
+	a.lock.Unlock()
+
+	a.wg.Wait()
+	_ = a.canceler.Close()
+	return a.CancelationReason()
 }
 
 func (a *archiver) Cancel(reason error) {
@@ -228,10 +258,17 @@ func (a *archiver) CancelationReason() error {
 	return a.canceler.CancelationReason()
 }
 
+func (a *archiver) Push(displayName string, src io.ReadSeeker) Future {
+	i := newArchiverItem("", displayName, src)
+	if pos, err := i.src.Seek(0, os.SEEK_SET); pos != 0 || err != nil {
+		i.err = errors.New("must use buffer set at offset 0")
+		return i
+	}
+	return a.push(i)
+}
+
 func (a *archiver) PushFile(path string) Future {
-	item := newArchiverItem(path)
-	a.filesToHash <- item
-	return item
+	return a.push(newArchiverItem(path, path, nil))
 }
 
 func (a *archiver) Stats() *Stats {
@@ -240,16 +277,14 @@ func (a *archiver) Stats() *Stats {
 	return a.stats.deepCopy()
 }
 
-func (a *archiver) setErr(err error) {
-	if err == nil {
-		panic("internal error")
-	}
-	log.Printf("%s\n", err)
+func (a *archiver) push(item *archiverItem) Future {
 	a.lock.Lock()
 	defer a.lock.Unlock()
-	if a.err == nil {
-		a.err = err
+	if a.filesToHash == nil {
+		return nil
 	}
+	a.filesToHash <- item
+	return item
 }
 
 // hashLoop is stage 1.
@@ -258,16 +293,20 @@ func (a *archiver) hashLoop() {
 
 	pool := common.NewGoroutinePool(a.maxConcurrentHash, a.canceler)
 
-	for file := range a.filesToHash {
+	a.lock.Lock()
+	filesToHash := a.filesToHash
+	a.lock.Unlock()
+	if filesToHash == nil {
+		// This means Close() was called really too quickly.
+		return
+	}
+	for file := range filesToHash {
 		item := file
 		pool.Schedule(func() {
-			d, err := isolated.HashFile(item.path)
-			if err != nil {
-				item.setErr(err)
-				a.setErr(fmt.Errorf("hash(%s) failed: %s\n", item.path, err))
+			if err := item.calcDigest(); err != nil {
+				a.Cancel(err)
 				return
 			}
-			item.setDigest(d)
 			a.itemsToLookup <- item
 		})
 	}
@@ -340,7 +379,7 @@ func (a *archiver) doContains(items []*archiverItem) {
 	states, err := a.is.Contains(tmp)
 	if err != nil {
 		err = fmt.Errorf("contains(%d) failed: %s", len(items), err)
-		a.setErr(err)
+		a.Cancel(err)
 		for _, item := range items {
 			item.setErr(err)
 		}
@@ -365,23 +404,30 @@ func (a *archiver) doContains(items []*archiverItem) {
 
 // doUpload is scaled by stage 3.
 func (a *archiver) doUpload(item *archiverItem) {
-	src, err := os.Open(item.path)
-	if err == nil {
-		defer src.Close()
-		start := time.Now()
-		if err := a.is.Push(item.state, src); err != nil {
-			err = fmt.Errorf("push(%s) failed: %s\n", item.path, err)
-		} else {
-			duration := time.Now().Sub(start)
-			u := &UploadStat{duration, item.digestItem.Size}
-			a.lock.Lock()
-			a.stats.Pushed = append(a.stats.Pushed, u)
-			a.lock.Unlock()
-			log.Printf("Uploaded %.1fkb\n", float64(item.digestItem.Size)/1024.)
+	var src io.Reader
+	if item.src == nil {
+		f, err := os.Open(item.path)
+		if err != nil {
+			a.Cancel(err)
+			item.setErr(err)
+			return
 		}
+		defer f.Close()
+		src = f
+	} else {
+		src = item.src
+		item.src = nil
 	}
-	if err != nil {
-		a.setErr(err)
+	start := time.Now()
+	if err := a.is.Push(item.state, src); err != nil {
+		err = fmt.Errorf("push(%s) failed: %s\n", item.path, err)
+		a.Cancel(err)
 		item.setErr(err)
 	}
+	duration := time.Now().Sub(start)
+	u := &UploadStat{duration, item.digestItem.Size}
+	a.lock.Lock()
+	a.stats.Pushed = append(a.stats.Pushed, u)
+	a.lock.Unlock()
+	log.Printf("Uploaded %.1fkb\n", float64(item.digestItem.Size)/1024.)
 }

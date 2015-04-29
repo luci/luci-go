@@ -7,6 +7,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/luci/luci-go/client/archiver"
@@ -55,25 +56,40 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 }
 
 func (c *archiveRun) main(a subcommands.Application, args []string) error {
-	if len(c.dirs) != 0 {
-		return errors.New("-dirs is not yet implemented")
-	}
 	start := time.Now()
 	interrupt.HandleCtrlC()
 	is := isolatedclient.New(c.serverURL, c.namespace)
 
-	archiver := archiver.New(is)
+	arch := archiver.New(is)
+	futures := []archiver.Future{}
+	names := []string{}
 	for _, file := range c.files {
-		archiver.PushFile(file)
+		futures = append(futures, arch.PushFile(file))
+		names = append(names, file)
 	}
-	err := archiver.Close()
-	duration := time.Now().Sub(start)
-	stats := archiver.Stats()
 
-	fmt.Printf("Hits    : %5d (%.1fkb)\n", len(stats.Hits), float64(stats.TotalHits())/1024.)
-	fmt.Printf("Misses  : %5d (%.1fkb)\n", len(stats.Misses), float64(stats.TotalMisses())/1024.)
-	fmt.Printf("Pushed  : %5d (%.1fkb)\n", len(stats.Pushed), float64(stats.TotalPushed())/1024.)
-	fmt.Printf("Duration: %s\n", duration)
+	for _, d := range c.dirs {
+		futures = append(futures, archiver.PushDirectory(arch, d, nil))
+		names = append(names, d)
+	}
+
+	for i, future := range futures {
+		future.WaitForHashed()
+		if err := future.Error(); err == nil {
+			fmt.Printf("%s  %s\n", future.Digest(), names[i])
+		} else {
+			fmt.Printf("%s failed: %s\n", names[i], err)
+		}
+	}
+	// This waits for all uploads.
+	err := arch.Close()
+	duration := time.Now().Sub(start)
+	stats := arch.Stats()
+
+	fmt.Fprintf(os.Stderr, "Hits    : %5d (%.1fkb)\n", len(stats.Hits), float64(stats.TotalHits())/1024.)
+	fmt.Fprintf(os.Stderr, "Misses  : %5d (%.1fkb)\n", len(stats.Misses), float64(stats.TotalMisses())/1024.)
+	fmt.Fprintf(os.Stderr, "Pushed  : %5d (%.1fkb)\n", len(stats.Pushed), float64(stats.TotalPushed())/1024.)
+	fmt.Fprintf(os.Stderr, "Duration: %s\n", duration)
 	return err
 }
 
