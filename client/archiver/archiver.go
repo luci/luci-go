@@ -17,10 +17,20 @@ import (
 	"github.com/luci/luci-go/common/isolated"
 )
 
+// Future is the future of a file pushed to be hashed.
+type Future interface {
+	// WaitForHashed hangs until the item hash is known.
+	WaitForHashed()
+	// Error returns any error that occured for this item if any.
+	Error() error
+	// Digest returns the calculated digest once calculated, empty otherwise.
+	Digest() isolated.HexDigest
+}
+
 // Archiver is an high level interface to an isolatedclient.IsolateServer.
 type Archiver interface {
 	io.Closer
-	PushFile(path string)
+	PushFile(path string) Future
 	Stats() *Stats
 }
 
@@ -136,12 +146,13 @@ type archiver struct {
 	stats Stats
 }
 
-// archiverItem is an item to process.
+// archiverItem is an item to process. Implements Future.
 //
 // It is caried over from pipeline stage to stage to do processing on it.
 type archiverItem struct {
 	// Immutable.
-	path string
+	path     string         // Set when source is a file on disk
+	wgHashed sync.WaitGroup // Released once .digestItem.Digest is set
 
 	// Mutable.
 	lock       sync.Mutex
@@ -154,6 +165,7 @@ type archiverItem struct {
 
 func newArchiverItem(path string) *archiverItem {
 	i := &archiverItem{path: path}
+	i.wgHashed.Add(1)
 	return i
 }
 
@@ -161,6 +173,7 @@ func (i *archiverItem) setDigest(d isolated.DigestItem) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 	i.digestItem = d
+	i.wgHashed.Done()
 }
 
 func (i *archiverItem) setErr(err error) {
@@ -170,8 +183,26 @@ func (i *archiverItem) setErr(err error) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 	if i.err == nil {
+		// No hashing will occur for this file.
+		i.wgHashed.Done()
 		i.err = err
 	}
+}
+
+func (i *archiverItem) WaitForHashed() {
+	i.wgHashed.Wait()
+}
+
+func (i *archiverItem) Error() error {
+	i.lock.Lock()
+	defer i.lock.Unlock()
+	return i.err
+}
+
+func (i *archiverItem) Digest() isolated.HexDigest {
+	i.lock.Lock()
+	defer i.lock.Unlock()
+	return i.digestItem.Digest
 }
 
 // Close waits for all pending files to be done.
@@ -184,9 +215,10 @@ func (a *archiver) Close() error {
 	return a.err
 }
 
-func (a *archiver) PushFile(path string) {
+func (a *archiver) PushFile(path string) Future {
 	item := newArchiverItem(path)
 	a.filesToHash <- item
+	return item
 }
 
 func (a *archiver) Stats() *Stats {

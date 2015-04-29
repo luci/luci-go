@@ -35,11 +35,11 @@ func TestArchiverFile(t *testing.T) {
 
 	fEmpty, err := ioutil.TempFile("", "archiver")
 	ut.AssertEqual(t, nil, err)
-	a.PushFile(fEmpty.Name())
+	future1 := a.PushFile(fEmpty.Name())
 	fFoo, err := ioutil.TempFile("", "archiver")
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, nil, ioutil.WriteFile(fFoo.Name(), []byte("foo"), 0600))
-	a.PushFile(fFoo.Name())
+	future2 := a.PushFile(fFoo.Name())
 	ut.AssertEqual(t, nil, a.Close())
 
 	stats := a.Stats()
@@ -50,4 +50,10 @@ func TestArchiverFile(t *testing.T) {
 		"da39a3ee5e6b4b0d3255bfef95601890afd80709": {},
 	}
 	ut.AssertEqual(t, expected, server.Contents())
+	future1.WaitForHashed()
+	ut.AssertEqual(t, isolated.HexDigest("da39a3ee5e6b4b0d3255bfef95601890afd80709"), future1.Digest())
+	ut.AssertEqual(t, nil, future1.Error())
+	future2.WaitForHashed()
+	ut.AssertEqual(t, isolated.HexDigest("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"), future2.Digest())
+	ut.AssertEqual(t, nil, future2.Error())
 }
