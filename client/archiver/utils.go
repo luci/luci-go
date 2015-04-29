@@ -58,6 +58,80 @@ func (s *simpleFuture) Digest() isolated.HexDigest {
 	return s.digest
 }
 
+type walkItem struct {
+	fullPath string
+	relPath  string
+	info     os.FileInfo
+	err      error
+}
+
+// walk() enumerates a directory tree synchronously and sends the items to
+// channel c.
+//
+// blacklist is a list of globs of files to ignore.
+func walk(root string, blacklist []string, c chan<- *walkItem) {
+	// TODO(maruel): Walk() sorts the file names list, which is not needed here
+	// and slows things down. Options:
+	// #1 Use os.File.Readdir() directly. It's in the stdlib and works fine, but
+	//    it's not the most efficient implementation. On posix it does a lstat()
+	//    call, on Windows it does a Win32FileAttributeData.
+	// #2 Use raw syscalls.
+	//   - On POSIX, use syscall.ReadDirent(). See src/os/dir_unix.go.
+	//   - On Windows, use syscall.FindFirstFile(), syscall.FindNextFile(),
+	//     syscall.FindClose() directly. See src/os/file_windows.go. For odd
+	//     reasons, Windows does not have a batched version to reduce the number
+	//     of kernel calls. It's as if they didn't care about performance.
+	//
+	// In practice, #2 may not be needed, the performance of #1 may be good
+	// enough relative to the other performance costs. This needs to be perf
+	// tested at 100k+ files scale on Windows and OSX.
+	//
+	// TODO(maruel): Cache directory enumeration. In particular cases (Chromium),
+	// the same directory may be enumerated multiple times. Caching the content
+	// may be worth. This needs to be perf tested.
+
+	// Check patterns upfront, so it has consistent behavior w.r.t. bad glob
+	// patterns.
+	for _, b := range blacklist {
+		if _, err := filepath.Match(b, ""); err != nil {
+			c <- &walkItem{err: fmt.Errorf("bad blacklist pattern \"%s\"", b)}
+			return
+		}
+	}
+	if strings.HasSuffix(root, string(filepath.Separator)) {
+		root = root[:len(root)-1]
+	}
+	rootLen := len(root) + 1
+	err := filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
+		if err != nil {
+			return fmt.Errorf("walk(%s): %s", p, err)
+		}
+		if len(p) <= rootLen {
+			// Root directory.
+			return nil
+		}
+		relPath := p[rootLen:]
+		for _, b := range blacklist {
+			if matched, _ := filepath.Match(b, relPath); matched {
+				// Must not return io.SkipDir for file, filepath.walk() handles this
+				// badly.
+				if info.IsDir() {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+		}
+		if info.IsDir() {
+			return nil
+		}
+		c <- &walkItem{fullPath: p, relPath: relPath, info: info}
+		return nil
+	})
+	if err != nil {
+		c <- &walkItem{err: err}
+	}
+}
+
 // PushDirectory walks a directory at root and creates a .isolated file.
 //
 // It walks the directories synchronously, then hashes, does cache lookups and
@@ -65,10 +139,11 @@ func (s *simpleFuture) Digest() isolated.HexDigest {
 //
 // blacklist is a list of globs of files to ignore.
 func PushDirectory(a Archiver, root string, blacklist []string) Future {
-	if strings.HasSuffix(root, string(filepath.Separator)) {
-		root = root[:len(root)-1]
-	}
-	rootLen := len(root) + 1
+	c := make(chan *walkItem)
+	go func() {
+		walk(root, blacklist, c)
+		close(c)
+	}()
 
 	i := isolated.Isolated{
 		Algo:    "sha-1",
@@ -76,40 +151,35 @@ func PushDirectory(a Archiver, root string, blacklist []string) Future {
 		Version: isolated.IsolatedFormatVersion,
 	}
 	futures := map[string]Future{}
-	// Directory enumeration is done synchronously.
-	err := filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
-		if err != nil {
-			return fmt.Errorf("walk(%s): %s", p, err)
+	s := &simpleFuture{}
+	for item := range c {
+		if item.err != nil {
+			s.err = item.err
 		}
-		if info.IsDir() {
-			return nil
+		if s.err != nil {
+			// Empty the queue.
+			continue
 		}
-
-		relPath := p[rootLen:]
 		if filepath.Separator == '\\' {
 			// Windows.
-			relPath = strings.Replace(relPath, "\\", "/", -1)
+			item.relPath = strings.Replace(item.relPath, "\\", "/", -1)
 		}
-
-		mode := info.Mode()
+		mode := item.info.Mode()
 		if mode&os.ModeSymlink == os.ModeSymlink {
-			l, err := os.Readlink(p)
+			l, err := os.Readlink(item.fullPath)
 			if err != nil {
-				return fmt.Errorf("readlink(%s): %s", p, err)
+				s.err = fmt.Errorf("readlink(%s): %s", item.fullPath, err)
 			}
-			i.Files[relPath] = isolated.File{Link: newString(l)}
+			i.Files[item.relPath] = isolated.File{Link: newString(l)}
 		} else {
-			i.Files[relPath] = isolated.File{
+			i.Files[item.relPath] = isolated.File{
 				Mode: newInt(int(mode.Perm())),
-				Size: newInt64(info.Size()),
+				Size: newInt64(item.info.Size()),
 			}
-			futures[relPath] = a.PushFile(p)
+			futures[item.relPath] = a.PushFile(item.fullPath)
 		}
-		return nil
-	})
-
-	s := &simpleFuture{err: err}
-	if err != nil {
+	}
+	if s.err != nil {
 		return s
 	}
 	log.Printf("PushDirectory(%s) = %d files", root, len(i.Files))
