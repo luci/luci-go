@@ -94,9 +94,10 @@ func New(is isolatedclient.IsolateServer) Archiver {
 		canceler:              common.NewCanceler(),
 		is:                    is,
 		maxConcurrentHash:     5,
-		maxConcurrentContains: 16,
+		maxConcurrentContains: 64,
 		maxConcurrentUpload:   8,
 		containsBatchingDelay: 100 * time.Millisecond,
+		containsBatchSize:     50,
 		filesToHash:           make(chan *archiverItem, 10240),
 		itemsToLookup:         make(chan *archiverItem, 10240),
 		itemsToUpload:         make(chan *archiverItem, 10240),
@@ -226,6 +227,7 @@ type archiver struct {
 	maxConcurrentContains int                // Stage 2
 	maxConcurrentUpload   int                // Stage 3
 	containsBatchingDelay time.Duration      // Used by stage 2
+	containsBatchSize     int                // Used by stage 2
 	filesToHash           chan *archiverItem // Stage 1
 	itemsToLookup         chan *archiverItem // Stage 2
 	itemsToUpload         chan *archiverItem // Stage 3
@@ -340,7 +342,14 @@ func (a *archiver) containsLoop() {
 				break
 			}
 			items = append(items, item)
-			if timer == never {
+			if len(items) == a.containsBatchSize {
+				batch := items
+				pool.Schedule(func() {
+					a.doContains(batch)
+				})
+				items = []*archiverItem{}
+				timer = never
+			} else if timer == never {
 				timer = time.After(a.containsBatchingDelay)
 			}
 		}
