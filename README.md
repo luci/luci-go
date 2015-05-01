@@ -6,23 +6,27 @@ luci-go: LUCI in Go
 [![Coverage Status](https://img.shields.io/coveralls/luci/luci-go.svg)](https://coveralls.io/r/luci/luci-go?branch=master)
 
 
-Installing clients
-------------------
+Installing
+----------
 
     go get -u github.com/luci/luci-go/client/cmd/...
+    go get -u github.com/luci/luci-go/server/cmd/...
 
 
 Code layout
 -----------
 
-  * `/client/cmd/...` contains executables.
-  * `/client/internal/...` contains non API shared internal packages for use by
-    other packages in this repository. This includes third parties. See
-    https://golang.org/s/go14internal for more details.
-  * `/client/...` not in any other of the category is an API package usable
-    externally.
-  * `/common/...` contains code and structures shared between client and server.
-  * `/server/...` contains server code.
+  * [/appengine/...](https://github.com/luci/luci-go/tree/master/appengine)
+    contains [AppEngine](https://cloud.google.com/appengine/docs/go/) server
+    code. It imports packages from `/common/...` and `/server/...`.
+  * [/client/...](https://github.com/luci/luci-go/tree/master/client) contains
+    all client code.
+  * [/common/...](https://github.com/luci/luci-go/tree/master/common) contains
+    code and structures shared between all of `/appengine/...`, `/client/...`
+    and `/server/...`; for example, the structures used by the server APIs.
+    These are inherently APIs.
+  * [/server/...](https://github.com/luci/luci-go/tree/master/server) contains
+    standalone server code. Its packages are reusable by `/appengine/...`.
 
 
 Versioning
