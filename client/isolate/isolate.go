@@ -6,6 +6,7 @@ package isolate
 
 import (
 	"errors"
+	"path/filepath"
 	"regexp"
 
 	"github.com/luci/luci-go/client/archiver"
@@ -91,7 +92,7 @@ func Archive(arch archiver.Archiver, opts *ArchiveOptions) archiver.Future {
 	// i := isolated.Isolated{}
 	// <Serialize>
 	// return arch.Push(encoded, strings.SplitN(filepath.Base(opts.Isolate), ".", 2)[0])
-	s := archiver.NewSimpleFuture()
+	s := archiver.NewSimpleFuture(filepath.Base(opts.Isolated))
 	s.Finalize("", errors.New("TODO"))
 	return s
 }

@@ -24,8 +24,8 @@ type SimpleFuture interface {
 }
 
 // NewSimpleFuture returns a SimpleFuture for asynchronous work.
-func NewSimpleFuture() SimpleFuture {
-	s := &simpleFuture{}
+func NewSimpleFuture(displayName string) SimpleFuture {
+	s := &simpleFuture{displayName: displayName}
 	s.wgHashed.Add(1)
 	return s
 }
@@ -51,10 +51,15 @@ func newString(v string) *string {
 }
 
 type simpleFuture struct {
-	wgHashed sync.WaitGroup
-	lock     sync.Mutex
-	err      error
-	digest   isolated.HexDigest
+	displayName string
+	wgHashed    sync.WaitGroup
+	lock        sync.Mutex
+	err         error
+	digest      isolated.HexDigest
+}
+
+func (s *simpleFuture) DisplayName() string {
+	return s.displayName
 }
 
 func (s *simpleFuture) WaitForHashed() {
@@ -171,13 +176,14 @@ func PushDirectory(a Archiver, root string, blacklist []string) Future {
 		close(c)
 	}()
 
+	displayName := filepath.Base(root) + ".isolated"
 	i := isolated.Isolated{
 		Algo:    "sha-1",
 		Files:   map[string]isolated.File{},
 		Version: isolated.IsolatedFormatVersion,
 	}
-	futures := map[string]Future{}
-	s := NewSimpleFuture()
+	futures := []Future{}
+	s := NewSimpleFuture(displayName)
 	for item := range c {
 		if s.Error() != nil {
 			// Empty the queue.
@@ -204,7 +210,7 @@ func PushDirectory(a Archiver, root string, blacklist []string) Future {
 				Mode: newInt(int(mode.Perm())),
 				Size: newInt64(item.info.Size()),
 			}
-			futures[item.relPath] = a.PushFile(item.fullPath)
+			futures = append(futures, a.PushFile(item.relPath, item.fullPath))
 		}
 	}
 	if s.Error() != nil {
@@ -215,20 +221,21 @@ func PushDirectory(a Archiver, root string, blacklist []string) Future {
 	// Hashing, cache lookups and upload is done asynchronously.
 	go func() {
 		var err error
-		for p, future := range futures {
+		for _, future := range futures {
 			future.WaitForHashed()
 			if err = future.Error(); err != nil {
 				break
 			}
-			d := i.Files[p]
+			name := future.DisplayName()
+			d := i.Files[name]
 			d.Digest = future.Digest()
-			i.Files[p] = d
+			i.Files[name] = d
 		}
 		var d isolated.HexDigest
 		if err == nil {
 			raw := &bytes.Buffer{}
 			if err = json.NewEncoder(raw).Encode(i); err == nil {
-				f := a.Push(filepath.Base(root)+".isolated", bytes.NewReader(raw.Bytes()))
+				f := a.Push(displayName, bytes.NewReader(raw.Bytes()))
 				f.WaitForHashed()
 				err = f.Error()
 				d = f.Digest()

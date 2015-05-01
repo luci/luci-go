@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"sort"
 	"testing"
@@ -44,13 +45,14 @@ func TestArchiverFile(t *testing.T) {
 
 	fEmpty, err := ioutil.TempFile("", "archiver")
 	ut.AssertEqual(t, nil, err)
-	future1 := a.PushFile(fEmpty.Name())
+	future1 := a.PushFile(fEmpty.Name(), fEmpty.Name())
+	ut.AssertEqual(t, fEmpty.Name(), future1.DisplayName())
 	fFoo, err := ioutil.TempFile("", "archiver")
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, nil, ioutil.WriteFile(fFoo.Name(), []byte("foo"), 0600))
-	future2 := a.PushFile(fFoo.Name())
+	future2 := a.PushFile(fFoo.Name(), fFoo.Name())
 	// Push the same file another time. It'll get linked to the first.
-	future3 := a.PushFile(fFoo.Name())
+	future3 := a.PushFile(fFoo.Name(), fFoo.Name())
 	future1.WaitForHashed()
 	future2.WaitForHashed()
 	future3.WaitForHashed()
@@ -86,11 +88,18 @@ func TestArchiverDirectory(t *testing.T) {
 	defer ts.Close()
 	a := New(isolatedclient.New(ts.URL, "default"))
 
-	dir, err := ioutil.TempDir("", "archiver")
+	tmpDir, err := ioutil.TempDir("", "archiver")
 	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, nil, ioutil.WriteFile(filepath.Join(dir, "bar"), []byte("foo"), 0600))
-	ut.AssertEqual(t, nil, ioutil.WriteFile(filepath.Join(dir, "bar_dupe"), []byte("foo"), 0600))
-	future := PushDirectory(a, dir, nil)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Fail()
+		}
+	}()
+
+	ut.AssertEqual(t, nil, ioutil.WriteFile(filepath.Join(tmpDir, "bar"), []byte("foo"), 0600))
+	ut.AssertEqual(t, nil, ioutil.WriteFile(filepath.Join(tmpDir, "bar_dupe"), []byte("foo"), 0600))
+	future := PushDirectory(a, tmpDir, nil)
+	ut.AssertEqual(t, filepath.Base(tmpDir)+".isolated", future.DisplayName())
 	future.WaitForHashed()
 	ut.AssertEqual(t, nil, a.Close())
 

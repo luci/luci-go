@@ -21,6 +21,8 @@ import (
 
 // Future is the future of a file pushed to be hashed.
 type Future interface {
+	// DisplayName is the name associated to the content.
+	DisplayName() string
 	// WaitForHashed hangs until the item hash is known.
 	WaitForHashed()
 	// Error returns any error that occured for this item if any.
@@ -34,7 +36,7 @@ type Archiver interface {
 	io.Closer
 	common.Cancelable
 	Push(displayName string, src io.ReadSeeker) Future
-	PushFile(path string) Future
+	PushFile(displayName, path string) Future
 	Stats() *Stats
 }
 
@@ -136,8 +138,8 @@ func New(is isolatedclient.IsolateServer) Archiver {
 // It is caried over from pipeline stage to stage to do processing on it.
 type archiverItem struct {
 	// Immutable.
-	path        string         // Set when source is a file on disk
 	displayName string         // Name to use to qualify this item
+	path        string         // Set when source is a file on disk
 	wgHashed    sync.WaitGroup // Released once .digestItem.Digest is set
 
 	// Mutable.
@@ -151,10 +153,14 @@ type archiverItem struct {
 	state *isolatedclient.PushState // Server-side push state for cache miss
 }
 
-func newArchiverItem(path, displayName string, src io.ReadSeeker) *archiverItem {
-	i := &archiverItem{path: path, displayName: displayName, src: src}
+func newArchiverItem(displayName, path string, src io.ReadSeeker) *archiverItem {
+	i := &archiverItem{displayName: displayName, path: path, src: src}
 	i.wgHashed.Add(1)
 	return i
+}
+
+func (i *archiverItem) DisplayName() string {
+	return i.displayName
 }
 
 func (i *archiverItem) WaitForHashed() {
@@ -199,7 +205,7 @@ func (i *archiverItem) calcDigest() error {
 		var err error
 		if d, err = isolated.HashFile(i.path); err != nil {
 			i.setErr(err)
-			return fmt.Errorf("hash(%s) failed: %s\n", i.displayName, err)
+			return fmt.Errorf("hash(%s) failed: %s\n", i.DisplayName(), err)
 		}
 	} else {
 		// Use src instead.
@@ -207,12 +213,12 @@ func (i *archiverItem) calcDigest() error {
 		size, err := io.Copy(h, i.src)
 		if err != nil {
 			i.setErr(err)
-			return fmt.Errorf("read(%s) failed: %s\n", i.displayName, err)
+			return fmt.Errorf("read(%s) failed: %s\n", i.DisplayName(), err)
 		}
 		_, err = i.src.Seek(0, os.SEEK_SET)
 		if err != nil {
 			i.setErr(err)
-			return fmt.Errorf("seek(%s) failed: %s\n", i.displayName, err)
+			return fmt.Errorf("seek(%s) failed: %s\n", i.DisplayName(), err)
 		}
 		digest := isolated.HexDigest(hex.EncodeToString(h.Sum(nil)))
 		d = isolated.DigestItem{digest, true, size}
@@ -298,7 +304,7 @@ func (a *archiver) CancelationReason() error {
 }
 
 func (a *archiver) Push(displayName string, src io.ReadSeeker) Future {
-	i := newArchiverItem("", displayName, src)
+	i := newArchiverItem(displayName, "", src)
 	if pos, err := i.src.Seek(0, os.SEEK_SET); pos != 0 || err != nil {
 		i.err = errors.New("must use buffer set at offset 0")
 		return i
@@ -306,8 +312,8 @@ func (a *archiver) Push(displayName string, src io.ReadSeeker) Future {
 	return a.push(i)
 }
 
-func (a *archiver) PushFile(path string) Future {
-	return a.push(newArchiverItem(path, path, nil))
+func (a *archiver) PushFile(displayName, path string) Future {
+	return a.push(newArchiverItem(displayName, path, nil))
 }
 
 func (a *archiver) Stats() *Stats {
