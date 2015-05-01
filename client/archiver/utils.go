@@ -157,8 +157,11 @@ func walk(root string, blacklist []string, c chan<- *walkItem) {
 
 // PushDirectory walks a directory at root and creates a .isolated file.
 //
-// It walks the directories synchronously, then hashes, does cache lookups and
-// uploads asynchronously.
+// It walks the directories synchronously, then returns a Future to signal when
+// the background work is completed. The future is signaled once all files are
+// hashed. In particular, the Future is signaled before server side cache
+// lookups and upload is completed. Use archiver.Close() to wait for
+// completion.
 //
 // blacklist is a list of globs of files to ignore.
 func PushDirectory(a Archiver, root string, blacklist []string) Future {

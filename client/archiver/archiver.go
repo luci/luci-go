@@ -87,9 +87,8 @@ func (s *Stats) deepCopy() *Stats {
 }
 
 // New returns a thread-safe Archiver instance.
-//
-// TODO(maruel): Cache hashes and server cache presence.
 func New(is isolatedclient.IsolateServer) Archiver {
+	// TODO(maruel): Cache hashes and server cache presence.
 	a := &archiver{
 		canceler:              common.NewCanceler(),
 		is:                    is,
