@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luci/luci-go/client/isolate"
 	"github.com/maruel/subcommands"
 )
 
@@ -49,14 +48,7 @@ func (c *checkRun) main(a subcommands.Application, args []string) error {
 		fmt.Printf("Path:      %s\n", c.PathVariables)
 		fmt.Printf("Extra:     %s\n", c.ExtraVariables)
 	}
-
-	tree := isolate.Tree{
-		Cwd:  ".",
-		Opts: c.ArchiveOptions,
-	}
-
-	_, err := isolate.IsolateAndArchive([]isolate.Tree{tree}, "", "")
-	return err
+	return errors.New("TODO")
 }
 
 func (c *checkRun) Run(a subcommands.Application, args []string) int {

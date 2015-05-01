@@ -7,10 +7,18 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 
+	"github.com/luci/luci-go/client/archiver"
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/client/isolate"
+	"github.com/luci/luci-go/client/isolatedclient"
+	"github.com/luci/luci-go/common/isolated"
+	"github.com/maruel/interrupt"
 	"github.com/maruel/subcommands"
 )
 
@@ -111,36 +119,71 @@ func convertPyToGoArchiveCMDArgs(args []string) []string {
 }
 
 func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
-	trees := []isolate.Tree{}
-	for _, genJsonPath := range args {
-		data := &struct {
-			Args    []string
-			Dir     string
-			Version int
-		}{}
-		if err := common.ReadJSONFile(genJsonPath, data); err != nil {
-			return err
-		}
-		if data.Version != isolate.IsolatedGenJSONVersion {
-			return fmt.Errorf("invalid version %d in %s", data.Version, genJsonPath)
-		}
-		if !common.IsDirectory(data.Dir) {
-			return fmt.Errorf("invalid dir %s in %s", data.Dir, genJsonPath)
-		}
-		if opts, err := parseArchiveCMD(data.Args, data.Dir); err != nil {
-			return fmt.Errorf("invalid archive command in %s: %s", genJsonPath, err)
+	start := time.Now()
+	interrupt.HandleCtrlC()
+	arch := archiver.New(isolatedclient.New(c.serverURL, c.namespace))
+	type tmp struct {
+		name   string
+		future archiver.Future
+	}
+	items := make(chan *tmp, len(args))
+	var wg sync.WaitGroup
+	for _, arg := range args {
+		wg.Add(1)
+		go func(genJsonPath string) {
+			defer wg.Done()
+			data := &struct {
+				Args    []string
+				Dir     string
+				Version int
+			}{}
+			if err := common.ReadJSONFile(genJsonPath, data); err != nil {
+				arch.Cancel(err)
+				return
+			}
+			if data.Version != isolate.IsolatedGenJSONVersion {
+				arch.Cancel(fmt.Errorf("invalid version %d in %s", data.Version, genJsonPath))
+				return
+			}
+			if !common.IsDirectory(data.Dir) {
+				arch.Cancel(fmt.Errorf("invalid dir %s in %s", data.Dir, genJsonPath))
+				return
+			}
+			opts, err := parseArchiveCMD(data.Args, data.Dir)
+			if err != nil {
+				arch.Cancel(fmt.Errorf("invalid archive command in %s: %s", genJsonPath, err))
+				return
+			}
+			name := strings.SplitN(filepath.Base(opts.Isolate), ".", 2)[0]
+			items <- &tmp{name, isolate.Archive(arch, opts)}
+		}(arg)
+	}
+	go func() {
+		wg.Wait()
+		close(items)
+	}()
+
+	isolatedHashes := map[string]isolated.HexDigest{}
+	for item := range items {
+		item.future.WaitForHashed()
+		if item.future.Error() == nil {
+			isolatedHashes[item.name] = item.future.Digest()
+			fmt.Printf("%s  %s\n", item.future.Digest(), item.name)
 		} else {
-			trees = append(trees, isolate.Tree{data.Dir, *opts})
+			fmt.Fprintf(os.Stderr, "%s  %s\n", item.name, item.future.Error())
 		}
 	}
-	isolatedHashes, err := isolate.IsolateAndArchive(trees, c.serverURL, c.namespace)
-	if err != nil && c.dumpJson != "" {
-		if isolatedHashes != nil {
-			return common.WriteJSONFile(c.dumpJson, isolatedHashes)
-		} else {
-			return common.WriteJSONFile(c.dumpJson, make(map[string]string))
-		}
+	err := arch.Close()
+	// Only write the file once upload is confirmed.
+	if err == nil && c.dumpJson != "" {
+		return common.WriteJSONFile(c.dumpJson, isolatedHashes)
 	}
+	duration := time.Now().Sub(start)
+	stats := arch.Stats()
+	fmt.Fprintf(os.Stderr, "Hits    : %5d (%.1fkb)\n", len(stats.Hits), float64(stats.TotalHits())/1024.)
+	fmt.Fprintf(os.Stderr, "Misses  : %5d (%.1fkb)\n", len(stats.Misses), float64(stats.TotalMisses())/1024.)
+	fmt.Fprintf(os.Stderr, "Pushed  : %5d (%.1fkb)\n", len(stats.Pushed), float64(stats.TotalPushed())/1024.)
+	fmt.Fprintf(os.Stderr, "Duration: %s\n", duration)
 	return err
 }
 

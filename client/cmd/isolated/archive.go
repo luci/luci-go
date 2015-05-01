@@ -58,9 +58,7 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	start := time.Now()
 	interrupt.HandleCtrlC()
-	is := isolatedclient.New(c.serverURL, c.namespace)
-
-	arch := archiver.New(is)
+	arch := archiver.New(isolatedclient.New(c.serverURL, c.namespace))
 	futures := []archiver.Future{}
 	names := []string{}
 	for _, file := range c.files {

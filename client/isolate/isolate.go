@@ -8,6 +8,7 @@ import (
 	"errors"
 	"regexp"
 
+	"github.com/luci/luci-go/client/archiver"
 	"github.com/luci/luci-go/client/internal/common"
 )
 
@@ -79,7 +80,18 @@ func ReplaceVariables(str string, opts ArchiveOptions) (string, error) {
 	return subst, err
 }
 
-func IsolateAndArchive(trees []Tree, namespace string, server string) (
-	map[string]string, error) {
-	return nil, nil
+// Archive processes a .isolate, generates a .isolated and archive it.
+// Returns a Future to the .isolated.
+func Archive(arch archiver.Archiver, opts *ArchiveOptions) archiver.Future {
+	// TODO(tandrii): Implement.
+	// cmd, deps, readOnly, isolateDir := isolate.LoadIsolateForConfig(data.Dir, content, variables)
+	// for _, dep := range deps {
+	//   ..
+	// }
+	// i := isolated.Isolated{}
+	// <Serialize>
+	// return arch.Push(encoded, strings.SplitN(filepath.Base(opts.Isolate), ".", 2)[0])
+	s := archiver.NewSimpleFuture()
+	s.Finalize("", errors.New("TODO"))
+	return s
 }

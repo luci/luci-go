@@ -19,6 +19,8 @@ import (
 	"github.com/luci/luci-go/client/internal/common"
 )
 
+var osPathSeparator = string(os.PathSeparator)
+
 // ReadOnlyValue defines permissions on isolated files.
 type ReadOnlyValue int
 
@@ -840,7 +842,7 @@ func loadIncludedIsolate(isolateDir, include string) (*Configs, error) {
 //
 // Returns:
 //   tuple of command, dependencies, readOnly flag, isolateDir.
-// The dependencies are fixed to use os.path.sep.
+// The dependencies are fixed to use os.PathSeparator.
 func LoadIsolateForConfig(isolateDir string, content []byte, configVariables common.KeyValVars) (
 	[]string, []string, ReadOnlyValue, string, error) {
 	// Load the .isolate file, process its conditions, retrieve the command and dependencies.
@@ -871,7 +873,6 @@ func LoadIsolateForConfig(isolateDir string, content []byte, configVariables com
 	if os.PathSeparator == '/' {
 		copy(dependencies, config.Files)
 	} else {
-		osPathSeparator := string(os.PathSeparator)
 		for i, f := range config.Files {
 			dependencies[i] = strings.Replace(f, "/", osPathSeparator, -1)
 		}

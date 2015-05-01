@@ -17,6 +17,21 @@ import (
 	"github.com/luci/luci-go/common/isolated"
 )
 
+// SimpleFuture is a Future that can be edited.
+type SimpleFuture interface {
+	Future
+	Finalize(d isolated.HexDigest, err error)
+}
+
+// NewSimpleFuture returns a SimpleFuture for asynchronous work.
+func NewSimpleFuture() SimpleFuture {
+	s := &simpleFuture{}
+	s.wgHashed.Add(1)
+	return s
+}
+
+// Private details.
+
 func newInt(v int) *int {
 	o := new(int)
 	*o = v
@@ -56,6 +71,14 @@ func (s *simpleFuture) Digest() isolated.HexDigest {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	return s.digest
+}
+
+func (s *simpleFuture) Finalize(d isolated.HexDigest, err error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.digest = d
+	s.err = err
+	s.wgHashed.Done()
 }
 
 type walkItem struct {
@@ -151,13 +174,14 @@ func PushDirectory(a Archiver, root string, blacklist []string) Future {
 		Version: isolated.IsolatedFormatVersion,
 	}
 	futures := map[string]Future{}
-	s := &simpleFuture{}
+	s := NewSimpleFuture()
 	for item := range c {
-		if item.err != nil {
-			s.err = item.err
-		}
-		if s.err != nil {
+		if s.Error() != nil {
 			// Empty the queue.
+			continue
+		}
+		if item.err != nil {
+			s.Finalize("", item.err)
 			continue
 		}
 		if filepath.Separator == '\\' {
@@ -168,7 +192,8 @@ func PushDirectory(a Archiver, root string, blacklist []string) Future {
 		if mode&os.ModeSymlink == os.ModeSymlink {
 			l, err := os.Readlink(item.fullPath)
 			if err != nil {
-				s.err = fmt.Errorf("readlink(%s): %s", item.fullPath, err)
+				s.Finalize("", fmt.Errorf("readlink(%s): %s", item.fullPath, err))
+				continue
 			}
 			i.Files[item.relPath] = isolated.File{Link: newString(l)}
 		} else {
@@ -179,15 +204,13 @@ func PushDirectory(a Archiver, root string, blacklist []string) Future {
 			futures[item.relPath] = a.PushFile(item.fullPath)
 		}
 	}
-	if s.err != nil {
+	if s.Error() != nil {
 		return s
 	}
 	log.Printf("PushDirectory(%s) = %d files", root, len(i.Files))
 
 	// Hashing, cache lookups and upload is done asynchronously.
-	s.wgHashed.Add(1)
 	go func() {
-		defer s.wgHashed.Done()
 		var err error
 		for p, future := range futures {
 			future.WaitForHashed()
@@ -208,10 +231,7 @@ func PushDirectory(a Archiver, root string, blacklist []string) Future {
 				d = f.Digest()
 			}
 		}
-		s.lock.Lock()
-		s.err = err
-		s.digest = d
-		s.lock.Unlock()
+		s.Finalize(d, err)
 	}()
 	return s
 }

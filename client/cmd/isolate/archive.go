@@ -7,7 +7,14 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"time"
 
+	"github.com/luci/luci-go/client/archiver"
+	"github.com/luci/luci-go/client/isolate"
+	"github.com/luci/luci-go/client/isolatedclient"
+	"github.com/maruel/interrupt"
 	"github.com/maruel/subcommands"
 )
 
@@ -45,15 +52,27 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 }
 
 func (c *archiveRun) main(a subcommands.Application, args []string) error {
-	fmt.Printf("Server:    %s\n", c.serverURL)
-	fmt.Printf("Namespace: %s\n", c.namespace)
-	fmt.Printf("Isolate:   %s\n", c.Isolate)
-	fmt.Printf("Isolated:  %s\n", c.Isolated)
-	fmt.Printf("Blacklist: %s\n", c.Blacklist)
-	fmt.Printf("Config:    %s\n", c.ConfigVariables)
-	fmt.Printf("Path:      %s\n", c.PathVariables)
-	fmt.Printf("Extra:     %s\n", c.ExtraVariables)
-	return errors.New("TODO")
+	start := time.Now()
+	interrupt.HandleCtrlC()
+	arch := archiver.New(isolatedclient.New(c.serverURL, c.namespace))
+	future := isolate.Archive(arch, &c.ArchiveOptions)
+	future.WaitForHashed()
+	err := future.Error()
+	if err != nil {
+		fmt.Printf("%s  %s\n", filepath.Base(c.Isolate), err)
+	} else {
+		fmt.Printf("%s  %s\n", future.Digest(), filepath.Base(c.Isolate))
+	}
+	if err2 := arch.Close(); err == nil {
+		err = err2
+	}
+	duration := time.Now().Sub(start)
+	stats := arch.Stats()
+	fmt.Fprintf(os.Stderr, "Hits    : %5d (%.1fkb)\n", len(stats.Hits), float64(stats.TotalHits())/1024.)
+	fmt.Fprintf(os.Stderr, "Misses  : %5d (%.1fkb)\n", len(stats.Misses), float64(stats.TotalMisses())/1024.)
+	fmt.Fprintf(os.Stderr, "Pushed  : %5d (%.1fkb)\n", len(stats.Pushed), float64(stats.TotalPushed())/1024.)
+	fmt.Fprintf(os.Stderr, "Duration: %s\n", duration)
+	return err
 }
 
 func (c *archiveRun) Run(a subcommands.Application, args []string) int {
