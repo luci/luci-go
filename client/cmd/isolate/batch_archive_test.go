@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/luci/luci-go/client/internal/common"
-	"github.com/stretchr/testify/assert"
+	"github.com/maruel/ut"
 )
 
 func TestConvertPyToGoArchiveCMDArgs(t *testing.T) {
@@ -48,14 +48,14 @@ func TestConvertPyToGoArchiveCMDArgs(t *testing.T) {
 			[]string{"--path-variable", "key-and-no-value"},
 		},
 	}
-	for _, line := range data {
-		assert.Equal(t, line.expected, convertPyToGoArchiveCMDArgs(line.input))
+	for i, line := range data {
+		ut.AssertEqualIndex(t, i, line.expected, convertPyToGoArchiveCMDArgs(line.input))
 	}
 }
 
 func TestInvalidArchiveCMD(t *testing.T) {
 	_, err := parseArchiveCMD([]string{}, "")
-	assert.Equal(t, "-isolated must be specified", err.Error())
+	ut.AssertEqual(t, "-isolated must be specified", err.Error())
 }
 
 func TestArchiveCMDParsing(t *testing.T) {
@@ -64,7 +64,7 @@ func TestArchiveCMDParsing(t *testing.T) {
 		" --extra-variable version_full=42.0.2284.0 --config-variable OS=linux")
 	args := strings.Split(argsString, " ")
 	opts, err := parseArchiveCMD(args, "")
-	assert.NoError(t, err)
-	assert.Equal(t, opts.ConfigVariables, common.KeyValVars{"OS": "linux"})
-	assert.Equal(t, opts.ExtraVariables, common.KeyValVars{"version_full": "42.0.2284.0"})
+	ut.AssertEqual(t, nil, err)
+	ut.AssertEqual(t, opts.ConfigVariables, common.KeyValVars{"OS": "linux"})
+	ut.AssertEqual(t, opts.ExtraVariables, common.KeyValVars{"version_full": "42.0.2284.0"})
 }

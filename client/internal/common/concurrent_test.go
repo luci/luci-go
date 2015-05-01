@@ -149,8 +149,8 @@ func TestCancelable(t *testing.T) {
 		defer wg.Done()
 		select {
 		case err, isCanceled := <-c.Channel():
-			ut.AssertEqualf(t, true, isCanceled, "Closed, but shouldn't be.")
-			ut.AssertEqual(t, ErrCanceled, err)
+			ut.ExpectEqualf(t, true, isCanceled, "Closed, but shouldn't be.")
+			ut.ExpectEqual(t, ErrCanceled, err)
 		}
 	}()
 	c.Cancel(nil)
@@ -192,7 +192,7 @@ func TestCancelableUnblockAfterClosed(t *testing.T) {
 		defer wg.Done()
 		select {
 		case _, stillOpen := <-c.Channel():
-			ut.AssertEqual(t, false, stillOpen)
+			ut.ExpectEqual(t, false, stillOpen)
 		}
 	}()
 	ut.AssertEqual(t, nil, c.Close())
