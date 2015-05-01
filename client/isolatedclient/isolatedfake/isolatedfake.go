@@ -7,52 +7,58 @@ package isolatedfake
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"sync"
-	"testing"
 
 	"github.com/luci/luci-go/common/isolated"
-	"github.com/maruel/ut"
 )
 
 type jsonAPI func(body io.Reader) interface{}
 
+type failure interface {
+	Fail(err error)
+}
+
 // handlerJSON converts a jsonAPI http handler to a proper http.Handler.
-func handlerJSON(t *testing.T, handler jsonAPI) http.Handler {
+func handlerJSON(f failure, handler jsonAPI) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		contentType := "application/json; charset=utf-8"
 		if r.Header.Get("Content-Type") != contentType {
-			t.Fatalf("invalid content type: %s", r.Header.Get("Content-Type"))
+			f.Fail(fmt.Errorf("invalid content type: %s", r.Header.Get("Content-Type")))
+			return
 		}
 		defer r.Body.Close()
 		out := handler(r.Body)
 		w.Header().Set("Content-Type", contentType)
 		j := json.NewEncoder(w)
-		ut.AssertEqual(t, nil, j.Encode(out))
+		if err := j.Encode(out); err != nil {
+			f.Fail(err)
+		}
 	})
 }
 
 type IsolatedFake interface {
 	http.Handler
 	Contents() map[isolated.HexDigest][]byte
+	Error() error
 }
 
 type isolatedFake struct {
-	t        *testing.T
 	mux      *http.ServeMux
 	lock     sync.Mutex
+	err      error
 	contents map[isolated.HexDigest][]byte
 }
 
 // New starts a fake in-process isolated server.
 //
 // Call Close() to stop the server.
-func New(t *testing.T) IsolatedFake {
+func New() IsolatedFake {
 	server := &isolatedFake{
-		t:        t,
 		mux:      http.NewServeMux(),
 		contents: map[isolated.HexDigest][]byte{},
 	}
@@ -64,7 +70,7 @@ func New(t *testing.T) IsolatedFake {
 
 	// Fail on anything else.
 	server.mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		t.Fatal()
+		server.Fail(fmt.Errorf("unknwown endpoint %s", req.URL))
 	})
 	return server
 }
@@ -85,21 +91,43 @@ func (server *isolatedFake) Contents() map[isolated.HexDigest][]byte {
 	return out
 }
 
+func (server *isolatedFake) Fail(err error) {
+	server.lock.Lock()
+	defer server.lock.Unlock()
+	if server.err == nil {
+		server.err = err
+	}
+}
+
+func (server *isolatedFake) Error() error {
+	server.lock.Lock()
+	defer server.lock.Unlock()
+	return server.err
+}
+
 func (server *isolatedFake) handleJSON(path string, handler jsonAPI) {
-	server.mux.Handle(path, handlerJSON(server.t, handler))
+	server.mux.Handle(path, handlerJSON(server, handler))
 }
 
 func (server *isolatedFake) serverDetails(body io.Reader) interface{} {
 	content, err := ioutil.ReadAll(body)
-	ut.AssertEqual(server.t, nil, err)
-	ut.AssertEqual(server.t, []byte("{}"), content)
+	if err != nil {
+		server.Fail(err)
+	}
+	if string(content) != "{}" {
+		server.Fail(fmt.Errorf("unexpected content %#v", string(content)))
+	}
 	return map[string]string{"server_version": "v1"}
 }
 
 func (server *isolatedFake) preupload(body io.Reader) interface{} {
 	data := &isolated.DigestCollection{}
-	ut.AssertEqual(server.t, nil, json.NewDecoder(body).Decode(data))
-	ut.AssertEqual(server.t, "default", data.Namespace.Namespace)
+	if err := json.NewDecoder(body).Decode(data); err != nil {
+		server.Fail(err)
+	}
+	if data.Namespace.Namespace != "default-gzip" {
+		server.Fail(fmt.Errorf("unexpected namespace %#v", data.Namespace.Namespace))
+	}
 	out := &isolated.UrlCollection{}
 
 	server.lock.Lock()
@@ -115,7 +143,9 @@ func (server *isolatedFake) preupload(body io.Reader) interface{} {
 
 func (server *isolatedFake) finalizeGSUpload(body io.Reader) interface{} {
 	data := &isolated.FinalizeRequest{}
-	ut.AssertEqual(server.t, nil, json.NewDecoder(body).Decode(data))
+	if err := json.NewDecoder(body).Decode(data); err != nil {
+		server.Fail(err)
+	}
 
 	server.lock.Lock()
 	defer server.lock.Unlock()
@@ -124,15 +154,27 @@ func (server *isolatedFake) finalizeGSUpload(body io.Reader) interface{} {
 
 func (server *isolatedFake) storeInline(body io.Reader) interface{} {
 	data := &isolated.StorageRequest{}
-	ut.AssertEqual(server.t, nil, json.NewDecoder(body).Decode(data))
+	if err := json.NewDecoder(body).Decode(data); err != nil {
+		server.Fail(err)
+	}
+
 	prefix := "ticket:"
-	ut.AssertEqual(server.t, true, strings.HasPrefix(data.UploadTicket, prefix))
+	if !strings.HasPrefix(data.UploadTicket, prefix) {
+		server.Fail(fmt.Errorf("unexpected ticket %#v", data.UploadTicket))
+	}
+
 	digest := isolated.HexDigest(data.UploadTicket[len(prefix):])
-	ut.AssertEqual(server.t, true, digest.Validate())
+	if !digest.Validate() {
+		server.Fail(fmt.Errorf("invalid digest %#v", digest))
+	}
 	comp := isolated.GetDecompressor(bytes.NewBuffer(data.Content))
 	raw, err := ioutil.ReadAll(comp)
-	ut.AssertEqual(server.t, nil, err)
-	ut.AssertEqual(server.t, digest, isolated.HashBytes(raw))
+	if err != nil {
+		server.Fail(err)
+	}
+	if digest != isolated.HashBytes(raw) {
+		server.Fail(fmt.Errorf("invalid digest %#v", digest))
+	}
 
 	server.lock.Lock()
 	defer server.lock.Unlock()

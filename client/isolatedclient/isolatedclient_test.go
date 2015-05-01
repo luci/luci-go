@@ -16,12 +16,14 @@ import (
 
 func TestIsolateServerCaps(t *testing.T) {
 	t.Parallel()
-	ts := httptest.NewServer(isolatedfake.New(t))
+	server := isolatedfake.New()
+	ts := httptest.NewServer(server)
 	defer ts.Close()
-	client := New(ts.URL, "default")
+	client := New(ts.URL, "default-gzip")
 	caps, err := client.ServerCapabilities()
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, &isolated.ServerCapabilities{"v1"}, caps)
+	ut.AssertEqual(t, nil, server.Error())
 }
 
 type items struct {
@@ -42,10 +44,10 @@ func makeItems(contents ...string) items {
 
 func TestIsolateServer(t *testing.T) {
 	t.Parallel()
-	server := isolatedfake.New(t)
+	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	client := New(ts.URL, "default")
+	client := New(ts.URL, "default-gzip")
 
 	files := makeItems("foo", "bar")
 	states, err := client.Contains(files.digests)
@@ -67,4 +69,5 @@ func TestIsolateServer(t *testing.T) {
 	for _, state := range states {
 		ut.AssertEqual(t, (*PushState)(nil), state)
 	}
+	ut.AssertEqual(t, nil, server.Error())
 }

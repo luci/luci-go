@@ -35,7 +35,7 @@ func (c *commonServerFlags) Init(b *subcommands.CommandRunBase) {
 	b.Flags.StringVar(&c.serverURL, "isolate-server", i,
 		"Isolate server to use; defaults to value of $ISOLATE_SERVER")
 	b.Flags.StringVar(&c.serverURL, "I", i, "Alias for -isolate-server")
-	b.Flags.StringVar(&c.namespace, "namespace", "testing", "")
+	b.Flags.StringVar(&c.namespace, "namespace", "default-gzip", "")
 }
 
 func (c *commonServerFlags) Parse() error {

@@ -32,16 +32,16 @@ func (a int64Slice) Less(i, j int) bool { return a[i] < a[j] }
 
 func TestArchiverEmpty(t *testing.T) {
 	t.Parallel()
-	a := New(isolatedclient.New("https://localhost:1", "default"))
+	a := New(isolatedclient.New("https://localhost:1", "default-gzip"))
 	ut.AssertEqual(t, &Stats{[]int64{}, []int64{}, []*UploadStat{}}, a.Stats())
 }
 
 func TestArchiverFile(t *testing.T) {
 	t.Parallel()
-	server := isolatedfake.New(t)
+	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	a := New(isolatedclient.New(ts.URL, "default"))
+	a := New(isolatedclient.New(ts.URL, "default-gzip"))
 
 	fEmpty, err := ioutil.TempFile("", "archiver")
 	ut.AssertEqual(t, nil, err)
@@ -78,15 +78,16 @@ func TestArchiverFile(t *testing.T) {
 	ut.AssertEqual(t, nil, future2.Error())
 	ut.AssertEqual(t, isolated.HexDigest("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"), future3.Digest())
 	ut.AssertEqual(t, nil, future3.Error())
+	ut.AssertEqual(t, nil, server.Error())
 }
 
 func TestArchiverDirectory(t *testing.T) {
 	// Uploads a real directory. 2 times the same file.
 	t.Parallel()
-	server := isolatedfake.New(t)
+	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	a := New(isolatedclient.New(ts.URL, "default"))
+	a := New(isolatedclient.New(ts.URL, "default-gzip"))
 
 	tmpDir, err := ioutil.TempDir("", "archiver")
 	ut.AssertEqual(t, nil, err)
@@ -112,6 +113,7 @@ func TestArchiverDirectory(t *testing.T) {
 		Version: isolated.IsolatedFormatVersion,
 	}
 	encoded, err := json.Marshal(isolatedData)
+	ut.AssertEqual(t, nil, err)
 	isolatedEncoded := string(encoded) + "\n"
 	stats := a.Stats()
 	ut.AssertEqual(t, []int64{}, stats.Hits)
@@ -119,7 +121,6 @@ func TestArchiverDirectory(t *testing.T) {
 	sort.Sort(misses)
 	// There's 3 cache misses even if the same content is looked up twice.
 	ut.AssertEqual(t, int64Slice{3, 3, int64(len(isolatedEncoded))}, misses)
-	ut.AssertEqual(t, nil, err)
 	expected := map[string]string{
 		"0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33": "foo",
 		"be8b1d344ab7129b7a80ab1977f5c32bd0c093c5": isolatedEncoded,
@@ -129,4 +130,5 @@ func TestArchiverDirectory(t *testing.T) {
 		actual[string(k)] = string(v)
 	}
 	ut.AssertEqual(t, expected, actual)
+	ut.AssertEqual(t, nil, server.Error())
 }
