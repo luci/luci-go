@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http/httptest"
 	"path/filepath"
+	"sort"
 	"testing"
 
 	"github.com/luci/luci-go/client/isolatedclient"
@@ -21,6 +22,12 @@ import (
 func init() {
 	log.SetOutput(ioutil.Discard)
 }
+
+type int64Slice []int64
+
+func (a int64Slice) Len() int           { return len(a) }
+func (a int64Slice) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a int64Slice) Less(i, j int) bool { return a[i] < a[j] }
 
 func TestArchiverEmpty(t *testing.T) {
 	t.Parallel()
@@ -48,7 +55,9 @@ func TestArchiverFile(t *testing.T) {
 
 	stats := a.Stats()
 	ut.AssertEqual(t, []int64{}, stats.Hits)
-	ut.AssertEqual(t, []int64{0, 3}, stats.Misses)
+	misses := int64Slice(stats.Misses)
+	sort.Sort(misses)
+	ut.AssertEqual(t, int64Slice{0, 3}, misses)
 	expected := map[isolated.HexDigest][]byte{
 		"0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33": []byte("foo"),
 		"da39a3ee5e6b4b0d3255bfef95601890afd80709": {},
@@ -76,8 +85,9 @@ func TestArchiverDirectory(t *testing.T) {
 
 	stats := a.Stats()
 	ut.AssertEqual(t, []int64{}, stats.Hits)
-	// Order is random.
-	//ut.AssertEqual(t, []int64{3, 112}, stats.Misses)
+	misses := int64Slice(stats.Misses)
+	sort.Sort(misses)
+	ut.AssertEqual(t, int64Slice{3, 112}, misses)
 	isolatedData := isolated.Isolated{
 		Algo: "sha-1",
 		Files: map[string]isolated.File{
