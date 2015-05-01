@@ -18,7 +18,7 @@ func TestGoroutinePool(t *testing.T) {
 
 	const MAX = 10
 	const J = 200
-	pool := NewGoroutinePool(MAX, nil)
+	pool := NewGoroutinePool(MAX, NewCanceler())
 	logs := make(chan int)
 	for i := 1; i <= J; i++ {
 		i := i
@@ -26,11 +26,12 @@ func TestGoroutinePool(t *testing.T) {
 			logs <- -i
 			time.Sleep(time.Millisecond)
 			logs <- i
-		})
+		}, nil)
 	}
+	var fail error
 	go func() {
 		defer close(logs)
-		ut.AssertEqual(t, nil, pool.Wait())
+		fail = pool.Wait()
 	}()
 	currentJobs := map[int]bool{}
 	doneJobs := map[int]bool{}
@@ -47,6 +48,7 @@ func TestGoroutinePool(t *testing.T) {
 	}
 	ut.AssertEqual(t, 0, len(currentJobs))
 	ut.AssertEqual(t, J, len(doneJobs))
+	ut.AssertEqual(t, nil, fail)
 }
 
 func TestGoroutinePoolCancel(t *testing.T) {
@@ -55,8 +57,8 @@ func TestGoroutinePoolCancel(t *testing.T) {
 	cancelError := errors.New("cancelError")
 	const MAX = 10
 	const J = 11 * MAX
-	pool := NewGoroutinePool(MAX, nil)
-	logs := make(chan int, J) // Avoid job blocking when writing to log.
+	pool := NewGoroutinePool(MAX, NewCanceler())
+	logs := make(chan int, 2*J) // Avoid job blocking when writing to log.
 	for i := 1; i <= J; i++ {
 		i := i
 		pool.Schedule(func() {
@@ -64,34 +66,49 @@ func TestGoroutinePoolCancel(t *testing.T) {
 				pool.Cancel(cancelError)
 			}
 			logs <- i
+		}, func() {
+			// Push negative on canceled tasks.
+			logs <- -i
 		})
 	}
+	var wait1 error
+	var wait2 error
 	go func() {
 		defer close(logs)
-		ut.AssertEqual(t, cancelError, pool.Wait())
+		wait1 = pool.Wait()
 		// Schedule more jobs, all of which must be cancelled.
 		for i := J + 1; i <= 2*J; i++ {
 			i := i
 			pool.Schedule(func() {
 				logs <- i
+			}, func() {
+				logs <- -i
 			})
 		}
-		ut.AssertEqual(t, cancelError, pool.Wait())
+		wait2 = pool.Wait()
 	}()
 	// At most MAX-1 could have been executing concurrently with job[i=1]
 	// after it had cancelled the pool and before it wrote to log.
 	// No new job should have started after that. So, log must have at most MAX-1
 	// jobs after 1.
 	count := 0
+	canceled := 0
 	for i := range logs {
 		if i == 1 {
 			for i = range logs {
 				ut.AssertEqual(t, true, i <= J)
-				count++
+				if i > 0 {
+					count++
+				} else {
+					canceled++
+				}
 			}
 		}
 	}
 	ut.AssertEqualf(t, true, count < MAX, "%d (>=%d MAX) jobs started after cancellation.", count, MAX)
+	ut.AssertEqualf(t, true, canceled > J, "%d > %d", canceled, J)
+	ut.AssertEqual(t, cancelError, wait1)
+	ut.AssertEqual(t, cancelError, wait2)
 }
 
 func assertClosed(t *testing.T, c *canceler) {

@@ -33,8 +33,7 @@ type Future interface {
 
 // Archiver is an high level interface to an isolatedclient.IsolateServer.
 type Archiver interface {
-	io.Closer
-	common.Cancelable
+	common.Canceler
 	Push(displayName string, src io.ReadSeeker) Future
 	PushFile(displayName, path string) Future
 	Stats() *Stats
@@ -303,6 +302,10 @@ func (a *archiver) CancelationReason() error {
 	return a.canceler.CancelationReason()
 }
 
+func (a *archiver) Channel() <-chan error {
+	return a.canceler.Channel()
+}
+
 func (a *archiver) Push(displayName string, src io.ReadSeeker) Future {
 	i := newArchiverItem(displayName, "", src)
 	if pos, err := i.src.Seek(0, os.SEEK_SET); pos != 0 || err != nil {
@@ -343,8 +346,12 @@ func (a *archiver) stage1DedupeLoop() {
 		return
 	}
 	seen := map[string]*archiverItem{}
-	for file := range stage1DedupeChan {
-		item := file
+	for item := range stage1DedupeChan {
+		if a.CancelationReason() != nil {
+			item.setErr(a.CancelationReason())
+			item.wgHashed.Done()
+			continue
+		}
 		// TODO(todd): Create on-disk cache. This should be a separate interface
 		// with its own implementation that 'archiver' keeps a reference to as
 		// member.
@@ -364,6 +371,9 @@ func (a *archiver) stage1DedupeLoop() {
 func (a *archiver) stage2HashLoop() {
 	defer close(a.stage3LookupChan)
 	pool := common.NewGoroutinePool(a.maxConcurrentContains, a.canceler)
+	defer func() {
+		_ = pool.Wait()
+	}()
 	for file := range a.stage2HashChan {
 		item := file
 		pool.Schedule(func() {
@@ -372,15 +382,20 @@ func (a *archiver) stage2HashLoop() {
 				return
 			}
 			a.stage3LookupChan <- item
+		}, func() {
+			item.setErr(a.CancelationReason())
+			item.wgHashed.Done()
 		})
 	}
 
-	_ = pool.Wait()
 }
 
 func (a *archiver) stage3LookupLoop() {
 	defer close(a.stage4UploadChan)
 	pool := common.NewGoroutinePool(a.maxConcurrentContains, a.canceler)
+	defer func() {
+		_ = pool.Wait()
+	}()
 	items := []*archiverItem{}
 	never := make(<-chan time.Time)
 	timer := never
@@ -391,7 +406,7 @@ func (a *archiver) stage3LookupLoop() {
 			batch := items
 			pool.Schedule(func() {
 				a.doContains(batch)
-			})
+			}, nil)
 			items = []*archiverItem{}
 			timer = never
 
@@ -405,7 +420,7 @@ func (a *archiver) stage3LookupLoop() {
 				batch := items
 				pool.Schedule(func() {
 					a.doContains(batch)
-				})
+				}, nil)
 				items = []*archiverItem{}
 				timer = never
 			} else if timer == never {
@@ -418,20 +433,21 @@ func (a *archiver) stage3LookupLoop() {
 		batch := items
 		pool.Schedule(func() {
 			a.doContains(batch)
-		})
+		}, nil)
 	}
-	_ = pool.Wait()
 }
 
 func (a *archiver) stage4UploadLoop() {
 	pool := common.NewGoroutinePool(a.maxConcurrentUpload, a.canceler)
+	defer func() {
+		_ = pool.Wait()
+	}()
 	for state := range a.stage4UploadChan {
 		item := state
 		pool.Schedule(func() {
 			a.doUpload(item)
-		})
+		}, nil)
 	}
-	_ = pool.Wait()
 }
 
 // doContains is called by stage 3.

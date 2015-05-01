@@ -6,6 +6,7 @@ package archiver
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http/httptest"
@@ -78,6 +79,35 @@ func TestArchiverFile(t *testing.T) {
 	ut.AssertEqual(t, nil, future2.Error())
 	ut.AssertEqual(t, isolated.HexDigest("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"), future3.Digest())
 	ut.AssertEqual(t, nil, future3.Error())
+	ut.AssertEqual(t, nil, server.Error())
+}
+
+func TestArchiverCancel(t *testing.T) {
+	t.Parallel()
+	server := isolatedfake.New()
+	ts := httptest.NewServer(server)
+	defer ts.Close()
+	a := New(isolatedclient.New(ts.URL, "default"))
+
+	tmpDir, err := ioutil.TempDir("", "archiver")
+	ut.AssertEqual(t, nil, err)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Fail()
+		}
+	}()
+
+	// This will trigger an eventual Cancel().
+	nonexistent := filepath.Join(tmpDir, "nonexistent")
+	future1 := a.PushFile("foo", nonexistent)
+	ut.AssertEqual(t, "foo", future1.DisplayName())
+
+	fileName := filepath.Join(tmpDir, "existent")
+	ut.AssertEqual(t, nil, ioutil.WriteFile(fileName, []byte("foo"), 0600))
+	future2 := a.PushFile("existent", fileName)
+	future1.WaitForHashed()
+	future2.WaitForHashed()
+	ut.AssertEqual(t, fmt.Errorf("hash(foo) failed: open %s: no such file or directory\n", nonexistent), a.Close())
 	ut.AssertEqual(t, nil, server.Error())
 }
 

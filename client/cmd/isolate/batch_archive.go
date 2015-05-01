@@ -18,7 +18,6 @@ import (
 	"github.com/luci/luci-go/client/isolate"
 	"github.com/luci/luci-go/client/isolatedclient"
 	"github.com/luci/luci-go/common/isolated"
-	"github.com/maruel/interrupt"
 	"github.com/maruel/subcommands"
 )
 
@@ -120,8 +119,8 @@ func convertPyToGoArchiveCMDArgs(args []string) []string {
 
 func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	start := time.Now()
-	interrupt.HandleCtrlC()
 	arch := archiver.New(isolatedclient.New(c.serverURL, c.namespace))
+	common.CancelOnCtrlC(arch)
 	type tmp struct {
 		name   string
 		future archiver.Future

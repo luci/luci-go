@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/client/archiver"
+	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/client/isolate"
 	"github.com/luci/luci-go/client/isolatedclient"
-	"github.com/maruel/interrupt"
 	"github.com/maruel/subcommands"
 )
 
@@ -53,8 +53,8 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 
 func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	start := time.Now()
-	interrupt.HandleCtrlC()
 	arch := archiver.New(isolatedclient.New(c.serverURL, c.namespace))
+	common.CancelOnCtrlC(arch)
 	future := isolate.Archive(arch, &c.ArchiveOptions)
 	future.WaitForHashed()
 	err := future.Error()

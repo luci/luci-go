@@ -6,29 +6,14 @@ package common
 
 import (
 	"errors"
+	"io"
+	"os"
+	"os/signal"
 	"sync"
-
-	"github.com/maruel/interrupt"
 )
 
 // ErrCanceled is the default reason (error) for cancelation of Cancelable.
 var ErrCanceled = errors.New("canceled")
-
-// InterruptCanceler embeds maruel/interrupt package in Canceler interface.
-var InterruptCanceler Canceler
-
-func init() {
-	// TODO(tandrii): maybe move all necessary code from maruel/interrupt here?
-	c := newCanceler()
-	go func() {
-		select {
-		case <-interrupt.Channel:
-			InterruptCanceler.Cancel(interrupt.ErrInterrupted)
-		case <-c.closeChannel:
-		}
-	}()
-	InterruptCanceler = c
-}
 
 type semaphore chan bool
 
@@ -85,6 +70,10 @@ type Cancelable interface {
 // error handling in pipelines with channels.
 type Canceler interface {
 	Cancelable
+	// Close releases all resources and makes the instance unusable.
+	// Returns error to implement io.Closer , but it is always nil.
+	// Calling more than once is a no-op: the call does nothing.
+	io.Closer
 
 	// Channel returns the channel producing reason values once Cancel() is
 	// called. When Close() is called, this channel is closed.
@@ -103,28 +92,22 @@ type Canceler interface {
 	//		}
 	//	}
 	Channel() <-chan error
-
-	// Close releases all resources and makes the instance unusable.
-	// Returns error to implement io.Closer , but it is always nil.
-	// Calling more than once is a no-op: the call does nothing.
-	Close() error
 }
 
-// newInterruptibleCanceler returns a new instance of canceler,
-// which cancels itself automatically if InterruptCanceler is cancelled.
-func newInterruptibleCanceler() *canceler {
-	c := newCanceler()
+// CancelOnCtrlC makes a Canceler to be canceled on Ctrl-C (os.Interrupt).
+//
+// It is fine to call this function multiple times on multiple Canceler.
+func CancelOnCtrlC(c Canceler) {
+	interrupted := make(chan os.Signal, 1)
+	signal.Notify(interrupted, os.Interrupt)
 	go func() {
+		defer signal.Stop(interrupted)
 		select {
-		case err, isCanceled := <-InterruptCanceler.Channel():
-			if !isCanceled {
-				err = errors.New("InterruptCanceler is closed")
-			}
-			c.Cancel(err)
-		case <-c.closeChannel:
+		case <-interrupted:
+			c.Cancel(errors.New("Ctrl-C"))
+		case <-c.Channel():
 		}
 	}()
-	return c
 }
 
 // NewCanceler returns a new instance of canceler.
@@ -148,8 +131,10 @@ type GoroutinePool interface {
 	// some jobs. This call is not itself cancelable, meaning that it'll block
 	// until all worker goroutines are finished.
 	Wait() error
-	// Schedule adds a new job for execution as a separate goroutine.
-	Schedule(job func())
+	// Schedule adds a new job for execution as a separate goroutine. If the
+	// GoroutinePool is canceled, onCanceled is called instead. It is fine to
+	// pass nil as onCanceled.
+	Schedule(job func(), onCanceled func())
 }
 
 // NewGoroutinePool creates a new GoroutinePool with at most maxConcurrentJobs.
@@ -170,7 +155,7 @@ type GoroutinePool interface {
 //	}
 func NewGoroutinePool(maxConcurrentJobs int, canceler Canceler) GoroutinePool {
 	if canceler == nil {
-		canceler = NewCanceler()
+		return nil
 	}
 	return &goroutinePool{
 		Canceler: canceler,
@@ -189,7 +174,7 @@ func (c *goroutinePool) Wait() error {
 	return c.CancelationReason()
 }
 
-func (c *goroutinePool) Schedule(job func()) {
+func (c *goroutinePool) Schedule(job func(), onCanceled func()) {
 	c.wg.Add(1)
 	go func() {
 		defer c.wg.Done()
@@ -198,6 +183,8 @@ func (c *goroutinePool) Schedule(job func()) {
 			// Do not start a new job if canceled.
 			if c.CancelationReason() == nil {
 				job()
+			} else if onCanceled != nil {
+				onCanceled()
 			}
 		}
 	}()
