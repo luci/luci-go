@@ -52,13 +52,16 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 }
 
 func (c *archiveRun) main(a subcommands.Application, args []string) error {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
 	start := time.Now()
 	arch := archiver.New(isolatedclient.New(c.serverURL, c.namespace))
 	common.CancelOnCtrlC(arch)
-	future := isolate.Archive(arch, &c.ArchiveOptions)
+	future := isolate.Archive(arch, cwd, &c.ArchiveOptions)
 	future.WaitForHashed()
-	err := future.Error()
-	if err != nil {
+	if err = future.Error(); err != nil {
 		fmt.Printf("%s  %s\n", filepath.Base(c.Isolate), err)
 	} else {
 		fmt.Printf("%s  %s\n", future.Digest(), filepath.Base(c.Isolate))

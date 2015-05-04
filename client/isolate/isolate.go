@@ -5,12 +5,17 @@
 package isolate
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 
 	"github.com/luci/luci-go/client/archiver"
 	"github.com/luci/luci-go/client/internal/common"
+	"github.com/luci/luci-go/common/isolated"
 )
 
 // IsolatedGenJSONVersion is used in the batcharchive json format.
@@ -49,6 +54,11 @@ type ArchiveOptions struct {
 func (a *ArchiveOptions) Init() {
 	a.Blacklist = common.Strings{}
 	a.PathVariables = common.KeyValVars{}
+	if common.IsWindows() {
+		a.PathVariables["EXECUTABLE_SUFFIX"] = ".exe"
+	} else {
+		a.PathVariables["EXECUTABLE_SUFFIX"] = ""
+	}
 	a.ExtraVariables = common.KeyValVars{}
 	a.ConfigVariables = common.KeyValVars{}
 }
@@ -59,7 +69,7 @@ func (a *ArchiveOptions) Init() {
 // If any substitution refers to a variable that is missing, the returned error will
 // refer to the first such variable. In the case of errors, the returned string will
 // still contain a valid result for any non-missing substitutions.
-func ReplaceVariables(str string, opts ArchiveOptions) (string, error) {
+func ReplaceVariables(str string, opts *ArchiveOptions) (string, error) {
 	var err error
 	subst := variableSubstitutionMatcher.ReplaceAllStringFunc(str,
 		func(match string) string {
@@ -83,16 +93,88 @@ func ReplaceVariables(str string, opts ArchiveOptions) (string, error) {
 
 // Archive processes a .isolate, generates a .isolated and archive it.
 // Returns a Future to the .isolated.
-func Archive(arch archiver.Archiver, opts *ArchiveOptions) archiver.Future {
-	// TODO(tandrii): Implement.
-	// cmd, deps, readOnly, isolateDir := isolate.LoadIsolateForConfig(data.Dir, content, variables)
-	// for _, dep := range deps {
-	//   ..
-	// }
-	// i := isolated.Isolated{}
-	// <Serialize>
-	// return arch.Push(encoded, strings.SplitN(filepath.Base(opts.Isolate), ".", 2)[0])
-	s := archiver.NewSimpleFuture(filepath.Base(opts.Isolated))
-	s.Finalize("", errors.New("TODO"))
-	return s
+func Archive(arch archiver.Archiver, relDir string, opts *ArchiveOptions) archiver.Future {
+	displayName := filepath.Base(opts.Isolated)
+	f, err := archive(arch, relDir, opts, displayName)
+	if err != nil {
+		s := archiver.NewSimpleFuture(displayName)
+		s.Finalize("", err)
+		return s
+	}
+	return f
+}
+
+func archive(arch archiver.Archiver, relDir string, opts *ArchiveOptions, displayName string) (archiver.Future, error) {
+	content, err := ioutil.ReadFile(opts.Isolate)
+	if err != nil {
+		return nil, err
+	}
+	cmd, deps, readOnly, isolateDir, err := LoadIsolateForConfig(relDir, content, opts.ConfigVariables)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check for variable error before doing anything.
+	for i := range cmd {
+		if cmd[i], err = ReplaceVariables(cmd[i], opts); err != nil {
+			return nil, err
+		}
+	}
+	filesCount := 0
+	dirsCount := 0
+	for i := range deps {
+		if deps[i], err = ReplaceVariables(deps[i], opts); err != nil {
+			return nil, err
+		}
+		if deps[i][len(deps[i])-1] == os.PathSeparator {
+			dirsCount++
+		} else {
+			filesCount++
+		}
+	}
+
+	// Handle each dependency, either a file or a directory..
+	fileFutures := make([]archiver.Future, 0, filesCount)
+	dirFutures := make([]archiver.Future, 0, dirsCount)
+	for _, dep := range deps {
+		depPath := filepath.Clean(filepath.Join(isolateDir, dep))
+		if dep[len(dep)-1] == os.PathSeparator {
+			// TODO(maruel): blacklist.
+			dirFutures = append(dirFutures, archiver.PushDirectory(arch, depPath, nil))
+		} else {
+			fileFutures = append(fileFutures, arch.PushFile(dep, depPath))
+		}
+	}
+
+	i := isolated.Isolated{
+		Algo:     "sha-1",
+		Files:    map[string]isolated.File{},
+		ReadOnly: readOnly.ToIsolated(),
+		Version:  isolated.IsolatedFormatVersion,
+	}
+	if len(cmd) != 0 {
+		i.Command = cmd
+	}
+	// TODO(maruel): i.RelativeCwd.
+
+	for _, future := range fileFutures {
+		future.WaitForHashed()
+		if err = future.Error(); err != nil {
+			return nil, err
+		}
+		i.Files[future.DisplayName()] = isolated.File{Digest: future.Digest()}
+	}
+	for _, future := range dirFutures {
+		future.WaitForHashed()
+		if err = future.Error(); err != nil {
+			return nil, err
+		}
+		i.Includes = append(i.Includes, future.Digest())
+	}
+
+	raw := &bytes.Buffer{}
+	if err = json.NewEncoder(raw).Encode(i); err != nil {
+		return nil, err
+	}
+	return arch.Push(displayName, bytes.NewReader(raw.Bytes())), nil
 }

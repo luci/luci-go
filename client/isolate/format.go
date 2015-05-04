@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -17,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/luci/luci-go/client/internal/common"
+	"github.com/luci/luci-go/common/isolated"
 )
 
 var osPathSeparator = string(os.PathSeparator)
@@ -30,6 +32,24 @@ const (
 	FilesReadOnly ReadOnlyValue = 1
 	DirsReadOnly  ReadOnlyValue = 2
 )
+
+func (r ReadOnlyValue) ToIsolated() (out *isolated.ReadOnlyValue) {
+	switch r {
+	case NotSet:
+	case Writeable:
+		out = new(isolated.ReadOnlyValue)
+		*out = isolated.Writeable
+	case FilesReadOnly:
+		out = new(isolated.ReadOnlyValue)
+		*out = isolated.FilesReadOnly
+	case DirsReadOnly:
+		out = new(isolated.ReadOnlyValue)
+		*out = isolated.DirsReadOnly
+	default:
+		log.Printf("invalid ReadOnlyValue %d", r)
+	}
+	return
+}
 
 type variableValue struct {
 	S *string `json:",omitempty"`
@@ -656,7 +676,8 @@ func createConfigSettings(values variables, isolateDir string) *ConfigSettings {
 		make([]string, len(values.Files)),
 		values.Command,
 		createReadOnlyValue(values.ReadOnly),
-		isolateDir}
+		isolateDir,
+	}
 	copy(c.Files, values.Files)
 	sort.Strings(c.Files)
 	return c
@@ -682,7 +703,7 @@ func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
 	}
 
 	if common.IsWindows() {
-		assert(strings.ToLower(lhs.IsolateDir) == strings.ToLower(rhs.IsolateDir))
+		assert(strings.ToLower(lhs.IsolateDir)[0] == strings.ToLower(rhs.IsolateDir)[0])
 	}
 
 	// Takes the difference between the two isolateDir. Note that while
@@ -719,14 +740,22 @@ func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
 	}
 	rebasePath = strings.Replace(rebasePath, string(os.PathSeparator), "/", 0)
 
-	files := make([]string, len(lFiles)+len(rFiles))
-	copy(files, lFiles)
-	for i, f := range rFiles {
+	filesSet := map[string]bool{}
+	for _, f := range lFiles {
+		filesSet[f] = true
+	}
+	for _, f := range rFiles {
 		// Rebase item.
 		if !(strings.HasPrefix(f, "<(") || rebasePath == ".") {
+			// paths are posix here.
 			f = path.Join(rebasePath, f)
 		}
-		files[i+len(lFiles)] = f
+		filesSet[f] = true
+	}
+	// Remove duplicates.
+	files := make([]string, 0, len(filesSet))
+	for f := range filesSet {
+		files = append(files, f)
 	}
 	sort.Strings(files)
 	return &ConfigSettings{files, command, readOnly, lRelCwd}, nil
@@ -764,7 +793,8 @@ func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
 //    },
 //  }
 func LoadIsolateAsConfig(isolateDir string, content []byte, fileComment []byte) (*Configs, error) {
-	assert(path.IsAbs(isolateDir), isolateDir)
+	// isolateDir must be in native style.
+	assert(filepath.IsAbs(isolateDir), isolateDir)
 	parsed, err := parseIsolate(content)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse isolate (isolateDir: %s): %s", isolateDir, err)
@@ -841,8 +871,9 @@ func loadIncludedIsolate(isolateDir, include string) (*Configs, error) {
 // the information unprocessed but filtered for the specific OS.
 //
 // Returns:
-//   tuple of command, dependencies, readOnly flag, isolateDir.
-// The dependencies are fixed to use os.PathSeparator.
+//   command, dependencies, readOnly flag, relDir, error.
+//
+// relDir and dependencies are fixed to use os.PathSeparator.
 func LoadIsolateForConfig(isolateDir string, content []byte, configVariables common.KeyValVars) (
 	[]string, []string, ReadOnlyValue, string, error) {
 	// Load the .isolate file, process its conditions, retrieve the command and dependencies.
@@ -869,13 +900,14 @@ func LoadIsolateForConfig(isolateDir string, content []byte, configVariables com
 	if err != nil {
 		return nil, nil, NotSet, "", err
 	}
-	dependencies := make([]string, len(config.Files))
-	if os.PathSeparator == '/' {
-		copy(dependencies, config.Files)
-	} else {
+	dependencies := config.Files
+	relDir := config.IsolateDir
+	if os.PathSeparator != '/' {
+		dependencies = make([]string, len(config.Files))
 		for i, f := range config.Files {
 			dependencies[i] = strings.Replace(f, "/", osPathSeparator, -1)
 		}
+		relDir = strings.Replace(relDir, "/", osPathSeparator, -1)
 	}
-	return config.Command, dependencies, config.ReadOnly, config.IsolateDir, nil
+	return config.Command, dependencies, config.ReadOnly, relDir, nil
 }

@@ -14,8 +14,21 @@ import (
 	"testing"
 
 	"github.com/luci/luci-go/client/internal/common"
+	"github.com/luci/luci-go/common/isolated"
 	"github.com/maruel/ut"
 )
+
+func TestReadOnlyValue(t *testing.T) {
+	ut.AssertEqual(t, (*isolated.ReadOnlyValue)(nil), NotSet.ToIsolated())
+	ut.AssertEqual(t, (*isolated.ReadOnlyValue)(nil), ReadOnlyValue(100).ToIsolated())
+	tmp := new(isolated.ReadOnlyValue)
+	*tmp = isolated.Writeable
+	ut.AssertEqual(t, tmp, Writeable.ToIsolated())
+	*tmp = isolated.FilesReadOnly
+	ut.AssertEqual(t, tmp, FilesReadOnly.ToIsolated())
+	*tmp = isolated.DirsReadOnly
+	ut.AssertEqual(t, tmp, DirsReadOnly.ToIsolated())
+}
 
 func TestConditionJson(t *testing.T) {
 	t.Parallel()
@@ -283,11 +296,8 @@ func TestLoadIsolateForConfig(t *testing.T) {
 	ut.AssertEqual(t, "/dir", dir)
 	ut.AssertEqual(t, NotSet, ro) // first condition has no read_only specified.
 	ut.AssertEqual(t, []string{"python", "64linuxOrWin"}, cmd)
-	// This is weird, but py isolate_format gives the same output.
 	ut.AssertEqual(t, []string{
 		"64linuxOrWin",
-		"64linuxOrWin",
-		"<(PRODUCT_DIR)/unittest<(EXECUTABLE_SUFFIX)",
 		"<(PRODUCT_DIR)/unittest<(EXECUTABLE_SUFFIX)",
 	}, deps)
 
@@ -307,11 +317,8 @@ func TestLoadIsolateForConfig(t *testing.T) {
 	ut.AssertEqual(t, "/dir", dir)
 	ut.AssertEqual(t, DirsReadOnly, ro) // first condition no read_only, but second has 2.
 	ut.AssertEqual(t, []string{"python", "32orMac64"}, cmd)
-	// This is weird, but py isolate_format gives the same output.
 	ut.AssertEqual(t, []string{
 		"64linuxOrWin",
-		"64linuxOrWin",
-		"<(PRODUCT_DIR)/unittest<(EXECUTABLE_SUFFIX)",
 		"<(PRODUCT_DIR)/unittest<(EXECUTABLE_SUFFIX)",
 	}, deps)
 }
