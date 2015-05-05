@@ -6,7 +6,6 @@ package archiver
 
 import (
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -214,10 +213,10 @@ func (i *archiverItem) calcDigest() error {
 			i.setErr(err)
 			return fmt.Errorf("read(%s) failed: %s\n", i.DisplayName(), err)
 		}
-		_, err = i.src.Seek(0, os.SEEK_SET)
-		if err != nil {
+		if pos, err := i.src.Seek(0, os.SEEK_SET); err != nil || pos != 0 {
+			err = fmt.Errorf("seek(%s) failed: %s\n", i.DisplayName(), err)
 			i.setErr(err)
-			return fmt.Errorf("seek(%s) failed: %s\n", i.DisplayName(), err)
+			return err
 		}
 		digest := isolated.HexDigest(hex.EncodeToString(h.Sum(nil)))
 		d = isolated.DigestItem{digest, true, size}
@@ -309,7 +308,8 @@ func (a *archiver) Channel() <-chan error {
 func (a *archiver) Push(displayName string, src io.ReadSeeker) Future {
 	i := newArchiverItem(displayName, "", src)
 	if pos, err := i.src.Seek(0, os.SEEK_SET); pos != 0 || err != nil {
-		i.err = errors.New("must use buffer set at offset 0")
+		i.setErr(fmt.Errorf("seek(%s) failed: %s\n", i.DisplayName(), err))
+		i.wgHashed.Done()
 		return i
 	}
 	return a.push(i)

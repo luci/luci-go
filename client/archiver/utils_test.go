@@ -1,0 +1,123 @@
+// Copyright 2015 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+package archiver
+
+import (
+	"encoding/json"
+	"errors"
+	"io/ioutil"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"sort"
+	"sync"
+	"testing"
+
+	"github.com/luci/luci-go/client/isolatedclient"
+	"github.com/luci/luci-go/client/isolatedclient/isolatedfake"
+	"github.com/luci/luci-go/common/isolated"
+	"github.com/maruel/ut"
+)
+
+func TestWalkInexistent(t *testing.T) {
+	ch := make(chan *walkItem)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer close(ch)
+		walk("inexistent_directory", nil, ch)
+	}()
+	item := <-ch
+	ut.AssertEqual(t, &walkItem{err: errors.New("walk(inexistent_directory): lstat inexistent_directory: no such file or directory")}, item)
+	item, ok := <-ch
+	ut.AssertEqual(t, (*walkItem)(nil), item)
+	ut.AssertEqual(t, false, ok)
+	wg.Wait()
+}
+
+func TestWalkBadRegexp(t *testing.T) {
+	ch := make(chan *walkItem)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer close(ch)
+		walk("inexistent", []string{"a["}, ch)
+	}()
+	item := <-ch
+	ut.AssertEqual(t, &walkItem{err: errors.New("bad blacklist pattern \"a[\"")}, item)
+	item, ok := <-ch
+	ut.AssertEqual(t, (*walkItem)(nil), item)
+	ut.AssertEqual(t, false, ok)
+	wg.Wait()
+}
+
+func TestPushDirectory(t *testing.T) {
+	// Uploads a real directory. 2 times the same file.
+	t.Parallel()
+	server := isolatedfake.New()
+	ts := httptest.NewServer(server)
+	defer ts.Close()
+	a := New(isolatedclient.New(ts.URL, "default-gzip"))
+
+	// Setup temporary directory.
+	tmpDir, err := ioutil.TempDir("", "archiver")
+	ut.AssertEqual(t, nil, err)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Fail()
+		}
+	}()
+	baseDir := filepath.Join(tmpDir, "base")
+	ignoredDir := filepath.Join(tmpDir, "ignored1")
+	ut.AssertEqual(t, nil, os.Mkdir(baseDir, 0700))
+	ut.AssertEqual(t, nil, ioutil.WriteFile(filepath.Join(baseDir, "bar"), []byte("foo"), 0600))
+	ut.AssertEqual(t, nil, ioutil.WriteFile(filepath.Join(baseDir, "bar_dupe"), []byte("foo"), 0600))
+	// TODO(maruel): Won't work on Windows.
+	ut.AssertEqual(t, nil, os.Symlink("bar", filepath.Join(baseDir, "link")))
+	ut.AssertEqual(t, nil, ioutil.WriteFile(filepath.Join(baseDir, "ignored2"), []byte("ignored"), 0600))
+	ut.AssertEqual(t, nil, os.Mkdir(ignoredDir, 0700))
+	ut.AssertEqual(t, nil, ioutil.WriteFile(filepath.Join(ignoredDir, "really"), []byte("ignored"), 0600))
+
+	future := PushDirectory(a, tmpDir, []string{"ignored1", "*/ignored2"})
+	ut.AssertEqual(t, filepath.Base(tmpDir)+".isolated", future.DisplayName())
+	future.WaitForHashed()
+	ut.AssertEqual(t, nil, a.Close())
+
+	isolatedData := isolated.Isolated{
+		Algo: "sha-1",
+		Files: map[string]isolated.File{
+			filepath.Join("base", "bar"):      {Digest: "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", Mode: newInt(384), Size: newInt64(3)},
+			filepath.Join("base", "bar_dupe"): {Digest: "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", Mode: newInt(384), Size: newInt64(3)},
+			filepath.Join("base", "link"):     {Link: newString("bar")},
+		},
+		Version: isolated.IsolatedFormatVersion,
+	}
+	encoded, err := json.Marshal(isolatedData)
+	ut.AssertEqual(t, nil, err)
+	isolatedEncoded := string(encoded) + "\n"
+	isolatedHash := isolated.HashBytes([]byte(isolatedEncoded))
+
+	expected := map[string]string{
+		"0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33": "foo",
+		string(isolatedHash):                       isolatedEncoded,
+	}
+	actual := map[string]string{}
+	for k, v := range server.Contents() {
+		actual[string(k)] = string(v)
+	}
+	ut.AssertEqual(t, expected, actual)
+	ut.AssertEqual(t, isolatedHash, future.Digest())
+
+	stats := a.Stats()
+	ut.AssertEqual(t, []int64{}, stats.Hits)
+	misses := int64Slice(stats.Misses)
+	sort.Sort(misses)
+	// There're 3 cache misses even if the same content is looked up twice.
+	ut.AssertEqual(t, int64Slice{3, 3, int64(len(isolatedEncoded))}, misses)
+
+	ut.AssertEqual(t, nil, server.Error())
+}

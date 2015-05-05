@@ -5,7 +5,7 @@
 package archiver
 
 import (
-	"encoding/json"
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -24,12 +24,6 @@ import (
 func init() {
 	log.SetOutput(ioutil.Discard)
 }
-
-type int64Slice []int64
-
-func (a int64Slice) Len() int           { return len(a) }
-func (a int64Slice) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a int64Slice) Less(i, j int) bool { return a[i] < a[j] }
 
 func TestArchiverEmpty(t *testing.T) {
 	t.Parallel()
@@ -82,12 +76,28 @@ func TestArchiverFile(t *testing.T) {
 	ut.AssertEqual(t, nil, server.Error())
 }
 
+func TestArchiverFileHit(t *testing.T) {
+	t.Parallel()
+	server := isolatedfake.New()
+	ts := httptest.NewServer(server)
+	defer ts.Close()
+	a := New(isolatedclient.New(ts.URL, "default-gzip"))
+	server.Inject([]byte("foo"))
+	future := a.Push("foo", bytes.NewReader([]byte("foo")))
+	future.WaitForHashed()
+	ut.AssertEqual(t, isolated.HexDigest("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"), future.Digest())
+	ut.AssertEqual(t, nil, a.Close())
+
+	stats := a.Stats()
+	ut.AssertEqual(t, int64(3), stats.TotalHits())
+}
+
 func TestArchiverCancel(t *testing.T) {
 	t.Parallel()
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	a := New(isolatedclient.New(ts.URL, "default"))
+	a := New(isolatedclient.New(ts.URL, "default-gzip"))
 
 	tmpDir, err := ioutil.TempDir("", "archiver")
 	ut.AssertEqual(t, nil, err)
@@ -107,58 +117,37 @@ func TestArchiverCancel(t *testing.T) {
 	future2 := a.PushFile("existent", fileName)
 	future1.WaitForHashed()
 	future2.WaitForHashed()
-	ut.AssertEqual(t, fmt.Errorf("hash(foo) failed: open %s: no such file or directory\n", nonexistent), a.Close())
+	expected := fmt.Errorf("hash(foo) failed: open %s: no such file or directory\n", nonexistent)
+	ut.AssertEqual(t, expected, <-a.Channel())
+	ut.AssertEqual(t, expected, a.Close())
 	ut.AssertEqual(t, nil, server.Error())
 }
 
-func TestArchiverDirectory(t *testing.T) {
-	// Uploads a real directory. 2 times the same file.
+func TestArchiverPushClosed(t *testing.T) {
+	t.Parallel()
+	a := New(nil)
+	ut.AssertEqual(t, nil, a.Close())
+	ut.AssertEqual(t, nil, a.PushFile("ignored", "ignored"))
+}
+
+func TestArchiverPushSeeked(t *testing.T) {
 	t.Parallel()
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
 	a := New(isolatedclient.New(ts.URL, "default-gzip"))
-
-	tmpDir, err := ioutil.TempDir("", "archiver")
-	ut.AssertEqual(t, nil, err)
-	defer func() {
-		if err := os.RemoveAll(tmpDir); err != nil {
-			t.Fail()
-		}
-	}()
-
-	ut.AssertEqual(t, nil, ioutil.WriteFile(filepath.Join(tmpDir, "bar"), []byte("foo"), 0600))
-	ut.AssertEqual(t, nil, ioutil.WriteFile(filepath.Join(tmpDir, "bar_dupe"), []byte("foo"), 0600))
-	future := PushDirectory(a, tmpDir, nil)
-	ut.AssertEqual(t, filepath.Base(tmpDir)+".isolated", future.DisplayName())
+	misplaced := bytes.NewReader([]byte("foo"))
+	_, _ = misplaced.Seek(1, os.SEEK_SET)
+	future := a.Push("works", misplaced)
 	future.WaitForHashed()
+	ut.AssertEqual(t, isolated.HexDigest("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"), future.Digest())
 	ut.AssertEqual(t, nil, a.Close())
-
-	isolatedData := isolated.Isolated{
-		Algo: "sha-1",
-		Files: map[string]isolated.File{
-			"bar":      {Digest: "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", Mode: newInt(384), Size: newInt64(3)},
-			"bar_dupe": {Digest: "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", Mode: newInt(384), Size: newInt64(3)},
-		},
-		Version: isolated.IsolatedFormatVersion,
-	}
-	encoded, err := json.Marshal(isolatedData)
-	ut.AssertEqual(t, nil, err)
-	isolatedEncoded := string(encoded) + "\n"
-	stats := a.Stats()
-	ut.AssertEqual(t, []int64{}, stats.Hits)
-	misses := int64Slice(stats.Misses)
-	sort.Sort(misses)
-	// There's 3 cache misses even if the same content is looked up twice.
-	ut.AssertEqual(t, int64Slice{3, 3, int64(len(isolatedEncoded))}, misses)
-	expected := map[string]string{
-		"0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33": "foo",
-		"be8b1d344ab7129b7a80ab1977f5c32bd0c093c5": isolatedEncoded,
-	}
-	actual := map[string]string{}
-	for k, v := range server.Contents() {
-		actual[string(k)] = string(v)
-	}
-	ut.AssertEqual(t, expected, actual)
-	ut.AssertEqual(t, nil, server.Error())
 }
+
+// Private stuff.
+
+type int64Slice []int64
+
+func (a int64Slice) Len() int           { return len(a) }
+func (a int64Slice) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a int64Slice) Less(i, j int) bool { return a[i] < a[j] }

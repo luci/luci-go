@@ -121,7 +121,7 @@ func walk(root string, blacklist []string, c chan<- *walkItem) {
 	// Check patterns upfront, so it has consistent behavior w.r.t. bad glob
 	// patterns.
 	for _, b := range blacklist {
-		if _, err := filepath.Match(b, ""); err != nil {
+		if _, err := filepath.Match(b, b); err != nil {
 			c <- &walkItem{err: fmt.Errorf("bad blacklist pattern \"%s\"", b)}
 			return
 		}

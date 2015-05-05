@@ -43,7 +43,10 @@ func handlerJSON(f failure, handler jsonAPI) http.Handler {
 
 type IsolatedFake interface {
 	http.Handler
+	// Contents returns all the uncompressed data on the fake isolated server.
 	Contents() map[isolated.HexDigest][]byte
+	// Inject adds uncompressed data in the fake isolated server.
+	Inject(data []byte)
 	Error() error
 }
 
@@ -89,6 +92,13 @@ func (server *isolatedFake) Contents() map[isolated.HexDigest][]byte {
 		out[k] = v
 	}
 	return out
+}
+
+func (server *isolatedFake) Inject(data []byte) {
+	h := isolated.HashBytes(data)
+	server.lock.Lock()
+	defer server.lock.Unlock()
+	server.contents[h] = data
 }
 
 func (server *isolatedFake) Fail(err error) {
