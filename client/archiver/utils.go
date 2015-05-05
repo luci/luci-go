@@ -196,10 +196,6 @@ func PushDirectory(a Archiver, root string, relDir string, blacklist []string) F
 			s.Finalize("", item.err)
 			continue
 		}
-		if filepath.Separator == '\\' {
-			// Windows.
-			item.relPath = strings.Replace(item.relPath, "\\", "/", -1)
-		}
 		if relDir != "" {
 			item.relPath = filepath.Join(relDir, item.relPath)
 		}

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -155,9 +156,9 @@ func (v variablesAndValues) getSortedValues(varName string) ([]variableValue, bo
 	return values, true
 }
 
-func (v variablesAndValues) cartesianProductOfValues(orderedKeys []string) [][]variableValue {
+func (v variablesAndValues) cartesianProductOfValues(orderedKeys []string) ([][]variableValue, error) {
 	if len(orderedKeys) == 0 {
-		return [][]variableValue{}
+		return [][]variableValue{}, nil
 	}
 	// Prepare ordered by orderedKeys list of variableValue
 	allValues := make([][]variableValue, 0, len(orderedKeys))
@@ -174,7 +175,9 @@ func (v variablesAndValues) cartesianProductOfValues(orderedKeys []string) [][]v
 	for _, values := range allValues {
 		length *= len(values)
 	}
-	assert(length > 0, "some variable had empty valuesSet?")
+	if length <= 0 {
+		return nil, errors.New("some variable had empty valuesSet?")
+	}
 	out := make([][]variableValue, 0, length)
 	// indices[i] points to index in allValues[i]; stop once indices[-1] == len(allValues[-1]).
 	indices := make([]int, len(orderedKeys))
@@ -183,8 +186,10 @@ func (v variablesAndValues) cartesianProductOfValues(orderedKeys []string) [][]v
 		for i, values := range allValues {
 			if indices[i] == len(values) {
 				if i+1 == len(orderedKeys) {
-					assert(length == len(out))
-					return out
+					if length != len(out) {
+						return nil, errors.New("internal error")
+					}
+					return out, nil
 				}
 				indices[i] = 0
 				indices[i+1]++
@@ -194,12 +199,11 @@ func (v variablesAndValues) cartesianProductOfValues(orderedKeys []string) [][]v
 		out = append(out, next)
 		indices[0]++
 	}
-	panic("unreachable code")
-	return nil
+	return nil, errors.New("unreachable code")
 }
 
-func matchConfigs(condition string, configVariables []string, allConfigs [][]variableValue) [][]variableValue {
-	// TODO: get rid of Python here...
+func matchConfigs(condition string, configVariables []string, allConfigs [][]variableValue) ([][]variableValue, error) {
+	// TODO(tandrii): get rid of Python here...
 	// While the looping can be done in Go, it'd require multiple calls to Python,
 	// which isn't better for performance. Ideally, we could parse ast in Python once,
 	// and evaluate the AST in Go later with each set of variable values.
@@ -239,18 +243,33 @@ all_configs = [[v['I'] if 'I' in v else v['S'] for v in conf] for conf in input[
 out = match_configs(input['cond'], input['conf'], all_configs)
 print json.dumps([[{'I': v} if isinstance(v, int) else {'S': v} for v in vs] for vs in out])
 `
+	f, err := ioutil.TempFile("", "isolate")
+	if err != nil {
+		return nil, err
+	}
+	_, err = io.WriteString(f, pythonCode)
+	if err != nil {
+		return nil, err
+	}
+	f.Close()
+	defer func() {
+		_ = os.Remove(f.Name())
+	}()
 	m := map[string]interface{}{}
 	m["cond"] = condition
 	m["conf"] = configVariables
 	m["a"] = allConfigs
 	jsonDataIn, err := json.Marshal(m)
-	assertNoError(err)
-	jsonDataOut, err := common.RunPython(jsonDataIn, "-c", pythonCode)
-	assertNoError(err)
+	if err != nil {
+		return nil, err
+	}
+	jsonDataOut, err := common.RunPython(jsonDataIn, f.Name())
+	if err != nil {
+		return nil, err
+	}
 	var out [][]variableValue
 	err = json.Unmarshal(jsonDataOut, &out)
-	assertNoError(err)
-	return out
+	return out, err
 }
 
 type parsedIsolate struct {
@@ -357,16 +376,25 @@ variables_and_values = {}
 verify_ast(test_ast.body, variables_and_values)
 print json.dumps(variables_and_values)
 `
-	jsonData, err := common.RunPython([]byte(p.Condition), "-c", pythonCode)
+	f, err := ioutil.TempFile("", "isolate")
+	_, _ = io.WriteString(f, pythonCode)
+	f.Close()
+	defer func() {
+		_ = os.Remove(f.Name())
+	}()
+	jsonData, err := common.RunPython([]byte(p.Condition), f.Name())
 	if err != nil {
 		return fmt.Errorf("failed to verify Condition string %s: %s", p.Condition, err)
 	}
 	tmpVarsAndValues := map[string][]variableValue{}
-	err = json.Unmarshal(jsonData, &tmpVarsAndValues)
-	assertNoError(err)
+	if err = json.Unmarshal(jsonData, &tmpVarsAndValues); err != nil {
+		return err
+	}
 	p.variableNames = new([]string)
 	for varName, tmpValueList := range tmpVarsAndValues {
-		assert(len(tmpValueList) > 0, "var %s has empty valueSet", varName)
+		if len(tmpValueList) == 0 {
+			return fmt.Errorf("var %s has empty valueSet", varName)
+		}
 		*p.variableNames = append(*p.variableNames, varName)
 		valueSet := varsAndValues[varName]
 		if valueSet == nil {
@@ -422,13 +450,19 @@ assert locs == {}, locs
 assert globs == {'__builtins__': None}, globs
 print json.dumps(value)
 `
-	jsonData, err := common.RunPython(content, "-c", pythonCode)
+	f, err := ioutil.TempFile("", "isolate")
+	_, _ = io.WriteString(f, pythonCode)
+	f.Close()
+	defer func() {
+		_ = os.Remove(f.Name())
+	}()
+	jsonData, err := common.RunPython(content, f.Name())
 	if err != nil {
 		return nil, fmt.Errorf("failed to evaluate isolate: %s", err)
 	}
 	parsed := &parsedIsolate{}
 	if err := json.Unmarshal(jsonData, parsed); err != nil {
-		return nil, fmt.Errorf("failed to parse isolate: %s", err)
+		return nil, fmt.Errorf("failed to parse isolate: %s; %s", err, jsonData)
 	}
 	return parsed, nil
 }
@@ -702,8 +736,8 @@ func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
 		return lhs, nil
 	}
 
-	if common.IsWindows() {
-		assert(strings.ToLower(lhs.IsolateDir)[0] == strings.ToLower(rhs.IsolateDir)[0])
+	if common.IsWindows() && strings.ToLower(lhs.IsolateDir)[0] != strings.ToLower(rhs.IsolateDir)[0] {
+		return nil, errors.New("All .isolate files must be on same drive")
 	}
 
 	// Takes the difference between the two isolateDir. Note that while
@@ -734,11 +768,11 @@ func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
 		lFiles, rFiles = rhs.Files, lhs.Files
 	}
 
-	rebasePath, err := posixRel(rRelCwd, lRelCwd)
+	rebasePath, err := filepath.Rel(rRelCwd, lRelCwd)
 	if err != nil {
 		return nil, err
 	}
-	rebasePath = strings.Replace(rebasePath, string(os.PathSeparator), "/", 0)
+	rebasePath = strings.Replace(rebasePath, osPathSeparator, "/", 0)
 
 	filesSet := map[string]bool{}
 	for _, f := range lFiles {
@@ -794,7 +828,9 @@ func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
 //  }
 func LoadIsolateAsConfig(isolateDir string, content []byte, fileComment []byte) (*Configs, error) {
 	// isolateDir must be in native style.
-	assert(filepath.IsAbs(isolateDir), isolateDir)
+	if !filepath.IsAbs(isolateDir) {
+		return nil, fmt.Errorf("%s is not an absolute path", isolateDir)
+	}
 	parsed, err := parseIsolate(content)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse isolate (isolateDir: %s): %s", isolateDir, err)
@@ -812,9 +848,15 @@ func LoadIsolateAsConfig(isolateDir string, content []byte, fileComment []byte) 
 		isolate.setConfig(globalconfigName, createConfigSettings(variables{}, isolateDir))
 	}
 	// Add configuration-specific variables.
-	allConfigs := varsAndValues.cartesianProductOfValues(isolate.ConfigVariables)
+	allConfigs, err := varsAndValues.cartesianProductOfValues(isolate.ConfigVariables)
+	if err != nil {
+		return nil, err
+	}
 	for _, cond := range parsed.Conditions {
-		configs := matchConfigs(cond.Condition, isolate.ConfigVariables, allConfigs)
+		configs, err := matchConfigs(cond.Condition, isolate.ConfigVariables, allConfigs)
+		if err != nil {
+			return nil, err
+		}
 		newConfigs := makeConfigs(nil, isolate.ConfigVariables)
 		for _, config := range configs {
 			newConfigs.setConfig(configName(config), createConfigSettings(cond.Variables, isolateDir))

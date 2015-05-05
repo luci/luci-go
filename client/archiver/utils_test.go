@@ -15,6 +15,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/client/isolatedclient"
 	"github.com/luci/luci-go/client/isolatedclient/isolatedfake"
 	"github.com/luci/luci-go/common/isolated"
@@ -31,7 +32,11 @@ func TestWalkInexistent(t *testing.T) {
 		walk("inexistent_directory", nil, ch)
 	}()
 	item := <-ch
-	ut.AssertEqual(t, &walkItem{err: errors.New("walk(inexistent_directory): lstat inexistent_directory: no such file or directory")}, item)
+	err := errors.New("walk(inexistent_directory): lstat inexistent_directory: no such file or directory")
+	if common.IsWindows() {
+		err = errors.New("walk(inexistent_directory): GetFileAttributesEx inexistent_directory: The system cannot find the file specified.")
+	}
+	ut.AssertEqual(t, &walkItem{err: err}, item)
 	item, ok := <-ch
 	ut.AssertEqual(t, (*walkItem)(nil), item)
 	ut.AssertEqual(t, false, ok)
@@ -76,25 +81,32 @@ func TestPushDirectory(t *testing.T) {
 	ut.AssertEqual(t, nil, os.Mkdir(baseDir, 0700))
 	ut.AssertEqual(t, nil, ioutil.WriteFile(filepath.Join(baseDir, "bar"), []byte("foo"), 0600))
 	ut.AssertEqual(t, nil, ioutil.WriteFile(filepath.Join(baseDir, "bar_dupe"), []byte("foo"), 0600))
-	// TODO(maruel): Won't work on Windows.
-	ut.AssertEqual(t, nil, os.Symlink("bar", filepath.Join(baseDir, "link")))
+	if !common.IsWindows() {
+		ut.AssertEqual(t, nil, os.Symlink("bar", filepath.Join(baseDir, "link")))
+	}
 	ut.AssertEqual(t, nil, ioutil.WriteFile(filepath.Join(baseDir, "ignored2"), []byte("ignored"), 0600))
 	ut.AssertEqual(t, nil, os.Mkdir(ignoredDir, 0700))
 	ut.AssertEqual(t, nil, ioutil.WriteFile(filepath.Join(ignoredDir, "really"), []byte("ignored"), 0600))
 
-	future := PushDirectory(a, tmpDir, "", []string{"ignored1", "*/ignored2"})
+	future := PushDirectory(a, tmpDir, "", []string{"ignored1", filepath.Join("*", "ignored2")})
 	ut.AssertEqual(t, filepath.Base(tmpDir)+".isolated", future.DisplayName())
 	future.WaitForHashed()
 	ut.AssertEqual(t, nil, a.Close())
 
+	mode := 0600
+	if common.IsWindows() {
+		mode = 0700
+	}
 	isolatedData := isolated.Isolated{
 		Algo: "sha-1",
 		Files: map[string]isolated.File{
-			filepath.Join("base", "bar"):      {Digest: "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", Mode: newInt(384), Size: newInt64(3)},
-			filepath.Join("base", "bar_dupe"): {Digest: "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", Mode: newInt(384), Size: newInt64(3)},
-			filepath.Join("base", "link"):     {Link: newString("bar")},
+			filepath.Join("base", "bar"):      {Digest: "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", Mode: newInt(mode), Size: newInt64(3)},
+			filepath.Join("base", "bar_dupe"): {Digest: "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", Mode: newInt(mode), Size: newInt64(3)},
 		},
 		Version: isolated.IsolatedFormatVersion,
+	}
+	if !common.IsWindows() {
+		isolatedData.Files[filepath.Join("base", "link")] = isolated.File{Link: newString("bar")}
 	}
 	encoded, err := json.Marshal(isolatedData)
 	ut.AssertEqual(t, nil, err)

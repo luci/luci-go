@@ -77,10 +77,6 @@ func (c *isolateFlags) Init(b *subcommands.CommandRunBase) {
 	b.Flags.Var(c.PathVariables, "path-variable",
 		`Path variables are used to replace file paths when
 		loading a .isolate file, default: {}`)
-
-	if common.IsWindows() {
-		c.ExtraVariables["EXECUTABLE_SUFFIX"] = ".exe"
-	}
 	b.Flags.Var(c.ExtraVariables, "extra-variable",
 		`Extraneous variables are replaced on the 'command
 		entry and on paths in the .isolate file but are not

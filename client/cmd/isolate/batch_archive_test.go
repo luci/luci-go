@@ -66,5 +66,10 @@ func TestArchiveCMDParsing(t *testing.T) {
 	opts, err := parseArchiveCMD(args, "")
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, opts.ConfigVariables, common.KeyValVars{"OS": "linux"})
+	if common.IsWindows() {
+		ut.AssertEqual(t, opts.PathVariables, common.KeyValVars{"PRODUCT_DIR": "../../out/Release", "EXECUTABLE_SUFFIX": ".exe", "DEPTH": "../.."})
+	} else {
+		ut.AssertEqual(t, opts.PathVariables, common.KeyValVars{"PRODUCT_DIR": "../../out/Release", "EXECUTABLE_SUFFIX": "", "DEPTH": "../.."})
+	}
 	ut.AssertEqual(t, opts.ExtraVariables, common.KeyValVars{"version_full": "42.0.2284.0"})
 }

@@ -96,9 +96,11 @@ func TestArchive(t *testing.T) {
 	}`
 	isolatePath := filepath.Join(fooDir, "baz.isolate")
 	ut.AssertEqual(t, nil, ioutil.WriteFile(isolatePath, []byte(isolate), 0600))
-	// TODO(maruel): Won't work on Windows.
-	ut.AssertEqual(t, nil, os.Symlink(filepath.Join("base", "bar"), filepath.Join(tmpDir, "link")))
-
+	if !common.IsWindows() {
+		ut.AssertEqual(t, nil, os.Symlink(filepath.Join("base", "bar"), filepath.Join(tmpDir, "link")))
+	} else {
+		ut.AssertEqual(t, nil, ioutil.WriteFile(filepath.Join(tmpDir, "link"), []byte("no link on Windows"), 0600))
+	}
 	opts := &ArchiveOptions{
 		Isolate:         isolatePath,
 		Isolated:        filepath.Join(tmpDir, "baz.isolated"),
@@ -113,11 +115,15 @@ func TestArchive(t *testing.T) {
 	ut.AssertEqual(t, nil, future.Error())
 	ut.AssertEqual(t, nil, a.Close())
 
+	mode := 0600
+	if common.IsWindows() {
+		mode = 0700
+	}
 	//   /base/
 	isolatedDirData := isolated.Isolated{
 		Algo: "sha-1",
 		Files: map[string]isolated.File{
-			filepath.Join("base", "bar"): {Digest: "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", Mode: newInt(384), Size: newInt64(3)},
+			filepath.Join("base", "bar"): {Digest: "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", Mode: newInt(mode), Size: newInt64(3)},
 		},
 		Version: isolated.IsolatedFormatVersion,
 	}
@@ -127,14 +133,17 @@ func TestArchive(t *testing.T) {
 	isolatedDirHash := isolated.HashBytes([]byte(isolatedDirEncoded))
 
 	isolatedData := isolated.Isolated{
-		Algo:    "sha-1",
-		Command: []string{"amiga", "really"},
-		Files: map[string]isolated.File{
-			"link": {Link: newString(filepath.Join("base", "bar"))},
-		},
+		Algo:        "sha-1",
+		Command:     []string{"amiga", "really"},
+		Files:       map[string]isolated.File{},
 		Includes:    []isolated.HexDigest{isolatedDirHash},
 		RelativeCwd: "base",
 		Version:     isolated.IsolatedFormatVersion,
+	}
+	if !common.IsWindows() {
+		isolatedData.Files["link"] = isolated.File{Link: newString(filepath.Join("base", "bar"))}
+	} else {
+		isolatedData.Files["link"] = isolated.File{Digest: "12339b9756c2994f85c310d560bc8c142a6b79a1", Mode: newInt(0700), Size: newInt64(18)}
 	}
 	encoded, err = json.Marshal(isolatedData)
 	ut.AssertEqual(t, nil, err)
@@ -145,6 +154,9 @@ func TestArchive(t *testing.T) {
 		"0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33": "foo",
 		string(isolatedDirHash):                    isolatedDirEncoded,
 		string(isolatedHash):                       isolatedEncoded,
+	}
+	if common.IsWindows() {
+		expected["12339b9756c2994f85c310d560bc8c142a6b79a1"] = "no link on Windows"
 	}
 	actual := map[string]string{}
 	for k, v := range server.Contents() {
@@ -158,7 +170,11 @@ func TestArchive(t *testing.T) {
 	ut.AssertEqual(t, []int64{}, stats.Hits)
 	misses := int64Slice(stats.Misses)
 	sort.Sort(misses)
-	ut.AssertEqual(t, int64Slice{3, int64(len(isolatedDirEncoded)), int64(len(isolatedEncoded))}, misses)
+	if !common.IsWindows() {
+		ut.AssertEqual(t, int64Slice{3, int64(len(isolatedDirEncoded)), int64(len(isolatedEncoded))}, misses)
+	} else {
+		ut.AssertEqual(t, int64Slice{3, 18, int64(len(isolatedDirEncoded)), int64(len(isolatedEncoded))}, misses)
+	}
 
 	ut.AssertEqual(t, nil, server.Error())
 }

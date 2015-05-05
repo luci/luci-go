@@ -15,6 +15,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/client/isolatedclient"
 	"github.com/luci/luci-go/client/isolatedclient/isolatedfake"
 	"github.com/luci/luci-go/common/isolated"
@@ -118,6 +119,9 @@ func TestArchiverCancel(t *testing.T) {
 	future1.WaitForHashed()
 	future2.WaitForHashed()
 	expected := fmt.Errorf("hash(foo) failed: open %s: no such file or directory\n", nonexistent)
+	if common.IsWindows() {
+		expected = fmt.Errorf("hash(foo) failed: open %s: The system cannot find the file specified.\n", nonexistent)
+	}
 	ut.AssertEqual(t, expected, <-a.Channel())
 	ut.AssertEqual(t, expected, a.Close())
 	ut.AssertEqual(t, nil, server.Error())

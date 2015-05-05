@@ -103,9 +103,10 @@ func TestMatchConfigs(t *testing.T) {
 			[][]variableValue{makeVVs("1", "a"), makeVVs("1", "b"), makeVVs("2", "b"), makeVVs("1", unbound)},
 		},
 	}
-	for _, one := range expectations {
-		out := matchConfigs(one.cond, one.conf, one.all)
-		ut.AssertEqual(t, vvToStr2D(one.out), vvToStr2D(out))
+	for i, one := range expectations {
+		out, err := matchConfigs(one.cond, one.conf, one.all)
+		ut.AssertEqualIndex(t, i, nil, err)
+		ut.AssertEqualIndex(t, i, vvToStr2D(one.out), vvToStr2D(out))
 	}
 }
 
@@ -119,7 +120,8 @@ func TestCartesianProductOfValues(t *testing.T) {
 		return out
 	}
 	test := func(vvs variablesAndValues, keys []string, expected ...[]variableValue) {
-		res := vvs.cartesianProductOfValues(keys)
+		res, err := vvs.cartesianProductOfValues(keys)
+		ut.AssertEqual(t, nil, err)
 		vvSort(expected)
 		vvSort(res)
 		ut.AssertEqual(t, vvToStr2D(expected), vvToStr2D(res))
@@ -256,7 +258,11 @@ func TestVerifyIsolate(t *testing.T) {
 
 func TestLoadIsolateAsConfig(t *testing.T) {
 	t.Parallel()
-	isolate, err := LoadIsolateAsConfig("/dir", []byte(sampleIsolateData), []byte("# filecomment"))
+	root := "/dir"
+	if common.IsWindows() {
+		root = "x:\\dir"
+	}
+	isolate, err := LoadIsolateAsConfig(root, []byte(sampleIsolateData), []byte("# filecomment"))
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, isolate.FileComment, []byte("# filecomment"))
 	ut.AssertEqual(t, []string{"OS", "bit"}, isolate.ConfigVariables)
@@ -265,12 +271,16 @@ func TestLoadIsolateAsConfig(t *testing.T) {
 func TestLoadIsolateForConfigMissingVars(t *testing.T) {
 	t.Parallel()
 	isoData := []byte(sampleIsolateData)
-	_, _, _, _, err := LoadIsolateForConfig("/", isoData, common.KeyValVars{})
+	root := "/dir"
+	if common.IsWindows() {
+		root = "x:\\dir"
+	}
+	_, _, _, _, err := LoadIsolateForConfig(root, isoData, common.KeyValVars{})
 	ut.AssertEqual(t, true, err != nil)
 	ut.AssertEqualf(t, true, strings.Contains(err.Error(), "variables were missing"), "%s", err)
 	ut.AssertEqualf(t, true, strings.Contains(err.Error(), "bit"), "%s", err)
 	ut.AssertEqualf(t, true, strings.Contains(err.Error(), "OS"), "%s", err)
-	_, _, _, _, err = LoadIsolateForConfig("/", isoData, common.KeyValVars{"bit": "32"})
+	_, _, _, _, err = LoadIsolateForConfig(root, isoData, common.KeyValVars{"bit": "32"})
 	ut.AssertEqual(t, true, err != nil)
 	ut.AssertEqualf(t, true, strings.Contains(err.Error(), "variables were missing"), "%s", err)
 	ut.AssertEqualf(t, true, strings.Contains(err.Error(), "OS"), "%s", err)
@@ -281,45 +291,49 @@ func TestLoadIsolateForConfigMissingVars(t *testing.T) {
 func TestLoadIsolateForConfig(t *testing.T) {
 	t.Parallel()
 	// Case linux64, matches first condition.
-	cmd, deps, ro, dir, err := LoadIsolateForConfig("/dir", []byte(sampleIsolateData),
-		common.KeyValVars{"bit": "64", "OS": "linux"})
+	root := "/dir"
+	if common.IsWindows() {
+		root = "x:\\dir"
+	}
+	vars := common.KeyValVars{"bit": "64", "OS": "linux"}
+	cmd, deps, ro, dir, err := LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
 	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, "/dir", dir)
+	ut.AssertEqual(t, root, dir)
 	ut.AssertEqual(t, NotSet, ro) // first condition has no read_only specified.
 	ut.AssertEqual(t, []string{"python", "64linuxOrWin"}, cmd)
-	ut.AssertEqual(t, []string{"64linuxOrWin", "<(PRODUCT_DIR)/unittest<(EXECUTABLE_SUFFIX)"}, deps)
+	ut.AssertEqual(t, []string{"64linuxOrWin", filepath.Join("<(PRODUCT_DIR)", "unittest<(EXECUTABLE_SUFFIX)")}, deps)
 
 	// Case win64, matches only first condition.
-	cmd, deps, ro, dir, err = LoadIsolateForConfig("/dir", []byte(sampleIsolateData),
-		common.KeyValVars{"bit": "64", "OS": "win"})
+	vars = common.KeyValVars{"bit": "64", "OS": "win"}
+	cmd, deps, ro, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
 	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, "/dir", dir)
+	ut.AssertEqual(t, root, dir)
 	ut.AssertEqual(t, NotSet, ro) // first condition has no read_only specified.
 	ut.AssertEqual(t, []string{"python", "64linuxOrWin"}, cmd)
 	ut.AssertEqual(t, []string{
 		"64linuxOrWin",
-		"<(PRODUCT_DIR)/unittest<(EXECUTABLE_SUFFIX)",
+		filepath.Join("<(PRODUCT_DIR)", "unittest<(EXECUTABLE_SUFFIX)"),
 	}, deps)
 
-	// Case mac32, matches only second condition.
-	cmd, deps, ro, dir, err = LoadIsolateForConfig("/dir", []byte(sampleIsolateData),
-		common.KeyValVars{"bit": "64", "OS": "mac"})
+	// Case mac64, matches only second condition.
+	vars = common.KeyValVars{"bit": "64", "OS": "mac"}
+	cmd, deps, ro, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
 	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, "/dir", dir)
+	ut.AssertEqual(t, root, dir)
 	ut.AssertEqual(t, DirsReadOnly, ro) // second condition has read_only 2.
 	ut.AssertEqual(t, []string{"python", "32orMac64"}, cmd)
 	ut.AssertEqual(t, []string{}, deps)
 
 	// Case win32, both first and second condition match.
-	cmd, deps, ro, dir, err = LoadIsolateForConfig("/dir", []byte(sampleIsolateData),
-		common.KeyValVars{"bit": "32", "OS": "win"})
+	vars = common.KeyValVars{"bit": "32", "OS": "win"}
+	cmd, deps, ro, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
 	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, "/dir", dir)
+	ut.AssertEqual(t, root, dir)
 	ut.AssertEqual(t, DirsReadOnly, ro) // first condition no read_only, but second has 2.
 	ut.AssertEqual(t, []string{"python", "32orMac64"}, cmd)
 	ut.AssertEqual(t, []string{
 		"64linuxOrWin",
-		"<(PRODUCT_DIR)/unittest<(EXECUTABLE_SUFFIX)",
+		filepath.Join("<(PRODUCT_DIR)", "unittest<(EXECUTABLE_SUFFIX)"),
 	}, deps)
 }
 
@@ -340,25 +354,25 @@ func TestLoadIsolateAsConfigWithIncludes(t *testing.T) {
 	// Test failures.
 	absIncData := addIncludesToSample(sampleIsolateData, "'includes':['/abs/path']")
 	_, _, _, _, err = LoadIsolateForConfig(tmpDir, []byte(absIncData), common.KeyValVars{})
-	ut.AssertEqualf(t, true, err != nil && strings.Contains(err.Error(), "absolute include path"), "%v", err)
+	ut.AssertEqual(t, true, err != nil)
 
 	_, _, _, _, err = LoadIsolateForConfig(filepath.Join(tmpDir, "wrong-dir"),
 		[]byte(sampleIsolateDataWithIncludes), common.KeyValVars{})
-	ut.AssertEqualf(t, true, err != nil && strings.Contains(err.Error(), "no such file"), "%v", err)
+	ut.AssertEqual(t, true, err != nil)
 
 	// Test Successfull loading.
 	// Case mac32, matches only second condition from main isolate and one in included.
-	cmd, deps, ro, dir, err := LoadIsolateForConfig(tmpDir, []byte(sampleIsolateDataWithIncludes),
-		common.KeyValVars{"bit": "64", "OS": "linux"})
+	vars := common.KeyValVars{"bit": "64", "OS": "linux"}
+	cmd, deps, ro, dir, err := LoadIsolateForConfig(tmpDir, []byte(sampleIsolateDataWithIncludes), vars)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, tmpDir, dir)
 	ut.AssertEqual(t, NotSet, ro) // first condition has no read_only specified.
 	ut.AssertEqual(t, []string{"python", "64linuxOrWin"}, cmd)
 	ut.AssertEqual(t, []string{
-		"../inc_file",
+		filepath.Join("..", "inc_file"),
 		"64linuxOrWin",
-		"<(DIR)/inc_unittest", // no rebasing for this.
-		"<(PRODUCT_DIR)/unittest<(EXECUTABLE_SUFFIX)",
+		filepath.Join("<(DIR)", "inc_unittest"), // no rebasing for this.
+		filepath.Join("<(PRODUCT_DIR)", "unittest<(EXECUTABLE_SUFFIX)"),
 	}, deps)
 }
 
