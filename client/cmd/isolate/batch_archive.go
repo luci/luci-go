@@ -85,6 +85,7 @@ func parseArchiveCMD(args []string, cwd string) (*isolate.ArchiveOptions, error)
 	if base.GetFlags().NArg() > 0 {
 		return nil, fmt.Errorf("no positional arguments expected")
 	}
+	i.PostProcess(cwd)
 	return &i.ArchiveOptions, nil
 }
 

@@ -511,5 +511,5 @@ func (a *archiver) doUpload(item *archiverItem) {
 	a.lock.Lock()
 	a.stats.Pushed = append(a.stats.Pushed, u)
 	a.lock.Unlock()
-	log.Printf("Uploaded %.1fkb\n", float64(item.digestItem.Size)/1024.)
+	log.Printf("Uploaded %7.1fkb: %s\n", float64(item.digestItem.Size)/1024., item.DisplayName())
 }

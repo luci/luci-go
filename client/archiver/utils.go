@@ -96,7 +96,8 @@ type walkItem struct {
 // walk() enumerates a directory tree synchronously and sends the items to
 // channel c.
 //
-// blacklist is a list of globs of files to ignore.
+// blacklist is a list of globs of files to ignore. Each blacklist glob is
+// relative to root.
 func walk(root string, blacklist []string, c chan<- *walkItem) {
 	// TODO(maruel): Walk() sorts the file names list, which is not needed here
 	// and slows things down. Options:
@@ -237,10 +238,11 @@ func PushDirectory(a Archiver, root string, relDir string, blacklist []string) F
 		if err == nil {
 			raw := &bytes.Buffer{}
 			if err = json.NewEncoder(raw).Encode(i); err == nil {
-				f := a.Push(displayName, bytes.NewReader(raw.Bytes()))
-				f.WaitForHashed()
-				err = f.Error()
-				d = f.Digest()
+				if f := a.Push(displayName, bytes.NewReader(raw.Bytes())); f != nil {
+					f.WaitForHashed()
+					err = f.Error()
+					d = f.Digest()
+				}
 			}
 		}
 		s.Finalize(d, err)

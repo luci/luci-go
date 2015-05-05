@@ -65,6 +65,26 @@ func (a *ArchiveOptions) Init() {
 	a.ConfigVariables = common.KeyValVars{}
 }
 
+// PostProcess post-processes the flags to fix any compatibility issue.
+func (a *ArchiveOptions) PostProcess(cwd string) {
+	// Set default blacklist only if none is set.
+	if len(a.Blacklist) == 0 {
+		a.Blacklist = common.Strings{
+			".git",
+			".hg",
+			".svn",
+		}
+	}
+	a.Isolate = filepath.Clean(filepath.Join(cwd, a.Isolate))
+	a.Isolated = filepath.Clean(filepath.Join(cwd, a.Isolated))
+	for k, v := range a.PathVariables {
+		// This is due to a Windows + GYP specific issue, where double-quoted paths
+		// would get mangled in a way that cannot be resolved unless a space is
+		// injected.
+		a.PathVariables[k] = strings.TrimSpace(v)
+	}
+}
+
 // ReplaceVariables replaces any occurrences of '<(FOO)' in 'str' with the
 // corresponding variable from 'opts'.
 //
@@ -99,6 +119,7 @@ func Archive(arch archiver.Archiver, relDir string, opts *ArchiveOptions) archiv
 	displayName := filepath.Base(opts.Isolated)
 	f, err := archive(arch, relDir, opts, displayName)
 	if err != nil {
+		arch.Cancel(err)
 		s := archiver.NewSimpleFuture(displayName)
 		s.Finalize("", err)
 		return s
