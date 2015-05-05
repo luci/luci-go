@@ -134,3 +134,21 @@ func posixRel(basepath, targpath string) (string, error) {
 	}
 	return targ[t0:], nil
 }
+
+func newInt(v int) *int {
+	o := new(int)
+	*o = v
+	return o
+}
+
+func newInt64(v int64) *int64 {
+	o := new(int64)
+	*o = v
+	return o
+}
+
+func newString(v string) *string {
+	o := new(string)
+	*o = v
+	return o
+}

@@ -9,9 +9,11 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/luci/luci-go/client/archiver"
 	"github.com/luci/luci-go/client/internal/common"
@@ -133,19 +135,38 @@ func archive(arch archiver.Archiver, relDir string, opts *ArchiveOptions, displa
 		}
 	}
 
-	// Handle each dependency, either a file or a directory..
-	fileFutures := make([]archiver.Future, 0, filesCount)
-	dirFutures := make([]archiver.Future, 0, dirsCount)
-	for _, dep := range deps {
-		depPath := filepath.Clean(filepath.Join(isolateDir, dep))
+	// Convert all dependencies to absolute path and find the root directory to
+	// use.
+	for i, dep := range deps {
+		clean := filepath.Clean(filepath.Join(isolateDir, dep))
 		if dep[len(dep)-1] == os.PathSeparator {
-			// TODO(maruel): blacklist.
-			dirFutures = append(dirFutures, archiver.PushDirectory(arch, depPath, nil))
-		} else {
-			fileFutures = append(fileFutures, arch.PushFile(dep, depPath))
+			clean += osPathSeparator
+		}
+		deps[i] = clean
+	}
+	rootDir := isolateDir
+	for _, dep := range deps {
+		base := filepath.Dir(dep)
+		for {
+			rel, err := filepath.Rel(rootDir, base)
+			if err != nil {
+				return nil, err
+			}
+			if !strings.HasPrefix(rel, "..") {
+				break
+			}
+			newRootDir := filepath.Dir(rootDir)
+			if newRootDir == rootDir {
+				return nil, errors.New("failed to find root dir")
+			}
+			rootDir = newRootDir
 		}
 	}
+	if rootDir != isolateDir {
+		log.Printf("Root: %s", rootDir)
+	}
 
+	// Prepare the .isolated file.
 	i := isolated.Isolated{
 		Algo:     "sha-1",
 		Files:    map[string]isolated.File{},
@@ -155,14 +176,56 @@ func archive(arch archiver.Archiver, relDir string, opts *ArchiveOptions, displa
 	if len(cmd) != 0 {
 		i.Command = cmd
 	}
-	// TODO(maruel): i.RelativeCwd.
+	if rootDir != isolateDir {
+		relPath, err := filepath.Rel(rootDir, isolateDir)
+		if err != nil {
+			return nil, err
+		}
+		i.RelativeCwd = relPath
+	}
+
+	// Handle each dependency, either a file or a directory..
+	fileFutures := make([]archiver.Future, 0, filesCount)
+	dirFutures := make([]archiver.Future, 0, dirsCount)
+	for _, dep := range deps {
+		relPath, err := filepath.Rel(rootDir, dep)
+		if err != nil {
+			return nil, err
+		}
+		if dep[len(dep)-1] == os.PathSeparator {
+			relPath, err := filepath.Rel(rootDir, dep)
+			if err != nil {
+				return nil, err
+			}
+			dirFutures = append(dirFutures, archiver.PushDirectory(arch, dep, relPath, opts.Blacklist))
+		} else {
+			// Grab the stats right away.
+			info, err := os.Lstat(dep)
+			if err != nil {
+				return nil, err
+			}
+			mode := info.Mode()
+			if mode&os.ModeSymlink == os.ModeSymlink {
+				l, err := os.Readlink(dep)
+				if err != nil {
+					return nil, err
+				}
+				i.Files[relPath] = isolated.File{Link: newString(l)}
+			} else {
+				i.Files[relPath] = isolated.File{Mode: newInt(int(mode.Perm())), Size: newInt64(info.Size())}
+				fileFutures = append(fileFutures, arch.PushFile(relPath, dep))
+			}
+		}
+	}
 
 	for _, future := range fileFutures {
 		future.WaitForHashed()
 		if err = future.Error(); err != nil {
 			return nil, err
 		}
-		i.Files[future.DisplayName()] = isolated.File{Digest: future.Digest()}
+		f := i.Files[future.DisplayName()]
+		f.Digest = future.Digest()
+		i.Files[future.DisplayName()] = f
 	}
 	for _, future := range dirFutures {
 		future.WaitForHashed()

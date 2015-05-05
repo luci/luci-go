@@ -82,7 +82,7 @@ func TestPushDirectory(t *testing.T) {
 	ut.AssertEqual(t, nil, os.Mkdir(ignoredDir, 0700))
 	ut.AssertEqual(t, nil, ioutil.WriteFile(filepath.Join(ignoredDir, "really"), []byte("ignored"), 0600))
 
-	future := PushDirectory(a, tmpDir, []string{"ignored1", "*/ignored2"})
+	future := PushDirectory(a, tmpDir, "", []string{"ignored1", "*/ignored2"})
 	ut.AssertEqual(t, filepath.Base(tmpDir)+".isolated", future.DisplayName())
 	future.WaitForHashed()
 	ut.AssertEqual(t, nil, a.Close())

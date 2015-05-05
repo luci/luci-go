@@ -168,8 +168,11 @@ func walk(root string, blacklist []string, c chan<- *walkItem) {
 // lookups and upload is completed. Use archiver.Close() to wait for
 // completion.
 //
+// relDir is a relative directory to offset relative paths against in the
+// generated .isolated file.
+//
 // blacklist is a list of globs of files to ignore.
-func PushDirectory(a Archiver, root string, blacklist []string) Future {
+func PushDirectory(a Archiver, root string, relDir string, blacklist []string) Future {
 	c := make(chan *walkItem)
 	go func() {
 		walk(root, blacklist, c)
@@ -196,6 +199,9 @@ func PushDirectory(a Archiver, root string, blacklist []string) Future {
 		if filepath.Separator == '\\' {
 			// Windows.
 			item.relPath = strings.Replace(item.relPath, "\\", "/", -1)
+		}
+		if relDir != "" {
+			item.relPath = filepath.Join(relDir, item.relPath)
 		}
 		mode := item.info.Mode()
 		if mode&os.ModeSymlink == os.ModeSymlink {

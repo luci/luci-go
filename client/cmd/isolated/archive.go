@@ -66,7 +66,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	}
 
 	for _, d := range c.dirs {
-		futures = append(futures, archiver.PushDirectory(arch, d, nil))
+		futures = append(futures, archiver.PushDirectory(arch, d, "", nil))
 		names = append(names, d)
 	}
 
