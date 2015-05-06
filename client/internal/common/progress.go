@@ -93,8 +93,9 @@ func (p *progress) printLoop() {
 	p.lock.Lock()
 	out := p.out
 	p.lock.Unlock()
-	io.WriteString(out, line)
-
+	if _, err := io.WriteString(out, line); err != nil {
+		return
+	}
 	for {
 		p.lock.Lock()
 		out, line := p.printStep()
