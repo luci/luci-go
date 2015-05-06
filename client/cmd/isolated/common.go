@@ -14,12 +14,14 @@ import (
 )
 
 type commonFlags struct {
+	quiet   bool
 	verbose bool
-	logFile string
-	noLog   bool
+	//logFile string
+	//noLog   bool
 }
 
 func (c *commonFlags) Init(b *subcommands.CommandRunBase) {
+	b.Flags.BoolVar(&c.quiet, "quiet", false, "Get less output")
 	b.Flags.BoolVar(&c.verbose, "verbose", false, "Get more output")
 	// TODO(maruel): Implement -log.
 	//b.Flags.StringVar(&c.logFile, "log", "", "Name of log file")
@@ -29,6 +31,9 @@ func (c *commonFlags) Parse() error {
 	if !c.verbose {
 		log.SetFlags(0)
 		log.SetOutput(ioutil.Discard)
+	}
+	if c.quiet && c.verbose {
+		return errors.New("can't use both -quiet and -verbose")
 	}
 	// TODO(maruel): Implement -log.
 	return nil

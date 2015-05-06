@@ -11,7 +11,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"sort"
 	"testing"
 
 	"github.com/luci/luci-go/client/archiver"
@@ -52,7 +51,7 @@ func TestArchive(t *testing.T) {
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	a := archiver.New(isolatedclient.New(ts.URL, "default-gzip"))
+	a := archiver.New(isolatedclient.New(ts.URL, "default-gzip"), nil)
 
 	// Setup temporary directory.
 	//   /base/bar
@@ -167,22 +166,15 @@ func TestArchive(t *testing.T) {
 	ut.AssertEqual(t, isolatedHash, future.Digest())
 
 	stats := a.Stats()
-	ut.AssertEqual(t, []int64{}, stats.Hits)
-	misses := int64Slice(stats.Misses)
-	sort.Sort(misses)
+	ut.AssertEqual(t, 0, stats.TotalHits())
+	ut.AssertEqual(t, common.Size(0), stats.TotalBytesHits())
 	if !common.IsWindows() {
-		ut.AssertEqual(t, int64Slice{3, int64(len(isolatedDirEncoded)), int64(len(isolatedEncoded))}, misses)
+		ut.AssertEqual(t, 3, stats.TotalMisses())
+		ut.AssertEqual(t, common.Size(3+len(isolatedDirEncoded)+len(isolatedEncoded)), stats.TotalBytesPushed())
 	} else {
-		ut.AssertEqual(t, int64Slice{3, 18, int64(len(isolatedDirEncoded)), int64(len(isolatedEncoded))}, misses)
+		ut.AssertEqual(t, 4, stats.TotalMisses())
+		ut.AssertEqual(t, common.Size(3+18+len(isolatedDirEncoded)+len(isolatedEncoded)), stats.TotalBytesPushed())
 	}
 
 	ut.AssertEqual(t, nil, server.Error())
 }
-
-// Private stuff.
-
-type int64Slice []int64
-
-func (a int64Slice) Len() int           { return len(a) }
-func (a int64Slice) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a int64Slice) Less(i, j int) bool { return a[i] < a[j] }

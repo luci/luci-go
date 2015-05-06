@@ -7,6 +7,7 @@ package common
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/maruel/ut"
 )
@@ -25,5 +26,24 @@ func TestURLToHTTPS(t *testing.T) {
 		out, err := URLToHTTPS(line.in)
 		ut.AssertEqualIndex(t, i, line.expected, out)
 		ut.AssertEqualIndex(t, i, line.err, err)
+	}
+}
+
+func TestRound(t *testing.T) {
+	data := []struct {
+		in       time.Duration
+		round    time.Duration
+		expected time.Duration
+	}{
+		{-time.Second, time.Second, -time.Second},
+		{-500 * time.Millisecond, time.Second, -time.Second},
+		{-499 * time.Millisecond, time.Second, 0},
+		{0, time.Second, 0},
+		{499 * time.Millisecond, time.Second, 0},
+		{500 * time.Millisecond, time.Second, time.Second},
+		{time.Second, time.Second, time.Second},
+	}
+	for i, line := range data {
+		ut.AssertEqualIndex(t, i, line.expected, Round(line.in, line.round))
 	}
 }

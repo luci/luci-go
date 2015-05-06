@@ -56,7 +56,13 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 
 func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	start := time.Now()
-	arch := archiver.New(isolatedclient.New(c.serverURL, c.namespace))
+	out := os.Stdout
+	prefix := "\n"
+	if c.quiet {
+		out = nil
+		prefix = ""
+	}
+	arch := archiver.New(isolatedclient.New(c.serverURL, c.namespace), out)
 	common.CancelOnCtrlC(arch)
 	futures := []archiver.Future{}
 	names := []string{}
@@ -73,20 +79,20 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	for i, future := range futures {
 		future.WaitForHashed()
 		if err := future.Error(); err == nil {
-			fmt.Printf("%s  %s\n", future.Digest(), names[i])
+			fmt.Printf("%s%s  %s\n", prefix, future.Digest(), names[i])
 		} else {
-			fmt.Printf("%s failed: %s\n", names[i], err)
+			fmt.Printf("%s%s failed: %s\n", prefix, names[i], err)
 		}
 	}
 	// This waits for all uploads.
 	err := arch.Close()
-	duration := time.Now().Sub(start)
-	stats := arch.Stats()
-
-	fmt.Fprintf(os.Stderr, "Hits    : %5d (%.1fkb)\n", len(stats.Hits), float64(stats.TotalHits())/1024.)
-	fmt.Fprintf(os.Stderr, "Misses  : %5d (%.1fkb)\n", len(stats.Misses), float64(stats.TotalMisses())/1024.)
-	fmt.Fprintf(os.Stderr, "Pushed  : %5d (%.1fkb)\n", len(stats.Pushed), float64(stats.TotalPushed())/1024.)
-	fmt.Fprintf(os.Stderr, "Duration: %s\n", duration)
+	if !c.quiet {
+		duration := time.Since(start)
+		stats := arch.Stats()
+		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", stats.TotalHits(), stats.TotalBytesHits())
+		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", stats.TotalMisses(), stats.TotalBytesPushed())
+		fmt.Fprintf(os.Stderr, "Duration: %s\n", duration)
+	}
 	return err
 }
 

@@ -11,7 +11,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"sort"
 	"sync"
 	"testing"
 
@@ -66,7 +65,7 @@ func TestPushDirectory(t *testing.T) {
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	a := New(isolatedclient.New(ts.URL, "default-gzip"))
+	a := New(isolatedclient.New(ts.URL, "default-gzip"), nil)
 
 	// Setup temporary directory.
 	tmpDir, err := ioutil.TempDir("", "archiver")
@@ -125,11 +124,11 @@ func TestPushDirectory(t *testing.T) {
 	ut.AssertEqual(t, isolatedHash, future.Digest())
 
 	stats := a.Stats()
-	ut.AssertEqual(t, []int64{}, stats.Hits)
-	misses := int64Slice(stats.Misses)
-	sort.Sort(misses)
+	ut.AssertEqual(t, 0, stats.TotalHits())
 	// There're 3 cache misses even if the same content is looked up twice.
-	ut.AssertEqual(t, int64Slice{3, 3, int64(len(isolatedEncoded))}, misses)
+	ut.AssertEqual(t, 3, stats.TotalMisses())
+	ut.AssertEqual(t, common.Size(0), stats.TotalBytesHits())
+	ut.AssertEqual(t, common.Size(3+3+len(isolatedEncoded)), stats.TotalBytesPushed())
 
 	ut.AssertEqual(t, nil, server.Error())
 }

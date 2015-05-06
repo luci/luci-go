@@ -18,6 +18,30 @@ import (
 	"github.com/luci/luci-go/common/isolated"
 )
 
+const (
+	groupFound      common.Group   = 0
+	groupFoundFound common.Section = 0
+
+	groupHash     common.Group   = 1
+	groupHashTodo common.Section = 0
+	groupHashDone common.Section = 1
+
+	groupLookup     common.Group   = 2
+	groupLookupTodo common.Section = 0
+	groupLookupDone common.Section = 1
+
+	groupUpload     common.Group   = 3
+	groupUploadTodo common.Section = 0
+	groupUploadDone common.Section = 1
+)
+
+var headers = [][]string{
+	{"found"},
+	{"to hash", "hashed"},
+	{"to lookup", "looked up"},
+	{"to upload", "uploaded"},
+}
+
 // Future is the future of a file pushed to be hashed.
 type Future interface {
 	// DisplayName is the name associated to the content.
@@ -41,34 +65,34 @@ type Archiver interface {
 // UploadStat is the statistic for a single upload.
 type UploadStat struct {
 	Duration time.Duration
-	Size     int64
+	Size     common.Size
+	Name     string
 }
 
 // Statistics from the Archiver.
 type Stats struct {
-	Hits   []int64
-	Misses []int64
-	Pushed []*UploadStat
+	Hits   []common.Size // Bytes; each item is immutable.
+	Pushed []*UploadStat // Misses; each item is immutable.
 }
 
-func (s *Stats) TotalHits() int64 {
-	out := int64(0)
+func (s *Stats) TotalHits() int {
+	return len(s.Hits)
+}
+
+func (s *Stats) TotalBytesHits() common.Size {
+	out := common.Size(0)
 	for _, i := range s.Hits {
 		out += i
 	}
 	return out
 }
 
-func (s *Stats) TotalMisses() int64 {
-	out := int64(0)
-	for _, i := range s.Misses {
-		out += i
-	}
-	return out
+func (s *Stats) TotalMisses() int {
+	return len(s.Pushed)
 }
 
-func (s *Stats) TotalPushed() int64 {
-	out := int64(0)
+func (s *Stats) TotalBytesPushed() common.Size {
+	out := common.Size(0)
 	for _, i := range s.Pushed {
 		out += i.Size
 	}
@@ -76,21 +100,16 @@ func (s *Stats) TotalPushed() int64 {
 }
 
 func (s *Stats) deepCopy() *Stats {
-	out := &Stats{}
-	out.Hits = make([]int64, len(s.Hits))
-	copy(out.Hits, s.Hits)
-	out.Misses = make([]int64, len(s.Misses))
-	copy(out.Misses, s.Misses)
-	out.Pushed = make([]*UploadStat, len(s.Pushed))
-	copy(out.Pushed, s.Pushed)
-	return out
+	// Only need to copy the slice, not the items themselves.
+	return &Stats{s.Hits, s.Pushed}
 }
 
 // New returns a thread-safe Archiver instance.
-func New(is isolatedclient.IsolateServer) Archiver {
+func New(is isolatedclient.IsolateServer, out io.Writer) Archiver {
 	// TODO(maruel): Cache hashes and server cache presence.
 	a := &archiver{
 		canceler:              common.NewCanceler(),
+		progress:              common.NewProgress(headers, out),
 		is:                    is,
 		maxConcurrentHash:     5,
 		maxConcurrentContains: 64,
@@ -274,6 +293,7 @@ type archiver struct {
 	stage4UploadChan      chan *archiverItem
 	wg                    sync.WaitGroup
 	canceler              common.Canceler
+	progress              common.Progress
 
 	// Mutable.
 	lock  sync.Mutex
@@ -289,6 +309,7 @@ func (a *archiver) Close() error {
 	a.lock.Unlock()
 
 	a.wg.Wait()
+	_ = a.progress.Close()
 	_ = a.canceler.Close()
 	return a.CancelationReason()
 }
@@ -326,6 +347,7 @@ func (a *archiver) Stats() *Stats {
 }
 
 func (a *archiver) push(item *archiverItem) Future {
+	// The close(a.stage1DedupeChan) call is always occuring with the lock held.
 	a.lock.Lock()
 	defer a.lock.Unlock()
 	if a.stage1DedupeChan == nil {
@@ -333,6 +355,7 @@ func (a *archiver) push(item *archiverItem) Future {
 		return nil
 	}
 	a.stage1DedupeChan <- item
+	a.progress.Update(groupFound, groupFoundFound, 1)
 	return item
 }
 
@@ -363,6 +386,7 @@ func (a *archiver) stage1DedupeLoop() {
 				continue
 			}
 		}
+		a.progress.Update(groupHash, groupHashTodo, 1)
 		a.stage2HashChan <- item
 		seen[item.path] = item
 	}
@@ -381,6 +405,8 @@ func (a *archiver) stage2HashLoop() {
 				a.Cancel(err)
 				return
 			}
+			a.progress.Update(groupHash, groupHashDone, 1)
+			a.progress.Update(groupLookup, groupLookupTodo, 1)
 			a.stage3LookupChan <- item
 		}, func() {
 			item.setErr(a.CancelationReason())
@@ -467,17 +493,16 @@ func (a *archiver) doContains(items []*archiverItem) {
 		}
 		return
 	}
+	a.progress.Update(groupLookup, groupLookupDone, len(items))
 	for index, state := range states {
 		size := items[index].digestItem.Size
 		if state == nil {
 			a.lock.Lock()
-			a.stats.Hits = append(a.stats.Hits, size)
+			a.stats.Hits = append(a.stats.Hits, common.Size(size))
 			a.lock.Unlock()
 		} else {
-			a.lock.Lock()
-			a.stats.Misses = append(a.stats.Misses, size)
-			a.lock.Unlock()
 			items[index].state = state
+			a.progress.Update(groupUpload, groupUploadTodo, 1)
 			a.stage4UploadChan <- items[index]
 		}
 	}
@@ -505,11 +530,13 @@ func (a *archiver) doUpload(item *archiverItem) {
 		err = fmt.Errorf("push(%s) failed: %s\n", item.path, err)
 		a.Cancel(err)
 		item.setErr(err)
+	} else {
+		a.progress.Update(groupUpload, groupUploadDone, 1)
 	}
-	duration := time.Now().Sub(start)
-	u := &UploadStat{duration, item.digestItem.Size}
+	size := common.Size(item.digestItem.Size)
+	u := &UploadStat{time.Since(start), size, item.DisplayName()}
 	a.lock.Lock()
 	a.stats.Pushed = append(a.stats.Pushed, u)
 	a.lock.Unlock()
-	log.Printf("Uploaded %7.1fkb: %s\n", float64(item.digestItem.Size)/1024., item.DisplayName())
+	log.Printf("Uploaded %7s: %s\n", size, item.DisplayName())
 }

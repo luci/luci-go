@@ -56,6 +56,9 @@ type batchArchiveRun struct {
 }
 
 func (c *batchArchiveRun) Parse(a subcommands.Application, args []string) error {
+	if err := c.commonFlags.Parse(); err != nil {
+		return err
+	}
 	if err := c.commonServerFlags.Parse(); err != nil {
 		return err
 	}
@@ -119,8 +122,14 @@ func convertPyToGoArchiveCMDArgs(args []string) []string {
 }
 
 func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
+	out := os.Stdout
+	prefix := "\n"
+	if c.quiet {
+		out = nil
+		prefix = ""
+	}
 	start := time.Now()
-	arch := archiver.New(isolatedclient.New(c.serverURL, c.namespace))
+	arch := archiver.New(isolatedclient.New(c.serverURL, c.namespace), out)
 	common.CancelOnCtrlC(arch)
 	type tmp struct {
 		name   string
@@ -163,27 +172,34 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 		close(items)
 	}()
 
-	isolatedHashes := map[string]isolated.HexDigest{}
+	data := struct {
+		Items map[string]isolated.HexDigest `json:"items"`
+		Stats *archiver.Stats               `json:"stats"`
+	}{
+		Items: map[string]isolated.HexDigest{},
+	}
 	for item := range items {
 		item.future.WaitForHashed()
 		if item.future.Error() == nil {
-			isolatedHashes[item.name] = item.future.Digest()
-			fmt.Printf("%s  %s\n", item.future.Digest(), item.name)
+			data.Items[item.name] = item.future.Digest()
+			fmt.Printf("%s%s  %s\n", prefix, item.future.Digest(), item.name)
 		} else {
-			fmt.Fprintf(os.Stderr, "%s  %s\n", item.name, item.future.Error())
+			fmt.Fprintf(os.Stderr, "%s%s  %s\n", prefix, item.name, item.future.Error())
 		}
 	}
 	err := arch.Close()
+	duration := time.Since(start)
+	stats := arch.Stats()
+	data.Stats = stats
 	// Only write the file once upload is confirmed.
 	if err == nil && c.dumpJson != "" {
-		return common.WriteJSONFile(c.dumpJson, isolatedHashes)
+		err = common.WriteJSONFile(c.dumpJson, data)
 	}
-	duration := time.Now().Sub(start)
-	stats := arch.Stats()
-	fmt.Fprintf(os.Stderr, "Hits    : %5d (%.1fkb)\n", len(stats.Hits), float64(stats.TotalHits())/1024.)
-	fmt.Fprintf(os.Stderr, "Misses  : %5d (%.1fkb)\n", len(stats.Misses), float64(stats.TotalMisses())/1024.)
-	fmt.Fprintf(os.Stderr, "Pushed  : %5d (%.1fkb)\n", len(stats.Pushed), float64(stats.TotalPushed())/1024.)
-	fmt.Fprintf(os.Stderr, "Duration: %s\n", duration)
+	if !c.quiet {
+		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", stats.TotalHits(), stats.TotalBytesHits())
+		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", stats.TotalMisses(), stats.TotalBytesPushed())
+		fmt.Fprintf(os.Stderr, "Duration: %s\n", duration)
+	}
 	return err
 }
 

@@ -39,6 +39,9 @@ type archiveRun struct {
 }
 
 func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
+	if err := c.commonFlags.Parse(); err != nil {
+		return err
+	}
 	if err := c.commonServerFlags.Parse(); err != nil {
 		return err
 	}
@@ -56,25 +59,32 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	if err != nil {
 		return err
 	}
+	out := os.Stdout
+	prefix := "\n"
+	if c.quiet {
+		out = nil
+		prefix = ""
+	}
 	start := time.Now()
-	arch := archiver.New(isolatedclient.New(c.serverURL, c.namespace))
+	arch := archiver.New(isolatedclient.New(c.serverURL, c.namespace), out)
 	common.CancelOnCtrlC(arch)
 	future := isolate.Archive(arch, cwd, &c.ArchiveOptions)
 	future.WaitForHashed()
 	if err = future.Error(); err != nil {
-		fmt.Printf("%s  %s\n", filepath.Base(c.Isolate), err)
+		fmt.Printf("%s%s  %s\n", prefix, filepath.Base(c.Isolate), err)
 	} else {
-		fmt.Printf("%s  %s\n", future.Digest(), filepath.Base(c.Isolate))
+		fmt.Printf("%s%s  %s\n", prefix, future.Digest(), filepath.Base(c.Isolate))
 	}
 	if err2 := arch.Close(); err == nil {
 		err = err2
 	}
-	duration := time.Now().Sub(start)
-	stats := arch.Stats()
-	fmt.Fprintf(os.Stderr, "Hits    : %5d (%.1fkb)\n", len(stats.Hits), float64(stats.TotalHits())/1024.)
-	fmt.Fprintf(os.Stderr, "Misses  : %5d (%.1fkb)\n", len(stats.Misses), float64(stats.TotalMisses())/1024.)
-	fmt.Fprintf(os.Stderr, "Pushed  : %5d (%.1fkb)\n", len(stats.Pushed), float64(stats.TotalPushed())/1024.)
-	fmt.Fprintf(os.Stderr, "Duration: %s\n", duration)
+	if !c.quiet {
+		duration := time.Since(start)
+		stats := arch.Stats()
+		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", stats.TotalHits(), stats.TotalBytesHits())
+		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", stats.TotalMisses(), stats.TotalBytesPushed())
+		fmt.Fprintf(os.Stderr, "Duration: %s\n", duration)
+	}
 	return err
 }
 

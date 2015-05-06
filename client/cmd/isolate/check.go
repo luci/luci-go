@@ -30,6 +30,9 @@ type checkRun struct {
 }
 
 func (c *checkRun) Parse(a subcommands.Application, args []string) error {
+	if err := c.commonFlags.Parse(); err != nil {
+		return err
+	}
 	if err := c.isolateFlags.Parse(RequireIsolatedFile | RequireIsolateFile); err != nil {
 		return err
 	}

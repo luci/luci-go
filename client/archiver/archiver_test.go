@@ -12,7 +12,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"sort"
 	"testing"
 
 	"github.com/luci/luci-go/client/internal/common"
@@ -28,8 +27,12 @@ func init() {
 
 func TestArchiverEmpty(t *testing.T) {
 	t.Parallel()
-	a := New(isolatedclient.New("https://localhost:1", "default-gzip"))
-	ut.AssertEqual(t, &Stats{[]int64{}, []int64{}, []*UploadStat{}}, a.Stats())
+	a := New(isolatedclient.New("https://localhost:1", "default-gzip"), nil)
+	stats := a.Stats()
+	ut.AssertEqual(t, 0, stats.TotalHits())
+	ut.AssertEqual(t, 0, stats.TotalMisses())
+	ut.AssertEqual(t, common.Size(0), stats.TotalBytesHits())
+	ut.AssertEqual(t, common.Size(0), stats.TotalBytesPushed())
 }
 
 func TestArchiverFile(t *testing.T) {
@@ -37,7 +40,7 @@ func TestArchiverFile(t *testing.T) {
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	a := New(isolatedclient.New(ts.URL, "default-gzip"))
+	a := New(isolatedclient.New(ts.URL, "default-gzip"), nil)
 
 	fEmpty, err := ioutil.TempFile("", "archiver")
 	ut.AssertEqual(t, nil, err)
@@ -55,14 +58,11 @@ func TestArchiverFile(t *testing.T) {
 	ut.AssertEqual(t, nil, a.Close())
 
 	stats := a.Stats()
-	ut.AssertEqual(t, []int64{}, stats.Hits)
-	misses := int64Slice(stats.Misses)
-	sort.Sort(misses)
+	ut.AssertEqual(t, 0, stats.TotalHits())
 	// Only 2 lookups, not 3.
-	ut.AssertEqual(t, int64Slice{0, 3}, misses)
-	ut.AssertEqual(t, int64(3), stats.TotalPushed())
-	ut.AssertEqual(t, int64(0), stats.TotalHits())
-	ut.AssertEqual(t, int64(3), stats.TotalMisses())
+	ut.AssertEqual(t, 2, stats.TotalMisses())
+	ut.AssertEqual(t, common.Size(0), stats.TotalBytesHits())
+	ut.AssertEqual(t, common.Size(3), stats.TotalBytesPushed())
 	expected := map[isolated.HexDigest][]byte{
 		"0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33": []byte("foo"),
 		"da39a3ee5e6b4b0d3255bfef95601890afd80709": {},
@@ -82,7 +82,7 @@ func TestArchiverFileHit(t *testing.T) {
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	a := New(isolatedclient.New(ts.URL, "default-gzip"))
+	a := New(isolatedclient.New(ts.URL, "default-gzip"), nil)
 	server.Inject([]byte("foo"))
 	future := a.Push("foo", bytes.NewReader([]byte("foo")))
 	future.WaitForHashed()
@@ -90,7 +90,10 @@ func TestArchiverFileHit(t *testing.T) {
 	ut.AssertEqual(t, nil, a.Close())
 
 	stats := a.Stats()
-	ut.AssertEqual(t, int64(3), stats.TotalHits())
+	ut.AssertEqual(t, 1, stats.TotalHits())
+	ut.AssertEqual(t, 0, stats.TotalMisses())
+	ut.AssertEqual(t, common.Size(3), stats.TotalBytesHits())
+	ut.AssertEqual(t, common.Size(0), stats.TotalBytesPushed())
 }
 
 func TestArchiverCancel(t *testing.T) {
@@ -98,7 +101,7 @@ func TestArchiverCancel(t *testing.T) {
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	a := New(isolatedclient.New(ts.URL, "default-gzip"))
+	a := New(isolatedclient.New(ts.URL, "default-gzip"), nil)
 
 	tmpDir, err := ioutil.TempDir("", "archiver")
 	ut.AssertEqual(t, nil, err)
@@ -129,7 +132,7 @@ func TestArchiverCancel(t *testing.T) {
 
 func TestArchiverPushClosed(t *testing.T) {
 	t.Parallel()
-	a := New(nil)
+	a := New(nil, nil)
 	ut.AssertEqual(t, nil, a.Close())
 	ut.AssertEqual(t, nil, a.PushFile("ignored", "ignored"))
 }
@@ -139,7 +142,7 @@ func TestArchiverPushSeeked(t *testing.T) {
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	a := New(isolatedclient.New(ts.URL, "default-gzip"))
+	a := New(isolatedclient.New(ts.URL, "default-gzip"), nil)
 	misplaced := bytes.NewReader([]byte("foo"))
 	_, _ = misplaced.Seek(1, os.SEEK_SET)
 	future := a.Push("works", misplaced)
@@ -147,11 +150,3 @@ func TestArchiverPushSeeked(t *testing.T) {
 	ut.AssertEqual(t, isolated.HexDigest("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"), future.Digest())
 	ut.AssertEqual(t, nil, a.Close())
 }
-
-// Private stuff.
-
-type int64Slice []int64
-
-func (a int64Slice) Len() int           { return len(a) }
-func (a int64Slice) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a int64Slice) Less(i, j int) bool { return a[i] < a[j] }
