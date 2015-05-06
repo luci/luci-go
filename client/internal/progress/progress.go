@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package common
+package progress
 
 import (
 	"fmt"
@@ -11,6 +11,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/luci/luci-go/client/internal/common"
 )
 
 type Group int
@@ -25,7 +27,7 @@ type Progress interface {
 	Update(group Group, section Section, count int)
 }
 
-// NewProgress returns an initialized thread-safe Progress implementation.
+// New returns an initialized thread-safe Progress implementation.
 //
 // columns is the number of stages each item must go through, then with a set
 // of numbers for each state, which will be displayed as a number in each box.
@@ -34,7 +36,7 @@ type Progress interface {
 //   columns = [][]string{{"found"}, {"to hash", "hashed"}}
 // It'll print:
 //   [found] [to hash/hashed]
-func NewProgress(columns [][]string, out io.Writer) Progress {
+func New(columns [][]string, out io.Writer) Progress {
 	p := &progress{
 		start:    time.Now().UTC(),
 		columns:  columns,
@@ -43,7 +45,7 @@ func NewProgress(columns [][]string, out io.Writer) Progress {
 		out:      out,
 		values:   make([][]int, len(columns)),
 	}
-	if IsTerminal(out) {
+	if common.IsTerminal(out) {
 		p.interval = 50 * time.Millisecond
 		p.EOL = "\r"
 	}
@@ -118,7 +120,7 @@ func (p *progress) printStep() (io.Writer, string) {
 	}
 	p.valueChanged = false
 	// Zap resolution at .1s level. We're slow anyway.
-	duration := Round(time.Since(p.start), 100*time.Millisecond)
+	duration := common.Round(time.Since(p.start), 100*time.Millisecond)
 	return p.out, fmt.Sprintf("%s %s%s", renderGroupsInt(p.values), duration, p.EOL)
 }
 

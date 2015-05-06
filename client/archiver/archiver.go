@@ -14,25 +14,26 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/client/internal/common"
+	"github.com/luci/luci-go/client/internal/progress"
 	"github.com/luci/luci-go/client/isolatedclient"
 	"github.com/luci/luci-go/common/isolated"
 )
 
 const (
-	groupFound      common.Group   = 0
-	groupFoundFound common.Section = 0
+	groupFound      progress.Group   = 0
+	groupFoundFound progress.Section = 0
 
-	groupHash     common.Group   = 1
-	groupHashTodo common.Section = 0
-	groupHashDone common.Section = 1
+	groupHash     progress.Group   = 1
+	groupHashTodo progress.Section = 0
+	groupHashDone progress.Section = 1
 
-	groupLookup     common.Group   = 2
-	groupLookupTodo common.Section = 0
-	groupLookupDone common.Section = 1
+	groupLookup     progress.Group   = 2
+	groupLookupTodo progress.Section = 0
+	groupLookupDone progress.Section = 1
 
-	groupUpload     common.Group   = 3
-	groupUploadTodo common.Section = 0
-	groupUploadDone common.Section = 1
+	groupUpload     progress.Group   = 3
+	groupUploadTodo progress.Section = 0
+	groupUploadDone progress.Section = 1
 )
 
 var headers = [][]string{
@@ -109,7 +110,7 @@ func New(is isolatedclient.IsolateServer, out io.Writer) Archiver {
 	// TODO(maruel): Cache hashes and server cache presence.
 	a := &archiver{
 		canceler:              common.NewCanceler(),
-		progress:              common.NewProgress(headers, out),
+		progress:              progress.New(headers, out),
 		is:                    is,
 		maxConcurrentHash:     5,
 		maxConcurrentContains: 64,
@@ -293,7 +294,7 @@ type archiver struct {
 	stage4UploadChan      chan *archiverItem
 	wg                    sync.WaitGroup
 	canceler              common.Canceler
-	progress              common.Progress
+	progress              progress.Progress
 
 	// Mutable.
 	lock  sync.Mutex
