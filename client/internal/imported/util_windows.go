@@ -15,6 +15,9 @@ import (
 	"unsafe"
 )
 
+var kernel32 = syscall.NewLazyDLL("kernel32.dll")
+var procGetConsoleMode = kernel32.NewProc("GetConsoleMode")
+
 // IsTerminal returns true if the given file descriptor is a terminal.
 func IsTerminal(fd int) bool {
 	var st uint32
