@@ -14,9 +14,14 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+
+	"go/ast"
+	"go/parser"
+	"go/token"
 
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/common/isolated"
@@ -52,472 +57,155 @@ func (r ReadOnlyValue) ToIsolated() (out *isolated.ReadOnlyValue) {
 	return
 }
 
-type variableValue struct {
-	S *string `json:",omitempty"`
-	I *int    `json:",omitempty"`
-}
-
-func createVariableValueTryInt(s string) variableValue {
-	v := variableValue{}
-	if i, err := strconv.Atoi(s); err == nil {
-		v.I = &i
-	} else {
-		v.S = &s
+// LoadIsolateAsConfig parses one .isolate file and returns a Configs instance.
+//
+//  Arguments:
+//    isolateDir: only used to load relative includes so it doesn't depend on
+//                cwd.
+//    value: is the loaded dictionary that was defined in the gyp file.
+//    fileComment: comments found at the top of the file so it can be preserved.
+//
+//  The expected format is strict, anything diverting from the format below will
+//  result in error:
+//  {
+//    'includes': [
+//      'foo.isolate',
+//    ],
+//    'conditions': [
+//      ['OS=="vms" and foo=42', {
+//        'variables': {
+//          'command': [
+//            ...
+//          ],
+//          'files': [
+//            ...
+//          ],
+//          'read_only': 0,
+//        },
+//      }],
+//      ...
+//    ],
+//    'variables': {
+//      ...
+//    },
+//  }
+func LoadIsolateAsConfig(isolateDir string, content []byte, fileComment []byte) (*Configs, error) {
+	// isolateDir must be in native style.
+	if !filepath.IsAbs(isolateDir) {
+		return nil, fmt.Errorf("%s is not an absolute path", isolateDir)
 	}
-	return v
-}
-
-func (v variableValue) String() string {
-	if v.S != nil {
-		return *v.S
-	} else if v.I != nil {
-		return fmt.Sprintf("%d", *v.I)
+	processedIsolate, err := processIsolate(content)
+	if err != nil {
+		return nil, fmt.Errorf("failed to process isolate (isolateDir: %s): %s", isolateDir, err)
 	}
-	return ""
-}
+	out := processedIsolate.toConfigs(fileComment)
+	// Add global variables. The global variables are on the empty tuple key.
+	globalconfigName := make([]variableValue, len(out.ConfigVariables))
+	out.setConfig(globalconfigName, newConfigSettings(processedIsolate.variables, isolateDir))
 
-// compare returns 0 if equal, 1 if lhs < right, else -1.
-// Order: unbound < 1 < 2 < "abc" < "cde" .
-func (lhs variableValue) compare(rhs variableValue) int {
-	if lhs.I != nil {
-		if rhs.I != nil {
-			// Both integers.
-			if *lhs.I < *rhs.I {
-				return 1
-			} else if *lhs.I > *rhs.I {
-				return -1
-			} else {
-				return 0
-			}
-		} else if rhs.S != nil {
-			// int vs string
-			return 1
+	// Add configuration-specific variables.
+	allConfigs, err := processedIsolate.getAllConfigs(out.ConfigVariables)
+	if err != nil {
+		return nil, err
+	}
+	configVariablesIndex := makeConfigVariableIndex(out.ConfigVariables)
+	for _, cond := range processedIsolate.conditions {
+		newConfigs := newConfigs(nil, out.ConfigVariables)
+		configs := cond.matchConfigs(configVariablesIndex, allConfigs)
+		for _, config := range configs {
+			newConfigs.setConfig(configName(config), newConfigSettings(cond.variables, isolateDir))
+		}
+		if out, err = out.union(newConfigs); err != nil {
+			return nil, err
+		}
+	}
+	// If the .isolate contains command, ignore any command in child .isolate.
+	rootHasCommand := false
+	for _, pair := range out.byConfig {
+		if len(pair.value.Command) > 0 {
+			rootHasCommand = true
+			break
+		}
+	}
+	// Load the includes. Process them in reverse so the last one take precedence.
+	for i := len(processedIsolate.includes) - 1; i >= 0; i-- {
+		if included, err := loadIncludedIsolate(isolateDir, processedIsolate.includes[i]); err != nil {
+			return nil, err
 		} else {
-			// int vs Unbound.
-			return -1
-		}
-	} else if lhs.S != nil {
-		if rhs.S != nil {
-			// Both strings.
-			if *lhs.S < *rhs.S {
-				return 1
-			} else if *lhs.S > *rhs.S {
-				return -1
-			} else {
-				return 0
-			}
-		} else {
-			// string vs (int | unbound)
-			return -1
-		}
-	} else if rhs.isBound() {
-		// unbound vs (int|string)
-		return 1
-	} else {
-		// unbound vs unbound
-		return 0
-	}
-}
-
-func (v variableValue) isBound() bool {
-	return v.S != nil || v.I != nil
-}
-
-// For indexing by variableValue in a map.
-type variableValueKey string
-
-func (v variableValue) key() variableValueKey {
-	if v.S != nil {
-		return variableValueKey("~" + *v.S)
-	}
-	if v.I != nil {
-		return variableValueKey(string(*v.I))
-	}
-	return variableValueKey("")
-}
-
-type variablesAndValues map[string]map[variableValueKey]variableValue
-
-// getSortedValues returns sorted values of given variable and whether it exists.
-func (v variablesAndValues) getSortedValues(varName string) ([]variableValue, bool) {
-	valueSet, ok := v[varName]
-	if !ok {
-		return nil, false
-	}
-	keys := make([]string, 0, len(valueSet))
-	for key := range valueSet {
-		keys = append(keys, string(key))
-	}
-	sort.Strings(keys)
-	values := make([]variableValue, len(valueSet))
-	for i, key := range keys {
-		values[i] = valueSet[variableValueKey(key)]
-	}
-	return values, true
-}
-
-func (v variablesAndValues) cartesianProductOfValues(orderedKeys []string) ([][]variableValue, error) {
-	if len(orderedKeys) == 0 {
-		return [][]variableValue{}, nil
-	}
-	// Prepare ordered by orderedKeys list of variableValue
-	allValues := make([][]variableValue, 0, len(orderedKeys))
-	for _, key := range orderedKeys {
-		valuesSet := v[key]
-		values := make([]variableValue, 0, len(valuesSet))
-		for _, value := range valuesSet {
-			values = append(values, value)
-		}
-		allValues = append(allValues, values)
-	}
-	// Precompute length of output for alloc and for assertion at the end.
-	length := 1
-	for _, values := range allValues {
-		length *= len(values)
-	}
-	if length <= 0 {
-		return nil, errors.New("some variable had empty valuesSet?")
-	}
-	out := make([][]variableValue, 0, length)
-	// indices[i] points to index in allValues[i]; stop once indices[-1] == len(allValues[-1]).
-	indices := make([]int, len(orderedKeys))
-	for {
-		next := make([]variableValue, len(orderedKeys))
-		for i, values := range allValues {
-			if indices[i] == len(values) {
-				if i+1 == len(orderedKeys) {
-					if length != len(out) {
-						return nil, errors.New("internal error")
-					}
-					return out, nil
+			if rootHasCommand {
+				// Strip any command in the imported isolate. It is because the chosen
+				// command is not related to the one in the top-most .isolate, since the
+				// configuration is flattened.
+				for _, pair := range included.byConfig {
+					pair.value.Command = []string{}
 				}
-				indices[i] = 0
-				indices[i+1]++
 			}
-			next[i] = values[indices[i]]
-		}
-		out = append(out, next)
-		indices[0]++
-	}
-	return nil, errors.New("unreachable code")
-}
-
-func matchConfigs(condition string, configVariables []string, allConfigs [][]variableValue) ([][]variableValue, error) {
-	// TODO(tandrii): get rid of Python here...
-	// While the looping can be done in Go, it'd require multiple calls to Python,
-	// which isn't better for performance. Ideally, we could parse ast in Python once,
-	// and evaluate the AST in Go later with each set of variable values.
-
-	// This code is copy-paste from Python isolate. The Go->Python->Go is done through json,
-	// through stdio|stdout pipes.
-	pythonCode := `
-import json, sys, itertools
-def match_configs(expr, config_variables, all_configs):
-	combinations = []
-	for bound_variables in itertools.product((True, False), repeat=len(config_variables)):
-		# Add the combination of variables bound.
-		combinations.append(
-			(
-				[c for c, b in zip(config_variables, bound_variables) if b],
-				set(
-					tuple(v if b else None for v, b in zip(line, bound_variables))
-					for line in all_configs)
-			))
-	out = []
-	for variables, configs in combinations:
-		# Strip variables and see if expr can still be evaluated.
-		for values in configs:
-			globs = {'__builtins__': None}
-			globs.update(zip(variables, (v for v in values if v is not None)))
-			try:
-				assertion = eval(expr, globs, {})
-			except NameError:
-				continue
-			if not isinstance(assertion, bool):
-				raise IsolateError('Invalid condition')
-			if assertion:
-				out.append(values)
-	return out
-input = json.loads(sys.stdin.read())
-all_configs = [[v['I'] if 'I' in v else v['S'] for v in conf] for conf in input['a']]
-out = match_configs(input['cond'], input['conf'], all_configs)
-print json.dumps([[{'I': v} if isinstance(v, int) else {'S': v} for v in vs] for vs in out])
-`
-	f, err := ioutil.TempFile("", "isolate")
-	if err != nil {
-		return nil, err
-	}
-	_, err = io.WriteString(f, pythonCode)
-	if err != nil {
-		return nil, err
-	}
-	f.Close()
-	defer func() {
-		_ = os.Remove(f.Name())
-	}()
-	m := map[string]interface{}{}
-	m["cond"] = condition
-	m["conf"] = configVariables
-	m["a"] = allConfigs
-	jsonDataIn, err := json.Marshal(m)
-	if err != nil {
-		return nil, err
-	}
-	jsonDataOut, err := common.RunPython(jsonDataIn, f.Name())
-	if err != nil {
-		return nil, err
-	}
-	var out [][]variableValue
-	err = json.Unmarshal(jsonDataOut, &out)
-	return out, err
-}
-
-type parsedIsolate struct {
-	Includes   []string
-	Conditions []condition
-	Variables  *variables
-}
-
-func (p *parsedIsolate) verify() (variablesAndValues, error) {
-	varsAndValues := variablesAndValues{}
-	for _, cond := range p.Conditions {
-		if err := cond.verify(varsAndValues); err != nil {
-			return varsAndValues, err
+			if out, err = out.union(included); err != nil {
+				return nil, err
+			}
 		}
 	}
-	if p.Variables != nil {
-		return varsAndValues, p.Variables.verify()
-	}
-	return varsAndValues, nil
+	return out, nil
 }
 
-// condition represents conditional part of an isolate file.
-type condition struct {
-	Condition string
-	Variables variables
-	// Helper to store variable names in Condition strings, set by verify method.
-	variableNames *[]string
-}
-
-// MarshalJSON implements json.Marshaler interface.
-func (p *condition) MarshalJSON() ([]byte, error) {
-	d := [2]json.RawMessage{}
-	var err error
-	if d[0], err = json.Marshal(&p.Condition); err != nil {
-		return nil, err
-	}
-	m := map[string]variables{"variables": p.Variables}
-	if d[1], err = json.Marshal(&m); err != nil {
-		return nil, err
-	}
-	return json.Marshal(&d)
-}
-
-// UnmarshalJSON implements json.Unmarshaler interface.
-func (p *condition) UnmarshalJSON(data []byte) error {
-	var d []json.RawMessage
-	if err := json.Unmarshal(data, &d); err != nil {
-		return err
-	}
-	if len(d) != 2 {
-		return errors.New("condition must be a list with two items.")
-	}
-	if err := json.Unmarshal(d[0], &p.Condition); err != nil {
-		return err
-	}
-	m := map[string]variables{}
-	if err := json.Unmarshal(d[1], &m); err != nil {
-		return err
-	}
-	var ok bool
-	if p.Variables, ok = m["variables"]; !ok {
-		return errors.New("variables item is required in condition.")
-	}
-	return nil
-}
-
-// verify ensures Condition is in correct format.
-// Updates argument variablesAndValues and also local variableNames.
-func (p *condition) verify(varsAndValues variablesAndValues) error {
-	// TODO: can we get rid of Python here?
-	// This code is copy-paste from Python isolate. It expects condition expression on stdin verbatim,
-	// and sends result as json on stdout. Note, that format of variables_and_values is modified to be
-	// easily unmarshalled by encoding/json package into variableValue struct.
-	pythonCode := `
-import json, sys, ast
-def verify_ast(expr, variables_and_values):
-	"""Verifies that |expr| is of the form
-	expr ::= expr ( "or" | "and" ) expr
-		| identifier "==" ( string | int )
-	Also collects the variable identifiers and string/int values in the dict
-	|variables_and_values|, in the form {'var': set([val1, val2, ...]), ...}.
-	"""
-	assert isinstance(expr, (ast.BoolOp, ast.Compare))
-	if isinstance(expr, ast.BoolOp):
-		assert isinstance(expr.op, (ast.And, ast.Or))
-		for subexpr in expr.values:
-			verify_ast(subexpr, variables_and_values)
-	else:
-		assert isinstance(expr.left.ctx, ast.Load)
-		assert len(expr.ops) == 1
-		assert isinstance(expr.ops[0], ast.Eq)
-		var_values = variables_and_values.setdefault(expr.left.id, [])
-		rhs = expr.comparators[0]
-		assert isinstance(rhs, (ast.Str, ast.Num))
-		if isinstance(rhs, ast.Num):
-			assert int(rhs.n) == rhs.n, "only ints are allowed, but %r given" % rhs.n
-			val = {'I': int(rhs.n)}  # Has to be int(), otherwise Go will fail to read it.
-		else:
-			val = {'S': rhs.s}
-		var_values.append(val)
-
-test_ast = compile(sys.stdin.read(), '<condition>', 'eval', ast.PyCF_ONLY_AST)
-variables_and_values = {}
-verify_ast(test_ast.body, variables_and_values)
-print json.dumps(variables_and_values)
-`
-	f, err := ioutil.TempFile("", "isolate")
-	_, _ = io.WriteString(f, pythonCode)
-	f.Close()
-	defer func() {
-		_ = os.Remove(f.Name())
-	}()
-	jsonData, err := common.RunPython([]byte(p.Condition), f.Name())
+// LoadIsolateForConfig loads the .isolate file and returns
+// the information unprocessed but filtered for the specific OS.
+//
+// Returns:
+//   command, dependencies, readOnly flag, relDir, error.
+//
+// relDir and dependencies are fixed to use os.PathSeparator.
+func LoadIsolateForConfig(isolateDir string, content []byte, configVariables common.KeyValVars) (
+	[]string, []string, ReadOnlyValue, string, error) {
+	// Load the .isolate file, process its conditions, retrieve the command and dependencies.
+	isolate, err := LoadIsolateAsConfig(isolateDir, content, nil)
 	if err != nil {
-		return fmt.Errorf("failed to verify Condition string %s: %s", p.Condition, err)
+		return nil, nil, NotSet, "", err
 	}
-	tmpVarsAndValues := map[string][]variableValue{}
-	if err = json.Unmarshal(jsonData, &tmpVarsAndValues); err != nil {
-		return err
-	}
-	p.variableNames = new([]string)
-	for varName, tmpValueList := range tmpVarsAndValues {
-		if len(tmpValueList) == 0 {
-			return fmt.Errorf("var %s has empty valueSet", varName)
-		}
-		*p.variableNames = append(*p.variableNames, varName)
-		valueSet := varsAndValues[varName]
-		if valueSet == nil {
-			valueSet = map[variableValueKey]variableValue{}
-			varsAndValues[varName] = valueSet
-		}
-		for _, value := range tmpValueList {
-			valueSet[value.key()] = value
-		}
-	}
-	if err = p.Variables.verify(); err != nil {
-		return err
-	}
-	return nil
-}
-
-// variables represents variable as part of condition or top level in an isolate file.
-type variables struct {
-	Command []string `json:"command"`
-	Files   []string `json:"files"`
-	// ReadOnly has 1 as default, according to specs.
-	// Just as Python-isolate also uses None as default, this code uses nil.
-	ReadOnly *int `json:"read_only"`
-}
-
-func (p *variables) isEmpty() bool {
-	return len(p.Command) == 0 && len(p.Files) == 0 && p.ReadOnly == nil
-}
-
-func (p *variables) verify() error {
-	if p.ReadOnly == nil || (0 <= *p.ReadOnly && *p.ReadOnly <= 2) {
-		return nil
-	}
-	return errors.New("read_only must be 0, 1, 2, or undefined.")
-}
-
-func parseIsolate(content []byte) (*parsedIsolate, error) {
-	// Isolate file is a Python expression, which is easiest to interprete with cPython itself.
-	// Go and Python both have excellent json support, so use this for Python->Go communication.
-	// The isolate file contents is passed to Python's stdin, the resulting json is dumped into stdout.
-	// In case of exceptions during interpretation or json serialization,
-	// Python exists with non-0 return code, obtained here as err.
-	pythonCode := `
-import json, sys
-globs = {'__builtins__': None}
-locs = {}
-try:
-	value = eval(sys.stdin.read(), globs, locs)
-except TypeError as e:
-	e.args = list(e.args) + [content]
-	raise
-assert locs == {}, locs
-assert globs == {'__builtins__': None}, globs
-print json.dumps(value)
-`
-	f, err := ioutil.TempFile("", "isolate")
-	_, _ = io.WriteString(f, pythonCode)
-	f.Close()
-	defer func() {
-		_ = os.Remove(f.Name())
-	}()
-	jsonData, err := common.RunPython(content, f.Name())
-	if err != nil {
-		return nil, fmt.Errorf("failed to evaluate isolate: %s", err)
-	}
-	parsed := &parsedIsolate{}
-	if err := json.Unmarshal(jsonData, parsed); err != nil {
-		return nil, fmt.Errorf("failed to parse isolate: %s; %s", err, jsonData)
-	}
-	return parsed, nil
-}
-
-// configName defines a config as an ordered set of bound and unbound variable values.
-type configName []variableValue
-
-func (lhs configName) compare(rhs configName) int {
-	// Bound value is less than unbound one.
-	assert(len(lhs) == len(rhs))
-	for i, l := range lhs {
-		if r := l.compare(rhs[i]); r != 0 {
-			return r
-		}
-	}
-	return 0
-}
-
-func (c configName) Equals(o configName) bool {
-	if len(c) != len(o) {
-		return false
-	}
-	return c.compare(o) == 0
-}
-
-func (c configName) key() string {
-	parts := make([]string, 0, len(c))
-	for _, v := range c {
-		if !v.isBound() {
-			parts = append(parts, "∀")
+	configName := configName{}
+	missingVars := []string{}
+	for _, variable := range isolate.ConfigVariables {
+		if value, ok := configVariables[variable]; ok {
+			configName = append(configName, makeVariableValue(value))
 		} else {
-			parts = append(parts, "∃", v.String())
+			missingVars = append(missingVars, variable)
 		}
 	}
-	return strings.Join(parts, "\x00")
+	if len(missingVars) > 0 {
+		sort.Strings(missingVars)
+		err = fmt.Errorf("these configuration variables were missing from the command line: %v", missingVars)
+		return nil, nil, NotSet, "", err
+	}
+	// A configuration is to be created with all the combinations of free variables.
+	config, err := isolate.GetConfig(configName)
+	if err != nil {
+		return nil, nil, NotSet, "", err
+	}
+	dependencies := config.Files
+	relDir := config.IsolateDir
+	if os.PathSeparator != '/' {
+		dependencies = make([]string, len(config.Files))
+		for i, f := range config.Files {
+			dependencies[i] = strings.Replace(f, "/", osPathSeparator, -1)
+		}
+		relDir = strings.Replace(relDir, "/", osPathSeparator, -1)
+	}
+	return config.Command, dependencies, config.ReadOnly, relDir, nil
 }
 
-type configPair struct {
-	key   configName
-	value *ConfigSettings
-}
-
-// configPairs implements interface for sort package sorting.
-type configPairs []configPair
-
-func (c configPairs) Len() int {
-	return len(c)
-}
-
-func (c configPairs) Less(i, j int) bool {
-	return c[i].key.compare(c[j].key) > 0
-}
-
-func (c configPairs) Swap(i, j int) {
-	c[i], c[j] = c[j], c[i]
+func loadIncludedIsolate(isolateDir, include string) (*Configs, error) {
+	if filepath.IsAbs(include) {
+		return nil, fmt.Errorf("failed to load configuration; absolute include path %s", include)
+	}
+	includedIsolate := filepath.Clean(filepath.Join(isolateDir, include))
+	if common.IsWindows() && (strings.ToLower(includedIsolate)[0] != strings.ToLower(isolateDir)[0]) {
+		return nil, errors.New("can't reference a .isolate file from another drive")
+	}
+	content, err := ioutil.ReadFile(includedIsolate)
+	if err != nil {
+		return nil, err
+	}
+	return LoadIsolateAsConfig(filepath.Dir(includedIsolate), content, nil)
 }
 
 // Configs represents a processed .isolate file.
@@ -538,17 +226,7 @@ type Configs struct {
 	byConfig map[string]configPair
 }
 
-// makeConfigsV deduces ConfigVariables from information collected during verification of isolate.
-func makeConfigsV(fileComment []byte, varsAndValues variablesAndValues) *Configs {
-	configVariables := make([]string, 0, len(varsAndValues))
-	for varName := range varsAndValues {
-		configVariables = append(configVariables, varName)
-	}
-	sort.Strings(configVariables)
-	return makeConfigs(fileComment, configVariables)
-}
-
-func makeConfigs(fileComment []byte, configVariables []string) *Configs {
+func newConfigs(fileComment []byte, configVariables []string) *Configs {
 	c := &Configs{fileComment, configVariables, map[string]configPair{}}
 	assert(sort.IsSorted(sort.StringSlice(c.ConfigVariables)))
 	return c
@@ -610,7 +288,7 @@ func (lhs *Configs) union(rhs *Configs) (*Configs, error) {
 	// variables will become unbounded. This requires realigning the keys.
 	configVariables := uniqueMergeSortedStrings(
 		lhs.ConfigVariables, rhs.ConfigVariables)
-	out := makeConfigs(lhs.FileComment, configVariables)
+	out := newConfigs(lhs.FileComment, configVariables)
 	if len(lhs.FileComment) == 0 {
 		out.FileComment = rhs.FileComment
 	}
@@ -699,20 +377,20 @@ type ConfigSettings struct {
 	IsolateDir string
 }
 
-func createConfigSettings(values variables, isolateDir string) *ConfigSettings {
+func newConfigSettings(variables Variables, isolateDir string) *ConfigSettings {
 	if isolateDir == "" {
 		// It must be an empty object if isolateDir is not set.
-		assert(values.isEmpty(), values)
+		assert(variables.isEmpty(), variables)
 	} else {
 		assert(filepath.IsAbs(isolateDir))
 	}
 	c := &ConfigSettings{
-		make([]string, len(values.Files)),
-		values.Command,
-		createReadOnlyValue(values.ReadOnly),
+		make([]string, len(variables.Files)),
+		variables.Command,
+		createReadOnlyValue(variables.ReadOnly),
 		isolateDir,
 	}
-	copy(c.Files, values.Files)
+	copy(c.Files, variables.Files)
 	sort.Strings(c.Files)
 	return c
 }
@@ -795,161 +473,630 @@ func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
 	return &ConfigSettings{files, command, readOnly, lRelCwd}, nil
 }
 
-// LoadIsolateAsConfig parses one .isolate file and returns a Configs instance.
-//
-//  Arguments:
-//    isolateDir: only used to load relative includes so it doesn't depend on
-//                 cwd.
-//    value: is the loaded dictionary that was defined in the gyp file.
-//    fileComment: comments found at the top of the file so it can be preserved.
-//
-//  The expected format is strict, anything diverting from the format below will result in error:
-//  {
-//    'includes': [
-//      'foo.isolate',
-//    ],
-//    'conditions': [
-//      ['OS=="vms" and foo=42', {
-//        'variables': {
-//          'command': [
-//            ...
-//          ],
-//          'files': [
-//            ...
-//          ],
-//          'read_only': 0,
-//        },
-//      }],
-//      ...
-//    ],
-//    'variables': {
-//      ...
-//    },
-//  }
-func LoadIsolateAsConfig(isolateDir string, content []byte, fileComment []byte) (*Configs, error) {
-	// isolateDir must be in native style.
-	if !filepath.IsAbs(isolateDir) {
-		return nil, fmt.Errorf("%s is not an absolute path", isolateDir)
-	}
-	parsed, err := parseIsolate(content)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse isolate (isolateDir: %s): %s", isolateDir, err)
-	}
-	varsAndValues, err := parsed.verify()
-	if err != nil {
-		return nil, fmt.Errorf("failed to verify isolate (isolateDir: %s): %s", isolateDir, err)
-	}
-	isolate := makeConfigsV(fileComment, varsAndValues)
-	// Add global variables. The global variables are on the empty tuple key.
-	globalconfigName := make([]variableValue, len(isolate.ConfigVariables))
-	if parsed.Variables != nil {
-		isolate.setConfig(globalconfigName, createConfigSettings(*parsed.Variables, isolateDir))
-	} else {
-		isolate.setConfig(globalconfigName, createConfigSettings(variables{}, isolateDir))
-	}
-	// Add configuration-specific variables.
-	allConfigs, err := varsAndValues.cartesianProductOfValues(isolate.ConfigVariables)
-	if err != nil {
+// Isolate represents contents of the isolate file.
+// The main purpose is (de)serialization.
+type Isolate struct {
+	Includes   []string    `json:"includes,omitempty"`
+	Conditions []Condition `json:"conditions"`
+	Variables  Variables   `json:"variables,omitempty"`
+}
+
+// Condition represents conditional part of an isolate file.
+type Condition struct {
+	Condition string
+	Variables Variables
+}
+
+// MarshalJSON implements json.Marshaler interface.
+func (p *Condition) MarshalJSON() ([]byte, error) {
+	d := [2]json.RawMessage{}
+	var err error
+	if d[0], err = json.Marshal(&p.Condition); err != nil {
 		return nil, err
 	}
-	for _, cond := range parsed.Conditions {
-		configs, err := matchConfigs(cond.Condition, isolate.ConfigVariables, allConfigs)
+	m := map[string]Variables{"variables": p.Variables}
+	if d[1], err = json.Marshal(&m); err != nil {
+		return nil, err
+	}
+	return json.Marshal(&d)
+}
+
+// UnmarshalJSON implements json.Unmarshaler interface.
+func (p *Condition) UnmarshalJSON(data []byte) error {
+	var d []json.RawMessage
+	if err := json.Unmarshal(data, &d); err != nil {
+		return err
+	}
+	if len(d) != 2 {
+		return errors.New("condition must be a list with two items.")
+	}
+	if err := json.Unmarshal(d[0], &p.Condition); err != nil {
+		return err
+	}
+	m := map[string]Variables{}
+	if err := json.Unmarshal(d[1], &m); err != nil {
+		return err
+	}
+	var ok bool
+	if p.Variables, ok = m["variables"]; !ok {
+		return errors.New("variables item is required in condition.")
+	}
+	return nil
+}
+
+// Variables represents variable as part of condition or top level in an isolate file.
+type Variables struct {
+	Command []string `json:"command"`
+	Files   []string `json:"files"`
+	// ReadOnly has 1 as default, according to specs.
+	// Just as Python-isolate also uses None as default, this code uses nil.
+	ReadOnly *int `json:"read_only"`
+}
+
+// Private details.
+
+// variableValue holds a single value of a string or an int,
+// otherwise it is unbound.
+type variableValue struct {
+	S *string
+	I *int
+}
+
+func makeVariableValue(s string) variableValue {
+	v := variableValue{}
+	if i, err := strconv.Atoi(s); err == nil {
+		v.I = &i
+	} else {
+		v.S = &s
+	}
+	return v
+}
+
+func (v variableValue) String() string {
+	if v.S != nil {
+		return *v.S
+	} else if v.I != nil {
+		return fmt.Sprintf("%d", *v.I)
+	}
+	return ""
+}
+
+// compare returns 0 if equal, 1 if lhs < right, else -1.
+// Order: unbound < 1 < 2 < "abc" < "cde" .
+func (lhs variableValue) compare(rhs variableValue) int {
+	if lhs.I != nil {
+		if rhs.I != nil {
+			// Both integers.
+			if *lhs.I < *rhs.I {
+				return 1
+			} else if *lhs.I > *rhs.I {
+				return -1
+			} else {
+				return 0
+			}
+		} else if rhs.S != nil {
+			// int vs string
+			return 1
+		} else {
+			// int vs Unbound.
+			return -1
+		}
+	} else if lhs.S != nil {
+		if rhs.S != nil {
+			// Both strings.
+			if *lhs.S < *rhs.S {
+				return 1
+			} else if *lhs.S > *rhs.S {
+				return -1
+			} else {
+				return 0
+			}
+		} else {
+			// string vs (int | unbound)
+			return -1
+		}
+	} else if rhs.isBound() {
+		// unbound vs (int|string)
+		return 1
+	} else {
+		// unbound vs unbound
+		return 0
+	}
+}
+
+func (v variableValue) isBound() bool {
+	return v.S != nil || v.I != nil
+}
+
+// variableValueKey is for indexing by variableValue in a map.
+type variableValueKey string
+
+func (v variableValue) key() variableValueKey {
+	if v.S != nil {
+		return variableValueKey("~" + *v.S)
+	}
+	if v.I != nil {
+		return variableValueKey(string(*v.I))
+	}
+	return variableValueKey("")
+}
+
+// variablesValueSet maps variable name to set of possible values
+// found in condition strings.
+type variablesValuesSet map[string]map[variableValueKey]variableValue
+
+func (v variablesValuesSet) cartesianProductOfValues(orderedKeys []string) ([][]variableValue, error) {
+	if len(orderedKeys) == 0 {
+		return [][]variableValue{}, nil
+	}
+	// Prepare ordered by orderedKeys list of variableValue
+	allValues := make([][]variableValue, 0, len(orderedKeys))
+	for _, key := range orderedKeys {
+		valuesSet := v[key]
+		values := make([]variableValue, 0, len(valuesSet))
+		for _, value := range valuesSet {
+			values = append(values, value)
+		}
+		allValues = append(allValues, values)
+	}
+	// Precompute length of output for alloc and for assertion at the end.
+	length := 1
+	for _, values := range allValues {
+		length *= len(values)
+	}
+	if length <= 0 {
+		return nil, errors.New("some variable had empty valuesSet?")
+	}
+	out := make([][]variableValue, 0, length)
+	// indices[i] points to index in allValues[i]; stop once indices[-1] == len(allValues[-1]).
+	indices := make([]int, len(orderedKeys))
+	for {
+		next := make([]variableValue, len(orderedKeys))
+		for i, values := range allValues {
+			if indices[i] == len(values) {
+				if i+1 == len(orderedKeys) {
+					if length != len(out) {
+						return nil, errors.New("internal error")
+					}
+					return out, nil
+				}
+				indices[i] = 0
+				indices[i+1]++
+			}
+			next[i] = values[indices[i]]
+		}
+		out = append(out, next)
+		indices[0]++
+	}
+	return nil, errors.New("unreachable code")
+}
+
+// processedIsolate is verified Isolate ready for further processing.
+// Immutable once created.
+type processedIsolate struct {
+	includes    []string
+	conditions  []*processedCondition
+	variables   Variables
+	varsValsSet variablesValuesSet
+}
+
+// evaluateIsolateAsPython evaluates content as Python code and returns it
+// as json string.
+func evaluateIsolateAsPython(content []byte) ([]byte, error) {
+	// Isolate file is a Python expression, which is easiest to interprete with cPython itself.
+	// Go and Python both have excellent json support, so use this for Python->Go communication.
+	// The isolate file contents is passed to Python's stdin, the resulting json is dumped into stdout.
+	// In case of exceptions during interpretation or json serialization,
+	// Python exists with non-0 return code, obtained here as err.
+	pythonCode := `
+import json, sys
+globs = {'__builtins__': None}
+locs = {}
+try:
+	value = eval(sys.stdin.read(), globs, locs)
+except TypeError as e:
+	e.args = list(e.args) + [content]
+	raise
+assert locs == {}, locs
+assert globs == {'__builtins__': None}, globs
+print json.dumps(value)
+`
+	f, err := ioutil.TempFile("", "isolate")
+	_, _ = io.WriteString(f, pythonCode)
+	f.Close()
+	defer func() {
+		_ = os.Remove(f.Name())
+	}()
+	jsonData, err := common.RunPython(content, f.Name())
+	if err != nil {
+		return nil, fmt.Errorf("failed to evaluate isolate as Python: %s", err)
+	}
+	return jsonData, nil
+}
+
+// processIsolate loads isolate, then verifies and returns it as
+// a processedIsolate for faster further processing.
+func processIsolate(content []byte) (*processedIsolate, error) {
+	var isolate Isolate
+	// Try to load as json (fast path).
+	err := json.Unmarshal(content, &isolate)
+	if err != nil {
+		// Fall back to Python otherwise (slow).
+		content, err = evaluateIsolateAsPython(content)
 		if err != nil {
 			return nil, err
 		}
-		newConfigs := makeConfigs(nil, isolate.ConfigVariables)
-		for _, config := range configs {
-			newConfigs.setConfig(configName(config), createConfigSettings(cond.Variables, isolateDir))
+		if err = json.Unmarshal(content, &isolate); err != nil {
+			return nil, fmt.Errorf("failed to parse isolate: %s", err)
 		}
-		if isolate, err = isolate.union(newConfigs); err != nil {
+	}
+	if err := isolate.Variables.verify(); err != nil {
+		return nil, err
+	}
+	out := &processedIsolate{
+		isolate.Includes,
+		make([]*processedCondition, len(isolate.Conditions)),
+		isolate.Variables,
+		variablesValuesSet{},
+	}
+	for i, cond := range isolate.Conditions {
+		out.conditions[i], err = processCondition(cond, out.varsValsSet)
+		if err != nil {
 			return nil, err
 		}
 	}
-	// If the .isolate contains command, ignore any command in child .isolate.
-	rootHasCommand := false
-	for _, pair := range isolate.byConfig {
-		if len(pair.value.Command) > 0 {
-			rootHasCommand = true
-			break
-		}
-	}
-	// Load the includes. Process them in reverse so the last one take precedence.
-	for i := len(parsed.Includes) - 1; i >= 0; i-- {
-		if included, err := loadIncludedIsolate(isolateDir, parsed.Includes[i]); err != nil {
-			return nil, err
-		} else {
-			if rootHasCommand {
-				// Strip any command in the imported isolate. It is because the chosen
-				// command is not related to the one in the top-most .isolate, since the
-				// configuration is flattened.
-				for _, pair := range included.byConfig {
-					pair.value.Command = []string{}
-				}
-			}
-			if isolate, err = isolate.union(included); err != nil {
-				return nil, err
-			}
-		}
-	}
-	return isolate, nil
+	return out, nil
 }
 
-func loadIncludedIsolate(isolateDir, include string) (*Configs, error) {
-	if filepath.IsAbs(include) {
-		return nil, fmt.Errorf("failed to load configuration; absolute include path %s", include)
+func (p *processedIsolate) toConfigs(fileComment []byte) *Configs {
+	configVariables := make([]string, 0, len(p.varsValsSet))
+	for varName := range p.varsValsSet {
+		configVariables = append(configVariables, varName)
 	}
-	includedIsolate := filepath.Clean(filepath.Join(isolateDir, include))
-	if common.IsWindows() && (strings.ToLower(includedIsolate)[0] != strings.ToLower(isolateDir)[0]) {
-		return nil, errors.New("can't reference a .isolate file from another drive")
-	}
-	content, err := ioutil.ReadFile(includedIsolate)
+	sort.Strings(configVariables)
+	return newConfigs(fileComment, configVariables)
+}
+
+func (p *processedIsolate) getAllConfigs(configVariables []string) ([][]variableValue, error) {
+	return p.varsValsSet.cartesianProductOfValues(configVariables)
+}
+
+// processedCondition is a verified Condition ready for evaluation.
+type processedCondition struct {
+	condition string
+	variables Variables
+	expr      ast.Expr
+	// equalityValues are cached values of literals in "id==val" parts of
+	// Condition, uniquely indexed by their position.
+	equalityValues map[token.Pos]variableValue
+}
+
+// processCondition ensures condition is in correct format, and converts it
+// to processedCondition for futher evaluation.
+func processCondition(c Condition, varsAndValues variablesValuesSet) (*processedCondition, error) {
+	goCond, err := pythonToGoCondition(c.Condition)
 	if err != nil {
 		return nil, err
 	}
-	return LoadIsolateAsConfig(filepath.Dir(includedIsolate), content, nil)
+	out := &processedCondition{condition: c.Condition, variables: c.Variables}
+	if out.expr, err = parser.ParseExpr(goCond); err != nil {
+		return nil, err
+	}
+	if out.equalityValues, err = processConditionAst(out.expr, varsAndValues); err != nil {
+		return nil, err
+	}
+	return out, out.variables.verify()
 }
 
-// LoadIsolateForConfig loads the .isolate file and returns
-// the information unprocessed but filtered for the specific OS.
-//
-// Returns:
-//   command, dependencies, readOnly flag, relDir, error.
-//
-// relDir and dependencies are fixed to use os.PathSeparator.
-func LoadIsolateForConfig(isolateDir string, content []byte, configVariables common.KeyValVars) (
-	[]string, []string, ReadOnlyValue, string, error) {
-	// Load the .isolate file, process its conditions, retrieve the command and dependencies.
-	isolate, err := LoadIsolateAsConfig(isolateDir, content, nil)
+func processConditionAst(expr ast.Expr, varsAndValues variablesValuesSet) (map[token.Pos]variableValue, error) {
+	err := error(nil)
+	equalityValues := map[token.Pos]variableValue{}
+	ast.Inspect(expr, func(n ast.Node) bool {
+		if n == nil {
+			return true
+		}
+		if err != nil {
+			return false
+		}
+		switch n := n.(type) {
+		case *ast.BinaryExpr:
+			if n.Op == token.LAND || n.Op == token.LOR {
+				return true
+			}
+			if n.Op != token.EQL {
+				err = fmt.Errorf("unknown binary operator %s\n", n.Op)
+				return false
+			}
+			id, value, tmpErr := verifyIdEqlValue(n)
+			if tmpErr != nil {
+				err = tmpErr
+				return false
+			}
+			equalityValues[n.Pos()] = value
+			if _, exists := varsAndValues[id]; !exists {
+				varsAndValues[id] = map[variableValueKey]variableValue{}
+			}
+			varsAndValues[id][value.key()] = value
+			return false
+		case *ast.ParenExpr:
+			return true
+		default:
+			err = fmt.Errorf("unknown expression type %T\n", n)
+			return false
+		}
+		return false
+	})
 	if err != nil {
-		return nil, nil, NotSet, "", err
+		return nil, fmt.Errorf("invalid Condition: %s", err)
 	}
-	configName := configName{}
-	missingVars := []string{}
-	for _, variable := range isolate.ConfigVariables {
-		if value, ok := configVariables[variable]; ok {
-			configName = append(configName, createVariableValueTryInt(value))
+	return equalityValues, nil
+}
+
+func (c *processedCondition) matchConfigs(configVariablesIndex map[string]int, allConfigs [][]variableValue) [][]variableValue {
+	// Brute force: try all possible subsets of boundVariables and their values
+	// (config) from allConfigs for which condition is True.
+	// Runs in O(2^len(configVariables) * len(allConfigs)), but in practice it
+	// is fast enough.
+
+	// bound is binary counter from [false, false, ...] to [true, true, ...]
+	// representing bound variables subset.
+	bound := make([]bool, len(configVariablesIndex))
+	okConfigs := map[string][]variableValue{}
+	for {
+		for _, config := range allConfigs {
+			isTrue, err := c.evaluate(func(varName string) variableValue {
+				i := configVariablesIndex[varName]
+				if bound[i] {
+					return config[i]
+				}
+				return variableValue{}
+			})
+			if err == nil && isTrue {
+				okConfig := make([]variableValue, len(config))
+				for i, b := range bound {
+					if b {
+						okConfig[i] = config[i]
+					}
+				}
+				okConfigs[configName(okConfig).key()] = okConfig
+			}
+		}
+		// Compute next bound vars subset.
+		nextBoundExists := false
+		for i, b := range bound {
+			if !b {
+				bound[i] = true
+				nextBoundExists = true
+				break
+			}
+			bound[i] = false
+		}
+		if !nextBoundExists {
+			break
+		}
+	}
+	out := make([][]variableValue, 0, len(okConfigs))
+	for _, okConfig := range okConfigs {
+		out = append(out, okConfig)
+	}
+	return out
+}
+
+type funcGetVariableValue func(varName string) variableValue
+
+func (c *processedCondition) evaluate(getValue funcGetVariableValue) (bool, error) {
+	ce := conditionEvaluator{cond: c, getVarValue: getValue, stop: false}
+	if isTrue := ce.eval(c.expr); ce.stop {
+		return false, errors.New("required variable is unbound")
+	} else {
+		return isTrue, nil
+	}
+}
+
+type conditionEvaluator struct {
+	cond        *processedCondition
+	getVarValue funcGetVariableValue
+	stop        bool
+}
+
+func (c *conditionEvaluator) eval(e ast.Expr) bool {
+	if c.stop {
+		return false
+	}
+	switch e := e.(type) {
+	case *ast.ParenExpr:
+		return c.eval(e.X)
+	case *ast.BinaryExpr:
+		if e.Op == token.LAND {
+			return c.eval(e.X) && c.eval(e.Y)
+		} else if e.Op == token.LOR {
+			return c.eval(e.X) || c.eval(e.Y)
+		}
+		assert(e.Op == token.EQL)
+		value := c.getVarValue(e.X.(*ast.Ident).Name)
+		if !value.isBound() {
+			c.stop = true
+			return false
+		}
+		eqValue := c.cond.equalityValues[e.Pos()]
+		assert(eqValue.isBound())
+		return value.compare(c.cond.equalityValues[e.Pos()]) == 0
+	default:
+		panic(errors.New("processCondition must have ensured condition is evaluatable"))
+	}
+	return false
+}
+
+func makeConfigVariableIndex(configVariables []string) map[string]int {
+	out := map[string]int{}
+	for i, name := range configVariables {
+		out[name] = i
+	}
+	return out
+}
+
+// verifyIdEqlValue processes identifier == (int | string) part of Condition.
+func verifyIdEqlValue(expr *ast.BinaryExpr) (name string, value variableValue, err error) {
+	id, ok := expr.X.(*ast.Ident)
+	if !ok {
+		err = errors.New("left operand of == must be identifier")
+		return
+	}
+	name = id.Name
+
+	val, ok := expr.Y.(*ast.BasicLit)
+	if ok && val.Kind == token.INT {
+		if i, parseErr := strconv.Atoi(val.Value); parseErr != nil {
+			err = errors.New("right operand of == must be int or string value")
 		} else {
-			missingVars = append(missingVars, variable)
+			value.I = &i
+		}
+	} else if ok && val.Kind == token.STRING {
+		// val.Value includes quotation marks, but we need just pure string.
+		s := val.Value[1 : len(val.Value)-1]
+		value.S = &s
+	} else {
+		err = errors.New("right operand of == must be int or string value")
+	}
+	return
+}
+
+// pythonToGoCondition converts Python code into valid Go code.
+func pythonToGoCondition(pyCond string) (string, error) {
+	// Isolate supported grammar is:
+	//	expr ::= expr ( "or" | "and" ) expr
+	//			| identifier "==" ( string | int )
+	// and parentheses.
+	// We convert this to equivalent Go expression by:
+	//	* replacing all 'string' to "string"
+	//  * replacing `and` and `or` to `&&` and `||` operators, respectively.
+	// We work with runes to be safe against unicode.
+	left := stringToRunes(pyCond)
+	var err error
+	goChunk := ""
+	out := []string{}
+	for len(left) > 0 {
+		// Process non-string tokens till next string token.
+		goChunk, left = pythonToGoNonString(left)
+		out = append(out, goChunk)
+		if len(left) != 0 {
+			if goChunk, left, err = pythonToGoString(left); err != nil {
+				return "", err
+			}
+			out = append(out, goChunk)
 		}
 	}
-	if len(missingVars) > 0 {
-		sort.Strings(missingVars)
-		err = fmt.Errorf("these configuration variables were missing from the command line: %v", missingVars)
-		return nil, nil, NotSet, "", err
-	}
-	// A configuration is to be created with all the combinations of free variables.
-	config, err := isolate.GetConfig(configName)
-	if err != nil {
-		return nil, nil, NotSet, "", err
-	}
-	dependencies := config.Files
-	relDir := config.IsolateDir
-	if os.PathSeparator != '/' {
-		dependencies = make([]string, len(config.Files))
-		for i, f := range config.Files {
-			dependencies[i] = strings.Replace(f, "/", osPathSeparator, -1)
+	return strings.Join(out, ""), nil
+}
+
+var rePythonAnd = regexp.MustCompile(`(\band\b)`)
+var rePythonOr = regexp.MustCompile(`(\bor\b)`)
+
+func pythonToGoNonString(left []rune) (string, []rune) {
+	end := len(left)
+	for i, r := range left {
+		if r == '\'' || r == '"' {
+			end = i
+			break
 		}
-		relDir = strings.Replace(relDir, "/", osPathSeparator, -1)
 	}
-	return config.Command, dependencies, config.ReadOnly, relDir, nil
+	out := string(left[:end])
+	out = rePythonAnd.ReplaceAllString(out, "&&")
+	out = rePythonOr.ReplaceAllString(out, "||")
+	return out, left[end:]
+}
+
+func pythonToGoString(left []rune) (string, []rune, error) {
+	quoteRune := left[0]
+	if quoteRune != '"' && quoteRune != '\'' {
+		panic(fmt.Errorf("pythonToGoString must be called with ' or \" as first rune: %s", string(left)))
+	}
+	left = left[1:]
+	escaped := false
+	goRunes := []rune{'"'}
+	for i, c := range left {
+		if c == quoteRune && !escaped {
+			goRunes = append(goRunes, '"')
+			return string(goRunes), left[i+1:], nil
+		}
+		if c == '\'' && escaped {
+			// Python allows "\'a", which is the same as "'a", but Go
+			// doesn't allow this, so remove redundant escape before '.
+			goRunes = goRunes[:len(goRunes)-1]
+		} else if c == '"' && !escaped {
+			// Either " is first char, or " is unescaped inside a string.
+			goRunes = append(goRunes, '\\')
+		}
+		goRunes = append(goRunes, c)
+		if c == '\\' {
+			escaped = !escaped
+		} else {
+			escaped = false
+		}
+	}
+	return string(goRunes), left, errors.New("failed to parse Condition string")
+}
+
+func (v *Variables) isEmpty() bool {
+	return len(v.Command) == 0 && len(v.Files) == 0 && v.ReadOnly == nil
+}
+
+func (v *Variables) verify() error {
+	if v.ReadOnly == nil || (0 <= *v.ReadOnly && *v.ReadOnly <= 2) {
+		return nil
+	}
+	return errors.New("read_only must be 0, 1, 2, or undefined.")
+}
+
+// configName defines a config as an ordered set of bound and unbound variable values.
+type configName []variableValue
+
+func (lhs configName) compare(rhs configName) int {
+	// Bound value is less than unbound one.
+	assert(len(lhs) == len(rhs))
+	for i, l := range lhs {
+		if r := l.compare(rhs[i]); r != 0 {
+			return r
+		}
+	}
+	return 0
+}
+
+func (c configName) Equals(o configName) bool {
+	if len(c) != len(o) {
+		return false
+	}
+	return c.compare(o) == 0
+}
+
+func (c configName) key() string {
+	parts := make([]string, 0, len(c))
+	for _, v := range c {
+		if !v.isBound() {
+			parts = append(parts, "∀")
+		} else {
+			parts = append(parts, "∃", v.String())
+		}
+	}
+	return strings.Join(parts, "\x00")
+}
+
+type configPair struct {
+	key   configName
+	value *ConfigSettings
+}
+
+// configPairs implements interface for sort package sorting.
+type configPairs []configPair
+
+func (c configPairs) Len() int {
+	return len(c)
+}
+
+func (c configPairs) Less(i, j int) bool {
+	return c[i].key.compare(c[j].key) > 0
+}
+
+func (c configPairs) Swap(i, j int) {
+	c[i], c[j] = c[j], c[i]
 }

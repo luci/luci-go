@@ -6,6 +6,7 @@ package isolate
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -32,14 +33,14 @@ func TestReadOnlyValue(t *testing.T) {
 
 func TestConditionJson(t *testing.T) {
 	t.Parallel()
-	c := condition{Condition: "OS == \"Linux\""}
+	c := Condition{Condition: "OS == \"Linux\""}
 	c.Variables.ReadOnly = new(int)
 	c.Variables.Command = []string{"python", "generate", "something"}
 	c.Variables.Files = []string{"generated"}
 	jsonData, err := json.Marshal(&c)
 	ut.AssertEqual(t, nil, err)
 	t.Logf("Generated jsonData: %s", string(jsonData))
-	pc := condition{}
+	pc := Condition{}
 	err = json.Unmarshal(jsonData, &pc)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, c, pc)
@@ -77,6 +78,69 @@ func TestConfigNameComparison(t *testing.T) {
 	ut.AssertEqual(t, 1, C("unbound").compare(C("1")))
 }
 
+func TestProcessConditionBad(t *testing.T) {
+	t.Parallel()
+	expectations := []string{
+		"wrong condition1",
+		"invalidConditionOp is False",
+		"a == 1.1", // Python isolate_format is actually OK with this.
+		"a = 1",
+	}
+	for i, e := range expectations {
+		_, err := processCondition(Condition{Condition: e}, variablesValuesSet{})
+		ut.AssertEqualIndex(t, i, true, err != nil)
+	}
+}
+
+func TestConditionEvaluate(t *testing.T) {
+	t.Parallel()
+	const (
+		T int = 1
+		F int = 0
+		E int = -1
+	)
+	expectations := []struct {
+		cond string
+		vals map[string]string
+		exp  int
+	}{
+		{"A=='w'", map[string]string{"A": "w"}, T},
+		{"A=='m'", map[string]string{"A": "w"}, F},
+		{"A=='m'", map[string]string{"a": "w"}, E},
+		{"A==1 or B=='b'", map[string]string{"A": "1"}, T},
+		{"A==1 or B=='b'", map[string]string{"B": "b"}, E},
+		{"A==1 and B=='b'", map[string]string{"A": "1"}, E},
+
+		{"(A=='w')", map[string]string{"A": "w"}, T},
+		{"A==1 or (B==2 and C==3)", map[string]string{"A": "1"}, T},
+		{"A==1 or (B==2 and C==3)", map[string]string{"A": "0"}, E},
+		{"A==1 or (B==2 and C==3)", map[string]string{"A": "0", "B": "0"}, F},
+		{"A==1 or (B==2 and C==3)", map[string]string{"A": "2", "B": "2"}, E},
+		{"A==1 or (B==2 and C==3)", map[string]string{"A": "2", "B": "2", "C": "3"}, T},
+
+		{"(A==1 or A==2) and B==3", map[string]string{"A": "1", "B": "3"}, T},
+		{"(A==1 or A==2) and B==3", map[string]string{"A": "2", "B": "3"}, T},
+		{"(A==1 or A==2) and B==3", map[string]string{"B": "3"}, E},
+	}
+	for i, e := range expectations {
+		c, err := processCondition(Condition{Condition: e.cond}, variablesValuesSet{})
+		ut.AssertEqualIndex(t, i, nil, err)
+		isTrue, err := c.evaluate(func(v string) variableValue {
+			if value, ok := e.vals[v]; ok {
+				return makeVariableValue(value)
+			}
+			assert(variableValue{}.isBound() == false)
+			return variableValue{}
+		})
+		if e.exp == E {
+			ut.AssertEqualIndex(t, i, errors.New("required variable is unbound"), err)
+		} else {
+			ut.AssertEqualIndex(t, i, nil, err)
+			ut.AssertEqualIndex(t, i, e.exp == T, isTrue)
+		}
+	}
+}
+
 func TestMatchConfigs(t *testing.T) {
 	t.Parallel()
 	unbound := "unbound" // Treated specially by makeVVs to create unbound variableValue.
@@ -103,10 +167,11 @@ func TestMatchConfigs(t *testing.T) {
 			[][]variableValue{makeVVs("1", "a"), makeVVs("1", "b"), makeVVs("2", "b"), makeVVs("1", unbound)},
 		},
 	}
-	for i, one := range expectations {
-		out, err := matchConfigs(one.cond, one.conf, one.all)
+	for i, e := range expectations {
+		c, err := processCondition(Condition{Condition: e.cond}, variablesValuesSet{})
 		ut.AssertEqualIndex(t, i, nil, err)
-		ut.AssertEqualIndex(t, i, vvToStr2D(one.out), vvToStr2D(out))
+		out := c.matchConfigs(makeConfigVariableIndex(e.conf), e.all)
+		ut.AssertEqualIndex(t, i, vvToStr2D(vvSort(e.out)), vvToStr2D(vvSort(out)))
 	}
 }
 
@@ -119,7 +184,7 @@ func TestCartesianProductOfValues(t *testing.T) {
 		}
 		return out
 	}
-	test := func(vvs variablesAndValues, keys []string, expected ...[]variableValue) {
+	test := func(vvs variablesValuesSet, keys []string, expected ...[]variableValue) {
 		res, err := vvs.cartesianProductOfValues(keys)
 		ut.AssertEqual(t, nil, err)
 		vvSort(expected)
@@ -128,7 +193,7 @@ func TestCartesianProductOfValues(t *testing.T) {
 	}
 	keys := func(vs ...string) []string { return vs }
 
-	vvs := variablesAndValues{}
+	vvs := variablesValuesSet{}
 	test(vvs, keys())
 
 	vvs["OS"] = set("win", "unbound")
@@ -153,34 +218,75 @@ func TestParseBadIsolate(t *testing.T) {
 		"{'conditions': [['', {'variables-missing': {}}]]}",
 		"{'variables': ['bad variables type']}",
 	}
-	for _, badIsolate := range badIsolates {
-		if iso, err := parseIsolate([]byte(badIsolate)); err == nil {
-			t.Logf("succeeded at parsing bad isolate: %s %s", badIsolate, iso.Includes)
-			t.Fail()
-		}
+	for i, badIsolate := range badIsolates {
+		_, err := processIsolate([]byte(badIsolate))
+		ut.AssertEqualIndex(t, i, true, err != nil)
 	}
 }
 
-func TestVerifyCondition(t *testing.T) {
+func TestPythonToGoString(t *testing.T) {
 	t.Parallel()
-	c := condition{}
-	varsAndValues := variablesAndValues{}
-	badConditions := []string{
-		"wrong condition1",
-		"invalidConditionOp is False",
-		"a == 1.1", // Python isolate_format is actually OK with this.
-		"a = 1",
+	expectations := []struct {
+		in, out, left string
+	}{
+		{`''`, `""`, ``},
+		{`''\'`, `""`, `\'`},
+		{`'''`, `""`, `'`},
+		{`""`, `""`, ``},
+		{`"" and`, `""`, ` and`},
+		{`'"' "w`, `"\""`, ` "w`},
+		{`"'"`, `"'"`, ``},
+		{`"\'"`, `"'"`, ``},
+		{`"ok" or`, `"ok"`, ` or`},
+		{`'\\"\\'`, `"\\\"\\"`, ``},
+		{`"\\\"\\"`, `"\\\"\\"`, ``},
+		{`"'\\'"`, `"'\\'"`, ``},
+		{`'"\'\'"'`, `"\"''\""`, ``},
+		{`'"\'\'"'`, `"\"''\""`, ``},
+		{`'∀ unicode'`, `"∀ unicode"`, ``},
 	}
-	for _, bad := range badConditions {
-		c.Condition = bad
-		err := c.verify(varsAndValues)
-		ut.AssertEqualf(t, true, err != nil, "must fail at %v condition", bad)
+	for i, e := range expectations {
+		goChunk, left, err := pythonToGoString(stringToRunes(e.in))
+		t.Logf("in: `%s` eg: `%s` g: `%s` el: `%s` l: `%s` err: %s", e.in, e.out, goChunk, e.left, string(left), err)
+		ut.AssertEqualIndex(t, i, e.left, string(left))
+		ut.AssertEqualIndex(t, i, e.out, goChunk)
+		ut.AssertEqualIndex(t, i, nil, err)
+	}
+}
+
+func TestPythonToGoStringError(t *testing.T) {
+	t.Parallel()
+	expErr := errors.New("failed to parse Condition string")
+	for i, e := range []string{`'"`, `"'`, `'\'`, `"\"`, `'""`, `"''`} {
+		goChunk, left, err := pythonToGoString(stringToRunes(e))
+		t.Logf("in: `%s`, g: `%s`, l: `%s`, err: %s", e, goChunk, string(left), err)
+		ut.AssertEqualIndex(t, i, expErr, err)
+	}
+}
+
+func TestPythonToGoNonString(t *testing.T) {
+	t.Parallel()
+	expectations := []struct {
+		in, out, left string
+	}{
+		{`and`, `&&`, ``},
+		{`or`, `||`, ``},
+		{` or('str'`, ` ||(`, `'str'`},
+		{`)or(`, `)||(`, ``},
+		{`andor`, `andor`, ``},
+		{`)whatever("string...`, `)whatever(`, `"string...`},
+	}
+	for i, e := range expectations {
+		goChunk, left := pythonToGoNonString(stringToRunes(e.in))
+		t.Logf("in: `%s` eg: `%s` g: `%s` el: `%s` l: `%s`", e.in, e.out, goChunk, e.left, string(left))
+		ut.AssertEqualIndex(t, i, e.left, string(left))
+		ut.AssertEqualIndex(t, i, e.out, goChunk)
 	}
 }
 
 func TestVerifyVariables(t *testing.T) {
 	t.Parallel()
-	v := variables{}
+	v := Variables{}
 	badRo := -2
 	v.ReadOnly = &badRo
 	ut.AssertEqual(t, true, v.verify() != nil)
@@ -230,28 +336,18 @@ const sampleIncIsolateData = `
 
 var sampleIsolateDataWithIncludes = addIncludesToSample(sampleIsolateData, sampleIncludes)
 
-func TestParseIsolate(t *testing.T) {
+func TestProcessIsolate(t *testing.T) {
 	t.Parallel()
-	parsed, err := parseIsolate([]byte(sampleIsolateDataWithIncludes))
+	p, err := processIsolate([]byte(sampleIsolateDataWithIncludes))
 	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, `(OS=="linux" and bit==64) or OS=="win"`, parsed.Conditions[0].Condition)
-	ut.AssertEqual(t, 2, len(parsed.Conditions[0].Variables.Files))
-	ut.AssertEqual(t, []string{"inc/included.isolate"}, parsed.Includes)
-}
+	ut.AssertEqual(t, `(OS=="linux" and bit==64) or OS=="win"`, p.conditions[0].condition)
+	ut.AssertEqual(t, 2, len(p.conditions[0].variables.Files))
+	ut.AssertEqual(t, []string{"inc/included.isolate"}, p.includes)
 
-func TestVerifyIsolate(t *testing.T) {
-	t.Parallel()
-	parsed, err := parseIsolate([]byte(sampleIsolateData))
-	if err != nil {
-		t.FailNow()
-		return
-	}
-	varsAndValues, err := parsed.verify()
-	ut.AssertEqualf(t, nil, err, "failed verification: %s", err)
-	vars, ok := varsAndValues.getSortedValues("OS")
+	vars, ok := getSortedVarValues(p.varsValsSet, "OS")
 	ut.AssertEqual(t, true, ok)
 	ut.AssertEqual(t, vvToStr(makeVVs("linux", "mac", "win")), vvToStr(vars))
-	vars, ok = varsAndValues.getSortedValues("bit")
+	vars, ok = getSortedVarValues(p.varsValsSet, "bit")
 	ut.AssertEqual(t, true, ok)
 	ut.AssertEqual(t, vvToStr(makeVVs("32", "64")), vvToStr(vars))
 }
@@ -388,12 +484,12 @@ func makeVVs(ss ...string) []variableValue {
 		if s == "unbound" {
 			continue
 		} else if strings.HasPrefix(s, "s") {
-			vs[i] = createVariableValueTryInt(s[1:])
+			vs[i] = makeVariableValue(s[1:])
 			if vs[i].I == nil {
 				vs[i].S = &s
 			}
 		} else {
-			vs[i] = createVariableValueTryInt(s)
+			vs[i] = makeVariableValue(s)
 		}
 	}
 	return vs
@@ -415,7 +511,7 @@ func vvToStr2D(vs [][]variableValue) [][]string {
 	return ks
 }
 
-func vvSort(vss [][]variableValue) {
+func vvSort(vss [][]variableValue) [][]variableValue {
 	tmpMap := map[string][]variableValue{}
 	keys := []string{}
 	for _, vs := range vss {
@@ -427,9 +523,27 @@ func vvSort(vss [][]variableValue) {
 	for i, key := range keys {
 		vss[i] = tmpMap[key]
 	}
+	return vss
 }
 
 func addIncludesToSample(sample, includes string) string {
 	assert(sample[len(sample)-1] == '}')
 	return sample[:len(sample)-1] + includes + "\n}"
+}
+
+func getSortedVarValues(v variablesValuesSet, varName string) ([]variableValue, bool) {
+	valueSet, ok := v[varName]
+	if !ok {
+		return nil, false
+	}
+	keys := make([]string, 0, len(valueSet))
+	for key := range valueSet {
+		keys = append(keys, string(key))
+	}
+	sort.Strings(keys)
+	values := make([]variableValue, len(valueSet))
+	for i, key := range keys {
+		values[i] = valueSet[variableValueKey(key)]
+	}
+	return values, true
 }
