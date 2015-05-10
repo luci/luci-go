@@ -74,21 +74,21 @@ func TestArchive(t *testing.T) {
 	ut.AssertEqual(t, nil, ioutil.WriteFile(filepath.Join(baseDir, "bar"), []byte("foo"), 0600))
 	ut.AssertEqual(t, nil, ioutil.WriteFile(filepath.Join(baseDir, "ignored"), []byte("ignored"), 0600))
 	isolate := `{
-		"variables": {
-			"files": [
-				"./",
-				"../link",
+		'variables': {
+			'files': [
+				'./',
+				'../link',
 			],
 		},
-		"conditions": [
-			["OS=='amiga'", {
-				"variables": {
-					"command": ["amiga", "<(EXTRA)"],
+		'conditions': [
+			['OS=="amiga"', {
+				'variables': {
+					'command': ['amiga', '<(EXTRA)'],
 				},
 			}],
-			["OS=='win'", {
-				"variables": {
-					"command": ["win"],
+			['OS=="win"', {
+				'variables': {
+					'command': ['win'],
 				},
 			}],
 		],

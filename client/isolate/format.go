@@ -5,6 +5,7 @@
 package isolate
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,6 +26,7 @@ import (
 
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/common/isolated"
+	"github.com/yosuke-furukawa/json5/encoding/json5"
 )
 
 var osPathSeparator = string(os.PathSeparator)
@@ -96,6 +98,7 @@ func LoadIsolateAsConfig(isolateDir string, content []byte, fileComment []byte) 
 	}
 	processedIsolate, err := processIsolate(content)
 	if err != nil {
+		panic(err)
 		return nil, fmt.Errorf("failed to process isolate (isolateDir: %s): %s", isolateDir, err)
 	}
 	out := processedIsolate.toConfigs(fileComment)
@@ -680,55 +683,43 @@ type processedIsolate struct {
 	varsValsSet variablesValuesSet
 }
 
-// evaluateIsolateAsPython evaluates content as Python code and returns it
-// as json string.
-func evaluateIsolateAsPython(content []byte) ([]byte, error) {
-	// Isolate file is a Python expression, which is easiest to interprete with cPython itself.
-	// Go and Python both have excellent json support, so use this for Python->Go communication.
-	// The isolate file contents is passed to Python's stdin, the resulting json is dumped into stdout.
-	// In case of exceptions during interpretation or json serialization,
-	// Python exists with non-0 return code, obtained here as err.
-	pythonCode := `
-import json, sys
-globs = {'__builtins__': None}
-locs = {}
-try:
-	value = eval(sys.stdin.read(), globs, locs)
-except TypeError as e:
-	e.args = list(e.args) + [content]
-	raise
-assert locs == {}, locs
-assert globs == {'__builtins__': None}, globs
-print json.dumps(value)
-`
-	f, err := ioutil.TempFile("", "isolate")
-	_, _ = io.WriteString(f, pythonCode)
-	f.Close()
-	defer func() {
-		_ = os.Remove(f.Name())
-	}()
-	jsonData, err := common.RunPython(content, f.Name())
-	if err != nil {
-		return nil, fmt.Errorf("failed to evaluate isolate as Python: %s", err)
+// convertIsolateToJson5 cleans up isolate content to be json5.
+func convertIsolateToJson5(content []byte) io.Reader {
+	out := &bytes.Buffer{}
+	for _, l := range strings.Split(string(content), "\n") {
+		l = strings.TrimSpace(l)
+		if len(l) == 0 || l[0] == '#' {
+			continue
+		}
+		l = strings.Replace(l, "\"", "\\\"", -1)
+		l = strings.Replace(l, "'", "\"", -1)
+		_, _ = io.WriteString(out, l+"\n")
 	}
-	return jsonData, nil
+	return out
+}
+
+func parseIsolate(content []byte) (*Isolate, error) {
+	isolate := &Isolate{}
+	// TODO(tandrii): figure out why decoding directly into isolate
+	// doesn't work.
+	// if err := json5.NewDecoder(json5src).Decode(isolate); err != nil {
+	var data interface{}
+	if err := json5.NewDecoder(convertIsolateToJson5(content)).Decode(&data); err != nil {
+		return nil, err
+	}
+	buf, _ := json.Marshal(&data)
+	if err := json.Unmarshal(buf, isolate); err != nil {
+		return nil, err
+	}
+	return isolate, nil
 }
 
 // processIsolate loads isolate, then verifies and returns it as
 // a processedIsolate for faster further processing.
 func processIsolate(content []byte) (*processedIsolate, error) {
-	var isolate Isolate
-	// Try to load as json (fast path).
-	err := json.Unmarshal(content, &isolate)
+	isolate, err := parseIsolate(content)
 	if err != nil {
-		// Fall back to Python otherwise (slow).
-		content, err = evaluateIsolateAsPython(content)
-		if err != nil {
-			return nil, err
-		}
-		if err = json.Unmarshal(content, &isolate); err != nil {
-			return nil, fmt.Errorf("failed to parse isolate: %s", err)
-		}
+		return nil, err
 	}
 	if err := isolate.Variables.verify(); err != nil {
 		return nil, err
