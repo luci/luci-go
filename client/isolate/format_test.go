@@ -358,9 +358,8 @@ func TestLoadIsolateAsConfig(t *testing.T) {
 	if common.IsWindows() {
 		root = "x:\\dir"
 	}
-	isolate, err := LoadIsolateAsConfig(root, []byte(sampleIsolateData), []byte("# filecomment"))
+	isolate, err := LoadIsolateAsConfig(root, []byte(sampleIsolateData))
 	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, isolate.FileComment, []byte("# filecomment"))
 	ut.AssertEqual(t, []string{"OS", "bit"}, isolate.ConfigVariables)
 }
 

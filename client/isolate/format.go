@@ -65,7 +65,6 @@ func (r ReadOnlyValue) ToIsolated() (out *isolated.ReadOnlyValue) {
 //    isolateDir: only used to load relative includes so it doesn't depend on
 //                cwd.
 //    value: is the loaded dictionary that was defined in the gyp file.
-//    fileComment: comments found at the top of the file so it can be preserved.
 //
 //  The expected format is strict, anything diverting from the format below will
 //  result in error:
@@ -91,7 +90,7 @@ func (r ReadOnlyValue) ToIsolated() (out *isolated.ReadOnlyValue) {
 //      ...
 //    },
 //  }
-func LoadIsolateAsConfig(isolateDir string, content []byte, fileComment []byte) (*Configs, error) {
+func LoadIsolateAsConfig(isolateDir string, content []byte) (*Configs, error) {
 	// isolateDir must be in native style.
 	if !filepath.IsAbs(isolateDir) {
 		return nil, fmt.Errorf("%s is not an absolute path", isolateDir)
@@ -101,7 +100,7 @@ func LoadIsolateAsConfig(isolateDir string, content []byte, fileComment []byte) 
 		panic(err)
 		return nil, fmt.Errorf("failed to process isolate (isolateDir: %s): %s", isolateDir, err)
 	}
-	out := processedIsolate.toConfigs(fileComment)
+	out := processedIsolate.toConfigs()
 	// Add global variables. The global variables are on the empty tuple key.
 	globalconfigName := make([]variableValue, len(out.ConfigVariables))
 	out.setConfig(globalconfigName, newConfigSettings(processedIsolate.variables, isolateDir))
@@ -113,7 +112,7 @@ func LoadIsolateAsConfig(isolateDir string, content []byte, fileComment []byte) 
 	}
 	configVariablesIndex := makeConfigVariableIndex(out.ConfigVariables)
 	for _, cond := range processedIsolate.conditions {
-		newConfigs := newConfigs(nil, out.ConfigVariables)
+		newConfigs := newConfigs(out.ConfigVariables)
 		configs := cond.matchConfigs(configVariablesIndex, allConfigs)
 		for _, config := range configs {
 			newConfigs.setConfig(configName(config), newConfigSettings(cond.variables, isolateDir))
@@ -161,7 +160,7 @@ func LoadIsolateAsConfig(isolateDir string, content []byte, fileComment []byte) 
 func LoadIsolateForConfig(isolateDir string, content []byte, configVariables common.KeyValVars) (
 	[]string, []string, ReadOnlyValue, string, error) {
 	// Load the .isolate file, process its conditions, retrieve the command and dependencies.
-	isolate, err := LoadIsolateAsConfig(isolateDir, content, nil)
+	isolate, err := LoadIsolateAsConfig(isolateDir, content)
 	if err != nil {
 		return nil, nil, NotSet, "", err
 	}
@@ -208,7 +207,7 @@ func loadIncludedIsolate(isolateDir, include string) (*Configs, error) {
 	if err != nil {
 		return nil, err
 	}
-	return LoadIsolateAsConfig(filepath.Dir(includedIsolate), content, nil)
+	return LoadIsolateAsConfig(filepath.Dir(includedIsolate), content)
 }
 
 // Configs represents a processed .isolate file.
@@ -222,15 +221,14 @@ func loadIncludedIsolate(isolateDir, include string) (*Configs, error) {
 // configuration selected. It is implicitly dependent on which .isolate defines
 // the 'command' that will take effect.
 type Configs struct {
-	FileComment []byte
 	// ConfigVariables contains names only, sorted by name; the order is same as in byConfig.
 	ConfigVariables []string
 	// The config key are lists of values of vars in the same order as ConfigSettings.
 	byConfig map[string]configPair
 }
 
-func newConfigs(fileComment []byte, configVariables []string) *Configs {
-	c := &Configs{fileComment, configVariables, map[string]configPair{}}
+func newConfigs(configVariables []string) *Configs {
+	c := &Configs{configVariables, map[string]configPair{}}
 	assert(sort.IsSorted(sort.StringSlice(c.ConfigVariables)))
 	return c
 }
@@ -284,18 +282,13 @@ func (c *Configs) setConfig(confName configName, value *ConfigSettings) {
 
 // union returns a new Configs instance, the union of variables from self and rhs.
 //
-// Uses lhs.FileComment if available, otherwise rhs.FileComment.
 // It keeps ConfigVariables sorted in the output.
 func (lhs *Configs) union(rhs *Configs) (*Configs, error) {
 	// Merge the keys of ConfigVariables for each Configs instances. All the new
 	// variables will become unbounded. This requires realigning the keys.
 	configVariables := uniqueMergeSortedStrings(
 		lhs.ConfigVariables, rhs.ConfigVariables)
-	out := newConfigs(lhs.FileComment, configVariables)
-	if len(lhs.FileComment) == 0 {
-		out.FileComment = rhs.FileComment
-	}
-
+	out := newConfigs(configVariables)
 	byConfig := configPairs(append(
 		lhs.expandConfigVariables(configVariables),
 		rhs.expandConfigVariables(configVariables)...))
@@ -739,13 +732,13 @@ func processIsolate(content []byte) (*processedIsolate, error) {
 	return out, nil
 }
 
-func (p *processedIsolate) toConfigs(fileComment []byte) *Configs {
+func (p *processedIsolate) toConfigs() *Configs {
 	configVariables := make([]string, 0, len(p.varsValsSet))
 	for varName := range p.varsValsSet {
 		configVariables = append(configVariables, varName)
 	}
 	sort.Strings(configVariables)
-	return newConfigs(fileComment, configVariables)
+	return newConfigs(configVariables)
 }
 
 func (p *processedIsolate) getAllConfigs(configVariables []string) ([][]variableValue, error) {
