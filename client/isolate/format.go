@@ -380,7 +380,7 @@ type ConfigSettings struct {
 	IsolateDir string
 }
 
-func newConfigSettings(variables Variables, isolateDir string) *ConfigSettings {
+func newConfigSettings(variables variables, isolateDir string) *ConfigSettings {
 	if isolateDir == "" {
 		// It must be an empty object if isolateDir is not set.
 		assert(variables.isEmpty(), variables)
@@ -476,28 +476,30 @@ func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
 	return &ConfigSettings{files, command, readOnly, lRelCwd}, nil
 }
 
-// Isolate represents contents of the isolate file.
+// Private details.
+
+// isolate represents contents of the isolate file.
 // The main purpose is (de)serialization.
-type Isolate struct {
+type isolate struct {
 	Includes   []string    `json:"includes,omitempty"`
-	Conditions []Condition `json:"conditions"`
-	Variables  Variables   `json:"variables,omitempty"`
+	Conditions []condition `json:"conditions"`
+	Variables  variables   `json:"variables,omitempty"`
 }
 
-// Condition represents conditional part of an isolate file.
-type Condition struct {
+// condition represents conditional part of an isolate file.
+type condition struct {
 	Condition string
-	Variables Variables
+	Variables variables
 }
 
 // MarshalJSON implements json.Marshaler interface.
-func (p *Condition) MarshalJSON() ([]byte, error) {
+func (p *condition) MarshalJSON() ([]byte, error) {
 	d := [2]json.RawMessage{}
 	var err error
 	if d[0], err = json.Marshal(&p.Condition); err != nil {
 		return nil, err
 	}
-	m := map[string]Variables{"variables": p.Variables}
+	m := map[string]variables{"variables": p.Variables}
 	if d[1], err = json.Marshal(&m); err != nil {
 		return nil, err
 	}
@@ -505,7 +507,7 @@ func (p *Condition) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON implements json.Unmarshaler interface.
-func (p *Condition) UnmarshalJSON(data []byte) error {
+func (p *condition) UnmarshalJSON(data []byte) error {
 	var d []json.RawMessage
 	if err := json.Unmarshal(data, &d); err != nil {
 		return err
@@ -516,7 +518,7 @@ func (p *Condition) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(d[0], &p.Condition); err != nil {
 		return err
 	}
-	m := map[string]Variables{}
+	m := map[string]variables{}
 	if err := json.Unmarshal(d[1], &m); err != nil {
 		return err
 	}
@@ -527,16 +529,14 @@ func (p *Condition) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// Variables represents variable as part of condition or top level in an isolate file.
-type Variables struct {
+// variables represents variable as part of condition or top level in an isolate file.
+type variables struct {
 	Command []string `json:"command"`
 	Files   []string `json:"files"`
 	// ReadOnly has 1 as default, according to specs.
 	// Just as Python-isolate also uses None as default, this code uses nil.
 	ReadOnly *int `json:"read_only"`
 }
-
-// Private details.
 
 // variableValue holds a single value of a string or an int,
 // otherwise it is unbound.
@@ -679,7 +679,7 @@ func (v variablesValuesSet) cartesianProductOfValues(orderedKeys []string) ([][]
 type processedIsolate struct {
 	includes    []string
 	conditions  []*processedCondition
-	variables   Variables
+	variables   variables
 	varsValsSet variablesValuesSet
 }
 
@@ -698,8 +698,8 @@ func convertIsolateToJson5(content []byte) io.Reader {
 	return out
 }
 
-func parseIsolate(content []byte) (*Isolate, error) {
-	isolate := &Isolate{}
+func parseIsolate(content []byte) (*isolate, error) {
+	isolate := &isolate{}
 	// TODO(tandrii): figure out why decoding directly into isolate
 	// doesn't work.
 	// if err := json5.NewDecoder(json5src).Decode(isolate); err != nil {
@@ -755,7 +755,7 @@ func (p *processedIsolate) getAllConfigs(configVariables []string) ([][]variable
 // processedCondition is a verified Condition ready for evaluation.
 type processedCondition struct {
 	condition string
-	variables Variables
+	variables variables
 	expr      ast.Expr
 	// equalityValues are cached values of literals in "id==val" parts of
 	// Condition, uniquely indexed by their position.
@@ -764,7 +764,7 @@ type processedCondition struct {
 
 // processCondition ensures condition is in correct format, and converts it
 // to processedCondition for futher evaluation.
-func processCondition(c Condition, varsAndValues variablesValuesSet) (*processedCondition, error) {
+func processCondition(c condition, varsAndValues variablesValuesSet) (*processedCondition, error) {
 	goCond, err := pythonToGoCondition(c.Condition)
 	if err != nil {
 		return nil, err
@@ -1028,11 +1028,11 @@ func pythonToGoString(left []rune) (string, []rune, error) {
 	return string(goRunes), left, errors.New("failed to parse Condition string")
 }
 
-func (v *Variables) isEmpty() bool {
+func (v *variables) isEmpty() bool {
 	return len(v.Command) == 0 && len(v.Files) == 0 && v.ReadOnly == nil
 }
 
-func (v *Variables) verify() error {
+func (v *variables) verify() error {
 	if v.ReadOnly == nil || (0 <= *v.ReadOnly && *v.ReadOnly <= 2) {
 		return nil
 	}

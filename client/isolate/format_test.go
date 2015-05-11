@@ -33,14 +33,14 @@ func TestReadOnlyValue(t *testing.T) {
 
 func TestConditionJson(t *testing.T) {
 	t.Parallel()
-	c := Condition{Condition: "OS == \"Linux\""}
+	c := condition{Condition: "OS == \"Linux\""}
 	c.Variables.ReadOnly = new(int)
 	c.Variables.Command = []string{"python", "generate", "something"}
 	c.Variables.Files = []string{"generated"}
 	jsonData, err := json.Marshal(&c)
 	ut.AssertEqual(t, nil, err)
 	t.Logf("Generated jsonData: %s", string(jsonData))
-	pc := Condition{}
+	pc := condition{}
 	err = json.Unmarshal(jsonData, &pc)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, c, pc)
@@ -87,7 +87,7 @@ func TestProcessConditionBad(t *testing.T) {
 		"a = 1",
 	}
 	for i, e := range expectations {
-		_, err := processCondition(Condition{Condition: e}, variablesValuesSet{})
+		_, err := processCondition(condition{Condition: e}, variablesValuesSet{})
 		ut.AssertEqualIndex(t, i, true, err != nil)
 	}
 }
@@ -123,7 +123,7 @@ func TestConditionEvaluate(t *testing.T) {
 		{"(A==1 or A==2) and B==3", map[string]string{"B": "3"}, E},
 	}
 	for i, e := range expectations {
-		c, err := processCondition(Condition{Condition: e.cond}, variablesValuesSet{})
+		c, err := processCondition(condition{Condition: e.cond}, variablesValuesSet{})
 		ut.AssertEqualIndex(t, i, nil, err)
 		isTrue, err := c.evaluate(func(v string) variableValue {
 			if value, ok := e.vals[v]; ok {
@@ -168,7 +168,7 @@ func TestMatchConfigs(t *testing.T) {
 		},
 	}
 	for i, e := range expectations {
-		c, err := processCondition(Condition{Condition: e.cond}, variablesValuesSet{})
+		c, err := processCondition(condition{Condition: e.cond}, variablesValuesSet{})
 		ut.AssertEqualIndex(t, i, nil, err)
 		out := c.matchConfigs(makeConfigVariableIndex(e.conf), e.all)
 		ut.AssertEqualIndex(t, i, vvToStr2D(vvSort(e.out)), vvToStr2D(vvSort(out)))
@@ -286,7 +286,7 @@ func TestPythonToGoNonString(t *testing.T) {
 
 func TestVerifyVariables(t *testing.T) {
 	t.Parallel()
-	v := Variables{}
+	v := variables{}
 	badRo := -2
 	v.ReadOnly = &badRo
 	ut.AssertEqual(t, true, v.verify() != nil)
