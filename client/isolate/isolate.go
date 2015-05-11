@@ -69,6 +69,8 @@ func (a *ArchiveOptions) Init() {
 func (a *ArchiveOptions) PostProcess(cwd string) {
 	// Set default blacklist only if none is set.
 	if len(a.Blacklist) == 0 {
+		// This cannot be generalized as ".*" as there is known use that require
+		// a ".pki" directory to be mapped.
 		a.Blacklist = common.Strings{
 			".git",
 			".hg",

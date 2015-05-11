@@ -141,7 +141,12 @@ func walk(root string, blacklist []string, c chan<- *walkItem) {
 		}
 		relPath := p[rootLen:]
 		for _, b := range blacklist {
-			if matched, _ := filepath.Match(b, relPath); matched {
+			matched, _ := filepath.Match(b, relPath)
+			if !matched {
+				// Also check at the base file name.
+				matched, _ = filepath.Match(b, filepath.Base(relPath))
+			}
+			if matched {
 				// Must not return io.SkipDir for file, filepath.walk() handles this
 				// badly.
 				if info.IsDir() {
