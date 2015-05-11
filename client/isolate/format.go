@@ -821,42 +821,30 @@ func (c *processedCondition) matchConfigs(configVariablesIndex map[string]int, a
 	// (config) from allConfigs for which condition is True.
 	// Runs in O(2^len(configVariables) * len(allConfigs)), but in practice it
 	// is fast enough.
-
-	// bound is binary counter from [false, false, ...] to [true, true, ...]
-	// representing bound variables subset.
-	bound := make([]bool, len(configVariablesIndex))
+	if len(configVariablesIndex) > 60 {
+		panic(fmt.Errorf("isolate doesn't scale to %d ConfigVariables", len(configVariablesIndex)))
+	}
+	boundSubsetsCount := int64(1) << uint(len(configVariablesIndex))
 	okConfigs := map[string][]variableValue{}
-	for {
+	// boundBits represents current subset of configVariables which are bound.
+	for boundBits := int64(0); boundBits < boundSubsetsCount; boundBits++ {
 		for _, config := range allConfigs {
 			isTrue, err := c.evaluate(func(varName string) variableValue {
 				i := configVariablesIndex[varName]
-				if bound[i] {
+				if (boundBits & (int64(1) << uint(i))) != 0 {
 					return config[i]
 				}
 				return variableValue{}
 			})
 			if err == nil && isTrue {
 				okConfig := make([]variableValue, len(config))
-				for i, b := range bound {
-					if b {
+				for i := 0; i < len(config); i++ {
+					if (boundBits & (int64(1) << uint(i))) != 0 {
 						okConfig[i] = config[i]
 					}
 				}
 				okConfigs[configName(okConfig).key()] = okConfig
 			}
-		}
-		// Compute next bound vars subset.
-		nextBoundExists := false
-		for i, b := range bound {
-			if !b {
-				bound[i] = true
-				nextBoundExists = true
-				break
-			}
-			bound[i] = false
-		}
-		if !nextBoundExists {
-			break
 		}
 	}
 	out := make([][]variableValue, 0, len(okConfigs))
