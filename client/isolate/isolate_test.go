@@ -142,7 +142,7 @@ func TestArchive(t *testing.T) {
 	if !common.IsWindows() {
 		isolatedData.Files["link"] = isolated.File{Link: newString(filepath.Join("base", "bar"))}
 	} else {
-		isolatedData.Files["link"] = isolated.File{Digest: "12339b9756c2994f85c310d560bc8c142a6b79a1", Mode: newInt(0700), Size: newInt64(18)}
+		isolatedData.Files["link"] = isolated.File{Digest: "12339b9756c2994f85c310d560bc8c142a6b79a1", Mode: newInt(0666), Size: newInt64(18)}
 	}
 	encoded, err = json.Marshal(isolatedData)
 	ut.AssertEqual(t, nil, err)
