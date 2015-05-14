@@ -6,6 +6,7 @@ package archiver
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -117,10 +118,10 @@ func New(is isolatedclient.IsolateServer, out io.Writer) Archiver {
 		maxConcurrentUpload:   8,
 		containsBatchingDelay: 100 * time.Millisecond,
 		containsBatchSize:     50,
-		stage1DedupeChan:      make(chan *archiverItem, 1024),
-		stage2HashChan:        make(chan *archiverItem, 10240),
-		stage3LookupChan:      make(chan *archiverItem, 2048),
-		stage4UploadChan:      make(chan *archiverItem, 2048),
+		stage1DedupeChan:      make(chan *archiverItem),
+		stage2HashChan:        make(chan *archiverItem),
+		stage3LookupChan:      make(chan *archiverItem),
+		stage4UploadChan:      make(chan *archiverItem),
 	}
 
 	a.wg.Add(1)
@@ -128,6 +129,10 @@ func New(is isolatedclient.IsolateServer, out io.Writer) Archiver {
 		defer a.wg.Done()
 		a.stage1DedupeLoop()
 	}()
+
+	// TODO(todd): Create on-disk cache in a new stage inserted between stages 1
+	// and 2. This should be a separate interface with its own implementation
+	// that 'archiver' keeps a reference to as member.
 
 	a.wg.Add(1)
 	go func() {
@@ -146,6 +151,10 @@ func New(is isolatedclient.IsolateServer, out io.Writer) Archiver {
 		defer a.wg.Done()
 		a.stage4UploadLoop()
 	}()
+
+	// Push an nil item to enforce stage1DedupeLoop() woke up. Otherwise this
+	// could lead to a race condition if Close() is called too quickly.
+	a.stage1DedupeChan <- nil
 	return a
 }
 
@@ -288,6 +297,7 @@ type archiver struct {
 	maxConcurrentUpload   int           // Stage 4; Network I/O bound.
 	containsBatchingDelay time.Duration // Used by stage 3
 	containsBatchSize     int           // Used by stage 3
+	closeLock             sync.Mutex
 	stage1DedupeChan      chan *archiverItem
 	stage2HashChan        chan *archiverItem
 	stage3LookupChan      chan *archiverItem
@@ -297,18 +307,26 @@ type archiver struct {
 	progress              progress.Progress
 
 	// Mutable.
-	lock  sync.Mutex
-	stats Stats
+	statsLock sync.Mutex
+	stats     Stats
 }
 
 // Close waits for all pending files to be done.
 func (a *archiver) Close() error {
 	// This is done so asynchronously calling push() won't crash.
-	a.lock.Lock()
-	close(a.stage1DedupeChan)
-	a.stage1DedupeChan = nil
-	a.lock.Unlock()
 
+	a.closeLock.Lock()
+	ok := false
+	if a.stage1DedupeChan != nil {
+		close(a.stage1DedupeChan)
+		a.stage1DedupeChan = nil
+		ok = true
+	}
+	a.closeLock.Unlock()
+
+	if !ok {
+		return errors.New("was already closed")
+	}
 	a.wg.Wait()
 	_ = a.progress.Close()
 	_ = a.canceler.Close()
@@ -342,43 +360,69 @@ func (a *archiver) PushFile(displayName, path string) Future {
 }
 
 func (a *archiver) Stats() *Stats {
-	a.lock.Lock()
-	defer a.lock.Unlock()
+	a.statsLock.Lock()
+	defer a.statsLock.Unlock()
 	return a.stats.deepCopy()
 }
 
 func (a *archiver) push(item *archiverItem) Future {
+	if a.pushLocked(item) {
+		a.progress.Update(groupFound, groupFoundFound, 1)
+		return item
+	}
+	return nil
+}
+
+func (a *archiver) pushLocked(item *archiverItem) bool {
 	// The close(a.stage1DedupeChan) call is always occuring with the lock held.
-	a.lock.Lock()
-	defer a.lock.Unlock()
+	a.closeLock.Lock()
+	defer a.closeLock.Unlock()
 	if a.stage1DedupeChan == nil {
 		// Archiver was closed.
-		return nil
+		return false
 	}
+	// stage1DedupeLoop must never block and must be as fast as it can because it
+	// is done while holding a.closeLock.
 	a.stage1DedupeChan <- item
-	a.progress.Update(groupFound, groupFoundFound, 1)
-	return item
+	return true
 }
 
 func (a *archiver) stage1DedupeLoop() {
+	c := a.stage1DedupeChan
 	defer close(a.stage2HashChan)
-	a.lock.Lock()
-	stage1DedupeChan := a.stage1DedupeChan
-	a.lock.Unlock()
-	if stage1DedupeChan == nil {
-		// This means Close() was called really too quickly.
-		return
-	}
 	seen := map[string]*archiverItem{}
-	for item := range stage1DedupeChan {
-		if a.CancelationReason() != nil {
-			item.setErr(a.CancelationReason())
+	// Create our own goroutine-local channel buffer, which doesn't need to be
+	// synchronized (unlike channels).
+	buildUp := []*archiverItem{}
+	for {
+		// Pull or push an item, dependending if there is build up.
+		var item *archiverItem
+		ok := true
+		if len(buildUp) == 0 {
+			item, ok = <-c
+		} else {
+			select {
+			case item, ok = <-c:
+			case a.stage2HashChan <- buildUp[0]:
+				// Pop first item from buildUp.
+				buildUp = buildUp[1:]
+				a.progress.Update(groupHash, groupHashTodo, 1)
+			}
+		}
+		if !ok {
+			break
+		}
+		if item == nil {
+			continue
+		}
+
+		// This loop must never block and must be as fast as it can as it is
+		// functionally equivalent to running with a.closeLock held.
+		if err := a.CancelationReason(); err != nil {
+			item.setErr(err)
 			item.wgHashed.Done()
 			continue
 		}
-		// TODO(todd): Create on-disk cache. This should be a separate interface
-		// with its own implementation that 'archiver' keeps a reference to as
-		// member.
 		// TODO(maruel): Resolve symlinks for further deduplication? Depends on the
 		// use case, not sure the trade off is worth.
 		if item.path != "" {
@@ -387,9 +431,21 @@ func (a *archiver) stage1DedupeLoop() {
 				continue
 			}
 		}
-		a.progress.Update(groupHash, groupHashTodo, 1)
-		a.stage2HashChan <- item
+
+		buildUp = append(buildUp, item)
 		seen[item.path] = item
+	}
+
+	// Take care of the build up after the channel closed.
+	for _, item := range buildUp {
+		if err := a.CancelationReason(); err != nil {
+			item.setErr(err)
+			item.wgHashed.Done()
+		} else {
+			// The archiver is being closed, this has to happen synchronously.
+			a.stage2HashChan <- item
+			a.progress.Update(groupHash, groupHashTodo, 1)
+		}
 	}
 }
 
@@ -400,8 +456,14 @@ func (a *archiver) stage2HashLoop() {
 		_ = pool.Wait()
 	}()
 	for file := range a.stage2HashChan {
+		// This loop will implicitly buffer when stage1 is too fast by creating a
+		// lot of hung goroutines in pool. This permits reducing the contention on
+		// a.closeLock.
+		// TODO(tandrii): Implement backpressure in GoroutinePool, e.g. when it
+		// exceeds 20k or something similar.
 		item := file
 		pool.Schedule(func() {
+			// calcDigest calls setErr() and update wgHashed even on failure.
 			if err := item.calcDigest(); err != nil {
 				a.Cancel(err)
 				return
@@ -414,7 +476,6 @@ func (a *archiver) stage2HashLoop() {
 			item.wgHashed.Done()
 		})
 	}
-
 }
 
 func (a *archiver) stage3LookupLoop() {
@@ -498,9 +559,9 @@ func (a *archiver) doContains(items []*archiverItem) {
 	for index, state := range states {
 		size := items[index].digestItem.Size
 		if state == nil {
-			a.lock.Lock()
+			a.statsLock.Lock()
 			a.stats.Hits = append(a.stats.Hits, common.Size(size))
-			a.lock.Unlock()
+			a.statsLock.Unlock()
 		} else {
 			items[index].state = state
 			a.progress.Update(groupUpload, groupUploadTodo, 1)
@@ -536,8 +597,8 @@ func (a *archiver) doUpload(item *archiverItem) {
 	}
 	size := common.Size(item.digestItem.Size)
 	u := &UploadStat{time.Since(start), size, item.DisplayName()}
-	a.lock.Lock()
+	a.statsLock.Lock()
 	a.stats.Pushed = append(a.stats.Pushed, u)
-	a.lock.Unlock()
+	a.statsLock.Unlock()
 	log.Printf("Uploaded %7s: %s\n", size, item.DisplayName())
 }

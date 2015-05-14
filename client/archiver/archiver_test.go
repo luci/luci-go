@@ -33,6 +33,7 @@ func TestArchiverEmpty(t *testing.T) {
 	ut.AssertEqual(t, 0, stats.TotalMisses())
 	ut.AssertEqual(t, common.Size(0), stats.TotalBytesHits())
 	ut.AssertEqual(t, common.Size(0), stats.TotalBytesPushed())
+	ut.AssertEqual(t, nil, a.Close())
 }
 
 func TestArchiverFile(t *testing.T) {
