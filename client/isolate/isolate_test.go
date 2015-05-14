@@ -116,7 +116,7 @@ func TestArchive(t *testing.T) {
 
 	mode := 0600
 	if common.IsWindows() {
-		mode = 0700
+		mode = 0666
 	}
 	//   /base/
 	isolatedDirData := isolated.Isolated{
