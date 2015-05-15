@@ -69,11 +69,13 @@ func testCache(t *testing.T, c Cache) []isolated.HexDigest {
 	ut.AssertEqual(t, true, c.Touch(emptyDigest))
 	ut.AssertEqual(t, nil, c.Add(file2Digest, bytes.NewBuffer(file2Content)))
 
-	_, err = c.Read(file1Digest)
+	r, err = c.Read(file1Digest)
+	ut.AssertEqual(t, nil, r)
 	ut.AssertEqual(t, true, nil != err)
 	r, err = c.Read(file2Digest)
 	ut.AssertEqual(t, nil, err)
 	actual, err := ioutil.ReadAll(r)
+	ut.AssertEqual(t, nil, r.Close())
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, file2Content, actual)
 
@@ -103,7 +105,7 @@ func TestNewDisk(t *testing.T) {
 	ut.AssertEqual(t, nil, err)
 	defer func() {
 		if err := os.RemoveAll(td); err != nil {
-			t.Fail()
+			t.Error(err)
 		}
 	}()
 	pol := Policies{MaxSize: 1024, MaxItems: 2}
