@@ -8,7 +8,7 @@ import (
 	"errors"
 	"os"
 
-	"github.com/luci/luci-go/client/internal/common"
+	"github.com/luci/luci-go/client/internal/lhttp"
 	"github.com/maruel/subcommands"
 )
 
@@ -29,7 +29,7 @@ func (c *commonFlags) Parse(a subcommands.Application) error {
 	if c.serverURL == "" {
 		return errors.New("must provide -server")
 	}
-	s, err := common.URLToHTTPS(c.serverURL)
+	s, err := lhttp.URLToHTTPS(c.serverURL)
 	if err != nil {
 		return err
 	}

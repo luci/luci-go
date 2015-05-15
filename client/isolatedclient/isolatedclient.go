@@ -5,12 +5,15 @@
 package isolatedclient
 
 import (
+	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 
-	"github.com/luci/luci-go/client/internal/common"
+	"github.com/luci/luci-go/client/internal/lhttp"
+	"github.com/luci/luci-go/client/internal/retry"
 	"github.com/luci/luci-go/client/internal/tracer"
 	"github.com/luci/luci-go/common/isolated"
 )
@@ -39,12 +42,12 @@ type PushState struct {
 }
 
 // New returns a new IsolateServer client.
-func New(url, namespace string) IsolateServer {
+func New(host, namespace string) IsolateServer {
 	i := &isolateServer{
-		url:       url,
+		url:       strings.TrimRight(host, "/"),
 		namespace: namespace,
 	}
-	tracer.NewTID(i, nil, url)
+	tracer.NewTID(i, nil, i.url)
 	return i
 }
 
@@ -55,10 +58,17 @@ type isolateServer struct {
 	namespace string
 }
 
+func (i *isolateServer) postJSON(resource string, in, out interface{}) error {
+	if len(resource) == 0 || resource[0] != '/' {
+		return errors.New("resource must start with '/'")
+	}
+	_, err := lhttp.PostJSON(retry.Default, http.DefaultClient, i.url+resource, in, out)
+	return err
+}
+
 func (i *isolateServer) ServerCapabilities() (*isolated.ServerCapabilities, error) {
-	url := i.url + "/_ah/api/isolateservice/v1/server_details"
 	out := &isolated.ServerCapabilities{}
-	if _, err := common.PostJSON(nil, url, nil, out); err != nil {
+	if err := i.postJSON("/_ah/api/isolateservice/v1/server_details", map[string]string{}, out); err != nil {
 		return nil, err
 	}
 	return out, nil
@@ -70,8 +80,7 @@ func (i *isolateServer) Contains(items []*isolated.DigestItem) (out []*PushState
 	in := isolated.DigestCollection{Items: items}
 	in.Namespace.Namespace = i.namespace
 	data := &isolated.UrlCollection{}
-	url := i.url + "/_ah/api/isolateservice/v1/preupload"
-	if _, err = common.PostJSON(nil, url, in, data); err != nil {
+	if err = i.postJSON("/_ah/api/isolateservice/v1/preupload", in, data); err != nil {
 		return nil, err
 	}
 	out = make([]*PushState, len(items))
@@ -105,9 +114,7 @@ func (i *isolateServer) Push(state *PushState, src io.Reader) (err error) {
 		// the data safely reached Google Storage (GS provides MD5 and CRC32C of
 		// stored files).
 		in := isolated.FinalizeRequest{state.status.UploadTicket}
-		url := i.url + "/_ah/api/isolateservice/v1/finalize_gs_upload"
-		_, err = common.PostJSON(nil, url, in, nil)
-		if err != nil {
+		if err = i.postJSON("/_ah/api/isolateservice/v1/finalize_gs_upload", in, nil); err != nil {
 			return
 		}
 	}
@@ -139,14 +146,12 @@ func (i *isolateServer) doPush(state *PushState, src io.Reader) (err error) {
 
 	// DB upload.
 	if state.status.GSUploadURL == "" {
-		url := i.url + "/_ah/api/isolateservice/v1/store_inline"
 		content, err2 := ioutil.ReadAll(reader)
 		if err2 != nil {
 			return err2
 		}
 		in := &isolated.StorageRequest{state.status.UploadTicket, content}
-		_, err = common.PostJSON(nil, url, in, nil)
-		return
+		return i.postJSON("/_ah/api/isolateservice/v1/store_inline", in, nil)
 	}
 
 	// Upload to GCS.

@@ -13,6 +13,7 @@ import (
 	"os"
 
 	"github.com/luci/luci-go/client/internal/common"
+	"github.com/luci/luci-go/client/internal/lhttp"
 	"github.com/luci/luci-go/client/internal/tracer"
 	"github.com/luci/luci-go/client/isolate"
 	"github.com/maruel/subcommands"
@@ -78,7 +79,7 @@ func (c *commonServerFlags) Parse() error {
 	if c.serverURL == "" {
 		return errors.New("-isolate-server must be specified")
 	}
-	if s, err := common.URLToHTTPS(c.serverURL); err != nil {
+	if s, err := lhttp.URLToHTTPS(c.serverURL); err != nil {
 		return err
 	} else {
 		c.serverURL = s

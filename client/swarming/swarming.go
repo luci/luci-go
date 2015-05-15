@@ -10,7 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luci/luci-go/client/internal/common"
+	"github.com/luci/luci-go/client/internal/lhttp"
+	"github.com/luci/luci-go/client/internal/retry"
 )
 
 // TaskID is a unique reference to a Swarming task.
@@ -18,25 +19,21 @@ type TaskID string
 
 // Swarming defines a Swarming client.
 type Swarming struct {
-	host   string
-	client *http.Client
+	host string
 }
 
 func (s *Swarming) getJSON(resource string, v interface{}) error {
 	if len(resource) == 0 || resource[0] != '/' {
 		return errors.New("resource must start with '/'")
 	}
-	status, err := common.GetJSON(s.client, s.host+resource, v)
-	if status == http.StatusNotFound {
-		return errors.New("not found")
-	}
+	_, err := lhttp.GetJSON(retry.Default, http.DefaultClient, s.host+resource, v)
 	return err
 }
 
 // NewSwarming returns a new Swarming client.
 func New(host string) (*Swarming, error) {
 	host = strings.TrimRight(host, "/")
-	return &Swarming{host, http.DefaultClient}, nil
+	return &Swarming{host}, nil
 }
 
 // FetchRequest returns the TaskRequest.

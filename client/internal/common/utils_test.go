@@ -5,7 +5,6 @@
 package common
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -32,23 +31,6 @@ func TestSizeToString(t *testing.T) {
 	}
 	for i, line := range data {
 		ut.AssertEqualIndex(t, i, line.expected, SizeToString(line.in))
-	}
-}
-
-func TestURLToHTTPS(t *testing.T) {
-	data := []struct {
-		in       string
-		expected string
-		err      error
-	}{
-		{"foo", "https://foo", nil},
-		{"https://foo", "https://foo", nil},
-		{"http://foo", "", errors.New("Only https:// scheme is accepted. It can be omitted.")},
-	}
-	for i, line := range data {
-		out, err := URLToHTTPS(line.in)
-		ut.AssertEqualIndex(t, i, line.expected, out)
-		ut.AssertEqualIndex(t, i, line.err, err)
 	}
 }
 
