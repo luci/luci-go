@@ -6,25 +6,27 @@ package main
 
 import (
 	"errors"
+	"io"
 	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/luci/luci-go/client/internal/common"
+	"github.com/luci/luci-go/client/internal/tracer"
 	"github.com/maruel/subcommands"
 )
 
 type commonFlags struct {
-	quiet   bool
-	verbose bool
-	//logFile string
-	//noLog   bool
+	quiet     bool
+	verbose   bool
+	tracePath string
+	traceFile io.Closer
 }
 
 func (c *commonFlags) Init(b *subcommands.CommandRunBase) {
 	b.Flags.BoolVar(&c.quiet, "quiet", false, "Get less output")
 	b.Flags.BoolVar(&c.verbose, "verbose", false, "Get more output")
-	// TODO(maruel): Implement -log.
-	//b.Flags.StringVar(&c.logFile, "log", "", "Name of log file")
+	b.Flags.StringVar(&c.tracePath, "trace", "", "Name of trace file")
 }
 
 func (c *commonFlags) Parse() error {
@@ -35,8 +37,26 @@ func (c *commonFlags) Parse() error {
 	if c.quiet && c.verbose {
 		return errors.New("can't use both -quiet and -verbose")
 	}
-	// TODO(maruel): Implement -log.
+	if c.tracePath != "" {
+		f, err := os.Create(c.tracePath)
+		if err != nil {
+			return err
+		}
+		if err := tracer.Start(f, 0); err != nil {
+			_ = f.Close()
+			return err
+		}
+		c.traceFile = f
+	}
 	return nil
+}
+
+func (c *commonFlags) Close() error {
+	if c.traceFile == nil {
+		return errors.New("was already closed")
+	}
+	tracer.Stop()
+	return c.traceFile.Close()
 }
 
 type commonServerFlags struct {

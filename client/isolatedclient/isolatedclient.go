@@ -8,8 +8,10 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 
 	"github.com/luci/luci-go/client/internal/common"
+	"github.com/luci/luci-go/client/internal/tracer"
 	"github.com/luci/luci-go/common/isolated"
 )
 
@@ -31,16 +33,19 @@ type IsolateServer interface {
 // Its content is implementation specific.
 type PushState struct {
 	status    isolated.PreuploadStatus
+	size      int64
 	uploaded  bool
 	finalized bool
 }
 
 // New returns a new IsolateServer client.
 func New(url, namespace string) IsolateServer {
-	return &isolateServer{
+	i := &isolateServer{
 		url:       url,
 		namespace: namespace,
 	}
+	tracer.NewTID(i, nil, url)
+	return i
 }
 
 // Private details.
@@ -59,93 +64,105 @@ func (i *isolateServer) ServerCapabilities() (*isolated.ServerCapabilities, erro
 	return out, nil
 }
 
-func (i *isolateServer) Contains(items []*isolated.DigestItem) ([]*PushState, error) {
+func (i *isolateServer) Contains(items []*isolated.DigestItem) (out []*PushState, err error) {
+	end := tracer.Span(i, "contains", strconv.Itoa(len(items)), nil)
+	defer func() { end(tracer.Args{"err": err}) }()
 	in := isolated.DigestCollection{Items: items}
 	in.Namespace.Namespace = i.namespace
 	data := &isolated.UrlCollection{}
 	url := i.url + "/_ah/api/isolateservice/v1/preupload"
-	if _, err := common.PostJSON(nil, url, in, data); err != nil {
+	if _, err = common.PostJSON(nil, url, in, data); err != nil {
 		return nil, err
 	}
-	out := make([]*PushState, len(items))
+	out = make([]*PushState, len(items))
 	for _, e := range data.Items {
 		index := int(e.Index)
 		out[index] = &PushState{
 			status: e,
+			size:   items[index].Size,
 		}
 	}
 	return out, nil
 }
 
-func (i *isolateServer) Push(state *PushState, src io.Reader) error {
+func (i *isolateServer) Push(state *PushState, src io.Reader) (err error) {
 	// This push operation may be a retry after failed finalization call below,
 	// no need to reupload contents in that case.
 	if !state.uploaded {
 		// PUT file to uploadURL.
-		if err := i.doPush(state, src); err != nil {
-			return err
+		if err = i.doPush(state, src); err != nil {
+			return
 		}
 		state.uploaded = true
 	}
 
 	// Optionally notify the server that it's done.
 	if state.status.GSUploadURL != "" {
+		end := tracer.Span(i, "finalize", "finalize", nil)
+		defer func() { end(tracer.Args{"err": err}) }()
 		// TODO(vadimsh): Calculate MD5 or CRC32C sum while uploading a file and
 		// send it to isolated server. That way isolate server can verify that
 		// the data safely reached Google Storage (GS provides MD5 and CRC32C of
 		// stored files).
 		in := isolated.FinalizeRequest{state.status.UploadTicket}
 		url := i.url + "/_ah/api/isolateservice/v1/finalize_gs_upload"
-		_, err := common.PostJSON(nil, url, in, nil)
+		_, err = common.PostJSON(nil, url, in, nil)
 		if err != nil {
-			return err
+			return
 		}
 	}
 	state.finalized = true
-	return nil
+	return
 }
 
-func (i *isolateServer) doPush(state *PushState, src io.Reader) error {
+func (i *isolateServer) doPush(state *PushState, src io.Reader) (err error) {
+	end := tracer.Span(i, "push", strconv.FormatInt(state.size, 10), nil)
+	defer func() { end(tracer.Args{"err": err}) }()
 	reader, writer := io.Pipe()
 	defer reader.Close()
 	compressor := isolated.GetCompressor(writer)
 	c := make(chan error)
 	go func() {
-		_, err := io.Copy(compressor, src)
-		if err2 := compressor.Close(); err == nil {
-			err = err2
+		_, err2 := io.Copy(compressor, src)
+		if err3 := compressor.Close(); err2 == nil {
+			err2 = err3
 		}
-		writer.Close()
-		c <- err
+		_ = writer.Close()
+		c <- err2
+	}()
+	defer func() {
+		err4 := <-c
+		if err == nil {
+			err = err4
+		}
 	}()
 
 	// DB upload.
 	if state.status.GSUploadURL == "" {
 		url := i.url + "/_ah/api/isolateservice/v1/store_inline"
-		content, err := ioutil.ReadAll(reader)
-		if err != nil {
-			return err
+		content, err2 := ioutil.ReadAll(reader)
+		if err2 != nil {
+			return err2
 		}
 		in := &isolated.StorageRequest{state.status.UploadTicket, content}
 		_, err = common.PostJSON(nil, url, in, nil)
-		return err
+		return
 	}
 
 	// Upload to GCS.
 	client := &http.Client{}
-	request, err := http.NewRequest("PUT", state.status.GSUploadURL, reader)
+	request, err5 := http.NewRequest("PUT", state.status.GSUploadURL, reader)
+	if err5 != nil {
+		return err5
+	}
 	request.Header.Set("Content-Type", "application/octet-stream")
 	// TODO(maruel): For relatively small file, set request.ContentLength so the
 	// TCP connection can be reused.
-	resp, err := client.Do(request)
-	if err != nil {
-		return err
+	resp, err6 := client.Do(request)
+	if err6 != nil {
+		return err6
 	}
 	_, err = io.Copy(ioutil.Discard, resp.Body)
-	resp.Body.Close()
-	err2 := <-c
-	if err == nil {
-		return err2
-	}
-	return err
+	_ = resp.Body.Close()
+	return
 }

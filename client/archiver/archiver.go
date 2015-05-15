@@ -16,6 +16,7 @@ import (
 
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/client/internal/progress"
+	"github.com/luci/luci-go/client/internal/tracer"
 	"github.com/luci/luci-go/client/isolatedclient"
 	"github.com/luci/luci-go/common/isolated"
 )
@@ -123,6 +124,7 @@ func New(is isolatedclient.IsolateServer, out io.Writer) Archiver {
 		stage3LookupChan:      make(chan *archiverItem),
 		stage4UploadChan:      make(chan *archiverItem),
 	}
+	tracer.NewTID(a, nil, "archiver")
 
 	a.wg.Add(1)
 	go func() {
@@ -334,6 +336,7 @@ func (a *archiver) Close() error {
 }
 
 func (a *archiver) Cancel(reason error) {
+	tracer.Instant(a, "archiver", "cancel", tracer.Thread, tracer.Args{"reason": reason})
 	a.canceler.Cancel(reason)
 }
 
@@ -367,6 +370,7 @@ func (a *archiver) Stats() *Stats {
 
 func (a *archiver) push(item *archiverItem) Future {
 	if a.pushLocked(item) {
+		tracer.Instant(a, "archiver", "push", tracer.Thread, tracer.Args{"item": item.DisplayName()})
 		a.progress.Update(groupFound, groupFoundFound, 1)
 		return item
 	}

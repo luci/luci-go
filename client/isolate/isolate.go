@@ -17,6 +17,7 @@ import (
 
 	"github.com/luci/luci-go/client/archiver"
 	"github.com/luci/luci-go/client/internal/common"
+	"github.com/luci/luci-go/client/internal/tracer"
 	"github.com/luci/luci-go/common/isolated"
 )
 
@@ -119,6 +120,8 @@ func ReplaceVariables(str string, opts *ArchiveOptions) (string, error) {
 // Returns a Future to the .isolated.
 func Archive(arch archiver.Archiver, relDir string, opts *ArchiveOptions) archiver.Future {
 	displayName := filepath.Base(opts.Isolated)
+	tracer.NewTID(opts, nil, displayName)
+	defer tracer.Span(opts, "isolate", "archive", nil)(nil)
 	f, err := archive(arch, relDir, opts, displayName)
 	if err != nil {
 		arch.Cancel(err)
@@ -129,27 +132,28 @@ func Archive(arch archiver.Archiver, relDir string, opts *ArchiveOptions) archiv
 	return f
 }
 
-func archive(arch archiver.Archiver, relDir string, opts *ArchiveOptions, displayName string) (archiver.Future, error) {
+func processing(relDir string, opts *ArchiveOptions, displayName string) (int, int, []string, string, *isolated.Isolated, error) {
+	defer tracer.Span(opts, "isolate", "loading", nil)(nil)
 	content, err := ioutil.ReadFile(opts.Isolate)
 	if err != nil {
-		return nil, err
+		return 0, 0, nil, "", nil, err
 	}
 	cmd, deps, readOnly, isolateDir, err := LoadIsolateForConfig(relDir, content, opts.ConfigVariables)
 	if err != nil {
-		return nil, err
+		return 0, 0, nil, "", nil, err
 	}
 
 	// Check for variable error before doing anything.
 	for i := range cmd {
 		if cmd[i], err = ReplaceVariables(cmd[i], opts); err != nil {
-			return nil, err
+			return 0, 0, nil, "", nil, err
 		}
 	}
 	filesCount := 0
 	dirsCount := 0
 	for i := range deps {
 		if deps[i], err = ReplaceVariables(deps[i], opts); err != nil {
-			return nil, err
+			return 0, 0, nil, "", nil, err
 		}
 		if deps[i][len(deps[i])-1] == os.PathSeparator {
 			dirsCount++
@@ -173,14 +177,14 @@ func archive(arch archiver.Archiver, relDir string, opts *ArchiveOptions, displa
 		for {
 			rel, err := filepath.Rel(rootDir, base)
 			if err != nil {
-				return nil, err
+				return 0, 0, nil, "", nil, err
 			}
 			if !strings.HasPrefix(rel, "..") {
 				break
 			}
 			newRootDir := filepath.Dir(rootDir)
 			if newRootDir == rootDir {
-				return nil, errors.New("failed to find root dir")
+				return 0, 0, nil, "", nil, errors.New("failed to find root dir")
 			}
 			rootDir = newRootDir
 		}
@@ -190,7 +194,7 @@ func archive(arch archiver.Archiver, relDir string, opts *ArchiveOptions, displa
 	}
 
 	// Prepare the .isolated file.
-	i := isolated.Isolated{
+	i := &isolated.Isolated{
 		Algo:     "sha-1",
 		Files:    map[string]isolated.File{},
 		ReadOnly: readOnly.ToIsolated(),
@@ -202,11 +206,16 @@ func archive(arch archiver.Archiver, relDir string, opts *ArchiveOptions, displa
 	if rootDir != isolateDir {
 		relPath, err := filepath.Rel(rootDir, isolateDir)
 		if err != nil {
-			return nil, err
+			return 0, 0, nil, "", nil, err
 		}
 		i.RelativeCwd = relPath
 	}
+	// Processing of the .isolate file ended.
+	return filesCount, dirsCount, deps, rootDir, i, err
+}
 
+func archive(arch archiver.Archiver, relDir string, opts *ArchiveOptions, displayName string) (archiver.Future, error) {
+	filesCount, dirsCount, deps, rootDir, i, err := processing(relDir, opts, displayName)
 	// Handle each dependency, either a file or a directory..
 	fileFutures := make([]archiver.Future, 0, filesCount)
 	dirFutures := make([]archiver.Future, 0, dirsCount)

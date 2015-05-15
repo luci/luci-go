@@ -204,6 +204,7 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 }
 
 func (c *batchArchiveRun) Run(a subcommands.Application, args []string) int {
+	defer c.Close()
 	if err := c.Parse(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1

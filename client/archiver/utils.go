@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/luci/luci-go/client/internal/tracer"
 	"github.com/luci/luci-go/common/isolated"
 )
 
@@ -119,6 +120,9 @@ func walk(root string, blacklist []string, c chan<- *walkItem) {
 	// the same directory may be enumerated multiple times. Caching the content
 	// may be worth. This needs to be perf tested.
 
+	total := 0
+	end := tracer.Span(root, "walk", filepath.Base(root), nil)
+	defer func() { end(tracer.Args{"root": root, "total": total}) }()
 	// Check patterns upfront, so it has consistent behavior w.r.t. bad glob
 	// patterns.
 	for _, b := range blacklist {
@@ -132,6 +136,7 @@ func walk(root string, blacklist []string, c chan<- *walkItem) {
 	}
 	rootLen := len(root) + 1
 	err := filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
+		total++
 		if err != nil {
 			return fmt.Errorf("walk(%s): %s", p, err)
 		}
@@ -179,6 +184,9 @@ func walk(root string, blacklist []string, c chan<- *walkItem) {
 //
 // blacklist is a list of globs of files to ignore.
 func PushDirectory(a Archiver, root string, relDir string, blacklist []string) Future {
+	total := 0
+	end := tracer.Span(a, "PushDirectory", relDir, nil)
+	defer func() { end(tracer.Args{"root": root, "total": total}) }()
 	c := make(chan *walkItem)
 	go func() {
 		walk(root, blacklist, c)
@@ -202,6 +210,7 @@ func PushDirectory(a Archiver, root string, relDir string, blacklist []string) F
 			s.Finalize("", item.err)
 			continue
 		}
+		total++
 		if relDir != "" {
 			item.relPath = filepath.Join(relDir, item.relPath)
 		}
