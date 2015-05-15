@@ -84,7 +84,8 @@ func testCache(t *testing.T, c Cache) []isolated.HexDigest {
 	ut.AssertEqual(t, true, nil != c.Hardlink(fakeDigest, dest, os.FileMode(0600)))
 	ut.AssertEqual(t, true, nil != c.Hardlink(badDigest, dest, os.FileMode(0600)))
 	ut.AssertEqual(t, nil, c.Hardlink(file2Digest, dest, os.FileMode(0600)))
-	ut.AssertEqual(t, nil, c.Hardlink(file2Digest, dest, os.FileMode(0600)))
+	// See comment about the fact that it may or may not work.
+	_ = c.Hardlink(file2Digest, dest, os.FileMode(0600))
 	actual, err = ioutil.ReadFile(dest)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, file2Content, actual)

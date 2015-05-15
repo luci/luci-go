@@ -45,6 +45,10 @@ type Cache interface {
 	Read(digest isolated.HexDigest) (io.ReadCloser, error)
 
 	// Hardlink ensures file at |dest| has the same content as cached |digest|.
+	//
+	// Note that the behavior when dest already exists is undefined. It will work
+	// on all POSIX and may or may not fail on Windows depending on the
+	// implementation used. Do not rely on this behavior.
 	Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode) error
 }
 
@@ -310,12 +314,22 @@ func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode
 		return os.ErrInvalid
 	}
 	src := d.itemPath(digest)
-	err := os.Link(src, dest)
-	if err != nil {
-		_ = os.Remove(dest)
-		err = os.Link(src, dest)
-	}
-	return err
+	// - Windows, if dest exists, the call fails. In particular, trying to
+	//   os.Remove() will fail if the file's ReadOnly bit is set. What's worse is
+	//   that the ReadOnly bit is set on the file inode, shared on all hardlinks
+	//   to this inode. This means that in the case of a file with the ReadOnly
+	//   bit set, it would have to do:
+	//   - If dest exists:
+	//    - If dest has ReadOnly bit:
+	//      - If file has any other inode:
+	//        - Remove the ReadOnly bit.
+	//        - Remove dest.
+	//        - Set the ReadOnly bit on one of the inode found.
+	//   - Call os.Link()
+	//  In short, nobody ain't got time for that.
+	//
+	// - On any other (sane) OS, if dest exists, it is silently overwritten.
+	return os.Link(src, dest)
 }
 
 func (d *disk) itemPath(digest isolated.HexDigest) string {
