@@ -127,6 +127,13 @@ func Span(marker interface{}, category string, name string, args Args) func(args
 	tsStart := time.Since(start)
 	return func(argsEnd Args) {
 		tsEnd := time.Since(start)
+		if tsEnd == tsStart {
+			// Make sure a duration event lasts at least one nanosecond.
+			// It is a problem on systems with very low resolution clock
+			// like Windows where the clock is so coarse that a large
+			// number of events would not show up on the UI.
+			tsEnd++
+		}
 		if args != nil && argsEnd != nil {
 			// Use a pair of eventBegin/eventEnd.
 			c.emit(&event{

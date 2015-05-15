@@ -176,6 +176,8 @@ func TestNewPIDNewTID(t *testing.T) {
 	})
 }
 
+// Private details.
+
 type traceContext struct {
 	Args []string `json:"args"`
 	Wd   string   `json:"cwd"`
@@ -189,7 +191,8 @@ type traceFile struct {
 func check(t *testing.T, b *bytes.Buffer, expected []event) {
 	actual := &traceFile{}
 	ut.AssertEqual(t, nil, json.Unmarshal(b.Bytes(), actual))
-	// Zap out .Timestamp since it is not deterministic.
+	// Zap out .Timestamp since it is not deterministic. Convert Duration to
+	// binary value, either 0 or 1 since it's value is either set or not set.
 	for i := range actual.Events {
 		ut.AssertEqual(t, true, actual.Events[i].Timestamp >= 0)
 		actual.Events[i].Timestamp = 0
