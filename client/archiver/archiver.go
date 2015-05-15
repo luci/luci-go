@@ -25,24 +25,36 @@ const (
 	groupFound      progress.Group   = 0
 	groupFoundFound progress.Section = 0
 
-	groupHash     progress.Group   = 1
-	groupHashTodo progress.Section = 0
-	groupHashDone progress.Section = 1
+	groupHash         progress.Group   = 1
+	groupHashDone     progress.Section = 0
+	groupHashDoneSize progress.Section = 1
+	groupHashTodo     progress.Section = 2
 
 	groupLookup     progress.Group   = 2
-	groupLookupTodo progress.Section = 0
-	groupLookupDone progress.Section = 1
+	groupLookupDone progress.Section = 0
+	groupLookupTodo progress.Section = 1
 
-	groupUpload     progress.Group   = 3
-	groupUploadTodo progress.Section = 0
-	groupUploadDone progress.Section = 1
+	groupUpload         progress.Group   = 3
+	groupUploadDone     progress.Section = 0
+	groupUploadDoneSize progress.Section = 1
+	groupUploadTodo     progress.Section = 2
+	groupUploadTodoSize progress.Section = 3
 )
 
-var headers = [][]string{
-	{"found"},
-	{"to hash", "hashed"},
-	{"to lookup", "looked up"},
-	{"to upload", "uploaded"},
+var headers = [][]progress.Column{
+	{{Name: "found"}},
+	{
+		{Name: "hashed"},
+		{Name: "size", Formatter: common.SizeToString},
+		{Name: "to hash"},
+	},
+	{{Name: "looked up"}, {Name: "to lookup"}},
+	{
+		{Name: "uploaded"},
+		{Name: "size", Formatter: common.SizeToString},
+		{Name: "to upload"},
+		{Name: "size", Formatter: common.SizeToString},
+	},
 }
 
 // Future is the future of a file pushed to be hashed.
@@ -473,6 +485,7 @@ func (a *archiver) stage2HashLoop() {
 				return
 			}
 			a.progress.Update(groupHash, groupHashDone, 1)
+			a.progress.Update(groupHash, groupHashDoneSize, item.digestItem.Size)
 			a.progress.Update(groupLookup, groupLookupTodo, 1)
 			a.stage3LookupChan <- item
 		}, func() {
@@ -559,7 +572,7 @@ func (a *archiver) doContains(items []*archiverItem) {
 		}
 		return
 	}
-	a.progress.Update(groupLookup, groupLookupDone, len(items))
+	a.progress.Update(groupLookup, groupLookupDone, int64(len(items)))
 	for index, state := range states {
 		size := items[index].digestItem.Size
 		if state == nil {
@@ -569,6 +582,7 @@ func (a *archiver) doContains(items []*archiverItem) {
 		} else {
 			items[index].state = state
 			a.progress.Update(groupUpload, groupUploadTodo, 1)
+			a.progress.Update(groupUpload, groupUploadTodoSize, items[index].digestItem.Size)
 			a.stage4UploadChan <- items[index]
 		}
 	}
@@ -598,6 +612,7 @@ func (a *archiver) doUpload(item *archiverItem) {
 		item.setErr(err)
 	} else {
 		a.progress.Update(groupUpload, groupUploadDone, 1)
+		a.progress.Update(groupUpload, groupUploadDoneSize, item.digestItem.Size)
 	}
 	size := common.Size(item.digestItem.Size)
 	u := &UploadStat{time.Since(start), size, item.DisplayName()}

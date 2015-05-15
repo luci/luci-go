@@ -198,7 +198,7 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	if !c.quiet {
 		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", stats.TotalHits(), stats.TotalBytesHits())
 		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", stats.TotalMisses(), stats.TotalBytesPushed())
-		fmt.Fprintf(os.Stderr, "Duration: %s\n", duration)
+		fmt.Fprintf(os.Stderr, "Duration: %s\n", common.Round(duration, time.Millisecond))
 	}
 	return err
 }

@@ -23,6 +23,10 @@ var units = []string{"b", "Kib", "Mib", "Gib", "Tib", "Pib", "Eib", "Zib", "Yib"
 type Size int64
 
 func (s Size) String() string {
+	return SizeToString(int64(s))
+}
+
+func SizeToString(s int64) string {
 	v := float64(s)
 	i := 0
 	for ; i < len(units); i++ {
@@ -31,7 +35,13 @@ func (s Size) String() string {
 		}
 		v /= 1024.
 	}
-	return fmt.Sprintf("%.1f%s", v, units[i])
+	if i == 0 {
+		return fmt.Sprintf("%d%s", s, units[i])
+	}
+	if v >= 10 {
+		return fmt.Sprintf("%.1f%s", v, units[i])
+	}
+	return fmt.Sprintf("%.2f%s", v, units[i])
 }
 
 // URLToHTTPS ensures the url is https://.

@@ -5,6 +5,7 @@
 package progress
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -24,7 +25,17 @@ type Section int
 type Progress interface {
 	io.Closer
 	// Update increases the count of a column.
-	Update(group Group, section Section, count int)
+	Update(group Group, section Section, count int64)
+}
+
+// Formatter formats numbers in a Column.
+type Formatter func(i int64) string
+
+// Column represent a column to be printed in the progress status.
+type Column struct {
+	Name      string
+	Formatter Formatter
+	Value     int64
 }
 
 // New returns an initialized thread-safe Progress implementation.
@@ -33,24 +44,29 @@ type Progress interface {
 // of numbers for each state, which will be displayed as a number in each box.
 //
 // For:
-//   columns = [][]string{{"found"}, {"to hash", "hashed"}}
+//   columns = [][]Column{{Name:"found"}, {"hashed", Name:"to hash"}}
 // It'll print:
-//   [found] [to hash/hashed]
-func New(columns [][]string, out io.Writer) Progress {
+//   [found] [hashed/to hash]
+func New(columns [][]Column, out io.Writer) Progress {
 	p := &progress{
 		start:    time.Now().UTC(),
-		columns:  columns,
+		columns:  make([][]Column, len(columns)),
 		interval: time.Second,
 		EOL:      "\n",
 		out:      out,
-		values:   make([][]int, len(columns)),
 	}
 	if common.IsTerminal(out) {
 		p.interval = 50 * time.Millisecond
 		p.EOL = "\r"
 	}
 	for i, c := range columns {
-		p.values[i] = make([]int, len(c))
+		p.columns[i] = make([]Column, len(c))
+		for j, d := range c {
+			p.columns[i][j] = d
+			if p.columns[i][j].Formatter == nil {
+				p.columns[i][j].Formatter = formatInt
+			}
+		}
 	}
 	if out != nil {
 		go p.printLoop()
@@ -63,22 +79,21 @@ func New(columns [][]string, out io.Writer) Progress {
 type progress struct {
 	// Immutable.
 	start    time.Time
-	columns  [][]string
 	interval time.Duration
 	EOL      string
 	out      io.Writer
 
 	// Mutable.
 	lock         sync.Mutex
-	values       [][]int
+	columns      [][]Column // Only the .Value are updated.
 	valueChanged bool
 }
 
-func (p *progress) Update(group Group, section Section, count int) {
+func (p *progress) Update(group Group, section Section, count int64) {
 	go func() {
 		p.lock.Lock()
 		defer p.lock.Unlock()
-		p.values[group][section] += count
+		p.columns[group][section].Value += count
 		p.valueChanged = true
 	}()
 }
@@ -86,12 +101,16 @@ func (p *progress) Update(group Group, section Section, count int) {
 func (p *progress) Close() error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
+	if p.out == nil {
+		return errors.New("was already closed")
+	}
+	_, _ = p.out.Write([]byte("\n"))
 	p.out = nil
 	return nil
 }
 
 func (p *progress) printLoop() {
-	line := renderGroups(p.columns) + "\n"
+	line := renderNames(p.columns) + "\n"
 	p.lock.Lock()
 	out := p.out
 	p.lock.Unlock()
@@ -121,33 +140,41 @@ func (p *progress) printStep() (io.Writer, string) {
 	p.valueChanged = false
 	// Zap resolution at .1s level. We're slow anyway.
 	duration := common.Round(time.Since(p.start), 100*time.Millisecond)
-	return p.out, fmt.Sprintf("%s %s%s", renderGroupsInt(p.values), duration, p.EOL)
+	return p.out, fmt.Sprintf("%s %s%s", renderValues(p.columns), duration, p.EOL)
 }
 
-func renderSection(section []string) string {
-	return "[" + strings.Join(section, "/") + "]"
-}
-
-func renderGroups(c [][]string) string {
-	sections := make([]string, len(c))
-	for i, section := range c {
-		sections[i] = renderSection(section)
-	}
-	return strings.Join(sections, " ")
-}
-
-func renderSectionInt(section []int) string {
+func renderSectionName(section []Column) string {
 	parts := make([]string, len(section))
-	for i, part := range section {
-		parts[i] = strconv.Itoa(part)
+	for i, s := range section {
+		parts[i] = s.Name
 	}
 	return "[" + strings.Join(parts, "/") + "]"
 }
 
-func renderGroupsInt(c [][]int) string {
+func renderNames(c [][]Column) string {
 	sections := make([]string, len(c))
 	for i, section := range c {
-		sections[i] = renderSectionInt(section)
+		sections[i] = renderSectionName(section)
 	}
 	return strings.Join(sections, " ")
+}
+
+func renderSectionValue(section []Column) string {
+	parts := make([]string, len(section))
+	for i, part := range section {
+		parts[i] = part.Formatter(part.Value)
+	}
+	return "[" + strings.Join(parts, "/") + "]"
+}
+
+func renderValues(c [][]Column) string {
+	sections := make([]string, len(c))
+	for i, section := range c {
+		sections[i] = renderSectionValue(section)
+	}
+	return strings.Join(sections, " ")
+}
+
+func formatInt(i int64) string {
+	return strconv.FormatInt(i, 10)
 }

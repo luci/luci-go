@@ -12,6 +12,29 @@ import (
 	"github.com/maruel/ut"
 )
 
+func TestSizeToString(t *testing.T) {
+	data := []struct {
+		in       int64
+		expected string
+	}{
+		{0, "0b"},
+		{1, "1b"},
+		{1000, "1000b"},
+		{1023, "1023b"},
+		{1024, "1.00Kib"},
+		{1029, "1.00Kib"},
+		{1030, "1.01Kib"},
+		{10234, "9.99Kib"},
+		{10239, "10.00Kib"},
+		{10240, "10.0Kib"},
+		{1048575, "1024.0Kib"},
+		{1048576, "1.00Mib"},
+	}
+	for i, line := range data {
+		ut.AssertEqualIndex(t, i, line.expected, SizeToString(line.in))
+	}
+}
+
 func TestURLToHTTPS(t *testing.T) {
 	data := []struct {
 		in       string
