@@ -216,6 +216,9 @@ func processing(relDir string, opts *ArchiveOptions, displayName string) (int, i
 
 func archive(arch archiver.Archiver, relDir string, opts *ArchiveOptions, displayName string) (archiver.Future, error) {
 	filesCount, dirsCount, deps, rootDir, i, err := processing(relDir, opts, displayName)
+	if err != nil {
+		return nil, err
+	}
 	// Handle each dependency, either a file or a directory..
 	fileFutures := make([]archiver.Future, 0, filesCount)
 	dirFutures := make([]archiver.Future, 0, dirsCount)

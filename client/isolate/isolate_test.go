@@ -178,3 +178,20 @@ func TestArchive(t *testing.T) {
 
 	ut.AssertEqual(t, nil, server.Error())
 }
+
+// Test that if the isolate file is not found, the error is properly propagated.
+func TestArchiveFileNotFoundReturnsError(t *testing.T) {
+	t.Parallel()
+	a := archiver.New(isolatedclient.New("http://unused", "default-gzip"), nil)
+	opts := &ArchiveOptions{
+		Isolate:  "/this-file-does-not-exist",
+		Isolated: "/this-file-doesnt-either",
+	}
+	future := Archive(a, "/base-dir", opts)
+	future.WaitForHashed()
+	expectedErr := "open /this-file-does-not-exist: no such file or directory"
+	ut.AssertEqual(t, expectedErr, future.Error().Error())
+	closeErr := a.Close()
+	ut.AssertEqual(t, true, closeErr != nil)
+	ut.AssertEqual(t, expectedErr, closeErr.Error())
+}
