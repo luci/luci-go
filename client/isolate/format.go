@@ -97,7 +97,6 @@ func LoadIsolateAsConfig(isolateDir string, content []byte) (*Configs, error) {
 	}
 	processedIsolate, err := processIsolate(content)
 	if err != nil {
-		panic(err)
 		return nil, fmt.Errorf("failed to process isolate (isolateDir: %s): %s", isolateDir, err)
 	}
 	out := processedIsolate.toConfigs()
