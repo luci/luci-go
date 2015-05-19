@@ -5,7 +5,6 @@
 package main
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/luci/luci-go/client/internal/common"
@@ -59,10 +58,14 @@ func TestInvalidArchiveCMD(t *testing.T) {
 }
 
 func TestArchiveCMDParsing(t *testing.T) {
-	argsString := ("--isolated .isolated --isolate .isolate --path-variable DEPTH ../.." +
-		" --path-variable PRODUCT_DIR ../../out/Release" +
-		" --extra-variable version_full=42.0.2284.0 --config-variable OS=linux")
-	args := strings.Split(argsString, " ")
+	args := []string{
+		"--isolated", ".isolated",
+		"--isolate", ".isolate",
+		"--path-variable", "DEPTH", "../..",
+		"--path-variable", "PRODUCT_DIR", "../../out/Release",
+		"--extra-variable", "version_full=42.0.2284.0",
+		"--config-variable", "OS=linux",
+	}
 	opts, err := parseArchiveCMD(args, "")
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, opts.ConfigVariables, common.KeyValVars{"OS": "linux"})
