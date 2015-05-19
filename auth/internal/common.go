@@ -17,7 +17,8 @@ import (
 	"net/http"
 	"time"
 
-	"code.google.com/p/goauth2/oauth"
+	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 )
 
 // ErrInsufficientAccess is can't be minted for given OAuth scopes. For example
@@ -47,14 +48,13 @@ type TokenProvider interface {
 	RequiresInteraction() bool
 
 	// MintToken launches authentication flow (possibly interactive) and returns
-	// a new refreshable token. It uses provided round tripper to make requests.
-	MintToken(http.RoundTripper) (Token, error)
+	// a new refreshable token.
+	MintToken() (Token, error)
 
 	// RefreshToken takes existing token (probably expired, but not necessarily)
 	// and returns a new refreshed token. It should never do any user interaction.
-	// If a user interaction is required, a error should be returned instead. The
-	// function uses provided round tripper to make requests.
-	RefreshToken(Token, http.RoundTripper) (Token, error)
+	// If a user interaction is required, a error should be returned instead.
+	RefreshToken(Token) (Token, error)
 
 	// MarshalToken converts a token to byte buffer.
 	MarshalToken(Token) ([]byte, error)
@@ -64,23 +64,35 @@ type TokenProvider interface {
 	UnmarshalToken([]byte) (Token, error)
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
-// tokenImpl implements Token interface by adapting oauth.Token.
-type tokenImpl struct {
-	oauth.Token
+// TransportFromContext returns http.RoundTripper buried inside the given
+// context.
+func TransportFromContext(ctx context.Context) http.RoundTripper {
+	// When nil is passed to NewClient it skips all OAuth stuff and returns
+	// client extracted from the context or http.DefaultClient.
+	c := oauth2.NewClient(ctx, nil)
+	if c == http.DefaultClient {
+		return http.DefaultTransport
+	}
+	return c.Transport
 }
 
-// makeToken builds Token from oauth.Token by copying it.
-func makeToken(tok *oauth.Token) Token {
+///////////////////////////////////////////////////////////////////////////////
+
+// tokenImpl implements Token interface by adapting oauth2.Token.
+type tokenImpl struct {
+	oauth2.Token
+}
+
+// makeToken builds Token from oauth2.Token by copying it.
+func makeToken(tok *oauth2.Token) Token {
 	return &tokenImpl{
 		Token: *tok,
 	}
 }
 
-// extractOAuthToken takes Token, checks its type and return oauth.Token.
+// extractOAuthToken takes Token, checks its type and return oauth2.Token.
 // It returns a copy that can be safely mutated.
-func extractOAuthToken(tok Token) oauth.Token {
+func extractOAuthToken(tok Token) oauth2.Token {
 	// It's OK to panic here on type mismatch.
 	return tok.(*tokenImpl).Token
 }
@@ -103,8 +115,8 @@ func (t *tokenImpl) Expired() bool {
 	if t.Expiry.IsZero() {
 		return false
 	}
-	// Allow 5 min clock skew.
-	expiry := t.Expiry.Add(-5 * time.Minute)
+	// Allow 1 min clock skew.
+	expiry := t.Expiry.Add(-time.Minute)
 	return expiry.Before(time.Now())
 }
 
@@ -162,7 +174,7 @@ func (p *oauthTokenProvider) UnmarshalToken(data []byte) (Token, error) {
 	if onDisk.Flavor != p.tokenFlavor {
 		return nil, fmt.Errorf("auth: bad token flavor %q, expected %q", onDisk.Flavor, p.tokenFlavor)
 	}
-	return makeToken(&oauth.Token{
+	return makeToken(&oauth2.Token{
 		AccessToken:  onDisk.AccessToken,
 		RefreshToken: onDisk.RefreshToken,
 		Expiry:       time.Unix(onDisk.ExpiresAtSec, 0),

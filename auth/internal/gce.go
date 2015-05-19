@@ -5,7 +5,6 @@
 package internal
 
 import (
-	"net/http"
 	"time"
 
 	"infra/libs/gce"
@@ -45,7 +44,7 @@ func NewGCETokenProvider(account string, scopes []string) (TokenProvider, error)
 	}, nil
 }
 
-func (p *gceTokenProvider) MintToken(_ http.RoundTripper) (Token, error) {
+func (p *gceTokenProvider) MintToken() (Token, error) {
 	tokenData, err := gce.GetAccessToken(p.account)
 	if err != nil {
 		return nil, err
@@ -56,7 +55,7 @@ func (p *gceTokenProvider) MintToken(_ http.RoundTripper) (Token, error) {
 	return tok, nil
 }
 
-func (p *gceTokenProvider) RefreshToken(_ Token, rt http.RoundTripper) (Token, error) {
+func (p *gceTokenProvider) RefreshToken(Token) (Token, error) {
 	// Minting and refreshing on GCE is the same thing: a call to metadata server.
-	return p.MintToken(rt)
+	return p.MintToken()
 }

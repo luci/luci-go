@@ -5,12 +5,34 @@
 package auth
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
 
 	"github.com/maruel/subcommands"
 )
+
+// Flags defines command line flags related to authentication.
+type Flags struct {
+	serviceAccountJSON string
+}
+
+// Register adds auth related flags to a FlagSet.
+func (fl *Flags) Register(f *flag.FlagSet) {
+	f.StringVar(&fl.serviceAccountJSON, "service-account-json", "", "Path to JSON file with service account credentials to use.")
+}
+
+// Options return instance of Options struct with values set accordingly to
+// parsed command line flags.
+func (fl *Flags) Options() (Options, error) {
+	opts := Options{}
+	if fl.serviceAccountJSON != "" {
+		opts.Method = ServiceAccountMethod
+		opts.ServiceAccountJSONPath = fl.serviceAccountJSON
+	}
+	return opts, nil
+}
 
 // SubcommandLogin returns subcommands.Command that can be used to perform
 // interactive login.
@@ -20,24 +42,32 @@ func SubcommandLogin(name string) *subcommands.Command {
 		ShortDesc: "performs interactive login flow",
 		LongDesc:  "Performs interactive login flow and caches obtained credentials",
 		CommandRun: func() subcommands.CommandRun {
-			return &loginRun{}
+			c := &loginRun{}
+			c.flags.Register(&c.Flags)
+			return c
 		},
 	}
 }
 
 type loginRun struct {
 	subcommands.CommandRunBase
+	flags Flags
 }
 
 func (c *loginRun) Run(subcommands.Application, []string) int {
-	transport, err := LoginIfRequired(nil)
+	opts, err := c.flags.Options()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Login failed: %s\n", err.Error())
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 		return 1
 	}
-	err = reportIdentity(transport)
+	client, err := AuthenticatedClient(InteractiveLogin, NewAuthenticator(opts))
 	if err != nil {
-		return 1
+		fmt.Fprintf(os.Stderr, "Login failed: %s\n", err.Error())
+		return 2
+	}
+	err = reportIdentity(client)
+	if err != nil {
+		return 3
 	}
 	return 0
 }
@@ -50,13 +80,16 @@ func SubcommandLogout(name string) *subcommands.Command {
 		ShortDesc: "removes cached credentials",
 		LongDesc:  "Removes cached credentials from the disk",
 		CommandRun: func() subcommands.CommandRun {
-			return &logoutRun{}
+			c := &logoutRun{}
+			c.flags.Register(&c.Flags)
+			return c
 		},
 	}
 }
 
 type logoutRun struct {
 	subcommands.CommandRunBase
+	flags Flags
 }
 
 func (c *logoutRun) Run(a subcommands.Application, args []string) int {
@@ -76,36 +109,44 @@ func SubcommandInfo(name string) *subcommands.Command {
 		ShortDesc: "prints an email address associated with currently cached token",
 		LongDesc:  "Prints an email address associated with currently cached token",
 		CommandRun: func() subcommands.CommandRun {
-			return &infoRun{}
+			c := &infoRun{}
+			c.flags.Register(&c.Flags)
+			return c
 		},
 	}
 }
 
 type infoRun struct {
 	subcommands.CommandRunBase
+	flags Flags
 }
 
 func (c *infoRun) Run(a subcommands.Application, args []string) int {
-	transport, err := DefaultAuthenticator.Transport()
+	opts, err := c.flags.Options()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		return 1
+	}
+	client, err := AuthenticatedClient(SilentLogin, NewAuthenticator(opts))
 	if err == ErrLoginRequired {
 		fmt.Fprintln(os.Stderr, "Not logged in")
-		return 1
+		return 2
 	} else if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		return 2
-	}
-	err = reportIdentity(transport)
-	if err != nil {
 		return 3
+	}
+	err = reportIdentity(client)
+	if err != nil {
+		return 4
 	}
 	return 0
 }
 
-// reportIdentity prints identity associated with credentials that round tripper
+// reportIdentity prints identity associated with credentials that the client
 // puts into each request (if any).
-func reportIdentity(t http.RoundTripper) error {
+func reportIdentity(c *http.Client) error {
 	var ident Identity
-	service, err := NewGroupsService("", &http.Client{Transport: t}, nil)
+	service, err := NewGroupsService("", c, nil)
 	if err == nil {
 		ident, err = service.FetchCallerIdentity()
 	}

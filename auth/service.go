@@ -85,7 +85,7 @@ func (i Identity) String() string {
 }
 
 // GroupsService knows how to talk to Groups API backend. Server side code
-// is in https://code.google.com/p/swarming repository.
+// is in https://github.com/luci/luci-py repository.
 type GroupsService struct {
 	client     *http.Client
 	serviceURL string
@@ -101,7 +101,7 @@ func NewGroupsService(serviceURL string, httpClient *http.Client, logger logging
 		serviceURL = defaultGroupsBackend()
 	}
 	if httpClient == nil {
-		httpClient, err = AuthenticatedClient(true, DefaultAuthenticator)
+		httpClient, err = DefaultAuthenticatedClient(OptionalLogin)
 		if err != nil {
 			return
 		}

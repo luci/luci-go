@@ -5,31 +5,28 @@
 package internal
 
 import (
-	"encoding/json"
 	"io/ioutil"
-	"net/http"
-	"strings"
 
-	"code.google.com/p/goauth2/oauth/jwt"
+	"golang.org/x/net/context"
+	"golang.org/x/oauth2/google"
+	"golang.org/x/oauth2/jwt"
 )
 
 type serviceAccountTokenProvider struct {
 	oauthTokenProvider
 
-	jwtToken *jwt.Token
+	ctx    context.Context
+	config *jwt.Config
 }
 
 // NewServiceAccountTokenProvider returns TokenProvider that supports service accounts.
-func NewServiceAccountTokenProvider(credsPath string, scopes []string) (TokenProvider, error) {
+func NewServiceAccountTokenProvider(ctx context.Context, credsPath string, scopes []string) (TokenProvider, error) {
 	buf, err := ioutil.ReadFile(credsPath)
 	if err != nil {
 		return nil, err
 	}
-	var key struct {
-		Email      string `json:"client_email"`
-		PrivateKey string `json:"private_key"`
-	}
-	if err = json.Unmarshal(buf, &key); err != nil {
+	config, err := google.JWTConfigFromJSON(buf, scopes...)
+	if err != nil {
 		return nil, err
 	}
 	return &serviceAccountTokenProvider{
@@ -37,20 +34,22 @@ func NewServiceAccountTokenProvider(credsPath string, scopes []string) (TokenPro
 			interactive: false,
 			tokenFlavor: "service_account",
 		},
-		jwtToken: jwt.NewToken(key.Email, strings.Join(scopes, " "), []byte(key.PrivateKey)),
+		ctx:    ctx,
+		config: config,
 	}, nil
 }
 
-func (p *serviceAccountTokenProvider) MintToken(rt http.RoundTripper) (Token, error) {
-	tok, err := p.jwtToken.Assert(&http.Client{Transport: rt})
+func (p *serviceAccountTokenProvider) MintToken() (Token, error) {
+	src := p.config.TokenSource(p.ctx)
+	tok, err := src.Token()
 	if err != nil {
 		return nil, err
 	}
 	return makeToken(tok), nil
 }
 
-func (p *serviceAccountTokenProvider) RefreshToken(_ Token, rt http.RoundTripper) (Token, error) {
+func (p *serviceAccountTokenProvider) RefreshToken(Token) (Token, error) {
 	// JWT tokens are self sufficient, there's no need for refresh_token. Minting
 	// a token and "refreshing" it is a same thing.
-	return p.MintToken(rt)
+	return p.MintToken()
 }

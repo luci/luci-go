@@ -14,15 +14,21 @@ import (
 	"infra/libs/auth/internal"
 	"infra/libs/logging"
 
+	"golang.org/x/net/context"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func ExampleNewAuthenticator() {
-	transport, err := LoginIfRequired(nil)
-	if err != nil {
+func ExampleDefaultAuthenticatedClient() {
+	client, err := DefaultAuthenticatedClient(SilentLogin)
+	if err == ErrLoginRequired {
+		logging.Errorf("Run 'auth login' to login")
 		return
 	}
-	client := http.Client{Transport: transport}
+	if err != nil {
+		logging.Errorf("Failed to login: %s", err)
+		return
+	}
 	client.Get("https://some-server.appspot.com")
 }
 
@@ -73,7 +79,7 @@ func TestAuthenticator(t *testing.T) {
 				ClientSecret:           clientSecret,
 				ServiceAccountJSONPath: filepath.Join(tempDir, "service_account.json"),
 				GCEAccountName:         "default",
-				Transport:              http.DefaultTransport,
+				Context:                context.TODO(),
 				Log:                    logging.DefaultLogger,
 			})
 		})
@@ -104,30 +110,6 @@ func TestPurgeCredentialsCache(t *testing.T) {
 	})
 }
 
-func TestLoginIfRequired(t *testing.T) {
-	Convey("Given mocked secrets dir", t, func() {
-		var tokenProvider internal.TokenProvider
-
-		mockTerminal()
-		mockSecretsDir()
-		mockTokenProvider(func() internal.TokenProvider { return tokenProvider })
-
-		Convey("Test non interactive auth", func() {
-			tokenProvider = &fakeTokenProvider{interactive: false}
-			t, err := LoginIfRequired(NewAuthenticator(Options{}))
-			So(err, ShouldBeNil)
-			So(t, ShouldNotBeNil)
-		})
-
-		Convey("Test interactive auth", func() {
-			tokenProvider = &fakeTokenProvider{interactive: true}
-			t, err := LoginIfRequired(NewAuthenticator(Options{}))
-			So(err, ShouldBeNil)
-			So(t, ShouldNotBeNil)
-		})
-	})
-}
-
 func TestAuthenticatedClient(t *testing.T) {
 	Convey("Given mocked secrets dir", t, func() {
 		var tokenProvider internal.TokenProvider
@@ -138,14 +120,14 @@ func TestAuthenticatedClient(t *testing.T) {
 
 		Convey("Test login required", func() {
 			tokenProvider = &fakeTokenProvider{interactive: true}
-			c, err := AuthenticatedClient(true, NewAuthenticator(Options{}))
+			c, err := AuthenticatedClient(InteractiveLogin, NewAuthenticator(Options{}))
 			So(err, ShouldBeNil)
 			So(c, ShouldNotEqual, http.DefaultClient)
 		})
 
 		Convey("Test login not required", func() {
 			tokenProvider = &fakeTokenProvider{interactive: true}
-			c, err := AuthenticatedClient(false, NewAuthenticator(Options{}))
+			c, err := AuthenticatedClient(OptionalLogin, NewAuthenticator(Options{}))
 			So(err, ShouldBeNil)
 			So(c, ShouldEqual, http.DefaultClient)
 		})
@@ -167,7 +149,7 @@ func TestRefreshToken(t *testing.T) {
 			}
 			auth, ok := NewAuthenticator(Options{}).(*authenticatorImpl)
 			So(ok, ShouldBeTrue)
-			_, err := LoginIfRequired(auth)
+			_, err := auth.Transport()
 			So(err, ShouldBeNil)
 			// No token yet. The token is minted on first refresh.
 			So(auth.currentToken(), ShouldBeNil)
@@ -176,7 +158,7 @@ func TestRefreshToken(t *testing.T) {
 			So(tok, ShouldEqual, tokenProvider.tokenToMint)
 		})
 
-		Convey("Test interactive auth (no cache)", func() {
+		Convey("Test interactive auth (cache expired)", func() {
 			tokenProvider = &fakeTokenProvider{
 				interactive:      true,
 				tokenToMint:      &fakeToken{name: "minted"},
@@ -185,7 +167,11 @@ func TestRefreshToken(t *testing.T) {
 			}
 			auth, ok := NewAuthenticator(Options{}).(*authenticatorImpl)
 			So(ok, ShouldBeTrue)
-			_, err := LoginIfRequired(auth)
+			_, err := auth.Transport()
+			So(err, ShouldEqual, ErrLoginRequired)
+			err = auth.Login()
+			So(err, ShouldBeNil)
+			_, err = auth.Transport()
 			So(err, ShouldBeNil)
 			// Minted initial token.
 			So(auth.currentToken(), ShouldEqual, tokenProvider.tokenToMint)
@@ -195,7 +181,7 @@ func TestRefreshToken(t *testing.T) {
 			So(tok, ShouldEqual, tokenProvider.tokenToRefresh)
 		})
 
-		Convey("Test interactive auth (with cache)", func() {
+		Convey("Test interactive auth (cache non expired)", func() {
 			tokenProvider = &fakeTokenProvider{
 				interactive:      true,
 				tokenToMint:      &fakeToken{name: "minted"},
@@ -204,7 +190,11 @@ func TestRefreshToken(t *testing.T) {
 			}
 			auth, ok := NewAuthenticator(Options{}).(*authenticatorImpl)
 			So(ok, ShouldBeTrue)
-			_, err := LoginIfRequired(auth)
+			_, err := auth.Transport()
+			So(err, ShouldEqual, ErrLoginRequired)
+			err = auth.Login()
+			So(err, ShouldBeNil)
+			_, err = auth.Transport()
 			So(err, ShouldBeNil)
 			// Minted initial token.
 			So(auth.currentToken(), ShouldEqual, tokenProvider.tokenToMint)
@@ -229,14 +219,14 @@ func (p *fakeTokenProvider) RequiresInteraction() bool {
 	return p.interactive
 }
 
-func (p *fakeTokenProvider) MintToken(http.RoundTripper) (internal.Token, error) {
+func (p *fakeTokenProvider) MintToken() (internal.Token, error) {
 	if p.tokenToMint != nil {
 		return p.tokenToMint, nil
 	}
 	return &fakeToken{}, nil
 }
 
-func (p *fakeTokenProvider) RefreshToken(internal.Token, http.RoundTripper) (internal.Token, error) {
+func (p *fakeTokenProvider) RefreshToken(internal.Token) (internal.Token, error) {
 	if p.tokenToRefresh != nil {
 		return p.tokenToRefresh, nil
 	}

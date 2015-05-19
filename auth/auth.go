@@ -36,6 +36,8 @@ import (
 	"strings"
 	"sync"
 
+	"golang.org/x/net/context"
+
 	"infra/libs/auth/internal"
 	"infra/libs/build"
 	"infra/libs/gce"
@@ -86,6 +88,27 @@ const (
 	GCEMetadataMethod Method = "GCEMetadataMethod"
 )
 
+// LoginMode is used as enum in AuthenticatedClient function.
+type LoginMode string
+
+const (
+	// InteractiveLogin is passed to AuthenticatedClient to forcefully rerun full
+	// login flow and cache resulting tokens. Used by 'login' CLI command.
+	InteractiveLogin LoginMode = "InteractiveLogin"
+
+	// SilentLogin is passed to AuthenticatedClient if authentication must be used
+	// and it is NOT OK to run interactive login flow to get the tokens. The call
+	// will fail with ErrLoginRequired error if there's no cached tokens. Should
+	// normally be used by all CLI tools that need to use authentication.
+	SilentLogin LoginMode = "SilentLogin"
+
+	// OptionalLogin is passed to AuthenticatedClient if it is OK not to use
+	// authentication if there are no cached credentials. Interactive login will
+	// never be called, default unauthenticated client will be returned instead.
+	// Should be used by CLI tools where authentication is optional.
+	OptionalLogin LoginMode = "OptionalLogin"
+)
+
 // Options are used by NewAuthenticator call. All fields are optional and have
 // sane default values.
 type Options struct {
@@ -114,8 +137,10 @@ type Options struct {
 	// Default: "default" account.
 	GCEAccountName string
 
-	// Transport is a http.RoundTripper to use, defaults to http.DefaultTransport.
-	Transport http.RoundTripper
+	// Context carries the underlying HTTP transport to use. If context is not
+	// provided or doesn't contain the transport, http.DefaultTransport will be
+	// used.
+	Context context.Context
 
 	// Log is logger to use, defaults to logging.DefaultLogger.
 	Log logging.Logger
@@ -136,6 +161,9 @@ type Authenticator interface {
 	// if interaction with a user is required, but the process is not running
 	// under a terminal. It overwrites currently cached credentials, if any.
 	Login() error
+
+	// PurgeCredentialsCache removes cached tokens.
+	PurgeCredentialsCache() error
 }
 
 // DefaultAuthenticator is a shared Authenticator built with default options.
@@ -166,8 +194,8 @@ func NewAuthenticator(opts Options) Authenticator {
 	if opts.GCEAccountName == "" {
 		opts.GCEAccountName = "default"
 	}
-	if opts.Transport == nil {
-		opts.Transport = http.DefaultTransport
+	if opts.Context == nil {
+		opts.Context = context.TODO()
 	}
 	if opts.Log == nil {
 		opts.Log = logging.DefaultLogger
@@ -175,27 +203,12 @@ func NewAuthenticator(opts Options) Authenticator {
 
 	// See ensureInitialized for the rest of the initialization.
 	auth := &authenticatorImpl{opts: &opts, log: opts.Log}
-	auth.transport = &authTransport{parent: auth, log: opts.Log}
+	auth.transport = &authTransport{
+		parent: auth,
+		base:   internal.TransportFromContext(opts.Context),
+		log:    opts.Log,
+	}
 	return auth
-}
-
-// LoginIfRequired runs an interactive login flow if authenticator has no cached
-// credentials. If authenticator already has credentials in cache, the function
-// uses them to build a transport. Regardless it returns a round tripper that
-// knows how to attach authentication information to requests. If nil is passed
-// will use DefaultAuthenticator.
-func LoginIfRequired(a Authenticator) (t http.RoundTripper, err error) {
-	if a == nil {
-		a = DefaultAuthenticator
-	}
-	if t, err = a.Transport(); err != ErrLoginRequired {
-		return
-	}
-	if err = a.Login(); err != nil {
-		return
-	}
-	t, err = a.Transport()
-	return
 }
 
 // PurgeCredentialsCache deletes all cached credentials from the disk.
@@ -227,33 +240,40 @@ func PurgeCredentialsCache() error {
 	return nil
 }
 
-// AuthenticatedClient performs login (if requested) and returns http.Client. If
-// requireLogin is false and there's no cached credentials, AuthenticatedClient
-// returns default http.Client. Otherwise it runs interactive login flow and
-// returns http.Client that supports authentication.
-func AuthenticatedClient(requireLogin bool, auth Authenticator) (*http.Client, error) {
-	if auth == nil {
-		auth = DefaultAuthenticator
+// AuthenticatedClient performs login (if requested) and returns http.Client.
+// See documentation for 'mode' for more details.
+func AuthenticatedClient(mode LoginMode, auth Authenticator) (*http.Client, error) {
+	if mode == InteractiveLogin {
+		if err := auth.PurgeCredentialsCache(); err != nil {
+			return nil, err
+		}
 	}
-	log := logging.DefaultLogger
 	transport, err := auth.Transport()
-	if err == ErrLoginRequired {
-		if !requireLogin {
-			return http.DefaultClient, nil
-		}
-		log.Infof("Authenticating...")
-		err = auth.Login()
-		if err != nil {
-			return nil, err
-		}
-		transport, err = auth.Transport()
-		if err != nil {
-			return nil, err
-		}
-	} else if err != nil {
+	if err == nil {
+		return &http.Client{Transport: transport}, nil
+	}
+	if err != ErrLoginRequired || mode == SilentLogin {
+		return nil, err
+	}
+	if mode == OptionalLogin {
+		return http.DefaultClient, nil
+	}
+	if mode != InteractiveLogin {
+		return nil, fmt.Errorf("Invalid mode argument: %s", mode)
+	}
+	if err = auth.Login(); err != nil {
+		return nil, err
+	}
+	if transport, err = auth.Transport(); err != nil {
 		return nil, err
 	}
 	return &http.Client{Transport: transport}, nil
+}
+
+// DefaultAuthenticatedClient performs login (if requested) and returns
+// http.Client. It uses DefaultAuthenticator.
+func DefaultAuthenticatedClient(mode LoginMode) (*http.Client, error) {
+	return AuthenticatedClient(mode, DefaultAuthenticator)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -311,7 +331,7 @@ func (a *authenticatorImpl) Login() error {
 
 	// Create initial token. This may require interaction with a user.
 	a.log.Debugf("auth: launching interactive authentication flow")
-	a.token, err = a.provider.MintToken(a.opts.Transport)
+	a.token, err = a.provider.MintToken()
 	if err != nil {
 		return err
 	}
@@ -322,6 +342,20 @@ func (a *authenticatorImpl) Login() error {
 		a.log.Warningf("auth: failed to write token to cache: %v", err)
 	}
 
+	return nil
+}
+
+func (a *authenticatorImpl) PurgeCredentialsCache() error {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
+	if err := a.ensureInitialized(); err != nil {
+		return err
+	}
+	if err := a.cache.clear(); err != nil {
+		return err
+	}
+	a.token = nil
 	return nil
 }
 
@@ -423,14 +457,14 @@ func (a *authenticatorImpl) refreshToken(prev internal.Token) (internal.Token, e
 				return nil, false, ErrLoginRequired
 			}
 			a.log.Debugf("auth: minting a new token")
-			a.token, err = a.provider.MintToken(a.opts.Transport)
+			a.token, err = a.provider.MintToken()
 			if err != nil {
 				a.log.Warningf("auth: failed to mint a token: %v", err)
 				return nil, false, err
 			}
 		} else {
 			a.log.Debugf("auth: refreshing the token")
-			a.token, err = a.provider.RefreshToken(a.token, a.opts.Transport)
+			a.token, err = a.provider.RefreshToken(a.token)
 			if err != nil {
 				a.log.Warningf("auth: failed to refresh the token: %v", err)
 				return nil, false, err
@@ -459,13 +493,14 @@ func (a *authenticatorImpl) refreshToken(prev internal.Token) (internal.Token, e
 // TODO(vadimsh): Support CancelRequest if underlying transport supports it.
 // It's tricky. http.Client uses type cast to figure out whether transport
 // supports request cancellation or not. So new authTransportWithCancelation
-// should be used when parent.opts.Transport provides CancelRequest. Also
+// should be used when parent transport provides CancelRequest. Also
 // authTransport should keep a mapping between original http.Request objects
 // and ones with access tokens attached (to know what to pass to
-// parent.opts.Transport.CancelRequest).
+// parent transport CancelRequest).
 
 type authTransport struct {
 	parent *authenticatorImpl
+	base   http.RoundTripper
 	log    logging.Logger
 }
 
@@ -490,7 +525,7 @@ func (t *authTransport) RoundTrip(req *http.Request) (resp *http.Response, err e
 	for k, v := range tok.RequestHeaders() {
 		clone.Header.Set(k, v)
 	}
-	return t.parent.opts.Transport.RoundTrip(&clone)
+	return t.base.RoundTrip(&clone)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -523,6 +558,16 @@ func (c *tokenCache) write(buf []byte) error {
 	}
 	// TODO(vadimsh): Make it atomic across multiple processes.
 	return ioutil.WriteFile(c.path, buf, 0600)
+}
+
+func (c *tokenCache) clear() error {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	err := os.Remove(c.path)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -577,11 +622,13 @@ var makeTokenProvider = func(opts *Options) (internal.TokenProvider, error) {
 	switch opts.Method {
 	case UserCredentialsMethod:
 		return internal.NewUserAuthTokenProvider(
+			opts.Context,
 			opts.ClientID,
 			opts.ClientSecret,
 			opts.Scopes)
 	case ServiceAccountMethod:
 		return internal.NewServiceAccountTokenProvider(
+			opts.Context,
 			opts.ServiceAccountJSONPath,
 			opts.Scopes)
 	case GCEMetadataMethod:
