@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/luci/luci-go/client/archiver"
@@ -189,9 +190,9 @@ func TestArchiveFileNotFoundReturnsError(t *testing.T) {
 	}
 	future := Archive(a, "/base-dir", opts)
 	future.WaitForHashed()
-	expectedErr := "open /this-file-does-not-exist: no such file or directory"
-	ut.AssertEqual(t, expectedErr, future.Error().Error())
+	err := future.Error()
+	ut.AssertEqual(t, true, strings.HasPrefix(err.Error(), "open /this-file-does-not-exist: "))
 	closeErr := a.Close()
 	ut.AssertEqual(t, true, closeErr != nil)
-	ut.AssertEqual(t, expectedErr, closeErr.Error())
+	ut.AssertEqual(t, true, strings.HasPrefix(closeErr.Error(), "open /this-file-does-not-exist: "))
 }
