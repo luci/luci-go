@@ -22,17 +22,14 @@ package logging
 // and thus it can be used in libraries that expect to be called from both kinds
 // of environments.
 type Logger interface {
-	// Debugf formats its arguments according to the format, analogous to fmt.Printf,
-	// and records the text as a log message at Debug level.
-	Debugf(format string, args ...interface{})
-
-	// Infof is like Debugf, but at Info level.
+	// Infof formats its arguments according to the format, analogous to fmt.Printf,
+	// and records the text as a log message at Info level.
 	Infof(format string, args ...interface{})
 
-	// Warningf is like Debugf, but at Warning level.
+	// Warningf is like Infof, but logs at Warning level.
 	Warningf(format string, args ...interface{})
 
-	// Errorf is like Debugf, but at Error level.
+	// Errorf is like Infof, but logs at Error level.
 	Errorf(format string, args ...interface{})
 }
 
@@ -44,15 +41,12 @@ var DefaultLogger Logger
 // IsTerminal is true if current process is attached to an interactive terminal.
 var IsTerminal bool
 
-// Debugf formats its arguments according to the format, analogous to fmt.Printf,
-// and records the text as a log message at Debug level.
-func Debugf(format string, args ...interface{}) { DefaultLogger.Debugf(format, args...) }
-
-// Infof is like Debugf, but at Info level.
+// Infof formats its arguments according to the format, analogous to fmt.Printf,
+// and records the text as a log message at Info level.
 func Infof(format string, args ...interface{}) { DefaultLogger.Infof(format, args...) }
 
-// Warningf is like Debugf, but at Warning level.
+// Warningf is like Infof, but logs at Warning level.
 func Warningf(format string, args ...interface{}) { DefaultLogger.Warningf(format, args...) }
 
-// Errorf is like Debugf, but at Error level.
+// Errorf is like Infof, but logs at Error level.
 func Errorf(format string, args ...interface{}) { DefaultLogger.Errorf(format, args...) }
