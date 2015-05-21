@@ -6,9 +6,15 @@ package isolated
 
 import (
 	"encoding/hex"
+	"hash"
 	"io"
 	"os"
 )
+
+// Sum is a shortcut to get a HexDigest from a hash.Hash.
+func Sum(h hash.Hash) HexDigest {
+	return HexDigest(hex.EncodeToString(h.Sum(nil)))
+}
 
 // Hash hashes a reader and returns a HexDigest from it.
 func Hash(src io.Reader) (HexDigest, error) {
@@ -17,14 +23,14 @@ func Hash(src io.Reader) (HexDigest, error) {
 	if err != nil {
 		return HexDigest(""), err
 	}
-	return HexDigest(hex.EncodeToString(h.Sum(nil))), nil
+	return Sum(h), nil
 }
 
 // HashBytes hashes content and returns a HexDigest from it.
 func HashBytes(content []byte) HexDigest {
 	h := GetHash()
 	_, _ = h.Write(content)
-	return HexDigest(hex.EncodeToString(h.Sum(nil)))
+	return Sum(h)
 }
 
 // HashFile hashes a file and returns a DigestItem out of it.
@@ -39,6 +45,5 @@ func HashFile(path string) (DigestItem, error) {
 	if err != nil {
 		return DigestItem{}, err
 	}
-	digest := HexDigest(hex.EncodeToString(h.Sum(nil)))
-	return DigestItem{Digest: digest, IsIsolated: false, Size: size}, nil
+	return DigestItem{Digest: Sum(h), IsIsolated: false, Size: size}, nil
 }

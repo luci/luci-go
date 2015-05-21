@@ -6,7 +6,6 @@ package cache
 
 import (
 	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
@@ -293,7 +292,7 @@ func (d *disk) Add(digest isolated.HexDigest, src io.Reader) error {
 		_ = os.Remove(p)
 		return err
 	}
-	if isolated.HexDigest(hex.EncodeToString(h.Sum(nil))) != digest {
+	if isolated.Sum(h) != digest {
 		_ = os.Remove(p)
 		return errors.New("invalid hash")
 	}

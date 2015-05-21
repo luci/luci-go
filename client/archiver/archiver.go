@@ -5,7 +5,6 @@
 package archiver
 
 import (
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -261,8 +260,7 @@ func (i *archiverItem) calcDigest() error {
 			i.setErr(err)
 			return err
 		}
-		digest := isolated.HexDigest(hex.EncodeToString(h.Sum(nil)))
-		d = isolated.DigestItem{digest, true, size}
+		d = isolated.DigestItem{isolated.Sum(h), true, size}
 	}
 	i.lock.Lock()
 	defer i.lock.Unlock()
