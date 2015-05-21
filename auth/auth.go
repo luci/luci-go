@@ -37,9 +37,9 @@ import (
 	"sync"
 
 	"golang.org/x/net/context"
+	"google.golang.org/cloud/compute/metadata"
 
 	"infra/libs/auth/internal"
-	"infra/libs/gce"
 	"infra/libs/logging"
 )
 
@@ -599,7 +599,7 @@ var selectDefaultMethod = func(opts *Options) Method {
 			return ServiceAccountMethod
 		}
 	}
-	if gce.IsRunningOnGCE() {
+	if metadata.OnGCE() {
 		return GCEMetadataMethod
 	}
 	return UserCredentialsMethod

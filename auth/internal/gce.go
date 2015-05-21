@@ -5,9 +5,8 @@
 package internal
 
 import (
-	"time"
-
-	"infra/libs/gce"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/cloud/compute/metadata"
 )
 
 type gceTokenProvider struct {
@@ -19,13 +18,13 @@ type gceTokenProvider struct {
 // NewGCETokenProvider returns TokenProvider that knows how to use GCE metadata server.
 func NewGCETokenProvider(account string, scopes []string) (TokenProvider, error) {
 	// Ensure account has requested scopes.
-	acc, err := gce.GetServiceAccount(account)
+	availableScopes, err := metadata.Scopes(account)
 	if err != nil {
 		return nil, err
 	}
 	for requested := range scopes {
 		ok := false
-		for available := range acc.Scopes {
+		for available := range availableScopes {
 			if requested == available {
 				ok = true
 				break
@@ -45,14 +44,12 @@ func NewGCETokenProvider(account string, scopes []string) (TokenProvider, error)
 }
 
 func (p *gceTokenProvider) MintToken() (Token, error) {
-	tokenData, err := gce.GetAccessToken(p.account)
+	src := google.ComputeTokenSource(p.account)
+	tok, err := src.Token()
 	if err != nil {
 		return nil, err
 	}
-	tok := &tokenImpl{}
-	tok.AccessToken = tokenData.AccessToken
-	tok.Expiry = time.Now().Add(time.Duration(tokenData.ExpiresIn) * time.Second)
-	return tok, nil
+	return makeToken(tok), nil
 }
 
 func (p *gceTokenProvider) RefreshToken(Token) (Token, error) {
