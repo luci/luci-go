@@ -39,7 +39,6 @@ import (
 	"golang.org/x/net/context"
 
 	"infra/libs/auth/internal"
-	"infra/libs/build"
 	"infra/libs/gce"
 	"infra/libs/logging"
 )
@@ -647,13 +646,8 @@ var makeTokenProvider = func(opts *Options) (internal.TokenProvider, error) {
 // reuse such client_secret they have to run something on user's local machine
 // to get the refresh_token.
 func DefaultClient() (clientID string, clientSecret string) {
-	if build.ReleaseBuild {
-		clientID = "446450136466-2hr92jrq8e6i4tnsa56b52vacp7t3936.apps.googleusercontent.com"
-		clientSecret = "uBfbay2KCy9t4QveJ-dOqHtp"
-	} else {
-		clientID = "502071599212-1mogcu4ekrulor34tjtt6t8oq07ihmf9.apps.googleusercontent.com"
-		clientSecret = "2wuVIjpMBVOaCKom9gZtopfZ"
-	}
+	clientID = "446450136466-2hr92jrq8e6i4tnsa56b52vacp7t3936.apps.googleusercontent.com"
+	clientSecret = "uBfbay2KCy9t4QveJ-dOqHtp"
 	return
 }
 

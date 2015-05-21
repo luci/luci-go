@@ -13,9 +13,11 @@ import (
 	"strings"
 	"time"
 
-	"infra/libs/build"
 	"infra/libs/logging"
 )
+
+// ServiceURL is URL of a service to talk to by default.
+const ServiceURL string = "https://chrome-infra-auth.appspot.com"
 
 // IdentityKind is enum like type with possible kinds of identities.
 type IdentityKind string
@@ -98,7 +100,7 @@ type GroupsService struct {
 // be used.
 func NewGroupsService(serviceURL string, httpClient *http.Client, logger logging.Logger) (c *GroupsService, err error) {
 	if serviceURL == "" {
-		serviceURL = defaultGroupsBackend()
+		serviceURL = ServiceURL
 	}
 	if httpClient == nil {
 		httpClient, err = DefaultAuthenticatedClient(OptionalLogin)
@@ -215,15 +217,6 @@ func (s *GroupsService) doGet(path string, response interface{}) error {
 		resp.Body.Close()
 	}
 	return fmt.Errorf("Request to %s failed after 5 attempts", url)
-}
-
-// defaultGroupsBackend return URL of a service to talk to if not overridden in
-// NewGroupsService.
-func defaultGroupsBackend() string {
-	if build.ReleaseBuild {
-		return "https://chrome-infra-auth.appspot.com"
-	}
-	return "https://chrome-infra-auth-dev.appspot.com"
 }
 
 // parseIdentity takes a string of form "<kind>:<name>" and returns Identity
