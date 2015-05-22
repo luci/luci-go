@@ -52,10 +52,6 @@ var (
 	// can't be minted for given OAuth scopes. For example if GCE instance wasn't
 	// granted access to requested scopes when it was created.
 	ErrInsufficientAccess = internal.ErrInsufficientAccess
-
-	// ErrNoTerminal is returned by Login() if interaction with a user is
-	// required, but the process is not attached to a terminal.
-	ErrNoTerminal = errors.New("Can't interact with a user: no terminal")
 )
 
 // Known Google API OAuth scopes.
@@ -320,11 +316,6 @@ func (a *authenticatorImpl) Login() error {
 	}
 	if !a.provider.RequiresInteraction() {
 		return nil
-	}
-
-	// Active terminal is required for interaction with a user.
-	if !logging.IsTerminal {
-		return ErrNoTerminal
 	}
 
 	// Create initial token. This may require interaction with a user.

@@ -19,14 +19,18 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+var (
+	log = logging.DefaultLogger
+)
+
 func ExampleDefaultAuthenticatedClient() {
 	client, err := DefaultAuthenticatedClient(SilentLogin)
 	if err == ErrLoginRequired {
-		logging.Errorf("Run 'auth login' to login")
+		log.Errorf("Run 'auth login' to login")
 		return
 	}
 	if err != nil {
-		logging.Errorf("Failed to login: %s", err)
+		log.Errorf("Failed to login: %s", err)
 		return
 	}
 	client.Get("https://some-server.appspot.com")
@@ -54,14 +58,6 @@ func mockTokenProvider(factory func() internal.TokenProvider) {
 	}
 	Reset(func() {
 		makeTokenProvider = prev
-	})
-}
-
-func mockTerminal() {
-	prev := logging.IsTerminal
-	logging.IsTerminal = true
-	Reset(func() {
-		logging.IsTerminal = prev
 	})
 }
 
@@ -114,7 +110,6 @@ func TestAuthenticatedClient(t *testing.T) {
 	Convey("Given mocked secrets dir", t, func() {
 		var tokenProvider internal.TokenProvider
 
-		mockTerminal()
 		mockSecretsDir()
 		mockTokenProvider(func() internal.TokenProvider { return tokenProvider })
 
@@ -138,7 +133,6 @@ func TestRefreshToken(t *testing.T) {
 	Convey("Given mocked secrets dir", t, func() {
 		var tokenProvider *fakeTokenProvider
 
-		mockTerminal()
 		mockSecretsDir()
 		mockTokenProvider(func() internal.TokenProvider { return tokenProvider })
 

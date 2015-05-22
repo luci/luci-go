@@ -14,5 +14,4 @@ func (*nullLogger) Errorf(string, ...interface{})   {}
 
 func init() {
 	DefaultLogger = &nullLogger{}
-	IsTerminal = false
 }
