@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"infra/libs/logging"
+	"github.com/luci/luci-go/common/logging"
 )
 
 // ServiceURL is URL of a service to talk to by default.
@@ -41,11 +41,11 @@ const (
 var (
 	// ErrAccessDenied is returned by GroupsService methods if caller doesn't have
 	// enough permissions to execute an action. Corresponds to 403 HTTP status.
-	ErrAccessDenied = errors.New("Access denied (HTTP 403)")
+	ErrAccessDenied = errors.New("access denied (HTTP 403)")
 
 	// ErrNoSuchItem is returned by GroupsService methods if requested item
 	// (e.g. a group) doesn't exist. Corresponds to 404 HTTP status.
-	ErrNoSuchItem = errors.New("No such item (HTTP 404)")
+	ErrNoSuchItem = errors.New("no such item (HTTP 404)")
 )
 
 // Identity represents some caller that can make requests. It generalizes
@@ -174,7 +174,7 @@ func (s *GroupsService) FetchGroup(name string) (Group, error) {
 // multiple times on transient errors.
 func (s *GroupsService) doGet(path string, response interface{}) error {
 	if len(path) == 0 || path[0] != '/' {
-		return fmt.Errorf("Path should start with '/': %s", path)
+		return fmt.Errorf("path should start with '/': %s", path)
 	}
 	url := s.serviceURL + path
 	for attempt := 0; attempt < 5; attempt++ {
@@ -205,13 +205,13 @@ func (s *GroupsService) doGet(path string, response interface{}) error {
 				return ErrNoSuchItem
 			default:
 				body, _ := ioutil.ReadAll(resp.Body)
-				return fmt.Errorf("Unexpected reply (HTTP %d):\n%s", resp.StatusCode, string(body))
+				return fmt.Errorf("unexpected reply (HTTP %d):\n%s", resp.StatusCode, string(body))
 			}
 		}
 		// Retry.
 		resp.Body.Close()
 	}
-	return fmt.Errorf("Request to %s failed after 5 attempts", url)
+	return fmt.Errorf("request to %s failed after 5 attempts", url)
 }
 
 // parseIdentity takes a string of form "<kind>:<name>" and returns Identity
@@ -219,14 +219,14 @@ func (s *GroupsService) doGet(path string, response interface{}) error {
 func parseIdentity(str string) (Identity, error) {
 	chunks := strings.Split(str, ":")
 	if len(chunks) != 2 {
-		return Identity{}, fmt.Errorf("Invalid identity string: '%s'", str)
+		return Identity{}, fmt.Errorf("invalid identity string: '%s'", str)
 	}
 	kind := IdentityKind(chunks[0])
 	name := chunks[1]
 	switch kind {
 	case IdentityKindAnonymous:
 		if name != "anonymous" {
-			return Identity{}, fmt.Errorf("Invalid anonymous identity: '%s'", str)
+			return Identity{}, fmt.Errorf("invalid anonymous identity: '%s'", str)
 		}
 		return Identity{
 			Kind: IdentityKindAnonymous,
@@ -238,7 +238,7 @@ func parseIdentity(str string) (Identity, error) {
 			Name: name,
 		}, nil
 	default:
-		return Identity{}, fmt.Errorf("Unrecognized identity kind: '%s'", str)
+		return Identity{}, fmt.Errorf("unrecognized identity kind: '%s'", str)
 	}
 }
 

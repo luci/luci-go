@@ -9,13 +9,13 @@ import (
 
 	"golang.org/x/net/context"
 
-	"infra/libs/logging"
+	"github.com/luci/luci-go/common/logging"
 )
 
 // LogLevel indicates the severity of a LogEntry.
 type LogLevel uint
 
-// 4 different log levels. These are automatically recorded in LogEntry by the
+// 3 different log levels. These are automatically recorded in LogEntry by the
 // various MemLogger.* methods.
 const (
 	LogError LogLevel = iota

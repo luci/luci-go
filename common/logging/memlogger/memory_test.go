@@ -11,7 +11,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"infra/libs/logging"
+	"github.com/luci/luci-go/common/logging"
 )
 
 func TestLogger(t *testing.T) {

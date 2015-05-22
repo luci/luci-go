@@ -1,4 +1,4 @@
-// Copyright 2014 The Chromium Authors. All rights reserved.
+// Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -23,7 +23,7 @@ import (
 
 // ErrInsufficientAccess is can't be minted for given OAuth scopes. For example
 // if GCE instance wasn't granted access to requested scopes when it was created.
-var ErrInsufficientAccess = errors.New("Can't get access token for given scopes")
+var ErrInsufficientAccess = errors.New("can't get access token for given scopes")
 
 // Token is immutable object that internally holds authentication credentials
 // (short term, long term, or both). Token knows how to modify http.Request to

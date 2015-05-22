@@ -1,4 +1,4 @@
-// Copyright 2014 The Chromium Authors. All rights reserved.
+// Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -11,12 +11,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"infra/libs/auth/internal"
-	"infra/libs/logging"
-
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
+
+	"github.com/luci/luci-go/common/auth/internal"
+	"github.com/luci/luci-go/common/logging"
 )
 
 var (

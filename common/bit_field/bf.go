@@ -42,7 +42,7 @@ func (bf BitField) Size() uint64 {
 // returned is for bounds checking.
 func (bf BitField) Set(idx uint64) error {
 	if idx >= bf.Size() {
-		return fmt.Errorf("Cannot set bit %d in BitField of size %d", idx, bf.Size())
+		return fmt.Errorf("cannot set bit %d in BitField of size %d", idx, bf.Size())
 	}
 	bf.Data[idx>>6] |= 1 << (idx % 64)
 	return nil
@@ -52,7 +52,7 @@ func (bf BitField) Set(idx uint64) error {
 // returned is for bounds checking.
 func (bf BitField) Clear(idx uint64) error {
 	if idx >= bf.Size() {
-		return fmt.Errorf("Cannot clear bit %d in BitField of size %d", idx, bf.Size())
+		return fmt.Errorf("cannot clear bit %d in BitField of size %d", idx, bf.Size())
 	}
 	bf.Data[idx>>6] &^= 1 << (idx % 64)
 	return nil

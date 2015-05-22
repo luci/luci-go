@@ -1,4 +1,4 @@
-// Copyright 2014 The Chromium Authors. All rights reserved.
+// Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -15,8 +15,8 @@ interface (or even more generally context.Context) as parameters. Then callers
 can pass appropriate Logger implementation  (or inject appropriate logger into
 context.Context) depending on where the code is running.
 
-Libraries under infra/libs/* MUST use infra/libs/logger instead of directly
-instantiating concrete implementations.
+Libraries under luci-go/common/ MUST use luci-go/common/logging instead of
+directly instantiating concrete implementations.
 */
 package logging
 

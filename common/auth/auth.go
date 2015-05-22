@@ -1,4 +1,4 @@
-// Copyright 2014 The Chromium Authors. All rights reserved.
+// Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -38,14 +38,14 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/cloud/compute/metadata"
 
-	"infra/libs/auth/internal"
-	"infra/libs/logging"
+	"github.com/luci/luci-go/common/auth/internal"
+	"github.com/luci/luci-go/common/logging"
 )
 
 var (
 	// ErrLoginRequired is returned by Transport() in case long term credentials
 	// are not cached and the user must go through interactive login.
-	ErrLoginRequired = errors.New("Interactive login is required")
+	ErrLoginRequired = errors.New("interactive login is required")
 
 	// ErrInsufficientAccess is returned by Login() or Transport() if access_token
 	// can't be minted for given OAuth scopes. For example if GCE instance wasn't
@@ -217,7 +217,7 @@ func AuthenticatedClient(mode LoginMode, auth Authenticator) (*http.Client, erro
 		return http.DefaultClient, nil
 	}
 	if mode != InteractiveLogin {
-		return nil, fmt.Errorf("Invalid mode argument: %s", mode)
+		return nil, fmt.Errorf("invalid mode argument: %s", mode)
 	}
 	if err = auth.Login(); err != nil {
 		return nil, err
@@ -580,7 +580,7 @@ var makeTokenProvider = func(opts *Options) (internal.TokenProvider, error) {
 			opts.GCEAccountName,
 			opts.Scopes)
 	default:
-		return nil, fmt.Errorf("Unrecognized authentication method: %s", opts.Method)
+		return nil, fmt.Errorf("unrecognized authentication method: %s", opts.Method)
 	}
 }
 

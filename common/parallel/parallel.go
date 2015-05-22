@@ -7,7 +7,7 @@ package parallel
 import (
 	"sync"
 
-	"infra/libs/errors"
+	"github.com/luci/luci-go/common/errors"
 )
 
 // FanOutIn is useful to quickly parallelize a group of tasks.

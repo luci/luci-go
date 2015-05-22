@@ -10,7 +10,7 @@ import (
 
 	gol "github.com/op/go-logging"
 
-	"infra/libs/logging"
+	"github.com/luci/luci-go/common/logging"
 )
 
 const fmt string = "%{color}" +

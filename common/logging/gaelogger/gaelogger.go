@@ -1,6 +1,8 @@
-// Copyright 2014 The Chromium Authors. All rights reserved.
+// Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+
+// +build appengine
 
 package gaelogger
 
@@ -9,7 +11,7 @@ import (
 
 	"appengine"
 
-	"infra/libs/logging"
+	"github.com/luci/luci-go/common/logging"
 )
 
 // Use adds a logging.Logger implementation to the context which logs to
