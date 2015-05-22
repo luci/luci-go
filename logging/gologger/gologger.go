@@ -13,7 +13,9 @@ import (
 	"infra/libs/logging"
 )
 
-const fmt string = "%{color}[P%{pid} %{time:15:04:05.000} %{shortfile} %{level:.4s} %{id:03x}]%{color:reset} %{message}"
+const fmt string = "%{color}" +
+	"[P%{pid} %{time:15:04:05.000} %{shortfile} %{level:.4s} %{id:03x}]" +
+	"%{color:reset} %{message}"
 
 type loggerImpl struct {
 	l *gol.Logger
@@ -24,9 +26,9 @@ func (l *loggerImpl) Warningf(format string, args ...interface{}) { l.l.Warning(
 func (l *loggerImpl) Errorf(format string, args ...interface{})   { l.l.Error(format, args...) }
 
 // UseFile adds a go-logging logger to the context which writes to the provided
-// file.
+// file. Caller is still responsible for closing the file when no longer needed.
 func UseFile(c context.Context, f *os.File) context.Context {
-	backend := gol.NewLogBackend(os.Stdout, "", 0)
+	backend := gol.NewLogBackend(f, "", 0)
 	formatted := gol.NewBackendFormatter(backend, gol.MustStringFormatter(fmt))
 	gol.SetBackend(formatted)
 	log := &loggerImpl{gol.MustGetLogger("")}
@@ -37,4 +39,9 @@ func UseFile(c context.Context, f *os.File) context.Context {
 // Use adds a go-logging logger to the context which writes to os.Stdout.
 func Use(c context.Context) context.Context {
 	return UseFile(c, os.Stdout)
+}
+
+// Get returns default go-logging based logger.
+func Get() logging.Logger {
+	return logging.Get(Use(context.Background()))
 }

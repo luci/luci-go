@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"infra/libs/auth/internal"
-	"infra/libs/logging/deflogger"
+	"infra/libs/logging"
 
 	"golang.org/x/net/context"
 
@@ -20,11 +20,12 @@ import (
 )
 
 var (
-	log = deflogger.Get()
+	ctx = context.Background()
+	log = logging.Null()
 )
 
 func ExampleDefaultAuthenticatedClient() {
-	client, err := DefaultAuthenticatedClient(SilentLogin)
+	client, err := AuthenticatedClient(SilentLogin, NewAuthenticator(Options{}))
 	if err == ErrLoginRequired {
 		log.Errorf("Run 'auth login' to login")
 		return
@@ -67,7 +68,7 @@ func TestAuthenticator(t *testing.T) {
 
 		Convey("Check NewAuthenticator defaults", func() {
 			clientID, clientSecret := DefaultClient()
-			ctx := deflogger.UseIfUnset(context.TODO())
+			ctx := context.Background()
 			a := NewAuthenticator(Options{Context: ctx}).(*authenticatorImpl)
 			So(a.opts, ShouldResemble, &Options{
 				Method:                 AutoSelectMethod,
@@ -77,31 +78,8 @@ func TestAuthenticator(t *testing.T) {
 				ServiceAccountJSONPath: filepath.Join(tempDir, "service_account.json"),
 				GCEAccountName:         "default",
 				Context:                ctx,
+				Logger:                 logging.Get(ctx),
 			})
-		})
-	})
-}
-
-func TestPurgeCredentialsCache(t *testing.T) {
-	Convey("Given mocked secrets dir", t, func() {
-		tempDir := mockSecretsDir()
-
-		makeFile := func(name string) {
-			err := ioutil.WriteFile(filepath.Join(tempDir, name), []byte(""), 0600)
-			So(err, ShouldBeNil)
-		}
-
-		makeFile("secret1.tok")
-		makeFile("secret2.tok")
-		makeFile("not-secret.txt")
-
-		Convey("Check PurgeCredentialsCache", func() {
-			err := PurgeCredentialsCache()
-			So(err, ShouldBeNil)
-			left, err := ioutil.ReadDir(tempDir)
-			So(err, ShouldBeNil)
-			So(len(left), ShouldEqual, 1)
-			So(left[0].Name(), ShouldEqual, "not-secret.txt")
 		})
 	})
 }

@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"infra/libs/logging"
-	"infra/libs/logging/deflogger"
 )
 
 // ServiceURL is URL of a service to talk to by default.
@@ -96,28 +95,23 @@ type GroupsService struct {
 }
 
 // NewGroupsService constructs new instance of GroupsService that talks to given
-// service URL via given http.Client. If serviceURL is empty string, the default
-// backend will be used. If httpClient is nil, default authenticated client will
-// be used.
-func NewGroupsService(serviceURL string, httpClient *http.Client, logger logging.Logger) (c *GroupsService, err error) {
-	if serviceURL == "" {
-		serviceURL = ServiceURL
+// service URL via given http.Client. If url is empty string, the default
+// backend will be used. If httpClient is nil, http.DefaultClient will be used.
+func NewGroupsService(url string, client *http.Client, logger logging.Logger) *GroupsService {
+	if url == "" {
+		url = ServiceURL
 	}
-	if httpClient == nil {
-		httpClient, err = DefaultAuthenticatedClient(OptionalLogin)
-		if err != nil {
-			return
-		}
+	if client == nil {
+		client = http.DefaultClient
 	}
 	if logger == nil {
-		logger = deflogger.Get()
+		logger = logging.Null()
 	}
-	c = &GroupsService{
-		client:     httpClient,
-		serviceURL: serviceURL,
+	return &GroupsService{
+		client:     client,
+		serviceURL: url,
 		logger:     logger,
 	}
-	return
 }
 
 // ServiceURL returns a string with root URL of a Groups backend.

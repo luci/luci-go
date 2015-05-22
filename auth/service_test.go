@@ -19,15 +19,14 @@ func TestGroupsService(t *testing.T) {
 		mockSleep()
 
 		requests := mockDoRequest()
-		service, err := NewGroupsService("https://example.com", &http.Client{}, nil)
-		So(err, ShouldBeNil)
+		service := NewGroupsService("https://example.com", &http.Client{}, nil)
 
 		Convey("doGet works", func() {
 			requests.expect("https://example.com/some/path", 200, `{"key":"val"}`)
 			var response struct {
 				Key string `json:"key"`
 			}
-			err = service.doGet("/some/path", &response)
+			err := service.doGet("/some/path", &response)
 			So(err, ShouldBeNil)
 			So(response.Key, ShouldEqual, "val")
 		})
@@ -39,7 +38,7 @@ func TestGroupsService(t *testing.T) {
 			var response struct {
 				Key string `json:"key"`
 			}
-			err = service.doGet("/some/path", &response)
+			err := service.doGet("/some/path", &response)
 			So(err, ShouldBeNil)
 			So(response.Key, ShouldEqual, "val")
 		})
@@ -47,7 +46,7 @@ func TestGroupsService(t *testing.T) {
 		Convey("doGet fatal error", func() {
 			requests.expect("https://example.com/some/path", 403, "error")
 			var response struct{}
-			err = service.doGet("/some/path", &response)
+			err := service.doGet("/some/path", &response)
 			So(err, ShouldNotBeNil)
 		})
 
@@ -56,7 +55,7 @@ func TestGroupsService(t *testing.T) {
 				requests.expect("https://example.com/some/path", 500, "")
 			}
 			var response struct{}
-			err = service.doGet("/some/path", &response)
+			err := service.doGet("/some/path", &response)
 			So(err, ShouldNotBeNil)
 		})
 

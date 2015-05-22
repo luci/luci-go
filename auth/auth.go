@@ -33,7 +33,6 @@ import (
 	"os/user"
 	"path/filepath"
 	"sort"
-	"strings"
 	"sync"
 
 	"golang.org/x/net/context"
@@ -41,7 +40,6 @@ import (
 
 	"infra/libs/auth/internal"
 	"infra/libs/logging"
-	"infra/libs/logging/deflogger"
 )
 
 var (
@@ -135,8 +133,11 @@ type Options struct {
 
 	// Context carries the underlying HTTP transport to use. If context is not
 	// provided or doesn't contain the transport, http.DefaultTransport will be
-	// used.
+	// used. Context will also be used to grab a logger if passed Logger is nil.
 	Context context.Context
+
+	// Logger is used to write log messages. If nil, extract it from the context.
+	Logger logging.Logger
 }
 
 // Authenticator is a factory for http.RoundTripper objects that know how to use
@@ -157,13 +158,6 @@ type Authenticator interface {
 
 	// PurgeCredentialsCache removes cached tokens.
 	PurgeCredentialsCache() error
-}
-
-// DefaultAuthenticator is a shared Authenticator built with default options.
-var DefaultAuthenticator Authenticator
-
-func init() {
-	DefaultAuthenticator = NewAuthenticator(Options{})
 }
 
 // NewAuthenticator returns a new instance of Authenticator given its options.
@@ -188,49 +182,20 @@ func NewAuthenticator(opts Options) Authenticator {
 		opts.GCEAccountName = "default"
 	}
 	if opts.Context == nil {
-		opts.Context = context.TODO()
+		opts.Context = context.Background()
 	}
-	// add the default logger if we don't have one
-	opts.Context = deflogger.UseIfUnset(opts.Context)
+	if opts.Logger == nil {
+		opts.Logger = logging.Get(opts.Context)
+	}
 
 	// See ensureInitialized for the rest of the initialization.
-	log := logging.Get(opts.Context)
-	auth := &authenticatorImpl{opts: &opts, log: log}
+	auth := &authenticatorImpl{opts: &opts, log: opts.Logger}
 	auth.transport = &authTransport{
 		parent: auth,
 		base:   internal.TransportFromContext(opts.Context),
-		log:    log,
+		log:    opts.Logger,
 	}
 	return auth
-}
-
-// PurgeCredentialsCache deletes all cached credentials from the disk.
-func PurgeCredentialsCache() error {
-	log := deflogger.Get()
-	dir := SecretsDir()
-	secrets, err := ioutil.ReadDir(dir)
-	if os.IsNotExist(err) {
-		return nil
-	}
-	if err != nil {
-		log.Warningf("auth: failed to enumerate %s to purge credentials: %s", dir, err)
-		return err
-	}
-	someFailed := false
-	for _, info := range secrets {
-		if info.Mode().IsRegular() && strings.HasSuffix(info.Name(), ".tok") {
-			log.Infof("auth: clearing cached token: %s", info.Name())
-			err = os.Remove(filepath.Join(dir, info.Name()))
-			if err != nil {
-				someFailed = true
-				log.Warningf("auth: failed to remove cached token %s: %s", info.Name(), err)
-			}
-		}
-	}
-	if someFailed {
-		return fmt.Errorf("auth: not all cached tokens were purged")
-	}
-	return nil
 }
 
 // AuthenticatedClient performs login (if requested) and returns http.Client.
@@ -261,12 +226,6 @@ func AuthenticatedClient(mode LoginMode, auth Authenticator) (*http.Client, erro
 		return nil, err
 	}
 	return &http.Client{Transport: transport}, nil
-}
-
-// DefaultAuthenticatedClient performs login (if requested) and returns
-// http.Client. It uses DefaultAuthenticator.
-func DefaultAuthenticatedClient(mode LoginMode) (*http.Client, error) {
-	return AuthenticatedClient(mode, DefaultAuthenticator)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -355,8 +314,7 @@ func (a *authenticatorImpl) ensureInitialized() error {
 	}
 
 	// selectDefaultMethod may do heavy calls, call it lazily here rather than in
-	// NewAuthenticator. NewAuthenticator is called from init(), no need to delay
-	// process startup.
+	// NewAuthenticator.
 	if a.opts.Method == AutoSelectMethod {
 		a.opts.Method = selectDefaultMethod(a.opts)
 	}
