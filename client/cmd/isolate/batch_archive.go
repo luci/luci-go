@@ -172,16 +172,11 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 		close(items)
 	}()
 
-	data := struct {
-		Items map[string]isolated.HexDigest `json:"items"`
-		Stats *archiver.Stats               `json:"stats"`
-	}{
-		Items: map[string]isolated.HexDigest{},
-	}
+	data := map[string]isolated.HexDigest{}
 	for item := range items {
 		item.future.WaitForHashed()
 		if item.future.Error() == nil {
-			data.Items[item.name] = item.future.Digest()
+			data[item.name] = item.future.Digest()
 			fmt.Printf("%s%s  %s\n", prefix, item.future.Digest(), item.name)
 		} else {
 			fmt.Fprintf(os.Stderr, "%s%s  %s\n", prefix, item.name, item.future.Error())
@@ -189,13 +184,12 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	}
 	err := arch.Close()
 	duration := time.Since(start)
-	stats := arch.Stats()
-	data.Stats = stats
 	// Only write the file once upload is confirmed.
 	if err == nil && c.dumpJson != "" {
 		err = common.WriteJSONFile(c.dumpJson, data)
 	}
 	if !c.quiet {
+		stats := arch.Stats()
 		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", stats.TotalHits(), stats.TotalBytesHits())
 		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", stats.TotalMisses(), stats.TotalBytesPushed())
 		fmt.Fprintf(os.Stderr, "Duration: %s\n", common.Round(duration, time.Millisecond))
