@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"math"
 	"math/rand"
 	"sort"
@@ -69,13 +70,36 @@ func init() {
 
 func TestPut(t *testing.T) {
 	Convey("Put", t, func() {
-		buf := make([]byte, MaxFunnyBaseLen64)
 		for _, c := range cases {
 			c := c
 			Convey(fmt.Sprintf("%d -> % x", c.val, c.expect), func() {
-				n := Put(buf, c.val)
-				So(n, ShouldEqual, len(c.expect))
-				So(buf[:n], ShouldResemble, c.expect)
+				Convey("Put", func() {
+					buf := make([]byte, MaxFunnyBaseLen64)
+					n := Put(buf, c.val)
+					So(n, ShouldEqual, len(c.expect))
+					So(buf[:n], ShouldResemble, c.expect)
+				})
+				Convey("Write", func() {
+					buf := &bytes.Buffer{}
+					err := Write(buf, c.val)
+					So(err, ShouldBeNil)
+					So(buf.Bytes(), ShouldResemble, c.expect)
+				})
+
+				if c.val >= 0 {
+					Convey("PutUint", func() {
+						buf := make([]byte, MaxFunnyBaseLen64)
+						n := PutUint(buf, uint64(c.val))
+						So(n, ShouldEqual, len(c.expect))
+						So(buf[:n], ShouldResemble, c.expect)
+					})
+					Convey("WriteUint", func() {
+						buf := &bytes.Buffer{}
+						err := WriteUint(buf, uint64(c.val))
+						So(err, ShouldBeNil)
+						So(buf.Bytes(), ShouldResemble, c.expect)
+					})
+				}
 			})
 		}
 	})
@@ -89,6 +113,33 @@ func TestGet(t *testing.T) {
 				v, n := Get(c.expect)
 				So(n, ShouldEqual, len(c.expect))
 				So(v, ShouldEqual, c.val)
+
+				if c.val >= 0 {
+					v, n := GetUint(c.expect)
+					So(n, ShouldEqual, len(c.expect))
+					So(v, ShouldEqual, c.val)
+				}
+			})
+		}
+	})
+}
+
+func TestRead(t *testing.T) {
+	Convey("Read", t, func() {
+		for _, c := range cases {
+			c := c
+			Convey(fmt.Sprintf("% x -> %d", c.expect, c.val), func() {
+				buf := bytes.NewBuffer(c.expect)
+				v, err := Read(buf)
+				So(err, ShouldBeNil)
+				So(v, ShouldEqual, c.val)
+
+				if c.val >= 0 {
+					buf := bytes.NewBuffer(c.expect)
+					v, err := ReadUint(buf)
+					So(err, ShouldBeNil)
+					So(v, ShouldEqual, c.val)
+				}
 			})
 		}
 	})
@@ -141,27 +192,137 @@ func TestSort(t *testing.T) {
 	})
 }
 
+type fakeWriter struct{ count int }
+
+func (f *fakeWriter) WriteByte(byte) error {
+	if f.count == 0 {
+		return fmt.Errorf("nope")
+	}
+	f.count--
+	return nil
+}
+
 func TestErrors(t *testing.T) {
+	smallerInt64 := []byte{b01000000, b01111111, b11111111, b11111111, b11111111, 0xff, 0xff, 0xff, b11111110}
+
+	prettyBigUint64 := []byte{b10111111, b10000000, 0, 0, 0, 0, 0, 0, 0}
+	prettyBigUint64Val := uint64(math.MaxInt64 + 1)
+
+	reallyBigUint64 := []byte{b10111111, b11111111, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
+	reallyBigUint64Val := uint64(math.MaxUint64)
+	tests := []struct {
+		name string
+		buf  []byte
+
+		v   int64
+		n   int
+		err error
+
+		uv   uint64
+		un   int
+		uerr error
+	}{
+		{
+			name: "Too big!!",
+			buf:  []byte{b11000000}, // 65 bits!?
+			n:    -1,
+			un:   -1,
+			err:  ErrOverflow,
+			uerr: ErrOverflow,
+		}, {
+			name: "Nil buffer",
+			err:  io.EOF,
+			uerr: io.EOF,
+		}, {
+			name: "Empty buffer",
+			buf:  []byte{},
+			err:  io.EOF,
+			uerr: io.EOF,
+		}, {
+			name: "Small buffer",
+			buf:  cases[len(cases)-1].expect[:4],
+			err:  io.EOF,
+			uerr: io.EOF,
+		}, {
+			name: "Reading a negative number with *Uint",
+			buf:  cases[0].expect,
+			v:    cases[0].val,
+			n:    len(cases[0].expect),
+
+			un:   -2,
+			uerr: ErrUnderflow,
+		}, {
+			name: "Reading a number smaller than min int64",
+			buf:  smallerInt64,
+			n:    -2,
+			err:  ErrUnderflow,
+
+			un:   -2,
+			uerr: ErrUnderflow,
+		}, {
+			name: "Reading a number bigger than int64",
+			buf:  prettyBigUint64,
+			n:    -1,
+			err:  ErrOverflow,
+
+			uv: prettyBigUint64Val,
+			un: len(prettyBigUint64),
+		}, {
+			name: "Reading MaxUint64",
+			buf:  reallyBigUint64,
+			n:    -1,
+			err:  ErrOverflow,
+
+			uv: reallyBigUint64Val,
+			un: len(reallyBigUint64),
+		},
+	}
+
 	Convey("Error conditions", t, func() {
-		Convey("Too big!", func() {
-			v, n := Get([]byte{b11000000}) // 65 bits!?
-			So(v, ShouldEqual, 0)
-			So(n, ShouldEqual, -1)
+		for _, t := range tests {
+			Convey(t.name, func() {
+				Convey("Get", func() {
+					v, n := Get(t.buf)
+					So(v, ShouldEqual, t.v)
+					So(n, ShouldEqual, t.n)
+				})
+				Convey("GetUint", func() {
+					uv, un := GetUint(t.buf)
+					So(uv, ShouldEqual, t.uv)
+					So(un, ShouldEqual, t.un)
+				})
+				Convey("Read", func() {
+					v, err := Read(bytes.NewBuffer(t.buf))
+					So(err, ShouldEqual, t.err)
+					So(v, ShouldEqual, t.v)
+				})
+				Convey("ReadUint", func() {
+					uv, err := ReadUint(bytes.NewBuffer(t.buf))
+					So(err, ShouldEqual, t.uerr)
+					So(uv, ShouldEqual, t.uv)
+				})
+			})
+		}
+		Convey("Panics", func() {
+			Convey("Put", func() {
+				buf := make([]byte, MaxFunnyBaseLen64)
+				buf = buf[:4] // enough capacity, but not enough length!
+				So(func() { Put(buf, cases[0].val) }, ShouldPanic)
+			})
+			Convey("PutUint", func() {
+				buf := make([]byte, MaxFunnyBaseLen64)
+				buf = buf[:4] // enough capacity, but not enough length!
+				So(func() { PutUint(buf, reallyBigUint64Val) }, ShouldPanic)
+			})
 		})
-		Convey("Nil buffer", func() {
-			v, n := Get(nil)
-			So(v, ShouldEqual, 0)
-			So(n, ShouldEqual, 0)
-		})
-		Convey("Empty buffer", func() {
-			v, n := Get([]byte{})
-			So(v, ShouldEqual, 0)
-			So(n, ShouldEqual, 0)
-		})
-		Convey("Small buffer", func() {
-			v, n := Get(cases[0].expect[:4])
-			So(v, ShouldEqual, 0)
-			So(n, ShouldEqual, 0)
+		Convey("Write Errors", func() {
+			// Test each error return location in writeSignMag
+			for count := 0; count < 3; count++ {
+				fw := &fakeWriter{count}
+				err := Write(fw, -10000)
+				So(err.Error(), ShouldContainSubstring, "nope")
+				So(fw.count, ShouldEqual, 0)
+			}
 		})
 	})
 }
