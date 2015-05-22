@@ -41,6 +41,7 @@ import (
 
 	"infra/libs/auth/internal"
 	"infra/libs/logging"
+	"infra/libs/logging/deflogger"
 )
 
 var (
@@ -136,9 +137,6 @@ type Options struct {
 	// provided or doesn't contain the transport, http.DefaultTransport will be
 	// used.
 	Context context.Context
-
-	// Log is logger to use, defaults to logging.DefaultLogger.
-	Log logging.Logger
 }
 
 // Authenticator is a factory for http.RoundTripper objects that know how to use
@@ -192,23 +190,23 @@ func NewAuthenticator(opts Options) Authenticator {
 	if opts.Context == nil {
 		opts.Context = context.TODO()
 	}
-	if opts.Log == nil {
-		opts.Log = logging.DefaultLogger
-	}
+	// add the default logger if we don't have one
+	opts.Context = deflogger.UseIfUnset(opts.Context)
 
 	// See ensureInitialized for the rest of the initialization.
-	auth := &authenticatorImpl{opts: &opts, log: opts.Log}
+	log := logging.Get(opts.Context)
+	auth := &authenticatorImpl{opts: &opts, log: log}
 	auth.transport = &authTransport{
 		parent: auth,
 		base:   internal.TransportFromContext(opts.Context),
-		log:    opts.Log,
+		log:    log,
 	}
 	return auth
 }
 
 // PurgeCredentialsCache deletes all cached credentials from the disk.
 func PurgeCredentialsCache() error {
-	log := logging.DefaultLogger
+	log := deflogger.Get()
 	dir := SecretsDir()
 	secrets, err := ioutil.ReadDir(dir)
 	if os.IsNotExist(err) {

@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"infra/libs/auth/internal"
-	"infra/libs/logging"
+	"infra/libs/logging/deflogger"
 
 	"golang.org/x/net/context"
 
@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	log = logging.DefaultLogger
+	log = deflogger.Get()
 )
 
 func ExampleDefaultAuthenticatedClient() {
@@ -67,7 +67,8 @@ func TestAuthenticator(t *testing.T) {
 
 		Convey("Check NewAuthenticator defaults", func() {
 			clientID, clientSecret := DefaultClient()
-			a := NewAuthenticator(Options{}).(*authenticatorImpl)
+			ctx := deflogger.UseIfUnset(context.TODO())
+			a := NewAuthenticator(Options{Context: ctx}).(*authenticatorImpl)
 			So(a.opts, ShouldResemble, &Options{
 				Method:                 AutoSelectMethod,
 				Scopes:                 []string{OAuthScopeEmail},
@@ -75,8 +76,7 @@ func TestAuthenticator(t *testing.T) {
 				ClientSecret:           clientSecret,
 				ServiceAccountJSONPath: filepath.Join(tempDir, "service_account.json"),
 				GCEAccountName:         "default",
-				Context:                context.TODO(),
-				Log:                    logging.DefaultLogger,
+				Context:                ctx,
 			})
 		})
 	})

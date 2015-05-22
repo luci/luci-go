@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"infra/libs/logging"
+	"infra/libs/logging/deflogger"
 )
 
 // ServiceURL is URL of a service to talk to by default.
@@ -109,7 +110,7 @@ func NewGroupsService(serviceURL string, httpClient *http.Client, logger logging
 		}
 	}
 	if logger == nil {
-		logger = logging.DefaultLogger
+		logger = deflogger.Get()
 	}
 	c = &GroupsService{
 		client:     httpClient,
