@@ -10,9 +10,8 @@ import (
 	"appengine"
 	"appengine/datastore"
 
+	"github.com/luci/luci-go/common/logging"
 	"github.com/mjibson/goon"
-
-	"infra/libs/logging"
 )
 
 /// Kinds + Keys
