@@ -1,0 +1,3 @@
+{
+  "skip_testing": ["darwin", "linux", "windows"]
+}
