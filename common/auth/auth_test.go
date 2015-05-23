@@ -45,7 +45,7 @@ func mockSecretsDir() string {
 	secretsDir = func() string { return tempDir }
 	Reset(func() {
 		secretsDir = prev
-		_ = os.RemoveAll(tempDir)
+		So(os.RemoveAll(tempDir), ShouldBeNil)
 	})
 	So(SecretsDir(), ShouldEqual, tempDir)
 
