@@ -318,7 +318,7 @@ func (a *authenticatorImpl) ensureInitialized() error {
 	if a.opts.Method == AutoSelectMethod {
 		a.opts.Method = selectDefaultMethod(a.opts)
 	}
-	a.log.Infof("auth: using %s", a.opts.Method)
+	a.log.Debugf("auth: using %s", a.opts.Method)
 	a.provider, a.err = makeTokenProvider(a.opts)
 	if a.err != nil {
 		return a.err
@@ -389,7 +389,7 @@ func (a *authenticatorImpl) refreshToken(prev internal.Token) (internal.Token, e
 		// Rescan the cache. Maybe some other process updated the token.
 		cached, err := a.readTokenCache()
 		if err == nil && cached != nil && !cached.Equals(prev) && !cached.Expired() {
-			a.log.Infof("auth: some other process put refreshed token in the cache")
+			a.log.Debugf("auth: some other process put refreshed token in the cache")
 			a.token = cached
 			return a.token, false, nil
 		}
@@ -400,14 +400,14 @@ func (a *authenticatorImpl) refreshToken(prev internal.Token) (internal.Token, e
 			if a.provider.RequiresInteraction() {
 				return nil, false, ErrLoginRequired
 			}
-			a.log.Infof("auth: minting a new token")
+			a.log.Debugf("auth: minting a new token")
 			a.token, err = a.provider.MintToken()
 			if err != nil {
 				a.log.Warningf("auth: failed to mint a token: %v", err)
 				return nil, false, err
 			}
 		} else {
-			a.log.Infof("auth: refreshing the token")
+			a.log.Debugf("auth: refreshing the token")
 			a.token, err = a.provider.RefreshToken(a.token)
 			if err != nil {
 				a.log.Warningf("auth: failed to refresh the token: %v", err)
@@ -484,7 +484,7 @@ type tokenCache struct {
 func (c *tokenCache) read() (buf []byte, err error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	c.log.Infof("auth: reading token from %s", c.path)
+	c.log.Debugf("auth: reading token from %s", c.path)
 	buf, err = ioutil.ReadFile(c.path)
 	if err != nil && os.IsNotExist(err) {
 		err = nil
@@ -495,7 +495,7 @@ func (c *tokenCache) read() (buf []byte, err error) {
 func (c *tokenCache) write(buf []byte) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	c.log.Infof("auth: writing token to %s", c.path)
+	c.log.Debugf("auth: writing token to %s", c.path)
 	err := os.MkdirAll(filepath.Dir(c.path), 0700)
 	if err != nil {
 		return err

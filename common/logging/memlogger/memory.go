@@ -15,12 +15,13 @@ import (
 // LogLevel indicates the severity of a LogEntry.
 type LogLevel uint
 
-// 3 different log levels. These are automatically recorded in LogEntry by the
+// 4 different log levels. These are automatically recorded in LogEntry by the
 // various MemLogger.* methods.
 const (
 	LogError LogLevel = iota
 	LogWarn
 	LogInfo
+	LogDebug
 )
 
 func (l LogLevel) String() string {
@@ -31,6 +32,8 @@ func (l LogLevel) String() string {
 		return "WRN"
 	case LogInfo:
 		return "IFO"
+	case LogDebug:
+		return "DBG"
 	default:
 		return "???"
 	}
@@ -45,6 +48,11 @@ type LogEntry struct {
 
 // MemLogger is an implementation of Logger.
 type MemLogger []LogEntry
+
+// Debugf adds a new LogEntry at the LogDebug level
+func (m *MemLogger) Debugf(format string, args ...interface{}) {
+	*m = append(*m, LogEntry{LogDebug, fmt.Sprintf(format, args...)})
+}
 
 // Infof adds a new LogEntry at the LogInfo level
 func (m *MemLogger) Infof(format string, args ...interface{}) {
@@ -66,7 +74,7 @@ func (m *MemLogger) Errorf(format string, args ...interface{}) {
 // log output after running a test case, for example.
 func Use(c context.Context) context.Context {
 	ml := &MemLogger{}
-	return logging.Set(c, func(ic context.Context) logging.Logger {
+	return logging.SetFactory(c, func(ic context.Context) logging.Logger {
 		return ml
 	})
 }

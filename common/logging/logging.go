@@ -28,14 +28,17 @@ import (
 // (like go-logging or GAE logging). It is the least common denominator among
 // logger implementations.
 type Logger interface {
-	// Infof formats its arguments according to the format, analogous to
-	// fmt.Printf and records the text as a log message at Info level.
+	// Debugf formats its arguments according to the format, analogous to
+	// fmt.Printf and records the text as a log message at Debug level.
+	Debugf(format string, args ...interface{})
+
+	// Infof is like Debugf, but logs at Info level.
 	Infof(format string, args ...interface{})
 
-	// Warningf is like Infof, but logs at Warning level.
+	// Warningf is like Debugf, but logs at Warning level.
 	Warningf(format string, args ...interface{})
 
-	// Errorf is like Infof, but logs at Error level.
+	// Errorf is like Debugf, but logs at Error level.
 	Errorf(format string, args ...interface{})
 }
 
@@ -43,11 +46,18 @@ type key int
 
 var loggerKey key
 
-// Set sets the Logger factory for this context.
+// SetFactory sets the Logger factory for this context.
 //
-// The current Logger can be retrieved with Get(context)
-func Set(c context.Context, f func(context.Context) Logger) context.Context {
+// The factory will be called each time Get(context) is used.
+func SetFactory(c context.Context, f func(context.Context) Logger) context.Context {
 	return context.WithValue(c, loggerKey, f)
+}
+
+// Set sets the logger for this context.
+//
+// It can be retrieved with Get(context).
+func Set(c context.Context, l Logger) context.Context {
+	return SetFactory(c, func(context.Context) Logger { return l })
 }
 
 // Get the current Logger, or a logger that ignores all messages if none
@@ -70,6 +80,7 @@ func Null() Logger {
 // nullLogger silently ignores all messages.
 type nullLogger struct{}
 
+func (nullLogger) Debugf(string, ...interface{})   {}
 func (nullLogger) Infof(string, ...interface{})    {}
 func (nullLogger) Warningf(string, ...interface{}) {}
 func (nullLogger) Errorf(string, ...interface{})   {}

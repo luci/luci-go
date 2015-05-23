@@ -6,6 +6,7 @@ package gologger
 
 import (
 	"os"
+	"sync"
 
 	"golang.org/x/net/context"
 
@@ -18,31 +19,50 @@ const fmt string = "%{color}" +
 	"[P%{pid} %{time:15:04:05.000} %{shortfile} %{level:.4s} %{id:03x}]" +
 	"%{color:reset} %{message}"
 
+var (
+	global     logging.Logger
+	initGlobal sync.Once
+)
+
 type loggerImpl struct {
 	l *gol.Logger
 }
 
+func (l *loggerImpl) Debugf(format string, args ...interface{})   { l.l.Debug(format, args...) }
 func (l *loggerImpl) Infof(format string, args ...interface{})    { l.l.Info(format, args...) }
 func (l *loggerImpl) Warningf(format string, args ...interface{}) { l.l.Warning(format, args...) }
 func (l *loggerImpl) Errorf(format string, args ...interface{})   { l.l.Error(format, args...) }
 
-// UseFile adds a go-logging logger to the context which writes to the provided
-// file. Caller is still responsible for closing the file when no longer needed.
-func UseFile(c context.Context, f *os.File) context.Context {
-	backend := gol.NewLogBackend(f, "", 0)
-	formatted := gol.NewBackendFormatter(backend, gol.MustStringFormatter(fmt))
-	gol.SetBackend(formatted)
-	log := &loggerImpl{gol.MustGetLogger("")}
-	log.l.ExtraCalldepth = 1 // one layer of wrapping in loggerImpl struct above
-	return logging.Set(c, func(context.Context) logging.Logger { return log })
+// New creates new logging.Logger backed by go-logging library. The new logger
+// writes (to the provided file) messages of a given log level (or above).
+// A caller is still responsible for closing the file when no longer needed.
+func New(f *os.File, level gol.Level) logging.Logger {
+	// Leveled formatted file backend.
+	backend := gol.AddModuleLevel(
+		gol.NewBackendFormatter(
+			gol.NewLogBackend(f, "", 0),
+			gol.MustStringFormatter(fmt)))
+	backend.SetLevel(level, "")
+	logger := gol.MustGetLogger("")
+	logger.SetBackend(backend)
+	return Wrap(logger)
 }
 
-// Use adds a go-logging logger to the context which writes to os.Stdout.
-func Use(c context.Context) context.Context {
-	return UseFile(c, os.Stdout)
-}
-
-// Get returns default go-logging based logger.
+// Get returns default global go-logging based logger. It writes >=INFO message
+// to stdout.
 func Get() logging.Logger {
-	return logging.Get(Use(context.Background()))
+	initGlobal.Do(func() { global = New(os.Stdout, gol.INFO) })
+	return global
+}
+
+// Use adds a default go-logging logger to the context.
+func Use(c context.Context) context.Context {
+	return logging.SetFactory(c, func(context.Context) logging.Logger { return Get() })
+}
+
+// Wrap takes existing go-logging Logger and returns logging.Logger. It can then
+// be put into a context with logging.Set(...).
+func Wrap(l *gol.Logger) logging.Logger {
+	l.ExtraCalldepth += 1 // one layer of wrapping in loggerImpl struct above
+	return &loggerImpl{l}
 }
