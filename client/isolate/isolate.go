@@ -138,7 +138,7 @@ func processing(relDir string, opts *ArchiveOptions, displayName string) (int, i
 	if err != nil {
 		return 0, 0, nil, "", nil, err
 	}
-	cmd, deps, readOnly, isolateDir, err := LoadIsolateForConfig(relDir, content, opts.ConfigVariables)
+	cmd, deps, readOnly, isolateDir, err := LoadIsolateForConfig(filepath.Dir(opts.Isolate), content, opts.ConfigVariables)
 	if err != nil {
 		return 0, 0, nil, "", nil, err
 	}

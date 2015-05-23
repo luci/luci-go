@@ -77,7 +77,7 @@ func TestArchive(t *testing.T) {
 	isolate := `{
 		'variables': {
 			'files': [
-				'./',
+				'../base/',
 				'../link',
 			],
 		},
@@ -137,7 +137,7 @@ func TestArchive(t *testing.T) {
 		Command:     []string{"amiga", "really"},
 		Files:       map[string]isolated.File{},
 		Includes:    []isolated.HexDigest{isolatedDirHash},
-		RelativeCwd: "base",
+		RelativeCwd: "foo",
 		Version:     isolated.IsolatedFormatVersion,
 	}
 	if !common.IsWindows() {
