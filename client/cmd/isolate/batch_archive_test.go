@@ -27,12 +27,18 @@ func TestConvertPyToGoArchiveCMDArgs(t *testing.T) {
 		},
 		// That's how python isolate works.
 		{
+			[]string{"--extra-variable", "key", "and spaces"},
+			[]string{"--extra-variable", "key=and spaces"},
+		},
+		{
 			[]string{"--path-variable", "key", "--even-this-value"},
-			[]string{"--path-variable", "key=--even-this-value"}},
+			[]string{"--path-variable", "key=--even-this-value"},
+		},
 		// Other args.
 		{
-			[]string{"-x", "--var", "--path-variable", "key", "value"},
-			[]string{"-x", "--var", "--path-variable", "key=value"}},
+			[]string{"-x", "--var", "--config-variable", "key", "value"},
+			[]string{"-x", "--var", "--config-variable", "key=value"},
+		},
 		{
 			[]string{"--path-variable", "key", "value", "posarg"},
 			[]string{"--path-variable", "key=value", "posarg"},
