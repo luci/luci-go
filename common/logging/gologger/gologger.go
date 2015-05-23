@@ -5,8 +5,9 @@
 package gologger
 
 import (
-	"golang.org/x/net/context"
 	"os"
+
+	"golang.org/x/net/context"
 
 	gol "github.com/op/go-logging"
 

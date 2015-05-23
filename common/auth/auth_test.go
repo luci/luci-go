@@ -34,7 +34,7 @@ func ExampleDefaultAuthenticatedClient() {
 		log.Errorf("Failed to login: %s", err)
 		return
 	}
-	client.Get("https://some-server.appspot.com")
+	_, _ = client.Get("https://some-server.appspot.com")
 }
 
 func mockSecretsDir() string {
@@ -45,7 +45,7 @@ func mockSecretsDir() string {
 	secretsDir = func() string { return tempDir }
 	Reset(func() {
 		secretsDir = prev
-		os.RemoveAll(tempDir)
+		_ = os.RemoveAll(tempDir)
 	})
 	So(SecretsDir(), ShouldEqual, tempDir)
 

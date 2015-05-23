@@ -522,17 +522,17 @@ func cacheFileName(opts *Options) string {
 	// credential, to allow multiple differently configured instances of
 	// Authenticator to coexist.
 	sum := sha1.New()
-	sum.Write([]byte(opts.Method))
-	sum.Write([]byte{0})
-	sum.Write([]byte(opts.ClientID))
-	sum.Write([]byte{0})
-	sum.Write([]byte(opts.ClientSecret))
-	sum.Write([]byte{0})
+	_, _ = sum.Write([]byte(opts.Method))
+	_, _ = sum.Write([]byte{0})
+	_, _ = sum.Write([]byte(opts.ClientID))
+	_, _ = sum.Write([]byte{0})
+	_, _ = sum.Write([]byte(opts.ClientSecret))
+	_, _ = sum.Write([]byte{0})
 	for _, scope := range opts.Scopes {
-		sum.Write([]byte(scope))
-		sum.Write([]byte{0})
+		_, _ = sum.Write([]byte(scope))
+		_, _ = sum.Write([]byte{0})
 	}
-	sum.Write([]byte(opts.GCEAccountName))
+	_, _ = sum.Write([]byte(opts.GCEAccountName))
 	return hex.EncodeToString(sum.Sum(nil))[:16]
 }
 

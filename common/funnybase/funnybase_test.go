@@ -146,10 +146,8 @@ func TestRead(t *testing.T) {
 }
 
 func TestSort(t *testing.T) {
-	num := 20000000
-	if testing.Short() {
-		num = 100000
-	}
+	// TODO(iannucci): Enable full test with num = 20000000.
+	num := 100000
 	num += len(cases)
 	randomCases := make(testCaseSlice, num)
 
