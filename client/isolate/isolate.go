@@ -78,8 +78,16 @@ func (a *ArchiveOptions) PostProcess(cwd string) {
 			".svn",
 		}
 	}
-	a.Isolate = filepath.Clean(filepath.Join(cwd, a.Isolate))
-	a.Isolated = filepath.Clean(filepath.Join(cwd, a.Isolated))
+	if !filepath.IsAbs(a.Isolate) {
+		a.Isolate = filepath.Join(cwd, a.Isolate)
+	}
+	a.Isolate = filepath.Clean(a.Isolate)
+
+	if !filepath.IsAbs(a.Isolated) {
+		a.Isolated = filepath.Join(cwd, a.Isolated)
+	}
+	a.Isolated = filepath.Clean(a.Isolated)
+
 	for k, v := range a.PathVariables {
 		// This is due to a Windows + GYP specific issue, where double-quoted paths
 		// would get mangled in a way that cannot be resolved unless a space is

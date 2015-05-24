@@ -82,3 +82,16 @@ func TestArchiveCMDParsing(t *testing.T) {
 	}
 	ut.AssertEqual(t, opts.ExtraVariables, common.KeyValVars{"version_full": "42.0.2284.0"})
 }
+
+// Verify that if the isolate/isolated paths are absolute, we don't
+// accidentally interpret them as relative to the cwd.
+func TestArchiveAbsolutePaths(t *testing.T) {
+	args := []string{
+		"--isolated", "/tmp/foo.isolated",
+		"--isolate", "/tmp/foo.isolate",
+	}
+	opts, err := parseArchiveCMD(args, "/my/project/")
+	ut.AssertEqual(t, nil, err)
+	ut.AssertEqual(t, "/tmp/foo.isolate", opts.Isolate)
+	ut.AssertEqual(t, "/tmp/foo.isolated", opts.Isolated)
+}
