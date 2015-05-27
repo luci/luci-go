@@ -478,10 +478,14 @@ func (a *archiver) stage2HashLoop() {
 		item := file
 		pool.Schedule(func() {
 			// calcDigest calls setErr() and update wgHashed even on failure.
+			end := tracer.Span(a, "archiver", "hash", nil)
 			if err := item.calcDigest(); err != nil {
+				end(tracer.Args{"err": err})
 				a.Cancel(err)
 				return
 			}
+			end(nil)
+			tracer.CounterAdd(a, "archiver", "hash", float64(item.digestItem.Size))
 			a.progress.Update(groupHash, groupHashDone, 1)
 			a.progress.Update(groupHash, groupHashDoneSize, item.digestItem.Size)
 			a.progress.Update(groupLookup, groupLookupTodo, 1)

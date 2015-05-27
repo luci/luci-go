@@ -169,5 +169,6 @@ func (i *isolateServer) doPush(state *PushState, src io.Reader) (err error) {
 	}
 	_, err = io.Copy(ioutil.Discard, resp.Body)
 	_ = resp.Body.Close()
+	tracer.CounterAdd(i, "isolateserver", "upload", float64(state.size))
 	return
 }

@@ -67,6 +67,48 @@ func TestNotStarted(t *testing.T) {
 	NewTID(nil, nil, "")
 }
 
+func TestCounterAdd(t *testing.T) {
+	b := &bytes.Buffer{}
+	ut.AssertEqual(t, nil, Start(b, 1))
+	CounterAdd(nil, "component1", "explosion", 42)
+	CounterAdd(nil, "component1", "explosion", 3)
+	Stop()
+
+	check(t, b, []event{
+		{
+			Type: eventCounter,
+			Name: "component1",
+			Args: Args{"explosion": 42.},
+		},
+		{
+			Type: eventCounter,
+			Name: "component1",
+			Args: Args{"explosion": 45.},
+		},
+	})
+}
+
+func TestCounterSet(t *testing.T) {
+	b := &bytes.Buffer{}
+	ut.AssertEqual(t, nil, Start(b, 1))
+	CounterSet(nil, "component1", "explosion", 42)
+	CounterSet(nil, "component1", "explosion", 3)
+	Stop()
+
+	check(t, b, []event{
+		{
+			Type: eventCounter,
+			Name: "component1",
+			Args: Args{"explosion": 42.},
+		},
+		{
+			Type: eventCounter,
+			Name: "component1",
+			Args: Args{"explosion": 3.},
+		},
+	})
+}
+
 func TestInstant(t *testing.T) {
 	b := &bytes.Buffer{}
 	ut.AssertEqual(t, nil, Start(b, 1))

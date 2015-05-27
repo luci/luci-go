@@ -180,6 +180,47 @@ func Instant(marker interface{}, category string, name string, s Scope, args Arg
 	}
 }
 
+// CounterSet registers a new value for a counter. The values will be grouped
+// inside category and each name displayed as a separate line.
+func CounterSet(marker interface{}, category, name string, value float64) {
+	if c := getContext(marker); c != nil {
+		c.lock.Lock()
+		m, ok := c.counters[category]
+		if !ok {
+			m = map[string]float64{}
+			c.counters[category] = m
+		}
+		m[name] = value
+		c.lock.Unlock()
+		c.emit(&event{
+			Type: eventCounter,
+			Name: category,
+			Args: Args{name: value},
+		})
+	}
+}
+
+// CounterAdd increments a value for a counter. The values will be grouped
+// inside category and each name displayed as a separate line.
+func CounterAdd(marker interface{}, category, name string, value float64) {
+	if c := getContext(marker); c != nil {
+		c.lock.Lock()
+		m, ok := c.counters[category]
+		if !ok {
+			m = map[string]float64{}
+			c.counters[category] = m
+		}
+		value += m[name]
+		m[name] = value
+		c.lock.Unlock()
+		c.emit(&event{
+			Type: eventCounter,
+			Name: category,
+			Args: Args{name: value},
+		})
+	}
+}
+
 // NewPID assigns a pseudo-process ID for this marker and TID 1. Optionally
 // assigns name to the 'process' and the initial thread.
 //
@@ -198,7 +239,7 @@ func NewPID(marker interface{}, pname, tname string) {
 	}
 	newPID++
 	tids[newPID] = 1
-	c := &context{newPID, 1}
+	c := &context{pid: newPID, tid: 1, counters: map[string]map[string]float64{}}
 	contexts[marker] = c
 	if pname != "" {
 		c.metadata(processName, Args{"name": pname})
@@ -220,7 +261,7 @@ func NewTID(marker interface{}, parent interface{}, tname string) {
 	lockContexts.Lock()
 	defer lockContexts.Unlock()
 	tids[parentC.pid]++
-	c := &context{pid: parentC.pid, tid: tids[parentC.pid]}
+	c := &context{pid: parentC.pid, tid: tids[parentC.pid], counters: map[string]map[string]float64{}}
 	contexts[marker] = c
 	if tname != "" {
 		c.metadata(threadName, Args{"name": tname})
@@ -231,9 +272,7 @@ func NewTID(marker interface{}, parent interface{}, tname string) {
 func Discard(marker interface{}) {
 	lockContexts.Lock()
 	defer lockContexts.Unlock()
-	if contexts != nil {
-		delete(contexts, marker)
-	}
+	delete(contexts, marker)
 	// Do not affect tids, tids is effectively a (small) memory leak.
 }
 
@@ -242,13 +281,13 @@ func Discard(marker interface{}) {
 var (
 	// Immutable.
 	start          = time.Now().UTC()
-	defaultContext = context{1, 1}
+	defaultContext = context{pid: 1, tid: 1, counters: map[string]map[string]float64{}}
 
 	// Mutable.
 	lockContexts sync.Mutex
 	contexts     map[interface{}]*context
-	tids         map[int]int
-	wg           sync.WaitGroup
+	tids         map[int]int    // Fast lookup {pid:maxTid} to create new context.
+	wg           sync.WaitGroup // Used to wait for all goroutines to complete on Stop().
 
 	lockWriter sync.Mutex
 	out        io.Writer
@@ -378,8 +417,10 @@ func fromDuration(t time.Duration) microseconds {
 // context embeds a pseudo thread id for this context. It's useful to keep
 // context, as runtime doesn't expose the goroutine id.
 type context struct {
-	pid int
-	tid int
+	pid      int
+	tid      int
+	lock     sync.Mutex
+	counters map[string]map[string]float64
 }
 
 // getContext returns a context if tracing is enabled. If the marker is
