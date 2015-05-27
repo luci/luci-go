@@ -4,15 +4,7 @@
 
 package wrapper
 
-type key int
-
-var (
-	globalInfoKey key
-
-	datastoreKey key = 1
-	memcacheKey  key = 2
-	taskQueueKey key = 3
-
-	timeNowKey  key = 4
-	mathRandKey key = 5
-)
+// Testable is the basic interface that every fake service should implement.
+type Testable interface {
+	FeatureBreaker
+}
