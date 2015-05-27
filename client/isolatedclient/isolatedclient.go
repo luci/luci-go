@@ -155,15 +155,12 @@ func (i *isolateServer) doPush(state *PushState, src io.Reader) (err error) {
 	}
 
 	// Upload to GCS.
-	client := &http.Client{}
 	request, err5 := http.NewRequest("PUT", state.status.GSUploadURL, reader)
 	if err5 != nil {
 		return err5
 	}
 	request.Header.Set("Content-Type", "application/octet-stream")
-	// TODO(maruel): For relatively small file, set request.ContentLength so the
-	// TCP connection can be reused.
-	resp, err6 := client.Do(request)
+	resp, err6 := http.DefaultClient.Do(request)
 	if err6 != nil {
 		return err6
 	}
