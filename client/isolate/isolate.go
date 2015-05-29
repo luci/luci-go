@@ -126,11 +126,10 @@ func ReplaceVariables(str string, opts *ArchiveOptions) (string, error) {
 
 // Archive processes a .isolate, generates a .isolated and archive it.
 // Returns a Future to the .isolated.
-func Archive(arch archiver.Archiver, relDir string, opts *ArchiveOptions) archiver.Future {
+func Archive(arch archiver.Archiver, opts *ArchiveOptions) archiver.Future {
 	displayName := filepath.Base(opts.Isolated)
-	tracer.NewTID(opts, nil, displayName)
-	defer tracer.Span(opts, "isolate", "archive", nil)(nil)
-	f, err := archive(arch, relDir, opts, displayName)
+	defer tracer.Span(arch, strings.SplitN(displayName, ".", 2)[0]+":archive", nil)(nil)
+	f, err := archive(arch, opts, displayName)
 	if err != nil {
 		arch.Cancel(err)
 		s := archiver.NewSimpleFuture(displayName)
@@ -140,8 +139,7 @@ func Archive(arch archiver.Archiver, relDir string, opts *ArchiveOptions) archiv
 	return f
 }
 
-func processing(relDir string, opts *ArchiveOptions, displayName string) (int, int, []string, string, *isolated.Isolated, error) {
-	defer tracer.Span(opts, "isolate", "loading", nil)(nil)
+func processing(opts *ArchiveOptions) (int, int, []string, string, *isolated.Isolated, error) {
 	content, err := ioutil.ReadFile(opts.Isolate)
 	if err != nil {
 		return 0, 0, nil, "", nil, err
@@ -222,8 +220,10 @@ func processing(relDir string, opts *ArchiveOptions, displayName string) (int, i
 	return filesCount, dirsCount, deps, rootDir, i, err
 }
 
-func archive(arch archiver.Archiver, relDir string, opts *ArchiveOptions, displayName string) (archiver.Future, error) {
-	filesCount, dirsCount, deps, rootDir, i, err := processing(relDir, opts, displayName)
+func archive(arch archiver.Archiver, opts *ArchiveOptions, displayName string) (archiver.Future, error) {
+	end := tracer.Span(arch, strings.SplitN(displayName, ".", 2)[0]+":loading", nil)
+	filesCount, dirsCount, deps, rootDir, i, err := processing(opts)
+	end(tracer.Args{"err": err})
 	if err != nil {
 		return nil, err
 	}

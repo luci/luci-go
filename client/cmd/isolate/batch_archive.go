@@ -158,7 +158,7 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 				return
 			}
 			name := strings.SplitN(filepath.Base(opts.Isolate), ".", 2)[0]
-			items <- &tmp{name, isolate.Archive(arch, data.Dir, opts)}
+			items <- &tmp{name, isolate.Archive(arch, opts)}
 		}(arg)
 	}
 	go func() {

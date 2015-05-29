@@ -109,7 +109,7 @@ func TestArchive(t *testing.T) {
 		ExtraVariables:  common.KeyValVars{"EXTRA": "really"},
 		ConfigVariables: common.KeyValVars{"OS": "amiga"},
 	}
-	future := Archive(a, baseDir, opts)
+	future := Archive(a, opts)
 	ut.AssertEqual(t, "baz.isolated", future.DisplayName())
 	future.WaitForHashed()
 	ut.AssertEqual(t, nil, future.Error())
@@ -188,7 +188,7 @@ func TestArchiveFileNotFoundReturnsError(t *testing.T) {
 		Isolate:  "/this-file-does-not-exist",
 		Isolated: "/this-file-doesnt-either",
 	}
-	future := Archive(a, "/base-dir", opts)
+	future := Archive(a, opts)
 	future.WaitForHashed()
 	err := future.Error()
 	ut.AssertEqual(t, true, strings.HasPrefix(err.Error(), "open /this-file-does-not-exist: "))

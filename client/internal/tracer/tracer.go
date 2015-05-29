@@ -46,14 +46,13 @@ func Start(w io.Writer, stackDepth int) error {
 	if out != nil {
 		return errors.New("tracer was already started")
 	}
-	if w == nil {
-		return errors.New("invalid output file")
-	}
 
 	lockContexts.Lock()
 	defer lockContexts.Unlock()
 	contexts = map[interface{}]*context{}
-	tids = map[int]int{1: 1}
+	nextPID = 2
+	lockID.Lock()
+	defer lockID.Unlock()
 
 	out = w
 	encoder = json.NewEncoder(out)
@@ -91,7 +90,8 @@ func Start(w io.Writer, stackDepth int) error {
 		// Unroll initialization.
 		out = nil
 		contexts = nil
-		tids = nil
+		nextPID = 0
+		nextID = 0
 	}
 	return err
 }
@@ -109,9 +109,12 @@ func Stop() {
 		// TODO(maruel): Dump all the stack frames.
 		_, _ = out.Write([]byte("]}"))
 	}
+	lockID.Lock()
+	defer lockID.Unlock()
 	out = nil
 	contexts = nil
-	tids = nil
+	nextPID = 0
+	nextID = 0
 }
 
 // Span defines an event with a duration. The caller MUST call the returned
@@ -119,7 +122,7 @@ func Stop() {
 //
 // The callback doesn't need to be called from the same goroutine as the
 // initial caller.
-func Span(marker interface{}, category string, name string, args Args) func(args Args) {
+func Span(marker interface{}, name string, args Args) func(args Args) {
 	c := getContext(marker)
 	if c == nil {
 		return dummy
@@ -134,146 +137,107 @@ func Span(marker interface{}, category string, name string, args Args) func(args
 			// number of events would not show up on the UI.
 			tsEnd++
 		}
-		if args != nil && argsEnd != nil {
-			// Use a pair of eventBegin/eventEnd.
-			c.emit(&event{
-				Category:  category,
-				Type:      eventBegin,
-				Name:      name,
-				Args:      args,
-				Timestamp: fromDuration(tsStart),
-			})
-			c.emit(&event{
-				Category:  category,
-				Type:      eventEnd,
-				Name:      name,
-				Args:      argsEnd,
-				Timestamp: fromDuration(tsEnd),
-			})
-		} else {
-			// Use a single event for compactness.
-			if args == nil {
-				args = argsEnd
-			}
-			c.emit(&event{
-				Category:  category,
-				Type:      eventComplete,
-				Name:      name,
-				Args:      args,
-				Timestamp: fromDuration(tsStart),
-				Duration:  fromDuration(tsEnd - tsStart),
-			})
+		// Use a pair of eventBegin/eventEnd.
+		id := getID()
+		// Remove once https://github.com/google/trace-viewer/issues/963 is rolled
+		// into Chrome stable.
+		if args == nil {
+			args = fakeArgs
 		}
+		if argsEnd == nil {
+			argsEnd = fakeArgs
+		}
+		c.emit(&event{
+			Type:      eventNestableBegin,
+			Category:  "ignored",
+			Name:      name,
+			Args:      args,
+			Timestamp: fromDuration(tsStart),
+			ID:        id,
+		})
+		c.emit(&event{
+			Type:      eventNestableEnd,
+			Category:  "ignored",
+			Name:      name,
+			Args:      argsEnd,
+			Timestamp: fromDuration(tsEnd),
+			ID:        id,
+		})
 	}
 }
 
 // Instant registers an intantaneous event.
-func Instant(marker interface{}, category string, name string, s Scope, args Args) {
+func Instant(marker interface{}, name string, s Scope, args Args) {
 	if c := getContext(marker); c != nil {
+		if args == nil {
+			args = fakeArgs
+		}
 		c.emit(&event{
-			Category: category,
-			Type:     eventInstant,
+			Type:     eventNestableInstant,
+			Category: "ignored",
 			Name:     name,
 			Scope:    s,
 			Args:     args,
+			ID:       getID(),
 		})
 	}
 }
 
 // CounterSet registers a new value for a counter. The values will be grouped
-// inside category and each name displayed as a separate line.
-func CounterSet(marker interface{}, category, name string, value float64) {
+// inside the PID and each name displayed as a separate line.
+func CounterSet(marker interface{}, name string, value float64) {
 	if c := getContext(marker); c != nil {
 		c.lock.Lock()
-		m, ok := c.counters[category]
-		if !ok {
-			m = map[string]float64{}
-			c.counters[category] = m
-		}
-		m[name] = value
+		c.counters[name] = value
 		c.lock.Unlock()
 		c.emit(&event{
 			Type: eventCounter,
-			Name: category,
-			Args: Args{name: value},
+			Name: name,
+			Args: Args{"value": value},
 		})
 	}
 }
 
 // CounterAdd increments a value for a counter. The values will be grouped
-// inside category and each name displayed as a separate line.
-func CounterAdd(marker interface{}, category, name string, value float64) {
+// inside the PID and each name displayed as a separate line.
+func CounterAdd(marker interface{}, name string, value float64) {
 	if c := getContext(marker); c != nil {
 		c.lock.Lock()
-		m, ok := c.counters[category]
-		if !ok {
-			m = map[string]float64{}
-			c.counters[category] = m
-		}
-		value += m[name]
-		m[name] = value
+		value += c.counters[name]
+		c.counters[name] = value
 		c.lock.Unlock()
 		c.emit(&event{
 			Type: eventCounter,
-			Name: category,
-			Args: Args{name: value},
+			Name: name,
+			Args: Args{"value": value},
 		})
 	}
 }
 
 // NewPID assigns a pseudo-process ID for this marker and TID 1. Optionally
-// assigns name to the 'process' and the initial thread.
+// assigns name to the 'process'.
 //
-// The main use is to create a logical group of 'threads'.
-func NewPID(marker interface{}, pname, tname string) {
+// The main use is to create a logical group for events.
+func NewPID(marker interface{}, pname string) {
 	lockContexts.Lock()
 	defer lockContexts.Unlock()
 	if contexts == nil {
 		return
 	}
-	newPID := 0
-	for pid := range tids {
-		if pid > newPID {
-			newPID = pid
-		}
-	}
-	newPID++
-	tids[newPID] = 1
-	c := &context{pid: newPID, tid: 1, counters: map[string]map[string]float64{}}
+	newPID := nextPID
+	nextPID++
+	c := &context{pid: newPID, counters: map[string]float64{}}
 	contexts[marker] = c
 	if pname != "" {
 		c.metadata(processName, Args{"name": pname})
 	}
-	if tname != "" {
-		c.metadata(threadName, Args{"name": tname})
-	}
 }
 
-// NewTID assigns a pseudo thread ID for this marker in the same process group
-// as the parent. parent can be nil, in this case the new thread id is within
-// process id 1. The new thread id is guaranteed to be above 1. Optionally
-// assigns a name to the thread.
-func NewTID(marker interface{}, parent interface{}, tname string) {
-	parentC := getContext(parent)
-	if parentC == nil {
-		return
-	}
-	lockContexts.Lock()
-	defer lockContexts.Unlock()
-	tids[parentC.pid]++
-	c := &context{pid: parentC.pid, tid: tids[parentC.pid], counters: map[string]map[string]float64{}}
-	contexts[marker] = c
-	if tname != "" {
-		c.metadata(threadName, Args{"name": tname})
-	}
-}
-
-// Discard forgets a context association created with NewPID or NewTID.
+// Discard forgets a context association created with NewPID.
 func Discard(marker interface{}) {
 	lockContexts.Lock()
 	defer lockContexts.Unlock()
 	delete(contexts, marker)
-	// Do not affect tids, tids is effectively a (small) memory leak.
 }
 
 // Private stuff.
@@ -281,18 +245,24 @@ func Discard(marker interface{}) {
 var (
 	// Immutable.
 	start          = time.Now().UTC()
-	defaultContext = context{pid: 1, tid: 1, counters: map[string]map[string]float64{}}
+	defaultContext = context{pid: 1, counters: map[string]float64{}}
+	// Remove once https://github.com/google/trace-viewer/issues/963 is rolled
+	// into Chrome stable.
+	fakeArgs = map[string]interface{}{"ignored": 0.}
 
 	// Mutable.
 	lockContexts sync.Mutex
 	contexts     map[interface{}]*context
-	tids         map[int]int    // Fast lookup {pid:maxTid} to create new context.
+	nextPID      int
 	wg           sync.WaitGroup // Used to wait for all goroutines to complete on Stop().
 
 	lockWriter sync.Mutex
 	out        io.Writer
 	encoder    *json.Encoder
 	first      bool
+
+	lockID sync.Mutex
+	nextID int
 )
 
 // eventType is one of the supported event type by
@@ -301,7 +271,8 @@ type eventType string
 
 const (
 	// Duration Events. Duration events provide a way to mark a duration of work
-	// on a given thread. These can be nested in the same Tid.
+	// on a given thread. These can be nested in the same Tid but must not be
+	// overlapped.
 	eventBegin eventType = "B"
 	eventEnd   eventType = "E"
 
@@ -320,8 +291,8 @@ const (
 	eventCounter eventType = "C"
 
 	// Async Events. Events that flows multiple threads, referenced by ID instead
-	// of relying on Tid. It's not useful here since there's no thread ID in Go!
-	eventNestableStart   eventType = "b"
+	// of relying on Tid. They can overload within the same thread.
+	eventNestableBegin   eventType = "b"
 	eventNestableEnd     eventType = "e"
 	eventNestableInstant eventType = "n"
 
@@ -376,7 +347,7 @@ const (
 // event is a single trace line.
 //
 // See format description at
-// https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/edit
+// https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview
 type event struct {
 	Pid       int          `json:"pid"`            // Required. Process ID.
 	Tid       int          `json:"tid"`            // Required. Thread ID. It is implicitly used to set start/end.
@@ -387,12 +358,12 @@ type event struct {
 	Args      Args         `json:"args,omitempty"` // Optional. Cannot be used with Object. Any arguments provided for the event. Some of the event types have required argument fields, otherwise, you can put any information you wish in here. The arguments are displayed in Trace Viewer when you view an event in the analysis section.
 	Duration  microseconds `json:"dur,omitempty"`  // Optional. Only for Complete.
 	Scope     Scope        `json:"s,omitempty"`    // Optional. Only for Instant. Defaults to ScopeThread.
+	ID        int          `json:"id,omitempty"`   // Optional. Only for Async or Object.
 	/* TODO(maruel): Add these if ever used, commented out for performance.
 	StackID         int          `json:"sf,omitempty"`     // Optional. Stack ID found in stackFrames section.
 	Stack           []string     `json:"stack,omitempty"`  // Optional. Raw stack.
 	EndStackID      int          `json:"esf,omitempty"`    // Optional. Only for Complete for end stack. Stack ID found in stackFrames section.
 	EndStack        []string     `json:"estack,omitempty"` // Optional. Only for Complete for end stack. Raw stack.
-	ID              int          `json:"id,omitempty"`     // Optional. Only for Async or Object.
 	ThreadTimestamp microseconds `json:"tts,omitempty"`    // Undocumented.
 	ThreadDuration  microseconds `json:"tdur,omitempty"`   // Undocumented.
 	*/
@@ -418,9 +389,8 @@ func fromDuration(t time.Duration) microseconds {
 // context, as runtime doesn't expose the goroutine id.
 type context struct {
 	pid      int
-	tid      int
 	lock     sync.Mutex
-	counters map[string]map[string]float64
+	counters map[string]float64
 }
 
 // getContext returns a context if tracing is enabled. If the marker is
@@ -447,7 +417,7 @@ func (c *context) emit(e *event) {
 	go func() {
 		defer wg.Done()
 		e.Pid = c.pid
-		e.Tid = c.tid
+		e.Tid = 1
 		lockWriter.Lock()
 		defer lockWriter.Unlock()
 		if out != nil {
@@ -472,6 +442,13 @@ func (c *context) emit(e *event) {
 // current pseudo process id or pseudo thread id.
 func (c *context) metadata(m metadataType, args Args) {
 	c.emit(&event{Type: eventMetadata, Name: string(m), Args: args})
+}
+
+func getID() int {
+	lockID.Lock()
+	defer lockID.Unlock()
+	nextID++
+	return nextID
 }
 
 func dummy(Args) {

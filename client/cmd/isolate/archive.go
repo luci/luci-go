@@ -49,10 +49,6 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 }
 
 func (c *archiveRun) main(a subcommands.Application, args []string) error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
 	out := os.Stdout
 	prefix := "\n"
 	if c.defaultFlags.Quiet {
@@ -62,8 +58,9 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	start := time.Now()
 	arch := archiver.New(isolatedclient.New(c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace), out)
 	common.CancelOnCtrlC(arch)
-	future := isolate.Archive(arch, cwd, &c.ArchiveOptions)
+	future := isolate.Archive(arch, &c.ArchiveOptions)
 	future.WaitForHashed()
+	var err error
 	if err = future.Error(); err != nil {
 		fmt.Printf("%s%s  %s\n", prefix, filepath.Base(c.Isolate), err)
 	} else {

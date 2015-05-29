@@ -9,7 +9,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/luci/luci-go/client/internal/lhttp"
@@ -47,7 +46,7 @@ func New(host, namespace string) IsolateServer {
 		url:       strings.TrimRight(host, "/"),
 		namespace: namespace,
 	}
-	tracer.NewTID(i, nil, i.url)
+	tracer.NewPID(i, "isolatedclient:"+i.url)
 	return i
 }
 
@@ -75,7 +74,7 @@ func (i *isolateServer) ServerCapabilities() (*isolated.ServerCapabilities, erro
 }
 
 func (i *isolateServer) Contains(items []*isolated.DigestItem) (out []*PushState, err error) {
-	end := tracer.Span(i, "contains", strconv.Itoa(len(items)), nil)
+	end := tracer.Span(i, "contains", tracer.Args{"number": len(items)})
 	defer func() { end(tracer.Args{"err": err}) }()
 	in := isolated.DigestCollection{Items: items}
 	in.Namespace.Namespace = i.namespace
@@ -107,7 +106,7 @@ func (i *isolateServer) Push(state *PushState, src io.Reader) (err error) {
 
 	// Optionally notify the server that it's done.
 	if state.status.GSUploadURL != "" {
-		end := tracer.Span(i, "finalize", "finalize", nil)
+		end := tracer.Span(i, "finalize", nil)
 		defer func() { end(tracer.Args{"err": err}) }()
 		// TODO(vadimsh): Calculate MD5 or CRC32C sum while uploading a file and
 		// send it to isolated server. That way isolate server can verify that
@@ -123,7 +122,7 @@ func (i *isolateServer) Push(state *PushState, src io.Reader) (err error) {
 }
 
 func (i *isolateServer) doPush(state *PushState, src io.Reader) (err error) {
-	end := tracer.Span(i, "push", strconv.FormatInt(state.size, 10), nil)
+	end := tracer.Span(i, "push", tracer.Args{"size": state.size})
 	defer func() { end(tracer.Args{"err": err}) }()
 	reader, writer := io.Pipe()
 	defer reader.Close()
@@ -151,7 +150,11 @@ func (i *isolateServer) doPush(state *PushState, src io.Reader) (err error) {
 			return err2
 		}
 		in := &isolated.StorageRequest{state.status.UploadTicket, content}
-		return i.postJSON("/_ah/api/isolateservice/v1/store_inline", in, nil)
+		if err = i.postJSON("/_ah/api/isolateservice/v1/store_inline", in, nil); err != nil {
+			return err
+		}
+		tracer.CounterAdd(i, "bytesUploaded", float64(state.size))
+		return
 	}
 
 	// Upload to GCS.
@@ -166,6 +169,6 @@ func (i *isolateServer) doPush(state *PushState, src io.Reader) (err error) {
 	}
 	_, err = io.Copy(ioutil.Discard, resp.Body)
 	_ = resp.Body.Close()
-	tracer.CounterAdd(i, "isolateserver", "upload", float64(state.size))
+	tracer.CounterAdd(i, "bytesUploaded", float64(state.size))
 	return
 }

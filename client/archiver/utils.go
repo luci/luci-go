@@ -121,7 +121,7 @@ func walk(root string, blacklist []string, c chan<- *walkItem) {
 	// may be worth. This needs to be perf tested.
 
 	total := 0
-	end := tracer.Span(root, "walk", filepath.Base(root), nil)
+	end := tracer.Span(root, "walk:"+filepath.Base(root), nil)
 	defer func() { end(tracer.Args{"root": root, "total": total}) }()
 	// Check patterns upfront, so it has consistent behavior w.r.t. bad glob
 	// patterns.
@@ -185,8 +185,8 @@ func walk(root string, blacklist []string, c chan<- *walkItem) {
 // blacklist is a list of globs of files to ignore.
 func PushDirectory(a Archiver, root string, relDir string, blacklist []string) Future {
 	total := 0
-	end := tracer.Span(a, "PushDirectory", relDir, nil)
-	defer func() { end(tracer.Args{"root": root, "total": total}) }()
+	end := tracer.Span(a, "PushDirectory", tracer.Args{"path": relDir, "root": root})
+	defer func() { end(tracer.Args{"total": total}) }()
 	c := make(chan *walkItem)
 	go func() {
 		walk(root, blacklist, c)

@@ -135,7 +135,7 @@ func New(is isolatedclient.IsolateServer, out io.Writer) Archiver {
 		stage3LookupChan:      make(chan *archiverItem),
 		stage4UploadChan:      make(chan *archiverItem),
 	}
-	tracer.NewTID(a, nil, "archiver")
+	tracer.NewPID(a, "archiver")
 
 	a.wg.Add(1)
 	go func() {
@@ -181,6 +181,7 @@ type archiverItem struct {
 	displayName string         // Name to use to qualify this item
 	path        string         // Set when source is a file on disk
 	wgHashed    sync.WaitGroup // Released once .digestItem.Digest is set
+	a           *archiver
 
 	// Mutable.
 	lock       sync.Mutex
@@ -193,10 +194,17 @@ type archiverItem struct {
 	state *isolatedclient.PushState // Server-side push state for cache miss
 }
 
-func newArchiverItem(displayName, path string, src io.ReadSeeker) *archiverItem {
-	i := &archiverItem{displayName: displayName, path: path, src: src}
+func newArchiverItem(a *archiver, displayName, path string, src io.ReadSeeker) *archiverItem {
+	tracer.CounterAdd(a, "itemsProcessing", 1)
+	i := &archiverItem{a: a, displayName: displayName, path: path, src: src}
 	i.wgHashed.Add(1)
 	return i
+}
+
+func (i *archiverItem) Close() error {
+	tracer.CounterAdd(i.a, "itemsProcessing", -1)
+	i.a = nil
+	return nil
 }
 
 func (i *archiverItem) DisplayName() string {
@@ -342,11 +350,13 @@ func (a *archiver) Close() error {
 	a.wg.Wait()
 	_ = a.progress.Close()
 	_ = a.canceler.Close()
-	return a.CancelationReason()
+	err := a.CancelationReason()
+	tracer.Instant(a, "done", tracer.Global, nil)
+	return err
 }
 
 func (a *archiver) Cancel(reason error) {
-	tracer.Instant(a, "archiver", "cancel", tracer.Thread, tracer.Args{"reason": reason})
+	tracer.Instant(a, "cancel", tracer.Thread, tracer.Args{"reason": reason})
 	a.canceler.Cancel(reason)
 }
 
@@ -359,7 +369,7 @@ func (a *archiver) Channel() <-chan error {
 }
 
 func (a *archiver) Push(displayName string, src io.ReadSeeker) Future {
-	i := newArchiverItem(displayName, "", src)
+	i := newArchiverItem(a, displayName, "", src)
 	if pos, err := i.src.Seek(0, os.SEEK_SET); pos != 0 || err != nil {
 		i.setErr(fmt.Errorf("seek(%s) failed: %s\n", i.DisplayName(), err))
 		i.wgHashed.Done()
@@ -369,7 +379,7 @@ func (a *archiver) Push(displayName string, src io.ReadSeeker) Future {
 }
 
 func (a *archiver) PushFile(displayName, path string) Future {
-	return a.push(newArchiverItem(displayName, path, nil))
+	return a.push(newArchiverItem(a, displayName, path, nil))
 }
 
 func (a *archiver) Stats() *Stats {
@@ -380,10 +390,12 @@ func (a *archiver) Stats() *Stats {
 
 func (a *archiver) push(item *archiverItem) Future {
 	if a.pushLocked(item) {
-		tracer.Instant(a, "archiver", "push", tracer.Thread, tracer.Args{"item": item.DisplayName()})
+		tracer.Instant(a, "itemAdded", tracer.Thread, tracer.Args{"item": item.DisplayName()})
+		tracer.CounterAdd(a, "itemsAdded", 1)
 		a.progress.Update(groupFound, groupFoundFound, 1)
 		return item
 	}
+	item.Close()
 	return nil
 }
 
@@ -434,6 +446,7 @@ func (a *archiver) stage1DedupeLoop() {
 		// functionally equivalent to running with a.closeLock held.
 		if err := a.CancelationReason(); err != nil {
 			item.setErr(err)
+			item.Close()
 			item.wgHashed.Done()
 			continue
 		}
@@ -442,6 +455,8 @@ func (a *archiver) stage1DedupeLoop() {
 		if item.path != "" {
 			if previous, ok := seen[item.path]; ok {
 				previous.link(item)
+				// TODO(maruel): Semantically weird.
+				item.Close()
 				continue
 			}
 		}
@@ -455,6 +470,7 @@ func (a *archiver) stage1DedupeLoop() {
 		if err := a.CancelationReason(); err != nil {
 			item.setErr(err)
 			item.wgHashed.Done()
+			item.Close()
 		} else {
 			// The archiver is being closed, this has to happen synchronously.
 			a.stage2HashChan <- item
@@ -478,14 +494,15 @@ func (a *archiver) stage2HashLoop() {
 		item := file
 		pool.Schedule(func() {
 			// calcDigest calls setErr() and update wgHashed even on failure.
-			end := tracer.Span(a, "archiver", "hash", nil)
+			end := tracer.Span(a, "hash", tracer.Args{"name": item.DisplayName()})
 			if err := item.calcDigest(); err != nil {
 				end(tracer.Args{"err": err})
 				a.Cancel(err)
+				item.Close()
 				return
 			}
-			end(nil)
-			tracer.CounterAdd(a, "archiver", "hash", float64(item.digestItem.Size))
+			end(tracer.Args{"size": float64(item.digestItem.Size)})
+			tracer.CounterAdd(a, "bytesHashed", float64(item.digestItem.Size))
 			a.progress.Update(groupHash, groupHashDone, 1)
 			a.progress.Update(groupHash, groupHashDoneSize, item.digestItem.Size)
 			a.progress.Update(groupLookup, groupLookupTodo, 1)
@@ -493,6 +510,7 @@ func (a *archiver) stage2HashLoop() {
 		}, func() {
 			item.setErr(a.CancelationReason())
 			item.wgHashed.Done()
+			item.Close()
 		})
 	}
 }
@@ -581,6 +599,7 @@ func (a *archiver) doContains(items []*archiverItem) {
 			a.statsLock.Lock()
 			a.stats.Hits = append(a.stats.Hits, common.Size(size))
 			a.statsLock.Unlock()
+			items[index].Close()
 		} else {
 			items[index].state = state
 			a.progress.Update(groupUpload, groupUploadTodo, 1)
@@ -599,6 +618,7 @@ func (a *archiver) doUpload(item *archiverItem) {
 		if err != nil {
 			a.Cancel(err)
 			item.setErr(err)
+			item.Close()
 			return
 		}
 		defer f.Close()
@@ -616,6 +636,7 @@ func (a *archiver) doUpload(item *archiverItem) {
 		a.progress.Update(groupUpload, groupUploadDone, 1)
 		a.progress.Update(groupUpload, groupUploadDoneSize, item.digestItem.Size)
 	}
+	item.Close()
 	size := common.Size(item.digestItem.Size)
 	u := &UploadStat{time.Since(start), size, item.DisplayName()}
 	a.statsLock.Lock()
