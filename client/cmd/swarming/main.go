@@ -8,8 +8,13 @@ import (
 	"log"
 	"os"
 
+	"github.com/luci/luci-go/client/internal/common"
 	"github.com/maruel/subcommands"
 )
+
+// version must be updated whenever functional change (behavior, arguments,
+// supported commands) is done.
+const version = "0.1"
 
 var application = &subcommands.DefaultApplication{
 	Name:  "swarming",
@@ -18,6 +23,7 @@ var application = &subcommands.DefaultApplication{
 	Commands: []*subcommands.Command{
 		subcommands.CmdHelp,
 		cmdRequestShow,
+		common.CmdVersion(version),
 	},
 }
 
