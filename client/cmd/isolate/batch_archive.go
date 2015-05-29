@@ -157,7 +157,11 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 				arch.Cancel(fmt.Errorf("invalid archive command in %s: %s", genJsonPath, err))
 				return
 			}
-			name := strings.SplitN(filepath.Base(opts.Isolate), ".", 2)[0]
+			name := filepath.Base(opts.Isolated)
+			// Strip the extension if there is one.
+			if dotIndex := strings.LastIndex(name, "."); dotIndex != -1 {
+				name = name[0:dotIndex]
+			}
 			items <- &tmp{name, isolate.Archive(arch, opts)}
 		}(arg)
 	}
