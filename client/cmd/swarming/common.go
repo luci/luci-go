@@ -7,11 +7,16 @@ package main
 import (
 	"errors"
 	"os"
+	"runtime"
 
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/client/internal/lhttp"
 	"github.com/maruel/subcommands"
 )
+
+func init() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+}
 
 type commonFlags struct {
 	subcommands.CommandRunBase

@@ -8,12 +8,17 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"runtime"
 
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/client/isolate"
 	"github.com/luci/luci-go/client/isolatedclient"
 	"github.com/maruel/subcommands"
 )
+
+func init() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+}
 
 type commonFlags struct {
 	subcommands.CommandRunBase
