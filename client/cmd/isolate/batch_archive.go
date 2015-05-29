@@ -40,8 +40,7 @@ isolate. Format of files is:
 }`,
 	CommandRun: func() subcommands.CommandRun {
 		c := batchArchiveRun{}
-		c.commonFlags.Init(&c.CommandRunBase)
-		c.commonServerFlags.Init(&c.CommandRunBase)
+		c.commonServerFlags.Init()
 		c.Flags.StringVar(&c.dumpJson, "dump-json", "",
 			"Write isolated Digestes of archived trees to this file as JSON")
 		return &c
@@ -49,16 +48,11 @@ isolate. Format of files is:
 }
 
 type batchArchiveRun struct {
-	subcommands.CommandRunBase
-	commonFlags
 	commonServerFlags
 	dumpJson string
 }
 
 func (c *batchArchiveRun) Parse(a subcommands.Application, args []string) error {
-	if err := c.commonFlags.Parse(); err != nil {
-		return err
-	}
 	if err := c.commonServerFlags.Parse(); err != nil {
 		return err
 	}
@@ -78,7 +72,7 @@ func parseArchiveCMD(args []string, cwd string) (*isolate.ArchiveOptions, error)
 	args = convertPyToGoArchiveCMDArgs(args)
 	base := subcommands.CommandRunBase{}
 	i := isolateFlags{}
-	i.Init(&base)
+	i.Init(&base.Flags)
 	if err := base.GetFlags().Parse(args); err != nil {
 		return nil, err
 	}
@@ -124,12 +118,12 @@ func convertPyToGoArchiveCMDArgs(args []string) []string {
 func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	out := os.Stdout
 	prefix := "\n"
-	if c.quiet {
+	if c.defaultFlags.Quiet {
 		out = nil
 		prefix = ""
 	}
 	start := time.Now()
-	arch := archiver.New(isolatedclient.New(c.serverURL, c.namespace), out)
+	arch := archiver.New(isolatedclient.New(c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace), out)
 	common.CancelOnCtrlC(arch)
 	type tmp struct {
 		name   string
@@ -188,7 +182,7 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	if err == nil && c.dumpJson != "" {
 		err = common.WriteJSONFile(c.dumpJson, data)
 	}
-	if !c.quiet {
+	if !c.defaultFlags.Quiet {
 		stats := arch.Stats()
 		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", stats.TotalHits(), stats.TotalBytesHits())
 		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", stats.TotalMisses(), stats.TotalBytesPushed())
@@ -198,11 +192,16 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 }
 
 func (c *batchArchiveRun) Run(a subcommands.Application, args []string) int {
-	defer c.Close()
 	if err := c.Parse(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
+	cl, err := c.defaultFlags.StartTracing()
+	if err != nil {
+		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		return 1
+	}
+	defer cl.Close()
 	if err := c.main(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1

@@ -6,88 +6,43 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"log"
-	"os"
 
 	"github.com/luci/luci-go/client/internal/common"
-	"github.com/luci/luci-go/client/internal/lhttp"
-	"github.com/luci/luci-go/client/internal/tracer"
 	"github.com/luci/luci-go/client/isolate"
+	"github.com/luci/luci-go/client/isolatedclient"
 	"github.com/maruel/subcommands"
 )
 
 type commonFlags struct {
-	quiet     bool
-	verbose   bool
-	tracePath string
-	traceFile io.Closer
+	subcommands.CommandRunBase
+	defaultFlags common.Flags
 }
 
-func (c *commonFlags) Init(b *subcommands.CommandRunBase) {
-	b.Flags.BoolVar(&c.quiet, "quiet", false, "Get less output")
-	b.Flags.BoolVar(&c.verbose, "verbose", false, "Get more output")
-	b.Flags.StringVar(&c.tracePath, "trace", "", "Name of trace file")
+func (c *commonFlags) Init() {
+	c.defaultFlags.Init(&c.Flags)
 }
 
 func (c *commonFlags) Parse() error {
-	if !c.verbose {
-		log.SetFlags(0)
-		log.SetOutput(ioutil.Discard)
-	}
-	if c.quiet && c.verbose {
-		return errors.New("can't use both -quiet and -verbose")
-	}
-	if c.tracePath != "" {
-		f, err := os.Create(c.tracePath)
-		if err != nil {
-			return err
-		}
-		if err = tracer.Start(f, 0); err != nil {
-			_ = f.Close()
-			return err
-		}
-		c.traceFile = f
-	}
-	return nil
-}
-
-func (c *commonFlags) Close() error {
-	if c.traceFile == nil {
-		return errors.New("was already closed")
-	}
-	tracer.Stop()
-	return c.traceFile.Close()
+	return c.defaultFlags.Parse()
 }
 
 type commonServerFlags struct {
-	serverURL string
-	namespace string
+	commonFlags
+	isolatedFlags isolatedclient.Flags
 }
 
-func (c *commonServerFlags) Init(b *subcommands.CommandRunBase) {
-	i := os.Getenv("ISOLATE_SERVER")
-	b.Flags.StringVar(&c.serverURL, "isolate-server", i,
-		"Isolate server to use; defaults to value of $ISOLATE_SERVER")
-	b.Flags.StringVar(&c.serverURL, "I", i, "Alias for -isolate-server")
-	b.Flags.StringVar(&c.namespace, "namespace", "default-gzip", "")
+func (c *commonServerFlags) Init() {
+	c.commonFlags.Init()
+	c.isolatedFlags.Init(&c.Flags)
 }
 
 func (c *commonServerFlags) Parse() error {
-	if c.serverURL == "" {
-		return errors.New("-isolate-server must be specified")
-	}
-	if s, err := lhttp.URLToHTTPS(c.serverURL); err != nil {
+	if err := c.commonFlags.Parse(); err != nil {
 		return err
-	} else {
-		c.serverURL = s
 	}
-	if c.namespace == "" {
-		return errors.New("-namespace must be specified.")
-	}
-	return nil
+	return c.isolatedFlags.Parse()
 }
 
 type isolateFlags struct {
@@ -95,26 +50,22 @@ type isolateFlags struct {
 	isolate.ArchiveOptions
 }
 
-func (c *isolateFlags) Init(b *subcommands.CommandRunBase) {
+func (c *isolateFlags) Init(f *flag.FlagSet) {
 	c.ArchiveOptions.Init()
-	b.Flags.StringVar(&c.Isolate, "isolate", "",
-		".isolate file to load the dependency data from")
-	b.Flags.StringVar(&c.Isolate, "i", "", "Alias for --isolate")
-	b.Flags.StringVar(&c.Isolated, "isolated", "",
-		".isolated file to generate or read")
-	b.Flags.StringVar(&c.Isolated, "s", "", "Alias for --isolated")
-	b.Flags.Var(&c.Blacklist, "blacklist",
-		"List of regexp to use as blacklist filter when uploading directories")
-	b.Flags.Var(c.ConfigVariables, "config-variable",
+	f.StringVar(&c.Isolate, "isolate", "", ".isolate file to load the dependency data from")
+	f.StringVar(&c.Isolate, "i", "", "Alias for --isolate")
+	f.StringVar(&c.Isolated, "isolated", "", ".isolated file to generate or read")
+	f.StringVar(&c.Isolated, "s", "", "Alias for --isolated")
+	f.Var(&c.Blacklist, "blacklist", "List of regexp to use as blacklist filter when uploading directories")
+	f.Var(c.ConfigVariables, "config-variable",
 		`Config variables are used to determine which
 		conditions should be matched when loading a .isolate
 		file, default: []. All 3 kinds of variables are
 		persistent accross calls, they are saved inside
 		<.isolated>.state`)
-	b.Flags.Var(c.PathVariables, "path-variable",
-		`Path variables are used to replace file paths when
-		loading a .isolate file, default: {}`)
-	b.Flags.Var(c.ExtraVariables, "extra-variable",
+	f.Var(c.PathVariables, "path-variable",
+		"Path variables are used to replace file paths when loading a .isolate file, default: {}")
+	f.Var(c.ExtraVariables, "extra-variable",
 		`Extraneous variables are replaced on the 'command
 		entry and on paths in the .isolate file but are not
 		considered relative paths.`)

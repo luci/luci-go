@@ -8,24 +8,28 @@ import (
 	"errors"
 	"os"
 
+	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/client/internal/lhttp"
 	"github.com/maruel/subcommands"
 )
 
 type commonFlags struct {
 	subcommands.CommandRunBase
-	serverURL string
-	verbose   bool
+	defaultFlags common.Flags
+	serverURL    string
 }
 
 // Init initializes common flags.
 func (c *commonFlags) Init() {
+	c.defaultFlags.Init(&c.Flags)
 	c.Flags.StringVar(&c.serverURL, "server", os.Getenv("SWARMING_SERVER"), "Server URL; required. Set $SWARMING_SERVER to set a default.")
-	c.Flags.BoolVar(&c.verbose, "verbose", false, "Enable logging.")
 }
 
 // Parse parses the common flags.
 func (c *commonFlags) Parse(a subcommands.Application) error {
+	if err := c.defaultFlags.Parse(); err != nil {
+		return err
+	}
 	if c.serverURL == "" {
 		return errors.New("must provide -server")
 	}

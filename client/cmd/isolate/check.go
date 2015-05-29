@@ -17,14 +17,13 @@ var cmdCheck = &subcommands.Command{
 	LongDesc:  "",
 	CommandRun: func() subcommands.CommandRun {
 		c := checkRun{}
-		c.commonFlags.Init(&c.CommandRunBase)
-		c.isolateFlags.Init(&c.CommandRunBase)
+		c.commonFlags.Init()
+		c.isolateFlags.Init(&c.Flags)
 		return &c
 	},
 }
 
 type checkRun struct {
-	subcommands.CommandRunBase
 	commonFlags
 	isolateFlags
 }
@@ -43,7 +42,7 @@ func (c *checkRun) Parse(a subcommands.Application, args []string) error {
 }
 
 func (c *checkRun) main(a subcommands.Application, args []string) error {
-	if c.verbose {
+	if !c.defaultFlags.Quiet {
 		fmt.Printf("Isolate:   %s\n", c.Isolate)
 		fmt.Printf("Isolated:  %s\n", c.Isolated)
 		fmt.Printf("Blacklist: %s\n", c.Blacklist)
@@ -55,11 +54,16 @@ func (c *checkRun) main(a subcommands.Application, args []string) error {
 }
 
 func (c *checkRun) Run(a subcommands.Application, args []string) int {
-	defer c.Close()
 	if err := c.Parse(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
+	cl, err := c.defaultFlags.StartTracing()
+	if err != nil {
+		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		return 1
+	}
+	defer cl.Close()
 	if err := c.main(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1

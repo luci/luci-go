@@ -24,24 +24,18 @@ var cmdArchive = &subcommands.Command{
 	LongDesc:  "All the files listed in the .isolated file are put in the isolate server cache via isolateserver.py.",
 	CommandRun: func() subcommands.CommandRun {
 		c := archiveRun{}
-		c.commonFlags.Init(&c.CommandRunBase)
-		c.commonServerFlags.Init(&c.CommandRunBase)
-		c.isolateFlags.Init(&c.CommandRunBase)
+		c.commonServerFlags.Init()
+		c.isolateFlags.Init(&c.Flags)
 		return &c
 	},
 }
 
 type archiveRun struct {
-	subcommands.CommandRunBase
-	commonFlags
 	commonServerFlags
 	isolateFlags
 }
 
 func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
-	if err := c.commonFlags.Parse(); err != nil {
-		return err
-	}
 	if err := c.commonServerFlags.Parse(); err != nil {
 		return err
 	}
@@ -61,12 +55,12 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	}
 	out := os.Stdout
 	prefix := "\n"
-	if c.quiet {
+	if c.defaultFlags.Quiet {
 		out = nil
 		prefix = ""
 	}
 	start := time.Now()
-	arch := archiver.New(isolatedclient.New(c.serverURL, c.namespace), out)
+	arch := archiver.New(isolatedclient.New(c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace), out)
 	common.CancelOnCtrlC(arch)
 	future := isolate.Archive(arch, cwd, &c.ArchiveOptions)
 	future.WaitForHashed()
@@ -78,7 +72,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	if err2 := arch.Close(); err == nil {
 		err = err2
 	}
-	if !c.quiet {
+	if !c.defaultFlags.Quiet {
 		duration := time.Since(start)
 		stats := arch.Stats()
 		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", stats.TotalHits(), stats.TotalBytesHits())
@@ -89,11 +83,16 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 }
 
 func (c *archiveRun) Run(a subcommands.Application, args []string) int {
-	defer c.Close()
 	if err := c.Parse(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
+	cl, err := c.defaultFlags.StartTracing()
+	if err != nil {
+		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		return 1
+	}
+	defer cl.Close()
 	if err := c.main(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1

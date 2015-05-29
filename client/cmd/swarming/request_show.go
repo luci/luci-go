@@ -5,6 +5,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/kr/pretty"
@@ -27,10 +28,17 @@ type requestShowRun struct {
 	commonFlags
 }
 
-func (c *requestShowRun) main(a subcommands.Application, taskid string) error {
-	if err := c.Parse(a); err != nil {
+func (r *requestShowRun) Parse(a subcommands.Application, args []string) error {
+	if err := r.commonFlags.Parse(a); err != nil {
 		return err
 	}
+	if len(args) != 1 {
+		return errors.New("must only provide a task id.")
+	}
+	return nil
+}
+
+func (c *requestShowRun) main(a subcommands.Application, taskid string) error {
 	s, err := swarming.New(c.serverURL)
 	if err != nil {
 		return err
@@ -44,10 +52,16 @@ func (c *requestShowRun) main(a subcommands.Application, taskid string) error {
 }
 
 func (c *requestShowRun) Run(a subcommands.Application, args []string) int {
-	if len(args) != 1 {
-		fmt.Fprintf(a.GetErr(), "%s: Must only provide a task id.\n", a.GetName())
+	if err := c.Parse(a, args); err != nil {
+		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
+	cl, err := c.defaultFlags.StartTracing()
+	if err != nil {
+		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		return 1
+	}
+	defer cl.Close()
 	if err := c.main(a, args[0]); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1

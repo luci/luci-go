@@ -22,8 +22,7 @@ var cmdArchive = &subcommands.Command{
 	LongDesc:  "All the files listed in the .isolated file are put in the isolate server.",
 	CommandRun: func() subcommands.CommandRun {
 		c := archiveRun{}
-		c.commonFlags.Init(&c.CommandRunBase)
-		c.commonServerFlags.Init(&c.CommandRunBase)
+		c.commonFlags.Init()
 		c.Flags.Var(&c.dirs, "dirs", "Directory(ies) to archive")
 		c.Flags.Var(&c.files, "files", "Individual file(s) to archive")
 		c.Flags.Var(&c.blacklist, "blacklist",
@@ -33,9 +32,7 @@ var cmdArchive = &subcommands.Command{
 }
 
 type archiveRun struct {
-	subcommands.CommandRunBase
 	commonFlags
-	commonServerFlags
 	dirs      common.Strings
 	files     common.Strings
 	blacklist common.Strings
@@ -43,9 +40,6 @@ type archiveRun struct {
 
 func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 	if err := c.commonFlags.Parse(); err != nil {
-		return err
-	}
-	if err := c.commonServerFlags.Parse(); err != nil {
 		return err
 	}
 	if len(args) != 0 {
@@ -58,11 +52,11 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	start := time.Now()
 	out := os.Stdout
 	prefix := "\n"
-	if c.quiet {
+	if c.defaultFlags.Quiet {
 		out = nil
 		prefix = ""
 	}
-	arch := archiver.New(isolatedclient.New(c.serverURL, c.namespace), out)
+	arch := archiver.New(isolatedclient.New(c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace), out)
 	common.CancelOnCtrlC(arch)
 	futures := []archiver.Future{}
 	names := []string{}
@@ -86,7 +80,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	}
 	// This waits for all uploads.
 	err := arch.Close()
-	if !c.quiet {
+	if !c.defaultFlags.Quiet {
 		duration := time.Since(start)
 		stats := arch.Stats()
 		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", stats.TotalHits(), stats.TotalBytesHits())
@@ -97,11 +91,16 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 }
 
 func (c *archiveRun) Run(a subcommands.Application, args []string) int {
-	defer c.Close()
 	if err := c.Parse(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
+	cl, err := c.defaultFlags.StartTracing()
+	if err != nil {
+		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		return 1
+	}
+	defer cl.Close()
 	if err := c.main(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1

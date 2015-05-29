@@ -19,20 +19,17 @@ var cmdDownload = &subcommands.Command{
 Files are referenced by their hash`,
 	CommandRun: func() subcommands.CommandRun {
 		c := downloadRun{}
-		c.commonFlags.Init(&c.CommandRunBase)
-		c.commonServerFlags.Init(&c.CommandRunBase)
+		c.commonFlags.Init()
 		return &c
 	},
 }
 
 type downloadRun struct {
-	subcommands.CommandRunBase
 	commonFlags
-	commonServerFlags
 }
 
 func (c *downloadRun) Parse(a subcommands.Application, args []string) error {
-	if err := c.commonServerFlags.Parse(); err != nil {
+	if err := c.commonFlags.Parse(); err != nil {
 		return err
 	}
 	if len(args) != 0 {
@@ -46,11 +43,16 @@ func (c *downloadRun) main(a subcommands.Application, args []string) error {
 }
 
 func (c *downloadRun) Run(a subcommands.Application, args []string) int {
-	defer c.Close()
 	if err := c.Parse(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
+	cl, err := c.defaultFlags.StartTracing()
+	if err != nil {
+		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		return 1
+	}
+	defer cl.Close()
 	if err := c.main(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
