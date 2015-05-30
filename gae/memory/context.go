@@ -5,6 +5,7 @@
 package memory
 
 import (
+	"errors"
 	"infra/gae/libs/wrapper"
 	"math/rand"
 	"sync"
@@ -92,18 +93,27 @@ func (m memContext) applyTxn(rnd *rand.Rand, txnCtxObj memContextObj) {
 	}
 }
 
-// Enable adds a new memory context to c. This new memory context will have
-// a zeroed state.
-func Enable(c context.Context) context.Context {
-	return context.WithValue(
+// Use adds implementations for the following gae/wrapper interfaces to the
+// context:
+//   * wrapper.Datastore
+//   * wrapper.TaskQueue
+//   * wrapper.Memcache
+//   * wrapper.GlobalInfo
+//
+// These can be retrieved with the "gae/wrapper".Get functions.
+//
+// The implementations are all backed by an in-memory implementation, and start
+// with an empty state.
+//
+// Using this more than once per context.Context will cause a panic.
+func Use(c context.Context) context.Context {
+	if c.Value(memContextKey) != nil {
+		panic(errors.New("memory.Use: called twice on the same Context"))
+	}
+	c = context.WithValue(
 		context.WithValue(c, memContextKey, newMemContext()),
 		giContextKey, &globalInfoData{})
-}
-
-// Use calls ALL of this packages Use* methods on c. This enables all
-// gae/wrapper Get* api's.
-func Use(c context.Context) context.Context {
-	return UseTQ(UseDS(UseMC(UseGI(c))))
+	return useTQ(useDS(useMC(useGI(c))))
 }
 
 func cur(c context.Context) (p memContext) {

@@ -30,7 +30,7 @@ func TestTaskQueue(t *testing.T) {
 		}
 		c := wrapper.SetTimeNowFactory(context.Background(), timeNow)
 		c = wrapper.SetMathRand(c, rand.New(rand.NewSource(wrapper.GetTimeNow(c).UnixNano())))
-		c = Use(Enable(c))
+		c = Use(c)
 
 		tq := wrapper.GetTQ(c).(interface {
 			wrapper.TQMultiReadWriter

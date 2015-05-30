@@ -23,9 +23,7 @@ import (
 
 /////////////////////////////// public functions ///////////////////////////////
 
-// UseTQ adds a wrapper.TaskQueue implementation to context, accessible
-// by wrapper.GetTQ(c)
-func UseTQ(c context.Context) context.Context {
+func useTQ(c context.Context) context.Context {
 	return wrapper.SetTQFactory(c, func(ic context.Context) wrapper.TaskQueue {
 		tqd := cur(ic).Get(memContextTQIdx)
 		var ret interface {

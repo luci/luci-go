@@ -20,7 +20,7 @@ func TestDatastoreKinder(t *testing.T) {
 	t.Parallel()
 
 	Convey("Datastore kinds and keys", t, func() {
-		c := Use(Enable(context.Background()))
+		c := Use(context.Background())
 		ds := wrapper.GetDS(c)
 		So(ds, ShouldNotBeNil)
 
@@ -52,7 +52,7 @@ func TestDatastoreKinder(t *testing.T) {
 				So(key.Namespace(), ShouldEqual, "")
 				So(key.String(), ShouldEqual, "/nerd,stringID")
 				So(key.Incomplete(), ShouldBeFalse)
-				So(KeyValid("", key, UserKeyOnly), ShouldBeTrue)
+				So(keyValid("", key, userKeyOnly), ShouldBeTrue)
 
 				chkey := ds.NewKey("wat", "", 100, key)
 				So(chkey, ShouldNotBeNil)
@@ -64,34 +64,34 @@ func TestDatastoreKinder(t *testing.T) {
 				So(chkey.Namespace(), ShouldEqual, "")
 				So(chkey.String(), ShouldEqual, "/nerd,stringID/wat,100")
 				So(key.Incomplete(), ShouldBeFalse)
-				So(KeyValid("", chkey, UserKeyOnly), ShouldBeTrue)
+				So(keyValid("", chkey, userKeyOnly), ShouldBeTrue)
 
 				incompl := ds.NewKey("sup", "", 0, key)
 				So(incompl, ShouldNotBeNil)
 				So(incompl.Incomplete(), ShouldBeTrue)
-				So(KeyValid("", incompl, UserKeyOnly), ShouldBeTrue)
+				So(keyValid("", incompl, userKeyOnly), ShouldBeTrue)
 				So(incompl.String(), ShouldEqual, "/nerd,stringID/sup,0")
 
 				bad := ds.NewKey("nooo", "", 10, incompl)
 				So(bad, ShouldNotBeNil)
 				So(bad.Incomplete(), ShouldBeFalse)
-				So(KeyValid("", bad, UserKeyOnly), ShouldBeFalse)
+				So(keyValid("", bad, userKeyOnly), ShouldBeFalse)
 				So(bad.String(), ShouldEqual, "/nerd,stringID/sup,0/nooo,10")
 
 				So(rootKey(bad), ShouldEqual, key)
 
 				Convey("other key validation", func() {
-					So(KeyValid("", nil, UserKeyOnly), ShouldBeFalse)
+					So(keyValid("", nil, userKeyOnly), ShouldBeFalse)
 
 					key := ds.NewKey("", "", 0, nil)
 					So(key, ShouldNotBeNil)
 
-					So(KeyValid("", key, UserKeyOnly), ShouldBeFalse)
+					So(keyValid("", key, userKeyOnly), ShouldBeFalse)
 
 					key = ds.NewKey("noop", "power level", 9000, nil)
 					So(key, ShouldNotBeNil)
 
-					So(KeyValid("", key, UserKeyOnly), ShouldBeFalse)
+					So(keyValid("", key, userKeyOnly), ShouldBeFalse)
 				})
 			})
 
@@ -135,7 +135,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 	t.Parallel()
 
 	Convey("Datastore single reads and writes", t, func() {
-		c := Use(Enable(context.Background()))
+		c := Use(context.Background())
 		ds := wrapper.GetDS(c)
 		So(ds, ShouldNotBeNil)
 

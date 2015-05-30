@@ -31,7 +31,7 @@ func TestKeyBinaryStuff(t *testing.T) {
 	t.Parallel()
 
 	Convey("Key binary encoding", t, func() {
-		c := Use(Enable(context.Background()))
+		c := Use(context.Background())
 		c, err := wrapper.GetGI(c).Namespace("bobspace")
 		So(err, ShouldBeNil)
 		ds := wrapper.GetDS(c)

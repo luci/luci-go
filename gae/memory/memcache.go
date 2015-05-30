@@ -39,9 +39,9 @@ var (
 	_ = wrapper.Testable((*memcacheImpl)(nil))
 )
 
-// UseMC adds a wrapper.Memcache implementation to context, accessible
+// useMC adds a wrapper.Memcache implementation to context, accessible
 // by wrapper.GetMC(c)
-func UseMC(c context.Context) context.Context {
+func useMC(c context.Context) context.Context {
 	lck := sync.Mutex{}
 	mcdMap := map[string]*memcacheData{}
 

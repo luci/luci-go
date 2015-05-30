@@ -26,7 +26,7 @@ func TestMemcache(t *testing.T) {
 			now = now.Add(time.Second)
 			return ret
 		}
-		c := UseMC(UseGI(wrapper.SetTimeNowFactory(Enable(context.Background()), timeNow)))
+		c := Use(wrapper.SetTimeNowFactory(context.Background(), timeNow))
 		mc := wrapper.GetMC(c)
 		mci := mc.(*memcacheImpl)
 

@@ -152,7 +152,7 @@ func (d *dataStoreData) entsKeyLocked(key *datastore.Key) (*memCollection, *data
 
 func putPrelim(ns string, knr goon.KindNameResolver, src interface{}) (*datastore.Key, *propertyList, error) {
 	key := newKeyObj(ns, knr, src)
-	if !KeyCouldBeValid(ns, key, UserKeyOnly) {
+	if !keyCouldBeValid(ns, key, userKeyOnly) {
 		// TODO(riannucci): different error for Put-ing to reserved Keys?
 		return nil, nil, datastore.ErrInvalidKey
 	}
@@ -196,7 +196,7 @@ func (d *dataStoreData) putInner(key *datastore.Key, data *propertyList) (*datas
 
 func getInner(ns string, knr goon.KindNameResolver, dst interface{}, getColl func(*datastore.Key) (*memCollection, error)) error {
 	key := newKeyObj(ns, knr, dst)
-	if !KeyValid(ns, key, AllowSpecialKeys) {
+	if !keyValid(ns, key, allowSpecialKeys) {
 		return datastore.ErrInvalidKey
 	}
 
@@ -229,7 +229,7 @@ func (d *dataStoreData) get(ns string, dst interface{}) error {
 }
 
 func (d *dataStoreData) del(ns string, key *datastore.Key) error {
-	if !KeyValid(ns, key, UserKeyOnly) {
+	if !keyValid(ns, key, userKeyOnly) {
 		return datastore.ErrInvalidKey
 	}
 
@@ -444,7 +444,7 @@ func (td *txnDataStoreData) get(ns string, dst interface{}) error {
 }
 
 func (td *txnDataStoreData) del(ns string, key *datastore.Key) error {
-	if !KeyValid(ns, key, UserKeyOnly) {
+	if !keyValid(ns, key, userKeyOnly) {
 		return datastore.ErrInvalidKey
 	}
 	return td.writeMutation(false, key, nil)

@@ -176,23 +176,23 @@ func rootKey(key *datastore.Key) *datastore.Key {
 type keyValidOption bool
 
 const (
-	// UserKeyOnly is used with KeyValid, and ensures that the key is only one
+	// userKeyOnly is used with keyValid, and ensures that the key is only one
 	// that's valid for a user program to write to.
-	UserKeyOnly keyValidOption = false
+	userKeyOnly keyValidOption = false
 
-	// AllowSpecialKeys is used with KeyValid, and allows keys for special
+	// allowSpecialKeys is used with keyValid, and allows keys for special
 	// metadata objects (like "__entity_group__").
-	AllowSpecialKeys = true
+	allowSpecialKeys = true
 )
 
-// KeyValid checks to see if a key is valid by applying a bunch of constraint
+// keyValid checks to see if a key is valid by applying a bunch of constraint
 // rules to it (e.g. can't have StringID and IntID set at the same time, can't
 // have a parent key which is Incomplete(), etc.)
 //
 // It verifies that the key is also in the provided namespace. It can also
 // reject keys which are 'special' e.g. have a Kind starting with "__". This
 // behavior is controllable with opt.
-func KeyValid(ns string, k *datastore.Key, opt keyValidOption) bool {
+func keyValid(ns string, k *datastore.Key, opt keyValidOption) bool {
 	// copied from the appengine SDK because why would any user program need to
 	// see if a key is valid? /s
 	if k == nil {
@@ -203,7 +203,7 @@ func KeyValid(ns string, k *datastore.Key, opt keyValidOption) bool {
 		return false
 	}
 	for ; k != nil; k = k.Parent() {
-		if opt == UserKeyOnly && len(k.Kind()) >= 2 && k.Kind()[:2] == "__" { // reserve all Kinds starting with __
+		if opt == userKeyOnly && len(k.Kind()) >= 2 && k.Kind()[:2] == "__" { // reserve all Kinds starting with __
 			return false
 		}
 		if k.Kind() == "" || k.AppID() == "" {
@@ -224,13 +224,13 @@ func KeyValid(ns string, k *datastore.Key, opt keyValidOption) bool {
 	return true
 }
 
-// KeyCouldBeValid is like KeyValid, but it allows for the possibility that the
+// keyCouldBeValid is like keyValid, but it allows for the possibility that the
 // last token of the key is Incomplete(). It returns true if the Key will become
 // valid once it recieves an automatically-assigned ID.
-func KeyCouldBeValid(ns string, k *datastore.Key, opt keyValidOption) bool {
+func keyCouldBeValid(ns string, k *datastore.Key, opt keyValidOption) bool {
 	// adds an id to k if it's incomplete.
 	if k.Incomplete() {
 		k = newKey(ns, k.Kind(), "", 1, k.Parent())
 	}
-	return KeyValid(ns, k, opt)
+	return keyValid(ns, k, opt)
 }

@@ -20,9 +20,9 @@ import (
 
 //////////////////////////////////// public ////////////////////////////////////
 
-// UseDS adds a wrapper.Datastore implementation to context, accessible
+// useDS adds a wrapper.Datastore implementation to context, accessible
 // by wrapper.GetDS(c)
-func UseDS(c context.Context) context.Context {
+func useDS(c context.Context) context.Context {
 	return wrapper.SetDSFactory(c, func(ic context.Context) wrapper.Datastore {
 		dsd := cur(ic).Get(memContextDSIdx)
 

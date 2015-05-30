@@ -18,9 +18,9 @@ func curGID(c context.Context) *globalInfoData {
 	return c.Value(giContextKey).(*globalInfoData)
 }
 
-// UseGI adds a wrapper.GlobalInfo context, accessible
+// useGI adds a wrapper.GlobalInfo context, accessible
 // by wrapper.GetGI(c)
-func UseGI(c context.Context) context.Context {
+func useGI(c context.Context) context.Context {
 	return wrapper.SetGIFactory(c, func(ic context.Context) wrapper.GlobalInfo {
 		return &giImpl{wrapper.DummyGI(), curGID(ic), ic}
 	})
