@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"infra/gae/libs/meta"
 	"infra/gae/libs/wrapper"
+	"math"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -517,6 +518,153 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 						So(f.Val, ShouldEqual, 10)
 					})
 				})
+			})
+		})
+
+	})
+}
+
+func TestDatastoreQueryer(t *testing.T) {
+	Convey("Datastore Query suport", t, func() {
+		c := Use(context.Background())
+		ds := wrapper.GetDS(c)
+		So(ds, ShouldNotBeNil)
+
+		Convey("can create good queries", func() {
+			q := ds.NewQuery("Foo").KeysOnly().Limit(10).Offset(39)
+			q = q.Start(queryCursor("kosmik")).End(queryCursor("krabs"))
+			So(q, ShouldNotBeNil)
+			So(q.(*queryImpl).err, ShouldBeNil)
+			qi := q.(*queryImpl).checkCorrectness("", false)
+			So(qi.err, ShouldBeNil)
+		})
+
+		Convey("normalize ensures orders make sense", func() {
+			q := ds.NewQuery("Cool")
+			q = q.Filter("cat =", 19).Filter("bob =", 10).Order("bob").Order("bob")
+
+			Convey("removes dups and equality orders", func() {
+				q = q.Order("wat")
+				qi := q.(*queryImpl).normalize().checkCorrectness("", false)
+				So(qi.err, ShouldBeNil)
+				So(qi.order, ShouldResemble, []queryOrder{{"wat", qASC}})
+			})
+
+			Convey("keeps inequality orders", func() {
+				q = q.Order("wat")
+				q := q.Filter("bob >", 10).Filter("wat <", 29)
+				qi := q.(*queryImpl).normalize().checkCorrectness("", false)
+				So(qi.order, ShouldResemble, []queryOrder{{"bob", qASC}, {"wat", qASC}})
+				So(qi.err.Error(), ShouldContainSubstring, "Only one inequality")
+			})
+
+			Convey("if we equality-filter on __key__, order is ditched", func() {
+				q = q.Order("wat")
+				q := q.Filter("__key__ =", ds.NewKey("Foo", "wat", 0, nil))
+				qi := q.(*queryImpl).normalize().checkCorrectness("", false)
+				So(qi.order, ShouldResemble, []queryOrder(nil))
+				So(qi.err, ShouldBeNil)
+			})
+
+			Convey("if we order by key and something else, key dominates", func() {
+				q := q.Order("__key__").Order("wat")
+				qi := q.(*queryImpl).normalize().checkCorrectness("", false)
+				So(qi.order, ShouldResemble, []queryOrder{{"__key__", qASC}})
+				So(qi.err, ShouldBeNil)
+			})
+		})
+
+		Convey("can create bad queries", func() {
+			q := ds.NewQuery("Foo")
+
+			Convey("bad filter ops", func() {
+				q := q.Filter("Bob !", "value")
+				So(q.(*queryImpl).err.Error(), ShouldContainSubstring, "invalid operator \"!\"")
+			})
+			Convey("bad filter", func() {
+				q := q.Filter("Bob", "value")
+				So(q.(*queryImpl).err.Error(), ShouldContainSubstring, "invalid filter")
+			})
+			Convey("bad order", func() {
+				q := q.Order("+Bob")
+				So(q.(*queryImpl).err.Error(), ShouldContainSubstring, "invalid order")
+			})
+			Convey("empty", func() {
+				q := q.Order("")
+				So(q.(*queryImpl).err.Error(), ShouldContainSubstring, "empty order")
+			})
+			Convey("OOB limit", func() {
+				q := q.Limit(math.MaxInt64)
+				So(q.(*queryImpl).err.Error(), ShouldContainSubstring, "query limit overflow")
+			})
+			Convey("underflow offset", func() {
+				q := q.Offset(-29)
+				So(q.(*queryImpl).err.Error(), ShouldContainSubstring, "negative query offset")
+			})
+			Convey("OOB offset", func() {
+				q := q.Offset(math.MaxInt64)
+				So(q.(*queryImpl).err.Error(), ShouldContainSubstring, "query offset overflow")
+			})
+			Convey("Bad cursors", func() {
+				q := q.Start(queryCursor("")).End(queryCursor(""))
+				So(q.(*queryImpl).err.Error(), ShouldContainSubstring, "invalid cursor")
+			})
+			Convey("Bad ancestors", func() {
+				q := q.Ancestor(ds.NewKey("Goop", "wat", 10, nil))
+				So(q, ShouldNotBeNil)
+				qi := q.(*queryImpl).checkCorrectness("", false)
+				So(qi.err, ShouldEqual, datastore.ErrInvalidKey)
+			})
+			Convey("nil ancestors", func() {
+				qi := q.Ancestor(nil).(*queryImpl).checkCorrectness("", false)
+				So(qi.err.Error(), ShouldContainSubstring, "nil query ancestor")
+			})
+			Convey("Bad key filters", func() {
+				q := q.Filter("__key__ =", ds.NewKey("Goop", "wat", 10, nil))
+				qi := q.(*queryImpl).checkCorrectness("", false)
+				So(qi.err, ShouldEqual, datastore.ErrInvalidKey)
+			})
+			Convey("non-ancestor queries in a transaction", func() {
+				qi := q.(*queryImpl).checkCorrectness("", true)
+				So(qi.err.Error(), ShouldContainSubstring, "Only ancestor queries")
+			})
+			Convey("absurd numbers of filters are prohibited", func() {
+				q := q.Ancestor(ds.NewKey("thing", "wat", 0, nil))
+				for i := 0; i < 100; i++ {
+					q = q.Filter("something =", 10)
+				}
+				qi := q.(*queryImpl).checkCorrectness("", false)
+				So(qi.err.Error(), ShouldContainSubstring, "query is too large")
+			})
+			Convey("filters for __key__ that aren't keys", func() {
+				q := q.Filter("__key__ = ", 10)
+				qi := q.(*queryImpl).checkCorrectness("", false)
+				So(qi.err.Error(), ShouldContainSubstring, "must be a Key")
+			})
+			Convey("multiple inequalities", func() {
+				q := q.Filter("bob > ", 19).Filter("charlie < ", 20)
+				qi := q.(*queryImpl).checkCorrectness("", false)
+				So(qi.err.Error(), ShouldContainSubstring, "one inequality filter")
+			})
+			Convey("bad sort orders", func() {
+				q := q.Filter("bob > ", 19).Order("-charlie")
+				qi := q.(*queryImpl).checkCorrectness("", false)
+				So(qi.err.Error(), ShouldContainSubstring, "first sort property")
+			})
+			Convey("kindless with non-__key__ filters", func() {
+				q := ds.NewQuery("").Filter("face <", 25.3)
+				qi := q.(*queryImpl).checkCorrectness("", false)
+				So(qi.err.Error(), ShouldContainSubstring, "kind is required for non-__key__")
+			})
+			Convey("kindless with non-__key__ orders", func() {
+				q := ds.NewQuery("").Order("face")
+				qi := q.(*queryImpl).checkCorrectness("", false)
+				So(qi.err.Error(), ShouldContainSubstring, "kind is required for all orders")
+			})
+			Convey("kindless with decending-__key__ orders", func() {
+				q := ds.NewQuery("").Order("-__key__")
+				qi := q.(*queryImpl).checkCorrectness("", false)
+				So(qi.err.Error(), ShouldContainSubstring, "kind is required for all orders")
 			})
 		})
 

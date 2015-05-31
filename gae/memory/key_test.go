@@ -42,7 +42,7 @@ func TestKeyBinaryStuff(t *testing.T) {
 		b := &bytes.Buffer{}
 		writeKey(b, withNS, k)
 
-		newk, err := readKey(b, withNS)
+		newk, err := readKey(b, withNS, "")
 		So(err, ShouldBeNil)
 		So(k.Namespace(), ShouldEqual, "bobspace")
 		So(newk, shouldEqualKey, k)

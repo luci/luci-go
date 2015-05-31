@@ -81,6 +81,8 @@ func (d *dataStoreData) Unlock() {
 	d.rwlock.Unlock()
 }
 
+/////////////////////////// indicies(dataStoreData) ////////////////////////////
+
 func groupMetaKey(key *datastore.Key) []byte {
 	return keyBytes(noNS, newKey("", "__entity_group__", "", 1, rootKey(key)))
 }
@@ -189,6 +191,18 @@ func (d *dataStoreData) putInner(key *datastore.Key, data *propertyList) (*datas
 		return nil, err
 	}
 
+	old := ents.Get(keyBytes(noNS, key))
+	oldPl := (*propertyList)(nil)
+	if old != nil {
+		oldPl = &propertyList{}
+		if err = oldPl.UnmarshalBinary(old); err != nil {
+			return nil, err
+		}
+	}
+	if err = updateIndicies(d.store, key, oldPl, data); err != nil {
+		return nil, err
+	}
+
 	ents.Set(keyBytes(noNS, key), dataBytes)
 
 	return key, nil
@@ -246,6 +260,18 @@ func (d *dataStoreData) del(ns string, key *datastore.Key) error {
 		return err
 	}
 
+	old := ents.Get(keyBuf)
+	oldPl := (*propertyList)(nil)
+	if old != nil {
+		oldPl = &propertyList{}
+		if err := oldPl.UnmarshalBinary(old); err != nil {
+			return err
+		}
+	}
+	if err := updateIndicies(d.store, key, oldPl, nil); err != nil {
+		return err
+	}
+
 	ents.Delete(keyBuf)
 	return nil
 }
@@ -258,7 +284,7 @@ func (d *dataStoreData) canApplyTxn(obj memContextObj) bool {
 		if len(muts) == 0 { // read-only
 			continue
 		}
-		k, err := keyFromByteString(withNS, rk)
+		k, err := keyFromByteString(withNS, rk, "")
 		if err != nil {
 			panic(err)
 		}

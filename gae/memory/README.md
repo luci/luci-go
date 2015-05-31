@@ -87,11 +87,28 @@ use as well as on the 2nd (or Nth) cursor use, where this method will not.
                                     (rootkind, rootid, __entity_group__,1) -> {__version__: int}
                                     (rootkind, rootid, __entity_group_ids__,1) -> {__version__: int}
                                     (__entity_group_ids__,1) -> {__version__: int}
+      // TODO(iannucci): Journal every entity write in a log with a globally
+      // increasing version number (aka "timestamp").
+      //
+      // TODO(iannucci): Use the value in idx collection to indicate the last
+      // global log version reflected in this index. Then index updates can happen
+      // in parallel, in a truly eventually-consistent fashion (and completely
+      // avoid holding the DB writelock while calculating index entries).
+      // Unfortunately, copying new records (and removing old ones) into the DB
+      // would still require holding global writelock.
+      //
+      // TODO(iannucci): how do we garbage-collect the journal?
+      //
+      // TODO(iannucci): add the ability in gkvlite to 'swap' a collection with
+      // another one, transactionally? Not sure if this is possible to do easily.
+      // If we had this, then we could do all the index writes for a given index
+      // on the side, and then do a quick swap into place with a writelock. As
+      // long as every index only has a single goroutine writing it, then this
+      // would enable maximum concurrency, since all indexes could update in
+      // parallel and only synchronize for the duration of a single pointer swap.
+      idx                        -> kind|A?|[-?prop]* = nil
       idx:ns:kind                -> key = nil
       idx:ns:kind|prop           -> propval|key = [prev val]
       idx:ns:kind|-prop          -> -propval|key = [next val]
       idx:ns:kind|A|?prop|?prop  -> A|propval|propval|key = [prev/next val]|[prev/next val]
       idx:ns:kind|?prop|?prop    -> propval|propval|key = [prev/next val]|[prev/next val]
-
-      // to add persistence later
-      idx:                       -> kind,A?,[-?prop]*

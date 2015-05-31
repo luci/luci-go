@@ -5,8 +5,58 @@
 package memory
 
 import (
+	"bytes"
+	"sync"
+
 	"github.com/luci/gkvlite"
 )
+
+func gkvCollide(o, n *memCollection, f func(k, ov, nv []byte)) {
+	oldItems, newItems := make(chan *gkvlite.Item), make(chan *gkvlite.Item)
+	walker := func(c *memCollection, ch chan<- *gkvlite.Item, wg *sync.WaitGroup) {
+		defer close(ch)
+		defer wg.Done()
+		if c != nil {
+			c.VisitItemsAscend(nil, true, func(i *gkvlite.Item) bool {
+				ch <- i
+				return true
+			})
+		}
+	}
+
+	wg := &sync.WaitGroup{}
+	wg.Add(2)
+	go walker(o, oldItems, wg)
+	go walker(n, newItems, wg)
+
+	l, r := <-oldItems, <-newItems
+	for {
+		if l == nil && r == nil {
+			break
+		}
+
+		if l == nil {
+			f(r.Key, nil, r.Val)
+			r = <-newItems
+		} else if r == nil {
+			f(l.Key, l.Val, nil)
+			l = <-oldItems
+		} else {
+			switch bytes.Compare(l.Key, r.Key) {
+			case -1: // l < r
+				f(l.Key, l.Val, nil)
+				l = <-oldItems
+			case 0: // l == r
+				f(l.Key, l.Val, r.Val)
+				l, r = <-oldItems, <-newItems
+			case 1: // l > r
+				f(r.Key, nil, r.Val)
+				r = <-newItems
+			}
+		}
+	}
+	wg.Wait()
+}
 
 // memStore is a gkvlite.Store which will panic for anything which might
 // otherwise return an error.
@@ -40,6 +90,14 @@ func (ms *memStore) SetCollection(name string, cmp gkvlite.KeyCompare) *memColle
 	return (*memCollection)((*gkvlite.Store)(ms).SetCollection(name, cmp))
 }
 
+func (ms *memStore) RemoveCollection(name string) {
+	(*gkvlite.Store)(ms).RemoveCollection(name)
+}
+
+func (ms *memStore) GetCollectionNames() []string {
+	return (*gkvlite.Store)(ms).GetCollectionNames()
+}
+
 // memCollection is a gkvlite.Collection which will panic for anything which
 // might otherwise return an error.
 //
@@ -50,6 +108,14 @@ type memCollection gkvlite.Collection
 
 func (mc *memCollection) Get(k []byte) []byte {
 	ret, err := (*gkvlite.Collection)(mc).Get(k)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+func (mc *memCollection) MinItem(withValue bool) *gkvlite.Item {
+	ret, err := (*gkvlite.Collection)(mc).MinItem(withValue)
 	if err != nil {
 		panic(err)
 	}
@@ -72,12 +138,6 @@ func (mc *memCollection) Delete(k []byte) bool {
 
 func (mc *memCollection) VisitItemsAscend(target []byte, withValue bool, visitor gkvlite.ItemVisitor) {
 	if err := (*gkvlite.Collection)(mc).VisitItemsAscend(target, withValue, visitor); err != nil {
-		panic(err)
-	}
-}
-
-func (mc *memCollection) VisitItemsDescend(target []byte, withValue bool, visitor gkvlite.ItemVisitor) {
-	if err := (*gkvlite.Collection)(mc).VisitItemsDescend(target, withValue, visitor); err != nil {
 		panic(err)
 	}
 }

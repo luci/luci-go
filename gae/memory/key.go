@@ -104,8 +104,8 @@ func keyBytes(nso nsOption, k *datastore.Key) []byte {
 	return buf.Bytes()
 }
 
-func keyFromByteString(nso nsOption, d string) (*datastore.Key, error) {
-	return readKey(bytes.NewBufferString(d), nso)
+func keyFromByteString(nso nsOption, d string, ns string) (*datastore.Key, error) {
+	return readKey(bytes.NewBufferString(d), nso, ns)
 }
 
 func writeKey(buf *bytes.Buffer, nso nsOption, k *datastore.Key) {
@@ -124,8 +124,8 @@ func writeKey(buf *bytes.Buffer, nso nsOption, k *datastore.Key) {
 	}
 }
 
-func readKey(buf *bytes.Buffer, nso nsOption) (*datastore.Key, error) {
-	namespace := ""
+func readKey(buf *bytes.Buffer, nso nsOption, ns string) (*datastore.Key, error) {
+	namespace := ns
 	if nso == withNS {
 		err := error(nil)
 		if namespace, err = readString(buf); err != nil {

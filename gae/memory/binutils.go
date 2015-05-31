@@ -9,6 +9,9 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
+	"time"
+
+	"appengine"
 
 	"github.com/luci/luci-go/common/funnybase"
 )
@@ -65,4 +68,31 @@ func readFloat64(buf *bytes.Buffer) (float64, error) {
 	}
 	bits := binary.BigEndian.Uint64(data)
 	return math.Float64frombits(bits ^ (((bits >> 63) - 1) | (1 << 63))), nil
+}
+
+// We truncate this to microseconds and drop the timezone, because that's the
+// way that the appengine SDK does it. Awesome, right? Also: its not documented.
+func writeTime(buf *bytes.Buffer, t time.Time) {
+	funnybase.WriteUint(buf, uint64(t.Unix())*1e6+uint64(t.Nanosecond()/1e3))
+}
+
+func readTime(buf *bytes.Buffer) (time.Time, error) {
+	v, err := funnybase.ReadUint(buf)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return time.Unix(int64(v/1e6), int64((v%1e6)*1e3)), nil
+}
+
+func writeGeoPoint(buf *bytes.Buffer, gp appengine.GeoPoint) {
+	writeFloat64(buf, gp.Lat)
+	writeFloat64(buf, gp.Lng)
+}
+
+func readGeoPoint(buf *bytes.Buffer) (pt appengine.GeoPoint, err error) {
+	if pt.Lat, err = readFloat64(buf); err != nil {
+		return
+	}
+	pt.Lng, err = readFloat64(buf)
+	return
 }

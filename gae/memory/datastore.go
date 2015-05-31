@@ -116,6 +116,32 @@ var (
 	_ = wrapper.Testable((*txnDsImpl)(nil))
 )
 
+func (d *dsImpl) NewQuery(kind string) wrapper.DSQuery {
+	return &queryImpl{DSQuery: wrapper.DummyQY(), ns: d.ns, kind: kind}
+}
+
+func (d *dsImpl) Run(q wrapper.DSQuery) wrapper.DSIterator {
+	rq := q.(*queryImpl)
+	rq = rq.normalize().checkCorrectness(d.ns, false)
+	return &queryIterImpl{rq}
+}
+
+func (d *dsImpl) GetAll(q wrapper.DSQuery, dst interface{}) ([]*datastore.Key, error) {
+	// TODO(riannucci): assert that dst is a slice of structs
+	return nil, nil
+}
+
+func (d *dsImpl) Count(q wrapper.DSQuery) (ret int, err error) {
+	itr := d.Run(q.KeysOnly())
+	for _, err = itr.Next(nil); err != nil; _, err = itr.Next(nil) {
+		ret++
+	}
+	if err == datastore.Done {
+		err = nil
+	}
+	return
+}
+
 func (d *txnDsImpl) BreakFeatures(err error, features ...string) {
 	d.data.BreakFeatures(err, features...)
 }
