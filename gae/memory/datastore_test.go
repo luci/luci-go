@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"infra/gae/libs/meta"
 	"infra/gae/libs/wrapper"
+	"math"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -525,6 +526,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 
 const MaxUint = ^uint(0)
 const MaxInt = int(MaxUint >> 1)
+const IntIs32Bits = MaxInt < math.MaxInt64
 
 func TestDatastoreQueryer(t *testing.T) {
 	Convey("Datastore Query suport", t, func() {
@@ -596,16 +598,22 @@ func TestDatastoreQueryer(t *testing.T) {
 				So(q.(*queryImpl).err.Error(), ShouldContainSubstring, "empty order")
 			})
 			Convey("OOB limit", func() {
-				q := q.Limit(MaxInt)
-				So(q.(*queryImpl).err.Error(), ShouldContainSubstring, "query limit overflow")
+				// this is supremely stupid. The SDK uses 'int' which measn we have to
+				// use it too, but then THEY BOUNDS CHECK IT FOR 32 BITS... *sigh*
+				if !IntIs32Bits {
+					q := q.Limit(MaxInt)
+					So(q.(*queryImpl).err.Error(), ShouldContainSubstring, "query limit overflow")
+				}
 			})
 			Convey("underflow offset", func() {
 				q := q.Offset(-29)
 				So(q.(*queryImpl).err.Error(), ShouldContainSubstring, "negative query offset")
 			})
 			Convey("OOB offset", func() {
-				q := q.Offset(MaxInt)
-				So(q.(*queryImpl).err.Error(), ShouldContainSubstring, "query offset overflow")
+				if !IntIs32Bits {
+					q := q.Offset(MaxInt)
+					So(q.(*queryImpl).err.Error(), ShouldContainSubstring, "query offset overflow")
+				}
 			})
 			Convey("Bad cursors", func() {
 				q := q.Start(queryCursor("")).End(queryCursor(""))
