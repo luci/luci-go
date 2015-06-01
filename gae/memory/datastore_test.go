@@ -526,7 +526,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 
 const MaxUint = ^uint(0)
 const MaxInt = int(MaxUint >> 1)
-const IntIs32Bits = MaxInt < math.MaxInt64
+const IntIs32Bits = int64(MaxInt) < math.MaxInt64
 
 func TestDatastoreQueryer(t *testing.T) {
 	Convey("Datastore Query suport", t, func() {
