@@ -5,6 +5,7 @@
 package main
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/luci/luci-go/client/internal/common"
@@ -86,12 +87,17 @@ func TestArchiveCMDParsing(t *testing.T) {
 // Verify that if the isolate/isolated paths are absolute, we don't
 // accidentally interpret them as relative to the cwd.
 func TestArchiveAbsolutePaths(t *testing.T) {
+	absPath := "/tmp/"
+	if common.IsWindows() {
+		absPath = "E:\\tmp\\"
+	}
+	ut.AssertEqual(t, true, filepath.IsAbs(absPath))
 	args := []string{
-		"--isolated", "/tmp/foo.isolated",
-		"--isolate", "/tmp/foo.isolate",
+		"--isolated", absPath + "foo.isolated",
+		"--isolate", absPath + "foo.isolate",
 	}
 	opts, err := parseArchiveCMD(args, "/my/project/")
 	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, "/tmp/foo.isolate", opts.Isolate)
-	ut.AssertEqual(t, "/tmp/foo.isolated", opts.Isolated)
+	ut.AssertEqual(t, absPath+"foo.isolate", opts.Isolate)
+	ut.AssertEqual(t, absPath+"foo.isolated", opts.Isolated)
 }
