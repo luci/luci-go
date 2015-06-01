@@ -6,6 +6,7 @@ package memlogger
 
 import (
 	"fmt"
+	"sync"
 
 	"golang.org/x/net/context"
 
@@ -44,37 +45,36 @@ func (l LogLevel) String() string {
 type LogEntry struct {
 	Level LogLevel
 	Msg   string
+	Data  map[string]interface{}
 }
 
 // MemLogger is an implementation of Logger.
-type MemLogger []LogEntry
-
-// Debugf adds a new LogEntry at the LogDebug level
-func (m *MemLogger) Debugf(format string, args ...interface{}) {
-	*m = append(*m, LogEntry{LogDebug, fmt.Sprintf(format, args...)})
+type MemLogger struct {
+	lock   *sync.Mutex
+	data   *[]LogEntry
+	fields map[string]interface{}
 }
 
-// Infof adds a new LogEntry at the LogInfo level
-func (m *MemLogger) Infof(format string, args ...interface{}) {
-	*m = append(*m, LogEntry{LogInfo, fmt.Sprintf(format, args...)})
+var _ logging.Logger = (*MemLogger)(nil)
+
+func (m *MemLogger) inner(lvl LogLevel, format string, args []interface{}) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	*m.data = append(*m.data, LogEntry{lvl, fmt.Sprintf(format, args...), m.fields})
 }
 
-// Warningf adds a new LogEntry at the LogWarn level
-func (m *MemLogger) Warningf(format string, args ...interface{}) {
-	*m = append(*m, LogEntry{LogWarn, fmt.Sprintf(format, args...)})
-}
-
-// Errorf adds a new LogEntry at the LogError level
-func (m *MemLogger) Errorf(format string, args ...interface{}) {
-	*m = append(*m, LogEntry{LogError, fmt.Sprintf(format, args...)})
-}
+func (m *MemLogger) Debugf(format string, args ...interface{})   { m.inner(LogDebug, format, args) }
+func (m *MemLogger) Infof(format string, args ...interface{})    { m.inner(LogInfo, format, args) }
+func (m *MemLogger) Warningf(format string, args ...interface{}) { m.inner(LogWarn, format, args) }
+func (m *MemLogger) Errorf(format string, args ...interface{})   { m.inner(LogError, format, args) }
 
 // Use adds a memory backed Logger to Context, with concrete type
 // *MemLogger. Casting to the concrete type can be used to inspect the
 // log output after running a test case, for example.
 func Use(c context.Context) context.Context {
-	ml := &MemLogger{}
+	lock := sync.Mutex{}
+	data := []LogEntry{}
 	return logging.SetFactory(c, func(ic context.Context) logging.Logger {
-		return ml
+		return &MemLogger{&lock, &data, logging.FieldsToMap(logging.GetFields(ic))}
 	})
 }
