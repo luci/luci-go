@@ -22,8 +22,9 @@ package logging
 
 import (
 	"fmt"
-	"golang.org/x/net/context"
 	"strings"
+
+	"golang.org/x/net/context"
 )
 
 // Fields is a simple map of additional context values to add to Logger (see
