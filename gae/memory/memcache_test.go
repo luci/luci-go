@@ -28,7 +28,8 @@ func TestMemcache(t *testing.T) {
 		}
 		c := Use(wrapper.SetTimeNowFactory(context.Background(), timeNow))
 		mc := wrapper.GetMC(c)
-		mci := mc.(*memcacheImpl)
+		mci := wrapper.GetMC(c).(*memcacheImpl)
+		So(mc, ShouldNotEqual, mci) // two impls with the same memcacheData
 
 		Convey("implements MCSingleReadWriter", func() {
 			Convey("Add", func() {

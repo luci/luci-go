@@ -17,6 +17,8 @@ import (
 )
 
 type memcacheData struct {
+	wrapper.BrokenFeatures
+
 	lock  sync.Mutex
 	items map[string]*unsafe.Item
 	casID uint64
@@ -26,9 +28,6 @@ type memcacheData struct {
 // implementation of {wrapper.Memcache, wrapper.Testable}.
 type memcacheImpl struct {
 	wrapper.Memcache
-	wrapper.BrokenFeatures
-
-	// TODO(riannucci): bind+use namespace too
 
 	data    *memcacheData
 	timeNow func() time.Time
@@ -52,13 +51,15 @@ func useMC(c context.Context) context.Context {
 		ns := curGID(ic).namespace
 		mcd, ok := mcdMap[ns]
 		if !ok {
-			mcd = &memcacheData{items: map[string]*unsafe.Item{}}
+			mcd = &memcacheData{
+				BrokenFeatures: wrapper.BrokenFeatures{
+					DefaultError: commonErrors.ErrServerErrorMC},
+				items: map[string]*unsafe.Item{}}
 			mcdMap[ns] = mcd
 		}
 
 		return &memcacheImpl{
 			wrapper.DummyMC(),
-			wrapper.BrokenFeatures{DefaultError: commonErrors.ErrServerErrorMC},
 			mcd,
 			func() time.Time { return wrapper.GetTimeNow(ic) },
 		}
@@ -104,9 +105,17 @@ func (m *memcacheImpl) retrieve(key string) (*unsafe.Item, bool) {
 	return ret, ok
 }
 
+func (m *memcacheImpl) BreakFeatures(err error, features ...string) {
+	m.data.BreakFeatures(err, features...)
+}
+
+func (m *memcacheImpl) UnbreakFeatures(features ...string) {
+	m.data.UnbreakFeatures(features...)
+}
+
 // Add implements context.MCSingleReadWriter.Add.
 func (m *memcacheImpl) Add(i *memcache.Item) error {
-	if err := m.IsBroken(); err != nil {
+	if err := m.data.IsBroken(); err != nil {
 		return err
 	}
 
@@ -122,7 +131,7 @@ func (m *memcacheImpl) Add(i *memcache.Item) error {
 
 // CompareAndSwap implements context.MCSingleReadWriter.CompareAndSwap.
 func (m *memcacheImpl) CompareAndSwap(item *memcache.Item) error {
-	if err := m.IsBroken(); err != nil {
+	if err := m.data.IsBroken(); err != nil {
 		return err
 	}
 
@@ -143,7 +152,7 @@ func (m *memcacheImpl) CompareAndSwap(item *memcache.Item) error {
 
 // Set implements context.MCSingleReadWriter.Set.
 func (m *memcacheImpl) Set(i *memcache.Item) error {
-	if err := m.IsBroken(); err != nil {
+	if err := m.data.IsBroken(); err != nil {
 		return err
 	}
 
@@ -156,7 +165,7 @@ func (m *memcacheImpl) Set(i *memcache.Item) error {
 
 // Get implements context.MCSingleReadWriter.Get.
 func (m *memcacheImpl) Get(key string) (*memcache.Item, error) {
-	if err := m.IsBroken(); err != nil {
+	if err := m.data.IsBroken(); err != nil {
 		return nil, err
 	}
 
@@ -171,7 +180,7 @@ func (m *memcacheImpl) Get(key string) (*memcache.Item, error) {
 
 // Delete implements context.MCSingleReadWriter.Delete.
 func (m *memcacheImpl) Delete(key string) error {
-	if err := m.IsBroken(); err != nil {
+	if err := m.data.IsBroken(); err != nil {
 		return err
 	}
 
