@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"infra/gae/libs/meta"
 	"infra/gae/libs/wrapper"
-	"math"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -524,6 +523,9 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 	})
 }
 
+const MaxUint = ^uint(0)
+const MaxInt = int(MaxUint >> 1)
+
 func TestDatastoreQueryer(t *testing.T) {
 	Convey("Datastore Query suport", t, func() {
 		c := Use(context.Background())
@@ -594,7 +596,7 @@ func TestDatastoreQueryer(t *testing.T) {
 				So(q.(*queryImpl).err.Error(), ShouldContainSubstring, "empty order")
 			})
 			Convey("OOB limit", func() {
-				q := q.Limit(math.MaxInt64)
+				q := q.Limit(MaxInt)
 				So(q.(*queryImpl).err.Error(), ShouldContainSubstring, "query limit overflow")
 			})
 			Convey("underflow offset", func() {
@@ -602,7 +604,7 @@ func TestDatastoreQueryer(t *testing.T) {
 				So(q.(*queryImpl).err.Error(), ShouldContainSubstring, "negative query offset")
 			})
 			Convey("OOB offset", func() {
-				q := q.Offset(math.MaxInt64)
+				q := q.Offset(MaxInt)
 				So(q.(*queryImpl).err.Error(), ShouldContainSubstring, "query offset overflow")
 			})
 			Convey("Bad cursors", func() {
