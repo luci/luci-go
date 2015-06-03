@@ -11,7 +11,10 @@ import (
 	"github.com/maruel/ut"
 )
 
-func TestURLToHTTPS(t *testing.T) {
+func TestCheckURL(t *testing.T) {
+	const onlyHttpsErr = "Only https:// scheme is accepted for appspot hosts. " +
+		"It can be omitted."
+
 	data := []struct {
 		in       string
 		expected string
@@ -19,10 +22,11 @@ func TestURLToHTTPS(t *testing.T) {
 	}{
 		{"foo", "https://foo", nil},
 		{"https://foo", "https://foo", nil},
-		{"http://foo", "", errors.New("Only https:// scheme is accepted. It can be omitted.")},
+		{"http://foo.example.com", "http://foo.example.com", nil},
+		{"http://foo.appspot.com", "", errors.New(onlyHttpsErr)},
 	}
 	for i, line := range data {
-		out, err := URLToHTTPS(line.in)
+		out, err := CheckURL(line.in)
 		ut.AssertEqualIndex(t, i, line.expected, out)
 		ut.AssertEqualIndex(t, i, line.err, err)
 	}

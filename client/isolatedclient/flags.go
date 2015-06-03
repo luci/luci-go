@@ -35,7 +35,7 @@ func (c *Flags) Parse() error {
 		ts := httptest.NewServer(isolatedfake.New())
 		c.ServerURL = ts.URL
 	} else {
-		if s, err := lhttp.URLToHTTPS(c.ServerURL); err != nil {
+		if s, err := lhttp.CheckURL(c.ServerURL); err != nil {
 			return err
 		} else {
 			c.ServerURL = s

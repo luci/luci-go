@@ -38,7 +38,7 @@ func (c *commonFlags) Parse(a subcommands.Application) error {
 	if c.serverURL == "" {
 		return errors.New("must provide -server")
 	}
-	s, err := lhttp.URLToHTTPS(c.serverURL)
+	s, err := lhttp.CheckURL(c.serverURL)
 	if err != nil {
 		return err
 	}

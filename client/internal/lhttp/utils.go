@@ -10,17 +10,30 @@ import (
 	"strings"
 )
 
-// URLToHTTPS ensures the url is https://.
-func URLToHTTPS(s string) (string, error) {
+func hostRequiresSSL(host string) bool {
+	host = strings.ToLower(host)
+	return strings.HasSuffix(host, ".appspot.com")
+}
+
+// Ensures that the URL has a valid scheme, and that, if it is an appspot
+// server, that it uses HTTPS.
+//
+// If no protocol is specified, the protocol defaults to https://.
+func CheckURL(s string) (string, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		return "", err
 	}
-	if u.Scheme != "" && u.Scheme != "https" {
-		return "", errors.New("Only https:// scheme is accepted. It can be omitted.")
-	}
-	if !strings.HasPrefix(s, "https://") {
+	if u.Scheme == "" {
 		s = "https://" + s
+		u.Scheme = "https"
+	}
+	if u.Scheme != "https" && u.Scheme != "http" {
+		return "", errors.New("Only http:// or https:// scheme is accepted.")
+	}
+	if u.Scheme != "https" && hostRequiresSSL(u.Host) {
+		return "", errors.New("Only https:// scheme is accepted for appspot hosts. " +
+			"It can be omitted.")
 	}
 	if _, err = url.Parse(s); err != nil {
 		return "", err
