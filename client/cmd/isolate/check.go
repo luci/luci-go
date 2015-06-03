@@ -7,6 +7,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/maruel/subcommands"
 )
@@ -32,7 +33,11 @@ func (c *checkRun) Parse(a subcommands.Application, args []string) error {
 	if err := c.commonFlags.Parse(); err != nil {
 		return err
 	}
-	if err := c.isolateFlags.Parse(RequireIsolatedFile | RequireIsolateFile); err != nil {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	if err := c.isolateFlags.Parse(cwd, RequireIsolatedFile|RequireIsolateFile); err != nil {
 		return err
 	}
 	if len(args) != 0 {

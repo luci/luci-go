@@ -60,20 +60,23 @@ func TestConvertPyToGoArchiveCMDArgs(t *testing.T) {
 }
 
 func TestInvalidArchiveCMD(t *testing.T) {
-	_, err := parseArchiveCMD([]string{}, "")
+	_, err := parseArchiveCMD([]string{}, absPath1)
 	ut.AssertEqual(t, "-isolated must be specified", err.Error())
 }
 
 func TestArchiveCMDParsing(t *testing.T) {
 	args := []string{
-		"--isolated", ".isolated",
-		"--isolate", ".isolate",
+		"--isolated", "../biz/bar.isolated",
+		"--isolate", "../boz/bar.isolate",
 		"--path-variable", "DEPTH", "../..",
 		"--path-variable", "PRODUCT_DIR", "../../out/Release",
 		"--extra-variable", "version_full=42.0.2284.0",
 		"--config-variable", "OS=linux",
 	}
-	opts, err := parseArchiveCMD(args, "")
+	opts, err := parseArchiveCMD(args, absPath1)
+	base := filepath.Dir(filepath.Dir(absPath1))
+	ut.AssertEqual(t, filepath.Join(base, "boz", "bar.isolate"), opts.Isolate)
+	ut.AssertEqual(t, filepath.Join(base, "biz", "bar.isolated"), opts.Isolated)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, opts.ConfigVariables, common.KeyValVars{"OS": "linux"})
 	if common.IsWindows() {
@@ -87,17 +90,24 @@ func TestArchiveCMDParsing(t *testing.T) {
 // Verify that if the isolate/isolated paths are absolute, we don't
 // accidentally interpret them as relative to the cwd.
 func TestArchiveAbsolutePaths(t *testing.T) {
-	absPath := "/tmp/"
-	if common.IsWindows() {
-		absPath = "E:\\tmp\\"
-	}
-	ut.AssertEqual(t, true, filepath.IsAbs(absPath))
 	args := []string{
-		"--isolated", absPath + "foo.isolated",
-		"--isolate", absPath + "foo.isolate",
+		"--isolated", absPath1 + "foo.isolated",
+		"--isolate", absPath1 + "foo.isolate",
 	}
-	opts, err := parseArchiveCMD(args, "/my/project/")
+	opts, err := parseArchiveCMD(args, absPath2)
 	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, absPath+"foo.isolate", opts.Isolate)
-	ut.AssertEqual(t, absPath+"foo.isolated", opts.Isolated)
+	ut.AssertEqual(t, absPath1+"foo.isolate", opts.Isolate)
+	ut.AssertEqual(t, absPath1+"foo.isolated", opts.Isolated)
+}
+
+var absPath1 string
+var absPath2 string
+
+func init() {
+	absPath1 = "/tmp/bar/"
+	absPath2 = "/var/lib/"
+	if common.IsWindows() {
+		absPath1 = "E:\\tmp\\bar\\"
+		absPath2 = "X:\\var\\lib\\"
+	}
 }

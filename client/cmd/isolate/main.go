@@ -14,7 +14,7 @@ import (
 
 // version must be updated whenever functional change (behavior, arguments,
 // supported commands) is done.
-const version = "0.1"
+const version = "0.2"
 
 var application = &subcommands.DefaultApplication{
 	Name:  "isolate",

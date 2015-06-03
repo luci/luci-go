@@ -282,5 +282,9 @@ func archive(arch archiver.Archiver, opts *ArchiveOptions, displayName string) (
 	if err = json.NewEncoder(raw).Encode(i); err != nil {
 		return nil, err
 	}
+
+	if err := ioutil.WriteFile(opts.Isolated, raw.Bytes(), 0644); err != nil {
+		return nil, err
+	}
 	return arch.Push(displayName, bytes.NewReader(raw.Bytes())), nil
 }

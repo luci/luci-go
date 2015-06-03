@@ -39,7 +39,11 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 	if err := c.commonServerFlags.Parse(); err != nil {
 		return err
 	}
-	if err := c.isolateFlags.Parse(RequireIsolatedFile); err != nil {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	if err := c.isolateFlags.Parse(cwd, RequireIsolatedFile); err != nil {
 		return err
 	}
 	if len(args) != 0 {

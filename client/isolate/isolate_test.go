@@ -178,6 +178,9 @@ func TestArchive(t *testing.T) {
 	}
 
 	ut.AssertEqual(t, nil, server.Error())
+	digest, err := isolated.HashFile(filepath.Join(tmpDir, "baz.isolated"))
+	ut.AssertEqual(t, isolated.DigestItem{isolatedHash, false, len(isolatedEncoded)}, digest)
+	ut.AssertEqual(t, nil, err)
 }
 
 // Test that if the isolate file is not found, the error is properly propagated.

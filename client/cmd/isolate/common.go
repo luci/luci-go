@@ -8,6 +8,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"path/filepath"
 	"runtime"
 
 	"github.com/luci/luci-go/client/internal/common"
@@ -87,7 +88,10 @@ const (
 	RequireIsolatedFile
 )
 
-func (c *isolateFlags) Parse(flags RequiredIsolateFlags) error {
+func (c *isolateFlags) Parse(cwd string, flags RequiredIsolateFlags) error {
+	if !filepath.IsAbs(cwd) {
+		return errors.New("cwd must be absolute path")
+	}
 	varss := [](common.KeyValVars){c.ConfigVariables, c.ExtraVariables, c.PathVariables}
 	for _, vars := range varss {
 		for k := range vars {
@@ -97,12 +101,24 @@ func (c *isolateFlags) Parse(flags RequiredIsolateFlags) error {
 		}
 	}
 
-	if flags&RequireIsolateFile != 0 && c.Isolate == "" {
-		return errors.New("-isolate must be specified")
-	}
-	if flags&RequireIsolatedFile != 0 && c.Isolated == "" {
-		return errors.New("-isolated must be specified")
+	if c.Isolate == "" {
+		if flags&RequireIsolateFile != 0 {
+			return errors.New("-isolate must be specified")
+		}
+	} else {
+		if !filepath.IsAbs(c.Isolate) {
+			c.Isolate = filepath.Clean(filepath.Join(cwd, c.Isolate))
+		}
 	}
 
+	if c.Isolated == "" {
+		if flags&RequireIsolatedFile != 0 {
+			return errors.New("-isolated must be specified")
+		}
+	} else {
+		if !filepath.IsAbs(c.Isolated) {
+			c.Isolated = filepath.Clean(filepath.Join(cwd, c.Isolated))
+		}
+	}
 	return nil
 }
