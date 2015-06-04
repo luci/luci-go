@@ -9,6 +9,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -381,8 +382,6 @@ func TestLoadIsolateForConfigMissingVars(t *testing.T) {
 	ut.AssertEqualf(t, true, strings.Contains(err.Error(), "OS"), "%s", err)
 }
 
-// TODO(tandrii): make sure these tests pass on windows.
-
 func TestLoadIsolateForConfig(t *testing.T) {
 	t.Parallel()
 	// Case linux64, matches first condition.
@@ -464,14 +463,54 @@ func TestLoadIsolateAsConfigWithIncludes(t *testing.T) {
 	ut.AssertEqual(t, NotSet, ro) // first condition has no read_only specified.
 	ut.AssertEqual(t, []string{"python", "64linuxOrWin"}, cmd)
 	ut.AssertEqual(t, []string{
-		filepath.Join("..", "inc_file"),
 		"64linuxOrWin",
 		filepath.Join("<(DIR)", "inc_unittest"), // no rebasing for this.
 		filepath.Join("<(PRODUCT_DIR)", "unittest<(EXECUTABLE_SUFFIX)"),
+		filepath.Join("inc", "inc_file"),
 	}, deps)
 }
 
+func TestConfigSettingsUnion(t *testing.T) {
+	left := &ConfigSettings{
+		Command:    []string{"left takes precedence"},
+		Files:      []string{"../../le/f/t"}, // Must be POSIX.
+		IsolateDir: absPath1,
+	}
+	right := &ConfigSettings{
+		Files:      []string{"../ri/g/ht"},
+		IsolateDir: absPath2,
+	}
+
+	out, err := left.union(right)
+	ut.AssertEqual(t, nil, err)
+	ut.AssertEqual(t, left.Command, out.Command)
+	ut.AssertEqual(t, left.IsolateDir, out.IsolateDir)
+	ut.AssertEqual(t, append(getAbsoluteFilenames(left), getAbsoluteFilenames(right)...),
+		getAbsoluteFilenames(out))
+}
+
 // Helper functions.
+
+var absPath1 string
+var absPath2 string
+
+func init() {
+	absPath1 = "/tmp/bar/"
+	absPath2 = "/var/lib/"
+	if common.IsWindows() {
+		absPath1 = "E:\\tmp\\bar\\"
+		absPath2 = "X:\\var\\lib\\"
+	}
+}
+
+func getAbsoluteFilenames(c *ConfigSettings) []string {
+	files := []string{}
+	for _, f := range c.Files {
+		files = append(files, path.Join(c.IsolateDir, f))
+	}
+	sort.Strings(files)
+	return files
+}
 
 // makeVVs simplifies creating variableValue:
 // "unbound" => unbound

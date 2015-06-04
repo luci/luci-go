@@ -441,7 +441,7 @@ func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
 		lFiles, rFiles = rhs.Files, lhs.Files
 	}
 
-	rebasePath, err := filepath.Rel(rRelCwd, lRelCwd)
+	rebasePath, err := filepath.Rel(lRelCwd, rRelCwd)
 	if err != nil {
 		return nil, err
 	}
