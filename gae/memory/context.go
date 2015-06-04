@@ -6,8 +6,6 @@ package memory
 
 import (
 	"errors"
-	"infra/gae/libs/wrapper"
-	"math/rand"
 	"sync"
 
 	"golang.org/x/net/context"
@@ -18,7 +16,7 @@ import (
 type memContextObj interface {
 	sync.Locker
 	canApplyTxn(m memContextObj) bool
-	applyTxn(rnd *rand.Rand, m memContextObj)
+	applyTxn(c context.Context, m memContextObj)
 
 	endTxn()
 	mkTxn(*datastore.TransactionOptions) (memContextObj, error)
@@ -86,10 +84,10 @@ func (m memContext) canApplyTxn(txnCtxObj memContextObj) bool {
 	return true
 }
 
-func (m memContext) applyTxn(rnd *rand.Rand, txnCtxObj memContextObj) {
+func (m memContext) applyTxn(c context.Context, txnCtxObj memContextObj) {
 	txnCtx := txnCtxObj.(memContext)
 	for i := range m {
-		m[i].applyTxn(rnd, txnCtx[i])
+		m[i].applyTxn(c, txnCtx[i])
 	}
 }
 
@@ -162,7 +160,7 @@ func (d *dsImpl) RunInTransaction(f func(context.Context) error, o *datastore.Tr
 	defer txnMC.Unlock()
 
 	if curMC.canApplyTxn(txnMC) {
-		curMC.applyTxn(wrapper.GetMathRand(d.c), txnMC)
+		curMC.applyTxn(d.c, txnMC)
 	} else {
 		return datastore.ErrConcurrentTransaction
 	}

@@ -7,10 +7,8 @@ package memory
 import (
 	"fmt"
 	"infra/gae/libs/wrapper"
-	"math/rand"
 	"net/http"
 	"regexp"
-	"time"
 
 	"golang.org/x/net/context"
 
@@ -35,18 +33,16 @@ func useTQ(c context.Context) context.Context {
 			ret = &taskqueueImpl{
 				wrapper.DummyTQ(),
 				x,
+				ic,
 				curGID(ic).namespace,
-				func() time.Time { return wrapper.GetTimeNow(ic) },
-				wrapper.GetMathRand(ic),
 			}
 
 		case *txnTaskQueueData:
 			ret = &taskqueueTxnImpl{
 				wrapper.DummyTQ(),
 				x,
+				ic,
 				curGID(ic).namespace,
-				func() time.Time { return wrapper.GetTimeNow(ic) },
-				wrapper.GetMathRand(ic),
 			}
 
 		default:
@@ -62,9 +58,8 @@ type taskqueueImpl struct {
 	wrapper.TaskQueue
 	*taskQueueData
 
-	ns       string
-	timeNow  func() time.Time
-	mathRand *rand.Rand
+	ctx context.Context
+	ns  string
 }
 
 var (
@@ -73,7 +68,7 @@ var (
 )
 
 func (t *taskqueueImpl) addLocked(task *taskqueue.Task, queueName string) (*taskqueue.Task, error) {
-	toSched, queueName, err := t.prepTask(t.ns, task, queueName, t.timeNow(), t.mathRand)
+	toSched, queueName, err := t.prepTask(t.ctx, t.ns, task, queueName)
 	if err != nil {
 		return nil, err
 	}
@@ -164,9 +159,8 @@ type taskqueueTxnImpl struct {
 	wrapper.TaskQueue
 	*txnTaskQueueData
 
-	ns       string
-	timeNow  func() time.Time
-	mathRand *rand.Rand
+	ctx context.Context
+	ns  string
 }
 
 var (
@@ -175,7 +169,7 @@ var (
 )
 
 func (t *taskqueueTxnImpl) addLocked(task *taskqueue.Task, queueName string) (*taskqueue.Task, error) {
-	toSched, queueName, err := t.parent.prepTask(t.ns, task, queueName, t.timeNow(), t.mathRand)
+	toSched, queueName, err := t.parent.prepTask(t.ctx, t.ns, task, queueName)
 	if err != nil {
 		return nil, err
 	}
@@ -234,12 +228,12 @@ var validTaskName = regexp.MustCompile("^[0-9a-zA-Z\\-\\_]{0,500}$")
 
 const validTaskChars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_"
 
-func mkName(rnd *rand.Rand, cur string, queue map[string]*taskqueue.Task) string {
+func mkName(c context.Context, cur string, queue map[string]*taskqueue.Task) string {
 	_, ok := queue[cur]
 	for !ok && cur == "" {
 		name := [500]byte{}
 		for i := 0; i < 500; i++ {
-			name[i] = validTaskChars[rnd.Intn(len(validTaskChars))]
+			name[i] = validTaskChars[wrapper.GetMathRand(c).Intn(len(validTaskChars))]
 		}
 		cur = string(name[:])
 		_, ok = queue[cur]

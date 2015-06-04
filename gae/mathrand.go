@@ -8,6 +8,7 @@ import (
 	"math/rand"
 
 	"golang.org/x/net/context"
+	"infra/libs/clock"
 )
 
 // MathRandFactory is the function signature for factory methods compatible with
@@ -16,12 +17,12 @@ type MathRandFactory func(context.Context) *rand.Rand
 
 // GetMathRand gets a *"math/rand".Rand from the context. If one hasn't been
 // set, this creates a new Rand object with a Source initialized from the
-// current time accordint to GetTimeNow(c).UnixNano().
+// current time clock.Now(c).UnixNano().
 func GetMathRand(c context.Context) *rand.Rand {
 	if f, ok := c.Value(mathRandKey).(MathRandFactory); ok && f != nil {
 		return f(c)
 	}
-	return rand.New(rand.NewSource(GetTimeNow(c).UnixNano()))
+	return rand.New(rand.NewSource(clock.Now(c).UnixNano()))
 }
 
 // SetMathRandFactory sets the function to produce *"math/rand".Rand instances,

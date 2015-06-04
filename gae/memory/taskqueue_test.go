@@ -7,6 +7,8 @@ package memory
 import (
 	"fmt"
 	"infra/gae/libs/wrapper"
+	"infra/libs/clock"
+	"infra/libs/clock/testclock"
 	"math/rand"
 	"net/http"
 	"testing"
@@ -23,13 +25,8 @@ func TestTaskQueue(t *testing.T) {
 
 	Convey("TaskQueue", t, func() {
 		now := time.Date(2000, time.January, 1, 1, 1, 1, 1, time.UTC)
-		timeNow := func(context.Context) time.Time {
-			ret := now
-			now = now.Add(time.Second)
-			return ret
-		}
-		c := wrapper.SetTimeNowFactory(context.Background(), timeNow)
-		c = wrapper.SetMathRand(c, rand.New(rand.NewSource(wrapper.GetTimeNow(c).UnixNano())))
+		c, tc := testclock.UseTime(context.Background(), now)
+		c = wrapper.SetMathRand(c, rand.New(rand.NewSource(clock.Now(c).UnixNano())))
 		c = Use(c)
 
 		tq := wrapper.GetTQ(c).(interface {
@@ -44,7 +41,6 @@ func TestTaskQueue(t *testing.T) {
 				t := &taskqueue.Task{Path: "/hello/world"}
 
 				Convey("works", func() {
-					curTime := now
 					t.Delay = 4 * time.Second
 					t.Header = http.Header{}
 					t.Header.Add("Cat", "tabby")
@@ -54,7 +50,7 @@ func TestTaskQueue(t *testing.T) {
 					So(err, ShouldBeNil)
 					name := "Z_UjshxM9ecyMQfGbZmUGOEcgxWU0_5CGLl_-RntudwAw2DqQ5-58bzJiWQN4OKzeuUb9O4JrPkUw2rOvk2Ax46THojnQ6avBQgZdrKcJmrwQ6o4qKfJdiyUbGXvy691yRfzLeQhs6cBhWrgf3wH-VPMcA4SC-zlbJ2U8An7I0zJQA5nBFnMNoMgT-2peGoay3rCSbj4z9VFFm9kS_i6JCaQH518ujLDSNCYdjTq6B6lcWrZAh0U_q3a1S2nXEwrKiw_t9MTNQFgAQZWyGBbvZQPmeRYtu8SPaWzTfd25v_YWgBuVL2rRSPSMvlDwE04nNdtvVzE8vNNiA1zRimmdzKeqATQF9_ReUvj4D7U8dcS703DZWfKMBLgBffY9jqCassOOOw77V72Oq5EVauUw3Qw0L6bBsfM9FtahTKUdabzRZjXUoze3EK4KXPt3-wdidau-8JrVf2XFocjjZbwHoxcGvbtT3b4nGLDlgwdC00bwaFBZWff"
 					So(*tq.GetScheduledTasks()["default"][name], ShouldResemble, taskqueue.Task{
-						ETA:          curTime.Add(4 * time.Second),
+						ETA:          now.Add(4 * time.Second),
 						Header:       http.Header{"Cat": []string{"tabby"}},
 						Method:       "POST",
 						Name:         name,
@@ -110,7 +106,8 @@ func TestTaskQueue(t *testing.T) {
 				})
 
 				Convey("cannot set ETA+Delay", func() {
-					t.ETA = wrapper.GetTimeNow(c).Add(time.Hour)
+					t.ETA = clock.Now(c).Add(time.Hour)
+					tc.Add(time.Second)
 					t.Delay = time.Hour
 					So(func() { tq.Add(t, "") }, ShouldPanic)
 				})
@@ -145,8 +142,6 @@ func TestTaskQueue(t *testing.T) {
 				})
 
 				Convey("AddMulti also works", func() {
-					curTime := now
-
 					t2 := dupTask(t)
 					t2.Path = "/hi/city"
 
@@ -160,7 +155,7 @@ func TestTaskQueue(t *testing.T) {
 					for i := range expect {
 						Convey(fmt.Sprintf("task %d: %s", i, expect[i].Path), func() {
 							expect[i].Method = "POST"
-							expect[i].ETA = curTime.Add(time.Duration(i) * time.Second)
+							expect[i].ETA = now
 							So(expect[i].Name, ShouldEqual, "")
 							So(len(tasks[i].Name), ShouldEqual, 500)
 							tasks[i].Name = ""

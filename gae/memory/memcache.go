@@ -8,6 +8,7 @@ import (
 	"infra/gae/libs/wrapper"
 	"infra/gae/libs/wrapper/gae/commonErrors"
 	"infra/gae/libs/wrapper/unsafe"
+	"infra/libs/clock"
 	"sync"
 	"time"
 
@@ -29,8 +30,8 @@ type memcacheData struct {
 type memcacheImpl struct {
 	wrapper.Memcache
 
-	data    *memcacheData
-	timeNow func() time.Time
+	data *memcacheData
+	ctx  context.Context
 }
 
 var (
@@ -61,7 +62,7 @@ func useMC(c context.Context) context.Context {
 		return &memcacheImpl{
 			wrapper.DummyMC(),
 			mcd,
-			func() time.Time { return wrapper.GetTimeNow(ic) },
+			ic,
 		}
 	})
 }
@@ -70,7 +71,7 @@ func (m *memcacheImpl) mkItemLocked(i *memcache.Item) *unsafe.Item {
 	m.data.casID++
 	var exp time.Duration
 	if i.Expiration != 0 {
-		exp = time.Duration(m.timeNow().Add(i.Expiration).UnixNano())
+		exp = time.Duration(clock.Now(m.ctx).Add(i.Expiration).UnixNano())
 	}
 	newItem := unsafe.Item{
 		Key:        i.Key,
@@ -97,7 +98,7 @@ func copyBack(i *unsafe.Item) *memcache.Item {
 
 func (m *memcacheImpl) retrieve(key string) (*unsafe.Item, bool) {
 	ret, ok := m.data.items[key]
-	if ok && ret.Expiration != 0 && ret.Expiration < time.Duration(m.timeNow().UnixNano()) {
+	if ok && ret.Expiration != 0 && ret.Expiration < time.Duration(clock.Now(m.ctx).UnixNano()) {
 		ret = nil
 		ok = false
 		delete(m.data.items, key)

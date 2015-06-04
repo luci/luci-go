@@ -8,7 +8,6 @@ import (
 	"errors"
 	"infra/gae/libs/wrapper"
 	goon_internal "infra/gae/libs/wrapper/memory/internal/goon"
-	"math/rand"
 	"sync"
 	"sync/atomic"
 
@@ -16,6 +15,7 @@ import (
 
 	"appengine/datastore"
 	pb "appengine_internal/datastore"
+	"golang.org/x/net/context"
 )
 
 ////////////////////////////////// knrKeeper ///////////////////////////////////
@@ -307,7 +307,7 @@ func (d *dataStoreData) canApplyTxn(obj memContextObj) bool {
 	return true
 }
 
-func (d *dataStoreData) applyTxn(r *rand.Rand, obj memContextObj) {
+func (d *dataStoreData) applyTxn(c context.Context, obj memContextObj) {
 	txn := obj.(*txnDataStoreData)
 	for _, muts := range txn.muts {
 		if len(muts) == 0 { // read-only
@@ -384,7 +384,7 @@ func (td *txnDataStoreData) endTxn() {
 	}
 	atomic.StoreInt32(&td.closed, 1)
 }
-func (*txnDataStoreData) applyTxn(*rand.Rand, memContextObj) {
+func (*txnDataStoreData) applyTxn(context.Context, memContextObj) {
 	panic("txnDataStoreData cannot apply transactions")
 }
 func (*txnDataStoreData) mkTxn(*datastore.TransactionOptions) (memContextObj, error) {

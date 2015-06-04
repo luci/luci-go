@@ -14,20 +14,19 @@ import (
 	"appengine/memcache"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"infra/libs/clock/testclock"
 )
 
 func TestContextAccess(t *testing.T) {
 	Convey("Context Access", t, func() {
-		c := context.Background()
+		now := time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)
+		c, _ := testclock.UseTime(context.Background(), now)
 
 		Convey("blank", func() {
 			So(GetDS(c), ShouldBeNil)
 			So(GetMC(c), ShouldBeNil)
 			So(GetTQ(c), ShouldBeNil)
 			So(GetGI(c), ShouldBeNil)
-
-			now := time.Now()
-			So(GetTimeNow(c), ShouldHappenOnOrAfter, now)
 		})
 
 		Convey("DS", func() {
@@ -59,30 +58,19 @@ func TestContextAccess(t *testing.T) {
 			So(func() { q.Distinct() }, ShouldPanic)
 		})
 
-		Convey("TimeNow", func() {
-			thing := time.Date(2000, time.August, 20, 0, 0, 0, 0, time.UTC)
-			c = SetTimeNow(c, &thing)
-			So(GetTimeNow(c), ShouldResemble, thing)
+		Convey("MathRand", func() {
+			r := rand.New(rand.NewSource(now.UnixNano()))
+			i := r.Int()
 
-			Convey("MathRand", func() {
-				r := rand.New(rand.NewSource(thing.UnixNano()))
-				i := r.Int()
+			// when it's unset it picks the current time every time
+			So(GetMathRand(c).Int(), ShouldEqual, i)
+			So(GetMathRand(c).Int(), ShouldEqual, i)
 
-				// when it's unset it picks TimeNow every time
-				So(GetMathRand(c).Int(), ShouldEqual, i)
-				So(GetMathRand(c).Int(), ShouldEqual, i)
-
-				// But we could set it to something concrete to have it persist.
-				c = SetMathRand(c, rand.New(rand.NewSource(thing.UnixNano())))
-				r = rand.New(rand.NewSource(thing.UnixNano()))
-				So(GetMathRand(c).Int(), ShouldEqual, r.Int())
-				So(GetMathRand(c).Int(), ShouldEqual, r.Int())
-			})
-
-			c = SetTimeNow(c, nil)
-			now := time.Now()
-			So(GetTimeNow(c), ShouldHappenOnOrAfter, now)
+			// But we could set it to something concrete to have it persist.
+			c = SetMathRand(c, rand.New(rand.NewSource(now.UnixNano())))
+			r = rand.New(rand.NewSource(now.UnixNano()))
+			So(GetMathRand(c).Int(), ShouldEqual, r.Int())
+			So(GetMathRand(c).Int(), ShouldEqual, r.Int())
 		})
-
 	})
 }

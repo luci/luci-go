@@ -7,6 +7,7 @@ package memory
 import (
 	"infra/gae/libs/wrapper"
 	"infra/gae/libs/wrapper/unsafe"
+	"infra/libs/clock/testclock"
 	"testing"
 	"time"
 
@@ -20,13 +21,9 @@ func TestMemcache(t *testing.T) {
 	t.Parallel()
 
 	Convey("memcache", t, func() {
-		now := time.Now()
-		timeNow := func(context.Context) time.Time {
-			ret := now
-			now = now.Add(time.Second)
-			return ret
-		}
-		c := Use(wrapper.SetTimeNowFactory(context.Background(), timeNow))
+		now := time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)
+		c, tc := testclock.UseTime(context.Background(), now)
+		c = Use(c)
 		mc := wrapper.GetMC(c)
 		mci := wrapper.GetMC(c).(*memcacheImpl)
 		So(mc, ShouldNotEqual, mci) // two impls with the same memcacheData
@@ -71,7 +68,7 @@ func TestMemcache(t *testing.T) {
 				So(i, ShouldResemble, testItem)
 
 				Convey("which can expire", func() {
-					now = now.Add(time.Second * 4)
+					tc.Add(time.Second * 4)
 					i, err := mc.Get("sup")
 					So(err, ShouldEqual, memcache.ErrCacheMiss)
 					So(i, ShouldBeNil)
@@ -169,9 +166,7 @@ func TestMemcache(t *testing.T) {
 				})
 
 				Convey("and fails if the item is expired/gone", func() {
-					// run the clock forward
-					wrapper.GetTimeNow(c)
-					wrapper.GetTimeNow(c)
+					tc.Add(3 * time.Second)
 					itm.Value = []byte("newp")
 					err = mc.CompareAndSwap(itm)
 					So(err, ShouldEqual, memcache.ErrNotStored)
