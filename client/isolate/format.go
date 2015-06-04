@@ -455,7 +455,11 @@ func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
 		// Rebase item.
 		if !(strings.HasPrefix(f, "<(") || rebasePath == ".") {
 			// paths are posix here.
+			trailingSlash := strings.HasSuffix(f, "/")
 			f = path.Join(rebasePath, f)
+			if trailingSlash {
+				f += "/"
+			}
 		}
 		filesSet[f] = true
 	}

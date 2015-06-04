@@ -472,11 +472,11 @@ func TestLoadIsolateAsConfigWithIncludes(t *testing.T) {
 func TestConfigSettingsUnionLeft(t *testing.T) {
 	left := &ConfigSettings{
 		Command:    []string{"left takes precedence"},
-		Files:      []string{"../../le/f/t", "foo"}, // Must be POSIX.
-		IsolateDir: absToOS("/tmp/bar"),             // In native path.
+		Files:      []string{"../../le/f/t", "foo/"}, // Must be POSIX.
+		IsolateDir: absToOS("/tmp/bar"),              // In native path.
 	}
 	right := &ConfigSettings{
-		Files:      []string{"../ri/g/ht"},
+		Files:      []string{"../ri/g/ht", "bar/"},
 		IsolateDir: absToOS("/var/lib"),
 	}
 
@@ -485,17 +485,17 @@ func TestConfigSettingsUnionLeft(t *testing.T) {
 	ut.AssertEqual(t, left.Command, out.Command)
 	ut.AssertEqual(t, left.IsolateDir, out.IsolateDir)
 	ut.AssertEqual(t, absToOS("/tmp/bar"), left.IsolateDir)
-	ut.AssertEqual(t, []string{"../../le/f/t", "../../var/ri/g/ht", "foo"}, out.Files)
+	ut.AssertEqual(t, []string{"../../le/f/t", "../../var/lib/bar/", "../../var/ri/g/ht", "foo/"}, out.Files)
 }
 
 func TestConfigSettingsUnionRight(t *testing.T) {
 	left := &ConfigSettings{
-		Files:      []string{"../../le/f/t", "foo"}, // Must be POSIX.
-		IsolateDir: absToOS("/tmp/bar"),             // In native path.
+		Files:      []string{"../../le/f/t", "foo/"}, // Must be POSIX.
+		IsolateDir: absToOS("/tmp/bar"),              // In native path.
 	}
 	right := &ConfigSettings{
 		Command:    []string{"right takes precedence"},
-		Files:      []string{"../ri/g/ht"},
+		Files:      []string{"../ri/g/ht", "bar/"},
 		IsolateDir: absToOS("/var/lib"),
 	}
 
@@ -504,7 +504,7 @@ func TestConfigSettingsUnionRight(t *testing.T) {
 	ut.AssertEqual(t, right.Command, out.Command)
 	ut.AssertEqual(t, right.IsolateDir, out.IsolateDir)
 	ut.AssertEqual(t, absToOS("/var/lib"), right.IsolateDir)
-	ut.AssertEqual(t, []string{"../../le/f/t", "../../tmp/bar/foo", "../ri/g/ht"}, out.Files)
+	ut.AssertEqual(t, []string{"../../le/f/t", "../../tmp/bar/foo/", "../ri/g/ht", "bar/"}, out.Files)
 }
 
 // Helper functions.
