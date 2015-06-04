@@ -6,6 +6,7 @@ package main
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/luci/luci-go/client/internal/common"
@@ -60,7 +61,7 @@ func TestConvertPyToGoArchiveCMDArgs(t *testing.T) {
 }
 
 func TestInvalidArchiveCMD(t *testing.T) {
-	_, err := parseArchiveCMD([]string{}, absPath1)
+	_, err := parseArchiveCMD([]string{}, absToOS("e:", "/tmp/bar"))
 	ut.AssertEqual(t, "-isolated must be specified", err.Error())
 }
 
@@ -73,8 +74,9 @@ func TestArchiveCMDParsing(t *testing.T) {
 		"--extra-variable", "version_full=42.0.2284.0",
 		"--config-variable", "OS=linux",
 	}
-	opts, err := parseArchiveCMD(args, absPath1)
-	base := filepath.Dir(filepath.Dir(absPath1))
+	root := absToOS("e:", "/tmp/bar")
+	opts, err := parseArchiveCMD(args, root)
+	base := filepath.Dir(root)
 	ut.AssertEqual(t, filepath.Join(base, "boz", "bar.isolate"), opts.Isolate)
 	ut.AssertEqual(t, filepath.Join(base, "biz", "bar.isolated"), opts.Isolated)
 	ut.AssertEqual(t, nil, err)
@@ -90,24 +92,23 @@ func TestArchiveCMDParsing(t *testing.T) {
 // Verify that if the isolate/isolated paths are absolute, we don't
 // accidentally interpret them as relative to the cwd.
 func TestArchiveAbsolutePaths(t *testing.T) {
+	root := absToOS("e:", "/tmp/bar/")
 	args := []string{
-		"--isolated", absPath1 + "foo.isolated",
-		"--isolate", absPath1 + "foo.isolate",
+		"--isolated", root + "foo.isolated",
+		"--isolate", root + "foo.isolate",
 	}
-	opts, err := parseArchiveCMD(args, absPath2)
+	opts, err := parseArchiveCMD(args, absToOS("x:", "/var/lib"))
 	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, absPath1+"foo.isolate", opts.Isolate)
-	ut.AssertEqual(t, absPath1+"foo.isolated", opts.Isolated)
+	ut.AssertEqual(t, root+"foo.isolate", opts.Isolate)
+	ut.AssertEqual(t, root+"foo.isolated", opts.Isolated)
 }
 
-var absPath1 string
-var absPath2 string
+// Private stuff.
 
-func init() {
-	absPath1 = "/tmp/bar/"
-	absPath2 = "/var/lib/"
+// absToOS converts a POSIX path to OS specific format.
+func absToOS(drive, p string) string {
 	if common.IsWindows() {
-		absPath1 = "E:\\tmp\\bar\\"
-		absPath2 = "X:\\var\\lib\\"
+		return drive + strings.Replace(p, "/", "\\", -1)
 	}
+	return p
 }

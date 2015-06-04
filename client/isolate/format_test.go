@@ -9,7 +9,6 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -470,46 +469,52 @@ func TestLoadIsolateAsConfigWithIncludes(t *testing.T) {
 	}, deps)
 }
 
-func TestConfigSettingsUnion(t *testing.T) {
+func TestConfigSettingsUnionLeft(t *testing.T) {
 	left := &ConfigSettings{
 		Command:    []string{"left takes precedence"},
-		Files:      []string{"../../le/f/t"}, // Must be POSIX.
-		IsolateDir: absPath1,
+		Files:      []string{"../../le/f/t", "foo"}, // Must be POSIX.
+		IsolateDir: absToOS("/tmp/bar"),             // In native path.
 	}
 	right := &ConfigSettings{
 		Files:      []string{"../ri/g/ht"},
-		IsolateDir: absPath2,
+		IsolateDir: absToOS("/var/lib"),
 	}
 
 	out, err := left.union(right)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, left.Command, out.Command)
 	ut.AssertEqual(t, left.IsolateDir, out.IsolateDir)
-	ut.AssertEqual(t, append(getAbsoluteFilenames(left), getAbsoluteFilenames(right)...),
-		getAbsoluteFilenames(out))
+	ut.AssertEqual(t, absToOS("/tmp/bar"), left.IsolateDir)
+	ut.AssertEqual(t, []string{"../../le/f/t", "../../var/ri/g/ht", "foo"}, out.Files)
+}
+
+func TestConfigSettingsUnionRight(t *testing.T) {
+	left := &ConfigSettings{
+		Files:      []string{"../../le/f/t", "foo"}, // Must be POSIX.
+		IsolateDir: absToOS("/tmp/bar"),             // In native path.
+	}
+	right := &ConfigSettings{
+		Command:    []string{"right takes precedence"},
+		Files:      []string{"../ri/g/ht"},
+		IsolateDir: absToOS("/var/lib"),
+	}
+
+	out, err := left.union(right)
+	ut.AssertEqual(t, nil, err)
+	ut.AssertEqual(t, right.Command, out.Command)
+	ut.AssertEqual(t, right.IsolateDir, out.IsolateDir)
+	ut.AssertEqual(t, absToOS("/var/lib"), right.IsolateDir)
+	ut.AssertEqual(t, []string{"../../le/f/t", "../../tmp/bar/foo", "../ri/g/ht"}, out.Files)
 }
 
 // Helper functions.
 
-var absPath1 string
-var absPath2 string
-
-func init() {
-	absPath1 = "/tmp/bar/"
-	absPath2 = "/var/lib/"
+// absToOS converts a POSIX path to OS specific format.
+func absToOS(p string) string {
 	if common.IsWindows() {
-		absPath1 = "E:\\tmp\\bar\\"
-		absPath2 = "X:\\var\\lib\\"
+		return "e:" + strings.Replace(p, "/", "\\", -1)
 	}
-}
-
-func getAbsoluteFilenames(c *ConfigSettings) []string {
-	files := []string{}
-	for _, f := range c.Files {
-		files = append(files, path.Join(c.IsolateDir, f))
-	}
-	sort.Strings(files)
-	return files
+	return p
 }
 
 // makeVVs simplifies creating variableValue:

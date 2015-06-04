@@ -61,7 +61,7 @@ func TestArchive(t *testing.T) {
 	//   /link -> /base/bar
 	// Result:
 	//   /baz.isolated
-	tmpDir, err := ioutil.TempDir("", "archiver")
+	tmpDir, err := ioutil.TempDir("", "isolate")
 	ut.AssertEqual(t, nil, err)
 	defer func() {
 		if err := os.RemoveAll(tmpDir); err != nil {

@@ -445,7 +445,7 @@ func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
 	if err != nil {
 		return nil, err
 	}
-	rebasePath = strings.Replace(rebasePath, osPathSeparator, "/", 0)
+	rebasePath = strings.Replace(rebasePath, osPathSeparator, "/", -1)
 
 	filesSet := map[string]bool{}
 	for _, f := range lFiles {
