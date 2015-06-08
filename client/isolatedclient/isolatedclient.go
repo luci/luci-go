@@ -8,6 +8,7 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 
@@ -35,6 +36,7 @@ type IsolateServer interface {
 // Its content is implementation specific.
 type PushState struct {
 	status    isolated.PreuploadStatus
+	digest    isolated.HexDigest
 	size      int64
 	uploaded  bool
 	finalized bool
@@ -87,6 +89,7 @@ func (i *isolateServer) Contains(items []*isolated.DigestItem) (out []*PushState
 		index := int(e.Index)
 		out[index] = &PushState{
 			status: e,
+			digest: items[index].Digest,
 			size:   items[index].Size,
 		}
 	}
@@ -99,6 +102,7 @@ func (i *isolateServer) Push(state *PushState, src io.Reader) (err error) {
 	if !state.uploaded {
 		// PUT file to uploadURL.
 		if err = i.doPush(state, src); err != nil {
+			log.Printf("doPush(%s) failed: %s\n%#v", state.digest, err, state)
 			return
 		}
 		state.uploaded = true
@@ -114,6 +118,7 @@ func (i *isolateServer) Push(state *PushState, src io.Reader) (err error) {
 		// stored files).
 		in := isolated.FinalizeRequest{state.status.UploadTicket}
 		if err = i.postJSON("/_ah/api/isolateservice/v1/finalize_gs_upload", in, nil); err != nil {
+			log.Printf("Push(%s) (finalize) failed: %s\n%#v", state.digest, err, state)
 			return
 		}
 	}
@@ -169,6 +174,8 @@ func (i *isolateServer) doPush(state *PushState, src io.Reader) (err error) {
 	}
 	_, err = io.Copy(ioutil.Discard, resp.Body)
 	_ = resp.Body.Close()
-	tracer.CounterAdd(i, "bytesUploaded", float64(state.size))
+	if err == nil {
+		tracer.CounterAdd(i, "bytesUploaded", float64(state.size))
+	}
 	return
 }

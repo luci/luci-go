@@ -6,6 +6,7 @@ package retry
 
 import (
 	"io"
+	"log"
 	"time"
 )
 
@@ -44,6 +45,7 @@ func (c *Config) Do(r Retriable) (err error) {
 				s = c.SleepMax
 			}
 			time.Sleep(s)
+			log.Printf("Task failed, retrying after a sleep of %.1fs: %s", s, err)
 		}
 	}
 	return
