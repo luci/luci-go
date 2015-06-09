@@ -4,6 +4,8 @@
 
 package model
 
+import "time"
+
 // AuthReplicationState contains state used to control Primary to Replica replicaiton.
 type AuthReplicationState struct {
 	// PrimaryID represents a GAE application ID of Primary.
