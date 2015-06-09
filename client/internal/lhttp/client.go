@@ -154,6 +154,7 @@ func (r *retriable) Close() error {
 // Warning: it returns an error on HTTP >=400. This is different than
 // http.Client.Do() but hell it makes coding simpler.
 func (r *retriable) Do() error {
+	//log.Printf("Do %s", r.req.URL)
 	if r.seekBody != nil {
 		if _, err := r.seekBody.Seek(0, os.SEEK_SET); err != nil {
 			// Can't be retried.

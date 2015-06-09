@@ -612,7 +612,7 @@ func (a *archiver) doContains(items []*archiverItem) {
 
 // doUpload is called by stage 4.
 func (a *archiver) doUpload(item *archiverItem) {
-	var src io.Reader
+	var src io.ReadSeeker
 	if item.src == nil {
 		f, err := os.Open(item.path)
 		if err != nil {

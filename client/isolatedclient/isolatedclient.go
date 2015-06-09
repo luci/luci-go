@@ -5,12 +5,14 @@
 package isolatedclient
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/luci/luci-go/client/internal/lhttp"
 	"github.com/luci/luci-go/client/internal/retry"
@@ -27,7 +29,7 @@ type IsolateServer interface {
 	// The returned list is in the same order as 'items', with entries nil for
 	// items that were present.
 	Contains(items []*isolated.DigestItem) ([]*PushState, error)
-	Push(state *PushState, src io.Reader) error
+	Push(state *PushState, src io.ReadSeeker) error
 }
 
 // PushState is per-item state passed from IsolateServer.Contains() to
@@ -44,7 +46,20 @@ type PushState struct {
 
 // New returns a new IsolateServer client.
 func New(host, namespace string) IsolateServer {
+	return newIsolateServer(host, namespace, retry.Default)
+}
+
+// Private details.
+
+type isolateServer struct {
+	config    *retry.Config
+	url       string
+	namespace string
+}
+
+func newIsolateServer(host, namespace string, config *retry.Config) *isolateServer {
 	i := &isolateServer{
+		config:    config,
 		url:       strings.TrimRight(host, "/"),
 		namespace: namespace,
 	}
@@ -52,18 +67,11 @@ func New(host, namespace string) IsolateServer {
 	return i
 }
 
-// Private details.
-
-type isolateServer struct {
-	url       string
-	namespace string
-}
-
 func (i *isolateServer) postJSON(resource string, in, out interface{}) error {
 	if len(resource) == 0 || resource[0] != '/' {
 		return errors.New("resource must start with '/'")
 	}
-	_, err := lhttp.PostJSON(retry.Default, http.DefaultClient, i.url+resource, in, out)
+	_, err := lhttp.PostJSON(i.config, http.DefaultClient, i.url+resource, in, out)
 	return err
 }
 
@@ -96,7 +104,7 @@ func (i *isolateServer) Contains(items []*isolated.DigestItem) (out []*PushState
 	return out, nil
 }
 
-func (i *isolateServer) Push(state *PushState, src io.Reader) (err error) {
+func (i *isolateServer) Push(state *PushState, src io.ReadSeeker) (err error) {
 	// This push operation may be a retry after failed finalization call below,
 	// no need to reupload contents in that case.
 	if !state.uploaded {
@@ -126,56 +134,108 @@ func (i *isolateServer) Push(state *PushState, src io.Reader) (err error) {
 	return
 }
 
-func (i *isolateServer) doPush(state *PushState, src io.Reader) (err error) {
-	end := tracer.Span(i, "push", tracer.Args{"size": state.size})
+func (i *isolateServer) doPush(state *PushState, src io.ReadSeeker) (err error) {
+	useDB := state.status.GSUploadURL == ""
+	end := tracer.Span(i, "push", tracer.Args{"useDB": useDB, "size": state.size})
 	defer func() { end(tracer.Args{"err": err}) }()
-	reader, writer := io.Pipe()
-	defer reader.Close()
-	compressor := isolated.GetCompressor(writer)
-	c := make(chan error)
-	go func() {
-		_, err2 := io.Copy(compressor, src)
-		if err3 := compressor.Close(); err2 == nil {
-			err2 = err3
-		}
-		_ = writer.Close()
-		c <- err2
-	}()
-	defer func() {
-		err4 := <-c
-		if err == nil {
-			err = err4
-		}
-	}()
-
-	// DB upload.
-	if state.status.GSUploadURL == "" {
-		content, err2 := ioutil.ReadAll(reader)
-		if err2 != nil {
-			return err2
-		}
-		in := &isolated.StorageRequest{state.status.UploadTicket, content}
-		if err = i.postJSON("/_ah/api/isolateservice/v1/store_inline", in, nil); err != nil {
-			return err
-		}
-		tracer.CounterAdd(i, "bytesUploaded", float64(state.size))
-		return
+	if useDB {
+		err = i.doPushDB(state, src)
+	} else {
+		err = i.doPushGCS(state, src)
 	}
+	if err != nil {
+		tracer.CounterAdd(i, "bytesUploaded", float64(state.size))
+	}
+	return err
+}
 
-	// Upload to GCS.
-	request, err5 := http.NewRequest("PUT", state.status.GSUploadURL, reader)
-	if err5 != nil {
-		return err5
+func (i *isolateServer) doPushDB(state *PushState, reader io.Reader) error {
+	buf := bytes.Buffer{}
+	compressor := isolated.GetCompressor(&buf)
+	if _, err := io.Copy(compressor, reader); err != nil {
+		return err
+	}
+	if err := compressor.Close(); err != nil {
+		return err
+	}
+	in := &isolated.StorageRequest{state.status.UploadTicket, buf.Bytes()}
+	return i.postJSON("/_ah/api/isolateservice/v1/store_inline", in, nil)
+}
+
+func (i *isolateServer) doPushGCS(state *PushState, src io.ReadSeeker) (err error) {
+	c := newCompressed(src)
+	defer func() {
+		if err2 := c.Close(); err == nil {
+			err = err2
+		}
+	}()
+	request, err2 := http.NewRequest("PUT", state.status.GSUploadURL, c)
+	if err2 != nil {
+		return err2
 	}
 	request.Header.Set("Content-Type", "application/octet-stream")
-	resp, err6 := http.DefaultClient.Do(request)
-	if err6 != nil {
-		return err6
+	req, err2 := lhttp.NewRequest(http.DefaultClient, request, func(resp *http.Response) error {
+		defer resp.Body.Close()
+		_, err4 := io.Copy(ioutil.Discard, resp.Body)
+		return err4
+	})
+	if err2 != nil {
+		return err2
 	}
-	_, err = io.Copy(ioutil.Discard, resp.Body)
-	_ = resp.Body.Close()
-	if err == nil {
-		tracer.CounterAdd(i, "bytesUploaded", float64(state.size))
+	return i.config.Do(req)
+}
+
+// compressed transparently compresses a source.
+//
+// It supports seeking to the beginning of the file to enable re-reading the
+// file multiple times. This is needed for HTTP retries.
+type compressed struct {
+	src io.ReadSeeker
+	wg  sync.WaitGroup
+	r   io.ReadCloser
+}
+
+func newCompressed(src io.ReadSeeker) *compressed {
+	c := &compressed{src: src}
+	c.reset()
+	return c
+}
+
+func (c *compressed) Close() error {
+	var err error
+	if c.r != nil {
+		err = c.r.Close()
+		c.r = nil
 	}
-	return
+	c.wg.Wait()
+	return err
+}
+
+func (c *compressed) Seek(offset int64, whence int) (int64, error) {
+	if offset != 0 || whence != 0 {
+		return 0, errors.New("compressed can only seek to 0")
+	}
+	c.Close()
+	n, err := c.src.Seek(0, 0)
+	c.reset()
+	return n, err
+}
+
+func (c *compressed) Read(p []byte) (int, error) {
+	return c.r.Read(p)
+}
+
+func (c *compressed) reset() {
+	var w *io.PipeWriter
+	c.r, w = io.Pipe()
+	c.wg.Add(1)
+	go func() {
+		defer c.wg.Done()
+		compressor := isolated.GetCompressor(w)
+		_, err := io.Copy(compressor, c.src)
+		if err2 := compressor.Close(); err == nil {
+			err = err2
+		}
+		w.CloseWithError(err)
+	}()
 }
