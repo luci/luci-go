@@ -113,18 +113,15 @@ func TestGoroutinePoolCancel(t *testing.T) {
 
 func assertClosed(t *testing.T, c *canceler) {
 	// Both channels are unbuffered, so there should be at most one value.
-	for range c.channel {
-		break
-	}
+	<-c.channel
 	select {
 	case _, ok := <-c.channel:
 		ut.AssertEqual(t, false, ok)
 	default:
 		t.Fatalf("channel is not closed")
 	}
-	for range c.closeChannel {
-		break
-	}
+
+	<-c.closeChannel
 	select {
 	case _, ok := <-c.closeChannel:
 		ut.AssertEqual(t, false, ok)
