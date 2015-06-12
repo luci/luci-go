@@ -12,4 +12,4 @@ before_install:
   - go get github.com/maruel/pre-commit-go
 
 script:
-  - pre-commit-go installrun -level 3 -verbose
+  - pre-commit-go
