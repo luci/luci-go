@@ -44,7 +44,9 @@ func (c *Config) Do(r Retriable) (err error) {
 			if s > c.SleepMax {
 				s = c.SleepMax
 			}
-			time.Sleep(s)
+			if s != 0 {
+				time.Sleep(s)
+			}
 			log.Printf("Task failed, retrying after a sleep of %s: %s", s, err)
 		}
 	}

@@ -12,7 +12,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 
@@ -168,10 +167,8 @@ func (r *retriable) Do() error {
 		r.status = 0
 	}
 	if err != nil {
-		// Any TCP level failure can be retried but malformed URL should nt.
-		if err2, ok := err.(*url.Error); ok {
-			return err2
-		}
+		// Retry every error. This is sad when you specify an invalid hostname but
+		// it's better than failing when DNS resolution is flaky.
 		return retry.Error{err}
 	}
 	// If the HTTP status code means the request should be retried.

@@ -107,15 +107,19 @@ func (server *isolatedFake) Inject(data []byte) {
 func (server *isolatedFake) Fail(err error) {
 	server.lock.Lock()
 	defer server.lock.Unlock()
-	if server.err == nil {
-		server.err = err
-	}
+	server.failLocked(err)
 }
 
 func (server *isolatedFake) Error() error {
 	server.lock.Lock()
 	defer server.lock.Unlock()
 	return server.err
+}
+
+func (server *isolatedFake) failLocked(err error) {
+	if server.err == nil {
+		server.err = err
+	}
 }
 
 func (server *isolatedFake) handleJSON(path string, handler jsonAPI) {
@@ -217,7 +221,7 @@ func (server *isolatedFake) finalizeGSUpload(r *http.Request) interface{} {
 	defer server.lock.Unlock()
 	if _, ok := server.staging[digest]; !ok {
 		err := fmt.Errorf("finalizing non uploaded file")
-		server.Fail(err)
+		server.failLocked(err)
 		return map[string]string{"err": err.Error()}
 	}
 	server.contents[digest] = server.staging[digest]
