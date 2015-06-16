@@ -46,6 +46,9 @@ type Logger interface {
 	LogCall(l Level, calldepth int, format string, args []interface{})
 }
 
+// Factory is a method that returns a Logger instance for the specified context.
+type Factory func(context.Context) Logger
+
 type key int
 
 const (
@@ -57,7 +60,7 @@ const (
 // SetFactory sets the Logger factory for this context.
 //
 // The factory will be called each time Get(context) is used.
-func SetFactory(c context.Context, f func(context.Context) Logger) context.Context {
+func SetFactory(c context.Context, f Factory) context.Context {
 	return context.WithValue(c, loggerKey, f)
 }
 
@@ -68,14 +71,16 @@ func Set(c context.Context, l Logger) context.Context {
 	return SetFactory(c, func(context.Context) Logger { return l })
 }
 
+// GetFactory returns the currently-configured logging factory.
+func GetFactory(c context.Context) Factory {
+	if f, ok := c.Value(loggerKey).(Factory); ok {
+		return f
+	}
+	return NullFactory
+}
+
 // Get the current Logger, or a logger that ignores all messages if none
 // is defined.
 func Get(c context.Context) (ret Logger) {
-	if f, ok := c.Value(loggerKey).(func(context.Context) Logger); ok {
-		ret = f(c)
-	}
-	if ret == nil {
-		ret = Null()
-	}
-	return
+	return GetFactory(c)(c)
 }

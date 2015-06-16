@@ -42,7 +42,7 @@ func (g *gaeLoggerImpl) og(l logging.Level, logf func(string, ...interface{}),
 
 	fields := logging.GetFields(g.c)
 	if len(fields) > 0 {
-		logf("%s ctx%s", fmt.Sprintf(format, args...), fields.String())
+		logf("%s ctx%s", fmt.Sprintf(format, args...), fields.FieldString(true))
 	} else {
 		logf(format, args...)
 	}

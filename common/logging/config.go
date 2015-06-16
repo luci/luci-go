@@ -28,7 +28,7 @@ func (c *Config) AddFlags(fs *flag.FlagSet) {
 // and selectively discards messages based on the logging configuration.
 func (c *Config) Set(ctx context.Context) context.Context {
 	filterFunc := c.Filter.Get()
-	base := Get(ctx)
+	baseFactory := GetFactory(ctx)
 
 	return SetFactory(ctx, func(ctx context.Context) Logger {
 		if value, ok := GetFields(ctx)[FilterOnKey]; ok {
@@ -36,6 +36,6 @@ func (c *Config) Set(ctx context.Context) context.Context {
 				return nil
 			}
 		}
-		return base
+		return baseFactory(ctx)
 	})
 }

@@ -5,12 +5,18 @@
 package gologger
 
 import (
+	"bytes"
+	"fmt"
 	"strings"
 	"sync"
 
 	"github.com/luci/luci-go/common/logging"
 	gol "github.com/op/go-logging"
 	"golang.org/x/net/context"
+)
+
+const (
+	logMessageFieldPadding = 44
 )
 
 // goLoggerWrapper is a synchronized wrapper around a go-logging Logger
@@ -47,7 +53,11 @@ func (li *loggerImpl) LogCall(l logging.Level, calldepth int, format string, arg
 		if !logging.IsLogging(li.c, l) {
 			return
 		}
-		format = appendFields(format, logging.GetFields(li.c))
+
+		if fields := logging.GetFields(li.c); len(fields) > 0 {
+			format = formatWithFields(format, fields, args)
+			args = nil
+		}
 	}
 
 	li.Lock()
@@ -66,13 +76,24 @@ func (li *loggerImpl) LogCall(l logging.Level, calldepth int, format string, arg
 	}
 }
 
-// appendFields returns a new format string with the formatted fields appended.
+// formatWithFields renders the supplied format string, adding fields.
 //
 // '%' characters in the fields string are escaped so they can't be interpreted
 // as format characters when appended to the initial format string.
-func appendFields(format string, fields logging.Fields) string {
-	if len(fields) == 0 {
-		return format
+func formatWithFields(format string, fields logging.Fields, args []interface{}) string {
+	fieldString := strings.Replace(fields.FieldString(true), "%", "%%", -1)
+
+	buf := bytes.Buffer{}
+	buf.Grow(len(format) + logMessageFieldPadding + len(fieldString))
+	fmt.Fprintf(&buf, format, args...)
+
+	padding := 44 - buf.Len()
+	if padding < 1 {
+		padding = 1
 	}
-	return strings.Join([]string{format, strings.Replace(fields.String(), "%", "%%", -1)}, " ")
+	for i := 0; i < padding; i++ {
+		buf.WriteString(" ")
+	}
+	buf.WriteString(fieldString)
+	return buf.String()
 }

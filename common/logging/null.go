@@ -4,9 +4,19 @@
 
 package logging
 
-// Null returns logger that silently ignores all messages.
+import (
+	"golang.org/x/net/context"
+)
+
+// Null returns a logger that silently ignores all messages.
 func Null() Logger {
 	return nullLogger{}
+}
+
+// NullFactory is a logging Factory implementation that returns the Null()
+// Logger.
+func NullFactory(context.Context) Logger {
+	return Null()
 }
 
 // nullLogger silently ignores all messages.

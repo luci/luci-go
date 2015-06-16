@@ -72,12 +72,14 @@ func (f Fields) SortedEntries(prune bool) (s []*FieldEntry) {
 	return
 }
 
-// String returns a string describing the contents of f in a sorted,
+// FieldString returns a string describing the contents of f in a sorted,
 // dictionary-like format.
-func (f Fields) String() string {
+//
+// If prune is true, pruned fields will be omitted from the resulting string.
+func (f Fields) FieldString(prune bool) string {
 	b := bytes.Buffer{}
 	b.WriteRune('{')
-	for idx, e := range f.SortedEntries(false) {
+	for idx, e := range f.SortedEntries(prune) {
 		if idx > 0 {
 			b.WriteString(", ")
 		}
@@ -85,6 +87,12 @@ func (f Fields) String() string {
 	}
 	b.WriteRune('}')
 	return b.String()
+}
+
+// String returns a full string representation of Fields. This should not be
+// used for logging otuput, as it doesn't prune fields.
+func (f Fields) String() string {
+	return f.FieldString(false)
 }
 
 // Debugf is a shorthand method to call the current logger's Errorf method.
@@ -117,7 +125,21 @@ type FieldEntry struct {
 // String returns the string representation of the field entry:
 // "<key>":"<value>".
 func (e *FieldEntry) String() string {
-	return fmt.Sprintf("%q:%q", e.Key, e.Value)
+	value := e.Value
+	if s, ok := value.(fmt.Stringer); ok {
+		value = s.String()
+	}
+
+	switch v := value.(type) {
+	case string:
+		return fmt.Sprintf("%q:%q", e.Key, v)
+
+	case error:
+		return fmt.Sprintf("%q:%q", e.Key, v.Error())
+
+	default:
+		return fmt.Sprintf("%q:%#v", e.Key, v)
+	}
 }
 
 // fieldEntrySlice is a slice of FieldEntry which implements sort.Interface.
@@ -165,9 +187,8 @@ func SetField(c context.Context, key string, value interface{}) context.Context 
 // This method is used for logger implementations with the understanding that
 // the returned fields must not be mutated.
 func GetFields(c context.Context) Fields {
-	ret, _ := c.Value(fieldsKey).(Fields)
-	if ret == nil {
-		return Fields(nil)
+	if ret, ok := c.Value(fieldsKey).(Fields); ok {
+		return ret
 	}
-	return ret
+	return Fields(nil)
 }

@@ -101,21 +101,23 @@ func TestGoLogger(t *testing.T) {
 				So(len(matches[0]), ShouldEqual, 4)
 				So(matches[0][1], ShouldEqual, "gologger_test.go")
 				So(matches[0][2], ShouldEqual, "INFO")
-				So(matches[0][3], ShouldEqual, `Here is a log {"error":"An error!", "reason":"test"}`)
+				So(matches[0][3], ShouldEqual,
+					`Here is a log                               {"error":"An error!", "reason":"test"}`)
 			})
 
 			Convey(`Should log fields installed immediately`, func() {
 				logging.Fields{
 					"foo":    "bar",
 					"reason": "override",
-				}.Infof(c, "Here is a %s", "log")
+				}.Infof(c, "Here is another %s", "log")
 
 				matches := lre.FindAllStringSubmatch(normalizeLog(buf.String()), -1)
 				So(len(matches), ShouldEqual, 1)
 				So(len(matches[0]), ShouldEqual, 4)
 				So(matches[0][1], ShouldEqual, "gologger_test.go")
 				So(matches[0][2], ShouldEqual, "INFO")
-				So(matches[0][3], ShouldEqual, `Here is a log {"error":"An error!", "foo":"bar", "reason":"override"}`)
+				So(matches[0][3], ShouldEqual,
+					`Here is another log                         {"error":"An error!", "foo":"bar", "reason":"override"}`)
 			})
 		})
 
