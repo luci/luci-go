@@ -156,7 +156,7 @@ func LoadIsolateAsConfig(isolateDir string, content []byte) (*Configs, error) {
 //   command, dependencies, readOnly flag, relDir, error.
 //
 // relDir and dependencies are fixed to use os.PathSeparator.
-func LoadIsolateForConfig(isolateDir string, content []byte, configVariables common.KeyValVars) (
+func LoadIsolateForConfig(isolateDir string, content []byte, configVariables map[string]string) (
 	[]string, []string, ReadOnlyValue, string, error) {
 	// Load the .isolate file, process its conditions, retrieve the command and dependencies.
 	isolate, err := LoadIsolateAsConfig(isolateDir, content)

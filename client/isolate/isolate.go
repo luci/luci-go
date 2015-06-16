@@ -17,6 +17,7 @@ import (
 
 	"github.com/luci/luci-go/client/archiver"
 	"github.com/luci/luci-go/client/internal/common"
+	"github.com/luci/luci-go/client/internal/flags/stringmapflag"
 	"github.com/luci/luci-go/client/internal/tracer"
 	"github.com/luci/luci-go/common/isolated"
 )
@@ -45,25 +46,25 @@ type Tree struct {
 
 // ArchiveOptions for achiving trees.
 type ArchiveOptions struct {
-	Isolate         string            `json:"isolate"`
-	Isolated        string            `json:"isolated"`
-	Blacklist       common.Strings    `json:"blacklist"`
-	PathVariables   common.KeyValVars `json:"path_variables"`
-	ExtraVariables  common.KeyValVars `json:"extra_variables"`
-	ConfigVariables common.KeyValVars `json:"config_variables"`
+	Isolate         string              `json:"isolate"`
+	Isolated        string              `json:"isolated"`
+	Blacklist       common.Strings      `json:"blacklist"`
+	PathVariables   stringmapflag.Value `json:"path_variables"`
+	ExtraVariables  stringmapflag.Value `json:"extra_variables"`
+	ConfigVariables stringmapflag.Value `json:"config_variables"`
 }
 
 // Init initializes with non-nil values.
 func (a *ArchiveOptions) Init() {
 	a.Blacklist = common.Strings{}
-	a.PathVariables = common.KeyValVars{}
+	a.PathVariables = map[string]string{}
 	if common.IsWindows() {
 		a.PathVariables["EXECUTABLE_SUFFIX"] = ".exe"
 	} else {
 		a.PathVariables["EXECUTABLE_SUFFIX"] = ""
 	}
-	a.ExtraVariables = common.KeyValVars{}
-	a.ConfigVariables = common.KeyValVars{}
+	a.ExtraVariables = map[string]string{}
+	a.ConfigVariables = map[string]string{}
 }
 
 // PostProcess post-processes the flags to fix any compatibility issue.

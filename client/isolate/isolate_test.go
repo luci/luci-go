@@ -29,7 +29,7 @@ func init() {
 func TestReplaceVars(t *testing.T) {
 	t.Parallel()
 
-	opts := &ArchiveOptions{PathVariables: common.KeyValVars{"VAR": "wonderful"}}
+	opts := &ArchiveOptions{PathVariables: map[string]string{"VAR": "wonderful"}}
 
 	// Single replacement.
 	r, err := ReplaceVariables("hello <(VAR) world", opts)
@@ -105,9 +105,9 @@ func TestArchive(t *testing.T) {
 		Isolate:         isolatePath,
 		Isolated:        filepath.Join(tmpDir, "baz.isolated"),
 		Blacklist:       common.Strings{"ignored", "*.isolate"},
-		PathVariables:   common.KeyValVars{"VAR": "wonderful"},
-		ExtraVariables:  common.KeyValVars{"EXTRA": "really"},
-		ConfigVariables: common.KeyValVars{"OS": "amiga"},
+		PathVariables:   map[string]string{"VAR": "wonderful"},
+		ExtraVariables:  map[string]string{"EXTRA": "really"},
+		ConfigVariables: map[string]string{"OS": "amiga"},
 	}
 	future := Archive(a, opts)
 	ut.AssertEqual(t, "baz.isolated", future.DisplayName())

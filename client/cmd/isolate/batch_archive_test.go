@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/luci/luci-go/client/internal/common"
+	"github.com/luci/luci-go/client/internal/flags/stringmapflag"
 	"github.com/maruel/ut"
 )
 
@@ -80,13 +81,13 @@ func TestArchiveCMDParsing(t *testing.T) {
 	ut.AssertEqual(t, filepath.Join(base, "boz", "bar.isolate"), opts.Isolate)
 	ut.AssertEqual(t, filepath.Join(base, "biz", "bar.isolated"), opts.Isolated)
 	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, opts.ConfigVariables, common.KeyValVars{"OS": "linux"})
+	ut.AssertEqual(t, opts.ConfigVariables, stringmapflag.Value{"OS": "linux"})
 	if common.IsWindows() {
-		ut.AssertEqual(t, opts.PathVariables, common.KeyValVars{"PRODUCT_DIR": "../../out/Release", "EXECUTABLE_SUFFIX": ".exe", "DEPTH": "../.."})
+		ut.AssertEqual(t, opts.PathVariables, stringmapflag.Value{"PRODUCT_DIR": "../../out/Release", "EXECUTABLE_SUFFIX": ".exe", "DEPTH": "../.."})
 	} else {
-		ut.AssertEqual(t, opts.PathVariables, common.KeyValVars{"PRODUCT_DIR": "../../out/Release", "EXECUTABLE_SUFFIX": "", "DEPTH": "../.."})
+		ut.AssertEqual(t, opts.PathVariables, stringmapflag.Value{"PRODUCT_DIR": "../../out/Release", "EXECUTABLE_SUFFIX": "", "DEPTH": "../.."})
 	}
-	ut.AssertEqual(t, opts.ExtraVariables, common.KeyValVars{"version_full": "42.0.2284.0"})
+	ut.AssertEqual(t, opts.ExtraVariables, stringmapflag.Value{"version_full": "42.0.2284.0"})
 }
 
 // Verify that if the isolate/isolated paths are absolute, we don't

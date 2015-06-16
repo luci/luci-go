@@ -370,12 +370,12 @@ func TestLoadIsolateForConfigMissingVars(t *testing.T) {
 	if common.IsWindows() {
 		root = "x:\\dir"
 	}
-	_, _, _, _, err := LoadIsolateForConfig(root, isoData, common.KeyValVars{})
+	_, _, _, _, err := LoadIsolateForConfig(root, isoData, nil)
 	ut.AssertEqual(t, true, err != nil)
 	ut.AssertEqualf(t, true, strings.Contains(err.Error(), "variables were missing"), "%s", err)
 	ut.AssertEqualf(t, true, strings.Contains(err.Error(), "bit"), "%s", err)
 	ut.AssertEqualf(t, true, strings.Contains(err.Error(), "OS"), "%s", err)
-	_, _, _, _, err = LoadIsolateForConfig(root, isoData, common.KeyValVars{"bit": "32"})
+	_, _, _, _, err = LoadIsolateForConfig(root, isoData, map[string]string{"bit": "32"})
 	ut.AssertEqual(t, true, err != nil)
 	ut.AssertEqualf(t, true, strings.Contains(err.Error(), "variables were missing"), "%s", err)
 	ut.AssertEqualf(t, true, strings.Contains(err.Error(), "OS"), "%s", err)
@@ -388,7 +388,7 @@ func TestLoadIsolateForConfig(t *testing.T) {
 	if common.IsWindows() {
 		root = "x:\\dir"
 	}
-	vars := common.KeyValVars{"bit": "64", "OS": "linux"}
+	vars := map[string]string{"bit": "64", "OS": "linux"}
 	cmd, deps, ro, dir, err := LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, root, dir)
@@ -397,7 +397,7 @@ func TestLoadIsolateForConfig(t *testing.T) {
 	ut.AssertEqual(t, []string{"64linuxOrWin", filepath.Join("<(PRODUCT_DIR)", "unittest<(EXECUTABLE_SUFFIX)")}, deps)
 
 	// Case win64, matches only first condition.
-	vars = common.KeyValVars{"bit": "64", "OS": "win"}
+	vars = map[string]string{"bit": "64", "OS": "win"}
 	cmd, deps, ro, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, root, dir)
@@ -409,7 +409,7 @@ func TestLoadIsolateForConfig(t *testing.T) {
 	}, deps)
 
 	// Case mac64, matches only second condition.
-	vars = common.KeyValVars{"bit": "64", "OS": "mac"}
+	vars = map[string]string{"bit": "64", "OS": "mac"}
 	cmd, deps, ro, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, root, dir)
@@ -418,7 +418,7 @@ func TestLoadIsolateForConfig(t *testing.T) {
 	ut.AssertEqual(t, []string{}, deps)
 
 	// Case win32, both first and second condition match.
-	vars = common.KeyValVars{"bit": "32", "OS": "win"}
+	vars = map[string]string{"bit": "32", "OS": "win"}
 	cmd, deps, ro, dir, err = LoadIsolateForConfig(root, []byte(sampleIsolateData), vars)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, root, dir)
@@ -446,16 +446,16 @@ func TestLoadIsolateAsConfigWithIncludes(t *testing.T) {
 
 	// Test failures.
 	absIncData := addIncludesToSample(sampleIsolateData, "'includes':['/abs/path']")
-	_, _, _, _, err = LoadIsolateForConfig(tmpDir, []byte(absIncData), common.KeyValVars{})
+	_, _, _, _, err = LoadIsolateForConfig(tmpDir, []byte(absIncData), nil)
 	ut.AssertEqual(t, true, err != nil)
 
 	_, _, _, _, err = LoadIsolateForConfig(filepath.Join(tmpDir, "wrong-dir"),
-		[]byte(sampleIsolateDataWithIncludes), common.KeyValVars{})
+		[]byte(sampleIsolateDataWithIncludes), nil)
 	ut.AssertEqual(t, true, err != nil)
 
 	// Test Successfull loading.
 	// Case mac32, matches only second condition from main isolate and one in included.
-	vars := common.KeyValVars{"bit": "64", "OS": "linux"}
+	vars := map[string]string{"bit": "64", "OS": "linux"}
 	cmd, deps, ro, dir, err := LoadIsolateForConfig(tmpDir, []byte(sampleIsolateDataWithIncludes), vars)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, tmpDir, dir)
