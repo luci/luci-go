@@ -29,7 +29,7 @@ func IPWhitelistKey(c context.Context, name string) *datastore.Key {
 	return datastore.NewKey(c, "AuthIPWhitelist", name, 0, RootKey(c))
 }
 
-// IPWhitelistAssignmentKey returns the default AuthIPWhitelistAssignments key.
-func IPWhitelistAssimentsKey(c context.Context) *datastore.Key {
+// IPWhitelistAssignmentsKey returns the default AuthIPWhitelistAssignments key.
+func IPWhitelistAssignmentsKey(c context.Context) *datastore.Key {
 	return datastore.NewKey(c, "AuthIPWhitelistAssignments", "default", 0, RootKey(c))
 }

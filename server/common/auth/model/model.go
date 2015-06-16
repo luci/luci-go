@@ -4,7 +4,11 @@
 
 package model
 
-import "time"
+import (
+	"time"
+
+	"google.golang.org/appengine/datastore"
+)
 
 // AuthReplicationState contains state used to control Primary to Replica replicaiton.
 type AuthReplicationState struct {
@@ -54,6 +58,9 @@ type AuthGroup struct {
 
 // AuthIPWhitelist is a named set of whitelisted IPv4 and IPv6 subnets.
 type AuthIPWhitelist struct {
+	// Key represents the entity's datastore.Key.
+	Key *datastore.Key
+
 	// Subnets is the list of subnets.
 	Subnets []string
 
@@ -88,6 +95,8 @@ type Assignment struct {
 
 // AuthIPWhitelistAssignments is a singleton entity with "identity -> AUthIPWhitelist to use" mapping.
 type AuthIPWhitelistAssignments struct {
+	// Key represents the entity's datastore.Key.
+	Key *datastore.Key
 	// Assignments holds all the assignments.
 	Assignments []Assignment
 }
