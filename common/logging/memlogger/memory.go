@@ -13,37 +13,10 @@ import (
 	"github.com/luci/luci-go/common/logging"
 )
 
-// LogLevel indicates the severity of a LogEntry.
-type LogLevel uint
-
-// 4 different log levels. These are automatically recorded in LogEntry by the
-// various MemLogger.* methods.
-const (
-	LogError LogLevel = iota
-	LogWarn
-	LogInfo
-	LogDebug
-)
-
-func (l LogLevel) String() string {
-	switch l {
-	case LogError:
-		return "ERR"
-	case LogWarn:
-		return "WRN"
-	case LogInfo:
-		return "IFO"
-	case LogDebug:
-		return "DBG"
-	default:
-		return "???"
-	}
-}
-
 // LogEntry is a single entry in a MemLogger, containing a message and a
 // severity.
 type LogEntry struct {
-	Level LogLevel
+	Level logging.Level
 	Msg   string
 	Data  map[string]interface{}
 }
@@ -57,16 +30,32 @@ type MemLogger struct {
 
 var _ logging.Logger = (*MemLogger)(nil)
 
-func (m *MemLogger) inner(lvl LogLevel, format string, args []interface{}) {
+// Debugf implements the logging.Logger interface.
+func (m *MemLogger) Debugf(format string, args ...interface{}) {
+	m.LogCall(logging.Debug, 1, format, args)
+}
+
+// Infof implements the logging.Logger interface.
+func (m *MemLogger) Infof(format string, args ...interface{}) {
+	m.LogCall(logging.Info, 1, format, args)
+}
+
+// Warningf implements the logging.Logger interface.
+func (m *MemLogger) Warningf(format string, args ...interface{}) {
+	m.LogCall(logging.Warning, 1, format, args)
+}
+
+// Errorf implements the logging.Logger interface.
+func (m *MemLogger) Errorf(format string, args ...interface{}) {
+	m.LogCall(logging.Error, 1, format, args)
+}
+
+// LogCall implements the logging.Logger interface.
+func (m *MemLogger) LogCall(lvl logging.Level, calldepth int, format string, args []interface{}) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	*m.data = append(*m.data, LogEntry{lvl, fmt.Sprintf(format, args...), m.fields})
 }
-
-func (m *MemLogger) Debugf(format string, args ...interface{})   { m.inner(LogDebug, format, args) }
-func (m *MemLogger) Infof(format string, args ...interface{})    { m.inner(LogInfo, format, args) }
-func (m *MemLogger) Warningf(format string, args ...interface{}) { m.inner(LogWarn, format, args) }
-func (m *MemLogger) Errorf(format string, args ...interface{})   { m.inner(LogError, format, args) }
 
 // Use adds a memory backed Logger to Context, with concrete type
 // *MemLogger. Casting to the concrete type can be used to inspect the
@@ -75,6 +64,6 @@ func Use(c context.Context) context.Context {
 	lock := sync.Mutex{}
 	data := []LogEntry{}
 	return logging.SetFactory(c, func(ic context.Context) logging.Logger {
-		return &MemLogger{&lock, &data, logging.FieldsToMap(logging.GetFields(ic))}
+		return &MemLogger{&lock, &data, logging.GetFields(ic)}
 	})
 }

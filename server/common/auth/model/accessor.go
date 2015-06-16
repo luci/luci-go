@@ -34,7 +34,7 @@ type AuthDBSnapshot struct {
 // byWhitelistKeyId is used for sorting IPWhitelists by entity key's IntID().
 type byWhitelistKeyId []AuthIPWhitelist
 
-func (b byWhitelistKeyId) Len() int { return len(b) }
+func (b byWhitelistKeyId) Len() int      { return len(b) }
 func (b byWhitelistKeyId) Swap(i, j int) { b[i], b[j] = b[j], b[i] }
 func (b byWhitelistKeyId) Less(i, j int) bool {
 	return b[i].Key.IntID() < b[j].Key.IntID()

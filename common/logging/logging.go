@@ -21,81 +21,8 @@ directly instantiating concrete implementations.
 package logging
 
 import (
-	"fmt"
-	"strings"
-
 	"golang.org/x/net/context"
 )
-
-// Fields is a simple map of additional context values to add to Logger (see
-// Logger.WithFields).
-type Fields interface {
-	fmt.Stringer
-
-	// Each calls cb for each key/value pair contained by this Fields object.
-	// Returning false from the callback will stop the iteration.
-	Each(cb func(k string, v interface{}) bool)
-
-	// Merge allows you to update a Fields instance with another one, returning
-	// a new Fields object with the merged data. Keys in both Fields instances
-	// will resolve by taking the value from 'other'. This does not mutate either
-	// Fields instance. This method does not allow you to remove fields (e.g.
-	// passing a key with a nil value will just cause the field to contain nil)
-	Merge(other Fields) Fields
-
-	// Len returns the number of fields currently contained by this Fields object.
-	Len() int
-}
-
-// FieldsToMap returns a copy of the underlying data from a Fields. Returns nil
-// if the Fields was nil, or if the Fields contained no data.
-func FieldsToMap(f Fields) map[string]interface{} {
-	if f == nil || f.Len() == 0 {
-		return nil
-	}
-	return (map[string]interface{})(fields(nil).Merge(f).(fields))
-}
-
-func NewFields(v map[string]interface{}) Fields {
-	return (fields(nil)).Merge(fields(v))
-}
-
-type fields map[string]interface{}
-
-var _ Fields = fields(nil)
-
-func (f fields) String() string {
-	if f == nil {
-		return "{}"
-	}
-	// strip away the `logging.Fields`{...}
-	ret := fmt.Sprintf("%#v", f)
-	return ret[strings.IndexRune(ret, '{'):]
-}
-
-func (f fields) Merge(other Fields) Fields {
-	ret := make(fields, len(f)+other.Len())
-	for k, v := range f {
-		ret[k] = v
-	}
-	other.Each(func(k string, v interface{}) bool {
-		ret[k] = v
-		return true
-	})
-	return ret
-}
-
-func (f fields) Each(cb func(string, interface{}) bool) {
-	for k, v := range f {
-		if !cb(k, v) {
-			break
-		}
-	}
-}
-
-func (f fields) Len() int {
-	return len(f)
-}
 
 // Logger interface is ultimately implemented by underlying logging libraries
 // (like go-logging or GAE logging). It is the least common denominator among
@@ -113,13 +40,18 @@ type Logger interface {
 
 	// Errorf is like Debugf, but logs at Error level.
 	Errorf(format string, args ...interface{})
+
+	// Generic logging function. This is oriented more towards utility functions
+	// than direct end-user usage.
+	LogCall(l Level, calldepth int, format string, args []interface{})
 }
 
 type key int
 
-var (
-	loggerKey key = 0
-	fieldsKey key = 1
+const (
+	loggerKey key = iota
+	fieldsKey
+	levelKey
 )
 
 // SetFactory sets the Logger factory for this context.
@@ -147,42 +79,3 @@ func Get(c context.Context) (ret Logger) {
 	}
 	return
 }
-
-// SetFields adds the additional fields as context for the current Logger. The
-// display of these fields depends on the implementation of the Logger. The
-// new Logger will contain the combination of its current Fields, updated with
-// the new ones (see Fields.UpdateWith). Specifying the new fields as nil will
-// clear the currently set fields.
-func SetFields(c context.Context, fields Fields) context.Context {
-	return context.WithValue(c, fieldsKey, fields)
-}
-
-// SetField is a convenience method for SetFields for a single key/value
-// pair.
-func SetField(c context.Context, key string, value interface{}) context.Context {
-	return SetFields(c, fields{key: value})
-}
-
-// GetFields returns the current Fields (used for logging implementations)
-func GetFields(c context.Context) Fields {
-	ret, _ := c.Value(fieldsKey).(Fields)
-	if ret == nil {
-		return fields(nil)
-	}
-	return ret
-}
-
-// Null returns logger that silently ignores all messages.
-func Null() Logger {
-	return nullLogger{}
-}
-
-// nullLogger silently ignores all messages.
-type nullLogger struct{}
-
-var _ Logger = nullLogger{}
-
-func (nullLogger) Debugf(string, ...interface{})   {}
-func (nullLogger) Infof(string, ...interface{})    {}
-func (nullLogger) Warningf(string, ...interface{}) {}
-func (nullLogger) Errorf(string, ...interface{})   {}
