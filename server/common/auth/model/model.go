@@ -10,7 +10,7 @@ import (
 	"google.golang.org/appengine/datastore"
 )
 
-// AuthReplicationState contains state used to control Primary to Replica replicaiton.
+// AuthReplicationState contains state used to control Primary to Replica replication.
 type AuthReplicationState struct {
 	// PrimaryID represents a GAE application ID of Primary.
 	PrimaryID string
@@ -24,6 +24,9 @@ type AuthReplicationState struct {
 
 // AuthGlobalConfig is a root entity for auth models.
 type AuthGlobalConfig struct {
+	// Key represents the entity's datastore.Key.
+	Key *datastore.Key
+
 	// OAuthClientID represents OAuth2 client id.
 	OAuthClientID string
 	// OAuthClientSecret represents OAuth2 client secret.
@@ -34,6 +37,9 @@ type AuthGlobalConfig struct {
 
 // AuthGroup is a group of identities.
 type AuthGroup struct {
+	// Key represents the entity's datastore.Key.
+	Key *datastore.Key
+
 	// Members represents a list of members that are explicitly in this group.
 	Members []string
 	// Globs is a list of identity-glob expressions.
