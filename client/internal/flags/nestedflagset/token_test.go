@@ -5,8 +5,9 @@
 package nestedflagset
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestToken(t *testing.T) {

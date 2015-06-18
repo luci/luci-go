@@ -43,8 +43,8 @@ Contributing
   * Make sure your `user.email` and `user.name` are configured in `git config`.
   * Install test-only packages:
     `go get -u -t github.com/luci/luci-go/client/...`
-  * Install the pre-commit git hook:
-    `go get -u github.com/maruel/pre-commit-go && pre-commit-go`
+  * Install the [pcg](https://github.com/maruel/pre-commit-go) git hook:
+    `go get -u github.com/maruel/pre-commit-go/cmd/... && pcg`
 
 Run the following to setup the code review tool and create your first review:
 
