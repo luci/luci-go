@@ -42,9 +42,9 @@ func TestIsolateServerSmall(t *testing.T) {
 
 func TestIsolateServerLarge(t *testing.T) {
 	t.Parallel()
-	large := strings.Repeat("0123456789abcdef", 1024*1024/16)
+	large := strings.Repeat("0123456789abcdef", 4096/16)
 	expected := map[isolated.HexDigest][]byte{
-		"7b961ac18d33b99122ed5d88d1ce62dd19fc8c69": []byte(large),
+		"5b713884e50a00b44abcee440f2f7d3e2ba701a6": []byte(large),
 	}
 	testNormal(t, makeItems(large), expected)
 }
@@ -79,10 +79,10 @@ func TestIsolateServerRetryGCSPartial(t *testing.T) {
 	defer ts.Close()
 	client := newIsolateServer(ts.URL, "default-gzip", fastRetry)
 
-	large := strings.Repeat("0123456789abcdef", 1024*1024/16)
+	large := strings.Repeat("0123456789abcdef", 4096/16)
 	files := makeItems(large)
 	expected := map[isolated.HexDigest][]byte{
-		"7b961ac18d33b99122ed5d88d1ce62dd19fc8c69": []byte(large),
+		"5b713884e50a00b44abcee440f2f7d3e2ba701a6": []byte(large),
 	}
 	states, err := client.Contains(files.digests)
 	ut.AssertEqual(t, nil, err)
@@ -104,6 +104,9 @@ func TestIsolateServerRetryGCSPartial(t *testing.T) {
 
 func TestIsolateServerBadURL(t *testing.T) {
 	t.Parallel()
+	if testing.Short() {
+		t.SkipNow()
+	}
 	client := newIsolateServer("http://asdfad.nonexistent", "default-gzip", fastRetry)
 	caps, err := client.ServerCapabilities()
 	ut.AssertEqual(t, (*isolated.ServerCapabilities)(nil), caps)
@@ -172,11 +175,11 @@ func testFlaky(t *testing.T, flake string) {
 	defer ts.Close()
 	client := newIsolateServer(ts.URL, "default-gzip", fastRetry)
 
-	large := strings.Repeat("0123456789abcdef", 1024*1024/16)
+	large := strings.Repeat("0123456789abcdef", 4096/16)
 	files := makeItems("foo", large)
 	expected := map[isolated.HexDigest][]byte{
 		"0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33": []byte("foo"),
-		"7b961ac18d33b99122ed5d88d1ce62dd19fc8c69": []byte(large),
+		"5b713884e50a00b44abcee440f2f7d3e2ba701a6": []byte(large),
 	}
 	states, err := client.Contains(files.digests)
 	ut.AssertEqual(t, nil, err)

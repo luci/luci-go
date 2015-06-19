@@ -20,6 +20,7 @@ import (
 )
 
 func TestReadOnlyValue(t *testing.T) {
+	t.Parallel()
 	ut.AssertEqual(t, (*isolated.ReadOnlyValue)(nil), NotSet.ToIsolated())
 	ut.AssertEqual(t, (*isolated.ReadOnlyValue)(nil), ReadOnlyValue(100).ToIsolated())
 	tmp := new(isolated.ReadOnlyValue)
@@ -470,6 +471,7 @@ func TestLoadIsolateAsConfigWithIncludes(t *testing.T) {
 }
 
 func TestConfigSettingsUnionLeft(t *testing.T) {
+	t.Parallel()
 	left := &ConfigSettings{
 		Command:    []string{"left takes precedence"},
 		Files:      []string{"../../le/f/t", "foo/"}, // Must be POSIX.
@@ -489,6 +491,7 @@ func TestConfigSettingsUnionLeft(t *testing.T) {
 }
 
 func TestConfigSettingsUnionRight(t *testing.T) {
+	t.Parallel()
 	left := &ConfigSettings{
 		Files:      []string{"../../le/f/t", "foo/"}, // Must be POSIX.
 		IsolateDir: absToOS("/tmp/bar"),              // In native path.

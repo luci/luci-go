@@ -12,6 +12,7 @@ import (
 )
 
 func TestSizeToString(t *testing.T) {
+	t.Parallel()
 	data := []struct {
 		in       int64
 		expected string
@@ -35,6 +36,7 @@ func TestSizeToString(t *testing.T) {
 }
 
 func TestRound(t *testing.T) {
+	t.Parallel()
 	data := []struct {
 		in       time.Duration
 		round    time.Duration

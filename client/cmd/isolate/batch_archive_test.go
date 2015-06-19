@@ -15,6 +15,7 @@ import (
 )
 
 func TestConvertPyToGoArchiveCMDArgs(t *testing.T) {
+	t.Parallel()
 	data := []struct {
 		input    []string
 		expected []string
@@ -62,11 +63,13 @@ func TestConvertPyToGoArchiveCMDArgs(t *testing.T) {
 }
 
 func TestInvalidArchiveCMD(t *testing.T) {
+	t.Parallel()
 	_, err := parseArchiveCMD([]string{}, absToOS("e:", "/tmp/bar"))
 	ut.AssertEqual(t, "-isolated must be specified", err.Error())
 }
 
 func TestArchiveCMDParsing(t *testing.T) {
+	t.Parallel()
 	args := []string{
 		"--isolated", "../biz/bar.isolated",
 		"--isolate", "../boz/bar.isolate",
@@ -93,6 +96,7 @@ func TestArchiveCMDParsing(t *testing.T) {
 // Verify that if the isolate/isolated paths are absolute, we don't
 // accidentally interpret them as relative to the cwd.
 func TestArchiveAbsolutePaths(t *testing.T) {
+	t.Parallel()
 	root := absToOS("e:", "/tmp/bar/")
 	args := []string{
 		"--isolated", root + "foo.isolated",
