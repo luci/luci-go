@@ -183,9 +183,11 @@ func (c *goroutinePool) Schedule(job func(), onCanceled func()) {
 			// Do not start a new job if canceled.
 			if c.CancelationReason() == nil {
 				job()
-			} else if onCanceled != nil {
-				onCanceled()
+				return
 			}
+		}
+		if onCanceled != nil {
+			onCanceled()
 		}
 	}()
 }

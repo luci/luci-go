@@ -91,24 +91,68 @@ func TestGoroutinePoolCancel(t *testing.T) {
 	// after it had cancelled the pool and before it wrote to log.
 	// No new job should have started after that. So, log must have at most MAX-1
 	// jobs after 1.
-	count := 0
+	finishedPre := 0
+	finishedAfter := 0
 	canceled := 0
 	for i := range logs {
 		if i == 1 {
-			for i = range logs {
-				ut.AssertEqual(t, true, i <= J)
-				if i > 0 {
-					count++
-				} else {
-					canceled++
-				}
-			}
+			finishedAfter++
+			break
+		}
+		finishedPre++
+	}
+	for i := range logs {
+		ut.AssertEqual(t, true, i <= J)
+		if i > 0 {
+			finishedAfter++
+		} else {
+			canceled++
 		}
 	}
-	ut.AssertEqualf(t, true, count < MAX, "%d (>=%d MAX) jobs started after cancellation.", count, MAX)
+	t.Logf("JOBS: Total %d Pre %d After %d Cancelled %d", 2*J, finishedPre, finishedAfter, canceled)
+	ut.AssertEqual(t, 2*J, finishedPre+finishedAfter+canceled)
+	ut.AssertEqualf(t, true, finishedAfter < MAX,
+		"%d (>=%d MAX) jobs started after cancellation.", finishedAfter, MAX)
 	ut.AssertEqualf(t, true, canceled > J, "%d > %d", canceled, J)
 	ut.AssertEqual(t, cancelError, wait1)
 	ut.AssertEqual(t, cancelError, wait2)
+}
+
+func TestGoroutinePoolCancelFuncCalled(t *testing.T) {
+	t.Parallel()
+
+	cancelError := errors.New("cancelError")
+	// Simulate deterministically when the semaphore returs immediately
+	// because of cancelation, as opposed to actually having a resource.
+	pipe := make(chan string, 2)
+	logs := make(chan string, 3)
+	slow := func() {
+		// Get 1 item to make sure GoroutinePool can't schedule new job.
+		item := <-pipe
+		logs <- item
+	}
+	pool := NewGoroutinePool(1, NewCanceler())
+	pool.Schedule(slow, slow)
+	// This job would have to wait for slow to finish,
+	// but slow is waiting for channel to have something.
+	// This is sort of a deadlock.
+	pool.Schedule(func() { pipe <- "job" }, func() { pipe <- "onCancel" })
+	pool.Cancel(cancelError)
+	// Canceling should result in onCancel of last job.
+	// In case it's a bug, don't wait forever for slow, but unblock slow().
+	pipe <- "unblock"
+	ut.AssertEqual(t, cancelError, pool.Wait())
+	close(pipe)
+	if pipeItem, ok := <-pipe; ok {
+		logs <- pipeItem
+	}
+	close(logs)
+	for l := range logs {
+		if l == "onCancel" {
+			return
+		}
+	}
+	t.Fatalf("onCancel wasn't called.")
 }
 
 func assertClosed(t *testing.T, c *canceler) {
