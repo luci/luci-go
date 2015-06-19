@@ -43,6 +43,7 @@ func handlerJSON(f failure, handler jsonAPI) http.Handler {
 	})
 }
 
+// IsolatedFake is a functional fake in-memory isolated server.
 type IsolatedFake interface {
 	http.Handler
 	// Contents returns all the uncompressed data on the fake isolated server.
@@ -145,7 +146,7 @@ func (server *isolatedFake) preupload(r *http.Request) interface{} {
 	if data.Namespace.Namespace != "default-gzip" {
 		server.Fail(fmt.Errorf("unexpected namespace %#v", data.Namespace.Namespace))
 	}
-	out := &isolated.UrlCollection{}
+	out := &isolated.URLCollection{}
 
 	server.lock.Lock()
 	defer server.lock.Unlock()

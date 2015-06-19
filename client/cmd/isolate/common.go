@@ -77,14 +77,14 @@ func (c *isolateFlags) Init(f *flag.FlagSet) {
 		considered relative paths.`)
 }
 
-// RequiredFlags specifies which flags are required on the command line being
-// parsed.
+// RequiredIsolateFlags specifies which flags are required on the command line
+// being parsed.
 type RequiredIsolateFlags uint
 
 const (
-	// If set, the --isolate flag is required.
+	// RequiredIsolateFlags means the --isolate flag is required.
 	RequireIsolateFile RequiredIsolateFlags = 1 << iota
-	// If set, the --isolated flag is required.
+	// RequireIsolatedFile means the --isolated flag is required.
 	RequireIsolatedFile
 )
 

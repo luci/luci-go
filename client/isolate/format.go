@@ -130,20 +130,20 @@ func LoadIsolateAsConfig(isolateDir string, content []byte) (*Configs, error) {
 	}
 	// Load the includes. Process them in reverse so the last one take precedence.
 	for i := len(processedIsolate.includes) - 1; i >= 0; i-- {
-		if included, err := loadIncludedIsolate(isolateDir, processedIsolate.includes[i]); err != nil {
+		included, err := loadIncludedIsolate(isolateDir, processedIsolate.includes[i])
+		if err != nil {
 			return nil, err
-		} else {
-			if rootHasCommand {
-				// Strip any command in the imported isolate. It is because the chosen
-				// command is not related to the one in the top-most .isolate, since the
-				// configuration is flattened.
-				for _, pair := range included.byConfig {
-					pair.value.Command = []string{}
-				}
+		}
+		if rootHasCommand {
+			// Strip any command in the imported isolate. It is because the chosen
+			// command is not related to the one in the top-most .isolate, since the
+			// configuration is flattened.
+			for _, pair := range included.byConfig {
+				pair.value.Command = []string{}
 			}
-			if out, err = out.union(included); err != nil {
-				return nil, err
-			}
+		}
+		if out, err = out.union(included); err != nil {
+			return nil, err
 		}
 	}
 	return out, nil
@@ -282,14 +282,14 @@ func (c *Configs) setConfig(confName configName, value *ConfigSettings) {
 // union returns a new Configs instance, the union of variables from self and rhs.
 //
 // It keeps ConfigVariables sorted in the output.
-func (lhs *Configs) union(rhs *Configs) (*Configs, error) {
+func (c *Configs) union(rhs *Configs) (*Configs, error) {
 	// Merge the keys of ConfigVariables for each Configs instances. All the new
 	// variables will become unbounded. This requires realigning the keys.
 	configVariables := uniqueMergeSortedStrings(
-		lhs.ConfigVariables, rhs.ConfigVariables)
+		c.ConfigVariables, rhs.ConfigVariables)
 	out := newConfigs(configVariables)
 	byConfig := configPairs(append(
-		lhs.expandConfigVariables(configVariables),
+		c.expandConfigVariables(configVariables),
 		rhs.expandConfigVariables(configVariables)...))
 	if len(byConfig) == 0 {
 		return out, nil
@@ -415,17 +415,17 @@ func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
 
 	// Takes the difference between the two isolateDir. Note that while
 	// isolateDir is in native path case, all other references are in posix.
-	useRhs := false
+	useRHS := false
 	var command []string
 	if len(lhs.Command) > 0 {
-		useRhs = false
+		useRHS = false
 		command = lhs.Command
 	} else if len(rhs.Command) > 0 {
-		useRhs = true
+		useRHS = true
 		command = rhs.Command
 	} else {
 		// If self doesn't define any file, use rhs.
-		useRhs = len(lhs.Files) == 0
+		useRHS = len(lhs.Files) == 0
 	}
 
 	readOnly := rhs.ReadOnly
@@ -435,7 +435,7 @@ func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
 
 	lRelCwd, rRelCwd := lhs.IsolateDir, rhs.IsolateDir
 	lFiles, rFiles := lhs.Files, rhs.Files
-	if useRhs {
+	if useRHS {
 		// Rebase files in rhs.
 		lRelCwd, rRelCwd = rhs.IsolateDir, lhs.IsolateDir
 		lFiles, rFiles = rhs.Files, lhs.Files
@@ -509,7 +509,7 @@ func (p *condition) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	if len(d) != 2 {
-		return errors.New("condition must be a list with two items.")
+		return errors.New("condition must be a list with two items")
 	}
 	if err := json.Unmarshal(d[0], &p.Condition); err != nil {
 		return err
@@ -520,7 +520,7 @@ func (p *condition) UnmarshalJSON(data []byte) error {
 	}
 	var ok bool
 	if p.Variables, ok = m["variables"]; !ok {
-		return errors.New("variables item is required in condition.")
+		return errors.New("variables item is required in condition")
 	}
 	return nil
 }
@@ -562,45 +562,40 @@ func (v variableValue) String() string {
 
 // compare returns 0 if equal, 1 if lhs < right, else -1.
 // Order: unbound < 1 < 2 < "abc" < "cde" .
-func (lhs variableValue) compare(rhs variableValue) int {
-	if lhs.I != nil {
+func (v variableValue) compare(rhs variableValue) int {
+	if v.I != nil {
 		if rhs.I != nil {
 			// Both integers.
-			if *lhs.I < *rhs.I {
+			if *v.I < *rhs.I {
 				return 1
-			} else if *lhs.I > *rhs.I {
+			} else if *v.I > *rhs.I {
 				return -1
-			} else {
-				return 0
 			}
+			return 0
 		} else if rhs.S != nil {
 			// int vs string
 			return 1
-		} else {
-			// int vs Unbound.
-			return -1
 		}
-	} else if lhs.S != nil {
+		// int vs Unbound.
+		return -1
+	} else if v.S != nil {
 		if rhs.S != nil {
 			// Both strings.
-			if *lhs.S < *rhs.S {
+			if *v.S < *rhs.S {
 				return 1
-			} else if *lhs.S > *rhs.S {
+			} else if *v.S > *rhs.S {
 				return -1
-			} else {
-				return 0
 			}
-		} else {
-			// string vs (int | unbound)
-			return -1
+			return 0
 		}
+		// string vs (int | unbound)
+		return -1
 	} else if rhs.isBound() {
 		// unbound vs (int|string)
 		return 1
-	} else {
-		// unbound vs unbound
-		return 0
 	}
+	// unbound vs unbound
+	return 0
 }
 
 func (v variableValue) isBound() bool {
@@ -679,8 +674,8 @@ type processedIsolate struct {
 	varsValsSet variablesValuesSet
 }
 
-// convertIsolateToJson5 cleans up isolate content to be json5.
-func convertIsolateToJson5(content []byte) io.Reader {
+// convertIsolateToJSON5 cleans up isolate content to be json5.
+func convertIsolateToJSON5(content []byte) io.Reader {
 	out := &bytes.Buffer{}
 	for _, l := range strings.Split(string(content), "\n") {
 		l = strings.TrimSpace(l)
@@ -700,7 +695,7 @@ func parseIsolate(content []byte) (*isolate, error) {
 	// doesn't work.
 	// if err := json5.NewDecoder(json5src).Decode(isolate); err != nil {
 	var data interface{}
-	if err := json5.NewDecoder(convertIsolateToJson5(content)).Decode(&data); err != nil {
+	if err := json5.NewDecoder(convertIsolateToJSON5(content)).Decode(&data); err != nil {
 		return nil, err
 	}
 	buf, _ := json.Marshal(&data)
@@ -794,7 +789,7 @@ func processConditionAst(expr ast.Expr, varsAndValues variablesValuesSet) (map[t
 				err = fmt.Errorf("unknown binary operator %s\n", n.Op)
 				return false
 			}
-			id, value, tmpErr := verifyIdEqlValue(n)
+			id, value, tmpErr := verifyIDEqualValue(n)
 			if tmpErr != nil {
 				err = tmpErr
 				return false
@@ -861,11 +856,11 @@ type funcGetVariableValue func(varName string) variableValue
 
 func (c *processedCondition) evaluate(getValue funcGetVariableValue) (bool, error) {
 	ce := conditionEvaluator{cond: c, getVarValue: getValue, stop: false}
-	if isTrue := ce.eval(c.expr); ce.stop {
+	isTrue := ce.eval(c.expr)
+	if ce.stop {
 		return false, errors.New("required variable is unbound")
-	} else {
-		return isTrue, nil
 	}
+	return isTrue, nil
 }
 
 type conditionEvaluator struct {
@@ -910,8 +905,8 @@ func makeConfigVariableIndex(configVariables []string) map[string]int {
 	return out
 }
 
-// verifyIdEqlValue processes identifier == (int | string) part of Condition.
-func verifyIdEqlValue(expr *ast.BinaryExpr) (name string, value variableValue, err error) {
+// verifyIDEqualValue processes identifier == (int | string) part of Condition.
+func verifyIDEqualValue(expr *ast.BinaryExpr) (name string, value variableValue, err error) {
 	id, ok := expr.X.(*ast.Ident)
 	if !ok {
 		err = errors.New("left operand of == must be identifier")
@@ -1020,16 +1015,16 @@ func (v *variables) verify() error {
 	if v.ReadOnly == nil || (0 <= *v.ReadOnly && *v.ReadOnly <= 2) {
 		return nil
 	}
-	return errors.New("read_only must be 0, 1, 2, or undefined.")
+	return errors.New("read_only must be 0, 1, 2, or undefined")
 }
 
 // configName defines a config as an ordered set of bound and unbound variable values.
 type configName []variableValue
 
-func (lhs configName) compare(rhs configName) int {
+func (c configName) compare(rhs configName) int {
 	// Bound value is less than unbound one.
-	assert(len(lhs) == len(rhs))
-	for i, l := range lhs {
+	assert(len(c) == len(rhs))
+	for i, l := range c {
 		if r := l.compare(rhs[i]); r != 0 {
 			return r
 		}

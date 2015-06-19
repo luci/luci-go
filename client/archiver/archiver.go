@@ -83,16 +83,19 @@ type UploadStat struct {
 	Name     string
 }
 
-// Statistics from the Archiver.
+// Stats is statistics from the Archiver.
 type Stats struct {
 	Hits   []common.Size // Bytes; each item is immutable.
 	Pushed []*UploadStat // Misses; each item is immutable.
 }
 
+// TotalHits is the number of cache hits on the server.
 func (s *Stats) TotalHits() int {
 	return len(s.Hits)
 }
 
+// TotalBytesHits is the number of bytes not uploaded due to cache hits on the
+// server.
 func (s *Stats) TotalBytesHits() common.Size {
 	out := common.Size(0)
 	for _, i := range s.Hits {
@@ -101,10 +104,12 @@ func (s *Stats) TotalBytesHits() common.Size {
 	return out
 }
 
+// TotalMisses returns the number of cache misses on the server.
 func (s *Stats) TotalMisses() int {
 	return len(s.Pushed)
 }
 
+// TotalBytesPushed returns the sum of bytes uploaded.
 func (s *Stats) TotalBytesPushed() common.Size {
 	out := common.Size(0)
 	for _, i := range s.Pushed {

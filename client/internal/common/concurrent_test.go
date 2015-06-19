@@ -136,7 +136,7 @@ func TestCancelable(t *testing.T) {
 	ut.AssertEqual(t, nil, c.CancelationReason())
 	select {
 	case <-c.Channel():
-		t.Fatal()
+		t.FailNow()
 	default:
 	}
 

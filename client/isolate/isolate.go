@@ -107,18 +107,18 @@ func ReplaceVariables(str string, opts *ArchiveOptions) (string, error) {
 	var err error
 	subst := variableSubstitutionMatcher.ReplaceAllStringFunc(str,
 		func(match string) string {
-			var_name := match[2 : len(match)-1]
-			if v, ok := opts.PathVariables[var_name]; ok {
+			varName := match[2 : len(match)-1]
+			if v, ok := opts.PathVariables[varName]; ok {
 				return v
 			}
-			if v, ok := opts.ExtraVariables[var_name]; ok {
+			if v, ok := opts.ExtraVariables[varName]; ok {
 				return v
 			}
-			if v, ok := opts.ConfigVariables[var_name]; ok {
+			if v, ok := opts.ConfigVariables[varName]; ok {
 				return v
 			}
 			if err == nil {
-				err = errors.New("no value for variable '" + var_name + "'")
+				err = errors.New("no value for variable '" + varName + "'")
 			}
 			return match
 		})

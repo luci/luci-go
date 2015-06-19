@@ -31,12 +31,12 @@ type AuthDBSnapshot struct {
 	IPWhitelistAssignments AuthIPWhitelistAssignments
 }
 
-// byWhitelistKeyId is used for sorting IPWhitelists by entity key's IntID().
-type byWhitelistKeyId []AuthIPWhitelist
+// byWhitelistKeyID is used for sorting IPWhitelists by entity key's IntID().
+type byWhitelistKeyID []AuthIPWhitelist
 
-func (b byWhitelistKeyId) Len() int      { return len(b) }
-func (b byWhitelistKeyId) Swap(i, j int) { b[i], b[j] = b[j], b[i] }
-func (b byWhitelistKeyId) Less(i, j int) bool {
+func (b byWhitelistKeyID) Len() int      { return len(b) }
+func (b byWhitelistKeyID) Swap(i, j int) { b[i], b[j] = b[j], b[i] }
+func (b byWhitelistKeyID) Less(i, j int) bool {
 	return b[i].Key.IntID() < b[j].Key.IntID()
 }
 
@@ -103,7 +103,7 @@ func currentAuthDBSnapshot(c context.Context, snap *AuthDBSnapshot) error {
 				return
 			}
 			snap.IPWhitelists = append(snap.IPWhitelists, r.authIPwl)
-			sort.Sort(byWhitelistKeyId(snap.IPWhitelists))
+			sort.Sort(byWhitelistKeyID(snap.IPWhitelists))
 		}
 		errCh <- nil
 	}()

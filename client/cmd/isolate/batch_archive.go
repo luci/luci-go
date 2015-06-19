@@ -41,7 +41,7 @@ isolate. Format of files is:
 	CommandRun: func() subcommands.CommandRun {
 		c := batchArchiveRun{}
 		c.commonServerFlags.Init()
-		c.Flags.StringVar(&c.dumpJson, "dump-json", "",
+		c.Flags.StringVar(&c.dumpJSON, "dump-json", "",
 			"Write isolated Digestes of archived trees to this file as JSON")
 		return &c
 	},
@@ -49,7 +49,7 @@ isolate. Format of files is:
 
 type batchArchiveRun struct {
 	commonServerFlags
-	dumpJson string
+	dumpJSON string
 }
 
 func (c *batchArchiveRun) Parse(a subcommands.Application, args []string) error {
@@ -183,8 +183,8 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	err := arch.Close()
 	duration := time.Since(start)
 	// Only write the file once upload is confirmed.
-	if err == nil && c.dumpJson != "" {
-		err = common.WriteJSONFile(c.dumpJson, data)
+	if err == nil && c.dumpJSON != "" {
+		err = common.WriteJSONFile(c.dumpJSON, data)
 	}
 	if !c.defaultFlags.Quiet {
 		stats := arch.Stats()

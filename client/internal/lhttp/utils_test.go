@@ -12,9 +12,6 @@ import (
 )
 
 func TestCheckURL(t *testing.T) {
-	const onlyHttpsErr = "Only https:// scheme is accepted for appspot hosts. " +
-		"It can be omitted."
-
 	data := []struct {
 		in       string
 		expected string
@@ -23,7 +20,7 @@ func TestCheckURL(t *testing.T) {
 		{"foo", "https://foo", nil},
 		{"https://foo", "https://foo", nil},
 		{"http://foo.example.com", "http://foo.example.com", nil},
-		{"http://foo.appspot.com", "", errors.New(onlyHttpsErr)},
+		{"http://foo.appspot.com", "", errors.New("only https:// scheme is accepted for appspot hosts, it can be omitted")},
 	}
 	for i, line := range data {
 		out, err := CheckURL(line.in)

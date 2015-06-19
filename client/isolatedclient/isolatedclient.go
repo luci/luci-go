@@ -88,7 +88,7 @@ func (i *isolateServer) Contains(items []*isolated.DigestItem) (out []*PushState
 	defer func() { end(tracer.Args{"err": err}) }()
 	in := isolated.DigestCollection{Items: items}
 	in.Namespace.Namespace = i.namespace
-	data := &isolated.UrlCollection{}
+	data := &isolated.URLCollection{}
 	if err = i.postJSON("/_ah/api/isolateservice/v1/preupload", in, data); err != nil {
 		return nil, err
 	}

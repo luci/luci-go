@@ -42,7 +42,7 @@ func (c *Flags) Parse() error {
 		}
 	}
 	if c.Namespace == "" {
-		return errors.New("-namespace must be specified.")
+		return errors.New("-namespace must be specified")
 	}
 	return nil
 }

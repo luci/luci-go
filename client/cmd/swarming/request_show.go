@@ -28,12 +28,12 @@ type requestShowRun struct {
 	commonFlags
 }
 
-func (r *requestShowRun) Parse(a subcommands.Application, args []string) error {
-	if err := r.commonFlags.Parse(a); err != nil {
+func (c *requestShowRun) Parse(a subcommands.Application, args []string) error {
+	if err := c.commonFlags.Parse(a); err != nil {
 		return err
 	}
 	if len(args) != 1 {
-		return errors.New("must only provide a task id.")
+		return errors.New("must only provide a task id")
 	}
 	return nil
 }

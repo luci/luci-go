@@ -51,15 +51,15 @@ type DigestCollection struct {
 	} `json:"namespace"`
 }
 
-// PreuploadStatus is returned by /preupload via UrlCollection.
+// PreuploadStatus is returned by /preupload via URLCollection.
 type PreuploadStatus struct {
 	GSUploadURL  string `json:"gs_upload_url"`
 	UploadTicket string `json:"upload_ticket"`
 	Index        Int    `json:"index"`
 }
 
-// UrlCollection is returned by /preupload.
-type UrlCollection struct {
+// URLCollection is returned by /preupload.
+type URLCollection struct {
 	Items []PreuploadStatus `json:"items"`
 }
 
