@@ -25,12 +25,17 @@ func timeToTimestamp(t time.Time) int64 {
 }
 
 // protoToAuthDBSnapshot converts AuthDB protobuf to model.AuthDBSnapshot.
-func protoToAuthDBSnapshot(c context.Context, adb *AuthDB) model.AuthDBSnapshot {
+func protoToAuthDBSnapshot(c context.Context, rev *AuthDBRevision, adb *AuthDB) model.AuthDBSnapshot {
 	grps := adb.GetGroups()
 	ipwls := adb.GetIpWhitelists()
 	asmts := adb.GetIpWhitelistAssignments()
 
 	snap := model.AuthDBSnapshot{
+		ReplicationState: model.AuthReplicationState{
+			PrimaryID:         rev.GetPrimaryId(),
+			AuthDBRev:         rev.GetAuthDbRev(),
+			ModifiedTimestamp: timestampToTime(rev.GetModifiedTs()),
+		},
 		GlobalConfig: model.AuthGlobalConfig{
 			Key:                      model.RootKey(c),
 			OAuthClientID:            adb.GetOauthClientId(),

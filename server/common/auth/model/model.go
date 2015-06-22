@@ -35,6 +35,10 @@ type AuthGlobalConfig struct {
 	OAuthAdditionalClientIDs []string
 }
 
+func (a AuthGlobalConfig) key() *datastore.Key {
+	return a.Key
+}
+
 // AuthGroup is a group of identities.
 type AuthGroup struct {
 	// Key represents the entity's datastore.Key.
@@ -62,6 +66,10 @@ type AuthGroup struct {
 	ModifiedBy string
 }
 
+func (a AuthGroup) key() *datastore.Key {
+	return a.Key
+}
+
 // AuthIPWhitelist is a named set of whitelisted IPv4 and IPv6 subnets.
 type AuthIPWhitelist struct {
 	// Key represents the entity's datastore.Key.
@@ -82,6 +90,10 @@ type AuthIPWhitelist struct {
 	ModifiedTimestamp time.Time
 	// ModifiedTimestamp represents who modified the list.
 	ModifiedBy string
+}
+
+func (a AuthIPWhitelist) key() *datastore.Key {
+	return a.Key
 }
 
 // Assignment is a internal data structure used in AuthIPWhitelistAssignments.
@@ -105,4 +117,8 @@ type AuthIPWhitelistAssignments struct {
 	Key *datastore.Key
 	// Assignments holds all the assignments.
 	Assignments []Assignment
+}
+
+func (a AuthIPWhitelistAssignments) key() *datastore.Key {
+	return a.Key
 }

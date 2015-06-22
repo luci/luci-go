@@ -5,6 +5,7 @@
 package model
 
 import (
+	"reflect"
 	"sort"
 	"sync"
 
@@ -40,9 +41,8 @@ func (b byWhitelistKeyID) Less(i, j int) bool {
 	return b[i].Key.IntID() < b[j].Key.IntID()
 }
 
-// currentAuthDBSnapshot is called under transaction context by
-// CurrentAuthDBSnapshot.
-// It gets a snapshot of AuthDB to be stored to snap.
+// currentAuthDBSnapshot returns current database's AuthDBSnapshot.
+// This function should be called under transaction context.
 func currentAuthDBSnapshot(c context.Context, snap *AuthDBSnapshot) error {
 	errCh := make(chan error, 4)
 
@@ -107,7 +107,6 @@ func currentAuthDBSnapshot(c context.Context, snap *AuthDBSnapshot) error {
 		}
 		errCh <- nil
 	}()
-
 	go func() {
 		wg.Wait()
 		close(errCh)
@@ -121,16 +120,160 @@ func currentAuthDBSnapshot(c context.Context, snap *AuthDBSnapshot) error {
 	return nil
 }
 
-// CurrentAuthDBSnapshot returns current AuthDBSnapshot.
-func CurrentAuthDBSnapshot(c context.Context) (*AuthDBSnapshot, error) {
-	snap := &AuthDBSnapshot{}
-	err := datastore.RunInTransaction(c, func(c context.Context) error {
-		return currentAuthDBSnapshot(c, snap)
-	}, nil)
-	if err != nil {
-		return nil, err
+// entity represents a datastore entity.
+type entity interface {
+	// key() result is used by datastore.PutMulti().
+	key() *datastore.Key
+}
+
+// inGroups returns true if exact matching g is in groups.
+func inGroups(g AuthGroup, groups []AuthGroup) bool {
+	for _, gitr := range groups {
+		if reflect.DeepEqual(g, gitr) {
+			return true
+		}
 	}
-	return snap, err
+	return false
+}
+
+// groupsDiff is used to get difference of two []AuthGroup.
+// newEntities contains the new data or updated data.
+// deleteKeys represents the keys to delete.
+func groupsDiff(curgrps, newgrps []AuthGroup) (newEntities []entity, deleteKeys []*datastore.Key) {
+	exists := make(map[string]bool)
+	for _, n := range newgrps {
+		exists[n.Key.Encode()] = true
+		if !inGroups(n, curgrps) {
+			newEntities = append(newEntities, n)
+		}
+	}
+	for _, cg := range curgrps {
+		if !exists[cg.Key.Encode()] {
+			deleteKeys = append(deleteKeys, cg.Key)
+		}
+	}
+	return newEntities, deleteKeys
+}
+
+// inWhitelists returns true if exact matching a is in wls.
+func inWhitelists(a AuthIPWhitelist, wls []AuthIPWhitelist) bool {
+	for _, wl := range wls {
+		if reflect.DeepEqual(a, wl) {
+			return true
+		}
+	}
+	return false
+}
+
+// whitelistsDiff is used to get difference of two []AuthWhitelist.
+// newEntities contains the new data or updated data.
+// deleteKeys represents the keys to delete.
+func whitelistsDiff(curwls, newwls []AuthIPWhitelist) (newEntities []entity, deleteKeys []*datastore.Key) {
+	exists := make(map[string]bool)
+	for _, n := range newwls {
+		exists[n.Key.Encode()] = true
+		if !inWhitelists(n, curwls) {
+			newEntities = append(newEntities, n)
+		}
+	}
+	for _, cw := range curwls {
+		if !exists[cw.Key.Encode()] {
+			deleteKeys = append(deleteKeys, cw.Key)
+		}
+	}
+	return newEntities, deleteKeys
+}
+
+// ReplaceAuthDB updates database with given AuthDBSnapshot if it is new.
+// The first return value indicates database was updated,
+// and the second one has the latest AuthReplicationState.
+func ReplaceAuthDB(c context.Context, newData AuthDBSnapshot) (bool, *AuthReplicationState, error) {
+	var stat *AuthReplicationState
+	updated := false
+
+	err := datastore.RunInTransaction(c, func(c context.Context) error {
+		curstat := &AuthReplicationState{}
+		if err := GetReplicationState(c, curstat); err != nil {
+			return err
+		}
+		// database is already up-to-date.
+		if curstat.AuthDBRev >= newData.ReplicationState.AuthDBRev {
+			stat = curstat
+			return nil
+		}
+
+		dbsnap := &AuthDBSnapshot{}
+		if err := currentAuthDBSnapshot(c, dbsnap); err != nil {
+			return err
+		}
+
+		var newEntities []entity
+		var delKeys []*datastore.Key
+		// Going to update database.
+		if !reflect.DeepEqual(newData.GlobalConfig, dbsnap.GlobalConfig) {
+			newEntities = append(newEntities, newData.GlobalConfig)
+		}
+
+		newGrps, delGrKeys := groupsDiff(dbsnap.Groups, newData.Groups)
+		newEntities = append(newEntities, newGrps...)
+		delKeys = append(delKeys, delGrKeys...)
+
+		newWls, delWlKeys := whitelistsDiff(dbsnap.IPWhitelists, newData.IPWhitelists)
+		newEntities = append(newEntities, newWls...)
+		delKeys = append(delKeys, delWlKeys...)
+
+		if !reflect.DeepEqual(newData.IPWhitelistAssignments, dbsnap.IPWhitelistAssignments) {
+			newEntities = append(newEntities, newData.IPWhitelistAssignments)
+		}
+
+		curstat.AuthDBRev = newData.ReplicationState.AuthDBRev
+		curstat.ModifiedTimestamp = newData.ReplicationState.ModifiedTimestamp
+
+		var wg sync.WaitGroup
+		ch := make(chan error, 3)
+		wg.Add(3)
+		go func() {
+			defer wg.Done()
+			if _, err := datastore.Put(c, ReplicationStateKey(c), curstat); err != nil {
+				ch <- err
+			}
+		}()
+		go func() {
+			defer wg.Done()
+			keys := make([]*datastore.Key, 0, len(newEntities))
+			for _, n := range newEntities {
+				keys = append(keys, n.key())
+			}
+			if _, err := datastore.PutMulti(c, keys, newEntities); err != nil {
+				ch <- err
+			}
+		}()
+		go func() {
+			defer wg.Done()
+			if err := datastore.DeleteMulti(c, delKeys); err != nil {
+				ch <- err
+			}
+		}()
+		go func() {
+			wg.Wait()
+			close(ch)
+		}()
+
+		for err := range ch {
+			if err != nil {
+				return err
+			}
+		}
+		stat = curstat
+		updated = true
+		return nil
+	}, &datastore.TransactionOptions{
+		XG: true,
+	})
+	if err != nil {
+		return false, nil, err
+	}
+	return updated, stat, nil
 }
 
 // TODO(yyanagisawa): write unittest.
