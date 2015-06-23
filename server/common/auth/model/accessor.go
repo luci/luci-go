@@ -5,6 +5,7 @@
 package model
 
 import (
+	"fmt"
 	"reflect"
 	"sort"
 	"sync"
@@ -280,6 +281,20 @@ func ReplaceAuthDB(c context.Context, newData AuthDBSnapshot) (bool, *AuthReplic
 		return false, nil, err
 	}
 	return updated, stat, nil
+}
+
+// BecomeReplica make the database become the replica.
+func BecomeReplica(c context.Context, rs AuthReplicationState) error {
+	if rs.AuthDBRev != 0 {
+		return fmt.Errorf("should not have AuthDBRev")
+	}
+	if len(rs.PrimaryID) == 0 || len(rs.PrimaryURL) == 0 {
+		return fmt.Errorf("wrong primary ID (%v) or primary url (%v)", rs.PrimaryID, rs.PrimaryURL)
+	}
+	return datastore.RunInTransaction(c, func(c context.Context) error {
+		_, err := datastore.Put(c, ReplicationStateKey(c), &rs)
+		return err
+	}, nil)
 }
 
 // TODO(yyanagisawa): write unittest.

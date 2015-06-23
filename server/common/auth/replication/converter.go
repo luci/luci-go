@@ -86,3 +86,11 @@ func protoToAuthDBSnapshot(c context.Context, rev *AuthDBRevision, adb *AuthDB) 
 
 	return snap
 }
+
+// ticketToReplicationState converts ServiceLinkTicket to AuthReplicationState.
+func ticketToReplicationState(ticket ServiceLinkTicket) model.AuthReplicationState {
+	return model.AuthReplicationState{
+		PrimaryID:  ticket.GetPrimaryId(),
+		PrimaryURL: ticket.GetPrimaryUrl(),
+	}
+}

@@ -8,9 +8,13 @@ package replication
 
 import (
 	"encoding/base64"
+	"fmt"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/server/common/auth/model"
 )
 
 // DecodeLinkTicket decodes Base64 encoded service link ticket.
@@ -29,4 +33,16 @@ func DecodeLinkTicket(t string) (*ServiceLinkTicket, error) {
 		return nil, err
 	}
 	return ticket, nil
+}
+
+// BecomeReplica make myself replica.
+// Id and URL of primary should be given through ServiceLinkTicket.
+func BecomeReplica(c context.Context, ticket *ServiceLinkTicket, initiatedBy string) error {
+	if ticket == nil {
+		return fmt.Errorf("ticket should not be nil")
+	}
+	if err := linkToPrimary(c, *ticket, initiatedBy); err != nil {
+		return err
+	}
+	return model.BecomeReplica(c, ticketToReplicationState(*ticket))
 }
