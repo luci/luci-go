@@ -144,7 +144,7 @@ func groupsDiff(curgrps, newgrps []AuthGroup) (newEntities []entity, deleteKeys 
 	for _, n := range newgrps {
 		exists[n.Key.Encode()] = true
 		if !inGroups(n, curgrps) {
-			newEntities = append(newEntities, n)
+			newEntities = append(newEntities, &n)
 		}
 	}
 	for _, cg := range curgrps {
@@ -173,7 +173,7 @@ func whitelistsDiff(curwls, newwls []AuthIPWhitelist) (newEntities []entity, del
 	for _, n := range newwls {
 		exists[n.Key.Encode()] = true
 		if !inWhitelists(n, curwls) {
-			newEntities = append(newEntities, n)
+			newEntities = append(newEntities, &n)
 		}
 	}
 	for _, cw := range curwls {
@@ -211,7 +211,7 @@ func ReplaceAuthDB(c context.Context, newData AuthDBSnapshot) (bool, *AuthReplic
 		var delKeys []*datastore.Key
 		// Going to update database.
 		if !reflect.DeepEqual(newData.GlobalConfig, dbsnap.GlobalConfig) {
-			newEntities = append(newEntities, newData.GlobalConfig)
+			newEntities = append(newEntities, &newData.GlobalConfig)
 		}
 
 		newGrps, delGrKeys := groupsDiff(dbsnap.Groups, newData.Groups)
@@ -223,7 +223,7 @@ func ReplaceAuthDB(c context.Context, newData AuthDBSnapshot) (bool, *AuthReplic
 		delKeys = append(delKeys, delWlKeys...)
 
 		if !reflect.DeepEqual(newData.IPWhitelistAssignments, dbsnap.IPWhitelistAssignments) {
-			newEntities = append(newEntities, newData.IPWhitelistAssignments)
+			newEntities = append(newEntities, &newData.IPWhitelistAssignments)
 		}
 
 		curstat.AuthDBRev = newData.ReplicationState.AuthDBRev
@@ -236,7 +236,9 @@ func ReplaceAuthDB(c context.Context, newData AuthDBSnapshot) (bool, *AuthReplic
 			defer wg.Done()
 			if _, err := datastore.Put(c, ReplicationStateKey(c), curstat); err != nil {
 				ch <- err
+				return
 			}
+			ch <- nil
 		}()
 		go func() {
 			defer wg.Done()
@@ -246,13 +248,17 @@ func ReplaceAuthDB(c context.Context, newData AuthDBSnapshot) (bool, *AuthReplic
 			}
 			if _, err := datastore.PutMulti(c, keys, newEntities); err != nil {
 				ch <- err
+				return
 			}
+			ch <- nil
 		}()
 		go func() {
 			defer wg.Done()
 			if err := datastore.DeleteMulti(c, delKeys); err != nil {
 				ch <- err
+				return
 			}
+			ch <- nil
 		}()
 		go func() {
 			wg.Wait()
