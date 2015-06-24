@@ -197,6 +197,9 @@ func ReplaceAuthDB(c context.Context, newData AuthDBSnapshot) (bool, *AuthReplic
 		if err := GetReplicationState(c, curstat); err != nil {
 			return err
 		}
+		if newData.ReplicationState.PrimaryID != curstat.PrimaryID {
+			return fmt.Errorf("primary id mismatch. incoming=%q; want=%q", newData.ReplicationState.PrimaryID, curstat.PrimaryID)
+		}
 		// database is already up-to-date.
 		if curstat.AuthDBRev >= newData.ReplicationState.AuthDBRev {
 			stat = curstat

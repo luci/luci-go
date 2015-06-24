@@ -46,3 +46,15 @@ func BecomeReplica(c context.Context, ticket *ServiceLinkTicket, initiatedBy str
 	}
 	return model.BecomeReplica(c, ticketToReplicationState(*ticket))
 }
+
+// PushAuthDB pushes incoming AuthDB proto to datastore if it is new.
+// The first return value indicates database was updated,
+// and the second one has the latest AuthDBRevision.
+func PushAuthDB(c context.Context, revision *AuthDBRevision, adb *AuthDB) (bool, *AuthDBRevision, error) {
+	snap := protoToAuthDBSnapshot(c, revision, adb)
+	applied, rs, err := model.ReplaceAuthDB(c, snap)
+	if err != nil {
+		return false, nil, err
+	}
+	return applied, toAuthDBRevision(rs), nil
+}

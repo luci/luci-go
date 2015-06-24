@@ -7,6 +7,7 @@ package replication
 import (
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/server/common/auth/model"
@@ -92,5 +93,14 @@ func ticketToReplicationState(ticket ServiceLinkTicket) model.AuthReplicationSta
 	return model.AuthReplicationState{
 		PrimaryID:  ticket.GetPrimaryId(),
 		PrimaryURL: ticket.GetPrimaryUrl(),
+	}
+}
+
+// toAuthDBRevision converts AuthReplicationState to AuthDBRevision proto.
+func toAuthDBRevision(rs *model.AuthReplicationState) *AuthDBRevision {
+	return &AuthDBRevision{
+		PrimaryId:  proto.String(rs.PrimaryID),
+		AuthDbRev:  proto.Int64(rs.AuthDBRev),
+		ModifiedTs: proto.Int64(timeToTimestamp(rs.ModifiedTimestamp)),
 	}
 }
