@@ -32,27 +32,27 @@ func protoToAuthDBSnapshot(c context.Context, rev *AuthDBRevision, adb *AuthDB) 
 	asmts := adb.GetIpWhitelistAssignments()
 
 	snap := model.AuthDBSnapshot{
-		ReplicationState: model.AuthReplicationState{
+		ReplicationState: &model.AuthReplicationState{
 			PrimaryID:         rev.GetPrimaryId(),
 			AuthDBRev:         rev.GetAuthDbRev(),
 			ModifiedTimestamp: timestampToTime(rev.GetModifiedTs()),
 		},
-		GlobalConfig: model.AuthGlobalConfig{
+		GlobalConfig: &model.AuthGlobalConfig{
 			Key:                      model.RootKey(c),
 			OAuthClientID:            adb.GetOauthClientId(),
 			OAuthClientSecret:        adb.GetOauthClientSecret(),
 			OAuthAdditionalClientIDs: adb.GetOauthAdditionalClientIds(),
 		},
-		Groups:       make([]model.AuthGroup, 0, len(grps)),
-		IPWhitelists: make([]model.AuthIPWhitelist, 0, len(ipwls)),
-		IPWhitelistAssignments: model.AuthIPWhitelistAssignments{
+		Groups:       make([]*model.AuthGroup, 0, len(grps)),
+		IPWhitelists: make([]*model.AuthIPWhitelist, 0, len(ipwls)),
+		IPWhitelistAssignments: &model.AuthIPWhitelistAssignments{
 			Key:         model.IPWhitelistAssignmentsKey(c),
 			Assignments: make([]model.Assignment, 0, len(asmts)),
 		},
 	}
 
 	for _, g := range grps {
-		snap.Groups = append(snap.Groups, model.AuthGroup{
+		snap.Groups = append(snap.Groups, &model.AuthGroup{
 			Key:               model.GroupKey(c, g.GetName()),
 			Members:           g.GetMembers(),
 			Globs:             g.GetGlobs(),
@@ -65,7 +65,7 @@ func protoToAuthDBSnapshot(c context.Context, rev *AuthDBRevision, adb *AuthDB) 
 		})
 	}
 	for _, wl := range ipwls {
-		snap.IPWhitelists = append(snap.IPWhitelists, model.AuthIPWhitelist{
+		snap.IPWhitelists = append(snap.IPWhitelists, &model.AuthIPWhitelist{
 			Key:               model.IPWhitelistKey(c, wl.GetName()),
 			Subnets:           wl.GetSubnets(),
 			Description:       wl.GetDescription(),

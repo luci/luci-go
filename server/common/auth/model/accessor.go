@@ -22,19 +22,19 @@ func GetReplicationState(c context.Context, a *AuthReplicationState) error {
 // AuthDBSnapshot represents a snapshot of AuthDB.
 type AuthDBSnapshot struct {
 	// ReplicationState represents AuthReplicationState of this snapshot.
-	ReplicationState AuthReplicationState
+	ReplicationState *AuthReplicationState
 	// GlobalConfig represents AuthGlobalConfig of this snapshot.
-	GlobalConfig AuthGlobalConfig
+	GlobalConfig *AuthGlobalConfig
 	// Groups represents list of AuthGroup.
-	Groups []AuthGroup
+	Groups []*AuthGroup
 	// IPWhitelists represents list of AuthIPWhitelist.
-	IPWhitelists []AuthIPWhitelist
+	IPWhitelists []*AuthIPWhitelist
 	// IPWhitelistsAssignments represents AuthIPWhitelistAssignments.
-	IPWhitelistAssignments AuthIPWhitelistAssignments
+	IPWhitelistAssignments *AuthIPWhitelistAssignments
 }
 
 // byWhitelistKeyID is used for sorting IPWhitelists by entity key's IntID().
-type byWhitelistKeyID []AuthIPWhitelist
+type byWhitelistKeyID []*AuthIPWhitelist
 
 func (b byWhitelistKeyID) Len() int      { return len(b) }
 func (b byWhitelistKeyID) Swap(i, j int) { b[i], b[j] = b[j], b[i] }
@@ -51,11 +51,13 @@ func currentAuthDBSnapshot(c context.Context, snap *AuthDBSnapshot) error {
 	wg.Add(4)
 	go func() {
 		defer wg.Done()
-		errCh <- GetReplicationState(c, &snap.ReplicationState)
+		snap.ReplicationState = &AuthReplicationState{}
+		errCh <- GetReplicationState(c, snap.ReplicationState)
 	}()
 	go func() {
 		defer wg.Done()
-		errCh <- datastore.Get(c, RootKey(c), &snap.GlobalConfig)
+		snap.GlobalConfig = &AuthGlobalConfig{}
+		errCh <- datastore.Get(c, RootKey(c), snap.GlobalConfig)
 	}()
 	go func() {
 		defer wg.Done()
@@ -66,7 +68,8 @@ func currentAuthDBSnapshot(c context.Context, snap *AuthDBSnapshot) error {
 	go func() {
 		defer wg.Done()
 		key := IPWhitelistAssignmentsKey(c)
-		err := datastore.Get(c, key, &snap.IPWhitelistAssignments)
+		snap.IPWhitelistAssignments = &AuthIPWhitelistAssignments{}
+		err := datastore.Get(c, key, snap.IPWhitelistAssignments)
 		if err != nil {
 			if err != datastore.ErrNoSuchEntity {
 				errCh <- err
@@ -103,7 +106,7 @@ func currentAuthDBSnapshot(c context.Context, snap *AuthDBSnapshot) error {
 				errCh <- r.err
 				return
 			}
-			snap.IPWhitelists = append(snap.IPWhitelists, r.authIPwl)
+			snap.IPWhitelists = append(snap.IPWhitelists, &r.authIPwl)
 			sort.Sort(byWhitelistKeyID(snap.IPWhitelists))
 		}
 		errCh <- nil
@@ -128,7 +131,7 @@ type entity interface {
 }
 
 // inGroups returns true if exact matching g is in groups.
-func inGroups(g AuthGroup, groups []AuthGroup) bool {
+func inGroups(g *AuthGroup, groups []*AuthGroup) bool {
 	for _, gitr := range groups {
 		if reflect.DeepEqual(g, gitr) {
 			return true
@@ -140,12 +143,12 @@ func inGroups(g AuthGroup, groups []AuthGroup) bool {
 // groupsDiff is used to get difference of two []AuthGroup.
 // newEntities contains the new data or updated data.
 // deleteKeys represents the keys to delete.
-func groupsDiff(curgrps, newgrps []AuthGroup) (newEntities []entity, deleteKeys []*datastore.Key) {
+func groupsDiff(curgrps, newgrps []*AuthGroup) (newEntities []entity, deleteKeys []*datastore.Key) {
 	exists := make(map[string]bool)
 	for _, n := range newgrps {
 		exists[n.Key.Encode()] = true
 		if !inGroups(n, curgrps) {
-			newEntities = append(newEntities, &n)
+			newEntities = append(newEntities, n)
 		}
 	}
 	for _, cg := range curgrps {
@@ -157,7 +160,7 @@ func groupsDiff(curgrps, newgrps []AuthGroup) (newEntities []entity, deleteKeys 
 }
 
 // inWhitelists returns true if exact matching a is in wls.
-func inWhitelists(a AuthIPWhitelist, wls []AuthIPWhitelist) bool {
+func inWhitelists(a *AuthIPWhitelist, wls []*AuthIPWhitelist) bool {
 	for _, wl := range wls {
 		if reflect.DeepEqual(a, wl) {
 			return true
@@ -169,12 +172,12 @@ func inWhitelists(a AuthIPWhitelist, wls []AuthIPWhitelist) bool {
 // whitelistsDiff is used to get difference of two []AuthWhitelist.
 // newEntities contains the new data or updated data.
 // deleteKeys represents the keys to delete.
-func whitelistsDiff(curwls, newwls []AuthIPWhitelist) (newEntities []entity, deleteKeys []*datastore.Key) {
+func whitelistsDiff(curwls, newwls []*AuthIPWhitelist) (newEntities []entity, deleteKeys []*datastore.Key) {
 	exists := make(map[string]bool)
 	for _, n := range newwls {
 		exists[n.Key.Encode()] = true
 		if !inWhitelists(n, curwls) {
-			newEntities = append(newEntities, &n)
+			newEntities = append(newEntities, n)
 		}
 	}
 	for _, cw := range curwls {
@@ -215,7 +218,7 @@ func ReplaceAuthDB(c context.Context, newData AuthDBSnapshot) (bool, *AuthReplic
 		var delKeys []*datastore.Key
 		// Going to update database.
 		if !reflect.DeepEqual(newData.GlobalConfig, dbsnap.GlobalConfig) {
-			newEntities = append(newEntities, &newData.GlobalConfig)
+			newEntities = append(newEntities, newData.GlobalConfig)
 		}
 
 		newGrps, delGrKeys := groupsDiff(dbsnap.Groups, newData.Groups)
@@ -227,7 +230,7 @@ func ReplaceAuthDB(c context.Context, newData AuthDBSnapshot) (bool, *AuthReplic
 		delKeys = append(delKeys, delWlKeys...)
 
 		if !reflect.DeepEqual(newData.IPWhitelistAssignments, dbsnap.IPWhitelistAssignments) {
-			newEntities = append(newEntities, &newData.IPWhitelistAssignments)
+			newEntities = append(newEntities, newData.IPWhitelistAssignments)
 		}
 
 		curstat.AuthDBRev = newData.ReplicationState.AuthDBRev
