@@ -271,12 +271,18 @@ func archive(arch archiver.Archiver, opts *ArchiveOptions, displayName string) (
 		f.Digest = future.Digest()
 		i.Files[future.DisplayName()] = f
 	}
+	// Avoid duplicated entries in includes.
+	// TODO(tandrii): add test to reproduce the problem.
+	includesSet := map[isolated.HexDigest]bool{}
 	for _, future := range dirFutures {
 		future.WaitForHashed()
 		if err = future.Error(); err != nil {
 			return nil, err
 		}
-		i.Includes = append(i.Includes, future.Digest())
+		includesSet[future.Digest()] = true
+	}
+	for digest := range includesSet {
+		i.Includes = append(i.Includes, digest)
 	}
 
 	raw := &bytes.Buffer{}
