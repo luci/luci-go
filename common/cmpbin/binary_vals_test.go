@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package funnybase
+package cmpbin
 
 // don't be hatin'
 const (
-	b00000000 = iota
+	b00000000 byte = iota
 	b00000001
 	b00000010
 	b00000011
