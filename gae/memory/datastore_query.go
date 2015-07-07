@@ -15,7 +15,7 @@ import (
 	pb "appengine_internal/datastore"
 
 	"github.com/luci/gkvlite"
-	"github.com/luci/luci-go/common/funnybase"
+	"github.com/luci/luci-go/common/cmpbin"
 
 	"infra/gae/libs/wrapper"
 )
@@ -89,7 +89,7 @@ func (i *qIndex) WriteBinary(buf *bytes.Buffer) {
 	} else {
 		buf.WriteByte(1)
 	}
-	funnybase.WriteUint(buf, uint64(len(i.sortby)))
+	cmpbin.WriteUint(buf, uint64(len(i.sortby)))
 	for _, sb := range i.sortby {
 		sb.WriteBinary(buf)
 	}
@@ -134,7 +134,7 @@ func (i *qIndex) ReadBinary(buf *bytes.Buffer) error {
 	}
 	i.ancestor = anc == 1
 
-	numSorts, err := funnybase.ReadUint(buf)
+	numSorts, _, err := cmpbin.ReadUint(buf)
 	if err != nil {
 		return err
 	}

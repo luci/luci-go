@@ -12,7 +12,7 @@ import (
 
 	"appengine/datastore"
 
-	"github.com/luci/luci-go/common/funnybase"
+	"github.com/luci/luci-go/common/cmpbin"
 )
 
 type kv struct{ k, v []byte }
@@ -81,9 +81,9 @@ func cat(bytethings ...interface{}) []byte {
 	for _, thing := range bytethings {
 		switch x := thing.(type) {
 		case int, int64:
-			funnybase.Write(buf, reflect.ValueOf(x).Int())
+			cmpbin.WriteInt(buf, reflect.ValueOf(x).Int())
 		case uint, uint64:
-			funnybase.WriteUint(buf, reflect.ValueOf(x).Uint())
+			cmpbin.WriteUint(buf, reflect.ValueOf(x).Uint())
 		case float64:
 			writeFloat64(buf, x)
 		case byte, propValType:

@@ -15,7 +15,7 @@ import (
 	"appengine/datastore"
 
 	"github.com/luci/gkvlite"
-	"github.com/luci/luci-go/common/funnybase"
+	"github.com/luci/luci-go/common/cmpbin"
 )
 
 type typData struct {
@@ -70,7 +70,7 @@ func (td *typData) WriteBinary(buf *bytes.Buffer, nso nsOption) error {
 	case pvNull, pvBoolFalse, pvBoolTrue:
 		return nil
 	case pvInt:
-		funnybase.Write(buf, td.data.(int64))
+		cmpbin.WriteInt(buf, td.data.(int64))
 	case pvFloat:
 		writeFloat64(buf, td.data.(float64))
 	case pvStr:
@@ -110,7 +110,7 @@ func (td *typData) ReadBinary(buf *bytes.Buffer, nso nsOption, ns string) error 
 	case pvBoolFalse:
 		td.data = false
 	case pvInt:
-		td.data, err = funnybase.Read(buf)
+		td.data, _, err = cmpbin.ReadInt(buf)
 	case pvFloat:
 		td.data, err = readFloat64(buf)
 	case pvStr:
@@ -511,7 +511,7 @@ func (pl *propertyList) MarshalBinary() ([]byte, error) {
 	pieces := make([][]byte, 0, len(*pl)*2+1)
 	for _, pv := range cols {
 		// TODO(riannucci): estimate buffer size better.
-		buf := bytes.NewBuffer(make([]byte, 0, funnybase.MaxFunnyBaseLen64+len(pv.name)))
+		buf := bytes.NewBuffer(make([]byte, 0, cmpbin.MaxIntLen64+len(pv.name)))
 		writeString(buf, pv.name)
 		err := pv.WriteBinary(buf)
 		if err != nil {
@@ -609,7 +609,7 @@ const (
 )
 
 func (p *pvals) ReadBinary(buf *bytes.Buffer) error {
-	n, err := funnybase.ReadUint(buf)
+	n, _, err := cmpbin.ReadUint(buf)
 	if err != nil {
 		return err
 	}
@@ -627,7 +627,7 @@ func (p *pvals) ReadBinary(buf *bytes.Buffer) error {
 }
 
 func (p *pvals) WriteBinary(buf *bytes.Buffer) error {
-	funnybase.WriteUint(buf, uint64(len(p.vals)))
+	cmpbin.WriteUint(buf, uint64(len(p.vals)))
 	for _, v := range p.vals {
 		if err := v.WriteBinary(buf, withNS); err != nil {
 			return err

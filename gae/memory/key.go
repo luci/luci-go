@@ -10,7 +10,7 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/funnybase"
+	"github.com/luci/luci-go/common/cmpbin"
 	"github.com/mjibson/goon"
 
 	"appengine"
@@ -114,12 +114,12 @@ func writeKey(buf *bytes.Buffer, nso nsOption, k *datastore.Key) {
 	if nso == withNS {
 		writeString(buf, namespace)
 	}
-	funnybase.WriteUint(buf, uint64(len(toks)))
+	cmpbin.WriteUint(buf, uint64(len(toks)))
 	for _, tok := range toks {
 		writeString(buf, tok.kind)
 		writeString(buf, tok.stringID)
 		if tok.stringID == "" {
-			funnybase.WriteUint(buf, tok.intID)
+			cmpbin.WriteUint(buf, tok.intID)
 		}
 	}
 }
@@ -133,7 +133,7 @@ func readKey(buf *bytes.Buffer, nso nsOption, ns string) (*datastore.Key, error)
 		}
 	}
 
-	numToks, err := funnybase.ReadUint(buf)
+	numToks, _, err := cmpbin.ReadUint(buf)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +151,7 @@ func readKey(buf *bytes.Buffer, nso nsOption, ns string) (*datastore.Key, error)
 			return nil, err
 		}
 		if tok.stringID == "" {
-			if tok.intID, err = funnybase.ReadUint(buf); err != nil {
+			if tok.intID, _, err = cmpbin.ReadUint(buf); err != nil {
 				return nil, err
 			}
 			if tok.intID == 0 {

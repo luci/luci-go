@@ -13,11 +13,11 @@ import (
 
 	"appengine"
 
-	"github.com/luci/luci-go/common/funnybase"
+	"github.com/luci/luci-go/common/cmpbin"
 )
 
 func writeString(buf *bytes.Buffer, s string) {
-	funnybase.WriteUint(buf, uint64(len(s)))
+	cmpbin.WriteUint(buf, uint64(len(s)))
 	buf.WriteString(s)
 }
 
@@ -30,12 +30,12 @@ func readString(buf *bytes.Buffer) (string, error) {
 }
 
 func writeBytes(buf *bytes.Buffer, b []byte) {
-	funnybase.WriteUint(buf, uint64(len(b)))
+	cmpbin.WriteUint(buf, uint64(len(b)))
 	buf.Write(b)
 }
 
 func readBytes(buf *bytes.Buffer) ([]byte, error) {
-	val, err := funnybase.ReadUint(buf)
+	val, _, err := cmpbin.ReadUint(buf)
 	if err != nil {
 		return nil, err
 	}
@@ -73,11 +73,11 @@ func readFloat64(buf *bytes.Buffer) (float64, error) {
 // We truncate this to microseconds and drop the timezone, because that's the
 // way that the appengine SDK does it. Awesome, right? Also: its not documented.
 func writeTime(buf *bytes.Buffer, t time.Time) {
-	funnybase.WriteUint(buf, uint64(t.Unix())*1e6+uint64(t.Nanosecond()/1e3))
+	cmpbin.WriteUint(buf, uint64(t.Unix())*1e6+uint64(t.Nanosecond()/1e3))
 }
 
 func readTime(buf *bytes.Buffer) (time.Time, error) {
-	v, err := funnybase.ReadUint(buf)
+	v, _, err := cmpbin.ReadUint(buf)
 	if err != nil {
 		return time.Time{}, err
 	}
