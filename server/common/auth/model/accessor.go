@@ -303,6 +303,13 @@ func BecomeReplica(c context.Context, rs AuthReplicationState) error {
 	}, nil)
 }
 
+// CurrentAuthDBSnapshot returns current database's AuthDBSnapshot.
+func CurrentAuthDBSnapshot(c context.Context, snap *AuthDBSnapshot) error {
+	return datastore.RunInTransaction(c, func(c context.Context) error {
+		return currentAuthDBSnapshot(c, snap)
+	}, nil)
+}
+
 // TODO(yyanagisawa): write unittest.
 //                    Since there is no test framework for
 //                    google.golang.org/appengine, we need to implement
