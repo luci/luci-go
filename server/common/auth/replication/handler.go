@@ -148,6 +148,15 @@ func (rh PushHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+	if err := ValidateAuthDB(req.GetAuthDb()); err != nil {
+		log.Errorf(c, "invalid AuthDB %v", err)
+		pushResponse(w, &ReplicationPushResponse{
+			Status:          ReplicationPushResponse_FATAL_ERROR.Enum(),
+			ErrorCode:       ReplicationPushResponse_BAD_REQUEST.Enum(),
+			AuthCodeVersion: proto.String(auth.Version),
+		})
+		return
+	}
 
 	applied, rev, err := PushAuthDB(c, req.GetRevision(), req.GetAuthDb())
 	if err != nil {
