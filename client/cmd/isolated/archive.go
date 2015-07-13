@@ -61,7 +61,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	futures := []archiver.Future{}
 	names := []string{}
 	for _, file := range c.files {
-		futures = append(futures, arch.PushFile(file, file))
+		futures = append(futures, arch.PushFile(file, file, 0))
 		names = append(names, file)
 	}
 

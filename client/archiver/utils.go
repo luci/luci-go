@@ -227,7 +227,7 @@ func PushDirectory(a Archiver, root string, relDir string, blacklist []string) F
 				Mode: newInt(int(mode.Perm())),
 				Size: newInt64(item.info.Size()),
 			}
-			futures = append(futures, a.PushFile(item.relPath, item.fullPath))
+			futures = append(futures, a.PushFile(item.relPath, item.fullPath, -item.info.Size()))
 		}
 	}
 	if s.Error() != nil {
@@ -252,7 +252,7 @@ func PushDirectory(a Archiver, root string, relDir string, blacklist []string) F
 		if err == nil {
 			raw := &bytes.Buffer{}
 			if err = json.NewEncoder(raw).Encode(i); err == nil {
-				if f := a.Push(displayName, bytes.NewReader(raw.Bytes())); f != nil {
+				if f := a.Push(displayName, bytes.NewReader(raw.Bytes()), 0); f != nil {
 					f.WaitForHashed()
 					err = f.Error()
 					d = f.Digest()

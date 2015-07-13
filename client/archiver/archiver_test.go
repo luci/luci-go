@@ -45,14 +45,14 @@ func TestArchiverFile(t *testing.T) {
 
 	fEmpty, err := ioutil.TempFile("", "archiver")
 	ut.AssertEqual(t, nil, err)
-	future1 := a.PushFile(fEmpty.Name(), fEmpty.Name())
+	future1 := a.PushFile(fEmpty.Name(), fEmpty.Name(), 0)
 	ut.AssertEqual(t, fEmpty.Name(), future1.DisplayName())
 	fFoo, err := ioutil.TempFile("", "archiver")
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, nil, ioutil.WriteFile(fFoo.Name(), []byte("foo"), 0600))
-	future2 := a.PushFile(fFoo.Name(), fFoo.Name())
+	future2 := a.PushFile(fFoo.Name(), fFoo.Name(), 0)
 	// Push the same file another time. It'll get linked to the first.
-	future3 := a.PushFile(fFoo.Name(), fFoo.Name())
+	future3 := a.PushFile(fFoo.Name(), fFoo.Name(), 0)
 	future1.WaitForHashed()
 	future2.WaitForHashed()
 	future3.WaitForHashed()
@@ -85,7 +85,7 @@ func TestArchiverFileHit(t *testing.T) {
 	defer ts.Close()
 	a := New(isolatedclient.New(ts.URL, "default-gzip"), nil)
 	server.Inject([]byte("foo"))
-	future := a.Push("foo", bytes.NewReader([]byte("foo")))
+	future := a.Push("foo", bytes.NewReader([]byte("foo")), 0)
 	future.WaitForHashed()
 	ut.AssertEqual(t, isolated.HexDigest("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"), future.Digest())
 	ut.AssertEqual(t, nil, a.Close())
@@ -114,12 +114,12 @@ func TestArchiverCancel(t *testing.T) {
 
 	// This will trigger an eventual Cancel().
 	nonexistent := filepath.Join(tmpDir, "nonexistent")
-	future1 := a.PushFile("foo", nonexistent)
+	future1 := a.PushFile("foo", nonexistent, 0)
 	ut.AssertEqual(t, "foo", future1.DisplayName())
 
 	fileName := filepath.Join(tmpDir, "existent")
 	ut.AssertEqual(t, nil, ioutil.WriteFile(fileName, []byte("foo"), 0600))
-	future2 := a.PushFile("existent", fileName)
+	future2 := a.PushFile("existent", fileName, 0)
 	future1.WaitForHashed()
 	future2.WaitForHashed()
 	expected := fmt.Errorf("hash(foo) failed: open %s: no such file or directory\n", nonexistent)
@@ -135,7 +135,7 @@ func TestArchiverPushClosed(t *testing.T) {
 	t.Parallel()
 	a := New(nil, nil)
 	ut.AssertEqual(t, nil, a.Close())
-	ut.AssertEqual(t, nil, a.PushFile("ignored", "ignored"))
+	ut.AssertEqual(t, nil, a.PushFile("ignored", "ignored", 0))
 }
 
 func TestArchiverPushSeeked(t *testing.T) {
@@ -146,7 +146,7 @@ func TestArchiverPushSeeked(t *testing.T) {
 	a := New(isolatedclient.New(ts.URL, "default-gzip"), nil)
 	misplaced := bytes.NewReader([]byte("foo"))
 	_, _ = misplaced.Seek(1, os.SEEK_SET)
-	future := a.Push("works", misplaced)
+	future := a.Push("works", misplaced, 0)
 	future.WaitForHashed()
 	ut.AssertEqual(t, isolated.HexDigest("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"), future.Digest())
 	ut.AssertEqual(t, nil, a.Close())

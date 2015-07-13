@@ -71,8 +71,12 @@ type Future interface {
 // Archiver is an high level interface to an isolatedclient.IsolateServer.
 type Archiver interface {
 	common.Canceler
-	Push(displayName string, src io.ReadSeeker) Future
-	PushFile(displayName, path string) Future
+	// Push schedules item upload to the isolate server.
+	// Smaller priority value means earlier processing.
+	Push(displayName string, src io.ReadSeeker, priority int64) Future
+	// PushFile schedules file upload to the isolate server.
+	// Smaller priority value means earlier processing.
+	PushFile(displayName, path string, priority int64) Future
 	Stats() *Stats
 }
 
@@ -186,6 +190,7 @@ type archiverItem struct {
 	displayName string         // Name to use to qualify this item
 	path        string         // Set when source is a file on disk
 	wgHashed    sync.WaitGroup // Released once .digestItem.Digest is set
+	priority    int64          // Lower values - earlier hashing and uploading.
 	a           *archiver
 
 	// Mutable.
@@ -199,9 +204,9 @@ type archiverItem struct {
 	state *isolatedclient.PushState // Server-side push state for cache miss
 }
 
-func newArchiverItem(a *archiver, displayName, path string, src io.ReadSeeker) *archiverItem {
+func newArchiverItem(a *archiver, displayName, path string, src io.ReadSeeker, priority int64) *archiverItem {
 	tracer.CounterAdd(a, "itemsProcessing", 1)
-	i := &archiverItem{a: a, displayName: displayName, path: path, src: src}
+	i := &archiverItem{a: a, displayName: displayName, path: path, src: src, priority: priority}
 	i.wgHashed.Add(1)
 	return i
 }
@@ -373,8 +378,8 @@ func (a *archiver) Channel() <-chan error {
 	return a.canceler.Channel()
 }
 
-func (a *archiver) Push(displayName string, src io.ReadSeeker) Future {
-	i := newArchiverItem(a, displayName, "", src)
+func (a *archiver) Push(displayName string, src io.ReadSeeker, priority int64) Future {
+	i := newArchiverItem(a, displayName, "", src, priority)
 	if pos, err := i.src.Seek(0, os.SEEK_SET); pos != 0 || err != nil {
 		i.setErr(fmt.Errorf("seek(%s) failed: %s\n", i.DisplayName(), err))
 		i.wgHashed.Done()
@@ -383,8 +388,8 @@ func (a *archiver) Push(displayName string, src io.ReadSeeker) Future {
 	return a.push(i)
 }
 
-func (a *archiver) PushFile(displayName, path string) Future {
-	return a.push(newArchiverItem(a, displayName, path, nil))
+func (a *archiver) PushFile(displayName, path string, priority int64) Future {
+	return a.push(newArchiverItem(a, displayName, path, nil, priority))
 }
 
 func (a *archiver) Stats() *Stats {
@@ -486,7 +491,7 @@ func (a *archiver) stage1DedupeLoop() {
 
 func (a *archiver) stage2HashLoop() {
 	defer close(a.stage3LookupChan)
-	pool := common.NewGoroutinePool(a.maxConcurrentContains, a.canceler)
+	pool := common.NewGoroutinePriorityPool(a.maxConcurrentContains, a.canceler)
 	defer func() {
 		_ = pool.Wait()
 	}()
@@ -497,7 +502,7 @@ func (a *archiver) stage2HashLoop() {
 		// TODO(tandrii): Implement backpressure in GoroutinePool, e.g. when it
 		// exceeds 20k or something similar.
 		item := file
-		pool.Schedule(func() {
+		pool.Schedule(item.priority, func() {
 			// calcDigest calls setErr() and update wgHashed even on failure.
 			end := tracer.Span(a, "hash", tracer.Args{"name": item.DisplayName()})
 			if err := item.calcDigest(); err != nil {
@@ -568,13 +573,13 @@ func (a *archiver) stage3LookupLoop() {
 }
 
 func (a *archiver) stage4UploadLoop() {
-	pool := common.NewGoroutinePool(a.maxConcurrentUpload, a.canceler)
+	pool := common.NewGoroutinePriorityPool(a.maxConcurrentUpload, a.canceler)
 	defer func() {
 		_ = pool.Wait()
 	}()
 	for state := range a.stage4UploadChan {
 		item := state
-		pool.Schedule(func() {
+		pool.Schedule(item.priority, func() {
 			a.doUpload(item)
 		}, nil)
 	}

@@ -257,7 +257,7 @@ func archive(arch archiver.Archiver, opts *ArchiveOptions, displayName string) (
 				i.Files[relPath] = isolated.File{Link: newString(l)}
 			} else {
 				i.Files[relPath] = isolated.File{Mode: newInt(int(mode.Perm())), Size: newInt64(info.Size())}
-				fileFutures = append(fileFutures, arch.PushFile(relPath, dep))
+				fileFutures = append(fileFutures, arch.PushFile(relPath, dep, -info.Size()))
 			}
 		}
 	}
@@ -293,5 +293,5 @@ func archive(arch archiver.Archiver, opts *ArchiveOptions, displayName string) (
 	if err := ioutil.WriteFile(opts.Isolated, raw.Bytes(), 0644); err != nil {
 		return nil, err
 	}
-	return arch.Push(displayName, bytes.NewReader(raw.Bytes())), nil
+	return arch.Push(displayName, bytes.NewReader(raw.Bytes()), 0), nil
 }
