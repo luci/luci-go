@@ -6,6 +6,7 @@ package common
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -13,12 +14,41 @@ import (
 	"github.com/maruel/ut"
 )
 
+func ExampleNewGoroutinePool() {
+	pool := NewGoroutinePool(2, NewCanceler())
+	for _, s := range []string{"knock!", "knock!"} {
+		s := s // Create a new s for closure.
+		pool.Schedule(func() { fmt.Print(s) }, nil)
+	}
+	if pool.Wait() == nil {
+		fmt.Printf("\n")
+	}
+	pool.Cancel(errors.New("pool is no more"))
+	pool.Schedule(func() {}, func() {
+		fmt.Printf("canceled because %s\n", pool.CancelationReason())
+	})
+	err := pool.Wait()
+	fmt.Printf("all jobs either executed or canceled (%s)\n", err)
+	// Output:
+	// knock!knock!
+	// canceled because pool is no more
+	// all jobs either executed or canceled (pool is no more)
+}
+
+type newPoolFunc func(p int) GoroutinePool
+
 func TestGoroutinePool(t *testing.T) {
+	testGoroutinePool(t, func(p int) GoroutinePool {
+		return NewGoroutinePool(p, NewCanceler())
+	})
+}
+
+func testGoroutinePool(t *testing.T, newPool newPoolFunc) {
 	t.Parallel()
 
 	const MAX = 10
 	const J = 200
-	pool := NewGoroutinePool(MAX, NewCanceler())
+	pool := newPool(MAX)
 	logs := make(chan int)
 	for i := 1; i <= J; i++ {
 		i := i
@@ -52,12 +82,18 @@ func TestGoroutinePool(t *testing.T) {
 }
 
 func TestGoroutinePoolCancel(t *testing.T) {
+	testGoroutinePoolCancel(t, func(p int) GoroutinePool {
+		return NewGoroutinePool(p, NewCanceler())
+	})
+}
+
+func testGoroutinePoolCancel(t *testing.T, newPool newPoolFunc) {
 	t.Parallel()
 
 	cancelError := errors.New("cancelError")
 	const MAX = 10
 	const J = 11 * MAX
-	pool := NewGoroutinePool(MAX, NewCanceler())
+	pool := newPool(MAX)
 	logs := make(chan int, 2*J) // Avoid job blocking when writing to log.
 	for i := 1; i <= J; i++ {
 		i := i
@@ -113,12 +149,18 @@ func TestGoroutinePoolCancel(t *testing.T) {
 	ut.AssertEqual(t, 2*J, finishedPre+finishedAfter+canceled)
 	ut.AssertEqualf(t, true, finishedAfter < MAX,
 		"%d (>=%d MAX) jobs started after cancellation.", finishedAfter, MAX)
-	ut.AssertEqualf(t, true, canceled > J, "%d > %d", canceled, J)
+	ut.AssertEqualf(t, true, canceled >= J, "%d > %d", canceled, J)
 	ut.AssertEqual(t, cancelError, wait1)
 	ut.AssertEqual(t, cancelError, wait2)
 }
 
 func TestGoroutinePoolCancelFuncCalled(t *testing.T) {
+	testGoroutinePoolCancelFuncCalled(t, func(p int) GoroutinePool {
+		return NewGoroutinePool(p, NewCanceler())
+	})
+}
+
+func testGoroutinePoolCancelFuncCalled(t *testing.T, newPool newPoolFunc) {
 	t.Parallel()
 
 	cancelError := errors.New("cancelError")
@@ -127,11 +169,11 @@ func TestGoroutinePoolCancelFuncCalled(t *testing.T) {
 	pipe := make(chan string, 2)
 	logs := make(chan string, 3)
 	slow := func() {
-		// Get 1 item to make sure GoroutinePool can't schedule new job.
+		// Get 2 item to make sure GoroutinePool can't schedule new job.
 		item := <-pipe
 		logs <- item
 	}
-	pool := NewGoroutinePool(1, NewCanceler())
+	pool := newPool(1)
 	pool.Schedule(slow, slow)
 	// This job would have to wait for slow to finish,
 	// but slow is waiting for channel to have something.
@@ -153,6 +195,72 @@ func TestGoroutinePoolCancelFuncCalled(t *testing.T) {
 		}
 	}
 	t.Fatalf("onCancel wasn't called.")
+}
+
+// Purpose: re-use GoroutinePool tests for GoroutinePriorityPool.
+type goroutinePriorityPoolforTest struct {
+	GoroutinePriorityPool
+}
+
+func (c *goroutinePriorityPoolforTest) Schedule(job func(), onCanceled func()) {
+	c.GoroutinePriorityPool.Schedule(0, job, onCanceled)
+}
+
+func TestGoroutinePriorityPool(t *testing.T) {
+	testGoroutinePool(t, func(p int) GoroutinePool {
+		return &goroutinePriorityPoolforTest{NewGoroutinePriorityPool(p, NewCanceler())}
+	})
+}
+
+func TestGoroutinePriorityPoolCancel(t *testing.T) {
+	testGoroutinePoolCancel(t, func(p int) GoroutinePool {
+		return &goroutinePriorityPoolforTest{NewGoroutinePriorityPool(p, NewCanceler())}
+	})
+}
+
+func TestGoroutinePriorityPoolCancelFuncCalled(t *testing.T) {
+	testGoroutinePoolCancelFuncCalled(t, func(p int) GoroutinePool {
+		return &goroutinePriorityPoolforTest{NewGoroutinePriorityPool(p, NewCanceler())}
+	})
+}
+
+func TestGoroutinePriorityPoolWithPriority(t *testing.T) {
+	t.Parallel()
+
+	const MAX_PRIORITIES = 15
+	pool := NewGoroutinePriorityPool(1, NewCanceler())
+	logs := make(chan int)
+	wg := sync.WaitGroup{}
+	for i := 0; i < MAX_PRIORITIES; i++ {
+		wg.Add(1)
+		i := i
+		go func() {
+			pool.Schedule(int64(i), func() { logs <- i }, nil)
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+	var fail error
+	go func() {
+		defer close(logs)
+		fail = pool.Wait()
+		ut.ExpectEqual(t, nil, fail)
+	}()
+	doneJobs := make([]bool, MAX_PRIORITIES)
+	// First job can be any, the rest must be in order.
+	prio := <-logs
+	doneJobs[prio] = true
+	for prio := range logs {
+		ut.AssertEqual(t, false, doneJobs[prio])
+		doneJobs[prio] = true
+		// All higher priority jobs must be finished.
+		for p := 0; p < prio; p++ {
+			ut.AssertEqual(t, true, doneJobs[prio])
+		}
+	}
+	for p, d := range doneJobs {
+		ut.AssertEqualIndex(t, p, true, d)
+	}
 }
 
 func assertClosed(t *testing.T, c *canceler) {

@@ -138,21 +138,6 @@ type GoroutinePool interface {
 }
 
 // NewGoroutinePool creates a new GoroutinePool with at most maxConcurrentJobs.
-//
-// If canceler is not provided, creates a new one.
-// GoroutinePool will not start new jobs if cancelled.
-//
-// Example usage:
-//	limiter := NewGoroutinePool(5, nil)
-//	for i := range jobs {
-//		i := i // Create a new i for closure.
-//		limiter.add(func(){work(i)})
-//	}
-//	if err := limiter.Wait(); err != nil {
-//		// Some jobs weren't executed, due to interrupt.
-//	} else {
-//		// All jobs done.
-//	}
 func NewGoroutinePool(maxConcurrentJobs int, canceler Canceler) GoroutinePool {
 	if canceler == nil {
 		return nil
@@ -190,6 +175,119 @@ func (c *goroutinePool) Schedule(job func(), onCanceled func()) {
 			onCanceled()
 		}
 	}()
+}
+
+// GoroutinePriorityPool executes at a limited number of jobs concurrently,
+// queueing others.
+//
+// GoroutinePriorityPool implements Canceler allowing canceling all not yet
+// started jobs.
+type GoroutinePriorityPool interface {
+	Canceler
+
+	// Wait blocks until all started jobs finish.
+	//
+	// Returns nil if all jobs have been executed, or reason for cancelation of
+	// some jobs. This call is not itself cancelable, meaning that it'll block
+	// until all worker goroutines are finished.
+	Wait() error
+	// Schedule adds a new job for execution as a separate goroutine.
+	//
+	// If the GoroutinePriorityPool is canceled, onCanceled is called instead. It
+	// is fine to pass nil as onCanceled. Smaller values of priority imply earlier
+	// execution.
+	Schedule(priority int64, job func(), onCanceled func())
+}
+
+// NewGoroutinePriorityPool creates a new goroutine pool with at most
+// maxConcurrentJobs and schedules jobs according to priority.
+func NewGoroutinePriorityPool(maxConcurrentJobs int, canceler Canceler) GoroutinePriorityPool {
+	if canceler == nil {
+		return nil
+	}
+	pool := &goroutinePriorityPool{
+		Canceler: canceler,
+		sema:     newSemaphore(maxConcurrentJobs),
+		tasks:    priorityQueue{},
+	}
+	return pool
+}
+
+type goroutinePriorityPool struct {
+	Canceler
+	sema  semaphore
+	wg    sync.WaitGroup
+	lock  sync.Mutex
+	tasks priorityQueue
+}
+
+func (c *goroutinePriorityPool) Wait() error {
+	c.wg.Wait()
+	return c.CancelationReason()
+}
+
+func (c *goroutinePriorityPool) Schedule(priority int64, job func(), onCanceled func()) {
+	c.wg.Add(1)
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	c.tasks.Push(&task{priority, job, onCanceled})
+	go c.executeOne()
+}
+
+func (c *goroutinePriorityPool) executeOne() {
+	defer c.wg.Done()
+	if c.sema.wait(c.Canceler) == nil {
+		defer c.sema.signal()
+		task := c.popTask()
+		// Do not start a new job if canceled.
+		if c.CancelationReason() == nil {
+			task.job()
+		} else if task.onCanceled != nil {
+			task.onCanceled()
+		}
+	} else if task := c.popTask(); task.onCanceled != nil {
+		task.onCanceled()
+	}
+}
+
+func (c *goroutinePriorityPool) popTask() *task {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	return c.tasks.Pop().(*task)
+}
+
+type task struct {
+	priority   int64
+	job        func()
+	onCanceled func()
+}
+
+// A priorityQueue implements heap.Interface and holds tasks.
+type priorityQueue []*task
+
+func (pq priorityQueue) Len() int { return len(pq) }
+
+func (pq priorityQueue) Less(i, j int) bool {
+	return pq[i].priority < pq[j].priority
+}
+
+func (pq priorityQueue) Swap(i, j int) {
+	pq[i], pq[j] = pq[j], pq[i]
+}
+
+func (pq *priorityQueue) Push(x interface{}) {
+	item := x.(*task)
+	*pq = append(*pq, item)
+}
+
+func (pq *priorityQueue) Pop() interface{} {
+	old := *pq
+	n := len(old)
+	item := old[n-1]
+	// This will leak up to the largest extent the pool ever grew to, until the
+	// pool itself is cleared up.
+	*pq = old[0 : n-1]
+	return item
 }
 
 // canceler implements Canceler interface.
