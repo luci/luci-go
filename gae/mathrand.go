@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package wrapper
+package gae
 
 import (
+	"golang.org/x/net/context"
 	"math/rand"
 
-	"golang.org/x/net/context"
-	"infra/libs/clock"
+	"github.com/luci/luci-go/common/clock"
 )
 
 // MathRandFactory is the function signature for factory methods compatible with

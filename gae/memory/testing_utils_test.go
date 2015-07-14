@@ -7,10 +7,10 @@ package memory
 import (
 	"bytes"
 	"fmt"
-	"reflect"
 	"time"
 
-	"appengine/datastore"
+	"infra/gae/libs/gae"
+	"infra/gae/libs/gae/helper"
 
 	"github.com/luci/luci-go/common/cmpbin"
 )
@@ -35,42 +35,29 @@ func indx(kind string, orders ...string) *qIndex {
 	return ret
 }
 
-func pl(props ...datastore.Property) *propertyList {
-	return (*propertyList)(&props)
-}
-
-func prop(name string, val interface{}, noIndex ...bool) (ret datastore.Property) {
-	ret.Name = name
-	ret.Value = val
+func prop(val interface{}, noIndex ...bool) (ret gae.DSProperty) {
+	ni := false
 	if len(noIndex) > 0 {
-		ret.NoIndex = noIndex[0]
+		ni = noIndex[0]
+	}
+	if err := ret.SetValue(val, ni); err != nil {
+		panic(err)
 	}
 	return
 }
 
-func key(kind string, id interface{}, parent ...*datastore.Key) *datastore.Key {
-	stringID := ""
-	intID := int64(0)
+func key(kind string, id interface{}, parent ...gae.DSKey) gae.DSKey {
+	p := gae.DSKey(nil)
+	if len(parent) > 0 {
+		p = parent[0]
+	}
 	switch x := id.(type) {
 	case string:
-		stringID = x
+		return helper.NewDSKey(globalAppID, "ns", kind, x, 0, p)
 	case int:
-		intID = int64(x)
+		return helper.NewDSKey(globalAppID, "ns", kind, "", int64(x), p)
 	default:
 		panic(fmt.Errorf("what the %T: %v", id, id))
-	}
-	par := (*datastore.Key)(nil)
-	if len(parent) > 0 {
-		par = parent[0]
-	}
-	return newKey("ns", kind, stringID, intID, par)
-}
-
-func mustLoadLocation(loc string) *time.Location {
-	if z, err := time.LoadLocation(loc); err != nil {
-		panic(err)
-	} else {
-		return z
 	}
 }
 
@@ -80,22 +67,28 @@ func cat(bytethings ...interface{}) []byte {
 	buf := &bytes.Buffer{}
 	for _, thing := range bytethings {
 		switch x := thing.(type) {
-		case int, int64:
-			cmpbin.WriteInt(buf, reflect.ValueOf(x).Int())
-		case uint, uint64:
-			cmpbin.WriteUint(buf, reflect.ValueOf(x).Uint())
+		case int64:
+			cmpbin.WriteInt(buf, x)
+		case int:
+			cmpbin.WriteInt(buf, int64(x))
+		case uint64:
+			cmpbin.WriteUint(buf, x)
+		case uint:
+			cmpbin.WriteUint(buf, uint64(x))
 		case float64:
-			writeFloat64(buf, x)
-		case byte, propValType:
-			buf.WriteByte(byte(reflect.ValueOf(x).Uint()))
-		case []byte, serializedPval:
-			buf.Write(reflect.ValueOf(x).Convert(byteSliceType).Interface().([]byte))
+			cmpbin.WriteFloat64(buf, x)
+		case byte:
+			buf.WriteByte(x)
+		case gae.DSPropertyType:
+			buf.WriteByte(byte(x))
 		case string:
-			writeString(buf, x)
+			cmpbin.WriteString(buf, x)
+		case []byte:
+			buf.Write(x)
 		case time.Time:
-			writeTime(buf, x)
-		case *datastore.Key:
-			writeKey(buf, noNS, x)
+			helper.WriteTime(buf, x)
+		case gae.DSKey:
+			helper.WriteDSKey(buf, helper.WithoutContext, x)
 		case *qIndex:
 			x.WriteBinary(buf)
 		default:

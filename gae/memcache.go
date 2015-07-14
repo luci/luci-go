@@ -2,82 +2,55 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package wrapper
+package gae
 
 import (
-	"golang.org/x/net/context"
+	"time"
 
-	"appengine/memcache"
+	"golang.org/x/net/context"
 )
 
-// MCSingleReadWriter is the interface for interacting with a single
-// memcache.Item at a time. See appengine.memcache for more details.
-type MCSingleReadWriter interface {
-	Add(item *memcache.Item) error
-	Set(item *memcache.Item) error
-	Get(key string) (*memcache.Item, error)
-	Delete(key string) error
-	CompareAndSwap(item *memcache.Item) error
-}
+// MCItem is a wrapper around *memcache.Item. Note that the Set* methods all
+// return the original MCItem (e.g. they mutate the original), due to
+// implementation constraints. They return the original item to allow easy
+// chaining, e.g.:
+//   itm := gae.MC(c).NewItem("foo").SetValue([]byte("stuff"))
+type MCItem interface {
+	Key() string
+	Value() []byte
+	Object() interface{}
+	Flags() uint32
+	Expiration() time.Duration
 
-// MCIncrementer is the interface for atomically incrementing a numeric
-// memcache entry.  See appengine.memcache for more details.
-type MCIncrementer interface {
-	Increment(key string, delta int64, initialValue uint64) (newValue uint64, err error)
-	IncrementExisting(key string, delta int64) (newValue uint64, err error)
-}
-
-// MCMultiReadWriter is the interface for doing batched memcache
-// operations. See appengine.memcache for more details.
-type MCMultiReadWriter interface {
-	MCSingleReadWriter
-
-	AddMulti(items []*memcache.Item) error
-	SetMulti(items []*memcache.Item) error
-	GetMulti(keys []string) (map[string]*memcache.Item, error)
-	DeleteMulti(keys []string) error
-	CompareAndSwapMulti(items []*memcache.Item) error
-}
-
-// MCFlusher is the interface for wiping the whole memcache server.
-// See appengine.memcache for more details.
-type MCFlusher interface {
-	Flush() error
-}
-
-// MCStatter is the interface for gathering statistics about the
-// memcache server. See appengine.memcache for more details.
-type MCStatter interface {
-	Stats() (*memcache.Statistics, error)
-}
-
-// MCCodec is the interface representing what you can do with a memcache.Codec
-// after it's been inflated with InflateCodec. It mirrors
-// appengine.memcache.Codec.
-type MCCodec interface {
-	// would use MCSingleReadWriter, but Get has a different signature.
-	Add(item *memcache.Item) error
-	Set(item *memcache.Item) error
-	Get(key string, v interface{}) (*memcache.Item, error)
-	CompareAndSwap(item *memcache.Item) error
-
-	AddMulti(items []*memcache.Item) error
-	SetMulti(items []*memcache.Item) error
-	CompareAndSwapMulti(items []*memcache.Item) error
-}
-
-// MCCodecInflater binds a Memcache to a memcache.Codec.
-type MCCodecInflater interface {
-	InflateCodec(m memcache.Codec) MCCodec
+	SetKey(string) MCItem
+	SetValue([]byte) MCItem
+	SetObject(interface{}) MCItem
+	SetFlags(uint32) MCItem
+	SetExpiration(time.Duration) MCItem
 }
 
 // Memcache is the full interface to the memcache service.
 type Memcache interface {
-	MCMultiReadWriter
-	MCIncrementer
-	MCFlusher
-	MCStatter
-	MCCodecInflater
+	NewItem(key string) MCItem
+
+	Add(item MCItem) error
+	Set(item MCItem) error
+	Get(key string) (MCItem, error)
+	Delete(key string) error
+	CompareAndSwap(item MCItem) error
+
+	AddMulti(items []MCItem) error
+	SetMulti(items []MCItem) error
+	GetMulti(keys []string) (map[string]MCItem, error)
+	DeleteMulti(keys []string) error
+	CompareAndSwapMulti(items []MCItem) error
+
+	Increment(key string, delta int64, initialValue uint64) (newValue uint64, err error)
+	IncrementExisting(key string, delta int64) (newValue uint64, err error)
+
+	Flush() error
+
+	Stats() (*MCStatistics, error)
 }
 
 // MCFactory is the function signature for factory methods compatible with

@@ -2,9 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package gae
-
-// Testable is the basic interface that every fake service should implement.
-type Testable interface {
-	FeatureBreaker
-}
+// Package prod provides an implementation of infra/gae/libs/wrapper which
+// backs to appengine.
+package prod
