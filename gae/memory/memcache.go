@@ -5,91 +5,47 @@
 package memory
 
 import (
-	"golang.org/x/net/context"
+	"infra/gae/libs/wrapper"
+	"infra/gae/libs/wrapper/gae/commonErrors"
+	"infra/gae/libs/wrapper/unsafe"
+	"infra/libs/clock"
 	"sync"
 	"time"
 
-	"infra/gae/libs/gae"
+	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
+	"appengine/memcache"
 )
 
-type mcItem struct {
-	key        string
-	value      []byte
-	object     interface{}
-	flags      uint32
-	expiration time.Duration
-
-	CasID uint64
-}
-
-var _ gae.MCItem = (*mcItem)(nil)
-
-func (m *mcItem) Key() string               { return m.key }
-func (m *mcItem) Value() []byte             { return m.value }
-func (m *mcItem) Object() interface{}       { return m.object }
-func (m *mcItem) Flags() uint32             { return m.flags }
-func (m *mcItem) Expiration() time.Duration { return m.expiration }
-
-func (m *mcItem) SetKey(key string) gae.MCItem {
-	m.key = key
-	return m
-}
-func (m *mcItem) SetValue(val []byte) gae.MCItem {
-	m.value = val
-	return m
-}
-func (m *mcItem) SetObject(obj interface{}) gae.MCItem {
-	m.object = obj
-	return m
-}
-func (m *mcItem) SetFlags(flg uint32) gae.MCItem {
-	m.flags = flg
-	return m
-}
-func (m *mcItem) SetExpiration(exp time.Duration) gae.MCItem {
-	m.expiration = exp
-	return m
-}
-
-func (m *mcItem) duplicate() *mcItem {
-	ret := mcItem{}
-	ret = *m
-	ret.value = make([]byte, len(m.value))
-	copy(ret.value, m.value)
-	return &ret
-}
-
 type memcacheData struct {
-	gae.BrokenFeatures
+	wrapper.BrokenFeatures
 
 	lock  sync.Mutex
-	items map[string]*mcItem
+	items map[string]*unsafe.Item
 	casID uint64
 }
 
 // memcacheImpl binds the current connection's memcache data to an
-// implementation of {gae.Memcache, gae.Testable}.
+// implementation of {wrapper.Memcache, wrapper.Testable}.
 type memcacheImpl struct {
-	gae.Memcache
+	wrapper.Memcache
 
 	data *memcacheData
 	ctx  context.Context
 }
 
 var (
-	_ = gae.Memcache((*memcacheImpl)(nil))
-	_ = gae.Testable((*memcacheImpl)(nil))
+	_ = wrapper.Memcache((*memcacheImpl)(nil))
+	_ = wrapper.Testable((*memcacheImpl)(nil))
 )
 
-// useMC adds a gae.Memcache implementation to context, accessible
-// by gae.GetMC(c)
+// useMC adds a wrapper.Memcache implementation to context, accessible
+// by wrapper.GetMC(c)
 func useMC(c context.Context) context.Context {
 	lck := sync.Mutex{}
 	mcdMap := map[string]*memcacheData{}
 
-	return gae.SetMCFactory(c, func(ic context.Context) gae.Memcache {
+	return wrapper.SetMCFactory(c, func(ic context.Context) wrapper.Memcache {
 		lck.Lock()
 		defer lck.Unlock()
 
@@ -97,35 +53,57 @@ func useMC(c context.Context) context.Context {
 		mcd, ok := mcdMap[ns]
 		if !ok {
 			mcd = &memcacheData{
-				BrokenFeatures: gae.BrokenFeatures{
-					DefaultError: gae.ErrMCServerError},
-				items: map[string]*mcItem{}}
+				BrokenFeatures: wrapper.BrokenFeatures{
+					DefaultError: commonErrors.ErrServerErrorMC},
+				items: map[string]*unsafe.Item{}}
 			mcdMap[ns] = mcd
 		}
 
 		return &memcacheImpl{
-			gae.DummyMC(),
+			wrapper.DummyMC(),
 			mcd,
 			ic,
 		}
 	})
 }
 
-func (m *memcacheImpl) mkItemLocked(i gae.MCItem) (ret *mcItem) {
+func (m *memcacheImpl) mkItemLocked(i *memcache.Item) *unsafe.Item {
 	m.data.casID++
-
 	var exp time.Duration
-	if i.Expiration() != 0 {
-		exp = time.Duration(clock.Now(m.ctx).Add(i.Expiration()).UnixNano())
+	if i.Expiration != 0 {
+		exp = time.Duration(clock.Now(m.ctx).Add(i.Expiration).UnixNano())
 	}
-	newItem := mcItem{
-		key:        i.Key(),
-		flags:      i.Flags(),
-		expiration: exp,
-		value:      i.Value(),
+	newItem := unsafe.Item{
+		Key:        i.Key,
+		Value:      make([]byte, len(i.Value)),
+		Flags:      i.Flags,
+		Expiration: exp,
 		CasID:      m.data.casID,
 	}
-	return newItem.duplicate()
+	copy(newItem.Value, i.Value)
+	return &newItem
+}
+
+func copyBack(i *unsafe.Item) *memcache.Item {
+	ret := &memcache.Item{
+		Key:   i.Key,
+		Value: make([]byte, len(i.Value)),
+		Flags: i.Flags,
+	}
+	copy(ret.Value, i.Value)
+	unsafe.MCSetCasID(ret, i.CasID)
+
+	return ret
+}
+
+func (m *memcacheImpl) retrieve(key string) (*unsafe.Item, bool) {
+	ret, ok := m.data.items[key]
+	if ok && ret.Expiration != 0 && ret.Expiration < time.Duration(clock.Now(m.ctx).UnixNano()) {
+		ret = nil
+		ok = false
+		delete(m.data.items, key)
+	}
+	return ret, ok
 }
 
 func (m *memcacheImpl) BreakFeatures(err error, features ...string) {
@@ -136,93 +114,83 @@ func (m *memcacheImpl) UnbreakFeatures(features ...string) {
 	m.data.UnbreakFeatures(features...)
 }
 
-func (m *memcacheImpl) NewItem(key string) gae.MCItem {
-	return &mcItem{key: key}
-}
-
 // Add implements context.MCSingleReadWriter.Add.
-func (m *memcacheImpl) Add(i gae.MCItem) error {
-	return m.data.RunIfNotBroken(func() error {
-		m.data.lock.Lock()
-		defer m.data.lock.Unlock()
+func (m *memcacheImpl) Add(i *memcache.Item) error {
+	if err := m.data.IsBroken(); err != nil {
+		return err
+	}
 
-		if _, ok := m.retrieveLocked(i.Key()); !ok {
-			m.data.items[i.Key()] = m.mkItemLocked(i)
-			return nil
-		}
-		return gae.ErrMCNotStored
-	})
+	m.data.lock.Lock()
+	defer m.data.lock.Unlock()
+
+	if _, ok := m.retrieve(i.Key); !ok {
+		m.data.items[i.Key] = m.mkItemLocked(i)
+		return nil
+	}
+	return memcache.ErrNotStored
 }
 
 // CompareAndSwap implements context.MCSingleReadWriter.CompareAndSwap.
-func (m *memcacheImpl) CompareAndSwap(item gae.MCItem) error {
-	return m.data.RunIfNotBroken(func() error {
-		m.data.lock.Lock()
-		defer m.data.lock.Unlock()
+func (m *memcacheImpl) CompareAndSwap(item *memcache.Item) error {
+	if err := m.data.IsBroken(); err != nil {
+		return err
+	}
 
-		if cur, ok := m.retrieveLocked(item.Key()); ok {
-			casid := uint64(0)
-			if mi, ok := item.(*mcItem); ok && mi != nil {
-				casid = mi.CasID
-			}
+	m.data.lock.Lock()
+	defer m.data.lock.Unlock()
 
-			if cur.CasID == casid {
-				m.data.items[item.Key()] = m.mkItemLocked(item)
-			} else {
-				return gae.ErrMCCASConflict
-			}
+	if cur, ok := m.retrieve(item.Key); ok {
+		if cur.CasID == unsafe.MCGetCasID(item) {
+			m.data.items[item.Key] = m.mkItemLocked(item)
 		} else {
-			return gae.ErrMCNotStored
+			return memcache.ErrCASConflict
 		}
-		return nil
-	})
+	} else {
+		return memcache.ErrNotStored
+	}
+	return nil
 }
 
 // Set implements context.MCSingleReadWriter.Set.
-func (m *memcacheImpl) Set(i gae.MCItem) error {
-	return m.data.RunIfNotBroken(func() error {
-		m.data.lock.Lock()
-		defer m.data.lock.Unlock()
-		m.data.items[i.Key()] = m.mkItemLocked(i)
-		return nil
-	})
+func (m *memcacheImpl) Set(i *memcache.Item) error {
+	if err := m.data.IsBroken(); err != nil {
+		return err
+	}
+
+	m.data.lock.Lock()
+	defer m.data.lock.Unlock()
+
+	m.data.items[i.Key] = m.mkItemLocked(i)
+	return nil
 }
 
 // Get implements context.MCSingleReadWriter.Get.
-func (m *memcacheImpl) Get(key string) (itm gae.MCItem, err error) {
-	err = m.data.RunIfNotBroken(func() (err error) {
-		m.data.lock.Lock()
-		defer m.data.lock.Unlock()
-		if val, ok := m.retrieveLocked(key); ok {
-			itm = val.duplicate().SetExpiration(0)
-		} else {
-			err = gae.ErrMCCacheMiss
-		}
-		return
-	})
-	return
+func (m *memcacheImpl) Get(key string) (*memcache.Item, error) {
+	if err := m.data.IsBroken(); err != nil {
+		return nil, err
+	}
+
+	m.data.lock.Lock()
+	defer m.data.lock.Unlock()
+
+	if val, ok := m.retrieve(key); ok {
+		return copyBack(val), nil
+	}
+	return nil, memcache.ErrCacheMiss
 }
 
 // Delete implements context.MCSingleReadWriter.Delete.
 func (m *memcacheImpl) Delete(key string) error {
-	return m.data.RunIfNotBroken(func() error {
-		m.data.lock.Lock()
-		defer m.data.lock.Unlock()
-
-		if _, ok := m.retrieveLocked(key); ok {
-			delete(m.data.items, key)
-			return nil
-		}
-		return gae.ErrMCCacheMiss
-	})
-}
-
-func (m *memcacheImpl) retrieveLocked(key string) (*mcItem, bool) {
-	ret, ok := m.data.items[key]
-	if ok && ret.Expiration() != 0 && ret.Expiration() < time.Duration(clock.Now(m.ctx).UnixNano()) {
-		ret = nil
-		ok = false
-		delete(m.data.items, key)
+	if err := m.data.IsBroken(); err != nil {
+		return err
 	}
-	return ret, ok
+
+	m.data.lock.Lock()
+	defer m.data.lock.Unlock()
+
+	if _, ok := m.retrieve(key); ok {
+		delete(m.data.items, key)
+		return nil
+	}
+	return memcache.ErrCacheMiss
 }

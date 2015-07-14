@@ -2,18 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package gae
+package wrapper
 
 type key int
 
 var (
 	globalInfoKey key
 
-	rawDatastoreKey key = 1
-	memcacheKey     key = 2
-	taskQueueKey    key = 3
+	datastoreKey key = 1
+	memcacheKey  key = 2
+	taskQueueKey key = 3
 
-	datastoreKey key = 4
-
+	timeNowKey  key = 4
 	mathRandKey key = 5
 )

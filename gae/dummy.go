@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package gae
+package wrapper
 
 import (
 	"fmt"
@@ -11,9 +11,16 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+
+	"appengine"
+	"appengine/datastore"
+	"appengine/memcache"
+	"appengine/taskqueue"
+
+	"github.com/mjibson/goon"
 )
 
-const niFmtStr = "gae: method %s.%s is not implemented"
+const niFmtStr = "wrapper: method %s.%s is not implemented"
 
 func ni() error {
 	iface := "UNKNOWN"
@@ -25,9 +32,9 @@ func ni() error {
 		if n != "" {
 			parts := strings.Split(n, ".")
 			if len(parts) == 3 {
-				switch parts[1][len("dummy"):] {
-				case "RDS":
-					iface = "RawDatastore"
+				switch parts[1][len(parts[1])-2:] {
+				case "DS":
+					iface = "Datastore"
 				case "MC":
 					iface = "Memcache"
 				case "TQ":
@@ -45,53 +52,56 @@ func ni() error {
 	return fmt.Errorf(niFmtStr, iface, funcName)
 }
 
-/////////////////////////////////// dummyRDS ////////////////////////////////////
+/////////////////////////////////// dummyDS ////////////////////////////////////
 
-type dummyRDS struct{}
+type dummyDS struct{}
 
-func (dummyRDS) NewKey(string, string, int64, DSKey) DSKey              { panic(ni()) }
-func (dummyRDS) DecodeKey(string) (DSKey, error)                        { panic(ni()) }
-func (dummyRDS) KeyFromTokens(a, n string, t []DSKeyTok) (DSKey, error) { panic(ni()) }
-func (dummyRDS) Put(DSKey, interface{}) (DSKey, error)                  { panic(ni()) }
-func (dummyRDS) Get(DSKey, interface{}) error                           { panic(ni()) }
-func (dummyRDS) Delete(DSKey) error                                     { panic(ni()) }
-func (dummyRDS) PutMulti([]DSKey, interface{}) ([]DSKey, error)         { panic(ni()) }
-func (dummyRDS) GetMulti([]DSKey, interface{}) error                    { panic(ni()) }
-func (dummyRDS) DeleteMulti([]DSKey) error                              { panic(ni()) }
-func (dummyRDS) NewQuery(string) DSQuery                                { panic(ni()) }
-func (dummyRDS) Run(DSQuery) DSIterator                                 { panic(ni()) }
-func (dummyRDS) GetAll(DSQuery, interface{}) ([]DSKey, error)           { panic(ni()) }
-func (dummyRDS) Count(DSQuery) (int, error)                             { panic(ni()) }
-func (dummyRDS) RunInTransaction(func(context.Context) error, *DSTransactionOptions) error {
+func (dummyDS) Kind(interface{}) string                                     { panic(ni()) }
+func (dummyDS) KindNameResolver() goon.KindNameResolver                     { panic(ni()) }
+func (dummyDS) SetKindNameResolver(goon.KindNameResolver)                   { panic(ni()) }
+func (dummyDS) NewKey(string, string, int64, *datastore.Key) *datastore.Key { panic(ni()) }
+func (dummyDS) NewKeyObj(interface{}) *datastore.Key                        { panic(ni()) }
+func (dummyDS) NewKeyObjError(interface{}) (*datastore.Key, error)          { panic(ni()) }
+func (dummyDS) Put(interface{}) (*datastore.Key, error)                     { panic(ni()) }
+func (dummyDS) Get(interface{}) error                                       { panic(ni()) }
+func (dummyDS) Delete(*datastore.Key) error                                 { panic(ni()) }
+func (dummyDS) PutMulti(interface{}) ([]*datastore.Key, error)              { panic(ni()) }
+func (dummyDS) GetMulti(interface{}) error                                  { panic(ni()) }
+func (dummyDS) DeleteMulti([]*datastore.Key) error                          { panic(ni()) }
+func (dummyDS) NewQuery(string) DSQuery                                     { panic(ni()) }
+func (dummyDS) Run(DSQuery) DSIterator                                      { panic(ni()) }
+func (dummyDS) GetAll(DSQuery, interface{}) ([]*datastore.Key, error)       { panic(ni()) }
+func (dummyDS) Count(DSQuery) (int, error)                                  { panic(ni()) }
+func (dummyDS) RunInTransaction(func(context.Context) error, *datastore.TransactionOptions) error {
 	panic(ni())
 }
 
-var dummyRDSInst = dummyRDS{}
+var dummyDSInst = dummyDS{}
 
-// DummyRDS returns a dummy RawDatastore implementation suitable for embedding.
+// DummyDS returns a dummy Datastore implementation suitable for embedding.
 // Every method panics with a message containing the name of the method which
 // was unimplemented.
-func DummyRDS() RawDatastore { return dummyRDSInst }
+func DummyDS() Datastore { return dummyDSInst }
 
 /////////////////////////////////// dummyMC ////////////////////////////////////
 
 type dummyMC struct{}
 
-func (dummyMC) Add(MCItem) error                                { panic(ni()) }
-func (dummyMC) NewItem(key string) MCItem                       { panic(ni()) }
-func (dummyMC) Set(MCItem) error                                { panic(ni()) }
-func (dummyMC) Get(string) (MCItem, error)                      { panic(ni()) }
-func (dummyMC) Delete(string) error                             { panic(ni()) }
-func (dummyMC) CompareAndSwap(MCItem) error                     { panic(ni()) }
-func (dummyMC) AddMulti([]MCItem) error                         { panic(ni()) }
-func (dummyMC) SetMulti([]MCItem) error                         { panic(ni()) }
-func (dummyMC) GetMulti([]string) (map[string]MCItem, error)    { panic(ni()) }
-func (dummyMC) DeleteMulti([]string) error                      { panic(ni()) }
-func (dummyMC) CompareAndSwapMulti([]MCItem) error              { panic(ni()) }
-func (dummyMC) Increment(string, int64, uint64) (uint64, error) { panic(ni()) }
-func (dummyMC) IncrementExisting(string, int64) (uint64, error) { panic(ni()) }
-func (dummyMC) Flush() error                                    { panic(ni()) }
-func (dummyMC) Stats() (*MCStatistics, error)                   { panic(ni()) }
+func (dummyMC) Add(*memcache.Item) error                             { panic(ni()) }
+func (dummyMC) Set(*memcache.Item) error                             { panic(ni()) }
+func (dummyMC) Get(string) (*memcache.Item, error)                   { panic(ni()) }
+func (dummyMC) Delete(string) error                                  { panic(ni()) }
+func (dummyMC) CompareAndSwap(*memcache.Item) error                  { panic(ni()) }
+func (dummyMC) AddMulti([]*memcache.Item) error                      { panic(ni()) }
+func (dummyMC) SetMulti([]*memcache.Item) error                      { panic(ni()) }
+func (dummyMC) GetMulti([]string) (map[string]*memcache.Item, error) { panic(ni()) }
+func (dummyMC) DeleteMulti([]string) error                           { panic(ni()) }
+func (dummyMC) CompareAndSwapMulti([]*memcache.Item) error           { panic(ni()) }
+func (dummyMC) Increment(string, int64, uint64) (uint64, error)      { panic(ni()) }
+func (dummyMC) IncrementExisting(string, int64) (uint64, error)      { panic(ni()) }
+func (dummyMC) Flush() error                                         { panic(ni()) }
+func (dummyMC) Stats() (*memcache.Statistics, error)                 { panic(ni()) }
+func (dummyMC) InflateCodec(memcache.Codec) MCCodec                  { panic(ni()) }
 
 var dummyMCInst = dummyMC{}
 
@@ -104,15 +114,15 @@ func DummyMC() Memcache { return dummyMCInst }
 
 type dummyTQ struct{}
 
-func (dummyTQ) Add(*TQTask, string) (*TQTask, error)                   { panic(ni()) }
-func (dummyTQ) Delete(*TQTask, string) error                           { panic(ni()) }
-func (dummyTQ) AddMulti([]*TQTask, string) ([]*TQTask, error)          { panic(ni()) }
-func (dummyTQ) DeleteMulti([]*TQTask, string) error                    { panic(ni()) }
-func (dummyTQ) Lease(int, string, int) ([]*TQTask, error)              { panic(ni()) }
-func (dummyTQ) LeaseByTag(int, string, int, string) ([]*TQTask, error) { panic(ni()) }
-func (dummyTQ) ModifyLease(*TQTask, string, int) error                 { panic(ni()) }
-func (dummyTQ) Purge(string) error                                     { panic(ni()) }
-func (dummyTQ) QueueStats([]string) ([]TQStatistics, error)            { panic(ni()) }
+func (dummyTQ) Add(*taskqueue.Task, string) (*taskqueue.Task, error)           { panic(ni()) }
+func (dummyTQ) Delete(*taskqueue.Task, string) error                           { panic(ni()) }
+func (dummyTQ) AddMulti([]*taskqueue.Task, string) ([]*taskqueue.Task, error)  { panic(ni()) }
+func (dummyTQ) DeleteMulti([]*taskqueue.Task, string) error                    { panic(ni()) }
+func (dummyTQ) Lease(int, string, int) ([]*taskqueue.Task, error)              { panic(ni()) }
+func (dummyTQ) LeaseByTag(int, string, int, string) ([]*taskqueue.Task, error) { panic(ni()) }
+func (dummyTQ) ModifyLease(*taskqueue.Task, string, int) error                 { panic(ni()) }
+func (dummyTQ) Purge(string) error                                             { panic(ni()) }
+func (dummyTQ) QueueStats([]string, int) ([]taskqueue.QueueStatistics, error)  { panic(ni()) }
 
 var dummyTQInst = dummyTQ{}
 
@@ -125,7 +135,7 @@ func DummyTQ() TaskQueue { return dummyTQInst }
 
 type dummyQY struct{}
 
-func (dummyQY) Ancestor(ancestor DSKey) DSQuery                    { panic(ni()) }
+func (dummyQY) Ancestor(ancestor *datastore.Key) DSQuery           { panic(ni()) }
 func (dummyQY) Distinct() DSQuery                                  { panic(ni()) }
 func (dummyQY) End(c DSCursor) DSQuery                             { panic(ni()) }
 func (dummyQY) EventualConsistency() DSQuery                       { panic(ni()) }
@@ -153,7 +163,7 @@ func (dummyGI) AppID() string                                                   
 func (dummyGI) ModuleHostname(module, version, instance string) (string, error)          { panic(ni()) }
 func (dummyGI) ModuleName() string                                                       { panic(ni()) }
 func (dummyGI) DefaultVersionHostname() string                                           { panic(ni()) }
-func (dummyGI) PublicCertificates() ([]GICertificate, error)                             { panic(ni()) }
+func (dummyGI) PublicCertificates() ([]appengine.Certificate, error)                     { panic(ni()) }
 func (dummyGI) RequestID() string                                                        { panic(ni()) }
 func (dummyGI) ServiceAccount() (string, error)                                          { panic(ni()) }
 func (dummyGI) SignBytes(bytes []byte) (keyName string, signature []byte, err error)     { panic(ni()) }
@@ -161,7 +171,7 @@ func (dummyGI) VersionID() string                                               
 func (dummyGI) Namespace(namespace string) (context.Context, error)                      { panic(ni()) }
 func (dummyGI) Datacenter() string                                                       { panic(ni()) }
 func (dummyGI) InstanceID() string                                                       { panic(ni()) }
-func (dummyGI) IsDevAppServer() bool                                                     { panic(ni()) }
+func (dummyGI) IsDevAppserver() bool                                                     { panic(ni()) }
 func (dummyGI) ServerSoftware() string                                                   { panic(ni()) }
 func (dummyGI) IsCapabilityDisabled(err error) bool                                      { panic(ni()) }
 func (dummyGI) IsOverQuota(err error) bool                                               { panic(ni()) }

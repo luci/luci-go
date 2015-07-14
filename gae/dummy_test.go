@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package gae
+package wrapper
 
 import (
 	"math/rand"
@@ -11,9 +11,10 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock/testclock"
+	"appengine/memcache"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"infra/libs/clock/testclock"
 )
 
 func TestContextAccess(t *testing.T) {
@@ -22,21 +23,22 @@ func TestContextAccess(t *testing.T) {
 		c, _ := testclock.UseTime(context.Background(), now)
 
 		Convey("blank", func() {
+			So(GetDS(c), ShouldBeNil)
 			So(GetMC(c), ShouldBeNil)
 			So(GetTQ(c), ShouldBeNil)
 			So(GetGI(c), ShouldBeNil)
 		})
 
-		Convey("RDS", func() {
-			c = SetRDS(c, DummyRDS())
-			So(GetRDS(c), ShouldNotBeNil)
-			So(func() { GetRDS(c).NewKey("", "", 1, nil) }, ShouldPanic)
+		Convey("DS", func() {
+			c = SetDS(c, DummyDS())
+			So(GetDS(c), ShouldNotBeNil)
+			So(func() { GetDS(c).Kind(nil) }, ShouldPanic)
 		})
 
 		Convey("MC", func() {
 			c = SetMC(c, DummyMC())
 			So(GetMC(c), ShouldNotBeNil)
-			So(func() { GetMC(c).Add(nil) }, ShouldPanic)
+			So(func() { GetMC(c).InflateCodec(memcache.Codec{}) }, ShouldPanic)
 		})
 
 		Convey("TQ", func() {
@@ -57,29 +59,18 @@ func TestContextAccess(t *testing.T) {
 		})
 
 		Convey("MathRand", func() {
-			// Note that the non-randomness below is because time is fixed at the
-			// top of the outer test function. Normally it would evolve with time.
-			Convey("unset", func() {
-				r := rand.New(rand.NewSource(now.UnixNano()))
-				i := r.Int()
-				So(GetMathRand(c).Int(), ShouldEqual, i)
-				So(GetMathRand(c).Int(), ShouldEqual, i)
-			})
+			r := rand.New(rand.NewSource(now.UnixNano()))
+			i := r.Int()
 
-			Convey("set persistance", func() {
-				c = SetMathRand(c, rand.New(rand.NewSource(now.UnixNano())))
-				r := rand.New(rand.NewSource(now.UnixNano()))
-				So(GetMathRand(c).Int(), ShouldEqual, r.Int())
-				So(GetMathRand(c).Int(), ShouldEqual, r.Int())
-			})
+			// when it's unset it picks the current time every time
+			So(GetMathRand(c).Int(), ShouldEqual, i)
+			So(GetMathRand(c).Int(), ShouldEqual, i)
 
-			Convey("nil set", func() {
-				c = SetMathRand(c, nil)
-				r := rand.New(rand.NewSource(now.UnixNano()))
-				i := r.Int()
-				So(GetMathRand(c).Int(), ShouldEqual, i)
-				So(GetMathRand(c).Int(), ShouldEqual, i)
-			})
+			// But we could set it to something concrete to have it persist.
+			c = SetMathRand(c, rand.New(rand.NewSource(now.UnixNano())))
+			r = rand.New(rand.NewSource(now.UnixNano()))
+			So(GetMathRand(c).Int(), ShouldEqual, r.Int())
+			So(GetMathRand(c).Int(), ShouldEqual, r.Int())
 		})
 	})
 }

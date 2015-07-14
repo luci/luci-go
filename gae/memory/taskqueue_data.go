@@ -7,14 +7,16 @@ package memory
 import (
 	"errors"
 	"fmt"
-	"golang.org/x/net/context"
+	"infra/gae/libs/wrapper"
 	"net/http"
 	"sync"
 	"sync/atomic"
 
-	"infra/gae/libs/gae"
-
-	"github.com/luci/luci-go/common/clock"
+	"appengine/datastore"
+	"appengine/taskqueue"
+	pb "appengine_internal/taskqueue"
+	"golang.org/x/net/context"
+	"infra/libs/clock"
 )
 
 var (
@@ -26,23 +28,23 @@ var (
 
 type taskQueueData struct {
 	sync.Mutex
-	gae.BrokenFeatures
+	wrapper.BrokenFeatures
 
-	named    gae.QueueData
-	archived gae.QueueData
+	named    wrapper.QueueData
+	archived wrapper.QueueData
 }
 
 var (
 	_ = memContextObj((*taskQueueData)(nil))
-	_ = gae.TQTestable((*taskQueueData)(nil))
+	_ = wrapper.TQTestable((*taskQueueData)(nil))
 )
 
 func newTaskQueueData() memContextObj {
 	return &taskQueueData{
-		BrokenFeatures: gae.BrokenFeatures{
-			DefaultError: errors.New("TRANSIENT_ERROR")},
-		named:    gae.QueueData{"default": {}},
-		archived: gae.QueueData{"default": {}},
+		BrokenFeatures: wrapper.BrokenFeatures{
+			DefaultError: newTQError(pb.TaskQueueServiceError_TRANSIENT_ERROR)},
+		named:    wrapper.QueueData{"default": {}},
+		archived: wrapper.QueueData{"default": {}},
 	}
 }
 
@@ -58,15 +60,15 @@ func (t *taskQueueData) applyTxn(c context.Context, obj memContextObj) {
 	}
 	txn.anony = nil
 }
-func (t *taskQueueData) mkTxn(*gae.DSTransactionOptions) (memContextObj, error) {
+func (t *taskQueueData) mkTxn(*datastore.TransactionOptions) (memContextObj, error) {
 	return &txnTaskQueueData{
 		BrokenFeatures: &t.BrokenFeatures,
 		parent:         t,
-		anony:          gae.AnonymousQueueData{},
+		anony:          wrapper.AnonymousQueueData{},
 	}, nil
 }
 
-func (t *taskQueueData) GetTransactionTasks() gae.AnonymousQueueData {
+func (t *taskQueueData) GetTransactionTasks() wrapper.AnonymousQueueData {
 	return nil
 }
 
@@ -77,18 +79,18 @@ func (t *taskQueueData) CreateQueue(queueName string) {
 	if _, ok := t.named[queueName]; ok {
 		panic(fmt.Errorf("memory/taskqueue: cannot add the same queue twice! %q", queueName))
 	}
-	t.named[queueName] = map[string]*gae.TQTask{}
-	t.archived[queueName] = map[string]*gae.TQTask{}
+	t.named[queueName] = map[string]*taskqueue.Task{}
+	t.archived[queueName] = map[string]*taskqueue.Task{}
 }
 
-func (t *taskQueueData) GetScheduledTasks() gae.QueueData {
+func (t *taskQueueData) GetScheduledTasks() wrapper.QueueData {
 	t.Lock()
 	defer t.Unlock()
 
 	return dupQueue(t.named)
 }
 
-func (t *taskQueueData) GetTombstonedTasks() gae.QueueData {
+func (t *taskQueueData) GetTombstonedTasks() wrapper.QueueData {
 	t.Lock()
 	defer t.Unlock()
 
@@ -96,9 +98,9 @@ func (t *taskQueueData) GetTombstonedTasks() gae.QueueData {
 }
 
 func (t *taskQueueData) resetTasksWithLock() {
-	for queueName := range t.named {
-		t.named[queueName] = map[string]*gae.TQTask{}
-		t.archived[queueName] = map[string]*gae.TQTask{}
+	for queuename := range t.named {
+		t.named[queuename] = map[string]*taskqueue.Task{}
+		t.archived[queuename] = map[string]*taskqueue.Task{}
 	}
 }
 
@@ -114,20 +116,13 @@ func (t *taskQueueData) getQueueName(queueName string) (string, error) {
 		queueName = "default"
 	}
 	if _, ok := t.named[queueName]; !ok {
-		return "", errors.New("UNKNOWN_QUEUE")
+		return "", newTQError(pb.TaskQueueServiceError_UNKNOWN_QUEUE)
 	}
 	return queueName, nil
 }
 
-var tqOkMethods = map[string]struct{}{
-	"GET":    {},
-	"POST":   {},
-	"HEAD":   {},
-	"PUT":    {},
-	"DELETE": {},
-}
-
-func (t *taskQueueData) prepTask(c context.Context, ns string, task *gae.TQTask, queueName string) (*gae.TQTask, string, error) {
+func (t *taskQueueData) prepTask(c context.Context, ns string, task *taskqueue.Task, queueName string) (
+	*taskqueue.Task, string, error) {
 	queueName, err := t.getQueueName(queueName)
 	if err != nil {
 		return nil, "", err
@@ -136,7 +131,7 @@ func (t *taskQueueData) prepTask(c context.Context, ns string, task *gae.TQTask,
 	toSched := dupTask(task)
 
 	if toSched.Path == "" {
-		return nil, "", errors.New("INVALID_URL")
+		return nil, "", newTQError(pb.TaskQueueServiceError_INVALID_URL)
 	}
 
 	if toSched.ETA.IsZero() {
@@ -149,7 +144,7 @@ func (t *taskQueueData) prepTask(c context.Context, ns string, task *gae.TQTask,
 	if toSched.Method == "" {
 		toSched.Method = "POST"
 	}
-	if _, ok := tqOkMethods[toSched.Method]; !ok {
+	if _, ok := pb.TaskQueueAddRequest_RequestMethod_value[toSched.Method]; !ok {
 		return nil, "", fmt.Errorf("taskqueue: bad method %q", toSched.Method)
 	}
 	if toSched.Method != "POST" && toSched.Method != "PUT" {
@@ -170,7 +165,7 @@ func (t *taskQueueData) prepTask(c context.Context, ns string, task *gae.TQTask,
 		toSched.Name = mkName(c, "", t.named[queueName])
 	} else {
 		if !validTaskName.MatchString(toSched.Name) {
-			return nil, "", errors.New("INVALID_TASK_NAME")
+			return nil, "", newTQError(pb.TaskQueueServiceError_INVALID_TASK_NAME)
 		}
 	}
 
@@ -180,19 +175,19 @@ func (t *taskQueueData) prepTask(c context.Context, ns string, task *gae.TQTask,
 /////////////////////////////// txnTaskQueueData ///////////////////////////////
 
 type txnTaskQueueData struct {
-	*gae.BrokenFeatures
+	*wrapper.BrokenFeatures
 
 	lock sync.Mutex
 
 	// boolean 0 or 1, use atomic.*Int32 to access.
 	closed int32
-	anony  gae.AnonymousQueueData
+	anony  wrapper.AnonymousQueueData
 	parent *taskQueueData
 }
 
 var (
 	_ = memContextObj((*txnTaskQueueData)(nil))
-	_ = gae.TQTestable((*txnTaskQueueData)(nil))
+	_ = wrapper.TQTestable((*txnTaskQueueData)(nil))
 )
 
 func (t *txnTaskQueueData) canApplyTxn(obj memContextObj) bool { return false }
@@ -201,7 +196,7 @@ func (t *txnTaskQueueData) applyTxn(context.Context, memContextObj) {
 	panic(errors.New("txnTaskQueueData.applyTxn is not implemented"))
 }
 
-func (t *txnTaskQueueData) mkTxn(*gae.DSTransactionOptions) (memContextObj, error) {
+func (t *txnTaskQueueData) mkTxn(*datastore.TransactionOptions) (memContextObj, error) {
 	return nil, errors.New("txnTaskQueueData.mkTxn is not implemented")
 }
 
@@ -212,13 +207,13 @@ func (t *txnTaskQueueData) endTxn() {
 	atomic.StoreInt32(&t.closed, 1)
 }
 
-func (t *txnTaskQueueData) RunIfNotBroken(f func() error) error {
+func (t *txnTaskQueueData) IsBroken() error {
 	// Slightly different from the SDK... datastore and taskqueue each implement
 	// this here, where in the SDK only datastore.transaction.Call does.
 	if atomic.LoadInt32(&t.closed) == 1 {
 		return fmt.Errorf("taskqueue: transaction context has expired")
 	}
-	return t.parent.RunIfNotBroken(f)
+	return t.parent.IsBroken()
 }
 
 func (t *txnTaskQueueData) ResetTasks() {
@@ -240,13 +235,13 @@ func (t *txnTaskQueueData) Unlock() {
 	t.lock.Unlock()
 }
 
-func (t *txnTaskQueueData) GetTransactionTasks() gae.AnonymousQueueData {
+func (t *txnTaskQueueData) GetTransactionTasks() wrapper.AnonymousQueueData {
 	t.Lock()
 	defer t.Unlock()
 
-	ret := make(gae.AnonymousQueueData, len(t.anony))
+	ret := make(wrapper.AnonymousQueueData, len(t.anony))
 	for k, vs := range t.anony {
-		ret[k] = make([]*gae.TQTask, len(vs))
+		ret[k] = make([]*taskqueue.Task, len(vs))
 		for i, v := range vs {
 			tsk := dupTask(v)
 			tsk.Name = ""
@@ -257,11 +252,11 @@ func (t *txnTaskQueueData) GetTransactionTasks() gae.AnonymousQueueData {
 	return ret
 }
 
-func (t *txnTaskQueueData) GetTombstonedTasks() gae.QueueData {
+func (t *txnTaskQueueData) GetTombstonedTasks() wrapper.QueueData {
 	return t.parent.GetTombstonedTasks()
 }
 
-func (t *txnTaskQueueData) GetScheduledTasks() gae.QueueData {
+func (t *txnTaskQueueData) GetScheduledTasks() wrapper.QueueData {
 	return t.parent.GetScheduledTasks()
 }
 

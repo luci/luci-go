@@ -2,13 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package gae
+package wrapper
 
-// QueueData is {queueName: {taskName: *TQTask}}
-type QueueData map[string]map[string]*TQTask
+import (
+	"appengine/taskqueue"
+)
 
-// AnonymousQueueData is {queueName: [*TQTask]}
-type AnonymousQueueData map[string][]*TQTask
+// QueueData is {queueName: {taskName: *Task}}
+type QueueData map[string]map[string]*taskqueue.Task
+
+// AnonymousQueueData is {queueName: [*Task]}
+type AnonymousQueueData map[string][]*taskqueue.Task
 
 // TQTestable is the testable interface for fake taskqueue implementations
 type TQTestable interface {

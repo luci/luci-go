@@ -5,16 +5,78 @@
 package memory
 
 import (
-	"infra/gae/libs/gae"
 	"testing"
 	"time"
 
 	"github.com/luci/gkvlite"
 	. "github.com/smartystreets/goconvey/convey"
+
+	"appengine"
+	"appengine/datastore"
 )
 
-func init() {
-	indexCreationDeterministic = true
+func TestPlistBinaryCodec(t *testing.T) {
+	t.Parallel()
+
+	Convey("Plist binary codec", t, func() {
+		Convey("basic functionality", func() {
+			Convey("empty", func() {
+				pl := (*propertyList)(nil)
+				data, err := pl.MarshalBinary()
+				So(err, ShouldBeNil)
+				So(data, ShouldBeEmpty)
+			})
+
+			Convey("one item", func() {
+				pl := &propertyList{prop("Bob", 301.23)}
+				data, err := pl.MarshalBinary()
+				So(err, ShouldBeNil)
+				pl2 := &propertyList{}
+
+				err = pl2.UnmarshalBinary(data)
+				So(err, ShouldBeNil)
+				So(pl, ShouldResemble, pl2)
+			})
+
+			Convey("one of each", func() {
+				pl := &propertyList{
+					prop("null", nil),
+					prop("int", int64(100)),
+					prop("time", time.Now().Round(time.Microsecond)),
+					prop("float", float64(301.23)),
+					prop("bool", true),
+					prop("bool", false),
+					prop("bool", "mixed types are allowed!"),
+					prop("bool", true),
+					prop("[]byte", []byte("sup"), true),
+					prop("ByteString", datastore.ByteString("sup")),
+					prop("BlobKey", appengine.BlobKey("bkey")),
+					prop("string", "stringy"),
+					prop("GeoPoint", appengine.GeoPoint{Lat: 123.3, Lng: 456.6}),
+					prop("*Key", fakeKey),
+				}
+				data, err := pl.MarshalBinary()
+				So(err, ShouldBeNil)
+				pl2 := &propertyList{}
+
+				err = pl2.UnmarshalBinary(data)
+				So(err, ShouldBeNil)
+				So(len(*pl), ShouldEqual, len(*pl2))
+
+				for i, v := range *pl {
+					v2 := (*pl2)[i]
+					So(v2.Name, ShouldEqual, v.Name)
+					So(v2.NoIndex, ShouldEqual, v.NoIndex)
+					switch v.Name {
+					case "*Key":
+						So(v2.Value, shouldEqualKey, v.Value)
+					default:
+						So(v2.Value, ShouldResemble, v.Value)
+					}
+				}
+			})
+		})
+	})
 }
 
 var fakeKey = key("knd", 10, key("parentKind", "sid"))
@@ -24,18 +86,25 @@ func TestCollated(t *testing.T) {
 
 	Convey("TestCollated", t, func() {
 		Convey("nil list", func() {
-			pm := (gae.DSPropertyMap)(nil)
-			sip := partiallySerialize(pm)
-			So(sip, ShouldBeNil)
+			pl := (*propertyList)(nil)
+			c, err := pl.collate()
+			So(err, ShouldBeNil)
+			So(c, ShouldBeNil)
 
 			Convey("nil collated", func() {
+				Convey("indexableMap", func() {
+					m, err := c.indexableMap()
+					So(err, ShouldBeNil)
+					So(m, ShouldBeEmpty)
+				})
 				Convey("defaultIndicies", func() {
-					idxs := defaultIndicies("knd", pm)
+					idxs := c.defaultIndicies("knd")
 					So(len(idxs), ShouldEqual, 1)
 					So(idxs[0].String(), ShouldEqual, "B:knd")
 				})
 				Convey("indexEntries", func() {
-					s := sip.indexEntries(fakeKey, defaultIndicies("knd", pm))
+					s, err := c.indexEntries(fakeKey, c.defaultIndicies("knd"))
+					So(err, ShouldBeNil)
 					numItems, _ := s.GetCollection("idx").GetTotals()
 					So(numItems, ShouldEqual, 1)
 					itm := s.GetCollection("idx").MinItem(false)
@@ -47,35 +116,50 @@ func TestCollated(t *testing.T) {
 		})
 
 		Convey("list", func() {
-			pm := gae.DSPropertyMap{
-				"wat":  {prop("thing", true), prop("hat"), prop(100)},
-				"nerd": {prop(103.7)},
-				"spaz": {prop(false, true)},
+			pl := &propertyList{
+				// intentionally out of order
+				prop("wat", "thing", true),
+				prop("nerd", 103.7),
+				prop("wat", "hat"),
+				prop("wat", int64(100)),
+				prop("spaz", false, true),
 			}
-			sip := partiallySerialize(pm)
-			So(len(sip), ShouldEqual, 2)
+			c, err := pl.collate()
+			So(err, ShouldBeNil)
+			So(len(c), ShouldEqual, 3)
+			So(len(c[0].vals), ShouldEqual, 3)
+			So(len(c[1].vals), ShouldEqual, 1)
+			So(len(c[2].vals), ShouldEqual, 1)
+			// collate keeps first-seen order, discards interleaving.
+			So(c[0].vals[0].typ, ShouldEqual, pvStr)
+			So(c[0].vals[1].typ, ShouldEqual, pvStr)
+			So(c[0].vals[2].typ, ShouldEqual, pvInt)
+			So(c[1].vals[0].typ, ShouldEqual, pvFloat)
+			So(c[2].vals[0].typ, ShouldEqual, pvBoolFalse)
 
 			Convey("single collated", func() {
 				Convey("indexableMap", func() {
-					So(sip, ShouldResemble, serializedIndexablePmap{
+					m, err := c.indexableMap()
+					So(err, ShouldBeNil)
+					So(m, ShouldResemble, mappedPlist{
 						"wat": {
-							cat(gae.DSPTInt, 100),
-							cat(gae.DSPTString, "hat"),
+							cat(pvInt, 100),
+							cat(pvStr, "hat"),
 							// 'thing' is skipped, because it's not NoIndex
 						},
 						"nerd": {
-							cat(gae.DSPTFloat, 103.7),
+							cat(pvFloat, 103.7),
 						},
 					})
 				})
 				Convey("defaultIndicies", func() {
-					idxs := defaultIndicies("knd", pm)
+					idxs := c.defaultIndicies("knd")
 					So(len(idxs), ShouldEqual, 5)
 					So(idxs[0].String(), ShouldEqual, "B:knd")
-					So(idxs[1].String(), ShouldEqual, "B:knd/-nerd")
+					So(idxs[1].String(), ShouldEqual, "B:knd/wat")
 					So(idxs[2].String(), ShouldEqual, "B:knd/-wat")
 					So(idxs[3].String(), ShouldEqual, "B:knd/nerd")
-					So(idxs[4].String(), ShouldEqual, "B:knd/wat")
+					So(idxs[4].String(), ShouldEqual, "B:knd/-nerd")
 				})
 			})
 		})
@@ -83,12 +167,13 @@ func TestCollated(t *testing.T) {
 }
 
 var rgenComplexTime = time.Date(
-	1986, time.October, 26, 1, 20, 00, 00, time.UTC)
+	1986, time.October, 26, 1, 20, 00, 00,
+	mustLoadLocation("America/Los_Angeles"))
 var rgenComplexKey = key("kind", "id")
 
 var rowGenTestCases = []struct {
 	name        string
-	pmap        gae.DSPropertyMap
+	plist       *propertyList
 	withBuiltin bool
 	idxs        []*qIndex
 
@@ -101,10 +186,13 @@ var rowGenTestCases = []struct {
 }{
 	{
 		name: "simple including builtins",
-		pmap: gae.DSPropertyMap{
-			"wat":  {prop("thing", true), prop("hat"), prop(100)},
-			"nerd": {prop(103.7)},
-			"spaz": {prop(false, true)},
+		plist: &propertyList{
+			// intentionally out of order
+			prop("wat", "thing", true),
+			prop("nerd", 103.7),
+			prop("wat", "hat"),
+			prop("wat", int64(100)),
+			prop("spaz", false, true),
 		},
 		withBuiltin: true,
 		idxs: []*qIndex{
@@ -112,47 +200,52 @@ var rowGenTestCases = []struct {
 		},
 		expected: []serializedPvals{
 			{{}}, // B:knd
-			{icat(gae.DSPTFloat, 103.7)},                          // B:knd/-nerd
-			{icat(gae.DSPTString, "hat"), icat(gae.DSPTInt, 100)}, // B:knd/-wat
-			{cat(gae.DSPTFloat, 103.7)},                           // B:knd/nerd
-			{cat(gae.DSPTInt, 100), cat(gae.DSPTString, "hat")},   // B:knd/wat
+			{cat(pvInt, 100), cat(pvStr, "hat")},   // B:knd/wat
+			{icat(pvStr, "hat"), icat(pvInt, 100)}, // B:knd/-wat
+			{cat(pvFloat, 103.7)},                  // B:knd/nerd
+			{icat(pvFloat, 103.7)},                 // B:knd/-nerd
 			{ // B:knd/-wat/nerd
-				cat(icat(gae.DSPTString, "hat"), cat(gae.DSPTFloat, 103.7)),
-				cat(icat(gae.DSPTInt, 100), cat(gae.DSPTFloat, 103.7)),
+				cat(icat(pvStr, "hat"), cat(pvFloat, 103.7)),
+				cat(icat(pvInt, 100), cat(pvFloat, 103.7)),
 			},
 		},
 		collections: map[string][]kv{
 			"idx": {
 				// 0 == builtin, 1 == complex
 				{cat(byte(0), "knd", byte(1), 0), []byte{}},
-				{cat(byte(0), "knd", byte(1), 1, byte(0), "nerd"), []byte{}},
 				{cat(byte(0), "knd", byte(1), 1, byte(0), "wat"), []byte{}},
-				{cat(byte(0), "knd", byte(1), 1, byte(1), "nerd"), []byte{}},
+				{cat(byte(0), "knd", byte(1), 1, byte(0), "nerd"), []byte{}},
 				{cat(byte(0), "knd", byte(1), 1, byte(1), "wat"), []byte{}},
+				{cat(byte(0), "knd", byte(1), 1, byte(1), "nerd"), []byte{}},
 				{cat(byte(1), "knd", byte(1), 2, byte(1), "wat", byte(0), "nerd"), []byte{}},
 			},
 			"idx:ns:" + sat(indx("knd")): {
 				{cat(fakeKey), []byte{}},
 			},
 			"idx:ns:" + sat(indx("knd", "wat")): {
-				{cat(gae.DSPTInt, 100, fakeKey), []byte{}},
-				{cat(gae.DSPTString, "hat", fakeKey), cat(gae.DSPTInt, 100)},
+				{cat(pvInt, 100, fakeKey), []byte{}},
+				{cat(pvStr, "hat", fakeKey), cat(pvInt, 100)},
 			},
 			"idx:ns:" + sat(indx("knd", "-wat")): {
-				{cat(icat(gae.DSPTString, "hat"), fakeKey), []byte{}},
-				{cat(icat(gae.DSPTInt, 100), fakeKey), icat(gae.DSPTString, "hat")},
+				{cat(icat(pvStr, "hat"), fakeKey), []byte{}},
+				{cat(icat(pvInt, 100), fakeKey), icat(pvStr, "hat")},
 			},
 		},
 	},
 	{
 		name: "complex",
-		pmap: gae.DSPropertyMap{
-			"yerp": {prop("hat"), prop(73.9)},
-			"wat": {
-				prop(rgenComplexTime),
-				prop(gae.DSByteString("value")),
-				prop(rgenComplexKey)},
-			"spaz": {prop(nil), prop(false), prop(true)},
+		plist: &propertyList{
+			// in order for sanity, grouped by property.
+			prop("yerp", "hat"),
+			prop("yerp", 73.9),
+
+			prop("wat", rgenComplexTime),
+			prop("wat", datastore.ByteString("value")),
+			prop("wat", rgenComplexKey),
+
+			prop("spaz", nil),
+			prop("spaz", false),
+			prop("spaz", true),
 		},
 		idxs: []*qIndex{
 			indx("knd", "-wat", "nerd", "spaz"), // doesn't match, so empty
@@ -163,40 +256,40 @@ var rowGenTestCases = []struct {
 			{ // C:knd/yerp/-wat/spaz
 				// thank goodness the binary serialization only happens 1/val in the
 				// real code :).
-				cat(cat(gae.DSPTString, "hat"), icat(gae.DSPTKey, rgenComplexKey), cat(gae.DSPTNull)),
-				cat(cat(gae.DSPTString, "hat"), icat(gae.DSPTKey, rgenComplexKey), cat(gae.DSPTBoolFalse)),
-				cat(cat(gae.DSPTString, "hat"), icat(gae.DSPTKey, rgenComplexKey), cat(gae.DSPTBoolTrue)),
-				cat(cat(gae.DSPTString, "hat"), icat(gae.DSPTBytes, "value"), cat(gae.DSPTNull)),
-				cat(cat(gae.DSPTString, "hat"), icat(gae.DSPTBytes, "value"), cat(gae.DSPTBoolFalse)),
-				cat(cat(gae.DSPTString, "hat"), icat(gae.DSPTBytes, "value"), cat(gae.DSPTBoolTrue)),
-				cat(cat(gae.DSPTString, "hat"), icat(gae.DSPTTime, rgenComplexTime), cat(gae.DSPTNull)),
-				cat(cat(gae.DSPTString, "hat"), icat(gae.DSPTTime, rgenComplexTime), cat(gae.DSPTBoolFalse)),
-				cat(cat(gae.DSPTString, "hat"), icat(gae.DSPTTime, rgenComplexTime), cat(gae.DSPTBoolTrue)),
+				cat(cat(pvStr, "hat"), icat(pvKey, rgenComplexKey), cat(pvNull)),
+				cat(cat(pvStr, "hat"), icat(pvKey, rgenComplexKey), cat(pvBoolFalse)),
+				cat(cat(pvStr, "hat"), icat(pvKey, rgenComplexKey), cat(pvBoolTrue)),
+				cat(cat(pvStr, "hat"), icat(pvBytes, "value"), cat(pvNull)),
+				cat(cat(pvStr, "hat"), icat(pvBytes, "value"), cat(pvBoolFalse)),
+				cat(cat(pvStr, "hat"), icat(pvBytes, "value"), cat(pvBoolTrue)),
+				cat(cat(pvStr, "hat"), icat(pvTime, rgenComplexTime), cat(pvNull)),
+				cat(cat(pvStr, "hat"), icat(pvTime, rgenComplexTime), cat(pvBoolFalse)),
+				cat(cat(pvStr, "hat"), icat(pvTime, rgenComplexTime), cat(pvBoolTrue)),
 
-				cat(cat(gae.DSPTFloat, 73.9), icat(gae.DSPTKey, rgenComplexKey), cat(gae.DSPTNull)),
-				cat(cat(gae.DSPTFloat, 73.9), icat(gae.DSPTKey, rgenComplexKey), cat(gae.DSPTBoolFalse)),
-				cat(cat(gae.DSPTFloat, 73.9), icat(gae.DSPTKey, rgenComplexKey), cat(gae.DSPTBoolTrue)),
-				cat(cat(gae.DSPTFloat, 73.9), icat(gae.DSPTBytes, "value"), cat(gae.DSPTNull)),
-				cat(cat(gae.DSPTFloat, 73.9), icat(gae.DSPTBytes, "value"), cat(gae.DSPTBoolFalse)),
-				cat(cat(gae.DSPTFloat, 73.9), icat(gae.DSPTBytes, "value"), cat(gae.DSPTBoolTrue)),
-				cat(cat(gae.DSPTFloat, 73.9), icat(gae.DSPTTime, rgenComplexTime), cat(gae.DSPTNull)),
-				cat(cat(gae.DSPTFloat, 73.9), icat(gae.DSPTTime, rgenComplexTime), cat(gae.DSPTBoolFalse)),
-				cat(cat(gae.DSPTFloat, 73.9), icat(gae.DSPTTime, rgenComplexTime), cat(gae.DSPTBoolTrue)),
+				cat(cat(pvFloat, 73.9), icat(pvKey, rgenComplexKey), cat(pvNull)),
+				cat(cat(pvFloat, 73.9), icat(pvKey, rgenComplexKey), cat(pvBoolFalse)),
+				cat(cat(pvFloat, 73.9), icat(pvKey, rgenComplexKey), cat(pvBoolTrue)),
+				cat(cat(pvFloat, 73.9), icat(pvBytes, "value"), cat(pvNull)),
+				cat(cat(pvFloat, 73.9), icat(pvBytes, "value"), cat(pvBoolFalse)),
+				cat(cat(pvFloat, 73.9), icat(pvBytes, "value"), cat(pvBoolTrue)),
+				cat(cat(pvFloat, 73.9), icat(pvTime, rgenComplexTime), cat(pvNull)),
+				cat(cat(pvFloat, 73.9), icat(pvTime, rgenComplexTime), cat(pvBoolFalse)),
+				cat(cat(pvFloat, 73.9), icat(pvTime, rgenComplexTime), cat(pvBoolTrue)),
 			},
 		},
 	},
 	{
 		name: "ancestor",
-		pmap: gae.DSPropertyMap{
-			"wat": {prop("sup")},
+		plist: &propertyList{
+			prop("wat", "sup"),
 		},
 		idxs: []*qIndex{
 			indx("knd!", "wat"),
 		},
 		collections: map[string][]kv{
 			"idx:ns:" + sat(indx("knd!", "wat")): {
-				{cat(fakeKey.Parent(), gae.DSPTString, "sup", fakeKey), []byte{}},
-				{cat(fakeKey, gae.DSPTString, "sup", fakeKey), []byte{}},
+				{cat(fakeKey.Parent(), pvStr, "sup", fakeKey), []byte{}},
+				{cat(fakeKey, pvStr, "sup", fakeKey), []byte{}},
 			},
 		},
 	},
@@ -213,10 +306,17 @@ func TestIndexRowGen(t *testing.T) {
 			}
 
 			Convey(tc.name, func() {
-				mvals := partiallySerialize(tc.pmap)
+				c, err := tc.plist.collate()
+				if err != nil {
+					panic(err)
+				}
+				mvals, err := c.indexableMap()
+				if err != nil {
+					panic(err)
+				}
 				idxs := []*qIndex(nil)
 				if tc.withBuiltin {
-					idxs = append(defaultIndicies("coolKind", tc.pmap), tc.idxs...)
+					idxs = append(c.defaultIndicies("coolKind"), tc.idxs...)
 				} else {
 					idxs = tc.idxs
 				}
@@ -229,7 +329,7 @@ func TestIndexRowGen(t *testing.T) {
 							So(ok, ShouldBeTrue)
 							j := 0
 							iGen.permute(func(row []byte) {
-								So([]byte(row), ShouldResemble, tc.expected[i][j])
+								So(serializedPval(row), ShouldResemble, tc.expected[i][j])
 								j++
 							})
 							So(j, ShouldEqual, len(tc.expected[i]))
@@ -255,11 +355,16 @@ func TestIndexEntries(t *testing.T) {
 
 			Convey(tc.name, func() {
 				store := (*memStore)(nil)
+				err := error(nil)
 				if tc.withBuiltin {
-					store = indexEntriesWithBuiltins(fakeKey, tc.pmap, tc.idxs)
+					store, err = tc.plist.indexEntriesWithBuiltins(fakeKey, tc.idxs)
 				} else {
-					store = partiallySerialize(tc.pmap).indexEntries(fakeKey, tc.idxs)
+					c, err := tc.plist.collate()
+					if err == nil {
+						store, err = c.indexEntries(fakeKey, tc.idxs)
+					}
 				}
+				So(err, ShouldBeNil)
 				for colName, vals := range tc.collections {
 					i := 0
 					store.GetCollection(colName).VisitItemsAscend(nil, true, func(itm *gkvlite.Item) bool {
@@ -276,8 +381,8 @@ func TestIndexEntries(t *testing.T) {
 }
 
 type dumbItem struct {
-	key   gae.DSKey
-	props gae.DSPropertyMap
+	key  *datastore.Key
+	prop *propertyList
 }
 
 var updateIndiciesTests = []struct {
@@ -289,31 +394,25 @@ var updateIndiciesTests = []struct {
 	{
 		name: "basic",
 		data: []dumbItem{
-			{key("knd", 1), gae.DSPropertyMap{
-				"wat":  {prop(10)},
-				"yerp": {prop(10)}},
-			},
-			{key("knd", 10), gae.DSPropertyMap{
-				"wat":  {prop(1)},
-				"yerp": {prop(200)}},
-			},
-			{key("knd", 1), gae.DSPropertyMap{
-				"wat":  {prop(10)},
-				"yerp": {prop(202)}},
-			},
+			{key("knd", 1),
+				pl(prop("wat", int64(10)), prop("yerp", int64(100)))},
+			{key("knd", 10),
+				pl(prop("wat", int64(1)), prop("yerp", int64(200)))},
+			{key("knd", 1),
+				pl(prop("wat", int64(10)), prop("yerp", int64(202)))},
 		},
 		expected: map[string][][]byte{
 			"idx:ns:" + sat(indx("knd", "wat")): {
-				cat(gae.DSPTInt, 1, key("knd", 10)),
-				cat(gae.DSPTInt, 10, key("knd", 1)),
+				cat(pvInt, 1, key("knd", 10)),
+				cat(pvInt, 10, key("knd", 1)),
 			},
 			"idx:ns:" + sat(indx("knd", "-wat")): {
-				cat(icat(gae.DSPTInt, 10), key("knd", 1)),
-				cat(icat(gae.DSPTInt, 1), key("knd", 10)),
+				cat(icat(pvInt, 10), key("knd", 1)),
+				cat(icat(pvInt, 1), key("knd", 10)),
 			},
 			"idx:ns:" + sat(indx("knd", "yerp")): {
-				cat(gae.DSPTInt, 200, key("knd", 10)),
-				cat(gae.DSPTInt, 202, key("knd", 1)),
+				cat(pvInt, 200, key("knd", 10)),
+				cat(pvInt, 202, key("knd", 1)),
 			},
 		},
 	},
@@ -321,33 +420,23 @@ var updateIndiciesTests = []struct {
 		name: "compound",
 		idxs: []*qIndex{indx("knd", "yerp", "-wat")},
 		data: []dumbItem{
-			{key("knd", 1), gae.DSPropertyMap{
-				"wat":  {prop(10)},
-				"yerp": {prop(100)}},
-			},
-			{key("knd", 10), gae.DSPropertyMap{
-				"wat":  {prop(1)},
-				"yerp": {prop(200)}},
-			},
-			{key("knd", 11), gae.DSPropertyMap{
-				"wat":  {prop(20)},
-				"yerp": {prop(200)}},
-			},
-			{key("knd", 14), gae.DSPropertyMap{
-				"wat":  {prop(20)},
-				"yerp": {prop(200)}},
-			},
-			{key("knd", 1), gae.DSPropertyMap{
-				"wat":  {prop(10)},
-				"yerp": {prop(202)}},
-			},
+			{key("knd", 1),
+				pl(prop("wat", int64(10)), prop("yerp", int64(100)))},
+			{key("knd", 10),
+				pl(prop("wat", int64(1)), prop("yerp", int64(200)))},
+			{key("knd", 11),
+				pl(prop("wat", int64(20)), prop("yerp", int64(200)))},
+			{key("knd", 14),
+				pl(prop("wat", int64(20)), prop("yerp", int64(200)))},
+			{key("knd", 1),
+				pl(prop("wat", int64(10)), prop("yerp", int64(202)))},
 		},
 		expected: map[string][][]byte{
 			"idx:ns:" + sat(indx("knd", "yerp", "-wat")): {
-				cat(gae.DSPTInt, 200, icat(gae.DSPTInt, 20), key("knd", 11)),
-				cat(gae.DSPTInt, 200, icat(gae.DSPTInt, 20), key("knd", 14)),
-				cat(gae.DSPTInt, 200, icat(gae.DSPTInt, 1), key("knd", 10)),
-				cat(gae.DSPTInt, 202, icat(gae.DSPTInt, 10), key("knd", 1)),
+				cat(pvInt, 200, icat(pvInt, 20), key("knd", 11)),
+				cat(pvInt, 200, icat(pvInt, 20), key("knd", 14)),
+				cat(pvInt, 200, icat(pvInt, 1), key("knd", 10)),
+				cat(pvInt, 202, icat(pvInt, 10), key("knd", 1)),
 			},
 		},
 	},
@@ -365,13 +454,13 @@ func TestUpdateIndicies(t *testing.T) {
 					idxColl.Set(cat(i), []byte{})
 				}
 
-				tmpLoader := map[string]gae.DSPropertyMap{}
+				tmpLoader := map[string]*propertyList{}
 				for _, itm := range tc.data {
 					ks := itm.key.String()
 					prev := tmpLoader[ks]
-					err := updateIndicies(store, itm.key, prev, itm.props)
+					err := updateIndicies(store, itm.key, prev, itm.prop)
 					So(err, ShouldBeNil)
-					tmpLoader[ks] = itm.props
+					tmpLoader[ks] = itm.prop
 				}
 				tmpLoader = nil
 

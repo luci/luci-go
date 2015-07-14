@@ -2,10 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package gae
+package wrapper
 
 import (
 	"time"
+
+	"appengine"
 
 	"golang.org/x/net/context"
 )
@@ -13,25 +15,43 @@ import (
 // GlobalInfo is the interface for all of the package methods which normally
 // would be in the 'appengine' package.
 type GlobalInfo interface {
-	AppID() string
-	Datacenter() string
-	DefaultVersionHostname() string
-	InstanceID() string
-	IsDevAppServer() bool
-	IsOverQuota(err error) bool
-	IsTimeoutError(err error) bool
-	ModuleHostname(module, version, instance string) (string, error)
-	ModuleName() string
-	RequestID() string
-	ServerSoftware() string
-	ServiceAccount() (string, error)
-	VersionID() string
-
-	Namespace(namespace string) (context.Context, error)
+	// methods usually requiring a Context
 
 	AccessToken(scopes ...string) (token string, expiry time.Time, err error)
-	PublicCertificates() ([]GICertificate, error)
+	AppID() string
+	DefaultVersionHostname() string
+	ModuleHostname(module, version, instance string) (string, error)
+	ModuleName() string
+	PublicCertificates() ([]appengine.Certificate, error)
+	RequestID() string
+	ServiceAccount() (string, error)
 	SignBytes(bytes []byte) (keyName string, signature []byte, err error)
+	VersionID() string
+
+	// our tweaked interface
+
+	// Namespace takes the new namespace as a string, and returns a context
+	// set to use that namespace, or an error.
+	// The appengine SDK doesn't document what errors you can see from this
+	// method, or under what circumstances they might occur.
+	Namespace(namespace string) (context.Context, error)
+
+	// Really global functions... these don't normally even require context, but
+	// for the purposes of testing+consistency, they're included here.
+
+	Datacenter() string
+	InstanceID() string
+	IsDevAppserver() bool
+	ServerSoftware() string
+
+	IsCapabilityDisabled(err error) bool
+	IsOverQuota(err error) bool
+	IsTimeoutError(err error) bool
+
+	// Backends are deprecated in favor of modules, so simplify this a bit by
+	// omitting them from the interface.
+	// BackendHostname(name string, index int) string
+	// BackendInstance() (name string, index int)
 }
 
 // GIFactory is the function signature for factory methods compatible with

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package gae
+package wrapper
 
 import (
 	"errors"
@@ -17,25 +17,24 @@ type foo struct {
 	BrokenFeatures
 }
 
-func (f *foo) RunIfNotBroken(fn func() error) error {
-	// can 'override' RunIfNotBroken
-	return f.BrokenFeatures.RunIfNotBroken(fn)
+func (f *foo) halp() error { // test the ability to call IsBroken from an internal helper
+	return f.IsBroken()
 }
 
-func (f *foo) Foo() (ret string, err error) {
-	err = f.RunIfNotBroken(func() error {
-		ret = "foo"
-		return nil
-	})
-	return
+func (f *foo) Foo() (string, error) {
+	err := f.halp()
+	if err != nil {
+		return "", err
+	}
+	return "foo", nil
 }
 
-func (f *foo) Bar() (ret string, err error) {
-	err = f.RunIfNotBroken(func() error {
-		ret = "bar"
-		return nil
-	})
-	return
+func (f *foo) Bar() (string, error) {
+	err := f.halp()
+	if err != nil {
+		return "", err
+	}
+	return "bar", nil
 }
 
 type override struct {
@@ -43,15 +42,15 @@ type override struct {
 	totallyRekt bool
 }
 
-func (o *override) RunIfNotBroken(f func() error) error {
+func (o *override) IsBroken() error {
 	if o.totallyRekt {
 		return fmt.Errorf("totallyRekt")
 	}
-	return o.BrokenFeatures.RunIfNotBroken(f)
+	return o.BrokenFeatures.IsBroken()
 }
 
 func (o *override) Foo() error {
-	return o.RunIfNotBroken(func() error { return nil })
+	return o.IsBroken()
 }
 
 func TestBrokenFeatures(t *testing.T) {
@@ -119,8 +118,7 @@ func TestBrokenFeatures(t *testing.T) {
 				// break some feature so we're forced to crawl the stack.
 				bf.BreakFeatures(nil, "Nerds")
 				// should break because there's no exported functions on the stack.
-				err := bf.RunIfNotBroken(func() error { return nil })
-				c.So(err, ShouldEqual, ErrBrokenFeaturesBroken)
+				c.So(bf.IsBroken(), ShouldEqual, ErrBrokenFeaturesBroken)
 			}()
 			wg.Wait()
 		})

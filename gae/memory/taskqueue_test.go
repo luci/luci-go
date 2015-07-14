@@ -6,7 +6,9 @@ package memory
 
 import (
 	"fmt"
-	"infra/gae/libs/gae"
+	"infra/gae/libs/wrapper"
+	"infra/libs/clock"
+	"infra/libs/clock/testclock"
 	"math/rand"
 	"net/http"
 	"testing"
@@ -15,8 +17,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/clock/testclock"
+	"appengine/taskqueue"
 )
 
 func TestTaskQueue(t *testing.T) {
@@ -25,37 +26,37 @@ func TestTaskQueue(t *testing.T) {
 	Convey("TaskQueue", t, func() {
 		now := time.Date(2000, time.January, 1, 1, 1, 1, 1, time.UTC)
 		c, tc := testclock.UseTime(context.Background(), now)
-		c = gae.SetMathRand(c, rand.New(rand.NewSource(clock.Now(c).UnixNano())))
+		c = wrapper.SetMathRand(c, rand.New(rand.NewSource(clock.Now(c).UnixNano())))
 		c = Use(c)
 
-		tq := gae.GetTQ(c).(interface {
-			gae.TQMultiReadWriter
-			gae.TQTestable
+		tq := wrapper.GetTQ(c).(interface {
+			wrapper.TQMultiReadWriter
+			wrapper.TQTestable
 		})
 
 		So(tq, ShouldNotBeNil)
 
 		Convey("implements TQMultiReadWriter", func() {
 			Convey("Add", func() {
-				t := &gae.TQTask{Path: "/hello/world"}
+				t := &taskqueue.Task{Path: "/hello/world"}
 
 				Convey("works", func() {
 					t.Delay = 4 * time.Second
 					t.Header = http.Header{}
 					t.Header.Add("Cat", "tabby")
 					t.Payload = []byte("watwatwat")
-					t.RetryOptions = &gae.TQRetryOptions{AgeLimit: 7 * time.Second}
+					t.RetryOptions = &taskqueue.RetryOptions{AgeLimit: 7 * time.Second}
 					_, err := tq.Add(t, "")
 					So(err, ShouldBeNil)
 					name := "Z_UjshxM9ecyMQfGbZmUGOEcgxWU0_5CGLl_-RntudwAw2DqQ5-58bzJiWQN4OKzeuUb9O4JrPkUw2rOvk2Ax46THojnQ6avBQgZdrKcJmrwQ6o4qKfJdiyUbGXvy691yRfzLeQhs6cBhWrgf3wH-VPMcA4SC-zlbJ2U8An7I0zJQA5nBFnMNoMgT-2peGoay3rCSbj4z9VFFm9kS_i6JCaQH518ujLDSNCYdjTq6B6lcWrZAh0U_q3a1S2nXEwrKiw_t9MTNQFgAQZWyGBbvZQPmeRYtu8SPaWzTfd25v_YWgBuVL2rRSPSMvlDwE04nNdtvVzE8vNNiA1zRimmdzKeqATQF9_ReUvj4D7U8dcS703DZWfKMBLgBffY9jqCassOOOw77V72Oq5EVauUw3Qw0L6bBsfM9FtahTKUdabzRZjXUoze3EK4KXPt3-wdidau-8JrVf2XFocjjZbwHoxcGvbtT3b4nGLDlgwdC00bwaFBZWff"
-					So(*tq.GetScheduledTasks()["default"][name], ShouldResemble, gae.TQTask{
+					So(*tq.GetScheduledTasks()["default"][name], ShouldResemble, taskqueue.Task{
 						ETA:          now.Add(4 * time.Second),
 						Header:       http.Header{"Cat": []string{"tabby"}},
 						Method:       "POST",
 						Name:         name,
 						Path:         "/hello/world",
 						Payload:      []byte("watwatwat"),
-						RetryOptions: &gae.TQRetryOptions{AgeLimit: 7 * time.Second},
+						RetryOptions: &taskqueue.RetryOptions{AgeLimit: 7 * time.Second},
 					})
 				})
 
@@ -88,7 +89,7 @@ func TestTaskQueue(t *testing.T) {
 
 					// can't add the same one twice!
 					_, err = tq.Add(t, "")
-					So(err, ShouldEqual, gae.ErrTQTaskAlreadyAdded)
+					So(err, ShouldEqual, taskqueue.ErrTaskAlreadyAdded)
 				})
 
 				Convey("cannot add deleted task", func() {
@@ -101,7 +102,7 @@ func TestTaskQueue(t *testing.T) {
 
 					// can't add a deleted task!
 					_, err = tq.Add(t, "")
-					So(err, ShouldEqual, gae.ErrTQTaskAlreadyAdded)
+					So(err, ShouldEqual, taskqueue.ErrTaskAlreadyAdded)
 				})
 
 				Convey("cannot set ETA+Delay", func() {
@@ -144,7 +145,7 @@ func TestTaskQueue(t *testing.T) {
 					t2 := dupTask(t)
 					t2.Path = "/hi/city"
 
-					expect := []*gae.TQTask{t, t2}
+					expect := []*taskqueue.Task{t, t2}
 
 					tasks, err := tq.AddMulti(expect, "default")
 					So(err, ShouldBeNil)
@@ -164,20 +165,20 @@ func TestTaskQueue(t *testing.T) {
 
 					Convey("can be broken", func() {
 						tq.BreakFeatures(nil, "AddMulti")
-						_, err := tq.AddMulti([]*gae.TQTask{t}, "")
+						_, err := tq.AddMulti([]*taskqueue.Task{t}, "")
 						So(err.Error(), ShouldContainSubstring, "TRANSIENT_ERROR")
 					})
 
 					Convey("is not broken by Add", func() {
 						tq.BreakFeatures(nil, "Add")
-						_, err := tq.AddMulti([]*gae.TQTask{t}, "")
+						_, err := tq.AddMulti([]*taskqueue.Task{t}, "")
 						So(err, ShouldBeNil)
 					})
 				})
 			})
 
 			Convey("Delete", func() {
-				t := &gae.TQTask{Path: "/hello/world"}
+				t := &taskqueue.Task{Path: "/hello/world"}
 				tEnQ, err := tq.Add(t, "")
 				So(err, ShouldBeNil)
 
@@ -231,7 +232,7 @@ func TestTaskQueue(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					Convey("usually works", func() {
-						err = tq.DeleteMulti([]*gae.TQTask{tEnQ, tEnQ2}, "")
+						err = tq.DeleteMulti([]*taskqueue.Task{tEnQ, tEnQ2}, "")
 						So(err, ShouldBeNil)
 						So(len(tq.GetScheduledTasks()["default"]), ShouldEqual, 0)
 						So(len(tq.GetTombstonedTasks()["default"]), ShouldEqual, 2)
@@ -239,13 +240,13 @@ func TestTaskQueue(t *testing.T) {
 
 					Convey("can be broken", func() {
 						tq.BreakFeatures(nil, "DeleteMulti")
-						err = tq.DeleteMulti([]*gae.TQTask{tEnQ, tEnQ2}, "")
+						err = tq.DeleteMulti([]*taskqueue.Task{tEnQ, tEnQ2}, "")
 						So(err.Error(), ShouldContainSubstring, "TRANSIENT_ERROR")
 					})
 
 					Convey("is not broken by Delete", func() {
 						tq.BreakFeatures(nil, "Delete")
-						err = tq.DeleteMulti([]*gae.TQTask{tEnQ, tEnQ2}, "")
+						err = tq.DeleteMulti([]*taskqueue.Task{tEnQ, tEnQ2}, "")
 						So(err, ShouldBeNil)
 					})
 				})
@@ -253,11 +254,11 @@ func TestTaskQueue(t *testing.T) {
 		})
 
 		Convey("works with transactions", func() {
-			t := &gae.TQTask{Path: "/hello/world"}
+			t := &taskqueue.Task{Path: "/hello/world"}
 			tEnQ, err := tq.Add(t, "")
 			So(err, ShouldBeNil)
 
-			t2 := &gae.TQTask{Path: "/hi/city"}
+			t2 := &taskqueue.Task{Path: "/hi/city"}
 			tEnQ2, err := tq.Add(t2, "")
 			So(err, ShouldBeNil)
 
@@ -265,10 +266,10 @@ func TestTaskQueue(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("can view regular tasks", func() {
-				gae.GetRDS(c).RunInTransaction(func(c context.Context) error {
-					tq := gae.GetTQ(c).(interface {
-						gae.TQTestable
-						gae.TaskQueue
+				wrapper.GetDS(c).RunInTransaction(func(c context.Context) error {
+					tq := wrapper.GetTQ(c).(interface {
+						wrapper.TQTestable
+						wrapper.TaskQueue
 					})
 
 					So(tq.GetScheduledTasks()["default"][tEnQ.Name], ShouldResemble, tEnQ)
@@ -279,15 +280,15 @@ func TestTaskQueue(t *testing.T) {
 			})
 
 			Convey("can add a new task", func() {
-				tEnQ3 := (*gae.TQTask)(nil)
+				tEnQ3 := (*taskqueue.Task)(nil)
 
-				gae.GetRDS(c).RunInTransaction(func(c context.Context) error {
-					tq := gae.GetTQ(c).(interface {
-						gae.TQTestable
-						gae.TaskQueue
+				wrapper.GetDS(c).RunInTransaction(func(c context.Context) error {
+					tq := wrapper.GetTQ(c).(interface {
+						wrapper.TQTestable
+						wrapper.TaskQueue
 					})
 
-					t3 := &gae.TQTask{Path: "/sandwitch/victory"}
+					t3 := &taskqueue.Task{Path: "/sandwitch/victory"}
 					tEnQ3, err = tq.Add(t3, "")
 					So(err, ShouldBeNil)
 
@@ -313,20 +314,20 @@ func TestTaskQueue(t *testing.T) {
 			})
 
 			Convey("can a new task (but reset the state in a test)", func() {
-				tEnQ3 := (*gae.TQTask)(nil)
+				tEnQ3 := (*taskqueue.Task)(nil)
 
 				ttq := interface {
-					gae.TQTestable
-					gae.TaskQueue
+					wrapper.TQTestable
+					wrapper.TaskQueue
 				}(nil)
 
-				gae.GetRDS(c).RunInTransaction(func(c context.Context) error {
-					ttq = gae.GetTQ(c).(interface {
-						gae.TQTestable
-						gae.TaskQueue
+				wrapper.GetDS(c).RunInTransaction(func(c context.Context) error {
+					ttq = wrapper.GetTQ(c).(interface {
+						wrapper.TQTestable
+						wrapper.TaskQueue
 					})
 
-					t3 := &gae.TQTask{Path: "/sandwitch/victory"}
+					t3 := &taskqueue.Task{Path: "/sandwitch/victory"}
 					tEnQ3, err = ttq.Add(t3, "")
 					So(err, ShouldBeNil)
 
@@ -354,12 +355,12 @@ func TestTaskQueue(t *testing.T) {
 			})
 
 			Convey("you can AddMulti as well", func() {
-				gae.GetRDS(c).RunInTransaction(func(c context.Context) error {
-					tq := gae.GetTQ(c).(interface {
-						gae.TQTestable
-						gae.TaskQueue
+				wrapper.GetDS(c).RunInTransaction(func(c context.Context) error {
+					tq := wrapper.GetTQ(c).(interface {
+						wrapper.TQTestable
+						wrapper.TaskQueue
 					})
-					_, err := tq.AddMulti([]*gae.TQTask{t, t, t}, "")
+					_, err := tq.AddMulti([]*taskqueue.Task{t, t, t}, "")
 					So(err, ShouldBeNil)
 					So(len(tq.GetScheduledTasks()["default"]), ShouldEqual, 1)
 					So(len(tq.GetTransactionTasks()["default"]), ShouldEqual, 3)
@@ -370,25 +371,25 @@ func TestTaskQueue(t *testing.T) {
 			})
 
 			Convey("unless you add too many things", func() {
-				gae.GetRDS(c).RunInTransaction(func(c context.Context) error {
+				wrapper.GetDS(c).RunInTransaction(func(c context.Context) error {
 					for i := 0; i < 5; i++ {
-						_, err = gae.GetTQ(c).Add(t, "")
+						_, err = wrapper.GetTQ(c).Add(t, "")
 						So(err, ShouldBeNil)
 					}
-					_, err = gae.GetTQ(c).Add(t, "")
+					_, err = wrapper.GetTQ(c).Add(t, "")
 					So(err.Error(), ShouldContainSubstring, "BAD_REQUEST")
 					return nil
 				}, nil)
 			})
 
 			Convey("unless you Add to a bad queue", func() {
-				gae.GetRDS(c).RunInTransaction(func(c context.Context) error {
-					_, err = gae.GetTQ(c).Add(t, "meat")
+				wrapper.GetDS(c).RunInTransaction(func(c context.Context) error {
+					_, err = wrapper.GetTQ(c).Add(t, "meat")
 					So(err.Error(), ShouldContainSubstring, "UNKNOWN_QUEUE")
 
 					Convey("unless you add it!", func() {
-						gae.GetTQ(c).(gae.TQTestable).CreateQueue("meat")
-						_, err = gae.GetTQ(c).Add(t, "meat")
+						wrapper.GetTQ(c).(wrapper.TQTestable).CreateQueue("meat")
+						_, err = wrapper.GetTQ(c).Add(t, "meat")
 						So(err, ShouldBeNil)
 					})
 
@@ -398,8 +399,8 @@ func TestTaskQueue(t *testing.T) {
 
 			Convey("unless Add is broken", func() {
 				tq.BreakFeatures(nil, "Add")
-				gae.GetRDS(c).RunInTransaction(func(c context.Context) error {
-					_, err = gae.GetTQ(c).Add(t, "")
+				wrapper.GetDS(c).RunInTransaction(func(c context.Context) error {
+					_, err = wrapper.GetTQ(c).Add(t, "")
 					So(err.Error(), ShouldContainSubstring, "TRANSIENT_ERROR")
 					return nil
 				}, nil)
@@ -407,8 +408,8 @@ func TestTaskQueue(t *testing.T) {
 
 			Convey("unless AddMulti is broken", func() {
 				tq.BreakFeatures(nil, "AddMulti")
-				gae.GetRDS(c).RunInTransaction(func(c context.Context) error {
-					_, err = gae.GetTQ(c).AddMulti(nil, "")
+				wrapper.GetDS(c).RunInTransaction(func(c context.Context) error {
+					_, err = wrapper.GetTQ(c).AddMulti(nil, "")
 					So(err.Error(), ShouldContainSubstring, "TRANSIENT_ERROR")
 					return nil
 				}, nil)
@@ -418,8 +419,8 @@ func TestTaskQueue(t *testing.T) {
 				err := error(nil)
 				func() {
 					defer func() { err = recover().(error) }()
-					gae.GetRDS(c).RunInTransaction(func(c context.Context) error {
-						gae.GetTQ(c).Delete(t, "")
+					wrapper.GetDS(c).RunInTransaction(func(c context.Context) error {
+						wrapper.GetTQ(c).Delete(t, "")
 						return nil
 					}, nil)
 				}()
@@ -427,9 +428,9 @@ func TestTaskQueue(t *testing.T) {
 			})
 
 			Convey("adding a new task only happens if we don't errout", func() {
-				gae.GetRDS(c).RunInTransaction(func(c context.Context) error {
-					t3 := &gae.TQTask{Path: "/sandwitch/victory"}
-					_, err = gae.GetTQ(c).Add(t3, "")
+				wrapper.GetDS(c).RunInTransaction(func(c context.Context) error {
+					t3 := &taskqueue.Task{Path: "/sandwitch/victory"}
+					_, err = wrapper.GetTQ(c).Add(t3, "")
 					So(err, ShouldBeNil)
 					return fmt.Errorf("nooooo")
 				}, nil)
@@ -442,13 +443,13 @@ func TestTaskQueue(t *testing.T) {
 			Convey("likewise, a panic doesn't schedule anything", func() {
 				func() {
 					defer func() { recover() }()
-					gae.GetRDS(c).RunInTransaction(func(c context.Context) error {
-						tq := gae.GetTQ(c).(interface {
-							gae.TQTestable
-							gae.TaskQueue
+					wrapper.GetDS(c).RunInTransaction(func(c context.Context) error {
+						tq := wrapper.GetTQ(c).(interface {
+							wrapper.TQTestable
+							wrapper.TaskQueue
 						})
 
-						t3 := &gae.TQTask{Path: "/sandwitch/victory"}
+						t3 := &taskqueue.Task{Path: "/sandwitch/victory"}
 						_, err = tq.Add(t3, "")
 						So(err, ShouldBeNil)
 

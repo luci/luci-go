@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package gae
+package wrapper
 
 import (
 	"errors"
@@ -34,8 +34,8 @@ type FeatureBreaker interface {
 	UnbreakFeatures(feature ...string)
 }
 
-// ErrBrokenFeaturesBroken is returned from RunIfNotBroken when BrokenFeatures
-// itself isn't working correctly.
+// ErrBrokenFeaturesBroken is returned from IsBroken when BrokenFeatures itself
+// isn't working correctly.
 var ErrBrokenFeaturesBroken = errors.New("brokenFeatures: Unable to retrieve caller information")
 
 // BrokenFeatures implements the FeatureBreaker interface, and is suitable for
@@ -81,14 +81,14 @@ func (b *BrokenFeatures) UnbreakFeatures(feature ...string) {
 	}
 }
 
-// RunIfNotBroken is to be called internally by the fake service on every
-// publically-facing method. If it returns an error, the fake should return the
-// error.
+// IsBroken is to be called internally by the fake service on every
+// publically-facing method. If it returns an error, the fake should return
+// the error.
 //
 // Example:
 //   type MyService struct { BrokenFeatures }
 //   func (ms *MyService) Thingy() error {
-//     if err := ms.RunIfNotBroken(); err != nil {
+//     if err := ms.IsBroken(); err != nil {
 //       return err
 //     }
 //		 ...
@@ -97,25 +97,23 @@ func (b *BrokenFeatures) UnbreakFeatures(feature ...string) {
 //  You can now do ms.SetBrokenFeatures("Thingy"), and Thingy will return an
 //  error.
 //
-//  Note that RunIfNotBroken will keep walking the stack until it finds the
-//  first publically-exported method, which will allow you to put the
-//  RunIfNotBroken call in an internal helper method of your service
-//  implementation.
+//  Note that IsBroken will keep walking the stack until it finds the first
+//  publically-exported method, which will allow you to put the IsBroken call
+//  in an internal helper method of your service implementation.
 //
-//  Additionaly, RunIfNotBroken allows a very primitive form of overriding; it
-//  walks the stack until it finds the first method which is not called
-//  "RunIfNotBroken".  This allows the embedding struct to call into
-//  BrokenFeatures.RunIfNotBroken from another RunIfNotBroken function, and
-//  still have it behave correctly.
-func (b *BrokenFeatures) RunIfNotBroken(f func() error) error {
+//  Additionaly, IsBroken allows a very primitive form of overriding; it walks
+//  the stack until it finds the first method which is not called "IsBroken".
+//  This allows the embedding struct to call into BrokenFeatures.IsBroken from
+//  another IsBroken function, and still have it behave correctly.
+func (b *BrokenFeatures) IsBroken() error {
 	if b.noBrokenFeatures() {
-		return f()
+		return nil
 	}
 
 	var name string
 	for off := 1; ; off++ { // offset of 1 skips ourselves by default
 		// TODO(riannucci): Profile this to see if it's having an adverse
-		// performance impact on tests.
+		// performance impact ont tests.
 		fn, _, _, ok := runtime.Caller(off)
 		if !ok {
 			return ErrBrokenFeaturesBroken
@@ -129,19 +127,17 @@ func (b *BrokenFeatures) RunIfNotBroken(f func() error) error {
 			// !IsLower, and afaik, in unicode-land they're not direct opposites.
 			continue
 		}
-		if name == "RunIfNotBroken" {
-			// Allow users to override RunIfNotBroken, keep walking until we see
-			// a function which is named differently than RunIfNotBroken.
+		if name == "IsBroken" {
+			// Allow users to override IsBroken, keep walking until we see a function
+			// which is named differently than IsBroken.
 			continue
 		}
 		break
 	}
 
 	b.lock.Lock()
-	err, ok := b.broken[name]
 	defer b.lock.Unlock()
-
-	if ok {
+	if err, ok := b.broken[name]; ok {
 		if err != nil {
 			return err
 		}
@@ -151,7 +147,7 @@ func (b *BrokenFeatures) RunIfNotBroken(f func() error) error {
 		return fmt.Errorf("feature %q is broken", name)
 	}
 
-	return f()
+	return nil
 }
 
 func (b *BrokenFeatures) noBrokenFeatures() bool {
