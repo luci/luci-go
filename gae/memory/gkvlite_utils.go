@@ -6,6 +6,7 @@ package memory
 
 import (
 	"bytes"
+	"runtime"
 	"sync"
 
 	"github.com/luci/gkvlite"
@@ -75,7 +76,11 @@ func newMemStore() *memStore {
 }
 
 func (ms *memStore) Snapshot() *memStore {
-	return (*memStore)((*gkvlite.Store)(ms).Snapshot())
+	ret := (*memStore)((*gkvlite.Store)(ms).Snapshot())
+	runtime.SetFinalizer((*gkvlite.Store)(ret), func(s *gkvlite.Store) {
+		go s.Close()
+	})
+	return ret
 }
 
 func (ms *memStore) MakePrivateCollection(cmp gkvlite.KeyCompare) *memCollection {
