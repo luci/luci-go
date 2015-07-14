@@ -10,22 +10,23 @@ import (
 	"golang.org/x/net/context"
 
 	"infra/gae/libs/gae"
+	"infra/gae/libs/gae/dummy"
 	"infra/gae/libs/gae/helper"
 )
 
 //////////////////////////////////// public ////////////////////////////////////
 
-// useDS adds a gae.Datastore implementation to context, accessible
+// useRDS adds a gae.Datastore implementation to context, accessible
 // by gae.GetDS(c)
-func useDS(c context.Context) context.Context {
+func useRDS(c context.Context) context.Context {
 	return gae.SetRDSFactory(c, func(ic context.Context) gae.RawDatastore {
 		dsd := cur(ic).Get(memContextDSIdx)
 
 		switch x := dsd.(type) {
 		case *dataStoreData:
-			return &dsImpl{gae.DummyRDS(), x, curGID(ic).namespace, ic}
+			return &dsImpl{dummy.RDS(), x, curGID(ic).namespace, ic}
 		case *txnDataStoreData:
-			return &txnDsImpl{gae.DummyRDS(), x, curGID(ic).namespace}
+			return &txnDsImpl{dummy.RDS(), x, curGID(ic).namespace}
 		default:
 			panic(fmt.Errorf("DS: bad type: %v in context %v", dsd, ic))
 		}
@@ -94,7 +95,7 @@ var (
 )
 
 func (d *dsImpl) NewQuery(kind string) gae.DSQuery {
-	return &queryImpl{DSQuery: gae.DummyQY(), ns: d.ns, kind: kind}
+	return &queryImpl{DSQuery: dummy.QY(), ns: d.ns, kind: kind}
 }
 
 func (d *dsImpl) Run(q gae.DSQuery) gae.DSIterator {

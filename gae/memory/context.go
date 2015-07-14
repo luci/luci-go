@@ -111,7 +111,7 @@ func Use(c context.Context) context.Context {
 	c = context.WithValue(
 		context.WithValue(c, memContextKey, newMemContext()),
 		giContextKey, &globalInfoData{})
-	return useTQ(useDS(useMC(useGI(c))))
+	return useTQ(useRDS(useMC(useGI(c))))
 }
 
 func cur(c context.Context) (p memContext) {

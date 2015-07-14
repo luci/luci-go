@@ -13,6 +13,7 @@ import (
 	"golang.org/x/net/context"
 
 	"infra/gae/libs/gae"
+	"infra/gae/libs/gae/dummy"
 )
 
 /////////////////////////////// public functions ///////////////////////////////
@@ -27,7 +28,7 @@ func useTQ(c context.Context) context.Context {
 		switch x := tqd.(type) {
 		case *taskQueueData:
 			ret = &taskqueueImpl{
-				gae.DummyTQ(),
+				dummy.TQ(),
 				x,
 				ic,
 				curGID(ic).namespace,
@@ -35,7 +36,7 @@ func useTQ(c context.Context) context.Context {
 
 		case *txnTaskQueueData:
 			ret = &taskqueueTxnImpl{
-				gae.DummyTQ(),
+				dummy.TQ(),
 				x,
 				ic,
 				curGID(ic).namespace,

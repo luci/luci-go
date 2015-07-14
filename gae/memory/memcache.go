@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"infra/gae/libs/gae"
+	"infra/gae/libs/gae/dummy"
 
 	"github.com/luci/luci-go/common/clock"
 )
@@ -104,7 +105,7 @@ func useMC(c context.Context) context.Context {
 		}
 
 		return &memcacheImpl{
-			gae.DummyMC(),
+			dummy.MC(),
 			mcd,
 			ic,
 		}

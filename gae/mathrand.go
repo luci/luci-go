@@ -11,6 +11,9 @@ import (
 	"github.com/luci/luci-go/common/clock"
 )
 
+// TODO(riannucci): Extract this into its own package. It's used by taskqueue,
+// but otherwise isn't related to gae services at all.
+
 // MathRandFactory is the function signature for factory methods compatible with
 // SetMathRandFactory.
 type MathRandFactory func(context.Context) *rand.Rand

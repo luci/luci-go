@@ -8,6 +8,7 @@ import (
 	"golang.org/x/net/context"
 
 	"infra/gae/libs/gae"
+	"infra/gae/libs/gae/dummy"
 )
 
 type giContextKeyType int
@@ -22,7 +23,7 @@ func curGID(c context.Context) *globalInfoData {
 // by gae.GetGI(c)
 func useGI(c context.Context) context.Context {
 	return gae.SetGIFactory(c, func(ic context.Context) gae.GlobalInfo {
-		return &giImpl{gae.DummyGI(), curGID(ic), ic}
+		return &giImpl{dummy.GI(), curGID(ic), ic}
 	})
 }
 
