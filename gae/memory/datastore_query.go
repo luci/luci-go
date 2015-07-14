@@ -241,6 +241,8 @@ type queryIterImpl struct {
 	idx *queryImpl
 }
 
+var _ gae.RDSIterator = (*queryIterImpl)(nil)
+
 func (q *queryIterImpl) Cursor() (gae.DSCursor, error) {
 	if q.idx.err != nil {
 		return nil, q.idx.err
@@ -248,7 +250,7 @@ func (q *queryIterImpl) Cursor() (gae.DSCursor, error) {
 	return nil, nil
 }
 
-func (q *queryIterImpl) Next(dst interface{}) (gae.DSKey, error) {
+func (q *queryIterImpl) Next(dst gae.DSPropertyLoadSaver) (gae.DSKey, error) {
 	if q.idx.err != nil {
 		return nil, q.idx.err
 	}

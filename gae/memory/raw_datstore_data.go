@@ -122,28 +122,20 @@ func (d *dataStoreData) entsKeyLocked(key gae.DSKey) (*memCollection, gae.DSKey,
 	return ents, key, nil
 }
 
-func putPrelim(ns string, key gae.DSKey, src interface{}) (gae.DSPropertyMap, error) {
+func putPrelim(ns string, key gae.DSKey, pls gae.DSPropertyLoadSaver) (gae.DSPropertyMap, error) {
 	if !keyCouldBeValid(key, ns, false) {
 		// TODO(riannucci): different error for Put-ing to reserved Keys?
 		return nil, gae.ErrDSInvalidKey
 	}
-
-	pls, err := helper.GetPLS(src)
-	if err != nil {
-		return nil, err
-	}
-	return pls.Save()
+	return pls.Save(false)
 }
 
-func (d *dataStoreData) put(ns string, key gae.DSKey, src interface{}) (gae.DSKey, error) {
-	pmData, err := putPrelim(ns, key, src)
+func (d *dataStoreData) put(ns string, key gae.DSKey, pls gae.DSPropertyLoadSaver) (gae.DSKey, error) {
+	pm, err := putPrelim(ns, key, pls)
 	if err != nil {
 		return nil, err
 	}
-	if key, err = d.putInner(key, pmData); err != nil {
-		return nil, err
-	}
-	return key, nil
+	return d.putInner(key, pm)
 }
 
 func (d *dataStoreData) putInner(key gae.DSKey, data gae.DSPropertyMap) (gae.DSKey, error) {
@@ -178,7 +170,7 @@ func (d *dataStoreData) putInner(key gae.DSKey, data gae.DSPropertyMap) (gae.DSK
 	return key, nil
 }
 
-func getInner(ns string, key gae.DSKey, dst interface{}, getColl func() (*memCollection, error)) error {
+func getInner(ns string, key gae.DSKey, pls gae.DSPropertyLoadSaver, getColl func() (*memCollection, error)) error {
 	if helper.DSKeyIncomplete(key) || !helper.DSKeyValid(key, ns, true) {
 		return gae.ErrDSInvalidKey
 	}
@@ -195,24 +187,16 @@ func getInner(ns string, key gae.DSKey, dst interface{}, getColl func() (*memCol
 		return gae.ErrDSNoSuchEntity
 	}
 
-	pm, err := rpmWoCtx(pdata, ns)
+	got, err := rpmWoCtx(pdata, ns)
 	if err != nil {
 		return err
 	}
 
-	pls, err := helper.GetPLS(dst)
-	if err != nil {
-		return err
-	}
-
-	// TODO(riannucci): should the Get API reveal conversion errors instead of
-	// swallowing them?
-	_, err = pls.Load(pm)
-	return err
+	return pls.Load(got)
 }
 
-func (d *dataStoreData) get(ns string, key gae.DSKey, dst interface{}) error {
-	return getInner(ns, key, dst, func() (*memCollection, error) {
+func (d *dataStoreData) get(ns string, key gae.DSKey, pls gae.DSPropertyLoadSaver) error {
+	return getInner(ns, key, pls, func() (*memCollection, error) {
 		d.rwlock.RLock()
 		s := d.store.Snapshot()
 		d.rwlock.RUnlock()
@@ -414,8 +398,8 @@ func (td *txnDataStoreData) writeMutation(getOnly bool, key gae.DSKey, data gae.
 	return nil
 }
 
-func (td *txnDataStoreData) put(ns string, key gae.DSKey, src interface{}) (gae.DSKey, error) {
-	pMap, err := putPrelim(ns, key, src)
+func (td *txnDataStoreData) put(ns string, key gae.DSKey, pls gae.DSPropertyLoadSaver) (gae.DSKey, error) {
+	pm, err := putPrelim(ns, key, pls)
 	if err != nil {
 		return nil, err
 	}
@@ -429,15 +413,15 @@ func (td *txnDataStoreData) put(ns string, key gae.DSKey, src interface{}) (gae.
 		return nil, err
 	}
 
-	if err = td.writeMutation(false, key, pMap); err != nil {
+	if err = td.writeMutation(false, key, pm); err != nil {
 		return nil, err
 	}
 
 	return key, nil
 }
 
-func (td *txnDataStoreData) get(ns string, key gae.DSKey, dst interface{}) error {
-	return getInner(ns, key, dst, func() (*memCollection, error) {
+func (td *txnDataStoreData) get(ns string, key gae.DSKey, pls gae.DSPropertyLoadSaver) error {
+	return getInner(ns, key, pls, func() (*memCollection, error) {
 		if err := td.writeMutation(true, key, nil); err != nil {
 			return nil, err
 		}

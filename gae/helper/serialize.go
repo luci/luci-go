@@ -185,7 +185,7 @@ func ReadTime(buf *bytes.Buffer) (time.Time, error) {
 // DSKey as its Value.
 func WriteDSProperty(buf *bytes.Buffer, p gae.DSProperty, context DSKeyContext) {
 	typb := byte(p.Type())
-	if p.NoIndex() {
+	if p.IndexSetting() == gae.NoIndex {
 		typb |= 0x80
 	}
 	buf.WriteByte(typb)
@@ -198,7 +198,7 @@ func WriteDSProperty(buf *bytes.Buffer, p gae.DSProperty, context DSKeyContext) 
 	case gae.DSPTString:
 		cmpbin.WriteString(buf, p.Value().(string))
 	case gae.DSPTBytes:
-		if p.NoIndex() {
+		if p.IndexSetting() == gae.NoIndex {
 			cmpbin.WriteBytes(buf, p.Value().([]byte))
 		} else {
 			cmpbin.WriteBytes(buf, p.Value().(gae.DSByteString))
@@ -223,7 +223,10 @@ func ReadDSProperty(buf *bytes.Buffer, context DSKeyContext, appid, namespace st
 	if err != nil {
 		return
 	}
-	noIndex := (typb & 0x80) != 0 // highbit means noindex
+	is := gae.ShouldIndex
+	if (typb & 0x80) != 0 {
+		is = gae.NoIndex
+	}
 	switch gae.DSPropertyType(typb & 0x7f) {
 	case gae.DSPTNull:
 	case gae.DSPTBoolTrue:
@@ -241,7 +244,7 @@ func ReadDSProperty(buf *bytes.Buffer, context DSKeyContext, appid, namespace st
 		if b, _, err = cmpbin.ReadBytes(buf); err != nil {
 			break
 		}
-		if noIndex {
+		if is == gae.NoIndex {
 			val = b
 		} else {
 			val = gae.DSByteString(b)
@@ -262,7 +265,7 @@ func ReadDSProperty(buf *bytes.Buffer, context DSKeyContext, appid, namespace st
 		err = fmt.Errorf("read: unknown type! %v", typb)
 	}
 	if err == nil {
-		err = p.SetValue(val, noIndex)
+		err = p.SetValue(val, is)
 	}
 	return
 }

@@ -22,18 +22,10 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func mp(value interface{}, noIndexes ...bool) (ret gae.DSProperty) {
-	ni := false
-	if len(noIndexes) > 1 {
-		panic("YOU FOOL! YOU CANNOT HOPE TO PASS THAT MANY VALUES!")
-	} else if len(noIndexes) == 1 {
-		ni = noIndexes[0]
-	}
-	if err := ret.SetValue(value, ni); err != nil {
-		panic(err)
-	}
-	return
-}
+var (
+	mp   = gae.MkDSProperty
+	mpNI = gae.MkDSPropertyNI
+)
 
 const testAppID = "testApp"
 
@@ -347,7 +339,7 @@ type MismatchTypes struct {
 }
 
 type BadSpecial struct {
-	ID int    `gae:"$id"`
+	ID int64  `gae:"$id"`
 	id string `gae:"$id"`
 }
 
@@ -357,19 +349,16 @@ type Doubler struct {
 	B bool
 }
 
-func (d *Doubler) Load(props gae.DSPropertyMap) ([]string, error) {
-	return GetStructPLS(d).Load(props)
+func (d *Doubler) Load(props gae.DSPropertyMap) error {
+	return GetPLS(d).Load(props)
 }
 
-func (d *Doubler) Save() (gae.DSPropertyMap, error) {
-	// Save the default gae.DSProperty slice to an in-memory buffer (a gae.DSPropertyList).
-	pls := GetStructPLS(d)
-	props, err := pls.Save()
+func (d *Doubler) Save(withMeta bool) (gae.DSPropertyMap, error) {
+	pls := GetPLS(d)
+	propMap, err := pls.Save(withMeta)
 	if err != nil {
 		return nil, err
 	}
-	var propMap gae.DSPropertyMap
-	propMap.Load(props) // we know this returns nil/nil
 
 	// Edit that map and send it on.
 	for _, props := range propMap {
@@ -377,15 +366,19 @@ func (d *Doubler) Save() (gae.DSPropertyMap, error) {
 			switch v := props[i].Value().(type) {
 			case string:
 				// + means string concatenation.
-				props[i].SetValue(v+v, props[i].NoIndex())
+				props[i].SetValue(v+v, props[i].IndexSetting())
 			case int64:
 				// + means integer addition.
-				props[i].SetValue(v+v, props[i].NoIndex())
+				props[i].SetValue(v+v, props[i].IndexSetting())
 			}
 		}
 	}
-	return propMap.Save()
+	return propMap, nil
 }
+
+func (d *Doubler) GetMeta(string) (interface{}, error) { return nil, gae.ErrDSMetaFieldUnset }
+func (d *Doubler) SetMeta(string, interface{}) error   { return gae.ErrDSMetaFieldUnset }
+func (d *Doubler) Problem() error                      { return nil }
 
 var _ gae.DSPropertyLoadSaver = (*Doubler)(nil)
 
@@ -393,7 +386,7 @@ type Deriver struct {
 	S, Derived, Ignored string
 }
 
-func (e *Deriver) Load(props gae.DSPropertyMap) ([]string, error) {
+func (e *Deriver) Load(props gae.DSPropertyMap) error {
 	for name, p := range props {
 		if name != "S" {
 			continue
@@ -401,14 +394,18 @@ func (e *Deriver) Load(props gae.DSPropertyMap) ([]string, error) {
 		e.S = p[0].Value().(string)
 		e.Derived = "derived+" + e.S
 	}
-	return nil, nil
+	return nil
 }
 
-func (e *Deriver) Save() (gae.DSPropertyMap, error) {
+func (e *Deriver) Save(withMeta bool) (gae.DSPropertyMap, error) {
 	return map[string][]gae.DSProperty{
 		"S": {mp(e.S)},
 	}, nil
 }
+
+func (d *Deriver) GetMeta(string) (interface{}, error) { return nil, gae.ErrDSMetaFieldUnset }
+func (d *Deriver) SetMeta(string, interface{}) error   { return gae.ErrDSMetaFieldUnset }
+func (d *Deriver) Problem() error                      { return nil }
 
 var _ gae.DSPropertyLoadSaver = (*Deriver)(nil)
 
@@ -425,7 +422,7 @@ func (c *Convertable) ToDSProperty() (ret gae.DSProperty, err error) {
 	for i, v := range *c {
 		buf[i] = strconv.FormatInt(v, 10)
 	}
-	err = ret.SetValue(strings.Join(buf, ","), true)
+	err = ret.SetValue(strings.Join(buf, ","), gae.NoIndex)
 	return
 }
 
@@ -457,7 +454,7 @@ type Convertable2 struct {
 }
 
 func (c *Convertable2) ToDSProperty() (ret gae.DSProperty, err error) {
-	err = ret.SetValue(c.Data, false)
+	err = ret.SetValue(c.Data, gae.ShouldIndex)
 	return
 }
 
@@ -487,7 +484,7 @@ func (j *JSONKVProp) ToDSProperty() (ret gae.DSProperty, err error) {
 	if err != nil {
 		return
 	}
-	err = ret.SetValue(data, true)
+	err = ret.SetValue(data, gae.NoIndex)
 	return
 }
 
@@ -513,7 +510,7 @@ func (c *Complex) ToDSProperty() (ret gae.DSProperty, err error) {
 	// (note that this won't REALLY work, since GeoPoints are limited to a very
 	// limited range of values, but it's nice to pretend ;)). You'd probably
 	// really end up with a packed binary representation.
-	err = ret.SetValue(gae.DSGeoPoint{Lat: real(*c), Lng: imag(*c)}, false)
+	err = ret.SetValue(gae.DSGeoPoint{Lat: real(*c), Lng: imag(*c)}, gae.ShouldIndex)
 	return
 }
 
@@ -545,7 +542,6 @@ type testCase struct {
 	saveErr       string
 	actualNoIndex bool
 	plsLoadErr    string
-	convErr       string
 	loadErr       string
 }
 
@@ -601,7 +597,7 @@ var testCases = []testCase{
 	{
 		desc: "geopoint as props",
 		src:  &G0{G: testGeoPt0},
-		want: &gae.DSPropertyMap{
+		want: gae.DSPropertyMap{
 			"G": {mp(testGeoPt0)},
 		},
 	},
@@ -639,7 +635,7 @@ var testCases = []testCase{
 		desc:    "overflow",
 		src:     &O0{I: 1 << 48},
 		want:    &O1{},
-		convErr: "overflow",
+		loadErr: "overflow",
 	},
 	{
 		desc: "time",
@@ -649,8 +645,8 @@ var testCases = []testCase{
 	{
 		desc: "time as props",
 		src:  &T{T: time.Unix(1e9, 0).UTC()},
-		want: &gae.DSPropertyMap{
-			"T": {mp(time.Unix(1e9, 0).UTC(), false)},
+		want: gae.DSPropertyMap{
+			"T": {mp(time.Unix(1e9, 0).UTC())},
 		},
 	},
 	{
@@ -683,13 +679,13 @@ var testCases = []testCase{
 		desc:    "missing fields",
 		src:     &X0{S: "one", I: 2, i: 3},
 		want:    &X2{},
-		convErr: "no such struct field",
+		loadErr: "no such struct field",
 	},
 	{
 		desc:    "save string load bool",
 		src:     &X0{S: "one", I: 2, i: 3},
 		want:    &X3{I: 2},
-		convErr: "type mismatch",
+		loadErr: "type mismatch",
 	},
 	{
 		desc: "basic slice",
@@ -700,7 +696,7 @@ var testCases = []testCase{
 		desc:    "save []float64 load float64",
 		src:     &Y0{B: true, F: []float64{7, 8, 9}},
 		want:    &Y1{B: true},
-		convErr: "requires a slice",
+		loadErr: "requires a slice",
 	},
 	{
 		desc: "save single []int64 load int64",
@@ -720,15 +716,15 @@ var testCases = []testCase{
 	{
 		desc: "use convertable slice (to map)",
 		src:  &Impossible{[]ImpossibleInner{{Convertable{1, 5, 9}}, {Convertable{2, 4, 6}}}},
-		want: &gae.DSPropertyMap{
-			"Nested.wot": {mp("1,5,9", true), mp("2,4,6", true)},
+		want: gae.DSPropertyMap{
+			"Nested.wot": {mpNI("1,5,9"), mpNI("2,4,6")},
 		},
 	},
 	{
 		desc:    "convertable slice (bad load)",
-		src:     &gae.DSPropertyMap{"Nested.wot": {mp([]byte("ohai"), true)}},
+		src:     gae.DSPropertyMap{"Nested.wot": {mpNI([]byte("ohai"))}},
 		want:    &Impossible{[]ImpossibleInner{{}}},
-		convErr: "nope",
+		loadErr: "nope",
 	},
 	{
 		desc: "use convertable struct",
@@ -769,11 +765,10 @@ var testCases = []testCase{
 				"what":    []interface{}{"is", "really", 100},
 			},
 		},
-		want: &gae.DSPropertyMap{
+		want: gae.DSPropertyMap{
 			"kewelmap": {
-				mp([]byte(
-					`{"epic":"success","no_way!":[true,"story"],"what":["is","really",100]}`),
-					true)},
+				mpNI([]byte(
+					`{"epic":"success","no_way!":[true,"story"],"what":["is","really",100]}`))},
 		},
 	},
 	{
@@ -790,16 +785,16 @@ var testCases = []testCase{
 		src: &Impossible4{
 			[]Complex{complex(1, 2), complex(3, 4)},
 		},
-		want: &gae.DSPropertyMap{
+		want: gae.DSPropertyMap{
 			"Values": {
 				mp(gae.DSGeoPoint{Lat: 1, Lng: 2}), mp(gae.DSGeoPoint{Lat: 3, Lng: 4})},
 		},
 	},
 	{
 		desc:    "convertable complex slice (bad load)",
-		src:     &gae.DSPropertyMap{"Values": {mp("hello")}},
+		src:     gae.DSPropertyMap{"Values": {mp("hello")}},
 		want:    &Impossible4{[]Complex(nil)},
-		convErr: "nope",
+		loadErr: "nope",
 	},
 	{
 		desc: "allow concrete gae.DSKey implementors (save)",
@@ -815,7 +810,7 @@ var testCases = []testCase{
 		desc:    "save []float64 load []int64",
 		src:     &Y0{B: true, F: []float64{7, 8, 9}},
 		want:    &Y2{B: true},
-		convErr: "type mismatch",
+		loadErr: "type mismatch",
 	},
 	{
 		desc:    "single slice is too long",
@@ -892,13 +887,13 @@ var testCases = []testCase{
 	{
 		desc: "short gae.DSByteString as props",
 		src:  &B5{B: gae.DSByteString(makeUint8Slice(3))},
-		want: &gae.DSPropertyMap{
+		want: gae.DSPropertyMap{
 			"B": {mp(gae.DSByteString(makeUint8Slice(3)))},
 		},
 	},
 	{
 		desc: "[]byte must be noindex",
-		src: &gae.DSPropertyMap{
+		src: gae.DSPropertyMap{
 			"B": {mp(makeUint8Slice(3))},
 		},
 		actualNoIndex: true,
@@ -906,7 +901,7 @@ var testCases = []testCase{
 	{
 		desc: "save tagged load props",
 		src:  &Tagged{A: 1, B: []int{21, 22, 23}, C: 3, D: 4, E: 5, I: 6, J: 7},
-		want: &gae.DSPropertyMap{
+		want: gae.DSPropertyMap{
 			// A and B are renamed to a and b; A and C are noindex, I is ignored.
 			// Indexed properties are loaded before raw properties. Thus, the
 			// result is: b, b, b, D, E, a, c.
@@ -917,9 +912,9 @@ var testCases = []testCase{
 			},
 			"D": {mp(4)},
 			"E": {mp(5)},
-			"a": {mp(1, true)},
-			"C": {mp(3, true)},
-			"J": {mp(7, true)},
+			"a": {mpNI(1)},
+			"C": {mpNI(3)},
+			"J": {mpNI(7)},
 		},
 	},
 	{
@@ -929,12 +924,12 @@ var testCases = []testCase{
 	},
 	{
 		desc: "save props load tagged",
-		src: &gae.DSPropertyMap{
-			"A": {mp(11, true)},
-			"a": {mp(12, true)},
+		src: gae.DSPropertyMap{
+			"A": {mpNI(11)},
+			"a": {mpNI(12)},
 		},
 		want:    &Tagged{A: 12},
-		convErr: `cannot load field "A"`,
+		loadErr: `cannot load field "A"`,
 	},
 	{
 		desc:   "invalid tagged1",
@@ -970,14 +965,14 @@ var testCases = []testCase{
 	{
 		desc: "save struct load props",
 		src:  &X0{S: "s", I: 1},
-		want: &gae.DSPropertyMap{
+		want: gae.DSPropertyMap{
 			"S": {mp("s")},
 			"I": {mp(1)},
 		},
 	},
 	{
 		desc: "save props load struct",
-		src: &gae.DSPropertyMap{
+		src: gae.DSPropertyMap{
 			"S": {mp("s")},
 			"I": {mp(1)},
 		},
@@ -985,7 +980,7 @@ var testCases = []testCase{
 	},
 	{
 		desc: "nil-value props",
-		src: &gae.DSPropertyMap{
+		src: gae.DSPropertyMap{
 			"I": {mp(nil)},
 			"B": {mp(nil)},
 			"S": {mp(nil)},
@@ -1026,7 +1021,7 @@ var testCases = []testCase{
 				Z: true,
 			},
 		},
-		want: &gae.DSPropertyMap{
+		want: gae.DSPropertyMap{
 			"A": {mp(1)},
 			"I.W": {
 				mp(10),
@@ -1044,7 +1039,7 @@ var testCases = []testCase{
 	},
 	{
 		desc: "save props load outer-equivalent",
-		src: &gae.DSPropertyMap{
+		src: gae.DSPropertyMap{
 			"A": {mp(1)},
 			"I.W": {
 				mp(10),
@@ -1094,13 +1089,13 @@ var testCases = []testCase{
 	{
 		desc: "dotted names save",
 		src:  &Dotted{A: DottedA{B: DottedB{C: 88}}},
-		want: &gae.DSPropertyMap{
+		want: gae.DSPropertyMap{
 			"A0.A1.A2.B3.C4.C5": {mp(88)},
 		},
 	},
 	{
 		desc: "dotted names load",
-		src: &gae.DSPropertyMap{
+		src: gae.DSPropertyMap{
 			"A0.A1.A2.B3.C4.C5": {mp(99)},
 		},
 		want: &Dotted{A: DottedA{B: DottedB{C: 99}}},
@@ -1180,49 +1175,49 @@ var testCases = []testCase{
 	},
 	{
 		desc: "mismatch (string)",
-		src: &gae.DSPropertyMap{
+		src: gae.DSPropertyMap{
 			"K": {mp(199)},
 			"S": {mp([]byte("cats"))},
 			"F": {mp(gae.DSByteString("nurbs"))},
 		},
 		want:    &MismatchTypes{},
-		convErr: "type mismatch",
+		loadErr: "type mismatch",
 	},
 	{
 		desc:    "mismatch (float)",
-		src:     &gae.DSPropertyMap{"F": {mp(gae.BSKey("wot"))}},
+		src:     gae.DSPropertyMap{"F": {mp(gae.BSKey("wot"))}},
 		want:    &MismatchTypes{},
-		convErr: "type mismatch",
+		loadErr: "type mismatch",
 	},
 	{
 		desc:    "mismatch (float/overflow)",
-		src:     &gae.DSPropertyMap{"F": {mp(math.MaxFloat64)}},
+		src:     gae.DSPropertyMap{"F": {mp(math.MaxFloat64)}},
 		want:    &MismatchTypes{},
-		convErr: "overflows",
+		loadErr: "overflows",
 	},
 	{
 		desc:    "mismatch (key)",
-		src:     &gae.DSPropertyMap{"K": {mp(false)}},
+		src:     gae.DSPropertyMap{"K": {mp(false)}},
 		want:    &MismatchTypes{},
-		convErr: "type mismatch",
+		loadErr: "type mismatch",
 	},
 	{
 		desc:    "mismatch (bool)",
-		src:     &gae.DSPropertyMap{"B": {mp(testKey0)}},
+		src:     gae.DSPropertyMap{"B": {mp(testKey0)}},
 		want:    &MismatchTypes{},
-		convErr: "type mismatch",
+		loadErr: "type mismatch",
 	},
 	{
 		desc:    "mismatch (time)",
-		src:     &gae.DSPropertyMap{"T": {mp(gae.DSGeoPoint{})}},
+		src:     gae.DSPropertyMap{"T": {mp(gae.DSGeoPoint{})}},
 		want:    &MismatchTypes{},
-		convErr: "type mismatch",
+		loadErr: "type mismatch",
 	},
 	{
 		desc:    "mismatch (geopoint)",
-		src:     &gae.DSPropertyMap{"G": {mp(time.Now().UTC())}},
+		src:     gae.DSPropertyMap{"G": {mp(time.Now().UTC())}},
 		want:    &MismatchTypes{},
-		convErr: "type mismatch",
+		loadErr: "type mismatch",
 	},
 	{
 		desc: "slice of structs",
@@ -1331,7 +1326,7 @@ var testCases = []testCase{
 				},
 			},
 		},
-		want: &gae.DSPropertyMap{
+		want: gae.DSPropertyMap{
 			"red.S":            {mp("rouge")},
 			"red.I":            {mp(0)},
 			"red.Nonymous.S":   {mp("rosso0"), mp("rosso1")},
@@ -1351,7 +1346,7 @@ var testCases = []testCase{
 	},
 	{
 		desc: "save props load structs with ragged fields",
-		src: &gae.DSPropertyMap{
+		src: gae.DSPropertyMap{
 			"red.S":            {mp("rot")},
 			"green.Nonymous.I": {mp(10), mp(11), mp(12), mp(13)},
 			"Blue.Nonymous.S":  {mp("blau0"), mp("blau1"), mp("blau2")},
@@ -1390,11 +1385,11 @@ var testCases = []testCase{
 				Y string
 			}
 		}{},
-		want: &gae.DSPropertyMap{
+		want: gae.DSPropertyMap{
 			"B.Y": {mp("")},
-			"A.X": {mp("", true)},
-			"A.Y": {mp("", true)},
-			"B.X": {mp("", true)},
+			"A.X": {mpNI("")},
+			"A.Y": {mpNI("")},
+			"B.X": {mpNI("")},
 		},
 	},
 	{
@@ -1402,7 +1397,7 @@ var testCases = []testCase{
 		src: &struct {
 			Inner1 `gae:"foo"`
 		}{},
-		want: &gae.DSPropertyMap{
+		want: gae.DSPropertyMap{
 			"foo.W": {mp(0)},
 			"foo.X": {mp("")},
 		},
@@ -1427,7 +1422,7 @@ var testCases = []testCase{
 		src: &struct {
 			i, J int64
 		}{i: 1, J: 2},
-		want: &gae.DSPropertyMap{
+		want: gae.DSPropertyMap{
 			"J": {mp(2)},
 		},
 	},
@@ -1438,7 +1433,7 @@ var testCases = []testCase{
 		}{
 			J: json.RawMessage("rawr"),
 		},
-		want: &gae.DSPropertyMap{
+		want: gae.DSPropertyMap{
 			"J": {mp([]byte("rawr"))},
 		},
 	},
@@ -1511,13 +1506,16 @@ func TestRoundTrip(t *testing.T) {
 		for _, tc := range testCases {
 			tc := tc
 			Convey(tc.desc, func() {
-				pls, err := GetPLS(tc.src)
-				if checkErr(err, tc.plsErr) {
+				pls, ok := tc.src.(gae.DSPropertyLoadSaver)
+				if !ok {
+					pls = GetPLS(tc.src)
+				}
+				if checkErr(pls.Problem(), tc.plsErr) {
 					return
 				}
 				So(pls, ShouldNotBeNil)
 
-				savedProps, err := pls.Save()
+				savedProps, err := pls.Save(false)
 				if checkErr(err, tc.saveErr) {
 					return
 				}
@@ -1525,33 +1523,31 @@ func TestRoundTrip(t *testing.T) {
 
 				if tc.actualNoIndex {
 					for _, props := range savedProps {
-						So(props[0].NoIndex(), ShouldBeTrue)
+						So(props[0].IndexSetting(), ShouldEqual, gae.NoIndex)
 						return
 					}
 					So(true, ShouldBeFalse) // shouldn't get here
 				}
 
 				var got interface{}
-				if _, ok := tc.want.(*gae.DSPropertyMap); ok {
-					got = &gae.DSPropertyMap{}
+				if _, ok := tc.want.(gae.DSPropertyMap); ok {
+					pls = gae.DSPropertyMap{}
+					got = pls
 				} else {
 					got = reflect.New(reflect.TypeOf(tc.want).Elem()).Interface()
+					if pls, ok = got.(gae.DSPropertyLoadSaver); !ok {
+						pls = GetPLS(got)
+					}
 				}
 
-				pls, err = GetPLS(got)
-				if checkErr(err, tc.plsLoadErr) {
+				if checkErr(pls.Problem(), tc.plsLoadErr) {
 					return
 				}
 				So(pls, ShouldNotBeNil)
 
-				convErrs, err := pls.Load(savedProps)
+				err = pls.Load(savedProps)
 				if checkErr(err, tc.loadErr) {
 					return
-				}
-				if len(tc.convErr) == 0 {
-					So(convErrs, ShouldBeNil)
-				} else {
-					So(convErrs[0], ShouldContainSubstring, tc.convErr)
 				}
 				if tc.want == nil {
 					return
@@ -1575,39 +1571,37 @@ func TestSpecial(t *testing.T) {
 	Convey("Test special fields", t, func() {
 		Convey("Can retrieve from struct", func() {
 			o := &N0{ID: 100}
-			pls := GetStructPLS(o)
-			val, current, err := pls.GetSpecial("id")
+			pls := GetPLS(o)
+			val, err := pls.GetMeta("id")
 			So(err, ShouldBeNil)
-			So(val, ShouldEqual, "")
-			So(current, ShouldEqual, 100)
+			So(val, ShouldEqual, 100)
 
-			val, current, err = pls.GetSpecial("kind")
+			val, err = pls.GetMeta("kind")
 			So(err, ShouldBeNil)
 			So(val, ShouldEqual, "whatnow")
-			So(current, ShouldEqual, nil)
 		})
 
 		Convey("Getting something not there is an error", func() {
 			o := &N0{ID: 100}
-			pls := GetStructPLS(o)
-			_, _, err := pls.GetSpecial("wat")
-			So(err, ShouldEqual, gae.ErrDSSpecialFieldUnset)
+			pls := GetPLS(o)
+			_, err := pls.GetMeta("wat")
+			So(err, ShouldEqual, gae.ErrDSMetaFieldUnset)
 		})
 
 		Convey("getting/setting from a bad struct is an error", func() {
 			o := &Recursive{}
-			pls := GetStructPLS(o)
-			_, _, err := pls.GetSpecial("wat")
+			pls := GetPLS(o)
+			_, err := pls.GetMeta("wat")
 			So(err, ShouldNotBeNil)
 
-			err = pls.SetSpecial("wat", 100)
+			err = pls.SetMeta("wat", 100)
 			So(err, ShouldNotBeNil)
 		})
 
 		Convey("can assign values to exported special fields", func() {
 			o := &N0{ID: 100}
-			pls := GetStructPLS(o)
-			err := pls.SetSpecial("id", int64(200))
+			pls := GetPLS(o)
+			err := pls.SetMeta("id", int64(200))
 			So(err, ShouldBeNil)
 			So(o.ID, ShouldEqual, 200)
 
@@ -1615,74 +1609,111 @@ func TestSpecial(t *testing.T) {
 
 		Convey("assigning to unsassiagnable fields is a simple error", func() {
 			o := &N0{ID: 100}
-			pls := GetStructPLS(o)
-			err := pls.SetSpecial("kind", "hi")
+			pls := GetPLS(o)
+			err := pls.SetMeta("kind", "hi")
 			So(err.Error(), ShouldContainSubstring, "unexported field")
 
-			err = pls.SetSpecial("noob", "hi")
-			So(err, ShouldEqual, gae.ErrDSSpecialFieldUnset)
+			err = pls.SetMeta("noob", "hi")
+			So(err, ShouldEqual, gae.ErrDSMetaFieldUnset)
 		})
 	})
 
 	Convey("StructPLS Miscellaneous", t, func() {
 		Convey("multiple overlapping fields is an error", func() {
 			o := &BadSpecial{}
-			pls := GetStructPLS(o)
-			convErr, err := pls.Load(nil)
-			So(convErr, ShouldBeNil)
+			pls := GetPLS(o)
+			err := pls.Load(nil)
 			So(err, ShouldErrLike, "multiple times")
 			e := pls.Problem()
-			_, err = pls.Save()
+			_, err = pls.Save(true)
 			So(err, ShouldEqual, e)
-			_, err = pls.Load(nil)
+			err = pls.Load(nil)
 			So(err, ShouldEqual, e)
-		})
-
-		Convey("can transform a list of things into a list of PLSs", func() {
-			o := []interface{}{
-				&N0{X0: X0{S: "hi", I: 5}},
-				&N0{Nonymous: X0{S: "hi", I: 5}},
-				&gae.DSPropertyMap{
-					"Nerd": {mp(10), mp(false)},
-					"What": {mp("is"), mp("up")},
-				},
-			}
-			plss, err := MultiGetPLS(o)
-			So(err, ShouldBeNil)
-			for i, pls := range plss {
-				pmap, err := pls.Save()
-				targ := gae.DSPropertyLoadSaver(&gae.DSPropertyMap{})
-				obj := interface{}(targ)
-				if i < 2 {
-					obj = &N0{}
-					targ = GetStructPLS(obj)
-				}
-				convErr, err := targ.Load(pmap)
-				So(err, ShouldBeNil)
-				So(convErr, ShouldBeNil)
-				So(obj, ShouldResemble, o[i])
-			}
-		})
-
-		Convey("list of DSPropertyLoadSavers is a shortcut", func() {
-			o := []gae.DSPropertyLoadSaver{&gae.DSPropertyMap{}}
-			plss, err := MultiGetPLS(o)
-			So(err, ShouldBeNil)
-			So(&plss[0], ShouldEqual, &o[0]) // identical underlying array
-		})
-
-		Convey("attempting to transform a bad object is an error", func() {
-			o := []int{100}
-			_, err := MultiGetPLS(o)
-			So(err, ShouldEqual, gae.ErrDSInvalidEntityType)
-
-			f := false
-			_, err = MultiGetPLS(&f)
-			So(err, ShouldErrLike, "bad type")
 		})
 
 		Convey("empty property names are invalid", func() {
 			So(validPropertyName(""), ShouldBeFalse)
+		})
+
+		Convey("attempting to get a PLS for a non *struct is an error", func() {
+			pls := GetPLS((*[]string)(nil))
+			So(pls.Problem(), ShouldEqual, gae.ErrDSInvalidEntityType)
+		})
+
+		Convey("convertible meta default types", func() {
+			type OKDefaults struct {
+				When   string `gae:"$when,tomorrow"`
+				Amount int64  `gae:"$amt,100"`
+			}
+			pls := GetPLS(&OKDefaults{})
+			So(pls.Problem(), ShouldBeNil)
+
+			v, err := pls.GetMeta("when")
+			So(err, ShouldBeNil)
+			So(v, ShouldEqual, "tomorrow")
+
+			v, err = pls.GetMeta("amt")
+			So(err, ShouldBeNil)
+			So(v, ShouldEqual, int64(100))
+		})
+
+		Convey("meta fields can be saved", func() {
+			type OKDefaults struct {
+				When   string `gae:"$when,tomorrow"`
+				Amount int64  `gae:"$amt,100"`
+			}
+			pls := GetPLS(&OKDefaults{})
+			pm, err := pls.Save(true)
+			So(err, ShouldBeNil)
+			So(pm, ShouldResemble, gae.DSPropertyMap{
+				"$when": {gae.MkDSPropertyNI("tomorrow")},
+				"$amt":  {gae.MkDSPropertyNI(100)},
+			})
+
+			v, err := pm.GetMeta("when")
+			So(err, ShouldBeNil)
+			So(v, ShouldEqual, "tomorrow")
+
+			v, err = pm.GetMeta("amt")
+			So(err, ShouldBeNil)
+			So(v, ShouldEqual, int64(100))
+		})
+
+		Convey("default are optional", func() {
+			type OverrideDefault struct {
+				Val int64 `gae:"$val"`
+			}
+			o := &OverrideDefault{}
+			pls := GetPLS(o)
+
+			v, err := pls.GetMeta("val")
+			So(err, ShouldBeNil)
+			So(v, ShouldEqual, int64(0))
+		})
+
+		Convey("overridable defaults", func() {
+			type OverrideDefault struct {
+				Val int64 `gae:"$val,100"`
+			}
+			o := &OverrideDefault{}
+			pls := GetPLS(o)
+
+			v, err := pls.GetMeta("val")
+			So(err, ShouldBeNil)
+			So(v, ShouldEqual, int64(100))
+
+			o.Val = 10
+			v, err = pls.GetMeta("val")
+			So(err, ShouldBeNil)
+			So(v, ShouldEqual, int64(10))
+		})
+
+		Convey("Bad default meta type", func() {
+			type BadDefault struct {
+				Val time.Time `gae:"$meta,tomorrow"`
+			}
+			pls := GetPLS(&BadDefault{})
+			So(pls.Problem().Error(), ShouldContainSubstring, "bad type")
 		})
 	})
 }

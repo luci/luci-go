@@ -46,6 +46,22 @@ var (
 
 /////////////////////////////// Supporting code ////////////////////////////////
 
+// ErrDSFieldMismatch is returned when a field is to be loaded into a different
+// type than the one it was stored from, or when a field is missing or
+// unexported in the destination struct.
+// StructType is the type of the struct pointed to by the destination argument
+// passed to Get or to Iterator.Next.
+type ErrDSFieldMismatch struct {
+	StructType reflect.Type
+	FieldName  string
+	Reason     string
+}
+
+func (e *ErrDSFieldMismatch) Error() string {
+	return fmt.Sprintf("gae: cannot load field %q into a %q: %s",
+		e.FieldName, e.StructType, e.Reason)
+}
+
 // MultiError is returned by batch operations when there are errors with
 // particular elements. Errors will be in a one-to-one correspondence with
 // the input elements; successful elements will have a nil entry.

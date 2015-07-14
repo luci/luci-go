@@ -13,10 +13,10 @@ import (
 )
 
 var (
-	// ErrDSSpecialFieldUnset is returned from DSStructPLS.{Get,Set}Special
-	// implementations when the specified special key isn't set on the struct at
+	// ErrDSMetaFieldUnset is returned from DSPropertyLoadSaver.{Get,Set}Meta
+	// implementations when the specified meta key isn't set on the struct at
 	// all.
-	ErrDSSpecialFieldUnset = fmt.Errorf("gae: special field unset")
+	ErrDSMetaFieldUnset = fmt.Errorf("gae: meta field unset")
 )
 
 var (
@@ -37,12 +37,52 @@ var (
 	maxTime = time.Unix(int64(math.MaxInt64)/1e6, (int64(math.MaxInt64)%1e6)*1e3)
 )
 
+type IndexSetting bool
+
+const (
+	// ShouldIndex is the default, which is why it must assume the zero value,
+	// even though it's werid :(.
+	ShouldIndex IndexSetting = false
+	NoIndex     IndexSetting = true
+)
+
+func (i IndexSetting) String() string {
+	if i {
+		return "NoIndex"
+	}
+	return "ShouldIndex"
+}
+
 // DSProperty is a value plus an indicator of whether the value should be
 // indexed. Name and Multiple are stored in the DSPropertyMap object.
 type DSProperty struct {
-	value    interface{}
-	noIndex  bool
-	propType DSPropertyType
+	value        interface{}
+	indexSetting IndexSetting
+	propType     DSPropertyType
+}
+
+// MkDSProperty makes a new indexed* DSProperty and returns it. If val is an
+// invalid value, this panics (so don't do it). If you want to handle the error
+// normally, use SetValue(..., ShouldIndex) instead.
+//
+// *indexed if val is not an unindexable type like []byte.
+func MkDSProperty(val interface{}) DSProperty {
+	ret := DSProperty{}
+	if err := ret.SetValue(val, ShouldIndex); err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+// MkDSPropertyNI makes a new DSProperty (with noindex set to true), and returns
+// it. If val is an invalid value, this panics (so don't do it). If you want to
+// handle the error normally, use SetValue(..., NoIndex) instead.
+func MkDSPropertyNI(val interface{}) DSProperty {
+	ret := DSProperty{}
+	if err := ret.SetValue(val, NoIndex); err != nil {
+		panic(err)
+	}
+	return ret
 }
 
 // DSPropertyConverter may be implemented by the pointer-to a struct field which
@@ -236,9 +276,9 @@ func DSUpconvertUnderlyingType(o interface{}, t reflect.Type) (interface{}, refl
 // an error).
 func (p DSProperty) Value() interface{} { return p.value }
 
-// NoIndex says weather or not the datastore should create indicies for this
-// value.
-func (p DSProperty) NoIndex() bool { return p.noIndex }
+// IndexSetting says weather or not the datastore should create indicies for
+// this value.
+func (p DSProperty) IndexSetting() IndexSetting { return p.indexSetting }
 
 // Type is the DSPT* type of the data contained in Value().
 func (p DSProperty) Type() DSPropertyType { return p.propType }
@@ -271,10 +311,7 @@ func (p DSProperty) Type() DSPropertyType { return p.propType }
 // Python's None but not directly representable by a Go struct. Loading
 // a nil-valued property into a struct will set that field to the zero
 // value.
-//
-// noIndex == false will attempt to set NoIndex to false as well. However, if
-// value is an unindexable type, noIndex will be coerced to true automatically.
-func (p *DSProperty) SetValue(value interface{}, noIndex bool) (err error) {
+func (p *DSProperty) SetValue(value interface{}, is IndexSetting) (err error) {
 	t := reflect.Type(nil)
 	pt := DSPTNull
 	if value != nil {
@@ -286,40 +323,52 @@ func (p *DSProperty) SetValue(value interface{}, noIndex bool) (err error) {
 	}
 	p.propType = pt
 	p.value = value
-	p.noIndex = noIndex || t == typeOfByteSlice
+	p.indexSetting = is
+	if t == typeOfByteSlice {
+		p.indexSetting = NoIndex
+	}
 	return
 }
 
 // DSPropertyLoadSaver may be implemented by a user type, and RawDatastore will
 // use this interface to serialize the type instead of trying to automatically
-// create a serialization codec for it with helper.GetStructPLS.
+// create a serialization codec for it with helper.GetPLS.
 type DSPropertyLoadSaver interface {
-	Load(DSPropertyMap) (convFailures []string, fatal error)
-	Save() (DSPropertyMap, error)
-}
+	// Load takes the values from the given map and attempts to save them into
+	// the underlying object (usually a struct or a DSPropertyMap). If a fatal
+	// error occurs, it's returned via error. If non-fatal conversion errors
+	// occur, error will be a MultiError containing one or more ErrDSFieldMismatch
+	// objects.
+	Load(DSPropertyMap) error
 
-// DSStructPLS is a DSPropertyLoadSaver, but with some bonus features which only
-// apply to user structs (instead of raw DSPropertyMap's).
-type DSStructPLS interface {
-	DSPropertyLoadSaver
+	// Save returns the current property as a DSPropertyMap. if withMeta is true,
+	// then the DSPropertyMap contains all the metadata (e.g. '$meta' fields)
+	// which was held by this DSPropertyLoadSaver.
+	Save(withMeta bool) (DSPropertyMap, error)
 
-	// GetSpecial will get information about the struct field which has the
-	// struct tag in the form of `gae:"$<key>"`.
+	// GetMeta will get information about the field which has the struct tag in
+	// the form of `gae:"$<key>[,<value>]?"`.
+	//
+	// string and int64 fields will return the <value> in the struct tag,
+	// converted to the appropriate type, if the field has the zero value.
 	//
 	// Example:
 	//   type MyStruct struct {
-	//     CoolField int `gae:"$id,cool"`
+	//     CoolField int64 `gae:"$id,1"`
 	//   }
-	//   val, current, err := helper.GetStructPLS(&MyStruct{10}).GetSpecial("id")
-	//   // val == "cool"
-	//   // current == 10
+	//   val, err := helper.GetPLS(&MyStruct{}).GetMeta("id")
+	//   // val == 1
 	//   // err == nil
-	GetSpecial(key string) (val string, current interface{}, err error)
+	//
+	//   val, err := helper.GetPLS(&MyStruct{10}).GetMeta("id")
+	//   // val == 10
+	//   // err == nil
+	GetMeta(key string) (interface{}, error)
 
-	// SetSpecial allows you to set the current value of the special-keyed field.
-	SetSpecial(key string, val interface{}) error
+	// SetMeta allows you to set the current value of the meta-keyed field.
+	SetMeta(key string, val interface{}) error
 
-	// Problem indicates that this StructPLS has a fatal problem. Usually this is
+	// Problem indicates that this PLS has a fatal problem. Usually this is
 	// set when the underlying struct has recursion, invalid field types, nested
 	// slices, etc.
 	Problem() error
@@ -329,28 +378,72 @@ type DSStructPLS interface {
 // It maps from property name to a list of property values which correspond to
 // that property name. It is the spiritual successor to PropertyList from the
 // original SDK.
+//
+// DSPropertyMap may contain "meta" values, which are keyed with a '$' prefix.
+// Technically the datastore allows arbitrary property names, but all of the
+// SDKs go out of their way to try to make all property names valid programming
+// language tokens. Special values must correspond to a single DSProperty...
+// corresponding to 0 is equivalent to unset, and corresponding to >1 is an
+// error. So:
+//
+//   {
+//     "$id": {MkDSProperty(1)}, // GetProperty("id") -> 1, nil
+//     "$foo": {}, // GetProperty("foo") -> nil, ErrDSMetaFieldUnset
+//     // GetProperty("bar") -> nil, ErrDSMetaFieldUnset
+//     "$meep": {
+//       MkDSProperty("hi"),
+//       MkDSProperty("there")}, // GetProperty("meep") -> nil, error!
+//   }
+//
+// Additionally, Save returns a copy of the map with the meta keys omitted (e.g.
+// these keys are not going to be serialized to the datastore).
 type DSPropertyMap map[string][]DSProperty
 
-var _ DSPropertyLoadSaver = (*DSPropertyMap)(nil)
+var _ DSPropertyLoadSaver = DSPropertyMap(nil)
 
 // Load implements DSPropertyLoadSaver.Load
-func (pm *DSPropertyMap) Load(props DSPropertyMap) (convErr []string, err error) {
-	if pm == nil {
-		return nil, errors.New("gae: nil DSPropertyMap")
-	}
-	if *pm == nil {
-		*pm = make(DSPropertyMap, len(props))
-	}
+func (pm DSPropertyMap) Load(props DSPropertyMap) error {
 	for k, v := range props {
-		(*pm)[k] = append((*pm)[k], v...)
+		pm[k] = append(pm[k], v...)
 	}
-	return nil, nil
+	return nil
 }
 
-// Save implements DSPropertyLoadSaver.Save
-func (pm *DSPropertyMap) Save() (DSPropertyMap, error) {
-	if pm == nil {
-		return nil, errors.New("gae: nil DSPropertyMap")
+// Save implements DSPropertyLoadSaver.Save by returning a copy of the
+// current map data.
+func (pm DSPropertyMap) Save(withMeta bool) (DSPropertyMap, error) {
+	if len(pm) == 0 {
+		return DSPropertyMap{}, nil
 	}
-	return *pm, nil
+	ret := make(DSPropertyMap, len(pm))
+	for k, v := range pm {
+		if withMeta || len(k) == 0 || k[0] != '$' {
+			ret[k] = append(ret[k], v...)
+		}
+	}
+	return ret, nil
+}
+
+func (pm DSPropertyMap) GetMeta(key string) (interface{}, error) {
+	v, ok := pm["$"+key]
+	if !ok || len(v) == 0 {
+		return nil, ErrDSMetaFieldUnset
+	}
+	if len(v) > 1 {
+		return nil, errors.New("gae: too many values for Meta key")
+	}
+	return v[0].Value(), nil
+}
+
+func (pm DSPropertyMap) SetMeta(key string, val interface{}) error {
+	prop := DSProperty{}
+	if err := prop.SetValue(val, NoIndex); err != nil {
+		return err
+	}
+	pm["$"+key] = []DSProperty{prop}
+	return nil
+}
+
+func (pm DSPropertyMap) Problem() error {
+	return nil
 }

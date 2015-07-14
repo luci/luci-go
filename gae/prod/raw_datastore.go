@@ -8,7 +8,6 @@ import (
 	"golang.org/x/net/context"
 
 	"infra/gae/libs/gae"
-	"infra/gae/libs/gae/helper"
 
 	"google.golang.org/appengine/datastore"
 )
@@ -63,14 +62,14 @@ func (q queryImpl) Filter(filterStr string, value interface{}) gae.DSQuery {
 
 type iteratorImpl struct{ *datastore.Iterator }
 
-var _ gae.DSIterator = iteratorImpl{}
+var _ gae.RDSIterator = iteratorImpl{}
 
 func (i iteratorImpl) Cursor() (gae.DSCursor, error) {
 	return i.Iterator.Cursor()
 }
 
-func (i iteratorImpl) Next(dst interface{}) (gae.DSKey, error) {
-	return dsR2FErr(i.Iterator.Next(dst))
+func (i iteratorImpl) Next(pls gae.DSPropertyLoadSaver) (gae.DSKey, error) {
+	return dsR2FErr(i.Iterator.Next(&typeFilter{pls}))
 }
 
 ////////// Datastore
@@ -86,51 +85,31 @@ func (rdsImpl) DecodeKey(encoded string) (gae.DSKey, error) {
 	return dsR2FErr(datastore.DecodeKey(encoded))
 }
 
-func multiWrap(os interface{}) ([]datastore.PropertyLoadSaver, error) {
-	plss, err := helper.MultiGetPLS(os)
-	if err != nil {
-		return nil, err
-	}
-
-	ret := make([]datastore.PropertyLoadSaver, len(plss))
-	for i, pls := range plss {
+func multiWrap(os []gae.DSPropertyLoadSaver) []datastore.PropertyLoadSaver {
+	ret := make([]datastore.PropertyLoadSaver, len(os))
+	for i, pls := range os {
 		ret[i] = &typeFilter{pls}
 	}
-	return ret, nil
+	return ret
 }
 
 func (d rdsImpl) Delete(k gae.DSKey) error { return datastore.Delete(d, dsF2R(k)) }
-func (d rdsImpl) Get(key gae.DSKey, dst interface{}) error {
-	pls, err := helper.GetPLS(dst)
-	if err != nil {
-		return err
-	}
-	return datastore.Get(d, dsF2R(key), &typeFilter{pls})
+func (d rdsImpl) Get(key gae.DSKey, dst gae.DSPropertyLoadSaver) error {
+	return datastore.Get(d, dsF2R(key), &typeFilter{dst})
 }
-func (d rdsImpl) Put(key gae.DSKey, src interface{}) (gae.DSKey, error) {
-	pls, err := helper.GetPLS(src)
-	if err != nil {
-		return nil, err
-	}
-	return dsR2FErr(datastore.Put(d, dsF2R(key), &typeFilter{pls}))
+func (d rdsImpl) Put(key gae.DSKey, src gae.DSPropertyLoadSaver) (gae.DSKey, error) {
+	return dsR2FErr(datastore.Put(d, dsF2R(key), &typeFilter{src}))
 }
 
 func (d rdsImpl) DeleteMulti(ks []gae.DSKey) error {
 	return gae.FixError(datastore.DeleteMulti(d, dsMF2R(ks)))
 }
-func (d rdsImpl) GetMulti(ks []gae.DSKey, dst interface{}) error {
-	plss, err := multiWrap(dst)
-	if err != nil {
-		return err
-	}
-	return gae.FixError(datastore.GetMulti(d, dsMF2R(ks), plss))
+
+func (d rdsImpl) GetMulti(ks []gae.DSKey, plss []gae.DSPropertyLoadSaver) error {
+	return gae.FixError(datastore.GetMulti(d, dsMF2R(ks), multiWrap(plss)))
 }
-func (d rdsImpl) PutMulti(key []gae.DSKey, src interface{}) ([]gae.DSKey, error) {
-	plss, err := multiWrap(src)
-	if err != nil {
-		return nil, err
-	}
-	ks, err := datastore.PutMulti(d, dsMF2R(key), plss)
+func (d rdsImpl) PutMulti(key []gae.DSKey, plss []gae.DSPropertyLoadSaver) ([]gae.DSKey, error) {
+	ks, err := datastore.PutMulti(d, dsMF2R(key), multiWrap(plss))
 	return dsMR2F(ks), gae.FixError(err)
 }
 
@@ -138,14 +117,25 @@ func (d rdsImpl) PutMulti(key []gae.DSKey, src interface{}) ([]gae.DSKey, error)
 func (d rdsImpl) NewQuery(kind string) gae.DSQuery {
 	return queryImpl{datastore.NewQuery(kind)}
 }
-func (d rdsImpl) Run(q gae.DSQuery) gae.DSIterator {
+func (d rdsImpl) Run(q gae.DSQuery) gae.RDSIterator {
 	return iteratorImpl{q.(queryImpl).Query.Run(d)}
 }
 func (d rdsImpl) Count(q gae.DSQuery) (int, error) {
 	return q.(queryImpl).Query.Count(d)
 }
-func (d rdsImpl) GetAll(q gae.DSQuery, dst interface{}) ([]gae.DSKey, error) {
-	ks, err := q.(queryImpl).GetAll(d, dst)
+func (d rdsImpl) GetAll(q gae.DSQuery, dst *[]gae.DSPropertyMap) ([]gae.DSKey, error) {
+	fakeDst := []datastore.PropertyList(nil)
+	ks, err := q.(queryImpl).GetAll(d, &fakeDst)
+	if err != nil {
+		return nil, err
+	}
+	*dst = make([]gae.DSPropertyMap, len(fakeDst))
+	for i, pl := range fakeDst {
+		(*dst)[i] = gae.DSPropertyMap{}
+		if err := (&typeFilter{(*dst)[i]}).Load(pl); err != nil {
+			return nil, err
+		}
+	}
 	return dsMR2F(ks), err
 }
 

@@ -5,8 +5,6 @@
 package prod
 
 import (
-	"errors"
-
 	"infra/gae/libs/gae"
 
 	"google.golang.org/appengine"
@@ -14,13 +12,13 @@ import (
 )
 
 type typeFilter struct {
-	dps gae.DSPropertyLoadSaver
+	pls gae.DSPropertyLoadSaver
 }
 
 var _ datastore.PropertyLoadSaver = &typeFilter{}
 
-func (tf *typeFilter) Load(props []datastore.Property) (err error) {
-	newProps := map[string][]gae.DSProperty{}
+func (tf *typeFilter) Load(props []datastore.Property) error {
+	pmap := make(gae.DSPropertyMap, len(props))
 	for _, p := range props {
 		val := p.Value
 		switch x := val.(type) {
@@ -34,24 +32,20 @@ func (tf *typeFilter) Load(props []datastore.Property) (err error) {
 			val = gae.DSGeoPoint(x)
 		}
 		prop := gae.DSProperty{}
-		if err = prop.SetValue(val, p.NoIndex); err != nil {
+		is := gae.ShouldIndex
+		if p.NoIndex {
+			is = gae.NoIndex
+		}
+		if err := prop.SetValue(val, is); err != nil {
 			return err
 		}
-		newProps[p.Name] = append(newProps[p.Name], prop)
+		pmap[p.Name] = append(pmap[p.Name], prop)
 	}
-	convFailures, err := tf.dps.Load(newProps)
-	if err == nil && len(convFailures) > 0 {
-		me := make(gae.MultiError, len(convFailures))
-		for i, f := range convFailures {
-			me[i] = errors.New(f)
-		}
-		err = me
-	}
-	return
+	return tf.pls.Load(pmap)
 }
 
 func (tf *typeFilter) Save() ([]datastore.Property, error) {
-	newProps, err := tf.dps.Save()
+	newProps, err := tf.pls.Save(false)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +57,7 @@ func (tf *typeFilter) Save() ([]datastore.Property, error) {
 			toAdd := datastore.Property{
 				Name:     name,
 				Multiple: multiple,
-				NoIndex:  prop.NoIndex(),
+				NoIndex:  prop.IndexSetting() == gae.NoIndex,
 			}
 			switch x := prop.Value().(type) {
 			case gae.DSByteString:

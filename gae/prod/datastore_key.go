@@ -17,12 +17,7 @@ type dsKeyImpl struct {
 
 var _ gae.DSKey = dsKeyImpl{}
 
-func (k dsKeyImpl) Equal(other gae.DSKey) bool { return k.Key.Equal(dsF2R(other)) }
-func (k dsKeyImpl) Parent() gae.DSKey          { return dsR2F(k.Key.Parent()) }
-func (k dsKeyImpl) Root() gae.DSKey            { return helper.DSKeyRoot(k) }
-func (k dsKeyImpl) Valid(ns string, allowSpecial bool) bool {
-	return helper.DSKeyValid(k, ns, allowSpecial)
-}
+func (k dsKeyImpl) Parent() gae.DSKey { return dsR2F(k.Key.Parent()) }
 
 // dsR2F (DS real-to-fake) converts an SDK Key to a gae.DSKey
 func dsR2F(k *datastore.Key) gae.DSKey {
@@ -57,6 +52,10 @@ func dsF2R(k gae.DSKey) *datastore.Key {
 	// trip through the proto encoding.
 	rkey, err := datastore.DecodeKey(helper.DSKeyEncode(k))
 	if err != nil {
+		// should never happen in a good program, but it's not ignorable, and
+		// passing an error back makes this function too cumbersome (and it causes
+		// this `if err != nil { panic(err) }` logic to show up in a bunch of
+		// places. Realistically, everything should hit the early exit clause above.
 		panic(err)
 	}
 	return rkey

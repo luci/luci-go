@@ -38,12 +38,6 @@ type DSCursor interface {
 	fmt.Stringer
 }
 
-// DSIterator wraps datastore.Iterator.
-type DSIterator interface {
-	Cursor() (DSCursor, error)
-	Next(dst interface{}) (DSKey, error)
-}
-
 // DSQuery wraps datastore.Query.
 type DSQuery interface {
 	Ancestor(ancestor DSKey) DSQuery
@@ -60,34 +54,41 @@ type DSQuery interface {
 }
 
 // CommonDatastore is the interface for the methods which are common between
-// Datastore and RawDatastore.
+// helper.Datastore and RawDatastore.
 type CommonDatastore interface {
 	NewKey(kind, stringID string, intID int64, parent DSKey) DSKey
 	DecodeKey(encoded string) (DSKey, error)
 
 	NewQuery(kind string) DSQuery
-	Run(q DSQuery) DSIterator
-	GetAll(q DSQuery, dst interface{}) ([]DSKey, error)
 	Count(q DSQuery) (int, error)
 
 	RunInTransaction(f func(c context.Context) error, opts *DSTransactionOptions) error
 }
 
-// RawDatastore implements the datastore functionality as described by
-// the raw appengine documentation. No key inference occurs, nor does any
-// caching. See Datastore for a nicer interface.
+// RDSIterator wraps datastore.Iterator.
+type RDSIterator interface {
+	Cursor() (DSCursor, error)
+	Next(dst DSPropertyLoadSaver) (DSKey, error)
+}
+
+// RawDatastore implements the datastore functionality without any of the fancy
+// reflection stuff. This is so that Filters can avoid doing lots of redundant
+// reflection work. See helper.Datastore for a more user-friendly interface.
 type RawDatastore interface {
 	CommonDatastore
 
-	Put(key DSKey, src interface{}) (DSKey, error)
-	Get(key DSKey, dst interface{}) error
+	Run(q DSQuery) RDSIterator
+	GetAll(q DSQuery, dst *[]DSPropertyMap) ([]DSKey, error)
+
+	Put(key DSKey, src DSPropertyLoadSaver) (DSKey, error)
+	Get(key DSKey, dst DSPropertyLoadSaver) error
 	Delete(key DSKey) error
 
 	// These allow you to read and write a multiple datastore objects in
 	// a non-atomic batch.
 	DeleteMulti(keys []DSKey) error
-	GetMulti(keys []DSKey, dst interface{}) error
-	PutMulti(keys []DSKey, src interface{}) ([]DSKey, error)
+	GetMulti(keys []DSKey, dst []DSPropertyLoadSaver) error
+	PutMulti(keys []DSKey, src []DSPropertyLoadSaver) ([]DSKey, error)
 }
 
 // RDSFactory is the function signature for factory methods compatible with

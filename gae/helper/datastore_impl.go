@@ -9,12 +9,14 @@ package helper
 import (
 	"errors"
 	"fmt"
-	"infra/gae/libs/gae"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 	"unicode"
+
+	"infra/gae/libs/gae"
 )
 
 // Entities with more than this many indexed properties will not be saved.
@@ -25,25 +27,29 @@ var (
 	typeOfDSPropertyConverter = reflect.TypeOf((*gae.DSPropertyConverter)(nil)).Elem()
 	typeOfGeoPoint            = reflect.TypeOf(gae.DSGeoPoint{})
 	typeOfTime                = reflect.TypeOf(time.Time{})
+	typeOfString              = reflect.TypeOf("")
+	typeOfInt64               = reflect.TypeOf(int64(0))
+	typeOfBool                = reflect.TypeOf(true)
 
 	valueOfnilDSKey = reflect.Zero(typeOfDSKey)
 )
 
 type structTag struct {
 	name           string
-	noIndex        bool
+	idxSetting     gae.IndexSetting
 	isSlice        bool
 	substructCodec *structCodec
 	convert        bool
-	specialVal     string
+	metaVal        interface{}
+	canSet         bool
 }
 
 type structCodec struct {
-	bySpecial map[string]int
-	byName    map[string]int
-	byIndex   []structTag
-	hasSlice  bool
-	problem   error
+	byMeta   map[string]int
+	byName   map[string]int
+	byIndex  []structTag
+	hasSlice bool
+	problem  error
 }
 
 type structPLS struct {
@@ -51,7 +57,7 @@ type structPLS struct {
 	c *structCodec
 }
 
-var _ gae.DSStructPLS = (*structPLS)(nil)
+var _ gae.DSPropertyLoadSaver = (*structPLS)(nil)
 
 // typeMismatchReason returns a string explaining why the property p could not
 // be stored in an entity field of type v.Type().
@@ -60,22 +66,35 @@ func typeMismatchReason(val interface{}, v reflect.Value) string {
 	return fmt.Sprintf("type mismatch: %s versus %v", entityType, v.Type())
 }
 
-func (p *structPLS) Load(propMap gae.DSPropertyMap) (convFailures []string, fatal error) {
-	if fatal = p.Problem(); fatal != nil {
-		return
+func (p *structPLS) Load(propMap gae.DSPropertyMap) error {
+	if err := p.Problem(); err != nil {
+		return err
 	}
 
-	t := p.o.Type()
+	convFailures := gae.MultiError(nil)
+
+	t := reflect.Type(nil)
 	for name, props := range propMap {
 		multiple := len(props) > 1
 		for i, prop := range props {
 			if reason := loadInner(p.c, p.o, i, name, prop, multiple); reason != "" {
-				convFailures = append(convFailures, fmt.Sprintf(
-					"cannot load field %q into a %q: %s", name, t, reason))
+				if t == nil {
+					t = p.o.Type()
+				}
+				convFailures = append(convFailures, &gae.ErrDSFieldMismatch{
+					StructType: t,
+					FieldName:  name,
+					Reason:     reason,
+				})
 			}
 		}
 	}
-	return
+
+	if len(convFailures) > 0 {
+		return convFailures
+	}
+
+	return nil
 }
 
 func loadInner(codec *structCodec, structValue reflect.Value, index int, name string, p gae.DSProperty, requireSlice bool) string {
@@ -222,38 +241,61 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 	return ""
 }
 
-func (p *structPLS) Save() (gae.DSPropertyMap, error) {
-	ret := gae.DSPropertyMap{}
-	idxCount := 0
-	if err := p.save(ret, &idxCount, "", false); err != nil {
+func (p *structPLS) Save(withMeta bool) (gae.DSPropertyMap, error) {
+	size := len(p.c.byName)
+	if withMeta {
+		size += len(p.c.byMeta)
+	}
+	ret := make(gae.DSPropertyMap, size)
+	if _, err := p.save(ret, "", gae.ShouldIndex); err != nil {
 		return nil, err
+	}
+	if withMeta {
+		for k := range p.c.byMeta {
+			val, err := p.GetMeta(k)
+			if err != nil {
+				return nil, err // TODO(riannucci): should these be ignored?
+			}
+			p := gae.DSProperty{}
+			if err = p.SetValue(val, gae.NoIndex); err != nil {
+				return nil, err
+			}
+			ret["$"+k] = []gae.DSProperty{p}
+		}
 	}
 	return ret, nil
 }
 
-func (p *structPLS) save(propMap gae.DSPropertyMap, idxCount *int, prefix string, noIndex bool) (err error) {
+func (p *structPLS) save(propMap gae.DSPropertyMap, prefix string, is gae.IndexSetting) (idxCount int, err error) {
 	if err = p.Problem(); err != nil {
 		return
 	}
 
-	saveProp := func(name string, ni bool, v reflect.Value, st *structTag) (err error) {
+	saveProp := func(name string, si gae.IndexSetting, v reflect.Value, st *structTag) (err error) {
 		if st.substructCodec != nil {
-			return (&structPLS{v, st.substructCodec}).save(propMap, idxCount, name, ni)
+			count, err := (&structPLS{v, st.substructCodec}).save(propMap, name, si)
+			if err == nil {
+				idxCount += count
+				if idxCount > maxIndexedProperties {
+					err = errors.New("gae: too many indexed properties")
+				}
+			}
+			return err
 		}
 
 		prop := gae.DSProperty{}
 		if st.convert {
 			prop, err = v.Addr().Interface().(gae.DSPropertyConverter).ToDSProperty()
 		} else {
-			err = prop.SetValue(v.Interface(), ni)
+			err = prop.SetValue(v.Interface(), si)
 		}
 		if err != nil {
 			return err
 		}
 		propMap[name] = append(propMap[name], prop)
-		if !prop.NoIndex() {
-			*idxCount++
-			if *idxCount > maxIndexedProperties {
+		if prop.IndexSetting() == gae.ShouldIndex {
+			idxCount++
+			if idxCount > maxIndexedProperties {
 				return errors.New("gae: too many indexed properties")
 			}
 		}
@@ -269,53 +311,55 @@ func (p *structPLS) save(propMap gae.DSPropertyMap, idxCount *int, prefix string
 			name = prefix + name
 		}
 		v := p.o.Field(i)
-		noIndex1 := noIndex || st.noIndex
+		is1 := is
+		if st.idxSetting == gae.NoIndex {
+			is1 = gae.NoIndex
+		}
 		if st.isSlice {
 			for j := 0; j < v.Len(); j++ {
-				if err := saveProp(name, noIndex1, v.Index(j), &st); err != nil {
-					return err
+				if err = saveProp(name, is1, v.Index(j), &st); err != nil {
+					return
 				}
 			}
 		} else {
-			if err := saveProp(name, noIndex1, v, &st); err != nil {
-				return err
+			if err = saveProp(name, is1, v, &st); err != nil {
+				return
 			}
 		}
-	}
-	return nil
-}
-
-func (p *structPLS) GetSpecial(key string) (val string, current interface{}, err error) {
-	if err = p.Problem(); err != nil {
-		return
-	}
-	idx, ok := p.c.bySpecial[key]
-	if !ok {
-		err = gae.ErrDSSpecialFieldUnset
-		return
-	}
-	val = p.c.byIndex[idx].specialVal
-	f := p.o.Field(idx)
-	if f.CanSet() {
-		current = f.Interface()
 	}
 	return
 }
 
-func (p *structPLS) SetSpecial(key string, val interface{}) (err error) {
+func (p *structPLS) GetMeta(key string) (interface{}, error) {
+	if err := p.Problem(); err != nil {
+		return nil, err
+	}
+	idx, ok := p.c.byMeta[key]
+	if !ok {
+		return nil, gae.ErrDSMetaFieldUnset
+	}
+	st := p.c.byIndex[idx]
+	val := st.metaVal
+	f := p.o.Field(idx)
+	if st.canSet {
+		if !reflect.DeepEqual(reflect.Zero(f.Type()).Interface(), f.Interface()) {
+			val = f.Interface()
+		}
+	}
+	return val, nil
+}
+
+func (p *structPLS) SetMeta(key string, val interface{}) (err error) {
 	if err = p.Problem(); err != nil {
 		return
 	}
-	idx, ok := p.c.bySpecial[key]
+	idx, ok := p.c.byMeta[key]
 	if !ok {
-		return gae.ErrDSSpecialFieldUnset
+		return gae.ErrDSMetaFieldUnset
 	}
-	defer func() {
-		pv := recover()
-		if pv != nil && err == nil {
-			err = fmt.Errorf("gae/helper: cannot set special %q: %s", key, pv)
-		}
-	}()
+	if !p.c.byIndex[idx].canSet {
+		return fmt.Errorf("gae/helper: cannot set meta %q: unexported field", key)
+	}
 	p.o.Field(idx).Set(reflect.ValueOf(val))
 	return nil
 }
@@ -372,17 +416,17 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 	}
 
 	c = &structCodec{
-		byIndex:   make([]structTag, t.NumField()),
-		byName:    make(map[string]int, t.NumField()),
-		bySpecial: make(map[string]int, t.NumField()),
-		problem:   errRecursiveStruct, // we'll clear this later if it's not recursive
+		byIndex: make([]structTag, t.NumField()),
+		byName:  make(map[string]int, t.NumField()),
+		byMeta:  make(map[string]int, t.NumField()),
+		problem: errRecursiveStruct, // we'll clear this later if it's not recursive
 	}
 	defer func() {
 		// If the codec has a problem, free up the indexes
 		if c.problem != nil {
 			c.byIndex = nil
 			c.byName = nil
-			c.bySpecial = nil
+			c.byMeta = nil
 		}
 	}()
 	structCodecs[t] = c
@@ -395,6 +439,7 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 		if i := strings.Index(name, ","); i != -1 {
 			name, opts = name[:i], name[i+1:]
 		}
+		st.canSet = f.PkgPath == "" // blank == exported
 		switch {
 		case name == "":
 			if !f.Anonymous {
@@ -402,12 +447,17 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 			}
 		case name[0] == '$':
 			name = name[1:]
-			if _, ok := c.bySpecial[name]; ok {
-				c.problem = me("special field %q set multiple times", "$"+name)
+			if _, ok := c.byMeta[name]; ok {
+				c.problem = me("meta field %q set multiple times", "$"+name)
 				return
 			}
-			c.bySpecial[name] = i
-			st.specialVal = opts
+			c.byMeta[name] = i
+			mv, err := convertMeta(opts, f.Type)
+			if err != nil {
+				c.problem = me("meta field %q has bad type: %s", "$"+name, err)
+				return
+			}
+			st.metaVal = mv
 			fallthrough
 		case name == "-":
 			st.name = "-"
@@ -418,7 +468,7 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 				return
 			}
 		}
-		if f.PkgPath != "" { // field is unexported, so don't bother doing more.
+		if !st.canSet {
 			st.name = "-"
 			continue
 		}
@@ -500,10 +550,25 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 			c.byName[name] = i
 		}
 		st.name = name
-		st.noIndex = opts == "noindex"
+		if opts == "noindex" {
+			st.idxSetting = gae.NoIndex
+		}
 	}
 	if c.problem == errRecursiveStruct {
 		c.problem = nil
 	}
 	return
+}
+
+func convertMeta(val string, t reflect.Type) (interface{}, error) {
+	switch t {
+	case typeOfString:
+		return val, nil
+	case typeOfInt64:
+		if val == "" {
+			return int64(0), nil
+		}
+		return strconv.ParseInt(val, 10, 64)
+	}
+	return nil, fmt.Errorf("helper: meta field with bad type/value %s/%s", t, val)
 }

@@ -63,19 +63,19 @@ func ni() error {
 
 type rds struct{}
 
-func (rds) NewKey(string, string, int64, gae.DSKey) gae.DSKey              { panic(ni()) }
-func (rds) DecodeKey(string) (gae.DSKey, error)                            { panic(ni()) }
-func (rds) KeyFromTokens(a, n string, t []gae.DSKeyTok) (gae.DSKey, error) { panic(ni()) }
-func (rds) Put(gae.DSKey, interface{}) (gae.DSKey, error)                  { panic(ni()) }
-func (rds) Get(gae.DSKey, interface{}) error                               { panic(ni()) }
-func (rds) Delete(gae.DSKey) error                                         { panic(ni()) }
-func (rds) PutMulti([]gae.DSKey, interface{}) ([]gae.DSKey, error)         { panic(ni()) }
-func (rds) GetMulti([]gae.DSKey, interface{}) error                        { panic(ni()) }
-func (rds) DeleteMulti([]gae.DSKey) error                                  { panic(ni()) }
-func (rds) NewQuery(string) gae.DSQuery                                    { panic(ni()) }
-func (rds) Run(gae.DSQuery) gae.DSIterator                                 { panic(ni()) }
-func (rds) GetAll(gae.DSQuery, interface{}) ([]gae.DSKey, error)           { panic(ni()) }
-func (rds) Count(gae.DSQuery) (int, error)                                 { panic(ni()) }
+func (rds) NewKey(string, string, int64, gae.DSKey) gae.DSKey                    { panic(ni()) }
+func (rds) DecodeKey(string) (gae.DSKey, error)                                  { panic(ni()) }
+func (rds) KeyFromTokens(a, n string, t []gae.DSKeyTok) (gae.DSKey, error)       { panic(ni()) }
+func (rds) Put(gae.DSKey, gae.DSPropertyLoadSaver) (gae.DSKey, error)            { panic(ni()) }
+func (rds) Get(gae.DSKey, gae.DSPropertyLoadSaver) error                         { panic(ni()) }
+func (rds) Delete(gae.DSKey) error                                               { panic(ni()) }
+func (rds) PutMulti([]gae.DSKey, []gae.DSPropertyLoadSaver) ([]gae.DSKey, error) { panic(ni()) }
+func (rds) GetMulti([]gae.DSKey, []gae.DSPropertyLoadSaver) error                { panic(ni()) }
+func (rds) DeleteMulti([]gae.DSKey) error                                        { panic(ni()) }
+func (rds) NewQuery(string) gae.DSQuery                                          { panic(ni()) }
+func (rds) Run(gae.DSQuery) gae.RDSIterator                                      { panic(ni()) }
+func (rds) GetAll(gae.DSQuery, *[]gae.DSPropertyMap) ([]gae.DSKey, error)        { panic(ni()) }
+func (rds) Count(gae.DSQuery) (int, error)                                       { panic(ni()) }
 func (rds) RunInTransaction(func(context.Context) error, *gae.DSTransactionOptions) error {
 	panic(ni())
 }

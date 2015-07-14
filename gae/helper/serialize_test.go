@@ -32,7 +32,7 @@ func TestDSPropertyMapSerialization(t *testing.T) {
 		{
 			"basic",
 			gae.DSPropertyMap{
-				"R": {mp(false), mp(2.1), mp(3, true)},
+				"R": {mp(false), mp(2.1), mpNI(3)},
 				"S": {mp("hello"), mp("world")},
 			},
 		},

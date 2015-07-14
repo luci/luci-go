@@ -60,17 +60,17 @@ func (d *dsImpl) NewKey(kind, stringID string, intID int64, parent gae.DSKey) ga
 	return helper.NewDSKey(globalAppID, d.ns, kind, stringID, intID, parent)
 }
 
-func (d *dsImpl) Put(key gae.DSKey, src interface{}) (retKey gae.DSKey, err error) {
+func (d *dsImpl) Put(key gae.DSKey, pls gae.DSPropertyLoadSaver) (retKey gae.DSKey, err error) {
 	err = d.data.RunIfNotBroken(func() (err error) {
-		retKey, err = d.data.put(d.ns, key, src)
+		retKey, err = d.data.put(d.ns, key, pls)
 		return
 	})
 	return
 }
 
-func (d *dsImpl) Get(key gae.DSKey, dst interface{}) error {
+func (d *dsImpl) Get(key gae.DSKey, pls gae.DSPropertyLoadSaver) error {
 	return d.data.RunIfNotBroken(func() error {
-		return d.data.get(d.ns, key, dst)
+		return d.data.get(d.ns, key, pls)
 	})
 }
 
@@ -98,13 +98,13 @@ func (d *dsImpl) NewQuery(kind string) gae.DSQuery {
 	return &queryImpl{DSQuery: dummy.QY(), ns: d.ns, kind: kind}
 }
 
-func (d *dsImpl) Run(q gae.DSQuery) gae.DSIterator {
+func (d *dsImpl) Run(q gae.DSQuery) gae.RDSIterator {
 	rq := q.(*queryImpl)
 	rq = rq.normalize().checkCorrectness(d.ns, false)
 	return &queryIterImpl{rq}
 }
 
-func (d *dsImpl) GetAll(q gae.DSQuery, dst interface{}) ([]gae.DSKey, error) {
+func (d *dsImpl) GetAll(q gae.DSQuery, dst *[]gae.DSPropertyMap) ([]gae.DSKey, error) {
 	// TODO(riannucci): assert that dst is a slice of structs
 	return nil, nil
 }
@@ -131,17 +131,17 @@ func (d *txnDsImpl) NewKey(kind, stringID string, intID int64, parent gae.DSKey)
 	return helper.NewDSKey(globalAppID, d.ns, kind, stringID, intID, parent)
 }
 
-func (d *txnDsImpl) Put(key gae.DSKey, src interface{}) (retKey gae.DSKey, err error) {
+func (d *txnDsImpl) Put(key gae.DSKey, pls gae.DSPropertyLoadSaver) (retKey gae.DSKey, err error) {
 	err = d.data.RunIfNotBroken(func() (err error) {
-		retKey, err = d.data.put(d.ns, key, src)
+		retKey, err = d.data.put(d.ns, key, pls)
 		return
 	})
 	return
 }
 
-func (d *txnDsImpl) Get(key gae.DSKey, dst interface{}) error {
+func (d *txnDsImpl) Get(key gae.DSKey, pls gae.DSPropertyLoadSaver) error {
 	return d.data.RunIfNotBroken(func() error {
-		return d.data.get(d.ns, key, dst)
+		return d.data.get(d.ns, key, pls)
 	})
 }
 

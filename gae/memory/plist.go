@@ -29,7 +29,7 @@ func defaultIndicies(kind string, pmap gae.DSPropertyMap) []*qIndex {
 	for name, pvals := range pmap {
 		needsIndex := false
 		for _, v := range pvals {
-			if !v.NoIndex() {
+			if v.IndexSetting() == gae.ShouldIndex {
 				needsIndex = true
 				break
 			}
@@ -71,7 +71,7 @@ func partiallySerialize(pm gae.DSPropertyMap) (ret serializedIndexablePmap) {
 	for k, vals := range pm {
 		newVals := make(serializedPvals, 0, len(vals))
 		for _, v := range vals {
-			if v.NoIndex() {
+			if v.IndexSetting() == gae.NoIndex {
 				continue
 			}
 			buf.Reset()

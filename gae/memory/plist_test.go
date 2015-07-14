@@ -48,9 +48,9 @@ func TestCollated(t *testing.T) {
 
 		Convey("list", func() {
 			pm := gae.DSPropertyMap{
-				"wat":  {prop("thing", true), prop("hat"), prop(100)},
+				"wat":  {propNI("thing"), prop("hat"), prop(100)},
 				"nerd": {prop(103.7)},
-				"spaz": {prop(false, true)},
+				"spaz": {propNI(false)},
 			}
 			sip := partiallySerialize(pm)
 			So(len(sip), ShouldEqual, 2)
@@ -102,9 +102,9 @@ var rowGenTestCases = []struct {
 	{
 		name: "simple including builtins",
 		pmap: gae.DSPropertyMap{
-			"wat":  {prop("thing", true), prop("hat"), prop(100)},
+			"wat":  {propNI("thing"), prop("hat"), prop(100)},
 			"nerd": {prop(103.7)},
-			"spaz": {prop(false, true)},
+			"spaz": {propNI(false)},
 		},
 		withBuiltin: true,
 		idxs: []*qIndex{

@@ -35,16 +35,10 @@ func indx(kind string, orders ...string) *qIndex {
 	return ret
 }
 
-func prop(val interface{}, noIndex ...bool) (ret gae.DSProperty) {
-	ni := false
-	if len(noIndex) > 0 {
-		ni = noIndex[0]
-	}
-	if err := ret.SetValue(val, ni); err != nil {
-		panic(err)
-	}
-	return
-}
+var (
+	prop   = gae.MkDSProperty
+	propNI = gae.MkDSPropertyNI
+)
 
 func key(kind string, id interface{}, parent ...gae.DSKey) gae.DSKey {
 	p := gae.DSKey(nil)
