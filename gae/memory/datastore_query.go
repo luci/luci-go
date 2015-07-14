@@ -11,13 +11,11 @@ import (
 	"math"
 	"strings"
 
-	"appengine/datastore"
-	pb "appengine_internal/datastore"
+	"infra/gae/libs/gae"
+	"infra/gae/libs/gae/helper"
 
 	"github.com/luci/gkvlite"
 	"github.com/luci/luci-go/common/cmpbin"
-
-	"infra/gae/libs/wrapper"
 )
 
 type qDirection bool
@@ -41,7 +39,7 @@ func (q qSortBy) WriteBinary(buf *bytes.Buffer) {
 	} else {
 		buf.WriteByte(1)
 	}
-	writeString(buf, q.prop)
+	cmpbin.WriteString(buf, q.prop)
 }
 
 func (q *qSortBy) ReadBinary(buf *bytes.Buffer) error {
@@ -50,7 +48,7 @@ func (q *qSortBy) ReadBinary(buf *bytes.Buffer) error {
 		return err
 	}
 	q.dir = dir == 0
-	q.prop, err = readString(buf)
+	q.prop, _, err = cmpbin.ReadString(buf)
 	return err
 }
 
@@ -62,6 +60,13 @@ type qIndex struct {
 
 func (i *qIndex) Builtin() bool {
 	return !i.ancestor && len(i.sortby) <= 1
+}
+
+func (i *qIndex) Less(o *qIndex) bool {
+	ibuf, obuf := &bytes.Buffer{}, &bytes.Buffer{}
+	i.WriteBinary(ibuf)
+	o.WriteBinary(obuf)
+	return i.String() < o.String()
 }
 
 // Valid verifies that this qIndex doesn't have duplicate sortBy fields.
@@ -83,7 +88,7 @@ func (i *qIndex) WriteBinary(buf *bytes.Buffer) {
 	} else {
 		buf.Write(complexQueryPrefix)
 	}
-	writeString(buf, i.kind)
+	cmpbin.WriteString(buf, i.kind)
 	if i.ancestor {
 		buf.WriteByte(0)
 	} else {
@@ -124,7 +129,7 @@ func (i *qIndex) ReadBinary(buf *bytes.Buffer) error {
 		return err
 	}
 
-	i.kind, err = readString(buf)
+	i.kind, _, err = cmpbin.ReadString(buf)
 	if err != nil {
 		return err
 	}
@@ -213,12 +218,12 @@ func (q queryCursor) String() string { return string(q) }
 func (q queryCursor) Valid() bool    { return q != "" }
 
 type queryImpl struct {
-	wrapper.DSQuery
+	gae.DSQuery
 
 	ns string
 
 	kind     string
-	ancestor *datastore.Key
+	ancestor gae.DSKey
 	filter   []queryFilter
 	order    []queryOrder
 
@@ -236,14 +241,14 @@ type queryIterImpl struct {
 	idx *queryImpl
 }
 
-func (q *queryIterImpl) Cursor() (wrapper.DSCursor, error) {
+func (q *queryIterImpl) Cursor() (gae.DSCursor, error) {
 	if q.idx.err != nil {
 		return nil, q.idx.err
 	}
 	return nil, nil
 }
 
-func (q *queryIterImpl) Next(dst interface{}) (*datastore.Key, error) {
+func (q *queryIterImpl) Next(dst interface{}) (gae.DSKey, error) {
 	if q.idx.err != nil {
 		return nil, q.idx.err
 	}
@@ -335,8 +340,8 @@ func (q *queryImpl) checkCorrectness(ns string, isTxn bool) (ret *queryImpl) {
 	ret = q.clone()
 
 	if ns != ret.ns {
-		ret.err = newDSError(pb.Error_BAD_REQUEST,
-			"MADE UP ERROR: Namespace mismatched. Query and Datastore don't agree "+
+		ret.err = errors.New(
+			"gae/memory: Namespace mismatched. Query and Datastore don't agree " +
 				"on the current namespace")
 		return
 	}
@@ -352,8 +357,8 @@ func (q *queryImpl) checkCorrectness(ns string, isTxn bool) (ret *queryImpl) {
 	//   "projections are not supported for the property: %(prop)s"
 
 	if isTxn && ret.ancestor == nil {
-		ret.err = newDSError(pb.Error_BAD_REQUEST,
-			"Only ancestor queries are allowed inside transactions")
+		ret.err = errors.New(
+			"gae/memory: Only ancestor queries are allowed inside transactions")
 		return
 	}
 
@@ -362,8 +367,8 @@ func (q *queryImpl) checkCorrectness(ns string, isTxn bool) (ret *queryImpl) {
 		numComponents++
 	}
 	if numComponents > 100 {
-		ret.err = newDSError(pb.Error_BAD_REQUEST,
-			"query is too large. may not have more than "+
+		ret.err = errors.New(
+			"gae/memory: query is too large. may not have more than " +
 				"100 filters + sort orders ancestor total")
 	}
 
@@ -378,17 +383,17 @@ func (q *queryImpl) checkCorrectness(ns string, isTxn bool) (ret *queryImpl) {
 	ineqPropName := ""
 	for _, f := range ret.filter {
 		if f.field == "__key__" {
-			k, ok := f.value.(*datastore.Key)
+			k, ok := f.value.(gae.DSKey)
 			if !ok {
-				ret.err = newDSError(pb.Error_BAD_REQUEST,
-					"__key__ filter value must be a Key")
+				ret.err = errors.New(
+					"gae/memory: __key__ filter value must be a Key")
 				return
 			}
-			if !keyValid(ret.ns, k, userKeyOnly) {
+			if !helper.DSKeyValid(k, ret.ns, false) {
 				// See the comment in queryImpl.Ancestor; basically this check
 				// never happens in the real env because the SDK silently swallows
 				// this condition :/
-				ret.err = datastore.ErrInvalidKey
+				ret.err = gae.ErrDSInvalidKey
 				return
 			}
 			// __key__ filter app is X but query app is X
@@ -401,10 +406,9 @@ func (q *queryImpl) checkCorrectness(ns string, isTxn bool) (ret *queryImpl) {
 			if ineqPropName == "" {
 				ineqPropName = f.field
 			} else if f.field != ineqPropName {
-				ret.err = newDSError(pb.Error_BAD_REQUEST,
-					fmt.Sprintf(
-						"Only one inequality filter per query is supported. "+
-							"Encountered both %s and %s", ineqPropName, f.field))
+				ret.err = fmt.Errorf(
+					"gae/memory: Only one inequality filter per query is supported. "+
+						"Encountered both %s and %s", ineqPropName, f.field)
 				return
 			}
 		}
@@ -416,12 +420,11 @@ func (q *queryImpl) checkCorrectness(ns string, isTxn bool) (ret *queryImpl) {
 
 	if ineqPropName != "" && len(ret.order) != 0 {
 		if ret.order[0].field != ineqPropName {
-			ret.err = newDSError(pb.Error_BAD_REQUEST,
-				fmt.Sprintf(
-					"The first sort property must be the same as the property "+
-						"to which the inequality filter is applied.  In your query "+
-						"the first sort property is %s but the inequality filter "+
-						"is on %s", ret.order[0].field, ineqPropName))
+			ret.err = fmt.Errorf(
+				"gae/memory: The first sort property must be the same as the property "+
+					"to which the inequality filter is applied.  In your query "+
+					"the first sort property is %s but the inequality filter "+
+					"is on %s", ret.order[0].field, ineqPropName)
 			return
 		}
 	}
@@ -429,15 +432,15 @@ func (q *queryImpl) checkCorrectness(ns string, isTxn bool) (ret *queryImpl) {
 	if ret.kind == "" {
 		for _, f := range ret.filter {
 			if f.field != "__key__" {
-				ret.err = newDSError(pb.Error_BAD_REQUEST,
-					"kind is required for non-__key__ filters")
+				ret.err = errors.New(
+					"gae/memory: kind is required for non-__key__ filters")
 				return
 			}
 		}
 		for _, o := range ret.order {
 			if o.field != "__key__" || o.direction != qASC {
-				ret.err = newDSError(pb.Error_BAD_REQUEST,
-					"kind is required for all orders except __key__ ascending")
+				ret.err = errors.New(
+					"gae/memory: kind is required for all orders except __key__ ascending")
 				return
 			}
 		}
@@ -467,24 +470,24 @@ func (q *queryImpl) clone() *queryImpl {
 	return &ret
 }
 
-func (q *queryImpl) Ancestor(k *datastore.Key) wrapper.DSQuery {
+func (q *queryImpl) Ancestor(k gae.DSKey) gae.DSQuery {
 	q = q.clone()
 	q.ancestor = k
 	if k == nil {
 		// SDK has an explicit nil-check
 		q.err = errors.New("datastore: nil query ancestor")
-	} else if !keyValid(q.ns, k, userKeyOnly) {
+	} else if !helper.DSKeyValid(k, q.ns, false) {
 		// technically the SDK implementation does a Weird Thing (tm) if both the
 		// stringID and intID are set on a key; it only serializes the stringID in
 		// the proto. This means that if you set the Ancestor to an invalid key,
 		// you'll never actually hear about it. Instead of doing that insanity, we
 		// just swap to an error here.
-		q.err = datastore.ErrInvalidKey
+		q.err = gae.ErrDSInvalidKey
 	}
 	return q
 }
 
-func (q *queryImpl) Filter(fStr string, val interface{}) wrapper.DSQuery {
+func (q *queryImpl) Filter(fStr string, val interface{}) gae.DSQuery {
 	q = q.clone()
 	f, err := parseFilter(fStr, val)
 	if err != nil {
@@ -495,7 +498,7 @@ func (q *queryImpl) Filter(fStr string, val interface{}) wrapper.DSQuery {
 	return q
 }
 
-func (q *queryImpl) Order(field string) wrapper.DSQuery {
+func (q *queryImpl) Order(field string) gae.DSQuery {
 	q = q.clone()
 	field = strings.TrimSpace(field)
 	o := queryOrder{field, qASC}
@@ -514,13 +517,13 @@ func (q *queryImpl) Order(field string) wrapper.DSQuery {
 	return q
 }
 
-func (q *queryImpl) KeysOnly() wrapper.DSQuery {
+func (q *queryImpl) KeysOnly() gae.DSQuery {
 	q = q.clone()
 	q.keysOnly = true
 	return q
 }
 
-func (q *queryImpl) Limit(limit int) wrapper.DSQuery {
+func (q *queryImpl) Limit(limit int) gae.DSQuery {
 	q = q.clone()
 	if limit < math.MinInt32 || limit > math.MaxInt32 {
 		q.err = errors.New("datastore: query limit overflow")
@@ -530,7 +533,7 @@ func (q *queryImpl) Limit(limit int) wrapper.DSQuery {
 	return q
 }
 
-func (q *queryImpl) Offset(offset int) wrapper.DSQuery {
+func (q *queryImpl) Offset(offset int) gae.DSQuery {
 	q = q.clone()
 	if offset < 0 {
 		q.err = errors.New("datastore: negative query offset")
@@ -544,7 +547,7 @@ func (q *queryImpl) Offset(offset int) wrapper.DSQuery {
 	return q
 }
 
-func (q *queryImpl) Start(c wrapper.DSCursor) wrapper.DSQuery {
+func (q *queryImpl) Start(c gae.DSCursor) gae.DSQuery {
 	q = q.clone()
 	curs := c.(queryCursor)
 	if !curs.Valid() {
@@ -555,7 +558,7 @@ func (q *queryImpl) Start(c wrapper.DSCursor) wrapper.DSQuery {
 	return q
 }
 
-func (q *queryImpl) End(c wrapper.DSCursor) wrapper.DSQuery {
+func (q *queryImpl) End(c gae.DSCursor) gae.DSQuery {
 	q = q.clone()
 	curs := c.(queryCursor)
 	if !curs.Valid() {

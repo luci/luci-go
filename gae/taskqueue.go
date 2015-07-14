@@ -2,19 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package wrapper
+package gae
 
 import (
 	"golang.org/x/net/context"
-
-	"appengine/taskqueue"
 )
 
 // TQSingleReadWriter allows you to add or delete a single Task from a queue.
 // See appengine.taskqueue.
 type TQSingleReadWriter interface {
-	Add(task *taskqueue.Task, queueName string) (*taskqueue.Task, error)
-	Delete(task *taskqueue.Task, queueName string) error
+	Add(task *TQTask, queueName string) (*TQTask, error)
+	Delete(task *TQTask, queueName string) error
 }
 
 // TQMultiReadWriter allows you to add or delete a batch of Tasks from a queue.
@@ -22,16 +20,16 @@ type TQSingleReadWriter interface {
 type TQMultiReadWriter interface {
 	TQSingleReadWriter
 
-	AddMulti(tasks []*taskqueue.Task, queueName string) ([]*taskqueue.Task, error)
-	DeleteMulti(tasks []*taskqueue.Task, queueName string) error
+	AddMulti(tasks []*TQTask, queueName string) ([]*TQTask, error)
+	DeleteMulti(tasks []*TQTask, queueName string) error
 }
 
 // TQLeaser allows you to lease tasks from a Pull queue.
 // See appengine.taskqueue.
 type TQLeaser interface {
-	Lease(maxTasks int, queueName string, leaseTime int) ([]*taskqueue.Task, error)
-	LeaseByTag(maxTasks int, queueName string, leaseTime int, tag string) ([]*taskqueue.Task, error)
-	ModifyLease(task *taskqueue.Task, queueName string, leaseTime int) error
+	Lease(maxTasks int, queueName string, leaseTime int) ([]*TQTask, error)
+	LeaseByTag(maxTasks int, queueName string, leaseTime int, tag string) ([]*TQTask, error)
+	ModifyLease(task *TQTask, queueName string, leaseTime int) error
 }
 
 // TQPurger allows you to drain a queue without processing it. See
@@ -43,7 +41,7 @@ type TQPurger interface {
 // TQStatter allows you to obtain semi-realtime stats on the current state of
 // a queue. See appengine.taskqueue.
 type TQStatter interface {
-	QueueStats(queueNames []string, maxTasks int) ([]taskqueue.QueueStatistics, error)
+	QueueStats(queueNames []string) ([]TQStatistics, error)
 }
 
 // TaskQueue is the full interface to the Task Queue service.
@@ -51,6 +49,7 @@ type TaskQueue interface {
 	TQMultiReadWriter
 	TQLeaser
 	TQPurger
+	TQStatter
 }
 
 // TQFactory is the function signature for factory methods compatible with
