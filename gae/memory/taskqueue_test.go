@@ -29,7 +29,7 @@ func TestTaskQueue(t *testing.T) {
 		c = Use(c)
 
 		tq := gae.GetTQ(c).(interface {
-			gae.TQMultiReadWriter
+			gae.TaskQueue
 			gae.TQTestable
 		})
 
