@@ -57,12 +57,30 @@ type Memcache interface {
 // SetMCFactory.
 type MCFactory func(context.Context) Memcache
 
-// GetMC gets the current memcache implementation from the context.
-func GetMC(c context.Context) Memcache {
+// MCFilter is the function signature for a filter MC implementation. It
+// gets the current MC implementation, and returns a new MC implementation
+// backed by the one passed in.
+type MCFilter func(context.Context, Memcache) Memcache
+
+// GetMCUnfiltered gets gets the Memcache implementation from context without
+// any of the filters applied.
+func GetMCUnfiltered(c context.Context) Memcache {
 	if f, ok := c.Value(memcacheKey).(MCFactory); ok && f != nil {
 		return f(c)
 	}
 	return nil
+}
+
+// GetMC gets the current memcache implementation from the context.
+func GetMC(c context.Context) Memcache {
+	ret := GetMCUnfiltered(c)
+	if ret == nil {
+		return nil
+	}
+	for _, f := range getCurMCFilters(c) {
+		ret = f(c, ret)
+	}
+	return ret
 }
 
 // SetMCFactory sets the function to produce Memcache instances, as returned by
@@ -76,4 +94,24 @@ func SetMCFactory(c context.Context, mcf MCFactory) context.Context {
 // a factory which always returns the same object.
 func SetMC(c context.Context, mc Memcache) context.Context {
 	return SetMCFactory(c, func(context.Context) Memcache { return mc })
+}
+
+func getCurMCFilters(c context.Context) []MCFilter {
+	curFiltsI := c.Value(memcacheFilterKey)
+	if curFiltsI != nil {
+		return curFiltsI.([]MCFilter)
+	}
+	return nil
+}
+
+// AddMCFilters adds Memcache filters to the context.
+func AddMCFilters(c context.Context, filts ...MCFilter) context.Context {
+	if len(filts) == 0 {
+		return c
+	}
+	cur := getCurMCFilters(c)
+	newFilts := make([]MCFilter, 0, len(cur)+len(filts))
+	newFilts = append(newFilts, getCurMCFilters(c)...)
+	newFilts = append(newFilts, filts...)
+	return context.WithValue(c, memcacheFilterKey, newFilts)
 }

@@ -29,12 +29,30 @@ type TaskQueue interface {
 // SetTQFactory.
 type TQFactory func(context.Context) TaskQueue
 
-// GetTQ gets the TaskQueue implementation from context.
-func GetTQ(c context.Context) TaskQueue {
+// TQFilter is the function signature for a filter TQ implementation. It
+// gets the current TQ implementation, and returns a new TQ implementation
+// backed by the one passed in.
+type TQFilter func(context.Context, TaskQueue) TaskQueue
+
+// GetTQUnfiltered gets gets the TaskQueue implementation from context without
+// any of the filters applied.
+func GetTQUnfiltered(c context.Context) TaskQueue {
 	if f, ok := c.Value(taskQueueKey).(TQFactory); ok && f != nil {
 		return f(c)
 	}
 	return nil
+}
+
+// GetTQ gets the TaskQueue implementation from context.
+func GetTQ(c context.Context) TaskQueue {
+	ret := GetTQUnfiltered(c)
+	if ret == nil {
+		return nil
+	}
+	for _, f := range getCurTQFilters(c) {
+		ret = f(c, ret)
+	}
+	return ret
 }
 
 // SetTQFactory sets the function to produce TaskQueue instances, as returned by
@@ -48,4 +66,24 @@ func SetTQFactory(c context.Context, tqf TQFactory) context.Context {
 // a factory which always returns the same object.
 func SetTQ(c context.Context, tq TaskQueue) context.Context {
 	return SetTQFactory(c, func(context.Context) TaskQueue { return tq })
+}
+
+func getCurTQFilters(c context.Context) []TQFilter {
+	curFiltsI := c.Value(taskQueueFilterKey)
+	if curFiltsI != nil {
+		return curFiltsI.([]TQFilter)
+	}
+	return nil
+}
+
+// AddTQFilters adds TaskQueue filters to the context.
+func AddTQFilters(c context.Context, filts ...TQFilter) context.Context {
+	if len(filts) == 0 {
+		return c
+	}
+	cur := getCurTQFilters(c)
+	newFilts := make([]TQFilter, 0, len(cur)+len(filts))
+	newFilts = append(newFilts, getCurTQFilters(c)...)
+	newFilts = append(newFilts, filts...)
+	return context.WithValue(c, taskQueueFilterKey, newFilts)
 }

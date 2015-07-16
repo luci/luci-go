@@ -7,13 +7,14 @@ package gae
 type key int
 
 var (
-	globalInfoKey key
+	globalInfoKey         key
+	globalInfoFilterKey   key = 1
+	rawDatastoreKey       key = 2
+	rawDatastoreFilterKey key = 3
+	memcacheKey           key = 4
+	memcacheFilterKey     key = 5
+	taskQueueKey          key = 6
+	taskQueueFilterKey    key = 7
 
-	rawDatastoreKey key = 1
-	memcacheKey     key = 2
-	taskQueueKey    key = 3
-
-	datastoreKey key = 4
-
-	mathRandKey key = 5
+	mathRandKey key = 8
 )
