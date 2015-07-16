@@ -136,7 +136,7 @@ func (t *taskQueueData) prepTask(c context.Context, ns string, task *gae.TQTask,
 	toSched := dupTask(task)
 
 	if toSched.Path == "" {
-		return nil, "", errors.New("INVALID_URL")
+		toSched.Path = "/_ah/queue/" + queueName
 	}
 
 	if toSched.ETA.IsZero() {

@@ -116,7 +116,7 @@ func DSKeyUnmarshalJSON(buf []byte) (appID, namespace string, toks []gae.DSKeyTo
 
 // DSKeyIncomplete returns true iff k doesn't have an id yet.
 func DSKeyIncomplete(k gae.DSKey) bool {
-	return k.StringID() == "" && k.IntID() == 0
+	return k != nil && k.StringID() == "" && k.IntID() == 0
 }
 
 // DSKeyValid determines if a key is valid, according to a couple rules:

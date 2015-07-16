@@ -74,11 +74,11 @@ func TestTaskQueue(t *testing.T) {
 					})
 				})
 
-				Convey("requires a URL", func() {
+				Convey("supplies a URL if it's missing", func() {
 					t.Path = ""
 					tr, err := tq.Add(t, "")
-					So(err.Error(), ShouldContainSubstring, "INVALID_URL")
-					So(tr, ShouldBeNil)
+					So(err, ShouldBeNil)
+					So(tr.Path, ShouldEqual, "/_ah/queue/default")
 				})
 
 				Convey("cannot add twice", func() {

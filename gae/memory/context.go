@@ -91,14 +91,14 @@ func (m memContext) applyTxn(c context.Context, txnCtxObj memContextObj) {
 	}
 }
 
-// Use adds implementations for the following gae/wrapper interfaces to the
+// Use adds implementations for the following gae interfaces to the
 // context:
-//   * wrapper.Datastore
-//   * wrapper.TaskQueue
-//   * wrapper.Memcache
-//   * wrapper.GlobalInfo
+//   * gae.Datastore
+//   * gae.TaskQueue
+//   * gae.Memcache
+//   * gae.GlobalInfo
 //
-// These can be retrieved with the "gae/wrapper".Get functions.
+// These can be retrieved with the gae.Get functions.
 //
 // The implementations are all backed by an in-memory implementation, and start
 // with an empty state.
