@@ -30,6 +30,7 @@ func (c *Config) Set(ctx context.Context) context.Context {
 	filterFunc := c.Filter.Get()
 	baseFactory := GetFactory(ctx)
 
+	ctx = SetLevel(ctx, c.Level)
 	return SetFactory(ctx, func(ctx context.Context) Logger {
 		if value, ok := GetFields(ctx)[FilterOnKey]; ok {
 			if !filterFunc(value) {

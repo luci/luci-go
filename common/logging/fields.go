@@ -190,5 +190,5 @@ func GetFields(c context.Context) Fields {
 	if ret, ok := c.Value(fieldsKey).(Fields); ok {
 		return ret
 	}
-	return Fields(nil)
+	return nil
 }
