@@ -19,8 +19,6 @@ import (
 //////////////////////////////// dataStoreData /////////////////////////////////
 
 type dataStoreData struct {
-	gae.BrokenFeatures
-
 	rwlock sync.RWMutex
 	// See README.md for store schema.
 	store *memStore
@@ -30,15 +28,13 @@ type dataStoreData struct {
 var (
 	_ = memContextObj((*dataStoreData)(nil))
 	_ = sync.Locker((*dataStoreData)(nil))
-	_ = gae.Testable((*dataStoreData)(nil))
 )
 
 func newDataStoreData() *dataStoreData {
 	store := newMemStore()
 	return &dataStoreData{
-		BrokenFeatures: gae.BrokenFeatures{DefaultError: errors.New("INTERNAL_ERROR")},
-		store:          store,
-		snap:           store.Snapshot(), // empty but better than a nil pointer.
+		store: store,
+		snap:  store.Snapshot(), // empty but better than a nil pointer.
 	}
 }
 
@@ -294,11 +290,10 @@ func (d *dataStoreData) mkTxn(o *gae.DSTransactionOptions) (memContextObj, error
 	return &txnDataStoreData{
 		// alias to the main datastore's so that testing code can have primitive
 		// access to break features inside of transactions.
-		BrokenFeatures: &d.BrokenFeatures,
-		parent:         d,
-		isXG:           o != nil && o.XG,
-		snap:           d.store.Snapshot(),
-		muts:           map[string][]txnMutation{},
+		parent: d,
+		isXG:   o != nil && o.XG,
+		snap:   d.store.Snapshot(),
+		muts:   map[string][]txnMutation{},
 	}, nil
 }
 
@@ -312,7 +307,6 @@ type txnMutation struct {
 }
 
 type txnDataStoreData struct {
-	*gae.BrokenFeatures
 	sync.Mutex
 
 	parent *dataStoreData
@@ -329,11 +323,7 @@ type txnDataStoreData struct {
 	// length of encoded keys + values.
 }
 
-var (
-	_ = memContextObj((*txnDataStoreData)(nil))
-	_ = sync.Locker((*txnDataStoreData)(nil))
-	_ = gae.Testable((*txnDataStoreData)(nil))
-)
+var _ memContextObj = (*txnDataStoreData)(nil)
 
 const xgEGLimit = 25
 
@@ -351,13 +341,13 @@ func (*txnDataStoreData) mkTxn(*gae.DSTransactionOptions) (memContextObj, error)
 	return nil, errors.New("datastore: nested transactions are not supported")
 }
 
-func (td *txnDataStoreData) RunIfNotBroken(f func() error) error {
+func (td *txnDataStoreData) isBroken() error {
 	// Slightly different from the SDK... datastore and taskqueue each implement
 	// this here, where in the SDK only datastore.transaction.Call does.
 	if atomic.LoadInt32(&td.closed) == 1 {
 		return errors.New("datastore: transaction context has expired")
 	}
-	return td.BrokenFeatures.RunIfNotBroken(f)
+	return nil
 }
 
 // writeMutation ensures that this transaction can support the given key/value

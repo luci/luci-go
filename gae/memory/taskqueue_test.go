@@ -134,12 +134,6 @@ func TestTaskQueue(t *testing.T) {
 					So(err.Error(), ShouldContainSubstring, "INVALID_TASK_NAME")
 				})
 
-				Convey("can be broken", func() {
-					tq.BreakFeatures(nil, "Add")
-					_, err := tq.Add(t, "")
-					So(err.Error(), ShouldContainSubstring, "TRANSIENT_ERROR")
-				})
-
 				Convey("AddMulti also works", func() {
 					t2 := dupTask(t)
 					t2.Path = "/hi/city"
@@ -161,18 +155,6 @@ func TestTaskQueue(t *testing.T) {
 							So(tasks[i], ShouldResemble, expect[i])
 						})
 					}
-
-					Convey("can be broken", func() {
-						tq.BreakFeatures(nil, "AddMulti")
-						_, err := tq.AddMulti([]*gae.TQTask{t}, "")
-						So(err.Error(), ShouldContainSubstring, "TRANSIENT_ERROR")
-					})
-
-					Convey("is not broken by Add", func() {
-						tq.BreakFeatures(nil, "Add")
-						_, err := tq.AddMulti([]*gae.TQTask{t}, "")
-						So(err, ShouldBeNil)
-					})
 				})
 			})
 
@@ -218,12 +200,6 @@ func TestTaskQueue(t *testing.T) {
 					So(err.Error(), ShouldContainSubstring, "UNKNOWN_TASK")
 				})
 
-				Convey("can be broken", func() {
-					tq.BreakFeatures(nil, "Delete")
-					err := tq.Delete(t, "")
-					So(err.Error(), ShouldContainSubstring, "TRANSIENT_ERROR")
-				})
-
 				Convey("DeleteMulti also works", func() {
 					t2 := dupTask(t)
 					t2.Path = "/hi/city"
@@ -235,18 +211,6 @@ func TestTaskQueue(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(len(tq.GetScheduledTasks()["default"]), ShouldEqual, 0)
 						So(len(tq.GetTombstonedTasks()["default"]), ShouldEqual, 2)
-					})
-
-					Convey("can be broken", func() {
-						tq.BreakFeatures(nil, "DeleteMulti")
-						err = tq.DeleteMulti([]*gae.TQTask{tEnQ, tEnQ2}, "")
-						So(err.Error(), ShouldContainSubstring, "TRANSIENT_ERROR")
-					})
-
-					Convey("is not broken by Delete", func() {
-						tq.BreakFeatures(nil, "Delete")
-						err = tq.DeleteMulti([]*gae.TQTask{tEnQ, tEnQ2}, "")
-						So(err, ShouldBeNil)
 					})
 				})
 			})
@@ -392,24 +356,6 @@ func TestTaskQueue(t *testing.T) {
 						So(err, ShouldBeNil)
 					})
 
-					return nil
-				}, nil)
-			})
-
-			Convey("unless Add is broken", func() {
-				tq.BreakFeatures(nil, "Add")
-				gae.GetRDS(c).RunInTransaction(func(c context.Context) error {
-					_, err = gae.GetTQ(c).Add(t, "")
-					So(err.Error(), ShouldContainSubstring, "TRANSIENT_ERROR")
-					return nil
-				}, nil)
-			})
-
-			Convey("unless AddMulti is broken", func() {
-				tq.BreakFeatures(nil, "AddMulti")
-				gae.GetRDS(c).RunInTransaction(func(c context.Context) error {
-					_, err = gae.GetTQ(c).AddMulti(nil, "")
-					So(err.Error(), ShouldContainSubstring, "TRANSIENT_ERROR")
 					return nil
 				}, nil)
 			})

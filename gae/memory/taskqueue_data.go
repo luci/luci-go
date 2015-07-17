@@ -26,7 +26,6 @@ var (
 
 type taskQueueData struct {
 	sync.Mutex
-	gae.BrokenFeatures
 
 	named    gae.QueueData
 	archived gae.QueueData
@@ -39,8 +38,6 @@ var (
 
 func newTaskQueueData() memContextObj {
 	return &taskQueueData{
-		BrokenFeatures: gae.BrokenFeatures{
-			DefaultError: errors.New("TRANSIENT_ERROR")},
 		named:    gae.QueueData{"default": {}},
 		archived: gae.QueueData{"default": {}},
 	}
@@ -60,9 +57,8 @@ func (t *taskQueueData) applyTxn(c context.Context, obj memContextObj) {
 }
 func (t *taskQueueData) mkTxn(*gae.DSTransactionOptions) (memContextObj, error) {
 	return &txnTaskQueueData{
-		BrokenFeatures: &t.BrokenFeatures,
-		parent:         t,
-		anony:          gae.AnonymousQueueData{},
+		parent: t,
+		anony:  gae.AnonymousQueueData{},
 	}, nil
 }
 
@@ -180,8 +176,6 @@ func (t *taskQueueData) prepTask(c context.Context, ns string, task *gae.TQTask,
 /////////////////////////////// txnTaskQueueData ///////////////////////////////
 
 type txnTaskQueueData struct {
-	*gae.BrokenFeatures
-
 	lock sync.Mutex
 
 	// boolean 0 or 1, use atomic.*Int32 to access.
@@ -212,13 +206,13 @@ func (t *txnTaskQueueData) endTxn() {
 	atomic.StoreInt32(&t.closed, 1)
 }
 
-func (t *txnTaskQueueData) RunIfNotBroken(f func() error) error {
+func (t *txnTaskQueueData) isBroken() error {
 	// Slightly different from the SDK... datastore and taskqueue each implement
 	// this here, where in the SDK only datastore.transaction.Call does.
 	if atomic.LoadInt32(&t.closed) == 1 {
 		return fmt.Errorf("taskqueue: transaction context has expired")
 	}
-	return t.parent.RunIfNotBroken(f)
+	return nil
 }
 
 func (t *txnTaskQueueData) ResetTasks() {

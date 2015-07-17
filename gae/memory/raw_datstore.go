@@ -44,40 +44,22 @@ type dsImpl struct {
 	c    context.Context
 }
 
-var _ interface {
-	gae.RawDatastore
-	gae.Testable
-} = (*dsImpl)(nil)
-
-func (d *dsImpl) BreakFeatures(err error, features ...string) {
-	d.data.BreakFeatures(err, features...)
-}
-func (d *dsImpl) UnbreakFeatures(features ...string) {
-	d.data.UnbreakFeatures(features...)
-}
+var _ gae.RawDatastore = (*dsImpl)(nil)
 
 func (d *dsImpl) NewKey(kind, stringID string, intID int64, parent gae.DSKey) gae.DSKey {
 	return helper.NewDSKey(globalAppID, d.ns, kind, stringID, intID, parent)
 }
 
 func (d *dsImpl) Put(key gae.DSKey, pls gae.DSPropertyLoadSaver) (retKey gae.DSKey, err error) {
-	err = d.data.RunIfNotBroken(func() (err error) {
-		retKey, err = d.data.put(d.ns, key, pls)
-		return
-	})
-	return
+	return d.data.put(d.ns, key, pls)
 }
 
 func (d *dsImpl) Get(key gae.DSKey, pls gae.DSPropertyLoadSaver) error {
-	return d.data.RunIfNotBroken(func() error {
-		return d.data.get(d.ns, key, pls)
-	})
+	return d.data.get(d.ns, key, pls)
 }
 
 func (d *dsImpl) Delete(key gae.DSKey) error {
-	return d.data.RunIfNotBroken(func() error {
-		return d.data.del(d.ns, key)
-	})
+	return d.data.del(d.ns, key)
 }
 
 ////////////////////////////////// txnDsImpl ///////////////////////////////////
@@ -89,10 +71,7 @@ type txnDsImpl struct {
 	ns   string
 }
 
-var (
-	_ = gae.RawDatastore((*txnDsImpl)(nil))
-	_ = gae.Testable((*txnDsImpl)(nil))
-)
+var _ gae.RawDatastore = (*txnDsImpl)(nil)
 
 func (d *dsImpl) NewQuery(kind string) gae.DSQuery {
 	return &queryImpl{DSQuery: dummy.QY(), ns: d.ns, kind: kind}
@@ -120,35 +99,29 @@ func (d *dsImpl) Count(q gae.DSQuery) (ret int, err error) {
 	return
 }
 
-func (d *txnDsImpl) BreakFeatures(err error, features ...string) {
-	d.data.BreakFeatures(err, features...)
-}
-func (d *txnDsImpl) UnbreakFeatures(features ...string) {
-	d.data.UnbreakFeatures(features...)
-}
-
 func (d *txnDsImpl) NewKey(kind, stringID string, intID int64, parent gae.DSKey) gae.DSKey {
 	return helper.NewDSKey(globalAppID, d.ns, kind, stringID, intID, parent)
 }
 
-func (d *txnDsImpl) Put(key gae.DSKey, pls gae.DSPropertyLoadSaver) (retKey gae.DSKey, err error) {
-	err = d.data.RunIfNotBroken(func() (err error) {
-		retKey, err = d.data.put(d.ns, key, pls)
-		return
-	})
-	return
+func (d *txnDsImpl) Put(key gae.DSKey, pls gae.DSPropertyLoadSaver) (gae.DSKey, error) {
+	if err := d.data.isBroken(); err != nil {
+		return nil, err
+	}
+	return d.data.put(d.ns, key, pls)
 }
 
 func (d *txnDsImpl) Get(key gae.DSKey, pls gae.DSPropertyLoadSaver) error {
-	return d.data.RunIfNotBroken(func() error {
-		return d.data.get(d.ns, key, pls)
-	})
+	if err := d.data.isBroken(); err != nil {
+		return err
+	}
+	return d.data.get(d.ns, key, pls)
 }
 
 func (d *txnDsImpl) Delete(key gae.DSKey) error {
-	return d.data.RunIfNotBroken(func() error {
-		return d.data.del(d.ns, key)
-	})
+	if err := d.data.isBroken(); err != nil {
+		return err
+	}
+	return d.data.del(d.ns, key)
 }
 
 func (*txnDsImpl) RunInTransaction(func(c context.Context) error, *gae.DSTransactionOptions) error {

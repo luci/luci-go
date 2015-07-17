@@ -34,8 +34,6 @@ func useGI(c context.Context) context.Context {
 const globalAppID = "dev~app"
 
 type globalInfoData struct {
-	gae.BrokenFeatures
-
 	namespace string
 }
 
@@ -48,14 +46,7 @@ type giImpl struct {
 var _ = gae.GlobalInfo((*giImpl)(nil))
 
 func (gi *giImpl) Namespace(ns string) (ret context.Context, err error) {
-	err = gi.RunIfNotBroken(func() error {
-		ret = context.WithValue(gi.c, giContextKey, &globalInfoData{
-			curGID(gi.c).BrokenFeatures,
-			ns,
-		})
-		return nil
-	})
-	return
+	return context.WithValue(gi.c, giContextKey, &globalInfoData{ns}), nil
 }
 
 func (gi *giImpl) AppID() string {

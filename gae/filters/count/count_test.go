@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"infra/gae/libs/gae"
+	"infra/gae/libs/gae/filters/featureBreaker"
 	"infra/gae/libs/gae/memory"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -98,13 +99,15 @@ func TestCount(t *testing.T) {
 	})
 
 	Convey("works for global info", t, func() {
-		c, ctr := FilterGI(memory.Use(context.Background()))
+		c, fb := featureBreaker.FilterGI(memory.Use(context.Background()), nil)
+		c, ctr := FilterGI(c)
 		So(c, ShouldNotBeNil)
 		So(ctr, ShouldNotBeNil)
+
 		gi := gae.GetGI(c)
 
 		gi.Namespace("foo")
-		gae.GetGIUnfiltered(c).(gae.Testable).BreakFeatures(nil, "Namespace")
+		fb.BreakFeatures(nil, "Namespace")
 		gi.Namespace("boom")
 
 		So(ctr.Namespace, ShouldResemble, Entry{1, 1})

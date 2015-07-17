@@ -23,8 +23,6 @@ func TestMemcache(t *testing.T) {
 		c, tc := testclock.UseTime(context.Background(), now)
 		c = Use(c)
 		mc := gae.GetMC(c)
-		mci := gae.GetMC(c).(*memcacheImpl)
-		So(mc, ShouldNotEqual, mci) // two impls with the same memcacheData
 
 		Convey("implements MCSingleReadWriter", func() {
 			Convey("Add", func() {
@@ -38,12 +36,6 @@ func TestMemcache(t *testing.T) {
 				Convey("which rejects objects already there", func() {
 					err := mc.Add(itm)
 					So(err, ShouldEqual, gae.ErrMCNotStored)
-				})
-
-				Convey("which can be broken intentionally", func() {
-					mci.BreakFeatures(nil, "Add")
-					err := mc.Add(itm)
-					So(err, ShouldEqual, gae.ErrMCServerError)
 				})
 			})
 
@@ -71,12 +63,6 @@ func TestMemcache(t *testing.T) {
 					So(err, ShouldEqual, gae.ErrMCCacheMiss)
 					So(i, ShouldBeNil)
 				})
-
-				Convey("which can be broken intentionally", func() {
-					mci.BreakFeatures(nil, "Get")
-					_, err := mc.Get("sup")
-					So(err, ShouldEqual, gae.ErrMCServerError)
-				})
 			})
 
 			Convey("Delete", func() {
@@ -101,12 +87,6 @@ func TestMemcache(t *testing.T) {
 					err := mc.Delete("sup")
 					So(err, ShouldEqual, gae.ErrMCCacheMiss)
 				})
-
-				Convey("and can be broken", func() {
-					mci.BreakFeatures(nil, "Delete")
-					err := mc.Delete("sup")
-					So(err, ShouldEqual, gae.ErrMCServerError)
-				})
 			})
 
 			Convey("Set", func() {
@@ -130,12 +110,6 @@ func TestMemcache(t *testing.T) {
 				i, err := mc.Get("sup")
 				So(err, ShouldBeNil)
 				So(i, ShouldResemble, testItem)
-
-				Convey("and can be broken", func() {
-					mci.BreakFeatures(nil, "Set")
-					err := mc.Set(itm)
-					So(err, ShouldEqual, gae.ErrMCServerError)
-				})
 			})
 
 			Convey("CompareAndSwap", func() {
@@ -169,12 +143,6 @@ func TestMemcache(t *testing.T) {
 					err = mc.CompareAndSwap(itm)
 					So(err, ShouldEqual, gae.ErrMCNotStored)
 				})
-
-				Convey("and can be broken", func() {
-					mci.BreakFeatures(nil, "CompareAndSwap")
-					err = mc.CompareAndSwap(itm)
-					So(err, ShouldEqual, gae.ErrMCServerError)
-				})
 			})
 		})
 
@@ -185,6 +153,8 @@ func TestMemcache(t *testing.T) {
 				value:      []byte("cool"),
 				expiration: time.Second * 2,
 			})
+
+			mci := mc.(*memcacheImpl)
 
 			So(err, ShouldBeNil)
 			So(len(mci.data.items), ShouldEqual, 1)

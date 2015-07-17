@@ -63,8 +63,6 @@ func (m *mcItem) duplicate() *mcItem {
 }
 
 type memcacheData struct {
-	gae.BrokenFeatures
-
 	lock  sync.Mutex
 	items map[string]*mcItem
 	casID uint64
@@ -79,10 +77,7 @@ type memcacheImpl struct {
 	ctx  context.Context
 }
 
-var (
-	_ = gae.Memcache((*memcacheImpl)(nil))
-	_ = gae.Testable((*memcacheImpl)(nil))
-)
+var _ gae.Memcache = (*memcacheImpl)(nil)
 
 // useMC adds a gae.Memcache implementation to context, accessible
 // by gae.GetMC(c)
@@ -97,10 +92,7 @@ func useMC(c context.Context) context.Context {
 		ns := curGID(ic).namespace
 		mcd, ok := mcdMap[ns]
 		if !ok {
-			mcd = &memcacheData{
-				BrokenFeatures: gae.BrokenFeatures{
-					DefaultError: gae.ErrMCServerError},
-				items: map[string]*mcItem{}}
+			mcd = &memcacheData{items: map[string]*mcItem{}}
 			mcdMap[ns] = mcd
 		}
 
@@ -129,93 +121,74 @@ func (m *memcacheImpl) mkItemLocked(i gae.MCItem) (ret *mcItem) {
 	return newItem.duplicate()
 }
 
-func (m *memcacheImpl) BreakFeatures(err error, features ...string) {
-	m.data.BreakFeatures(err, features...)
-}
-
-func (m *memcacheImpl) UnbreakFeatures(features ...string) {
-	m.data.UnbreakFeatures(features...)
-}
-
 func (m *memcacheImpl) NewItem(key string) gae.MCItem {
 	return &mcItem{key: key}
 }
 
 // Add implements context.MCSingleReadWriter.Add.
 func (m *memcacheImpl) Add(i gae.MCItem) error {
-	return m.data.RunIfNotBroken(func() error {
-		m.data.lock.Lock()
-		defer m.data.lock.Unlock()
+	m.data.lock.Lock()
+	defer m.data.lock.Unlock()
 
-		if _, ok := m.retrieveLocked(i.Key()); !ok {
-			m.data.items[i.Key()] = m.mkItemLocked(i)
-			return nil
-		}
-		return gae.ErrMCNotStored
-	})
+	if _, ok := m.retrieveLocked(i.Key()); !ok {
+		m.data.items[i.Key()] = m.mkItemLocked(i)
+		return nil
+	}
+	return gae.ErrMCNotStored
 }
 
 // CompareAndSwap implements context.MCSingleReadWriter.CompareAndSwap.
 func (m *memcacheImpl) CompareAndSwap(item gae.MCItem) error {
-	return m.data.RunIfNotBroken(func() error {
-		m.data.lock.Lock()
-		defer m.data.lock.Unlock()
+	m.data.lock.Lock()
+	defer m.data.lock.Unlock()
 
-		if cur, ok := m.retrieveLocked(item.Key()); ok {
-			casid := uint64(0)
-			if mi, ok := item.(*mcItem); ok && mi != nil {
-				casid = mi.CasID
-			}
-
-			if cur.CasID == casid {
-				m.data.items[item.Key()] = m.mkItemLocked(item)
-			} else {
-				return gae.ErrMCCASConflict
-			}
-		} else {
-			return gae.ErrMCNotStored
+	if cur, ok := m.retrieveLocked(item.Key()); ok {
+		casid := uint64(0)
+		if mi, ok := item.(*mcItem); ok && mi != nil {
+			casid = mi.CasID
 		}
-		return nil
-	})
+
+		if cur.CasID == casid {
+			m.data.items[item.Key()] = m.mkItemLocked(item)
+		} else {
+			return gae.ErrMCCASConflict
+		}
+	} else {
+		return gae.ErrMCNotStored
+	}
+	return nil
 }
 
 // Set implements context.MCSingleReadWriter.Set.
 func (m *memcacheImpl) Set(i gae.MCItem) error {
-	return m.data.RunIfNotBroken(func() error {
-		m.data.lock.Lock()
-		defer m.data.lock.Unlock()
-		m.data.items[i.Key()] = m.mkItemLocked(i)
-		return nil
-	})
+	m.data.lock.Lock()
+	defer m.data.lock.Unlock()
+	m.data.items[i.Key()] = m.mkItemLocked(i)
+	return nil
 }
 
 // Get implements context.MCSingleReadWriter.Get.
 func (m *memcacheImpl) Get(key string) (itm gae.MCItem, err error) {
-	err = m.data.RunIfNotBroken(func() (err error) {
-		m.data.lock.Lock()
-		defer m.data.lock.Unlock()
-		if val, ok := m.retrieveLocked(key); ok {
-			itm = val.duplicate().SetExpiration(0)
-		} else {
-			err = gae.ErrMCCacheMiss
-		}
-		return
-	})
+	m.data.lock.Lock()
+	defer m.data.lock.Unlock()
+	if val, ok := m.retrieveLocked(key); ok {
+		itm = val.duplicate().SetExpiration(0)
+	} else {
+		err = gae.ErrMCCacheMiss
+	}
 	return
 }
 
 // Delete implements context.MCSingleReadWriter.Delete.
 func (m *memcacheImpl) Delete(key string) error {
-	return m.data.RunIfNotBroken(func() error {
-		m.data.lock.Lock()
-		defer m.data.lock.Unlock()
+	m.data.lock.Lock()
+	defer m.data.lock.Unlock()
 
-		if _, ok := m.retrieveLocked(key); ok {
-			delete(m.data.items, key)
-			return nil
-		}
-		return gae.ErrMCCacheMiss
-	})
+	if _, ok := m.retrieveLocked(key); ok {
+		delete(m.data.items, key)
+		return nil
+	}
+	return gae.ErrMCCacheMiss
 }
 
 func (m *memcacheImpl) retrieveLocked(key string) (*mcItem, bool) {

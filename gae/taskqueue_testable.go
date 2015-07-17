@@ -12,8 +12,6 @@ type AnonymousQueueData map[string][]*TQTask
 
 // TQTestable is the testable interface for fake taskqueue implementations
 type TQTestable interface {
-	Testable
-
 	CreateQueue(queueName string)
 	GetScheduledTasks() QueueData
 	GetTombstonedTasks() QueueData
