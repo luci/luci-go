@@ -20,6 +20,7 @@ package gae
 import (
 	"fmt"
 	"reflect"
+	"sync"
 
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/memcache"
@@ -122,4 +123,41 @@ func FixError(err error) error {
 		}
 	}
 	return err
+}
+
+// LazyMultiError is a lazily-constructed MultiError. You specify the target
+// MultiError size up front (as Size), and then you call Assign for each error
+// encountered, and it's potential index. The MultiError will only be allocated
+// if one of the Assign'd errors is non-nil. Similarly, Get will retrieve either
+// the allocated MultiError, or nil if no error was encountered.
+type LazyMultiError struct {
+	sync.Mutex
+
+	Size int
+	me   MultiError
+}
+
+// Assign semantically assigns the error to the given index in the MultiError.
+// If the error is nil, no action is taken. Otherwise the MultiError is
+// allocated to its full size (if not already), and the error assigned into it.
+func (e *LazyMultiError) Assign(i int, err error) {
+	if err == nil {
+		return
+	}
+	e.Lock()
+	defer e.Unlock()
+	if e.me == nil {
+		e.me = make(MultiError, e.Size)
+	}
+	e.me[i] = err
+}
+
+// Get returns the MultiError, or nil, if no non-nil error was Assign'd.
+func (e *LazyMultiError) Get() error {
+	e.Lock()
+	defer e.Unlock()
+	if e.me == nil {
+		return nil
+	}
+	return e.me
 }
