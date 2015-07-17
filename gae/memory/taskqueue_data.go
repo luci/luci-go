@@ -55,11 +55,11 @@ func (t *taskQueueData) applyTxn(c context.Context, obj memContextObj) {
 	}
 	txn.anony = nil
 }
-func (t *taskQueueData) mkTxn(*gae.DSTransactionOptions) (memContextObj, error) {
+func (t *taskQueueData) mkTxn(*gae.DSTransactionOptions) memContextObj {
 	return &txnTaskQueueData{
 		parent: t,
 		anony:  gae.AnonymousQueueData{},
-	}, nil
+	}
 }
 
 func (t *taskQueueData) GetTransactionTasks() gae.AnonymousQueueData {
@@ -189,15 +189,9 @@ var (
 	_ = gae.TQTestable((*txnTaskQueueData)(nil))
 )
 
-func (t *txnTaskQueueData) canApplyTxn(obj memContextObj) bool { return false }
-
-func (t *txnTaskQueueData) applyTxn(context.Context, memContextObj) {
-	panic(errors.New("txnTaskQueueData.applyTxn is not implemented"))
-}
-
-func (t *txnTaskQueueData) mkTxn(*gae.DSTransactionOptions) (memContextObj, error) {
-	return nil, errors.New("txnTaskQueueData.mkTxn is not implemented")
-}
+func (t *txnTaskQueueData) canApplyTxn(obj memContextObj) bool            { return false }
+func (t *txnTaskQueueData) applyTxn(context.Context, memContextObj)       { panic("impossible") }
+func (t *txnTaskQueueData) mkTxn(*gae.DSTransactionOptions) memContextObj { panic("impossible") }
 
 func (t *txnTaskQueueData) endTxn() {
 	if atomic.LoadInt32(&t.closed) == 1 {
@@ -206,13 +200,13 @@ func (t *txnTaskQueueData) endTxn() {
 	atomic.StoreInt32(&t.closed, 1)
 }
 
-func (t *txnTaskQueueData) isBroken() error {
+func (t *txnTaskQueueData) run(f func() error) error {
 	// Slightly different from the SDK... datastore and taskqueue each implement
 	// this here, where in the SDK only datastore.transaction.Call does.
 	if atomic.LoadInt32(&t.closed) == 1 {
 		return fmt.Errorf("taskqueue: transaction context has expired")
 	}
-	return nil
+	return f()
 }
 
 func (t *txnTaskQueueData) ResetTasks() {

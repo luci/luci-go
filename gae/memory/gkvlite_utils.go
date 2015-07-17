@@ -95,14 +95,6 @@ func (ms *memStore) SetCollection(name string, cmp gkvlite.KeyCompare) *memColle
 	return (*memCollection)((*gkvlite.Store)(ms).SetCollection(name, cmp))
 }
 
-func (ms *memStore) RemoveCollection(name string) {
-	(*gkvlite.Store)(ms).RemoveCollection(name)
-}
-
-func (ms *memStore) GetCollectionNames() []string {
-	return (*gkvlite.Store)(ms).GetCollectionNames()
-}
-
 // memCollection is a gkvlite.Collection which will panic for anything which
 // might otherwise return an error.
 //

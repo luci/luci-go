@@ -109,15 +109,19 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					So(err, ShouldBeNil)
 				})
 
-				Convey("check that metadata works", func() {
+				Convey("with multiple puts", func() {
 					So(testGetMeta(c, k), ShouldEqual, 1)
+
+					keys := []gae.DSKey{}
+					plss := []gae.DSPropertyLoadSaver{}
 
 					pkey := k
 					for i := 0; i < 10; i++ {
-						k := rds.NewKey("Foo", "", 0, pkey)
-						_, err = rds.Put(k, pls(&Foo{Val: 10}))
-						So(err, ShouldBeNil)
+						keys = append(keys, rds.NewKey("Foo", "", 0, pkey))
+						plss = append(plss, pls(&Foo{Val: 10}))
 					}
+					keys, err := rds.PutMulti(keys, plss)
+					So(err, ShouldBeNil)
 					So(testGetMeta(c, k), ShouldEqual, 11)
 
 					Convey("ensure that group versions persist across deletes", func() {
@@ -133,13 +137,25 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 						// /Foo,1/__entity_group_ids__,1
 						So(num, ShouldEqual, 3)
 
-						version, err := curVersion(ents, groupMetaKey(k))
-						So(err, ShouldBeNil)
-						So(version, ShouldEqual, 22)
+						So(curVersion(ents, groupMetaKey(k)), ShouldEqual, 22)
 
 						k, err := rds.Put(k, pls(f))
 						So(err, ShouldBeNil)
 						So(testGetMeta(c, k), ShouldEqual, 23)
+					})
+
+					Convey("can GetMulti", func() {
+						plss := make([]gae.DSPropertyLoadSaver, len(keys))
+						for i := range plss {
+							plss[i] = gae.DSPropertyMap{}
+						}
+						err := rds.GetMulti(keys, plss)
+						So(err, ShouldBeNil)
+						for _, pls := range plss {
+							So(pls.(gae.DSPropertyMap), ShouldResemble, gae.DSPropertyMap{
+								"Val": {gae.MkDSProperty(10)},
+							})
+						}
 					})
 				})
 			})

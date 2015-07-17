@@ -19,7 +19,7 @@ type memContextObj interface {
 	applyTxn(c context.Context, m memContextObj)
 
 	endTxn()
-	mkTxn(*gae.DSTransactionOptions) (memContextObj, error)
+	mkTxn(*gae.DSTransactionOptions) memContextObj
 }
 
 type memContext []memContextObj
@@ -62,16 +62,12 @@ func (m memContext) endTxn() {
 	}
 }
 
-func (m memContext) mkTxn(o *gae.DSTransactionOptions) (memContextObj, error) {
+func (m memContext) mkTxn(o *gae.DSTransactionOptions) memContextObj {
 	ret := make(memContext, len(m))
 	for i, itm := range m {
-		newItm, err := itm.mkTxn(o)
-		if err != nil {
-			return nil, err
-		}
-		ret[i] = newItm
+		ret[i] = itm.mkTxn(o)
 	}
-	return ret, nil
+	return ret
 }
 
 func (m memContext) canApplyTxn(txnCtxObj memContextObj) bool {
@@ -140,10 +136,7 @@ var memContextKey memContextKeyType
 func (d *dsImpl) RunInTransaction(f func(context.Context) error, o *gae.DSTransactionOptions) error {
 	curMC := cur(d.c)
 
-	txnMC, err := curMC.mkTxn(o)
-	if err != nil {
-		return err
-	}
+	txnMC := curMC.mkTxn(o)
 
 	defer func() {
 		txnMC.Lock()
@@ -152,7 +145,7 @@ func (d *dsImpl) RunInTransaction(f func(context.Context) error, o *gae.DSTransa
 		txnMC.endTxn()
 	}()
 
-	if err = f(context.WithValue(d.c, memContextKey, txnMC)); err != nil {
+	if err := f(context.WithValue(d.c, memContextKey, txnMC)); err != nil {
 		return err
 	}
 

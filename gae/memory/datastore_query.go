@@ -218,24 +218,27 @@ func (q queryCursor) String() string { return string(q) }
 func (q queryCursor) Valid() bool    { return q != "" }
 
 type queryImpl struct {
-	gae.DSQuery
-
 	ns string
 
 	kind     string
 	ancestor gae.DSKey
 	filter   []queryFilter
 	order    []queryOrder
+	project  []string
 
-	keysOnly bool
-	limit    int32
-	offset   int32
+	distinct            bool
+	eventualConsistency bool
+	keysOnly            bool
+	limit               int32
+	offset              int32
 
 	start queryCursor
 	end   queryCursor
 
 	err error
 }
+
+var _ gae.DSQuery = (*queryImpl)(nil)
 
 type queryIterImpl struct {
 	idx *queryImpl
@@ -469,6 +472,7 @@ func (q *queryImpl) clone() *queryImpl {
 	ret := *q
 	ret.filter = append([]queryFilter(nil), q.filter...)
 	ret.order = append([]queryOrder(nil), q.order...)
+	ret.project = append([]string(nil), q.project...)
 	return &ret
 }
 
@@ -486,6 +490,12 @@ func (q *queryImpl) Ancestor(k gae.DSKey) gae.DSQuery {
 		// just swap to an error here.
 		q.err = gae.ErrDSInvalidKey
 	}
+	return q
+}
+
+func (q *queryImpl) Distinct() gae.DSQuery {
+	q = q.clone()
+	q.distinct = true
 	return q
 }
 
@@ -516,6 +526,12 @@ func (q *queryImpl) Order(field string) gae.DSQuery {
 		return q
 	}
 	q.order = append(q.order, o)
+	return q
+}
+
+func (q *queryImpl) Project(fieldName ...string) gae.DSQuery {
+	q = q.clone()
+	q.project = append(q.project, fieldName...)
 	return q
 }
 
@@ -568,5 +584,11 @@ func (q *queryImpl) End(c gae.DSCursor) gae.DSQuery {
 		return q
 	}
 	q.end = curs
+	return q
+}
+
+func (q *queryImpl) EventualConsistency() gae.DSQuery {
+	q = q.clone()
+	q.eventualConsistency = true
 	return q
 }

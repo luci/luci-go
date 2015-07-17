@@ -369,8 +369,7 @@ func TestUpdateIndicies(t *testing.T) {
 				for _, itm := range tc.data {
 					ks := itm.key.String()
 					prev := tmpLoader[ks]
-					err := updateIndicies(store, itm.key, prev, itm.props)
-					So(err, ShouldBeNil)
+					updateIndicies(store, itm.key, prev, itm.props)
 					tmpLoader[ks] = itm.props
 				}
 				tmpLoader = nil

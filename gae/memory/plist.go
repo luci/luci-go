@@ -226,9 +226,7 @@ func (sip serializedIndexablePmap) indexEntries(k gae.DSKey, idxs []*qIndex) *me
 	return ret
 }
 
-func updateIndicies(store *memStore, key gae.DSKey, oldEnt, newEnt gae.DSPropertyMap) error {
-	var err error
-
+func updateIndicies(store *memStore, key gae.DSKey, oldEnt, newEnt gae.DSPropertyMap) {
 	idxColl := store.GetCollection("idx")
 	if idxColl == nil {
 		idxColl = store.SetCollection("idx", nil)
@@ -241,15 +239,12 @@ func updateIndicies(store *memStore, key gae.DSKey, oldEnt, newEnt gae.DSPropert
 			return false
 		}
 		qi := &qIndex{}
-		if err = qi.ReadBinary(bytes.NewBuffer(i.Key)); err != nil {
-			return false
+		if err := qi.ReadBinary(bytes.NewBuffer(i.Key)); err != nil {
+			panic(err) // memory corruption
 		}
 		compIdx = append(compIdx, qi)
 		return true
 	})
-	if err != nil {
-		return err
-	}
 
 	oldIdx := indexEntriesWithBuiltins(key, oldEnt, compIdx)
 
@@ -293,6 +288,4 @@ func updateIndicies(store *memStore, key gae.DSKey, oldEnt, newEnt gae.DSPropert
 		// TODO(riannucci): remove entries from idxColl and remove index collections
 		// when there are no index entries for that index any more.
 	})
-
-	return nil
 }
