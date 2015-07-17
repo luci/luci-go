@@ -386,20 +386,20 @@ type Deriver struct {
 	S, Derived, Ignored string
 }
 
-func (e *Deriver) Load(props gae.DSPropertyMap) error {
+func (d *Deriver) Load(props gae.DSPropertyMap) error {
 	for name, p := range props {
 		if name != "S" {
 			continue
 		}
-		e.S = p[0].Value().(string)
-		e.Derived = "derived+" + e.S
+		d.S = p[0].Value().(string)
+		d.Derived = "derived+" + d.S
 	}
 	return nil
 }
 
-func (e *Deriver) Save(withMeta bool) (gae.DSPropertyMap, error) {
+func (d *Deriver) Save(withMeta bool) (gae.DSPropertyMap, error) {
 	return map[string][]gae.DSProperty{
-		"S": {mp(e.S)},
+		"S": {mp(d.S)},
 	}, nil
 }
 

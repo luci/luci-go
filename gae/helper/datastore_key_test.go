@@ -62,6 +62,11 @@ func TestKeyEncode(t *testing.T) {
 				dec := NewDSKeyToks(aid, ns, toks)
 				So(dec, ShouldNotBeNil)
 				So(dec, ShouldEqualKey, k)
+
+				dec2, err := NewDSKeyFromEncoded(enc)
+				So(err, ShouldBeNil)
+				So(dec2, ShouldEqualKey, dec)
+				So(dec2, ShouldEqualKey, k)
 			})
 
 			Convey(k.String()+" (json)", func() {

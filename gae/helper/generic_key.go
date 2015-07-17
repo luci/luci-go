@@ -49,6 +49,13 @@ func NewDSKey(appID, ns, kind, stringID string, intID int64, parent gae.DSKey) *
 	return &GenericDSKey{appID, ns, newToks}
 }
 
+// NewDSKeyFromEncoded decodes and returns a *GenericDSKey
+func NewDSKeyFromEncoded(encoded string) (ret *GenericDSKey, err error) {
+	ret = &GenericDSKey{}
+	ret.appID, ret.namespace, ret.toks, err = DSKeyToksDecode(encoded)
+	return
+}
+
 func (k *GenericDSKey) lastTok() (ret gae.DSKeyTok) {
 	if len(k.toks) > 0 {
 		ret = k.toks[len(k.toks)-1]
@@ -56,17 +63,39 @@ func (k *GenericDSKey) lastTok() (ret gae.DSKeyTok) {
 	return
 }
 
-func (k *GenericDSKey) AppID() string     { return k.appID }
-func (k *GenericDSKey) Namespace() string { return k.namespace }
-func (k *GenericDSKey) Kind() string      { return k.lastTok().Kind }
-func (k *GenericDSKey) StringID() string  { return k.lastTok().StringID }
-func (k *GenericDSKey) IntID() int64      { return k.lastTok().IntID }
-func (k *GenericDSKey) String() string    { return DSKeyString(k) }
+// AppID returns the application ID that this Key is for.
+func (k *GenericDSKey) AppID() string { return k.appID }
 
+// Namespace returns the namespace that this Key is for.
+func (k *GenericDSKey) Namespace() string { return k.namespace }
+
+// Kind returns the datastore kind of the entity.
+func (k *GenericDSKey) Kind() string { return k.lastTok().Kind }
+
+// StringID returns the string ID of the entity (if defined, otherwise "").
+func (k *GenericDSKey) StringID() string { return k.lastTok().StringID }
+
+// IntID returns the int64 ID of the entity (if defined, otherwise 0).
+func (k *GenericDSKey) IntID() int64 { return k.lastTok().IntID }
+
+// String returns a human-readable version of this Key.
+func (k *GenericDSKey) String() string { return DSKeyString(k) }
+
+// Parent returns the parent DSKey of this *GenericDSKey, or nil. The parent
+// will always have the concrete type of *GenericDSKey.
+func (k *GenericDSKey) Parent() gae.DSKey {
+	if len(k.toks) <= 1 {
+		return nil
+	}
+	return &GenericDSKey{k.appID, k.namespace, k.toks[:len(k.toks)-1]}
+}
+
+// MarshalJSON allows this key to be automatically marshaled by encoding/json.
 func (k *GenericDSKey) MarshalJSON() ([]byte, error) {
 	return DSKeyMarshalJSON(k)
 }
 
+// UnmarshalJSON allows this key to be automatically unmarshaled by encoding/json.
 func (k *GenericDSKey) UnmarshalJSON(buf []byte) error {
 	appID, namespace, toks, err := DSKeyUnmarshalJSON(buf)
 	if err != nil {
@@ -74,11 +103,4 @@ func (k *GenericDSKey) UnmarshalJSON(buf []byte) error {
 	}
 	*k = *NewDSKeyToks(appID, namespace, toks)
 	return nil
-}
-
-func (k *GenericDSKey) Parent() gae.DSKey {
-	if len(k.toks) <= 1 {
-		return nil
-	}
-	return &GenericDSKey{k.appID, k.namespace, k.toks[:len(k.toks)-1]}
 }
