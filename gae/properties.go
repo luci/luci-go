@@ -188,7 +188,7 @@ func (t DSPropertyType) String() string {
 	case DSPTBlobKey:
 		return "DSPTBlobKey"
 	default:
-		return "DSPTUnknown"
+		return fmt.Sprintf("DSPTUnknown(%02x)", byte(t))
 	}
 }
 

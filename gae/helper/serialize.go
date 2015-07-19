@@ -112,10 +112,13 @@ func ReadDSKey(buf *bytes.Buffer, context DSKeyContext, appid, namespace string)
 // WriteDSKeyTok writes a DSKeyTok to the buffer. You usually want WriteDSKey
 // instead of this.
 func WriteDSKeyTok(buf *bytes.Buffer, tok gae.DSKeyTok) {
-	// tok.kind ++ tok.stringID ++ tok.intID?
+	// tok.kind ++ typ ++ [tok.stringID || tok.intID]
 	cmpbin.WriteString(buf, tok.Kind)
-	cmpbin.WriteString(buf, tok.StringID)
-	if tok.StringID == "" {
+	if tok.StringID != "" {
+		buf.WriteByte(byte(gae.DSPTString))
+		cmpbin.WriteString(buf, tok.StringID)
+	} else {
+		buf.WriteByte(byte(gae.DSPTInt))
 		cmpbin.WriteInt(buf, tok.IntID)
 	}
 }
@@ -126,17 +129,20 @@ func ReadDSKeyTok(buf *bytes.Buffer) (ret gae.DSKeyTok, err error) {
 	if ret.Kind, _, err = cmpbin.ReadString(buf); err != nil {
 		return
 	}
-	if ret.StringID, _, err = cmpbin.ReadString(buf); err != nil {
+	typ, err := buf.ReadByte()
+	if err != nil {
 		return
 	}
-	if ret.StringID == "" {
-		if ret.IntID, _, err = cmpbin.ReadInt(buf); err != nil {
-			return
-		}
-		if ret.IntID <= 0 {
+	switch gae.DSPropertyType(typ) {
+	case gae.DSPTString:
+		ret.StringID, _, err = cmpbin.ReadString(buf)
+	case gae.DSPTInt:
+		ret.IntID, _, err = cmpbin.ReadInt(buf)
+		if err == nil && ret.IntID <= 0 {
 			err = errors.New("helper: decoded key with empty stringID and zero/negative intID")
-			return
 		}
+	default:
+		err = fmt.Errorf("helper: invalid type %s", gae.DSPropertyType(typ))
 	}
 	return
 }

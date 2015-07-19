@@ -130,6 +130,19 @@ func TestSerializationReadMisc(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(dk, ShouldEqualKey, mkKey("spam", "nerd", "knd", "yo", "other", 10))
 				})
+				Convey("IntIDs always sort before StringIDs", func() {
+					// -1 writes as almost all 1's in the first byte under cmpbin, even
+					// though it's technically not a valid key.
+					k := mkKey("aid", "ns", "knd", -1)
+					buf := &bytes.Buffer{}
+					WriteDSKey(buf, WithoutContext, k)
+
+					k = mkKey("aid", "ns", "knd", "hat")
+					buf2 := &bytes.Buffer{}
+					WriteDSKey(buf2, WithoutContext, k)
+
+					So(bytes.Compare(buf.Bytes(), buf2.Bytes()), ShouldBeLessThan, 0)
+				})
 			})
 
 			Convey("err cases", func() {
@@ -200,18 +213,29 @@ func TestSerializationReadMisc(t *testing.T) {
 					cmpbin.WriteString(buf, "ns")
 					cmpbin.WriteUint(buf, 2)
 					cmpbin.WriteString(buf, "hi")
-					cmpbin.WriteString(buf, "")
+					buf.WriteByte(byte(gae.DSPTString))
 					_, err := ReadDSKey(buf, WithContext, "", "")
 					So(err, ShouldEqual, io.EOF)
 				})
-				Convey("bad token", func() {
+				Convey("bad token (invalid type)", func() {
 					buf := &bytes.Buffer{}
 					buf.WriteByte(1) // actualCtx == 1
 					cmpbin.WriteString(buf, "aid")
 					cmpbin.WriteString(buf, "ns")
 					cmpbin.WriteUint(buf, 2)
 					cmpbin.WriteString(buf, "hi")
-					cmpbin.WriteString(buf, "")
+					buf.WriteByte(byte(gae.DSPTBlobKey))
+					_, err := ReadDSKey(buf, WithContext, "", "")
+					So(err, ShouldErrLike, "invalid type DSPTBlobKey")
+				})
+				Convey("bad token (invalid IntID)", func() {
+					buf := &bytes.Buffer{}
+					buf.WriteByte(1) // actualCtx == 1
+					cmpbin.WriteString(buf, "aid")
+					cmpbin.WriteString(buf, "ns")
+					cmpbin.WriteUint(buf, 2)
+					cmpbin.WriteString(buf, "hi")
+					buf.WriteByte(byte(gae.DSPTInt))
 					cmpbin.WriteInt(buf, -2)
 					_, err := ReadDSKey(buf, WithContext, "", "")
 					So(err, ShouldErrLike, "zero/negative")
