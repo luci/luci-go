@@ -58,6 +58,9 @@ type DSTransactionOptions struct {
 	// It is valid to set XG to true even if the transaction is within a
 	// single entity group.
 	XG bool
+	// Attempts controls the number of retries to perform when commits fail
+	// due to a conflicting transaction. If omitted, it defaults to 3.
+	Attempts int
 }
 
 // MCStatistics represents a set of statistics about the memcache cache.  This
