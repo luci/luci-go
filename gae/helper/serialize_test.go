@@ -266,8 +266,10 @@ func TestSerializationReadMisc(t *testing.T) {
 		Convey("WriteTime", func() {
 			Convey("in non-UTC!", func() {
 				buf := &bytes.Buffer{}
+				pst, err := time.LoadLocation("America/Los_Angeles")
+				So(err, ShouldBeNil)
 				So(func() {
-					WriteTime(buf, time.Now())
+					WriteTime(buf, time.Now().In(pst))
 				}, ShouldPanic)
 			})
 		})
