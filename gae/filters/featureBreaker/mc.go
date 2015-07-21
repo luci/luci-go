@@ -7,7 +7,7 @@ package featureBreaker
 import (
 	"golang.org/x/net/context"
 
-	"infra/gae/libs/gae"
+	"github.com/luci/gae"
 )
 
 type mcState struct {

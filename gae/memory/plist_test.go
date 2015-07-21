@@ -5,10 +5,10 @@
 package memory
 
 import (
-	"infra/gae/libs/gae"
 	"testing"
 	"time"
 
+	"github.com/luci/gae"
 	"github.com/luci/gkvlite"
 	. "github.com/smartystreets/goconvey/convey"
 )

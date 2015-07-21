@@ -7,13 +7,13 @@ package memory
 import (
 	"errors"
 	"fmt"
-	"golang.org/x/net/context"
 	"net/http"
 	"sync"
 	"sync/atomic"
 
-	"infra/gae/libs/gae"
+	"golang.org/x/net/context"
 
+	"github.com/luci/gae"
 	"github.com/luci/luci-go/common/clock"
 )
 

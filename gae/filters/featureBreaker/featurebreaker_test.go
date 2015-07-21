@@ -6,11 +6,12 @@ package featureBreaker
 
 import (
 	"errors"
-	"golang.org/x/net/context"
 	"testing"
 
-	"infra/gae/libs/gae"
-	"infra/gae/libs/gae/memory"
+	"golang.org/x/net/context"
+
+	"github.com/luci/gae"
+	"github.com/luci/gae/memory"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

@@ -5,8 +5,7 @@
 package prod
 
 import (
-	"infra/gae/libs/gae"
-
+	"github.com/luci/gae"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 )

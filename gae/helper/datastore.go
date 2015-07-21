@@ -9,7 +9,7 @@ package helper
 import (
 	"reflect"
 
-	"infra/gae/libs/gae"
+	"github.com/luci/gae"
 )
 
 // GetPLS resolves o into a gae.DSStructPLS. o must be a pointer to a

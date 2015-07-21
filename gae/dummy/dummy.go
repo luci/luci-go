@@ -6,12 +6,12 @@ package dummy
 
 import (
 	"fmt"
-	"golang.org/x/net/context"
 	"runtime"
 	"strings"
 	"time"
 
-	"infra/gae/libs/gae"
+	"github.com/luci/gae"
+	"golang.org/x/net/context"
 )
 
 const niFmtStr = "dummy: method %s.%s is not implemented"
@@ -38,8 +38,8 @@ func ni() error {
 		n := f.Name()
 		if n != "" {
 			parts := strings.Split(n, ".")
-			if len(parts) == 3 {
-				switch parts[1] {
+			if len(parts) > 2 {
+				switch parts[len(parts)-2] {
 				case "rds":
 					iface = "RawDatastore"
 				case "mc":
@@ -51,7 +51,7 @@ func ni() error {
 				case "qy":
 					iface = "DSQuery"
 				}
-				funcName = parts[2]
+				funcName = parts[len(parts)-1]
 			}
 		}
 	}

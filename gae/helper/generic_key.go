@@ -6,7 +6,8 @@ package helper
 
 import (
 	"encoding/json"
-	"infra/gae/libs/gae"
+
+	"github.com/luci/gae"
 )
 
 // GenericDSKey is an implementation of gae.DSKey which doesn't rely on the

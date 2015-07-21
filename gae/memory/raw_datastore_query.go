@@ -11,9 +11,8 @@ import (
 	"math"
 	"strings"
 
-	"infra/gae/libs/gae"
-	"infra/gae/libs/gae/helper"
-
+	"github.com/luci/gae"
+	"github.com/luci/gae/helper"
 	"github.com/luci/gkvlite"
 	"github.com/luci/luci-go/common/cmpbin"
 )

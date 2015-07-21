@@ -8,9 +8,8 @@ import (
 	"errors"
 	"testing"
 
-	"golang.org/x/net/context"
-
 	. "github.com/smartystreets/goconvey/convey"
+	"golang.org/x/net/context"
 )
 
 type fakeRDS struct{ RawDatastore }

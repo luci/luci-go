@@ -5,14 +5,13 @@
 package memory
 
 import (
-	"golang.org/x/net/context"
-	"infra/gae/libs/gae"
 	"testing"
 	"time"
 
+	"github.com/luci/gae"
 	"github.com/luci/luci-go/common/clock/testclock"
-
 	. "github.com/smartystreets/goconvey/convey"
+	"golang.org/x/net/context"
 )
 
 func TestMemcache(t *testing.T) {

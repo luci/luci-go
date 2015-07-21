@@ -13,8 +13,8 @@ import (
 	"strconv"
 	"strings"
 
-	"infra/gae/libs/gae"
-	pb "infra/gae/libs/gae/helper/internal/protos/datastore"
+	"github.com/luci/gae"
+	pb "github.com/luci/gae/helper/internal/protos/datastore"
 
 	"github.com/golang/protobuf/proto"
 )

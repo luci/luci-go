@@ -5,12 +5,11 @@
 package dummy
 
 import (
-	"golang.org/x/net/context"
 	"testing"
 
-	"infra/gae/libs/gae"
-
+	"github.com/luci/gae"
 	. "github.com/smartystreets/goconvey/convey"
+	"golang.org/x/net/context"
 )
 
 func TestContextAccess(t *testing.T) {

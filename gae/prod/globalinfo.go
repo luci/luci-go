@@ -7,10 +7,8 @@ package prod
 import (
 	"time"
 
+	"github.com/luci/gae"
 	"golang.org/x/net/context"
-
-	"infra/gae/libs/gae"
-
 	"google.golang.org/appengine"
 )
 

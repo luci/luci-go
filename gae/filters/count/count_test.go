@@ -6,14 +6,13 @@ package count
 
 import (
 	"fmt"
-	"golang.org/x/net/context"
 	"testing"
 
-	"infra/gae/libs/gae"
-	"infra/gae/libs/gae/filters/featureBreaker"
-	"infra/gae/libs/gae/memory"
-
+	"github.com/luci/gae"
+	"github.com/luci/gae/filters/featureBreaker"
+	"github.com/luci/gae/memory"
 	. "github.com/smartystreets/goconvey/convey"
+	"golang.org/x/net/context"
 )
 
 func TestCount(t *testing.T) {

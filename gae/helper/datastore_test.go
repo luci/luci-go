@@ -17,8 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"infra/gae/libs/gae"
-
+	"github.com/luci/gae"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

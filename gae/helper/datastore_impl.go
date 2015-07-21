@@ -16,7 +16,7 @@ import (
 	"time"
 	"unicode"
 
-	"infra/gae/libs/gae"
+	"github.com/luci/gae"
 )
 
 // Entities with more than this many indexed properties will not be saved.

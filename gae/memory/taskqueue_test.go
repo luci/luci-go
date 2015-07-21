@@ -6,17 +6,16 @@ package memory
 
 import (
 	"fmt"
-	"infra/gae/libs/gae"
 	"math/rand"
 	"net/http"
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
-
+	"github.com/luci/gae"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
+	. "github.com/smartystreets/goconvey/convey"
+	"golang.org/x/net/context"
 )
 
 func TestTaskQueue(t *testing.T) {

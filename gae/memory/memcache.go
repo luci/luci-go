@@ -5,12 +5,13 @@
 package memory
 
 import (
-	"golang.org/x/net/context"
 	"sync"
 	"time"
 
-	"infra/gae/libs/gae"
-	"infra/gae/libs/gae/dummy"
+	"golang.org/x/net/context"
+
+	"github.com/luci/gae"
+	"github.com/luci/gae/dummy"
 
 	"github.com/luci/luci-go/common/clock"
 )

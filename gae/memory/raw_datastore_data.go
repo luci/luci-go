@@ -8,12 +8,13 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"golang.org/x/net/context"
 	"sync"
 	"sync/atomic"
 
-	"infra/gae/libs/gae"
-	"infra/gae/libs/gae/helper"
+	"golang.org/x/net/context"
+
+	"github.com/luci/gae"
+	"github.com/luci/gae/helper"
 )
 
 //////////////////////////////// dataStoreData /////////////////////////////////

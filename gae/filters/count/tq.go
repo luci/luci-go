@@ -7,7 +7,7 @@ package count
 import (
 	"golang.org/x/net/context"
 
-	"infra/gae/libs/gae"
+	"github.com/luci/gae"
 )
 
 // TQCounter is the counter object for the TaskQueue service.

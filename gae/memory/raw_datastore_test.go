@@ -6,11 +6,11 @@ package memory
 
 import (
 	"fmt"
-	"infra/gae/libs/gae"
-	"infra/gae/libs/gae/helper"
 	"math"
 	"testing"
 
+	"github.com/luci/gae"
+	"github.com/luci/gae/helper"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )

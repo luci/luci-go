@@ -8,9 +8,8 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/luci/gae"
 	"golang.org/x/net/context"
-
-	"infra/gae/libs/gae"
 )
 
 type memContextObj interface {

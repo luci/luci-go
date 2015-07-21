@@ -7,7 +7,7 @@ package count
 import (
 	"golang.org/x/net/context"
 
-	"infra/gae/libs/gae"
+	"github.com/luci/gae"
 )
 
 // MCCounter is the counter object for the Memcache service.

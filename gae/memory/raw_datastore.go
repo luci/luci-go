@@ -6,10 +6,11 @@ package memory
 
 import (
 	"errors"
+
 	"golang.org/x/net/context"
 
-	"infra/gae/libs/gae"
-	"infra/gae/libs/gae/helper"
+	"github.com/luci/gae"
+	"github.com/luci/gae/helper"
 )
 
 //////////////////////////////////// public ////////////////////////////////////

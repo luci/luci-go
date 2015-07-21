@@ -9,11 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
-
 	"github.com/luci/luci-go/common/clock/testclock"
-
 	. "github.com/smartystreets/goconvey/convey"
+	"golang.org/x/net/context"
 )
 
 func TestMathRand(t *testing.T) {

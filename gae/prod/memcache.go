@@ -5,11 +5,10 @@
 package prod
 
 import (
-	"golang.org/x/net/context"
 	"time"
 
-	"infra/gae/libs/gae"
-
+	"github.com/luci/gae"
+	"golang.org/x/net/context"
 	"google.golang.org/appengine/memcache"
 )
 

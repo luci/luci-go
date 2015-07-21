@@ -11,8 +11,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"infra/gae/libs/gae"
-	"infra/gae/libs/gae/dummy"
+	"github.com/luci/gae"
+	"github.com/luci/gae/dummy"
 )
 
 /////////////////////////////// public functions ///////////////////////////////

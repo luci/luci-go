@@ -11,8 +11,7 @@ import (
 	"sort"
 	"time"
 
-	"infra/gae/libs/gae"
-
+	"github.com/luci/gae"
 	"github.com/luci/luci-go/common/cmpbin"
 )
 

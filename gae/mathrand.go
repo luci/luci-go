@@ -5,10 +5,10 @@
 package gae
 
 import (
-	"golang.org/x/net/context"
 	"math/rand"
 
 	"github.com/luci/luci-go/common/clock"
+	"golang.org/x/net/context"
 )
 
 // TODO(riannucci): Extract this into its own package. It's used by taskqueue,

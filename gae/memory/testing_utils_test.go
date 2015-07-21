@@ -9,9 +9,8 @@ import (
 	"fmt"
 	"time"
 
-	"infra/gae/libs/gae"
-	"infra/gae/libs/gae/helper"
-
+	"github.com/luci/gae"
+	"github.com/luci/gae/helper"
 	"github.com/luci/luci-go/common/cmpbin"
 )
 

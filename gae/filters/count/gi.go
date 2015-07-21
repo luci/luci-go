@@ -5,10 +5,11 @@
 package count
 
 import (
-	"golang.org/x/net/context"
 	"time"
 
-	"infra/gae/libs/gae"
+	"golang.org/x/net/context"
+
+	"github.com/luci/gae"
 )
 
 // GICounter is the counter object for the GlobalInfo service.
