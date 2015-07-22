@@ -1,0 +1,16 @@
+// Copyright 2015 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+package protocol;
+
+/*
+ * Timestamp is a message that represents a specific moment in time. All
+ * Timestamps will be relative to epoch, meaning that their respective values
+ * will be recorded as microseconds from UNIX epoch, defined as
+ * 00:00:00 January 1, 1970 UTC.
+ */
+message Timestamp {
+  // The timestamp's value, in microseconds from epoch.
+  optional uint64 us_from_epoch = 1;
+}
