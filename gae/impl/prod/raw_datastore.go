@@ -5,8 +5,8 @@
 package prod
 
 import (
-	"github.com/luci/gae"
 	rds "github.com/luci/gae/service/rawdatastore"
+	"github.com/luci/luci-go/common/errors"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/datastore"
 )
@@ -101,15 +101,15 @@ func (d rdsImpl) Put(key rds.Key, src rds.PropertyLoadSaver) (rds.Key, error) {
 }
 
 func (d rdsImpl) DeleteMulti(ks []rds.Key) error {
-	return gae.FixError(datastore.DeleteMulti(d, dsMF2R(ks)))
+	return errors.Fix(datastore.DeleteMulti(d, dsMF2R(ks)))
 }
 
 func (d rdsImpl) GetMulti(ks []rds.Key, plss []rds.PropertyLoadSaver) error {
-	return gae.FixError(datastore.GetMulti(d, dsMF2R(ks), multiWrap(plss)))
+	return errors.Fix(datastore.GetMulti(d, dsMF2R(ks), multiWrap(plss)))
 }
 func (d rdsImpl) PutMulti(key []rds.Key, plss []rds.PropertyLoadSaver) ([]rds.Key, error) {
 	ks, err := datastore.PutMulti(d, dsMF2R(key), multiWrap(plss))
-	return dsMR2F(ks), gae.FixError(err)
+	return dsMR2F(ks), errors.Fix(err)
 }
 
 // DSQueryer

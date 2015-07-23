@@ -7,7 +7,6 @@
 package rawdatastore
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -16,8 +15,8 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/luci/gae"
 	"github.com/luci/gae/service/blobstore"
+	"github.com/luci/luci-go/common/errors"
 )
 
 // Entities with more than this many indexed properties will not be saved.
@@ -60,7 +59,7 @@ func (p *structPLS) Load(propMap PropertyMap) error {
 		return err
 	}
 
-	convFailures := gae.MultiError(nil)
+	convFailures := errors.MultiError(nil)
 
 	t := reflect.Type(nil)
 	for name, props := range propMap {

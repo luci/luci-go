@@ -7,8 +7,8 @@ package prod
 import (
 	"time"
 
-	"github.com/luci/gae"
 	mc "github.com/luci/gae/service/memcache"
+	"github.com/luci/luci-go/common/errors"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/memcache"
 )
@@ -110,18 +110,18 @@ func (m mcImpl) CompareAndSwap(item mc.Item) error {
 
 //////// MCMultiReadWriter
 func (m mcImpl) DeleteMulti(keys []string) error {
-	return gae.FixError(memcache.DeleteMulti(m.Context, keys))
+	return errors.Fix(memcache.DeleteMulti(m.Context, keys))
 }
 func (m mcImpl) AddMulti(items []mc.Item) error {
-	return gae.FixError(memcache.AddMulti(m.Context, mcMF2R(items)))
+	return errors.Fix(memcache.AddMulti(m.Context, mcMF2R(items)))
 }
 func (m mcImpl) SetMulti(items []mc.Item) error {
-	return gae.FixError(memcache.SetMulti(m.Context, mcMF2R(items)))
+	return errors.Fix(memcache.SetMulti(m.Context, mcMF2R(items)))
 }
 func (m mcImpl) GetMulti(keys []string) (map[string]mc.Item, error) {
 	realItems, err := memcache.GetMulti(m.Context, keys)
 	if err != nil {
-		return nil, gae.FixError(err)
+		return nil, errors.Fix(err)
 	}
 	items := make(map[string]mc.Item, len(realItems))
 	for k, itm := range realItems {
@@ -130,7 +130,7 @@ func (m mcImpl) GetMulti(keys []string) (map[string]mc.Item, error) {
 	return items, err
 }
 func (m mcImpl) CompareAndSwapMulti(items []mc.Item) error {
-	return gae.FixError(memcache.CompareAndSwapMulti(m.Context, mcMF2R(items)))
+	return errors.Fix(memcache.CompareAndSwapMulti(m.Context, mcMF2R(items)))
 }
 
 //////// MCIncrementer

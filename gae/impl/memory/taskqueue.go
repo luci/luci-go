@@ -5,15 +5,14 @@
 package memory
 
 import (
-	"errors"
 	"net/http"
 	"regexp"
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae"
 	"github.com/luci/gae/impl/dummy"
 	tq "github.com/luci/gae/service/taskqueue"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/mathrand"
 )
 
@@ -209,7 +208,7 @@ func mkName(c context.Context, cur string, queue map[string]*tq.Task) string {
 
 func multi(tasks []*tq.Task, queueName string, f func(*tq.Task, string) (*tq.Task, error)) ([]*tq.Task, error) {
 	ret := []*tq.Task(nil)
-	lme := gae.LazyMultiError{Size: len(tasks)}
+	lme := errors.LazyMultiError{Size: len(tasks)}
 	for i, task := range tasks {
 		rt, err := f(task, queueName)
 		ret = append(ret, rt)

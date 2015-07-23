@@ -6,13 +6,12 @@ package memory
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
 
-	"github.com/luci/gae"
 	rds "github.com/luci/gae/service/rawdatastore"
+	"github.com/luci/luci-go/common/errors"
 	"golang.org/x/net/context"
 )
 
@@ -113,7 +112,7 @@ func (d *dataStoreData) put(ns string, key rds.Key, pls rds.PropertyLoadSaver) (
 	if errs == nil {
 		return keys[0], nil
 	}
-	return nil, gae.SingleError(errs)
+	return nil, errors.SingleError(errs)
 }
 
 func (d *dataStoreData) putMulti(ns string, keys []rds.Key, plss []rds.PropertyLoadSaver) ([]rds.Key, error) {
@@ -130,7 +129,7 @@ func putMultiPrelim(ns string, keys []rds.Key, plss []rds.PropertyLoadSaver) ([]
 		return nil, err
 	}
 	pmaps := make([]rds.PropertyMap, len(keys))
-	lme := gae.LazyMultiError{Size: len(keys)}
+	lme := errors.LazyMultiError{Size: len(keys)}
 	for i, pls := range plss {
 		pm, err := pls.Save(false)
 		lme.Assign(i, err)
@@ -141,7 +140,7 @@ func putMultiPrelim(ns string, keys []rds.Key, plss []rds.PropertyLoadSaver) ([]
 
 func (d *dataStoreData) putMultiInner(keys []rds.Key, data []rds.PropertyMap) ([]rds.Key, error) {
 	retKeys := make([]rds.Key, len(keys))
-	lme := gae.LazyMultiError{Size: len(keys)}
+	lme := errors.LazyMultiError{Size: len(keys)}
 	for i, k := range keys {
 		buf := &bytes.Buffer{}
 		data[i].Write(buf, rds.WithoutContext)
@@ -176,7 +175,7 @@ func getMultiInner(ns string, keys []rds.Key, plss []rds.PropertyLoadSaver, getC
 		return err
 	}
 
-	lme := gae.LazyMultiError{Size: len(keys)}
+	lme := errors.LazyMultiError{Size: len(keys)}
 
 	ents, err := getColl()
 	if err != nil {
@@ -208,7 +207,7 @@ func getMultiInner(ns string, keys []rds.Key, plss []rds.PropertyLoadSaver, getC
 }
 
 func (d *dataStoreData) get(ns string, key rds.Key, pls rds.PropertyLoadSaver) error {
-	return gae.SingleError(d.getMulti(ns, []rds.Key{key}, []rds.PropertyLoadSaver{pls}))
+	return errors.SingleError(d.getMulti(ns, []rds.Key{key}, []rds.PropertyLoadSaver{pls}))
 }
 
 func (d *dataStoreData) getMulti(ns string, keys []rds.Key, plss []rds.PropertyLoadSaver) error {
@@ -222,11 +221,11 @@ func (d *dataStoreData) getMulti(ns string, keys []rds.Key, plss []rds.PropertyL
 }
 
 func (d *dataStoreData) del(ns string, key rds.Key) (err error) {
-	return gae.SingleError(d.delMulti(ns, []rds.Key{key}))
+	return errors.SingleError(d.delMulti(ns, []rds.Key{key}))
 }
 
 func (d *dataStoreData) delMulti(ns string, keys []rds.Key) error {
-	lme := gae.LazyMultiError{Size: len(keys)}
+	lme := errors.LazyMultiError{Size: len(keys)}
 	toDel := make([][]byte, 0, len(keys))
 	for i, k := range keys {
 		if !rds.KeyValid(k, ns, false) {
@@ -418,7 +417,7 @@ func (td *txnDataStoreData) put(ns string, key rds.Key, pls rds.PropertyLoadSave
 	if errs == nil {
 		return keys[0], nil
 	}
-	return nil, gae.SingleError(errs)
+	return nil, errors.SingleError(errs)
 }
 
 func (td *txnDataStoreData) putMulti(ns string, keys []rds.Key, plss []rds.PropertyLoadSaver) ([]rds.Key, error) {
@@ -428,7 +427,7 @@ func (td *txnDataStoreData) putMulti(ns string, keys []rds.Key, plss []rds.Prope
 	}
 
 	retKeys := make([]rds.Key, len(keys))
-	lme := gae.LazyMultiError{Size: len(keys)}
+	lme := errors.LazyMultiError{Size: len(keys)}
 	for i, k := range keys {
 		func() {
 			td.parent.Lock()
@@ -443,12 +442,12 @@ func (td *txnDataStoreData) putMulti(ns string, keys []rds.Key, plss []rds.Prope
 }
 
 func (td *txnDataStoreData) get(ns string, key rds.Key, pls rds.PropertyLoadSaver) error {
-	return gae.SingleError(td.getMulti(ns, []rds.Key{key}, []rds.PropertyLoadSaver{pls}))
+	return errors.SingleError(td.getMulti(ns, []rds.Key{key}, []rds.PropertyLoadSaver{pls}))
 }
 
 func (td *txnDataStoreData) getMulti(ns string, keys []rds.Key, plss []rds.PropertyLoadSaver) error {
 	return getMultiInner(ns, keys, plss, func() (*memCollection, error) {
-		lme := gae.LazyMultiError{Size: len(keys)}
+		lme := errors.LazyMultiError{Size: len(keys)}
 		for i, k := range keys {
 			lme.Assign(i, td.writeMutation(true, k, nil))
 		}
@@ -457,11 +456,11 @@ func (td *txnDataStoreData) getMulti(ns string, keys []rds.Key, plss []rds.Prope
 }
 
 func (td *txnDataStoreData) del(ns string, key rds.Key) error {
-	return gae.SingleError(td.delMulti(ns, []rds.Key{key}))
+	return errors.SingleError(td.delMulti(ns, []rds.Key{key}))
 }
 
 func (td *txnDataStoreData) delMulti(ns string, keys []rds.Key) error {
-	lme := gae.LazyMultiError{Size: len(keys)}
+	lme := errors.LazyMultiError{Size: len(keys)}
 	for i, k := range keys {
 		if !rds.KeyValid(k, ns, false) {
 			lme.Assign(i, rds.ErrInvalidKey)
@@ -510,7 +509,7 @@ func multiValid(keys []rds.Key, plss []rds.PropertyLoadSaver, ns string, potenti
 	if len(keys) != len(plss) {
 		return errors.New("gae: key and dst slices have different length")
 	}
-	lme := gae.LazyMultiError{Size: len(keys)}
+	lme := errors.LazyMultiError{Size: len(keys)}
 	for i, k := range keys {
 		if !vfn(k) {
 			lme.Assign(i, rds.ErrInvalidKey)

@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/luci/gae"
 	tq "github.com/luci/gae/service/taskqueue"
+	"github.com/luci/luci-go/common/errors"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/taskqueue"
 )
@@ -81,7 +81,7 @@ func tqF2R(n *tq.Task) *taskqueue.Task {
 // *taskqueue.Task to a slice of *tq.Task
 func tqMR2FErr(os []*taskqueue.Task, err error) ([]*tq.Task, error) {
 	if err != nil {
-		return nil, gae.FixError(err)
+		return nil, errors.Fix(err)
 	}
 	ret := make([]*tq.Task, len(os))
 	for i, t := range os {
@@ -114,7 +114,7 @@ func (t tqImpl) AddMulti(tasks []*tq.Task, queueName string) ([]*tq.Task, error)
 	return tqMR2FErr(taskqueue.AddMulti(t.Context, tqMF2R(tasks), queueName))
 }
 func (t tqImpl) DeleteMulti(tasks []*tq.Task, queueName string) error {
-	return gae.FixError(taskqueue.DeleteMulti(t.Context, tqMF2R(tasks), queueName))
+	return errors.Fix(taskqueue.DeleteMulti(t.Context, tqMF2R(tasks), queueName))
 }
 
 //////// TQLeaser
