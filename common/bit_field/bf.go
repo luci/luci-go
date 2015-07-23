@@ -18,11 +18,11 @@ type BitField struct {
 	// you know what's good for you.
 
 	// Data is the actual bits data. rightmost bit of 0th number is the first bit.
-	Data []int64 `datastore:",noindex"`
+	Data []int64 `gae:",noindex"`
 
 	// NumBits is the number of bits held in this BitField. It's stored as a
 	// casted uint64 since datastore can't store unsigned things, apparently.
-	NumBits int64 `datastore:",noindex"`
+	NumBits int64 `gae:",noindex"`
 }
 
 // Make creates a new properly-initialized BitField.
