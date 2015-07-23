@@ -3,8 +3,7 @@ luci-go: LUCI in Go
 
 [![GoDoc](https://godoc.org/github.com/luci/luci-go?status.svg)](https://godoc.org/github.com/luci/luci-go)
 [![Build Status](https://travis-ci.org/luci/luci-go.svg?branch=master)](https://travis-ci.org/luci/luci-go)
-[![Coverage Status](https://img.shields.io/coveralls/luci/luci-go.svg)](https://coveralls.io/r/luci/luci-go?branch=master)
-
+[![Coverage Status](https://coveralls.io/repos/luci/luci-go/badge.svg?branch=master&service=github)](https://coveralls.io/github/luci/luci-go?branch=master)
 
 Installing
 ----------
