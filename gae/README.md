@@ -1,5 +1,6 @@
-gae: A Google AppEngine SDK wrapper designed for testing+extensibility (for Go)
+gae: A Google AppEngine SDK wrapper
 ===================
+*designed for testing and extensibility*
 
 [![GoDoc](https://godoc.org/github.com/luci/gae?status.svg)](https://godoc.org/github.com/luci/gae)
 [![Build Status](https://travis-ci.org/luci/gae.svg?branch=master)](https://travis-ci.org/luci/gae)
