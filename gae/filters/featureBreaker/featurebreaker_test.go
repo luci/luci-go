@@ -10,8 +10,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae"
-	"github.com/luci/gae/memory"
+	"github.com/luci/gae/impl/memory"
+	"github.com/luci/gae/service/rawdatastore"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -27,7 +27,7 @@ func TestBrokenFeatures(t *testing.T) {
 		Convey("Can break rds", func() {
 			Convey("without a default", func() {
 				c, bf := FilterRDS(c, nil)
-				rds := gae.GetRDS(c)
+				rds := rawdatastore.Get(c)
 
 				Convey("by specifying an error", func() {
 					bf.BreakFeatures(e, "Get", "Put")
@@ -35,11 +35,11 @@ func TestBrokenFeatures(t *testing.T) {
 
 					Convey("and you can unbreak them as well", func() {
 						bf.UnbreakFeatures("Get")
-						So(rds.Get(nil, nil), ShouldEqual, gae.ErrDSInvalidKey)
+						So(rds.Get(nil, nil), ShouldEqual, rawdatastore.ErrInvalidKey)
 
 						Convey("no broken features at all is a shortcut", func() {
 							bf.UnbreakFeatures("Put")
-							So(rds.Get(nil, nil), ShouldEqual, gae.ErrDSInvalidKey)
+							So(rds.Get(nil, nil), ShouldEqual, rawdatastore.ErrInvalidKey)
 						})
 					})
 				})
@@ -52,7 +52,7 @@ func TestBrokenFeatures(t *testing.T) {
 
 			Convey("with a default", func() {
 				c, bf := FilterRDS(c, e)
-				rds := gae.GetRDS(c)
+				rds := rawdatastore.Get(c)
 				bf.BreakFeatures(nil, "Get")
 				So(rds.Get(nil, nil), ShouldEqual, e)
 			})

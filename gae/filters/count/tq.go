@@ -7,7 +7,7 @@ package count
 import (
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae"
+	tq "github.com/luci/gae/service/taskqueue"
 )
 
 // TQCounter is the counter object for the TaskQueue service.
@@ -26,40 +26,40 @@ type TQCounter struct {
 type tqCounter struct {
 	c *TQCounter
 
-	tq gae.TaskQueue
+	tq tq.Interface
 }
 
-var _ gae.TaskQueue = (*tqCounter)(nil)
+var _ tq.Interface = (*tqCounter)(nil)
 
-func (t *tqCounter) Add(task *gae.TQTask, queueName string) (*gae.TQTask, error) {
+func (t *tqCounter) Add(task *tq.Task, queueName string) (*tq.Task, error) {
 	ret, err := t.tq.Add(task, queueName)
 	return ret, t.c.Add.up(err)
 }
 
-func (t *tqCounter) Delete(task *gae.TQTask, queueName string) error {
+func (t *tqCounter) Delete(task *tq.Task, queueName string) error {
 	return t.c.Delete.up(t.tq.Delete(task, queueName))
 }
 
-func (t *tqCounter) AddMulti(tasks []*gae.TQTask, queueName string) ([]*gae.TQTask, error) {
+func (t *tqCounter) AddMulti(tasks []*tq.Task, queueName string) ([]*tq.Task, error) {
 	ret, err := t.tq.AddMulti(tasks, queueName)
 	return ret, t.c.AddMulti.up(err)
 }
 
-func (t *tqCounter) DeleteMulti(tasks []*gae.TQTask, queueName string) error {
+func (t *tqCounter) DeleteMulti(tasks []*tq.Task, queueName string) error {
 	return t.c.DeleteMulti.up(t.tq.DeleteMulti(tasks, queueName))
 }
 
-func (t *tqCounter) Lease(maxTasks int, queueName string, leaseTime int) ([]*gae.TQTask, error) {
+func (t *tqCounter) Lease(maxTasks int, queueName string, leaseTime int) ([]*tq.Task, error) {
 	ret, err := t.tq.Lease(maxTasks, queueName, leaseTime)
 	return ret, t.c.Lease.up(err)
 }
 
-func (t *tqCounter) LeaseByTag(maxTasks int, queueName string, leaseTime int, tag string) ([]*gae.TQTask, error) {
+func (t *tqCounter) LeaseByTag(maxTasks int, queueName string, leaseTime int, tag string) ([]*tq.Task, error) {
 	ret, err := t.tq.LeaseByTag(maxTasks, queueName, leaseTime, tag)
 	return ret, t.c.LeaseByTag.up(err)
 }
 
-func (t *tqCounter) ModifyLease(task *gae.TQTask, queueName string, leaseTime int) error {
+func (t *tqCounter) ModifyLease(task *tq.Task, queueName string, leaseTime int) error {
 	return t.c.ModifyLease.up(t.tq.ModifyLease(task, queueName, leaseTime))
 }
 
@@ -67,7 +67,7 @@ func (t *tqCounter) Purge(queueName string) error {
 	return t.c.Purge.up(t.tq.Purge(queueName))
 }
 
-func (t *tqCounter) QueueStats(queueNames []string) ([]gae.TQStatistics, error) {
+func (t *tqCounter) QueueStats(queueNames []string) ([]tq.Statistics, error) {
 	ret, err := t.tq.QueueStats(queueNames)
 	return ret, t.c.QueueStats.up(err)
 }
@@ -75,7 +75,7 @@ func (t *tqCounter) QueueStats(queueNames []string) ([]gae.TQStatistics, error) 
 // FilterTQ installs a counter TaskQueue filter in the context.
 func FilterTQ(c context.Context) (context.Context, *TQCounter) {
 	state := &TQCounter{}
-	return gae.AddTQFilters(c, func(ic context.Context, tq gae.TaskQueue) gae.TaskQueue {
+	return tq.AddFilters(c, func(ic context.Context, tq tq.Interface) tq.Interface {
 		return &tqCounter{state, tq}
 	}), state
 }

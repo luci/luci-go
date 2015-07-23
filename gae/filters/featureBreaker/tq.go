@@ -7,18 +7,18 @@ package featureBreaker
 import (
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae"
+	tq "github.com/luci/gae/service/taskqueue"
 )
 
 type tqState struct {
 	*state
 
-	tq gae.TaskQueue
+	tq tq.Interface
 }
 
-var _ gae.TaskQueue = (*tqState)(nil)
+var _ tq.Interface = (*tqState)(nil)
 
-func (t *tqState) Add(task *gae.TQTask, queueName string) (ret *gae.TQTask, err error) {
+func (t *tqState) Add(task *tq.Task, queueName string) (ret *tq.Task, err error) {
 	err = t.run(func() (err error) {
 		ret, err = t.tq.Add(task, queueName)
 		return
@@ -26,13 +26,13 @@ func (t *tqState) Add(task *gae.TQTask, queueName string) (ret *gae.TQTask, err 
 	return
 }
 
-func (t *tqState) Delete(task *gae.TQTask, queueName string) error {
+func (t *tqState) Delete(task *tq.Task, queueName string) error {
 	return t.run(func() error {
 		return t.tq.Delete(task, queueName)
 	})
 }
 
-func (t *tqState) AddMulti(tasks []*gae.TQTask, queueName string) (ret []*gae.TQTask, err error) {
+func (t *tqState) AddMulti(tasks []*tq.Task, queueName string) (ret []*tq.Task, err error) {
 	err = t.run(func() (err error) {
 		ret, err = t.tq.AddMulti(tasks, queueName)
 		return
@@ -40,13 +40,13 @@ func (t *tqState) AddMulti(tasks []*gae.TQTask, queueName string) (ret []*gae.TQ
 	return
 }
 
-func (t *tqState) DeleteMulti(tasks []*gae.TQTask, queueName string) error {
+func (t *tqState) DeleteMulti(tasks []*tq.Task, queueName string) error {
 	return t.run(func() error {
 		return t.tq.DeleteMulti(tasks, queueName)
 	})
 }
 
-func (t *tqState) Lease(maxTasks int, queueName string, leaseTime int) (ret []*gae.TQTask, err error) {
+func (t *tqState) Lease(maxTasks int, queueName string, leaseTime int) (ret []*tq.Task, err error) {
 	err = t.run(func() (err error) {
 		ret, err = t.tq.Lease(maxTasks, queueName, leaseTime)
 		return
@@ -54,7 +54,7 @@ func (t *tqState) Lease(maxTasks int, queueName string, leaseTime int) (ret []*g
 	return
 }
 
-func (t *tqState) LeaseByTag(maxTasks int, queueName string, leaseTime int, tag string) (ret []*gae.TQTask, err error) {
+func (t *tqState) LeaseByTag(maxTasks int, queueName string, leaseTime int, tag string) (ret []*tq.Task, err error) {
 	err = t.run(func() (err error) {
 		ret, err = t.tq.LeaseByTag(maxTasks, queueName, leaseTime, tag)
 		return
@@ -62,7 +62,7 @@ func (t *tqState) LeaseByTag(maxTasks int, queueName string, leaseTime int, tag 
 	return
 }
 
-func (t *tqState) ModifyLease(task *gae.TQTask, queueName string, leaseTime int) error {
+func (t *tqState) ModifyLease(task *tq.Task, queueName string, leaseTime int) error {
 	return t.run(func() error {
 		return t.tq.ModifyLease(task, queueName, leaseTime)
 	})
@@ -74,7 +74,7 @@ func (t *tqState) Purge(queueName string) error {
 	})
 }
 
-func (t *tqState) QueueStats(queueNames []string) (ret []gae.TQStatistics, err error) {
+func (t *tqState) QueueStats(queueNames []string) (ret []tq.Statistics, err error) {
 	err = t.run(func() (err error) {
 		ret, err = t.tq.QueueStats(queueNames)
 		return
@@ -85,7 +85,7 @@ func (t *tqState) QueueStats(queueNames []string) (ret []gae.TQStatistics, err e
 // FilterTQ installs a counter TaskQueue filter in the context.
 func FilterTQ(c context.Context, defaultError error) (context.Context, FeatureBreaker) {
 	state := newState(defaultError)
-	return gae.AddTQFilters(c, func(ic context.Context, tq gae.TaskQueue) gae.TaskQueue {
+	return tq.AddFilters(c, func(ic context.Context, tq tq.Interface) tq.Interface {
 		return &tqState{state, tq}
 	}), state
 }

@@ -7,80 +7,80 @@ package featureBreaker
 import (
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae"
+	rds "github.com/luci/gae/service/rawdatastore"
 )
 
 type rdsState struct {
 	*state
 
-	gae.RawDatastore
+	rds.Interface
 }
 
-func (r *rdsState) DecodeKey(encoded string) (ret gae.DSKey, err error) {
+func (r *rdsState) DecodeKey(encoded string) (ret rds.Key, err error) {
 	err = r.run(func() (err error) {
-		ret, err = r.RawDatastore.DecodeKey(encoded)
+		ret, err = r.Interface.DecodeKey(encoded)
 		return
 	})
 	return
 }
 
-func (r *rdsState) GetAll(q gae.DSQuery, dst *[]gae.DSPropertyMap) (ret []gae.DSKey, err error) {
+func (r *rdsState) GetAll(q rds.Query, dst *[]rds.PropertyMap) (ret []rds.Key, err error) {
 	err = r.run(func() (err error) {
-		ret, err = r.RawDatastore.GetAll(q, dst)
+		ret, err = r.Interface.GetAll(q, dst)
 		return
 	})
 	return
 }
 
-func (r *rdsState) Count(q gae.DSQuery) (ret int, err error) {
+func (r *rdsState) Count(q rds.Query) (ret int, err error) {
 	err = r.run(func() (err error) {
-		ret, err = r.RawDatastore.Count(q)
+		ret, err = r.Interface.Count(q)
 		return
 	})
 	return
 }
 
-func (r *rdsState) RunInTransaction(f func(c context.Context) error, opts *gae.DSTransactionOptions) error {
+func (r *rdsState) RunInTransaction(f func(c context.Context) error, opts *rds.TransactionOptions) error {
 	return r.run(func() error {
-		return r.RawDatastore.RunInTransaction(f, opts)
+		return r.Interface.RunInTransaction(f, opts)
 	})
 }
 
-func (r *rdsState) Put(key gae.DSKey, src gae.DSPropertyLoadSaver) (ret gae.DSKey, err error) {
+func (r *rdsState) Put(key rds.Key, src rds.PropertyLoadSaver) (ret rds.Key, err error) {
 	err = r.run(func() (err error) {
-		ret, err = r.RawDatastore.Put(key, src)
+		ret, err = r.Interface.Put(key, src)
 		return
 	})
 	return
 }
 
-func (r *rdsState) Get(key gae.DSKey, dst gae.DSPropertyLoadSaver) error {
+func (r *rdsState) Get(key rds.Key, dst rds.PropertyLoadSaver) error {
 	return r.run(func() error {
-		return r.RawDatastore.Get(key, dst)
+		return r.Interface.Get(key, dst)
 	})
 }
 
-func (r *rdsState) Delete(key gae.DSKey) error {
+func (r *rdsState) Delete(key rds.Key) error {
 	return r.run(func() error {
-		return r.RawDatastore.Delete(key)
+		return r.Interface.Delete(key)
 	})
 }
 
-func (r *rdsState) DeleteMulti(keys []gae.DSKey) error {
+func (r *rdsState) DeleteMulti(keys []rds.Key) error {
 	return r.run(func() error {
-		return r.RawDatastore.DeleteMulti(keys)
+		return r.Interface.DeleteMulti(keys)
 	})
 }
 
-func (r *rdsState) GetMulti(keys []gae.DSKey, dst []gae.DSPropertyLoadSaver) error {
+func (r *rdsState) GetMulti(keys []rds.Key, dst []rds.PropertyLoadSaver) error {
 	return r.run(func() error {
-		return r.RawDatastore.GetMulti(keys, dst)
+		return r.Interface.GetMulti(keys, dst)
 	})
 }
 
-func (r *rdsState) PutMulti(keys []gae.DSKey, src []gae.DSPropertyLoadSaver) (ret []gae.DSKey, err error) {
+func (r *rdsState) PutMulti(keys []rds.Key, src []rds.PropertyLoadSaver) (ret []rds.Key, err error) {
 	err = r.run(func() (err error) {
-		ret, err = r.RawDatastore.PutMulti(keys, src)
+		ret, err = r.Interface.PutMulti(keys, src)
 		return
 	})
 	return
@@ -89,7 +89,7 @@ func (r *rdsState) PutMulti(keys []gae.DSKey, src []gae.DSPropertyLoadSaver) (re
 // FilterRDS installs a counter RawDatastore filter in the context.
 func FilterRDS(c context.Context, defaultError error) (context.Context, FeatureBreaker) {
 	state := newState(defaultError)
-	return gae.AddRDSFilters(c, func(ic context.Context, RawDatastore gae.RawDatastore) gae.RawDatastore {
+	return rds.AddFilters(c, func(ic context.Context, RawDatastore rds.Interface) rds.Interface {
 		return &rdsState{state, RawDatastore}
 	}), state
 }

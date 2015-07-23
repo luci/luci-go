@@ -7,7 +7,7 @@ package count
 import (
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae"
+	rds "github.com/luci/gae/service/rawdatastore"
 )
 
 // RDSCounter is the counter object for the RawDatastore service.
@@ -30,67 +30,67 @@ type RDSCounter struct {
 type rdsCounter struct {
 	c *RDSCounter
 
-	rds gae.RawDatastore
+	rds rds.Interface
 }
 
-var _ gae.RawDatastore = (*rdsCounter)(nil)
+var _ rds.Interface = (*rdsCounter)(nil)
 
-func (r *rdsCounter) NewKey(kind, stringID string, intID int64, parent gae.DSKey) gae.DSKey {
+func (r *rdsCounter) NewKey(kind, stringID string, intID int64, parent rds.Key) rds.Key {
 	r.c.NewKey.up()
 	return r.rds.NewKey(kind, stringID, intID, parent)
 }
 
-func (r *rdsCounter) DecodeKey(encoded string) (gae.DSKey, error) {
+func (r *rdsCounter) DecodeKey(encoded string) (rds.Key, error) {
 	ret, err := r.rds.DecodeKey(encoded)
 	return ret, r.c.DecodeKey.up(err)
 }
 
-func (r *rdsCounter) NewQuery(kind string) gae.DSQuery {
+func (r *rdsCounter) NewQuery(kind string) rds.Query {
 	r.c.NewQuery.up()
 	return r.rds.NewQuery(kind)
 }
 
-func (r *rdsCounter) Run(q gae.DSQuery) gae.RDSIterator {
+func (r *rdsCounter) Run(q rds.Query) rds.Iterator {
 	r.c.Run.up()
 	return r.rds.Run(q)
 }
 
-func (r *rdsCounter) GetAll(q gae.DSQuery, dst *[]gae.DSPropertyMap) ([]gae.DSKey, error) {
+func (r *rdsCounter) GetAll(q rds.Query, dst *[]rds.PropertyMap) ([]rds.Key, error) {
 	ret, err := r.rds.GetAll(q, dst)
 	return ret, r.c.GetAll.up(err)
 }
 
-func (r *rdsCounter) Count(q gae.DSQuery) (int, error) {
+func (r *rdsCounter) Count(q rds.Query) (int, error) {
 	ret, err := r.rds.Count(q)
 	return ret, r.c.Count.up(err)
 }
 
-func (r *rdsCounter) RunInTransaction(f func(context.Context) error, opts *gae.DSTransactionOptions) error {
+func (r *rdsCounter) RunInTransaction(f func(context.Context) error, opts *rds.TransactionOptions) error {
 	return r.c.RunInTransaction.up(r.rds.RunInTransaction(f, opts))
 }
 
-func (r *rdsCounter) Put(key gae.DSKey, src gae.DSPropertyLoadSaver) (gae.DSKey, error) {
+func (r *rdsCounter) Put(key rds.Key, src rds.PropertyLoadSaver) (rds.Key, error) {
 	ret, err := r.rds.Put(key, src)
 	return ret, r.c.Put.up(err)
 }
 
-func (r *rdsCounter) Get(key gae.DSKey, dst gae.DSPropertyLoadSaver) error {
+func (r *rdsCounter) Get(key rds.Key, dst rds.PropertyLoadSaver) error {
 	return r.c.Get.up(r.rds.Get(key, dst))
 }
 
-func (r *rdsCounter) Delete(key gae.DSKey) error {
+func (r *rdsCounter) Delete(key rds.Key) error {
 	return r.c.Delete.up(r.rds.Delete(key))
 }
 
-func (r *rdsCounter) DeleteMulti(keys []gae.DSKey) error {
+func (r *rdsCounter) DeleteMulti(keys []rds.Key) error {
 	return r.c.DeleteMulti.up(r.rds.DeleteMulti(keys))
 }
 
-func (r *rdsCounter) GetMulti(keys []gae.DSKey, dst []gae.DSPropertyLoadSaver) error {
+func (r *rdsCounter) GetMulti(keys []rds.Key, dst []rds.PropertyLoadSaver) error {
 	return r.c.GetMulti.up(r.rds.GetMulti(keys, dst))
 }
 
-func (r *rdsCounter) PutMulti(keys []gae.DSKey, src []gae.DSPropertyLoadSaver) ([]gae.DSKey, error) {
+func (r *rdsCounter) PutMulti(keys []rds.Key, src []rds.PropertyLoadSaver) ([]rds.Key, error) {
 	ret, err := r.rds.PutMulti(keys, src)
 	return ret, r.c.PutMulti.up(err)
 }
@@ -98,7 +98,7 @@ func (r *rdsCounter) PutMulti(keys []gae.DSKey, src []gae.DSPropertyLoadSaver) (
 // FilterRDS installs a counter RawDatastore filter in the context.
 func FilterRDS(c context.Context) (context.Context, *RDSCounter) {
 	state := &RDSCounter{}
-	return gae.AddRDSFilters(c, func(ic context.Context, rds gae.RawDatastore) gae.RawDatastore {
+	return rds.AddFilters(c, func(ic context.Context, rds rds.Interface) rds.Interface {
 		return &rdsCounter{state, rds}
 	}), state
 }

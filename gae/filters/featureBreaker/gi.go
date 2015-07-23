@@ -9,67 +9,67 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae"
+	"github.com/luci/gae/service/info"
 )
 
-type giState struct {
+type infoState struct {
 	*state
 
-	gae.GlobalInfo
+	info.Interface
 }
 
-func (g *giState) ModuleHostname(module, version, instance string) (ret string, err error) {
+func (g *infoState) ModuleHostname(module, version, instance string) (ret string, err error) {
 	err = g.run(func() (err error) {
-		ret, err = g.GlobalInfo.ModuleHostname(module, version, instance)
+		ret, err = g.Interface.ModuleHostname(module, version, instance)
 		return
 	})
 	return
 }
 
-func (g *giState) ServiceAccount() (ret string, err error) {
+func (g *infoState) ServiceAccount() (ret string, err error) {
 	err = g.run(func() (err error) {
-		ret, err = g.GlobalInfo.ServiceAccount()
+		ret, err = g.Interface.ServiceAccount()
 		return
 	})
 	return
 }
 
-func (g *giState) Namespace(namespace string) (ret context.Context, err error) {
+func (g *infoState) Namespace(namespace string) (ret context.Context, err error) {
 	err = g.run(func() (err error) {
-		ret, err = g.GlobalInfo.Namespace(namespace)
+		ret, err = g.Interface.Namespace(namespace)
 		return
 	})
 	return
 }
 
-func (g *giState) AccessToken(scopes ...string) (token string, expiry time.Time, err error) {
+func (g *infoState) AccessToken(scopes ...string) (token string, expiry time.Time, err error) {
 	err = g.run(func() (err error) {
-		token, expiry, err = g.GlobalInfo.AccessToken(scopes...)
+		token, expiry, err = g.Interface.AccessToken(scopes...)
 		return
 	})
 	return
 }
 
-func (g *giState) PublicCertificates() (ret []gae.GICertificate, err error) {
+func (g *infoState) PublicCertificates() (ret []info.Certificate, err error) {
 	err = g.run(func() (err error) {
-		ret, err = g.GlobalInfo.PublicCertificates()
+		ret, err = g.Interface.PublicCertificates()
 		return
 	})
 	return
 }
 
-func (g *giState) SignBytes(bytes []byte) (keyName string, signature []byte, err error) {
+func (g *infoState) SignBytes(bytes []byte) (keyName string, signature []byte, err error) {
 	err = g.run(func() (err error) {
-		keyName, signature, err = g.GlobalInfo.SignBytes(bytes)
+		keyName, signature, err = g.Interface.SignBytes(bytes)
 		return
 	})
 	return
 }
 
-// FilterGI installs a counter GlobalInfo filter in the context.
+// FilterGI installs a counter info filter in the context.
 func FilterGI(c context.Context, defaultError error) (context.Context, FeatureBreaker) {
 	state := newState(defaultError)
-	return gae.AddGIFilters(c, func(ic context.Context, gi gae.GlobalInfo) gae.GlobalInfo {
-		return &giState{state, gi}
+	return info.AddFilters(c, func(ic context.Context, i info.Interface) info.Interface {
+		return &infoState{state, i}
 	}), state
 }

@@ -7,70 +7,70 @@ package featureBreaker
 import (
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae"
+	mc "github.com/luci/gae/service/memcache"
 )
 
 type mcState struct {
 	*state
 
-	gae.Memcache
+	mc.Interface
 }
 
-func (m *mcState) Get(key string) (ret gae.MCItem, err error) {
+func (m *mcState) Get(key string) (ret mc.Item, err error) {
 	err = m.run(func() (err error) {
-		ret, err = m.Memcache.Get(key)
+		ret, err = m.Interface.Get(key)
 		return
 	})
 	return
 }
 
-func (m *mcState) GetMulti(keys []string) (ret map[string]gae.MCItem, err error) {
+func (m *mcState) GetMulti(keys []string) (ret map[string]mc.Item, err error) {
 	err = m.run(func() (err error) {
-		ret, err = m.Memcache.GetMulti(keys)
+		ret, err = m.Interface.GetMulti(keys)
 		return
 	})
 	return
 }
 
-func (m *mcState) Add(item gae.MCItem) error {
-	return m.run(func() error { return m.Memcache.Add(item) })
+func (m *mcState) Add(item mc.Item) error {
+	return m.run(func() error { return m.Interface.Add(item) })
 }
 
-func (m *mcState) Set(item gae.MCItem) error {
-	return m.run(func() error { return m.Memcache.Set(item) })
+func (m *mcState) Set(item mc.Item) error {
+	return m.run(func() error { return m.Interface.Set(item) })
 }
 
 func (m *mcState) Delete(key string) error {
-	return m.run(func() error { return m.Memcache.Delete(key) })
+	return m.run(func() error { return m.Interface.Delete(key) })
 }
 
-func (m *mcState) CompareAndSwap(item gae.MCItem) error {
-	return m.run(func() error { return m.Memcache.CompareAndSwap(item) })
+func (m *mcState) CompareAndSwap(item mc.Item) error {
+	return m.run(func() error { return m.Interface.CompareAndSwap(item) })
 }
 
-func (m *mcState) AddMulti(items []gae.MCItem) error {
-	return m.run(func() error { return m.Memcache.AddMulti(items) })
+func (m *mcState) AddMulti(items []mc.Item) error {
+	return m.run(func() error { return m.Interface.AddMulti(items) })
 }
 
-func (m *mcState) SetMulti(items []gae.MCItem) error {
-	return m.run(func() error { return m.Memcache.SetMulti(items) })
+func (m *mcState) SetMulti(items []mc.Item) error {
+	return m.run(func() error { return m.Interface.SetMulti(items) })
 }
 
 func (m *mcState) DeleteMulti(keys []string) error {
-	return m.run(func() error { return m.Memcache.DeleteMulti(keys) })
+	return m.run(func() error { return m.Interface.DeleteMulti(keys) })
 }
 
 func (m *mcState) Flush() error {
-	return m.run(func() error { return m.Memcache.Flush() })
+	return m.run(func() error { return m.Interface.Flush() })
 }
 
-func (m *mcState) CompareAndSwapMulti(items []gae.MCItem) error {
-	return m.run(func() error { return m.Memcache.CompareAndSwapMulti(items) })
+func (m *mcState) CompareAndSwapMulti(items []mc.Item) error {
+	return m.run(func() error { return m.Interface.CompareAndSwapMulti(items) })
 }
 
 func (m *mcState) Increment(key string, delta int64, initialValue uint64) (newValue uint64, err error) {
 	err = m.run(func() (err error) {
-		newValue, err = m.Memcache.Increment(key, delta, initialValue)
+		newValue, err = m.Interface.Increment(key, delta, initialValue)
 		return
 	})
 	return
@@ -78,24 +78,24 @@ func (m *mcState) Increment(key string, delta int64, initialValue uint64) (newVa
 
 func (m *mcState) IncrementExisting(key string, delta int64) (newValue uint64, err error) {
 	err = m.run(func() (err error) {
-		newValue, err = m.Memcache.IncrementExisting(key, delta)
+		newValue, err = m.Interface.IncrementExisting(key, delta)
 		return
 	})
 	return
 }
 
-func (m *mcState) Stats() (ret *gae.MCStatistics, err error) {
+func (m *mcState) Stats() (ret *mc.Statistics, err error) {
 	err = m.run(func() (err error) {
-		ret, err = m.Memcache.Stats()
+		ret, err = m.Interface.Stats()
 		return
 	})
 	return
 }
 
-// FilterMC installs a counter Memcache filter in the context.
+// FilterMC installs a counter mc filter in the context.
 func FilterMC(c context.Context, defaultError error) (context.Context, FeatureBreaker) {
 	state := newState(defaultError)
-	return gae.AddMCFilters(c, func(ic context.Context, rds gae.Memcache) gae.Memcache {
+	return mc.AddFilters(c, func(ic context.Context, rds mc.Interface) mc.Interface {
 		return &mcState{state, rds}
 	}), state
 }

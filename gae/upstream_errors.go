@@ -2,66 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// This file contains types and values which are mirrors/duplicates of the
-// upstream SDK errors. This exists so that users can depend solely on this
-// wrapper library without also needing to import the SDK.
-//
-// Format of the errors is Err<sub>Name, where <sub> is one of the 2/3-letter
-// All Caps subpackage codes (e.g. DS, TQ, MC, etc.). Name is the same as the
-// original SDK error.
-//
-// Note that this only replicates the 'named' errors (which a user might compare
-// for equality or observe by-type in their code like ErrDSNoSuchEntity). The
-// underlying implementations can (and do) return many more sorts of non-named
-// and custom errors.
-
 package gae
 
 import (
 	"fmt"
 	"reflect"
 	"sync"
-
-	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/memcache"
-	"google.golang.org/appengine/taskqueue"
 )
-
-// These are pass-through versions from the managed-VM SDK. All implementations
-// must return these (exact) errors (not just an error with the same text).
-var (
-	ErrDSInvalidEntityType     = datastore.ErrInvalidEntityType
-	ErrDSInvalidKey            = datastore.ErrInvalidKey
-	ErrDSNoSuchEntity          = datastore.ErrNoSuchEntity
-	ErrDSConcurrentTransaction = datastore.ErrConcurrentTransaction
-	ErrDSQueryDone             = datastore.Done
-
-	ErrMCCacheMiss   = memcache.ErrCacheMiss
-	ErrMCCASConflict = memcache.ErrCASConflict
-	ErrMCNoStats     = memcache.ErrNoStats
-	ErrMCNotStored   = memcache.ErrNotStored
-	ErrMCServerError = memcache.ErrServerError
-
-	ErrTQTaskAlreadyAdded = taskqueue.ErrTaskAlreadyAdded
-)
-
-/////////////////////////////// Supporting code ////////////////////////////////
-
-// ErrDSFieldMismatch is returned when a field is to be loaded into a different
-// type than the one it was stored from, or when a field is missing or
-// unexported in the destination struct.
-// StructType is the type of the struct pointed to by the destination argument
-// passed to Get or to Iterator.Next.
-type ErrDSFieldMismatch struct {
-	StructType reflect.Type
-	FieldName  string
-	Reason     string
-}
-
-func (e *ErrDSFieldMismatch) Error() string {
-	return fmt.Sprintf("gae: cannot load field %q into a %q: %s",
-		e.FieldName, e.StructType, e.Reason)
-}
 
 // MultiError is returned by batch operations when there are errors with
 // particular elements. Errors will be in a one-to-one correspondence with

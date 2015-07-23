@@ -8,9 +8,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/luci/gae"
 	"github.com/luci/gae/filters/featureBreaker"
-	"github.com/luci/gae/memory"
+	"github.com/luci/gae/impl/memory"
+	"github.com/luci/gae/service/info"
+	"github.com/luci/gae/service/memcache"
+	"github.com/luci/gae/service/rawdatastore"
+	"github.com/luci/gae/service/taskqueue"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -24,12 +27,12 @@ func TestCount(t *testing.T) {
 		So(c, ShouldNotBeNil)
 		So(ctr, ShouldNotBeNil)
 
-		rds := gae.GetRDS(c)
+		rds := rawdatastore.Get(c)
 
 		Convey("Calling a rds function should reflect in counter", func() {
-			p := gae.DSProperty{}
+			p := rawdatastore.Property{}
 			p.SetValue(100, false)
-			_, err := rds.Put(rds.NewKey("Kind", "", 0, nil), &gae.DSPropertyMap{
+			_, err := rds.Put(rds.NewKey("Kind", "", 0, nil), &rawdatastore.PropertyMap{
 				"Val": {p},
 			})
 			So(err, ShouldBeNil)
@@ -37,7 +40,7 @@ func TestCount(t *testing.T) {
 			So(ctr.Put.Successes, ShouldEqual, 1)
 
 			Convey("effects are cumulative", func() {
-				_, err := rds.Put(rds.NewKey("Kind", "", 0, nil), &gae.DSPropertyMap{
+				_, err := rds.Put(rds.NewKey("Kind", "", 0, nil), &rawdatastore.PropertyMap{
 					"Val": {p},
 				})
 				So(err, ShouldBeNil)
@@ -46,10 +49,10 @@ func TestCount(t *testing.T) {
 
 				Convey("even within transactions", func() {
 					rds.RunInTransaction(func(c context.Context) error {
-						rds := gae.GetRDS(c)
+						rds := rawdatastore.Get(c)
 						k := rds.NewKey("Wat", "sup", 0, nil)
-						rds.Put(k, &gae.DSPropertyMap{"Wat": {p}})
-						rds.Put(k, &gae.DSPropertyMap{"Wat": {p}})
+						rds.Put(k, &rawdatastore.PropertyMap{"Wat": {p}})
+						rds.Put(k, &rawdatastore.PropertyMap{"Wat": {p}})
 						return nil
 					}, nil)
 				})
@@ -58,12 +61,12 @@ func TestCount(t *testing.T) {
 		Convey("errors count against errors", func() {
 			rds.Get(nil, nil)
 			So(ctr.Get.Errors, ShouldEqual, 1)
-			k, err := rds.Put(rds.NewKey("Kind", "", 0, nil), &gae.DSPropertyMap{
-				"Val": {gae.DSProperty{}},
+			k, err := rds.Put(rds.NewKey("Kind", "", 0, nil), &rawdatastore.PropertyMap{
+				"Val": {rawdatastore.Property{}},
 			})
 			So(err, ShouldBeNil)
 			So(ctr.NewKey.Successes, ShouldEqual, 1)
-			rds.Get(k, &gae.DSPropertyMap{})
+			rds.Get(k, &rawdatastore.PropertyMap{})
 			So(ctr.Get.Errors, ShouldEqual, 1)
 			So(ctr.Get.Successes, ShouldEqual, 1)
 			So(ctr.Get.Total(), ShouldEqual, 2)
@@ -74,7 +77,7 @@ func TestCount(t *testing.T) {
 		c, ctr := FilterMC(memory.Use(context.Background()))
 		So(c, ShouldNotBeNil)
 		So(ctr, ShouldNotBeNil)
-		mc := gae.GetMC(c)
+		mc := memcache.Get(c)
 
 		mc.Set(mc.NewItem("hello").SetValue([]byte("sup")))
 		mc.Get("Wat")
@@ -89,10 +92,10 @@ func TestCount(t *testing.T) {
 		c, ctr := FilterTQ(memory.Use(context.Background()))
 		So(c, ShouldNotBeNil)
 		So(ctr, ShouldNotBeNil)
-		tq := gae.GetTQ(c)
+		tq := taskqueue.Get(c)
 
-		tq.Add(&gae.TQTask{Name: "wat"}, "")
-		tq.Add(&gae.TQTask{Name: "wat"}, "DNE_QUEUE")
+		tq.Add(&taskqueue.Task{Name: "wat"}, "")
+		tq.Add(&taskqueue.Task{Name: "wat"}, "DNE_QUEUE")
 
 		So(ctr.Add, ShouldResemble, Entry{1, 1})
 	})
@@ -103,7 +106,7 @@ func TestCount(t *testing.T) {
 		So(c, ShouldNotBeNil)
 		So(ctr, ShouldNotBeNil)
 
-		gi := gae.GetGI(c)
+		gi := info.Get(c)
 
 		gi.Namespace("foo")
 		fb.BreakFeatures(nil, "Namespace")
@@ -123,11 +126,11 @@ func ExampleFilterRDS() {
 	// functions use RDS from the context like normal... they don't need to know
 	// that there are any filters at all.
 	someCalledFunc := func(c context.Context) {
-		rds := gae.GetRDS(c)
+		rds := rawdatastore.Get(c)
 		key := rds.NewKey("Kind", "", 1, nil)
-		prop := gae.DSProperty{}
+		prop := rawdatastore.Property{}
 		prop.SetValue(100, false)
-		val := gae.DSPropertyMap{
+		val := rawdatastore.PropertyMap{
 			"FieldName": {prop},
 		}
 		rds.Put(key, &val)

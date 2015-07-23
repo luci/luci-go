@@ -9,11 +9,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae"
+	"github.com/luci/gae/service/info"
 )
 
-// GICounter is the counter object for the GlobalInfo service.
-type GICounter struct {
+// InfoCounter is the counter object for the GlobalInfo service.
+type InfoCounter struct {
 	AppID                  Entry
 	Datacenter             Entry
 	DefaultVersionHostname Entry
@@ -33,105 +33,105 @@ type GICounter struct {
 	SignBytes              Entry
 }
 
-type giCounter struct {
-	c *GICounter
+type infoCounter struct {
+	c *InfoCounter
 
-	gi gae.GlobalInfo
+	gi info.Interface
 }
 
-var _ gae.GlobalInfo = (*giCounter)(nil)
+var _ info.Interface = (*infoCounter)(nil)
 
-func (g *giCounter) AppID() string {
+func (g *infoCounter) AppID() string {
 	g.c.AppID.up()
 	return g.gi.AppID()
 }
 
-func (g *giCounter) Datacenter() string {
+func (g *infoCounter) Datacenter() string {
 	g.c.Datacenter.up()
 	return g.gi.Datacenter()
 }
 
-func (g *giCounter) DefaultVersionHostname() string {
+func (g *infoCounter) DefaultVersionHostname() string {
 	g.c.DefaultVersionHostname.up()
 	return g.gi.DefaultVersionHostname()
 }
 
-func (g *giCounter) InstanceID() string {
+func (g *infoCounter) InstanceID() string {
 	g.c.InstanceID.up()
 	return g.gi.InstanceID()
 }
 
-func (g *giCounter) IsDevAppServer() bool {
+func (g *infoCounter) IsDevAppServer() bool {
 	g.c.IsDevAppServer.up()
 	return g.gi.IsDevAppServer()
 }
 
-func (g *giCounter) IsOverQuota(err error) bool {
+func (g *infoCounter) IsOverQuota(err error) bool {
 	g.c.IsOverQuota.up()
 	return g.gi.IsOverQuota(err)
 }
 
-func (g *giCounter) IsTimeoutError(err error) bool {
+func (g *infoCounter) IsTimeoutError(err error) bool {
 	g.c.IsTimeoutError.up()
 	return g.gi.IsTimeoutError(err)
 }
 
-func (g *giCounter) ModuleHostname(module, version, instance string) (string, error) {
+func (g *infoCounter) ModuleHostname(module, version, instance string) (string, error) {
 	ret, err := g.gi.ModuleHostname(module, version, instance)
 	return ret, g.c.ModuleHostname.up(err)
 }
 
-func (g *giCounter) ModuleName() string {
+func (g *infoCounter) ModuleName() string {
 	g.c.ModuleName.up()
 	return g.gi.ModuleName()
 }
 
-func (g *giCounter) RequestID() string {
+func (g *infoCounter) RequestID() string {
 	g.c.RequestID.up()
 	return g.gi.RequestID()
 }
 
-func (g *giCounter) ServerSoftware() string {
+func (g *infoCounter) ServerSoftware() string {
 	g.c.ServerSoftware.up()
 	return g.gi.ServerSoftware()
 }
 
-func (g *giCounter) ServiceAccount() (string, error) {
+func (g *infoCounter) ServiceAccount() (string, error) {
 	ret, err := g.gi.ServiceAccount()
 	return ret, g.c.ServiceAccount.up(err)
 }
 
-func (g *giCounter) VersionID() string {
+func (g *infoCounter) VersionID() string {
 	g.c.VersionID.up()
 	return g.gi.VersionID()
 }
 
-func (g *giCounter) Namespace(namespace string) (context.Context, error) {
+func (g *infoCounter) Namespace(namespace string) (context.Context, error) {
 	ret, err := g.gi.Namespace(namespace)
 	return ret, g.c.Namespace.up(err)
 }
 
-func (g *giCounter) AccessToken(scopes ...string) (token string, expiry time.Time, err error) {
+func (g *infoCounter) AccessToken(scopes ...string) (token string, expiry time.Time, err error) {
 	token, expiry, err = g.gi.AccessToken(scopes...)
 	g.c.AccessToken.up(err)
 	return
 }
 
-func (g *giCounter) PublicCertificates() ([]gae.GICertificate, error) {
+func (g *infoCounter) PublicCertificates() ([]info.Certificate, error) {
 	ret, err := g.gi.PublicCertificates()
 	return ret, g.c.PublicCertificates.up(err)
 }
 
-func (g *giCounter) SignBytes(bytes []byte) (keyName string, signature []byte, err error) {
+func (g *infoCounter) SignBytes(bytes []byte) (keyName string, signature []byte, err error) {
 	keyName, signature, err = g.gi.SignBytes(bytes)
 	g.c.SignBytes.up(err)
 	return
 }
 
 // FilterGI installs a counter GlobalInfo filter in the context.
-func FilterGI(c context.Context) (context.Context, *GICounter) {
-	state := &GICounter{}
-	return gae.AddGIFilters(c, func(ic context.Context, gi gae.GlobalInfo) gae.GlobalInfo {
-		return &giCounter{state, gi}
+func FilterGI(c context.Context) (context.Context, *InfoCounter) {
+	state := &InfoCounter{}
+	return info.AddFilters(c, func(ic context.Context, gi info.Interface) info.Interface {
+		return &infoCounter{state, gi}
 	}), state
 }
