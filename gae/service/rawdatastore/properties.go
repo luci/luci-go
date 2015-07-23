@@ -258,14 +258,14 @@ func UpconvertUnderlyingType(o interface{}, t reflect.Type) (interface{}, reflec
 // Value returns the current value held by this property. It's guaranteed to
 // be a valid value type (i.e. `p.SetValue(p.Value(), true)` will never return
 // an error).
-func (p Property) Value() interface{} { return p.value }
+func (p *Property) Value() interface{} { return p.value }
 
 // IndexSetting says weather or not the datastore should create indicies for
 // this value.
-func (p Property) IndexSetting() IndexSetting { return p.indexSetting }
+func (p *Property) IndexSetting() IndexSetting { return p.indexSetting }
 
 // Type is the PT* type of the data contained in Value().
-func (p Property) Type() PropertyType { return p.propType }
+func (p *Property) Type() PropertyType { return p.propType }
 
 // SetValue sets the Value field of a Property, and ensures that its value
 // conforms to the permissible types. That way, you're guaranteed that if you

@@ -81,8 +81,9 @@ func TestPropertyMapSerialization(t *testing.T) {
 				tc := tc
 				Convey(tc.name, func() {
 					buf := &bytes.Buffer{}
-					WritePropertyMap(buf, tc.props, WithContext)
-					dec, err := ReadPropertyMap(buf, WithContext, "", "")
+					tc.props.Write(buf, WithContext)
+					dec := PropertyMap{}
+					err := dec.Read(buf, WithContext, "", "")
 					So(err, ShouldBeNil)
 					So(dec, ShouldResemble, tc.props)
 				})
@@ -228,19 +229,20 @@ func TestSerializationReadMisc(t *testing.T) {
 		})
 
 		Convey("ReadGeoPoint", func() {
+			gp := GeoPoint{}
 			Convey("trunc 1", func() {
-				_, err := ReadGeoPoint(buf)
+				err := gp.Read(buf)
 				So(err, ShouldEqual, io.EOF)
 			})
 			Convey("trunc 2", func() {
 				cmpbin.WriteFloat64(buf, 100)
-				_, err := ReadGeoPoint(buf)
+				err := gp.Read(buf)
 				So(err, ShouldEqual, io.EOF)
 			})
 			Convey("invalid", func() {
 				cmpbin.WriteFloat64(buf, 100)
 				cmpbin.WriteFloat64(buf, 1000)
-				_, err := ReadGeoPoint(buf)
+				err := gp.Read(buf)
 				So(err, ShouldErrLike, "invalid GeoPoint")
 			})
 		})
@@ -263,60 +265,64 @@ func TestSerializationReadMisc(t *testing.T) {
 		})
 
 		Convey("ReadProperty", func() {
+			p := Property{}
 			Convey("trunc 1", func() {
-				_, err := ReadProperty(buf, WithContext, "", "")
+				err := p.Read(buf, WithContext, "", "")
 				So(err, ShouldEqual, io.EOF)
+				So(p.Type(), ShouldEqual, PTNull)
+				So(p.Value(), ShouldBeNil)
 			})
 			Convey("trunc (PTBytes)", func() {
 				buf.WriteByte(byte(PTBytes))
-				_, err := ReadProperty(buf, WithContext, "", "")
+				err := p.Read(buf, WithContext, "", "")
 				So(err, ShouldEqual, io.EOF)
 			})
 			Convey("trunc (PTBlobKey)", func() {
 				buf.WriteByte(byte(PTBlobKey))
-				_, err := ReadProperty(buf, WithContext, "", "")
+				err := p.Read(buf, WithContext, "", "")
 				So(err, ShouldEqual, io.EOF)
 			})
 			Convey("invalid type", func() {
 				buf.WriteByte(byte(PTUnknown + 1))
-				_, err := ReadProperty(buf, WithContext, "", "")
+				err := p.Read(buf, WithContext, "", "")
 				So(err, ShouldErrLike, "unknown type!")
 			})
 		})
 
 		Convey("ReadPropertyMap", func() {
+			pm := PropertyMap{}
 			Convey("trunc 1", func() {
-				_, err := ReadPropertyMap(buf, WithContext, "", "")
+				err := pm.Read(buf, WithContext, "", "")
 				So(err, ShouldEqual, io.EOF)
 			})
 			Convey("too many rows", func() {
 				cmpbin.WriteUint(buf, 1000000)
-				_, err := ReadPropertyMap(buf, WithContext, "", "")
+				err := pm.Read(buf, WithContext, "", "")
 				So(err, ShouldErrLike, "huge number of rows")
 			})
 			Convey("trunc 2", func() {
 				cmpbin.WriteUint(buf, 10)
-				_, err := ReadPropertyMap(buf, WithContext, "", "")
+				err := pm.Read(buf, WithContext, "", "")
 				So(err, ShouldEqual, io.EOF)
 			})
 			Convey("trunc 3", func() {
 				cmpbin.WriteUint(buf, 10)
 				cmpbin.WriteString(buf, "ohai")
-				_, err := ReadPropertyMap(buf, WithContext, "", "")
+				err := pm.Read(buf, WithContext, "", "")
 				So(err, ShouldEqual, io.EOF)
 			})
 			Convey("too many values", func() {
 				cmpbin.WriteUint(buf, 10)
 				cmpbin.WriteString(buf, "ohai")
 				cmpbin.WriteUint(buf, 100000)
-				_, err := ReadPropertyMap(buf, WithContext, "", "")
+				err := pm.Read(buf, WithContext, "", "")
 				So(err, ShouldErrLike, "huge number of properties")
 			})
 			Convey("trunc 4", func() {
 				cmpbin.WriteUint(buf, 10)
 				cmpbin.WriteString(buf, "ohai")
 				cmpbin.WriteUint(buf, 10)
-				_, err := ReadPropertyMap(buf, WithContext, "", "")
+				err := pm.Read(buf, WithContext, "", "")
 				So(err, ShouldEqual, io.EOF)
 			})
 		})

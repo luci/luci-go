@@ -81,8 +81,8 @@ func curVersion(ents *memCollection, key []byte) int64 {
 func incrementLocked(ents *memCollection, key []byte) int64 {
 	ret := curVersion(ents, key) + 1
 	buf := &bytes.Buffer{}
-	rds.WritePropertyMap(
-		buf, rds.PropertyMap{"__version__": {rds.MkPropertyNI(ret)}}, rds.WithContext)
+	rds.PropertyMap{"__version__": {rds.MkPropertyNI(ret)}}.Write(
+		buf, rds.WithContext)
 	ents.Set(key, buf.Bytes())
 	return ret
 }
@@ -144,7 +144,7 @@ func (d *dataStoreData) putMultiInner(keys []rds.Key, data []rds.PropertyMap) ([
 	lme := gae.LazyMultiError{Size: len(keys)}
 	for i, k := range keys {
 		buf := &bytes.Buffer{}
-		rds.WritePropertyMap(buf, data[i], rds.WithoutContext)
+		data[i].Write(buf, rds.WithoutContext)
 		dataBytes := buf.Bytes()
 
 		rKey, err := func() (ret rds.Key, err error) {
@@ -479,11 +479,15 @@ func keyBytes(ctx rds.KeyContext, key rds.Key) []byte {
 }
 
 func rpmWoCtx(data []byte, ns string) (rds.PropertyMap, error) {
-	return rds.ReadPropertyMap(bytes.NewBuffer(data), rds.WithoutContext, globalAppID, ns)
+	ret := rds.PropertyMap{}
+	err := ret.Read(bytes.NewBuffer(data), rds.WithoutContext, globalAppID, ns)
+	return ret, err
 }
 
 func rpm(data []byte) (rds.PropertyMap, error) {
-	return rds.ReadPropertyMap(bytes.NewBuffer(data), rds.WithContext, "", "")
+	ret := rds.PropertyMap{}
+	err := ret.Read(bytes.NewBuffer(data), rds.WithContext, "", "")
+	return ret, err
 }
 
 func multiValid(keys []rds.Key, plss []rds.PropertyLoadSaver, ns string, potentialKey, allowSpecial bool) error {

@@ -151,8 +151,8 @@ func ReadKeyTok(buf Buffer) (ret KeyTok, err error) {
 	return
 }
 
-// WriteGeoPoint writes a GeoPoint to the buffer.
-func WriteGeoPoint(buf Buffer, gp GeoPoint) (err error) {
+// Write writes a GeoPoint to the buffer.
+func (gp GeoPoint) Write(buf Buffer) (err error) {
 	defer recoverTo(&err)
 	_, e := cmpbin.WriteFloat64(buf, gp.Lat)
 	panicIf(e)
@@ -160,8 +160,8 @@ func WriteGeoPoint(buf Buffer, gp GeoPoint) (err error) {
 	return e
 }
 
-// ReadGeoPoint reads a GeoPoint from the buffer.
-func ReadGeoPoint(buf Buffer) (gp GeoPoint, err error) {
+// Read reads a GeoPoint from the buffer.
+func (gp *GeoPoint) Read(buf Buffer) (err error) {
 	defer recoverTo(&err)
 	e := error(nil)
 	gp.Lat, _, e = cmpbin.ReadFloat64(buf)
@@ -198,10 +198,10 @@ func ReadTime(buf Buffer) (time.Time, error) {
 	return time.Unix(int64(v/1e6), int64((v%1e6)*1e3)).UTC(), nil
 }
 
-// WriteProperty writes a Property to the buffer. `context` behaves the same
+// Write writes a Property to the buffer. `context` behaves the same
 // way that it does for WriteKey, but only has an effect if `p` contains a
 // Key as its Value.
-func WriteProperty(buf Buffer, p Property, context KeyContext) (err error) {
+func (p *Property) Write(buf Buffer, context KeyContext) (err error) {
 	defer recoverTo(&err)
 	typb := byte(p.Type())
 	if p.IndexSetting() == NoIndex {
@@ -225,7 +225,7 @@ func WriteProperty(buf Buffer, p Property, context KeyContext) (err error) {
 	case PTTime:
 		err = WriteTime(buf, p.Value().(time.Time))
 	case PTGeoPoint:
-		err = WriteGeoPoint(buf, p.Value().(GeoPoint))
+		err = p.Value().(GeoPoint).Write(buf)
 	case PTKey:
 		err = WriteKey(buf, context, p.Value().(Key))
 	case PTBlobKey:
@@ -234,10 +234,10 @@ func WriteProperty(buf Buffer, p Property, context KeyContext) (err error) {
 	return
 }
 
-// ReadProperty reads a Property from the buffer. `context`, `appid`, and
+// Read reads a Property from the buffer. `context`, `appid`, and
 // `namespace` behave the same way they do for ReadKey, but only have an
 // effect if the decoded property has a Key value.
-func ReadProperty(buf Buffer, context KeyContext, appid, namespace string) (p Property, err error) {
+func (p *Property) Read(buf Buffer, context KeyContext, appid, namespace string) (err error) {
 	val := interface{}(nil)
 	typb, err := buf.ReadByte()
 	if err != nil {
@@ -272,7 +272,9 @@ func ReadProperty(buf Buffer, context KeyContext, appid, namespace string) (p Pr
 	case PTTime:
 		val, err = ReadTime(buf)
 	case PTGeoPoint:
-		val, err = ReadGeoPoint(buf)
+		gp := GeoPoint{}
+		err = gp.Read(buf)
+		val = gp
 	case PTKey:
 		val, err = ReadKey(buf, context, appid, namespace)
 	case PTBlobKey:
@@ -290,23 +292,23 @@ func ReadProperty(buf Buffer, context KeyContext, appid, namespace string) (p Pr
 	return
 }
 
-// WritePropertyMap writes an entire PropertyMap to the buffer. `context`
+// Write writes an entire PropertyMap to the buffer. `context`
 // behaves the same way that it does for WriteKey. If
 // WritePropertyMapDeterministic is true, then the rows will be sorted by
 // property name before they're serialized to buf (mostly useful for testing,
 // but also potentially useful if you need to make a hash of the property data).
-func WritePropertyMap(buf Buffer, propMap PropertyMap, context KeyContext) (err error) {
+func (pm PropertyMap) Write(buf Buffer, context KeyContext) (err error) {
 	defer recoverTo(&err)
-	rows := make(sort.StringSlice, 0, len(propMap))
+	rows := make(sort.StringSlice, 0, len(pm))
 	tmpBuf := &bytes.Buffer{}
-	for name, vals := range propMap {
+	for name, vals := range pm {
 		tmpBuf.Reset()
 		_, e := cmpbin.WriteString(tmpBuf, name)
 		panicIf(e)
 		_, e = cmpbin.WriteUint(tmpBuf, uint64(len(vals)))
 		panicIf(e)
 		for _, p := range vals {
-			panicIf(WriteProperty(tmpBuf, p, context))
+			panicIf(p.Write(tmpBuf, context))
 		}
 		rows = append(rows, tmpBuf.String())
 	}
@@ -315,7 +317,7 @@ func WritePropertyMap(buf Buffer, propMap PropertyMap, context KeyContext) (err 
 		rows.Sort()
 	}
 
-	_, e := cmpbin.WriteUint(buf, uint64(len(propMap)))
+	_, e := cmpbin.WriteUint(buf, uint64(len(pm)))
 	panicIf(e)
 	for _, r := range rows {
 		_, e := buf.WriteString(r)
@@ -324,9 +326,9 @@ func WritePropertyMap(buf Buffer, propMap PropertyMap, context KeyContext) (err 
 	return
 }
 
-// ReadPropertyMap reads a PropertyMap from the buffer. `context` and
+// Read reads a PropertyMap from the buffer. `context` and
 // friends behave the same way that they do for ReadKey.
-func ReadPropertyMap(buf Buffer, context KeyContext, appid, namespace string) (propMap PropertyMap, err error) {
+func (pm PropertyMap) Read(buf Buffer, context KeyContext, appid, namespace string) (err error) {
 	defer recoverTo(&err)
 
 	numRows := uint64(0)
@@ -338,7 +340,6 @@ func ReadPropertyMap(buf Buffer, context KeyContext, appid, namespace string) (p
 	}
 
 	name, prop := "", Property{}
-	propMap = make(PropertyMap, numRows)
 	for i := uint64(0); i < numRows; i++ {
 		name, _, e = cmpbin.ReadString(buf)
 		panicIf(e)
@@ -351,11 +352,10 @@ func ReadPropertyMap(buf Buffer, context KeyContext, appid, namespace string) (p
 		}
 		props := make([]Property, 0, numProps)
 		for j := uint64(0); j < numProps; j++ {
-			prop, e = ReadProperty(buf, context, appid, namespace)
-			panicIf(e)
+			panicIf(prop.Read(buf, context, appid, namespace))
 			props = append(props, prop)
 		}
-		propMap[name] = props
+		pm[name] = props
 	}
 	return
 }

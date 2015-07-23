@@ -19,7 +19,7 @@ var (
 	ErrConcurrentTransaction = datastore.ErrConcurrentTransaction
 	ErrQueryDone             = datastore.Done
 
-	// ErrMetaFieldUnset is returned from DSPropertyLoadSaver.{Get,Set}Meta
+	// ErrMetaFieldUnset is returned from PropertyLoadSaver.{Get,Set}Meta
 	// implementations when the specified meta key isn't set on the struct at
 	// all.
 	ErrMetaFieldUnset = fmt.Errorf("gae: meta field unset")

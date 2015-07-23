@@ -73,7 +73,7 @@ func partiallySerialize(pm rds.PropertyMap) (ret serializedIndexablePmap) {
 				continue
 			}
 			buf.Reset()
-			rds.WriteProperty(buf, v, rds.WithoutContext)
+			v.Write(buf, rds.WithoutContext)
 			newVal := make([]byte, buf.Len())
 			copy(newVal, buf.Bytes())
 			newVals = append(newVals, newVal)

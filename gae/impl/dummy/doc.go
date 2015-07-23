@@ -2,7 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Package dummy comtains dummy implementations of:
+// Package dummy comtains panicking dummy implementations of all service
+// Interfaces.
+//
+// In particular, this includes:
 //   * datastore.Interface
 //   * memcache.Interface
 //   * taskqueue.Interface

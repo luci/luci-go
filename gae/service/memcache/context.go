@@ -24,9 +24,9 @@ type Factory func(context.Context) Interface
 // backed by the one passed in.
 type Filter func(context.Context, Interface) Interface
 
-// GetUnfiltered gets gets the Interface implementation from context without
+// getUnfiltered gets gets the Interface implementation from context without
 // any of the filters applied.
-func GetUnfiltered(c context.Context) Interface {
+func getUnfiltered(c context.Context) Interface {
 	if f, ok := c.Value(memcacheKey).(Factory); ok && f != nil {
 		return f(c)
 	}
@@ -35,7 +35,7 @@ func GetUnfiltered(c context.Context) Interface {
 
 // Get gets the current memcache implementation from the context.
 func Get(c context.Context) Interface {
-	ret := GetUnfiltered(c)
+	ret := getUnfiltered(c)
 	if ret == nil {
 		return nil
 	}

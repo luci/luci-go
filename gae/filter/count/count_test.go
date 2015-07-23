@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/luci/gae/filters/featureBreaker"
+	"github.com/luci/gae/filter/featureBreaker"
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/memcache"
