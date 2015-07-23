@@ -5,38 +5,20 @@ gae: A Google AppEngine SDK wrapper designed for testing+extensibility (for Go)
 [![Build Status](https://travis-ci.org/luci/gae.svg?branch=master)](https://travis-ci.org/luci/gae)
 [![Coverage Status](https://coveralls.io/repos/luci/gae/badge.svg?branch=master&service=github)](https://coveralls.io/github/luci/gae?branch=master)
 
-
 Installing
 ----------
 
     go get -u github.com/luci/gae/...
 
+Why/What/How
+------------
 
-Code layout
------------
-
-  * This directory contains the interfaces common to all supported services.
-  * [/dummy/...](https://github.com/luci/gae/tree/master/dummy)
-    Contains dummy service implementations (they just panic, not too interesting).
-  * [/prod/...](https://github.com/luci/gae/tree/master/prod)
-    Contains service implementations based on the [Appengine SDK](google.golang.org/appengine/datastore).
-  * [/memory/...](https://github.com/luci/gae/tree/master/memory)
-    Contains fast, in-memory service implementations for testing.
-  * [/filters/...](https://github.com/luci/gae/tree/master/filters)
-    Contains optional service filters to transparently change the behavior
-    of the services. Can be used with any service implementation.
-  * [/helper/...](https://github.com/luci/gae/tree/master/helper) contains
-    methods for doing helpful reflection, binary serialization, etc. You
-    don't have to worry about these too much, but they're there if you need
-    them for doing lower-level things (like building new service implementations
-    or filters).
-
+See the [godocs](https://godoc.org/github.com/luci/gae).
 
 Versioning
 ----------
 
   * Branch `master` constains the latest code.
-
 
 Contributing
 ------------
