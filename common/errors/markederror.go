@@ -5,10 +5,14 @@
 package errors
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"runtime"
 )
+
+// New is a pass-through version of the standard errors.New function.
+var New = errors.New
 
 // MarkedError is the specific error type retuned by MakeMarkFn. It's designed
 // so that you can access the underlying object if needed.

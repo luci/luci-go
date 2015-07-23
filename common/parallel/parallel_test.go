@@ -22,6 +22,6 @@ func ExampleFanOutIn() {
 		}
 	})
 
-	fmt.Printf("got: %s", err)
-	// Output: got: ["20 is over 10"]
+	fmt.Printf("got: %q", err)
+	// Output: got: "20 is over 10"
 }

@@ -22,8 +22,8 @@ func TestMark(t *testing.T) {
 		var err error
 		err = f(c)
 
-		So(err.Error(), ShouldEqual, "errorsTest - errors_test.go:23 - &{name:dude}")
-		So(f("hello").Error(), ShouldEqual, "errorsTest - errors_test.go:26 - hello")
+		So(err.Error(), ShouldEqual, "errorsTest - markederror_test.go:23 - &{name:dude}")
+		So(f("hello").Error(), ShouldEqual, "errorsTest - markederror_test.go:26 - hello")
 
 		So(err.(*MarkedError).Orig, ShouldEqual, c)
 
@@ -35,17 +35,17 @@ func TestMultiError(t *testing.T) {
 	Convey("MultiError works", t, func() {
 		var me error = MultiError{fmt.Errorf("hello"), fmt.Errorf("bob")}
 
-		So(me.Error(), ShouldEqual, `["hello" "bob"]`)
+		So(me.Error(), ShouldEqual, `hello (and 1 other error)`)
 
 		Convey("MultiErrorFromErrors with errors works", func() {
 			mec := make(chan error, 5)
-			mec <- fmt.Errorf("what")
-			mec <- nil
 			mec <- MakeMarkFn("multiErr")("one-off")
+			mec <- nil
+			mec <- fmt.Errorf("what")
 			close(mec)
 
 			err := MultiErrorFromErrors(mec)
-			So(err.Error(), ShouldEqual, `["what" "multiErr - errors_test.go:44 - one-off"]`)
+			So(err.Error(), ShouldEqual, `multiErr - markederror_test.go:42 - one-off (and 1 other error)`)
 		})
 
 		Convey("MultiErrorFromErrors with nil works", func() {
@@ -76,7 +76,7 @@ func ExampleMakeMarkFn() {
 	fmt.Printf("original: %d", marked.Orig)
 
 	// Output:
-	// got: "cool_package - errors_test.go:72 - 100"
+	// got: "cool_package - markederror_test.go:72 - 100"
 	// original: 100
 }
 
@@ -97,6 +97,6 @@ func ExampleMultiError() {
 	fmt.Printf("got: %v\n", err)
 
 	// Output:
-	// got: ["what"] len=1
+	// got: what len=1
 	// got: <nil>
 }
