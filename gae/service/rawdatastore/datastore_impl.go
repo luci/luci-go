@@ -332,6 +332,9 @@ func (p *structPLS) GetMeta(key string) (interface{}, error) {
 	if st.canSet {
 		if !reflect.DeepEqual(reflect.Zero(f.Type()).Interface(), f.Interface()) {
 			val = f.Interface()
+			if bf, ok := val.(Toggle); ok {
+				val = bf == On // true if On, otherwise false
+			}
 		}
 	}
 	return val, nil
@@ -347,6 +350,14 @@ func (p *structPLS) SetMeta(key string, val interface{}) (err error) {
 	}
 	if !p.c.byIndex[idx].canSet {
 		return fmt.Errorf("gae/helper: cannot set meta %q: unexported field", key)
+	}
+	// setting a BoolField
+	if b, ok := val.(bool); ok {
+		if b {
+			val = On
+		} else {
+			val = Off
+		}
 	}
 	p.o.Field(idx).Set(reflect.ValueOf(val))
 	return nil
@@ -557,6 +568,14 @@ func convertMeta(val string, t reflect.Type) (interface{}, error) {
 			return int64(0), nil
 		}
 		return strconv.ParseInt(val, 10, 64)
+	case typeOfToggle:
+		switch val {
+		case "on", "On", "true":
+			return true, nil
+		case "off", "Off", "false":
+			return false, nil
+		}
+		return nil, fmt.Errorf("Toggle field has bad/missing default, got %q", val)
 	}
-	return nil, fmt.Errorf("helper: meta field with bad type/value %s/%s", t, val)
+	return nil, fmt.Errorf("helper: meta field with bad type/value %s/%q", t, val)
 }

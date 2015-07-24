@@ -4,6 +4,10 @@
 
 package rawdatastore
 
+import (
+	"fmt"
+)
+
 // ByteString is a short byte slice (up to 1500 bytes) that can be indexed.
 type ByteString []byte
 
@@ -36,4 +40,28 @@ type TransactionOptions struct {
 	// Attempts controls the number of retries to perform when commits fail
 	// due to a conflicting transaction. If omitted, it defaults to 3.
 	Attempts int
+}
+
+// Toggle is a tri-state boolean (Auto/True/False), which allows structs
+// to control boolean flags for metadata in a non-ambiguous way.
+type Toggle byte
+
+// These are the allowed values for Toggle. Any other values are invalid.
+const (
+	Auto Toggle = iota
+	On
+	Off
+)
+
+func (b Toggle) String() string {
+	switch b {
+	case Auto:
+		return "Auto"
+	case On:
+		return "On"
+	case Off:
+		return "Off"
+	default:
+		return fmt.Sprintf("UNKNOWN_Toggle(%d)", b)
+	}
 }

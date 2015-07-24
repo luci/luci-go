@@ -1643,8 +1643,10 @@ func TestSpecial(t *testing.T) {
 			type OKDefaults struct {
 				When   string `gae:"$when,tomorrow"`
 				Amount int64  `gae:"$amt,100"`
+				DoIt   Toggle `gae:"$doit,on"`
 			}
-			pls := GetPLS(&OKDefaults{})
+			okd := &OKDefaults{}
+			pls := GetPLS(okd)
 			So(pls.Problem(), ShouldBeNil)
 
 			v, err := pls.GetMeta("when")
@@ -1654,6 +1656,33 @@ func TestSpecial(t *testing.T) {
 			v, err = pls.GetMeta("amt")
 			So(err, ShouldBeNil)
 			So(v, ShouldEqual, int64(100))
+
+			So(okd.DoIt, ShouldEqual, Auto)
+			v, err = pls.GetMeta("doit")
+			So(err, ShouldBeNil)
+			So(v, ShouldBeTrue)
+
+			err = pls.SetMeta("doit", false)
+			So(err, ShouldBeNil)
+			v, err = pls.GetMeta("doit")
+			So(err, ShouldBeNil)
+			So(v, ShouldBeFalse)
+			So(okd.DoIt, ShouldEqual, Off)
+
+			err = pls.SetMeta("doit", true)
+			So(err, ShouldBeNil)
+			v, err = pls.GetMeta("doit")
+			So(err, ShouldBeNil)
+			So(v, ShouldBeTrue)
+			So(okd.DoIt, ShouldEqual, On)
+
+			Convey("Toggle fields REQUIRE a default", func() {
+				type BadToggle struct {
+					Bad Toggle `gae:"$wut"`
+				}
+				pls := GetPLS(&BadToggle{})
+				So(pls.Problem().Error(), ShouldContainSubstring, "bad/missing default")
+			})
 		})
 
 		Convey("meta fields can be saved", func() {

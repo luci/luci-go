@@ -347,6 +347,18 @@ type PropertyLoadSaver interface {
 	//   val, err := helper.GetPLS(&MyStruct{10}).GetMeta("id")
 	//   // val == 10
 	//   // err == nil
+	//
+	// Struct fields of type Toggle (which is an Auto/On/Off) allow you to
+	// specify a value of 'true' or 'false' for the default value of the struct
+	// tag, and GetMeta will return the combined value as a regular boolean true
+	// or false value. If a field is Toggle, a <value> MUST be specified.
+	//
+	// Example:
+	//   type MyStruct struct {
+	//     TFlag Toggle `gae:"$flag1,true"`  // defaults to true
+	//     FFlag Toggle `gae:"$flag2,false"` // defaults to false
+	//     // BadFlag  Toggle `gae:"$flag3"` // ILLEGAL
+	//   }
 	GetMeta(key string) (interface{}, error)
 
 	// SetMeta allows you to set the current value of the meta-keyed field.
