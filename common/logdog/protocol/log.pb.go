@@ -31,14 +31,19 @@ type LogStreamDescriptor struct {
 	//
 	// The stream's prefix (required).
 	//
-	// The must be a valid LogDog prefix value. Logs originating from the same
-	// Butler instance will share a Prefix.
+	// Logs originating from the same Butler instance will share a Prefix.
+	//
+	// A valid prefix value is a StreamName described in:
+	// https://github.com/luci/luci-go/common/logdog/types
 	Prefix *string `protobuf:"bytes,1,opt,name=prefix" json:"prefix,omitempty"`
 	//
 	// The log stream's name (required).
 	//
-	// This must be a valid LogDog stream name. This is used to uniquely identify
-	// a log stream.
+	// This is used to uniquely identify a log stream within the scope of its
+	// prefix.
+	//
+	// A valid name value is a StreamName described in:
+	// https://github.com/luci/luci-go/common/logdog/types
 	Name *string `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
 	//
 	// The stream's content type (required).
@@ -143,13 +148,14 @@ type LogEntry struct {
 	// The message index within the Prefix (required).
 	//
 	// This is value is unique to this LogEntry across the entire set of entries
-	// sharing the stream's Prefix. It is used to designate absolute log ordering.
+	// sharing the stream's Prefix. It is used to designate unambiguous log
+	// ordering.
 	PrefixIndex *uint64 `protobuf:"varint,2,opt,name=prefix_index" json:"prefix_index,omitempty"`
 	//
 	// The message index within its Stream (required).
 	//
 	// This value is unique across all entries sharing the same Prefix and Stream
-	// Name. It is used to designate absolute log ordering within the stream.
+	// Name. It is used to designate unambiguous log ordering within the stream.
 	StreamIndex *uint64 `protobuf:"varint,3,opt,name=stream_index" json:"stream_index,omitempty"`
 	//
 	// (Text) Lines of log text.
