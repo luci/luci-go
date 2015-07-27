@@ -14,10 +14,10 @@ import (
 // should be used throughout the program.
 var defaultIteratorTemplate = ExponentialBackoff{
 	Limited: Limited{
-		Delay:   500 * time.Millisecond,
+		Delay:   200 * time.Millisecond,
 		Retries: 10,
 	},
-	MaxDelay:   100 * time.Millisecond, // TODO: Is this correct? This is lower than the base delay...
+	MaxDelay:   10 * time.Second,
 	Multiplier: 2,
 }
 

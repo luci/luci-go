@@ -26,16 +26,3 @@ func (i *TransientOnly) Next(ctx context.Context, err error) time.Duration {
 	}
 	return i.Iterator.Next(ctx, err)
 }
-
-// WithTransientOnly returns a Context whose retry Iterator only retries on
-// transient errors.
-func WithTransientOnly(ctx context.Context) context.Context {
-	f := GetFactory(ctx)
-	if f == nil {
-		return ctx
-	}
-
-	return Use(ctx, func(context.Context) Iterator {
-		return &TransientOnly{f(ctx)}
-	})
-}

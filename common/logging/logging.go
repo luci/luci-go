@@ -41,8 +41,8 @@ type Logger interface {
 	// Errorf is like Debugf, but logs at Error level.
 	Errorf(format string, args ...interface{})
 
-	// Generic logging function. This is oriented more towards utility functions
-	// than direct end-user usage.
+	// LogCall is a generic logging function. This is oriented more towards
+	// utility functions than direct end-user usage.
 	LogCall(l Level, calldepth int, format string, args []interface{})
 }
 

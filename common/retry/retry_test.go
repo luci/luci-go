@@ -46,13 +46,11 @@ func TestRetry(t *testing.T) {
 		})
 
 		Convey(`A test Iterator with three retries`, func() {
-			ctx = Use(ctx, func(context.Context) Iterator {
-				return &testIterator{total: 3}
-			})
+			it := &testIterator{total: 3}
 
 			Convey(`Executes a successful function once.`, func() {
 				var count, callbacks int
-				err := Retry(ctx, func() error {
+				err := Retry(ctx, it, func() error {
 					count++
 					return nil
 				}, func(error, time.Duration) {
@@ -66,7 +64,7 @@ func TestRetry(t *testing.T) {
 
 			Convey(`Executes a failing function three times.`, func() {
 				var count, callbacks int
-				err := Retry(ctx, func() error {
+				err := Retry(ctx, it, func() error {
 					count++
 					return failure
 				}, func(error, time.Duration) {
@@ -81,7 +79,7 @@ func TestRetry(t *testing.T) {
 			Convey(`Executes a function that fails once, then succeeds once.`, func() {
 				failure := errors.New("retry: test error")
 				var count, callbacks int
-				err := Retry(ctx, func() error {
+				err := Retry(ctx, it, func() error {
 					defer func() { count++ }()
 					if count == 0 {
 						return failure
@@ -97,11 +95,11 @@ func TestRetry(t *testing.T) {
 			})
 		})
 
-		Convey(`Uses the Default Iteerator if Iterator/callback is not set.`, func() {
-			So(Retry(ctx, func() error {
+		Convey(`Does not retry if callback is not set.`, func() {
+			So(Retry(ctx, nil, func() error {
 				return failure
 			}, nil), ShouldEqual, failure)
-			So(sleeps, ShouldEqual, 10)
+			So(sleeps, ShouldEqual, 0)
 		})
 	})
 }

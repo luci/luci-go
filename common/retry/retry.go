@@ -28,15 +28,23 @@ type Iterator interface {
 // Retry executes a function. If the function returns an error, it will
 // be re-executed according to a retry plan.
 //
-// The retry parameters are defined by the supplied Context's retry Factory.
+// If the supplied context is cancelled, retry will stop executing. Retry will
+// not execute the supplied function at all if the context is canelled when
+// Retry is invoked.
 //
 // If notify is not nil, it will be invoked if an error occurs (prior to
 // sleeping).
-func Retry(ctx context.Context, f func() error, callback Callback) (err error) {
-	it := Get(ctx)
-
-	// Retry loop.
+func Retry(ctx context.Context, it Iterator, f func() error, callback Callback) (err error) {
 	for {
+		// If we've been cancelled, don't try/retry.
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+
+		default:
+			break
+		}
+
 		// Execute the function.
 		err = f()
 		if err == nil || it == nil {
@@ -53,6 +61,14 @@ func Retry(ctx context.Context, f func() error, callback Callback) (err error) {
 			callback(err, delay)
 		}
 
-		clock.Sleep(ctx, delay)
+		if delay > 0 {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+
+			case <-clock.After(ctx, delay):
+				break
+			}
+		}
 	}
 }
