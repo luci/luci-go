@@ -70,9 +70,9 @@ func (tcf *checkFilter) PutMulti(keys []Key, vals []PropertyLoadSaver, cb PutMul
 		}
 		v := vals[i]
 		if v == nil {
-			if !lme.Assign(i, errors.New("rawdatastore: PutMulti got nil vals entry")) {
-				lme.Assign(i, v.Problem())
-			}
+			lme.Assign(i, errors.New("rawdatastore: PutMulti got nil vals entry"))
+		} else {
+			lme.Assign(i, v.Problem())
 		}
 	}
 	if me := lme.Get(); me != nil {
