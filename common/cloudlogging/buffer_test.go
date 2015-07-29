@@ -187,7 +187,8 @@ func TestBuffer(t *testing.T) {
 			b.StopAndFlush()
 		}()
 
-		// Make sure at least one attempt has been made.
+		// Wait for the first attempt. This ensures that we've entered the retry
+		// loop.
 		<-entriesC
 		go func() {
 			// Consume any other attempts.
@@ -197,9 +198,6 @@ func TestBuffer(t *testing.T) {
 
 		// Abort the buffer.
 		b.Abort()
-
-		// Make sure at least one attempt has been made after the abort.
-		<-entriesC
 
 		// Assert that it will stop eventually. Rather than deadlock/panic, we wait
 		// one real second and fail if it didn't terminate. Since there is no
