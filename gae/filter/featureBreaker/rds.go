@@ -24,66 +24,31 @@ func (r *rdsState) DecodeKey(encoded string) (ret rds.Key, err error) {
 	return
 }
 
-func (r *rdsState) GetAll(q rds.Query, dst *[]rds.PropertyMap) (ret []rds.Key, err error) {
-	err = r.run(func() (err error) {
-		ret, err = r.Interface.GetAll(q, dst)
-		return
-	})
-	return
-}
-
-func (r *rdsState) Count(q rds.Query) (ret int, err error) {
-	err = r.run(func() (err error) {
-		ret, err = r.Interface.Count(q)
-		return
-	})
-	return
-}
-
 func (r *rdsState) RunInTransaction(f func(c context.Context) error, opts *rds.TransactionOptions) error {
 	return r.run(func() error {
 		return r.Interface.RunInTransaction(f, opts)
 	})
 }
 
-func (r *rdsState) Put(key rds.Key, src rds.PropertyLoadSaver) (ret rds.Key, err error) {
-	err = r.run(func() (err error) {
-		ret, err = r.Interface.Put(key, src)
-		return
-	})
-	return
-}
+// TODO(riannucci): Allow the user to specify a multierror which will propagate
+// to the callback correctly.
 
-func (r *rdsState) Get(key rds.Key, dst rds.PropertyLoadSaver) error {
+func (r *rdsState) DeleteMulti(keys []rds.Key, cb rds.DeleteMultiCB) error {
 	return r.run(func() error {
-		return r.Interface.Get(key, dst)
+		return r.Interface.DeleteMulti(keys, cb)
 	})
 }
 
-func (r *rdsState) Delete(key rds.Key) error {
+func (r *rdsState) GetMulti(keys []rds.Key, cb rds.GetMultiCB) error {
 	return r.run(func() error {
-		return r.Interface.Delete(key)
+		return r.Interface.GetMulti(keys, cb)
 	})
 }
 
-func (r *rdsState) DeleteMulti(keys []rds.Key) error {
-	return r.run(func() error {
-		return r.Interface.DeleteMulti(keys)
+func (r *rdsState) PutMulti(keys []rds.Key, vals []rds.PropertyLoadSaver, cb rds.PutMultiCB) error {
+	return r.run(func() (err error) {
+		return r.Interface.PutMulti(keys, vals, cb)
 	})
-}
-
-func (r *rdsState) GetMulti(keys []rds.Key, dst []rds.PropertyLoadSaver) error {
-	return r.run(func() error {
-		return r.Interface.GetMulti(keys, dst)
-	})
-}
-
-func (r *rdsState) PutMulti(keys []rds.Key, src []rds.PropertyLoadSaver) (ret []rds.Key, err error) {
-	err = r.run(func() (err error) {
-		ret, err = r.Interface.PutMulti(keys, src)
-		return
-	})
-	return
 }
 
 // FilterRDS installs a counter RawDatastore filter in the context.

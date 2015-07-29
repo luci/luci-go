@@ -10,8 +10,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-/// Kinds + Keys
-
 // Key is the equivalent of *datastore.Key from the original SDK, except that
 // it can have multiple implementations. See helper.Key* methods for missing
 // methods like KeyIncomplete (and some new ones like KeyValid).
@@ -53,34 +51,77 @@ type Query interface {
 	Start(c Cursor) Query
 }
 
-// Iterator wraps datastore.Iterator.
-type Iterator interface {
-	Cursor() (Cursor, error)
-	Next(dst PropertyLoadSaver) (Key, error)
-}
+// RunCB is the callback signature provided to Interface.Run
+//
+//   - key is the Key of the entity
+//   - val is the data of the entity (or nil, if the query was keys-only)
+//   - getCursor can be invoked to obtain the current cursor.
+//
+// Return true to continue iterating through the query results, or false to stop.
+type RunCB func(key Key, val PropertyMap, getCursor func() (Cursor, error)) bool
+
+// GetMultiCB is the callback signature provided to Interface.GetMulti
+//
+//   - val is the data of the entity
+//     * It may be nil if some of the keys to the GetMulti were bad, since all
+//       keys are validated before the RPC occurs!
+//   - err is an error associated with this entity (e.g. ErrNoSuchEntity).
+type GetMultiCB func(val PropertyMap, err error)
+
+// PutMultiCB is the callback signature provided to Interface.PutMulti
+//
+//   - key is the new key for the entity (if the original was incomplete)
+//     * It may be nil if some of the keys/vals to the PutMulti were bad, since
+//       all keys are validated before the RPC occurs!
+//   - err is an error associated with putting this entity.
+type PutMultiCB func(key Key, err error)
+
+// DeleteMultiCB is the callback signature provided to Interface.DeleteMulti
+//
+//   - err is an error associated with deleting this entity.
+type DeleteMultiCB func(err error)
 
 // Interface implements the datastore functionality without any of the fancy
 // reflection stuff. This is so that Filters can avoid doing lots of redundant
-// reflection work. See helper.Datastore for a more user-friendly interface.
+// reflection work. See datastore.Interface for a more user-friendly interface.
 type Interface interface {
 	NewKey(kind, stringID string, intID int64, parent Key) Key
 	DecodeKey(encoded string) (Key, error)
-
 	NewQuery(kind string) Query
-	Count(q Query) (int, error)
 
 	RunInTransaction(f func(c context.Context) error, opts *TransactionOptions) error
 
-	Run(q Query) Iterator
-	GetAll(q Query, dst *[]PropertyMap) ([]Key, error)
+	// Run executes the given query, and calls `cb` for each successfully item.
+	Run(q Query, cb RunCB) error
 
-	Put(key Key, src PropertyLoadSaver) (Key, error)
-	Get(key Key, dst PropertyLoadSaver) error
-	Delete(key Key) error
+	// GetMulti retrieves items from the datastore.
+	//
+	// Callback execues once per key, in the order of keys. Callback may not
+	// execute at all if there's a server error. If callback is nil, this
+	// method does nothing.
+	//
+	// NOTE: Implementations and filters are guaranteed that keys are all Valid
+	// and Complete, and in the correct namespace.
+	GetMulti(keys []Key, cb GetMultiCB) error
 
-	// These allow you to read and write a multiple datastore objects in
-	// a non-atomic batch.
-	DeleteMulti(keys []Key) error
-	GetMulti(keys []Key, dst []PropertyLoadSaver) error
-	PutMulti(keys []Key, src []PropertyLoadSaver) ([]Key, error)
+	// PutMulti writes items to the datastore.
+	//
+	// Callback execues once per item, in the order of itemss. Callback may not
+	// execute at all if there's a server error.
+	//
+	// NOTE: Implementations and filters are guaranteed that len(keys) ==
+	// len(vals), that keys are all Valid, and in the correct namespace.
+	// Additionally, vals are guaranteed to be PropertyMaps already. Callback
+	// may be nil.
+	PutMulti(keys []Key, vals []PropertyLoadSaver, cb PutMultiCB) error
+
+	// DeleteMulti removes items from the datastore.
+	//
+	// Callback execues once per key, in the order of keys. Callback may not
+	// execute at all if there's a server error.
+	//
+	// NOTE: Implementations and filters are guaranteed that keys are all Valid
+	// and Complete, and in the correct namespace, and are not 'special'.
+	// Callback may be nil.
+	DeleteMulti(keys []Key, cb DeleteMultiCB) error
 }

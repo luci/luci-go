@@ -6,8 +6,8 @@ package prod
 
 import (
 	rds "github.com/luci/gae/service/rawdatastore"
-	"github.com/luci/luci-go/common/errors"
 	"golang.org/x/net/context"
+	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 )
 
@@ -15,7 +15,9 @@ import (
 // by gae.GetDS(c)
 func useRDS(c context.Context) context.Context {
 	return rds.SetFactory(c, func(ci context.Context) rds.Interface {
-		return rdsImpl{ci}
+		// TODO(riannucci): Track namespace in a better way
+		k := datastore.NewKey(ci, "kind", "", 1, nil) // get current namespace.
+		return rdsImpl{ci, k.Namespace()}
 	})
 }
 
@@ -57,88 +59,99 @@ func (q queryImpl) Filter(filterStr string, value interface{}) rds.Query {
 	return queryImpl{q.Query.Filter(filterStr, value)}
 }
 
-////////// Iterator
-
-type iteratorImpl struct{ *datastore.Iterator }
-
-var _ rds.Iterator = iteratorImpl{}
-
-func (i iteratorImpl) Cursor() (rds.Cursor, error) {
-	return i.Iterator.Cursor()
-}
-
-func (i iteratorImpl) Next(pls rds.PropertyLoadSaver) (rds.Key, error) {
-	return dsR2FErr(i.Iterator.Next(&typeFilter{pls}))
-}
-
 ////////// Datastore
 
-type rdsImpl struct{ context.Context }
+type rdsImpl struct {
+	context.Context
 
-// NewKeyer
+	ns string
+}
+
 func (d rdsImpl) NewKey(kind, stringID string, intID int64, parent rds.Key) rds.Key {
 	return dsR2F(datastore.NewKey(d, kind, stringID, intID, dsF2R(parent)))
 }
 
 func (rdsImpl) DecodeKey(encoded string) (rds.Key, error) {
-	return dsR2FErr(datastore.DecodeKey(encoded))
+	k, err := datastore.DecodeKey(encoded)
+	return dsR2F(k), err
 }
 
-func multiWrap(os []rds.PropertyLoadSaver) []datastore.PropertyLoadSaver {
-	ret := make([]datastore.PropertyLoadSaver, len(os))
-	for i, pls := range os {
-		ret[i] = &typeFilter{pls}
+func idxCallbacker(err error, amt int, cb func(idx int, err error)) error {
+	if err == nil {
+		for i := 0; i < amt; i++ {
+			cb(i, nil)
+		}
+		return nil
 	}
-	return ret
+	me, ok := err.(appengine.MultiError)
+	if ok {
+		for i, err := range me {
+			cb(i, err)
+		}
+		return nil
+	}
+	return err
 }
 
-func (d rdsImpl) Delete(k rds.Key) error { return datastore.Delete(d, dsF2R(k)) }
-func (d rdsImpl) Get(key rds.Key, dst rds.PropertyLoadSaver) error {
-	return datastore.Get(d, dsF2R(key), &typeFilter{dst})
-}
-func (d rdsImpl) Put(key rds.Key, src rds.PropertyLoadSaver) (rds.Key, error) {
-	return dsR2FErr(datastore.Put(d, dsF2R(key), &typeFilter{src}))
-}
-
-func (d rdsImpl) DeleteMulti(ks []rds.Key) error {
-	return errors.Fix(datastore.DeleteMulti(d, dsMF2R(ks)))
+func (d rdsImpl) DeleteMulti(ks []rds.Key, cb rds.DeleteMultiCB) error {
+	err := datastore.DeleteMulti(d, dsMF2R(ks))
+	return idxCallbacker(err, len(ks), func(_ int, err error) {
+		cb(err)
+	})
 }
 
-func (d rdsImpl) GetMulti(ks []rds.Key, plss []rds.PropertyLoadSaver) error {
-	return errors.Fix(datastore.GetMulti(d, dsMF2R(ks), multiWrap(plss)))
-}
-func (d rdsImpl) PutMulti(key []rds.Key, plss []rds.PropertyLoadSaver) ([]rds.Key, error) {
-	ks, err := datastore.PutMulti(d, dsMF2R(key), multiWrap(plss))
-	return dsMR2F(ks), errors.Fix(err)
+func (d rdsImpl) GetMulti(keys []rds.Key, cb rds.GetMultiCB) error {
+	rkeys := dsMF2R(keys)
+	vals := make([]datastore.PropertyLoadSaver, len(keys))
+	for i := range keys {
+		vals[i] = &typeFilter{rds.PropertyMap{}}
+	}
+	err := datastore.GetMulti(d, rkeys, vals)
+	return idxCallbacker(err, len(keys), func(idx int, err error) {
+		cb(vals[idx].(*typeFilter).pm, err)
+	})
 }
 
-// DSQueryer
+func (d rdsImpl) PutMulti(keys []rds.Key, vals []rds.PropertyLoadSaver, cb rds.PutMultiCB) error {
+	rkeys := dsMF2R(keys)
+	rvals := make([]datastore.PropertyLoadSaver, len(vals))
+	for i, val := range vals {
+		rvals[i] = &typeFilter{val.(rds.PropertyMap)}
+	}
+	rkeys, err := datastore.PutMulti(d, rkeys, vals)
+	return idxCallbacker(err, len(keys), func(idx int, err error) {
+		k := rds.Key(nil)
+		if err == nil {
+			k = dsR2F(rkeys[idx])
+		}
+		cb(k, err)
+	})
+}
+
 func (d rdsImpl) NewQuery(kind string) rds.Query {
 	return queryImpl{datastore.NewQuery(kind)}
 }
-func (d rdsImpl) Run(q rds.Query) rds.Iterator {
-	return iteratorImpl{q.(queryImpl).Query.Run(d)}
-}
-func (d rdsImpl) Count(q rds.Query) (int, error) {
-	return q.(queryImpl).Query.Count(d)
-}
-func (d rdsImpl) GetAll(q rds.Query, dst *[]rds.PropertyMap) ([]rds.Key, error) {
-	fakeDst := []datastore.PropertyList(nil)
-	ks, err := q.(queryImpl).GetAll(d, &fakeDst)
-	if err != nil {
-		return nil, err
+
+func (d rdsImpl) Run(q rds.Query, cb rds.RunCB) error {
+	tf := typeFilter{}
+	t := q.(queryImpl).Query.Run(d)
+	cfunc := func() (rds.Cursor, error) {
+		return t.Cursor()
 	}
-	*dst = make([]rds.PropertyMap, len(fakeDst))
-	for i, pl := range fakeDst {
-		(*dst)[i] = rds.PropertyMap{}
-		if err := (&typeFilter{(*dst)[i]}).Load(pl); err != nil {
-			return nil, err
+	for {
+		k, err := t.Next(&tf)
+		if err == datastore.Done {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if !cb(dsR2F(k), tf.pm, cfunc) {
+			return nil
 		}
 	}
-	return dsMR2F(ks), err
 }
 
-// Transactioner
 func (d rdsImpl) RunInTransaction(f func(c context.Context) error, opts *rds.TransactionOptions) error {
 	ropts := (*datastore.TransactionOptions)(opts)
 	return datastore.RunInTransaction(d, f, ropts)

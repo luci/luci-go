@@ -42,7 +42,7 @@ func Get(c context.Context) Interface {
 	for _, f := range getCurFilters(c) {
 		ret = f(c, ret)
 	}
-	return ret
+	return applyCheckFilter(c, ret)
 }
 
 // SetFactory sets the function to produce Datastore instances, as returned by

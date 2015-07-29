@@ -21,8 +21,17 @@ import (
 func TestCount(t *testing.T) {
 	t.Parallel()
 
+	pnil := func(_ rawdatastore.Key, err error) {
+		So(err, ShouldBeNil)
+	}
+
+	gnil := func(_ rawdatastore.PropertyMap, err error) {
+		So(err, ShouldBeNil)
+	}
+
 	Convey("Test Count filter", t, func() {
-		c, ctr := FilterRDS(memory.Use(context.Background()))
+		c, fb := featureBreaker.FilterRDS(memory.Use(context.Background()), nil)
+		c, ctr := FilterRDS(c)
 
 		So(c, ShouldNotBeNil)
 		So(ctr, ShouldNotBeNil)
@@ -32,44 +41,54 @@ func TestCount(t *testing.T) {
 		Convey("Calling a rds function should reflect in counter", func() {
 			p := rawdatastore.Property{}
 			p.SetValue(100, false)
-			_, err := rds.Put(rds.NewKey("Kind", "", 0, nil), &rawdatastore.PropertyMap{
-				"Val": {p},
-			})
-			So(err, ShouldBeNil)
+			keys := []rawdatastore.Key{rds.NewKey("Kind", "", 0, nil)}
+			vals := []rawdatastore.PropertyLoadSaver{&rawdatastore.PropertyMap{"Val": {p}}}
+
+			So(rds.PutMulti(keys, vals, pnil), ShouldBeNil)
 			So(ctr.NewKey.Successes, ShouldEqual, 1)
-			So(ctr.Put.Successes, ShouldEqual, 1)
+			So(ctr.PutMulti.Successes, ShouldEqual, 1)
 
 			Convey("effects are cumulative", func() {
-				_, err := rds.Put(rds.NewKey("Kind", "", 0, nil), &rawdatastore.PropertyMap{
-					"Val": {p},
-				})
-				So(err, ShouldBeNil)
-				So(ctr.NewKey.Successes, ShouldEqual, 2)
-				So(ctr.Put.Successes, ShouldEqual, 2)
+				So(rds.PutMulti(keys, vals, pnil), ShouldBeNil)
+				So(ctr.PutMulti.Successes, ShouldEqual, 2)
 
 				Convey("even within transactions", func() {
+					root := rds.NewKey("Root", "", 1, nil)
 					rds.RunInTransaction(func(c context.Context) error {
 						rds := rawdatastore.Get(c)
-						k := rds.NewKey("Wat", "sup", 0, nil)
-						rds.Put(k, &rawdatastore.PropertyMap{"Wat": {p}})
-						rds.Put(k, &rawdatastore.PropertyMap{"Wat": {p}})
+						keys := []rawdatastore.Key{
+							rds.NewKey("Kind", "hi", 0, root),
+							rds.NewKey("Kind", "there", 0, root),
+						}
+						vals = append(vals, vals[0])
+						So(rds.PutMulti(keys, vals, pnil), ShouldBeNil)
 						return nil
 					}, nil)
 				})
 			})
 		})
+
 		Convey("errors count against errors", func() {
-			rds.Get(nil, nil)
-			So(ctr.Get.Errors, ShouldEqual, 1)
-			k, err := rds.Put(rds.NewKey("Kind", "", 0, nil), &rawdatastore.PropertyMap{
-				"Val": {rawdatastore.Property{}},
+			keys := []rawdatastore.Key{rds.NewKey("Kind", "", 1, nil)}
+			vals := []rawdatastore.PropertyLoadSaver{&rawdatastore.PropertyMap{"Val": {{}}}}
+
+			fb.BreakFeatures(nil, "GetMulti")
+
+			rds.GetMulti(keys, gnil)
+			So(ctr.GetMulti.Errors, ShouldEqual, 1)
+
+			fb.UnbreakFeatures("GetMulti")
+
+			err := rds.PutMulti(keys, vals, func(k rawdatastore.Key, err error) {
+				keys[0] = k
+				So(err, ShouldBeNil)
 			})
 			So(err, ShouldBeNil)
-			So(ctr.NewKey.Successes, ShouldEqual, 1)
-			rds.Get(k, &rawdatastore.PropertyMap{})
-			So(ctr.Get.Errors, ShouldEqual, 1)
-			So(ctr.Get.Successes, ShouldEqual, 1)
-			So(ctr.Get.Total(), ShouldEqual, 2)
+
+			rds.GetMulti(keys, gnil)
+			So(ctr.GetMulti.Errors, ShouldEqual, 1)
+			So(ctr.GetMulti.Successes, ShouldEqual, 1)
+			So(ctr.GetMulti.Total(), ShouldEqual, 2)
 		})
 	})
 
@@ -133,7 +152,7 @@ func ExampleFilterRDS() {
 		val := rawdatastore.PropertyMap{
 			"FieldName": {prop},
 		}
-		rds.Put(key, &val)
+		rds.PutMulti([]rawdatastore.Key{key}, []rawdatastore.PropertyLoadSaver{&val}, nil)
 	}
 
 	// Using the other function.
@@ -142,7 +161,7 @@ func ExampleFilterRDS() {
 
 	// Then we can see what happened!
 	fmt.Printf("%#v\n", counter.NewKey)
-	fmt.Printf("%d\n", counter.Put.Successes)
+	fmt.Printf("%d\n", counter.PutMulti.Successes)
 	// Output:
 	// count.Entry{Successes:2, Errors:0}
 	// 2

@@ -120,19 +120,16 @@ func KeyIncomplete(k Key) bool {
 
 // KeyValid determines if a key is valid, according to a couple rules:
 //   - k is not nil
-//   - k's namespace matches ns
 //   - every token of k:
 //     - (if !allowSpecial) token's kind doesn't start with '__'
 //     - token's kind and appid are non-blank
 //     - token is not incomplete
 //   - all tokens have the same namespace and appid
-func KeyValid(k Key, ns string, allowSpecial bool) bool {
+func KeyValid(k Key, allowSpecial bool, aid, ns string) bool {
 	if k == nil {
 		return false
 	}
-	// since we do "client-side" validation of namespaces in local
-	// implementations, it's convenient to check this here.
-	if k.Namespace() != ns {
+	if aid != k.AppID() || ns != k.Namespace() {
 		return false
 	}
 	for ; k != nil; k = k.Parent() {

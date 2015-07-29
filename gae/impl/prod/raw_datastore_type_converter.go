@@ -12,13 +12,13 @@ import (
 )
 
 type typeFilter struct {
-	pls rds.PropertyLoadSaver
+	pm rds.PropertyMap
 }
 
 var _ datastore.PropertyLoadSaver = &typeFilter{}
 
 func (tf *typeFilter) Load(props []datastore.Property) error {
-	pmap := make(rds.PropertyMap, len(props))
+	tf.pm = make(rds.PropertyMap, len(props))
 	for _, p := range props {
 		val := p.Value
 		switch x := val.(type) {
@@ -39,19 +39,17 @@ func (tf *typeFilter) Load(props []datastore.Property) error {
 		if err := prop.SetValue(val, is); err != nil {
 			return err
 		}
-		pmap[p.Name] = append(pmap[p.Name], prop)
+		tf.pm[p.Name] = append(tf.pm[p.Name], prop)
 	}
-	return tf.pls.Load(pmap)
+	return nil
 }
 
 func (tf *typeFilter) Save() ([]datastore.Property, error) {
-	newProps, err := tf.pls.Save(false)
-	if err != nil {
-		return nil, err
-	}
-
 	props := []datastore.Property{}
-	for name, propList := range newProps {
+	for name, propList := range tf.pm {
+		if len(name) != 0 && name[0] == '$' {
+			continue
+		}
 		multiple := len(propList) > 1
 		for _, prop := range propList {
 			toAdd := datastore.Property{
@@ -74,6 +72,5 @@ func (tf *typeFilter) Save() ([]datastore.Property, error) {
 			props = append(props, toAdd)
 		}
 	}
-
 	return props, nil
 }

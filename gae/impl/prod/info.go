@@ -12,9 +12,15 @@ import (
 	"google.golang.org/appengine"
 )
 
+type key int
+
+var namespaceCopyKey key
+
 // useGI adds a gae.GlobalInfo implementation to context, accessible
 // by gae.GetGI(c)
 func useGI(c context.Context) context.Context {
+	// TODO(iannucci): make a better way to get the initial namespace?
+	c = context.WithValue(c, namespaceCopyKey, "")
 	return info.SetFactory(c, func(ci context.Context) info.Interface {
 		return giImpl{ci}
 	})
@@ -27,6 +33,9 @@ func (g giImpl) AccessToken(scopes ...string) (token string, expiry time.Time, e
 }
 func (g giImpl) AppID() string {
 	return appengine.AppID(g)
+}
+func (g giImpl) GetNamespace() string {
+	return g.Value(namespaceCopyKey).(string)
 }
 func (g giImpl) Datacenter() string {
 	return appengine.Datacenter(g)
@@ -53,7 +62,11 @@ func (g giImpl) ModuleName() (name string) {
 	return appengine.ModuleName(g)
 }
 func (g giImpl) Namespace(namespace string) (context.Context, error) {
-	return appengine.Namespace(g, namespace)
+	c, err := appengine.Namespace(g, namespace)
+	if err != nil {
+		return c, err
+	}
+	return context.WithValue(c, namespaceCopyKey, namespace), nil
 }
 func (g giImpl) PublicCertificates() ([]info.Certificate, error) {
 	certs, err := appengine.PublicCertificates(g)

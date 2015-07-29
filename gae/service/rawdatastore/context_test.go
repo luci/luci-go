@@ -5,19 +5,24 @@
 package rawdatastore
 
 import (
-	"errors"
 	"testing"
 
+	"github.com/luci/gae/service/info"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
+
+type fakeInfo struct{ info.Interface }
+
+func (fakeInfo) GetNamespace() string { return "ns" }
+func (fakeInfo) AppID() string        { return "aid" }
 
 type fakeService struct{ Interface }
 
 type fakeFilt struct{ Interface }
 
-func (fakeFilt) Count(Query) (int, error) {
-	return 0, errors.New("wow")
+func (fakeFilt) NewKey(kind, stringID string, intID int64, parent Key) Key {
+	return NewKey("aid", "ns", kind, stringID, intID, parent)
 }
 
 func TestServices(t *testing.T) {
@@ -30,10 +35,10 @@ func TestServices(t *testing.T) {
 		})
 
 		Convey("adding a basic implementation", func() {
-			c = Set(c, fakeService{})
+			c = Set(info.Set(c, fakeInfo{}), fakeService{})
 
 			Convey("lets you pull them back out", func() {
-				So(Get(c), ShouldResemble, fakeService{})
+				So(Get(c), ShouldResemble, &checkFilter{fakeService{}, "aid", "ns"})
 			})
 
 			Convey("and lets you add filters", func() {
@@ -41,8 +46,8 @@ func TestServices(t *testing.T) {
 					return fakeFilt{rds}
 				})
 
-				_, err := Get(c).Count(nil)
-				So(err.Error(), ShouldEqual, "wow")
+				k := Get(c).NewKey("Kind", "", 1, nil)
+				So(KeysEqual(k, NewKey("aid", "ns", "Kind", "", 1, nil)), ShouldBeTrue)
 			})
 		})
 		Convey("adding zero filters does nothing", func() {

@@ -47,47 +47,32 @@ func (d *dsImpl) NewKey(kind, stringID string, intID int64, parent rds.Key) rds.
 	return rds.NewKey(globalAppID, d.ns, kind, stringID, intID, parent)
 }
 
-func (d *dsImpl) Put(key rds.Key, pls rds.PropertyLoadSaver) (rds.Key, error) {
-	return d.data.put(d.ns, key, pls)
+func (d *dsImpl) PutMulti(keys []rds.Key, vals []rds.PropertyLoadSaver, cb rds.PutMultiCB) error {
+	d.data.putMulti(keys, vals, cb)
+	return nil
 }
 
-func (d *dsImpl) PutMulti(keys []rds.Key, plss []rds.PropertyLoadSaver) ([]rds.Key, error) {
-	return d.data.putMulti(d.ns, keys, plss)
+func (d *dsImpl) GetMulti(keys []rds.Key, cb rds.GetMultiCB) error {
+	d.data.getMulti(keys, cb)
+	return nil
 }
 
-func (d *dsImpl) Get(key rds.Key, pls rds.PropertyLoadSaver) error {
-	return d.data.get(d.ns, key, pls)
-}
-
-func (d *dsImpl) GetMulti(keys []rds.Key, plss []rds.PropertyLoadSaver) error {
-	return d.data.getMulti(d.ns, keys, plss)
-}
-
-func (d *dsImpl) Delete(key rds.Key) error {
-	return d.data.del(d.ns, key)
-}
-
-func (d *dsImpl) DeleteMulti(keys []rds.Key) error {
-	return d.data.delMulti(d.ns, keys)
+func (d *dsImpl) DeleteMulti(keys []rds.Key, cb rds.DeleteMultiCB) error {
+	d.data.delMulti(keys, cb)
+	return nil
 }
 
 func (d *dsImpl) NewQuery(kind string) rds.Query {
 	return &queryImpl{ns: d.ns, kind: kind}
 }
 
-func (d *dsImpl) Run(q rds.Query) rds.Iterator {
-	rq := q.(*queryImpl)
-	rq = rq.normalize().checkCorrectness(d.ns, false)
-	return &queryIterImpl{rq}
-}
-
-func (d *dsImpl) GetAll(q rds.Query, dst *[]rds.PropertyMap) ([]rds.Key, error) {
-	// TODO(riannucci): assert that dst is a slice of structs
-	panic("NOT IMPLEMENTED")
-}
-
-func (d *dsImpl) Count(q rds.Query) (int, error) {
-	return count(d.Run(q.KeysOnly()))
+func (d *dsImpl) Run(q rds.Query, cb rds.RunCB) error {
+	return nil
+	/*
+		rq := q.(*queryImpl)
+		rq = rq.normalize().checkCorrectness(d.ns, false)
+		return &queryIterImpl{rq}
+	*/
 }
 
 ////////////////////////////////// txnDsImpl ///////////////////////////////////
@@ -107,51 +92,29 @@ func (d *txnDsImpl) NewKey(kind, stringID string, intID int64, parent rds.Key) r
 	return rds.NewKey(globalAppID, d.ns, kind, stringID, intID, parent)
 }
 
-func (d *txnDsImpl) Put(key rds.Key, pls rds.PropertyLoadSaver) (retKey rds.Key, err error) {
-	err = d.data.run(func() (err error) {
-		retKey, err = d.data.put(d.ns, key, pls)
-		return
-	})
-	return
-}
-
-func (d *txnDsImpl) PutMulti(keys []rds.Key, plss []rds.PropertyLoadSaver) (retKeys []rds.Key, err error) {
-	err = d.data.run(func() (err error) {
-		retKeys, err = d.data.putMulti(d.ns, keys, plss)
-		return
-	})
-	return
-}
-
-func (d *txnDsImpl) Get(key rds.Key, pls rds.PropertyLoadSaver) error {
+func (d *txnDsImpl) PutMulti(keys []rds.Key, vals []rds.PropertyLoadSaver, cb rds.PutMultiCB) error {
 	return d.data.run(func() error {
-		return d.data.get(d.ns, key, pls)
+		d.data.putMulti(keys, vals, cb)
+		return nil
 	})
 }
 
-func (d *txnDsImpl) GetMulti(keys []rds.Key, plss []rds.PropertyLoadSaver) error {
+func (d *txnDsImpl) GetMulti(keys []rds.Key, cb rds.GetMultiCB) error {
 	return d.data.run(func() error {
-		return d.data.getMulti(d.ns, keys, plss)
+		return d.data.getMulti(keys, cb)
 	})
 }
 
-func (d *txnDsImpl) Delete(key rds.Key) error {
+func (d *txnDsImpl) DeleteMulti(keys []rds.Key, cb rds.DeleteMultiCB) error {
 	return d.data.run(func() error {
-		return d.data.del(d.ns, key)
+		return d.data.delMulti(keys, cb)
 	})
 }
 
-func (d *txnDsImpl) DeleteMulti(keys []rds.Key) error {
-	return d.data.run(func() error {
-		return d.data.delMulti(d.ns, keys)
-	})
-}
-
-func (d *txnDsImpl) Run(q rds.Query) rds.Iterator {
+func (d *txnDsImpl) Run(q rds.Query, cb rds.RunCB) error {
 	rq := q.(*queryImpl)
 	if rq.ancestor == nil {
-		rq.err = errors.New("memory: queries in transactions only support ancestor queries")
-		return &queryIterImpl{rq}
+		return errors.New("memory: queries in transactions only support ancestor queries")
 	}
 	panic("NOT IMPLEMENTED")
 }
@@ -162,23 +125,4 @@ func (*txnDsImpl) RunInTransaction(func(c context.Context) error, *rds.Transacti
 
 func (d *txnDsImpl) NewQuery(kind string) rds.Query {
 	return &queryImpl{ns: d.ns, kind: kind}
-}
-
-func (d *txnDsImpl) GetAll(q rds.Query, dst *[]rds.PropertyMap) ([]rds.Key, error) {
-	// TODO(riannucci): assert that dst is a slice of structs
-	panic("NOT IMPLEMENTED")
-}
-
-func (d *txnDsImpl) Count(q rds.Query) (int, error) {
-	return count(d.Run(q.KeysOnly()))
-}
-
-func count(itr rds.Iterator) (ret int, err error) {
-	for _, err = itr.Next(nil); err != nil; _, err = itr.Next(nil) {
-		ret++
-	}
-	if err == rds.ErrQueryDone {
-		err = nil
-	}
-	return
 }

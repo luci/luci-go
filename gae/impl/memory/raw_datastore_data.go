@@ -107,46 +107,14 @@ func (d *dataStoreData) entsKeyLocked(key rds.Key) (*memCollection, rds.Key) {
 	return ents, key
 }
 
-func (d *dataStoreData) put(ns string, key rds.Key, pls rds.PropertyLoadSaver) (rds.Key, error) {
-	keys, errs := d.putMulti(ns, []rds.Key{key}, []rds.PropertyLoadSaver{pls})
-	if errs == nil {
-		return keys[0], nil
-	}
-	return nil, errors.SingleError(errs)
-}
-
-func (d *dataStoreData) putMulti(ns string, keys []rds.Key, plss []rds.PropertyLoadSaver) ([]rds.Key, error) {
-	pmaps, err := putMultiPrelim(ns, keys, plss)
-	if err != nil {
-		return nil, err
-	}
-	return d.putMultiInner(keys, pmaps)
-}
-
-func putMultiPrelim(ns string, keys []rds.Key, plss []rds.PropertyLoadSaver) ([]rds.PropertyMap, error) {
-	err := multiValid(keys, plss, ns, true, false)
-	if err != nil {
-		return nil, err
-	}
-	pmaps := make([]rds.PropertyMap, len(keys))
-	lme := errors.LazyMultiError{Size: len(keys)}
-	for i, pls := range plss {
-		pm, err := pls.Save(false)
-		lme.Assign(i, err)
-		pmaps[i] = pm
-	}
-	return pmaps, lme.Get()
-}
-
-func (d *dataStoreData) putMultiInner(keys []rds.Key, data []rds.PropertyMap) ([]rds.Key, error) {
-	retKeys := make([]rds.Key, len(keys))
-	lme := errors.LazyMultiError{Size: len(keys)}
+func (d *dataStoreData) putMulti(keys []rds.Key, vals []rds.PropertyLoadSaver, cb rds.PutMultiCB) {
 	for i, k := range keys {
 		buf := &bytes.Buffer{}
-		data[i].Write(buf, rds.WithoutContext)
+		pmap := vals[i].(rds.PropertyMap)
+		pmap.Write(buf, rds.WithoutContext)
 		dataBytes := buf.Bytes()
 
-		rKey, err := func() (ret rds.Key, err error) {
+		k, err := func() (ret rds.Key, err error) {
 			d.rwlock.Lock()
 			defer d.rwlock.Unlock()
 
@@ -160,108 +128,82 @@ func (d *dataStoreData) putMultiInner(keys []rds.Key, data []rds.PropertyMap) ([
 					return
 				}
 			}
-			updateIndicies(d.store, ret, oldPM, data[i])
+			updateIndicies(d.store, ret, oldPM, pmap)
 			ents.Set(keyBytes(rds.WithoutContext, ret), dataBytes)
 			return
 		}()
-		lme.Assign(i, err)
-		retKeys[i] = rKey
+		if cb != nil {
+			cb(k, err)
+		}
 	}
-	return retKeys, lme.Get()
 }
 
-func getMultiInner(ns string, keys []rds.Key, plss []rds.PropertyLoadSaver, getColl func() (*memCollection, error)) error {
-	if err := multiValid(keys, plss, ns, false, true); err != nil {
-		return err
-	}
-
-	lme := errors.LazyMultiError{Size: len(keys)}
-
+func getMultiInner(keys []rds.Key, cb rds.GetMultiCB, getColl func() (*memCollection, error)) error {
 	ents, err := getColl()
 	if err != nil {
 		return err
 	}
 	if ents == nil {
-		for i := range keys {
-			lme.Assign(i, rds.ErrNoSuchEntity)
+		for range keys {
+			cb(nil, rds.ErrNoSuchEntity)
 		}
-		return lme.Get()
+		return nil
 	}
 
-	for i, k := range keys {
+	for _, k := range keys {
 		pdata := ents.Get(keyBytes(rds.WithoutContext, k))
 		if pdata == nil {
-			lme.Assign(i, rds.ErrNoSuchEntity)
+			cb(nil, rds.ErrNoSuchEntity)
 			continue
 		}
-
-		got, err := rpmWoCtx(pdata, ns)
-		if err != nil {
-			lme.Assign(i, err)
-			continue
-		}
-
-		lme.Assign(i, plss[i].Load(got))
+		cb(rpmWoCtx(pdata, k.Namespace()))
 	}
-	return lme.Get()
+	return nil
 }
 
-func (d *dataStoreData) get(ns string, key rds.Key, pls rds.PropertyLoadSaver) error {
-	return errors.SingleError(d.getMulti(ns, []rds.Key{key}, []rds.PropertyLoadSaver{pls}))
-}
-
-func (d *dataStoreData) getMulti(ns string, keys []rds.Key, plss []rds.PropertyLoadSaver) error {
-	return getMultiInner(ns, keys, plss, func() (*memCollection, error) {
+func (d *dataStoreData) getMulti(keys []rds.Key, cb rds.GetMultiCB) error {
+	getMultiInner(keys, cb, func() (*memCollection, error) {
 		d.rwlock.RLock()
 		s := d.store.Snapshot()
 		d.rwlock.RUnlock()
 
-		return s.GetCollection("ents:" + ns), nil
+		return s.GetCollection("ents:" + keys[0].Namespace()), nil
 	})
+	return nil
 }
 
-func (d *dataStoreData) del(ns string, key rds.Key) (err error) {
-	return errors.SingleError(d.delMulti(ns, []rds.Key{key}))
-}
-
-func (d *dataStoreData) delMulti(ns string, keys []rds.Key) error {
-	lme := errors.LazyMultiError{Size: len(keys)}
+func (d *dataStoreData) delMulti(keys []rds.Key, cb rds.DeleteMultiCB) {
 	toDel := make([][]byte, 0, len(keys))
-	for i, k := range keys {
-		if !rds.KeyValid(k, ns, false) {
-			lme.Assign(i, rds.ErrInvalidKey)
-			continue
-		}
+	for _, k := range keys {
 		toDel = append(toDel, keyBytes(rds.WithoutContext, k))
 	}
-	err := lme.Get()
-	if err != nil {
-		return err
-	}
+	ns := keys[0].Namespace()
 
 	d.rwlock.Lock()
 	defer d.rwlock.Unlock()
 
 	ents := d.store.GetCollection("ents:" + ns)
-	if ents == nil {
-		return nil
-	}
 
 	for i, k := range keys {
-		incrementLocked(ents, groupMetaKey(k))
-		kb := toDel[i]
-		old := ents.Get(kb)
-		oldPM := rds.PropertyMap(nil)
-		if old != nil {
-			if oldPM, err = rpmWoCtx(old, ns); err != nil {
-				lme.Assign(i, err)
-				continue
+		if ents != nil {
+			incrementLocked(ents, groupMetaKey(k))
+			kb := toDel[i]
+			if old := ents.Get(kb); old != nil {
+				oldPM, err := rpmWoCtx(old, ns)
+				if err != nil {
+					if cb != nil {
+						cb(err)
+					}
+					continue
+				}
+				updateIndicies(d.store, k, oldPM, nil)
+				ents.Delete(kb)
 			}
 		}
-		updateIndicies(d.store, k, oldPM, nil)
-		ents.Delete(kb)
+		if cb != nil {
+			cb(nil)
+		}
 	}
-	return lme.Get()
 }
 
 func (d *dataStoreData) canApplyTxn(obj memContextObj) bool {
@@ -296,13 +238,18 @@ func (d *dataStoreData) applyTxn(c context.Context, obj memContextObj) {
 		if len(muts) == 0 { // read-only
 			continue
 		}
+		// TODO(riannucci): refactor to do just 1 putMulti, and 1 delMulti
 		for _, m := range muts {
 			err := error(nil)
+			k := m.key
 			if m.data == nil {
-				err = d.del(m.key.Namespace(), m.key)
+				d.delMulti([]rds.Key{k},
+					func(e error) { err = e })
 			} else {
-				_, err = d.put(m.key.Namespace(), m.key, m.data)
+				d.putMulti([]rds.Key{m.key}, []rds.PropertyLoadSaver{m.data},
+					func(_ rds.Key, e error) { err = e })
 			}
+			err = errors.SingleError(err)
 			if err != nil {
 				panic(err)
 			}
@@ -412,63 +359,41 @@ func (td *txnDataStoreData) writeMutation(getOnly bool, key rds.Key, data rds.Pr
 	return nil
 }
 
-func (td *txnDataStoreData) put(ns string, key rds.Key, pls rds.PropertyLoadSaver) (rds.Key, error) {
-	keys, errs := td.putMulti(ns, []rds.Key{key}, []rds.PropertyLoadSaver{pls})
-	if errs == nil {
-		return keys[0], nil
-	}
-	return nil, errors.SingleError(errs)
-}
-
-func (td *txnDataStoreData) putMulti(ns string, keys []rds.Key, plss []rds.PropertyLoadSaver) ([]rds.Key, error) {
-	pmaps, err := putMultiPrelim(ns, keys, plss)
-	if err != nil {
-		return nil, err
-	}
-
-	retKeys := make([]rds.Key, len(keys))
-	lme := errors.LazyMultiError{Size: len(keys)}
+func (td *txnDataStoreData) putMulti(keys []rds.Key, vals []rds.PropertyLoadSaver, cb rds.PutMultiCB) {
 	for i, k := range keys {
 		func() {
 			td.parent.Lock()
 			defer td.parent.Unlock()
 			_, k = td.parent.entsKeyLocked(k)
 		}()
-		lme.Assign(i, td.writeMutation(false, k, pmaps[i]))
-		retKeys[i] = k
-	}
-
-	return retKeys, lme.Get()
-}
-
-func (td *txnDataStoreData) get(ns string, key rds.Key, pls rds.PropertyLoadSaver) error {
-	return errors.SingleError(td.getMulti(ns, []rds.Key{key}, []rds.PropertyLoadSaver{pls}))
-}
-
-func (td *txnDataStoreData) getMulti(ns string, keys []rds.Key, plss []rds.PropertyLoadSaver) error {
-	return getMultiInner(ns, keys, plss, func() (*memCollection, error) {
-		lme := errors.LazyMultiError{Size: len(keys)}
-		for i, k := range keys {
-			lme.Assign(i, td.writeMutation(true, k, nil))
+		err := td.writeMutation(false, k, vals[i].(rds.PropertyMap))
+		if cb != nil {
+			cb(k, err)
 		}
-		return td.snap.GetCollection("ents:" + ns), lme.Get()
+	}
+}
+
+func (td *txnDataStoreData) getMulti(keys []rds.Key, cb rds.GetMultiCB) error {
+	return getMultiInner(keys, cb, func() (*memCollection, error) {
+		err := error(nil)
+		for _, key := range keys {
+			err = td.writeMutation(true, key, nil)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return td.snap.GetCollection("ents:" + keys[0].Namespace()), nil
 	})
 }
 
-func (td *txnDataStoreData) del(ns string, key rds.Key) error {
-	return errors.SingleError(td.delMulti(ns, []rds.Key{key}))
-}
-
-func (td *txnDataStoreData) delMulti(ns string, keys []rds.Key) error {
-	lme := errors.LazyMultiError{Size: len(keys)}
-	for i, k := range keys {
-		if !rds.KeyValid(k, ns, false) {
-			lme.Assign(i, rds.ErrInvalidKey)
-		} else {
-			lme.Assign(i, td.writeMutation(false, k, nil))
+func (td *txnDataStoreData) delMulti(keys []rds.Key, cb rds.DeleteMultiCB) error {
+	for _, k := range keys {
+		err := td.writeMutation(false, k, nil)
+		if cb != nil {
+			cb(err)
 		}
 	}
-	return lme.Get()
+	return nil
 }
 
 func keyBytes(ctx rds.KeyContext, key rds.Key) []byte {
@@ -489,31 +414,6 @@ func rpm(data []byte) (rds.PropertyMap, error) {
 	return ret, err
 }
 
-func multiValid(keys []rds.Key, plss []rds.PropertyLoadSaver, ns string, potentialKey, allowSpecial bool) error {
-	vfn := func(k rds.Key) bool {
-		return !rds.KeyIncomplete(k) && rds.KeyValid(k, ns, allowSpecial)
-	}
-	if potentialKey {
-		vfn = func(k rds.Key) bool {
-			// adds an id to k if it's incomplete.
-			if rds.KeyIncomplete(k) {
-				k = rds.NewKey(k.AppID(), k.Namespace(), k.Kind(), "", 1, k.Parent())
-			}
-			return rds.KeyValid(k, ns, allowSpecial)
-		}
-	}
-
-	if keys == nil || plss == nil {
-		return errors.New("gae: key or plss slices were nil")
-	}
-	if len(keys) != len(plss) {
-		return errors.New("gae: key and dst slices have different length")
-	}
-	lme := errors.LazyMultiError{Size: len(keys)}
-	for i, k := range keys {
-		if !vfn(k) {
-			lme.Assign(i, rds.ErrInvalidKey)
-		}
-	}
-	return lme.Get()
+type keyitem interface {
+	Key() rds.Key
 }

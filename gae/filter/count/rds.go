@@ -15,13 +15,8 @@ type RDSCounter struct {
 	NewKey           Entry
 	DecodeKey        Entry
 	NewQuery         Entry
-	Count            Entry
 	RunInTransaction Entry
 	Run              Entry
-	GetAll           Entry
-	Put              Entry
-	Get              Entry
-	Delete           Entry
 	DeleteMulti      Entry
 	GetMulti         Entry
 	PutMulti         Entry
@@ -50,49 +45,24 @@ func (r *rdsCounter) NewQuery(kind string) rds.Query {
 	return r.rds.NewQuery(kind)
 }
 
-func (r *rdsCounter) Run(q rds.Query) rds.Iterator {
-	r.c.Run.up()
-	return r.rds.Run(q)
-}
-
-func (r *rdsCounter) GetAll(q rds.Query, dst *[]rds.PropertyMap) ([]rds.Key, error) {
-	ret, err := r.rds.GetAll(q, dst)
-	return ret, r.c.GetAll.up(err)
-}
-
-func (r *rdsCounter) Count(q rds.Query) (int, error) {
-	ret, err := r.rds.Count(q)
-	return ret, r.c.Count.up(err)
+func (r *rdsCounter) Run(q rds.Query, cb rds.RunCB) error {
+	return r.c.Run.up(r.rds.Run(q, cb))
 }
 
 func (r *rdsCounter) RunInTransaction(f func(context.Context) error, opts *rds.TransactionOptions) error {
 	return r.c.RunInTransaction.up(r.rds.RunInTransaction(f, opts))
 }
 
-func (r *rdsCounter) Put(key rds.Key, src rds.PropertyLoadSaver) (rds.Key, error) {
-	ret, err := r.rds.Put(key, src)
-	return ret, r.c.Put.up(err)
+func (r *rdsCounter) DeleteMulti(keys []rds.Key, cb rds.DeleteMultiCB) error {
+	return r.c.DeleteMulti.up(r.rds.DeleteMulti(keys, cb))
 }
 
-func (r *rdsCounter) Get(key rds.Key, dst rds.PropertyLoadSaver) error {
-	return r.c.Get.up(r.rds.Get(key, dst))
+func (r *rdsCounter) GetMulti(keys []rds.Key, cb rds.GetMultiCB) error {
+	return r.c.GetMulti.up(r.rds.GetMulti(keys, cb))
 }
 
-func (r *rdsCounter) Delete(key rds.Key) error {
-	return r.c.Delete.up(r.rds.Delete(key))
-}
-
-func (r *rdsCounter) DeleteMulti(keys []rds.Key) error {
-	return r.c.DeleteMulti.up(r.rds.DeleteMulti(keys))
-}
-
-func (r *rdsCounter) GetMulti(keys []rds.Key, dst []rds.PropertyLoadSaver) error {
-	return r.c.GetMulti.up(r.rds.GetMulti(keys, dst))
-}
-
-func (r *rdsCounter) PutMulti(keys []rds.Key, src []rds.PropertyLoadSaver) ([]rds.Key, error) {
-	ret, err := r.rds.PutMulti(keys, src)
-	return ret, r.c.PutMulti.up(err)
+func (r *rdsCounter) PutMulti(keys []rds.Key, vals []rds.PropertyLoadSaver, cb rds.PutMultiCB) error {
+	return r.c.PutMulti.up(r.rds.PutMulti(keys, vals, cb))
 }
 
 // FilterRDS installs a counter RawDatastore filter in the context.

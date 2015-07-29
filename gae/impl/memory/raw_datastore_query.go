@@ -238,26 +238,6 @@ type queryImpl struct {
 
 var _ rds.Query = (*queryImpl)(nil)
 
-type queryIterImpl struct {
-	idx *queryImpl
-}
-
-var _ rds.Iterator = (*queryIterImpl)(nil)
-
-func (q *queryIterImpl) Cursor() (rds.Cursor, error) {
-	if q.idx.err != nil {
-		return nil, q.idx.err
-	}
-	return nil, nil
-}
-
-func (q *queryIterImpl) Next(dst rds.PropertyLoadSaver) (rds.Key, error) {
-	if q.idx.err != nil {
-		return nil, q.idx.err
-	}
-	return nil, nil
-}
-
 func (q *queryImpl) normalize() (ret *queryImpl) {
 	// ported from GAE SDK datastore_index.py;Normalize()
 	ret = q.clone()
@@ -392,11 +372,15 @@ func (q *queryImpl) checkCorrectness(ns string, isTxn bool) (ret *queryImpl) {
 					"gae/memory: __key__ filter value must be a Key")
 				return
 			}
-			if !rds.KeyValid(k, ret.ns, false) {
+			if !rds.KeyValid(k, false, globalAppID, q.ns) {
 				// See the comment in queryImpl.Ancestor; basically this check
 				// never happens in the real env because the SDK silently swallows
 				// this condition :/
 				ret.err = rds.ErrInvalidKey
+				return
+			}
+			if k.Namespace() != ns {
+				ret.err = fmt.Errorf("bad namespace: %q (expected %q)", k.Namespace(), ns)
 				return
 			}
 			// __key__ filter app is X but query app is X
@@ -480,13 +464,15 @@ func (q *queryImpl) Ancestor(k rds.Key) rds.Query {
 	if k == nil {
 		// SDK has an explicit nil-check
 		q.err = errors.New("datastore: nil query ancestor")
-	} else if !rds.KeyValid(k, q.ns, false) {
+	} else if !rds.KeyValid(k, false, globalAppID, q.ns) {
 		// technically the SDK implementation does a Weird Thing (tm) if both the
 		// stringID and intID are set on a key; it only serializes the stringID in
 		// the proto. This means that if you set the Ancestor to an invalid key,
 		// you'll never actually hear about it. Instead of doing that insanity, we
 		// just swap to an error here.
 		q.err = rds.ErrInvalidKey
+	} else if k.Namespace() != q.ns {
+		q.err = fmt.Errorf("bad namespace: %q (expected %q)", k.Namespace(), q.ns)
 	}
 	return q
 }

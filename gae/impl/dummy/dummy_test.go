@@ -33,13 +33,24 @@ func TestContextAccess(t *testing.T) {
 			So(infoS.Get(c), ShouldBeNil)
 		})
 
+		// needed for everything else
+		c = infoS.Set(c, Info())
+
+		Convey("Info", func() {
+			So(infoS.Get(c), ShouldNotBeNil)
+			So(func() {
+				defer p()
+				infoS.Get(c).Datacenter()
+			}, ShouldPanicWith, "dummy: method Info.Datacenter is not implemented")
+		})
+
 		Convey("RawDatastore", func() {
 			c = rdsS.Set(c, RawDatastore())
 			So(rdsS.Get(c), ShouldNotBeNil)
 			So(func() {
 				defer p()
-				rdsS.Get(c).NewKey("", "", 1, nil)
-			}, ShouldPanicWith, "dummy: method RawDatastore.NewKey is not implemented")
+				rdsS.Get(c).DecodeKey("wut")
+			}, ShouldPanicWith, "dummy: method RawDatastore.DecodeKey is not implemented")
 		})
 
 		Convey("Memcache", func() {
@@ -60,13 +71,5 @@ func TestContextAccess(t *testing.T) {
 			}, ShouldPanicWith, "dummy: method TaskQueue.Purge is not implemented")
 		})
 
-		Convey("Info", func() {
-			c = infoS.Set(c, Info())
-			So(infoS.Get(c), ShouldNotBeNil)
-			So(func() {
-				defer p()
-				infoS.Get(c).Datacenter()
-			}, ShouldPanicWith, "dummy: method Info.Datacenter is not implemented")
-		})
 	})
 }

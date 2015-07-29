@@ -5,15 +5,20 @@
 package memory
 
 import (
-	"golang.org/x/net/context"
+	"fmt"
+	"regexp"
 
 	"github.com/luci/gae/impl/dummy"
 	"github.com/luci/gae/service/info"
+	"golang.org/x/net/context"
 )
 
 type giContextKeyType int
 
 var giContextKey giContextKeyType
+
+// validNamespace matches valid namespace names.
+var validNamespace = regexp.MustCompile(`^[0-9A-Za-z._-]{0,100}$`)
 
 func curGID(c context.Context) *globalInfoData {
 	return c.Value(giContextKey).(*globalInfoData)
@@ -45,7 +50,14 @@ type giImpl struct {
 
 var _ = info.Interface((*giImpl)(nil))
 
+func (gi *giImpl) GetNamespace() string {
+	return gi.namespace
+}
+
 func (gi *giImpl) Namespace(ns string) (ret context.Context, err error) {
+	if !validNamespace.MatchString(ns) {
+		return nil, fmt.Errorf("appengine: namespace %q does not match /%s/", ns, validNamespace)
+	}
 	return context.WithValue(gi.c, giContextKey, &globalInfoData{ns}), nil
 }
 

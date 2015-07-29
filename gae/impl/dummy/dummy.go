@@ -64,25 +64,17 @@ func ni() error {
 
 type rds struct{}
 
-func (rds) NewKey(string, string, int64, rawdatastore.Key) rawdatastore.Key              { panic(ni()) }
-func (rds) DecodeKey(string) (rawdatastore.Key, error)                                   { panic(ni()) }
-func (rds) KeyFromTokens(a, n string, t []rawdatastore.KeyTok) (rawdatastore.Key, error) { panic(ni()) }
-func (rds) Put(rawdatastore.Key, rawdatastore.PropertyLoadSaver) (rawdatastore.Key, error) {
+func (rds) NewKey(kind string, sid string, iid int64, par rawdatastore.Key) rawdatastore.Key {
+	return rawdatastore.NewKey("dummy~appid", "", kind, sid, iid, par)
+}
+func (rds) DecodeKey(string) (rawdatastore.Key, error) { panic(ni()) }
+func (rds) PutMulti([]rawdatastore.Key, []rawdatastore.PropertyLoadSaver, rawdatastore.PutMultiCB) error {
 	panic(ni())
 }
-func (rds) Get(rawdatastore.Key, rawdatastore.PropertyLoadSaver) error { panic(ni()) }
-func (rds) Delete(rawdatastore.Key) error                              { panic(ni()) }
-func (rds) PutMulti([]rawdatastore.Key, []rawdatastore.PropertyLoadSaver) ([]rawdatastore.Key, error) {
-	panic(ni())
-}
-func (rds) GetMulti([]rawdatastore.Key, []rawdatastore.PropertyLoadSaver) error { panic(ni()) }
-func (rds) DeleteMulti([]rawdatastore.Key) error                                { panic(ni()) }
-func (rds) NewQuery(string) rawdatastore.Query                                  { panic(ni()) }
-func (rds) Run(rawdatastore.Query) rawdatastore.Iterator                        { panic(ni()) }
-func (rds) GetAll(rawdatastore.Query, *[]rawdatastore.PropertyMap) ([]rawdatastore.Key, error) {
-	panic(ni())
-}
-func (rds) Count(rawdatastore.Query) (int, error) { panic(ni()) }
+func (rds) GetMulti([]rawdatastore.Key, rawdatastore.GetMultiCB) error       { panic(ni()) }
+func (rds) DeleteMulti([]rawdatastore.Key, rawdatastore.DeleteMultiCB) error { panic(ni()) }
+func (rds) NewQuery(string) rawdatastore.Query                               { panic(ni()) }
+func (rds) Run(rawdatastore.Query, rawdatastore.RunCB) error                 { panic(ni()) }
 func (rds) RunInTransaction(func(context.Context) error, *rawdatastore.TransactionOptions) error {
 	panic(ni())
 }
@@ -147,7 +139,8 @@ func TaskQueue() taskqueue.Interface { return dummyTQInst }
 type i struct{}
 
 func (i) AccessToken(scopes ...string) (token string, expiry time.Time, err error) { panic(ni()) }
-func (i) AppID() string                                                            { panic(ni()) }
+func (i) AppID() string                                                            { return "dummy~appid" }
+func (i) GetNamespace() string                                                     { return "dummy-namespace" }
 func (i) ModuleHostname(module, version, instance string) (string, error)          { panic(ni()) }
 func (i) ModuleName() string                                                       { panic(ni()) }
 func (i) DefaultVersionHostname() string                                           { panic(ni()) }

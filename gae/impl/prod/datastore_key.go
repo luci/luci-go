@@ -22,25 +22,6 @@ func dsR2F(k *datastore.Key) rds.Key {
 	return dsKeyImpl{k}
 }
 
-// dsR2FErr (DS real-to-fake with error) acts like dsR2F, but is for wrapping function
-// invocations which return (*Key, error). e.g.
-//
-//   return dsR2FErr(datastore.Put(...))
-//
-// instead of:
-//
-//   k, err := datastore.Put(...)
-//   if err != nil {
-//     return nil, err
-//   }
-//   return dsR2F(k), nil
-func dsR2FErr(k *datastore.Key, err error) (rds.Key, error) {
-	if err != nil {
-		return nil, err
-	}
-	return dsR2F(k), nil
-}
-
 // dsF2R (DS fake-to-real) converts a DSKey back to an SDK *Key.
 func dsF2R(k rds.Key) *datastore.Key {
 	if rkey, ok := k.(dsKeyImpl); ok {
@@ -57,16 +38,6 @@ func dsF2R(k rds.Key) *datastore.Key {
 		panic(err)
 	}
 	return rkey
-}
-
-// dsMR2F (DS multi-real-to-fake) converts a slice of SDK keys to their wrapped
-// types.
-func dsMR2F(ks []*datastore.Key) []rds.Key {
-	ret := make([]rds.Key, len(ks))
-	for i, k := range ks {
-		ret[i] = dsR2F(k)
-	}
-	return ret
 }
 
 // dsMF2R (DS multi-fake-to-fake) converts a slice of wrapped keys to SDK keys.

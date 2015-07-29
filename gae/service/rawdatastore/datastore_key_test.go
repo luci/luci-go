@@ -142,8 +142,7 @@ func TestBadKeyEncode(t *testing.T) {
 		})
 
 		Convey("invalid", func() {
-			So(KeyValid(mkKey("aid", "ns", "hat", "face", "__kind__", 1), "ns", true), ShouldBeTrue)
-			So(KeyValid(mkKey("aid", "ns", "hat", "face", "kind", 1), "wat", false), ShouldBeFalse)
+			So(KeyValid(mkKey("aid", "ns", "hat", "face", "__kind__", 1), true, "aid", "ns"), ShouldBeTrue)
 
 			bads := []Key{
 				nil,
@@ -160,7 +159,7 @@ func TestBadKeyEncode(t *testing.T) {
 					s = k.String()
 				}
 				Convey(s, func() {
-					So(KeyValid(k, "ns", false), ShouldBeFalse)
+					So(KeyValid(k, false, "aid", "ns"), ShouldBeFalse)
 				})
 			}
 		})
