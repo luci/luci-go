@@ -117,7 +117,7 @@ func TestBuffer(t *testing.T) {
 			So(bundle[0].InsertID, ShouldEqual, "a")
 
 			// Read the second bundle.
-			for _ = range entries {
+			for range entries {
 				<-ackC
 			}
 			bundle = <-entriesC
@@ -159,6 +159,8 @@ func TestBuffer(t *testing.T) {
 
 	Convey(`A Buffer instance configured to retry forever will stop if aborted.`, t, func() {
 		entriesC := make(chan []*Entry)
+		defer close(entriesC)
+
 		client := &testClient{
 			callback: func(entries []*Entry) error {
 				entriesC <- entries
@@ -192,7 +194,7 @@ func TestBuffer(t *testing.T) {
 		<-entriesC
 		go func() {
 			// Consume any other attempts.
-			for _ = range entriesC {
+			for range entriesC {
 			}
 		}()
 
