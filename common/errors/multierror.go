@@ -88,9 +88,11 @@ type LazyMultiError struct {
 // Assign semantically assigns the error to the given index in the MultiError.
 // If the error is nil, no action is taken. Otherwise the MultiError is
 // allocated to its full size (if not already), and the error assigned into it.
-func (e *LazyMultiError) Assign(i int, err error) {
+//
+// It returns true iff err != nil.
+func (e *LazyMultiError) Assign(i int, err error) bool {
 	if err == nil {
-		return
+		return false
 	}
 	e.Lock()
 	defer e.Unlock()
@@ -98,6 +100,7 @@ func (e *LazyMultiError) Assign(i int, err error) {
 		e.me = make(MultiError, e.Size)
 	}
 	e.me[i] = err
+	return true
 }
 
 // Get returns the MultiError, or nil, if no non-nil error was Assign'd.
