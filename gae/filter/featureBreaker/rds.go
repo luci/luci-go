@@ -7,16 +7,16 @@ package featureBreaker
 import (
 	"golang.org/x/net/context"
 
-	rds "github.com/luci/gae/service/rawdatastore"
+	ds "github.com/luci/gae/service/datastore"
 )
 
-type rdsState struct {
+type dsState struct {
 	*state
 
-	rds.Interface
+	ds.Interface
 }
 
-func (r *rdsState) DecodeKey(encoded string) (ret rds.Key, err error) {
+func (r *dsState) DecodeKey(encoded string) (ret ds.Key, err error) {
 	err = r.run(func() (err error) {
 		ret, err = r.Interface.DecodeKey(encoded)
 		return
@@ -24,7 +24,7 @@ func (r *rdsState) DecodeKey(encoded string) (ret rds.Key, err error) {
 	return
 }
 
-func (r *rdsState) RunInTransaction(f func(c context.Context) error, opts *rds.TransactionOptions) error {
+func (r *dsState) RunInTransaction(f func(c context.Context) error, opts *ds.TransactionOptions) error {
 	return r.run(func() error {
 		return r.Interface.RunInTransaction(f, opts)
 	})
@@ -33,28 +33,28 @@ func (r *rdsState) RunInTransaction(f func(c context.Context) error, opts *rds.T
 // TODO(riannucci): Allow the user to specify a multierror which will propagate
 // to the callback correctly.
 
-func (r *rdsState) DeleteMulti(keys []rds.Key, cb rds.DeleteMultiCB) error {
+func (r *dsState) DeleteMulti(keys []ds.Key, cb ds.DeleteMultiCB) error {
 	return r.run(func() error {
 		return r.Interface.DeleteMulti(keys, cb)
 	})
 }
 
-func (r *rdsState) GetMulti(keys []rds.Key, cb rds.GetMultiCB) error {
+func (r *dsState) GetMulti(keys []ds.Key, cb ds.GetMultiCB) error {
 	return r.run(func() error {
 		return r.Interface.GetMulti(keys, cb)
 	})
 }
 
-func (r *rdsState) PutMulti(keys []rds.Key, vals []rds.PropertyLoadSaver, cb rds.PutMultiCB) error {
+func (r *dsState) PutMulti(keys []ds.Key, vals []ds.PropertyLoadSaver, cb ds.PutMultiCB) error {
 	return r.run(func() (err error) {
 		return r.Interface.PutMulti(keys, vals, cb)
 	})
 }
 
-// FilterRDS installs a counter RawDatastore filter in the context.
+// FilterRDS installs a counter datastore filter in the context.
 func FilterRDS(c context.Context, defaultError error) (context.Context, FeatureBreaker) {
 	state := newState(defaultError)
-	return rds.AddFilters(c, func(ic context.Context, RawDatastore rds.Interface) rds.Interface {
-		return &rdsState{state, RawDatastore}
+	return ds.AddFilters(c, func(ic context.Context, datastore ds.Interface) ds.Interface {
+		return &dsState{state, datastore}
 	}), state
 }

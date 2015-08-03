@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/memcache"
-	"github.com/luci/gae/service/rawdatastore"
 	"github.com/luci/gae/service/taskqueue"
 	"golang.org/x/net/context"
 )
@@ -23,7 +23,7 @@ const niFmtStr = "dummy: method %s.%s is not implemented"
 //
 // It walks the stack to find out what interface and method it's being
 // called from. For example, it might return a message which looks like:
-//   dummy: method RawDatastore.Get is not implemented
+//   dummy: method Datastore.Get is not implemented
 //
 // This allows the various dummy objects below to have clear boilerplate which
 // avoids copy+paste errors (such as if each one of them filled in the template
@@ -43,8 +43,8 @@ func ni() error {
 			parts := strings.Split(n, ".")
 			if len(parts) > 2 {
 				switch parts[len(parts)-2] {
-				case "rds":
-					iface = "RawDatastore"
+				case "ds":
+					iface = "Datastore"
 				case "mc":
 					iface = "Memcache"
 				case "tq":
@@ -60,31 +60,31 @@ func ni() error {
 	return fmt.Errorf(niFmtStr, iface, funcName)
 }
 
-/////////////////////////////////// rds ////////////////////////////////////
+/////////////////////////////////// ds ////////////////////////////////////
 
-type rds struct{}
+type ds struct{}
 
-func (rds) NewKey(kind string, sid string, iid int64, par rawdatastore.Key) rawdatastore.Key {
-	return rawdatastore.NewKey("dummy~appid", "", kind, sid, iid, par)
+func (ds) NewKey(kind string, sid string, iid int64, par datastore.Key) datastore.Key {
+	return datastore.NewKey("dummy~appid", "", kind, sid, iid, par)
 }
-func (rds) DecodeKey(string) (rawdatastore.Key, error) { panic(ni()) }
-func (rds) PutMulti([]rawdatastore.Key, []rawdatastore.PropertyLoadSaver, rawdatastore.PutMultiCB) error {
+func (ds) DecodeKey(string) (datastore.Key, error) { panic(ni()) }
+func (ds) PutMulti([]datastore.Key, []datastore.PropertyLoadSaver, datastore.PutMultiCB) error {
 	panic(ni())
 }
-func (rds) GetMulti([]rawdatastore.Key, rawdatastore.GetMultiCB) error       { panic(ni()) }
-func (rds) DeleteMulti([]rawdatastore.Key, rawdatastore.DeleteMultiCB) error { panic(ni()) }
-func (rds) NewQuery(string) rawdatastore.Query                               { panic(ni()) }
-func (rds) Run(rawdatastore.Query, rawdatastore.RunCB) error                 { panic(ni()) }
-func (rds) RunInTransaction(func(context.Context) error, *rawdatastore.TransactionOptions) error {
+func (ds) GetMulti([]datastore.Key, datastore.GetMultiCB) error       { panic(ni()) }
+func (ds) DeleteMulti([]datastore.Key, datastore.DeleteMultiCB) error { panic(ni()) }
+func (ds) NewQuery(string) datastore.Query                            { panic(ni()) }
+func (ds) Run(datastore.Query, datastore.RunCB) error                 { panic(ni()) }
+func (ds) RunInTransaction(func(context.Context) error, *datastore.TransactionOptions) error {
 	panic(ni())
 }
 
-var dummyRDSInst = rds{}
+var dummyDSInst = ds{}
 
-// RawDatastore returns a dummy rawdatastore.Interface implementation suitable
+// Datastore returns a dummy datastore.Interface implementation suitable
 // for embedding. Every method panics with a message containing the name of the
 // method which was unimplemented.
-func RawDatastore() rawdatastore.Interface { return dummyRDSInst }
+func Datastore() datastore.Interface { return dummyDSInst }
 
 /////////////////////////////////// mc ////////////////////////////////////
 

@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	rdsS "github.com/luci/gae/service/rawdatastore"
+	dsS "github.com/luci/gae/service/datastore"
 	tqS "github.com/luci/gae/service/taskqueue"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -230,7 +230,7 @@ func TestTaskQueue(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("can view regular tasks", func() {
-				rdsS.Get(c).RunInTransaction(func(c context.Context) error {
+				dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					tq := tqS.Get(c).(interface {
 						tqS.Testable
 						tqS.Interface
@@ -246,7 +246,7 @@ func TestTaskQueue(t *testing.T) {
 			Convey("can add a new task", func() {
 				tEnQ3 := (*tqS.Task)(nil)
 
-				rdsS.Get(c).RunInTransaction(func(c context.Context) error {
+				dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					tq := tqS.Get(c).(interface {
 						tqS.Testable
 						tqS.Interface
@@ -285,7 +285,7 @@ func TestTaskQueue(t *testing.T) {
 					tqS.Interface
 				}(nil)
 
-				rdsS.Get(c).RunInTransaction(func(c context.Context) error {
+				dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					ttq = tqS.Get(c).(interface {
 						tqS.Testable
 						tqS.Interface
@@ -319,7 +319,7 @@ func TestTaskQueue(t *testing.T) {
 			})
 
 			Convey("you can AddMulti as well", func() {
-				rdsS.Get(c).RunInTransaction(func(c context.Context) error {
+				dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					tq := tqS.Get(c).(interface {
 						tqS.Testable
 						tqS.Interface
@@ -335,7 +335,7 @@ func TestTaskQueue(t *testing.T) {
 			})
 
 			Convey("unless you add too many things", func() {
-				rdsS.Get(c).RunInTransaction(func(c context.Context) error {
+				dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					for i := 0; i < 5; i++ {
 						_, err = tqS.Get(c).Add(t, "")
 						So(err, ShouldBeNil)
@@ -347,7 +347,7 @@ func TestTaskQueue(t *testing.T) {
 			})
 
 			Convey("unless you Add to a bad queue", func() {
-				rdsS.Get(c).RunInTransaction(func(c context.Context) error {
+				dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					_, err = tqS.Get(c).Add(t, "meat")
 					So(err.Error(), ShouldContainSubstring, "UNKNOWN_QUEUE")
 
@@ -365,7 +365,7 @@ func TestTaskQueue(t *testing.T) {
 				err := error(nil)
 				func() {
 					defer func() { err = recover().(error) }()
-					rdsS.Get(c).RunInTransaction(func(c context.Context) error {
+					dsS.Get(c).RunInTransaction(func(c context.Context) error {
 						tqS.Get(c).Delete(t, "")
 						return nil
 					}, nil)
@@ -374,7 +374,7 @@ func TestTaskQueue(t *testing.T) {
 			})
 
 			Convey("adding a new task only happens if we don't errout", func() {
-				rdsS.Get(c).RunInTransaction(func(c context.Context) error {
+				dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					t3 := &tqS.Task{Path: "/sandwitch/victory"}
 					_, err = tqS.Get(c).Add(t3, "")
 					So(err, ShouldBeNil)
@@ -389,7 +389,7 @@ func TestTaskQueue(t *testing.T) {
 			Convey("likewise, a panic doesn't schedule anything", func() {
 				func() {
 					defer func() { recover() }()
-					rdsS.Get(c).RunInTransaction(func(c context.Context) error {
+					dsS.Get(c).RunInTransaction(func(c context.Context) error {
 						tq := tqS.Get(c).(interface {
 							tqS.Testable
 							tqS.Interface

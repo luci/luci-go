@@ -6,35 +6,35 @@ package prod
 
 import (
 	bs "github.com/luci/gae/service/blobstore"
-	rds "github.com/luci/gae/service/rawdatastore"
+	ds "github.com/luci/gae/service/datastore"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 )
 
 type typeFilter struct {
-	pm rds.PropertyMap
+	pm ds.PropertyMap
 }
 
 var _ datastore.PropertyLoadSaver = &typeFilter{}
 
 func (tf *typeFilter) Load(props []datastore.Property) error {
-	tf.pm = make(rds.PropertyMap, len(props))
+	tf.pm = make(ds.PropertyMap, len(props))
 	for _, p := range props {
 		val := p.Value
 		switch x := val.(type) {
 		case datastore.ByteString:
-			val = rds.ByteString(x)
+			val = ds.ByteString(x)
 		case *datastore.Key:
 			val = dsR2F(x)
 		case appengine.BlobKey:
 			val = bs.Key(x)
 		case appengine.GeoPoint:
-			val = rds.GeoPoint(x)
+			val = ds.GeoPoint(x)
 		}
-		prop := rds.Property{}
-		is := rds.ShouldIndex
+		prop := ds.Property{}
+		is := ds.ShouldIndex
 		if p.NoIndex {
-			is = rds.NoIndex
+			is = ds.NoIndex
 		}
 		if err := prop.SetValue(val, is); err != nil {
 			return err
@@ -55,16 +55,16 @@ func (tf *typeFilter) Save() ([]datastore.Property, error) {
 			toAdd := datastore.Property{
 				Name:     name,
 				Multiple: multiple,
-				NoIndex:  prop.IndexSetting() == rds.NoIndex,
+				NoIndex:  prop.IndexSetting() == ds.NoIndex,
 			}
 			switch x := prop.Value().(type) {
-			case rds.ByteString:
+			case ds.ByteString:
 				toAdd.Value = datastore.ByteString(x)
-			case rds.Key:
+			case ds.Key:
 				toAdd.Value = dsF2R(x)
 			case bs.Key:
 				toAdd.Value = appengine.BlobKey(x)
-			case rds.GeoPoint:
+			case ds.GeoPoint:
 				toAdd.Value = appengine.GeoPoint(x)
 			default:
 				toAdd.Value = x

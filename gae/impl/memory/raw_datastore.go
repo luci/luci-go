@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	rds "github.com/luci/gae/service/rawdatastore"
+	ds "github.com/luci/gae/service/datastore"
 )
 
 //////////////////////////////////// public ////////////////////////////////////
@@ -17,7 +17,7 @@ import (
 // useRDS adds a gae.Datastore implementation to context, accessible
 // by gae.GetDS(c)
 func useRDS(c context.Context) context.Context {
-	return rds.SetFactory(c, func(ic context.Context) rds.Interface {
+	return ds.SetFactory(c, func(ic context.Context) ds.Interface {
 		dsd := cur(ic).Get(memContextDSIdx)
 
 		ns := curGID(ic).namespace
@@ -37,36 +37,36 @@ type dsImpl struct {
 	c    context.Context
 }
 
-var _ rds.Interface = (*dsImpl)(nil)
+var _ ds.Interface = (*dsImpl)(nil)
 
-func (d *dsImpl) DecodeKey(encoded string) (rds.Key, error) {
-	return rds.NewKeyFromEncoded(encoded)
+func (d *dsImpl) DecodeKey(encoded string) (ds.Key, error) {
+	return ds.NewKeyFromEncoded(encoded)
 }
 
-func (d *dsImpl) NewKey(kind, stringID string, intID int64, parent rds.Key) rds.Key {
-	return rds.NewKey(globalAppID, d.ns, kind, stringID, intID, parent)
+func (d *dsImpl) NewKey(kind, stringID string, intID int64, parent ds.Key) ds.Key {
+	return ds.NewKey(globalAppID, d.ns, kind, stringID, intID, parent)
 }
 
-func (d *dsImpl) PutMulti(keys []rds.Key, vals []rds.PropertyLoadSaver, cb rds.PutMultiCB) error {
+func (d *dsImpl) PutMulti(keys []ds.Key, vals []ds.PropertyLoadSaver, cb ds.PutMultiCB) error {
 	d.data.putMulti(keys, vals, cb)
 	return nil
 }
 
-func (d *dsImpl) GetMulti(keys []rds.Key, cb rds.GetMultiCB) error {
+func (d *dsImpl) GetMulti(keys []ds.Key, cb ds.GetMultiCB) error {
 	d.data.getMulti(keys, cb)
 	return nil
 }
 
-func (d *dsImpl) DeleteMulti(keys []rds.Key, cb rds.DeleteMultiCB) error {
+func (d *dsImpl) DeleteMulti(keys []ds.Key, cb ds.DeleteMultiCB) error {
 	d.data.delMulti(keys, cb)
 	return nil
 }
 
-func (d *dsImpl) NewQuery(kind string) rds.Query {
+func (d *dsImpl) NewQuery(kind string) ds.Query {
 	return &queryImpl{ns: d.ns, kind: kind}
 }
 
-func (d *dsImpl) Run(q rds.Query, cb rds.RunCB) error {
+func (d *dsImpl) Run(q ds.Query, cb ds.RunCB) error {
 	return nil
 	/*
 		rq := q.(*queryImpl)
@@ -82,36 +82,36 @@ type txnDsImpl struct {
 	ns   string
 }
 
-var _ rds.Interface = (*txnDsImpl)(nil)
+var _ ds.Interface = (*txnDsImpl)(nil)
 
-func (d *txnDsImpl) DecodeKey(encoded string) (rds.Key, error) {
-	return rds.NewKeyFromEncoded(encoded)
+func (d *txnDsImpl) DecodeKey(encoded string) (ds.Key, error) {
+	return ds.NewKeyFromEncoded(encoded)
 }
 
-func (d *txnDsImpl) NewKey(kind, stringID string, intID int64, parent rds.Key) rds.Key {
-	return rds.NewKey(globalAppID, d.ns, kind, stringID, intID, parent)
+func (d *txnDsImpl) NewKey(kind, stringID string, intID int64, parent ds.Key) ds.Key {
+	return ds.NewKey(globalAppID, d.ns, kind, stringID, intID, parent)
 }
 
-func (d *txnDsImpl) PutMulti(keys []rds.Key, vals []rds.PropertyLoadSaver, cb rds.PutMultiCB) error {
+func (d *txnDsImpl) PutMulti(keys []ds.Key, vals []ds.PropertyLoadSaver, cb ds.PutMultiCB) error {
 	return d.data.run(func() error {
 		d.data.putMulti(keys, vals, cb)
 		return nil
 	})
 }
 
-func (d *txnDsImpl) GetMulti(keys []rds.Key, cb rds.GetMultiCB) error {
+func (d *txnDsImpl) GetMulti(keys []ds.Key, cb ds.GetMultiCB) error {
 	return d.data.run(func() error {
 		return d.data.getMulti(keys, cb)
 	})
 }
 
-func (d *txnDsImpl) DeleteMulti(keys []rds.Key, cb rds.DeleteMultiCB) error {
+func (d *txnDsImpl) DeleteMulti(keys []ds.Key, cb ds.DeleteMultiCB) error {
 	return d.data.run(func() error {
 		return d.data.delMulti(keys, cb)
 	})
 }
 
-func (d *txnDsImpl) Run(q rds.Query, cb rds.RunCB) error {
+func (d *txnDsImpl) Run(q ds.Query, cb ds.RunCB) error {
 	rq := q.(*queryImpl)
 	if rq.ancestor == nil {
 		return errors.New("memory: queries in transactions only support ancestor queries")
@@ -119,10 +119,10 @@ func (d *txnDsImpl) Run(q rds.Query, cb rds.RunCB) error {
 	panic("NOT IMPLEMENTED")
 }
 
-func (*txnDsImpl) RunInTransaction(func(c context.Context) error, *rds.TransactionOptions) error {
+func (*txnDsImpl) RunInTransaction(func(c context.Context) error, *ds.TransactionOptions) error {
 	return errors.New("datastore: nested transactions are not supported")
 }
 
-func (d *txnDsImpl) NewQuery(kind string) rds.Query {
+func (d *txnDsImpl) NewQuery(kind string) ds.Query {
 	return &queryImpl{ns: d.ns, kind: kind}
 }

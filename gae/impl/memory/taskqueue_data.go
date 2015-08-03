@@ -13,7 +13,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	rds "github.com/luci/gae/service/rawdatastore"
+	ds "github.com/luci/gae/service/datastore"
 	tq "github.com/luci/gae/service/taskqueue"
 	"github.com/luci/luci-go/common/clock"
 )
@@ -56,7 +56,7 @@ func (t *taskQueueData) applyTxn(c context.Context, obj memContextObj) {
 	}
 	txn.anony = nil
 }
-func (t *taskQueueData) mkTxn(*rds.TransactionOptions) memContextObj {
+func (t *taskQueueData) mkTxn(*ds.TransactionOptions) memContextObj {
 	return &txnTaskQueueData{
 		parent: t,
 		anony:  tq.AnonymousQueueData{},
@@ -190,9 +190,9 @@ var (
 	_ = tq.Testable((*txnTaskQueueData)(nil))
 )
 
-func (t *txnTaskQueueData) canApplyTxn(obj memContextObj) bool          { return false }
-func (t *txnTaskQueueData) applyTxn(context.Context, memContextObj)     { panic("impossible") }
-func (t *txnTaskQueueData) mkTxn(*rds.TransactionOptions) memContextObj { panic("impossible") }
+func (t *txnTaskQueueData) canApplyTxn(obj memContextObj) bool         { return false }
+func (t *txnTaskQueueData) applyTxn(context.Context, memContextObj)    { panic("impossible") }
+func (t *txnTaskQueueData) mkTxn(*ds.TransactionOptions) memContextObj { panic("impossible") }
 
 func (t *txnTaskQueueData) endTxn() {
 	if atomic.LoadInt32(&t.closed) == 1 {

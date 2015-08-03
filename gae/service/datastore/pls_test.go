@@ -4,7 +4,7 @@
 
 // adapted from github.com/golang/appengine/datastore
 
-package rawdatastore
+package datastore
 
 import (
 	"bytes"

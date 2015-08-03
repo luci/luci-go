@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	rds "github.com/luci/gae/service/rawdatastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/cmpbin"
 )
 
@@ -34,20 +34,20 @@ func indx(kind string, orders ...string) *qIndex {
 }
 
 var (
-	prop   = rds.MkProperty
-	propNI = rds.MkPropertyNI
+	prop   = ds.MkProperty
+	propNI = ds.MkPropertyNI
 )
 
-func key(kind string, id interface{}, parent ...rds.Key) rds.Key {
-	p := rds.Key(nil)
+func key(kind string, id interface{}, parent ...ds.Key) ds.Key {
+	p := ds.Key(nil)
 	if len(parent) > 0 {
 		p = parent[0]
 	}
 	switch x := id.(type) {
 	case string:
-		return rds.NewKey(globalAppID, "ns", kind, x, 0, p)
+		return ds.NewKey(globalAppID, "ns", kind, x, 0, p)
 	case int:
-		return rds.NewKey(globalAppID, "ns", kind, "", int64(x), p)
+		return ds.NewKey(globalAppID, "ns", kind, "", int64(x), p)
 	default:
 		panic(fmt.Errorf("what the %T: %v", id, id))
 	}
@@ -71,16 +71,16 @@ func cat(bytethings ...interface{}) []byte {
 			cmpbin.WriteFloat64(buf, x)
 		case byte:
 			buf.WriteByte(x)
-		case rds.PropertyType:
+		case ds.PropertyType:
 			buf.WriteByte(byte(x))
 		case string:
 			cmpbin.WriteString(buf, x)
 		case []byte:
 			buf.Write(x)
 		case time.Time:
-			rds.WriteTime(buf, x)
-		case rds.Key:
-			rds.WriteKey(buf, rds.WithoutContext, x)
+			ds.WriteTime(buf, x)
+		case ds.Key:
+			ds.WriteKey(buf, ds.WithoutContext, x)
 		case *qIndex:
 			x.WriteBinary(buf)
 		default:

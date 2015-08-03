@@ -7,11 +7,11 @@ package count
 import (
 	"golang.org/x/net/context"
 
-	rds "github.com/luci/gae/service/rawdatastore"
+	ds "github.com/luci/gae/service/datastore"
 )
 
-// RDSCounter is the counter object for the RawDatastore service.
-type RDSCounter struct {
+// DSCounter is the counter object for the datastore service.
+type DSCounter struct {
 	NewKey           Entry
 	DecodeKey        Entry
 	NewQuery         Entry
@@ -22,53 +22,53 @@ type RDSCounter struct {
 	PutMulti         Entry
 }
 
-type rdsCounter struct {
-	c *RDSCounter
+type dsCounter struct {
+	c *DSCounter
 
-	rds rds.Interface
+	ds ds.Interface
 }
 
-var _ rds.Interface = (*rdsCounter)(nil)
+var _ ds.Interface = (*dsCounter)(nil)
 
-func (r *rdsCounter) NewKey(kind, stringID string, intID int64, parent rds.Key) rds.Key {
+func (r *dsCounter) NewKey(kind, stringID string, intID int64, parent ds.Key) ds.Key {
 	r.c.NewKey.up()
-	return r.rds.NewKey(kind, stringID, intID, parent)
+	return r.ds.NewKey(kind, stringID, intID, parent)
 }
 
-func (r *rdsCounter) DecodeKey(encoded string) (rds.Key, error) {
-	ret, err := r.rds.DecodeKey(encoded)
+func (r *dsCounter) DecodeKey(encoded string) (ds.Key, error) {
+	ret, err := r.ds.DecodeKey(encoded)
 	return ret, r.c.DecodeKey.up(err)
 }
 
-func (r *rdsCounter) NewQuery(kind string) rds.Query {
+func (r *dsCounter) NewQuery(kind string) ds.Query {
 	r.c.NewQuery.up()
-	return r.rds.NewQuery(kind)
+	return r.ds.NewQuery(kind)
 }
 
-func (r *rdsCounter) Run(q rds.Query, cb rds.RunCB) error {
-	return r.c.Run.up(r.rds.Run(q, cb))
+func (r *dsCounter) Run(q ds.Query, cb ds.RunCB) error {
+	return r.c.Run.up(r.ds.Run(q, cb))
 }
 
-func (r *rdsCounter) RunInTransaction(f func(context.Context) error, opts *rds.TransactionOptions) error {
-	return r.c.RunInTransaction.up(r.rds.RunInTransaction(f, opts))
+func (r *dsCounter) RunInTransaction(f func(context.Context) error, opts *ds.TransactionOptions) error {
+	return r.c.RunInTransaction.up(r.ds.RunInTransaction(f, opts))
 }
 
-func (r *rdsCounter) DeleteMulti(keys []rds.Key, cb rds.DeleteMultiCB) error {
-	return r.c.DeleteMulti.up(r.rds.DeleteMulti(keys, cb))
+func (r *dsCounter) DeleteMulti(keys []ds.Key, cb ds.DeleteMultiCB) error {
+	return r.c.DeleteMulti.up(r.ds.DeleteMulti(keys, cb))
 }
 
-func (r *rdsCounter) GetMulti(keys []rds.Key, cb rds.GetMultiCB) error {
-	return r.c.GetMulti.up(r.rds.GetMulti(keys, cb))
+func (r *dsCounter) GetMulti(keys []ds.Key, cb ds.GetMultiCB) error {
+	return r.c.GetMulti.up(r.ds.GetMulti(keys, cb))
 }
 
-func (r *rdsCounter) PutMulti(keys []rds.Key, vals []rds.PropertyLoadSaver, cb rds.PutMultiCB) error {
-	return r.c.PutMulti.up(r.rds.PutMulti(keys, vals, cb))
+func (r *dsCounter) PutMulti(keys []ds.Key, vals []ds.PropertyLoadSaver, cb ds.PutMultiCB) error {
+	return r.c.PutMulti.up(r.ds.PutMulti(keys, vals, cb))
 }
 
-// FilterRDS installs a counter RawDatastore filter in the context.
-func FilterRDS(c context.Context) (context.Context, *RDSCounter) {
-	state := &RDSCounter{}
-	return rds.AddFilters(c, func(ic context.Context, rds rds.Interface) rds.Interface {
-		return &rdsCounter{state, rds}
+// FilterRDS installs a counter datastore filter in the context.
+func FilterRDS(c context.Context) (context.Context, *DSCounter) {
+	state := &DSCounter{}
+	return ds.AddFilters(c, func(ic context.Context, ds ds.Interface) ds.Interface {
+		return &dsCounter{state, ds}
 	}), state
 }

@@ -4,7 +4,7 @@
 
 // adapted from github.com/golang/appengine/datastore
 
-package rawdatastore
+package datastore
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	pb "github.com/luci/gae/service/rawdatastore/internal/protos/datastore"
+	pb "github.com/luci/gae/service/datastore/internal/protos/datastore"
 
 	"github.com/golang/protobuf/proto"
 )

@@ -8,7 +8,7 @@ import (
 	"errors"
 	"sync"
 
-	rds "github.com/luci/gae/service/rawdatastore"
+	ds "github.com/luci/gae/service/datastore"
 	"golang.org/x/net/context"
 )
 
@@ -18,7 +18,7 @@ type memContextObj interface {
 	applyTxn(c context.Context, m memContextObj)
 
 	endTxn()
-	mkTxn(*rds.TransactionOptions) memContextObj
+	mkTxn(*ds.TransactionOptions) memContextObj
 }
 
 type memContext []memContextObj
@@ -61,7 +61,7 @@ func (m memContext) endTxn() {
 	}
 }
 
-func (m memContext) mkTxn(o *rds.TransactionOptions) memContextObj {
+func (m memContext) mkTxn(o *ds.TransactionOptions) memContextObj {
 	ret := make(memContext, len(m))
 	for i, itm := range m {
 		ret[i] = itm.mkTxn(o)
@@ -132,7 +132,7 @@ var memContextKey memContextKeyType
 // fake TaskQueue is NOT backed by the fake Datastore. This is done to make the
 // test-access API for TaskQueue better (instead of trying to reconstitute the
 // state of the task queue from a bunch of datastore accesses).
-func (d *dsImpl) RunInTransaction(f func(context.Context) error, o *rds.TransactionOptions) error {
+func (d *dsImpl) RunInTransaction(f func(context.Context) error, o *ds.TransactionOptions) error {
 	curMC := cur(d.c)
 
 	txnMC := curMC.mkTxn(o)
@@ -154,7 +154,7 @@ func (d *dsImpl) RunInTransaction(f func(context.Context) error, o *rds.Transact
 	if curMC.canApplyTxn(txnMC) {
 		curMC.applyTxn(d.c, txnMC)
 	} else {
-		return rds.ErrConcurrentTransaction
+		return ds.ErrConcurrentTransaction
 	}
 	return nil
 }

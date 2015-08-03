@@ -7,9 +7,9 @@ package dummy
 import (
 	"testing"
 
+	dsS "github.com/luci/gae/service/datastore"
 	infoS "github.com/luci/gae/service/info"
 	mcS "github.com/luci/gae/service/memcache"
-	rdsS "github.com/luci/gae/service/rawdatastore"
 	tqS "github.com/luci/gae/service/taskqueue"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
@@ -44,13 +44,13 @@ func TestContextAccess(t *testing.T) {
 			}, ShouldPanicWith, "dummy: method Info.Datacenter is not implemented")
 		})
 
-		Convey("RawDatastore", func() {
-			c = rdsS.Set(c, RawDatastore())
-			So(rdsS.Get(c), ShouldNotBeNil)
+		Convey("Datastore", func() {
+			c = dsS.Set(c, Datastore())
+			So(dsS.Get(c), ShouldNotBeNil)
 			So(func() {
 				defer p()
-				rdsS.Get(c).DecodeKey("wut")
-			}, ShouldPanicWith, "dummy: method RawDatastore.DecodeKey is not implemented")
+				dsS.Get(c).DecodeKey("wut")
+			}, ShouldPanicWith, "dummy: method Datastore.DecodeKey is not implemented")
 		})
 
 		Convey("Memcache", func() {

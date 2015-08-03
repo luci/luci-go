@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	rds "github.com/luci/gae/service/rawdatastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gkvlite"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -24,7 +24,7 @@ func TestCollated(t *testing.T) {
 
 	Convey("TestCollated", t, func() {
 		Convey("nil list", func() {
-			pm := (rds.PropertyMap)(nil)
+			pm := (ds.PropertyMap)(nil)
 			sip := partiallySerialize(pm)
 			So(sip, ShouldBeNil)
 
@@ -47,7 +47,7 @@ func TestCollated(t *testing.T) {
 		})
 
 		Convey("list", func() {
-			pm := rds.PropertyMap{
+			pm := ds.PropertyMap{
 				"wat":  {propNI("thing"), prop("hat"), prop(100)},
 				"nerd": {prop(103.7)},
 				"spaz": {propNI(false)},
@@ -59,12 +59,12 @@ func TestCollated(t *testing.T) {
 				Convey("indexableMap", func() {
 					So(sip, ShouldResemble, serializedIndexablePmap{
 						"wat": {
-							cat(rds.PTInt, 100),
-							cat(rds.PTString, "hat"),
+							cat(ds.PTInt, 100),
+							cat(ds.PTString, "hat"),
 							// 'thing' is skipped, because it's not NoIndex
 						},
 						"nerd": {
-							cat(rds.PTFloat, 103.7),
+							cat(ds.PTFloat, 103.7),
 						},
 					})
 				})
@@ -88,7 +88,7 @@ var rgenComplexKey = key("kind", "id")
 
 var rowGenTestCases = []struct {
 	name        string
-	pmap        rds.PropertyMap
+	pmap        ds.PropertyMap
 	withBuiltin bool
 	idxs        []*qIndex
 
@@ -101,7 +101,7 @@ var rowGenTestCases = []struct {
 }{
 	{
 		name: "simple including builtins",
-		pmap: rds.PropertyMap{
+		pmap: ds.PropertyMap{
 			"wat":  {propNI("thing"), prop("hat"), prop(100)},
 			"nerd": {prop(103.7)},
 			"spaz": {propNI(false)},
@@ -112,13 +112,13 @@ var rowGenTestCases = []struct {
 		},
 		expected: []serializedPvals{
 			{{}}, // B:knd
-			{icat(rds.PTFloat, 103.7)},                        // B:knd/-nerd
-			{icat(rds.PTString, "hat"), icat(rds.PTInt, 100)}, // B:knd/-wat
-			{cat(rds.PTFloat, 103.7)},                         // B:knd/nerd
-			{cat(rds.PTInt, 100), cat(rds.PTString, "hat")},   // B:knd/wat
+			{icat(ds.PTFloat, 103.7)},                       // B:knd/-nerd
+			{icat(ds.PTString, "hat"), icat(ds.PTInt, 100)}, // B:knd/-wat
+			{cat(ds.PTFloat, 103.7)},                        // B:knd/nerd
+			{cat(ds.PTInt, 100), cat(ds.PTString, "hat")},   // B:knd/wat
 			{ // B:knd/-wat/nerd
-				cat(icat(rds.PTString, "hat"), cat(rds.PTFloat, 103.7)),
-				cat(icat(rds.PTInt, 100), cat(rds.PTFloat, 103.7)),
+				cat(icat(ds.PTString, "hat"), cat(ds.PTFloat, 103.7)),
+				cat(icat(ds.PTInt, 100), cat(ds.PTFloat, 103.7)),
 			},
 		},
 		collections: map[string][]kv{
@@ -135,22 +135,22 @@ var rowGenTestCases = []struct {
 				{cat(fakeKey), []byte{}},
 			},
 			"idx:ns:" + sat(indx("knd", "wat")): {
-				{cat(rds.PTInt, 100, fakeKey), []byte{}},
-				{cat(rds.PTString, "hat", fakeKey), cat(rds.PTInt, 100)},
+				{cat(ds.PTInt, 100, fakeKey), []byte{}},
+				{cat(ds.PTString, "hat", fakeKey), cat(ds.PTInt, 100)},
 			},
 			"idx:ns:" + sat(indx("knd", "-wat")): {
-				{cat(icat(rds.PTString, "hat"), fakeKey), []byte{}},
-				{cat(icat(rds.PTInt, 100), fakeKey), icat(rds.PTString, "hat")},
+				{cat(icat(ds.PTString, "hat"), fakeKey), []byte{}},
+				{cat(icat(ds.PTInt, 100), fakeKey), icat(ds.PTString, "hat")},
 			},
 		},
 	},
 	{
 		name: "complex",
-		pmap: rds.PropertyMap{
+		pmap: ds.PropertyMap{
 			"yerp": {prop("hat"), prop(73.9)},
 			"wat": {
 				prop(rgenComplexTime),
-				prop(rds.ByteString("value")),
+				prop(ds.ByteString("value")),
 				prop(rgenComplexKey)},
 			"spaz": {prop(nil), prop(false), prop(true)},
 		},
@@ -163,31 +163,31 @@ var rowGenTestCases = []struct {
 			{ // C:knd/yerp/-wat/spaz
 				// thank goodness the binary serialization only happens 1/val in the
 				// real code :).
-				cat(cat(rds.PTString, "hat"), icat(rds.PTKey, rgenComplexKey), cat(rds.PTNull)),
-				cat(cat(rds.PTString, "hat"), icat(rds.PTKey, rgenComplexKey), cat(rds.PTBoolFalse)),
-				cat(cat(rds.PTString, "hat"), icat(rds.PTKey, rgenComplexKey), cat(rds.PTBoolTrue)),
-				cat(cat(rds.PTString, "hat"), icat(rds.PTBytes, "value"), cat(rds.PTNull)),
-				cat(cat(rds.PTString, "hat"), icat(rds.PTBytes, "value"), cat(rds.PTBoolFalse)),
-				cat(cat(rds.PTString, "hat"), icat(rds.PTBytes, "value"), cat(rds.PTBoolTrue)),
-				cat(cat(rds.PTString, "hat"), icat(rds.PTTime, rgenComplexTime), cat(rds.PTNull)),
-				cat(cat(rds.PTString, "hat"), icat(rds.PTTime, rgenComplexTime), cat(rds.PTBoolFalse)),
-				cat(cat(rds.PTString, "hat"), icat(rds.PTTime, rgenComplexTime), cat(rds.PTBoolTrue)),
+				cat(cat(ds.PTString, "hat"), icat(ds.PTKey, rgenComplexKey), cat(ds.PTNull)),
+				cat(cat(ds.PTString, "hat"), icat(ds.PTKey, rgenComplexKey), cat(ds.PTBoolFalse)),
+				cat(cat(ds.PTString, "hat"), icat(ds.PTKey, rgenComplexKey), cat(ds.PTBoolTrue)),
+				cat(cat(ds.PTString, "hat"), icat(ds.PTBytes, "value"), cat(ds.PTNull)),
+				cat(cat(ds.PTString, "hat"), icat(ds.PTBytes, "value"), cat(ds.PTBoolFalse)),
+				cat(cat(ds.PTString, "hat"), icat(ds.PTBytes, "value"), cat(ds.PTBoolTrue)),
+				cat(cat(ds.PTString, "hat"), icat(ds.PTTime, rgenComplexTime), cat(ds.PTNull)),
+				cat(cat(ds.PTString, "hat"), icat(ds.PTTime, rgenComplexTime), cat(ds.PTBoolFalse)),
+				cat(cat(ds.PTString, "hat"), icat(ds.PTTime, rgenComplexTime), cat(ds.PTBoolTrue)),
 
-				cat(cat(rds.PTFloat, 73.9), icat(rds.PTKey, rgenComplexKey), cat(rds.PTNull)),
-				cat(cat(rds.PTFloat, 73.9), icat(rds.PTKey, rgenComplexKey), cat(rds.PTBoolFalse)),
-				cat(cat(rds.PTFloat, 73.9), icat(rds.PTKey, rgenComplexKey), cat(rds.PTBoolTrue)),
-				cat(cat(rds.PTFloat, 73.9), icat(rds.PTBytes, "value"), cat(rds.PTNull)),
-				cat(cat(rds.PTFloat, 73.9), icat(rds.PTBytes, "value"), cat(rds.PTBoolFalse)),
-				cat(cat(rds.PTFloat, 73.9), icat(rds.PTBytes, "value"), cat(rds.PTBoolTrue)),
-				cat(cat(rds.PTFloat, 73.9), icat(rds.PTTime, rgenComplexTime), cat(rds.PTNull)),
-				cat(cat(rds.PTFloat, 73.9), icat(rds.PTTime, rgenComplexTime), cat(rds.PTBoolFalse)),
-				cat(cat(rds.PTFloat, 73.9), icat(rds.PTTime, rgenComplexTime), cat(rds.PTBoolTrue)),
+				cat(cat(ds.PTFloat, 73.9), icat(ds.PTKey, rgenComplexKey), cat(ds.PTNull)),
+				cat(cat(ds.PTFloat, 73.9), icat(ds.PTKey, rgenComplexKey), cat(ds.PTBoolFalse)),
+				cat(cat(ds.PTFloat, 73.9), icat(ds.PTKey, rgenComplexKey), cat(ds.PTBoolTrue)),
+				cat(cat(ds.PTFloat, 73.9), icat(ds.PTBytes, "value"), cat(ds.PTNull)),
+				cat(cat(ds.PTFloat, 73.9), icat(ds.PTBytes, "value"), cat(ds.PTBoolFalse)),
+				cat(cat(ds.PTFloat, 73.9), icat(ds.PTBytes, "value"), cat(ds.PTBoolTrue)),
+				cat(cat(ds.PTFloat, 73.9), icat(ds.PTTime, rgenComplexTime), cat(ds.PTNull)),
+				cat(cat(ds.PTFloat, 73.9), icat(ds.PTTime, rgenComplexTime), cat(ds.PTBoolFalse)),
+				cat(cat(ds.PTFloat, 73.9), icat(ds.PTTime, rgenComplexTime), cat(ds.PTBoolTrue)),
 			},
 		},
 	},
 	{
 		name: "ancestor",
-		pmap: rds.PropertyMap{
+		pmap: ds.PropertyMap{
 			"wat": {prop("sup")},
 		},
 		idxs: []*qIndex{
@@ -195,8 +195,8 @@ var rowGenTestCases = []struct {
 		},
 		collections: map[string][]kv{
 			"idx:ns:" + sat(indx("knd!", "wat")): {
-				{cat(fakeKey.Parent(), rds.PTString, "sup", fakeKey), []byte{}},
-				{cat(fakeKey, rds.PTString, "sup", fakeKey), []byte{}},
+				{cat(fakeKey.Parent(), ds.PTString, "sup", fakeKey), []byte{}},
+				{cat(fakeKey, ds.PTString, "sup", fakeKey), []byte{}},
 			},
 		},
 	},
@@ -276,8 +276,8 @@ func TestIndexEntries(t *testing.T) {
 }
 
 type dumbItem struct {
-	key   rds.Key
-	props rds.PropertyMap
+	key   ds.Key
+	props ds.PropertyMap
 }
 
 var updateIndiciesTests = []struct {
@@ -289,31 +289,31 @@ var updateIndiciesTests = []struct {
 	{
 		name: "basic",
 		data: []dumbItem{
-			{key("knd", 1), rds.PropertyMap{
+			{key("knd", 1), ds.PropertyMap{
 				"wat":  {prop(10)},
 				"yerp": {prop(10)}},
 			},
-			{key("knd", 10), rds.PropertyMap{
+			{key("knd", 10), ds.PropertyMap{
 				"wat":  {prop(1)},
 				"yerp": {prop(200)}},
 			},
-			{key("knd", 1), rds.PropertyMap{
+			{key("knd", 1), ds.PropertyMap{
 				"wat":  {prop(10)},
 				"yerp": {prop(202)}},
 			},
 		},
 		expected: map[string][][]byte{
 			"idx:ns:" + sat(indx("knd", "wat")): {
-				cat(rds.PTInt, 1, key("knd", 10)),
-				cat(rds.PTInt, 10, key("knd", 1)),
+				cat(ds.PTInt, 1, key("knd", 10)),
+				cat(ds.PTInt, 10, key("knd", 1)),
 			},
 			"idx:ns:" + sat(indx("knd", "-wat")): {
-				cat(icat(rds.PTInt, 10), key("knd", 1)),
-				cat(icat(rds.PTInt, 1), key("knd", 10)),
+				cat(icat(ds.PTInt, 10), key("knd", 1)),
+				cat(icat(ds.PTInt, 1), key("knd", 10)),
 			},
 			"idx:ns:" + sat(indx("knd", "yerp")): {
-				cat(rds.PTInt, 200, key("knd", 10)),
-				cat(rds.PTInt, 202, key("knd", 1)),
+				cat(ds.PTInt, 200, key("knd", 10)),
+				cat(ds.PTInt, 202, key("knd", 1)),
 			},
 		},
 	},
@@ -321,33 +321,33 @@ var updateIndiciesTests = []struct {
 		name: "compound",
 		idxs: []*qIndex{indx("knd", "yerp", "-wat")},
 		data: []dumbItem{
-			{key("knd", 1), rds.PropertyMap{
+			{key("knd", 1), ds.PropertyMap{
 				"wat":  {prop(10)},
 				"yerp": {prop(100)}},
 			},
-			{key("knd", 10), rds.PropertyMap{
+			{key("knd", 10), ds.PropertyMap{
 				"wat":  {prop(1)},
 				"yerp": {prop(200)}},
 			},
-			{key("knd", 11), rds.PropertyMap{
+			{key("knd", 11), ds.PropertyMap{
 				"wat":  {prop(20)},
 				"yerp": {prop(200)}},
 			},
-			{key("knd", 14), rds.PropertyMap{
+			{key("knd", 14), ds.PropertyMap{
 				"wat":  {prop(20)},
 				"yerp": {prop(200)}},
 			},
-			{key("knd", 1), rds.PropertyMap{
+			{key("knd", 1), ds.PropertyMap{
 				"wat":  {prop(10)},
 				"yerp": {prop(202)}},
 			},
 		},
 		expected: map[string][][]byte{
 			"idx:ns:" + sat(indx("knd", "yerp", "-wat")): {
-				cat(rds.PTInt, 200, icat(rds.PTInt, 20), key("knd", 11)),
-				cat(rds.PTInt, 200, icat(rds.PTInt, 20), key("knd", 14)),
-				cat(rds.PTInt, 200, icat(rds.PTInt, 1), key("knd", 10)),
-				cat(rds.PTInt, 202, icat(rds.PTInt, 10), key("knd", 1)),
+				cat(ds.PTInt, 200, icat(ds.PTInt, 20), key("knd", 11)),
+				cat(ds.PTInt, 200, icat(ds.PTInt, 20), key("knd", 14)),
+				cat(ds.PTInt, 200, icat(ds.PTInt, 1), key("knd", 10)),
+				cat(ds.PTInt, 202, icat(ds.PTInt, 10), key("knd", 1)),
 			},
 		},
 	},
@@ -365,7 +365,7 @@ func TestUpdateIndicies(t *testing.T) {
 					idxColl.Set(cat(i), []byte{})
 				}
 
-				tmpLoader := map[string]rds.PropertyMap{}
+				tmpLoader := map[string]ds.PropertyMap{}
 				for _, itm := range tc.data {
 					ks := itm.key.String()
 					prev := tmpLoader[ks]

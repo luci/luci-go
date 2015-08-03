@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package rawdatastore
+package datastore
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ type ByteString []byte
 // GeoPoint represents a location as latitude/longitude in degrees.
 //
 // You probably shouldn't use these, but their inclusion here is so that the
-// RawDatastore can interact (and round-trip) correctly with other datastore API
+// Datastore can interact (and round-trip) correctly with other datastore API
 // implementations.
 type GeoPoint struct {
 	Lat, Lng float64

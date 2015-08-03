@@ -4,7 +4,7 @@
 
 // HEAVILY adapted from github.com/golang/appengine/datastore
 
-package rawdatastore
+package datastore
 
 import (
 	"fmt"
@@ -369,7 +369,7 @@ var (
 	// The RWMutex is chosen intentionally, as the majority of access to the
 	// structCodecs map will be in parallel and will be to read an existing codec.
 	// There's no reason to serialize goroutines on every
-	// gae.RawDatastore.{Get,Put}{,Multi} call.
+	// gae.datastore.{Get,Put}{,Multi} call.
 	structCodecsMutex sync.RWMutex
 	structCodecs      = map[reflect.Type]*structCodec{}
 )

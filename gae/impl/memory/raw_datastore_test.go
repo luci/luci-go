@@ -9,7 +9,7 @@ import (
 	"math"
 	"testing"
 
-	rdsS "github.com/luci/gae/service/rawdatastore"
+	dsS "github.com/luci/gae/service/datastore"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -19,12 +19,12 @@ func TestDatastoreKinder(t *testing.T) {
 
 	Convey("Datastore keys", t, func() {
 		c := Use(context.Background())
-		rds := rdsS.Get(c)
-		So(rds, ShouldNotBeNil)
+		ds := dsS.Get(c)
+		So(ds, ShouldNotBeNil)
 
 		Convey("implements DSNewKeyer", func() {
 			Convey("NewKey", func() {
-				key := rds.NewKey("nerd", "stringID", 0, nil)
+				key := ds.NewKey("nerd", "stringID", 0, nil)
 				So(key, ShouldNotBeNil)
 				So(key.Kind(), ShouldEqual, "nerd")
 				So(key.StringID(), ShouldEqual, "stringID")
@@ -33,18 +33,18 @@ func TestDatastoreKinder(t *testing.T) {
 				So(key.AppID(), ShouldEqual, "dev~app")
 				So(key.Namespace(), ShouldEqual, "")
 				So(key.String(), ShouldEqual, "/nerd,stringID")
-				So(rdsS.KeyIncomplete(key), ShouldBeFalse)
-				So(rdsS.KeyValid(key, false, "dev~app", ""), ShouldBeTrue)
+				So(dsS.KeyIncomplete(key), ShouldBeFalse)
+				So(dsS.KeyValid(key, false, "dev~app", ""), ShouldBeTrue)
 			})
 		})
 
 	})
 }
 
-func testGetMeta(c context.Context, k rdsS.Key) int64 {
-	rds := rdsS.Get(c)
+func testGetMeta(c context.Context, k dsS.Key) int64 {
+	ds := dsS.Get(c)
 	retval := int64(0)
-	err := rds.GetMulti([]rdsS.Key{rds.NewKey("__entity_group__", "", 1, rdsS.KeyRoot(k))}, func(val rdsS.PropertyMap, err error) {
+	err := ds.GetMulti([]dsS.Key{ds.NewKey("__entity_group__", "", 1, dsS.KeyRoot(k))}, func(val dsS.PropertyMap, err error) {
 		if err != nil {
 			panic(err)
 		}
@@ -56,13 +56,13 @@ func testGetMeta(c context.Context, k rdsS.Key) int64 {
 	return retval
 }
 
-var pls = rdsS.GetPLS
+var pls = dsS.GetPLS
 
 func TestDatastoreSingleReadWriter(t *testing.T) {
 	t.Parallel()
 
-	getOnePM := func(rds rdsS.Interface, key rdsS.Key) (pmap rdsS.PropertyMap, err error) {
-		blankErr := rds.GetMulti([]rdsS.Key{key}, func(itmPmap rdsS.PropertyMap, itmErr error) {
+	getOnePM := func(ds dsS.Interface, key dsS.Key) (pmap dsS.PropertyMap, err error) {
+		blankErr := ds.GetMulti([]dsS.Key{key}, func(itmPmap dsS.PropertyMap, itmErr error) {
 			pmap = itmPmap
 			err = itmErr
 		})
@@ -70,26 +70,26 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 		return
 	}
 
-	delOneErr := func(rds rdsS.Interface, key rdsS.Key) (err error) {
-		blankErr := rds.DeleteMulti([]rdsS.Key{key}, func(itmErr error) {
+	delOneErr := func(ds dsS.Interface, key dsS.Key) (err error) {
+		blankErr := ds.DeleteMulti([]dsS.Key{key}, func(itmErr error) {
 			err = itmErr
 		})
 		So(blankErr, ShouldBeNil)
 		return
 	}
 
-	delOne := func(rds rdsS.Interface, key rdsS.Key) {
-		So(delOneErr(rds, key), ShouldBeNil)
+	delOne := func(ds dsS.Interface, key dsS.Key) {
+		So(delOneErr(ds, key), ShouldBeNil)
 	}
 
-	getOne := func(rds rdsS.Interface, key rdsS.Key, dst interface{}) {
-		pm, err := getOnePM(rds, key)
+	getOne := func(ds dsS.Interface, key dsS.Key, dst interface{}) {
+		pm, err := getOnePM(ds, key)
 		So(err, ShouldBeNil)
 		So(pls(dst).Load(pm), ShouldBeNil)
 	}
 
-	putOneErr := func(rds rdsS.Interface, key rdsS.Key, val interface{}) (retKey rdsS.Key, err error) {
-		blankErr := rds.PutMulti([]rdsS.Key{key}, []rdsS.PropertyLoadSaver{pls(val)}, func(itmKey rdsS.Key, itmErr error) {
+	putOneErr := func(ds dsS.Interface, key dsS.Key, val interface{}) (retKey dsS.Key, err error) {
+		blankErr := ds.PutMulti([]dsS.Key{key}, []dsS.PropertyLoadSaver{pls(val)}, func(itmKey dsS.Key, itmErr error) {
 			err = itmErr
 			retKey = itmKey
 		})
@@ -97,16 +97,16 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 		return
 	}
 
-	putOne := func(rds rdsS.Interface, key rdsS.Key, val interface{}) (retKey rdsS.Key) {
-		key, err := putOneErr(rds, key, val)
+	putOne := func(ds dsS.Interface, key dsS.Key, val interface{}) (retKey dsS.Key) {
+		key, err := putOneErr(ds, key, val)
 		So(err, ShouldBeNil)
 		return key
 	}
 
 	Convey("Datastore single reads and writes", t, func() {
 		c := Use(context.Background())
-		rds := rdsS.Get(c)
-		So(rds, ShouldNotBeNil)
+		ds := dsS.Get(c)
+		So(ds, ShouldNotBeNil)
 
 		Convey("implements DSSingleReadWriter", func() {
 			type Foo struct {
@@ -114,48 +114,48 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 			}
 
 			Convey("getting objects that DNE is an error", func() {
-				_, err := getOnePM(rds, rds.NewKey("Foo", "", 1, nil))
-				So(err, ShouldEqual, rdsS.ErrNoSuchEntity)
+				_, err := getOnePM(ds, ds.NewKey("Foo", "", 1, nil))
+				So(err, ShouldEqual, dsS.ErrNoSuchEntity)
 			})
 
 			Convey("Can Put stuff", func() {
 				// with an incomplete key!
-				k := rds.NewKey("Foo", "", 0, nil)
+				k := ds.NewKey("Foo", "", 0, nil)
 				f := &Foo{Val: 10}
-				k = putOne(rds, k, f)
+				k = putOne(ds, k, f)
 				So(k.String(), ShouldEqual, "/Foo,1")
 
 				Convey("and Get it back", func() {
 					newFoo := &Foo{}
-					getOne(rds, k, newFoo)
+					getOne(ds, k, newFoo)
 					So(newFoo, ShouldResemble, f)
 
 					Convey("and we can Delete it", func() {
-						delOne(rds, k)
-						_, err := getOnePM(rds, k)
-						So(err, ShouldEqual, rdsS.ErrNoSuchEntity)
+						delOne(ds, k)
+						_, err := getOnePM(ds, k)
+						So(err, ShouldEqual, dsS.ErrNoSuchEntity)
 					})
 				})
 				Convey("Deleteing with a bogus key is bad", func() {
-					So(delOneErr(rds, rds.NewKey("Foo", "wat", 100, nil)), ShouldEqual, rdsS.ErrInvalidKey)
+					So(delOneErr(ds, ds.NewKey("Foo", "wat", 100, nil)), ShouldEqual, dsS.ErrInvalidKey)
 				})
 				Convey("Deleteing a DNE entity is fine", func() {
-					delOne(rds, rds.NewKey("Foo", "wat", 0, nil))
+					delOne(ds, ds.NewKey("Foo", "wat", 0, nil))
 				})
 
 				Convey("with multiple puts", func() {
 					So(testGetMeta(c, k), ShouldEqual, 1)
 
-					keys := []rdsS.Key{}
-					vals := []rdsS.PropertyLoadSaver{}
+					keys := []dsS.Key{}
+					vals := []dsS.PropertyLoadSaver{}
 
 					pkey := k
 					for i := 0; i < 10; i++ {
-						keys = append(keys, rds.NewKey("Foo", "", 0, pkey))
+						keys = append(keys, ds.NewKey("Foo", "", 0, pkey))
 						vals = append(vals, pls(&Foo{Val: 10}))
 					}
 					i := 0
-					err := rds.PutMulti(keys, vals, func(k rdsS.Key, err error) {
+					err := ds.PutMulti(keys, vals, func(k dsS.Key, err error) {
 						So(err, ShouldBeNil)
 						keys[i] = k
 						i++
@@ -165,14 +165,14 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 
 					Convey("ensure that group versions persist across deletes", func() {
 						keys = append(keys, pkey)
-						err := rds.DeleteMulti(keys, func(err error) {
+						err := ds.DeleteMulti(keys, func(err error) {
 							So(err, ShouldBeNil)
 						})
 						So(err, ShouldBeNil)
 
 						// TODO(riannucci): replace with a Count query instead of this cast
 						/*
-							ents := rds.(*dsImpl).data.store.GetCollection("ents:")
+							ents := ds.(*dsImpl).data.store.GetCollection("ents:")
 							num, _ := ents.GetTotals()
 							// /__entity_root_ids__,Foo
 							// /Foo,1/__entity_group__,1
@@ -182,20 +182,20 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 
 						So(testGetMeta(c, k), ShouldEqual, 22)
 
-						putOne(rds, k, f)
+						putOne(ds, k, f)
 						So(testGetMeta(c, k), ShouldEqual, 23)
 					})
 
 					Convey("can Get", func() {
-						vals := []rdsS.PropertyMap{}
-						err := rds.GetMulti(keys, func(pm rdsS.PropertyMap, err error) {
+						vals := []dsS.PropertyMap{}
+						err := ds.GetMulti(keys, func(pm dsS.PropertyMap, err error) {
 							So(err, ShouldBeNil)
 							vals = append(vals, pm)
 						})
 						So(err, ShouldBeNil)
 
 						for _, val := range vals {
-							So(val, ShouldResemble, rdsS.PropertyMap{"Val": {rdsS.MkProperty(10)}})
+							So(val, ShouldResemble, dsS.PropertyMap{"Val": {dsS.MkProperty(10)}})
 						}
 					})
 				})
@@ -208,46 +208,46 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 			}
 			Convey("Put", func() {
 				f := &Foo{Val: 10}
-				origKey := rds.NewKey("Foo", "", 0, nil)
-				k := putOne(rds, origKey, f)
+				origKey := ds.NewKey("Foo", "", 0, nil)
+				k := putOne(ds, origKey, f)
 				So(k.String(), ShouldEqual, "/Foo,1")
 
 				Convey("can Put new entity groups", func() {
-					err := rds.RunInTransaction(func(c context.Context) error {
-						rds := rdsS.Get(c)
+					err := ds.RunInTransaction(func(c context.Context) error {
+						ds := dsS.Get(c)
 
 						f1 := &Foo{Val: 100}
-						k := putOne(rds, origKey, f1)
+						k := putOne(ds, origKey, f1)
 						So(k.String(), ShouldEqual, "/Foo,2")
 
 						f2 := &Foo{Val: 200}
-						k = putOne(rds, origKey, f2)
+						k = putOne(ds, origKey, f2)
 						So(k.String(), ShouldEqual, "/Foo,3")
 
 						return nil
-					}, &rdsS.TransactionOptions{XG: true})
+					}, &dsS.TransactionOptions{XG: true})
 					So(err, ShouldBeNil)
 
 					f := &Foo{}
-					getOne(rds, rds.NewKey("Foo", "", 2, nil), f)
+					getOne(ds, ds.NewKey("Foo", "", 2, nil), f)
 					So(f.Val, ShouldEqual, 100)
 
-					getOne(rds, rds.NewKey("Foo", "", 3, nil), f)
+					getOne(ds, ds.NewKey("Foo", "", 3, nil), f)
 					So(f.Val, ShouldEqual, 200)
 				})
 
 				Convey("can Put new entities in a current group", func() {
 					par := k
-					err := rds.RunInTransaction(func(c context.Context) error {
-						rds := rdsS.Get(c)
-						So(rds, ShouldNotBeNil)
+					err := ds.RunInTransaction(func(c context.Context) error {
+						ds := dsS.Get(c)
+						So(ds, ShouldNotBeNil)
 
 						f1 := &Foo{Val: 100}
-						k := putOne(rds, rds.NewKey("Foo", "", 0, par), f1)
+						k := putOne(ds, ds.NewKey("Foo", "", 0, par), f1)
 						So(k.String(), ShouldEqual, "/Foo,1/Foo,1")
 
 						f2 := &Foo{Val: 200}
-						k = putOne(rds, rds.NewKey("Foo", "", 0, par), f2)
+						k = putOne(ds, ds.NewKey("Foo", "", 0, par), f2)
 						So(k.String(), ShouldEqual, "/Foo,1/Foo,2")
 
 						return nil
@@ -255,33 +255,33 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					f := &Foo{}
-					getOne(rds, rds.NewKey("Foo", "", 1, k), f)
+					getOne(ds, ds.NewKey("Foo", "", 1, k), f)
 					So(f.Val, ShouldEqual, 100)
 
-					getOne(rds, rds.NewKey("Foo", "", 2, k), f)
+					getOne(ds, ds.NewKey("Foo", "", 2, k), f)
 					So(f.Val, ShouldEqual, 200)
 				})
 
 				Convey("Deletes work too", func() {
-					err := rds.RunInTransaction(func(c context.Context) error {
-						rds := rdsS.Get(c)
-						So(rds, ShouldNotBeNil)
-						delOne(rds, k)
+					err := ds.RunInTransaction(func(c context.Context) error {
+						ds := dsS.Get(c)
+						So(ds, ShouldNotBeNil)
+						delOne(ds, k)
 						return nil
 					}, nil)
 					So(err, ShouldBeNil)
-					_, err = getOnePM(rds, k)
-					So(err, ShouldEqual, rdsS.ErrNoSuchEntity)
+					_, err = getOnePM(ds, k)
+					So(err, ShouldEqual, dsS.ErrNoSuchEntity)
 				})
 
 				Convey("A Get counts against your group count", func() {
-					err := rds.RunInTransaction(func(c context.Context) error {
-						rds := rdsS.Get(c)
+					err := ds.RunInTransaction(func(c context.Context) error {
+						ds := dsS.Get(c)
 
-						_, err := getOnePM(rds, rds.NewKey("Foo", "", 20, nil))
-						So(err, ShouldEqual, rdsS.ErrNoSuchEntity)
+						_, err := getOnePM(ds, ds.NewKey("Foo", "", 20, nil))
+						So(err, ShouldEqual, dsS.ErrNoSuchEntity)
 
-						err = rds.GetMulti([]rdsS.Key{k}, func(_ rdsS.PropertyMap, err error) {
+						err = ds.GetMulti([]dsS.Key{k}, func(_ dsS.PropertyMap, err error) {
 							So(err, ShouldBeNil)
 						})
 						So(err.Error(), ShouldContainSubstring, "cross-group")
@@ -291,8 +291,8 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 				})
 
 				Convey("Get takes a snapshot", func() {
-					err := rds.RunInTransaction(func(c context.Context) error {
-						txnDS := rdsS.Get(c)
+					err := ds.RunInTransaction(func(c context.Context) error {
+						txnDS := dsS.Get(c)
 						So(txnDS, ShouldNotBeNil)
 
 						getOne(txnDS, k, f)
@@ -301,7 +301,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 						// Don't ever do this in a real program unless you want to guarantee
 						// a failed transaction :)
 						f.Val = 11
-						putOne(rds, k, f)
+						putOne(ds, k, f)
 
 						getOne(txnDS, k, f)
 						So(f.Val, ShouldEqual, 10)
@@ -311,13 +311,13 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					f := &Foo{}
-					getOne(rds, k, f)
+					getOne(ds, k, f)
 					So(f.Val, ShouldEqual, 11)
 				})
 
 				Convey("and snapshots are consistent even after Puts", func() {
-					err := rds.RunInTransaction(func(c context.Context) error {
-						txnDS := rdsS.Get(c)
+					err := ds.RunInTransaction(func(c context.Context) error {
+						txnDS := dsS.Get(c)
 						So(txnDS, ShouldNotBeNil)
 
 						f := &Foo{}
@@ -327,7 +327,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 						// Don't ever do this in a real program unless you want to guarantee
 						// a failed transaction :)
 						f.Val = 11
-						putOne(rds, k, f)
+						putOne(ds, k, f)
 
 						getOne(txnDS, k, f)
 						So(f.Val, ShouldEqual, 10)
@@ -343,28 +343,28 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					So(err.Error(), ShouldContainSubstring, "concurrent")
 
 					f := &Foo{}
-					getOne(rds, k, f)
+					getOne(ds, k, f)
 					So(f.Val, ShouldEqual, 11)
 				})
 
 				Convey("Reusing a transaction context is bad news", func() {
-					k := rds.NewKey("Foo", "", 1, nil)
-					txnDS := rdsS.Interface(nil)
-					err := rds.RunInTransaction(func(c context.Context) error {
-						txnDS = rdsS.Get(c)
+					k := ds.NewKey("Foo", "", 1, nil)
+					txnDS := dsS.Interface(nil)
+					err := ds.RunInTransaction(func(c context.Context) error {
+						txnDS = dsS.Get(c)
 						getOnePM(txnDS, k)
 						return nil
 					}, nil)
 					So(err, ShouldBeNil)
-					err = txnDS.GetMulti([]rdsS.Key{k}, func(_ rdsS.PropertyMap, err error) {
+					err = txnDS.GetMulti([]dsS.Key{k}, func(_ dsS.PropertyMap, err error) {
 						So(err, ShouldBeNil)
 					})
 					So(err.Error(), ShouldContainSubstring, "expired")
 				})
 
 				Convey("Nested transactions are rejected", func() {
-					err := rds.RunInTransaction(func(c context.Context) error {
-						err := rdsS.Get(c).RunInTransaction(func(c context.Context) error {
+					err := ds.RunInTransaction(func(c context.Context) error {
+						err := dsS.Get(c).RunInTransaction(func(c context.Context) error {
 							panic("noooo")
 						}, nil)
 						So(err.Error(), ShouldContainSubstring, "nested transactions")
@@ -381,13 +381,13 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					// entity group as soon as something observes/affects it.
 					//
 					// That said... I'm not sure if there's really a semantic difference.
-					err := rds.RunInTransaction(func(c context.Context) error {
-						txnDS := rdsS.Get(c)
+					err := ds.RunInTransaction(func(c context.Context) error {
+						txnDS := dsS.Get(c)
 						f := &Foo{Val: 21}
 						putOne(txnDS, k, f)
 
-						err := rds.RunInTransaction(func(c context.Context) error {
-							txnDS := rdsS.Get(c)
+						err := ds.RunInTransaction(func(c context.Context) error {
+							txnDS := dsS.Get(c)
 							f := &Foo{Val: 27}
 							putOne(txnDS, k, f)
 							return nil
@@ -399,18 +399,18 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					So(err.Error(), ShouldContainSubstring, "concurrent")
 
 					f := &Foo{}
-					getOne(rds, k, f)
+					getOne(ds, k, f)
 					So(f.Val, ShouldEqual, 27)
 				})
 
 				Convey("XG", func() {
 					Convey("Modifying two groups with XG=false is invalid", func() {
-						err := rds.RunInTransaction(func(c context.Context) error {
-							rds := rdsS.Get(c)
+						err := ds.RunInTransaction(func(c context.Context) error {
+							ds := dsS.Get(c)
 							f := &Foo{Val: 200}
-							putOne(rds, k, f)
+							putOne(ds, k, f)
 
-							_, err := putOneErr(rds, rds.NewKey("Foo", "", 2, nil), f)
+							_, err := putOneErr(ds, ds.NewKey("Foo", "", 2, nil), f)
 							So(err.Error(), ShouldContainSubstring, "cross-group")
 							return err
 						}, nil)
@@ -418,50 +418,50 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					})
 
 					Convey("Modifying >25 groups with XG=true is invald", func() {
-						err := rds.RunInTransaction(func(c context.Context) error {
-							rds := rdsS.Get(c)
+						err := ds.RunInTransaction(func(c context.Context) error {
+							ds := dsS.Get(c)
 							for i := int64(1); i < 26; i++ {
-								k := rds.NewKey("Foo", "", i, nil)
+								k := ds.NewKey("Foo", "", i, nil)
 								f := &Foo{Val: 200}
-								putOne(rds, k, f)
+								putOne(ds, k, f)
 							}
 							f := &Foo{Val: 200}
-							_, err := putOneErr(rds, rds.NewKey("Foo", "", 27, nil), f)
+							_, err := putOneErr(ds, ds.NewKey("Foo", "", 27, nil), f)
 							So(err.Error(), ShouldContainSubstring, "too many entity groups")
 							return err
-						}, &rdsS.TransactionOptions{XG: true})
+						}, &dsS.TransactionOptions{XG: true})
 						So(err.Error(), ShouldContainSubstring, "too many entity groups")
 					})
 				})
 
 				Convey("Errors and panics", func() {
 					Convey("returning an error aborts", func() {
-						err := rds.RunInTransaction(func(c context.Context) error {
-							rds := rdsS.Get(c)
+						err := ds.RunInTransaction(func(c context.Context) error {
+							ds := dsS.Get(c)
 							f := &Foo{Val: 200}
-							putOne(rds, k, f)
+							putOne(ds, k, f)
 
 							return fmt.Errorf("thingy")
 						}, nil)
 						So(err.Error(), ShouldEqual, "thingy")
 
 						f := &Foo{}
-						getOne(rds, k, f)
+						getOne(ds, k, f)
 						So(f.Val, ShouldEqual, 10)
 					})
 
 					Convey("panicing aborts", func() {
 						So(func() {
-							rds.RunInTransaction(func(c context.Context) error {
-								rds := rdsS.Get(c)
+							ds.RunInTransaction(func(c context.Context) error {
+								ds := dsS.Get(c)
 								f := &Foo{Val: 200}
-								putOne(rds, k, f)
+								putOne(ds, k, f)
 								panic("wheeeeee")
 							}, nil)
 						}, ShouldPanic)
 
 						f := &Foo{}
-						getOne(rds, k, f)
+						getOne(ds, k, f)
 						So(f.Val, ShouldEqual, 10)
 					})
 				})
@@ -478,11 +478,11 @@ const IntIs32Bits = int64(MaxInt) < math.MaxInt64
 func TestDatastoreQueryer(t *testing.T) {
 	Convey("Datastore Query suport", t, func() {
 		c := Use(context.Background())
-		rds := rdsS.Get(c)
-		So(rds, ShouldNotBeNil)
+		ds := dsS.Get(c)
+		So(ds, ShouldNotBeNil)
 
 		Convey("can create good queries", func() {
-			q := rds.NewQuery("Foo").KeysOnly().Limit(10).Offset(39)
+			q := ds.NewQuery("Foo").KeysOnly().Limit(10).Offset(39)
 			q = q.Start(queryCursor("kosmik")).End(queryCursor("krabs"))
 			So(q, ShouldNotBeNil)
 			So(q.(*queryImpl).err, ShouldBeNil)
@@ -491,7 +491,7 @@ func TestDatastoreQueryer(t *testing.T) {
 		})
 
 		Convey("normalize ensures orders make sense", func() {
-			q := rds.NewQuery("Cool")
+			q := ds.NewQuery("Cool")
 			q = q.Filter("cat =", 19).Filter("bob =", 10).Order("bob").Order("bob")
 
 			Convey("removes dups and equality orders", func() {
@@ -511,7 +511,7 @@ func TestDatastoreQueryer(t *testing.T) {
 
 			Convey("if we equality-filter on __key__, order is ditched", func() {
 				q = q.Order("wat")
-				q := q.Filter("__key__ =", rds.NewKey("Foo", "wat", 0, nil))
+				q := q.Filter("__key__ =", ds.NewKey("Foo", "wat", 0, nil))
 				qi := q.(*queryImpl).normalize().checkCorrectness("", false)
 				So(qi.order, ShouldResemble, []queryOrder(nil))
 				So(qi.err, ShouldBeNil)
@@ -526,7 +526,7 @@ func TestDatastoreQueryer(t *testing.T) {
 		})
 
 		Convey("can create bad queries", func() {
-			q := rds.NewQuery("Foo")
+			q := ds.NewQuery("Foo")
 
 			Convey("bad filter ops", func() {
 				q := q.Filter("Bob !", "value")
@@ -567,26 +567,26 @@ func TestDatastoreQueryer(t *testing.T) {
 				So(q.(*queryImpl).err.Error(), ShouldContainSubstring, "invalid cursor")
 			})
 			Convey("Bad ancestors", func() {
-				q := q.Ancestor(rds.NewKey("Goop", "wat", 10, nil))
+				q := q.Ancestor(ds.NewKey("Goop", "wat", 10, nil))
 				So(q, ShouldNotBeNil)
 				qi := q.(*queryImpl).checkCorrectness("", false)
-				So(qi.err, ShouldEqual, rdsS.ErrInvalidKey)
+				So(qi.err, ShouldEqual, dsS.ErrInvalidKey)
 			})
 			Convey("nil ancestors", func() {
 				qi := q.Ancestor(nil).(*queryImpl).checkCorrectness("", false)
 				So(qi.err.Error(), ShouldContainSubstring, "nil query ancestor")
 			})
 			Convey("Bad key filters", func() {
-				q := q.Filter("__key__ =", rds.NewKey("Goop", "wat", 10, nil))
+				q := q.Filter("__key__ =", ds.NewKey("Goop", "wat", 10, nil))
 				qi := q.(*queryImpl).checkCorrectness("", false)
-				So(qi.err, ShouldEqual, rdsS.ErrInvalidKey)
+				So(qi.err, ShouldEqual, dsS.ErrInvalidKey)
 			})
 			Convey("non-ancestor queries in a transaction", func() {
 				qi := q.(*queryImpl).checkCorrectness("", true)
 				So(qi.err.Error(), ShouldContainSubstring, "Only ancestor queries")
 			})
 			Convey("absurd numbers of filters are prohibited", func() {
-				q := q.Ancestor(rds.NewKey("thing", "wat", 0, nil))
+				q := q.Ancestor(ds.NewKey("thing", "wat", 0, nil))
 				for i := 0; i < 100; i++ {
 					q = q.Filter("something =", 10)
 				}
@@ -609,17 +609,17 @@ func TestDatastoreQueryer(t *testing.T) {
 				So(qi.err.Error(), ShouldContainSubstring, "first sort property")
 			})
 			Convey("kindless with non-__key__ filters", func() {
-				q := rds.NewQuery("").Filter("face <", 25.3)
+				q := ds.NewQuery("").Filter("face <", 25.3)
 				qi := q.(*queryImpl).checkCorrectness("", false)
 				So(qi.err.Error(), ShouldContainSubstring, "kind is required for non-__key__")
 			})
 			Convey("kindless with non-__key__ orders", func() {
-				q := rds.NewQuery("").Order("face")
+				q := ds.NewQuery("").Order("face")
 				qi := q.(*queryImpl).checkCorrectness("", false)
 				So(qi.err.Error(), ShouldContainSubstring, "kind is required for all orders")
 			})
 			Convey("kindless with decending-__key__ orders", func() {
-				q := rds.NewQuery("").Order("-__key__")
+				q := ds.NewQuery("").Order("-__key__")
 				qi := q.(*queryImpl).checkCorrectness("", false)
 				So(qi.err.Error(), ShouldContainSubstring, "kind is required for all orders")
 			})

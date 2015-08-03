@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package rawdatastore
+package datastore
 
 import (
 	"fmt"
@@ -54,7 +54,7 @@ func (tcf *checkFilter) GetMulti(keys []Key, cb GetMultiCB) error {
 
 func (tcf *checkFilter) PutMulti(keys []Key, vals []PropertyLoadSaver, cb PutMultiCB) error {
 	if len(keys) != len(vals) {
-		return fmt.Errorf("rawdatastore: GetMulti with mismatched keys/vals lengths (%d/%d)", len(keys), len(vals))
+		return fmt.Errorf("datastore: GetMulti with mismatched keys/vals lengths (%d/%d)", len(keys), len(vals))
 	}
 	if len(keys) == 0 {
 		return nil
@@ -70,7 +70,7 @@ func (tcf *checkFilter) PutMulti(keys []Key, vals []PropertyLoadSaver, cb PutMul
 		}
 		v := vals[i]
 		if v == nil {
-			lme.Assign(i, errors.New("rawdatastore: PutMulti got nil vals entry"))
+			lme.Assign(i, errors.New("datastore: PutMulti got nil vals entry"))
 		} else {
 			lme.Assign(i, v.Problem())
 		}

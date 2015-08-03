@@ -5,7 +5,7 @@
 package prod
 
 import (
-	rds "github.com/luci/gae/service/rawdatastore"
+	ds "github.com/luci/gae/service/datastore"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
@@ -14,7 +14,7 @@ import (
 // useRDS adds a gae.RawDatastore implementation to context, accessible
 // by gae.GetDS(c)
 func useRDS(c context.Context) context.Context {
-	return rds.SetFactory(c, func(ci context.Context) rds.Interface {
+	return ds.SetFactory(c, func(ci context.Context) ds.Interface {
 		// TODO(riannucci): Track namespace in a better way
 		k := datastore.NewKey(ci, "kind", "", 1, nil) // get current namespace.
 		return rdsImpl{ci, k.Namespace()}
@@ -25,37 +25,37 @@ func useRDS(c context.Context) context.Context {
 
 type queryImpl struct{ *datastore.Query }
 
-func (q queryImpl) Distinct() rds.Query {
+func (q queryImpl) Distinct() ds.Query {
 	return queryImpl{q.Query.Distinct()}
 }
-func (q queryImpl) End(c rds.Cursor) rds.Query {
+func (q queryImpl) End(c ds.Cursor) ds.Query {
 	return queryImpl{q.Query.End(c.(datastore.Cursor))}
 }
-func (q queryImpl) EventualConsistency() rds.Query {
+func (q queryImpl) EventualConsistency() ds.Query {
 	return queryImpl{q.Query.EventualConsistency()}
 }
-func (q queryImpl) KeysOnly() rds.Query {
+func (q queryImpl) KeysOnly() ds.Query {
 	return queryImpl{q.Query.KeysOnly()}
 }
-func (q queryImpl) Limit(limit int) rds.Query {
+func (q queryImpl) Limit(limit int) ds.Query {
 	return queryImpl{q.Query.Limit(limit)}
 }
-func (q queryImpl) Offset(offset int) rds.Query {
+func (q queryImpl) Offset(offset int) ds.Query {
 	return queryImpl{q.Query.Offset(offset)}
 }
-func (q queryImpl) Order(fieldName string) rds.Query {
+func (q queryImpl) Order(fieldName string) ds.Query {
 	return queryImpl{q.Query.Order(fieldName)}
 }
-func (q queryImpl) Start(c rds.Cursor) rds.Query {
+func (q queryImpl) Start(c ds.Cursor) ds.Query {
 	return queryImpl{q.Query.Start(c.(datastore.Cursor))}
 }
-func (q queryImpl) Ancestor(ancestor rds.Key) rds.Query {
+func (q queryImpl) Ancestor(ancestor ds.Key) ds.Query {
 	return queryImpl{q.Query.Ancestor(dsF2R(ancestor))}
 }
-func (q queryImpl) Project(fieldNames ...string) rds.Query {
+func (q queryImpl) Project(fieldNames ...string) ds.Query {
 	return queryImpl{q.Query.Project(fieldNames...)}
 }
-func (q queryImpl) Filter(filterStr string, value interface{}) rds.Query {
+func (q queryImpl) Filter(filterStr string, value interface{}) ds.Query {
 	return queryImpl{q.Query.Filter(filterStr, value)}
 }
 
@@ -67,11 +67,11 @@ type rdsImpl struct {
 	ns string
 }
 
-func (d rdsImpl) NewKey(kind, stringID string, intID int64, parent rds.Key) rds.Key {
+func (d rdsImpl) NewKey(kind, stringID string, intID int64, parent ds.Key) ds.Key {
 	return dsR2F(datastore.NewKey(d, kind, stringID, intID, dsF2R(parent)))
 }
 
-func (rdsImpl) DecodeKey(encoded string) (rds.Key, error) {
+func (rdsImpl) DecodeKey(encoded string) (ds.Key, error) {
 	k, err := datastore.DecodeKey(encoded)
 	return dsR2F(k), err
 }
@@ -93,18 +93,18 @@ func idxCallbacker(err error, amt int, cb func(idx int, err error)) error {
 	return err
 }
 
-func (d rdsImpl) DeleteMulti(ks []rds.Key, cb rds.DeleteMultiCB) error {
+func (d rdsImpl) DeleteMulti(ks []ds.Key, cb ds.DeleteMultiCB) error {
 	err := datastore.DeleteMulti(d, dsMF2R(ks))
 	return idxCallbacker(err, len(ks), func(_ int, err error) {
 		cb(err)
 	})
 }
 
-func (d rdsImpl) GetMulti(keys []rds.Key, cb rds.GetMultiCB) error {
+func (d rdsImpl) GetMulti(keys []ds.Key, cb ds.GetMultiCB) error {
 	rkeys := dsMF2R(keys)
 	vals := make([]datastore.PropertyLoadSaver, len(keys))
 	for i := range keys {
-		vals[i] = &typeFilter{rds.PropertyMap{}}
+		vals[i] = &typeFilter{ds.PropertyMap{}}
 	}
 	err := datastore.GetMulti(d, rkeys, vals)
 	return idxCallbacker(err, len(keys), func(idx int, err error) {
@@ -112,15 +112,15 @@ func (d rdsImpl) GetMulti(keys []rds.Key, cb rds.GetMultiCB) error {
 	})
 }
 
-func (d rdsImpl) PutMulti(keys []rds.Key, vals []rds.PropertyLoadSaver, cb rds.PutMultiCB) error {
+func (d rdsImpl) PutMulti(keys []ds.Key, vals []ds.PropertyLoadSaver, cb ds.PutMultiCB) error {
 	rkeys := dsMF2R(keys)
 	rvals := make([]datastore.PropertyLoadSaver, len(vals))
 	for i, val := range vals {
-		rvals[i] = &typeFilter{val.(rds.PropertyMap)}
+		rvals[i] = &typeFilter{val.(ds.PropertyMap)}
 	}
 	rkeys, err := datastore.PutMulti(d, rkeys, vals)
 	return idxCallbacker(err, len(keys), func(idx int, err error) {
-		k := rds.Key(nil)
+		k := ds.Key(nil)
 		if err == nil {
 			k = dsR2F(rkeys[idx])
 		}
@@ -128,14 +128,14 @@ func (d rdsImpl) PutMulti(keys []rds.Key, vals []rds.PropertyLoadSaver, cb rds.P
 	})
 }
 
-func (d rdsImpl) NewQuery(kind string) rds.Query {
+func (d rdsImpl) NewQuery(kind string) ds.Query {
 	return queryImpl{datastore.NewQuery(kind)}
 }
 
-func (d rdsImpl) Run(q rds.Query, cb rds.RunCB) error {
+func (d rdsImpl) Run(q ds.Query, cb ds.RunCB) error {
 	tf := typeFilter{}
 	t := q.(queryImpl).Query.Run(d)
-	cfunc := func() (rds.Cursor, error) {
+	cfunc := func() (ds.Cursor, error) {
 		return t.Cursor()
 	}
 	for {
@@ -152,7 +152,7 @@ func (d rdsImpl) Run(q rds.Query, cb rds.RunCB) error {
 	}
 }
 
-func (d rdsImpl) RunInTransaction(f func(c context.Context) error, opts *rds.TransactionOptions) error {
+func (d rdsImpl) RunInTransaction(f func(c context.Context) error, opts *ds.TransactionOptions) error {
 	ropts := (*datastore.TransactionOptions)(opts)
 	return datastore.RunInTransaction(d, f, ropts)
 }

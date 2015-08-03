@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package rawdatastore
+package datastore
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"google.golang.org/appengine/datastore"
 )
 
-// These errors are returned by various rawdatastore.Interface methods.
+// These errors are returned by various datastore.Interface methods.
 var (
 	ErrInvalidEntityType     = datastore.ErrInvalidEntityType
 	ErrInvalidKey            = datastore.ErrInvalidKey

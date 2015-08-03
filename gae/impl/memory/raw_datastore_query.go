@@ -11,7 +11,7 @@ import (
 	"math"
 	"strings"
 
-	rds "github.com/luci/gae/service/rawdatastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gkvlite"
 	"github.com/luci/luci-go/common/cmpbin"
 )
@@ -219,7 +219,7 @@ type queryImpl struct {
 	ns string
 
 	kind     string
-	ancestor rds.Key
+	ancestor ds.Key
 	filter   []queryFilter
 	order    []queryOrder
 	project  []string
@@ -236,7 +236,7 @@ type queryImpl struct {
 	err error
 }
 
-var _ rds.Query = (*queryImpl)(nil)
+var _ ds.Query = (*queryImpl)(nil)
 
 func (q *queryImpl) normalize() (ret *queryImpl) {
 	// ported from GAE SDK datastore_index.py;Normalize()
@@ -366,17 +366,17 @@ func (q *queryImpl) checkCorrectness(ns string, isTxn bool) (ret *queryImpl) {
 	ineqPropName := ""
 	for _, f := range ret.filter {
 		if f.field == "__key__" {
-			k, ok := f.value.(rds.Key)
+			k, ok := f.value.(ds.Key)
 			if !ok {
 				ret.err = errors.New(
 					"gae/memory: __key__ filter value must be a Key")
 				return
 			}
-			if !rds.KeyValid(k, false, globalAppID, q.ns) {
+			if !ds.KeyValid(k, false, globalAppID, q.ns) {
 				// See the comment in queryImpl.Ancestor; basically this check
 				// never happens in the real env because the SDK silently swallows
 				// this condition :/
-				ret.err = rds.ErrInvalidKey
+				ret.err = ds.ErrInvalidKey
 				return
 			}
 			if k.Namespace() != ns {
@@ -458,32 +458,32 @@ func (q *queryImpl) clone() *queryImpl {
 	return &ret
 }
 
-func (q *queryImpl) Ancestor(k rds.Key) rds.Query {
+func (q *queryImpl) Ancestor(k ds.Key) ds.Query {
 	q = q.clone()
 	q.ancestor = k
 	if k == nil {
 		// SDK has an explicit nil-check
 		q.err = errors.New("datastore: nil query ancestor")
-	} else if !rds.KeyValid(k, false, globalAppID, q.ns) {
+	} else if !ds.KeyValid(k, false, globalAppID, q.ns) {
 		// technically the SDK implementation does a Weird Thing (tm) if both the
 		// stringID and intID are set on a key; it only serializes the stringID in
 		// the proto. This means that if you set the Ancestor to an invalid key,
 		// you'll never actually hear about it. Instead of doing that insanity, we
 		// just swap to an error here.
-		q.err = rds.ErrInvalidKey
+		q.err = ds.ErrInvalidKey
 	} else if k.Namespace() != q.ns {
 		q.err = fmt.Errorf("bad namespace: %q (expected %q)", k.Namespace(), q.ns)
 	}
 	return q
 }
 
-func (q *queryImpl) Distinct() rds.Query {
+func (q *queryImpl) Distinct() ds.Query {
 	q = q.clone()
 	q.distinct = true
 	return q
 }
 
-func (q *queryImpl) Filter(fStr string, val interface{}) rds.Query {
+func (q *queryImpl) Filter(fStr string, val interface{}) ds.Query {
 	q = q.clone()
 	f, err := parseFilter(fStr, val)
 	if err != nil {
@@ -494,7 +494,7 @@ func (q *queryImpl) Filter(fStr string, val interface{}) rds.Query {
 	return q
 }
 
-func (q *queryImpl) Order(field string) rds.Query {
+func (q *queryImpl) Order(field string) ds.Query {
 	q = q.clone()
 	field = strings.TrimSpace(field)
 	o := queryOrder{field, qASC}
@@ -513,19 +513,19 @@ func (q *queryImpl) Order(field string) rds.Query {
 	return q
 }
 
-func (q *queryImpl) Project(fieldName ...string) rds.Query {
+func (q *queryImpl) Project(fieldName ...string) ds.Query {
 	q = q.clone()
 	q.project = append(q.project, fieldName...)
 	return q
 }
 
-func (q *queryImpl) KeysOnly() rds.Query {
+func (q *queryImpl) KeysOnly() ds.Query {
 	q = q.clone()
 	q.keysOnly = true
 	return q
 }
 
-func (q *queryImpl) Limit(limit int) rds.Query {
+func (q *queryImpl) Limit(limit int) ds.Query {
 	q = q.clone()
 	if limit < math.MinInt32 || limit > math.MaxInt32 {
 		q.err = errors.New("datastore: query limit overflow")
@@ -535,7 +535,7 @@ func (q *queryImpl) Limit(limit int) rds.Query {
 	return q
 }
 
-func (q *queryImpl) Offset(offset int) rds.Query {
+func (q *queryImpl) Offset(offset int) ds.Query {
 	q = q.clone()
 	if offset < 0 {
 		q.err = errors.New("datastore: negative query offset")
@@ -549,7 +549,7 @@ func (q *queryImpl) Offset(offset int) rds.Query {
 	return q
 }
 
-func (q *queryImpl) Start(c rds.Cursor) rds.Query {
+func (q *queryImpl) Start(c ds.Cursor) ds.Query {
 	q = q.clone()
 	curs := c.(queryCursor)
 	if !curs.Valid() {
@@ -560,7 +560,7 @@ func (q *queryImpl) Start(c rds.Cursor) rds.Query {
 	return q
 }
 
-func (q *queryImpl) End(c rds.Cursor) rds.Query {
+func (q *queryImpl) End(c ds.Cursor) ds.Query {
 	q = q.clone()
 	curs := c.(queryCursor)
 	if !curs.Valid() {
@@ -571,7 +571,7 @@ func (q *queryImpl) End(c rds.Cursor) rds.Query {
 	return q
 }
 
-func (q *queryImpl) EventualConsistency() rds.Query {
+func (q *queryImpl) EventualConsistency() ds.Query {
 	q = q.clone()
 	q.eventualConsistency = true
 	return q

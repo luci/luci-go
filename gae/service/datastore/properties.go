@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package rawdatastore
+package datastore
 
 import (
 	"errors"
@@ -70,7 +70,7 @@ func MkPropertyNI(val interface{}) Property {
 }
 
 // PropertyConverter may be implemented by the pointer-to a struct field which
-// is serialized by RawDatastore. Its ToProperty will be called on save, and
+// is serialized by datastore. Its ToProperty will be called on save, and
 // it's FromProperty will be called on load (from datastore). The method may
 // do arbitrary computation, and if it encounters an error, may return it.  This
 // error will be a fatal error (as defined by PropertyLoadSaver) for the
@@ -314,7 +314,7 @@ func (p *Property) SetValue(value interface{}, is IndexSetting) (err error) {
 	return
 }
 
-// PropertyLoadSaver may be implemented by a user type, and RawDatastore will
+// PropertyLoadSaver may be implemented by a user type, and datastore will
 // use this interface to serialize the type instead of trying to automatically
 // create a serialization codec for it with helper.GetPLS.
 type PropertyLoadSaver interface {

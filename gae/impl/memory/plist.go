@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"sort"
 
-	rds "github.com/luci/gae/service/rawdatastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gkvlite"
 )
 
@@ -21,13 +21,13 @@ func (s qIndexSlice) Len() int           { return len(s) }
 func (s qIndexSlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s qIndexSlice) Less(i, j int) bool { return s[i].Less(s[j]) }
 
-func defaultIndicies(kind string, pmap rds.PropertyMap) []*qIndex {
+func defaultIndicies(kind string, pmap ds.PropertyMap) []*qIndex {
 	ret := make(qIndexSlice, 0, 2*len(pmap)+1)
 	ret = append(ret, &qIndex{kind, false, nil})
 	for name, pvals := range pmap {
 		needsIndex := false
 		for _, v := range pvals {
-			if v.IndexSetting() == rds.ShouldIndex {
+			if v.IndexSetting() == ds.ShouldIndex {
 				needsIndex = true
 				break
 			}
@@ -44,7 +44,7 @@ func defaultIndicies(kind string, pmap rds.PropertyMap) []*qIndex {
 	return ret
 }
 
-func indexEntriesWithBuiltins(k rds.Key, pm rds.PropertyMap, complexIdxs []*qIndex) *memStore {
+func indexEntriesWithBuiltins(k ds.Key, pm ds.PropertyMap, complexIdxs []*qIndex) *memStore {
 	sip := partiallySerialize(pm)
 	return sip.indexEntries(k, append(defaultIndicies(k.Kind(), pm), complexIdxs...))
 }
@@ -59,7 +59,7 @@ func (s serializedPvals) Less(i, j int) bool { return bytes.Compare(s[i], s[j]) 
 // prop name -> [<serialized DSProperty>, ...]
 type serializedIndexablePmap map[string]serializedPvals
 
-func partiallySerialize(pm rds.PropertyMap) (ret serializedIndexablePmap) {
+func partiallySerialize(pm ds.PropertyMap) (ret serializedIndexablePmap) {
 	if len(pm) == 0 {
 		return
 	}
@@ -69,11 +69,11 @@ func partiallySerialize(pm rds.PropertyMap) (ret serializedIndexablePmap) {
 	for k, vals := range pm {
 		newVals := make(serializedPvals, 0, len(vals))
 		for _, v := range vals {
-			if v.IndexSetting() == rds.NoIndex {
+			if v.IndexSetting() == ds.NoIndex {
 				continue
 			}
 			buf.Reset()
-			v.Write(buf, rds.WithoutContext)
+			v.Write(buf, ds.WithoutContext)
 			newVal := make([]byte, buf.Len())
 			copy(newVal, buf.Bytes())
 			newVals = append(newVals, newVal)
@@ -175,7 +175,7 @@ func (m *matcher) match(idx *qIndex, sip serializedIndexablePmap) (indexRowGen, 
 	return m.buf, true
 }
 
-func (sip serializedIndexablePmap) indexEntries(k rds.Key, idxs []*qIndex) *memStore {
+func (sip serializedIndexablePmap) indexEntries(k ds.Key, idxs []*qIndex) *memStore {
 	ret := newMemStore()
 	idxColl := ret.SetCollection("idx", nil)
 	// getIdxEnts retrieves an index collection or adds it if it's not there.
@@ -188,7 +188,7 @@ func (sip serializedIndexablePmap) indexEntries(k rds.Key, idxs []*qIndex) *memS
 	}
 
 	buf := &bytes.Buffer{}
-	rds.WriteKey(buf, rds.WithoutContext, k)
+	ds.WriteKey(buf, ds.WithoutContext, k)
 	keyData := buf.Bytes()
 
 	walkPermutations := func(prefix []byte, irg indexRowGen, ents *memCollection) {
@@ -212,7 +212,7 @@ func (sip serializedIndexablePmap) indexEntries(k rds.Key, idxs []*qIndex) *memS
 			} else if idx.ancestor {
 				for ancKey := k; ancKey != nil; ancKey = ancKey.Parent() {
 					buf := &bytes.Buffer{}
-					rds.WriteKey(buf, rds.WithoutContext, ancKey)
+					ds.WriteKey(buf, ds.WithoutContext, ancKey)
 					walkPermutations(buf.Bytes(), irg, idxEnts)
 				}
 			} else {
@@ -224,7 +224,7 @@ func (sip serializedIndexablePmap) indexEntries(k rds.Key, idxs []*qIndex) *memS
 	return ret
 }
 
-func updateIndicies(store *memStore, key rds.Key, oldEnt, newEnt rds.PropertyMap) {
+func updateIndicies(store *memStore, key ds.Key, oldEnt, newEnt ds.PropertyMap) {
 	idxColl := store.GetCollection("idx")
 	if idxColl == nil {
 		idxColl = store.SetCollection("idx", nil)
