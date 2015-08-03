@@ -17,9 +17,9 @@ type fakeInfo struct{ info.Interface }
 func (fakeInfo) GetNamespace() string { return "ns" }
 func (fakeInfo) AppID() string        { return "aid" }
 
-type fakeService struct{ Interface }
+type fakeService struct{ RawInterface }
 
-type fakeFilt struct{ Interface }
+type fakeFilt struct{ RawInterface }
 
 func (fakeFilt) NewKey(kind, stringID string, intID int64, parent Key) Key {
 	return NewKey("aid", "ns", kind, stringID, intID, parent)
@@ -31,18 +31,18 @@ func TestServices(t *testing.T) {
 	Convey("Test service interfaces", t, func() {
 		c := context.Background()
 		Convey("without adding anything", func() {
-			So(Get(c), ShouldBeNil)
+			So(GetRaw(c), ShouldBeNil)
 		})
 
 		Convey("adding a basic implementation", func() {
-			c = Set(info.Set(c, fakeInfo{}), fakeService{})
+			c = SetRaw(info.Set(c, fakeInfo{}), fakeService{})
 
 			Convey("lets you pull them back out", func() {
-				So(Get(c), ShouldResemble, &checkFilter{fakeService{}, "aid", "ns"})
+				So(GetRaw(c), ShouldResemble, &checkFilter{fakeService{}, "aid", "ns"})
 			})
 
 			Convey("and lets you add filters", func() {
-				c = AddFilters(c, func(ic context.Context, rds Interface) Interface {
+				c = AddRawFilters(c, func(ic context.Context, rds RawInterface) RawInterface {
 					return fakeFilt{rds}
 				})
 
@@ -51,7 +51,7 @@ func TestServices(t *testing.T) {
 			})
 		})
 		Convey("adding zero filters does nothing", func() {
-			So(AddFilters(c), ShouldEqual, c)
+			So(AddRawFilters(c), ShouldEqual, c)
 		})
 	})
 }

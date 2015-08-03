@@ -19,14 +19,6 @@ func TestBrokenFeatures(t *testing.T) {
 
 	e := errors.New("default err")
 
-	cbe := func(expect string) func(datastore.PropertyMap, error) {
-		return func(_ datastore.PropertyMap, err error) {
-			So(err.Error(), ShouldContainSubstring, expect)
-		}
-	}
-
-	cbn := func(datastore.PropertyMap, error) {}
-
 	Convey("BrokenFeatures", t, func() {
 		c := memory.Use(context.Background())
 
@@ -34,39 +26,40 @@ func TestBrokenFeatures(t *testing.T) {
 			Convey("without a default", func() {
 				c, bf := FilterRDS(c, nil)
 				ds := datastore.Get(c)
-				keys := []datastore.Key{ds.NewKey("Wut", "", 1, nil)}
+				vals := []datastore.PropertyMap{{
+					"$key": {datastore.MkPropertyNI(ds.NewKey("Wut", "", 1, nil))},
+				}}
 
 				Convey("by specifying an error", func() {
 					bf.BreakFeatures(e, "GetMulti", "PutMulti")
-					So(ds.GetMulti(keys, cbn), ShouldEqual, e)
+					So(ds.GetMulti(vals), ShouldEqual, e)
 
 					Convey("and you can unbreak them as well", func() {
 						bf.UnbreakFeatures("GetMulti")
 
-						err := ds.GetMulti(keys, cbe(datastore.ErrNoSuchEntity.Error()))
-						So(err, ShouldBeNil)
+						So(errors.SingleError(ds.GetMulti(vals)), ShouldEqual, datastore.ErrNoSuchEntity)
 
 						Convey("no broken features at all is a shortcut", func() {
 							bf.UnbreakFeatures("PutMulti")
-							err := ds.GetMulti(keys, cbe(datastore.ErrNoSuchEntity.Error()))
-							So(err, ShouldBeNil)
+							So(errors.SingleError(ds.GetMulti(vals)), ShouldEqual, datastore.ErrNoSuchEntity)
 						})
 					})
 				})
 
 				Convey("Not specifying an error gets you a generic error", func() {
 					bf.BreakFeatures(nil, "GetMulti")
-					err := ds.GetMulti(keys, cbn)
-					So(err.Error(), ShouldContainSubstring, `feature "GetMulti" is broken`)
+					So(ds.GetMulti(vals).Error(), ShouldContainSubstring, `feature "GetMulti" is broken`)
 				})
 			})
 
 			Convey("with a default", func() {
 				c, bf := FilterRDS(c, e)
 				ds := datastore.Get(c)
-				keys := []datastore.Key{ds.NewKey("Wut", "", 1, nil)}
+				vals := []datastore.PropertyMap{{
+					"$key": {datastore.MkPropertyNI(ds.NewKey("Wut", "", 1, nil))},
+				}}
 				bf.BreakFeatures(nil, "GetMulti")
-				So(ds.GetMulti(keys, cbn), ShouldEqual, e)
+				So(ds.GetMulti(vals), ShouldEqual, e)
 			})
 		})
 	})

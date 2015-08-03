@@ -15,26 +15,26 @@ var (
 	rawDatastoreFilterKey key = 1
 )
 
-// Factory is the function signature for factory methods compatible with
-// SetFactory.
-type Factory func(context.Context) Interface
+// RawFactory is the function signature for factory methods compatible with
+// SetRawFactory.
+type RawFactory func(context.Context) RawInterface
 
-// Filter is the function signature for a filter RDS implementation. It
+// RawFilter is the function signature for a filter RDS implementation. It
 // gets the current RDS implementation, and returns a new RDS implementation
 // backed by the one passed in.
-type Filter func(context.Context, Interface) Interface
+type RawFilter func(context.Context, RawInterface) RawInterface
 
-// getUnfiltered gets gets the Interface implementation from context without
+// getUnfiltered gets gets the RawInterface implementation from context without
 // any of the filters applied.
-func getUnfiltered(c context.Context) Interface {
-	if f, ok := c.Value(rawDatastoreKey).(Factory); ok && f != nil {
+func getUnfiltered(c context.Context) RawInterface {
+	if f, ok := c.Value(rawDatastoreKey).(RawFactory); ok && f != nil {
 		return f(c)
 	}
 	return nil
 }
 
-// Get gets the Interface implementation from context.
-func Get(c context.Context) Interface {
+// GetRaw gets the RawInterface implementation from context.
+func GetRaw(c context.Context) RawInterface {
 	ret := getUnfiltered(c)
 	if ret == nil {
 		return nil
@@ -45,34 +45,39 @@ func Get(c context.Context) Interface {
 	return applyCheckFilter(c, ret)
 }
 
-// SetFactory sets the function to produce Datastore instances, as returned by
-// the Get method.
-func SetFactory(c context.Context, rdsf Factory) context.Context {
+// Get gets the Interface implementation from context.
+func Get(c context.Context) Interface {
+	return &datastoreImpl{GetRaw(c)}
+}
+
+// SetRawFactory sets the function to produce Datastore instances, as returned by
+// the GetRaw method.
+func SetRawFactory(c context.Context, rdsf RawFactory) context.Context {
 	return context.WithValue(c, rawDatastoreKey, rdsf)
 }
 
-// Set sets the current Datastore object in the context. Useful for testing with
-// a quick mock. This is just a shorthand SetFactory invocation to set a factory
+// SetRaw sets the current Datastore object in the context. Useful for testing with
+// a quick mock. This is just a shorthand SetRawFactory invocation to set a factory
 // which always returns the same object.
-func Set(c context.Context, rds Interface) context.Context {
-	return SetFactory(c, func(context.Context) Interface { return rds })
+func SetRaw(c context.Context, rds RawInterface) context.Context {
+	return SetRawFactory(c, func(context.Context) RawInterface { return rds })
 }
 
-func getCurFilters(c context.Context) []Filter {
+func getCurFilters(c context.Context) []RawFilter {
 	curFiltsI := c.Value(rawDatastoreFilterKey)
 	if curFiltsI != nil {
-		return curFiltsI.([]Filter)
+		return curFiltsI.([]RawFilter)
 	}
 	return nil
 }
 
-// AddFilters adds Interface filters to the context.
-func AddFilters(c context.Context, filts ...Filter) context.Context {
+// AddRawFilters adds RawInterface filters to the context.
+func AddRawFilters(c context.Context, filts ...RawFilter) context.Context {
 	if len(filts) == 0 {
 		return c
 	}
 	cur := getCurFilters(c)
-	newFilts := make([]Filter, 0, len(cur)+len(filts))
+	newFilts := make([]RawFilter, 0, len(cur)+len(filts))
 	newFilts = append(newFilts, getCurFilters(c)...)
 	newFilts = append(newFilts, filts...)
 	return context.WithValue(c, rawDatastoreFilterKey, newFilts)

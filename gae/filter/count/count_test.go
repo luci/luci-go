@@ -21,14 +21,6 @@ import (
 func TestCount(t *testing.T) {
 	t.Parallel()
 
-	pnil := func(_ datastore.Key, err error) {
-		So(err, ShouldBeNil)
-	}
-
-	gnil := func(_ datastore.PropertyMap, err error) {
-		So(err, ShouldBeNil)
-	}
-
 	Convey("Test Count filter", t, func() {
 		c, fb := featureBreaker.FilterRDS(memory.Use(context.Background()), nil)
 		c, ctr := FilterRDS(c)
@@ -37,31 +29,24 @@ func TestCount(t *testing.T) {
 		So(ctr, ShouldNotBeNil)
 
 		ds := datastore.Get(c)
+		vals := []datastore.PropertyMap{{
+			"Val":  {datastore.MkProperty(100)},
+			"$key": {datastore.MkPropertyNI(ds.NewKey("Kind", "", 1, nil))},
+		}}
 
 		Convey("Calling a ds function should reflect in counter", func() {
-			p := datastore.Property{}
-			p.SetValue(100, false)
-			keys := []datastore.Key{ds.NewKey("Kind", "", 0, nil)}
-			vals := []datastore.PropertyLoadSaver{&datastore.PropertyMap{"Val": {p}}}
-
-			So(ds.PutMulti(keys, vals, pnil), ShouldBeNil)
+			So(ds.PutMulti(vals), ShouldBeNil)
 			So(ctr.NewKey.Successes, ShouldEqual, 1)
 			So(ctr.PutMulti.Successes, ShouldEqual, 1)
 
 			Convey("effects are cumulative", func() {
-				So(ds.PutMulti(keys, vals, pnil), ShouldBeNil)
+				So(ds.PutMulti(vals), ShouldBeNil)
 				So(ctr.PutMulti.Successes, ShouldEqual, 2)
 
 				Convey("even within transactions", func() {
-					root := ds.NewKey("Root", "", 1, nil)
 					ds.RunInTransaction(func(c context.Context) error {
 						ds := datastore.Get(c)
-						keys := []datastore.Key{
-							ds.NewKey("Kind", "hi", 0, root),
-							ds.NewKey("Kind", "there", 0, root),
-						}
-						vals = append(vals, vals[0])
-						So(ds.PutMulti(keys, vals, pnil), ShouldBeNil)
+						So(ds.PutMulti(append(vals, vals[0])), ShouldBeNil)
 						return nil
 					}, nil)
 				})
@@ -69,23 +54,16 @@ func TestCount(t *testing.T) {
 		})
 
 		Convey("errors count against errors", func() {
-			keys := []datastore.Key{ds.NewKey("Kind", "", 1, nil)}
-			vals := []datastore.PropertyLoadSaver{&datastore.PropertyMap{"Val": {{}}}}
-
 			fb.BreakFeatures(nil, "GetMulti")
 
-			ds.GetMulti(keys, gnil)
+			ds.GetMulti(vals)
 			So(ctr.GetMulti.Errors, ShouldEqual, 1)
 
 			fb.UnbreakFeatures("GetMulti")
 
-			err := ds.PutMulti(keys, vals, func(k datastore.Key, err error) {
-				keys[0] = k
-				So(err, ShouldBeNil)
-			})
-			So(err, ShouldBeNil)
+			So(ds.PutMulti(vals), ShouldBeNil)
 
-			ds.GetMulti(keys, gnil)
+			ds.GetMulti(vals)
 			So(ctr.GetMulti.Errors, ShouldEqual, 1)
 			So(ctr.GetMulti.Successes, ShouldEqual, 1)
 			So(ctr.GetMulti.Total(), ShouldEqual, 2)
@@ -146,13 +124,13 @@ func ExampleFilterRDS() {
 	// that there are any filters at all.
 	someCalledFunc := func(c context.Context) {
 		ds := datastore.Get(c)
-		key := ds.NewKey("Kind", "", 1, nil)
-		prop := datastore.Property{}
-		prop.SetValue(100, false)
-		val := datastore.PropertyMap{
-			"FieldName": {prop},
+		vals := []datastore.PropertyMap{{
+			"FieldName": {datastore.MkProperty(100)},
+			"$key":      {datastore.MkProperty(ds.NewKey("Kind", "", 1, nil))}},
 		}
-		ds.PutMulti([]datastore.Key{key}, []datastore.PropertyLoadSaver{&val}, nil)
+		if err := ds.PutMulti(vals); err != nil {
+			panic(err)
+		}
 	}
 
 	// Using the other function.

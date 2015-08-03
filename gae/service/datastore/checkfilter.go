@@ -13,7 +13,7 @@ import (
 )
 
 type checkFilter struct {
-	Interface
+	RawInterface
 
 	aid string
 	ns  string
@@ -21,21 +21,27 @@ type checkFilter struct {
 
 func (tcf *checkFilter) RunInTransaction(f func(c context.Context) error, opts *TransactionOptions) error {
 	if f == nil {
-		return nil
+		return fmt.Errorf("datastore: RunInTransaction function is nil")
 	}
-	return tcf.Interface.RunInTransaction(f, opts)
+	return tcf.RawInterface.RunInTransaction(f, opts)
 }
 
-func (tcf *checkFilter) Run(q Query, cb RunCB) error {
-	if q == nil || cb == nil {
-		return nil
+func (tcf *checkFilter) Run(q Query, cb RawRunCB) error {
+	if q == nil {
+		return fmt.Errorf("datastore: Run query is nil")
 	}
-	return tcf.Interface.Run(q, cb)
+	if cb == nil {
+		return fmt.Errorf("datastore: Run callback is nil")
+	}
+	return tcf.RawInterface.Run(q, cb)
 }
 
 func (tcf *checkFilter) GetMulti(keys []Key, cb GetMultiCB) error {
-	if len(keys) == 0 || cb == nil {
+	if len(keys) == 0 {
 		return nil
+	}
+	if cb == nil {
+		return fmt.Errorf("datastore: GetMulti callback is nil")
 	}
 	lme := errors.LazyMultiError{Size: len(keys)}
 	for i, k := range keys {
@@ -49,19 +55,23 @@ func (tcf *checkFilter) GetMulti(keys []Key, cb GetMultiCB) error {
 		}
 		return nil
 	}
-	return tcf.Interface.GetMulti(keys, cb)
+	return tcf.RawInterface.GetMulti(keys, cb)
 }
 
-func (tcf *checkFilter) PutMulti(keys []Key, vals []PropertyLoadSaver, cb PutMultiCB) error {
+func (tcf *checkFilter) PutMulti(keys []Key, vals []PropertyMap, cb PutMultiCB) error {
 	if len(keys) != len(vals) {
 		return fmt.Errorf("datastore: GetMulti with mismatched keys/vals lengths (%d/%d)", len(keys), len(vals))
 	}
 	if len(keys) == 0 {
 		return nil
 	}
+	if cb == nil {
+		return fmt.Errorf("datastore: PutMulti callback is nil")
+	}
 	lme := errors.LazyMultiError{Size: len(keys)}
 	for i, k := range keys {
 		if KeyIncomplete(k) {
+			// use NewKey to avoid going all the way down the stack for this check.
 			k = NewKey(k.AppID(), k.Namespace(), k.Kind(), "", 1, k.Parent())
 		}
 		if !KeyValid(k, false, tcf.aid, tcf.ns) {
@@ -71,8 +81,6 @@ func (tcf *checkFilter) PutMulti(keys []Key, vals []PropertyLoadSaver, cb PutMul
 		v := vals[i]
 		if v == nil {
 			lme.Assign(i, errors.New("datastore: PutMulti got nil vals entry"))
-		} else {
-			lme.Assign(i, v.Problem())
 		}
 	}
 	if me := lme.Get(); me != nil {
@@ -82,25 +90,15 @@ func (tcf *checkFilter) PutMulti(keys []Key, vals []PropertyLoadSaver, cb PutMul
 		return nil
 	}
 
-	err := error(nil)
-	pmVals := make([]PropertyLoadSaver, len(vals))
-	for i, val := range vals {
-		pmVals[i], err = val.Save(true)
-		lme.Assign(i, err)
-	}
-	if me := lme.Get(); me != nil {
-		for _, err := range me.(errors.MultiError) {
-			cb(nil, err)
-		}
-		return nil
-	}
-
-	return tcf.Interface.PutMulti(keys, pmVals, cb)
+	return tcf.RawInterface.PutMulti(keys, vals, cb)
 }
 
 func (tcf *checkFilter) DeleteMulti(keys []Key, cb DeleteMultiCB) error {
 	if len(keys) == 0 {
 		return nil
+	}
+	if cb == nil {
+		return fmt.Errorf("datastore: DeleteMulti callback is nil")
 	}
 	lme := errors.LazyMultiError{Size: len(keys)}
 	for i, k := range keys {
@@ -114,10 +112,10 @@ func (tcf *checkFilter) DeleteMulti(keys []Key, cb DeleteMultiCB) error {
 		}
 		return nil
 	}
-	return tcf.Interface.DeleteMulti(keys, cb)
+	return tcf.RawInterface.DeleteMulti(keys, cb)
 }
 
-func applyCheckFilter(c context.Context, i Interface) Interface {
+func applyCheckFilter(c context.Context, i RawInterface) RawInterface {
 	inf := info.Get(c)
 	return &checkFilter{i, inf.AppID(), inf.GetNamespace()}
 }

@@ -15,7 +15,7 @@ import (
 // using the existing context obtained by appengine.NewContext.
 //
 // The services added are:
-//   - github.com/luci/gae/service/rawdatastore
+//   - github.com/luci/gae/service/datastore
 //   - github.com/luci/gae/service/taskqueue
 //   - github.com/luci/gae/service/memcache
 //   - github.com/luci/gae/service/info
@@ -30,7 +30,7 @@ func Use(c context.Context) context.Context {
 // Use adds production implementations for all the gae services to the context.
 //
 // The services added are:
-//   - github.com/luci/gae/service/rawdatastore
+//   - github.com/luci/gae/service/datastore
 //   - github.com/luci/gae/service/taskqueue
 //   - github.com/luci/gae/service/memcache
 //   - github.com/luci/gae/service/info

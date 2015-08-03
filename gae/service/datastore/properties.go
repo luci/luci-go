@@ -70,11 +70,11 @@ func MkPropertyNI(val interface{}) Property {
 }
 
 // PropertyConverter may be implemented by the pointer-to a struct field which
-// is serialized by datastore. Its ToProperty will be called on save, and
-// it's FromProperty will be called on load (from datastore). The method may
-// do arbitrary computation, and if it encounters an error, may return it.  This
-// error will be a fatal error (as defined by PropertyLoadSaver) for the
-// struct conversion.
+// is serialized by the struct PropertyLoadSaver from GetPLS. Its ToProperty
+// will be called on save, and it's FromProperty will be called on load (from
+// datastore). The method may do arbitrary computation, and if it encounters an
+// error, may return it.  This error will be a fatal error (as defined by
+// PropertyLoadSaver) for the struct conversion.
 //
 // Example:
 //   type Complex complex
@@ -314,7 +314,7 @@ func (p *Property) SetValue(value interface{}, is IndexSetting) (err error) {
 	return
 }
 
-// PropertyLoadSaver may be implemented by a user type, and datastore will
+// PropertyLoadSaver may be implemented by a user type, and Interface will
 // use this interface to serialize the type instead of trying to automatically
 // create a serialization codec for it with helper.GetPLS.
 type PropertyLoadSaver interface {
@@ -331,11 +331,18 @@ type PropertyLoadSaver interface {
 	Save(withMeta bool) (PropertyMap, error)
 
 	// GetMeta will get information about the field which has the struct tag in
-	// the form of `gae:"$<key>[,<value>]?"`.
+	// the form of `gae:"$<key>[,<default>]?"`.
 	//
-	// string and int64 fields will return the <value> in the struct tag,
-	// converted to the appropriate type, if the field has the zero value.
+	// Supported metadata types are:
+	//   int64  - may have default (ascii encoded base-10)
+	//   string - may have default
+	//   Toggle - MUST have default ("true" or "false")
+	//   Key    - NO default allowed
 	//
+	// Struct fields of type Toggle (which is an Auto/On/Off) require you to
+	// specify a value of 'true' or 'false' for the default value of the struct
+	// tag, and GetMeta will return the combined value as a regular boolean true
+	// or false value.
 	// Example:
 	//   type MyStruct struct {
 	//     CoolField int64 `gae:"$id,1"`
@@ -348,12 +355,6 @@ type PropertyLoadSaver interface {
 	//   // val == 10
 	//   // err == nil
 	//
-	// Struct fields of type Toggle (which is an Auto/On/Off) allow you to
-	// specify a value of 'true' or 'false' for the default value of the struct
-	// tag, and GetMeta will return the combined value as a regular boolean true
-	// or false value. If a field is Toggle, a <value> MUST be specified.
-	//
-	// Example:
 	//   type MyStruct struct {
 	//     TFlag Toggle `gae:"$flag1,true"`  // defaults to true
 	//     FFlag Toggle `gae:"$flag2,false"` // defaults to false

@@ -107,10 +107,10 @@ func (d *dataStoreData) entsKeyLocked(key ds.Key) (*memCollection, ds.Key) {
 	return ents, key
 }
 
-func (d *dataStoreData) putMulti(keys []ds.Key, vals []ds.PropertyLoadSaver, cb ds.PutMultiCB) {
+func (d *dataStoreData) putMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) {
 	for i, k := range keys {
 		buf := &bytes.Buffer{}
-		pmap := vals[i].(ds.PropertyMap)
+		pmap, _ := vals[i].Save(false)
 		pmap.Write(buf, ds.WithoutContext)
 		dataBytes := buf.Bytes()
 
@@ -246,7 +246,7 @@ func (d *dataStoreData) applyTxn(c context.Context, obj memContextObj) {
 				d.delMulti([]ds.Key{k},
 					func(e error) { err = e })
 			} else {
-				d.putMulti([]ds.Key{m.key}, []ds.PropertyLoadSaver{m.data},
+				d.putMulti([]ds.Key{m.key}, []ds.PropertyMap{m.data},
 					func(_ ds.Key, e error) { err = e })
 			}
 			err = errors.SingleError(err)
@@ -359,14 +359,14 @@ func (td *txnDataStoreData) writeMutation(getOnly bool, key ds.Key, data ds.Prop
 	return nil
 }
 
-func (td *txnDataStoreData) putMulti(keys []ds.Key, vals []ds.PropertyLoadSaver, cb ds.PutMultiCB) {
+func (td *txnDataStoreData) putMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) {
 	for i, k := range keys {
 		func() {
 			td.parent.Lock()
 			defer td.parent.Unlock()
 			_, k = td.parent.entsKeyLocked(k)
 		}()
-		err := td.writeMutation(false, k, vals[i].(ds.PropertyMap))
+		err := td.writeMutation(false, k, vals[i])
 		if cb != nil {
 			cb(k, err)
 		}

@@ -13,12 +13,12 @@ import (
 type dsState struct {
 	*state
 
-	ds.Interface
+	ds.RawInterface
 }
 
 func (r *dsState) DecodeKey(encoded string) (ret ds.Key, err error) {
 	err = r.run(func() (err error) {
-		ret, err = r.Interface.DecodeKey(encoded)
+		ret, err = r.RawInterface.DecodeKey(encoded)
 		return
 	})
 	return
@@ -26,7 +26,7 @@ func (r *dsState) DecodeKey(encoded string) (ret ds.Key, err error) {
 
 func (r *dsState) RunInTransaction(f func(c context.Context) error, opts *ds.TransactionOptions) error {
 	return r.run(func() error {
-		return r.Interface.RunInTransaction(f, opts)
+		return r.RawInterface.RunInTransaction(f, opts)
 	})
 }
 
@@ -35,26 +35,26 @@ func (r *dsState) RunInTransaction(f func(c context.Context) error, opts *ds.Tra
 
 func (r *dsState) DeleteMulti(keys []ds.Key, cb ds.DeleteMultiCB) error {
 	return r.run(func() error {
-		return r.Interface.DeleteMulti(keys, cb)
+		return r.RawInterface.DeleteMulti(keys, cb)
 	})
 }
 
 func (r *dsState) GetMulti(keys []ds.Key, cb ds.GetMultiCB) error {
 	return r.run(func() error {
-		return r.Interface.GetMulti(keys, cb)
+		return r.RawInterface.GetMulti(keys, cb)
 	})
 }
 
-func (r *dsState) PutMulti(keys []ds.Key, vals []ds.PropertyLoadSaver, cb ds.PutMultiCB) error {
+func (r *dsState) PutMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
 	return r.run(func() (err error) {
-		return r.Interface.PutMulti(keys, vals, cb)
+		return r.RawInterface.PutMulti(keys, vals, cb)
 	})
 }
 
 // FilterRDS installs a counter datastore filter in the context.
 func FilterRDS(c context.Context, defaultError error) (context.Context, FeatureBreaker) {
 	state := newState(defaultError)
-	return ds.AddFilters(c, func(ic context.Context, datastore ds.Interface) ds.Interface {
-		return &dsState{state, datastore}
+	return ds.AddRawFilters(c, func(ic context.Context, RawDatastore ds.RawInterface) ds.RawInterface {
+		return &dsState{state, RawDatastore}
 	}), state
 }

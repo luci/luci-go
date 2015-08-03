@@ -14,8 +14,8 @@ type ByteString []byte
 // GeoPoint represents a location as latitude/longitude in degrees.
 //
 // You probably shouldn't use these, but their inclusion here is so that the
-// Datastore can interact (and round-trip) correctly with other datastore API
-// implementations.
+// datastore service can interact (and round-trip) correctly with other
+// datastore API implementations.
 type GeoPoint struct {
 	Lat, Lng float64
 }

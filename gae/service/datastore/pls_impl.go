@@ -359,7 +359,12 @@ func (p *structPLS) SetMeta(key string, val interface{}) (err error) {
 			val = Off
 		}
 	}
-	p.o.Field(idx).Set(reflect.ValueOf(val))
+	f := p.o.Field(idx)
+	if val == nil {
+		f.Set(reflect.Zero(f.Type()))
+	} else {
+		f.Set(reflect.ValueOf(val))
+	}
 	return nil
 }
 
@@ -369,7 +374,7 @@ var (
 	// The RWMutex is chosen intentionally, as the majority of access to the
 	// structCodecs map will be in parallel and will be to read an existing codec.
 	// There's no reason to serialize goroutines on every
-	// gae.datastore.{Get,Put}{,Multi} call.
+	// gae.Interface.{Get,Put}{,Multi} call.
 	structCodecsMutex sync.RWMutex
 	structCodecs      = map[reflect.Type]*structCodec{}
 )
@@ -563,6 +568,11 @@ func convertMeta(val string, t reflect.Type) (interface{}, error) {
 	switch t {
 	case typeOfString:
 		return val, nil
+	case typeOfKey:
+		if val != "" {
+			return nil, fmt.Errorf("key field is not allowed to have a default: %q", val)
+		}
+		return nil, nil
 	case typeOfInt64:
 		if val == "" {
 			return int64(0), nil

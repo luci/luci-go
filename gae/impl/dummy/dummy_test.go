@@ -45,7 +45,7 @@ func TestContextAccess(t *testing.T) {
 		})
 
 		Convey("Datastore", func() {
-			c = dsS.Set(c, Datastore())
+			c = dsS.SetRaw(c, Datastore())
 			So(dsS.Get(c), ShouldNotBeNil)
 			So(func() {
 				defer p()

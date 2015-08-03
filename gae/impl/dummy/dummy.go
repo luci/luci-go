@@ -68,13 +68,13 @@ func (ds) NewKey(kind string, sid string, iid int64, par datastore.Key) datastor
 	return datastore.NewKey("dummy~appid", "", kind, sid, iid, par)
 }
 func (ds) DecodeKey(string) (datastore.Key, error) { panic(ni()) }
-func (ds) PutMulti([]datastore.Key, []datastore.PropertyLoadSaver, datastore.PutMultiCB) error {
+func (ds) PutMulti([]datastore.Key, []datastore.PropertyMap, datastore.PutMultiCB) error {
 	panic(ni())
 }
 func (ds) GetMulti([]datastore.Key, datastore.GetMultiCB) error       { panic(ni()) }
 func (ds) DeleteMulti([]datastore.Key, datastore.DeleteMultiCB) error { panic(ni()) }
 func (ds) NewQuery(string) datastore.Query                            { panic(ni()) }
-func (ds) Run(datastore.Query, datastore.RunCB) error                 { panic(ni()) }
+func (ds) Run(datastore.Query, datastore.RawRunCB) error              { panic(ni()) }
 func (ds) RunInTransaction(func(context.Context) error, *datastore.TransactionOptions) error {
 	panic(ni())
 }
@@ -84,7 +84,7 @@ var dummyDSInst = ds{}
 // Datastore returns a dummy datastore.Interface implementation suitable
 // for embedding. Every method panics with a message containing the name of the
 // method which was unimplemented.
-func Datastore() datastore.Interface { return dummyDSInst }
+func Datastore() datastore.RawInterface { return dummyDSInst }
 
 /////////////////////////////////// mc ////////////////////////////////////
 

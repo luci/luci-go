@@ -17,7 +17,7 @@ import (
 // useRDS adds a gae.Datastore implementation to context, accessible
 // by gae.GetDS(c)
 func useRDS(c context.Context) context.Context {
-	return ds.SetFactory(c, func(ic context.Context) ds.Interface {
+	return ds.SetRawFactory(c, func(ic context.Context) ds.RawInterface {
 		dsd := cur(ic).Get(memContextDSIdx)
 
 		ns := curGID(ic).namespace
@@ -37,7 +37,7 @@ type dsImpl struct {
 	c    context.Context
 }
 
-var _ ds.Interface = (*dsImpl)(nil)
+var _ ds.RawInterface = (*dsImpl)(nil)
 
 func (d *dsImpl) DecodeKey(encoded string) (ds.Key, error) {
 	return ds.NewKeyFromEncoded(encoded)
@@ -47,7 +47,7 @@ func (d *dsImpl) NewKey(kind, stringID string, intID int64, parent ds.Key) ds.Ke
 	return ds.NewKey(globalAppID, d.ns, kind, stringID, intID, parent)
 }
 
-func (d *dsImpl) PutMulti(keys []ds.Key, vals []ds.PropertyLoadSaver, cb ds.PutMultiCB) error {
+func (d *dsImpl) PutMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
 	d.data.putMulti(keys, vals, cb)
 	return nil
 }
@@ -66,7 +66,7 @@ func (d *dsImpl) NewQuery(kind string) ds.Query {
 	return &queryImpl{ns: d.ns, kind: kind}
 }
 
-func (d *dsImpl) Run(q ds.Query, cb ds.RunCB) error {
+func (d *dsImpl) Run(q ds.Query, cb ds.RawRunCB) error {
 	return nil
 	/*
 		rq := q.(*queryImpl)
@@ -82,7 +82,7 @@ type txnDsImpl struct {
 	ns   string
 }
 
-var _ ds.Interface = (*txnDsImpl)(nil)
+var _ ds.RawInterface = (*txnDsImpl)(nil)
 
 func (d *txnDsImpl) DecodeKey(encoded string) (ds.Key, error) {
 	return ds.NewKeyFromEncoded(encoded)
@@ -92,7 +92,7 @@ func (d *txnDsImpl) NewKey(kind, stringID string, intID int64, parent ds.Key) ds
 	return ds.NewKey(globalAppID, d.ns, kind, stringID, intID, parent)
 }
 
-func (d *txnDsImpl) PutMulti(keys []ds.Key, vals []ds.PropertyLoadSaver, cb ds.PutMultiCB) error {
+func (d *txnDsImpl) PutMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
 	return d.data.run(func() error {
 		d.data.putMulti(keys, vals, cb)
 		return nil
@@ -111,7 +111,7 @@ func (d *txnDsImpl) DeleteMulti(keys []ds.Key, cb ds.DeleteMultiCB) error {
 	})
 }
 
-func (d *txnDsImpl) Run(q ds.Query, cb ds.RunCB) error {
+func (d *txnDsImpl) Run(q ds.Query, cb ds.RawRunCB) error {
 	rq := q.(*queryImpl)
 	if rq.ancestor == nil {
 		return errors.New("memory: queries in transactions only support ancestor queries")

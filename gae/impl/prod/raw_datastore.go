@@ -6,6 +6,7 @@ package prod
 
 import (
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/info"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
@@ -14,10 +15,8 @@ import (
 // useRDS adds a gae.RawDatastore implementation to context, accessible
 // by gae.GetDS(c)
 func useRDS(c context.Context) context.Context {
-	return ds.SetFactory(c, func(ci context.Context) ds.Interface {
-		// TODO(riannucci): Track namespace in a better way
-		k := datastore.NewKey(ci, "kind", "", 1, nil) // get current namespace.
-		return rdsImpl{ci, k.Namespace()}
+	return ds.SetRawFactory(c, func(ci context.Context) ds.RawInterface {
+		return rdsImpl{ci, info.Get(ci).GetNamespace()}
 	})
 }
 
@@ -112,11 +111,11 @@ func (d rdsImpl) GetMulti(keys []ds.Key, cb ds.GetMultiCB) error {
 	})
 }
 
-func (d rdsImpl) PutMulti(keys []ds.Key, vals []ds.PropertyLoadSaver, cb ds.PutMultiCB) error {
+func (d rdsImpl) PutMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
 	rkeys := dsMF2R(keys)
 	rvals := make([]datastore.PropertyLoadSaver, len(vals))
 	for i, val := range vals {
-		rvals[i] = &typeFilter{val.(ds.PropertyMap)}
+		rvals[i] = &typeFilter{val}
 	}
 	rkeys, err := datastore.PutMulti(d, rkeys, vals)
 	return idxCallbacker(err, len(keys), func(idx int, err error) {
@@ -132,7 +131,7 @@ func (d rdsImpl) NewQuery(kind string) ds.Query {
 	return queryImpl{datastore.NewQuery(kind)}
 }
 
-func (d rdsImpl) Run(q ds.Query, cb ds.RunCB) error {
+func (d rdsImpl) Run(q ds.Query, cb ds.RawRunCB) error {
 	tf := typeFilter{}
 	t := q.(queryImpl).Query.Run(d)
 	cfunc := func() (ds.Cursor, error) {

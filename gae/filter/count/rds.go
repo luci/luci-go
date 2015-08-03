@@ -25,10 +25,10 @@ type DSCounter struct {
 type dsCounter struct {
 	c *DSCounter
 
-	ds ds.Interface
+	ds ds.RawInterface
 }
 
-var _ ds.Interface = (*dsCounter)(nil)
+var _ ds.RawInterface = (*dsCounter)(nil)
 
 func (r *dsCounter) NewKey(kind, stringID string, intID int64, parent ds.Key) ds.Key {
 	r.c.NewKey.up()
@@ -45,7 +45,7 @@ func (r *dsCounter) NewQuery(kind string) ds.Query {
 	return r.ds.NewQuery(kind)
 }
 
-func (r *dsCounter) Run(q ds.Query, cb ds.RunCB) error {
+func (r *dsCounter) Run(q ds.Query, cb ds.RawRunCB) error {
 	return r.c.Run.up(r.ds.Run(q, cb))
 }
 
@@ -61,14 +61,14 @@ func (r *dsCounter) GetMulti(keys []ds.Key, cb ds.GetMultiCB) error {
 	return r.c.GetMulti.up(r.ds.GetMulti(keys, cb))
 }
 
-func (r *dsCounter) PutMulti(keys []ds.Key, vals []ds.PropertyLoadSaver, cb ds.PutMultiCB) error {
+func (r *dsCounter) PutMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
 	return r.c.PutMulti.up(r.ds.PutMulti(keys, vals, cb))
 }
 
 // FilterRDS installs a counter datastore filter in the context.
 func FilterRDS(c context.Context) (context.Context, *DSCounter) {
 	state := &DSCounter{}
-	return ds.AddFilters(c, func(ic context.Context, ds ds.Interface) ds.Interface {
+	return ds.AddRawFilters(c, func(ic context.Context, ds ds.RawInterface) ds.RawInterface {
 		return &dsCounter{state, ds}
 	}), state
 }
