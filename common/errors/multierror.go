@@ -103,6 +103,17 @@ func (e *LazyMultiError) Assign(i int, err error) bool {
 	return true
 }
 
+// GetOne returns the error at the given index, or nil, if no non-nil error
+// was Assign'd.
+func (e *LazyMultiError) GetOne(i int) error {
+	e.Lock()
+	defer e.Unlock()
+	if e.me == nil {
+		return nil
+	}
+	return e.me[i]
+}
+
 // Get returns the MultiError, or nil, if no non-nil error was Assign'd.
 func (e *LazyMultiError) Get() error {
 	e.Lock()
