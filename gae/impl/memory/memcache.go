@@ -50,42 +50,47 @@ func (m *mcItem) SetExpiration(exp time.Duration) mc.Item {
 }
 
 func (m *mcItem) SetAll(other mc.Item) {
-	*m = *other.(*mcItem).duplicate(false)
+	*m = *other.(*mcItem)
 }
 
-func (m *mcItem) duplicate(deep bool) *mcItem {
-	ret := mcItem{}
-	ret = *m
-	if deep {
-		ret.value = make([]byte, len(m.value))
-		copy(ret.value, m.value)
-	}
-	return &ret
+type mcDataItem struct {
+	value      []byte
+	flags      uint32
+	expiration time.Time
+	casID      uint64
+}
+
+func (m *mcDataItem) toUserItem(key string) *mcItem {
+	value := make([]byte, len(m.value))
+	copy(value, m.value)
+	// Expiration is defined to be 0 when retrieving items from memcache.
+	//   https://cloud.google.com/appengine/docs/go/memcache/reference#Item
+	// ¯\_(ツ)_/¯
+	return &mcItem{key, value, m.flags, 0, m.casID}
 }
 
 type memcacheData struct {
 	lock  sync.RWMutex
-	items map[string]*mcItem
+	items map[string]*mcDataItem
 	casID uint64
 
 	stats mc.Statistics
 }
 
-func (m *memcacheData) mkItemLocked(now time.Time, i mc.Item) (ret *mcItem) {
+func (m *memcacheData) mkDataItemLocked(now time.Time, i mc.Item) (ret *mcDataItem) {
 	m.casID++
 
-	var exp time.Duration
+	exp := time.Time{}
 	if i.Expiration() != 0 {
-		exp = time.Duration(now.Add(i.Expiration()).UnixNano())
+		exp = now.Add(i.Expiration()).Truncate(time.Second)
 	}
 	value := make([]byte, len(i.Value()))
 	copy(value, i.Value())
-	return &mcItem{
-		key:        i.Key(),
+	return &mcDataItem{
 		flags:      i.Flags(),
 		expiration: exp,
 		value:      value,
-		CasID:      m.casID,
+		casID:      m.casID,
 	}
 }
 
@@ -96,7 +101,7 @@ func (m *memcacheData) setItemLocked(now time.Time, i mc.Item) {
 	}
 	m.stats.Items++
 	m.stats.Bytes += uint64(len(i.Value()))
-	m.items[i.Key()] = m.mkItemLocked(now, i)
+	m.items[i.Key()] = m.mkDataItemLocked(now, i)
 }
 
 func (m *memcacheData) delItemLocked(k string) {
@@ -109,19 +114,19 @@ func (m *memcacheData) delItemLocked(k string) {
 
 func (m *memcacheData) reset() {
 	m.stats = mc.Statistics{}
-	m.items = map[string]*mcItem{}
+	m.items = map[string]*mcDataItem{}
 }
 
 func (m *memcacheData) hasItemLocked(now time.Time, key string) bool {
 	ret, ok := m.items[key]
-	if ok && ret.Expiration() != 0 && ret.Expiration() < time.Duration(now.UnixNano()) {
+	if ok && !ret.expiration.IsZero() && ret.expiration.Before(now) {
 		m.delItemLocked(key)
 		return false
 	}
 	return ok
 }
 
-func (m *memcacheData) retrieveLocked(now time.Time, key string) (*mcItem, error) {
+func (m *memcacheData) retrieveLocked(now time.Time, key string) (*mcDataItem, error) {
 	if !m.hasItemLocked(now, key) {
 		m.stats.Misses++
 		return nil, mc.ErrCacheMiss
@@ -155,7 +160,7 @@ func useMC(c context.Context) context.Context {
 		ns := curGID(ic).namespace
 		mcd, ok := mcdMap[ns]
 		if !ok {
-			mcd = &memcacheData{items: map[string]*mcItem{}}
+			mcd = &memcacheData{items: map[string]*mcDataItem{}}
 			mcdMap[ns] = mcd
 		}
 
@@ -213,7 +218,7 @@ func (m *memcacheImpl) CompareAndSwapMulti(items []mc.Item, cb mc.RawCB) error {
 				casid = mi.CasID
 			}
 
-			if cur.CasID == casid {
+			if cur.casID == casid {
 				m.data.setItemLocked(now, itm)
 			} else {
 				return mc.ErrCASConflict
@@ -250,7 +255,7 @@ func (m *memcacheImpl) GetMulti(keys []string, cb mc.RawItemCB) error {
 			if err != nil {
 				return nil, err
 			}
-			return val.duplicate(true).SetExpiration(0), nil
+			return val.toUserItem(k), nil
 		}()
 	}
 

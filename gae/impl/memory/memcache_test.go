@@ -185,11 +185,10 @@ func TestMemcache(t *testing.T) {
 			So(stats.Misses, ShouldEqual, 1)
 			So(stats.ByteHits, ShouldEqual, 4*4)
 			So(mci.data.casID, ShouldEqual, 1)
-			So(mci.data.items["sup"], ShouldResemble, &mcItem{
-				key:        "sup",
+			So(mci.data.items["sup"], ShouldResemble, &mcDataItem{
 				value:      []byte("cool"),
-				expiration: time.Duration(curTime.Add(time.Second * 2).UnixNano()),
-				CasID:      1,
+				expiration: curTime.Add(time.Second * 2).Truncate(time.Second),
+				casID:      1,
 			})
 
 			getItm := mc.NewItem("sup")
