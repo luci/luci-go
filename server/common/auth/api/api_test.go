@@ -101,6 +101,14 @@ func TestIsInGroupNormalCases(t *testing.T) {
 			},
 			expected: true,
 		},
+		{ // should be true for "*" group name.
+			groups: map[string]*model.AuthGroup{
+				groupName: {
+					Nested: []string{"*"},
+				},
+			},
+			expected: true,
+		},
 	}
 	for _, tc := range testcases {
 		seen := make(map[string]bool)
@@ -135,6 +143,34 @@ func TestIsInGroupErrorCasesShouldBeIgnored(t *testing.T) {
 		actual := isInGroup(groupName, userID, tc.groups, seen)
 		if actual {
 			t.Errorf("isInGroup(%q, %q, %q, _) = %v; want false", groupName, userID, tc.groups, actual)
+		}
+	}
+}
+
+func TestFlattenGroupsShouldWorkForNestedGroups(t *testing.T) {
+	userID := model.ToUserID("dummy@example.com")
+	groups := map[string]*model.AuthGroup{
+		"orig": {
+			Nested: []string{"nested"},
+		},
+		"nested": {
+			Nested: []string{"nestednested"},
+		},
+		"nestednested": {
+			Members: []string{userID},
+		},
+		"yetanother": {
+			// yet another group that use "nested".
+			// if pruning is broken, either this or orig won't work.
+			Nested: []string{"nested"},
+		},
+	}
+	fgs := flattenGroups(groups)
+	names := []string{"orig", "nested", "nestednested", "yetanother"}
+	for _, name := range names {
+		actual := fgs[name].has(userID)
+		if !actual {
+			t.Errorf("fgs[%q]=%v; want true", name, actual)
 		}
 	}
 }
