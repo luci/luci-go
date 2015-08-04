@@ -491,7 +491,7 @@ func (a *archiver) stage1DedupeLoop() {
 
 func (a *archiver) stage2HashLoop() {
 	defer close(a.stage3LookupChan)
-	pool := common.NewGoroutinePriorityPool(a.maxConcurrentContains, a.canceler)
+	pool := common.NewGoroutinePriorityPool(a.maxConcurrentHash, a.canceler)
 	defer func() {
 		_ = pool.Wait()
 	}()
