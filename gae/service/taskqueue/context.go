@@ -15,26 +15,26 @@ var (
 	taskQueueFilterKey key = 1
 )
 
-// Factory is the function signature for factory methods compatible with
-// SetFactory.
-type Factory func(context.Context) Interface
+// RawFactory is the function signature for RawFactory methods compatible with
+// SetRawFactory.
+type RawFactory func(context.Context) RawInterface
 
-// Filter is the function signature for a filter TQ implementation. It
+// RawFilter is the function signature for a RawFilter TQ implementation. It
 // gets the current TQ implementation, and returns a new TQ implementation
 // backed by the one passed in.
-type Filter func(context.Context, Interface) Interface
+type RawFilter func(context.Context, RawInterface) RawInterface
 
-// getUnfiltered gets gets the Interface implementation from context without
+// getUnfiltered gets gets the RawInterface implementation from context without
 // any of the filters applied.
-func getUnfiltered(c context.Context) Interface {
-	if f, ok := c.Value(taskQueueKey).(Factory); ok && f != nil {
+func getUnfiltered(c context.Context) RawInterface {
+	if f, ok := c.Value(taskQueueKey).(RawFactory); ok && f != nil {
 		return f(c)
 	}
 	return nil
 }
 
-// Get gets the Interface implementation from context.
-func Get(c context.Context) Interface {
+// GetRaw gets the RawInterface implementation from context.
+func GetRaw(c context.Context) RawInterface {
 	ret := getUnfiltered(c)
 	if ret == nil {
 		return nil
@@ -45,34 +45,34 @@ func Get(c context.Context) Interface {
 	return ret
 }
 
-// SetFactory sets the function to produce Interface instances, as returned by
-// the Get method.
-func SetFactory(c context.Context, tqf Factory) context.Context {
+// SetRawFactory sets the function to produce RawInterface instances, as returned by
+// the GetRaw method.
+func SetRawFactory(c context.Context, tqf RawFactory) context.Context {
 	return context.WithValue(c, taskQueueKey, tqf)
 }
 
-// Set sets the current Interface object in the context. Useful for testing
-// with a quick mock. This is just a shorthand SetFactory invocation to set
-// a factory which always returns the same object.
-func Set(c context.Context, tq Interface) context.Context {
-	return SetFactory(c, func(context.Context) Interface { return tq })
+// SetRaw sets the current RawInterface object in the context. Useful for testing
+// with a quick mock. This is just a shorthand SetRawFactory invocation to SetRaw
+// a RawFactory which always returns the same object.
+func SetRaw(c context.Context, tq RawInterface) context.Context {
+	return SetRawFactory(c, func(context.Context) RawInterface { return tq })
 }
 
-func getCurFilters(c context.Context) []Filter {
+func getCurFilters(c context.Context) []RawFilter {
 	curFiltsI := c.Value(taskQueueFilterKey)
 	if curFiltsI != nil {
-		return curFiltsI.([]Filter)
+		return curFiltsI.([]RawFilter)
 	}
 	return nil
 }
 
-// AddFilters adds Interface filters to the context.
-func AddFilters(c context.Context, filts ...Filter) context.Context {
+// AddRawFilters adds RawInterface filters to the context.
+func AddRawFilters(c context.Context, filts ...RawFilter) context.Context {
 	if len(filts) == 0 {
 		return c
 	}
 	cur := getCurFilters(c)
-	newFilts := make([]Filter, 0, len(cur)+len(filts))
+	newFilts := make([]RawFilter, 0, len(cur)+len(filts))
 	newFilts = append(newFilts, getCurFilters(c)...)
 	newFilts = append(newFilts, filts...)
 	return context.WithValue(c, taskQueueFilterKey, newFilts)

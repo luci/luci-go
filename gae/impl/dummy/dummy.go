@@ -81,7 +81,7 @@ func (ds) RunInTransaction(func(context.Context) error, *datastore.TransactionOp
 
 var dummyDSInst = ds{}
 
-// Datastore returns a dummy datastore.Interface implementation suitable
+// Datastore returns a dummy datastore.RawInterface implementation suitable
 // for embedding. Every method panics with a message containing the name of the
 // method which was unimplemented.
 func Datastore() datastore.RawInterface { return dummyDSInst }
@@ -90,49 +90,38 @@ func Datastore() datastore.RawInterface { return dummyDSInst }
 
 type mc struct{}
 
-func (mc) Add(memcache.Item) error                             { panic(ni()) }
-func (mc) NewItem(key string) memcache.Item                    { panic(ni()) }
-func (mc) Set(memcache.Item) error                             { panic(ni()) }
-func (mc) Get(string) (memcache.Item, error)                   { panic(ni()) }
-func (mc) Delete(string) error                                 { panic(ni()) }
-func (mc) CompareAndSwap(memcache.Item) error                  { panic(ni()) }
-func (mc) AddMulti([]memcache.Item) error                      { panic(ni()) }
-func (mc) SetMulti([]memcache.Item) error                      { panic(ni()) }
-func (mc) GetMulti([]string) (map[string]memcache.Item, error) { panic(ni()) }
-func (mc) DeleteMulti([]string) error                          { panic(ni()) }
-func (mc) CompareAndSwapMulti([]memcache.Item) error           { panic(ni()) }
-func (mc) Increment(string, int64, uint64) (uint64, error)     { panic(ni()) }
-func (mc) IncrementExisting(string, int64) (uint64, error)     { panic(ni()) }
-func (mc) Flush() error                                        { panic(ni()) }
-func (mc) Stats() (*memcache.Statistics, error)                { panic(ni()) }
+func (mc) NewItem(key string) memcache.Item                          { panic(ni()) }
+func (mc) AddMulti([]memcache.Item, memcache.RawCB) error            { panic(ni()) }
+func (mc) SetMulti([]memcache.Item, memcache.RawCB) error            { panic(ni()) }
+func (mc) GetMulti([]string, memcache.RawItemCB) error               { panic(ni()) }
+func (mc) DeleteMulti([]string, memcache.RawCB) error                { panic(ni()) }
+func (mc) CompareAndSwapMulti([]memcache.Item, memcache.RawCB) error { panic(ni()) }
+func (mc) Increment(string, int64, *uint64) (uint64, error)          { panic(ni()) }
+func (mc) Flush() error                                              { panic(ni()) }
+func (mc) Stats() (*memcache.Statistics, error)                      { panic(ni()) }
 
 var dummyMCInst = mc{}
 
-// Memcache returns a dummy memcache.Interface implementation suitable for
+// Memcache returns a dummy memcache.RawInterface implementation suitable for
 // embedding.  Every method panics with a message containing the name of the
 // method which was unimplemented.
-func Memcache() memcache.Interface { return dummyMCInst }
+func Memcache() memcache.RawInterface { return dummyMCInst }
 
 /////////////////////////////////// tq ////////////////////////////////////
 
 type tq struct{}
 
-func (tq) Add(*taskqueue.Task, string) (*taskqueue.Task, error)           { panic(ni()) }
-func (tq) Delete(*taskqueue.Task, string) error                           { panic(ni()) }
-func (tq) AddMulti([]*taskqueue.Task, string) ([]*taskqueue.Task, error)  { panic(ni()) }
-func (tq) DeleteMulti([]*taskqueue.Task, string) error                    { panic(ni()) }
-func (tq) Lease(int, string, int) ([]*taskqueue.Task, error)              { panic(ni()) }
-func (tq) LeaseByTag(int, string, int, string) ([]*taskqueue.Task, error) { panic(ni()) }
-func (tq) ModifyLease(*taskqueue.Task, string, int) error                 { panic(ni()) }
-func (tq) Purge(string) error                                             { panic(ni()) }
-func (tq) QueueStats([]string) ([]taskqueue.Statistics, error)            { panic(ni()) }
+func (tq) AddMulti([]*taskqueue.Task, string, taskqueue.RawTaskCB) error { panic(ni()) }
+func (tq) DeleteMulti([]*taskqueue.Task, string, taskqueue.RawCB) error  { panic(ni()) }
+func (tq) Purge(string) error                                            { panic(ni()) }
+func (tq) Stats([]string, taskqueue.RawStatsCB) error                    { panic(ni()) }
 
 var dummyTQInst = tq{}
 
-// TaskQueue returns a dummy taskqueue.Interface implementation suitable for
+// TaskQueue returns a dummy taskqueue.RawInterface implementation suitable for
 // embedding.  Every method panics with a message containing the name of the
 // method which was unimplemented.
-func TaskQueue() taskqueue.Interface { return dummyTQInst }
+func TaskQueue() taskqueue.RawInterface { return dummyTQInst }
 
 /////////////////////////////////// i ////////////////////////////////////
 

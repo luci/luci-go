@@ -103,7 +103,9 @@
 //    service.RawInterface - the internal service interface used by service
 //                           and filter implementations. Note that some services
 //                           like Info don't distinguish between the service
-//                           interface and the user interface.
+//                           interface and the user interface. This interface is
+//                           typically a bit lower level than Interface and
+//                           lacks convenience methods.
 //
 //    service.Testable     - any additional methods that a 'testing'
 //                           implementation should provide. It's expected that
@@ -132,9 +134,9 @@
 //                            Interface for a service are fully interchangable and
 //                            usage of them can be freely mixed in an application.
 //
-//    service.AddRawFilters - adds one or more Filters to the context.
+//    service.AddRawFilters - adds one or more RawFilters to the context.
 //
-//    service.SetRawFactory - adds a Factory to the context
+//    service.SetRawFactory - adds a RawFactory to the context
 //
 //    service.SetRaw        - adds an implementation of RawInterface to the context
 //                            (shorthand for SetRawFactory, useful for testing)

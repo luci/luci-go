@@ -30,13 +30,15 @@ type Statistics struct {
 type Item interface {
 	Key() string
 	Value() []byte
-	Object() interface{}
 	Flags() uint32
 	Expiration() time.Duration
 
 	SetKey(string) Item
 	SetValue([]byte) Item
-	SetObject(interface{}) Item
 	SetFlags(uint32) Item
 	SetExpiration(time.Duration) Item
+
+	// SetAll copies all the values from other into this item (including the hidden
+	// CasID field).
+	SetAll(other Item)
 }

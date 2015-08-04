@@ -12,6 +12,7 @@ import (
 	"time"
 
 	dsS "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/info"
 	tqS "github.com/luci/gae/service/taskqueue"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -29,16 +30,14 @@ func TestTaskQueue(t *testing.T) {
 		c = mathrand.Set(c, rand.New(rand.NewSource(clock.Now(c).UnixNano())))
 		c = Use(c)
 
-		tq := tqS.Get(c).(interface {
-			tqS.Interface
-			tqS.Testable
-		})
+		tq := tqS.Get(c)
+		tqt := tq.Raw().(tqS.Testable)
 
 		So(tq, ShouldNotBeNil)
 
 		Convey("implements TQMultiReadWriter", func() {
 			Convey("Add", func() {
-				t := &tqS.Task{Path: "/hello/world"}
+				t := tq.NewTask("/hello/world")
 
 				Convey("works", func() {
 					t.Delay = 4 * time.Second
@@ -46,10 +45,10 @@ func TestTaskQueue(t *testing.T) {
 					t.Header.Add("Cat", "tabby")
 					t.Payload = []byte("watwatwat")
 					t.RetryOptions = &tqS.RetryOptions{AgeLimit: 7 * time.Second}
-					_, err := tq.Add(t, "")
-					So(err, ShouldBeNil)
+					So(tq.Add(t, ""), ShouldBeNil)
+
 					name := "Z_UjshxM9ecyMQfGbZmUGOEcgxWU0_5CGLl_-RntudwAw2DqQ5-58bzJiWQN4OKzeuUb9O4JrPkUw2rOvk2Ax46THojnQ6avBQgZdrKcJmrwQ6o4qKfJdiyUbGXvy691yRfzLeQhs6cBhWrgf3wH-VPMcA4SC-zlbJ2U8An7I0zJQA5nBFnMNoMgT-2peGoay3rCSbj4z9VFFm9kS_i6JCaQH518ujLDSNCYdjTq6B6lcWrZAh0U_q3a1S2nXEwrKiw_t9MTNQFgAQZWyGBbvZQPmeRYtu8SPaWzTfd25v_YWgBuVL2rRSPSMvlDwE04nNdtvVzE8vNNiA1zRimmdzKeqATQF9_ReUvj4D7U8dcS703DZWfKMBLgBffY9jqCassOOOw77V72Oq5EVauUw3Qw0L6bBsfM9FtahTKUdabzRZjXUoze3EK4KXPt3-wdidau-8JrVf2XFocjjZbwHoxcGvbtT3b4nGLDlgwdC00bwaFBZWff"
-					So(*tq.GetScheduledTasks()["default"][name], ShouldResemble, tqS.Task{
+					So(tqt.GetScheduledTasks()["default"][name], ShouldResemble, &tqS.Task{
 						ETA:          now.Add(4 * time.Second),
 						Header:       http.Header{"Cat": []string{"tabby"}},
 						Method:       "POST",
@@ -60,49 +59,54 @@ func TestTaskQueue(t *testing.T) {
 					})
 				})
 
+				Convey("picks up namespace", func() {
+					c, err := info.Get(c).Namespace("coolNamespace")
+					So(err, ShouldBeNil)
+					tq = tqS.Get(c)
+
+					t := tq.NewTask("")
+					So(tq.Add(t, ""), ShouldBeNil)
+					So(t.Header, ShouldResemble, http.Header{
+						"X-Appengine-Current-Namespace": {"coolNamespace"},
+					})
+
+				})
+
 				Convey("cannot add to bad queues", func() {
-					_, err := tq.Add(nil, "waaat")
-					So(err.Error(), ShouldContainSubstring, "UNKNOWN_QUEUE")
+					So(tq.Add(nil, "waaat").Error(), ShouldContainSubstring, "UNKNOWN_QUEUE")
 
 					Convey("but you can add Queues when testing", func() {
-						tq.CreateQueue("waaat")
-						_, err := tq.Add(t, "waaat")
-						So(err, ShouldBeNil)
+						tqt.CreateQueue("waaat")
+						So(tq.Add(t, "waaat"), ShouldBeNil)
 
 						Convey("you just can't add them twice", func() {
-							So(func() { tq.CreateQueue("waaat") }, ShouldPanic)
+							So(func() { tqt.CreateQueue("waaat") }, ShouldPanic)
 						})
 					})
 				})
 
 				Convey("supplies a URL if it's missing", func() {
 					t.Path = ""
-					tr, err := tq.Add(t, "")
-					So(err, ShouldBeNil)
-					So(tr.Path, ShouldEqual, "/_ah/queue/default")
+					So(tq.Add(t, ""), ShouldBeNil)
+					So(t.Path, ShouldEqual, "/_ah/queue/default")
 				})
 
 				Convey("cannot add twice", func() {
 					t.Name = "bob"
-					_, err := tq.Add(t, "")
-					So(err, ShouldBeNil)
+					So(tq.Add(t, ""), ShouldBeNil)
 
 					// can't add the same one twice!
-					_, err = tq.Add(t, "")
-					So(err, ShouldEqual, tqS.ErrTaskAlreadyAdded)
+					So(tq.Add(t, ""), ShouldEqual, tqS.ErrTaskAlreadyAdded)
 				})
 
 				Convey("cannot add deleted task", func() {
 					t.Name = "bob"
-					_, err := tq.Add(t, "")
-					So(err, ShouldBeNil)
+					So(tq.Add(t, ""), ShouldBeNil)
 
-					err = tq.Delete(t, "")
-					So(err, ShouldBeNil)
+					So(tq.Delete(t, ""), ShouldBeNil)
 
 					// can't add a deleted task!
-					_, err = tq.Add(t, "")
-					So(err, ShouldEqual, tqS.ErrTaskAlreadyAdded)
+					So(tq.Add(t, ""), ShouldEqual, tqS.ErrTaskAlreadyAdded)
 				})
 
 				Convey("cannot set ETA+Delay", func() {
@@ -114,79 +118,93 @@ func TestTaskQueue(t *testing.T) {
 
 				Convey("must use a reasonable method", func() {
 					t.Method = "Crystal"
-					_, err := tq.Add(t, "")
-					So(err.Error(), ShouldContainSubstring, "bad method")
+					So(tq.Add(t, "").Error(), ShouldContainSubstring, "bad method")
 				})
 
 				Convey("payload gets dumped for non POST/PUT methods", func() {
 					t.Method = "HEAD"
 					t.Payload = []byte("coool")
-					tq, err := tq.Add(t, "")
-					So(err, ShouldBeNil)
-					So(tq.Payload, ShouldBeNil)
-
-					// check that it didn't modify our original
-					So(t.Payload, ShouldResemble, []byte("coool"))
+					So(tq.Add(t, ""), ShouldBeNil)
+					So(t.Payload, ShouldBeNil)
 				})
 
 				Convey("invalid names are rejected", func() {
 					t.Name = "happy times"
-					_, err := tq.Add(t, "")
-					So(err.Error(), ShouldContainSubstring, "INVALID_TASK_NAME")
+					So(tq.Add(t, "").Error(), ShouldContainSubstring, "INVALID_TASK_NAME")
 				})
 
 				Convey("AddMulti also works", func() {
-					t2 := dupTask(t)
+					t2 := t.Duplicate()
 					t2.Path = "/hi/city"
 
 					expect := []*tqS.Task{t, t2}
 
-					tasks, err := tq.AddMulti(expect, "default")
-					So(err, ShouldBeNil)
-					So(len(tasks), ShouldEqual, 2)
-					So(len(tq.GetScheduledTasks()["default"]), ShouldEqual, 2)
+					So(tq.AddMulti(expect, "default"), ShouldBeNil)
+					So(len(expect), ShouldEqual, 2)
+					So(len(tqt.GetScheduledTasks()["default"]), ShouldEqual, 2)
 
 					for i := range expect {
 						Convey(fmt.Sprintf("task %d: %s", i, expect[i].Path), func() {
-							expect[i].Method = "POST"
-							expect[i].ETA = now
-							So(expect[i].Name, ShouldEqual, "")
-							So(len(tasks[i].Name), ShouldEqual, 500)
-							tasks[i].Name = ""
-							So(tasks[i], ShouldResemble, expect[i])
+							So(expect[i].Method, ShouldEqual, "POST")
+							So(expect[i].ETA, ShouldHappenOnOrBefore, now)
+							So(len(expect[i].Name), ShouldEqual, 500)
 						})
 					}
+
+					Convey("stats work too", func() {
+						delay := -time.Second * 400
+
+						t := tq.NewTask("/somewhere")
+						t.Delay = delay
+						So(tq.Add(t, ""), ShouldBeNil)
+
+						stats, err := tq.Stats("")
+						So(err, ShouldBeNil)
+						So(stats[0].Tasks, ShouldEqual, 3)
+						So(stats[0].OldestETA, ShouldHappenOnOrBefore, clock.Now(c).Add(delay))
+
+						_, err = tq.Stats("noexist")
+						So(err.Error(), ShouldContainSubstring, "UNKNOWN_QUEUE")
+					})
+
+					Convey("can purge all tasks", func() {
+						So(tq.Add(&tqS.Task{Path: "/wut/nerbs"}, ""), ShouldBeNil)
+						So(tq.Purge(""), ShouldBeNil)
+
+						So(len(tqt.GetScheduledTasks()["default"]), ShouldEqual, 0)
+						So(len(tqt.GetTombstonedTasks()["default"]), ShouldEqual, 0)
+						So(len(tqt.GetTransactionTasks()["default"]), ShouldEqual, 0)
+
+						Convey("purging a queue which DNE fails", func() {
+							So(tq.Purge("noexist").Error(), ShouldContainSubstring, "UNKNOWN_QUEUE")
+						})
+					})
+
 				})
 			})
 
 			Convey("Delete", func() {
 				t := &tqS.Task{Path: "/hello/world"}
-				tEnQ, err := tq.Add(t, "")
-				So(err, ShouldBeNil)
+				So(tq.Add(t, ""), ShouldBeNil)
 
 				Convey("works", func() {
-					t.Name = tEnQ.Name
 					err := tq.Delete(t, "")
 					So(err, ShouldBeNil)
-					So(len(tq.GetScheduledTasks()["default"]), ShouldEqual, 0)
-					So(len(tq.GetTombstonedTasks()["default"]), ShouldEqual, 1)
-					So(tq.GetTombstonedTasks()["default"][tEnQ.Name], ShouldResemble, tEnQ)
+					So(len(tqt.GetScheduledTasks()["default"]), ShouldEqual, 0)
+					So(len(tqt.GetTombstonedTasks()["default"]), ShouldEqual, 1)
+					So(tqt.GetTombstonedTasks()["default"][t.Name], ShouldResemble, t)
 				})
 
 				Convey("cannot delete a task twice", func() {
-					err := tq.Delete(tEnQ, "")
-					So(err, ShouldBeNil)
+					So(tq.Delete(t, ""), ShouldBeNil)
 
-					err = tq.Delete(tEnQ, "")
-					So(err.Error(), ShouldContainSubstring, "TOMBSTONED_TASK")
+					So(tq.Delete(t, "").Error(), ShouldContainSubstring, "TOMBSTONED_TASK")
 
 					Convey("but you can if you do a reset", func() {
-						tq.ResetTasks()
+						tqt.ResetTasks()
 
-						tEnQ, err := tq.Add(t, "")
-						So(err, ShouldBeNil)
-						err = tq.Delete(tEnQ, "")
-						So(err, ShouldBeNil)
+						So(tq.Add(t, ""), ShouldBeNil)
+						So(tq.Delete(t, ""), ShouldBeNil)
 					})
 				})
 
@@ -202,16 +220,15 @@ func TestTaskQueue(t *testing.T) {
 				})
 
 				Convey("DeleteMulti also works", func() {
-					t2 := dupTask(t)
+					t2 := t.Duplicate()
+					t2.Name = ""
 					t2.Path = "/hi/city"
-					tEnQ2, err := tq.Add(t2, "")
-					So(err, ShouldBeNil)
+					So(tq.Add(t2, ""), ShouldBeNil)
 
 					Convey("usually works", func() {
-						err = tq.DeleteMulti([]*tqS.Task{tEnQ, tEnQ2}, "")
-						So(err, ShouldBeNil)
-						So(len(tq.GetScheduledTasks()["default"]), ShouldEqual, 0)
-						So(len(tq.GetTombstonedTasks()["default"]), ShouldEqual, 2)
+						So(tq.DeleteMulti([]*tqS.Task{t, t2}, ""), ShouldBeNil)
+						So(len(tqt.GetScheduledTasks()["default"]), ShouldEqual, 0)
+						So(len(tqt.GetTombstonedTasks()["default"]), ShouldEqual, 2)
 					})
 				})
 			})
@@ -219,142 +236,120 @@ func TestTaskQueue(t *testing.T) {
 
 		Convey("works with transactions", func() {
 			t := &tqS.Task{Path: "/hello/world"}
-			tEnQ, err := tq.Add(t, "")
-			So(err, ShouldBeNil)
+			So(tq.Add(t, ""), ShouldBeNil)
 
 			t2 := &tqS.Task{Path: "/hi/city"}
-			tEnQ2, err := tq.Add(t2, "")
-			So(err, ShouldBeNil)
+			So(tq.Add(t2, ""), ShouldBeNil)
 
-			err = tq.Delete(tEnQ2, "")
-			So(err, ShouldBeNil)
+			So(tq.Delete(t2, ""), ShouldBeNil)
 
 			Convey("can view regular tasks", func() {
 				dsS.Get(c).RunInTransaction(func(c context.Context) error {
-					tq := tqS.Get(c).(interface {
-						tqS.Testable
-						tqS.Interface
-					})
+					tqt := tqS.Get(c).Raw().(tqS.Testable)
 
-					So(tq.GetScheduledTasks()["default"][tEnQ.Name], ShouldResemble, tEnQ)
-					So(tq.GetTombstonedTasks()["default"][tEnQ2.Name], ShouldResemble, tEnQ2)
-					So(tq.GetTransactionTasks()["default"], ShouldBeNil)
+					So(tqt.GetScheduledTasks()["default"][t.Name], ShouldResemble, t)
+					So(tqt.GetTombstonedTasks()["default"][t2.Name], ShouldResemble, t2)
+					So(tqt.GetTransactionTasks()["default"], ShouldBeNil)
 					return nil
 				}, nil)
 			})
 
 			Convey("can add a new task", func() {
-				tEnQ3 := (*tqS.Task)(nil)
+				t3 := &tqS.Task{Path: "/sandwitch/victory"}
 
-				dsS.Get(c).RunInTransaction(func(c context.Context) error {
-					tq := tqS.Get(c).(interface {
-						tqS.Testable
-						tqS.Interface
-					})
+				err := dsS.Get(c).RunInTransaction(func(c context.Context) error {
+					tq := tqS.Get(c)
+					tqt := tq.Raw().(tqS.Testable)
 
-					t3 := &tqS.Task{Path: "/sandwitch/victory"}
-					tEnQ3, err = tq.Add(t3, "")
-					So(err, ShouldBeNil)
+					So(tq.Add(t3, ""), ShouldBeNil)
+					So(t3.Name, ShouldEqual, "")
 
-					So(tq.GetScheduledTasks()["default"][tEnQ.Name], ShouldResemble, tEnQ)
-					So(tq.GetTombstonedTasks()["default"][tEnQ2.Name], ShouldResemble, tEnQ2)
-					So(tq.GetTransactionTasks()["default"][0], ShouldResemble, tEnQ3)
+					So(tqt.GetScheduledTasks()["default"][t.Name], ShouldResemble, t)
+					So(tqt.GetTombstonedTasks()["default"][t2.Name], ShouldResemble, t2)
+					So(tqt.GetTransactionTasks()["default"][0], ShouldResemble, t3)
 					return nil
 				}, nil)
+				So(err, ShouldBeNil)
 
-				// name gets generated at transaction-commit-time
-				for name := range tq.GetScheduledTasks()["default"] {
-					if name == tEnQ.Name {
-						continue
+				for _, tsk := range tqt.GetScheduledTasks()["default"] {
+					if tsk.Name == t.Name {
+						So(tsk, ShouldResemble, t)
+					} else {
+						tsk.Name = ""
+						So(tsk, ShouldResemble, t3)
 					}
-					tEnQ3.Name = name
-					break
 				}
 
-				So(tq.GetScheduledTasks()["default"][tEnQ.Name], ShouldResemble, tEnQ)
-				So(tq.GetScheduledTasks()["default"][tEnQ3.Name], ShouldResemble, tEnQ3)
-				So(tq.GetTombstonedTasks()["default"][tEnQ2.Name], ShouldResemble, tEnQ2)
-				So(tq.GetTransactionTasks()["default"], ShouldBeNil)
+				So(tqt.GetTombstonedTasks()["default"][t2.Name], ShouldResemble, t2)
+				So(tqt.GetTransactionTasks()["default"], ShouldBeNil)
 			})
 
-			Convey("can a new task (but reset the state in a test)", func() {
-				tEnQ3 := (*tqS.Task)(nil)
+			Convey("can add a new task (but reset the state in a test)", func() {
+				t3 := &tqS.Task{Path: "/sandwitch/victory"}
 
-				ttq := interface {
-					tqS.Testable
-					tqS.Interface
-				}(nil)
+				ttq := tqS.Interface(nil)
 
 				dsS.Get(c).RunInTransaction(func(c context.Context) error {
-					ttq = tqS.Get(c).(interface {
-						tqS.Testable
-						tqS.Interface
-					})
+					ttq = tqS.Get(c)
+					tqt := ttq.Raw().(tqS.Testable)
 
-					t3 := &tqS.Task{Path: "/sandwitch/victory"}
-					tEnQ3, err = ttq.Add(t3, "")
-					So(err, ShouldBeNil)
+					So(ttq.Add(t3, ""), ShouldBeNil)
 
-					So(ttq.GetScheduledTasks()["default"][tEnQ.Name], ShouldResemble, tEnQ)
-					So(ttq.GetTombstonedTasks()["default"][tEnQ2.Name], ShouldResemble, tEnQ2)
-					So(ttq.GetTransactionTasks()["default"][0], ShouldResemble, tEnQ3)
+					So(tqt.GetScheduledTasks()["default"][t.Name], ShouldResemble, t)
+					So(tqt.GetTombstonedTasks()["default"][t2.Name], ShouldResemble, t2)
+					So(tqt.GetTransactionTasks()["default"][0], ShouldResemble, t3)
 
-					ttq.ResetTasks()
+					tqt.ResetTasks()
 
-					So(len(ttq.GetScheduledTasks()["default"]), ShouldEqual, 0)
-					So(len(ttq.GetTombstonedTasks()["default"]), ShouldEqual, 0)
-					So(len(ttq.GetTransactionTasks()["default"]), ShouldEqual, 0)
+					So(len(tqt.GetScheduledTasks()["default"]), ShouldEqual, 0)
+					So(len(tqt.GetTombstonedTasks()["default"]), ShouldEqual, 0)
+					So(len(tqt.GetTransactionTasks()["default"]), ShouldEqual, 0)
 
 					return nil
 				}, nil)
 
-				So(len(tq.GetScheduledTasks()["default"]), ShouldEqual, 0)
-				So(len(tq.GetTombstonedTasks()["default"]), ShouldEqual, 0)
-				So(len(tq.GetTransactionTasks()["default"]), ShouldEqual, 0)
+				So(len(tqt.GetScheduledTasks()["default"]), ShouldEqual, 0)
+				So(len(tqt.GetTombstonedTasks()["default"]), ShouldEqual, 0)
+				So(len(tqt.GetTransactionTasks()["default"]), ShouldEqual, 0)
 
 				Convey("and reusing a closed context is bad times", func() {
-					_, err := ttq.Add(nil, "")
-					So(err.Error(), ShouldContainSubstring, "expired")
+					So(ttq.Add(nil, "").Error(), ShouldContainSubstring, "expired")
 				})
 			})
 
 			Convey("you can AddMulti as well", func() {
 				dsS.Get(c).RunInTransaction(func(c context.Context) error {
-					tq := tqS.Get(c).(interface {
-						tqS.Testable
-						tqS.Interface
-					})
-					_, err := tq.AddMulti([]*tqS.Task{t, t, t}, "")
-					So(err, ShouldBeNil)
-					So(len(tq.GetScheduledTasks()["default"]), ShouldEqual, 1)
-					So(len(tq.GetTransactionTasks()["default"]), ShouldEqual, 3)
+					tq := tqS.Get(c)
+					tqt := tq.Raw().(tqS.Testable)
+
+					t.Name = ""
+					tasks := []*tqS.Task{t.Duplicate(), t.Duplicate(), t.Duplicate()}
+					So(tq.AddMulti(tasks, ""), ShouldBeNil)
+					So(len(tqt.GetScheduledTasks()["default"]), ShouldEqual, 1)
+					So(len(tqt.GetTransactionTasks()["default"]), ShouldEqual, 3)
 					return nil
 				}, nil)
-				So(len(tq.GetScheduledTasks()["default"]), ShouldEqual, 4)
-				So(len(tq.GetTransactionTasks()["default"]), ShouldEqual, 0)
+				So(len(tqt.GetScheduledTasks()["default"]), ShouldEqual, 4)
+				So(len(tqt.GetTransactionTasks()["default"]), ShouldEqual, 0)
 			})
 
 			Convey("unless you add too many things", func() {
 				dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					for i := 0; i < 5; i++ {
-						_, err = tqS.Get(c).Add(t, "")
-						So(err, ShouldBeNil)
+						So(tqS.Get(c).Add(t.Duplicate(), ""), ShouldBeNil)
 					}
-					_, err = tqS.Get(c).Add(t, "")
-					So(err.Error(), ShouldContainSubstring, "BAD_REQUEST")
+					So(tqS.Get(c).Add(t, "").Error(), ShouldContainSubstring, "BAD_REQUEST")
 					return nil
 				}, nil)
 			})
 
 			Convey("unless you Add to a bad queue", func() {
 				dsS.Get(c).RunInTransaction(func(c context.Context) error {
-					_, err = tqS.Get(c).Add(t, "meat")
-					So(err.Error(), ShouldContainSubstring, "UNKNOWN_QUEUE")
+					So(tqS.Get(c).Add(t, "meat").Error(), ShouldContainSubstring, "UNKNOWN_QUEUE")
 
 					Convey("unless you add it!", func() {
-						tqS.Get(c).(tqS.Testable).CreateQueue("meat")
-						_, err = tqS.Get(c).Add(t, "meat")
-						So(err, ShouldBeNil)
+						tqS.Get(c).Raw().(tqS.Testable).CreateQueue("meat")
+						So(tqS.Get(c).Add(t, "meat"), ShouldBeNil)
 					})
 
 					return nil
@@ -362,28 +357,25 @@ func TestTaskQueue(t *testing.T) {
 			})
 
 			Convey("No other features are available, however", func() {
-				err := error(nil)
-				func() {
-					defer func() { err = recover().(error) }()
-					dsS.Get(c).RunInTransaction(func(c context.Context) error {
-						tqS.Get(c).Delete(t, "")
-						return nil
-					}, nil)
-				}()
-				So(err.Error(), ShouldContainSubstring, "TaskQueue.Delete")
+				dsS.Get(c).RunInTransaction(func(c context.Context) error {
+					So(tqS.Get(c).Delete(t, "").Error(), ShouldContainSubstring, "cannot DeleteMulti from a transaction")
+					So(tqS.Get(c).Purge("").Error(), ShouldContainSubstring, "cannot Purge from a transaction")
+					_, err := tqS.Get(c).Stats("")
+					So(err.Error(), ShouldContainSubstring, "cannot Stats from a transaction")
+					return nil
+				}, nil)
 			})
 
 			Convey("adding a new task only happens if we don't errout", func() {
 				dsS.Get(c).RunInTransaction(func(c context.Context) error {
-					t3 := &tqS.Task{Path: "/sandwitch/victory"}
-					_, err = tqS.Get(c).Add(t3, "")
-					So(err, ShouldBeNil)
+					t3 := tq.NewTask("/sandwitch/victory")
+					So(tqS.Get(c).Add(t3, ""), ShouldBeNil)
 					return fmt.Errorf("nooooo")
 				}, nil)
 
-				So(tq.GetScheduledTasks()["default"][tEnQ.Name], ShouldResemble, tEnQ)
-				So(tq.GetTombstonedTasks()["default"][tEnQ2.Name], ShouldResemble, tEnQ2)
-				So(tq.GetTransactionTasks()["default"], ShouldBeNil)
+				So(tqt.GetScheduledTasks()["default"][t.Name], ShouldResemble, t)
+				So(tqt.GetTombstonedTasks()["default"][t2.Name], ShouldResemble, t2)
+				So(tqt.GetTransactionTasks()["default"], ShouldBeNil)
 			})
 
 			Convey("likewise, a panic doesn't schedule anything", func() {
@@ -395,17 +387,15 @@ func TestTaskQueue(t *testing.T) {
 							tqS.Interface
 						})
 
-						t3 := &tqS.Task{Path: "/sandwitch/victory"}
-						_, err = tq.Add(t3, "")
-						So(err, ShouldBeNil)
+						So(tq.Add(tq.NewTask("/sandwitch/victory"), ""), ShouldBeNil)
 
 						panic(fmt.Errorf("nooooo"))
 					}, nil)
 				}()
 
-				So(tq.GetScheduledTasks()["default"][tEnQ.Name], ShouldResemble, tEnQ)
-				So(tq.GetTombstonedTasks()["default"][tEnQ2.Name], ShouldResemble, tEnQ2)
-				So(tq.GetTransactionTasks()["default"], ShouldBeNil)
+				So(tqt.GetScheduledTasks()["default"][t.Name], ShouldResemble, t)
+				So(tqt.GetTombstonedTasks()["default"][t2.Name], ShouldResemble, t2)
+				So(tqt.GetTransactionTasks()["default"], ShouldBeNil)
 			})
 
 		})

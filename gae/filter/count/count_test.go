@@ -77,12 +77,12 @@ func TestCount(t *testing.T) {
 		mc := memcache.Get(c)
 
 		mc.Set(mc.NewItem("hello").SetValue([]byte("sup")))
-		mc.Get("Wat")
-		mc.Get("hello")
+		So(mc.Get(mc.NewItem("Wat")), ShouldNotBeNil)
+		mc.Get(mc.NewItem("hello"))
 
-		So(ctr.Set, ShouldResemble, Entry{1, 0})
-		So(ctr.Get, ShouldResemble, Entry{1, 1})
-		So(ctr.NewItem, ShouldResemble, Entry{1, 0})
+		So(ctr.SetMulti, ShouldResemble, Entry{1, 0})
+		So(ctr.GetMulti, ShouldResemble, Entry{2, 0})
+		So(ctr.NewItem, ShouldResemble, Entry{3, 0})
 	})
 
 	Convey("works for taskqueue", t, func() {
@@ -94,7 +94,7 @@ func TestCount(t *testing.T) {
 		tq.Add(&taskqueue.Task{Name: "wat"}, "")
 		tq.Add(&taskqueue.Task{Name: "wat"}, "DNE_QUEUE")
 
-		So(ctr.Add, ShouldResemble, Entry{1, 1})
+		So(ctr.AddMulti, ShouldResemble, Entry{1, 1})
 	})
 
 	Convey("works for global info", t, func() {

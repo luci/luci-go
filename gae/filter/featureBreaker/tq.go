@@ -13,79 +13,31 @@ import (
 type tqState struct {
 	*state
 
-	tq tq.Interface
+	tq tq.RawInterface
 }
 
-var _ tq.Interface = (*tqState)(nil)
+var _ tq.RawInterface = (*tqState)(nil)
 
-func (t *tqState) Add(task *tq.Task, queueName string) (ret *tq.Task, err error) {
-	err = t.run(func() (err error) {
-		ret, err = t.tq.Add(task, queueName)
-		return
-	})
-	return
+func (t *tqState) AddMulti(tasks []*tq.Task, queueName string, cb tq.RawTaskCB) error {
+	return t.run(func() (err error) { return t.tq.AddMulti(tasks, queueName, cb) })
 }
 
-func (t *tqState) Delete(task *tq.Task, queueName string) error {
-	return t.run(func() error {
-		return t.tq.Delete(task, queueName)
-	})
-}
-
-func (t *tqState) AddMulti(tasks []*tq.Task, queueName string) (ret []*tq.Task, err error) {
-	err = t.run(func() (err error) {
-		ret, err = t.tq.AddMulti(tasks, queueName)
-		return
-	})
-	return
-}
-
-func (t *tqState) DeleteMulti(tasks []*tq.Task, queueName string) error {
-	return t.run(func() error {
-		return t.tq.DeleteMulti(tasks, queueName)
-	})
-}
-
-func (t *tqState) Lease(maxTasks int, queueName string, leaseTime int) (ret []*tq.Task, err error) {
-	err = t.run(func() (err error) {
-		ret, err = t.tq.Lease(maxTasks, queueName, leaseTime)
-		return
-	})
-	return
-}
-
-func (t *tqState) LeaseByTag(maxTasks int, queueName string, leaseTime int, tag string) (ret []*tq.Task, err error) {
-	err = t.run(func() (err error) {
-		ret, err = t.tq.LeaseByTag(maxTasks, queueName, leaseTime, tag)
-		return
-	})
-	return
-}
-
-func (t *tqState) ModifyLease(task *tq.Task, queueName string, leaseTime int) error {
-	return t.run(func() error {
-		return t.tq.ModifyLease(task, queueName, leaseTime)
-	})
+func (t *tqState) DeleteMulti(tasks []*tq.Task, queueName string, cb tq.RawCB) error {
+	return t.run(func() error { return t.tq.DeleteMulti(tasks, queueName, cb) })
 }
 
 func (t *tqState) Purge(queueName string) error {
-	return t.run(func() error {
-		return t.tq.Purge(queueName)
-	})
+	return t.run(func() error { return t.tq.Purge(queueName) })
 }
 
-func (t *tqState) QueueStats(queueNames []string) (ret []tq.Statistics, err error) {
-	err = t.run(func() (err error) {
-		ret, err = t.tq.QueueStats(queueNames)
-		return
-	})
-	return
+func (t *tqState) Stats(queueNames []string, cb tq.RawStatsCB) error {
+	return t.run(func() error { return t.tq.Stats(queueNames, cb) })
 }
 
 // FilterTQ installs a counter TaskQueue filter in the context.
 func FilterTQ(c context.Context, defaultError error) (context.Context, FeatureBreaker) {
 	state := newState(defaultError)
-	return tq.AddFilters(c, func(ic context.Context, tq tq.Interface) tq.Interface {
+	return tq.AddRawFilters(c, func(ic context.Context, tq tq.RawInterface) tq.RawInterface {
 		return &tqState{state, tq}
 	}), state
 }

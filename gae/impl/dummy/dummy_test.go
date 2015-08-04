@@ -28,8 +28,9 @@ func TestContextAccess(t *testing.T) {
 		c := context.Background()
 
 		Convey("blank", func() {
-			So(mcS.Get(c), ShouldBeNil)
-			So(tqS.Get(c), ShouldBeNil)
+			So(dsS.GetRaw(c), ShouldBeNil)
+			So(mcS.GetRaw(c), ShouldBeNil)
+			So(tqS.GetRaw(c), ShouldBeNil)
 			So(infoS.Get(c), ShouldBeNil)
 		})
 
@@ -54,16 +55,16 @@ func TestContextAccess(t *testing.T) {
 		})
 
 		Convey("Memcache", func() {
-			c = mcS.Set(c, Memcache())
+			c = mcS.SetRaw(c, Memcache())
 			So(mcS.Get(c), ShouldNotBeNil)
 			So(func() {
 				defer p()
 				mcS.Get(c).Add(nil)
-			}, ShouldPanicWith, "dummy: method Memcache.Add is not implemented")
+			}, ShouldPanicWith, "dummy: method Memcache.AddMulti is not implemented")
 		})
 
 		Convey("TaskQueue", func() {
-			c = tqS.Set(c, TaskQueue())
+			c = tqS.SetRaw(c, TaskQueue())
 			So(tqS.Get(c), ShouldNotBeNil)
 			So(func() {
 				defer p()

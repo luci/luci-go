@@ -97,3 +97,28 @@ type Task struct {
 	// Retry options for this task. May be nil.
 	RetryOptions *RetryOptions
 }
+
+func (t *Task) Duplicate() *Task {
+	ret := *t
+
+	if len(t.Header) > 0 {
+		ret.Header = make(http.Header, len(t.Header))
+		for k, vs := range t.Header {
+			newVs := make([]string, len(vs))
+			copy(newVs, vs)
+			ret.Header[k] = newVs
+		}
+	}
+
+	if len(t.Payload) > 0 {
+		ret.Payload = make([]byte, len(t.Payload))
+		copy(ret.Payload, t.Payload)
+	}
+
+	if t.RetryOptions != nil {
+		ret.RetryOptions = &RetryOptions{}
+		*ret.RetryOptions = *t.RetryOptions
+	}
+
+	return &ret
+}

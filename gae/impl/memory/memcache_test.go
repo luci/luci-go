@@ -25,16 +25,12 @@ func TestMemcache(t *testing.T) {
 
 		Convey("implements MCSingleReadWriter", func() {
 			Convey("Add", func() {
-				itm := &mcItem{
-					key:        "sup",
-					value:      []byte("cool"),
-					expiration: time.Second,
-				}
-				err := mc.Add(itm)
-				So(err, ShouldBeNil)
+				itm := (mc.NewItem("sup").
+					SetValue([]byte("cool")).
+					SetExpiration(time.Second))
+				So(mc.Add(itm), ShouldBeNil)
 				Convey("which rejects objects already there", func() {
-					err := mc.Add(itm)
-					So(err, ShouldEqual, mcS.ErrNotStored)
+					So(mc.Add(itm), ShouldEqual, mcS.ErrNotStored)
 				})
 			})
 
@@ -44,23 +40,24 @@ func TestMemcache(t *testing.T) {
 					value:      []byte("cool"),
 					expiration: time.Second,
 				}
-				err := mc.Add(itm)
-				So(err, ShouldBeNil)
+				So(mc.Add(itm), ShouldBeNil)
 
 				testItem := &mcItem{
 					key:   "sup",
 					value: []byte("cool"),
 					CasID: 1,
 				}
-				i, err := mc.Get("sup")
-				So(err, ShouldBeNil)
-				So(i, ShouldResemble, testItem)
+				getItm := &mcItem{
+					key: "sup",
+				}
+				So(mc.Get(getItm), ShouldBeNil)
+				So(getItm, ShouldResemble, testItem)
 
 				Convey("which can expire", func() {
 					tc.Add(time.Second * 4)
-					i, err := mc.Get("sup")
-					So(err, ShouldEqual, mcS.ErrCacheMiss)
-					So(i, ShouldBeNil)
+					getItm := &mcItem{key: "sup"}
+					So(mc.Get(getItm), ShouldEqual, mcS.ErrCacheMiss)
+					So(getItm, ShouldResemble, &mcItem{key: "sup"})
 				})
 			})
 
@@ -71,20 +68,15 @@ func TestMemcache(t *testing.T) {
 						value:      []byte("cool"),
 						expiration: time.Second,
 					}
-					err := mc.Add(itm)
-					So(err, ShouldBeNil)
+					So(mc.Add(itm), ShouldBeNil)
 
-					err = mc.Delete("sup")
-					So(err, ShouldBeNil)
+					So(mc.Delete("sup"), ShouldBeNil)
 
-					i, err := mc.Get("sup")
-					So(err, ShouldEqual, mcS.ErrCacheMiss)
-					So(i, ShouldBeNil)
+					So(mc.Get(mc.NewItem("sup")), ShouldEqual, mcS.ErrCacheMiss)
 				})
 
 				Convey("but not if it's not there", func() {
-					err := mc.Delete("sup")
-					So(err, ShouldEqual, mcS.ErrCacheMiss)
+					So(mc.Delete("sup"), ShouldEqual, mcS.ErrCacheMiss)
 				})
 			})
 
@@ -94,21 +86,48 @@ func TestMemcache(t *testing.T) {
 					value:      []byte("cool"),
 					expiration: time.Second,
 				}
-				err := mc.Add(itm)
-				So(err, ShouldBeNil)
+				So(mc.Add(itm), ShouldBeNil)
 
 				itm.SetValue([]byte("newp"))
-				err = mc.Set(itm)
-				So(err, ShouldBeNil)
+				So(mc.Set(itm), ShouldBeNil)
 
 				testItem := &mcItem{
 					key:   "sup",
 					value: []byte("newp"),
 					CasID: 2,
 				}
-				i, err := mc.Get("sup")
+				getItm := mc.NewItem("sup")
+				So(mc.Get(getItm), ShouldBeNil)
+				So(getItm, ShouldResemble, testItem)
+
+				Convey("Flush works too", func() {
+					mc.Flush()
+					So(mc.Get(getItm), ShouldEqual, mcS.ErrCacheMiss)
+				})
+			})
+
+			Convey("Increment", func() {
+				val, err := mc.Increment("num", 7, 2)
 				So(err, ShouldBeNil)
-				So(i, ShouldResemble, testItem)
+				So(val, ShouldEqual, 9)
+
+				Convey("IncrementExisting", func() {
+					val, err := mc.IncrementExisting("num", -2)
+					So(err, ShouldBeNil)
+					So(val, ShouldEqual, 7)
+
+					val, err = mc.IncrementExisting("num", -100)
+					So(err, ShouldBeNil)
+					So(val, ShouldEqual, 0)
+
+					_, err = mc.IncrementExisting("noexist", 2)
+					So(err, ShouldEqual, mcS.ErrCacheMiss)
+
+					So(mc.Set(mc.NewItem("text").SetValue([]byte("hello world, hooman!"))), ShouldBeNil)
+
+					_, err = mc.IncrementExisting("text", 2)
+					So(err.Error(), ShouldContainSubstring, "got invalid current value")
+				})
 			})
 
 			Convey("CompareAndSwap", func() {
@@ -117,30 +136,26 @@ func TestMemcache(t *testing.T) {
 					value:      []byte("cool"),
 					expiration: time.Second * 2,
 				})
-				err := mc.Add(itm)
-				So(err, ShouldBeNil)
+				So(mc.Add(itm), ShouldBeNil)
 
 				Convey("works after a Get", func() {
-					itm, err = mc.Get("sup")
-					So(err, ShouldBeNil)
+					itm = mc.NewItem("sup")
+					So(mc.Get(itm), ShouldBeNil)
 					So(itm.(*mcItem).CasID, ShouldEqual, 1)
 
 					itm.SetValue([]byte("newp"))
-					err = mc.CompareAndSwap(itm)
-					So(err, ShouldBeNil)
+					So(mc.CompareAndSwap(itm), ShouldBeNil)
 				})
 
 				Convey("but fails if you don't", func() {
 					itm.SetValue([]byte("newp"))
-					err = mc.CompareAndSwap(itm)
-					So(err, ShouldEqual, mcS.ErrCASConflict)
+					So(mc.CompareAndSwap(itm), ShouldEqual, mcS.ErrCASConflict)
 				})
 
 				Convey("and fails if the item is expired/gone", func() {
 					tc.Add(3 * time.Second)
 					itm.SetValue([]byte("newp"))
-					err = mc.CompareAndSwap(itm)
-					So(err, ShouldEqual, mcS.ErrNotStored)
+					So(mc.CompareAndSwap(itm), ShouldEqual, mcS.ErrNotStored)
 				})
 			})
 		})
@@ -153,10 +168,22 @@ func TestMemcache(t *testing.T) {
 				expiration: time.Second * 2,
 			})
 
-			mci := mc.(*memcacheImpl)
+			mc.Get(mc.NewItem("sup"))
+			mc.Get(mc.NewItem("sup"))
+			mc.Get(mc.NewItem("sup"))
+			mc.Get(mc.NewItem("sup"))
+			mc.Get(mc.NewItem("wot"))
+
+			mci := mc.Raw().(*memcacheImpl)
 
 			So(err, ShouldBeNil)
-			So(len(mci.data.items), ShouldEqual, 1)
+			stats, err := mc.Stats()
+			So(err, ShouldBeNil)
+			So(stats.Items, ShouldEqual, 1)
+			So(stats.Bytes, ShouldEqual, 4)
+			So(stats.Hits, ShouldEqual, 4)
+			So(stats.Misses, ShouldEqual, 1)
+			So(stats.ByteHits, ShouldEqual, 4*4)
 			So(mci.data.casID, ShouldEqual, 1)
 			So(mci.data.items["sup"], ShouldResemble, &mcItem{
 				key:        "sup",
@@ -165,8 +192,8 @@ func TestMemcache(t *testing.T) {
 				CasID:      1,
 			})
 
-			el, err := mc.Get("sup")
-			So(err, ShouldBeNil)
+			getItm := mc.NewItem("sup")
+			So(mc.Get(getItm), ShouldBeNil)
 			So(len(mci.data.items), ShouldEqual, 1)
 			So(mci.data.casID, ShouldEqual, 1)
 
@@ -175,7 +202,7 @@ func TestMemcache(t *testing.T) {
 				value: []byte("cool"),
 				CasID: 1,
 			}
-			So(el, ShouldResemble, testItem)
+			So(getItm, ShouldResemble, testItem)
 		})
 
 	})

@@ -19,7 +19,7 @@ var (
 // SetRawFactory.
 type RawFactory func(context.Context) RawInterface
 
-// RawFilter is the function signature for a filter RDS implementation. It
+// RawFilter is the function signature for a RawFilter implementation. It
 // gets the current RDS implementation, and returns a new RDS implementation
 // backed by the one passed in.
 type RawFilter func(context.Context, RawInterface) RawInterface
@@ -56,9 +56,9 @@ func SetRawFactory(c context.Context, rdsf RawFactory) context.Context {
 	return context.WithValue(c, rawDatastoreKey, rdsf)
 }
 
-// SetRaw sets the current Datastore object in the context. Useful for testing with
-// a quick mock. This is just a shorthand SetRawFactory invocation to set a factory
-// which always returns the same object.
+// SetRaw sets the current Datastore object in the context. Useful for testing
+// with a quick mock. This is just a shorthand SetRawFactory invocation to set
+// a factory which always returns the same object.
 func SetRaw(c context.Context, rds RawInterface) context.Context {
 	return SetRawFactory(c, func(context.Context) RawInterface { return rds })
 }
