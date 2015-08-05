@@ -254,10 +254,11 @@ func TestGoroutinePriorityPoolWithPriority(t *testing.T) {
 		ut.AssertEqual(t, false, doneJobs[prio])
 		doneJobs[prio] = true
 		// All higher priority jobs must be finished.
-		for p := 0; p < prio; p++ {
-			ut.AssertEqual(t, true, doneJobs[prio])
+		for before := 0; before < prio; before++ {
+			ut.AssertEqual(t, true, doneJobs[before])
 		}
 	}
+	ut.AssertEqual(t, MAX_PRIORITIES, len(doneJobs))
 	for p, d := range doneJobs {
 		ut.AssertEqualIndex(t, p, true, d)
 	}

@@ -5,6 +5,7 @@
 package common
 
 import (
+	"container/heap"
 	"errors"
 	"io"
 	"os"
@@ -230,7 +231,7 @@ func (c *goroutinePriorityPool) Schedule(priority int64, job func(), onCanceled 
 	c.wg.Add(1)
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	c.tasks.Push(&task{priority, job, onCanceled})
+	heap.Push(&c.tasks, &task{priority, job, onCanceled})
 	go c.executeOne()
 }
 
@@ -253,7 +254,7 @@ func (c *goroutinePriorityPool) executeOne() {
 func (c *goroutinePriorityPool) popTask() *task {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	return c.tasks.Pop().(*task)
+	return heap.Pop(&c.tasks).(*task)
 }
 
 type task struct {
