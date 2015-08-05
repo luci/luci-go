@@ -99,7 +99,7 @@ func (d rdsImpl) DeleteMulti(ks []ds.Key, cb ds.DeleteMultiCB) error {
 	})
 }
 
-func (d rdsImpl) GetMulti(keys []ds.Key, cb ds.GetMultiCB) error {
+func (d rdsImpl) GetMulti(keys []ds.Key, _meta ds.MultiMetaGetter, cb ds.GetMultiCB) error {
 	rkeys := dsMF2R(keys)
 	vals := make([]datastore.PropertyLoadSaver, len(keys))
 	for i := range keys {

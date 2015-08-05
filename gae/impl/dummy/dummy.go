@@ -71,7 +71,9 @@ func (ds) DecodeKey(string) (datastore.Key, error) { panic(ni()) }
 func (ds) PutMulti([]datastore.Key, []datastore.PropertyMap, datastore.PutMultiCB) error {
 	panic(ni())
 }
-func (ds) GetMulti([]datastore.Key, datastore.GetMultiCB) error       { panic(ni()) }
+func (ds) GetMulti([]datastore.Key, datastore.MultiMetaGetter, datastore.GetMultiCB) error {
+	panic(ni())
+}
 func (ds) DeleteMulti([]datastore.Key, datastore.DeleteMultiCB) error { panic(ni()) }
 func (ds) NewQuery(string) datastore.Query                            { panic(ni()) }
 func (ds) Run(datastore.Query, datastore.RawRunCB) error              { panic(ni()) }

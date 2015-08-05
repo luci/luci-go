@@ -127,14 +127,15 @@ func (d *datastoreImpl) GetMulti(dst interface{}) error {
 		return fmt.Errorf("invalid GetMulti input type: %T", dst)
 	}
 
-	keys, err := mat.GetKeys(d.NewKey, slice)
+	keys, pms, err := mat.GetKeysPMs(d.NewKey, slice)
 	if err != nil {
 		return err
 	}
 
 	lme := errors.LazyMultiError{Size: len(keys)}
 	i := 0
-	err = d.RawInterface.GetMulti(keys, func(pm PropertyMap, err error) {
+	meta := NewMultiMetaGetter(pms)
+	err = d.RawInterface.GetMulti(keys, meta, func(pm PropertyMap, err error) {
 		if !lme.Assign(i, err) {
 			lme.Assign(i, mat.setPM(slice.Index(i), pm))
 		}
@@ -154,12 +155,7 @@ func (d *datastoreImpl) PutMulti(src interface{}) error {
 		return fmt.Errorf("invalid PutMulti input type: %T", src)
 	}
 
-	keys, err := mat.GetKeys(d.NewKey, slice)
-	if err != nil {
-		return err
-	}
-
-	vals, err := mat.GetPMs(slice)
+	keys, vals, err := mat.GetKeysPMs(d.NewKey, slice)
 	if err != nil {
 		return err
 	}

@@ -39,9 +39,9 @@ func (r *dsState) DeleteMulti(keys []ds.Key, cb ds.DeleteMultiCB) error {
 	})
 }
 
-func (r *dsState) GetMulti(keys []ds.Key, cb ds.GetMultiCB) error {
+func (r *dsState) GetMulti(keys []ds.Key, meta ds.MultiMetaGetter, cb ds.GetMultiCB) error {
 	return r.run(func() error {
-		return r.RawInterface.GetMulti(keys, cb)
+		return r.RawInterface.GetMulti(keys, meta, cb)
 	})
 }
 

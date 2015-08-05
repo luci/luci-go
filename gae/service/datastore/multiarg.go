@@ -21,26 +21,21 @@ type multiArgType struct {
 	newElem func() reflect.Value
 }
 
-func (mat *multiArgType) GetKeys(nk newKeyFunc, slice reflect.Value) ([]Key, error) {
-	ret := make([]Key, slice.Len())
-	lme := errors.LazyMultiError{Size: len(ret)}
-	for i := range ret {
+func (mat *multiArgType) GetKeysPMs(nk newKeyFunc, slice reflect.Value) ([]Key, []PropertyMap, error) {
+	retKey := make([]Key, slice.Len())
+	retPM := make([]PropertyMap, slice.Len())
+	lme := errors.LazyMultiError{Size: len(retKey)}
+	for i := range retKey {
 		key, err := mat.getKey(nk, slice.Index(i))
-		lme.Assign(i, err)
-		ret[i] = key
+		if !lme.Assign(i, err) {
+			retKey[i] = key
+			pm, err := mat.getPM(slice.Index(i))
+			if !lme.Assign(i, err) {
+				retPM[i] = pm
+			}
+		}
 	}
-	return ret, lme.Get()
-}
-
-func (mat *multiArgType) GetPMs(slice reflect.Value) ([]PropertyMap, error) {
-	ret := make([]PropertyMap, slice.Len())
-	lme := errors.LazyMultiError{Size: len(ret)}
-	for i := range ret {
-		key, err := mat.getPM(slice.Index(i))
-		lme.Assign(i, err)
-		ret[i] = key
-	}
-	return ret, lme.Get()
+	return retKey, retPM, lme.Get()
 }
 
 // parseMultiArg checks that v has type []S, []*S, []I, []P or []*P, for some
@@ -234,22 +229,22 @@ func multiArgTypeInterface() multiArgType {
 
 func newKeyObjErr(nk newKeyFunc, src interface{}) (Key, error) {
 	pls, name := mkPLSName(src)
-	if key := getMetaKey(pls, "key"); key != nil {
+	if key, _ := pls.GetMetaDefault("key", nil).(Key); key != nil {
 		return key, nil
 	}
 
 	// get kind
-	kind := getMetaString(pls, "kind", name)
+	kind := pls.GetMetaDefault("kind", name).(string)
 	if kind == "" {
 		return nil, fmt.Errorf("unable to extract $kind from %v", src)
 	}
 
 	// get id - allow both to be default for default keys
-	sid := getMetaString(pls, "id", "")
-	iid := getMetaInt64(pls, "id", 0)
+	sid := pls.GetMetaDefault("id", "").(string)
+	iid := pls.GetMetaDefault("id", 0).(int64)
 
 	// get parent
-	par := getMetaKey(pls, "parent")
+	par, _ := pls.GetMetaDefault("parent", nil).(Key)
 
 	return nk(kind, sid, iid, par), nil
 }
@@ -277,28 +272,4 @@ func mkPLSName(o interface{}) (PropertyLoadSaver, string) {
 	pls := GetPLS(o)
 	name := pls.(*structPLS).o.Type().Name()
 	return pls, name
-}
-
-func getMetaString(pls PropertyLoadSaver, key, dflt string) string {
-	mstr, err := pls.GetMeta(key)
-	ret, ok := mstr.(string)
-	if err != nil || !ok {
-		return dflt
-	}
-	return ret
-}
-
-func getMetaInt64(pls PropertyLoadSaver, key string, dflt int64) int64 {
-	mint, err := pls.GetMeta(key)
-	ret, ok := mint.(int64)
-	if err != nil || !ok {
-		return dflt
-	}
-	return ret
-}
-
-func getMetaKey(pls PropertyLoadSaver, key string) Key {
-	mkey, _ := pls.GetMeta(key)
-	ret, _ := mkey.(Key)
-	return ret
 }

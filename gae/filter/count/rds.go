@@ -57,8 +57,8 @@ func (r *dsCounter) DeleteMulti(keys []ds.Key, cb ds.DeleteMultiCB) error {
 	return r.c.DeleteMulti.up(r.ds.DeleteMulti(keys, cb))
 }
 
-func (r *dsCounter) GetMulti(keys []ds.Key, cb ds.GetMultiCB) error {
-	return r.c.GetMulti.up(r.ds.GetMulti(keys, cb))
+func (r *dsCounter) GetMulti(keys []ds.Key, meta ds.MultiMetaGetter, cb ds.GetMultiCB) error {
+	return r.c.GetMulti.up(r.ds.GetMulti(keys, meta, cb))
 }
 
 func (r *dsCounter) PutMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {

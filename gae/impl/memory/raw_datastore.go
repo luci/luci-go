@@ -52,7 +52,7 @@ func (d *dsImpl) PutMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB
 	return nil
 }
 
-func (d *dsImpl) GetMulti(keys []ds.Key, cb ds.GetMultiCB) error {
+func (d *dsImpl) GetMulti(keys []ds.Key, _meta ds.MultiMetaGetter, cb ds.GetMultiCB) error {
 	d.data.getMulti(keys, cb)
 	return nil
 }
@@ -99,7 +99,7 @@ func (d *txnDsImpl) PutMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.PutMult
 	})
 }
 
-func (d *txnDsImpl) GetMulti(keys []ds.Key, cb ds.GetMultiCB) error {
+func (d *txnDsImpl) GetMulti(keys []ds.Key, _meta ds.MultiMetaGetter, cb ds.GetMultiCB) error {
 	return d.data.run(func() error {
 		return d.data.getMulti(keys, cb)
 	})

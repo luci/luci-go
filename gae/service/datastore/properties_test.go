@@ -155,6 +155,8 @@ func TestDSPropertyMapImpl(t *testing.T) {
 				v, err := pm.GetMeta("foo")
 				So(err, ShouldBeNil)
 				So(v, ShouldEqual, 100)
+				So(pm.GetMetaDefault("foo", 100), ShouldEqual, 100)
+				So(pm.GetMetaDefault("bar", 100), ShouldEqual, 100)
 
 				npm, err := pm.Save(false)
 				So(err, ShouldBeNil)

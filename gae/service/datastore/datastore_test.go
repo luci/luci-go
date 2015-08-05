@@ -116,7 +116,7 @@ func (f *fakeDatastore) PutMulti(keys []Key, vals []PropertyMap, cb PutMultiCB) 
 	return nil
 }
 
-func (f *fakeDatastore) GetMulti(keys []Key, cb GetMultiCB) error {
+func (f *fakeDatastore) GetMulti(keys []Key, _meta MultiMetaGetter, cb GetMultiCB) error {
 	if keys[0].Kind() == "FailAll" {
 		return errors.New("GetMulti fail all")
 	}
@@ -172,12 +172,14 @@ type FakePLS struct {
 	Value     int64
 	gotLoaded bool
 
-	failGetMeta  bool
-	failLoad     bool
-	failProblem  bool
-	failSave     bool
-	failSaveMeta bool
+	failGetMeta bool
+	failLoad    bool
+	failProblem bool
+	failSave    bool
+	failSetMeta bool
 }
+
+var _ PropertyLoadSaver = (*FakePLS)(nil)
 
 func (f *FakePLS) Load(pm PropertyMap) error {
 	if f.failLoad {
@@ -209,6 +211,10 @@ func (f *FakePLS) Save(withMeta bool) (PropertyMap, error) {
 	return ret, nil
 }
 
+func (f *FakePLS) GetMetaDefault(key string, dflt interface{}) interface{} {
+	return GetMetaDefaultImpl(f.GetMeta, key, dflt)
+}
+
 func (f *FakePLS) GetMeta(key string) (interface{}, error) {
 	if f.failGetMeta {
 		return nil, errors.New("FakePLS.GetMeta")
@@ -229,7 +235,7 @@ func (f *FakePLS) GetMeta(key string) (interface{}, error) {
 }
 
 func (f *FakePLS) SetMeta(key string, val interface{}) error {
-	if f.failSaveMeta {
+	if f.failSetMeta {
 		return errors.New("FakePL.SetMeta")
 	}
 	if key == "id" {
@@ -602,6 +608,11 @@ func TestGet(t *testing.T) {
 				cs := CommonStruct{}
 				So(ds.Get(cs).Error(), ShouldContainSubstring, "invalid Get input type")
 			})
+
+			Convey("failure to save metadata is an issue too", func() {
+				cs := &FakePLS{failSave: true}
+				So(ds.Get(cs).Error(), ShouldContainSubstring, "FakePLS.Save")
+			})
 		})
 
 		Convey("ok", func() {
@@ -613,7 +624,8 @@ func TestGet(t *testing.T) {
 
 			Convey("Raw access too", func() {
 				rds := ds.Raw()
-				So(rds.GetMulti([]Key{rds.NewKey("Kind", "", 1, nil)}, func(pm PropertyMap, err error) {
+				keys := []Key{rds.NewKey("Kind", "", 1, nil)}
+				So(rds.GetMulti(keys, nil, func(pm PropertyMap, err error) {
 					So(err, ShouldBeNil)
 					So(pm["Value"][0].Value(), ShouldEqual, 1)
 				}), ShouldBeNil)

@@ -224,27 +224,27 @@ func PropertyTypeOf(v interface{}, checkValid bool) (PropertyType, error) {
 // UpconvertUnderlyingType takes an object o, and attempts to convert it to
 // its native datastore-compatible type. e.g. int16 will convert to int64, and
 // `type Foo string` will convert to `string`.
-func UpconvertUnderlyingType(o interface{}, t reflect.Type) (interface{}, reflect.Type) {
+func UpconvertUnderlyingType(o interface{}) interface{} {
+	if o == nil {
+		return o
+	}
+
 	v := reflect.ValueOf(o)
-	switch t.Kind() {
+	t := v.Type()
+	switch v.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		o = v.Int()
-		t = typeOfInt64
 	case reflect.Bool:
 		o = v.Bool()
-		t = typeOfBool
 	case reflect.String:
 		if t != typeOfBSKey {
 			o = v.String()
-			t = typeOfString
 		}
 	case reflect.Float32, reflect.Float64:
 		o = v.Float()
-		t = typeOfFloat64
 	case reflect.Slice:
 		if t != typeOfByteString && t.Elem().Kind() == reflect.Uint8 {
 			o = v.Bytes()
-			t = typeOfByteSlice
 		}
 	case reflect.Struct:
 		if t == typeOfTime {
@@ -252,7 +252,7 @@ func UpconvertUnderlyingType(o interface{}, t reflect.Type) (interface{}, reflec
 			o = v.Interface().(time.Time).Round(time.Microsecond)
 		}
 	}
-	return o, t
+	return o
 }
 
 // Value returns the current value held by this property. It's guaranteed to
@@ -296,11 +296,9 @@ func (p *Property) Type() PropertyType { return p.propType }
 // a nil-valued property into a struct will set that field to the zero
 // value.
 func (p *Property) SetValue(value interface{}, is IndexSetting) (err error) {
-	t := reflect.Type(nil)
 	pt := PTNull
 	if value != nil {
-		t = reflect.TypeOf(value)
-		value, t = UpconvertUnderlyingType(value, t)
+		value = UpconvertUnderlyingType(value)
 		if pt, err = PropertyTypeOf(value, true); err != nil {
 			return
 		}
@@ -308,28 +306,15 @@ func (p *Property) SetValue(value interface{}, is IndexSetting) (err error) {
 	p.propType = pt
 	p.value = value
 	p.indexSetting = is
-	if t == typeOfByteSlice {
+	if _, ok := value.([]byte); ok {
 		p.indexSetting = NoIndex
 	}
 	return
 }
 
-// PropertyLoadSaver may be implemented by a user type, and Interface will
-// use this interface to serialize the type instead of trying to automatically
-// create a serialization codec for it with helper.GetPLS.
-type PropertyLoadSaver interface {
-	// Load takes the values from the given map and attempts to save them into
-	// the underlying object (usually a struct or a PropertyMap). If a fatal
-	// error occurs, it's returned via error. If non-fatal conversion errors
-	// occur, error will be a MultiError containing one or more ErrFieldMismatch
-	// objects.
-	Load(PropertyMap) error
-
-	// Save returns the current property as a PropertyMap. if withMeta is true,
-	// then the PropertyMap contains all the metadata (e.g. '$meta' fields)
-	// which was held by this PropertyLoadSaver.
-	Save(withMeta bool) (PropertyMap, error)
-
+// MetaGetter is a subinterface of PropertyLoadSaver, but is also used to
+// abstract the meta argument for RawInterface.GetMulti.
+type MetaGetter interface {
 	// GetMeta will get information about the field which has the struct tag in
 	// the form of `gae:"$<key>[,<default>]?"`.
 	//
@@ -361,6 +346,38 @@ type PropertyLoadSaver interface {
 	//     // BadFlag  Toggle `gae:"$flag3"` // ILLEGAL
 	//   }
 	GetMeta(key string) (interface{}, error)
+
+	// GetMetaDefault is GetMeta, but with a default.
+	//
+	// If the metadata key is not available, or its type doesn't equal the
+	// homogenized type of dflt, then dflt will be returned.
+	//
+	// Type homogenization:
+	//   signed integer types -> int64
+	//   bool                 -> Toggle fields (bool)
+	//
+	// Example:
+	//   pls.GetMetaDefault("foo", 100).(int64)
+	GetMetaDefault(key string, dflt interface{}) interface{}
+}
+
+// PropertyLoadSaver may be implemented by a user type, and Interface will
+// use this interface to serialize the type instead of trying to automatically
+// create a serialization codec for it with helper.GetPLS.
+type PropertyLoadSaver interface {
+	// Load takes the values from the given map and attempts to save them into
+	// the underlying object (usually a struct or a PropertyMap). If a fatal
+	// error occurs, it's returned via error. If non-fatal conversion errors
+	// occur, error will be a MultiError containing one or more ErrFieldMismatch
+	// objects.
+	Load(PropertyMap) error
+
+	// Save returns the current property as a PropertyMap. if withMeta is true,
+	// then the PropertyMap contains all the metadata (e.g. '$meta' fields)
+	// which was held by this PropertyLoadSaver.
+	Save(withMeta bool) (PropertyMap, error)
+
+	MetaGetter
 
 	// SetMeta allows you to set the current value of the meta-keyed field.
 	SetMeta(key string, val interface{}) error
@@ -435,6 +452,10 @@ func (pm PropertyMap) GetMeta(key string) (interface{}, error) {
 	return v[0].Value(), nil
 }
 
+func (pm PropertyMap) GetMetaDefault(key string, dflt interface{}) interface{} {
+	return GetMetaDefaultImpl(pm.GetMeta, key, dflt)
+}
+
 // SetMeta implements PropertyLoadSaver.SetMeta. It will only return an error
 // if `val` has an invalid type (e.g. not one supported by Property).
 func (pm PropertyMap) SetMeta(key string, val interface{}) error {
@@ -449,4 +470,20 @@ func (pm PropertyMap) SetMeta(key string, val interface{}) error {
 // Problem implements PropertyLoadSaver.Problem. It ALWAYS returns nil.
 func (pm PropertyMap) Problem() error {
 	return nil
+}
+
+// GetMetaDefaultImpl is the implementation of PropertyLoadSaver.GetMetaDefault.
+//
+// It takes the normal GetMeta function, the key and the default, and returns
+// the value according to PropertyLoadSaver.GetMetaDefault.
+func GetMetaDefaultImpl(gm func(string) (interface{}, error), key string, dflt interface{}) interface{} {
+	dflt = UpconvertUnderlyingType(dflt)
+	cur, err := gm(key)
+	if err != nil {
+		return dflt
+	}
+	if dflt != nil && reflect.TypeOf(cur) != reflect.TypeOf(dflt) {
+		return dflt
+	}
+	return cur
 }

@@ -58,12 +58,12 @@ func TestCheckFilter(t *testing.T) {
 		})
 
 		Convey("GetMulti", func() {
-			So(rds.GetMulti(nil, nil), ShouldBeNil)
-			So(rds.GetMulti([]Key{NewKey("", "", "", "", 0, nil)}, nil).Error(), ShouldContainSubstring, "is nil")
+			So(rds.GetMulti(nil, nil, nil), ShouldBeNil)
+			So(rds.GetMulti([]Key{NewKey("", "", "", "", 0, nil)}, nil, nil).Error(), ShouldContainSubstring, "is nil")
 
 			// this is in the wrong aid/ns
 			keys := []Key{NewKey("wut", "wrong", "Kind", "", 1, nil)}
-			So(rds.GetMulti(keys, func(pm PropertyMap, err error) {
+			So(rds.GetMulti(keys, nil, func(pm PropertyMap, err error) {
 				So(pm, ShouldBeNil)
 				So(err, ShouldEqual, ErrInvalidKey)
 			}), ShouldBeNil)
@@ -71,7 +71,7 @@ func TestCheckFilter(t *testing.T) {
 			keys[0] = NewKey("aid", "ns", "Kind", "", 1, nil)
 			hit := false
 			So(func() {
-				rds.GetMulti(keys, func(pm PropertyMap, err error) {
+				rds.GetMulti(keys, nil, func(pm PropertyMap, err error) {
 					hit = true
 				})
 			}, ShouldPanic)

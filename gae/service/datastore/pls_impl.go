@@ -340,6 +340,10 @@ func (p *structPLS) GetMeta(key string) (interface{}, error) {
 	return val, nil
 }
 
+func (p *structPLS) GetMetaDefault(key string, def interface{}) interface{} {
+	return GetMetaDefaultImpl(p.GetMeta, key, def)
+}
+
 func (p *structPLS) SetMeta(key string, val interface{}) (err error) {
 	if err = p.Problem(); err != nil {
 		return
@@ -539,8 +543,7 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 				if st.isSlice {
 					t = t.Elem()
 				}
-				v := reflect.New(t).Elem().Interface()
-				v, _ = UpconvertUnderlyingType(v, t)
+				v := UpconvertUnderlyingType(reflect.New(t).Elem().Interface())
 				if _, err := PropertyTypeOf(v, false); err != nil {
 					c.problem = me("field %q has invalid type: %s", name, ft)
 					return

@@ -337,7 +337,7 @@ type MismatchTypes struct {
 	IS []int
 }
 
-type BadSpecial struct {
+type BadMeta struct {
 	ID int64  `gae:"$id"`
 	id string `gae:"$id"`
 }
@@ -375,9 +375,10 @@ func (d *Doubler) Save(withMeta bool) (PropertyMap, error) {
 	return propMap, nil
 }
 
-func (d *Doubler) GetMeta(string) (interface{}, error) { return nil, ErrMetaFieldUnset }
-func (d *Doubler) SetMeta(string, interface{}) error   { return ErrMetaFieldUnset }
-func (d *Doubler) Problem() error                      { return nil }
+func (d *Doubler) GetMeta(string) (interface{}, error)                   { return nil, ErrMetaFieldUnset }
+func (d *Doubler) GetMetaDefault(_ string, dflt interface{}) interface{} { return dflt }
+func (d *Doubler) SetMeta(string, interface{}) error                     { return ErrMetaFieldUnset }
+func (d *Doubler) Problem() error                                        { return nil }
 
 var _ PropertyLoadSaver = (*Doubler)(nil)
 
@@ -402,9 +403,10 @@ func (d *Deriver) Save(withMeta bool) (PropertyMap, error) {
 	}, nil
 }
 
-func (d *Deriver) GetMeta(string) (interface{}, error) { return nil, ErrMetaFieldUnset }
-func (d *Deriver) SetMeta(string, interface{}) error   { return ErrMetaFieldUnset }
-func (d *Deriver) Problem() error                      { return nil }
+func (d *Deriver) GetMeta(string) (interface{}, error)                   { return nil, ErrMetaFieldUnset }
+func (d *Deriver) GetMetaDefault(_ string, dflt interface{}) interface{} { return dflt }
+func (d *Deriver) SetMeta(string, interface{}) error                     { return ErrMetaFieldUnset }
+func (d *Deriver) Problem() error                                        { return nil }
 
 var _ PropertyLoadSaver = (*Deriver)(nil)
 
@@ -1564,10 +1566,10 @@ func TestRoundTrip(t *testing.T) {
 	})
 }
 
-func TestSpecial(t *testing.T) {
+func TestMeta(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test special fields", t, func() {
+	Convey("Test meta fields", t, func() {
 		Convey("Can retrieve from struct", func() {
 			o := &N0{ID: 100}
 			pls := GetPLS(o)
@@ -1578,6 +1580,10 @@ func TestSpecial(t *testing.T) {
 			val, err = pls.GetMeta("kind")
 			So(err, ShouldBeNil)
 			So(val, ShouldEqual, "whatnow")
+
+			So(pls.GetMetaDefault("kind", "zappo"), ShouldEqual, "whatnow")
+			So(pls.GetMetaDefault("id", "stringID"), ShouldEqual, "stringID")
+			So(pls.GetMetaDefault("id", 6), ShouldEqual, 100)
 		})
 
 		Convey("Getting something not there is an error", func() {
@@ -1585,6 +1591,12 @@ func TestSpecial(t *testing.T) {
 			pls := GetPLS(o)
 			_, err := pls.GetMeta("wat")
 			So(err, ShouldEqual, ErrMetaFieldUnset)
+		})
+
+		Convey("Default works for missing fields", func() {
+			o := &N0{ID: 100}
+			pls := GetPLS(o)
+			So(pls.GetMetaDefault("whozit", 10), ShouldEqual, 10)
 		})
 
 		Convey("getting/setting from a bad struct is an error", func() {
@@ -1597,7 +1609,13 @@ func TestSpecial(t *testing.T) {
 			So(err, ShouldNotBeNil)
 		})
 
-		Convey("can assign values to exported special fields", func() {
+		Convey("Default works for bad structs", func() {
+			o := &Recursive{}
+			pls := GetPLS(o)
+			So(pls.GetMetaDefault("whozit", 10), ShouldEqual, 10)
+		})
+
+		Convey("can assign values to exported meta fields", func() {
 			o := &N0{ID: 100}
 			pls := GetPLS(o)
 			err := pls.SetMeta("id", int64(200))
@@ -1619,7 +1637,7 @@ func TestSpecial(t *testing.T) {
 
 	Convey("StructPLS Miscellaneous", t, func() {
 		Convey("multiple overlapping fields is an error", func() {
-			o := &BadSpecial{}
+			o := &BadMeta{}
 			pls := GetPLS(o)
 			err := pls.Load(nil)
 			So(err, ShouldErrLike, "multiple times")

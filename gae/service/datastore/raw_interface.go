@@ -81,6 +81,52 @@ type PutMultiCB func(key Key, err error)
 //   - err is an error associated with deleting this entity.
 type DeleteMultiCB func(err error)
 
+type nullMetaGetterType struct{}
+
+func (nullMetaGetterType) GetMeta(string) (interface{}, error)                   { return nil, ErrMetaFieldUnset }
+func (nullMetaGetterType) GetMetaDefault(_ string, dflt interface{}) interface{} { return dflt }
+
+var nullMetaGetter MetaGetter = nullMetaGetterType{}
+
+// MultiMetaGetter is a carrier for metadata, used with RawInterface.GetMulti
+//
+// It's OK to default-construct this. GetMeta will just return
+// (nil, ErrMetaFieldUnset) for every index.
+type MultiMetaGetter []MetaGetter
+
+// NewMultiMetaGetter returns a new MultiMetaGetter object. data may be nil.
+func NewMultiMetaGetter(data []PropertyMap) MultiMetaGetter {
+	if len(data) == 0 {
+		return nil
+	}
+	inner := make(MultiMetaGetter, len(data))
+	for i, pm := range data {
+		inner[i] = pm
+	}
+	return inner
+}
+
+// GetMeta is like PropertyLoadSaver.GetMeta, but it also takes an index
+// indicating which slot you want metadata for. If idx isn't there, this
+// returns (nil, ErrMetaFieldUnset).
+func (m MultiMetaGetter) GetMeta(idx int, key string) (interface{}, error) {
+	return m.GetSingle(idx).GetMeta(key)
+}
+
+// GetMetaDefault is like PropertyLoadSaver.GetMetaDefault, but it also takes an
+// index indicating which slot you want metadata for. If idx isn't there, this
+// returns dflt.
+func (m MultiMetaGetter) GetMetaDefault(idx int, key string, dflt interface{}) interface{} {
+	return m.GetSingle(idx).GetMetaDefault(key, dflt)
+}
+
+func (m MultiMetaGetter) GetSingle(idx int) MetaGetter {
+	if idx >= len(m) || m[idx] == nil {
+		return nullMetaGetter
+	}
+	return m[idx]
+}
+
 // RawInterface implements the datastore functionality without any of the fancy
 // reflection stuff. This is so that Filters can avoid doing lots of redundant
 // reflection work. See datastore.RawInterface for a more user-friendly interface.
@@ -110,11 +156,13 @@ type RawInterface interface {
 	// execute at all if there's a server error. If callback is nil, this
 	// method does nothing.
 	//
+	// meta is used to propagate metadata from higher levels.
+	//
 	// NOTE: Implementations and filters are guaranteed that:
 	//   - len(keys) > 0
 	//   - all keys are Valid, !Incomplete, and in the current namespace
 	//   - cb is not nil
-	GetMulti(keys []Key, cb GetMultiCB) error
+	GetMulti(keys []Key, meta MultiMetaGetter, cb GetMultiCB) error
 
 	// PutMulti writes items to the datastore.
 	//

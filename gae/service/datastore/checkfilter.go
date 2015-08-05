@@ -36,7 +36,7 @@ func (tcf *checkFilter) Run(q Query, cb RawRunCB) error {
 	return tcf.RawInterface.Run(q, cb)
 }
 
-func (tcf *checkFilter) GetMulti(keys []Key, cb GetMultiCB) error {
+func (tcf *checkFilter) GetMulti(keys []Key, meta MultiMetaGetter, cb GetMultiCB) error {
 	if len(keys) == 0 {
 		return nil
 	}
@@ -55,12 +55,12 @@ func (tcf *checkFilter) GetMulti(keys []Key, cb GetMultiCB) error {
 		}
 		return nil
 	}
-	return tcf.RawInterface.GetMulti(keys, cb)
+	return tcf.RawInterface.GetMulti(keys, meta, cb)
 }
 
 func (tcf *checkFilter) PutMulti(keys []Key, vals []PropertyMap, cb PutMultiCB) error {
 	if len(keys) != len(vals) {
-		return fmt.Errorf("datastore: GetMulti with mismatched keys/vals lengths (%d/%d)", len(keys), len(vals))
+		return fmt.Errorf("datastore: PutMulti with mismatched keys/vals lengths (%d/%d)", len(keys), len(vals))
 	}
 	if len(keys) == 0 {
 		return nil

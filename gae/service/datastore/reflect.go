@@ -12,11 +12,8 @@ import (
 )
 
 var (
-	typeOfBool              = reflect.TypeOf(false)
 	typeOfBSKey             = reflect.TypeOf(blobstore.Key(""))
-	typeOfByteSlice         = reflect.TypeOf([]byte(nil))
 	typeOfByteString        = reflect.TypeOf(ByteString(nil))
-	typeOfFloat64           = reflect.TypeOf(float64(0))
 	typeOfGeoPoint          = reflect.TypeOf(GeoPoint{})
 	typeOfInt64             = reflect.TypeOf(int64(0))
 	typeOfKey               = reflect.TypeOf((*Key)(nil)).Elem()
@@ -25,5 +22,4 @@ var (
 	typeOfString            = reflect.TypeOf("")
 	typeOfTime              = reflect.TypeOf(time.Time{})
 	typeOfToggle            = reflect.TypeOf(Auto)
-	valueOfnilDSKey         = reflect.Zero(typeOfKey)
 )
