@@ -20,3 +20,13 @@ func IsTransient(err error) bool {
 	_, ok := err.(Transient)
 	return ok
 }
+
+// WrapTransient wraps an existing error with in a Transient error.
+//
+// If the supplied error is already Transient, it will be returned.
+func WrapTransient(err error) error {
+	if !IsTransient(err) {
+		err = &Transient{Err: err}
+	}
+	return err
+}
