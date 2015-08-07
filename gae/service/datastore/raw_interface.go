@@ -51,14 +51,19 @@ type Query interface {
 	Start(c Cursor) Query
 }
 
+// CursorCB is used to obtain a Cursor while Run'ing a query on either
+// Interface or RawInterface.
+//
+// it can be invoked to obtain the current cursor.
+type CursorCB func() (Cursor, error)
+
 // RawRunCB is the callback signature provided to RawInterface.Run
 //
 //   - key is the Key of the entity
 //   - val is the data of the entity (or nil, if the query was keys-only)
-//   - getCursor can be invoked to obtain the current cursor.
 //
 // Return true to continue iterating through the query results, or false to stop.
-type RawRunCB func(key Key, val PropertyMap, getCursor func() (Cursor, error)) bool
+type RawRunCB func(key Key, val PropertyMap, getCursor CursorCB) bool
 
 // GetMultiCB is the callback signature provided to RawInterface.GetMulti
 //

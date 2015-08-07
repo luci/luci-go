@@ -49,7 +49,7 @@ func TestCheckFilter(t *testing.T) {
 			So(rds.Run(rds.NewQuery("sup"), nil).Error(), ShouldContainSubstring, "callback is nil")
 			hit := false
 			So(func() {
-				rds.Run(rds.NewQuery("sup"), func(Key, PropertyMap, func() (Cursor, error)) bool {
+				rds.Run(rds.NewQuery("sup"), func(Key, PropertyMap, CursorCB) bool {
 					hit = true
 					return true
 				})

@@ -27,26 +27,50 @@ func (d *datastoreImpl) KeyForObjErr(src interface{}) (Key, error) {
 	return newKeyObjErr(d.NewKey, src)
 }
 
-func (d *datastoreImpl) Run(q Query, proto interface{}, cb RunCB) error {
-	if _, ok := proto.(*Key); ok {
-		return d.RawInterface.Run(q.KeysOnly(), func(k Key, _ PropertyMap, gc func() (Cursor, error)) bool {
+func (d *datastoreImpl) Run(q Query, cbIface interface{}) error {
+	// TODO(riannucci): Profile and determine if any of this is causing a real
+	// slowdown. Could potentially cache reflection stuff by cbType?
+	cbTyp := reflect.TypeOf(cbIface)
+
+	badSig := false
+	mat := multiArgType{}
+	isKey := false
+
+	if cbTyp.Kind() == reflect.Func && cbTyp.NumIn() == 2 && cbTyp.NumOut() == 1 {
+		firstArg := cbTyp.In(0)
+		if firstArg == typeOfKey {
+			isKey = true
+		} else {
+			mat = parseArg(firstArg)
+			badSig = !mat.valid || mat.newElem == nil
+		}
+	} else {
+		badSig = true
+	}
+
+	if badSig || cbTyp.Out(0) != typeOfBool || cbTyp.In(1) != typeOfCursorCB {
+		panic(fmt.Errorf(
+			"cb does not match the required callback signature: `%T` != `func(TYPE, CursorCB) bool`",
+			cbIface))
+	}
+
+	if isKey {
+		cb := cbIface.(func(Key, CursorCB) bool)
+		return d.RawInterface.Run(q.KeysOnly(), func(k Key, _ PropertyMap, gc CursorCB) bool {
 			return cb(k, gc)
 		})
 	}
 
-	mat := parseArg(reflect.TypeOf(proto))
-	if !mat.valid || mat.newElem == nil {
-		return fmt.Errorf("invalid Run proto type: %T", proto)
-	}
+	cbVal := reflect.ValueOf(cbIface)
 
 	innerErr := error(nil)
-	err := d.RawInterface.Run(q, func(k Key, pm PropertyMap, gc func() (Cursor, error)) bool {
+	err := d.RawInterface.Run(q, func(k Key, pm PropertyMap, gc CursorCB) bool {
 		itm := mat.newElem()
 		if innerErr = mat.setPM(itm, pm); innerErr != nil {
 			return false
 		}
 		mat.setKey(itm, k)
-		return cb(itm.Interface(), gc)
+		return cbVal.Call([]reflect.Value{itm, reflect.ValueOf(gc)})[0].Bool()
 	})
 	if err == nil {
 		err = innerErr
@@ -64,7 +88,7 @@ func (d *datastoreImpl) GetAll(q Query, dst interface{}) error {
 	}
 
 	if keys, ok := dst.(*[]Key); ok {
-		return d.RawInterface.Run(q.KeysOnly(), func(k Key, _ PropertyMap, _ func() (Cursor, error)) bool {
+		return d.RawInterface.Run(q.KeysOnly(), func(k Key, _ PropertyMap, _ CursorCB) bool {
 			*keys = append(*keys, k)
 			return true
 		})
@@ -78,7 +102,7 @@ func (d *datastoreImpl) GetAll(q Query, dst interface{}) error {
 
 	lme := errors.LazyMultiError{Size: slice.Len()}
 	i := 0
-	err := d.RawInterface.Run(q, func(k Key, pm PropertyMap, _ func() (Cursor, error)) bool {
+	err := d.RawInterface.Run(q, func(k Key, pm PropertyMap, _ CursorCB) bool {
 		slice.Set(reflect.Append(slice, mat.newElem()))
 		itm := slice.Index(i)
 		mat.setKey(itm, k)

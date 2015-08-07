@@ -8,14 +8,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-// RunCB is the callback signature provided to Interface.Run
-//
-//   - obj is an object as specified by the proto argument of Run
-//   - getCursor can be invoked to obtain the current cursor.
-//
-// Return true to continue iterating through the query results, or false to stop.
-type RunCB func(obj interface{}, getCursor func() (Cursor, error)) bool
-
 // Interface is the 'user-friendly' interface to access the current filtered
 // datastore service implementation.
 //
@@ -80,15 +72,16 @@ type Interface interface {
 	// Run executes the given query, and calls `cb` for each successfully
 	// retrieved item.
 	//
-	// proto is a prototype of the objects which will be passed to the callback.
-	// It will be used solely for type information, and the actual proto object
-	// may be zero/nil.  It must be of the form:
+	// cb is a callback function whose signature is
+	//   func(obj TYPE, getCursor CursorCB) bool
+	//
+	// Where TYPE is one of:
 	//   - S or *S where S is a struct
 	//   - P or *P where *P is a concrete type implementing PropertyLoadSaver
-	//   - *Key implies a keys-only query (and cb will be invoked with Key objects)
-	// Run will create a new, populated instance of proto for each call of
-	// cb. Run stops on the first error encountered.
-	Run(q Query, proto interface{}, cb RunCB) error
+	//   - Key (implies a keys-only query)
+	//
+	// Run stops on the first error encountered.
+	Run(q Query, cb interface{}) error
 
 	// GetAll retrieves all of the Query results into dst.
 	//
