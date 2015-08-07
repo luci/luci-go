@@ -38,7 +38,8 @@ type Item interface {
 	SetFlags(uint32) Item
 	SetExpiration(time.Duration) Item
 
-	// SetAll copies all the values from other into this item (including the hidden
-	// CasID field).
+	// SetAll copies all the values from other, except Key, into this item
+	// (including the hidden CasID field). If other is nil, then all non-Key
+	// fields are reset.
 	SetAll(other Item)
 }

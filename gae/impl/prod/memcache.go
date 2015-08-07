@@ -52,11 +52,13 @@ func (i mcItem) SetExpiration(d time.Duration) mc.Item {
 }
 
 func (i mcItem) SetAll(other mc.Item) {
-	o := other.(mcItem)
-	*i.i = *o.i
-	val := i.i.Value
-	i.i.Value = make([]byte, len(val))
-	copy(i.i.Value, val)
+	if other == nil {
+		i.i = &memcache.Item{Key: i.i.Key}
+	} else {
+		k := i.i.Key
+		*i.i = *other.(mcItem).i
+		i.i.Key = k
+	}
 }
 
 // mcR2FErr (MC real-to-fake w/ error) converts a *memcache.Item to a mc.Item,

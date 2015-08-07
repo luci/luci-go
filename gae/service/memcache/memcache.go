@@ -33,12 +33,27 @@ func (m *memcacheImpl) CompareAndSwap(item Item) error {
 	return errors.SingleError(m.CompareAndSwapMulti([]Item{item}))
 }
 
-func multiCall(items []Item, inner func(items []Item, cb RawCB) error) error {
+func filterItems(lme *errors.LazyMultiError, items []Item, nilErr error) ([]Item, []int) {
+	idxMap := make([]int, 0, len(items))
+	retItems := make([]Item, 0, len(items))
+	for i, itm := range items {
+		if itm != nil {
+			idxMap = append(idxMap, i)
+			retItems = append(retItems, itm)
+		} else {
+			lme.Assign(i, nilErr)
+		}
+	}
+	return retItems, idxMap
+}
+
+func multiCall(items []Item, nilErr error, inner func(items []Item, cb RawCB) error) error {
 	lme := errors.LazyMultiError{Size: len(items)}
-	i := 0
-	err := inner(items, func(err error) {
-		lme.Assign(i, err)
-		i++
+	realItems, idxMap := filterItems(&lme, items, nilErr)
+	j := 0
+	err := inner(realItems, func(err error) {
+		lme.Assign(idxMap[j], err)
+		j++
 	})
 	if err == nil {
 		err = lme.Get()
@@ -47,15 +62,15 @@ func multiCall(items []Item, inner func(items []Item, cb RawCB) error) error {
 }
 
 func (m *memcacheImpl) AddMulti(items []Item) error {
-	return multiCall(items, m.RawInterface.AddMulti)
+	return multiCall(items, ErrNotStored, m.RawInterface.AddMulti)
 }
 
 func (m *memcacheImpl) SetMulti(items []Item) error {
-	return multiCall(items, m.RawInterface.SetMulti)
+	return multiCall(items, ErrNotStored, m.RawInterface.SetMulti)
 }
 
 func (m *memcacheImpl) CompareAndSwapMulti(items []Item) error {
-	return multiCall(items, m.RawInterface.CompareAndSwapMulti)
+	return multiCall(items, ErrNotStored, m.RawInterface.CompareAndSwapMulti)
 }
 
 func (m *memcacheImpl) DeleteMulti(keys []string) error {
@@ -73,16 +88,23 @@ func (m *memcacheImpl) DeleteMulti(keys []string) error {
 
 func (m *memcacheImpl) GetMulti(items []Item) error {
 	lme := errors.LazyMultiError{Size: len(items)}
-	i := 0
-	keys := make([]string, len(items))
-	for i, itm := range items {
+	realItems, idxMap := filterItems(&lme, items, ErrCacheMiss)
+	if len(realItems) == 0 {
+		return lme.Get()
+	}
+
+	keys := make([]string, len(realItems))
+	for i, itm := range realItems {
 		keys[i] = itm.Key()
 	}
+
+	j := 0
 	err := m.RawInterface.GetMulti(keys, func(item Item, err error) {
+		i := idxMap[j]
 		if !lme.Assign(i, err) {
 			items[i].SetAll(item)
 		}
-		i++
+		j++
 	})
 	if err == nil {
 		err = lme.Get()

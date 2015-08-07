@@ -8,7 +8,8 @@ package memcache
 type RawCB func(error)
 
 // RawItemCB is the callback for RawInterface.GetMulti. It takes the retrieved
-// item and the error for that item (e.g. ErrCacheMiss) if there was one..
+// item and the error for that item (e.g. ErrCacheMiss) if there was one. Item
+// is guaranteed to be nil if error is not nil.
 type RawItemCB func(Item, error)
 
 // RawInterface is the full interface to the memcache service.

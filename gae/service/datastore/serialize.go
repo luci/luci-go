@@ -292,16 +292,21 @@ func (p *Property) Read(buf Buffer, context KeyContext, appid, namespace string)
 	return
 }
 
-// Write writes an entire PropertyMap to the buffer. `context`
-// behaves the same way that it does for WriteKey. If
-// WritePropertyMapDeterministic is true, then the rows will be sorted by
-// property name before they're serialized to buf (mostly useful for testing,
-// but also potentially useful if you need to make a hash of the property data).
+// Write writes an entire PropertyMap to the buffer. `context` behaves the same
+// way that it does for WriteKey. If WritePropertyMapDeterministic is true, then
+// the rows will be sorted by property name before they're serialized to buf
+// (mostly useful for testing, but also potentially useful if you need to make
+// a hash of the property data).
+//
+// Write skips metadata keys.
 func (pm PropertyMap) Write(buf Buffer, context KeyContext) (err error) {
 	defer recoverTo(&err)
 	rows := make(sort.StringSlice, 0, len(pm))
 	tmpBuf := &bytes.Buffer{}
 	for name, vals := range pm {
+		if isMetaKey(name) {
+			continue
+		}
 		tmpBuf.Reset()
 		_, e := cmpbin.WriteString(tmpBuf, name)
 		panicIf(e)

@@ -160,7 +160,7 @@ func TestDSPropertyMapImpl(t *testing.T) {
 
 				npm, err := pm.Save(false)
 				So(err, ShouldBeNil)
-				So(len(npm), ShouldEqual, 1)
+				So(len(npm), ShouldEqual, 0)
 			})
 
 			Convey("errors", func() {

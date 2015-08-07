@@ -431,7 +431,7 @@ func (pm PropertyMap) Save(withMeta bool) (PropertyMap, error) {
 	}
 	ret := make(PropertyMap, len(pm))
 	for k, v := range pm {
-		if withMeta || len(k) == 0 || k[0] != '$' {
+		if withMeta || !isMetaKey(k) {
 			ret[k] = append(ret[k], v...)
 		}
 	}
@@ -470,6 +470,12 @@ func (pm PropertyMap) SetMeta(key string, val interface{}) error {
 // Problem implements PropertyLoadSaver.Problem. It ALWAYS returns nil.
 func (pm PropertyMap) Problem() error {
 	return nil
+}
+
+func isMetaKey(k string) bool {
+	// empty counts as a metakey since it's not a valid data key, but it's
+	// not really a valid metakey either.
+	return k == "" || k[0] == '$'
 }
 
 // GetMetaDefaultImpl is the implementation of PropertyLoadSaver.GetMetaDefault.

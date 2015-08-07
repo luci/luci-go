@@ -50,7 +50,13 @@ func (m *mcItem) SetExpiration(exp time.Duration) mc.Item {
 }
 
 func (m *mcItem) SetAll(other mc.Item) {
-	*m = *other.(*mcItem)
+	if other == nil {
+		*m = mcItem{key: m.key}
+	} else {
+		k := m.key
+		*m = *other.(*mcItem)
+		m.key = k
+	}
 }
 
 type mcDataItem struct {
@@ -151,6 +157,8 @@ var _ mc.RawInterface = (*memcacheImpl)(nil)
 // by gae.GetMC(c)
 func useMC(c context.Context) context.Context {
 	lck := sync.Mutex{}
+	// TODO(riannucci): just use namespace for automatic key prefixing. Flush
+	// actually wipes the ENTIRE memcache, regardless of namespace.
 	mcdMap := map[string]*memcacheData{}
 
 	return mc.SetRawFactory(c, func(ic context.Context) mc.RawInterface {
@@ -200,7 +208,7 @@ func (m *memcacheImpl) AddMulti(items []mc.Item, cb mc.RawCB) error {
 			m.data.setItemLocked(now, itm)
 			return nil
 		} else {
-			return (mc.ErrNotStored)
+			return mc.ErrNotStored
 		}
 	})
 	return nil

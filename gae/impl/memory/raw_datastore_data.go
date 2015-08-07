@@ -63,16 +63,18 @@ func rootIDsKey(kind string) []byte {
 }
 
 func curVersion(ents *memCollection, key []byte) int64 {
-	if v := ents.Get(key); v != nil {
-		pm, err := rpm(v)
-		if err != nil {
-			panic(err) // memory corruption
+	if ents != nil {
+		if v := ents.Get(key); v != nil {
+			pm, err := rpm(v)
+			if err != nil {
+				panic(err) // memory corruption
+			}
+			pl, ok := pm["__version__"]
+			if ok && len(pl) > 0 && pl[0].Type() == ds.PTInt {
+				return pl[0].Value().(int64)
+			}
+			panic(fmt.Errorf("__version__ property missing or wrong: %v", pm))
 		}
-		pl, ok := pm["__version__"]
-		if ok && len(pl) > 0 && pl[0].Type() == ds.PTInt {
-			return pl[0].Value().(int64)
-		}
-		panic(fmt.Errorf("__version__ property missing or wrong: %v", pm))
 	}
 	return 0
 }
