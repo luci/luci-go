@@ -11,18 +11,27 @@ import (
 	"golang.org/x/net/context"
 )
 
-// TransientOnly is an Iterator implementation that only retries errors if they
-// are transient.
+// transientOnlyIterator is an Iterator implementation that only retries errors
+// if they are transient.
 //
 // (See errors.IsTransient).
-type TransientOnly struct {
+type transientOnlyIterator struct {
 	Iterator // The wrapped Iterator.
 }
 
-// Next implements the Iterator interface.
-func (i *TransientOnly) Next(ctx context.Context, err error) time.Duration {
+func (i *transientOnlyIterator) Next(ctx context.Context, err error) time.Duration {
 	if !errors.IsTransient(err) {
 		return Stop
 	}
 	return i.Iterator.Next(ctx, err)
+}
+
+// TransientOnly returns an Iterator that wraps another Iterator. It will fall
+// through to the wrapped Iterator if a transient error is encountered;
+// otherwise, it will not retry.
+func TransientOnly(i Iterator) Iterator {
+	if i == nil {
+		return nil
+	}
+	return &transientOnlyIterator{i}
 }

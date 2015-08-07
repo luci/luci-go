@@ -6,8 +6,6 @@ package retry
 
 import (
 	"time"
-
-	"golang.org/x/net/context"
 )
 
 // defaultIterator defines a template for the default retry parameters that
@@ -21,8 +19,8 @@ var defaultIteratorTemplate = ExponentialBackoff{
 	Multiplier: 2,
 }
 
-// Default is a Factory that returns a new instance of the default iterator
-// configuration.
-func Default(context.Context) Iterator {
-	return &defaultIteratorTemplate
+// Default returns a new instance of the default iterator configuration.
+func Default() Iterator {
+	it := defaultIteratorTemplate
+	return &it
 }
