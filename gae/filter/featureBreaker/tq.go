@@ -34,6 +34,10 @@ func (t *tqState) Stats(queueNames []string, cb tq.RawStatsCB) error {
 	return t.run(func() error { return t.tq.Stats(queueNames, cb) })
 }
 
+func (t *tqState) Testable() tq.Testable {
+	return t.tq.Testable()
+}
+
 // FilterTQ installs a counter TaskQueue filter in the context.
 func FilterTQ(c context.Context, defaultError error) (context.Context, FeatureBreaker) {
 	state := newState(defaultError)

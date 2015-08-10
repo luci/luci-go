@@ -108,9 +108,11 @@
 //                           lacks convenience methods.
 //
 //    service.Testable     - any additional methods that a 'testing'
-//                           implementation should provide. It's expected that
-//                           tests will cast the RawInterface from GetRaw() to
-//                           Testable in order to access these methods.
+//                           implementation should provide. This can be accessed
+//                           via the Testable method on Interface or
+//                           RawInterface. If the current implementation is not
+//                           testable, it will return nil. This is only meant to
+//                           be accessed when testing.
 //
 //    service.RawFactory   - a function returning a RawInterface
 //

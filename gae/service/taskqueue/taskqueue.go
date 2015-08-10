@@ -75,6 +75,10 @@ func (t *taskqueueImpl) Raw() RawInterface {
 	return t.RawInterface
 }
 
+func (t *taskqueueImpl) Testable() Testable {
+	return t.RawInterface.Testable()
+}
+
 var _ Interface = (*taskqueueImpl)(nil)
 
 func Get(c context.Context) Interface {

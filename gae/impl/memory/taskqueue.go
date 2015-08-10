@@ -145,6 +145,10 @@ func (t *taskqueueImpl) Stats(queueNames []string, cb tq.RawStatsCB) error {
 	return nil
 }
 
+func (t *taskqueueImpl) Testable() tq.Testable {
+	return t
+}
+
 /////////////////////////////// taskqueueTxnImpl ///////////////////////////////
 
 type taskqueueTxnImpl struct {
@@ -220,6 +224,10 @@ func (t *taskqueueTxnImpl) Purge(string) error {
 
 func (t *taskqueueTxnImpl) Stats([]string, tq.RawStatsCB) error {
 	return errors.New("taskqueue: cannot Stats from a transaction")
+}
+
+func (t *taskqueueTxnImpl) Testable() tq.Testable {
+	return t
 }
 
 ////////////////////////////// private functions ///////////////////////////////

@@ -117,6 +117,7 @@ func (tq) AddMulti([]*taskqueue.Task, string, taskqueue.RawTaskCB) error { panic
 func (tq) DeleteMulti([]*taskqueue.Task, string, taskqueue.RawCB) error  { panic(ni()) }
 func (tq) Purge(string) error                                            { panic(ni()) }
 func (tq) Stats([]string, taskqueue.RawStatsCB) error                    { panic(ni()) }
+func (tq) Testable() taskqueue.Testable                                  { panic(ni()) }
 
 var dummyTQInst = tq{}
 

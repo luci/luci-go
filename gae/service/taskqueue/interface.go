@@ -41,4 +41,6 @@ type Interface interface {
 	Stats(queueNames ...string) ([]Statistics, error)
 
 	Raw() RawInterface
+
+	Testable() Testable
 }

@@ -32,10 +32,10 @@ type taskQueueData struct {
 	archived tq.QueueData
 }
 
-var (
-	_ = memContextObj((*taskQueueData)(nil))
-	_ = tq.Testable((*taskQueueData)(nil))
-)
+var _ interface {
+	memContextObj
+	tq.Testable
+} = (*taskQueueData)(nil)
 
 func newTaskQueueData() memContextObj {
 	return &taskQueueData{
@@ -191,10 +191,10 @@ type txnTaskQueueData struct {
 	parent *taskQueueData
 }
 
-var (
-	_ = memContextObj((*txnTaskQueueData)(nil))
-	_ = tq.Testable((*txnTaskQueueData)(nil))
-)
+var _ interface {
+	memContextObj
+	tq.Testable
+} = (*txnTaskQueueData)(nil)
 
 func (t *txnTaskQueueData) canApplyTxn(obj memContextObj) bool         { return false }
 func (t *txnTaskQueueData) applyTxn(context.Context, memContextObj)    { panic("impossible") }

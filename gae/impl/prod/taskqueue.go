@@ -131,3 +131,7 @@ func (t tqImpl) Stats(queueNames []string, cb tq.RawStatsCB) error {
 	}
 	return nil
 }
+
+func (t tqImpl) Testable() tq.Testable {
+	return nil
+}

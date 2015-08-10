@@ -29,4 +29,6 @@ type RawInterface interface {
 	Purge(queueName string) error
 
 	Stats(queueNames []string, cb RawStatsCB) error
+
+	Testable() Testable
 }
