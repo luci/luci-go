@@ -24,7 +24,7 @@ func (t *taskqueueImpl) Delete(task *Task, queueName string) error {
 }
 
 func (t *taskqueueImpl) AddMulti(tasks []*Task, queueName string) error {
-	lme := errors.LazyMultiError{Size: len(tasks)}
+	lme := errors.NewLazyMultiError(len(tasks))
 	i := 0
 	err := t.RawInterface.AddMulti(tasks, queueName, func(t *Task, err error) {
 		if !lme.Assign(i, err) {
@@ -39,7 +39,7 @@ func (t *taskqueueImpl) AddMulti(tasks []*Task, queueName string) error {
 }
 
 func (t *taskqueueImpl) DeleteMulti(tasks []*Task, queueName string) error {
-	lme := errors.LazyMultiError{Size: len(tasks)}
+	lme := errors.NewLazyMultiError(len(tasks))
 	i := 0
 	err := t.RawInterface.DeleteMulti(tasks, queueName, func(err error) {
 		lme.Assign(i, err)
@@ -57,7 +57,7 @@ func (t *taskqueueImpl) Purge(queueName string) error {
 
 func (t *taskqueueImpl) Stats(queueNames ...string) ([]Statistics, error) {
 	ret := make([]Statistics, len(queueNames))
-	lme := errors.LazyMultiError{Size: len(queueNames)}
+	lme := errors.NewLazyMultiError(len(queueNames))
 	i := 0
 	err := t.RawInterface.Stats(queueNames, func(s *Statistics, err error) {
 		if !lme.Assign(i, err) {

@@ -92,7 +92,7 @@ func makeFetchPlan(c context.Context, aid, ns string, f *facts) *plan {
 	p := plan{
 		keepMeta: f.getMeta != nil,
 		decoded:  make([]ds.PropertyMap, len(f.lockItems)),
-		lme:      errors.LazyMultiError{Size: len(f.lockItems)},
+		lme:      errors.NewLazyMultiError(len(f.lockItems)),
 	}
 	for i, lockItm := range f.lockItems {
 		m := f.getMeta.GetSingle(i)

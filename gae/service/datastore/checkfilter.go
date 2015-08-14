@@ -43,7 +43,7 @@ func (tcf *checkFilter) GetMulti(keys []Key, meta MultiMetaGetter, cb GetMultiCB
 	if cb == nil {
 		return fmt.Errorf("datastore: GetMulti callback is nil")
 	}
-	lme := errors.LazyMultiError{Size: len(keys)}
+	lme := errors.NewLazyMultiError(len(keys))
 	for i, k := range keys {
 		if KeyIncomplete(k) || !KeyValid(k, true, tcf.aid, tcf.ns) {
 			lme.Assign(i, ErrInvalidKey)
@@ -68,7 +68,7 @@ func (tcf *checkFilter) PutMulti(keys []Key, vals []PropertyMap, cb PutMultiCB) 
 	if cb == nil {
 		return fmt.Errorf("datastore: PutMulti callback is nil")
 	}
-	lme := errors.LazyMultiError{Size: len(keys)}
+	lme := errors.NewLazyMultiError(len(keys))
 	for i, k := range keys {
 		if KeyIncomplete(k) {
 			// use NewKey to avoid going all the way down the stack for this check.
@@ -100,7 +100,7 @@ func (tcf *checkFilter) DeleteMulti(keys []Key, cb DeleteMultiCB) error {
 	if cb == nil {
 		return fmt.Errorf("datastore: DeleteMulti callback is nil")
 	}
-	lme := errors.LazyMultiError{Size: len(keys)}
+	lme := errors.NewLazyMultiError(len(keys))
 	for i, k := range keys {
 		if KeyIncomplete(k) || !KeyValid(k, false, tcf.aid, tcf.ns) {
 			lme.Assign(i, ErrInvalidKey)

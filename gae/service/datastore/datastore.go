@@ -100,7 +100,7 @@ func (d *datastoreImpl) GetAll(q Query, dst interface{}) error {
 		return fmt.Errorf("invalid GetAll input type: %T", dst)
 	}
 
-	lme := errors.LazyMultiError{Size: slice.Len()}
+	lme := errors.NewLazyMultiError(slice.Len())
 	i := 0
 	err := d.RawInterface.Run(q, func(k Key, pm PropertyMap, _ CursorCB) bool {
 		slice.Set(reflect.Append(slice, mat.newElem()))
@@ -156,7 +156,7 @@ func (d *datastoreImpl) GetMulti(dst interface{}) error {
 		return err
 	}
 
-	lme := errors.LazyMultiError{Size: len(keys)}
+	lme := errors.NewLazyMultiError(len(keys))
 	i := 0
 	meta := NewMultiMetaGetter(pms)
 	err = d.RawInterface.GetMulti(keys, meta, func(pm PropertyMap, err error) {
@@ -184,7 +184,7 @@ func (d *datastoreImpl) PutMulti(src interface{}) error {
 		return err
 	}
 
-	lme := errors.LazyMultiError{Size: len(keys)}
+	lme := errors.NewLazyMultiError(len(keys))
 	i := 0
 	err = d.RawInterface.PutMulti(keys, vals, func(key Key, err error) {
 		if key != keys[i] {
@@ -201,7 +201,7 @@ func (d *datastoreImpl) PutMulti(src interface{}) error {
 }
 
 func (d *datastoreImpl) DeleteMulti(keys []Key) (err error) {
-	lme := errors.LazyMultiError{Size: len(keys)}
+	lme := errors.NewLazyMultiError(len(keys))
 	i := 0
 	extErr := d.RawInterface.DeleteMulti(keys, func(internalErr error) {
 		lme.Assign(i, internalErr)

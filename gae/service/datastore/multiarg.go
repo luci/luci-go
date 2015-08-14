@@ -24,7 +24,7 @@ type multiArgType struct {
 func (mat *multiArgType) GetKeysPMs(nk newKeyFunc, slice reflect.Value) ([]Key, []PropertyMap, error) {
 	retKey := make([]Key, slice.Len())
 	retPM := make([]PropertyMap, slice.Len())
-	lme := errors.LazyMultiError{Size: len(retKey)}
+	lme := errors.NewLazyMultiError(len(retKey))
 	for i := range retKey {
 		key, err := mat.getKey(nk, slice.Index(i))
 		if !lme.Assign(i, err) {

@@ -33,7 +33,7 @@ func (m *memcacheImpl) CompareAndSwap(item Item) error {
 	return errors.SingleError(m.CompareAndSwapMulti([]Item{item}))
 }
 
-func filterItems(lme *errors.LazyMultiError, items []Item, nilErr error) ([]Item, []int) {
+func filterItems(lme errors.LazyMultiError, items []Item, nilErr error) ([]Item, []int) {
 	idxMap := make([]int, 0, len(items))
 	retItems := make([]Item, 0, len(items))
 	for i, itm := range items {
@@ -48,8 +48,8 @@ func filterItems(lme *errors.LazyMultiError, items []Item, nilErr error) ([]Item
 }
 
 func multiCall(items []Item, nilErr error, inner func(items []Item, cb RawCB) error) error {
-	lme := errors.LazyMultiError{Size: len(items)}
-	realItems, idxMap := filterItems(&lme, items, nilErr)
+	lme := errors.NewLazyMultiError(len(items))
+	realItems, idxMap := filterItems(lme, items, nilErr)
 	j := 0
 	err := inner(realItems, func(err error) {
 		lme.Assign(idxMap[j], err)
@@ -74,7 +74,7 @@ func (m *memcacheImpl) CompareAndSwapMulti(items []Item) error {
 }
 
 func (m *memcacheImpl) DeleteMulti(keys []string) error {
-	lme := errors.LazyMultiError{Size: len(keys)}
+	lme := errors.NewLazyMultiError(len(keys))
 	i := 0
 	err := m.RawInterface.DeleteMulti(keys, func(err error) {
 		lme.Assign(i, err)
@@ -87,8 +87,8 @@ func (m *memcacheImpl) DeleteMulti(keys []string) error {
 }
 
 func (m *memcacheImpl) GetMulti(items []Item) error {
-	lme := errors.LazyMultiError{Size: len(items)}
-	realItems, idxMap := filterItems(&lme, items, ErrCacheMiss)
+	lme := errors.NewLazyMultiError(len(items))
+	realItems, idxMap := filterItems(lme, items, ErrCacheMiss)
 	if len(realItems) == 0 {
 		return lme.Get()
 	}
