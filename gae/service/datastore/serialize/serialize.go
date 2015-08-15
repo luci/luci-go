@@ -34,7 +34,7 @@ const ReadPropertyMapReasonableLimit uint64 = 30000
 
 // ReadKeyNumToksReasonableLimit is the maximum number of Key tokens that
 // ReadKey is willing to read for a single key.
-const ReadKeyNumToksReasonableLimit uint64 = 50
+const ReadKeyNumToksReasonableLimit = 50
 
 // KeyContext controls whether the various Write and Read serializtion
 // routines should encode the context of Keys (read: the appid and namespace).
@@ -52,7 +52,7 @@ const (
 // WriteKey encodes a key to the buffer. If context is WithContext, then this
 // encoded value will include the appid and namespace of the key.
 func WriteKey(buf Buffer, context KeyContext, k ds.Key) (err error) {
-	// [appid ++ namespace]? ++ #tokens ++ tokens*
+	// [appid ++ namespace]? ++ [1 ++ token]* ++ NULL
 	defer recoverTo(&err)
 	appid, namespace, toks := dskey.Split(k)
 	if context == WithContext {
@@ -64,12 +64,11 @@ func WriteKey(buf Buffer, context KeyContext, k ds.Key) (err error) {
 	} else {
 		panicIf(buf.WriteByte(0))
 	}
-	_, e := cmpbin.WriteUint(buf, uint64(len(toks)))
-	panicIf(e)
 	for _, tok := range toks {
+		panicIf(buf.WriteByte(1))
 		panicIf(WriteKeyTok(buf, tok))
 	}
-	return nil
+	return buf.WriteByte(0)
 }
 
 // ReadKey deserializes a key from the buffer. The value of context must match
@@ -98,17 +97,24 @@ func ReadKey(buf Buffer, context KeyContext, appid, namespace string) (ret ds.Ke
 		actualNS = namespace
 	}
 
-	numToks, _, e := cmpbin.ReadUint(buf)
-	panicIf(e)
-	if numToks > ReadKeyNumToksReasonableLimit {
-		err = fmt.Errorf("helper: tried to decode huge key of length %d", numToks)
-		return
-	}
-
-	toks := make([]ds.KeyTok, numToks)
-	for i := uint64(0); i < numToks; i++ {
-		toks[i], e = ReadKeyTok(buf)
+	toks := []ds.KeyTok{}
+	for {
+		ctrlByte, e := buf.ReadByte()
 		panicIf(e)
+		if ctrlByte == 0 {
+			break
+		}
+		if len(toks)+1 > ReadKeyNumToksReasonableLimit {
+			err = fmt.Errorf(
+				"helper: tried to decode huge key with > %d tokens",
+				ReadKeyNumToksReasonableLimit)
+			return
+		}
+
+		tok, e := ReadKeyTok(buf)
+		panicIf(e)
+
+		toks = append(toks, tok)
 	}
 
 	return dskey.NewToks(actualAid, actualNS, toks), nil

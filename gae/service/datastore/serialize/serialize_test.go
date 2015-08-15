@@ -256,7 +256,11 @@ func TestSerializationReadMisc(t *testing.T) {
 					buf.WriteByte(1) // actualCtx == 1
 					cmpbin.WriteString(buf, "aid")
 					cmpbin.WriteString(buf, "ns")
-					cmpbin.WriteUint(buf, 1000)
+					for i := 1; i < 60; i++ {
+						buf.WriteByte(1)
+						WriteKeyTok(buf, ds.KeyTok{Kind: "sup", IntID: int64(i)})
+					}
+					buf.WriteByte(0)
 					_, err := ReadKey(buf, WithContext, "", "")
 					So(err, ShouldErrLike, "huge key")
 				})
@@ -272,7 +276,7 @@ func TestSerializationReadMisc(t *testing.T) {
 					buf.WriteByte(1) // actualCtx == 1
 					cmpbin.WriteString(buf, "aid")
 					cmpbin.WriteString(buf, "ns")
-					cmpbin.WriteUint(buf, 2)
+					buf.WriteByte(1)
 					cmpbin.WriteString(buf, "hi")
 					_, err := ReadKey(buf, WithContext, "", "")
 					So(err, ShouldEqual, io.EOF)
@@ -281,7 +285,7 @@ func TestSerializationReadMisc(t *testing.T) {
 					buf.WriteByte(1) // actualCtx == 1
 					cmpbin.WriteString(buf, "aid")
 					cmpbin.WriteString(buf, "ns")
-					cmpbin.WriteUint(buf, 2)
+					buf.WriteByte(1)
 					cmpbin.WriteString(buf, "hi")
 					buf.WriteByte(byte(ds.PTString))
 					_, err := ReadKey(buf, WithContext, "", "")
@@ -291,7 +295,7 @@ func TestSerializationReadMisc(t *testing.T) {
 					buf.WriteByte(1) // actualCtx == 1
 					cmpbin.WriteString(buf, "aid")
 					cmpbin.WriteString(buf, "ns")
-					cmpbin.WriteUint(buf, 2)
+					buf.WriteByte(1)
 					cmpbin.WriteString(buf, "hi")
 					buf.WriteByte(byte(ds.PTBlobKey))
 					_, err := ReadKey(buf, WithContext, "", "")
@@ -301,7 +305,7 @@ func TestSerializationReadMisc(t *testing.T) {
 					buf.WriteByte(1) // actualCtx == 1
 					cmpbin.WriteString(buf, "aid")
 					cmpbin.WriteString(buf, "ns")
-					cmpbin.WriteUint(buf, 2)
+					buf.WriteByte(1)
 					cmpbin.WriteString(buf, "hi")
 					buf.WriteByte(byte(ds.PTInt))
 					cmpbin.WriteInt(buf, -2)
