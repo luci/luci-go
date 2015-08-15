@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package datastore
+package serialize
 
 import (
 	"bytes"
@@ -12,11 +12,14 @@ import (
 	"time"
 
 	"github.com/luci/gae/service/blobstore"
+	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/datastore/dskey"
 	"github.com/luci/luci-go/common/cmpbin"
 )
 
-// MaxIndexColumns is the maximum number of sort orders you may have on a
-// single composite index. 64 was chosen as a likely-astronomical number.
+// MaxIndexColumns is the maximum number of sort columns (e.g. sort orders) that
+// ReadIndexDefinition is willing to deserialize. 64 was chosen as
+// a likely-astronomical number.
 const MaxIndexColumns = 64
 
 // WritePropertyMapDeterministic allows tests to make WritePropertyMap
@@ -48,10 +51,10 @@ const (
 
 // WriteKey encodes a key to the buffer. If context is WithContext, then this
 // encoded value will include the appid and namespace of the key.
-func WriteKey(buf Buffer, context KeyContext, k Key) (err error) {
+func WriteKey(buf Buffer, context KeyContext, k ds.Key) (err error) {
 	// [appid ++ namespace]? ++ #tokens ++ tokens*
 	defer recoverTo(&err)
-	appid, namespace, toks := KeySplit(k)
+	appid, namespace, toks := dskey.Split(k)
 	if context == WithContext {
 		panicIf(buf.WriteByte(1))
 		_, e := cmpbin.WriteString(buf, appid)
@@ -73,7 +76,7 @@ func WriteKey(buf Buffer, context KeyContext, k Key) (err error) {
 // the value of context that was passed to WriteKey when the key was encoded.
 // If context == WithoutContext, then the appid and namespace parameters are
 // used in the decoded Key. Otherwise they're ignored.
-func ReadKey(buf Buffer, context KeyContext, appid, namespace string) (ret Key, err error) {
+func ReadKey(buf Buffer, context KeyContext, appid, namespace string) (ret ds.Key, err error) {
 	defer recoverTo(&err)
 	actualCtx, e := buf.ReadByte()
 	panicIf(e)
@@ -102,28 +105,28 @@ func ReadKey(buf Buffer, context KeyContext, appid, namespace string) (ret Key, 
 		return
 	}
 
-	toks := make([]KeyTok, numToks)
+	toks := make([]ds.KeyTok, numToks)
 	for i := uint64(0); i < numToks; i++ {
 		toks[i], e = ReadKeyTok(buf)
 		panicIf(e)
 	}
 
-	return NewKeyToks(actualAid, actualNS, toks), nil
+	return dskey.NewToks(actualAid, actualNS, toks), nil
 }
 
 // WriteKeyTok writes a KeyTok to the buffer. You usually want WriteKey
 // instead of this.
-func WriteKeyTok(buf Buffer, tok KeyTok) (err error) {
+func WriteKeyTok(buf Buffer, tok ds.KeyTok) (err error) {
 	// tok.kind ++ typ ++ [tok.stringID || tok.intID]
 	defer recoverTo(&err)
 	_, e := cmpbin.WriteString(buf, tok.Kind)
 	panicIf(e)
 	if tok.StringID != "" {
-		panicIf(buf.WriteByte(byte(PTString)))
+		panicIf(buf.WriteByte(byte(ds.PTString)))
 		_, e := cmpbin.WriteString(buf, tok.StringID)
 		panicIf(e)
 	} else {
-		panicIf(buf.WriteByte(byte(PTInt)))
+		panicIf(buf.WriteByte(byte(ds.PTInt)))
 		_, e := cmpbin.WriteInt(buf, tok.IntID)
 		panicIf(e)
 	}
@@ -132,7 +135,7 @@ func WriteKeyTok(buf Buffer, tok KeyTok) (err error) {
 
 // ReadKeyTok reads a KeyTok from the buffer. You usually want ReadKey
 // instead of this.
-func ReadKeyTok(buf Buffer) (ret KeyTok, err error) {
+func ReadKeyTok(buf Buffer) (ret ds.KeyTok, err error) {
 	defer recoverTo(&err)
 	e := error(nil)
 	ret.Kind, _, e = cmpbin.ReadString(buf)
@@ -141,22 +144,22 @@ func ReadKeyTok(buf Buffer) (ret KeyTok, err error) {
 	typ, e := buf.ReadByte()
 	panicIf(e)
 
-	switch PropertyType(typ) {
-	case PTString:
+	switch ds.PropertyType(typ) {
+	case ds.PTString:
 		ret.StringID, _, err = cmpbin.ReadString(buf)
-	case PTInt:
+	case ds.PTInt:
 		ret.IntID, _, err = cmpbin.ReadInt(buf)
 		if err == nil && ret.IntID <= 0 {
 			err = errors.New("helper: decoded key with empty stringID and zero/negative intID")
 		}
 	default:
-		err = fmt.Errorf("helper: invalid type %s", PropertyType(typ))
+		err = fmt.Errorf("helper: invalid type %s", ds.PropertyType(typ))
 	}
 	return
 }
 
-// Write writes a GeoPoint to the buffer.
-func (gp GeoPoint) Write(buf Buffer) (err error) {
+// WriteGeoPoint writes a GeoPoint to the buffer.
+func WriteGeoPoint(buf Buffer, gp ds.GeoPoint) (err error) {
 	defer recoverTo(&err)
 	_, e := cmpbin.WriteFloat64(buf, gp.Lat)
 	panicIf(e)
@@ -164,8 +167,8 @@ func (gp GeoPoint) Write(buf Buffer) (err error) {
 	return e
 }
 
-// Read reads a GeoPoint from the buffer.
-func (gp *GeoPoint) Read(buf Buffer) (err error) {
+// ReadGeoPoint reads a GeoPoint from the buffer.
+func ReadGeoPoint(buf Buffer) (gp ds.GeoPoint, err error) {
 	defer recoverTo(&err)
 	e := error(nil)
 	gp.Lat, _, e = cmpbin.ReadFloat64(buf)
@@ -202,86 +205,84 @@ func ReadTime(buf Buffer) (time.Time, error) {
 	return time.Unix(int64(v/1e6), int64((v%1e6)*1e3)).UTC(), nil
 }
 
-// Write writes a Property to the buffer. `context` behaves the same
+// WriteProperty writes a Property to the buffer. `context` behaves the same
 // way that it does for WriteKey, but only has an effect if `p` contains a
 // Key as its Value.
-func (p *Property) Write(buf Buffer, context KeyContext) (err error) {
+func WriteProperty(buf Buffer, context KeyContext, p ds.Property) (err error) {
 	defer recoverTo(&err)
 	typb := byte(p.Type())
-	if p.IndexSetting() == NoIndex {
+	if p.IndexSetting() == ds.NoIndex {
 		typb |= 0x80
 	}
 	panicIf(buf.WriteByte(typb))
 	switch p.Type() {
-	case PTNull, PTBoolTrue, PTBoolFalse:
-	case PTInt:
+	case ds.PTNull, ds.PTBoolTrue, ds.PTBoolFalse:
+	case ds.PTInt:
 		_, err = cmpbin.WriteInt(buf, p.Value().(int64))
-	case PTFloat:
+	case ds.PTFloat:
 		_, err = cmpbin.WriteFloat64(buf, p.Value().(float64))
-	case PTString:
+	case ds.PTString:
 		_, err = cmpbin.WriteString(buf, p.Value().(string))
-	case PTBytes:
-		if p.IndexSetting() == NoIndex {
+	case ds.PTBytes:
+		if p.IndexSetting() == ds.NoIndex {
 			_, err = cmpbin.WriteBytes(buf, p.Value().([]byte))
 		} else {
-			_, err = cmpbin.WriteBytes(buf, p.Value().(ByteString))
+			_, err = cmpbin.WriteBytes(buf, p.Value().(ds.ByteString))
 		}
-	case PTTime:
+	case ds.PTTime:
 		err = WriteTime(buf, p.Value().(time.Time))
-	case PTGeoPoint:
-		err = p.Value().(GeoPoint).Write(buf)
-	case PTKey:
-		err = WriteKey(buf, context, p.Value().(Key))
-	case PTBlobKey:
+	case ds.PTGeoPoint:
+		err = WriteGeoPoint(buf, p.Value().(ds.GeoPoint))
+	case ds.PTKey:
+		err = WriteKey(buf, context, p.Value().(ds.Key))
+	case ds.PTBlobKey:
 		_, err = cmpbin.WriteString(buf, string(p.Value().(blobstore.Key)))
 	}
 	return
 }
 
-// Read reads a Property from the buffer. `context`, `appid`, and
+// ReadProperty reads a Property from the buffer. `context`, `appid`, and
 // `namespace` behave the same way they do for ReadKey, but only have an
 // effect if the decoded property has a Key value.
-func (p *Property) Read(buf Buffer, context KeyContext, appid, namespace string) (err error) {
+func ReadProperty(buf Buffer, context KeyContext, appid, namespace string) (p ds.Property, err error) {
 	val := interface{}(nil)
 	typb, err := buf.ReadByte()
 	if err != nil {
 		return
 	}
-	is := ShouldIndex
+	is := ds.ShouldIndex
 	if (typb & 0x80) != 0 {
-		is = NoIndex
+		is = ds.NoIndex
 	}
-	switch PropertyType(typb & 0x7f) {
-	case PTNull:
-	case PTBoolTrue:
+	switch ds.PropertyType(typb & 0x7f) {
+	case ds.PTNull:
+	case ds.PTBoolTrue:
 		val = true
-	case PTBoolFalse:
+	case ds.PTBoolFalse:
 		val = false
-	case PTInt:
+	case ds.PTInt:
 		val, _, err = cmpbin.ReadInt(buf)
-	case PTFloat:
+	case ds.PTFloat:
 		val, _, err = cmpbin.ReadFloat64(buf)
-	case PTString:
+	case ds.PTString:
 		val, _, err = cmpbin.ReadString(buf)
-	case PTBytes:
+	case ds.PTBytes:
 		b := []byte(nil)
 		if b, _, err = cmpbin.ReadBytes(buf); err != nil {
 			break
 		}
-		if is == NoIndex {
+		if is == ds.NoIndex {
 			val = b
 		} else {
-			val = ByteString(b)
+			val = ds.ByteString(b)
 		}
-	case PTTime:
+	case ds.PTTime:
 		val, err = ReadTime(buf)
-	case PTGeoPoint:
-		gp := GeoPoint{}
-		err = gp.Read(buf)
-		val = gp
-	case PTKey:
+	case ds.PTGeoPoint:
+		val, err = ReadGeoPoint(buf)
+	case ds.PTKey:
 		val, err = ReadKey(buf, context, appid, namespace)
-	case PTBlobKey:
+	case ds.PTBlobKey:
 		s := ""
 		if s, _, err = cmpbin.ReadString(buf); err != nil {
 			break
@@ -296,28 +297,26 @@ func (p *Property) Read(buf Buffer, context KeyContext, appid, namespace string)
 	return
 }
 
-// Write writes an entire PropertyMap to the buffer. `context` behaves the same
+// WritePropertyMap writes an entire PropertyMap to the buffer. `context` behaves the same
 // way that it does for WriteKey. If WritePropertyMapDeterministic is true, then
 // the rows will be sorted by property name before they're serialized to buf
 // (mostly useful for testing, but also potentially useful if you need to make
 // a hash of the property data).
 //
 // Write skips metadata keys.
-func (pm PropertyMap) Write(buf Buffer, context KeyContext) (err error) {
+func WritePropertyMap(buf Buffer, context KeyContext, pm ds.PropertyMap) (err error) {
 	defer recoverTo(&err)
 	rows := make(sort.StringSlice, 0, len(pm))
 	tmpBuf := &bytes.Buffer{}
+	pm, _ = pm.Save(false)
 	for name, vals := range pm {
-		if isMetaKey(name) {
-			continue
-		}
 		tmpBuf.Reset()
 		_, e := cmpbin.WriteString(tmpBuf, name)
 		panicIf(e)
 		_, e = cmpbin.WriteUint(tmpBuf, uint64(len(vals)))
 		panicIf(e)
 		for _, p := range vals {
-			panicIf(p.Write(tmpBuf, context))
+			panicIf(WriteProperty(tmpBuf, context, p))
 		}
 		rows = append(rows, tmpBuf.String())
 	}
@@ -335,9 +334,9 @@ func (pm PropertyMap) Write(buf Buffer, context KeyContext) (err error) {
 	return
 }
 
-// Read reads a PropertyMap from the buffer. `context` and
+// ReadPropertyMap reads a PropertyMap from the buffer. `context` and
 // friends behave the same way that they do for ReadKey.
-func (pm PropertyMap) Read(buf Buffer, context KeyContext, appid, namespace string) (err error) {
+func ReadPropertyMap(buf Buffer, context KeyContext, appid, namespace string) (pm ds.PropertyMap, err error) {
 	defer recoverTo(&err)
 
 	numRows := uint64(0)
@@ -348,7 +347,9 @@ func (pm PropertyMap) Read(buf Buffer, context KeyContext, appid, namespace stri
 		return
 	}
 
-	name, prop := "", Property{}
+	pm = make(ds.PropertyMap, numRows)
+
+	name, prop := "", ds.Property{}
 	for i := uint64(0); i < numRows; i++ {
 		name, _, e = cmpbin.ReadString(buf)
 		panicIf(e)
@@ -359,9 +360,10 @@ func (pm PropertyMap) Read(buf Buffer, context KeyContext, appid, namespace stri
 			err = fmt.Errorf("helper: tried to decode map with huge number of properties %d", numProps)
 			return
 		}
-		props := make([]Property, 0, numProps)
+		props := make([]ds.Property, 0, numProps)
 		for j := uint64(0); j < numProps; j++ {
-			panicIf(prop.Read(buf, context, appid, namespace))
+			prop, err = ReadProperty(buf, context, appid, namespace)
+			panicIf(err)
 			props = append(props, prop)
 		}
 		pm[name] = props
@@ -369,10 +371,11 @@ func (pm PropertyMap) Read(buf Buffer, context KeyContext, appid, namespace stri
 	return
 }
 
-func (c *IndexColumn) Write(buf Buffer) (err error) {
+// WriteIndexColumn writes an IndexColumn to the buffer.
+func WriteIndexColumn(buf Buffer, c ds.IndexColumn) (err error) {
 	defer recoverTo(&err)
 
-	if c.Direction == ASCENDING {
+	if c.Direction == ds.ASCENDING {
 		panicIf(buf.WriteByte(0))
 	} else {
 		panicIf(buf.WriteByte(1))
@@ -381,7 +384,8 @@ func (c *IndexColumn) Write(buf Buffer) (err error) {
 	return
 }
 
-func (c *IndexColumn) Read(buf Buffer) (err error) {
+// ReadIndexColumn reads an IndexColumn from the buffer.
+func ReadIndexColumn(buf Buffer) (c ds.IndexColumn, err error) {
 	defer recoverTo(&err)
 
 	dir, err := buf.ReadByte()
@@ -389,15 +393,16 @@ func (c *IndexColumn) Read(buf Buffer) (err error) {
 
 	switch dir {
 	case 0:
-		c.Direction = ASCENDING
+		c.Direction = ds.ASCENDING
 	default:
-		c.Direction = DESCENDING
+		c.Direction = ds.DESCENDING
 	}
 	c.Property, _, err = cmpbin.ReadString(buf)
-	return err
+	return
 }
 
-func (i *IndexDefinition) Write(buf Buffer) (err error) {
+// WriteIndexDefinition writes an IndexDefinition to the buffer
+func WriteIndexDefinition(buf Buffer, i ds.IndexDefinition) (err error) {
 	defer recoverTo(&err)
 
 	if i.Builtin() {
@@ -415,12 +420,13 @@ func (i *IndexDefinition) Write(buf Buffer) (err error) {
 	_, err = cmpbin.WriteUint(buf, uint64(len(i.SortBy)))
 	panicIf(err)
 	for _, sb := range i.SortBy {
-		panicIf(sb.Write(buf))
+		panicIf(WriteIndexColumn(buf, sb))
 	}
 	return
 }
 
-func (i *IndexDefinition) Read(buf Buffer) (err error) {
+// ReadIndexDefinition reads an IndexDefinition from the buffer.
+func ReadIndexDefinition(buf Buffer) (i ds.IndexDefinition, err error) {
 	defer recoverTo(&err)
 
 	// discard builtin/complex byte
@@ -439,18 +445,102 @@ func (i *IndexDefinition) Read(buf Buffer) (err error) {
 	panicIf(err)
 
 	if numSorts > MaxIndexColumns {
-		return fmt.Errorf("datastore: Got over %d sort orders: %d",
+		err = fmt.Errorf("datastore: Got over %d sort orders: %d",
 			MaxIndexColumns, numSorts)
+		return
 	}
 
 	if numSorts > 0 {
-		i.SortBy = make([]IndexColumn, numSorts)
+		i.SortBy = make([]ds.IndexColumn, numSorts)
 		for idx := range i.SortBy {
-			panicIf(i.SortBy[idx].Read(buf))
+			i.SortBy[idx], err = ReadIndexColumn(buf)
+			panicIf(err)
 		}
 	}
 
 	return
+}
+
+func toBytesErr(i interface{}, ctx KeyContext) (ret []byte, err error) {
+	buf := &bytes.Buffer{}
+	switch x := i.(type) {
+	case ds.GeoPoint:
+		err = WriteGeoPoint(buf, x)
+
+	case ds.IndexColumn:
+		err = WriteIndexColumn(buf, x)
+
+	case ds.IndexDefinition:
+		err = WriteIndexDefinition(buf, x)
+
+	case ds.Key:
+		err = WriteKey(buf, ctx, x)
+
+	case ds.KeyTok:
+		err = WriteKeyTok(buf, x)
+
+	case ds.Property:
+		err = WriteProperty(buf, ctx, x)
+
+	case ds.PropertyMap:
+		err = WritePropertyMap(buf, ctx, x)
+
+	case time.Time:
+		err = WriteTime(buf, x)
+
+	default:
+		err = fmt.Errorf("unknown type for ToBytes: %T", i)
+	}
+	if err == nil {
+		ret = buf.Bytes()
+	}
+	return
+}
+
+// ToBytesErr serializes i to a byte slice, if it's one of the type supported
+// by this library, otherwise it returns an error.
+//
+// Key types will be serialized using the 'WithoutContext' option (e.g. their
+// encoded forms will not contain AppID or Namespace).
+func ToBytesErr(i interface{}) ([]byte, error) {
+	return toBytesErr(i, WithoutContext)
+}
+
+// ToBytesWithContextErr serializes i to a byte slice, if it's one of the type
+// supported by this library, otherwise it returns an error.
+//
+// Key types will be serialized using the 'WithContext' option (e.g. their
+// encoded forms will contain AppID and Namespace).
+func ToBytesWithContextErr(i interface{}) ([]byte, error) {
+	return toBytesErr(i, WithContext)
+}
+
+// ToBytes serializes i to a byte slice, if it's one of the type supported
+// by this library. If an error is encountered (e.g. `i` is not a supported
+// type), this method panics.
+//
+// Key types will be serialized using the 'WithoutContext' option (e.g. their
+// encoded forms will not contain AppID or Namespace).
+func ToBytes(i interface{}) []byte {
+	ret, err := ToBytesErr(i)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+// ToBytesWithContext serializes i to a byte slice, if it's one of the type
+// supported by this library. If an error is encountered (e.g. `i` is not
+// a supported type), this method panics.
+//
+// Key types will be serialized using the 'WithContext' option (e.g. their
+// encoded forms will not contain AppID or Namespace).
+func ToBytesWithContext(i interface{}) []byte {
+	ret, err := ToBytesWithContextErr(i)
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }
 
 type parseError error

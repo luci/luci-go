@@ -21,6 +21,23 @@ type Key interface {
 	AppID() string
 	Namespace() string
 
+	// Incomplete returns true iff k doesn't have an id yet.
+	Incomplete() bool
+
+	// Valid determines if a key is valid, according to a couple rules:
+	//   - k is not nil
+	//   - every token of k:
+	//     - (if !allowSpecial) token's kind doesn't start with '__'
+	//     - token's kind and appid are non-blank
+	//     - token is not incomplete
+	//   - all tokens have the same namespace and appid
+	Valid(allowSpecial bool, aid, ns string) bool
+
+	// PartialValid determines if a key is valid for a Put operation. This is
+	// like Valid(false, aid, ns), except that the childmost key is allowed to
+	// be Incomplete().
+	PartialValid(aid, ns string) bool
+
 	String() string
 }
 

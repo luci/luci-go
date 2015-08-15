@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/luci/gae/service/blobstore"
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -527,8 +528,120 @@ type Impossible4 struct {
 	Values []Complex
 }
 
+// TODO(riannucci): see if there's a way to NOT have this be a duplicate of
+// key.Generic. I couldn't figure out the package interdependency, and this
+// allows things to be in separate packages.
+type genericKey struct {
+	kind string
+	sid  string
+	iid  int64
+
+	aid string
+	ns  string
+
+	parent *genericKey
+}
+
+func (g *genericKey) Kind() string      { return g.kind }
+func (g *genericKey) StringID() string  { return g.sid }
+func (g *genericKey) IntID() int64      { return g.iid }
+func (g *genericKey) AppID() string     { return g.aid }
+func (g *genericKey) Namespace() string { return g.ns }
+func (g *genericKey) Parent() Key       { return g.parent }
+
+func marshalDSKey(b *bytes.Buffer, k *genericKey) {
+	if k.parent != nil {
+		marshalDSKey(b, k.parent)
+	}
+	b.WriteByte('/')
+	b.WriteString(k.kind)
+	b.WriteByte(',')
+	if k.sid != "" {
+		b.WriteString(k.sid)
+	} else {
+		b.WriteString(strconv.FormatInt(k.iid, 10))
+	}
+}
+
+func (g *genericKey) String() string {
+	if g == nil {
+		return ""
+	}
+	b := bytes.NewBuffer(make([]byte, 0, 512))
+	marshalDSKey(b, g)
+	return b.String()
+}
+
+func (g *genericKey) Incomplete() bool {
+	return g.iid == 0 && g.sid == ""
+}
+
+func (g *genericKey) Valid(allowSpecial bool, aid, ns string) bool {
+	if g == nil {
+		return false
+	}
+	if aid != g.AppID() || ns != g.Namespace() {
+		return false
+	}
+	for ; g != nil; g = g.parent {
+		if !allowSpecial && len(g.Kind()) >= 2 && g.Kind()[:2] == "__" {
+			return false
+		}
+		if g.Kind() == "" || g.AppID() == "" {
+			return false
+		}
+		if g.StringID() != "" && g.IntID() != 0 {
+			return false
+		}
+		if g.parent != nil {
+			if g.parent.Incomplete() {
+				return false
+			}
+			if g.parent.AppID() != g.AppID() || g.parent.Namespace() != g.Namespace() {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func (g *genericKey) PartialValid(aid, ns string) bool {
+	if g.Incomplete() {
+		g = mkKey(g.AppID(), g.Namespace(), g.Kind(), 1, g.Parent()).(*genericKey)
+	}
+	return g.Valid(false, aid, ns)
+}
+
+var _ Key = (*genericKey)(nil)
+
+func mkKey(aid, ns string, pairs ...interface{}) Key {
+	ret := (*genericKey)(nil)
+	if len(pairs)%2 != 0 {
+		ret, _ = pairs[len(pairs)-1].(*genericKey)
+		pairs = pairs[:len(pairs)-1]
+	}
+	for i := 0; i < len(pairs); i += 2 {
+		kind := pairs[i].(string)
+		id := pairs[i+1]
+		ret = &genericKey{
+			kind:   kind,
+			aid:    aid,
+			ns:     ns,
+			parent: ret,
+		}
+		ret.sid, _ = id.(string)
+		iid, ok := id.(int)
+		if ok {
+			ret.iid = int64(iid)
+		} else {
+			ret.iid, _ = id.(int64)
+		}
+	}
+	return ret
+}
+
 type DerivedKey struct {
-	K *GenericKey
+	K *genericKey
 }
 
 type IfaceKey struct {
@@ -799,13 +912,13 @@ var testCases = []testCase{
 	},
 	{
 		desc: "allow concrete Key implementors (save)",
-		src:  &DerivedKey{testKey2a.(*GenericKey)},
+		src:  &DerivedKey{testKey2a.(*genericKey)},
 		want: &IfaceKey{testKey2b},
 	},
 	{
 		desc: "allow concrete Key implementors (load)",
 		src:  &IfaceKey{testKey2b},
-		want: &DerivedKey{testKey2a.(*GenericKey)},
+		want: &DerivedKey{testKey2a.(*genericKey)},
 	},
 	{
 		desc:    "save []float64 load []int64",
@@ -1463,43 +1576,15 @@ func checkErr(want string, err error) string {
 	return ""
 }
 
-func ShouldErrLike(actual interface{}, expected ...interface{}) string {
-	e2s := func(o interface{}) (string, bool) {
-		switch x := o.(type) {
-		case nil:
-			return "", true
-		case string:
-			return x, true
-		case error:
-			if x != nil {
-				return x.Error(), true
-			}
-			return "", true
-		}
-		return fmt.Sprintf("unknown argument type %T, expected string, error or nil", actual), false
-	}
-
-	as, ok := e2s(actual)
-	if !ok {
-		return as
-	}
-
-	if len(expected) != 1 {
-		return fmt.Sprintf("Assertion requires 1 expected value, got %d", len(expected))
-	}
-
-	err, ok := e2s(expected[0])
-	if !ok {
-		return err
-	}
-	return ShouldContainSubstring(as, err)
-}
-
 func TestRoundTrip(t *testing.T) {
 	t.Parallel()
 
 	checkErr := func(actual interface{}, expected string) bool {
-		So(actual, ShouldErrLike, expected)
+		if expected == "" {
+			So(actual, ShouldErrLike, nil)
+		} else {
+			So(actual, ShouldErrLike, expected)
+		}
 		return expected != ""
 	}
 

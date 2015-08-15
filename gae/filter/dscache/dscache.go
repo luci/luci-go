@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/datastore/serialize"
 )
 
 var (
@@ -105,11 +106,8 @@ func MakeMemcacheKey(shard int, k datastore.Key) string {
 }
 
 func HashKey(k datastore.Key) string {
-	// errs can't happen, since we're using a byte buffer.
+	dgst := sha1.Sum(serialize.ToBytes(k))
 	buf := bytes.Buffer{}
-	_ = datastore.WriteKey(&buf, datastore.WithoutContext, k)
-	dgst := sha1.Sum(buf.Bytes())
-	buf.Reset()
 	enc := base64.NewEncoder(base64.StdEncoding, &buf)
 	_, _ = enc.Write(dgst[:])
 	enc.Close()

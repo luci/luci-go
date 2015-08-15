@@ -15,6 +15,7 @@ import (
 	"github.com/luci/gae/filter/featureBreaker"
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/datastore/serialize"
 	"github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -43,7 +44,7 @@ type noCacheObj struct { // see shardsForKey() at top
 }
 
 func init() {
-	datastore.WritePropertyMapDeterministic = true
+	serialize.WritePropertyMapDeterministic = true
 
 	internalValueSizeLimit = 2048
 }
@@ -97,9 +98,7 @@ func TestDSCache(t *testing.T) {
 					"BigData": {datastore.MkProperty([]byte(""))},
 					"Value":   {datastore.MkProperty("hi")},
 				}
-				buf := &bytes.Buffer{}
-				So(pm.Write(buf, datastore.WithoutContext), ShouldBeNil)
-				encoded := append([]byte{0}, buf.Bytes()...)
+				encoded := append([]byte{0}, serialize.ToBytes(pm)...)
 
 				o := object{ID: 1, Value: "hi"}
 				So(ds.Put(&o), ShouldBeNil)

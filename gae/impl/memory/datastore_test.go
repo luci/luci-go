@@ -5,11 +5,12 @@
 package memory
 
 import (
-	"bytes"
 	"fmt"
 	"testing"
 
 	dsS "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/datastore/dskey"
+	"github.com/luci/gae/service/datastore/serialize"
 	infoS "github.com/luci/gae/service/info"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
@@ -34,8 +35,8 @@ func TestDatastoreKinder(t *testing.T) {
 				So(key.AppID(), ShouldEqual, "dev~app")
 				So(key.Namespace(), ShouldEqual, "")
 				So(key.String(), ShouldEqual, "/nerd,stringID")
-				So(dsS.KeyIncomplete(key), ShouldBeFalse)
-				So(dsS.KeyValid(key, false, "dev~app", ""), ShouldBeTrue)
+				So(key.Incomplete(), ShouldBeFalse)
+				So(key.Valid(false, "dev~app", ""), ShouldBeTrue)
 			})
 		})
 
@@ -52,7 +53,7 @@ type MetaGroup struct {
 
 func testGetMeta(c context.Context, k dsS.Key) int64 {
 	ds := dsS.Get(c)
-	mg := &MetaGroup{Parent: dsS.KeyRoot(k)}
+	mg := &MetaGroup{Parent: dskey.Root(k)}
 	if err := ds.Get(mg); err != nil {
 		panic(err)
 	}
@@ -425,11 +426,9 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 func TestCompoundIndexes(t *testing.T) {
 	t.Parallel()
 
-	idxKey := func(def *dsS.IndexDefinition) string {
-		buf := &bytes.Buffer{}
-		buf.WriteString("idx::")
-		So(def.Write(buf), ShouldBeNil)
-		return buf.String()
+	idxKey := func(def dsS.IndexDefinition) string {
+		So(def, ShouldNotBeNil)
+		return "idx::" + string(serialize.ToBytes(def))
 	}
 
 	numItms := func(c *memCollection) uint64 {
@@ -452,7 +451,7 @@ func TestCompoundIndexes(t *testing.T) {
 
 		So(ds.Put(&Model{1, []string{"hello", "world"}, []int64{10, 11}}), ShouldBeNil)
 
-		idx := &dsS.IndexDefinition{
+		idx := dsS.IndexDefinition{
 			Kind: "Model",
 			SortBy: []dsS.IndexColumn{
 				{Property: "Field2"},
@@ -471,7 +470,7 @@ func TestCompoundIndexes(t *testing.T) {
 		idx.SortBy = append(idx.SortBy, dsS.IndexColumn{Property: "Field1"})
 		So(store.GetCollection(idxKey(idx)), ShouldBeNil)
 
-		t.AddIndexes(idx)
+		t.AddIndexes(&idx)
 		coll = store.GetCollection(idxKey(idx))
 		So(coll, ShouldNotBeNil)
 		So(numItms(coll), ShouldEqual, 4)

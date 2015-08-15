@@ -22,7 +22,7 @@ type fakeService struct{ RawInterface }
 type fakeFilt struct{ RawInterface }
 
 func (fakeFilt) NewKey(kind, stringID string, intID int64, parent Key) Key {
-	return NewKey("aid", "ns", kind, stringID, intID, parent)
+	return mkKey("aid", "ns", "filteredKind", "")
 }
 
 func TestServices(t *testing.T) {
@@ -47,7 +47,7 @@ func TestServices(t *testing.T) {
 				})
 
 				k := Get(c).NewKey("Kind", "", 1, nil)
-				So(KeysEqual(k, NewKey("aid", "ns", "Kind", "", 1, nil)), ShouldBeTrue)
+				So(k.Kind(), ShouldEqual, "filteredKind")
 			})
 		})
 		Convey("adding zero filters does nothing", func() {

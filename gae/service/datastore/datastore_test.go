@@ -61,7 +61,11 @@ type fakeDatastore struct {
 }
 
 func (f *fakeDatastore) NewKey(kind, stringID string, intID int64, parent Key) Key {
-	return NewKey(f.aid, f.ns, kind, stringID, intID, parent)
+	id := interface{}(stringID)
+	if stringID == "" {
+		id = intID
+	}
+	return mkKey(f.aid, f.ns, kind, id, parent)
 }
 
 func (f *fakeDatastore) NewQuery(string) Query {
@@ -107,8 +111,8 @@ func (f *fakeDatastore) PutMulti(keys []Key, vals []PropertyMap, cb PutMultiCB) 
 			if assertExtra {
 				So(vals[i]["Extra"], ShouldResemble, []Property{MkProperty("whoa")})
 			}
-			if KeyIncomplete(k) {
-				k = NewKey(k.AppID(), k.Namespace(), k.Kind(), "", int64(i+1), k.Parent())
+			if k.Incomplete() {
+				k = mkKey(k.AppID(), k.Namespace(), k.Kind(), int64(i+1), k.Parent())
 			}
 		}
 		cb(k, err)
@@ -548,8 +552,8 @@ func TestDelete(t *testing.T) {
 		Convey("bad", func() {
 			Convey("get single error for RPC failure", func() {
 				keys := []Key{
-					NewKey("aid", "ns", "FailAll", "", 1, nil),
-					NewKey("aid", "ns", "Ok", "", 1, nil),
+					mkKey("aid", "ns", "FailAll", 1, nil),
+					mkKey("aid", "ns", "Ok", 1, nil),
 				}
 				So(ds.DeleteMulti(keys).Error(), ShouldEqual, "DeleteMulti fail all")
 			})

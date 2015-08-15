@@ -4,7 +4,7 @@
 
 // adapted from github.com/golang/appengine/datastore
 
-package datastore
+package dskey
 
 import (
 	"bytes"
@@ -13,16 +13,18 @@ import (
 	"strconv"
 	"strings"
 
-	pb "github.com/luci/gae/service/datastore/internal/protos/datastore"
-
 	"github.com/golang/protobuf/proto"
+	ds "github.com/luci/gae/service/datastore"
+	pb "github.com/luci/gae/service/datastore/internal/protos/datastore"
 )
 
-// KeyEncode encodes the provided key as a base64-encoded protobuf.
+// Encode encodes the provided key as a base64-encoded protobuf.
 //
 // This encoding is compatible with the SDK-provided encoding and is agnostic
 // to the underlying implementation of the Key.
-func KeyEncode(k Key) string {
+//
+// It's encoded with the urlsafe base64 table.
+func Encode(k ds.Key) string {
 	n := 0
 	for i := k; i != nil; i = i.Parent() {
 		n++
@@ -63,13 +65,13 @@ func KeyEncode(k Key) string {
 	return strings.TrimRight(base64.URLEncoding.EncodeToString(r), "=")
 }
 
-// KeyToksDecode decodes a base64-encoded protobuf representation of a Key
+// ToksDecode decodes a base64-encoded protobuf representation of a Key
 // into a tokenized form. This is so that implementations of the gae wrapper
 // can decode to their own implementation of Key.
 //
 // This encoding is compatible with the SDK-provided encoding and is agnostic
 // to the underlying implementation of the Key.
-func KeyToksDecode(encoded string) (appID, namespace string, toks []KeyTok, err error) {
+func ToksDecode(encoded string) (appID, namespace string, toks []ds.KeyTok, err error) {
 	// Re-add padding
 	if m := len(encoded) % 4; m != 0 {
 		encoded += strings.Repeat("=", 4-m)
@@ -86,9 +88,9 @@ func KeyToksDecode(encoded string) (appID, namespace string, toks []KeyTok, err 
 
 	appID = r.GetApp()
 	namespace = r.GetNameSpace()
-	toks = make([]KeyTok, len(r.Path.Element))
+	toks = make([]ds.KeyTok, len(r.Path.Element))
 	for i, e := range r.Path.Element {
-		toks[i] = KeyTok{
+		toks[i] = ds.KeyTok{
 			Kind:     e.GetType(),
 			IntID:    e.GetId(),
 			StringID: e.GetName(),
@@ -97,35 +99,35 @@ func KeyToksDecode(encoded string) (appID, namespace string, toks []KeyTok, err 
 	return
 }
 
-// KeyMarshalJSON returns a MarshalJSON-compatible serialization of a Key.
-func KeyMarshalJSON(k Key) ([]byte, error) {
-	return []byte(`"` + KeyEncode(k) + `"`), nil
+// MarshalJSON returns a MarshalJSON-compatible serialization of a Key.
+func MarshalJSON(k ds.Key) ([]byte, error) {
+	return []byte(`"` + Encode(k) + `"`), nil
 }
 
-// KeyUnmarshalJSON returns the tokenized version of a Key as encoded by
-// KeyMarshalJSON.
-func KeyUnmarshalJSON(buf []byte) (appID, namespace string, toks []KeyTok, err error) {
+// UnmarshalJSON returns the tokenized version of a ds.Key as encoded by
+// MarshalJSON.
+func UnmarshalJSON(buf []byte) (appID, namespace string, toks []ds.KeyTok, err error) {
 	if len(buf) < 2 || buf[0] != '"' || buf[len(buf)-1] != '"' {
 		err = errors.New("datastore: bad JSON key")
 	} else {
-		appID, namespace, toks, err = KeyToksDecode(string(buf[1 : len(buf)-1]))
+		appID, namespace, toks, err = ToksDecode(string(buf[1 : len(buf)-1]))
 	}
 	return
 }
 
-// KeyIncomplete returns true iff k doesn't have an id yet.
-func KeyIncomplete(k Key) bool {
+// Incomplete returns true iff k doesn't have an id yet.
+func Incomplete(k ds.Key) bool {
 	return k != nil && k.StringID() == "" && k.IntID() == 0
 }
 
-// KeyValid determines if a key is valid, according to a couple rules:
+// Valid determines if a key is valid, according to a couple rules:
 //   - k is not nil
 //   - every token of k:
 //     - (if !allowSpecial) token's kind doesn't start with '__'
 //     - token's kind and appid are non-blank
 //     - token is not incomplete
 //   - all tokens have the same namespace and appid
-func KeyValid(k Key, allowSpecial bool, aid, ns string) bool {
+func Valid(k ds.Key, allowSpecial bool, aid, ns string) bool {
 	if k == nil {
 		return false
 	}
@@ -143,7 +145,7 @@ func KeyValid(k Key, allowSpecial bool, aid, ns string) bool {
 			return false
 		}
 		if k.Parent() != nil {
-			if KeyIncomplete(k.Parent()) {
+			if k.Parent().Incomplete() {
 				return false
 			}
 			if k.Parent().AppID() != k.AppID() || k.Parent().Namespace() != k.Namespace() {
@@ -154,16 +156,26 @@ func KeyValid(k Key, allowSpecial bool, aid, ns string) bool {
 	return true
 }
 
-// KeyRoot returns the entity root for the given key.
-func KeyRoot(k Key) Key {
+// PartialValid returns true iff this key is suitable for use in a Put
+// operation. This is the same as Valid(k, false, ...), but also allowing k to
+// be Incomplete().
+func PartialValid(k ds.Key, aid, ns string) bool {
+	if k.Incomplete() {
+		k = New(k.AppID(), k.Namespace(), k.Kind(), "", 1, k.Parent())
+	}
+	return Valid(k, false, aid, ns)
+}
+
+// Root returns the entity root for the given key.
+func Root(k ds.Key) ds.Key {
 	for k != nil && k.Parent() != nil {
 		k = k.Parent()
 	}
 	return k
 }
 
-// KeysEqual returns true iff the two keys represent identical key values.
-func KeysEqual(a, b Key) (ret bool) {
+// Equal returns true iff the two keys represent identical key values.
+func Equal(a, b ds.Key) (ret bool) {
 	ret = (a.Kind() == b.Kind() &&
 		a.StringID() == b.StringID() &&
 		a.IntID() == b.IntID() &&
@@ -173,10 +185,10 @@ func KeysEqual(a, b Key) (ret bool) {
 		return
 	}
 	ap, bp := a.Parent(), b.Parent()
-	return (ap == nil && bp == nil) || KeysEqual(ap, bp)
+	return (ap == nil && bp == nil) || Equal(ap, bp)
 }
 
-func marshalDSKey(b *bytes.Buffer, k Key) {
+func marshalDSKey(b *bytes.Buffer, k ds.Key) {
 	if k.Parent() != nil {
 		marshalDSKey(b, k.Parent())
 	}
@@ -190,9 +202,9 @@ func marshalDSKey(b *bytes.Buffer, k Key) {
 	}
 }
 
-// KeyString returns a human-readable representation of the key, and is the
+// String returns a human-readable representation of the key, and is the
 // typical implementation of Key.String() (though it isn't guaranteed to be)
-func KeyString(k Key) string {
+func String(k ds.Key) string {
 	if k == nil {
 		return ""
 	}
@@ -201,14 +213,14 @@ func KeyString(k Key) string {
 	return b.String()
 }
 
-// KeySplit splits the key into its constituent parts. Note that if the key is
-// not KeyValid, this method may not provide a round-trip for k.
-func KeySplit(k Key) (appID, namespace string, toks []KeyTok) {
+// Split splits the key into its constituent parts. Note that if the key is
+// not Valid, this method may not provide a round-trip for k.
+func Split(k ds.Key) (appID, namespace string, toks []ds.KeyTok) {
 	if k == nil {
 		return
 	}
 
-	if sk, ok := k.(*GenericKey); ok {
+	if sk, ok := k.(*Generic); ok {
 		if sk == nil {
 			return
 		}
@@ -219,7 +231,7 @@ func KeySplit(k Key) (appID, namespace string, toks []KeyTok) {
 	for i := k; i != nil; i = i.Parent() {
 		n++
 	}
-	toks = make([]KeyTok, n)
+	toks = make([]ds.KeyTok, n)
 	for i := k; i != nil; i = i.Parent() {
 		n--
 		toks[n].IntID = i.IntID()

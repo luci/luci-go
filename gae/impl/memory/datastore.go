@@ -11,6 +11,7 @@ import (
 	"golang.org/x/net/context"
 
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/datastore/dskey"
 )
 
 //////////////////////////////////// public ////////////////////////////////////
@@ -41,11 +42,11 @@ type dsImpl struct {
 var _ ds.RawInterface = (*dsImpl)(nil)
 
 func (d *dsImpl) DecodeKey(encoded string) (ds.Key, error) {
-	return ds.NewKeyFromEncoded(encoded)
+	return dskey.NewFromEncoded(encoded)
 }
 
 func (d *dsImpl) NewKey(kind, stringID string, intID int64, parent ds.Key) ds.Key {
-	return ds.NewKey(globalAppID, d.ns, kind, stringID, intID, parent)
+	return dskey.New(globalAppID, d.ns, kind, stringID, intID, parent)
 }
 
 func (d *dsImpl) PutMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
@@ -114,11 +115,11 @@ type txnDsImpl struct {
 var _ ds.RawInterface = (*txnDsImpl)(nil)
 
 func (d *txnDsImpl) DecodeKey(encoded string) (ds.Key, error) {
-	return ds.NewKeyFromEncoded(encoded)
+	return dskey.NewFromEncoded(encoded)
 }
 
 func (d *txnDsImpl) NewKey(kind, stringID string, intID int64, parent ds.Key) ds.Key {
-	return ds.NewKey(globalAppID, d.ns, kind, stringID, intID, parent)
+	return dskey.New(globalAppID, d.ns, kind, stringID, intID, parent)
 }
 
 func (d *txnDsImpl) PutMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {

@@ -11,6 +11,8 @@ import (
 	"sync/atomic"
 
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/datastore/dskey"
+	"github.com/luci/gae/service/datastore/serialize"
 	"github.com/luci/luci-go/common/errors"
 	"golang.org/x/net/context"
 )
@@ -78,18 +80,18 @@ func (d *dataStoreData) catchupIndexes() {
 /////////////////////////// indicies(dataStoreData) ////////////////////////////
 
 func groupMetaKey(key ds.Key) []byte {
-	return keyBytes(ds.WithoutContext,
-		ds.NewKey("", "", "__entity_group__", "", 1, ds.KeyRoot(key)))
+	return keyBytes(serialize.WithoutContext,
+		dskey.New("", "", "__entity_group__", "", 1, dskey.Root(key)))
 }
 
 func groupIDsKey(key ds.Key) []byte {
-	return keyBytes(ds.WithoutContext,
-		ds.NewKey("", "", "__entity_group_ids__", "", 1, ds.KeyRoot(key)))
+	return keyBytes(serialize.WithoutContext,
+		dskey.New("", "", "__entity_group_ids__", "", 1, dskey.Root(key)))
 }
 
 func rootIDsKey(kind string) []byte {
-	return keyBytes(ds.WithoutContext,
-		ds.NewKey("", "", "__entity_root_ids__", kind, 0, nil))
+	return keyBytes(serialize.WithoutContext,
+		dskey.New("", "", "__entity_root_ids__", kind, 0, nil))
 }
 
 func curVersion(ents *memCollection, key []byte) int64 {
@@ -112,8 +114,8 @@ func curVersion(ents *memCollection, key []byte) int64 {
 func incrementLocked(ents *memCollection, key []byte) int64 {
 	ret := curVersion(ents, key) + 1
 	buf := &bytes.Buffer{}
-	ds.PropertyMap{"__version__": {ds.MkPropertyNI(ret)}}.Write(
-		buf, ds.WithContext)
+	serialize.WritePropertyMap(buf, serialize.WithContext, ds.PropertyMap{
+		"__version__": {ds.MkPropertyNI(ret)}})
 	ents.Set(key, buf.Bytes())
 	return ret
 }
@@ -125,7 +127,7 @@ func (d *dataStoreData) entsKeyLocked(key ds.Key) (*memCollection, ds.Key) {
 		ents = d.store.SetCollection(coll, nil)
 	}
 
-	if ds.KeyIncomplete(key) {
+	if dskey.Incomplete(key) {
 		idKey := []byte(nil)
 		if key.Parent() == nil {
 			idKey = rootIDsKey(key.Kind())
@@ -133,7 +135,7 @@ func (d *dataStoreData) entsKeyLocked(key ds.Key) (*memCollection, ds.Key) {
 			idKey = groupIDsKey(key)
 		}
 		id := incrementLocked(ents, idKey)
-		key = ds.NewKey(key.AppID(), key.Namespace(), key.Kind(), "", id, key.Parent())
+		key = dskey.New(key.AppID(), key.Namespace(), key.Kind(), "", id, key.Parent())
 	}
 
 	return ents, key
@@ -143,7 +145,7 @@ func (d *dataStoreData) putMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.Put
 	for i, k := range keys {
 		buf := &bytes.Buffer{}
 		pmap, _ := vals[i].Save(false)
-		pmap.Write(buf, ds.WithoutContext)
+		serialize.WritePropertyMap(buf, serialize.WithoutContext, pmap)
 		dataBytes := buf.Bytes()
 
 		k, err := func() (ret ds.Key, err error) {
@@ -153,7 +155,7 @@ func (d *dataStoreData) putMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.Put
 			ents, ret := d.entsKeyLocked(k)
 			incrementLocked(ents, groupMetaKey(ret))
 
-			old := ents.Get(keyBytes(ds.WithoutContext, ret))
+			old := ents.Get(keyBytes(serialize.WithoutContext, ret))
 			oldPM := ds.PropertyMap(nil)
 			if old != nil {
 				if oldPM, err = rpmWoCtx(old, ret.Namespace()); err != nil {
@@ -161,7 +163,7 @@ func (d *dataStoreData) putMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.Put
 				}
 			}
 			updateIndicies(d.store, ret, oldPM, pmap)
-			ents.Set(keyBytes(ds.WithoutContext, ret), dataBytes)
+			ents.Set(keyBytes(serialize.WithoutContext, ret), dataBytes)
 			return
 		}()
 		if cb != nil {
@@ -183,7 +185,7 @@ func getMultiInner(keys []ds.Key, cb ds.GetMultiCB, getColl func() (*memCollecti
 	}
 
 	for _, k := range keys {
-		pdata := ents.Get(keyBytes(ds.WithoutContext, k))
+		pdata := ents.Get(keyBytes(serialize.WithoutContext, k))
 		if pdata == nil {
 			cb(nil, ds.ErrNoSuchEntity)
 			continue
@@ -205,7 +207,7 @@ func (d *dataStoreData) getMulti(keys []ds.Key, cb ds.GetMultiCB) error {
 func (d *dataStoreData) delMulti(keys []ds.Key, cb ds.DeleteMultiCB) {
 	toDel := make([][]byte, 0, len(keys))
 	for _, k := range keys {
-		toDel = append(toDel, keyBytes(ds.WithoutContext, k))
+		toDel = append(toDel, keyBytes(serialize.WithoutContext, k))
 	}
 	ns := keys[0].Namespace()
 
@@ -244,7 +246,7 @@ func (d *dataStoreData) canApplyTxn(obj memContextObj) bool {
 		if len(muts) == 0 { // read-only
 			continue
 		}
-		k, err := ds.ReadKey(bytes.NewBufferString(rk), ds.WithContext, "", "")
+		k, err := serialize.ReadKey(bytes.NewBufferString(rk), serialize.WithContext, "", "")
 		if err != nil {
 			panic(err)
 		}
@@ -363,7 +365,7 @@ func (td *txnDataStoreData) run(f func() error) error {
 // Returns an error if this key causes the transaction to cross too many entity
 // groups.
 func (td *txnDataStoreData) writeMutation(getOnly bool, key ds.Key, data ds.PropertyMap) error {
-	rk := string(keyBytes(ds.WithContext, ds.KeyRoot(key)))
+	rk := string(keyBytes(serialize.WithContext, dskey.Root(key)))
 
 	td.Lock()
 	defer td.Unlock()
@@ -426,22 +428,20 @@ func (td *txnDataStoreData) delMulti(keys []ds.Key, cb ds.DeleteMultiCB) error {
 	return nil
 }
 
-func keyBytes(ctx ds.KeyContext, key ds.Key) []byte {
+func keyBytes(ctx serialize.KeyContext, key ds.Key) []byte {
 	buf := &bytes.Buffer{}
-	ds.WriteKey(buf, ctx, key)
+	serialize.WriteKey(buf, ctx, key)
 	return buf.Bytes()
 }
 
 func rpmWoCtx(data []byte, ns string) (ds.PropertyMap, error) {
-	ret := ds.PropertyMap{}
-	err := ret.Read(bytes.NewBuffer(data), ds.WithoutContext, globalAppID, ns)
-	return ret, err
+	return serialize.ReadPropertyMap(bytes.NewBuffer(data),
+		serialize.WithoutContext, globalAppID, ns)
 }
 
 func rpm(data []byte) (ds.PropertyMap, error) {
-	ret := ds.PropertyMap{}
-	err := ret.Read(bytes.NewBuffer(data), ds.WithContext, "", "")
-	return ret, err
+	return serialize.ReadPropertyMap(bytes.NewBuffer(data),
+		serialize.WithContext, "", "")
 }
 
 type keyitem interface {

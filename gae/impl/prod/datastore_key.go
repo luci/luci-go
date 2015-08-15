@@ -6,6 +6,7 @@ package prod
 
 import (
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/datastore/dskey"
 	"google.golang.org/appengine/datastore"
 )
 
@@ -15,7 +16,14 @@ type dsKeyImpl struct {
 
 var _ ds.Key = dsKeyImpl{}
 
-func (k dsKeyImpl) Parent() ds.Key { return dsR2F(k.Key.Parent()) }
+func (k dsKeyImpl) Parent() ds.Key   { return dsR2F(k.Key.Parent()) }
+func (k dsKeyImpl) Incomplete() bool { return k.Key.Incomplete() }
+func (k dsKeyImpl) Valid(allowSpecial bool, aid, ns string) bool {
+	return dskey.Valid(k, allowSpecial, aid, ns)
+}
+func (k dsKeyImpl) PartialValid(aid, ns string) bool {
+	return dskey.PartialValid(k, aid, ns)
+}
 
 // dsR2F (DS real-to-fake) converts an SDK Key to a ds.Key
 func dsR2F(k *datastore.Key) ds.Key {
@@ -29,7 +37,7 @@ func dsF2R(k ds.Key) *datastore.Key {
 	}
 	// we should always hit the fast case above, but just in case, safely round
 	// trip through the proto encoding.
-	rkey, err := datastore.DecodeKey(ds.KeyEncode(k))
+	rkey, err := datastore.DecodeKey(dskey.Encode(k))
 	if err != nil {
 		// should never happen in a good program, but it's not ignorable, and
 		// passing an error back makes this function too cumbersome (and it causes

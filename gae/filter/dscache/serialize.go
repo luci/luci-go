@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/datastore/serialize"
 )
 
 func encodeItemValue(pm ds.PropertyMap) []byte {
@@ -18,7 +19,7 @@ func encodeItemValue(pm ds.PropertyMap) []byte {
 	buf := bytes.Buffer{}
 	// errs can't happen, since we're using a byte buffer.
 	_ = buf.WriteByte(byte(NoCompression))
-	_ = pm.Write(&buf, ds.WithoutContext)
+	_ = serialize.WritePropertyMap(&buf, serialize.WithoutContext, pm)
 
 	data := buf.Bytes()
 	if buf.Len() > CompressionThreshold {
@@ -55,7 +56,5 @@ func decodeItemValue(val []byte, ns, aid string) (ds.PropertyMap, error) {
 		}
 		buf = bytes.NewBuffer(data)
 	}
-	ret := ds.PropertyMap{}
-	err = ret.Read(buf, ds.WithoutContext, ns, aid)
-	return ret, err
+	return serialize.ReadPropertyMap(buf, serialize.WithoutContext, ns, aid)
 }

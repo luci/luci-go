@@ -5,13 +5,13 @@
 package memory
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"math"
 	"strings"
 
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/datastore/serialize"
 )
 
 // MaxQueryComponents was lifted from a hard-coded constant in dev_appserver.
@@ -250,7 +250,7 @@ func (q *queryImpl) Ancestor(k ds.Key) ds.Query {
 				// SDK has an explicit nil-check
 				return errors.New("datastore: nil query ancestor")
 			}
-			if !ds.KeyValid(k, false, globalAppID, q.ns) {
+			if !k.Valid(false, globalAppID, q.ns) {
 				// technically the SDK implementation does a Weird Thing (tm) if both the
 				// stringID and intID are set on a key; it only serializes the stringID in
 				// the proto. This means that if you set the Ancestor to an invalid key,
@@ -302,7 +302,7 @@ func (q *queryImpl) Filter(fStr string, val interface{}) ds.Query {
 			}
 
 			if p.Type() == ds.PTKey {
-				if !ds.KeyValid(p.Value().(ds.Key), false, globalAppID, q.ns) {
+				if !p.Value().(ds.Key).Valid(false, globalAppID, q.ns) {
 					return ds.ErrInvalidKey
 				}
 			}
@@ -333,11 +333,8 @@ func (q *queryImpl) Filter(fStr string, val interface{}) ds.Query {
 					"cannot project on field which is used in an equality filter: %q",
 					prop)
 			}
-
-			buf := &bytes.Buffer{}
-			p.Write(buf, ds.WithoutContext)
-			binVal = buf.String()
-			return nil
+			binVal = string(serialize.ToBytes(p))
+			return err
 		},
 		func(q *queryImpl) {
 			if op == qEqual {

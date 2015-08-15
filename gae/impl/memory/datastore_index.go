@@ -10,6 +10,7 @@ import (
 	"sort"
 
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/datastore/serialize"
 	"github.com/luci/gkvlite"
 )
 
@@ -73,7 +74,7 @@ func partiallySerialize(pm ds.PropertyMap) (ret serializedIndexablePmap) {
 				continue
 			}
 			buf.Reset()
-			v.Write(buf, ds.WithoutContext)
+			serialize.WriteProperty(buf, serialize.WithoutContext, v)
 			newVal := make([]byte, buf.Len())
 			copy(newVal, buf.Bytes())
 			newVals = append(newVals, newVal)
@@ -183,16 +184,12 @@ func (sip serializedIndexablePmap) indexEntries(k ds.Key, idxs []*ds.IndexDefini
 	idxColl := ret.SetCollection("idx", nil)
 	// getIdxEnts retrieves an index collection or adds it if it's not there.
 	getIdxEnts := func(qi *ds.IndexDefinition) *memCollection {
-		buf := &bytes.Buffer{}
-		qi.Write(buf)
-		b := buf.Bytes()
+		b := serialize.ToBytes(*qi)
 		idxColl.Set(b, []byte{})
 		return ret.SetCollection(fmt.Sprintf("idx:%s:%s", k.Namespace(), b), nil)
 	}
 
-	buf := &bytes.Buffer{}
-	ds.WriteKey(buf, ds.WithoutContext, k)
-	keyData := buf.Bytes()
+	keyData := serialize.ToBytes(k)
 
 	walkPermutations := func(prefix []byte, irg indexRowGen, ents *memCollection) {
 		prev := []byte{} // intentionally make a non-nil slice, gkvlite hates nil.
@@ -214,9 +211,7 @@ func (sip serializedIndexablePmap) indexEntries(k ds.Key, idxs []*ds.IndexDefini
 				idxEnts.Set(keyData, []byte{}) // propless index, e.g. kind -> key = nil
 			} else if idx.Ancestor {
 				for ancKey := k; ancKey != nil; ancKey = ancKey.Parent() {
-					buf := &bytes.Buffer{}
-					ds.WriteKey(buf, ds.WithoutContext, ancKey)
-					walkPermutations(buf.Bytes(), irg, idxEnts)
+					walkPermutations(serialize.ToBytes(ancKey), irg, idxEnts)
 				}
 			} else {
 				walkPermutations(nil, irg, idxEnts)
@@ -235,11 +230,11 @@ func getCompIdxs(idxColl *memCollection) []*ds.IndexDefinition {
 		if !bytes.HasPrefix(i.Key, complexQueryPrefix) {
 			return false
 		}
-		qi := &ds.IndexDefinition{}
-		if err := qi.Read(bytes.NewBuffer(i.Key)); err != nil {
+		qi, err := serialize.ReadIndexDefinition(bytes.NewBuffer(i.Key))
+		if err != nil {
 			panic(err) // memory corruption
 		}
-		compIdx = append(compIdx, qi)
+		compIdx = append(compIdx, &qi)
 		return true
 	})
 	return compIdx
@@ -304,7 +299,7 @@ func addIndex(store *memStore, ns string, compIdx []*ds.IndexDefinition) {
 		if err != nil {
 			panic(err) // memory corruption
 		}
-		k, err := ds.ReadKey(bytes.NewBuffer(i.Key), ds.WithoutContext, globalAppID, ns)
+		k, err := serialize.ReadKey(bytes.NewBuffer(i.Key), serialize.WithoutContext, globalAppID, ns)
 		if err != nil {
 			panic(err)
 		}

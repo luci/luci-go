@@ -60,9 +60,9 @@ func (s *supportContext) mkRandKeys(keys []ds.Key, metas ds.MultiMetaGetter) []s
 func (s *supportContext) mkAllKeys(keys []ds.Key) []string {
 	size := 0
 	nums := make([]int, len(keys))
-	for i, k := range keys {
-		if !ds.KeyIncomplete(k) {
-			shards := s.numShards(k)
+	for i, key := range keys {
+		if !key.Incomplete() {
+			shards := s.numShards(key)
 			nums[i] = shards
 			size += shards
 		}
@@ -72,7 +72,7 @@ func (s *supportContext) mkAllKeys(keys []ds.Key) []string {
 	}
 	ret := make([]string, 0, size)
 	for i, key := range keys {
-		if !ds.KeyIncomplete(key) {
+		if !key.Incomplete() {
 			keySuffix := HashKey(key)
 			for shard := 0; shard < nums[i]; shard++ {
 				ret = append(ret, fmt.Sprintf(KeyFormat, shard, keySuffix))

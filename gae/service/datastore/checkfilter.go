@@ -45,7 +45,7 @@ func (tcf *checkFilter) GetMulti(keys []Key, meta MultiMetaGetter, cb GetMultiCB
 	}
 	lme := errors.NewLazyMultiError(len(keys))
 	for i, k := range keys {
-		if KeyIncomplete(k) || !KeyValid(k, true, tcf.aid, tcf.ns) {
+		if k.Incomplete() || !k.Valid(true, tcf.aid, tcf.ns) {
 			lme.Assign(i, ErrInvalidKey)
 		}
 	}
@@ -70,11 +70,7 @@ func (tcf *checkFilter) PutMulti(keys []Key, vals []PropertyMap, cb PutMultiCB) 
 	}
 	lme := errors.NewLazyMultiError(len(keys))
 	for i, k := range keys {
-		if KeyIncomplete(k) {
-			// use NewKey to avoid going all the way down the stack for this check.
-			k = NewKey(k.AppID(), k.Namespace(), k.Kind(), "", 1, k.Parent())
-		}
-		if !KeyValid(k, false, tcf.aid, tcf.ns) {
+		if !k.PartialValid(tcf.aid, tcf.ns) {
 			lme.Assign(i, ErrInvalidKey)
 			continue
 		}
@@ -102,7 +98,7 @@ func (tcf *checkFilter) DeleteMulti(keys []Key, cb DeleteMultiCB) error {
 	}
 	lme := errors.NewLazyMultiError(len(keys))
 	for i, k := range keys {
-		if KeyIncomplete(k) || !KeyValid(k, false, tcf.aid, tcf.ns) {
+		if k.Incomplete() || !k.Valid(false, tcf.aid, tcf.ns) {
 			lme.Assign(i, ErrInvalidKey)
 		}
 	}

@@ -8,6 +8,8 @@ import (
 	"bytes"
 )
 
+const MaxIndexColumns = 64
+
 type IndexDirection bool
 
 const (
@@ -21,25 +23,91 @@ type IndexColumn struct {
 	Direction IndexDirection
 }
 
+func (i IndexColumn) cmp(o IndexColumn) int {
+	// sort ascending first
+	if i.Direction == ASCENDING && o.Direction == DESCENDING {
+		return -1
+	} else if i.Direction == DESCENDING && o.Direction == ASCENDING {
+		return 1
+	}
+	return cmpString(i.Property, o.Property)()
+}
+
 type IndexDefinition struct {
 	Kind     string
 	Ancestor bool
 	SortBy   []IndexColumn
 }
 
+// Yeah who needs templates, right?
+// <flames>This is fine.</flames>
+
+func cmpBool(a, b bool) func() int {
+	return func() int {
+		if a == b {
+			return 0
+		}
+		if a && !b { // >
+			return 1
+		}
+		return -1
+	}
+}
+
+func cmpInt(a, b int) func() int {
+	return func() int {
+		if a == b {
+			return 0
+		}
+		if a > b {
+			return 1
+		}
+		return -1
+	}
+}
+
+func cmpString(a, b string) func() int {
+	return func() int {
+		if a == b {
+			return 0
+		}
+		if a > b {
+			return 1
+		}
+		return -1
+	}
+}
+
 func (i *IndexDefinition) Less(o *IndexDefinition) bool {
-	// yes, this is inefficient.... however I'm disinclined to care, because the
-	// actual comparison function is really ugly, and sorting IndexDefintions is
-	// not performance critical. If you're here because you profiled this and
-	// determined that it's a bottleneck, then feel free to rewrite :).
-	//
-	// At the time of writing, this function is only used during the tests of
-	// impl/memory and this package.
-	ibuf, obuf := &bytes.Buffer{}, &bytes.Buffer{}
-	// we know these can't return an error because we're using bytes.Buffer
-	_ = i.Write(ibuf)
-	_ = o.Write(obuf)
-	return bytes.Compare(ibuf.Bytes(), obuf.Bytes()) < 0
+	decide := func(v int) (ret, keepGoing bool) {
+		if v > 0 {
+			return false, false
+		}
+		if v < 0 {
+			return true, false
+		}
+		return false, true
+	}
+
+	factors := []func() int{
+		cmpBool(i.Builtin(), o.Builtin()),
+		cmpString(i.Kind, o.Kind),
+		cmpBool(i.Ancestor, o.Ancestor),
+		cmpInt(len(i.SortBy), len(o.SortBy)),
+	}
+	for _, f := range factors {
+		ret, keepGoing := decide(f())
+		if !keepGoing {
+			return ret
+		}
+	}
+	for idx := range i.SortBy {
+		ret, keepGoing := decide(i.SortBy[idx].cmp(o.SortBy[idx]))
+		if !keepGoing {
+			return ret
+		}
+	}
+	return false
 }
 
 func (i *IndexDefinition) Builtin() bool {

@@ -10,6 +10,8 @@ import (
 	"time"
 
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/datastore/dskey"
+	"github.com/luci/gae/service/datastore/serialize"
 	"github.com/luci/luci-go/common/cmpbin"
 )
 
@@ -45,9 +47,9 @@ func key(kind string, id interface{}, parent ...ds.Key) ds.Key {
 	}
 	switch x := id.(type) {
 	case string:
-		return ds.NewKey(globalAppID, "ns", kind, x, 0, p)
+		return dskey.New(globalAppID, "ns", kind, x, 0, p)
 	case int:
-		return ds.NewKey(globalAppID, "ns", kind, "", int64(x), p)
+		return dskey.New(globalAppID, "ns", kind, "", int64(x), p)
 	default:
 		panic(fmt.Errorf("what the %T: %v", id, id))
 	}
@@ -78,11 +80,11 @@ func cat(bytethings ...interface{}) []byte {
 		case []byte:
 			buf.Write(x)
 		case time.Time:
-			ds.WriteTime(buf, x)
+			serialize.WriteTime(buf, x)
 		case ds.Key:
-			ds.WriteKey(buf, ds.WithoutContext, x)
+			serialize.WriteKey(buf, serialize.WithoutContext, x)
 		case *ds.IndexDefinition:
-			x.Write(buf)
+			serialize.WriteIndexDefinition(buf, *x)
 		default:
 			panic(fmt.Errorf("I don't know how to deal with %T: %#v", thing, thing))
 		}

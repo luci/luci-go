@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/datastore/dskey"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/memcache"
 	"github.com/luci/gae/service/taskqueue"
@@ -65,7 +66,7 @@ func ni() error {
 type ds struct{}
 
 func (ds) NewKey(kind string, sid string, iid int64, par datastore.Key) datastore.Key {
-	return datastore.NewKey("dummy~appid", "", kind, sid, iid, par)
+	return dskey.New("dummy~appid", "", kind, sid, iid, par)
 }
 func (ds) DecodeKey(string) (datastore.Key, error) { panic(ni()) }
 func (ds) PutMulti([]datastore.Key, []datastore.PropertyMap, datastore.PutMultiCB) error {
