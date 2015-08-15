@@ -5,6 +5,7 @@
 package memory
 
 import (
+	"bytes"
 	"fmt"
 	"math"
 	"testing"
@@ -449,14 +450,14 @@ func TestDatastoreQueryer(t *testing.T) {
 				q = q.Order("wat")
 				qi := q.(*queryImpl).normalize().checkCorrectness("", false)
 				So(qi.err, ShouldBeNil)
-				So(qi.order, ShouldResemble, []queryOrder{{"wat", qASC}})
+				So(qi.order, ShouldResemble, []dsS.IndexColumn{{Property: "wat"}})
 			})
 
 			Convey("keeps inequality orders", func() {
 				q = q.Order("wat")
 				q := q.Filter("bob >", 10).Filter("wat <", 29)
 				qi := q.(*queryImpl).normalize().checkCorrectness("", false)
-				So(qi.order, ShouldResemble, []queryOrder{{"bob", qASC}, {"wat", qASC}})
+				So(qi.order, ShouldResemble, []dsS.IndexColumn{{Property: "bob"}, {Property: "wat"}})
 				So(qi.err.Error(), ShouldContainSubstring, "Only one inequality")
 			})
 
@@ -464,14 +465,14 @@ func TestDatastoreQueryer(t *testing.T) {
 				q = q.Order("wat")
 				q := q.Filter("__key__ =", ds.NewKey("Foo", "wat", 0, nil))
 				qi := q.(*queryImpl).normalize().checkCorrectness("", false)
-				So(qi.order, ShouldResemble, []queryOrder(nil))
+				So(qi.order, ShouldResemble, []dsS.IndexColumn(nil))
 				So(qi.err, ShouldBeNil)
 			})
 
 			Convey("if we order by key and something else, key dominates", func() {
 				q := q.Order("__key__").Order("wat")
 				qi := q.(*queryImpl).normalize().checkCorrectness("", false)
-				So(qi.order, ShouldResemble, []queryOrder{{"__key__", qASC}})
+				So(qi.order, ShouldResemble, []dsS.IndexColumn{{Property: "__key__"}})
 				So(qi.err, ShouldBeNil)
 			})
 		})
@@ -576,5 +577,61 @@ func TestDatastoreQueryer(t *testing.T) {
 			})
 		})
 
+	})
+}
+
+func TestCompoundIndexes(t *testing.T) {
+	t.Parallel()
+
+	idxKey := func(def *dsS.IndexDefinition) string {
+		buf := &bytes.Buffer{}
+		buf.WriteString("idx::")
+		So(def.Write(buf), ShouldBeNil)
+		return buf.String()
+	}
+
+	numItms := func(c *memCollection) uint64 {
+		ret, _ := c.GetTotals()
+		return ret
+	}
+
+	Convey("Test Compound indexes", t, func() {
+		type Model struct {
+			ID int64 `gae:"$id"`
+
+			Field1 []string
+			Field2 []int64
+		}
+
+		c := Use(context.Background())
+		ds := dsS.Get(c)
+		t := ds.Raw().Testable().(*dsImpl)
+		store := t.data.store
+
+		So(ds.Put(&Model{1, []string{"hello", "world"}, []int64{10, 11}}), ShouldBeNil)
+
+		idx := &dsS.IndexDefinition{
+			Kind: "Model",
+			SortBy: []dsS.IndexColumn{
+				{Property: "Field2"},
+			},
+		}
+
+		coll := store.GetCollection(idxKey(idx))
+		So(coll, ShouldNotBeNil)
+		So(numItms(coll), ShouldEqual, 2)
+
+		idx.SortBy[0].Property = "Field1"
+		coll = store.GetCollection(idxKey(idx))
+		So(coll, ShouldNotBeNil)
+		So(numItms(coll), ShouldEqual, 2)
+
+		idx.SortBy = append(idx.SortBy, dsS.IndexColumn{Property: "Field1"})
+		So(store.GetCollection(idxKey(idx)), ShouldBeNil)
+
+		t.AddIndexes(idx)
+		coll = store.GetCollection(idxKey(idx))
+		So(coll, ShouldNotBeNil)
+		So(numItms(coll), ShouldEqual, 4)
 	})
 }

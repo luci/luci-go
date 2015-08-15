@@ -15,6 +15,10 @@ import (
 	"github.com/luci/luci-go/common/cmpbin"
 )
 
+// MaxIndexColumns is the maximum number of sort orders you may have on a
+// single composite index. 64 was chosen as a likely-astronomical number.
+const MaxIndexColumns = 64
+
 // WritePropertyMapDeterministic allows tests to make WritePropertyMap
 // deterministic.
 var WritePropertyMapDeterministic = false
@@ -362,6 +366,90 @@ func (pm PropertyMap) Read(buf Buffer, context KeyContext, appid, namespace stri
 		}
 		pm[name] = props
 	}
+	return
+}
+
+func (c *IndexColumn) Write(buf Buffer) (err error) {
+	defer recoverTo(&err)
+
+	if c.Direction == ASCENDING {
+		panicIf(buf.WriteByte(0))
+	} else {
+		panicIf(buf.WriteByte(1))
+	}
+	_, err = cmpbin.WriteString(buf, c.Property)
+	return
+}
+
+func (c *IndexColumn) Read(buf Buffer) (err error) {
+	defer recoverTo(&err)
+
+	dir, err := buf.ReadByte()
+	panicIf(err)
+
+	switch dir {
+	case 0:
+		c.Direction = ASCENDING
+	default:
+		c.Direction = DESCENDING
+	}
+	c.Property, _, err = cmpbin.ReadString(buf)
+	return err
+}
+
+func (i *IndexDefinition) Write(buf Buffer) (err error) {
+	defer recoverTo(&err)
+
+	if i.Builtin() {
+		panicIf(buf.WriteByte(0))
+	} else {
+		panicIf(buf.WriteByte(1))
+	}
+	_, err = cmpbin.WriteString(buf, i.Kind)
+	panicIf(err)
+	if !i.Ancestor {
+		panicIf(buf.WriteByte(0))
+	} else {
+		panicIf(buf.WriteByte(1))
+	}
+	_, err = cmpbin.WriteUint(buf, uint64(len(i.SortBy)))
+	panicIf(err)
+	for _, sb := range i.SortBy {
+		panicIf(sb.Write(buf))
+	}
+	return
+}
+
+func (i *IndexDefinition) Read(buf Buffer) (err error) {
+	defer recoverTo(&err)
+
+	// discard builtin/complex byte
+	_, err = buf.ReadByte()
+	panicIf(err)
+
+	i.Kind, _, err = cmpbin.ReadString(buf)
+	panicIf(err)
+
+	anc, err := buf.ReadByte()
+	panicIf(err)
+
+	i.Ancestor = anc == 1
+
+	numSorts, _, err := cmpbin.ReadUint(buf)
+	panicIf(err)
+
+	if numSorts > MaxIndexColumns {
+		return fmt.Errorf("datastore: Got over %d sort orders: %d",
+			MaxIndexColumns, numSorts)
+	}
+
+	if numSorts > 0 {
+		i.SortBy = make([]IndexColumn, numSorts)
+		for idx := range i.SortBy {
+			panicIf(i.SortBy[idx].Read(buf))
+		}
+	}
+
 	return
 }
 

@@ -15,20 +15,20 @@ import (
 
 type kv struct{ k, v []byte }
 
-func indx(kind string, orders ...string) *qIndex {
+func indx(kind string, orders ...string) *ds.IndexDefinition {
 	ancestor := false
 	if kind[len(kind)-1] == '!' {
 		ancestor = true
 		kind = kind[:len(kind)-1]
 	}
-	ret := &qIndex{kind, ancestor, nil}
+	ret := &ds.IndexDefinition{Kind: kind, Ancestor: ancestor}
 	for _, o := range orders {
-		dir := qASC
+		dir := ds.ASCENDING
 		if o[0] == '-' {
-			dir = qDEC
+			dir = ds.DESCENDING
 			o = o[1:]
 		}
-		ret.sortby = append(ret.sortby, qSortBy{o, dir})
+		ret.SortBy = append(ret.SortBy, ds.IndexColumn{Property: o, Direction: dir})
 	}
 	return ret
 }
@@ -81,8 +81,8 @@ func cat(bytethings ...interface{}) []byte {
 			ds.WriteTime(buf, x)
 		case ds.Key:
 			ds.WriteKey(buf, ds.WithoutContext, x)
-		case *qIndex:
-			x.WriteBinary(buf)
+		case *ds.IndexDefinition:
+			x.Write(buf)
 		default:
 			panic(fmt.Errorf("I don't know how to deal with %T: %#v", thing, thing))
 		}

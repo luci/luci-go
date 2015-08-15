@@ -192,4 +192,8 @@ type RawInterface interface {
 	//   - none keys of the keys are 'special' (use a kind prefixed with '__')
 	//   - cb is not nil
 	DeleteMulti(keys []Key, cb DeleteMultiCB) error
+
+	// Testable returns the Testable interface for the implementation, or nil if
+	// there is none.
+	Testable() Testable
 }

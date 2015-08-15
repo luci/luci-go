@@ -45,6 +45,36 @@ func (d *dataStoreData) Unlock() {
 	d.rwlock.Unlock()
 }
 
+func (d *dataStoreData) getQuerySnaps(consistent bool) (idx, head *memStore) {
+	d.rwlock.RLock()
+	defer d.rwlock.RUnlock()
+	head = d.store.Snapshot()
+	if consistent {
+		idx = head
+	} else {
+		idx = d.snap
+	}
+	return
+}
+
+func (d *dataStoreData) takeSnapshot() *memStore {
+	d.rwlock.RLock()
+	defer d.rwlock.RUnlock()
+	return d.store.Snapshot()
+}
+
+func (d *dataStoreData) setSnapshot(snap *memStore) {
+	d.rwlock.Lock()
+	defer d.rwlock.Unlock()
+	d.snap = snap
+}
+
+func (d *dataStoreData) catchupIndexes() {
+	d.rwlock.Lock()
+	defer d.rwlock.Unlock()
+	d.snap = d.store.Snapshot()
+}
+
 /////////////////////////// indicies(dataStoreData) ////////////////////////////
 
 func groupMetaKey(key ds.Key) []byte {
@@ -165,9 +195,7 @@ func getMultiInner(keys []ds.Key, cb ds.GetMultiCB, getColl func() (*memCollecti
 
 func (d *dataStoreData) getMulti(keys []ds.Key, cb ds.GetMultiCB) error {
 	getMultiInner(keys, cb, func() (*memCollection, error) {
-		d.rwlock.RLock()
-		s := d.store.Snapshot()
-		d.rwlock.RUnlock()
+		s := d.takeSnapshot()
 
 		return s.GetCollection("ents:" + keys[0].Namespace()), nil
 	})

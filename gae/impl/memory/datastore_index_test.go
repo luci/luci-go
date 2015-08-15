@@ -72,10 +72,10 @@ func TestCollated(t *testing.T) {
 					idxs := defaultIndicies("knd", pm)
 					So(len(idxs), ShouldEqual, 5)
 					So(idxs[0].String(), ShouldEqual, "B:knd")
-					So(idxs[1].String(), ShouldEqual, "B:knd/-nerd")
-					So(idxs[2].String(), ShouldEqual, "B:knd/-wat")
-					So(idxs[3].String(), ShouldEqual, "B:knd/nerd")
-					So(idxs[4].String(), ShouldEqual, "B:knd/wat")
+					So(idxs[1].String(), ShouldEqual, "B:knd/nerd")
+					So(idxs[2].String(), ShouldEqual, "B:knd/wat")
+					So(idxs[3].String(), ShouldEqual, "B:knd/-nerd")
+					So(idxs[4].String(), ShouldEqual, "B:knd/-wat")
 				})
 			})
 		})
@@ -90,7 +90,7 @@ var rowGenTestCases = []struct {
 	name        string
 	pmap        ds.PropertyMap
 	withBuiltin bool
-	idxs        []*qIndex
+	idxs        []*ds.IndexDefinition
 
 	// These are checked in TestIndexRowGen. nil to skip test case.
 	expected []serializedPvals
@@ -107,16 +107,16 @@ var rowGenTestCases = []struct {
 			"spaz": {propNI(false)},
 		},
 		withBuiltin: true,
-		idxs: []*qIndex{
+		idxs: []*ds.IndexDefinition{
 			indx("knd", "-wat", "nerd"),
 		},
 		expected: []serializedPvals{
 			{{}}, // B:knd
-			{icat(ds.PTFloat, 103.7)},                       // B:knd/-nerd
-			{icat(ds.PTString, "hat"), icat(ds.PTInt, 100)}, // B:knd/-wat
 			{cat(ds.PTFloat, 103.7)},                        // B:knd/nerd
 			{cat(ds.PTInt, 100), cat(ds.PTString, "hat")},   // B:knd/wat
-			{ // B:knd/-wat/nerd
+			{icat(ds.PTFloat, 103.7)},                       // B:knd/-nerd
+			{icat(ds.PTString, "hat"), icat(ds.PTInt, 100)}, // B:knd/-wat
+			{ // C:knd/-wat/nerd
 				cat(icat(ds.PTString, "hat"), cat(ds.PTFloat, 103.7)),
 				cat(icat(ds.PTInt, 100), cat(ds.PTFloat, 103.7)),
 			},
@@ -124,12 +124,12 @@ var rowGenTestCases = []struct {
 		collections: map[string][]kv{
 			"idx": {
 				// 0 == builtin, 1 == complex
-				{cat(byte(0), "knd", byte(1), 0), []byte{}},
-				{cat(byte(0), "knd", byte(1), 1, byte(0), "nerd"), []byte{}},
-				{cat(byte(0), "knd", byte(1), 1, byte(0), "wat"), []byte{}},
-				{cat(byte(0), "knd", byte(1), 1, byte(1), "nerd"), []byte{}},
-				{cat(byte(0), "knd", byte(1), 1, byte(1), "wat"), []byte{}},
-				{cat(byte(1), "knd", byte(1), 2, byte(1), "wat", byte(0), "nerd"), []byte{}},
+				{cat(byte(0), "knd", byte(0), 0), []byte{}},
+				{cat(byte(0), "knd", byte(0), 1, byte(0), "nerd"), []byte{}},
+				{cat(byte(0), "knd", byte(0), 1, byte(0), "wat"), []byte{}},
+				{cat(byte(0), "knd", byte(0), 1, byte(1), "nerd"), []byte{}},
+				{cat(byte(0), "knd", byte(0), 1, byte(1), "wat"), []byte{}},
+				{cat(byte(1), "knd", byte(0), 2, byte(1), "wat", byte(0), "nerd"), []byte{}},
 			},
 			"idx:ns:" + sat(indx("knd")): {
 				{cat(fakeKey), []byte{}},
@@ -154,7 +154,7 @@ var rowGenTestCases = []struct {
 				prop(rgenComplexKey)},
 			"spaz": {prop(nil), prop(false), prop(true)},
 		},
-		idxs: []*qIndex{
+		idxs: []*ds.IndexDefinition{
 			indx("knd", "-wat", "nerd", "spaz"), // doesn't match, so empty
 			indx("knd", "yerp", "-wat", "spaz"),
 		},
@@ -190,7 +190,7 @@ var rowGenTestCases = []struct {
 		pmap: ds.PropertyMap{
 			"wat": {prop("sup")},
 		},
-		idxs: []*qIndex{
+		idxs: []*ds.IndexDefinition{
 			indx("knd!", "wat"),
 		},
 		collections: map[string][]kv{
@@ -214,7 +214,7 @@ func TestIndexRowGen(t *testing.T) {
 
 			Convey(tc.name, func() {
 				mvals := partiallySerialize(tc.pmap)
-				idxs := []*qIndex(nil)
+				idxs := []*ds.IndexDefinition(nil)
 				if tc.withBuiltin {
 					idxs = append(defaultIndicies("coolKind", tc.pmap), tc.idxs...)
 				} else {
@@ -282,7 +282,7 @@ type dumbItem struct {
 
 var updateIndiciesTests = []struct {
 	name     string
-	idxs     []*qIndex
+	idxs     []*ds.IndexDefinition
 	data     []dumbItem
 	expected map[string][][]byte
 }{
@@ -319,7 +319,7 @@ var updateIndiciesTests = []struct {
 	},
 	{
 		name: "compound",
-		idxs: []*qIndex{indx("knd", "yerp", "-wat")},
+		idxs: []*ds.IndexDefinition{indx("knd", "yerp", "-wat")},
 		data: []dumbItem{
 			{key("knd", 1), ds.PropertyMap{
 				"wat":  {prop(10)},

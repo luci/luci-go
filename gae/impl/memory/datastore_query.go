@@ -5,7 +5,6 @@
 package memory
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"math"
@@ -13,147 +12,7 @@ import (
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gkvlite"
-	"github.com/luci/luci-go/common/cmpbin"
 )
-
-type qDirection bool
-
-const (
-	qASC qDirection = true
-	qDEC            = false
-)
-
-var builtinQueryPrefix = []byte{0}
-var complexQueryPrefix = []byte{1}
-
-type qSortBy struct {
-	prop string
-	dir  qDirection
-}
-
-func (q qSortBy) WriteBinary(buf *bytes.Buffer) {
-	if q.dir == qASC {
-		buf.WriteByte(0)
-	} else {
-		buf.WriteByte(1)
-	}
-	cmpbin.WriteString(buf, q.prop)
-}
-
-func (q *qSortBy) ReadBinary(buf *bytes.Buffer) error {
-	dir, err := buf.ReadByte()
-	if err != nil {
-		return err
-	}
-	q.dir = dir == 0
-	q.prop, _, err = cmpbin.ReadString(buf)
-	return err
-}
-
-type qIndex struct {
-	kind     string
-	ancestor bool
-	sortby   []qSortBy
-}
-
-func (i *qIndex) Builtin() bool {
-	return !i.ancestor && len(i.sortby) <= 1
-}
-
-func (i *qIndex) Less(o *qIndex) bool {
-	ibuf, obuf := &bytes.Buffer{}, &bytes.Buffer{}
-	i.WriteBinary(ibuf)
-	o.WriteBinary(obuf)
-	return i.String() < o.String()
-}
-
-// Valid verifies that this qIndex doesn't have duplicate sortBy fields.
-func (i *qIndex) Valid() bool {
-	names := map[string]bool{}
-	for _, sb := range i.sortby {
-		if names[sb.prop] {
-			return false
-		}
-		names[sb.prop] = true
-	}
-	return true
-}
-
-func (i *qIndex) WriteBinary(buf *bytes.Buffer) {
-	// TODO(riannucci): do a Grow call here?
-	if i.Builtin() {
-		buf.Write(builtinQueryPrefix)
-	} else {
-		buf.Write(complexQueryPrefix)
-	}
-	cmpbin.WriteString(buf, i.kind)
-	if i.ancestor {
-		buf.WriteByte(0)
-	} else {
-		buf.WriteByte(1)
-	}
-	cmpbin.WriteUint(buf, uint64(len(i.sortby)))
-	for _, sb := range i.sortby {
-		sb.WriteBinary(buf)
-	}
-}
-
-func (i *qIndex) String() string {
-	ret := &bytes.Buffer{}
-	if i.Builtin() {
-		ret.WriteRune('B')
-	} else {
-		ret.WriteRune('C')
-	}
-	ret.WriteRune(':')
-	ret.WriteString(i.kind)
-	if i.ancestor {
-		ret.WriteString("|A")
-	}
-	for _, sb := range i.sortby {
-		ret.WriteRune('/')
-		if sb.dir == qDEC {
-			ret.WriteRune('-')
-		}
-		ret.WriteString(sb.prop)
-	}
-	return ret.String()
-}
-
-func (i *qIndex) ReadBinary(buf *bytes.Buffer) error {
-	// discard builtin/complex byte
-	_, err := buf.ReadByte()
-	if err != nil {
-		return err
-	}
-
-	i.kind, _, err = cmpbin.ReadString(buf)
-	if err != nil {
-		return err
-	}
-	anc, err := buf.ReadByte()
-	if err != nil {
-		return err
-	}
-	i.ancestor = anc == 1
-
-	numSorts, _, err := cmpbin.ReadUint(buf)
-	if err != nil {
-		return err
-	}
-	if numSorts > 64 {
-		return fmt.Errorf("qIndex.ReadBinary: Got over 64 sort orders: %d", numSorts)
-	}
-	i.sortby = make([]qSortBy, numSorts)
-	for idx := range i.sortby {
-		err = (&i.sortby[idx]).ReadBinary(buf)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
 
 type queryOp int
 
@@ -183,7 +42,7 @@ var queryOpMap = map[string]queryOp{
 }
 
 type queryFilter struct {
-	field string
+	prop  string
 	op    queryOp
 	value interface{}
 }
@@ -197,17 +56,12 @@ func parseFilter(f string, v interface{}) (ret queryFilter, err error) {
 		if op == qInvalid {
 			err = fmt.Errorf("datastore: invalid operator %q in filter %q", toks[1], f)
 		} else {
-			ret.field = toks[0]
+			ret.prop = toks[0]
 			ret.op = op
 			ret.value = v
 		}
 	}
 	return
-}
-
-type queryOrder struct {
-	field     string
-	direction qDirection
 }
 
 type queryCursor string
@@ -221,7 +75,7 @@ type queryImpl struct {
 	kind     string
 	ancestor ds.Key
 	filter   []queryFilter
-	order    []queryOrder
+	order    []ds.IndexColumn
 	project  []string
 
 	distinct            bool
@@ -252,9 +106,9 @@ func (q *queryImpl) normalize() (ret *queryImpl) {
 		// if we supported the IN operator, we would check to see if there were
 		// multiple value operands here, but the go SDK doesn't support this.
 		if f.op.isEQOp() {
-			eqProperties.Set([]byte(f.field), []byte{})
+			eqProperties.Set([]byte(f.prop), []byte{})
 		} else if f.op.isINEQOp() {
-			ineqProperties.Set([]byte(f.field), []byte{})
+			ineqProperties.Set([]byte(f.prop), []byte{})
 		}
 	}
 
@@ -269,10 +123,10 @@ func (q *queryImpl) normalize() (ret *queryImpl) {
 		return true
 	})
 
-	newOrders := []queryOrder{}
+	newOrders := []ds.IndexColumn{}
 	for _, o := range ret.order {
-		if removeSet.Get([]byte(o.field)) == nil {
-			removeSet.Set([]byte(o.field), []byte{})
+		if removeSet.Get([]byte(o.Property)) == nil {
+			removeSet.Set([]byte(o.Property), []byte{})
 			newOrders = append(newOrders, o)
 		}
 	}
@@ -285,8 +139,8 @@ func (q *queryImpl) normalize() (ret *queryImpl) {
 	//   for f in ret.filters:
 	//     if f.op != qExists:
 	//       newFilters = append(newFilters, f)
-	//     if !removeSet.Has(f.field):
-	//       removeSet.InsertNoReplace(f.field)
+	//     if !removeSet.Has(f.prop):
+	//       removeSet.InsertNoReplace(f.prop)
 	//       newFilters = append(newFilters, f)
 	//
 	// so ret.filters == newFilters becuase none of ret.filters has op == qExists
@@ -302,12 +156,12 @@ func (q *queryImpl) normalize() (ret *queryImpl) {
 	// However, since we don't support projection queries, this is moot.
 
 	if eqProperties.Get([]byte("__key__")) != nil {
-		ret.order = []queryOrder{}
+		ret.order = []ds.IndexColumn{}
 	}
 
-	newOrders = []queryOrder{}
+	newOrders = []ds.IndexColumn{}
 	for _, o := range ret.order {
-		if o.field == "__key__" {
+		if o.Property == "__key__" {
 			newOrders = append(newOrders, o)
 			break
 		}
@@ -365,7 +219,7 @@ func (q *queryImpl) checkCorrectness(ns string, isTxn bool) (ret *queryImpl) {
 
 	ineqPropName := ""
 	for _, f := range ret.filter {
-		if f.field == "__key__" {
+		if f.prop == "__key__" {
 			k, ok := f.value.(ds.Key)
 			if !ok {
 				ret.err = errors.New(
@@ -386,16 +240,16 @@ func (q *queryImpl) checkCorrectness(ns string, isTxn bool) (ret *queryImpl) {
 			// __key__ filter app is X but query app is X
 			// __key__ filter namespace is X but query namespace is X
 		}
-		// if f.op == qEqual and f.field in ret.project_fields
+		// if f.op == qEqual and f.prop in ret.project_fields
 		//   "cannot use projection on a proprety with an equality filter"
 
 		if f.op.isINEQOp() {
 			if ineqPropName == "" {
-				ineqPropName = f.field
-			} else if f.field != ineqPropName {
+				ineqPropName = f.prop
+			} else if f.prop != ineqPropName {
 				ret.err = fmt.Errorf(
 					"gae/memory: Only one inequality filter per query is supported. "+
-						"Encountered both %s and %s", ineqPropName, f.field)
+						"Encountered both %s and %s", ineqPropName, f.prop)
 				return
 			}
 		}
@@ -406,26 +260,26 @@ func (q *queryImpl) checkCorrectness(ns string, isTxn bool) (ret *queryImpl) {
 	//   "when group by properties are set."
 
 	if ineqPropName != "" && len(ret.order) != 0 {
-		if ret.order[0].field != ineqPropName {
+		if ret.order[0].Property != ineqPropName {
 			ret.err = fmt.Errorf(
 				"gae/memory: The first sort property must be the same as the property "+
 					"to which the inequality filter is applied.  In your query "+
 					"the first sort property is %s but the inequality filter "+
-					"is on %s", ret.order[0].field, ineqPropName)
+					"is on %s", ret.order[0].Property, ineqPropName)
 			return
 		}
 	}
 
 	if ret.kind == "" {
 		for _, f := range ret.filter {
-			if f.field != "__key__" {
+			if f.prop != "__key__" {
 				ret.err = errors.New(
 					"gae/memory: kind is required for non-__key__ filters")
 				return
 			}
 		}
 		for _, o := range ret.order {
-			if o.field != "__key__" || o.direction != qASC {
+			if o.Property != "__key__" || o.Direction != ds.ASCENDING {
 				ret.err = errors.New(
 					"gae/memory: kind is required for all orders except __key__ ascending")
 				return
@@ -435,7 +289,7 @@ func (q *queryImpl) checkCorrectness(ns string, isTxn bool) (ret *queryImpl) {
 	return
 }
 
-func (q *queryImpl) calculateIndex() *qIndex {
+func (q *queryImpl) calculateIndex() *ds.IndexDefinition {
 	// as a nod to simplicity in this code, we'll require that a single index
 	// is able to service the entire query. E.g. no zigzag merge joins or
 	// multiqueries. This will mean that the user will need to rely on
@@ -453,7 +307,7 @@ func (q *queryImpl) calculateIndex() *qIndex {
 func (q *queryImpl) clone() *queryImpl {
 	ret := *q
 	ret.filter = append([]queryFilter(nil), q.filter...)
-	ret.order = append([]queryOrder(nil), q.order...)
+	ret.order = append([]ds.IndexColumn(nil), q.order...)
 	ret.project = append([]string(nil), q.project...)
 	return &ret
 }
@@ -494,18 +348,18 @@ func (q *queryImpl) Filter(fStr string, val interface{}) ds.Query {
 	return q
 }
 
-func (q *queryImpl) Order(field string) ds.Query {
+func (q *queryImpl) Order(prop string) ds.Query {
 	q = q.clone()
-	field = strings.TrimSpace(field)
-	o := queryOrder{field, qASC}
-	if strings.HasPrefix(field, "-") {
-		o.direction = qDEC
-		o.field = strings.TrimSpace(field[1:])
-	} else if strings.HasPrefix(field, "+") {
-		q.err = fmt.Errorf("datastore: invalid order: %q", field)
+	prop = strings.TrimSpace(prop)
+	o := ds.IndexColumn{Property: prop}
+	if strings.HasPrefix(prop, "-") {
+		o.Direction = ds.DESCENDING
+		o.Property = strings.TrimSpace(prop[1:])
+	} else if strings.HasPrefix(prop, "+") {
+		q.err = fmt.Errorf("datastore: invalid order: %q", prop)
 		return q
 	}
-	if len(o.field) == 0 {
+	if len(o.Property) == 0 {
 		q.err = errors.New("datastore: empty order")
 		return q
 	}

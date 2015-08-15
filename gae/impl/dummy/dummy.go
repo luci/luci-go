@@ -80,6 +80,7 @@ func (ds) Run(datastore.Query, datastore.RawRunCB) error              { panic(ni
 func (ds) RunInTransaction(func(context.Context) error, *datastore.TransactionOptions) error {
 	panic(ni())
 }
+func (ds) Testable() datastore.Testable { return nil }
 
 var dummyDSInst = ds{}
 
@@ -117,7 +118,7 @@ func (tq) AddMulti([]*taskqueue.Task, string, taskqueue.RawTaskCB) error { panic
 func (tq) DeleteMulti([]*taskqueue.Task, string, taskqueue.RawCB) error  { panic(ni()) }
 func (tq) Purge(string) error                                            { panic(ni()) }
 func (tq) Stats([]string, taskqueue.RawStatsCB) error                    { panic(ni()) }
-func (tq) Testable() taskqueue.Testable                                  { panic(ni()) }
+func (tq) Testable() taskqueue.Testable                                  { return nil }
 
 var dummyTQInst = tq{}
 

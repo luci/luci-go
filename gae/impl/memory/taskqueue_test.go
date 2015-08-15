@@ -31,7 +31,7 @@ func TestTaskQueue(t *testing.T) {
 		c = Use(c)
 
 		tq := tqS.Get(c)
-		tqt := tq.Testable()
+		tqt := tq.Raw().Testable()
 		So(tqt, ShouldNotBeNil)
 
 		So(tq, ShouldNotBeNil)
@@ -246,7 +246,7 @@ func TestTaskQueue(t *testing.T) {
 
 			Convey("can view regular tasks", func() {
 				dsS.Get(c).RunInTransaction(func(c context.Context) error {
-					tqt := tqS.Get(c).Testable()
+					tqt := tqS.GetRaw(c).Testable()
 
 					So(tqt.GetScheduledTasks()["default"][t.Name], ShouldResemble, t)
 					So(tqt.GetTombstonedTasks()["default"][t2.Name], ShouldResemble, t2)
@@ -260,7 +260,7 @@ func TestTaskQueue(t *testing.T) {
 
 				err := dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					tq := tqS.Get(c)
-					tqt := tq.Testable()
+					tqt := tq.Raw().Testable()
 
 					So(tq.Add(t3, ""), ShouldBeNil)
 					So(t3.Name, ShouldEqual, "")
@@ -292,7 +292,7 @@ func TestTaskQueue(t *testing.T) {
 
 				dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					ttq = tqS.Get(c)
-					tqt := ttq.Testable()
+					tqt := ttq.Raw().Testable()
 
 					So(ttq.Add(t3, ""), ShouldBeNil)
 
@@ -321,7 +321,7 @@ func TestTaskQueue(t *testing.T) {
 			Convey("you can AddMulti as well", func() {
 				dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					tq := tqS.Get(c)
-					tqt := tq.Testable()
+					tqt := tq.Raw().Testable()
 
 					t.Name = ""
 					tasks := []*tqS.Task{t.Duplicate(), t.Duplicate(), t.Duplicate()}
@@ -349,7 +349,7 @@ func TestTaskQueue(t *testing.T) {
 					So(tqS.Get(c).Add(t, "meat").Error(), ShouldContainSubstring, "UNKNOWN_QUEUE")
 
 					Convey("unless you add it!", func() {
-						tqS.Get(c).Testable().CreateQueue("meat")
+						tqS.GetRaw(c).Testable().CreateQueue("meat")
 						So(tqS.Get(c).Add(t, "meat"), ShouldBeNil)
 					})
 

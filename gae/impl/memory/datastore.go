@@ -6,6 +6,7 @@ package memory
 
 import (
 	"errors"
+	"fmt"
 
 	"golang.org/x/net/context"
 
@@ -68,11 +69,34 @@ func (d *dsImpl) NewQuery(kind string) ds.Query {
 
 func (d *dsImpl) Run(q ds.Query, cb ds.RawRunCB) error {
 	return nil
-	/*
-		rq := q.(*queryImpl)
-		rq = rq.normalize().checkCorrectness(d.ns, false)
-		return &queryIterImpl{rq}
-	*/
+}
+
+func (d *dsImpl) AddIndexes(idxs ...*ds.IndexDefinition) {
+	for _, i := range idxs {
+		if !i.Compound() {
+			panic(fmt.Errorf("Attempted to add non-compound index: %s", i))
+		}
+	}
+
+	d.data.Lock()
+	defer d.data.Unlock()
+	addIndex(d.data.store, d.ns, idxs)
+}
+
+func (d *dsImpl) TakeIndexSnapshot() ds.TestingSnapshot {
+	return d.data.takeSnapshot()
+}
+
+func (d *dsImpl) SetIndexSnapshot(snap ds.TestingSnapshot) {
+	d.data.setSnapshot(snap.(*memStore))
+}
+
+func (d *dsImpl) CatchupIndexes() {
+	d.data.catchupIndexes()
+}
+
+func (d *dsImpl) Testable() ds.Testable {
+	return d
 }
 
 ////////////////////////////////// txnDsImpl ///////////////////////////////////
@@ -114,8 +138,13 @@ func (d *txnDsImpl) DeleteMulti(keys []ds.Key, cb ds.DeleteMultiCB) error {
 func (d *txnDsImpl) Run(q ds.Query, cb ds.RawRunCB) error {
 	rq := q.(*queryImpl)
 	if rq.ancestor == nil {
-		return errors.New("memory: queries in transactions only support ancestor queries")
+		return errors.New("gae/impl/memory: queries in transactions only support ancestor queries")
 	}
+	if rq.eventualConsistency {
+		rq = rq.clone()
+		rq.eventualConsistency = false
+	}
+	// TODO(riannucci): use head instead of snap for indexes
 	panic("NOT IMPLEMENTED")
 }
 
@@ -125,4 +154,8 @@ func (*txnDsImpl) RunInTransaction(func(c context.Context) error, *ds.Transactio
 
 func (d *txnDsImpl) NewQuery(kind string) ds.Query {
 	return &queryImpl{ns: d.ns, kind: kind}
+}
+
+func (*txnDsImpl) Testable() ds.Testable {
+	return nil
 }

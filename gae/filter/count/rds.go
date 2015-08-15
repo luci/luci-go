@@ -65,6 +65,10 @@ func (r *dsCounter) PutMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.PutMult
 	return r.c.PutMulti.up(r.ds.PutMulti(keys, vals, cb))
 }
 
+func (r *dsCounter) Testable() ds.Testable {
+	return r.ds.Testable()
+}
+
 // FilterRDS installs a counter datastore filter in the context.
 func FilterRDS(c context.Context) (context.Context, *DSCounter) {
 	state := &DSCounter{}

@@ -109,10 +109,10 @@
 //
 //    service.Testable     - any additional methods that a 'testing'
 //                           implementation should provide. This can be accessed
-//                           via the Testable method on Interface or
-//                           RawInterface. If the current implementation is not
-//                           testable, it will return nil. This is only meant to
-//                           be accessed when testing.
+//                           via the Testable method on RawInterface. If the
+//                           current implementation is not testable, it will
+//                           return nil. This is only meant to be accessed when
+//                           testing.
 //
 //    service.RawFactory   - a function returning a RawInterface
 //

@@ -155,3 +155,7 @@ func (d rdsImpl) RunInTransaction(f func(c context.Context) error, opts *ds.Tran
 	ropts := (*datastore.TransactionOptions)(opts)
 	return datastore.RunInTransaction(d, f, ropts)
 }
+
+func (d rdsImpl) Testable() ds.Testable {
+	return nil
+}
