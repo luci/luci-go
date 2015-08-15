@@ -17,7 +17,6 @@ var (
 	ErrInvalidKey            = datastore.ErrInvalidKey
 	ErrNoSuchEntity          = datastore.ErrNoSuchEntity
 	ErrConcurrentTransaction = datastore.ErrConcurrentTransaction
-	ErrQueryDone             = datastore.Done
 
 	// ErrMetaFieldUnset is returned from PropertyLoadSaver.{Get,Set}Meta
 	// implementations when the specified meta key isn't set on the struct at

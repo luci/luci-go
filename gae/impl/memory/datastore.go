@@ -68,6 +68,11 @@ func (d *dsImpl) NewQuery(kind string) ds.Query {
 }
 
 func (d *dsImpl) Run(q ds.Query, cb ds.RawRunCB) error {
+	rq := q.(*queryImpl)
+	done, err := rq.valid(d.ns, true)
+	if done || err != nil {
+		return err // will be nil if done
+	}
 	return nil
 }
 
@@ -137,11 +142,12 @@ func (d *txnDsImpl) DeleteMulti(keys []ds.Key, cb ds.DeleteMultiCB) error {
 
 func (d *txnDsImpl) Run(q ds.Query, cb ds.RawRunCB) error {
 	rq := q.(*queryImpl)
-	if rq.ancestor == nil {
-		return errors.New("gae/impl/memory: queries in transactions only support ancestor queries")
+	done, err := rq.valid(d.ns, true)
+	if done || err != nil {
+		return err // will be nil if done
 	}
 	if rq.eventualConsistency {
-		rq = rq.clone()
+		rq = rq.checkMutateClone(nil, nil)
 		rq.eventualConsistency = false
 	}
 	// TODO(riannucci): use head instead of snap for indexes

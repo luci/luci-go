@@ -165,6 +165,9 @@ func (m *matcher) match(idx *ds.IndexDefinition, sip serializedIndexablePmap) (i
 	m.buf.propVec = m.buf.propVec[:0]
 	m.buf.orders = m.buf.orders[:0]
 	for _, sb := range idx.SortBy {
+		if sb.Property == "__key__" {
+			panic("don't know how to build compound index on __key__")
+		}
 		if pv, ok := sip[sb.Property]; ok {
 			m.buf.propVec = append(m.buf.propVec, pv)
 			m.buf.orders = append(m.buf.orders, sb.Direction)
