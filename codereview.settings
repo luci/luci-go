@@ -2,3 +2,4 @@
 CODE_REVIEW_SERVER: https://codereview.chromium.org
 CC_LIST: chromium-reviews@chromium.org
 VIEW_VC: https://github.com/luci/luci-go/commit/
+PROJECT: luci-go
