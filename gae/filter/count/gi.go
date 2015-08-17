@@ -15,6 +15,7 @@ import (
 // InfoCounter is the counter object for the GlobalInfo service.
 type InfoCounter struct {
 	AppID                  Entry
+	FullyQualifiedAppID    Entry
 	GetNamespace           Entry
 	Datacenter             Entry
 	DefaultVersionHostname Entry
@@ -45,6 +46,11 @@ var _ info.Interface = (*infoCounter)(nil)
 func (g *infoCounter) AppID() string {
 	g.c.AppID.up()
 	return g.gi.AppID()
+}
+
+func (g *infoCounter) FullyQualifiedAppID() string {
+	g.c.FullyQualifiedAppID.up()
+	return g.gi.FullyQualifiedAppID()
 }
 
 func (g *infoCounter) GetNamespace() string {

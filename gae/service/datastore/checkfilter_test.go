@@ -68,7 +68,7 @@ func TestCheckFilter(t *testing.T) {
 				So(err, ShouldEqual, ErrInvalidKey)
 			}), ShouldBeNil)
 
-			keys[0] = mkKey("aid", "ns", "Kind", 1)
+			keys[0] = mkKey("s~aid", "ns", "Kind", 1)
 			hit := false
 			So(func() {
 				rds.GetMulti(keys, nil, func(pm PropertyMap, err error) {
@@ -94,7 +94,7 @@ func TestCheckFilter(t *testing.T) {
 				So(err, ShouldEqual, ErrInvalidKey)
 			}), ShouldBeNil)
 
-			keys = []Key{mkKey("aid", "ns", "Kind", 0)}
+			keys = []Key{mkKey("s~aid", "ns", "Kind", 0)}
 			vals = []PropertyMap{nil}
 			So(rds.PutMulti(keys, vals, func(k Key, err error) {
 				So(k, ShouldBeNil)
@@ -120,7 +120,7 @@ func TestCheckFilter(t *testing.T) {
 
 			hit := false
 			So(func() {
-				rds.DeleteMulti([]Key{mkKey("aid", "ns", "Kind", 1)}, func(error) {
+				rds.DeleteMulti([]Key{mkKey("s~aid", "ns", "Kind", 1)}, func(error) {
 					hit = true
 				})
 			}, ShouldPanic)

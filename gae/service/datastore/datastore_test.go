@@ -19,7 +19,7 @@ import (
 func fakeDatastoreFactory(c context.Context) RawInterface {
 	i := info.Get(c)
 	return &fakeDatastore{
-		aid: i.AppID(),
+		aid: i.FullyQualifiedAppID(),
 		ns:  i.GetNamespace(),
 	}
 }
@@ -552,8 +552,8 @@ func TestDelete(t *testing.T) {
 		Convey("bad", func() {
 			Convey("get single error for RPC failure", func() {
 				keys := []Key{
-					mkKey("aid", "ns", "FailAll", 1, nil),
-					mkKey("aid", "ns", "Ok", 1, nil),
+					mkKey("s~aid", "ns", "FailAll", 1, nil),
+					mkKey("s~aid", "ns", "Ok", 1, nil),
 				}
 				So(ds.DeleteMulti(keys).Error(), ShouldEqual, "DeleteMulti fail all")
 			})

@@ -133,7 +133,8 @@ func TaskQueue() taskqueue.RawInterface { return dummyTQInst }
 type i struct{}
 
 func (i) AccessToken(scopes ...string) (token string, expiry time.Time, err error) { panic(ni()) }
-func (i) AppID() string                                                            { return "dummy~appid" }
+func (i) AppID() string                                                            { return "appid" }
+func (i) FullyQualifiedAppID() string                                              { return "dummy~appid" }
 func (i) GetNamespace() string                                                     { return "dummy-namespace" }
 func (i) ModuleHostname(module, version, instance string) (string, error)          { panic(ni()) }
 func (i) ModuleName() string                                                       { panic(ni()) }

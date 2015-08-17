@@ -250,8 +250,15 @@ func (p *structPLS) Save(withMeta bool) (PropertyMap, error) {
 			}
 			ret["$"+k] = []Property{p}
 		}
+		if _, ok := p.c.byMeta["kind"]; !ok {
+			ret["$kind"] = []Property{MkPropertyNI(p.getDefaultKind())}
+		}
 	}
 	return ret, nil
+}
+
+func (p *structPLS) getDefaultKind() string {
+	return p.o.Type().Name()
 }
 
 func (p *structPLS) save(propMap PropertyMap, prefix string, is IndexSetting) (idxCount int, err error) {
@@ -324,6 +331,9 @@ func (p *structPLS) GetMeta(key string) (interface{}, error) {
 	}
 	idx, ok := p.c.byMeta[key]
 	if !ok {
+		if key == "kind" {
+			return p.getDefaultKind(), nil
+		}
 		return nil, ErrMetaFieldUnset
 	}
 	st := p.c.byIndex[idx]

@@ -14,8 +14,9 @@ import (
 
 type fakeInfo struct{ info.Interface }
 
-func (fakeInfo) GetNamespace() string { return "ns" }
-func (fakeInfo) AppID() string        { return "aid" }
+func (fakeInfo) GetNamespace() string        { return "ns" }
+func (fakeInfo) AppID() string               { return "aid" }
+func (fakeInfo) FullyQualifiedAppID() string { return "s~aid" }
 
 type fakeService struct{ RawInterface }
 
@@ -38,7 +39,7 @@ func TestServices(t *testing.T) {
 			c = SetRaw(info.Set(c, fakeInfo{}), fakeService{})
 
 			Convey("lets you pull them back out", func() {
-				So(GetRaw(c), ShouldResemble, &checkFilter{fakeService{}, "aid", "ns"})
+				So(GetRaw(c), ShouldResemble, &checkFilter{fakeService{}, "s~aid", "ns"})
 			})
 
 			Convey("and lets you add filters", func() {

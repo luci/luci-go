@@ -64,3 +64,7 @@ func (gi *giImpl) Namespace(ns string) (ret context.Context, err error) {
 func (gi *giImpl) AppID() string {
 	return globalAppID
 }
+
+func (gi *giImpl) FullyQualifiedAppID() string {
+	return globalAppID
+}

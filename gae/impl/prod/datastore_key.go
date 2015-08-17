@@ -27,11 +27,17 @@ func (k dsKeyImpl) PartialValid(aid, ns string) bool {
 
 // dsR2F (DS real-to-fake) converts an SDK Key to a ds.Key
 func dsR2F(k *datastore.Key) ds.Key {
+	if k == nil {
+		return nil
+	}
 	return dsKeyImpl{k}
 }
 
 // dsF2R (DS fake-to-real) converts a DSKey back to an SDK *Key.
 func dsF2R(k ds.Key) *datastore.Key {
+	if k == nil {
+		return nil
+	}
 	if rkey, ok := k.(dsKeyImpl); ok {
 		return rkey.Key
 	}

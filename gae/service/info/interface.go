@@ -14,6 +14,7 @@ import (
 // would be in the 'appengine' package.
 type Interface interface {
 	AppID() string
+	FullyQualifiedAppID() string
 	GetNamespace() string
 
 	Datacenter() string

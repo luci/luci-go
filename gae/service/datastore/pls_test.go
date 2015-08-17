@@ -1799,6 +1799,7 @@ func TestMeta(t *testing.T) {
 			So(pm, ShouldResemble, PropertyMap{
 				"$when": {mpNI("tomorrow")},
 				"$amt":  {mpNI(100)},
+				"$kind": {mpNI("OKDefaults")},
 			})
 
 			v, err := pm.GetMeta("when")

@@ -24,11 +24,11 @@ import (
 //
 // GetPLS supports the following struct tag syntax:
 //   `gae:"fieldName[,noindex]"` -- an alternate fieldname for an exportable
-//	    field.  When the struct is serialized or deserialized, fieldName will be
+//      field.  When the struct is serialized or deserialized, fieldName will be
 //      associated with the struct field instead of the field's Go name. This is
 //      useful when writing Go code which interfaces with appengine code written
 //      in other languages (like python) which use lowercase as their default
-//		  datastore field names.
+//      datastore field names.
 //
 //      A fieldName of "-" means that gae will ignore the field for all
 //      serialization/deserialization.

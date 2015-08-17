@@ -214,11 +214,11 @@ func multiArgTypeInterface() multiArgType {
 			return newKeyObjErr(nk, slot.Elem().Interface())
 		},
 		getPM: func(slot reflect.Value) (PropertyMap, error) {
-			pls, _ := mkPLSName(slot.Elem().Interface())
+			pls := mkPLS(slot.Elem().Interface())
 			return pls.Save(true)
 		},
 		setPM: func(slot reflect.Value, pm PropertyMap) error {
-			pls, _ := mkPLSName(slot.Elem().Interface())
+			pls := mkPLS(slot.Elem().Interface())
 			return pls.Load(pm)
 		},
 		setKey: func(slot reflect.Value, k Key) {
@@ -228,15 +228,15 @@ func multiArgTypeInterface() multiArgType {
 }
 
 func newKeyObjErr(nk newKeyFunc, src interface{}) (Key, error) {
-	pls, name := mkPLSName(src)
+	pls := mkPLS(src)
 	if key, _ := pls.GetMetaDefault("key", nil).(Key); key != nil {
 		return key, nil
 	}
 
 	// get kind
-	kind := pls.GetMetaDefault("kind", name).(string)
+	kind := pls.GetMetaDefault("kind", "").(string)
 	if kind == "" {
-		return nil, fmt.Errorf("unable to extract $kind from %v", src)
+		return nil, fmt.Errorf("unable to extract $kind from %T", src)
 	}
 
 	// get id - allow both to be default for default keys
@@ -250,7 +250,7 @@ func newKeyObjErr(nk newKeyFunc, src interface{}) (Key, error) {
 }
 
 func setKey(src interface{}, key Key) {
-	pls, _ := mkPLSName(src)
+	pls := mkPLS(src)
 	if pls.SetMeta("key", key) == ErrMetaFieldUnset {
 		if key.StringID() != "" {
 			pls.SetMeta("id", key.StringID())
@@ -262,14 +262,9 @@ func setKey(src interface{}, key Key) {
 	}
 }
 
-func mkPLSName(o interface{}) (PropertyLoadSaver, string) {
-	if pls, ok := o.(*structPLS); ok {
-		return pls, pls.o.Type().Name()
-	}
+func mkPLS(o interface{}) PropertyLoadSaver {
 	if pls, ok := o.(PropertyLoadSaver); ok {
-		return pls, ""
+		return pls
 	}
-	pls := GetPLS(o)
-	name := pls.(*structPLS).o.Type().Name()
-	return pls, name
+	return GetPLS(o)
 }

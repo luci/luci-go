@@ -27,19 +27,19 @@ type tqImpl struct {
 }
 
 func init() {
-	const taskExpectedFields = 9
-	// Runtime-assert that the number of fields in the Task structs is 9, to
+	const taskExpectedFields = 10
+	// Runtime-assert that the number of fields in the Task structs match, to
 	// avoid missing additional fields if they're added later.
 	// all other type assertions are statically enforced by o2n() and tqF2R()
 
-	oldType := reflect.TypeOf((*taskqueue.Task)(nil))
-	newType := reflect.TypeOf((*tq.Task)(nil))
+	oldType := reflect.TypeOf((*taskqueue.Task)(nil)).Elem()
+	newType := reflect.TypeOf((*tq.Task)(nil)).Elem()
 
 	if oldType.NumField() != newType.NumField() ||
 		oldType.NumField() != taskExpectedFields {
 		panic(fmt.Errorf(
-			"prod/taskqueue:init() field count differs: %v, %v",
-			oldType, newType))
+			"prod/taskqueue:init() field count differs: %d, %d, %d",
+			oldType.NumField(), newType.NumField(), taskExpectedFields))
 	}
 }
 

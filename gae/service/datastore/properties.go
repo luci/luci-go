@@ -17,6 +17,8 @@ import (
 var (
 	minTime = time.Unix(int64(math.MinInt64)/1e6, (int64(math.MinInt64)%1e6)*1e3)
 	maxTime = time.Unix(int64(math.MaxInt64)/1e6, (int64(math.MaxInt64)%1e6)*1e3)
+
+	utcTestTime = time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
 )
 
 // IndexSetting indicates whether or not a Property should be indexed by the
@@ -206,8 +208,8 @@ func PropertyTypeOf(v interface{}, checkValid bool) (PropertyType, error) {
 		if checkValid && (x.Before(minTime) || x.After(maxTime)) {
 			err = errors.New("time value out of range")
 		}
-		if checkValid && x.Location() != time.UTC {
-			err = fmt.Errorf("time value has wrong Location: %s", x.Location())
+		if checkValid && !timeLocationIsUTC(x.Location()) {
+			err = fmt.Errorf("time value has wrong Location: %v %v", x.Location())
 		}
 		return PTTime, err
 	case GeoPoint:
@@ -219,6 +221,16 @@ func PropertyTypeOf(v interface{}, checkValid bool) (PropertyType, error) {
 	default:
 		return PTUnknown, fmt.Errorf("gae: Property has bad type %T", v)
 	}
+}
+
+// timeLocationsEqual tests if two time.Location are equal.
+//
+// This is tricky using the standard time API, as time is implicitly normalized
+// to UTC and all equality checks are performed relative to that normalized
+// time. To compensate, we instantiate two new time.Time using the respective
+// Locations.
+func timeLocationIsUTC(l *time.Location) bool {
+	return time.Date(1970, 1, 1, 0, 0, 0, 0, l).Equal(utcTestTime)
 }
 
 // UpconvertUnderlyingType takes an object o, and attempts to convert it to

@@ -94,7 +94,11 @@ func TestProperties(t *testing.T) {
 			})
 			Convey("invalid time", func() {
 				pv := Property{}
-				err := pv.SetValue(time.Now(), ShouldIndex)
+				loc, err := time.LoadLocation("America/Los_Angeles")
+				So(err, ShouldBeNil)
+				t := time.Date(1970, 1, 1, 0, 0, 0, 0, loc)
+
+				err = pv.SetValue(t, ShouldIndex)
 				So(err.Error(), ShouldContainSubstring, "time value has wrong Location")
 
 				err = pv.SetValue(time.Unix(math.MaxInt64, 0).UTC(), ShouldIndex)

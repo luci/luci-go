@@ -10,17 +10,21 @@ import (
 	"github.com/luci/gae/service/info"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
+	"google.golang.org/appengine/datastore"
 )
 
 type key int
 
-var namespaceCopyKey key
+var probeCacheKey key
 
 // useGI adds a gae.GlobalInfo implementation to context, accessible
 // by gae.GetGI(c)
 func useGI(c context.Context) context.Context {
-	// TODO(iannucci): make a better way to get the initial namespace?
-	c = context.WithValue(c, namespaceCopyKey, "")
+	probeCache := getProbeCache(c)
+	if probeCache == nil {
+		c = withProbeCache(c, probe(c))
+	}
+
 	return info.SetFactory(c, func(ci context.Context) info.Interface {
 		return giImpl{ci}
 	})
@@ -34,8 +38,11 @@ func (g giImpl) AccessToken(scopes ...string) (token string, expiry time.Time, e
 func (g giImpl) AppID() string {
 	return appengine.AppID(g)
 }
+func (g giImpl) FullyQualifiedAppID() string {
+	return getProbeCache(g).fqaid
+}
 func (g giImpl) GetNamespace() string {
-	return g.Value(namespaceCopyKey).(string)
+	return getProbeCache(g).namespace
 }
 func (g giImpl) Datacenter() string {
 	return appengine.Datacenter(g)
@@ -66,7 +73,9 @@ func (g giImpl) Namespace(namespace string) (context.Context, error) {
 	if err != nil {
 		return c, err
 	}
-	return context.WithValue(c, namespaceCopyKey, namespace), nil
+	pc := *getProbeCache(g)
+	pc.namespace = namespace
+	return withProbeCache(c, &pc), nil
 }
 func (g giImpl) PublicCertificates() ([]info.Certificate, error) {
 	certs, err := appengine.PublicCertificates(g)
@@ -93,4 +102,28 @@ func (g giImpl) SignBytes(bytes []byte) (keyName string, signature []byte, err e
 }
 func (g giImpl) VersionID() string {
 	return appengine.VersionID(g)
+}
+
+type infoProbeCache struct {
+	namespace string
+	fqaid     string
+}
+
+func probe(c context.Context) *infoProbeCache {
+	probeKey := datastore.NewKey(c, "Kind", "id", 0, nil)
+	return &infoProbeCache{
+		namespace: probeKey.Namespace(),
+		fqaid:     probeKey.AppID(),
+	}
+}
+
+func getProbeCache(c context.Context) *infoProbeCache {
+	if pc, ok := c.Value(probeCacheKey).(*infoProbeCache); ok {
+		return pc
+	}
+	return nil
+}
+
+func withProbeCache(c context.Context, pc *infoProbeCache) context.Context {
+	return context.WithValue(c, probeCacheKey, pc)
 }

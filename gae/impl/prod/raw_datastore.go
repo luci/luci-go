@@ -117,7 +117,7 @@ func (d rdsImpl) PutMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB
 	for i, val := range vals {
 		rvals[i] = &typeFilter{val}
 	}
-	rkeys, err := datastore.PutMulti(d, rkeys, vals)
+	rkeys, err := datastore.PutMulti(d, rkeys, rvals)
 	return idxCallbacker(err, len(keys), func(idx int, err error) {
 		k := ds.Key(nil)
 		if err == nil {
