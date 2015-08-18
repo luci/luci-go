@@ -54,14 +54,15 @@ func (c *Config) GenerateInsertIDBase() error {
 
 // Use installs a cloud logging Logger into the supplied Context.
 func Use(ctx context.Context, config Config, client cloudlogging.Client) context.Context {
-	counter := &atomicCounter{}
+	counter := new(atomicCounter)
 
 	return logging.SetFactory(ctx, func(factoryCtx context.Context) logging.Logger {
 		return &boundCloudLogger{
-			Config: &config,
-			ctx:    factoryCtx,
-			client: client,
-			index:  counter.next(),
+			Config:  &config,
+			ctx:     factoryCtx,
+			client:  client,
+			index:   counter.next(),
+			counter: new(atomicCounter),
 		}
 	})
 }
@@ -71,10 +72,11 @@ func Use(ctx context.Context, config Config, client cloudlogging.Client) context
 type boundCloudLogger struct {
 	*Config
 
-	ctx     context.Context
-	client  cloudlogging.Client
-	index   int64
-	counter atomicCounter
+	ctx    context.Context
+	client cloudlogging.Client
+	index  int64
+	// Allocating atomicCounter ensures proper 8-byte alignment.
+	counter *atomicCounter
 }
 
 var _ logging.Logger = (*boundCloudLogger)(nil)
@@ -150,11 +152,11 @@ func (l *boundCloudLogger) generateInsertID() string {
 	return fmt.Sprintf("%s.%d.%d", l.InsertIDBase, l.index, l.counter.next())
 }
 
-type atomicCounter struct {
-	value int64 // The current counter value.
-}
+// atomicCounter must be allocated separately. If embedding, use a pointer.
+// Stores current counter value.
+type atomicCounter int64
 
 func (c *atomicCounter) next() int64 {
-	nextPlusOne := atomic.AddInt64(&c.value, 1)
+	nextPlusOne := atomic.AddInt64((*int64)(c), 1)
 	return nextPlusOne - 1
 }
