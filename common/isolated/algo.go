@@ -61,3 +61,10 @@ func (d HexDigest) Validate() bool {
 	}
 	return true
 }
+
+// HexDigests is a slice of HexDigest that implements sort.Interface.
+type HexDigests []HexDigest
+
+func (h HexDigests) Len() int           { return len(h) }
+func (h HexDigests) Less(i, j int) bool { return h[i] < h[j] }
+func (h HexDigests) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }

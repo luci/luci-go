@@ -26,7 +26,7 @@ type Cache interface {
 	io.Closer
 
 	// Keys returns the list of all cached digests in LRU order.
-	Keys() []isolated.HexDigest
+	Keys() isolated.HexDigests
 
 	// Touch updates the LRU position of an item to ensure it is kept in the
 	// cache.
@@ -121,7 +121,7 @@ func (m *memory) Close() error {
 	return nil
 }
 
-func (m *memory) Keys() []isolated.HexDigest {
+func (m *memory) Keys() isolated.HexDigests {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	return m.lru.keys()
@@ -232,7 +232,7 @@ func (d *disk) Close() error {
 	return err
 }
 
-func (d *disk) Keys() []isolated.HexDigest {
+func (d *disk) Keys() isolated.HexDigests {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	return d.lru.keys()

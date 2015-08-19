@@ -61,8 +61,8 @@ func makeOrderedDict() orderedDict {
 }
 
 // keys returns the keys in order.
-func (o *orderedDict) keys() []isolated.HexDigest {
-	out := make([]isolated.HexDigest, 0, o.length())
+func (o *orderedDict) keys() isolated.HexDigests {
+	out := make(isolated.HexDigests, 0, o.length())
 	for e := o.ll.Front(); e != nil; e = e.Next() {
 		out = append(out, e.Value.(*entry).key)
 	}
@@ -142,7 +142,7 @@ func (l *lruDict) IsDirty() bool {
 	return l.dirty
 }
 
-func (l *lruDict) keys() []isolated.HexDigest {
+func (l *lruDict) keys() isolated.HexDigests {
 	return l.items.keys()
 }
 

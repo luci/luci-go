@@ -15,7 +15,7 @@ import (
 	"github.com/maruel/ut"
 )
 
-func testCache(t *testing.T, c Cache) []isolated.HexDigest {
+func testCache(t *testing.T, c Cache) isolated.HexDigests {
 	// c's policies must have MaxItems == 2 and MaxSize == 1024.
 	td, err := ioutil.TempDir("", "cache")
 	ut.AssertEqual(t, nil, err)
@@ -38,7 +38,7 @@ func testCache(t *testing.T, c Cache) []isolated.HexDigest {
 	tooLargeContent := bytes.Repeat([]byte("A"), 1025)
 	tooLargeDigest := isolated.HashBytes(tooLargeContent)
 
-	ut.AssertEqual(t, []isolated.HexDigest{}, c.Keys())
+	ut.AssertEqual(t, isolated.HexDigests{}, c.Keys())
 
 	ut.AssertEqual(t, false, c.Touch(fakeDigest))
 	ut.AssertEqual(t, false, c.Touch(badDigest))
@@ -60,9 +60,9 @@ func testCache(t *testing.T, c Cache) []isolated.HexDigest {
 	ut.AssertEqual(t, nil, c.Add(largeDigest, bytes.NewBuffer(largeContent)))
 	ut.AssertEqual(t, nil, c.Add(emptyDigest, bytes.NewBuffer(emptyContent)))
 	ut.AssertEqual(t, nil, c.Add(emptyDigest, bytes.NewBuffer(emptyContent)))
-	ut.AssertEqual(t, []isolated.HexDigest{emptyDigest, largeDigest}, c.Keys())
+	ut.AssertEqual(t, isolated.HexDigests{emptyDigest, largeDigest}, c.Keys())
 	c.Evict(emptyDigest)
-	ut.AssertEqual(t, []isolated.HexDigest{largeDigest}, c.Keys())
+	ut.AssertEqual(t, isolated.HexDigests{largeDigest}, c.Keys())
 	ut.AssertEqual(t, nil, c.Add(emptyDigest, bytes.NewBuffer(emptyContent)))
 
 	ut.AssertEqual(t, nil, c.Add(file1Digest, bytes.NewBuffer(file1Content)))
@@ -79,7 +79,7 @@ func testCache(t *testing.T, c Cache) []isolated.HexDigest {
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, file2Content, actual)
 
-	expected := []isolated.HexDigest{file2Digest, emptyDigest}
+	expected := isolated.HexDigests{file2Digest, emptyDigest}
 	ut.AssertEqual(t, expected, c.Keys())
 
 	dest := filepath.Join(td, "foo")

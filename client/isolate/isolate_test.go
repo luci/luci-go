@@ -59,6 +59,7 @@ func TestArchive(t *testing.T) {
 	//   /base/ignored
 	//   /foo/baz.isolate
 	//   /link -> /base/bar
+	//   /second/boz
 	// Result:
 	//   /baz.isolated
 	tmpDir, err := ioutil.TempDir("", "isolate")
@@ -70,14 +71,18 @@ func TestArchive(t *testing.T) {
 	}()
 	baseDir := filepath.Join(tmpDir, "base")
 	fooDir := filepath.Join(tmpDir, "foo")
+	secondDir := filepath.Join(tmpDir, "second")
 	ut.AssertEqual(t, nil, os.Mkdir(baseDir, 0700))
 	ut.AssertEqual(t, nil, os.Mkdir(fooDir, 0700))
+	ut.AssertEqual(t, nil, os.Mkdir(secondDir, 0700))
 	ut.AssertEqual(t, nil, ioutil.WriteFile(filepath.Join(baseDir, "bar"), []byte("foo"), 0600))
 	ut.AssertEqual(t, nil, ioutil.WriteFile(filepath.Join(baseDir, "ignored"), []byte("ignored"), 0600))
+	ut.AssertEqual(t, nil, ioutil.WriteFile(filepath.Join(secondDir, "boz"), []byte("foo2"), 0600))
 	isolate := `{
 		'variables': {
 			'files': [
 				'../base/',
+				'../second/',
 				'../link',
 			],
 		},
@@ -119,24 +124,39 @@ func TestArchive(t *testing.T) {
 	if common.IsWindows() {
 		mode = 0666
 	}
+
 	//   /base/
-	isolatedDirData := isolated.Isolated{
+	baseIsolatedData := isolated.Isolated{
 		Algo: "sha-1",
 		Files: map[string]isolated.File{
 			filepath.Join("base", "bar"): {Digest: "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", Mode: newInt(mode), Size: newInt64(3)},
 		},
 		Version: isolated.IsolatedFormatVersion,
 	}
-	encoded, err := json.Marshal(isolatedDirData)
+	encoded, err := json.Marshal(baseIsolatedData)
 	ut.AssertEqual(t, nil, err)
-	isolatedDirEncoded := string(encoded) + "\n"
-	isolatedDirHash := isolated.HashBytes([]byte(isolatedDirEncoded))
+	baseIsolatedEncoded := string(encoded) + "\n"
+	baseIsolatedHash := isolated.HashBytes([]byte(baseIsolatedEncoded))
+
+	//   /second/
+	secondIsolatedData := isolated.Isolated{
+		Algo: "sha-1",
+		Files: map[string]isolated.File{
+			filepath.Join("second", "boz"): {Digest: "aaadd94977b8fbf3f6fb09fc3bbbc9edbdfa8427", Mode: newInt(mode), Size: newInt64(4)},
+		},
+		Version: isolated.IsolatedFormatVersion,
+	}
+	encoded, err = json.Marshal(secondIsolatedData)
+	ut.AssertEqual(t, nil, err)
+	secondIsolatedEncoded := string(encoded) + "\n"
+	secondIsolatedHash := isolated.HashBytes([]byte(secondIsolatedEncoded))
 
 	isolatedData := isolated.Isolated{
-		Algo:        "sha-1",
-		Command:     []string{"amiga", "really"},
-		Files:       map[string]isolated.File{},
-		Includes:    []isolated.HexDigest{isolatedDirHash},
+		Algo:    "sha-1",
+		Command: []string{"amiga", "really"},
+		Files:   map[string]isolated.File{},
+		// This list must be in deterministic order.
+		Includes:    isolated.HexDigests{baseIsolatedHash, secondIsolatedHash},
 		RelativeCwd: "foo",
 		Version:     isolated.IsolatedFormatVersion,
 	}
@@ -152,8 +172,10 @@ func TestArchive(t *testing.T) {
 
 	expected := map[string]string{
 		"0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33": "foo",
-		string(isolatedDirHash):                    isolatedDirEncoded,
+		"aaadd94977b8fbf3f6fb09fc3bbbc9edbdfa8427": "foo2",
+		string(baseIsolatedHash):                   baseIsolatedEncoded,
 		string(isolatedHash):                       isolatedEncoded,
+		string(secondIsolatedHash):                 secondIsolatedEncoded,
 	}
 	if common.IsWindows() {
 		expected["12339b9756c2994f85c310d560bc8c142a6b79a1"] = "no link on Windows"
@@ -169,12 +191,14 @@ func TestArchive(t *testing.T) {
 	stats := a.Stats()
 	ut.AssertEqual(t, 0, stats.TotalHits())
 	ut.AssertEqual(t, common.Size(0), stats.TotalBytesHits())
+	size := 3 + 4 + len(baseIsolatedEncoded) + len(isolatedEncoded) + len(secondIsolatedEncoded)
 	if !common.IsWindows() {
-		ut.AssertEqual(t, 3, stats.TotalMisses())
-		ut.AssertEqual(t, common.Size(3+len(isolatedDirEncoded)+len(isolatedEncoded)), stats.TotalBytesPushed())
+		ut.AssertEqual(t, 5, stats.TotalMisses())
+		ut.AssertEqual(t, common.Size(size), stats.TotalBytesPushed())
 	} else {
-		ut.AssertEqual(t, 4, stats.TotalMisses())
-		ut.AssertEqual(t, common.Size(3+18+len(isolatedDirEncoded)+len(isolatedEncoded)), stats.TotalBytesPushed())
+		ut.AssertEqual(t, 6, stats.TotalMisses())
+		// Includes the duplicate due to lack of symlink.
+		ut.AssertEqual(t, common.Size(size+18), stats.TotalBytesPushed())
 	}
 
 	ut.AssertEqual(t, nil, server.Error())

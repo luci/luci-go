@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/luci/luci-go/client/archiver"
@@ -284,6 +285,8 @@ func archive(arch archiver.Archiver, opts *ArchiveOptions, displayName string) (
 	for digest := range includesSet {
 		i.Includes = append(i.Includes, digest)
 	}
+	// Make the includes list deterministic.
+	sort.Sort(i.Includes)
 
 	raw := &bytes.Buffer{}
 	if err = json.NewEncoder(raw).Encode(i); err != nil {

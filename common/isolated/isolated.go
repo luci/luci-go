@@ -39,7 +39,7 @@ type Isolated struct {
 	Algo        string          `json:"algo"` // Must be "sha-1"
 	Command     []string        `json:"command,omitempty"`
 	Files       map[string]File `json:"files,omitempty"`
-	Includes    []HexDigest     `json:"includes,omitempty"`
+	Includes    HexDigests      `json:"includes,omitempty"`
 	ReadOnly    *ReadOnlyValue  `json:"read_only,omitempty"`
 	RelativeCwd string          `json:"relative_cwd,omitempty"`
 	Version     string          `json:"version"`
