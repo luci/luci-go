@@ -5,6 +5,8 @@
 package prod
 
 import (
+	"time"
+
 	bs "github.com/luci/gae/service/blobstore"
 	ds "github.com/luci/gae/service/datastore"
 	"google.golang.org/appengine"
@@ -30,6 +32,9 @@ func (tf *typeFilter) Load(props []datastore.Property) error {
 			val = bs.Key(x)
 		case appengine.GeoPoint:
 			val = ds.GeoPoint(x)
+		case time.Time:
+			// "appengine" layer instantiates with Local timezone.
+			val = x.UTC()
 		}
 		prop := ds.Property{}
 		is := ds.ShouldIndex

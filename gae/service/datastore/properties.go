@@ -209,7 +209,7 @@ func PropertyTypeOf(v interface{}, checkValid bool) (PropertyType, error) {
 			err = errors.New("time value out of range")
 		}
 		if checkValid && !timeLocationIsUTC(x.Location()) {
-			err = fmt.Errorf("time value has wrong Location: %v %v", x.Location())
+			err = fmt.Errorf("time value has wrong Location: %v", x.Location())
 		}
 		return PTTime, err
 	case GeoPoint:
