@@ -10,6 +10,18 @@ import (
 	"github.com/luci/luci-go/server/common/auth/model"
 )
 
+// isInGroup returns true if a user is in a group.
+// Since I believe cost to flatten all groups for test data is negligible,
+// this function flatten all groups before checking.
+// Note that completely ignores error cases not to stop authentication.
+// See: https://codereview.chromium.org/1229503002/patch/20001/30001
+func isInGroup(groupName, userName string, groups map[string]*model.AuthGroup, seen map[string]bool) bool {
+	if fg, ok := flattenGroups(groups)[groupName]; ok {
+		return fg.has(userName)
+	}
+	return false
+}
+
 func TestIsInGroupNormalCases(t *testing.T) {
 	userID := model.ToUserID("dummy@example.com")
 	groupName := "group"

@@ -5,12 +5,27 @@
 package api
 
 import (
+	"errors"
 	"path/filepath"
+	"sync"
+	"time"
 
 	"golang.org/x/net/context"
+	"google.golang.org/appengine/log"
 
 	"github.com/luci/luci-go/server/common/auth/model"
 )
+
+var (
+	cache *authCacheService
+)
+var (
+	ErrAlreadyInitialized = errors.New("auth cache: already initialized")
+	ErrNotInitialized     = errors.New("auth cache: not initialized")
+	ErrUnknownGroup       = errors.New("auth cache: unknown group")
+)
+
+const updateInterval = time.Hour
 
 type flatGroup struct {
 	// TODO(yyanagisawa): consider use of regexp for luci-py compatibility.
@@ -19,7 +34,7 @@ type flatGroup struct {
 	members map[string]bool
 }
 
-func flattenGroup(groupName string, groups map[string]*model.AuthGroup, flatGroups map[string]flatGroup, seen map[string]bool) {
+func flattenGroup(groupName string, groups map[string]*model.AuthGroup, flatGroups map[string]*flatGroup, seen map[string]bool) {
 	if seen[groupName] {
 		return
 	}
@@ -61,14 +76,14 @@ func flattenGroup(groupName string, groups map[string]*model.AuthGroup, flatGrou
 	for gb := range globs {
 		gs = append(gs, gb)
 	}
-	flatGroups[groupName] = flatGroup{
+	flatGroups[groupName] = &flatGroup{
 		globs:   gs,
 		members: members,
 	}
 }
 
-func flattenGroups(groups map[string]*model.AuthGroup) map[string]flatGroup {
-	flatGroups := make(map[string]flatGroup)
+func flattenGroups(groups map[string]*model.AuthGroup) map[string]*flatGroup {
+	flatGroups := make(map[string]*flatGroup)
 	for n := range groups {
 		seen := make(map[string]bool)
 		flattenGroup(n, groups, flatGroups, seen)
@@ -92,35 +107,97 @@ func (fg flatGroup) has(userName string) bool {
 	return false
 }
 
-// isGroupMember returns true if a user is in a group.
-// Currently, this function is called by IsGroupMember, and always flatten
-// all groups.  In future change list, this function will only used for
-// test purpose.
-// Since I believe cost to flatten all groups for test data is negligible,
-// this function flatten all groups before checking.
-// Note that completely ignores error cases not to stop authentication.
-// See: https://codereview.chromium.org/1229503002/patch/20001/30001
-func isInGroup(groupName, userName string, groups map[string]*model.AuthGroup, seen map[string]bool) bool {
-	if fg, ok := flattenGroups(groups)[groupName]; ok {
-		return fg.has(userName)
-	}
-	return false
+type authCacheService struct {
+	mu     sync.RWMutex
+	groups map[string]*flatGroup
 }
 
-// IsGroupMember returns true if a member is in a group.
-func IsGroupMember(c context.Context, groupName, userName string) (bool, error) {
-	// TODO(yyanagisawa): cache coverted data, and match result.
-	//                    we do not need to create map everytime.
+func latestFlatGroups(c context.Context) (map[string]*flatGroup, error) {
 	snap := &model.AuthDBSnapshot{}
 	if err := model.CurrentAuthDBSnapshot(c, snap); err != nil {
-		return false, err
+		return nil, err
 	}
-
 	ag := make(map[string]*model.AuthGroup, len(snap.Groups))
 	for _, g := range snap.Groups {
 		ag[g.Key.StringID()] = g
 	}
+	return flattenGroups(ag), nil
+}
 
-	seen := make(map[string]bool)
-	return isInGroup(groupName, model.ToUserID(userName), ag, seen), nil
+func (a *authCacheService) setGroups(g map[string]*flatGroup) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.groups = g
+}
+
+func (a *authCacheService) group(name string) (*flatGroup, error) {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	if a.groups == nil {
+		return nil, ErrNotInitialized
+	}
+	return a.groups[name], nil
+}
+
+func (a *authCacheService) isInitialized() bool {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.groups != nil
+}
+
+func (a *authCacheService) update(c context.Context) {
+	fgs, err := latestFlatGroups(c)
+	if err != nil {
+		log.Errorf(c, "failed to get latest authgroup: %v", err)
+		return
+	}
+	a.setGroups(fgs)
+}
+
+func (a *authCacheService) run(c context.Context, t time.Ticker) {
+	for range t.C {
+		a.update(c)
+	}
+}
+
+// Initialize initializes cache service for auth.
+//
+// c should be appengine.BackgroundContext().
+func Initialize(c context.Context, t time.Ticker) error {
+	if cache != nil {
+		log.Errorf(c, "auth cache already initialized")
+		return ErrAlreadyInitialized
+	}
+
+	cache = &authCacheService{}
+	cache.update(c)
+	go cache.run(c, t)
+	if !cache.isInitialized() {
+		return ErrNotInitialized
+	}
+	return nil
+}
+
+// IsGroupMember returns true if a member is in a group.
+//
+// Note that this function ignores errors caused by broken AuthGroup.
+// e.g. globs field is broken or cyclic dependency.
+// Otherwise broken AuthGroup can kill IsGroupMember function.
+//
+// Also, not to accept bad glob, all AuthDB proto instances must be verified
+// by ValidateAuthDB in github.com/luci/luci-go/server/common/auth/replication
+// before stored to datastore.
+func IsGroupMember(c context.Context, groupName, userName string) (bool, error) {
+	if cache == nil {
+		return false, ErrNotInitialized
+	}
+
+	fg, err := cache.group(groupName)
+	if err != nil {
+		return false, err
+	}
+	if fg == nil {
+		return false, ErrUnknownGroup
+	}
+	return fg.has(userName), nil
 }
