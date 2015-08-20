@@ -43,6 +43,7 @@ Run the following to setup the code review tool and create your first review:
     # This will ask for your Google Account credentials.
     git cl upload -s
     # Wait for LGTM over email.
-    git cl land
+    # Check Commit Queue checkbox in Rietveld codereview site.
+    # See it tested and landed automatically.
 
 Use `git cl help` and `git cl help <cmd>` for more details.
