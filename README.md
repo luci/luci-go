@@ -58,6 +58,7 @@ Run the following to setup the code review tool and create your first review:
     # This will ask for your Google Account credentials.
     git cl upload -s
     # Wait for LGTM over email.
-    git cl land
+    # Check the commit queue box in codereview website.
+    # Wait for the change to be tested and landed automatically.
 
 Use `git cl help` and `git cl help <cmd>` for more details.
