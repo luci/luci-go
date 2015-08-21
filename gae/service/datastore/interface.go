@@ -83,11 +83,17 @@ type Interface interface {
 	// Run stops on the first error encountered.
 	Run(q Query, cb interface{}) error
 
+	// DecodeCursor converts a string returned by a Cursor into a Cursor instance.
+	// It will return an error if the supplied string is not valid, or could not
+	// be decoded by the implementation.
+	DecodeCursor(string) (Cursor, error)
+
 	// GetAll retrieves all of the Query results into dst.
 	//
 	// dst must be one of:
 	//   - *[]S or *[]*S where S is a struct
-	//   - *[]P or *[]*P where *P is a concrete type implementing PropertyLoadSaver
+	//   - *[]P or *[]*P where *P is a concrete type implementing
+	//     PropertyLoadSaver
 	//   - *[]Key implies a keys-only query.
 	GetAll(q Query, dst interface{}) error
 
@@ -118,7 +124,7 @@ type Interface interface {
 	//   - []S or []*S where S is a struct
 	//   - []P or []*P where *P is a concrete type implementing PropertyLoadSaver
 	//   - []I where I is some interface type. Each element of the slice must
-	//		 be non-nil, and its underlying type must be either *S or *P.
+	//     be non-nil, and its underlying type must be either *S or *P.
 	GetMulti(dst interface{}) error
 
 	// PutMulti writes items to the datastore.

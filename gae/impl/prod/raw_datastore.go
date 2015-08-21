@@ -131,6 +131,10 @@ func (d rdsImpl) NewQuery(kind string) ds.Query {
 	return queryImpl{datastore.NewQuery(kind)}
 }
 
+func (d rdsImpl) DecodeCursor(s string) (ds.Cursor, error) {
+	return datastore.DecodeCursor(s)
+}
+
 func (d rdsImpl) Run(q ds.Query, cb ds.RawRunCB) error {
 	tf := typeFilter{}
 	t := q.(queryImpl).Query.Run(d)

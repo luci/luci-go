@@ -165,6 +165,11 @@ type RawInterface interface {
 	//   - f is not nil
 	RunInTransaction(f func(c context.Context) error, opts *TransactionOptions) error
 
+	// DecodeCursor converts a string returned by a Cursor into a Cursor instance.
+	// It will return an error if the supplied string is not valid, or could not
+	// be decoded by the implementation.
+	DecodeCursor(s string) (Cursor, error)
+
 	// Run executes the given query, and calls `cb` for each successfully item.
 	//
 	// NOTE: Implementations and filters are guaranteed that:

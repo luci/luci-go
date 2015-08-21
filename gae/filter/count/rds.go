@@ -13,6 +13,7 @@ import (
 // DSCounter is the counter object for the datastore service.
 type DSCounter struct {
 	NewKey           Entry
+	DecodeCursor     Entry
 	DecodeKey        Entry
 	NewQuery         Entry
 	RunInTransaction Entry
@@ -43,6 +44,11 @@ func (r *dsCounter) DecodeKey(encoded string) (ds.Key, error) {
 func (r *dsCounter) NewQuery(kind string) ds.Query {
 	r.c.NewQuery.up()
 	return r.ds.NewQuery(kind)
+}
+
+func (r *dsCounter) DecodeCursor(s string) (ds.Cursor, error) {
+	cursor, err := r.ds.DecodeCursor(s)
+	return cursor, r.c.DecodeCursor.up(err)
 }
 
 func (r *dsCounter) Run(q ds.Query, cb ds.RawRunCB) error {

@@ -68,6 +68,10 @@ func (d *dsImpl) NewQuery(kind string) ds.Query {
 	return &queryImpl{ns: d.ns, kind: kind}
 }
 
+func (d *dsImpl) DecodeCursor(s string) (ds.Cursor, error) {
+	return decodeCursor(s)
+}
+
 func (d *dsImpl) Run(q ds.Query, cb ds.RawRunCB) error {
 	rq := q.(*queryImpl)
 	done, err := rq.valid(d.ns, true)
@@ -139,6 +143,10 @@ func (d *txnDsImpl) DeleteMulti(keys []ds.Key, cb ds.DeleteMultiCB) error {
 	return d.data.run(func() error {
 		return d.data.delMulti(keys, cb)
 	})
+}
+
+func (d *txnDsImpl) DecodeCursor(s string) (ds.Cursor, error) {
+	return decodeCursor(s)
 }
 
 func (d *txnDsImpl) Run(q ds.Query, cb ds.RawRunCB) error {

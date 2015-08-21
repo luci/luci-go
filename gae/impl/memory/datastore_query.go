@@ -5,6 +5,7 @@
 package memory
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"math"
@@ -63,7 +64,7 @@ func parseFilter(f string) (prop string, op queryOp, err error) {
 
 type queryCursor string
 
-func (q queryCursor) String() string { return string(q) }
+func (q queryCursor) String() string { return base64.URLEncoding.EncodeToString([]byte(q)) }
 func (q queryCursor) Valid() bool    { return q != "" }
 
 type queryIneqFilter struct {
@@ -71,6 +72,18 @@ type queryIneqFilter struct {
 
 	low  *string
 	high *string
+}
+
+func decodeCursor(s string) (ds.Cursor, error) {
+	d, err := base64.URLEncoding.DecodeString(s)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to Base64-decode cursor: %s", err)
+	}
+	c := queryCursor(string(d))
+	if !c.Valid() {
+		return nil, errors.New("Decoded cursor is not valid.")
+	}
+	return c, nil
 }
 
 func increment(bstr string, positive bool) string {

@@ -27,6 +27,10 @@ func (d *datastoreImpl) KeyForObjErr(src interface{}) (Key, error) {
 	return newKeyObjErr(d.NewKey, src)
 }
 
+func (d *datastoreImpl) DecodeCursor(s string) (Cursor, error) {
+	return d.RawInterface.DecodeCursor(s)
+}
+
 func (d *datastoreImpl) Run(q Query, cbIface interface{}) error {
 	// TODO(riannucci): Profile and determine if any of this is causing a real
 	// slowdown. Could potentially cache reflection stuff by cbType?
