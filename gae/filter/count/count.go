@@ -9,19 +9,44 @@
 package count
 
 import (
+	"fmt"
 	"sync/atomic"
 )
+
+type counter struct {
+	value int32
+}
+
+func (c *counter) increment() {
+	atomic.AddInt32(&c.value, 1)
+}
+
+func (c *counter) get() int {
+	return int(atomic.LoadInt32(&c.value))
+}
 
 // Entry is a success/fail pair for a single API method. It's returned
 // by the Counter interface.
 type Entry struct {
-	Successes int64
-	Errors    int64
+	successes counter
+	errors    counter
+}
+
+func (e *Entry) String() string {
+	return fmt.Sprintf("{Successes:%d, Errors:%d}", e.Successes(), e.Errors())
 }
 
 // Total is a convenience function for getting the total number of calls to
 // this API. It's Successes+Errors.
-func (e Entry) Total() int64 { return e.Successes + e.Errors }
+func (e *Entry) Total() int64 { return int64(e.Successes()) + int64(e.Errors()) }
+
+func (e *Entry) Successes() int {
+	return e.successes.get()
+}
+
+func (e *Entry) Errors() int {
+	return e.errors.get()
+}
 
 func (e *Entry) up(errs ...error) error {
 	err := error(nil)
@@ -29,9 +54,9 @@ func (e *Entry) up(errs ...error) error {
 		err = errs[0]
 	}
 	if err == nil {
-		atomic.AddInt64(&e.Successes, 1)
+		e.successes.increment()
 	} else {
-		atomic.AddInt64(&e.Errors, 1)
+		e.errors.increment()
 	}
 	return err
 }
