@@ -6,27 +6,40 @@ package errors
 
 // Transient is an Error implementation. It wraps an existing Error, marking
 // it as transient. This can be tested with IsTransient.
-type Transient struct {
-	Err error
+type Transient interface {
+	error
+
+	// IsTransient returns true if this error type is transient.
+	IsTransient() bool
 }
 
-// Error implements the error interface.
-func (t Transient) Error() string {
-	return t.Err.Error()
+type transientWrapper struct {
+	error
+}
+
+func (t transientWrapper) Error() string {
+	return t.error.Error()
+}
+
+func (t transientWrapper) IsTransient() bool {
+	return true
 }
 
 // IsTransient tests if a given error is Transient.
 func IsTransient(err error) bool {
-	_, ok := err.(Transient)
-	return ok
+	if t, ok := err.(Transient); ok {
+		return t.IsTransient()
+	}
+	return false
 }
 
 // WrapTransient wraps an existing error with in a Transient error.
 //
-// If the supplied error is already Transient, it will be returned.
+// If the supplied error is already Transient, it will be returned. If the
+// supplied error is nil, nil wil be returned.
 func WrapTransient(err error) error {
-	if !IsTransient(err) {
-		err = &Transient{Err: err}
+	if err == nil {
+		return nil
 	}
-	return err
+	return transientWrapper{err}
 }

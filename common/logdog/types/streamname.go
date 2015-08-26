@@ -20,6 +20,10 @@ const (
 	// name.
 	StreamPathSep = '+'
 	pathSepStr    = "+"
+
+	// MaxStreamNameLength is the maximum size, in bytes, of a StreamName. Since
+	// stream names must be valid ASCII, this is also the maximum string length.
+	MaxStreamNameLength = 4096
 )
 
 // StreamName is a structured stream name.
@@ -46,56 +50,55 @@ func isAlnum(r rune) bool {
 // This method is guaranteed to return a valid stream name. In order to ensure
 // that the arbitrary input can meet this standard, the following
 // transformations will be applied as needed:
-// - If no segments are provided, a single segment containing the fill string
-//   will be returned.
 // - If the segment doesn't begin with an alphanumeric character, the fill
 //   string will be prepended.
 // - Any character disallowed in the segment will be replaced with an
 //   underscore. This includes segment separators within a segment string.
-//
-// If the fill string isn't itself a valid StreamName, this method will panic.
-func MakeStreamName(fill string, s ...string) StreamName {
-	if err := StreamName(fill).Validate(); err != nil {
-		panic(fmt.Errorf("fill parameters is not a valid stream name: %v", err))
-	}
-
+func MakeStreamName(fill string, s ...string) (StreamName, error) {
 	if len(s) == 0 {
-		s = []string{fill}
-	} else {
-		for idx, v := range s {
-			v = strings.Map(func(r rune) rune {
-				switch {
-				case r >= 'A' && r <= 'Z':
-					fallthrough
-				case r >= 'a' && r <= 'z':
-					fallthrough
-				case r >= '0' && r <= '9':
-					fallthrough
-				case r == '.':
-					fallthrough
-				case r == '_':
-					fallthrough
-				case r == '-':
-					fallthrough
-				case r == ':':
-					return r
-
-				default:
-					return '_'
-				}
-			}, v)
-			if len(v) == 0 {
-				v = fill
-			} else {
-				r, _ := utf8.DecodeRuneInString(v)
-				if !isAlnum(r) {
-					v = fill + v
-				}
-			}
-			s[idx] = v
-		}
+		return "", errors.New("at least one segment must be provided")
 	}
-	return makeStreamName(s...)
+	if err := StreamName(fill).Validate(); err != nil {
+		return "", fmt.Errorf("fill string must be a valid stream name: %s", err)
+	}
+
+	for idx, v := range s {
+		v = strings.Map(func(r rune) rune {
+			switch {
+			case r >= 'A' && r <= 'Z':
+				fallthrough
+			case r >= 'a' && r <= 'z':
+				fallthrough
+			case r >= '0' && r <= '9':
+				fallthrough
+			case r == '.':
+				fallthrough
+			case r == '_':
+				fallthrough
+			case r == '-':
+				fallthrough
+			case r == ':':
+				return r
+
+			default:
+				return '_'
+			}
+		}, v)
+		if len(v) == 0 {
+			v = fill
+		} else {
+			r, _ := utf8.DecodeRuneInString(v)
+			if !isAlnum(r) {
+				v = fill + v
+			}
+		}
+		s[idx] = v
+	}
+	result := makeStreamName(s...)
+	if err := result.Validate(); err != nil {
+		return "", err
+	}
+	return result, nil
 }
 
 // makeStreamName constructs a StreamName by joining segments with the stream
@@ -155,7 +158,10 @@ func (s StreamName) Join(o StreamName) StreamPath {
 // Validate tests whether the stream name is valid.
 func (s StreamName) Validate() error {
 	if len(s) == 0 {
-		return errors.New("Must contain at least one character.")
+		return errors.New("must contain at least one character")
+	}
+	if len(s) > MaxStreamNameLength {
+		return fmt.Errorf("stream name is too long (%d > %d)", len(s), MaxStreamNameLength)
 	}
 
 	var lastRune rune
@@ -207,7 +213,10 @@ func (s StreamName) SegmentCount() int {
 // separator.
 type StreamPath string
 
-// Split splits a StreamPath into its prefix and tail components.
+// Split splits a StreamPath into its prefix and name components.
+//
+// If there is no divider present (e.g., foo/bar/baz), the result will parse
+// as the stream prefix with an empty name component.
 func (p StreamPath) Split() (StreamName, StreamName) {
 	segments := StreamName(p).Segments()
 	for idx, s := range segments {
@@ -215,7 +224,7 @@ func (p StreamPath) Split() (StreamName, StreamName) {
 			return makeStreamName(segments[:idx]...), makeStreamName(segments[idx+1:]...)
 		}
 	}
-	return StreamName(""), StreamName(p)
+	return StreamName(p), ""
 }
 
 // Validate checks whether a StreamPath is valid. A valid stream path must have

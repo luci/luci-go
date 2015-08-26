@@ -5,11 +5,8 @@
 package gcps
 
 import (
-	"net/http"
-
 	"github.com/luci/luci-go/common/errors"
 	"golang.org/x/net/context"
-	"google.golang.org/cloud"
 	"google.golang.org/cloud/pubsub"
 )
 
@@ -24,11 +21,11 @@ type pubSubImpl struct {
 // New instantiates a new PubSub instance configured to use the Google Cloud
 // Pub/Sub system.
 //
-// The supplied Client must be authenticated with sufficient OAuth scopes to
-// use the underlying Pub/Sub methods.
-func New(ctx context.Context, projectID string, client *http.Client) PubSub {
+// The supplied context must be properly authenticated to interface with the
+// named Pub/Sub system.
+func New(ctx context.Context) PubSub {
 	return &pubSubImpl{
-		ctx: cloud.NewContext(projectID, client),
+		ctx: ctx,
 	}
 }
 

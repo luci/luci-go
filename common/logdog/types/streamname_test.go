@@ -7,6 +7,7 @@ package types
 import (
 	"flag"
 	"fmt"
+	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -41,18 +42,23 @@ func TestStreamName(t *testing.T) {
 			e string   // Expected value.
 		}
 		for _, entry := range []e{
-			{[]string{}, "FILL"},
 			{[]string{""}, "FILL"},
 			{[]string{"", ""}, "FILL/FILL"},
 			{[]string{"", "foo", "ba!r", "¿baz"}, "FILL/foo/ba_r/FILL_baz"},
 			{[]string{"foo", "bar baz"}, "foo/bar_baz"},
 		} {
 			Convey(fmt.Sprintf(`Transforms "%#v" into "%s".`, entry.t, entry.e), func() {
-				s := MakeStreamName("FILL", entry.t...)
+				s, err := MakeStreamName("FILL", entry.t...)
+				So(err, ShouldBeNil)
 				So(s, ShouldEqual, StreamName(entry.e))
 				So(s.Validate(), ShouldBeNil)
 			})
 		}
+
+		Convey(`Fails if the fill string is not a valid path.`, func() {
+			_, err := MakeStreamName("__not_a_path", "a", "b", "c")
+			So(err, ShouldNotBeNil)
+		})
 	})
 
 	Convey(`StreamName.Trim`, t, func() {
@@ -99,6 +105,11 @@ func TestStreamName(t *testing.T) {
 				})
 			}
 		}
+
+		Convey(`A stream name that is too long will not validate.`, func() {
+			So(StreamName(strings.Repeat("A", MaxStreamNameLength)).Validate(), ShouldBeNil)
+			So(StreamName(strings.Repeat("A", MaxStreamNameLength+1)).Validate(), ShouldNotBeNil)
+		})
 	})
 
 	Convey(`StreamName.Join`, t, func() {

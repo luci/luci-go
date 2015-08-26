@@ -100,7 +100,7 @@ func (e Enum) FlagString(v interface{}) string {
 // The interface, v, must be a valid pointer to the mapped enumeration type.
 // a string corresponding to one of the enum's keys.
 func (e Enum) JSONUnmarshal(v interface{}, data []byte) error {
-	s := string(data)
+	s := ""
 	if err := json.Unmarshal(data, &s); err != nil {
 		return err
 	}
