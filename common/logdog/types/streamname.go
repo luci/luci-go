@@ -5,6 +5,7 @@
 package types
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -209,6 +210,25 @@ func (s StreamName) SegmentCount() int {
 	return strings.Count(string(s), string(StreamNameSep)) + 1
 }
 
+// UnmarshalJSON implements json.Unmarshaler.
+func (s *StreamName) UnmarshalJSON(data []byte) error {
+	v := ""
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	if err := StreamName(v).Validate(); err != nil {
+		return err
+	}
+	*s = StreamName(v)
+	return nil
+}
+
+// MarshalJSON implements json.Marshaler.
+func (s StreamName) MarshalJSON() ([]byte, error) {
+	v := string(s)
+	return json.Marshal(&v)
+}
+
 // A StreamPath consists of two StreamName, joined via a StreamPathSep (+)
 // separator.
 type StreamPath string
@@ -238,4 +258,23 @@ func (p StreamPath) Validate() error {
 		return err
 	}
 	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (p *StreamPath) UnmarshalJSON(data []byte) error {
+	v := ""
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	if err := StreamPath(v).Validate(); err != nil {
+		return err
+	}
+	*p = StreamPath(v)
+	return nil
+}
+
+// MarshalJSON implements json.Marshaler.
+func (p StreamPath) MarshalJSON() ([]byte, error) {
+	v := string(p)
+	return json.Marshal(&v)
 }

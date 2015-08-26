@@ -69,12 +69,12 @@ message LogStreamDescriptor {
  */
 message LogEntry {
   /*
-   * The stream time offset (in microseconds) for this entry (required).
+   * The stream time offset for this entry (required).
    *
    * This offset is added to the log stream's base "timestamp" to resolve the
    * timestamp for this specific LogEntry.
    */
-  optional uint64 time_offset_us = 1;
+  optional TimeOffset time_offset = 1;
   /*
    * The message index within the Prefix (required).
    *
@@ -82,14 +82,14 @@ message LogEntry {
    * sharing the stream's Prefix. It is used to designate unambiguous log
    * ordering.
    */
-  optional uint64 prefix_index = 2;
+  optional uint32 prefix_index = 2;
   /*
    * The message index within its Stream (required).
    *
    * This value is unique across all entries sharing the same Prefix and Stream
    * Name. It is used to designate unambiguous log ordering within the stream.
    */
-  optional uint64 stream_index = 3;
+  optional uint32 stream_index = 3;
 
   /*
    * (Text) Lines of log text.
@@ -105,7 +105,10 @@ message LogEntry {
    * For binary logs, each entry is a sequential chunk of log data. For
    * datagram logs, each entry is an independent datagram.
    */
-  repeated bytes data = 5;
+  message Data {
+    optional bytes value = 1;
+  }
+  repeated Data data = 5;
 }
 
 /**
@@ -139,7 +142,7 @@ message LogIndex {
      * This is used by clients to request specific LogEntry from an archived
      * log stream.
      */
-    optional uint64 offset = 1;
+    optional uint32 offset = 1;
 
     /*
      * The log index that this entry describes (required).
@@ -147,14 +150,14 @@ message LogIndex {
      * This is used by clients to identify a specific LogEntry within a set of
      * streams sharing a Prefix.
      */
-    optional uint64 prefix_index = 2;
+    optional uint32 prefix_index = 2;
     /*
      * The time offset of this log entry (required).
      *
      * This is used by clients to identify a specific LogEntry within a log
      * stream.
      */
-    optional uint64 stream_index = 3;
+    optional uint32 stream_index = 3;
     /*
      * The time offset of this log entry, in microseconds.
      *
@@ -162,7 +165,7 @@ message LogIndex {
      * specific timestamp of this log. It is used by clients to identify a
      * specific LogEntry by time.
      */
-    optional uint64 time_offset_us = 4;
+    optional uint32 time_offset_us = 4;
   }
   /*
    * A series of ascending-ordered Entry messages representing snapshots of an

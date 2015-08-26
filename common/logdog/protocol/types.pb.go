@@ -13,12 +13,10 @@ var _ = math.Inf
 
 //
 // Timestamp is a message that represents a specific moment in time. All
-// Timestamps will be relative to epoch, meaning that their respective values
-// will be recorded as microseconds from UNIX epoch, defined as
-// 00:00:00 January 1, 1970 UTC.
+// Timestamps will be encoded as UTC.
 type Timestamp struct {
-	// The timestamp's value, in microseconds from epoch.
-	UsFromEpoch      *uint64 `protobuf:"varint,1,opt,name=us_from_epoch" json:"us_from_epoch,omitempty"`
+	// The timestamp's value, expressed as an RFC 3339 time string.
+	Value            *string `protobuf:"bytes,1,opt,name=value" json:"value,omitempty"`
 	XXX_unrecognized []byte  `json:"-"`
 }
 
@@ -26,9 +24,37 @@ func (m *Timestamp) Reset()         { *m = Timestamp{} }
 func (m *Timestamp) String() string { return proto.CompactTextString(m) }
 func (*Timestamp) ProtoMessage()    {}
 
-func (m *Timestamp) GetUsFromEpoch() uint64 {
-	if m != nil && m.UsFromEpoch != nil {
-		return *m.UsFromEpoch
+func (m *Timestamp) GetValue() string {
+	if m != nil && m.Value != nil {
+		return *m.Value
+	}
+	return ""
+}
+
+//
+// TimeOffset is a message that represents a difference in time.
+type TimeOffset struct {
+	// The number of seconds in the offset.
+	Seconds *uint32 `protobuf:"varint,1,opt,name=seconds" json:"seconds,omitempty"`
+	// The number of nanoseconds in the offset.
+	Nanoseconds      *uint32 `protobuf:"varint,2,opt,name=nanoseconds" json:"nanoseconds,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
+}
+
+func (m *TimeOffset) Reset()         { *m = TimeOffset{} }
+func (m *TimeOffset) String() string { return proto.CompactTextString(m) }
+func (*TimeOffset) ProtoMessage()    {}
+
+func (m *TimeOffset) GetSeconds() uint32 {
+	if m != nil && m.Seconds != nil {
+		return *m.Seconds
+	}
+	return 0
+}
+
+func (m *TimeOffset) GetNanoseconds() uint32 {
+	if m != nil && m.Nanoseconds != nil {
+		return *m.Nanoseconds
 	}
 	return 0
 }

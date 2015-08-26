@@ -6,11 +6,19 @@ package protocol;
 
 /*
  * Timestamp is a message that represents a specific moment in time. All
- * Timestamps will be relative to epoch, meaning that their respective values
- * will be recorded as microseconds from UNIX epoch, defined as
- * 00:00:00 January 1, 1970 UTC.
+ * Timestamps will be encoded as UTC.
  */
 message Timestamp {
-  // The timestamp's value, in microseconds from epoch.
-  optional uint64 us_from_epoch = 1;
+  // The timestamp's value, expressed as an RFC 3339 time string.
+  optional string value = 1;
+}
+
+/*
+ * TimeOffset is a message that represents a difference in time.
+ */
+message TimeOffset {
+  // The number of seconds in the offset.
+  optional uint32 seconds = 1;
+  // The number of nanoseconds in the offset.
+  optional uint32 nanoseconds = 2;
 }

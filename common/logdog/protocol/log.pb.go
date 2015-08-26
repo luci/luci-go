@@ -139,58 +139,53 @@ func (m *LogStreamDescriptor_Tag) GetValue() string {
 // should be interpreted in the context of the log stream's content type.
 type LogEntry struct {
 	//
-	// The stream time offset (in microseconds) for this entry (required).
+	// The stream time offset for this entry (required).
 	//
 	// This offset is added to the log stream's base "timestamp" to resolve the
 	// timestamp for this specific LogEntry.
-	TimeOffsetUs *uint64 `protobuf:"varint,1,opt,name=time_offset_us" json:"time_offset_us,omitempty"`
+	TimeOffset *TimeOffset `protobuf:"bytes,1,opt,name=time_offset" json:"time_offset,omitempty"`
 	//
 	// The message index within the Prefix (required).
 	//
 	// This is value is unique to this LogEntry across the entire set of entries
 	// sharing the stream's Prefix. It is used to designate unambiguous log
 	// ordering.
-	PrefixIndex *uint64 `protobuf:"varint,2,opt,name=prefix_index" json:"prefix_index,omitempty"`
+	PrefixIndex *uint32 `protobuf:"varint,2,opt,name=prefix_index" json:"prefix_index,omitempty"`
 	//
 	// The message index within its Stream (required).
 	//
 	// This value is unique across all entries sharing the same Prefix and Stream
 	// Name. It is used to designate unambiguous log ordering within the stream.
-	StreamIndex *uint64 `protobuf:"varint,3,opt,name=stream_index" json:"stream_index,omitempty"`
+	StreamIndex *uint32 `protobuf:"varint,3,opt,name=stream_index" json:"stream_index,omitempty"`
 	//
 	// (Text) Lines of log text.
 	//
 	// For text logs, each string represents a single log line. Newlines should
 	// not be included.
-	Lines []string `protobuf:"bytes,4,rep,name=lines" json:"lines,omitempty"`
-	//
-	// (Data) Log binary data.
-	//
-	// For binary logs, each entry is a sequential chunk of log data. For
-	// datagram logs, each entry is an independent datagram.
-	Data             [][]byte `protobuf:"bytes,5,rep,name=data" json:"data,omitempty"`
-	XXX_unrecognized []byte   `json:"-"`
+	Lines            []string         `protobuf:"bytes,4,rep,name=lines" json:"lines,omitempty"`
+	Data             []*LogEntry_Data `protobuf:"bytes,5,rep,name=data" json:"data,omitempty"`
+	XXX_unrecognized []byte           `json:"-"`
 }
 
 func (m *LogEntry) Reset()         { *m = LogEntry{} }
 func (m *LogEntry) String() string { return proto.CompactTextString(m) }
 func (*LogEntry) ProtoMessage()    {}
 
-func (m *LogEntry) GetTimeOffsetUs() uint64 {
-	if m != nil && m.TimeOffsetUs != nil {
-		return *m.TimeOffsetUs
+func (m *LogEntry) GetTimeOffset() *TimeOffset {
+	if m != nil {
+		return m.TimeOffset
 	}
-	return 0
+	return nil
 }
 
-func (m *LogEntry) GetPrefixIndex() uint64 {
+func (m *LogEntry) GetPrefixIndex() uint32 {
 	if m != nil && m.PrefixIndex != nil {
 		return *m.PrefixIndex
 	}
 	return 0
 }
 
-func (m *LogEntry) GetStreamIndex() uint64 {
+func (m *LogEntry) GetStreamIndex() uint32 {
 	if m != nil && m.StreamIndex != nil {
 		return *m.StreamIndex
 	}
@@ -204,9 +199,30 @@ func (m *LogEntry) GetLines() []string {
 	return nil
 }
 
-func (m *LogEntry) GetData() [][]byte {
+func (m *LogEntry) GetData() []*LogEntry_Data {
 	if m != nil {
 		return m.Data
+	}
+	return nil
+}
+
+//
+// (Data) Log binary data.
+//
+// For binary logs, each entry is a sequential chunk of log data. For
+// datagram logs, each entry is an independent datagram.
+type LogEntry_Data struct {
+	Value            []byte `protobuf:"bytes,1,opt,name=value" json:"value,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
+}
+
+func (m *LogEntry_Data) Reset()         { *m = LogEntry_Data{} }
+func (m *LogEntry_Data) String() string { return proto.CompactTextString(m) }
+func (*LogEntry_Data) ProtoMessage()    {}
+
+func (m *LogEntry_Data) GetValue() []byte {
+	if m != nil {
+		return m.Value
 	}
 	return nil
 }
@@ -268,26 +284,26 @@ type LogIndex_Entry struct {
 	//
 	// This is used by clients to request specific LogEntry from an archived
 	// log stream.
-	Offset *uint64 `protobuf:"varint,1,opt,name=offset" json:"offset,omitempty"`
+	Offset *uint32 `protobuf:"varint,1,opt,name=offset" json:"offset,omitempty"`
 	//
 	// The log index that this entry describes (required).
 	//
 	// This is used by clients to identify a specific LogEntry within a set of
 	// streams sharing a Prefix.
-	PrefixIndex *uint64 `protobuf:"varint,2,opt,name=prefix_index" json:"prefix_index,omitempty"`
+	PrefixIndex *uint32 `protobuf:"varint,2,opt,name=prefix_index" json:"prefix_index,omitempty"`
 	//
 	// The time offset of this log entry (required).
 	//
 	// This is used by clients to identify a specific LogEntry within a log
 	// stream.
-	StreamIndex *uint64 `protobuf:"varint,3,opt,name=stream_index" json:"stream_index,omitempty"`
+	StreamIndex *uint32 `protobuf:"varint,3,opt,name=stream_index" json:"stream_index,omitempty"`
 	//
 	// The time offset of this log entry, in microseconds.
 	//
 	// This is added to the descriptor's "timestamp" field to identify the
 	// specific timestamp of this log. It is used by clients to identify a
 	// specific LogEntry by time.
-	TimeOffsetUs     *uint64 `protobuf:"varint,4,opt,name=time_offset_us" json:"time_offset_us,omitempty"`
+	TimeOffsetUs     *uint32 `protobuf:"varint,4,opt,name=time_offset_us" json:"time_offset_us,omitempty"`
 	XXX_unrecognized []byte  `json:"-"`
 }
 
@@ -295,28 +311,28 @@ func (m *LogIndex_Entry) Reset()         { *m = LogIndex_Entry{} }
 func (m *LogIndex_Entry) String() string { return proto.CompactTextString(m) }
 func (*LogIndex_Entry) ProtoMessage()    {}
 
-func (m *LogIndex_Entry) GetOffset() uint64 {
+func (m *LogIndex_Entry) GetOffset() uint32 {
 	if m != nil && m.Offset != nil {
 		return *m.Offset
 	}
 	return 0
 }
 
-func (m *LogIndex_Entry) GetPrefixIndex() uint64 {
+func (m *LogIndex_Entry) GetPrefixIndex() uint32 {
 	if m != nil && m.PrefixIndex != nil {
 		return *m.PrefixIndex
 	}
 	return 0
 }
 
-func (m *LogIndex_Entry) GetStreamIndex() uint64 {
+func (m *LogIndex_Entry) GetStreamIndex() uint32 {
 	if m != nil && m.StreamIndex != nil {
 		return *m.StreamIndex
 	}
 	return 0
 }
 
-func (m *LogIndex_Entry) GetTimeOffsetUs() uint64 {
+func (m *LogIndex_Entry) GetTimeOffsetUs() uint32 {
 	if m != nil && m.TimeOffsetUs != nil {
 		return *m.TimeOffsetUs
 	}
