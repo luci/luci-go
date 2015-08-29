@@ -5,7 +5,13 @@
 // Package cmpbin provides binary serialization routines which ensure that the
 // serialized objects maintain the same sort order of the original inputs when
 // sorted bytewise (i.e. with memcmp).  Additionally, serialized objects are
-// concatenatable.
+// concatenatable, and the concatenated items will behave as if they're compared
+// field-to-field. So, for example, comparing each string in a []string would
+// compare the same way as comparing the concatenation of those strings encoded
+// with cmpbin. Simply concatenating the strings without encoding them will
+// NOT retain this property, as you could not distinguish []string{"a", "aa"}
+// from []string{"aa", "a"}. With cmpbin, these two would unambiguously sort as
+// ("a", "aa") < ("aa", "a").
 //
 // Notes on particular serialization schemes:
 //
