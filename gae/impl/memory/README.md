@@ -64,6 +64,7 @@ compound index that the user adds by calling `ds.Raw().Testable().AddIndexes`.
 
 The Key format here requires some special attention. Say you started with
 a compound IndexDefinition of:
+
     IndexDefinition{
       Kind: "Foo",
       Ancestor: true,
@@ -75,6 +76,7 @@ a compound IndexDefinition of:
     }
 
 After prepping it for the table, it would be equivalent to:
+
     IndexDefinition{
       Kind: "Foo",
       Ancestor: true,
@@ -110,17 +112,18 @@ of indexes that it matches.
 
 The following indexes are automatically created for some entity with a key
 `/Kind,*`, for every property (with `ShouldIndex` values) named "Foo":
-  IndexDefinition{ Kind: "Kind", Ancestor: false, SortBy: []IndexColumn{
-    {Property: "__key__", Direction: ASCENDING},
-  }}
-  IndexDefinition{ Kind: "Kind", Ancestor: false, SortBy: []IndexColumn{
-    {Property: "Foo", Direction: ASCENDING},
-    {Property: "__key__", Direction: ASCENDING},
-  }}
-  IndexDefinition{ Kind: "Kind", Ancestor: false, SortBy: []IndexColumn{
-    {Property: "Foo", Direction: DESCENDING},
-    {Property: "__key__", Direction: ASCENDING},
-  }}
+
+    IndexDefinition{ Kind: "Kind", Ancestor: false, SortBy: []IndexColumn{
+      {Property: "__key__", Direction: ASCENDING},
+    }}
+    IndexDefinition{ Kind: "Kind", Ancestor: false, SortBy: []IndexColumn{
+      {Property: "Foo", Direction: ASCENDING},
+      {Property: "__key__", Direction: ASCENDING},
+    }}
+    IndexDefinition{ Kind: "Kind", Ancestor: false, SortBy: []IndexColumn{
+      {Property: "Foo", Direction: DESCENDING},
+      {Property: "__key__", Direction: ASCENDING},
+    }}
 
 Index updates
 -------------
@@ -158,10 +161,12 @@ theoretically use it to fill a query for `duck=1,duck=2,goose>"canadian"`, by
 pasting 1 or 2 as the value for the 3rd `duck` column. This simplifies index
 selection at the expense of larger indexes. However, it means that if you have
 the entity:
+
     duck = 1, 2, 3, 4
     goose = "færøske"
 
 It generates the following index entries:
+
     duck=1,duck=1,duck=1,goose="færøske"
     duck=1,duck=1,duck=2,goose="færøske"
     duck=1,duck=1,duck=3,goose="færøske"
@@ -186,6 +191,7 @@ is very difficult to scale without application knowledge). If we do this, it
 also means that we need to SORT the equality filter values when generating the
 prefix (so that the least-valued equality constraint is first). If we did this,
 then the generated index rows for the above entity would be:
+
     duck=1,duck=2,duck=3,goose="færøske"
     duck=1,duck=2,duck=4,goose="færøske"
     duck=1,duck=3,duck=4,goose="færøske"
@@ -197,6 +203,7 @@ later, simply for the memory savings when indexing multi-valued properties.
 If this technique is used, there's also room to unambiguously index entities
 with repeated equivalent values. E.g. if duck=1,1,2,3,4 , then you could see
 a row in the index like:
+
     duck=1,duck=1,duck=2,goose="færøske"
 
 Which would allow you to query for "an entity which has duck values equal to 1,
@@ -208,29 +215,29 @@ Query planning
 
 Now that we have all of our data tabulated, let's plan some queries. The
 high-level algorithm works like this:
-  * Generate a suffix format from the user's query which looks like:
-    * orders (including the inequality as the first order, if any)
-    * projected fields which aren't explicitly referenced in the orders (we
-      assume ASCENDING order for them), in the order that they were projected.
-    * `__key__` (implied ascending, unless the query's last sort order is for
-      `__key__`, in which case it's whatever order the user specified)
-  * Reverse the order of this suffix format, and serialize it into an
-    IndexDefinition, along with the query's Kind and Ancestor values. This
-    does what PrepForIdxTable did when we added the Index in the first place.
-  * Use this serialized reversed index to find compound indexes which might
-    match by looking up rows in the "idx" table which begin with this serialized
-    reversed index.
-  * Generate every builtin index for the inequality + equality filter
-    properties, and see if they match too.
+* Generate a suffix format from the user's query which looks like:
+  * orders (including the inequality as the first order, if any)
+  * projected fields which aren't explicitly referenced in the orders (we
+    assume ASCENDING order for them), in the order that they were projected.
+  * `__key__` (implied ascending, unless the query's last sort order is for
+    `__key__`, in which case it's whatever order the user specified)
+* Reverse the order of this suffix format, and serialize it into an
+  IndexDefinition, along with the query's Kind and Ancestor values. This
+  does what PrepForIdxTable did when we added the Index in the first place.
+* Use this serialized reversed index to find compound indexes which might
+  match by looking up rows in the "idx" table which begin with this serialized
+  reversed index.
+* Generate every builtin index for the inequality + equality filter
+  properties, and see if they match too.
 
 An index is a potential match if its suffix *exactly* matches the suffix format,
 and it contains *only* sort orders which appear in the query (e.g. the index
 contains a column which doesn't appear as an equality or inequlity filter).
 
 The index search continues until:
-  * We find at least one matching index; AND
-  * The combination of all matching indexes accounts for every equality filter
-    at least once.
+* We find at least one matching index; AND
+* The combination of all matching indexes accounts for every equality filter
+  at least once.
 
 If we fail to find sufficient indexes to fulfill the query, we generate an index
 description that *could* be sufficient by concatenating all missing equality
