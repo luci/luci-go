@@ -34,11 +34,13 @@ serialized using the settings `serialize.WithoutContext`, and
 ### Primary table
 
 The primary table maps datastore keys to entities.
+
 - Name: `"ents:" + namespace`
 - Key: serialized datastore.Property containing the entity's datastore.Key
 - Value: serialized datastore.PropertyMap
 
 This table also encodes values for the following special keys:
+
 - Every entity root (e.g. a Key with nil Parent()) with key K has:
   - `Key("__entity_group__", 1, K)` -> `{"__version__": PTInt}`
     A child entity with the kind `__entity_group__` and an id of `1`. The value
@@ -57,6 +59,7 @@ This table also encodes values for the following special keys:
 The next table keeps track of all the user-added 'compound' index descriptions
 (not the content for the indexes). There is a row in this table for each
 compound index that the user adds by calling `ds.Raw().Testable().AddIndexes`.
+
 - Name: `"idx"`
 - Key: normalized, serialized `datastore.IndexDefinition` with the SortBy slice
   in reverse order (i.e. `datastore.IndexDefinition.PrepForIdxTable()`).
@@ -96,6 +99,7 @@ intelligently scan for potentially useful compound indexes.
 
 Every index (both builtin and compound) has one index table per namespace, which
 contains as rows every entry in the index, one per row.
+
 - Name: `"idx:" + namespace + IndexDefinition.PrepForIdxTable()`
 - Key: concatenated datastore.Property values, one per SortBy column in the
   IndexDefinition (the non-PrepForIdxTable version). If the SortBy column is
@@ -141,6 +145,7 @@ exist in the old entities, but not the new ones, are deleted. Entries that exist
 in the new entities, but not the old ones, are added).
 
 Index generation works (given an slice of indexes []Idxs) by:
+
 * serializing all ShouldIndex Properties in the PropertyMap to get a
   `map[name][]serializedProperty`.
 * for each index idx
@@ -215,6 +220,7 @@ Query planning
 
 Now that we have all of our data tabulated, let's plan some queries. The
 high-level algorithm works like this:
+
 * Generate a suffix format from the user's query which looks like:
   * orders (including the inequality as the first order, if any)
   * projected fields which aren't explicitly referenced in the orders (we
@@ -235,6 +241,7 @@ and it contains *only* sort orders which appear in the query (e.g. the index
 contains a column which doesn't appear as an equality or inequlity filter).
 
 The index search continues until:
+
 * We find at least one matching index; AND
 * The combination of all matching indexes accounts for every equality filter
   at least once.
@@ -363,6 +370,7 @@ A hit occurs when all of the iterators have precisely the same suffix. This hit
 suffix is then decoded using the suffix format information. The very last column
 of the suffix will always be the datastore key. The suffix is then used to call
 back to the user, according to the query type:
+
 * keys-only queries just directly return the Key
 * projection queries return the projected fields from the decoded suffix.
   Remember how we added all the projections after the orders? This is why. The
