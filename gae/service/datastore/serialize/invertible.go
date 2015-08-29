@@ -12,6 +12,9 @@ import (
 // that this package requires.
 type Buffer interface {
 	String() string
+	Bytes() []byte
+	Len() int
+
 	Grow(int)
 
 	Read([]byte) (int, error)
@@ -46,7 +49,7 @@ var _ Buffer = (*bytes.Buffer)(nil)
 // then you definitely don't need it!
 type InvertibleBuffer interface {
 	Buffer
-	Invert()
+	SetInvert(inverted bool)
 }
 
 type invertibleBuffer struct {
@@ -110,6 +113,6 @@ func (ib *invertibleBuffer) ReadByte() (byte, error) {
 	return ret, err
 }
 
-func (ib *invertibleBuffer) Invert() {
-	ib.invert = !ib.invert
+func (ib *invertibleBuffer) SetInvert(inverted bool) {
+	ib.invert = inverted
 }

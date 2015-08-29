@@ -32,6 +32,10 @@ func (d *datastoreImpl) DecodeCursor(s string) (Cursor, error) {
 }
 
 func (d *datastoreImpl) Run(q Query, cbIface interface{}) error {
+	if cbIface == nil {
+		return fmt.Errorf("cannot use nil callback when Running query")
+	}
+
 	// TODO(riannucci): Profile and determine if any of this is causing a real
 	// slowdown. Could potentially cache reflection stuff by cbType?
 	cbTyp := reflect.TypeOf(cbIface)

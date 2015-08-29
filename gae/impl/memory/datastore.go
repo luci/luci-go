@@ -69,19 +69,21 @@ func (d *dsImpl) NewQuery(kind string) ds.Query {
 }
 
 func (d *dsImpl) DecodeCursor(s string) (ds.Cursor, error) {
-	return decodeCursor(s)
+	return newCursor(s)
 }
 
-func (d *dsImpl) Run(q ds.Query, cb ds.RawRunCB) error {
-	rq := q.(*queryImpl)
-	done, err := rq.valid(d.ns, true)
-	if done || err != nil {
-		return err // will be nil if done
-	}
-	return nil
+func (d *dsImpl) Run(qi ds.Query, cb ds.RawRunCB) error {
+	q := qi.(*queryImpl)
+	consistent := q.eqFilters["__ancestor__"] != nil && !q.eventualConsistency
+	idx, head := d.data.getQuerySnaps(consistent)
+	return executeQuery(qi, d.ns, false, idx, head, cb)
 }
 
 func (d *dsImpl) AddIndexes(idxs ...*ds.IndexDefinition) {
+	if len(idxs) == 0 {
+		return
+	}
+
 	for _, i := range idxs {
 		if !i.Compound() {
 			panic(fmt.Errorf("Attempted to add non-compound index: %s", i))
@@ -90,7 +92,7 @@ func (d *dsImpl) AddIndexes(idxs ...*ds.IndexDefinition) {
 
 	d.data.Lock()
 	defer d.data.Unlock()
-	addIndex(d.data.store, d.ns, idxs)
+	addIndex(d.data.head, d.ns, idxs)
 }
 
 func (d *dsImpl) TakeIndexSnapshot() ds.TestingSnapshot {
@@ -146,21 +148,11 @@ func (d *txnDsImpl) DeleteMulti(keys []ds.Key, cb ds.DeleteMultiCB) error {
 }
 
 func (d *txnDsImpl) DecodeCursor(s string) (ds.Cursor, error) {
-	return decodeCursor(s)
+	return newCursor(s)
 }
 
 func (d *txnDsImpl) Run(q ds.Query, cb ds.RawRunCB) error {
-	rq := q.(*queryImpl)
-	done, err := rq.valid(d.ns, true)
-	if done || err != nil {
-		return err // will be nil if done
-	}
-	if rq.eventualConsistency {
-		rq = rq.checkMutateClone(nil, nil)
-		rq.eventualConsistency = false
-	}
-	// TODO(riannucci): use head instead of snap for indexes
-	panic("NOT IMPLEMENTED")
+	return executeQuery(q, d.ns, true, d.data.snap, d.data.snap, cb)
 }
 
 func (*txnDsImpl) RunInTransaction(func(c context.Context) error, *ds.TransactionOptions) error {

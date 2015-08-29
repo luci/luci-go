@@ -127,7 +127,7 @@ func (t *taskQueueData) purgeLocked(queueName string) error {
 	return nil
 }
 
-var tqOkMethods = map[string]struct{}{
+var tqOkMethods = stringSet{
 	"GET":    {},
 	"POST":   {},
 	"HEAD":   {},
@@ -152,7 +152,7 @@ func (t *taskQueueData) prepTask(c context.Context, ns string, task *tq.Task, qu
 	if toSched.Method == "" {
 		toSched.Method = "POST"
 	}
-	if _, ok := tqOkMethods[toSched.Method]; !ok {
+	if !tqOkMethods.has(toSched.Method) {
 		return nil, fmt.Errorf("taskqueue: bad method %q", toSched.Method)
 	}
 	if toSched.Method != "POST" && toSched.Method != "PUT" {
@@ -196,9 +196,14 @@ var _ interface {
 	tq.Testable
 } = (*txnTaskQueueData)(nil)
 
-func (t *txnTaskQueueData) canApplyTxn(obj memContextObj) bool         { return false }
-func (t *txnTaskQueueData) applyTxn(context.Context, memContextObj)    { panic("impossible") }
-func (t *txnTaskQueueData) mkTxn(*ds.TransactionOptions) memContextObj { panic("impossible") }
+func (t *txnTaskQueueData) canApplyTxn(obj memContextObj) bool { return false }
+func (t *txnTaskQueueData) applyTxn(context.Context, memContextObj) {
+	impossible(fmt.Errorf("cannot apply nested transaction"))
+}
+func (t *txnTaskQueueData) mkTxn(*ds.TransactionOptions) memContextObj {
+	impossible(fmt.Errorf("cannot start nested transaction"))
+	return nil
+}
 
 func (t *txnTaskQueueData) endTxn() {
 	if atomic.LoadInt32(&t.closed) == 1 {

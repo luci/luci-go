@@ -13,6 +13,7 @@ import (
 )
 
 func gkvCollide(o, n *memCollection, f func(k, ov, nv []byte)) {
+	// TODO(riannucci): reimplement in terms of *iterator.
 	oldItems, newItems := make(chan *gkvlite.Item), make(chan *gkvlite.Item)
 	walker := func(c *memCollection, ch chan<- *gkvlite.Item, wg *sync.WaitGroup) {
 		defer close(ch)
@@ -69,9 +70,7 @@ type memStore gkvlite.Store
 
 func newMemStore() *memStore {
 	ret, err := gkvlite.NewStore(nil)
-	if err != nil {
-		panic(err)
-	}
+	memoryCorruption(err)
 	return (*memStore)(ret)
 }
 
@@ -95,6 +94,10 @@ func (ms *memStore) SetCollection(name string, cmp gkvlite.KeyCompare) *memColle
 	return (*memCollection)((*gkvlite.Store)(ms).SetCollection(name, cmp))
 }
 
+func (ms *memStore) GetCollectionNames() []string {
+	return (*gkvlite.Store)(ms).GetCollectionNames()
+}
+
 // memCollection is a gkvlite.Collection which will panic for anything which
 // might otherwise return an error.
 //
@@ -105,44 +108,34 @@ type memCollection gkvlite.Collection
 
 func (mc *memCollection) Get(k []byte) []byte {
 	ret, err := (*gkvlite.Collection)(mc).Get(k)
-	if err != nil {
-		panic(err)
-	}
+	memoryCorruption(err)
 	return ret
 }
 
 func (mc *memCollection) MinItem(withValue bool) *gkvlite.Item {
 	ret, err := (*gkvlite.Collection)(mc).MinItem(withValue)
-	if err != nil {
-		panic(err)
-	}
+	memoryCorruption(err)
 	return ret
 }
 
 func (mc *memCollection) Set(k, v []byte) {
-	if err := (*gkvlite.Collection)(mc).Set(k, v); err != nil {
-		panic(err)
-	}
+	err := (*gkvlite.Collection)(mc).Set(k, v)
+	memoryCorruption(err)
 }
 
 func (mc *memCollection) Delete(k []byte) bool {
 	ret, err := (*gkvlite.Collection)(mc).Delete(k)
-	if err != nil {
-		panic(err)
-	}
+	memoryCorruption(err)
 	return ret
 }
 
 func (mc *memCollection) VisitItemsAscend(target []byte, withValue bool, visitor gkvlite.ItemVisitor) {
-	if err := (*gkvlite.Collection)(mc).VisitItemsAscend(target, withValue, visitor); err != nil {
-		panic(err)
-	}
+	err := (*gkvlite.Collection)(mc).VisitItemsAscend(target, withValue, visitor)
+	memoryCorruption(err)
 }
 
 func (mc *memCollection) GetTotals() (numItems, numBytes uint64) {
 	numItems, numBytes, err := (*gkvlite.Collection)(mc).GetTotals()
-	if err != nil {
-		panic(err)
-	}
+	memoryCorruption(err)
 	return
 }

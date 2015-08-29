@@ -18,6 +18,13 @@ const (
 	DESCENDING                = true
 )
 
+func (i IndexDirection) String() string {
+	if i == ASCENDING {
+		return "ASCENDING"
+	}
+	return "DESCENDING"
+}
+
 type IndexColumn struct {
 	Property  string
 	Direction IndexDirection
@@ -37,6 +44,55 @@ type IndexDefinition struct {
 	Kind     string
 	Ancestor bool
 	SortBy   []IndexColumn
+}
+
+func (id *IndexDefinition) Equal(o *IndexDefinition) bool {
+	if id.Kind != o.Kind || id.Ancestor != o.Ancestor || len(id.SortBy) != len(o.SortBy) {
+		return false
+	}
+	for i, col := range id.SortBy {
+		if col != o.SortBy[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// NormalizeOrder returns the normalized SortBy value for this IndexDefinition.
+// This is just appending __key__ if it's not explicitly the last field in this
+// IndexDefinition.
+func (id *IndexDefinition) Normalize() *IndexDefinition {
+	if len(id.SortBy) > 0 && id.SortBy[len(id.SortBy)-1].Property == "__key__" {
+		return id
+	}
+	ret := *id
+	ret.SortBy = make([]IndexColumn, len(id.SortBy), len(id.SortBy)+1)
+	copy(ret.SortBy, id.SortBy)
+	ret.SortBy = append(ret.SortBy, IndexColumn{Property: "__key__"})
+	return &ret
+}
+
+func (id *IndexDefinition) GetFullSortOrder() []IndexColumn {
+	id = id.Normalize()
+	if !id.Ancestor {
+		return id.SortBy
+	}
+	ret := make([]IndexColumn, 0, len(id.SortBy)+1)
+	ret = append(ret, IndexColumn{Property: "__ancestor__"})
+	return append(ret, id.SortBy...)
+}
+
+func (id *IndexDefinition) PrepForIdxTable() *IndexDefinition {
+	return id.Normalize().Flip()
+}
+
+func (id *IndexDefinition) Flip() *IndexDefinition {
+	ret := *id
+	ret.SortBy = make([]IndexColumn, 0, len(id.SortBy))
+	for i := len(id.SortBy) - 1; i >= 0; i-- {
+		ret.SortBy = append(ret.SortBy, id.SortBy[i])
+	}
+	return &ret
 }
 
 // Yeah who needs templates, right?
@@ -119,7 +175,7 @@ func (i *IndexDefinition) Compound() bool {
 		return false
 	}
 	for _, sb := range i.SortBy {
-		if sb.Property == "" {
+		if sb.Property == "" || sb.Property == "__ancestor__" {
 			return false
 		}
 	}
@@ -146,12 +202,4 @@ func (i *IndexDefinition) String() string {
 		ret.WriteString(sb.Property)
 	}
 	return ret.String()
-}
-
-func IndexBuiltinQueryPrefix() []byte {
-	return []byte{0}
-}
-
-func IndexComplexQueryPrefix() []byte {
-	return []byte{1}
 }

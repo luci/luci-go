@@ -5,6 +5,7 @@
 package memory
 
 import (
+	"sort"
 	"testing"
 	"time"
 
@@ -13,10 +14,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func init() {
-	indexCreationDeterministic = true
-}
-
 var fakeKey = key("knd", 10, key("parentKind", "sid"))
 
 func TestCollated(t *testing.T) {
@@ -24,22 +21,21 @@ func TestCollated(t *testing.T) {
 
 	Convey("TestCollated", t, func() {
 		Convey("nil list", func() {
-			pm := (ds.PropertyMap)(nil)
-			sip := partiallySerialize(pm)
-			So(sip, ShouldBeNil)
+			pm := ds.PropertyMap(nil)
+			sip := partiallySerialize(fakeKey, pm)
 
 			Convey("nil collated", func() {
-				Convey("defaultIndicies", func() {
-					idxs := defaultIndicies("knd", pm)
+				Convey("defaultIndexes", func() {
+					idxs := defaultIndexes("knd", pm)
 					So(len(idxs), ShouldEqual, 1)
 					So(idxs[0].String(), ShouldEqual, "B:knd")
 				})
 				Convey("indexEntries", func() {
-					s := sip.indexEntries(fakeKey, defaultIndicies("knd", pm))
+					s := sip.indexEntries("ns", defaultIndexes("knd", pm))
 					numItems, _ := s.GetCollection("idx").GetTotals()
 					So(numItems, ShouldEqual, 1)
 					itm := s.GetCollection("idx").MinItem(false)
-					So(itm.Key, ShouldResemble, cat(indx("knd")))
+					So(itm.Key, ShouldResemble, cat(indx("knd").PrepForIdxTable()))
 					numItems, _ = s.GetCollection("idx:ns:" + string(itm.Key)).GetTotals()
 					So(numItems, ShouldEqual, 1)
 				})
@@ -52,24 +48,31 @@ func TestCollated(t *testing.T) {
 				"nerd": {prop(103.7)},
 				"spaz": {propNI(false)},
 			}
-			sip := partiallySerialize(pm)
-			So(len(sip), ShouldEqual, 2)
+			sip := partiallySerialize(fakeKey, pm)
+			So(len(sip), ShouldEqual, 4)
 
 			Convey("single collated", func() {
 				Convey("indexableMap", func() {
 					So(sip, ShouldResemble, serializedIndexablePmap{
 						"wat": {
-							cat(ds.PTInt, 100),
-							cat(ds.PTString, "hat"),
+							cat(prop("hat")),
+							cat(prop(100)),
 							// 'thing' is skipped, because it's not NoIndex
 						},
 						"nerd": {
-							cat(ds.PTFloat, 103.7),
+							cat(prop(103.7)),
+						},
+						"__key__": {
+							cat(prop(fakeKey)),
+						},
+						"__ancestor__": {
+							cat(prop(fakeKey)),
+							cat(prop(fakeKey.Parent())),
 						},
 					})
 				})
-				Convey("defaultIndicies", func() {
-					idxs := defaultIndicies("knd", pm)
+				Convey("defaultIndexes", func() {
+					idxs := defaultIndexes("knd", pm)
 					So(len(idxs), ShouldEqual, 5)
 					So(idxs[0].String(), ShouldEqual, "B:knd")
 					So(idxs[1].String(), ShouldEqual, "B:knd/nerd")
@@ -97,8 +100,9 @@ var rowGenTestCases = []struct {
 
 	// just the collections you want to assert. These are checked in
 	// TestIndexEntries. nil to skip test case.
-	collections map[string][]kv
+	collections map[string][][]byte
 }{
+
 	{
 		name: "simple including builtins",
 		pmap: ds.PropertyMap{
@@ -111,39 +115,48 @@ var rowGenTestCases = []struct {
 			indx("knd", "-wat", "nerd"),
 		},
 		expected: []serializedPvals{
-			{{}}, // B:knd
-			{cat(ds.PTFloat, 103.7)},                        // B:knd/nerd
-			{cat(ds.PTInt, 100), cat(ds.PTString, "hat")},   // B:knd/wat
-			{icat(ds.PTFloat, 103.7)},                       // B:knd/-nerd
-			{icat(ds.PTString, "hat"), icat(ds.PTInt, 100)}, // B:knd/-wat
+			{cat(prop(fakeKey))},              // B:knd
+			{cat(prop(103.7), prop(fakeKey))}, // B:knd/nerd
+			{ // B:knd/wat
+				cat(prop(100), prop(fakeKey)),
+				cat(prop("hat"), prop(fakeKey)),
+			},
+			{ // B:knd/-nerd
+				cat(icat(prop(103.7)), prop(fakeKey)),
+			},
+			{ // B:knd/-wat
+				cat(icat(prop("hat")), prop(fakeKey)),
+				cat(icat(prop(100)), prop(fakeKey)),
+			},
 			{ // C:knd/-wat/nerd
-				cat(icat(ds.PTString, "hat"), cat(ds.PTFloat, 103.7)),
-				cat(icat(ds.PTInt, 100), cat(ds.PTFloat, 103.7)),
+				cat(icat(prop("hat")), prop(103.7), prop(fakeKey)),
+				cat(icat(prop(100)), prop(103.7), prop(fakeKey)),
 			},
 		},
-		collections: map[string][]kv{
+
+		collections: map[string][][]byte{
 			"idx": {
-				// 0 == builtin, 1 == complex
-				{cat(byte(0), "knd", byte(0), 0), []byte{}},
-				{cat(byte(0), "knd", byte(0), 1, byte(0), "nerd"), []byte{}},
-				{cat(byte(0), "knd", byte(0), 1, byte(0), "wat"), []byte{}},
-				{cat(byte(0), "knd", byte(0), 1, byte(1), "nerd"), []byte{}},
-				{cat(byte(0), "knd", byte(0), 1, byte(1), "wat"), []byte{}},
-				{cat(byte(1), "knd", byte(0), 2, byte(1), "wat", byte(0), "nerd"), []byte{}},
+				cat("knd", byte(0), byte(1), byte(0), "__key__", byte(0)),
+				cat("knd", byte(0), byte(1), byte(0), "__key__", byte(1), byte(0), "nerd", byte(0)),
+				cat("knd", byte(0), byte(1), byte(0), "__key__", byte(1), byte(0), "nerd", byte(1), byte(1), "wat", byte(0)),
+				cat("knd", byte(0), byte(1), byte(0), "__key__", byte(1), byte(0), "wat", byte(0)),
+				cat("knd", byte(0), byte(1), byte(0), "__key__", byte(1), byte(1), "nerd", byte(0)),
+				cat("knd", byte(0), byte(1), byte(0), "__key__", byte(1), byte(1), "wat", byte(0)),
 			},
-			"idx:ns:" + sat(indx("knd")): {
-				{cat(fakeKey), []byte{}},
+			"idx:ns:" + sat(indx("knd").PrepForIdxTable()): {
+				cat(prop(fakeKey)),
 			},
-			"idx:ns:" + sat(indx("knd", "wat")): {
-				{cat(ds.PTInt, 100, fakeKey), []byte{}},
-				{cat(ds.PTString, "hat", fakeKey), cat(ds.PTInt, 100)},
+			"idx:ns:" + sat(indx("knd", "wat").PrepForIdxTable()): {
+				cat(prop(100), prop(fakeKey)),
+				cat(prop("hat"), prop(fakeKey)),
 			},
-			"idx:ns:" + sat(indx("knd", "-wat")): {
-				{cat(icat(ds.PTString, "hat"), fakeKey), []byte{}},
-				{cat(icat(ds.PTInt, 100), fakeKey), icat(ds.PTString, "hat")},
+			"idx:ns:" + sat(indx("knd", "-wat").PrepForIdxTable()): {
+				cat(icat(prop("hat")), prop(fakeKey)),
+				cat(icat(prop(100)), prop(fakeKey)),
 			},
 		},
 	},
+
 	{
 		name: "complex",
 		pmap: ds.PropertyMap{
@@ -163,28 +176,29 @@ var rowGenTestCases = []struct {
 			{ // C:knd/yerp/-wat/spaz
 				// thank goodness the binary serialization only happens 1/val in the
 				// real code :).
-				cat(cat(ds.PTString, "hat"), icat(ds.PTKey, rgenComplexKey), cat(ds.PTNull)),
-				cat(cat(ds.PTString, "hat"), icat(ds.PTKey, rgenComplexKey), cat(ds.PTBoolFalse)),
-				cat(cat(ds.PTString, "hat"), icat(ds.PTKey, rgenComplexKey), cat(ds.PTBoolTrue)),
-				cat(cat(ds.PTString, "hat"), icat(ds.PTBytes, "value"), cat(ds.PTNull)),
-				cat(cat(ds.PTString, "hat"), icat(ds.PTBytes, "value"), cat(ds.PTBoolFalse)),
-				cat(cat(ds.PTString, "hat"), icat(ds.PTBytes, "value"), cat(ds.PTBoolTrue)),
-				cat(cat(ds.PTString, "hat"), icat(ds.PTTime, rgenComplexTime), cat(ds.PTNull)),
-				cat(cat(ds.PTString, "hat"), icat(ds.PTTime, rgenComplexTime), cat(ds.PTBoolFalse)),
-				cat(cat(ds.PTString, "hat"), icat(ds.PTTime, rgenComplexTime), cat(ds.PTBoolTrue)),
+				cat(prop("hat"), icat(prop(rgenComplexKey)), prop(nil), prop(fakeKey)),
+				cat(prop("hat"), icat(prop(rgenComplexKey)), prop(false), prop(fakeKey)),
+				cat(prop("hat"), icat(prop(rgenComplexKey)), prop(true), prop(fakeKey)),
+				cat(prop("hat"), icat(prop(ds.ByteString("value"))), prop(nil), prop(fakeKey)),
+				cat(prop("hat"), icat(prop(ds.ByteString("value"))), prop(false), prop(fakeKey)),
+				cat(prop("hat"), icat(prop(ds.ByteString("value"))), prop(true), prop(fakeKey)),
+				cat(prop("hat"), icat(prop(rgenComplexTime)), prop(nil), prop(fakeKey)),
+				cat(prop("hat"), icat(prop(rgenComplexTime)), prop(false), prop(fakeKey)),
+				cat(prop("hat"), icat(prop(rgenComplexTime)), prop(true), prop(fakeKey)),
 
-				cat(cat(ds.PTFloat, 73.9), icat(ds.PTKey, rgenComplexKey), cat(ds.PTNull)),
-				cat(cat(ds.PTFloat, 73.9), icat(ds.PTKey, rgenComplexKey), cat(ds.PTBoolFalse)),
-				cat(cat(ds.PTFloat, 73.9), icat(ds.PTKey, rgenComplexKey), cat(ds.PTBoolTrue)),
-				cat(cat(ds.PTFloat, 73.9), icat(ds.PTBytes, "value"), cat(ds.PTNull)),
-				cat(cat(ds.PTFloat, 73.9), icat(ds.PTBytes, "value"), cat(ds.PTBoolFalse)),
-				cat(cat(ds.PTFloat, 73.9), icat(ds.PTBytes, "value"), cat(ds.PTBoolTrue)),
-				cat(cat(ds.PTFloat, 73.9), icat(ds.PTTime, rgenComplexTime), cat(ds.PTNull)),
-				cat(cat(ds.PTFloat, 73.9), icat(ds.PTTime, rgenComplexTime), cat(ds.PTBoolFalse)),
-				cat(cat(ds.PTFloat, 73.9), icat(ds.PTTime, rgenComplexTime), cat(ds.PTBoolTrue)),
+				cat(prop(73.9), icat(prop(rgenComplexKey)), prop(nil), prop(fakeKey)),
+				cat(prop(73.9), icat(prop(rgenComplexKey)), prop(false), prop(fakeKey)),
+				cat(prop(73.9), icat(prop(rgenComplexKey)), prop(true), prop(fakeKey)),
+				cat(prop(73.9), icat(prop(ds.ByteString("value"))), prop(nil), prop(fakeKey)),
+				cat(prop(73.9), icat(prop(ds.ByteString("value"))), prop(false), prop(fakeKey)),
+				cat(prop(73.9), icat(prop(ds.ByteString("value"))), prop(true), prop(fakeKey)),
+				cat(prop(73.9), icat(prop(rgenComplexTime)), prop(nil), prop(fakeKey)),
+				cat(prop(73.9), icat(prop(rgenComplexTime)), prop(false), prop(fakeKey)),
+				cat(prop(73.9), icat(prop(rgenComplexTime)), prop(true), prop(fakeKey)),
 			},
 		},
 	},
+
 	{
 		name: "ancestor",
 		pmap: ds.PropertyMap{
@@ -193,10 +207,10 @@ var rowGenTestCases = []struct {
 		idxs: []*ds.IndexDefinition{
 			indx("knd!", "wat"),
 		},
-		collections: map[string][]kv{
-			"idx:ns:" + sat(indx("knd!", "wat")): {
-				{cat(fakeKey.Parent(), ds.PTString, "sup", fakeKey), []byte{}},
-				{cat(fakeKey, ds.PTString, "sup", fakeKey), []byte{}},
+		collections: map[string][][]byte{
+			"idx:ns:" + sat(indx("knd!", "wat").PrepForIdxTable()): {
+				cat(prop(fakeKey.Parent()), prop("sup"), prop(fakeKey)),
+				cat(prop(fakeKey), prop("sup"), prop(fakeKey)),
 			},
 		},
 	},
@@ -213,10 +227,10 @@ func TestIndexRowGen(t *testing.T) {
 			}
 
 			Convey(tc.name, func() {
-				mvals := partiallySerialize(tc.pmap)
+				mvals := partiallySerialize(fakeKey, tc.pmap)
 				idxs := []*ds.IndexDefinition(nil)
 				if tc.withBuiltin {
-					idxs = append(defaultIndicies("coolKind", tc.pmap), tc.idxs...)
+					idxs = append(defaultIndexes("coolKind", tc.pmap), tc.idxs...)
 				} else {
 					idxs = tc.idxs
 				}
@@ -224,15 +238,18 @@ func TestIndexRowGen(t *testing.T) {
 				m := matcher{}
 				for i, idx := range idxs {
 					Convey(idx.String(), func() {
-						iGen, ok := m.match(idx, mvals)
+						iGen, ok := m.match(idx.GetFullSortOrder(), mvals)
 						if len(tc.expected[i]) > 0 {
 							So(ok, ShouldBeTrue)
-							j := 0
-							iGen.permute(func(row []byte) {
-								So([]byte(row), ShouldResemble, tc.expected[i][j])
-								j++
+							actual := make(serializedPvals, 0, len(tc.expected[i]))
+							iGen.permute(func(row, _ []byte) {
+								actual = append(actual, row)
 							})
-							So(j, ShouldEqual, len(tc.expected[i]))
+							So(len(actual), ShouldEqual, len(tc.expected[i]))
+							sort.Sort(actual)
+							for j, act := range actual {
+								So(act, ShouldResemble, tc.expected[i][j])
+							}
 						} else {
 							So(ok, ShouldBeFalse)
 						}
@@ -258,13 +275,15 @@ func TestIndexEntries(t *testing.T) {
 				if tc.withBuiltin {
 					store = indexEntriesWithBuiltins(fakeKey, tc.pmap, tc.idxs)
 				} else {
-					store = partiallySerialize(tc.pmap).indexEntries(fakeKey, tc.idxs)
+					store = partiallySerialize(fakeKey, tc.pmap).indexEntries(fakeKey.Namespace(), tc.idxs)
 				}
 				for colName, vals := range tc.collections {
 					i := 0
-					store.GetCollection(colName).VisitItemsAscend(nil, true, func(itm *gkvlite.Item) bool {
-						So(itm.Key, ShouldResemble, vals[i].k)
-						So(itm.Val, ShouldResemble, vals[i].v)
+					coll := store.GetCollection(colName)
+					numItems, _ := coll.GetTotals()
+					So(numItems, ShouldEqual, len(tc.collections[colName]))
+					coll.VisitItemsAscend(nil, true, func(itm *gkvlite.Item) bool {
+						So(itm.Key, ShouldResemble, vals[i])
 						i++
 						return true
 					})
@@ -280,12 +299,13 @@ type dumbItem struct {
 	props ds.PropertyMap
 }
 
-var updateIndiciesTests = []struct {
+var updateIndexesTests = []struct {
 	name     string
 	idxs     []*ds.IndexDefinition
 	data     []dumbItem
 	expected map[string][][]byte
 }{
+
 	{
 		name: "basic",
 		data: []dumbItem{
@@ -303,20 +323,21 @@ var updateIndiciesTests = []struct {
 			},
 		},
 		expected: map[string][][]byte{
-			"idx:ns:" + sat(indx("knd", "wat")): {
-				cat(ds.PTInt, 1, key("knd", 10)),
-				cat(ds.PTInt, 10, key("knd", 1)),
+			"idx:ns:" + sat(indx("knd", "wat").PrepForIdxTable()): {
+				cat(prop(1), prop(key("knd", 10))),
+				cat(prop(10), prop(key("knd", 1))),
 			},
-			"idx:ns:" + sat(indx("knd", "-wat")): {
-				cat(icat(ds.PTInt, 10), key("knd", 1)),
-				cat(icat(ds.PTInt, 1), key("knd", 10)),
+			"idx:ns:" + sat(indx("knd", "-wat").PrepForIdxTable()): {
+				cat(icat(prop(10)), prop(key("knd", 1))),
+				cat(icat(prop(1)), prop(key("knd", 10))),
 			},
-			"idx:ns:" + sat(indx("knd", "yerp")): {
-				cat(ds.PTInt, 200, key("knd", 10)),
-				cat(ds.PTInt, 202, key("knd", 1)),
+			"idx:ns:" + sat(indx("knd", "yerp").PrepForIdxTable()): {
+				cat(prop(200), prop(key("knd", 10))),
+				cat(prop(202), prop(key("knd", 1))),
 			},
 		},
 	},
+
 	{
 		name: "compound",
 		idxs: []*ds.IndexDefinition{indx("knd", "yerp", "-wat")},
@@ -343,33 +364,33 @@ var updateIndiciesTests = []struct {
 			},
 		},
 		expected: map[string][][]byte{
-			"idx:ns:" + sat(indx("knd", "yerp", "-wat")): {
-				cat(ds.PTInt, 200, icat(ds.PTInt, 20), key("knd", 11)),
-				cat(ds.PTInt, 200, icat(ds.PTInt, 20), key("knd", 14)),
-				cat(ds.PTInt, 200, icat(ds.PTInt, 1), key("knd", 10)),
-				cat(ds.PTInt, 202, icat(ds.PTInt, 10), key("knd", 1)),
+			"idx:ns:" + sat(indx("knd", "yerp", "-wat").PrepForIdxTable()): {
+				cat(prop(200), icat(prop(20)), prop(key("knd", 11))),
+				cat(prop(200), icat(prop(20)), prop(key("knd", 14))),
+				cat(prop(200), icat(prop(1)), prop(key("knd", 10))),
+				cat(prop(202), icat(prop(10)), prop(key("knd", 1))),
 			},
 		},
 	},
 }
 
-func TestUpdateIndicies(t *testing.T) {
+func TestUpdateIndexes(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test updateIndicies", t, func() {
-		for _, tc := range updateIndiciesTests {
+	Convey("Test updateIndexes", t, func() {
+		for _, tc := range updateIndexesTests {
 			Convey(tc.name, func() {
 				store := newMemStore()
 				idxColl := store.SetCollection("idx", nil)
 				for _, i := range tc.idxs {
-					idxColl.Set(cat(i), []byte{})
+					idxColl.Set(cat(i.PrepForIdxTable()), []byte{})
 				}
 
 				tmpLoader := map[string]ds.PropertyMap{}
 				for _, itm := range tc.data {
 					ks := itm.key.String()
 					prev := tmpLoader[ks]
-					updateIndicies(store, itm.key, prev, itm.props)
+					updateIndexes(store, itm.key, prev, itm.props)
 					tmpLoader[ks] = itm.props
 				}
 				tmpLoader = nil

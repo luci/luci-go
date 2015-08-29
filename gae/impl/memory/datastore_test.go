@@ -139,7 +139,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 
 					// TODO(riannucci): replace with a Count query instead of this cast
 					/*
-						ents := ds.(*dsImpl).data.store.GetCollection("ents:")
+						ents := ds.(*dsImpl).data.head.GetCollection("ents:")
 						num, _ := ents.GetTotals()
 						// /__entity_root_ids__,Foo
 						// /Foo,1/__entity_group__,1
@@ -428,7 +428,7 @@ func TestCompoundIndexes(t *testing.T) {
 
 	idxKey := func(def dsS.IndexDefinition) string {
 		So(def, ShouldNotBeNil)
-		return "idx::" + string(serialize.ToBytes(def))
+		return "idx::" + string(serialize.ToBytes(*def.PrepForIdxTable()))
 	}
 
 	numItms := func(c *memCollection) uint64 {
@@ -447,7 +447,7 @@ func TestCompoundIndexes(t *testing.T) {
 		c := Use(context.Background())
 		ds := dsS.Get(c)
 		t := ds.Raw().Testable().(*dsImpl)
-		store := t.data.store
+		head := t.data.head
 
 		So(ds.Put(&Model{1, []string{"hello", "world"}, []int64{10, 11}}), ShouldBeNil)
 
@@ -458,20 +458,20 @@ func TestCompoundIndexes(t *testing.T) {
 			},
 		}
 
-		coll := store.GetCollection(idxKey(idx))
+		coll := head.GetCollection(idxKey(idx))
 		So(coll, ShouldNotBeNil)
 		So(numItms(coll), ShouldEqual, 2)
 
 		idx.SortBy[0].Property = "Field1"
-		coll = store.GetCollection(idxKey(idx))
+		coll = head.GetCollection(idxKey(idx))
 		So(coll, ShouldNotBeNil)
 		So(numItms(coll), ShouldEqual, 2)
 
 		idx.SortBy = append(idx.SortBy, dsS.IndexColumn{Property: "Field1"})
-		So(store.GetCollection(idxKey(idx)), ShouldBeNil)
+		So(head.GetCollection(idxKey(idx)), ShouldBeNil)
 
 		t.AddIndexes(&idx)
-		coll = store.GetCollection(idxKey(idx))
+		coll = head.GetCollection(idxKey(idx))
 		So(coll, ShouldNotBeNil)
 		So(numItms(coll), ShouldEqual, 4)
 	})

@@ -47,7 +47,7 @@ func TestInvertible(t *testing.T) {
 			})
 		})
 		Convey("inverted writing", func() {
-			inv.Invert()
+			inv.SetInvert(true)
 			Convey("Write", func() {
 				n, err := inv.Write([]byte("hello"))
 				So(err, ShouldBeNil)
@@ -77,10 +77,10 @@ func TestInvertible(t *testing.T) {
 			})
 		})
 		Convey("Toggleable", func() {
-			inv.Invert()
+			inv.SetInvert(true)
 			n, err := inv.Write([]byte("hello"))
 			So(err, ShouldBeNil)
-			inv.Invert()
+			inv.SetInvert(false)
 			n, err = inv.Write([]byte("hello"))
 			So(n, ShouldEqual, 5)
 			So(inv.String(), ShouldEqual, "\x97\x9a\x93\x93\x90hello")

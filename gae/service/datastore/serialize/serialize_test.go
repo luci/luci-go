@@ -164,7 +164,7 @@ func TestSerializationReadMisc(t *testing.T) {
 
 		Convey("Property", func() {
 			buf := mkBuf(nil)
-			buf.WriteByte(byte(ds.PTString))
+			buf.WriteByte(0x80 | byte(ds.PTString))
 			cmpbin.WriteString(buf, "nerp")
 			So(string(ToBytes(mp("nerp"))),
 				ShouldEqual, buf.String())
@@ -416,41 +416,37 @@ func TestSerializationReadMisc(t *testing.T) {
 
 		Convey("IndexDefinition", func() {
 			id := ds.IndexDefinition{Kind: "kind"}
-			data := ToBytes(id)
-			So(string(data), ShouldStartWith, string(ds.IndexBuiltinQueryPrefix()))
+			data := ToBytes(*id.PrepForIdxTable())
 			newID, err := ReadIndexDefinition(mkBuf(data))
 			So(err, ShouldBeNil)
-			So(newID, ShouldResemble, id)
+			So(newID.Flip(), ShouldResemble, id.Normalize())
 
 			id.SortBy = append(id.SortBy, ds.IndexColumn{Property: "prop"})
-			data = ToBytes(id)
-			So(string(data), ShouldStartWith, string(ds.IndexBuiltinQueryPrefix()))
+			data = ToBytes(*id.PrepForIdxTable())
 			newID, err = ReadIndexDefinition(mkBuf(data))
 			So(err, ShouldBeNil)
-			So(newID, ShouldResemble, id)
+			So(newID.Flip(), ShouldResemble, id.Normalize())
 
 			id.SortBy = append(id.SortBy, ds.IndexColumn{Property: "other", Direction: ds.DESCENDING})
 			id.Ancestor = true
-			data = ToBytes(id)
-			So(string(data), ShouldStartWith, string(ds.IndexComplexQueryPrefix()))
+			data = ToBytes(*id.PrepForIdxTable())
 			newID, err = ReadIndexDefinition(mkBuf(data))
 			So(err, ShouldBeNil)
-			So(newID, ShouldResemble, id)
+			So(newID.Flip(), ShouldResemble, id.Normalize())
 
 			// invalid
 			id.SortBy = append(id.SortBy, ds.IndexColumn{Property: "", Direction: ds.DESCENDING})
-			data = ToBytes(id)
-			So(string(data), ShouldStartWith, string(ds.IndexComplexQueryPrefix()))
+			data = ToBytes(*id.PrepForIdxTable())
 			newID, err = ReadIndexDefinition(mkBuf(data))
 			So(err, ShouldBeNil)
-			So(newID, ShouldResemble, id)
+			So(newID.Flip(), ShouldResemble, id.Normalize())
 
 			Convey("too many", func() {
 				id := ds.IndexDefinition{Kind: "wat"}
 				for i := 0; i < MaxIndexColumns+1; i++ {
 					id.SortBy = append(id.SortBy, ds.IndexColumn{Property: "Hi", Direction: ds.ASCENDING})
 				}
-				data := ToBytes(id)
+				data := ToBytes(*id.PrepForIdxTable())
 				newID, err = ReadIndexDefinition(mkBuf(data))
 				So(err, ShouldErrLike, "over 64 sort orders")
 			})

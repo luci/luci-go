@@ -217,7 +217,7 @@ func ReadTime(buf Buffer) (time.Time, error) {
 func WriteProperty(buf Buffer, context KeyContext, p ds.Property) (err error) {
 	defer recoverTo(&err)
 	typb := byte(p.Type())
-	if p.IndexSetting() == ds.NoIndex {
+	if p.IndexSetting() != ds.NoIndex {
 		typb |= 0x80
 	}
 	panicIf(buf.WriteByte(typb))
@@ -257,7 +257,7 @@ func ReadProperty(buf Buffer, context KeyContext, appid, namespace string) (p ds
 		return
 	}
 	is := ds.ShouldIndex
-	if (typb & 0x80) != 0 {
+	if (typb & 0x80) == 0 {
 		is = ds.NoIndex
 	}
 	switch ds.PropertyType(typb & 0x7f) {
@@ -411,11 +411,6 @@ func ReadIndexColumn(buf Buffer) (c ds.IndexColumn, err error) {
 func WriteIndexDefinition(buf Buffer, i ds.IndexDefinition) (err error) {
 	defer recoverTo(&err)
 
-	if i.Builtin() {
-		panicIf(buf.WriteByte(0))
-	} else {
-		panicIf(buf.WriteByte(1))
-	}
 	_, err = cmpbin.WriteString(buf, i.Kind)
 	panicIf(err)
 	if !i.Ancestor {
@@ -423,21 +418,16 @@ func WriteIndexDefinition(buf Buffer, i ds.IndexDefinition) (err error) {
 	} else {
 		panicIf(buf.WriteByte(1))
 	}
-	_, err = cmpbin.WriteUint(buf, uint64(len(i.SortBy)))
-	panicIf(err)
 	for _, sb := range i.SortBy {
+		panicIf(buf.WriteByte(1))
 		panicIf(WriteIndexColumn(buf, sb))
 	}
-	return
+	return buf.WriteByte(0)
 }
 
 // ReadIndexDefinition reads an IndexDefinition from the buffer.
 func ReadIndexDefinition(buf Buffer) (i ds.IndexDefinition, err error) {
 	defer recoverTo(&err)
-
-	// discard builtin/complex byte
-	_, err = buf.ReadByte()
-	panicIf(err)
 
 	i.Kind, _, err = cmpbin.ReadString(buf)
 	panicIf(err)
@@ -447,21 +437,22 @@ func ReadIndexDefinition(buf Buffer) (i ds.IndexDefinition, err error) {
 
 	i.Ancestor = anc == 1
 
-	numSorts, _, err := cmpbin.ReadUint(buf)
-	panicIf(err)
-
-	if numSorts > MaxIndexColumns {
-		err = fmt.Errorf("datastore: Got over %d sort orders: %d",
-			MaxIndexColumns, numSorts)
-		return
-	}
-
-	if numSorts > 0 {
-		i.SortBy = make([]ds.IndexColumn, numSorts)
-		for idx := range i.SortBy {
-			i.SortBy[idx], err = ReadIndexColumn(buf)
-			panicIf(err)
+	for {
+		ctrl := byte(0)
+		ctrl, err = buf.ReadByte()
+		panicIf(err)
+		if ctrl == 0 {
+			break
 		}
+		if len(i.SortBy) > MaxIndexColumns {
+			err = fmt.Errorf("datastore: Got over %d sort orders", MaxIndexColumns)
+			return
+		}
+
+		sb, err := ReadIndexColumn(buf)
+		panicIf(err)
+
+		i.SortBy = append(i.SortBy, sb)
 	}
 
 	return

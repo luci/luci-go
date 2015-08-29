@@ -111,8 +111,14 @@ type PropertyType byte
 // These constants are in the order described by
 //   https://cloud.google.com/appengine/docs/go/datastore/entities#Go_Value_type_ordering
 // with a slight divergence for the Int/Time split.
+//
 // NOTE: this enum can only occupy 7 bits, because we use the high bit to encode
-// indexed/non-indexed. See typData.WriteBinary.
+// indexed/non-indexed, and we additionally require that all valid values and
+// all INVERTED valid values must never equal 0xFF or 0x00. The reason for this
+// constraint is that we must always be able to create a byte that sorts before
+// and after it.
+//
+// See "./serialize".WriteProperty and "impl/memory".increment for more info.
 const (
 	PTNull PropertyType = iota
 	PTInt
@@ -146,8 +152,19 @@ const (
 	PTKey
 	PTBlobKey
 
+	// NOTE: THIS MUST BE LAST VALUE FOR THE init() ASSERTION BELOW TO WORK.
 	PTUnknown
 )
+
+func init() {
+	if PTUnknown > 0x7e {
+		panic(
+			"PTUnknown (and therefore PropertyType) exceeds 0x7e. This conflicts " +
+				"with serialize.WriteProperty's use of the high bit to indicate " +
+				"NoIndex and/or \"impl/memory\".increment's ability to guarantee " +
+				"incrementability.")
+	}
+}
 
 func (t PropertyType) String() string {
 	switch t {

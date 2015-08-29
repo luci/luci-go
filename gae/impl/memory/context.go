@@ -12,6 +12,8 @@ import (
 	"golang.org/x/net/context"
 )
 
+var serializationDeterministic = false
+
 type memContextObj interface {
 	sync.Locker
 	canApplyTxn(m memContextObj) bool

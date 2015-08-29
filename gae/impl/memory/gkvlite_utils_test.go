@@ -12,6 +12,8 @@ import (
 
 type keyLeftRight struct{ key, left, right []byte }
 
+type kv struct{ k, v []byte }
+
 var testCollisionCases = []struct {
 	name        string
 	left, right []kv // inserts into left and right collections
