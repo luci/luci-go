@@ -23,7 +23,7 @@ const (
 // in the Context's parent Context, overriding duplicate keys. When Fields are
 // added to a Context, they are copied internally for retention.
 //
-// Fields can also be added direcetly to a log message by calling its
+// Fields can also be added directly to a log message by calling its
 // logging passthrough methods. This immediate usage avoids the overhead of
 // duplicating the fields for retention.
 type Fields map[string]interface{}
