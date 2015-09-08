@@ -44,7 +44,7 @@ type lazyMultiError struct {
 }
 
 // NewLazyMultiError makes a new LazyMultiError of the provided size.
-func NewLazyMultiError(size int) *lazyMultiError {
+func NewLazyMultiError(size int) LazyMultiError {
 	return &lazyMultiError{size: size}
 }
 

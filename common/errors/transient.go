@@ -38,8 +38,8 @@ func IsTransient(err error) bool {
 // If the supplied error is already Transient, it will be returned. If the
 // supplied error is nil, nil wil be returned.
 func WrapTransient(err error) error {
-	if err == nil {
-		return nil
+	if err == nil || IsTransient(err) {
+		return err
 	}
 	return transientWrapper{err}
 }
