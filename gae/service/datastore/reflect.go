@@ -14,7 +14,6 @@ import (
 var (
 	typeOfBool              = reflect.TypeOf(true)
 	typeOfBSKey             = reflect.TypeOf(blobstore.Key(""))
-	typeOfByteString        = reflect.TypeOf(ByteString(nil))
 	typeOfCursorCB          = reflect.TypeOf(CursorCB(nil))
 	typeOfGeoPoint          = reflect.TypeOf(GeoPoint{})
 	typeOfInt64             = reflect.TypeOf(int64(0))

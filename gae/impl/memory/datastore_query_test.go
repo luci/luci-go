@@ -42,7 +42,7 @@ func TestDatastoreQueries(t *testing.T) {
 				serialize.ToBytes(prop(ds.NewKey("Foo", "id", 0, nil)))))
 
 			So(start.String(), ShouldEqual,
-				`gYAAZzFdTeeb3d9zOxsAAF-v221Xy32_AIGHyIkAAUc32-AGabMAAA==`)
+				`gYAAZzFdTeeb3d9zOxsAAF-v221Xy32_AIGHyIgAAUc32-AFabMAAA==`)
 
 			end := queryCursor(bjoin(
 				mkNum(2),

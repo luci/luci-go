@@ -53,7 +53,7 @@ func TestProperties(t *testing.T) {
 					pv := MkProperty(mybool(true))
 					So(pv.Value(), ShouldBeTrue)
 					So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
-					So(pv.Type().String(), ShouldEqual, "PTBoolTrue")
+					So(pv.Type().String(), ShouldEqual, "PTBool")
 				})
 				Convey("string", func() {
 					pv := MkProperty(mystring("sup"))
@@ -116,17 +116,10 @@ func TestProperties(t *testing.T) {
 				So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
 				So(pv.Type().String(), ShouldEqual, "PTTime")
 			})
-			Convey("[]byte coerces IndexSetting", func() {
+			Convey("[]byte allows IndexSetting", func() {
 				pv := Property{}
 				pv.SetValue([]byte("hello"), ShouldIndex)
 				So(pv.Value(), ShouldResemble, []byte("hello"))
-				So(pv.IndexSetting(), ShouldEqual, NoIndex)
-				So(pv.Type().String(), ShouldEqual, "PTBytes")
-			})
-			Convey("ByteString allows !IndexSetting", func() {
-				pv := Property{}
-				pv.SetValue(ByteString("hello"), ShouldIndex)
-				So(pv.Value(), ShouldResemble, ByteString("hello"))
 				So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
 				So(pv.Type().String(), ShouldEqual, "PTBytes")
 			})

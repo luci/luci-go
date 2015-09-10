@@ -222,7 +222,14 @@ func WriteProperty(buf Buffer, context KeyContext, p ds.Property) (err error) {
 	}
 	panicIf(buf.WriteByte(typb))
 	switch p.Type() {
-	case ds.PTNull, ds.PTBoolTrue, ds.PTBoolFalse:
+	case ds.PTNull:
+	case ds.PTBool:
+		b := p.Value().(bool)
+		if b {
+			err = buf.WriteByte(1)
+		} else {
+			err = buf.WriteByte(0)
+		}
 	case ds.PTInt:
 		_, err = cmpbin.WriteInt(buf, p.Value().(int64))
 	case ds.PTFloat:
@@ -230,11 +237,7 @@ func WriteProperty(buf Buffer, context KeyContext, p ds.Property) (err error) {
 	case ds.PTString:
 		_, err = cmpbin.WriteString(buf, p.Value().(string))
 	case ds.PTBytes:
-		if p.IndexSetting() == ds.NoIndex {
-			_, err = cmpbin.WriteBytes(buf, p.Value().([]byte))
-		} else {
-			_, err = cmpbin.WriteBytes(buf, p.Value().(ds.ByteString))
-		}
+		_, err = cmpbin.WriteBytes(buf, p.Value().([]byte))
 	case ds.PTTime:
 		err = WriteTime(buf, p.Value().(time.Time))
 	case ds.PTGeoPoint:
@@ -252,20 +255,19 @@ func WriteProperty(buf Buffer, context KeyContext, p ds.Property) (err error) {
 // effect if the decoded property has a Key value.
 func ReadProperty(buf Buffer, context KeyContext, appid, namespace string) (p ds.Property, err error) {
 	val := interface{}(nil)
-	typb, err := buf.ReadByte()
+	b, err := buf.ReadByte()
 	if err != nil {
 		return
 	}
 	is := ds.ShouldIndex
-	if (typb & 0x80) == 0 {
+	if (b & 0x80) == 0 {
 		is = ds.NoIndex
 	}
-	switch ds.PropertyType(typb & 0x7f) {
+	switch ds.PropertyType(b & 0x7f) {
 	case ds.PTNull:
-	case ds.PTBoolTrue:
-		val = true
-	case ds.PTBoolFalse:
-		val = false
+	case ds.PTBool:
+		b, err = buf.ReadByte()
+		val = (b != 0)
 	case ds.PTInt:
 		val, _, err = cmpbin.ReadInt(buf)
 	case ds.PTFloat:
@@ -273,15 +275,7 @@ func ReadProperty(buf Buffer, context KeyContext, appid, namespace string) (p ds
 	case ds.PTString:
 		val, _, err = cmpbin.ReadString(buf)
 	case ds.PTBytes:
-		b := []byte(nil)
-		if b, _, err = cmpbin.ReadBytes(buf); err != nil {
-			break
-		}
-		if is == ds.NoIndex {
-			val = b
-		} else {
-			val = ds.ByteString(b)
-		}
+		val, _, err = cmpbin.ReadBytes(buf)
 	case ds.PTTime:
 		val, err = ReadTime(buf)
 	case ds.PTGeoPoint:
@@ -295,7 +289,7 @@ func ReadProperty(buf Buffer, context KeyContext, appid, namespace string) (p ds
 		}
 		val = blobstore.Key(s)
 	default:
-		err = fmt.Errorf("read: unknown type! %v", typb)
+		err = fmt.Errorf("read: unknown type! %v", b)
 	}
 	if err == nil {
 		err = p.SetValue(val, is)

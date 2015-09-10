@@ -8,9 +8,6 @@ import (
 	"fmt"
 )
 
-// ByteString is a short byte slice (up to 1500 bytes) that can be indexed.
-type ByteString []byte
-
 // GeoPoint represents a location as latitude/longitude in degrees.
 //
 // You probably shouldn't use these, but their inclusion here is so that the

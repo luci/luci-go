@@ -60,27 +60,36 @@ func (s serializedPvals) Less(i, j int) bool { return bytes.Compare(s[i], s[j]) 
 // the ancestor entries for this key.
 type serializedIndexablePmap map[string]serializedPvals
 
+func serializeRow(vals []ds.Property) serializedPvals {
+	dups := map[string]struct{}{}
+	ret := make(serializedPvals, 0, len(vals))
+	for _, v := range vals {
+		if v.IndexSetting() == ds.NoIndex {
+			continue
+		}
+		data := serialize.ToBytes(v.ForIndex())
+		dataS := string(data)
+		if _, ok := dups[dataS]; ok {
+			continue
+		}
+		dups[dataS] = struct{}{}
+		ret = append(ret, data)
+	}
+	return ret
+}
+
 func partiallySerialize(k ds.Key, pm ds.PropertyMap) (ret serializedIndexablePmap) {
 	ret = make(serializedIndexablePmap, len(pm)+2)
+	if k == nil {
+		impossible(fmt.Errorf("key to partiallySerialize is nil"))
+	}
 	ret["__key__"] = [][]byte{serialize.ToBytes(ds.MkProperty(k))}
 	for k != nil {
 		ret["__ancestor__"] = append(ret["__ancestor__"], serialize.ToBytes(ds.MkProperty(k)))
 		k = k.Parent()
 	}
 	for k, vals := range pm {
-		dups := stringSet{}
-		newVals := make(serializedPvals, 0, len(vals))
-		for _, v := range vals {
-			if v.IndexSetting() == ds.NoIndex {
-				continue
-			}
-			data := serialize.ToBytes(v)
-			dataS := string(data)
-			if !dups.add(dataS) {
-				continue
-			}
-			newVals = append(newVals, data)
-		}
+		newVals := serializeRow(vals)
 		if len(newVals) > 0 {
 			ret[k] = newVals
 		}

@@ -7,6 +7,7 @@ package memory
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
@@ -45,14 +46,17 @@ var stage1Data = []ds.PropertyMap{
 	),
 	pmap("$key", key("Kind", 2), NEXT,
 		"Val", 6, 8, 7, NEXT,
+		"When", 27, NEXT,
 		"Extra", "zebra",
 	),
 	pmap("$key", key("Kind", 3), NEXT,
 		"Val", 1, 2, 2, 100, NEXT,
+		"When", 996688461000000, NEXT,
 		"Extra", "waffle",
 	),
 	pmap("$key", key("Kind", 6), NEXT,
 		"Val", 5, NEXT,
+		"When", time.Date(2000, time.January, 1, 1, 1, 1, 1, time.UTC), NEXT,
 		"Extra", "waffle",
 	),
 	pmap("$key", key("Child", "seven", key("Kind", 3)), NEXT,
@@ -224,6 +228,25 @@ var queryExecutionTests = []qExTest{
 						pmap("$key", key("Kind", 2, key("Kind", 3)), NEXT,
 							"Val", 3),
 					}},
+
+				// Projecting a complex type (time), gets the index type (int64)
+				// instead. Additionally, mixed-types within the same index type are
+				// smooshed together in the result.
+				{q: nq("Kind").Project("When"), get: []ds.PropertyMap{
+					pmap("$key", key("Kind", 2), NEXT,
+						"When", 27),
+					pmap("$key", key("Kind", 6), NEXT,
+						"When", 946688461000000),
+					pmap("$key", key("Kind", 3), NEXT,
+						"When", 996688461000000),
+				}},
+
+				// Original (complex) types are retained when getting the full value.
+				{q: nq("Kind").Order("When"), get: []ds.PropertyMap{
+					stage1Data[1],
+					stage1Data[3],
+					stage1Data[2],
+				}},
 			},
 
 			extraFns: []func(context.Context){

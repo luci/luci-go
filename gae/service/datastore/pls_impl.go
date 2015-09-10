@@ -12,10 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 	"unicode"
 
-	"github.com/luci/gae/service/blobstore"
 	"github.com/luci/luci-go/common/errors"
 )
 
@@ -138,8 +136,6 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 		return "multiple-valued property requires a slice field type"
 	}
 
-	pVal := p.Value()
-
 	if ret, ok := doConversion(v); ok {
 		if ret != "" {
 			return ret
@@ -149,79 +145,61 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 		if v.Type().Implements(typeOfKey) {
 			knd = reflect.Interface
 		}
+
+		project := PTNull
+		overflow := (func(interface{}) bool)(nil)
+		set := (func(interface{}))(nil)
+
 		switch knd {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			x, ok := pVal.(int64)
-			if !ok && pVal != nil {
-				return typeMismatchReason(pVal, v)
-			}
-			if v.OverflowInt(x) {
-				return fmt.Sprintf("value %v overflows struct field of type %v", x, v.Type())
-			}
-			v.SetInt(x)
+			project = PTInt
+			overflow = func(x interface{}) bool { return v.OverflowInt(x.(int64)) }
+			set = func(x interface{}) { v.SetInt(x.(int64)) }
 		case reflect.Bool:
-			x, ok := pVal.(bool)
-			if !ok && pVal != nil {
-				return typeMismatchReason(pVal, v)
-			}
-			v.SetBool(x)
+			project = PTBool
+			set = func(x interface{}) { v.SetBool(x.(bool)) }
 		case reflect.String:
-			switch x := pVal.(type) {
-			case blobstore.Key:
-				v.SetString(string(x))
-			case string:
-				v.SetString(x)
-			default:
-				if pVal != nil {
-					return typeMismatchReason(pVal, v)
-				}
-			}
+			project = PTString
+			set = func(x interface{}) { v.SetString(x.(string)) }
 		case reflect.Float32, reflect.Float64:
-			x, ok := pVal.(float64)
-			if !ok && pVal != nil {
-				return typeMismatchReason(pVal, v)
-			}
-			if v.OverflowFloat(x) {
-				return fmt.Sprintf("value %v overflows struct field of type %v", x, v.Type())
-			}
-			v.SetFloat(x)
+			project = PTFloat
+			overflow = func(x interface{}) bool { return v.OverflowFloat(x.(float64)) }
+			set = func(x interface{}) { v.SetFloat(x.(float64)) }
 		case reflect.Interface:
-			x, ok := pVal.(Key)
-			if !ok && pVal != nil {
-				return typeMismatchReason(pVal, v)
-			}
-			if x != nil {
-				v.Set(reflect.ValueOf(x))
+			project = PTKey
+			set = func(x interface{}) {
+				if k, ok := x.(Key); ok {
+					v.Set(reflect.ValueOf(k))
+				}
 			}
 		case reflect.Struct:
 			switch v.Type() {
 			case typeOfTime:
-				x, ok := pVal.(time.Time)
-				if !ok && pVal != nil {
-					return typeMismatchReason(pVal, v)
-				}
-				v.Set(reflect.ValueOf(x))
+				project = PTTime
+				set = func(x interface{}) { v.Set(reflect.ValueOf(x)) }
 			case typeOfGeoPoint:
-				x, ok := pVal.(GeoPoint)
-				if !ok && pVal != nil {
-					return typeMismatchReason(pVal, v)
-				}
-				v.Set(reflect.ValueOf(x))
+				project = PTGeoPoint
+				set = func(x interface{}) { v.Set(reflect.ValueOf(x)) }
 			default:
-				panic(fmt.Errorf("helper: impossible: %s", typeMismatchReason(pVal, v)))
+				panic(fmt.Errorf("helper: impossible: %s", typeMismatchReason(p.value, v)))
 			}
 		case reflect.Slice:
-			switch x := pVal.(type) {
-			case []byte:
-				v.SetBytes(x)
-			case ByteString:
-				v.SetBytes([]byte(x))
-			default:
-				panic(fmt.Errorf("helper: impossible: %s", typeMismatchReason(pVal, v)))
+			project = PTBytes
+			set = func(x interface{}) {
+				v.SetBytes(reflect.ValueOf(x).Bytes())
 			}
 		default:
-			panic(fmt.Errorf("helper: impossible: %s", typeMismatchReason(pVal, v)))
+			panic(fmt.Errorf("helper: impossible: %s", typeMismatchReason(p.value, v)))
 		}
+
+		pVal, err := p.Project(project)
+		if err != nil {
+			return typeMismatchReason(p.value, v)
+		}
+		if overflow != nil && overflow(pVal) {
+			return fmt.Sprintf("value %v overflows struct field of type %v", pVal, v.Type())
+		}
+		set(pVal)
 	}
 	if slice.IsValid() {
 		slice.Set(reflect.Append(slice, v))

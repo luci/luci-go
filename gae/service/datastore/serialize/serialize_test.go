@@ -97,7 +97,6 @@ func TestPropertyMapSerialization(t *testing.T) {
 			ds.PropertyMap{
 				"S":          {mp("sup"), mp("fool"), mp("nerd")},
 				"D.Foo.Nerd": {mp([]byte("sup")), mp([]byte("fool"))},
-				"B":          {mp(ds.ByteString("sup")), mp(ds.ByteString("fool"))},
 			},
 		},
 		{

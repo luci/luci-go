@@ -71,7 +71,7 @@ var (
 )
 
 type B0 struct {
-	B []byte
+	B []byte `gae:",noindex"`
 }
 
 type B1 struct {
@@ -87,11 +87,11 @@ type B3 struct {
 }
 
 type B4 struct {
-	B [][]byte
+	B [][]byte `gae:",noindex"`
 }
 
 type B5 struct {
-	B ByteString
+	B []byte
 }
 
 type C0 struct {
@@ -320,8 +320,7 @@ type MutuallyRecursive1 struct {
 }
 
 type ExoticTypes struct {
-	BS   blobstore.Key
-	DSBS ByteString
+	BS blobstore.Key
 }
 
 type Underspecified struct {
@@ -649,14 +648,13 @@ type IfaceKey struct {
 }
 
 type testCase struct {
-	desc          string
-	src           interface{}
-	want          interface{}
-	plsErr        string
-	saveErr       string
-	actualNoIndex bool
-	plsLoadErr    string
-	loadErr       string
+	desc       string
+	src        interface{}
+	want       interface{}
+	plsErr     string
+	saveErr    string
+	plsLoadErr string
+	loadErr    string
 }
 
 var testCases = []testCase{
@@ -994,23 +992,16 @@ var testCases = []testCase{
 		}},
 	},
 	{
-		desc: "short ByteString",
-		src:  &B5{B: ByteString(makeUint8Slice(3))},
-		want: &B5{B: ByteString(makeUint8Slice(3))},
+		desc: "short []byte",
+		src:  &B5{B: makeUint8Slice(3)},
+		want: &B5{B: makeUint8Slice(3)},
 	},
 	{
 		desc: "short ByteString as props",
-		src:  &B5{B: ByteString(makeUint8Slice(3))},
+		src:  &B5{B: makeUint8Slice(3)},
 		want: PropertyMap{
-			"B": {mp(ByteString(makeUint8Slice(3)))},
-		},
-	},
-	{
-		desc: "[]byte must be noindex",
-		src: PropertyMap{
 			"B": {mp(makeUint8Slice(3))},
 		},
-		actualNoIndex: true,
 	},
 	{
 		desc: "save tagged load props",
@@ -1274,12 +1265,10 @@ var testCases = []testCase{
 	{
 		desc: "exotic types",
 		src: &ExoticTypes{
-			BS:   "sup",
-			DSBS: ByteString("nerds"),
+			BS: "sup",
 		},
 		want: &ExoticTypes{
-			BS:   "sup",
-			DSBS: ByteString("nerds"),
+			BS: "sup",
 		},
 	},
 	{
@@ -1292,7 +1281,7 @@ var testCases = []testCase{
 		src: PropertyMap{
 			"K": {mp(199)},
 			"S": {mp([]byte("cats"))},
-			"F": {mp(ByteString("nurbs"))},
+			"F": {mp("nurbs")},
 		},
 		want:    &MismatchTypes{},
 		loadErr: "type mismatch",
@@ -1606,14 +1595,6 @@ func TestRoundTrip(t *testing.T) {
 					return
 				}
 				So(savedProps, ShouldNotBeNil)
-
-				if tc.actualNoIndex {
-					for _, props := range savedProps {
-						So(props[0].IndexSetting(), ShouldEqual, NoIndex)
-						return
-					}
-					So(true, ShouldBeFalse) // shouldn't get here
-				}
 
 				var got interface{}
 				if _, ok := tc.want.(PropertyMap); ok {

@@ -88,6 +88,7 @@ func TestCollated(t *testing.T) {
 var rgenComplexTime = time.Date(
 	1986, time.October, 26, 1, 20, 00, 00, time.UTC)
 var rgenComplexKey = key("kind", "id")
+var rgenComplexTimeIdx = prop(rgenComplexTime).ForIndex()
 
 var rowGenTestCases = []struct {
 	name        string
@@ -163,7 +164,7 @@ var rowGenTestCases = []struct {
 			"yerp": {prop("hat"), prop(73.9)},
 			"wat": {
 				prop(rgenComplexTime),
-				prop(ds.ByteString("value")),
+				prop([]byte("value")),
 				prop(rgenComplexKey)},
 			"spaz": {prop(nil), prop(false), prop(true)},
 		},
@@ -179,22 +180,22 @@ var rowGenTestCases = []struct {
 				cat(prop("hat"), icat(prop(rgenComplexKey)), prop(nil), prop(fakeKey)),
 				cat(prop("hat"), icat(prop(rgenComplexKey)), prop(false), prop(fakeKey)),
 				cat(prop("hat"), icat(prop(rgenComplexKey)), prop(true), prop(fakeKey)),
-				cat(prop("hat"), icat(prop(ds.ByteString("value"))), prop(nil), prop(fakeKey)),
-				cat(prop("hat"), icat(prop(ds.ByteString("value"))), prop(false), prop(fakeKey)),
-				cat(prop("hat"), icat(prop(ds.ByteString("value"))), prop(true), prop(fakeKey)),
-				cat(prop("hat"), icat(prop(rgenComplexTime)), prop(nil), prop(fakeKey)),
-				cat(prop("hat"), icat(prop(rgenComplexTime)), prop(false), prop(fakeKey)),
-				cat(prop("hat"), icat(prop(rgenComplexTime)), prop(true), prop(fakeKey)),
+				cat(prop("hat"), icat(prop("value")), prop(nil), prop(fakeKey)),
+				cat(prop("hat"), icat(prop("value")), prop(false), prop(fakeKey)),
+				cat(prop("hat"), icat(prop("value")), prop(true), prop(fakeKey)),
+				cat(prop("hat"), icat(rgenComplexTimeIdx), prop(nil), prop(fakeKey)),
+				cat(prop("hat"), icat(rgenComplexTimeIdx), prop(false), prop(fakeKey)),
+				cat(prop("hat"), icat(rgenComplexTimeIdx), prop(true), prop(fakeKey)),
 
 				cat(prop(73.9), icat(prop(rgenComplexKey)), prop(nil), prop(fakeKey)),
 				cat(prop(73.9), icat(prop(rgenComplexKey)), prop(false), prop(fakeKey)),
 				cat(prop(73.9), icat(prop(rgenComplexKey)), prop(true), prop(fakeKey)),
-				cat(prop(73.9), icat(prop(ds.ByteString("value"))), prop(nil), prop(fakeKey)),
-				cat(prop(73.9), icat(prop(ds.ByteString("value"))), prop(false), prop(fakeKey)),
-				cat(prop(73.9), icat(prop(ds.ByteString("value"))), prop(true), prop(fakeKey)),
-				cat(prop(73.9), icat(prop(rgenComplexTime)), prop(nil), prop(fakeKey)),
-				cat(prop(73.9), icat(prop(rgenComplexTime)), prop(false), prop(fakeKey)),
-				cat(prop(73.9), icat(prop(rgenComplexTime)), prop(true), prop(fakeKey)),
+				cat(prop(73.9), icat(prop("value")), prop(nil), prop(fakeKey)),
+				cat(prop(73.9), icat(prop("value")), prop(false), prop(fakeKey)),
+				cat(prop(73.9), icat(prop("value")), prop(true), prop(fakeKey)),
+				cat(prop(73.9), icat(rgenComplexTimeIdx), prop(nil), prop(fakeKey)),
+				cat(prop(73.9), icat(rgenComplexTimeIdx), prop(false), prop(fakeKey)),
+				cat(prop(73.9), icat(rgenComplexTimeIdx), prop(true), prop(fakeKey)),
 			},
 		},
 	},

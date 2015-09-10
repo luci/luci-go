@@ -106,6 +106,23 @@ type PropertyConverter interface {
 // in a Property. The specific values of this type information are chosen so
 // that the types sort according to the order of types as sorted by the
 // datastore.
+//
+// Note that indexes may only contain values of the following types:
+//   PTNull
+//   PTInt
+//   PTBool
+//   PTFloat
+//   PTString
+//   PTGeoPoint
+//   PTKey
+//
+// The biggest impact of this is that if you do a Projection query, you'll only
+// get back Properties with the above types (e.g. if you store a PTTime value,
+// then Project on it, you'll get back a PTInt value). For convenience, Property
+// has a Project(PropertyType) method which will side-cast to your intended
+// type. If you project into a structure with the high-level Interface
+// implementation, or use StructPLS, this conversion will be done for you
+// automatically, using the type of the destination field to cast.
 type PropertyType byte
 
 // These constants are in the order described by
@@ -120,36 +137,51 @@ type PropertyType byte
 //
 // See "./serialize".WriteProperty and "impl/memory".increment for more info.
 const (
+	// PTNull represents the 'nil' value. This is only directly visible when
+	// reading/writing a PropertyMap. If a PTNull value is loaded into a struct
+	// field, the field will be initialized with its zero value. If a struct with
+	// a zero value is saved from a struct, it will still retain the field's type,
+	// not the 'nil' type. This is in contrast to other GAE languages such as
+	// python where 'None' is a distinct value than the 'zero' value (e.g. a
+	// StringProperty can have the value "" OR None).
+	//
+	// PTNull is a Projection-query type
 	PTNull PropertyType = iota
-	PTInt
 
-	// PTTime is a slight divergence from the way that datastore natively stores
-	// time. In datastore, times and integers actually sort together
-	// (apparently?). This is probably insane, and I don't want to add the
-	// complexity of field 'meaning' as a sparate concept from the field's 'type'
-	// (which is what datastore seems to do, judging from the protobufs). So if
-	// you're here because you implemented an app which relies on time.Time and
-	// int64 sorting together, then this is why your app acts differently in
-	// production. My advice is to NOT DO THAT. If you really want this (and you
-	// probably don't), you should take care of the time.Time <-> int64 conversion
-	// in your app and just use a property type of int64 (consider using
-	// PropertyConverter).
+	// PTInt is always an int64.
+	//
+	// This is a Projection-query type, and may be projected to PTTime.
+	PTInt
 	PTTime
 
-	// PTBoolFalse and True are also a slight divergence, but not a semantic
-	// one. IIUC, in datastore 'bool' is actually the type and the value is either
-	// 0 or 1 (taking another byte to store). Since we have plenty of space in
-	// this type byte, I just merge the value into the type for booleans. If this
-	// becomes problematic, consider changing this to just pvBool, and then
-	// encoding a 0 or 1 as a byte in the relevant marshalling routines.
-	PTBoolFalse
-	PTBoolTrue
+	// PTBool represents true or false
+	//
+	// This is a Projection-query type.
+	PTBool
 
-	PTBytes  // []byte or datastore.ByteString
-	PTString // string or string noindex
+	// PTBytes represents []byte
+	PTBytes
+
+	// PTString is used to represent all strings (text).
+	//
+	// PTString is a Projection-query type and may be projected to PTBytes or
+	// PTBlobKey.
+	PTString
+
+	// PTFloat is always a float64.
+	//
+	// This is a Projection-query type.
 	PTFloat
+
+	// PTGeoPoint is a Projection-query type.
 	PTGeoPoint
+
+	// PTKey represents a Key object.
+	//
+	// PTKey is a Projection-query type.
 	PTKey
+
+	// PTBlobKey represents a blobstore.Key
 	PTBlobKey
 
 	// NOTE: THIS MUST BE LAST VALUE FOR THE init() ASSERTION BELOW TO WORK.
@@ -174,10 +206,8 @@ func (t PropertyType) String() string {
 		return "PTInt"
 	case PTTime:
 		return "PTTime"
-	case PTBoolFalse:
-		return "PTBoolFalse"
-	case PTBoolTrue:
-		return "PTBoolTrue"
+	case PTBool:
+		return "PTBool"
 	case PTBytes:
 		return "PTBytes"
 	case PTString:
@@ -207,11 +237,8 @@ func PropertyTypeOf(v interface{}, checkValid bool) (PropertyType, error) {
 	case float64:
 		return PTFloat, nil
 	case bool:
-		if x {
-			return PTBoolTrue, nil
-		}
-		return PTBoolFalse, nil
-	case []byte, ByteString:
+		return PTBool, nil
+	case []byte:
 		return PTBytes, nil
 	case blobstore.Key:
 		return PTBlobKey, nil
@@ -272,7 +299,7 @@ func UpconvertUnderlyingType(o interface{}) interface{} {
 	case reflect.Float32, reflect.Float64:
 		o = v.Float()
 	case reflect.Slice:
-		if t != typeOfByteString && t.Elem().Kind() == reflect.Uint8 {
+		if t.Elem().Kind() == reflect.Uint8 {
 			o = v.Bytes()
 		}
 	case reflect.Struct:
@@ -302,15 +329,17 @@ func (p *Property) Type() PropertyType { return p.propType }
 //
 // value is the property value. The valid types are:
 //	- int64
+//	- time.Time
 //	- bool
 //	- string
-//	- float64
-//	- ByteString
-//	- Key
-//	- time.Time
+//    (only the first 1500 bytes is indexable)
+//	- []byte
+//    (only the first 1500 bytes is indexable)
 //	- blobstore.Key
+//    (only the first 1500 bytes is indexable)
+//	- float64
+//	- Key
 //	- GeoPoint
-//	- []byte (up to 1 megabyte in length)
 // This set is smaller than the set of valid struct field types that the
 // datastore can load and save. A Property Value cannot be a slice (apart
 // from []byte); use multiple Properties instead. Also, a Value's type
@@ -335,10 +364,90 @@ func (p *Property) SetValue(value interface{}, is IndexSetting) (err error) {
 	p.propType = pt
 	p.value = value
 	p.indexSetting = is
-	if _, ok := value.([]byte); ok {
-		p.indexSetting = NoIndex
-	}
 	return
+}
+
+// ForIndex gets a new Property with its value and type converted as if it were
+// being stored in a datastore index. See the doc on PropertyType for more info.
+func (p Property) ForIndex() Property {
+	switch p.propType {
+	case PTNull, PTInt, PTBool, PTString, PTFloat, PTGeoPoint, PTKey:
+		return p
+
+	case PTTime:
+		v, _ := p.Project(PTInt)
+		return Property{v, p.indexSetting, PTInt}
+
+	case PTBytes, PTBlobKey:
+		v, _ := p.Project(PTString)
+		return Property{v, p.indexSetting, PTString}
+	}
+	panic(fmt.Errorf("unknown PropertyType: %s", p.propType))
+}
+
+// Project can be used to project a Property retrieved from a Projection query
+// into a different datatype. For example, if you have a PTInt property, you
+// could Project(PTTime) to convert it to a time.Time. The following conversions
+// are supported:
+//   PTXXX <-> PTXXX (i.e. identity)
+//   PTInt <-> PTTime
+//   PTString <-> PTBlobKey
+//   PTString <-> PTBytes
+//   PTNull <-> Anything
+func (p *Property) Project(to PropertyType) (interface{}, error) {
+	switch {
+	case to == p.propType:
+		return p.value, nil
+
+	case to == PTInt && p.propType == PTTime:
+		t := p.value.(time.Time)
+		v := uint64(t.Unix())*1e6 + uint64(t.Nanosecond()/1e3)
+		return int64(v), nil
+
+	case to == PTTime && p.propType == PTInt:
+		v := p.value.(int64)
+		return time.Unix(int64(v/1e6), int64((v%1e6)*1e3)).UTC(), nil
+
+	case to == PTString && p.propType == PTBytes:
+		return string(p.value.([]byte)), nil
+
+	case to == PTString && p.propType == PTBlobKey:
+		return string(p.value.(blobstore.Key)), nil
+
+	case to == PTBytes && p.propType == PTString:
+		return []byte(p.value.(string)), nil
+
+	case to == PTBlobKey && p.propType == PTString:
+		return blobstore.Key(p.value.(string)), nil
+
+	case to == PTNull:
+		return nil, nil
+
+	case p.propType == PTNull:
+		switch to {
+		case PTInt:
+			return int64(0), nil
+		case PTTime:
+			return time.Time{}, nil
+		case PTBool:
+			return false, nil
+		case PTBytes:
+			return []byte(nil), nil
+		case PTString:
+			return "", nil
+		case PTFloat:
+			return float64(0), nil
+		case PTGeoPoint:
+			return GeoPoint{}, nil
+		case PTKey:
+			return nil, nil
+		case PTBlobKey:
+			return blobstore.Key(""), nil
+		}
+		fallthrough
+	default:
+		return nil, fmt.Errorf("unable to project %s to %s", p.propType, to)
+	}
 }
 
 // MetaGetter is a subinterface of PropertyLoadSaver, but is also used to
