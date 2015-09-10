@@ -8,10 +8,12 @@
 package authcli
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/luci/luci-go/common/auth"
 	"github.com/maruel/subcommands"
@@ -63,7 +65,7 @@ type loginRun struct {
 func (c *loginRun) Run(subcommands.Application, []string) int {
 	opts, err := c.flags.Options()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
 	client, err := auth.AuthenticatedClient(auth.InteractiveLogin, auth.NewAuthenticator(opts))
@@ -101,7 +103,7 @@ type logoutRun struct {
 func (c *logoutRun) Run(a subcommands.Application, args []string) int {
 	opts, err := c.flags.Options()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
 	err = auth.NewAuthenticator(opts).PurgeCredentialsCache()
@@ -135,7 +137,7 @@ type infoRun struct {
 func (c *infoRun) Run(a subcommands.Application, args []string) int {
 	opts, err := c.flags.Options()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
 	client, err := auth.AuthenticatedClient(auth.SilentLogin, auth.NewAuthenticator(opts))
@@ -151,6 +153,91 @@ func (c *infoRun) Run(a subcommands.Application, args []string) int {
 		return 4
 	}
 	return 0
+}
+
+// SubcommandToken returns subcommand.Command that can be used to print current
+// access token.
+func SubcommandToken(opts auth.Options, name string) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: name,
+		ShortDesc: "prints an access token",
+		LongDesc:  "Generates an access token if requested and prints it.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &tokenRun{}
+			c.flags.Register(&c.Flags, opts)
+			c.Flags.DurationVar(
+				&c.lifetime, "lifetime", time.Minute,
+				"Minimum token lifetime. If existing token expired and refresh token or service account is not present, returns nothing.",
+			)
+			c.Flags.StringVar(
+				&c.jsonOutput, "json-output", "",
+				"Destination file to print token and expiration time in JSON. \"-\" for standard output.")
+			return c
+		},
+	}
+}
+
+type tokenRun struct {
+	subcommands.CommandRunBase
+	flags      Flags
+	lifetime   time.Duration
+	jsonOutput string
+}
+
+const (
+	TokenExitCodeValidToken = iota
+	TokenExitCodeNoValidToken
+	TokenExitCodeInvalidInput
+	TokenExitCodeInternalError
+)
+
+func (c *tokenRun) Run(a subcommands.Application, args []string) int {
+	opts, err := c.flags.Options()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return TokenExitCodeInvalidInput
+	}
+	if c.lifetime > 45*time.Minute {
+		fmt.Fprintln(os.Stderr, "lifetime cannot exceed 45m")
+		return TokenExitCodeInvalidInput
+	}
+
+	authenticator := auth.NewAuthenticator(opts)
+	token, expiry, err := authenticator.GetAccessToken(c.lifetime)
+	if err != nil {
+		if err == auth.ErrLoginRequired {
+			fmt.Fprintln(os.Stderr, "interactive login required")
+		} else {
+			fmt.Fprintln(os.Stderr, err)
+		}
+		return TokenExitCodeNoValidToken
+	}
+	if token == "" {
+		return TokenExitCodeNoValidToken
+	}
+
+	if c.jsonOutput == "" {
+		fmt.Println(token)
+	} else {
+		out := os.Stdout
+		if c.jsonOutput != "-" {
+			out, err = os.Create(c.jsonOutput)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				return TokenExitCodeInvalidInput
+			}
+			defer out.Close()
+		}
+		data := struct {
+			Token  string `json:"token"`
+			Expiry int64  `json:"expiry"`
+		}{token, expiry.Unix()}
+		if err = json.NewEncoder(out).Encode(data); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return TokenExitCodeInternalError
+		}
+	}
+	return TokenExitCodeValidToken
 }
 
 // reportIdentity prints identity associated with credentials that the client

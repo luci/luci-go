@@ -34,6 +34,7 @@ import (
 	"path/filepath"
 	"sort"
 	"sync"
+	"time"
 
 	"golang.org/x/net/context"
 	"google.golang.org/cloud/compute/metadata"
@@ -158,6 +159,10 @@ type Authenticator interface {
 
 	// PurgeCredentialsCache removes cached tokens.
 	PurgeCredentialsCache() error
+
+	// GetAccessToken returns a valid access token with specified minimum lifetime.
+	// Does not interact with the user. May return ErrLoginRequered.
+	GetAccessToken(lifetime time.Duration) (token string, expiry time.Time, err error)
 }
 
 // NewAuthenticator returns a new instance of Authenticator given its options.
@@ -304,6 +309,30 @@ func (a *authenticatorImpl) PurgeCredentialsCache() error {
 	return nil
 }
 
+func (a *authenticatorImpl) GetAccessToken(lifetime time.Duration) (token string, expiry time.Time, err error) {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
+	if err := a.ensureInitialized(); err != nil {
+		return "", time.Time{}, err
+	}
+
+	tok := a.token
+	if expiresIn(tok, lifetime) {
+		tok, err = a.refreshToken(a.token, lifetime, true)
+		if err != nil {
+			return
+		}
+		if expiresIn(tok, lifetime) {
+			err = fmt.Errorf("auth: failed to refresh the token")
+			return
+		}
+	}
+	token = tok.AccessToken()
+	expiry = tok.Expiry()
+	return
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Authenticator private methods.
 
@@ -375,11 +404,13 @@ func (a *authenticatorImpl) currentToken() internal.Token {
 // procedure if they still match. Returns a refreshed token (if a refresh
 // procedure happened) or the current token (i.e. if it's different from prev).
 // Acts as "Compare-And-Swap" where "Swap" is a token refresh procedure.
-func (a *authenticatorImpl) refreshToken(prev internal.Token) (internal.Token, error) {
+func (a *authenticatorImpl) refreshToken(prev internal.Token, lifetime time.Duration, locked bool) (internal.Token, error) {
 	// Refresh the token under the lock.
 	tok, cache, err := func() (internal.Token, bool, error) {
-		a.lock.Lock()
-		defer a.lock.Unlock()
+		if !locked {
+			a.lock.Lock()
+			defer a.lock.Unlock()
+		}
 
 		// Some other goroutine already updated the token, just return the token.
 		if a.token != nil && !a.token.Equals(prev) {
@@ -388,7 +419,7 @@ func (a *authenticatorImpl) refreshToken(prev internal.Token) (internal.Token, e
 
 		// Rescan the cache. Maybe some other process updated the token.
 		cached, err := a.readTokenCache()
-		if err == nil && cached != nil && !cached.Equals(prev) && !cached.Expired() {
+		if err == nil && !expiresIn(cached, lifetime) && !cached.Equals(prev) {
 			a.log.Debugf("auth: some other process put refreshed token in the cache")
 			a.token = cached
 			return a.token, false, nil
@@ -451,12 +482,12 @@ type authTransport struct {
 // RoundTrip appends authorization details to the request.
 func (t *authTransport) RoundTrip(req *http.Request) (resp *http.Response, err error) {
 	tok := t.parent.currentToken()
-	if tok == nil || tok.Expired() {
-		tok, err = t.parent.refreshToken(tok)
+	if expiresIn(tok, time.Minute) {
+		tok, err = t.parent.refreshToken(tok, time.Minute, false)
 		if err != nil {
 			return
 		}
-		if tok == nil || tok.Expired() {
+		if expiresIn(tok, time.Minute) {
 			err = fmt.Errorf("auth: failed to refresh the token")
 			return
 		}
@@ -599,4 +630,18 @@ func DefaultClient() (clientID string, clientSecret string) {
 // SecretsDir returns an absolute path to a directory to keep secret files in.
 func SecretsDir() string {
 	return secretsDir()
+}
+
+func expiresIn(t internal.Token, lifetime time.Duration) bool {
+	if t == nil {
+		return true
+	}
+	if t.AccessToken() == "" {
+		return true
+	}
+	if t.Expiry().IsZero() {
+		return false
+	}
+	expiry := t.Expiry().Add(-lifetime)
+	return expiry.Before(time.Now())
 }

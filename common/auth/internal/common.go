@@ -35,8 +35,12 @@ type Token interface {
 	// RequestHeaders returns a map of authorization headers to add to the request.
 	RequestHeaders() map[string]string
 
-	// Expired is true if token MUST be refreshed via RefreshToken call.
-	Expired() bool
+	// Expiry is the optional expiration time of the access token.
+	// Zero if it does not expire.
+	Expiry() time.Time
+
+	// AccessToken returns a token that authorizes and authenticates the requests.
+	AccessToken() string
 }
 
 // TokenProvider knows how to mint new tokens, refresh existing ones, marshal
@@ -99,33 +103,29 @@ func extractOAuthToken(tok Token) oauth2.Token {
 
 func (t *tokenImpl) Equals(another Token) bool {
 	if another == nil {
-		return false
+		return t == nil
 	}
 	casted, ok := another.(*tokenImpl)
 	if !ok {
 		return false
 	}
-	return t.AccessToken == casted.AccessToken
+	return t.Token.AccessToken == casted.Token.AccessToken
 }
 
-func (t *tokenImpl) Expired() bool {
-	if t.AccessToken == "" {
-		return true
-	}
-	if t.Expiry.IsZero() {
-		return false
-	}
-	// Allow 1 min clock skew.
-	expiry := t.Expiry.Add(-time.Minute)
-	return expiry.Before(time.Now())
+func (t *tokenImpl) Expiry() time.Time {
+	return t.Token.Expiry
 }
 
 func (t *tokenImpl) RequestHeaders() map[string]string {
 	ret := make(map[string]string)
-	if t.AccessToken != "" {
-		ret["Authorization"] = "Bearer " + t.AccessToken
+	if t.Token.AccessToken != "" {
+		ret["Authorization"] = "Bearer " + t.Token.AccessToken
 	}
 	return ret
+}
+
+func (t *tokenImpl) AccessToken() string {
+	return t.Token.AccessToken
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -20,8 +21,10 @@ import (
 )
 
 var (
-	ctx = context.Background()
-	log = logging.Null()
+	ctx    = context.Background()
+	log    = logging.Null()
+	past   = time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC)
+	future = time.Now().Add(24 * time.Hour)
 )
 
 func ExampleDefaultAuthenticatedClient() {
@@ -125,7 +128,7 @@ func TestRefreshToken(t *testing.T) {
 			So(err, ShouldBeNil)
 			// No token yet. The token is minted on first refresh.
 			So(auth.currentToken(), ShouldBeNil)
-			tok, err := auth.refreshToken(nil)
+			tok, err := auth.refreshToken(nil, time.Minute, false)
 			So(err, ShouldBeNil)
 			So(tok, ShouldEqual, tokenProvider.tokenToMint)
 		})
@@ -135,7 +138,7 @@ func TestRefreshToken(t *testing.T) {
 				interactive:      true,
 				tokenToMint:      &fakeToken{name: "minted"},
 				tokenToRefresh:   &fakeToken{name: "refreshed"},
-				tokenToUnmarshal: &fakeToken{name: "cached", expired: true},
+				tokenToUnmarshal: &fakeToken{name: "cached", expiry: past},
 			}
 			auth, ok := NewAuthenticator(Options{}).(*authenticatorImpl)
 			So(ok, ShouldBeTrue)
@@ -148,7 +151,7 @@ func TestRefreshToken(t *testing.T) {
 			// Minted initial token.
 			So(auth.currentToken(), ShouldEqual, tokenProvider.tokenToMint)
 			// Should return refreshed token.
-			tok, err := auth.refreshToken(auth.currentToken())
+			tok, err := auth.refreshToken(auth.currentToken(), time.Minute, false)
 			So(err, ShouldBeNil)
 			So(tok, ShouldEqual, tokenProvider.tokenToRefresh)
 		})
@@ -158,7 +161,7 @@ func TestRefreshToken(t *testing.T) {
 				interactive:      true,
 				tokenToMint:      &fakeToken{name: "minted"},
 				tokenToRefresh:   &fakeToken{name: "refreshed"},
-				tokenToUnmarshal: &fakeToken{name: "cached", expired: false},
+				tokenToUnmarshal: &fakeToken{name: "cached", expiry: future},
 			}
 			auth, ok := NewAuthenticator(Options{}).(*authenticatorImpl)
 			So(ok, ShouldBeTrue)
@@ -171,7 +174,7 @@ func TestRefreshToken(t *testing.T) {
 			// Minted initial token.
 			So(auth.currentToken(), ShouldEqual, tokenProvider.tokenToMint)
 			// Should return token from cache (since it's not expired yet).
-			tok, err := auth.refreshToken(auth.currentToken())
+			tok, err := auth.refreshToken(auth.currentToken(), time.Minute, false)
 			So(err, ShouldBeNil)
 			So(tok, ShouldEqual, tokenProvider.tokenToUnmarshal)
 		})
@@ -217,8 +220,8 @@ func (p *fakeTokenProvider) UnmarshalToken([]byte) (internal.Token, error) {
 }
 
 type fakeToken struct {
-	name    string
-	expired bool
+	name   string
+	expiry time.Time
 }
 
 func (t *fakeToken) Equals(another internal.Token) bool {
@@ -227,4 +230,5 @@ func (t *fakeToken) Equals(another internal.Token) bool {
 }
 
 func (t *fakeToken) RequestHeaders() map[string]string { return make(map[string]string) }
-func (t *fakeToken) Expired() bool                     { return t.expired }
+func (t *fakeToken) Expiry() time.Time                 { return t.expiry }
+func (t *fakeToken) AccessToken() string               { return "token" }
