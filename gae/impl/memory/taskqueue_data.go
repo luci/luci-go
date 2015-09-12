@@ -16,6 +16,7 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	tq "github.com/luci/gae/service/taskqueue"
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/stringset"
 )
 
 var (
@@ -127,13 +128,7 @@ func (t *taskQueueData) purgeLocked(queueName string) error {
 	return nil
 }
 
-var tqOkMethods = stringSet{
-	"GET":    {},
-	"POST":   {},
-	"HEAD":   {},
-	"PUT":    {},
-	"DELETE": {},
-}
+var tqOkMethods = stringset.NewFromSlice("GET", "POST", "HEAD", "PUT", "DELETE")
 
 func (t *taskQueueData) prepTask(c context.Context, ns string, task *tq.Task, queueName string) (*tq.Task, error) {
 	toSched := task.Duplicate()
@@ -152,7 +147,7 @@ func (t *taskQueueData) prepTask(c context.Context, ns string, task *tq.Task, qu
 	if toSched.Method == "" {
 		toSched.Method = "POST"
 	}
-	if !tqOkMethods.has(toSched.Method) {
+	if !tqOkMethods.Has(toSched.Method) {
 		return nil, fmt.Errorf("taskqueue: bad method %q", toSched.Method)
 	}
 	if toSched.Method != "POST" && toSched.Method != "PUT" {

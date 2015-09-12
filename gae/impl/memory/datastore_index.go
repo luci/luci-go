@@ -12,6 +12,7 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
 	"github.com/luci/gkvlite"
+	"github.com/luci/luci-go/common/stringset"
 )
 
 type qIndexSlice []*ds.IndexDefinition
@@ -61,7 +62,7 @@ func (s serializedPvals) Less(i, j int) bool { return bytes.Compare(s[i], s[j]) 
 type serializedIndexablePmap map[string]serializedPvals
 
 func serializeRow(vals []ds.Property) serializedPvals {
-	dups := map[string]struct{}{}
+	dups := stringset.New(0)
 	ret := make(serializedPvals, 0, len(vals))
 	for _, v := range vals {
 		if v.IndexSetting() == ds.NoIndex {
@@ -69,10 +70,9 @@ func serializeRow(vals []ds.Property) serializedPvals {
 		}
 		data := serialize.ToBytes(v.ForIndex())
 		dataS := string(data)
-		if _, ok := dups[dataS]; ok {
+		if !dups.Add(dataS) {
 			continue
 		}
-		dups[dataS] = struct{}{}
 		ret = append(ret, data)
 	}
 	return ret

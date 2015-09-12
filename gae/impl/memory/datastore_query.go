@@ -15,6 +15,7 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
 	"github.com/luci/luci-go/common/cmpbin"
+	"github.com/luci/luci-go/common/stringset"
 )
 
 // MaxQueryComponents was lifted from a hard-coded constant in dev_appserver.
@@ -165,7 +166,7 @@ type queryImpl struct {
 
 	// prop -> encoded values (which are ds.Property objects)
 	// "__ancestor__" is the key for Ancestor queries.
-	eqFilters          map[string]stringSet
+	eqFilters          map[string]stringset.Set
 	ineqFilter         queryIneqFilter
 	order              []ds.IndexColumn
 	startCursor        []byte
@@ -226,12 +227,8 @@ func (q *queryImpl) reduce(ns string, isTxn bool) (*reducedQuery, error) {
 			"gae/memory: Distinct() only makes sense on projection queries.")
 	}
 	if q.eqFilters["__ancestor__"] != nil && q.ineqFilter.prop == "__key__" {
-		anc := []byte(nil)
-		for k := range q.eqFilters["__ancestor__"] {
-			anc = []byte(k)
-			break
-		}
-		anc = anc[:len(anc)-1]
+		ancS, _ := q.eqFilters["__ancestor__"].Peek()
+		anc := []byte(ancS[:len(ancS)-1])
 		if q.ineqFilter.start != nil && !bytes.HasPrefix(q.ineqFilter.start, anc) {
 			return nil, errors.New(
 				"gae/memory: __key__ inequality filter has a value outside of Ancestor()")
@@ -356,7 +353,7 @@ func (q *queryImpl) reduce(ns string, isTxn bool) (*reducedQuery, error) {
 		if len(ret.suffixFormat) == 1 && prop == "__ancestor__" {
 			continue
 		}
-		ret.numCols += len(vals)
+		ret.numCols += vals.Len()
 	}
 
 	return ret, nil
@@ -373,7 +370,7 @@ func (q *queryImpl) numComponents() int {
 		}
 	}
 	for _, v := range q.eqFilters {
-		numComponents += len(v)
+		numComponents += v.Len()
 	}
 	return numComponents
 }
@@ -387,9 +384,9 @@ func (q *queryImpl) checkMutateClone(check func() error, mutate func(*queryImpl)
 		return q
 	}
 	nq := *q
-	nq.eqFilters = make(map[string]stringSet, len(q.eqFilters))
+	nq.eqFilters = make(map[string]stringset.Set, len(q.eqFilters))
 	for prop, vals := range q.eqFilters {
-		nq.eqFilters[prop] = vals.dup()
+		nq.eqFilters[prop] = vals.Dup()
 	}
 	nq.order = make([]ds.IndexColumn, len(q.order))
 	copy(nq.order, q.order)
@@ -441,9 +438,11 @@ func (q *queryImpl) Distinct() ds.Query {
 func (q *queryImpl) addEqFilt(prop string, p ds.Property) {
 	binVal := string(serialize.ToBytes(p))
 	if cur, ok := q.eqFilters[prop]; !ok {
-		q.eqFilters[prop] = stringSet{binVal: {}}
+		s := stringset.New(1)
+		s.Add(binVal)
+		q.eqFilters[prop] = s
 	} else {
-		cur.add(binVal)
+		cur.Add(binVal)
 	}
 }
 
@@ -584,9 +583,9 @@ func (q *queryImpl) Project(fieldName ...string) ds.Query {
 			if q.keysOnly {
 				return errors.New("cannot project a keysOnly query")
 			}
-			dupCheck := stringSet{}
+			dupCheck := stringset.New(len(fieldName) + len(q.project))
 			for _, f := range fieldName {
-				if !dupCheck.add(f) {
+				if !dupCheck.Add(f) {
 					return fmt.Errorf("cannot project on the same field twice: %q", f)
 				}
 				if f == "" {

@@ -12,6 +12,7 @@ import (
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
+	"github.com/luci/luci-go/common/stringset"
 )
 
 // reducedQuery contains only the pieces of the query necessary to iterate for
@@ -25,7 +26,7 @@ type reducedQuery struct {
 	// eqFilters indicate the set of all prefix constraints which need to be
 	// fulfilled in the composite query. All of these will translate into prefix
 	// bytes for SOME index.
-	eqFilters map[string]stringSet
+	eqFilters map[string]stringset.Set
 
 	// suffixFormat is the PRECISE listing of the suffix columns that ALL indexes
 	//   in the multi query will have.
@@ -113,7 +114,7 @@ func (s IndexDefinitionSortableSlice) Less(i, j int) bool {
 // If the proposed index is PERFECT (e.g. contains enough columns to cover all
 // equality filters, and also has the correct suffix), idxs will be replaced
 // with JUST that index, and this will return true.
-func (idxs *IndexDefinitionSortableSlice) maybeAddDefinition(q *reducedQuery, s *memStore, missingTerms stringSet, id *ds.IndexDefinition) bool {
+func (idxs *IndexDefinitionSortableSlice) maybeAddDefinition(q *reducedQuery, s *memStore, missingTerms stringset.Set, id *ds.IndexDefinition) bool {
 	// Kindless queries are handled elsewhere.
 	if id.Kind != q.kind {
 		impossible(
@@ -185,14 +186,14 @@ func (idxs *IndexDefinitionSortableSlice) maybeAddDefinition(q *reducedQuery, s 
 	toAdd := IndexDefinitionSortable{coll: coll}
 	toAdd.eqFilts = eqFilts
 	for _, sb := range toAdd.eqFilts {
-		missingTerms.rm(sb.Property)
+		missingTerms.Del(sb.Property)
 	}
 
 	perfect := false
 	if len(sortBy) == q.numCols {
 		perfect = true
 		for k, num := range numByProp {
-			if num < len(q.eqFilters[k]) {
+			if num < q.eqFilters[k].Len() {
 				perfect = false
 				break
 			}
@@ -203,14 +204,14 @@ func (idxs *IndexDefinitionSortableSlice) maybeAddDefinition(q *reducedQuery, s 
 	} else {
 		*idxs = append(*idxs, toAdd)
 	}
-	return len(missingTerms) == 0
+	return missingTerms.Len() == 0
 }
 
 // getRelevantIndexes retrieves the relevant indexes which could be used to
 // service q. It returns nil if it's not possible to service q with the current
 // indexes.
 func getRelevantIndexes(q *reducedQuery, s *memStore) (IndexDefinitionSortableSlice, error) {
-	missingTerms := stringSet{}
+	missingTerms := stringset.New(len(q.eqFilters))
 	for k := range q.eqFilters {
 		if k == "__ancestor__" {
 			// ancestor is not a prefix which can be satisfied by a single index. It
@@ -218,7 +219,7 @@ func getRelevantIndexes(q *reducedQuery, s *memStore) (IndexDefinitionSortableSl
 			// the addDefinition logic)
 			continue
 		}
-		missingTerms.add(k)
+		missingTerms.Add(k)
 	}
 	idxs := IndexDefinitionSortableSlice{}
 
@@ -234,14 +235,14 @@ func getRelevantIndexes(q *reducedQuery, s *memStore) (IndexDefinitionSortableSl
 	// add
 	//   idx:KIND:prop
 	//   idx:KIND:-prop
-	props := stringSet{}
+	props := stringset.New(len(q.eqFilters) + len(q.suffixFormat))
 	for prop := range q.eqFilters {
-		props.add(prop)
+		props.Add(prop)
 	}
 	for _, col := range q.suffixFormat[:len(q.suffixFormat)-1] {
-		props.add(col.Property)
+		props.Add(col.Property)
 	}
-	for prop := range props {
+	for _, prop := range props.ToSlice() {
 		if strings.HasPrefix(prop, "__") && strings.HasSuffix(prop, "__") {
 			continue
 		}
@@ -276,15 +277,12 @@ func getRelevantIndexes(q *reducedQuery, s *memStore) (IndexDefinitionSortableSl
 
 	// this query is impossible to fulfil with the current indexes. Not all the
 	// terms (equality + projection) are satisfied.
-	if len(missingTerms) < 0 || len(idxs) == 0 {
+	if missingTerms.Len() < 0 || len(idxs) == 0 {
 		remains := &ds.IndexDefinition{
 			Kind:     q.kind,
 			Ancestor: q.eqFilters["__ancestor__"] != nil,
 		}
-		terms := make([]string, 0, len(missingTerms))
-		for mt := range missingTerms {
-			terms = append(terms, mt)
-		}
+		terms := missingTerms.ToSlice()
 		if serializationDeterministic {
 			sort.Strings(terms)
 		}
@@ -344,7 +342,7 @@ func generate(q *reducedQuery, idx *IndexDefinitionSortable, c *constraints) *it
 		}
 
 		// get the only value out of __ancestor__
-		anc := q.eqFilters["__ancestor__"].getOne()
+		anc, _ := q.eqFilters["__ancestor__"].Peek()
 
 		// Intentionally do NOT update prefixLen. This allows multiIterator to
 		// correctly include the entire key in the shared iterator suffix, instead
@@ -438,10 +436,11 @@ func calculateConstraints(q *reducedQuery) *constraints {
 		residualMapping: make(map[string]int),
 	}
 	for prop, vals := range q.eqFilters {
-		bvals := make([][]byte, 0, len(vals))
-		for val := range vals {
+		bvals := make([][]byte, 0, vals.Len())
+		vals.Iter(func(val string) bool {
 			bvals = append(bvals, []byte(val))
-		}
+			return true
+		})
 		ret.original[prop] = bvals
 		if prop == "__ancestor__" {
 			// exclude __ancestor__ from the constraints.

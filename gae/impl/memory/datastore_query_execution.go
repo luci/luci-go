@@ -11,6 +11,7 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
 	"github.com/luci/luci-go/common/cmpbin"
+	"github.com/luci/luci-go/common/stringset"
 )
 
 type queryStrategy interface {
@@ -33,7 +34,7 @@ type projectionStrategy struct {
 	cb ds.RawRunCB
 
 	project  []projectionLookup
-	distinct stringSet
+	distinct stringset.Set
 }
 
 func newProjectionStrategy(q *queryImpl, rq *reducedQuery, cb ds.RawRunCB) queryStrategy {
@@ -52,7 +53,7 @@ func newProjectionStrategy(q *queryImpl, rq *reducedQuery, cb ds.RawRunCB) query
 	}
 	ret := &projectionStrategy{cb: cb, project: projectionLookups}
 	if q.distinct {
-		ret.distinct = stringSet{}
+		ret.distinct = stringset.New(0)
 	}
 	return ret
 }
@@ -70,7 +71,7 @@ func (s *projectionStrategy) handle(rawData [][]byte, decodedProps []ds.Property
 		pmap[p.propertyName] = []ds.Property{decodedProps[p.suffixIndex]}
 	}
 	if s.distinct != nil {
-		if !s.distinct.add(string(bjoin(projectedRaw...))) {
+		if !s.distinct.Add(string(bjoin(projectedRaw...))) {
 			return true
 		}
 	}
@@ -80,11 +81,11 @@ func (s *projectionStrategy) handle(rawData [][]byte, decodedProps []ds.Property
 type keysOnlyStrategy struct {
 	cb ds.RawRunCB
 
-	dedup stringSet
+	dedup stringset.Set
 }
 
 func (s *keysOnlyStrategy) handle(rawData [][]byte, _ []ds.Property, key ds.Key, gc func() (ds.Cursor, error)) bool {
-	if !s.dedup.add(string(rawData[len(rawData)-1])) {
+	if !s.dedup.Add(string(rawData[len(rawData)-1])) {
 		return true
 	}
 	return s.cb(key, nil, gc)
@@ -95,7 +96,7 @@ type normalStrategy struct {
 
 	ns    string
 	head  *memCollection
-	dedup stringSet
+	dedup stringset.Set
 }
 
 func newNormalStrategy(ns string, cb ds.RawRunCB, head *memStore) queryStrategy {
@@ -103,12 +104,12 @@ func newNormalStrategy(ns string, cb ds.RawRunCB, head *memStore) queryStrategy 
 	if coll == nil {
 		return nil
 	}
-	return &normalStrategy{cb, ns, coll, stringSet{}}
+	return &normalStrategy{cb, ns, coll, stringset.New(0)}
 }
 
 func (s *normalStrategy) handle(rawData [][]byte, _ []ds.Property, key ds.Key, gc func() (ds.Cursor, error)) bool {
 	rawKey := rawData[len(rawData)-1]
-	if !s.dedup.add(string(rawKey)) {
+	if !s.dedup.Add(string(rawKey)) {
 		return true
 	}
 
@@ -125,7 +126,7 @@ func (s *normalStrategy) handle(rawData [][]byte, _ []ds.Property, key ds.Key, g
 
 func pickQueryStrategy(q *queryImpl, rq *reducedQuery, cb ds.RawRunCB, head *memStore) queryStrategy {
 	if q.keysOnly {
-		return &keysOnlyStrategy{cb, stringSet{}}
+		return &keysOnlyStrategy{cb, stringset.New(0)}
 	}
 	if len(q.project) > 0 {
 		return newProjectionStrategy(q, rq, cb)
