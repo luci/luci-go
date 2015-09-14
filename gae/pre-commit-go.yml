@@ -45,7 +45,7 @@ modes:
       govet:
       - blacklist:
         - ' composite literal uses unkeyed fields'
-    max_duration: 15
+    max_duration: 20
   pre-commit:
     checks:
       build:
@@ -56,7 +56,7 @@ modes:
       test:
       - extra_args:
         - -short
-    max_duration: 5
+    max_duration: 10
   pre-push:
     checks:
       coverage:
@@ -67,7 +67,8 @@ modes:
       - extra_args:
         - -v
         - -race
-    max_duration: 15
+    max_duration: 20
+
 ignore_patterns:
 - .*
 - _*
