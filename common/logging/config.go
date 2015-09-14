@@ -34,7 +34,7 @@ func (c *Config) Set(ctx context.Context) context.Context {
 	return SetFactory(ctx, func(ctx context.Context) Logger {
 		if value, ok := GetFields(ctx)[FilterOnKey]; ok {
 			if !filterFunc(value) {
-				return nil
+				return Null()
 			}
 		}
 		return baseFactory(ctx)
