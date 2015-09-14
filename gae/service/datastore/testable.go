@@ -33,4 +33,9 @@ type Testable interface {
 	// But depending on the implementation it may implemented with an atomic
 	// operation.
 	CatchupIndexes()
+
+	// SetTransactionRetryCount set how many times RunInTransaction will retry
+	// transaction body pretending transaction conflicts happens. 0 (default)
+	// means commit succeeds on the first attempt (no retries).
+	SetTransactionRetryCount(int)
 }

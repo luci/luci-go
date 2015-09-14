@@ -24,7 +24,7 @@ func useRDS(c context.Context) context.Context {
 
 		ns := curGID(ic).namespace
 		if x, ok := dsd.(*dataStoreData); ok {
-			return &dsImpl{x, ns, ic}
+			return &dsImpl{x, ns, 0, ic}
 		}
 		return &txnDsImpl{dsd.(*txnDataStoreData), ns}
 	})
@@ -34,9 +34,10 @@ func useRDS(c context.Context) context.Context {
 
 // dsImpl exists solely to bind the current c to the datastore data.
 type dsImpl struct {
-	data *dataStoreData
-	ns   string
-	c    context.Context
+	data         *dataStoreData
+	ns           string
+	txnFakeRetry int
+	c            context.Context
 }
 
 var _ ds.RawInterface = (*dsImpl)(nil)
@@ -105,6 +106,10 @@ func (d *dsImpl) SetIndexSnapshot(snap ds.TestingSnapshot) {
 
 func (d *dsImpl) CatchupIndexes() {
 	d.data.catchupIndexes()
+}
+
+func (d *dsImpl) SetTransactionRetryCount(count int) {
+	d.txnFakeRetry = count
 }
 
 func (d *dsImpl) Testable() ds.Testable {

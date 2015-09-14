@@ -301,7 +301,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 						So(f.Val, ShouldEqual, 10) // still gets 10
 
 						return nil
-					}, nil)
+					}, &dsS.TransactionOptions{Attempts: 1})
 					So(err.Error(), ShouldContainSubstring, "concurrent")
 
 					f := &Foo{Id: 1}
@@ -333,7 +333,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 
 				Convey("Concurrent transactions only accept one set of changes", func() {
 					// Note: I think this implementation is actually /slightly/ wrong.
-					// Accorting to my read of the docs for appengine, when you open a
+					// According to my read of the docs for appengine, when you open a
 					// transaction it actually (essentially) holds a reference to the
 					// entire datastore. Our implementation takes a snapshot of the
 					// entity group as soon as something observes/affects it.
@@ -417,9 +417,63 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 						So(f.Val, ShouldEqual, 10)
 					})
 				})
+
+				Convey("Transaction retries", func() {
+					tst := ds.Testable()
+					Reset(func() { tst.SetTransactionRetryCount(0) })
+
+					Convey("SetTransactionRetryCount set to zere", func() {
+						tst.SetTransactionRetryCount(0)
+						calls := 0
+						So(ds.RunInTransaction(func(c context.Context) error {
+							calls++
+							return nil
+						}, nil), ShouldBeNil)
+						So(calls, ShouldEqual, 1)
+					})
+
+					Convey("default TransactionOptions is 3 attempts", func() {
+						tst.SetTransactionRetryCount(100) // more than 3
+						calls := 0
+						So(ds.RunInTransaction(func(c context.Context) error {
+							calls++
+							return nil
+						}, nil), ShouldEqual, dsS.ErrConcurrentTransaction)
+						So(calls, ShouldEqual, 3)
+					})
+
+					Convey("non-default TransactionOptions ", func() {
+						tst.SetTransactionRetryCount(100) // more than 20
+						calls := 0
+						So(ds.RunInTransaction(func(c context.Context) error {
+							calls++
+							return nil
+						}, &dsS.TransactionOptions{Attempts: 20}), ShouldEqual, dsS.ErrConcurrentTransaction)
+						So(calls, ShouldEqual, 20)
+					})
+
+					Convey("SetTransactionRetryCount is respected", func() {
+						tst.SetTransactionRetryCount(1) // less than 3
+						calls := 0
+						So(ds.RunInTransaction(func(c context.Context) error {
+							calls++
+							return nil
+						}, nil), ShouldBeNil)
+						So(calls, ShouldEqual, 2)
+					})
+
+					Convey("fatal errors are not retried", func() {
+						tst.SetTransactionRetryCount(1)
+						calls := 0
+						So(ds.RunInTransaction(func(c context.Context) error {
+							calls++
+							return fmt.Errorf("omg")
+						}, nil).Error(), ShouldEqual, "omg")
+						So(calls, ShouldEqual, 1)
+					})
+				})
 			})
 		})
-
 	})
 }
 
@@ -446,7 +500,7 @@ func TestCompoundIndexes(t *testing.T) {
 
 		c := Use(context.Background())
 		ds := dsS.Get(c)
-		t := ds.Raw().Testable().(*dsImpl)
+		t := ds.Testable().(*dsImpl)
 		head := t.data.head
 
 		So(ds.Put(&Model{1, []string{"hello", "world"}, []int64{10, 11}}), ShouldBeNil)

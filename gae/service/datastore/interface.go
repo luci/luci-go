@@ -142,6 +142,10 @@ type Interface interface {
 	// DeleteMulti removes items from the datastore.
 	DeleteMulti(keys []Key) error
 
+	// Testable returns the Testable interface for the implementation, or nil if
+	// there is none.
+	Testable() Testable
+
 	// Raw returns the underlying RawInterface. The Interface and RawInterface may
 	// be used interchangably; there's no danger of interleaving access to the
 	// datastore via the two.

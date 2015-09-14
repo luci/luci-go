@@ -135,28 +135,43 @@ var memContextKey memContextKeyType
 // test-access API for TaskQueue better (instead of trying to reconstitute the
 // state of the task queue from a bunch of datastore accesses).
 func (d *dsImpl) RunInTransaction(f func(context.Context) error, o *ds.TransactionOptions) error {
-	curMC := cur(d.c)
+	// Keep in separate function for defers.
+	loopBody := func(applyForReal bool) error {
+		curMC := cur(d.c)
 
-	txnMC := curMC.mkTxn(o)
+		txnMC := curMC.mkTxn(o)
 
-	defer func() {
+		defer func() {
+			txnMC.Lock()
+			defer txnMC.Unlock()
+
+			txnMC.endTxn()
+		}()
+
+		if err := f(context.WithValue(d.c, memContextKey, txnMC)); err != nil {
+			return err
+		}
+
 		txnMC.Lock()
 		defer txnMC.Unlock()
 
-		txnMC.endTxn()
-	}()
-
-	if err := f(context.WithValue(d.c, memContextKey, txnMC)); err != nil {
-		return err
+		if applyForReal && curMC.canApplyTxn(txnMC) {
+			curMC.applyTxn(d.c, txnMC)
+		} else {
+			return ds.ErrConcurrentTransaction
+		}
+		return nil
 	}
 
-	txnMC.Lock()
-	defer txnMC.Unlock()
-
-	if curMC.canApplyTxn(txnMC) {
-		curMC.applyTxn(d.c, txnMC)
-	} else {
-		return ds.ErrConcurrentTransaction
+	// From GAE docs for TransactionOptions: "If omitted, it defaults to 3."
+	attempts := 3
+	if o != nil && o.Attempts != 0 {
+		attempts = o.Attempts
 	}
-	return nil
+	for attempt := 0; attempt < attempts; attempt++ {
+		if err := loopBody(attempt >= d.txnFakeRetry); err != ds.ErrConcurrentTransaction {
+			return err
+		}
+	}
+	return ds.ErrConcurrentTransaction
 }

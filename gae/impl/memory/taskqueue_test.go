@@ -31,7 +31,7 @@ func TestTaskQueue(t *testing.T) {
 		c = Use(c)
 
 		tq := tqS.Get(c)
-		tqt := tq.Raw().Testable()
+		tqt := tq.Testable()
 		So(tqt, ShouldNotBeNil)
 
 		So(tq, ShouldNotBeNil)
@@ -260,7 +260,7 @@ func TestTaskQueue(t *testing.T) {
 
 				err := dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					tq := tqS.Get(c)
-					tqt := tq.Raw().Testable()
+					tqt := tq.Testable()
 
 					So(tq.Add(t3, ""), ShouldBeNil)
 					So(t3.Name, ShouldEqual, "")
@@ -292,7 +292,7 @@ func TestTaskQueue(t *testing.T) {
 
 				dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					ttq = tqS.Get(c)
-					tqt := ttq.Raw().Testable()
+					tqt := ttq.Testable()
 
 					So(ttq.Add(t3, ""), ShouldBeNil)
 
@@ -321,7 +321,7 @@ func TestTaskQueue(t *testing.T) {
 			Convey("you can AddMulti as well", func() {
 				dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					tq := tqS.Get(c)
-					tqt := tq.Raw().Testable()
+					tqt := tq.Testable()
 
 					t.Name = ""
 					tasks := []*tqS.Task{t.Duplicate(), t.Duplicate(), t.Duplicate()}

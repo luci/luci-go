@@ -311,7 +311,7 @@ func TestQueryExecution(t *testing.T) {
 		}
 
 		data := ds.Get(c)
-		testing := data.Raw().Testable()
+		testing := data.Testable()
 
 		for _, tc := range queryExecutionTests {
 			Convey(tc.name, func() {
