@@ -24,6 +24,8 @@ type dataStoreData struct {
 	// See README.md for head schema.
 	head *memStore
 	snap *memStore
+	// For testing, see SetTransactionRetryCount.
+	txnFakeRetry int
 }
 
 var (

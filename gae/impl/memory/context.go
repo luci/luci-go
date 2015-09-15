@@ -169,7 +169,7 @@ func (d *dsImpl) RunInTransaction(f func(context.Context) error, o *ds.Transacti
 		attempts = o.Attempts
 	}
 	for attempt := 0; attempt < attempts; attempt++ {
-		if err := loopBody(attempt >= d.txnFakeRetry); err != ds.ErrConcurrentTransaction {
+		if err := loopBody(attempt >= d.data.txnFakeRetry); err != ds.ErrConcurrentTransaction {
 			return err
 		}
 	}
