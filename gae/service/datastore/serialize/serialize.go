@@ -198,17 +198,17 @@ func WriteTime(buf Buffer, t time.Time) error {
 	if name != "UTC" || off != 0 {
 		panic(fmt.Errorf("helper: UTC OR DEATH: %s", t))
 	}
-	_, err := cmpbin.WriteUint(buf, uint64(t.Unix())*1e6+uint64(t.Nanosecond()/1e3))
+	_, err := cmpbin.WriteInt(buf, t.Unix()*1e6+int64(t.Nanosecond()/1e3))
 	return err
 }
 
 // ReadTime reads a time.Time from the buffer.
 func ReadTime(buf Buffer) (time.Time, error) {
-	v, _, err := cmpbin.ReadUint(buf)
+	v, _, err := cmpbin.ReadInt(buf)
 	if err != nil {
 		return time.Time{}, err
 	}
-	return time.Unix(int64(v/1e6), int64((v%1e6)*1e3)).UTC(), nil
+	return time.Unix(v/1e6, (v%1e6)*1e3).UTC(), nil
 }
 
 // WriteProperty writes a Property to the buffer. `context` behaves the same

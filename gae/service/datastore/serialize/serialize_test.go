@@ -174,6 +174,14 @@ func TestSerializationReadMisc(t *testing.T) {
 			So(string(ToBytes(tp.Value())), ShouldEqual, string(ToBytes(tp)[1:]))
 		})
 
+		Convey("Zero time", func() {
+			buf := mkBuf(nil)
+			So(WriteTime(buf, time.Time{}), ShouldBeNil)
+			t, err := ReadTime(mkBuf(buf.Bytes()))
+			So(err, ShouldBeNil)
+			So(t.IsZero(), ShouldBeTrue)
+		})
+
 		Convey("Bad ToBytes", func() {
 			So(func() { ToBytes(100.7) }, ShouldPanic)
 			So(func() { ToBytesWithContext(100.7) }, ShouldPanic)

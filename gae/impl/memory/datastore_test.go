@@ -7,6 +7,7 @@ package memory
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	dsS "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/dskey"
@@ -528,5 +529,26 @@ func TestCompoundIndexes(t *testing.T) {
 		coll = head.GetCollection(idxKey(idx))
 		So(coll, ShouldNotBeNil)
 		So(numItms(coll), ShouldEqual, 4)
+	})
+}
+
+// High level test for regression in how zero time is stored,
+// see https://codereview.chromium.org/1334043003/
+func TestDefaultTimeField(t *testing.T) {
+	t.Parallel()
+
+	Convey("Default time.Time{} can be stored", t, func() {
+		type Model struct {
+			ID   int64 `gae:"$id"`
+			Time time.Time
+		}
+		ds := dsS.Get(Use(context.Background()))
+		m := Model{ID: 1}
+		So(ds.Put(&m), ShouldBeNil)
+
+		// Reset to something non zero to ensure zero is fetched.
+		m.Time = time.Now().UTC()
+		So(ds.Get(&m), ShouldBeNil)
+		So(m.Time.IsZero(), ShouldBeTrue)
 	})
 }
