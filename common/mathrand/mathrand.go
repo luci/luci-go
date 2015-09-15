@@ -10,7 +10,6 @@ package mathrand
 import (
 	"math/rand"
 
-	"github.com/luci/luci-go/common/clock"
 	"golang.org/x/net/context"
 )
 
@@ -24,12 +23,12 @@ type Factory func(context.Context) *rand.Rand
 
 // Get gets a *"math/rand".Rand from the context. If one hasn't been
 // set, this creates a new Rand object with a Source initialized from the
-// current time clock.Now(c).UnixNano().
+// global randomness source provided by stdlib.
 func Get(c context.Context) *rand.Rand {
 	if f, ok := c.Value(mathRandKey).(Factory); ok && f != nil {
 		return f(c)
 	}
-	return rand.New(rand.NewSource(clock.Now(c).UnixNano()))
+	return rand.New(rand.NewSource(rand.Int63()))
 }
 
 // SetFactory sets the function to produce *"math/rand".Rand instances,
