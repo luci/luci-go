@@ -1,0 +1,18 @@
+application: luci-cron
+version: 1
+module: default
+runtime: go
+api_version: go1
+
+handlers:
+- url: /internal.*
+  script: _go_app
+  secure: always
+  login: admin
+
+- url: /.*
+  script: _go_app
+  secure: always
+
+inbound_services:
+- warmup
