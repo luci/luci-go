@@ -19,10 +19,18 @@ import (
 var (
 	cache *authCacheService
 )
+
 var (
+	// ErrAlreadyInitialized is returned by Initialize if it was already called.
 	ErrAlreadyInitialized = errors.New("auth cache: already initialized")
-	ErrNotInitialized     = errors.New("auth cache: not initialized")
-	ErrUnknownGroup       = errors.New("auth cache: unknown group")
+
+	// ErrNotInitialized is returned by IsGroupMember if it is used before
+	// Initialize has been called.
+	ErrNotInitialized = errors.New("auth cache: not initialized")
+
+	// ErrUnknownGroup is returned by IsGroupMember if it encounters an unknown
+	// group.
+	ErrUnknownGroup = errors.New("auth cache: unknown group")
 )
 
 const updateInterval = time.Hour

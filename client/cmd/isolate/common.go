@@ -82,7 +82,7 @@ func (c *isolateFlags) Init(f *flag.FlagSet) {
 type RequiredIsolateFlags uint
 
 const (
-	// RequiredIsolateFlags means the --isolate flag is required.
+	// RequireIsolateFile means the --isolate flag is required.
 	RequireIsolateFile RequiredIsolateFlags = 1 << iota
 	// RequireIsolatedFile means the --isolated flag is required.
 	RequireIsolatedFile

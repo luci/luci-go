@@ -34,6 +34,7 @@ var osPathSeparator = string(os.PathSeparator)
 // ReadOnlyValue defines permissions on isolated files.
 type ReadOnlyValue int
 
+// Possible kinds of read only values.
 const (
 	NotSet        ReadOnlyValue = -1
 	Writeable     ReadOnlyValue = 0
@@ -41,6 +42,8 @@ const (
 	DirsReadOnly  ReadOnlyValue = 2
 )
 
+// ToIsolated can be used to convert ReadOnlyValue enum values to corresponding
+// isolated.ReadOnlyValue enum values. It returns nil on errors.
 func (r ReadOnlyValue) ToIsolated() (out *isolated.ReadOnlyValue) {
 	switch r {
 	case NotSet:
@@ -301,11 +304,11 @@ func (c *Configs) union(rhs *Configs) (*Configs, error) {
 	last := byConfig[0]
 	for _, curr := range byConfig[1:] {
 		if last.key.compare(curr.key) == 0 {
-			if val, err := last.value.union(curr.value); err != nil {
+			val, err := last.value.union(curr.value)
+			if err != nil {
 				return out, err
-			} else {
-				last.value = val
 			}
+			last.value = val
 		} else {
 			out.setConfig(last.key, last.value)
 			last = curr
@@ -662,7 +665,7 @@ func (v variablesValuesSet) cartesianProductOfValues(orderedKeys []string) ([][]
 		out = append(out, next)
 		indices[0]++
 	}
-	return nil, errors.New("unreachable code")
+	// unreachable
 }
 
 // processedIsolate is verified Isolate ready for further processing.
@@ -806,7 +809,7 @@ func processConditionAst(expr ast.Expr, varsAndValues variablesValuesSet) (map[t
 			err = fmt.Errorf("unknown expression type %T\n", n)
 			return false
 		}
-		return false
+		// unreachable
 	})
 	if err != nil {
 		return nil, fmt.Errorf("invalid Condition: %s", err)
@@ -894,7 +897,7 @@ func (c *conditionEvaluator) eval(e ast.Expr) bool {
 	default:
 		panic(errors.New("processCondition must have ensured condition is evaluatable"))
 	}
-	return false
+	// unreachable
 }
 
 func makeConfigVariableIndex(configVariables []string) map[string]int {

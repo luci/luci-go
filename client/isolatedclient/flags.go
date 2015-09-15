@@ -14,11 +14,13 @@ import (
 	"github.com/luci/luci-go/client/isolatedclient/isolatedfake"
 )
 
+// Flags contains values parsed from command line arguments.
 type Flags struct {
 	ServerURL string
 	Namespace string
 }
 
+// Init registers flags in a given flag set.
 func (c *Flags) Init(f *flag.FlagSet) {
 	i := os.Getenv("ISOLATE_SERVER")
 	f.StringVar(&c.ServerURL, "isolate-server", i,
@@ -27,6 +29,7 @@ func (c *Flags) Init(f *flag.FlagSet) {
 	f.StringVar(&c.Namespace, "namespace", "default-gzip", "")
 }
 
+// Parse applies changes specified by command line flags.
 func (c *Flags) Parse() error {
 	if c.ServerURL == "" {
 		return errors.New("-isolate-server must be specified")
@@ -35,11 +38,11 @@ func (c *Flags) Parse() error {
 		ts := httptest.NewServer(isolatedfake.New())
 		c.ServerURL = ts.URL
 	} else {
-		if s, err := lhttp.CheckURL(c.ServerURL); err != nil {
+		s, err := lhttp.CheckURL(c.ServerURL)
+		if err != nil {
 			return err
-		} else {
-			c.ServerURL = s
 		}
+		c.ServerURL = s
 	}
 	if c.Namespace == "" {
 		return errors.New("-namespace must be specified")

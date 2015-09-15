@@ -227,11 +227,11 @@ func TestGoroutinePriorityPoolCancelFuncCalled(t *testing.T) {
 func TestGoroutinePriorityPoolWithPriority(t *testing.T) {
 	t.Parallel()
 
-	const MAX_PRIORITIES = 15
+	const maxPriorities = 15
 	pool := NewGoroutinePriorityPool(1, NewCanceler())
 	logs := make(chan int)
 	wg := sync.WaitGroup{}
-	for i := 0; i < MAX_PRIORITIES; i++ {
+	for i := 0; i < maxPriorities; i++ {
 		wg.Add(1)
 		i := i
 		go func() {
@@ -246,7 +246,7 @@ func TestGoroutinePriorityPoolWithPriority(t *testing.T) {
 		fail = pool.Wait()
 		ut.ExpectEqual(t, nil, fail)
 	}()
-	doneJobs := make([]bool, MAX_PRIORITIES)
+	doneJobs := make([]bool, maxPriorities)
 	// First job can be any, the rest must be in order.
 	prio := <-logs
 	doneJobs[prio] = true
@@ -258,7 +258,7 @@ func TestGoroutinePriorityPoolWithPriority(t *testing.T) {
 			ut.AssertEqual(t, true, doneJobs[before])
 		}
 	}
-	ut.AssertEqual(t, MAX_PRIORITIES, len(doneJobs))
+	ut.AssertEqual(t, maxPriorities, len(doneJobs))
 	for p, d := range doneJobs {
 		ut.AssertEqualIndex(t, p, true, d)
 	}

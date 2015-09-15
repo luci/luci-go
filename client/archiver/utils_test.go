@@ -7,6 +7,7 @@ package archiver
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http/httptest"
 	"os"
@@ -31,10 +32,11 @@ func TestWalkInexistent(t *testing.T) {
 		walk("inexistent_directory", nil, ch)
 	}()
 	item := <-ch
-	err := errors.New("walk(inexistent_directory): lstat inexistent_directory: no such file or directory")
+	osErr := "lstat inexistent_directory: no such file or directory"
 	if common.IsWindows() {
-		err = errors.New("walk(inexistent_directory): GetFileAttributesEx inexistent_directory: The system cannot find the file specified.")
+		osErr = "GetFileAttributesEx inexistent_directory: The system cannot find the file specified."
 	}
+	err := fmt.Errorf("walk(inexistent_directory): %s", osErr)
 	ut.AssertEqual(t, &walkItem{err: err}, item)
 	item, ok := <-ch
 	ut.AssertEqual(t, (*walkItem)(nil), item)

@@ -38,6 +38,14 @@ func (m MultiError) Error() string {
 	return fmt.Sprintf("%s (and %d other errors)", s, n-1)
 }
 
+// NewMultiError create new multi error from given errors.
+//
+// Can be used to workaround 'go vet' confusion "composite literal uses unkeyed
+// fields" or if you do not want to remember that MultiError is in fact []error.
+func NewMultiError(errors ...error) MultiError {
+	return errors
+}
+
 // SingleError provides a simple way to uwrap a MultiError if you know that it
 // could only ever contain one element.
 //

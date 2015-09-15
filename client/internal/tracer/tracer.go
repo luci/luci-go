@@ -19,6 +19,7 @@ import (
 // event.
 type Scope string
 
+// Possible scopes that can be passed to Instant.
 const (
 	Global  Scope = "g"
 	Process Scope = "p"

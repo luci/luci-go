@@ -122,10 +122,11 @@ func TestArchiverCancel(t *testing.T) {
 	future2 := a.PushFile("existent", fileName, 0)
 	future1.WaitForHashed()
 	future2.WaitForHashed()
-	expected := fmt.Errorf("hash(foo) failed: open %s: no such file or directory\n", nonexistent)
+	osErr := "no such file or directory"
 	if common.IsWindows() {
-		expected = fmt.Errorf("hash(foo) failed: open %s: The system cannot find the file specified.\n", nonexistent)
+		osErr = "The system cannot find the file specified."
 	}
+	expected := fmt.Errorf("hash(foo) failed: open %s: %s\n", nonexistent, osErr)
 	ut.AssertEqual(t, expected, <-a.Channel())
 	ut.AssertEqual(t, expected, a.Close())
 	ut.AssertEqual(t, nil, server.Error())

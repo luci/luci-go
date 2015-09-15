@@ -184,6 +184,7 @@ type tokenRun struct {
 	jsonOutput string
 }
 
+// Process exit codes of SubcommandToken subcommand.
 const (
 	TokenExitCodeValidToken = iota
 	TokenExitCodeNoValidToken

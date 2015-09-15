@@ -4,6 +4,7 @@
 
 package isolated
 
+// IsolatedFormatVersion is version of *.isolated file format. Put into JSON.
 const IsolatedFormatVersion = "1.4"
 
 // ReadOnlyValue defines permissions on isolated files.

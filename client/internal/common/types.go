@@ -17,6 +17,7 @@ func (c *Strings) String() string {
 	return pretty.Sprintf("%v", []string(*c))
 }
 
+// Set is needed to implements flag.Var interface.
 func (c *Strings) Set(value string) error {
 	*c = append(*c, value)
 	return nil

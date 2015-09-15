@@ -23,6 +23,7 @@ func (s Size) String() string {
 	return SizeToString(int64(s))
 }
 
+// SizeToString pretty prints file size (given as number of bytes).
 func SizeToString(s int64) string {
 	v := float64(s)
 	i := 0
@@ -47,6 +48,7 @@ func IsDirectory(path string) bool {
 	return err == nil && fileInfo.IsDir()
 }
 
+// IsWindows returns True when running on the best OS there is.
 func IsWindows() bool {
 	return runtime.GOOS == "windows"
 }

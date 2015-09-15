@@ -16,18 +16,21 @@ import (
 	"github.com/luci/luci-go/client/internal/tracer"
 )
 
+// Flags contains values parsed from command line arguments.
 type Flags struct {
 	Quiet     bool
 	Verbose   bool
 	TracePath string
 }
 
+// Init registers flags in a given flag set.
 func (d *Flags) Init(f *flag.FlagSet) {
 	f.BoolVar(&d.Quiet, "quiet", false, "Get less output")
 	f.BoolVar(&d.Verbose, "verbose", false, "Get more output")
 	f.StringVar(&d.TracePath, "trace", "", "Name of trace file to generate")
 }
 
+// Parse applies changes specified by command line flags.
 func (d *Flags) Parse() error {
 	if !d.Verbose {
 		log.SetFlags(0)

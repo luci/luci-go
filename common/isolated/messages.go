@@ -13,6 +13,8 @@ import (
 // string encoded integers found in JSON encoded data.
 type Int int
 
+// UnmarshalJSON takes JSON blob with int as is (e.g. 123) or wrapped in
+// a string (e.g. "123") and decodes it.
 func (i *Int) UnmarshalJSON(p []byte) error {
 	val := 0
 	if err := json.Unmarshal(p, &val); err == nil {

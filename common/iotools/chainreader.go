@@ -34,7 +34,7 @@ func (cr *ChainReader) Read(p []byte) (int, error) {
 	total := 0
 	for idx, source := range *cr {
 		if source == nil {
-			consumed += 1
+			consumed++
 			continue
 		}
 
@@ -42,7 +42,7 @@ func (cr *ChainReader) Read(p []byte) (int, error) {
 		total += count
 		if err == io.EOF {
 			(*cr)[idx] = nil
-			consumed += 1
+			consumed++
 		} else if err != nil {
 			return total, err
 		}
@@ -87,7 +87,7 @@ func (cr ChainReader) RemainingErr() (int64, error) {
 			Len() int
 		})
 		if !ok {
-			return 0, errors.New("chainreader: can only calculate Remaining for instances implementing Len().")
+			return 0, errors.New("chainreader: can only calculate Remaining for instances implementing Len()")
 		}
 		result += int64(r.Len())
 	}

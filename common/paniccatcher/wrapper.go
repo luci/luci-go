@@ -25,6 +25,7 @@ type Wrapper struct {
 	Stack []byte      // The stack at the time of the panic.
 }
 
+// Catch recovers from panic, dumping the stack trace to the error log.
 func (w *Wrapper) Catch(ctx context.Context, format string, args ...interface{}) {
 	if w.Panic = recover(); w.Panic != nil {
 		stack := make([]byte, maxStackBufferSize)

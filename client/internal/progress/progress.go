@@ -16,7 +16,10 @@ import (
 	"github.com/luci/luci-go/client/internal/common"
 )
 
+// Group identifies a column group to keep progress for.
 type Group int
+
+// Section identifies a particular column in a column group.
 type Section int
 
 // Progress outputs information about the progress of a long task.
