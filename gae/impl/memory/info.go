@@ -68,3 +68,7 @@ func (gi *giImpl) AppID() string {
 func (gi *giImpl) FullyQualifiedAppID() string {
 	return globalAppID
 }
+
+func (gi *giImpl) IsDevAppServer() bool {
+	return true
+}
