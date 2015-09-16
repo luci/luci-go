@@ -32,10 +32,13 @@ def PreCommitGo(input_api, output_api, pcg_mode):
         'checks are skipped. See https://github.com/maruel/pre-commit-go.')
     ]
 
-  # pcg can figure out what files to check on its own based on upstream ref.
   cmd = [pcg, 'run', '-m', ','.join(pcg_mode)]
   if input_api.verbose:
     cmd.append('-v')
+  # pcg can figure out what files to check on its own based on upstream ref,
+  # but on PRESUBMIT try builder upsteram isn't set, and it's just 1 commit.
+  if os.getenv('PRESUBMIT_BUILDER', ''):
+    cmd.extend(['-r', 'HEAD~1'])
   return input_api.RunTests([
     input_api.Command(
       name='pre-commit-go: %s' % ', '.join(pcg_mode),
