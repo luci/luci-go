@@ -204,7 +204,7 @@ func (c *tokenRun) Run(a subcommands.Application, args []string) int {
 	}
 
 	authenticator := auth.NewAuthenticator(opts)
-	token, expiry, err := authenticator.GetAccessToken(c.lifetime)
+	token, err := authenticator.GetAccessToken(c.lifetime)
 	if err != nil {
 		if err == auth.ErrLoginRequired {
 			fmt.Fprintln(os.Stderr, "interactive login required")
@@ -213,12 +213,12 @@ func (c *tokenRun) Run(a subcommands.Application, args []string) int {
 		}
 		return TokenExitCodeNoValidToken
 	}
-	if token == "" {
+	if token.AccessToken == "" {
 		return TokenExitCodeNoValidToken
 	}
 
 	if c.jsonOutput == "" {
-		fmt.Println(token)
+		fmt.Println(token.AccessToken)
 	} else {
 		out := os.Stdout
 		if c.jsonOutput != "-" {
@@ -232,7 +232,7 @@ func (c *tokenRun) Run(a subcommands.Application, args []string) int {
 		data := struct {
 			Token  string `json:"token"`
 			Expiry int64  `json:"expiry"`
-		}{token, expiry.Unix()}
+		}{token.AccessToken, token.Expiry.Unix()}
 		if err = json.NewEncoder(out).Encode(data); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return TokenExitCodeInternalError

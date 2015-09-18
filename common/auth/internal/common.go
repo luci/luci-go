@@ -32,9 +32,6 @@ type Token interface {
 	// Equals compares this token to another token of the same kind.
 	Equals(Token) bool
 
-	// RequestHeaders returns a map of authorization headers to add to the request.
-	RequestHeaders() map[string]string
-
 	// Expiry is the optional expiration time of the access token.
 	// Zero if it does not expire.
 	Expiry() time.Time
@@ -50,6 +47,11 @@ type Token interface {
 type TokenProvider interface {
 	// RequiresInteraction is true if provider may start user interaction in MintToken.
 	RequiresInteraction() bool
+
+	// CacheSeed is an optional byte string to use when constructing cache entry
+	// name for access token cache. Different seeds will result in different
+	// cache entries.
+	CacheSeed() []byte
 
 	// MintToken launches authentication flow (possibly interactive) and returns
 	// a new refreshable token.
@@ -116,14 +118,6 @@ func (t *tokenImpl) Expiry() time.Time {
 	return t.Token.Expiry
 }
 
-func (t *tokenImpl) RequestHeaders() map[string]string {
-	ret := make(map[string]string)
-	if t.Token.AccessToken != "" {
-		ret["Authorization"] = "Bearer " + t.Token.AccessToken
-	}
-	return ret
-}
-
 func (t *tokenImpl) AccessToken() string {
 	return t.Token.AccessToken
 }
@@ -150,6 +144,10 @@ const tokFormatVersion = "1"
 
 func (p *oauthTokenProvider) RequiresInteraction() bool {
 	return p.interactive
+}
+
+func (p *oauthTokenProvider) CacheSeed() []byte {
+	return nil
 }
 
 func (p *oauthTokenProvider) MarshalToken(t Token) ([]byte, error) {

@@ -5,7 +5,7 @@
 package internal
 
 import (
-	"io/ioutil"
+	"crypto/sha1"
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2/google"
@@ -20,12 +20,8 @@ type serviceAccountTokenProvider struct {
 }
 
 // NewServiceAccountTokenProvider returns TokenProvider that supports service accounts.
-func NewServiceAccountTokenProvider(ctx context.Context, credsPath string, scopes []string) (TokenProvider, error) {
-	buf, err := ioutil.ReadFile(credsPath)
-	if err != nil {
-		return nil, err
-	}
-	config, err := google.JWTConfigFromJSON(buf, scopes...)
+func NewServiceAccountTokenProvider(ctx context.Context, jsonKey []byte, scopes []string) (TokenProvider, error) {
+	config, err := google.JWTConfigFromJSON(jsonKey, scopes...)
 	if err != nil {
 		return nil, err
 	}
@@ -37,6 +33,11 @@ func NewServiceAccountTokenProvider(ctx context.Context, credsPath string, scope
 		ctx:    ctx,
 		config: config,
 	}, nil
+}
+
+func (p *serviceAccountTokenProvider) CacheSeed() []byte {
+	seed := sha1.Sum(p.config.PrivateKey)
+	return seed[:]
 }
 
 func (p *serviceAccountTokenProvider) MintToken() (Token, error) {

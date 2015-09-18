@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -67,21 +66,20 @@ func mockTokenProvider(factory func() internal.TokenProvider) {
 
 func TestAuthenticator(t *testing.T) {
 	Convey("Given mocked secrets dir", t, func() {
-		tempDir := mockSecretsDir()
-
 		Convey("Check NewAuthenticator defaults", func() {
 			clientID, clientSecret := DefaultClient()
 			ctx := context.Background()
 			a := NewAuthenticator(Options{Context: ctx}).(*authenticatorImpl)
 			So(a.opts, ShouldResemble, &Options{
-				Method:                 AutoSelectMethod,
-				Scopes:                 []string{OAuthScopeEmail},
 				ClientID:               clientID,
 				ClientSecret:           clientSecret,
-				ServiceAccountJSONPath: filepath.Join(tempDir, "service_account.json"),
-				GCEAccountName:         "default",
 				Context:                ctx,
+				GCEAccountName:         "default",
 				Logger:                 logging.Get(ctx),
+				Method:                 AutoSelectMethod,
+				Scopes:                 []string{OAuthScopeEmail},
+				ServiceAccountJSONPath: "",
+				Transport:              http.DefaultTransport,
 			})
 		})
 	})
@@ -96,16 +94,16 @@ func TestAuthenticatedClient(t *testing.T) {
 
 		Convey("Test login required", func() {
 			tokenProvider = &fakeTokenProvider{interactive: true}
-			c, err := AuthenticatedClient(InteractiveLogin, NewAuthenticator(Options{}))
+			t, err := AuthenticatedTransport(InteractiveLogin, NewAuthenticator(Options{}))
 			So(err, ShouldBeNil)
-			So(c, ShouldNotEqual, http.DefaultClient)
+			So(t, ShouldNotEqual, http.DefaultTransport)
 		})
 
 		Convey("Test login not required", func() {
 			tokenProvider = &fakeTokenProvider{interactive: true}
-			c, err := AuthenticatedClient(OptionalLogin, NewAuthenticator(Options{}))
+			t, err := AuthenticatedTransport(OptionalLogin, NewAuthenticator(Options{}))
 			So(err, ShouldBeNil)
-			So(c, ShouldEqual, http.DefaultClient)
+			So(t, ShouldEqual, http.DefaultTransport)
 		})
 	})
 }
@@ -192,6 +190,10 @@ type fakeTokenProvider struct {
 
 func (p *fakeTokenProvider) RequiresInteraction() bool {
 	return p.interactive
+}
+
+func (p *fakeTokenProvider) CacheSeed() []byte {
+	return nil
 }
 
 func (p *fakeTokenProvider) MintToken() (internal.Token, error) {
