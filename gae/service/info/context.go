@@ -33,7 +33,7 @@ func getUnfiltered(c context.Context) Interface {
 	return nil
 }
 
-// Get gets gets the Interface implementation from context.
+// Get gets the Interface implementation from context.
 func Get(c context.Context) Interface {
 	ret := getUnfiltered(c)
 	if ret == nil {

@@ -19,25 +19,28 @@ import (
 //   - github.com/luci/gae/service/taskqueue
 //   - github.com/luci/gae/service/memcache
 //   - github.com/luci/gae/service/info
+//   - github.com/luci/gae/service/urlfetch
 //
 // These can be retrieved with the <service>.Get functions.
 //
 // The implementations are all backed by the real appengine SDK functionality,
 func Use(c context.Context) context.Context {
-	return useRDS(useMC(useTQ(useGI(c))))
+	return useURLFetch(useRDS(useMC(useTQ(useGI(c)))))
 }
 
-// Use adds production implementations for all the gae services to the context.
+// UseRequest adds production implementations for all the gae services
+// to the context.
 //
 // The services added are:
 //   - github.com/luci/gae/service/datastore
 //   - github.com/luci/gae/service/taskqueue
 //   - github.com/luci/gae/service/memcache
 //   - github.com/luci/gae/service/info
+//   - github.com/luci/gae/service/urlfetch
 //
 // These can be retrieved with the <service>.Get functions.
 //
 // The implementations are all backed by the real appengine SDK functionality,
 func UseRequest(r *http.Request) context.Context {
-	return useRDS(useMC(useTQ(useGI(appengine.NewContext(r)))))
+	return useURLFetch(useRDS(useMC(useTQ(useGI(appengine.NewContext(r))))))
 }
