@@ -36,7 +36,7 @@ func TestProperties(t *testing.T) {
 				So(pv.IndexSetting(), ShouldEqual, NoIndex)
 				So(pv.Type().String(), ShouldEqual, "PTInt")
 
-				pv.SetValue(nil, ShouldIndex)
+				So(pv.SetValue(nil, ShouldIndex), ShouldBeNil)
 				So(pv.Value(), ShouldBeNil)
 				So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
 				So(pv.Type().String(), ShouldEqual, "PTNull")
@@ -69,7 +69,7 @@ func TestProperties(t *testing.T) {
 				})
 				Convey("float", func() {
 					pv := Property{}
-					pv.SetValue(myfloat(19.7), ShouldIndex)
+					So(pv.SetValue(myfloat(19.7), ShouldIndex), ShouldBeNil)
 					So(pv.Value(), ShouldHaveSameTypeAs, float64(19.7))
 					So(pv.Value(), ShouldEqual, float32(19.7))
 					So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
@@ -111,14 +111,14 @@ func TestProperties(t *testing.T) {
 				pv := Property{}
 				now := time.Now().In(time.UTC)
 				now = now.Round(time.Microsecond).Add(time.Nanosecond * 313)
-				pv.SetValue(now, ShouldIndex)
+				So(pv.SetValue(now, ShouldIndex), ShouldBeNil)
 				So(pv.Value(), ShouldHappenBefore, now)
 				So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
 				So(pv.Type().String(), ShouldEqual, "PTTime")
 			})
 			Convey("[]byte allows IndexSetting", func() {
 				pv := Property{}
-				pv.SetValue([]byte("hello"), ShouldIndex)
+				So(pv.SetValue([]byte("hello"), ShouldIndex), ShouldBeNil)
 				So(pv.Value(), ShouldResemble, []byte("hello"))
 				So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
 				So(pv.Type().String(), ShouldEqual, "PTBytes")

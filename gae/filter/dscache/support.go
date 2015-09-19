@@ -22,10 +22,10 @@ type supportContext struct {
 	c            context.Context
 	mc           memcache.Interface
 	mr           *rand.Rand
-	shardsForKey func(ds.Key) int
+	shardsForKey func(*ds.Key) int
 }
 
-func (s *supportContext) numShards(k ds.Key) int {
+func (s *supportContext) numShards(k *ds.Key) int {
 	ret := DefaultShards
 	if s.shardsForKey != nil {
 		ret = s.shardsForKey(k)
@@ -39,7 +39,7 @@ func (s *supportContext) numShards(k ds.Key) int {
 	return ret
 }
 
-func (s *supportContext) mkRandKeys(keys []ds.Key, metas ds.MultiMetaGetter) []string {
+func (s *supportContext) mkRandKeys(keys []*ds.Key, metas ds.MultiMetaGetter) []string {
 	ret := []string(nil)
 	for i, key := range keys {
 		if !metas.GetMetaDefault(i, CacheEnableMeta, true).(bool) {
@@ -57,7 +57,7 @@ func (s *supportContext) mkRandKeys(keys []ds.Key, metas ds.MultiMetaGetter) []s
 	return ret
 }
 
-func (s *supportContext) mkAllKeys(keys []ds.Key) []string {
+func (s *supportContext) mkAllKeys(keys []*ds.Key) []string {
 	size := 0
 	nums := make([]int, len(keys))
 	for i, key := range keys {
@@ -102,7 +102,7 @@ func (s *supportContext) crappyNonce() []byte {
 	return ret
 }
 
-func (s *supportContext) mutation(keys []ds.Key, f func() error) error {
+func (s *supportContext) mutation(keys []*ds.Key, f func() error) error {
 	lockItems, lockKeys := s.mkAllLockItems(keys)
 	if lockItems == nil {
 		return f()
@@ -124,7 +124,7 @@ func (s *supportContext) mutation(keys []ds.Key, f func() error) error {
 	return err
 }
 
-func (s *supportContext) mkRandLockItems(keys []ds.Key, metas ds.MultiMetaGetter) ([]memcache.Item, []byte) {
+func (s *supportContext) mkRandLockItems(keys []*ds.Key, metas ds.MultiMetaGetter) ([]memcache.Item, []byte) {
 	mcKeys := s.mkRandKeys(keys, metas)
 	if len(mcKeys) == 0 {
 		return nil, nil
@@ -143,7 +143,7 @@ func (s *supportContext) mkRandLockItems(keys []ds.Key, metas ds.MultiMetaGetter
 	return ret, nonce
 }
 
-func (s *supportContext) mkAllLockItems(keys []ds.Key) ([]memcache.Item, []string) {
+func (s *supportContext) mkAllLockItems(keys []*ds.Key) ([]memcache.Item, []string) {
 	mcKeys := s.mkAllKeys(keys)
 	if mcKeys == nil {
 		return nil, nil

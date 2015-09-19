@@ -21,19 +21,19 @@ type dsCache struct {
 
 var _ ds.RawInterface = (*dsCache)(nil)
 
-func (d *dsCache) DeleteMulti(keys []ds.Key, cb ds.DeleteMultiCB) error {
+func (d *dsCache) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 	return d.mutation(keys, func() error {
 		return d.RawInterface.DeleteMulti(keys, cb)
 	})
 }
 
-func (d *dsCache) PutMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
+func (d *dsCache) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
 	return d.mutation(keys, func() error {
 		return d.RawInterface.PutMulti(keys, vals, cb)
 	})
 }
 
-func (d *dsCache) GetMulti(keys []ds.Key, metas ds.MultiMetaGetter, cb ds.GetMultiCB) error {
+func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMultiCB) error {
 	lockItems, nonce := d.mkRandLockItems(keys, metas)
 	if len(lockItems) == 0 {
 		return d.RawInterface.GetMulti(keys, metas, cb)

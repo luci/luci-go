@@ -17,6 +17,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/mathrand"
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -114,7 +115,9 @@ func TestTaskQueue(t *testing.T) {
 					t.ETA = clock.Now(c).Add(time.Hour)
 					tc.Add(time.Second)
 					t.Delay = time.Hour
-					So(func() { tq.Add(t, "") }, ShouldPanic)
+					So(func() {
+						So(tq.Add(t, ""), ShouldBeNil)
+					}, ShouldPanic)
 				})
 
 				Convey("must use a reasonable method", func() {
@@ -245,14 +248,14 @@ func TestTaskQueue(t *testing.T) {
 			So(tq.Delete(t2, ""), ShouldBeNil)
 
 			Convey("can view regular tasks", func() {
-				dsS.Get(c).RunInTransaction(func(c context.Context) error {
+				So(dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					tqt := tqS.GetRaw(c).Testable()
 
 					So(tqt.GetScheduledTasks()["default"][t.Name], ShouldResemble, t)
 					So(tqt.GetTombstonedTasks()["default"][t2.Name], ShouldResemble, t2)
 					So(tqt.GetTransactionTasks()["default"], ShouldBeNil)
 					return nil
-				}, nil)
+				}, nil), ShouldBeNil)
 			})
 
 			Convey("can add a new task", func() {
@@ -290,7 +293,7 @@ func TestTaskQueue(t *testing.T) {
 
 				ttq := tqS.Interface(nil)
 
-				dsS.Get(c).RunInTransaction(func(c context.Context) error {
+				So(dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					ttq = tqS.Get(c)
 					tqt := ttq.Testable()
 
@@ -307,7 +310,7 @@ func TestTaskQueue(t *testing.T) {
 					So(len(tqt.GetTransactionTasks()["default"]), ShouldEqual, 0)
 
 					return nil
-				}, nil)
+				}, nil), ShouldBeNil)
 
 				So(len(tqt.GetScheduledTasks()["default"]), ShouldEqual, 0)
 				So(len(tqt.GetTombstonedTasks()["default"]), ShouldEqual, 0)
@@ -319,7 +322,7 @@ func TestTaskQueue(t *testing.T) {
 			})
 
 			Convey("you can AddMulti as well", func() {
-				dsS.Get(c).RunInTransaction(func(c context.Context) error {
+				So(dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					tq := tqS.Get(c)
 					tqt := tq.Testable()
 
@@ -329,23 +332,23 @@ func TestTaskQueue(t *testing.T) {
 					So(len(tqt.GetScheduledTasks()["default"]), ShouldEqual, 1)
 					So(len(tqt.GetTransactionTasks()["default"]), ShouldEqual, 3)
 					return nil
-				}, nil)
+				}, nil), ShouldBeNil)
 				So(len(tqt.GetScheduledTasks()["default"]), ShouldEqual, 4)
 				So(len(tqt.GetTransactionTasks()["default"]), ShouldEqual, 0)
 			})
 
 			Convey("unless you add too many things", func() {
-				dsS.Get(c).RunInTransaction(func(c context.Context) error {
+				So(dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					for i := 0; i < 5; i++ {
 						So(tqS.Get(c).Add(t.Duplicate(), ""), ShouldBeNil)
 					}
 					So(tqS.Get(c).Add(t, "").Error(), ShouldContainSubstring, "BAD_REQUEST")
 					return nil
-				}, nil)
+				}, nil), ShouldBeNil)
 			})
 
 			Convey("unless you Add to a bad queue", func() {
-				dsS.Get(c).RunInTransaction(func(c context.Context) error {
+				So(dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					So(tqS.Get(c).Add(t, "meat").Error(), ShouldContainSubstring, "UNKNOWN_QUEUE")
 
 					Convey("unless you add it!", func() {
@@ -354,25 +357,25 @@ func TestTaskQueue(t *testing.T) {
 					})
 
 					return nil
-				}, nil)
+				}, nil), ShouldBeNil)
 			})
 
 			Convey("No other features are available, however", func() {
-				dsS.Get(c).RunInTransaction(func(c context.Context) error {
+				So(dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					So(tqS.Get(c).Delete(t, "").Error(), ShouldContainSubstring, "cannot DeleteMulti from a transaction")
 					So(tqS.Get(c).Purge("").Error(), ShouldContainSubstring, "cannot Purge from a transaction")
 					_, err := tqS.Get(c).Stats("")
 					So(err.Error(), ShouldContainSubstring, "cannot Stats from a transaction")
 					return nil
-				}, nil)
+				}, nil), ShouldBeNil)
 			})
 
 			Convey("adding a new task only happens if we don't errout", func() {
-				dsS.Get(c).RunInTransaction(func(c context.Context) error {
+				So(dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					t3 := tq.NewTask("/sandwitch/victory")
 					So(tqS.Get(c).Add(t3, ""), ShouldBeNil)
 					return fmt.Errorf("nooooo")
-				}, nil)
+				}, nil), ShouldErrLike, "nooooo")
 
 				So(tqt.GetScheduledTasks()["default"][t.Name], ShouldResemble, t)
 				So(tqt.GetTombstonedTasks()["default"][t2.Name], ShouldResemble, t2)
@@ -381,14 +384,14 @@ func TestTaskQueue(t *testing.T) {
 
 			Convey("likewise, a panic doesn't schedule anything", func() {
 				func() {
-					defer func() { recover() }()
-					dsS.Get(c).RunInTransaction(func(c context.Context) error {
+					defer func() { _ = recover() }()
+					So(dsS.Get(c).RunInTransaction(func(c context.Context) error {
 						tq := tqS.Get(c)
 
 						So(tq.Add(tq.NewTask("/sandwitch/victory"), ""), ShouldBeNil)
 
 						panic(fmt.Errorf("nooooo"))
-					}, nil)
+					}, nil), ShouldBeNil)
 				}()
 
 				So(tqt.GetScheduledTasks()["default"][t.Name], ShouldResemble, t)

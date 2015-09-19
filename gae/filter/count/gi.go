@@ -44,47 +44,47 @@ type infoCounter struct {
 var _ info.Interface = (*infoCounter)(nil)
 
 func (g *infoCounter) AppID() string {
-	g.c.AppID.up()
+	_ = g.c.AppID.up()
 	return g.gi.AppID()
 }
 
 func (g *infoCounter) FullyQualifiedAppID() string {
-	g.c.FullyQualifiedAppID.up()
+	_ = g.c.FullyQualifiedAppID.up()
 	return g.gi.FullyQualifiedAppID()
 }
 
 func (g *infoCounter) GetNamespace() string {
-	g.c.GetNamespace.up()
+	_ = g.c.GetNamespace.up()
 	return g.gi.GetNamespace()
 }
 
 func (g *infoCounter) Datacenter() string {
-	g.c.Datacenter.up()
+	_ = g.c.Datacenter.up()
 	return g.gi.Datacenter()
 }
 
 func (g *infoCounter) DefaultVersionHostname() string {
-	g.c.DefaultVersionHostname.up()
+	_ = g.c.DefaultVersionHostname.up()
 	return g.gi.DefaultVersionHostname()
 }
 
 func (g *infoCounter) InstanceID() string {
-	g.c.InstanceID.up()
+	_ = g.c.InstanceID.up()
 	return g.gi.InstanceID()
 }
 
 func (g *infoCounter) IsDevAppServer() bool {
-	g.c.IsDevAppServer.up()
+	_ = g.c.IsDevAppServer.up()
 	return g.gi.IsDevAppServer()
 }
 
 func (g *infoCounter) IsOverQuota(err error) bool {
-	g.c.IsOverQuota.up()
+	_ = g.c.IsOverQuota.up()
 	return g.gi.IsOverQuota(err)
 }
 
 func (g *infoCounter) IsTimeoutError(err error) bool {
-	g.c.IsTimeoutError.up()
+	_ = g.c.IsTimeoutError.up()
 	return g.gi.IsTimeoutError(err)
 }
 
@@ -94,17 +94,17 @@ func (g *infoCounter) ModuleHostname(module, version, instance string) (string, 
 }
 
 func (g *infoCounter) ModuleName() string {
-	g.c.ModuleName.up()
+	_ = g.c.ModuleName.up()
 	return g.gi.ModuleName()
 }
 
 func (g *infoCounter) RequestID() string {
-	g.c.RequestID.up()
+	_ = g.c.RequestID.up()
 	return g.gi.RequestID()
 }
 
 func (g *infoCounter) ServerSoftware() string {
-	g.c.ServerSoftware.up()
+	_ = g.c.ServerSoftware.up()
 	return g.gi.ServerSoftware()
 }
 
@@ -114,7 +114,7 @@ func (g *infoCounter) ServiceAccount() (string, error) {
 }
 
 func (g *infoCounter) VersionID() string {
-	g.c.VersionID.up()
+	_ = g.c.VersionID.up()
 	return g.gi.VersionID()
 }
 
@@ -123,10 +123,9 @@ func (g *infoCounter) Namespace(namespace string) (context.Context, error) {
 	return ret, g.c.Namespace.up(err)
 }
 
-func (g *infoCounter) AccessToken(scopes ...string) (token string, expiry time.Time, err error) {
-	token, expiry, err = g.gi.AccessToken(scopes...)
-	g.c.AccessToken.up(err)
-	return
+func (g *infoCounter) AccessToken(scopes ...string) (string, time.Time, error) {
+	token, expiry, err := g.gi.AccessToken(scopes...)
+	return token, expiry, g.c.AccessToken.up(err)
 }
 
 func (g *infoCounter) PublicCertificates() ([]info.Certificate, error) {
@@ -134,10 +133,9 @@ func (g *infoCounter) PublicCertificates() ([]info.Certificate, error) {
 	return ret, g.c.PublicCertificates.up(err)
 }
 
-func (g *infoCounter) SignBytes(bytes []byte) (keyName string, signature []byte, err error) {
-	keyName, signature, err = g.gi.SignBytes(bytes)
-	g.c.SignBytes.up(err)
-	return
+func (g *infoCounter) SignBytes(bytes []byte) (string, []byte, error) {
+	keyName, signature, err := g.gi.SignBytes(bytes)
+	return keyName, signature, g.c.SignBytes.up(err)
 }
 
 // FilterGI installs a counter GlobalInfo filter in the context.

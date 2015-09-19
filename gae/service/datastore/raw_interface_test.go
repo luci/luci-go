@@ -31,8 +31,8 @@ func TestMultiMetaGetter(t *testing.T) {
 
 		Convey("stuff", func() {
 			pmaps := []PropertyMap{{}, nil, {}}
-			pmaps[0].SetMeta("hi", "thing")
-			pmaps[2].SetMeta("key", 100)
+			So(pmaps[0].SetMeta("hi", "thing"), ShouldBeNil)
+			So(pmaps[2].SetMeta("key", 100), ShouldBeNil)
 			mmg := NewMultiMetaGetter(pmaps)
 
 			// oob is OK

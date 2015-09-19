@@ -207,9 +207,8 @@ func (m *memcacheImpl) AddMulti(items []mc.Item, cb mc.RawCB) error {
 		if !m.data.hasItemLocked(now, itm.Key()) {
 			m.data.setItemLocked(now, itm)
 			return nil
-		} else {
-			return mc.ErrNotStored
 		}
+		return mc.ErrNotStored
 	})
 	return nil
 }

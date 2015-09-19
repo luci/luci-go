@@ -50,8 +50,8 @@ func TestContextAccess(t *testing.T) {
 			So(dsS.Get(c), ShouldNotBeNil)
 			So(func() {
 				defer p()
-				dsS.Get(c).DecodeKey("wut")
-			}, ShouldPanicWith, "dummy: method Datastore.DecodeKey is not implemented")
+				_, _ = dsS.Get(c).DecodeCursor("wut")
+			}, ShouldPanicWith, "dummy: method Datastore.DecodeCursor is not implemented")
 		})
 
 		Convey("Memcache", func() {
@@ -59,7 +59,7 @@ func TestContextAccess(t *testing.T) {
 			So(mcS.Get(c), ShouldNotBeNil)
 			So(func() {
 				defer p()
-				mcS.Get(c).Add(nil)
+				_ = mcS.Get(c).Add(nil)
 			}, ShouldPanicWith, "dummy: method Memcache.AddMulti is not implemented")
 		})
 
@@ -68,7 +68,7 @@ func TestContextAccess(t *testing.T) {
 			So(tqS.Get(c), ShouldNotBeNil)
 			So(func() {
 				defer p()
-				tqS.Get(c).Purge("")
+				_ = tqS.Get(c).Purge("")
 			}, ShouldPanicWith, "dummy: method TaskQueue.Purge is not implemented")
 		})
 

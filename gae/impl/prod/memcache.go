@@ -141,9 +141,8 @@ func (m mcImpl) CompareAndSwapMulti(items []mc.Item, cb mc.RawCB) error {
 func (m mcImpl) Increment(key string, delta int64, initialValue *uint64) (uint64, error) {
 	if initialValue == nil {
 		return memcache.IncrementExisting(m.Context, key, delta)
-	} else {
-		return memcache.Increment(m.Context, key, delta, *initialValue)
 	}
+	return memcache.Increment(m.Context, key, delta, *initialValue)
 }
 
 func (m mcImpl) Flush() error {

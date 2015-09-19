@@ -8,4 +8,6 @@ import (
 	"google.golang.org/appengine/taskqueue"
 )
 
+// ErrTaskAlreadyAdded is the error returned when a named task is added to a
+// task queue more than once.
 var ErrTaskAlreadyAdded = taskqueue.ErrTaskAlreadyAdded

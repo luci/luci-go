@@ -32,7 +32,7 @@ type mcCounter struct {
 var _ mc.RawInterface = (*mcCounter)(nil)
 
 func (m *mcCounter) NewItem(key string) mc.Item {
-	m.c.NewItem.up()
+	_ = m.c.NewItem.up()
 	return m.mc.NewItem(key)
 }
 

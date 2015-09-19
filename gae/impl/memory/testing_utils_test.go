@@ -11,7 +11,6 @@ import (
 	"time"
 
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/datastore/dskey"
 	"github.com/luci/gae/service/datastore/serialize"
 	"github.com/luci/luci-go/common/cmpbin"
 )
@@ -21,13 +20,13 @@ func init() {
 	serialize.WritePropertyMapDeterministic = true
 }
 
-var NEXT_STR = "NEXT MARKER"
-var NEXT = &NEXT_STR
+var nextMarker = "NEXT MARKER"
+var Next = &nextMarker
 
 // Use like:
 //   pmap(
-//     "prop", "val", 0, 100, NEXT,
-//     "other", "val", 0, 100, NEXT,
+//     "prop", "val", 0, 100, Next,
+//     "other", "val", 0, 100, Next,
 //   )
 //
 func pmap(stuff ...interface{}) ds.PropertyMap {
@@ -45,11 +44,11 @@ func pmap(stuff ...interface{}) ds.PropertyMap {
 	for len(stuff) > 0 {
 		pname := nom().(string)
 		if pname[0] == '$' || (strings.HasPrefix(pname, "__") && strings.HasSuffix(pname, "__")) {
-			for len(stuff) > 0 && stuff[0] != NEXT {
+			for len(stuff) > 0 && stuff[0] != Next {
 				ret[pname] = append(ret[pname], propNI(nom()))
 			}
 		} else {
-			for len(stuff) > 0 && stuff[0] != NEXT {
+			for len(stuff) > 0 && stuff[0] != Next {
 				ret[pname] = append(ret[pname], prop(nom()))
 			}
 		}
@@ -59,13 +58,12 @@ func pmap(stuff ...interface{}) ds.PropertyMap {
 	return ret
 }
 
-func nq(kind_ns ...string) ds.Query {
-	if len(kind_ns) == 2 {
-		return &queryImpl{kind: kind_ns[0], ns: kind_ns[1]}
-	} else if len(kind_ns) == 1 {
-		return &queryImpl{kind: kind_ns[0], ns: "ns"}
+func nq(kindMaybe ...string) *ds.Query {
+	kind := "Foo"
+	if len(kindMaybe) == 1 {
+		kind = kindMaybe[0]
 	}
-	return &queryImpl{kind: "Foo", ns: "ns"}
+	return ds.NewQuery(kind)
 }
 
 func indx(kind string, orders ...string) *ds.IndexDefinition {
@@ -76,12 +74,11 @@ func indx(kind string, orders ...string) *ds.IndexDefinition {
 	}
 	ret := &ds.IndexDefinition{Kind: kind, Ancestor: ancestor}
 	for _, o := range orders {
-		dir := ds.ASCENDING
-		if o[0] == '-' {
-			dir = ds.DESCENDING
-			o = o[1:]
+		col, err := ds.ParseIndexColumn(o)
+		if err != nil {
+			panic(err)
 		}
-		ret.SortBy = append(ret.SortBy, ds.IndexColumn{Property: o, Direction: dir})
+		ret.SortBy = append(ret.SortBy, col)
 	}
 	return ret
 }
@@ -91,56 +88,53 @@ var (
 	propNI = ds.MkPropertyNI
 )
 
-func key(kind string, id interface{}, parent ...ds.Key) ds.Key {
-	p := ds.Key(nil)
-	if len(parent) > 0 {
-		p = parent[0]
-	}
-	switch x := id.(type) {
-	case string:
-		return dskey.New(globalAppID, "ns", kind, x, 0, p)
-	case int:
-		return dskey.New(globalAppID, "ns", kind, "", int64(x), p)
-	default:
-		return dskey.New(globalAppID, "ns", kind, "invalid", 100, p)
+func key(elems ...interface{}) *ds.Key {
+	return ds.MakeKey(globalAppID, "ns", elems...)
+}
+
+func die(err error) {
+	if err != nil {
+		panic(err)
 	}
 }
 
 // cat is a convenience method for concatenating anything with an underlying
 // byte representation into a single []byte.
 func cat(bytethings ...interface{}) []byte {
+	err := error(nil)
 	buf := &bytes.Buffer{}
 	for _, thing := range bytethings {
 		switch x := thing.(type) {
 		case int64:
-			cmpbin.WriteInt(buf, x)
+			_, err = cmpbin.WriteInt(buf, x)
 		case int:
-			cmpbin.WriteInt(buf, int64(x))
+			_, err = cmpbin.WriteInt(buf, int64(x))
 		case uint64:
-			cmpbin.WriteUint(buf, x)
+			_, err = cmpbin.WriteUint(buf, x)
 		case uint:
-			cmpbin.WriteUint(buf, uint64(x))
+			_, err = cmpbin.WriteUint(buf, uint64(x))
 		case float64:
-			cmpbin.WriteFloat64(buf, x)
+			_, err = cmpbin.WriteFloat64(buf, x)
 		case byte:
-			buf.WriteByte(x)
+			err = buf.WriteByte(x)
 		case ds.PropertyType:
-			buf.WriteByte(byte(x))
+			err = buf.WriteByte(byte(x))
 		case string:
-			cmpbin.WriteString(buf, x)
+			_, err = cmpbin.WriteString(buf, x)
 		case []byte:
-			buf.Write(x)
+			_, err = buf.Write(x)
 		case time.Time:
-			serialize.WriteTime(buf, x)
-		case ds.Key:
-			serialize.WriteKey(buf, serialize.WithoutContext, x)
+			err = serialize.WriteTime(buf, x)
+		case *ds.Key:
+			err = serialize.WriteKey(buf, serialize.WithoutContext, x)
 		case *ds.IndexDefinition:
-			serialize.WriteIndexDefinition(buf, *x)
+			err = serialize.WriteIndexDefinition(buf, *x)
 		case ds.Property:
-			serialize.WriteProperty(buf, serialize.WithoutContext, x)
+			err = serialize.WriteProperty(buf, serialize.WithoutContext, x)
 		default:
 			panic(fmt.Errorf("I don't know how to deal with %T: %#v", thing, thing))
 		}
+		die(err)
 	}
 	ret := buf.Bytes()
 	if ret == nil {

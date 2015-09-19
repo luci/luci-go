@@ -48,7 +48,7 @@ type reducedQuery struct {
 	numCols int
 }
 
-type IndexDefinitionSortable struct {
+type indexDefinitionSortable struct {
 	// eqFilts is the list of ACTUAL prefix columns. Note that it may contain
 	// redundant columns! (e.g. (tag, tag) is a perfectly valid prefix, becuase
 	// (tag=1, tag=2) is a perfectly valid query).
@@ -56,11 +56,11 @@ type IndexDefinitionSortable struct {
 	coll    *memCollection
 }
 
-func (i *IndexDefinitionSortable) hasAncestor() bool {
+func (i *indexDefinitionSortable) hasAncestor() bool {
 	return len(i.eqFilts) > 0 && i.eqFilts[0].Property == "__ancestor__"
 }
 
-func (i *IndexDefinitionSortable) numEqHits(c *constraints) int {
+func (i *indexDefinitionSortable) numEqHits(c *constraints) int {
 	ret := 0
 	for _, filt := range i.eqFilts {
 		if _, ok := c.constraints[filt.Property]; ok {
@@ -70,12 +70,12 @@ func (i *IndexDefinitionSortable) numEqHits(c *constraints) int {
 	return ret
 }
 
-type IndexDefinitionSortableSlice []IndexDefinitionSortable
+type indexDefinitionSortableSlice []indexDefinitionSortable
 
-func (s IndexDefinitionSortableSlice) Len() int      { return len(s) }
-func (s IndexDefinitionSortableSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-func (s IndexDefinitionSortableSlice) Less(i, j int) bool {
-	a, b := s[i], s[j]
+func (idxs indexDefinitionSortableSlice) Len() int      { return len(idxs) }
+func (idxs indexDefinitionSortableSlice) Swap(i, j int) { idxs[i], idxs[j] = idxs[j], idxs[i] }
+func (idxs indexDefinitionSortableSlice) Less(i, j int) bool {
+	a, b := idxs[i], idxs[j]
 	if a.coll == nil && b.coll != nil {
 		return true
 	} else if a.coll != nil && b.coll == nil {
@@ -90,9 +90,9 @@ func (s IndexDefinitionSortableSlice) Less(i, j int) bool {
 	}
 	for k, col := range a.eqFilts {
 		ocol := b.eqFilts[k]
-		if col.Direction == ds.ASCENDING && ocol.Direction == ds.DESCENDING {
+		if !col.Descending && ocol.Descending {
 			return true
-		} else if col.Direction == ds.DESCENDING && ocol.Direction == ds.ASCENDING {
+		} else if col.Descending && !ocol.Descending {
 			return false
 		}
 		if col.Property < ocol.Property {
@@ -104,7 +104,7 @@ func (s IndexDefinitionSortableSlice) Less(i, j int) bool {
 	return false
 }
 
-// maybeAddDefinition possibly adds a new IndexDefinitionSortable to this slice.
+// maybeAddDefinition possibly adds a new indexDefinitionSortable to this slice.
 // It's only added if it could be useful in servicing q, otherwise this function
 // is a noop.
 //
@@ -114,7 +114,7 @@ func (s IndexDefinitionSortableSlice) Less(i, j int) bool {
 // If the proposed index is PERFECT (e.g. contains enough columns to cover all
 // equality filters, and also has the correct suffix), idxs will be replaced
 // with JUST that index, and this will return true.
-func (idxs *IndexDefinitionSortableSlice) maybeAddDefinition(q *reducedQuery, s *memStore, missingTerms stringset.Set, id *ds.IndexDefinition) bool {
+func (idxs *indexDefinitionSortableSlice) maybeAddDefinition(q *reducedQuery, s *memStore, missingTerms stringset.Set, id *ds.IndexDefinition) bool {
 	// Kindless queries are handled elsewhere.
 	if id.Kind != q.kind {
 		impossible(
@@ -183,7 +183,7 @@ func (idxs *IndexDefinitionSortableSlice) maybeAddDefinition(q *reducedQuery, s 
 	//
 	// A perfect match contains ALL the equality filter columns (or more, since
 	// we can use residuals to fill in the extras).
-	toAdd := IndexDefinitionSortable{coll: coll}
+	toAdd := indexDefinitionSortable{coll: coll}
 	toAdd.eqFilts = eqFilts
 	for _, sb := range toAdd.eqFilts {
 		missingTerms.Del(sb.Property)
@@ -200,7 +200,7 @@ func (idxs *IndexDefinitionSortableSlice) maybeAddDefinition(q *reducedQuery, s 
 		}
 	}
 	if perfect {
-		*idxs = IndexDefinitionSortableSlice{toAdd}
+		*idxs = indexDefinitionSortableSlice{toAdd}
 	} else {
 		*idxs = append(*idxs, toAdd)
 	}
@@ -210,7 +210,7 @@ func (idxs *IndexDefinitionSortableSlice) maybeAddDefinition(q *reducedQuery, s 
 // getRelevantIndexes retrieves the relevant indexes which could be used to
 // service q. It returns nil if it's not possible to service q with the current
 // indexes.
-func getRelevantIndexes(q *reducedQuery, s *memStore) (IndexDefinitionSortableSlice, error) {
+func getRelevantIndexes(q *reducedQuery, s *memStore) (indexDefinitionSortableSlice, error) {
 	missingTerms := stringset.New(len(q.eqFilters))
 	for k := range q.eqFilters {
 		if k == "__ancestor__" {
@@ -221,7 +221,7 @@ func getRelevantIndexes(q *reducedQuery, s *memStore) (IndexDefinitionSortableSl
 		}
 		missingTerms.Add(k)
 	}
-	idxs := IndexDefinitionSortableSlice{}
+	idxs := indexDefinitionSortableSlice{}
 
 	// First we add builtins
 	// add
@@ -257,7 +257,7 @@ func getRelevantIndexes(q *reducedQuery, s *memStore) (IndexDefinitionSortableSl
 		if idxs.maybeAddDefinition(q, s, missingTerms, &ds.IndexDefinition{
 			Kind: q.kind,
 			SortBy: []ds.IndexColumn{
-				{Property: prop, Direction: ds.DESCENDING},
+				{Property: prop, Descending: true},
 			},
 		}) {
 			return idxs, nil
@@ -291,7 +291,7 @@ func getRelevantIndexes(q *reducedQuery, s *memStore) (IndexDefinitionSortableSl
 		}
 		remains.SortBy = append(remains.SortBy, q.suffixFormat...)
 		last := remains.SortBy[len(remains.SortBy)-1]
-		if last.Direction == ds.ASCENDING {
+		if !last.Descending {
 			// this removes the __key__ column, since it's implicit.
 			remains.SortBy = remains.SortBy[:len(remains.SortBy)-1]
 		}
@@ -307,7 +307,7 @@ func getRelevantIndexes(q *reducedQuery, s *memStore) (IndexDefinitionSortableSl
 }
 
 // generate generates a single iterDefinition for the given index.
-func generate(q *reducedQuery, idx *IndexDefinitionSortable, c *constraints) *iterDefinition {
+func generate(q *reducedQuery, idx *indexDefinitionSortable, c *constraints) *iterDefinition {
 	def := &iterDefinition{
 		c:     idx.coll,
 		start: q.start,
@@ -316,7 +316,7 @@ func generate(q *reducedQuery, idx *IndexDefinitionSortable, c *constraints) *it
 	toJoin := make([][]byte, len(idx.eqFilts))
 	for _, sb := range idx.eqFilts {
 		val := c.peel(sb.Property)
-		if sb.Direction == ds.DESCENDING {
+		if sb.Descending {
 			val = invert(val)
 		}
 		toJoin = append(toJoin, val)
@@ -353,7 +353,7 @@ func generate(q *reducedQuery, idx *IndexDefinitionSortable, c *constraints) *it
 		// from the key (the terminating null) allows this trick to work. Otherwise
 		// it would be a closed range of EXACTLY this key.
 		chopped := []byte(anc[:len(anc)-1])
-		if q.suffixFormat[0].Direction == ds.DESCENDING {
+		if q.suffixFormat[0].Descending {
 			chopped = invert(chopped)
 		}
 		def.prefix = bjoin(def.prefix, chopped)
@@ -458,10 +458,10 @@ func calculateConstraints(q *reducedQuery) *constraints {
 // getIndexes returns a set of iterator definitions. Iterating over these
 // will result in matching suffixes.
 func getIndexes(q *reducedQuery, s *memStore) ([]*iterDefinition, error) {
-	relevantIdxs := IndexDefinitionSortableSlice(nil)
+	relevantIdxs := indexDefinitionSortableSlice(nil)
 	if q.kind == "" {
 		if coll := s.GetCollection("ents:" + q.ns); coll != nil {
-			relevantIdxs = IndexDefinitionSortableSlice{{coll: coll}}
+			relevantIdxs = indexDefinitionSortableSlice{{coll: coll}}
 		}
 	} else {
 		err := error(nil)
@@ -471,7 +471,7 @@ func getIndexes(q *reducedQuery, s *memStore) ([]*iterDefinition, error) {
 		}
 	}
 	if len(relevantIdxs) == 0 {
-		return nil, errQueryDone
+		return nil, ds.ErrNullQuery
 	}
 
 	// This sorts it so that relevantIdxs goes less filters -> more filters. We
@@ -483,7 +483,7 @@ func getIndexes(q *reducedQuery, s *memStore) ([]*iterDefinition, error) {
 
 	ret := []*iterDefinition{}
 	for !constraints.empty() || len(ret) == 0 {
-		bestIdx := (*IndexDefinitionSortable)(nil)
+		bestIdx := (*indexDefinitionSortable)(nil)
 		if len(ret) == 0 {
 			// if ret is empty, take the biggest relevantIdx. It's guaranteed to have
 			// the greatest number of equality filters of any index in the list, and
@@ -495,7 +495,7 @@ func getIndexes(q *reducedQuery, s *memStore) ([]*iterDefinition, error) {
 			// :)
 			bestIdx = &relevantIdxs[len(relevantIdxs)-1]
 			if bestIdx.coll == nil {
-				return nil, errQueryDone
+				return nil, ds.ErrNullQuery
 			}
 		} else {
 			// If ret's not empty, then we need to find the best index we can. The

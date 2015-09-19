@@ -17,17 +17,17 @@ import (
 )
 
 type qExpect struct {
-	q     ds.Query
+	q     *ds.Query
 	inTxn bool
 
 	get  []ds.PropertyMap
-	keys []ds.Key
+	keys []*ds.Key
 }
 
 type qExStage struct {
 	addIdxs []*ds.IndexDefinition
 	putEnts []ds.PropertyMap
-	delEnts []ds.Key
+	delEnts []*ds.Key
 
 	expect []qExpect
 
@@ -40,45 +40,45 @@ type qExTest struct {
 }
 
 var stage1Data = []ds.PropertyMap{
-	pmap("$key", key("Kind", 1), NEXT,
-		"Val", 1, 2, 3, NEXT,
+	pmap("$key", key("Kind", 1), Next,
+		"Val", 1, 2, 3, Next,
 		"Extra", "hello",
 	),
-	pmap("$key", key("Kind", 2), NEXT,
-		"Val", 6, 8, 7, NEXT,
-		"When", 27, NEXT,
+	pmap("$key", key("Kind", 2), Next,
+		"Val", 6, 8, 7, Next,
+		"When", 27, Next,
 		"Extra", "zebra",
 	),
-	pmap("$key", key("Kind", 3), NEXT,
-		"Val", 1, 2, 2, 100, NEXT,
-		"When", 996688461000000, NEXT,
+	pmap("$key", key("Kind", 3), Next,
+		"Val", 1, 2, 2, 100, Next,
+		"When", 996688461000000, Next,
 		"Extra", "waffle",
 	),
-	pmap("$key", key("Kind", 6), NEXT,
-		"Val", 5, NEXT,
-		"When", time.Date(2000, time.January, 1, 1, 1, 1, 1, time.UTC), NEXT,
+	pmap("$key", key("Kind", 6), Next,
+		"Val", 5, Next,
+		"When", time.Date(2000, time.January, 1, 1, 1, 1, 1, time.UTC), Next,
 		"Extra", "waffle",
 	),
-	pmap("$key", key("Child", "seven", key("Kind", 3)), NEXT,
-		"Interesting", 28, NEXT,
+	pmap("$key", key("Kind", 3, "Child", "seven"), Next,
+		"Interesting", 28, Next,
 		"Extra", "hello",
 	),
-	pmap("$key", key("Unique", 1), NEXT,
+	pmap("$key", key("Unique", 1), Next,
 		"Derp", 39,
 	),
 }
 
 var stage2Data = []ds.PropertyMap{
-	pmap("$key", key("Kind", 1, key("Kind", 3)), NEXT,
-		"Val", 2, 4, 28, NEXT,
+	pmap("$key", key("Kind", 3, "Kind", 1), Next,
+		"Val", 2, 4, 28, Next,
 		"Extra", "hello", "waffle",
 	),
-	pmap("$key", key("Kind", 2, key("Kind", 3)), NEXT,
-		"Val", 3, 4, NEXT,
+	pmap("$key", key("Kind", 3, "Kind", 2), Next,
+		"Val", 3, 4, Next,
 		"Extra", "hello", "waffle",
 	),
-	pmap("$key", key("Kind", 3, key("Kind", 3)), NEXT,
-		"Val", 3, 4, 2, 1, NEXT,
+	pmap("$key", key("Kind", 3, "Kind", 3), Next,
+		"Val", 3, 4, 2, 1, Next,
 		"Extra", "nuts",
 	),
 }
@@ -97,7 +97,7 @@ var queryExecutionTests = []qExTest{
 			expect: []qExpect{
 				// tests the case where the query has indexes to fulfill it, but there
 				// are no actual entities in the datastore.
-				{q: nq("Wat").Filter("meep =", 1).Filter("deep =", 2).Order("opt").Order("other"),
+				{q: nq("Wat").Eq("meep", 1).Eq("deep", 2).Order("opt", "other"),
 					get: []ds.PropertyMap{}},
 			},
 		},
@@ -106,15 +106,15 @@ var queryExecutionTests = []qExTest{
 			putEnts: stage1Data,
 			expect: []qExpect{
 				{q: nq("Kind"), get: []ds.PropertyMap{}},
-				{q: nq("Child").Ancestor(key("Kind", 3)), keys: []ds.Key{
-					key("Child", "seven", key("Kind", 3)),
+				{q: nq("Child").Ancestor(key("Kind", 3)), keys: []*ds.Key{
+					key("Kind", 3, "Child", "seven"),
 				}},
 			},
 		},
 
 		{
 			putEnts: stage2Data,
-			delEnts: []ds.Key{key("Unique", 1)},
+			delEnts: []*ds.Key{key("Unique", 1)},
 			addIdxs: []*ds.IndexDefinition{
 				indx("Kind!", "-Extra", "-Val"),
 				indx("Kind!", "-Extra", "-Val", "-__key__"),
@@ -129,56 +129,57 @@ var queryExecutionTests = []qExTest{
 
 				{q: nq("Missing"), get: []ds.PropertyMap{}},
 
-				{q: nq("Missing").Filter("Id <", 2).Filter("Id >", 2), get: []ds.PropertyMap{}},
+				{q: nq("Missing").Lt("Id", 2).Gt("Id", 2), get: []ds.PropertyMap{}},
 
-				{q: nq("Missing").Filter("Bogus =", 3), get: []ds.PropertyMap{}},
+				{q: nq("Missing").Eq("Bogus", 3), get: []ds.PropertyMap{}},
 
-				{q: nq("Kind").Filter("Extra =", "waffle"), get: []ds.PropertyMap{
+				{q: nq("Kind").Eq("Extra", "waffle"), get: []ds.PropertyMap{
 					stage1Data[2], stage1Data[3],
 				}},
 
 				// get ziggy with it
-				{q: nq("Kind").Filter("Extra =", "waffle").Filter("Val =", 100), get: []ds.PropertyMap{
+				{q: nq("Kind").Eq("Extra", "waffle").Eq("Val", 100), get: []ds.PropertyMap{
 					stage1Data[2],
 				}},
-				{q: nq("Child").Filter("Interesting =", 28).Filter("Extra =", "hello"), get: []ds.PropertyMap{
+
+				{q: nq("Child").Eq("Interesting", 28).Eq("Extra", "hello"), get: []ds.PropertyMap{
 					stage1Data[4],
 				}},
 
 				{q: (nq("Kind").Ancestor(key("Kind", 3)).Order("Val").
 					Start(curs("Val", 1, "__key__", key("Kind", 3))).
-					End(curs("Val", 90, "__key__", key("Zeta", "woot", key("Kind", 3))))), keys: []ds.Key{},
+					End(curs("Val", 90, "__key__", key("Kind", 3, "Zeta", "woot")))), keys: []*ds.Key{},
 				},
 
-				{q: nq("Kind").Filter("Val >", 2).Filter("Val <=", 5), get: []ds.PropertyMap{
+				{q: nq("Kind").Gt("Val", 2).Lte("Val", 5), get: []ds.PropertyMap{
 					stage1Data[0], stage1Data[3],
 				}},
 
-				{q: nq("Kind").Filter("Val >", 2).Filter("Val <=", 5).Order("-Val"), get: []ds.PropertyMap{
+				{q: nq("Kind").Gt("Val", 2).Lte("Val", 5).Order("-Val"), get: []ds.PropertyMap{
 					stage1Data[3], stage1Data[0],
 				}},
 
-				{q: nq("").Filter("__key__ >", key("Kind", 2)), get: []ds.PropertyMap{
+				{q: nq("").Gt("__key__", key("Kind", 2)), get: []ds.PropertyMap{
 					// TODO(riannucci): determine if the real datastore shows metadata
 					// during kindless queries. The documentation seems to imply so, but
 					// I'd like to be sure.
-					pmap("$key", key("__entity_group__", 1, key("Kind", 2)), NEXT,
+					pmap("$key", key("Kind", 2, "__entity_group__", 1), Next,
 						"__version__", 1),
 					stage1Data[2],
 					stage1Data[4],
 					// this is 5 because the value is retrieved from HEAD and not from
 					// the index snapshot!
-					pmap("$key", key("__entity_group__", 1, key("Kind", 3)), NEXT,
+					pmap("$key", key("Kind", 3, "__entity_group__", 1), Next,
 						"__version__", 5),
 					stage1Data[3],
-					pmap("$key", key("__entity_group__", 1, key("Kind", 6)), NEXT,
+					pmap("$key", key("Kind", 6, "__entity_group__", 1), Next,
 						"__version__", 1),
-					pmap("$key", key("__entity_group__", 1, key("Unique", 1)), NEXT,
+					pmap("$key", key("Unique", 1, "__entity_group__", 1), Next,
 						"__version__", 2),
 				}},
 
 				{q: (nq("Kind").
-					Filter("Val >", 2).Filter("Extra =", "waffle").
+					Gt("Val", 2).Eq("Extra", "waffle").
 					Order("-Val").
 					Ancestor(key("Kind", 3))),
 					get: []ds.PropertyMap{
@@ -188,8 +189,8 @@ var queryExecutionTests = []qExTest{
 					}},
 
 				{q: (nq("Kind").
-					Filter("Val >", 2).Filter("Extra =", "waffle").
-					Order("-Val").Order("-__key__").
+					Gt("Val", 2).Eq("Extra", "waffle").
+					Order("-Val", "-__key__").
 					Ancestor(key("Kind", 3))),
 					get: []ds.PropertyMap{
 						stage1Data[2],
@@ -198,34 +199,34 @@ var queryExecutionTests = []qExTest{
 					}},
 
 				{q: (nq("Kind").
-					Filter("Val >", 2).Filter("Extra =", "waffle").
+					Gt("Val", 2).Eq("Extra", "waffle").
 					Order("-Val").
 					Ancestor(key("Kind", 3)).Project("Val")),
 					get: []ds.PropertyMap{
-						pmap("$key", key("Kind", 3), NEXT,
+						pmap("$key", key("Kind", 3), Next,
 							"Val", 100),
-						pmap("$key", key("Kind", 1, key("Kind", 3)), NEXT,
+						pmap("$key", key("Kind", 3, "Kind", 1), Next,
 							"Val", 28),
-						pmap("$key", key("Kind", 1, key("Kind", 3)), NEXT,
+						pmap("$key", key("Kind", 3, "Kind", 1), Next,
 							"Val", 4),
-						pmap("$key", key("Kind", 2, key("Kind", 3)), NEXT,
+						pmap("$key", key("Kind", 3, "Kind", 2), Next,
 							"Val", 4),
-						pmap("$key", key("Kind", 2, key("Kind", 3)), NEXT,
+						pmap("$key", key("Kind", 3, "Kind", 2), Next,
 							"Val", 3),
 					}},
 
 				{q: (nq("Kind").
-					Filter("Val >", 2).Filter("Extra =", "waffle").
+					Gt("Val", 2).Eq("Extra", "waffle").
 					Order("-Val").
-					Ancestor(key("Kind", 3)).Project("Val").Distinct()),
+					Ancestor(key("Kind", 3)).Project("Val").Distinct(true)),
 					get: []ds.PropertyMap{
-						pmap("$key", key("Kind", 3), NEXT,
+						pmap("$key", key("Kind", 3), Next,
 							"Val", 100),
-						pmap("$key", key("Kind", 1, key("Kind", 3)), NEXT,
+						pmap("$key", key("Kind", 3, "Kind", 1), Next,
 							"Val", 28),
-						pmap("$key", key("Kind", 1, key("Kind", 3)), NEXT,
+						pmap("$key", key("Kind", 3, "Kind", 1), Next,
 							"Val", 4),
-						pmap("$key", key("Kind", 2, key("Kind", 3)), NEXT,
+						pmap("$key", key("Kind", 3, "Kind", 2), Next,
 							"Val", 3),
 					}},
 
@@ -233,11 +234,11 @@ var queryExecutionTests = []qExTest{
 				// instead. Additionally, mixed-types within the same index type are
 				// smooshed together in the result.
 				{q: nq("Kind").Project("When"), get: []ds.PropertyMap{
-					pmap("$key", key("Kind", 2), NEXT,
+					pmap("$key", key("Kind", 2), Next,
 						"When", 27),
-					pmap("$key", key("Kind", 6), NEXT,
+					pmap("$key", key("Kind", 6), Next,
 						"When", 946688461000000),
-					pmap("$key", key("Kind", 3), NEXT,
+					pmap("$key", key("Kind", 3), Next,
 						"When", 996688461000000),
 				}},
 
@@ -254,11 +255,11 @@ var queryExecutionTests = []qExTest{
 					data := ds.Get(c)
 					curs := ds.Cursor(nil)
 
-					q := nq("").Filter("__key__ >", key("Kind", 2))
+					q := nq("").Gt("__key__", key("Kind", 2))
 
 					err := data.Run(q, func(pm ds.PropertyMap, gc ds.CursorCB) bool {
 						So(pm, ShouldResemble, pmap(
-							"$key", key("__entity_group__", 1, key("Kind", 2)), NEXT,
+							"$key", key("Kind", 2, "__entity_group__", 1), Next,
 							"__version__", 1))
 
 						err := error(nil)
@@ -277,7 +278,7 @@ var queryExecutionTests = []qExTest{
 
 				func(c context.Context) {
 					data := ds.Get(c)
-					q := nq("Something").Filter("Does =", 2).Order("Not").Order("Work")
+					q := nq("Something").Eq("Does", 2).Order("Not", "Work")
 					So(data.Run(q, func(ds.Key, ds.CursorCB) bool {
 						return true
 					}), ShouldErrLike, "Try adding:\n  C:Something/Does/Not/Work")
@@ -289,11 +290,11 @@ var queryExecutionTests = []qExTest{
 			expect: []qExpect{
 				// eventual consistency; Unique/1 is deleted at HEAD. Keysonly finds it,
 				// but 'normal' doesn't.
-				{q: nq("Unique").Filter("__key__ >", key("AKind", 5)).Filter("__key__ <=", key("Zeta", "prime")),
-					keys: []ds.Key{key("Unique", 1)},
+				{q: nq("Unique").Gt("__key__", key("AKind", 5)).Lte("__key__", key("Zeta", "prime")),
+					keys: []*ds.Key{key("Unique", 1)},
 					get:  []ds.PropertyMap{}},
 
-				{q: nq("Kind").Filter("Val =", 1).Filter("Val =", 3), get: []ds.PropertyMap{
+				{q: nq("Kind").Eq("Val", 1, 3), get: []ds.PropertyMap{
 					stage1Data[0], stage2Data[2],
 				}},
 			},
@@ -309,6 +310,9 @@ func TestQueryExecution(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
+
+		So(info.Get(c).FullyQualifiedAppID(), ShouldEqual, "dev~app")
+		So(info.Get(c).GetNamespace(), ShouldEqual, "ns")
 
 		data := ds.Get(c)
 		testing := data.Testable()
@@ -340,10 +344,10 @@ func TestQueryExecution(t *testing.T) {
 							}
 
 							if expect.keys != nil {
-								runner(func(c context.Context) error {
+								err := runner(func(c context.Context) error {
 									data := ds.Get(c)
 									Convey(fmt.Sprintf("expect %d (keys)", j), func() {
-										rslt := []ds.Key(nil)
+										rslt := []*ds.Key(nil)
 										So(data.GetAll(expect.q, &rslt), ShouldBeNil)
 										So(len(rslt), ShouldEqual, len(expect.keys))
 										for i, r := range rslt {
@@ -352,11 +356,12 @@ func TestQueryExecution(t *testing.T) {
 									})
 									return nil
 								}, &ds.TransactionOptions{XG: true})
+								So(err, ShouldBeNil)
 							}
 
 							if expect.get != nil {
 								Convey(fmt.Sprintf("expect %d (data)", j), func() {
-									runner(func(c context.Context) error {
+									err := runner(func(c context.Context) error {
 										rslt := []ds.PropertyMap(nil)
 										So(data.GetAll(expect.q, &rslt), ShouldBeNil)
 										So(len(rslt), ShouldEqual, len(expect.get))
@@ -365,6 +370,7 @@ func TestQueryExecution(t *testing.T) {
 										}
 										return nil
 									}, &ds.TransactionOptions{XG: true})
+									So(err, ShouldBeNil)
 								})
 							}
 						}

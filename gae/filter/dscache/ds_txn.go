@@ -18,12 +18,12 @@ type dsTxnCache struct {
 
 var _ ds.RawInterface = (*dsTxnCache)(nil)
 
-func (d *dsTxnCache) DeleteMulti(keys []ds.Key, cb ds.DeleteMultiCB) error {
+func (d *dsTxnCache) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 	d.state.add(d.sc, keys)
 	return d.RawInterface.DeleteMulti(keys, cb)
 }
 
-func (d *dsTxnCache) PutMulti(keys []ds.Key, metas []ds.PropertyMap, cb ds.PutMultiCB) error {
+func (d *dsTxnCache) PutMulti(keys []*ds.Key, metas []ds.PropertyMap, cb ds.PutMultiCB) error {
 	d.state.add(d.sc, keys)
 	return d.RawInterface.PutMulti(keys, metas, cb)
 }

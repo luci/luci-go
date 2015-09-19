@@ -11,12 +11,14 @@ import (
 
 	bs "github.com/luci/gae/service/blobstore"
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/datastore/dskey"
+	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 )
 
 type typeFilter struct {
+	ctx context.Context
+
 	pm ds.PropertyMap
 }
 
@@ -80,7 +82,7 @@ func maybeIndexValue(val interface{}) interface{} {
 									toks[i].StringID = sid.Elem().String()
 								}
 							}
-							return dskey.NewToks(aid, ns, toks)
+							return ds.NewKeyToks(aid, ns, toks)
 						}
 						panic(fmt.Errorf(
 							"UNKNOWN datastore.indexValue field type: %s", field.Type()))
@@ -98,31 +100,62 @@ func maybeIndexValue(val interface{}) interface{} {
 	}
 }
 
+func dsR2FProp(in datastore.Property) (ds.Property, error) {
+	val := in.Value
+	switch x := val.(type) {
+	case datastore.ByteString:
+		val = []byte(x)
+	case *datastore.Key:
+		val = dsR2F(x)
+	case appengine.BlobKey:
+		val = bs.Key(x)
+	case appengine.GeoPoint:
+		val = ds.GeoPoint(x)
+	case time.Time:
+		// "appengine" layer instantiates with Local timezone.
+		val = x.UTC()
+	default:
+		val = maybeIndexValue(val)
+	}
+	ret := ds.Property{}
+	is := ds.ShouldIndex
+	if in.NoIndex {
+		is = ds.NoIndex
+	}
+	err := ret.SetValue(val, is)
+	return ret, err
+}
+
+func dsF2RProp(ctx context.Context, in ds.Property) (datastore.Property, error) {
+	err := error(nil)
+	ret := datastore.Property{
+		NoIndex: in.IndexSetting() == ds.NoIndex,
+	}
+	switch in.Type() {
+	case ds.PTBytes:
+		v := in.Value().([]byte)
+		if in.IndexSetting() == ds.ShouldIndex {
+			ret.Value = datastore.ByteString(v)
+		} else {
+			ret.Value = v
+		}
+	case ds.PTKey:
+		ret.Value, err = dsF2R(ctx, in.Value().(*ds.Key))
+	case ds.PTBlobKey:
+		ret.Value = appengine.BlobKey(in.Value().(bs.Key))
+	case ds.PTGeoPoint:
+		ret.Value = appengine.GeoPoint(in.Value().(ds.GeoPoint))
+	default:
+		ret.Value = in.Value()
+	}
+	return ret, err
+}
+
 func (tf *typeFilter) Load(props []datastore.Property) error {
 	tf.pm = make(ds.PropertyMap, len(props))
 	for _, p := range props {
-		val := p.Value
-		switch x := val.(type) {
-		case datastore.ByteString:
-			val = []byte(x)
-		case *datastore.Key:
-			val = dsR2F(x)
-		case appengine.BlobKey:
-			val = bs.Key(x)
-		case appengine.GeoPoint:
-			val = ds.GeoPoint(x)
-		case time.Time:
-			// "appengine" layer instantiates with Local timezone.
-			val = x.UTC()
-		default:
-			val = maybeIndexValue(val)
-		}
-		prop := ds.Property{}
-		is := ds.ShouldIndex
-		if p.NoIndex {
-			is = ds.NoIndex
-		}
-		if err := prop.SetValue(val, is); err != nil {
+		prop, err := dsR2FProp(p)
+		if err != nil {
 			return err
 		}
 		tf.pm[p.Name] = append(tf.pm[p.Name], prop)
@@ -138,28 +171,12 @@ func (tf *typeFilter) Save() ([]datastore.Property, error) {
 		}
 		multiple := len(propList) > 1
 		for _, prop := range propList {
-			toAdd := datastore.Property{
-				Name:     name,
-				Multiple: multiple,
-				NoIndex:  prop.IndexSetting() == ds.NoIndex,
+			toAdd, err := dsF2RProp(tf.ctx, prop)
+			if err != nil {
+				return nil, err
 			}
-			switch prop.Type() {
-			case ds.PTBytes:
-				v := prop.Value().([]byte)
-				if prop.IndexSetting() == ds.ShouldIndex {
-					toAdd.Value = datastore.ByteString(v)
-				} else {
-					toAdd.Value = v
-				}
-			case ds.PTKey:
-				toAdd.Value = dsF2R(prop.Value().(ds.Key))
-			case ds.PTBlobKey:
-				toAdd.Value = appengine.BlobKey(prop.Value().(bs.Key))
-			case ds.PTGeoPoint:
-				toAdd.Value = appengine.GeoPoint(prop.Value().(ds.GeoPoint))
-			default:
-				toAdd.Value = prop.Value()
-			}
+			toAdd.Name = name
+			toAdd.Multiple = multiple
 			props = append(props, toAdd)
 		}
 	}

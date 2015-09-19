@@ -13,7 +13,6 @@ import (
 
 	"github.com/luci/gae/service/blobstore"
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/datastore/dskey"
 	"github.com/luci/luci-go/common/cmpbin"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -33,25 +32,7 @@ type dspmapTC struct {
 	props ds.PropertyMap
 }
 
-// TODO(riannucci): dedup with datastore/key testing file.
-func mkKey(aid, ns string, elems ...interface{}) ds.Key {
-	if len(elems)%2 != 0 {
-		panic("odd number of tokens")
-	}
-	toks := make([]ds.KeyTok, len(elems)/2)
-	for i := 0; i < len(elems); i += 2 {
-		toks[i/2].Kind = elems[i].(string)
-		switch x := elems[i+1].(type) {
-		case string:
-			toks[i/2].StringID = x
-		case int:
-			toks[i/2].IntID = int64(x)
-		default:
-			panic("bad token id")
-		}
-	}
-	return dskey.NewToks(aid, ns, toks)
-}
+var mkKey = ds.MakeKey
 
 func mkBuf(data []byte) Buffer {
 	return Invertible(bytes.NewBuffer(data))
@@ -62,7 +43,7 @@ func ShouldEqualKey(actual interface{}, expected ...interface{}) string {
 	if len(expected) != 1 {
 		return fmt.Sprintf("Assertion requires 1 expected value, got %d", len(expected))
 	}
-	if dskey.Equal(actual.(ds.Key), expected[0].(ds.Key)) {
+	if actual.(*ds.Key).Equal(expected[0].(*ds.Key)) {
 		return ""
 	}
 	return fmt.Sprintf("Expected: %q\nActual: %q", actual, expected[0])
@@ -133,38 +114,68 @@ func TestPropertyMapSerialization(t *testing.T) {
 	})
 }
 
+func die(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+func wf(w io.Writer, v float64) int {
+	ret, err := cmpbin.WriteFloat64(w, v)
+	die(err)
+	return ret
+}
+
+func ws(w io.ByteWriter, s string) int {
+	ret, err := cmpbin.WriteString(w, s)
+	die(err)
+	return ret
+}
+
+func wi(w io.ByteWriter, i int64) int {
+	ret, err := cmpbin.WriteInt(w, i)
+	die(err)
+	return ret
+}
+
+func wui(w io.ByteWriter, i uint64) int {
+	ret, err := cmpbin.WriteUint(w, i)
+	die(err)
+	return ret
+}
+
 func TestSerializationReadMisc(t *testing.T) {
 	t.Parallel()
 
 	Convey("Misc Serialization tests", t, func() {
 		Convey("GeoPoint", func() {
 			buf := mkBuf(nil)
-			cmpbin.WriteFloat64(buf, 10)
-			cmpbin.WriteFloat64(buf, 20)
+			wf(buf, 10)
+			wf(buf, 20)
 			So(string(ToBytes(ds.GeoPoint{Lat: 10, Lng: 20})), ShouldEqual, buf.String())
 		})
 
 		Convey("IndexColumn", func() {
 			buf := mkBuf(nil)
-			buf.WriteByte(1)
-			cmpbin.WriteString(buf, "hi")
-			So(string(ToBytes(ds.IndexColumn{Property: "hi", Direction: ds.DESCENDING})),
+			die(buf.WriteByte(1))
+			ws(buf, "hi")
+			So(string(ToBytes(ds.IndexColumn{Property: "hi", Descending: true})),
 				ShouldEqual, buf.String())
 		})
 
 		Convey("KeyTok", func() {
 			buf := mkBuf(nil)
-			cmpbin.WriteString(buf, "foo")
-			buf.WriteByte(byte(ds.PTInt))
-			cmpbin.WriteInt(buf, 20)
+			ws(buf, "foo")
+			die(buf.WriteByte(byte(ds.PTInt)))
+			wi(buf, 20)
 			So(string(ToBytes(ds.KeyTok{Kind: "foo", IntID: 20})),
 				ShouldEqual, buf.String())
 		})
 
 		Convey("Property", func() {
 			buf := mkBuf(nil)
-			buf.WriteByte(0x80 | byte(ds.PTString))
-			cmpbin.WriteString(buf, "nerp")
+			die(buf.WriteByte(0x80 | byte(ds.PTString)))
+			ws(buf, "nerp")
 			So(string(ToBytes(mp("nerp"))),
 				ShouldEqual, buf.String())
 		})
@@ -237,85 +248,86 @@ func TestSerializationReadMisc(t *testing.T) {
 					So(err, ShouldEqual, io.EOF)
 				})
 				Convey("str", func() {
-					buf.WriteString("sup")
-					_, err := ReadKey(buf, WithContext, "", "")
+					_, err := buf.WriteString("sup")
+					die(err)
+					_, err = ReadKey(buf, WithContext, "", "")
 					So(err, ShouldErrLike, "expected actualCtx")
 				})
 				Convey("truncated 1", func() {
-					buf.WriteByte(1) // actualCtx == 1
+					die(buf.WriteByte(1)) // actualCtx == 1
 					_, err := ReadKey(buf, WithContext, "", "")
 					So(err, ShouldEqual, io.EOF)
 				})
 				Convey("truncated 2", func() {
-					buf.WriteByte(1) // actualCtx == 1
-					cmpbin.WriteString(buf, "aid")
+					die(buf.WriteByte(1)) // actualCtx == 1
+					ws(buf, "aid")
 					_, err := ReadKey(buf, WithContext, "", "")
 					So(err, ShouldEqual, io.EOF)
 				})
 				Convey("truncated 3", func() {
-					buf.WriteByte(1) // actualCtx == 1
-					cmpbin.WriteString(buf, "aid")
-					cmpbin.WriteString(buf, "ns")
+					die(buf.WriteByte(1)) // actualCtx == 1
+					ws(buf, "aid")
+					ws(buf, "ns")
 					_, err := ReadKey(buf, WithContext, "", "")
 					So(err, ShouldEqual, io.EOF)
 				})
 				Convey("huge key", func() {
-					buf.WriteByte(1) // actualCtx == 1
-					cmpbin.WriteString(buf, "aid")
-					cmpbin.WriteString(buf, "ns")
+					die(buf.WriteByte(1)) // actualCtx == 1
+					ws(buf, "aid")
+					ws(buf, "ns")
 					for i := 1; i < 60; i++ {
-						buf.WriteByte(1)
-						WriteKeyTok(buf, ds.KeyTok{Kind: "sup", IntID: int64(i)})
+						die(buf.WriteByte(1))
+						die(WriteKeyTok(buf, ds.KeyTok{Kind: "sup", IntID: int64(i)}))
 					}
-					buf.WriteByte(0)
+					die(buf.WriteByte(0))
 					_, err := ReadKey(buf, WithContext, "", "")
 					So(err, ShouldErrLike, "huge key")
 				})
 				Convey("insufficient tokens", func() {
-					buf.WriteByte(1) // actualCtx == 1
-					cmpbin.WriteString(buf, "aid")
-					cmpbin.WriteString(buf, "ns")
-					cmpbin.WriteUint(buf, 2)
+					die(buf.WriteByte(1)) // actualCtx == 1
+					ws(buf, "aid")
+					ws(buf, "ns")
+					wui(buf, 2)
 					_, err := ReadKey(buf, WithContext, "", "")
 					So(err, ShouldEqual, io.EOF)
 				})
 				Convey("partial token 1", func() {
-					buf.WriteByte(1) // actualCtx == 1
-					cmpbin.WriteString(buf, "aid")
-					cmpbin.WriteString(buf, "ns")
-					buf.WriteByte(1)
-					cmpbin.WriteString(buf, "hi")
+					die(buf.WriteByte(1)) // actualCtx == 1
+					ws(buf, "aid")
+					ws(buf, "ns")
+					die(buf.WriteByte(1))
+					ws(buf, "hi")
 					_, err := ReadKey(buf, WithContext, "", "")
 					So(err, ShouldEqual, io.EOF)
 				})
 				Convey("partial token 2", func() {
-					buf.WriteByte(1) // actualCtx == 1
-					cmpbin.WriteString(buf, "aid")
-					cmpbin.WriteString(buf, "ns")
-					buf.WriteByte(1)
-					cmpbin.WriteString(buf, "hi")
-					buf.WriteByte(byte(ds.PTString))
+					die(buf.WriteByte(1)) // actualCtx == 1
+					ws(buf, "aid")
+					ws(buf, "ns")
+					die(buf.WriteByte(1))
+					ws(buf, "hi")
+					die(buf.WriteByte(byte(ds.PTString)))
 					_, err := ReadKey(buf, WithContext, "", "")
 					So(err, ShouldEqual, io.EOF)
 				})
 				Convey("bad token (invalid type)", func() {
-					buf.WriteByte(1) // actualCtx == 1
-					cmpbin.WriteString(buf, "aid")
-					cmpbin.WriteString(buf, "ns")
-					buf.WriteByte(1)
-					cmpbin.WriteString(buf, "hi")
-					buf.WriteByte(byte(ds.PTBlobKey))
+					die(buf.WriteByte(1)) // actualCtx == 1
+					ws(buf, "aid")
+					ws(buf, "ns")
+					die(buf.WriteByte(1))
+					ws(buf, "hi")
+					die(buf.WriteByte(byte(ds.PTBlobKey)))
 					_, err := ReadKey(buf, WithContext, "", "")
 					So(err, ShouldErrLike, "invalid type PTBlobKey")
 				})
 				Convey("bad token (invalid IntID)", func() {
-					buf.WriteByte(1) // actualCtx == 1
-					cmpbin.WriteString(buf, "aid")
-					cmpbin.WriteString(buf, "ns")
-					buf.WriteByte(1)
-					cmpbin.WriteString(buf, "hi")
-					buf.WriteByte(byte(ds.PTInt))
-					cmpbin.WriteInt(buf, -2)
+					die(buf.WriteByte(1)) // actualCtx == 1
+					ws(buf, "aid")
+					ws(buf, "ns")
+					die(buf.WriteByte(1))
+					ws(buf, "hi")
+					die(buf.WriteByte(byte(ds.PTInt)))
+					wi(buf, -2)
 					_, err := ReadKey(buf, WithContext, "", "")
 					So(err, ShouldErrLike, "zero/negative")
 				})
@@ -329,13 +341,13 @@ func TestSerializationReadMisc(t *testing.T) {
 				So(err, ShouldEqual, io.EOF)
 			})
 			Convey("trunc 2", func() {
-				cmpbin.WriteFloat64(buf, 100)
+				wf(buf, 100)
 				_, err := ReadGeoPoint(buf)
 				So(err, ShouldEqual, io.EOF)
 			})
 			Convey("invalid", func() {
-				cmpbin.WriteFloat64(buf, 100)
-				cmpbin.WriteFloat64(buf, 1000)
+				wf(buf, 100)
+				wf(buf, 1000)
 				_, err := ReadGeoPoint(buf)
 				So(err, ShouldErrLike, "invalid GeoPoint")
 			})
@@ -346,7 +358,7 @@ func TestSerializationReadMisc(t *testing.T) {
 				pst, err := time.LoadLocation("America/Los_Angeles")
 				So(err, ShouldBeNil)
 				So(func() {
-					WriteTime(mkBuf(nil), time.Now().In(pst))
+					die(WriteTime(mkBuf(nil), time.Now().In(pst)))
 				}, ShouldPanic)
 			})
 		})
@@ -367,17 +379,17 @@ func TestSerializationReadMisc(t *testing.T) {
 				So(p.Value(), ShouldBeNil)
 			})
 			Convey("trunc (PTBytes)", func() {
-				buf.WriteByte(byte(ds.PTBytes))
+				die(buf.WriteByte(byte(ds.PTBytes)))
 				_, err := ReadProperty(buf, WithContext, "", "")
 				So(err, ShouldEqual, io.EOF)
 			})
 			Convey("trunc (PTBlobKey)", func() {
-				buf.WriteByte(byte(ds.PTBlobKey))
+				die(buf.WriteByte(byte(ds.PTBlobKey)))
 				_, err := ReadProperty(buf, WithContext, "", "")
 				So(err, ShouldEqual, io.EOF)
 			})
 			Convey("invalid type", func() {
-				buf.WriteByte(byte(ds.PTUnknown + 1))
+				die(buf.WriteByte(byte(ds.PTUnknown + 1)))
 				_, err := ReadProperty(buf, WithContext, "", "")
 				So(err, ShouldErrLike, "unknown type!")
 			})
@@ -390,32 +402,32 @@ func TestSerializationReadMisc(t *testing.T) {
 				So(err, ShouldEqual, io.EOF)
 			})
 			Convey("too many rows", func() {
-				cmpbin.WriteUint(buf, 1000000)
+				wui(buf, 1000000)
 				_, err := ReadPropertyMap(buf, WithContext, "", "")
 				So(err, ShouldErrLike, "huge number of rows")
 			})
 			Convey("trunc 2", func() {
-				cmpbin.WriteUint(buf, 10)
+				wui(buf, 10)
 				_, err := ReadPropertyMap(buf, WithContext, "", "")
 				So(err, ShouldEqual, io.EOF)
 			})
 			Convey("trunc 3", func() {
-				cmpbin.WriteUint(buf, 10)
-				cmpbin.WriteString(buf, "ohai")
+				wui(buf, 10)
+				ws(buf, "ohai")
 				_, err := ReadPropertyMap(buf, WithContext, "", "")
 				So(err, ShouldEqual, io.EOF)
 			})
 			Convey("too many values", func() {
-				cmpbin.WriteUint(buf, 10)
-				cmpbin.WriteString(buf, "ohai")
-				cmpbin.WriteUint(buf, 100000)
+				wui(buf, 10)
+				ws(buf, "ohai")
+				wui(buf, 100000)
 				_, err := ReadPropertyMap(buf, WithContext, "", "")
 				So(err, ShouldErrLike, "huge number of properties")
 			})
 			Convey("trunc 4", func() {
-				cmpbin.WriteUint(buf, 10)
-				cmpbin.WriteString(buf, "ohai")
-				cmpbin.WriteUint(buf, 10)
+				wui(buf, 10)
+				ws(buf, "ohai")
+				wui(buf, 10)
 				_, err := ReadPropertyMap(buf, WithContext, "", "")
 				So(err, ShouldEqual, io.EOF)
 			})
@@ -434,7 +446,7 @@ func TestSerializationReadMisc(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(newID.Flip(), ShouldResemble, id.Normalize())
 
-			id.SortBy = append(id.SortBy, ds.IndexColumn{Property: "other", Direction: ds.DESCENDING})
+			id.SortBy = append(id.SortBy, ds.IndexColumn{Property: "other", Descending: true})
 			id.Ancestor = true
 			data = ToBytes(*id.PrepForIdxTable())
 			newID, err = ReadIndexDefinition(mkBuf(data))
@@ -442,7 +454,7 @@ func TestSerializationReadMisc(t *testing.T) {
 			So(newID.Flip(), ShouldResemble, id.Normalize())
 
 			// invalid
-			id.SortBy = append(id.SortBy, ds.IndexColumn{Property: "", Direction: ds.DESCENDING})
+			id.SortBy = append(id.SortBy, ds.IndexColumn{Property: "", Descending: true})
 			data = ToBytes(*id.PrepForIdxTable())
 			newID, err = ReadIndexDefinition(mkBuf(data))
 			So(err, ShouldBeNil)
@@ -451,7 +463,7 @@ func TestSerializationReadMisc(t *testing.T) {
 			Convey("too many", func() {
 				id := ds.IndexDefinition{Kind: "wat"}
 				for i := 0; i < MaxIndexColumns+1; i++ {
-					id.SortBy = append(id.SortBy, ds.IndexColumn{Property: "Hi", Direction: ds.ASCENDING})
+					id.SortBy = append(id.SortBy, ds.IndexColumn{Property: "Hi", Descending: true})
 				}
 				data := ToBytes(*id.PrepForIdxTable())
 				newID, err = ReadIndexDefinition(mkBuf(data))

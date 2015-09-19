@@ -14,19 +14,19 @@ import (
 type multiArgType struct {
 	valid bool
 
-	getKey  func(nk newKeyFunc, slot reflect.Value) (Key, error)
+	getKey  func(aid, ns string, slot reflect.Value) (*Key, error)
 	getPM   func(slot reflect.Value) (PropertyMap, error)
 	setPM   func(slot reflect.Value, pm PropertyMap) error
-	setKey  func(slot reflect.Value, k Key)
+	setKey  func(slot reflect.Value, k *Key)
 	newElem func() reflect.Value
 }
 
-func (mat *multiArgType) GetKeysPMs(nk newKeyFunc, slice reflect.Value) ([]Key, []PropertyMap, error) {
-	retKey := make([]Key, slice.Len())
+func (mat *multiArgType) GetKeysPMs(aid, ns string, slice reflect.Value) ([]*Key, []PropertyMap, error) {
+	retKey := make([]*Key, slice.Len())
 	retPM := make([]PropertyMap, slice.Len())
 	lme := errors.NewLazyMultiError(len(retKey))
 	for i := range retKey {
-		key, err := mat.getKey(nk, slice.Index(i))
+		key, err := mat.getKey(aid, ns, slice.Index(i))
 		if !lme.Assign(i, err) {
 			retKey[i] = key
 			pm, err := mat.getPM(slice.Index(i))
@@ -84,8 +84,8 @@ func multiArgTypePLS(et reflect.Type) multiArgType {
 	ret := multiArgType{
 		valid: true,
 
-		getKey: func(nk newKeyFunc, slot reflect.Value) (Key, error) {
-			return newKeyObjErr(nk, slot.Addr().Interface())
+		getKey: func(aid, ns string, slot reflect.Value) (*Key, error) {
+			return newKeyObjErr(aid, ns, slot.Addr().Interface())
 		},
 		getPM: func(slot reflect.Value) (PropertyMap, error) {
 			return slot.Addr().Interface().(PropertyLoadSaver).Save(true)
@@ -93,7 +93,7 @@ func multiArgTypePLS(et reflect.Type) multiArgType {
 		setPM: func(slot reflect.Value, pm PropertyMap) error {
 			return slot.Addr().Interface().(PropertyLoadSaver).Load(pm)
 		},
-		setKey: func(slot reflect.Value, k Key) {
+		setKey: func(slot reflect.Value, k *Key) {
 			setKey(slot.Addr().Interface(), k)
 		},
 	}
@@ -120,8 +120,8 @@ func multiArgTypePLSPtr(et reflect.Type) multiArgType {
 	ret := multiArgType{
 		valid: true,
 
-		getKey: func(nk newKeyFunc, slot reflect.Value) (Key, error) {
-			return newKeyObjErr(nk, slot.Interface())
+		getKey: func(aid, ns string, slot reflect.Value) (*Key, error) {
+			return newKeyObjErr(aid, ns, slot.Interface())
 		},
 		getPM: func(slot reflect.Value) (PropertyMap, error) {
 			return slot.Interface().(PropertyLoadSaver).Save(true)
@@ -129,7 +129,7 @@ func multiArgTypePLSPtr(et reflect.Type) multiArgType {
 		setPM: func(slot reflect.Value, pm PropertyMap) error {
 			return slot.Interface().(PropertyLoadSaver).Load(pm)
 		},
-		setKey: func(slot reflect.Value, k Key) {
+		setKey: func(slot reflect.Value, k *Key) {
 			setKey(slot.Interface(), k)
 		},
 	}
@@ -157,8 +157,8 @@ func multiArgTypeStruct(et reflect.Type) multiArgType {
 	return multiArgType{
 		valid: true,
 
-		getKey: func(nk newKeyFunc, slot reflect.Value) (Key, error) {
-			return newKeyObjErr(nk, toPLS(slot))
+		getKey: func(aid, ns string, slot reflect.Value) (*Key, error) {
+			return newKeyObjErr(aid, ns, toPLS(slot))
 		},
 		getPM: func(slot reflect.Value) (PropertyMap, error) {
 			return toPLS(slot).(PropertyLoadSaver).Save(true)
@@ -166,7 +166,7 @@ func multiArgTypeStruct(et reflect.Type) multiArgType {
 		setPM: func(slot reflect.Value, pm PropertyMap) error {
 			return toPLS(slot).(PropertyLoadSaver).Load(pm)
 		},
-		setKey: func(slot reflect.Value, k Key) {
+		setKey: func(slot reflect.Value, k *Key) {
 			setKey(toPLS(slot), k)
 		},
 		newElem: func() reflect.Value {
@@ -187,8 +187,8 @@ func multiArgTypeStructPtr(et reflect.Type) multiArgType {
 	return multiArgType{
 		valid: true,
 
-		getKey: func(nk newKeyFunc, slot reflect.Value) (Key, error) {
-			return newKeyObjErr(nk, toPLS(slot))
+		getKey: func(aid, ns string, slot reflect.Value) (*Key, error) {
+			return newKeyObjErr(aid, ns, toPLS(slot))
 		},
 		getPM: func(slot reflect.Value) (PropertyMap, error) {
 			return toPLS(slot).(PropertyLoadSaver).Save(true)
@@ -196,7 +196,7 @@ func multiArgTypeStructPtr(et reflect.Type) multiArgType {
 		setPM: func(slot reflect.Value, pm PropertyMap) error {
 			return toPLS(slot).(PropertyLoadSaver).Load(pm)
 		},
-		setKey: func(slot reflect.Value, k Key) {
+		setKey: func(slot reflect.Value, k *Key) {
 			setKey(toPLS(slot), k)
 		},
 		newElem: func() reflect.Value {
@@ -210,8 +210,8 @@ func multiArgTypeInterface() multiArgType {
 	return multiArgType{
 		valid: true,
 
-		getKey: func(nk newKeyFunc, slot reflect.Value) (Key, error) {
-			return newKeyObjErr(nk, slot.Elem().Interface())
+		getKey: func(aid, ns string, slot reflect.Value) (*Key, error) {
+			return newKeyObjErr(aid, ns, slot.Elem().Interface())
 		},
 		getPM: func(slot reflect.Value) (PropertyMap, error) {
 			pls := mkPLS(slot.Elem().Interface())
@@ -221,15 +221,15 @@ func multiArgTypeInterface() multiArgType {
 			pls := mkPLS(slot.Elem().Interface())
 			return pls.Load(pm)
 		},
-		setKey: func(slot reflect.Value, k Key) {
+		setKey: func(slot reflect.Value, k *Key) {
 			setKey(slot.Elem().Interface(), k)
 		},
 	}
 }
 
-func newKeyObjErr(nk newKeyFunc, src interface{}) (Key, error) {
+func newKeyObjErr(aid, ns string, src interface{}) (*Key, error) {
 	pls := mkPLS(src)
-	if key, _ := pls.GetMetaDefault("key", nil).(Key); key != nil {
+	if key, _ := pls.GetMetaDefault("key", nil).(*Key); key != nil {
 		return key, nil
 	}
 
@@ -244,21 +244,22 @@ func newKeyObjErr(nk newKeyFunc, src interface{}) (Key, error) {
 	iid := pls.GetMetaDefault("id", 0).(int64)
 
 	// get parent
-	par, _ := pls.GetMetaDefault("parent", nil).(Key)
+	par, _ := pls.GetMetaDefault("parent", nil).(*Key)
 
-	return nk(kind, sid, iid, par), nil
+	return NewKey(aid, ns, kind, sid, iid, par), nil
 }
 
-func setKey(src interface{}, key Key) {
+func setKey(src interface{}, key *Key) {
 	pls := mkPLS(src)
 	if pls.SetMeta("key", key) == ErrMetaFieldUnset {
-		if key.StringID() != "" {
-			pls.SetMeta("id", key.StringID())
+		lst := key.Last()
+		if lst.StringID != "" {
+			_ = pls.SetMeta("id", lst.StringID)
 		} else {
-			pls.SetMeta("id", key.IntID())
+			_ = pls.SetMeta("id", lst.IntID)
 		}
-		pls.SetMeta("kind", key.Kind())
-		pls.SetMeta("parent", key.Parent())
+		_ = pls.SetMeta("kind", lst.Kind)
+		_ = pls.SetMeta("parent", key.Parent())
 	}
 }
 

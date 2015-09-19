@@ -36,7 +36,7 @@ func defaultIndexes(kind string, pmap ds.PropertyMap) []*ds.IndexDefinition {
 			continue
 		}
 		ret = append(ret, &ds.IndexDefinition{Kind: kind, SortBy: []ds.IndexColumn{{Property: name}}})
-		ret = append(ret, &ds.IndexDefinition{Kind: kind, SortBy: []ds.IndexColumn{{Property: name, Direction: ds.DESCENDING}}})
+		ret = append(ret, &ds.IndexDefinition{Kind: kind, SortBy: []ds.IndexColumn{{Property: name, Descending: true}}})
 	}
 	if serializationDeterministic {
 		sort.Sort(ret)
@@ -44,9 +44,9 @@ func defaultIndexes(kind string, pmap ds.PropertyMap) []*ds.IndexDefinition {
 	return ret
 }
 
-func indexEntriesWithBuiltins(k ds.Key, pm ds.PropertyMap, complexIdxs []*ds.IndexDefinition) *memStore {
+func indexEntriesWithBuiltins(k *ds.Key, pm ds.PropertyMap, complexIdxs []*ds.IndexDefinition) *memStore {
 	sip := partiallySerialize(k, pm)
-	return sip.indexEntries(k.Namespace(), append(defaultIndexes(k.Kind(), pm), complexIdxs...))
+	return sip.indexEntries(k.Namespace(), append(defaultIndexes(k.Last().Kind, pm), complexIdxs...))
 }
 
 // serializedPvals is all of the serialized DSProperty values in qASC order.
@@ -78,7 +78,7 @@ func serializeRow(vals []ds.Property) serializedPvals {
 	return ret
 }
 
-func partiallySerialize(k ds.Key, pm ds.PropertyMap) (ret serializedIndexablePmap) {
+func partiallySerialize(k *ds.Key, pm ds.PropertyMap) (ret serializedIndexablePmap) {
 	ret = make(serializedIndexablePmap, len(pm)+2)
 	if k == nil {
 		impossible(fmt.Errorf("key to partiallySerialize is nil"))
@@ -100,8 +100,8 @@ func partiallySerialize(k ds.Key, pm ds.PropertyMap) (ret serializedIndexablePma
 // indexRowGen contains enough information to generate all of the index rows which
 // correspond with a propertyList and a ds.IndexDefinition.
 type indexRowGen struct {
-	propVec []serializedPvals
-	orders  []ds.IndexDirection
+	propVec   []serializedPvals
+	decending []bool
 }
 
 // permute calls cb for each index row, in the sorted order of the rows.
@@ -113,7 +113,7 @@ func (s indexRowGen) permute(collSetFn func(k, v []byte)) {
 		for i := len(iVec) - 1; i >= 0; i-- {
 			var done bool
 			var newVal int
-			if s.orders[i] == ds.ASCENDING {
+			if !s.decending[i] {
 				newVal = (iVec[i] + 1) % iVecLim[i]
 				done = newVal != 0
 			} else {
@@ -137,7 +137,7 @@ func (s indexRowGen) permute(collSetFn func(k, v []byte)) {
 	}
 
 	for i := range iVec {
-		if s.orders[i] == ds.DESCENDING {
+		if s.decending[i] {
 			iVec[i] = iVecLim[i] - 1
 		}
 	}
@@ -150,8 +150,8 @@ func (s indexRowGen) permute(collSetFn func(k, v []byte)) {
 		buf := serialize.Invertible(bytes.NewBuffer(make([]byte, 0, bufsiz)))
 		for pvalSliceIdx, pvalIdx := range iVec {
 			data := s.propVec[pvalSliceIdx][pvalIdx]
-			buf.SetInvert(s.orders[pvalSliceIdx] == ds.DESCENDING)
-			buf.Write(data)
+			buf.SetInvert(s.decending[pvalSliceIdx])
+			_, _ = buf.Write(data)
 		}
 		collSetFn(buf.Bytes(), []byte{})
 		if !incPos() {
@@ -169,11 +169,11 @@ type matcher struct {
 // the data in the indexRowGen.
 func (m *matcher) match(sortBy []ds.IndexColumn, sip serializedIndexablePmap) (indexRowGen, bool) {
 	m.buf.propVec = m.buf.propVec[:0]
-	m.buf.orders = m.buf.orders[:0]
+	m.buf.decending = m.buf.decending[:0]
 	for _, sb := range sortBy {
 		if pv, ok := sip[sb.Property]; ok {
 			m.buf.propVec = append(m.buf.propVec, pv)
-			m.buf.orders = append(m.buf.orders, sb.Direction)
+			m.buf.decending = append(m.buf.decending, sb.Descending)
 		} else {
 			return indexRowGen{}, false
 		}
@@ -289,7 +289,7 @@ func addIndex(store *memStore, ns string, compIdx []*ds.IndexDefinition) {
 			prop, err := serialize.ReadProperty(bytes.NewBuffer(i.Key), serialize.WithoutContext, globalAppID, ns)
 			memoryCorruption(err)
 
-			k := prop.Value().(ds.Key)
+			k := prop.Value().(*ds.Key)
 
 			sip := partiallySerialize(k, pm)
 
@@ -301,7 +301,7 @@ func addIndex(store *memStore, ns string, compIdx []*ds.IndexDefinition) {
 	}
 }
 
-func updateIndexes(store *memStore, key ds.Key, oldEnt, newEnt ds.PropertyMap) {
+func updateIndexes(store *memStore, key *ds.Key, oldEnt, newEnt ds.PropertyMap) {
 	// load all current complex query index definitions.
 	compIdx := []*ds.IndexDefinition{}
 	walkCompIdxs(store, nil, func(i *ds.IndexDefinition) bool {

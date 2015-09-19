@@ -68,6 +68,8 @@ func gkvCollide(o, n *memCollection, f func(k, ov, nv []byte)) {
 // doesn't exist).
 type memStore gkvlite.Store
 
+func (memStore) ImATestingSnapshot() {}
+
 func newMemStore() *memStore {
 	ret, err := gkvlite.NewStore(nil)
 	memoryCorruption(err)

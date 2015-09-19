@@ -6,46 +6,78 @@ package datastore
 
 import (
 	"bytes"
+	"fmt"
+	"strings"
 )
 
-const MaxIndexColumns = 64
-
-type IndexDirection bool
-
-const (
-	// ASCENDING is false so that it's the default (zero) value.
-	ASCENDING  IndexDirection = false
-	DESCENDING                = true
-)
-
-func (i IndexDirection) String() string {
-	if i == ASCENDING {
-		return "ASCENDING"
-	}
-	return "DESCENDING"
+// IndexColumn represents a sort order for a single entity field.
+type IndexColumn struct {
+	Property   string
+	Descending bool
 }
 
-type IndexColumn struct {
-	Property  string
-	Direction IndexDirection
+// ParseIndexColumn takes a spec in the form of /\s*-?\s*.+\s*/, and
+// returns an IndexColumn. Examples are:
+//   `- Field `:  IndexColumn{Property: "Field", Descending: true}
+//   `Something`: IndexColumn{Property: "Something", Descending: false}
+//
+// `+Field` is invalid. `` is invalid.
+func ParseIndexColumn(spec string) (IndexColumn, error) {
+	col := IndexColumn{}
+	if strings.HasPrefix(spec, "-") {
+		col.Descending = true
+		col.Property = strings.TrimSpace(spec[1:])
+	} else if strings.HasPrefix(spec, "+") {
+		return col, fmt.Errorf("datastore: invalid order: %q", spec)
+	} else {
+		col.Property = strings.TrimSpace(spec)
+	}
+	if col.Property == "" {
+		return col, fmt.Errorf("datastore: empty order")
+	}
+	return col, nil
 }
 
 func (i IndexColumn) cmp(o IndexColumn) int {
 	// sort ascending first
-	if i.Direction == ASCENDING && o.Direction == DESCENDING {
+	if !i.Descending && o.Descending {
 		return -1
-	} else if i.Direction == DESCENDING && o.Direction == ASCENDING {
+	} else if i.Descending && !o.Descending {
 		return 1
 	}
 	return cmpString(i.Property, o.Property)()
 }
 
+// String returns a human-readable version of this IndexColumn which is
+// compatible with ParseIndexColumn.
+func (i IndexColumn) String() string {
+	ret := ""
+	if i.Descending {
+		ret = "-"
+	}
+	return ret + i.Property
+}
+
+// GQL returns a correctly formatted Cloud Datastore GQL literal which
+// is valid for the `ORDER BY` clause.
+//
+// The flavor of GQL that this emits is defined here:
+//   https://cloud.google.com/datastore/docs/apis/gql/gql_reference
+func (i IndexColumn) GQL() string {
+	if i.Descending {
+		return gqlQuoteName(i.Property) + " DESC"
+	}
+	return gqlQuoteName(i.Property)
+}
+
+// IndexDefinition holds the parsed definition of a datastore index definition.
 type IndexDefinition struct {
 	Kind     string
 	Ancestor bool
 	SortBy   []IndexColumn
 }
 
+// Equal returns true if the two IndexDefinitions are equivalent.
 func (id *IndexDefinition) Equal(o *IndexDefinition) bool {
 	if id.Kind != o.Kind || id.Ancestor != o.Ancestor || len(id.SortBy) != len(o.SortBy) {
 		return false
@@ -58,7 +90,8 @@ func (id *IndexDefinition) Equal(o *IndexDefinition) bool {
 	return true
 }
 
-// NormalizeOrder returns the normalized SortBy value for this IndexDefinition.
+// Normalize returns an IndexDefinition which has a normalized SortBy field.
+//
 // This is just appending __key__ if it's not explicitly the last field in this
 // IndexDefinition.
 func (id *IndexDefinition) Normalize() *IndexDefinition {
@@ -72,6 +105,9 @@ func (id *IndexDefinition) Normalize() *IndexDefinition {
 	return &ret
 }
 
+// GetFullSortOrder gets the full sort order for this IndexDefinition,
+// including an extra "__ancestor__" column at the front if this index has
+// Ancestor set to true.
 func (id *IndexDefinition) GetFullSortOrder() []IndexColumn {
 	id = id.Normalize()
 	if !id.Ancestor {
@@ -82,10 +118,12 @@ func (id *IndexDefinition) GetFullSortOrder() []IndexColumn {
 	return append(ret, id.SortBy...)
 }
 
+// PrepForIdxTable normalize and then flips the IndexDefinition.
 func (id *IndexDefinition) PrepForIdxTable() *IndexDefinition {
 	return id.Normalize().Flip()
 }
 
+// Flip returns an IndexDefinition with its SortBy field in reverse order.
 func (id *IndexDefinition) Flip() *IndexDefinition {
 	ret := *id
 	ret.SortBy = make([]IndexColumn, 0, len(id.SortBy))
@@ -134,7 +172,8 @@ func cmpString(a, b string) func() int {
 	}
 }
 
-func (i *IndexDefinition) Less(o *IndexDefinition) bool {
+// Less returns true iff id is ordered before o.
+func (id *IndexDefinition) Less(o *IndexDefinition) bool {
 	decide := func(v int) (ret, keepGoing bool) {
 		if v > 0 {
 			return false, false
@@ -146,10 +185,10 @@ func (i *IndexDefinition) Less(o *IndexDefinition) bool {
 	}
 
 	factors := []func() int{
-		cmpBool(i.Builtin(), o.Builtin()),
-		cmpString(i.Kind, o.Kind),
-		cmpBool(i.Ancestor, o.Ancestor),
-		cmpInt(len(i.SortBy), len(o.SortBy)),
+		cmpBool(id.Builtin(), o.Builtin()),
+		cmpString(id.Kind, o.Kind),
+		cmpBool(id.Ancestor, o.Ancestor),
+		cmpInt(len(id.SortBy), len(o.SortBy)),
 	}
 	for _, f := range factors {
 		ret, keepGoing := decide(f())
@@ -157,8 +196,8 @@ func (i *IndexDefinition) Less(o *IndexDefinition) bool {
 			return ret
 		}
 	}
-	for idx := range i.SortBy {
-		ret, keepGoing := decide(i.SortBy[idx].cmp(o.SortBy[idx]))
+	for idx := range id.SortBy {
+		ret, keepGoing := decide(id.SortBy[idx].cmp(o.SortBy[idx]))
 		if !keepGoing {
 			return ret
 		}
@@ -166,15 +205,21 @@ func (i *IndexDefinition) Less(o *IndexDefinition) bool {
 	return false
 }
 
-func (i *IndexDefinition) Builtin() bool {
-	return !i.Ancestor && len(i.SortBy) <= 1
+// Builtin returns true iff the IndexDefinition is one of the automatic built-in
+// indexes.
+func (id *IndexDefinition) Builtin() bool {
+	return !id.Ancestor && len(id.SortBy) <= 1
 }
 
-func (i *IndexDefinition) Compound() bool {
-	if i.Kind == "" || len(i.SortBy) <= 1 {
+// Compound returns true iff this IndexDefinition is a valid compound index
+// definition.
+//
+// NOTE: !Builtin() does not imply Compound().
+func (id *IndexDefinition) Compound() bool {
+	if id.Kind == "" || len(id.SortBy) <= 1 {
 		return false
 	}
-	for _, sb := range i.SortBy {
+	for _, sb := range id.SortBy {
 		if sb.Property == "" || sb.Property == "__ancestor__" {
 			return false
 		}
@@ -182,24 +227,38 @@ func (i *IndexDefinition) Compound() bool {
 	return true
 }
 
-func (i *IndexDefinition) String() string {
+func (id *IndexDefinition) String() string {
 	ret := &bytes.Buffer{}
-	if i.Builtin() {
-		ret.WriteRune('B')
-	} else {
-		ret.WriteRune('C')
-	}
-	ret.WriteRune(':')
-	ret.WriteString(i.Kind)
-	if i.Ancestor {
-		ret.WriteString("|A")
-	}
-	for _, sb := range i.SortBy {
-		ret.WriteRune('/')
-		if sb.Direction == DESCENDING {
-			ret.WriteRune('-')
+	wr := func(r rune) {
+		_, err := ret.WriteRune(r)
+		if err != nil {
+			panic(err)
 		}
-		ret.WriteString(sb.Property)
+	}
+
+	ws := func(s string) {
+		_, err := ret.WriteString(s)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	if id.Builtin() {
+		wr('B')
+	} else {
+		wr('C')
+	}
+	wr(':')
+	ws(id.Kind)
+	if id.Ancestor {
+		ws("|A")
+	}
+	for _, sb := range id.SortBy {
+		wr('/')
+		if sb.Descending {
+			wr('-')
+		}
+		ws(sb.Property)
 	}
 	return ret.String()
 }

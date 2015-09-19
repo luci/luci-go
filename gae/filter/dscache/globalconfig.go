@@ -15,6 +15,13 @@ import (
 	"golang.org/x/net/context"
 )
 
+// GlobalConfig is the entity definition for dscache's global configuration.
+//
+// It's Enable field can be set to false to cause all dscache operations
+// (read and write) to cease in a given application.
+//
+// This should be manipulated in the GLOBAL (e.g. empty) namespace only. When
+// written there, it affects activity in all namespaces.
 type GlobalConfig struct {
 	_id   int64  `gae:"$id,1"`
 	_kind string `gae:"$kind,dscache"`
@@ -80,6 +87,10 @@ func IsGloballyEnabled(c context.Context) bool {
 	return globalEnabled
 }
 
+// SetGlobalEnable is a convenience function for manipulating the GlobalConfig.
+//
+// It's meant to be called from admin handlers on your app to turn dscache
+// functionality on or off in emergencies.
 func SetGlobalEnable(c context.Context, memcacheEnabled bool) error {
 	// always go to the default namespace
 	c, err := info.Get(c).Namespace("")

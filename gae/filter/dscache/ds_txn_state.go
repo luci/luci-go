@@ -67,7 +67,7 @@ func (s *dsTxnState) release(sc *supportContext) {
 	}
 }
 
-func (s *dsTxnState) add(sc *supportContext, keys []datastore.Key) {
+func (s *dsTxnState) add(sc *supportContext, keys []*datastore.Key) {
 	lockItems, lockKeys := sc.mkAllLockItems(keys)
 	if lockItems == nil {
 		return

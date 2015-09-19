@@ -14,6 +14,7 @@ import (
 	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/memcache"
 	"github.com/luci/gae/service/taskqueue"
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -34,6 +35,12 @@ func shouldHaveSuccessesAndErrors(actual interface{}, expected ...interface{}) s
 	return ""
 }
 
+func die(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
 func TestCount(t *testing.T) {
 	t.Parallel()
 
@@ -52,7 +59,6 @@ func TestCount(t *testing.T) {
 
 		Convey("Calling a ds function should reflect in counter", func() {
 			So(ds.PutMulti(vals), ShouldBeNil)
-			So(ctr.NewKey.Successes(), ShouldEqual, 1)
 			So(ctr.PutMulti.Successes(), ShouldEqual, 1)
 
 			Convey("effects are cumulative", func() {
@@ -60,11 +66,11 @@ func TestCount(t *testing.T) {
 				So(ctr.PutMulti.Successes(), ShouldEqual, 2)
 
 				Convey("even within transactions", func() {
-					ds.RunInTransaction(func(c context.Context) error {
+					die(ds.RunInTransaction(func(c context.Context) error {
 						ds := datastore.Get(c)
 						So(ds.PutMulti(append(vals, vals[0])), ShouldBeNil)
 						return nil
-					}, nil)
+					}, nil))
 				})
 			})
 		})
@@ -72,14 +78,14 @@ func TestCount(t *testing.T) {
 		Convey("errors count against errors", func() {
 			fb.BreakFeatures(nil, "GetMulti")
 
-			ds.GetMulti(vals)
+			So(ds.GetMulti(vals), ShouldErrLike, `"GetMulti" is broken`)
 			So(ctr.GetMulti.Errors(), ShouldEqual, 1)
 
 			fb.UnbreakFeatures("GetMulti")
 
 			So(ds.PutMulti(vals), ShouldBeNil)
 
-			ds.GetMulti(vals)
+			die(ds.GetMulti(vals))
 			So(ctr.GetMulti.Errors(), ShouldEqual, 1)
 			So(ctr.GetMulti.Successes(), ShouldEqual, 1)
 			So(ctr.GetMulti.Total(), ShouldEqual, 2)
@@ -92,9 +98,9 @@ func TestCount(t *testing.T) {
 		So(ctr, ShouldNotBeNil)
 		mc := memcache.Get(c)
 
-		mc.Set(mc.NewItem("hello").SetValue([]byte("sup")))
+		die(mc.Set(mc.NewItem("hello").SetValue([]byte("sup"))))
 		So(mc.Get(mc.NewItem("Wat")), ShouldNotBeNil)
-		mc.Get(mc.NewItem("hello"))
+		die(mc.Get(mc.NewItem("hello")))
 
 		So(ctr.SetMulti, shouldHaveSuccessesAndErrors, 1, 0)
 		So(ctr.GetMulti, shouldHaveSuccessesAndErrors, 2, 0)
@@ -107,8 +113,9 @@ func TestCount(t *testing.T) {
 		So(ctr, ShouldNotBeNil)
 		tq := taskqueue.Get(c)
 
-		tq.Add(&taskqueue.Task{Name: "wat"}, "")
-		tq.Add(&taskqueue.Task{Name: "wat"}, "DNE_QUEUE")
+		die(tq.Add(&taskqueue.Task{Name: "wat"}, ""))
+		So(tq.Add(&taskqueue.Task{Name: "wat"}, "DNE_QUEUE"),
+			ShouldErrLike, "UNKNOWN_QUEUE")
 
 		So(ctr.AddMulti, shouldHaveSuccessesAndErrors, 1, 1)
 	})
@@ -121,9 +128,11 @@ func TestCount(t *testing.T) {
 
 		gi := info.Get(c)
 
-		gi.Namespace("foo")
+		_, err := gi.Namespace("foo")
+		die(err)
 		fb.BreakFeatures(nil, "Namespace")
-		gi.Namespace("boom")
+		_, err = gi.Namespace("boom")
+		So(err, ShouldErrLike, `"Namespace" is broken`)
 
 		So(ctr.Namespace, shouldHaveSuccessesAndErrors, 1, 1)
 	})
@@ -154,9 +163,7 @@ func ExampleFilterRDS() {
 	someCalledFunc(c)
 
 	// Then we can see what happened!
-	fmt.Printf("%s\n", counter.NewKey.String())
 	fmt.Printf("%d\n", counter.PutMulti.Successes())
 	// Output:
-	// {Successes:2, Errors:0}
 	// 2
 }

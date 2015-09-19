@@ -10,62 +10,9 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Key is the equivalent of *datastore.Key from the original SDK, except that
-// it can have multiple implementations. See helper.Key* methods for missing
-// methods like KeyIncomplete (and some new ones like KeyValid).
-type Key interface {
-	Kind() string
-	StringID() string
-	IntID() int64
-	Parent() Key
-	AppID() string
-	Namespace() string
-
-	// Incomplete returns true iff k doesn't have an id yet.
-	Incomplete() bool
-
-	// Valid determines if a key is valid, according to a couple rules:
-	//   - k is not nil
-	//   - every token of k:
-	//     - (if !allowSpecial) token's kind doesn't start with '__'
-	//     - token's kind and appid are non-blank
-	//     - token is not incomplete
-	//   - all tokens have the same namespace and appid
-	Valid(allowSpecial bool, aid, ns string) bool
-
-	// PartialValid determines if a key is valid for a Put operation. This is
-	// like Valid(false, aid, ns), except that the childmost key is allowed to
-	// be Incomplete().
-	PartialValid(aid, ns string) bool
-
-	String() string
-}
-
-// KeyTok is a single token from a multi-part Key.
-type KeyTok struct {
-	Kind     string
-	IntID    int64
-	StringID string
-}
-
 // Cursor wraps datastore.Cursor.
 type Cursor interface {
 	fmt.Stringer
-}
-
-// Query wraps datastore.Query.
-type Query interface {
-	Ancestor(ancestor Key) Query
-	Distinct() Query
-	End(c Cursor) Query
-	EventualConsistency() Query
-	Filter(filterStr string, value interface{}) Query
-	KeysOnly() Query
-	Limit(limit int) Query
-	Offset(offset int) Query
-	Order(fieldName string) Query
-	Project(fieldNames ...string) Query
-	Start(c Cursor) Query
 }
 
 // CursorCB is used to obtain a Cursor while Run'ing a query on either
@@ -80,7 +27,7 @@ type CursorCB func() (Cursor, error)
 //   - val is the data of the entity (or nil, if the query was keys-only)
 //
 // Return true to continue iterating through the query results, or false to stop.
-type RawRunCB func(key Key, val PropertyMap, getCursor CursorCB) bool
+type RawRunCB func(key *Key, val PropertyMap, getCursor CursorCB) bool
 
 // GetMultiCB is the callback signature provided to RawInterface.GetMulti
 //
@@ -96,7 +43,7 @@ type GetMultiCB func(val PropertyMap, err error)
 //     * It may be nil if some of the keys/vals to the PutMulti were bad, since
 //       all keys are validated before the RPC occurs!
 //   - err is an error associated with putting this entity.
-type PutMultiCB func(key Key, err error)
+type PutMultiCB func(key *Key, err error)
 
 // DeleteMultiCB is the callback signature provided to RawInterface.DeleteMulti
 //
@@ -142,6 +89,7 @@ func (m MultiMetaGetter) GetMetaDefault(idx int, key string, dflt interface{}) i
 	return m.GetSingle(idx).GetMetaDefault(key, dflt)
 }
 
+// GetSingle gets a single MetaGetter at the specified index.
 func (m MultiMetaGetter) GetSingle(idx int) MetaGetter {
 	if idx >= len(m) || m[idx] == nil {
 		return nullMetaGetter
@@ -153,10 +101,6 @@ func (m MultiMetaGetter) GetSingle(idx int) MetaGetter {
 // reflection stuff. This is so that Filters can avoid doing lots of redundant
 // reflection work. See datastore.RawInterface for a more user-friendly interface.
 type RawInterface interface {
-	NewKey(kind, stringID string, intID int64, parent Key) Key
-	DecodeKey(encoded string) (Key, error)
-	NewQuery(kind string) Query
-
 	// RunInTransaction runs f in a transaction.
 	//
 	// opts may be nil.
@@ -175,7 +119,7 @@ type RawInterface interface {
 	// NOTE: Implementations and filters are guaranteed that:
 	//   - query is not nil
 	//   - cb is not nil
-	Run(q Query, cb RawRunCB) error
+	Run(q *FinalizedQuery, cb RawRunCB) error
 
 	// GetMulti retrieves items from the datastore.
 	//
@@ -189,7 +133,7 @@ type RawInterface interface {
 	//   - len(keys) > 0
 	//   - all keys are Valid, !Incomplete, and in the current namespace
 	//   - cb is not nil
-	GetMulti(keys []Key, meta MultiMetaGetter, cb GetMultiCB) error
+	GetMulti(keys []*Key, meta MultiMetaGetter, cb GetMultiCB) error
 
 	// PutMulti writes items to the datastore.
 	//
@@ -201,7 +145,7 @@ type RawInterface interface {
 	//   - len(keys) == len(vals)
 	//   - all keys are Valid and in the current namespace
 	//   - cb is not nil
-	PutMulti(keys []Key, vals []PropertyMap, cb PutMultiCB) error
+	PutMulti(keys []*Key, vals []PropertyMap, cb PutMultiCB) error
 
 	// DeleteMulti removes items from the datastore.
 	//
@@ -213,7 +157,7 @@ type RawInterface interface {
 	//   - all keys are Valid, !Incomplete, and in the current namespace
 	//   - none keys of the keys are 'special' (use a kind prefixed with '__')
 	//   - cb is not nil
-	DeleteMulti(keys []Key, cb DeleteMultiCB) error
+	DeleteMulti(keys []*Key, cb DeleteMultiCB) error
 
 	// Testable returns the Testable interface for the implementation, or nil if
 	// there is none.

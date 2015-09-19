@@ -98,6 +98,7 @@ type Task struct {
 	RetryOptions *RetryOptions
 }
 
+// Duplicate returns a deep copy of this Task.
 func (t *Task) Duplicate() *Task {
 	ret := *t
 

@@ -22,7 +22,7 @@ type queryStrategy interface {
 	//   - key is the decoded Key from the index row (the last item in rawData and
 	//     decodedProps)
 	//   - gc is the getCursor function to be passed to the user's callback
-	handle(rawData [][]byte, decodedProps []ds.Property, key ds.Key, gc func() (ds.Cursor, error)) bool
+	handle(rawData [][]byte, decodedProps []ds.Property, key *ds.Key, gc func() (ds.Cursor, error)) bool
 }
 
 type projectionLookup struct {
@@ -37,9 +37,11 @@ type projectionStrategy struct {
 	distinct stringset.Set
 }
 
-func newProjectionStrategy(q *queryImpl, rq *reducedQuery, cb ds.RawRunCB) queryStrategy {
-	projectionLookups := make([]projectionLookup, len(q.project))
-	for i, prop := range q.project {
+func newProjectionStrategy(fq *ds.FinalizedQuery, rq *reducedQuery, cb ds.RawRunCB) queryStrategy {
+	proj := fq.Project()
+
+	projectionLookups := make([]projectionLookup, len(proj))
+	for i, prop := range proj {
 		projectionLookups[i].propertyName = prop
 		lookupErr := fmt.Errorf("planning a strategy for an unfulfillable query?")
 		for j, col := range rq.suffixFormat {
@@ -52,13 +54,13 @@ func newProjectionStrategy(q *queryImpl, rq *reducedQuery, cb ds.RawRunCB) query
 		impossible(lookupErr)
 	}
 	ret := &projectionStrategy{cb: cb, project: projectionLookups}
-	if q.distinct {
+	if fq.Distinct() {
 		ret.distinct = stringset.New(0)
 	}
 	return ret
 }
 
-func (s *projectionStrategy) handle(rawData [][]byte, decodedProps []ds.Property, key ds.Key, gc func() (ds.Cursor, error)) bool {
+func (s *projectionStrategy) handle(rawData [][]byte, decodedProps []ds.Property, key *ds.Key, gc func() (ds.Cursor, error)) bool {
 	projectedRaw := [][]byte(nil)
 	if s.distinct != nil {
 		projectedRaw = make([][]byte, len(decodedProps))
@@ -84,7 +86,7 @@ type keysOnlyStrategy struct {
 	dedup stringset.Set
 }
 
-func (s *keysOnlyStrategy) handle(rawData [][]byte, _ []ds.Property, key ds.Key, gc func() (ds.Cursor, error)) bool {
+func (s *keysOnlyStrategy) handle(rawData [][]byte, _ []ds.Property, key *ds.Key, gc func() (ds.Cursor, error)) bool {
 	if !s.dedup.Add(string(rawData[len(rawData)-1])) {
 		return true
 	}
@@ -107,7 +109,7 @@ func newNormalStrategy(ns string, cb ds.RawRunCB, head *memStore) queryStrategy 
 	return &normalStrategy{cb, ns, coll, stringset.New(0)}
 }
 
-func (s *normalStrategy) handle(rawData [][]byte, _ []ds.Property, key ds.Key, gc func() (ds.Cursor, error)) bool {
+func (s *normalStrategy) handle(rawData [][]byte, _ []ds.Property, key *ds.Key, gc func() (ds.Cursor, error)) bool {
 	rawKey := rawData[len(rawData)-1]
 	if !s.dedup.Add(string(rawKey)) {
 		return true
@@ -124,12 +126,12 @@ func (s *normalStrategy) handle(rawData [][]byte, _ []ds.Property, key ds.Key, g
 	return s.cb(key, pm, gc)
 }
 
-func pickQueryStrategy(q *queryImpl, rq *reducedQuery, cb ds.RawRunCB, head *memStore) queryStrategy {
-	if q.keysOnly {
+func pickQueryStrategy(fq *ds.FinalizedQuery, rq *reducedQuery, cb ds.RawRunCB, head *memStore) queryStrategy {
+	if fq.KeysOnly() {
 		return &keysOnlyStrategy{cb, stringset.New(0)}
 	}
-	if len(q.project) > 0 {
-		return newProjectionStrategy(q, rq, cb)
+	if len(fq.Project()) > 0 {
+		return newProjectionStrategy(fq, rq, cb)
 	}
 	return newNormalStrategy(rq.ns, cb, head)
 }
@@ -144,7 +146,7 @@ func parseSuffix(ns string, suffixFormat []ds.IndexColumn, suffix []byte, count 
 		if count > 0 && i > count {
 			break
 		}
-		needInvert := suffixFormat[i].Direction == ds.DESCENDING
+		needInvert := suffixFormat[i].Descending
 
 		buf.SetInvert(needInvert)
 		decoded[i], err = serialize.ReadProperty(buf, serialize.WithoutContext, globalAppID, ns)
@@ -161,11 +163,9 @@ func parseSuffix(ns string, suffixFormat []ds.IndexColumn, suffix []byte, count 
 	return
 }
 
-func executeQuery(origQ ds.Query, ns string, isTxn bool, idx, head *memStore, cb ds.RawRunCB) error {
-	q := origQ.(*queryImpl)
-
-	rq, err := q.reduce(ns, isTxn)
-	if err == errQueryDone {
+func executeQuery(fq *ds.FinalizedQuery, ns string, isTxn bool, idx, head *memStore, cb ds.RawRunCB) error {
+	rq, err := reduce(fq, ns, isTxn)
+	if err == ds.ErrNullQuery {
 		return nil
 	}
 	if err != nil {
@@ -173,23 +173,22 @@ func executeQuery(origQ ds.Query, ns string, isTxn bool, idx, head *memStore, cb
 	}
 
 	idxs, err := getIndexes(rq, idx)
-	if err == errQueryDone {
+	if err == ds.ErrNullQuery {
 		return nil
 	}
 	if err != nil {
 		return err
 	}
 
-	strategy := pickQueryStrategy(q, rq, cb, head)
+	strategy := pickQueryStrategy(fq, rq, cb, head)
 	if strategy == nil {
 		// e.g. the normalStrategy found that there were NO entities in the current
 		// namespace.
 		return nil
 	}
 
-	offset := q.offset
-	limit := q.limit
-	hasLimit := q.limitSet && limit >= 0
+	offset, _ := fq.Offset()
+	limit, hasLimit := fq.Limit()
 
 	cursorPrefix := []byte(nil)
 	getCursorFn := func(suffix []byte) func() (ds.Cursor, error) {
@@ -231,7 +230,7 @@ func executeQuery(origQ ds.Query, ns string, isTxn bool, idx, head *memStore, cb
 		}
 
 		return strategy.handle(
-			rawData, decodedProps, keyProp.Value().(ds.Key),
+			rawData, decodedProps, keyProp.Value().(*ds.Key),
 			getCursorFn(suffix))
 	})
 

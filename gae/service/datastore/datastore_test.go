@@ -12,6 +12,7 @@ import (
 
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/errors"
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -24,78 +25,40 @@ func fakeDatastoreFactory(c context.Context) RawInterface {
 	}
 }
 
-type fakeQuery struct {
-	Query
-
-	limit int
-
-	err          error
-	errSingle    error
-	errSingleIdx int
-}
-
-func (q *fakeQuery) KeysOnly() Query {
-	return q
-}
-
-func (q *fakeQuery) Limit(i int) Query {
-	q.limit = i
-	return q
-}
-
-func (q *fakeQuery) FailAll() Query {
-	q.err = errors.New("Query fail all")
-	return q
-}
-
-func (q *fakeQuery) Fail(i int) Query {
-	q.errSingleIdx = i
-	q.errSingle = errors.New("Query fail")
-	return q
-}
-
 type fakeDatastore struct {
 	RawInterface
 	aid string
 	ns  string
 }
 
-func (f *fakeDatastore) NewKey(kind, stringID string, intID int64, parent Key) Key {
-	id := interface{}(stringID)
-	if stringID == "" {
-		id = intID
-	}
-	return mkKey(f.aid, f.ns, kind, id, parent)
+func (f *fakeDatastore) mkKey(elems ...interface{}) *Key {
+	return MakeKey(f.aid, f.ns, elems...)
 }
 
-func (f *fakeDatastore) NewQuery(string) Query {
-	return &fakeQuery{}
-}
+func (f *fakeDatastore) Run(fq *FinalizedQuery, cb RawRunCB) error {
+	lim, _ := fq.Limit()
 
-func (f *fakeDatastore) Run(q Query, cb RawRunCB) error {
-	rq := q.(*fakeQuery)
-	if rq.err != nil {
-		return rq.err
-	}
-	for i := 0; i < rq.limit; i++ {
-		if rq.errSingle != nil && i == rq.errSingleIdx {
-			return rq.errSingle
-		} else {
-			k := f.NewKey("Kind", "", int64(i+1), nil)
-			if i == 10 {
-				k = f.NewKey("Kind", "eleven", 0, nil)
+	for i := int32(0); i < lim; i++ {
+		if v, ok := fq.eqFilts["$err_single"]; ok {
+			idx := fq.eqFilts["$err_single_idx"][0].Value().(int64)
+			if idx == int64(i) {
+				return errors.New(v[0].Value().(string))
 			}
-			pm := PropertyMap{"Value": {MkProperty(i)}}
-			if !cb(k, pm, nil) {
-				break
-			}
+		}
+		k := f.mkKey("Kind", i+1)
+		if i == 10 {
+			k = f.mkKey("Kind", "eleven")
+		}
+		pm := PropertyMap{"Value": {MkProperty(i)}}
+		if !cb(k, pm, nil) {
+			break
 		}
 	}
 	return nil
 }
 
-func (f *fakeDatastore) PutMulti(keys []Key, vals []PropertyMap, cb PutMultiCB) error {
-	if keys[0].Kind() == "FailAll" {
+func (f *fakeDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb PutMultiCB) error {
+	if keys[0].Last().Kind == "FailAll" {
 		return errors.New("PutMulti fail all")
 	}
 	assertExtra := false
@@ -104,7 +67,7 @@ func (f *fakeDatastore) PutMulti(keys []Key, vals []PropertyMap, cb PutMultiCB) 
 	}
 	for i, k := range keys {
 		err := error(nil)
-		if k.Kind() == "Fail" {
+		if k.Last().Kind == "Fail" {
 			err = errors.New("PutMulti fail")
 		} else {
 			So(vals[i]["Value"], ShouldResemble, []Property{MkProperty(i)})
@@ -112,7 +75,7 @@ func (f *fakeDatastore) PutMulti(keys []Key, vals []PropertyMap, cb PutMultiCB) 
 				So(vals[i]["Extra"], ShouldResemble, []Property{MkProperty("whoa")})
 			}
 			if k.Incomplete() {
-				k = mkKey(k.AppID(), k.Namespace(), k.Kind(), int64(i+1), k.Parent())
+				k = NewKey(k.AppID(), k.Namespace(), k.Last().Kind, "", int64(i+1), k.Parent())
 			}
 		}
 		cb(k, err)
@@ -120,12 +83,12 @@ func (f *fakeDatastore) PutMulti(keys []Key, vals []PropertyMap, cb PutMultiCB) 
 	return nil
 }
 
-func (f *fakeDatastore) GetMulti(keys []Key, _meta MultiMetaGetter, cb GetMultiCB) error {
-	if keys[0].Kind() == "FailAll" {
+func (f *fakeDatastore) GetMulti(keys []*Key, _meta MultiMetaGetter, cb GetMultiCB) error {
+	if keys[0].Last().Kind == "FailAll" {
 		return errors.New("GetMulti fail all")
 	}
 	for i, k := range keys {
-		if k.Kind() == "Fail" {
+		if k.Last().Kind == "Fail" {
 			cb(nil, errors.New("GetMulti fail"))
 		} else {
 			cb(PropertyMap{"Value": {MkProperty(i + 1)}}, nil)
@@ -134,12 +97,12 @@ func (f *fakeDatastore) GetMulti(keys []Key, _meta MultiMetaGetter, cb GetMultiC
 	return nil
 }
 
-func (f *fakeDatastore) DeleteMulti(keys []Key, cb DeleteMultiCB) error {
-	if keys[0].Kind() == "FailAll" {
+func (f *fakeDatastore) DeleteMulti(keys []*Key, cb DeleteMultiCB) error {
+	if keys[0].Last().Kind == "FailAll" {
 		return errors.New("DeleteMulti fail all")
 	}
 	for _, k := range keys {
-		if k.Kind() == "Fail" {
+		if k.Last().Kind == "Fail" {
 			cb(errors.New("DeleteMulti fail"))
 		} else {
 			cb(nil)
@@ -155,7 +118,7 @@ type badStruct struct {
 
 type CommonStruct struct {
 	ID     int64 `gae:"$id"`
-	Parent Key   `gae:"$parent"`
+	Parent *Key  `gae:"$parent"`
 
 	Value int64
 }
@@ -204,13 +167,13 @@ func (f *FakePLS) Save(withMeta bool) (PropertyMap, error) {
 	}
 	if withMeta {
 		id, _ := f.GetMeta("id")
-		ret.SetMeta("id", id)
+		So(ret.SetMeta("id", id), ShouldBeNil)
 		if f.Kind == "" {
-			ret.SetMeta("kind", "FakePLS")
+			So(ret.SetMeta("kind", "FakePLS"), ShouldBeNil)
 		} else {
-			ret.SetMeta("kind", f.Kind)
+			So(ret.SetMeta("kind", f.Kind), ShouldBeNil)
 		}
-		ret.SetMeta("assertExtra", true)
+		So(ret.SetMeta("assertExtra", true), ShouldBeNil)
 	}
 	return ret, nil
 }
@@ -273,12 +236,12 @@ func TestKeyForObj(t *testing.T) {
 		c = SetRawFactory(c, fakeDatastoreFactory)
 		ds := Get(c)
 
-		k := ds.NewKey("Hello", "world", 0, nil)
+		k := ds.MakeKey("Hello", "world")
 
 		Convey("good", func() {
 			Convey("struct containing $key", func() {
 				type keyStruct struct {
-					Key Key `gae:"$key"`
+					Key *Key `gae:"$key"`
 				}
 
 				ks := &keyStruct{k}
@@ -291,37 +254,37 @@ func TestKeyForObj(t *testing.T) {
 					knd string `gae:"$kind,SuperKind"`
 				}
 
-				So(ds.KeyForObj(&idStruct{}).String(), ShouldEqual, `/SuperKind,wut`)
+				So(ds.KeyForObj(&idStruct{}).String(), ShouldEqual, `s~aid:ns:/SuperKind,"wut"`)
 			})
 
 			Convey("struct containing $id and $parent", func() {
-				So(ds.KeyForObj(&CommonStruct{ID: 4}).String(), ShouldEqual, `/CommonStruct,4`)
+				So(ds.KeyForObj(&CommonStruct{ID: 4}).String(), ShouldEqual, `s~aid:ns:/CommonStruct,4`)
 
-				So(ds.KeyForObj(&CommonStruct{ID: 4, Parent: k}).String(), ShouldEqual, `/Hello,world/CommonStruct,4`)
+				So(ds.KeyForObj(&CommonStruct{ID: 4, Parent: k}).String(), ShouldEqual, `s~aid:ns:/Hello,"world"/CommonStruct,4`)
 			})
 
 			Convey("a propmap with $key", func() {
 				pm := PropertyMap{}
-				pm.SetMeta("key", k)
-				So(ds.KeyForObj(pm).String(), ShouldEqual, `/Hello,world`)
+				So(pm.SetMeta("key", k), ShouldBeNil)
+				So(ds.KeyForObj(pm).String(), ShouldEqual, `s~aid:ns:/Hello,"world"`)
 			})
 
 			Convey("a propmap with $id, $kind, $parent", func() {
 				pm := PropertyMap{}
-				pm.SetMeta("id", 100)
-				pm.SetMeta("kind", "Sup")
-				So(ds.KeyForObj(pm).String(), ShouldEqual, `/Sup,100`)
+				So(pm.SetMeta("id", 100), ShouldBeNil)
+				So(pm.SetMeta("kind", "Sup"), ShouldBeNil)
+				So(ds.KeyForObj(pm).String(), ShouldEqual, `s~aid:ns:/Sup,100`)
 
-				pm.SetMeta("parent", k)
-				So(ds.KeyForObj(pm).String(), ShouldEqual, `/Hello,world/Sup,100`)
+				So(pm.SetMeta("parent", k), ShouldBeNil)
+				So(ds.KeyForObj(pm).String(), ShouldEqual, `s~aid:ns:/Hello,"world"/Sup,100`)
 			})
 
 			Convey("a pls with $id, $parent", func() {
 				pls := GetPLS(&CommonStruct{ID: 1})
-				So(ds.KeyForObj(pls).String(), ShouldEqual, `/CommonStruct,1`)
+				So(ds.KeyForObj(pls).String(), ShouldEqual, `s~aid:ns:/CommonStruct,1`)
 
-				pls.SetMeta("parent", k)
-				So(ds.KeyForObj(pls).String(), ShouldEqual, `/Hello,world/CommonStruct,1`)
+				So(pls.SetMeta("parent", k), ShouldBeNil)
+				So(ds.KeyForObj(pls).String(), ShouldEqual, `s~aid:ns:/Hello,"world"/CommonStruct,1`)
 			})
 
 		})
@@ -329,7 +292,7 @@ func TestKeyForObj(t *testing.T) {
 		Convey("bad", func() {
 			Convey("a propmap without $kind", func() {
 				pm := PropertyMap{}
-				pm.SetMeta("id", 100)
+				So(pm.SetMeta("id", 100), ShouldBeNil)
 				So(func() { ds.KeyForObj(pm) }, ShouldPanic)
 			})
 		})
@@ -449,7 +412,7 @@ func TestPut(t *testing.T) {
 
 				pm := PropertyMap{"Value": {MkProperty(0)}, "$kind": {MkPropertyNI("Pmap")}}
 				So(ds.Put(pm), ShouldBeNil)
-				So(ds.KeyForObj(pm).IntID(), ShouldEqual, 1)
+				So(ds.KeyForObj(pm).Last().IntID, ShouldEqual, 1)
 			})
 
 			Convey("[]P (map)", func() {
@@ -460,7 +423,7 @@ func TestPut(t *testing.T) {
 						"Value": {MkProperty(i)},
 					}
 					if i == 4 {
-						pms[i].SetMeta("id", int64(200))
+						So(pms[i].SetMeta("id", int64(200)), ShouldBeNil)
 					}
 				}
 				So(ds.PutMulti(pms), ShouldBeNil)
@@ -469,7 +432,7 @@ func TestPut(t *testing.T) {
 					if i == 4 {
 						expect = 200
 					}
-					So(ds.KeyForObj(pm).String(), ShouldEqual, fmt.Sprintf("/Pmap,%d", expect))
+					So(ds.KeyForObj(pm).String(), ShouldEqual, fmt.Sprintf("s~aid:ns:/Pmap,%d", expect))
 				}
 			})
 
@@ -499,7 +462,7 @@ func TestPut(t *testing.T) {
 						"Value": {MkProperty(i)},
 					}
 					if i == 4 {
-						pms[i].SetMeta("id", int64(200))
+						So(pms[i].SetMeta("id", int64(200)), ShouldBeNil)
 					}
 				}
 				So(ds.PutMulti(pms), ShouldBeNil)
@@ -508,7 +471,7 @@ func TestPut(t *testing.T) {
 					if i == 4 {
 						expect = 200
 					}
-					So(ds.KeyForObj(*pm).String(), ShouldEqual, fmt.Sprintf("/Pmap,%d", expect))
+					So(ds.KeyForObj(*pm).String(), ShouldEqual, fmt.Sprintf("s~aid:ns:/Pmap,%d", expect))
 				}
 			})
 
@@ -528,9 +491,9 @@ func TestPut(t *testing.T) {
 						fpls := ifs[i].(*FakePLS)
 						So(fpls.IntID, ShouldEqual, 2)
 					case 2:
-						So(ds.KeyForObj(ifs[i].(PropertyMap)).String(), ShouldEqual, "/Pmap,3")
+						So(ds.KeyForObj(ifs[i].(PropertyMap)).String(), ShouldEqual, "s~aid:ns:/Pmap,3")
 					case 3:
-						So(ds.KeyForObj(*ifs[i].(*PropertyMap)).String(), ShouldEqual, "/Pmap,4")
+						So(ds.KeyForObj(*ifs[i].(*PropertyMap)).String(), ShouldEqual, "s~aid:ns:/Pmap,4")
 					}
 				}
 			})
@@ -551,23 +514,23 @@ func TestDelete(t *testing.T) {
 
 		Convey("bad", func() {
 			Convey("get single error for RPC failure", func() {
-				keys := []Key{
-					mkKey("s~aid", "ns", "FailAll", 1, nil),
-					mkKey("s~aid", "ns", "Ok", 1, nil),
+				keys := []*Key{
+					MakeKey("s~aid", "ns", "FailAll", 1),
+					MakeKey("s~aid", "ns", "Ok", 1),
 				}
 				So(ds.DeleteMulti(keys).Error(), ShouldEqual, "DeleteMulti fail all")
 			})
 
 			Convey("get multi error for individual failure", func() {
-				keys := []Key{
-					ds.NewKey("Ok", "", 1, nil),
-					ds.NewKey("Fail", "", 2, nil),
+				keys := []*Key{
+					ds.MakeKey("Ok", 1),
+					ds.MakeKey("Fail", 2),
 				}
 				So(ds.DeleteMulti(keys).Error(), ShouldEqual, "DeleteMulti fail")
 			})
 
 			Convey("get single error when deleting a single", func() {
-				k := ds.NewKey("Fail", "", 1, nil)
+				k := ds.MakeKey("Fail", 1)
 				So(ds.Delete(k).Error(), ShouldEqual, "DeleteMulti fail")
 			})
 		})
@@ -628,7 +591,7 @@ func TestGet(t *testing.T) {
 
 			Convey("Raw access too", func() {
 				rds := ds.Raw()
-				keys := []Key{rds.NewKey("Kind", "", 1, nil)}
+				keys := []*Key{ds.MakeKey("Kind", 1)}
 				So(rds.GetMulti(keys, nil, func(pm PropertyMap, err error) {
 					So(err, ShouldBeNil)
 					So(pm["Value"][0].Value(), ShouldEqual, 1)
@@ -648,7 +611,7 @@ func TestGetAll(t *testing.T) {
 		ds := Get(c)
 		So(ds, ShouldNotBeNil)
 
-		q := ds.NewQuery("").Limit(5)
+		q := NewQuery("").Limit(5)
 
 		Convey("bad", func() {
 			Convey("nil target", func() {
@@ -709,7 +672,7 @@ func TestGetAll(t *testing.T) {
 				for i, o := range output {
 					k, err := o.GetMeta("key")
 					So(err, ShouldBeNil)
-					So(k.(Key).IntID(), ShouldEqual, i+1)
+					So(k.(*Key).Last().IntID, ShouldEqual, i+1)
 					So(o["Value"][0].Value().(int64), ShouldEqual, i)
 				}
 			})
@@ -733,17 +696,17 @@ func TestGetAll(t *testing.T) {
 					o := *op
 					k, err := o.GetMeta("key")
 					So(err, ShouldBeNil)
-					So(k.(Key).IntID(), ShouldEqual, i+1)
+					So(k.(*Key).Last().IntID, ShouldEqual, i+1)
 					So(o["Value"][0].Value().(int64), ShouldEqual, i)
 				}
 			})
 
-			Convey("*[]Key", func() {
-				output := []Key(nil)
+			Convey("*[]*Key", func() {
+				output := []*Key(nil)
 				So(ds.GetAll(q, &output), ShouldBeNil)
 				So(len(output), ShouldEqual, 5)
 				for i, k := range output {
-					So(k.IntID(), ShouldEqual, i+1)
+					So(k.Last().IntID, ShouldEqual, i+1)
 				}
 			})
 
@@ -760,7 +723,7 @@ func TestRun(t *testing.T) {
 		ds := Get(c)
 		So(ds, ShouldNotBeNil)
 
-		q := ds.NewQuery("").Limit(5)
+		q := NewQuery("kind").Limit(5)
 
 		Convey("bad", func() {
 			assertBadTypePanics := func(cb interface{}) {
@@ -770,7 +733,7 @@ func TestRun(t *testing.T) {
 					So(err.Error(), ShouldContainSubstring,
 						"cb does not match the required callback signature")
 				}()
-				ds.Run(q, cb)
+				So(ds.Run(q, cb), ShouldBeNil)
 			}
 
 			Convey("not a function", func() {
@@ -802,12 +765,12 @@ func TestRun(t *testing.T) {
 			})
 
 			Convey("early abort on error", func() {
-				rq := q.(*fakeQuery).Fail(3)
+				q = q.Eq("$err_single", "Query fail").Eq("$err_single_idx", 3)
 				i := 0
-				So(ds.Run(rq, func(c CommonStruct, _ CursorCB) bool {
+				So(ds.Run(q, func(c CommonStruct, _ CursorCB) bool {
 					i++
 					return true
-				}).Error(), ShouldEqual, "Query fail")
+				}), ShouldErrLike, "Query fail")
 				So(i, ShouldEqual, 3)
 			})
 
@@ -849,7 +812,7 @@ func TestRun(t *testing.T) {
 				So(ds.Run(q, func(pm *PropertyMap, _ CursorCB) bool {
 					k, err := pm.GetMeta("key")
 					So(err, ShouldBeNil)
-					So(k.(Key).IntID(), ShouldEqual, i+1)
+					So(k.(*Key).Last().IntID, ShouldEqual, i+1)
 					So((*pm)["Value"][0].Value(), ShouldEqual, i)
 					i++
 					return true
@@ -882,7 +845,7 @@ func TestRun(t *testing.T) {
 				So(ds.Run(q, func(pm PropertyMap, _ CursorCB) bool {
 					k, err := pm.GetMeta("key")
 					So(err, ShouldBeNil)
-					So(k.(Key).IntID(), ShouldEqual, i+1)
+					So(k.(*Key).Last().IntID, ShouldEqual, i+1)
 					So(pm["Value"][0].Value(), ShouldEqual, i)
 					i++
 					return true
@@ -891,8 +854,8 @@ func TestRun(t *testing.T) {
 
 			Convey("Key", func() {
 				i := 0
-				So(ds.Run(q, func(k Key, _ CursorCB) bool {
-					So(k.IntID(), ShouldEqual, i+1)
+				So(ds.Run(q, func(k *Key, _ CursorCB) bool {
+					So(k.Last().IntID, ShouldEqual, i+1)
 					i++
 					return true
 				}), ShouldBeNil)

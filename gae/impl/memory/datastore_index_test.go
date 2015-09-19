@@ -14,7 +14,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-var fakeKey = key("knd", 10, key("parentKind", "sid"))
+var fakeKey = key("parentKind", "sid", "knd", 10)
 
 func TestCollated(t *testing.T) {
 	t.Parallel()
@@ -296,7 +296,7 @@ func TestIndexEntries(t *testing.T) {
 }
 
 type dumbItem struct {
-	key   ds.Key
+	key   *ds.Key
 	props ds.PropertyMap
 }
 

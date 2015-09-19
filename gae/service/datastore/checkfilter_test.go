@@ -16,8 +16,6 @@ import (
 
 type fakeRDS struct{ RawInterface }
 
-func (fakeRDS) NewQuery(string) Query { return &fakeQuery{} }
-
 func TestCheckFilter(t *testing.T) {
 	t.Parallel()
 
@@ -36,67 +34,69 @@ func TestCheckFilter(t *testing.T) {
 			So(rds.RunInTransaction(nil, nil).Error(), ShouldContainSubstring, "is nil")
 			hit := false
 			So(func() {
-				rds.RunInTransaction(func(context.Context) error {
+				So(rds.RunInTransaction(func(context.Context) error {
 					hit = true
 					return nil
-				}, nil)
+				}, nil), ShouldBeNil)
 			}, ShouldPanic)
 			So(hit, ShouldBeFalse)
 		})
 
 		Convey("Run", func() {
 			So(rds.Run(nil, nil).Error(), ShouldContainSubstring, "query is nil")
-			So(rds.Run(rds.NewQuery("sup"), nil).Error(), ShouldContainSubstring, "callback is nil")
+			fq, err := NewQuery("sup").Finalize()
+			So(err, ShouldBeNil)
+
+			So(rds.Run(fq, nil).Error(), ShouldContainSubstring, "callback is nil")
 			hit := false
 			So(func() {
-				rds.Run(rds.NewQuery("sup"), func(Key, PropertyMap, CursorCB) bool {
+				So(rds.Run(fq, func(*Key, PropertyMap, CursorCB) bool {
 					hit = true
 					return true
-				})
+				}), ShouldBeNil)
 			}, ShouldPanic)
 			So(hit, ShouldBeFalse)
 		})
 
 		Convey("GetMulti", func() {
 			So(rds.GetMulti(nil, nil, nil), ShouldBeNil)
-			So(rds.GetMulti([]Key{mkKey("", "", "", "")}, nil, nil).Error(), ShouldContainSubstring, "is nil")
+			So(rds.GetMulti([]*Key{mkKey("", "", "", "")}, nil, nil).Error(), ShouldContainSubstring, "is nil")
 
 			// this is in the wrong aid/ns
-			keys := []Key{mkKey("wut", "wrong", "Kind", 1)}
+			keys := []*Key{MakeKey("wut", "wrong", "Kind", 1)}
 			So(rds.GetMulti(keys, nil, func(pm PropertyMap, err error) {
 				So(pm, ShouldBeNil)
 				So(err, ShouldEqual, ErrInvalidKey)
 			}), ShouldBeNil)
 
-			keys[0] = mkKey("s~aid", "ns", "Kind", 1)
+			keys[0] = mkKey("Kind", 1)
 			hit := false
 			So(func() {
-				rds.GetMulti(keys, nil, func(pm PropertyMap, err error) {
+				So(rds.GetMulti(keys, nil, func(pm PropertyMap, err error) {
 					hit = true
-				})
+				}), ShouldBeNil)
 			}, ShouldPanic)
 			So(hit, ShouldBeFalse)
 		})
 
 		Convey("PutMulti", func() {
-			keys := []Key{}
+			keys := []*Key{}
 			vals := []PropertyMap{{}}
 			So(rds.PutMulti(keys, vals, nil).Error(),
 				ShouldContainSubstring, "mismatched keys/vals")
 			So(rds.PutMulti(nil, nil, nil), ShouldBeNil)
 
-			badParent := mkKey("aid", "ns", "Wut", 0)
-			keys = append(keys, mkKey("aid", "ns", "Kind", 0, badParent))
+			keys = append(keys, mkKey("aid", "ns", "Wut", 0, "Kind", 0))
 			So(rds.PutMulti(keys, vals, nil).Error(), ShouldContainSubstring, "callback is nil")
 
-			So(rds.PutMulti(keys, vals, func(k Key, err error) {
+			So(rds.PutMulti(keys, vals, func(k *Key, err error) {
 				So(k, ShouldBeNil)
 				So(err, ShouldEqual, ErrInvalidKey)
 			}), ShouldBeNil)
 
-			keys = []Key{mkKey("s~aid", "ns", "Kind", 0)}
+			keys = []*Key{mkKey("s~aid", "ns", "Kind", 0)}
 			vals = []PropertyMap{nil}
-			So(rds.PutMulti(keys, vals, func(k Key, err error) {
+			So(rds.PutMulti(keys, vals, func(k *Key, err error) {
 				So(k, ShouldBeNil)
 				So(err.Error(), ShouldContainSubstring, "nil vals entry")
 			}), ShouldBeNil)
@@ -104,25 +104,25 @@ func TestCheckFilter(t *testing.T) {
 			vals = []PropertyMap{{}}
 			hit := false
 			So(func() {
-				rds.PutMulti(keys, vals, func(k Key, err error) {
+				So(rds.PutMulti(keys, vals, func(k *Key, err error) {
 					hit = true
-				})
+				}), ShouldBeNil)
 			}, ShouldPanic)
 			So(hit, ShouldBeFalse)
 		})
 
 		Convey("DeleteMulti", func() {
 			So(rds.DeleteMulti(nil, nil), ShouldBeNil)
-			So(rds.DeleteMulti([]Key{mkKey("", "", "", "")}, nil).Error(), ShouldContainSubstring, "is nil")
-			So(rds.DeleteMulti([]Key{mkKey("", "", "", "")}, func(err error) {
+			So(rds.DeleteMulti([]*Key{mkKey("", "", "", "")}, nil).Error(), ShouldContainSubstring, "is nil")
+			So(rds.DeleteMulti([]*Key{mkKey("", "", "", "")}, func(err error) {
 				So(err, ShouldEqual, ErrInvalidKey)
 			}), ShouldBeNil)
 
 			hit := false
 			So(func() {
-				rds.DeleteMulti([]Key{mkKey("s~aid", "ns", "Kind", 1)}, func(error) {
+				So(rds.DeleteMulti([]*Key{mkKey("s~aid", "ns", "Kind", 1)}, func(error) {
 					hit = true
-				})
+				}), ShouldBeNil)
 			}, ShouldPanic)
 			So(hit, ShouldBeFalse)
 		})

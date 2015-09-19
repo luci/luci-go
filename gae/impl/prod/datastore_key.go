@@ -6,7 +6,9 @@ package prod
 
 import (
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/datastore/dskey"
+	"github.com/luci/luci-go/common/errors"
+	"golang.org/x/net/context"
+	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 )
 
@@ -14,51 +16,60 @@ type dsKeyImpl struct {
 	*datastore.Key
 }
 
-var _ ds.Key = dsKeyImpl{}
-
-func (k dsKeyImpl) Parent() ds.Key   { return dsR2F(k.Key.Parent()) }
-func (k dsKeyImpl) Incomplete() bool { return k.Key.Incomplete() }
-func (k dsKeyImpl) Valid(allowSpecial bool, aid, ns string) bool {
-	return dskey.Valid(k, allowSpecial, aid, ns)
-}
-func (k dsKeyImpl) PartialValid(aid, ns string) bool {
-	return dskey.PartialValid(k, aid, ns)
-}
-
 // dsR2F (DS real-to-fake) converts an SDK Key to a ds.Key
-func dsR2F(k *datastore.Key) ds.Key {
+func dsR2F(k *datastore.Key) *ds.Key {
 	if k == nil {
 		return nil
 	}
-	return dsKeyImpl{k}
+	aid := k.AppID()
+	ns := k.Namespace()
+
+	count := 0
+	for nk := k; nk != nil; nk = nk.Parent() {
+		count++
+	}
+
+	toks := make([]ds.KeyTok, count)
+
+	for ; k != nil; k = k.Parent() {
+		count--
+		toks[count].Kind = k.Kind()
+		toks[count].StringID = k.StringID()
+		toks[count].IntID = k.IntID()
+	}
+	return ds.NewKeyToks(aid, ns, toks)
 }
 
 // dsF2R (DS fake-to-real) converts a DSKey back to an SDK *Key.
-func dsF2R(k ds.Key) *datastore.Key {
+func dsF2R(ctx context.Context, k *ds.Key) (*datastore.Key, error) {
 	if k == nil {
-		return nil
+		return nil, nil
 	}
-	if rkey, ok := k.(dsKeyImpl); ok {
-		return rkey.Key
-	}
-	// we should always hit the fast case above, but just in case, safely round
-	// trip through the proto encoding.
-	rkey, err := datastore.DecodeKey(dskey.Encode(k))
+
+	// drop aid.
+	_, ns, toks := k.Split()
+	err := error(nil)
+	ctx, err = appengine.Namespace(ctx, ns)
 	if err != nil {
-		// should never happen in a good program, but it's not ignorable, and
-		// passing an error back makes this function too cumbersome (and it causes
-		// this `if err != nil { panic(err) }` logic to show up in a bunch of
-		// places. Realistically, everything should hit the early exit clause above.
-		panic(err)
+		return nil, err
 	}
-	return rkey
+
+	ret := datastore.NewKey(ctx, toks[0].Kind, toks[0].StringID, toks[0].IntID, nil)
+	for _, t := range toks[1:] {
+		ret = datastore.NewKey(ctx, t.Kind, t.StringID, t.IntID, ret)
+	}
+
+	return ret, nil
 }
 
 // dsMF2R (DS multi-fake-to-fake) converts a slice of wrapped keys to SDK keys.
-func dsMF2R(ks []ds.Key) []*datastore.Key {
+func dsMF2R(ctx context.Context, ks []*ds.Key) ([]*datastore.Key, error) {
+	lme := errors.NewLazyMultiError(len(ks))
 	ret := make([]*datastore.Key, len(ks))
+	err := error(nil)
 	for i, k := range ks {
-		ret[i] = dsF2R(k)
+		ret[i], err = dsF2R(ctx, k)
+		lme.Assign(i, err)
 	}
-	return ret
+	return ret, lme.Get()
 }

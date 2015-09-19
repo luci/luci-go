@@ -5,6 +5,7 @@
 package datastore
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"math"
@@ -37,38 +38,6 @@ func (i IndexSetting) String() string {
 		return "NoIndex"
 	}
 	return "ShouldIndex"
-}
-
-// Property is a value plus an indicator of whether the value should be
-// indexed. Name and Multiple are stored in the PropertyMap object.
-type Property struct {
-	value        interface{}
-	indexSetting IndexSetting
-	propType     PropertyType
-}
-
-// MkProperty makes a new indexed* Property and returns it. If val is an
-// invalid value, this panics (so don't do it). If you want to handle the error
-// normally, use SetValue(..., ShouldIndex) instead.
-//
-// *indexed if val is not an unindexable type like []byte.
-func MkProperty(val interface{}) Property {
-	ret := Property{}
-	if err := ret.SetValue(val, ShouldIndex); err != nil {
-		panic(err)
-	}
-	return ret
-}
-
-// MkPropertyNI makes a new Property (with noindex set to true), and returns
-// it. If val is an invalid value, this panics (so don't do it). If you want to
-// handle the error normally, use SetValue(..., NoIndex) instead.
-func MkPropertyNI(val interface{}) Property {
-	ret := Property{}
-	if err := ret.SetValue(val, NoIndex); err != nil {
-		panic(err)
-	}
-	return ret
 }
 
 // PropertyConverter may be implemented by the pointer-to a struct field which
@@ -176,7 +145,7 @@ const (
 	// PTGeoPoint is a Projection-query type.
 	PTGeoPoint
 
-	// PTKey represents a Key object.
+	// PTKey represents a *Key object.
 	//
 	// PTKey is a Projection-query type.
 	PTKey
@@ -184,6 +153,8 @@ const (
 	// PTBlobKey represents a blobstore.Key
 	PTBlobKey
 
+	// PTUnknown is a placeholder value which should never show up in reality.
+	//
 	// NOTE: THIS MUST BE LAST VALUE FOR THE init() ASSERTION BELOW TO WORK.
 	PTUnknown
 )
@@ -225,6 +196,38 @@ func (t PropertyType) String() string {
 	}
 }
 
+// Property is a value plus an indicator of whether the value should be
+// indexed. Name and Multiple are stored in the PropertyMap object.
+type Property struct {
+	value        interface{}
+	indexSetting IndexSetting
+	propType     PropertyType
+}
+
+// MkProperty makes a new indexed* Property and returns it. If val is an
+// invalid value, this panics (so don't do it). If you want to handle the error
+// normally, use SetValue(..., ShouldIndex) instead.
+//
+// *indexed if val is not an unindexable type like []byte.
+func MkProperty(val interface{}) Property {
+	ret := Property{}
+	if err := ret.SetValue(val, ShouldIndex); err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+// MkPropertyNI makes a new Property (with noindex set to true), and returns
+// it. If val is an invalid value, this panics (so don't do it). If you want to
+// handle the error normally, use SetValue(..., NoIndex) instead.
+func MkPropertyNI(val interface{}) Property {
+	ret := Property{}
+	if err := ret.SetValue(val, NoIndex); err != nil {
+		panic(err)
+	}
+	return ret
+}
+
 // PropertyTypeOf returns the PT* type of the given Property-compatible
 // value v. If checkValid is true, this method will also ensure that time.Time
 // and GeoPoint have valid values.
@@ -244,7 +247,7 @@ func PropertyTypeOf(v interface{}, checkValid bool) (PropertyType, error) {
 		return PTBlobKey, nil
 	case string:
 		return PTString, nil
-	case Key:
+	case *Key:
 		// TODO(riannucci): Check key for validity in its own namespace?
 		return PTKey, nil
 	case time.Time:
@@ -338,7 +341,7 @@ func (p *Property) Type() PropertyType { return p.propType }
 //	- blobstore.Key
 //    (only the first 1500 bytes is indexable)
 //	- float64
-//	- Key
+//	- *Key
 //	- GeoPoint
 // This set is smaller than the set of valid struct field types that the
 // datastore can load and save. A Property Value cannot be a slice (apart
@@ -450,6 +453,159 @@ func (p *Property) Project(to PropertyType) (interface{}, error) {
 	}
 }
 
+func cmpVals(a, b interface{}, t PropertyType) int {
+	cmpFloat := func(a, b float64) int {
+		if a == b {
+			return 0
+		}
+		if a > b {
+			return 1
+		}
+		return -1
+	}
+
+	switch t {
+	case PTNull:
+		return 0
+
+	case PTBool:
+		a, b := a.(bool), b.(bool)
+		if a == b {
+			return 0
+		}
+		if a && !b {
+			return 1
+		}
+		return -1
+
+	case PTInt:
+		a, b := a.(int64), b.(int64)
+		if a == b {
+			return 0
+		}
+		if a > b {
+			return 1
+		}
+		return -1
+
+	case PTString:
+		a, b := a.(string), b.(string)
+		if a == b {
+			return 0
+		}
+		if a > b {
+			return 1
+		}
+		return -1
+
+	case PTFloat:
+		return cmpFloat(a.(float64), b.(float64))
+
+	case PTGeoPoint:
+		a, b := a.(GeoPoint), b.(GeoPoint)
+		cmp := cmpFloat(a.Lat, b.Lat)
+		if cmp != 0 {
+			return cmp
+		}
+		return cmpFloat(a.Lng, b.Lng)
+
+	case PTKey:
+		a, b := a.(*Key), b.(*Key)
+		if a.Equal(b) {
+			return 0
+		}
+		if b.Less(a) {
+			return 1
+		}
+		return -1
+
+	default:
+		panic(fmt.Errorf("uncomparable type: %s", t))
+	}
+}
+
+// Less returns true iff p would sort before other.
+//
+// This uses datastore's index rules for sorting (e.g.
+// []byte("hello") == "hello")
+func (p *Property) Less(other *Property) bool {
+	if p.indexSetting && !other.indexSetting {
+		return true
+	} else if !p.indexSetting && other.indexSetting {
+		return false
+	}
+	a, b := p.ForIndex(), other.ForIndex()
+	cmp := int(a.propType) - int(b.propType)
+	if cmp < 0 {
+		return true
+	} else if cmp > 0 {
+		return false
+	}
+	return cmpVals(a.value, b.value, a.propType) < 0
+}
+
+// Equal returns true iff p and other have identical index representations.
+//
+// This uses datastore's index rules for sorting (e.g.
+// []byte("hello") == "hello")
+func (p *Property) Equal(other *Property) bool {
+	ret := p.indexSetting == other.indexSetting
+	if ret {
+		a, b := p.ForIndex(), other.ForIndex()
+		ret = a.propType == b.propType && cmpVals(a.value, b.value, a.propType) == 0
+	}
+	return ret
+}
+
+// GQL returns a correctly formatted Cloud Datastore GQL literal which
+// is valid for a comparison value in the `WHERE` clause.
+//
+// The flavor of GQL that this emits is defined here:
+//   https://cloud.google.com/datastore/docs/apis/gql/gql_reference
+//
+// NOTE: GeoPoint values are emitted with speculated future syntax. There is
+// currently no syntax for literal GeoPoint values.
+func (p *Property) GQL() string {
+	switch p.propType {
+	case PTNull:
+		return "NULL"
+
+	case PTInt, PTFloat, PTBool:
+		return fmt.Sprint(p.value)
+
+	case PTString:
+		return gqlQuoteString(p.value.(string))
+
+	case PTBytes:
+		return fmt.Sprintf("BLOB(%q)",
+			base64.URLEncoding.EncodeToString(p.value.([]byte)))
+
+	case PTBlobKey:
+		return fmt.Sprintf("BLOBKEY(%s)", gqlQuoteString(
+			string(p.value.(blobstore.Key))))
+
+	case PTKey:
+		return p.value.(*Key).GQL()
+
+	case PTTime:
+		return fmt.Sprintf("DATETIME(%s)", p.value.(time.Time).Format(time.RFC3339Nano))
+
+	case PTGeoPoint:
+		// note that cloud SQL doesn't support this yet, but take a good guess at
+		// it.
+		v := p.value.(GeoPoint)
+		return fmt.Sprintf("GEOPOINT(%v, %v)", v.Lat, v.Lng)
+	}
+	panic(fmt.Errorf("bad type: %s", p.propType))
+}
+
+// PropertySlice is a slice of Properties. It implements sort.Interface.
+type PropertySlice []Property
+
+func (s PropertySlice) Len() int           { return len(s) }
+func (s PropertySlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s PropertySlice) Less(i, j int) bool { return s[i].Less(&s[j]) }
+
 // MetaGetter is a subinterface of PropertyLoadSaver, but is also used to
 // abstract the meta argument for RawInterface.GetMulti.
 type MetaGetter interface {
@@ -460,7 +616,7 @@ type MetaGetter interface {
 	//   int64  - may have default (ascii encoded base-10)
 	//   string - may have default
 	//   Toggle - MUST have default ("true" or "false")
-	//   Key    - NO default allowed
+	//   *Key    - NO default allowed
 	//
 	// Struct fields of type Toggle (which is an Auto/On/Off) require you to
 	// specify a value of 'true' or 'false' for the default value of the struct
@@ -590,6 +746,7 @@ func (pm PropertyMap) GetMeta(key string) (interface{}, error) {
 	return v[0].Value(), nil
 }
 
+// GetMetaDefault is the implementation of PropertyLoadSaver.GetMetaDefault.
 func (pm PropertyMap) GetMetaDefault(key string, dflt interface{}) interface{} {
 	return GetMetaDefaultImpl(pm.GetMeta, key, dflt)
 }

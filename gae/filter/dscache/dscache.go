@@ -38,28 +38,49 @@ var (
 	CompressionThreshold = 860
 
 	// DefaultShards is the default number of key sharding to do.
-	DefaultShards int = 1
+	DefaultShards = 1
 
-	// DefaultEnable indicates whether or not caching is globally enabled or
+	// DefaultEnabled indicates whether or not caching is globally enabled or
 	// disabled by default. Can still be overridden by CacheEnableMeta.
 	DefaultEnabled = true
 )
 
 const (
+	// MemcacheVersion will be incremented in the event that the in-memcache
+	// representation of the cache data is modified.
 	MemcacheVersion = "1"
 
 	// KeyFormat is the format string used to generate memcache keys. It's
 	//   gae:<version>:<shard#>:<base64_std_nopad(sha1(datastore.Key))>
-	KeyFormat      = "gae:" + MemcacheVersion + ":%x:%s"
+	KeyFormat = "gae:" + MemcacheVersion + ":%x:%s"
+
+	// Sha1B64Padding is the number of padding characters a base64 encoding of
+	// a sha1 has.
 	Sha1B64Padding = 1
-	Sha1B64Size    = 28 - Sha1B64Padding
 
-	MaxShards          = 256
-	MaxShardsLen       = len("ff")
+	// MaxShards is the maximum number of shards a single entity can have.
+	MaxShards = 256
+
+	// MaxShardsLen is the number of characters in the key the shard field
+	// occupies.
+	MaxShardsLen = len("ff")
+
+	// InternalGAEPadding is the estimated internal padding size that GAE takes
+	// per memcache line.
+	//   https://cloud.google.com/appengine/docs/go/memcache/#Go_Limits
 	InternalGAEPadding = 96
-	ValueSizeLimit     = (1000 * 1000) - InternalGAEPadding - MaxShardsLen
 
-	CacheEnableMeta     = "dscache.enable"
+	// ValueSizeLimit is the maximum encoded size a datastore key+entry may
+	// occupy. If a datastore entity is too large, it will have an indefinite
+	// lock which will cause all clients to fetch it from the datastore.
+	ValueSizeLimit = (1000 * 1000) - InternalGAEPadding - MaxShardsLen
+
+	// CacheEnableMeta is the gae metadata key name for whether or not dscache
+	// is enabled for an entity type at all.
+	CacheEnableMeta = "dscache.enable"
+
+	// CacheExpirationMeta is the gae metadata key name for the default
+	// expiration time (in seconds) for an entity type.
 	CacheExpirationMeta = "dscache.expiration"
 
 	// NonceUint32s is the number of 32 bit uints to use in the 'lock' nonce.
@@ -73,8 +94,10 @@ const (
 // internalValueSizeLimit is a var for testing purposes.
 var internalValueSizeLimit = ValueSizeLimit
 
+// CompressionType is the type of compression a single memcache entry has.
 type CompressionType byte
 
+// Types of compression. ZlibCompression uses "compress/zlib".
 const (
 	NoCompression CompressionType = iota
 	ZlibCompression
@@ -95,17 +118,22 @@ func (c CompressionType) String() string {
 // item or a lock.
 type FlagValue uint32
 
+// States for a memcache entry. ItemUNKNOWN exists to distinguish the default
+// zero state from a valid state, but shouldn't ever be observed in memcache. .
 const (
 	ItemUKNONWN FlagValue = iota
 	ItemHasData
 	ItemHasLock
 )
 
-func MakeMemcacheKey(shard int, k datastore.Key) string {
+// MakeMemcacheKey generates a memcache key for the given datastore Key. This
+// is useful for debugging.
+func MakeMemcacheKey(shard int, k *datastore.Key) string {
 	return fmt.Sprintf(KeyFormat, shard, HashKey(k))
 }
 
-func HashKey(k datastore.Key) string {
+// HashKey generates just the hashed portion of the MemcacheKey.
+func HashKey(k *datastore.Key) string {
 	dgst := sha1.Sum(serialize.ToBytes(k))
 	buf := bytes.Buffer{}
 	enc := base64.NewEncoder(base64.StdEncoding, &buf)

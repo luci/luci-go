@@ -5,6 +5,7 @@
 package datastore
 
 import (
+	"github.com/luci/gae/service/info"
 	"golang.org/x/net/context"
 )
 
@@ -47,7 +48,12 @@ func GetRaw(c context.Context) RawInterface {
 
 // Get gets the Interface implementation from context.
 func Get(c context.Context) Interface {
-	return &datastoreImpl{GetRaw(c)}
+	inf := info.Get(c)
+	return &datastoreImpl{
+		GetRaw(c),
+		inf.FullyQualifiedAppID(),
+		inf.GetNamespace(),
+	}
 }
 
 // SetRawFactory sets the function to produce Datastore instances, as returned by

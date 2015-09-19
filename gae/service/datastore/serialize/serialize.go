@@ -13,7 +13,6 @@ import (
 
 	"github.com/luci/gae/service/blobstore"
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/datastore/dskey"
 	"github.com/luci/luci-go/common/cmpbin"
 )
 
@@ -51,10 +50,10 @@ const (
 
 // WriteKey encodes a key to the buffer. If context is WithContext, then this
 // encoded value will include the appid and namespace of the key.
-func WriteKey(buf Buffer, context KeyContext, k ds.Key) (err error) {
+func WriteKey(buf Buffer, context KeyContext, k *ds.Key) (err error) {
 	// [appid ++ namespace]? ++ [1 ++ token]* ++ NULL
 	defer recoverTo(&err)
-	appid, namespace, toks := dskey.Split(k)
+	appid, namespace, toks := k.Split()
 	if context == WithContext {
 		panicIf(buf.WriteByte(1))
 		_, e := cmpbin.WriteString(buf, appid)
@@ -75,7 +74,7 @@ func WriteKey(buf Buffer, context KeyContext, k ds.Key) (err error) {
 // the value of context that was passed to WriteKey when the key was encoded.
 // If context == WithoutContext, then the appid and namespace parameters are
 // used in the decoded Key. Otherwise they're ignored.
-func ReadKey(buf Buffer, context KeyContext, appid, namespace string) (ret ds.Key, err error) {
+func ReadKey(buf Buffer, context KeyContext, appid, namespace string) (ret *ds.Key, err error) {
 	defer recoverTo(&err)
 	actualCtx, e := buf.ReadByte()
 	panicIf(e)
@@ -117,7 +116,7 @@ func ReadKey(buf Buffer, context KeyContext, appid, namespace string) (ret ds.Ke
 		toks = append(toks, tok)
 	}
 
-	return dskey.NewToks(actualAid, actualNS, toks), nil
+	return ds.NewKeyToks(actualAid, actualNS, toks), nil
 }
 
 // WriteKeyTok writes a KeyTok to the buffer. You usually want WriteKey
@@ -243,7 +242,7 @@ func WriteProperty(buf Buffer, context KeyContext, p ds.Property) (err error) {
 	case ds.PTGeoPoint:
 		err = WriteGeoPoint(buf, p.Value().(ds.GeoPoint))
 	case ds.PTKey:
-		err = WriteKey(buf, context, p.Value().(ds.Key))
+		err = WriteKey(buf, context, p.Value().(*ds.Key))
 	case ds.PTBlobKey:
 		_, err = cmpbin.WriteString(buf, string(p.Value().(blobstore.Key)))
 	}
@@ -375,7 +374,7 @@ func ReadPropertyMap(buf Buffer, context KeyContext, appid, namespace string) (p
 func WriteIndexColumn(buf Buffer, c ds.IndexColumn) (err error) {
 	defer recoverTo(&err)
 
-	if c.Direction == ds.ASCENDING {
+	if !c.Descending {
 		panicIf(buf.WriteByte(0))
 	} else {
 		panicIf(buf.WriteByte(1))
@@ -391,12 +390,7 @@ func ReadIndexColumn(buf Buffer) (c ds.IndexColumn, err error) {
 	dir, err := buf.ReadByte()
 	panicIf(err)
 
-	switch dir {
-	case 0:
-		c.Direction = ds.ASCENDING
-	default:
-		c.Direction = ds.DESCENDING
-	}
+	c.Descending = dir != 0
 	c.Property, _, err = cmpbin.ReadString(buf)
 	return
 }
@@ -464,7 +458,7 @@ func toBytesErr(i interface{}, ctx KeyContext) (ret []byte, err error) {
 	case ds.IndexDefinition:
 		err = WriteIndexDefinition(buf, x)
 
-	case ds.Key:
+	case *ds.Key:
 		err = WriteKey(buf, ctx, x)
 
 	case ds.KeyTok:

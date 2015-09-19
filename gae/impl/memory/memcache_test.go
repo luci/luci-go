@@ -10,6 +10,7 @@ import (
 
 	mcS "github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/common/clock/testclock"
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -101,7 +102,7 @@ func TestMemcache(t *testing.T) {
 				So(getItm, ShouldResemble, testItem)
 
 				Convey("Flush works too", func() {
-					mc.Flush()
+					So(mc.Flush(), ShouldBeNil)
 					So(mc.Get(getItm), ShouldEqual, mcS.ErrCacheMiss)
 				})
 			})
@@ -168,11 +169,11 @@ func TestMemcache(t *testing.T) {
 				expiration: time.Second * 2,
 			})
 
-			mc.Get(mc.NewItem("sup"))
-			mc.Get(mc.NewItem("sup"))
-			mc.Get(mc.NewItem("sup"))
-			mc.Get(mc.NewItem("sup"))
-			mc.Get(mc.NewItem("wot"))
+			So(mc.Get(mc.NewItem("sup")), ShouldBeNil)
+			So(mc.Get(mc.NewItem("sup")), ShouldBeNil)
+			So(mc.Get(mc.NewItem("sup")), ShouldBeNil)
+			So(mc.Get(mc.NewItem("sup")), ShouldBeNil)
+			So(mc.Get(mc.NewItem("wot")), ShouldErrLike, mcS.ErrCacheMiss)
 
 			mci := mc.Raw().(*memcacheImpl)
 

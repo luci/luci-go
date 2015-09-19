@@ -81,6 +81,7 @@ func (t *taskqueueImpl) Testable() Testable {
 
 var _ Interface = (*taskqueueImpl)(nil)
 
+// Get gets the Interface implementation from context.
 func Get(c context.Context) Interface {
 	return &taskqueueImpl{GetRaw(c)}
 }

@@ -11,7 +11,6 @@ import (
 	"sync/atomic"
 
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/datastore/dskey"
 	"github.com/luci/gae/service/datastore/serialize"
 	"github.com/luci/luci-go/common/errors"
 	"golang.org/x/net/context"
@@ -81,16 +80,16 @@ func (d *dataStoreData) catchupIndexes() {
 
 /////////////////////////// indexes(dataStoreData) ////////////////////////////
 
-func groupMetaKey(key ds.Key) []byte {
-	return keyBytes(dskey.New("", "", "__entity_group__", "", 1, dskey.Root(key)))
+func groupMetaKey(key *ds.Key) []byte {
+	return keyBytes(ds.NewKey("", "", "__entity_group__", "", 1, key.Root()))
 }
 
-func groupIDsKey(key ds.Key) []byte {
-	return keyBytes(dskey.New("", "", "__entity_group_ids__", "", 1, dskey.Root(key)))
+func groupIDsKey(key *ds.Key) []byte {
+	return keyBytes(ds.NewKey("", "", "__entity_group_ids__", "", 1, key.Root()))
 }
 
 func rootIDsKey(kind string) []byte {
-	return keyBytes(dskey.New("", "", "__entity_root_ids__", kind, 0, nil))
+	return keyBytes(ds.NewKey("", "", "__entity_root_ids__", kind, 0, nil))
 }
 
 func curVersion(ents *memCollection, key []byte) int64 {
@@ -118,33 +117,33 @@ func incrementLocked(ents *memCollection, key []byte) int64 {
 	return ret
 }
 
-func (d *dataStoreData) entsKeyLocked(key ds.Key) (*memCollection, ds.Key) {
+func (d *dataStoreData) entsKeyLocked(key *ds.Key) (*memCollection, *ds.Key) {
 	coll := "ents:" + key.Namespace()
 	ents := d.head.GetCollection(coll)
 	if ents == nil {
 		ents = d.head.SetCollection(coll, nil)
 	}
 
-	if dskey.Incomplete(key) {
+	if key.Incomplete() {
 		idKey := []byte(nil)
 		if key.Parent() == nil {
-			idKey = rootIDsKey(key.Kind())
+			idKey = rootIDsKey(key.Last().Kind)
 		} else {
 			idKey = groupIDsKey(key)
 		}
 		id := incrementLocked(ents, idKey)
-		key = dskey.New(key.AppID(), key.Namespace(), key.Kind(), "", id, key.Parent())
+		key = ds.NewKey(key.AppID(), key.Namespace(), key.Last().Kind, "", id, key.Parent())
 	}
 
 	return ents, key
 }
 
-func (d *dataStoreData) putMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) {
+func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) {
 	for i, k := range keys {
 		pmap, _ := vals[i].Save(false)
 		dataBytes := serialize.ToBytes(pmap)
 
-		k, err := func() (ret ds.Key, err error) {
+		k, err := func() (ret *ds.Key, err error) {
 			d.rwlock.Lock()
 			defer d.rwlock.Unlock()
 
@@ -168,7 +167,7 @@ func (d *dataStoreData) putMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.Put
 	}
 }
 
-func getMultiInner(keys []ds.Key, cb ds.GetMultiCB, getColl func() (*memCollection, error)) error {
+func getMultiInner(keys []*ds.Key, cb ds.GetMultiCB, getColl func() (*memCollection, error)) error {
 	ents, err := getColl()
 	if err != nil {
 		return err
@@ -191,16 +190,15 @@ func getMultiInner(keys []ds.Key, cb ds.GetMultiCB, getColl func() (*memCollecti
 	return nil
 }
 
-func (d *dataStoreData) getMulti(keys []ds.Key, cb ds.GetMultiCB) error {
-	getMultiInner(keys, cb, func() (*memCollection, error) {
+func (d *dataStoreData) getMulti(keys []*ds.Key, cb ds.GetMultiCB) error {
+	return getMultiInner(keys, cb, func() (*memCollection, error) {
 		s := d.takeSnapshot()
 
 		return s.GetCollection("ents:" + keys[0].Namespace()), nil
 	})
-	return nil
 }
 
-func (d *dataStoreData) delMulti(keys []ds.Key, cb ds.DeleteMultiCB) {
+func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) {
 	toDel := make([][]byte, 0, len(keys))
 	for _, k := range keys {
 		toDel = append(toDel, keyBytes(k))
@@ -245,7 +243,7 @@ func (d *dataStoreData) canApplyTxn(obj memContextObj) bool {
 		prop, err := serialize.ReadProperty(bytes.NewBufferString(rk), serialize.WithContext, "", "")
 		memoryCorruption(err)
 
-		k := prop.Value().(ds.Key)
+		k := prop.Value().(*ds.Key)
 
 		entKey := "ents:" + k.Namespace()
 		mkey := groupMetaKey(k)
@@ -271,11 +269,11 @@ func (d *dataStoreData) applyTxn(c context.Context, obj memContextObj) {
 			err := error(nil)
 			k := m.key
 			if m.data == nil {
-				d.delMulti([]ds.Key{k},
+				d.delMulti([]*ds.Key{k},
 					func(e error) { err = e })
 			} else {
-				d.putMulti([]ds.Key{m.key}, []ds.PropertyMap{m.data},
-					func(_ ds.Key, e error) { err = e })
+				d.putMulti([]*ds.Key{m.key}, []ds.PropertyMap{m.data},
+					func(_ *ds.Key, e error) { err = e })
 			}
 			impossible(err)
 		}
@@ -298,7 +296,7 @@ func (d *dataStoreData) endTxn() {}
 /////////////////////////////// txnDataStoreData ///////////////////////////////
 
 type txnMutation struct {
-	key  ds.Key
+	key  *ds.Key
 	data ds.PropertyMap
 }
 
@@ -358,8 +356,8 @@ func (td *txnDataStoreData) run(f func() error) error {
 //
 // Returns an error if this key causes the transaction to cross too many entity
 // groups.
-func (td *txnDataStoreData) writeMutation(getOnly bool, key ds.Key, data ds.PropertyMap) error {
-	rk := string(keyBytes(dskey.Root(key)))
+func (td *txnDataStoreData) writeMutation(getOnly bool, key *ds.Key, data ds.PropertyMap) error {
+	rk := string(keyBytes(key.Root()))
 
 	td.Lock()
 	defer td.Unlock()
@@ -385,7 +383,7 @@ func (td *txnDataStoreData) writeMutation(getOnly bool, key ds.Key, data ds.Prop
 	return nil
 }
 
-func (td *txnDataStoreData) putMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) {
+func (td *txnDataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) {
 	for i, k := range keys {
 		func() {
 			td.parent.Lock()
@@ -399,7 +397,7 @@ func (td *txnDataStoreData) putMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds
 	}
 }
 
-func (td *txnDataStoreData) getMulti(keys []ds.Key, cb ds.GetMultiCB) error {
+func (td *txnDataStoreData) getMulti(keys []*ds.Key, cb ds.GetMultiCB) error {
 	return getMultiInner(keys, cb, func() (*memCollection, error) {
 		err := error(nil)
 		for _, key := range keys {
@@ -412,7 +410,7 @@ func (td *txnDataStoreData) getMulti(keys []ds.Key, cb ds.GetMultiCB) error {
 	})
 }
 
-func (td *txnDataStoreData) delMulti(keys []ds.Key, cb ds.DeleteMultiCB) error {
+func (td *txnDataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 	for _, k := range keys {
 		err := td.writeMutation(false, k, nil)
 		if cb != nil {
@@ -422,7 +420,7 @@ func (td *txnDataStoreData) delMulti(keys []ds.Key, cb ds.DeleteMultiCB) error {
 	return nil
 }
 
-func keyBytes(key ds.Key) []byte {
+func keyBytes(key *ds.Key) []byte {
 	return serialize.ToBytes(ds.MkProperty(key))
 }
 
@@ -434,8 +432,4 @@ func rpmWoCtx(data []byte, ns string) (ds.PropertyMap, error) {
 func rpm(data []byte) (ds.PropertyMap, error) {
 	return serialize.ReadPropertyMap(bytes.NewBuffer(data),
 		serialize.WithContext, "", "")
-}
-
-type keyitem interface {
-	Key() ds.Key
 }

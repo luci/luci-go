@@ -28,7 +28,7 @@ var dsTxnCacheKey key
 // setting.
 //
 // If shardsForKey is nil, the value of DefaultShards is used for all keys.
-func FilterRDS(c context.Context, shardsForKey func(ds.Key) int) context.Context {
+func FilterRDS(c context.Context, shardsForKey func(*ds.Key) int) context.Context {
 	if !IsGloballyEnabled(c) {
 		return c
 	}

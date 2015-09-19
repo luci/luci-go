@@ -26,17 +26,17 @@ func (tcf *checkFilter) RunInTransaction(f func(c context.Context) error, opts *
 	return tcf.RawInterface.RunInTransaction(f, opts)
 }
 
-func (tcf *checkFilter) Run(q Query, cb RawRunCB) error {
-	if q == nil {
+func (tcf *checkFilter) Run(fq *FinalizedQuery, cb RawRunCB) error {
+	if fq == nil {
 		return fmt.Errorf("datastore: Run query is nil")
 	}
 	if cb == nil {
 		return fmt.Errorf("datastore: Run callback is nil")
 	}
-	return tcf.RawInterface.Run(q, cb)
+	return tcf.RawInterface.Run(fq, cb)
 }
 
-func (tcf *checkFilter) GetMulti(keys []Key, meta MultiMetaGetter, cb GetMultiCB) error {
+func (tcf *checkFilter) GetMulti(keys []*Key, meta MultiMetaGetter, cb GetMultiCB) error {
 	if len(keys) == 0 {
 		return nil
 	}
@@ -58,7 +58,7 @@ func (tcf *checkFilter) GetMulti(keys []Key, meta MultiMetaGetter, cb GetMultiCB
 	return tcf.RawInterface.GetMulti(keys, meta, cb)
 }
 
-func (tcf *checkFilter) PutMulti(keys []Key, vals []PropertyMap, cb PutMultiCB) error {
+func (tcf *checkFilter) PutMulti(keys []*Key, vals []PropertyMap, cb PutMultiCB) error {
 	if len(keys) != len(vals) {
 		return fmt.Errorf("datastore: PutMulti with mismatched keys/vals lengths (%d/%d)", len(keys), len(vals))
 	}
@@ -89,7 +89,7 @@ func (tcf *checkFilter) PutMulti(keys []Key, vals []PropertyMap, cb PutMultiCB) 
 	return tcf.RawInterface.PutMulti(keys, vals, cb)
 }
 
-func (tcf *checkFilter) DeleteMulti(keys []Key, cb DeleteMultiCB) error {
+func (tcf *checkFilter) DeleteMulti(keys []*Key, cb DeleteMultiCB) error {
 	if len(keys) == 0 {
 		return nil
 	}

@@ -28,8 +28,8 @@ func Use(c context.Context) context.Context {
 	return useURLFetch(useRDS(useMC(useTQ(useGI(c)))))
 }
 
-// UseRequest adds production implementations for all the gae services
-// to the context.
+// UseRequest adds production implementations for all the gae services to the
+// context.
 //
 // The services added are:
 //   - github.com/luci/gae/service/datastore

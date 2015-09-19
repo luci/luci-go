@@ -10,51 +10,23 @@ import (
 	"time"
 
 	dsS "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/datastore/dskey"
 	"github.com/luci/gae/service/datastore/serialize"
 	infoS "github.com/luci/gae/service/info"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
 
-func TestDatastoreKinder(t *testing.T) {
-	t.Parallel()
-
-	Convey("Datastore keys", t, func() {
-		c := Use(context.Background())
-		ds := dsS.Get(c)
-		So(ds, ShouldNotBeNil)
-
-		Convey("implements DSNewKeyer", func() {
-			Convey("NewKey", func() {
-				key := ds.NewKey("nerd", "stringID", 0, nil)
-				So(key, ShouldNotBeNil)
-				So(key.Kind(), ShouldEqual, "nerd")
-				So(key.StringID(), ShouldEqual, "stringID")
-				So(key.IntID(), ShouldEqual, 0)
-				So(key.Parent(), ShouldBeNil)
-				So(key.AppID(), ShouldEqual, "dev~app")
-				So(key.Namespace(), ShouldEqual, "")
-				So(key.String(), ShouldEqual, "/nerd,stringID")
-				So(key.Incomplete(), ShouldBeFalse)
-				So(key.Valid(false, "dev~app", ""), ShouldBeTrue)
-			})
-		})
-
-	})
-}
-
 type MetaGroup struct {
-	_id    int64   `gae:"$id,1"`
-	_kind  string  `gae:"$kind,__entity_group__"`
-	Parent dsS.Key `gae:"$parent"`
+	_id    int64    `gae:"$id,1"`
+	_kind  string   `gae:"$kind,__entity_group__"`
+	Parent *dsS.Key `gae:"$parent"`
 
 	Version int64 `gae:"__version__"`
 }
 
-func testGetMeta(c context.Context, k dsS.Key) int64 {
+func testGetMeta(c context.Context, k *dsS.Key) int64 {
 	ds := dsS.Get(c)
-	mg := &MetaGroup{Parent: dskey.Root(k)}
+	mg := &MetaGroup{Parent: k.Root()}
 	if err := ds.Get(mg); err != nil {
 		panic(err)
 	}
@@ -64,8 +36,8 @@ func testGetMeta(c context.Context, k dsS.Key) int64 {
 var pls = dsS.GetPLS
 
 type Foo struct {
-	Id     int64   `gae:"$id"`
-	Parent dsS.Key `gae:"$parent"`
+	ID     int64    `gae:"$id"`
+	Parent *dsS.Key `gae:"$parent"`
 
 	Val int
 }
@@ -79,7 +51,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 		So(ds, ShouldNotBeNil)
 
 		Convey("getting objects that DNE is an error", func() {
-			So(ds.Get(&Foo{Id: 1}), ShouldEqual, dsS.ErrNoSuchEntity)
+			So(ds.Get(&Foo{ID: 1}), ShouldEqual, dsS.ErrNoSuchEntity)
 		})
 
 		Convey("bad namespaces fail", func() {
@@ -92,10 +64,10 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 			f := &Foo{Val: 10}
 			So(ds.Put(f), ShouldBeNil)
 			k := ds.KeyForObj(f)
-			So(k.String(), ShouldEqual, "/Foo,1")
+			So(k.String(), ShouldEqual, "dev~app::/Foo,1")
 
 			Convey("and Get it back", func() {
-				newFoo := &Foo{Id: 1}
+				newFoo := &Foo{ID: 1}
 				So(ds.Get(newFoo), ShouldBeNil)
 				So(newFoo, ShouldResemble, f)
 
@@ -130,7 +102,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 				So(ds.PutMulti(foos), ShouldBeNil)
 				So(testGetMeta(c, k), ShouldEqual, 11)
 
-				keys := make([]dsS.Key, len(foos))
+				keys := make([]*dsS.Key, len(foos))
 				for i, f := range foos {
 					keys[i] = ds.KeyForObj(&f)
 				}
@@ -150,7 +122,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 
 					So(testGetMeta(c, k), ShouldEqual, 22)
 
-					So(ds.Put(&Foo{Id: 1}), ShouldBeNil)
+					So(ds.Put(&Foo{ID: 1}), ShouldBeNil)
 					So(testGetMeta(c, k), ShouldEqual, 23)
 				})
 
@@ -158,7 +130,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					vals := make([]dsS.PropertyMap, len(keys))
 					for i := range vals {
 						vals[i] = dsS.PropertyMap{}
-						vals[i].SetMeta("key", keys[i])
+						So(vals[i].SetMeta("key", keys[i]), ShouldBeNil)
 					}
 					So(ds.GetMulti(vals), ShouldBeNil)
 
@@ -178,7 +150,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 				f := &Foo{Val: 10}
 				So(ds.Put(f), ShouldBeNil)
 				k := ds.KeyForObj(f)
-				So(k.String(), ShouldEqual, "/Foo,1")
+				So(k.String(), ShouldEqual, "dev~app::/Foo,1")
 
 				Convey("can Put new entity groups", func() {
 					err := ds.RunInTransaction(func(c context.Context) error {
@@ -186,22 +158,22 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 
 						f := &Foo{Val: 100}
 						So(ds.Put(f), ShouldBeNil)
-						So(f.Id, ShouldEqual, 2)
+						So(f.ID, ShouldEqual, 2)
 
-						f.Id = 0
+						f.ID = 0
 						f.Val = 200
 						So(ds.Put(f), ShouldBeNil)
-						So(f.Id, ShouldEqual, 3)
+						So(f.ID, ShouldEqual, 3)
 
 						return nil
 					}, &dsS.TransactionOptions{XG: true})
 					So(err, ShouldBeNil)
 
-					f := &Foo{Id: 2}
+					f := &Foo{ID: 2}
 					So(ds.Get(f), ShouldBeNil)
 					So(f.Val, ShouldEqual, 100)
 
-					f.Id = 3
+					f.ID = 3
 					So(ds.Get(f), ShouldBeNil)
 					So(f.Val, ShouldEqual, 200)
 				})
@@ -212,22 +184,22 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 
 						f := &Foo{Val: 100, Parent: k}
 						So(ds.Put(f), ShouldBeNil)
-						So(ds.KeyForObj(f).String(), ShouldEqual, "/Foo,1/Foo,1")
+						So(ds.KeyForObj(f).String(), ShouldEqual, "dev~app::/Foo,1/Foo,1")
 
-						f.Id = 0
+						f.ID = 0
 						f.Val = 200
 						So(ds.Put(f), ShouldBeNil)
-						So(ds.KeyForObj(f).String(), ShouldEqual, "/Foo,1/Foo,2")
+						So(ds.KeyForObj(f).String(), ShouldEqual, "dev~app::/Foo,1/Foo,2")
 
 						return nil
 					}, nil)
 					So(err, ShouldBeNil)
 
-					f := &Foo{Id: 1, Parent: k}
+					f := &Foo{ID: 1, Parent: k}
 					So(ds.Get(f), ShouldBeNil)
 					So(f.Val, ShouldEqual, 100)
 
-					f.Id = 2
+					f.ID = 2
 					So(ds.Get(f), ShouldBeNil)
 					So(f.Val, ShouldEqual, 200)
 				})
@@ -237,7 +209,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 						return dsS.Get(c).Delete(k)
 					}, nil)
 					So(err, ShouldBeNil)
-					So(ds.Get(&Foo{Id: 1}), ShouldEqual, dsS.ErrNoSuchEntity)
+					So(ds.Get(&Foo{ID: 1}), ShouldEqual, dsS.ErrNoSuchEntity)
 				})
 
 				Convey("A Get counts against your group count", func() {
@@ -245,10 +217,10 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 						ds := dsS.Get(c)
 
 						pm := dsS.PropertyMap{}
-						pm.SetMeta("key", ds.NewKey("Foo", "", 20, nil))
+						So(pm.SetMeta("key", ds.NewKey("Foo", "", 20, nil)), ShouldBeNil)
 						So(ds.Get(pm), ShouldEqual, dsS.ErrNoSuchEntity)
 
-						pm.SetMeta("key", k)
+						So(pm.SetMeta("key", k), ShouldBeNil)
 						So(ds.Get(pm).Error(), ShouldContainSubstring, "cross-group")
 						return nil
 					}, nil)
@@ -274,7 +246,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					}, nil)
 					So(err, ShouldBeNil)
 
-					f := &Foo{Id: 1}
+					f := &Foo{ID: 1}
 					So(ds.Get(f), ShouldBeNil)
 					So(f.Val, ShouldEqual, 11)
 				})
@@ -283,7 +255,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					err := ds.RunInTransaction(func(c context.Context) error {
 						txnDS := dsS.Get(c)
 
-						f := &Foo{Id: 1}
+						f := &Foo{ID: 1}
 						So(txnDS.Get(f), ShouldBeNil)
 						So(f.Val, ShouldEqual, 10)
 
@@ -305,7 +277,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					}, &dsS.TransactionOptions{Attempts: 1})
 					So(err.Error(), ShouldContainSubstring, "concurrent")
 
-					f := &Foo{Id: 1}
+					f := &Foo{ID: 1}
 					So(ds.Get(f), ShouldBeNil)
 					So(f.Val, ShouldEqual, 11)
 				})
@@ -341,10 +313,10 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					//
 					// That said... I'm not sure if there's really a semantic difference.
 					err := ds.RunInTransaction(func(c context.Context) error {
-						So(dsS.Get(c).Put(&Foo{Id: 1, Val: 21}), ShouldBeNil)
+						So(dsS.Get(c).Put(&Foo{ID: 1, Val: 21}), ShouldBeNil)
 
 						err := ds.RunInTransaction(func(c context.Context) error {
-							So(dsS.Get(c).Put(&Foo{Id: 1, Val: 27}), ShouldBeNil)
+							So(dsS.Get(c).Put(&Foo{ID: 1, Val: 27}), ShouldBeNil)
 							return nil
 						}, nil)
 						So(err, ShouldBeNil)
@@ -353,7 +325,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					}, nil)
 					So(err.Error(), ShouldContainSubstring, "concurrent")
 
-					f := &Foo{Id: 1}
+					f := &Foo{ID: 1}
 					So(ds.Get(f), ShouldBeNil)
 					So(f.Val, ShouldEqual, 27)
 				})
@@ -362,10 +334,10 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					Convey("Modifying two groups with XG=false is invalid", func() {
 						err := ds.RunInTransaction(func(c context.Context) error {
 							ds := dsS.Get(c)
-							f := &Foo{Id: 1, Val: 200}
+							f := &Foo{ID: 1, Val: 200}
 							So(ds.Put(f), ShouldBeNil)
 
-							f.Id = 2
+							f.ID = 2
 							err := ds.Put(f)
 							So(err.Error(), ShouldContainSubstring, "cross-group")
 							return err
@@ -378,11 +350,11 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 							ds := dsS.Get(c)
 							foos := make([]Foo, 25)
 							for i := int64(1); i < 26; i++ {
-								foos[i-1].Id = i
+								foos[i-1].ID = i
 								foos[i-1].Val = 200
 							}
 							So(ds.PutMulti(foos), ShouldBeNil)
-							err := ds.Put(&Foo{Id: 26})
+							err := ds.Put(&Foo{ID: 26})
 							So(err.Error(), ShouldContainSubstring, "too many entity groups")
 							return err
 						}, &dsS.TransactionOptions{XG: true})
@@ -394,26 +366,26 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					Convey("returning an error aborts", func() {
 						err := ds.RunInTransaction(func(c context.Context) error {
 							ds := dsS.Get(c)
-							So(ds.Put(&Foo{Id: 1, Val: 200}), ShouldBeNil)
+							So(ds.Put(&Foo{ID: 1, Val: 200}), ShouldBeNil)
 							return fmt.Errorf("thingy")
 						}, nil)
 						So(err.Error(), ShouldEqual, "thingy")
 
-						f := &Foo{Id: 1}
+						f := &Foo{ID: 1}
 						So(ds.Get(f), ShouldBeNil)
 						So(f.Val, ShouldEqual, 10)
 					})
 
 					Convey("panicing aborts", func() {
 						So(func() {
-							ds.RunInTransaction(func(c context.Context) error {
+							So(ds.RunInTransaction(func(c context.Context) error {
 								ds := dsS.Get(c)
 								So(ds.Put(&Foo{Val: 200}), ShouldBeNil)
 								panic("wheeeeee")
-							}, nil)
+							}, nil), ShouldBeNil)
 						}, ShouldPanic)
 
-						f := &Foo{Id: 1}
+						f := &Foo{ID: 1}
 						So(ds.Get(f), ShouldBeNil)
 						So(f.Val, ShouldEqual, 10)
 					})

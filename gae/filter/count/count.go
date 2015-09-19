@@ -40,10 +40,12 @@ func (e *Entry) String() string {
 // this API. It's Successes+Errors.
 func (e *Entry) Total() int64 { return int64(e.Successes()) + int64(e.Errors()) }
 
+// Successes returns the number of successful invocations for this Entry.
 func (e *Entry) Successes() int {
 	return e.successes.get()
 }
 
+// Errors returns the number of unsuccessful invocations for this Entry.
 func (e *Entry) Errors() int {
 	return e.errors.get()
 }

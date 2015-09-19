@@ -142,9 +142,6 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 		}
 	} else {
 		knd := v.Kind()
-		if v.Type().Implements(typeOfKey) {
-			knd = reflect.Interface
-		}
 
 		project := PTNull
 		overflow := (func(interface{}) bool)(nil)
@@ -165,10 +162,10 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 			project = PTFloat
 			overflow = func(x interface{}) bool { return v.OverflowFloat(x.(float64)) }
 			set = func(x interface{}) { v.SetFloat(x.(float64)) }
-		case reflect.Interface:
+		case reflect.Ptr:
 			project = PTKey
 			set = func(x interface{}) {
-				if k, ok := x.(Key); ok {
+				if k, ok := x.(*Key); ok {
 					v.Set(reflect.ValueOf(k))
 				}
 			}
@@ -488,11 +485,9 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 				st.isSlice = ft.Elem().Kind() != reflect.Uint8
 				c.hasSlice = c.hasSlice || st.isSlice
 			case reflect.Interface:
-				if ft != typeOfKey {
-					c.problem = me("field %q has non-concrete interface type %s",
-						f.Name, f.Type)
-					return
-				}
+				c.problem = me("field %q has non-concrete interface type %s",
+					f.Name, f.Type)
+				return
 			}
 		}
 

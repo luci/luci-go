@@ -24,19 +24,19 @@ func TestIndexDefinition(t *testing.T) {
 			So(id.String(), ShouldEqual, "B:kind")
 
 			id.SortBy = append(id.SortBy, IndexColumn{Property: "prop"})
-			So(id.SortBy[0].Direction, ShouldEqual, ASCENDING)
+			So(id.SortBy[0].Descending, ShouldBeFalse)
 			So(id.Builtin(), ShouldBeTrue)
 			So(id.Compound(), ShouldBeFalse)
 			So(id.String(), ShouldEqual, "B:kind/prop")
 
-			id.SortBy = append(id.SortBy, IndexColumn{"other", DESCENDING})
+			id.SortBy = append(id.SortBy, IndexColumn{Property: "other", Descending: true})
 			id.Ancestor = true
 			So(id.Builtin(), ShouldBeFalse)
 			So(id.Compound(), ShouldBeTrue)
 			So(id.String(), ShouldEqual, "C:kind|A/prop/-other")
 
 			// invalid
-			id.SortBy = append(id.SortBy, IndexColumn{"", DESCENDING})
+			id.SortBy = append(id.SortBy, IndexColumn{Property: "", Descending: true})
 			So(id.Builtin(), ShouldBeFalse)
 			So(id.Compound(), ShouldBeFalse)
 		})

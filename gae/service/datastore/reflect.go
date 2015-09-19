@@ -17,7 +17,7 @@ var (
 	typeOfCursorCB          = reflect.TypeOf(CursorCB(nil))
 	typeOfGeoPoint          = reflect.TypeOf(GeoPoint{})
 	typeOfInt64             = reflect.TypeOf(int64(0))
-	typeOfKey               = reflect.TypeOf((*Key)(nil)).Elem()
+	typeOfKey               = reflect.TypeOf((*Key)(nil))
 	typeOfPropertyConverter = reflect.TypeOf((*PropertyConverter)(nil)).Elem()
 	typeOfPropertyLoadSaver = reflect.TypeOf((*PropertyLoadSaver)(nil)).Elem()
 	typeOfString            = reflect.TypeOf("")

@@ -66,15 +66,16 @@ func TestDSCache(t *testing.T) {
 		dsUnder := datastore.Get(c)
 		mc := memcache.Get(c)
 
-		itmFor := func(i int, k datastore.Key) memcache.Item {
+		itmFor := func(i int, k *datastore.Key) memcache.Item {
 			return mc.NewItem(MakeMemcacheKey(i, k))
 		}
 
-		shardsForKey := func(k datastore.Key) int {
-			if k.Kind() == "shardObj" {
-				return int(k.IntID())
+		shardsForKey := func(k *datastore.Key) int {
+			last := k.Last()
+			if last.Kind == "shardObj" {
+				return int(last.IntID)
 			}
-			if k.Kind() == "noCacheObj" {
+			if last.Kind == "noCacheObj" {
 				return 0
 			}
 			return DefaultShards

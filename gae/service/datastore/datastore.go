@@ -11,11 +11,16 @@ import (
 	"github.com/luci/luci-go/common/errors"
 )
 
-type datastoreImpl struct{ RawInterface }
+type datastoreImpl struct {
+	RawInterface
+
+	aid string
+	ns  string
+}
 
 var _ Interface = (*datastoreImpl)(nil)
 
-func (d *datastoreImpl) KeyForObj(src interface{}) Key {
+func (d *datastoreImpl) KeyForObj(src interface{}) *Key {
 	ret, err := d.KeyForObjErr(src)
 	if err != nil {
 		panic(err)
@@ -23,21 +28,29 @@ func (d *datastoreImpl) KeyForObj(src interface{}) Key {
 	return ret
 }
 
-func (d *datastoreImpl) KeyForObjErr(src interface{}) (Key, error) {
-	return newKeyObjErr(d.NewKey, src)
+func (d *datastoreImpl) KeyForObjErr(src interface{}) (*Key, error) {
+	return newKeyObjErr(d.aid, d.ns, src)
 }
 
-func (d *datastoreImpl) DecodeCursor(s string) (Cursor, error) {
-	return d.RawInterface.DecodeCursor(s)
+func (d *datastoreImpl) MakeKey(elems ...interface{}) *Key {
+	return MakeKey(d.aid, d.ns, elems...)
 }
 
-func (d *datastoreImpl) Run(q Query, cbIface interface{}) error {
+func (d *datastoreImpl) NewKey(kind, stringID string, intID int64, parent *Key) *Key {
+	return NewKey(d.aid, d.ns, kind, stringID, intID, parent)
+}
+
+func (d *datastoreImpl) NewKeyToks(toks []KeyTok) *Key {
+	return NewKeyToks(d.aid, d.ns, toks)
+}
+
+func (d *datastoreImpl) Run(q *Query, cbIface interface{}) error {
 	if cbIface == nil {
 		return fmt.Errorf("cannot use nil callback when Running query")
 	}
 
 	// TODO(riannucci): Profile and determine if any of this is causing a real
-	// slowdown. Could potentially cache reflection stuff by cbType?
+	// slowdown. Could potentially cache reflection stuff by cbTyp?
 	cbTyp := reflect.TypeOf(cbIface)
 
 	badSig := false
@@ -63,16 +76,25 @@ func (d *datastoreImpl) Run(q Query, cbIface interface{}) error {
 	}
 
 	if isKey {
-		cb := cbIface.(func(Key, CursorCB) bool)
-		return d.RawInterface.Run(q.KeysOnly(), func(k Key, _ PropertyMap, gc CursorCB) bool {
+		cb := cbIface.(func(*Key, CursorCB) bool)
+		fq, err := q.KeysOnly(true).Finalize()
+		if err != nil {
+			return err
+		}
+		return d.RawInterface.Run(fq, func(k *Key, _ PropertyMap, gc CursorCB) bool {
 			return cb(k, gc)
 		})
+	}
+
+	fq, err := q.Finalize()
+	if err != nil {
+		return err
 	}
 
 	cbVal := reflect.ValueOf(cbIface)
 
 	innerErr := error(nil)
-	err := d.RawInterface.Run(q, func(k Key, pm PropertyMap, gc CursorCB) bool {
+	err = d.RawInterface.Run(fq, func(k *Key, pm PropertyMap, gc CursorCB) bool {
 		itm := mat.newElem()
 		if innerErr = mat.setPM(itm, pm); innerErr != nil {
 			return false
@@ -86,7 +108,7 @@ func (d *datastoreImpl) Run(q Query, cbIface interface{}) error {
 	return err
 }
 
-func (d *datastoreImpl) GetAll(q Query, dst interface{}) error {
+func (d *datastoreImpl) GetAll(q *Query, dst interface{}) error {
 	v := reflect.ValueOf(dst)
 	if v.Kind() != reflect.Ptr {
 		return fmt.Errorf("invalid GetAll dst: must have a ptr-to-slice: %T", dst)
@@ -95,11 +117,20 @@ func (d *datastoreImpl) GetAll(q Query, dst interface{}) error {
 		return errors.New("invalid GetAll dst: <nil>")
 	}
 
-	if keys, ok := dst.(*[]Key); ok {
-		return d.RawInterface.Run(q.KeysOnly(), func(k Key, _ PropertyMap, _ CursorCB) bool {
+	if keys, ok := dst.(*[]*Key); ok {
+		fq, err := q.KeysOnly(true).Finalize()
+		if err != nil {
+			return err
+		}
+
+		return d.RawInterface.Run(fq, func(k *Key, _ PropertyMap, _ CursorCB) bool {
 			*keys = append(*keys, k)
 			return true
 		})
+	}
+	fq, err := q.Finalize()
+	if err != nil {
+		return err
 	}
 
 	slice := v.Elem()
@@ -108,18 +139,27 @@ func (d *datastoreImpl) GetAll(q Query, dst interface{}) error {
 		return fmt.Errorf("invalid GetAll input type: %T", dst)
 	}
 
-	lme := errors.NewLazyMultiError(slice.Len())
+	errs := map[int]error{}
 	i := 0
-	err := d.RawInterface.Run(q, func(k Key, pm PropertyMap, _ CursorCB) bool {
+	err = d.RawInterface.Run(fq, func(k *Key, pm PropertyMap, _ CursorCB) bool {
 		slice.Set(reflect.Append(slice, mat.newElem()))
 		itm := slice.Index(i)
 		mat.setKey(itm, k)
-		lme.Assign(i, mat.setPM(itm, pm))
+		err := mat.setPM(itm, pm)
+		if err != nil {
+			errs[i] = err
+		}
 		i++
 		return true
 	})
 	if err == nil {
-		err = lme.Get()
+		if len(errs) > 0 {
+			me := make(errors.MultiError, slice.Len())
+			for i, e := range errs {
+				me[i] = e
+			}
+			err = me
+		}
 	}
 	return err
 }
@@ -148,8 +188,8 @@ func (d *datastoreImpl) Put(src interface{}) (err error) {
 	return errors.SingleError(d.PutMulti([]interface{}{src}))
 }
 
-func (d *datastoreImpl) Delete(key Key) (err error) {
-	return errors.SingleError(d.DeleteMulti([]Key{key}))
+func (d *datastoreImpl) Delete(key *Key) (err error) {
+	return errors.SingleError(d.DeleteMulti([]*Key{key}))
 }
 
 func (d *datastoreImpl) GetMulti(dst interface{}) error {
@@ -159,7 +199,7 @@ func (d *datastoreImpl) GetMulti(dst interface{}) error {
 		return fmt.Errorf("invalid GetMulti input type: %T", dst)
 	}
 
-	keys, pms, err := mat.GetKeysPMs(d.NewKey, slice)
+	keys, pms, err := mat.GetKeysPMs(d.aid, d.ns, slice)
 	if err != nil {
 		return err
 	}
@@ -187,14 +227,14 @@ func (d *datastoreImpl) PutMulti(src interface{}) error {
 		return fmt.Errorf("invalid PutMulti input type: %T", src)
 	}
 
-	keys, vals, err := mat.GetKeysPMs(d.NewKey, slice)
+	keys, vals, err := mat.GetKeysPMs(d.aid, d.ns, slice)
 	if err != nil {
 		return err
 	}
 
 	lme := errors.NewLazyMultiError(len(keys))
 	i := 0
-	err = d.RawInterface.PutMulti(keys, vals, func(key Key, err error) {
+	err = d.RawInterface.PutMulti(keys, vals, func(key *Key, err error) {
 		if key != keys[i] {
 			mat.setKey(slice.Index(i), key)
 		}
@@ -208,7 +248,7 @@ func (d *datastoreImpl) PutMulti(src interface{}) error {
 	return err
 }
 
-func (d *datastoreImpl) DeleteMulti(keys []Key) (err error) {
+func (d *datastoreImpl) DeleteMulti(keys []*Key) (err error) {
 	lme := errors.NewLazyMultiError(len(keys))
 	i := 0
 	extErr := d.RawInterface.DeleteMulti(keys, func(internalErr error) {

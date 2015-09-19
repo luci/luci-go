@@ -20,15 +20,34 @@ import (
 // Struct objects passed in will be converted to PropertyLoadSaver interfaces
 // using this package's GetPLS function.
 type Interface interface {
-	// NewKey produces a new Key with the current appid and namespace.
-	NewKey(kind, stringID string, intID int64, parent Key) Key
-
 	// KeyForObj extracts a key from src.
 	//
 	// It is the same as KeyForObjErr, except that if KeyForObjErr would have
 	// returned an error, this method panics. It's safe to use if you know that
 	// src statically meets the metadata constraints described by KeyForObjErr.
-	KeyForObj(src interface{}) Key
+	KeyForObj(src interface{}) *Key
+
+	// MakeKey is a convenience method for manufacturing a *Key. It should only be
+	// used when elems... is known statically (e.g. in the code) to be correct.
+	//
+	// elems is pairs of (string, string|int|int32|int64) pairs, which correspond
+	// to Kind/id pairs. Example:
+	//   dstore.MakeKey("Parent", 1, "Child", "id")
+	//
+	// Would create the key:
+	//   <current appID>:<current Namespace>:/Parent,1/Child,id
+	//
+	// If elems is not parsable (e.g. wrong length, wrong types, etc.) this method
+	// will panic.
+	MakeKey(elems ...interface{}) *Key
+
+	// NewKey constructs a new key in the current appID/Namespace, using the
+	// specified parameters.
+	NewKey(kind, stringID string, intID int64, parent *Key) *Key
+
+	// NewKeyToks constructs a new key in the current appID/Namespace, using the
+	// specified key tokens.
+	NewKeyToks([]KeyTok) *Key
 
 	// KeyForObjErr extracts a key from src.
 	//
@@ -48,17 +67,7 @@ type Interface interface {
 	//
 	// If a required metadata item is missing or of the wrong type, then this will
 	// return an error.
-	KeyForObjErr(src interface{}) (Key, error)
-
-	// DecodeKey decodes a proto-encoded key.
-	//
-	// The encoding is defined by the appengine SDK's implementation.  In
-	// particular, it is a no-pad-base64-encoded protobuf. If there's an error
-	// during the decoding process, it will be returned.
-	DecodeKey(encoded string) (Key, error)
-
-	// NewQuery creates a new Query object. No server communication occurs.
-	NewQuery(kind string) Query
+	KeyForObjErr(src interface{}) (*Key, error)
 
 	// RunInTransaction runs f inside of a transaction. See the appengine SDK's
 	// documentation for full details on the behavior of transactions in the
@@ -78,10 +87,10 @@ type Interface interface {
 	// Where TYPE is one of:
 	//   - S or *S where S is a struct
 	//   - P or *P where *P is a concrete type implementing PropertyLoadSaver
-	//   - Key (implies a keys-only query)
+	//   - *Key (implies a keys-only query)
 	//
 	// Run stops on the first error encountered.
-	Run(q Query, cb interface{}) error
+	Run(q *Query, cb interface{}) error
 
 	// DecodeCursor converts a string returned by a Cursor into a Cursor instance.
 	// It will return an error if the supplied string is not valid, or could not
@@ -94,8 +103,8 @@ type Interface interface {
 	//   - *[]S or *[]*S where S is a struct
 	//   - *[]P or *[]*P where *P is a concrete type implementing
 	//     PropertyLoadSaver
-	//   - *[]Key implies a keys-only query.
-	GetAll(q Query, dst interface{}) error
+	//   - *[]*Key implies a keys-only query.
+	GetAll(q *Query, dst interface{}) error
 
 	// Get retrieves a single object from the datastore
 	//
@@ -110,13 +119,13 @@ type Interface interface {
 	//   - *S where S is a struct
 	//   - *P where *P is a concrete type implementing PropertyLoadSaver
 	//
-	// A Key will be extracted from src via KeyForObj. If
-	// KeyIncomplete(extractedKey) is true, then Put will write the resolved (i.e.
-	// automatic datastore-populated) Key back to src.
+	// A *Key will be extracted from src via KeyForObj. If
+	// extractedKey.Incomplete() is true, then Put will write the resolved (i.e.
+	// automatic datastore-populated) *Key back to src.
 	Put(src interface{}) error
 
 	// Delete removes an item from the datastore.
-	Delete(key Key) error
+	Delete(key *Key) error
 
 	// GetMulti retrieves items from the datastore.
 	//
@@ -140,7 +149,7 @@ type Interface interface {
 	PutMulti(src interface{}) error
 
 	// DeleteMulti removes items from the datastore.
-	DeleteMulti(keys []Key) error
+	DeleteMulti(keys []*Key) error
 
 	// Testable returns the Testable interface for the implementation, or nil if
 	// there is none.

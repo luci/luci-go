@@ -13,42 +13,53 @@ import (
 type dsState struct {
 	*state
 
-	ds.RawInterface
+	rds ds.RawInterface
 }
 
-func (r *dsState) DecodeKey(encoded string) (ret ds.Key, err error) {
-	err = r.run(func() (err error) {
-		ret, err = r.RawInterface.DecodeKey(encoded)
+func (r *dsState) DecodeCursor(s string) (ds.Cursor, error) {
+	curs := ds.Cursor(nil)
+	err := r.run(func() (err error) {
+		curs, err = r.rds.DecodeCursor(s)
 		return
 	})
-	return
+	return curs, err
+}
+
+func (r *dsState) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
+	return r.run(func() error {
+		return r.rds.Run(q, cb)
+	})
 }
 
 func (r *dsState) RunInTransaction(f func(c context.Context) error, opts *ds.TransactionOptions) error {
 	return r.run(func() error {
-		return r.RawInterface.RunInTransaction(f, opts)
+		return r.rds.RunInTransaction(f, opts)
 	})
 }
 
 // TODO(riannucci): Allow the user to specify a multierror which will propagate
 // to the callback correctly.
 
-func (r *dsState) DeleteMulti(keys []ds.Key, cb ds.DeleteMultiCB) error {
+func (r *dsState) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 	return r.run(func() error {
-		return r.RawInterface.DeleteMulti(keys, cb)
+		return r.rds.DeleteMulti(keys, cb)
 	})
 }
 
-func (r *dsState) GetMulti(keys []ds.Key, meta ds.MultiMetaGetter, cb ds.GetMultiCB) error {
+func (r *dsState) GetMulti(keys []*ds.Key, meta ds.MultiMetaGetter, cb ds.GetMultiCB) error {
 	return r.run(func() error {
-		return r.RawInterface.GetMulti(keys, meta, cb)
+		return r.rds.GetMulti(keys, meta, cb)
 	})
 }
 
-func (r *dsState) PutMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
+func (r *dsState) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
 	return r.run(func() (err error) {
-		return r.RawInterface.PutMulti(keys, vals, cb)
+		return r.rds.PutMulti(keys, vals, cb)
 	})
+}
+
+func (r *dsState) Testable() ds.Testable {
+	return r.rds.Testable()
 }
 
 // FilterRDS installs a counter datastore filter in the context.

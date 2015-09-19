@@ -4,7 +4,10 @@
 
 package datastore
 
-type TestingSnapshot interface{}
+// TestingSnapshot is an opaque implementation-defined snapshot type.
+type TestingSnapshot interface {
+	ImATestingSnapshot()
+}
 
 // Testable is the testable interface for fake datastore implementations.
 type Testable interface {

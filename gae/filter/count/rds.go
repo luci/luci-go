@@ -12,10 +12,7 @@ import (
 
 // DSCounter is the counter object for the datastore service.
 type DSCounter struct {
-	NewKey           Entry
 	DecodeCursor     Entry
-	DecodeKey        Entry
-	NewQuery         Entry
 	RunInTransaction Entry
 	Run              Entry
 	DeleteMulti      Entry
@@ -31,27 +28,12 @@ type dsCounter struct {
 
 var _ ds.RawInterface = (*dsCounter)(nil)
 
-func (r *dsCounter) NewKey(kind, stringID string, intID int64, parent ds.Key) ds.Key {
-	r.c.NewKey.up()
-	return r.ds.NewKey(kind, stringID, intID, parent)
-}
-
-func (r *dsCounter) DecodeKey(encoded string) (ds.Key, error) {
-	ret, err := r.ds.DecodeKey(encoded)
-	return ret, r.c.DecodeKey.up(err)
-}
-
-func (r *dsCounter) NewQuery(kind string) ds.Query {
-	r.c.NewQuery.up()
-	return r.ds.NewQuery(kind)
-}
-
 func (r *dsCounter) DecodeCursor(s string) (ds.Cursor, error) {
 	cursor, err := r.ds.DecodeCursor(s)
 	return cursor, r.c.DecodeCursor.up(err)
 }
 
-func (r *dsCounter) Run(q ds.Query, cb ds.RawRunCB) error {
+func (r *dsCounter) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
 	return r.c.Run.up(r.ds.Run(q, cb))
 }
 
@@ -59,15 +41,15 @@ func (r *dsCounter) RunInTransaction(f func(context.Context) error, opts *ds.Tra
 	return r.c.RunInTransaction.up(r.ds.RunInTransaction(f, opts))
 }
 
-func (r *dsCounter) DeleteMulti(keys []ds.Key, cb ds.DeleteMultiCB) error {
+func (r *dsCounter) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 	return r.c.DeleteMulti.up(r.ds.DeleteMulti(keys, cb))
 }
 
-func (r *dsCounter) GetMulti(keys []ds.Key, meta ds.MultiMetaGetter, cb ds.GetMultiCB) error {
+func (r *dsCounter) GetMulti(keys []*ds.Key, meta ds.MultiMetaGetter, cb ds.GetMultiCB) error {
 	return r.c.GetMulti.up(r.ds.GetMulti(keys, meta, cb))
 }
 
-func (r *dsCounter) PutMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
+func (r *dsCounter) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
 	return r.c.PutMulti.up(r.ds.PutMulti(keys, vals, cb))
 }
 

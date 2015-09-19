@@ -29,7 +29,7 @@ type TestStruct struct {
 	ValueS  []string
 	ValueF  []float64
 	ValueBS [][]byte // "ByteString"
-	ValueK  []dstore.Key
+	ValueK  []*dstore.Key
 	ValueBK []blobstore.Key
 	ValueGP []dstore.GeoPoint
 }
@@ -57,7 +57,7 @@ func TestBasicDatastore(t *testing.T) {
 					[]byte("world"),
 					[]byte("zurple"),
 				},
-				ValueK: []dstore.Key{
+				ValueK: []*dstore.Key{
 					ds.NewKey("Something", "Cool", 0, nil),
 					ds.NewKey("Something", "", 1, nil),
 					ds.NewKey("Something", "Recursive", 0,
@@ -78,14 +78,14 @@ func TestBasicDatastore(t *testing.T) {
 			time.Sleep(time.Second)
 
 			Convey("Can query", func() {
-				ds.Run(ds.NewQuery("TestStruct"), func(ts *TestStruct, _ dstore.CursorCB) bool {
+				ds.Run(dstore.NewQuery("TestStruct"), func(ts *TestStruct, _ dstore.CursorCB) bool {
 					So(*ts, ShouldResemble, orig)
 					return true
 				})
 			})
 
 			Convey("Can project", func() {
-				q := ds.NewQuery("TestStruct").Project("ValueS")
+				q := dstore.NewQuery("TestStruct").Project("ValueS")
 				rslts := []dstore.PropertyMap{}
 				So(ds.GetAll(q, &rslts), ShouldBeNil)
 				So(rslts, ShouldResemble, []dstore.PropertyMap{
@@ -99,7 +99,7 @@ func TestBasicDatastore(t *testing.T) {
 					},
 				})
 
-				q = ds.NewQuery("TestStruct").Project("ValueBS")
+				q = dstore.NewQuery("TestStruct").Project("ValueBS")
 				rslts = []dstore.PropertyMap{}
 				So(ds.GetAll(q, &rslts), ShouldBeNil)
 				So(rslts, ShouldResemble, []dstore.PropertyMap{
@@ -137,7 +137,7 @@ func TestBasicDatastore(t *testing.T) {
 
 			So(pm["Time"][0].Value(), ShouldResemble, rslt["Time"][0].Value())
 
-			q := ds.NewQuery("Something").Project("Time")
+			q := dstore.NewQuery("Something").Project("Time")
 			all := []dstore.PropertyMap{}
 			So(ds.GetAll(q, &all), ShouldBeNil)
 			So(len(all), ShouldEqual, 1)

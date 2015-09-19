@@ -11,7 +11,6 @@ import (
 	"golang.org/x/net/context"
 
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/datastore/dskey"
 )
 
 //////////////////////////////////// public ////////////////////////////////////
@@ -41,42 +40,27 @@ type dsImpl struct {
 
 var _ ds.RawInterface = (*dsImpl)(nil)
 
-func (d *dsImpl) DecodeKey(encoded string) (ds.Key, error) {
-	return dskey.NewFromEncoded(encoded)
-}
-
-func (d *dsImpl) NewKey(kind, stringID string, intID int64, parent ds.Key) ds.Key {
-	return dskey.New(globalAppID, d.ns, kind, stringID, intID, parent)
-}
-
-func (d *dsImpl) PutMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
+func (d *dsImpl) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
 	d.data.putMulti(keys, vals, cb)
 	return nil
 }
 
-func (d *dsImpl) GetMulti(keys []ds.Key, _meta ds.MultiMetaGetter, cb ds.GetMultiCB) error {
-	d.data.getMulti(keys, cb)
-	return nil
+func (d *dsImpl) GetMulti(keys []*ds.Key, _meta ds.MultiMetaGetter, cb ds.GetMultiCB) error {
+	return d.data.getMulti(keys, cb)
 }
 
-func (d *dsImpl) DeleteMulti(keys []ds.Key, cb ds.DeleteMultiCB) error {
+func (d *dsImpl) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 	d.data.delMulti(keys, cb)
 	return nil
-}
-
-func (d *dsImpl) NewQuery(kind string) ds.Query {
-	return &queryImpl{ns: d.ns, kind: kind}
 }
 
 func (d *dsImpl) DecodeCursor(s string) (ds.Cursor, error) {
 	return newCursor(s)
 }
 
-func (d *dsImpl) Run(qi ds.Query, cb ds.RawRunCB) error {
-	q := qi.(*queryImpl)
-	consistent := q.eqFilters["__ancestor__"] != nil && !q.eventualConsistency
-	idx, head := d.data.getQuerySnaps(consistent)
-	return executeQuery(qi, d.ns, false, idx, head, cb)
+func (d *dsImpl) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
+	idx, head := d.data.getQuerySnaps(!fq.EventuallyConsistent())
+	return executeQuery(fq, d.ns, false, idx, head, cb)
 }
 
 func (d *dsImpl) AddIndexes(idxs ...*ds.IndexDefinition) {
@@ -124,28 +108,20 @@ type txnDsImpl struct {
 
 var _ ds.RawInterface = (*txnDsImpl)(nil)
 
-func (d *txnDsImpl) DecodeKey(encoded string) (ds.Key, error) {
-	return dskey.NewFromEncoded(encoded)
-}
-
-func (d *txnDsImpl) NewKey(kind, stringID string, intID int64, parent ds.Key) ds.Key {
-	return dskey.New(globalAppID, d.ns, kind, stringID, intID, parent)
-}
-
-func (d *txnDsImpl) PutMulti(keys []ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
+func (d *txnDsImpl) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
 	return d.data.run(func() error {
 		d.data.putMulti(keys, vals, cb)
 		return nil
 	})
 }
 
-func (d *txnDsImpl) GetMulti(keys []ds.Key, _meta ds.MultiMetaGetter, cb ds.GetMultiCB) error {
+func (d *txnDsImpl) GetMulti(keys []*ds.Key, _meta ds.MultiMetaGetter, cb ds.GetMultiCB) error {
 	return d.data.run(func() error {
 		return d.data.getMulti(keys, cb)
 	})
 }
 
-func (d *txnDsImpl) DeleteMulti(keys []ds.Key, cb ds.DeleteMultiCB) error {
+func (d *txnDsImpl) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 	return d.data.run(func() error {
 		return d.data.delMulti(keys, cb)
 	})
@@ -155,16 +131,12 @@ func (d *txnDsImpl) DecodeCursor(s string) (ds.Cursor, error) {
 	return newCursor(s)
 }
 
-func (d *txnDsImpl) Run(q ds.Query, cb ds.RawRunCB) error {
+func (d *txnDsImpl) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
 	return executeQuery(q, d.ns, true, d.data.snap, d.data.snap, cb)
 }
 
 func (*txnDsImpl) RunInTransaction(func(c context.Context) error, *ds.TransactionOptions) error {
 	return errors.New("datastore: nested transactions are not supported")
-}
-
-func (d *txnDsImpl) NewQuery(kind string) ds.Query {
-	return &queryImpl{ns: d.ns, kind: kind}
 }
 
 func (*txnDsImpl) Testable() ds.Testable {

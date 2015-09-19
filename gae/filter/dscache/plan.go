@@ -15,7 +15,7 @@ import (
 )
 
 type facts struct {
-	getKeys   []ds.Key
+	getKeys   []*ds.Key
 	getMeta   ds.MultiMetaGetter
 	lockItems []mc.Item
 	nonce     []byte
@@ -32,7 +32,7 @@ type plan struct {
 	// toGet is a list of datstore keys to retrieve in the call down to the
 	// underlying datastore. It will have length >= facts.getKeys. All the keys
 	// in this will be valid (not nil).
-	toGet []ds.Key
+	toGet []*ds.Key
 
 	// toGetMeta is a MultiMetaGetter to be passed in the call down to the
 	// underlying datastore.GetMulti. It has the same length as toGet.
@@ -61,7 +61,7 @@ type plan struct {
 //   - get and m are the pair of values that will be passed to datastore.GetMulti
 //   - save is the memcache item to save the result back to. If it's nil, then
 //     it will not be saved back to memcache.
-func (p *plan) add(idx int, get ds.Key, m ds.MetaGetter, save mc.Item) {
+func (p *plan) add(idx int, get *ds.Key, m ds.MetaGetter, save mc.Item) {
 	p.idxMap = append(p.idxMap, idx)
 	p.toGet = append(p.toGet, get)
 

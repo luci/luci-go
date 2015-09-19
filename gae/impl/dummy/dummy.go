@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/datastore/dskey"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/memcache"
 	"github.com/luci/gae/service/taskqueue"
@@ -65,20 +64,16 @@ func ni() error {
 
 type ds struct{}
 
-func (ds) NewKey(kind string, sid string, iid int64, par datastore.Key) datastore.Key {
-	return dskey.New("dummy~appid", "", kind, sid, iid, par)
-}
-func (ds) DecodeKey(string) (datastore.Key, error) { panic(ni()) }
-func (ds) PutMulti([]datastore.Key, []datastore.PropertyMap, datastore.PutMultiCB) error {
+func (ds) PutMulti([]*datastore.Key, []datastore.PropertyMap, datastore.PutMultiCB) error {
 	panic(ni())
 }
-func (ds) GetMulti([]datastore.Key, datastore.MultiMetaGetter, datastore.GetMultiCB) error {
+func (ds) GetMulti([]*datastore.Key, datastore.MultiMetaGetter, datastore.GetMultiCB) error {
 	panic(ni())
 }
-func (ds) DeleteMulti([]datastore.Key, datastore.DeleteMultiCB) error { panic(ni()) }
-func (ds) NewQuery(string) datastore.Query                            { panic(ni()) }
-func (ds) DecodeCursor(string) (datastore.Cursor, error)              { panic(ni()) }
-func (ds) Run(datastore.Query, datastore.RawRunCB) error              { panic(ni()) }
+func (ds) DeleteMulti([]*datastore.Key, datastore.DeleteMultiCB) error { panic(ni()) }
+func (ds) NewQuery(string) datastore.Query                             { panic(ni()) }
+func (ds) DecodeCursor(string) (datastore.Cursor, error)               { panic(ni()) }
+func (ds) Run(*datastore.FinalizedQuery, datastore.RawRunCB) error     { panic(ni()) }
 func (ds) RunInTransaction(func(context.Context) error, *datastore.TransactionOptions) error {
 	panic(ni())
 }
