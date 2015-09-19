@@ -66,10 +66,6 @@ func TestDSCache(t *testing.T) {
 		dsUnder := datastore.Get(c)
 		mc := memcache.Get(c)
 
-		itmFor := func(i int, k *datastore.Key) memcache.Item {
-			return mc.NewItem(MakeMemcacheKey(i, k))
-		}
-
 		shardsForKey := func(k *datastore.Key) int {
 			last := k.Last()
 			if last.Kind == "shardObj" {
@@ -108,13 +104,15 @@ func TestDSCache(t *testing.T) {
 				So(dsUnder.Get(&o), ShouldBeNil)
 				So(o.Value, ShouldEqual, "hi")
 
-				itm := itmFor(0, ds.KeyForObj(&o))
-				So(mc.Get(itm), ShouldEqual, memcache.ErrCacheMiss)
+				itm, err := mc.Get(MakeMemcacheKey(0, ds.KeyForObj(&o)))
+				So(err, ShouldEqual, memcache.ErrCacheMiss)
 
 				o = object{ID: 1}
 				So(ds.Get(&o), ShouldBeNil)
 				So(o.Value, ShouldEqual, "hi")
-				So(mc.Get(itm), ShouldBeNil)
+
+				itm, err = mc.Get(itm.Key())
+				So(err, ShouldBeNil)
 				So(itm.Value(), ShouldResemble, encoded)
 
 				Convey("now we don't need the datastore!", func() {
@@ -124,8 +122,8 @@ func TestDSCache(t *testing.T) {
 					// unless you want a crappy cache.
 					So(dsUnder.Delete(ds.KeyForObj(&o)), ShouldBeNil)
 
-					itm := itmFor(0, ds.KeyForObj(&o))
-					So(mc.Get(itm), ShouldBeNil)
+					itm, err := mc.Get(MakeMemcacheKey(0, ds.KeyForObj(&o)))
+					So(err, ShouldBeNil)
 					So(itm.Value(), ShouldResemble, encoded)
 
 					So(ds.Get(&o), ShouldBeNil)
@@ -136,11 +134,12 @@ func TestDSCache(t *testing.T) {
 					o := object{ID: 1}
 					So(ds.Delete(ds.KeyForObj(&o)), ShouldBeNil)
 
-					itm := itmFor(0, ds.KeyForObj(&o))
-					So(mc.Get(itm), ShouldEqual, memcache.ErrCacheMiss)
+					itm, err := mc.Get(MakeMemcacheKey(0, ds.KeyForObj(&o)))
+					So(err, ShouldEqual, memcache.ErrCacheMiss)
 					So(ds.Get(&o), ShouldEqual, datastore.ErrNoSuchEntity)
 
-					So(mc.Get(itm), ShouldBeNil)
+					itm, err = mc.Get(itm.Key())
+					So(err, ShouldBeNil)
 					So(itm.Value(), ShouldResemble, []byte{})
 
 					// this one hits memcache
@@ -160,8 +159,8 @@ func TestDSCache(t *testing.T) {
 				So(ds.Put(&o), ShouldBeNil)
 				So(ds.Get(&o), ShouldBeNil)
 
-				itm := itmFor(0, ds.KeyForObj(&o))
-				So(mc.Get(itm), ShouldBeNil)
+				itm, err := mc.Get(MakeMemcacheKey(0, ds.KeyForObj(&o)))
+				So(err, ShouldBeNil)
 
 				So(itm.Value()[0], ShouldEqual, ZlibCompression)
 				So(len(itm.Value()), ShouldEqual, 653) // a bit smaller than 4k
@@ -198,10 +197,10 @@ func TestDSCache(t *testing.T) {
 						return nil
 					}, &datastore.TransactionOptions{XG: true}), ShouldBeNil)
 
-					So(mc.Get(itmFor(0, ds.KeyForObj(&object{ID: 1}))),
-						ShouldEqual, memcache.ErrCacheMiss)
-					So(mc.Get(itmFor(0, ds.KeyForObj(&object{ID: 2}))),
-						ShouldEqual, memcache.ErrCacheMiss)
+					_, err := mc.Get(MakeMemcacheKey(0, ds.KeyForObj(&object{ID: 1})))
+					So(err, ShouldEqual, memcache.ErrCacheMiss)
+					_, err = mc.Get(MakeMemcacheKey(0, ds.KeyForObj(&object{ID: 2})))
+					So(err, ShouldEqual, memcache.ErrCacheMiss)
 					o := &object{ID: 1}
 					So(ds.Get(o), ShouldBeNil)
 					So(o.Value, ShouldEqual, "txn")
@@ -282,11 +281,12 @@ func TestDSCache(t *testing.T) {
 					So(ds.Put(&model{ID: 1, Value: "mooo"}), ShouldBeNil)
 					So(ds.Get(&model{ID: 1}), ShouldBeNil)
 
-					itm := itmFor(0, ds.KeyForObj(&model{ID: 1}))
-					So(mc.Get(itm), ShouldBeNil)
+					itm, err := mc.Get(MakeMemcacheKey(0, ds.KeyForObj(&model{ID: 1})))
+					So(err, ShouldBeNil)
 
 					clk.Add(10 * time.Second)
-					So(mc.Get(itm), ShouldEqual, memcache.ErrCacheMiss)
+					_, err = mc.Get(itm.Key())
+					So(err, ShouldEqual, memcache.ErrCacheMiss)
 				})
 			})
 
@@ -296,14 +296,15 @@ func TestDSCache(t *testing.T) {
 					So(ds.Put(o), ShouldBeNil)
 
 					sekret := []byte("I am a banana")
-					itm := itmFor(0, ds.KeyForObj(o)).SetValue(sekret)
+					itm := mc.NewItem(MakeMemcacheKey(0, ds.KeyForObj(o))).SetValue(sekret)
 					So(mc.Set(itm), ShouldBeNil)
 
 					o = &object{ID: 1}
 					So(ds.Get(o), ShouldBeNil)
 					So(o.Value, ShouldEqual, "spleen")
 
-					So(mc.Get(itm), ShouldBeNil)
+					itm, err := mc.Get(itm.Key())
+					So(err, ShouldBeNil)
 					So(itm.Flags(), ShouldEqual, ItemUKNONWN)
 					So(itm.Value(), ShouldResemble, sekret)
 				})
@@ -313,7 +314,7 @@ func TestDSCache(t *testing.T) {
 					So(ds.Put(o), ShouldBeNil)
 
 					sekret := []byte("I am a banana")
-					itm := (itmFor(0, ds.KeyForObj(o)).
+					itm := (mc.NewItem(MakeMemcacheKey(0, ds.KeyForObj(o))).
 						SetValue(sekret).
 						SetFlags(uint32(ItemHasData)))
 					So(mc.Set(itm), ShouldBeNil)
@@ -322,7 +323,8 @@ func TestDSCache(t *testing.T) {
 					So(ds.Get(o), ShouldBeNil)
 					So(o.Value, ShouldEqual, "spleen")
 
-					So(mc.Get(itm), ShouldBeNil)
+					itm, err := mc.Get(itm.Key())
+					So(err, ShouldBeNil)
 					So(itm.Flags(), ShouldEqual, ItemHasData)
 					So(itm.Value(), ShouldResemble, sekret)
 				})
@@ -332,7 +334,7 @@ func TestDSCache(t *testing.T) {
 					So(ds.Put(o), ShouldBeNil)
 
 					sekret := []byte("r@vmarod!#)%9T")
-					itm := (itmFor(0, ds.KeyForObj(o)).
+					itm := (mc.NewItem(MakeMemcacheKey(0, ds.KeyForObj(o))).
 						SetValue(sekret).
 						SetFlags(uint32(ItemHasLock)))
 					So(mc.Set(itm), ShouldBeNil)
@@ -341,7 +343,8 @@ func TestDSCache(t *testing.T) {
 					So(ds.Get(o), ShouldBeNil)
 					So(o.Value, ShouldEqual, "spleen")
 
-					So(mc.Get(itm), ShouldBeNil)
+					itm, err := mc.Get(itm.Key())
+					So(err, ShouldBeNil)
 					So(itm.Flags(), ShouldEqual, ItemHasLock)
 					So(itm.Value(), ShouldResemble, sekret)
 				})
@@ -360,8 +363,8 @@ func TestDSCache(t *testing.T) {
 					o.BigData = nil
 					So(ds.Get(o), ShouldBeNil)
 
-					itm := itmFor(0, ds.KeyForObj(o))
-					So(mc.Get(itm), ShouldBeNil)
+					itm, err := mc.Get(MakeMemcacheKey(0, ds.KeyForObj(o)))
+					So(err, ShouldBeNil)
 
 					// Is locked until the next put, forcing all access to the datastore.
 					So(itm.Value(), ShouldResemble, []byte{})
@@ -371,7 +374,8 @@ func TestDSCache(t *testing.T) {
 					So(ds.Put(o), ShouldBeNil)
 					So(ds.Get(o), ShouldBeNil)
 
-					So(mc.Get(itm), ShouldBeNil)
+					itm, err = mc.Get(itm.Key())
+					So(err, ShouldBeNil)
 					So(itm.Flags(), ShouldEqual, ItemHasData)
 				})
 

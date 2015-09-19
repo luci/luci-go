@@ -21,8 +21,10 @@ func (m *memcacheImpl) Set(item Item) error {
 	return errors.SingleError(m.SetMulti([]Item{item}))
 }
 
-func (m *memcacheImpl) Get(item Item) error {
-	return errors.SingleError(m.GetMulti([]Item{item}))
+func (m *memcacheImpl) Get(key string) (Item, error) {
+	ret := m.NewItem(key)
+	err := errors.SingleError(m.GetMulti([]Item{ret}))
+	return ret, err
 }
 
 func (m *memcacheImpl) Delete(key string) error {

@@ -48,16 +48,14 @@ func TestMemcache(t *testing.T) {
 					value: []byte("cool"),
 					CasID: 1,
 				}
-				getItm := &mcItem{
-					key: "sup",
-				}
-				So(mc.Get(getItm), ShouldBeNil)
+				getItm, err := mc.Get("sup")
+				So(err, ShouldBeNil)
 				So(getItm, ShouldResemble, testItem)
 
 				Convey("which can expire", func() {
 					tc.Add(time.Second * 4)
-					getItm := &mcItem{key: "sup"}
-					So(mc.Get(getItm), ShouldEqual, mcS.ErrCacheMiss)
+					getItm, err := mc.Get("sup")
+					So(err, ShouldEqual, mcS.ErrCacheMiss)
 					So(getItm, ShouldResemble, &mcItem{key: "sup"})
 				})
 			})
@@ -73,7 +71,8 @@ func TestMemcache(t *testing.T) {
 
 					So(mc.Delete("sup"), ShouldBeNil)
 
-					So(mc.Get(mc.NewItem("sup")), ShouldEqual, mcS.ErrCacheMiss)
+					_, err := mc.Get("sup")
+					So(err, ShouldEqual, mcS.ErrCacheMiss)
 				})
 
 				Convey("but not if it's not there", func() {
@@ -97,13 +96,14 @@ func TestMemcache(t *testing.T) {
 					value: []byte("newp"),
 					CasID: 2,
 				}
-				getItm := mc.NewItem("sup")
-				So(mc.Get(getItm), ShouldBeNil)
+				getItm, err := mc.Get("sup")
+				So(err, ShouldBeNil)
 				So(getItm, ShouldResemble, testItem)
 
 				Convey("Flush works too", func() {
 					So(mc.Flush(), ShouldBeNil)
-					So(mc.Get(getItm), ShouldEqual, mcS.ErrCacheMiss)
+					_, err := mc.Get("sup")
+					So(err, ShouldEqual, mcS.ErrCacheMiss)
 				})
 			})
 
@@ -140,8 +140,8 @@ func TestMemcache(t *testing.T) {
 				So(mc.Add(itm), ShouldBeNil)
 
 				Convey("works after a Get", func() {
-					itm = mc.NewItem("sup")
-					So(mc.Get(itm), ShouldBeNil)
+					itm, err := mc.Get("sup")
+					So(err, ShouldBeNil)
 					So(itm.(*mcItem).CasID, ShouldEqual, 1)
 
 					itm.SetValue([]byte("newp"))
@@ -169,15 +169,15 @@ func TestMemcache(t *testing.T) {
 				expiration: time.Second * 2,
 			})
 
-			So(mc.Get(mc.NewItem("sup")), ShouldBeNil)
-			So(mc.Get(mc.NewItem("sup")), ShouldBeNil)
-			So(mc.Get(mc.NewItem("sup")), ShouldBeNil)
-			So(mc.Get(mc.NewItem("sup")), ShouldBeNil)
-			So(mc.Get(mc.NewItem("wot")), ShouldErrLike, mcS.ErrCacheMiss)
+			for i := 0; i < 4; i++ {
+				_, err := mc.Get("sup")
+				So(err, ShouldBeNil)
+			}
+			_, err = mc.Get("wot")
+			So(err, ShouldErrLike, mcS.ErrCacheMiss)
 
 			mci := mc.Raw().(*memcacheImpl)
 
-			So(err, ShouldBeNil)
 			stats, err := mc.Stats()
 			So(err, ShouldBeNil)
 			So(stats.Items, ShouldEqual, 1)
@@ -192,8 +192,8 @@ func TestMemcache(t *testing.T) {
 				casID:      1,
 			})
 
-			getItm := mc.NewItem("sup")
-			So(mc.Get(getItm), ShouldBeNil)
+			getItm, err := mc.Get("sup")
+			So(err, ShouldBeNil)
 			So(len(mci.data.items), ShouldEqual, 1)
 			So(mci.data.casID, ShouldEqual, 1)
 

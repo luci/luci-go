@@ -21,9 +21,11 @@ type Interface interface {
 	// Set the item in memcache, whether or not it exists.
 	Set(item Item) error
 
-	// Get retrieves an item from memcache. Only the key field is read. The item
-	// will be mutated to contain the data in the memcache item.
-	Get(item Item) error
+	// Get retrieves an item from memcache.
+	//
+	// On a cache miss ErrCacheMiss will be returned. Item will always be
+	// returned, even on a miss, but it's value may be empty if it was a miss.
+	Get(key string) (Item, error)
 
 	// Delete removes an item from memcache.
 	Delete(key string) error
@@ -41,6 +43,8 @@ type Interface interface {
 	//   mc.CompareAndSwap(itm) // check error
 	CompareAndSwap(item Item) error
 
+	// Batch operations; GetMulti takes a []Item instead of []string to improve
+	// ergonomics when streamlining these operations.
 	AddMulti(items []Item) error
 	SetMulti(items []Item) error
 	GetMulti(items []Item) error

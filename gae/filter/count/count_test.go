@@ -99,8 +99,12 @@ func TestCount(t *testing.T) {
 		mc := memcache.Get(c)
 
 		die(mc.Set(mc.NewItem("hello").SetValue([]byte("sup"))))
-		So(mc.Get(mc.NewItem("Wat")), ShouldNotBeNil)
-		die(mc.Get(mc.NewItem("hello")))
+
+		_, err := mc.Get("Wat")
+		So(err, ShouldNotBeNil)
+
+		_, err = mc.Get("hello")
+		die(err)
 
 		So(ctr.SetMulti, shouldHaveSuccessesAndErrors, 1, 0)
 		So(ctr.GetMulti, shouldHaveSuccessesAndErrors, 2, 0)
