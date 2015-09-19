@@ -207,7 +207,11 @@ func ReadTime(buf Buffer) (time.Time, error) {
 	if err != nil {
 		return time.Time{}, err
 	}
-	return time.Unix(v/1e6, (v%1e6)*1e3).UTC(), nil
+	t := time.Unix(v/1e6, (v%1e6)*1e3)
+	if t.IsZero() {
+		return time.Time{}, nil
+	}
+	return t.UTC(), nil
 }
 
 // WriteProperty writes a Property to the buffer. `context` behaves the same

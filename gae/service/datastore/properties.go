@@ -270,7 +270,7 @@ func PropertyTypeOf(v interface{}, checkValid bool) (PropertyType, error) {
 	}
 }
 
-// timeLocationsEqual tests if two time.Location are equal.
+// timeLocationIsUTC tests if two time.Location are equal.
 //
 // This is tricky using the standard time API, as time is implicitly normalized
 // to UTC and all equality checks are performed relative to that normalized
@@ -308,7 +308,10 @@ func UpconvertUnderlyingType(o interface{}) interface{} {
 	case reflect.Struct:
 		if t == typeOfTime {
 			// time in a Property can only hold microseconds
-			o = v.Interface().(time.Time).Round(time.Microsecond)
+			tim := v.Interface().(time.Time)
+			if !tim.IsZero() {
+				o = v.Interface().(time.Time).Round(time.Microsecond)
+			}
 		}
 	}
 	return o
@@ -409,7 +412,11 @@ func (p *Property) Project(to PropertyType) (interface{}, error) {
 
 	case to == PTTime && p.propType == PTInt:
 		v := p.value.(int64)
-		return time.Unix(int64(v/1e6), int64((v%1e6)*1e3)).UTC(), nil
+		t := time.Unix(int64(v/1e6), int64((v%1e6)*1e3))
+		if t.IsZero() {
+			return time.Time{}, nil
+		}
+		return t.UTC(), nil
 
 	case to == PTString && p.propType == PTBytes:
 		return string(p.value.([]byte)), nil

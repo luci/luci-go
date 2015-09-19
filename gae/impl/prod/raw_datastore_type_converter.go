@@ -113,7 +113,11 @@ func dsR2FProp(in datastore.Property) (ds.Property, error) {
 		val = ds.GeoPoint(x)
 	case time.Time:
 		// "appengine" layer instantiates with Local timezone.
-		val = x.UTC()
+		if x.IsZero() {
+			val = time.Time{}
+		} else {
+			val = x.UTC()
+		}
 	default:
 		val = maybeIndexValue(val)
 	}

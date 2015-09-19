@@ -190,7 +190,7 @@ func TestSerializationReadMisc(t *testing.T) {
 			So(WriteTime(buf, time.Time{}), ShouldBeNil)
 			t, err := ReadTime(mkBuf(buf.Bytes()))
 			So(err, ShouldBeNil)
-			So(t.IsZero(), ShouldBeTrue)
+			So(t, ShouldResemble, time.Time{})
 		})
 
 		Convey("Bad ToBytes", func() {

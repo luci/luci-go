@@ -127,7 +127,10 @@ func TestBasicDatastore(t *testing.T) {
 			// time comparisons in Go are wonky, so this is pulled out
 			pm := dstore.PropertyMap{
 				"$key": {mpNI(ds.NewKey("Something", "value", 0, nil))},
-				"Time": {mp(time.Date(1938, time.January, 1, 1, 1, 1, 1, time.UTC))},
+				"Time": {
+					mp(time.Date(1938, time.January, 1, 1, 1, 1, 1, time.UTC)),
+					mp(time.Time{}),
+				},
 			}
 			So(ds.Put(&pm), ShouldBeNil)
 
@@ -140,13 +143,23 @@ func TestBasicDatastore(t *testing.T) {
 			q := dstore.NewQuery("Something").Project("Time")
 			all := []dstore.PropertyMap{}
 			So(ds.GetAll(q, &all), ShouldBeNil)
-			So(len(all), ShouldEqual, 1)
+			So(len(all), ShouldEqual, 2)
 			prop := all[0]["Time"][0]
 			So(prop.Type(), ShouldEqual, dstore.PTInt)
 
 			tval, err := prop.Project(dstore.PTTime)
 			So(err, ShouldBeNil)
+			So(tval, ShouldResemble, time.Time{})
+
+			tval, err = all[1]["Time"][0].Project(dstore.PTTime)
+			So(err, ShouldBeNil)
 			So(tval, ShouldResemble, pm["Time"][0].Value())
+
+			ent := dstore.PropertyMap{
+				"$key": {mpNI(ds.MakeKey("Something", "value"))},
+			}
+			So(ds.Get(&ent), ShouldBeNil)
+			So(ent["Time"], ShouldResemble, pm["Time"])
 		})
 	})
 }
