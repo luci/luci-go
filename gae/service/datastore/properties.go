@@ -680,6 +680,11 @@ type PropertyLoadSaver interface {
 
 	MetaGetter
 
+	// GetAllMeta returns a PropertyMap with all of the metadata in this
+	// PropertyLoadSaver. If a metadata field has an error during serialization,
+	// it is skipped.
+	GetAllMeta() PropertyMap
+
 	// SetMeta allows you to set the current value of the meta-keyed field.
 	SetMeta(key string, val interface{}) error
 
@@ -751,6 +756,19 @@ func (pm PropertyMap) GetMeta(key string) (interface{}, error) {
 		return nil, errors.New("gae: too many values for Meta key")
 	}
 	return v[0].Value(), nil
+}
+
+// GetAllMeta implements PropertyLoadSaver.GetAllMeta.
+func (pm PropertyMap) GetAllMeta() PropertyMap {
+	ret := make(PropertyMap, 8)
+	for k, v := range pm {
+		if isMetaKey(k) {
+			newV := make([]Property, len(v))
+			copy(newV, v)
+			ret[k] = newV
+		}
+	}
+	return ret
 }
 
 // GetMetaDefault is the implementation of PropertyLoadSaver.GetMetaDefault.

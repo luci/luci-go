@@ -205,29 +205,14 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 }
 
 func (p *structPLS) Save(withMeta bool) (PropertyMap, error) {
-	size := len(p.c.byName)
+	ret := PropertyMap(nil)
 	if withMeta {
-		size += len(p.c.byMeta)
+		ret = p.GetAllMeta()
+	} else {
+		ret = make(PropertyMap, len(p.c.byName))
 	}
-	ret := make(PropertyMap, size)
 	if _, err := p.save(ret, "", ShouldIndex); err != nil {
 		return nil, err
-	}
-	if withMeta {
-		for k := range p.c.byMeta {
-			val, err := p.GetMeta(k)
-			if err != nil {
-				return nil, err // TODO(riannucci): should these be ignored?
-			}
-			p := Property{}
-			if err = p.SetValue(val, NoIndex); err != nil {
-				return nil, err
-			}
-			ret["$"+k] = []Property{p}
-		}
-		if _, ok := p.c.byMeta["kind"]; !ok {
-			ret["$kind"] = []Property{MkPropertyNI(p.getDefaultKind())}
-		}
 	}
 	return ret, nil
 }
@@ -311,6 +296,10 @@ func (p *structPLS) GetMeta(key string) (interface{}, error) {
 		}
 		return nil, ErrMetaFieldUnset
 	}
+	return p.getMetaFor(idx), nil
+}
+
+func (p *structPLS) getMetaFor(idx int) interface{} {
 	st := p.c.byIndex[idx]
 	val := st.metaVal
 	f := p.o.Field(idx)
@@ -322,7 +311,23 @@ func (p *structPLS) GetMeta(key string) (interface{}, error) {
 			}
 		}
 	}
-	return val, nil
+	return val
+}
+
+func (p *structPLS) GetAllMeta() PropertyMap {
+	ret := make(PropertyMap, len(p.c.byMeta)+1)
+	for k, idx := range p.c.byMeta {
+		val := p.getMetaFor(idx)
+		p := Property{}
+		if err := p.SetValue(val, NoIndex); err != nil {
+			continue
+		}
+		ret["$"+k] = []Property{p}
+	}
+	if _, ok := p.c.byMeta["kind"]; !ok {
+		ret["$kind"] = []Property{MkPropertyNI(p.getDefaultKind())}
+	}
+	return ret
 }
 
 func (p *structPLS) GetMetaDefault(key string, def interface{}) interface{} {

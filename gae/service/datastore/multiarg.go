@@ -14,22 +14,29 @@ import (
 type multiArgType struct {
 	valid bool
 
-	getKey  func(aid, ns string, slot reflect.Value) (*Key, error)
-	getPM   func(slot reflect.Value) (PropertyMap, error)
-	setPM   func(slot reflect.Value, pm PropertyMap) error
-	setKey  func(slot reflect.Value, k *Key)
-	newElem func() reflect.Value
+	getKey    func(aid, ns string, slot reflect.Value) (*Key, error)
+	getPM     func(slot reflect.Value) (PropertyMap, error)
+	getMetaPM func(slot reflect.Value) PropertyMap
+	setPM     func(slot reflect.Value, pm PropertyMap) error
+	setKey    func(slot reflect.Value, k *Key)
+	newElem   func() reflect.Value
 }
 
-func (mat *multiArgType) GetKeysPMs(aid, ns string, slice reflect.Value) ([]*Key, []PropertyMap, error) {
+func (mat *multiArgType) GetKeysPMs(aid, ns string, slice reflect.Value, meta bool) ([]*Key, []PropertyMap, error) {
 	retKey := make([]*Key, slice.Len())
 	retPM := make([]PropertyMap, slice.Len())
+	getter := mat.getPM
+	if meta {
+		getter = func(slot reflect.Value) (PropertyMap, error) {
+			return mat.getMetaPM(slot), nil
+		}
+	}
 	lme := errors.NewLazyMultiError(len(retKey))
 	for i := range retKey {
 		key, err := mat.getKey(aid, ns, slice.Index(i))
 		if !lme.Assign(i, err) {
 			retKey[i] = key
-			pm, err := mat.getPM(slice.Index(i))
+			pm, err := getter(slice.Index(i))
 			if !lme.Assign(i, err) {
 				retPM[i] = pm
 			}
@@ -90,6 +97,9 @@ func multiArgTypePLS(et reflect.Type) multiArgType {
 		getPM: func(slot reflect.Value) (PropertyMap, error) {
 			return slot.Addr().Interface().(PropertyLoadSaver).Save(true)
 		},
+		getMetaPM: func(slot reflect.Value) PropertyMap {
+			return slot.Addr().Interface().(PropertyLoadSaver).GetAllMeta()
+		},
 		setPM: func(slot reflect.Value, pm PropertyMap) error {
 			return slot.Addr().Interface().(PropertyLoadSaver).Load(pm)
 		},
@@ -125,6 +135,9 @@ func multiArgTypePLSPtr(et reflect.Type) multiArgType {
 		},
 		getPM: func(slot reflect.Value) (PropertyMap, error) {
 			return slot.Interface().(PropertyLoadSaver).Save(true)
+		},
+		getMetaPM: func(slot reflect.Value) PropertyMap {
+			return slot.Interface().(PropertyLoadSaver).GetAllMeta()
 		},
 		setPM: func(slot reflect.Value, pm PropertyMap) error {
 			return slot.Interface().(PropertyLoadSaver).Load(pm)
@@ -163,6 +176,9 @@ func multiArgTypeStruct(et reflect.Type) multiArgType {
 		getPM: func(slot reflect.Value) (PropertyMap, error) {
 			return toPLS(slot).(PropertyLoadSaver).Save(true)
 		},
+		getMetaPM: func(slot reflect.Value) PropertyMap {
+			return toPLS(slot).(PropertyLoadSaver).GetAllMeta()
+		},
 		setPM: func(slot reflect.Value, pm PropertyMap) error {
 			return toPLS(slot).(PropertyLoadSaver).Load(pm)
 		},
@@ -193,6 +209,9 @@ func multiArgTypeStructPtr(et reflect.Type) multiArgType {
 		getPM: func(slot reflect.Value) (PropertyMap, error) {
 			return toPLS(slot).(PropertyLoadSaver).Save(true)
 		},
+		getMetaPM: func(slot reflect.Value) PropertyMap {
+			return toPLS(slot).(PropertyLoadSaver).GetAllMeta()
+		},
 		setPM: func(slot reflect.Value, pm PropertyMap) error {
 			return toPLS(slot).(PropertyLoadSaver).Load(pm)
 		},
@@ -216,6 +235,10 @@ func multiArgTypeInterface() multiArgType {
 		getPM: func(slot reflect.Value) (PropertyMap, error) {
 			pls := mkPLS(slot.Elem().Interface())
 			return pls.Save(true)
+		},
+		getMetaPM: func(slot reflect.Value) PropertyMap {
+			pls := mkPLS(slot.Elem().Interface())
+			return pls.GetAllMeta()
 		},
 		setPM: func(slot reflect.Value, pm PropertyMap) error {
 			pls := mkPLS(slot.Elem().Interface())

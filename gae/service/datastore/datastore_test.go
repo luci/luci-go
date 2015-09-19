@@ -201,6 +201,17 @@ func (f *FakePLS) GetMeta(key string) (interface{}, error) {
 	return nil, ErrMetaFieldUnset
 }
 
+func (f *FakePLS) GetAllMeta() PropertyMap {
+	ret := PropertyMap{}
+	if id, err := f.GetMeta("id"); err != nil {
+		So(ret.SetMeta("id", id), ShouldBeNil)
+	}
+	if kind, err := f.GetMeta("kind"); err != nil {
+		So(ret.SetMeta("kind", kind), ShouldBeNil)
+	}
+	return ret
+}
+
 func (f *FakePLS) SetMeta(key string, val interface{}) error {
 	if f.failSetMeta {
 		return errors.New("FakePL.SetMeta")
@@ -577,8 +588,8 @@ func TestGet(t *testing.T) {
 			})
 
 			Convey("failure to save metadata is an issue too", func() {
-				cs := &FakePLS{failSave: true}
-				So(ds.Get(cs).Error(), ShouldContainSubstring, "FakePLS.Save")
+				cs := &FakePLS{failGetMeta: true}
+				So(ds.Get(cs).Error(), ShouldContainSubstring, "unable to extract $kind")
 			})
 		})
 
@@ -596,6 +607,11 @@ func TestGet(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(pm["Value"][0].Value(), ShouldEqual, 1)
 				}), ShouldBeNil)
+			})
+
+			Convey("but general failure to save is fine on a Get", func() {
+				cs := &FakePLS{failSave: true, IntID: 7}
+				So(ds.Get(cs), ShouldBeNil)
 			})
 		})
 

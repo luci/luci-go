@@ -375,6 +375,7 @@ func (d *Doubler) Save(withMeta bool) (PropertyMap, error) {
 	return propMap, nil
 }
 
+func (d *Doubler) GetAllMeta() PropertyMap                               { return nil }
 func (d *Doubler) GetMeta(string) (interface{}, error)                   { return nil, ErrMetaFieldUnset }
 func (d *Doubler) GetMetaDefault(_ string, dflt interface{}) interface{} { return dflt }
 func (d *Doubler) SetMeta(string, interface{}) error                     { return ErrMetaFieldUnset }
@@ -403,6 +404,7 @@ func (d *Deriver) Save(withMeta bool) (PropertyMap, error) {
 	}, nil
 }
 
+func (d *Deriver) GetAllMeta() PropertyMap                               { return nil }
 func (d *Deriver) GetMeta(string) (interface{}, error)                   { return nil, ErrMetaFieldUnset }
 func (d *Deriver) GetMetaDefault(_ string, dflt interface{}) interface{} { return dflt }
 func (d *Deriver) SetMeta(string, interface{}) error                     { return ErrMetaFieldUnset }

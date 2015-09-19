@@ -199,7 +199,7 @@ func (d *datastoreImpl) GetMulti(dst interface{}) error {
 		return fmt.Errorf("invalid GetMulti input type: %T", dst)
 	}
 
-	keys, pms, err := mat.GetKeysPMs(d.aid, d.ns, slice)
+	keys, pms, err := mat.GetKeysPMs(d.aid, d.ns, slice, true)
 	if err != nil {
 		return err
 	}
@@ -227,7 +227,7 @@ func (d *datastoreImpl) PutMulti(src interface{}) error {
 		return fmt.Errorf("invalid PutMulti input type: %T", src)
 	}
 
-	keys, vals, err := mat.GetKeysPMs(d.aid, d.ns, slice)
+	keys, vals, err := mat.GetKeysPMs(d.aid, d.ns, slice, false)
 	if err != nil {
 		return err
 	}
