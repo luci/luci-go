@@ -395,7 +395,7 @@ func allJobs(c context.Context) []jobEntity {
 	ds := datastore.Get(c)
 	ds.Testable().CatchupIndexes()
 	entities := []jobEntity{}
-	if err := ds.GetAll(ds.NewQuery("CronJob"), &entities); err != nil {
+	if err := ds.GetAll(datastore.NewQuery("CronJob"), &entities); err != nil {
 		panic(err)
 	}
 	// Strip UTC location pointers from zero time.Time{} so that ShouldResemble

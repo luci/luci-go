@@ -129,10 +129,10 @@ type engineImpl struct {
 
 func (e *engineImpl) GetAllProjects(c context.Context) ([]string, error) {
 	ds := datastore.Get(c)
-	q := ds.NewQuery("CronJob").
-		Filter("Enabled =", true).
+	q := datastore.NewQuery("CronJob").
+		Eq("Enabled", true).
 		Project("ProjectID").
-		Distinct()
+		Distinct(true)
 	entities := []jobEntity{}
 	if err := ds.GetAll(q, &entities); err != nil {
 		return nil, errors.WrapTransient(err)
@@ -197,7 +197,7 @@ func (e *engineImpl) UpdateProjectJobs(c context.Context, projectID string, defs
 	if updateErrs.Get() == nil && disableErrs.Get() == nil {
 		return nil
 	}
-	return errors.WrapTransient(errors.MultiError{updateErrs.Get(), disableErrs.Get()})
+	return errors.WrapTransient(errors.NewMultiError(updateErrs.Get(), disableErrs.Get()))
 }
 
 func (e *engineImpl) ResetAllJobsOnDevServer(c context.Context) error {
@@ -205,8 +205,8 @@ func (e *engineImpl) ResetAllJobsOnDevServer(c context.Context) error {
 		return errors.New("ResetAllJobsOnDevServer must not be used in production")
 	}
 	ds := datastore.Get(c)
-	q := ds.NewQuery("CronJob").Filter("Enabled =", true)
-	keys := []datastore.Key{}
+	q := datastore.NewQuery("CronJob").Eq("Enabled", true)
+	keys := []*datastore.Key{}
 	if err := ds.GetAll(q, &keys); err != nil {
 		return errors.WrapTransient(err)
 	}
@@ -214,8 +214,8 @@ func (e *engineImpl) ResetAllJobsOnDevServer(c context.Context) error {
 	errs := errors.NewLazyMultiError(len(keys))
 	for i, key := range keys {
 		wg.Add(1)
-		go func(i int, key datastore.Key) {
-			errs.Assign(i, e.resetJob(c, key.StringID()))
+		go func(i int, key *datastore.Key) {
+			errs.Assign(i, e.resetJob(c, key.Last().StringID))
 			wg.Done()
 		}(i, key)
 	}
@@ -227,9 +227,9 @@ func (e *engineImpl) ResetAllJobsOnDevServer(c context.Context) error {
 // project.
 func (e *engineImpl) getProjectJobs(c context.Context, projectID string) (map[string]*jobEntity, error) {
 	ds := datastore.Get(c)
-	q := ds.NewQuery("CronJob").
-		Filter("Enabled =", true).
-		Filter("ProjectID =", projectID)
+	q := datastore.NewQuery("CronJob").
+		Eq("Enabled", true).
+		Eq("ProjectID", projectID)
 	entities := []*jobEntity{}
 	if err := ds.GetAll(q, &entities); err != nil {
 		return nil, errors.WrapTransient(err)

@@ -136,8 +136,7 @@ type tokenCache struct {
 
 func (c tokenCache) Read() ([]byte, error) {
 	mem := memcache.Get(c.c)
-	itm := mem.NewItem(c.key)
-	err := mem.Get(itm)
+	itm, err := mem.Get(c.key)
 	if err == memcache.ErrCacheMiss {
 		return nil, nil
 	}
