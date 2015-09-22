@@ -215,7 +215,7 @@ func (e *engineImpl) ResetAllJobsOnDevServer(c context.Context) error {
 	for i, key := range keys {
 		wg.Add(1)
 		go func(i int, key *datastore.Key) {
-			errs.Assign(i, e.resetJob(c, key.Last().StringID))
+			errs.Assign(i, e.resetJob(c, key.StringID()))
 			wg.Done()
 		}(i, key)
 	}
