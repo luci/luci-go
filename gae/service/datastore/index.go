@@ -24,6 +24,7 @@ type IndexColumn struct {
 // `+Field` is invalid. `` is invalid.
 func ParseIndexColumn(spec string) (IndexColumn, error) {
 	col := IndexColumn{}
+	spec = strings.TrimSpace(spec)
 	if strings.HasPrefix(spec, "-") {
 		col.Descending = true
 		col.Property = strings.TrimSpace(spec[1:])
@@ -33,7 +34,7 @@ func ParseIndexColumn(spec string) (IndexColumn, error) {
 		col.Property = strings.TrimSpace(spec)
 	}
 	if col.Property == "" {
-		return col, fmt.Errorf("datastore: empty order")
+		return col, fmt.Errorf("datastore: empty order: %q", spec)
 	}
 	return col, nil
 }
