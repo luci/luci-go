@@ -1,4 +1,4 @@
-// Copyright (c) 2015 The Chromium Authors. All rights reserved.
+// Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -83,6 +83,11 @@ func TestPromise(t *testing.T) {
 					tc.Add(1 * time.Second)
 				}()
 
+				// Make sure we have fully processed the data. Otherwise, it could get
+				// stuck in between reading from 'opC' and returning/assigning to the
+				// Promise.
+				p.Get(ctx)
+
 				ctx, _ = clock.WithTimeout(ctx, 1*time.Second)
 				data, err := p.Get(ctx)
 				So(data, ShouldEqual, "DATA")
@@ -105,7 +110,7 @@ func TestPromise(t *testing.T) {
 				finishedC <- data.(string)
 			}()
 			go func() {
-				ctx, _ = clock.WithTimeout(ctx, 1*time.Hour)
+				ctx, _ := clock.WithTimeout(ctx, 1*time.Hour)
 				data, _ := p.Get(ctx)
 				finishedC <- data.(string)
 			}()
