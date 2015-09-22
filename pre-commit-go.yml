@@ -75,3 +75,4 @@ ignore_patterns:
 - _*
 - '*.pb.go'
 - '*_string.go'
+- '*-gen.go'
