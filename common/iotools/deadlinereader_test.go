@@ -15,16 +15,14 @@ import (
 // TestDeadlineReader tests the DeadlineReader struct.
 func TestDeadlineReader(t *testing.T) {
 	Convey(`A DeadlineReader with a nil connection`, t, func() {
-		dr := new(DeadlineReader)
+		dr := &DeadlineReader{}
 
 		Convey(`Should panic when Read is called.`, func() {
-			dr := dr
 			buf := make([]byte, 1)
 			So(func() { dr.Read(buf) }, ShouldPanic)
 		})
 
 		Convey(`Should panic when Close is called.`, func() {
-			dr := dr
 			So(func() { dr.Close() }, ShouldPanic)
 		})
 	})
@@ -38,6 +36,7 @@ func TestDeadlineReader(t *testing.T) {
 			ln, err = net.Listen(proto, "[::0]:0")
 		}
 		So(err, ShouldBeNil)
+		defer ln.Close()
 
 		// Accept connections and don't write any data.
 		dataC := make(chan []byte)
@@ -60,12 +59,11 @@ func TestDeadlineReader(t *testing.T) {
 
 		// Create a deadline reader.
 		dr := &DeadlineReader{Conn: c}
+		defer dr.Close()
 
 		// Wrap it in a deadline reader.
 		Convey(`Given a deadline reader with no deadline, should block on read.`, func() {
-			dr := dr
-			dataC := dataC
-			dr.Deadline = 0 * time.Second
+			dr.Deadline = 0
 
 			// Have the server send data (goroutine).
 			go func() {
@@ -79,17 +77,8 @@ func TestDeadlineReader(t *testing.T) {
 			So(amount, ShouldEqual, 1)
 		})
 
-		// Wrap it in a deadline reader.
 		Convey(`Given a deadline reader with a deadline, should timeout.`, func() {
-			dr := dr
-			dataC := dataC
 			dr.Deadline = 1 * time.Millisecond
-
-			// Have the server send data (goroutine).
-			go func() {
-				time.Sleep(10 * time.Millisecond)
-				dataC <- []byte{0xAA}
-			}()
 
 			// Connect and read bytes.
 			buf := make([]byte, 1)
@@ -102,11 +91,6 @@ func TestDeadlineReader(t *testing.T) {
 			default:
 				t.Error("Invalid error type.")
 			}
-		})
-
-		Reset(func() {
-			dr.Close()
-			ln.Close()
 		})
 	})
 }
