@@ -19,7 +19,7 @@ var (
 	minTime = time.Unix(int64(math.MinInt64)/1e6, (int64(math.MinInt64)%1e6)*1e3)
 	maxTime = time.Unix(int64(math.MaxInt64)/1e6, (int64(math.MaxInt64)%1e6)*1e3)
 
-	utcTestTime = time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
+	utcTestTime = time.Unix(0, 0)
 )
 
 // IndexSetting indicates whether or not a Property should be indexed by the
@@ -94,6 +94,8 @@ type PropertyConverter interface {
 // automatically, using the type of the destination field to cast.
 type PropertyType byte
 
+//go:generate stringer -type=PropertyType
+
 // These constants are in the order described by
 //   https://cloud.google.com/appengine/docs/go/datastore/entities#Go_Value_type_ordering
 // with a slight divergence for the Int/Time split.
@@ -166,33 +168,6 @@ func init() {
 				"with serialize.WriteProperty's use of the high bit to indicate " +
 				"NoIndex and/or \"impl/memory\".increment's ability to guarantee " +
 				"incrementability.")
-	}
-}
-
-func (t PropertyType) String() string {
-	switch t {
-	case PTNull:
-		return "PTNull"
-	case PTInt:
-		return "PTInt"
-	case PTTime:
-		return "PTTime"
-	case PTBool:
-		return "PTBool"
-	case PTBytes:
-		return "PTBytes"
-	case PTString:
-		return "PTString"
-	case PTFloat:
-		return "PTFloat"
-	case PTGeoPoint:
-		return "PTGeoPoint"
-	case PTKey:
-		return "PTKey"
-	case PTBlobKey:
-		return "PTBlobKey"
-	default:
-		return fmt.Sprintf("PTUnknown(%02x)", byte(t))
 	}
 }
 
@@ -322,7 +297,7 @@ func UpconvertUnderlyingType(o interface{}) interface{} {
 // an error).
 func (p *Property) Value() interface{} { return p.value }
 
-// IndexSetting says weather or not the datastore should create indicies for
+// IndexSetting says whether or not the datastore should create indicies for
 // this value.
 func (p *Property) IndexSetting() IndexSetting { return p.indexSetting }
 
