@@ -99,8 +99,16 @@ func (m MultiMetaGetter) GetSingle(idx int) MetaGetter {
 
 // RawInterface implements the datastore functionality without any of the fancy
 // reflection stuff. This is so that Filters can avoid doing lots of redundant
-// reflection work. See datastore.RawInterface for a more user-friendly interface.
+// reflection work. See datastore.Interface for a more user-friendly interface.
 type RawInterface interface {
+	// AllocateIDs allows you to allocate IDs from the datastore without putting
+	// any data. `incomplete` must be a PartialValid Key. If there's no error,
+	// a contiguous block of IDs of n length starting at `start` will be reserved
+	// indefinitely for the user application code for use in new keys. The
+	// appengine automatic ID generator will never automatically assign these IDs
+	// for Keys of this type.
+	AllocateIDs(incomplete *Key, n int) (start int64, err error)
+
 	// RunInTransaction runs f in a transaction.
 	//
 	// opts may be nil.

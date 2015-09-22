@@ -46,6 +46,16 @@ func idxCallbacker(err error, amt int, cb func(idx int, err error)) error {
 	return err
 }
 
+func (d rdsImpl) AllocateIDs(incomplete *ds.Key, n int) (start int64, err error) {
+	par, err := dsF2R(d, incomplete.Parent())
+	if err != nil {
+		return
+	}
+
+	start, _, err = datastore.AllocateIDs(d, incomplete.Last().Kind, par, n)
+	return
+}
+
 func (d rdsImpl) DeleteMulti(ks []*ds.Key, cb ds.DeleteMultiCB) error {
 	keys, err := dsMF2R(d, ks)
 	if err == nil {

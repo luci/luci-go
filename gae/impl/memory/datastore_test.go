@@ -110,15 +110,14 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 				Convey("ensure that group versions persist across deletes", func() {
 					So(ds.DeleteMulti(append(keys, k)), ShouldBeNil)
 
-					// TODO(riannucci): replace with a Count query instead of this cast
-					/*
-						ents := ds.(*dsImpl).data.head.GetCollection("ents:")
-						num, _ := ents.GetTotals()
-						// /__entity_root_ids__,Foo
-						// /Foo,1/__entity_group__,1
-						// /Foo,1/__entity_group_ids__,1
-						So(num, ShouldEqual, 3)
-					*/
+					ds.Testable().CatchupIndexes()
+
+					count := 0
+					So(ds.Run(dsS.NewQuery(""), func(_ *dsS.Key, _ dsS.CursorCB) bool {
+						count++
+						return true
+					}), ShouldBeNil)
+					So(count, ShouldEqual, 3)
 
 					So(testGetMeta(c, k), ShouldEqual, 22)
 
@@ -142,6 +141,17 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					}
 				})
 
+			})
+
+			Convey("allocating ids prevents their use", func() {
+				start, err := ds.AllocateIDs(ds.MakeKey("Foo", 0), 100)
+				So(err, ShouldBeNil)
+				So(start, ShouldEqual, 2)
+
+				f := &Foo{Val: 10}
+				So(ds.Put(f), ShouldBeNil)
+				k := ds.KeyForObj(f)
+				So(k.String(), ShouldEqual, "dev~app::/Foo,102")
 			})
 		})
 

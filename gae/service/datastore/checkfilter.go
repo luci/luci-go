@@ -19,6 +19,16 @@ type checkFilter struct {
 	ns  string
 }
 
+func (tcf *checkFilter) AllocateIDs(incomplete *Key, n int) (start int64, err error) {
+	if n <= 0 {
+		return 0, fmt.Errorf("datastore: invalid `n` parameter in AllocateIDs: %d", n)
+	}
+	if !incomplete.PartialValid(tcf.aid, tcf.ns) {
+		return 0, ErrInvalidKey
+	}
+	return tcf.RawInterface.AllocateIDs(incomplete, n)
+}
+
 func (tcf *checkFilter) RunInTransaction(f func(c context.Context) error, opts *TransactionOptions) error {
 	if f == nil {
 		return fmt.Errorf("datastore: RunInTransaction function is nil")

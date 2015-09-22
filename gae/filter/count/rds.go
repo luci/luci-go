@@ -12,6 +12,7 @@ import (
 
 // DSCounter is the counter object for the datastore service.
 type DSCounter struct {
+	AllocateIDs      Entry
 	DecodeCursor     Entry
 	RunInTransaction Entry
 	Run              Entry
@@ -27,6 +28,11 @@ type dsCounter struct {
 }
 
 var _ ds.RawInterface = (*dsCounter)(nil)
+
+func (r *dsCounter) AllocateIDs(incomplete *ds.Key, n int) (int64, error) {
+	start, err := r.ds.AllocateIDs(incomplete, n)
+	return start, r.c.AllocateIDs.up(err)
+}
 
 func (r *dsCounter) DecodeCursor(s string) (ds.Cursor, error) {
 	cursor, err := r.ds.DecodeCursor(s)

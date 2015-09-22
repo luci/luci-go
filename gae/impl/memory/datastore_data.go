@@ -109,46 +109,68 @@ func curVersion(ents *memCollection, key []byte) int64 {
 	return 0
 }
 
-func incrementLocked(ents *memCollection, key []byte) int64 {
+func incrementLocked(ents *memCollection, key []byte, amt int) int64 {
+	if amt <= 0 {
+		panic(fmt.Errorf("incrementLocked called with bad `amt`: %d", amt))
+	}
 	ret := curVersion(ents, key) + 1
 	ents.Set(key, serialize.ToBytes(ds.PropertyMap{
-		"__version__": {ds.MkPropertyNI(ret)},
+		"__version__": {ds.MkPropertyNI(ret + int64(amt-1))},
 	}))
 	return ret
 }
 
-func (d *dataStoreData) entsKeyLocked(key *ds.Key) (*memCollection, *ds.Key) {
-	coll := "ents:" + key.Namespace()
+func (d *dataStoreData) mutableEnts(ns string) *memCollection {
+	d.Lock()
+	defer d.Unlock()
+
+	coll := "ents:" + ns
 	ents := d.head.GetCollection(coll)
 	if ents == nil {
 		ents = d.head.SetCollection(coll, nil)
 	}
+	return ents
+}
 
+func (d *dataStoreData) allocateIDs(incomplete *ds.Key, n int) int64 {
+	ents := d.mutableEnts(incomplete.Namespace())
+
+	d.Lock()
+	defer d.Unlock()
+	return d.allocateIDsLocked(ents, incomplete, n)
+}
+
+func (d *dataStoreData) allocateIDsLocked(ents *memCollection, incomplete *ds.Key, n int) int64 {
+	idKey := []byte(nil)
+	if incomplete.Parent() == nil {
+		idKey = rootIDsKey(incomplete.Last().Kind)
+	} else {
+		idKey = groupIDsKey(incomplete)
+	}
+	return incrementLocked(ents, idKey, n)
+}
+
+func (d *dataStoreData) fixKeyLocked(ents *memCollection, key *ds.Key) *ds.Key {
 	if key.Incomplete() {
-		idKey := []byte(nil)
-		if key.Parent() == nil {
-			idKey = rootIDsKey(key.Last().Kind)
-		} else {
-			idKey = groupIDsKey(key)
-		}
-		id := incrementLocked(ents, idKey)
+		id := d.allocateIDsLocked(ents, key, 1)
 		key = ds.NewKey(key.AppID(), key.Namespace(), key.Last().Kind, "", id, key.Parent())
 	}
-
-	return ents, key
+	return key
 }
 
 func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) {
+	ents := d.mutableEnts(keys[0].Namespace())
+
 	for i, k := range keys {
 		pmap, _ := vals[i].Save(false)
 		dataBytes := serialize.ToBytes(pmap)
 
 		k, err := func() (ret *ds.Key, err error) {
-			d.rwlock.Lock()
-			defer d.rwlock.Unlock()
+			d.Lock()
+			defer d.Unlock()
 
-			ents, ret := d.entsKeyLocked(k)
-			incrementLocked(ents, groupMetaKey(ret))
+			ret = d.fixKeyLocked(ents, k)
+			incrementLocked(ents, groupMetaKey(ret), 1)
 
 			old := ents.Get(keyBytes(ret))
 			oldPM := ds.PropertyMap(nil)
@@ -212,7 +234,7 @@ func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) {
 
 	for i, k := range keys {
 		if ents != nil {
-			incrementLocked(ents, groupMetaKey(k))
+			incrementLocked(ents, groupMetaKey(k), 1)
 			kb := toDel[i]
 			if old := ents.Get(kb); old != nil {
 				oldPM, err := rpmWoCtx(old, ns)
@@ -384,11 +406,13 @@ func (td *txnDataStoreData) writeMutation(getOnly bool, key *ds.Key, data ds.Pro
 }
 
 func (td *txnDataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) {
+	ents := td.parent.mutableEnts(keys[0].Namespace())
+
 	for i, k := range keys {
 		func() {
 			td.parent.Lock()
 			defer td.parent.Unlock()
-			_, k = td.parent.entsKeyLocked(k)
+			k = td.parent.fixKeyLocked(ents, k)
 		}()
 		err := td.writeMutation(false, k, vals[i])
 		if cb != nil {

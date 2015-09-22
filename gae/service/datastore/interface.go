@@ -20,6 +20,14 @@ import (
 // Struct objects passed in will be converted to PropertyLoadSaver interfaces
 // using this package's GetPLS function.
 type Interface interface {
+	// AllocateIDs allows you to allocate IDs from the datastore without putting
+	// any data. `incomplete` must be a PartialValid Key. If there's no error,
+	// a contiguous block of IDs of n length starting at `start` will be reserved
+	// indefinitely for the user application code for use in new keys. The
+	// appengine automatic ID generator will never automatically assign these IDs
+	// for Keys of this type.
+	AllocateIDs(incomplete *Key, n int) (start int64, err error)
+
 	// KeyForObj extracts a key from src.
 	//
 	// It is the same as KeyForObjErr, except that if KeyForObjErr would have

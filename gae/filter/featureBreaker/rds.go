@@ -16,6 +16,15 @@ type dsState struct {
 	rds ds.RawInterface
 }
 
+func (r *dsState) AllocateIDs(incomplete *ds.Key, n int) (int64, error) {
+	start := int64(0)
+	err := r.run(func() (err error) {
+		start, err = r.rds.AllocateIDs(incomplete, n)
+		return
+	})
+	return start, err
+}
+
 func (r *dsState) DecodeCursor(s string) (ds.Cursor, error) {
 	curs := ds.Cursor(nil)
 	err := r.run(func() (err error) {
