@@ -275,7 +275,7 @@ func newKeyObjErr(aid, ns string, src interface{}) (*Key, error) {
 func setKey(src interface{}, key *Key) {
 	pls := mkPLS(src)
 	if pls.SetMeta("key", key) == ErrMetaFieldUnset {
-		lst := key.Last()
+		lst := key.LastTok()
 		if lst.StringID != "" {
 			_ = pls.SetMeta("id", lst.StringID)
 		} else {

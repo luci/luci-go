@@ -52,7 +52,7 @@ func (d rdsImpl) AllocateIDs(incomplete *ds.Key, n int) (start int64, err error)
 		return
 	}
 
-	start, _, err = datastore.AllocateIDs(d, incomplete.Last().Kind, par, n)
+	start, _, err = datastore.AllocateIDs(d, incomplete.Kind(), par, n)
 	return
 }
 

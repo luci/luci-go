@@ -176,9 +176,9 @@ func NewKeyEncoded(encoded string) (ret *Key, err error) {
 	return
 }
 
-// Last returns the last KeyTok in this Key. Non-nil Keys are always guaranteed
+// LastTok returns the last KeyTok in this Key. Non-nil Keys are always guaranteed
 // to have at least one token.
-func (k *Key) Last() KeyTok {
+func (k *Key) LastTok() KeyTok {
 	return k.toks[len(k.toks)-1]
 }
 
@@ -187,6 +187,15 @@ func (k *Key) AppID() string { return k.appID }
 
 // Namespace returns the namespace that this Key is for.
 func (k *Key) Namespace() string { return k.namespace }
+
+// Kind returns the Kind of the child KeyTok
+func (k *Key) Kind() string { return k.toks[len(k.toks)-1].Kind }
+
+// StringID returns the StringID of the child KeyTok
+func (k *Key) StringID() string { return k.toks[len(k.toks)-1].StringID }
+
+// IntID returns the IntID of the child KeyTok
+func (k *Key) IntID() int64 { return k.toks[len(k.toks)-1].IntID }
 
 // String returns a human-readable representation of the key in the form of
 //   AID:NS:/Kind,id/Kind,id/...
@@ -205,7 +214,7 @@ func (k *Key) String() string {
 
 // Incomplete returns true iff k doesn't have an id yet.
 func (k *Key) Incomplete() bool {
-	return k.Last().Incomplete()
+	return k.LastTok().Incomplete()
 }
 
 // Valid determines if a key is valid, according to a couple rules:
@@ -241,7 +250,7 @@ func (k *Key) Valid(allowSpecial bool, aid, ns string) bool {
 // be Incomplete().
 func (k *Key) PartialValid(aid, ns string) bool {
 	if k.Incomplete() {
-		k = NewKey(k.AppID(), k.Namespace(), k.Last().Kind, "", 1, k.Parent())
+		k = NewKey(k.AppID(), k.Namespace(), k.Kind(), "", 1, k.Parent())
 	}
 	return k.Valid(false, aid, ns)
 }

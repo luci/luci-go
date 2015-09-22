@@ -46,7 +46,7 @@ func defaultIndexes(kind string, pmap ds.PropertyMap) []*ds.IndexDefinition {
 
 func indexEntriesWithBuiltins(k *ds.Key, pm ds.PropertyMap, complexIdxs []*ds.IndexDefinition) *memStore {
 	sip := partiallySerialize(k, pm)
-	return sip.indexEntries(k.Namespace(), append(defaultIndexes(k.Last().Kind, pm), complexIdxs...))
+	return sip.indexEntries(k.Namespace(), append(defaultIndexes(k.Kind(), pm), complexIdxs...))
 }
 
 // serializedPvals is all of the serialized DSProperty values in qASC order.

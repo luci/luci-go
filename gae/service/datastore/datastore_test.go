@@ -58,7 +58,7 @@ func (f *fakeDatastore) Run(fq *FinalizedQuery, cb RawRunCB) error {
 }
 
 func (f *fakeDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb PutMultiCB) error {
-	if keys[0].Last().Kind == "FailAll" {
+	if keys[0].Kind() == "FailAll" {
 		return errors.New("PutMulti fail all")
 	}
 	assertExtra := false
@@ -67,7 +67,7 @@ func (f *fakeDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb PutMultiCB)
 	}
 	for i, k := range keys {
 		err := error(nil)
-		if k.Last().Kind == "Fail" {
+		if k.Kind() == "Fail" {
 			err = errors.New("PutMulti fail")
 		} else {
 			So(vals[i]["Value"], ShouldResemble, []Property{MkProperty(i)})
@@ -75,7 +75,7 @@ func (f *fakeDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb PutMultiCB)
 				So(vals[i]["Extra"], ShouldResemble, []Property{MkProperty("whoa")})
 			}
 			if k.Incomplete() {
-				k = NewKey(k.AppID(), k.Namespace(), k.Last().Kind, "", int64(i+1), k.Parent())
+				k = NewKey(k.AppID(), k.Namespace(), k.Kind(), "", int64(i+1), k.Parent())
 			}
 		}
 		cb(k, err)
@@ -84,11 +84,11 @@ func (f *fakeDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb PutMultiCB)
 }
 
 func (f *fakeDatastore) GetMulti(keys []*Key, _meta MultiMetaGetter, cb GetMultiCB) error {
-	if keys[0].Last().Kind == "FailAll" {
+	if keys[0].Kind() == "FailAll" {
 		return errors.New("GetMulti fail all")
 	}
 	for i, k := range keys {
-		if k.Last().Kind == "Fail" {
+		if k.Kind() == "Fail" {
 			cb(nil, errors.New("GetMulti fail"))
 		} else {
 			cb(PropertyMap{"Value": {MkProperty(i + 1)}}, nil)
@@ -98,11 +98,11 @@ func (f *fakeDatastore) GetMulti(keys []*Key, _meta MultiMetaGetter, cb GetMulti
 }
 
 func (f *fakeDatastore) DeleteMulti(keys []*Key, cb DeleteMultiCB) error {
-	if keys[0].Last().Kind == "FailAll" {
+	if keys[0].Kind() == "FailAll" {
 		return errors.New("DeleteMulti fail all")
 	}
 	for _, k := range keys {
-		if k.Last().Kind == "Fail" {
+		if k.Kind() == "Fail" {
 			cb(errors.New("DeleteMulti fail"))
 		} else {
 			cb(nil)
@@ -423,7 +423,7 @@ func TestPut(t *testing.T) {
 
 				pm := PropertyMap{"Value": {MkProperty(0)}, "$kind": {MkPropertyNI("Pmap")}}
 				So(ds.Put(pm), ShouldBeNil)
-				So(ds.KeyForObj(pm).Last().IntID, ShouldEqual, 1)
+				So(ds.KeyForObj(pm).IntID(), ShouldEqual, 1)
 			})
 
 			Convey("[]P (map)", func() {
@@ -688,7 +688,7 @@ func TestGetAll(t *testing.T) {
 				for i, o := range output {
 					k, err := o.GetMeta("key")
 					So(err, ShouldBeNil)
-					So(k.(*Key).Last().IntID, ShouldEqual, i+1)
+					So(k.(*Key).IntID(), ShouldEqual, i+1)
 					So(o["Value"][0].Value().(int64), ShouldEqual, i)
 				}
 			})
@@ -712,7 +712,7 @@ func TestGetAll(t *testing.T) {
 					o := *op
 					k, err := o.GetMeta("key")
 					So(err, ShouldBeNil)
-					So(k.(*Key).Last().IntID, ShouldEqual, i+1)
+					So(k.(*Key).IntID(), ShouldEqual, i+1)
 					So(o["Value"][0].Value().(int64), ShouldEqual, i)
 				}
 			})
@@ -722,7 +722,7 @@ func TestGetAll(t *testing.T) {
 				So(ds.GetAll(q, &output), ShouldBeNil)
 				So(len(output), ShouldEqual, 5)
 				for i, k := range output {
-					So(k.Last().IntID, ShouldEqual, i+1)
+					So(k.IntID(), ShouldEqual, i+1)
 				}
 			})
 
@@ -828,7 +828,7 @@ func TestRun(t *testing.T) {
 				So(ds.Run(q, func(pm *PropertyMap, _ CursorCB) bool {
 					k, err := pm.GetMeta("key")
 					So(err, ShouldBeNil)
-					So(k.(*Key).Last().IntID, ShouldEqual, i+1)
+					So(k.(*Key).IntID(), ShouldEqual, i+1)
 					So((*pm)["Value"][0].Value(), ShouldEqual, i)
 					i++
 					return true
@@ -861,7 +861,7 @@ func TestRun(t *testing.T) {
 				So(ds.Run(q, func(pm PropertyMap, _ CursorCB) bool {
 					k, err := pm.GetMeta("key")
 					So(err, ShouldBeNil)
-					So(k.(*Key).Last().IntID, ShouldEqual, i+1)
+					So(k.(*Key).IntID(), ShouldEqual, i+1)
 					So(pm["Value"][0].Value(), ShouldEqual, i)
 					i++
 					return true
@@ -871,7 +871,7 @@ func TestRun(t *testing.T) {
 			Convey("Key", func() {
 				i := 0
 				So(ds.Run(q, func(k *Key, _ CursorCB) bool {
-					So(k.Last().IntID, ShouldEqual, i+1)
+					So(k.IntID(), ShouldEqual, i+1)
 					i++
 					return true
 				}), ShouldBeNil)

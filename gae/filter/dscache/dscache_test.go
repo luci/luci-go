@@ -67,7 +67,7 @@ func TestDSCache(t *testing.T) {
 		mc := memcache.Get(c)
 
 		shardsForKey := func(k *datastore.Key) int {
-			last := k.Last()
+			last := k.LastTok()
 			if last.Kind == "shardObj" {
 				return int(last.IntID)
 			}

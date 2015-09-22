@@ -143,7 +143,7 @@ func (d *dataStoreData) allocateIDs(incomplete *ds.Key, n int) int64 {
 func (d *dataStoreData) allocateIDsLocked(ents *memCollection, incomplete *ds.Key, n int) int64 {
 	idKey := []byte(nil)
 	if incomplete.Parent() == nil {
-		idKey = rootIDsKey(incomplete.Last().Kind)
+		idKey = rootIDsKey(incomplete.Kind())
 	} else {
 		idKey = groupIDsKey(incomplete)
 	}
@@ -153,7 +153,7 @@ func (d *dataStoreData) allocateIDsLocked(ents *memCollection, incomplete *ds.Ke
 func (d *dataStoreData) fixKeyLocked(ents *memCollection, key *ds.Key) *ds.Key {
 	if key.Incomplete() {
 		id := d.allocateIDsLocked(ents, key, 1)
-		key = ds.NewKey(key.AppID(), key.Namespace(), key.Last().Kind, "", id, key.Parent())
+		key = ds.NewKey(key.AppID(), key.Namespace(), key.Kind(), "", id, key.Parent())
 	}
 	return key
 }
