@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// Package isolatedfake implements an in-process fake Isolated server for
+// integration testing.
 package isolatedfake
 
 import (
