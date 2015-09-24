@@ -27,6 +27,9 @@ type dataStoreData struct {
 	txnFakeRetry int
 	// true means that head always == snap
 	consistent bool
+	// true means that queries with insufficent indexes will pause to add them
+	// and then continue instead of failing.
+	autoIndex bool
 }
 
 var (
@@ -64,6 +67,39 @@ func (d *dataStoreData) setConsistent(always bool) {
 	if d.consistent {
 		d.snap = d.head.Snapshot()
 	}
+}
+
+func (d *dataStoreData) addIndexes(ns string, idxs []*ds.IndexDefinition) {
+	d.Lock()
+	defer d.Unlock()
+	addIndexes(d.head, ns, idxs)
+	if d.consistent {
+		d.snap = d.head.Snapshot()
+	}
+}
+
+func (d *dataStoreData) setAutoIndex(enable bool) {
+	d.Lock()
+	defer d.Unlock()
+	d.autoIndex = enable
+}
+
+func (d *dataStoreData) maybeAutoIndex(err error) bool {
+	mi, ok := err.(*ErrMissingIndex)
+	if !ok {
+		return false
+	}
+
+	d.rwlock.RLock()
+	ai := d.autoIndex
+	d.rwlock.RUnlock()
+
+	if !ai {
+		return false
+	}
+
+	d.addIndexes(mi.ns, []*ds.IndexDefinition{mi.Missing})
+	return true
 }
 
 func (d *dataStoreData) getQuerySnaps(consistent bool) (idx, head *memStore) {

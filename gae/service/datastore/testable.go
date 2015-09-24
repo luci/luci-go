@@ -49,4 +49,12 @@ type Testable interface {
 	// By default the datastore is eventually consistent, and you must call
 	// CatchupIndexes or use Take/SetIndexSnapshot to manipulate the index state.
 	Consistent(always bool)
+
+	// AutoIndex controls the index creation behavior. If it is set to true, then
+	// any time the datastore encounters a missing index, it will silently create
+	// one and allow the query to succeed. If it's false, then the query will
+	// return an error describing the index which could be added with AddIndexes.
+	//
+	// By default this is false.
+	AutoIndex(bool)
 }

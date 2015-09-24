@@ -15,6 +15,22 @@ import (
 	"github.com/luci/luci-go/common/stringset"
 )
 
+// ErrMissingIndex is returned when the current indexes are not sufficient
+// for the current query.
+type ErrMissingIndex struct {
+	ns      string
+	Missing *ds.IndexDefinition
+}
+
+func (e *ErrMissingIndex) Error() string {
+	yaml, err := e.Missing.YAMLString()
+	if err != nil {
+		panic(err)
+	}
+	return fmt.Sprintf(
+		"Insufficient indexes. Consider adding:\n%s", yaml)
+}
+
 // reducedQuery contains only the pieces of the query necessary to iterate for
 // results.
 //   deduplication is applied externally
@@ -299,8 +315,7 @@ func getRelevantIndexes(q *reducedQuery, s *memStore) (indexDefinitionSortableSl
 			impossible(
 				fmt.Errorf("recommended missing index would be a builtin: %s", remains))
 		}
-		return nil, fmt.Errorf(
-			"Your indexes are insufficient! Try adding:\n  %s", remains)
+		return nil, &ErrMissingIndex{q.ns, remains}
 	}
 
 	return idxs, nil

@@ -6,6 +6,7 @@ package memory
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -110,6 +111,13 @@ var queryExecutionTests = []qExTest{
 				{q: nq("Child").Ancestor(key("Kind", 3)), keys: []*ds.Key{
 					key("Kind", 3, "Child", "seven"),
 				}},
+				{q: nq("Child").Ancestor(key("Kind", 3)).EventualConsistency(true), keys: []*ds.Key{}},
+				{q: nq("Child").Ancestor(key("Kind", 3)).EventualConsistency(true), keys: []*ds.Key{
+					key("Kind", 3, "Child", "seven"),
+				}, inTxn: true},
+				{q: nq("Child").Ancestor(key("Kind", 3)), keys: []*ds.Key{
+					key("Kind", 3, "Child", "seven"),
+				}, inTxn: true},
 			},
 		},
 
@@ -152,6 +160,12 @@ var queryExecutionTests = []qExTest{
 					End(curs("Val", 90, "__key__", key("Kind", 3, "Zeta", "woot")))), keys: []*ds.Key{},
 				},
 
+				{q: (nq("Kind").Ancestor(key("Kind", 3)).Order("Val").
+					Start(curs("Val", 1, "__key__", key("Kind", 3))).
+					End(curs("Val", 90, "__key__", key("Kind", 3, "Zeta", "woot")))),
+					keys:  []*ds.Key{},
+					inTxn: true},
+
 				{q: nq("Kind").Gt("Val", 2).Lte("Val", 5), get: []ds.PropertyMap{
 					stage1Data[0], stage1Data[3],
 				}},
@@ -192,6 +206,16 @@ var queryExecutionTests = []qExTest{
 						stage2Data[0],
 						stage2Data[1],
 					}},
+
+				{q: (nq("Kind").
+					Gt("Val", 2).Eq("Extra", "waffle").
+					Order("-Val").
+					Ancestor(key("Kind", 3))),
+					get: []ds.PropertyMap{
+						stage1Data[2],
+						stage2Data[0],
+						stage2Data[1],
+					}, inTxn: true},
 
 				{q: (nq("Kind").
 					Gt("Val", 2).Eq("Extra", "waffle").
@@ -283,10 +307,18 @@ var queryExecutionTests = []qExTest{
 
 				func(c context.Context) {
 					data := ds.Get(c)
-					q := nq("Something").Eq("Does", 2).Order("Not", "Work")
+					q := nq("Something").Eq("Does", 2).Order("Not", "-Work")
 					So(data.Run(q, func(ds.Key, ds.CursorCB) bool {
 						return true
-					}), ShouldErrLike, "Try adding:\n  C:Something/Does/Not/Work")
+					}), ShouldErrLike, strings.Join([]string{
+						"Consider adding:",
+						"- kind: Something",
+						"  properties:",
+						"  - name: Does",
+						"  - name: Not",
+						"  - name: Work",
+						"    direction: desc",
+					}, "\n"))
 				},
 			},
 		},
@@ -406,5 +438,37 @@ func TestQueryExecution(t *testing.T) {
 				}
 			})
 		}
+	})
+
+	Convey("Test AutoIndex", t, func() {
+		c, err := info.Get(Use(context.Background())).Namespace("ns")
+		if err != nil {
+			panic(err)
+		}
+
+		data := ds.Get(c)
+		testing := data.Testable()
+		testing.Consistent(true)
+
+		So(data.Put(pmap("$key", key("Kind", 1), Next,
+			"Val", 1, 2, 3, Next,
+			"Extra", "hello",
+		)), ShouldBeNil)
+
+		So(data.Put(pmap("$key", key("Kind", 2), Next,
+			"Val", 2, 3, 9, Next,
+			"Extra", "ace", "hello", "there",
+		)), ShouldBeNil)
+
+		q := nq("Kind").Gt("Val", 2).Order("Val", "Extra")
+
+		count, err := data.Count(q)
+		So(err, ShouldErrLike, "Insufficient indexes")
+
+		testing.AutoIndex(true)
+
+		count, err = data.Count(q)
+		So(err, ShouldBeNil)
+		So(count, ShouldEqual, 2)
 	})
 }

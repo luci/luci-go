@@ -38,8 +38,6 @@ modes:
     max_duration: 120
   lint:
     checks:
-      errcheck:
-      - ignores: Close
       golint:
       - blacklist: []
       govet:

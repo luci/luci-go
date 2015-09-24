@@ -224,7 +224,7 @@ func mergeIndexes(ns string, store, oldIdx, newIdx *memStore) {
 	})
 }
 
-func addIndex(store *memStore, ns string, compIdx []*ds.IndexDefinition) {
+func addIndexes(store *memStore, ns string, compIdx []*ds.IndexDefinition) {
 	normalized := make([]*ds.IndexDefinition, len(compIdx))
 	idxColl := store.SetCollection("idx", nil)
 	for i, idx := range compIdx {

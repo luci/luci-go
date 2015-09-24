@@ -228,8 +228,43 @@ func (id *IndexDefinition) Compound() bool {
 	return true
 }
 
+// YAMLString returns the YAML representation of this IndexDefinition.
+//
+// If the index definition is Builtin() or not Compound(), this will return
+// an error.
+func (id *IndexDefinition) YAMLString() (string, error) {
+	if id.Builtin() || !id.Compound() {
+		return "", fmt.Errorf("cannot generate YAML for this IndexDefinition")
+	}
+
+	ret := bytes.Buffer{}
+
+	first := true
+	ws := func(s string, indent int) {
+		nl := "\n"
+		if first {
+			nl = ""
+			first = false
+		}
+		fmt.Fprintf(&ret, "%s%s%s", nl, strings.Repeat("  ", indent), s)
+	}
+
+	ws(fmt.Sprintf("- kind: %s", id.Kind), 0)
+	if id.Ancestor {
+		ws("ancestor: yes", 1)
+	}
+	ws("properties:", 1)
+	for _, o := range id.SortBy {
+		ws(fmt.Sprintf("- name: %s", o.Property), 1)
+		if o.Descending {
+			ws("direction: desc", 2)
+		}
+	}
+	return ret.String(), nil
+}
+
 func (id *IndexDefinition) String() string {
-	ret := &bytes.Buffer{}
+	ret := bytes.Buffer{}
 	wr := func(r rune) {
 		_, err := ret.WriteRune(r)
 		if err != nil {
