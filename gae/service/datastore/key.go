@@ -410,3 +410,21 @@ func (k *Key) Split() (appID, namespace string, toks []KeyTok) {
 	copy(toks, k.toks)
 	return
 }
+
+// EstimateSize estimates the size of a Key.
+//
+// It uses https://cloud.google.com/appengine/articles/storage_breakdown?csw=1
+// as a guide for these values.
+func (k *Key) EstimateSize() int64 {
+	ret := int64(len(k.appID))
+	ret += int64(len(k.namespace))
+	for _, t := range k.toks {
+		ret += int64(len(t.Kind))
+		if t.StringID != "" {
+			ret += int64(len(t.StringID))
+		} else {
+			ret += 8
+		}
+	}
+	return ret
+}

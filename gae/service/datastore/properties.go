@@ -588,6 +588,33 @@ func (s PropertySlice) Len() int           { return len(s) }
 func (s PropertySlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s PropertySlice) Less(i, j int) bool { return s[i].Less(&s[j]) }
 
+// EstimateSize estimates the amount of space that this Property would consume
+// if it were committed as part of an entity in the real production datastore.
+//
+// It uses https://cloud.google.com/appengine/articles/storage_breakdown?csw=1
+// as a guide for these values.
+func (p *Property) EstimateSize() int64 {
+	switch p.Type() {
+	case PTNull:
+		return 1
+	case PTBool:
+		return 1 + 4
+	case PTInt, PTTime, PTFloat:
+		return 1 + 8
+	case PTGeoPoint:
+		return 1 + (8 * 2)
+	case PTString:
+		return 1 + int64(len(p.value.(string)))
+	case PTBlobKey:
+		return 1 + int64(len(p.value.(blobstore.Key)))
+	case PTBytes:
+		return 1 + int64(len(p.value.([]byte)))
+	case PTKey:
+		return 1 + p.value.(*Key).EstimateSize()
+	}
+	panic(fmt.Errorf("Unknown property type: %s", p.Type().String()))
+}
+
 // MetaGetter is a subinterface of PropertyLoadSaver, but is also used to
 // abstract the meta argument for RawInterface.GetMulti.
 type MetaGetter interface {
@@ -765,6 +792,25 @@ func (pm PropertyMap) SetMeta(key string, val interface{}) error {
 // Problem implements PropertyLoadSaver.Problem. It ALWAYS returns nil.
 func (pm PropertyMap) Problem() error {
 	return nil
+}
+
+// EstimateSize estimates the size that it would take to encode this PropertyMap
+// in the production Appengine datastore. The calculation excludes metadata
+// fields in the map.
+//
+// It uses https://cloud.google.com/appengine/articles/storage_breakdown?csw=1
+// as a guide for sizes.
+func (pm PropertyMap) EstimateSize() int64 {
+	ret := int64(0)
+	for k, vals := range pm {
+		if !isMetaKey(k) {
+			ret += int64(len(k))
+			for i := range vals {
+				ret += vals[i].EstimateSize()
+			}
+		}
+	}
+	return ret
 }
 
 func isMetaKey(k string) bool {
