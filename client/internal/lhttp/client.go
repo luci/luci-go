@@ -175,6 +175,10 @@ func (r *retriable) Do() error {
 	if resp.StatusCode == 408 || resp.StatusCode == 429 || resp.StatusCode >= 500 {
 		return retry.Error{fmt.Errorf("http request failed: %s (HTTP %d)", http.StatusText(resp.StatusCode), resp.StatusCode)}
 	}
+	// Endpoints occasionally return 404 on valid requests (!)
+	if resp.StatusCode == 404 && strings.HasPrefix(r.req.URL.Path, "/_ah/api/") && resp.Header.Get("Content-Type") == "text/html" {
+		return retry.Error{fmt.Errorf("http request failed (endpoints): %s (HTTP %d)", http.StatusText(resp.StatusCode), resp.StatusCode)}
+	}
 	// Any other failure code is a hard failure.
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("http request failed: %s (HTTP %d)", http.StatusText(resp.StatusCode), resp.StatusCode)
