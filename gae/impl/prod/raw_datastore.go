@@ -182,7 +182,6 @@ func (d rdsImpl) DecodeCursor(s string) (ds.Cursor, error) {
 }
 
 func (d rdsImpl) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
-	tf := typeFilter{}
 	q, err := d.fixQuery(fq)
 	if err != nil {
 		return err
@@ -193,6 +192,7 @@ func (d rdsImpl) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
 	cfunc := func() (ds.Cursor, error) {
 		return t.Cursor()
 	}
+	tf := typeFilter{}
 	for {
 		k, err := t.Next(&tf)
 		if err == datastore.Done {
@@ -205,6 +205,15 @@ func (d rdsImpl) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
 			return nil
 		}
 	}
+}
+
+func (d rdsImpl) Count(fq *ds.FinalizedQuery) (int64, error) {
+	q, err := d.fixQuery(fq)
+	if err != nil {
+		return 0, err
+	}
+	ret, err := q.Count(d)
+	return int64(ret), err
 }
 
 func (d rdsImpl) RunInTransaction(f func(c context.Context) error, opts *ds.TransactionOptions) error {

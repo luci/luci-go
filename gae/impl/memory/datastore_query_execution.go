@@ -163,6 +163,20 @@ func parseSuffix(ns string, suffixFormat []ds.IndexColumn, suffix []byte, count 
 	return
 }
 
+func countQuery(fq *ds.FinalizedQuery, ns string, isTxn bool, idx, head *memStore) (ret int64, err error) {
+	if len(fq.Project()) == 0 && !fq.KeysOnly() {
+		fq, err = fq.Original().KeysOnly(true).Finalize()
+		if err != nil {
+			return
+		}
+	}
+	err = executeQuery(fq, ns, isTxn, idx, head, func(_ *ds.Key, _ ds.PropertyMap, _ ds.CursorCB) bool {
+		ret++
+		return true
+	})
+	return
+}
+
 func executeQuery(fq *ds.FinalizedQuery, ns string, isTxn bool, idx, head *memStore, cb ds.RawRunCB) error {
 	rq, err := reduce(fq, ns, isTxn)
 	if err == ds.ErrNullQuery {

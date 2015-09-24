@@ -20,8 +20,9 @@ type qExpect struct {
 	q     *ds.Query
 	inTxn bool
 
-	get  []ds.PropertyMap
-	keys []*ds.Key
+	get   []ds.PropertyMap
+	keys  []*ds.Key
+	count int
 }
 
 type qExStage struct {
@@ -159,24 +160,28 @@ var queryExecutionTests = []qExTest{
 					stage1Data[3], stage1Data[0],
 				}},
 
-				{q: nq("").Gt("__key__", key("Kind", 2)), get: []ds.PropertyMap{
-					// TODO(riannucci): determine if the real datastore shows metadata
-					// during kindless queries. The documentation seems to imply so, but
-					// I'd like to be sure.
-					pmap("$key", key("Kind", 2, "__entity_group__", 1), Next,
-						"__version__", 1),
-					stage1Data[2],
-					stage1Data[4],
-					// this is 5 because the value is retrieved from HEAD and not from
-					// the index snapshot!
-					pmap("$key", key("Kind", 3, "__entity_group__", 1), Next,
-						"__version__", 5),
-					stage1Data[3],
-					pmap("$key", key("Kind", 6, "__entity_group__", 1), Next,
-						"__version__", 1),
-					pmap("$key", key("Unique", 1, "__entity_group__", 1), Next,
-						"__version__", 2),
-				}},
+				{q: nq("").Gt("__key__", key("Kind", 2)),
+					// count counts from the index with KeysOnly and so counts the deleted
+					// entity Unique/1.
+					count: 8,
+					get: []ds.PropertyMap{
+						// TODO(riannucci): determine if the real datastore shows metadata
+						// during kindless queries. The documentation seems to imply so, but
+						// I'd like to be sure.
+						pmap("$key", key("Kind", 2, "__entity_group__", 1), Next,
+							"__version__", 1),
+						stage1Data[2],
+						stage1Data[4],
+						// this is 5 because the value is retrieved from HEAD and not from
+						// the index snapshot!
+						pmap("$key", key("Kind", 3, "__entity_group__", 1), Next,
+							"__version__", 5),
+						stage1Data[3],
+						pmap("$key", key("Kind", 6, "__entity_group__", 1), Next,
+							"__version__", 1),
+						pmap("$key", key("Unique", 1, "__entity_group__", 1), Next,
+							"__version__", 2),
+					}},
 
 				{q: (nq("Kind").
 					Gt("Val", 2).Eq("Extra", "waffle").
@@ -343,25 +348,42 @@ func TestQueryExecution(t *testing.T) {
 								runner = data.RunInTransaction
 							}
 
+							if expect.count == 0 {
+								if len(expect.keys) > 0 {
+									expect.count = len(expect.keys)
+								} else {
+									expect.count = len(expect.get)
+								}
+							}
+
 							if expect.keys != nil {
-								err := runner(func(c context.Context) error {
-									data := ds.Get(c)
-									Convey(fmt.Sprintf("expect %d (keys)", j), func() {
+								Convey(fmt.Sprintf("expect %d (keys)", j), func() {
+									err := runner(func(c context.Context) error {
+										data := ds.Get(c)
+										count, err := data.Count(expect.q)
+										So(err, ShouldBeNil)
+										So(count, ShouldEqual, expect.count)
+
 										rslt := []*ds.Key(nil)
 										So(data.GetAll(expect.q, &rslt), ShouldBeNil)
 										So(len(rslt), ShouldEqual, len(expect.keys))
 										for i, r := range rslt {
 											So(r, ShouldResemble, expect.keys[i])
 										}
-									})
-									return nil
-								}, &ds.TransactionOptions{XG: true})
-								So(err, ShouldBeNil)
+										return nil
+									}, &ds.TransactionOptions{XG: true})
+									So(err, ShouldBeNil)
+								})
 							}
 
 							if expect.get != nil {
 								Convey(fmt.Sprintf("expect %d (data)", j), func() {
 									err := runner(func(c context.Context) error {
+										data := ds.Get(c)
+										count, err := data.Count(expect.q)
+										So(err, ShouldBeNil)
+										So(count, ShouldEqual, expect.count)
+
 										rslt := []ds.PropertyMap(nil)
 										So(data.GetAll(expect.q, &rslt), ShouldBeNil)
 										So(len(rslt), ShouldEqual, len(expect.get))

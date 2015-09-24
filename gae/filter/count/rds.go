@@ -16,6 +16,7 @@ type DSCounter struct {
 	DecodeCursor     Entry
 	RunInTransaction Entry
 	Run              Entry
+	Count            Entry
 	DeleteMulti      Entry
 	GetMulti         Entry
 	PutMulti         Entry
@@ -41,6 +42,11 @@ func (r *dsCounter) DecodeCursor(s string) (ds.Cursor, error) {
 
 func (r *dsCounter) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
 	return r.c.Run.up(r.ds.Run(q, cb))
+}
+
+func (r *dsCounter) Count(q *ds.FinalizedQuery) (int64, error) {
+	count, err := r.ds.Count(q)
+	return count, r.c.Count.up(err)
 }
 
 func (r *dsCounter) RunInTransaction(f func(context.Context) error, opts *ds.TransactionOptions) error {

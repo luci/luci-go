@@ -100,6 +100,10 @@ type Interface interface {
 	// Run stops on the first error encountered.
 	Run(q *Query, cb interface{}) error
 
+	// Count executes the given query and returns the number of entries which
+	// match it.
+	Count(q *Query) (int64, error)
+
 	// DecodeCursor converts a string returned by a Cursor into a Cursor instance.
 	// It will return an error if the supplied string is not valid, or could not
 	// be decoded by the implementation.

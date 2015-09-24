@@ -40,6 +40,15 @@ func (r *dsState) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
 	})
 }
 
+func (r *dsState) Count(q *ds.FinalizedQuery) (int64, error) {
+	count := int64(0)
+	err := r.run(func() (err error) {
+		count, err = r.rds.Count(q)
+		return
+	})
+	return count, err
+}
+
 func (r *dsState) RunInTransaction(f func(c context.Context) error, opts *ds.TransactionOptions) error {
 	return r.run(func() error {
 		return r.rds.RunInTransaction(f, opts)

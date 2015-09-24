@@ -68,6 +68,11 @@ func (d *dsImpl) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
 	return executeQuery(fq, d.ns, false, idx, head, cb)
 }
 
+func (d *dsImpl) Count(fq *ds.FinalizedQuery) (ret int64, err error) {
+	idx, head := d.data.getQuerySnaps(!fq.EventuallyConsistent())
+	return countQuery(fq, d.ns, false, idx, head)
+}
+
 func (d *dsImpl) AddIndexes(idxs ...*ds.IndexDefinition) {
 	if len(idxs) == 0 {
 		return
@@ -143,6 +148,10 @@ func (d *txnDsImpl) DecodeCursor(s string) (ds.Cursor, error) {
 
 func (d *txnDsImpl) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
 	return executeQuery(q, d.ns, true, d.data.snap, d.data.snap, cb)
+}
+
+func (d *txnDsImpl) Count(fq *ds.FinalizedQuery) (ret int64, err error) {
+	return countQuery(fq, d.ns, true, d.data.snap, d.data.snap)
 }
 
 func (*txnDsImpl) RunInTransaction(func(c context.Context) error, *ds.TransactionOptions) error {

@@ -129,6 +129,10 @@ type RawInterface interface {
 	//   - cb is not nil
 	Run(q *FinalizedQuery, cb RawRunCB) error
 
+	// Count executes the given query and returns the number of entries which
+	// match it.
+	Count(q *FinalizedQuery) (int64, error)
+
 	// GetMulti retrieves items from the datastore.
 	//
 	// Callback execues once per key, in the order of keys. Callback may not

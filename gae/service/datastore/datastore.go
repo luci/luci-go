@@ -108,6 +108,14 @@ func (d *datastoreImpl) Run(q *Query, cbIface interface{}) error {
 	return err
 }
 
+func (d *datastoreImpl) Count(q *Query) (int64, error) {
+	fq, err := q.Finalize()
+	if err != nil {
+		return 0, err
+	}
+	return d.RawInterface.Count(fq)
+}
+
 func (d *datastoreImpl) GetAll(q *Query, dst interface{}) error {
 	v := reflect.ValueOf(dst)
 	if v.Kind() != reflect.Ptr {

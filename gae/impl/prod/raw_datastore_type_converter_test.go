@@ -78,10 +78,14 @@ func TestBasicDatastore(t *testing.T) {
 			time.Sleep(time.Second)
 
 			Convey("Can query", func() {
-				ds.Run(dstore.NewQuery("TestStruct"), func(ts *TestStruct, _ dstore.CursorCB) bool {
+				q := dstore.NewQuery("TestStruct")
+				ds.Run(q, func(ts *TestStruct, _ dstore.CursorCB) bool {
 					So(*ts, ShouldResemble, orig)
 					return true
 				})
+				count, err := ds.Count(q)
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 1)
 			})
 
 			Convey("Can project", func() {
@@ -120,6 +124,10 @@ func TestBasicDatastore(t *testing.T) {
 						"ValueBS": {mp("zurple")},
 					},
 				})
+
+				count, err := ds.Count(q)
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 4)
 			})
 		})
 
