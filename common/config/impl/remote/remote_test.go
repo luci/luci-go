@@ -13,9 +13,11 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/luci/luci-go/common/config"
-	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/config"
+	"github.com/luci/luci-go/common/transport"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func encodeToB(s string) string {
@@ -30,7 +32,7 @@ func testTools(code int, resp interface{}) (*httptest.Server, config.Interface) 
 		fmt.Fprintln(w, string(marsh))
 	}))
 
-	c := Use(context.Background(), nil, server.URL)
+	c := Use(context.Background(), server.URL)
 	return server, config.Get(c)
 }
 
@@ -182,7 +184,7 @@ func TestRemoteCalls(t *testing.T) {
 
 	Convey("Should handle errors well", t, func() {
 		Convey("Should enforce GetConfigSetLocation argument is not the empty string.", func() {
-			c := Use(context.Background(), nil, "")
+			c := Use(context.Background(), "")
 			remoteImpl := config.Get(c)
 
 			_, err := remoteImpl.GetConfigSetLocation("")
@@ -190,10 +192,7 @@ func TestRemoteCalls(t *testing.T) {
 		})
 
 		Convey("Should pass through HTTP errors", func() {
-			client := http.Client{
-				Transport: failingRoundTripper{},
-			}
-			c := Use(context.Background(), &client, "")
+			c := Use(transport.Set(context.Background(), failingRoundTripper{}), "")
 			remoteImpl := config.Get(c)
 
 			_, err := remoteImpl.GetConfig("a", "b")

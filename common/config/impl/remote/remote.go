@@ -7,25 +7,21 @@ package remote
 import (
 	"encoding/base64"
 	"fmt"
-	"net/http"
 	"net/url"
 
 	"golang.org/x/net/context"
 
-	config "github.com/luci/luci-go/common/config"
+	"github.com/luci/luci-go/common/config"
 	genApi "github.com/luci/luci-go/common/config/impl/remote/generated_api/v1"
+	"github.com/luci/luci-go/common/transport"
 )
 
 // Use adds an implementation of the config service which talks to the actual
-// luci-config service.
-// You may pass in a custom http client.
-func Use(c context.Context, client *http.Client, basePath string) context.Context {
-	if client == nil {
-		client = http.DefaultClient
-	}
-
+// luci-config service. Uses transport injected into the context for
+// authentication. See common/transport.
+func Use(c context.Context, basePath string) context.Context {
 	return config.SetFactory(c, func(ic context.Context) config.Interface {
-		service, err := genApi.New(client)
+		service, err := genApi.New(transport.GetClient(ic))
 		if basePath != "" {
 			service.BasePath = basePath
 		}

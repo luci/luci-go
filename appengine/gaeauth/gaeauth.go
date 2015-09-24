@@ -12,8 +12,10 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"sync"
 	"time"
 
 	"golang.org/x/net/context"
@@ -26,6 +28,7 @@ import (
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/mathrand"
+	"github.com/luci/luci-go/common/transport"
 )
 
 // cacheSchema defines version of memcache structures.
@@ -98,6 +101,39 @@ func StoreServiceAccountJSON(c context.Context, id string, blob []byte) error {
 		ID:             id,
 		ServiceAccount: string(blob),
 	})
+}
+
+// Use injects authenticating transport into context.Context. It can be
+// extracted back via transport.Get(c). It will be lazy-initialized on a first
+// use.
+func Use(c context.Context, scopes []string, serviceAccountJSON []byte) context.Context {
+	var cached http.RoundTripper
+	var once sync.Once
+	return transport.SetFactory(c, func(ic context.Context) http.RoundTripper {
+		once.Do(func() {
+			t, err := Transport(ic, scopes, serviceAccountJSON)
+			if err != nil {
+				cached = failTransport{err}
+			} else {
+				cached = t
+			}
+		})
+		return cached
+	})
+}
+
+type failTransport struct {
+	err error
+}
+
+func (f failTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	// http.RoundTripper contract states: "RoundTrip should not modify the
+	// request, except for consuming and closing the Body, including on errors"
+	if r.Body != nil {
+		_, _ = io.Copy(ioutil.Discard, r.Body)
+		r.Body.Close()
+	}
+	return nil, f.err
 }
 
 //// Internal stuff.
