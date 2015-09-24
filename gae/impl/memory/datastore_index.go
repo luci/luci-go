@@ -12,7 +12,6 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
 	"github.com/luci/gkvlite"
-	"github.com/luci/luci-go/common/stringset"
 )
 
 type qIndexSlice []*ds.IndexDefinition
@@ -45,62 +44,14 @@ func defaultIndexes(kind string, pmap ds.PropertyMap) []*ds.IndexDefinition {
 }
 
 func indexEntriesWithBuiltins(k *ds.Key, pm ds.PropertyMap, complexIdxs []*ds.IndexDefinition) *memStore {
-	sip := partiallySerialize(k, pm)
-	return sip.indexEntries(k.Namespace(), append(defaultIndexes(k.Kind(), pm), complexIdxs...))
-}
-
-// serializedPvals is all of the serialized DSProperty values in qASC order.
-type serializedPvals [][]byte
-
-func (s serializedPvals) Len() int           { return len(s) }
-func (s serializedPvals) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-func (s serializedPvals) Less(i, j int) bool { return bytes.Compare(s[i], s[j]) < 0 }
-
-// prop name -> [<serialized DSProperty>, ...]
-// includes special values '__key__' and '__ancestor__' which contains all of
-// the ancestor entries for this key.
-type serializedIndexablePmap map[string]serializedPvals
-
-func serializeRow(vals []ds.Property) serializedPvals {
-	dups := stringset.New(0)
-	ret := make(serializedPvals, 0, len(vals))
-	for _, v := range vals {
-		if v.IndexSetting() == ds.NoIndex {
-			continue
-		}
-		data := serialize.ToBytes(v.ForIndex())
-		dataS := string(data)
-		if !dups.Add(dataS) {
-			continue
-		}
-		ret = append(ret, data)
-	}
-	return ret
-}
-
-func partiallySerialize(k *ds.Key, pm ds.PropertyMap) (ret serializedIndexablePmap) {
-	ret = make(serializedIndexablePmap, len(pm)+2)
-	if k == nil {
-		impossible(fmt.Errorf("key to partiallySerialize is nil"))
-	}
-	ret["__key__"] = [][]byte{serialize.ToBytes(ds.MkProperty(k))}
-	for k != nil {
-		ret["__ancestor__"] = append(ret["__ancestor__"], serialize.ToBytes(ds.MkProperty(k)))
-		k = k.Parent()
-	}
-	for k, vals := range pm {
-		newVals := serializeRow(vals)
-		if len(newVals) > 0 {
-			ret[k] = newVals
-		}
-	}
-	return
+	sip := serialize.PropertyMapPartially(k, pm)
+	return indexEntries(sip, k.Namespace(), append(defaultIndexes(k.Kind(), pm), complexIdxs...))
 }
 
 // indexRowGen contains enough information to generate all of the index rows which
 // correspond with a propertyList and a ds.IndexDefinition.
 type indexRowGen struct {
-	propVec   []serializedPvals
+	propVec   []serialize.SerializedPslice
 	decending []bool
 }
 
@@ -167,7 +118,7 @@ type matcher struct {
 // matcher.match checks to see if the mapped, serialized property values
 // match the index. If they do, it returns a indexRowGen. Do not write or modify
 // the data in the indexRowGen.
-func (m *matcher) match(sortBy []ds.IndexColumn, sip serializedIndexablePmap) (indexRowGen, bool) {
+func (m *matcher) match(sortBy []ds.IndexColumn, sip serialize.SerializedPmap) (indexRowGen, bool) {
 	m.buf.propVec = m.buf.propVec[:0]
 	m.buf.decending = m.buf.decending[:0]
 	for _, sb := range sortBy {
@@ -181,7 +132,7 @@ func (m *matcher) match(sortBy []ds.IndexColumn, sip serializedIndexablePmap) (i
 	return m.buf, true
 }
 
-func (sip serializedIndexablePmap) indexEntries(ns string, idxs []*ds.IndexDefinition) *memStore {
+func indexEntries(sip serialize.SerializedPmap, ns string, idxs []*ds.IndexDefinition) *memStore {
 	ret := newMemStore()
 	idxColl := ret.SetCollection("idx", nil)
 
@@ -291,11 +242,11 @@ func addIndex(store *memStore, ns string, compIdx []*ds.IndexDefinition) {
 
 			k := prop.Value().(*ds.Key)
 
-			sip := partiallySerialize(k, pm)
+			sip := serialize.PropertyMapPartially(k, pm)
 
 			mergeIndexes(ns, store,
 				newMemStore(),
-				sip.indexEntries(ns, normalized))
+				indexEntries(sip, ns, normalized))
 			return true
 		})
 	}

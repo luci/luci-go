@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/luci/gae/service/datastore/serialize"
 	"github.com/luci/gkvlite"
 	"github.com/luci/luci-go/common/cmpbin"
 	. "github.com/smartystreets/goconvey/convey"
@@ -164,7 +165,7 @@ func TestMultiIteratorSimple(t *testing.T) {
 		for j, n := range nms {
 			numbs[j] = mkNum(n)
 		}
-		valBytes[i] = bjoin(numbs...)
+		valBytes[i] = serialize.Join(numbs...)
 	}
 
 	otherVals := [][]int64{
@@ -184,7 +185,7 @@ func TestMultiIteratorSimple(t *testing.T) {
 		for i, n := range nms {
 			numbs[i] = mkNum(n)
 		}
-		otherValBytes[i] = bjoin(numbs...)
+		otherValBytes[i] = serialize.Join(numbs...)
 	}
 
 	Convey("Test MultiIterator", t, func() {

@@ -14,6 +14,7 @@ import (
 	"github.com/luci/gae/service/blobstore"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/cmpbin"
+	"github.com/luci/luci-go/common/stringset"
 )
 
 // MaxIndexColumns is the maximum number of sort columns (e.g. sort orders) that
@@ -447,6 +448,58 @@ func ReadIndexDefinition(buf Buffer) (i ds.IndexDefinition, err error) {
 		i.SortBy = append(i.SortBy, sb)
 	}
 
+	return
+}
+
+// SerializedPslice is all of the serialized DSProperty values in qASC order.
+type SerializedPslice [][]byte
+
+func (s SerializedPslice) Len() int           { return len(s) }
+func (s SerializedPslice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s SerializedPslice) Less(i, j int) bool { return bytes.Compare(s[i], s[j]) < 0 }
+
+// PropertySlice serializes a single row of a DSProperty map.
+func PropertySlice(vals ds.PropertySlice) SerializedPslice {
+	dups := stringset.New(0)
+	ret := make(SerializedPslice, 0, len(vals))
+	for _, v := range vals {
+		if v.IndexSetting() == ds.NoIndex {
+			continue
+		}
+		data := ToBytes(v.ForIndex())
+		dataS := string(data)
+		if !dups.Add(dataS) {
+			continue
+		}
+		ret = append(ret, data)
+	}
+	return ret
+}
+
+// SerializedPmap maps from
+//   prop name -> [<serialized DSProperty>, ...]
+// includes special values '__key__' and '__ancestor__' which contains all of
+// the ancestor entries for this key.
+type SerializedPmap map[string]SerializedPslice
+
+// PropertyMapPartially turns a regular PropertyMap into a SerializedPmap.
+// Essentially all the []Property's become SerializedPslice, using cmpbin and
+// datastore/serialize's encodings.
+func PropertyMapPartially(k *ds.Key, pm ds.PropertyMap) (ret SerializedPmap) {
+	ret = make(SerializedPmap, len(pm)+2)
+	if k != nil {
+		ret["__key__"] = [][]byte{ToBytes(ds.MkProperty(k))}
+		for k != nil {
+			ret["__ancestor__"] = append(ret["__ancestor__"], ToBytes(ds.MkProperty(k)))
+			k = k.Parent()
+		}
+	}
+	for k, vals := range pm {
+		newVals := PropertySlice(vals)
+		if len(newVals) > 0 {
+			ret[k] = newVals
+		}
+	}
 	return
 }
 

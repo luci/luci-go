@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"sync"
 
+	"github.com/luci/gae/service/datastore/serialize"
 	"github.com/luci/gkvlite"
 )
 
@@ -64,7 +65,7 @@ func multiIterate(defs []*iterDefinition, cb func(suffix []byte) bool) {
 			}
 			def := defs[idx]
 
-			it.next(bjoin(def.prefix, suffix), func(itm *gkvlite.Item) {
+			it.next(serialize.Join(def.prefix, suffix), func(itm *gkvlite.Item) {
 				if itm == nil {
 					// we hit the end of an iterator, we're now done with the whole
 					// query.
@@ -127,11 +128,11 @@ func (def *iterDefinition) mkIter() *iterator {
 
 	// convert the suffixes from the iterDefinition into full rows for the
 	// underlying storage.
-	start := bjoin(prefix, def.start)
+	start := serialize.Join(prefix, def.start)
 
 	end := []byte(nil)
 	if def.end != nil {
-		end = bjoin(prefix, def.end)
+		end = serialize.Join(prefix, def.end)
 	}
 
 	go func() {

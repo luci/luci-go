@@ -73,7 +73,7 @@ func (s *projectionStrategy) handle(rawData [][]byte, decodedProps []ds.Property
 		pmap[p.propertyName] = []ds.Property{decodedProps[p.suffixIndex]}
 	}
 	if s.distinct != nil {
-		if !s.distinct.Add(string(bjoin(projectedRaw...))) {
+		if !s.distinct.Add(string(serialize.Join(projectedRaw...))) {
 			return true
 		}
 	}
@@ -156,7 +156,7 @@ func parseSuffix(ns string, suffixFormat []ds.IndexColumn, suffix []byte, count 
 		raw[i] = suffix[:offset]
 		suffix = suffix[offset:]
 		if needInvert {
-			raw[i] = invert(raw[i])
+			raw[i] = serialize.Invert(raw[i])
 		}
 	}
 
@@ -206,7 +206,7 @@ func executeQuery(fq *ds.FinalizedQuery, ns string, isTxn bool, idx, head *memSt
 			}
 			// TODO(riannucci): Do we need to decrement suffix instead of increment
 			// if we're sorting by __key__ DESCENDING?
-			return queryCursor(bjoin(cursorPrefix, increment(suffix))), nil
+			return queryCursor(serialize.Join(cursorPrefix, increment(suffix))), nil
 		}
 	}
 

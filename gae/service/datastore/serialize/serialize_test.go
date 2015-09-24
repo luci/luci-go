@@ -472,3 +472,43 @@ func TestSerializationReadMisc(t *testing.T) {
 		})
 	})
 }
+
+func TestPartialSerialization(t *testing.T) {
+	t.Parallel()
+
+	fakeKey := mkKey("dev~app", "ns", "parentKind", "sid", "knd", 10)
+
+	Convey("TestPartialSerialization", t, func() {
+		Convey("list", func() {
+			pm := ds.PropertyMap{
+				"wat":  {mpNI("thing"), mp("hat"), mp(100)},
+				"nerd": {mp(103.7)},
+				"spaz": {mpNI(false)},
+			}
+			sip := PropertyMapPartially(fakeKey, pm)
+			So(len(sip), ShouldEqual, 4)
+
+			Convey("single collated", func() {
+				Convey("indexableMap", func() {
+					So(sip, ShouldResemble, SerializedPmap{
+						"wat": {
+							ToBytes(mp("hat")),
+							ToBytes(mp(100)),
+							// 'thing' is skipped, because it's not NoIndex
+						},
+						"nerd": {
+							ToBytes(mp(103.7)),
+						},
+						"__key__": {
+							ToBytes(mp(fakeKey)),
+						},
+						"__ancestor__": {
+							ToBytes(mp(fakeKey)),
+							ToBytes(mp(fakeKey.Parent())),
+						},
+					})
+				})
+			})
+		})
+	})
+}

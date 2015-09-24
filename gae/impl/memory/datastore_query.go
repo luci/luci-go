@@ -168,10 +168,10 @@ func reduce(fq *ds.FinalizedQuery, ns string, isTxn bool) (*reducedQuery, error)
 		if ret.suffixFormat[0].Descending {
 			hi, lo := []byte(nil), []byte(nil)
 			if len(startD) > 0 {
-				lo = increment(invert(startD))
+				lo = increment(serialize.Invert(startD))
 			}
 			if len(endD) > 0 {
-				hi = increment(invert(endD))
+				hi = increment(serialize.Invert(endD))
 			}
 			endD, startD = lo, hi
 		}
@@ -244,4 +244,26 @@ func reduce(fq *ds.FinalizedQuery, ns string, isTxn bool) (*reducedQuery, error)
 	}
 
 	return ret, nil
+}
+
+func increment(bstr []byte) []byte {
+	ret, overflow := serialize.Increment(bstr)
+	if overflow {
+		// This byte string was ALL 0xFF's. The only safe incrementation to do here
+		// would be to add a new byte to the beginning of bstr with the value 0x01,
+		// and a byte to the beginning OF ALL OTHER []byte's which bstr may be
+		// compared with. This is obviously impossible to do here, so panic. If we
+		// hit this, then we would need to add a spare 0 byte before every index
+		// column.
+		//
+		// Another way to think about this is that we just accumulated a 'carry' bit,
+		// and the new value has overflowed this representation.
+		//
+		// Fortunately, the first byte of a serialized index column entry is a
+		// PropertyType byte, and the only valid values that we'll be incrementing
+		// are never equal to 0xFF, since they have the high bit set (so either they're
+		// 0x8*, or 0x7*, depending on if it's inverted).
+		impossible(fmt.Errorf("incrementing %v would require more sigfigs", bstr))
+	}
+	return ret
 }

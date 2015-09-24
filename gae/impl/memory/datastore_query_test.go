@@ -45,7 +45,7 @@ func curs(pairs ...interface{}) queryCursor {
 			panic(err)
 		}
 	}
-	return queryCursor(bjoin(pre.Bytes(), post.Bytes()))
+	return queryCursor(serialize.Join(pre.Bytes(), post.Bytes()))
 }
 
 type queryTest struct {

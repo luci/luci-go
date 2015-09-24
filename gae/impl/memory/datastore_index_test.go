@@ -10,80 +10,12 @@ import (
 	"time"
 
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/datastore/serialize"
 	"github.com/luci/gkvlite"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 var fakeKey = key("parentKind", "sid", "knd", 10)
-
-func TestCollated(t *testing.T) {
-	t.Parallel()
-
-	Convey("TestCollated", t, func() {
-		Convey("nil list", func() {
-			pm := ds.PropertyMap(nil)
-			sip := partiallySerialize(fakeKey, pm)
-
-			Convey("nil collated", func() {
-				Convey("defaultIndexes", func() {
-					idxs := defaultIndexes("knd", pm)
-					So(len(idxs), ShouldEqual, 1)
-					So(idxs[0].String(), ShouldEqual, "B:knd")
-				})
-				Convey("indexEntries", func() {
-					s := sip.indexEntries("ns", defaultIndexes("knd", pm))
-					numItems, _ := s.GetCollection("idx").GetTotals()
-					So(numItems, ShouldEqual, 1)
-					itm := s.GetCollection("idx").MinItem(false)
-					So(itm.Key, ShouldResemble, cat(indx("knd").PrepForIdxTable()))
-					numItems, _ = s.GetCollection("idx:ns:" + string(itm.Key)).GetTotals()
-					So(numItems, ShouldEqual, 1)
-				})
-			})
-		})
-
-		Convey("list", func() {
-			pm := ds.PropertyMap{
-				"wat":  {propNI("thing"), prop("hat"), prop(100)},
-				"nerd": {prop(103.7)},
-				"spaz": {propNI(false)},
-			}
-			sip := partiallySerialize(fakeKey, pm)
-			So(len(sip), ShouldEqual, 4)
-
-			Convey("single collated", func() {
-				Convey("indexableMap", func() {
-					So(sip, ShouldResemble, serializedIndexablePmap{
-						"wat": {
-							cat(prop("hat")),
-							cat(prop(100)),
-							// 'thing' is skipped, because it's not NoIndex
-						},
-						"nerd": {
-							cat(prop(103.7)),
-						},
-						"__key__": {
-							cat(prop(fakeKey)),
-						},
-						"__ancestor__": {
-							cat(prop(fakeKey)),
-							cat(prop(fakeKey.Parent())),
-						},
-					})
-				})
-				Convey("defaultIndexes", func() {
-					idxs := defaultIndexes("knd", pm)
-					So(len(idxs), ShouldEqual, 5)
-					So(idxs[0].String(), ShouldEqual, "B:knd")
-					So(idxs[1].String(), ShouldEqual, "B:knd/nerd")
-					So(idxs[2].String(), ShouldEqual, "B:knd/wat")
-					So(idxs[3].String(), ShouldEqual, "B:knd/-nerd")
-					So(idxs[4].String(), ShouldEqual, "B:knd/-wat")
-				})
-			})
-		})
-	})
-}
 
 var rgenComplexTime = time.Date(
 	1986, time.October, 26, 1, 20, 00, 00, time.UTC)
@@ -97,7 +29,7 @@ var rowGenTestCases = []struct {
 	idxs        []*ds.IndexDefinition
 
 	// These are checked in TestIndexRowGen. nil to skip test case.
-	expected []serializedPvals
+	expected []serialize.SerializedPslice
 
 	// just the collections you want to assert. These are checked in
 	// TestIndexEntries. nil to skip test case.
@@ -115,7 +47,7 @@ var rowGenTestCases = []struct {
 		idxs: []*ds.IndexDefinition{
 			indx("knd", "-wat", "nerd"),
 		},
-		expected: []serializedPvals{
+		expected: []serialize.SerializedPslice{
 			{cat(prop(fakeKey))},              // B:knd
 			{cat(prop(103.7), prop(fakeKey))}, // B:knd/nerd
 			{ // B:knd/wat
@@ -172,7 +104,7 @@ var rowGenTestCases = []struct {
 			indx("knd", "-wat", "nerd", "spaz"), // doesn't match, so empty
 			indx("knd", "yerp", "-wat", "spaz"),
 		},
-		expected: []serializedPvals{
+		expected: []serialize.SerializedPslice{
 			{}, // C:knd/-wat/nerd/spaz, no match
 			{ // C:knd/yerp/-wat/spaz
 				// thank goodness the binary serialization only happens 1/val in the
@@ -228,7 +160,7 @@ func TestIndexRowGen(t *testing.T) {
 			}
 
 			Convey(tc.name, func() {
-				mvals := partiallySerialize(fakeKey, tc.pmap)
+				mvals := serialize.PropertyMapPartially(fakeKey, tc.pmap)
 				idxs := []*ds.IndexDefinition(nil)
 				if tc.withBuiltin {
 					idxs = append(defaultIndexes("coolKind", tc.pmap), tc.idxs...)
@@ -242,7 +174,7 @@ func TestIndexRowGen(t *testing.T) {
 						iGen, ok := m.match(idx.GetFullSortOrder(), mvals)
 						if len(tc.expected[i]) > 0 {
 							So(ok, ShouldBeTrue)
-							actual := make(serializedPvals, 0, len(tc.expected[i]))
+							actual := make(serialize.SerializedPslice, 0, len(tc.expected[i]))
 							iGen.permute(func(row, _ []byte) {
 								actual = append(actual, row)
 							})
@@ -258,6 +190,43 @@ func TestIndexRowGen(t *testing.T) {
 				}
 			})
 		}
+	})
+
+	Convey("default indexes", t, func() {
+		Convey("nil collated", func() {
+			Convey("defaultIndexes (nil)", func() {
+				idxs := defaultIndexes("knd", ds.PropertyMap(nil))
+				So(len(idxs), ShouldEqual, 1)
+				So(idxs[0].String(), ShouldEqual, "B:knd")
+			})
+
+			Convey("indexEntries", func() {
+				sip := serialize.PropertyMapPartially(fakeKey, nil)
+				s := indexEntries(sip, "ns", defaultIndexes("knd", ds.PropertyMap(nil)))
+				numItems, _ := s.GetCollection("idx").GetTotals()
+				So(numItems, ShouldEqual, 1)
+				itm := s.GetCollection("idx").MinItem(false)
+				So(itm.Key, ShouldResemble, cat(indx("knd").PrepForIdxTable()))
+				numItems, _ = s.GetCollection("idx:ns:" + string(itm.Key)).GetTotals()
+				So(numItems, ShouldEqual, 1)
+			})
+
+			Convey("defaultIndexes", func() {
+				pm := ds.PropertyMap{
+					"wat":  {propNI("thing"), prop("hat"), prop(100)},
+					"nerd": {prop(103.7)},
+					"spaz": {propNI(false)},
+				}
+				idxs := defaultIndexes("knd", pm)
+				So(len(idxs), ShouldEqual, 5)
+				So(idxs[0].String(), ShouldEqual, "B:knd")
+				So(idxs[1].String(), ShouldEqual, "B:knd/nerd")
+				So(idxs[2].String(), ShouldEqual, "B:knd/wat")
+				So(idxs[3].String(), ShouldEqual, "B:knd/-nerd")
+				So(idxs[4].String(), ShouldEqual, "B:knd/-wat")
+			})
+
+		})
 	})
 }
 
@@ -276,7 +245,8 @@ func TestIndexEntries(t *testing.T) {
 				if tc.withBuiltin {
 					store = indexEntriesWithBuiltins(fakeKey, tc.pmap, tc.idxs)
 				} else {
-					store = partiallySerialize(fakeKey, tc.pmap).indexEntries(fakeKey.Namespace(), tc.idxs)
+					sip := serialize.PropertyMapPartially(fakeKey, tc.pmap)
+					store = indexEntries(sip, fakeKey.Namespace(), tc.idxs)
 				}
 				for colName, vals := range tc.collections {
 					i := 0

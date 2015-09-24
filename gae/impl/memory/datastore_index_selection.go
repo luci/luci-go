@@ -317,11 +317,11 @@ func generate(q *reducedQuery, idx *indexDefinitionSortable, c *constraints) *it
 	for _, sb := range idx.eqFilts {
 		val := c.peel(sb.Property)
 		if sb.Descending {
-			val = invert(val)
+			val = serialize.Invert(val)
 		}
 		toJoin = append(toJoin, val)
 	}
-	def.prefix = bjoin(toJoin...)
+	def.prefix = serialize.Join(toJoin...)
 	def.prefixLen = len(def.prefix)
 
 	if q.eqFilters["__ancestor__"] != nil && !idx.hasAncestor() {
@@ -354,9 +354,9 @@ func generate(q *reducedQuery, idx *indexDefinitionSortable, c *constraints) *it
 		// it would be a closed range of EXACTLY this key.
 		chopped := []byte(anc[:len(anc)-1])
 		if q.suffixFormat[0].Descending {
-			chopped = invert(chopped)
+			chopped = serialize.Invert(chopped)
 		}
-		def.prefix = bjoin(def.prefix, chopped)
+		def.prefix = serialize.Join(def.prefix, chopped)
 
 		// Update start and end, since we know that if they contain anything, they
 		// contain values for the __key__ field.
