@@ -57,4 +57,20 @@ type Testable interface {
 	//
 	// By default this is false.
 	AutoIndex(bool)
+
+	// DisableSpecialEntities turns off maintenance of special __entity_group__
+	// type entities. By default this mainenance is enabled, but it can be
+	// disabled by calling this with true.
+	//
+	// If it's true:
+	//   - AllocateIDs returns an error.
+	//   - Put'ing incomplete Keys returns an error.
+	//   - Transactions are disabled and will return an error.
+	//
+	// This is mainly only useful when using an embedded in-memory datastore as
+	// a fully-consistent 'datastore-lite'. In particular, this is useful for the
+	// txnBuf filter which uses it to fulfil queries in a buffered transaction,
+	// but never wants the in-memory versions of these entities to bleed through
+	// to the user code.
+	DisableSpecialEntities(bool)
 }

@@ -12,6 +12,7 @@ import (
 	dsS "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
 	infoS "github.com/luci/gae/service/info"
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -512,6 +513,20 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(count, ShouldEqual, 6)
 			})
+		})
+
+		Convey("Testable.DisableSpecialEntities", func() {
+			ds.Testable().DisableSpecialEntities(true)
+
+			So(ds.Put(&Foo{}), ShouldErrLike, "allocateIDs is disabled")
+
+			So(ds.Put(&Foo{ID: 1}), ShouldBeNil)
+
+			ds.Testable().CatchupIndexes()
+
+			count, err := ds.Count(dsS.NewQuery(""))
+			So(err, ShouldBeNil)
+			So(count, ShouldEqual, 1) // normally this would include __entity_group__
 		})
 	})
 }

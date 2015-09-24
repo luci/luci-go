@@ -135,6 +135,10 @@ var memContextKey memContextKeyType
 // test-access API for TaskQueue better (instead of trying to reconstitute the
 // state of the task queue from a bunch of datastore accesses).
 func (d *dsImpl) RunInTransaction(f func(context.Context) error, o *ds.TransactionOptions) error {
+	if d.data.getDisableSpecialEntities() {
+		return errors.New("special entities are disabled. no transactions for you")
+	}
+
 	// Keep in separate function for defers.
 	loopBody := func(applyForReal bool) error {
 		curMC := cur(d.c)

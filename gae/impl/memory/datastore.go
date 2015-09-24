@@ -41,8 +41,7 @@ type dsImpl struct {
 var _ ds.RawInterface = (*dsImpl)(nil)
 
 func (d *dsImpl) AllocateIDs(incomplete *ds.Key, n int) (int64, error) {
-	start := d.data.allocateIDs(incomplete, n)
-	return start, nil
+	return d.data.allocateIDs(incomplete, n)
 }
 
 func (d *dsImpl) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
@@ -121,6 +120,10 @@ func (d *dsImpl) AutoIndex(enable bool) {
 	d.data.setAutoIndex(enable)
 }
 
+func (d *dsImpl) DisableSpecialEntities(enabled bool) {
+	d.data.setDisableSpecialEntities(enabled)
+}
+
 func (d *dsImpl) Testable() ds.Testable {
 	return d
 }
@@ -135,8 +138,7 @@ type txnDsImpl struct {
 var _ ds.RawInterface = (*txnDsImpl)(nil)
 
 func (d *txnDsImpl) AllocateIDs(incomplete *ds.Key, n int) (int64, error) {
-	start := d.data.parent.allocateIDs(incomplete, n)
-	return start, nil
+	return d.data.parent.allocateIDs(incomplete, n)
 }
 
 func (d *txnDsImpl) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {

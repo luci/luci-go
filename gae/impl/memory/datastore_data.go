@@ -30,6 +30,10 @@ type dataStoreData struct {
 	// true means that queries with insufficent indexes will pause to add them
 	// and then continue instead of failing.
 	autoIndex bool
+	// true means that all of the __...__ keys which are normally automatically
+	// maintained will be omitted. This also means that Put with an incomplete
+	// key will become an error.
+	disableSpecialEntities bool
 }
 
 var (
@@ -100,6 +104,18 @@ func (d *dataStoreData) maybeAutoIndex(err error) bool {
 
 	d.addIndexes(mi.ns, []*ds.IndexDefinition{mi.Missing})
 	return true
+}
+
+func (d *dataStoreData) setDisableSpecialEntities(enabled bool) {
+	d.Lock()
+	defer d.Unlock()
+	d.disableSpecialEntities = true
+}
+
+func (d *dataStoreData) getDisableSpecialEntities() bool {
+	d.rwlock.RLock()
+	defer d.rwlock.RUnlock()
+	return d.disableSpecialEntities
 }
 
 func (d *dataStoreData) getQuerySnaps(consistent bool) (idx, head *memStore) {
@@ -200,7 +216,7 @@ func (d *dataStoreData) mutableEnts(ns string) *memCollection {
 	return ents
 }
 
-func (d *dataStoreData) allocateIDs(incomplete *ds.Key, n int) int64 {
+func (d *dataStoreData) allocateIDs(incomplete *ds.Key, n int) (int64, error) {
 	ents := d.mutableEnts(incomplete.Namespace())
 
 	d.Lock()
@@ -208,22 +224,29 @@ func (d *dataStoreData) allocateIDs(incomplete *ds.Key, n int) int64 {
 	return d.allocateIDsLocked(ents, incomplete, n)
 }
 
-func (d *dataStoreData) allocateIDsLocked(ents *memCollection, incomplete *ds.Key, n int) int64 {
+func (d *dataStoreData) allocateIDsLocked(ents *memCollection, incomplete *ds.Key, n int) (int64, error) {
+	if d.disableSpecialEntities {
+		return 0, errors.New("disableSpecialEntities is true so allocateIDs is disabled")
+	}
+
 	idKey := []byte(nil)
 	if incomplete.Parent() == nil {
 		idKey = rootIDsKey(incomplete.Kind())
 	} else {
 		idKey = groupIDsKey(incomplete)
 	}
-	return incrementLocked(ents, idKey, n)
+	return incrementLocked(ents, idKey, n), nil
 }
 
-func (d *dataStoreData) fixKeyLocked(ents *memCollection, key *ds.Key) *ds.Key {
+func (d *dataStoreData) fixKeyLocked(ents *memCollection, key *ds.Key) (*ds.Key, error) {
 	if key.Incomplete() {
-		id := d.allocateIDsLocked(ents, key, 1)
+		id, err := d.allocateIDsLocked(ents, key, 1)
+		if err != nil {
+			return key, err
+		}
 		key = ds.NewKey(key.AppID(), key.Namespace(), key.Kind(), "", id, key.Parent())
 	}
-	return key
+	return key, nil
 }
 
 func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) {
@@ -238,8 +261,13 @@ func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.Pu
 			d.Lock()
 			defer d.Unlock()
 
-			ret = d.fixKeyLocked(ents, k)
-			incrementLocked(ents, groupMetaKey(ret), 1)
+			ret, err = d.fixKeyLocked(ents, k)
+			if err != nil {
+				return
+			}
+			if !d.disableSpecialEntities {
+				incrementLocked(ents, groupMetaKey(ret), 1)
+			}
 
 			old := ents.Get(keyBytes(ret))
 			oldPM := ds.PropertyMap(nil)
@@ -304,7 +332,9 @@ func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) {
 				d.Lock()
 				defer d.Unlock()
 
-				incrementLocked(ents, groupMetaKey(k), 1)
+				if !d.disableSpecialEntities {
+					incrementLocked(ents, groupMetaKey(k), 1)
+				}
 				if old := ents.Get(kb); old != nil {
 					oldPM, err := rpmWoCtx(old, ns)
 					if err != nil {
@@ -484,12 +514,15 @@ func (td *txnDataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb d
 	ents := td.parent.mutableEnts(keys[0].Namespace())
 
 	for i, k := range keys {
-		func() {
+		err := func() (err error) {
 			td.parent.Lock()
 			defer td.parent.Unlock()
-			k = td.parent.fixKeyLocked(ents, k)
+			k, err = td.parent.fixKeyLocked(ents, k)
+			return
 		}()
-		err := td.writeMutation(false, k, vals[i])
+		if err == nil {
+			err = td.writeMutation(false, k, vals[i])
+		}
 		if cb != nil {
 			cb(k, err)
 		}
