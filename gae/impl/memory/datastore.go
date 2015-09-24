@@ -102,7 +102,11 @@ func (d *dsImpl) CatchupIndexes() {
 }
 
 func (d *dsImpl) SetTransactionRetryCount(count int) {
-	d.data.txnFakeRetry = count
+	d.data.setTxnRetry(count)
+}
+
+func (d *dsImpl) Consistent(always bool) {
+	d.data.setConsistent(always)
 }
 
 func (d *dsImpl) Testable() ds.Testable {

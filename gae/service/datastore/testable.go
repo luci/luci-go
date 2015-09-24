@@ -41,4 +41,12 @@ type Testable interface {
 	// transaction body pretending transaction conflicts happens. 0 (default)
 	// means commit succeeds on the first attempt (no retries).
 	SetTransactionRetryCount(int)
+
+	// Consistent controls the eventual consistency behavior of the testing
+	// implementation. If it is called with true, then this datastore
+	// implementation will be always-consistent, instead of eventually-consistent.
+	//
+	// By default the datastore is eventually consistent, and you must call
+	// CatchupIndexes or use Take/SetIndexSnapshot to manipulate the index state.
+	Consistent(always bool)
 }

@@ -91,6 +91,21 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 				So(ds.Delete(ds.NewKey("Foo", "wat", 0, nil)), ShouldBeNil)
 			})
 
+			Convey("Deleting entities from a nonexistant namespace works", func() {
+				aid := infoS.Get(c).FullyQualifiedAppID()
+				keys := make([]*dsS.Key, 10)
+				for i := range keys {
+					keys[i] = ds.MakeKey(aid, "noexist", "Kind", i+1)
+				}
+				So(ds.DeleteMulti(keys), ShouldBeNil)
+				count := 0
+				So(ds.Raw().DeleteMulti(keys, func(err error) {
+					count++
+					So(err, ShouldBeNil)
+				}), ShouldBeNil)
+				So(count, ShouldEqual, len(keys))
+			})
+
 			Convey("with multiple puts", func() {
 				So(testGetMeta(c, k), ShouldEqual, 1)
 
@@ -455,6 +470,47 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 						So(calls, ShouldEqual, 1)
 					})
 				})
+			})
+		})
+
+		Convey("Testable.Consistent", func() {
+			Convey("false", func() {
+				ds.Testable().Consistent(false) // the default
+				for i := 0; i < 10; i++ {
+					So(ds.Put(&Foo{ID: int64(i + 1), Val: i + 1}), ShouldBeNil)
+				}
+				q := dsS.NewQuery("Foo").Gt("Val", 3)
+				count, err := ds.Count(q)
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 0)
+
+				So(ds.Delete(ds.MakeKey("Foo", 4)), ShouldBeNil)
+
+				count, err = ds.Count(q)
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 0)
+
+				ds.Testable().Consistent(true)
+				count, err = ds.Count(q)
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 6)
+			})
+
+			Convey("true", func() {
+				ds.Testable().Consistent(true)
+				for i := 0; i < 10; i++ {
+					So(ds.Put(&Foo{ID: int64(i + 1), Val: i + 1}), ShouldBeNil)
+				}
+				q := dsS.NewQuery("Foo").Gt("Val", 3)
+				count, err := ds.Count(q)
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 7)
+
+				So(ds.Delete(ds.MakeKey("Foo", 4)), ShouldBeNil)
+
+				count, err = ds.Count(q)
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 6)
 			})
 		})
 	})
