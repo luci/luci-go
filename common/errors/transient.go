@@ -17,10 +17,6 @@ type transientWrapper struct {
 	error
 }
 
-func (t transientWrapper) Error() string {
-	return t.error.Error()
-}
-
 func (t transientWrapper) IsTransient() bool {
 	return true
 }
