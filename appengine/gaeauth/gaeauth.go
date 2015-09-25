@@ -122,6 +122,16 @@ func Use(c context.Context, scopes []string, serviceAccountJSON []byte) context.
 	})
 }
 
+// UseAnonymous injects non-authenticating GAE transport into context.Context.
+// It can be extracted back via transport.Get(c). Use it with libraries that
+// search for transport in the context (e.g. common/config), since by default
+// they revert to http.DefaultTransport that doesn't work in GAE environment.
+func UseAnonymous(c context.Context) context.Context {
+	return transport.SetFactory(c, func(ic context.Context) http.RoundTripper {
+		return urlfetch.Get(ic)
+	})
+}
+
 type failTransport struct {
 	err error
 }
