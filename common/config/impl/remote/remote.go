@@ -41,15 +41,18 @@ type remoteImpl struct {
 	c       context.Context
 }
 
-func (r *remoteImpl) GetConfig(configSet, path string) (*config.Config, error) {
-	resp, err := r.service.GetConfig(configSet, path).Do()
+func (r *remoteImpl) GetConfig(configSet, path string, hashOnly bool) (*config.Config, error) {
+	resp, err := r.service.GetConfig(configSet, path).HashOnly(hashOnly).Do()
 	if err != nil {
 		return nil, apiErr(err)
 	}
 
-	decoded, err := base64.StdEncoding.DecodeString(resp.Content)
-	if err != nil {
-		return nil, err
+	var decoded []byte
+	if !hashOnly {
+		decoded, err = base64.StdEncoding.DecodeString(resp.Content)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &config.Config{
@@ -130,22 +133,22 @@ func (r *remoteImpl) GetProjects() ([]config.Project, error) {
 	return projects, err
 }
 
-func (r *remoteImpl) GetProjectConfigs(path string) ([]config.Config, error) {
-	resp, err := r.service.GetProjectConfigs(path).Do()
+func (r *remoteImpl) GetProjectConfigs(path string, hashesOnly bool) ([]config.Config, error) {
+	resp, err := r.service.GetProjectConfigs(path).HashesOnly(hashesOnly).Do()
 	if err != nil {
 		return nil, apiErr(err)
 	}
 	c := logging.SetField(r.c, "path", path)
-	return convertMultiWireConfigs(c, resp)
+	return convertMultiWireConfigs(c, resp, hashesOnly)
 }
 
-func (r *remoteImpl) GetRefConfigs(path string) ([]config.Config, error) {
-	resp, err := r.service.GetRefConfigs(path).Do()
+func (r *remoteImpl) GetRefConfigs(path string, hashesOnly bool) ([]config.Config, error) {
+	resp, err := r.service.GetRefConfigs(path).HashesOnly(hashesOnly).Do()
 	if err != nil {
 		return nil, apiErr(err)
 	}
 	c := logging.SetField(r.c, "path", path)
-	return convertMultiWireConfigs(c, resp)
+	return convertMultiWireConfigs(c, resp, hashesOnly)
 }
 
 func (r *remoteImpl) GetRefs(projectID string) ([]string, error) {
@@ -163,13 +166,18 @@ func (r *remoteImpl) GetRefs(projectID string) ([]string, error) {
 
 // convertMultiWireConfigs is a utility to convert what we get over the wire
 // into the structs we use in the config package.
-func convertMultiWireConfigs(ctx context.Context, wireConfigs *genApi.LuciConfigGetConfigMultiResponseMessage) ([]config.Config, error) {
+func convertMultiWireConfigs(ctx context.Context, wireConfigs *genApi.LuciConfigGetConfigMultiResponseMessage, hashesOnly bool) ([]config.Config, error) {
 	configs := make([]config.Config, len(wireConfigs.Configs))
 	for i, c := range wireConfigs.Configs {
-		decoded, err := base64.StdEncoding.DecodeString(c.Content)
-		if err != nil {
-			lc := logging.SetField(ctx, "configSet", c.ConfigSet)
-			logging.Warningf(lc, "Failed to base64 decode config: %s", err)
+		var decoded []byte
+		var err error
+
+		if !hashesOnly {
+			decoded, err = base64.StdEncoding.DecodeString(c.Content)
+			if err != nil {
+				lc := logging.SetField(ctx, "configSet", c.ConfigSet)
+				logging.Warningf(lc, "Failed to base64 decode config: %s", err)
+			}
 		}
 
 		configs[i] = config.Config{

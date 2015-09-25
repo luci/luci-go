@@ -27,7 +27,7 @@ type filesystemImpl struct {
 
 // TODO(martiniss) implement a file system config provider
 
-func (fs *filesystemImpl) GetConfig(configSet, path string) (*config.Config, error) {
+func (fs *filesystemImpl) GetConfig(configSet, path string, hashOnly bool) (*config.Config, error) {
 	panic("UNIMPLEMENTED")
 }
 
@@ -39,7 +39,7 @@ func (fs *filesystemImpl) GetConfigSetLocation(configSet string) (*url.URL, erro
 	panic("UNIMPLEMENTED")
 }
 
-func (fs *filesystemImpl) GetProjectConfigs(path string) ([]config.Config, error) {
+func (fs *filesystemImpl) GetProjectConfigs(path string, hashesOnly bool) ([]config.Config, error) {
 	panic("UNIMPLEMENTED")
 }
 
@@ -47,7 +47,7 @@ func (fs *filesystemImpl) GetProjects() ([]config.Project, error) {
 	panic("UNIMPLEMENTED")
 }
 
-func (fs *filesystemImpl) GetRefConfigs(path string) ([]config.Config, error) {
+func (fs *filesystemImpl) GetRefConfigs(path string, hashesOnly bool) ([]config.Config, error) {
 	panic("UNIMPLEMENTED")
 }
 

@@ -65,8 +65,9 @@ type Project struct {
 // Transient errors are wrapped in errors.Transient. See common/errors.
 type Interface interface {
 	// GetConfig returns a config at a path in a config set or ErrNoConfig
-	// if missing.
-	GetConfig(configSet, path string) (*Config, error)
+	// if missing. If hashOnly is true, returned Config struct has Content set
+	// to "" (and the call is faster).
+	GetConfig(configSet, path string, hashOnly bool) (*Config, error)
 
 	// GetConfigByHash returns the contents of a config, as identified by its
 	// content hash, or ErrNoConfig if missing.
@@ -76,16 +77,18 @@ type Interface interface {
 	GetConfigSetLocation(configSet string) (*url.URL, error)
 
 	// GetProjectConfigs returns all the configs at the given path in all
-	// projects that have such config.
-	GetProjectConfigs(path string) ([]Config, error)
+	// projects that have such config. If hashesOnly is true, returned Config
+	// structs have Content set to "" (and the call is faster).
+	GetProjectConfigs(path string, hashesOnly bool) ([]Config, error)
 
 	// GetProjects returns all the registered projects in the configuration
 	// service.
 	GetProjects() ([]Project, error)
 
 	// GetRefConfigs returns the config at the given path in all refs of all
-	// projects that have such config.
-	GetRefConfigs(path string) ([]Config, error)
+	// projects that have such config. If hashesOnly is true, returned Config
+	// structs have Content set to "" (and the call is faster).
+	GetRefConfigs(path string, hashesOnly bool) ([]Config, error)
 
 	// GetRefs returns the list of refs for a project.
 	GetRefs(projectID string) ([]string, error)

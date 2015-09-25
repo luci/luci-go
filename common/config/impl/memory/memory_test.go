@@ -41,7 +41,7 @@ func TestMemoryImpl(t *testing.T) {
 		}))
 
 		Convey("GetConfig works", func() {
-			cfg, err := impl.GetConfig("services/abc", "file")
+			cfg, err := impl.GetConfig("services/abc", "file", false)
 			So(err, ShouldBeNil)
 			So(cfg, ShouldResemble, &config.Config{
 				ConfigSet:   "services/abc",
@@ -51,14 +51,24 @@ func TestMemoryImpl(t *testing.T) {
 			})
 		})
 
+		Convey("GetConfig hashOnly works", func() {
+			cfg, err := impl.GetConfig("services/abc", "file", true)
+			So(err, ShouldBeNil)
+			So(cfg, ShouldResemble, &config.Config{
+				ConfigSet:   "services/abc",
+				ContentHash: "v1:fb4c35e739d53994aba7d3e0416a1082f11bfbba",
+				Revision:    "a9ae6f9d4d7ee130e6d77b5bf6cc94c681318a47",
+			})
+		})
+
 		Convey("GetConfig missing set", func() {
-			cfg, err := impl.GetConfig("missing/set", "path")
+			cfg, err := impl.GetConfig("missing/set", "path", false)
 			So(cfg, ShouldBeNil)
 			So(err, ShouldEqual, config.ErrNoConfig)
 		})
 
 		Convey("GetConfig missing path", func() {
-			cfg, err := impl.GetConfig("services/abc", "missing file")
+			cfg, err := impl.GetConfig("services/abc", "missing file", false)
 			So(cfg, ShouldBeNil)
 			So(err, ShouldEqual, config.ErrNoConfig)
 		})
@@ -82,7 +92,7 @@ func TestMemoryImpl(t *testing.T) {
 		})
 
 		Convey("GetProjectConfigs works", func() {
-			cfgs, err := impl.GetProjectConfigs("file")
+			cfgs, err := impl.GetProjectConfigs("file", false)
 			So(err, ShouldBeNil)
 			So(cfgs, ShouldResemble, []config.Config{
 				{
@@ -100,8 +110,25 @@ func TestMemoryImpl(t *testing.T) {
 			})
 		})
 
+		Convey("GetProjectConfigs hashesOnly works", func() {
+			cfgs, err := impl.GetProjectConfigs("file", true)
+			So(err, ShouldBeNil)
+			So(cfgs, ShouldResemble, []config.Config{
+				{
+					ConfigSet:   "projects/proj1",
+					ContentHash: "v1:4eb9d5ca35782bed53bbaae001306251b9471ff8",
+					Revision:    "c57ee9f7b1ce4d1f145f76c7a3d908c800a923c8",
+				},
+				{
+					ConfigSet:   "projects/proj2",
+					ContentHash: "v1:1d1ac7078c40817f0bb2c41be3c3a6ee47d99b54",
+					Revision:    "bc2557da36bfa9db25ee678e773c2607bcb6068c",
+				},
+			})
+		})
+
 		Convey("GetProjectConfigs unknown file", func() {
-			cfgs, err := impl.GetProjectConfigs("unknown file")
+			cfgs, err := impl.GetProjectConfigs("unknown file", false)
 			So(err, ShouldBeNil)
 			So(len(cfgs), ShouldEqual, 0)
 		})
@@ -129,7 +156,7 @@ func TestMemoryImpl(t *testing.T) {
 		})
 
 		Convey("GetRefConfigs works", func() {
-			cfg, err := impl.GetRefConfigs("file")
+			cfg, err := impl.GetRefConfigs("file", false)
 			So(err, ShouldBeNil)
 			So(cfg, ShouldResemble, []config.Config{
 				{
@@ -153,8 +180,30 @@ func TestMemoryImpl(t *testing.T) {
 			})
 		})
 
+		Convey("GetRefConfigs hashesOnly works", func() {
+			cfg, err := impl.GetRefConfigs("file", true)
+			So(err, ShouldBeNil)
+			So(cfg, ShouldResemble, []config.Config{
+				{
+					ConfigSet:   "projects/proj1/refs/heads/master",
+					ContentHash: "v1:ef997153c60bd293248d146aa7d8e73080ab4d03",
+					Revision:    "cd5ecf349116150a828f076cc5faeb2cf9d0e8c2",
+				},
+				{
+					ConfigSet:   "projects/proj1/refs/heads/other",
+					ContentHash: "v1:1cfd1169b62b807e8dc10725f171bb0d8246dcd4",
+					Revision:    "22760df658f5124ea212f7dac5ff36d511950582",
+				},
+				{
+					ConfigSet:   "projects/proj2/refs/heads/master",
+					ContentHash: "v1:1fdb77cd2ce14bc5cadbb012692a65ef4a0e3a55",
+					Revision:    "841da20f3e01271c6b9f7fec6244d352272f8aee",
+				},
+			})
+		})
+
 		Convey("GetRefConfigs no configs", func() {
-			cfg, err := impl.GetRefConfigs("unknown file")
+			cfg, err := impl.GetRefConfigs("unknown file", false)
 			So(err, ShouldBeNil)
 			So(len(cfg), ShouldEqual, 0)
 		})

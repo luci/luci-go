@@ -48,7 +48,7 @@ func TestRemoteCalls(t *testing.T) {
 			})
 			defer server.Close()
 
-			res, err := remoteImpl.GetConfig("a", "b")
+			res, err := remoteImpl.GetConfig("a", "b", false)
 
 			So(err, ShouldBeNil)
 			So(*res, ShouldResemble, config.Config{
@@ -99,7 +99,7 @@ func TestRemoteCalls(t *testing.T) {
 			})
 			defer server.Close()
 
-			res, err := remoteImpl.GetProjectConfigs("a")
+			res, err := remoteImpl.GetProjectConfigs("a", false)
 
 			So(err, ShouldBeNil)
 			So(res, ShouldNotBeEmpty)
@@ -107,6 +107,28 @@ func TestRemoteCalls(t *testing.T) {
 			So(res[0], ShouldResemble, config.Config{
 				ConfigSet:   "a",
 				Content:     "hi",
+				ContentHash: "bar",
+				Revision:    "3",
+			})
+		})
+		Convey("GetProjectConfigs hashesOnly", func() {
+			server, remoteImpl := testTools(200, map[string]interface{}{
+				"configs": [...]interface{}{map[string]string{
+					"config_set":   "a",
+					"content_hash": "bar",
+					"revision":     "3",
+				}},
+			})
+			defer server.Close()
+
+			res, err := remoteImpl.GetProjectConfigs("a", true)
+
+			So(err, ShouldBeNil)
+			So(res, ShouldNotBeEmpty)
+			So(len(res), ShouldEqual, 1)
+			So(res[0], ShouldResemble, config.Config{
+				ConfigSet:   "a",
+				Content:     "",
 				ContentHash: "bar",
 				Revision:    "3",
 			})
@@ -152,7 +174,7 @@ func TestRemoteCalls(t *testing.T) {
 			})
 			defer server.Close()
 
-			res, err := remoteImpl.GetRefConfigs("a")
+			res, err := remoteImpl.GetRefConfigs("a", false)
 
 			So(err, ShouldBeNil)
 			So(res, ShouldNotBeEmpty)
@@ -160,6 +182,27 @@ func TestRemoteCalls(t *testing.T) {
 			So(res[0], ShouldResemble, config.Config{
 				ConfigSet:   "a",
 				Content:     "hi",
+				ContentHash: "bar",
+				Revision:    "3",
+			})
+		})
+		Convey("GetRefConfigs hashesOnly", func() {
+			server, remoteImpl := testTools(200, map[string]interface{}{
+				"configs": [...]interface{}{map[string]string{
+					"config_set":   "a",
+					"content_hash": "bar",
+					"revision":     "3",
+				}},
+			})
+			defer server.Close()
+
+			res, err := remoteImpl.GetRefConfigs("a", true)
+
+			So(err, ShouldBeNil)
+			So(res, ShouldNotBeEmpty)
+			So(len(res), ShouldEqual, 1)
+			So(res[0], ShouldResemble, config.Config{
+				ConfigSet:   "a",
 				ContentHash: "bar",
 				Revision:    "3",
 			})
@@ -195,17 +238,17 @@ func TestRemoteCalls(t *testing.T) {
 			c := Use(transport.Set(context.Background(), failingRoundTripper{}), "")
 			remoteImpl := config.Get(c)
 
-			_, err := remoteImpl.GetConfig("a", "b")
+			_, err := remoteImpl.GetConfig("a", "b", false)
 			So(err, ShouldNotBeNil)
 			_, err = remoteImpl.GetConfigByHash("a")
 			So(err, ShouldNotBeNil)
 			_, err = remoteImpl.GetConfigSetLocation("a")
 			So(err, ShouldNotBeNil)
-			_, err = remoteImpl.GetProjectConfigs("a")
+			_, err = remoteImpl.GetProjectConfigs("a", false)
 			So(err, ShouldNotBeNil)
 			_, err = remoteImpl.GetProjects()
 			So(err, ShouldNotBeNil)
-			_, err = remoteImpl.GetRefConfigs("a")
+			_, err = remoteImpl.GetRefConfigs("a", false)
 			So(err, ShouldNotBeNil)
 			_, err = remoteImpl.GetRefs("a")
 			So(err, ShouldNotBeNil)

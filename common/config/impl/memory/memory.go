@@ -35,9 +35,9 @@ type memoryImpl struct {
 	sets map[string]ConfigSet
 }
 
-func (m *memoryImpl) GetConfig(configSet, path string) (*config.Config, error) {
+func (m *memoryImpl) GetConfig(configSet, path string, hashOnly bool) (*config.Config, error) {
 	if set, ok := m.sets[configSet]; ok {
-		if cfg := set.configMaybe(configSet, path); cfg != nil {
+		if cfg := set.configMaybe(configSet, path, hashOnly); cfg != nil {
 			return cfg, nil
 		}
 	}
@@ -59,14 +59,14 @@ func (m *memoryImpl) GetConfigSetLocation(configSet string) (*url.URL, error) {
 	return url.Parse("https://example.com/fake-config/" + configSet)
 }
 
-func (m *memoryImpl) GetProjectConfigs(path string) ([]config.Config, error) {
+func (m *memoryImpl) GetProjectConfigs(path string, hashesOnly bool) ([]config.Config, error) {
 	projects, err := m.GetProjects()
 	if err != nil {
 		return nil, err
 	}
 	out := []config.Config{}
 	for _, proj := range projects {
-		if cfg, err := m.GetConfig("projects/"+proj.ID, path); err == nil {
+		if cfg, err := m.GetConfig("projects/"+proj.ID, path, hashesOnly); err == nil {
 			out = append(out, *cfg)
 		}
 	}
@@ -94,7 +94,7 @@ func (m *memoryImpl) GetProjects() ([]config.Project, error) {
 	return out, nil
 }
 
-func (m *memoryImpl) GetRefConfigs(path string) ([]config.Config, error) {
+func (m *memoryImpl) GetRefConfigs(path string, hashesOnly bool) ([]config.Config, error) {
 	sets := []string{}
 	for configSet := range m.sets {
 		chunks := strings.Split(configSet, "/")
@@ -105,7 +105,7 @@ func (m *memoryImpl) GetRefConfigs(path string) ([]config.Config, error) {
 	sort.Strings(sets)
 	out := []config.Config{}
 	for _, configSet := range sets {
-		if cfg, err := m.GetConfig(configSet, path); err == nil {
+		if cfg, err := m.GetConfig(configSet, path, hashesOnly); err == nil {
 			out = append(out, *cfg)
 		}
 	}
@@ -127,15 +127,18 @@ func (m *memoryImpl) GetRefs(projectID string) ([]string, error) {
 	return out, nil
 }
 
-// configMaybe returns *Config if such config is in the set, otherwise nil.
-func (b ConfigSet) configMaybe(configSet, path string) *config.Config {
+// configMaybe returns config.Config is such config is in the set, else nil.
+func (b ConfigSet) configMaybe(configSet, path string, hashesOnly bool) *config.Config {
 	if body, ok := b[path]; ok {
-		return &config.Config{
+		cfg := &config.Config{
 			ConfigSet:   configSet,
-			Content:     body,
 			ContentHash: hash(body),
 			Revision:    b.rev(),
 		}
+		if !hashesOnly {
+			cfg.Content = body
+		}
+		return cfg
 	}
 	return nil
 }
