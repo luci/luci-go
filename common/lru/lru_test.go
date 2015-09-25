@@ -1,34 +1,14 @@
-// Copyright (c) 2015 The Chromium Authors. All rights reserved.
+// Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 package lru
 
 import (
-	"fmt"
-	"sort"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-// A sortable slice of interface{} that are all strings.
-type stringInterfaceSlice []interface{}
-
-// Implements sort.Interface
-func (s stringInterfaceSlice) Len() int {
-	return len(s)
-}
-
-// Implements sort.Interface
-func (s stringInterfaceSlice) Less(i, j int) bool {
-	return s[i].(string) < s[j].(string)
-}
-
-// Implements sort.Interface
-func (s stringInterfaceSlice) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
 
 // If put is true, test the Put command; if false, test the PutIfMissing
 // command.
@@ -47,39 +27,20 @@ func TestCache(t *testing.T) {
 		addCacheValues := func(values ...string) {
 			for _, v := range values {
 				isPresent := (cache.Peek(v) != nil)
-				So(cache.Put(v, v), ShouldEqual, isPresent)
+				So(cache.Put(v, v+"v"), ShouldEqual, isPresent)
 			}
 		}
 
 		shouldHaveValues := func(actual interface{}, expected ...interface{}) string {
-			cache := actual.(*cacheImpl)
+			cache := actual.(*Cache)
 
-			// Take a snapshot.
-			ss := cache.snapshot()
-			keys := stringInterfaceSlice(cache.keys())
-			sort.Sort(keys)
+			actualSnapshot := cache.snapshot()
 
-			// A snapshot should have all keys.
-			if len(ss) != len(keys) {
-				return fmt.Sprintf("Snapshot size (%d) doesn't match keys size (%d).", len(ss), len(keys))
+			expectedSnapshot := snapshot{}
+			for _, k := range expected {
+				expectedSnapshot[k] = k.(string) + "v"
 			}
-			for _, k := range keys {
-				v, ok := ss[k]
-				if !ok {
-					return fmt.Sprintf("Snapshot missing key '%s'", k)
-				}
-				if k != v {
-					return fmt.Sprintf("Entry %s=%s should match.", k, v)
-				}
-			}
-
-			// Maps should match.
-			expectedMap := make(snapshot)
-			for _, exp := range expected {
-				value := exp.(string)
-				expectedMap[value] = value
-			}
-			return ShouldResemble(ss, expectedMap)
+			return ShouldResemble(actualSnapshot, expectedSnapshot)
 		}
 
 		Convey(`Has a size of 3.`, func() {
@@ -96,19 +57,19 @@ func TestCache(t *testing.T) {
 			})
 
 			Convey(`Can retrieve each of those values.`, func() {
-				So(cache.Get("a"), ShouldEqual, "a")
-				So(cache.Get("b"), ShouldEqual, "b")
-				So(cache.Get("c"), ShouldEqual, "c")
+				So(cache.Get("a"), ShouldEqual, "av")
+				So(cache.Get("b"), ShouldEqual, "bv")
+				So(cache.Get("c"), ShouldEqual, "cv")
 			})
 
 			Convey(`Get()ting "a", then adding "d" will cause "b" to be evicted.`, func() {
-				So(cache.Get("a"), ShouldEqual, "a")
+				So(cache.Get("a"), ShouldEqual, "av")
 				addCacheValues("d")
 				So(cache, shouldHaveValues, "a", "c", "d")
 			})
 
 			Convey(`Peek()ing "a", then adding "d" will cause "a" to be evicted.`, func() {
-				So(cache.Peek("a"), ShouldEqual, "a")
+				So(cache.Peek("a"), ShouldEqual, "av")
 				addCacheValues("d")
 				So(cache, shouldHaveValues, "b", "c", "d")
 			})
@@ -132,7 +93,7 @@ func TestCache(t *testing.T) {
 			So(cache, shouldHaveValues, "a", "c", "d")
 
 			Convey(`When removing "c", will contain {a, d}.`, func() {
-				So(cache.Remove("c"), ShouldEqual, "c")
+				So(cache.Remove("c"), ShouldEqual, "cv")
 				So(cache, shouldHaveValues, "a", "d")
 
 				Convey(`When adding {e, f}, "a" will be evicted.`, func() {
