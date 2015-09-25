@@ -10,9 +10,12 @@ import (
 	"net/url"
 
 	"golang.org/x/net/context"
+	"google.golang.org/api/googleapi"
 
 	"github.com/luci/luci-go/common/config"
 	genApi "github.com/luci/luci-go/common/config/impl/remote/generated_api/v1"
+	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/transport"
 )
 
@@ -29,18 +32,19 @@ func Use(c context.Context, basePath string) context.Context {
 			// client is nil
 			panic("unreachable")
 		}
-		return &remoteImpl{service}
+		return &remoteImpl{service, ic}
 	})
 }
 
 type remoteImpl struct {
 	service *genApi.Service
+	c       context.Context
 }
 
 func (r *remoteImpl) GetConfig(configSet, path string) (*config.Config, error) {
 	resp, err := r.service.GetConfig(configSet, path).Do()
 	if err != nil {
-		return nil, err
+		return nil, apiErr(err)
 	}
 
 	decoded, err := base64.StdEncoding.DecodeString(resp.Content)
@@ -50,6 +54,7 @@ func (r *remoteImpl) GetConfig(configSet, path string) (*config.Config, error) {
 
 	return &config.Config{
 		configSet,
+		nil,
 		string(decoded),
 		resp.ContentHash,
 		resp.Revision}, nil
@@ -58,7 +63,7 @@ func (r *remoteImpl) GetConfig(configSet, path string) (*config.Config, error) {
 func (r *remoteImpl) GetConfigByHash(configSet string) (string, error) {
 	resp, err := r.service.GetConfigByHash(configSet).Do()
 	if err != nil {
-		return "", err
+		return "", apiErr(err)
 	}
 
 	decoded, err := base64.StdEncoding.DecodeString(resp.Content)
@@ -75,7 +80,7 @@ func (r *remoteImpl) GetConfigSetLocation(configSet string) (*url.URL, error) {
 	}
 	resp, err := r.service.GetMapping().ConfigSet(configSet).Do()
 	if err != nil {
-		return nil, err
+		return nil, apiErr(err)
 	}
 
 	urlString := "sentinel"
@@ -83,7 +88,7 @@ func (r *remoteImpl) GetConfigSetLocation(configSet string) (*url.URL, error) {
 		if mapping.ConfigSet == configSet {
 			if urlString != "sentinel" {
 				return nil, fmt.Errorf(
-					"Duplicate entries '%s' and '%s' for location of config set %s",
+					"duplicate entries %q and %q for location of config set %s",
 					urlString, mapping.Location, configSet)
 			}
 
@@ -99,22 +104,23 @@ func (r *remoteImpl) GetConfigSetLocation(configSet string) (*url.URL, error) {
 	return url, nil
 }
 
-func (r *remoteImpl) GetProjects() ([]*config.Project, error) {
+func (r *remoteImpl) GetProjects() ([]config.Project, error) {
 	resp, err := r.service.GetProjects().Do()
 	if err != nil {
-		return nil, err
+		return nil, apiErr(err)
 	}
 
-	projects := make([]*config.Project, len(resp.Projects))
+	projects := make([]config.Project, len(resp.Projects))
 	for i, p := range resp.Projects {
 		repoType := parseWireRepoType(p.RepoType)
 
 		url, err := url.Parse(p.RepoUrl)
 		if err != nil {
-			return nil, err
+			lc := logging.SetField(r.c, "projectID", p.Id)
+			logging.Warningf(lc, "Failed to parse repo URL %q: %s", p.RepoUrl, err)
 		}
 
-		projects[i] = &config.Project{
+		projects[i] = config.Project{
 			p.Id,
 			p.Name,
 			repoType,
@@ -124,28 +130,28 @@ func (r *remoteImpl) GetProjects() ([]*config.Project, error) {
 	return projects, err
 }
 
-func (r *remoteImpl) GetProjectConfigs(path string) ([]*config.Config, error) {
+func (r *remoteImpl) GetProjectConfigs(path string) ([]config.Config, error) {
 	resp, err := r.service.GetProjectConfigs(path).Do()
 	if err != nil {
-		return nil, err
+		return nil, apiErr(err)
 	}
-
-	return convertMultiWireConfigs(resp)
+	c := logging.SetField(r.c, "path", path)
+	return convertMultiWireConfigs(c, resp)
 }
 
-func (r *remoteImpl) GetRefConfigs(path string) ([]*config.Config, error) {
+func (r *remoteImpl) GetRefConfigs(path string) ([]config.Config, error) {
 	resp, err := r.service.GetRefConfigs(path).Do()
 	if err != nil {
-		return nil, err
+		return nil, apiErr(err)
 	}
-
-	return convertMultiWireConfigs(resp)
+	c := logging.SetField(r.c, "path", path)
+	return convertMultiWireConfigs(c, resp)
 }
 
 func (r *remoteImpl) GetRefs(projectID string) ([]string, error) {
 	resp, err := r.service.GetRefs(projectID).Do()
 	if err != nil {
-		return nil, err
+		return nil, apiErr(err)
 	}
 
 	refs := make([]string, len(resp.Refs))
@@ -157,16 +163,18 @@ func (r *remoteImpl) GetRefs(projectID string) ([]string, error) {
 
 // convertMultiWireConfigs is a utility to convert what we get over the wire
 // into the structs we use in the config package.
-func convertMultiWireConfigs(wireConfigs *genApi.LuciConfigGetConfigMultiResponseMessage) ([]*config.Config, error) {
-	configs := make([]*config.Config, len(wireConfigs.Configs))
+func convertMultiWireConfigs(ctx context.Context, wireConfigs *genApi.LuciConfigGetConfigMultiResponseMessage) ([]config.Config, error) {
+	configs := make([]config.Config, len(wireConfigs.Configs))
 	for i, c := range wireConfigs.Configs {
 		decoded, err := base64.StdEncoding.DecodeString(c.Content)
 		if err != nil {
-			return nil, err
+			lc := logging.SetField(ctx, "configSet", c.ConfigSet)
+			logging.Warningf(lc, "Failed to base64 decode config: %s", err)
 		}
 
-		configs[i] = &config.Config{
+		configs[i] = config.Config{
 			c.ConfigSet,
+			err,
 			string(decoded),
 			c.ContentHash,
 			c.Revision,
@@ -184,4 +192,19 @@ func parseWireRepoType(s string) config.RepoType {
 	}
 
 	return config.UnknownRepo
+}
+
+// apiErr converts googleapi.Error to an appropriate type.
+func apiErr(e error) error {
+	err, ok := e.(*googleapi.Error)
+	if !ok {
+		return e
+	}
+	if err.Code == 404 {
+		return config.ErrNoConfig
+	}
+	if err.Code >= 500 {
+		return errors.WrapTransient(err)
+	}
+	return err
 }

@@ -2,22 +2,24 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package config
+// Package fs implements file system backend for the config client.
+//
+// May be useful during local development.
+package fs
 
 import (
 	"net/url"
 
-	config "github.com/luci/luci-go/common/config"
 	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/config"
 )
 
 // Use adds an implementation of the config service which stores the
 // results on the local filesystem.
 // NOT SUITABLE FOR PRODUCTION USE.
 func Use(c context.Context) context.Context {
-	return config.SetFactory(c, func(ic context.Context) config.Interface {
-		return &filesystemImpl{}
-	})
+	return config.Set(c, &filesystemImpl{})
 }
 
 type filesystemImpl struct {
@@ -37,15 +39,15 @@ func (fs *filesystemImpl) GetConfigSetLocation(configSet string) (*url.URL, erro
 	panic("UNIMPLEMENTED")
 }
 
-func (fs *filesystemImpl) GetProjectConfigs(path string) ([]*config.Config, error) {
+func (fs *filesystemImpl) GetProjectConfigs(path string) ([]config.Config, error) {
 	panic("UNIMPLEMENTED")
 }
 
-func (fs *filesystemImpl) GetProjects() ([]*config.Project, error) {
+func (fs *filesystemImpl) GetProjects() ([]config.Project, error) {
 	panic("UNIMPLEMENTED")
 }
 
-func (fs *filesystemImpl) GetRefConfigs(path string) ([]*config.Config, error) {
+func (fs *filesystemImpl) GetRefConfigs(path string) ([]config.Config, error) {
 	panic("UNIMPLEMENTED")
 }
 

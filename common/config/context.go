@@ -52,7 +52,7 @@ func SetFactory(c context.Context, rf Factory) context.Context {
 }
 
 // Set sets the current Interface object in the context. Useful for testing
-// with a quick mock. This is just a shorthand SetFactory invocation to SetImpl
+// with a quick mock. This is just a shorthand SetFactory invocation to set
 // a Factory which always returns the same object.
 func Set(c context.Context, ri Interface) context.Context {
 	return SetFactory(c, func(context.Context) Interface { return ri })

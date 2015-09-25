@@ -4,10 +4,11 @@
 
 // Package config is a library to access the luci-config service.
 //
-// There are two backends for the interface presented in the interface.go file.
+// There are three backends for the interface presented in the interface.go.
 //
-// One backend talks directly to the luci-config service, and the other reads
-// from the local filesystem.
-// Usually, you should use the remote backend in production, and the filesystem
-// backend when developing.
+// One backend talks directly to the luci-config service, another reads
+// from the local filesystem, and the third one reads from memory struct.
+//
+// Usually, you should use the remote backend in production, the filesystem
+// backend when developing, and the memory backend from unit tests.
 package config

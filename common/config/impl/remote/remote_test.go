@@ -104,7 +104,7 @@ func TestRemoteCalls(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(res, ShouldNotBeEmpty)
 			So(len(res), ShouldEqual, 1)
-			So(*res[0], ShouldResemble, config.Config{
+			So(res[0], ShouldResemble, config.Config{
 				ConfigSet:   "a",
 				Content:     "hi",
 				ContentHash: "bar",
@@ -134,7 +134,7 @@ func TestRemoteCalls(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(res, ShouldNotBeEmpty)
 			So(len(res), ShouldEqual, 1)
-			So(*res[0], ShouldResemble, config.Project{
+			So(res[0], ShouldResemble, config.Project{
 				ID:       id,
 				Name:     name,
 				RepoType: config.GitilesRepo,
@@ -157,7 +157,7 @@ func TestRemoteCalls(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(res, ShouldNotBeEmpty)
 			So(len(res), ShouldEqual, 1)
-			So(*res[0], ShouldResemble, config.Config{
+			So(res[0], ShouldResemble, config.Config{
 				ConfigSet:   "a",
 				Content:     "hi",
 				ContentHash: "bar",
