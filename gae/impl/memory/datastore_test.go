@@ -605,3 +605,29 @@ func TestDefaultTimeField(t *testing.T) {
 		So(m.Time.IsZero(), ShouldBeTrue)
 	})
 }
+
+func TestNewDatastore(t *testing.T) {
+	t.Parallel()
+
+	Convey("Can get and use a NewDatastore", t, func() {
+		ds, err := NewDatastore("aid", "ns")
+		So(err, ShouldBeNil)
+
+		k := ds.MakeKey("Something", 1)
+		So(k.AppID(), ShouldEqual, "aid")
+		So(k.Namespace(), ShouldEqual, "ns")
+
+		type Model struct {
+			ID    int64 `gae:"$id"`
+			Value []int64
+		}
+		So(ds.Put(&Model{ID: 1, Value: []int64{20, 30}}), ShouldBeNil)
+
+		vals := []dsS.PropertyMap{}
+		So(ds.GetAll(dsS.NewQuery("Model").Project("Value"), &vals), ShouldBeNil)
+		So(len(vals), ShouldEqual, 2)
+
+		So(vals[0]["Value"][0].Value(), ShouldEqual, 20)
+		So(vals[1]["Value"][0].Value(), ShouldEqual, 30)
+	})
+}

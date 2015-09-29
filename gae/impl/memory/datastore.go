@@ -11,6 +11,7 @@ import (
 	"golang.org/x/net/context"
 
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/info"
 )
 
 //////////////////////////////////// public ////////////////////////////////////
@@ -27,6 +28,29 @@ func useRDS(c context.Context) context.Context {
 		}
 		return &txnDsImpl{dsd.(*txnDataStoreData), ns}
 	})
+}
+
+// NewDatastore creates a new standalone memory implementation of the datastore,
+// suitable for embedding for doing in-memory data organization.
+//
+// It's configured by default with the following settings:
+//   * AutoIndex(true)
+//   * Consistent(true)
+//   * DisableSpecialEntities(true)
+//
+// These settings can of course be changed by using the Testable() interface.
+func NewDatastore(aid, ns string) (ds.Interface, error) {
+	ctx := UseWithAppID(context.Background(), aid)
+	ctx, err := info.Get(ctx).Namespace(ns)
+	if err != nil {
+		return nil, err
+	}
+	ret := ds.Get(ctx)
+	t := ret.Testable()
+	t.AutoIndex(true)
+	t.Consistent(true)
+	t.DisableSpecialEntities(true)
+	return ret, nil
 }
 
 //////////////////////////////////// dsImpl ////////////////////////////////////
