@@ -27,10 +27,10 @@ type memContext []memContextObj
 
 var _ = memContextObj((memContext)(nil))
 
-func newMemContext() memContext {
+func newMemContext(aid string) memContext {
 	return memContext{
 		newTaskQueueData(),
-		newDataStoreData(),
+		newDataStoreData(aid),
 	}
 }
 
@@ -88,12 +88,20 @@ func (m memContext) applyTxn(c context.Context, txnCtxObj memContextObj) {
 	}
 }
 
-// Use adds implementations for the following gae interfaces to the
+// Use calls UseWithAppID with the appid of "dev~app"
+func Use(c context.Context) context.Context {
+	return UseWithAppID(c, "dev~app")
+}
+
+// UseWithAppID adds implementations for the following gae interfaces to the
 // context:
 //   * gae.Datastore
 //   * gae.TaskQueue
 //   * gae.Memcache
 //   * gae.GlobalInfo
+//
+// The application id wil be set to 'aid', and will not be modifiable in this
+// context.
 //
 // These can be retrieved with the gae.Get functions.
 //
@@ -101,14 +109,14 @@ func (m memContext) applyTxn(c context.Context, txnCtxObj memContextObj) {
 // with an empty state.
 //
 // Using this more than once per context.Context will cause a panic.
-func Use(c context.Context) context.Context {
+func UseWithAppID(c context.Context, aid string) context.Context {
 	if c.Value(memContextKey) != nil {
 		panic(errors.New("memory.Use: called twice on the same Context"))
 	}
 	c = context.WithValue(
-		context.WithValue(c, memContextKey, newMemContext()),
-		giContextKey, &globalInfoData{})
-	return useTQ(useRDS(useMC(useGI(c))))
+		context.WithValue(c, memContextKey, newMemContext(aid)),
+		giContextKey, &globalInfoData{appid: aid})
+	return useTQ(useRDS(useMC(useGI(c, aid))))
 }
 
 func cur(c context.Context) (p memContext) {

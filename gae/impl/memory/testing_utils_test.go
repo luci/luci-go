@@ -89,7 +89,7 @@ var (
 )
 
 func key(elems ...interface{}) *ds.Key {
-	return ds.MakeKey(globalAppID, "ns", elems...)
+	return ds.MakeKey("dev~app", "ns", elems...)
 }
 
 func die(err error) {

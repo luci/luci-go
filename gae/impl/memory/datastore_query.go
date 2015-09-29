@@ -102,8 +102,60 @@ func numComponents(fq *ds.FinalizedQuery) int {
 	return numComponents
 }
 
-func reduce(fq *ds.FinalizedQuery, ns string, isTxn bool) (*reducedQuery, error) {
-	if err := fq.Valid(globalAppID, ns); err != nil {
+// GetBinaryBounds gets the binary encoding of the upper and lower bounds of
+// the inequality filter on fq, if any is defined. If a bound does not exist,
+// it is nil.
+//
+// NOTE: if fq specifies a descending sort order for the inequality, the bounds
+// will be inverted, incremented, and fliped.
+func GetBinaryBounds(fq *ds.FinalizedQuery) (lower, upper []byte) {
+	// Pick up the start/end range from the inequalities, if any.
+	//
+	// start and end in the reducedQuery are normalized so that `start >=
+	// X < end`. Because of that, we need to tweak the inequality filters
+	// contained in the query if they use the > or <= operators.
+	if ineqProp := fq.IneqFilterProp(); ineqProp != "" {
+		_, startOp, startV := fq.IneqFilterLow()
+		if startOp != "" {
+			lower = serialize.ToBytes(startV)
+			if startOp == ">" {
+				lower = increment(lower)
+			}
+		}
+
+		_, endOp, endV := fq.IneqFilterHigh()
+		if endOp != "" {
+			upper = serialize.ToBytes(endV)
+			if endOp == "<=" {
+				upper = increment(upper)
+			}
+		}
+
+		// The inequality is specified in natural (ascending) order in the query's
+		// Filter syntax, but the order information may indicate to use a descending
+		// index column for it. If that's the case, then we must invert, swap and
+		// increment the inequality endpoints.
+		//
+		// Invert so that the desired numbers are represented correctly in the index.
+		// Swap so that our iterators still go from >= start to < end.
+		// Increment so that >= and < get correctly bounded (since the iterator is
+		// still using natrual bytes ordering)
+		if fq.Orders()[0].Descending {
+			hi, lo := []byte(nil), []byte(nil)
+			if len(lower) > 0 {
+				lo = increment(serialize.Invert(lower))
+			}
+			if len(upper) > 0 {
+				hi = increment(serialize.Invert(upper))
+			}
+			upper, lower = lo, hi
+		}
+	}
+	return
+}
+
+func reduce(fq *ds.FinalizedQuery, aid, ns string, isTxn bool) (*reducedQuery, error) {
+	if err := fq.Valid(aid, ns); err != nil {
 		return nil, err
 	}
 	if isTxn && fq.Ancestor() == nil {
@@ -117,6 +169,7 @@ func reduce(fq *ds.FinalizedQuery, ns string, isTxn bool) (*reducedQuery, error)
 	}
 
 	ret := &reducedQuery{
+		aid:          aid,
 		ns:           ns,
 		kind:         fq.Kind(),
 		suffixFormat: fq.Orders(),
@@ -132,50 +185,7 @@ func reduce(fq *ds.FinalizedQuery, ns string, isTxn bool) (*reducedQuery, error)
 		ret.eqFilters[prop] = sVals
 	}
 
-	// Pick up the start/end range from the inequalities, if any.
-	//
-	// start and end in the reducedQuery are normalized so that `start >=
-	// X < end`. Because of that, we need to tweak the inequality filters
-	// contained in the query if they use the > or <= operators.
-	startD := []byte(nil)
-	endD := []byte(nil)
-	if ineqProp := fq.IneqFilterProp(); ineqProp != "" {
-		_, startOp, startV := fq.IneqFilterLow()
-		if startOp != "" {
-			startD = serialize.ToBytes(startV)
-			if startOp == ">" {
-				startD = increment(startD)
-			}
-		}
-
-		_, endOp, endV := fq.IneqFilterHigh()
-		if endOp != "" {
-			endD = serialize.ToBytes(endV)
-			if endOp == "<=" {
-				endD = increment(endD)
-			}
-		}
-
-		// The inequality is specified in natural (ascending) order in the query's
-		// Filter syntax, but the order information may indicate to use a descending
-		// index column for it. If that's the case, then we must invert, swap and
-		// increment the inequality endpoints.
-		//
-		// Invert so that the desired numbers are represented correctly in the index.
-		// Swap so that our iterators still go from >= start to < end.
-		// Increment so that >= and < get correctly bounded (since the iterator is
-		// still using natrual bytes ordering)
-		if ret.suffixFormat[0].Descending {
-			hi, lo := []byte(nil), []byte(nil)
-			if len(startD) > 0 {
-				lo = increment(serialize.Invert(startD))
-			}
-			if len(endD) > 0 {
-				hi = increment(serialize.Invert(endD))
-			}
-			endD, startD = lo, hi
-		}
-	}
+	startD, endD := GetBinaryBounds(fq)
 
 	// Now we check the start and end cursors.
 	//

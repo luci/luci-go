@@ -36,6 +36,7 @@ func (e *ErrMissingIndex) Error() string {
 //   deduplication is applied externally
 //   projection / keysonly / entity retrieval is done externally
 type reducedQuery struct {
+	aid  string
 	ns   string
 	kind string
 
@@ -378,7 +379,7 @@ func generate(q *reducedQuery, idx *indexDefinitionSortable, c *constraints) *it
 		if def.start != nil {
 			offset := 0
 			if len(q.suffixFormat) > 1 {
-				chunks, _ := parseSuffix(q.ns, q.suffixFormat, def.start, 1)
+				chunks, _ := parseSuffix(q.aid, q.ns, q.suffixFormat, def.start, 1)
 				offset = len(chunks[0])
 			}
 			if !bytes.HasPrefix(def.start[offset:], chopped) {
@@ -392,7 +393,7 @@ func generate(q *reducedQuery, idx *indexDefinitionSortable, c *constraints) *it
 		if def.end != nil {
 			offset := 0
 			if len(q.suffixFormat) > 1 {
-				chunks, _ := parseSuffix(q.ns, q.suffixFormat, def.end, 1)
+				chunks, _ := parseSuffix(q.aid, q.ns, q.suffixFormat, def.end, 1)
 				offset = len(chunks[0])
 			}
 			if !bytes.HasPrefix(def.end[offset:], chopped) {

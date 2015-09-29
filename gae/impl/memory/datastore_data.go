@@ -20,6 +20,10 @@ import (
 
 type dataStoreData struct {
 	rwlock sync.RWMutex
+
+	// the 'appid' of this datastore
+	aid string
+
 	// See README.md for head schema.
 	head *memStore
 	// if snap is nil, that means that this is always-consistent, and
@@ -41,9 +45,10 @@ var (
 	_ = sync.Locker((*dataStoreData)(nil))
 )
 
-func newDataStoreData() *dataStoreData {
+func newDataStoreData(aid string) *dataStoreData {
 	head := newMemStore()
 	return &dataStoreData{
+		aid:  aid,
 		head: head,
 		snap: head.Snapshot(), // empty but better than a nil pointer.
 	}
@@ -77,7 +82,7 @@ func (d *dataStoreData) setConsistent(always bool) {
 func (d *dataStoreData) addIndexes(ns string, idxs []*ds.IndexDefinition) {
 	d.Lock()
 	defer d.Unlock()
-	addIndexes(d.head, ns, idxs)
+	addIndexes(d.head, d.aid, ns, idxs)
 }
 
 func (d *dataStoreData) setAutoIndex(enable bool) {
@@ -269,7 +274,7 @@ func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.Pu
 			old := ents.Get(keyBytes(ret))
 			oldPM := ds.PropertyMap(nil)
 			if old != nil {
-				if oldPM, err = rpmWoCtx(old, ns); err != nil {
+				if oldPM, err = rpm(old); err != nil {
 					return
 				}
 			}
@@ -301,7 +306,7 @@ func getMultiInner(keys []*ds.Key, cb ds.GetMultiCB, getColl func() (*memCollect
 			cb(nil, ds.ErrNoSuchEntity)
 			continue
 		}
-		cb(rpmWoCtx(pdata, k.Namespace()))
+		cb(rpm(pdata))
 	}
 	return nil
 }
@@ -330,7 +335,7 @@ func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) {
 					incrementLocked(ents, groupMetaKey(k), 1)
 				}
 				if old := ents.Get(kb); old != nil {
-					oldPM, err := rpmWoCtx(old, ns)
+					oldPM, err := rpm(old)
 					if err != nil {
 						return err
 					}
@@ -545,11 +550,6 @@ func (td *txnDataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error 
 
 func keyBytes(key *ds.Key) []byte {
 	return serialize.ToBytes(ds.MkProperty(key))
-}
-
-func rpmWoCtx(data []byte, ns string) (ds.PropertyMap, error) {
-	return serialize.ReadPropertyMap(bytes.NewBuffer(data),
-		serialize.WithoutContext, globalAppID, ns)
 }
 
 func rpm(data []byte) (ds.PropertyMap, error) {
