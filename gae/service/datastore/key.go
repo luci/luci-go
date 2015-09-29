@@ -359,6 +359,22 @@ func (k *Key) Less(other *Key) bool {
 	return len(k.toks) < len(other.toks)
 }
 
+// HasAncestor returns true iff other is an ancestor of k (or if other == k).
+func (k *Key) HasAncestor(other *Key) bool {
+	if k.appID != other.appID || k.namespace != other.namespace {
+		return false
+	}
+	if len(k.toks) < len(other.toks) {
+		return false
+	}
+	for i, tok := range other.toks {
+		if tok != k.toks[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // GQL returns a correctly formatted Cloud Datastore GQL key literal.
 //
 // The flavor of GQL that this emits is defined here:

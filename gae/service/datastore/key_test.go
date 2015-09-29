@@ -155,6 +155,23 @@ func TestMiscKey(t *testing.T) {
 		So(k1.String(), ShouldEqual, "a:n:/knd,1/other,\"wat\"")
 	})
 
+	Convey("HasAncestor", t, func() {
+		k1 := MakeKey("a", "n", "kind", 1)
+		k2 := MakeKey("a", "n", "kind", 1, "other", "wat")
+		k3 := MakeKey("a", "n", "kind", 1, "other", "wat", "extra", "data")
+		k4 := MakeKey("something", "n", "kind", 1)
+		k5 := MakeKey("a", "n", "kind", 1, "other", "meep")
+
+		So(k1.HasAncestor(k1), ShouldBeTrue)
+		So(k1.HasAncestor(k2), ShouldBeFalse)
+		So(k2.HasAncestor(k5), ShouldBeFalse)
+		So(k5.HasAncestor(k2), ShouldBeFalse)
+		So(k2.HasAncestor(k1), ShouldBeTrue)
+		So(k3.HasAncestor(k2), ShouldBeTrue)
+		So(k3.HasAncestor(k1), ShouldBeTrue)
+		So(k3.HasAncestor(k4), ShouldBeFalse)
+	})
+
 	Convey("*GenericKey supports json encoding", t, func() {
 		type TestStruct struct {
 			Key *Key
