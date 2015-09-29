@@ -22,11 +22,11 @@ type dataStoreData struct {
 	rwlock sync.RWMutex
 	// See README.md for head schema.
 	head *memStore
+	// if snap is nil, that means that this is always-consistent, and
+	// getQuerySnaps will return (head, head)
 	snap *memStore
 	// For testing, see SetTransactionRetryCount.
 	txnFakeRetry int
-	// true means that head always == snap
-	consistent bool
 	// true means that queries with insufficent indexes will pause to add them
 	// and then continue instead of failing.
 	autoIndex bool
@@ -67,8 +67,9 @@ func (d *dataStoreData) setConsistent(always bool) {
 	d.Lock()
 	defer d.Unlock()
 
-	d.consistent = always
-	if d.consistent {
+	if always {
+		d.snap = nil
+	} else {
 		d.snap = d.head.Snapshot()
 	}
 }
@@ -77,9 +78,6 @@ func (d *dataStoreData) addIndexes(ns string, idxs []*ds.IndexDefinition) {
 	d.Lock()
 	defer d.Unlock()
 	addIndexes(d.head, ns, idxs)
-	if d.consistent {
-		d.snap = d.head.Snapshot()
-	}
 }
 
 func (d *dataStoreData) setAutoIndex(enable bool) {
@@ -121,9 +119,9 @@ func (d *dataStoreData) getDisableSpecialEntities() bool {
 func (d *dataStoreData) getQuerySnaps(consistent bool) (idx, head *memStore) {
 	d.rwlock.RLock()
 	defer d.rwlock.RUnlock()
-	if d.consistent {
-		// snap is already a consistent snapshot of head
-		return d.snap, d.snap
+	if d.snap == nil {
+		// we're 'always consistent'
+		return d.head, d.head
 	}
 
 	head = d.head.Snapshot()
@@ -138,16 +136,14 @@ func (d *dataStoreData) getQuerySnaps(consistent bool) (idx, head *memStore) {
 func (d *dataStoreData) takeSnapshot() *memStore {
 	d.rwlock.RLock()
 	defer d.rwlock.RUnlock()
-	if d.consistent {
-		return d.snap
-	}
 	return d.head.Snapshot()
 }
 
 func (d *dataStoreData) setSnapshot(snap *memStore) {
 	d.rwlock.Lock()
 	defer d.rwlock.Unlock()
-	if d.consistent {
+	if d.snap == nil {
+		// we're 'always consistent'
 		return
 	}
 	d.snap = snap
@@ -156,7 +152,8 @@ func (d *dataStoreData) setSnapshot(snap *memStore) {
 func (d *dataStoreData) catchupIndexes() {
 	d.rwlock.Lock()
 	defer d.rwlock.Unlock()
-	if d.consistent {
+	if d.snap == nil {
+		// we're 'always consistent'
 		return
 	}
 	d.snap = d.head.Snapshot()
@@ -278,9 +275,6 @@ func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.Pu
 			}
 			updateIndexes(d.head, ret, oldPM, pmap)
 			ents.Set(keyBytes(ret), dataBytes)
-			if d.consistent {
-				d.snap = d.head.Snapshot()
-			}
 			return
 		}()
 		if cb != nil {
@@ -342,9 +336,6 @@ func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) {
 					}
 					updateIndexes(d.head, k, oldPM, nil)
 					ents.Delete(kb)
-					if d.consistent {
-						d.snap = d.head.Snapshot()
-					}
 				}
 				return nil
 			}()
