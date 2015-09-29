@@ -125,6 +125,11 @@ var queryTests = []queryTest{
 		"",
 		"cannot project on \"__key__\"", nil},
 
+	{"getting all the keys",
+		nq("").KeysOnly(true),
+		"SELECT __key__ ORDER BY `__key__`",
+		nil, nil},
+
 	{"projecting a duplicate",
 		nq().Project("hello", "hello"),
 		"SELECT `hello` FROM `Foo` ORDER BY `hello`, `__key__`",
@@ -134,6 +139,11 @@ var queryTests = []queryTest{
 		nq().Project("hello").Project("hello"),
 		"SELECT `hello` FROM `Foo` ORDER BY `hello`, `__key__`",
 		nil, nq().Project("hello")},
+
+	{"project distinct",
+		nq().Project("hello").Distinct(true),
+		"SELECT DISTINCT `hello` FROM `Foo` ORDER BY `hello`, `__key__`",
+		nil, nil},
 
 	{"bad ancestors",
 		nq().Ancestor(mkKey("goop", 0)),
@@ -195,6 +205,21 @@ var queryTests = []queryTest{
 		"",
 		"invalid order for kindless query", nil},
 
+	{"kindless with equality filters",
+		nq("").Eq("hello", 1),
+		"",
+		"may not have any equality", nil},
+
+	{"kindless with ancestor filter",
+		nq("").Ancestor(mkKey("Parent", 1)),
+		"SELECT * WHERE __key__ HAS ANCESTOR KEY(DATASET(\"s~aid\"), NAMESPACE(\"ns\"), \"Parent\", 1) ORDER BY `__key__`",
+		nil, nil},
+
+	{"kindless with ancestor filter and __key__ ineq",
+		nq("").Ancestor(mkKey("Parent", 1)).Lt("__key__", mkKey("Parent", 1, "Sub", "hat")),
+		"SELECT * WHERE `__key__` < KEY(DATASET(\"s~aid\"), NAMESPACE(\"ns\"), \"Parent\", 1, \"Sub\", \"hat\") AND __key__ HAS ANCESTOR KEY(DATASET(\"s~aid\"), NAMESPACE(\"ns\"), \"Parent\", 1) ORDER BY `__key__`",
+		nil, nil},
+
 	{"distinct non-projection",
 		nq().Distinct(true).Gt("marla", 1),
 		"SELECT * FROM `Foo` WHERE `marla` > 1 ORDER BY `marla`, `__key__`",
@@ -218,7 +243,7 @@ var queryTests = []queryTest{
 		"bad type complex", nil},
 
 	{"sort orders used for equality are ignored",
-		nq().Order("a", "b", "c").Eq("b", 2),
+		nq().Order("a", "b", "c").Eq("b", 2, 2),
 		"SELECT * FROM `Foo` WHERE `b` = 2 ORDER BY `a`, `c`, `__key__`",
 		nil, nq().Order("a", "c").Eq("b", 2)},
 
@@ -241,9 +266,9 @@ var queryTests = []queryTest{
 		nil},
 
 	{"in-bound key filters with ancestor OK",
-		nq().Ancestor(mkKey("Hello", 10)).Lt("__key__", mkKey("Hello", 10, "Something", "hi")),
+		nq().Ancestor(mkKey("Hello", 10)).Lte("__key__", mkKey("Hello", 10, "Something", "hi")),
 		("SELECT * FROM `Foo` " +
-			"WHERE `__key__` < KEY(DATASET(\"s~aid\"), NAMESPACE(\"ns\"), \"Hello\", 10, \"Something\", \"hi\") AND " +
+			"WHERE `__key__` <= KEY(DATASET(\"s~aid\"), NAMESPACE(\"ns\"), \"Hello\", 10, \"Something\", \"hi\") AND " +
 			"__key__ HAS ANCESTOR KEY(DATASET(\"s~aid\"), NAMESPACE(\"ns\"), \"Hello\", 10) " +
 			"ORDER BY `__key__`"),
 		nil,
@@ -259,6 +284,21 @@ var queryTests = []queryTest{
 		"SELECT * FROM `Foo` ORDER BY `__key__`",
 		nil,
 		nil},
+
+	{"ineq on __key__ with ancestor must be an ancestor of __ancestor__!",
+		nq().Ancestor(mkKey("Hello", 10)).Lt("__key__", mkKey("Hello", 8)),
+		"",
+		"inequality filters on __key__ must be descendants of the __ancestor__", nil},
+
+	{"ineq on __key__ with ancestor must be an ancestor of __ancestor__! (2)",
+		nq().Ancestor(mkKey("Hello", 10)).Gt("__key__", mkKey("Hello", 8)),
+		"",
+		"inequality filters on __key__ must be descendants of the __ancestor__", nil},
+
+	{"can build an empty query",
+		nq().Lt("hello", 10).Gt("hello", 50),
+		"",
+		ErrNullQuery, nil},
 }
 
 func TestQueries(t *testing.T) {

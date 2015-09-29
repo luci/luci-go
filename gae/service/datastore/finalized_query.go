@@ -240,6 +240,8 @@ func (q *FinalizedQuery) GQL() string {
 		}
 		ws(" ")
 		ws(strings.Join(proj, ", "))
+	} else if q.keysOnly {
+		ws(" __key__")
 	} else {
 		ws(" *")
 	}

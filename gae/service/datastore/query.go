@@ -470,14 +470,24 @@ func (q *Query) Finalize() (*FinalizedQuery, error) {
 		return q.finalized, q.err
 	}
 
+	ancestor := (*Key)(nil)
+	if slice, ok := q.eqFilts["__ancestor__"]; ok {
+		ancestor = slice[0].Value().(*Key)
+	}
+
 	err := func() error {
+
 		if q.kind == "" { // kindless query checks
 			if q.ineqFiltProp != "" && q.ineqFiltProp != "__key__" {
 				return fmt.Errorf(
 					"kindless queries can only filter on __key__, got %q", q.ineqFiltProp)
 			}
-			if len(q.eqFilts) > 0 {
-				return fmt.Errorf("kindless queries not have any equality filters")
+			allowedEqs := 0
+			if ancestor != nil {
+				allowedEqs = 1
+			}
+			if len(q.eqFilts) > allowedEqs {
+				return fmt.Errorf("kindless queries may not have any equality filters")
 			}
 			for _, o := range q.order {
 				if o.Property != "__key__" || o.Descending {
@@ -497,10 +507,24 @@ func (q *Query) Finalize() (*FinalizedQuery, error) {
 					q.order[0].Property, q.ineqFiltProp)
 			}
 			if q.ineqFiltLowSet && q.ineqFiltHighSet {
-				if q.ineqFiltHigh.Less(&q.ineqFiltLow) &&
+				if q.ineqFiltHigh.Less(&q.ineqFiltLow) ||
 					(q.ineqFiltHigh.Equal(&q.ineqFiltLow) &&
 						(!q.ineqFiltLowIncl || !q.ineqFiltHighIncl)) {
 					return ErrNullQuery
+				}
+			}
+			if q.ineqFiltProp == "__key__" {
+				if q.ineqFiltLowSet {
+					if ancestor != nil && !q.ineqFiltLow.Value().(*Key).HasAncestor(ancestor) {
+						return fmt.Errorf(
+							"inequality filters on __key__ must be descendants of the __ancestor__")
+					}
+				}
+				if q.ineqFiltHighSet {
+					if ancestor != nil && !q.ineqFiltHigh.Value().(*Key).HasAncestor(ancestor) {
+						return fmt.Errorf(
+							"inequality filters on __key__ must be descendants of the __ancestor__")
+					}
 				}
 			}
 		}
@@ -527,7 +551,7 @@ func (q *Query) Finalize() (*FinalizedQuery, error) {
 		kind:     q.kind,
 
 		keysOnly:             q.keysOnly,
-		eventuallyConsistent: q.eventualConsistency || q.eqFilts["__ancestor__"] == nil,
+		eventuallyConsistent: q.eventualConsistency || ancestor == nil,
 		limit:                q.limit,
 		offset:               q.offset,
 		start:                q.start,
@@ -549,13 +573,14 @@ func (q *Query) Finalize() (*FinalizedQuery, error) {
 		ret.distinct = q.distinct && q.project.Len() > 0
 	}
 
+	seenOrders := stringset.New(len(q.order))
+
 	// if len(q.order) > 0, we already enforce that the first order
 	// is the same as the inequality above. Otherwise we need to add it.
 	if len(q.order) == 0 && q.ineqFiltProp != "" {
 		ret.orders = []IndexColumn{{Property: q.ineqFiltProp}}
+		seenOrders.Add(q.ineqFiltProp)
 	}
-
-	seenOrders := stringset.New(len(q.order))
 
 	// drop orders where there's an equality filter
 	//   https://cloud.google.com/appengine/docs/go/datastore/queries#sort_orders_are_ignored_on_properties_with_equality_filters

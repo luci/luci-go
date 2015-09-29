@@ -217,7 +217,7 @@ func (id *IndexDefinition) Builtin() bool {
 //
 // NOTE: !Builtin() does not imply Compound().
 func (id *IndexDefinition) Compound() bool {
-	if id.Kind == "" || len(id.SortBy) <= 1 {
+	if id.Kind == "" || id.Builtin() {
 		return false
 	}
 	for _, sb := range id.SortBy {
@@ -234,7 +234,7 @@ func (id *IndexDefinition) Compound() bool {
 // an error.
 func (id *IndexDefinition) YAMLString() (string, error) {
 	if id.Builtin() || !id.Compound() {
-		return "", fmt.Errorf("cannot generate YAML for this IndexDefinition")
+		return "", fmt.Errorf("cannot generate YAML for %s", id)
 	}
 
 	ret := bytes.Buffer{}

@@ -138,8 +138,6 @@ var queryExecutionTests = []qExTest{
 
 				{q: nq("Missing"), get: []ds.PropertyMap{}},
 
-				{q: nq("Missing").Lt("Id", 2).Gt("Id", 2), get: []ds.PropertyMap{}},
-
 				{q: nq("Missing").Eq("Bogus", 3), get: []ds.PropertyMap{}},
 
 				{q: nq("Kind").Eq("Extra", "waffle"), get: []ds.PropertyMap{
