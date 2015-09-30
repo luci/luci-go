@@ -144,7 +144,7 @@ func parseSuffix(aid, ns string, suffixFormat []ds.IndexColumn, suffix []byte, c
 
 	err := error(nil)
 	for i := range decoded {
-		if count > 0 && i > count {
+		if count >= 0 && i >= count {
 			break
 		}
 		needInvert := suffixFormat[i].Descending

@@ -57,7 +57,7 @@ var stage1Data = []ds.PropertyMap{
 		"Extra", "waffle",
 	),
 	pmap("$key", key("Kind", 6), Next,
-		"Val", 5, Next,
+		"Val", 5, 3, 2, Next,
 		"When", time.Date(2000, time.January, 1, 1, 1, 1, 1, time.UTC), Next,
 		"Extra", "waffle",
 	),
@@ -153,16 +153,56 @@ var queryExecutionTests = []qExTest{
 					stage1Data[4],
 				}},
 
-				{q: (nq("Kind").Ancestor(key("Kind", 3)).Order("Val").
-					Start(curs("Val", 1, "__key__", key("Kind", 3))).
-					End(curs("Val", 90, "__key__", key("Kind", 3, "Zeta", "woot")))), keys: []*ds.Key{},
+				{q: nq("Kind").Eq("Val", 2, 3), get: []ds.PropertyMap{
+					stage1Data[0],
+					stage1Data[3],
+				}},
+
+				// note the kind :)
+				{q: (nq("Kind").Ancestor(key("Kind", 3)).
+					Start(curs("__key__", key("Kind", 3))).
+					End(curs("__key__", key("Kind", 3, "Zeta", "woot")))),
+					keys: []*ds.Key{
+						key("Kind", 3),
+						key("Kind", 3, "Kind", 1),
+						key("Kind", 3, "Kind", 2),
+						key("Kind", 3, "Kind", 3),
+					},
 				},
 
-				{q: (nq("Kind").Ancestor(key("Kind", 3)).Order("Val").
-					Start(curs("Val", 1, "__key__", key("Kind", 3))).
-					End(curs("Val", 90, "__key__", key("Kind", 3, "Zeta", "woot")))),
-					keys:  []*ds.Key{},
+				{q: (nq("").Ancestor(key("Kind", 3)).
+					Start(curs("__key__", key("Kind", 3))).
+					End(curs("__key__", key("Kind", 3, "Zeta", "woot")))),
+					keys: []*ds.Key{
+						key("Kind", 3),
+						key("Kind", 3, "Child", "seven"),
+						key("Kind", 3, "Kind", 1),
+						key("Kind", 3, "Kind", 2),
+						key("Kind", 3, "Kind", 3),
+					},
+				},
+
+				{q: (nq("Kind").Ancestor(key("Kind", 3)).
+					Start(curs("__key__", key("Kind", 3))).
+					End(curs("__key__", key("Kind", 3, "Zeta", "woot")))),
+					keys: []*ds.Key{
+						key("Kind", 3),
+						key("Kind", 3, "Kind", 1),
+						key("Kind", 3, "Kind", 2),
+						key("Kind", 3, "Kind", 3),
+					},
 					inTxn: true},
+
+				{q: nq("Kind").Ancestor(key("Kind", 3)).Eq("Val", 3, 4),
+					keys: []*ds.Key{
+						key("Kind", 3, "Kind", 2),
+						key("Kind", 3, "Kind", 3),
+					},
+					get: []ds.PropertyMap{
+						stage2Data[1],
+						stage2Data[2],
+					},
+				},
 
 				{q: nq("Kind").Gt("Val", 2).Lte("Val", 5), get: []ds.PropertyMap{
 					stage1Data[0], stage1Data[3],
@@ -316,6 +356,20 @@ var queryExecutionTests = []qExTest{
 						"  - name: Not",
 						"  - name: Work",
 						"    direction: desc",
+					}, "\n"))
+				},
+
+				func(c context.Context) {
+					data := ds.Get(c)
+					q := nq("Something").Ancestor(key("Kind", 3)).Order("Val")
+					So(data.Run(q, func(ds.Key, ds.CursorCB) bool {
+						return true
+					}), ShouldErrLike, strings.Join([]string{
+						"Consider adding:",
+						"- kind: Something",
+						"  ancestor: yes",
+						"  properties:",
+						"  - name: Val",
 					}, "\n"))
 				},
 			},

@@ -65,7 +65,8 @@ func multiIterate(defs []*iterDefinition, cb func(suffix []byte) bool) {
 			}
 			def := defs[idx]
 
-			it.next(serialize.Join(def.prefix, suffix), func(itm *gkvlite.Item) {
+			pfxLen := prefixLens[idx]
+			it.next(serialize.Join(def.prefix[:pfxLen], suffix), func(itm *gkvlite.Item) {
 				if itm == nil {
 					// we hit the end of an iterator, we're now done with the whole
 					// query.
@@ -73,7 +74,7 @@ func multiIterate(defs []*iterDefinition, cb func(suffix []byte) bool) {
 					return
 				}
 
-				sfxRO := itm.Key[prefixLens[idx]:]
+				sfxRO := itm.Key[pfxLen:]
 
 				if bytes.Compare(sfxRO, suffix) > 0 {
 					// this row has a higher suffix than anything we've seen before. Set

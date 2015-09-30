@@ -168,6 +168,9 @@ func (idxs *indexDefinitionSortableSlice) maybeAddDefinition(q *reducedQuery, s 
 		if len(q.eqFilters) > 1 || (len(q.eqFilters) == 1 && q.eqFilters["__ancestor__"] == nil) {
 			return false
 		}
+		if len(sortBy) > 1 && q.eqFilters["__ancestor__"] != nil {
+			return false
+		}
 	}
 
 	// Make sure the equalities section doesn't contain any properties we don't
@@ -375,33 +378,25 @@ func generate(q *reducedQuery, idx *indexDefinitionSortable, c *constraints) *it
 		def.prefix = serialize.Join(def.prefix, chopped)
 
 		// Update start and end, since we know that if they contain anything, they
-		// contain values for the __key__ field.
+		// contain values for the __key__ field. This is necessary because bytes
+		// are shifting from the suffix to the prefix, and start/end should only
+		// contain suffix (variable) bytes.
 		if def.start != nil {
-			offset := 0
-			if len(q.suffixFormat) > 1 {
-				chunks, _ := parseSuffix(q.aid, q.ns, q.suffixFormat, def.start, 1)
-				offset = len(chunks[0])
-			}
-			if !bytes.HasPrefix(def.start[offset:], chopped) {
+			if !bytes.HasPrefix(def.start, chopped) {
 				// again, shouldn't happen, but if it does, we want to know about it.
 				impossible(fmt.Errorf(
 					"start suffix for implied ancestor doesn't start with ancestor! start:%v ancestor:%v",
 					def.start, chopped))
 			}
-			def.start = def.start[:offset+len(chopped)]
+			def.start = def.start[len(chopped):]
 		}
 		if def.end != nil {
-			offset := 0
-			if len(q.suffixFormat) > 1 {
-				chunks, _ := parseSuffix(q.aid, q.ns, q.suffixFormat, def.end, 1)
-				offset = len(chunks[0])
-			}
-			if !bytes.HasPrefix(def.end[offset:], chopped) {
+			if !bytes.HasPrefix(def.end, chopped) {
 				impossible(fmt.Errorf(
 					"end suffix for implied ancestor doesn't start with ancestor! end:%v ancestor:%v",
 					def.end, chopped))
 			}
-			def.end = def.end[:offset+len(chopped)]
+			def.end = def.end[len(chopped):]
 		}
 	}
 
