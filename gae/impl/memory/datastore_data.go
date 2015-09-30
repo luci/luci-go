@@ -126,7 +126,8 @@ func (d *dataStoreData) getQuerySnaps(consistent bool) (idx, head *memStore) {
 	defer d.rwlock.RUnlock()
 	if d.snap == nil {
 		// we're 'always consistent'
-		return d.head, d.head
+		snap := d.head.Snapshot()
+		return snap, snap
 	}
 
 	head = d.head.Snapshot()

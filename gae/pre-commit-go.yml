@@ -65,7 +65,7 @@ modes:
       - extra_args:
         - -v
         - -race
-    max_duration: 20
+    max_duration: 120
 
 ignore_patterns:
 - .*
