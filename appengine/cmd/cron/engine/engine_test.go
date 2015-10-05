@@ -20,7 +20,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/mathrand"
 
-	"github.com/luci/luci-go/appengine/cmd/cron/jobs"
+	"github.com/luci/luci-go/appengine/cmd/cron/catalog"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -28,7 +28,7 @@ import (
 func TestGetAllProjects(t *testing.T) {
 	Convey("works", t, func() {
 		c := newTestContext(epoch)
-		_, e := newTestEngine()
+		e := newTestEngine()
 		ds := datastore.Get(c)
 
 		// Empty.
@@ -53,19 +53,18 @@ func TestGetAllProjects(t *testing.T) {
 func TestUpdateProjectJobs(t *testing.T) {
 	Convey("works", t, func() {
 		c := newTestContext(epoch)
-		_, e := newTestEngine()
+		e := newTestEngine()
 
 		// Doing nothing.
-		So(e.UpdateProjectJobs(c, "abc", []jobs.Definition{}), ShouldBeNil)
+		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{}), ShouldBeNil)
 		So(allJobs(c), ShouldResemble, []jobEntity{})
 
 		// Adding a new job (ticks every 5 sec).
-		So(e.UpdateProjectJobs(c, "abc", []jobs.Definition{
-			&fakeJob{
-				id:       "abc/1",
-				project:  "abc",
-				rev:      "rev1",
-				schedule: "*/5 * * * * * *",
+		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{
+			{
+				JobID:    "abc/1",
+				Revision: "rev1",
+				Schedule: "*/5 * * * * * *",
 			}}), ShouldBeNil)
 		So(allJobs(c), ShouldResemble, []jobEntity{
 			{
@@ -88,23 +87,21 @@ func TestUpdateProjectJobs(t *testing.T) {
 		taskqueue.Get(c).Testable().ResetTasks()
 
 		// Readding same job in with exact same config revision -> noop.
-		So(e.UpdateProjectJobs(c, "abc", []jobs.Definition{
-			&fakeJob{
-				id:       "abc/1",
-				project:  "abc",
-				rev:      "rev1",
-				schedule: "*/5 * * * * * *",
+		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{
+			{
+				JobID:    "abc/1",
+				Revision: "rev1",
+				Schedule: "*/5 * * * * * *",
 			}}), ShouldBeNil)
 		ensureZeroTasks(c, "timers-q")
 		ensureZeroTasks(c, "invs-q")
 
 		// Changing schedule to tick earlier -> rescheduled.
-		So(e.UpdateProjectJobs(c, "abc", []jobs.Definition{
-			&fakeJob{
-				id:       "abc/1",
-				project:  "abc",
-				rev:      "rev2",
-				schedule: "*/1 * * * * * *",
+		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{
+			{
+				JobID:    "abc/1",
+				Revision: "rev2",
+				Schedule: "*/1 * * * * * *",
 			}}), ShouldBeNil)
 		So(allJobs(c), ShouldResemble, []jobEntity{
 			{
@@ -127,7 +124,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 		taskqueue.Get(c).Testable().ResetTasks()
 
 		// Removed -> goes to disabled state.
-		So(e.UpdateProjectJobs(c, "abc", []jobs.Definition{}), ShouldBeNil)
+		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{}), ShouldBeNil)
 		So(allJobs(c), ShouldResemble, []jobEntity{
 			{
 				JobID:     "abc/1",
@@ -148,16 +145,15 @@ func TestUpdateProjectJobs(t *testing.T) {
 func TestTransactionRetries(t *testing.T) {
 	Convey("retry works", t, func() {
 		c := newTestContext(epoch)
-		_, e := newTestEngine()
+		e := newTestEngine()
 
 		// Adding a new job with transaction retry, should enqueue one task.
 		datastore.Get(c).Testable().SetTransactionRetryCount(2)
-		So(e.UpdateProjectJobs(c, "abc", []jobs.Definition{
-			&fakeJob{
-				id:       "abc/1",
-				project:  "abc",
-				rev:      "rev1",
-				schedule: "*/5 * * * * * *",
+		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{
+			{
+				JobID:    "abc/1",
+				Revision: "rev1",
+				Schedule: "*/5 * * * * * *",
 			}}), ShouldBeNil)
 		So(allJobs(c), ShouldResemble, []jobEntity{
 			{
@@ -182,16 +178,15 @@ func TestTransactionRetries(t *testing.T) {
 
 	Convey("collision is handled", t, func() {
 		c := newTestContext(epoch)
-		_, e := newTestEngine()
+		e := newTestEngine()
 
 		// Pretend collision happened in all retries.
 		datastore.Get(c).Testable().SetTransactionRetryCount(5)
-		err := e.UpdateProjectJobs(c, "abc", []jobs.Definition{
-			&fakeJob{
-				id:       "abc/1",
-				project:  "abc",
-				rev:      "rev1",
-				schedule: "*/5 * * * * * *",
+		err := e.UpdateProjectJobs(c, "abc", []catalog.Definition{
+			{
+				JobID:    "abc/1",
+				Revision: "rev1",
+				Schedule: "*/5 * * * * * *",
 			}})
 		So(errors.IsTransient(err), ShouldBeTrue)
 		So(allJobs(c), ShouldResemble, []jobEntity{})
@@ -203,14 +198,13 @@ func TestTransactionRetries(t *testing.T) {
 func TestResetAllJobsOnDevServer(t *testing.T) {
 	Convey("works", t, func() {
 		c := newTestContext(epoch)
-		_, e := newTestEngine()
+		e := newTestEngine()
 
-		So(e.UpdateProjectJobs(c, "abc", []jobs.Definition{
-			&fakeJob{
-				id:       "abc/1",
-				project:  "abc",
-				rev:      "rev1",
-				schedule: "*/5 * * * * * *",
+		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{
+			{
+				JobID:    "abc/1",
+				Revision: "rev1",
+				Schedule: "*/5 * * * * * *",
 			}}), ShouldBeNil)
 		So(allJobs(c), ShouldResemble, []jobEntity{
 			{
@@ -251,15 +245,14 @@ func TestResetAllJobsOnDevServer(t *testing.T) {
 func TestFullFlow(t *testing.T) {
 	Convey("full flow", t, func() {
 		c := newTestContext(epoch)
-		jt, e := newTestEngine()
+		e := newTestEngine()
 
 		// Adding a new job (ticks every 5 sec).
-		So(e.UpdateProjectJobs(c, "abc", []jobs.Definition{
-			&fakeJob{
-				id:       "abc/1",
-				project:  "abc",
-				rev:      "rev1",
-				schedule: "*/5 * * * * * *",
+		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{
+			{
+				JobID:    "abc/1",
+				Revision: "rev1",
+				Schedule: "*/5 * * * * * *",
 			}}), ShouldBeNil)
 		So(allJobs(c), ShouldResemble, []jobEntity{
 			{
@@ -314,30 +307,8 @@ func TestFullFlow(t *testing.T) {
 		taskqueue.Get(c).Testable().ResetTasks()
 
 		// Time to run the job.
+		// TODO(vadimsh): Test RUNNING state.
 		So(e.ExecuteSerializedAction(c, invTask.Payload), ShouldBeNil)
-		So(jt.jobs, ShouldResemble, []fakeTrackedJob{
-			{jobID: "abc/1", invocationID: 631000787647335445},
-		})
-		So(allJobs(c), ShouldResemble, []jobEntity{
-			{
-				JobID:     "abc/1",
-				ProjectID: "abc",
-				Revision:  "rev1",
-				Enabled:   true,
-				Schedule:  "*/5 * * * * * *",
-				State: JobState{
-					State:          "RUNNING",
-					TickID:         9111178027324032851,
-					TickTime:       epoch.Add(10 * time.Second),
-					InvocationID:   631000787647335445,
-					InvocationTime: epoch.Add(5 * time.Second),
-				},
-			},
-		})
-
-		// Some time later it finishes.
-		clock.Get(c).(testclock.TestClock).Add(1 * time.Second)
-		So(jt.finishJob(c, 631000787647335445), ShouldBeNil)
 		So(allJobs(c), ShouldResemble, []jobEntity{
 			{
 				JobID:     "abc/1",
@@ -378,17 +349,13 @@ func newTestContext(now time.Time) context.Context {
 	return c
 }
 
-func newTestEngine() (*fakeJobTracker, Engine) {
-	jt := &fakeJobTracker{}
-	eng := NewEngine(Config{
+func newTestEngine() Engine {
+	return NewEngine(Config{
 		TimersQueuePath:      "/timers",
 		TimersQueueName:      "timers-q",
 		InvocationsQueuePath: "/invs",
 		InvocationsQueueName: "invs-q",
-		JobTracker:           jt,
 	})
-	jt.SetListener(eng)
-	return jt, eng
 }
 
 func allJobs(c context.Context) []jobEntity {
@@ -426,50 +393,4 @@ func ensureOneTask(c context.Context, q string) *taskqueue.Task {
 		return t
 	}
 	return nil
-}
-
-type fakeJob struct {
-	id       string
-	project  string
-	rev      string
-	schedule string
-	work     []byte
-}
-
-func (d *fakeJob) JobID() string     { return d.id }
-func (d *fakeJob) ProjectID() string { return d.project }
-func (d *fakeJob) Revision() string  { return d.rev }
-func (d *fakeJob) Schedule() string  { return d.schedule }
-func (d *fakeJob) Work() []byte      { return d.work }
-
-type fakeTrackedJob struct {
-	jobID        string
-	invocationID int64
-	work         []byte
-}
-
-type fakeJobTracker struct {
-	l    jobs.Listener
-	jobs []fakeTrackedJob
-}
-
-func (t *fakeJobTracker) SetListener(l jobs.Listener) { t.l = l }
-
-func (t *fakeJobTracker) LaunchJob(c context.Context, jobID string, invocationID int64, work []byte) error {
-	t.jobs = append(t.jobs, fakeTrackedJob{jobID, invocationID, work})
-	return nil
-}
-
-func (t *fakeJobTracker) finishJob(c context.Context, invID int64) error {
-	filtered := []fakeTrackedJob{}
-	var err error
-	for _, job := range t.jobs {
-		if job.invocationID == invID {
-			err = t.l.InvocationDone(c, job.jobID, job.invocationID)
-		} else {
-			filtered = append(filtered, job)
-		}
-	}
-	t.jobs = filtered
-	return err
 }

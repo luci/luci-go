@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -24,7 +25,7 @@ import (
 	"github.com/luci/luci-go/common/stringset"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/appengine/cmd/cron/jobs"
+	"github.com/luci/luci-go/appengine/cmd/cron/catalog"
 )
 
 // Engine manages all cron jobs: keeps track of their state, runs state machine
@@ -37,30 +38,26 @@ type Engine interface {
 	GetAllProjects(c context.Context) ([]string, error)
 
 	// UpdateProjectJobs adds new, removes old and updates existing jobs.
-	UpdateProjectJobs(c context.Context, projectID string, defs []jobs.Definition) error
+	UpdateProjectJobs(c context.Context, projectID string, defs []catalog.Definition) error
 
-	// ResetAllJobsOnDevServer forcefully resets state of all enabled jobs. Supposed to be
-	// used only on devserver, where task queue stub state is not preserved
-	// between appserver restarts and it messes everything.
+	// ResetAllJobsOnDevServer forcefully resets state of all enabled jobs.
+	// Supposed to be used only on devserver, where task queue stub state is not
+	// preserved between appserver restarts and it messes everything.
 	ResetAllJobsOnDevServer(c context.Context) error
 
 	// ExecuteSerializedAction is called via a task queue to execute an action
 	// produced by job state machine transition. These actions are POSTed
 	// to TimersQueue and InvocationsQueue defined in Config by Engine.
 	ExecuteSerializedAction(c context.Context, body []byte) error
-
-	// InvocationDone is called by JobTracker when previously started invocation
-	// finishes.
-	InvocationDone(c context.Context, jobID string, invocationID int64) error
 }
 
 // Config contains parameters for the engine.
 type Config struct {
+	Catalog              catalog.Catalog // provides task.Manager's to run tasks
 	TimersQueuePath      string          // URL of a task queue handler for timer ticks
 	TimersQueueName      string          // queue name for timer ticks
 	InvocationsQueuePath string          // URL of a task queue handler that starts jobs
 	InvocationsQueueName string          // queue name for job starts
-	JobTracker           jobs.JobTracker // knows how to start tasks
 }
 
 // NewEngine returns default implementation of Engine.
@@ -101,10 +98,9 @@ type jobEntity struct {
 	// Schedule is cron job schedule in regular cron expression format.
 	Schedule string
 
-	// Work is cron job payload in serialized form. Opaque from the point of view
-	// of the engine. The engine gets it from Catalog and passes it to JobTracker
-	// where it is actually validated and used.
-	Work []byte
+	// Task is cron job payload in serialized form. Opaque from the point of view
+	// of the engine. See Catalog.UnmarshalTask().
+	Task []byte
 
 	// State is cron job state machine state, see StateMachine.
 	State JobState
@@ -117,8 +113,14 @@ func (e *jobEntity) isEqual(other *jobEntity) bool {
 		e.Revision == other.Revision &&
 		e.Enabled == other.Enabled &&
 		e.Schedule == other.Schedule &&
-		bytes.Equal(e.Work, other.Work) &&
+		bytes.Equal(e.Task, other.Task) &&
 		e.State == other.State)
+}
+
+// matches returns true if job definition in the entity matches the one
+// specified by catalog.Definition struct.
+func (e *jobEntity) matches(def catalog.Definition) bool {
+	return e.JobID == def.JobID && e.Schedule == def.Schedule && bytes.Equal(e.Task, def.Task)
 }
 
 ////
@@ -147,7 +149,7 @@ func (e *engineImpl) GetAllProjects(c context.Context) ([]string, error) {
 	return out, nil
 }
 
-func (e *engineImpl) UpdateProjectJobs(c context.Context, projectID string, defs []jobs.Definition) error {
+func (e *engineImpl) UpdateProjectJobs(c context.Context, projectID string, defs []catalog.Definition) error {
 	// JobID -> *jobEntity map.
 	existing, err := e.getProjectJobs(c, projectID)
 	if err != nil {
@@ -156,7 +158,7 @@ func (e *engineImpl) UpdateProjectJobs(c context.Context, projectID string, defs
 	// JobID -> new definition revision map.
 	updated := make(map[string]string, len(defs))
 	for _, def := range defs {
-		updated[def.JobID()] = def.Revision()
+		updated[def.JobID] = def.Revision
 	}
 	// List of job ids to disable.
 	toDisable := []string{}
@@ -171,13 +173,13 @@ func (e *engineImpl) UpdateProjectJobs(c context.Context, projectID string, defs
 	// Add new jobs, update existing ones.
 	updateErrs := errors.NewLazyMultiError(len(defs))
 	for i, def := range defs {
-		if ent := existing[def.JobID()]; ent != nil {
-			if ent.Enabled && ent.Revision == def.Revision() {
+		if ent := existing[def.JobID]; ent != nil {
+			if ent.Enabled && ent.matches(def) {
 				continue
 			}
 		}
 		wg.Add(1)
-		go func(i int, def jobs.Definition) {
+		go func(i int, def catalog.Definition) {
 			updateErrs.Assign(i, e.updateJob(c, def))
 			wg.Done()
 		}(i, def)
@@ -404,18 +406,23 @@ func (e *engineImpl) ExecuteSerializedAction(c context.Context, action []byte) e
 
 // updateJob updates an existing job if its definition has changed, adds
 // a completely new job or enables a previously disabled job.
-func (e *engineImpl) updateJob(c context.Context, def jobs.Definition) error {
-	return e.txn(c, def.JobID(), func(c context.Context, job *jobEntity, isNew bool) error {
-		if !isNew && job.Enabled && job.Revision == def.Revision() {
+func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error {
+	return e.txn(c, def.JobID, func(c context.Context, job *jobEntity, isNew bool) error {
+		if !isNew && job.Enabled && job.matches(def) {
 			return errSkipPut
 		}
 		if isNew {
+			// JobID is <projectID>/<name>, it's ensure by Catalog.
+			chunks := strings.Split(def.JobID, "/")
+			if len(chunks) != 2 {
+				return fmt.Errorf("unexpected jobID format: %s", def.JobID)
+			}
 			*job = jobEntity{
-				JobID:     def.JobID(),
-				ProjectID: def.ProjectID(),
+				JobID:     def.JobID,
+				ProjectID: chunks[0],
 				Enabled:   false, // to trigger 'if !oldEnabled' below
-				Schedule:  def.Schedule(),
-				Work:      def.Work(),
+				Schedule:  def.Schedule,
+				Task:      def.Task,
 				State:     JobState{State: JobStateDisabled},
 			}
 		}
@@ -423,10 +430,10 @@ func (e *engineImpl) updateJob(c context.Context, def jobs.Definition) error {
 		oldSchedule := job.Schedule
 
 		// Update the job in full before running any state changes.
-		job.Revision = def.Revision()
+		job.Revision = def.Revision
 		job.Enabled = true
-		job.Schedule = def.Schedule()
-		job.Work = def.Work()
+		job.Schedule = def.Schedule
+		job.Task = def.Task
 
 		// Do state machine transitions.
 		if !oldEnabled {
@@ -486,12 +493,6 @@ func (e *engineImpl) timerTick(c context.Context, jobID string, tickID int64) er
 	})
 }
 
-// For context.Context.
-type invocationDoneCBKeyType int
-type invocationDoneCB func(c context.Context, jobID string, invocationID int64) error
-
-var invocationDoneCBKey invocationDoneCBKeyType
-
 // startInvocation is called via task queue to start running a job.
 func (e *engineImpl) startInvocation(c context.Context, jobID string, invocationID int64) error {
 	// Still need to do this?
@@ -510,30 +511,8 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 		return nil
 	}
 
-	// LaunchJob may call InvocationDone inside. Pass specially crafted context
-	// to detect this situation. Need to use explicitly typed 'cb' variable for
-	// type cast *.(invocationDoneCB) to work.
-	doneAlready := false
-	var cb invocationDoneCB = func(c context.Context, jid string, invID int64) error {
-		if jid != jobID || invID != invocationID {
-			return fmt.Errorf("unexpected InvocationDone call")
-		}
-		doneAlready = true
-		return nil
-	}
-	c = context.WithValue(c, invocationDoneCBKey, cb)
+	// TODO(vadimsh): Implement via task.TaskManager. Mark as "Done" for now.
 
-	err = e.JobTracker.LaunchJob(c, jobID, invocationID, job.Work)
-	if errors.IsTransient(err) {
-		return err
-	}
-	launchFailed := false
-	if err != nil {
-		launchFailed = true
-		logging.Errorf(c, "Failed to start invocation %d - %s", invocationID, err)
-	}
-
-	// Mutate the machine state.
 	return e.txn(c, jobID, func(c context.Context, job *jobEntity, isNew bool) error {
 		if isNew {
 			logging.Errorf(c, "Queued job is unexpectedly gone")
@@ -542,23 +521,6 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 		err := e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnInvocationStart(invocationID) })
 		if err != nil {
 			return err
-		}
-		// Failed to launch or already finished -> mark as done.
-		if launchFailed || doneAlready {
-			return e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnInvocationDone(invocationID) })
-		}
-		return nil
-	})
-}
-
-func (e *engineImpl) InvocationDone(c context.Context, jobID string, invocationID int64) error {
-	if cb, ok := c.Value(invocationDoneCBKey).(invocationDoneCB); ok {
-		return cb(c, jobID, invocationID)
-	}
-	return e.txn(c, jobID, func(c context.Context, job *jobEntity, isNew bool) error {
-		if isNew {
-			logging.Errorf(c, "Running job is unexpectedly gone")
-			return errSkipPut
 		}
 		return e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnInvocationDone(invocationID) })
 	})

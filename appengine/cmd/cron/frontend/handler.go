@@ -24,12 +24,39 @@ import (
 	"github.com/luci/gae/impl/prod"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/taskqueue"
+
+	"github.com/luci/luci-go/appengine/gaeauth"
 	"github.com/luci/luci-go/appengine/gaelogger"
+	cfgmemory "github.com/luci/luci-go/common/config/impl/memory"
+	cfgremote "github.com/luci/luci-go/common/config/impl/remote"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 
-	"github.com/luci/luci-go/appengine/cmd/cron/engine"
-	"github.com/luci/luci-go/appengine/cmd/cron/jobs"
+	cat "github.com/luci/luci-go/appengine/cmd/cron/catalog"
+	eng "github.com/luci/luci-go/appengine/cmd/cron/engine"
+
+	"github.com/luci/luci-go/appengine/cmd/cron/task"
+	"github.com/luci/luci-go/appengine/cmd/cron/task/noop"
+	"github.com/luci/luci-go/appengine/cmd/cron/task/urlfetch"
+)
+
+//// Global state. See init().
+
+var (
+	catalog cat.Catalog
+	engine  eng.Engine
+
+	// Known kinds of tasks.
+	managers = []task.Manager{
+		&noop.TaskManager{},
+		&urlfetch.TaskManager{},
+	}
+)
+
+const (
+	// configServiceURL is URL of luci-config service.
+	// TODO(vadimsh): Make it configurable.
+	configServiceURL = "https://luci-config.appspot.com"
 )
 
 //// Helpers.
@@ -39,10 +66,8 @@ type handler func(c *requestContext)
 type requestContext struct {
 	context.Context
 
-	w       http.ResponseWriter
-	r       *http.Request
-	catalog jobs.Catalog
-	engine  engine.Engine
+	w http.ResponseWriter
+	r *http.Request
 }
 
 // fail writes error message to the log and the response and sets status code.
@@ -77,21 +102,20 @@ var globalInit sync.Once
 var isProdGAE = true
 
 func makeProdRequestContext(w http.ResponseWriter, r *http.Request) *requestContext {
-	tracker := jobs.NewJobTracker()
-	rc := &requestContext{
-		Context: gaelogger.Use(prod.UseRequest(r)),
-		w:       w,
-		r:       r,
-		catalog: jobs.NewCatalog(),
-		engine: engine.NewEngine(engine.Config{
-			TimersQueuePath:      "/internal/tasks/timers",
-			TimersQueueName:      "timers",
-			InvocationsQueuePath: "/internal/tasks/invocations",
-			InvocationsQueueName: "invocations",
-			JobTracker:           tracker,
-		}),
+	c := prod.UseRequest(r)
+	c = gaelogger.Use(c)
+	c = gaeauth.Use(c, nil, nil)
+
+	// Use fake config data on dev server for simplicity.
+	if info.Get(c).IsDevAppServer() {
+		c = cfgmemory.Use(c, devServerConfigs())
+	} else {
+		c = cfgremote.Use(c, configServiceURL+"/_ah/api/config/v1/")
 	}
-	tracker.SetListener(rc.engine)
+
+	rc := &requestContext{c, w, r}
+
+	// One time initialization for stuff that needs active GAE context.
 	globalInit.Do(func() { initializeGlobalState(rc) })
 	return rc
 }
@@ -101,7 +125,7 @@ func initializeGlobalState(rc *requestContext) {
 	// need to reset datastore state accordingly, otherwise everything gets stuck.
 	if info.Get(rc.Context).IsDevAppServer() {
 		isProdGAE = false
-		if err := rc.engine.ResetAllJobsOnDevServer(rc.Context); err != nil {
+		if err := engine.ResetAllJobsOnDevServer(rc.Context); err != nil {
 			logging.Errorf(rc.Context, "Failed to reset jobs: %s", err)
 		}
 	}
@@ -137,6 +161,22 @@ func taskQueueHandler(queue string, h handler) http.HandlerFunc {
 //// Routes.
 
 func init() {
+	// Setup global singletons.
+	catalog = cat.NewCatalog()
+	for _, m := range managers {
+		if err := catalog.RegisterTaskManager(m); err != nil {
+			panic(err)
+		}
+	}
+	engine = eng.NewEngine(eng.Config{
+		Catalog:              catalog,
+		TimersQueuePath:      "/internal/tasks/timers",
+		TimersQueueName:      "timers",
+		InvocationsQueuePath: "/internal/tasks/invocations",
+		InvocationsQueueName: "invocations",
+	})
+
+	// Setup HTTP routes.
 	registerFrontendHandlers(http.DefaultServeMux)
 	registerBackendHandlers(http.DefaultServeMux)
 }
@@ -170,7 +210,7 @@ func readConfigCron(c *requestContext) {
 	projectsToVisit := map[string]bool{}
 
 	// Visit all projects in the catalog.
-	projects, err := c.catalog.GetAllProjects(c.Context)
+	projects, err := catalog.GetAllProjects(c.Context)
 	if err != nil {
 		c.err(err, "Failed to grab a list of project IDs from catalog")
 		return
@@ -181,7 +221,7 @@ func readConfigCron(c *requestContext) {
 
 	// Also visit all registered projects that do not show up in the catalog
 	// listing anymore. It will unregister all crons belonging to them.
-	existing, err := c.engine.GetAllProjects(c.Context)
+	existing, err := engine.GetAllProjects(c.Context)
 	if err != nil {
 		c.err(err, "Failed to grab a list of project IDs from datastore")
 		return
@@ -215,12 +255,12 @@ func readProjectConfigTask(c *requestContext) {
 		c.fail(202, "Missing projectID query attribute")
 		return
 	}
-	jobs, err := c.catalog.GetProjectJobs(c.Context, projectID)
+	jobs, err := catalog.GetProjectJobs(c.Context, projectID)
 	if err != nil {
 		c.err(err, "Failed to query for a list of jobs")
 		return
 	}
-	if err = c.engine.UpdateProjectJobs(c.Context, projectID, jobs); err != nil {
+	if err = engine.UpdateProjectJobs(c.Context, projectID, jobs); err != nil {
 		c.err(err, "Failed to update some cron jobs")
 		return
 	}
@@ -235,7 +275,7 @@ func actionTask(c *requestContext) {
 		c.fail(500, "Failed to read request body: %s", err)
 		return
 	}
-	err = c.engine.ExecuteSerializedAction(c.Context, body)
+	err = engine.ExecuteSerializedAction(c.Context, body)
 	if err != nil {
 		c.err(err, "Error when executing the action")
 		return
