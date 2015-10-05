@@ -21,18 +21,16 @@ const (
 	StatusStarting Status = "STARTING"
 	// StatusRunning means the task has started and is running now.
 	StatusRunning Status = "RUNNING"
-	// StatusFailedToStart means the task could not be started.
-	StatusFailedToStart Status = "FAILED_TO_START"
 	// StatusSucceeded means the task finished with success.
 	StatusSucceeded Status = "SUCCEEDED"
-	// StatusFailed means the task finished with error.
+	// StatusFailed means the task finished with error or failed to start.
 	StatusFailed Status = "FAILED"
 )
 
 // Final returns true if Status represents some final status.
 func (s Status) Final() bool {
 	switch s {
-	case StatusFailedToStart, StatusSucceeded, StatusFailed:
+	case StatusSucceeded, StatusFailed:
 		return true
 	default:
 		return false

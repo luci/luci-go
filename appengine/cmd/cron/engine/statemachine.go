@@ -41,12 +41,23 @@ const (
 
 // JobState contains the current state of a job state machine.
 type JobState struct {
-	State          StateKind // the overall state of the job
-	TickID         int64     // id of the expected OnTimerTick event
-	TickTime       time.Time // when the OnTimerTick event is expected
-	InvocationID   int64     // id of the currently queued or running invocation
-	InvocationTime time.Time // when invocation was started
-	Overruns       int       // how many times current invocation overran
+	// State is the overall state of the job (like "RUNNING" or "DISABLED", etc).
+	State StateKind
+
+	// Overruns is how many times current invocation overran.
+	Overruns int
+
+	// TickNonce is id of the next expected OnTimerTick event.
+	TickNonce int64 `gae:",noindex"`
+
+	// TickTime is when the OnTimerTick event is expected.
+	TickTime time.Time `gae:",noindex"`
+
+	// InvocationNonce is id of the currently queued or running invocation.
+	InvocationNonce int64 `gae:",noindex"`
+
+	// InvocationTime is when the current invocation was started.
+	InvocationTime time.Time `gae:",noindex"`
 }
 
 // Action is a particular action to perform when switching the state. Can be
@@ -55,21 +66,21 @@ type Action interface {
 	IsAction() bool
 }
 
-// TickLaterAction schedules an OnTimerTick(tickID) call at give moment in
-// time (or close to it). TickID is used to skip canceled or repeated ticks.
+// TickLaterAction schedules an OnTimerTick(tickNonce) call at give moment in
+// time (or close to it). TickNonce is used to skip canceled or repeated ticks.
 type TickLaterAction struct {
-	When   time.Time
-	TickID int64
+	When      time.Time
+	TickNonce int64
 }
 
 // IsAction makes TickLaterAction implement Action interface.
 func (a TickLaterAction) IsAction() bool { return true }
 
 // StartInvocationAction enqueues invocation of the actual job.
-// OnInvocationDone(invocationID) will be called sometime later when the job
+// OnInvocationDone(invocationNonce) will be called sometime later when the job
 // is done.
 type StartInvocationAction struct {
-	InvocationID int64
+	InvocationNonce int64
 }
 
 // IsAction makes StartInvocationAction implement Action interface.
@@ -118,9 +129,9 @@ func (m *StateMachine) OnJobDisabled() error {
 }
 
 // OnTimerTick happens when scheduled timer (added with TickLaterAction) ticks.
-func (m *StateMachine) OnTimerTick(tickID int64) error {
+func (m *StateMachine) OnTimerTick(tickNonce int64) error {
 	// Skip unexpected, late or canceled ticks.
-	if !m.expectingTick() || m.InputState.TickID != tickID {
+	if !m.expectingTick() || m.InputState.TickNonce != tickNonce {
 		return nil
 	}
 
@@ -137,8 +148,8 @@ func (m *StateMachine) OnTimerTick(tickID int64) error {
 	if m.InputState.State == JobStateScheduled {
 		m.schedule(JobStateQueued)
 		m.OutputState.InvocationTime = m.Now
-		m.OutputState.InvocationID = m.Nonce()
-		m.emitAction(StartInvocationAction{m.OutputState.InvocationID})
+		m.OutputState.InvocationNonce = m.Nonce()
+		m.emitAction(StartInvocationAction{m.OutputState.InvocationNonce})
 		return nil
 	}
 
@@ -157,18 +168,18 @@ func (m *StateMachine) OnTimerTick(tickID int64) error {
 		panic("Impossible, see expectingTick()")
 	}
 	m.OutputState.InvocationTime = m.InputState.InvocationTime
-	m.OutputState.InvocationID = m.InputState.InvocationID
+	m.OutputState.InvocationNonce = m.InputState.InvocationNonce
 	m.OutputState.Overruns = m.InputState.Overruns + 1
 	return nil
 }
 
 // OnInvocationStart happens when enqueued invocation finally starts to run.
-func (m *StateMachine) OnInvocationStart(invocationID int64) error {
+func (m *StateMachine) OnInvocationStart(invocationNonce int64) error {
 	s := m.InputState.State
 	if s != JobStateQueued && s != JobStateSlowQueue {
 		return nil
 	}
-	if m.InputState.InvocationID != invocationID {
+	if m.InputState.InvocationNonce != invocationNonce {
 		return nil
 	}
 	cp := m.InputState
@@ -182,13 +193,13 @@ func (m *StateMachine) OnInvocationStart(invocationID int64) error {
 }
 
 // OnInvocationDone happens when invocation completes.
-func (m *StateMachine) OnInvocationDone(invocationID int64) error {
+func (m *StateMachine) OnInvocationDone(invocationNonce int64) error {
 	// Ignore unexpected events. Can happen if job was moved to disabled state
 	// while invocation was still running.
 	if m.InputState.State != JobStateRunning && m.InputState.State != JobStateOverrun {
 		return nil
 	}
-	if m.InputState.InvocationID != invocationID {
+	if m.InputState.InvocationNonce != invocationNonce {
 		return nil
 	}
 	// Do not schedule another tick. It was already scheduled when job entered
@@ -196,9 +207,9 @@ func (m *StateMachine) OnInvocationDone(invocationID int64) error {
 	// TODO(vadimsh): Start the job right away if overrun happened? Retry job on
 	// failure?
 	m.OutputState = &JobState{
-		State:    JobStateScheduled,
-		TickTime: m.InputState.TickTime,
-		TickID:   m.InputState.TickID,
+		State:     JobStateScheduled,
+		TickTime:  m.InputState.TickTime,
+		TickNonce: m.InputState.TickNonce,
 	}
 	return nil
 }
@@ -214,8 +225,8 @@ func (m *StateMachine) OnScheduleChange() error {
 	cp := m.InputState
 	m.OutputState = &cp
 	m.OutputState.TickTime = m.NextInvocationTime
-	m.OutputState.TickID = m.Nonce()
-	m.emitAction(TickLaterAction{m.OutputState.TickTime, m.OutputState.TickID})
+	m.OutputState.TickNonce = m.Nonce()
+	m.emitAction(TickLaterAction{m.OutputState.TickTime, m.OutputState.TickNonce})
 	return nil
 }
 
@@ -237,11 +248,11 @@ func (m *StateMachine) expectingTick() bool {
 // InputState if needed.
 func (m *StateMachine) schedule(s StateKind) {
 	m.OutputState = &JobState{
-		State:    s,
-		TickTime: m.NextInvocationTime,
-		TickID:   m.Nonce(),
+		State:     s,
+		TickTime:  m.NextInvocationTime,
+		TickNonce: m.Nonce(),
 	}
-	m.emitAction(TickLaterAction{m.OutputState.TickTime, m.OutputState.TickID})
+	m.emitAction(TickLaterAction{m.OutputState.TickTime, m.OutputState.TickNonce})
 }
 
 // emitAction adds an action to 'actions' array.

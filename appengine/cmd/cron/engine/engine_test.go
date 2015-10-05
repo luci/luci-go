@@ -74,9 +74,9 @@ func TestUpdateProjectJobs(t *testing.T) {
 				Enabled:   true,
 				Schedule:  "*/5 * * * * * *",
 				State: JobState{
-					State:    "SCHEDULED",
-					TickID:   6278013164014963328,
-					TickTime: epoch.Add(5 * time.Second),
+					State:     "SCHEDULED",
+					TickNonce: 6278013164014963328,
+					TickTime:  epoch.Add(5 * time.Second),
 				},
 			},
 		})
@@ -111,9 +111,9 @@ func TestUpdateProjectJobs(t *testing.T) {
 				Enabled:   true,
 				Schedule:  "*/1 * * * * * *",
 				State: JobState{
-					State:    "SCHEDULED",
-					TickID:   9111178027324032851,
-					TickTime: epoch.Add(1 * time.Second),
+					State:     "SCHEDULED",
+					TickNonce: 9111178027324032851,
+					TickTime:  epoch.Add(1 * time.Second),
 				},
 			},
 		})
@@ -163,9 +163,9 @@ func TestTransactionRetries(t *testing.T) {
 				Enabled:   true,
 				Schedule:  "*/5 * * * * * *",
 				State: JobState{
-					State:    "SCHEDULED",
-					TickID:   1907242367099883828,
-					TickTime: epoch.Add(5 * time.Second),
+					State:     "SCHEDULED",
+					TickNonce: 1907242367099883828,
+					TickTime:  epoch.Add(5 * time.Second),
 				},
 			},
 		})
@@ -181,7 +181,7 @@ func TestTransactionRetries(t *testing.T) {
 		e := newTestEngine()
 
 		// Pretend collision happened in all retries.
-		datastore.Get(c).Testable().SetTransactionRetryCount(5)
+		datastore.Get(c).Testable().SetTransactionRetryCount(15)
 		err := e.UpdateProjectJobs(c, "abc", []catalog.Definition{
 			{
 				JobID:    "abc/1",
@@ -214,9 +214,9 @@ func TestResetAllJobsOnDevServer(t *testing.T) {
 				Enabled:   true,
 				Schedule:  "*/5 * * * * * *",
 				State: JobState{
-					State:    "SCHEDULED",
-					TickID:   6278013164014963328,
-					TickTime: epoch.Add(5 * time.Second),
+					State:     "SCHEDULED",
+					TickNonce: 6278013164014963328,
+					TickTime:  epoch.Add(5 * time.Second),
 				},
 			},
 		})
@@ -233,9 +233,9 @@ func TestResetAllJobsOnDevServer(t *testing.T) {
 				Enabled:   true,
 				Schedule:  "*/5 * * * * * *",
 				State: JobState{
-					State:    "SCHEDULED",
-					TickID:   9111178027324032851,
-					TickTime: epoch.Add(65 * time.Second),
+					State:     "SCHEDULED",
+					TickNonce: 9111178027324032851,
+					TickTime:  epoch.Add(65 * time.Second),
 				},
 			},
 		})
@@ -262,9 +262,9 @@ func TestFullFlow(t *testing.T) {
 				Enabled:   true,
 				Schedule:  "*/5 * * * * * *",
 				State: JobState{
-					State:    "SCHEDULED",
-					TickID:   6278013164014963328,
-					TickTime: epoch.Add(5 * time.Second),
+					State:     "SCHEDULED",
+					TickNonce: 6278013164014963328,
+					TickTime:  epoch.Add(5 * time.Second),
 				},
 			},
 		})
@@ -276,7 +276,7 @@ func TestFullFlow(t *testing.T) {
 
 		// Tick time comes, the tick task is executed, job is added to queue.
 		clock.Get(c).(testclock.TestClock).Add(5 * time.Second)
-		So(e.ExecuteSerializedAction(c, task.Payload), ShouldBeNil)
+		So(e.ExecuteSerializedAction(c, task.Payload, 0), ShouldBeNil)
 
 		// Job is in queued state now.
 		So(allJobs(c), ShouldResemble, []jobEntity{
@@ -287,11 +287,11 @@ func TestFullFlow(t *testing.T) {
 				Enabled:   true,
 				Schedule:  "*/5 * * * * * *",
 				State: JobState{
-					State:          "QUEUED",
-					TickID:         9111178027324032851,
-					TickTime:       epoch.Add(10 * time.Second),
-					InvocationID:   631000787647335445,
-					InvocationTime: epoch.Add(5 * time.Second),
+					State:           "QUEUED",
+					TickNonce:       9111178027324032851,
+					TickTime:        epoch.Add(10 * time.Second),
+					InvocationNonce: 631000787647335445,
+					InvocationTime:  epoch.Add(5 * time.Second),
 				},
 			},
 		})
@@ -308,7 +308,7 @@ func TestFullFlow(t *testing.T) {
 
 		// Time to run the job.
 		// TODO(vadimsh): Test RUNNING state.
-		So(e.ExecuteSerializedAction(c, invTask.Payload), ShouldBeNil)
+		So(e.ExecuteSerializedAction(c, invTask.Payload, 0), ShouldBeNil)
 		So(allJobs(c), ShouldResemble, []jobEntity{
 			{
 				JobID:     "abc/1",
@@ -317,9 +317,9 @@ func TestFullFlow(t *testing.T) {
 				Enabled:   true,
 				Schedule:  "*/5 * * * * * *",
 				State: JobState{
-					State:    "SCHEDULED",
-					TickID:   9111178027324032851,
-					TickTime: epoch.Add(10 * time.Second),
+					State:     "SCHEDULED",
+					TickNonce: 9111178027324032851,
+					TickTime:  epoch.Add(10 * time.Second),
 				},
 			},
 		})

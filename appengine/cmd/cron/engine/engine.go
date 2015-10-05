@@ -48,7 +48,9 @@ type Engine interface {
 	// ExecuteSerializedAction is called via a task queue to execute an action
 	// produced by job state machine transition. These actions are POSTed
 	// to TimersQueue and InvocationsQueue defined in Config by Engine.
-	ExecuteSerializedAction(c context.Context, body []byte) error
+	// 'retryCount' is 0 on first attempt, 1 if task queue service retries
+	// request once, 2 - if twice, and so on.
+	ExecuteSerializedAction(c context.Context, body []byte, retryCount int) error
 }
 
 // Config contains parameters for the engine.
@@ -71,10 +73,10 @@ func NewEngine(conf Config) Engine {
 // Serialized as JSON, produced by enqueueActions, used as inputs in
 // ExecuteSerializedAction. Union of all possible payloads for simplicity.
 type actionTaskPayload struct {
-	JobID        string // ID of relevant jobEntity
-	Kind         string // defines what fields below to examine
-	TickID       int64  // valid for "TickLaterAction" kind
-	InvocationID int64  // valid for "StartInvocationAction" kind
+	JobID           string // ID of relevant jobEntity
+	Kind            string // defines what fields below to examine
+	TickNonce       int64  // valid for "TickLaterAction" kind
+	InvocationNonce int64  // valid for "StartInvocationAction" kind
 }
 
 // jobEntity stores the last known definition of a cron job, as well as its
@@ -89,18 +91,18 @@ type jobEntity struct {
 	// ProjectID exists for indexing. It matches <projectID> portion of JobID.
 	ProjectID string
 
-	// Revision is last seen job definition revision, to skip useless updates.
-	Revision string
-
-	// Enabled is false if cron job was disabled or removed.
+	// Enabled is false if cron job was disabled or removed from config.
 	Enabled bool
 
+	// Revision is last seen job definition revision, to skip useless updates.
+	Revision string `gae:",noindex"`
+
 	// Schedule is cron job schedule in regular cron expression format.
-	Schedule string
+	Schedule string `gae:",noindex"`
 
 	// Task is cron job payload in serialized form. Opaque from the point of view
 	// of the engine. See Catalog.UnmarshalTask().
-	Task []byte
+	Task []byte `gae:",noindex"`
 
 	// State is cron job state machine state, see StateMachine.
 	State JobState
@@ -254,6 +256,13 @@ type txnCallback func(c context.Context, job *jobEntity, isNew bool) error
 // errSkipPut can be returned by txnCallback to cancel ds.Put call.
 var errSkipPut = errors.New("errSkipPut")
 
+// defaultTransactionOptions is used for all transactions. Cron service has
+// no user facing API, all activity is in background task queues. So tune it
+// to do more retries.
+var defaultTransactionOptions = datastore.TransactionOptions{
+	Attempts: 10,
+}
+
 // txn reads jobEntity, calls callback, then dumps the modified entity
 // back into datastore (unless callback returns errSkipPut).
 func (e *engineImpl) txn(c context.Context, jobID string, txn txnCallback) error {
@@ -263,7 +272,7 @@ func (e *engineImpl) txn(c context.Context, jobID string, txn txnCallback) error
 	err := datastore.Get(c).RunInTransaction(func(c context.Context) error {
 		attempt++
 		if attempt != 1 {
-			logging.Warningf(c, "Retrying transaction")
+			logging.Warningf(c, "Retrying transaction...")
 		}
 		ds := datastore.Get(c)
 		stored := jobEntity{JobID: jobID}
@@ -281,7 +290,7 @@ func (e *engineImpl) txn(c context.Context, jobID string, txn txnCallback) error
 			return ds.Put(&modified)
 		}
 		return nil
-	}, nil)
+	}, &defaultTransactionOptions)
 	if err != nil {
 		logging.Errorf(c, "Job transaction failed: %s", err)
 		if fatal {
@@ -291,6 +300,9 @@ func (e *engineImpl) txn(c context.Context, jobID string, txn txnCallback) error
 		// error (i.e. produced by RunInTransaction itself, not by its callback).
 		// Need to wrap commit errors too.
 		return errors.WrapTransient(err)
+	}
+	if attempt > 1 {
+		logging.Infof(c, "Committed on %d attempt", attempt)
 	}
 	return nil
 }
@@ -342,14 +354,14 @@ func (e *engineImpl) enqueueActions(c context.Context, jobID string, actions []A
 		switch a := a.(type) {
 		case TickLaterAction:
 			payload, err := json.Marshal(actionTaskPayload{
-				JobID:  jobID,
-				Kind:   "TickLaterAction",
-				TickID: a.TickID,
+				JobID:     jobID,
+				Kind:      "TickLaterAction",
+				TickNonce: a.TickNonce,
 			})
 			if err != nil {
 				return err
 			}
-			logging.Infof(c, "Scheduling tick %d after %.1f sec", a.TickID, a.When.Sub(time.Now()).Seconds())
+			logging.Infof(c, "Scheduling tick %d after %.1f sec", a.TickNonce, a.When.Sub(time.Now()).Seconds())
 			qs[e.TimersQueueName] = append(qs[e.TimersQueueName], &taskqueue.Task{
 				Path:    e.TimersQueuePath,
 				ETA:     a.When,
@@ -357,9 +369,9 @@ func (e *engineImpl) enqueueActions(c context.Context, jobID string, actions []A
 			})
 		case StartInvocationAction:
 			payload, err := json.Marshal(actionTaskPayload{
-				JobID:        jobID,
-				Kind:         "StartInvocationAction",
-				InvocationID: a.InvocationID,
+				JobID:           jobID,
+				Kind:            "StartInvocationAction",
+				InvocationNonce: a.InvocationNonce,
 			})
 			if err != nil {
 				return err
@@ -389,16 +401,16 @@ func (e *engineImpl) enqueueActions(c context.Context, jobID string, actions []A
 	return errors.WrapTransient(errs.Get())
 }
 
-func (e *engineImpl) ExecuteSerializedAction(c context.Context, action []byte) error {
+func (e *engineImpl) ExecuteSerializedAction(c context.Context, action []byte, retryCount int) error {
 	payload := actionTaskPayload{}
 	if err := json.Unmarshal(action, &payload); err != nil {
 		return err
 	}
 	switch payload.Kind {
 	case "TickLaterAction":
-		return e.timerTick(c, payload.JobID, payload.TickID)
+		return e.timerTick(c, payload.JobID, payload.TickNonce)
 	case "StartInvocationAction":
-		return e.startInvocation(c, payload.JobID, payload.InvocationID)
+		return e.startInvocation(c, payload.JobID, payload.InvocationNonce, retryCount)
 	default:
 		return fmt.Errorf("unexpected action kind %q", payload.Kind)
 	}
@@ -482,19 +494,20 @@ func (e *engineImpl) resetJob(c context.Context, jobID string) error {
 
 // timerTick is invoked via task queue in a task with some ETA. It what makes
 // cron tick.
-func (e *engineImpl) timerTick(c context.Context, jobID string, tickID int64) error {
+func (e *engineImpl) timerTick(c context.Context, jobID string, tickNonce int64) error {
 	return e.txn(c, jobID, func(c context.Context, job *jobEntity, isNew bool) error {
 		if isNew {
 			logging.Errorf(c, "Scheduled job is unexpectedly gone")
 			return errSkipPut
 		}
-		logging.Infof(c, "Tick %d has arrived", tickID)
-		return e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnTimerTick(tickID) })
+		logging.Infof(c, "Tick %d has arrived", tickNonce)
+		return e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnTimerTick(tickNonce) })
 	})
 }
 
-// startInvocation is called via task queue to start running a job.
-func (e *engineImpl) startInvocation(c context.Context, jobID string, invocationID int64) error {
+// startInvocation is called via task queue to start running a job. This call
+// may be retried by task queue service.
+func (e *engineImpl) startInvocation(c context.Context, jobID string, invocationNonce int64, retryCount int) error {
 	// Still need to do this?
 	c = logging.SetField(c, "JobID", jobID)
 	job := jobEntity{JobID: jobID}
@@ -506,8 +519,8 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	if err != nil {
 		return errors.WrapTransient(err)
 	}
-	if job.State.InvocationID != invocationID {
-		logging.Errorf(c, "No longer need to start invocation %d", invocationID)
+	if job.State.InvocationNonce != invocationNonce {
+		logging.Errorf(c, "No longer need to start invocation %d", invocationNonce)
 		return nil
 	}
 
@@ -518,10 +531,10 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 			logging.Errorf(c, "Queued job is unexpectedly gone")
 			return errSkipPut
 		}
-		err := e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnInvocationStart(invocationID) })
+		err := e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnInvocationStart(invocationNonce) })
 		if err != nil {
 			return err
 		}
-		return e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnInvocationDone(invocationID) })
+		return e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnInvocationDone(invocationNonce) })
 	})
 }

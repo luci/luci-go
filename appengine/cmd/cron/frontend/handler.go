@@ -17,6 +17,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 	"sync"
 
 	"golang.org/x/net/context"
@@ -275,7 +276,8 @@ func actionTask(c *requestContext) {
 		c.fail(500, "Failed to read request body: %s", err)
 		return
 	}
-	err = engine.ExecuteSerializedAction(c.Context, body)
+	count, _ := strconv.Atoi(c.r.Header.Get("X-AppEngine-TaskExecutionCount"))
+	err = engine.ExecuteSerializedAction(c.Context, body, count)
 	if err != nil {
 		c.err(err, "Error when executing the action")
 		return

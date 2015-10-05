@@ -78,12 +78,12 @@ func TestStateMachine(t *testing.T) {
 		// when StartInvocationAction was issued.
 		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationDone(3) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateScheduled)
-		So(m.state.TickID, ShouldEqual, 2)
+		So(m.state.TickNonce, ShouldEqual, 2)
 
 		// Disable cancels the timer.
 		So(m.roll(func(sm *StateMachine) error { return sm.OnJobDisabled() }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateDisabled)
-		So(m.state.InvocationID, ShouldEqual, 0)
+		So(m.state.InvocationNonce, ShouldEqual, 0)
 	})
 
 	Convey("Overrun when queued", t, func() {
@@ -173,7 +173,7 @@ func TestStateMachine(t *testing.T) {
 		// Enabling schedules a tick after 5 sec.
 		So(m.roll(func(sm *StateMachine) error { return sm.OnJobEnabled() }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateScheduled)
-		So(m.state.TickID, ShouldEqual, 1)
+		So(m.state.TickNonce, ShouldEqual, 1)
 		So(m.state.TickTime, ShouldResemble, epoch.Add(5*time.Second))
 		So(m.actions, ShouldResemble, []Action{
 			TickLaterAction{epoch.Add(5 * time.Second), 1},
@@ -183,7 +183,7 @@ func TestStateMachine(t *testing.T) {
 		// Rescheduling event with same NextInvocationTime time is noop.
 		So(m.roll(func(sm *StateMachine) error { return sm.OnScheduleChange() }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateScheduled)
-		So(m.state.TickID, ShouldEqual, 1)
+		So(m.state.TickNonce, ShouldEqual, 1)
 		So(m.state.TickTime, ShouldResemble, epoch.Add(5*time.Second))
 		So(m.actions, ShouldBeNil)
 
@@ -194,7 +194,7 @@ func TestStateMachine(t *testing.T) {
 		// Should be rescheduled to run earlier
 		So(m.roll(func(sm *StateMachine) error { return sm.OnScheduleChange() }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateScheduled)
-		So(m.state.TickID, ShouldEqual, 2)
+		So(m.state.TickNonce, ShouldEqual, 2)
 		So(m.state.TickTime, ShouldResemble, epoch.Add(1*time.Second))
 		So(m.actions, ShouldResemble, []Action{
 			TickLaterAction{epoch.Add(1 * time.Second), 2},
