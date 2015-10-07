@@ -45,7 +45,7 @@ func (t *timer) Reset(d time.Duration) (active bool) {
 	triggerTime := now.Add(d)
 
 	// Signal our timerSet callback.
-	t.clock.signalTimerSet(t)
+	t.clock.signalTimerSet(d, t)
 
 	// Stop our current polling goroutine, if it's running.
 	active = t.Stop()

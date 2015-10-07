@@ -30,7 +30,7 @@ func TestTestClock(t *testing.T) {
 
 		Convey(`When sleeping for a period of time, awakens when signalled.`, func() {
 			sleepingC := make(chan struct{})
-			c.SetTimerCallback(func(_ clock.Timer) {
+			c.SetTimerCallback(func(_ time.Duration, _ clock.Timer) {
 				close(sleepingC)
 			})
 

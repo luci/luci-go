@@ -44,7 +44,7 @@ func TestPromise(t *testing.T) {
 		Convey(`Will timeout with no data.`, func() {
 			// Wait until our Promise starts its timer. Then signal it.
 			readyC := make(chan struct{})
-			tc.SetTimerCallback(func(_ clock.Timer) {
+			tc.SetTimerCallback(func(_ time.Duration, _ clock.Timer) {
 				close(readyC)
 			})
 			go func() {
@@ -75,7 +75,7 @@ func TestPromise(t *testing.T) {
 			Convey(`Will return data instead of timing out.`, func() {
 				// Wait until our Promise starts its timer. Then signal it.
 				readyC := make(chan struct{})
-				tc.SetTimerCallback(func(_ clock.Timer) {
+				tc.SetTimerCallback(func(_ time.Duration, _ clock.Timer) {
 					close(readyC)
 				})
 				go func() {

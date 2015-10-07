@@ -72,7 +72,7 @@ func TestTestTimer(t *testing.T) {
 			// Mark when timers are started, so we can ensure that our signalling
 			// happens after the timers have been instantiated.
 			timerStartedC := make(chan bool)
-			c.SetTimerCallback(func(_ clock.Timer) {
+			c.SetTimerCallback(func(_ time.Duration, _ clock.Timer) {
 				timerStartedC <- true
 			})
 

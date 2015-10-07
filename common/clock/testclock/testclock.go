@@ -21,7 +21,7 @@ type TestClock interface {
 
 // TimerCallback that can be invoked when a timer has been set. This is useful
 // for sychronizing state when testing.
-type TimerCallback func(clock.Timer)
+type TimerCallback func(time.Duration, clock.Timer)
 
 type cancelFunc func()
 
@@ -109,9 +109,9 @@ func (c *testClock) getTimerCallback() TimerCallback {
 	return c.timerCallback
 }
 
-func (c *testClock) signalTimerSet(t clock.Timer) {
+func (c *testClock) signalTimerSet(d time.Duration, t clock.Timer) {
 	if callback := c.getTimerCallback(); callback != nil {
-		callback(t)
+		callback(d, t)
 	}
 }
 

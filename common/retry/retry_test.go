@@ -40,7 +40,7 @@ func TestRetry(t *testing.T) {
 
 		// Every time we sleep, update time by one second and count.
 		sleeps := 0
-		c.SetTimerCallback(func(clock.Timer) {
+		c.SetTimerCallback(func(time.Duration, clock.Timer) {
 			c.Add(1 * time.Second)
 			sleeps++
 		})
