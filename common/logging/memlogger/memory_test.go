@@ -25,14 +25,14 @@ func TestLogger(t *testing.T) {
 		l.Errorf("test %s", logging.Error)
 		l.Errorf("test WAT: %s", logging.Level(9001))
 		ml := l.(*MemLogger)
-		mld := ml.data
 
-		So(len(*mld), ShouldEqual, 5)
-		So((*mld)[0], ShouldResemble, LogEntry{logging.Debug, "test debug", nil})
-		So((*mld)[1], ShouldResemble, LogEntry{logging.Info, "test info", nil})
-		So((*mld)[2], ShouldResemble, LogEntry{logging.Warning, "test warning", nil})
-		So((*mld)[3], ShouldResemble, LogEntry{logging.Error, "test error", nil})
-		So((*mld)[4], ShouldResemble, LogEntry{logging.Error, "test WAT: unknown", nil})
+		msgs := ml.Messages()
+		So(len(msgs), ShouldEqual, 5)
+		So(msgs[0], ShouldResemble, LogEntry{logging.Debug, "test debug", nil})
+		So(msgs[1], ShouldResemble, LogEntry{logging.Info, "test info", nil})
+		So(msgs[2], ShouldResemble, LogEntry{logging.Warning, "test warning", nil})
+		So(msgs[3], ShouldResemble, LogEntry{logging.Error, "test error", nil})
+		So(msgs[4], ShouldResemble, LogEntry{logging.Error, "test WAT: unknown", nil})
 	})
 
 	Convey("logger context", t, func() {
@@ -43,8 +43,9 @@ func TestLogger(t *testing.T) {
 
 		l.Infof("totally works: %s", "yes")
 
-		So(len(*ml.data), ShouldEqual, 1)
-		So((*ml.data)[0], ShouldResemble, LogEntry{logging.Info, "totally works: yes", nil})
+		msgs := ml.Messages()
+		So(len(msgs), ShouldEqual, 1)
+		So(msgs[0], ShouldResemble, LogEntry{logging.Info, "totally works: yes", nil})
 	})
 
 	Convey("field data", t, func() {
@@ -58,7 +59,22 @@ func TestLogger(t *testing.T) {
 		ml := l.(*MemLogger)
 
 		l.Infof("Some unsuspecting log")
-		So((*ml.data)[0].Data["trombone"], ShouldEqual, 50)
-		So((*ml.data)[0].Data["cat"], ShouldEqual, "amazing")
+		msgs := ml.Messages()
+		So(msgs[0].Data["trombone"], ShouldEqual, 50)
+		So(msgs[0].Data["cat"], ShouldEqual, "amazing")
+	})
+
+	Convey("reset", t, func() {
+		c := Use(context.Background())
+		l := logging.Get(c).(*MemLogger)
+
+		l.Infof("hello")
+		So(len(l.Messages()), ShouldEqual, 1)
+
+		l.Reset()
+		So(len(l.Messages()), ShouldEqual, 0)
+
+		l.Infof("shweeet")
+		So(len(l.Messages()), ShouldEqual, 1)
 	})
 }

@@ -57,6 +57,23 @@ func (m *MemLogger) LogCall(lvl logging.Level, calldepth int, format string, arg
 	*m.data = append(*m.data, LogEntry{lvl, fmt.Sprintf(format, args...), m.fields})
 }
 
+// Messages returns all of the log messages that this memory logger has
+// recorded.
+func (m *MemLogger) Messages() []LogEntry {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	ret := make([]LogEntry, len(*m.data))
+	copy(ret, *m.data)
+	return ret
+}
+
+// Reset resets the logged messages recorded so far.
+func (m *MemLogger) Reset() {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	*m.data = []LogEntry{}
+}
+
 // Use adds a memory backed Logger to Context, with concrete type
 // *MemLogger. Casting to the concrete type can be used to inspect the
 // log output after running a test case, for example.
