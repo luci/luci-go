@@ -320,6 +320,21 @@ func (k *Key) UnmarshalJSON(buf []byte) error {
 	return nil
 }
 
+// GobEncode allows the Key to be encoded in a Gob struct.
+func (k *Key) GobEncode() ([]byte, error) {
+	return []byte(k.Encode()), nil
+}
+
+// GobDecode allows the Key to be decoded in a Gob struct.
+func (k *Key) GobDecode(buf []byte) error {
+	nk, err := NewKeyEncoded(string(buf))
+	if err != nil {
+		return err
+	}
+	*k = *nk
+	return nil
+}
+
 // Root returns the entity root for the given key.
 func (k *Key) Root() *Key {
 	if len(k.toks) > 1 {
