@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-//go:generate protoc --go_out=. log.proto butler.proto types.proto
+//go:generate protoc --go_out=Mgoogle/protobuf/timestamp.proto=github.com/luci/luci-go/common/proto/google,Mgoogle/protobuf/duration.proto=github.com/luci/luci-go/common/proto/google:. log.proto butler.proto
 
 // Package protocol contains LogDog protobuf source and generated protobuf data.
 //
