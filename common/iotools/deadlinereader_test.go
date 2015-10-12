@@ -83,14 +83,7 @@ func TestDeadlineReader(t *testing.T) {
 			// Connect and read bytes.
 			buf := make([]byte, 1)
 			_, err := dr.Read(buf)
-			So(err, ShouldNotBeNil)
-			switch e := err.(type) {
-			case net.Error:
-				So(e.Timeout(), ShouldBeTrue)
-
-			default:
-				t.Error("Invalid error type.")
-			}
+			So(err, ShouldEqual, ErrTimeout)
 		})
 	})
 }

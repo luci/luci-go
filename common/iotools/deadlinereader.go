@@ -5,10 +5,14 @@
 package iotools
 
 import (
+	"errors"
 	"io"
 	"net"
 	"time"
 )
+
+// ErrTimeout is an error returned if the DeadlineReader times out.
+var ErrTimeout = errors.New("deadlinereader: timeout")
 
 // DeadlineReader is a wrapper around a net.Conn that applies an idle timeout
 // deadline to the Conn's Read() method.
@@ -30,5 +34,10 @@ func (r *DeadlineReader) Read(b []byte) (int, error) {
 		}
 	}
 
-	return r.Conn.Read(b)
+	amount, err := r.Conn.Read(b)
+	if e, ok := err.(net.Error); ok && e.Timeout() {
+		// Don't report back read timeout errors.
+		err = ErrTimeout
+	}
+	return amount, err
 }
