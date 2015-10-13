@@ -118,6 +118,18 @@ type Interface interface {
 	//   - *[]*Key implies a keys-only query.
 	GetAll(q *Query, dst interface{}) error
 
+	// Does a Get for this key and returns true iff it exists. Will only return
+	// an error if it's not ErrNoSuchEntity. This is slightly more efficient
+	// than using Get directly, because it uses the underlying RawInterface to
+	// avoid some reflection and copies.
+	Exists(k *Key) (bool, error)
+
+	// Does a GetMulti for thes keys and returns true iff they exist. Will only
+	// return an error if it's not ErrNoSuchEntity. This is slightly more efficient
+	// than using Get directly, because it uses the underlying RawInterface to
+	// avoid some reflection and copies.
+	ExistsMulti(k []*Key) ([]bool, error)
+
 	// Get retrieves a single object from the datastore
 	//
 	// dst must be one of:

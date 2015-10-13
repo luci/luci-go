@@ -90,6 +90,8 @@ func (f *fakeDatastore) GetMulti(keys []*Key, _meta MultiMetaGetter, cb GetMulti
 	for i, k := range keys {
 		if k.Kind() == "Fail" {
 			cb(nil, errors.New("GetMulti fail"))
+		} else if k.Kind() == "DNE" {
+			cb(nil, ErrNoSuchEntity)
 		} else {
 			cb(PropertyMap{"Value": {MkProperty(i + 1)}}, nil)
 		}
@@ -296,6 +298,19 @@ func TestKeyForObj(t *testing.T) {
 
 				So(pls.SetMeta("parent", k), ShouldBeNil)
 				So(ds.KeyForObj(pls).String(), ShouldEqual, `s~aid:ns:/Hello,"world"/CommonStruct,1`)
+			})
+
+			Convey("can see if things exist", func() {
+				e, err := ds.Exists(k)
+				So(err, ShouldBeNil)
+				So(e, ShouldBeTrue)
+
+				e, err = ds.Exists(ds.MakeKey("DNE", "nope"))
+				So(err, ShouldBeNil)
+				So(e, ShouldBeFalse)
+
+				_, err = ds.Exists(ds.MakeKey("Fail", "boom"))
+				So(err, ShouldErrLike, "GetMulti fail")
 			})
 
 		})

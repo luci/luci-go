@@ -182,6 +182,29 @@ func isOkType(v reflect.Type) bool {
 	return false
 }
 
+func (d *datastoreImpl) ExistsMulti(keys []*Key) ([]bool, error) {
+	lme := errors.NewLazyMultiError(len(keys))
+	ret := make([]bool, len(keys))
+	i := 0
+	err := d.RawInterface.GetMulti(keys, nil, func(_ PropertyMap, err error) {
+		if err == nil {
+			ret[i] = true
+		} else if err != ErrNoSuchEntity {
+			lme.Assign(i, err)
+		}
+		i++
+	})
+	if err != nil {
+		return ret, err
+	}
+	return ret, lme.Get()
+}
+
+func (d *datastoreImpl) Exists(k *Key) (bool, error) {
+	ret, err := d.ExistsMulti([]*Key{k})
+	return ret[0], errors.SingleError(err)
+}
+
 func (d *datastoreImpl) Get(dst interface{}) (err error) {
 	if !isOkType(reflect.TypeOf(dst)) {
 		return fmt.Errorf("invalid Get input type: %T", dst)
