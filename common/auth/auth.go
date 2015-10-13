@@ -164,25 +164,18 @@ type Options struct {
 // Authenticator is a factory for http.RoundTripper objects that know how to use
 // cached OAuth credentials. Authenticator also knows how to run interactive
 // login flow, if required.
-type Authenticator interface {
-	// Transport returns http.RoundTripper that adds authentication details to
-	// each request. An interactive authentication flow (if required) must be
-	// complete before making a transport, otherwise ErrLoginRequired is returned.
-	// Returned transport object can be safely reused across many http.Client's.
-	Transport() (http.RoundTripper, error)
+type Authenticator struct {
+	// Immutable members.
+	opts      *Options
+	transport http.RoundTripper
+	log       logging.Logger
 
-	// Login perform an interaction with the user to get a long term refresh token
-	// and cache it. Blocks for user input, can use stdin. Returns ErrNoTerminal
-	// if interaction with a user is required, but the process is not running
-	// under a terminal. It overwrites currently cached credentials, if any.
-	Login() error
-
-	// PurgeCredentialsCache removes cached tokens.
-	PurgeCredentialsCache() error
-
-	// GetAccessToken returns a valid access token with specified minimum lifetime.
-	// Does not interact with the user. May return ErrLoginRequered.
-	GetAccessToken(lifetime time.Duration) (Token, error)
+	// Mutable members.
+	lock     sync.Mutex
+	cache    TokenCache
+	provider internal.TokenProvider
+	err      error
+	token    internal.Token
 }
 
 // TokenCache implements a scheme to cache access tokens between the calls. It
@@ -222,7 +215,7 @@ type TokenMinter interface {
 }
 
 // NewAuthenticator returns a new instance of Authenticator given its options.
-func NewAuthenticator(opts Options) Authenticator {
+func NewAuthenticator(opts Options) *Authenticator {
 	// Add default scope, sort scopes.
 	if len(opts.Scopes) == 0 {
 		opts.Scopes = []string{OAuthScopeEmail}
@@ -250,7 +243,7 @@ func NewAuthenticator(opts Options) Authenticator {
 	}
 
 	// See ensureInitialized for the rest of the initialization.
-	auth := &authenticatorImpl{opts: &opts, log: opts.Logger}
+	auth := &Authenticator{opts: &opts, log: opts.Logger}
 	auth.transport = &authTransport{
 		parent: auth,
 		base:   opts.Transport,
@@ -261,7 +254,7 @@ func NewAuthenticator(opts Options) Authenticator {
 
 // AuthenticatedTransport performs login (if requested) and returns
 // http.RoundTripper. See documentation for 'mode' for more details.
-func AuthenticatedTransport(mode LoginMode, auth Authenticator) (http.RoundTripper, error) {
+func AuthenticatedTransport(mode LoginMode, auth *Authenticator) (http.RoundTripper, error) {
 	if mode == InteractiveLogin {
 		if err := auth.PurgeCredentialsCache(); err != nil {
 			return nil, err
@@ -288,7 +281,7 @@ func AuthenticatedTransport(mode LoginMode, auth Authenticator) (http.RoundTripp
 
 // AuthenticatedClient performs login (if requested) and returns http.Client.
 // See documentation for 'mode' for more details.
-func AuthenticatedClient(mode LoginMode, auth Authenticator) (*http.Client, error) {
+func AuthenticatedClient(mode LoginMode, auth *Authenticator) (*http.Client, error) {
 	transport, err := AuthenticatedTransport(mode, auth)
 	if err != nil {
 		return nil, err
@@ -299,21 +292,11 @@ func AuthenticatedClient(mode LoginMode, auth Authenticator) (*http.Client, erro
 ////////////////////////////////////////////////////////////////////////////////
 // Authenticator implementation.
 
-type authenticatorImpl struct {
-	// Immutable members.
-	opts      *Options
-	transport http.RoundTripper
-	log       logging.Logger
-
-	// Mutable members.
-	lock     sync.Mutex
-	cache    TokenCache
-	provider internal.TokenProvider
-	err      error
-	token    internal.Token
-}
-
-func (a *authenticatorImpl) Transport() (http.RoundTripper, error) {
+// Transport returns http.RoundTripper that adds authentication details to
+// each request. An interactive authentication flow (if required) must be
+// complete before making a transport, otherwise ErrLoginRequired is returned.
+// Returned transport object can be safely reused across many http.Client's.
+func (a *Authenticator) Transport() (http.RoundTripper, error) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
@@ -331,7 +314,11 @@ func (a *authenticatorImpl) Transport() (http.RoundTripper, error) {
 	return a.transport, nil
 }
 
-func (a *authenticatorImpl) Login() error {
+// Login perform an interaction with the user to get a long term refresh token
+// and cache it. Blocks for user input, can use stdin. Returns ErrNoTerminal
+// if interaction with a user is required, but the process is not running
+// under a terminal. It overwrites currently cached credentials, if any.
+func (a *Authenticator) Login() error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
@@ -361,7 +348,8 @@ func (a *authenticatorImpl) Login() error {
 	return nil
 }
 
-func (a *authenticatorImpl) PurgeCredentialsCache() error {
+// PurgeCredentialsCache removes cached tokens.
+func (a *Authenticator) PurgeCredentialsCache() error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 	if err := a.ensureInitialized(); err != nil {
@@ -371,7 +359,9 @@ func (a *authenticatorImpl) PurgeCredentialsCache() error {
 	return a.cache.Clear()
 }
 
-func (a *authenticatorImpl) GetAccessToken(lifetime time.Duration) (Token, error) {
+// GetAccessToken returns a valid access token with specified minimum lifetime.
+// Does not interact with the user. May return ErrLoginRequered.
+func (a *Authenticator) GetAccessToken(lifetime time.Duration) (Token, error) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
@@ -399,7 +389,7 @@ func (a *authenticatorImpl) GetAccessToken(lifetime time.Duration) (Token, error
 // Authenticator private methods.
 
 // ensureInitialized is supposed to be called under the lock.
-func (a *authenticatorImpl) ensureInitialized() error {
+func (a *Authenticator) ensureInitialized() error {
 	if a.err != nil || a.provider != nil {
 		return a.err
 	}
@@ -439,7 +429,7 @@ func (a *authenticatorImpl) ensureInitialized() error {
 }
 
 // readTokenCache may be called with a.lock held or not held. It works either way.
-func (a *authenticatorImpl) readTokenCache() (internal.Token, error) {
+func (a *Authenticator) readTokenCache() (internal.Token, error) {
 	// 'read' returns (nil, nil) if cache is empty.
 	buf, err := a.cache.Read()
 	if err != nil || buf == nil {
@@ -453,7 +443,7 @@ func (a *authenticatorImpl) readTokenCache() (internal.Token, error) {
 }
 
 // cacheToken may be called with a.lock held or not held. It works either way.
-func (a *authenticatorImpl) cacheToken(tok internal.Token) error {
+func (a *Authenticator) cacheToken(tok internal.Token) error {
 	buf, err := a.provider.MarshalToken(tok)
 	if err != nil {
 		return err
@@ -462,7 +452,7 @@ func (a *authenticatorImpl) cacheToken(tok internal.Token) error {
 }
 
 // currentToken lock a.lock inside. It MUST NOT be called when a.lock is held.
-func (a *authenticatorImpl) currentToken() internal.Token {
+func (a *Authenticator) currentToken() internal.Token {
 	// TODO(vadimsh): Test with go test -race. The lock may be unnecessary.
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -471,7 +461,7 @@ func (a *authenticatorImpl) currentToken() internal.Token {
 
 // expiresIn returns True if token is not valid or expires within given
 // duration.
-func (a *authenticatorImpl) expiresIn(t internal.Token, lifetime time.Duration) bool {
+func (a *Authenticator) expiresIn(t internal.Token, lifetime time.Duration) bool {
 	if t == nil {
 		return true
 	}
@@ -489,7 +479,7 @@ func (a *authenticatorImpl) expiresIn(t internal.Token, lifetime time.Duration) 
 // procedure if they still match. Returns a refreshed token (if a refresh
 // procedure happened) or the current token (i.e. if it's different from prev).
 // Acts as "Compare-And-Swap" where "Swap" is a token refresh procedure.
-func (a *authenticatorImpl) refreshToken(prev internal.Token, lifetime time.Duration, locked bool) (internal.Token, error) {
+func (a *Authenticator) refreshToken(prev internal.Token, lifetime time.Duration, locked bool) (internal.Token, error) {
 	// Refresh the token under the lock.
 	tok, cache, err := func() (internal.Token, bool, error) {
 		if !locked {
@@ -551,14 +541,14 @@ func (a *authenticatorImpl) refreshToken(prev internal.Token, lifetime time.Dura
 
 // mintTokenWithRetries calls provider's MintToken() retrying on transient
 // errors a bunch of times. Called only for non-interactive providers.
-func (a *authenticatorImpl) mintTokenWithRetries() (internal.Token, error) {
+func (a *Authenticator) mintTokenWithRetries() (internal.Token, error) {
 	// TODO(vadimsh): Implement retries.
 	return a.provider.MintToken()
 }
 
 // refreshTokenWithRetries calls providers' RefreshToken(...) retrying on
 // transient errors a bunch of times.
-func (a *authenticatorImpl) refreshTokenWithRetries(t internal.Token) (internal.Token, error) {
+func (a *Authenticator) refreshTokenWithRetries(t internal.Token) (internal.Token, error) {
 	// TODO(vadimsh): Implement retries.
 	return a.provider.RefreshToken(a.token)
 }
@@ -575,7 +565,7 @@ func (a *authenticatorImpl) refreshTokenWithRetries(t internal.Token) (internal.
 // parent transport CancelRequest).
 
 type authTransport struct {
-	parent *authenticatorImpl
+	parent *Authenticator
 	base   http.RoundTripper
 	log    logging.Logger
 }
