@@ -53,11 +53,39 @@ type JobState struct {
 	// TickTime is when the OnTimerTick event is expected.
 	TickTime time.Time `gae:",noindex"`
 
-	// InvocationNonce is id of the currently queued or running invocation.
+	// InvocationNonce is id of the currently queued or running invocation
+	// request. Once it is processed, it produces some new invocation identified
+	// by InvocationID. Single InvocationNonce can spawn many InvocationIDs due to
+	// retries on transient errors when starting an invocation. Only one of them
+	// will end up in Running state though.
 	InvocationNonce int64 `gae:",noindex"`
 
-	// InvocationTime is when the current invocation was started.
+	// InvocationTime is when the current invocation request was queued.
 	InvocationTime time.Time `gae:",noindex"`
+
+	// InvocationID is ID of currently running invocation or 0 if none is running.
+	InvocationID int64 `gae:",noindex"`
+
+	// InvocationStarting is true if invocation identified by InvocationID is
+	// being started right now. InvocationStarting is false if invocation has been
+	// successfully started and running now.
+	InvocationStarting bool
+}
+
+// IsExpectingInvocation returns true if the state machine accepts
+// OnInvocationStarting event with given nonce.
+func (s *JobState) IsExpectingInvocation(invocationNonce int64) bool {
+	return (s.State == JobStateQueued || s.State == JobStateSlowQueue) && s.InvocationNonce == invocationNonce
+}
+
+// IsExpectingTick returns true if the state implies that the state machine is
+// waiting for a timer tick.
+func (s *JobState) IsExpectingTick() bool {
+	switch s.State {
+	case JobStateScheduled, JobStateQueued, JobStateRunning, JobStateOverrun, JobStateSlowQueue:
+		return true
+	}
+	return false
 }
 
 // Action is a particular action to perform when switching the state. Can be
@@ -99,7 +127,7 @@ func (a StartInvocationAction) IsAction() bool { return true }
 // pure functions (InputState, World) -> (OutputState, Actions).
 //
 // The lifecycle of a healthy cron job:
-// DISABLED -> SCHEDULED -> QUEUED -> RUNNING -> SCHEDULED -> ...
+// DISABLED -> SCHEDULED -> QUEUED -> QUEUED (starting) -> RUNNING -> SCHEDULED
 type StateMachine struct {
 	// Inputs.
 	InputState         JobState     // job's current state
@@ -116,7 +144,7 @@ type StateMachine struct {
 // a previously disabled job was enabled.
 func (m *StateMachine) OnJobEnabled() error {
 	if m.InputState.State == JobStateDisabled {
-		m.schedule(JobStateScheduled)
+		m.schedule(JobStateScheduled, JobState{})
 	}
 	return nil
 }
@@ -131,7 +159,7 @@ func (m *StateMachine) OnJobDisabled() error {
 // OnTimerTick happens when scheduled timer (added with TickLaterAction) ticks.
 func (m *StateMachine) OnTimerTick(tickNonce int64) error {
 	// Skip unexpected, late or canceled ticks.
-	if !m.expectingTick() || m.InputState.TickNonce != tickNonce {
+	if !m.InputState.IsExpectingTick() || m.InputState.TickNonce != tickNonce {
 		return nil
 	}
 
@@ -146,7 +174,7 @@ func (m *StateMachine) OnTimerTick(tickNonce int64) error {
 
 	// Was waiting for a tick to start a job? Add invocation to the queue.
 	if m.InputState.State == JobStateScheduled {
-		m.schedule(JobStateQueued)
+		m.schedule(JobStateQueued, JobState{})
 		m.OutputState.InvocationTime = m.Now
 		m.OutputState.InvocationNonce = m.Nonce()
 		m.emitAction(StartInvocationAction{m.OutputState.InvocationNonce})
@@ -161,45 +189,53 @@ func (m *StateMachine) OnTimerTick(tickNonce int64) error {
 	// stuck jobs.
 	switch m.InputState.State {
 	case JobStateRunning, JobStateOverrun:
-		m.schedule(JobStateOverrun)
+		m.schedule(JobStateOverrun, m.InputState)
 	case JobStateQueued, JobStateSlowQueue:
-		m.schedule(JobStateSlowQueue)
+		m.schedule(JobStateSlowQueue, m.InputState)
 	default:
-		panic("Impossible, see expectingTick()")
+		panic("Impossible, see IsExpectingTick()")
 	}
-	m.OutputState.InvocationTime = m.InputState.InvocationTime
-	m.OutputState.InvocationNonce = m.InputState.InvocationNonce
-	m.OutputState.Overruns = m.InputState.Overruns + 1
+	m.OutputState.Overruns++
 	return nil
 }
 
-// OnInvocationStart happens when enqueued invocation finally starts to run.
-func (m *StateMachine) OnInvocationStart(invocationNonce int64) error {
-	s := m.InputState.State
-	if s != JobStateQueued && s != JobStateSlowQueue {
-		return nil
+// OnInvocationStarting happens when the engine picks up enqueued invocation and
+// attempts to start it. Engine calls OnInvocationStarted when it succeeds at
+// launching the invocation. Engine calls OnInvocationStarting again with
+// another invocationID if previous launch attempt failed.
+func (m *StateMachine) OnInvocationStarting(invocationNonce, invocationID int64) error {
+	if m.InputState.IsExpectingInvocation(invocationNonce) {
+		cp := m.InputState
+		m.OutputState = &cp
+		m.OutputState.InvocationID = invocationID
+		m.OutputState.InvocationStarting = true
 	}
-	if m.InputState.InvocationNonce != invocationNonce {
-		return nil
-	}
-	cp := m.InputState
-	m.OutputState = &cp
-	if s == JobStateQueued {
-		m.OutputState.State = JobStateRunning
-	} else { // JobStateSlowQueue
-		m.OutputState.State = JobStateOverrun
+	return nil
+}
+
+// OnInvocationStarted happens when enqueued invocation finally starts to run.
+func (m *StateMachine) OnInvocationStarted(invocationID int64) error {
+	if m.InputState.InvocationID == invocationID {
+		cp := m.InputState
+		m.OutputState = &cp
+		if m.InputState.State == JobStateQueued {
+			m.OutputState.State = JobStateRunning
+		} else { // JobStateSlowQueue
+			m.OutputState.State = JobStateOverrun
+		}
+		m.OutputState.InvocationStarting = false
 	}
 	return nil
 }
 
 // OnInvocationDone happens when invocation completes.
-func (m *StateMachine) OnInvocationDone(invocationNonce int64) error {
+func (m *StateMachine) OnInvocationDone(invocationID int64) error {
 	// Ignore unexpected events. Can happen if job was moved to disabled state
 	// while invocation was still running.
 	if m.InputState.State != JobStateRunning && m.InputState.State != JobStateOverrun {
 		return nil
 	}
-	if m.InputState.InvocationNonce != invocationNonce {
+	if m.InputState.InvocationID != invocationID {
 		return nil
 	}
 	// Do not schedule another tick. It was already scheduled when job entered
@@ -218,7 +254,7 @@ func (m *StateMachine) OnInvocationDone(invocationNonce int64) error {
 // needs to be rescheduled).
 func (m *StateMachine) OnScheduleChange() error {
 	// Did it really change next invocation time?
-	if !m.expectingTick() || m.NextInvocationTime == m.InputState.TickTime {
+	if !m.InputState.IsExpectingTick() || m.NextInvocationTime == m.InputState.TickTime {
 		return nil
 	}
 	// Change the next tick time, carry over the rest of the state.
@@ -232,26 +268,15 @@ func (m *StateMachine) OnScheduleChange() error {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// expectingTick returns true if current state implies that machine is waiting
-// for a timer tick.
-func (m *StateMachine) expectingTick() bool {
-	switch m.InputState.State {
-	case JobStateScheduled, JobStateQueued, JobStateRunning, JobStateOverrun, JobStateSlowQueue:
-		return true
-	}
-	return false
-}
-
 // schedule emits TickLaterAction action according to job's schedule and
 // generates OutputState putting tick time and tick ID there. It does NOT
 // preserve invocation ID and related fields from InputState. Copy them from
 // InputState if needed.
-func (m *StateMachine) schedule(s StateKind) {
-	m.OutputState = &JobState{
-		State:     s,
-		TickTime:  m.NextInvocationTime,
-		TickNonce: m.Nonce(),
-	}
+func (m *StateMachine) schedule(s StateKind, prev JobState) {
+	m.OutputState = &prev
+	m.OutputState.State = s
+	m.OutputState.TickTime = m.NextInvocationTime
+	m.OutputState.TickNonce = m.Nonce()
 	m.emitAction(TickLaterAction{m.OutputState.TickTime, m.OutputState.TickNonce})
 }
 

@@ -53,8 +53,11 @@ type Manager interface {
 
 	// LaunchTask starts (or starts and finishes in one go) the given task,
 	// described by its proto message. msg must have same underlying type as
-	// ProtoMessageType() return value. Manager must not use supplied controller
-	// outside of LaunchTask call.
+	// ProtoMessageType() return value. Manager responsibilities:
+	//  * To move the task to some state other than StatusStarting
+	//    (by calling ctl.Save(...)).
+	//  * Not to use supplied controller outside of LaunchTask call.
+	//  * Not to use supplied controller concurrently without synchronization.
 	LaunchTask(c context.Context, msg proto.Message, ctl Controller) error
 }
 

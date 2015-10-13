@@ -21,7 +21,9 @@ func TestStateMachine(t *testing.T) {
 		// Noop when in disabled state.
 		So(m.roll(func(sm *StateMachine) error { return sm.OnTimerTick(1) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateDisabled)
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStart(1) }), ShouldBeNil)
+		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(1, 1) }), ShouldBeNil)
+		So(m.state.State, ShouldEqual, JobStateDisabled)
+		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarted(1) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateDisabled)
 		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationDone(1) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateDisabled)
@@ -61,22 +63,33 @@ func TestStateMachine(t *testing.T) {
 		})
 		m.actions = nil
 
-		// Wrong invocation ID is skipped.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStart(333) }), ShouldBeNil)
+		// Wrong invocation nonce is skipped.
+		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(333, 1000) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateQueued)
 		So(m.actions, ShouldBeNil)
 
 		// Time to run.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStart(3) }), ShouldBeNil)
-		So(m.state.State, ShouldEqual, JobStateRunning)
+		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(3, 1000) }), ShouldBeNil)
+		So(m.state.State, ShouldEqual, JobStateQueued)
+		So(m.state.InvocationID, ShouldEqual, 1000)
+		So(m.state.InvocationStarting, ShouldBeTrue)
 
 		// Skip wrong invocation ID.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationDone(333) }), ShouldBeNil)
+		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarted(1001) }), ShouldBeNil)
+		So(m.state.State, ShouldEqual, JobStateQueued)
+
+		// Started.
+		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarted(1000) }), ShouldBeNil)
+		So(m.state.State, ShouldEqual, JobStateRunning)
+		So(m.state.InvocationStarting, ShouldBeFalse)
+
+		// Skip wrong invocation ID.
+		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationDone(1001) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateRunning)
 
 		// End of the cycle. Ends up in scheduled state, waiting for the tick added
 		// when StartInvocationAction was issued.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationDone(3) }), ShouldBeNil)
+		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationDone(1000) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateScheduled)
 		So(m.state.TickNonce, ShouldEqual, 2)
 
@@ -118,12 +131,13 @@ func TestStateMachine(t *testing.T) {
 		m.actions = nil
 
 		// Time to run. Moves to JobStateOverrun because was stuck in queue.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStart(3) }), ShouldBeNil)
+		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(3, 100) }), ShouldBeNil)
+		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarted(100) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateOverrun)
 		So(m.state.Overruns, ShouldEqual, 1)
 
 		// End of the cycle.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationDone(3) }), ShouldBeNil)
+		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationDone(100) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateScheduled)
 	})
 
@@ -149,7 +163,8 @@ func TestStateMachine(t *testing.T) {
 		m.actions = nil
 
 		// Time to run.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStart(3) }), ShouldBeNil)
+		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(3, 100) }), ShouldBeNil)
+		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarted(100) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateRunning)
 
 		// Next tick comes while job is running.
@@ -163,7 +178,7 @@ func TestStateMachine(t *testing.T) {
 		m.actions = nil
 
 		// End of the cycle.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationDone(3) }), ShouldBeNil)
+		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationDone(100) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateScheduled)
 	})
 

@@ -11,6 +11,8 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/golang/protobuf/proto"
+
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/taskqueue"
@@ -21,6 +23,8 @@ import (
 	"github.com/luci/luci-go/common/mathrand"
 
 	"github.com/luci/luci-go/appengine/cmd/cron/catalog"
+	"github.com/luci/luci-go/appengine/cmd/cron/messages"
+	"github.com/luci/luci-go/appengine/cmd/cron/task"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -28,7 +32,7 @@ import (
 func TestGetAllProjects(t *testing.T) {
 	Convey("works", t, func() {
 		c := newTestContext(epoch)
-		e := newTestEngine()
+		e, _ := newTestEngine()
 		ds := datastore.Get(c)
 
 		// Empty.
@@ -53,7 +57,7 @@ func TestGetAllProjects(t *testing.T) {
 func TestUpdateProjectJobs(t *testing.T) {
 	Convey("works", t, func() {
 		c := newTestContext(epoch)
-		e := newTestEngine()
+		e, _ := newTestEngine()
 
 		// Doing nothing.
 		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{}), ShouldBeNil)
@@ -145,7 +149,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 func TestTransactionRetries(t *testing.T) {
 	Convey("retry works", t, func() {
 		c := newTestContext(epoch)
-		e := newTestEngine()
+		e, _ := newTestEngine()
 
 		// Adding a new job with transaction retry, should enqueue one task.
 		datastore.Get(c).Testable().SetTransactionRetryCount(2)
@@ -178,7 +182,7 @@ func TestTransactionRetries(t *testing.T) {
 
 	Convey("collision is handled", t, func() {
 		c := newTestContext(epoch)
-		e := newTestEngine()
+		e, _ := newTestEngine()
 
 		// Pretend collision happened in all retries.
 		datastore.Get(c).Testable().SetTransactionRetryCount(15)
@@ -198,7 +202,7 @@ func TestTransactionRetries(t *testing.T) {
 func TestResetAllJobsOnDevServer(t *testing.T) {
 	Convey("works", t, func() {
 		c := newTestContext(epoch)
-		e := newTestEngine()
+		e, _ := newTestEngine()
 
 		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{
 			{
@@ -245,7 +249,8 @@ func TestResetAllJobsOnDevServer(t *testing.T) {
 func TestFullFlow(t *testing.T) {
 	Convey("full flow", t, func() {
 		c := newTestContext(epoch)
-		e := newTestEngine()
+		e, mgr := newTestEngine()
+		taskBytes := noopTaskBytes()
 
 		// Adding a new job (ticks every 5 sec).
 		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{
@@ -253,6 +258,7 @@ func TestFullFlow(t *testing.T) {
 				JobID:    "abc/1",
 				Revision: "rev1",
 				Schedule: "*/5 * * * * * *",
+				Task:     taskBytes,
 			}}), ShouldBeNil)
 		So(allJobs(c), ShouldResemble, []jobEntity{
 			{
@@ -261,6 +267,7 @@ func TestFullFlow(t *testing.T) {
 				Revision:  "rev1",
 				Enabled:   true,
 				Schedule:  "*/5 * * * * * *",
+				Task:      taskBytes,
 				State: JobState{
 					State:     "SCHEDULED",
 					TickNonce: 6278013164014963328,
@@ -269,14 +276,14 @@ func TestFullFlow(t *testing.T) {
 			},
 		})
 		// Enqueued timer task to launch it.
-		task := ensureOneTask(c, "timers-q")
-		So(task.Path, ShouldEqual, "/timers")
-		So(task.ETA, ShouldResemble, epoch.Add(5*time.Second))
+		tsk := ensureOneTask(c, "timers-q")
+		So(tsk.Path, ShouldEqual, "/timers")
+		So(tsk.ETA, ShouldResemble, epoch.Add(5*time.Second))
 		taskqueue.Get(c).Testable().ResetTasks()
 
 		// Tick time comes, the tick task is executed, job is added to queue.
 		clock.Get(c).(testclock.TestClock).Add(5 * time.Second)
-		So(e.ExecuteSerializedAction(c, task.Payload, 0), ShouldBeNil)
+		So(e.ExecuteSerializedAction(c, tsk.Payload, 0), ShouldBeNil)
 
 		// Job is in queued state now.
 		So(allJobs(c), ShouldResemble, []jobEntity{
@@ -286,6 +293,7 @@ func TestFullFlow(t *testing.T) {
 				Revision:  "rev1",
 				Enabled:   true,
 				Schedule:  "*/5 * * * * * *",
+				Task:      taskBytes,
 				State: JobState{
 					State:           "QUEUED",
 					TickNonce:       9111178027324032851,
@@ -300,15 +308,131 @@ func TestFullFlow(t *testing.T) {
 		tickTask := ensureOneTask(c, "timers-q")
 		So(tickTask.Path, ShouldEqual, "/timers")
 		So(tickTask.ETA, ShouldResemble, epoch.Add(10*time.Second))
+
 		// Invocation task (ETA is 1 sec in the future).
 		invTask := ensureOneTask(c, "invs-q")
 		So(invTask.Path, ShouldEqual, "/invs")
 		So(invTask.ETA, ShouldResemble, epoch.Add(6*time.Second))
 		taskqueue.Get(c).Testable().ResetTasks()
 
-		// Time to run the job.
-		// TODO(vadimsh): Test RUNNING state.
-		So(e.ExecuteSerializedAction(c, invTask.Payload, 0), ShouldBeNil)
+		// Time to run the job and it fails to launch with a transient error.
+		mgr.launchTask = func(ctl task.Controller) error {
+			ctl.DebugLog("oops, fail")
+			return errors.WrapTransient(errors.New("oops"))
+		}
+		So(errors.IsTransient(e.ExecuteSerializedAction(c, invTask.Payload, 0)), ShouldBeTrue)
+
+		// Still in QUEUED state, but with InvocatioID assigned.
+		jobs := allJobs(c)
+		So(jobs, ShouldResemble, []jobEntity{
+			{
+				JobID:     "abc/1",
+				ProjectID: "abc",
+				Revision:  "rev1",
+				Enabled:   true,
+				Schedule:  "*/5 * * * * * *",
+				Task:      taskBytes,
+				State: JobState{
+					State:              "QUEUED",
+					TickNonce:          9111178027324032851,
+					TickTime:           epoch.Add(10 * time.Second),
+					InvocationNonce:    631000787647335445,
+					InvocationTime:     epoch.Add(5 * time.Second),
+					InvocationID:       1,
+					InvocationStarting: true,
+				},
+			},
+		})
+		jobKey := datastore.Get(c).KeyForObj(&jobs[0])
+
+		// Check invocationEntity fields.
+		inv := invocationEntity{ID: 1, JobKey: jobKey}
+		So(datastore.Get(c).Get(&inv), ShouldBeNil)
+		inv.JobKey = nil // for easier ShouldResemble below
+		So(inv, ShouldResemble, invocationEntity{
+			ID:              1,
+			InvocationNonce: 631000787647335445,
+			Revision:        "rev1",
+			Task:            taskBytes,
+			DebugLog: "[22:42:05.000] oops, fail\n" +
+				"[22:42:05.000] Failed to run the task: oops\n",
+			Status: task.StatusFailed,
+		})
+
+		// Second attempt. Now starts, hangs midway, they finishes.
+		mgr.launchTask = func(ctl task.Controller) error {
+			ctl.DebugLog("Starting")
+			So(ctl.Save(task.StatusRunning), ShouldBeNil)
+
+			// After first Save the job and the invocation are in running state.
+			So(allJobs(c), ShouldResemble, []jobEntity{
+				{
+					JobID:     "abc/1",
+					ProjectID: "abc",
+					Revision:  "rev1",
+					Enabled:   true,
+					Schedule:  "*/5 * * * * * *",
+					Task:      taskBytes,
+					State: JobState{
+						State:           "RUNNING",
+						TickNonce:       9111178027324032851,
+						TickTime:        epoch.Add(10 * time.Second),
+						InvocationNonce: 631000787647335445,
+						InvocationTime:  epoch.Add(5 * time.Second),
+						InvocationID:    2,
+					},
+				},
+			})
+			inv := invocationEntity{ID: 2, JobKey: jobKey}
+			So(datastore.Get(c).Get(&inv), ShouldBeNil)
+			inv.JobKey = nil // for easier ShouldResemble below
+			So(inv, ShouldResemble, invocationEntity{
+				ID:              2,
+				InvocationNonce: 631000787647335445,
+				Revision:        "rev1",
+				Task:            taskBytes,
+				DebugLog:        "[22:42:05.000] Starting\n",
+				RetryCount:      1,
+				Status:          task.StatusRunning,
+			})
+
+			// Noop save, just for code coverage.
+			So(ctl.Save(task.StatusRunning), ShouldBeNil)
+
+			return ctl.Save(task.StatusSucceeded)
+		}
+		So(e.ExecuteSerializedAction(c, invTask.Payload, 1), ShouldBeNil)
+
+		// After final save.
+		inv = invocationEntity{ID: 2, JobKey: jobKey}
+		So(datastore.Get(c).Get(&inv), ShouldBeNil)
+		inv.JobKey = nil // for easier ShouldResemble below
+		So(inv, ShouldResemble, invocationEntity{
+			ID:              2,
+			InvocationNonce: 631000787647335445,
+			Revision:        "rev1",
+			Task:            taskBytes,
+			DebugLog:        "[22:42:05.000] Starting\n",
+			RetryCount:      1,
+			Status:          task.StatusSucceeded,
+		})
+
+		// Previous invocation is canceled.
+		inv = invocationEntity{ID: 1, JobKey: jobKey}
+		So(datastore.Get(c).Get(&inv), ShouldBeNil)
+		inv.JobKey = nil // for easier ShouldResemble below
+		So(inv, ShouldResemble, invocationEntity{
+			ID:              1,
+			InvocationNonce: 631000787647335445,
+			Revision:        "rev1",
+			Task:            taskBytes,
+			DebugLog: "[22:42:05.000] oops, fail\n" +
+				"[22:42:05.000] Failed to run the task: oops\n" +
+				"[22:42:05.000] New invocation is running (2), marking this one as failed.\n",
+			Status: task.StatusFailed,
+		})
+
+		// Job is in scheduled state again.
 		So(allJobs(c), ShouldResemble, []jobEntity{
 			{
 				JobID:     "abc/1",
@@ -316,6 +440,7 @@ func TestFullFlow(t *testing.T) {
 				Revision:  "rev1",
 				Enabled:   true,
 				Schedule:  "*/5 * * * * * *",
+				Task:      taskBytes,
 				State: JobState{
 					State:     "SCHEDULED",
 					TickNonce: 9111178027324032851,
@@ -349,13 +474,43 @@ func newTestContext(now time.Time) context.Context {
 	return c
 }
 
-func newTestEngine() Engine {
+func newTestEngine() (Engine, *fakeTaskManager) {
+	mgr := &fakeTaskManager{}
+	cat := catalog.NewCatalog()
+	cat.RegisterTaskManager(mgr)
 	return NewEngine(Config{
+		Catalog:              cat,
 		TimersQueuePath:      "/timers",
 		TimersQueueName:      "timers-q",
 		InvocationsQueuePath: "/invs",
 		InvocationsQueueName: "invs-q",
-	})
+	}), mgr
+}
+
+////
+
+// fakeTaskManager implement task.Manager interface.
+type fakeTaskManager struct {
+	launchTask func(ctl task.Controller) error
+}
+
+func (m *fakeTaskManager) ProtoMessageType() proto.Message {
+	return (*messages.NoopTask)(nil)
+}
+
+func (m *fakeTaskManager) ValidateProtoMessage(msg proto.Message) error {
+	return nil
+}
+
+func (m *fakeTaskManager) LaunchTask(c context.Context, msg proto.Message, ctl task.Controller) error {
+	return m.launchTask(ctl)
+}
+
+////
+
+func noopTaskBytes() []byte {
+	buf, _ := proto.Marshal(&messages.Task{Noop: &messages.NoopTask{}})
+	return buf
 }
 
 func allJobs(c context.Context) []jobEntity {
