@@ -19,6 +19,7 @@ import (
 	"net/url"
 	"strconv"
 	"sync"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -58,6 +59,9 @@ const (
 	// configServiceURL is URL of luci-config service.
 	// TODO(vadimsh): Make it configurable.
 	configServiceURL = "https://luci-config.appspot.com"
+
+	// configServiceTimeout is deadline for luci-config url fetch calls.
+	configServiceTimeout = 150 * time.Second
 )
 
 //// Helpers.
@@ -211,7 +215,8 @@ func readConfigCron(c *requestContext) {
 	projectsToVisit := map[string]bool{}
 
 	// Visit all projects in the catalog.
-	projects, err := catalog.GetAllProjects(c.Context)
+	ctx, _ := context.WithTimeout(c.Context, configServiceTimeout)
+	projects, err := catalog.GetAllProjects(ctx)
 	if err != nil {
 		c.err(err, "Failed to grab a list of project IDs from catalog")
 		return
@@ -256,7 +261,8 @@ func readProjectConfigTask(c *requestContext) {
 		c.fail(202, "Missing projectID query attribute")
 		return
 	}
-	jobs, err := catalog.GetProjectJobs(c.Context, projectID)
+	ctx, _ := context.WithTimeout(c.Context, configServiceTimeout)
+	jobs, err := catalog.GetProjectJobs(ctx, projectID)
 	if err != nil {
 		c.err(err, "Failed to query for a list of jobs")
 		return
