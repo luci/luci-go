@@ -537,6 +537,88 @@ type IfaceKey struct {
 	K *Key
 }
 
+type IDParser struct {
+	_kind string `gae:"$kind,CoolKind"`
+
+	// real $id is myParentName|myID
+	parent string `gae:"-"`
+	id     int64  `gae:"-"`
+}
+
+var _ MetaGetterSetter = (*IDParser)(nil)
+
+func (i *IDParser) getFullID() string {
+	return fmt.Sprintf("%s|%d", i.parent, i.id)
+}
+
+func (i *IDParser) GetAllMeta() PropertyMap {
+	pm := PropertyMap{}
+	pm.SetMeta("id", i.getFullID())
+	return pm
+}
+
+func (i *IDParser) GetMeta(key string) (interface{}, error) {
+	if key == "id" {
+		return i.getFullID(), nil
+	}
+	return nil, ErrMetaFieldUnset
+}
+
+func (i *IDParser) GetMetaDefault(key string, dflt interface{}) interface{} {
+	return GetMetaDefaultImpl(i.GetMeta, key, dflt)
+}
+
+func (i *IDParser) SetMeta(key string, value interface{}) (err error) {
+	if key == "id" {
+		// let the panics flooowwww
+		vS := strings.SplitN(value.(string), "|", 2)
+		i.parent = vS[0]
+		i.id, err = strconv.ParseInt(vS[1], 10, 64)
+		return
+	}
+	return ErrMetaFieldUnset
+}
+
+type KindOverride struct {
+	ID int64 `gae:"$id"`
+
+	customKind string `gae:"-"`
+}
+
+var _ MetaGetterSetter = (*KindOverride)(nil)
+
+func (i *KindOverride) GetAllMeta() PropertyMap {
+	pm := PropertyMap{}
+	if i.customKind != "" {
+		pm.SetMeta("kind", i.customKind)
+	}
+	return pm
+}
+
+func (i *KindOverride) GetMeta(key string) (interface{}, error) {
+	if key == "kind" && i.customKind != "" {
+		return i.customKind, nil
+	}
+	return nil, ErrMetaFieldUnset
+}
+
+func (i *KindOverride) GetMetaDefault(key string, dflt interface{}) interface{} {
+	return GetMetaDefaultImpl(i.GetMeta, key, dflt)
+}
+
+func (i *KindOverride) SetMeta(key string, value interface{}) error {
+	if key == "kind" {
+		kind := value.(string)
+		if kind != "KindOverride" {
+			i.customKind = kind
+		} else {
+			i.customKind = ""
+		}
+		return nil
+	}
+	return ErrMetaFieldUnset
+}
+
 type testCase struct {
 	desc       string
 	src        interface{}
@@ -1717,6 +1799,49 @@ func TestMeta(t *testing.T) {
 			}
 			pls := GetPLS(&BadDefault{})
 			So(pls.Problem().Error(), ShouldContainSubstring, "bad type")
+		})
+
+		Convey("MetaGetterSetter implementation (IDParser)", func() {
+			idp := &IDParser{parent: "moo", id: 100}
+			pls := GetPLS(idp)
+			So(pls.GetMetaDefault("id", ""), ShouldEqual, "moo|100")
+			So(pls.GetMetaDefault("kind", ""), ShouldEqual, "CoolKind")
+
+			So(pls.SetMeta("kind", "Something"), ShouldErrLike, "unexported field")
+			So(pls.SetMeta("id", "happy|27"), ShouldBeNil)
+
+			So(idp.parent, ShouldEqual, "happy")
+			So(idp.id, ShouldEqual, 27)
+
+			So(pls.GetAllMeta(), ShouldResemble, PropertyMap{
+				"$id":   {MkPropertyNI("happy|27")},
+				"$kind": {MkPropertyNI("CoolKind")},
+			})
+		})
+
+		Convey("MetaGetterSetter implementation (KindOverride)", func() {
+			ko := &KindOverride{ID: 20}
+			pls := GetPLS(ko)
+			So(pls.GetMetaDefault("kind", ""), ShouldEqual, "KindOverride")
+
+			ko.customKind = "something"
+			So(pls.GetMetaDefault("kind", ""), ShouldEqual, "something")
+
+			So(pls.SetMeta("kind", "Nerp"), ShouldBeNil)
+			So(ko.customKind, ShouldEqual, "Nerp")
+
+			So(pls.SetMeta("kind", "KindOverride"), ShouldBeNil)
+			So(ko.customKind, ShouldEqual, "")
+
+			So(pls.GetAllMeta(), ShouldResemble, PropertyMap{
+				"$id":   {MkPropertyNI(20)},
+				"$kind": {MkPropertyNI("KindOverride")},
+			})
+			ko.customKind = "wut"
+			So(pls.GetAllMeta(), ShouldResemble, PropertyMap{
+				"$id":   {MkPropertyNI(20)},
+				"$kind": {MkPropertyNI("wut")},
+			})
 		})
 	})
 }

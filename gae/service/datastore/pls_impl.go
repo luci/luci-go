@@ -35,12 +35,20 @@ type structCodec struct {
 	byName   map[string]int
 	byIndex  []structTag
 	hasSlice bool
+	mgs      bool
 	problem  error
 }
 
 type structPLS struct {
 	o reflect.Value
 	c *structCodec
+}
+
+func (p *structPLS) getMGS() MetaGetterSetter {
+	if !p.c.mgs {
+		return nil
+	}
+	return p.o.Addr().Interface().(MetaGetterSetter)
 }
 
 var _ PropertyLoadSaver = (*structPLS)(nil)
@@ -289,14 +297,23 @@ func (p *structPLS) GetMeta(key string) (interface{}, error) {
 	if err := p.Problem(); err != nil {
 		return nil, err
 	}
-	idx, ok := p.c.byMeta[key]
-	if !ok {
-		if key == "kind" {
-			return p.getDefaultKind(), nil
-		}
-		return nil, ErrMetaFieldUnset
+
+	if idx, ok := p.c.byMeta[key]; ok {
+		return p.getMetaFor(idx), nil
 	}
-	return p.getMetaFor(idx), nil
+
+	if p.c.mgs {
+		ret, err := p.getMGS().GetMeta(key)
+		if err == nil {
+			return ret, err
+		} else if err != ErrMetaFieldUnset {
+			return nil, err
+		}
+	}
+	if key == "kind" {
+		return p.getDefaultKind(), nil
+	}
+	return nil, ErrMetaFieldUnset
 }
 
 func (p *structPLS) getMetaFor(idx int) interface{} {
@@ -315,7 +332,15 @@ func (p *structPLS) getMetaFor(idx int) interface{} {
 }
 
 func (p *structPLS) GetAllMeta() PropertyMap {
-	ret := make(PropertyMap, len(p.c.byMeta)+1)
+	ret := PropertyMap(nil)
+	needKind := true
+	if p.c.mgs {
+		ret = p.getMGS().GetAllMeta()
+		_, haveKind := ret["$kind"]
+		needKind = !haveKind
+	} else {
+		ret = make(PropertyMap, len(p.c.byMeta)+1)
+	}
 	for k, idx := range p.c.byMeta {
 		val := p.getMetaFor(idx)
 		p := Property{}
@@ -324,8 +349,10 @@ func (p *structPLS) GetAllMeta() PropertyMap {
 		}
 		ret["$"+k] = []Property{p}
 	}
-	if _, ok := p.c.byMeta["kind"]; !ok {
-		ret["$kind"] = []Property{MkPropertyNI(p.getDefaultKind())}
+	if needKind {
+		if _, ok := p.c.byMeta["kind"]; !ok {
+			ret["$kind"] = []Property{MkPropertyNI(p.getDefaultKind())}
+		}
 	}
 	return ret
 }
@@ -340,6 +367,9 @@ func (p *structPLS) SetMeta(key string, val interface{}) (err error) {
 	}
 	idx, ok := p.c.byMeta[key]
 	if !ok {
+		if p.c.mgs {
+			return p.getMGS().SetMeta(key, val)
+		}
 		return ErrMetaFieldUnset
 	}
 	if !p.c.byIndex[idx].canSet {
@@ -418,6 +448,7 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 		byName:  make(map[string]int, t.NumField()),
 		byMeta:  make(map[string]int, t.NumField()),
 		problem: errRecursiveStruct, // we'll clear this later if it's not recursive
+		mgs:     reflect.PtrTo(t).Implements(typeOfMGS),
 	}
 	defer func() {
 		// If the codec has a problem, free up the indexes

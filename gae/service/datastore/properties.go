@@ -680,20 +680,36 @@ type PropertyLoadSaver interface {
 	// which was held by this PropertyLoadSaver.
 	Save(withMeta bool) (PropertyMap, error)
 
-	MetaGetter
-
-	// GetAllMeta returns a PropertyMap with all of the metadata in this
-	// PropertyLoadSaver. If a metadata field has an error during serialization,
-	// it is skipped.
-	GetAllMeta() PropertyMap
-
-	// SetMeta allows you to set the current value of the meta-keyed field.
-	SetMeta(key string, val interface{}) error
+	MetaGetterSetter
 
 	// Problem indicates that this PLS has a fatal problem. Usually this is
 	// set when the underlying struct has recursion, invalid field types, nested
 	// slices, etc.
 	Problem() error
+}
+
+// MetaGetterSetter is the subset of PropertyLoadSaver which pertains to
+// getting and saving metadata.
+//
+// A *struct may implement this interface to provide metadata which is
+// supplimental to the variety described by GetPLS. For example, this could be
+// used to implement a parsed-out $kind or $id.
+type MetaGetterSetter interface {
+	MetaGetter
+
+	// GetAllMeta returns a PropertyMap with all of the metadata in this
+	// MetaGetterSetter. If a metadata field has an error during serialization,
+	// it is skipped.
+	//
+	// If a *struct is implementing this, then it only needs to return the
+	// metadata fields which would be returned by its GetMeta implementation, and
+	// the `GetPLS` implementation will add any statically-defined metadata
+	// fields. So if GetMeta provides $id, but there's a simple tagged field for
+	// $kind, this method is only expected to return a PropertyMap with "$id".
+	GetAllMeta() PropertyMap
+
+	// SetMeta allows you to set the current value of the meta-keyed field.
+	SetMeta(key string, val interface{}) error
 }
 
 // PropertyMap represents the contents of a datastore entity in a generic way.

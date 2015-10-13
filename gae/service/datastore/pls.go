@@ -86,6 +86,13 @@ import (
 //     // 'Lines' will serialized to the datastore in the field 'Lines'
 //     Lines []string
 //   }
+//
+// A pointer-to-struct may also implement MetaGetterSetter to provide more
+// sophistocated metadata values. Explicitly defined fields (as shown above)
+// always take precedence over fields manipulated by the MetaGetterSetter
+// methods. So if your GetMeta handles "kind", but you explicitly have a
+// $kind field, the $kind field will take precedence and your GetMeta
+// implementation will not be called for "kind".
 func GetPLS(obj interface{}) PropertyLoadSaver {
 	v := reflect.ValueOf(obj)
 	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {

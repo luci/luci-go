@@ -23,4 +23,5 @@ var (
 	typeOfString            = reflect.TypeOf("")
 	typeOfTime              = reflect.TypeOf(time.Time{})
 	typeOfToggle            = reflect.TypeOf(Auto)
+	typeOfMGS               = reflect.TypeOf((*MetaGetterSetter)(nil)).Elem()
 )
