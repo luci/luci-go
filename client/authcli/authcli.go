@@ -68,7 +68,7 @@ func (c *loginRun) Run(subcommands.Application, []string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	client, err := auth.AuthenticatedClient(auth.InteractiveLogin, auth.NewAuthenticator(opts))
+	client, err := auth.NewAuthenticator(auth.InteractiveLogin, opts).Client()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Login failed: %s\n", err.Error())
 		return 2
@@ -106,7 +106,7 @@ func (c *logoutRun) Run(a subcommands.Application, args []string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	err = auth.NewAuthenticator(opts).PurgeCredentialsCache()
+	err = auth.NewAuthenticator(auth.SilentLogin, opts).PurgeCredentialsCache()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 2
@@ -140,7 +140,7 @@ func (c *infoRun) Run(a subcommands.Application, args []string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	client, err := auth.AuthenticatedClient(auth.SilentLogin, auth.NewAuthenticator(opts))
+	client, err := auth.NewAuthenticator(auth.SilentLogin, opts).Client()
 	if err == auth.ErrLoginRequired {
 		fmt.Fprintln(os.Stderr, "Not logged in")
 		return 2
@@ -203,11 +203,11 @@ func (c *tokenRun) Run(a subcommands.Application, args []string) int {
 		return TokenExitCodeInvalidInput
 	}
 
-	authenticator := auth.NewAuthenticator(opts)
+	authenticator := auth.NewAuthenticator(auth.SilentLogin, opts)
 	token, err := authenticator.GetAccessToken(c.lifetime)
 	if err != nil {
 		if err == auth.ErrLoginRequired {
-			fmt.Fprintln(os.Stderr, "interactive login required")
+			fmt.Fprintln(os.Stderr, "Not logged in. Run 'authutil login'.")
 		} else {
 			fmt.Fprintln(os.Stderr, err)
 		}

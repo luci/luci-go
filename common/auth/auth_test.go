@@ -27,7 +27,7 @@ var (
 )
 
 func ExampleDefaultAuthenticatedClient() {
-	client, err := AuthenticatedClient(SilentLogin, NewAuthenticator(Options{}))
+	client, err := NewAuthenticator(SilentLogin, Options{}).Client()
 	if err == ErrLoginRequired {
 		log.Errorf("Run 'auth login' to login")
 		return
@@ -69,7 +69,7 @@ func TestAuthenticator(t *testing.T) {
 		Convey("Check NewAuthenticator defaults", func() {
 			clientID, clientSecret := DefaultClient()
 			ctx := context.Background()
-			a := NewAuthenticator(Options{Context: ctx})
+			a := NewAuthenticator(SilentLogin, Options{Context: ctx})
 			So(a.opts, ShouldResemble, &Options{
 				ClientID:               clientID,
 				ClientSecret:           clientSecret,
@@ -94,14 +94,14 @@ func TestAuthenticatedClient(t *testing.T) {
 
 		Convey("Test login required", func() {
 			tokenProvider = &fakeTokenProvider{interactive: true}
-			t, err := AuthenticatedTransport(InteractiveLogin, NewAuthenticator(Options{}))
+			t, err := NewAuthenticator(InteractiveLogin, Options{}).Transport()
 			So(err, ShouldBeNil)
 			So(t, ShouldNotEqual, http.DefaultTransport)
 		})
 
 		Convey("Test login not required", func() {
 			tokenProvider = &fakeTokenProvider{interactive: true}
-			t, err := AuthenticatedTransport(OptionalLogin, NewAuthenticator(Options{}))
+			t, err := NewAuthenticator(OptionalLogin, Options{}).Transport()
 			So(err, ShouldBeNil)
 			So(t, ShouldEqual, http.DefaultTransport)
 		})
@@ -120,8 +120,8 @@ func TestRefreshToken(t *testing.T) {
 				interactive: false,
 				tokenToMint: &fakeToken{},
 			}
-			auth := NewAuthenticator(Options{})
-			_, err := auth.Transport()
+			auth := NewAuthenticator(SilentLogin, Options{})
+			_, err := auth.TransportIfAvailable()
 			So(err, ShouldBeNil)
 			// No token yet. The token is minted on first refresh.
 			So(auth.currentToken(), ShouldBeNil)
@@ -137,12 +137,12 @@ func TestRefreshToken(t *testing.T) {
 				tokenToRefresh:   &fakeToken{name: "refreshed"},
 				tokenToUnmarshal: &fakeToken{name: "cached", expiry: past},
 			}
-			auth := NewAuthenticator(Options{})
-			_, err := auth.Transport()
+			auth := NewAuthenticator(SilentLogin, Options{})
+			_, err := auth.TransportIfAvailable()
 			So(err, ShouldEqual, ErrLoginRequired)
 			err = auth.Login()
 			So(err, ShouldBeNil)
-			_, err = auth.Transport()
+			_, err = auth.TransportIfAvailable()
 			So(err, ShouldBeNil)
 			// Minted initial token.
 			So(auth.currentToken(), ShouldEqual, tokenProvider.tokenToMint)
@@ -159,12 +159,12 @@ func TestRefreshToken(t *testing.T) {
 				tokenToRefresh:   &fakeToken{name: "refreshed"},
 				tokenToUnmarshal: &fakeToken{name: "cached", expiry: future},
 			}
-			auth := NewAuthenticator(Options{})
-			_, err := auth.Transport()
+			auth := NewAuthenticator(SilentLogin, Options{})
+			_, err := auth.TransportIfAvailable()
 			So(err, ShouldEqual, ErrLoginRequired)
 			err = auth.Login()
 			So(err, ShouldBeNil)
-			_, err = auth.Transport()
+			_, err = auth.TransportIfAvailable()
 			So(err, ShouldBeNil)
 			// Minted initial token.
 			So(auth.currentToken(), ShouldEqual, tokenProvider.tokenToMint)

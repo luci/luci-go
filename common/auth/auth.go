@@ -88,24 +88,27 @@ const (
 	CustomMethod Method = "CustomMethod"
 )
 
-// LoginMode is used as enum in AuthenticatedClient function.
+// LoginMode is used as enum in NewAuthenticator function.
 type LoginMode string
 
 const (
-	// InteractiveLogin is passed to AuthenticatedClient to forcefully rerun full
-	// login flow and cache resulting tokens. Used by 'login' CLI command.
+	// InteractiveLogin is passed to NewAuthenticator to instruct Authenticator to
+	// ignore cached tokens and forcefully rerun full login flow in Transport().
+	// Used by 'login' CLI command.
 	InteractiveLogin LoginMode = "InteractiveLogin"
 
-	// SilentLogin is passed to AuthenticatedClient if authentication must be used
-	// and it is NOT OK to run interactive login flow to get the tokens. The call
-	// will fail with ErrLoginRequired error if there's no cached tokens. Should
-	// normally be used by all CLI tools that need to use authentication.
+	// SilentLogin is passed to NewAuthenticator if authentication must be used
+	// and it is NOT OK to run interactive login flow to get the tokens.
+	// Transport() call will fail with ErrLoginRequired error if there's no cached
+	// tokens. Should normally be used by all CLI tools that need to use
+	// authentication. If in doubt what mode to use, pick this one.
 	SilentLogin LoginMode = "SilentLogin"
 
-	// OptionalLogin is passed to AuthenticatedClient if it is OK not to use
-	// authentication if there are no cached credentials. Interactive login will
-	// never be called, default unauthenticated client will be returned instead.
-	// Should be used by CLI tools where authentication is optional.
+	// OptionalLogin is passed to NewAuthenticator if it is OK not to use
+	// authentication if there are no cached credentials or they are revoked or
+	// expired. Interactive login will never be called, default unauthenticated
+	// client will be used instead if no credentials are present. Should be used
+	// by CLI tools where authentication is optional.
 	OptionalLogin LoginMode = "OptionalLogin"
 )
 
@@ -166,6 +169,7 @@ type Options struct {
 // login flow, if required.
 type Authenticator struct {
 	// Immutable members.
+	loginMode LoginMode
 	opts      *Options
 	transport http.RoundTripper
 	log       logging.Logger
@@ -215,7 +219,7 @@ type TokenMinter interface {
 }
 
 // NewAuthenticator returns a new instance of Authenticator given its options.
-func NewAuthenticator(opts Options) *Authenticator {
+func NewAuthenticator(loginMode LoginMode, opts Options) *Authenticator {
 	// Add default scope, sort scopes.
 	if len(opts.Scopes) == 0 {
 		opts.Scopes = []string{OAuthScopeEmail}
@@ -243,7 +247,11 @@ func NewAuthenticator(opts Options) *Authenticator {
 	}
 
 	// See ensureInitialized for the rest of the initialization.
-	auth := &Authenticator{opts: &opts, log: opts.Logger}
+	auth := &Authenticator{
+		loginMode: loginMode,
+		opts:      &opts,
+		log:       opts.Logger,
+	}
 	auth.transport = &authTransport{
 		parent: auth,
 		base:   opts.Transport,
@@ -252,51 +260,47 @@ func NewAuthenticator(opts Options) *Authenticator {
 	return auth
 }
 
-// AuthenticatedTransport performs login (if requested) and returns
-// http.RoundTripper. See documentation for 'mode' for more details.
-func AuthenticatedTransport(mode LoginMode, auth *Authenticator) (http.RoundTripper, error) {
-	if mode == InteractiveLogin {
-		if err := auth.PurgeCredentialsCache(); err != nil {
+// Transport optionally performs a login and returns http.RoundTripper. It is
+// high level wrapper around Login() and TransportIfAvailable() calls. See
+// documentation for LoginMode for more details.
+func (a *Authenticator) Transport() (http.RoundTripper, error) {
+	if a.loginMode == InteractiveLogin {
+		if err := a.PurgeCredentialsCache(); err != nil {
 			return nil, err
 		}
 	}
-	transport, err := auth.Transport()
-	if err == nil {
+	transport, err := a.TransportIfAvailable()
+	switch {
+	case err == nil:
 		return transport, nil
-	}
-	if err != ErrLoginRequired || mode == SilentLogin {
+	case err != ErrLoginRequired || a.loginMode == SilentLogin:
 		return nil, err
-	}
-	if mode == OptionalLogin {
+	case a.loginMode == OptionalLogin:
 		return http.DefaultTransport, nil
+	case a.loginMode != InteractiveLogin:
+		return nil, fmt.Errorf("invalid mode argument: %s", a.loginMode)
 	}
-	if mode != InteractiveLogin {
-		return nil, fmt.Errorf("invalid mode argument: %s", mode)
-	}
-	if err = auth.Login(); err != nil {
+	if err = a.Login(); err != nil {
 		return nil, err
 	}
-	return auth.Transport()
+	return a.TransportIfAvailable()
 }
 
-// AuthenticatedClient performs login (if requested) and returns http.Client.
-// See documentation for 'mode' for more details.
-func AuthenticatedClient(mode LoginMode, auth *Authenticator) (*http.Client, error) {
-	transport, err := AuthenticatedTransport(mode, auth)
+// Client optionally performs a login and returns http.Client. It uses transport
+// returned by Transport(). See documentation for LoginMode for more details.
+func (a *Authenticator) Client() (*http.Client, error) {
+	transport, err := a.Transport()
 	if err != nil {
 		return nil, err
 	}
 	return &http.Client{Transport: transport}, nil
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Authenticator implementation.
-
-// Transport returns http.RoundTripper that adds authentication details to
-// each request. An interactive authentication flow (if required) must be
-// complete before making a transport, otherwise ErrLoginRequired is returned.
-// Returned transport object can be safely reused across many http.Client's.
-func (a *Authenticator) Transport() (http.RoundTripper, error) {
+// TransportIfAvailable returns http.RoundTripper that adds authentication
+// details to each request. An interactive authentication flow (if required)
+// must be complete before making a transport, otherwise ErrLoginRequired is
+// returned.
+func (a *Authenticator) TransportIfAvailable() (http.RoundTripper, error) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 

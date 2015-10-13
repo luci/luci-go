@@ -77,7 +77,7 @@ func Transport(c context.Context, scopes []string, serviceAccountJSON []byte) (h
 		opts.Method = auth.CustomMethod
 		opts.CustomTokenMinter = tokenMinter{c}
 	}
-	return auth.NewAuthenticator(opts).Transport()
+	return auth.NewAuthenticator(auth.SilentLogin, opts).Transport()
 }
 
 // FetchServiceAccountJSON returns service account JSON key blob by reading it
