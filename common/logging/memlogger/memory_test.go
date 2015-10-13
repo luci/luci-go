@@ -43,9 +43,8 @@ func TestLogger(t *testing.T) {
 
 		l.Infof("totally works: %s", "yes")
 
-		msgs := ml.Messages()
-		So(len(msgs), ShouldEqual, 1)
-		So(msgs[0], ShouldResemble, LogEntry{logging.Info, "totally works: yes", nil})
+		So(ml.Has(logging.Info, "totally works: yes", nil), ShouldBeTrue)
+		So(ml.Has(logging.Warning, "totally works: yes", nil), ShouldBeFalse)
 	})
 
 	Convey("field data", t, func() {

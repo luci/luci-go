@@ -6,6 +6,7 @@ package memlogger
 
 import (
 	"fmt"
+	"reflect"
 	"sync"
 
 	"golang.org/x/net/context"
@@ -72,6 +73,19 @@ func (m *MemLogger) Reset() {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	*m.data = []LogEntry{}
+}
+
+// Has returns true iff the MemLogger contains the specified log message. Note
+// that lvl, msg and data have to match the entry precisely.
+func (m *MemLogger) Has(lvl logging.Level, msg string, data map[string]interface{}) bool {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	for _, ent := range *m.data {
+		if ent.Level == lvl && ent.Msg == msg && reflect.DeepEqual(ent.Data, data) {
+			return true
+		}
+	}
+	return false
 }
 
 // Use adds a memory backed Logger to Context, with concrete type
