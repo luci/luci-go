@@ -110,21 +110,26 @@ func (*NoopTask) ProtoMessage()    {}
 // UrlFetchTask specifies parameters for simple HTTP call.
 type UrlFetchTask struct {
 	// Method is HTTP method to use, such as "GET" or "POST".
-	Method *string `protobuf:"bytes,1,opt,name=method" json:"method,omitempty"`
+	Method *string `protobuf:"bytes,1,opt,name=method,def=GET" json:"method,omitempty"`
 	// Url to send the request to.
-	Url              *string `protobuf:"bytes,2,opt,name=url" json:"url,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	Url *string `protobuf:"bytes,2,opt,name=url" json:"url,omitempty"`
+	// Timeout is how long to wait for request to complete.
+	TimeoutSec       *int32 `protobuf:"varint,3,opt,name=timeout_sec,def=60" json:"timeout_sec,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
 }
 
 func (m *UrlFetchTask) Reset()         { *m = UrlFetchTask{} }
 func (m *UrlFetchTask) String() string { return proto.CompactTextString(m) }
 func (*UrlFetchTask) ProtoMessage()    {}
 
+const Default_UrlFetchTask_Method string = "GET"
+const Default_UrlFetchTask_TimeoutSec int32 = 60
+
 func (m *UrlFetchTask) GetMethod() string {
 	if m != nil && m.Method != nil {
 		return *m.Method
 	}
-	return ""
+	return Default_UrlFetchTask_Method
 }
 
 func (m *UrlFetchTask) GetUrl() string {
@@ -132,6 +137,13 @@ func (m *UrlFetchTask) GetUrl() string {
 		return *m.Url
 	}
 	return ""
+}
+
+func (m *UrlFetchTask) GetTimeoutSec() int32 {
+	if m != nil && m.TimeoutSec != nil {
+		return *m.TimeoutSec
+	}
+	return Default_UrlFetchTask_TimeoutSec
 }
 
 // ProjectConfig defines a schema for cron.cfg files that describe cron jobs

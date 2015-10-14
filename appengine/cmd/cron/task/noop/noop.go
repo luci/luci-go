@@ -21,7 +21,7 @@ type TaskManager struct {
 
 // ProtoMessageType is part of Manager interface.
 func (m TaskManager) ProtoMessageType() proto.Message {
-	return &messages.NoopTask{}
+	return (*messages.NoopTask)(nil)
 }
 
 // ValidateProtoMessage is part of Manager interface.

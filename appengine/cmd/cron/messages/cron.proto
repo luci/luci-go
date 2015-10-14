@@ -37,9 +37,11 @@ message NoopTask {
 // UrlFetchTask specifies parameters for simple HTTP call.
 message UrlFetchTask {
   // Method is HTTP method to use, such as "GET" or "POST".
-  optional string method = 1;
+  optional string method = 1 [default = "GET"];
   // Url to send the request to.
   optional string url = 2;
+  // Timeout is how long to wait for request to complete.
+  optional int32 timeout_sec = 3 [default = 60];
   // TODO: add more.
 }
 
