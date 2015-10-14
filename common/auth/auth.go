@@ -255,7 +255,6 @@ func NewAuthenticator(loginMode LoginMode, opts Options) *Authenticator {
 	auth.transport = &authTransport{
 		parent: auth,
 		base:   opts.Transport,
-		log:    opts.Logger,
 	}
 	return auth
 }
@@ -367,15 +366,16 @@ func (a *Authenticator) PurgeCredentialsCache() error {
 // Does not interact with the user. May return ErrLoginRequered.
 func (a *Authenticator) GetAccessToken(lifetime time.Duration) (Token, error) {
 	a.lock.Lock()
-	defer a.lock.Unlock()
-
 	if err := a.ensureInitialized(); err != nil {
+		a.lock.Unlock()
 		return Token{}, err
 	}
-
 	tok := a.token
+	a.lock.Unlock()
+
 	if a.expiresIn(tok, lifetime) {
-		tok, err := a.refreshToken(a.token, lifetime, true)
+		var err error
+		tok, err = a.refreshToken(tok, lifetime)
 		if err != nil {
 			return Token{}, err
 		}
@@ -483,13 +483,13 @@ func (a *Authenticator) expiresIn(t internal.Token, lifetime time.Duration) bool
 // procedure if they still match. Returns a refreshed token (if a refresh
 // procedure happened) or the current token (i.e. if it's different from prev).
 // Acts as "Compare-And-Swap" where "Swap" is a token refresh procedure.
-func (a *Authenticator) refreshToken(prev internal.Token, lifetime time.Duration, locked bool) (internal.Token, error) {
+// If token can't be refreshed (e.g. it was revoked), sets current token to nil
+// and returns ErrLoginRequired.
+func (a *Authenticator) refreshToken(prev internal.Token, lifetime time.Duration) (internal.Token, error) {
 	// Refresh the token under the lock.
 	tok, cache, err := func() (internal.Token, bool, error) {
-		if !locked {
-			a.lock.Lock()
-			defer a.lock.Unlock()
-		}
+		a.lock.Lock()
+		defer a.lock.Unlock()
 
 		// Some other goroutine already updated the token, just return the token.
 		if a.token != nil && !a.token.Equals(prev) {
@@ -521,6 +521,9 @@ func (a *Authenticator) refreshToken(prev internal.Token, lifetime time.Duration
 			a.token, err = a.refreshTokenWithRetries(a.token)
 			if err != nil {
 				a.log.Warningf("auth: failed to refresh the token: %s", err)
+				if err == internal.ErrBadRefreshToken && a.loginMode == OptionalLogin {
+					a.log.Warningf("auth: switching to anonymous calls")
+				}
 				return nil, false, err
 			}
 		}
@@ -529,17 +532,26 @@ func (a *Authenticator) refreshToken(prev internal.Token, lifetime time.Duration
 		return a.token, true, nil
 	}()
 
+	if err == internal.ErrBadRefreshToken {
+		// Do not keep revoked token in the cache. It is unusable.
+		if err := a.cache.Clear(); err != nil {
+			a.log.Warningf("auth: failed to remove revoked token from the cache: %s", err)
+		}
+		return nil, ErrLoginRequired
+	}
+
 	if err != nil {
 		return nil, err
 	}
 
-	// Store the new token in the cache outside the lock, no need for callers to
-	// wait for this. Do not die if failed, token is still usable from the memory.
-	if cache {
+	// Update the cache outside the lock, no need for callers to wait for this.
+	// Do not die if failed, token is still usable from the memory.
+	if cache && tok != nil {
 		if err = a.cacheToken(tok); err != nil {
 			a.log.Warningf("auth: failed to write refreshed token to the cache: %s", err)
 		}
 	}
+
 	return tok, nil
 }
 
@@ -571,22 +583,26 @@ func (a *Authenticator) refreshTokenWithRetries(t internal.Token) (internal.Toke
 type authTransport struct {
 	parent *Authenticator
 	base   http.RoundTripper
-	log    logging.Logger
 }
 
 // RoundTrip appends authorization details to the request.
-func (t *authTransport) RoundTrip(req *http.Request) (resp *http.Response, err error) {
+func (t *authTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	// Attempt to refresh the token, if required. Revert to non-authed call if
+	// token can't be refreshed and running in OptionalLogin mode.
 	tok := t.parent.currentToken()
-	if t.parent.expiresIn(tok, time.Minute) {
-		tok, err = t.parent.refreshToken(tok, time.Minute, false)
-		if err != nil {
-			return
-		}
-		if t.parent.expiresIn(tok, time.Minute) {
-			err = fmt.Errorf("auth: failed to refresh the token")
-			return
+	if tok == nil || t.parent.expiresIn(tok, time.Minute) {
+		var err error
+		tok, err = t.parent.refreshToken(tok, time.Minute)
+		switch {
+		case err == ErrLoginRequired && t.parent.loginMode == OptionalLogin:
+			return t.base.RoundTrip(req)
+		case err != nil:
+			return nil, err
+		case t.parent.expiresIn(tok, time.Minute):
+			return nil, fmt.Errorf("auth: failed to refresh the token")
 		}
 	}
+	// Original request must not be modified, make a shallow clone.
 	clone := *req
 	clone.Header = make(http.Header)
 	for k, v := range req.Header {
@@ -609,7 +625,6 @@ type tokenFileCache struct {
 func (c *tokenFileCache) Read() (buf []byte, err error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	c.log.Debugf("auth: reading token from %s", c.path)
 	buf, err = ioutil.ReadFile(c.path)
 	if err != nil && os.IsNotExist(err) {
 		err = nil
@@ -709,6 +724,7 @@ var makeTokenProvider = func(opts *Options) (internal.TokenProvider, error) {
 	case UserCredentialsMethod:
 		return internal.NewUserAuthTokenProvider(
 			opts.Context,
+			opts.Logger,
 			opts.ClientID,
 			opts.ClientSecret,
 			opts.Scopes)

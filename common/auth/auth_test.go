@@ -125,7 +125,7 @@ func TestRefreshToken(t *testing.T) {
 			So(err, ShouldBeNil)
 			// No token yet. The token is minted on first refresh.
 			So(auth.currentToken(), ShouldBeNil)
-			tok, err := auth.refreshToken(nil, time.Minute, false)
+			tok, err := auth.refreshToken(nil, time.Minute)
 			So(err, ShouldBeNil)
 			So(tok, ShouldEqual, tokenProvider.tokenToMint)
 		})
@@ -147,7 +147,7 @@ func TestRefreshToken(t *testing.T) {
 			// Minted initial token.
 			So(auth.currentToken(), ShouldEqual, tokenProvider.tokenToMint)
 			// Should return refreshed token.
-			tok, err := auth.refreshToken(auth.currentToken(), time.Minute, false)
+			tok, err := auth.refreshToken(auth.currentToken(), time.Minute)
 			So(err, ShouldBeNil)
 			So(tok, ShouldEqual, tokenProvider.tokenToRefresh)
 		})
@@ -169,9 +169,27 @@ func TestRefreshToken(t *testing.T) {
 			// Minted initial token.
 			So(auth.currentToken(), ShouldEqual, tokenProvider.tokenToMint)
 			// Should return token from cache (since it's not expired yet).
-			tok, err := auth.refreshToken(auth.currentToken(), time.Minute, false)
+			tok, err := auth.refreshToken(auth.currentToken(), time.Minute)
 			So(err, ShouldBeNil)
 			So(tok, ShouldEqual, tokenProvider.tokenToUnmarshal)
+		})
+
+		Convey("Test revoked token", func() {
+			tokenProvider = &fakeTokenProvider{
+				interactive:      true,
+				revokedToken:     true,
+				tokenToMint:      &fakeToken{name: "minted"},
+				tokenToUnmarshal: &fakeToken{name: "cached", expiry: past},
+			}
+			auth := NewAuthenticator(OptionalLogin, Options{})
+			So(auth.Login(), ShouldBeNil)
+			_, err := auth.TransportIfAvailable()
+			So(err, ShouldBeNil)
+			// Minted initial token.
+			So(auth.currentToken(), ShouldEqual, tokenProvider.tokenToMint)
+			// Should return ErrLoginRequired, since token has been revoked.
+			_, err = auth.refreshToken(auth.currentToken(), time.Minute)
+			So(err, ShouldEqual, ErrLoginRequired)
 		})
 	})
 }
@@ -180,6 +198,7 @@ func TestRefreshToken(t *testing.T) {
 
 type fakeTokenProvider struct {
 	interactive      bool
+	revokedToken     bool
 	tokenToMint      internal.Token
 	tokenToRefresh   internal.Token
 	tokenToUnmarshal internal.Token
@@ -201,6 +220,9 @@ func (p *fakeTokenProvider) MintToken() (internal.Token, error) {
 }
 
 func (p *fakeTokenProvider) RefreshToken(internal.Token) (internal.Token, error) {
+	if p.revokedToken {
+		return nil, internal.ErrBadRefreshToken
+	}
 	if p.tokenToRefresh != nil {
 		return p.tokenToRefresh, nil
 	}

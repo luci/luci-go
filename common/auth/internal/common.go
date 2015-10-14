@@ -21,9 +21,17 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// ErrInsufficientAccess is can't be minted for given OAuth scopes. For example
-// if GCE instance wasn't granted access to requested scopes when it was created.
-var ErrInsufficientAccess = errors.New("can't get access token for given scopes")
+var (
+	// ErrInsufficientAccess is returned by MintToken() if token can't be minted
+	// for given OAuth scopes. For example, if GCE instance wasn't granted access
+	// to requested scopes when it was created.
+	ErrInsufficientAccess = errors.New("can't get access token for given scopes")
+
+	// ErrBadRefreshToken is returned by RefreshToken if refresh token was revoked
+	// or otherwise invalid. It means MintToken must be used to get a new refresh
+	// token.
+	ErrBadRefreshToken = errors.New("refresh_token is not valid")
+)
 
 // Token is immutable object that internally holds authentication credentials
 // (short term, long term, or both). Token knows how to modify http.Request to

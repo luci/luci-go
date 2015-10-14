@@ -6,28 +6,33 @@ package internal
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
+
+	"github.com/luci/luci-go/common/logging"
 )
 
 type userAuthTokenProvider struct {
 	oauthTokenProvider
 
 	ctx    context.Context
+	logger logging.Logger
 	config *oauth2.Config
 }
 
 // NewUserAuthTokenProvider returns TokenProvider that can perform 3-legged
 // OAuth flow involving interaction with a user.
-func NewUserAuthTokenProvider(ctx context.Context, clientID, clientSecret string, scopes []string) (TokenProvider, error) {
+func NewUserAuthTokenProvider(ctx context.Context, logger logging.Logger, clientID, clientSecret string, scopes []string) (TokenProvider, error) {
 	return &userAuthTokenProvider{
 		oauthTokenProvider: oauthTokenProvider{
 			interactive: true,
 			tokenFlavor: "user",
 		},
-		ctx: ctx,
+		ctx:    ctx,
+		logger: logger,
 		config: &oauth2.Config{
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
@@ -63,10 +68,21 @@ func (p *userAuthTokenProvider) RefreshToken(tok Token) (Token, error) {
 	// that token never expires.
 	t := extractOAuthToken(tok)
 	t.Expiry = time.Unix(1, 0)
-	src := p.config.TokenSource(p.ctx, &t)
-	newTok, err := src.Token()
-	if err != nil {
+	switch newTok, err := p.config.TokenSource(p.ctx, &t).Token(); {
+	case isBadTokenError(err):
+		p.logger.Warningf("auth: bad refresh token - %s", err)
+		return nil, ErrBadRefreshToken
+	case err != nil:
+		p.logger.Warningf("auth: error when refreshing the token - %s", err)
 		return nil, err
+	default:
+		return makeToken(newTok), nil
 	}
-	return makeToken(newTok), nil
+}
+
+func isBadTokenError(err error) bool {
+	// See https://github.com/golang/oauth2/blob/master/internal/token.go.
+	// Unfortunately, fmt.Errorf is used there, so there's no other way to
+	// differentiate between bad tokens and transient errors.
+	return err != nil && strings.Contains(err.Error(), "400 Bad Request")
 }
