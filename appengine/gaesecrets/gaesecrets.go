@@ -20,11 +20,14 @@ import (
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/server/proccache"
 	"github.com/luci/luci-go/server/secrets"
 )
 
-// TODO(vadimsh): Add secret rotation.
-// TODO(vadimsh): Add caching (memcache and local memory).
+// TODO(vadimsh): Add secrets rotation.
+
+// procCacheExp is how long to cache secrets in the process memory.
+const procCacheExp = time.Minute * 5
 
 // Config can be used to tweak parameters of the store. It is fine to use
 // default values.
@@ -64,6 +67,22 @@ type storeImpl struct {
 
 // GetSecret returns a secret by its key.
 func (s *storeImpl) GetSecret(k secrets.Key) (secrets.Secret, error) {
+	cacheKey := secrets.Key(s.cfg.Prefix + ":" + string(k))
+	secret, err := proccache.GetOrMake(s.ctx, cacheKey, func() (interface{}, time.Duration, error) {
+		secret, err := s.getSecretFromDatastore(k)
+		if err != nil {
+			return nil, 0, err
+		}
+		return secret, procCacheExp, nil
+	})
+	if err != nil {
+		return secrets.Secret{}, err
+	}
+	return secret.(secrets.Secret).Clone(), nil
+}
+
+// getSecretImpl uses datastore to grab a secret.
+func (s *storeImpl) getSecretFromDatastore(k secrets.Key) (secrets.Secret, error) {
 	ds := datastore.Get(s.ctx)
 
 	// Grab existing.

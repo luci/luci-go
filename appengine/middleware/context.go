@@ -12,8 +12,14 @@ import (
 	"github.com/luci/gae/impl/prod"
 	"github.com/luci/luci-go/appengine/gaelogger"
 	"github.com/luci/luci-go/common/logging/memlogger"
+	"github.com/luci/luci-go/server/proccache"
 	"golang.org/x/net/context"
 )
+
+// globalProcessCache holds all state cached between requests. Used only by
+// BaseProd. Testing context doesn't have a global cache, since we specifically
+// do not want to preserve state between unit tests.
+var globalProcessCache = proccache.Cache{}
 
 // Handler is the type for all middleware handlers. Of particular note, it's the
 // same as httprouder.Handle, except that it also has a context parameter.
@@ -31,9 +37,13 @@ func Base(h Handler) httprouter.Handle {
 // a new context to `h` with the following services installed:
 //   * github.com/luci/gae/impl/prod (production appengine services)
 //   * github.com/luci/luci-go/appengine/gaelogger (appengine logging service)
+//   * github.com/luci/luci-go/server/proccache (in process memory cache)
 func BaseProd(h Handler) httprouter.Handle {
 	return func(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		h(gaelogger.Use(prod.UseRequest(r)), rw, r, p)
+		c := prod.UseRequest(r)
+		c = gaelogger.Use(c)
+		c = proccache.Use(c, &globalProcessCache)
+		h(c, rw, r, p)
 	}
 }
 
@@ -43,6 +53,9 @@ func BaseProd(h Handler) httprouter.Handle {
 //   * github.com/luci/luci-go/common/logging/memlogger (in-memory logging service)
 func BaseTest(h Handler) httprouter.Handle {
 	return func(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		h(memlogger.Use(memory.Use(context.Background())), rw, r, p)
+		c := context.Background()
+		c = memory.Use(c)
+		c = memlogger.Use(c)
+		h(c, rw, r, p)
 	}
 }
