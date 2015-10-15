@@ -21,11 +21,10 @@ It has these top-level messages:
 package milo
 
 import proto "github.com/golang/protobuf/proto"
-import math "math"
+import google_protobuf "github.com/luci/luci-go/common/proto/google"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
-var _ = math.Inf
 
 // Status is the expressed root step of this step or substep.
 type Status int32
@@ -54,21 +53,8 @@ var Status_value = map[string]int32{
 	"EXCEPTION": 3,
 }
 
-func (x Status) Enum() *Status {
-	p := new(Status)
-	*p = x
-	return p
-}
 func (x Status) String() string {
 	return proto.EnumName(Status_name, int32(x))
-}
-func (x *Status) UnmarshalJSON(data []byte) error {
-	value, err := proto.UnmarshalJSONEnum(Status_value, data, "Status")
-	if err != nil {
-		return err
-	}
-	*x = Status(value)
-	return nil
 }
 
 // Type is the type of failure.
@@ -97,51 +83,23 @@ var FailureDetails_Type_value = map[string]int32{
 	"DM_DEPENDENCY_FAILED": 2,
 }
 
-func (x FailureDetails_Type) Enum() *FailureDetails_Type {
-	p := new(FailureDetails_Type)
-	*p = x
-	return p
-}
 func (x FailureDetails_Type) String() string {
 	return proto.EnumName(FailureDetails_Type_name, int32(x))
-}
-func (x *FailureDetails_Type) UnmarshalJSON(data []byte) error {
-	value, err := proto.UnmarshalJSONEnum(FailureDetails_Type_value, data, "FailureDetails_Type")
-	if err != nil {
-		return err
-	}
-	*x = FailureDetails_Type(value)
-	return nil
 }
 
 // FailureType provides more details on the nature of the Status.
 type FailureDetails struct {
-	Type *FailureDetails_Type `protobuf:"varint,1,opt,name=type,enum=milo.FailureDetails_Type" json:"type,omitempty"`
+	Type FailureDetails_Type `protobuf:"varint,1,opt,name=type,enum=milo.FailureDetails_Type" json:"type,omitempty"`
 	// An optional string describing the failure.
-	Text *string `protobuf:"bytes,2,opt,name=text" json:"text,omitempty"`
+	Text string `protobuf:"bytes,2,opt,name=text" json:"text,omitempty"`
 	// If the failure type is DEPENDENCY_FAILED, the failed dependencies should be
 	// listed here.
 	FailedDmDependency []*DMLink `protobuf:"bytes,3,rep,name=failed_dm_dependency" json:"failed_dm_dependency,omitempty"`
-	XXX_unrecognized   []byte    `json:"-"`
 }
 
 func (m *FailureDetails) Reset()         { *m = FailureDetails{} }
 func (m *FailureDetails) String() string { return proto.CompactTextString(m) }
 func (*FailureDetails) ProtoMessage()    {}
-
-func (m *FailureDetails) GetType() FailureDetails_Type {
-	if m != nil && m.Type != nil {
-		return *m.Type
-	}
-	return FailureDetails_GENERAL
-}
-
-func (m *FailureDetails) GetText() string {
-	if m != nil && m.Text != nil {
-		return *m.Text
-	}
-	return ""
-}
 
 func (m *FailureDetails) GetFailedDmDependency() []*DMLink {
 	if m != nil {
@@ -181,7 +139,6 @@ type Step struct {
 	// - luci/dm/QUEST/ATTEMPT/EXECUTION/+/steps/0/stdout
 	// - luci/dm/QUEST/ATTEMPT/EXECUTION/+/steps/0/annotations
 	SubstepLogdogNameBase []string `protobuf:"bytes,5,rep,name=substep_logdog_name_base" json:"substep_logdog_name_base,omitempty"`
-	XXX_unrecognized      []byte   `json:"-"`
 }
 
 func (m *Step) Reset()         { *m = Step{} }
@@ -216,24 +173,17 @@ func (m *Step) GetComponents() []*Component {
 	return nil
 }
 
-func (m *Step) GetSubstepLogdogNameBase() []string {
-	if m != nil {
-		return m.SubstepLogdogNameBase
-	}
-	return nil
-}
-
 // A Component represents a renderable state.
 type Component struct {
 	// The display name of the Component.
-	Name *string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// Type classifies the information associated with the Note.
-	Status *Status `protobuf:"varint,2,opt,name=status,enum=milo.Status" json:"status,omitempty"`
+	Status Status `protobuf:"varint,2,opt,name=status,enum=milo.Status" json:"status,omitempty"`
 	// When the step started, expressed as an RFC3339 string using Z (UTC)
 	// timezone.
-	StartedTs *string `protobuf:"bytes,3,opt,name=started_ts" json:"started_ts,omitempty"`
+	Started *google_protobuf.Timestamp `protobuf:"bytes,3,opt,name=started" json:"started,omitempty"`
 	// When the step ended, expressed as an RFC3339 string using Z (UTC) timezone.
-	EndedTs *string `protobuf:"bytes,4,opt,name=ended_ts" json:"ended_ts,omitempty"`
+	Ended *google_protobuf.Timestamp `protobuf:"bytes,4,opt,name=ended" json:"ended,omitempty"`
 	// Arbitrary lines of component text. Each string here is a consecutive line,
 	// and should not contain newlines.
 	Text []string `protobuf:"bytes,5,rep,name=text" json:"text,omitempty"`
@@ -244,46 +194,24 @@ type Component struct {
 	Link *Component_Link `protobuf:"bytes,7,opt,name=link" json:"link,omitempty"`
 	// Additional links related to the Component. These will be rendered alongside
 	// the component.
-	OtherLinks       []*Component_Link     `protobuf:"bytes,8,rep,name=other_links" json:"other_links,omitempty"`
-	Property         []*Component_Property `protobuf:"bytes,9,rep,name=property" json:"property,omitempty"`
-	XXX_unrecognized []byte                `json:"-"`
+	OtherLinks []*Component_Link     `protobuf:"bytes,8,rep,name=other_links" json:"other_links,omitempty"`
+	Property   []*Component_Property `protobuf:"bytes,9,rep,name=property" json:"property,omitempty"`
 }
 
 func (m *Component) Reset()         { *m = Component{} }
 func (m *Component) String() string { return proto.CompactTextString(m) }
 func (*Component) ProtoMessage()    {}
 
-func (m *Component) GetName() string {
-	if m != nil && m.Name != nil {
-		return *m.Name
-	}
-	return ""
-}
-
-func (m *Component) GetStatus() Status {
-	if m != nil && m.Status != nil {
-		return *m.Status
-	}
-	return Status_RUNNING
-}
-
-func (m *Component) GetStartedTs() string {
-	if m != nil && m.StartedTs != nil {
-		return *m.StartedTs
-	}
-	return ""
-}
-
-func (m *Component) GetEndedTs() string {
-	if m != nil && m.EndedTs != nil {
-		return *m.EndedTs
-	}
-	return ""
-}
-
-func (m *Component) GetText() []string {
+func (m *Component) GetStarted() *google_protobuf.Timestamp {
 	if m != nil {
-		return m.Text
+		return m.Started
+	}
+	return nil
+}
+
+func (m *Component) GetEnded() *google_protobuf.Timestamp {
+	if m != nil {
+		return m.Ended
 	}
 	return nil
 }
@@ -320,35 +248,19 @@ func (m *Component) GetProperty() []*Component_Property {
 // resource.
 type Component_Link struct {
 	// An optional display label for the link.
-	Label *string `protobuf:"bytes,1,opt,name=label" json:"label,omitempty"`
-	// (One of) A base URL to link to.
-	Url *string `protobuf:"bytes,2,opt,name=url" json:"url,omitempty"`
+	Label string `protobuf:"bytes,1,opt,name=label" json:"label,omitempty"`
+	Url   string `protobuf:"bytes,2,opt,name=url" json:"url,omitempty"`
 	// (One of) A LogDog stream link.
 	LogdogStream *LogdogStream `protobuf:"bytes,3,opt,name=logdog_stream" json:"logdog_stream,omitempty"`
 	// (One of) An isolate server link.
 	IsolateObject *IsolateObject `protobuf:"bytes,4,opt,name=isolate_object" json:"isolate_object,omitempty"`
 	// (One of) A link to a Dungeon Master object.
-	DmLink           *DMLink `protobuf:"bytes,5,opt,name=dm_link" json:"dm_link,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	DmLink *DMLink `protobuf:"bytes,5,opt,name=dm_link" json:"dm_link,omitempty"`
 }
 
 func (m *Component_Link) Reset()         { *m = Component_Link{} }
 func (m *Component_Link) String() string { return proto.CompactTextString(m) }
 func (*Component_Link) ProtoMessage()    {}
-
-func (m *Component_Link) GetLabel() string {
-	if m != nil && m.Label != nil {
-		return *m.Label
-	}
-	return ""
-}
-
-func (m *Component_Link) GetUrl() string {
-	if m != nil && m.Url != nil {
-		return *m.Url
-	}
-	return ""
-}
 
 func (m *Component_Link) GetLogdogStream() *LogdogStream {
 	if m != nil {
@@ -374,57 +286,27 @@ func (m *Component_Link) GetDmLink() *DMLink {
 // Property is an arbitrary key/value (build) property.
 type Component_Property struct {
 	// name is the property name.
-	Name *string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// value is the optional property value.
-	Value            *string `protobuf:"bytes,2,opt,name=value" json:"value,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	Value string `protobuf:"bytes,2,opt,name=value" json:"value,omitempty"`
 }
 
 func (m *Component_Property) Reset()         { *m = Component_Property{} }
 func (m *Component_Property) String() string { return proto.CompactTextString(m) }
 func (*Component_Property) ProtoMessage()    {}
 
-func (m *Component_Property) GetName() string {
-	if m != nil && m.Name != nil {
-		return *m.Name
-	}
-	return ""
-}
-
-func (m *Component_Property) GetValue() string {
-	if m != nil && m.Value != nil {
-		return *m.Value
-	}
-	return ""
-}
-
 // Command contains information about a command-line invocation.
 type Command struct {
 	// The command-line invocation, expressed as an argument vector.
 	CommandLine []string `protobuf:"bytes,1,rep,name=command_line" json:"command_line,omitempty"`
 	// The current working directory.
-	Cwd              *string              `protobuf:"bytes,2,opt,name=cwd" json:"cwd,omitempty"`
-	Environ          *Command_Environment `protobuf:"bytes,3,opt,name=environ" json:"environ,omitempty"`
-	XXX_unrecognized []byte               `json:"-"`
+	Cwd     string               `protobuf:"bytes,2,opt,name=cwd" json:"cwd,omitempty"`
+	Environ *Command_Environment `protobuf:"bytes,3,opt,name=environ" json:"environ,omitempty"`
 }
 
 func (m *Command) Reset()         { *m = Command{} }
 func (m *Command) String() string { return proto.CompactTextString(m) }
 func (*Command) ProtoMessage()    {}
-
-func (m *Command) GetCommandLine() []string {
-	if m != nil {
-		return m.CommandLine
-	}
-	return nil
-}
-
-func (m *Command) GetCwd() string {
-	if m != nil && m.Cwd != nil {
-		return *m.Cwd
-	}
-	return ""
-}
 
 func (m *Command) GetEnviron() *Command_Environment {
 	if m != nil {
@@ -436,8 +318,7 @@ func (m *Command) GetEnviron() *Command_Environment {
 // Environment represents the state of a process' environment.
 type Command_Environment struct {
 	// The entries that compose the environment.
-	Entries          []*Command_Environment_Entry `protobuf:"bytes,1,rep,name=entries" json:"entries,omitempty"`
-	XXX_unrecognized []byte                       `json:"-"`
+	Entries []*Command_Environment_Entry `protobuf:"bytes,1,rep,name=entries" json:"entries,omitempty"`
 }
 
 func (m *Command_Environment) Reset()         { *m = Command_Environment{} }
@@ -454,29 +335,14 @@ func (m *Command_Environment) GetEntries() []*Command_Environment_Entry {
 // Entry is a single key/value environment entry.
 type Command_Environment_Entry struct {
 	// Name is the name of the environment variable.
-	Name *string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// Value is the value of the environment variable. This may be empty.
-	Value            *string `protobuf:"bytes,2,opt,name=value" json:"value,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	Value string `protobuf:"bytes,2,opt,name=value" json:"value,omitempty"`
 }
 
 func (m *Command_Environment_Entry) Reset()         { *m = Command_Environment_Entry{} }
 func (m *Command_Environment_Entry) String() string { return proto.CompactTextString(m) }
 func (*Command_Environment_Entry) ProtoMessage()    {}
-
-func (m *Command_Environment_Entry) GetName() string {
-	if m != nil && m.Name != nil {
-		return *m.Name
-	}
-	return ""
-}
-
-func (m *Command_Environment_Entry) GetValue() string {
-	if m != nil && m.Value != nil {
-		return *m.Value
-	}
-	return ""
-}
 
 // Progress expresses a Component's overall progress. It does this using
 // arbitrary "progress units", wich are discrete units of work measured by the
@@ -487,142 +353,61 @@ func (m *Command_Environment_Entry) GetValue() string {
 type Progress struct {
 	// The total number of progress units. If missing or zero, no progress is
 	// expressed.
-	Total *int32 `protobuf:"varint,1,opt,name=total" json:"total,omitempty"`
+	Total int32 `protobuf:"varint,1,opt,name=total" json:"total,omitempty"`
 	// The number of completed progress units. This must always be less than or
 	// equal to `total`. If omitted, it is implied to be zero.
-	Completed        *int32 `protobuf:"varint,2,opt,name=completed" json:"completed,omitempty"`
-	XXX_unrecognized []byte `json:"-"`
+	Completed int32 `protobuf:"varint,2,opt,name=completed" json:"completed,omitempty"`
 }
 
 func (m *Progress) Reset()         { *m = Progress{} }
 func (m *Progress) String() string { return proto.CompactTextString(m) }
 func (*Progress) ProtoMessage()    {}
 
-func (m *Progress) GetTotal() int32 {
-	if m != nil && m.Total != nil {
-		return *m.Total
-	}
-	return 0
-}
-
-func (m *Progress) GetCompleted() int32 {
-	if m != nil && m.Completed != nil {
-		return *m.Completed
-	}
-	return 0
-}
-
 // LogdogLink is a LogDog stream link.
 type LogdogStream struct {
 	// The stream's server. If omitted, the server is the same server that this
 	// annotation stream is homed on.
-	Server *string `protobuf:"bytes,1,opt,name=server" json:"server,omitempty"`
+	Server string `protobuf:"bytes,1,opt,name=server" json:"server,omitempty"`
 	// The log Prefix. If empty, the prefix is the same prefix as this annotation
 	// stream.
-	Prefix *string `protobuf:"bytes,2,opt,name=prefix" json:"prefix,omitempty"`
+	Prefix string `protobuf:"bytes,2,opt,name=prefix" json:"prefix,omitempty"`
 	// The log name.
-	Name             *string `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	Name string `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
 }
 
 func (m *LogdogStream) Reset()         { *m = LogdogStream{} }
 func (m *LogdogStream) String() string { return proto.CompactTextString(m) }
 func (*LogdogStream) ProtoMessage()    {}
 
-func (m *LogdogStream) GetServer() string {
-	if m != nil && m.Server != nil {
-		return *m.Server
-	}
-	return ""
-}
-
-func (m *LogdogStream) GetPrefix() string {
-	if m != nil && m.Prefix != nil {
-		return *m.Prefix
-	}
-	return ""
-}
-
-func (m *LogdogStream) GetName() string {
-	if m != nil && m.Name != nil {
-		return *m.Name
-	}
-	return ""
-}
-
 // IsolateObject is an Isolate service object specification.
 type IsolateObject struct {
 	// The Isolate server. If empty, this is the default Isolate server specified
 	// by the project's LUCI config.
-	Server *string `protobuf:"bytes,1,opt,name=server" json:"server,omitempty"`
+	Server string `protobuf:"bytes,1,opt,name=server" json:"server,omitempty"`
 	// The isolate object hash.
-	Hash             *string `protobuf:"bytes,2,opt,name=hash" json:"hash,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	Hash string `protobuf:"bytes,2,opt,name=hash" json:"hash,omitempty"`
 }
 
 func (m *IsolateObject) Reset()         { *m = IsolateObject{} }
 func (m *IsolateObject) String() string { return proto.CompactTextString(m) }
 func (*IsolateObject) ProtoMessage()    {}
 
-func (m *IsolateObject) GetServer() string {
-	if m != nil && m.Server != nil {
-		return *m.Server
-	}
-	return ""
-}
-
-func (m *IsolateObject) GetHash() string {
-	if m != nil && m.Hash != nil {
-		return *m.Hash
-	}
-	return ""
-}
-
 // Dependency is a Dungeon Master execution specification.
 type DMLink struct {
 	// The Dungeon Master server. If empty, this is the default Isolate server
 	// specified by the project's LUCI config.
-	Server *string `protobuf:"bytes,1,opt,name=server" json:"server,omitempty"`
+	Server string `protobuf:"bytes,1,opt,name=server" json:"server,omitempty"`
 	// The quest name.
-	Quest *string `protobuf:"bytes,2,opt,name=quest" json:"quest,omitempty"`
+	Quest string `protobuf:"bytes,2,opt,name=quest" json:"quest,omitempty"`
 	// The attempt number.
-	Attempt *int64 `protobuf:"varint,3,opt,name=attempt" json:"attempt,omitempty"`
+	Attempt int64 `protobuf:"varint,3,opt,name=attempt" json:"attempt,omitempty"`
 	// The execution number.
-	Execution        *int64 `protobuf:"varint,4,opt,name=execution" json:"execution,omitempty"`
-	XXX_unrecognized []byte `json:"-"`
+	Execution int64 `protobuf:"varint,4,opt,name=execution" json:"execution,omitempty"`
 }
 
 func (m *DMLink) Reset()         { *m = DMLink{} }
 func (m *DMLink) String() string { return proto.CompactTextString(m) }
 func (*DMLink) ProtoMessage()    {}
-
-func (m *DMLink) GetServer() string {
-	if m != nil && m.Server != nil {
-		return *m.Server
-	}
-	return ""
-}
-
-func (m *DMLink) GetQuest() string {
-	if m != nil && m.Quest != nil {
-		return *m.Quest
-	}
-	return ""
-}
-
-func (m *DMLink) GetAttempt() int64 {
-	if m != nil && m.Attempt != nil {
-		return *m.Attempt
-	}
-	return 0
-}
-
-func (m *DMLink) GetExecution() int64 {
-	if m != nil && m.Execution != nil {
-		return *m.Execution
-	}
-	return 0
-}
 
 func init() {
 	proto.RegisterEnum("milo.Status", Status_name, Status_value)

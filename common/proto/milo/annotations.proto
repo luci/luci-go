@@ -2,7 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+syntax = "proto3";
+
 package milo;
+
+import "google/protobuf/timestamp.proto";
 
 // Status is the expressed root step of this step or substep.
 enum Status {
@@ -30,10 +34,10 @@ message FailureDetails {
     // or proceed without it.
     DM_DEPENDENCY_FAILED = 2;
   }
-  optional Type type = 1;
+  Type type = 1;
 
   // An optional string describing the failure.
-  optional string text = 2;
+  string text = 2;
 
   // If the failure type is DEPENDENCY_FAILED, the failed dependencies should be
   // listed here.
@@ -43,14 +47,14 @@ message FailureDetails {
 // Generic step or substep state.
 message Step {
   // The command-line invocation of the step, expressed as an argument vector.
-  optional Command command = 1;
+  Command command = 1;
 
   // Optional information detailing the failure. This may be populated if the
   // Step's top-level command Status is set to FAILURE.
-  optional FailureDetails failure_details = 2;
+  FailureDetails failure_details = 2;
 
   // Base Component information describing the high-level Step.
-  optional Component step_component = 3;
+  Component step_component = 3;
 
   // Sub-components that are part of the Step.
   repeated Component components = 4;
@@ -80,43 +84,44 @@ message Step {
 // A Component represents a renderable state.
 message Component {
   // The display name of the Component.
-  optional string name = 1;
+  string name = 1;
 
   // Type classifies the information associated with the Note.
-  optional Status status = 2;
+  Status status = 2;
 
   // When the step started, expressed as an RFC3339 string using Z (UTC)
   // timezone.
-  optional string started_ts = 3;
+  google.protobuf.Timestamp started = 3;
 
   // When the step ended, expressed as an RFC3339 string using Z (UTC) timezone.
-  optional string ended_ts = 4;
+  google.protobuf.Timestamp ended = 4;
 
   // Arbitrary lines of component text. Each string here is a consecutive line,
   // and should not contain newlines.
   repeated string text = 5;
 
   // The Component's progress.
-  optional Progress progress = 6;
+  Progress progress = 6;
 
   // A Link is an optional label followed by a typed link to an external
   // resource.
   message Link {
     // An optional display label for the link.
-    optional string label = 1;
+    string label = 1;
 
-    // (One of) A base URL to link to.
-    optional string url = 2;
-    // (One of) A LogDog stream link.
-    optional LogdogStream logdog_stream = 3;
-    // (One of) An isolate server link.
-    optional IsolateObject isolate_object = 4;
-    // (One of) A link to a Dungeon Master object.
-    optional DMLink dm_link = 5;
+    oneof value {
+      string url = 2;
+      // (One of) A LogDog stream link.
+      LogdogStream logdog_stream = 3;
+      // (One of) An isolate server link.
+      IsolateObject isolate_object = 4;
+      // (One of) A link to a Dungeon Master object.
+      DMLink dm_link = 5;
+    }
   }
   // The primary link for this Component. This is the link that interaction
   // with the Component will use.
-  optional Link link = 7;
+  Link link = 7;
   // Additional links related to the Component. These will be rendered alongside
   // the component.
   repeated Link other_links = 8;
@@ -124,9 +129,9 @@ message Component {
   // Property is an arbitrary key/value (build) property.
   message Property {
     // name is the property name.
-    optional string name = 1;
+    string name = 1;
     // value is the optional property value.
-    optional string value = 2;
+    string value = 2;
   }
   repeated Property property = 9;
 }
@@ -136,21 +141,21 @@ message Command {
   // The command-line invocation, expressed as an argument vector.
   repeated string command_line = 1;
   // The current working directory.
-  optional string cwd = 2;
+  string cwd = 2;
 
   // Environment represents the state of a process' environment.
   message Environment {
     // Entry is a single key/value environment entry.
     message Entry {
       // Name is the name of the environment variable.
-      optional string name = 1;
+      string name = 1;
       // Value is the value of the environment variable. This may be empty.
-      optional string value = 2;
+      string value = 2;
     }
     // The entries that compose the environment.
     repeated Entry entries = 1;
   }
-  optional Environment environ = 3;
+  Environment environ = 3;
 }
 
 // Progress expresses a Component's overall progress. It does this using
@@ -162,45 +167,45 @@ message Command {
 message Progress {
   // The total number of progress units. If missing or zero, no progress is
   // expressed.
-  optional int32 total = 1;
+  int32 total = 1;
   // The number of completed progress units. This must always be less than or
   // equal to `total`. If omitted, it is implied to be zero.
-  optional int32 completed = 2;
+  int32 completed = 2;
 }
 
 // LogdogLink is a LogDog stream link.
 message LogdogStream {
   // The stream's server. If omitted, the server is the same server that this
   // annotation stream is homed on.
-  optional string server = 1;
+  string server = 1;
   // The log Prefix. If empty, the prefix is the same prefix as this annotation
   // stream.
-  optional string prefix = 2;
+  string prefix = 2;
   // The log name.
-  optional string name = 3;
+  string name = 3;
 }
 
 // IsolateObject is an Isolate service object specification.
 message IsolateObject {
   // The Isolate server. If empty, this is the default Isolate server specified
   // by the project's LUCI config.
-  optional string server = 1;
+  string server = 1;
   // The isolate object hash.
-  optional string hash = 2;
+  string hash = 2;
 }
 
 // Dependency is a Dungeon Master execution specification.
 message DMLink {
   // The Dungeon Master server. If empty, this is the default Isolate server
   // specified by the project's LUCI config.
-  optional string server = 1;
+  string server = 1;
 
   // The quest name.
-  optional string quest = 2;
+  string quest = 2;
 
   // The attempt number.
-  optional int64 attempt = 3;
+  int64 attempt = 3;
 
   // The execution number.
-  optional int64 execution = 4;
+  int64 execution = 4;
 }
