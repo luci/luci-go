@@ -270,11 +270,13 @@ func (q *Query) Eq(field string, values ...interface{}) *Query {
 					return
 				}
 				idx := sort.Search(len(s), func(i int) bool {
-					return s[i].Equal(&p)
+					// s[i] >= p is the same as:
+					return s[i].Equal(&p) || p.Less(&s[i])
 				})
-				if idx == len(s) {
-					s = append(s, p)
-					sort.Sort(s)
+				if idx == len(s) || !s[idx].Equal(&p) {
+					s = append(s, Property{})
+					copy(s[idx+1:], s[idx:])
+					s[idx] = p
 				}
 			}
 			q.eqFilts[field] = s

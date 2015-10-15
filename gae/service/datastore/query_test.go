@@ -253,6 +253,12 @@ var queryTests = []queryTest{
 		nil,
 		nq().Order("a", "c").Eq("b", 2)},
 
+	{"duplicate equality filters are ignored",
+		nq().Eq("b", 10, -1, 2, 2, 7, 1, 2, 10, -1, 7, 1, 2),
+		"SELECT * FROM `Foo` WHERE `b` = -1 AND `b` = 1 AND `b` = 2 AND `b` = 7 AND `b` = 10 ORDER BY `__key__`",
+		nil,
+		nq().Eq("b", -1, 1, 2, 7, 10)},
+
 	{"duplicate orders are ignored",
 		nq().Order("a").Order("a").Order("a"),
 		"SELECT * FROM `Foo` ORDER BY `a`, `__key__`",
