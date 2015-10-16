@@ -3,7 +3,8 @@
 // found in the LICENSE file.
 
 // Package testsecrets provides a dumb in-memory secret store to use in unit
-// tests. Use secrets.Set(c, &TestingStore{...}) to inject it into the context.
+// tests. Use secrets.Set(c, &testsecrets.Store{...}) to inject it into
+// the context.
 package testsecrets
 
 import (
@@ -14,11 +15,11 @@ import (
 	"github.com/luci/luci-go/server/secrets"
 )
 
-// TestingStore implements Store in the simplest way possible using memory as
+// Store implements secrets.Store in the simplest way possible using memory as
 // a backend and very dumb deterministic "randomness" source for secret key
 // autogeneration. Useful in unit tests. Can be modified directly (use lock if
 // doing it concurrently). NEVER use it outside of tests.
-type TestingStore struct {
+type Store struct {
 	sync.Mutex
 
 	Secrets        map[secrets.Key]secrets.Secret // current map of all secrets
@@ -30,7 +31,7 @@ type TestingStore struct {
 }
 
 // GetSecret is a part of Store interface.
-func (t *TestingStore) GetSecret(k secrets.Key) (secrets.Secret, error) {
+func (t *Store) GetSecret(k secrets.Key) (secrets.Secret, error) {
 	t.Lock()
 	defer t.Unlock()
 

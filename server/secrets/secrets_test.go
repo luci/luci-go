@@ -27,6 +27,23 @@ func TestClone(t *testing.T) {
 	})
 }
 
+func TestBlobs(t *testing.T) {
+	Convey("Blobs works", t, func() {
+		s := Secret{
+			Current: NamedBlob{"id1", nil},
+			Previous: []NamedBlob{
+				{"id2", nil},
+				{"id3", nil},
+			},
+		}
+		So(s.Blobs(), ShouldResemble, []NamedBlob{
+			{"id1", nil},
+			{"id2", nil},
+			{"id3", nil},
+		})
+	})
+}
+
 func TestContext(t *testing.T) {
 	Convey("Works", t, func() {
 		c := Set(context.Background(), fakeStore{})

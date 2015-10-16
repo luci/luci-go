@@ -12,9 +12,9 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestTestingStore(t *testing.T) {
+func TestStore(t *testing.T) {
 	Convey("Autogeneration enabled", t, func() {
-		store := TestingStore{}
+		store := Store{}
 
 		// Autogenerate one.
 		s1, err := store.GetSecret("key1")
@@ -38,7 +38,7 @@ func TestTestingStore(t *testing.T) {
 	})
 
 	Convey("Autogeneration disabled", t, func() {
-		store := TestingStore{NoAutogenerate: true}
+		store := Store{NoAutogenerate: true}
 		_, err := store.GetSecret("key1")
 		So(err, ShouldEqual, secrets.ErrNoSuchSecret)
 	})

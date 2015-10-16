@@ -42,6 +42,14 @@ type Secret struct {
 	Previous []NamedBlob // optional list of previous values, most recent first
 }
 
+// Blobs returns current blob and all previous blobs as one array.
+func (s Secret) Blobs() []NamedBlob {
+	out := make([]NamedBlob, 0, 1+len(s.Previous))
+	out = append(out, s.Current)
+	out = append(out, s.Previous...)
+	return out
+}
+
 // Clone makes a deep copy of the Secret.
 func (s Secret) Clone() Secret {
 	out := Secret{Current: s.Current.Clone()}
