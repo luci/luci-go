@@ -21,14 +21,15 @@ import (
 	"sync"
 	"time"
 
+	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/impl/prod"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/taskqueue"
 
 	"github.com/luci/luci-go/appengine/gaeauth"
-	"github.com/luci/luci-go/appengine/gaelogger"
+	"github.com/luci/luci-go/appengine/middleware"
+
 	cfgmemory "github.com/luci/luci-go/common/config/impl/memory"
 	cfgremote "github.com/luci/luci-go/common/config/impl/remote"
 	"github.com/luci/luci-go/common/errors"
@@ -73,6 +74,7 @@ type requestContext struct {
 
 	w http.ResponseWriter
 	r *http.Request
+	p httprouter.Params
 }
 
 // fail writes error message to the log and the response and sets status code.
@@ -106,25 +108,6 @@ func (c *requestContext) ok() {
 var globalInit sync.Once
 var isProdGAE = true
 
-func makeProdRequestContext(w http.ResponseWriter, r *http.Request) *requestContext {
-	c := prod.UseRequest(r)
-	c = gaelogger.Use(c)
-	c = gaeauth.Use(c, nil, nil)
-
-	// Use fake config data on dev server for simplicity.
-	if info.Get(c).IsDevAppServer() {
-		c = cfgmemory.Use(c, devServerConfigs())
-	} else {
-		c = cfgremote.Use(c, configServiceURL+"/_ah/api/config/v1/")
-	}
-
-	rc := &requestContext{c, w, r}
-
-	// One time initialization for stuff that needs active GAE context.
-	globalInit.Do(func() { initializeGlobalState(rc) })
-	return rc
-}
-
 func initializeGlobalState(rc *requestContext) {
 	// Dev app server doesn't preserve the state of task queues across restarts,
 	// need to reset datastore state accordingly, otherwise everything gets stuck.
@@ -136,31 +119,41 @@ func initializeGlobalState(rc *requestContext) {
 	}
 }
 
-func gaeHandler(h handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		h(makeProdRequestContext(w, r))
+// wrap converts the handler to format accepted by middleware lib. It also adds
+// context initialization code.
+func wrap(h handler) middleware.Handler {
+	return func(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		c = gaeauth.Use(c, nil, nil)
+
+		// Use fake config data on dev server for simplicity.
+		if info.Get(c).IsDevAppServer() {
+			c = cfgmemory.Use(c, devServerConfigs())
+		} else {
+			c = cfgremote.Use(c, configServiceURL+"/_ah/api/config/v1/")
+		}
+
+		rc := &requestContext{c, w, r, p}
+
+		// One time initialization for stuff that needs active GAE context.
+		globalInit.Do(func() { initializeGlobalState(rc) })
+
+		h(rc)
 	}
 }
 
-func cronHandler(h handler) http.HandlerFunc {
-	return gaeHandler(func(c *requestContext) {
-		if c.r.Header.Get("X-AppEngine-Cron") != "true" && isProdGAE {
-			c.fail(403, "Only internal cron jobs can do this")
-		} else {
-			h(c)
-		}
-	})
+// publicHandler returns handler for publicly accessible routes.
+func publicHandler(h handler) httprouter.Handle {
+	return middleware.BaseProd(wrap(h))
 }
 
-func taskQueueHandler(queue string, h handler) http.HandlerFunc {
-	return gaeHandler(func(c *requestContext) {
-		got := c.r.Header.Get("X-AppEngine-QueueName")
-		if got != queue && isProdGAE {
-			c.fail(403, "Only internal queue %q can call this, got %q", queue, got)
-		} else {
-			h(c)
-		}
-	})
+// cronHandler returns handler intended for cron jobs.
+func cronHandler(h handler) httprouter.Handle {
+	return middleware.BaseProd(middleware.RequireCron(wrap(h)))
+}
+
+// taskQueueHandler returns handler intended for task queue calls.
+func taskQueueHandler(name string, h handler) httprouter.Handle {
+	return middleware.BaseProd(middleware.RequireTaskQueue(name, wrap(h)))
 }
 
 //// Routes.
@@ -182,32 +175,35 @@ func init() {
 	})
 
 	// Setup HTTP routes.
-	registerFrontendHandlers(http.DefaultServeMux)
-	registerBackendHandlers(http.DefaultServeMux)
+	router := httprouter.New()
+	registerFrontendHandlers(router)
+	registerBackendHandlers(router)
+	http.DefaultServeMux.Handle("/", router)
 }
 
-func registerFrontendHandlers(mux *http.ServeMux) {
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		fmt.Fprint(w, "Hi there!")
-	})
-	// To call initializeGlobalState on devserver sooner than later.
-	mux.HandleFunc("/_ah/warmup", gaeHandler(func(c *requestContext) { c.ok() }))
+func registerFrontendHandlers(router *httprouter.Router) {
+	router.GET("/", publicHandler(indexPage))
+	router.GET("/_ah/warmup", publicHandler(warmupHandler))
 }
 
-func registerBackendHandlers(mux *http.ServeMux) {
-	mux.HandleFunc("/internal/cron/read-config", cronHandler(readConfigCron))
-	mux.HandleFunc(
-		"/internal/tasks/read-project-config",
-		taskQueueHandler("read-project-config", readProjectConfigTask))
-	mux.HandleFunc("/internal/tasks/timers", taskQueueHandler("timers", actionTask))
-	mux.HandleFunc("/internal/tasks/invocations", taskQueueHandler("invocations", actionTask))
+func registerBackendHandlers(router *httprouter.Router) {
+	router.GET("/internal/cron/read-config", cronHandler(readConfigCron))
+	router.POST("/internal/tasks/read-project-config", taskQueueHandler("read-project-config", readProjectConfigTask))
+	router.POST("/internal/tasks/timers", taskQueueHandler("timers", actionTask))
+	router.POST("/internal/tasks/invocations", taskQueueHandler("invocations", actionTask))
 }
 
-//// Actual handlers.
+//// Frontend handlers.
+
+func indexPage(rc *requestContext) {
+	fmt.Fprint(rc.w, "Hi there!")
+}
+
+func warmupHandler(rc *requestContext) {
+	rc.ok()
+}
+
+//// Backend handlers.
 
 // readConfigCron grabs a list of projects from the catalog and datastore and
 // dispatches task queue tasks to update each project's cron jobs.
