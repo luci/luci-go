@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -176,7 +177,8 @@ func (r *retriable) Do() error {
 		return retry.Error{fmt.Errorf("http request failed: %s (HTTP %d)", http.StatusText(resp.StatusCode), resp.StatusCode)}
 	}
 	// Endpoints occasionally return 404 on valid requests (!)
-	if resp.StatusCode == 404 && strings.HasPrefix(r.req.URL.Path, "/_ah/api/") && resp.Header.Get("Content-Type") == "text/html" {
+	if resp.StatusCode == 404 && strings.HasPrefix(r.req.URL.Path, "/_ah/api/") {
+		log.Printf("lhttp.Do() got a Cloud Endpoints 404: %#v", resp.Header)
 		return retry.Error{fmt.Errorf("http request failed (endpoints): %s (HTTP %d)", http.StatusText(resp.StatusCode), resp.StatusCode)}
 	}
 	// Any other failure code is a hard failure.
