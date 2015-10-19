@@ -15,11 +15,18 @@ import (
 	"github.com/luci/luci-go/common/config"
 )
 
+// New returns an implementation of the config service which stores the
+// results on the local filesystem.
+// NOT SUITABLE FOR PRODUCTION USE.
+func New() config.Interface {
+	return &filesystemImpl{}
+}
+
 // Use adds an implementation of the config service which stores the
 // results on the local filesystem.
 // NOT SUITABLE FOR PRODUCTION USE.
 func Use(c context.Context) context.Context {
-	return config.Set(c, &filesystemImpl{})
+	return config.Set(c, New())
 }
 
 type filesystemImpl struct {

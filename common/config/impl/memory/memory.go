@@ -25,10 +25,16 @@ import (
 // ConfigSet is a mapping from a file path to a config file body.
 type ConfigSet map[string]string
 
+// New makes an implementation of the config service which takes all configs
+// from provided mapping {config set name -> map of configs}. For unit testing.
+func New(cfg map[string]ConfigSet) config.Interface {
+	return &memoryImpl{cfg}
+}
+
 // Use adds an implementation of the config service which takes all configs
 // from provided mapping {config set name -> map of configs}. For unit testing.
 func Use(c context.Context, cfg map[string]ConfigSet) context.Context {
-	return config.Set(c, &memoryImpl{cfg})
+	return config.Set(c, New(cfg))
 }
 
 type memoryImpl struct {

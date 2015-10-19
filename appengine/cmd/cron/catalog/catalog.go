@@ -74,13 +74,23 @@ type Definition struct {
 	Task []byte
 }
 
-// NewCatalog returns implementation of Catalog.
-func NewCatalog() Catalog {
-	return &catalog{map[reflect.Type]task.Manager{}}
+// LazyConfig makes an instance of config.Interface on demand.
+type LazyConfig func(c context.Context) config.Interface
+
+// New returns implementation of Catalog.
+func New(c LazyConfig) Catalog {
+	if c == nil {
+		c = func(ctx context.Context) config.Interface { return config.Get(ctx) }
+	}
+	return &catalog{
+		managers:   map[reflect.Type]task.Manager{},
+		lazyConfig: c,
+	}
 }
 
 type catalog struct {
-	managers map[reflect.Type]task.Manager
+	managers   map[reflect.Type]task.Manager
+	lazyConfig LazyConfig
 }
 
 func (cat *catalog) RegisterTaskManager(m task.Manager) error {
@@ -110,7 +120,7 @@ func (cat *catalog) UnmarshalTask(task []byte) (proto.Message, error) {
 
 func (cat *catalog) GetAllProjects(c context.Context) ([]string, error) {
 	// Enumerate all projects that have cron.cfg. Do not fetch actual configs yet.
-	cfgs, err := config.Get(c).GetProjectConfigs(configFile, true)
+	cfgs, err := cat.lazyConfig(c).GetProjectConfigs(configFile, true)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +138,7 @@ func (cat *catalog) GetAllProjects(c context.Context) ([]string, error) {
 }
 
 func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Definition, error) {
-	rawCfg, err := config.Get(c).GetConfig("projects/"+projectID, configFile, false)
+	rawCfg, err := cat.lazyConfig(c).GetConfig("projects/"+projectID, configFile, false)
 	if err == config.ErrNoConfig {
 		return nil, nil
 	}

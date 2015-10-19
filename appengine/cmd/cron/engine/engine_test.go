@@ -476,7 +476,7 @@ func newTestContext(now time.Time) context.Context {
 
 func newTestEngine() (Engine, *fakeTaskManager) {
 	mgr := &fakeTaskManager{}
-	cat := catalog.NewCatalog()
+	cat := catalog.New(nil)
 	cat.RegisterTaskManager(mgr)
 	return NewEngine(Config{
 		Catalog:              cat,

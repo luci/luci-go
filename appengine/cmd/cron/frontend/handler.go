@@ -30,14 +30,14 @@ import (
 	"github.com/luci/luci-go/appengine/gaeauth"
 	"github.com/luci/luci-go/appengine/middleware"
 
-	cfgmemory "github.com/luci/luci-go/common/config/impl/memory"
-	cfgremote "github.com/luci/luci-go/common/config/impl/remote"
+	"github.com/luci/luci-go/common/config"
+	"github.com/luci/luci-go/common/config/impl/memory"
+	"github.com/luci/luci-go/common/config/impl/remote"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 
-	cat "github.com/luci/luci-go/appengine/cmd/cron/catalog"
-	eng "github.com/luci/luci-go/appengine/cmd/cron/engine"
-
+	"github.com/luci/luci-go/appengine/cmd/cron/catalog"
+	"github.com/luci/luci-go/appengine/cmd/cron/engine"
 	"github.com/luci/luci-go/appengine/cmd/cron/task"
 	"github.com/luci/luci-go/appengine/cmd/cron/task/noop"
 	"github.com/luci/luci-go/appengine/cmd/cron/task/urlfetch"
@@ -46,8 +46,8 @@ import (
 //// Global state. See init().
 
 var (
-	catalog cat.Catalog
-	engine  eng.Engine
+	globalCatalog catalog.Catalog
+	globalEngine  engine.Engine
 
 	// Known kinds of tasks.
 	managers = []task.Manager{
@@ -108,35 +108,35 @@ func (c *requestContext) ok() {
 var globalInit sync.Once
 var isProdGAE = true
 
+// initializeGlobalState does one time initialization for stuff that needs
+// active GAE context.
 func initializeGlobalState(rc *requestContext) {
 	// Dev app server doesn't preserve the state of task queues across restarts,
 	// need to reset datastore state accordingly, otherwise everything gets stuck.
 	if info.Get(rc.Context).IsDevAppServer() {
 		isProdGAE = false
-		if err := engine.ResetAllJobsOnDevServer(rc.Context); err != nil {
+		if err := globalEngine.ResetAllJobsOnDevServer(rc.Context); err != nil {
 			logging.Errorf(rc.Context, "Failed to reset jobs: %s", err)
 		}
 	}
+}
+
+// getConfigImpl returns config.Interface implementation to use from the
+// catalog.
+func getConfigImpl(c context.Context) config.Interface {
+	// Use fake config data on dev server for simplicity.
+	if info.Get(c).IsDevAppServer() {
+		return memory.New(devServerConfigs())
+	}
+	return remote.New(c, configServiceURL+"/_ah/api/config/v1/")
 }
 
 // wrap converts the handler to format accepted by middleware lib. It also adds
 // context initialization code.
 func wrap(h handler) middleware.Handler {
 	return func(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		c = gaeauth.Use(c, nil, nil)
-
-		// Use fake config data on dev server for simplicity.
-		if info.Get(c).IsDevAppServer() {
-			c = cfgmemory.Use(c, devServerConfigs())
-		} else {
-			c = cfgremote.Use(c, configServiceURL+"/_ah/api/config/v1/")
-		}
-
-		rc := &requestContext{c, w, r, p}
-
-		// One time initialization for stuff that needs active GAE context.
+		rc := &requestContext{gaeauth.Use(c, nil, nil), w, r, p}
 		globalInit.Do(func() { initializeGlobalState(rc) })
-
 		h(rc)
 	}
 }
@@ -160,14 +160,14 @@ func taskQueueHandler(name string, h handler) httprouter.Handle {
 
 func init() {
 	// Setup global singletons.
-	catalog = cat.NewCatalog()
+	globalCatalog = catalog.New(getConfigImpl)
 	for _, m := range managers {
-		if err := catalog.RegisterTaskManager(m); err != nil {
+		if err := globalCatalog.RegisterTaskManager(m); err != nil {
 			panic(err)
 		}
 	}
-	engine = eng.NewEngine(eng.Config{
-		Catalog:              catalog,
+	globalEngine = engine.NewEngine(engine.Config{
+		Catalog:              globalCatalog,
 		TimersQueuePath:      "/internal/tasks/timers",
 		TimersQueueName:      "timers",
 		InvocationsQueuePath: "/internal/tasks/invocations",
@@ -212,7 +212,7 @@ func readConfigCron(c *requestContext) {
 
 	// Visit all projects in the catalog.
 	ctx, _ := context.WithTimeout(c.Context, configServiceTimeout)
-	projects, err := catalog.GetAllProjects(ctx)
+	projects, err := globalCatalog.GetAllProjects(ctx)
 	if err != nil {
 		c.err(err, "Failed to grab a list of project IDs from catalog")
 		return
@@ -223,7 +223,7 @@ func readConfigCron(c *requestContext) {
 
 	// Also visit all registered projects that do not show up in the catalog
 	// listing anymore. It will unregister all crons belonging to them.
-	existing, err := engine.GetAllProjects(c.Context)
+	existing, err := globalEngine.GetAllProjects(c.Context)
 	if err != nil {
 		c.err(err, "Failed to grab a list of project IDs from datastore")
 		return
@@ -258,12 +258,12 @@ func readProjectConfigTask(c *requestContext) {
 		return
 	}
 	ctx, _ := context.WithTimeout(c.Context, configServiceTimeout)
-	jobs, err := catalog.GetProjectJobs(ctx, projectID)
+	jobs, err := globalCatalog.GetProjectJobs(ctx, projectID)
 	if err != nil {
 		c.err(err, "Failed to query for a list of jobs")
 		return
 	}
-	if err = engine.UpdateProjectJobs(c.Context, projectID, jobs); err != nil {
+	if err = globalEngine.UpdateProjectJobs(c.Context, projectID, jobs); err != nil {
 		c.err(err, "Failed to update some cron jobs")
 		return
 	}
@@ -279,7 +279,7 @@ func actionTask(c *requestContext) {
 		return
 	}
 	count, _ := strconv.Atoi(c.r.Header.Get("X-AppEngine-TaskExecutionCount"))
-	err = engine.ExecuteSerializedAction(c.Context, body, count)
+	err = globalEngine.ExecuteSerializedAction(c.Context, body, count)
 	if err != nil {
 		c.err(err, "Error when executing the action")
 		return

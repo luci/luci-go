@@ -13,31 +13,38 @@ import (
 	"google.golang.org/api/googleapi"
 
 	"github.com/luci/luci-go/common/config"
-	genApi "github.com/luci/luci-go/common/config/impl/remote/generated_api/v1"
+	configApi "github.com/luci/luci-go/common/config/impl/remote/generated_api/v1"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/transport"
 )
+
+// New returns an implementation of the config service which talks to the actual
+// luci-config service. Uses transport injected into the context for
+// authentication. See common/transport.
+func New(c context.Context, basePath string) config.Interface {
+	service, err := configApi.New(transport.GetClient(c))
+	if err != nil {
+		// client is nil
+		panic("unreachable")
+	}
+	if basePath != "" {
+		service.BasePath = basePath
+	}
+	return &remoteImpl{service, c}
+}
 
 // Use adds an implementation of the config service which talks to the actual
 // luci-config service. Uses transport injected into the context for
 // authentication. See common/transport.
 func Use(c context.Context, basePath string) context.Context {
 	return config.SetFactory(c, func(ic context.Context) config.Interface {
-		service, err := genApi.New(transport.GetClient(ic))
-		if basePath != "" {
-			service.BasePath = basePath
-		}
-		if err != nil {
-			// client is nil
-			panic("unreachable")
-		}
-		return &remoteImpl{service, ic}
+		return New(ic, basePath)
 	})
 }
 
 type remoteImpl struct {
-	service *genApi.Service
+	service *configApi.Service
 	c       context.Context
 }
 
@@ -166,7 +173,7 @@ func (r *remoteImpl) GetRefs(projectID string) ([]string, error) {
 
 // convertMultiWireConfigs is a utility to convert what we get over the wire
 // into the structs we use in the config package.
-func convertMultiWireConfigs(ctx context.Context, wireConfigs *genApi.LuciConfigGetConfigMultiResponseMessage, hashesOnly bool) ([]config.Config, error) {
+func convertMultiWireConfigs(ctx context.Context, wireConfigs *configApi.LuciConfigGetConfigMultiResponseMessage, hashesOnly bool) ([]config.Config, error) {
 	configs := make([]config.Config, len(wireConfigs.Configs))
 	for i, c := range wireConfigs.Configs {
 		var decoded []byte
