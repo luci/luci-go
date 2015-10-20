@@ -56,15 +56,6 @@ var (
 	}
 )
 
-const (
-	// configServiceURL is URL of luci-config service.
-	// TODO(vadimsh): Make it configurable.
-	configServiceURL = "https://luci-config.appspot.com"
-
-	// configServiceTimeout is deadline for luci-config url fetch calls.
-	configServiceTimeout = 150 * time.Second
-)
-
 //// Helpers.
 
 type handler func(c *requestContext)
@@ -123,12 +114,19 @@ func initializeGlobalState(rc *requestContext) {
 
 // getConfigImpl returns config.Interface implementation to use from the
 // catalog.
-func getConfigImpl(c context.Context) config.Interface {
+func getConfigImpl(c context.Context) (config.Interface, error) {
 	// Use fake config data on dev server for simplicity.
 	if info.Get(c).IsDevAppServer() {
-		return memory.New(devServerConfigs())
+		return memory.New(devServerConfigs()), nil
 	}
-	return remote.New(c, configServiceURL+"/_ah/api/config/v1/")
+	settings, err := fetchAppSettings(c)
+	if err != nil {
+		return nil, err
+	}
+	if settings.ConfigServiceURL == "" {
+		return memory.New(nil), nil
+	}
+	return remote.New(c, settings.ConfigServiceURL+"/_ah/api/config/v1/"), nil
 }
 
 // wrap converts the handler to format accepted by middleware lib. It also adds
@@ -196,10 +194,11 @@ func registerBackendHandlers(router *httprouter.Router) {
 //// Frontend handlers.
 
 func indexPage(rc *requestContext) {
-	fmt.Fprint(rc.w, "Hi there!")
+	fmt.Fprintf(rc.w, "Hi there!")
 }
 
 func warmupHandler(rc *requestContext) {
+	fetchAppSettings(rc)
 	rc.ok()
 }
 
@@ -211,7 +210,7 @@ func readConfigCron(c *requestContext) {
 	projectsToVisit := map[string]bool{}
 
 	// Visit all projects in the catalog.
-	ctx, _ := context.WithTimeout(c.Context, configServiceTimeout)
+	ctx, _ := context.WithTimeout(c.Context, 150*time.Second)
 	projects, err := globalCatalog.GetAllProjects(ctx)
 	if err != nil {
 		c.err(err, "Failed to grab a list of project IDs from catalog")
@@ -257,7 +256,7 @@ func readProjectConfigTask(c *requestContext) {
 		c.fail(202, "Missing projectID query attribute")
 		return
 	}
-	ctx, _ := context.WithTimeout(c.Context, configServiceTimeout)
+	ctx, _ := context.WithTimeout(c.Context, 150*time.Second)
 	jobs, err := globalCatalog.GetProjectJobs(ctx, projectID)
 	if err != nil {
 		c.err(err, "Failed to query for a list of jobs")
