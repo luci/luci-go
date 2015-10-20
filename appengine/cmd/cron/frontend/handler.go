@@ -27,7 +27,7 @@ import (
 	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/taskqueue"
 
-	"github.com/luci/luci-go/appengine/gaeauth"
+	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/appengine/middleware"
 
 	"github.com/luci/luci-go/common/config"
@@ -126,6 +126,7 @@ func getConfigImpl(c context.Context) (config.Interface, error) {
 	if settings.ConfigServiceURL == "" {
 		return memory.New(nil), nil
 	}
+	c = client.UseServiceAccountTransport(c, nil, nil)
 	return remote.New(c, settings.ConfigServiceURL+"/_ah/api/config/v1/"), nil
 }
 
@@ -133,7 +134,7 @@ func getConfigImpl(c context.Context) (config.Interface, error) {
 // context initialization code.
 func wrap(h handler) middleware.Handler {
 	return func(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		rc := &requestContext{gaeauth.Use(c, nil, nil), w, r, p}
+		rc := &requestContext{c, w, r, p}
 		globalInit.Do(func() { initializeGlobalState(rc) })
 		h(rc)
 	}

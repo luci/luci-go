@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Package gaeauth implements OAuth2 authentication for outbound connections
+// Package client implements OAuth2 authentication for outbound connections
 // from Appengine using service account keys. It supports native GAE service
 // account credentials and external ones provided via JSON keys. It caches
 // access tokens in memcache.
-package gaeauth
+package client
 
 import (
 	"bytes"
@@ -103,10 +103,10 @@ func StoreServiceAccountJSON(c context.Context, id string, blob []byte) error {
 	})
 }
 
-// Use injects authenticating transport into context.Context. It can be
-// extracted back via transport.Get(c). It will be lazy-initialized on a first
-// use.
-func Use(c context.Context, scopes []string, serviceAccountJSON []byte) context.Context {
+// UseServiceAccountTransport injects authenticating transport into
+// context.Context. It can be extracted back via transport.Get(c). It will be
+// lazy-initialized on a first use.
+func UseServiceAccountTransport(c context.Context, scopes []string, serviceAccountJSON []byte) context.Context {
 	var cached http.RoundTripper
 	var once sync.Once
 	return transport.SetFactory(c, func(ic context.Context) http.RoundTripper {
@@ -122,11 +122,12 @@ func Use(c context.Context, scopes []string, serviceAccountJSON []byte) context.
 	})
 }
 
-// UseAnonymous injects non-authenticating GAE transport into context.Context.
-// It can be extracted back via transport.Get(c). Use it with libraries that
-// search for transport in the context (e.g. common/config), since by default
-// they revert to http.DefaultTransport that doesn't work in GAE environment.
-func UseAnonymous(c context.Context) context.Context {
+// UseAnonymousTransport injects non-authenticating GAE transport into
+// context.Context. It can be extracted back via transport.Get(c). Use it with
+// libraries that search for transport in the context (e.g. common/config),
+// since by default they revert to http.DefaultTransport that doesn't work in
+// GAE environment.
+func UseAnonymousTransport(c context.Context) context.Context {
 	return transport.SetFactory(c, func(ic context.Context) http.RoundTripper {
 		return urlfetch.Get(ic)
 	})
