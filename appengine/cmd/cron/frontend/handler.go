@@ -27,8 +27,10 @@ import (
 	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/taskqueue"
 
+	"github.com/luci/luci-go/server/middleware"
+
 	"github.com/luci/luci-go/appengine/gaeauth/client"
-	"github.com/luci/luci-go/appengine/middleware"
+	"github.com/luci/luci-go/appengine/gaemiddleware"
 
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/config/impl/memory"
@@ -142,17 +144,17 @@ func wrap(h handler) middleware.Handler {
 
 // publicHandler returns handler for publicly accessible routes.
 func publicHandler(h handler) httprouter.Handle {
-	return middleware.BaseProd(wrap(h))
+	return gaemiddleware.BaseProd(wrap(h))
 }
 
 // cronHandler returns handler intended for cron jobs.
 func cronHandler(h handler) httprouter.Handle {
-	return middleware.BaseProd(middleware.RequireCron(wrap(h)))
+	return gaemiddleware.BaseProd(gaemiddleware.RequireCron(wrap(h)))
 }
 
 // taskQueueHandler returns handler intended for task queue calls.
 func taskQueueHandler(name string, h handler) httprouter.Handle {
-	return middleware.BaseProd(middleware.RequireTaskQueue(name, wrap(h)))
+	return gaemiddleware.BaseProd(gaemiddleware.RequireTaskQueue(name, wrap(h)))
 }
 
 //// Routes.

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package middleware
+package gaemiddleware
 
 import (
 	"net/http"
@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/luci/luci-go/appengine/gaetesting"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -31,7 +32,7 @@ func TestRequireCron(t *testing.T) {
 
 		Convey("from non-cron fails", func() {
 			rec := httptest.NewRecorder()
-			BaseTest(RequireCron(f))(rec, &http.Request{}, nil)
+			gaetesting.BaseTest(RequireCron(f))(rec, &http.Request{}, nil)
 			So(hit, ShouldBeFalse)
 			So(rec.Body.String(), ShouldEqual, "error: must be run from cron")
 			So(rec.Code, ShouldEqual, http.StatusForbidden)
@@ -39,7 +40,7 @@ func TestRequireCron(t *testing.T) {
 
 		Convey("from cron succeeds", func() {
 			rec := httptest.NewRecorder()
-			BaseTest(RequireCron(f))(rec, &http.Request{
+			gaetesting.BaseTest(RequireCron(f))(rec, &http.Request{
 				Header: http.Header{
 					http.CanonicalHeaderKey("x-appengine-cron"): []string{"true"},
 				},
@@ -63,7 +64,7 @@ func TestRequireTQ(t *testing.T) {
 
 		Convey("from non-tq fails (wat)", func() {
 			rec := httptest.NewRecorder()
-			BaseTest(RequireTaskQueue("wat", f))(rec, &http.Request{}, nil)
+			gaetesting.BaseTest(RequireTaskQueue("wat", f))(rec, &http.Request{}, nil)
 			So(hit, ShouldBeFalse)
 			So(rec.Body.String(), ShouldEqual, "error: must be run from the correct taskqueue")
 			So(rec.Code, ShouldEqual, http.StatusForbidden)
@@ -71,7 +72,7 @@ func TestRequireTQ(t *testing.T) {
 
 		Convey("from non-tq fails", func() {
 			rec := httptest.NewRecorder()
-			BaseTest(RequireTaskQueue("", f))(rec, &http.Request{}, nil)
+			gaetesting.BaseTest(RequireTaskQueue("", f))(rec, &http.Request{}, nil)
 			So(hit, ShouldBeFalse)
 			So(rec.Body.String(), ShouldEqual, "error: must be run from the correct taskqueue")
 			So(rec.Code, ShouldEqual, http.StatusForbidden)
@@ -79,7 +80,7 @@ func TestRequireTQ(t *testing.T) {
 
 		Convey("from wrong tq fails (wat)", func() {
 			rec := httptest.NewRecorder()
-			BaseTest(RequireTaskQueue("wat", f))(rec, &http.Request{
+			gaetesting.BaseTest(RequireTaskQueue("wat", f))(rec, &http.Request{
 				Header: http.Header{
 					http.CanonicalHeaderKey("x-appengine-queuename"): []string{"else"},
 				},
@@ -91,7 +92,7 @@ func TestRequireTQ(t *testing.T) {
 
 		Convey("from right tq succeeds (wat)", func() {
 			rec := httptest.NewRecorder()
-			BaseTest(RequireTaskQueue("wat", f))(rec, &http.Request{
+			gaetesting.BaseTest(RequireTaskQueue("wat", f))(rec, &http.Request{
 				Header: http.Header{
 					http.CanonicalHeaderKey("x-appengine-queuename"): []string{"wat"},
 				},
@@ -103,7 +104,7 @@ func TestRequireTQ(t *testing.T) {
 
 		Convey("from any tq succeeds", func() {
 			rec := httptest.NewRecorder()
-			BaseTest(RequireTaskQueue("", f))(rec, &http.Request{
+			gaetesting.BaseTest(RequireTaskQueue("", f))(rec, &http.Request{
 				Header: http.Header{
 					http.CanonicalHeaderKey("x-appengine-queuename"): []string{"wat"},
 				},

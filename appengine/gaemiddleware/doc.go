@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Package middleware provides a standard set of middleware tools for luci
+// Package gaemiddleware provides a standard set of middleware tools for luci
 // appengine apps. It's built around "github.com/julienschmidt/httprouter".
 //
 // Usage Example
@@ -19,7 +19,7 @@
 //
 //     "github.com/julienschmidt/httprouter"
 //     "github.com/luci/gae/service/datastore"
-//     "github.com/luci/luci-go/appengine/middleware"
+//     "github.com/luci/luci-go/appengine/gaemiddleware"
 //     "github.com/luci/luci-go/common/logging"
 //   )
 //
@@ -41,8 +41,8 @@
 //   func init() {
 //     router := httprouter.New()
 //     router.GET("/internal/make_thing/:obj_id",
-//       middleware.BaseProd(middleware.RequireCron(myHandler)))
+//       gaemiddleware.BaseProd(gaemiddleware.RequireCron(myHandler)))
 //
 //     log.Fatal(http.ListenAndServe(":8080", router))
 //   }
-package middleware
+package gaemiddleware

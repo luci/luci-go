@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/luci/luci-go/appengine/middleware"
+	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"golang.org/x/net/context"
 )
 
@@ -149,8 +149,8 @@ func (c *Config) FireAllTasksURL() string {
 func (c *Config) InstallHandlers(r *httprouter.Router) {
 	// GET so that this can be invoked from cron
 	r.GET(c.FireAllTasksURL(),
-		middleware.BaseProd(middleware.RequireCron(FireAllTasksHandler)))
+		gaemiddleware.BaseProd(gaemiddleware.RequireCron(FireAllTasksHandler)))
 
 	r.POST(c.ProcessURLPattern(),
-		middleware.BaseProd(middleware.RequireTaskQueue(c.Name, ProcessShardHandler)))
+		gaemiddleware.BaseProd(gaemiddleware.RequireTaskQueue(c.Name, ProcessShardHandler)))
 }

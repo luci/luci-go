@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package middleware
+package gaemiddleware
 
 import (
 	"fmt"
@@ -11,6 +11,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/server/middleware"
 	"golang.org/x/net/context"
 )
 
@@ -23,7 +24,7 @@ var devAppserverBypassFn = func(c context.Context) bool {
 //
 // This middleware has no effect when using 'BaseTest' or when running under
 // dev_appserver.py
-func RequireCron(h Handler) Handler {
+func RequireCron(h middleware.Handler) middleware.Handler {
 	return func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		if !devAppserverBypassFn(c) {
 			if r.Header.Get("X-Appengine-Cron") != "true" {
@@ -46,7 +47,7 @@ func RequireCron(h Handler) Handler {
 //
 // This middleware has no effect when using 'BaseTest' or when running under
 // dev_appserver.py
-func RequireTaskQueue(queue string, h Handler) Handler {
+func RequireTaskQueue(queue string, h middleware.Handler) middleware.Handler {
 	return func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		if !devAppserverBypassFn(c) {
 			qName := r.Header.Get("X-AppEngine-QueueName")
