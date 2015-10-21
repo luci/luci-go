@@ -27,9 +27,11 @@ import (
 	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/taskqueue"
 
+	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/middleware"
 
 	"github.com/luci/luci-go/appengine/gaeauth/client"
+	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 
 	"github.com/luci/luci-go/common/config"
@@ -56,6 +58,9 @@ var (
 		&noop.TaskManager{},
 		&urlfetch.TaskManager{},
 	}
+
+	// HTTP server authentication config. Initialized in initializeGlobalState.
+	globalAuthenticator *auth.Authenticator
 )
 
 //// Helpers.
@@ -99,18 +104,21 @@ func (c *requestContext) ok() {
 ///
 
 var globalInit sync.Once
-var isProdGAE = true
 
 // initializeGlobalState does one time initialization for stuff that needs
 // active GAE context.
-func initializeGlobalState(rc *requestContext) {
+func initializeGlobalState(c context.Context) {
 	// Dev app server doesn't preserve the state of task queues across restarts,
 	// need to reset datastore state accordingly, otherwise everything gets stuck.
-	if info.Get(rc.Context).IsDevAppServer() {
-		isProdGAE = false
-		if err := globalEngine.ResetAllJobsOnDevServer(rc.Context); err != nil {
-			logging.Errorf(rc.Context, "Failed to reset jobs: %s", err)
+	if info.Get(c).IsDevAppServer() {
+		if err := globalEngine.ResetAllJobsOnDevServer(c); err != nil {
+			logging.Errorf(c, "Failed to reset jobs: %s", err)
 		}
+	}
+	globalAuthenticator = &auth.Authenticator{
+		Methods: []auth.Method{
+			server.CookieAuthMethod{},
+		},
 	}
 }
 
@@ -142,19 +150,37 @@ func wrap(h handler) middleware.Handler {
 	}
 }
 
+// base starts middleware chain. It initializes prod context and sets up
+// authentication.
+func base(h middleware.Handler) httprouter.Handle {
+	wrapper := func(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		globalInit.Do(func() { initializeGlobalState(c) })
+		c = auth.SetAuthenticator(c, globalAuthenticator)
+		h(c, w, r, p)
+	}
+	return gaemiddleware.BaseProd(wrapper)
+}
+
 // publicHandler returns handler for publicly accessible routes.
+// No authentication at all.
 func publicHandler(h handler) httprouter.Handle {
-	return gaemiddleware.BaseProd(wrap(h))
+	return base(wrap(h))
+}
+
+// authHandler returns handler that perform authentication and redirect user to
+// login if necessary.
+func authHandler(h handler) httprouter.Handle {
+	return base(auth.Autologin(wrap(h), nil))
 }
 
 // cronHandler returns handler intended for cron jobs.
 func cronHandler(h handler) httprouter.Handle {
-	return gaemiddleware.BaseProd(gaemiddleware.RequireCron(wrap(h)))
+	return base(gaemiddleware.RequireCron(wrap(h)))
 }
 
 // taskQueueHandler returns handler intended for task queue calls.
 func taskQueueHandler(name string, h handler) httprouter.Handle {
-	return gaemiddleware.BaseProd(gaemiddleware.RequireTaskQueue(name, wrap(h)))
+	return base(gaemiddleware.RequireTaskQueue(name, wrap(h)))
 }
 
 //// Routes.
@@ -183,7 +209,7 @@ func init() {
 }
 
 func registerFrontendHandlers(router *httprouter.Router) {
-	router.GET("/", publicHandler(indexPage))
+	router.GET("/", authHandler(indexPage))
 	router.GET("/_ah/warmup", publicHandler(warmupHandler))
 }
 
@@ -197,7 +223,7 @@ func registerBackendHandlers(router *httprouter.Router) {
 //// Frontend handlers.
 
 func indexPage(rc *requestContext) {
-	fmt.Fprintf(rc.w, "Hi there!")
+	fmt.Fprintf(rc.w, "Hi there, %s!", auth.CurrentIdentity(rc))
 }
 
 func warmupHandler(rc *requestContext) {
