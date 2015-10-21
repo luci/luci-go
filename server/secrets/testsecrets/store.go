@@ -13,6 +13,7 @@ import (
 	"sync"
 
 	"github.com/luci/luci-go/server/secrets"
+	"golang.org/x/net/context"
 )
 
 // Store implements secrets.Store in the simplest way possible using memory as
@@ -67,4 +68,9 @@ func (t *Store) GetSecret(k secrets.Key) (secrets.Secret, error) {
 		},
 	}
 	return t.Secrets[k].Clone(), nil
+}
+
+// Use installs default testing store into the context.
+func Use(c context.Context) context.Context {
+	return secrets.Set(c, &Store{})
 }

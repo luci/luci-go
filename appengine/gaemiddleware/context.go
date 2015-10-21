@@ -11,6 +11,7 @@ import (
 	"github.com/luci/gae/impl/prod"
 	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/appengine/gaelogger"
+	"github.com/luci/luci-go/appengine/gaesecrets"
 	"github.com/luci/luci-go/appengine/gaesettings"
 	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/proccache"
@@ -19,7 +20,7 @@ import (
 
 var (
 	// globalProcessCache holds state cached between requests.
-	globalProcessCache = proccache.Cache{}
+	globalProcessCache = &proccache.Cache{}
 
 	// globalSettings holds global app settings lazily updated from the datastore.
 	globalSettings = settings.New(gaesettings.Storage{})
@@ -32,13 +33,15 @@ var (
 //   * github.com/luci/luci-go/appengine/gaeauth/client (appengine urlfetch transport)
 //   * github.com/luci/luci-go/server/proccache (in process memory cache)
 //   * github.com/luci/luci-go/server/settings (global app settings)
+//   * github.com/luci/luci-go/appengine/gaesecrets (access to secret keys in datastore)
 func BaseProd(h middleware.Handler) httprouter.Handle {
 	return func(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		c := prod.UseRequest(r)
 		c = gaelogger.Use(c)
 		c = client.UseAnonymousTransport(c)
-		c = proccache.Use(c, &globalProcessCache)
+		c = proccache.Use(c, globalProcessCache)
 		c = settings.Use(c, globalSettings)
+		c = gaesecrets.Use(c, nil)
 		h(c, rw, r, p)
 	}
 }
