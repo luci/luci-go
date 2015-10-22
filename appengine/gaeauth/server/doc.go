@@ -5,4 +5,7 @@
 // Package server implements authentication for inbound HTTP requests on GAE.
 // It provides adapters for GAE Users and OAuth2 APIs to make them usable by
 // server/auth package.
+//
+// It also provides GAE-specific implementation of some other interface used
+// by server/auth package, such as SessionStore.
 package server
