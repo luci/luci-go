@@ -1,0 +1,167 @@
+{
+ "kind": "discovery#restDescription",
+ "discoveryVersion": "v1",
+ "id": "dumb_counter:v1",
+ "name": "dumb_counter",
+ "version": "v1",
+ "description": "A hideously stupid persistant counter service.",
+ "root": "https://localhost:8080/_ah/api",
+ "defaultVersion": false,
+ "schemas": {
+  "AddReq": {
+   "id": "AddReq",
+   "type": "object",
+   "properties": {
+    "Delta": {
+     "format": "int64",
+     "type": "string"
+    },
+    "Name": {
+     "type": "string"
+    }
+   }
+  },
+  "AddRsp": {
+   "id": "AddRsp",
+   "type": "object",
+   "properties": {
+    "Cur": {
+     "format": "int64",
+     "type": "string"
+    },
+    "Prev": {
+     "format": "int64",
+     "type": "string"
+    }
+   }
+  },
+  "CASReq": {
+   "id": "CASReq",
+   "type": "object",
+   "properties": {
+    "Name": {
+     "type": "string"
+    },
+    "NewVal": {
+     "format": "int64",
+     "type": "string"
+    },
+    "OldVal": {
+     "format": "int64",
+     "type": "string"
+    }
+   }
+  },
+  "Counter": {
+   "id": "Counter",
+   "type": "object",
+   "properties": {
+    "Name": {
+     "type": "string"
+    },
+    "Val": {
+     "format": "int64",
+     "type": "string"
+    }
+   }
+  },
+  "CurrentValueRsp": {
+   "id": "CurrentValueRsp",
+   "type": "object",
+   "properties": {
+    "Val": {
+     "format": "int64",
+     "type": "string"
+    }
+   }
+  },
+  "ListRsp": {
+   "id": "ListRsp",
+   "type": "object",
+   "properties": {
+    "Counters": {
+     "type": "array",
+     "items": {
+      "$ref": "Counter"
+     }
+    }
+   }
+  }
+ },
+ "methods": {
+  "add": {
+   "id": "dumb_counter.add",
+   "path": "counter/{Name}",
+   "httpMethod": "POST",
+   "description": "Add an an amount to a particular counter",
+   "parameters": {
+    "Name": {
+     "type": "string",
+     "required": true,
+     "location": "path"
+    }
+   },
+   "parameterOrder": [
+    "Name"
+   ],
+   "request": {
+    "$ref": "AddReq",
+    "parameterName": "resource"
+   },
+   "response": {
+    "$ref": "AddRsp",
+    "parameterName": "resource"
+   }
+  },
+  "cas": {
+   "id": "dumb_counter.cas",
+   "path": "counter/{Name}/cas",
+   "httpMethod": "POST",
+   "description": "Compare and swap a counter value",
+   "parameters": {
+    "Name": {
+     "type": "string",
+     "required": true,
+     "location": "path"
+    }
+   },
+   "parameterOrder": [
+    "Name"
+   ],
+   "request": {
+    "$ref": "CASReq",
+    "parameterName": "resource"
+   }
+  },
+  "currentvalue": {
+   "id": "dumb_counter.currentvalue",
+   "path": "counter/{Name}",
+   "httpMethod": "GET",
+   "description": "Returns the current value held by the named counter",
+   "parameters": {
+    "Name": {
+     "type": "string",
+     "required": true,
+     "location": "path"
+    }
+   },
+   "parameterOrder": [
+    "Name"
+   ],
+   "response": {
+    "$ref": "CurrentValueRsp",
+    "parameterName": "resource"
+   }
+  },
+  "list": {
+   "id": "dumb_counter.list",
+   "path": "counter",
+   "httpMethod": "GET",
+   "description": "Returns all of the available counters",
+   "response": {
+    "$ref": "ListRsp",
+    "parameterName": "resource"
+   }
+  }
+ }
+}

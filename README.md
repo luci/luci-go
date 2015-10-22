@@ -26,6 +26,8 @@ Code layout
     These are inherently APIs.
   * [/server/...](https://github.com/luci/luci-go/tree/master/server) contains
     standalone server code. Its packages are reusable by `/appengine/...`.
+  * [/tools/...](https://github.com/luci/luci-go/tree/master/tools) contains
+    support tools used by other LUCI components.
 
 
 Versioning
