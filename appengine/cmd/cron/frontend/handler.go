@@ -14,6 +14,7 @@ package frontend
 
 import (
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -28,6 +29,8 @@ import (
 	"github.com/luci/gae/service/taskqueue"
 
 	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/identity"
+	"github.com/luci/luci-go/server/auth/openid"
 	"github.com/luci/luci-go/server/middleware"
 
 	"github.com/luci/luci-go/appengine/gaeauth/client"
@@ -61,6 +64,14 @@ var (
 
 	// HTTP server authentication config. Initialized in initializeGlobalState.
 	globalAuthenticator *auth.Authenticator
+
+	// OpenID authentication method. Its routes are added to http router in
+	// init(). See also initializeGlobalState where it is tweaked for dev server
+	// usage.
+	globalOpenIDAuth = &openid.AuthMethod{
+		SessionStore:        &server.SessionStore{Namespace: "openid"},
+		IncompatibleCookies: []string{"SACSID", "dev_appserver_login"},
+	}
 )
 
 //// Helpers.
@@ -108,17 +119,26 @@ var globalInit sync.Once
 // initializeGlobalState does one time initialization for stuff that needs
 // active GAE context.
 func initializeGlobalState(c context.Context) {
-	// Dev app server doesn't preserve the state of task queues across restarts,
-	// need to reset datastore state accordingly, otherwise everything gets stuck.
+	var method auth.Method
+
 	if info.Get(c).IsDevAppServer() {
+		// Dev app server doesn't preserve the state of task queues across restarts,
+		// need to reset datastore state accordingly, otherwise everything gets stuck.
 		if err := globalEngine.ResetAllJobsOnDevServer(c); err != nil {
 			logging.Errorf(c, "Failed to reset jobs: %s", err)
 		}
+		method = globalOpenIDAuth
+		globalOpenIDAuth.Insecure = true
+		// Replace above two lines with this ones to use dev server login.
+		// method = &server.CookieAuthMethod{}
+		// globalOpenIDAuth.Disabled = true
+	} else {
+		// Always use OpenID in prod.
+		method = globalOpenIDAuth
 	}
+
 	globalAuthenticator = &auth.Authenticator{
-		Methods: []auth.Method{
-			server.CookieAuthMethod{},
-		},
+		Methods: []auth.Method{method},
 	}
 }
 
@@ -144,14 +164,12 @@ func getConfigImpl(c context.Context) (config.Interface, error) {
 // context initialization code.
 func wrap(h handler) middleware.Handler {
 	return func(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		rc := &requestContext{c, w, r, p}
-		globalInit.Do(func() { initializeGlobalState(rc) })
-		h(rc)
+		h(&requestContext{c, w, r, p})
 	}
 }
 
 // base starts middleware chain. It initializes prod context and sets up
-// authentication.
+// authentication config.
 func base(h middleware.Handler) httprouter.Handle {
 	wrapper := func(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		globalInit.Do(func() { initializeGlobalState(c) })
@@ -167,10 +185,10 @@ func publicHandler(h handler) httprouter.Handle {
 	return base(wrap(h))
 }
 
-// authHandler returns handler that perform authentication and redirect user to
-// login if necessary.
+// authHandler returns handler that perform authentication, but does not force
+// login.
 func authHandler(h handler) httprouter.Handle {
-	return base(auth.Autologin(wrap(h), nil))
+	return base(auth.Authenticate(wrap(h), nil))
 }
 
 // cronHandler returns handler intended for cron jobs.
@@ -209,6 +227,8 @@ func init() {
 }
 
 func registerFrontendHandlers(router *httprouter.Router) {
+	globalOpenIDAuth.InstallHandlers(router, base)
+
 	router.GET("/", authHandler(indexPage))
 	router.GET("/_ah/warmup", publicHandler(warmupHandler))
 }
@@ -223,11 +243,45 @@ func registerBackendHandlers(router *httprouter.Router) {
 //// Frontend handlers.
 
 func indexPage(rc *requestContext) {
-	fmt.Fprintf(rc.w, "Hi there, %s!", auth.CurrentIdentity(rc))
+	// TODO(vadimsh): Improve the way we use templates. Add caching, default
+	// environment, etc.
+	tmpl, err := template.ParseFiles("templates/index.html")
+	if err != nil {
+		rc.fail(500, "Failed to parse template - %s", err)
+		return
+	}
+	loginURL, err := auth.LoginURL(rc, "/")
+	if err != nil {
+		rc.fail(500, "Failed to generate login URL - %s", err)
+		return
+	}
+	logoutURL, err := auth.LogoutURL(rc, "/")
+	if err != nil {
+		rc.fail(500, "Failed to generate logout URL - %s", err)
+		return
+	}
+	tc := map[string]interface{}{
+		"HasUser":   auth.CurrentIdentity(rc).Kind() != identity.Anonymous,
+		"User":      auth.CurrentUser(rc),
+		"LoginURL":  loginURL,
+		"LogoutURL": logoutURL,
+	}
+	if err := tmpl.Execute(rc.w, tc); err != nil {
+		rc.fail(500, "Failed to execute template - %s", err)
+	}
 }
 
 func warmupHandler(rc *requestContext) {
-	fetchAppSettings(rc)
+	if _, err := fetchAppSettings(rc); err != nil {
+		rc.fail(500, "Failed to load app settings: %s", err)
+		return
+	}
+	if !globalOpenIDAuth.Disabled {
+		if err := globalOpenIDAuth.Warmup(rc); err != nil {
+			rc.fail(500, "Failed to warmup OpenID: %s", err)
+			return
+		}
+	}
 	rc.ok()
 }
 
