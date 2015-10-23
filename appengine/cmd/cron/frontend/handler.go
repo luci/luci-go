@@ -138,7 +138,10 @@ func initializeGlobalState(c context.Context) {
 	}
 
 	globalAuthenticator = &auth.Authenticator{
-		Methods: []auth.Method{method},
+		Methods: []auth.Method{
+			&server.OAuth2Method{},
+			method,
+		},
 	}
 }
 

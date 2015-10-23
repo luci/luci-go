@@ -66,6 +66,11 @@ type User struct {
 
 	// Picture is URL of the user avatar. Optional, default "".
 	Picture string
+
+	// ClientID is the ID of the pre-registered OAuth2 client so its identity can
+	// be verified. Used only by authentication methods based on OAuth2.
+	// See https://developers.google.com/console/help/#generatingoauth2 for more.
+	ClientID string
 }
 
 // Authenticator perform authentication of incoming requests. It is stateful
