@@ -119,7 +119,7 @@ var globalInit sync.Once
 // initializeGlobalState does one time initialization for stuff that needs
 // active GAE context.
 func initializeGlobalState(c context.Context) {
-	var method auth.Method
+	var cookieMethod auth.Method
 
 	if info.Get(c).IsDevAppServer() {
 		// Dev app server doesn't preserve the state of task queues across restarts,
@@ -127,20 +127,19 @@ func initializeGlobalState(c context.Context) {
 		if err := globalEngine.ResetAllJobsOnDevServer(c); err != nil {
 			logging.Errorf(c, "Failed to reset jobs: %s", err)
 		}
-		method = globalOpenIDAuth
-		globalOpenIDAuth.Insecure = true
-		// Replace above two lines with this ones to use dev server login.
-		// method = &server.CookieAuthMethod{}
-		// globalOpenIDAuth.Disabled = true
+		// Use dev server login instead of OpenID. It simpler to use on dev server.
+		cookieMethod = &server.CookieAuthMethod{}
+		globalOpenIDAuth.Disabled = true
 	} else {
-		// Always use OpenID in prod.
-		method = globalOpenIDAuth
+		// Use OpenID in prod.
+		cookieMethod = globalOpenIDAuth
 	}
 
 	globalAuthenticator = &auth.Authenticator{
 		Methods: []auth.Method{
 			&server.OAuth2Method{},
-			method,
+			cookieMethod,
+			&server.InboundAppIDAuthMethod{},
 		},
 	}
 }
