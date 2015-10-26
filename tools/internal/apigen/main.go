@@ -81,6 +81,7 @@ type Application struct {
 	genPath        string
 	apiPackage     string
 	apiSubproject  string
+	apiWhitelist   apiWhitelist
 	baseURL        string
 
 	license string
@@ -100,6 +101,9 @@ func (a *Application) AddToFlagSet(fs *flag.FlagSet) {
 		"Name of the root API package on GOPATH.")
 	flag.StringVar(&a.apiSubproject, "api-subproject", "",
 		"If supplied, place APIs in an additional subdirectory under -api-package.")
+	flag.Var(&a.apiWhitelist, "api",
+		"If supplied, limit the emitted APIs to those named. Can be specified "+
+			"multiple times.")
 	flag.StringVar(&a.baseURL, "base-url", "http://localhost:8080/_ah/api",
 		"Use this as the default base service client URL.")
 }
@@ -250,6 +254,11 @@ func (a Application) Run(c context.Context) error {
 					"api":   item.ID,
 				})
 
+				if !a.isWhitelisted(item.ID) {
+					log.Infof(c, "API is not whitelisted; skipping.")
+					continue
+				}
+
 				taskC <- func() error {
 					return a.generateAPI(c, item, &discoveryURL, apiDst)
 				}
@@ -335,4 +344,16 @@ func (a *Application) generateAPI(c context.Context, item *directoryItem, discov
 		return fmt.Errorf("failed to install [%s]: %s", item.ID, err)
 	}
 	return nil
+}
+
+func (a *Application) isWhitelisted(id string) bool {
+	if len(a.apiWhitelist) == 0 {
+		return true
+	}
+	for _, w := range a.apiWhitelist {
+		if w == id {
+			return true
+		}
+	}
+	return false
 }

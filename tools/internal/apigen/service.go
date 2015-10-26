@@ -110,6 +110,9 @@ func (sc *serviceConfig) loadService(c context.Context) (service, error) {
 			}, nil
 		}
 		return &devAppserverService{
+			prerun: func(c context.Context) error {
+				return checkBuild(c, path)
+			},
 			args: []string{"goapp", "serve", yamlPath},
 		}, nil
 
@@ -124,10 +127,17 @@ func (sc *serviceConfig) loadService(c context.Context) (service, error) {
 }
 
 type devAppserverService struct {
-	args []string
+	prerun func(context.Context) error
+	args   []string
 }
 
 func (s *devAppserverService) run(c context.Context, f serviceRunFunc) error {
+	if s.prerun != nil {
+		if err := s.prerun(c); err != nil {
+			return err
+		}
+	}
+
 	log.Fields{
 		"args": s.args,
 	}.Infof(c, "Executing service.")
@@ -210,6 +220,7 @@ func (s *discoveryTranslateService) run(c context.Context, f serviceRunFunc) err
 	if err != nil {
 		return fmt.Errorf("endpoints service did not come online: %s", err)
 	}
+	log.Debugf(c, "Got backend API configs:\n%s", string(data))
 
 	// Translate the configs into APIs.
 	h, err := translateAPIs(data)
@@ -269,4 +280,27 @@ func serveJSON(c context.Context, d interface{}) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 		w.Write(data)
 	}
+}
+
+func checkBuild(c context.Context, dir string) error {
+	d, err := ioutil.TempDir(dir, "apigen_service")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(d)
+
+	cmd := exec.Command("go", "build", "-o", filepath.Join(d, "service"), ".")
+	cmd.Dir = dir
+	log.Fields{
+		"args": cmd.Args,
+		"wd":   cmd.Dir,
+	}.Debugf(c, "Executing `go build` command.")
+	if out, err := cmd.CombinedOutput(); err != nil {
+		log.Fields{
+			log.ErrorKey: err,
+			"wd":         cmd.Dir,
+		}.Errorf(c, "Failed to build package:\n%s", string(out))
+		return fmt.Errorf("failed to build package: %s", err)
+	}
+	return nil
 }

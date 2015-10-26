@@ -107,6 +107,7 @@ type singleAPI struct {
 	Methods map[string]struct {
 		Description string           `json:"description"`
 		HTTPMethod  string           `json:"httpMethod"`
+		Scopes      []string         `json:"scopes"`
 		Path        string           `json:"path"`
 		Request     *singleAPIMethod `json:"request"`
 		Response    *singleAPIMethod `json:"response"`
@@ -118,14 +119,16 @@ type singleAPISchema struct {
 	ID         string `json:"id"`
 	Type       string `json:"type"`
 	Properties map[string]struct {
-		Format string              `json:"format,omitempty"`
 		Type   string              `json:"type,omitempty"`
+		Format string              `json:"format,omitempty"`
+		Ref    string              `json:"$ref,omitempty"`
 		Items  *singleAPIMethodRef `json:"items,omitempty"`
 	} `json:"properties"`
 }
 
 type singleAPIMethodRef struct {
-	Ref string `json:"$ref"`
+	Ref  string `json:"$ref,omitempty"`
+	Type string `json:"type,omitempty"`
 }
 
 type singleAPIMethod struct {
@@ -175,7 +178,6 @@ func (a *singleAPI) restDescription() (*restDescription, error) {
 
 	for name, schema := range a.Descriptor.Schemas {
 		schema := *schema
-		schema.Type = "object"
 		rdesc.Schemas[name] = &schema
 	}
 
@@ -184,6 +186,7 @@ func (a *singleAPI) restDescription() (*restDescription, error) {
 			ID:          id,
 			Path:        desc.Path,
 			HTTPMethod:  desc.HTTPMethod,
+			Scopes:      desc.Scopes,
 			Description: desc.Description,
 			Parameters:  map[string]*restMethodParameter{},
 
@@ -210,11 +213,16 @@ func (a *singleAPI) restDescription() (*restDescription, error) {
 
 func (m *restMethod) buildMethodParamRef(desc *singleAPIMethod, ref *singleAPIMethodRef) (*restMethodParameterRef, error) {
 	for name, param := range desc.Parameters {
-		m.Parameters[name] = &restMethodParameter{
+		rmp := restMethodParameter{
 			Type:     param.Type,
-			Required: true, // All path parameters are required.
-			Location: "path",
+			Required: param.Required, // All path parameters are required.
 		}
+		if m.HTTPMethod == "GET" {
+			rmp.Location = "query"
+		} else {
+			rmp.Location = "path"
+		}
+		m.Parameters[name] = &rmp
 	}
 
 	if desc.Body == "empty" {
@@ -243,9 +251,9 @@ func parseParameterOrderFromPath(path string) []string {
 // This is the first-level directory structure, which exports a series of API
 // items.
 type directoryList struct {
-	Kind             string           `json:"kind"`
-	DiscoveryVersion string           `json:"discoveryVersion"`
-	Items            []*directoryItem `json:"items"`
+	Kind             string           `json:"kind,omitempty"`
+	DiscoveryVersion string           `json:"discoveryVersion,omitempty"`
+	Items            []*directoryItem `json:"items,omitempty"`
 }
 
 // directoryItem is a single API's directoryList entry.
@@ -256,16 +264,16 @@ type directoryList struct {
 // The directoryItem exports a REST API (restDescription) at its relative
 // DiscoveryLink.
 type directoryItem struct {
-	Kind             string `json:"kind"`
-	ID               string `json:"id"`
-	Name             string `json:"name"`
-	Version          string `json:"version"`
-	Title            string `json:"title"`
-	Description      string `json:"description"`
-	DiscoveryRestURL string `json:"discoveryRestUrl"`
-	DiscoveryLink    string `json:"discoveryLink"`
-	RootURL          string `json:"rootUrl"`
-	Preferred        bool   `json:"preferred"`
+	Kind             string `json:"kind,omitempty"`
+	ID               string `json:"id,omitempty"`
+	Name             string `json:"name,omitempty"`
+	Version          string `json:"version,omitempty"`
+	Title            string `json:"title,omitempty"`
+	Description      string `json:"description,omitempty"`
+	DiscoveryRestURL string `json:"discoveryRestUrl,omitempty"`
+	DiscoveryLink    string `json:"discoveryLink,omitempty"`
+	RootURL          string `json:"rootUrl,omitempty"`
+	Preferred        bool   `json:"preferred,omitempty"`
 
 	rdesc *restDescription
 }
@@ -273,43 +281,44 @@ type directoryItem struct {
 // restDescription is a hosted JSON at a rest endpoint. It is translated from a
 // singleAPI into a form served by the frontend.
 type restDescription struct {
-	Kind             string `json:"kind"`
-	DiscoveryVersion string `json:"discoveryVersion"`
+	Kind             string `json:"kind,omitempty"`
+	DiscoveryVersion string `json:"discoveryVersion,omitempty"`
 
-	ID             string `json:"id"`
-	Name           string `json:"name"`
-	Version        string `json:"version"`
-	Description    string `json:"description"`
-	Root           string `json:"root"`
-	DefaultVersion bool   `json:"defaultVersion"`
+	ID             string `json:"id,omitempty"`
+	Name           string `json:"name,omitempty"`
+	Version        string `json:"version,omitempty"`
+	Description    string `json:"description,omitempty"`
+	Root           string `json:"root,omitempty"`
+	DefaultVersion bool   `json:"defaultVersion,omitempty"`
 
-	Schemas map[string]*singleAPISchema `json:"schemas"`
-	Methods map[string]*restMethod      `json:"methods"`
+	Schemas map[string]*singleAPISchema `json:"schemas,omitempty"`
+	Methods map[string]*restMethod      `json:"methods,omitempty"`
 }
 
 type restMethod struct {
-	ID             string                          `json:"id"`
-	Path           string                          `json:"path"`
-	HTTPMethod     string                          `json:"httpMethod"`
-	Description    string                          `json:"description"`
+	ID             string                          `json:"id,omitempty"`
+	Path           string                          `json:"path,omitempty"`
+	HTTPMethod     string                          `json:"httpMethod,omitempty"`
+	Description    string                          `json:"description,omitempty"`
 	Parameters     map[string]*restMethodParameter `json:"parameters,omitempty"`
 	ParameterOrder []string                        `json:"parameterOrder,omitempty"`
 	Request        *restMethodParameterRef         `json:"request,omitempty"`
 	Response       *restMethodParameterRef         `json:"response,omitempty"`
+	Scopes         []string                        `json:"scopes,omitempty"`
 
 	// a is the source API for this method.
 	a *singleAPI
 }
 
 type restMethodParameter struct {
-	Type     string `json:"type"`
-	Required bool   `json:"required"`
-	Location string `json:"location"`
+	Type     string `json:"type,omitempty"`
+	Location string `json:"location,omitempty"`
+	Required bool   `json:"required,omitempty"`
 }
 
 type restMethodParameterRef struct {
-	Ref           string `json:"$ref"`
-	ParameterName string `json:"parameterName"`
+	Ref           string `json:"$ref,omitempty"`
+	ParameterName string `json:"parameterName,omitempty"`
 }
 
 // relativeLink returns the URL path of an item's DiscoveryLink.
