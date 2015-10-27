@@ -5,7 +5,7 @@
   </head>
   <body>
     {{if .HasUser}}
-      <p>Hi there, {{.User.Name}}!</p>
+      <p>Hi there, {{.User.Email}}!</p>
       {{if .User.Picture}}
         <p>Here's your picture: <img src="{{.User.Picture}}"></p>
       {{end}}

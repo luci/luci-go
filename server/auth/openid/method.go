@@ -58,14 +58,15 @@ type AuthMethod struct {
 	IncompatibleCookies []string
 }
 
-// InstallHandlers installs http handlers used in OpenID protocol.
+// InstallHandlers installs http handlers used in OpenID protocol. Part of
+// auth.HandlersInstaller interface.
 func (m *AuthMethod) InstallHandlers(r *httprouter.Router, base middleware.Base) {
 	r.GET(loginURL, base(m.loginHandler))
 	r.GET(logoutURL, base(m.logoutHandler))
 	r.GET(callbackURL, base(m.callbackHandler))
 }
 
-// Warmup prepares local caches. It's optional.
+// Warmup prepares local caches. It's optional. Part of auth.Warmable interface.
 func (m *AuthMethod) Warmup(c context.Context) error {
 	cfg, err := FetchSettings(c)
 	if err != nil {

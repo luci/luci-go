@@ -9,10 +9,12 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/server/auth/identity"
+	"github.com/luci/luci-go/server/middleware"
 )
 
 var (
@@ -22,8 +24,10 @@ var (
 )
 
 // Method implements particular kind of low level authentication mechanism for
-// incoming requests. It may also optionally implement UsersAPI if the method
-// support login and logout URLs. Use type sniffing to figure out.
+// incoming requests. It may also optionally implement UsersAPI (if the method
+// support login and logout URLs), HandlersInstaller (it the method needs
+// some HTTP handlers to be exposed) and Warmable (if the method support Warmup
+// method). Use type sniffing to figure out.
 type Method interface {
 	// Authenticate extracts user information from the incoming request.
 	// It returns:
@@ -43,6 +47,22 @@ type UsersAPI interface {
 	// LogoutURL returns a URL that, when visited, signs the user out,
 	// then redirects the user to the URL specified by dest.
 	LogoutURL(c context.Context, dest string) (string, error)
+}
+
+// HandlersInstaller may be additionally implemented by Method if it needs some
+// HTTP handlers to be exposed.
+type HandlersInstaller interface {
+	// InstallHandlers installs HTTP handlers require by the auth method. They
+	// use middleware chain specified by `base`.
+	InstallHandlers(r *httprouter.Router, base middleware.Base)
+}
+
+// Warmable may be additionally implemented by Method if it has some local
+// caches that should be warmed up. Warmup is performed on best effort basis and
+// not guaranteed to happen or finish before Method is used.
+type Warmable interface {
+	// Warmup prepares local caches.
+	Warmup(c context.Context) error
 }
 
 // User represents identity and profile of a user.
@@ -77,9 +97,36 @@ type User struct {
 // object (holds in-memory caches), so declare it only once and then reuse
 // across many requests.
 type Authenticator struct {
-	// Methods is a list of authentication methods to try. Will be checked
-	// sequentially until a first hit.
-	Methods []Method
+	// methods is a list of authentication methods to try.
+	methods []Method
+}
+
+// NewAuthenticator returns new instance of Authenticator configured to use
+// given list of methods. Methods will be checked sequentially when
+// authenticating a request until a first hit.
+func NewAuthenticator(methods []Method) *Authenticator {
+	return &Authenticator{methods}
+}
+
+// InstallHandlers installs HTTP handlers require by auth methods. They
+// use middleware chain specified by `base`.
+func (a *Authenticator) InstallHandlers(r *httprouter.Router, base middleware.Base) {
+	for _, m := range a.methods {
+		if i, ok := m.(HandlersInstaller); ok {
+			i.InstallHandlers(r, base)
+		}
+	}
+}
+
+// Warmup prepares local caches. It is optional
+func (a *Authenticator) Warmup(c context.Context) error {
+	me := errors.NewLazyMultiError(len(a.methods))
+	for i, m := range a.methods {
+		if w, ok := m.(Warmable); ok {
+			me.Assign(i, w.Warmup(c))
+		}
+	}
+	return me.Get()
 }
 
 // Authenticate authenticates incoming requests and returns new context.Context
@@ -90,7 +137,7 @@ type Authenticator struct {
 func (a *Authenticator) Authenticate(c context.Context, r *http.Request) (context.Context, error) {
 	// Pick first authentication method that applies.
 	var s state
-	for _, m := range a.Methods {
+	for _, m := range a.methods {
 		var err error
 		s.user, err = m.Authenticate(c, r)
 		if err != nil {
@@ -126,7 +173,7 @@ func (a *Authenticator) Authenticate(c context.Context, r *http.Request) (contex
 // usersAPI returns implementation of UsersAPI by examining Methods. Returns nil
 // if none of Methods implement UsersAPI.
 func (a *Authenticator) usersAPI() UsersAPI {
-	for _, m := range a.Methods {
+	for _, m := range a.methods {
 		if api, ok := m.(UsersAPI); ok {
 			return api
 		}

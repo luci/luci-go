@@ -31,7 +31,7 @@ func TestContext(t *testing.T) {
 		So(err, ShouldEqual, ErrNoUsersAPI)
 
 		// Authenticator without UsersAPI.
-		c = SetAuthenticator(c, &Authenticator{})
+		c = SetAuthenticator(c, NewAuthenticator(nil))
 
 		So(GetAuthenticator(c), ShouldNotBeNil)
 		_, err = LoginURL(c, "dest")
@@ -97,7 +97,7 @@ func TestAuthenticate(t *testing.T) {
 	})
 
 	Convey("Anonymous works", t, func() {
-		rr := call(context.Background(), Authenticate(handler, &Authenticator{}))
+		rr := call(context.Background(), Authenticate(handler, NewAuthenticator(nil)))
 		So(rr.Code, ShouldEqual, 200)
 		So(rr.Body.String(), ShouldEqual, "anonymous:anonymous")
 	})
@@ -153,7 +153,7 @@ func TestAutologin(t *testing.T) {
 	})
 
 	Convey("Anonymous is rejected if no UsersAPI", t, func() {
-		rr := call(context.Background(), Autologin(handler, &Authenticator{}))
+		rr := call(context.Background(), Autologin(handler, NewAuthenticator(nil)))
 		So(rr.Code, ShouldEqual, 401)
 		So(rr.Body.String(), ShouldEqual, "Authentication error - auth: methods do not support login or logout URL\n")
 	})
@@ -176,9 +176,7 @@ func TestAutologin(t *testing.T) {
 }
 
 func makeAuthenticator(m fakeMethod) *Authenticator {
-	return &Authenticator{
-		Methods: []Method{&m},
-	}
+	return NewAuthenticator([]Method{&m})
 }
 
 type fakeMethod struct {

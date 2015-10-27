@@ -14,7 +14,6 @@ package frontend
 
 import (
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -29,8 +28,6 @@ import (
 	"github.com/luci/gae/service/taskqueue"
 
 	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/identity"
-	"github.com/luci/luci-go/server/auth/openid"
 	"github.com/luci/luci-go/server/middleware"
 
 	"github.com/luci/luci-go/appengine/gaeauth/client"
@@ -53,6 +50,8 @@ import (
 //// Global state. See init().
 
 var (
+	globalAuthenticator = server.NewAuthenticator()
+
 	globalCatalog catalog.Catalog
 	globalEngine  engine.Engine
 
@@ -60,17 +59,6 @@ var (
 	managers = []task.Manager{
 		&noop.TaskManager{},
 		&urlfetch.TaskManager{},
-	}
-
-	// HTTP server authentication config. Initialized in initializeGlobalState.
-	globalAuthenticator *auth.Authenticator
-
-	// OpenID authentication method. Its routes are added to http router in
-	// init(). See also initializeGlobalState where it is tweaked for dev server
-	// usage.
-	globalOpenIDAuth = &openid.AuthMethod{
-		SessionStore:        &server.SessionStore{Namespace: "openid"},
-		IncompatibleCookies: []string{"SACSID", "dev_appserver_login"},
 	}
 )
 
@@ -119,28 +107,12 @@ var globalInit sync.Once
 // initializeGlobalState does one time initialization for stuff that needs
 // active GAE context.
 func initializeGlobalState(c context.Context) {
-	var cookieMethod auth.Method
-
 	if info.Get(c).IsDevAppServer() {
 		// Dev app server doesn't preserve the state of task queues across restarts,
 		// need to reset datastore state accordingly, otherwise everything gets stuck.
 		if err := globalEngine.ResetAllJobsOnDevServer(c); err != nil {
 			logging.Errorf(c, "Failed to reset jobs: %s", err)
 		}
-		// Use dev server login instead of OpenID. It simpler to use on dev server.
-		cookieMethod = &server.CookieAuthMethod{}
-		globalOpenIDAuth.Disabled = true
-	} else {
-		// Use OpenID in prod.
-		cookieMethod = globalOpenIDAuth
-	}
-
-	globalAuthenticator = &auth.Authenticator{
-		Methods: []auth.Method{
-			&server.OAuth2Method{},
-			cookieMethod,
-			&server.InboundAppIDAuthMethod{},
-		},
 	}
 }
 
@@ -229,7 +201,7 @@ func init() {
 }
 
 func registerFrontendHandlers(router *httprouter.Router) {
-	globalOpenIDAuth.InstallHandlers(router, base)
+	globalAuthenticator.InstallHandlers(router, base)
 
 	router.GET("/", authHandler(indexPage))
 	router.GET("/_ah/warmup", publicHandler(warmupHandler))
@@ -245,32 +217,7 @@ func registerBackendHandlers(router *httprouter.Router) {
 //// Frontend handlers.
 
 func indexPage(rc *requestContext) {
-	// TODO(vadimsh): Improve the way we use templates. Add caching, default
-	// environment, etc.
-	tmpl, err := template.ParseFiles("templates/index.html")
-	if err != nil {
-		rc.fail(500, "Failed to parse template - %s", err)
-		return
-	}
-	loginURL, err := auth.LoginURL(rc, "/")
-	if err != nil {
-		rc.fail(500, "Failed to generate login URL - %s", err)
-		return
-	}
-	logoutURL, err := auth.LogoutURL(rc, "/")
-	if err != nil {
-		rc.fail(500, "Failed to generate logout URL - %s", err)
-		return
-	}
-	tc := map[string]interface{}{
-		"HasUser":   auth.CurrentIdentity(rc).Kind() != identity.Anonymous,
-		"User":      auth.CurrentUser(rc),
-		"LoginURL":  loginURL,
-		"LogoutURL": logoutURL,
-	}
-	if err := tmpl.Execute(rc.w, tc); err != nil {
-		rc.fail(500, "Failed to execute template - %s", err)
-	}
+	fmt.Fprintf(rc.w, "Hi there, %s!", auth.CurrentIdentity(rc))
 }
 
 func warmupHandler(rc *requestContext) {
@@ -278,11 +225,9 @@ func warmupHandler(rc *requestContext) {
 		rc.fail(500, "Failed to load app settings: %s", err)
 		return
 	}
-	if !globalOpenIDAuth.Disabled {
-		if err := globalOpenIDAuth.Warmup(rc); err != nil {
-			rc.fail(500, "Failed to warmup OpenID: %s", err)
-			return
-		}
+	if err := globalAuthenticator.Warmup(rc); err != nil {
+		rc.fail(500, "Failed to warmup OpenID: %s", err)
+		return
 	}
 	rc.ok()
 }
