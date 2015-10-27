@@ -55,9 +55,7 @@ func TestShardCalculation(t *testing.T) {
 		Convey("expandedShardsPerShard returns crossed ranges on shard reduction", func() {
 			low, high := expandedShardBounds(ctx, 256)
 			So(low, ShouldBeGreaterThan, high)
-			So(l.Messages(), ShouldResemble, []memlogger.LogEntry{
-				{Level: logging.Warning, Msg: "Invalid shard: 256"},
-			})
+			So(l, memlogger.ShouldHaveLog, logging.Warning, "Invalid shard: 256")
 		})
 	})
 }

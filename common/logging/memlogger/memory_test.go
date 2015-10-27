@@ -5,6 +5,7 @@
 package memlogger
 
 import (
+	"sync"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -26,13 +27,11 @@ func TestLogger(t *testing.T) {
 		l.Errorf("test WAT: %s", logging.Level(9001))
 		ml := l.(*MemLogger)
 
-		msgs := ml.Messages()
-		So(len(msgs), ShouldEqual, 5)
-		So(msgs[0], ShouldResemble, LogEntry{logging.Debug, "test debug", nil})
-		So(msgs[1], ShouldResemble, LogEntry{logging.Info, "test info", nil})
-		So(msgs[2], ShouldResemble, LogEntry{logging.Warning, "test warning", nil})
-		So(msgs[3], ShouldResemble, LogEntry{logging.Error, "test error", nil})
-		So(msgs[4], ShouldResemble, LogEntry{logging.Error, "test WAT: unknown", nil})
+		So(ml, ShouldHaveLog, logging.Debug, "test debug")
+		So(ml, ShouldHaveLog, logging.Info, "test info")
+		So(ml, ShouldHaveLog, logging.Warning, "test warning")
+		So(ml, ShouldHaveLog, logging.Error, "test error")
+		So(ml, ShouldHaveLog, logging.Error, "test WAT: unknown")
 	})
 
 	Convey("logger context", t, func() {
@@ -43,8 +42,8 @@ func TestLogger(t *testing.T) {
 
 		l.Infof("totally works: %s", "yes")
 
-		So(ml.Has(logging.Info, "totally works: yes", nil), ShouldBeTrue)
-		So(ml.Has(logging.Warning, "totally works: yes", nil), ShouldBeFalse)
+		So(ml, ShouldHaveLog, logging.Info, "totally works: yes")
+		So(ml, ShouldNotHaveLog, logging.Warning, "totally works: yes")
 	})
 
 	Convey("field data", t, func() {
@@ -75,5 +74,95 @@ func TestLogger(t *testing.T) {
 
 		l.Infof("shweeet")
 		So(len(l.Messages()), ShouldEqual, 1)
+	})
+}
+
+func TestLoggerAssertion(t *testing.T) {
+	t.Parallel()
+
+	Convey("ShouldHaveLog", t, func() {
+		Convey("basic", func() {
+			m := &MemLogger{
+				lock: &sync.Mutex{},
+				data: &[]LogEntry{
+					{
+						Level:     logging.Error,
+						Msg:       "HI THAR",
+						Data:      map[string]interface{}{"hi": 3},
+						CallDepth: 47,
+					},
+				},
+			}
+
+			So(ShouldHaveLog(m, logging.Error, "HI THAR", map[string]interface{}{"hi": 3}), ShouldEqual, "")
+		})
+
+		Convey("level and message", func() {
+			m := &MemLogger{
+				lock: &sync.Mutex{},
+				data: &[]LogEntry{
+					{
+						Level: logging.Error,
+						Msg:   "HI THAR",
+						Data:  nil,
+					},
+				},
+			}
+
+			So(ShouldHaveLog(m, logging.Error, "HI THAR"), ShouldEqual, "")
+		})
+
+		Convey("level only", func() {
+			m := &MemLogger{
+				lock: &sync.Mutex{},
+				data: &[]LogEntry{
+					{
+						Level:     logging.Error,
+						Msg:       "HI THAR",
+						Data:      nil,
+						CallDepth: 47,
+					},
+				},
+			}
+
+			So(ShouldHaveLog(m, logging.Error), ShouldNotEqual, "")
+		})
+
+		Convey("bad logger", func() {
+			So(ShouldHaveLog(nil), ShouldNotEqual, "")
+		})
+
+		Convey("bad level", func() {
+			m := &MemLogger{}
+
+			So(ShouldHaveLog(m, "BOO"), ShouldNotEqual, "")
+		})
+
+		Convey("bad message", func() {
+			m := &MemLogger{}
+
+			So(ShouldHaveLog(m, logging.Error, 48), ShouldNotEqual, "")
+		})
+
+		Convey("bad depth", func() {
+			m := &MemLogger{}
+
+			So(ShouldHaveLog(m, logging.Error, "HI THAR", "NO BAD"), ShouldNotEqual, "")
+		})
+
+		Convey("not found", func() {
+			m := &MemLogger{
+				lock: &sync.Mutex{},
+				data: &[]LogEntry{},
+			}
+
+			So(ShouldHaveLog(m, logging.Error, "BYE THAR", 47), ShouldNotEqual, "")
+		})
+
+		Convey("need at least one argument", func() {
+			m := &MemLogger{}
+
+			So(ShouldHaveLog(m), ShouldNotEqual, "")
+		})
 	})
 }

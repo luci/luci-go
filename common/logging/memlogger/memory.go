@@ -17,9 +17,10 @@ import (
 // LogEntry is a single entry in a MemLogger, containing a message and a
 // severity.
 type LogEntry struct {
-	Level logging.Level
-	Msg   string
-	Data  map[string]interface{}
+	Level     logging.Level
+	Msg       string
+	Data      map[string]interface{}
+	CallDepth int
 }
 
 // MemLogger is an implementation of Logger.
@@ -55,7 +56,7 @@ func (m *MemLogger) Errorf(format string, args ...interface{}) {
 func (m *MemLogger) LogCall(lvl logging.Level, calldepth int, format string, args []interface{}) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	*m.data = append(*m.data, LogEntry{lvl, fmt.Sprintf(format, args...), m.fields})
+	*m.data = append(*m.data, LogEntry{lvl, fmt.Sprintf(format, args...), m.fields, calldepth + 1})
 }
 
 // Messages returns all of the log messages that this memory logger has
@@ -75,17 +76,25 @@ func (m *MemLogger) Reset() {
 	*m.data = []LogEntry{}
 }
 
-// Has returns true iff the MemLogger contains the specified log message. Note
-// that lvl, msg and data have to match the entry precisely.
-func (m *MemLogger) Has(lvl logging.Level, msg string, data map[string]interface{}) bool {
+// Get returns the log entry iff the MemLogger contains the specified log message.
+// Note that lvl, msg and data have to match the entry precisely.
+func (m *MemLogger) Get(lvl logging.Level, msg string, data map[string]interface{}) *LogEntry {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	for _, ent := range *m.data {
-		if ent.Level == lvl && ent.Msg == msg && reflect.DeepEqual(ent.Data, data) {
-			return true
+		if ent.Level == lvl && ent.Msg == msg && reflect.DeepEqual(data, ent.Data) {
+			clone := ent
+			return &clone
 		}
 	}
-	return false
+
+	return nil
+}
+
+// Has returns true iff the MemLogger contains the specified log message. Note
+// that lvl, msg and data have to match the entry precisely.
+func (m *MemLogger) Has(lvl logging.Level, msg string, data map[string]interface{}) bool {
+	return m.Get(lvl, msg, data) != nil
 }
 
 // Use adds a memory backed Logger to Context, with concrete type
