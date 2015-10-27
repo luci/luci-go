@@ -5,10 +5,14 @@
 package protocol
 
 import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 import google_protobuf "github.com/luci/luci-go/common/proto/google"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
+var _ = fmt.Errorf
+var _ = math.Inf
 
 //
 // This enumerates the possible contents of published Butler data.

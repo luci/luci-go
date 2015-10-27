@@ -44,34 +44,13 @@ message LogStreamDescriptor {
   StreamType stream_type = 3;
 
   /*
-   * Additional information about the source data for a text log stream.
-   *
-   * Required if `stream_type` is `TEXT`.
-   */
-  message TextSource {
-    enum Newline {
-      NATIVE = 0;
-      LF = 1;
-      CRLF = 2;
-    }
-    Newline newline = 1;
-
-    /* The source stream encoding. */
-    enum Encoding {
-      UTF8 = 0;
-    }
-    Encoding encoding = 2;
-  }
-  TextSource text_source = 4;
-
-  /*
    * The stream's content type (required).
    *
    * This must be an HTTP Content-Type value. It is made available to LogDog
    * clients when querying stream metadata. It will also be applied to archived
    * binary log data.
    */
-  string content_type = 5;
+  string content_type = 4;
 
   /*
    * The log stream's base timestamp (required).
@@ -79,7 +58,7 @@ message LogStreamDescriptor {
    * This notes the start time of the log stream. All LogEntries express their
    * timestamp as microsecond offsets from this field.
    */
-  google.protobuf.Timestamp timestamp = 6;
+  google.protobuf.Timestamp timestamp = 5;
 
   /*
    * Tag is an arbitrary key/value tag associated with this log stream.
@@ -93,32 +72,59 @@ message LogStreamDescriptor {
     string value = 2;
   }
   /* The set of associated log tags. */
-  repeated Tag tags = 7;
+  repeated Tag tags = 6;
 
   /*
    * If set, the stream will be joined together during archival to recreate the
    * original stream and made available at <prefix>/+/<name>.ext.
    */
-  string binary_file_ext = 8;
+  string binary_file_ext = 7;
 }
 
 /* Text stream content. */
 message Text {
-  repeated string lines = 1;
+  /* Contiguous text lines and their delimiters. */
+  message Line {
+    /* The line's text content, not including its delimiter. */
+    string value = 1;
+
+    /*
+     * The line's delimiter string.
+     *
+     * If this is an empty string, this line is continued in the next sequential
+     * line, and the line's sequence number does not advance.
+     */
+    string delimiter = 2;
+  }
+  repeated Line lines = 1;
 }
 
 /* Binary stream content. */
 message Binary {
-  bytes data = 1;
+  /* The byte offset in the stream of the first byte of data. */
+  uint64 offset = 1;
+  /* The binary stream's data. */
+  bytes data = 2;
 }
 
 /* Datagram stream content type. */
 message Datagram {
-  /* The size in bytes of the overall datagram. */
+  /*
+   * The size in bytes of the overall datagram.
+   *
+   * If this is not a partial datagram, this field may be omitted, as the size
+   * is known from the length of the data field. If this is partial, the size
+   * must be the same across all partial pieces.
+   */
   uint64 size = 1;
+  /*
+   * If true, this is a partial datagram, and the next sequential LogEntry will
+   * contain its continuation.
+   */
+  bool partial = 2;
 
   /* This datagram data. */
-  bytes data = 2;
+  bytes data = 3;
 }
 
 /**
@@ -163,31 +169,6 @@ message LogEntry {
    *     zero.
    */
   uint64 sequence = 4;
-
-  /*
-   * If true, the last content entry in this LogEntry is continued in the first
-   * content entry of the stream's next sequential LogEntry.
-   *
-   * Only Datagrams and Text content types support this field. Binary types are
-   * implicitly partial.
-   *
-   * Note that sparse reassembly is NOT supported. If stream message `N` which
-   * has content entries [0, 1, 2] sets partial to `true`, this implies that
-   * the last content entry (2) is incomplete. LogEntry `N+1` must begin with
-   * the next sequential piece of content entry 2. This can continue across
-   * as many sequential LogEntry records are necessary to complete the content.
-   *
-   * For example, if content entry 2 must be split across multiple LogEntry
-   * starting with sequence number `N`, the LogEntry composition must look like:
-   * N:   [0, 1, 2]
-   * N+1: [2]
-   * N+2: [2, 3, ...]
-   *
-   * As a special case, if the last line of the last Text LogEntry in a stream
-   * is marked partial, this means that there is no terminating newline in the
-   * stream.
-   */
-  bool partial = 5;
 
   /*
    * The content of the message. The field that is populated here must

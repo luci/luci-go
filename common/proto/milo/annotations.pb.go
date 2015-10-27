@@ -21,10 +21,14 @@ It has these top-level messages:
 package milo
 
 import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 import google_protobuf "github.com/luci/luci-go/common/proto/google"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
+var _ = fmt.Errorf
+var _ = math.Inf
 
 // Status is the expressed root step of this step or substep.
 type Status int32
@@ -249,38 +253,151 @@ func (m *Component) GetProperty() []*Component_Property {
 type Component_Link struct {
 	// An optional display label for the link.
 	Label string `protobuf:"bytes,1,opt,name=label" json:"label,omitempty"`
-	Url   string `protobuf:"bytes,2,opt,name=url" json:"url,omitempty"`
-	// (One of) A LogDog stream link.
-	LogdogStream *LogdogStream `protobuf:"bytes,3,opt,name=logdog_stream" json:"logdog_stream,omitempty"`
-	// (One of) An isolate server link.
-	IsolateObject *IsolateObject `protobuf:"bytes,4,opt,name=isolate_object" json:"isolate_object,omitempty"`
-	// (One of) A link to a Dungeon Master object.
-	DmLink *DMLink `protobuf:"bytes,5,opt,name=dm_link" json:"dm_link,omitempty"`
+	// Types that are valid to be assigned to Value:
+	//	*Component_Link_Url
+	//	*Component_Link_LogdogStream
+	//	*Component_Link_IsolateObject
+	//	*Component_Link_DmLink
+	Value isComponent_Link_Value `protobuf_oneof:"value"`
 }
 
 func (m *Component_Link) Reset()         { *m = Component_Link{} }
 func (m *Component_Link) String() string { return proto.CompactTextString(m) }
 func (*Component_Link) ProtoMessage()    {}
 
-func (m *Component_Link) GetLogdogStream() *LogdogStream {
+type isComponent_Link_Value interface {
+	isComponent_Link_Value()
+}
+
+type Component_Link_Url struct {
+	Url string `protobuf:"bytes,2,opt,name=url,oneof"`
+}
+type Component_Link_LogdogStream struct {
+	LogdogStream *LogdogStream `protobuf:"bytes,3,opt,name=logdog_stream,oneof"`
+}
+type Component_Link_IsolateObject struct {
+	IsolateObject *IsolateObject `protobuf:"bytes,4,opt,name=isolate_object,oneof"`
+}
+type Component_Link_DmLink struct {
+	DmLink *DMLink `protobuf:"bytes,5,opt,name=dm_link,oneof"`
+}
+
+func (*Component_Link_Url) isComponent_Link_Value()           {}
+func (*Component_Link_LogdogStream) isComponent_Link_Value()  {}
+func (*Component_Link_IsolateObject) isComponent_Link_Value() {}
+func (*Component_Link_DmLink) isComponent_Link_Value()        {}
+
+func (m *Component_Link) GetValue() isComponent_Link_Value {
 	if m != nil {
-		return m.LogdogStream
+		return m.Value
+	}
+	return nil
+}
+
+func (m *Component_Link) GetUrl() string {
+	if x, ok := m.GetValue().(*Component_Link_Url); ok {
+		return x.Url
+	}
+	return ""
+}
+
+func (m *Component_Link) GetLogdogStream() *LogdogStream {
+	if x, ok := m.GetValue().(*Component_Link_LogdogStream); ok {
+		return x.LogdogStream
 	}
 	return nil
 }
 
 func (m *Component_Link) GetIsolateObject() *IsolateObject {
-	if m != nil {
-		return m.IsolateObject
+	if x, ok := m.GetValue().(*Component_Link_IsolateObject); ok {
+		return x.IsolateObject
 	}
 	return nil
 }
 
 func (m *Component_Link) GetDmLink() *DMLink {
-	if m != nil {
-		return m.DmLink
+	if x, ok := m.GetValue().(*Component_Link_DmLink); ok {
+		return x.DmLink
 	}
 	return nil
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*Component_Link) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), []interface{}) {
+	return _Component_Link_OneofMarshaler, _Component_Link_OneofUnmarshaler, []interface{}{
+		(*Component_Link_Url)(nil),
+		(*Component_Link_LogdogStream)(nil),
+		(*Component_Link_IsolateObject)(nil),
+		(*Component_Link_DmLink)(nil),
+	}
+}
+
+func _Component_Link_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*Component_Link)
+	// value
+	switch x := m.Value.(type) {
+	case *Component_Link_Url:
+		b.EncodeVarint(2<<3 | proto.WireBytes)
+		b.EncodeStringBytes(x.Url)
+	case *Component_Link_LogdogStream:
+		b.EncodeVarint(3<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.LogdogStream); err != nil {
+			return err
+		}
+	case *Component_Link_IsolateObject:
+		b.EncodeVarint(4<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.IsolateObject); err != nil {
+			return err
+		}
+	case *Component_Link_DmLink:
+		b.EncodeVarint(5<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.DmLink); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("Component_Link.Value has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _Component_Link_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*Component_Link)
+	switch tag {
+	case 2: // value.url
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		x, err := b.DecodeStringBytes()
+		m.Value = &Component_Link_Url{x}
+		return true, err
+	case 3: // value.logdog_stream
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(LogdogStream)
+		err := b.DecodeMessage(msg)
+		m.Value = &Component_Link_LogdogStream{msg}
+		return true, err
+	case 4: // value.isolate_object
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(IsolateObject)
+		err := b.DecodeMessage(msg)
+		m.Value = &Component_Link_IsolateObject{msg}
+		return true, err
+	case 5: // value.dm_link
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(DMLink)
+		err := b.DecodeMessage(msg)
+		m.Value = &Component_Link_DmLink{msg}
+		return true, err
+	default:
+		return false, nil
+	}
 }
 
 // Property is an arbitrary key/value (build) property.

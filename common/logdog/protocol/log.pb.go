@@ -16,15 +16,21 @@ It has these top-level messages:
 	Datagram
 	LogEntry
 	LogIndex
+	ButlerMetadata
+	ButlerLogBundle
 */
 package protocol
 
 import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 import google_protobuf "github.com/luci/luci-go/common/proto/google"
 import google_protobuf1 "github.com/luci/luci-go/common/proto/google"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
+var _ = fmt.Errorf
+var _ = math.Inf
 
 // The log stream's content type (required).
 type LogStreamDescriptor_StreamType int32
@@ -50,47 +56,6 @@ func (x LogStreamDescriptor_StreamType) String() string {
 	return proto.EnumName(LogStreamDescriptor_StreamType_name, int32(x))
 }
 
-type LogStreamDescriptor_TextSource_Newline int32
-
-const (
-	LogStreamDescriptor_TextSource_NATIVE LogStreamDescriptor_TextSource_Newline = 0
-	LogStreamDescriptor_TextSource_LF     LogStreamDescriptor_TextSource_Newline = 1
-	LogStreamDescriptor_TextSource_CRLF   LogStreamDescriptor_TextSource_Newline = 2
-)
-
-var LogStreamDescriptor_TextSource_Newline_name = map[int32]string{
-	0: "NATIVE",
-	1: "LF",
-	2: "CRLF",
-}
-var LogStreamDescriptor_TextSource_Newline_value = map[string]int32{
-	"NATIVE": 0,
-	"LF":     1,
-	"CRLF":   2,
-}
-
-func (x LogStreamDescriptor_TextSource_Newline) String() string {
-	return proto.EnumName(LogStreamDescriptor_TextSource_Newline_name, int32(x))
-}
-
-// The source stream encoding.
-type LogStreamDescriptor_TextSource_Encoding int32
-
-const (
-	LogStreamDescriptor_TextSource_UTF8 LogStreamDescriptor_TextSource_Encoding = 0
-)
-
-var LogStreamDescriptor_TextSource_Encoding_name = map[int32]string{
-	0: "UTF8",
-}
-var LogStreamDescriptor_TextSource_Encoding_value = map[string]int32{
-	"UTF8": 0,
-}
-
-func (x LogStreamDescriptor_TextSource_Encoding) String() string {
-	return proto.EnumName(LogStreamDescriptor_TextSource_Encoding_name, int32(x))
-}
-
 // *
 // Log stream descriptor data. This is the full set of information that
 // describes a logging stream.
@@ -111,40 +76,32 @@ type LogStreamDescriptor struct {
 	//
 	// A valid name value is a StreamName described in:
 	// https://github.com/luci/luci-go/common/logdog/types
-	Name       string                          `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	StreamType LogStreamDescriptor_StreamType  `protobuf:"varint,3,opt,name=stream_type,enum=protocol.LogStreamDescriptor_StreamType" json:"stream_type,omitempty"`
-	TextSource *LogStreamDescriptor_TextSource `protobuf:"bytes,4,opt,name=text_source" json:"text_source,omitempty"`
+	Name       string                         `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	StreamType LogStreamDescriptor_StreamType `protobuf:"varint,3,opt,name=stream_type,enum=protocol.LogStreamDescriptor_StreamType" json:"stream_type,omitempty"`
 	//
 	// The stream's content type (required).
 	//
 	// This must be an HTTP Content-Type value. It is made available to LogDog
 	// clients when querying stream metadata. It will also be applied to archived
 	// binary log data.
-	ContentType string `protobuf:"bytes,5,opt,name=content_type" json:"content_type,omitempty"`
+	ContentType string `protobuf:"bytes,4,opt,name=content_type" json:"content_type,omitempty"`
 	//
 	// The log stream's base timestamp (required).
 	//
 	// This notes the start time of the log stream. All LogEntries express their
 	// timestamp as microsecond offsets from this field.
-	Timestamp *google_protobuf.Timestamp `protobuf:"bytes,6,opt,name=timestamp" json:"timestamp,omitempty"`
+	Timestamp *google_protobuf.Timestamp `protobuf:"bytes,5,opt,name=timestamp" json:"timestamp,omitempty"`
 	// The set of associated log tags.
-	Tags []*LogStreamDescriptor_Tag `protobuf:"bytes,7,rep,name=tags" json:"tags,omitempty"`
+	Tags []*LogStreamDescriptor_Tag `protobuf:"bytes,6,rep,name=tags" json:"tags,omitempty"`
 	//
 	// If set, the stream will be joined together during archival to recreate the
 	// original stream and made available at <prefix>/+/<name>.ext.
-	BinaryFileExt string `protobuf:"bytes,8,opt,name=binary_file_ext" json:"binary_file_ext,omitempty"`
+	BinaryFileExt string `protobuf:"bytes,7,opt,name=binary_file_ext" json:"binary_file_ext,omitempty"`
 }
 
 func (m *LogStreamDescriptor) Reset()         { *m = LogStreamDescriptor{} }
 func (m *LogStreamDescriptor) String() string { return proto.CompactTextString(m) }
 func (*LogStreamDescriptor) ProtoMessage()    {}
-
-func (m *LogStreamDescriptor) GetTextSource() *LogStreamDescriptor_TextSource {
-	if m != nil {
-		return m.TextSource
-	}
-	return nil
-}
 
 func (m *LogStreamDescriptor) GetTimestamp() *google_protobuf.Timestamp {
 	if m != nil {
@@ -159,19 +116,6 @@ func (m *LogStreamDescriptor) GetTags() []*LogStreamDescriptor_Tag {
 	}
 	return nil
 }
-
-//
-// Additional information about the source data for a text log stream.
-//
-// Required if `stream_type` is `TEXT`.
-type LogStreamDescriptor_TextSource struct {
-	Newline  LogStreamDescriptor_TextSource_Newline  `protobuf:"varint,1,opt,name=newline,enum=protocol.LogStreamDescriptor_TextSource_Newline" json:"newline,omitempty"`
-	Encoding LogStreamDescriptor_TextSource_Encoding `protobuf:"varint,2,opt,name=encoding,enum=protocol.LogStreamDescriptor_TextSource_Encoding" json:"encoding,omitempty"`
-}
-
-func (m *LogStreamDescriptor_TextSource) Reset()         { *m = LogStreamDescriptor_TextSource{} }
-func (m *LogStreamDescriptor_TextSource) String() string { return proto.CompactTextString(m) }
-func (*LogStreamDescriptor_TextSource) ProtoMessage()    {}
 
 //
 // Tag is an arbitrary key/value tag associated with this log stream.
@@ -190,16 +134,42 @@ func (*LogStreamDescriptor_Tag) ProtoMessage()    {}
 
 // Text stream content.
 type Text struct {
-	Lines []string `protobuf:"bytes,1,rep,name=lines" json:"lines,omitempty"`
+	Lines []*Text_Line `protobuf:"bytes,1,rep,name=lines" json:"lines,omitempty"`
 }
 
 func (m *Text) Reset()         { *m = Text{} }
 func (m *Text) String() string { return proto.CompactTextString(m) }
 func (*Text) ProtoMessage()    {}
 
+func (m *Text) GetLines() []*Text_Line {
+	if m != nil {
+		return m.Lines
+	}
+	return nil
+}
+
+// Contiguous text lines and their delimiters.
+type Text_Line struct {
+	// The line's text content, not including its delimiter.
+	Value string `protobuf:"bytes,1,opt,name=value" json:"value,omitempty"`
+	//
+	// The line's delimiter string.
+	//
+	// If this is an empty string, this line is continued in the next sequential
+	// line, and the line's sequence number does not advance.
+	Delimiter string `protobuf:"bytes,2,opt,name=delimiter" json:"delimiter,omitempty"`
+}
+
+func (m *Text_Line) Reset()         { *m = Text_Line{} }
+func (m *Text_Line) String() string { return proto.CompactTextString(m) }
+func (*Text_Line) ProtoMessage()    {}
+
 // Binary stream content.
 type Binary struct {
-	Data []byte `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	// The byte offset in the stream of the first byte of data.
+	Offset uint64 `protobuf:"varint,1,opt,name=offset" json:"offset,omitempty"`
+	// The binary stream's data.
+	Data []byte `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
 }
 
 func (m *Binary) Reset()         { *m = Binary{} }
@@ -208,10 +178,19 @@ func (*Binary) ProtoMessage()    {}
 
 // Datagram stream content type.
 type Datagram struct {
+	//
 	// The size in bytes of the overall datagram.
+	//
+	// If this is not a partial datagram, this field may be omitted, as the size
+	// is known from the length of the data field. If this is partial, the size
+	// must be the same across all partial pieces.
 	Size uint64 `protobuf:"varint,1,opt,name=size" json:"size,omitempty"`
+	//
+	// If true, this is a partial datagram, and the next sequential LogEntry will
+	// contain its continuation.
+	Partial bool `protobuf:"varint,2,opt,name=partial" json:"partial,omitempty"`
 	// This datagram data.
-	Data []byte `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	Data []byte `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
 }
 
 func (m *Datagram) Reset()         { *m = Datagram{} }
@@ -253,39 +232,44 @@ type LogEntry struct {
 	//     zero.
 	Sequence uint64 `protobuf:"varint,4,opt,name=sequence" json:"sequence,omitempty"`
 	//
-	// If true, the last content entry in this LogEntry is continued in the first
-	// content entry of the stream's next sequential LogEntry.
+	// The content of the message. The field that is populated here must
+	// match the log's `stream_type`.
 	//
-	// Only Datagrams and Text content types support this field. Binary types are
-	// implicitly partial.
-	//
-	// Note that sparse reassembly is NOT supported. If stream message `N` which
-	// has content entries [0, 1, 2] sets partial to `true`, this implies that
-	// the last content entry (2) is incomplete. LogEntry `N+1` must begin with
-	// the next sequential piece of content entry 2. This can continue across
-	// as many sequential LogEntry records are necessary to complete the content.
-	//
-	// For example, if content entry 2 must be split across multiple LogEntry
-	// starting with sequence number `N`, the LogEntry composition must look like:
-	// N:   [0, 1, 2]
-	// N+1: [2]
-	// N+2: [2, 3, ...]
-	//
-	// As a special case, if the last line of the last Text LogEntry in a stream
-	// is marked partial, this means that there is no terminating newline in the
-	// stream.
-	Partial bool `protobuf:"varint,5,opt,name=partial" json:"partial,omitempty"`
-	// Text Stream: Lines of log text.
-	Text *Text `protobuf:"bytes,10,opt,name=text" json:"text,omitempty"`
-	// Binary stream: data segment.
-	Binary *Binary `protobuf:"bytes,11,opt,name=binary" json:"binary,omitempty"`
-	// Datagram stream: Datagrams.
-	Datagram *Datagram `protobuf:"bytes,12,opt,name=datagram" json:"datagram,omitempty"`
+	// Types that are valid to be assigned to Content:
+	//	*LogEntry_Text
+	//	*LogEntry_Binary
+	//	*LogEntry_Datagram
+	Content isLogEntry_Content `protobuf_oneof:"content"`
 }
 
 func (m *LogEntry) Reset()         { *m = LogEntry{} }
 func (m *LogEntry) String() string { return proto.CompactTextString(m) }
 func (*LogEntry) ProtoMessage()    {}
+
+type isLogEntry_Content interface {
+	isLogEntry_Content()
+}
+
+type LogEntry_Text struct {
+	Text *Text `protobuf:"bytes,10,opt,name=text,oneof"`
+}
+type LogEntry_Binary struct {
+	Binary *Binary `protobuf:"bytes,11,opt,name=binary,oneof"`
+}
+type LogEntry_Datagram struct {
+	Datagram *Datagram `protobuf:"bytes,12,opt,name=datagram,oneof"`
+}
+
+func (*LogEntry_Text) isLogEntry_Content()     {}
+func (*LogEntry_Binary) isLogEntry_Content()   {}
+func (*LogEntry_Datagram) isLogEntry_Content() {}
+
+func (m *LogEntry) GetContent() isLogEntry_Content {
+	if m != nil {
+		return m.Content
+	}
+	return nil
+}
 
 func (m *LogEntry) GetTimeOffset() *google_protobuf1.Duration {
 	if m != nil {
@@ -295,24 +279,91 @@ func (m *LogEntry) GetTimeOffset() *google_protobuf1.Duration {
 }
 
 func (m *LogEntry) GetText() *Text {
-	if m != nil {
-		return m.Text
+	if x, ok := m.GetContent().(*LogEntry_Text); ok {
+		return x.Text
 	}
 	return nil
 }
 
 func (m *LogEntry) GetBinary() *Binary {
-	if m != nil {
-		return m.Binary
+	if x, ok := m.GetContent().(*LogEntry_Binary); ok {
+		return x.Binary
 	}
 	return nil
 }
 
 func (m *LogEntry) GetDatagram() *Datagram {
-	if m != nil {
-		return m.Datagram
+	if x, ok := m.GetContent().(*LogEntry_Datagram); ok {
+		return x.Datagram
 	}
 	return nil
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*LogEntry) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), []interface{}) {
+	return _LogEntry_OneofMarshaler, _LogEntry_OneofUnmarshaler, []interface{}{
+		(*LogEntry_Text)(nil),
+		(*LogEntry_Binary)(nil),
+		(*LogEntry_Datagram)(nil),
+	}
+}
+
+func _LogEntry_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*LogEntry)
+	// content
+	switch x := m.Content.(type) {
+	case *LogEntry_Text:
+		b.EncodeVarint(10<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Text); err != nil {
+			return err
+		}
+	case *LogEntry_Binary:
+		b.EncodeVarint(11<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Binary); err != nil {
+			return err
+		}
+	case *LogEntry_Datagram:
+		b.EncodeVarint(12<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Datagram); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("LogEntry.Content has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _LogEntry_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*LogEntry)
+	switch tag {
+	case 10: // content.text
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(Text)
+		err := b.DecodeMessage(msg)
+		m.Content = &LogEntry_Text{msg}
+		return true, err
+	case 11: // content.binary
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(Binary)
+		err := b.DecodeMessage(msg)
+		m.Content = &LogEntry_Binary{msg}
+		return true, err
+	case 12: // content.datagram
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(Datagram)
+		err := b.DecodeMessage(msg)
+		m.Content = &LogEntry_Datagram{msg}
+		return true, err
+	default:
+		return false, nil
+	}
 }
 
 // *
@@ -409,6 +460,4 @@ func (m *LogIndex_Entry) GetTimeOffset() *google_protobuf1.Duration {
 
 func init() {
 	proto.RegisterEnum("protocol.LogStreamDescriptor_StreamType", LogStreamDescriptor_StreamType_name, LogStreamDescriptor_StreamType_value)
-	proto.RegisterEnum("protocol.LogStreamDescriptor_TextSource_Newline", LogStreamDescriptor_TextSource_Newline_name, LogStreamDescriptor_TextSource_Newline_value)
-	proto.RegisterEnum("protocol.LogStreamDescriptor_TextSource_Encoding", LogStreamDescriptor_TextSource_Encoding_name, LogStreamDescriptor_TextSource_Encoding_value)
 }
