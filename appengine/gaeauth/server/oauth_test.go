@@ -38,7 +38,7 @@ func TestOAuth2MethodDevServer(t *testing.T) {
 			Email:         "abc@example.com",
 			EmailVerified: "true",
 			ExpiresIn:     "3600",
-			Scope:         EmailScope + " other stuff",
+			Scope:         auth.EmailScope + " other stuff",
 		}
 		status := http.StatusOK
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

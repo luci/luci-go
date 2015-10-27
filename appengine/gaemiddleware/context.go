@@ -16,6 +16,8 @@ import (
 	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/proccache"
 	"github.com/luci/luci-go/server/settings"
+	"golang.org/x/net/context"
+	"google.golang.org/appengine"
 )
 
 var (
@@ -26,22 +28,28 @@ var (
 	globalSettings = settings.New(gaesettings.Storage{})
 )
 
-// BaseProd adapts a middleware-style handler to a httprouter.Handle. It passes
-// a new context to `h` with the following services installed:
+// WithProd installs the set of standard production AppEngine services:
 //   * github.com/luci/gae/impl/prod (production appengine services)
 //   * github.com/luci/luci-go/appengine/gaelogger (appengine logging service)
 //   * github.com/luci/luci-go/appengine/gaeauth/client (appengine urlfetch transport)
 //   * github.com/luci/luci-go/server/proccache (in process memory cache)
 //   * github.com/luci/luci-go/server/settings (global app settings)
 //   * github.com/luci/luci-go/appengine/gaesecrets (access to secret keys in datastore)
+func WithProd(c context.Context, req *http.Request) context.Context {
+	c = prod.Use(appengine.WithContext(c, req))
+	c = gaelogger.Use(c)
+	c = client.UseAnonymousTransport(c)
+	c = proccache.Use(c, globalProcessCache)
+	c = settings.Use(c, globalSettings)
+	c = gaesecrets.Use(c, nil)
+	return c
+}
+
+// BaseProd adapts a middleware-style handler to a httprouter.Handle. It
+// installs services using InstallProd, then passes the context.
 func BaseProd(h middleware.Handler) httprouter.Handle {
 	return func(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		c := prod.UseRequest(r)
-		c = gaelogger.Use(c)
-		c = client.UseAnonymousTransport(c)
-		c = proccache.Use(c, globalProcessCache)
-		c = settings.Use(c, globalSettings)
-		c = gaesecrets.Use(c, nil)
+		c := WithProd(context.Background(), r)
 		h(c, rw, r, p)
 	}
 }

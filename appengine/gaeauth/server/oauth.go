@@ -27,16 +27,9 @@ import (
 	"github.com/luci/luci-go/server/proccache"
 )
 
-// EmailScope is a scope used by OAuth2Method by default.
-const EmailScope = "https://www.googleapis.com/auth/userinfo.email"
-
 // OAuth2Method implements auth.Method top of GAE OAuth2 API. It doesn't
 // implement auth.UsersAPI.
 type OAuth2Method struct {
-	// Scopes is a of OAuth2 scopes a token must have to pass authentication,
-	// default is []string{EmailScope}.
-	Scopes []string
-
 	// tokenInfoEndpoint is used in unit test to mock production endpoint.
 	tokenInfoEndpoint string
 }
@@ -47,10 +40,7 @@ func (m *OAuth2Method) Authenticate(c context.Context, r *http.Request) (*auth.U
 	if header == "" {
 		return nil, nil // this method is not applicable
 	}
-	scopes := m.Scopes
-	if len(scopes) == 0 {
-		scopes = []string{EmailScope}
-	}
+	scopes := auth.OAuthScopes(c)
 	if info.Get(c).IsDevAppServer() {
 		return m.authenticateDevServer(c, header, scopes)
 	}
