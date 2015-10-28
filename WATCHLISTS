@@ -17,7 +17,7 @@
     'all': [
       # Add yourself here to get explicitly spammed.
       'maruel@chromium.org',
-      'tandrii@chromium.org',
+      'tandrii+luci-go@chromium.org',
       'todd@cloudera.com',
       'andrew.wang@cloudera.com',
     ],
