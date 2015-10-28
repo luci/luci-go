@@ -15,7 +15,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"regexp"
+	"os/signal"
 	"strings"
 	"text/template"
 	"time"
@@ -41,21 +41,6 @@ const (
 var (
 	// chromiumLicenseTemplate is the compiled Chromium license template text.
 	chromiumLicenseTemplate *template.Template
-
-	// reImportExampleOverride replaces the usage example.
-	//
-	//   import "google.golang.org/api/dumb_counter/v1"
-	//   ...
-	reImportExampleOverride = regexp.MustCompile(`(?m)(//   import ")google\.golang\.org/api/`)
-
-	// reImportOverride replaces the import override in the package declaration:
-	//
-	// package dumb_counter // import "google.golang.org/api/dumb_counter/v1"
-	reImportOverride = regexp.MustCompile(`(?m) // import "google\.golang\.org/api/.*"`)
-
-	// reBasePathOverride replaces the generated basePath with the one specified
-	// in the command-line.
-	reBasePathOverride = regexp.MustCompile(`(?m)(const basePath = )".*"$`)
 )
 
 func init() {
@@ -217,13 +202,22 @@ func (a Application) Run(c context.Context) error {
 		return fmt.Errorf("failed to compile Chromium license: %s", err)
 	}
 
+	c, cancelFunc := context.WithCancel(c)
+	sigC := make(chan os.Signal, 1)
+	signal.Notify(sigC, os.Interrupt)
+	go func() {
+		for range sigC {
+			cancelFunc()
+		}
+	}()
+	defer signal.Stop(sigC)
+
 	// (1) Execute our service. Capture its discovery API.
 	svc, err := loadService(c, a.servicePath)
 	if err != nil {
 		return fmt.Errorf("failed to load service [%s]: %s", a.servicePath, err)
 	}
 
-	// (1) Execute our service. Capture its discovery API.
 	discoveryURL := url.URL{
 		Scheme: "http",
 		Host:   fmt.Sprintf("localhost:%d", a.servicePort),
@@ -280,19 +274,28 @@ func (a Application) Run(c context.Context) error {
 
 // generateAPI generates and installs a single directory item's API.
 func (a *Application) generateAPI(c context.Context, item *directoryItem, discoveryURL *url.URL, dst string) error {
-	gendir, err := ioutil.TempDir(os.TempDir(), "apigen")
+	tmpdir, err := ioutil.TempDir(os.TempDir(), "apigen")
 	if err != nil {
 		return err
 	}
 	defer func() {
-		os.RemoveAll(gendir)
+		os.RemoveAll(tmpdir)
 	}()
+
+	gendir := augPath(tmpdir, "gen")
+	headerPath := augPath(tmpdir, "header.txt")
+	if err := ioutil.WriteFile(headerPath, []byte(a.license), 0644); err != nil {
+		return err
+	}
 
 	args := []string{
 		"-cache=false", // Apparently the form {"-cache", "false"} is ignored.
 		"-discoveryurl", discoveryURL.String(),
 		"-api", item.ID,
 		"-gendir", gendir,
+		"-api_pkg_base", a.apiPackage,
+		"-base_url", a.baseURL,
+		"-header_path", headerPath,
 	}
 	log.Fields{
 		"command": a.genPath,
@@ -319,25 +322,6 @@ func (a *Application) generateAPI(c context.Context, item *directoryItem, discov
 		log.Fields{
 			"relpath": relpath,
 		}.Infof(c, "Fixing up generated Go file.")
-
-		// Replace the usage example import (non-critical).
-		data = reImportExampleOverride.ReplaceAll(data,
-			[]byte(fmt.Sprintf("${1}%s/", a.apiPackage)))
-
-		// Replace the basePath variable.
-		data = reBasePathOverride.ReplaceAll(data,
-			[]byte(fmt.Sprintf(`${1}"%s"`, safeURLPathJoin(a.baseURL, a.serviceAPIRoot, item.Name, item.Version, ""))))
-
-		// Replace the package import override (critical).
-		data = reImportOverride.ReplaceAllLiteral(data, []byte(nil))
-
-		// Prepend our license, if set.
-		if a.license != "" {
-			data = bytes.Join([][]byte{
-				[]byte(a.license),
-				data,
-			}, []byte(nil))
-		}
 		return data, nil
 	})
 	if err != nil {

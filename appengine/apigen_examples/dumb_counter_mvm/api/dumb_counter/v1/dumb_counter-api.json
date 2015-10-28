@@ -6,9 +6,9 @@
  "name": "dumb_counter",
  "version": "v1",
  "description": "A hideously stupid persistant counter service.",
- "baseUrl": "http://localhost:8080/_ah/api/dumb_counter/v1/",
- "basePath": "/_ah/api/dumb_counter/v1/",
- "rootUrl": "http://localhost:8080/_ah/api/",
+ "baseUrl": "http://localhost:8080/api/dumb_counter/v1/",
+ "basePath": "/api/dumb_counter/v1/",
+ "rootUrl": "http://localhost:8080/api/",
  "servicePath": "dumb_counter/v1/",
  "schemas": {
   "AddReq": {
