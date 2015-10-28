@@ -26,8 +26,8 @@ func TestShouldResembleV(t *testing.T) {
 			b := X{Y: &Y{V: "bar"}}
 
 			So(ShouldResembleV(a, b), ShouldEqual, ""+
-				"Expected: 'assertions.X{Y:(*assertions.Y){V:\"foo\"}}'\n"+
-				"Actual:   'assertions.X{Y:(*assertions.Y){V:\"bar\"}}'\n"+
+				"Expected: 'assertions.X{Y:(*assertions.Y){V:\"bar\"}}'\n"+
+				"Actual:   'assertions.X{Y:(*assertions.Y){V:\"foo\"}}'\n"+
 				"(Should resemble)!")
 		})
 

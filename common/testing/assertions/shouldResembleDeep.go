@@ -20,7 +20,7 @@ import (
 func ShouldResembleV(actual interface{}, expected ...interface{}) string {
 	if matches := convey.ShouldResemble(actual, expected...); matches != "" {
 		return fmt.Sprintf("Expected: '%s'\nActual:   '%s'\n(Should resemble)!",
-			render.StringDeep(actual), render.StringDeep(expected[0]))
+			render.StringDeep(expected[0]), render.StringDeep(actual))
 	}
 	return ""
 }
@@ -34,7 +34,7 @@ func ShouldResembleV(actual interface{}, expected ...interface{}) string {
 func ShouldNotResembleV(actual interface{}, expected ...interface{}) string {
 	if matches := convey.ShouldNotResemble(actual, expected...); matches != "" {
 		return fmt.Sprintf("Expected        '%s'\nto NOT resemble '%s'\n(but it did)!",
-			render.StringDeep(actual), render.StringDeep(expected[0]))
+			render.StringDeep(expected[0]), render.StringDeep(actual))
 	}
 	return ""
 }
