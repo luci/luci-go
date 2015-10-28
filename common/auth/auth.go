@@ -38,6 +38,7 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 	"google.golang.org/cloud/compute/metadata"
 
 	"github.com/luci/luci-go/common/auth/internal"
@@ -386,6 +387,32 @@ func (a *Authenticator) GetAccessToken(lifetime time.Duration) (Token, error) {
 	return Token{
 		AccessToken: tok.AccessToken(),
 		Expiry:      tok.Expiry(),
+	}, nil
+}
+
+// TokenSource returns oauth2.TokenSource implementation for interoperability
+// with libraries that use it.
+func (a *Authenticator) TokenSource() oauth2.TokenSource {
+	return tokenSource{a}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// oauth2.TokenSource implementation.
+
+type tokenSource struct {
+	a *Authenticator
+}
+
+// Token is part of oauth2.TokenSource inteface.
+func (s tokenSource) Token() (*oauth2.Token, error) {
+	// Assume token is going to be used in next minute.
+	tok, err := s.a.GetAccessToken(time.Minute)
+	if err != nil {
+		return nil, err
+	}
+	return &oauth2.Token{
+		AccessToken: tok.AccessToken,
+		Expiry:      tok.Expiry,
 	}, nil
 }
 
