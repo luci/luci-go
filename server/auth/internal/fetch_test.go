@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package openid
+package internal
 
 import (
 	"errors"
@@ -31,7 +31,7 @@ func TestFetch(t *testing.T) {
 				A string `json:"a"`
 			}
 			body = `{"a": "hello"}`
-			So(fetchJSON(ctx, &val, func() (*http.Request, error) {
+			So(FetchJSON(ctx, &val, func() (*http.Request, error) {
 				return http.NewRequest("GET", ts.URL, nil)
 			}), ShouldBeNil)
 			So(val.A, ShouldEqual, "hello")
@@ -39,7 +39,7 @@ func TestFetch(t *testing.T) {
 
 		Convey("handles callback error", func() {
 			var val struct{}
-			So(fetchJSON(ctx, &val, func() (*http.Request, error) {
+			So(FetchJSON(ctx, &val, func() (*http.Request, error) {
 				return nil, errors.New("oops")
 			}), ShouldErrLike, "oops")
 		})
@@ -47,22 +47,22 @@ func TestFetch(t *testing.T) {
 		Convey("handles bad status code", func() {
 			var val struct{}
 			status = http.StatusNotFound
-			So(fetchJSON(ctx, &val, func() (*http.Request, error) {
+			So(FetchJSON(ctx, &val, func() (*http.Request, error) {
 				return http.NewRequest("GET", ts.URL, nil)
-			}), ShouldErrLike, "openid: unexpected HTTP code (404)")
+			}), ShouldErrLike, "unexpected HTTP code (404)")
 		})
 
 		Convey("handles bad body", func() {
 			var val struct{}
 			body = "not json"
-			So(fetchJSON(ctx, &val, func() (*http.Request, error) {
+			So(FetchJSON(ctx, &val, func() (*http.Request, error) {
 				return http.NewRequest("GET", ts.URL, nil)
-			}), ShouldErrLike, "openid: can't deserialize JSON")
+			}), ShouldErrLike, "can't deserialize JSON")
 		})
 
 		Convey("handles connection error", func() {
 			var val struct{}
-			So(fetchJSON(ctx, &val, func() (*http.Request, error) {
+			So(FetchJSON(ctx, &val, func() (*http.Request, error) {
 				return http.NewRequest("GET", "http://localhost:???", nil)
 			}), ShouldErrLike, "dial tcp")
 		})

@@ -16,6 +16,7 @@ import (
 
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
+	"github.com/luci/luci-go/server/auth/internal"
 	"github.com/luci/luci-go/server/proccache"
 	"github.com/luci/luci-go/server/tokens"
 )
@@ -48,7 +49,7 @@ func fetchDiscoveryDoc(c context.Context, url string) (*discoveryDoc, error) {
 
 	fetcher := func() (interface{}, time.Duration, error) {
 		doc := &discoveryDoc{}
-		err := fetchJSON(c, doc, func() (*http.Request, error) {
+		err := internal.FetchJSON(c, doc, func() (*http.Request, error) {
 			return http.NewRequest("GET", url, nil)
 		})
 		if err != nil {
@@ -140,7 +141,7 @@ func handleAuthorizationCode(c context.Context, cfg *Settings, code string) (uid
 		TokenType   string `json:"token_type"`
 		AccessToken string `json:"access_token"`
 	}
-	err = fetchJSON(c, &token, func() (*http.Request, error) {
+	err = internal.FetchJSON(c, &token, func() (*http.Request, error) {
 		r, err := http.NewRequest("POST", discovery.TokenEndpoint, bytes.NewReader([]byte(payload)))
 		if err != nil {
 			return nil, err
@@ -159,7 +160,7 @@ func handleAuthorizationCode(c context.Context, cfg *Settings, code string) (uid
 		Name    string `json:"name"`
 		Picture string `json:"picture"`
 	}
-	err = fetchJSON(c, &profile, func() (*http.Request, error) {
+	err = internal.FetchJSON(c, &profile, func() (*http.Request, error) {
 		r, err := http.NewRequest("GET", discovery.UserinfoEndpoint, nil)
 		if err != nil {
 			return nil, err
