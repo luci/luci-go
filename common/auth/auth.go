@@ -413,6 +413,7 @@ func (s tokenSource) Token() (*oauth2.Token, error) {
 	return &oauth2.Token{
 		AccessToken: tok.AccessToken,
 		Expiry:      tok.Expiry,
+		TokenType:   "Bearer",
 	}, nil
 }
 
