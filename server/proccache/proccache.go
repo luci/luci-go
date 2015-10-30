@@ -42,7 +42,7 @@ type Entry struct {
 // Cache holds a mapping key -> (value, expiration time). The mapping is never
 // cleared automatically, store only O(1) number of items there.
 type Cache struct {
-	lock  sync.Mutex
+	lock  sync.RWMutex
 	cache map[interface{}]Entry
 }
 
@@ -58,8 +58,8 @@ func (c *Cache) Put(key, value interface{}, exp time.Time) {
 
 // Get returns a stored item or nil if no such item.
 func (c *Cache) Get(key interface{}) *Entry {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	c.lock.RLock()
+	defer c.lock.RUnlock()
 	if e, ok := c.cache[key]; ok {
 		return &e
 	}
