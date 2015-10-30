@@ -20,9 +20,6 @@ import (
 	"github.com/luci/luci-go/server/middleware"
 )
 
-// ErrDisabled is returned by AuthMethod methods if AuthMethod.Disabled is true.
-var ErrDisabled = errors.New("openid: the authentication method is disabled")
-
 // These are installed into a HTTP router by AuthMethod.InstallHandlers(...).
 const (
 	loginURL    = "/auth/openid/login"
@@ -42,11 +39,6 @@ type AuthMethod struct {
 	// SessionStore keeps user sessions in some permanent storage. Must be set,
 	// otherwise all methods return ErrNotConfigured.
 	SessionStore auth.SessionStore
-
-	// Disabled can be set to true to make all OpenID-related HTTP routes return
-	// HTTP 400. Useful for disabling OpenID login after HTTP router have been
-	// already configured. Used to disable OpenID routes on GAE dev server.
-	Disabled bool
 
 	// Insecure is true to allow http:// URLs and non-https cookies. Useful for
 	// local development.
@@ -82,9 +74,6 @@ func (m *AuthMethod) Authenticate(c context.Context, r *http.Request) (*auth.Use
 	if m.SessionStore == nil {
 		return nil, ErrNotConfigured
 	}
-	if m.Disabled {
-		return nil, ErrDisabled
-	}
 
 	// Grab session ID from the cookie.
 	sid, err := decodeSessionCookie(c, r)
@@ -113,9 +102,6 @@ func (m *AuthMethod) LoginURL(c context.Context, dest string) (string, error) {
 	if m.SessionStore == nil {
 		return "", ErrNotConfigured
 	}
-	if m.Disabled {
-		return "", ErrDisabled
-	}
 	return makeRedirectURL(loginURL, dest)
 }
 
@@ -126,9 +112,6 @@ func (m *AuthMethod) LogoutURL(c context.Context, dest string) (string, error) {
 	if m.SessionStore == nil {
 		return "", ErrNotConfigured
 	}
-	if m.Disabled {
-		return "", ErrDisabled
-	}
 	return makeRedirectURL(logoutURL, dest)
 }
 
@@ -136,11 +119,6 @@ func (m *AuthMethod) LogoutURL(c context.Context, dest string) (string, error) {
 
 // loginHandler initiates login flow by redirecting user to OpenID login page.
 func (m *AuthMethod) loginHandler(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	if m.Disabled {
-		http.Error(rw, "OpenID authentication is disabled", http.StatusBadRequest)
-		return
-	}
-
 	dest, err := normalizeURL(r.URL.Query().Get("r"))
 	if err != nil {
 		replyError(c, rw, err, "Bad redirect URI (%q) - %s", dest, err)
@@ -169,11 +147,6 @@ func (m *AuthMethod) loginHandler(c context.Context, rw http.ResponseWriter, r *
 
 // logoutHandler nukes active session and redirect back to destination URL.
 func (m *AuthMethod) logoutHandler(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	if m.Disabled {
-		http.Error(rw, "OpenID authentication is disabled", http.StatusBadRequest)
-		return
-	}
-
 	dest, err := normalizeURL(r.URL.Query().Get("r"))
 	if err != nil {
 		replyError(c, rw, err, "Bad redirect URI (%q) - %s", dest, err)
@@ -204,11 +177,6 @@ func (m *AuthMethod) logoutHandler(c context.Context, rw http.ResponseWriter, r 
 // callbackHandler handles redirect from OpenID backend. Parameters contain
 // authorization code that can be exchanged for user profile.
 func (m *AuthMethod) callbackHandler(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	if m.Disabled {
-		http.Error(rw, "OpenID authentication is disabled", http.StatusBadRequest)
-		return
-	}
-
 	// This code path is hit when user clicks "Deny" on consent page.
 	q := r.URL.Query()
 	errorMsg := q.Get("error")
