@@ -37,7 +37,7 @@ func New(w io.Writer, level gol.Level) logging.Logger {
 }
 
 // Get returns default global go-logging based logger. It writes >=DEBUG message
-// to stdout.
+// to stderr.
 func Get() logging.Logger {
 	return standardConfig.getImpl()
 }

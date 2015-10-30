@@ -68,8 +68,10 @@ type ClientOptions struct {
 	// log message that is sent.
 	CommonLabels Labels
 
-	// ErrorCallback, if not nil, will be called when an error is encountered in
-	// the Client iself.
+	// ErrorWriter, if not nil, will be called when an error is encountered in
+	// the Client iself. This is used to report errors because the client may
+	// send messages asynchronously, so they will not be returned immediately,
+	// as is the go convention.
 	ErrorWriter func(string)
 }
 
@@ -91,6 +93,11 @@ func (o *ClientOptions) Populate() {
 		get(metadata.InstanceName, &o.ResourceType)
 		get(metadata.InstanceID, &o.ResourceID)
 		get(metadata.Zone, &o.Zone)
+	}
+	if o.ErrorWriter == nil {
+		o.ErrorWriter = func(s string) {
+			fmt.Fprintln(os.Stderr, s)
+		}
 	}
 }
 
@@ -186,7 +193,7 @@ type clientImpl struct {
 	*ClientOptions
 
 	service *cloudlog.ProjectsLogsEntriesService
-	// These are passed to Cloud Loggin API as is.
+	// These are passed to Cloud Logging API as is.
 	commonLabels map[string]string
 }
 
@@ -205,6 +212,9 @@ func (c *clientImpl) PushEntries(entries []*Entry) error {
 	}
 
 	_, err := c.service.Write(c.ProjectID, c.LogID, &req).Do()
+	if err != nil {
+		c.writeError(err.Error())
+	}
 	return err
 }
 

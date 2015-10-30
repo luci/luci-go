@@ -137,19 +137,21 @@ func (b *bufferImpl) process() {
 		count := 1
 
 		// Buffer other logs that are also available in the channel.
-	bundleLoop:
 		for count < len(entries) {
+			moreE := (*Entry)(nil)
 			select {
-			case moreE, ok := <-b.logC:
-				if ok {
-					b.ackLogEntry(moreE)
-
-					entries[count] = moreE
-					count++
-				}
+			case moreE = <-b.logC:
+				break
 			default:
-				break bundleLoop
+				break
 			}
+			if moreE == nil {
+				break
+			}
+			b.ackLogEntry(moreE)
+
+			entries[count] = moreE
+			count++
 		}
 
 		// Acquire a push channel semaphore token.
