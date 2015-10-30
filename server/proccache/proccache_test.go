@@ -98,4 +98,40 @@ func TestCache(t *testing.T) {
 		So(val, ShouldEqual, "first")
 		So(err, ShouldBeNil)
 	})
+
+	Convey("Mutate works", t, func() {
+		c := Cache{}
+
+		c.Mutate("key", func(e *Entry) *Entry {
+			So(e, ShouldBeNil)
+			return &Entry{Value: "value"}
+		})
+		So(c.Get("key"), ShouldResemble, &Entry{Value: "value"})
+
+		c.Mutate("key", func(e *Entry) *Entry {
+			So(e, ShouldResemble, &Entry{Value: "value"})
+			return nil
+		})
+		So(c.Get("key"), ShouldBeNil)
+	})
+
+	Convey("Add works", t, func() {
+		ctx, tc := testclock.UseTime(context.Background(), time.Unix(1444945245, 0))
+		ctx = Use(ctx, &Cache{})
+
+		set, val := Add(ctx, "key", "value1", time.Second)
+		So(set, ShouldBeTrue)
+		So(val, ShouldEqual, "value1")
+
+		set, val = Add(ctx, "key", "value2", time.Second)
+		So(set, ShouldBeFalse)
+		So(val, ShouldEqual, "value1")
+
+		// Expire.
+		tc.Add(2 * time.Second)
+
+		set, val = Add(ctx, "key", "value2", time.Second)
+		So(set, ShouldBeTrue)
+		So(val, ShouldEqual, "value2")
+	})
 }

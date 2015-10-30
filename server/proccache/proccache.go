@@ -19,9 +19,9 @@ import (
 // Getter is returned by Cached. See Cached for more details.
 type Getter func(c context.Context) (interface{}, error)
 
-// Maker is used by GetOrMake to make new cache item if previous one has expired.
-// It returns a value to put in the cache along with its expiration duration
-// (or 0 if it doesn't expire).
+// Maker is used by GetOrMake to make new cache item if previous one has
+// expired. It returns a value to put in the cache along with its expiration
+// duration (or 0 if it doesn't expire).
 type Maker func() (interface{}, time.Duration, error)
 
 // Warmer is used by Cached to make a new cache item if previous one has
@@ -66,6 +66,28 @@ func (c *Cache) Get(key interface{}) *Entry {
 	return nil
 }
 
+// Mutate reads an entry, passes it to the callback, and writes back whatever
+// callback returns. All under the lock. If such entry doesn't exist, callback
+// receives nil. If callback returns nil, entry is removed from the cache.
+func (c *Cache) Mutate(key interface{}, callback func(*Entry) *Entry) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	if c.cache == nil {
+		c.cache = make(map[interface{}]Entry, 1)
+	}
+	var changed *Entry
+	if e, ok := c.cache[key]; ok {
+		changed = callback(&e)
+	} else {
+		changed = callback(nil)
+	}
+	if changed == nil {
+		delete(c.cache, key)
+	} else {
+		c.cache[key] = *changed
+	}
+}
+
 type contextKey int
 
 // Use injects instance of Cache in the context.
@@ -103,8 +125,34 @@ func Get(c context.Context, key interface{}) (value interface{}, ok bool) {
 	return nil, false
 }
 
+// Add atomically adds an item to the cache if it's not currently cached
+// or existing item has expired.
+//
+// Returns (true, new item) if the item was added, (false, existing item) if
+// the item existed before.
+func Add(c context.Context, key, value interface{}, exp time.Duration) (added bool, out interface{}) {
+	now := clock.Now(c)
+	GetCache(c).Mutate(key, func(existing *Entry) *Entry {
+		if existing != nil && (existing.Exp.IsZero() || now.Before(existing.Exp)) {
+			out = existing.Value
+			return existing
+		}
+		expTs := time.Time{}
+		if exp != 0 {
+			expTs = now.Add(exp)
+		}
+		added = true
+		out = value
+		return &Entry{value, expTs}
+	})
+	return
+}
+
 // GetOrMake attempts to grab an item from the cache. If it's not there, it
-// calls a supplied callback to generate it.
+// calls a supplied `maker` callback to generate it and uses Add to place it in
+// the cache. If some concurrent operation managed to put an item in the cache
+// in between the calls, existing item is returned and return value of `maker`
+// is discarded. Returns error only if `maker` returns error.
 func GetOrMake(c context.Context, key interface{}, maker Maker) (interface{}, error) {
 	if value, ok := Get(c, key); ok {
 		return value, nil
@@ -113,7 +161,7 @@ func GetOrMake(c context.Context, key interface{}, maker Maker) (interface{}, er
 	if err != nil {
 		return nil, err
 	}
-	Put(c, key, value, exp)
+	_, value = Add(c, key, value, exp)
 	return value, nil
 }
 
@@ -123,7 +171,7 @@ func GetOrMake(c context.Context, key interface{}, maker Maker) (interface{}, er
 // returns a error only if cache initialization callback (Warmer) returns
 // a error. Warmer callback is not protected by any locks, and it may be called
 // concurrently (and the cache will have the result of invocation that finished
-// last, whatever it may be). Implement synchronization inside the callback
+// first, whatever it may be). Implement synchronization inside the callback
 // itself if needed.
 func Cached(key interface{}, warmer Warmer) Getter {
 	return func(c context.Context) (interface{}, error) {
