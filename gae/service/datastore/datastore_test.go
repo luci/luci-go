@@ -241,6 +241,28 @@ func (f *FakePLS) Problem() error {
 	return nil
 }
 
+type MGSWithNoKind struct {
+	S string
+}
+
+func (s *MGSWithNoKind) GetMetaDefault(key string, dflt interface{}) interface{} {
+	return GetMetaDefaultImpl(s.GetMeta, key, dflt)
+}
+
+func (s *MGSWithNoKind) GetMeta(key string) (interface{}, error) {
+	return nil, ErrMetaFieldUnset
+}
+
+func (s *MGSWithNoKind) GetAllMeta() PropertyMap {
+	return PropertyMap{}
+}
+
+func (s *MGSWithNoKind) SetMeta(key string, val interface{}) error {
+	return ErrMetaFieldUnset
+}
+
+var _ MetaGetterSetter = (*MGSWithNoKind)(nil)
+
 func TestKeyForObj(t *testing.T) {
 	t.Parallel()
 
@@ -375,6 +397,11 @@ func TestPut(t *testing.T) {
 			Convey("put with non-modifyable type is an error", func() {
 				cs := CommonStruct{}
 				So(ds.Put(cs).Error(), ShouldContainSubstring, "invalid Put input type")
+			})
+
+			Convey("struct with no $kind is an error", func() {
+				s := MGSWithNoKind{}
+				So(ds.Put(&s).Error(), ShouldContainSubstring, "unable to extract $kind")
 			})
 		})
 

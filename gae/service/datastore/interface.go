@@ -63,8 +63,8 @@ type Interface interface {
 	//   - *S where S is a struct
 	//   - a PropertyLoadSaver
 	//
-	// It is expected that the struct or PropertyLoadSaver exposes the
-	// following metadata (as retrieved by PropertyLoadSaver.GetMeta):
+	// It is expected that the struct exposes the following metadata (as retrieved
+	// by MetaGetter.GetMeta):
 	//   - "key" (type: Key) - The full datastore key to use. Must not be nil.
 	//     OR
 	//   - "id" (type: int64 or string) - The id of the Key to create
@@ -72,6 +72,12 @@ type Interface interface {
 	//     blank or not present, KeyForObjErr will extract the name of the src
 	//     object's type.
 	//   - "parent" (optional, type: Key) - The parent key to use.
+	//
+	// By default, the metadata will be extracted from the struct and its tagged
+	// properties. However, if the struct implements MetaGetterSetter it is
+	// wholly responsible for exporting the required fields. A struct that
+	// implements GetMeta to make some minor tweaks can evoke the defualt behavior
+	// by using GetPLS(s).GetMeta.
 	//
 	// If a required metadata item is missing or of the wrong type, then this will
 	// return an error.

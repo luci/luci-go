@@ -8,7 +8,8 @@ import (
 	"reflect"
 )
 
-// GetPLS resolves obj into a PropertyLoadSaver.
+// GetPLS resolves obj into default struct PropertyLoadSaver and
+// MetaGetterSetter implementation.
 //
 // obj must be a non-nil pointer to a struct of some sort.
 //
@@ -93,7 +94,41 @@ import (
 // methods. So if your GetMeta handles "kind", but you explicitly have a
 // $kind field, the $kind field will take precedence and your GetMeta
 // implementation will not be called for "kind".
-func GetPLS(obj interface{}) PropertyLoadSaver {
+//
+// A struct overloading any of the PropertyLoadSaver or MetaGetterSetter
+// interfaces may evoke the default struct behavior by using GetPLS on itself.
+// For example:
+//
+//   struct Special {
+//     Name string
+//
+//     foo string
+//   }
+//
+//   func (s *Special) Load(props PropertyMap) error {
+//     if foo, ok := props["foo"]; ok && len(foo) == 1 {
+//       s.foo = foo
+//       delete(props, "foo")
+//     }
+//     return GetPLS(s).Load(props)
+//   }
+//
+//   func (s *Special) Save(withMeta bool) (PropertyMap, error) {
+//     props, err := GetPLS(s).Save(withMeta)
+//     if err != nil {
+//       return nil, err
+//     }
+//     props["foo"] = []Property{MkProperty(s.foo)}
+//     return props, nil
+//   }
+//
+//   func (s *Special) Problem() error {
+//     return GetPLS(s).Problem()
+//   }
+func GetPLS(obj interface{}) interface {
+	PropertyLoadSaver
+	MetaGetterSetter
+} {
 	v := reflect.ValueOf(obj)
 	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
 		return &structPLS{c: &structCodec{problem: ErrInvalidEntityType}}
@@ -104,6 +139,13 @@ func GetPLS(obj interface{}) PropertyLoadSaver {
 	v = v.Elem()
 	c := getCodec(v.Type())
 	return &structPLS{v, c}
+}
+
+func getMGS(obj interface{}) MetaGetterSetter {
+	if mgs, ok := obj.(MetaGetterSetter); ok {
+		return mgs
+	}
+	return GetPLS(obj)
 }
 
 func getCodec(structType reflect.Type) *structCodec {

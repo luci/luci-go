@@ -680,8 +680,6 @@ type PropertyLoadSaver interface {
 	// which was held by this PropertyLoadSaver.
 	Save(withMeta bool) (PropertyMap, error)
 
-	MetaGetterSetter
-
 	// Problem indicates that this PLS has a fatal problem. Usually this is
 	// set when the underlying struct has recursion, invalid field types, nested
 	// slices, etc.

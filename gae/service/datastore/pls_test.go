@@ -375,11 +375,7 @@ func (d *Doubler) Save(withMeta bool) (PropertyMap, error) {
 	return propMap, nil
 }
 
-func (d *Doubler) GetAllMeta() PropertyMap                               { return nil }
-func (d *Doubler) GetMeta(string) (interface{}, error)                   { return nil, ErrMetaFieldUnset }
-func (d *Doubler) GetMetaDefault(_ string, dflt interface{}) interface{} { return dflt }
-func (d *Doubler) SetMeta(string, interface{}) error                     { return ErrMetaFieldUnset }
-func (d *Doubler) Problem() error                                        { return nil }
+func (d *Doubler) Problem() error { return nil }
 
 var _ PropertyLoadSaver = (*Doubler)(nil)
 
@@ -404,13 +400,39 @@ func (d *Deriver) Save(withMeta bool) (PropertyMap, error) {
 	}, nil
 }
 
-func (d *Deriver) GetAllMeta() PropertyMap                               { return nil }
-func (d *Deriver) GetMeta(string) (interface{}, error)                   { return nil, ErrMetaFieldUnset }
-func (d *Deriver) GetMetaDefault(_ string, dflt interface{}) interface{} { return dflt }
-func (d *Deriver) SetMeta(string, interface{}) error                     { return ErrMetaFieldUnset }
-func (d *Deriver) Problem() error                                        { return nil }
+func (d *Deriver) Problem() error { return nil }
 
 var _ PropertyLoadSaver = (*Deriver)(nil)
+
+type Augmenter struct {
+	S string
+
+	g string `gae:"-"`
+}
+
+func (a *Augmenter) Load(props PropertyMap) error {
+	if e := props["Extra"]; len(e) > 0 {
+		a.g = e[0].Value().(string)
+		delete(props, "Extra")
+	}
+	if err := GetPLS(a).Load(props); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *Augmenter) Save(withMeta bool) (PropertyMap, error) {
+	props, err := GetPLS(a).Save(withMeta)
+	if err != nil {
+		return nil, err
+	}
+	props["Extra"] = []Property{MkProperty("ohai!")}
+	return props, nil
+}
+
+func (a *Augmenter) Problem() error { return nil }
+
+var _ PropertyLoadSaver = (*Augmenter)(nil)
 
 type BK struct {
 	Key blobstore.Key
@@ -552,7 +574,7 @@ func (i *IDParser) getFullID() string {
 }
 
 func (i *IDParser) GetAllMeta() PropertyMap {
-	pm := PropertyMap{}
+	pm := GetPLS(i).GetAllMeta()
 	pm.SetMeta("id", i.getFullID())
 	return pm
 }
@@ -561,7 +583,7 @@ func (i *IDParser) GetMeta(key string) (interface{}, error) {
 	if key == "id" {
 		return i.getFullID(), nil
 	}
-	return nil, ErrMetaFieldUnset
+	return GetPLS(i).GetMeta(key)
 }
 
 func (i *IDParser) GetMetaDefault(key string, dflt interface{}) interface{} {
@@ -576,7 +598,7 @@ func (i *IDParser) SetMeta(key string, value interface{}) (err error) {
 		i.id, err = strconv.ParseInt(vS[1], 10, 64)
 		return
 	}
-	return ErrMetaFieldUnset
+	return GetPLS(i).SetMeta(key, value)
 }
 
 type KindOverride struct {
@@ -588,7 +610,7 @@ type KindOverride struct {
 var _ MetaGetterSetter = (*KindOverride)(nil)
 
 func (i *KindOverride) GetAllMeta() PropertyMap {
-	pm := PropertyMap{}
+	pm := GetPLS(i).GetAllMeta()
 	if i.customKind != "" {
 		pm.SetMeta("kind", i.customKind)
 	}
@@ -599,7 +621,7 @@ func (i *KindOverride) GetMeta(key string) (interface{}, error) {
 	if key == "kind" && i.customKind != "" {
 		return i.customKind, nil
 	}
-	return nil, ErrMetaFieldUnset
+	return GetPLS(i).GetMeta(key)
 }
 
 func (i *KindOverride) GetMetaDefault(key string, dflt interface{}) interface{} {
@@ -618,6 +640,8 @@ func (i *KindOverride) SetMeta(key string, value interface{}) error {
 	}
 	return ErrMetaFieldUnset
 }
+
+type Simple struct{}
 
 type testCase struct {
 	desc       string
@@ -1187,6 +1211,22 @@ var testCases = []testCase{
 		src:  &Deriver{S: "s", Derived: "derived+s", Ignored: "ignored"},
 		want: &X0{S: "s"},
 	},
+	{
+		desc: "augmenter save",
+		src:  &Augmenter{S: "s"},
+		want: PropertyMap{
+			"S":     {mp("s")},
+			"Extra": {mp("ohai!")},
+		},
+	},
+	{
+		desc: "augmenter load",
+		src: PropertyMap{
+			"S":     {mp("s")},
+			"Extra": {mp("kthxbye!")},
+		},
+		want: &Augmenter{S: "s", g: "kthxbye!"},
+	},
 	// Regression: CL 25062824 broke handling of appengine.BlobKey fields.
 	{
 		desc: "appengine.BlobKey",
@@ -1610,53 +1650,53 @@ func TestMeta(t *testing.T) {
 	Convey("Test meta fields", t, func() {
 		Convey("Can retrieve from struct", func() {
 			o := &N0{ID: 100}
-			pls := GetPLS(o)
-			val, err := pls.GetMeta("id")
+			mgs := getMGS(o)
+			val, err := mgs.GetMeta("id")
 			So(err, ShouldBeNil)
 			So(val, ShouldEqual, 100)
 
-			val, err = pls.GetMeta("kind")
+			val, err = mgs.GetMeta("kind")
 			So(err, ShouldBeNil)
 			So(val, ShouldEqual, "whatnow")
 
-			So(pls.GetMetaDefault("kind", "zappo"), ShouldEqual, "whatnow")
-			So(pls.GetMetaDefault("id", "stringID"), ShouldEqual, "stringID")
-			So(pls.GetMetaDefault("id", 6), ShouldEqual, 100)
+			So(mgs.GetMetaDefault("kind", "zappo"), ShouldEqual, "whatnow")
+			So(mgs.GetMetaDefault("id", "stringID"), ShouldEqual, "stringID")
+			So(mgs.GetMetaDefault("id", 6), ShouldEqual, 100)
 		})
 
 		Convey("Getting something not there is an error", func() {
 			o := &N0{ID: 100}
-			pls := GetPLS(o)
-			_, err := pls.GetMeta("wat")
+			mgs := getMGS(o)
+			_, err := mgs.GetMeta("wat")
 			So(err, ShouldEqual, ErrMetaFieldUnset)
 		})
 
 		Convey("Default works for missing fields", func() {
 			o := &N0{ID: 100}
-			pls := GetPLS(o)
-			So(pls.GetMetaDefault("whozit", 10), ShouldEqual, 10)
+			mgs := getMGS(o)
+			So(mgs.GetMetaDefault("whozit", 10), ShouldEqual, 10)
 		})
 
 		Convey("getting/setting from a bad struct is an error", func() {
 			o := &Recursive{}
-			pls := GetPLS(o)
-			_, err := pls.GetMeta("wat")
+			mgs := getMGS(o)
+			_, err := mgs.GetMeta("wat")
 			So(err, ShouldNotBeNil)
 
-			err = pls.SetMeta("wat", 100)
+			err = mgs.SetMeta("wat", 100)
 			So(err, ShouldNotBeNil)
 		})
 
 		Convey("Default works for bad structs", func() {
 			o := &Recursive{}
-			pls := GetPLS(o)
-			So(pls.GetMetaDefault("whozit", 10), ShouldEqual, 10)
+			mgs := getMGS(o)
+			So(mgs.GetMetaDefault("whozit", 10), ShouldEqual, 10)
 		})
 
 		Convey("can assign values to exported meta fields", func() {
 			o := &N0{ID: 100}
-			pls := GetPLS(o)
-			err := pls.SetMeta("id", int64(200))
+			mgs := getMGS(o)
+			err := mgs.SetMeta("id", int64(200))
 			So(err, ShouldBeNil)
 			So(o.ID, ShouldEqual, 200)
 
@@ -1664,16 +1704,22 @@ func TestMeta(t *testing.T) {
 
 		Convey("assigning to unsassiagnable fields is a simple error", func() {
 			o := &N0{ID: 100}
-			pls := GetPLS(o)
-			err := pls.SetMeta("kind", "hi")
+			mgs := getMGS(o)
+			err := mgs.SetMeta("kind", "hi")
 			So(err.Error(), ShouldContainSubstring, "unexported field")
 
-			err = pls.SetMeta("noob", "hi")
+			err = mgs.SetMeta("noob", "hi")
 			So(err, ShouldEqual, ErrMetaFieldUnset)
 		})
 	})
 
 	Convey("StructPLS Miscellaneous", t, func() {
+		Convey("a simple struct has a default $kind", func() {
+			So(GetPLS(&Simple{}).GetAllMeta(), ShouldResemble, PropertyMap{
+				"$kind": []Property{mpNI("Simple")},
+			})
+		})
+
 		Convey("multiple overlapping fields is an error", func() {
 			o := &BadMeta{}
 			pls := GetPLS(o)
@@ -1693,6 +1739,16 @@ func TestMeta(t *testing.T) {
 		Convey("attempting to get a PLS for a non *struct is an error", func() {
 			pls := GetPLS((*[]string)(nil))
 			So(pls.Problem(), ShouldEqual, ErrInvalidEntityType)
+
+			Convey("the error PLS can still be used", func() {
+				k, _ := pls.GetMeta("kind")
+				So(k, ShouldBeNil)
+
+				props := pls.GetAllMeta()
+				So(props, ShouldResemble, PropertyMap{
+					"$kind": []Property{mpNI("")},
+				})
+			})
 		})
 
 		Convey("convertible meta default types", func() {
@@ -1703,31 +1759,32 @@ func TestMeta(t *testing.T) {
 			}
 			okd := &OKDefaults{}
 			pls := GetPLS(okd)
+			mgs := getMGS(okd)
 			So(pls.Problem(), ShouldBeNil)
 
-			v, err := pls.GetMeta("when")
+			v, err := mgs.GetMeta("when")
 			So(err, ShouldBeNil)
 			So(v, ShouldEqual, "tomorrow")
 
-			v, err = pls.GetMeta("amt")
+			v, err = mgs.GetMeta("amt")
 			So(err, ShouldBeNil)
 			So(v, ShouldEqual, int64(100))
 
 			So(okd.DoIt, ShouldEqual, Auto)
-			v, err = pls.GetMeta("doit")
+			v, err = mgs.GetMeta("doit")
 			So(err, ShouldBeNil)
 			So(v, ShouldBeTrue)
 
-			err = pls.SetMeta("doit", false)
+			err = mgs.SetMeta("doit", false)
 			So(err, ShouldBeNil)
-			v, err = pls.GetMeta("doit")
+			v, err = mgs.GetMeta("doit")
 			So(err, ShouldBeNil)
 			So(v, ShouldBeFalse)
 			So(okd.DoIt, ShouldEqual, Off)
 
-			err = pls.SetMeta("doit", true)
+			err = mgs.SetMeta("doit", true)
 			So(err, ShouldBeNil)
-			v, err = pls.GetMeta("doit")
+			v, err = mgs.GetMeta("doit")
 			So(err, ShouldBeNil)
 			So(v, ShouldBeTrue)
 			So(okd.DoIt, ShouldEqual, On)
@@ -1769,9 +1826,9 @@ func TestMeta(t *testing.T) {
 				Val int64 `gae:"$val"`
 			}
 			o := &OverrideDefault{}
-			pls := GetPLS(o)
+			mgs := getMGS(o)
 
-			v, err := pls.GetMeta("val")
+			v, err := mgs.GetMeta("val")
 			So(err, ShouldBeNil)
 			So(v, ShouldEqual, int64(0))
 		})
@@ -1781,14 +1838,14 @@ func TestMeta(t *testing.T) {
 				Val int64 `gae:"$val,100"`
 			}
 			o := &OverrideDefault{}
-			pls := GetPLS(o)
+			mgs := getMGS(o)
 
-			v, err := pls.GetMeta("val")
+			v, err := mgs.GetMeta("val")
 			So(err, ShouldBeNil)
 			So(v, ShouldEqual, int64(100))
 
 			o.Val = 10
-			v, err = pls.GetMeta("val")
+			v, err = mgs.GetMeta("val")
 			So(err, ShouldBeNil)
 			So(v, ShouldEqual, int64(10))
 		})
@@ -1803,17 +1860,17 @@ func TestMeta(t *testing.T) {
 
 		Convey("MetaGetterSetter implementation (IDParser)", func() {
 			idp := &IDParser{parent: "moo", id: 100}
-			pls := GetPLS(idp)
-			So(pls.GetMetaDefault("id", ""), ShouldEqual, "moo|100")
-			So(pls.GetMetaDefault("kind", ""), ShouldEqual, "CoolKind")
+			mgs := getMGS(idp)
+			So(mgs.GetMetaDefault("id", ""), ShouldEqual, "moo|100")
+			So(mgs.GetMetaDefault("kind", ""), ShouldEqual, "CoolKind")
 
-			So(pls.SetMeta("kind", "Something"), ShouldErrLike, "unexported field")
-			So(pls.SetMeta("id", "happy|27"), ShouldBeNil)
+			So(mgs.SetMeta("kind", "Something"), ShouldErrLike, "unexported field")
+			So(mgs.SetMeta("id", "happy|27"), ShouldBeNil)
 
 			So(idp.parent, ShouldEqual, "happy")
 			So(idp.id, ShouldEqual, 27)
 
-			So(pls.GetAllMeta(), ShouldResemble, PropertyMap{
+			So(mgs.GetAllMeta(), ShouldResemble, PropertyMap{
 				"$id":   {MkPropertyNI("happy|27")},
 				"$kind": {MkPropertyNI("CoolKind")},
 			})
@@ -1821,24 +1878,24 @@ func TestMeta(t *testing.T) {
 
 		Convey("MetaGetterSetter implementation (KindOverride)", func() {
 			ko := &KindOverride{ID: 20}
-			pls := GetPLS(ko)
-			So(pls.GetMetaDefault("kind", ""), ShouldEqual, "KindOverride")
+			mgs := getMGS(ko)
+			So(mgs.GetMetaDefault("kind", ""), ShouldEqual, "KindOverride")
 
 			ko.customKind = "something"
-			So(pls.GetMetaDefault("kind", ""), ShouldEqual, "something")
+			So(mgs.GetMetaDefault("kind", ""), ShouldEqual, "something")
 
-			So(pls.SetMeta("kind", "Nerp"), ShouldBeNil)
+			So(mgs.SetMeta("kind", "Nerp"), ShouldBeNil)
 			So(ko.customKind, ShouldEqual, "Nerp")
 
-			So(pls.SetMeta("kind", "KindOverride"), ShouldBeNil)
+			So(mgs.SetMeta("kind", "KindOverride"), ShouldBeNil)
 			So(ko.customKind, ShouldEqual, "")
 
-			So(pls.GetAllMeta(), ShouldResemble, PropertyMap{
+			So(mgs.GetAllMeta(), ShouldResemble, PropertyMap{
 				"$id":   {MkPropertyNI(20)},
 				"$kind": {MkPropertyNI("KindOverride")},
 			})
 			ko.customKind = "wut"
-			So(pls.GetAllMeta(), ShouldResemble, PropertyMap{
+			So(mgs.GetAllMeta(), ShouldResemble, PropertyMap{
 				"$id":   {MkPropertyNI(20)},
 				"$kind": {MkPropertyNI("wut")},
 			})

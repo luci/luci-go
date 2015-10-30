@@ -98,7 +98,7 @@ func multiArgTypePLS(et reflect.Type) multiArgType {
 			return slot.Addr().Interface().(PropertyLoadSaver).Save(true)
 		},
 		getMetaPM: func(slot reflect.Value) PropertyMap {
-			return slot.Addr().Interface().(PropertyLoadSaver).GetAllMeta()
+			return getMGS(slot.Addr().Interface()).GetAllMeta()
 		},
 		setPM: func(slot reflect.Value, pm PropertyMap) error {
 			return slot.Addr().Interface().(PropertyLoadSaver).Load(pm)
@@ -137,7 +137,7 @@ func multiArgTypePLSPtr(et reflect.Type) multiArgType {
 			return slot.Interface().(PropertyLoadSaver).Save(true)
 		},
 		getMetaPM: func(slot reflect.Value) PropertyMap {
-			return slot.Interface().(PropertyLoadSaver).GetAllMeta()
+			return getMGS(slot.Interface()).GetAllMeta()
 		},
 		setPM: func(slot reflect.Value, pm PropertyMap) error {
 			return slot.Interface().(PropertyLoadSaver).Load(pm)
@@ -164,7 +164,7 @@ func multiArgTypeStruct(et reflect.Type) multiArgType {
 	if cdc.problem != nil {
 		return multiArgTypeInvalid()
 	}
-	toPLS := func(slot reflect.Value) PropertyLoadSaver {
+	toPLS := func(slot reflect.Value) *structPLS {
 		return &structPLS{slot, cdc}
 	}
 	return multiArgType{
@@ -174,13 +174,16 @@ func multiArgTypeStruct(et reflect.Type) multiArgType {
 			return newKeyObjErr(aid, ns, toPLS(slot))
 		},
 		getPM: func(slot reflect.Value) (PropertyMap, error) {
-			return toPLS(slot).(PropertyLoadSaver).Save(true)
+			return toPLS(slot).Save(true)
 		},
 		getMetaPM: func(slot reflect.Value) PropertyMap {
-			return toPLS(slot).(PropertyLoadSaver).GetAllMeta()
+			if slot.Type().Implements(typeOfMGS) {
+				return slot.Interface().(MetaGetterSetter).GetAllMeta()
+			}
+			return toPLS(slot).GetAllMeta()
 		},
 		setPM: func(slot reflect.Value, pm PropertyMap) error {
-			return toPLS(slot).(PropertyLoadSaver).Load(pm)
+			return toPLS(slot).Load(pm)
 		},
 		setKey: func(slot reflect.Value, k *Key) {
 			setKey(toPLS(slot), k)
@@ -197,7 +200,7 @@ func multiArgTypeStructPtr(et reflect.Type) multiArgType {
 	if cdc.problem != nil {
 		return multiArgTypeInvalid()
 	}
-	toPLS := func(slot reflect.Value) PropertyLoadSaver {
+	toPLS := func(slot reflect.Value) *structPLS {
 		return &structPLS{slot.Elem(), cdc}
 	}
 	return multiArgType{
@@ -207,13 +210,16 @@ func multiArgTypeStructPtr(et reflect.Type) multiArgType {
 			return newKeyObjErr(aid, ns, toPLS(slot))
 		},
 		getPM: func(slot reflect.Value) (PropertyMap, error) {
-			return toPLS(slot).(PropertyLoadSaver).Save(true)
+			return toPLS(slot).Save(true)
 		},
 		getMetaPM: func(slot reflect.Value) PropertyMap {
-			return toPLS(slot).(PropertyLoadSaver).GetAllMeta()
+			if slot.Elem().Type().Implements(typeOfMGS) {
+				return getMGS(slot.Interface()).GetAllMeta()
+			}
+			return toPLS(slot).GetAllMeta()
 		},
 		setPM: func(slot reflect.Value, pm PropertyMap) error {
-			return toPLS(slot).(PropertyLoadSaver).Load(pm)
+			return toPLS(slot).Load(pm)
 		},
 		setKey: func(slot reflect.Value, k *Key) {
 			setKey(toPLS(slot), k)
@@ -237,7 +243,7 @@ func multiArgTypeInterface() multiArgType {
 			return pls.Save(true)
 		},
 		getMetaPM: func(slot reflect.Value) PropertyMap {
-			pls := mkPLS(slot.Elem().Interface())
+			pls := getMGS(slot.Elem().Interface())
 			return pls.GetAllMeta()
 		},
 		setPM: func(slot reflect.Value, pm PropertyMap) error {
@@ -251,7 +257,7 @@ func multiArgTypeInterface() multiArgType {
 }
 
 func newKeyObjErr(aid, ns string, src interface{}) (*Key, error) {
-	pls := mkPLS(src)
+	pls := getMGS(src)
 	if key, _ := pls.GetMetaDefault("key", nil).(*Key); key != nil {
 		return key, nil
 	}
@@ -273,7 +279,7 @@ func newKeyObjErr(aid, ns string, src interface{}) (*Key, error) {
 }
 
 func setKey(src interface{}, key *Key) {
-	pls := mkPLS(src)
+	pls := getMGS(src)
 	if pls.SetMeta("key", key) == ErrMetaFieldUnset {
 		lst := key.LastTok()
 		if lst.StringID != "" {
