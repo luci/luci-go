@@ -19,6 +19,7 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
+	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/middleware"
 )
 
@@ -38,6 +39,7 @@ func authHandler(h middleware.Handler) httprouter.Handle {
 func init() {
 	router := httprouter.New()
 	authenticator.InstallHandlers(router, gaemiddleware.BaseProd)
+	signing.InstallHandlers(router, gaemiddleware.BaseProd)
 	router.GET("/", authHandler(indexPage))
 	router.GET("/_ah/warmup", authHandler(warmupHandler))
 	http.DefaultServeMux.Handle("/", router)

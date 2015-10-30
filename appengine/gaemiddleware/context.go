@@ -10,6 +10,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/impl/prod"
 	"github.com/luci/luci-go/appengine/gaeauth/client"
+	"github.com/luci/luci-go/appengine/gaeauth/server/gaesigner"
 	"github.com/luci/luci-go/appengine/gaelogger"
 	"github.com/luci/luci-go/appengine/gaesecrets"
 	"github.com/luci/luci-go/appengine/gaesettings"
@@ -35,6 +36,7 @@ var (
 //   * github.com/luci/luci-go/server/proccache (in process memory cache)
 //   * github.com/luci/luci-go/server/settings (global app settings)
 //   * github.com/luci/luci-go/appengine/gaesecrets (access to secret keys in datastore)
+//   * github.com/luci/luci-go/appengine/gaeauth/server/gaesigner (RSA signer)
 func WithProd(c context.Context, req *http.Request) context.Context {
 	c = prod.Use(appengine.WithContext(c, req))
 	c = gaelogger.Use(c)
@@ -42,6 +44,7 @@ func WithProd(c context.Context, req *http.Request) context.Context {
 	c = proccache.Use(c, globalProcessCache)
 	c = settings.Use(c, globalSettings)
 	c = gaesecrets.Use(c, nil)
+	c = gaesigner.Use(c)
 	return c
 }
 
