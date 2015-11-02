@@ -1748,6 +1748,9 @@ func TestMeta(t *testing.T) {
 				So(props, ShouldResemble, PropertyMap{
 					"$kind": []Property{mpNI("")},
 				})
+
+				_, err := pls.Save(true)
+				So(err, ShouldNotBeNil)
 			})
 		})
 
@@ -1871,8 +1874,8 @@ func TestMeta(t *testing.T) {
 			So(idp.id, ShouldEqual, 27)
 
 			So(mgs.GetAllMeta(), ShouldResemble, PropertyMap{
-				"$id":   {MkPropertyNI("happy|27")},
-				"$kind": {MkPropertyNI("CoolKind")},
+				"$id":   {mpNI("happy|27")},
+				"$kind": {mpNI("CoolKind")},
 			})
 		})
 
@@ -1891,13 +1894,20 @@ func TestMeta(t *testing.T) {
 			So(ko.customKind, ShouldEqual, "")
 
 			So(mgs.GetAllMeta(), ShouldResemble, PropertyMap{
-				"$id":   {MkPropertyNI(20)},
-				"$kind": {MkPropertyNI("KindOverride")},
+				"$id":   {mpNI(20)},
+				"$kind": {mpNI("KindOverride")},
 			})
 			ko.customKind = "wut"
 			So(mgs.GetAllMeta(), ShouldResemble, PropertyMap{
-				"$id":   {MkPropertyNI(20)},
-				"$kind": {MkPropertyNI("wut")},
+				"$id":   {mpNI(20)},
+				"$kind": {mpNI("wut")},
+			})
+
+			props, err := GetPLS(ko).Save(true)
+			So(err, ShouldBeNil)
+			So(props, ShouldResemble, PropertyMap{
+				"$id":   {mpNI(20)},
+				"$kind": {mpNI("wut")},
 			})
 		})
 	})

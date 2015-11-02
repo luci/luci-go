@@ -205,9 +205,13 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 }
 
 func (p *structPLS) Save(withMeta bool) (PropertyMap, error) {
+	if err := p.Problem(); err != nil {
+		return nil, err
+	}
+
 	ret := PropertyMap(nil)
 	if withMeta {
-		ret = p.GetAllMeta()
+		ret = getMGS(p.o.Addr().Interface()).GetAllMeta()
 	} else {
 		ret = make(PropertyMap, len(p.c.byName))
 	}
