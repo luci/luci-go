@@ -5,6 +5,7 @@
 package internal
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -43,8 +44,12 @@ func FetchJSON(c context.Context, val interface{}, f RequestFactory) error {
 	}()
 	if resp.StatusCode >= 300 {
 		body, _ := ioutil.ReadAll(resp.Body)
+		// Opportunistically try to unmarshal the response. Works with JSON APIs.
+		if val != nil {
+			json.Unmarshal(body, val)
+		}
 		logging.Errorf(c, "auth: URL fetch failed - HTTP %d - %s", resp.StatusCode, string(body))
-		err := fmt.Errorf("auth: unexpected HTTP code (%d) when fetching %s", resp.StatusCode, r.URL)
+		err := fmt.Errorf("auth: HTTP code (%d) when fetching %s", resp.StatusCode, r.URL)
 		if resp.StatusCode >= 500 {
 			return errors.WrapTransient(err)
 		}
@@ -57,4 +62,45 @@ func FetchJSON(c context.Context, val interface{}, f RequestFactory) error {
 		}
 	}
 	return nil
+}
+
+// GetJSON makes GET request.
+func GetJSON(c context.Context, url string, out interface{}) error {
+	return methodWithoutBody(c, "GET", url, out)
+}
+
+// PostJSON makes POST request.
+func PostJSON(c context.Context, url string, body, out interface{}) error {
+	return methodWithBody(c, "POST", url, body, out)
+}
+
+// PutJSON makes PUT request.
+func PutJSON(c context.Context, url string, body, out interface{}) error {
+	return methodWithBody(c, "PUT", url, body, out)
+}
+
+// methodWithoutBody makes request that doesn't have request body (e.g GET).
+func methodWithoutBody(c context.Context, method, url string, out interface{}) error {
+	return FetchJSON(c, out, func() (*http.Request, error) {
+		return http.NewRequest(method, url, nil)
+	})
+}
+
+// methodWithoutBody makes request that does have request body (e.g POST).
+func methodWithBody(c context.Context, method, url string, body, out interface{}) error {
+	var blob []byte
+	if body != nil {
+		var err error
+		if blob, err = json.Marshal(body); err != nil {
+			return err
+		}
+	}
+	return FetchJSON(c, out, func() (*http.Request, error) {
+		req, err := http.NewRequest(method, url, bytes.NewReader(blob))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		return req, nil
+	})
 }

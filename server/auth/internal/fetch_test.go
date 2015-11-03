@@ -49,7 +49,7 @@ func TestFetch(t *testing.T) {
 			status = http.StatusNotFound
 			So(FetchJSON(ctx, &val, func() (*http.Request, error) {
 				return http.NewRequest("GET", ts.URL, nil)
-			}), ShouldErrLike, "unexpected HTTP code (404)")
+			}), ShouldErrLike, "HTTP code (404)")
 		})
 
 		Convey("handles bad body", func() {
