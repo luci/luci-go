@@ -125,6 +125,36 @@ import (
 //   func (s *Special) Problem() error {
 //     return GetPLS(s).Problem()
 //   }
+//
+// Additionally, any field ptr-to-type may implement the PropertyConverter
+// interface to allow a single field to, for example, implement some alternate
+// encoding (json, gzip), or even just serialize to/from a simple string field.
+// This applies to normal fields, as well as metadata fields. It can be useful
+// for storing struct '$id's which have multi-field meanings. For example, the
+// Person struct below could be initialized in go as `&Person{Name{"Jane",
+// "Doe"}}`, retaining Jane's name as manipulable Go fields. However, in the
+// datastore, it would have a key of `/Person,"Jane|Doe"`, and loading the
+// struct from the datastore as part of a Query, for example, would correctly
+// populate Person.Name.First and Person.Name.Last.
+//
+//   type Name struct {
+//     First string
+//     Last string
+//   }
+//
+//   func (n *Name) ToProperty() (Property, error) {
+//     return fmt.Sprintf("%s|%s", n.First, n.Last)
+//   }
+//
+//   func (n *Name) FromProperty(p Property) error {
+//     // check p to be a PTString
+//     // split on "|"
+//     // assign to n.First, n.Last
+//   }
+//
+//   type Person struct {
+//     Name `gae:"$id"`
+//   }
 func GetPLS(obj interface{}) interface {
 	PropertyLoadSaver
 	MetaGetterSetter

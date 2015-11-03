@@ -298,20 +298,28 @@ func (p *structPLS) GetMeta(key string) (interface{}, error) {
 	}
 
 	if idx, ok := p.c.byMeta[key]; ok {
-		return p.getMetaFor(idx), nil
-	}
-
-	if key == "kind" {
+		if val, ok := p.getMetaFor(idx); ok {
+			return val, nil
+		}
+	} else if key == "kind" {
 		return p.getDefaultKind(), nil
 	}
 	return nil, ErrMetaFieldUnset
 }
 
-func (p *structPLS) getMetaFor(idx int) interface{} {
+func (p *structPLS) getMetaFor(idx int) (interface{}, bool) {
 	st := p.c.byIndex[idx]
 	val := st.metaVal
-	f := p.o.Field(idx)
 	if st.canSet {
+		f := p.o.Field(idx)
+		if st.convert {
+			prop, err := f.Addr().Interface().(PropertyConverter).ToProperty()
+			if err != nil {
+				return nil, false
+			}
+			return prop.value, true
+		}
+
 		if !reflect.DeepEqual(reflect.Zero(f.Type()).Interface(), f.Interface()) {
 			val = f.Interface()
 			if bf, ok := val.(Toggle); ok {
@@ -319,19 +327,20 @@ func (p *structPLS) getMetaFor(idx int) interface{} {
 			}
 		}
 	}
-	return val
+	return val, true
 }
 
 func (p *structPLS) GetAllMeta() PropertyMap {
 	needKind := true
 	ret := make(PropertyMap, len(p.c.byMeta)+1)
 	for k, idx := range p.c.byMeta {
-		val := p.getMetaFor(idx)
-		p := Property{}
-		if err := p.SetValue(val, NoIndex); err != nil {
-			continue
+		if val, ok := p.getMetaFor(idx); ok {
+			p := Property{}
+			if err := p.SetValue(val, NoIndex); err != nil {
+				continue
+			}
+			ret["$"+k] = []Property{p}
 		}
-		ret["$"+k] = []Property{p}
 	}
 	if needKind {
 		if _, ok := p.c.byMeta["kind"]; !ok {
@@ -353,9 +362,15 @@ func (p *structPLS) SetMeta(key string, val interface{}) (err error) {
 	if !ok {
 		return ErrMetaFieldUnset
 	}
-	if !p.c.byIndex[idx].canSet {
+	st := p.c.byIndex[idx]
+	if !st.canSet {
 		return fmt.Errorf("gae/helper: cannot set meta %q: unexported field", key)
 	}
+	if st.convert {
+		return p.o.Field(idx).Addr().Interface().(PropertyConverter).FromProperty(
+			MkPropertyNI(val))
+	}
+
 	// setting a BoolField
 	if b, ok := val.(bool); ok {
 		if b {
@@ -443,12 +458,15 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 	for i := range c.byIndex {
 		st := &c.byIndex[i]
 		f := t.Field(i)
+		ft := f.Type
+
 		name := f.Tag.Get("gae")
 		opts := ""
 		if i := strings.Index(name, ","); i != -1 {
 			name, opts = name[:i], name[i+1:]
 		}
 		st.canSet = f.PkgPath == "" // blank == exported
+		st.convert = reflect.PtrTo(ft).Implements(typeOfPropertyConverter)
 		switch {
 		case name == "":
 			if !f.Anonymous {
@@ -461,12 +479,14 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 				return
 			}
 			c.byMeta[name] = i
-			mv, err := convertMeta(opts, f.Type)
-			if err != nil {
-				c.problem = me("meta field %q has bad type: %s", "$"+name, err)
-				return
+			if !st.convert {
+				mv, err := convertMeta(opts, ft)
+				if err != nil {
+					c.problem = me("meta field %q has bad type: %s", "$"+name, err)
+					return
+				}
+				st.metaVal = mv
 			}
-			st.metaVal = mv
 			fallthrough
 		case name == "-":
 			st.name = "-"
@@ -483,11 +503,8 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 		}
 
 		substructType := reflect.Type(nil)
-		ft := f.Type
-		if reflect.PtrTo(ft).Implements(typeOfPropertyConverter) {
-			st.convert = true
-		} else {
-			switch f.Type.Kind() {
+		if !st.convert {
+			switch ft.Kind() {
 			case reflect.Struct:
 				if ft != typeOfTime && ft != typeOfGeoPoint {
 					substructType = ft
@@ -502,7 +519,7 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 				c.hasSlice = c.hasSlice || st.isSlice
 			case reflect.Interface:
 				c.problem = me("field %q has non-concrete interface type %s",
-					f.Name, f.Type)
+					f.Name, ft)
 				return
 			}
 		}

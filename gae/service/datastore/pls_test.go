@@ -641,6 +641,39 @@ func (i *KindOverride) SetMeta(key string, value interface{}) error {
 	return ErrMetaFieldUnset
 }
 
+type EmbeddedID struct {
+	Thing string
+	Val   int
+}
+
+var _ PropertyConverter = (*EmbeddedID)(nil)
+
+func (e *EmbeddedID) ToProperty() (ret Property, err error) {
+	return mpNI(fmt.Sprintf("%s|%d", e.Thing, e.Val)), nil
+}
+
+func (e *EmbeddedID) FromProperty(val Property) error {
+	if val.Type() != PTString {
+		return fmt.Errorf("gotta have a string")
+	}
+	toks := strings.SplitN(val.Value().(string), "|", 2)
+	if len(toks) != 2 {
+		return fmt.Errorf("gotta have two parts")
+	}
+	v, err := strconv.Atoi(toks[1])
+	if err != nil {
+		return err
+	}
+
+	e.Thing = toks[0]
+	e.Val = v
+	return nil
+}
+
+type IDEmbedder struct {
+	EmbeddedID `gae:"$id"`
+}
+
 type Simple struct{}
 
 type testCase struct {
@@ -1908,6 +1941,22 @@ func TestMeta(t *testing.T) {
 			So(props, ShouldResemble, PropertyMap{
 				"$id":   {mpNI(20)},
 				"$kind": {mpNI("wut")},
+			})
+		})
+
+		Convey("Embeddable Metadata structs", func() {
+			ide := &IDEmbedder{EmbeddedID{"hello", 10}}
+			pls := GetPLS(ide)
+			val, err := pls.GetMeta("id")
+			So(err, ShouldBeNil)
+			So(val, ShouldEqual, "hello|10")
+
+			So(pls.SetMeta("id", "sup|1337"), ShouldBeNil)
+			So(ide.EmbeddedID, ShouldResemble, EmbeddedID{"sup", 1337})
+
+			So(pls.GetAllMeta(), ShouldResembleV, PropertyMap{
+				"$id":   {mpNI("sup|1337")},
+				"$kind": {mpNI("IDEmbedder")},
 			})
 		})
 	})
