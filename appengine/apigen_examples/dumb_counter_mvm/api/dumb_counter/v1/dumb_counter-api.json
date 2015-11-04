@@ -1,20 +1,23 @@
 {
  "kind": "discovery#restDescription",
  "discoveryVersion": "v1",
+ "protocol": "rest",
  "id": "dumb_counter:v1",
  "name": "dumb_counter",
  "version": "v1",
  "description": "A hideously stupid persistant counter service.",
- "root": "https://localhost:8080/_ah/api",
- "defaultVersion": false,
+ "baseUrl": "http://localhost:8080/_ah/api/dumb_counter/v1/",
+ "basePath": "/_ah/api/dumb_counter/v1/",
+ "rootUrl": "http://localhost:8080/_ah/api/",
+ "servicePath": "dumb_counter/v1/",
  "schemas": {
   "AddReq": {
    "id": "AddReq",
    "type": "object",
    "properties": {
     "Delta": {
-     "format": "int64",
-     "type": "string"
+     "type": "string",
+     "format": "int64"
     },
     "Name": {
      "type": "string"
@@ -26,12 +29,12 @@
    "type": "object",
    "properties": {
     "Cur": {
-     "format": "int64",
-     "type": "string"
+     "type": "string",
+     "format": "int64"
     },
     "Prev": {
-     "format": "int64",
-     "type": "string"
+     "type": "string",
+     "format": "int64"
     }
    }
   },
@@ -43,12 +46,12 @@
      "type": "string"
     },
     "NewVal": {
-     "format": "int64",
-     "type": "string"
+     "type": "string",
+     "format": "int64"
     },
     "OldVal": {
-     "format": "int64",
-     "type": "string"
+     "type": "string",
+     "format": "int64"
     }
    }
   },
@@ -60,8 +63,8 @@
      "type": "string"
     },
     "Val": {
-     "format": "int64",
-     "type": "string"
+     "type": "string",
+     "format": "int64"
     }
    }
   },
@@ -70,8 +73,8 @@
    "type": "object",
    "properties": {
     "Val": {
-     "format": "int64",
-     "type": "string"
+     "type": "string",
+     "format": "int64"
     }
    }
   },
@@ -97,8 +100,8 @@
    "parameters": {
     "Name": {
      "type": "string",
-     "required": true,
-     "location": "path"
+     "location": "path",
+     "required": true
     }
    },
    "parameterOrder": [
@@ -121,8 +124,8 @@
    "parameters": {
     "Name": {
      "type": "string",
-     "required": true,
-     "location": "path"
+     "location": "path",
+     "required": true
     }
    },
    "parameterOrder": [
@@ -141,8 +144,8 @@
    "parameters": {
     "Name": {
      "type": "string",
-     "required": true,
-     "location": "path"
+     "location": "path",
+     "required": true
     }
    },
    "parameterOrder": [

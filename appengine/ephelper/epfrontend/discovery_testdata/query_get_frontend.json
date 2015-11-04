@@ -1,0 +1,44 @@
+{
+ "basePath": "/testing/v1/testapi/v2/", 
+ "baseUrl": "https://example.com/testing/v1/testapi/v2/", 
+ "description": "A testing API", 
+ "discoveryVersion": "v1", 
+ "id": "testapi:v2", 
+ "kind": "discovery#restDescription", 
+ "methods": {
+  "test": {
+   "description": "API Test Method", 
+   "httpMethod": "GET", 
+   "id": "test", 
+   "parameters": {
+    "value": {
+     "location": "query", 
+     "required": true, 
+     "type": "string"
+    }
+   }, 
+   "path": "testMethod", 
+   "request": {
+    "$ref": "TestRequest", 
+    "parameterName": "resource"
+   }
+  }
+ }, 
+ "name": "testapi", 
+ "protocol": "rest", 
+ "rootUrl": "https://example.com/testing/v1", 
+ "schemas": {
+  "TestRequest": {
+   "description": "Test Method Request", 
+   "id": "TestRequest", 
+   "properties": {
+    "value": {
+     "$ref": "ValueType"
+    }
+   }, 
+   "type": "object"
+  }
+ }, 
+ "servicePath": "testapi/v2/", 
+ "version": "v2"
+}

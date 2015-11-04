@@ -2,6 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-//go:generate apigen -api-package "github.com/luci/luci-go/appengine/apigen_examples/dumb_counter/api" -base-url "https://counter.example.com/_ah/api"
+//go:generate apigen -api-package "github.com/luci/luci-go/appengine/apigen_examples/dumb_counter/api" -base-url "https://counter.example.com"
 
-package dumbCounter
+package service

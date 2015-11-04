@@ -1,0 +1,49 @@
+{
+ "description": "A testing API", 
+ "descriptor": {
+  "methods": {
+   "Test": {
+    "response": {
+     "$ref": "TestResponse"
+    }
+   }
+  }, 
+  "schemas": {
+   "TestResponse": {
+    "description": "Test Method Response", 
+    "id": "TestResponse", 
+    "properties": {
+     "value": {
+      "$ref": "ValueType"
+     }
+    }, 
+    "type": "object", 
+    "types": "object"
+   }
+  }
+ }, 
+ "methods": {
+  "test": {
+   "description": "API Test Method", 
+   "httpMethod": "POST", 
+   "path": "testMethod/{value}", 
+   "request": {
+    "body": "empty", 
+    "parameters": {
+     "value": {
+      "required": true, 
+      "type": "string"
+     }
+    }
+   }, 
+   "response": {
+    "body": "autoTemplate(backendRequest)", 
+    "bodyName": "resource"
+   }, 
+   "rosyMethod": "Test"
+  }
+ }, 
+ "name": "testapi", 
+ "root": "foo", 
+ "version": "v2"
+}

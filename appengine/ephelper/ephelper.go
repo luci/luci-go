@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
+	"github.com/luci/luci-go/appengine/ephelper/epfrontend"
 )
 
 const errPrefix = "endpoints.Register: "
@@ -21,11 +22,23 @@ var (
 	// ErrServiceNil is returned if you pass a nil service to Register. Don't do
 	// that.
 	ErrServiceNil = errors.New(errPrefix + "service is nil")
+
+	// DefaultHelper is the default Helper implementation.
+	DefaultHelper = Helper{}
 )
 
 // MethodInfoMap is the common registry for an endpoints service. It's
 // used by infra/libs/endpoints_client to populate its API.
 type MethodInfoMap map[string]*endpoints.MethodInfo
+
+// Helper is the endpoint helper configuration.
+type Helper struct {
+	// Frontend is the internally-hosted endpoints frontend service.
+	//
+	// If not nil, calls to Register() will also register the resulting
+	// services with the Frontend instance.
+	Frontend *epfrontend.Server
+}
 
 // Register adds an endpoints.RegisterService-compatible service object using
 // the MethodInfoMap to look up the MethodInfo objects by methodName. It is
@@ -34,7 +47,8 @@ type MethodInfoMap map[string]*endpoints.MethodInfo
 //
 // service should be an instance of your service type (as if you were passing
 // it to "go-endpoints/endpoints".RegisterService).
-func Register(server *endpoints.Server, service interface{}, si *endpoints.ServiceInfo, mi MethodInfoMap) error {
+func (h *Helper) Register(server *endpoints.Server, service interface{}, si *endpoints.ServiceInfo,
+	mi MethodInfoMap) error {
 	if server == nil {
 		return ErrServerNil
 	}
@@ -73,5 +87,16 @@ func Register(server *endpoints.Server, service interface{}, si *endpoints.Servi
 		mi[methodName] = curInfo // So that we can observe the merged result
 	}
 
+	if h.Frontend != nil {
+		if err := h.Frontend.RegisterService(api); err != nil {
+			return fmt.Errorf("%s: failed to register with frontend: %v", errPrefix, err)
+		}
+	}
 	return nil
+}
+
+// Register is a convenience method to pass through registration to the
+// DefaultHelper.
+func Register(server *endpoints.Server, service interface{}, si *endpoints.ServiceInfo, mi MethodInfoMap) error {
+	return DefaultHelper.Register(server, service, si, mi)
 }

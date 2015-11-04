@@ -93,7 +93,7 @@ func (a *Application) AddToFlagSet(fs *flag.FlagSet) {
 		"Path to the AppEngine service to generate from.")
 	flag.IntVar(&a.servicePort, "service-port", 8080,
 		"Port that the service listens on.")
-	flag.StringVar(&a.serviceAPIRoot, "service-api-root", "/_ah/spi",
+	flag.StringVar(&a.serviceAPIRoot, "service-api-root", "/_ah/api/",
 		"The service's API root path.")
 	flag.StringVar(&a.genPath, "generator", "google-api-go-generator",
 		"Path to the `google-api-go-generator` binary to use.")
@@ -104,7 +104,7 @@ func (a *Application) AddToFlagSet(fs *flag.FlagSet) {
 	flag.Var(&a.apiWhitelist, "api",
 		"If supplied, limit the emitted APIs to those named. Can be specified "+
 			"multiple times.")
-	flag.StringVar(&a.baseURL, "base-url", "http://localhost:8080/_ah/api",
+	flag.StringVar(&a.baseURL, "base-url", "http://localhost:8080",
 		"Use this as the default base service client URL.")
 }
 
@@ -218,18 +218,18 @@ func (a Application) Run(c context.Context) error {
 	}
 
 	// (1) Execute our service. Capture its discovery API.
-	sc := &serviceConfig{
-		path:    a.servicePath,
-		port:    a.servicePort,
-		apiRoot: a.serviceAPIRoot,
-	}
-	svc, err := sc.loadService(c)
+	svc, err := loadService(c, a.servicePath)
 	if err != nil {
 		return fmt.Errorf("failed to load service [%s]: %s", a.servicePath, err)
 	}
 
 	// (1) Execute our service. Capture its discovery API.
-	err = svc.run(c, func(c context.Context, discoveryURL url.URL) error {
+	discoveryURL := url.URL{
+		Scheme: "http",
+		Host:   fmt.Sprintf("localhost:%d", a.servicePort),
+		Path:   safeURLPathJoin("", a.serviceAPIRoot, "discovery", "v1", "apis"),
+	}
+	err = svc.run(c, func(c context.Context) error {
 		data, err := retryHTTP(c, discoveryURL, "GET", "")
 		if err != nil {
 			return fmt.Errorf("discovery server did not come online: %s", err)
@@ -326,7 +326,7 @@ func (a *Application) generateAPI(c context.Context, item *directoryItem, discov
 
 		// Replace the basePath variable.
 		data = reBasePathOverride.ReplaceAll(data,
-			[]byte(fmt.Sprintf(`${1}"%s/%s/%s/"`, a.baseURL, item.Name, item.Version)))
+			[]byte(fmt.Sprintf(`${1}"%s"`, safeURLPathJoin(a.baseURL, a.serviceAPIRoot, item.Name, item.Version, ""))))
 
 		// Replace the package import override (critical).
 		data = reImportOverride.ReplaceAllLiteral(data, []byte(nil))
@@ -356,4 +356,11 @@ func (a *Application) isWhitelisted(id string) bool {
 		}
 	}
 	return false
+}
+
+func safeURLPathJoin(p ...string) string {
+	for i, v := range p {
+		p[i] = strings.Trim(v, "/")
+	}
+	return strings.Join(p, "/")
 }

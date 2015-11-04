@@ -5,13 +5,9 @@
 package apigen
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net"
-	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -32,13 +28,7 @@ type service interface {
 	run(context.Context, serviceRunFunc) error
 }
 
-type serviceRunFunc func(context.Context, url.URL) error
-
-type serviceConfig struct {
-	path    string
-	port    int
-	apiRoot string
-}
+type serviceRunFunc func(context.Context) error
 
 // loadService is a generic service loader routine. It attempts to:
 // 1) Identify the filesystem path of the service being described.
@@ -47,8 +37,7 @@ type serviceConfig struct {
 //
 // "path" is first treated as a filesystem path, then considered as a Go package
 // path.
-func (sc *serviceConfig) loadService(c context.Context) (service, error) {
-	path := sc.path
+func loadService(c context.Context, path string) (service, error) {
 	yamlPath := ""
 	st, err := os.Stat(path)
 	switch {
@@ -105,8 +94,7 @@ func (sc *serviceConfig) loadService(c context.Context) (service, error) {
 	case "go":
 		if config.VM {
 			return &discoveryTranslateService{
-				serviceConfig: *sc,
-				dir:           path,
+				dir: path,
 			}, nil
 		}
 		return &devAppserverService{
@@ -155,19 +143,13 @@ func (s *devAppserverService) run(c context.Context, f serviceRunFunc) error {
 	}
 	defer cmd.kill(c)
 
-	return f(c, url.URL{
-		Scheme: "http",
-		Host:   "localhost:8080", // Default dev_appserver.py host/port.
-		Path:   "/_ah/api/discovery/v1/apis",
-	})
+	return f(c)
 }
 
 // discoveryTranslateService is a service that loads a backend discovery
 // document, translates it to a frontend directory list, then hosts its own
 // frontend server to expose the translated data.
 type discoveryTranslateService struct {
-	serviceConfig
-
 	dir string
 }
 
@@ -210,76 +192,7 @@ func (s *discoveryTranslateService) run(c context.Context, f serviceRunFunc) err
 	}
 	defer svc.kill(c)
 
-	// Load the service's discovery document.
-	discoveryURL := url.URL{
-		Scheme: "http",
-		Host:   fmt.Sprintf("localhost:%d", s.port),
-		Path:   fmt.Sprintf("%s/%s", s.apiRoot, "BackendService.getApiConfigs"),
-	}
-	data, err := retryHTTP(c, discoveryURL, "POST", "{}")
-	if err != nil {
-		return fmt.Errorf("endpoints service did not come online: %s", err)
-	}
-	log.Debugf(c, "Got backend API configs:\n%s", string(data))
-
-	// Translate the configs into APIs.
-	h, err := translateAPIs(data)
-	if err != nil {
-		return err
-	}
-	dl, err := h.directoryList()
-	if err != nil {
-		return fmt.Errorf("failed to create directory list: %s", err)
-	}
-
-	// Spawn an HTTP server to host those APIs.
-	//
-	// We don't care what port it listens on.
-	l, err := net.ListenTCP("tcp", &net.TCPAddr{})
-	if err != nil {
-		return fmt.Errorf("failed to create TCP server: %s", err)
-	}
-	defer l.Close()
-
-	// Install handlers for directory index/items.
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", serveJSON(c, dl))
-	for _, de := range dl.Items {
-		mux.HandleFunc(de.relativeLink("/"), serveJSON(c, de.rdesc))
-	}
-
-	server := http.Server{
-		Handler: mux,
-	}
-	go server.Serve(l)
-
-	return f(c, url.URL{
-		Scheme: "http",
-		Host:   fmt.Sprintf("localhost:%d", l.Addr().(*net.TCPAddr).Port),
-		Path:   "/",
-	})
-}
-
-// serveJSON returns an HTTP handler that serves the marshalled JSON form of
-// the specified object.
-func serveJSON(c context.Context, d interface{}) http.HandlerFunc {
-	data, err := json.MarshalIndent(d, "", " ")
-
-	return func(w http.ResponseWriter, req *http.Request) {
-		if err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-			}.Errorf(c, "Failed to serve.")
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			return
-		}
-
-		log.Debugf(c, "Serving response data:\n%s", string(data))
-		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(data)
-	}
+	return f(c)
 }
 
 func checkBuild(c context.Context, dir string) error {
@@ -289,7 +202,7 @@ func checkBuild(c context.Context, dir string) error {
 	}
 	defer os.RemoveAll(d)
 
-	cmd := exec.Command("go", "build", "-o", filepath.Join(d, "service"), ".")
+	cmd := exec.Command("go", "build", "-o", filepath.Join(filepath.Base(d), "service"), ".")
 	cmd.Dir = dir
 	log.Fields{
 		"args": cmd.Args,

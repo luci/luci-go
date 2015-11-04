@@ -5,10 +5,23 @@
 package main
 
 import (
-	_ "github.com/luci/luci-go/appengine/apigen_examples/dumb_counter/service"
+	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
+	"github.com/luci/luci-go/appengine/apigen_examples/dumb_counter/dumbCounter"
+	"github.com/luci/luci-go/appengine/ephelper"
+	"github.com/luci/luci-go/appengine/ephelper/epfrontend"
+	"github.com/luci/luci-go/common/logging/gologger"
 	"google.golang.org/appengine"
 )
 
 func main() {
+	epfe := epfrontend.New("/api/", nil)
+	epfe.Logger = gologger.Get()
+	h := ephelper.Helper{
+		Frontend: epfe,
+	}
+	h.Register(endpoints.DefaultServer, dumbCounter.Example{}, dumbCounter.ServiceInfo, dumbCounter.MethodInfoMap)
+
+	endpoints.HandleHTTP()
+	epfe.HandleHTTP(nil)
 	appengine.Main()
 }
