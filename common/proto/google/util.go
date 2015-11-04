@@ -14,6 +14,10 @@ const (
 
 // NewTimestamp creates a new Timestamp protobuf from a time.Time type.
 func NewTimestamp(t time.Time) *Timestamp {
+	if t.IsZero() {
+		return nil
+	}
+
 	nanos := t.UnixNano()
 	return &Timestamp{
 		Seconds: nanos / nanosecondsInASecond,
@@ -28,6 +32,10 @@ func (t *Timestamp) Time() time.Time {
 
 // NewDuration creates a new Duration protobuf from a time.Duration.
 func NewDuration(d time.Duration) *Duration {
+	if d == 0 {
+		return nil
+	}
+
 	nanos := d.Nanoseconds()
 	return &Duration{
 		Seconds: nanos / nanosecondsInASecond,
