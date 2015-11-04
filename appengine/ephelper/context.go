@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
+	gaeauth "github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/server/auth"
 	"golang.org/x/net/context"
@@ -29,22 +30,23 @@ import (
 //     ...
 //   }
 type ServiceBase struct {
-	// Authenticator, if not nil, is the Authenticator instance to use for this
-	// service.
-	//
-	// If nil, no Authenticator will be installed into the Context.
-	Authenticator *auth.Authenticator
-
 	// InstallServices, if not nil, is the setup function called in Use to install
 	// a baseline set of services into the Context. This can be used for testing
 	// to install testing services into the context.
 	//
 	// If nil, gaemiddleware.WithProd will be used to install production services.
 	InstallServices func(c context.Context) (context.Context, error)
+
+	// Authenticator, if not nil, is the auth.Authenticator factory to use for
+	// this service. For each incoming request it returns a list of authentication
+	// methods to try when authenticating that request.
+	//
+	// If nil, default OAuth2 authentication will be used.
+	Authenticator func(c context.Context, mi *endpoints.MethodInfo) auth.Authenticator
 }
 
 // Use should be called at the beginning of a Cloud Endpoint handler to
-// initialize the handler's baseline Context.
+// initialize the handler's baseline Context and authenticate the call.
 func (s *ServiceBase) Use(c context.Context, mi *endpoints.MethodInfo) (context.Context, error) {
 	// In case the developer forgot to set it...
 	if s == nil {
@@ -52,9 +54,6 @@ func (s *ServiceBase) Use(c context.Context, mi *endpoints.MethodInfo) (context.
 	}
 
 	req := endpoints.HTTPRequest(c)
-	if mi != nil {
-		c = auth.WithOAuthScopes(c, mi.Scopes...)
-	}
 
 	// If an initializer is configured, use it.
 	if s.InstallServices != nil {
@@ -69,15 +68,14 @@ func (s *ServiceBase) Use(c context.Context, mi *endpoints.MethodInfo) (context.
 	}
 
 	// Install and authenticate.
-	if s.Authenticator != nil {
-		c = auth.SetAuthenticator(c, s.Authenticator)
-
-		err := error(nil)
-		c, err = s.Authenticator.Authenticate(c, req)
-		if err != nil {
-			return c, err
+	authenticator := (auth.Authenticator)(nil)
+	if s.Authenticator == nil {
+		authenticator = auth.Authenticator{
+			&gaeauth.OAuth2Method{Scopes: mi.Scopes},
 		}
+	} else {
+		authenticator = s.Authenticator(c, mi)
 	}
-
-	return c, nil
+	c = auth.SetAuthenticator(c, authenticator)
+	return authenticator.Authenticate(c, req)
 }

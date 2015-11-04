@@ -23,22 +23,27 @@ import (
 	"github.com/luci/luci-go/server/middleware"
 )
 
-var (
-	// HTTP server authentication config.
-	authenticator = server.NewAuthenticator()
-)
+// base is the root of the middleware chain.
+func base(h middleware.Handler) httprouter.Handle {
+	methods := auth.Authenticator{
+		&server.OAuth2Method{Scopes: []string{server.EmailScope}},
+		server.CookieAuth,
+		&server.InboundAppIDAuthMethod{},
+	}
+	return gaemiddleware.BaseProd(auth.Use(h, methods))
+}
 
 // authHandler returns handler that perform authentication, but does not
 // enforce a login.
 func authHandler(h middleware.Handler) httprouter.Handle {
-	return gaemiddleware.BaseProd(auth.Authenticate(h, authenticator))
+	return base(auth.Authenticate(h))
 }
 
 //// Routes.
 
 func init() {
 	router := httprouter.New()
-	authenticator.InstallHandlers(router, gaemiddleware.BaseProd)
+	server.InstallHandlers(router, gaemiddleware.BaseProd)
 	signing.InstallHandlers(router, gaemiddleware.BaseProd)
 	router.GET("/", authHandler(indexPage))
 	router.GET("/_ah/warmup", authHandler(warmupHandler))
@@ -85,7 +90,7 @@ func warmupHandler(c context.Context, w http.ResponseWriter, r *http.Request, p 
 		http.Error(w, fmt.Sprintf("Failed to load app settings - %s", err), 500)
 		return
 	}
-	if err := authenticator.Warmup(c); err != nil {
+	if err := server.Warmup(c); err != nil {
 		http.Error(w, fmt.Sprintf("Failed to warmup auth - %s", err), 500)
 		return
 	}

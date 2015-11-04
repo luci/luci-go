@@ -50,8 +50,6 @@ import (
 //// Global state. See init().
 
 var (
-	globalAuthenticator = server.NewAuthenticator()
-
 	globalCatalog catalog.Catalog
 	globalEngine  engine.Engine
 
@@ -145,9 +143,14 @@ func wrap(h handler) middleware.Handler {
 // base starts middleware chain. It initializes prod context and sets up
 // authentication config.
 func base(h middleware.Handler) httprouter.Handle {
+	methods := auth.Authenticator{
+		&server.OAuth2Method{Scopes: []string{server.EmailScope}},
+		server.CookieAuth,
+		&server.InboundAppIDAuthMethod{},
+	}
 	wrapper := func(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		globalInit.Do(func() { initializeGlobalState(c) })
-		c = auth.SetAuthenticator(c, globalAuthenticator)
+		c = auth.SetAuthenticator(c, methods)
 		h(c, w, r, p)
 	}
 	return gaemiddleware.BaseProd(wrapper)
@@ -162,7 +165,7 @@ func publicHandler(h handler) httprouter.Handle {
 // authHandler returns handler that perform authentication, but does not force
 // login.
 func authHandler(h handler) httprouter.Handle {
-	return base(auth.Authenticate(wrap(h), nil))
+	return base(auth.Authenticate(wrap(h)))
 }
 
 // cronHandler returns handler intended for cron jobs.
@@ -201,7 +204,7 @@ func init() {
 }
 
 func registerFrontendHandlers(router *httprouter.Router) {
-	globalAuthenticator.InstallHandlers(router, base)
+	server.InstallHandlers(router, base)
 
 	router.GET("/", authHandler(indexPage))
 	router.GET("/_ah/warmup", publicHandler(warmupHandler))
@@ -225,7 +228,7 @@ func warmupHandler(rc *requestContext) {
 		rc.fail(500, "Failed to load app settings: %s", err)
 		return
 	}
-	if err := globalAuthenticator.Warmup(rc); err != nil {
+	if err := server.Warmup(rc); err != nil {
 		rc.fail(500, "Failed to warmup OpenID: %s", err)
 		return
 	}

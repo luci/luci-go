@@ -5,16 +5,14 @@
 package auth
 
 import (
+	"errors"
 	"net"
 	"net/http"
 	"strings"
 
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/server/auth/identity"
-	"github.com/luci/luci-go/server/middleware"
 )
 
 var (
@@ -25,9 +23,7 @@ var (
 
 // Method implements particular kind of low level authentication mechanism for
 // incoming requests. It may also optionally implement UsersAPI (if the method
-// support login and logout URLs), HandlersInstaller (it the method needs
-// some HTTP handlers to be exposed) and Warmable (if the method support Warmup
-// method). Use type sniffing to figure out.
+// support login and logout URLs). Use type sniffing to figure out.
 type Method interface {
 	// Authenticate extracts user information from the incoming request.
 	// It returns:
@@ -47,22 +43,6 @@ type UsersAPI interface {
 	// LogoutURL returns a URL that, when visited, signs the user out,
 	// then redirects the user to the URL specified by dest.
 	LogoutURL(c context.Context, dest string) (string, error)
-}
-
-// HandlersInstaller may be additionally implemented by Method if it needs some
-// HTTP handlers to be exposed.
-type HandlersInstaller interface {
-	// InstallHandlers installs HTTP handlers require by the auth method. They
-	// use middleware chain specified by `base`.
-	InstallHandlers(r *httprouter.Router, base middleware.Base)
-}
-
-// Warmable may be additionally implemented by Method if it has some local
-// caches that should be warmed up. Warmup is performed on best effort basis and
-// not guaranteed to happen or finish before Method is used.
-type Warmable interface {
-	// Warmup prepares local caches.
-	Warmup(c context.Context) error
 }
 
 // User represents identity and profile of a user.
@@ -93,51 +73,20 @@ type User struct {
 	ClientID string
 }
 
-// Authenticator perform authentication of incoming requests. It is stateful
-// object (holds in-memory caches), so declare it only once and then reuse
-// across many requests.
-type Authenticator struct {
-	// methods is a list of authentication methods to try.
-	methods []Method
-}
-
-// NewAuthenticator returns new instance of Authenticator configured to use
-// given list of methods. Methods will be checked sequentially when
-// authenticating a request until a first hit.
-func NewAuthenticator(methods []Method) *Authenticator {
-	return &Authenticator{methods}
-}
-
-// InstallHandlers installs HTTP handlers require by auth methods. They
-// use middleware chain specified by `base`.
-func (a *Authenticator) InstallHandlers(r *httprouter.Router, base middleware.Base) {
-	for _, m := range a.methods {
-		if i, ok := m.(HandlersInstaller); ok {
-			i.InstallHandlers(r, base)
-		}
-	}
-}
-
-// Warmup prepares local caches. It is optional
-func (a *Authenticator) Warmup(c context.Context) error {
-	me := errors.NewLazyMultiError(len(a.methods))
-	for i, m := range a.methods {
-		if w, ok := m.(Warmable); ok {
-			me.Assign(i, w.Warmup(c))
-		}
-	}
-	return me.Get()
-}
+// Authenticator perform authentication of incoming requests. It is stateless
+// object that just describes what methods to try when authenticating current
+// request. It is fine to create it on per-request basis.
+type Authenticator []Method
 
 // Authenticate authenticates incoming requests and returns new context.Context
 // with State stored into it. Returns error if credentials are provided, but
 // invalid. If no credentials are provided (i.e. the request is anonymous),
 // finishes successfully, but in that case State.Identity() will return
 // AnonymousIdentity.
-func (a *Authenticator) Authenticate(c context.Context, r *http.Request) (context.Context, error) {
+func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context.Context, error) {
 	// Pick first authentication method that applies.
 	var s state
-	for _, m := range a.methods {
+	for _, m := range a {
 		var err error
 		s.user, err = m.Authenticate(c, r)
 		if err != nil {
@@ -163,17 +112,15 @@ func (a *Authenticator) Authenticate(c context.Context, r *http.Request) (contex
 	// TODO(vadimsh): Check host token.
 	// TODO(vadimsh): Check delegation token.
 
-	// Inject auth state. Also make sure this instance of authenticator is in
-	// the returned context.
+	// Inject auth state.
 	c = context.WithValue(c, stateContextKey(0), &s)
-	c = SetAuthenticator(c, a)
 	return c, nil
 }
 
 // usersAPI returns implementation of UsersAPI by examining Methods. Returns nil
 // if none of Methods implement UsersAPI.
-func (a *Authenticator) usersAPI() UsersAPI {
-	for _, m := range a.methods {
+func (a Authenticator) usersAPI() UsersAPI {
+	for _, m := range a {
 		if api, ok := m.(UsersAPI); ok {
 			return api
 		}
@@ -183,7 +130,7 @@ func (a *Authenticator) usersAPI() UsersAPI {
 
 // LoginURL returns a URL that, when visited, prompts the user to sign in,
 // then redirects the user to the URL specified by dest.
-func (a *Authenticator) LoginURL(c context.Context, dest string) (string, error) {
+func (a Authenticator) LoginURL(c context.Context, dest string) (string, error) {
 	if api := a.usersAPI(); api != nil {
 		return api.LoginURL(c, dest)
 	}
@@ -192,7 +139,7 @@ func (a *Authenticator) LoginURL(c context.Context, dest string) (string, error)
 
 // LogoutURL returns a URL that, when visited, signs the user out,
 // then redirects the user to the URL specified by dest.
-func (a *Authenticator) LogoutURL(c context.Context, dest string) (string, error) {
+func (a Authenticator) LogoutURL(c context.Context, dest string) (string, error) {
 	if api := a.usersAPI(); api != nil {
 		return api.LogoutURL(c, dest)
 	}

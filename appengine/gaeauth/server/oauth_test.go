@@ -38,7 +38,7 @@ func TestOAuth2MethodDevServer(t *testing.T) {
 			Email:         "abc@example.com",
 			EmailVerified: "true",
 			ExpiresIn:     "3600",
-			Scope:         auth.EmailScope + " other stuff",
+			Scope:         EmailScope + " other stuff",
 		}
 		status := http.StatusOK
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +47,10 @@ func TestOAuth2MethodDevServer(t *testing.T) {
 		}))
 
 		call := func(header string) (*auth.User, error) {
-			m := OAuth2Method{tokenInfoEndpoint: ts.URL}
+			m := OAuth2Method{
+				Scopes:            []string{EmailScope},
+				tokenInfoEndpoint: ts.URL,
+			}
 			req, err := http.NewRequest("GET", "http://fake", nil)
 			So(err, ShouldBeNil)
 			req.Header.Set("Authorization", header)

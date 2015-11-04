@@ -20,48 +20,48 @@ import (
 
 type authenticatorKey int
 
-// SetAuthenticator injects *Authenticator into the context.
-func SetAuthenticator(c context.Context, a *Authenticator) context.Context {
-	return context.WithValue(c, authenticatorKey(0), a)
+// SetAuthenticator injects copy of Authenticator (list of auth methods) into
+// the context to use by default in LoginURL, LogoutURL and Authenticate.
+// Usually installed into the context by some base middleware.
+func SetAuthenticator(c context.Context, a Authenticator) context.Context {
+	return context.WithValue(c, authenticatorKey(0), append(Authenticator(nil), a...))
 }
 
-// GetAuthenticator extracts instance of Authenticator from the context.
-// Returns nil if no authenticator is set.
-func GetAuthenticator(c context.Context) *Authenticator {
-	if a, ok := c.Value(authenticatorKey(0)).(*Authenticator); ok {
+// GetAuthenticator extracts instance of Authenticator (list of auth methods)
+// from the context. Returns nil if no authenticator is set.
+func GetAuthenticator(c context.Context) Authenticator {
+	if a, ok := c.Value(authenticatorKey(0)).(Authenticator); ok {
 		return a
 	}
 	return nil
+}
+
+// Use is a middleware that simply puts given Authenticator into the context.
+func Use(h middleware.Handler, a Authenticator) middleware.Handler {
+	return func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		h(SetAuthenticator(c, a), rw, r, p)
+	}
 }
 
 // LoginURL returns a URL that, when visited, prompts the user to sign in,
 // then redirects the user to the URL specified by dest. It is wrapper around
 // LoginURL method of Authenticator in the context.
 func LoginURL(c context.Context, dest string) (string, error) {
-	if auth := GetAuthenticator(c); auth != nil {
-		return auth.LoginURL(c, dest)
-	}
-	return "", ErrNoUsersAPI
+	return GetAuthenticator(c).LoginURL(c, dest)
 }
 
 // LogoutURL returns a URL that, when visited, signs the user out,
 // then redirects the user to the URL specified by dest. It is wrapper around
 // LogoutURL method of Authenticator in the context.
 func LogoutURL(c context.Context, dest string) (string, error) {
-	if auth := GetAuthenticator(c); auth != nil {
-		return auth.LogoutURL(c, dest)
-	}
-	return "", ErrNoUsersAPI
+	return GetAuthenticator(c).LogoutURL(c, dest)
 }
 
 // Authenticate returns a wrapper around middleware.Handler that performs
-// authentication (using provided authenticator or the one in the context if
-// provided one is nil) and calls `h`.
-func Authenticate(h middleware.Handler, a *Authenticator) middleware.Handler {
+// authentication (using Authenticator in the context) and calls `h`.
+func Authenticate(h middleware.Handler) middleware.Handler {
 	return func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		if a == nil {
-			a = GetAuthenticator(c)
-		}
+		a := GetAuthenticator(c)
 		if a == nil {
 			replyError(c, rw, 500, "Authentication middleware is not configured")
 			return
@@ -80,13 +80,10 @@ func Authenticate(h middleware.Handler, a *Authenticator) middleware.Handler {
 
 // Autologin is a middleware that redirects the user to login page if the user
 // is not signed in yet or authentication methods do not recognize user
-// credentials. Uses provided Authenticator instance (if not nil) or the one
-// in the context.
-func Autologin(h middleware.Handler, a *Authenticator) middleware.Handler {
+// credentials. Uses Authenticator instance in the context.
+func Autologin(h middleware.Handler) middleware.Handler {
 	return func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		if a == nil {
-			a = GetAuthenticator(c)
-		}
+		a := GetAuthenticator(c)
 		if a == nil {
 			replyError(c, rw, 500, "Authentication middleware is not configured")
 			return

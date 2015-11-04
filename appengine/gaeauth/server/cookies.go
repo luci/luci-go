@@ -14,12 +14,12 @@ import (
 	"github.com/luci/luci-go/server/auth/identity"
 )
 
-// CookieAuthMethod implements auth.Method and auth.UsersAPI interfaces on top
+// UsersAPIAuthMethod implements auth.Method and auth.UsersAPI interfaces on top
 // of GAE Users API (that uses HTTP cookies internally to track user sessions).
-type CookieAuthMethod struct{}
+type UsersAPIAuthMethod struct{}
 
 // Authenticate extracts peer's identity from the incoming request.
-func (m CookieAuthMethod) Authenticate(c context.Context, r *http.Request) (*auth.User, error) {
+func (m UsersAPIAuthMethod) Authenticate(c context.Context, r *http.Request) (*auth.User, error) {
 	u := user.Current(c)
 	if u == nil {
 		return nil, nil
@@ -37,12 +37,12 @@ func (m CookieAuthMethod) Authenticate(c context.Context, r *http.Request) (*aut
 
 // LoginURL returns a URL that, when visited, prompts the user to sign in,
 // then redirects the user to the URL specified by dest.
-func (m CookieAuthMethod) LoginURL(c context.Context, dest string) (string, error) {
+func (m UsersAPIAuthMethod) LoginURL(c context.Context, dest string) (string, error) {
 	return user.LoginURL(c, dest)
 }
 
 // LogoutURL returns a URL that, when visited, signs the user out,
 // then redirects the user to the URL specified by dest.
-func (m CookieAuthMethod) LogoutURL(c context.Context, dest string) (string, error) {
+func (m UsersAPIAuthMethod) LogoutURL(c context.Context, dest string) (string, error) {
 	return user.LogoutURL(c, dest)
 }
