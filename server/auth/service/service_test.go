@@ -5,12 +5,17 @@
 package service
 
 import (
+	"bytes"
+	"compress/zlib"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
@@ -167,6 +172,76 @@ func TestPubSubWorkflow(t *testing.T) {
 		So(notify, ShouldNotBeNil)
 		So(notify.Revision, ShouldEqual, 456)
 	})
+}
+
+func TestGetSnapshot(t *testing.T) {
+	Convey("GetSnapshot works", t, func(c C) {
+		ctx := context.Background()
+
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			c.So(r.URL.Path, ShouldEqual, "/auth_service/api/v1/authdb/revisions/123")
+			body, digest := generateSnapshot(123)
+			w.Write([]byte(fmt.Sprintf(`{"snapshot": {
+				"auth_db_rev": 123,
+				"sha256": "%s",
+				"created_ts": 1446599918304238,
+				"deflated_body": "%s"
+			}}`, digest, body)))
+		}))
+
+		srv := AuthService{
+			URL: ts.URL,
+		}
+		snap, err := srv.GetSnapshot(ctx, 123)
+		So(err, ShouldBeNil)
+
+		empty := ""
+		So(snap, ShouldResemble, &Snapshot{
+			AuthDB: &protocol.AuthDB{
+				OauthClientId:     &empty,
+				OauthClientSecret: &empty,
+			},
+			AuthServiceURL: ts.URL,
+			Rev:            123,
+			Created:        time.Unix(0, 1446599918304238000),
+		})
+	})
+}
+
+///
+
+func generateSnapshot(rev int64) (body string, digest string) {
+	primaryID := "primaryId"
+	ts := int64(1446599918304238)
+	empty := ""
+
+	blob, err := proto.Marshal(&protocol.ReplicationPushRequest{
+		Revision: &protocol.AuthDBRevision{
+			AuthDbRev:  &rev,
+			PrimaryId:  &primaryID,
+			ModifiedTs: &ts,
+		},
+		AuthDb: &protocol.AuthDB{
+			OauthClientId:     &empty,
+			OauthClientSecret: &empty,
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	buf := bytes.Buffer{}
+	w := zlib.NewWriter(&buf)
+	_, err = w.Write(blob)
+	if err != nil {
+		panic(err)
+	}
+	w.Close()
+
+	body = base64.StdEncoding.EncodeToString(buf.Bytes())
+	hash := sha256.Sum256(blob)
+	digest = hex.EncodeToString(hash[:])
+	return
 }
 
 func fakePubSubMessage(c context.Context, ackID string, rev int64, signer signing.Signer) string {
