@@ -21,6 +21,8 @@ import (
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/middleware"
+
+	"github.com/luci/luci-go/appengine/cmd/helloworld/templates"
 )
 
 // base is the root of the middleware chain.
@@ -59,7 +61,7 @@ func indexPage(c context.Context, w http.ResponseWriter, r *http.Request, p http
 	}
 	// TODO(vadimsh): Improve the way we use templates. Add caching, default
 	// environment, etc.
-	tmpl, err := template.ParseFiles("templates/index.html")
+	tmpl, err := template.New("index.html").Parse(templates.GetAssetString("index.html"))
 	if err != nil {
 		fail("Failed to parse template", err)
 		return
