@@ -274,6 +274,16 @@ func loadFilteredMutations(c context.Context, rms []*realMutation) ([]*datastore
 	return mutKeys, muts, nil
 }
 
+type overrideRoot struct {
+	Mutation
+
+	root *datastore.Key
+}
+
+func (o overrideRoot) Root(context.Context) *datastore.Key {
+	return o.root
+}
+
 func processRoot(c context.Context, root *datastore.Key, banSet stringset.Set, counter *int64) error {
 	l := logging.Get(c)
 
@@ -302,7 +312,7 @@ func processRoot(c context.Context, root *datastore.Key, banSet stringset.Set, c
 		numMuts = 0
 
 		for i, m := range muts {
-			shards, numNewMuts, err := enterTransactionInternal(c, root, m.RollForward)
+			shards, numNewMuts, err := enterTransactionInternal(c, overrideRoot{m, root})
 			if err != nil {
 				l.Errorf("Executing decoded gob(%T) failed: %q: %+v", m, err, m)
 				continue

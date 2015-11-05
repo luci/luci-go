@@ -12,15 +12,15 @@ import (
 	"golang.org/x/net/context"
 )
 
-// EnterTransaction is the method to use when doing transactional operations
+// RunMutation is the method to use when doing transactional operations
 // in the tumble ecosystem. It allows work to be done in the entity group
 // specified by `fromRoot`, and any returned Mutation objects will be
 // transactionally queued for the tumble backend.
 //
 // Usually this is called from your application's handlers to begin a tumble
 // state machine as a result of some API interaction.
-func EnterTransaction(c context.Context, fromRoot *datastore.Key, f func(context.Context) ([]Mutation, error)) error {
-	shardSet, _, err := enterTransactionInternal(txnBuf.FilterRDS(c), fromRoot, f)
+func RunMutation(c context.Context, m Mutation) error {
+	shardSet, _, err := enterTransactionInternal(txnBuf.FilterRDS(c), m)
 	if err != nil {
 		return err
 	}
@@ -28,7 +28,9 @@ func EnterTransaction(c context.Context, fromRoot *datastore.Key, f func(context
 	return nil
 }
 
-func enterTransactionInternal(c context.Context, fromRoot *datastore.Key, f func(context.Context) ([]Mutation, error)) (map[uint64]struct{}, uint, error) {
+func enterTransactionInternal(c context.Context, m Mutation) (map[uint64]struct{}, uint, error) {
+	fromRoot := m.Root(c)
+
 	if fromRoot == nil {
 		return nil, 0, fmt.Errorf("tumble: Passing nil as fromRoot is illegal")
 	}
@@ -41,7 +43,7 @@ func enterTransactionInternal(c context.Context, fromRoot *datastore.Key, f func
 		// with that entity group.
 		_, _ = datastore.Get(c).Exists(fromRoot)
 
-		muts, err := f(c)
+		muts, err := m.RollForward(c)
 		if err != nil {
 			return err
 		}

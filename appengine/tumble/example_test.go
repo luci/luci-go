@@ -30,29 +30,39 @@ type User struct {
 	Name string `gae:"$id"`
 }
 
+type WriteMessage struct {
+	Out *OutgoingMessage
+}
+
+func (w *WriteMessage) Root(context.Context) *datastore.Key {
+	return w.Out.FromUser
+}
+
+func (w *WriteMessage) RollForward(c context.Context) ([]Mutation, error) {
+	ds := datastore.Get(c)
+	if err := ds.Put(w.Out); err != nil {
+		return nil, err
+	}
+	outKey := ds.KeyForObj(w.Out)
+	muts := make([]Mutation, len(w.Out.Recipients))
+	for i, p := range w.Out.Recipients {
+		muts[i] = &SendMessage{outKey, p}
+	}
+	return muts, nil
+}
+
 func (u *User) SendMessage(c context.Context, msg string, toUsers ...string) (*OutgoingMessage, error) {
 	sort.Strings(toUsers)
-	ds := datastore.Get(c)
-	k := ds.KeyForObj(u)
+
 	outMsg := &OutgoingMessage{
-		FromUser:   k,
+		FromUser:   datastore.Get(c).KeyForObj(u),
 		Message:    msg,
 		Recipients: toUsers,
 		Success:    bf.Make(uint64(len(toUsers))),
 		Failure:    bf.Make(uint64(len(toUsers))),
 	}
-	err := EnterTransaction(c, k, func(c context.Context) ([]Mutation, error) {
-		ds := datastore.Get(c)
-		if err := ds.Put(outMsg); err != nil {
-			return nil, err
-		}
-		outKey := ds.KeyForObj(outMsg)
-		muts := make([]Mutation, len(toUsers))
-		for i := range muts {
-			muts[i] = &SendMessage{outKey, toUsers[i]}
-		}
-		return muts, nil
-	})
+
+	err := RunMutation(c, &WriteMessage{outMsg})
 	if err != nil {
 		outMsg = nil
 	}
@@ -135,6 +145,7 @@ func (w *WriteReceipt) RollForward(c context.Context) ([]Mutation, error) {
 }
 
 func init() {
+	Register((*WriteMessage)(nil))
 	Register((*SendMessage)(nil))
 	Register((*WriteReceipt)(nil))
 
