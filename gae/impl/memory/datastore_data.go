@@ -207,10 +207,7 @@ func incrementLocked(ents *memCollection, key []byte, amt int) int64 {
 	return ret
 }
 
-func (d *dataStoreData) mutableEnts(ns string) *memCollection {
-	d.Lock()
-	defer d.Unlock()
-
+func (d *dataStoreData) mutableEntsLocked(ns string) *memCollection {
 	coll := "ents:" + ns
 	ents := d.head.GetCollection(coll)
 	if ents == nil {
@@ -220,10 +217,10 @@ func (d *dataStoreData) mutableEnts(ns string) *memCollection {
 }
 
 func (d *dataStoreData) allocateIDs(incomplete *ds.Key, n int) (int64, error) {
-	ents := d.mutableEnts(incomplete.Namespace())
-
 	d.Lock()
 	defer d.Unlock()
+
+	ents := d.mutableEntsLocked(incomplete.Namespace())
 	return d.allocateIDsLocked(ents, incomplete, n)
 }
 
@@ -254,7 +251,6 @@ func (d *dataStoreData) fixKeyLocked(ents *memCollection, key *ds.Key) (*ds.Key,
 
 func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) {
 	ns := keys[0].Namespace()
-	ents := d.mutableEnts(ns)
 
 	for i, k := range keys {
 		pmap, _ := vals[i].Save(false)
@@ -263,6 +259,8 @@ func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.Pu
 		k, err := func() (ret *ds.Key, err error) {
 			d.Lock()
 			defer d.Unlock()
+
+			ents := d.mutableEntsLocked(ns)
 
 			ret, err = d.fixKeyLocked(ents, k)
 			if err != nil {
@@ -322,15 +320,22 @@ func (d *dataStoreData) getMulti(keys []*ds.Key, cb ds.GetMultiCB) error {
 
 func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) {
 	ns := keys[0].Namespace()
-	ents := d.mutableEnts(ns)
 
-	if ents != nil {
+	hasEntsInNS := func() bool {
+		d.Lock()
+		defer d.Unlock()
+		return d.mutableEntsLocked(ns) != nil
+	}()
+
+	if hasEntsInNS {
 		for _, k := range keys {
 			err := func() error {
 				kb := keyBytes(k)
 
 				d.Lock()
 				defer d.Unlock()
+
+				ents := d.mutableEntsLocked(ns)
 
 				if !d.disableSpecialEntities {
 					incrementLocked(ents, groupMetaKey(k), 1)
@@ -508,12 +513,14 @@ func (td *txnDataStoreData) writeMutation(getOnly bool, key *ds.Key, data ds.Pro
 }
 
 func (td *txnDataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) {
-	ents := td.parent.mutableEnts(keys[0].Namespace())
+	ns := keys[0].Namespace()
 
 	for i, k := range keys {
 		err := func() (err error) {
 			td.parent.Lock()
 			defer td.parent.Unlock()
+			ents := td.parent.mutableEntsLocked(ns)
+
 			k, err = td.parent.fixKeyLocked(ents, k)
 			return
 		}()
