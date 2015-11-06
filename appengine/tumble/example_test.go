@@ -7,19 +7,11 @@ package tumble
 import (
 	"encoding/base64"
 	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"sort"
-	"strings"
 	"testing"
-	"time"
 
-	"github.com/julienschmidt/httprouter"
-	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/taskqueue"
 	"github.com/luci/luci-go/common/bit_field"
-	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/memlogger"
 	. "github.com/smartystreets/goconvey/convey"
@@ -149,7 +141,7 @@ func init() {
 	Register((*SendMessage)(nil))
 	Register((*WriteReceipt)(nil))
 
-	dustSettleTimeout = 0
+	TestMode()
 }
 
 func TestHighLevel(t *testing.T) {
@@ -161,100 +153,58 @@ func TestHighLevel(t *testing.T) {
 		})
 
 		Convey("Good", func() {
-			ctx := memory.Use(memlogger.Use(context.Background()))
-			ctx, clk := testclock.UseTime(ctx, testclock.TestTimeUTC)
+			testing := Testing{}
+
+			ctx := testing.Context()
+
 			cfg := GetConfig(ctx)
 			ds := datastore.Get(ctx)
-			tq := taskqueue.Get(ctx)
 			l := logging.Get(ctx).(*memlogger.MemLogger)
 			_ = l
-
-			tq.Testable().CreateQueue(cfg.Name)
-
-			ds.Testable().AddIndexes(&datastore.IndexDefinition{
-				Kind: "tumble.Mutation",
-				SortBy: []datastore.IndexColumn{
-					{Property: "ExpandedShard"},
-					{Property: "TargetRoot"},
-				},
-			})
-			ds.Testable().CatchupIndexes()
-
-			iterate := func() int {
-				ret := 0
-				tsks := tq.Testable().GetScheduledTasks()[cfg.Name]
-				for _, tsk := range tsks {
-					if tsk.ETA.After(clk.Now()) {
-						continue
-					}
-					toks := strings.Split(tsk.Path, "/")
-					rec := httptest.NewRecorder()
-					ProcessShardHandler(ctx, rec, &http.Request{
-						Header: http.Header{"X-AppEngine-QueueName": []string{cfg.Name}},
-					}, httprouter.Params{
-						{Key: "shard_id", Value: toks[4]},
-						{Key: "timestamp", Value: toks[6]},
-					})
-					So(rec.Code, ShouldEqual, 200)
-					So(tq.Delete(tsk, cfg.Name), ShouldBeNil)
-					ret++
-				}
-				return ret
-			}
-
-			cron := func() {
-				rec := httptest.NewRecorder()
-				FireAllTasksHandler(ctx, rec, &http.Request{
-					Header: http.Header{"X-Appengine-Cron": []string{"true"}},
-				}, nil)
-				So(rec.Code, ShouldEqual, 200)
-			}
 
 			charlie := &User{Name: "charlie"}
 			So(ds.Put(charlie), ShouldBeNil)
 
 			Convey("can't send to someone who doesn't exist", func() {
+				ds.Testable().Consistent(false)
+
 				outMsg, err := charlie.SendMessage(ctx, "Hey there", "lennon")
 				So(err, ShouldBeNil)
 
 				// need to advance clock and catch up indexes
-				So(iterate(), ShouldEqual, 0)
-				clk.Add(time.Second * 10)
+				So(testing.Iterate(ctx), ShouldEqual, 0)
+				testing.AdvanceTime(ctx)
 
 				// need to catch up indexes
-				So(iterate(), ShouldEqual, 1)
+				So(testing.Iterate(ctx), ShouldEqual, 1)
 
-				cron()
+				testing.FireAllTasks(ctx)
 				ds.Testable().CatchupIndexes()
-				clk.Add(time.Second * 10)
+				testing.AdvanceTime(ctx)
 
-				So(iterate(), ShouldEqual, cfg.NumShards)
+				So(testing.Iterate(ctx), ShouldEqual, cfg.NumShards)
 				ds.Testable().CatchupIndexes()
-				clk.Add(time.Second * 10)
+				testing.AdvanceTime(ctx)
 
-				So(iterate(), ShouldEqual, 1)
+				So(testing.Iterate(ctx), ShouldEqual, 1)
 
 				So(ds.Get(outMsg), ShouldBeNil)
 				So(outMsg.Failure.All(true), ShouldBeTrue)
 			})
 
-			Convey("sending to yourself could be done in one iteration if you're lucky", func() {
-				ds.Testable().Consistent(true)
-
+			Convey("sending to yourself could be done in one iteration", func() {
 				outMsg, err := charlie.SendMessage(ctx, "Hey there", "charlie")
 				So(err, ShouldBeNil)
 
-				clk.Add(time.Second * 10)
+				testing.AdvanceTime(ctx)
 
-				So(iterate(), ShouldEqual, 1)
+				So(testing.Iterate(ctx), ShouldEqual, 1)
 
 				So(ds.Get(outMsg), ShouldBeNil)
 				So(outMsg.Success.All(true), ShouldBeTrue)
 			})
 
 			Convey("different version IDs log a warning", func() {
-				ds.Testable().Consistent(true)
-
 				outMsg, err := charlie.SendMessage(ctx, "Hey there", "charlie")
 				So(err, ShouldBeNil)
 
@@ -267,10 +217,8 @@ func TestHighLevel(t *testing.T) {
 				rm.Version = "otherCodeVersion.1"
 				So(ds.Put(rm), ShouldBeNil)
 
-				clk.Add(time.Second * 10)
-
 				l.Reset()
-				So(iterate(), ShouldEqual, 1)
+				testing.Drain(ctx)
 				So(l.Has(logging.Warning, "loading mutation with different code version", map[string]interface{}{
 					"key":         "tumble.23.lock",
 					"clientID":    "-62132730888_23",
@@ -283,6 +231,8 @@ func TestHighLevel(t *testing.T) {
 			})
 
 			Convey("sending to 200 people is no big deal", func() {
+				ds.Testable().Consistent(false)
+
 				users := make([]User, 200)
 				recipients := make([]string, 200)
 				for i := range recipients {
@@ -297,24 +247,24 @@ func TestHighLevel(t *testing.T) {
 
 				// do all the SendMessages
 				ds.Testable().CatchupIndexes()
-				clk.Add(time.Second * 10)
-				So(iterate(), ShouldEqual, cfg.NumShards)
+				testing.AdvanceTime(ctx)
+				So(testing.Iterate(ctx), ShouldEqual, cfg.NumShards)
 
 				// do all the WriteReceipts
 				l.Reset()
 				ds.Testable().CatchupIndexes()
-				clk.Add(time.Second * 10)
-				So(iterate(), ShouldEqual, 1)
+				testing.AdvanceTime(ctx)
+				So(testing.Iterate(ctx), ShouldEqual, 1)
 
 				// hacky proof that all 200 incoming message reciepts were buffered
 				// appropriately.
 				So(l.Has(logging.Info, "successfully processed 128 mutations, adding 0 more", map[string]interface{}{
 					"key":      "tumble.23.lock",
-					"clientID": "-62132730880_23",
+					"clientID": "-62132730884_23",
 				}), ShouldBeTrue)
 				So(l.Has(logging.Info, "successfully processed 72 mutations, adding 0 more", map[string]interface{}{
 					"key":      "tumble.23.lock",
-					"clientID": "-62132730880_23",
+					"clientID": "-62132730884_23",
 				}), ShouldBeTrue)
 
 				So(ds.Get(outMsg), ShouldBeNil)
