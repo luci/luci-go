@@ -277,8 +277,8 @@ func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.Pu
 					return
 				}
 			}
-			updateIndexes(d.head, ret, oldPM, pmap)
 			ents.Set(keyBytes(ret), dataBytes)
+			updateIndexes(d.head, ret, oldPM, pmap)
 			return
 		}()
 		if cb != nil {
@@ -345,8 +345,8 @@ func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) {
 					if err != nil {
 						return err
 					}
-					updateIndexes(d.head, k, oldPM, nil)
 					ents.Delete(kb)
+					updateIndexes(d.head, k, oldPM, nil)
 				}
 				return nil
 			}()
