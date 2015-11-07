@@ -10,6 +10,7 @@ import (
 	"google.golang.org/appengine"
 
 	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/admin"
 	"github.com/luci/luci-go/server/auth/openid"
 	"github.com/luci/luci-go/server/middleware"
 )
@@ -28,6 +29,7 @@ func InstallHandlers(r *httprouter.Router, base middleware.Base) {
 	if oid, ok := m.Method.(*openid.AuthMethod); ok {
 		oid.InstallHandlers(r, base)
 	}
+	admin.InstallHandlers(r, base, &UsersAPIAuthMethod{})
 }
 
 // Warmup prepares local caches. It's optional.

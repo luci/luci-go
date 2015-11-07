@@ -9,7 +9,7 @@
 // It contains tests that ensure that assets embedded into the binary are
 // identical to files on disk.
 
-package templates
+package assets
 
 import (
 	"go/build"

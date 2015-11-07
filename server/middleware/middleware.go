@@ -25,3 +25,13 @@ type Middleware func(Handler) Handler
 // base services and passes it to the given handler. Return value of Base can
 // be plugged in into httprouter directly.
 type Base func(Handler) httprouter.Handle
+
+// TestingBase is Base that passes given context to the handler. Useful in
+// tests.
+func TestingBase(c context.Context) Base {
+	return func(h Handler) httprouter.Handle {
+		return func(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+			h(c, rw, r, p)
+		}
+	}
+}

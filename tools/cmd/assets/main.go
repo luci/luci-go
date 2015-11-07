@@ -27,7 +27,9 @@ import (
 // recognizedAssets lists glob patterns for files to put into generated
 // *.go file.
 var recognizedAssets = []string{
+	"*.css",
 	"*.html",
+	"*.js",
 }
 
 // funcMap contains functions used when rendering assets.gen.go template.
@@ -51,13 +53,22 @@ package {{.PackageName}}
 
 // GetAsset returns an asset by its name. Returns nil if no such asset.
 func GetAsset(name string) []byte {
-	return ([]byte)(files[name])
+	return []byte(files[name])
 }
 
 // GetAssetString is version of GetAsset that returns string instead of byte
 // slice. Returns empty string if no such asset.
 func GetAssetString(name string) string {
 	return files[name]
+}
+
+// Assets returns a map of all assets.
+func Assets() map[string]string {
+	cpy := make(map[string]string, len(files))
+	for k, v := range files {
+		cpy[k] = v
+	}
+	return cpy
 }
 
 var importPath = {{.ImportPath | printf "%q"}}
@@ -99,7 +110,7 @@ func TestAssets(t *testing.T) {
 	}
 
 	fail := false
-	for name := range files {
+	for name := range Assets() {
 		GetAsset(name) // for code coverage
 		path := filepath.Join(pkg.Dir, filepath.FromSlash(name))
 		blob, err := ioutil.ReadFile(path)
