@@ -11,9 +11,15 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/logging"
+
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/admin/internal/assets"
+	"github.com/luci/luci-go/server/auth/openid"
+	"github.com/luci/luci-go/server/auth/xsrf"
 	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/settings"
 	"github.com/luci/luci-go/server/templates"
 )
 
@@ -35,6 +41,7 @@ func InstallHandlers(r *httprouter.Router, base middleware.Base, adminAuth auth.
 	}
 
 	r.GET("/auth/admin/settings", wrap(settingsPage))
+	r.POST("/auth/admin/settings", wrap(xsrf.WithTokenCheck(storeSettings)))
 }
 
 ///
@@ -74,7 +81,63 @@ func adminOnly(h middleware.Handler) middleware.Handler {
 	})
 }
 
+// replyError sends HTML error page with status 500 on transient errors or 400
+// on fatal ones.
+func replyError(c context.Context, rw http.ResponseWriter, err error) {
+	if errors.IsTransient(err) {
+		rw.WriteHeader(http.StatusInternalServerError)
+	} else {
+		rw.WriteHeader(http.StatusBadRequest)
+	}
+	templates.MustRender(c, rw, "pages/error.html", templates.Args{
+		"Error": err.Error(),
+	})
+}
+
+///
+
 // settingsPage renders the settings page.
 func settingsPage(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	templates.MustRender(c, rw, "pages/settings.html", nil)
+	oidSettings := openid.Settings{}
+	err := settings.GetUncached(c, openid.SettingsKey, &oidSettings)
+	if err != nil && err != settings.ErrNoSettings {
+		replyError(c, rw, err)
+		return
+	}
+	templates.MustRender(c, rw, "pages/settings.html", templates.Args{
+		"OpenID":             oidSettings,
+		"DefaultRedirectURI": "https://" + r.Host + "/auth/openid/callback",
+		"XsrfTokenField":     xsrf.TokenField(c),
+	})
+}
+
+// storeSettings is POST handler that updates the settings.
+func storeSettings(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	oidSettings := openid.Settings{
+		DiscoveryURL: r.PostFormValue("DiscoveryURL"),
+		ClientID:     r.PostFormValue("ClientID"),
+		ClientSecret: r.PostFormValue("ClientSecret"),
+		RedirectURI:  r.PostFormValue("RedirectURI"),
+	}
+	err := saveOpenIDSettings(c, &oidSettings)
+	if err != nil {
+		replyError(c, rw, err)
+		return
+	}
+	templates.MustRender(c, rw, "pages/done.html", nil)
+}
+
+///
+
+func saveOpenIDSettings(c context.Context, s *openid.Settings) error {
+	existing := openid.Settings{}
+	err := settings.GetUncached(c, openid.SettingsKey, &existing)
+	if err != nil && err != settings.ErrNoSettings {
+		return err
+	}
+	if existing == *s {
+		return nil
+	}
+	logging.Warningf(c, "OpenID settings changed from %q to %q", existing, *s)
+	return settings.Set(c, openid.SettingsKey, s, auth.CurrentUser(c).Email, "via /auth/admin/settings")
 }

@@ -15,13 +15,14 @@ import (
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/secrets/testsecrets"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestAccess(t *testing.T) {
 	Convey("Works for admin", t, func() {
-		c := context.Background()
+		c := makeContext()
 		router := httprouter.New()
 		InstallHandlers(router, middleware.TestingBase(c), authtest.FakeAuth{
 			&auth.User{
@@ -36,7 +37,7 @@ func TestAccess(t *testing.T) {
 	})
 
 	Convey("Doesn't works for non-admin", t, func() {
-		c := context.Background()
+		c := makeContext()
 		router := httprouter.New()
 		InstallHandlers(router, middleware.TestingBase(c), authtest.FakeAuth{
 			&auth.User{
@@ -49,4 +50,8 @@ func TestAccess(t *testing.T) {
 		router.ServeHTTP(w, req)
 		So(w.Code, ShouldEqual, 403)
 	})
+}
+
+func makeContext() context.Context {
+	return testsecrets.Use(context.Background())
 }
