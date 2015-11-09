@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
 )
 
 // StringDeep converts a structure to a string representation. Unline the "%#v"
@@ -51,6 +52,10 @@ func (s *traverseState) forkFor(ptr uintptr) *traverseState {
 }
 
 func (s *traverseState) stringDeep(buf *bytes.Buffer, ptrs int, v reflect.Value) {
+	if v.Kind() == reflect.Invalid {
+		buf.WriteString("nil")
+		return
+	}
 	vt := v.Type()
 
 	// If the type being rendered is a potentially recursive type (a type that
@@ -101,7 +106,15 @@ func (s *traverseState) stringDeep(buf *bytes.Buffer, ptrs int, v reflect.Value)
 		}
 		buf.WriteRune('}')
 
-	case reflect.Array, reflect.Slice:
+	case reflect.Slice:
+		if v.IsNil() {
+			writeType(buf, ptrs, false, vt)
+			buf.WriteString("(nil)")
+			return
+		}
+		fallthrough
+
+	case reflect.Array:
 		writeType(buf, ptrs, false, vt)
 		buf.WriteString("{")
 		for i := 0; i < v.Len(); i++ {
@@ -115,28 +128,35 @@ func (s *traverseState) stringDeep(buf *bytes.Buffer, ptrs int, v reflect.Value)
 
 	case reflect.Map:
 		writeType(buf, ptrs, false, vt)
-		buf.WriteString("{")
+		if v.IsNil() {
+			buf.WriteString("(nil)")
+		} else {
+			buf.WriteString("{")
 
-		mkeys := v.MapKeys()
-		tryAndSortMapKeys(vt, mkeys)
+			mkeys := v.MapKeys()
+			tryAndSortMapKeys(vt, mkeys)
 
-		for i, mk := range mkeys {
-			if i > 0 {
-				buf.WriteString(", ")
+			for i, mk := range mkeys {
+				if i > 0 {
+					buf.WriteString(", ")
+				}
+
+				s.stringDeep(buf, 0, mk)
+				buf.WriteString(": ")
+				s.stringDeep(buf, 0, v.MapIndex(mk))
 			}
-
-			s.stringDeep(buf, 0, mk)
-			buf.WriteString(": ")
-			s.stringDeep(buf, 0, v.MapIndex(mk))
+			buf.WriteRune('}')
 		}
-		buf.WriteRune('}')
 
 	case reflect.Ptr:
 		ptrs++
 		fallthrough
 	case reflect.Interface:
 		if v.IsNil() {
+			writeType(buf, ptrs, false, v.Type())
+			buf.WriteRune('(')
 			fmt.Fprint(buf, "nil")
+			buf.WriteRune(')')
 		} else {
 			s.stringDeep(buf, ptrs, v.Elem())
 		}
@@ -183,7 +203,37 @@ func writeType(buf *bytes.Buffer, ptrs int, forceParens bool, t reflect.Type) {
 		}
 	}
 
-	buf.WriteString(t.String())
+	switch t.Kind() {
+	case reflect.Ptr:
+		buf.WriteRune('*')
+		writeType(buf, 0, false, t.Elem())
+
+	case reflect.Interface:
+		if n := t.Name(); n != "" {
+			buf.WriteString(t.String())
+		} else {
+			buf.WriteString("interface{}")
+		}
+
+	case reflect.Array:
+		buf.WriteRune('[')
+		buf.WriteString(strconv.FormatInt(int64(t.Len()), 10))
+		buf.WriteRune(']')
+		writeType(buf, 0, false, t.Elem())
+
+	case reflect.Slice:
+		buf.WriteString("[]")
+		writeType(buf, 0, false, t.Elem())
+
+	case reflect.Map:
+		buf.WriteString("map[")
+		writeType(buf, 0, false, t.Key())
+		buf.WriteRune(']')
+		writeType(buf, 0, false, t.Elem())
+
+	default:
+		buf.WriteString(t.String())
+	}
 
 	if forceParens || ptrs > 0 {
 		buf.WriteRune(')')

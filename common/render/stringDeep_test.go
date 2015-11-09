@@ -30,22 +30,28 @@ func TestStringDeep(t *testing.T) {
 
 	s0 := "string0"
 	s0P := &s0
+	stringer := fmt.Stringer(nil)
 
 	Convey(`Test cases`, t, func() {
 		for i, tc := range []struct {
 			a interface{}
 			s string
 		}{
+			{nil, `nil`},
 			{make(chan int), `(chan int)(PTR)`},
+			{&stringer, `(*fmt.Stringer)(nil)`},
 			{123, `123`},
 			{"hello", `"hello"`},
 			{testStruct{Name: "foo", I: &testStruct{Name: "baz"}},
-				`render.testStruct{Name:"foo", I:(*render.testStruct){Name:"baz", I:nil}}`},
+				`render.testStruct{Name:"foo", I:(*render.testStruct){Name:"baz", I:interface{}(nil)}}`},
+			{[]byte(nil), `[]uint8(nil)`},
+			{[]byte{}, `[]uint8{}`},
+			{map[string]string(nil), `map[string]string(nil)`},
 			{[]*testStruct{
 				{Name: "foo"},
 				{Name: "bar"},
-			}, `[]*render.testStruct{(*render.testStruct){Name:"foo", I:nil}, ` +
-				`(*render.testStruct){Name:"bar", I:nil}}`},
+			}, `[]*render.testStruct{(*render.testStruct){Name:"foo", I:interface{}(nil)}, ` +
+				`(*render.testStruct){Name:"bar", I:interface{}(nil)}}`},
 			{struct {
 				a int
 				b string
@@ -63,6 +69,7 @@ func TestStringDeep(t *testing.T) {
 			{complex(3, 0.14), `(3+0.14i)`},
 			{&s0, `(*string)("string0")`},
 			{&s0P, `(**string)("string0")`},
+			{[]interface{}{nil, 1, 2, nil}, `[]interface{}{interface{}(nil), 1, 2, interface{}(nil)}`},
 		} {
 			Convey(fmt.Sprintf(`%d: string of [%s] is %q`, i, reflect.ValueOf(tc.a), tc.s), func() {
 				So(StringDeep(tc.a), ShouldEqual, tc.s)
@@ -85,7 +92,7 @@ func TestStringDeep(t *testing.T) {
 		a[1] = &a
 
 		So(StringDeep(&a), ShouldEqual,
-			`(*[2]interface {}){<REC(*[2]interface {})>, <REC(*[2]interface {})>}`)
+			`(*[2]interface{}){<REC(*[2]interface{})>, <REC(*[2]interface{})>}`)
 	})
 
 	Convey(`A recursive map will note the recursion and stop.`, t, func() {
@@ -96,11 +103,11 @@ func TestStringDeep(t *testing.T) {
 		v := []map[string]interface{}{m, m}
 
 		So(StringDeep(v), ShouldEqual,
-			`[]map[string]interface {}{map[string]interface {}{`+
+			`[]map[string]interface{}{map[string]interface{}{`+
 				`"bar": []*string{(*string)("foo"), (*string)("foo")}, `+
-				`"foo": <REC(map[string]interface {})>}, `+
-				`map[string]interface {}{`+
+				`"foo": <REC(map[string]interface{})>}, `+
+				`map[string]interface{}{`+
 				`"bar": []*string{(*string)("foo"), (*string)("foo")}, `+
-				`"foo": <REC(map[string]interface {})>}}`)
+				`"foo": <REC(map[string]interface{})>}}`)
 	})
 }
