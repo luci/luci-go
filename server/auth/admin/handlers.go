@@ -5,6 +5,7 @@
 package admin
 
 import (
+	"html/template"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -43,6 +44,11 @@ func prepareTemplates() *templates.Bundle {
 	return &templates.Bundle{
 		Loader:          templates.AssetsLoader(assets.Assets()),
 		DefaultTemplate: "base",
+		FuncMap: template.FuncMap{
+			"includeCSS": func(name string) template.CSS {
+				return template.CSS(assets.GetAsset(name))
+			},
+		},
 		DefaultArgs: func(c context.Context) (templates.Args, error) {
 			logoutURL, err := auth.LogoutURL(c, "/")
 			if err != nil {

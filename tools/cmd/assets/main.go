@@ -34,7 +34,7 @@ var recognizedAssets = []string{
 
 // funcMap contains functions used when rendering assets.gen.go template.
 var funcMap = template.FuncMap{
-	"asString": asString,
+	"asByteArray": asByteArray,
 }
 
 // assetsGenGoTmpl is template for generated assets.gen.go file. Result of
@@ -74,7 +74,7 @@ func Assets() map[string]string {
 var importPath = {{.ImportPath | printf "%q"}}
 
 var files = map[string]string{
-{{range .Assets}}{{.Path | printf "%q"}}: {{.Body | asString }},
+{{range .Assets}}{{.Path | printf "%q"}}: string({{.Body | asByteArray }}),
 {{end}}
 }
 `)))
@@ -266,23 +266,15 @@ func gofmt(blob []byte) ([]byte, error) {
 	return out.Bytes(), nil
 }
 
-// asString formats byte slice as Golang string.
-func asString(blob []byte) string {
+func asByteArray(blob []byte) string {
 	out := &bytes.Buffer{}
-	line := 16
-	for i := 0; i < len(blob); i += line {
-		max := i + line
-		if max > len(blob) {
-			max = len(blob)
-		}
-		fmt.Fprint(out, "\"")
-		for j := i; j < max; j++ {
-			fmt.Fprintf(out, `\x%02x`, blob[j])
-		}
-		fmt.Fprint(out, "\"")
-		if max != len(blob) {
-			fmt.Fprintln(out, "+")
+	fmt.Fprintf(out, "[]byte{")
+	for i := 0; i < len(blob); i++ {
+		fmt.Fprintf(out, "%d, ", blob[i])
+		if i%14 == 1 {
+			fmt.Fprintln(out)
 		}
 	}
+	fmt.Fprintf(out, "}")
 	return out.String()
 }
