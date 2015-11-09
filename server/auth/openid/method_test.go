@@ -72,7 +72,7 @@ func TestFullFlow(t *testing.T) {
 			ClientSecret: "client_secret",
 			RedirectURI:  "http://fake/redirect",
 		}
-		So(StoreSettings(ctx, &cfg, "who", "why"), ShouldBeNil)
+		So(settings.Set(ctx, SettingsKey, &cfg, "who", "why"), ShouldBeNil)
 
 		method := AuthMethod{
 			SessionStore:        &authtest.MemorySessionStore{},

@@ -18,20 +18,8 @@ func TestSettings(t *testing.T) {
 		c := context.Background()
 		c = settings.Use(c, settings.New(&settings.MemoryStorage{}))
 
-		cfg, err := FetchSettings(c)
+		cfg, err := fetchCachedSettings(c)
 		So(err, ShouldBeNil)
 		So(cfg, ShouldResemble, &Settings{})
-
-		store := Settings{
-			DiscoveryURL: "http://discovery",
-			ClientID:     "client_id",
-			ClientSecret: "client_secret",
-			RedirectURI:  "http://redirect",
-		}
-		So(StoreSettings(c, &store, "who", "why"), ShouldBeNil)
-
-		cfg, err = FetchSettings(c)
-		So(err, ShouldBeNil)
-		So(cfg, ShouldResemble, &store)
 	})
 }

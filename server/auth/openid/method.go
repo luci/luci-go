@@ -60,7 +60,7 @@ func (m *AuthMethod) InstallHandlers(r *httprouter.Router, base middleware.Base)
 
 // Warmup prepares local caches. It's optional.
 func (m *AuthMethod) Warmup(c context.Context) error {
-	cfg, err := FetchSettings(c)
+	cfg, err := fetchCachedSettings(c)
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func (m *AuthMethod) loginHandler(c context.Context, rw http.ResponseWriter, r *
 		return
 	}
 
-	cfg, err := FetchSettings(c)
+	cfg, err := fetchCachedSettings(c)
 	if err != nil {
 		replyError(c, rw, err, "Can't load OpenID settings - %s", err)
 		return
@@ -233,7 +233,7 @@ func (m *AuthMethod) callbackHandler(c context.Context, rw http.ResponseWriter, 
 	}
 
 	// Use authorization code to grab user profile.
-	cfg, err := FetchSettings(c)
+	cfg, err := fetchCachedSettings(c)
 	if err != nil {
 		replyError(c, rw, err, "Can't load OpenID settings - %s", err)
 		return

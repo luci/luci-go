@@ -23,10 +23,11 @@ func GetSettings(c context.Context) *Settings {
 	return nil
 }
 
-// Get returns setting value for the given key. It will be deserialized into
-// the supplied value. Caller is responsible to pass correct type here. If
-// the setting is not set or the context doesn't have settings implementation
-// in it, returns ErrNoSettings.
+// Get returns setting value (possibly cached) for the given key.
+//
+// It will be deserialized into the supplied value. Caller is responsible to
+// pass correct type here. If the setting is not set or the context doesn't have
+// settings implementation in it, returns ErrNoSettings.
 func Get(c context.Context, key string, value interface{}) error {
 	if s := GetSettings(c); s != nil {
 		return s.Get(c, key, value)
@@ -34,10 +35,23 @@ func Get(c context.Context, key string, value interface{}) error {
 	return ErrNoSettings
 }
 
-// Set changes a setting value for the given key. New settings will apply only
-// when existing in-memory cache expires. In particular, Get() right after Set()
-// may still return old value. Returns ErrNoSettings if context doesn't have
-// Settings implementation.
+// GetUncached is like Get, by always fetches settings from the storage.
+//
+// Do not use GetUncached in performance critical parts, it is much heavier than
+// Get.
+func GetUncached(c context.Context, key string, value interface{}) error {
+	if s := GetSettings(c); s != nil {
+		return s.GetUncached(c, key, value)
+	}
+	return ErrNoSettings
+}
+
+// Set overwrites a setting value for the given key.
+//
+// New settings will apply only when existing in-memory cache expires.
+// In particular, Get() right after Set() may still return old value.
+//
+// Returns ErrNoSettings if context doesn't have Settings implementation.
 func Set(c context.Context, key string, value interface{}, who, why string) error {
 	if s := GetSettings(c); s != nil {
 		return s.Set(c, key, value, who, why)

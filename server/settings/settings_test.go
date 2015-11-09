@@ -35,6 +35,10 @@ func TestSettings(t *testing.T) {
 		// Old value (the lack of there of) is still cached.
 		So(settings.Get(ctx, "key", &s), ShouldEqual, ErrNoSettings)
 
+		// Non-caching version works.
+		So(settings.GetUncached(ctx, "key", &s), ShouldBeNil)
+		So(s, ShouldResemble, exampleSettings{"hi"})
+
 		// Advance time to make old value expired.
 		tc.Add(2 * time.Second)
 		So(settings.Get(ctx, "key", &s), ShouldBeNil)
@@ -54,11 +58,16 @@ func TestContext(t *testing.T) {
 		s := exampleSettings{}
 
 		So(Get(ctx, "key", &exampleSettings{}), ShouldEqual, ErrNoSettings)
+		So(GetUncached(ctx, "key", &exampleSettings{}), ShouldEqual, ErrNoSettings)
 		So(Set(ctx, "key", &exampleSettings{}, "who", "why"), ShouldEqual, ErrNoSettings)
 
 		ctx = Use(ctx, New(&MemoryStorage{}))
 		So(Set(ctx, "key", &exampleSettings{"hi"}, "who", "why"), ShouldBeNil)
+
 		So(Get(ctx, "key", &s), ShouldBeNil)
+		So(s, ShouldResemble, exampleSettings{"hi"})
+
+		So(GetUncached(ctx, "key", &s), ShouldBeNil)
 		So(s, ShouldResemble, exampleSettings{"hi"})
 	})
 }

@@ -11,6 +11,10 @@ import (
 	"golang.org/x/net/context"
 )
 
+// SettingsKey is key for OpenID settings (described by Settings struct) in
+// settings store. See github.com/luci/luci-go/server/settings.
+const SettingsKey = "openid_auth"
+
 var (
 	// ErrNotConfigured is returned by various functions if OpenID settings are
 	// not properly configured.
@@ -18,7 +22,7 @@ var (
 )
 
 // Settings contain parameters of OpenID protocol. They are stored in app
-// settings store under "openid_auth" key.
+// settings store under SettingsKey key.
 type Settings struct {
 	// DiscoveryURL is where to grab discovery document with provider's config.
 	// Use `https://accounts.google.com/.well-known/openid-configuration` for
@@ -38,18 +42,13 @@ type Settings struct {
 	RedirectURI string `json:"redirect_uri"`
 }
 
-// FetchSettings fetches OpenID configuration from the settings store or puts
-// a default one there.
-func FetchSettings(c context.Context) (*Settings, error) {
+// fetchCachedSettings fetches OpenID configuration from the settings store
+// or puts a default one there.
+func fetchCachedSettings(c context.Context) (*Settings, error) {
 	cfg := &Settings{}
-	if err := settings.Get(c, "openid_auth", cfg); err != settings.ErrNoSettings {
+	if err := settings.Get(c, SettingsKey, cfg); err != settings.ErrNoSettings {
 		return cfg, err
 	}
-	StoreSettings(c, cfg, "self", "default OpenID settings")
+	settings.Set(c, SettingsKey, cfg, "self", "default OpenID settings")
 	return cfg, nil
-}
-
-// StoreSettings puts OpenID configuration into the settings store.
-func StoreSettings(c context.Context, cfg *Settings, who, why string) error {
-	return settings.Set(c, "openid_auth", cfg, who, why)
 }

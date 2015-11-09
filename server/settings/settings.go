@@ -24,10 +24,10 @@ import (
 
 var (
 	// ErrNoSettings can be returned by Get and Set on fatal errors.
-	ErrNoSettings = errors.New("settings are not available")
+	ErrNoSettings = errors.New("settings: settings are not available")
 
 	// ErrBadType is returned if Get(...) receives unexpected type.
-	ErrBadType = errors.New("bad type")
+	ErrBadType = errors.New("settings: bad type")
 )
 
 // Bundle contains all latest settings along with the timestamp when they need
@@ -116,9 +116,11 @@ func New(storage Storage) *Settings {
 	}
 }
 
-// Get returns setting value for the given key. It will be deserialized into
-// the supplied value. Caller is responsible to pass correct type and pass same
-// type to all calls. If the setting is not set returns ErrNoSettings.
+// Get returns setting value (possibly cached) for the given key.
+//
+// It will be deserialized into the supplied value. Caller is responsible
+// to pass correct type and pass same type to all calls. If the setting is not
+// set returns ErrNoSettings.
 func (s *Settings) Get(c context.Context, key string, value interface{}) error {
 	lazyValue, err := s.values.Get(c)
 	if err != nil {
@@ -127,9 +129,22 @@ func (s *Settings) Get(c context.Context, key string, value interface{}) error {
 	return lazyValue.Value.(*Bundle).get(key, value)
 }
 
-// Set changes a setting value for the given key. New settings will apply only
-// when existing in-memory cache expires. In particular, Get() right after Set()
-// may still return old value.
+// GetUncached is like Get, by always fetches settings from the storage.
+//
+// Do not use GetUncached in performance critical parts, it is much heavier than
+// Get.
+func (s *Settings) GetUncached(c context.Context, key string, value interface{}) error {
+	bundle, err := s.storage.FetchAllSettings(c)
+	if err != nil {
+		return err
+	}
+	return bundle.get(key, value)
+}
+
+// Set changes a setting value for the given key.
+//
+// New settings will apply only when existing in-memory cache expires.
+// In particular, Get() right after Set() may still return old value.
 func (s *Settings) Set(c context.Context, key string, value interface{}, who, why string) error {
 	blob, err := json.Marshal(value)
 	if err != nil {
