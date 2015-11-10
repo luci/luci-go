@@ -5,6 +5,8 @@
 package server
 
 import (
+	"errors"
+
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
@@ -22,14 +24,16 @@ import (
 // the router. See InstallHandlers.
 var CookieAuth auth.Method
 
-// InstallHandlers installs HTTP handlers used in OpenID protocol. Must be
-// installed in server HTTP router for OpenID authentication flow to work.
+// InstallHandlers installs HTTP handlers for various routes related
+// to authentication system.
+//
+// Must be installed in server HTTP router for authentication to work.
 func InstallHandlers(r *httprouter.Router, base middleware.Base) {
 	m := CookieAuth.(cookieAuthMethod)
 	if oid, ok := m.Method.(*openid.AuthMethod); ok {
 		oid.InstallHandlers(r, base)
 	}
-	admin.InstallHandlers(r, base, &UsersAPIAuthMethod{})
+	admin.InstallHandlers(r, base, &UsersAPIAuthMethod{}, adminPagesConfig{})
 }
 
 // Warmup prepares local caches. It's optional.
@@ -40,6 +44,25 @@ func Warmup(c context.Context) error {
 	}
 	return nil
 }
+
+///
+
+// adminPagesConfig is used by server/auth/admin to display admin UI
+type adminPagesConfig struct{}
+
+func (adminPagesConfig) GetAppServiceAccount(c context.Context) (string, error) {
+	return appengine.ServiceAccount(c)
+}
+
+func (adminPagesConfig) GetReplicationState(c context.Context) (authServiceURL string, rev int64, err error) {
+	return
+}
+
+func (adminPagesConfig) ConfigureAuthService(c context.Context, baseURL, authServiceURL string) error {
+	return errors.New("not implemented yet")
+}
+
+///
 
 // cookieAuthMethod implements union of openid.AuthMethod and UsersAPIAuthMethod
 // methods, routing calls appropriately.

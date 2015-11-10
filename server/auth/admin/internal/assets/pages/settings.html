@@ -77,7 +77,41 @@
 
   <h3>Authorization settings</h3>
   <hr>
-  <i>TODO</i>
+
+  <div class="form-group">
+    <div class="col-sm-9">
+      <p>Prerequisites for fetching groups from an <a href="https://github.com/luci/luci-py/tree/master/appengine/auth_service">auth service</a>:</p>
+      <ul>
+        <li>
+          Google Cloud Pub/Sub service is enabled in the Cloud Console project.
+        </li>
+        <li>
+          The <b>auth-trusted-services</b> group on the auth service includes
+          the service account belonging to this application:
+          <b>{{.ServiceAccount}}</b>.
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="form-group">
+    <label for="AuthServiceURL" class="col-sm-3 control-label">Auth service URL</label>
+    <div class="col-sm-9">
+      <input
+        type="text" class="form-control"
+        name="AuthServiceURL"
+        value="{{.AuthServiceURL}}">
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label class="col-sm-3 control-label">Latest fetched revision</label>
+    <div class="col-sm-9">
+      <p class="form-control-static">{{.AuthLatestRev}}</p>
+    </div>
+  </div>
 
   <hr>
 

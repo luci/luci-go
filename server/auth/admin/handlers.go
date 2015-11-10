@@ -5,8 +5,10 @@
 package admin
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
@@ -23,6 +25,27 @@ import (
 	"github.com/luci/luci-go/server/templates"
 )
 
+// Config is interface between admin pages and component that talks to
+// AuthService to fetch groups (there may be multiple implementations, for GAE
+// and non-GAE).
+type Config interface {
+	// GetAppServiceAccount returns service account representing the application.
+	GetAppServiceAccount(context.Context) (string, error)
+
+	// GetReplicationState returns current URL of main auth_service and latest
+	// processed revision number (or "", 0 if not configured).
+	GetReplicationState(context.Context) (authServiceURL string, rev int64, err error)
+
+	// ConfigureAuthService changes URL of auth_service to fetch groups from. Does
+	// nothing if already using given auth_service.
+	//
+	// `baseURL` is root URL of the current service. Will be used to construct
+	// PubSub push URLs.
+	//
+	// If `authServiceURL` is blank, disables the fetching.
+	ConfigureAuthService(c context.Context, baseURL, authServiceURL string) error
+}
+
 // InstallHandlers installs HTTP handlers that implement admin UI.
 //
 // `adminAuth` is the method that will be used to authenticate the access
@@ -30,13 +53,14 @@ import (
 // distinguish admins (aka superusers) from non-admins.
 //
 // auth.CurrentUser(...).Superuser is set to true for admins.
-func InstallHandlers(r *httprouter.Router, base middleware.Base, adminAuth auth.Method) {
+func InstallHandlers(r *httprouter.Router, base middleware.Base, adminAuth auth.Method, cfg Config) {
 	tmpl := prepareTemplates()
 
 	wrap := func(h middleware.Handler) httprouter.Handle {
 		h = adminOnly(h)
 		h = auth.Use(h, auth.Authenticator{adminAuth})
 		h = templates.WithTemplates(h, tmpl)
+		h = middleware.WithContextValue(h, contextKey(0), cfg)
 		return base(h)
 	}
 
@@ -45,6 +69,16 @@ func InstallHandlers(r *httprouter.Router, base middleware.Base, adminAuth auth.
 }
 
 ///
+
+type contextKey int
+
+// getConfig extracts Config from the context or returns nil.
+//
+// It's put there by 'wrap' in InstallHandlers.
+func getConfig(c context.Context) Config {
+	cfg, _ := c.Value(contextKey(0)).(Config)
+	return cfg
+}
 
 // prepareTemplates configures templates.Bundle.
 func prepareTemplates() *templates.Bundle {
@@ -104,7 +138,29 @@ func settingsPage(c context.Context, rw http.ResponseWriter, r *http.Request, p 
 		replyError(c, rw, err)
 		return
 	}
+
+	cfg := getConfig(c)
+	if cfg == nil {
+		replyError(c, rw, errors.New("config interface is not provided"))
+		return
+	}
+
+	serviceAcc, err := cfg.GetAppServiceAccount(c)
+	if err != nil {
+		replyError(c, rw, err)
+		return
+	}
+
+	authServiceURL, authRev, err := cfg.GetReplicationState(c)
+	if err != nil {
+		replyError(c, rw, err)
+		return
+	}
+
 	templates.MustRender(c, rw, "pages/settings.html", templates.Args{
+		"AuthServiceURL":     authServiceURL,
+		"AuthLatestRev":      authRev,
+		"ServiceAccount":     serviceAcc,
 		"OpenID":             oidSettings,
 		"DefaultRedirectURI": "https://" + r.Host + "/auth/openid/callback",
 		"XsrfTokenField":     xsrf.TokenField(c),
@@ -120,6 +176,9 @@ func storeSettings(c context.Context, rw http.ResponseWriter, r *http.Request, p
 		RedirectURI:  r.PostFormValue("RedirectURI"),
 	}
 	err := saveOpenIDSettings(c, &oidSettings)
+	if err == nil {
+		err = saveAuthServiceURL(c, "https://"+r.Host, r.PostFormValue("AuthServiceURL"))
+	}
 	if err != nil {
 		replyError(c, rw, err)
 		return
@@ -140,4 +199,21 @@ func saveOpenIDSettings(c context.Context, s *openid.Settings) error {
 	}
 	logging.Warningf(c, "OpenID settings changed from %q to %q", existing, *s)
 	return settings.Set(c, openid.SettingsKey, s, auth.CurrentUser(c).Email, "via /auth/admin/settings")
+}
+
+func saveAuthServiceURL(c context.Context, baseURL, authServiceURL string) error {
+	if authServiceURL != "" {
+		parsed, err := url.Parse(authServiceURL)
+		if err != nil {
+			return fmt.Errorf("bad URL %q - %s", authServiceURL, err)
+		}
+		if !parsed.IsAbs() || parsed.Path != "" {
+			return fmt.Errorf("bad URL %q - must be host root URL", authServiceURL)
+		}
+	}
+	cfg := getConfig(c)
+	if cfg == nil {
+		return errors.New("config interface is not provided")
+	}
+	return cfg.ConfigureAuthService(c, baseURL, authServiceURL)
 }

@@ -29,7 +29,7 @@ func TestAccess(t *testing.T) {
 				Identity:  "user:admin@example.com",
 				Superuser: true,
 			},
-		})
+		}, fakeConfig{})
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/auth/admin/settings", nil)
 		router.ServeHTTP(w, req)
@@ -44,7 +44,7 @@ func TestAccess(t *testing.T) {
 				Identity:  "user:non-admin@example.com",
 				Superuser: false,
 			},
-		})
+		}, fakeConfig{})
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/auth/admin/settings", nil)
 		router.ServeHTTP(w, req)
@@ -54,4 +54,18 @@ func TestAccess(t *testing.T) {
 
 func makeContext() context.Context {
 	return testsecrets.Use(context.Background())
+}
+
+type fakeConfig struct{}
+
+func (fakeConfig) GetAppServiceAccount(context.Context) (string, error) {
+	return "account", nil
+}
+
+func (fakeConfig) GetReplicationState(context.Context) (authServiceURL string, rev int64, err error) {
+	return
+}
+
+func (fakeConfig) ConfigureAuthService(c context.Context, baseURL, authServiceURL string) error {
+	panic("not called in tests")
 }

@@ -35,3 +35,11 @@ func TestingBase(c context.Context) Base {
 		}
 	}
 }
+
+// WithContextValue is a middleware that adds a value to the context before
+// calling the handler.
+func WithContextValue(h Handler, key, val interface{}) Handler {
+	return func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		h(context.WithValue(c, key, val), rw, r, p)
+	}
+}
