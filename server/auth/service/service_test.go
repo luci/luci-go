@@ -125,6 +125,20 @@ func TestPubSubWorkflow(t *testing.T) {
 				200,
 				"",
 			},
+			// Removing existing subscription.
+			{
+				"DELETE",
+				"/pubsub/projects/p1/subscriptions/sub",
+				200,
+				"{}",
+			},
+			// Removing already deleted subscription.
+			{
+				"DELETE",
+				"/pubsub/projects/p1/subscriptions/sub",
+				404,
+				`{"error": {"code": 404}}`,
+			},
 		}
 		counter := 0
 
@@ -171,6 +185,11 @@ func TestPubSubWorkflow(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(notify, ShouldNotBeNil)
 		So(notify.Revision, ShouldEqual, 456)
+
+		// Killing existing subscription.
+		So(srv.DeleteSubscription(ctx, "projects/p1/subscriptions/sub"), ShouldBeNil)
+		// Killing already removed subscription.
+		So(srv.DeleteSubscription(ctx, "projects/p1/subscriptions/sub"), ShouldBeNil)
 	})
 }
 
@@ -205,6 +224,20 @@ func TestGetSnapshot(t *testing.T) {
 			Rev:            123,
 			Created:        time.Unix(0, 1446599918304238000),
 		})
+	})
+}
+
+func TestDeflateInflate(t *testing.T) {
+	Convey("Deflate then Inflate works", t, func() {
+		initial := &protocol.AuthDB{
+			OauthClientId:     strPtr("abc"),
+			OauthClientSecret: strPtr("def"),
+		}
+		blob, err := DeflateAuthDB(initial)
+		So(err, ShouldBeNil)
+		inflated, err := InflateAuthDB(blob)
+		So(err, ShouldBeNil)
+		So(inflated, ShouldResemble, initial)
 	})
 }
 

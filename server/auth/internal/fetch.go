@@ -69,6 +69,11 @@ func GetJSON(c context.Context, url string, out interface{}) error {
 	return methodWithoutBody(c, "GET", url, out)
 }
 
+// DeleteJSON makes DELETE request.
+func DeleteJSON(c context.Context, url string, out interface{}) error {
+	return methodWithoutBody(c, "DELETE", url, out)
+}
+
 // PostJSON makes POST request.
 func PostJSON(c context.Context, url string, body, out interface{}) error {
 	return methodWithBody(c, "POST", url, body, out)
