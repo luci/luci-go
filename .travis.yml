@@ -2,7 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-sudo: false
+# pick trusty beta to try to avoid OOM-kills in container infrastructure.
+sudo: required
+dist: trusty
+
 language: go
 
 go:
