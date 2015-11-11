@@ -90,7 +90,7 @@ func (r *realMutation) shard(cfg *Config) uint64 {
 	return ret
 }
 
-func putMutations(c context.Context, fromRoot *datastore.Key, muts []Mutation) (shardSet map[uint64]struct{}, err error) {
+func putMutations(c context.Context, fromRoot *datastore.Key, muts []Mutation, round uint64) (shardSet map[uint64]struct{}, mutKeys []*datastore.Key, err error) {
 	cfg := GetConfig(c)
 
 	if len(muts) == 0 {
@@ -102,20 +102,24 @@ func putMutations(c context.Context, fromRoot *datastore.Key, muts []Mutation) (
 		return
 	}
 
+	ds := datastore.Get(c)
+
 	shardSet = map[uint64]struct{}{}
 	toPut := make([]*realMutation, len(muts))
+	mutKeys = make([]*datastore.Key, len(muts))
 	for i, m := range muts {
-		id := fmt.Sprintf("%016x_%08x", version, i)
+		id := fmt.Sprintf("%016x_%08x_%08x", version, round, i)
 		toPut[i], err = newRealMutation(c, id, fromRoot, m)
 		if err != nil {
 			logging.Errorf(c, "error creating real mutation for %v: %s", m, err)
 			return
 		}
+		mutKeys[i] = ds.KeyForObj(toPut[i])
 
 		shardSet[toPut[i].shard(&cfg)] = struct{}{}
 	}
 
-	if err = datastore.Get(c).PutMulti(toPut); err != nil {
+	if err = ds.PutMulti(toPut); err != nil {
 		logging.Errorf(c, "error putting %d new mutations: %s", len(toPut), err)
 	}
 	return

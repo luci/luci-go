@@ -307,18 +307,46 @@ func processRoot(c context.Context, root *datastore.Key, banSet stringset.Set, c
 
 	toDel := make([]*datastore.Key, 0, len(muts))
 	numMuts := uint64(0)
+	deletedMuts := uint64(0)
+	processedMuts := uint64(0)
 	err = datastore.Get(txnBuf.FilterRDS(c)).RunInTransaction(func(c context.Context) error {
 		toDel = toDel[:0]
 		numMuts = 0
+		deletedMuts = 0
+		processedMuts = 0
 
-		for i, m := range muts {
-			shards, numNewMuts, err := enterTransactionInternal(c, overrideRoot{m, root})
+		iterMuts := muts
+		iterMutKeys := mutKeys
+
+		for i := 0; i < len(iterMuts); i++ {
+			m := iterMuts[i]
+
+			shards, newMuts, newMutKeys, err := enterTransactionInternal(c, overrideRoot{m, root}, uint64(i))
 			if err != nil {
 				l.Errorf("Executing decoded gob(%T) failed: %q: %+v", m, err, m)
 				continue
 			}
-			toDel = append(toDel, mutKeys[i])
-			numMuts += uint64(numNewMuts)
+			processedMuts++
+			for j, nm := range newMuts {
+				if nm.Root(c).HasAncestor(root) {
+					iterMuts = append(iterMuts, nm)
+					iterMutKeys = append(iterMutKeys, newMutKeys[j])
+				}
+			}
+
+			key := iterMutKeys[i]
+			if key.HasAncestor(root) {
+				// try to delete it as part of the same transaction.
+				if err := datastore.Get(c).Delete(key); err == nil {
+					deletedMuts++
+				} else {
+					toDel = append(toDel, key)
+				}
+			} else {
+				toDel = append(toDel, key)
+			}
+
+			numMuts += uint64(len(newMuts))
 			for shard := range shards {
 				allShards[shard] = struct{}{}
 			}
@@ -330,8 +358,10 @@ func processRoot(c context.Context, root *datastore.Key, banSet stringset.Set, c
 		l.Errorf("failed running transaction: %s", err)
 		return err
 	}
+	numMuts -= deletedMuts
+
 	fireTasks(c, allShards)
-	l.Infof("successfully processed %d mutations, adding %d more", len(toDel), numMuts)
+	l.Infof("successfully processed %d mutations (%d tail-call), adding %d more", processedMuts, deletedMuts, numMuts)
 
 	if len(toDel) > 0 {
 		atomic.StoreInt64(counter, int64(len(toDel)))

@@ -209,7 +209,7 @@ func TestHighLevel(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				rm := &realMutation{
-					ID:     "0000000000000001_00000000",
+					ID:     "0000000000000001_00000000_00000000",
 					Parent: ds.KeyForObj(charlie),
 				}
 				So(ds.Get(rm), ShouldBeNil)
@@ -258,11 +258,11 @@ func TestHighLevel(t *testing.T) {
 
 				// hacky proof that all 200 incoming message reciepts were buffered
 				// appropriately.
-				So(l.Has(logging.Info, "successfully processed 128 mutations, adding 0 more", map[string]interface{}{
+				So(l.Has(logging.Info, "successfully processed 128 mutations (0 tail-call), adding 0 more", map[string]interface{}{
 					"key":      "tumble.23.lock",
 					"clientID": "-62132730884_23",
 				}), ShouldBeTrue)
-				So(l.Has(logging.Info, "successfully processed 72 mutations, adding 0 more", map[string]interface{}{
+				So(l.Has(logging.Info, "successfully processed 72 mutations (0 tail-call), adding 0 more", map[string]interface{}{
 					"key":      "tumble.23.lock",
 					"clientID": "-62132730884_23",
 				}), ShouldBeTrue)

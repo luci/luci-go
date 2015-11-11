@@ -20,7 +20,7 @@ import (
 // Usually this is called from your application's handlers to begin a tumble
 // state machine as a result of some API interaction.
 func RunMutation(c context.Context, m Mutation) error {
-	shardSet, _, err := enterTransactionInternal(txnBuf.FilterRDS(c), m)
+	shardSet, _, _, err := enterTransactionInternal(txnBuf.FilterRDS(c), m, 0)
 	if err != nil {
 		return err
 	}
@@ -28,15 +28,16 @@ func RunMutation(c context.Context, m Mutation) error {
 	return nil
 }
 
-func enterTransactionInternal(c context.Context, m Mutation) (map[uint64]struct{}, uint, error) {
+func enterTransactionInternal(c context.Context, m Mutation, round uint64) (map[uint64]struct{}, []Mutation, []*datastore.Key, error) {
 	fromRoot := m.Root(c)
 
 	if fromRoot == nil {
-		return nil, 0, fmt.Errorf("tumble: Passing nil as fromRoot is illegal")
+		return nil, nil, nil, fmt.Errorf("tumble: Passing nil as fromRoot is illegal")
 	}
 
 	shardSet := map[uint64]struct{}(nil)
-	numNewMuts := uint(0)
+	retMuts := []Mutation(nil)
+	retMutKeys := []*datastore.Key(nil)
 
 	err := datastore.Get(c).RunInTransaction(func(c context.Context) error {
 		// do a Get on the fromRoot to ensure that this transaction is associated
@@ -48,14 +49,14 @@ func enterTransactionInternal(c context.Context, m Mutation) (map[uint64]struct{
 			return err
 		}
 
-		numNewMuts = uint(len(muts))
-		shardSet, err = putMutations(c, fromRoot, muts)
+		retMuts = muts
+		shardSet, retMutKeys, err = putMutations(c, fromRoot, muts, round)
 
 		return err
 	}, nil)
 	if err != nil {
-		return nil, 0, err
+		return nil, nil, nil, err
 	}
 
-	return shardSet, numNewMuts, nil
+	return shardSet, retMuts, retMutKeys, nil
 }
