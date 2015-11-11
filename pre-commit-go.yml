@@ -30,7 +30,7 @@ modes:
       - extra_args:
         - -v
         - -race
-    max_duration: 120
+    max_duration: 300
   lint:
     checks:
       golint:
