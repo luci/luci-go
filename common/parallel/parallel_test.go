@@ -6,6 +6,8 @@ package parallel
 
 import (
 	"fmt"
+	"sync/atomic"
+	"testing"
 )
 
 func ExampleFanOutIn() {
@@ -24,4 +26,20 @@ func ExampleFanOutIn() {
 
 	fmt.Printf("got: %q", err)
 	// Output: got: "20 is over 10"
+}
+
+func TestRaciness(t *testing.T) {
+	t.Parallel()
+
+	val := int32(0)
+
+	for i := 0; i < 100; i++ {
+		FanOutIn(func(ch chan<- func() error) {
+			ch <- func() error { atomic.AddInt32(&val, 1); return nil }
+		})
+	}
+
+	if val != 100 {
+		t.Error("val != 100, was", val)
+	}
 }
