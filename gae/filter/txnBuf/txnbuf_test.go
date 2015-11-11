@@ -247,11 +247,7 @@ func TestTransactionBuffers(t *testing.T) {
 				So(under.PutMulti.Total(), ShouldEqual, 2)
 				So(under.DeleteMulti.Total(), ShouldEqual, 2)
 
-				// 'over' Put operations are amplified because the inner transaction
-				// commits go through the 'over' filter on the outer transaction. So it's
-				// # Puts + # inner txns, times 2 because we are simulating a failed
-				// transaction.
-				So(over.PutMulti.Total(), ShouldEqual, 10)
+				So(over.PutMulti.Total(), ShouldEqual, 8)
 
 				So(7, fooShouldHave(ds))
 				So(3, fooShouldHave(ds), 10, 20, 30, 40)
@@ -838,7 +834,7 @@ func TestQuerySupport(t *testing.T) {
 
 					vals = []*Foo{}
 					So(ds.GetAll(q, &vals), ShouldBeNil)
-					So(vals, ShouldResemble, []*Foo{foo1, projectData[0], foo7})
+					So(vals, ShouldResembleV, []*Foo{foo1, projectData[0], foo7})
 
 					return nil
 				}, nil), ShouldBeNil)
@@ -857,6 +853,7 @@ func TestQuerySupport(t *testing.T) {
 					q := datastore.NewQuery("Foo").Ancestor(root)
 					return ds.Run(q, func(pm datastore.PropertyMap, _ datastore.CursorCB) bool {
 						So(ds.RunInTransaction(func(c context.Context) error {
+							ds := datastore.Get(c)
 							pm["Value"] = append(pm["Value"], datastore.MkProperty("wat"))
 							return ds.Put(pm)
 						}, nil), ShouldBeNil)

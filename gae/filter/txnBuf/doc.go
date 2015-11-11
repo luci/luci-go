@@ -57,8 +57,18 @@
 //     viable outside the transaction as well as inside of it while also having
 //     it accurately reflect the 'merged' query results.
 //
-//   - No parallel access to datastore while in a transaction; all nested
-//     transactions are serialized. This is done for simplicity and correctness.
+//   - No parallel access* to datastore while in a transaction; all nested
+//     operations are serialized. This is done for simplicity and correctness.
+//
+//     * The exception is that callbacks inside of
+//     a Run/GetMulti/DeleteMulti/PutMulti query MAY read/write the current
+//     transaction. Modifications to the datastore during query executions will
+//     not affect the query results (e.g. the query has snapshot consistency
+//     from the moment that it begins iteration). Note, however, that datastore
+//     operations within the callback are still synchronized. This behavior is
+//     so that the user is not forced to buffer all of the query results before
+//     doing work with them, but can treat the query like a stream of events,
+//     if they so choose.
 //
 //   - The changing of namespace inside of a transaction is undefined... This is
 //     just generally a terrible idea anyway, but I thought it was worth

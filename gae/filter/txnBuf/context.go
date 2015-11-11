@@ -8,13 +8,13 @@ import (
 	"golang.org/x/net/context"
 
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
 )
 
 type key int
 
 var (
-	dsTxnBufParent key
+	dsTxnBufParent   key
+	dsTxnBufHaveLock key = 1
 )
 
 // FilterRDS installs a transaction buffer datastore filter in the context.
@@ -23,9 +23,10 @@ func FilterRDS(c context.Context) context.Context {
 	// transaction to, transitively.
 	return ds.AddRawFilters(c, func(c context.Context, rds ds.RawInterface) ds.RawInterface {
 		if par, _ := c.Value(dsTxnBufParent).(*txnBufState); par != nil {
-			return &dsTxnBuf{c, par}
+			haveLock, _ := c.Value(dsTxnBufHaveLock).(bool)
+			return &dsTxnBuf{c, par, haveLock}
 		}
-		return &dsBuf{rds, info.Get(c).GetNamespace()}
+		return &dsBuf{rds}
 	})
 }
 

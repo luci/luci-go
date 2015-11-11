@@ -12,8 +12,6 @@ import (
 
 type dsBuf struct {
 	ds.RawInterface
-
-	ns string
 }
 
 var _ ds.RawInterface = (*dsBuf)(nil)
