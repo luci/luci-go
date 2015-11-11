@@ -5,8 +5,6 @@
 package server
 
 import (
-	"errors"
-
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
@@ -15,6 +13,8 @@ import (
 	"github.com/luci/luci-go/server/auth/admin"
 	"github.com/luci/luci-go/server/auth/openid"
 	"github.com/luci/luci-go/server/middleware"
+
+	"github.com/luci/luci-go/appengine/gaeauth/server/internal/authdb"
 )
 
 // CookieAuth is default cookie-based auth method to use on GAE.
@@ -34,6 +34,7 @@ func InstallHandlers(r *httprouter.Router, base middleware.Base) {
 		oid.InstallHandlers(r, base)
 	}
 	admin.InstallHandlers(r, base, &UsersAPIAuthMethod{}, adminPagesConfig{})
+	authdb.InstallHandlers(r, base)
 }
 
 // Warmup prepares local caches. It's optional.
@@ -54,12 +55,16 @@ func (adminPagesConfig) GetAppServiceAccount(c context.Context) (string, error) 
 	return appengine.ServiceAccount(c)
 }
 
-func (adminPagesConfig) GetReplicationState(c context.Context) (authServiceURL string, rev int64, err error) {
-	return
+func (adminPagesConfig) GetReplicationState(c context.Context) (string, int64, error) {
+	info, err := authdb.GetLatestSnapshotInfo(c)
+	if info != nil {
+		return info.AuthServiceURL, info.Rev, nil
+	}
+	return "", 0, err
 }
 
 func (adminPagesConfig) ConfigureAuthService(c context.Context, baseURL, authServiceURL string) error {
-	return errors.New("not implemented yet")
+	return authdb.ConfigureAuthService(c, baseURL, authServiceURL)
 }
 
 ///

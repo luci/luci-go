@@ -22,10 +22,15 @@ import (
 //   * github.com/luci/luci-go/server/secrets/testsecrets (access to fake secret keys)
 func BaseTest(h middleware.Handler) httprouter.Handle {
 	return func(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		c := context.Background()
-		c = memory.Use(c)
-		c = memlogger.Use(c)
-		c = testsecrets.Use(c)
-		h(c, rw, r, p)
+		h(TestingContext(), rw, r, p)
 	}
+}
+
+// TestingContext returns context with base services installed.
+func TestingContext() context.Context {
+	c := context.Background()
+	c = memory.Use(c)
+	c = memlogger.Use(c)
+	c = testsecrets.Use(c)
+	return c
 }
