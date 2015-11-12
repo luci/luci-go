@@ -53,7 +53,7 @@ func TestContext(t *testing.T) {
 
 }
 
-func TestAuthenticate(t *testing.T) {
+func TestContextAuthenticate(t *testing.T) {
 	call := func(c context.Context, h middleware.Handler) *httptest.ResponseRecorder {
 		req, err := http.NewRequest("GET", "http://example.com/foo", nil)
 		So(err, ShouldBeNil)
@@ -94,7 +94,7 @@ func TestAuthenticate(t *testing.T) {
 	})
 
 	Convey("Anonymous works", t, func() {
-		c := prepareCtx(fakeMethod{skip: true})
+		c := prepareCtx(fakeMethod{anon: true})
 		rr := call(c, Authenticate(handler))
 		So(rr.Code, ShouldEqual, 200)
 		So(rr.Body.String(), ShouldEqual, "anonymous:anonymous")
@@ -137,12 +137,11 @@ func TestAutologin(t *testing.T) {
 	Convey("Fatal error", t, func() {
 		c := prepareCtx(fakeMethod{authError: errors.New("boo")})
 		rr := call(c, Autologin(handler))
-		So(rr.Code, ShouldEqual, 302)
-		So(rr.Header().Get("Location"), ShouldEqual, "http://login_url?r=%2Ffoo")
+		So(rr.Code, ShouldEqual, 401)
 	})
 
 	Convey("Anonymous is redirected to login if has UsersAPI", t, func() {
-		c := prepareCtx(fakeMethod{})
+		c := prepareCtx(fakeMethod{anon: true})
 		rr := call(c, Autologin(handler))
 		So(rr.Code, ShouldEqual, 302)
 		So(rr.Header().Get("Location"), ShouldEqual, "http://login_url?r=%2Ffoo")
@@ -156,7 +155,7 @@ func TestAutologin(t *testing.T) {
 	})
 
 	Convey("Handles transient error in LoginURL", t, func() {
-		c := prepareCtx(fakeMethod{loginURLError: errors.WrapTransient(errors.New("boo"))})
+		c := prepareCtx(fakeMethod{anon: true, loginURLError: errors.WrapTransient(errors.New("boo"))})
 		rr := call(c, Autologin(handler))
 		So(rr.Code, ShouldEqual, 500)
 		So(rr.Body.String(), ShouldEqual, "Transient error during authentication - boo\n")
@@ -184,11 +183,11 @@ type fakeMethod struct {
 	authError     error
 	loginURLError error
 	userID        identity.Identity
-	skip          bool
+	anon          bool
 }
 
 func (m fakeMethod) Authenticate(context.Context, *http.Request) (*User, error) {
-	if m.skip {
+	if m.anon {
 		return nil, nil
 	}
 	if m.authError != nil {

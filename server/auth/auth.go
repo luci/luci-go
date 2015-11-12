@@ -12,6 +12,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth/identity"
 )
 
@@ -19,6 +20,10 @@ var (
 	// ErrNoUsersAPI is returned by LoginURL and LogoutURL if none of
 	// the authentication methods support UsersAPI.
 	ErrNoUsersAPI = errors.New("auth: methods do not support login or logout URL")
+
+	// ErrBadClientID is returned by Authenticate if caller is using
+	// non-whitelisted OAuth2 client. More info is in the log.
+	ErrBadClientID = errors.New("auth: OAuth client_id is not whitelisted")
 )
 
 // Method implements particular kind of low level authentication mechanism for
@@ -107,6 +112,28 @@ func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context
 	}
 	s.peerIdent = s.user.Identity
 	s.peerIP = net.ParseIP(strings.SplitN(r.RemoteAddr, ":", 2)[0])
+
+	// Grab a snapshot of auth DB to use consistently for the duration of this
+	// request.
+	var err error
+	s.db, err = GetDB(c)
+	if err != nil {
+		return nil, err
+	}
+
+	// If using OAuth2, make sure ClientID is whitelisted.
+	if s.user.ClientID != "" {
+		valid, err := s.db.IsAllowedOAuthClientID(c, s.user.Email, s.user.ClientID)
+		if err != nil {
+			return nil, err
+		}
+		if !valid {
+			logging.Warningf(
+				c, "auth: %q is using client_id %q not in the whitelist",
+				s.user.Email, s.user.ClientID)
+			return nil, ErrBadClientID
+		}
+	}
 
 	// TODO(vadimsh): Check IP whitelist.
 	// TODO(vadimsh): Check host token.

@@ -10,10 +10,12 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/impl/prod"
 	"github.com/luci/luci-go/appengine/gaeauth/client"
+	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaeauth/server/gaesigner"
 	"github.com/luci/luci-go/appengine/gaelogger"
 	"github.com/luci/luci-go/appengine/gaesecrets"
 	"github.com/luci/luci-go/appengine/gaesettings"
+	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/proccache"
 	"github.com/luci/luci-go/server/settings"
@@ -27,6 +29,10 @@ var (
 
 	// globalSettings holds global app settings lazily updated from the datastore.
 	globalSettings = settings.New(gaesettings.Storage{})
+
+	// globalAuthDBCache knows how to fetch auth.DB from datastore and keep it
+	// in local memory cache. Used in prod contexts only.
+	globalAuthDBCache = auth.NewDBCache(server.GetAuthDB)
 )
 
 // WithProd installs the set of standard production AppEngine services:
@@ -37,6 +43,7 @@ var (
 //   * github.com/luci/luci-go/server/settings (global app settings)
 //   * github.com/luci/luci-go/appengine/gaesecrets (access to secret keys in datastore)
 //   * github.com/luci/luci-go/appengine/gaeauth/server/gaesigner (RSA signer)
+//   * github.com/luci/luci-go/appengine/gaeauth/server/auth (user groups database)
 func WithProd(c context.Context, req *http.Request) context.Context {
 	c = prod.Use(appengine.WithContext(c, req))
 	c = gaelogger.Use(c)
@@ -45,6 +52,7 @@ func WithProd(c context.Context, req *http.Request) context.Context {
 	c = settings.Use(c, globalSettings)
 	c = gaesecrets.Use(c, nil)
 	c = gaesigner.Use(c)
+	c = auth.UseDB(c, globalAuthDBCache)
 	return c
 }
 

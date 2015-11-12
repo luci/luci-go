@@ -17,6 +17,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth/service"
+	"github.com/luci/luci-go/server/auth/service/protocol"
 )
 
 // SnapshotInfo identifies some concrete AuthDB snapshot.
@@ -80,6 +81,19 @@ func GetLatestSnapshotInfo(c context.Context) (*SnapshotInfo, error) {
 func deleteSnapshotInfo(c context.Context) error {
 	ds := datastore.Get(c)
 	return ds.Delete(ds.KeyForObj(&SnapshotInfo{}))
+}
+
+// GetAuthDBSnapshot fetches, inflates and deserializes AuthDB snapshot.
+func GetAuthDBSnapshot(c context.Context, id string) (*protocol.AuthDB, error) {
+	snap := Snapshot{ID: id}
+	switch err := datastore.Get(c).Get(&snap); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, err // not transient
+	case err != nil:
+		return nil, errors.WrapTransient(err)
+	default:
+		return service.InflateAuthDB(snap.AuthDBDeflated)
+	}
 }
 
 // ConfigureAuthService makes initial fetch of AuthDB snapshot from the auth

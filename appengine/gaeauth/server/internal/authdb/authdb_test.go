@@ -10,6 +10,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/gaetesting"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/server/auth/service"
@@ -33,6 +34,16 @@ func TestConfigureAuthService(t *testing.T) {
 		So(info, ShouldResemble, &SnapshotInfo{
 			AuthServiceURL: "http://auth-service",
 			Rev:            123,
+		})
+
+		// Coverage for GetAuthDBSnapshot.
+		_, err = GetAuthDBSnapshot(c, "missing")
+		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+		snap, err := GetAuthDBSnapshot(c, info.GetSnapshotID())
+		So(err, ShouldBeNil)
+		So(snap, ShouldResemble, &protocol.AuthDB{
+			OauthClientId:     strPtr("client-id-for-rev-123"),
+			OauthClientSecret: strPtr("secret"),
 		})
 
 		// Same config call again triggers resubsciption.

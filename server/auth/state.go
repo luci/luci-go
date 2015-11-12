@@ -68,6 +68,7 @@ func CurrentIdentity(c context.Context) identity.Identity {
 
 // state implements State. Immutable.
 type state struct {
+	db        DB
 	method    Method
 	user      *User
 	peerIdent identity.Identity

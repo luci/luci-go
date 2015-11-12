@@ -67,6 +67,9 @@ func (m *OAuth2Method) authenticateProd(c context.Context, scopes []string) (*au
 		if u == nil {
 			return nil, nil
 		}
+		if u.ClientID == "" {
+			return nil, fmt.Errorf("oauth: ClientID is unexpectedly empty")
+		}
 		id, idErr := identity.MakeIdentity("user:" + u.Email)
 		if idErr != nil {
 			return nil, idErr

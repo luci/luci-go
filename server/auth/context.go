@@ -95,10 +95,9 @@ func Autologin(h middleware.Handler) middleware.Handler {
 			replyError(c, rw, 500, fmt.Sprintf("Transient error during authentication - %s", err))
 
 		case err != nil:
-			logging.Errorf(c, "Authentication failure - %s. Redirecting to login", err)
-			fallthrough
+			replyError(c, rw, 401, fmt.Sprintf("Authentication error - %s", err))
 
-		case err != nil || CurrentIdentity(ctx).Kind() == identity.Anonymous:
+		case CurrentIdentity(ctx).Kind() == identity.Anonymous:
 			dest := r.RequestURI
 			if dest == "" {
 				// Make r.URL relative.
