@@ -18,6 +18,7 @@ import (
 
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/admin/internal/assets"
+	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/openid"
 	"github.com/luci/luci-go/server/auth/xsrf"
 	"github.com/luci/luci-go/server/middleware"
@@ -84,6 +85,10 @@ type adminBypassDB struct{}
 
 func (adminBypassDB) IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error) {
 	return false, fmt.Errorf("OAuth is not allowed for admin pages access")
+}
+
+func (adminBypassDB) IsMember(c context.Context, id identity.Identity, group string) (bool, error) {
+	return false, fmt.Errorf("IsMember must not be used by admin pages, but it was")
 }
 
 ///

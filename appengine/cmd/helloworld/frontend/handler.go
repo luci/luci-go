@@ -76,11 +76,17 @@ func indexPage(c context.Context, w http.ResponseWriter, r *http.Request, p http
 		fail("Failed to generate logout URL", err)
 		return
 	}
+	isAdmin, err := auth.IsMember(c, "administrators")
+	if err != nil {
+		fail("Failed to check group membership", err)
+		return
+	}
 	tc := map[string]interface{}{
 		"HasUser":   auth.CurrentIdentity(c).Kind() != identity.Anonymous,
 		"User":      auth.CurrentUser(c),
 		"LoginURL":  loginURL,
 		"LogoutURL": logoutURL,
+		"IsAdmin":   isAdmin,
 	}
 	if err := tmpl.Execute(w, tc); err != nil {
 		fail("Failed to execute the template", err)

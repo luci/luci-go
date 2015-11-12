@@ -81,3 +81,7 @@ type fakeDB struct {
 func (db *fakeDB) IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error) {
 	return clientID == db.allowedClientID, nil
 }
+
+func (db *fakeDB) IsMember(c context.Context, id identity.Identity, group string) (bool, error) {
+	return true, nil
+}

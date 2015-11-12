@@ -19,10 +19,15 @@ func TestState(t *testing.T) {
 		So(GetState(ctx), ShouldBeNil)
 		So(CurrentUser(ctx).Identity, ShouldEqual, identity.AnonymousIdentity)
 		So(CurrentIdentity(ctx), ShouldEqual, identity.AnonymousIdentity)
+
+		res, err := IsMember(ctx, "group")
+		So(res, ShouldBeFalse)
+		So(err, ShouldEqual, ErrNoAuthState)
 	})
 
 	Convey("Check non-empty ctx", t, func() {
 		s := state{
+			db:        &fakeDB{},
 			user:      &User{Identity: "user:abc@example.com"},
 			peerIdent: "user:abc@example.com",
 		}
@@ -33,5 +38,9 @@ func TestState(t *testing.T) {
 		So(GetState(ctx).PeerIP(), ShouldBeNil)
 		So(CurrentUser(ctx).Identity, ShouldEqual, identity.Identity("user:abc@example.com"))
 		So(CurrentIdentity(ctx), ShouldEqual, identity.Identity("user:abc@example.com"))
+
+		res, err := IsMember(ctx, "group")
+		So(err, ShouldBeNil)
+		So(res, ShouldBeTrue) // fakeDB always returns true
 	})
 }

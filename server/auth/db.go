@@ -6,6 +6,7 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -17,6 +18,7 @@ import (
 	"github.com/luci/luci-go/common/lazyslot"
 	"github.com/luci/luci-go/common/logging"
 
+	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/service/protocol"
 	"github.com/luci/luci-go/server/middleware"
 )
@@ -33,6 +35,12 @@ type DB interface {
 	// IsAllowedOAuthClientID returns true if given OAuth2 client_id can be used
 	// to authenticate access for given email.
 	IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error)
+
+	// IsMember returns true if the given identity belongs to the given group.
+	//
+	// Unknown groups are considered empty. May return errors if underlying
+	// datastore has issues.
+	IsMember(c context.Context, id identity.Identity, group string) (bool, error)
 }
 
 // DBFactory returns most recent DB instance.
@@ -124,6 +132,15 @@ func (db ErroringDB) IsAllowedOAuthClientID(c context.Context, email, clientID s
 	return false, db.Error
 }
 
+// IsMember returns true if the given identity belongs to the given group.
+//
+// Unknown groups are considered empty. May return errors if underlying
+// datastore has issues.
+func (db ErroringDB) IsMember(c context.Context, id identity.Identity, group string) (bool, error) {
+	logging.Errorf(c, "%s", db.Error)
+	return false, db.Error
+}
+
 ///
 
 // OAuth client_id of https://apis-explorer.appspot.com/.
@@ -138,21 +155,31 @@ type SnapshotDB struct {
 	Rev            int64  // its revision number
 
 	clientIDs map[string]struct{} // set of allowed client IDs
+	groups    map[string]*group   // map of all known groups
+}
+
+// group is a node in a group graph. Nested groups are referenced directly via
+// pointer.
+type group struct {
+	members map[identity.Identity]struct{} // set of all members
+	globs   []identity.Glob                // list of all identity globs
+	nested  []*group                       // pointers to nested groups
 }
 
 var _ DB = &SnapshotDB{}
 
 // NewSnapshotDB creates new instance of SnapshotDB.
 //
-// It does some preprocessing to speed up subsequent checks.
-func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64) *SnapshotDB {
+// It does some preprocessing to speed up subsequent checks. Return errors if
+// it encounters inconsistencies.
+func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64) (*SnapshotDB, error) {
 	db := &SnapshotDB{
 		AuthServiceURL: authServiceURL,
 		Rev:            rev,
-		clientIDs:      make(map[string]struct{}, 2+len(authDB.GetOauthAdditionalClientIds())),
 	}
 
 	// Set of all allowed clientIDs.
+	db.clientIDs = make(map[string]struct{}, 2+len(authDB.GetOauthAdditionalClientIds()))
 	db.clientIDs[googleAPIExplorerClientID] = struct{}{}
 	if authDB.GetOauthClientId() != "" {
 		db.clientIDs[authDB.GetOauthClientId()] = struct{}{}
@@ -163,7 +190,42 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64) *S
 		}
 	}
 
-	return db
+	// First pass: build all `group` nodes.
+	db.groups = make(map[string]*group, len(authDB.GetGroups()))
+	for _, g := range authDB.GetGroups() {
+		if db.groups[g.GetName()] != nil {
+			return nil, fmt.Errorf("auth: bad AuthDB, group %q is listed twice", g.GetName())
+		}
+		gr := &group{}
+		if len(g.GetMembers()) != 0 {
+			gr.members = make(map[identity.Identity]struct{}, len(g.GetMembers()))
+			for _, ident := range g.GetMembers() {
+				gr.members[identity.Identity(ident)] = struct{}{}
+			}
+		}
+		if len(g.GetGlobs()) != 0 {
+			gr.globs = make([]identity.Glob, len(g.GetGlobs()))
+			for i, glob := range g.GetGlobs() {
+				gr.globs[i] = identity.Glob(glob)
+			}
+		}
+		if len(g.GetNested()) != 0 {
+			gr.nested = make([]*group, 0, len(g.GetNested()))
+		}
+		db.groups[g.GetName()] = gr
+	}
+
+	// Second pass: fill in `nested` with pointers, now that we have them.
+	for _, g := range authDB.GetGroups() {
+		gr := db.groups[g.GetName()]
+		for _, nestedName := range g.GetNested() {
+			if nestedGroup := db.groups[nestedName]; nestedGroup != nil {
+				gr.nested = append(gr.nested, nestedGroup)
+			}
+		}
+	}
+
+	return db, nil
 }
 
 // IsAllowedOAuthClientID returns true if given OAuth2 client_id can be used
@@ -182,4 +244,52 @@ func (db *SnapshotDB) IsAllowedOAuthClientID(c context.Context, email, clientID 
 
 	_, ok := db.clientIDs[clientID]
 	return ok, nil
+}
+
+// IsMember returns true if the given identity belongs to the given group.
+//
+// Unknown groups are considered empty. May return errors if underlying
+// datastore has issues.
+func (db *SnapshotDB) IsMember(c context.Context, id identity.Identity, groupName string) (bool, error) {
+	// isMember is used to recurse over nested groups.
+	var isMember func(*group, []*group) bool
+	isMember = func(gr *group, visited []*group) bool {
+		if _, ok := gr.members[id]; ok {
+			return true
+		}
+		for _, glob := range gr.globs {
+			if glob.Match(id) {
+				return true
+			}
+		}
+		if len(gr.nested) != 0 {
+			visited = append(visited, gr)
+			defer func() {
+				visited = visited[:len(visited)-1]
+			}()
+			for _, nested := range gr.nested {
+				// There should be no cycles, but do the check just in case there are,
+				// seg faulting with stack overflow is very bad.
+				for _, seenGroup := range visited {
+					if seenGroup == nested {
+						logging.Errorf(c, "auth: unexpected group nesting cycle in group %q", groupName)
+						return false
+					}
+				}
+				if isMember(nested, visited) {
+					return true
+				}
+			}
+		}
+		return false
+	}
+
+	// Cycle detection check uses a stack of visited groups. Use stack allocated
+	// array as a backing store to avoid unnecessary dynamic allocation. If stack
+	// depth grows beyond 8, 'append' will reallocate it on heap.
+	var visited [8]*group
+	if gr := db.groups[groupName]; gr != nil {
+		return isMember(gr, visited[:0]), nil
+	}
+	return false, nil
 }

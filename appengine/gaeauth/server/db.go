@@ -14,6 +14,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/identity"
 )
 
 // errNotConfigured is returned on real GAE if auth service URL is not set.
@@ -61,8 +62,12 @@ func GetAuthDB(c context.Context, prev auth.DB) (auth.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	db := auth.NewSnapshotDB(proto, latest.AuthServiceURL, latest.Rev)
+	db, err := auth.NewSnapshotDB(proto, latest.AuthServiceURL, latest.Rev)
 	logging.Infof(c, "auth: AuthDB at rev %d fetched in %s", latest.Rev, clock.Now(c).Sub(start))
+	if err != nil {
+		logging.Errorf(c, "auth: AuthDB is invalid - %s", err)
+		return nil, err
+	}
 
 	return db, nil
 }
@@ -78,4 +83,11 @@ func (devServerDB) IsAllowedOAuthClientID(c context.Context, email, clientID str
 		return false, errNotConfigured
 	}
 	return true, nil
+}
+
+func (devServerDB) IsMember(c context.Context, id identity.Identity, group string) (bool, error) {
+	if !info.Get(c).IsDevAppServer() {
+		return false, errNotConfigured
+	}
+	return id.Kind() != identity.Anonymous, nil
 }

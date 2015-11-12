@@ -5,6 +5,7 @@
 package auth
 
 import (
+	"errors"
 	"net"
 
 	"golang.org/x/net/context"
@@ -12,9 +13,21 @@ import (
 	"github.com/luci/luci-go/server/auth/identity"
 )
 
+// ErrNoAuthState is returned when a function requires State to be in the
+// context, but it is not there. In particular `IsMember` requires an existing
+// state.
+var ErrNoAuthState = errors.New("auth: auth.State is not in the context")
+
 // State is stored in the context when handling an incoming request. It
 // contains authentication related state of the current request.
 type State interface {
+	// DB is auth.DB snapshot with authorization information to use when
+	// processing this request.
+	//
+	// Use directly only when you know what your are doing. Prefer to use wrapping
+	// functions (e.g. IsMember) instead.
+	DB() DB
+
 	// Method returns authentication method used for current request or nil if
 	// request is anonymous.
 	Method() Method
@@ -64,6 +77,20 @@ func CurrentIdentity(c context.Context) identity.Identity {
 	return identity.AnonymousIdentity
 }
 
+// IsMember returns true if the current caller is in the given group.
+//
+// Unknown groups are considered empty (the function returns false).
+// If the context doesn't have State installed returns ErrNoAuthState.
+//
+// May also return errors if the check can not be performed (e.g. on datastore
+// issues).
+func IsMember(c context.Context, group string) (bool, error) {
+	if s := GetState(c); s != nil {
+		return s.DB().IsMember(c, s.User().Identity, group)
+	}
+	return false, ErrNoAuthState
+}
+
 ///
 
 // state implements State. Immutable.
@@ -75,6 +102,7 @@ type state struct {
 	peerIP    net.IP
 }
 
+func (s *state) DB() DB                          { return s.db }
 func (s *state) Method() Method                  { return s.method }
 func (s *state) User() *User                     { return s.user }
 func (s *state) PeerIdentity() identity.Identity { return s.peerIdent }
