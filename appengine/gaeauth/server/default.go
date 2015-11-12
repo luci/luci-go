@@ -12,6 +12,7 @@ import (
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/admin"
 	"github.com/luci/luci-go/server/auth/openid"
+	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/middleware"
 
 	"github.com/luci/luci-go/appengine/gaeauth/server/internal/authdb"
@@ -34,7 +35,9 @@ func InstallHandlers(r *httprouter.Router, base middleware.Base) {
 		oid.InstallHandlers(r, base)
 	}
 	admin.InstallHandlers(r, base, &UsersAPIAuthMethod{}, adminPagesConfig{})
+	auth.InstallHandlers(r, base)
 	authdb.InstallHandlers(r, base)
+	signing.InstallHandlers(r, base)
 }
 
 // Warmup prepares local caches. It's optional.

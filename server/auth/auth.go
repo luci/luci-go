@@ -6,6 +6,7 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -111,7 +112,25 @@ func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context
 		s.user = &User{Identity: identity.AnonymousIdentity}
 	}
 	s.peerIdent = s.user.Identity
-	s.peerIP = net.ParseIP(strings.SplitN(r.RemoteAddr, ":", 2)[0])
+
+	// Unit tests do not have RemoteAddr set, so default to ::1.
+	remoteAddr := r.RemoteAddr
+	if remoteAddr == "" {
+		remoteAddr = "::1"
+	}
+
+	// Go docs claim that r.RemoteAddr is "host:port" pair. They lie. At least on
+	// GAE RemoteAddr doesn't have ":port" part. Also 'host' part can be an IPv6
+	// (have ':' char inside), so try to parse RemoteAddr as raw IP, and strip
+	// ":port" only if it fails.
+	if ip := net.ParseIP(remoteAddr); ip != nil {
+		s.peerIP = ip
+	} else {
+		s.peerIP = net.ParseIP(strings.SplitN(remoteAddr, ":", 2)[0])
+	}
+	if s.peerIP == nil {
+		panic(fmt.Errorf("auth: bad remote_addr %q", remoteAddr))
+	}
 
 	// Grab a snapshot of auth DB to use consistently for the duration of this
 	// request.
