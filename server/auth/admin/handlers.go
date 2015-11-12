@@ -18,7 +18,6 @@ import (
 
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/admin/internal/assets"
-	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/openid"
 	"github.com/luci/luci-go/server/auth/xsrf"
 	"github.com/luci/luci-go/server/middleware"
@@ -60,7 +59,10 @@ func InstallHandlers(r *httprouter.Router, base middleware.Base, adminAuth auth.
 	wrap := func(h middleware.Handler) httprouter.Handle {
 		h = adminOnly(h)
 		h = auth.WithDB(h, func(c context.Context) (auth.DB, error) {
-			return &adminBypassDB{}, nil // adminOnly is used for authorization
+			// adminOnly is used for authorization, disable auth.DB
+			return &auth.ErroringDB{
+				Error: errors.New("auth: unexpected call to auth.DB on admin page"),
+			}, nil
 		})
 		h = auth.Use(h, auth.Authenticator{adminAuth})
 		h = templates.WithTemplates(h, tmpl)
@@ -70,25 +72,6 @@ func InstallHandlers(r *httprouter.Router, base middleware.Base, adminAuth auth.
 
 	r.GET("/auth/admin/settings", wrap(settingsPage))
 	r.POST("/auth/admin/settings", wrap(xsrf.WithTokenCheck(storeSettings)))
-}
-
-///
-
-// adminBypassDB implements auth.DB by skipping some authorization checks.
-//
-// It is needed since admin pages are used to configure Auth DB, and the default
-// unconfigured one forbids all access. `adminBypassDB` makes sure admin pages
-// are accessible even when Auth DB is not configured yet.
-//
-// Real authorization happens in `adminOnly` function.
-type adminBypassDB struct{}
-
-func (adminBypassDB) IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error) {
-	return false, fmt.Errorf("OAuth is not allowed for admin pages access")
-}
-
-func (adminBypassDB) IsMember(c context.Context, id identity.Identity, group string) (bool, error) {
-	return false, fmt.Errorf("IsMember must not be used by admin pages, but it was")
 }
 
 ///

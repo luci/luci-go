@@ -21,6 +21,7 @@ import (
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/service/protocol"
 	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/secrets"
 )
 
 // ErrNoDB is returned by default DB returned from GetDB if no DBFactory is
@@ -41,6 +42,12 @@ type DB interface {
 	// Unknown groups are considered empty. May return errors if underlying
 	// datastore has issues.
 	IsMember(c context.Context, id identity.Identity, group string) (bool, error)
+
+	// SharedSecrets is secrets.Store with secrets in Auth DB.
+	//
+	// Such secrets are usually generated on central Auth Service and are known
+	// to all trusted services (so that they can use them to exchange data).
+	SharedSecrets(c context.Context) (secrets.Store, error)
 }
 
 // DBFactory returns most recent DB instance.
@@ -141,6 +148,15 @@ func (db ErroringDB) IsMember(c context.Context, id identity.Identity, group str
 	return false, db.Error
 }
 
+// SharedSecrets is secrets.Store with secrets in Auth DB.
+//
+// Such secrets are usually generated on central Auth Service and are known
+// to all trusted services (so that they can use them to exchange data).
+func (db ErroringDB) SharedSecrets(c context.Context) (secrets.Store, error) {
+	logging.Errorf(c, "%s", db.Error)
+	return nil, db.Error
+}
+
 ///
 
 // OAuth client_id of https://apis-explorer.appspot.com/.
@@ -156,6 +172,7 @@ type SnapshotDB struct {
 
 	clientIDs map[string]struct{} // set of allowed client IDs
 	groups    map[string]*group   // map of all known groups
+	secrets   secrets.StaticStore // secrets shared by all service with this DB
 }
 
 // group is a node in a group graph. Nested groups are referenced directly via
@@ -225,6 +242,23 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64) (*
 		}
 	}
 
+	// Load all shared secrets.
+	db.secrets = make(secrets.StaticStore, len(authDB.GetSecrets()))
+	for _, s := range authDB.GetSecrets() {
+		values := s.GetValues()
+		if len(values) == 0 {
+			continue
+		}
+		secret := secrets.Secret{
+			Current:  secrets.NamedBlob{Blob: values[0]}, // most recent on top
+			Previous: make([]secrets.NamedBlob, len(values)-1),
+		}
+		for i := 1; i < len(values); i++ {
+			secret.Previous[i-1] = secrets.NamedBlob{Blob: values[i]}
+		}
+		db.secrets[secrets.Key(s.GetName())] = secret
+	}
+
 	return db, nil
 }
 
@@ -292,4 +326,12 @@ func (db *SnapshotDB) IsMember(c context.Context, id identity.Identity, groupNam
 		return isMember(gr, visited[:0]), nil
 	}
 	return false, nil
+}
+
+// SharedSecrets is secrets.Store with secrets in Auth DB.
+//
+// Such secrets are usually generated on central Auth Service and are known
+// to all trusted services (so that they can use them to exchange data).
+func (db *SnapshotDB) SharedSecrets(c context.Context) (secrets.Store, error) {
+	return db.secrets, nil
 }

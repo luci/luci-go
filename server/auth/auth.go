@@ -5,7 +5,6 @@
 package auth
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -13,6 +12,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth/identity"
 )
@@ -154,8 +154,19 @@ func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context
 		}
 	}
 
+	// Extract peer host name from host token header, if present and valid.
+	if token := r.Header.Get("X-Host-Token-V1"); token != "" {
+		store, err := s.db.SharedSecrets(c)
+		if err != nil {
+			return nil, err
+		}
+		s.peerHost, err = validateHostToken(c, store, token)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// TODO(vadimsh): Check IP whitelist.
-	// TODO(vadimsh): Check host token.
 	// TODO(vadimsh): Check delegation token.
 
 	// Inject auth state.

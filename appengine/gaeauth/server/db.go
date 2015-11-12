@@ -15,6 +15,7 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
+	"github.com/luci/luci-go/server/secrets"
 )
 
 // errNotConfigured is returned on real GAE if auth service URL is not set.
@@ -90,4 +91,8 @@ func (devServerDB) IsMember(c context.Context, id identity.Identity, group strin
 		return false, errNotConfigured
 	}
 	return id.Kind() != identity.Anonymous, nil
+}
+
+func (devServerDB) SharedSecrets(c context.Context) (secrets.Store, error) {
+	return nil, errNotConfigured
 }

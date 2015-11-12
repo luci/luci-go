@@ -5,12 +5,14 @@
 package auth
 
 import (
+	"errors"
 	"net/http"
 	"testing"
 
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/server/auth/identity"
+	"github.com/luci/luci-go/server/secrets"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -84,4 +86,8 @@ func (db *fakeDB) IsAllowedOAuthClientID(c context.Context, email, clientID stri
 
 func (db *fakeDB) IsMember(c context.Context, id identity.Identity, group string) (bool, error) {
 	return true, nil
+}
+
+func (db *fakeDB) SharedSecrets(c context.Context) (secrets.Store, error) {
+	return nil, errors.New("fakeDB: SharedSecrets is not implemented")
 }

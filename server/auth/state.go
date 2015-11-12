@@ -45,6 +45,10 @@ type State interface {
 	// PeerIP is IP address (IPv4 or IPv6) of whoever is making the request or
 	// nil if not available.
 	PeerIP() net.IP
+
+	// PeerHost is hostname extracted from X-Host-Token-V1 header or "" if the
+	// header is not provided or signature is invalid.
+	PeerHost() string
 }
 
 type stateContextKey int
@@ -100,6 +104,7 @@ type state struct {
 	user      *User
 	peerIdent identity.Identity
 	peerIP    net.IP
+	peerHost  string
 }
 
 func (s *state) DB() DB                          { return s.db }
@@ -107,3 +112,4 @@ func (s *state) Method() Method                  { return s.method }
 func (s *state) User() *User                     { return s.user }
 func (s *state) PeerIdentity() identity.Identity { return s.peerIdent }
 func (s *state) PeerIP() net.IP                  { return s.peerIP }
+func (s *state) PeerHost() string                { return s.peerHost }

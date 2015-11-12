@@ -46,10 +46,15 @@ func TestBlobs(t *testing.T) {
 
 func TestContext(t *testing.T) {
 	Convey("Works", t, func() {
-		c := Set(context.Background(), fakeStore{})
+		c := Set(context.Background(), StaticStore{
+			"key": Secret{Current: NamedBlob{ID: "secret"}},
+		})
 		s, err := GetSecret(c, "key")
 		So(err, ShouldBeNil)
 		So(s.Current.ID, ShouldEqual, "secret")
+
+		_, err = GetSecret(c, "missing")
+		So(err, ShouldEqual, ErrNoSuchSecret)
 
 		// For code coverage.
 		c = Set(c, nil)
@@ -57,10 +62,4 @@ func TestContext(t *testing.T) {
 		_, err = GetSecret(c, "key")
 		So(err, ShouldEqual, ErrNoStoreConfigured)
 	})
-}
-
-type fakeStore struct{}
-
-func (f fakeStore) GetSecret(k Key) (Secret, error) {
-	return Secret{Current: NamedBlob{ID: "secret"}}, nil
 }

@@ -71,3 +71,15 @@ type Store interface {
 	// unintended modifications of arrays that back all byte blobs).
 	GetSecret(Key) (Secret, error)
 }
+
+// StaticStore is Store with predefined secrets.
+type StaticStore map[Key]Secret
+
+// GetSecret returns a copy of a secret given its key or ErrNoSuchSecret if no
+// such secret.
+func (s StaticStore) GetSecret(k Key) (Secret, error) {
+	if secret, ok := s[k]; ok {
+		return secret.Clone(), nil
+	}
+	return Secret{}, ErrNoSuchSecret
+}
