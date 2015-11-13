@@ -170,7 +170,11 @@ func TestAutologin(t *testing.T) {
 }
 
 func prepareCtx(m ...Method) context.Context {
-	return SetAuthenticator(context.Background(), Authenticator(m))
+	c := SetAuthenticator(context.Background(), Authenticator(m))
+	c = UseDB(c, func(context.Context) (DB, error) {
+		return &fakeDB{}, nil
+	})
+	return c
 }
 
 type noUserAPI struct{}

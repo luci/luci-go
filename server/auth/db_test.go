@@ -6,6 +6,7 @@ package auth
 
 import (
 	"errors"
+	"net"
 	"testing"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/service/protocol"
+	"github.com/luci/luci-go/server/secrets"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -137,6 +139,93 @@ func TestSnapshotDB(t *testing.T) {
 		So(call("user:abc@example.com", "cycle"), ShouldBeFalse)
 		So(call("user:abc@example.com", "unknown"), ShouldBeFalse)
 		So(call("user:abc@example.com", "unknown nested"), ShouldBeFalse)
+	})
+
+	Convey("SharedSecrets works", t, func() {
+		c := context.Background()
+		db, err := NewSnapshotDB(&protocol.AuthDB{
+			Secrets: []*protocol.AuthSecret{
+				{
+					Name: strPtr("secret-1"),
+					Values: [][]byte{
+						[]byte("current"),
+					},
+				},
+				{
+					Name: strPtr("secret-2"),
+					Values: [][]byte{
+						[]byte("current"),
+						[]byte("prev1"),
+						[]byte("prev2"),
+					},
+				},
+				{
+					Name: strPtr("empty"),
+				},
+			},
+		}, "http://auth-service", 1234)
+		So(err, ShouldBeNil)
+
+		s, err := db.SharedSecrets(c)
+		So(err, ShouldBeNil)
+		So(s, ShouldResemble, secrets.StaticStore{
+			"secret-1": {
+				Current: secrets.NamedBlob{Blob: []byte("current")},
+			},
+			"secret-2": {
+				Current: secrets.NamedBlob{Blob: []byte("current")},
+				Previous: []secrets.NamedBlob{
+					{Blob: []byte("prev1")},
+					{Blob: []byte("prev2")},
+				},
+			},
+		})
+	})
+
+	Convey("IsInWhitelist works", t, func() {
+		c := context.Background()
+		db, err := NewSnapshotDB(&protocol.AuthDB{
+			IpWhitelistAssignments: []*protocol.AuthIPWhitelistAssignment{
+				{
+					Identity:    strPtr("user:abc@example.com"),
+					IpWhitelist: strPtr("whitelist"),
+				},
+			},
+			IpWhitelists: []*protocol.AuthIPWhitelist{
+				{
+					Name: strPtr("whitelist"),
+					Subnets: []string{
+						"1.2.3.4/32",
+						"10.0.0.0/8",
+					},
+				},
+				{
+					Name: strPtr("empty"),
+				},
+			},
+		}, "http://auth-service", 1234)
+		So(err, ShouldBeNil)
+
+		wl, err := db.GetWhitelistForIdentity(c, "user:abc@example.com")
+		So(err, ShouldBeNil)
+		So(wl, ShouldEqual, "whitelist")
+
+		wl, err = db.GetWhitelistForIdentity(c, "user:unknown@example.com")
+		So(err, ShouldBeNil)
+		So(wl, ShouldEqual, "")
+
+		call := func(ip, whitelist string) bool {
+			ipaddr := net.ParseIP(ip)
+			So(ipaddr, ShouldNotBeNil)
+			res, err := db.IsInWhitelist(c, ipaddr, whitelist)
+			So(err, ShouldBeNil)
+			return res
+		}
+
+		So(call("1.2.3.4", "whitelist"), ShouldBeTrue)
+		So(call("10.255.255.255", "whitelist"), ShouldBeTrue)
+		So(call("9.255.255.255", "whitelist"), ShouldBeFalse)
+		So(call("1.2.3.4", "empty"), ShouldBeFalse)
 	})
 }
 

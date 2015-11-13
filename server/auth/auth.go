@@ -111,7 +111,6 @@ func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context
 	if s.method == nil {
 		s.user = &User{Identity: identity.AnonymousIdentity}
 	}
-	s.peerIdent = s.user.Identity
 
 	// Unit tests do not have RemoteAddr set, so default to ::1.
 	remoteAddr := r.RemoteAddr
@@ -166,8 +165,17 @@ func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context
 		}
 	}
 
-	// TODO(vadimsh): Check IP whitelist.
-	// TODO(vadimsh): Check delegation token.
+	// Bots may use IP whitelist for authentication. In this case checkIPWhitelist
+	// returns new bot identity. Otherwise it just returns s.user.Identity
+	// unchanged.
+	s.user.Identity, err = checkIPWhitelist(c, s.db, s.user.Identity, s.peerIP, r.Header)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO(vadimsh): Check delegation token. When using delegation
+	// s.User.Identity may be != s.peerIdent.
+	s.peerIdent = s.user.Identity
 
 	// Inject auth state.
 	c = context.WithValue(c, stateContextKey(0), &s)

@@ -7,6 +7,7 @@ package admin
 import (
 	"fmt"
 	"html/template"
+	"net"
 	"net/http"
 	"net/url"
 
@@ -18,6 +19,7 @@ import (
 
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/admin/internal/assets"
+	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/openid"
 	"github.com/luci/luci-go/server/auth/xsrf"
 	"github.com/luci/luci-go/server/middleware"
@@ -55,14 +57,17 @@ type Config interface {
 // auth.CurrentUser(...).Superuser is set to true for admins.
 func InstallHandlers(r *httprouter.Router, base middleware.Base, adminAuth auth.Method, cfg Config) {
 	tmpl := prepareTemplates()
+	adminDB := adminBypassDB{
+		auth.ErroringDB{
+			Error: errors.New("auth: unexpected call to auth.DB on admin page"),
+		},
+	}
 
 	wrap := func(h middleware.Handler) httprouter.Handle {
 		h = adminOnly(h)
 		h = auth.WithDB(h, func(c context.Context) (auth.DB, error) {
 			// adminOnly is used for authorization, disable auth.DB
-			return &auth.ErroringDB{
-				Error: errors.New("auth: unexpected call to auth.DB on admin page"),
-			}, nil
+			return adminDB, nil
 		})
 		h = auth.Use(h, auth.Authenticator{adminAuth})
 		h = templates.WithTemplates(h, tmpl)
@@ -75,6 +80,23 @@ func InstallHandlers(r *httprouter.Router, base middleware.Base, adminAuth auth.
 }
 
 ///
+
+// adminBypassDB skips IP whitelist checks (assuming no IPs are whitelisted) and
+// errors on all other checks.
+//
+// It is needed to make admin pages accessible even when AuthDB is not
+// configured.
+type adminBypassDB struct {
+	auth.ErroringDB
+}
+
+func (adminBypassDB) GetWhitelistForIdentity(c context.Context, ident identity.Identity) (string, error) {
+	return "", nil
+}
+
+func (adminBypassDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
+	return false, nil
+}
 
 type contextKey int
 

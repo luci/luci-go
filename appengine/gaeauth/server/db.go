@@ -6,6 +6,7 @@ package server
 
 import (
 	"errors"
+	"net"
 
 	"golang.org/x/net/context"
 
@@ -95,4 +96,12 @@ func (devServerDB) IsMember(c context.Context, id identity.Identity, group strin
 
 func (devServerDB) SharedSecrets(c context.Context) (secrets.Store, error) {
 	return nil, errNotConfigured
+}
+
+func (devServerDB) GetWhitelistForIdentity(c context.Context, ident identity.Identity) (string, error) {
+	return "", nil
+}
+
+func (devServerDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
+	return false, nil
 }

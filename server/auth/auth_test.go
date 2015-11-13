@@ -6,6 +6,7 @@ package auth
 
 import (
 	"errors"
+	"net"
 	"net/http"
 	"testing"
 
@@ -49,6 +50,19 @@ func TestAuthenticate(t *testing.T) {
 		_, err := auth.Authenticate(c, makeRequest())
 		So(err, ShouldEqual, ErrBadClientID)
 	})
+
+	Convey("IP whitelist works for anon bots", t, func() {
+		c := context.Background()
+		c = UseDB(c, func(c context.Context) (DB, error) {
+			return &fakeDB{}, nil
+		})
+		auth := Authenticator{}
+		req := makeRequest()
+		req.RemoteAddr = "1.2.3.4" // in "bots" whitelist of fakeDB
+		c, err := auth.Authenticate(c, req)
+		So(err, ShouldBeNil)
+		So(CurrentIdentity(c), ShouldEqual, identity.Identity("bot:1.2.3.4"))
+	})
 }
 
 ///
@@ -90,4 +104,12 @@ func (db *fakeDB) IsMember(c context.Context, id identity.Identity, group string
 
 func (db *fakeDB) SharedSecrets(c context.Context) (secrets.Store, error) {
 	return nil, errors.New("fakeDB: SharedSecrets is not implemented")
+}
+
+func (db *fakeDB) GetWhitelistForIdentity(c context.Context, ident identity.Identity) (string, error) {
+	return "", nil
+}
+
+func (db *fakeDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
+	return whitelist == "bots" && ip.String() == "1.2.3.4", nil
 }

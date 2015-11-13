@@ -7,6 +7,7 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -48,6 +49,21 @@ type DB interface {
 	// Such secrets are usually generated on central Auth Service and are known
 	// to all trusted services (so that they can use them to exchange data).
 	SharedSecrets(c context.Context) (secrets.Store, error)
+
+	// GetWhitelistForIdentity returns name of the IP whitelist to use to check
+	// IP of requests from given `ident`.
+	//
+	// It's used to restrict access for certain account to certain IP subnets.
+	//
+	// Returns ("", nil) if `ident` is not IP restricted.
+	GetWhitelistForIdentity(c context.Context, ident identity.Identity) (string, error)
+
+	// IsInWhitelist returns true if IP address belongs to given named
+	// IP whitelist.
+	//
+	// IP whitelist is a set of IP subnets. Unknown IP whitelists are considered
+	// empty. May return errors if underlying datastore has issues.
+	IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error)
 }
 
 // DBFactory returns most recent DB instance.
@@ -157,6 +173,26 @@ func (db ErroringDB) SharedSecrets(c context.Context) (secrets.Store, error) {
 	return nil, db.Error
 }
 
+// GetWhitelistForIdentity returns name of the IP whitelist to use to check
+// IP of requests from given `ident`.
+//
+// It's used to restrict access for certain account to certain IP subnets.
+//
+// Returns ("", nil) if `ident` is not IP restricted.
+func (db ErroringDB) GetWhitelistForIdentity(c context.Context, ident identity.Identity) (string, error) {
+	logging.Errorf(c, "%s", db.Error)
+	return "", db.Error
+}
+
+// IsInWhitelist returns true if IP address belongs to given named IP whitelist.
+//
+// IP whitelist is a set of IP subnets. Unknown IP whitelists are considered
+// empty. May return errors if underlying datastore has issues.
+func (db ErroringDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
+	logging.Errorf(c, "%s", db.Error)
+	return false, db.Error
+}
+
 ///
 
 // OAuth client_id of https://apis-explorer.appspot.com/.
@@ -173,6 +209,9 @@ type SnapshotDB struct {
 	clientIDs map[string]struct{} // set of allowed client IDs
 	groups    map[string]*group   // map of all known groups
 	secrets   secrets.StaticStore // secrets shared by all service with this DB
+
+	assignments map[identity.Identity]string // IP whitelist assignements
+	whitelists  map[string][]net.IPNet       // IP whitelists
 }
 
 // group is a node in a group graph. Nested groups are referenced directly via
@@ -250,13 +289,38 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64) (*
 			continue
 		}
 		secret := secrets.Secret{
-			Current:  secrets.NamedBlob{Blob: values[0]}, // most recent on top
-			Previous: make([]secrets.NamedBlob, len(values)-1),
+			Current: secrets.NamedBlob{Blob: values[0]}, // most recent on top
 		}
-		for i := 1; i < len(values); i++ {
-			secret.Previous[i-1] = secrets.NamedBlob{Blob: values[i]}
+		if len(values) > 1 {
+			secret.Previous = make([]secrets.NamedBlob, len(values)-1)
+			for i := 1; i < len(values); i++ {
+				secret.Previous[i-1] = secrets.NamedBlob{Blob: values[i]}
+			}
 		}
 		db.secrets[secrets.Key(s.GetName())] = secret
+	}
+
+	// Build map of IP whitelist assignments.
+	db.assignments = make(map[identity.Identity]string, len(authDB.GetIpWhitelistAssignments()))
+	for _, a := range authDB.GetIpWhitelistAssignments() {
+		db.assignments[identity.Identity(a.GetIdentity())] = a.GetIpWhitelist()
+	}
+
+	// Parse all subnets into IPNet objects.
+	db.whitelists = make(map[string][]net.IPNet, len(authDB.GetIpWhitelists()))
+	for _, w := range authDB.GetIpWhitelists() {
+		if len(w.GetSubnets()) == 0 {
+			continue
+		}
+		nets := make([]net.IPNet, len(w.GetSubnets()))
+		for i, subnet := range w.GetSubnets() {
+			_, ipnet, err := net.ParseCIDR(subnet)
+			if err != nil {
+				return nil, fmt.Errorf("auth: bad subnet %q in IP list %q - %s", subnet, w.GetName(), err)
+			}
+			nets[i] = *ipnet
+		}
+		db.whitelists[w.GetName()] = nets
 	}
 
 	return db, nil
@@ -334,4 +398,27 @@ func (db *SnapshotDB) IsMember(c context.Context, id identity.Identity, groupNam
 // to all trusted services (so that they can use them to exchange data).
 func (db *SnapshotDB) SharedSecrets(c context.Context) (secrets.Store, error) {
 	return db.secrets, nil
+}
+
+// GetWhitelistForIdentity returns name of the IP whitelist to use to check
+// IP of requests from given `ident`.
+//
+// It's used to restrict access for certain account to certain IP subnets.
+//
+// Returns ("", nil) if `ident` is not IP restricted.
+func (db *SnapshotDB) GetWhitelistForIdentity(c context.Context, ident identity.Identity) (string, error) {
+	return db.assignments[ident], nil
+}
+
+// IsInWhitelist returns true if IP address belongs to given named IP whitelist.
+//
+// IP whitelist is a set of IP subnets. Unknown IP whitelists are considered
+// empty. May return errors if underlying datastore has issues.
+func (db *SnapshotDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
+	for _, ipnet := range db.whitelists[whitelist] {
+		if ipnet.Contains(ip) {
+			return true, nil
+		}
+	}
+	return false, nil
 }
