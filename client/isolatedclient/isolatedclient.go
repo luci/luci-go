@@ -165,8 +165,8 @@ func (i *isolateServer) doPushDB(state *PushState, reader io.Reader) error {
 func (i *isolateServer) doPushGCS(state *PushState, src io.ReadSeeker) (err error) {
 	c := newCompressed(src)
 	defer func() {
-		if err2 := c.Close(); err == nil {
-			err = err2
+		if err1 := c.Close(); err == nil {
+			err = err1
 		}
 	}()
 	request, err2 := http.NewRequest("PUT", state.status.GSUploadURL, c)
@@ -174,13 +174,16 @@ func (i *isolateServer) doPushGCS(state *PushState, src io.ReadSeeker) (err erro
 		return err2
 	}
 	request.Header.Set("Content-Type", "application/octet-stream")
-	req, err2 := lhttp.NewRequest(http.DefaultClient, request, func(resp *http.Response) error {
-		defer resp.Body.Close()
+	req, err3 := lhttp.NewRequest(http.DefaultClient, request, func(resp *http.Response) error {
 		_, err4 := io.Copy(ioutil.Discard, resp.Body)
-		return err4
+		err5 := resp.Body.Close()
+		if err4 != nil {
+			return err4
+		}
+		return err5
 	})
-	if err2 != nil {
-		return err2
+	if err3 != nil {
+		return err3
 	}
 	return i.config.Do(req)
 }
@@ -211,25 +214,31 @@ func (c *compressed) Close() error {
 	return err
 }
 
+// Seek resets the compressor.
 func (c *compressed) Seek(offset int64, whence int) (int64, error) {
 	if offset != 0 || whence != 0 {
 		return 0, errors.New("compressed can only seek to 0")
 	}
-	c.Close()
-	n, err := c.src.Seek(0, 0)
+	err1 := c.Close()
+	n, err2 := c.src.Seek(0, 0)
 	c.reset()
-	return n, err
+	if err1 != nil {
+		return n, err1
+	}
+	return n, err2
 }
 
 func (c *compressed) Read(p []byte) (int, error) {
 	return c.r.Read(p)
 }
 
+// reset restarts the compression loop.
 func (c *compressed) reset() {
 	var w *io.PipeWriter
 	c.r, w = io.Pipe()
 	c.wg.Add(1)
 	go func() {
+		// The compressor itself is not thread safe.
 		defer c.wg.Done()
 		compressor := isolated.GetCompressor(w)
 		_, err := io.Copy(compressor, c.src)

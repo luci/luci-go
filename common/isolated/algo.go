@@ -7,11 +7,13 @@
 package isolated
 
 import (
+	"compress/zlib"
 	"crypto/sha1"
 	"hash"
 	"io"
 
-	"github.com/klauspost/compress/zlib"
+	// https://crbug.com/552697
+	//"github.com/klauspost/compress/zlib"
 )
 
 var hashLength = sha1.New().Size()

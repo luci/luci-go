@@ -141,6 +141,7 @@ type retriable struct {
 	req       *http.Request
 	closeBody io.Closer
 	seekBody  io.Seeker
+	try       int
 	status    int
 }
 
@@ -156,11 +157,15 @@ func (r *retriable) Close() error {
 func (r *retriable) Do() error {
 	//log.Printf("Do %s", r.req.URL)
 	if r.seekBody != nil {
-		if _, err := r.seekBody.Seek(0, os.SEEK_SET); err != nil {
-			// Can't be retried.
-			return err
+		// Only do this on retry.
+		if r.try != 0 {
+			if _, err := r.seekBody.Seek(0, os.SEEK_SET); err != nil {
+				// Can't be retried.
+				return err
+			}
 		}
 	}
+	r.try++
 	resp, err := r.c.Do(r.req)
 	if resp != nil {
 		r.status = resp.StatusCode

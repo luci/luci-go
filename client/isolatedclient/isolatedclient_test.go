@@ -6,9 +6,11 @@ package isolatedclient
 
 import (
 	"bytes"
+	"io"
+	"log"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -33,20 +35,12 @@ func TestIsolateServerCaps(t *testing.T) {
 
 func TestIsolateServerSmall(t *testing.T) {
 	t.Parallel()
-	expected := map[isolated.HexDigest][]byte{
-		"0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33": []byte("foo"),
-		"62cdb7020ff920e5aa642c3d4066950dd1f01f4d": []byte("bar"),
-	}
-	testNormal(t, makeItems("foo", "bar"), expected)
+	testNormal(t, foo, bar)
 }
 
 func TestIsolateServerLarge(t *testing.T) {
 	t.Parallel()
-	large := strings.Repeat("0123456789abcdef", 4096/16)
-	expected := map[isolated.HexDigest][]byte{
-		"5b713884e50a00b44abcee440f2f7d3e2ba701a6": []byte(large),
-	}
-	testNormal(t, makeItems(large), expected)
+	testNormal(t, large)
 }
 
 func TestIsolateServerRetryContains(t *testing.T) {
@@ -73,33 +67,30 @@ func TestIsolateServerRetryGCSPartial(t *testing.T) {
 	// GCS upload is teared down in the middle.
 	t.Parallel()
 	server := isolatedfake.New()
-	flaky := &killingMux{server: server, fail: map[string]int{"/fake/cloudstorage": 1}}
-	ts := httptest.NewServer(flaky)
-	flaky.ts = ts
-	defer ts.Close()
-	client := newIsolateServer(ts.URL, "default-gzip", fastRetry)
+	flaky := &killingMux{server: server, tearDown: map[string]int{"/fake/cloudstorage": 1024}}
+	flaky.ts = httptest.NewServer(flaky)
+	defer flaky.ts.Close()
+	client := newIsolateServer(flaky.ts.URL, "default-gzip", fastRetry)
 
-	large := strings.Repeat("0123456789abcdef", 4096/16)
-	files := makeItems(large)
-	expected := map[isolated.HexDigest][]byte{
-		"5b713884e50a00b44abcee440f2f7d3e2ba701a6": []byte(large),
-	}
-	states, err := client.Contains(files.digests)
+	digests, contents, expected := makeItems(large)
+	states, err := client.Contains(digests)
 	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, len(files.digests), len(states))
-	for index, state := range states {
-		err = client.Push(state, bytes.NewReader(files.contents[index]))
+	ut.AssertEqual(t, len(digests), len(states))
+	for _, state := range states {
+		err = client.Push(state, bytes.NewReader(contents[state.status.Index]))
 		ut.AssertEqual(t, nil, err)
 	}
 	ut.AssertEqual(t, expected, server.Contents())
-	states, err = client.Contains(files.digests)
+	ut.AssertEqual(t, map[string]int{}, flaky.tearDown)
+
+	// Look up again to confirm.
+	states, err = client.Contains(digests)
 	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, len(files.digests), len(states))
+	ut.AssertEqual(t, len(digests), len(states))
 	for _, state := range states {
 		ut.AssertEqual(t, (*PushState)(nil), state)
 	}
 	ut.AssertEqual(t, nil, server.Error())
-	ut.AssertEqual(t, map[string]int{}, flaky.fail)
 }
 
 func TestIsolateServerBadURL(t *testing.T) {
@@ -107,7 +98,7 @@ func TestIsolateServerBadURL(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
 	}
-	client := newIsolateServer("http://asdfad.nonexistent", "default-gzip", fastRetry)
+	client := newIsolateServer("http://asdfad.nonexistent.local", "default-gzip", fastRetry)
 	caps, err := client.ServerCapabilities()
 	ut.AssertEqual(t, (*isolated.ServerCapabilities)(nil), caps)
 	ut.AssertEqual(t, true, err != nil)
@@ -128,40 +119,50 @@ var (
 		SleepBase:           0,
 		SleepMultiplicative: 0,
 	}
+
+	bar   = []byte("bar")
+	foo   = []byte("foo")
+	large []byte
 )
 
-type items struct {
-	digests  []*isolated.DigestItem
-	contents [][]byte
-}
-
-func makeItems(contents ...string) items {
-	out := items{}
-	for _, content := range contents {
-		c := []byte(content)
-		hex := isolated.HashBytes(c)
-		out.digests = append(out.digests, &isolated.DigestItem{hex, false, int64(len(content))})
-		out.contents = append(out.contents, c)
+func init() {
+	src := rand.New(rand.NewSource(0))
+	// It has to be exactly 64kb + 1; as the internal buffering is 64kb. This is
+	// needed to reproduce https://crbug.com/552697
+	large = make([]byte, 64*1024+1)
+	for i := 0; i < len(large); i++ {
+		large[i] = byte(src.Uint32())
 	}
-	return out
 }
 
-func testNormal(t *testing.T, files items, expected map[isolated.HexDigest][]byte) {
+func makeItems(contents ...[]byte) ([]*isolated.DigestItem, [][]byte, map[isolated.HexDigest][]byte) {
+	digests := make([]*isolated.DigestItem, 0, len(contents))
+	expected := make(map[isolated.HexDigest][]byte, len(contents))
+	for _, content := range contents {
+		hex := isolated.HashBytes(content)
+		digests = append(digests, &isolated.DigestItem{hex, false, int64(len(content))})
+		expected[hex] = content
+	}
+	return digests, contents, expected
+}
+
+func testNormal(t *testing.T, contents ...[]byte) {
+	digests, _, expected := makeItems(contents...)
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
 	client := newIsolateServer(ts.URL, "default-gzip", cantRetry)
-	states, err := client.Contains(files.digests)
+	states, err := client.Contains(digests)
 	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, len(files.digests), len(states))
-	for index, state := range states {
-		err = client.Push(state, bytes.NewReader(files.contents[index]))
+	ut.AssertEqual(t, len(digests), len(states))
+	for _, state := range states {
+		err = client.Push(state, bytes.NewReader(contents[state.status.Index]))
 		ut.AssertEqual(t, nil, err)
 	}
 	ut.AssertEqual(t, expected, server.Contents())
-	states, err = client.Contains(files.digests)
+	states, err = client.Contains(digests)
 	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, len(files.digests), len(states))
+	ut.AssertEqual(t, len(digests), len(states))
 	for _, state := range states {
 		ut.AssertEqual(t, (*PushState)(nil), state)
 	}
@@ -170,81 +171,68 @@ func testNormal(t *testing.T, files items, expected map[isolated.HexDigest][]byt
 
 func testFlaky(t *testing.T, flake string) {
 	server := isolatedfake.New()
-	flaky := &failingMux{server: server, fail: map[string]int{flake: 1}}
-	ts := httptest.NewServer(flaky)
-	defer ts.Close()
-	client := newIsolateServer(ts.URL, "default-gzip", fastRetry)
+	flaky := &killingMux{server: server, http503: map[string]int{flake: 10}}
+	flaky.ts = httptest.NewServer(flaky)
+	defer flaky.ts.Close()
+	client := newIsolateServer(flaky.ts.URL, "default-gzip", fastRetry)
 
-	large := strings.Repeat("0123456789abcdef", 4096/16)
-	files := makeItems("foo", large)
-	expected := map[isolated.HexDigest][]byte{
-		"0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33": []byte("foo"),
-		"5b713884e50a00b44abcee440f2f7d3e2ba701a6": []byte(large),
-	}
-	states, err := client.Contains(files.digests)
+	digests, contents, expected := makeItems(foo, large)
+	states, err := client.Contains(digests)
 	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, len(files.digests), len(states))
-	for index, state := range states {
-		err = client.Push(state, bytes.NewReader(files.contents[index]))
+	ut.AssertEqual(t, len(digests), len(states))
+	for _, state := range states {
+		err = client.Push(state, bytes.NewReader(contents[state.status.Index]))
 		ut.AssertEqual(t, nil, err)
 	}
 	ut.AssertEqual(t, expected, server.Contents())
-	states, err = client.Contains(files.digests)
+	states, err = client.Contains(digests)
 	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, len(files.digests), len(states))
+	ut.AssertEqual(t, len(digests), len(states))
 	for _, state := range states {
 		ut.AssertEqual(t, (*PushState)(nil), state)
 	}
 	ut.AssertEqual(t, nil, server.Error())
-	ut.AssertEqual(t, map[string]int{}, flaky.fail)
-}
-
-// failingMux inserts HTTP 500 in the urls specified.
-type failingMux struct {
-	lock   sync.Mutex
-	server http.Handler
-	fail   map[string]int // Number of times each path should return HTTP 500.
-}
-
-func (f *failingMux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	f.lock.Lock()
-	if v, ok := f.fail[req.URL.Path]; ok {
-		v--
-		if v == 0 {
-			delete(f.fail, req.URL.Path)
-		} else {
-			f.fail[req.URL.Path] = v
-		}
-		f.lock.Unlock()
-		w.WriteHeader(500)
-		return
-	}
-	f.lock.Unlock()
-	f.server.ServeHTTP(w, req)
+	ut.AssertEqual(t, map[string]int{}, flaky.http503)
 }
 
 // killingMux inserts tears down connection in the middle of a transfer.
 type killingMux struct {
-	lock   sync.Mutex
-	server http.Handler
-	fail   map[string]int // Number of times each path should cut after 1kb.
-	ts     *httptest.Server
+	lock     sync.Mutex
+	server   http.Handler
+	http503  map[string]int // Number of bytes should be read before returning HTTP 500.
+	tearDown map[string]int // Number of bytes should be read before killing the connection.
+	ts       *httptest.Server
+}
+
+func readBytes(r io.Reader, toRead int) {
+	b := make([]byte, toRead)
+	read := 0
+	for read < toRead {
+		n, _ := r.Read(b[:toRead-read])
+		read += n
+	}
 }
 
 func (k *killingMux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	k.lock.Lock()
-	if v, ok := k.fail[req.URL.Path]; ok {
-		v--
-		if v == 0 {
-			delete(k.fail, req.URL.Path)
-		} else {
-			k.fail[req.URL.Path] = v
+	f := func() bool {
+		k.lock.Lock()
+		defer k.lock.Unlock()
+		if toRead, ok := k.http503[req.URL.Path]; ok {
+			delete(k.http503, req.URL.Path)
+			readBytes(req.Body, toRead)
+			w.WriteHeader(503)
+			return false
 		}
-		// Kills all TCP connection to simulate a broken server.
-		k.ts.CloseClientConnections()
-		k.lock.Unlock()
-		return
+		if toRead, ok := k.tearDown[req.URL.Path]; ok {
+			delete(k.tearDown, req.URL.Path)
+			readBytes(req.Body, toRead)
+			k.ts.CloseClientConnections()
+			return false
+		}
+		return true
 	}
-	k.lock.Unlock()
-	k.server.ServeHTTP(w, req)
+	if f() {
+		log.Printf("%-4s %s", req.Method, req.URL.Path)
+		k.server.ServeHTTP(w, req)
+	}
 }
