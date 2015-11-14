@@ -15,8 +15,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/common/isolated"
+	"github.com/luci/luci-go/common/units"
 )
 
 // Cache is a cache of objects.
@@ -57,7 +57,7 @@ type Cache interface {
 type Policies struct {
 	// MaxSize trims if the cache gets larger than this value. If 0, the cache is
 	// effectively a leak.
-	MaxSize common.Size
+	MaxSize units.Size
 	// MaxItems is the maximum number of items to keep in the cache. If 0, do not
 	// enforce a limit.
 	MaxItems int
@@ -66,7 +66,7 @@ type Policies struct {
 	// cache.
 	//
 	// BUG: Implement Policies.MinFreeSpace.
-	MinFreeSpace common.Size
+	MinFreeSpace units.Size
 }
 
 // NewMemory creates a purely in-memory cache.
@@ -175,13 +175,13 @@ func (m *memory) Add(digest isolated.HexDigest, src io.Reader) error {
 	if isolated.HashBytes(content) != digest {
 		return errors.New("invalid hash")
 	}
-	if common.Size(len(content)) > m.policies.MaxSize {
+	if units.Size(len(content)) > m.policies.MaxSize {
 		return errors.New("item too large")
 	}
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	m.data[digest] = content
-	m.lru.pushFront(digest, common.Size(len(content)))
+	m.lru.pushFront(digest, units.Size(len(content)))
 	m.respectPolicies()
 	return nil
 }
@@ -296,14 +296,14 @@ func (d *disk) Add(digest isolated.HexDigest, src io.Reader) error {
 		_ = os.Remove(p)
 		return errors.New("invalid hash")
 	}
-	if common.Size(size) > d.policies.MaxSize {
+	if units.Size(size) > d.policies.MaxSize {
 		_ = os.Remove(p)
 		return errors.New("item too large")
 	}
 
 	d.lock.Lock()
 	defer d.lock.Unlock()
-	d.lru.pushFront(digest, common.Size(size))
+	d.lru.pushFront(digest, units.Size(size))
 	d.respectPolicies()
 	return nil
 }

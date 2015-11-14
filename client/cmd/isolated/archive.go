@@ -13,6 +13,7 @@ import (
 	"github.com/luci/luci-go/client/archiver"
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/client/isolatedclient"
+	"github.com/luci/luci-go/common/units"
 	"github.com/maruel/subcommands"
 )
 
@@ -85,7 +86,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 		stats := arch.Stats()
 		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", stats.TotalHits(), stats.TotalBytesHits())
 		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", stats.TotalMisses(), stats.TotalBytesPushed())
-		fmt.Fprintf(os.Stderr, "Duration: %s\n", common.Round(duration, time.Millisecond))
+		fmt.Fprintf(os.Stderr, "Duration: %s\n", units.Round(duration, time.Millisecond))
 	}
 	return err
 }

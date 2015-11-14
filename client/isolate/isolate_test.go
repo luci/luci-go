@@ -19,6 +19,7 @@ import (
 	"github.com/luci/luci-go/client/isolatedclient"
 	"github.com/luci/luci-go/client/isolatedclient/isolatedfake"
 	"github.com/luci/luci-go/common/isolated"
+	"github.com/luci/luci-go/common/units"
 	"github.com/maruel/ut"
 )
 
@@ -190,15 +191,15 @@ func TestArchive(t *testing.T) {
 
 	stats := a.Stats()
 	ut.AssertEqual(t, 0, stats.TotalHits())
-	ut.AssertEqual(t, common.Size(0), stats.TotalBytesHits())
+	ut.AssertEqual(t, units.Size(0), stats.TotalBytesHits())
 	size := 3 + 4 + len(baseIsolatedEncoded) + len(isolatedEncoded) + len(secondIsolatedEncoded)
 	if !common.IsWindows() {
 		ut.AssertEqual(t, 5, stats.TotalMisses())
-		ut.AssertEqual(t, common.Size(size), stats.TotalBytesPushed())
+		ut.AssertEqual(t, units.Size(size), stats.TotalBytesPushed())
 	} else {
 		ut.AssertEqual(t, 6, stats.TotalMisses())
 		// Includes the duplicate due to lack of symlink.
-		ut.AssertEqual(t, common.Size(size+18), stats.TotalBytesPushed())
+		ut.AssertEqual(t, units.Size(size+18), stats.TotalBytesPushed())
 	}
 
 	ut.AssertEqual(t, nil, server.Error())

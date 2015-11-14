@@ -19,6 +19,7 @@ import (
 	"github.com/luci/luci-go/client/isolatedclient"
 	"github.com/luci/luci-go/client/isolatedclient/isolatedfake"
 	"github.com/luci/luci-go/common/isolated"
+	"github.com/luci/luci-go/common/units"
 	"github.com/maruel/ut"
 )
 
@@ -129,8 +130,8 @@ func TestPushDirectory(t *testing.T) {
 	ut.AssertEqual(t, 0, stats.TotalHits())
 	// There're 3 cache misses even if the same content is looked up twice.
 	ut.AssertEqual(t, 3, stats.TotalMisses())
-	ut.AssertEqual(t, common.Size(0), stats.TotalBytesHits())
-	ut.AssertEqual(t, common.Size(3+3+len(isolatedEncoded)), stats.TotalBytesPushed())
+	ut.AssertEqual(t, units.Size(0), stats.TotalBytesHits())
+	ut.AssertEqual(t, units.Size(3+3+len(isolatedEncoded)), stats.TotalBytesPushed())
 
 	ut.AssertEqual(t, nil, server.Error())
 }

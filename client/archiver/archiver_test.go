@@ -18,6 +18,7 @@ import (
 	"github.com/luci/luci-go/client/isolatedclient"
 	"github.com/luci/luci-go/client/isolatedclient/isolatedfake"
 	"github.com/luci/luci-go/common/isolated"
+	"github.com/luci/luci-go/common/units"
 	"github.com/maruel/ut"
 )
 
@@ -31,8 +32,8 @@ func TestArchiverEmpty(t *testing.T) {
 	stats := a.Stats()
 	ut.AssertEqual(t, 0, stats.TotalHits())
 	ut.AssertEqual(t, 0, stats.TotalMisses())
-	ut.AssertEqual(t, common.Size(0), stats.TotalBytesHits())
-	ut.AssertEqual(t, common.Size(0), stats.TotalBytesPushed())
+	ut.AssertEqual(t, units.Size(0), stats.TotalBytesHits())
+	ut.AssertEqual(t, units.Size(0), stats.TotalBytesPushed())
 	ut.AssertEqual(t, nil, a.Close())
 }
 
@@ -62,8 +63,8 @@ func TestArchiverFile(t *testing.T) {
 	ut.AssertEqual(t, 0, stats.TotalHits())
 	// Only 2 lookups, not 3.
 	ut.AssertEqual(t, 2, stats.TotalMisses())
-	ut.AssertEqual(t, common.Size(0), stats.TotalBytesHits())
-	ut.AssertEqual(t, common.Size(3), stats.TotalBytesPushed())
+	ut.AssertEqual(t, units.Size(0), stats.TotalBytesHits())
+	ut.AssertEqual(t, units.Size(3), stats.TotalBytesPushed())
 	expected := map[isolated.HexDigest][]byte{
 		"0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33": []byte("foo"),
 		"da39a3ee5e6b4b0d3255bfef95601890afd80709": {},
@@ -93,8 +94,8 @@ func TestArchiverFileHit(t *testing.T) {
 	stats := a.Stats()
 	ut.AssertEqual(t, 1, stats.TotalHits())
 	ut.AssertEqual(t, 0, stats.TotalMisses())
-	ut.AssertEqual(t, common.Size(3), stats.TotalBytesHits())
-	ut.AssertEqual(t, common.Size(0), stats.TotalBytesPushed())
+	ut.AssertEqual(t, units.Size(3), stats.TotalBytesHits())
+	ut.AssertEqual(t, units.Size(0), stats.TotalBytesPushed())
 }
 
 func TestArchiverCancel(t *testing.T) {

@@ -18,6 +18,7 @@ import (
 	"github.com/luci/luci-go/client/internal/tracer"
 	"github.com/luci/luci-go/client/isolatedclient"
 	"github.com/luci/luci-go/common/isolated"
+	"github.com/luci/luci-go/common/units"
 )
 
 const (
@@ -44,15 +45,15 @@ var headers = [][]progress.Column{
 	{{Name: "found"}},
 	{
 		{Name: "hashed"},
-		{Name: "size", Formatter: common.SizeToString},
+		{Name: "size", Formatter: units.SizeToString},
 		{Name: "to hash"},
 	},
 	{{Name: "looked up"}, {Name: "to lookup"}},
 	{
 		{Name: "uploaded"},
-		{Name: "size", Formatter: common.SizeToString},
+		{Name: "size", Formatter: units.SizeToString},
 		{Name: "to upload"},
-		{Name: "size", Formatter: common.SizeToString},
+		{Name: "size", Formatter: units.SizeToString},
 	},
 }
 
@@ -83,13 +84,13 @@ type Archiver interface {
 // UploadStat is the statistic for a single upload.
 type UploadStat struct {
 	Duration time.Duration
-	Size     common.Size
+	Size     units.Size
 	Name     string
 }
 
 // Stats is statistics from the Archiver.
 type Stats struct {
-	Hits   []common.Size // Bytes; each item is immutable.
+	Hits   []units.Size  // Bytes; each item is immutable.
 	Pushed []*UploadStat // Misses; each item is immutable.
 }
 
@@ -100,8 +101,8 @@ func (s *Stats) TotalHits() int {
 
 // TotalBytesHits is the number of bytes not uploaded due to cache hits on the
 // server.
-func (s *Stats) TotalBytesHits() common.Size {
-	out := common.Size(0)
+func (s *Stats) TotalBytesHits() units.Size {
+	out := units.Size(0)
 	for _, i := range s.Hits {
 		out += i
 	}
@@ -114,8 +115,8 @@ func (s *Stats) TotalMisses() int {
 }
 
 // TotalBytesPushed returns the sum of bytes uploaded.
-func (s *Stats) TotalBytesPushed() common.Size {
-	out := common.Size(0)
+func (s *Stats) TotalBytesPushed() units.Size {
+	out := units.Size(0)
 	for _, i := range s.Pushed {
 		out += i.Size
 	}
@@ -607,7 +608,7 @@ func (a *archiver) doContains(items []*archiverItem) {
 		size := items[index].digestItem.Size
 		if state == nil {
 			a.statsLock.Lock()
-			a.stats.Hits = append(a.stats.Hits, common.Size(size))
+			a.stats.Hits = append(a.stats.Hits, units.Size(size))
 			a.statsLock.Unlock()
 			items[index].Close()
 		} else {
@@ -647,7 +648,7 @@ func (a *archiver) doUpload(item *archiverItem) {
 		a.progress.Update(groupUpload, groupUploadDoneSize, item.digestItem.Size)
 	}
 	item.Close()
-	size := common.Size(item.digestItem.Size)
+	size := units.Size(item.digestItem.Size)
 	u := &UploadStat{time.Since(start), size, item.DisplayName()}
 	a.statsLock.Lock()
 	a.stats.Pushed = append(a.stats.Pushed, u)

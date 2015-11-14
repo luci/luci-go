@@ -5,42 +5,12 @@
 package common
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"runtime"
-	"time"
 
 	"github.com/luci/luci-go/client/internal/imported"
 )
-
-var units = []string{"b", "Kib", "Mib", "Gib", "Tib", "Pib", "Eib", "Zib", "Yib"}
-
-// Size represents a size in bytes that knows how to print itself.
-type Size int64
-
-func (s Size) String() string {
-	return SizeToString(int64(s))
-}
-
-// SizeToString pretty prints file size (given as number of bytes).
-func SizeToString(s int64) string {
-	v := float64(s)
-	i := 0
-	for ; i < len(units); i++ {
-		if v < 1024. {
-			break
-		}
-		v /= 1024.
-	}
-	if i == 0 {
-		return fmt.Sprintf("%d%s", s, units[i])
-	}
-	if v >= 10 {
-		return fmt.Sprintf("%.1f%s", v, units[i])
-	}
-	return fmt.Sprintf("%.2f%s", v, units[i])
-}
 
 // IsDirectory returns true if path is a directory and is accessible.
 func IsDirectory(path string) bool {
@@ -51,16 +21,6 @@ func IsDirectory(path string) bool {
 // IsWindows returns True when running on the best OS there is.
 func IsWindows() bool {
 	return runtime.GOOS == "windows"
-}
-
-// Round rounds a time.Duration at round.
-func Round(value time.Duration, resolution time.Duration) time.Duration {
-	if value < 0 {
-		value -= resolution / 2
-	} else {
-		value += resolution / 2
-	}
-	return value / resolution * resolution
 }
 
 // IsTerminal returns true if the specified io.Writer is a terminal.

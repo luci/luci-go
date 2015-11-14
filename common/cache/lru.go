@@ -10,14 +10,14 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/common/isolated"
+	"github.com/luci/luci-go/common/units"
 )
 
 // entry is an entry in the orderedDict.
 type entry struct {
 	key   isolated.HexDigest
-	value common.Size
+	value units.Size
 }
 
 func (e *entry) MarshalJSON() ([]byte, error) {
@@ -37,7 +37,7 @@ func (e *entry) UnmarshalJSON(data []byte) error {
 	if key, ok := elems[0].(string); ok {
 		e.key = isolated.HexDigest(key)
 		if value, ok := elems[1].(float64); ok {
-			e.value = common.Size(value)
+			e.value = units.Size(value)
 		} else {
 			return fmt.Errorf("invalid entry: expected value to be number: %s", string(data))
 		}
@@ -69,14 +69,14 @@ func (o *orderedDict) keys() isolated.HexDigests {
 	return out
 }
 
-func (o *orderedDict) pop(key isolated.HexDigest) common.Size {
+func (o *orderedDict) pop(key isolated.HexDigest) units.Size {
 	if e, hit := o.entries[key]; hit {
 		return o.removeElement(e).value
 	}
 	return 0
 }
 
-func (o *orderedDict) popOldest() (isolated.HexDigest, common.Size) {
+func (o *orderedDict) popOldest() (isolated.HexDigest, units.Size) {
 	if e := o.ll.Back(); e != nil {
 		entry := o.removeElement(e)
 		return entry.key, entry.value
@@ -95,7 +95,7 @@ func (o *orderedDict) length() int {
 	return o.ll.Len()
 }
 
-func (o *orderedDict) pushFront(key isolated.HexDigest, value common.Size) {
+func (o *orderedDict) pushFront(key isolated.HexDigest, value units.Size) {
 	if e, ok := o.entries[key]; ok {
 		o.ll.MoveToFront(e)
 		e.Value.(*entry).value = value
@@ -104,7 +104,7 @@ func (o *orderedDict) pushFront(key isolated.HexDigest, value common.Size) {
 	o.entries[key] = o.ll.PushFront(&entry{key, value})
 }
 
-func (o *orderedDict) pushBack(key isolated.HexDigest, value common.Size) {
+func (o *orderedDict) pushBack(key isolated.HexDigest, value units.Size) {
 	if e, ok := o.entries[key]; ok {
 		o.ll.MoveToBack(e)
 		e.Value.(*entry).value = value
@@ -129,7 +129,7 @@ func (o *orderedDict) serialized() []entry {
 type lruDict struct {
 	items orderedDict // ordered key -> value mapping, newest items at the bottom.
 	dirty bool        // true if was modified after loading until it is marshaled.
-	sum   common.Size // sum of all the values.
+	sum   units.Size  // sum of all the values.
 }
 
 func makeLRUDict() lruDict {
@@ -150,14 +150,14 @@ func (l *lruDict) length() int {
 	return l.items.length()
 }
 
-func (l *lruDict) pop(key isolated.HexDigest) common.Size {
+func (l *lruDict) pop(key isolated.HexDigest) units.Size {
 	out := l.items.pop(key)
 	l.sum -= out
 	l.dirty = true
 	return out
 }
 
-func (l *lruDict) popOldest() (isolated.HexDigest, common.Size) {
+func (l *lruDict) popOldest() (isolated.HexDigest, units.Size) {
 	k, v := l.items.popOldest()
 	l.sum -= v
 	if k != "" {
@@ -166,7 +166,7 @@ func (l *lruDict) popOldest() (isolated.HexDigest, common.Size) {
 	return k, v
 }
 
-func (l *lruDict) pushFront(key isolated.HexDigest, value common.Size) {
+func (l *lruDict) pushFront(key isolated.HexDigest, value units.Size) {
 	l.items.pushFront(key, value)
 	l.sum += value
 	l.dirty = true
