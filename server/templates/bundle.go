@@ -48,6 +48,12 @@ type Bundle struct {
 	// for example.
 	Loader Loader
 
+	// DebugMode can be set to true to enable template reloading before each use.
+	//
+	// It disables the caching of compiled templates, essentially. Useful during
+	// development.
+	DebugMode bool
+
 	// FuncMap contains functions accessible from templates.
 	//
 	// Will be passed to Loader on first use. Not used after that.
@@ -77,9 +83,14 @@ type Bundle struct {
 
 // EnsureLoaded loads all the templates if they haven't been loaded yet.
 func (b *Bundle) EnsureLoaded(c context.Context) error {
-	b.once.Do(func() {
+	// Always reload in debug mode. Load only once in non-debug mode.
+	if b.DebugMode {
 		b.templates, b.err = b.Loader(c, b.FuncMap)
-	})
+	} else {
+		b.once.Do(func() {
+			b.templates, b.err = b.Loader(c, b.FuncMap)
+		})
+	}
 	return b.err
 }
 
