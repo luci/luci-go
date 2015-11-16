@@ -45,6 +45,7 @@ import (
 	"github.com/luci/luci-go/appengine/cmd/cron/task"
 	"github.com/luci/luci-go/appengine/cmd/cron/task/noop"
 	"github.com/luci/luci-go/appengine/cmd/cron/task/urlfetch"
+	"github.com/luci/luci-go/appengine/cmd/cron/ui"
 )
 
 //// Global state. See init().
@@ -156,18 +157,6 @@ func base(h middleware.Handler) httprouter.Handle {
 	return gaemiddleware.BaseProd(wrapper)
 }
 
-// publicHandler returns handler for publicly accessible routes.
-// No authentication at all.
-func publicHandler(h handler) httprouter.Handle {
-	return base(wrap(h))
-}
-
-// authHandler returns handler that perform authentication, but does not force
-// login.
-func authHandler(h handler) httprouter.Handle {
-	return base(auth.Authenticate(wrap(h)))
-}
-
 // cronHandler returns handler intended for cron jobs.
 func cronHandler(h handler) httprouter.Handle {
 	return base(gaemiddleware.RequireCron(wrap(h)))
@@ -198,31 +187,23 @@ func init() {
 
 	// Setup HTTP routes.
 	router := httprouter.New()
-	registerFrontendHandlers(router)
-	registerBackendHandlers(router)
-	http.DefaultServeMux.Handle("/", router)
-}
 
-func registerFrontendHandlers(router *httprouter.Router) {
 	server.InstallHandlers(router, base)
+	ui.InstallHandlers(router, base, ui.Config{
+		Engine:        globalEngine,
+		TemplatesPath: "templates",
+	})
 
-	router.GET("/", authHandler(indexPage))
-	router.GET("/_ah/warmup", publicHandler(warmupHandler))
-}
-
-func registerBackendHandlers(router *httprouter.Router) {
+	router.GET("/_ah/warmup", base(wrap(warmupHandler)))
 	router.GET("/internal/cron/read-config", cronHandler(readConfigCron))
 	router.POST("/internal/tasks/read-project-config", taskQueueHandler("read-project-config", readProjectConfigTask))
 	router.POST("/internal/tasks/timers", taskQueueHandler("timers", actionTask))
 	router.POST("/internal/tasks/invocations", taskQueueHandler("invocations", actionTask))
+
+	http.DefaultServeMux.Handle("/", router)
 }
 
-//// Frontend handlers.
-
-func indexPage(rc *requestContext) {
-	fmt.Fprintf(rc.w, "Hi there, %s!", auth.CurrentIdentity(rc))
-}
-
+// warmupHandler warms in-memory caches.
 func warmupHandler(rc *requestContext) {
 	if _, err := fetchAppSettings(rc); err != nil {
 		rc.fail(500, "Failed to load app settings: %s", err)
@@ -234,8 +215,6 @@ func warmupHandler(rc *requestContext) {
 	}
 	rc.ok()
 }
-
-//// Backend handlers.
 
 // readConfigCron grabs a list of projects from the catalog and datastore and
 // dispatches task queue tasks to update each project's cron jobs.
