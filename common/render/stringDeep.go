@@ -205,7 +205,12 @@ func writeType(buf *bytes.Buffer, ptrs int, forceParens bool, t reflect.Type) {
 
 	switch t.Kind() {
 	case reflect.Ptr:
-		buf.WriteRune('*')
+		if ptrs == 0 {
+			// This pointer was referenced from within writeType (e.g., as part of
+			// rendering a list), and so hasn't had its pointer asterisk accounted
+			// for.
+			buf.WriteRune('*')
+		}
 		writeType(buf, 0, false, t.Elem())
 
 	case reflect.Interface:
