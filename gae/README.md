@@ -22,7 +22,7 @@ See the [godocs](https://godoc.org/github.com/luci/gae).
 Versioning
 ----------
 
-  * Branch `master` constains the latest code.
+  * Branch `master` contains the latest code.
 
 Contributing
 ------------
