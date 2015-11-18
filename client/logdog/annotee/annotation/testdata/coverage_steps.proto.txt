@@ -1,0 +1,14 @@
+step_component: <
+  name: "steps"
+  status: FAILURE
+  started: <
+    seconds: 1420070400
+  >
+  ended: <
+    seconds: 1420070405
+  >
+>
+substep_logdog_name_base: "base/steps/baz/0"
+substep_logdog_name_base: "base/steps/foo/0"
+substep_logdog_name_base: "base/steps/bar/0"
+substep_logdog_name_base: "base/steps/qux/0"

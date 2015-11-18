@@ -156,6 +156,17 @@ func (s StreamName) Join(o StreamName) StreamPath {
 		s.Trim(), StreamNameSep, StreamPathSep, StreamNameSep, o.Trim()))
 }
 
+// Concat constructs a StreamName by concatenating several StreamName components
+// together.
+func (s StreamName) Concat(o ...StreamName) StreamName {
+	parts := make([]string, len(o)+1)
+	parts[0] = string(s)
+	for i, c := range o {
+		parts[i+1] = string(c)
+	}
+	return StreamName(strings.Join(parts, nameSepStr))
+}
+
 // Validate tests whether the stream name is valid.
 func (s StreamName) Validate() error {
 	if len(s) == 0 {

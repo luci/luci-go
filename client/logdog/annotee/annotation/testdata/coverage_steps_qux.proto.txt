@@ -1,0 +1,10 @@
+step_component: <
+  name: "qux"
+  status: FAILURE
+  started: <
+    seconds: 1420070404
+  >
+  ended: <
+    seconds: 1420070405
+  >
+>
