@@ -8,21 +8,49 @@ package frontend
 
 import (
 	"fmt"
-	"html/template"
 	"net/http"
+	"strings"
 
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
+	"google.golang.org/appengine"
 
+	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/middleware"
-
-	"github.com/luci/luci-go/appengine/cmd/helloworld/templates"
+	"github.com/luci/luci-go/server/templates"
 )
+
+// templateBundle is used to render HTML templates. It provides a base args
+// passed to all templates.
+var templateBundle = &templates.Bundle{
+	Loader:    templates.FileSystemLoader("templates"),
+	DebugMode: appengine.IsDevAppServer(),
+	DefaultArgs: func(c context.Context) (templates.Args, error) {
+		loginURL, err := auth.LoginURL(c, "/")
+		if err != nil {
+			return nil, err
+		}
+		logoutURL, err := auth.LogoutURL(c, "/")
+		if err != nil {
+			return nil, err
+		}
+		isAdmin, err := auth.IsMember(c, "administrators")
+		if err != nil {
+			return nil, err
+		}
+		return templates.Args{
+			"AppVersion":  strings.Split(info.Get(c).VersionID(), ".")[0],
+			"IsAnonymous": auth.CurrentIdentity(c) == "anonymous:anonymous",
+			"IsAdmin":     isAdmin,
+			"User":        auth.CurrentUser(c),
+			"LoginURL":    loginURL,
+			"LogoutURL":   logoutURL,
+		}, nil
+	},
+}
 
 // base is the root of the middleware chain.
 func base(h middleware.Handler) httprouter.Handle {
@@ -31,13 +59,12 @@ func base(h middleware.Handler) httprouter.Handle {
 		server.CookieAuth,
 		&server.InboundAppIDAuthMethod{},
 	}
+	h = auth.Use(h, methods)
+	h = templates.WithTemplates(h, templateBundle)
+	if !appengine.IsDevAppServer() {
+		h = middleware.WithPanicCatcher(h)
+	}
 	return gaemiddleware.BaseProd(auth.Use(h, methods))
-}
-
-// authHandler returns handler that perform authentication, but does not
-// enforce a login.
-func authHandler(h middleware.Handler) httprouter.Handle {
-	return base(auth.Authenticate(h))
 }
 
 //// Routes.
@@ -45,50 +72,15 @@ func authHandler(h middleware.Handler) httprouter.Handle {
 func init() {
 	router := httprouter.New()
 	server.InstallHandlers(router, base)
-	router.GET("/", authHandler(indexPage))
-	router.GET("/_ah/warmup", authHandler(warmupHandler))
+	router.GET("/", base(auth.Authenticate(indexPage)))
+	router.GET("/_ah/warmup", base(warmupHandler))
 	http.DefaultServeMux.Handle("/", router)
 }
 
 //// Handlers.
 
 func indexPage(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	fail := func(msg string, err error) {
-		logging.Errorf(c, "HTTP 500: %s - %s", msg, err)
-		http.Error(w, fmt.Sprintf("%s - %s", msg, err), 500)
-	}
-	// TODO(vadimsh): Improve the way we use templates. Add caching, default
-	// environment, etc.
-	tmpl, err := template.New("index.html").Parse(templates.GetAssetString("index.html"))
-	if err != nil {
-		fail("Failed to parse template", err)
-		return
-	}
-	loginURL, err := auth.LoginURL(c, "/")
-	if err != nil {
-		fail("Failed to generate login URL", err)
-		return
-	}
-	logoutURL, err := auth.LogoutURL(c, "/")
-	if err != nil {
-		fail("Failed to generate logout URL", err)
-		return
-	}
-	isAdmin, err := auth.IsMember(c, "administrators")
-	if err != nil {
-		fail("Failed to check group membership", err)
-		return
-	}
-	tc := map[string]interface{}{
-		"HasUser":   auth.CurrentIdentity(c).Kind() != identity.Anonymous,
-		"User":      auth.CurrentUser(c),
-		"LoginURL":  loginURL,
-		"LogoutURL": logoutURL,
-		"IsAdmin":   isAdmin,
-	}
-	if err := tmpl.Execute(w, tc); err != nil {
-		fail("Failed to execute the template", err)
-	}
+	templates.MustRender(c, w, "pages/index.html", nil)
 }
 
 func warmupHandler(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {

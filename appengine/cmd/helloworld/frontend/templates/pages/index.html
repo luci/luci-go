@@ -4,7 +4,7 @@
     <title>Example</title>
   </head>
   <body>
-    {{if .HasUser}}
+    {{if not .IsAnonymous}}
       <p>Hi there, {{.User.Email}}!</p>
       {{if .User.Picture}}
         <p>Here's your picture: <img src="{{.User.Picture}}"></p>
@@ -16,5 +16,7 @@
     {{else}}
       <a href="{{.LoginURL}}">Login</a>
     {{end}}
+  <hr>
+  <small>App version: {{.AppVersion}}</small>
   </body>
 </html>

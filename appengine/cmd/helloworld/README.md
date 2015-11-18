@@ -75,8 +75,10 @@ Use `gae.py` to deploy:
 ./gae.py switch -A <appid>
 ```
 
-When deployed for a first time you'd need to configure OAuth2 client used for
-OpenID login flow:
+When deployed for a first time you'd need to configure OAuth2 client (used for
+OpenID login flow) and URL of an auth service to grab user groups from.
+
+To configure OAuth2:
 
 1.  Go to [Cloud Console](https://console.developers.google.com) for some
     project of your choosing (not necessarily same one that GAE app belongs to).
@@ -86,22 +88,27 @@ OpenID login flow:
 1.  In "Authorized redirect URIs" add
     `https://<yourapp>.appspot.com/auth/openid/callback`.
 1.  As a result you'll get client ID and client secret strings. Note them.
-1.  Go to "Datastore" page in Cloud Console for your GAE app.
-1.  On "Query" tab find `gaesettings.Settings` entity (there should be only
-    one). If it's not there, make sure you've visited your GAE app at least
-    once.
-1.  Edit `value` field on the entity. Fill in `openid_auth` section:
-```json
-{
-  "openid_auth": {
-    "discovery_url": "https://accounts.google.com/.well-known/openid-configuration",
-    "client_id": "<your OAuth client id>",
-    "client_secret": "<your OAuth client secret>",
-    "redirect_uri": "https://<yourapp>.appspot.com/auth/openid/callback"
-  }
-}
-```
-1. Save the value. One minute later OpenID authentication should start working.
+1.  Go to `https://<yourapp>.appspot.com/auth/admin/settings`. You must be GAE
+    level administrator of the app to access this page.
+1.  In "Discovery URL" field enter `https://accounts.google.com/.well-known/openid-configuration`
+1.  In "OAuth client ID", "OAuth client secret" and "Redirect URI" fields put
+    values you used when configuring client ID in the Cloud Console.
+1.  Click "Save settings". One minute later OpenID authentication should start
+    working.
 
 It is possible to reuse existing OAuth 2.0 web clients. Just add a new redirect
 URI to the list of authorized redirect URIs.
+
+To start using auth groups from some existing auth service
+(e.g. [chrome-infra-auth.appspot.com](https://chrome-infra-auth.appspot.com)):
+
+1.  Go to [Cloud Console](https://console.developers.google.com) project that
+    contain your GAE app.
+1.  In "API Manager" section enable "Google Cloud Pub/Sub" API.
+1.  Go to `https://<yourapp>.appspot.com/auth/admin/settings`.
+1.  Note service account ID corresponding to your GAE app. It is highlighted in
+    bold in "Authorization settings" section.
+1.  Add this account to `auth-trusted-services` group on the auth service. You
+    must be an admin on auth server to be able to do so.
+1.  Put URL of the auth server into "Auth service URL" field, click
+    "Save settings".
