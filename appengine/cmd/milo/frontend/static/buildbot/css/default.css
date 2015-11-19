@@ -9,7 +9,6 @@ body.interface {
   margin-top: 20px;
   margin-bottom: 50px;
   padding: 0;
-  background: url(bg_gradient.jpg) repeat-x;
   font-family: Verdana, sans-serif;
   font-size: 10px;
   background-color: #fff;
@@ -17,9 +16,9 @@ body.interface {
 }
 
 .auth {
-position:absolute;
-top:5px;
-right:40px;
+  position:absolute;
+  top:5px;
+  right:40px;
 }
 
 .alert {
@@ -377,7 +376,7 @@ div.BuildWaterfall {
 }
 
 /* LastBuild, BuildStep states */
-.status-SUCCESS {
+.status-Success {
   color: #000;
   background-color: #8d4;
   border-color: #4F8530;
@@ -389,7 +388,7 @@ div.BuildWaterfall {
   border-color: #4F8530;
 }
 
-.status-FAILURE {
+.status-Failure {
   color: #000;
   background-color: #e88;
   border-color: #A77272;
@@ -407,7 +406,7 @@ div.BuildWaterfall {
   border-color: #A77272;
 }
 
-.status-WARNINGS {
+.status-Warnings {
   color: #FFFFFF;
   background-color: #fa3;
   border-color: #C29D46;
