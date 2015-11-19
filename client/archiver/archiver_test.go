@@ -28,7 +28,7 @@ func init() {
 
 func TestArchiverEmpty(t *testing.T) {
 	t.Parallel()
-	a := New(isolatedclient.New("https://localhost:1", "default-gzip"), nil)
+	a := New(isolatedclient.New(nil, "https://localhost:1", "default-gzip"), nil)
 	stats := a.Stats()
 	ut.AssertEqual(t, 0, stats.TotalHits())
 	ut.AssertEqual(t, 0, stats.TotalMisses())
@@ -42,7 +42,7 @@ func TestArchiverFile(t *testing.T) {
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	a := New(isolatedclient.New(ts.URL, "default-gzip"), nil)
+	a := New(isolatedclient.New(nil, ts.URL, "default-gzip"), nil)
 
 	fEmpty, err := ioutil.TempFile("", "archiver")
 	ut.AssertEqual(t, nil, err)
@@ -84,7 +84,7 @@ func TestArchiverFileHit(t *testing.T) {
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	a := New(isolatedclient.New(ts.URL, "default-gzip"), nil)
+	a := New(isolatedclient.New(nil, ts.URL, "default-gzip"), nil)
 	server.Inject([]byte("foo"))
 	future := a.Push("foo", bytes.NewReader([]byte("foo")), 0)
 	future.WaitForHashed()
@@ -103,7 +103,7 @@ func TestArchiverCancel(t *testing.T) {
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	a := New(isolatedclient.New(ts.URL, "default-gzip"), nil)
+	a := New(isolatedclient.New(nil, ts.URL, "default-gzip"), nil)
 
 	tmpDir, err := ioutil.TempDir("", "archiver")
 	ut.AssertEqual(t, nil, err)
@@ -145,7 +145,7 @@ func TestArchiverPushSeeked(t *testing.T) {
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	a := New(isolatedclient.New(ts.URL, "default-gzip"), nil)
+	a := New(isolatedclient.New(nil, ts.URL, "default-gzip"), nil)
 	misplaced := bytes.NewReader([]byte("foo"))
 	_, _ = misplaced.Seek(1, os.SEEK_SET)
 	future := a.Push("works", misplaced, 0)

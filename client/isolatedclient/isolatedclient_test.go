@@ -26,7 +26,7 @@ func TestIsolateServerCaps(t *testing.T) {
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	client := New(ts.URL, "default-gzip")
+	client := New(nil, ts.URL, "default-gzip")
 	caps, err := client.ServerCapabilities()
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, &isolated.ServerCapabilities{"v1"}, caps)
@@ -70,7 +70,7 @@ func TestIsolateServerRetryGCSPartial(t *testing.T) {
 	flaky := &killingMux{server: server, tearDown: map[string]int{"/fake/cloudstorage": 1024}}
 	flaky.ts = httptest.NewServer(flaky)
 	defer flaky.ts.Close()
-	client := newIsolateServer(flaky.ts.URL, "default-gzip", fastRetry)
+	client := newIsolateServer(nil, flaky.ts.URL, "default-gzip", fastRetry)
 
 	digests, contents, expected := makeItems(large)
 	states, err := client.Contains(digests)
@@ -98,7 +98,7 @@ func TestIsolateServerBadURL(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
 	}
-	client := newIsolateServer("http://asdfad.nonexistent.local", "default-gzip", fastRetry)
+	client := newIsolateServer(nil, "http://asdfad.nonexistent.local", "default-gzip", fastRetry)
 	caps, err := client.ServerCapabilities()
 	ut.AssertEqual(t, (*isolated.ServerCapabilities)(nil), caps)
 	ut.AssertEqual(t, true, err != nil)
@@ -151,7 +151,7 @@ func testNormal(t *testing.T, contents ...[]byte) {
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	client := newIsolateServer(ts.URL, "default-gzip", cantRetry)
+	client := newIsolateServer(nil, ts.URL, "default-gzip", cantRetry)
 	states, err := client.Contains(digests)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, len(digests), len(states))
@@ -174,7 +174,7 @@ func testFlaky(t *testing.T, flake string) {
 	flaky := &killingMux{server: server, http503: map[string]int{flake: 10}}
 	flaky.ts = httptest.NewServer(flaky)
 	defer flaky.ts.Close()
-	client := newIsolateServer(flaky.ts.URL, "default-gzip", fastRetry)
+	client := newIsolateServer(nil, flaky.ts.URL, "default-gzip", fastRetry)
 
 	digests, contents, expected := makeItems(foo, large)
 	states, err := client.Contains(digests)

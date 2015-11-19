@@ -68,7 +68,7 @@ func TestPushDirectory(t *testing.T) {
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	a := New(isolatedclient.New(ts.URL, "default-gzip"), nil)
+	a := New(isolatedclient.New(nil, ts.URL, "default-gzip"), nil)
 
 	// Setup temporary directory.
 	tmpDir, err := ioutil.TempDir("", "archiver")

@@ -57,7 +57,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 		out = nil
 		prefix = ""
 	}
-	arch := archiver.New(isolatedclient.New(c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace), out)
+	arch := archiver.New(isolatedclient.New(c.createClient(), c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace), out)
 	common.CancelOnCtrlC(arch)
 	futures := []archiver.Future{}
 	names := []string{}

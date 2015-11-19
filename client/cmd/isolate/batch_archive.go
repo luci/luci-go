@@ -124,7 +124,7 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 		prefix = ""
 	}
 	start := time.Now()
-	arch := archiver.New(isolatedclient.New(c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace), out)
+	arch := archiver.New(isolatedclient.New(c.createClient(), c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace), out)
 	common.CancelOnCtrlC(arch)
 	type tmp struct {
 		name   string

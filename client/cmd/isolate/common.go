@@ -8,12 +8,14 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net/http"
 	"path/filepath"
 	"runtime"
 
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/client/isolate"
 	"github.com/luci/luci-go/client/isolatedclient"
+	"github.com/luci/luci-go/common/auth"
 	"github.com/maruel/subcommands"
 )
 
@@ -49,6 +51,11 @@ func (c *commonServerFlags) Parse() error {
 		return err
 	}
 	return c.isolatedFlags.Parse()
+}
+
+func (c *commonServerFlags) createClient() *http.Client {
+	client, _ := auth.NewAuthenticator(auth.SilentLogin, auth.Options{}).Client()
+	return client
 }
 
 type isolateFlags struct {

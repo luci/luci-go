@@ -8,13 +8,17 @@ import (
 	"log"
 	"os"
 
+	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/client/internal/common"
+	"github.com/luci/luci-go/common/auth"
 	"github.com/maruel/subcommands"
 )
 
 // version must be updated whenever functional change (behavior, arguments,
 // supported commands) is done.
-const version = "0.1"
+const version = "0.2"
+
+var opts = auth.Options{}
 
 var application = &subcommands.DefaultApplication{
 	Name:  "isolated",
@@ -24,6 +28,9 @@ var application = &subcommands.DefaultApplication{
 		cmdArchive,
 		cmdDownload,
 		subcommands.CmdHelp,
+		authcli.SubcommandInfo(opts, "info"),
+		authcli.SubcommandLogin(opts, "login"),
+		authcli.SubcommandLogout(opts, "logout"),
 		common.CmdVersion(version),
 	},
 }

@@ -45,8 +45,8 @@ type PushState struct {
 }
 
 // New returns a new IsolateServer client.
-func New(host, namespace string) IsolateServer {
-	return newIsolateServer(host, namespace, retry.Default)
+func New(client *http.Client, host, namespace string) IsolateServer {
+	return newIsolateServer(client, host, namespace, retry.Default)
 }
 
 // Private details.
@@ -55,13 +55,18 @@ type isolateServer struct {
 	config    *retry.Config
 	url       string
 	namespace string
+	client    *http.Client
 }
 
-func newIsolateServer(host, namespace string, config *retry.Config) *isolateServer {
+func newIsolateServer(client *http.Client, host, namespace string, config *retry.Config) *isolateServer {
+	if client == nil {
+		client = http.DefaultClient
+	}
 	i := &isolateServer{
 		config:    config,
 		url:       strings.TrimRight(host, "/"),
 		namespace: namespace,
+		client:    client,
 	}
 	tracer.NewPID(i, "isolatedclient:"+i.url)
 	return i
@@ -71,7 +76,7 @@ func (i *isolateServer) postJSON(resource string, in, out interface{}) error {
 	if len(resource) == 0 || resource[0] != '/' {
 		return errors.New("resource must start with '/'")
 	}
-	_, err := lhttp.PostJSON(i.config, http.DefaultClient, i.url+resource, in, out)
+	_, err := lhttp.PostJSON(i.config, i.client, i.url+resource, in, out)
 	return err
 }
 
@@ -174,7 +179,7 @@ func (i *isolateServer) doPushGCS(state *PushState, src io.ReadSeeker) (err erro
 		return err2
 	}
 	request.Header.Set("Content-Type", "application/octet-stream")
-	req, err3 := lhttp.NewRequest(http.DefaultClient, request, func(resp *http.Response) error {
+	req, err3 := lhttp.NewRequest(i.client, request, func(resp *http.Response) error {
 		_, err4 := io.Copy(ioutil.Discard, resp.Body)
 		err5 := resp.Body.Close()
 		if err4 != nil {
