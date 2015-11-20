@@ -12,8 +12,6 @@ import (
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
 )
 
-type clientFactory func(string) (Client, error)
-
 // Client is a client to a LogDog Butler StreamServer. A Client will connect
 // to a StreamServer, negotiate a stream configuration, and return an active
 // stream object that can be written to.
@@ -45,7 +43,7 @@ type clientImpl struct {
 //   - net.pipe:name describes a stream server listening on Windows named pipe
 //     "\\.\pipe\name".
 func New(path string) (Client, error) {
-	return defaultRegistry.newClient(path)
+	return DefaultRegistry.NewClient(path)
 }
 
 func (c *clientImpl) NewStream(f streamproto.Flags) (Stream, error) {

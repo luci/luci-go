@@ -11,47 +11,55 @@ import (
 )
 
 var (
-	// defaultRegistry is the default protocol registry.
-	defaultRegistry = &protocolRegistry{}
+	// DefaultRegistry is the default protocol registry.
+	DefaultRegistry = &Registry{}
 )
 
-// protocolRegistry maps protocol prefix strings to their Client generator
-// functions.
+// ClientFactory is a generator function that is invoked by the Registry when a
+// new Client is requested for its protocol.
+type ClientFactory func(string) (Client, error)
+
+// Registry maps protocol prefix strings to their Client generator functions.
 //
 // This allows multiple Butler stream protocols (e.g., "unix:", "net.pipe:",
 // etc.) to be parsed from string.
-type protocolRegistry struct {
-	sync.Mutex
+type Registry struct {
+	// lock protects the fields in Registry.
+	lock sync.Mutex
 
 	// protocols is the set of registered protocols. Each client should register
 	// via registerProtocol in its init() method.
-	protocols map[string]clientFactory
+	protocols map[string]ClientFactory
 }
 
-func (r *protocolRegistry) register(name string, f clientFactory) {
-	r.Lock()
-	defer r.Unlock()
+// Register registers a new protocol and its ClientFactory.
+//
+// This can be invoked by calling NewClient with a path spec referencing that
+// protocol.
+func (r *Registry) Register(name string, f ClientFactory) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 
 	if _, ok := r.protocols[name]; ok {
 		panic(fmt.Errorf("streamclient: protocol already registered for [%s]", name))
 	}
 	if r.protocols == nil {
-		r.protocols = make(map[string]clientFactory)
+		r.protocols = make(map[string]ClientFactory)
 	}
 	r.protocols[name] = f
 }
 
-// newClient invokes the protocol clientFactory generator for the
+// NewClient invokes the protocol ClientFactory generator for the
 // supplied protocol/address string, returning the generated Client.
-func (r *protocolRegistry) newClient(path string) (Client, error) {
+func (r *Registry) NewClient(path string) (Client, error) {
 	parts := strings.SplitN(path, ":", 2)
 	params := ""
 	if len(parts) == 2 {
 		params = parts[1]
 	}
 
-	r.Lock()
-	defer r.Unlock()
+	r.lock.Lock()
+	defer r.lock.Unlock()
 
 	if f, ok := r.protocols[parts[0]]; ok {
 		return f(params)
@@ -61,6 +69,6 @@ func (r *protocolRegistry) newClient(path string) (Client, error) {
 
 // registerProtocol registers a protocol with the default (global) protocol
 // registry.
-func registerProtocol(name string, f clientFactory) {
-	defaultRegistry.register(name, f)
+func registerProtocol(name string, f ClientFactory) {
+	DefaultRegistry.Register(name, f)
 }

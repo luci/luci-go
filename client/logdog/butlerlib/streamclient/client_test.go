@@ -42,8 +42,8 @@ func TestClient(t *testing.T) {
 		tswcErr := error(nil)
 		tswc := (*testStreamWriteCloser)(nil)
 
-		reg := protocolRegistry{}
-		reg.register("test", func(addr string) (Client, error) {
+		reg := Registry{}
+		reg.Register("test", func(addr string) (Client, error) {
 			return &clientImpl{
 				factory: func() (io.WriteCloser, error) {
 					tswc = &testStreamWriteCloser{
@@ -61,17 +61,17 @@ func TestClient(t *testing.T) {
 		}
 
 		Convey(`Will panic if the same protocol is registered twice.`, func() {
-			So(func() { reg.register("test", nil) }, ShouldPanic)
-			So(func() { reg.register("test2", nil) }, ShouldNotPanic)
+			So(func() { reg.Register("test", nil) }, ShouldPanic)
+			So(func() { reg.Register("test2", nil) }, ShouldNotPanic)
 		})
 
 		Convey(`Will fail to instantiate a Client with an invalid protocol.`, func() {
-			_, err := reg.newClient("fake:foo")
+			_, err := reg.NewClient("fake:foo")
 			So(err, ShouldNotBeNil)
 		})
 
 		Convey(`Can instantiate a new client.`, func() {
-			client, err := reg.newClient("test:foo")
+			client, err := reg.NewClient("test:foo")
 			So(err, ShouldBeNil)
 			So(client, ShouldHaveSameTypeAs, &clientImpl{})
 
