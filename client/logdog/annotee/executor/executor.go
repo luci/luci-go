@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package annotee
+package executor
 
 import (
 	"errors"
@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"syscall"
 
+	"github.com/luci/luci-go/client/logdog/annotee"
 	"github.com/luci/luci-go/client/logdog/annotee/annotation"
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamclient"
 	"github.com/luci/luci-go/common/logdog/types"
@@ -42,9 +43,6 @@ type Executor struct {
 
 	// Annoate describes how annotations in the STDOUT stream should be handled.
 	Annotate AnnotationMode
-
-	// Prefix is the LogDog log stream prefix.
-	Prefix types.StreamName
 
 	// Stdin, if not nil, will be used as standard input for the bootstrapped
 	// process.
@@ -110,12 +108,12 @@ func (e *Executor) Run(ctx context.Context) error {
 	execution := annotation.ProbeExecution(e.Command)
 
 	// Configure our Processor.
-	proc := Processor{
+	proc := annotee.Processor{
 		Context:   ctx,
 		Client:    e.Client,
 		Execution: execution,
 	}
-	streams := []*Stream{
+	streams := []*annotee.Stream{
 		stdout,
 		stderr,
 	}
@@ -157,8 +155,8 @@ func (e *Executor) ReturnCode() int {
 	return e.returnCode
 }
 
-func (e *Executor) configStream(r io.Reader, name types.StreamName, tee io.Writer) *Stream {
-	s := &Stream{
+func (e *Executor) configStream(r io.Reader, name types.StreamName, tee io.Writer) *annotee.Stream {
+	s := &annotee.Stream{
 		Reader:           r,
 		Name:             name,
 		Tee:              tee,
