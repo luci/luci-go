@@ -385,12 +385,18 @@ func TestStreamSmoke(t *testing.T) {
 		// Appender goroutine, constantly appends data.
 		//
 		// This will be inherently throttled by the nextBundle consumption.
+		dataTokenC := make(chan struct{}, 512)
 		go func() {
-			defer s.Close()
+			defer func() {
+				close(dataTokenC)
+				s.Close()
+			}()
 
 			for i := 0; i < 512; i++ {
 				s.Append(data(tc.Now(), []byte(fmt.Sprintf("%d", i))...))
-				tc.Add(time.Second)
+
+				// Note that data has been sent.
+				dataTokenC <- struct{}{}
 			}
 		}()
 
@@ -417,7 +423,7 @@ func TestStreamSmoke(t *testing.T) {
 						b = nil
 					} else {
 						// No content! Sleep for a second and check again.
-						tc.Sleep(time.Second)
+						<-dataTokenC
 					}
 				}
 			}()
@@ -439,6 +445,8 @@ func TestStreamSmoke(t *testing.T) {
 			}
 		}()
 
+		// Awaken all sleeping goroutines.
+		tc.Add(32 * time.Second)
 		for i := 0; i < 32; i++ {
 			<-consumerC
 		}
