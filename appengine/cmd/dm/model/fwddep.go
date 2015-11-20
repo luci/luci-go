@@ -32,8 +32,10 @@ type FwdDep struct {
 	// Dep completes.
 	BitIndex types.UInt32
 
-	// ForExecution indicates which Execution added this dependency, mostly for
-	// historical analysis/display.
+	// ForExecution indicates which Execution added this dependency. This is used
+	// for validation of AckFwdDep mutations to ensure that they're operating
+	// on an Attempt in the correct state, but can also be used for historical
+	// analysis/display.
 	ForExecution types.UInt32
 }
 
