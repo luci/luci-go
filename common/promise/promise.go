@@ -1,4 +1,4 @@
-// Copyright (c) 2015 The Chromium Authors. All rights reserved.
+// Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -66,11 +66,21 @@ func New(gen func() (interface{}, error)) Promise {
 }
 
 func (p *promiseImpl) Get(c context.Context) (interface{}, error) {
+	// Block until at least one of these conditions is satisfied. If both are,
+	// "select" will choose one pseudo-randomly.
 	select {
 	case <-p.signalC:
 		return p.data, p.err
 
 	case <-c.Done():
+		// Make sure we don't actually have data.
+		select {
+		case <-p.signalC:
+			return p.data, p.err
+
+		default:
+			break
+		}
 		return nil, c.Err()
 	}
 }

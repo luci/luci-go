@@ -16,11 +16,9 @@ import (
 	"golang.org/x/net/context"
 )
 
-var (
-	now = time.Unix(1420070400, 0)
-)
-
 func TestPromise(t *testing.T) {
+	t.Parallel()
+
 	Convey(`An instrumented Promise instance`, t, func() {
 		ctx, tc := testclock.UseTime(context.Background(), time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 
@@ -73,28 +71,19 @@ func TestPromise(t *testing.T) {
 			})
 
 			Convey(`Will return data instead of timing out.`, func() {
-				// Wait until our Promise starts its timer. Then signal it.
-				readyC := make(chan struct{})
-				tc.SetTimerCallback(func(_ time.Duration, _ clock.Timer) {
-					close(readyC)
-				})
-				go func() {
-					<-readyC
-					tc.Add(1 * time.Second)
-				}()
+				ctx, cancelFunc := context.WithCancel(ctx)
+				cancelFunc()
 
-				// Make sure we have fully processed the data. Otherwise, it could get
-				// stuck in between reading from 'opC' and returning/assigning to the
-				// Promise.
-				p.Get(ctx)
-
-				ctx, _ = clock.WithTimeout(ctx, 1*time.Second)
-				data, err := p.Get(ctx)
+				data, err = p.Get(ctx)
 				So(data, ShouldEqual, "DATA")
 				So(err, ShouldEqual, e)
 			})
 		})
 	})
+}
+
+func TestPromiseSmoke(t *testing.T) {
+	t.Parallel()
 
 	Convey(`A Promise instance with multiple consumers will block.`, t, func() {
 		ctx, _ := testclock.UseTime(context.Background(), time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
