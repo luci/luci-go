@@ -41,7 +41,7 @@ func TestGetAllProjects(t *testing.T) {
 		So(len(projects), ShouldEqual, 0)
 
 		// Non empty.
-		So(ds.PutMulti([]jobEntity{
+		So(ds.PutMulti([]CronJob{
 			{JobID: "abc/1", ProjectID: "abc", Enabled: true},
 			{JobID: "abc/2", ProjectID: "abc", Enabled: true},
 			{JobID: "def/1", ProjectID: "def", Enabled: true},
@@ -61,7 +61,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 
 		// Doing nothing.
 		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{}), ShouldBeNil)
-		So(allJobs(c), ShouldResemble, []jobEntity{})
+		So(allJobs(c), ShouldResemble, []CronJob{})
 
 		// Adding a new job (ticks every 5 sec).
 		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{
@@ -70,7 +70,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 				Revision: "rev1",
 				Schedule: "*/5 * * * * * *",
 			}}), ShouldBeNil)
-		So(allJobs(c), ShouldResemble, []jobEntity{
+		So(allJobs(c), ShouldResemble, []CronJob{
 			{
 				JobID:     "abc/1",
 				ProjectID: "abc",
@@ -107,7 +107,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 				Revision: "rev2",
 				Schedule: "*/1 * * * * * *",
 			}}), ShouldBeNil)
-		So(allJobs(c), ShouldResemble, []jobEntity{
+		So(allJobs(c), ShouldResemble, []CronJob{
 			{
 				JobID:     "abc/1",
 				ProjectID: "abc",
@@ -129,7 +129,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 
 		// Removed -> goes to disabled state.
 		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{}), ShouldBeNil)
-		So(allJobs(c), ShouldResemble, []jobEntity{
+		So(allJobs(c), ShouldResemble, []CronJob{
 			{
 				JobID:     "abc/1",
 				ProjectID: "abc",
@@ -159,7 +159,7 @@ func TestTransactionRetries(t *testing.T) {
 				Revision: "rev1",
 				Schedule: "*/5 * * * * * *",
 			}}), ShouldBeNil)
-		So(allJobs(c), ShouldResemble, []jobEntity{
+		So(allJobs(c), ShouldResemble, []CronJob{
 			{
 				JobID:     "abc/1",
 				ProjectID: "abc",
@@ -193,7 +193,7 @@ func TestTransactionRetries(t *testing.T) {
 				Schedule: "*/5 * * * * * *",
 			}})
 		So(errors.IsTransient(err), ShouldBeTrue)
-		So(allJobs(c), ShouldResemble, []jobEntity{})
+		So(allJobs(c), ShouldResemble, []CronJob{})
 		ensureZeroTasks(c, "timers-q")
 		ensureZeroTasks(c, "invs-q")
 	})
@@ -210,7 +210,7 @@ func TestResetAllJobsOnDevServer(t *testing.T) {
 				Revision: "rev1",
 				Schedule: "*/5 * * * * * *",
 			}}), ShouldBeNil)
-		So(allJobs(c), ShouldResemble, []jobEntity{
+		So(allJobs(c), ShouldResemble, []CronJob{
 			{
 				JobID:     "abc/1",
 				ProjectID: "abc",
@@ -229,7 +229,7 @@ func TestResetAllJobsOnDevServer(t *testing.T) {
 
 		// ResetAllJobsOnDevServer should reschedule the job.
 		So(e.ResetAllJobsOnDevServer(c), ShouldBeNil)
-		So(allJobs(c), ShouldResemble, []jobEntity{
+		So(allJobs(c), ShouldResemble, []CronJob{
 			{
 				JobID:     "abc/1",
 				ProjectID: "abc",
@@ -260,7 +260,7 @@ func TestFullFlow(t *testing.T) {
 				Schedule: "*/5 * * * * * *",
 				Task:     taskBytes,
 			}}), ShouldBeNil)
-		So(allJobs(c), ShouldResemble, []jobEntity{
+		So(allJobs(c), ShouldResemble, []CronJob{
 			{
 				JobID:     "abc/1",
 				ProjectID: "abc",
@@ -286,7 +286,7 @@ func TestFullFlow(t *testing.T) {
 		So(e.ExecuteSerializedAction(c, tsk.Payload, 0), ShouldBeNil)
 
 		// Job is in queued state now.
-		So(allJobs(c), ShouldResemble, []jobEntity{
+		So(allJobs(c), ShouldResemble, []CronJob{
 			{
 				JobID:     "abc/1",
 				ProjectID: "abc",
@@ -324,7 +324,7 @@ func TestFullFlow(t *testing.T) {
 
 		// Still in QUEUED state, but with InvocatioID assigned.
 		jobs := allJobs(c)
-		So(jobs, ShouldResemble, []jobEntity{
+		So(jobs, ShouldResemble, []CronJob{
 			{
 				JobID:     "abc/1",
 				ProjectID: "abc",
@@ -338,24 +338,28 @@ func TestFullFlow(t *testing.T) {
 					TickTime:           epoch.Add(10 * time.Second),
 					InvocationNonce:    631000787647335445,
 					InvocationTime:     epoch.Add(5 * time.Second),
-					InvocationID:       1,
+					InvocationID:       9200093518582666224,
 					InvocationStarting: true,
 				},
 			},
 		})
 		jobKey := datastore.Get(c).KeyForObj(&jobs[0])
 
-		// Check invocationEntity fields.
-		inv := invocationEntity{ID: 1, JobKey: jobKey}
+		// Check Invocation fields.
+		inv := Invocation{ID: 9200093518582666224, JobKey: jobKey}
 		So(datastore.Get(c).Get(&inv), ShouldBeNil)
 		inv.JobKey = nil // for easier ShouldResemble below
-		So(inv, ShouldResemble, invocationEntity{
-			ID:              1,
+		So(inv, ShouldResemble, Invocation{
+			ID:              9200093518582666224,
 			InvocationNonce: 631000787647335445,
 			Revision:        "rev1",
+			Started:         epoch.Add(5 * time.Second),
+			Finished:        epoch.Add(5 * time.Second),
 			Task:            taskBytes,
-			DebugLog: "[22:42:05.000] oops, fail\n" +
-				"[22:42:05.000] Failed to run the task: oops\n",
+			DebugLog: "[22:42:05.000] Invocation initiated\n" +
+				"[22:42:05.000] oops, fail\n" +
+				"[22:42:05.000] Failed to run the task: oops\n" +
+				"[22:42:05.000] Invocation finished in 0 with status FAILED\n",
 			Status: task.StatusFailed,
 		})
 
@@ -365,7 +369,7 @@ func TestFullFlow(t *testing.T) {
 			So(ctl.Save(task.StatusRunning), ShouldBeNil)
 
 			// After first Save the job and the invocation are in running state.
-			So(allJobs(c), ShouldResemble, []jobEntity{
+			So(allJobs(c), ShouldResemble, []CronJob{
 				{
 					JobID:     "abc/1",
 					ProjectID: "abc",
@@ -379,19 +383,20 @@ func TestFullFlow(t *testing.T) {
 						TickTime:        epoch.Add(10 * time.Second),
 						InvocationNonce: 631000787647335445,
 						InvocationTime:  epoch.Add(5 * time.Second),
-						InvocationID:    2,
+						InvocationID:    9200093518581789696,
 					},
 				},
 			})
-			inv := invocationEntity{ID: 2, JobKey: jobKey}
+			inv := Invocation{ID: 9200093518581789696, JobKey: jobKey}
 			So(datastore.Get(c).Get(&inv), ShouldBeNil)
 			inv.JobKey = nil // for easier ShouldResemble below
-			So(inv, ShouldResemble, invocationEntity{
-				ID:              2,
+			So(inv, ShouldResemble, Invocation{
+				ID:              9200093518581789696,
 				InvocationNonce: 631000787647335445,
 				Revision:        "rev1",
+				Started:         epoch.Add(5 * time.Second),
 				Task:            taskBytes,
-				DebugLog:        "[22:42:05.000] Starting\n",
+				DebugLog:        "[22:42:05.000] Invocation initiated\n[22:42:05.000] Starting\n",
 				RetryCount:      1,
 				Status:          task.StatusRunning,
 			})
@@ -404,36 +409,43 @@ func TestFullFlow(t *testing.T) {
 		So(e.ExecuteSerializedAction(c, invTask.Payload, 1), ShouldBeNil)
 
 		// After final save.
-		inv = invocationEntity{ID: 2, JobKey: jobKey}
+		inv = Invocation{ID: 9200093518581789696, JobKey: jobKey}
 		So(datastore.Get(c).Get(&inv), ShouldBeNil)
 		inv.JobKey = nil // for easier ShouldResemble below
-		So(inv, ShouldResemble, invocationEntity{
-			ID:              2,
+		So(inv, ShouldResemble, Invocation{
+			ID:              9200093518581789696,
 			InvocationNonce: 631000787647335445,
 			Revision:        "rev1",
+			Started:         epoch.Add(5 * time.Second),
+			Finished:        epoch.Add(5 * time.Second),
 			Task:            taskBytes,
-			DebugLog:        "[22:42:05.000] Starting\n",
-			RetryCount:      1,
-			Status:          task.StatusSucceeded,
+			DebugLog: "[22:42:05.000] Invocation initiated\n" +
+				"[22:42:05.000] Starting\n" +
+				"[22:42:05.000] Invocation finished in 0 with status SUCCEEDED\n",
+			RetryCount: 1,
+			Status:     task.StatusSucceeded,
 		})
 
 		// Previous invocation is canceled.
-		inv = invocationEntity{ID: 1, JobKey: jobKey}
+		inv = Invocation{ID: 9200093518582666224, JobKey: jobKey}
 		So(datastore.Get(c).Get(&inv), ShouldBeNil)
 		inv.JobKey = nil // for easier ShouldResemble below
-		So(inv, ShouldResemble, invocationEntity{
-			ID:              1,
+		So(inv, ShouldResemble, Invocation{
+			ID:              9200093518582666224,
 			InvocationNonce: 631000787647335445,
 			Revision:        "rev1",
+			Started:         epoch.Add(5 * time.Second),
+			Finished:        epoch.Add(5 * time.Second),
 			Task:            taskBytes,
-			DebugLog: "[22:42:05.000] oops, fail\n" +
+			DebugLog: "[22:42:05.000] Invocation initiated\n" +
+				"[22:42:05.000] oops, fail\n" +
 				"[22:42:05.000] Failed to run the task: oops\n" +
-				"[22:42:05.000] New invocation is running (2), marking this one as failed.\n",
+				"[22:42:05.000] Invocation finished in 0 with status FAILED\n",
 			Status: task.StatusFailed,
 		})
 
 		// Job is in scheduled state again.
-		So(allJobs(c), ShouldResemble, []jobEntity{
+		So(allJobs(c), ShouldResemble, []CronJob{
 			{
 				JobID:     "abc/1",
 				ProjectID: "abc",
@@ -448,6 +460,37 @@ func TestFullFlow(t *testing.T) {
 				},
 			},
 		})
+	})
+}
+
+func TestGenerateInvocationID(t *testing.T) {
+	Convey("generateInvocationID does not collide", t, func() {
+		c := newTestContext(epoch)
+		k := datastore.Get(c).NewKey("CronJob", "", 123, nil)
+
+		// Bunch of ids generated at the exact same moment in time do not collide.
+		ids := map[int64]struct{}{}
+		for i := 0; i < 20; i++ {
+			id, err := generateInvocationID(c, k)
+			So(err, ShouldBeNil)
+			ids[id] = struct{}{}
+		}
+		So(len(ids), ShouldEqual, 20)
+	})
+
+	Convey("generateInvocationID gen IDs with most recent first", t, func() {
+		c := newTestContext(epoch)
+		k := datastore.Get(c).NewKey("CronJob", "", 123, nil)
+
+		older, err := generateInvocationID(c, k)
+		So(err, ShouldBeNil)
+
+		clock.Get(c).(testclock.TestClock).Add(5 * time.Second)
+
+		newer, err := generateInvocationID(c, k)
+		So(err, ShouldBeNil)
+
+		So(newer, ShouldBeLessThan, older)
 	})
 }
 
@@ -513,10 +556,10 @@ func noopTaskBytes() []byte {
 	return buf
 }
 
-func allJobs(c context.Context) []jobEntity {
+func allJobs(c context.Context) []CronJob {
 	ds := datastore.Get(c)
 	ds.Testable().CatchupIndexes()
-	entities := []jobEntity{}
+	entities := []CronJob{}
 	if err := ds.GetAll(datastore.NewQuery("CronJob"), &entities); err != nil {
 		panic(err)
 	}
