@@ -17,16 +17,10 @@ import (
 	"github.com/luci/gae/service/taskqueue"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/memlogger"
 	"golang.org/x/net/context"
 )
-
-// TestMode should be called at init() time in your tests. It will zero out
-// some of tumble's built-in timeouts to avoid clock mocking conflicts
-// (deadlocks).
-func TestMode() {
-	dustSettleTimeout = 0
-}
 
 // Testing is a high-level testing object for testing applications that use
 // tumble.
@@ -41,7 +35,13 @@ type Testing struct {
 //
 // It also correctly configures the "tumble.Mutation" indexes and taskqueue
 // named in this Testing config.
+//
+// Calling this method will render the tumble package unsuitable for production
+// usage, since it disables some internal timeouts. DO NOT CALL THIS METHOD
+// IN PRODUCTION.
 func (t Testing) Context() context.Context {
+	dustSettleTimeout = 0
+
 	ctx := memory.Use(memlogger.Use(context.Background()))
 	ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC)
 	ctx = Use(ctx, t.Config)
@@ -114,7 +114,9 @@ func (t Testing) FireAllTasks(c context.Context) {
 func (t Testing) AdvanceTime(c context.Context) {
 	clk := clock.Get(c).(testclock.TestClock)
 	cfg := GetConfig(c)
-	clk.Add(cfg.TemporalMinDelay + cfg.TemporalRoundFactor + time.Second)
+	toAdd := cfg.TemporalMinDelay + cfg.TemporalRoundFactor + time.Second
+	logging.Infof(c, "adding %s to %s", toAdd, clk.Now())
+	clk.Add(toAdd)
 }
 
 // Drain will run a loop, advancing time and iterating through tumble mutations

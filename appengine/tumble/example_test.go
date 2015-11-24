@@ -140,8 +140,6 @@ func init() {
 	Register((*WriteMessage)(nil))
 	Register((*SendMessage)(nil))
 	Register((*WriteReceipt)(nil))
-
-	TestMode()
 }
 
 func TestHighLevel(t *testing.T) {

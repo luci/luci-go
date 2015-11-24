@@ -122,8 +122,8 @@ func ProcessShard(c context.Context, timestamp time.Time, shard uint64) error {
 			l.Warningf("could not decode timestamp %v: %s", val, err)
 		} else {
 			last = last.Add(cfg.TemporalRoundFactor)
-			if timestamp.After(last) {
-				l.Infof("early exit, %s > %s", timestamp, last)
+			if last.After(timestamp) {
+				l.Infof("early exit, %s > %s", last, timestamp)
 				return nil
 			}
 		}
@@ -170,13 +170,11 @@ func ProcessShard(c context.Context, timestamp time.Time, shard uint64) error {
 							return processRoot(c, root, bs, counter)
 						}
 
-						select {
-						case <-c.Done():
-							l.Warningf("Lost lock!")
+						if c.Err() != nil {
+							l.Warningf("Lost lock! %s", c.Err())
 							return false
-						default:
-							return true
 						}
+						return true
 					})
 					if err != nil {
 						l.Errorf("Failure to query: %s", err)
@@ -297,10 +295,9 @@ func processRoot(c context.Context, root *datastore.Key, banSet stringset.Set, c
 		return err
 	}
 
-	select {
-	case <-c.Done():
+	if c.Err() != nil {
 		l.Warningf("Lost lock during processRoot")
-	default:
+		return nil
 	}
 
 	allShards := map[uint64]struct{}{}
