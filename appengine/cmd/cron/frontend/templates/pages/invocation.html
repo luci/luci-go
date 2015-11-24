@@ -1,0 +1,43 @@
+{{define "title"}}Cron Service :: {{.ProjectID}} :: {{.JobID}} :: {{.Inv.InvID}}{{end}}
+
+{{define "head"}}
+{{end}}
+
+{{define "content"}}
+
+<ol class="breadcrumb">
+  <li><a href="/">All projects</a></li>
+  <li><a href="/jobs/{{.ProjectID}}">{{.ProjectID}}</a></li>
+  <li><a href="/jobs/{{.ProjectID}}/{{.JobID}}">{{.JobID}}</a></li>
+  <li class="active">{{.Inv.InvID}}</li>
+</ol>
+
+<div class="container">
+  <div class="row">
+    <div class="col-sm-3"><b>Status:</b> {{.Inv.Status}}</div>
+    <div class="col-sm-3"><b>Attempt:</b> {{.Inv.Attempt}}</div>
+    <div class="col-sm-3"><b>Started:</b> {{.Inv.Started}}</div>
+    <div class="col-sm-3"><b>Duration:</b> {{.Inv.Duration}}</div>
+  </div>
+
+  <div class="col-sm-12">
+    <hr>
+  </div>
+
+  <h4>Definition (rev {{.Inv.Revision}})</h4>
+  <div class="row">
+    <div class="col-sm-12">
+      <pre>{{.Inv.Definition}}</pre>
+    </div>
+  </div>
+
+  <h4>Debug log</h4>
+  <div class="row">
+    <div class="col-sm-12">
+      <pre>{{.Inv.DebugLog}}</pre>
+    </div>
+  </div>
+
+</div>
+
+{{end}}

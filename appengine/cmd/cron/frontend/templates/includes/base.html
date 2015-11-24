@@ -8,7 +8,7 @@ found in the LICENSE file. -->
   <meta http-equiv="Content-type" content="text/html; charset=UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="static/third_party/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/static/third_party/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <title>{{template "title" .}}</title>
   <style type="text/css">
     body {
@@ -33,6 +33,7 @@ found in the LICENSE file. -->
       margin: 10px 0px;
     }
   </style>
+  {{template "head" .}}
 </head>
 
 <body>
@@ -47,7 +48,9 @@ found in the LICENSE file. -->
           <span class="icon-bar"></span>
         </button>
         <span class="navbar-brand">
-          <span id="progress-spinner" class="not-spinning">Cron Service</span>
+          <span id="progress-spinner" class="not-spinning">
+            <a href="/">Cron Service</a>
+          </span>
         </span>
       </div>
       <div class="navbar-collapse collapse">
@@ -70,9 +73,7 @@ found in the LICENSE file. -->
     </div>
 
     <div id="content-box">
-      <div class="container">
-        {{template "content" .}}
-      </div>
+      {{template "content" .}}
     </div>
 
     <footer>
@@ -83,8 +84,8 @@ found in the LICENSE file. -->
     </footer>
   </div>
 
-  <script src="static/third_party/jquery/jquery-2.1.4.min.js"></script>
-  <script src="static/third_party/bootstrap/js/bootstrap.min.js"></script>
+  <script src="/static/third_party/jquery/jquery-2.1.4.min.js"></script>
+  <script src="/static/third_party/bootstrap/js/bootstrap.min.js"></script>
 </body>
 
 </html>

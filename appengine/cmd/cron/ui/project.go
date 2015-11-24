@@ -14,12 +14,14 @@ import (
 	"github.com/luci/luci-go/server/templates"
 )
 
-func indexPage(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	jobs, err := config(c).Engine.GetAllCronJobs(c)
+func projectPage(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	projectID := p.ByName("ProjectID")
+	jobs, err := config(c).Engine.GetProjectCronJobs(c, projectID)
 	if err != nil {
 		panic(err)
 	}
-	templates.MustRender(c, w, "pages/index.html", map[string]interface{}{
-		"Jobs": convertToSortedCronJobs(jobs, clock.Now(c).UTC()),
+	templates.MustRender(c, w, "pages/project.html", map[string]interface{}{
+		"ProjectID": projectID,
+		"Jobs":      convertToSortedCronJobs(jobs, clock.Now(c).UTC()),
 	})
 }

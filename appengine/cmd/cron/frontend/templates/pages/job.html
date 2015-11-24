@@ -1,0 +1,65 @@
+{{define "title"}}Cron Service :: {{.Job.ProjectID}} :: {{.Job.JobID}}{{end}}
+
+{{define "head"}}
+<style type="text/css">
+#invocations-table {
+  table-layout: fixed;
+}
+</style>
+{{end}}
+
+{{define "content"}}
+
+<ol class="breadcrumb">
+  <li><a href="/">All projects</a></li>
+  <li><a href="/jobs/{{.Job.ProjectID}}">{{.Job.ProjectID}}</a></li>
+  <li class="active">{{.Job.JobID}}</li>
+</ol>
+
+<div class="container">
+  <div class="row">
+    <div class="col-sm-3"><b>State:</b> {{.Job.State}}</div>
+    <div class="col-sm-3"><b>Schedule:</b> {{.Job.Schedule}}</div>
+    <div class="col-sm-3"><b>Overruns:</b> {{.Job.Overruns}}</div>
+    <div class="col-sm-3"><b>Next run:</b> {{.Job.NextRun}}</div>
+  </div>
+
+  <div class="col-sm-12">
+    <hr>
+  </div>
+
+  <h4>Definition (rev {{.Job.Revision}})</h4>
+  <div class="row">
+    <div class="col-sm-12">
+      <pre>{{.Job.Definition}}</pre>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-12">
+      <table class="table table-condensed" id="invocations-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Started</th>
+            <th>Duration</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+        {{range .Invocations }}
+          <tr class="{{.RowClass}}">
+            <td><a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobID}}/{{.InvID}}">{{.InvID}}</a></td>
+            <td>{{.Started}}</td>
+            <td>{{.Duration}}</td>
+            <td>{{.Status}}</td>
+          </tr>
+        {{end}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+{{end}}

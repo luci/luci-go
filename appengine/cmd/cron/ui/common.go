@@ -42,6 +42,9 @@ func InstallHandlers(r *httprouter.Router, base middleware.Base, cfg Config) {
 	}
 
 	r.GET("/", wrap(indexPage))
+	r.GET("/jobs/:ProjectID", wrap(projectPage))
+	r.GET("/jobs/:ProjectID/:JobID", wrap(jobPage))
+	r.GET("/jobs/:ProjectID/:JobID/:InvID", wrap(invocationPage))
 }
 
 type configContextKey int

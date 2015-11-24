@@ -1,4 +1,4 @@
-{{define "title"}}Cron Service{{end}}
+{{define "title"}}Cron Service :: {{.ProjectID}}{{end}}
 
 {{define "head"}}
 <style type="text/css">
@@ -11,7 +11,8 @@
 {{define "content"}}
 
 <ol class="breadcrumb">
-  <li class="active">All projects</li>
+  <li><a href="/">All projects</a></li>
+  <li class="active">{{.ProjectID}}</li>
 </ol>
 
 <div class="container">
@@ -20,7 +21,6 @@
       <table class="table" id="jobs-table">
         <thead>
           <tr>
-            <th>Project</th>
             <th>Job</th>
             <th>Schedule</th>
             <th>State</th>
@@ -31,7 +31,6 @@
         <tbody>
         {{range .Jobs }}
           <tr>
-            <td><a href="/jobs/{{.ProjectID}}">{{.ProjectID}}</a></td>
             <td><a href="/jobs/{{.ProjectID}}/{{.JobID}}">{{.JobID}}</a></td>
             <td>{{.Schedule}}</td>
             <td>{{.State}}</td>
