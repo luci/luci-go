@@ -5,12 +5,16 @@
 package server
 
 import (
+	"runtime"
+	"strings"
+
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/admin"
+	"github.com/luci/luci-go/server/auth/info"
 	"github.com/luci/luci-go/server/auth/openid"
 	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/middleware"
@@ -37,6 +41,7 @@ func InstallHandlers(r *httprouter.Router, base middleware.Base) {
 	admin.InstallHandlers(r, base, &UsersAPIAuthMethod{}, adminPagesConfig{})
 	auth.InstallHandlers(r, base)
 	authdb.InstallHandlers(r, base)
+	info.InstallHandlers(r, base, getServiceInfo)
 	signing.InstallHandlers(r, base)
 }
 
@@ -47,6 +52,20 @@ func Warmup(c context.Context) error {
 		return oid.Warmup(c)
 	}
 	return nil
+}
+
+func getServiceInfo(c context.Context) (info.ServiceInfo, error) {
+	account, err := appengine.ServiceAccount(c)
+	if err != nil {
+		return info.ServiceInfo{}, err
+	}
+	return info.ServiceInfo{
+		AppID:              appengine.AppID(c),
+		AppRuntime:         "go",
+		AppRuntimeVersion:  runtime.Version(),
+		AppVersion:         strings.Split(appengine.VersionID(c), ".")[0],
+		ServiceAccountName: account,
+	}, nil
 }
 
 ///
