@@ -38,6 +38,24 @@ type Engine interface {
 	// enabled cron job.
 	GetAllProjects(c context.Context) ([]string, error)
 
+	// GetAllCronJobs returns a list of all enabled cron jobs in no particular
+	// order.
+	GetAllCronJobs(c context.Context) ([]*CronJob, error)
+
+	// GetProjectCronJobs returns a list of enabled cron jobs of some project in
+	// no particular order.
+	GetProjectCronJobs(c context.Context, projectID string) ([]*CronJob, error)
+
+	// GetCronJob returns single cron job given its full ID or nil if no such job.
+	GetCronJob(c context.Context, jobID string) (*CronJob, error)
+
+	// ListInvocations returns invocations of a cron job, most recent first.
+	// Returns fetched invocations and cursor string if there's more.
+	ListInvocations(c context.Context, jobID string, pageSize int, cursor string) ([]*Invocation, string, error)
+
+	// GetInvocation returns single invocation of some cron job given its ID.
+	GetInvocation(c context.Context, jobID string, invID int64) (*Invocation, error)
+
 	// UpdateProjectJobs adds new, removes old and updates existing jobs.
 	UpdateProjectJobs(c context.Context, projectID string, defs []catalog.Definition) error
 
@@ -262,6 +280,110 @@ func (e *engineImpl) GetAllProjects(c context.Context) ([]string, error) {
 	out := projects.ToSlice()
 	sort.Strings(out)
 	return out, nil
+}
+
+func (e *engineImpl) GetAllCronJobs(c context.Context) ([]*CronJob, error) {
+	q := datastore.NewQuery("CronJob").Eq("Enabled", true)
+	return e.queryEnabledJobs(c, q)
+}
+
+func (e *engineImpl) GetProjectCronJobs(c context.Context, projectID string) ([]*CronJob, error) {
+	q := datastore.NewQuery("CronJob").Eq("Enabled", true).Eq("ProjectID", projectID)
+	return e.queryEnabledJobs(c, q)
+}
+
+func (e *engineImpl) queryEnabledJobs(c context.Context, q *datastore.Query) ([]*CronJob, error) {
+	ds := datastore.Get(c)
+	entities := []*CronJob{}
+	if err := ds.GetAll(q, &entities); err != nil {
+		return nil, errors.WrapTransient(err)
+	}
+	// Non-ancestor query used, need to recheck filters.
+	filtered := make([]*CronJob, 0, len(entities))
+	for _, job := range entities {
+		if job.Enabled {
+			filtered = append(filtered, job)
+		}
+	}
+	return filtered, nil
+}
+
+func (e *engineImpl) GetCronJob(c context.Context, jobID string) (*CronJob, error) {
+	job := &CronJob{JobID: jobID}
+	switch err := datastore.Get(c).Get(job); {
+	case err == nil:
+		return job, nil
+	case err == datastore.ErrNoSuchEntity:
+		return nil, nil
+	default:
+		return nil, errors.WrapTransient(err)
+	}
+}
+
+func (e *engineImpl) ListInvocations(c context.Context, jobID string, pageSize int, cursor string) ([]*Invocation, string, error) {
+	if pageSize == 0 {
+		pageSize = 500
+	}
+
+	ds := datastore.Get(c)
+
+	// Deserialize the cursor.
+	var cursorObj datastore.Cursor
+	if cursor != "" {
+		var err error
+		cursorObj, err = ds.DecodeCursor(cursor)
+		if err != nil {
+			return nil, "", err
+		}
+	}
+
+	// Prepare the query.
+	q := datastore.NewQuery("Invocation").
+		Ancestor(ds.NewKey("CronJob", jobID, 0, nil)).
+		Order("__key__")
+	if cursorObj != nil {
+		q = q.Start(cursorObj)
+	}
+
+	// Fetch pageSize worth of invocations, then grab the cursor.
+	out := make([]*Invocation, 0, pageSize)
+	var newCursor string
+	var cursorErr error
+	err := ds.Run(q, func(obj *Invocation, getCursor datastore.CursorCB) bool {
+		out = append(out, obj)
+		if len(out) < pageSize {
+			return true
+		}
+		var c datastore.Cursor
+		c, cursorErr = getCursor()
+		if cursorErr == nil {
+			newCursor = c.String()
+		}
+		return false
+	})
+	if err != nil {
+		return nil, "", errors.WrapTransient(err)
+	}
+	if cursorErr != nil {
+		return nil, "", errors.WrapTransient(cursorErr)
+	}
+	return out, newCursor, nil
+}
+
+func (e *engineImpl) GetInvocation(c context.Context, jobID string, invID int64) (*Invocation, error) {
+	ds := datastore.Get(c)
+	inv := &Invocation{
+		ID:     invID,
+		JobKey: ds.NewKey("CronJob", jobID, 0, nil),
+	}
+	switch err := ds.Get(inv); {
+	case err == nil:
+		return inv, nil
+	case err == datastore.ErrNoSuchEntity:
+		return nil, nil
+	default:
+		return nil, errors.WrapTransient(err)
+	}
 }
 
 func (e *engineImpl) UpdateProjectJobs(c context.Context, projectID string, defs []catalog.Definition) error {

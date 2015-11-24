@@ -6,6 +6,7 @@ package engine
 
 import (
 	"math/rand"
+	"sort"
 	"testing"
 	"time"
 
@@ -21,6 +22,7 @@ import (
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/mathrand"
+	"github.com/luci/luci-go/common/stringset"
 
 	"github.com/luci/luci-go/appengine/cmd/cron/catalog"
 	"github.com/luci/luci-go/appengine/cmd/cron/messages"
@@ -491,6 +493,88 @@ func TestGenerateInvocationID(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		So(newer, ShouldBeLessThan, older)
+	})
+}
+
+func TestQueries(t *testing.T) {
+	Convey("with mock data", t, func() {
+		c := newTestContext(epoch)
+		e, _ := newTestEngine()
+		ds := datastore.Get(c)
+
+		So(ds.PutMulti([]CronJob{
+			{JobID: "abc/1", ProjectID: "abc", Enabled: true},
+			{JobID: "abc/2", ProjectID: "abc", Enabled: true},
+			{JobID: "def/1", ProjectID: "def", Enabled: true},
+			{JobID: "def/2", ProjectID: "def", Enabled: false},
+		}), ShouldBeNil)
+
+		job1 := ds.NewKey("CronJob", "abc/1", 0, nil)
+		job2 := ds.NewKey("CronJob", "abc/2", 0, nil)
+		So(ds.PutMulti([]Invocation{
+			{ID: 1, JobKey: job1},
+			{ID: 2, JobKey: job1},
+			{ID: 3, JobKey: job1},
+			{ID: 1, JobKey: job2},
+			{ID: 2, JobKey: job2},
+			{ID: 3, JobKey: job2},
+		}), ShouldBeNil)
+
+		ds.Testable().CatchupIndexes()
+
+		Convey("GetAllCronJobs works", func() {
+			jobs, err := e.GetAllCronJobs(c)
+			So(err, ShouldBeNil)
+			ids := stringset.New(0)
+			for _, j := range jobs {
+				ids.Add(j.JobID)
+			}
+			asSlice := ids.ToSlice()
+			sort.Strings(asSlice)
+			So(asSlice, ShouldResemble, []string{"abc/1", "abc/2", "def/1"}) // only enabled
+		})
+
+		Convey("GetProjectCronJobs works", func() {
+			jobs, err := e.GetProjectCronJobs(c, "def")
+			So(err, ShouldBeNil)
+			So(len(jobs), ShouldEqual, 1)
+			So(jobs[0].JobID, ShouldEqual, "def/1")
+		})
+
+		Convey("GetCronJob works", func() {
+			job, err := e.GetCronJob(c, "missing/job")
+			So(job, ShouldBeNil)
+			So(err, ShouldBeNil)
+
+			job, err = e.GetCronJob(c, "abc/1")
+			So(job, ShouldNotBeNil)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("ListInvocations works", func() {
+			invs, cursor, err := e.ListInvocations(c, "abc/1", 2, "")
+			So(err, ShouldBeNil)
+			So(len(invs), ShouldEqual, 2)
+			So(invs[0].ID, ShouldEqual, 1)
+			So(invs[1].ID, ShouldEqual, 2)
+			So(cursor, ShouldNotEqual, "")
+
+			invs, cursor, err = e.ListInvocations(c, "abc/1", 2, cursor)
+			So(err, ShouldBeNil)
+			So(len(invs), ShouldEqual, 1)
+			So(invs[0].ID, ShouldEqual, 3)
+			So(cursor, ShouldEqual, "")
+		})
+
+		Convey("GetInvocation works", func() {
+			inv, err := e.GetInvocation(c, "missing/job", 1)
+			So(inv, ShouldBeNil)
+			So(err, ShouldBeNil)
+
+			inv, err = e.GetInvocation(c, "abc/1", 1)
+			So(inv, ShouldNotBeNil)
+			So(err, ShouldBeNil)
+		})
 	})
 }
 
