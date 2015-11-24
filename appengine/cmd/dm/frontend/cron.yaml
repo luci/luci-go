@@ -1,0 +1,4 @@
+cron:
+- description: tumble.Cron invocation
+  url: /tumble/cron
+  schedule: every 1 minutes
