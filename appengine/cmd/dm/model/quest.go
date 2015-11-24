@@ -43,26 +43,36 @@ const (
 	distributorNameMaxLength = 64
 )
 
-func (desc *QuestDescriptor) compactPayload() error {
-	if len(desc.Payload) > payloadMaxLength {
-		return fmt.Errorf("quest payload is too large: %d > %d",
-			len(desc.Payload), payloadMaxLength)
+// NormalizeJSONObject is used to take some free-form JSON, validate that:
+//   * its unnormalized form is <= maxLen
+//   * it contains a valid JSON object (e.g. `{...stuff...}`)
+//
+// This function will re-use data as the destination buffer, and will return
+// a new slice into the same memory (or nil).
+func NormalizeJSONObject(maxLen int, data []byte) ([]byte, error) {
+	if len(data) > maxLen {
+		return nil, fmt.Errorf("quest payload is too large: %d > %d",
+			len(data), maxLen)
 	}
 
-	dec := json.NewDecoder(bytes.NewBuffer(desc.Payload))
+	dec := json.NewDecoder(bytes.NewBuffer(data))
 	dec.UseNumber()
 	decoded := map[string]interface{}{}
 	err := dec.Decode(&decoded)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	buf := bytes.NewBuffer(desc.Payload[:0])
+	buf := bytes.NewBuffer(data[:0])
 	err = json.NewEncoder(buf).Encode(decoded)
 
-	desc.Payload = buf.Bytes()[:buf.Len()-1]
+	// the -1 chops off an extraneous newline that the json lib adds on.
+	return buf.Bytes()[:buf.Len()-1], err
+}
 
-	return err
+func (desc *QuestDescriptor) compactPayload() (err error) {
+	desc.Payload, err = NormalizeJSONObject(payloadMaxLength, desc.Payload)
+	return
 }
 
 func (desc *QuestDescriptor) validDistributor() error {

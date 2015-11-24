@@ -17,7 +17,7 @@ import (
 // Execution represents either an ongoing execution on the Quest's specified
 // distributor, or is a placeholder for an already-completed Execution.
 type Execution struct {
-	ID      int64          `gae:"$id"`
+	ID      types.UInt32   `gae:"$id"`
 	Attempt *datastore.Key `gae:"$parent"`
 
 	// ExecutionKey is a randomized nonce that's used to identify API calls from
@@ -53,7 +53,7 @@ func verifyExecutionInternal(c context.Context, aid *types.AttemptID, evkey []by
 		return nil, nil, fmt.Errorf("couldn't get attempt (%+v): %v", a, err)
 	}
 
-	e := &Execution{ID: int64(a.CurExecution), Attempt: ds.KeyForObj(a)}
+	e := &Execution{ID: a.CurExecution, Attempt: ds.KeyForObj(a)}
 	if err := ds.Get(e); err != nil {
 		return nil, nil, fmt.Errorf("couldn't get execution (%+v): %v", e, err)
 	}

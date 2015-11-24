@@ -24,6 +24,10 @@ type Data struct {
 // containing the set of entries which were actually merged (i.e. the diff). If
 // nothing new was added to `d`, this returns nil.
 func (d *Data) Merge(o *Data) *Data {
+	if o == nil {
+		return nil
+	}
+
 	didSomething := false
 	ret := &Data{}
 

@@ -6,6 +6,8 @@ package model
 
 import (
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/appengine/cmd/dm/display"
+	"github.com/luci/luci-go/appengine/cmd/dm/types"
 )
 
 // AttemptResult holds the raw, compressed json blob returned from the
@@ -15,4 +17,12 @@ type AttemptResult struct {
 	Attempt *datastore.Key `gae:"$parent"`
 
 	Data []byte `gae:",noindex"`
+}
+
+// ToDisplay returns a display.AttemptResult for this AttemptResult.
+func (ar *AttemptResult) ToDisplay() *display.AttemptResult {
+	return &display.AttemptResult{
+		ID:   *types.NewAttemptID(ar.Attempt.StringID()),
+		Data: string(ar.Data),
+	}
 }
