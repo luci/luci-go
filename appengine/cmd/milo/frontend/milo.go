@@ -39,11 +39,10 @@ func init() {
 	// Register plain ol' http services.
 	r := httprouter.New()
 	r.GET("/", gaemiddleware.BaseProd(wrap(root)))
-	// TODO(hinoka): Handle different swarming servers, eg dev vs prod.
 	r.GET(
-		"/swarming/:id/steps/:step/logs/:log",
+		"/swarming/:server/:id/steps/:step/logs/:log",
 		gaemiddleware.BaseProd(wrap(swarming.WriteBuildLog)))
-	r.GET("/swarming/:id", gaemiddleware.BaseProd(wrap(swarming.Render)))
+	r.GET("/swarming/:server/:id", gaemiddleware.BaseProd(wrap(swarming.Render)))
 	http.Handle("/", r)
 
 	endpoints.HandleHTTP()

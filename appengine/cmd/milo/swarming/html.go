@@ -43,7 +43,8 @@ func WriteBuildLog(
 			Code:    http.StatusBadRequest,
 		}
 	}
-	b, err := swarmingBuildLogImpl(c, id, log, step)
+	server := p.ByName("server") // This one may be blank.
+	b, err := swarmingBuildLogImpl(c, server, id, log, step)
 	if err != nil {
 		return err
 	}
@@ -62,8 +63,9 @@ func Render(
 			Code:    http.StatusBadRequest,
 		}
 	}
+	server := p.ByName("server") // This one may be blank.
 
-	result, err := swarmingBuildImpl(c, r.URL.String(), id)
+	result, err := swarmingBuildImpl(c, r.URL.String(), server, id)
 	if err != nil {
 		return err
 	}

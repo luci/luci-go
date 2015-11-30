@@ -11,9 +11,9 @@ import (
 	"golang.org/x/net/context"
 )
 
-func swarmingBuildLogImpl(c context.Context, id string, log string, step string) (*BuildLog, error) {
+func swarmingBuildLogImpl(c context.Context, server string, id string, log string, step string) (*BuildLog, error) {
 	// Fetch the data from Swarming
-	body, err := getSwarmingLog(id, c)
+	body, err := getSwarmingLog(server, id, c)
 	if err != nil {
 		return nil, err
 	}

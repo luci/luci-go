@@ -22,9 +22,20 @@ import (
 	"github.com/luci/luci-go/appengine/cmd/milo/resp"
 )
 
+func resolveServer(server string) string {
+	// TODO(hinoka): configure this map in luci-config
+	if server == "" || server == "default" || server == "dev" {
+		return "chromium-swarm-dev.appspot.com"
+	} else if server == "prod" {
+		return "chromium-swarm.appspot.com"
+	} else {
+		return server
+	}
+}
+
 // swarmingIDs that beging with "debug:" wil redirect to json found in
 // /testdata/
-func getSwarmingLog(swarmingID string, c context.Context) ([]byte, error) {
+func getSwarmingLog(server string, swarmingID string, c context.Context) ([]byte, error) {
 	// Fetch the debug file instead.
 	if strings.HasPrefix(swarmingID, "debug:") {
 		filename := strings.Join(
@@ -33,10 +44,9 @@ func getSwarmingLog(swarmingID string, c context.Context) ([]byte, error) {
 		return b, nil
 	}
 
-	// TODO(hinoka): This should point to the prod instance at some point?
 	swarmingURL := fmt.Sprintf(
-		"https://chromium-swarm-dev.appspot.com/swarming/api/v1/client/task/%s/output/0",
-		swarmingID)
+		"https://%s/swarming/api/v1/client/task/%s/output/0",
+		resolveServer(server), swarmingID)
 	client := urlfetch.Client(c)
 	resp, err := client.Get(swarmingURL)
 	if err != nil {
@@ -206,9 +216,9 @@ func clientFromAnnotatedLog(log []byte) (*memoryClient, error) {
 	return c, nil
 }
 
-func swarmingBuildImpl(c context.Context, URL string, id string) (*resp.MiloBuild, error) {
+func swarmingBuildImpl(c context.Context, URL string, server string, id string) (*resp.MiloBuild, error) {
 	// Fetch the data from Swarming
-	body, err := getSwarmingLog(id, c)
+	body, err := getSwarmingLog(server, id, c)
 	if err != nil {
 		return nil, err
 	}

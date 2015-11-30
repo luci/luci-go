@@ -11,14 +11,15 @@ import (
 
 // BuildReq is a request for a build on swarming.
 type BuildReq struct {
+	Server     string
 	SwarmingID string
 }
 
 // BuildLogReq is a request for a build log from swarming.
 type BuildLogReq struct {
-	SwarmingID string
-	StepName   string
-	LogName    string
+	BuildReq
+	StepName string
+	LogName  string
 }
 
 // BuildLog contains the log text retrieved from swarming.
@@ -32,10 +33,10 @@ type Service struct{}
 
 // Build returns the build for the given BuildReq (the swarming ID).
 func (ss *Service) Build(c context.Context, r *BuildReq) (*resp.MiloBuild, error) {
-	return swarmingBuildImpl(c, "foo", r.SwarmingID)
+	return swarmingBuildImpl(c, "foo", r.Server, r.SwarmingID)
 }
 
 // BuildLog gets the requested build log from swarming.
 func (ss *Service) BuildLog(c context.Context, r *BuildLogReq) (*BuildLog, error) {
-	return swarmingBuildLogImpl(c, r.SwarmingID, r.LogName, r.StepName)
+	return swarmingBuildLogImpl(c, r.Server, r.SwarmingID, r.LogName, r.StepName)
 }
