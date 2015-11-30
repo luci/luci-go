@@ -32,6 +32,10 @@ const (
 	// This will only be returned for runtime errors. If there is a flag error
 	// or a configuration error, standard Annotee return codes (likely to overlap
 	// with standard process return codes) will be used.
+	//
+	// This value has been chosen so as not to conflict with LogDog Butler runtime
+	// error return code, allowing users to differentiate between Butler and
+	// Annotee errors.
 	runtimeErrorReturnCode = 251
 )
 
