@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/ts_mon/field"
 	"github.com/luci/luci-go/common/ts_mon/types"
 	"golang.org/x/net/context"
@@ -77,7 +78,7 @@ func (s InMemoryStore) Get(ctx context.Context, name string, fieldVals []interfa
 		return nil, fmt.Errorf("metric %s is not registered", name)
 	}
 
-	c, err := m.get(fieldVals, time.Now())
+	c, err := m.get(fieldVals, clock.Now(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +93,7 @@ func (s InMemoryStore) Set(ctx context.Context, name string, fieldVals []interfa
 		return fmt.Errorf("metric %s is not registered", name)
 	}
 
-	c, err := m.get(fieldVals, time.Now())
+	c, err := m.get(fieldVals, clock.Now(ctx))
 	if err != nil {
 		return err
 	}
@@ -108,7 +109,7 @@ func (s InMemoryStore) Incr(ctx context.Context, name string, fieldVals []interf
 		return fmt.Errorf("metric %s is not registered", name)
 	}
 
-	c, err := m.get(fieldVals, time.Now())
+	c, err := m.get(fieldVals, clock.Now(ctx))
 	if err != nil {
 		return err
 	}

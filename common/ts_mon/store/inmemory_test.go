@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"sort"
 	"testing"
+	"time"
 
+	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/ts_mon/field"
 	"github.com/luci/luci-go/common/ts_mon/types"
 	"golang.org/x/net/context"
@@ -174,19 +176,30 @@ func (s sortableCellSlice) Less(i, j int) bool {
 func (s sortableCellSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 func TestGetAll(t *testing.T) {
-	ctx := context.Background()
-
 	Convey("GetAll", t, func() {
+		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
+
 		s := InMemoryStore{}
 		So(s.Register(&fakeMetric{"foo", []field.Field{}, types.NonCumulativeIntType}), ShouldBeNil)
 		So(s.Register(&fakeMetric{"bar", []field.Field{field.String("f")}, types.StringType}), ShouldBeNil)
 		So(s.Register(&fakeMetric{"baz", []field.Field{field.String("f")}, types.CumulativeFloatType}), ShouldBeNil)
 
-		So(s.Set(ctx, "foo", []interface{}{}, int64(42)), ShouldBeNil)
-		So(s.Set(ctx, "bar", makeInterfaceSlice("one"), "hello"), ShouldBeNil)
-		So(s.Set(ctx, "bar", makeInterfaceSlice("two"), "world"), ShouldBeNil)
-		So(s.Set(ctx, "baz", makeInterfaceSlice("three"), 1.23), ShouldBeNil)
-		So(s.Set(ctx, "baz", makeInterfaceSlice("four"), 4.56), ShouldBeNil)
+		// Add test records. We increment the test clock each time so that the added
+		// records sort deterministically using sortableCellSlice.
+		for _, m := range []struct {
+			name      string
+			fieldvals []interface{}
+			value     interface{}
+		}{
+			{"foo", []interface{}{}, int64(42)},
+			{"bar", makeInterfaceSlice("one"), "hello"},
+			{"bar", makeInterfaceSlice("two"), "world"},
+			{"baz", makeInterfaceSlice("three"), 1.23},
+			{"baz", makeInterfaceSlice("four"), 4.56},
+		} {
+			So(s.Set(ctx, m.name, m.fieldvals, m.value), ShouldBeNil)
+			tc.Add(time.Second)
+		}
 
 		got := s.GetAll(ctx)
 		sort.Sort(sortableCellSlice(got))
