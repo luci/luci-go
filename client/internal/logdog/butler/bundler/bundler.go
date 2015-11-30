@@ -52,23 +52,8 @@ type bundlerStream interface {
 
 // Bundler is the main Bundler instance. It exposes goroutine-safe endpoints for
 // stream registration and bundle consumption.
-type Bundler interface {
-	Register(streamproto.Properties) (Stream, error)
-
-	// Next causes the Bundler to pack a new ButlerLogBundle message for
-	// transmission.
-	//
-	// The maximum marshalled byte size of the bundle's protobuf is supplied; the
-	// generated bundle will not exceed this size.
-	Next() *protocol.ButlerLogBundle
-
-	// CloseAndFlush flushes the Bundler, blocking until all registered Streams
-	// have closed and all buffered data has been output.
-	CloseAndFlush()
-}
-
-type bundlerImpl struct {
-	*Config
+type Bundler struct {
+	c *Config
 
 	// finishedC is closed when makeBundles goroutine has terminated.
 	finishedC chan struct{}
@@ -89,9 +74,9 @@ type bundlerImpl struct {
 }
 
 // New instantiates a new Bundler instance.
-func New(c Config) Bundler {
-	b := bundlerImpl{
-		Config:    &c,
+func New(c Config) *Bundler {
+	b := Bundler{
+		c:         &c,
 		finishedC: make(chan struct{}),
 		bundleC:   make(chan *protocol.ButlerLogBundle),
 		streams:   map[string]bundlerStream{},
@@ -102,11 +87,9 @@ func New(c Config) Bundler {
 	return &b
 }
 
-func (b *bundlerImpl) Register(p streamproto.Properties) (Stream, error) {
-	if s := b.streams[p.Name]; s != nil {
-		return nil, fmt.Errorf("a Stream is already registered for %q", p.Name)
-	}
-
+// Register adds a new stream to the Bundler, returning a reference to the
+// registered stream.
+func (b *Bundler) Register(p streamproto.Properties) (Stream, error) {
 	// Our Properties must validate.
 	if err := p.Validate(); err != nil {
 		return nil, err
@@ -118,8 +101,8 @@ func (b *bundlerImpl) Register(p streamproto.Properties) (Stream, error) {
 		template: protocol.ButlerLogBundle_Entry{
 			Desc: &p.LogStreamDescriptor,
 		},
-		maximumBufferDuration: b.MaxBufferDelay,
-		maximumBufferedBytes:  b.MaxBufferedBytes,
+		maximumBufferDuration: b.c.MaxBufferDelay,
+		maximumBufferedBytes:  b.c.MaxBufferedBytes,
 		onAppend: func(appended bool) {
 			if appended {
 				b.signalStreamUpdate()
@@ -139,30 +122,38 @@ func (b *bundlerImpl) Register(p streamproto.Properties) (Stream, error) {
 		return nil, fmt.Errorf("failed to generate stream secret: %s", err)
 	}
 
-	// Create a new stream. This will kick off its processing goroutine, which
-	// will not stop until it is closed.
-	s := newStream(c)
-
-	// Register the stream.
 	b.streamsLock.Lock()
 	defer b.streamsLock.Unlock()
 
+	// Ensure that this is not a duplicate stream name.
+	if s := b.streams[p.Name]; s != nil {
+		return nil, fmt.Errorf("a Stream is already registered for %q", p.Name)
+	}
+
+	// Create a new stream. This will kick off its processing goroutine, which
+	// will not stop until it is closed.
+	s := newStream(c)
 	b.registerStreamLocked(s)
 	return s, nil
 }
 
-func (b *bundlerImpl) CloseAndFlush() {
+// CloseAndFlush closes the Bundler, alerting it that no more streams will be
+// added and that existing data may be aggressively output.
+//
+// CloseAndFlush will block until all buffered data has been consumed.
+func (b *Bundler) CloseAndFlush() {
 	// Mark that we're flushing. This will cause us to perform more aggressive
 	// bundling in Next().
 	b.startFlushing()
 	<-b.finishedC
 }
 
-func (b *bundlerImpl) Next() *protocol.ButlerLogBundle {
+// Next returns the next bundle, blocking until it is available.
+func (b *Bundler) Next() *protocol.ButlerLogBundle {
 	return <-b.bundleC
 }
 
-func (b *bundlerImpl) startFlushing() {
+func (b *Bundler) startFlushing() {
 	b.streamsLock.Lock()
 	defer b.streamsLock.Unlock()
 
@@ -177,7 +168,7 @@ func (b *bundlerImpl) startFlushing() {
 // bundleC when available.
 //
 // makeBundles will terminate when closeC is closed and all streams are drained.
-func (b *bundlerImpl) makeBundles() {
+func (b *Bundler) makeBundles() {
 	defer close(b.finishedC)
 	defer close(b.bundleC)
 
@@ -193,9 +184,9 @@ func (b *bundlerImpl) makeBundles() {
 
 	for {
 		bb = &builder{
-			size: b.MaxBundleSize,
+			size: b.c.MaxBundleSize,
 			template: protocol.ButlerLogBundle{
-				Source:    b.Source,
+				Source:    b.c.Source,
 				Timestamp: google.NewTimestamp(b.getClock().Now()),
 			},
 		}
@@ -227,7 +218,7 @@ func (b *bundlerImpl) makeBundles() {
 
 			// If we have content, consider emitting this bundle.
 			if bb.hasContent() {
-				if b.MaxBufferDelay == 0 || sendNow || bb.ready() {
+				if b.c.MaxBufferDelay == 0 || sendNow || bb.ready() {
 					break
 				}
 			}
@@ -248,7 +239,7 @@ func (b *bundlerImpl) makeBundles() {
 			// If we have an oldest content time, that also means that we have
 			// content. Factor this constraint in.
 			if !oldestContentTime.IsZero() {
-				roundExpire := oldestContentTime.Add(b.MaxBufferDelay)
+				roundExpire := oldestContentTime.Add(b.c.MaxBufferDelay)
 				if !roundExpire.After(state.now) {
 					break
 				}
@@ -300,7 +291,7 @@ func (b *bundlerImpl) makeBundles() {
 //      with older data.
 //
 // Returns true if bundle some data was added that should be sent immediately.
-func (b *bundlerImpl) bundleRoundLocked(bb *builder, state *streamState) bool {
+func (b *Bundler) bundleRoundLocked(bb *builder, state *streamState) bool {
 	sendNow := false
 
 	// First pass: non-blocking data that has exceeded its storage threshold.
@@ -340,7 +331,7 @@ func (b *bundlerImpl) bundleRoundLocked(bb *builder, state *streamState) bool {
 	return sendNow
 }
 
-func (b *bundlerImpl) getStreamStateLocked() *streamState {
+func (b *Bundler) getStreamStateLocked() *streamState {
 	// Lock and collect each stream.
 	state := &streamState{
 		streams: make([]bundlerStream, 0, len(b.streams)),
@@ -355,34 +346,34 @@ func (b *bundlerImpl) getStreamStateLocked() *streamState {
 	return state
 }
 
-func (b *bundlerImpl) registerStreamLocked(s bundlerStream) {
+func (b *Bundler) registerStreamLocked(s bundlerStream) {
 	b.streams[s.name()] = s
 	b.signalStreamUpdateLocked()
 }
 
-func (b *bundlerImpl) unregisterStreamLocked(s bundlerStream) {
+func (b *Bundler) unregisterStreamLocked(s bundlerStream) {
 	delete(b.streams, s.name())
 }
 
-func (b *bundlerImpl) signalStreamUpdate() {
+func (b *Bundler) signalStreamUpdate() {
 	b.streamsLock.Lock()
 	defer b.streamsLock.Unlock()
 
 	b.signalStreamUpdateLocked()
 }
 
-func (b *bundlerImpl) signalStreamUpdateLocked() {
+func (b *Bundler) signalStreamUpdateLocked() {
 	b.streamsCond.Broadcast()
 }
 
 // nextPrefixIndex is a goroutine-safe method that returns the next prefix index
 // for the given Bundler.
-func (b *bundlerImpl) nextPrefixIndex() uint64 {
+func (b *Bundler) nextPrefixIndex() uint64 {
 	return uint64(b.prefixCounter.next())
 }
 
-func (b *bundlerImpl) getClock() clock.Clock {
-	c := b.Clock
+func (b *Bundler) getClock() clock.Clock {
+	c := b.c.Clock
 	if c != nil {
 		return c
 	}

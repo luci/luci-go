@@ -3,5 +3,5 @@
 // found in the LICENSE file.
 
 // Package paniccatcher package exposes a set of utility structures and methods
-// that support standardized panic catching and logging.
+// that support standardized panic catching and handling.
 package paniccatcher

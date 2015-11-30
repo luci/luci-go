@@ -15,6 +15,8 @@ import (
 )
 
 func TestTimeoutCond(t *testing.T) {
+	t.Parallel()
+
 	Convey(`A timeout Cond bound to a lock`, t, func() {
 		l := sync.Mutex{}
 		tc := testclock.New(time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
@@ -62,9 +64,15 @@ func TestTimeoutCond(t *testing.T) {
 			l.Lock()
 			defer l.Unlock()
 
+			// After one second, signal our Cond.
 			t := tc.NewTimer()
 			t.Reset(time.Second)
 			go func() {
+				// Reclaim the lock. This ensures that "Wait()" has yielded the lock
+				// prior to signalling.
+				l.Lock()
+				defer l.Unlock()
+
 				<-t.GetC()
 				c.Signal()
 			}()

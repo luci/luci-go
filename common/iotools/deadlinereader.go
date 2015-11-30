@@ -12,17 +12,30 @@ import (
 )
 
 // ErrTimeout is an error returned if the DeadlineReader times out.
-var ErrTimeout = errors.New("deadlinereader: timeout")
+var ErrTimeout = errors.New("iotools: timeout")
+
+// ReadTimeoutSetter is an interface for an object that can have its read
+// timeout set.
+type ReadTimeoutSetter interface {
+	// SetReadTimeout sets the read deadline for subsqeuent reads on this
+	// Reader.
+	SetReadTimeout(time.Duration) error
+}
 
 // DeadlineReader is a wrapper around a net.Conn that applies an idle timeout
 // deadline to the Conn's Read() method.
 type DeadlineReader struct {
 	net.Conn
 
-	Deadline time.Duration // The read deadline to apply prior to each 'Read()'
+	// Deadline is the read deadline to apply prior to each 'Read()'. It can also
+	// be set via SetReadTimeout.
+	Deadline time.Duration
 }
 
-var _ io.ReadCloser = (*DeadlineReader)(nil)
+var _ interface {
+	io.ReadCloser
+	ReadTimeoutSetter
+} = (*DeadlineReader)(nil)
 
 // Read implements io.Reader.
 func (r *DeadlineReader) Read(b []byte) (int, error) {
@@ -40,4 +53,10 @@ func (r *DeadlineReader) Read(b []byte) (int, error) {
 		err = ErrTimeout
 	}
 	return amount, err
+}
+
+// SetReadTimeout implements ReadDeadlineSetter.
+func (r *DeadlineReader) SetReadTimeout(d time.Duration) error {
+	r.Deadline = d
+	return nil
 }

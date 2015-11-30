@@ -10,6 +10,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 
+	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/paniccatcher"
 )
 
@@ -17,15 +18,16 @@ import (
 // logging and returns HTTP 500.
 func WithPanicCatcher(h Handler) Handler {
 	return func(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		catcher := &paniccatcher.Wrapper{}
-		defer func() {
-			if catcher.DidPanic() {
-				// Note: it may be too late to send HTTP 500 if `h` already sent
-				// headers. But there's nothing else we can do at this point anyway.
-				http.Error(w, "Internal Server Error. See logs.", http.StatusInternalServerError)
-			}
-		}()
-		defer catcher.Catch(c, "Caught panic during handling of %q", r.RequestURI)
-		h(c, w, r, p)
+		paniccatcher.Do(func() {
+			h(c, w, r, p)
+		}, func(p *paniccatcher.Panic) {
+			log.Fields{
+				"panic.error": p.Reason,
+			}.Errorf(c, "Caught panic during handling of %q:\n%s", r.RequestURI, p.Stack)
+
+			// Note: it may be too late to send HTTP 500 if `h` already sent
+			// headers. But there's nothing else we can do at this point anyway.
+			http.Error(w, "Internal Server Error. See logs.", http.StatusInternalServerError)
+		})
 	}
 }

@@ -30,44 +30,30 @@ func (c *timeoutCond) waitTimeout(d time.Duration) (timeout bool) {
 		return
 	}
 
-	// Kick off a timer to Broadcast when it has completed.
-	doneC := make(chan struct{})
-	finishedC := make(chan bool)
+	// Wait on our Cond. This will be released when something else Broadcasts.
+	waitFinishedC := make(chan struct{})
 	defer func() {
-		close(doneC)
-		timeout = <-finishedC
+		// Cleanup our goroutine prior to exiting.
+		<-waitFinishedC
 	}()
-
 	go func() {
-		timerExpired := false
-		defer func() {
-			finishedC <- timerExpired
-		}()
-
-		t := c.clock.NewTimer()
-		defer t.Stop()
-		t.Reset(d)
-
-		// Quickly own our lock. This ensures that we have entered our Wait()
-		// method, which in turn ensures that our Broadcast will wake it if
-		// necessary.
-		func() {
-			c.L.Lock()
-			defer c.L.Unlock()
-		}()
-
-		select {
-		case <-doneC:
-			break
-
-		case <-t.GetC():
-			timerExpired = true
-			c.Broadcast()
-		}
+		defer close(waitFinishedC)
+		c.Wait()
 	}()
 
-	// Wait on our Cond. This will be released when either something else
-	// Broadcasts. That "something else" may be our timer expiring.
-	c.Wait()
-	return
+	// Start a timer.
+	t := c.clock.NewTimer()
+	defer t.Stop()
+	t.Reset(d)
+
+	select {
+	case <-waitFinishedC:
+		return false
+
+	case <-t.GetC():
+		// Wake our "wait" goroutine. This will claim the lock, which will put us
+		// in the expected state upon return.
+		c.Broadcast()
+		return true
+	}
 }

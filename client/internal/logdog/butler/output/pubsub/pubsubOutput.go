@@ -57,9 +57,9 @@ type gcpsBuffer struct {
 // protocol buffer blobs.
 type gcpsOutput struct {
 	*Config
+	context.Context
 
-	ctx        context.Context // Retained context object.
-	bufferPool sync.Pool       // Pool of reusable gcpsBuffer instances.
+	bufferPool sync.Pool // Pool of reusable gcpsBuffer instances.
 
 	statsMu sync.Mutex
 	stats   output.StatsBase
@@ -69,10 +69,9 @@ type gcpsOutput struct {
 func New(ctx context.Context, c Config) output.Output {
 	o := gcpsOutput{
 		Config: &c,
-		ctx:    ctx,
 	}
 	o.bufferPool.New = func() interface{} { return &gcpsBuffer{} }
-	o.ctx = log.SetField(o.ctx, "output", &o)
+	o.Context = log.SetField(ctx, "output", &o)
 	return &o
 }
 
@@ -89,7 +88,9 @@ func (o *gcpsOutput) SendBundle(bundle *protocol.ButlerLogBundle) error {
 
 	message, err := o.buildMessage(b, bundle)
 	if err != nil {
-		log.Errorf(log.SetError(o.ctx, err), "Failed to build PubSub Message from bundle.")
+		log.Fields{
+			log.ErrorKey: err,
+		}.Errorf(o, "Failed to build PubSub Message from bundle.")
 		st.F.DiscardedMessages++
 		st.F.Errors++
 		return err
@@ -98,7 +99,7 @@ func (o *gcpsOutput) SendBundle(bundle *protocol.ButlerLogBundle) error {
 		log.Fields{
 			"messageSize":   len(message.Data),
 			"maxPubSubSize": gcps.MaxPublishSize,
-		}.Errorf(o.ctx, "Constructed message exceeds Pub/Sub maximum size.")
+		}.Errorf(o, "Constructed message exceeds Pub/Sub maximum size.")
 		return errors.New("gcps: bundle contents violate Pub/Sub size limit")
 	}
 	if err := o.publishMessages([]*pubsub.Message{message}); err != nil {
@@ -163,7 +164,7 @@ func (o *gcpsOutput) buildMessage(buf *gcpsBuffer, bundle *protocol.ButlerLogBun
 func (o *gcpsOutput) publishMessages(messages []*pubsub.Message) error {
 	var messageIDs []string
 	count := 0
-	err := retry.Retry(o.ctx, retry.TransientOnly(o.publishRetryIterator()), func() error {
+	err := retry.Retry(o, retry.TransientOnly(retry.Default()), func() error {
 		ids, err := o.PubSub.Publish(o.Topic, messages...)
 		if err != nil {
 			return err
@@ -175,15 +176,15 @@ func (o *gcpsOutput) publishMessages(messages []*pubsub.Message) error {
 			log.ErrorKey: err,
 			"count":      count,
 			"delay":      d,
-		}.Warningf(o.ctx, "Transient publish error; retrying.")
+		}.Warningf(o, "Transient publish error; retrying.")
 		count++
 	})
 	if err != nil {
-		log.Errorf(log.SetError(o.ctx, err), "Failed to send PubSub message.")
+		log.Errorf(log.SetError(o, err), "Failed to send PubSub message.")
 		return err
 	}
 
-	log.Debugf(log.SetField(o.ctx, "messageIds", messageIDs), "Published messages.")
+	log.Debugf(log.SetField(o, "messageIds", messageIDs), "Published messages.")
 	return nil
 }
 
@@ -192,19 +193,4 @@ func (o *gcpsOutput) mergeStats(s output.Stats) {
 	defer o.statsMu.Unlock()
 
 	o.stats.Merge(s)
-}
-
-// publishRetryIterator returns a retry.Iterator configured for publish
-// requests.
-//
-// Note that this iterator has no retry upper bound. It will continue retrying
-// indefinitely until success.
-func (*gcpsOutput) publishRetryIterator() retry.Iterator {
-	return &retry.ExponentialBackoff{
-		Limited: retry.Limited{
-			Delay: 500 * time.Millisecond,
-		},
-		Multiplier: 3.0,
-		MaxDelay:   15 * time.Second,
-	}
 }

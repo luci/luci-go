@@ -83,24 +83,20 @@ func testNamedPipeServer(t *testing.T, npt namedPipeTester) {
 		Convey(`A test client connection`, func() {
 			tc := testConn{}
 			npc := &namedPipeConn{
-				id:   1337,
-				conn: &tc,
-				name: "test",
+				Context: c,
+				id:      1337,
+				conn:    &tc,
 			}
 
 			Convey(`Will reject an invalid handshake magic.`, func() {
 				hb.magic = []byte(`NOT A HANDSHAKE MAGIC`)
 				hb.writeTo(&tc, "", nil)
-				So(func() {
-					npc.negotiate(c)
-				}, ShouldPanic)
+				So(npc.handle(nil), ShouldBeFalse)
 			})
 
 			Convey(`Will reject an invalid handshake.`, func() {
 				hb.writeTo(&tc, "CLEARLY NOT JSON", nil)
-				So(func() {
-					npc.negotiate(c)
-				}, ShouldPanic)
+				So(npc.handle(nil), ShouldBeFalse)
 			})
 		})
 

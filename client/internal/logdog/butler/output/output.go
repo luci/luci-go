@@ -73,22 +73,22 @@ func (s *StatsBase) String() string {
 	return fmt.Sprintf("%+v", s.F)
 }
 
-// SentBytes implements Stas.
+// SentBytes implements Stats.
 func (s *StatsBase) SentBytes() int {
 	return s.F.SentBytes
 }
 
-// SentMessages implements Stas.
+// SentMessages implements Stats.
 func (s *StatsBase) SentMessages() int {
 	return s.F.SentMessages
 }
 
-// DiscardedMessages implements Stas.
+// DiscardedMessages implements Stats.
 func (s *StatsBase) DiscardedMessages() int {
 	return s.F.DiscardedMessages
 }
 
-// Errors implements Stas.
+// Errors implements Stats.
 func (s *StatsBase) Errors() int {
 	return s.F.Errors
 }

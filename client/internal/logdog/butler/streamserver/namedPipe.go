@@ -5,11 +5,9 @@
 package streamserver
 
 import (
-	"fmt"
 	"io"
 	"net"
 	"sync"
-	"time"
 
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
 	"github.com/luci/luci-go/common/iotools"
@@ -114,12 +112,12 @@ func (s *namedPipeServer) serve() {
 		npConn := &namedPipeConn{
 			closedC: s.closedC,
 			id:      nextID,
-			conn:    conn,
-			name:    conn.RemoteAddr().String(),
+			conn:    &iotools.DeadlineReader{conn, 0},
 		}
 		npConn.Context = log.SetFields(s, log.Fields{
-			"id":   npConn.id,
-			"name": npConn.name,
+			"id":     npConn.id,
+			"local":  npConn.conn.LocalAddr(),
+			"remote": npConn.conn.RemoteAddr(),
 		})
 
 		clientWG.Add(1)
@@ -134,7 +132,7 @@ func (s *namedPipeServer) serve() {
 				}
 			}()
 
-			s.streamParamsC <- npConn.negotiate(s)
+			npConn.handle(s.streamParamsC)
 		}()
 		nextID++
 	}
@@ -148,7 +146,7 @@ func (s *namedPipeServer) serve() {
 }
 
 //
-// namedPipeClient
+// namedPipeConn
 //
 
 // Manages a single named pipe connection.
@@ -158,59 +156,39 @@ type namedPipeConn struct {
 	closedC chan struct{} // Signal channel to indicate that the server has closed.
 	id      clientID      // Client ID, used for debugging correlation.
 	conn    net.Conn      // The underlying client connection.
-	name    string        // The name of this connection, for debugging purposes.
 
 	// decoupleMu is used to ensure that decoupleConn is called at most one time.
 	decoupleMu sync.Mutex
 }
 
-// String conversion (for logging).
-func (c *namedPipeConn) String() string {
-	return fmt.Sprintf("(%d %s)", c.id, c.name)
-}
+// handle initializes the supplied connection. On success, it will prepare
+// the connection as a Butler stream and pass its parameters through the
+// supplied channel.
+//
+// On failure, the connection will be closed.
+//
+// This method returns true if the handshake completed and the stream was
+// passed onto the server, and false otherwise.
+func (c *namedPipeConn) handle(paramsC chan *namedPipeStreamParams) bool {
+	log.Infof(c, "Received new connection.")
 
-// negotiate will panic if an error occurs during stream negotiation.
-func (c *namedPipeConn) negotiate(ctx context.Context) *namedPipeStreamParams {
 	// Close the connection as a failsafe. If we have already decoupled it, this
 	// will end up being a no-op.
 	defer c.closeConn()
 
-	ctx = log.SetFields(ctx, log.Fields{
-		"id":     c.id,
-		"local":  c.conn.LocalAddr(),
-		"remote": c.conn.RemoteAddr(),
-	})
-	log.Infof(ctx, "Received new connection.")
-
-	// Monitor goroutine that will close our connection if our server has shut
-	// down before it's finished handshaking.
-	handshakeFinishedC := make(chan struct{})
-	defer close(handshakeFinishedC)
-
-	go func() {
-		select {
-		case <-c.closedC:
-			log.Warningf(ctx, "Received server close signal; closing client.")
-			c.closeConn()
-			break
-
-		case <-handshakeFinishedC:
-			break
-		}
-	}()
-
-	p, err := c.handshake(ctx)
+	// Perform our handshake. We pass the connection explicitly into this method
+	// because it can get decoupled during operation.
+	p, err := handshake(c, c.conn)
 	if err != nil {
-		panic(fmt.Errorf("failed to negotiate stream config: %v", err))
+		log.Fields{
+			log.ErrorKey: err,
+		}.Errorf(c, "Failed to perform handshake.")
+		return false
 	}
 
-	// If we have a timeout configured, set it.
-	if p.Timeout > 0 {
-		c.setDeadline(p.Timeout)
-	}
-
-	// Break off our handshake stream and send it to the Butler for reading.
-	return &namedPipeStreamParams{c.decoupleConn(), p}
+	// Successful handshake. Forward our properties.
+	paramsC <- &namedPipeStreamParams{c.decoupleConn(), p}
+	return true
 }
 
 // handshake handles the handshaking and registration of a single connection. If
@@ -219,13 +197,10 @@ func (c *namedPipeConn) negotiate(ctx context.Context) *namedPipeStreamParams {
 //
 // The client connection opens with a handshake protocol. Once complete, the
 // connection itself becomes the stream.
-func (c *namedPipeConn) handshake(ctx context.Context) (*streamproto.Properties, error) {
-	// Read the handshake header.
+func handshake(ctx context.Context, conn net.Conn) (*streamproto.Properties, error) {
 	log.Infof(ctx, "Beginning handshake.")
-
-	// Perform the handshake.
 	hs := handshakeProtocol{}
-	return hs.Handshake(ctx, c.conn)
+	return hs.Handshake(ctx, conn)
 }
 
 // Closes the underlying connection.
@@ -240,17 +215,9 @@ func (c *namedPipeConn) closeConn() {
 	}
 }
 
-func (c *namedPipeConn) setDeadline(d time.Duration) error {
-	c.conn = &iotools.DeadlineReader{
-		Conn:     c.conn,
-		Deadline: d,
-	}
-	return nil
-}
-
 // Decouples the active connection, returning it and setting the connection to
 // nil.
-func (c *namedPipeConn) decoupleConn() (conn io.ReadCloser) {
+func (c *namedPipeConn) decoupleConn() (conn net.Conn) {
 	c.decoupleMu.Lock()
 	defer c.decoupleMu.Unlock()
 
