@@ -105,5 +105,5 @@ def CheckChangeOnCommit(input_api, output_api):
   results.extend(input_api.canned_checks.CheckDoNotSubmitInFiles(
       input_api, output_api))
   results.extend(PreCommitGo(
-      input_api, output_api, ['lint', 'continuous-integration']))
+      input_api, output_api, ['continuous-integration']))
   return results
