@@ -6,17 +6,13 @@ package swarming
 
 import (
 	"fmt"
-	"html/template"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/appengine/cmd/milo/miloerror"
-)
-
-var (
-	tmpl = template.Must(template.New("build.html").ParseFiles("templates/buildbot/build.html"))
+	"github.com/luci/luci-go/server/templates"
 )
 
 // WriteBuildLog writes the build log to the given response writer.
@@ -71,9 +67,8 @@ func Render(
 	}
 
 	// Render into the template
-	err = tmpl.Execute(w, *result)
-	if err != nil {
-		return err
-	}
+	templates.MustRender(c, w, "pages/buildbot/build.html", templates.Args{
+		"Build": result,
+	})
 	return nil
 }

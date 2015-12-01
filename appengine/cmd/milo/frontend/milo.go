@@ -12,11 +12,18 @@ import (
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/templates"
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/appengine/cmd/milo/assets"
 	"github.com/luci/luci-go/appengine/cmd/milo/miloerror"
 	"github.com/luci/luci-go/appengine/cmd/milo/swarming"
+)
+
+var (
+	tmpl = &templates.Bundle{
+		Loader: templates.AssetsLoader(assets.Assets()),
+	}
 )
 
 // Where it all begins!!!
@@ -38,11 +45,9 @@ func init() {
 
 	// Register plain ol' http services.
 	r := httprouter.New()
-	r.GET("/", gaemiddleware.BaseProd(wrap(root)))
-	r.GET(
-		"/swarming/:server/:id/steps/:step/logs/:log",
-		gaemiddleware.BaseProd(wrap(swarming.WriteBuildLog)))
-	r.GET("/swarming/:server/:id", gaemiddleware.BaseProd(wrap(swarming.Render)))
+	r.GET("/", wrap(root))
+	r.GET("/swarming/:server/:id/steps/:step/logs/:log", wrap(swarming.WriteBuildLog))
+	r.GET("/swarming/:server/:id", wrap(swarming.Render))
 	http.Handle("/", r)
 
 	endpoints.HandleHTTP()
@@ -58,8 +63,8 @@ type handler func(context.Context, http.ResponseWriter, *http.Request, httproute
 
 // Wrapper around handler functions so that they can return errors and be
 // rendered as 400's
-func wrap(h handler) middleware.Handler {
-	return func(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func wrap(h handler) httprouter.Handle {
+	hx := func(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		if err := h(c, w, r, p); err != nil {
 			if merr, ok := err.(*miloerror.Error); ok {
 				http.Error(w, merr.Message, merr.Code)
@@ -68,4 +73,6 @@ func wrap(h handler) middleware.Handler {
 			}
 		}
 	}
+	hx = templates.WithTemplates(hx, tmpl)
+	return gaemiddleware.BaseProd(hx)
 }
