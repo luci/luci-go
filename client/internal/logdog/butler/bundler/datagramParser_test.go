@@ -72,20 +72,16 @@ func TestDatagramParser(t *testing.T) {
 				le, err := p.nextEntry(c)
 				So(err, ShouldBeNil)
 				So(le, shouldMatchLogEntry, s.le(0, protocol.Datagram{
-					Size: 2,
 					Data: []byte{0xca, 0xfe},
 				}))
 
 				le, err = p.nextEntry(c)
 				So(err, ShouldBeNil)
-				So(le, shouldMatchLogEntry, s.add(2*time.Second).le(1, protocol.Datagram{
-					Size: 0,
-				}))
+				So(le, shouldMatchLogEntry, s.add(2*time.Second).le(1, protocol.Datagram{}))
 
 				le, err = p.nextEntry(c)
 				So(err, ShouldBeNil)
 				So(le, shouldMatchLogEntry, s.add(time.Second).le(2, protocol.Datagram{
-					Size: 5,
 					Data: []byte{0xd0, 0x65, 0x10, 0xbb, 0x12},
 				}))
 			})
@@ -97,15 +93,12 @@ func TestDatagramParser(t *testing.T) {
 					le, err := p.nextEntry(c)
 					So(err, ShouldBeNil)
 					So(le, shouldMatchLogEntry, s.le(0, protocol.Datagram{
-						Size: 2,
 						Data: []byte{0xca, 0xfe},
 					}))
 
 					le, err = p.nextEntry(c)
 					So(err, ShouldBeNil)
-					So(le, shouldMatchLogEntry, s.add(2*time.Second).le(1, protocol.Datagram{
-						Size: 0,
-					}))
+					So(le, shouldMatchLogEntry, s.add(2*time.Second).le(1, protocol.Datagram{}))
 
 					le, err = p.nextEntry(c)
 					So(err, ShouldBeNil)
@@ -119,37 +112,42 @@ func TestDatagramParser(t *testing.T) {
 					le, err := p.nextEntry(c)
 					So(err, ShouldBeNil)
 					So(le, shouldMatchLogEntry, s.le(0, protocol.Datagram{
-						Size: 2,
 						Data: []byte{0xca, 0xfe},
 					}))
 
 					le, err = p.nextEntry(c)
 					So(err, ShouldBeNil)
-					So(le, shouldMatchLogEntry, s.add(2*time.Second).le(1, protocol.Datagram{
-						Size: 0,
+					So(le, shouldMatchLogEntry, s.add(2*time.Second).le(1, protocol.Datagram{}))
+
+					le, err = p.nextEntry(c)
+					So(err, ShouldBeNil)
+					So(le, shouldMatchLogEntry, s.add(time.Second).le(2, protocol.Datagram{
+						Data: []byte{0xd0, 0x65},
+						Partial: &protocol.Datagram_Partial{
+							Size:  5,
+							Index: 0,
+						},
 					}))
 
 					le, err = p.nextEntry(c)
 					So(err, ShouldBeNil)
 					So(le, shouldMatchLogEntry, s.add(time.Second).le(2, protocol.Datagram{
-						Size:    5,
-						Partial: true,
-						Data:    []byte{0xd0, 0x65},
+						Data: []byte{0x10, 0xbb},
+						Partial: &protocol.Datagram_Partial{
+							Size:  5,
+							Index: 1,
+						},
 					}))
 
 					le, err = p.nextEntry(c)
 					So(err, ShouldBeNil)
 					So(le, shouldMatchLogEntry, s.add(time.Second).le(2, protocol.Datagram{
-						Size:    5,
-						Partial: true,
-						Data:    []byte{0x10, 0xbb},
-					}))
-
-					le, err = p.nextEntry(c)
-					So(err, ShouldBeNil)
-					So(le, shouldMatchLogEntry, s.add(time.Second).le(2, protocol.Datagram{
-						Size: 5,
 						Data: []byte{0x12},
+						Partial: &protocol.Datagram_Partial{
+							Size:  5,
+							Index: 2,
+							Last:  true,
+						},
 					}))
 
 					le, err = p.nextEntry(c)

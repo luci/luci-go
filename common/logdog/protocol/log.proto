@@ -109,22 +109,27 @@ message Binary {
 
 /* Datagram stream content type. */
 message Datagram {
-  /*
-   * The size in bytes of the overall datagram.
-   *
-   * If this is not a partial datagram, this field may be omitted, as the size
-   * is known from the length of the data field. If this is partial, the size
-   * must be the same across all partial pieces.
-   */
-  uint64 size = 1;
-  /*
-   * If true, this is a partial datagram, and the next sequential LogEntry will
-   * contain its continuation.
-   */
-  bool partial = 2;
-
   /* This datagram data. */
-  bytes data = 3;
+  bytes data = 1;
+
+  /*
+   * If this is not a partial datagram, this field will include reassembly and
+   * state details for the full datagram.
+   */
+  message Partial {
+    /*
+     * The index, starting with zero, of this datagram fragment in the full
+     * datagram.
+     */
+    uint32 index = 1;
+
+    /* The size of the full datagram */
+    uint64 size = 2;
+
+    /* If true, this is the last partial datagram in the overall datagram. */
+    bool last = 3;
+  }
+  Partial partial = 2;
 }
 
 /**

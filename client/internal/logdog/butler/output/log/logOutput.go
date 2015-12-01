@@ -73,7 +73,11 @@ func (o *logOutput) SendBundle(bundle *protocol.ButlerLogBundle) error {
 				log.Infof(ctx, "Binary) %s", hex.EncodeToString(c.Data))
 			}
 			if c := le.GetDatagram(); c != nil {
-				log.Infof(ctx, "Datagram %d: %s", c.Size, hex.EncodeToString(c.Data))
+				if cp := c.Partial; cp != nil {
+					log.Infof(ctx, "Datagram (%#v) (%d bytes): %s", cp, cp.Size, hex.EncodeToString(c.Data))
+				} else {
+					log.Infof(ctx, "Datagram (%d bytes): %s", len(c.Data), hex.EncodeToString(c.Data))
+				}
 			}
 
 			o.stats.F.SentMessages++

@@ -22,11 +22,16 @@ type datagramParser struct {
 
 	// seq is the current datagram sequence number.
 	seq int64
+
 	// remaining is the amount of data remaining in a datagram that has previously
 	// been emitted partially.
 	//
 	// This will be zero if we're not continuing a partial datagram.
 	remaining int64
+	// index is the index of this datagram. This is zero unless the datagram is
+	// a continuation of a previous partial datagram, in which case this is the
+	// continuation's index.
+	index int64
 	// size is the size of the current partial datagram.
 	//
 	// This value is only valid if we're continuing a partial datagram (i.e., if
@@ -69,6 +74,7 @@ func (s *datagramParser) nextEntry(c *constraints) (*protocol.LogEntry, error) {
 			memoryCorruption(err)
 		}
 
+		s.index = 0
 		s.size = size
 		s.remaining = size
 
@@ -78,16 +84,16 @@ func (s *datagramParser) nextEntry(c *constraints) (*protocol.LogEntry, error) {
 
 	// If we read this, will it be partial?
 	emitCount := s.remaining
-	partial := false
+	continued := false
 	if emitCount > int64(c.limit) {
-		partial = true
+		continued = true
 		emitCount = int64(c.limit)
 	}
 
 	bv := s.ViewLimit(s.remaining)
 	if r := bv.Remaining(); r < emitCount {
 		// Not enough buffered data to complete the datagram in one round.
-		partial = true
+		continued = true
 		emitCount = r
 	}
 	if s.remaining > 0 && emitCount == 0 {
@@ -98,13 +104,17 @@ func (s *datagramParser) nextEntry(c *constraints) (*protocol.LogEntry, error) {
 
 	// We're not willing to emit a partial datagram unless we're allowed to
 	// split.
-	if partial && !c.allowSplit {
+	if continued && !c.allowSplit {
 		return nil, nil
 	}
 
-	dg := protocol.Datagram{
-		Partial: partial,
-		Size:    uint64(s.size),
+	dg := protocol.Datagram{}
+	if continued || s.index > 0 {
+		dg.Partial = &protocol.Datagram_Partial{
+			Index: uint32(s.index),
+			Size:  uint64(s.size),
+			Last:  !continued,
+		}
 	}
 	if emitCount > 0 {
 		dg.Data = make([]byte, emitCount)
@@ -116,10 +126,12 @@ func (s *datagramParser) nextEntry(c *constraints) (*protocol.LogEntry, error) {
 	le.Sequence = uint64(s.seq)
 	le.Content = &protocol.LogEntry_Datagram{Datagram: &dg}
 
-	if !partial {
+	if !continued {
 		s.seq++
 		s.remaining = 0
+		// Will reset remaining partial fields on next read, since remaining == 0.
 	} else {
+		s.index++
 		s.remaining -= emitCount
 	}
 	return le, nil

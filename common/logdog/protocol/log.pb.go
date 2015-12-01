@@ -178,24 +178,39 @@ func (*Binary) ProtoMessage()    {}
 
 // Datagram stream content type.
 type Datagram struct {
-	//
-	// The size in bytes of the overall datagram.
-	//
-	// If this is not a partial datagram, this field may be omitted, as the size
-	// is known from the length of the data field. If this is partial, the size
-	// must be the same across all partial pieces.
-	Size uint64 `protobuf:"varint,1,opt,name=size" json:"size,omitempty"`
-	//
-	// If true, this is a partial datagram, and the next sequential LogEntry will
-	// contain its continuation.
-	Partial bool `protobuf:"varint,2,opt,name=partial" json:"partial,omitempty"`
 	// This datagram data.
-	Data []byte `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
+	Data    []byte            `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	Partial *Datagram_Partial `protobuf:"bytes,2,opt,name=partial" json:"partial,omitempty"`
 }
 
 func (m *Datagram) Reset()         { *m = Datagram{} }
 func (m *Datagram) String() string { return proto.CompactTextString(m) }
 func (*Datagram) ProtoMessage()    {}
+
+func (m *Datagram) GetPartial() *Datagram_Partial {
+	if m != nil {
+		return m.Partial
+	}
+	return nil
+}
+
+//
+// If this is not a partial datagram, this field will include reassembly and
+// state details for the full datagram.
+type Datagram_Partial struct {
+	//
+	// The index, starting with zero, of this datagram fragment in the full
+	// datagram.
+	Index uint32 `protobuf:"varint,1,opt,name=index" json:"index,omitempty"`
+	// The size of the full datagram
+	Size uint64 `protobuf:"varint,2,opt,name=size" json:"size,omitempty"`
+	// If true, this is the last partial datagram in the overall datagram.
+	Last bool `protobuf:"varint,3,opt,name=last" json:"last,omitempty"`
+}
+
+func (m *Datagram_Partial) Reset()         { *m = Datagram_Partial{} }
+func (m *Datagram_Partial) String() string { return proto.CompactTextString(m) }
+func (*Datagram_Partial) ProtoMessage()    {}
 
 // *
 // An individual log entry.
