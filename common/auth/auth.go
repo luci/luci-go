@@ -28,6 +28,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -168,6 +169,9 @@ type Options struct {
 // Authenticator is a factory for http.RoundTripper objects that know how to use
 // cached OAuth credentials. Authenticator also knows how to run interactive
 // login flow, if required.
+//
+// http.RoundTripper produced by Authenticator supports CancelRequest method and
+// thus can be used when sending requests with timeouts.
 type Authenticator struct {
 	// Immutable members.
 	loginMode LoginMode
@@ -253,9 +257,12 @@ func NewAuthenticator(loginMode LoginMode, opts Options) *Authenticator {
 		opts:      &opts,
 		log:       opts.Logger,
 	}
+	transportCanceler, _ := opts.Transport.(canceler)
 	auth.transport = &authTransport{
-		parent: auth,
-		base:   opts.Transport,
+		parent:   auth,
+		base:     opts.Transport,
+		canceler: transportCanceler,
+		inflight: make(map[*http.Request]*http.Request, 10),
 	}
 	return auth
 }
@@ -600,17 +607,17 @@ func (a *Authenticator) refreshTokenWithRetries(t internal.Token) (internal.Toke
 ////////////////////////////////////////////////////////////////////////////////
 // authTransport implementation.
 
-// TODO(vadimsh): Support CancelRequest if underlying transport supports it.
-// It's tricky. http.Client uses type cast to figure out whether transport
-// supports request cancellation or not. So new authTransportWithCancelation
-// should be used when parent transport provides CancelRequest. Also
-// authTransport should keep a mapping between original http.Request objects
-// and ones with access tokens attached (to know what to pass to
-// parent transport CancelRequest).
+type canceler interface {
+	CancelRequest(*http.Request)
+}
 
 type authTransport struct {
-	parent *Authenticator
-	base   http.RoundTripper
+	parent   *Authenticator
+	base     http.RoundTripper
+	canceler canceler // non-nil if 'base' implements it
+
+	lock     sync.Mutex                      // protecting 'inflight'
+	inflight map[*http.Request]*http.Request // original -> modified
 }
 
 // RoundTrip appends authorization details to the request.
@@ -623,21 +630,105 @@ func (t *authTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		tok, err = t.parent.refreshToken(tok, time.Minute)
 		switch {
 		case err == ErrLoginRequired && t.parent.loginMode == OptionalLogin:
-			return t.base.RoundTrip(req)
+			// Need to put it in 'inflight' to make CancelRequest work.
+			t.lock.Lock()
+			t.inflight[req] = req
+			t.lock.Unlock()
+			return t.roundTripAndForget(req, req)
 		case err != nil:
 			return nil, err
 		case t.parent.expiresIn(tok, time.Minute):
 			return nil, fmt.Errorf("auth: failed to refresh the token")
 		}
 	}
-	// Original request must not be modified, make a shallow clone.
-	clone := *req
+
+	// Original request must not be modified, make a shallow clone. Keep a mapping
+	// between original request and modified copy to know what to cancel in
+	// CancelRequest.
+	clone := t.cloneAndRemember(req)
 	clone.Header = make(http.Header)
 	for k, v := range req.Header {
 		clone.Header[k] = v
 	}
 	clone.Header.Set("Authorization", "Bearer "+tok.AccessToken())
-	return t.base.RoundTrip(&clone)
+	return t.roundTripAndForget(clone, req)
+}
+
+// CancelRequest is needed for request timeouts to work.
+func (t *authTransport) CancelRequest(req *http.Request) {
+	if t.canceler != nil {
+		if clone := t.forget(req); clone != nil {
+			t.canceler.CancelRequest(clone)
+		}
+	}
+}
+
+// cloneAndRemember makes a shallow copy of 'req' and puts it into inflight map.
+func (t *authTransport) cloneAndRemember(req *http.Request) *http.Request {
+	clone := *req
+	t.lock.Lock()
+	defer t.lock.Unlock()
+	t.inflight[req] = &clone
+	return &clone
+}
+
+// roundTripAndForget calls original RoundTrip and then cleans up inflight map.
+func (t *authTransport) roundTripAndForget(clone, orig *http.Request) (*http.Response, error) {
+	// Hook response to know when it is safe to "forget" the original request.
+	// Users of http.Client are supposed to always close the body of the response.
+	res, err := t.base.RoundTrip(clone)
+	if err != nil {
+		t.forget(orig)
+		return nil, err
+	}
+	res.Body = &onEOFReader{
+		rc: res.Body,
+		fn: func() { t.forget(orig) },
+	}
+	return res, nil
+}
+
+// forget removes an entry in 'inflight' map stored by 'cloneAndRemember'.
+//
+// Return stored value if it is there, nil if empty.
+func (t *authTransport) forget(req *http.Request) *http.Request {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+	clone := t.inflight[req]
+	if clone != nil {
+		delete(t.inflight, req)
+	}
+	return clone
+}
+
+// onEOFReader wraps ReadCloser and calls supplied function when EOF is seen or
+// Close is called.
+//
+// Copy-pasted from https://github.com/golang/oauth2/blob/master/transport.go.
+type onEOFReader struct {
+	rc io.ReadCloser
+	fn func()
+}
+
+func (r *onEOFReader) Read(p []byte) (n int, err error) {
+	n, err = r.rc.Read(p)
+	if err == io.EOF {
+		r.runFunc()
+	}
+	return
+}
+
+func (r *onEOFReader) Close() error {
+	err := r.rc.Close()
+	r.runFunc()
+	return err
+}
+
+func (r *onEOFReader) runFunc() {
+	if fn := r.fn; fn != nil {
+		fn()
+		r.fn = nil
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
