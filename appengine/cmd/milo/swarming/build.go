@@ -14,6 +14,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/client/logdog/annotee"
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logdog/types"
 	miloProto "github.com/luci/luci-go/common/proto/milo"
 	"golang.org/x/net/context"
@@ -40,7 +41,10 @@ func getSwarmingLog(server string, swarmingID string, c context.Context) ([]byte
 	if strings.HasPrefix(swarmingID, "debug:") {
 		filename := strings.Join(
 			[]string{"testdata", swarmingID[6:]}, "/")
-		b, _ := ioutil.ReadFile(filename)
+		b, err := ioutil.ReadFile(filename)
+		if err != nil {
+			return nil, err
+		}
 		return b, nil
 	}
 
@@ -158,11 +162,11 @@ func miloBuildStep(
 }
 
 // Takes a butler client and return a fully populated milo build.
-func buildFromClient(swarmingID string, url string, s *memoryClient) (*resp.MiloBuild, error) {
+func buildFromClient(c context.Context, swarmingID string, url string, s *memoryClient) (*resp.MiloBuild, error) {
 	// Build the basic page response.
 	build := &resp.MiloBuild{}
 	build.Navi = getNavi(swarmingID, url)
-	build.CurrentTime = time.Now().String()
+	build.CurrentTime = clock.Now(c).String()
 
 	// Now Fetch the main annotation of the build.
 	mainAnno := &miloProto.Step{}
@@ -194,8 +198,7 @@ func buildFromClient(swarmingID string, url string, s *memoryClient) (*resp.Milo
 }
 
 // Takes in an annotated log and returns a fully populated memory client.
-func clientFromAnnotatedLog(log []byte) (*memoryClient, error) {
-	ctx := context.Background()
+func clientFromAnnotatedLog(ctx context.Context, log []byte) (*memoryClient, error) {
 	c := &memoryClient{}
 	p := annotee.Processor{
 		Context:                ctx,
@@ -224,10 +227,10 @@ func swarmingBuildImpl(c context.Context, URL string, server string, id string) 
 	}
 
 	// Decode the data using annotee.
-	client, err := clientFromAnnotatedLog(body)
+	client, err := clientFromAnnotatedLog(c, body)
 	if err != nil {
 		return nil, err
 	}
 
-	return buildFromClient(id, URL, client)
+	return buildFromClient(c, id, URL, client)
 }

@@ -19,7 +19,7 @@ func swarmingBuildLogImpl(c context.Context, server string, id string, log strin
 	}
 
 	// Decode the data using annotee.
-	client, err := clientFromAnnotatedLog(body)
+	client, err := clientFromAnnotatedLog(c, body)
 	if err != nil {
 		return nil, err
 	}
