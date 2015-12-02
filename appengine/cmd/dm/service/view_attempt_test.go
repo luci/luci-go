@@ -5,8 +5,6 @@
 package service
 
 import (
-	"fmt"
-	"sort"
 	"testing"
 	"time"
 
@@ -20,62 +18,7 @@ import (
 	"github.com/luci/luci-go/common/logging/memlogger"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
-
-var dmTestService = &DungeonMaster{}
-
-func mkAid(qid string, num uint32) *types.AttemptID {
-	return &types.AttemptID{QuestID: qid, AttemptNum: num}
-}
-
-func mkQuest(c context.Context, name string) string {
-	qsts, err := dmTestService.ensureQuestsInternal(c, &EnsureQuestsReq{
-		[]*model.QuestDescriptor{{
-			Distributor: "foof",
-			Payload:     []byte(fmt.Sprintf(`{"name": "%s"}`, name)),
-		}},
-	})
-	So(err, ShouldBeNil)
-	return qsts.QuestIDs[0]
-}
-
-func execute(c context.Context, aid *types.AttemptID) {
-	// takes an NeedsExecution attempt, and moves it to Executing
-	err := datastore.Get(c).RunInTransaction(func(c context.Context) error {
-		ds := datastore.Get(c)
-		atmpt := &model.Attempt{AttemptID: *aid}
-		So(ds.Get(atmpt), ShouldBeNil)
-
-		atmpt.CurExecution++
-		So(atmpt.ChangeState(types.Executing), ShouldBeNil)
-
-		So(ds.PutMulti([]interface{}{atmpt, &model.Execution{
-			ID:           atmpt.CurExecution,
-			Attempt:      ds.KeyForObj(atmpt),
-			ExecutionKey: []byte("sekret"),
-		}}), ShouldBeNil)
-		return nil
-	}, nil)
-	So(err, ShouldBeNil)
-}
-
-func depOn(c context.Context, from *types.AttemptID, to ...*types.AttemptID) {
-	rsp, err := dmTestService.addDepsInternal(c, &AddDepsReq{*from, to, []byte("sekret")})
-	So(err, ShouldBeNil)
-	So(rsp.ShouldHalt, ShouldBeTrue)
-}
-
-func mkDisplayDeps(from *types.AttemptID, to ...*types.AttemptID) *display.DepsFromAttempt {
-	sort.Sort(types.AttemptIDSlice(to))
-	ret := &display.DepsFromAttempt{From: *from}
-	for _, t := range to {
-		ret.To.Merge(&display.QuestAttempts{
-			QuestID: t.QuestID, Attempts: types.U32s{t.AttemptNum},
-		})
-	}
-	return ret
-}
 
 func TestViewAttempt(t *testing.T) {
 	t.Parallel()
@@ -85,14 +28,14 @@ func TestViewAttempt(t *testing.T) {
 		c := ttest.Context()
 
 		ds := datastore.Get(c)
-		s := DungeonMaster{}
+		s := getService()
 		log := logging.Get(c).(*memlogger.MemLogger)
 
 		_ = log // keep this around for convenience
 
 		Convey("bad", func() {
 			Convey("no attempt", func() {
-				ret, err := s.viewAttemptInternal(c, &ViewAttemptReq{AttemptID: *mkAid("quest", 1)})
+				ret, err := s.ViewAttempt(c, &ViewAttemptReq{AttemptID: *mkAid("quest", 1)})
 				So(err, ShouldErrLike, datastore.ErrNoSuchEntity)
 				So(ret, ShouldBeNil)
 			})
@@ -107,7 +50,7 @@ func TestViewAttempt(t *testing.T) {
 
 			w := mkQuest(c, "w")
 
-			So(s.ensureAttemptInternal(c, &EnsureAttemptReq{*mkAid(w, 1)}), ShouldBeNil)
+			So(s.EnsureAttempt(c, &EnsureAttemptReq{*mkAid(w, 1)}), ShouldBeNil)
 
 			req := &ViewAttemptReq{
 				AttemptID: *mkAid(w, 1),
@@ -120,7 +63,7 @@ func TestViewAttempt(t *testing.T) {
 			}
 
 			view := func() *display.Data {
-				ret, err := s.viewAttemptInternal(c, req)
+				ret, err := s.ViewAttempt(c, req)
 				So(err, ShouldBeNil)
 				return ret
 			}
@@ -145,7 +88,7 @@ func TestViewAttempt(t *testing.T) {
 			Convey("finished", func() {
 				execute(c, mkAid(w, 1))
 
-				So(s.finishAttemptInternal(c, &FinishAttemptReq{
+				So(s.FinishAttempt(c, &FinishAttemptReq{
 					*mkAid(w, 1),
 					[]byte("sekret"),
 

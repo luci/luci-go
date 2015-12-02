@@ -22,7 +22,7 @@ func TestAddDeps(t *testing.T) {
 	Convey("AddDeps", t, func() {
 		c := memory.Use(context.Background())
 		ds := datastore.Get(c)
-		s := DungeonMaster{}
+		s := getService()
 
 		a := &model.Attempt{AttemptID: *types.NewAttemptID("quest|fffffffe")}
 		a.CurExecution = 1
@@ -42,7 +42,7 @@ func TestAddDeps(t *testing.T) {
 
 		Convey("Bad", func() {
 			Convey("No such originating attempt", func() {
-				rsp, err := s.addDepsInternal(c, req)
+				rsp, err := s.AddDeps(c, req)
 				So(err, ShouldErrLike, "couldn't get attempt")
 				So(rsp, ShouldBeNil)
 			})
@@ -50,7 +50,7 @@ func TestAddDeps(t *testing.T) {
 			Convey("No such destination quest", func() {
 				So(ds.PutMulti([]interface{}{a, e}), ShouldBeNil)
 
-				rsp, err := s.addDepsInternal(c, req)
+				rsp, err := s.AddDeps(c, req)
 				So(err, ShouldErrLike, `could not load quest "to"`)
 				So(rsp, ShouldBeNil)
 			})
@@ -62,7 +62,7 @@ func TestAddDeps(t *testing.T) {
 			Convey("deps already exist", func() {
 				So(ds.Put(fwd), ShouldBeNil)
 
-				rsp, err := s.addDepsInternal(c, req)
+				rsp, err := s.AddDeps(c, req)
 				So(err, ShouldBeNil)
 				So(rsp, ShouldResembleV, &AddDepsRsp{false})
 			})
@@ -71,7 +71,7 @@ func TestAddDeps(t *testing.T) {
 				to.State = types.Finished
 				So(ds.Put(to), ShouldBeNil)
 
-				rsp, err := s.addDepsInternal(c, req)
+				rsp, err := s.AddDeps(c, req)
 				So(err, ShouldBeNil)
 				So(rsp, ShouldResembleV, &AddDepsRsp{false})
 
@@ -81,7 +81,7 @@ func TestAddDeps(t *testing.T) {
 			Convey("adding new deps", func() {
 				So(ds.Put(&model.Quest{ID: "to"}), ShouldBeNil)
 
-				rsp, err := s.addDepsInternal(c, req)
+				rsp, err := s.AddDeps(c, req)
 				So(err, ShouldBeNil)
 				So(rsp, ShouldResembleV, &AddDepsRsp{true})
 

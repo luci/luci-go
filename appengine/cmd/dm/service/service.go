@@ -10,11 +10,13 @@ import (
 )
 
 // DungeonMaster is the endpoints server object.
-type DungeonMaster struct{}
+type DungeonMaster struct {
+	ephelper.ServiceBase
+}
 
-// DungeonMasterMethodInfo provides the method info map that each service
+// MethodInfo provides the method info map that each service
 // registers itself in.
-var DungeonMasterMethodInfo = ephelper.MethodInfoMap{}
+var MethodInfo = ephelper.MethodInfoMap{}
 
 // DungeonMasterServiceInfo is the service-wide endpoints configuration.
 var DungeonMasterServiceInfo = &endpoints.ServiceInfo{
@@ -26,6 +28,6 @@ var DungeonMasterServiceInfo = &endpoints.ServiceInfo{
 
 // RegisterEndpointsService is used to integrate with ephelper.
 func RegisterEndpointsService(srv *endpoints.Server) error {
-	return ephelper.Register(srv,
-		&DungeonMaster{}, DungeonMasterServiceInfo, DungeonMasterMethodInfo)
+	return ephelper.Register(srv, &DungeonMaster{},
+		DungeonMasterServiceInfo, MethodInfo)
 }

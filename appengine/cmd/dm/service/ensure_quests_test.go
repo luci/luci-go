@@ -24,11 +24,11 @@ func TestEnsureQuests(t *testing.T) {
 		c := memory.Use(context.Background())
 		c, clk := testclock.UseTime(c, testclock.TestTimeUTC.Round(time.Millisecond))
 		ds := datastore.Get(c)
-		s := DungeonMaster{}
+		s := getService()
 
 		Convey("bad", func() {
 			Convey("missing distributor", func() {
-				_, err := s.ensureQuestsInternal(c, &EnsureQuestsReq{
+				_, err := s.EnsureQuests(c, &EnsureQuestsReq{
 					[]*model.QuestDescriptor{
 						{Distributor: "foof", Payload: []byte("{}")},
 					},
@@ -58,7 +58,7 @@ func TestEnsureQuests(t *testing.T) {
 			req := &EnsureQuestsReq{[]*model.QuestDescriptor{qd, qd2}}
 
 			Convey("0/2 exist", func() {
-				rsp, err := s.ensureQuestsInternal(c, req)
+				rsp, err := s.EnsureQuests(c, req)
 				So(err, ShouldBeNil)
 				So(rsp.QuestIDs, ShouldResembleV, []string{q.ID, q2.ID})
 			})
@@ -68,7 +68,7 @@ func TestEnsureQuests(t *testing.T) {
 
 				clk.Add(time.Minute)
 
-				rsp, err := s.ensureQuestsInternal(c, req)
+				rsp, err := s.EnsureQuests(c, req)
 				So(err, ShouldBeNil)
 				So(rsp.QuestIDs, ShouldResembleV, []string{q.ID, q2.ID})
 
@@ -85,7 +85,7 @@ func TestEnsureQuests(t *testing.T) {
 			Convey("all exist", func() {
 				So(ds.Put(q), ShouldBeNil)
 
-				rsp, err := s.ensureQuestsInternal(c, req)
+				rsp, err := s.EnsureQuests(c, req)
 				So(err, ShouldBeNil)
 				So(rsp.QuestIDs, ShouldResembleV, []string{q.ID, q2.ID})
 

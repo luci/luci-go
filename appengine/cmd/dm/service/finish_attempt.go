@@ -8,11 +8,9 @@ import (
 	"time"
 
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
-	"github.com/luci/gae/impl/prod"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/cmd/dm/mutate"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
-	"github.com/luci/luci-go/appengine/gaelogger"
 	"github.com/luci/luci-go/appengine/tumble"
 	"golang.org/x/net/context"
 )
@@ -30,10 +28,10 @@ const resultMaxLength = 256 * 1024
 
 // FinishAttempt allows an executing Attempt to post its result.
 func (d *DungeonMaster) FinishAttempt(c context.Context, req *FinishAttemptReq) (err error) {
-	return d.finishAttemptInternal(prod.Use(gaelogger.Use(c)), req)
-}
+	if c, err = d.Use(c, MethodInfo["FinishAttempt"]); err != nil {
+		return
+	}
 
-func (*DungeonMaster) finishAttemptInternal(c context.Context, req *FinishAttemptReq) (err error) {
 	req.Result, err = model.NormalizeJSONObject(resultMaxLength, req.Result)
 	if err != nil {
 		return err
@@ -48,7 +46,7 @@ func (*DungeonMaster) finishAttemptInternal(c context.Context, req *FinishAttemp
 }
 
 func init() {
-	DungeonMasterMethodInfo["FinishAttempt"] = &endpoints.MethodInfo{
+	MethodInfo["FinishAttempt"] = &endpoints.MethodInfo{
 		Name:       "quests.attempts.finish",
 		HTTPMethod: "POST",
 		Path:       "quests/{QuestID}/attempts/{AttemptNum}/result",

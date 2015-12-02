@@ -8,12 +8,10 @@ import (
 	"time"
 
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
-	"github.com/luci/gae/impl/prod"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/display"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
-	"github.com/luci/luci-go/appengine/gaelogger"
 	"golang.org/x/net/context"
 )
 
@@ -30,10 +28,10 @@ type ViewAttemptReq struct {
 // Attempt, and walking until you hit the end of the graph, or it hits the
 // TimeoutMs. At this point, all data collected will be returned
 func (d *DungeonMaster) ViewAttempt(c context.Context, req *ViewAttemptReq) (ret *display.Data, err error) {
-	return d.viewAttemptInternal(prod.Use(gaelogger.Use(c)), req)
-}
+	if c, err = d.Use(c, MethodInfo["ViewAttempt"]); err != nil {
+		return
+	}
 
-func (*DungeonMaster) viewAttemptInternal(c context.Context, req *ViewAttemptReq) (ret *display.Data, err error) {
 	// TODO(iannucci): restrict this against current executions (or filter by
 	// attempts the current execution is allowed to see). Basically, we don't
 	// want an execution to be able to cheat and view results of attempts which
@@ -57,7 +55,7 @@ func (*DungeonMaster) viewAttemptInternal(c context.Context, req *ViewAttemptReq
 }
 
 func init() {
-	DungeonMasterMethodInfo["ViewAttempt"] = &endpoints.MethodInfo{
+	MethodInfo["ViewAttempt"] = &endpoints.MethodInfo{
 		Name:       "quests.attempts.get",
 		HTTPMethod: "GET",
 		Path:       "quests/{QuestID}/attempts/{AttemptNum}",

@@ -9,11 +9,9 @@ import (
 	"sort"
 
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
-	"github.com/luci/gae/impl/prod"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/display"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/appengine/gaelogger"
 	"golang.org/x/net/context"
 )
 
@@ -25,10 +23,11 @@ type ViewAttemptsReq struct {
 
 // ViewAttempts allows you to view the Attempts that exist for a Quest.
 func (d *DungeonMaster) ViewAttempts(c context.Context, req *ViewAttemptsReq) (*display.Data, error) {
-	return d.viewAttemptsInternal(prod.Use(gaelogger.Use(c)), req)
-}
+	c, err := d.Use(c, MethodInfo["ViewAttempts"])
+	if err != nil {
+		return nil, err
+	}
 
-func (*DungeonMaster) viewAttemptsInternal(c context.Context, req *ViewAttemptsReq) (*display.Data, error) {
 	// TODO(iannucci): restrict this against current executions (or filter by
 	// attempts the current execution is allowed to see).
 	ds := datastore.Get(c)
@@ -49,7 +48,7 @@ func (*DungeonMaster) viewAttemptsInternal(c context.Context, req *ViewAttemptsR
 }
 
 func init() {
-	DungeonMasterMethodInfo["ViewAttempts"] = &endpoints.MethodInfo{
+	MethodInfo["ViewAttempts"] = &endpoints.MethodInfo{
 		Name:       "quests.attempts.list",
 		HTTPMethod: "GET",
 		Path:       "quests/{QuestID}/attempts",

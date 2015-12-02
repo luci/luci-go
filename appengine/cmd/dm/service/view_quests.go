@@ -8,11 +8,9 @@ import (
 	"fmt"
 
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
-	"github.com/luci/gae/impl/prod"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/display"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/appengine/gaelogger"
 	"github.com/luci/luci-go/common/parallel"
 	"golang.org/x/net/context"
 )
@@ -40,10 +38,10 @@ func (req *ViewQuestsReq) Valid() error {
 
 // ViewQuests allows the user to view a range of Quests by ID.
 func (d *DungeonMaster) ViewQuests(c context.Context, req *ViewQuestsReq) (rsp *display.Data, err error) {
-	return d.viewQuestsInternal(prod.Use(gaelogger.Use(c)), req)
-}
+	if c, err = d.Use(c, MethodInfo["ViewQuests"]); err != nil {
+		return
+	}
 
-func (*DungeonMaster) viewQuestsInternal(c context.Context, req *ViewQuestsReq) (rsp *display.Data, err error) {
 	if err = req.Valid(); err != nil {
 		return
 	}
@@ -110,7 +108,7 @@ func (*DungeonMaster) viewQuestsInternal(c context.Context, req *ViewQuestsReq) 
 }
 
 func init() {
-	DungeonMasterMethodInfo["ViewQuests"] = &endpoints.MethodInfo{
+	MethodInfo["ViewQuests"] = &endpoints.MethodInfo{
 		Name:       "quests.list",
 		HTTPMethod: "GET",
 		Path:       "quests",

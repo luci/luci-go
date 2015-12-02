@@ -22,11 +22,11 @@ func TestEnsureAttempt(t *testing.T) {
 	Convey("EnsureAttempt", t, func() {
 		c := memory.Use(context.Background())
 		ds := datastore.Get(c)
-		s := DungeonMaster{}
+		s := getService()
 
 		Convey("bad", func() {
 			Convey("no quest", func() {
-				err := s.ensureAttemptInternal(c, &EnsureAttemptReq{*types.NewAttemptID("quest|fffffffe")})
+				err := s.EnsureAttempt(c, &EnsureAttemptReq{*types.NewAttemptID("quest|fffffffe")})
 				So(err, ShouldErrLike, "no such quest")
 			})
 		})
@@ -34,7 +34,7 @@ func TestEnsureAttempt(t *testing.T) {
 		Convey("good", func() {
 			So(ds.Put(&model.Quest{ID: "quest"}), ShouldBeNil)
 
-			err := s.ensureAttemptInternal(c, &EnsureAttemptReq{*types.NewAttemptID("quest|fffffffe")})
+			err := s.EnsureAttempt(c, &EnsureAttemptReq{*types.NewAttemptID("quest|fffffffe")})
 			So(err, ShouldBeNil)
 
 			So(ds.Get(&model.Attempt{AttemptID: *types.NewAttemptID("quest|fffffffe")}), ShouldBeNil)

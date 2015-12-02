@@ -8,12 +8,10 @@ import (
 	"fmt"
 
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
-	"github.com/luci/gae/impl/prod"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/cmd/dm/mutate"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
-	"github.com/luci/luci-go/appengine/gaelogger"
 	"github.com/luci/luci-go/appengine/tumble"
 	"golang.org/x/net/context"
 )
@@ -28,10 +26,10 @@ type EnsureAttemptReq struct {
 //
 // You must have already ensured that the target Quest exists with EnsureQuest.
 func (d *DungeonMaster) EnsureAttempt(c context.Context, req *EnsureAttemptReq) (err error) {
-	return d.ensureAttemptInternal(prod.Use(gaelogger.Use(c)), req)
-}
+	if c, err = d.Use(c, MethodInfo["EnsureAttempt"]); err != nil {
+		return
+	}
 
-func (*DungeonMaster) ensureAttemptInternal(c context.Context, req *EnsureAttemptReq) (err error) {
 	ds := datastore.Get(c)
 
 	if err = ds.Get(&model.Quest{ID: req.QuestID}); err != nil {
@@ -42,7 +40,7 @@ func (*DungeonMaster) ensureAttemptInternal(c context.Context, req *EnsureAttemp
 }
 
 func init() {
-	DungeonMasterMethodInfo["EnsureAttempt"] = &endpoints.MethodInfo{
+	MethodInfo["EnsureAttempt"] = &endpoints.MethodInfo{
 		Name:       "quests.attempts.insert",
 		HTTPMethod: "PUT",
 		Path:       "quests/{QuestID}/attempts/{AttemptNum}",

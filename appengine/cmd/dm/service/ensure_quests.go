@@ -8,10 +8,8 @@ import (
 	"fmt"
 
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
-	"github.com/luci/gae/impl/prod"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/appengine/gaelogger"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/stringset"
@@ -32,11 +30,12 @@ type EnsureQuestsRsp struct {
 
 // EnsureQuests allows a client to populate Quests by their descriptors. This
 // is required before any Attempt is ensured for a Quest.
-func (d *DungeonMaster) EnsureQuests(c context.Context, req *EnsureQuestsReq) (rsp *EnsureQuestsRsp, err error) {
-	return d.ensureQuestsInternal(prod.Use(gaelogger.Use(c)), req)
-}
+func (d *DungeonMaster) EnsureQuests(c context.Context, req *EnsureQuestsReq) (*EnsureQuestsRsp, error) {
+	c, err := d.Use(c, MethodInfo["EnsureQuests"])
+	if err != nil {
+		return nil, err
+	}
 
-func (*DungeonMaster) ensureQuestsInternal(c context.Context, req *EnsureQuestsReq) (*EnsureQuestsRsp, error) {
 	questIDs := stringset.New(len(req.QuestDescriptors))
 	distroNames := stringset.New(1)
 	distros := make([]*model.Distributor, 0, len(req.QuestDescriptors))
@@ -57,7 +56,7 @@ func (*DungeonMaster) ensureQuestsInternal(c context.Context, req *EnsureQuestsR
 	}
 
 	ds := datastore.Get(c)
-	err := ds.GetMulti(distros)
+	err = ds.GetMulti(distros)
 	if err != nil {
 		logging.Errorf(c, "error getting distributors: %s", err)
 		return nil, fmt.Errorf("one or more unknown distributors")
@@ -87,7 +86,7 @@ func (*DungeonMaster) ensureQuestsInternal(c context.Context, req *EnsureQuestsR
 }
 
 func init() {
-	DungeonMasterMethodInfo["EnsureQuests"] = &endpoints.MethodInfo{
+	MethodInfo["EnsureQuests"] = &endpoints.MethodInfo{
 		Name:       "quests.insert",
 		HTTPMethod: "PUT",
 		Path:       "quests",

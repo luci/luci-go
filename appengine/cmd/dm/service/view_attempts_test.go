@@ -23,11 +23,11 @@ func TestViewAttempts(t *testing.T) {
 	Convey("ViewAttempts", t, func() {
 		c := memory.Use(context.Background())
 		ds := datastore.Get(c)
-		s := DungeonMaster{}
+		s := getService()
 
 		Convey("bad", func() {
 			Convey("no quest", func() {
-				_, err := s.viewAttemptsInternal(c, &ViewAttemptsReq{"foof"})
+				_, err := s.ViewAttempts(c, &ViewAttemptsReq{"foof"})
 				So(err, ShouldErrLike, "no such quest")
 			})
 		})
@@ -41,7 +41,7 @@ func TestViewAttempts(t *testing.T) {
 			So(ds.Put(q), ShouldBeNil)
 
 			Convey("no attempts", func() {
-				rsp, err := s.viewAttemptsInternal(c, &ViewAttemptsReq{q.ID})
+				rsp, err := s.ViewAttempts(c, &ViewAttemptsReq{q.ID})
 				So(err, ShouldBeNil)
 				So(rsp, ShouldResembleV, &display.Data{
 					Attempts: display.AttemptSlice{},
@@ -57,7 +57,7 @@ func TestViewAttempts(t *testing.T) {
 
 				ds.Testable().CatchupIndexes()
 
-				rsp, err := s.viewAttemptsInternal(c, &ViewAttemptsReq{q.ID})
+				rsp, err := s.ViewAttempts(c, &ViewAttemptsReq{q.ID})
 				So(err, ShouldBeNil)
 				So(rsp, ShouldResembleV, &display.Data{
 					Attempts: display.AttemptSlice{

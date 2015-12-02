@@ -9,12 +9,10 @@ import (
 	"encoding/hex"
 
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
-	"github.com/luci/gae/impl/prod"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/display"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
-	"github.com/luci/luci-go/appengine/gaelogger"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/mathrand"
 	"golang.org/x/net/context"
@@ -41,10 +39,10 @@ const claimRetries = 8
 // ClaimExecution is a temporary api which searches for and transactionally
 // claims an execution for an Attempt whose state is NeedsExecution.
 func (d *DungeonMaster) ClaimExecution(c context.Context) (rsp *ClaimExecutionRsp, err error) {
-	return d.claimExecutionInternal(prod.Use(gaelogger.Use(c)))
-}
+	if c, err = d.Use(c, MethodInfo["ClaimExecution"]); err != nil {
+		return
+	}
 
-func (*DungeonMaster) claimExecutionInternal(c context.Context) (rsp *ClaimExecutionRsp, err error) {
 	// TODO(iannucci): stuff below
 	// It's temporary!! Don't worry about it! :D
 	//   Use of GET to mutate state
@@ -153,7 +151,7 @@ func (*DungeonMaster) claimExecutionInternal(c context.Context) (rsp *ClaimExecu
 }
 
 func init() {
-	DungeonMasterMethodInfo["ClaimExecution"] = &endpoints.MethodInfo{
+	MethodInfo["ClaimExecution"] = &endpoints.MethodInfo{
 		Name:       "executions.claim",
 		HTTPMethod: "GET",
 		Path:       "executions/claim",

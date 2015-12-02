@@ -43,6 +43,12 @@ type ServiceBase struct {
 	//
 	// If nil, default OAuth2 authentication will be used.
 	Authenticator func(c context.Context, mi *endpoints.MethodInfo) auth.Authenticator
+
+	// TestMode if true, will cause Use to short-circuit and just return context
+	// without calling InstallServices or Authenticator. This allows you to write
+	// unit tests for endpoints handlers without needing an httptest server
+	// instance.
+	TestMode bool
 }
 
 // Use should be called at the beginning of a Cloud Endpoint handler to
@@ -51,6 +57,10 @@ func (s *ServiceBase) Use(c context.Context, mi *endpoints.MethodInfo) (context.
 	// In case the developer forgot to set it...
 	if s == nil {
 		return c, fmt.Errorf("no ServiceBase is configured for: %#v", mi)
+	}
+
+	if s.TestMode {
+		return c, nil
 	}
 
 	req := endpoints.HTTPRequest(c)

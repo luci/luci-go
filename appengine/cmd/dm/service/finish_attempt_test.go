@@ -23,7 +23,7 @@ func TestFinishAttempt(t *testing.T) {
 	Convey("FinishAttempt", t, func() {
 		c := memory.Use(context.Background())
 		ds := datastore.Get(c)
-		s := DungeonMaster{}
+		s := getService()
 
 		So(ds.Put(&model.Quest{ID: "quest"}), ShouldBeNil)
 		a := &model.Attempt{
@@ -36,7 +36,7 @@ func TestFinishAttempt(t *testing.T) {
 
 		Convey("bad", func() {
 			Convey("bad ExecutionKey", func() {
-				err := s.finishAttemptInternal(c, &FinishAttemptReq{
+				err := s.FinishAttempt(c, &FinishAttemptReq{
 					a.AttemptID,
 					[]byte("fake"),
 
@@ -47,7 +47,7 @@ func TestFinishAttempt(t *testing.T) {
 			})
 
 			Convey("not real json", func() {
-				err := s.finishAttemptInternal(c, &FinishAttemptReq{
+				err := s.FinishAttempt(c, &FinishAttemptReq{
 					a.AttemptID,
 					[]byte("exKey"),
 
@@ -59,7 +59,7 @@ func TestFinishAttempt(t *testing.T) {
 		})
 
 		Convey("good", func() {
-			err := s.finishAttemptInternal(c, &FinishAttemptReq{
+			err := s.FinishAttempt(c, &FinishAttemptReq{
 				a.AttemptID,
 				[]byte("exKey"),
 

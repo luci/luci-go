@@ -8,12 +8,10 @@ import (
 	"fmt"
 
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
-	"github.com/luci/gae/impl/prod"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/cmd/dm/mutate"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
-	"github.com/luci/luci-go/appengine/gaelogger"
 	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/stringset"
@@ -38,10 +36,10 @@ type AddDepsRsp struct {
 
 // AddDeps allows you to add attempts to a currently executing Attempt.
 func (d *DungeonMaster) AddDeps(c context.Context, req *AddDepsReq) (rsp *AddDepsRsp, err error) {
-	return d.addDepsInternal(prod.Use(gaelogger.Use(c)), req)
-}
+	if c, err = d.Use(c, MethodInfo["AddDeps"]); err != nil {
+		return
+	}
 
-func (*DungeonMaster) addDepsInternal(c context.Context, req *AddDepsReq) (rsp *AddDepsRsp, err error) {
 	_, _, err = model.VerifyExecution(c, &req.AttemptID, req.ExecutionKey)
 	if err != nil {
 		return
@@ -112,7 +110,7 @@ func (*DungeonMaster) addDepsInternal(c context.Context, req *AddDepsReq) (rsp *
 }
 
 func init() {
-	DungeonMasterMethodInfo["AddDeps"] = &endpoints.MethodInfo{
+	MethodInfo["AddDeps"] = &endpoints.MethodInfo{
 		Name:       "quests.attempts.dependencies",
 		HTTPMethod: "PUT",
 		Path:       "quests/{QuestID}/attempts/{AttemptNum}/dependencies",
