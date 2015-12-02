@@ -39,9 +39,10 @@ type Job struct {
 	XXX_unrecognized []byte `json:"-"`
 }
 
-func (m *Job) Reset()         { *m = Job{} }
-func (m *Job) String() string { return proto.CompactTextString(m) }
-func (*Job) ProtoMessage()    {}
+func (m *Job) Reset()                    { *m = Job{} }
+func (m *Job) String() string            { return proto.CompactTextString(m) }
+func (*Job) ProtoMessage()               {}
+func (*Job) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
 func (m *Job) GetId() string {
 	if m != nil && m.Id != nil {
@@ -80,9 +81,10 @@ type Task struct {
 	XXX_unrecognized []byte        `json:"-"`
 }
 
-func (m *Task) Reset()         { *m = Task{} }
-func (m *Task) String() string { return proto.CompactTextString(m) }
-func (*Task) ProtoMessage()    {}
+func (m *Task) Reset()                    { *m = Task{} }
+func (m *Task) String() string            { return proto.CompactTextString(m) }
+func (*Task) ProtoMessage()               {}
+func (*Task) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
 func (m *Task) GetNoop() *NoopTask {
 	if m != nil {
@@ -103,9 +105,10 @@ type NoopTask struct {
 	XXX_unrecognized []byte `json:"-"`
 }
 
-func (m *NoopTask) Reset()         { *m = NoopTask{} }
-func (m *NoopTask) String() string { return proto.CompactTextString(m) }
-func (*NoopTask) ProtoMessage()    {}
+func (m *NoopTask) Reset()                    { *m = NoopTask{} }
+func (m *NoopTask) String() string            { return proto.CompactTextString(m) }
+func (*NoopTask) ProtoMessage()               {}
+func (*NoopTask) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
 // UrlFetchTask specifies parameters for simple HTTP call.
 type UrlFetchTask struct {
@@ -118,9 +121,10 @@ type UrlFetchTask struct {
 	XXX_unrecognized []byte `json:"-"`
 }
 
-func (m *UrlFetchTask) Reset()         { *m = UrlFetchTask{} }
-func (m *UrlFetchTask) String() string { return proto.CompactTextString(m) }
-func (*UrlFetchTask) ProtoMessage()    {}
+func (m *UrlFetchTask) Reset()                    { *m = UrlFetchTask{} }
+func (m *UrlFetchTask) String() string            { return proto.CompactTextString(m) }
+func (*UrlFetchTask) ProtoMessage()               {}
+func (*UrlFetchTask) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
 
 const Default_UrlFetchTask_Method string = "GET"
 const Default_UrlFetchTask_TimeoutSec int32 = 60
@@ -155,13 +159,42 @@ type ProjectConfig struct {
 	XXX_unrecognized []byte `json:"-"`
 }
 
-func (m *ProjectConfig) Reset()         { *m = ProjectConfig{} }
-func (m *ProjectConfig) String() string { return proto.CompactTextString(m) }
-func (*ProjectConfig) ProtoMessage()    {}
+func (m *ProjectConfig) Reset()                    { *m = ProjectConfig{} }
+func (m *ProjectConfig) String() string            { return proto.CompactTextString(m) }
+func (*ProjectConfig) ProtoMessage()               {}
+func (*ProjectConfig) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
 
 func (m *ProjectConfig) GetJob() []*Job {
 	if m != nil {
 		return m.Job
 	}
 	return nil
+}
+
+func init() {
+	proto.RegisterType((*Job)(nil), "messages.Job")
+	proto.RegisterType((*Task)(nil), "messages.Task")
+	proto.RegisterType((*NoopTask)(nil), "messages.NoopTask")
+	proto.RegisterType((*UrlFetchTask)(nil), "messages.UrlFetchTask")
+	proto.RegisterType((*ProjectConfig)(nil), "messages.ProjectConfig")
+}
+
+var fileDescriptor0 = []byte{
+	// 250 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x4c, 0x90, 0xc1, 0x4b, 0xc3, 0x30,
+	0x14, 0xc6, 0x59, 0x53, 0xa5, 0x7b, 0x71, 0x22, 0x11, 0xb4, 0x88, 0x87, 0xd1, 0x93, 0x22, 0x14,
+	0xe9, 0xc1, 0xc3, 0xae, 0xa2, 0xa2, 0x07, 0x11, 0x9c, 0xe7, 0xd1, 0xa6, 0x6f, 0x6b, 0x67, 0xdb,
+	0x37, 0x92, 0xf4, 0xff, 0xf7, 0x2d, 0xb4, 0xd4, 0x53, 0xc8, 0xf7, 0xbe, 0xfc, 0xf2, 0x7d, 0x0f,
+	0x40, 0x1b, 0xea, 0xd2, 0x83, 0x21, 0x47, 0x2a, 0x6a, 0xd1, 0xda, 0x7c, 0x87, 0x36, 0xf9, 0x06,
+	0xf1, 0x41, 0x85, 0x02, 0x08, 0xea, 0x32, 0x9e, 0x2d, 0x67, 0x77, 0x73, 0x75, 0x01, 0x91, 0xd5,
+	0x15, 0x96, 0x7d, 0x83, 0x71, 0x30, 0x2a, 0x65, 0x6d, 0xf3, 0xa2, 0xc1, 0x32, 0x16, 0xac, 0x44,
+	0xea, 0x16, 0x42, 0x97, 0xdb, 0xdf, 0x38, 0xe4, 0x9b, 0xcc, 0xce, 0xd3, 0x91, 0x97, 0xae, 0x59,
+	0x65, 0x68, 0x78, 0x3c, 0xd5, 0x12, 0xc2, 0x8e, 0xe8, 0xe0, 0xb9, 0x32, 0x53, 0x93, 0xeb, 0x93,
+	0x55, 0xef, 0xb8, 0x87, 0x79, 0x6f, 0x9a, 0xcd, 0x16, 0x9d, 0xae, 0xfc, 0x67, 0x32, 0xbb, 0x9a,
+	0x6c, 0x3f, 0xa6, 0x79, 0x3d, 0x4e, 0x3c, 0x14, 0x20, 0x1a, 0x9f, 0x25, 0xef, 0x70, 0xf6, 0x7f,
+	0xa6, 0x2e, 0xe1, 0xb4, 0x45, 0x57, 0xd1, 0x50, 0x61, 0x25, 0xde, 0x5e, 0xd6, 0x4a, 0x82, 0x60,
+	0xf6, 0x50, 0xe1, 0x1a, 0xa4, 0xab, 0x5b, 0xa4, 0xde, 0x6d, 0x2c, 0x6a, 0xdf, 0xe2, 0x64, 0x15,
+	0x3c, 0x3d, 0x26, 0x0f, 0xb0, 0xf8, 0x32, 0xb4, 0x47, 0xed, 0x9e, 0xa9, 0xdb, 0xd6, 0x3b, 0x75,
+	0x03, 0x62, 0x4f, 0x05, 0x83, 0x04, 0x87, 0x59, 0x4c, 0x61, 0x78, 0x4d, 0x7f, 0x01, 0x00, 0x00,
+	0xff, 0xff, 0x7c, 0x1e, 0x08, 0x4d, 0x44, 0x01, 0x00, 0x00,
 }

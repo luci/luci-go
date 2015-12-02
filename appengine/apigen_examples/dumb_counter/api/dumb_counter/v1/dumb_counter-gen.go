@@ -201,32 +201,32 @@ func (s *ListRsp) MarshalJSON() ([]byte, error) {
 // method id "dumb_counter.add":
 
 type AddCall struct {
-	s      *Service
-	Name   string
-	addreq *AddReq
-	opt_   map[string]interface{}
-	ctx_   context.Context
+	s          *Service
+	Name       string
+	addreq     *AddReq
+	urlParams_ gensupport.URLParams
+	ctx_       context.Context
 }
 
 // Add: Add an an amount to a particular counter
 func (s *Service) Add(Name string, addreq *AddReq) *AddCall {
-	c := &AddCall{s: s, opt_: make(map[string]interface{})}
+	c := &AddCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.Name = Name
 	c.addreq = addreq
 	return c
 }
 
-// Fields allows partial responses to be retrieved.
-// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
 // for more information.
 func (c *AddCall) Fields(s ...googleapi.Field) *AddCall {
-	c.opt_["fields"] = googleapi.CombineFields(s)
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
 	return c
 }
 
-// Context sets the context to be used in this call's Do method.
-// Any pending HTTP request will be aborted if the provided context
-// is canceled.
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
 func (c *AddCall) Context(ctx context.Context) *AddCall {
 	c.ctx_ = ctx
 	return c
@@ -239,13 +239,9 @@ func (c *AddCall) doRequest(alt string) (*http.Response, error) {
 		return nil, err
 	}
 	ctype := "application/json"
-	params := make(url.Values)
-	params.Set("alt", alt)
-	if v, ok := c.opt_["fields"]; ok {
-		params.Set("fields", fmt.Sprintf("%v", v))
-	}
+	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "counter/{Name}")
-	urls += "?" + params.Encode()
+	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("POST", urls, body)
 	googleapi.Expand(req.URL, map[string]string{
 		"Name": c.Name,
@@ -322,32 +318,32 @@ func (c *AddCall) Do() (*AddRsp, error) {
 // method id "dumb_counter.cas":
 
 type CasCall struct {
-	s      *Service
-	Name   string
-	casreq *CASReq
-	opt_   map[string]interface{}
-	ctx_   context.Context
+	s          *Service
+	Name       string
+	casreq     *CASReq
+	urlParams_ gensupport.URLParams
+	ctx_       context.Context
 }
 
 // Cas: Compare and swap a counter value
 func (s *Service) Cas(Name string, casreq *CASReq) *CasCall {
-	c := &CasCall{s: s, opt_: make(map[string]interface{})}
+	c := &CasCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.Name = Name
 	c.casreq = casreq
 	return c
 }
 
-// Fields allows partial responses to be retrieved.
-// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
 // for more information.
 func (c *CasCall) Fields(s ...googleapi.Field) *CasCall {
-	c.opt_["fields"] = googleapi.CombineFields(s)
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
 	return c
 }
 
-// Context sets the context to be used in this call's Do method.
-// Any pending HTTP request will be aborted if the provided context
-// is canceled.
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
 func (c *CasCall) Context(ctx context.Context) *CasCall {
 	c.ctx_ = ctx
 	return c
@@ -360,13 +356,9 @@ func (c *CasCall) doRequest(alt string) (*http.Response, error) {
 		return nil, err
 	}
 	ctype := "application/json"
-	params := make(url.Values)
-	params.Set("alt", alt)
-	if v, ok := c.opt_["fields"]; ok {
-		params.Set("fields", fmt.Sprintf("%v", v))
-	}
+	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "counter/{Name}/cas")
-	urls += "?" + params.Encode()
+	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("POST", urls, body)
 	googleapi.Expand(req.URL, map[string]string{
 		"Name": c.Name,
@@ -416,24 +408,25 @@ func (c *CasCall) Do() error {
 // method id "dumb_counter.currentvalue":
 
 type CurrentvalueCall struct {
-	s    *Service
-	Name string
-	opt_ map[string]interface{}
-	ctx_ context.Context
+	s            *Service
+	Name         string
+	urlParams_   gensupport.URLParams
+	ifNoneMatch_ string
+	ctx_         context.Context
 }
 
 // Currentvalue: Returns the current value held by the named counter
 func (s *Service) Currentvalue(Name string) *CurrentvalueCall {
-	c := &CurrentvalueCall{s: s, opt_: make(map[string]interface{})}
+	c := &CurrentvalueCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.Name = Name
 	return c
 }
 
-// Fields allows partial responses to be retrieved.
-// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
 // for more information.
 func (c *CurrentvalueCall) Fields(s ...googleapi.Field) *CurrentvalueCall {
-	c.opt_["fields"] = googleapi.CombineFields(s)
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
 	return c
 }
 
@@ -443,13 +436,13 @@ func (c *CurrentvalueCall) Fields(s ...googleapi.Field) *CurrentvalueCall {
 // request. Use googleapi.IsNotModified to check whether the response
 // error from Do is the result of In-None-Match.
 func (c *CurrentvalueCall) IfNoneMatch(entityTag string) *CurrentvalueCall {
-	c.opt_["ifNoneMatch"] = entityTag
+	c.ifNoneMatch_ = entityTag
 	return c
 }
 
-// Context sets the context to be used in this call's Do method.
-// Any pending HTTP request will be aborted if the provided context
-// is canceled.
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
 func (c *CurrentvalueCall) Context(ctx context.Context) *CurrentvalueCall {
 	c.ctx_ = ctx
 	return c
@@ -457,20 +450,16 @@ func (c *CurrentvalueCall) Context(ctx context.Context) *CurrentvalueCall {
 
 func (c *CurrentvalueCall) doRequest(alt string) (*http.Response, error) {
 	var body io.Reader = nil
-	params := make(url.Values)
-	params.Set("alt", alt)
-	if v, ok := c.opt_["fields"]; ok {
-		params.Set("fields", fmt.Sprintf("%v", v))
-	}
+	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "counter/{Name}")
-	urls += "?" + params.Encode()
+	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
 	googleapi.Expand(req.URL, map[string]string{
 		"Name": c.Name,
 	})
 	req.Header.Set("User-Agent", c.s.userAgent())
-	if v, ok := c.opt_["ifNoneMatch"]; ok {
-		req.Header.Set("If-None-Match", fmt.Sprintf("%v", v))
+	if c.ifNoneMatch_ != "" {
+		req.Header.Set("If-None-Match", c.ifNoneMatch_)
 	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
@@ -538,22 +527,23 @@ func (c *CurrentvalueCall) Do() (*CurrentValueRsp, error) {
 // method id "dumb_counter.list":
 
 type ListCall struct {
-	s    *Service
-	opt_ map[string]interface{}
-	ctx_ context.Context
+	s            *Service
+	urlParams_   gensupport.URLParams
+	ifNoneMatch_ string
+	ctx_         context.Context
 }
 
 // List: Returns all of the available counters
 func (s *Service) List() *ListCall {
-	c := &ListCall{s: s, opt_: make(map[string]interface{})}
+	c := &ListCall{s: s, urlParams_: make(gensupport.URLParams)}
 	return c
 }
 
-// Fields allows partial responses to be retrieved.
-// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
 // for more information.
 func (c *ListCall) Fields(s ...googleapi.Field) *ListCall {
-	c.opt_["fields"] = googleapi.CombineFields(s)
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
 	return c
 }
 
@@ -563,13 +553,13 @@ func (c *ListCall) Fields(s ...googleapi.Field) *ListCall {
 // request. Use googleapi.IsNotModified to check whether the response
 // error from Do is the result of In-None-Match.
 func (c *ListCall) IfNoneMatch(entityTag string) *ListCall {
-	c.opt_["ifNoneMatch"] = entityTag
+	c.ifNoneMatch_ = entityTag
 	return c
 }
 
-// Context sets the context to be used in this call's Do method.
-// Any pending HTTP request will be aborted if the provided context
-// is canceled.
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
 func (c *ListCall) Context(ctx context.Context) *ListCall {
 	c.ctx_ = ctx
 	return c
@@ -577,18 +567,14 @@ func (c *ListCall) Context(ctx context.Context) *ListCall {
 
 func (c *ListCall) doRequest(alt string) (*http.Response, error) {
 	var body io.Reader = nil
-	params := make(url.Values)
-	params.Set("alt", alt)
-	if v, ok := c.opt_["fields"]; ok {
-		params.Set("fields", fmt.Sprintf("%v", v))
-	}
+	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "counter")
-	urls += "?" + params.Encode()
+	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
 	googleapi.SetOpaque(req.URL)
 	req.Header.Set("User-Agent", c.s.userAgent())
-	if v, ok := c.opt_["ifNoneMatch"]; ok {
-		req.Header.Set("If-None-Match", fmt.Sprintf("%v", v))
+	if c.ifNoneMatch_ != "" {
+		req.Header.Set("If-None-Match", c.ifNoneMatch_)
 	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)

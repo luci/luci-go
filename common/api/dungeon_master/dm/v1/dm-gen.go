@@ -9,7 +9,7 @@
 //   import "github.com/luci/luci-go/common/api/dungeon_master/dm/v1"
 //   ...
 //   dmService, err := dm.New(oauthHttpClient)
-package dm
+package dm // import "github.com/luci/luci-go/common/api/dungeon_master/dm/v1"
 
 import (
 	"bytes"
@@ -395,13 +395,11 @@ func (s *EnsureQuestsRsp) MarshalJSON() ([]byte, error) {
 }
 
 type ExecutionInfo struct {
-	// DistributorToken: The distributor Token that this execution has.
-	DistributorToken string `json:"DistributorToken,omitempty"`
+	ID int64 `json:"ID,omitempty"`
 
-	// ExecutionID: The Execution ID
-	ExecutionID int64 `json:"ExecutionID,omitempty"`
+	Key string `json:"Key,omitempty"`
 
-	// ForceSendFields is a list of field names (e.g. "DistributorToken") to
+	// ForceSendFields is a list of field names (e.g. "ID") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
 	// non-interface field appearing in ForceSendFields will be sent to the
@@ -463,16 +461,12 @@ func (s *FinishAttemptReq) MarshalJSON() ([]byte, error) {
 }
 
 type Quest struct {
-	// Created: The time that this quest was created
 	Created string `json:"Created,omitempty"`
 
-	// Distributor: The Distributor to use for this Quest
 	Distributor string `json:"Distributor,omitempty"`
 
-	// ID: The Quest ID
 	ID string `json:"ID,omitempty"`
 
-	// Payload: The Quest JSON payload for the distributor
 	Payload string `json:"Payload,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "Created") to
