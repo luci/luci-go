@@ -6,7 +6,6 @@ package dumbCounter
 
 import (
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
-	"github.com/luci/gae/impl/prod"
 	dstore "github.com/luci/gae/service/datastore"
 	"golang.org/x/net/context"
 )
@@ -29,10 +28,14 @@ type AddRsp struct {
 
 // Add adds a value to the current counter, and returns the old+new values. It
 // may cause a counter to come into existance.
-func (Example) Add(c context.Context, r *AddReq) (rsp *AddRsp, err error) {
+func (e *Example) Add(c context.Context, r *AddReq) (rsp *AddRsp, err error) {
+	c, err = e.Use(c, addMethodInfo)
+	if err != nil {
+		return
+	}
+
 	rsp = &AddRsp{}
 
-	c = prod.Use(c)
 	err = dstore.Get(c).RunInTransaction(func(c context.Context) error {
 		ds := dstore.Get(c)
 		ctr := &Counter{Name: r.Name}

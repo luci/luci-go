@@ -15,6 +15,6 @@ import (
 
 // Uncomment this block to make this a Managed VM application.
 func init() {
-	ephelper.Register(endpoints.DefaultServer, dumbCounter.Example{}, dumbCounter.ServiceInfo, dumbCounter.MethodInfoMap)
+	ephelper.Register(endpoints.DefaultServer, &dumbCounter.Example{}, dumbCounter.ServiceInfo, dumbCounter.MethodInfoMap)
 	endpoints.HandleHTTP()
 }

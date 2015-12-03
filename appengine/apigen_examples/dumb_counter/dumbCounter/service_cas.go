@@ -6,7 +6,6 @@ package dumbCounter
 
 import (
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
-	"github.com/luci/gae/impl/prod"
 	dstore "github.com/luci/gae/service/datastore"
 	"golang.org/x/net/context"
 )
@@ -20,9 +19,13 @@ type CASReq struct {
 }
 
 // CAS does an atomic compare-and-swap on a counter.
-func (Example) CAS(c context.Context, r *CASReq) (err error) {
+func (e *Example) CAS(c context.Context, r *CASReq) (err error) {
+	c, err = e.Use(c, casMethodInfo)
+	if err != nil {
+		return
+	}
+
 	success := false
-	c = prod.Use(c)
 	err = dstore.Get(c).RunInTransaction(func(c context.Context) error {
 		ds := dstore.Get(c)
 		ctr := &Counter{Name: r.Name}

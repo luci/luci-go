@@ -6,7 +6,6 @@ package dumbCounter
 
 import (
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
-	"github.com/luci/gae/impl/prod"
 	dstore "github.com/luci/gae/service/datastore"
 	"golang.org/x/net/context"
 )
@@ -19,8 +18,13 @@ type ListRsp struct {
 
 // List returns a list of all the counters. Note that it's very poorly
 // implemented! It's completely unpaged. I don't care :).
-func (Example) List(c context.Context) (rsp *ListRsp, err error) {
-	ds := dstore.Get(prod.Use(c))
+func (e *Example) List(c context.Context) (rsp *ListRsp, err error) {
+	c, err = e.Use(c, listMethodInfo)
+	if err != nil {
+		return
+	}
+
+	ds := dstore.Get(c)
 	rsp = &ListRsp{}
 	err = ds.GetAll(dstore.NewQuery("Counter"), &rsp.Counters)
 	return

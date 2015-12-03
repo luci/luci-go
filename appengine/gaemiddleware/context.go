@@ -20,7 +20,6 @@ import (
 	"github.com/luci/luci-go/server/proccache"
 	"github.com/luci/luci-go/server/settings"
 	"golang.org/x/net/context"
-	"google.golang.org/appengine"
 )
 
 var (
@@ -45,7 +44,7 @@ var (
 //   * github.com/luci/luci-go/appengine/gaeauth/server/gaesigner (RSA signer)
 //   * github.com/luci/luci-go/appengine/gaeauth/server/auth (user groups database)
 func WithProd(c context.Context, req *http.Request) context.Context {
-	c = prod.Use(appengine.WithContext(c, req))
+	c = prod.Use(c, req)
 	c = gaelogger.Use(c)
 	c = client.UseAnonymousTransport(c)
 	c = proccache.Use(c, globalProcessCache)

@@ -27,4 +27,6 @@ var (
 )
 
 // Example is the example service type.
-type Example struct{}
+type Example struct {
+	ephelper.ServiceBase
+}

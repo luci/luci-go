@@ -17,8 +17,8 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logdog/types"
 	miloProto "github.com/luci/luci-go/common/proto/milo"
+	"github.com/luci/luci-go/common/transport"
 	"golang.org/x/net/context"
-	"google.golang.org/appengine/urlfetch"
 
 	"github.com/luci/luci-go/appengine/cmd/milo/resp"
 )
@@ -51,7 +51,7 @@ func getSwarmingLog(server string, swarmingID string, c context.Context) ([]byte
 	swarmingURL := fmt.Sprintf(
 		"https://%s/swarming/api/v1/client/task/%s/output/0",
 		resolveServer(server), swarmingID)
-	client := urlfetch.Client(c)
+	client := transport.GetClient(c)
 	resp, err := client.Get(swarmingURL)
 	if err != nil {
 		return nil, err

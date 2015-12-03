@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
-	"google.golang.org/appengine"
 
+	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/proccache"
@@ -28,7 +28,7 @@ func Use(c context.Context) context.Context {
 type signer struct{}
 
 func (signer) SignBytes(c context.Context, blob []byte) (keyName string, signature []byte, err error) {
-	return appengine.SignBytes(c, blob)
+	return info.Get(c).SignBytes(blob)
 }
 
 func (signer) Certificates(c context.Context) (*signing.PublicCertificates, error) {
@@ -45,7 +45,7 @@ type certsCacheKey int
 
 // cachedCerts caches this app certs in local memory for 1 hour.
 var cachedCerts = proccache.Cached(certsCacheKey(0), func(c context.Context, key interface{}) (interface{}, time.Duration, error) {
-	aeCerts, err := appengine.PublicCertificates(c)
+	aeCerts, err := info.Get(c).PublicCertificates()
 	if err != nil {
 		return nil, 0, err
 	}

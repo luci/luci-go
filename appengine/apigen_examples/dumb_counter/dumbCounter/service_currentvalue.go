@@ -6,7 +6,6 @@ package dumbCounter
 
 import (
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
-	"github.com/luci/gae/impl/prod"
 	dstore "github.com/luci/gae/service/datastore"
 	"golang.org/x/net/context"
 )
@@ -22,8 +21,12 @@ type CurrentValueRsp struct {
 }
 
 // CurrentValue gets the current value of a counter (duh)
-func (Example) CurrentValue(c context.Context, r *CurrentValueReq) (rsp *CurrentValueRsp, err error) {
-	c = prod.Use(c)
+func (e *Example) CurrentValue(c context.Context, r *CurrentValueReq) (rsp *CurrentValueRsp, err error) {
+	c, err = e.Use(c, currentValueMethodInfo)
+	if err != nil {
+		return
+	}
+
 	ds := dstore.Get(c)
 
 	ctr := &Counter{Name: r.Name}

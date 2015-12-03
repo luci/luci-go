@@ -9,7 +9,7 @@
 //   import "github.com/luci/luci-go/appengine/apigen_examples/dumb_counter/api/dumb_counter/v1"
 //   ...
 //   dumb_counterService, err := dumb_counter.New(oauthHttpClient)
-package dumb_counter // import "github.com/luci/luci-go/appengine/apigen_examples/dumb_counter/api/dumb_counter/v1"
+package dumb_counter
 
 import (
 	"bytes"
@@ -45,7 +45,7 @@ var _ = ctxhttp.Do
 const apiId = "dumb_counter:v1"
 const apiName = "dumb_counter"
 const apiVersion = "v1"
-const basePath = "https://counter.example.com/_ah/api/dumb_counter/v1/"
+const basePath = "https://counter.example.com/dumb_counter/v1/"
 
 func New(client *http.Client) (*Service, error) {
 	if client == nil {

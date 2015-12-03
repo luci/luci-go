@@ -12,6 +12,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
+	gae_info "github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/admin"
 	"github.com/luci/luci-go/server/auth/info"
@@ -55,15 +56,17 @@ func Warmup(c context.Context) error {
 }
 
 func getServiceInfo(c context.Context) (info.ServiceInfo, error) {
-	account, err := appengine.ServiceAccount(c)
+	i := gae_info.Get(c)
+
+	account, err := i.ServiceAccount()
 	if err != nil {
 		return info.ServiceInfo{}, err
 	}
 	return info.ServiceInfo{
-		AppID:              appengine.AppID(c),
+		AppID:              i.AppID(),
 		AppRuntime:         "go",
 		AppRuntimeVersion:  runtime.Version(),
-		AppVersion:         strings.Split(appengine.VersionID(c), ".")[0],
+		AppVersion:         strings.Split(i.VersionID(), ".")[0],
 		ServiceAccountName: account,
 	}, nil
 }
@@ -74,7 +77,7 @@ func getServiceInfo(c context.Context) (info.ServiceInfo, error) {
 type adminPagesConfig struct{}
 
 func (adminPagesConfig) GetAppServiceAccount(c context.Context) (string, error) {
-	return appengine.ServiceAccount(c)
+	return gae_info.Get(c).ServiceAccount()
 }
 
 func (adminPagesConfig) GetReplicationState(c context.Context) (string, int64, error) {
