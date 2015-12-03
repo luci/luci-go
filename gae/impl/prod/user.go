@@ -42,8 +42,8 @@ func (u userImpl) Current() *gae_user.User {
 	return (*gae_user.User)(user.Current(u.aeCtx))
 }
 
-func (u userImpl) CurrentOAuth() (*gae_user.User, error) {
-	usr, err := user.CurrentOAuth(u.aeCtx)
+func (u userImpl) CurrentOAuth(scopes ...string) (*gae_user.User, error) {
+	usr, err := user.CurrentOAuth(u.aeCtx, scopes...)
 	if err != nil {
 		return nil, err
 	}

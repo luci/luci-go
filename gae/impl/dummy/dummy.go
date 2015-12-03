@@ -168,7 +168,7 @@ func Info() info.Interface { return dummyInfoInst }
 type u struct{}
 
 func (u) Current() *user.User                              { panic(ni()) }
-func (u) CurrentOAuth() (*user.User, error)                { panic(ni()) }
+func (u) CurrentOAuth(...string) (*user.User, error)       { panic(ni()) }
 func (u) IsAdmin() bool                                    { panic(ni()) }
 func (u) LoginURL(string) (string, error)                  { panic(ni()) }
 func (u) LoginURLFederated(string, string) (string, error) { panic(ni()) }

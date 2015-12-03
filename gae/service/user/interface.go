@@ -7,7 +7,7 @@ package user
 // Interface provides access to the "appengine/users" API methods.
 type Interface interface {
 	Current() *User
-	CurrentOAuth() (*User, error)
+	CurrentOAuth(scopes ...string) (*User, error)
 
 	IsAdmin() bool
 
