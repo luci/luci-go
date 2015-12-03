@@ -12,47 +12,42 @@ import (
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
 	"github.com/luci/luci-go/common/iotools"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/paniccatcher"
 	"golang.org/x/net/context"
 )
 
-// An client ID, used for logging only
-type clientID int
-
-// namedPipeStreamParams are parameters representing a negotiated stream ready
-// to deliver.
-type namedPipeStreamParams struct {
+// streamParams are parameters representing a negotiated stream ready to
+// deliver.
+type streamParams struct {
 	// The stream's ReadCloser connection.
 	rc io.ReadCloser
 	// Negotiated stream properties.
 	properties *streamproto.Properties
 }
 
-type namedPipeGenFunc func() (net.Listener, error)
-
-// Base class for OS-specific stream server implementations.
-type namedPipeServer struct {
+// listenerStreamServer is the class for Listener-based stream server
+// implementations.
+type listenerStreamServer struct {
 	context.Context
 
-	gen             func() (net.Listener, error)
-	streamParamsC   chan *namedPipeStreamParams
+	// gen is a generator function that is called to produce the stream server's
+	// Listener. On success, it returns the instantiated Listener, which will be
+	// closed when the stream server is closed.
+	gen func() (net.Listener, error)
+	l   net.Listener
+
+	streamParamsC   chan *streamParams
 	closedC         chan struct{}
 	acceptFinishedC chan struct{}
-	l               net.Listener // The Listener to use for client connections.
+
+	// discardC is a testing channel. If not nil, failed client connections will
+	// be written here.
+	discardC chan *streamClient
 }
 
-// Initializes the base structure members.
-func createNamedPipeServer(ctx context.Context, gen namedPipeGenFunc) *namedPipeServer {
-	return &namedPipeServer{
-		Context:         log.SetFilter(ctx, "streamServer"),
-		gen:             gen,
-		streamParamsC:   make(chan *namedPipeStreamParams),
-		closedC:         make(chan struct{}),
-		acceptFinishedC: make(chan struct{}),
-	}
-}
+var _ StreamServer = (*listenerStreamServer)(nil)
 
-// Implements StreamServer.Connect
-func (s *namedPipeServer) Listen() error {
+func (s *listenerStreamServer) Listen() error {
 	// Create a listener (OS-specific).
 	var err error
 	s.l, err = s.gen()
@@ -60,13 +55,17 @@ func (s *namedPipeServer) Listen() error {
 		return err
 	}
 
+	s.streamParamsC = make(chan *streamParams)
+	s.closedC = make(chan struct{})
+	s.acceptFinishedC = make(chan struct{})
+
 	// Poll the Listener for new connections in a separate goroutine. This will
 	// terminate when the server is Close()d.
 	go s.serve()
 	return nil
 }
 
-func (s *namedPipeServer) Next() (io.ReadCloser, *streamproto.Properties) {
+func (s *listenerStreamServer) Next() (io.ReadCloser, *streamproto.Properties) {
 	if streamParams, ok := <-s.streamParamsC; ok {
 		return streamParams.rc, streamParams.properties
 	}
@@ -74,7 +73,7 @@ func (s *namedPipeServer) Next() (io.ReadCloser, *streamproto.Properties) {
 }
 
 // Implements StreamServer.Close
-func (s *namedPipeServer) Close() {
+func (s *listenerStreamServer) Close() {
 	if s.l == nil {
 		panic("server is not currently serving")
 	}
@@ -92,10 +91,10 @@ func (s *namedPipeServer) Close() {
 
 // Continuously pulls connections from the supplied Listener and returns them as
 // connections to streamParamsC for consumption by Next().
-func (s *namedPipeServer) serve() {
+func (s *listenerStreamServer) serve() {
 	defer close(s.acceptFinishedC)
 
-	nextID := clientID(0)
+	nextID := 0
 	clientWG := sync.WaitGroup{}
 	for {
 		log.Debugf(s, "Beginning Accept() loop cycle.")
@@ -109,30 +108,57 @@ func (s *namedPipeServer) serve() {
 
 		// Spawn a goroutine to handle this connection. This goroutine will take
 		// ownership of the connection, closing it as appropriate.
-		npConn := &namedPipeConn{
+		client := &streamClient{
 			closedC: s.closedC,
 			id:      nextID,
 			conn:    &iotools.DeadlineReader{conn, 0},
 		}
-		npConn.Context = log.SetFields(s, log.Fields{
-			"id":     npConn.id,
-			"local":  npConn.conn.LocalAddr(),
-			"remote": npConn.conn.RemoteAddr(),
+		client.Context = log.SetFields(s, log.Fields{
+			"id":     client.id,
+			"local":  client.conn.LocalAddr(),
+			"remote": client.conn.RemoteAddr(),
 		})
 
 		clientWG.Add(1)
 		go func() {
 			defer clientWG.Done()
 
-			defer func() {
-				if r := recover(); r != nil {
+			var params *streamParams
+			paniccatcher.Do(func() {
+				var err error
+				params, err = client.handle()
+				if err != nil {
 					log.Fields{
-						log.ErrorKey: r,
-					}.Errorf(npConn, "Failed to negotitate stream client.")
+						log.ErrorKey: err,
+					}.Errorf(client, "Failed to negotitate stream client.")
+					params = nil
 				}
-			}()
+			}, func(p *paniccatcher.Panic) {
+				log.Fields{
+					"panicReason": p.Reason,
+				}.Errorf(client, "Panic during client handshake:\n%s", p.Stack)
+				params = nil
+			})
 
-			npConn.handle(s.streamParamsC)
+			// Did the negotiation fail?
+			if params != nil {
+				// Punt the client to our Next function. If we close while waiting, close
+				// the Client.
+				select {
+				case s.streamParamsC <- params:
+					break
+
+				case <-s.closedC:
+					log.Warningf(client, "Closed with client in hand. Cleaning up client.")
+					params.rc.Close()
+					params = nil
+				}
+			}
+
+			// (Testing) write failed connections to discardC if configured.
+			if params == nil && s.discardC != nil {
+				s.discardC <- client
+			}
 		}()
 		nextID++
 	}
@@ -145,16 +171,12 @@ func (s *namedPipeServer) serve() {
 	}.Infof(s, "Exiting serve loop.")
 }
 
-//
-// namedPipeConn
-//
-
-// Manages a single named pipe connection.
-type namedPipeConn struct {
+// streamClient manages a single client connection.
+type streamClient struct {
 	context.Context
 
 	closedC chan struct{} // Signal channel to indicate that the server has closed.
-	id      clientID      // Client ID, used for debugging correlation.
+	id      int           // Client ID, used for debugging correlation.
 	conn    net.Conn      // The underlying client connection.
 
 	// decoupleMu is used to ensure that decoupleConn is called at most one time.
@@ -167,9 +189,9 @@ type namedPipeConn struct {
 //
 // On failure, the connection will be closed.
 //
-// This method returns true if the handshake completed and the stream was
-// passed onto the server, and false otherwise.
-func (c *namedPipeConn) handle(paramsC chan *namedPipeStreamParams) bool {
+// This method returns the negotiated stream parameters, or nil if the
+// negotitation failed and the client was closed.
+func (c *streamClient) handle() (*streamParams, error) {
 	log.Infof(c, "Received new connection.")
 
 	// Close the connection as a failsafe. If we have already decoupled it, this
@@ -180,15 +202,11 @@ func (c *namedPipeConn) handle(paramsC chan *namedPipeStreamParams) bool {
 	// because it can get decoupled during operation.
 	p, err := handshake(c, c.conn)
 	if err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-		}.Errorf(c, "Failed to perform handshake.")
-		return false
+		return nil, err
 	}
 
 	// Successful handshake. Forward our properties.
-	paramsC <- &namedPipeStreamParams{c.decoupleConn(), p}
-	return true
+	return &streamParams{c.decoupleConn(), p}, nil
 }
 
 // handshake handles the handshaking and registration of a single connection. If
@@ -204,7 +222,7 @@ func handshake(ctx context.Context, conn net.Conn) (*streamproto.Properties, err
 }
 
 // Closes the underlying connection.
-func (c *namedPipeConn) closeConn() {
+func (c *streamClient) closeConn() {
 	conn := c.decoupleConn()
 	if conn != nil {
 		if err := conn.Close(); err != nil {
@@ -217,7 +235,7 @@ func (c *namedPipeConn) closeConn() {
 
 // Decouples the active connection, returning it and setting the connection to
 // nil.
-func (c *namedPipeConn) decoupleConn() (conn net.Conn) {
+func (c *streamClient) decoupleConn() (conn net.Conn) {
 	c.decoupleMu.Lock()
 	defer c.decoupleMu.Unlock()
 

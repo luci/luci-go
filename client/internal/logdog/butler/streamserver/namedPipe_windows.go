@@ -15,8 +15,11 @@ import (
 // NewNamedPipeServer instantiates a new Windows named pipe server instance.
 func NewNamedPipeServer(ctx context.Context, address string) StreamServer {
 	ctx = log.SetField(ctx, "address", address)
-	return createNamedPipeServer(ctx, func() (net.Listener, error) {
-		log.Debugf(ctx, "Creating Windows server socket Listener.")
-		return npipe.Listen(address)
-	})
+	return &listenerStreamServer{
+		Context: ctx,
+		gen: func() (net.Listener, error) {
+			log.Debugf(ctx, "Creating Windows server socket Listener.")
+			return npipe.Listen(address)
+		},
+	}
 }
