@@ -11,24 +11,20 @@ import (
 	"google.golang.org/appengine"
 )
 
-// Use adds production implementations for all the gae services to the context,
-// using the existing context obtained by appengine.NewContext.
-//
-// The services added are:
-//   - github.com/luci/gae/service/datastore
-//   - github.com/luci/gae/service/taskqueue
-//   - github.com/luci/gae/service/memcache
-//   - github.com/luci/gae/service/info
-//   - github.com/luci/gae/service/urlfetch
-//
-// These can be retrieved with the <service>.Get functions.
-//
-// The implementations are all backed by the real appengine SDK functionality,
-func Use(c context.Context) context.Context {
-	return useURLFetch(useRDS(useMC(useTQ(useGI(c)))))
+type key int
+
+var (
+	prodContextKey key
+	probeCacheKey  key = 1
+)
+
+// AEContext retrieves the raw "google.golang.org/appengine" compatible Context.
+func AEContext(c context.Context) context.Context {
+	aeCtx, _ := c.Value(prodContextKey).(context.Context)
+	return aeCtx
 }
 
-// UseRequest adds production implementations for all the gae services to the
+// Use adds production implementations for all the gae services to the
 // context.
 //
 // The services added are:
@@ -41,6 +37,8 @@ func Use(c context.Context) context.Context {
 // These can be retrieved with the <service>.Get functions.
 //
 // The implementations are all backed by the real appengine SDK functionality,
-func UseRequest(r *http.Request) context.Context {
-	return useURLFetch(useRDS(useMC(useTQ(useGI(appengine.NewContext(r))))))
+func Use(c context.Context, r *http.Request) context.Context {
+	aeCtx := appengine.NewContext(r)
+	c = context.WithValue(c, prodContextKey, aeCtx)
+	return useURLFetch(useRDS(useMC(useTQ(useGI(c)))))
 }

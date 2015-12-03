@@ -41,7 +41,7 @@ func dsR2F(k *datastore.Key) *ds.Key {
 }
 
 // dsF2R (DS fake-to-real) converts a DSKey back to an SDK *Key.
-func dsF2R(ctx context.Context, k *ds.Key) (*datastore.Key, error) {
+func dsF2R(aeCtx context.Context, k *ds.Key) (*datastore.Key, error) {
 	if k == nil {
 		return nil, nil
 	}
@@ -49,26 +49,26 @@ func dsF2R(ctx context.Context, k *ds.Key) (*datastore.Key, error) {
 	// drop aid.
 	_, ns, toks := k.Split()
 	err := error(nil)
-	ctx, err = appengine.Namespace(ctx, ns)
+	aeCtx, err = appengine.Namespace(aeCtx, ns)
 	if err != nil {
 		return nil, err
 	}
 
-	ret := datastore.NewKey(ctx, toks[0].Kind, toks[0].StringID, toks[0].IntID, nil)
+	ret := datastore.NewKey(aeCtx, toks[0].Kind, toks[0].StringID, toks[0].IntID, nil)
 	for _, t := range toks[1:] {
-		ret = datastore.NewKey(ctx, t.Kind, t.StringID, t.IntID, ret)
+		ret = datastore.NewKey(aeCtx, t.Kind, t.StringID, t.IntID, ret)
 	}
 
 	return ret, nil
 }
 
 // dsMF2R (DS multi-fake-to-fake) converts a slice of wrapped keys to SDK keys.
-func dsMF2R(ctx context.Context, ks []*ds.Key) ([]*datastore.Key, error) {
+func dsMF2R(aeCtx context.Context, ks []*ds.Key) ([]*datastore.Key, error) {
 	lme := errors.NewLazyMultiError(len(ks))
 	ret := make([]*datastore.Key, len(ks))
 	err := error(nil)
 	for i, k := range ks {
-		ret[i], err = dsF2R(ctx, k)
+		ret[i], err = dsF2R(aeCtx, k)
 		lme.Assign(i, err)
 	}
 	return ret, lme.Get()

@@ -18,12 +18,12 @@ import (
 // by gae.GetTQ(c)
 func useTQ(c context.Context) context.Context {
 	return tq.SetRawFactory(c, func(ci context.Context) tq.RawInterface {
-		return tqImpl{ci}
+		return tqImpl{AEContext(ci)}
 	})
 }
 
 type tqImpl struct {
-	context.Context
+	aeCtx context.Context
 }
 
 func init() {
@@ -86,7 +86,7 @@ func tqMF2R(ns []*tq.Task) []*taskqueue.Task {
 }
 
 func (t tqImpl) AddMulti(tasks []*tq.Task, queueName string, cb tq.RawTaskCB) error {
-	realTasks, err := taskqueue.AddMulti(t.Context, tqMF2R(tasks), queueName)
+	realTasks, err := taskqueue.AddMulti(t.aeCtx, tqMF2R(tasks), queueName)
 	if err != nil {
 		if me, ok := err.(appengine.MultiError); ok {
 			for i, err := range me {
@@ -107,7 +107,7 @@ func (t tqImpl) AddMulti(tasks []*tq.Task, queueName string, cb tq.RawTaskCB) er
 }
 
 func (t tqImpl) DeleteMulti(tasks []*tq.Task, queueName string, cb tq.RawCB) error {
-	err := taskqueue.DeleteMulti(t.Context, tqMF2R(tasks), queueName)
+	err := taskqueue.DeleteMulti(t.aeCtx, tqMF2R(tasks), queueName)
 	if me, ok := err.(appengine.MultiError); ok {
 		for _, err := range me {
 			cb(err)
@@ -118,11 +118,11 @@ func (t tqImpl) DeleteMulti(tasks []*tq.Task, queueName string, cb tq.RawCB) err
 }
 
 func (t tqImpl) Purge(queueName string) error {
-	return taskqueue.Purge(t.Context, queueName)
+	return taskqueue.Purge(t.aeCtx, queueName)
 }
 
 func (t tqImpl) Stats(queueNames []string, cb tq.RawStatsCB) error {
-	stats, err := taskqueue.QueueStats(t.Context, queueNames)
+	stats, err := taskqueue.QueueStats(t.aeCtx, queueNames)
 	if err != nil {
 		return err
 	}

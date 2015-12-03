@@ -16,14 +16,19 @@ import (
 // by gae.GetDS(c)
 func useRDS(c context.Context) context.Context {
 	return ds.SetRawFactory(c, func(ci context.Context) ds.RawInterface {
-		return rdsImpl{ci, info.Get(ci).GetNamespace()}
+		return rdsImpl{ci, AEContext(ci), info.Get(ci).GetNamespace()}
 	})
 }
 
 ////////// Datastore
 
 type rdsImpl struct {
-	context.Context
+	// userCtx is the context that has the luci/gae services and user objects in
+	// it.
+	userCtx context.Context
+
+	// aeCtx is the context with the appengine connection information in it.
+	aeCtx context.Context
 
 	ns string
 }
@@ -47,19 +52,19 @@ func idxCallbacker(err error, amt int, cb func(idx int, err error)) error {
 }
 
 func (d rdsImpl) AllocateIDs(incomplete *ds.Key, n int) (start int64, err error) {
-	par, err := dsF2R(d, incomplete.Parent())
+	par, err := dsF2R(d.aeCtx, incomplete.Parent())
 	if err != nil {
 		return
 	}
 
-	start, _, err = datastore.AllocateIDs(d, incomplete.Kind(), par, n)
+	start, _, err = datastore.AllocateIDs(d.aeCtx, incomplete.Kind(), par, n)
 	return
 }
 
 func (d rdsImpl) DeleteMulti(ks []*ds.Key, cb ds.DeleteMultiCB) error {
-	keys, err := dsMF2R(d, ks)
+	keys, err := dsMF2R(d.aeCtx, ks)
 	if err == nil {
-		err = datastore.DeleteMulti(d, keys)
+		err = datastore.DeleteMulti(d.aeCtx, keys)
 	}
 	return idxCallbacker(err, len(ks), func(_ int, err error) {
 		cb(err)
@@ -68,12 +73,12 @@ func (d rdsImpl) DeleteMulti(ks []*ds.Key, cb ds.DeleteMultiCB) error {
 
 func (d rdsImpl) GetMulti(keys []*ds.Key, _meta ds.MultiMetaGetter, cb ds.GetMultiCB) error {
 	vals := make([]datastore.PropertyLoadSaver, len(keys))
-	rkeys, err := dsMF2R(d, keys)
+	rkeys, err := dsMF2R(d.aeCtx, keys)
 	if err == nil {
 		for i := range keys {
-			vals[i] = &typeFilter{d, ds.PropertyMap{}}
+			vals[i] = &typeFilter{d.aeCtx, ds.PropertyMap{}}
 		}
-		err = datastore.GetMulti(d, rkeys, vals)
+		err = datastore.GetMulti(d.aeCtx, rkeys, vals)
 	}
 	return idxCallbacker(err, len(keys), func(idx int, err error) {
 		if pls := vals[idx]; pls != nil {
@@ -85,13 +90,13 @@ func (d rdsImpl) GetMulti(keys []*ds.Key, _meta ds.MultiMetaGetter, cb ds.GetMul
 }
 
 func (d rdsImpl) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
-	rkeys, err := dsMF2R(d, keys)
+	rkeys, err := dsMF2R(d.aeCtx, keys)
 	if err == nil {
 		rvals := make([]datastore.PropertyLoadSaver, len(vals))
 		for i, val := range vals {
-			rvals[i] = &typeFilter{d, val}
+			rvals[i] = &typeFilter{d.aeCtx, val}
 		}
-		rkeys, err = datastore.PutMulti(d, rkeys, rvals)
+		rkeys, err = datastore.PutMulti(d.aeCtx, rkeys, rvals)
 	}
 	return idxCallbacker(err, len(keys), func(idx int, err error) {
 		k := (*ds.Key)(nil)
@@ -115,7 +120,7 @@ func (d rdsImpl) fixQuery(fq *ds.FinalizedQuery) (*datastore.Query, error) {
 
 	for prop, vals := range fq.EqFilters() {
 		if prop == "__ancestor__" {
-			p, err := dsF2RProp(d, vals[0])
+			p, err := dsF2RProp(d.aeCtx, vals[0])
 			if err != nil {
 				return nil, err
 			}
@@ -123,7 +128,7 @@ func (d rdsImpl) fixQuery(fq *ds.FinalizedQuery) (*datastore.Query, error) {
 		} else {
 			filt := prop + "="
 			for _, v := range vals {
-				p, err := dsF2RProp(d, v)
+				p, err := dsF2RProp(d.aeCtx, v)
 				if err != nil {
 					return nil, err
 				}
@@ -134,7 +139,7 @@ func (d rdsImpl) fixQuery(fq *ds.FinalizedQuery) (*datastore.Query, error) {
 	}
 
 	if lnam, lop, lprop := fq.IneqFilterLow(); lnam != "" {
-		p, err := dsF2RProp(d, lprop)
+		p, err := dsF2RProp(d.aeCtx, lprop)
 		if err != nil {
 			return nil, err
 		}
@@ -142,7 +147,7 @@ func (d rdsImpl) fixQuery(fq *ds.FinalizedQuery) (*datastore.Query, error) {
 	}
 
 	if hnam, hop, hprop := fq.IneqFilterHigh(); hnam != "" {
-		p, err := dsF2RProp(d, hprop)
+		p, err := dsF2RProp(d.aeCtx, hprop)
 		if err != nil {
 			return nil, err
 		}
@@ -187,7 +192,7 @@ func (d rdsImpl) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
 		return err
 	}
 
-	t := q.Run(d)
+	t := q.Run(d.aeCtx)
 
 	cfunc := func() (ds.Cursor, error) {
 		return t.Cursor()
@@ -212,13 +217,15 @@ func (d rdsImpl) Count(fq *ds.FinalizedQuery) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	ret, err := q.Count(d)
+	ret, err := q.Count(d.aeCtx)
 	return int64(ret), err
 }
 
 func (d rdsImpl) RunInTransaction(f func(c context.Context) error, opts *ds.TransactionOptions) error {
 	ropts := (*datastore.TransactionOptions)(opts)
-	return datastore.RunInTransaction(d, f, ropts)
+	return datastore.RunInTransaction(d.aeCtx, func(aeCtx context.Context) error {
+		return f(context.WithValue(d.userCtx, prodContextKey, aeCtx))
+	}, ropts)
 }
 
 func (d rdsImpl) Testable() ds.Testable {

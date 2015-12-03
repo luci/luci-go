@@ -15,6 +15,6 @@ import (
 // useURLFetch adds a http.RoundTripper implementation to the context.
 func useURLFetch(c context.Context) context.Context {
 	return uf.SetFactory(c, func(ci context.Context) http.RoundTripper {
-		return &urlfetch.Transport{Context: ci}
+		return &urlfetch.Transport{Context: AEContext(ci)}
 	})
 }

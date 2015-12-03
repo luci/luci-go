@@ -11,14 +11,16 @@ import (
 	"time"
 
 	"github.com/luci/gae/service/blobstore"
-	dstore "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/info"
 	. "github.com/smartystreets/goconvey/convey"
+	"golang.org/x/net/context"
 	"google.golang.org/appengine/aetest"
 )
 
 var (
-	mp   = dstore.MkProperty
-	mpNI = dstore.MkPropertyNI
+	mp   = datastore.MkProperty
+	mpNI = datastore.MkPropertyNI
 )
 
 type TestStruct struct {
@@ -29,21 +31,37 @@ type TestStruct struct {
 	ValueS  []string
 	ValueF  []float64
 	ValueBS [][]byte // "ByteString"
-	ValueK  []*dstore.Key
+	ValueK  []*datastore.Key
 	ValueBK []blobstore.Key
-	ValueGP []dstore.GeoPoint
+	ValueGP []datastore.GeoPoint
 }
 
 func TestBasicDatastore(t *testing.T) {
 	t.Parallel()
 
 	Convey("basic", t, func() {
-		ctx, closer, err := aetest.NewContext()
+		inst, err := aetest.NewInstance(&aetest.Options{
+			StronglyConsistentDatastore: true,
+		})
 		So(err, ShouldBeNil)
-		defer closer()
+		defer inst.Close()
 
-		ctx = Use(ctx)
-		ds := dstore.Get(ctx)
+		req, err := inst.NewRequest("GET", "/", nil)
+		So(err, ShouldBeNil)
+
+		ctx := Use(context.Background(), req)
+		ds := datastore.Get(ctx)
+		inf := info.Get(ctx)
+
+		Convey("Can probe/change Namespace", func() {
+			So(inf.GetNamespace(), ShouldEqual, "")
+			ctx, err = inf.Namespace("wat")
+			So(err, ShouldBeNil)
+			inf = info.Get(ctx)
+			So(inf.GetNamespace(), ShouldEqual, "wat")
+			ds = datastore.Get(ctx)
+			So(ds.MakeKey("Hello", "world").Namespace(), ShouldEqual, "wat")
+		})
 
 		Convey("Can Put/Get", func() {
 			orig := TestStruct{
@@ -57,14 +75,14 @@ func TestBasicDatastore(t *testing.T) {
 					[]byte("world"),
 					[]byte("zurple"),
 				},
-				ValueK: []*dstore.Key{
+				ValueK: []*datastore.Key{
 					ds.NewKey("Something", "Cool", 0, nil),
 					ds.NewKey("Something", "", 1, nil),
 					ds.NewKey("Something", "Recursive", 0,
 						ds.NewKey("Parent", "", 2, nil)),
 				},
 				ValueBK: []blobstore.Key{"bellow", "hello"},
-				ValueGP: []dstore.GeoPoint{
+				ValueGP: []datastore.GeoPoint{
 					{Lat: 120.7, Lng: 95.5},
 				},
 			}
@@ -78,8 +96,8 @@ func TestBasicDatastore(t *testing.T) {
 			time.Sleep(time.Second)
 
 			Convey("Can query", func() {
-				q := dstore.NewQuery("TestStruct")
-				ds.Run(q, func(ts *TestStruct, _ dstore.CursorCB) bool {
+				q := datastore.NewQuery("TestStruct")
+				ds.Run(q, func(ts *TestStruct, _ datastore.CursorCB) bool {
 					So(*ts, ShouldResemble, orig)
 					return true
 				})
@@ -89,10 +107,10 @@ func TestBasicDatastore(t *testing.T) {
 			})
 
 			Convey("Can project", func() {
-				q := dstore.NewQuery("TestStruct").Project("ValueS")
-				rslts := []dstore.PropertyMap{}
+				q := datastore.NewQuery("TestStruct").Project("ValueS")
+				rslts := []datastore.PropertyMap{}
 				So(ds.GetAll(q, &rslts), ShouldBeNil)
-				So(rslts, ShouldResemble, []dstore.PropertyMap{
+				So(rslts, ShouldResemble, []datastore.PropertyMap{
 					{
 						"$key":   {mpNI(ds.KeyForObj(&orig))},
 						"ValueS": {mp("hello")},
@@ -103,10 +121,10 @@ func TestBasicDatastore(t *testing.T) {
 					},
 				})
 
-				q = dstore.NewQuery("TestStruct").Project("ValueBS")
-				rslts = []dstore.PropertyMap{}
+				q = datastore.NewQuery("TestStruct").Project("ValueBS")
+				rslts = []datastore.PropertyMap{}
 				So(ds.GetAll(q, &rslts), ShouldBeNil)
-				So(rslts, ShouldResemble, []dstore.PropertyMap{
+				So(rslts, ShouldResemble, []datastore.PropertyMap{
 					{
 						"$key":    {mpNI(ds.KeyForObj(&orig))},
 						"ValueBS": {mp("allo")},
@@ -133,7 +151,7 @@ func TestBasicDatastore(t *testing.T) {
 
 		Convey("Can Put/Get (time)", func() {
 			// time comparisons in Go are wonky, so this is pulled out
-			pm := dstore.PropertyMap{
+			pm := datastore.PropertyMap{
 				"$key": {mpNI(ds.NewKey("Something", "value", 0, nil))},
 				"Time": {
 					mp(time.Date(1938, time.January, 1, 1, 1, 1, 1, time.UTC)),
@@ -142,28 +160,28 @@ func TestBasicDatastore(t *testing.T) {
 			}
 			So(ds.Put(&pm), ShouldBeNil)
 
-			rslt := dstore.PropertyMap{}
+			rslt := datastore.PropertyMap{}
 			rslt.SetMeta("key", ds.KeyForObj(pm))
 			So(ds.Get(&rslt), ShouldBeNil)
 
 			So(pm["Time"][0].Value(), ShouldResemble, rslt["Time"][0].Value())
 
-			q := dstore.NewQuery("Something").Project("Time")
-			all := []dstore.PropertyMap{}
+			q := datastore.NewQuery("Something").Project("Time")
+			all := []datastore.PropertyMap{}
 			So(ds.GetAll(q, &all), ShouldBeNil)
 			So(len(all), ShouldEqual, 2)
 			prop := all[0]["Time"][0]
-			So(prop.Type(), ShouldEqual, dstore.PTInt)
+			So(prop.Type(), ShouldEqual, datastore.PTInt)
 
-			tval, err := prop.Project(dstore.PTTime)
+			tval, err := prop.Project(datastore.PTTime)
 			So(err, ShouldBeNil)
 			So(tval, ShouldResemble, time.Time{})
 
-			tval, err = all[1]["Time"][0].Project(dstore.PTTime)
+			tval, err = all[1]["Time"][0].Project(datastore.PTTime)
 			So(err, ShouldBeNil)
 			So(tval, ShouldResemble, pm["Time"][0].Value())
 
-			ent := dstore.PropertyMap{
+			ent := datastore.PropertyMap{
 				"$key": {mpNI(ds.MakeKey("Something", "value"))},
 			}
 			So(ds.Get(&ent), ShouldBeNil)

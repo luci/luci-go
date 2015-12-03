@@ -17,11 +17,13 @@ import (
 // by gae.GetMC(c)
 func useMC(c context.Context) context.Context {
 	return mc.SetRawFactory(c, func(ci context.Context) mc.RawInterface {
-		return mcImpl{ci}
+		return mcImpl{AEContext(ci)}
 	})
 }
 
-type mcImpl struct{ context.Context }
+type mcImpl struct {
+	aeCtx context.Context
+}
 
 type mcItem struct {
 	i *memcache.Item
@@ -107,19 +109,19 @@ func doCB(err error, cb mc.RawCB) error {
 }
 
 func (m mcImpl) DeleteMulti(keys []string, cb mc.RawCB) error {
-	return doCB(memcache.DeleteMulti(m.Context, keys), cb)
+	return doCB(memcache.DeleteMulti(m.aeCtx, keys), cb)
 }
 
 func (m mcImpl) AddMulti(items []mc.Item, cb mc.RawCB) error {
-	return doCB(memcache.AddMulti(m.Context, mcMF2R(items)), cb)
+	return doCB(memcache.AddMulti(m.aeCtx, mcMF2R(items)), cb)
 }
 
 func (m mcImpl) SetMulti(items []mc.Item, cb mc.RawCB) error {
-	return doCB(memcache.SetMulti(m.Context, mcMF2R(items)), cb)
+	return doCB(memcache.SetMulti(m.aeCtx, mcMF2R(items)), cb)
 }
 
 func (m mcImpl) GetMulti(keys []string, cb mc.RawItemCB) error {
-	realItems, err := memcache.GetMulti(m.Context, keys)
+	realItems, err := memcache.GetMulti(m.aeCtx, keys)
 	if err != nil {
 		return err
 	}
@@ -135,22 +137,22 @@ func (m mcImpl) GetMulti(keys []string, cb mc.RawItemCB) error {
 }
 
 func (m mcImpl) CompareAndSwapMulti(items []mc.Item, cb mc.RawCB) error {
-	return doCB(memcache.CompareAndSwapMulti(m.Context, mcMF2R(items)), cb)
+	return doCB(memcache.CompareAndSwapMulti(m.aeCtx, mcMF2R(items)), cb)
 }
 
 func (m mcImpl) Increment(key string, delta int64, initialValue *uint64) (uint64, error) {
 	if initialValue == nil {
-		return memcache.IncrementExisting(m.Context, key, delta)
+		return memcache.IncrementExisting(m.aeCtx, key, delta)
 	}
-	return memcache.Increment(m.Context, key, delta, *initialValue)
+	return memcache.Increment(m.aeCtx, key, delta, *initialValue)
 }
 
 func (m mcImpl) Flush() error {
-	return memcache.Flush(m.Context)
+	return memcache.Flush(m.aeCtx)
 }
 
 func (m mcImpl) Stats() (*mc.Statistics, error) {
-	stats, err := memcache.Stats(m.Context)
+	stats, err := memcache.Stats(m.aeCtx)
 	if err != nil {
 		return nil, err
 	}

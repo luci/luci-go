@@ -13,42 +13,41 @@ import (
 	"google.golang.org/appengine/datastore"
 )
 
-type key int
-
-var probeCacheKey key
-
 // useGI adds a gae.GlobalInfo implementation to context, accessible
 // by gae.GetGI(c)
-func useGI(c context.Context) context.Context {
-	probeCache := getProbeCache(c)
+func useGI(usrCtx context.Context) context.Context {
+	probeCache := getProbeCache(usrCtx)
 	if probeCache == nil {
-		c = withProbeCache(c, probe(c))
+		usrCtx = withProbeCache(usrCtx, probe(AEContext(usrCtx)))
 	}
 
-	return info.SetFactory(c, func(ci context.Context) info.Interface {
-		return giImpl{ci}
+	return info.SetFactory(usrCtx, func(ci context.Context) info.Interface {
+		return giImpl{ci, AEContext(ci)}
 	})
 }
 
-type giImpl struct{ context.Context }
+type giImpl struct {
+	usrCtx context.Context
+	aeCtx  context.Context
+}
 
 func (g giImpl) AccessToken(scopes ...string) (token string, expiry time.Time, err error) {
-	return appengine.AccessToken(g, scopes...)
+	return appengine.AccessToken(g.aeCtx, scopes...)
 }
 func (g giImpl) AppID() string {
-	return appengine.AppID(g)
+	return appengine.AppID(g.aeCtx)
 }
 func (g giImpl) FullyQualifiedAppID() string {
-	return getProbeCache(g).fqaid
+	return getProbeCache(g.usrCtx).fqaid
 }
 func (g giImpl) GetNamespace() string {
-	return getProbeCache(g).namespace
+	return getProbeCache(g.usrCtx).namespace
 }
 func (g giImpl) Datacenter() string {
-	return appengine.Datacenter(g)
+	return appengine.Datacenter(g.aeCtx)
 }
 func (g giImpl) DefaultVersionHostname() string {
-	return appengine.DefaultVersionHostname(g)
+	return appengine.DefaultVersionHostname(g.aeCtx)
 }
 func (g giImpl) InstanceID() string {
 	return appengine.InstanceID()
@@ -63,22 +62,23 @@ func (g giImpl) IsTimeoutError(err error) bool {
 	return appengine.IsTimeoutError(err)
 }
 func (g giImpl) ModuleHostname(module, version, instance string) (string, error) {
-	return appengine.ModuleHostname(g, module, version, instance)
+	return appengine.ModuleHostname(g.aeCtx, module, version, instance)
 }
 func (g giImpl) ModuleName() (name string) {
-	return appengine.ModuleName(g)
+	return appengine.ModuleName(g.aeCtx)
 }
 func (g giImpl) Namespace(namespace string) (context.Context, error) {
-	c, err := appengine.Namespace(g, namespace)
+	aeCtx, err := appengine.Namespace(g.aeCtx, namespace)
 	if err != nil {
-		return c, err
+		return g.usrCtx, err
 	}
-	pc := *getProbeCache(g)
+	usrCtx := context.WithValue(g.usrCtx, prodContextKey, aeCtx)
+	pc := *getProbeCache(usrCtx)
 	pc.namespace = namespace
-	return withProbeCache(c, &pc), nil
+	return withProbeCache(usrCtx, &pc), nil
 }
 func (g giImpl) PublicCertificates() ([]info.Certificate, error) {
-	certs, err := appengine.PublicCertificates(g)
+	certs, err := appengine.PublicCertificates(g.aeCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -89,19 +89,19 @@ func (g giImpl) PublicCertificates() ([]info.Certificate, error) {
 	return ret, nil
 }
 func (g giImpl) RequestID() string {
-	return appengine.RequestID(g)
+	return appengine.RequestID(g.aeCtx)
 }
 func (g giImpl) ServerSoftware() string {
 	return appengine.ServerSoftware()
 }
 func (g giImpl) ServiceAccount() (string, error) {
-	return appengine.ServiceAccount(g)
+	return appengine.ServiceAccount(g.aeCtx)
 }
 func (g giImpl) SignBytes(bytes []byte) (keyName string, signature []byte, err error) {
-	return appengine.SignBytes(g, bytes)
+	return appengine.SignBytes(g.aeCtx, bytes)
 }
 func (g giImpl) VersionID() string {
-	return appengine.VersionID(g)
+	return appengine.VersionID(g.aeCtx)
 }
 
 type infoProbeCache struct {
@@ -109,8 +109,8 @@ type infoProbeCache struct {
 	fqaid     string
 }
 
-func probe(c context.Context) *infoProbeCache {
-	probeKey := datastore.NewKey(c, "Kind", "id", 0, nil)
+func probe(aeCtx context.Context) *infoProbeCache {
+	probeKey := datastore.NewKey(aeCtx, "Kind", "id", 0, nil)
 	return &infoProbeCache{
 		namespace: probeKey.Namespace(),
 		fqaid:     probeKey.AppID(),
