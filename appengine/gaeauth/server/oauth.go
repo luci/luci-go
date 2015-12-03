@@ -15,10 +15,10 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
-	"google.golang.org/appengine/user"
 
 	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/urlfetch"
+	"github.com/luci/gae/service/user"
 
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
@@ -59,7 +59,7 @@ func (m *OAuth2Method) authenticateProd(c context.Context, scopes []string) (*au
 	var err error
 	for attemp := 0; attemp < 4; attemp++ {
 		var u *user.User
-		u, err = user.CurrentOAuth(c, scopes...)
+		u, err = user.Get(c).CurrentOAuth(scopes...)
 		if err != nil {
 			logging.Warningf(c, "oauth: failed to execute GetOAuthUser - %s", err)
 			continue

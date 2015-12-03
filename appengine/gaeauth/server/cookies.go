@@ -8,8 +8,8 @@ import (
 	"net/http"
 
 	"golang.org/x/net/context"
-	"google.golang.org/appengine/user"
 
+	"github.com/luci/gae/service/user"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
 )
@@ -20,7 +20,7 @@ type UsersAPIAuthMethod struct{}
 
 // Authenticate extracts peer's identity from the incoming request.
 func (m UsersAPIAuthMethod) Authenticate(c context.Context, r *http.Request) (*auth.User, error) {
-	u := user.Current(c)
+	u := user.Get(c).Current()
 	if u == nil {
 		return nil, nil
 	}
@@ -38,11 +38,11 @@ func (m UsersAPIAuthMethod) Authenticate(c context.Context, r *http.Request) (*a
 // LoginURL returns a URL that, when visited, prompts the user to sign in,
 // then redirects the user to the URL specified by dest.
 func (m UsersAPIAuthMethod) LoginURL(c context.Context, dest string) (string, error) {
-	return user.LoginURL(c, dest)
+	return user.Get(c).LoginURL(dest)
 }
 
 // LogoutURL returns a URL that, when visited, signs the user out,
 // then redirects the user to the URL specified by dest.
 func (m UsersAPIAuthMethod) LogoutURL(c context.Context, dest string) (string, error) {
-	return user.LogoutURL(c, dest)
+	return user.Get(c).LogoutURL(dest)
 }
