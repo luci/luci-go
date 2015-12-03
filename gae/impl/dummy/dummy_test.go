@@ -11,6 +11,7 @@ import (
 	infoS "github.com/luci/gae/service/info"
 	mcS "github.com/luci/gae/service/memcache"
 	tqS "github.com/luci/gae/service/taskqueue"
+	userS "github.com/luci/gae/service/user"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -70,6 +71,15 @@ func TestContextAccess(t *testing.T) {
 				defer p()
 				_ = tqS.Get(c).Purge("")
 			}, ShouldPanicWith, "dummy: method TaskQueue.Purge is not implemented")
+		})
+
+		Convey("User", func() {
+			c = userS.Set(c, User())
+			So(userS.Get(c), ShouldNotBeNil)
+			So(func() {
+				defer p()
+				_ = userS.Get(c).IsAdmin()
+			}, ShouldPanicWith, "dummy: method User.IsAdmin is not implemented")
 		})
 
 	})

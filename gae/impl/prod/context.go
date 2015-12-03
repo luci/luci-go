@@ -40,5 +40,5 @@ func AEContext(c context.Context) context.Context {
 func Use(c context.Context, r *http.Request) context.Context {
 	aeCtx := appengine.NewContext(r)
 	c = context.WithValue(c, prodContextKey, aeCtx)
-	return useURLFetch(useRDS(useMC(useTQ(useGI(c)))))
+	return useUser(useURLFetch(useRDS(useMC(useTQ(useGI(c))))))
 }

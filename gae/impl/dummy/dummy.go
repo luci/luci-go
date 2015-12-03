@@ -14,6 +14,7 @@ import (
 	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/memcache"
 	"github.com/luci/gae/service/taskqueue"
+	"github.com/luci/gae/service/user"
 	"golang.org/x/net/context"
 )
 
@@ -45,12 +46,14 @@ func ni() error {
 				switch parts[len(parts)-2] {
 				case "ds":
 					iface = "Datastore"
+				case "i":
+					iface = "Info"
 				case "mc":
 					iface = "Memcache"
 				case "tq":
 					iface = "TaskQueue"
-				case "i":
-					iface = "Info"
+				case "u":
+					iface = "User"
 				}
 				funcName = parts[len(parts)-1]
 			}
@@ -159,3 +162,22 @@ var dummyInfoInst = i{}
 // Every method panics with a message containing the name of the method which
 // was unimplemented.
 func Info() info.Interface { return dummyInfoInst }
+
+////////////////////////////////////// u ///////////////////////////////////////
+
+type u struct{}
+
+func (u) Current() *user.User                              { panic(ni()) }
+func (u) CurrentOAuth() (*user.User, error)                { panic(ni()) }
+func (u) IsAdmin() bool                                    { panic(ni()) }
+func (u) LoginURL(string) (string, error)                  { panic(ni()) }
+func (u) LoginURLFederated(string, string) (string, error) { panic(ni()) }
+func (u) LogoutURL(string) (string, error)                 { panic(ni()) }
+func (u) OAuthConsumerKey() (string, error)                { panic(ni()) }
+
+var dummyUserInst = u{}
+
+// User returns a dummy user.Interface implementation suitable for embedding.
+// Every method panics with a message containing the name of the method which
+// was unimplemented.
+func User() user.Interface { return dummyUserInst }
