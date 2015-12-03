@@ -1,5 +1,5 @@
-luci-go: LUCI in Go
-===================
+luci-go: LUCI services and tools in Go
+======================================
 
 [![GoDoc](https://godoc.org/github.com/luci/luci-go?status.svg)](https://godoc.org/github.com/luci/luci-go)
 [![Build Status](https://travis-ci.org/luci/luci-go.svg?branch=master)](https://travis-ci.org/luci/luci-go)
