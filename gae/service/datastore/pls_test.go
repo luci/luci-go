@@ -1886,6 +1886,29 @@ func TestMeta(t *testing.T) {
 			So(v, ShouldEqual, int64(10))
 		})
 
+		Convey("Derived metadata fields", func() {
+			type DerivedString string
+			type DerivedInt int16
+			type DerivedStruct struct {
+				ID  DerivedString `gae:"$id"`
+				Foo DerivedInt    `gae:"$foo"`
+			}
+			o := &DerivedStruct{"hello", 10}
+			mgs := getMGS(o)
+			v, err := mgs.GetMeta("id")
+			So(err, ShouldBeNil)
+			So(v, ShouldEqual, "hello")
+
+			v, err = mgs.GetMeta("foo")
+			So(err, ShouldBeNil)
+			So(v, ShouldEqual, int64(10))
+
+			So(mgs.SetMeta("id", "nerds"), ShouldBeNil)
+			So(mgs.SetMeta("foo", 20), ShouldBeNil)
+			So(o.ID, ShouldEqual, DerivedString("nerds"))
+			So(o.Foo, ShouldEqual, DerivedInt(20))
+		})
+
 		Convey("Bad default meta type", func() {
 			type BadDefault struct {
 				Val time.Time `gae:"$meta,tomorrow"`

@@ -324,6 +324,8 @@ func (p *structPLS) getMetaFor(idx int) (interface{}, bool) {
 			val = f.Interface()
 			if bf, ok := val.(Toggle); ok {
 				val = bf == On // true if On, otherwise false
+			} else {
+				val = UpconvertUnderlyingType(val)
 			}
 		}
 	}
@@ -383,7 +385,8 @@ func (p *structPLS) SetMeta(key string, val interface{}) (err error) {
 	if val == nil {
 		f.Set(reflect.Zero(f.Type()))
 	} else {
-		f.Set(reflect.ValueOf(val))
+		value := reflect.ValueOf(val)
+		f.Set(value.Convert(f.Type()))
 	}
 	return nil
 }
@@ -584,19 +587,21 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 }
 
 func convertMeta(val string, t reflect.Type) (interface{}, error) {
-	switch t {
-	case typeOfString:
+	switch t.Kind() {
+	case reflect.String:
 		return val, nil
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		if val == "" {
+			return int64(0), nil
+		}
+		return strconv.ParseInt(val, 10, 64)
+	}
+	switch t {
 	case typeOfKey:
 		if val != "" {
 			return nil, fmt.Errorf("key field is not allowed to have a default: %q", val)
 		}
 		return nil, nil
-	case typeOfInt64:
-		if val == "" {
-			return int64(0), nil
-		}
-		return strconv.ParseInt(val, 10, 64)
 	case typeOfToggle:
 		switch val {
 		case "on", "On", "true":
