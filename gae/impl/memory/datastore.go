@@ -19,11 +19,24 @@ import (
 // useRDS adds a gae.Datastore implementation to context, accessible
 // by gae.GetDS(c)
 func useRDS(c context.Context) context.Context {
-	return ds.SetRawFactory(c, func(ic context.Context) ds.RawInterface {
-		dsd := cur(ic).Get(memContextDSIdx)
-
+	return ds.SetRawFactory(c, func(ic context.Context, wantTxn bool) ds.RawInterface {
 		ns := curGID(ic).namespace
+		maybeTxnCtx := cur(ic)
+
+		needResetCtx := false
+		if !wantTxn {
+			rootctx := curNoTxn(ic)
+			if rootctx != maybeTxnCtx {
+				needResetCtx = true
+				maybeTxnCtx = rootctx
+			}
+		}
+
+		dsd := maybeTxnCtx.Get(memContextDSIdx)
 		if x, ok := dsd.(*dataStoreData); ok {
+			if needResetCtx {
+				ic = context.WithValue(ic, memContextKey, maybeTxnCtx)
+			}
 			return &dsImpl{x, ns, ic}
 		}
 		return &txnDsImpl{dsd.(*txnDataStoreData), ns}

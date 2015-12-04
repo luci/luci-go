@@ -63,6 +63,29 @@ func TestBasicDatastore(t *testing.T) {
 			So(ds.MakeKey("Hello", "world").Namespace(), ShouldEqual, "wat")
 		})
 
+		Convey("Can get non-transactional context", func() {
+			ctx, err := inf.Namespace("foo")
+			So(err, ShouldBeNil)
+			ds = datastore.Get(ctx)
+			inf = info.Get(ctx)
+
+			ds.RunInTransaction(func(ctx context.Context) error {
+				So(ds.MakeKey("Foo", "bar").Namespace(), ShouldEqual, "foo")
+
+				So(ds.Put(&TestStruct{ValueI: []int64{100}}), ShouldBeNil)
+
+				err = datastore.GetNoTxn(ctx).RunInTransaction(func(ctx context.Context) error {
+					ds = datastore.Get(ctx)
+					So(ds.MakeKey("Foo", "bar").Namespace(), ShouldEqual, "foo")
+					So(ds.Put(&TestStruct{ValueI: []int64{100}}), ShouldBeNil)
+					return nil
+				}, nil)
+				So(err, ShouldBeNil)
+
+				return nil
+			}, nil)
+		})
+
 		Convey("Can Put/Get", func() {
 			orig := TestStruct{
 				ValueI: []int64{1, 7, 946688461000000, 996688461000000},

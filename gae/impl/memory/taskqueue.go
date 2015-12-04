@@ -18,20 +18,20 @@ import (
 /////////////////////////////// public functions ///////////////////////////////
 
 func useTQ(c context.Context) context.Context {
-	return tq.SetRawFactory(c, func(ic context.Context) tq.RawInterface {
-		tqd := cur(ic).Get(memContextTQIdx)
+	return tq.SetRawFactory(c, func(ic context.Context, wantTxn bool) tq.RawInterface {
+		ns := curGID(ic).namespace
+		var tqd memContextObj
+
+		if !wantTxn {
+			tqd = curNoTxn(ic).Get(memContextTQIdx)
+		} else {
+			tqd = cur(ic).Get(memContextTQIdx)
+		}
+
 		if x, ok := tqd.(*taskQueueData); ok {
-			return &taskqueueImpl{
-				x,
-				ic,
-				curGID(ic).namespace,
-			}
+			return &taskqueueImpl{x, ic, ns}
 		}
-		return &taskqueueTxnImpl{
-			tqd.(*txnTaskQueueData),
-			ic,
-			curGID(ic).namespace,
-		}
+		return &taskqueueTxnImpl{tqd.(*txnTaskQueueData), ic, ns}
 	})
 }
 

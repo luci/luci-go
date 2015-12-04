@@ -17,8 +17,10 @@ var (
 )
 
 // RawFactory is the function signature for factory methods compatible with
-// SetRawFactory.
-type RawFactory func(context.Context) RawInterface
+// SetRawFactory. wantTxn is true if the Factory should return the datastore in
+// the current transaction, and false if the Factory should return the
+// non-transactional (root) datastore.
+type RawFactory func(c context.Context, wantTxn bool) RawInterface
 
 // RawFilter is the function signature for a RawFilter implementation. It
 // gets the current RDS implementation, and returns a new RDS implementation
@@ -27,16 +29,17 @@ type RawFilter func(context.Context, RawInterface) RawInterface
 
 // getUnfiltered gets gets the RawInterface implementation from context without
 // any of the filters applied.
-func getUnfiltered(c context.Context) RawInterface {
+func getUnfiltered(c context.Context, wantTxn bool) RawInterface {
 	if f, ok := c.Value(rawDatastoreKey).(RawFactory); ok && f != nil {
-		return f(c)
+		return f(c, wantTxn)
 	}
 	return nil
 }
 
-// GetRaw gets the RawInterface implementation from context.
-func GetRaw(c context.Context) RawInterface {
-	ret := getUnfiltered(c)
+// getFiltered gets the datastore (transactional or not), and applies all of
+// the currently installed filters to it.
+func getFiltered(c context.Context, wantTxn bool) RawInterface {
+	ret := getUnfiltered(c, wantTxn)
 	if ret == nil {
 		return nil
 	}
@@ -46,11 +49,36 @@ func GetRaw(c context.Context) RawInterface {
 	return applyCheckFilter(c, ret)
 }
 
+// GetRaw gets the RawInterface implementation from context.
+func GetRaw(c context.Context) RawInterface {
+	return getFiltered(c, true)
+}
+
+// GetRawNoTxn gets the RawInterface implementation from context. If there's a
+// currently active transaction, this will return a non-transactional connection
+// to the datastore, otherwise this is the same as GetRaw.
+func GetRawNoTxn(c context.Context) RawInterface {
+	return getFiltered(c, false)
+}
+
 // Get gets the Interface implementation from context.
 func Get(c context.Context) Interface {
 	inf := info.Get(c)
 	return &datastoreImpl{
 		GetRaw(c),
+		inf.FullyQualifiedAppID(),
+		inf.GetNamespace(),
+	}
+}
+
+// GetNoTxn gets the Interface implementation from context. If there's a
+// currently active transaction, this will return a non-transactional connection
+// to the datastore, otherwise this is the same as GetRaw.
+// Get gets the Interface implementation from context.
+func GetNoTxn(c context.Context) Interface {
+	inf := info.Get(c)
+	return &datastoreImpl{
+		GetRawNoTxn(c),
 		inf.FullyQualifiedAppID(),
 		inf.GetNamespace(),
 	}
@@ -66,7 +94,7 @@ func SetRawFactory(c context.Context, rdsf RawFactory) context.Context {
 // with a quick mock. This is just a shorthand SetRawFactory invocation to set
 // a factory which always returns the same object.
 func SetRaw(c context.Context, rds RawInterface) context.Context {
-	return SetRawFactory(c, func(context.Context) RawInterface { return rds })
+	return SetRawFactory(c, func(context.Context, bool) RawInterface { return rds })
 }
 
 func getCurFilters(c context.Context) []RawFilter {

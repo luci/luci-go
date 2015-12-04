@@ -255,17 +255,17 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 
 				Convey("Get takes a snapshot", func() {
 					err := ds.RunInTransaction(func(c context.Context) error {
-						txnDS := dsS.Get(c)
+						ds := dsS.Get(c)
 
-						So(txnDS.Get(f), ShouldBeNil)
+						So(ds.Get(f), ShouldBeNil)
 						So(f.Val, ShouldEqual, 10)
 
 						// Don't ever do this in a real program unless you want to guarantee
 						// a failed transaction :)
 						f.Val = 11
-						So(ds.Put(f), ShouldBeNil)
+						So(dsS.GetNoTxn(c).Put(f), ShouldBeNil)
 
-						So(txnDS.Get(f), ShouldBeNil)
+						So(ds.Get(f), ShouldBeNil)
 						So(f.Val, ShouldEqual, 10)
 
 						return nil
@@ -279,24 +279,24 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 
 				Convey("and snapshots are consistent even after Puts", func() {
 					err := ds.RunInTransaction(func(c context.Context) error {
-						txnDS := dsS.Get(c)
+						ds := dsS.Get(c)
 
 						f := &Foo{ID: 1}
-						So(txnDS.Get(f), ShouldBeNil)
+						So(ds.Get(f), ShouldBeNil)
 						So(f.Val, ShouldEqual, 10)
 
 						// Don't ever do this in a real program unless you want to guarantee
 						// a failed transaction :)
 						f.Val = 11
-						So(ds.Put(f), ShouldBeNil)
+						So(dsS.GetNoTxn(c).Put(f), ShouldBeNil)
 
-						So(txnDS.Get(f), ShouldBeNil)
+						So(ds.Get(f), ShouldBeNil)
 						So(f.Val, ShouldEqual, 10)
 
 						f.Val = 20
-						So(txnDS.Put(f), ShouldBeNil)
+						So(ds.Put(f), ShouldBeNil)
 
-						So(txnDS.Get(f), ShouldBeNil)
+						So(ds.Get(f), ShouldBeNil)
 						So(f.Val, ShouldEqual, 10) // still gets 10
 
 						return nil
@@ -341,7 +341,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					err := ds.RunInTransaction(func(c context.Context) error {
 						So(dsS.Get(c).Put(&Foo{ID: 1, Val: 21}), ShouldBeNil)
 
-						err := ds.RunInTransaction(func(c context.Context) error {
+						err := dsS.GetNoTxn(c).RunInTransaction(func(c context.Context) error {
 							So(dsS.Get(c).Put(&Foo{ID: 1, Val: 27}), ShouldBeNil)
 							return nil
 						}, nil)
@@ -421,7 +421,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					tst := ds.Testable()
 					Reset(func() { tst.SetTransactionRetryCount(0) })
 
-					Convey("SetTransactionRetryCount set to zere", func() {
+					Convey("SetTransactionRetryCount set to zero", func() {
 						tst.SetTransactionRetryCount(0)
 						calls := 0
 						So(ds.RunInTransaction(func(c context.Context) error {

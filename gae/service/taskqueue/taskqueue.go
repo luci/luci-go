@@ -6,7 +6,6 @@ package taskqueue
 
 import (
 	"github.com/luci/luci-go/common/errors"
-	"golang.org/x/net/context"
 )
 
 type taskqueueImpl struct{ RawInterface }
@@ -80,8 +79,3 @@ func (t *taskqueueImpl) Testable() Testable {
 }
 
 var _ Interface = (*taskqueueImpl)(nil)
-
-// Get gets the Interface implementation from context.
-func Get(c context.Context) Interface {
-	return &taskqueueImpl{GetRaw(c)}
-}

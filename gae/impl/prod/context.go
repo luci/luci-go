@@ -7,6 +7,7 @@ package prod
 import (
 	"net/http"
 
+	"github.com/luci/gae/service/info"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 )
@@ -14,13 +15,25 @@ import (
 type key int
 
 var (
-	prodContextKey key
-	probeCacheKey  key = 1
+	prodContextKey      key
+	prodContextNoTxnKey key = 1
+	probeCacheKey       key = 2
 )
 
 // AEContext retrieves the raw "google.golang.org/appengine" compatible Context.
 func AEContext(c context.Context) context.Context {
 	aeCtx, _ := c.Value(prodContextKey).(context.Context)
+	return aeCtx
+}
+
+// AEContextNoTxn retrieves the raw "google.golang.org/appengine" compatible
+// Context that's not part of a transaction.
+func AEContextNoTxn(c context.Context) context.Context {
+	aeCtx, _ := c.Value(prodContextNoTxnKey).(context.Context)
+	aeCtx, err := appengine.Namespace(aeCtx, info.Get(c).GetNamespace())
+	if err != nil {
+		panic(err)
+	}
 	return aeCtx
 }
 
@@ -40,5 +53,6 @@ func AEContext(c context.Context) context.Context {
 func Use(c context.Context, r *http.Request) context.Context {
 	aeCtx := appengine.NewContext(r)
 	c = context.WithValue(c, prodContextKey, aeCtx)
+	c = context.WithValue(c, prodContextNoTxnKey, aeCtx)
 	return useUser(useURLFetch(useRDS(useMC(useTQ(useGI(c))))))
 }

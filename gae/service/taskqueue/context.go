@@ -16,8 +16,10 @@ var (
 )
 
 // RawFactory is the function signature for RawFactory methods compatible with
-// SetRawFactory.
-type RawFactory func(context.Context) RawInterface
+// SetRawFactory. wantTxn is true if the Factory should return the taskqueue in
+// the current transaction, and false if the Factory should return the
+// non-transactional (root) taskqueue service.
+type RawFactory func(c context.Context, wantTxn bool) RawInterface
 
 // RawFilter is the function signature for a RawFilter TQ implementation. It
 // gets the current TQ implementation, and returns a new TQ implementation
@@ -26,16 +28,17 @@ type RawFilter func(context.Context, RawInterface) RawInterface
 
 // getUnfiltered gets gets the RawInterface implementation from context without
 // any of the filters applied.
-func getUnfiltered(c context.Context) RawInterface {
+func getUnfiltered(c context.Context, wantTxn bool) RawInterface {
 	if f, ok := c.Value(taskQueueKey).(RawFactory); ok && f != nil {
-		return f(c)
+		return f(c, wantTxn)
 	}
 	return nil
 }
 
-// GetRaw gets the RawInterface implementation from context.
-func GetRaw(c context.Context) RawInterface {
-	ret := getUnfiltered(c)
+// getFiltered gets the taskqueue (transactional or not), and applies all of
+// the currently installed filters to it.
+func getFiltered(c context.Context, wantTxn bool) RawInterface {
+	ret := getUnfiltered(c, wantTxn)
 	if ret == nil {
 		return nil
 	}
@@ -43,6 +46,28 @@ func GetRaw(c context.Context) RawInterface {
 		ret = f(c, ret)
 	}
 	return ret
+}
+
+// GetRaw gets the RawInterface implementation from context.
+func GetRaw(c context.Context) RawInterface {
+	return getFiltered(c, true)
+}
+
+// GetRawNoTxn gets the RawInterface implementation from context. If there's a
+// currently active transaction, this will return a non-transactional connection
+// to the taskqueue, otherwise this is the same as GetRaw.
+func GetRawNoTxn(c context.Context) RawInterface {
+	return getFiltered(c, false)
+}
+
+// Get gets the Interface implementation from context.
+func Get(c context.Context) Interface {
+	return &taskqueueImpl{GetRaw(c)}
+}
+
+// GetNoTxn gets the Interface implementation from context.
+func GetNoTxn(c context.Context) Interface {
+	return &taskqueueImpl{GetRawNoTxn(c)}
 }
 
 // SetRawFactory sets the function to produce RawInterface instances, as returned by
@@ -55,7 +80,7 @@ func SetRawFactory(c context.Context, tqf RawFactory) context.Context {
 // with a quick mock. This is just a shorthand SetRawFactory invocation to SetRaw
 // a RawFactory which always returns the same object.
 func SetRaw(c context.Context, tq RawInterface) context.Context {
-	return SetRawFactory(c, func(context.Context) RawInterface { return tq })
+	return SetRawFactory(c, func(context.Context, bool) RawInterface { return tq })
 }
 
 func getCurFilters(c context.Context) []RawFilter {

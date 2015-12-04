@@ -17,8 +17,11 @@ import (
 // useTQ adds a gae.TaskQueue implementation to context, accessible
 // by gae.GetTQ(c)
 func useTQ(c context.Context) context.Context {
-	return tq.SetRawFactory(c, func(ci context.Context) tq.RawInterface {
-		return tqImpl{AEContext(ci)}
+	return tq.SetRawFactory(c, func(ci context.Context, wantTxn bool) tq.RawInterface {
+		if wantTxn {
+			return tqImpl{AEContext(ci)}
+		}
+		return tqImpl{AEContextNoTxn(ci)}
 	})
 }
 

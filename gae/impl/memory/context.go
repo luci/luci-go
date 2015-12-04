@@ -25,10 +25,10 @@ type memContextObj interface {
 
 type memContext []memContextObj
 
-var _ = memContextObj((memContext)(nil))
+var _ memContextObj = (*memContext)(nil)
 
-func newMemContext(aid string) memContext {
-	return memContext{
+func newMemContext(aid string) *memContext {
+	return &memContext{
 		newTaskQueueData(),
 		newDataStoreData(aid),
 	}
@@ -41,50 +41,50 @@ const (
 	memContextDSIdx
 )
 
-func (m memContext) Get(itm memContextIdx) memContextObj {
-	return m[itm]
+func (m *memContext) Get(itm memContextIdx) memContextObj {
+	return (*m)[itm]
 }
 
-func (m memContext) Lock() {
-	for _, itm := range m {
+func (m *memContext) Lock() {
+	for _, itm := range *m {
 		itm.Lock()
 	}
 }
 
-func (m memContext) Unlock() {
-	for i := len(m) - 1; i >= 0; i-- {
-		m[i].Unlock()
+func (m *memContext) Unlock() {
+	for i := len(*m) - 1; i >= 0; i-- {
+		(*m)[i].Unlock()
 	}
 }
 
-func (m memContext) endTxn() {
-	for _, itm := range m {
+func (m *memContext) endTxn() {
+	for _, itm := range *m {
 		itm.endTxn()
 	}
 }
 
-func (m memContext) mkTxn(o *ds.TransactionOptions) memContextObj {
-	ret := make(memContext, len(m))
-	for i, itm := range m {
+func (m *memContext) mkTxn(o *ds.TransactionOptions) memContextObj {
+	ret := make(memContext, len(*m))
+	for i, itm := range *m {
 		ret[i] = itm.mkTxn(o)
 	}
-	return ret
+	return &ret
 }
 
-func (m memContext) canApplyTxn(txnCtxObj memContextObj) bool {
-	txnCtx := txnCtxObj.(memContext)
-	for i := range m {
-		if !m[i].canApplyTxn(txnCtx[i]) {
+func (m *memContext) canApplyTxn(txnCtxObj memContextObj) bool {
+	txnCtx := *txnCtxObj.(*memContext)
+	for i := range *m {
+		if !(*m)[i].canApplyTxn(txnCtx[i]) {
 			return false
 		}
 	}
 	return true
 }
 
-func (m memContext) applyTxn(c context.Context, txnCtxObj memContextObj) {
-	txnCtx := txnCtxObj.(memContext)
-	for i := range m {
-		m[i].applyTxn(c, txnCtx[i])
+func (m *memContext) applyTxn(c context.Context, txnCtxObj memContextObj) {
+	txnCtx := *txnCtxObj.(*memContext)
+	for i := range *m {
+		(*m)[i].applyTxn(c, txnCtx[i])
 	}
 }
 
@@ -113,20 +113,30 @@ func UseWithAppID(c context.Context, aid string) context.Context {
 	if c.Value(memContextKey) != nil {
 		panic(errors.New("memory.Use: called twice on the same Context"))
 	}
-	c = context.WithValue(
-		context.WithValue(c, memContextKey, newMemContext(aid)),
-		giContextKey, &globalInfoData{appid: aid})
+	memctx := newMemContext(aid)
+	c = context.WithValue(c, memContextKey, memctx)
+	c = context.WithValue(c, memContextNoTxnKey, memctx)
+	c = context.WithValue(c, giContextKey, &globalInfoData{appid: aid})
+
 	return useTQ(useRDS(useMC(useGI(c, aid))))
 }
 
-func cur(c context.Context) (p memContext) {
-	p, _ = c.Value(memContextKey).(memContext)
+func cur(c context.Context) (p *memContext) {
+	p, _ = c.Value(memContextKey).(*memContext)
+	return
+}
+
+func curNoTxn(c context.Context) (p *memContext) {
+	p, _ = c.Value(memContextNoTxnKey).(*memContext)
 	return
 }
 
 type memContextKeyType int
 
-var memContextKey memContextKeyType
+var (
+	memContextKey      memContextKeyType
+	memContextNoTxnKey memContextKeyType = 1
+)
 
 // weird stuff
 

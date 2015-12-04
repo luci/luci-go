@@ -370,6 +370,16 @@ func TestTaskQueue(t *testing.T) {
 				}, nil), ShouldBeNil)
 			})
 
+			Convey("can get the non-transactional taskqueue context though", func() {
+				So(dsS.Get(c).RunInTransaction(func(c context.Context) error {
+					So(tqS.GetNoTxn(c).Delete(t, ""), ShouldBeNil)
+					So(tqS.GetNoTxn(c).Purge(""), ShouldBeNil)
+					_, err := tqS.GetNoTxn(c).Stats("")
+					So(err, ShouldBeNil)
+					return nil
+				}, nil), ShouldBeNil)
+			})
+
 			Convey("adding a new task only happens if we don't errout", func() {
 				So(dsS.Get(c).RunInTransaction(func(c context.Context) error {
 					t3 := tq.NewTask("/sandwitch/victory")

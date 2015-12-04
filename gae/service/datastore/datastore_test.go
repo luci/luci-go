@@ -17,7 +17,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func fakeDatastoreFactory(c context.Context) RawInterface {
+func fakeDatastoreFactory(c context.Context, wantTxn bool) RawInterface {
 	i := info.Get(c)
 	return &fakeDatastore{
 		aid: i.FullyQualifiedAppID(),
