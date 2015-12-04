@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/common/logging/memlogger"
 	"golang.org/x/net/context"
 )
 
@@ -93,12 +94,14 @@ func Use(c context.Context) context.Context {
 	return UseWithAppID(c, "dev~app")
 }
 
-// UseWithAppID adds implementations for the following gae interfaces to the
+// UseWithAppID adds implementations for the following gae services to the
 // context:
-//   * gae.Datastore
-//   * gae.TaskQueue
-//   * gae.Memcache
-//   * gae.GlobalInfo
+//   * github.com/luci/gae/service/datastore
+//   * github.com/luci/gae/service/taskqueue
+//   * github.com/luci/gae/service/memcache
+//   * github.com/luci/gae/service/info
+//   * github.com/luci/gae/service/user
+//   * github.com/luci/luci-go/common/logger (using memlogger)
 //
 // The application id wil be set to 'aid', and will not be modifiable in this
 // context.
@@ -113,11 +116,12 @@ func UseWithAppID(c context.Context, aid string) context.Context {
 	if c.Value(memContextKey) != nil {
 		panic(errors.New("memory.Use: called twice on the same Context"))
 	}
+	c = memlogger.Use(c)
+
 	memctx := newMemContext(aid)
 	c = context.WithValue(c, memContextKey, memctx)
 	c = context.WithValue(c, memContextNoTxnKey, memctx)
 	c = context.WithValue(c, giContextKey, &globalInfoData{appid: aid})
-
 	return useTQ(useRDS(useMC(useGI(c, aid))))
 }
 

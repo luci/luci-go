@@ -46,6 +46,8 @@ func AEContextNoTxn(c context.Context) context.Context {
 //   - github.com/luci/gae/service/memcache
 //   - github.com/luci/gae/service/info
 //   - github.com/luci/gae/service/urlfetch
+//   - github.com/luci/gae/service/user
+//   - github.com/luci-go/common/logging
 //
 // These can be retrieved with the <service>.Get functions.
 //
@@ -54,5 +56,5 @@ func Use(c context.Context, r *http.Request) context.Context {
 	aeCtx := appengine.NewContext(r)
 	c = context.WithValue(c, prodContextKey, aeCtx)
 	c = context.WithValue(c, prodContextNoTxnKey, aeCtx)
-	return useUser(useURLFetch(useRDS(useMC(useTQ(useGI(c))))))
+	return useUser(useURLFetch(useRDS(useMC(useTQ(useGI(useLogging(c)))))))
 }

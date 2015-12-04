@@ -13,6 +13,7 @@ import (
 	"github.com/luci/gae/service/blobstore"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
+	"github.com/luci/luci-go/common/logging"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/aetest"
@@ -52,6 +53,10 @@ func TestBasicDatastore(t *testing.T) {
 		ctx := Use(context.Background(), req)
 		ds := datastore.Get(ctx)
 		inf := info.Get(ctx)
+
+		// You have to visually confirm that this actually happens in the stdout
+		// of the test... yeah I know.
+		logging.Infof(ctx, "I am a banana")
 
 		Convey("Can probe/change Namespace", func() {
 			So(inf.GetNamespace(), ShouldEqual, "")
