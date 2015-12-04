@@ -329,8 +329,8 @@ func (m *Component_Link) GetDmLink() *DMLink {
 }
 
 // XXX_OneofFuncs is for the internal use of the proto package.
-func (*Component_Link) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), []interface{}) {
-	return _Component_Link_OneofMarshaler, _Component_Link_OneofUnmarshaler, []interface{}{
+func (*Component_Link) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _Component_Link_OneofMarshaler, _Component_Link_OneofUnmarshaler, _Component_Link_OneofSizer, []interface{}{
 		(*Component_Link_Url)(nil),
 		(*Component_Link_LogdogStream)(nil),
 		(*Component_Link_IsolateObject)(nil),
@@ -404,6 +404,36 @@ func _Component_Link_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto
 	default:
 		return false, nil
 	}
+}
+
+func _Component_Link_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*Component_Link)
+	// value
+	switch x := m.Value.(type) {
+	case *Component_Link_Url:
+		n += proto.SizeVarint(2<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(len(x.Url)))
+		n += len(x.Url)
+	case *Component_Link_LogdogStream:
+		s := proto.Size(x.LogdogStream)
+		n += proto.SizeVarint(3<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Component_Link_IsolateObject:
+		s := proto.Size(x.IsolateObject)
+		n += proto.SizeVarint(4<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Component_Link_DmLink:
+		s := proto.Size(x.DmLink)
+		n += proto.SizeVarint(5<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
 }
 
 // Property is an arbitrary key/value (build) property.
