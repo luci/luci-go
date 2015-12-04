@@ -53,6 +53,14 @@ type State interface {
 
 type stateContextKey int
 
+// WithState injects State into the context.
+//
+// Mostly useful from tests. Must not be normally used from production code,
+// Authenticate sets the state itself.
+func WithState(c context.Context, s State) context.Context {
+	return context.WithValue(c, stateContextKey(0), s)
+}
+
 // GetState return State stored in the context or nil if it is not available.
 func GetState(c context.Context) State {
 	if s, ok := c.Value(stateContextKey(0)).(State); ok && s != nil {

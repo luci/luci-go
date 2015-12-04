@@ -162,8 +162,7 @@ func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context
 	s.peerIdent = s.user.Identity
 
 	// Inject auth state.
-	c = context.WithValue(c, stateContextKey(0), &s)
-	return c, nil
+	return WithState(c, &s), nil
 }
 
 // usersAPI returns implementation of UsersAPI by examining Methods. Returns nil
