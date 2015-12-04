@@ -12,7 +12,6 @@ import (
 	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaeauth/server/gaesigner"
-	"github.com/luci/luci-go/appengine/gaelogger"
 	"github.com/luci/luci-go/appengine/gaesecrets"
 	"github.com/luci/luci-go/appengine/gaesettings"
 	"github.com/luci/luci-go/server/auth"
@@ -36,7 +35,6 @@ var (
 
 // WithProd installs the set of standard production AppEngine services:
 //   * github.com/luci/gae/impl/prod (production appengine services)
-//   * github.com/luci/luci-go/appengine/gaelogger (appengine logging service)
 //   * github.com/luci/luci-go/appengine/gaeauth/client (appengine urlfetch transport)
 //   * github.com/luci/luci-go/server/proccache (in process memory cache)
 //   * github.com/luci/luci-go/server/settings (global app settings)
@@ -45,7 +43,6 @@ var (
 //   * github.com/luci/luci-go/appengine/gaeauth/server/auth (user groups database)
 func WithProd(c context.Context, req *http.Request) context.Context {
 	c = prod.Use(c, req)
-	c = gaelogger.Use(c)
 	c = client.UseAnonymousTransport(c)
 	c = proccache.Use(c, globalProcessCache)
 	c = settings.Use(c, globalSettings)
