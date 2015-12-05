@@ -11,10 +11,12 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
+	"github.com/luci/luci-go/common/cancelcond"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/google"
+	"golang.org/x/net/context"
 )
 
 // Config is the Bundler configuration.
@@ -63,7 +65,7 @@ type Bundler struct {
 	streamsLock sync.Mutex
 	// streamsCond is a Cond bound to streamsLock, used to signal Next() when new
 	// data is available.
-	streamsCond *timeoutCond
+	streamsCond *cancelcond.Cond
 	// streams is the set of currently-registered Streams.
 	streams map[string]bundlerStream
 	// flushing is true if we're blocking on CloseAndFlush().
@@ -81,7 +83,7 @@ func New(c Config) *Bundler {
 		bundleC:   make(chan *protocol.ButlerLogBundle),
 		streams:   map[string]bundlerStream{},
 	}
-	b.streamsCond = newTimeoutCond(b.getClock(), &b.streamsLock)
+	b.streamsCond = cancelcond.New(&b.streamsLock)
 
 	go b.makeBundles()
 	return &b
@@ -250,13 +252,14 @@ func (b *Bundler) makeBundles() {
 				}
 			}
 
+			// If we had no data or expire constraints, wait indefinitely for
+			// something to change.
+			c := context.Background()
 			if has {
-				b.streamsCond.waitTimeout(nextExpire.Sub(state.now))
-			} else {
-				// No data, no expire constraints. Wait indefinitely for something
-				// to change.
-				b.streamsCond.Wait()
+				// If there is still data, unblock after it expires.
+				c, _ = context.WithTimeout(c, nextExpire.Sub(state.now))
 			}
+			b.streamsCond.Wait(c)
 		}
 
 		// If our bundler has contents, send them.
