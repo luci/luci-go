@@ -126,6 +126,11 @@ func (r *Reader) Read(ir io.Reader) error {
 			return fmt.Errorf("butlerproto: failed to read Bundle data: %s", err)
 		}
 
+		if r.Metadata.ProtoVersion != protocol.Version {
+			return fmt.Errorf("butlerproto: unknown protobuf version (%q != %q)",
+				r.Metadata.ProtoVersion, protocol.Version)
+		}
+
 		bundle := protocol.ButlerLogBundle{}
 		if err := proto.Unmarshal(data, &bundle); err != nil {
 			return fmt.Errorf("butlerproto: failed to unmarshal Bundle frame: %s", err)
@@ -181,7 +186,8 @@ func (w *Writer) writeData(fw recordio.Writer, t protocol.ButlerMetadata_Content
 	}
 
 	md := protocol.ButlerMetadata{
-		Type: t,
+		Type:         t,
+		ProtoVersion: protocol.Version,
 	}
 
 	// If we're configured to compress and the data is below our threshold,

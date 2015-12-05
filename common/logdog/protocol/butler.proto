@@ -32,6 +32,9 @@ message ButlerMetadata {
     ZLIB = 1;
   }
   Compression compression = 2;
+
+  /* The protobuf version string (see version.go). */
+  string proto_version = 3;
 }
 
 /*

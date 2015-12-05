@@ -13,6 +13,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/recordio"
+	"github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -40,24 +41,28 @@ func TestReader(t *testing.T) {
 			return nil
 		}
 
-		push := func(m proto.Message) error {
+		push := func(m proto.Message) {
 			data, err := proto.Marshal(m)
 			if err != nil {
-				return err
+				panic(err)
 			}
-			return writeFrame(data)
+			if err := writeFrame(data); err != nil {
+				panic(err)
+			}
+		}
+
+		// Test case templates.
+		md := protocol.ButlerMetadata{
+			Type:         protocol.ButlerMetadata_ButlerLogBundle,
+			ProtoVersion: protocol.Version,
+		}
+		bundle := protocol.ButlerLogBundle{
+			Source: "test source",
 		}
 
 		Convey(`Can read a ButlerLogBundle entry.`, func() {
-			md := protocol.ButlerMetadata{
-				Type: protocol.ButlerMetadata_ButlerLogBundle,
-			}
-			bundle := protocol.ButlerLogBundle{
-				Source: "test source",
-			}
-
-			So(push(&md), ShouldBeNil)
-			So(push(&bundle), ShouldBeNil)
+			push(&md)
+			push(&bundle)
 
 			So(r.Read(&buf), ShouldBeNil)
 			So(r.Bundle, ShouldNotBeNil)
@@ -69,14 +74,23 @@ func TestReader(t *testing.T) {
 			unknownType := protocol.ButlerMetadata_ContentType(-1)
 			So(protocol.ButlerMetadata_ContentType_name[int32(unknownType)], ShouldEqual, "")
 
-			md := protocol.ButlerMetadata{
-				Type: unknownType,
-			}
-			So(push(&md), ShouldBeNil)
+			md.Type = unknownType
+			push(&md)
 
 			err := r.Read(&buf)
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "unknown data type")
+			So(err, assertions.ShouldErrLike, "unknown data type")
+		})
+
+		Convey(`Will fail to read if an unknown protocol version is identified.`, func() {
+			// Assert that we are testing an unknown type.
+			md.ProtoVersion = "DEFINITELY NOT VALID"
+			push(&md)
+			push(&bundle)
+
+			err := r.Read(&buf)
+			So(err, ShouldNotBeNil)
+			So(err, assertions.ShouldErrLike, "unknown protobuf version")
 		})
 
 		Convey(`Will fail to read junk metadata.`, func() {
@@ -84,35 +98,29 @@ func TestReader(t *testing.T) {
 
 			err := r.Read(&buf)
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "failed to unmarshal Metadata frame")
+			So(err, assertions.ShouldErrLike, "failed to unmarshal Metadata frame")
 		})
 
 		Convey(`With a proper Metadata frame`, func() {
-			md := protocol.ButlerMetadata{
-				Type: protocol.ButlerMetadata_ButlerLogBundle,
-			}
-			So(push(&md), ShouldBeNil)
+			push(&md)
 
 			Convey(`Will fail if the bundle data is junk.`, func() {
 				So(writeFrame([]byte{0xd0, 0x6f, 0x00, 0xd5}), ShouldBeNil)
 
 				err := r.Read(&buf)
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "failed to unmarshal Bundle frame")
+				So(err, assertions.ShouldErrLike, "failed to unmarshal Bundle frame")
 			})
 		})
 
 		Convey(`With a proper compressed Metadata frame`, func() {
-			md := protocol.ButlerMetadata{
-				Type:        protocol.ButlerMetadata_ButlerLogBundle,
-				Compression: protocol.ButlerMetadata_ZLIB,
-			}
-			So(push(&md), ShouldBeNil)
+			md.Compression = protocol.ButlerMetadata_ZLIB
+			push(&md)
 
 			Convey(`Will fail if the data frame is missing.`, func() {
 				err := r.Read(&buf)
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "failed to read Bundle data")
+				So(err, assertions.ShouldErrLike, "failed to read Bundle data")
 			})
 
 			Convey(`Will fail if there is junk compressed data.`, func() {
@@ -120,7 +128,7 @@ func TestReader(t *testing.T) {
 
 				err := r.Read(&buf)
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "failed to initialize zlib reader")
+				So(err, assertions.ShouldErrLike, "failed to initialize zlib reader")
 			})
 		})
 
@@ -150,7 +158,7 @@ func TestReader(t *testing.T) {
 
 			err := r.Read(&buf)
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "limit exceeded")
+			So(err, assertions.ShouldErrLike, "limit exceeded")
 		})
 	})
 }
@@ -176,6 +184,7 @@ func TestWriter(t *testing.T) {
 				r, err := read(&buf)
 				So(err, ShouldBeNil)
 				So(r.Metadata.Compression, ShouldEqual, protocol.ButlerMetadata_NONE)
+				So(r.Metadata.ProtoVersion, ShouldEqual, protocol.Version)
 			})
 
 			Convey(`Will not write data larger than the maximum bundle size.`, func() {
@@ -183,7 +192,7 @@ func TestWriter(t *testing.T) {
 				bundle.Source = strings.Repeat("A", 17)
 				err := w.Write(&buf, &bundle)
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "exceeds soft cap")
+				So(err, assertions.ShouldErrLike, "exceeds soft cap")
 			})
 
 			Convey(`Will compress data >= the threshold.`, func() {
@@ -194,6 +203,7 @@ func TestWriter(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(r.Metadata.Compression, ShouldEqual, protocol.ButlerMetadata_ZLIB)
 				So(r.Bundle.Source, ShouldResemble, bundle.Source)
+				So(r.Metadata.ProtoVersion, ShouldEqual, protocol.Version)
 
 				Convey(`And can be reused.`, func() {
 					bundle.Source = strings.Repeat("A", 64)
@@ -203,6 +213,7 @@ func TestWriter(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(r.Metadata.Compression, ShouldEqual, protocol.ButlerMetadata_ZLIB)
 					So(r.Bundle.Source, ShouldEqual, bundle.Source)
+					So(r.Metadata.ProtoVersion, ShouldEqual, protocol.Version)
 				})
 			})
 		})
