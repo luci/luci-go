@@ -5,6 +5,7 @@
 package assertions
 
 import (
+	"encoding/json"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -25,10 +26,14 @@ func TestShouldResembleV(t *testing.T) {
 		Convey(`Should have a nice ShouldResembleV string.`, func() {
 			b := X{Y: &Y{V: "bar"}}
 
-			So(ShouldResembleV(a, b), ShouldEqual, ""+
+			s := serialized{}
+			So(json.Unmarshal([]byte(ShouldResembleV(a, b)), &s), ShouldBeNil)
+			So(s.Message, ShouldEqual, ""+
 				"Expected: 'assertions.X{Y:(*assertions.Y){V:\"bar\"}}'\n"+
 				"Actual:   'assertions.X{Y:(*assertions.Y){V:\"foo\"}}'\n"+
 				"(Should resemble)!")
+			So(s.Expected, ShouldEqual, `assertions.X{Y:(*assertions.Y){V:"bar"}}`)
+			So(s.Actual, ShouldEqual, `assertions.X{Y:(*assertions.Y){V:"foo"}}`)
 		})
 
 		Convey(`Should have a nice ShouldNotResembleV string.`, func() {
