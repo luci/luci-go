@@ -326,8 +326,8 @@ func (m *LogEntry) GetDatagram() *Datagram {
 }
 
 // XXX_OneofFuncs is for the internal use of the proto package.
-func (*LogEntry) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _LogEntry_OneofMarshaler, _LogEntry_OneofUnmarshaler, _LogEntry_OneofSizer, []interface{}{
+func (*LogEntry) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), []interface{}) {
+	return _LogEntry_OneofMarshaler, _LogEntry_OneofUnmarshaler, []interface{}{
 		(*LogEntry_Text)(nil),
 		(*LogEntry_Binary)(nil),
 		(*LogEntry_Datagram)(nil),
@@ -390,32 +390,6 @@ func _LogEntry_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffe
 	default:
 		return false, nil
 	}
-}
-
-func _LogEntry_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*LogEntry)
-	// content
-	switch x := m.Content.(type) {
-	case *LogEntry_Text:
-		s := proto.Size(x.Text)
-		n += proto.SizeVarint(10<<3 | proto.WireBytes)
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *LogEntry_Binary:
-		s := proto.Size(x.Binary)
-		n += proto.SizeVarint(11<<3 | proto.WireBytes)
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *LogEntry_Datagram:
-		s := proto.Size(x.Datagram)
-		n += proto.SizeVarint(12<<3 | proto.WireBytes)
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 // *
