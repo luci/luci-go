@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Package frontend implements HTTP server that handles requests to default
+// Package main implements HTTP server that handles requests to default
 // module.
-package frontend
+package main
 
 import (
 	"net/http"
@@ -68,11 +68,13 @@ func base(h middleware.Handler) httprouter.Handle {
 
 //// Routes.
 
-func init() {
+func main() {
 	router := httprouter.New()
 	server.InstallHandlers(router, base)
 	router.GET("/", base(auth.Authenticate(indexPage)))
 	http.DefaultServeMux.Handle("/", router)
+
+	appengine.Main()
 }
 
 //// Handlers.

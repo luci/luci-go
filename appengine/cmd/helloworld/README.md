@@ -1,7 +1,7 @@
-# Template for GAE app
+# Template for Classic GAE app
 
-This directory contains "Hello, world" GAE application with all bells and
-whistles of luci-go framework:
+This directory contains "Hello, world" class (non-managed VMs) GAE application
+with all bells and whistles of luci-go framework:
 
 *   HTTP router and middlewares.
 *   luci/gae wrapper around datastore for better testability.

@@ -70,6 +70,7 @@ def source_file_filter(input_api):
   bl = list(input_api.DEFAULT_BLACK_LIST) + [
     r'.+\.pb\.go$',
     r'.+_string\.go$',
+    r'.+gae\.py$', # symlinks from outside
   ]
   wl = list(input_api.DEFAULT_WHITE_LIST) + [
     r'.+\.go$',
