@@ -8,6 +8,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
 )
 
@@ -15,10 +16,10 @@ import (
 type Attempt struct {
 	ID types.AttemptID
 
-	NumExecutions  uint32             `endpoints:"desc=The number of executions this Attempt has had."`
-	State          types.AttemptState `endpoints:"desc=The current state of this Attempt"`
-	Expiration     time.Time          `endpoints:"desc=The time at which this result will become Expired. Only set for attempts in the Finished or Expired states"`
-	NumWaitingDeps uint32             `endpoints:"desc=The number of dependencies that this Attempt is blocked on. Only valid for attempts in the AddingDeps or Blocked states"`
+	NumExecutions  uint32        `endpoints:"desc=The number of executions this Attempt has had."`
+	State          attempt.State `endpoints:"desc=The current state of this Attempt"`
+	Expiration     time.Time     `endpoints:"desc=The time at which this result will become Expired. Only set for attempts in the Finished or Expired states"`
+	NumWaitingDeps uint32        `endpoints:"desc=The number of dependencies that this Attempt is blocked on. Only valid for attempts in the AddingDeps or Blocked states"`
 }
 
 // Less allows display attempts to be compared based on their ID.

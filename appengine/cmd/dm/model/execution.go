@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
@@ -58,7 +59,7 @@ func verifyExecutionInternal(c context.Context, aid *types.AttemptID, evkey []by
 		return nil, nil, fmt.Errorf("couldn't get execution (%+v): %v", e, err)
 	}
 
-	if a.State != types.Executing {
+	if a.State != attempt.Executing {
 		return nil, nil, fmt.Errorf("Attempt is not executing yet")
 	}
 

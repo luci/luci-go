@@ -10,6 +10,7 @@ import (
 	"github.com/luci/gae/filter/featureBreaker"
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -40,10 +41,10 @@ func TestEnsureAttempt(t *testing.T) {
 
 				ds := datastore.Get(c)
 				So(ds.Get(a), ShouldEqual, nil)
-				So(a.State, ShouldEqual, types.NeedsExecution)
+				So(a.State, ShouldEqual, attempt.NeedsExecution)
 
 				Convey("replaying the mutation after the state has evolved is a noop", func() {
-					So(a.ChangeState(types.Executing), ShouldBeNil)
+					a.State.MustEvolve(attempt.Executing)
 					So(ds.Put(a), ShouldBeNil)
 
 					muts, err = ea.RollForward(c)
@@ -51,7 +52,7 @@ func TestEnsureAttempt(t *testing.T) {
 					So(muts, ShouldBeEmpty)
 
 					So(ds.Get(a), ShouldEqual, nil)
-					So(a.State, ShouldEqual, types.Executing)
+					So(a.State, ShouldEqual, attempt.Executing)
 				})
 			})
 

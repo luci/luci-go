@@ -6,6 +6,7 @@ package mutate
 
 import (
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/appengine/tumble"
@@ -47,7 +48,7 @@ func (a *AddDeps) RollForward(c context.Context) (muts []tumble.Mutation, err er
 
 	atmpt.AddingDepsBitmap = bf.Make(uint64(len(fwdDeps)))
 	atmpt.WaitingDepBitmap = bf.Make(uint64(len(fwdDeps)))
-	if err = atmpt.ChangeState(types.AddingDeps); err != nil {
+	if err = atmpt.State.Evolve(attempt.AddingDeps); err != nil {
 		return
 	}
 

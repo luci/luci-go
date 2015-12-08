@@ -9,6 +9,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/cmd/dm/mutate"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
@@ -69,7 +70,7 @@ func (d *DungeonMaster) AddDeps(c context.Context, req *AddDepsReq) (rsp *AddDep
 	_ = ds.GetMulti(atmpts)
 	allFinished := true
 	for _, a := range atmpts {
-		if a == nil || a.State != types.Finished {
+		if a == nil || a.State != attempt.Finished {
 			allFinished = false
 			break
 		}

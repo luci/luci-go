@@ -10,6 +10,7 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/display"
+	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	. "github.com/smartystreets/goconvey/convey"
@@ -45,7 +46,7 @@ func execute(c context.Context, aid *types.AttemptID) {
 		So(ds.Get(atmpt), ShouldBeNil)
 
 		atmpt.CurExecution++
-		So(atmpt.ChangeState(types.Executing), ShouldBeNil)
+		atmpt.State.MustEvolve(attempt.Executing)
 
 		So(ds.PutMulti([]interface{}{atmpt, &model.Execution{
 			ID:           atmpt.CurExecution,

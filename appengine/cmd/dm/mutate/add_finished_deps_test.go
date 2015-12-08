@@ -9,6 +9,7 @@ import (
 
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/appengine/tumble"
@@ -41,7 +42,7 @@ func TestAddFinishedDeps(t *testing.T) {
 		fs[1].ForExecution = 1
 		So(ds.Put(fs[1]), ShouldBeNil)
 
-		a := &model.Attempt{AttemptID: *f.ToAdd.Base, State: types.Executing, CurExecution: 7}
+		a := &model.Attempt{AttemptID: *f.ToAdd.Base, State: attempt.Executing, CurExecution: 7}
 		ak := ds.KeyForObj(a)
 		e := &model.Execution{ID: 7, Attempt: ak, ExecutionKey: []byte("sup")}
 		So(ds.PutMulti([]interface{}{a, e}), ShouldBeNil)

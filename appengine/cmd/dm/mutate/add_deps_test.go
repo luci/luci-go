@@ -9,6 +9,7 @@ import (
 
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -26,7 +27,7 @@ func TestAddDeps(t *testing.T) {
 
 		a := &model.Attempt{
 			AttemptID:    *types.NewAttemptID("quest|fffffffe"),
-			State:        types.Executing,
+			State:        attempt.Executing,
 			CurExecution: 1,
 		}
 		ak := ds.KeyForObj(a)
@@ -94,7 +95,7 @@ func TestAddDeps(t *testing.T) {
 					So(ds.GetMulti(fds), ShouldBeNil)
 					So(a.AddingDepsBitmap.Size(), ShouldEqual, len(fds))
 					So(a.WaitingDepBitmap.Size(), ShouldEqual, len(fds))
-					So(a.State, ShouldEqual, types.AddingDeps)
+					So(a.State, ShouldEqual, attempt.AddingDeps)
 					So(fds[0].ForExecution, ShouldEqual, 1)
 				})
 			})

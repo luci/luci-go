@@ -5,6 +5,7 @@
 // Package dm provides the implementation for the Dungeon Master (DM)
 // distributed dependency scheduling service. It is split into the following
 // subpackages:
+//   enums - Simple state enumerations and their state machine restrictions.
 //   types - Types common to the other packages.
 //   model - These objects are the datastore model objects for DM.
 //   mutate - Tumble mutations for DM, a.k.a. DM's state machine. Each mutation

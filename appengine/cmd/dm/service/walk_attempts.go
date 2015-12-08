@@ -10,6 +10,7 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/display"
+	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/common/logging"
@@ -98,7 +99,7 @@ func walkAttemptWorkerInner(ds datastore.Interface, opts *AttemptOpts, aid *type
 		ret.BackDeps.Merge(deps)
 	}
 
-	if opts.Result && atmpt.State == types.Finished {
+	if opts.Result && atmpt.State == attempt.Finished {
 		ar := &model.AttemptResult{Attempt: ds.KeyForObj(atmpt)}
 		err = ds.Get(ar)
 		if err != nil {

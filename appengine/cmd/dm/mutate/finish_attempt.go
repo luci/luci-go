@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/appengine/tumble"
@@ -40,10 +41,9 @@ func (f *FinishAttempt) RollForward(c context.Context) (muts []tumble.Mutation, 
 
 	ds := datastore.Get(c)
 
-	err = atmpt.ChangeState(types.Finished)
 	// Executing -> Finished is valid, and we know we're already Executing because
 	// the InvalidateExecution call above asserts that or errors out.
-	impossible(err)
+	atmpt.State.MustEvolve(attempt.Finished)
 
 	rslt := &model.AttemptResult{
 		Attempt: ds.KeyForObj(atmpt),

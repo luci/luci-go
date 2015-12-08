@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/luci/luci-go/appengine/cmd/dm/display"
+	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/common/bit_field"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -22,27 +23,27 @@ func TestAttempt(t *testing.T) {
 	Convey("Attempt", t, func() {
 		Convey("ChangeState", func() {
 			a := &Attempt{}
-			So(a.State, ShouldEqual, types.UNKNOWN)
-			So(a.ChangeState(types.AddingDeps), ShouldErrLike, "invalid state transition")
+			So(a.State, ShouldEqual, attempt.UnknownState)
+			So(a.State.Evolve(attempt.AddingDeps), ShouldErrLike, "invalid state transition")
 
-			a.State = types.NeedsExecution
-			So(a.ChangeState(types.Executing), ShouldBeNil)
-			So(a.State, ShouldEqual, types.Executing)
+			a.State = attempt.NeedsExecution
+			So(a.State.Evolve(attempt.Executing), ShouldBeNil)
+			So(a.State, ShouldEqual, attempt.Executing)
 
-			So(a.ChangeState(types.AddingDeps), ShouldBeNil)
-			So(a.ChangeState(types.Blocked), ShouldBeNil)
-			So(a.ChangeState(types.Blocked), ShouldBeNil)
-			So(a.ChangeState(types.NeedsExecution), ShouldBeNil)
-			So(a.ChangeState(types.Executing), ShouldBeNil)
-			So(a.ChangeState(types.Finished), ShouldBeNil)
+			So(a.State.Evolve(attempt.AddingDeps), ShouldBeNil)
+			So(a.State.Evolve(attempt.Blocked), ShouldBeNil)
+			So(a.State.Evolve(attempt.Blocked), ShouldBeNil)
+			So(a.State.Evolve(attempt.NeedsExecution), ShouldBeNil)
+			So(a.State.Evolve(attempt.Executing), ShouldBeNil)
+			So(a.State.Evolve(attempt.Finished), ShouldBeNil)
 
-			So(a.ChangeState(types.NeedsExecution), ShouldErrLike, "invalid")
-			So(a.State, ShouldEqual, types.Finished)
+			So(a.State.Evolve(attempt.NeedsExecution), ShouldErrLike, "invalid")
+			So(a.State, ShouldEqual, attempt.Finished)
 		})
 
 		Convey("ToDisplay", func() {
 			a := NewAttempt("quest", 10)
-			a.State = types.Finished
+			a.State = attempt.Finished
 			a.CurExecution = math.MaxUint32
 			a.AddingDepsBitmap = bf.Make(20)
 			a.WaitingDepBitmap = bf.Make(20)
@@ -54,7 +55,7 @@ func TestAttempt(t *testing.T) {
 			So(a.ToDisplay(), ShouldResembleV, &display.Attempt{
 				ID:             types.AttemptID{QuestID: "quest", AttemptNum: 10},
 				NumExecutions:  math.MaxUint32,
-				State:          types.Finished,
+				State:          attempt.Finished,
 				Expiration:     testclock.TestTimeUTC,
 				NumWaitingDeps: 17,
 			})

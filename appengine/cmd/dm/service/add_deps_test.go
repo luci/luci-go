@@ -9,6 +9,7 @@ import (
 
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -26,7 +27,7 @@ func TestAddDeps(t *testing.T) {
 
 		a := &model.Attempt{AttemptID: *types.NewAttemptID("quest|fffffffe")}
 		a.CurExecution = 1
-		a.State = types.Executing
+		a.State = attempt.Executing
 		ak := ds.KeyForObj(a)
 
 		e := &model.Execution{ID: 1, Attempt: ak, ExecutionKey: []byte("key")}
@@ -68,7 +69,7 @@ func TestAddDeps(t *testing.T) {
 			})
 
 			Convey("deps already done", func() {
-				to.State = types.Finished
+				to.State = attempt.Finished
 				So(ds.Put(to), ShouldBeNil)
 
 				rsp, err := s.AddDeps(c, req)
@@ -87,7 +88,7 @@ func TestAddDeps(t *testing.T) {
 
 				So(ds.Get(fwd), ShouldBeNil)
 				So(ds.Get(a), ShouldBeNil)
-				So(a.State, ShouldEqual, types.AddingDeps)
+				So(a.State, ShouldEqual, attempt.AddingDeps)
 			})
 
 		})

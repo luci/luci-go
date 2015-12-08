@@ -11,6 +11,7 @@ import (
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/display"
+	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/common/logging"
@@ -59,7 +60,7 @@ func (d *DungeonMaster) ClaimExecution(c context.Context) (rsp *ClaimExecutionRs
 		Execution: &ExecutionInfo{Key: exKeyBytes}}
 
 	for attempts := 0; attempts < claimRetries; attempts++ {
-		q := datastore.NewQuery("Attempt").Eq("State", types.NeedsExecution).Limit(32)
+		q := datastore.NewQuery("Attempt").Eq("State", attempt.NeedsExecution).Limit(32)
 
 		if attempts < claimRetries-1 {
 			prefixBytes := make([]byte, 2)
@@ -87,7 +88,7 @@ func (d *DungeonMaster) ClaimExecution(c context.Context) (rsp *ClaimExecutionRs
 		// Now find a random one which actually needs execution
 		var aid types.AttemptID
 		for _, i := range mathrand.Get(c).Perm(len(as)) {
-			if as[i].State != types.NeedsExecution {
+			if as[i].State != attempt.NeedsExecution {
 				continue
 			}
 			aid = as[i].AttemptID
@@ -117,13 +118,13 @@ func (d *DungeonMaster) ClaimExecution(c context.Context) (rsp *ClaimExecutionRs
 			if err != nil {
 				return err
 			}
-			if a.State != types.NeedsExecution {
+			if a.State != attempt.NeedsExecution {
 				// oops, we picked a bad one, try again in the outer loop.
 				tryAgain = true
 				return nil
 			}
 
-			err = a.ChangeState(types.Executing)
+			err = a.State.Evolve(attempt.Executing)
 			if err != nil {
 				return err
 			}

@@ -10,8 +10,8 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/display"
+	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
@@ -72,7 +72,7 @@ func TestViewAttempt(t *testing.T) {
 				req.Options = nil
 				So(view(), ShouldResembleV, &display.Data{
 					Attempts: display.AttemptSlice{
-						{ID: *mkAid(w, 1), State: types.NeedsExecution},
+						{ID: *mkAid(w, 1), State: attempt.NeedsExecution},
 					},
 				})
 			})
@@ -80,7 +80,7 @@ func TestViewAttempt(t *testing.T) {
 			Convey("no dependencies", func() {
 				So(view(), ShouldResembleV, &display.Data{
 					Attempts: display.AttemptSlice{
-						{ID: *mkAid(w, 1), State: types.NeedsExecution},
+						{ID: *mkAid(w, 1), State: attempt.NeedsExecution},
 					},
 				})
 			})
@@ -100,7 +100,7 @@ func TestViewAttempt(t *testing.T) {
 					Attempts: display.AttemptSlice{
 						{
 							ID:            *mkAid(w, 1),
-							State:         types.Finished,
+							State:         attempt.Finished,
 							NumExecutions: 1,
 							Expiration:    clock.Now(c).Add(time.Hour * 24 * 4).Round(time.Millisecond),
 						},
@@ -121,7 +121,7 @@ func TestViewAttempt(t *testing.T) {
 				// don't run tumble, so that x|1 and x|2 don't get created.
 				So(view(), ShouldResembleV, &display.Data{
 					Attempts: display.AttemptSlice{
-						{ID: *mkAid(w, 1), State: types.AddingDeps,
+						{ID: *mkAid(w, 1), State: attempt.AddingDeps,
 							NumExecutions: 1, NumWaitingDeps: 2},
 					},
 					FwdDeps: display.DepsFromAttemptSlice{
@@ -134,10 +134,10 @@ func TestViewAttempt(t *testing.T) {
 
 					So(view(), ShouldResembleV, &display.Data{
 						Attempts: display.AttemptSlice{
-							{ID: *mkAid(w, 1), State: types.Blocked,
+							{ID: *mkAid(w, 1), State: attempt.Blocked,
 								NumExecutions: 1, NumWaitingDeps: 2},
-							{ID: *mkAid(x, 1), State: types.NeedsExecution},
-							{ID: *mkAid(x, 2), State: types.NeedsExecution},
+							{ID: *mkAid(x, 1), State: attempt.NeedsExecution},
+							{ID: *mkAid(x, 2), State: attempt.NeedsExecution},
 						},
 						FwdDeps: display.DepsFromAttemptSlice{
 							mkDisplayDeps(mkAid(w, 1), mkAid(x, 1), mkAid(x, 2)),
@@ -160,10 +160,10 @@ func TestViewAttempt(t *testing.T) {
 
 					So(view(), ShouldResembleV, &display.Data{
 						Attempts: display.AttemptSlice{
-							{ID: *mkAid(w, 1), State: types.Blocked, NumExecutions: 1, NumWaitingDeps: 2},
-							{ID: *mkAid(z, 1), State: types.NeedsExecution},
-							{ID: *mkAid(x, 1), State: types.Blocked, NumExecutions: 1, NumWaitingDeps: 1},
-							{ID: *mkAid(x, 2), State: types.Blocked, NumExecutions: 1, NumWaitingDeps: 1},
+							{ID: *mkAid(w, 1), State: attempt.Blocked, NumExecutions: 1, NumWaitingDeps: 2},
+							{ID: *mkAid(z, 1), State: attempt.NeedsExecution},
+							{ID: *mkAid(x, 1), State: attempt.Blocked, NumExecutions: 1, NumWaitingDeps: 1},
+							{ID: *mkAid(x, 2), State: attempt.Blocked, NumExecutions: 1, NumWaitingDeps: 1},
 						},
 						FwdDeps: display.DepsFromAttemptSlice{
 							mkDisplayDeps(mkAid(w, 1), mkAid(x, 1), mkAid(x, 2)),
@@ -190,10 +190,10 @@ func TestViewAttempt(t *testing.T) {
 					req.Options.DFS = true
 					So(view(), ShouldResembleV, &display.Data{
 						Attempts: display.AttemptSlice{
-							{ID: *mkAid(w, 1), State: types.Blocked, NumExecutions: 1, NumWaitingDeps: 2},
-							{ID: *mkAid(z, 1), State: types.NeedsExecution},
-							{ID: *mkAid(x, 1), State: types.Blocked, NumExecutions: 1, NumWaitingDeps: 1},
-							{ID: *mkAid(x, 2), State: types.Blocked, NumExecutions: 1, NumWaitingDeps: 1},
+							{ID: *mkAid(w, 1), State: attempt.Blocked, NumExecutions: 1, NumWaitingDeps: 2},
+							{ID: *mkAid(z, 1), State: attempt.NeedsExecution},
+							{ID: *mkAid(x, 1), State: attempt.Blocked, NumExecutions: 1, NumWaitingDeps: 1},
+							{ID: *mkAid(x, 2), State: attempt.Blocked, NumExecutions: 1, NumWaitingDeps: 1},
 						},
 						FwdDeps: display.DepsFromAttemptSlice{
 							mkDisplayDeps(mkAid(w, 1), mkAid(x, 1), mkAid(x, 2)),

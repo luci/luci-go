@@ -10,6 +10,7 @@ import (
 
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/appengine/tumble"
@@ -40,7 +41,7 @@ func TestFinishAttempt(t *testing.T) {
 		Convey("RollForward", func() {
 			a := &model.Attempt{
 				AttemptID:    fa.ID,
-				State:        types.Executing,
+				State:        attempt.Executing,
 				CurExecution: 1,
 			}
 			ak := ds.KeyForObj(a)
@@ -58,7 +59,7 @@ func TestFinishAttempt(t *testing.T) {
 
 				So(ds.GetMulti([]interface{}{a, e, ar}), ShouldBeNil)
 				So(e.Done(), ShouldBeTrue)
-				So(a.State, ShouldEqual, types.Finished)
+				So(a.State, ShouldEqual, attempt.Finished)
 				So(a.ResultExpiration, ShouldResembleV,
 					testclock.TestTimeUTC.Round(time.Microsecond))
 				So(ar.Data, ShouldResembleV, []byte(`{"result": true}`))
@@ -71,7 +72,7 @@ func TestFinishAttempt(t *testing.T) {
 
 				So(ds.GetMulti([]interface{}{a, e}), ShouldBeNil)
 				So(e.Done(), ShouldBeFalse)
-				So(a.State, ShouldEqual, types.Executing)
+				So(a.State, ShouldEqual, attempt.Executing)
 
 				So(ds.Get(ar), ShouldEqual, datastore.ErrNoSuchEntity)
 			})

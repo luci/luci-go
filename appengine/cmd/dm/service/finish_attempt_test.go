@@ -9,6 +9,7 @@ import (
 
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -28,7 +29,7 @@ func TestFinishAttempt(t *testing.T) {
 		So(ds.Put(&model.Quest{ID: "quest"}), ShouldBeNil)
 		a := &model.Attempt{
 			AttemptID:    *types.NewAttemptID("quest|fffffffe"),
-			State:        types.Executing,
+			State:        attempt.Executing,
 			CurExecution: 1,
 		}
 		So(ds.Put(a), ShouldBeNil)
@@ -69,7 +70,7 @@ func TestFinishAttempt(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			So(ds.Get(a), ShouldBeNil)
-			So(a.State, ShouldEqual, types.Finished)
+			So(a.State, ShouldEqual, attempt.Finished)
 		})
 
 	})

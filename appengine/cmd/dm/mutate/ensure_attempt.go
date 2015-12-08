@@ -6,6 +6,7 @@ package mutate
 
 import (
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/appengine/tumble"
@@ -27,7 +28,7 @@ func (e *EnsureAttempt) Root(c context.Context) *datastore.Key {
 func (e *EnsureAttempt) RollForward(c context.Context) (muts []tumble.Mutation, err error) {
 	ds := datastore.Get(c)
 
-	a := &model.Attempt{AttemptID: e.ID, State: types.NeedsExecution}
+	a := &model.Attempt{AttemptID: e.ID, State: attempt.NeedsExecution}
 	err = ds.Get(a)
 	if err != datastore.ErrNoSuchEntity {
 		return

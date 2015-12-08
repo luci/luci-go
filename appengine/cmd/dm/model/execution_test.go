@@ -9,6 +9,7 @@ import (
 
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/common/logging/memlogger"
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -61,7 +62,7 @@ func TestExecutions(t *testing.T) {
 			_, _, err = VerifyExecution(c, types.NewAttemptID("q|fffffffe"), []byte("hello"))
 			So(err, ShouldErrLike, "Attempt is not executing yet")
 
-			a.State = types.Executing
+			a.State = attempt.Executing
 			So(ds.Put(a), ShouldBeNil)
 			_, _, err = VerifyExecution(c, types.NewAttemptID("q|fffffffe"), []byte("wat"))
 			So(err, ShouldErrLike, "Incorrect ExecutionKey")
@@ -75,7 +76,7 @@ func TestExecutions(t *testing.T) {
 
 		Convey("Invalidate", func() {
 			a.CurExecution = 1
-			a.State = types.Executing
+			a.State = attempt.Executing
 			So(ds.Put(a), ShouldBeNil)
 
 			_, _, err := InvalidateExecution(c, types.NewAttemptID("q|fffffffe"), []byte("wat"))

@@ -5,11 +5,11 @@
 package model
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/display"
+	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/common/bit_field"
 )
@@ -24,7 +24,7 @@ import (
 type Attempt struct {
 	types.AttemptID `gae:"$id"`
 
-	State types.AttemptState
+	State attempt.State
 
 	// TODO(iannucci): Use CurExecution as a 'deps block version'
 	// then we can have an 'ANY' directive which executes the attempt as soon
@@ -76,32 +76,6 @@ func (a *Attempt) Problem() error {
 // Attempt number. It is created with the UNKNOWN state.
 func NewAttempt(quest string, num uint32) *Attempt {
 	return &Attempt{AttemptID: types.AttemptID{QuestID: quest, AttemptNum: num}}
-}
-
-var validStateEvolution = map[types.AttemptState][]types.AttemptState{
-	types.AddingDeps:     {types.Blocked, types.NeedsExecution},
-	types.Blocked:        {types.NeedsExecution},
-	types.Executing:      {types.AddingDeps, types.Finished},
-	types.Finished:       {},
-	types.NeedsExecution: {types.Executing},
-}
-
-// ChangeState attempts to evolve the state of this Attempt. If the state
-// evolution is not allowed (e.g. invalid state transition), this returns an
-// error.
-func (a *Attempt) ChangeState(newState types.AttemptState) error {
-	if newState == a.State {
-		return nil
-	}
-
-	for _, val := range validStateEvolution[a.State] {
-		if newState == val {
-			a.State = newState
-			return nil
-		}
-	}
-
-	return fmt.Errorf("invalid state transition %v -> %v", a.State, newState)
 }
 
 // ToDisplay returns a display.Attempt for this Attempt.
