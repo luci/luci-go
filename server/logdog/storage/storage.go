@@ -20,35 +20,25 @@ var (
 
 	// ErrBadData is an error returned when the stored data is invalid.
 	ErrBadData = errors.New("storage: bad data")
-
-	// ErrInvalidRequest is returned when the supplied request parameters are
-	// invalid.
-	ErrInvalidRequest = errors.New("storage: invalid request")
 )
-
-// StreamRecord is a stream storage record header.
-type StreamRecord struct {
-	// Path is the stream path to retrieve.
-	Path types.StreamPath
-
-	// Index is the entry's stream index.
-	Index types.MessageIndex
-}
-
-// StreamRecordData is the data value of a single stream record.
-type StreamRecordData []byte
 
 // PutRequest describes adding a single storage record to BigTable.
 type PutRequest struct {
-	StreamRecord
+	// Path is the stream path to retrieve.
+	Path types.StreamPath
+	// Index is the entry's stream index.
+	Index types.MessageIndex
 
 	// Value is the contents of the cell to add.
-	Value StreamRecordData
+	Value []byte
 }
 
 // GetRequest is a request to retrieve a series of LogEntry records.
 type GetRequest struct {
-	StreamRecord
+	// Path is the stream path to retrieve.
+	Path types.StreamPath
+	// Index is the entry's stream index.
+	Index types.MessageIndex
 
 	// Limit is the maximum number of records to return before stopping iteration.
 	// If zero, no maximum limit will be applied.
@@ -74,7 +64,9 @@ type Storage interface {
 	// Close shuts down this instance, releasing any allocated resources.
 	Close()
 
-	// Writes a series of EntryRecords to storage.
+	// Writes log record data to storage.
+	//
+	// If the data already exists, ErrExists will be returned.
 	Put(*PutRequest) error
 
 	// Get invokes a callback over a range of sequential LogEntry records.
@@ -87,7 +79,7 @@ type Storage interface {
 	// receiving fewer than requsted records does not necessarily mean that more
 	// records are not available.
 	//
-	// Returns nil if retrieval executed successfully, ErrStreamDoesNotExist if
+	// Returns nil if retrieval executed successfully, ErrDoesNotExist if
 	// the requested stream does not exist, and an error if an error occurred
 	// during retrieval.
 	Get(*GetRequest, GetCallback) error
@@ -98,11 +90,13 @@ type Storage interface {
 	// The contiguous space is started from the specified Index. If a Limit is
 	// supplied, the tail record will begin at most Limit records from the Index.
 	//
-	// Returns nil if retrieval executed successfully, ErrStreamDoesNotExist if
+	// Returns nil if retrieval executed successfully, ErrDoesNotExist if
 	// the requested stream does not exist, and an error if an error occurred
 	// during retrieval.
 	Tail(*GetRequest, GetCallback) error
 
 	// Purges a stream and all of its data from the store.
-	Purge(*StreamRecord) error
+	//
+	// If the requested stream doesn't exist, ErrDoesNotExist will be returned.
+	Purge(types.StreamPath) error
 }

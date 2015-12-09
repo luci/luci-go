@@ -82,8 +82,8 @@ type btStorage struct {
 	table btTable
 }
 
-func streamRecordRowKey(sr *storage.StreamRecord) *rowKey {
-	return newRowKey(string(sr.Path), int64(sr.Index))
+func streamRecordRowKey(path types.StreamPath, index types.MessageIndex) *rowKey {
+	return newRowKey(string(path), int64(index))
 }
 
 // New instantiates a new Storage instance connected to a BigTable cluster.
@@ -109,7 +109,7 @@ func (s *btStorage) Close() {
 }
 
 func (s *btStorage) Put(r *storage.PutRequest) error {
-	rk := streamRecordRowKey(&r.StreamRecord)
+	rk := streamRecordRowKey(r.Path, r.Index)
 	ctx := log.SetFields(s.ctx, log.Fields{
 		"rowKey": rk,
 		"path":   r.Path,
@@ -122,7 +122,7 @@ func (s *btStorage) Put(r *storage.PutRequest) error {
 }
 
 func (s *btStorage) Get(r *storage.GetRequest, cb storage.GetCallback) error {
-	startKey := streamRecordRowKey(&r.StreamRecord)
+	startKey := streamRecordRowKey(r.Path, r.Index)
 	c := log.SetFields(s.ctx, log.Fields{
 		"path":        r.Path,
 		"index":       r.Index,
@@ -166,7 +166,7 @@ func (s *btStorage) Tail(r *storage.GetRequest, cb storage.GetCallback) error {
 	// First Pass: SCAN
 	// Scan forwards (keys-only) from the starting key looking for the last
 	// contiguous index.
-	ridx, err := s.getLastContiguousIndex(c, &r.StreamRecord, r.Limit)
+	ridx, err := s.getLastContiguousIndex(c, r.Path, r.Index, r.Limit)
 	if err != nil {
 		return err
 	}
@@ -186,7 +186,8 @@ func (s *btStorage) Tail(r *storage.GetRequest, cb storage.GetCallback) error {
 	rows := make([][]byte, 0, rowCount)
 
 	greq := storage.GetRequest{
-		StreamRecord: r.StreamRecord,
+		Path:  r.Path,
+		Index: r.Index,
 	}
 
 	for count > 0 {
@@ -201,7 +202,7 @@ func (s *btStorage) Tail(r *storage.GetRequest, cb storage.GetCallback) error {
 		rows = rows[:0]
 		greq.Index = types.MessageIndex(ridx - amount + 1)
 		greq.Limit = int(amount)
-		rk := streamRecordRowKey(&r.StreamRecord)
+		rk := streamRecordRowKey(r.Path, r.Index)
 		err := s.table.getLogData(c, rk, greq.Limit, false, func(rk *rowKey, data []byte) error {
 			rows = append(rows, data)
 			return nil
@@ -235,9 +236,10 @@ func (s *btStorage) Tail(r *storage.GetRequest, cb storage.GetCallback) error {
 // - The last contiguous row for a given stream could be cached in a separate
 //   table. Future searches would start with that index. This would avoid
 //   traversing the massive row space more times than necessary.
-func (s *btStorage) getLastContiguousIndex(c context.Context, r *storage.StreamRecord, limit int) (int64, error) {
-	lastIndex := int64(r.Index) - 1
-	startKey := streamRecordRowKey(r)
+func (s *btStorage) getLastContiguousIndex(c context.Context, path types.StreamPath,
+	index types.MessageIndex, limit int) (int64, error) {
+	lastIndex := int64(index) - 1
+	startKey := streamRecordRowKey(path, index)
 	err := s.table.getLogData(c, startKey, limit, true, func(rk *rowKey, data []byte) error {
 		if !rk.sharesPathWith(startKey) {
 			return errStop
@@ -257,7 +259,7 @@ func (s *btStorage) getLastContiguousIndex(c context.Context, r *storage.StreamR
 	return lastIndex, nil
 }
 
-func (s *btStorage) Purge(r *storage.StreamRecord) error {
+func (s *btStorage) Purge(p types.StreamPath) error {
 	panic("Not implemented.")
 }
 

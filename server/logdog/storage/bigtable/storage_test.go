@@ -134,20 +134,16 @@ func TestStorage(t *testing.T) {
 
 		put := func(path string, index int, d string) error {
 			return s.Put(&storage.PutRequest{
-				StreamRecord: storage.StreamRecord{
-					Path:  types.StreamPath(path),
-					Index: types.MessageIndex(index),
-				},
-				Value: storage.StreamRecordData(d),
+				Path:  types.StreamPath(path),
+				Index: types.MessageIndex(index),
+				Value: []byte(d),
 			})
 		}
 
 		get := func(path string, index int, limit int) ([]string, error) {
 			req := storage.GetRequest{
-				StreamRecord: storage.StreamRecord{
-					Path:  types.StreamPath(path),
-					Index: types.MessageIndex(index),
-				},
+				Path:  types.StreamPath(path),
+				Index: types.MessageIndex(index),
 				Limit: limit,
 			}
 			got := []string{}
@@ -160,10 +156,8 @@ func TestStorage(t *testing.T) {
 
 		tail := func(path string, index int, limit int) ([]string, error) {
 			req := storage.GetRequest{
-				StreamRecord: storage.StreamRecord{
-					Path:  types.StreamPath(path),
-					Index: types.MessageIndex(index),
-				},
+				Path:  types.StreamPath(path),
+				Index: types.MessageIndex(index),
 				Limit: limit,
 			}
 			got := []string{}
@@ -269,7 +263,7 @@ func TestStorage(t *testing.T) {
 
 			Convey(`Testing "Purge"...`, func() {
 				Convey(`Is not implemented, and should panic.`, func() {
-					So(func() { s.Purge(&storage.StreamRecord{}) }, ShouldPanic)
+					So(func() { s.Purge("") }, ShouldPanic)
 				})
 			})
 		})
