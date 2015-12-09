@@ -21,6 +21,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/appengine/cmd/milo/resp"
+	"github.com/luci/luci-go/appengine/gaeauth/client"
 )
 
 func resolveServer(server string) string {
@@ -49,9 +50,10 @@ func getSwarmingLog(server string, swarmingID string, c context.Context) ([]byte
 	}
 
 	swarmingURL := fmt.Sprintf(
-		"https://%s/swarming/api/v1/client/task/%s/output/0",
+		"https://%s/_ah/api/swarming/v1/task/%s/stdout",
 		resolveServer(server), swarmingID)
-	client := transport.GetClient(c)
+	client := transport.GetClient(client.UseServiceAccountTransport(c,
+		[]string{"https://www.googleapis.com/auth/userinfo.email"}, nil))
 	resp, err := client.Get(swarmingURL)
 	if err != nil {
 		return nil, err
