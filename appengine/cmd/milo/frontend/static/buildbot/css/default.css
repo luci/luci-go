@@ -412,6 +412,12 @@ div.BuildWaterfall {
   border-color: #C29D46;
 }
 
+.status-InfraFailure {
+  color: #FFFFFF;
+  background-color: #c6c;
+  border-color: #ACA0B3;
+}
+
 .warnings {
   color: #FFFFFF;
   background-color: #fa3;

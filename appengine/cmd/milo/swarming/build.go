@@ -123,6 +123,10 @@ func miloBuildStep(
 		} else {
 			comp.Status = resp.Failure
 		}
+
+	case miloProto.Status_EXCEPTION:
+		comp.Status = resp.InfraFailure
+
 		// Missing the case of waiting on unfinished dependency...
 	default:
 		comp.Status = resp.NotRun
@@ -130,6 +134,9 @@ func miloBuildStep(
 	// Sub link is for one link per log that isn't stdio.
 	for _, link := range asc.GetOtherLinks() {
 		lds := link.GetLogdogStream()
+		if lds == nil {
+			continue // DNE???
+		}
 		shortName := lds.Name[5 : len(lds.Name)-2]
 		if strings.HasSuffix(lds.Name, "annotations") || strings.HasSuffix(lds.Name, "stdio") {
 			// Skip the special ones.
@@ -145,7 +152,7 @@ func miloBuildStep(
 	// Main link is a link to the stdio.
 	comp.MainLink = &resp.Link{
 		Label: "stdio",
-		URL:   strings.Join([]string{url, name, "logs", "stdio"}, "/"),
+		URL:   strings.Join([]string{url, name, "stdio"}, "/"),
 	}
 
 	// This should always be a step.

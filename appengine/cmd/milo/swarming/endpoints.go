@@ -18,8 +18,7 @@ type BuildReq struct {
 // BuildLogReq is a request for a build log from swarming.
 type BuildLogReq struct {
 	BuildReq
-	StepName string
-	LogName  string
+	LogName string
 }
 
 // BuildLog contains the log text retrieved from swarming.
@@ -38,5 +37,5 @@ func (ss *Service) Build(c context.Context, r *BuildReq) (*resp.MiloBuild, error
 
 // BuildLog gets the requested build log from swarming.
 func (ss *Service) BuildLog(c context.Context, r *BuildLogReq) (*BuildLog, error) {
-	return swarmingBuildLogImpl(c, r.Server, r.SwarmingID, r.LogName, r.StepName)
+	return swarmingBuildLogImpl(c, r.Server, r.SwarmingID, r.LogName)
 }

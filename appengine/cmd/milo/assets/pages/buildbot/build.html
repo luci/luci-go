@@ -35,6 +35,9 @@
           </div>
           <ul>
             <li><a href="{{.MainLink.URL}}">{{.MainLink.Label}}</a></li>
+            {{ range .SubLink }}
+              <li><a href="{{.URL}}">{{.Label}}</a></li>
+            {{ end }}
           </ul>
         </li>
         {{ end }}

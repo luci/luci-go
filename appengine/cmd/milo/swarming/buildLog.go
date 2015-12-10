@@ -11,7 +11,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func swarmingBuildLogImpl(c context.Context, server string, id string, log string, step string) (*BuildLog, error) {
+func swarmingBuildLogImpl(c context.Context, server string, id string, logname string) (*BuildLog, error) {
 	// Fetch the data from Swarming
 	body, err := getSwarmingLog(server, id, c)
 	if err != nil {
@@ -24,12 +24,7 @@ func swarmingBuildLogImpl(c context.Context, server string, id string, log strin
 		return nil, err
 	}
 
-	var k string
-	if log == "stdio" {
-		k = strings.Join([]string{"steps", step, "stdio"}, "/")
-	} else {
-		k = strings.Join([]string{"steps", step, "logs", log}, "/")
-	}
+	k := strings.Join([]string{"steps", logname}, "")
 	if s, ok := client.stream[k]; ok {
 		return &BuildLog{log: s.buf.String()}, nil
 	}

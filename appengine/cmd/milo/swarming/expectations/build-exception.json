@@ -1,0 +1,133 @@
+{
+  "Navi": {
+    "SiteTitle": {
+      "Label": "Milo",
+      "Img": "",
+      "Subtitle": "",
+      "URL": "/",
+      "Alt": ""
+    },
+    "PageTitle": {
+      "Label": "debug:build-exception",
+      "Img": "",
+      "Subtitle": "",
+      "URL": "foo",
+      "Alt": ""
+    },
+    "Breadcrumbs": null,
+    "Right": null
+  },
+  "Summary": null,
+  "Components": [
+    {
+      "Label": "recipe bootstrap",
+      "Status": "Success",
+      "MainLink": {
+        "Label": "stdio",
+        "Img": "",
+        "Subtitle": "",
+        "URL": "foo/steps/recipe_bootstrap/0/stdio",
+        "Alt": ""
+      },
+      "SubLink": null,
+      "Progress": null,
+      "Started": "1754-10-03T02:48:47Z",
+      "Finished": "",
+      "Duration": 0,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Text": null
+    },
+    {
+      "Label": "setup_build",
+      "Status": "Success",
+      "MainLink": {
+        "Label": "stdio",
+        "Img": "",
+        "Subtitle": "",
+        "URL": "foo/steps/setup_build/0/stdio",
+        "Alt": ""
+      },
+      "SubLink": [
+        {
+          "Label": "/setup_build/0/logs/run_recipe",
+          "Img": "",
+          "Subtitle": "",
+          "URL": "foo/steps/setup_build/0/logs/run_recipe/0",
+          "Alt": ""
+        }
+      ],
+      "Progress": null,
+      "Started": "1754-10-03T02:48:47Z",
+      "Finished": "",
+      "Duration": 0,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Text": [
+        "\u003cbr/\u003erunning recipe: \"v8\""
+      ]
+    },
+    {
+      "Label": "bot_update",
+      "Status": "InfraFailure",
+      "MainLink": {
+        "Label": "stdio",
+        "Img": "",
+        "Subtitle": "",
+        "URL": "foo/steps/bot_update/0/stdio",
+        "Alt": ""
+      },
+      "SubLink": [
+        {
+          "Label": "/bot_update/0/logs/json.output__invalid_",
+          "Img": "",
+          "Subtitle": "",
+          "URL": "foo/steps/bot_update/0/logs/json.output__invalid_/0",
+          "Alt": ""
+        }
+      ],
+      "Progress": null,
+      "Started": "1754-10-03T02:48:47Z",
+      "Finished": "",
+      "Duration": 0,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Text": null
+    },
+    {
+      "Label": "Uncaught Exception",
+      "Status": "InfraFailure",
+      "MainLink": {
+        "Label": "stdio",
+        "Img": "",
+        "Subtitle": "",
+        "URL": "foo/steps/Uncaught_Exception/0/stdio",
+        "Alt": ""
+      },
+      "SubLink": [
+        {
+          "Label": "/Uncaught_Exception/0/logs/exception",
+          "Img": "",
+          "Subtitle": "",
+          "URL": "foo/steps/Uncaught_Exception/0/logs/exception/0",
+          "Alt": ""
+        }
+      ],
+      "Progress": null,
+      "Started": "1754-10-03T02:48:47Z",
+      "Finished": "",
+      "Duration": 0,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Text": null
+    }
+  ],
+  "PropertyGroup": [
+    {
+      "GroupName": "Main",
+      "Property": null
+    }
+  ],
+  "Blame": null,
+  "CurrentTime": "0001-02-03 04:05:06.000000007 +0000 UTC"
+}

@@ -46,7 +46,7 @@ func init() {
 	// Register plain ol' http services.
 	r := httprouter.New()
 	r.GET("/", wrap(root))
-	r.GET("/swarming/:server/:id/steps/:step/logs/:log", wrap(swarming.WriteBuildLog))
+	r.GET("/swarming/:server/:id/steps/*logname", wrap(swarming.WriteBuildLog))
 	r.GET("/swarming/:server/:id", wrap(swarming.Render))
 	http.Handle("/", r)
 

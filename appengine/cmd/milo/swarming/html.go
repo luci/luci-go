@@ -25,22 +25,15 @@ func WriteBuildLog(
 			Code:    http.StatusBadRequest,
 		}
 	}
-	log := p.ByName("log")
-	if log == "" {
+	logname := p.ByName("logname")
+	if logname == "" {
 		return &miloerror.Error{
-			Message: "No log",
-			Code:    http.StatusBadRequest,
-		}
-	}
-	step := p.ByName("step")
-	if step == "" {
-		return &miloerror.Error{
-			Message: "No step",
+			Message: "No log name",
 			Code:    http.StatusBadRequest,
 		}
 	}
 	server := p.ByName("server") // This one may be blank.
-	b, err := swarmingBuildLogImpl(c, server, id, log, step)
+	b, err := swarmingBuildLogImpl(c, server, id, logname)
 	if err != nil {
 		return err
 	}
