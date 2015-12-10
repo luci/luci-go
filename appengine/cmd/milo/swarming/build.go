@@ -16,6 +16,7 @@ import (
 	"github.com/luci/luci-go/client/logdog/annotee"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logdog/types"
+	"github.com/luci/luci-go/common/logging"
 	miloProto "github.com/luci/luci-go/common/proto/milo"
 	"github.com/luci/luci-go/common/transport"
 	"golang.org/x/net/context"
@@ -97,7 +98,7 @@ func getNavi(swarmingID string, URL string) *resp.Navigation {
 
 // Given a logdog/milo step, translate it to a BuildComponent struct.
 func miloBuildStep(
-	url string, anno *miloProto.Step, name string) *resp.BuildComponent {
+	c context.Context, url string, anno *miloProto.Step, name string) *resp.BuildComponent {
 	comp := &resp.BuildComponent{}
 	asc := anno.GetStepComponent()
 	comp.Label = asc.Name
@@ -135,6 +136,7 @@ func miloBuildStep(
 	for _, link := range asc.GetOtherLinks() {
 		lds := link.GetLogdogStream()
 		if lds == nil {
+			logging.Warningf(c, "Warning: %v of %v has an empty logdog stream.", link, asc)
 			continue // DNE???
 		}
 		shortName := lds.Name[5 : len(lds.Name)-2]
@@ -187,7 +189,7 @@ func buildFromClient(c context.Context, swarmingID string, url string, s *memory
 		anno := &miloProto.Step{}
 		fullname := strings.Join([]string{name, "annotations"}, "/")
 		proto.Unmarshal(s.stream[fullname].dg, anno)
-		build.Components = append(build.Components, miloBuildStep(url, anno, name))
+		build.Components = append(build.Components, miloBuildStep(c, url, anno, name))
 	}
 
 	// Take care of properties
