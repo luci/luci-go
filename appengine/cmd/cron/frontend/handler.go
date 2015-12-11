@@ -44,6 +44,7 @@ import (
 	"github.com/luci/luci-go/appengine/cmd/cron/engine"
 	"github.com/luci/luci-go/appengine/cmd/cron/task"
 	"github.com/luci/luci-go/appengine/cmd/cron/task/noop"
+	"github.com/luci/luci-go/appengine/cmd/cron/task/swarming"
 	"github.com/luci/luci-go/appengine/cmd/cron/task/urlfetch"
 	"github.com/luci/luci-go/appengine/cmd/cron/ui"
 )
@@ -57,6 +58,7 @@ var (
 	// Known kinds of tasks.
 	managers = []task.Manager{
 		&noop.TaskManager{},
+		&swarming.TaskManager{},
 		&urlfetch.TaskManager{},
 	}
 )

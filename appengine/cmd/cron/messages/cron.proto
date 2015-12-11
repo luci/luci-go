@@ -26,6 +26,8 @@ message Task {
   optional NoopTask noop = 1;
   // UrlFetch can be used to make a simple HTTP call.
   optional UrlFetchTask url_fetch = 2;
+  // SwarmingTask can be used to schedule swarming job.
+  optional SwarmingTask swarming_task = 3;
 }
 
 
@@ -43,6 +45,42 @@ message UrlFetchTask {
   // Timeout is how long to wait for request to complete.
   optional int32 timeout_sec = 3 [default = 60];
   // TODO: add more.
+}
+
+
+// SwarmingTask specifies parameters of Swarming-based cron job.
+message SwarmingTask {
+  // IsolatedRef defines a data tree reference, normally a reference to
+  // an .isolated file
+  message IsolatedRef {
+    optional string isolated = 1;
+    optional string isolated_server = 2;
+    optional string namespace = 3;
+  }
+
+  // Server is URL of the swarming service to use.
+  optional string server = 1;
+
+  // What to run. Only one of 'command' or 'isolated_ref' must be given.
+  repeated string command = 2;
+  optional IsolatedRef isolated_ref = 3;
+
+  // Additional arguments to pass to isolated command.
+  repeated string extra_args = 4;
+  // List of "key=value" pairs with additional OS environment variables.
+  repeated string env = 5;
+
+  // Where to run it. List of "key:value" pairs.
+  repeated string dimensions = 6;
+  // Tags is a list of tags (as "key:value" pairs) to assign to the task.
+  repeated string tags = 7;
+  // Priority is task priority (or niceness, lower value - higher priority).
+  optional int32 priority = 8 [default = 200];
+
+  // Timeouts. All optional. Cron service will set reasonable default values.
+  optional int32 execution_timeout_secs = 9;
+  optional int32 grace_period_secs = 10 [default = 30];
+  optional int32 io_timeout_secs = 11;
 }
 
 
