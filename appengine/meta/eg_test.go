@@ -28,8 +28,7 @@ func TestGetEntityGroupVersion(t *testing.T) {
 			"Val":  {datastore.MkProperty(10)},
 		}
 		So(ds.Put(pm), ShouldBeNil)
-		aKey, ok := pm.GetMetaDefault("key", nil).(*datastore.Key)
-		So(ok, ShouldBeTrue)
+		aKey := ds.KeyForObj(pm)
 		So(aKey, ShouldNotBeNil)
 
 		v, err := GetEntityGroupVersion(c, aKey)

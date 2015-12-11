@@ -1,4 +1,4 @@
-// Copyright (c) 2015 The Chromium Authors. All rights reserved.
+// Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -52,4 +52,18 @@ func ShouldErrLike(actual interface{}, expected ...interface{}) string {
 		return assertions.ShouldContainSubstring(ae.Error(), x.Error())
 	}
 	return fmt.Sprintf("unknown argument type %T, expected string or error", expected[0])
+}
+
+// ShouldPanicLike is the same as ShouldErrLike, but with the exception that it
+// takes a panic'ing func() as its first argument, instead of the error itself.
+func ShouldPanicLike(function interface{}, expected ...interface{}) (ret string) {
+	f, ok := function.(func())
+	if !ok {
+		return fmt.Sprintf("unknown argument type %T, expected `func()`", function)
+	}
+	defer func() {
+		ret = ShouldErrLike(recover(), expected...)
+	}()
+	f()
+	return ShouldErrLike(nil, expected...)
 }
