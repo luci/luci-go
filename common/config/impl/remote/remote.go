@@ -12,8 +12,8 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/api/googleapi"
 
+	configApi "github.com/luci/luci-go/common/api/luci_config/config/v1"
 	"github.com/luci/luci-go/common/config"
-	configApi "github.com/luci/luci-go/common/config/impl/remote/generated_api/v1"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/transport"

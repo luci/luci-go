@@ -16,21 +16,21 @@ var ErrNoConfig = errors.New("no such config")
 type Config struct {
 	// ConfigSet is the config set name (e.g. "projects/<id>") this config
 	// belongs to. May be the empty string if this is unknown.
-	ConfigSet string
+	ConfigSet string `json:"configSet,omitempty"`
 
 	// Error is not nil if there where troubles fetching this config. Used only
 	// by functions that operate with multiple configs at once, such as
 	// GetProjectConfigs and GetRefConfigs.
-	Error error
+	Error error `json:"error,omitempty"`
 
 	// Content is the actual body of the config file.
-	Content string
+	Content string `json:"content,omitempty"`
 
 	// ContentHash can be used to quickly check that content didn't change.
-	ContentHash string
+	ContentHash string `json:"contentHash,omitempty"`
 
 	// Revision is git SHA1 of a repository the config was fetched from.
-	Revision string
+	Revision string `json:"revision,omitempty"`
 }
 
 // RepoType is the type of the repo the Project is stored in.

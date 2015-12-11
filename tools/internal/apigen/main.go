@@ -61,7 +61,6 @@ func compileChromiumLicense(c context.Context) (string, error) {
 // Application is the main apigen application instance.
 type Application struct {
 	servicePath    string
-	servicePort    int
 	serviceAPIRoot string
 	genPath        string
 	apiPackage     string
@@ -76,8 +75,6 @@ type Application struct {
 func (a *Application) AddToFlagSet(fs *flag.FlagSet) {
 	flag.StringVar(&a.servicePath, "service", ".",
 		"Path to the AppEngine service to generate from.")
-	flag.IntVar(&a.servicePort, "service-port", 8080,
-		"Port that the service listens on.")
 	flag.StringVar(&a.serviceAPIRoot, "service-api-root", "/_ah/api/",
 		"The service's API root path.")
 	flag.StringVar(&a.genPath, "generator", "google-api-go-generator",
@@ -218,12 +215,9 @@ func (a Application) Run(c context.Context) error {
 		return fmt.Errorf("failed to load service [%s]: %s", a.servicePath, err)
 	}
 
-	discoveryURL := url.URL{
-		Scheme: "http",
-		Host:   fmt.Sprintf("localhost:%d", a.servicePort),
-		Path:   safeURLPathJoin("", a.serviceAPIRoot, "discovery", "v1", "apis"),
-	}
-	err = svc.run(c, func(c context.Context) error {
+	err = svc.run(c, func(c context.Context, discoveryURL url.URL) error {
+		discoveryURL.Path = safeURLPathJoin(discoveryURL.Path, a.serviceAPIRoot, "discovery", "v1", "apis")
+
 		data, err := retryHTTP(c, discoveryURL, "GET", "")
 		if err != nil {
 			return fmt.Errorf("discovery server did not come online: %s", err)
@@ -231,7 +225,7 @@ func (a Application) Run(c context.Context) error {
 
 		dir := directoryList{}
 		if err := json.Unmarshal(data, &dir); err != nil {
-			fmt.Errorf("failed to load directory list: %s", err)
+			return fmt.Errorf("failed to load directory list: %s", err)
 		}
 
 		// Ensure that our target API base directory exists.

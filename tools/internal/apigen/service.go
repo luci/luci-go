@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -28,16 +29,32 @@ type service interface {
 	run(context.Context, serviceRunFunc) error
 }
 
-type serviceRunFunc func(context.Context) error
+type serviceRunFunc func(c context.Context, u url.URL) error
 
 // loadService is a generic service loader routine. It attempts to:
 // 1) Identify the filesystem path of the service being described.
 // 2) Analyze its "app.yaml" to determine its runtime parameters.
 // 3) Construct and return a `service` instance for the result.
 //
-// "path" is first treated as a filesystem path, then considered as a Go package
-// path.
+// "path" is decoded as:
+// - A discovery base URL
+// - A filesystem path, pointing to an "app.yaml" file.
+// - A Go package path containing an "app.yaml" file.
 func loadService(c context.Context, path string) (service, error) {
+	url, err := url.Parse(path)
+	if err == nil && url.Scheme != "" {
+		log.Fields{
+			"url": path,
+		}.Infof(c, "Identified path as service URL.")
+		return &remoteDiscoveryService{
+			url: *url,
+		}, nil
+	}
+	log.Fields{
+		log.ErrorKey: err,
+		"value":      path,
+	}.Debugf(c, "Path did not parse as URL. Trying local filesystem options.")
+
 	yamlPath := ""
 	st, err := os.Stat(path)
 	switch {
@@ -114,6 +131,14 @@ func loadService(c context.Context, path string) (service, error) {
 	}
 }
 
+type remoteDiscoveryService struct {
+	url url.URL
+}
+
+func (s *remoteDiscoveryService) run(c context.Context, f serviceRunFunc) error {
+	return f(c, s.url)
+}
+
 type devAppserverService struct {
 	prerun func(context.Context) error
 	args   []string
@@ -143,7 +168,10 @@ func (s *devAppserverService) run(c context.Context, f serviceRunFunc) error {
 	}
 	defer cmd.kill(c)
 
-	return f(c)
+	return f(c, url.URL{
+		Scheme: "http",
+		Host:   "localhost:8080",
+	})
 }
 
 // discoveryTranslateService is a service that loads a backend discovery
@@ -192,7 +220,10 @@ func (s *discoveryTranslateService) run(c context.Context, f serviceRunFunc) err
 	}
 	defer svc.kill(c)
 
-	return f(c)
+	return f(c, url.URL{
+		Scheme: "http",
+		Host:   "localhost:8080",
+	})
 }
 
 func checkBuild(c context.Context, dir string) error {
