@@ -108,7 +108,7 @@ func TestFetchStoreServiceAccountJSON(t *testing.T) {
 	})
 }
 
-func TestTransport(t *testing.T) {
+func TestAuthenticatorAndTransport(t *testing.T) {
 	Convey("with mocked context", t, func() {
 		c := testContext()
 		scopes := []string{"a", "b", "c"}

@@ -41,17 +41,18 @@ const (
 	expirationRandomization = 5 * time.Minute
 )
 
-// Transport returns http.RoundTripper that injects Authorization headers into
-// requests. It uses GAE service account tokens minted for given set of scopes,
-// or 'email' scope if empty. If serviceAccountJSON is given, it must be a
-// byte blob with service account JSON key to use instead of app's own account.
-// If it is not given, and running on devserver, it will be read from
-// the datastore via FetchServiceAccountJSON(c, "devserver").
+// Authenticator returns an auth.Authenticator using GAE service account
+// tokens minted for a given set of scopes, or 'email' scope if empty.
 //
-// Prefer to use Transport(...) lazily (e.g. only when really going to send
-// the request), since it does a bunch of datastore and memcache reads to
+// If serviceAccountJSON is given, it must be a byte blob with service account
+// JSON key to use instead of app's own account.  If it is not given, and
+// unning on devserver, it will be read from the datastore via
+// FetchServiceAccountJSON(c, "devserver").
+//
+// Prefer to use Authenticator(...) lazily (e.g. only when really going to
+// send the request), since it does a bunch of datastore and memcache reads to
 // initialize http.RoundTripper.
-func Transport(c context.Context, scopes []string, serviceAccountJSON []byte) (http.RoundTripper, error) {
+func Authenticator(c context.Context, scopes []string, serviceAccountJSON []byte) (*auth.Authenticator, error) {
 	if len(serviceAccountJSON) == 0 && info.Get(c).IsDevAppServer() {
 		var err error
 		if serviceAccountJSON, err = FetchServiceAccountJSON(c, "devserver"); err != nil {
@@ -77,7 +78,17 @@ func Transport(c context.Context, scopes []string, serviceAccountJSON []byte) (h
 		opts.Method = auth.CustomMethod
 		opts.CustomTokenMinter = tokenMinter{c}
 	}
-	return auth.NewAuthenticator(auth.SilentLogin, opts).Transport()
+	return auth.NewAuthenticator(auth.SilentLogin, opts), nil
+}
+
+// Transport returns http.RoundTripper that injects Authorization headers into
+// requests. It uses an authenticator returned by Authenticator.
+func Transport(c context.Context, scopes []string, serviceAccountJSON []byte) (http.RoundTripper, error) {
+	a, err := Authenticator(c, scopes, serviceAccountJSON)
+	if err != nil {
+		return nil, err
+	}
+	return a.Transport()
 }
 
 // FetchServiceAccountJSON returns service account JSON key blob by reading it
