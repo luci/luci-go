@@ -5,6 +5,7 @@
 package urlfetch
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -127,4 +128,8 @@ func (c *dumbController) DebugLog(format string, args ...interface{}) {
 func (c *dumbController) Save(status task.Status) error {
 	c.status = status
 	return nil
+}
+
+func (c *dumbController) PrepareTopic(publisher string) (topic string, token string, err error) {
+	return "", "", errors.New("not implemented")
 }

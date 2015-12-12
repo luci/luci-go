@@ -42,6 +42,10 @@ func (s Status) Final() bool {
 //
 // Manager uses Controller to talk back to cron engine.
 type Manager interface {
+	// Name returns task manager name. It identifies the corresponding kind
+	// of tasks and used in various resource names (e.g. PubSub topic names).
+	Name() string
+
 	// ProtoMessageType returns a pointer to protobuf message struct that
 	// describes config for the task kind, e.g. &cron.UrlFetchTask{}. Will be used
 	// only for its type signature.
@@ -59,13 +63,27 @@ type Manager interface {
 	//  * Not to use supplied controller outside of LaunchTask call.
 	//  * Not to use supplied controller concurrently without synchronization.
 	LaunchTask(c context.Context, msg proto.Message, ctl Controller) error
+
+	// HandleNotification is called whenever engine receives a PubSub message sent
+	// to a topic created with Controller.PrepareTopic.
+	HandleNotification(c context.Context, ctl Controller) error
 }
 
 // Controller is passed to LaunchTask by cron engine. It gives Manager control
-// over one task. Manager must not used it outside of LaunchTask. Controller
+// over one task. Manager must not use it outside of LaunchTask. Controller
 // implementation is generally not thread safe (but it's fine to use it from
 // multiple goroutines if access is protected by a lock).
 type Controller interface {
+	// PrepareTopic create PubSub topic for notifications related to the task and
+	// adds given publisher to its ACL.
+	//
+	// It returns full name of the topic and a token that will be used to route
+	// PubSub messages back to the Manager. Topic name and its configuration are
+	// controlled by the Engine. The publisher to the topic must be instructed to
+	// put the token into 'auth_token' attribute of PubSub messages. Cron engine
+	// will know how to route such messages to Manager.HandleNotification.
+	PrepareTopic(publisher string) (topic string, token string, err error)
+
 	// DebugLog appends a line to the free form text log of the task.
 	// For debugging.
 	DebugLog(format string, args ...interface{})

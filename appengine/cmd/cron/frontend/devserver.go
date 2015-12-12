@@ -16,32 +16,9 @@ job {
     noop: {}
   }
 }
-
-job {
-  id: "noop-job-2"
-  schedule: "*/10 * * * * * *"
-  task: {
-    noop: {}
-  }
-}
 `
 
 const project2CronCfg = `
-job {
-  id: "noop-job-1"
-  schedule: "*/10 * * * * * *"
-  task: {
-    noop: {}
-  }
-}
-
-job {
-  id: "noop-job-2"
-  schedule: "*/10 * * * * * *"
-  task: {
-    noop: {}
-  }
-}
 `
 
 // devServerConfig returns mocked luci-config configs to use locally on dev

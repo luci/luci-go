@@ -7,6 +7,7 @@ package urlfetch
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -27,6 +28,11 @@ import (
 // TaskManager implements task.Manager interface for tasks defined with
 // UrlFetchTask proto message
 type TaskManager struct {
+}
+
+// Name is part of Manager interface.
+func (m TaskManager) Name() string {
+	return "url_fetch"
 }
 
 // ProtoMessageType is part of Manager interface.
@@ -137,6 +143,11 @@ func (m TaskManager) LaunchTask(c context.Context, msg proto.Message, ctl task.C
 		ctl.DebugLog(dumpResponse(res.resp, res.body))
 	}
 	return ctl.Save(status)
+}
+
+// HandleNotification is part of Manager interface.
+func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller) error {
+	return errors.New("not implemented")
 }
 
 ////////////////////////////////////////////////////////////////////////////////

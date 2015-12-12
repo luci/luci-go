@@ -23,10 +23,12 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/mathrand"
 	"github.com/luci/luci-go/common/stringset"
+	"github.com/luci/luci-go/server/secrets/testsecrets"
 
 	"github.com/luci/luci-go/appengine/cmd/cron/catalog"
 	"github.com/luci/luci-go/appengine/cmd/cron/messages"
 	"github.com/luci/luci-go/appengine/cmd/cron/task"
+	"github.com/luci/luci-go/appengine/cmd/cron/task/noop"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -578,12 +580,59 @@ func TestQueries(t *testing.T) {
 	})
 }
 
+func TestPrepareTopic(t *testing.T) {
+	Convey("PrepareTopic works", t, func(ctx C) {
+		c := newTestContext(epoch)
+
+		e, _ := newTestEngine()
+
+		pubSubCalls := 0
+		e.configureTopic = func(c context.Context, topic, sub, pushURL, publisher string) error {
+			pubSubCalls++
+			ctx.So(topic, ShouldEqual, "projects/dev~app/topics/dev-cron+noop+some~publisher.com")
+			ctx.So(sub, ShouldEqual, "projects/dev~app/subscriptions/dev-cron+noop+some~publisher.com")
+			ctx.So(pushURL, ShouldEqual, "") // pull on dev server
+			ctx.So(publisher, ShouldEqual, "some@publisher.com")
+			return nil
+		}
+
+		ctl := &taskController{
+			ctx:     c,
+			eng:     e,
+			manager: &noop.TaskManager{},
+			current: Invocation{
+				ID:     123456,
+				JobKey: datastore.Get(c).NewKey("CronJob", "job_id", 0, nil),
+			},
+		}
+
+		// Once.
+		topic, token, err := ctl.PrepareTopic("some@publisher.com")
+		So(err, ShouldBeNil)
+		So(topic, ShouldEqual, "projects/dev~app/topics/dev-cron+noop+some~publisher.com")
+		So(token, ShouldNotEqual, "")
+		So(pubSubCalls, ShouldEqual, 1)
+
+		// Again. 'configureTopic' should not be called anymore.
+		_, _, err = ctl.PrepareTopic("some@publisher.com")
+		So(err, ShouldBeNil)
+		So(pubSubCalls, ShouldEqual, 1)
+
+		// Make sure memcache-based deduplication also works.
+		e.doneFlags = make(map[string]bool)
+		_, _, err = ctl.PrepareTopic("some@publisher.com")
+		So(err, ShouldBeNil)
+		So(pubSubCalls, ShouldEqual, 1)
+	})
+}
+
 ////
 
 func newTestContext(now time.Time) context.Context {
 	c := memory.Use(context.Background())
 	c = clock.Set(c, testclock.New(now))
 	c = mathrand.Set(c, rand.New(rand.NewSource(1000)))
+	c = testsecrets.Use(c)
 
 	ds := datastore.Get(c)
 	ds.Testable().AddIndexes(&datastore.IndexDefinition{
@@ -601,7 +650,7 @@ func newTestContext(now time.Time) context.Context {
 	return c
 }
 
-func newTestEngine() (Engine, *fakeTaskManager) {
+func newTestEngine() (*engineImpl, *fakeTaskManager) {
 	mgr := &fakeTaskManager{}
 	cat := catalog.New(nil)
 	cat.RegisterTaskManager(mgr)
@@ -611,7 +660,8 @@ func newTestEngine() (Engine, *fakeTaskManager) {
 		TimersQueueName:      "timers-q",
 		InvocationsQueuePath: "/invs",
 		InvocationsQueueName: "invs-q",
-	}), mgr
+		PubSubPushPath:       "/push-url",
+	}).(*engineImpl), mgr
 }
 
 ////
@@ -619,6 +669,10 @@ func newTestEngine() (Engine, *fakeTaskManager) {
 // fakeTaskManager implement task.Manager interface.
 type fakeTaskManager struct {
 	launchTask func(ctl task.Controller) error
+}
+
+func (m *fakeTaskManager) Name() string {
+	return "fake"
 }
 
 func (m *fakeTaskManager) ProtoMessageType() proto.Message {
@@ -631,6 +685,10 @@ func (m *fakeTaskManager) ValidateProtoMessage(msg proto.Message) error {
 
 func (m *fakeTaskManager) LaunchTask(c context.Context, msg proto.Message, ctl task.Controller) error {
 	return m.launchTask(ctl)
+}
+
+func (m *fakeTaskManager) HandleNotification(c context.Context, ctl task.Controller) error {
+	return errors.New("not implemented")
 }
 
 ////

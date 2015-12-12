@@ -166,6 +166,10 @@ type noopTaskManager struct {
 	validationErr error
 }
 
+func (m noopTaskManager) Name() string {
+	return "testing"
+}
+
 func (m noopTaskManager) ProtoMessageType() proto.Message {
 	return &messages.NoopTask{}
 }
@@ -180,6 +184,10 @@ func (m noopTaskManager) LaunchTask(c context.Context, msg proto.Message, ctl ta
 	// Let it panic on a wrong type.
 	So(msg.(*messages.NoopTask), ShouldNotBeNil)
 	return nil
+}
+
+func (m noopTaskManager) HandleNotification(c context.Context, ctl task.Controller) error {
+	return errors.New("not implemented")
 }
 
 type brokenTaskManager struct {

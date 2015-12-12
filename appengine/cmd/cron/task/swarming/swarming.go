@@ -6,6 +6,7 @@
 package swarming
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -20,6 +21,11 @@ import (
 // TaskManager implements task.Manager interface for tasks defined with
 // SwarmingTask proto message.
 type TaskManager struct {
+}
+
+// Name is part of Manager interface.
+func (m TaskManager) Name() string {
+	return "swarming"
 }
 
 // ProtoMessageType is part of Manager interface.
@@ -93,4 +99,9 @@ func validateKVList(kind string, list []string, sep rune) error {
 func (m TaskManager) LaunchTask(c context.Context, msg proto.Message, ctl task.Controller) error {
 	// TODO(vadimsh): Implement.
 	return ctl.Save(task.StatusSucceeded)
+}
+
+// HandleNotification is part of Manager interface.
+func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller) error {
+	return errors.New("not implemented")
 }

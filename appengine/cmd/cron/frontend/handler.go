@@ -185,6 +185,7 @@ func init() {
 		TimersQueueName:      "timers",
 		InvocationsQueuePath: "/internal/tasks/invocations",
 		InvocationsQueueName: "invocations",
+		PubSubPushPath:       "/pubsub",
 	})
 
 	// Setup HTTP routes.
@@ -197,6 +198,7 @@ func init() {
 	})
 
 	router.GET("/_ah/warmup", base(wrap(warmupHandler)))
+	router.POST("/pubsub", base(wrap(pubsubPushHandler)))
 	router.GET("/internal/cron/read-config", cronHandler(readConfigCron))
 	router.POST("/internal/tasks/read-project-config", taskQueueHandler("read-project-config", readProjectConfigTask))
 	router.POST("/internal/tasks/timers", taskQueueHandler("timers", actionTask))
@@ -213,6 +215,20 @@ func warmupHandler(rc *requestContext) {
 	}
 	if err := server.Warmup(rc); err != nil {
 		rc.fail(500, "Failed to warmup OpenID: %s", err)
+		return
+	}
+	rc.ok()
+}
+
+// pubsubPushHandler handles incoming PubSub messages.
+func pubsubPushHandler(rc *requestContext) {
+	body, err := ioutil.ReadAll(rc.r.Body)
+	if err != nil {
+		rc.fail(500, "Failed to read the request: %s", err)
+		return
+	}
+	if err = globalEngine.ProcessPubSubPush(rc, body); err != nil {
+		rc.err(err, "Failed to process incoming PubSub push")
 		return
 	}
 	rc.ok()

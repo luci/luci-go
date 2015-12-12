@@ -7,6 +7,8 @@
 package noop
 
 import (
+	"errors"
+
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
@@ -17,6 +19,11 @@ import (
 // TaskManager implements task.Manager interface for tasks defined with
 // NoopTask proto message.
 type TaskManager struct {
+}
+
+// Name is part of Manager interface.
+func (m TaskManager) Name() string {
+	return "noop"
 }
 
 // ProtoMessageType is part of Manager interface.
@@ -33,4 +40,9 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 func (m TaskManager) LaunchTask(c context.Context, msg proto.Message, ctl task.Controller) error {
 	ctl.DebugLog("Running noop task")
 	return ctl.Save(task.StatusSucceeded)
+}
+
+// HandleNotification is part of Manager interface.
+func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller) error {
+	return errors.New("not implemented")
 }

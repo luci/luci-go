@@ -9,21 +9,26 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/gorhill/cronexpr"
+	"golang.org/x/net/context"
+
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
+	"github.com/luci/gae/service/memcache"
 	"github.com/luci/gae/service/taskqueue"
+
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/mathrand"
 	"github.com/luci/luci-go/common/stringset"
-	"golang.org/x/net/context"
+	"github.com/luci/luci-go/server/tokens"
 
 	"github.com/luci/luci-go/appengine/cmd/cron/catalog"
 	"github.com/luci/luci-go/appengine/cmd/cron/task"
@@ -70,6 +75,9 @@ type Engine interface {
 	// 'retryCount' is 0 on first attempt, 1 if task queue service retries
 	// request once, 2 - if twice, and so on.
 	ExecuteSerializedAction(c context.Context, body []byte, retryCount int) error
+
+	// ProcessPubSubPush is called whenever incoming PubSub message is received.
+	ProcessPubSubPush(c context.Context, body []byte) error
 }
 
 // Config contains parameters for the engine.
@@ -79,11 +87,15 @@ type Config struct {
 	TimersQueueName      string          // queue name for timer ticks
 	InvocationsQueuePath string          // URL of a task queue handler that starts jobs
 	InvocationsQueueName string          // queue name for job starts
+	PubSubPushPath       string          // URL to use in PubSub push config
 }
 
 // NewEngine returns default implementation of Engine.
 func NewEngine(conf Config) Engine {
-	return &engineImpl{conf}
+	return &engineImpl{
+		Config:    conf,
+		doneFlags: make(map[string]bool),
+	}
 }
 
 //// Implementation.
@@ -260,6 +272,63 @@ func generateInvocationID(c context.Context, parent *datastore.Key) (int64, erro
 
 type engineImpl struct {
 	Config
+
+	lock      sync.Mutex
+	doneFlags map[string]bool // see doIfNotDone
+
+	// configureTopic is used by prepareTopic, mocked in tests.
+	configureTopic func(c context.Context, topic, sub, pushURL, publisher string) error
+}
+
+// doIfNotDone calls callback only if it wasn't called before.
+//
+// Works on best effort basis: callback can and will be called multiple times
+// (just not the every time 'doIfNotDone' is called).
+//
+// Keeps "done" flag in local memory and in memcache (using 'key' as
+// identifier). The callback should be idempotent, since it still may be called
+// multiple times if multiple processes attempt to execute the action at once.
+func (e *engineImpl) doIfNotDone(c context.Context, key string, cb func() error) error {
+	// Check the local cache.
+	e.lock.Lock()
+	if e.doneFlags[key] {
+		e.lock.Unlock()
+		return nil
+	}
+	e.lock.Unlock()
+
+	// Check the global cache.
+	mc := memcache.Get(c)
+	switch _, err := mc.Get(key); {
+	case err == nil:
+		e.lock.Lock()
+		defer e.lock.Unlock()
+		e.doneFlags[key] = true
+		return nil
+	case err == memcache.ErrCacheMiss:
+		break
+	default:
+		return errors.WrapTransient(err)
+	}
+
+	// Do it.
+	if err := cb(); err != nil {
+		return err
+	}
+
+	// Store in the global cache. Ignore errors, it's not a big deal.
+	item := mc.NewItem(key)
+	item.SetValue([]byte("ok"))
+	item.SetExpiration(24 * time.Hour)
+	if err := mc.Set(item); err != nil {
+		logging.Warningf(c, "Failed to write item to memcache - %s", err)
+	}
+
+	// Store in the local cache.
+	e.lock.Lock()
+	defer e.lock.Unlock()
+	e.doneFlags[key] = true
+	return nil
 }
 
 func (e *engineImpl) GetAllProjects(c context.Context) ([]string, error) {
@@ -651,6 +720,11 @@ func (e *engineImpl) ExecuteSerializedAction(c context.Context, action []byte, r
 	}
 }
 
+func (e *engineImpl) ProcessPubSubPush(c context.Context, body []byte) error {
+	// TODO(vadimsh): Implement.
+	return nil
+}
+
 // updateJob updates an existing job if its definition has changed, adds
 // a completely new job or enables a previously disabled job.
 func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error {
@@ -825,7 +899,12 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	// point we are already handling the invocation, and thus already using
 	// Controller interface with all its bells and whistles.
 	c = logging.SetField(c, "InvID", inv.ID)
-	ctl := e.makeController(c, inv)
+	ctl := &taskController{
+		ctx:     c,
+		eng:     e,
+		saved:   inv,
+		current: inv,
+	}
 	taskMsg, err := e.Catalog.UnmarshalTask(inv.Task)
 	if err != nil {
 		return ctl.launchFailed(fmt.Errorf("failed to unmarshal the task: %s", err))
@@ -834,6 +913,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	if manager == nil {
 		return ctl.launchFailed(fmt.Errorf("TaskManager is unexpectedly missing"))
 	}
+	ctl.manager = manager
 
 	// LaunchTask MUST move the invocation out of StatusStarting, otherwise cron
 	// job will be forever stuck in starting state.
@@ -850,21 +930,102 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	return err
 }
 
-// makeController sets up task.Controller that knows how to mutate given
-// Invocation entity and associated CronJob entity. It is passed to task.Manager
-// that uses it to update job state.
-func (e *engineImpl) makeController(c context.Context, inv Invocation) *taskController {
-	return &taskController{c, e, inv, inv}
+// topicParams is passed to prepareTopic by task.Controller.
+type topicParams struct {
+	inv       *Invocation  // invocation being handled by Controller
+	manager   task.Manager // task manager for the invocation
+	publisher string       // name of publisher to add to PubSub topic.
+}
+
+// pubsubAuthToken describes how to generate HMAC protected tokens used to
+// authenticate PubSub messages.
+var pubsubAuthToken = tokens.TokenKind{
+	Algo:       tokens.TokenAlgoHmacSHA256,
+	Expiration: 48 * time.Hour,
+	SecretKey:  "pubsub_auth_token",
+	Version:    1,
+}
+
+// prepareTopic creates a pubsub topic that can be used to pass task related
+// messages back to the task.Manager that handles the task.
+//
+// It returns full topic name, as well as a token that securely identifies the
+// task. It should be put into 'auth_token' attribute of PubSub messages by
+// whoever publishes them.
+func (e *engineImpl) prepareTopic(c context.Context, params topicParams) (topic string, tok string, err error) {
+	inf := info.Get(c)
+
+	// Avoid accidental override of the topic when running on dev server.
+	prefix := "cron"
+	if inf.IsDevAppServer() {
+		prefix = "dev-cron"
+	}
+
+	// Each publisher gets its own topic (and subscription), so it's clearer from
+	// logs and PubSub console who's calling what. PubSub topics can't have "@" in
+	// them, so replace "@" with "~". URL encoding could have been used too, but
+	// Cloud Console confuses %40 with its own URL encoding and doesn't display
+	// all pages correctly.
+	id := fmt.Sprintf("%s+%s+%s",
+		prefix,
+		params.manager.Name(),
+		strings.Replace(params.publisher, "@", "~", -1))
+	topic = fmt.Sprintf("projects/%s/topics/%s", inf.AppID(), id)
+	sub := fmt.Sprintf("projects/%s/subscriptions/%s", inf.AppID(), id)
+
+	// Put same parameters in push URL to make them visible in logs. On dev server
+	// use pull based subscription, since localhost push URL is not valid.
+	pushURL := ""
+	if !inf.IsDevAppServer() {
+		urlParams := url.Values{}
+		urlParams.Add("kind", params.manager.Name())
+		urlParams.Add("publisher", params.publisher)
+		pushURL = fmt.Sprintf(
+			"https://%s%s?%s", inf.DefaultVersionHostname(), e.PubSubPushPath, urlParams.Encode())
+	}
+
+	// Create and configure the topic. Do it only once.
+	err = e.doIfNotDone(c, fmt.Sprintf("prepareTopic:v1:%s", topic), func() error {
+		if e.configureTopic != nil {
+			return e.configureTopic(c, topic, sub, pushURL, params.publisher)
+		}
+		return configureTopic(c, topic, sub, pushURL, params.publisher, "")
+	})
+	if err != nil {
+		return "", "", err
+	}
+
+	// Encode full invocation identifier (job key + invocation ID) into HMAC
+	// protected token.
+	tok, err = pubsubAuthToken.Generate(c, nil, map[string]string{
+		"job": params.inv.JobKey.StringID(),
+		"inv": fmt.Sprintf("%d", params.inv.ID),
+	}, 0)
+	if err != nil {
+		return "", "", err
+	}
+
+	return topic, tok, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 type taskController struct {
-	ctx context.Context
-	eng *engineImpl
+	ctx     context.Context
+	eng     *engineImpl
+	manager task.Manager
 
 	saved   Invocation // what have been given initially or saved in Save()
 	current Invocation // what is currently being mutated
+}
+
+// PrepareTopic is part of task.Controller interface.
+func (ctl *taskController) PrepareTopic(publisher string) (topic string, token string, err error) {
+	return ctl.eng.prepareTopic(ctl.ctx, topicParams{
+		inv:       &ctl.current,
+		manager:   ctl.manager,
+		publisher: publisher,
+	})
 }
 
 // DebugLog is part of task.Controller interface.
