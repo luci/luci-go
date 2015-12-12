@@ -21,8 +21,15 @@ var (
 )
 
 // AEContext retrieves the raw "google.golang.org/appengine" compatible Context.
+//
+// It also transfers deadline of `c` to AE context, since deadline is used for
+// RPCs. Doesn't transfer cancelation ability though (since it's ignored by GAE
+// anyway).
 func AEContext(c context.Context) context.Context {
 	aeCtx, _ := c.Value(prodContextKey).(context.Context)
+	if deadline, ok := c.Deadline(); ok {
+		aeCtx, _ = context.WithDeadline(aeCtx, deadline)
+	}
 	return aeCtx
 }
 
@@ -33,6 +40,9 @@ func AEContextNoTxn(c context.Context) context.Context {
 	aeCtx, err := appengine.Namespace(aeCtx, info.Get(c).GetNamespace())
 	if err != nil {
 		panic(err)
+	}
+	if deadline, ok := c.Deadline(); ok {
+		aeCtx, _ = context.WithDeadline(aeCtx, deadline)
 	}
 	return aeCtx
 }
