@@ -67,9 +67,10 @@ func (a *Attempt) Save(withMeta bool) (datastore.PropertyMap, error) {
 	return datastore.GetPLS(a).Save(withMeta)
 }
 
-// Problem implements datastore.PropertyLoadSaver
+// Problem (DEPRECATED) implements datastore.PropertyLoadSaver
 func (a *Attempt) Problem() error {
-	return datastore.GetPLS(a).Problem()
+	//return datastore.GetPLS(a).Problem()
+	return nil
 }
 
 // NewAttempt creates a new Attempt for the given quest with the specified
