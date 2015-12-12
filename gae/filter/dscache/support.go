@@ -42,7 +42,8 @@ func (s *supportContext) numShards(k *ds.Key) int {
 func (s *supportContext) mkRandKeys(keys []*ds.Key, metas ds.MultiMetaGetter) []string {
 	ret := []string(nil)
 	for i, key := range keys {
-		if !metas.GetMetaDefault(i, CacheEnableMeta, true).(bool) {
+		mg := metas.GetSingle(i)
+		if !ds.GetMetaDefault(mg, CacheEnableMeta, true).(bool) {
 			continue
 		}
 		shards := s.numShards(key)

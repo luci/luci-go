@@ -16,36 +16,37 @@ func TestMultiMetaGetter(t *testing.T) {
 	Convey("Test MultiMetaGetter", t, func() {
 		Convey("nil", func() {
 			mmg := NewMultiMetaGetter(nil)
-			val, err := mmg.GetMeta(7, "hi")
-			So(err, ShouldEqual, ErrMetaFieldUnset)
+			val, ok := mmg.GetMeta(7, "hi")
+			So(ok, ShouldBeFalse)
 			So(val, ShouldBeNil)
 
-			So(mmg.GetMetaDefault(7, "hi", "value"), ShouldEqual, "value")
+			So(GetMetaDefault(mmg.GetSingle(7), "hi", "value"), ShouldEqual, "value")
 
 			m := mmg.GetSingle(10)
-			val, err = m.GetMeta("hi")
-			So(err, ShouldEqual, ErrMetaFieldUnset)
+			val, ok = m.GetMeta("hi")
+			So(ok, ShouldBeFalse)
 			So(val, ShouldBeNil)
-			So(m.GetMetaDefault("hi", "value"), ShouldEqual, "value")
+
+			So(GetMetaDefault(m, "hi", "value"), ShouldEqual, "value")
 		})
 
 		Convey("stuff", func() {
 			pmaps := []PropertyMap{{}, nil, {}}
-			So(pmaps[0].SetMeta("hi", "thing"), ShouldBeNil)
-			So(pmaps[2].SetMeta("key", 100), ShouldBeNil)
+			So(pmaps[0].SetMeta("hi", "thing"), ShouldBeTrue)
+			So(pmaps[2].SetMeta("key", 100), ShouldBeTrue)
 			mmg := NewMultiMetaGetter(pmaps)
 
 			// oob is OK
-			So(mmg.GetMetaDefault(7, "hi", "value"), ShouldEqual, "value")
+			So(GetMetaDefault(mmg.GetSingle(7), "hi", "value"), ShouldEqual, "value")
 
 			// nil is OK
-			So(mmg.GetMetaDefault(1, "key", true), ShouldEqual, true)
+			So(GetMetaDefault(mmg.GetSingle(1), "key", true), ShouldEqual, true)
 
-			val, err := mmg.GetMeta(0, "hi")
-			So(err, ShouldBeNil)
+			val, ok := mmg.GetMeta(0, "hi")
+			So(ok, ShouldBeTrue)
 			So(val, ShouldEqual, "thing")
 
-			So(mmg.GetMetaDefault(2, "key", 20), ShouldEqual, 100)
+			So(GetMetaDefault(mmg.GetSingle(2), "key", 20), ShouldEqual, 100)
 		})
 	})
 }

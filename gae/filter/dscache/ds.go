@@ -87,7 +87,8 @@ func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMu
 
 			if toSave != nil {
 				if shouldSave { // save
-					expSecs := metas.GetMetaDefault(i, CacheExpirationMeta, CacheTimeSeconds).(int64)
+					mg := metas.GetSingle(i)
+					expSecs := ds.GetMetaDefault(mg, CacheExpirationMeta, CacheTimeSeconds).(int64)
 					toSave.SetFlags(uint32(ItemHasData))
 					toSave.SetExpiration(time.Duration(expSecs) * time.Second)
 					toSave.SetValue(data)

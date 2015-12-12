@@ -621,6 +621,8 @@ type MetaGetter interface {
 	// GetMeta will get information about the field which has the struct tag in
 	// the form of `gae:"$<key>[,<default>]?"`.
 	//
+	// It returns the value, if any, and true iff the value was retrieved.
+	//
 	// Supported metadata types are:
 	//   int64  - may have default (ascii encoded base-10)
 	//   string - may have default
@@ -648,20 +650,7 @@ type MetaGetter interface {
 	//     FFlag Toggle `gae:"$flag2,false"` // defaults to false
 	//     // BadFlag  Toggle `gae:"$flag3"` // ILLEGAL
 	//   }
-	GetMeta(key string) (interface{}, error)
-
-	// GetMetaDefault is GetMeta, but with a default.
-	//
-	// If the metadata key is not available, or its type doesn't equal the
-	// homogenized type of dflt, then dflt will be returned.
-	//
-	// Type homogenization:
-	//   signed integer types -> int64
-	//   bool                 -> Toggle fields (bool)
-	//
-	// Example:
-	//   pls.GetMetaDefault("foo", 100).(int64)
-	GetMetaDefault(key string, dflt interface{}) interface{}
+	GetMeta(key string) (interface{}, bool)
 }
 
 // PropertyLoadSaver may be implemented by a user type, and Interface will
@@ -679,11 +668,6 @@ type PropertyLoadSaver interface {
 	// then the PropertyMap contains all the metadata (e.g. '$meta' fields)
 	// which was held by this PropertyLoadSaver.
 	Save(withMeta bool) (PropertyMap, error)
-
-	// Problem indicates that this PLS has a fatal problem. Usually this is
-	// set when the underlying struct has recursion, invalid field types, nested
-	// slices, etc.
-	Problem() error
 }
 
 // MetaGetterSetter is the subset of PropertyLoadSaver which pertains to
@@ -707,7 +691,8 @@ type MetaGetterSetter interface {
 	GetAllMeta() PropertyMap
 
 	// SetMeta allows you to set the current value of the meta-keyed field.
-	SetMeta(key string, val interface{}) error
+	// It returns true iff the field was set.
+	SetMeta(key string, val interface{}) bool
 }
 
 // PropertyMap represents the contents of a datastore entity in a generic way.
@@ -761,17 +746,13 @@ func (pm PropertyMap) Save(withMeta bool) (PropertyMap, error) {
 }
 
 // GetMeta implements PropertyLoadSaver.GetMeta, and returns the current value
-// associated with the metadata key. It may return ErrMetaFieldUnset if the
-// key doesn't exist.
-func (pm PropertyMap) GetMeta(key string) (interface{}, error) {
+// associated with the metadata key.
+func (pm PropertyMap) GetMeta(key string) (interface{}, bool) {
 	v, ok := pm["$"+key]
 	if !ok || len(v) == 0 {
-		return nil, ErrMetaFieldUnset
+		return nil, false
 	}
-	if len(v) > 1 {
-		return nil, errors.New("gae: too many values for Meta key")
-	}
-	return v[0].Value(), nil
+	return v[0].Value(), true
 }
 
 // GetAllMeta implements PropertyLoadSaver.GetAllMeta.
@@ -787,20 +768,15 @@ func (pm PropertyMap) GetAllMeta() PropertyMap {
 	return ret
 }
 
-// GetMetaDefault is the implementation of PropertyLoadSaver.GetMetaDefault.
-func (pm PropertyMap) GetMetaDefault(key string, dflt interface{}) interface{} {
-	return GetMetaDefaultImpl(pm.GetMeta, key, dflt)
-}
-
 // SetMeta implements PropertyLoadSaver.SetMeta. It will only return an error
 // if `val` has an invalid type (e.g. not one supported by Property).
-func (pm PropertyMap) SetMeta(key string, val interface{}) error {
+func (pm PropertyMap) SetMeta(key string, val interface{}) bool {
 	prop := Property{}
 	if err := prop.SetValue(val, NoIndex); err != nil {
-		return err
+		return false
 	}
 	pm["$"+key] = []Property{prop}
-	return nil
+	return true
 }
 
 // Problem implements PropertyLoadSaver.Problem. It ALWAYS returns nil.
@@ -833,17 +809,21 @@ func isMetaKey(k string) bool {
 	return k == "" || k[0] == '$'
 }
 
-// GetMetaDefaultImpl is the implementation of PropertyLoadSaver.GetMetaDefault.
+// GetMetaDefault is a helper for GetMeta, allowing a default value.
 //
-// It takes the normal GetMeta function, the key and the default, and returns
-// the value according to PropertyLoadSaver.GetMetaDefault.
-func GetMetaDefaultImpl(gm func(string) (interface{}, error), key string, dflt interface{}) interface{} {
+// If the metadata key is not available, or its type doesn't equal the
+// homogenized type of dflt, then dflt will be returned.
+//
+// Type homogenization:
+//   signed integer types -> int64
+//   bool                 -> Toggle fields (bool)
+//
+// Example:
+//   pls.GetMetaDefault("foo", 100).(int64)
+func GetMetaDefault(getter MetaGetter, key string, dflt interface{}) interface{} {
 	dflt = UpconvertUnderlyingType(dflt)
-	cur, err := gm(key)
-	if err != nil {
-		return dflt
-	}
-	if dflt != nil && reflect.TypeOf(cur) != reflect.TypeOf(dflt) {
+	cur, ok := getter.GetMeta(key)
+	if !ok || (dflt != nil && reflect.TypeOf(cur) != reflect.TypeOf(dflt)) {
 		return dflt
 	}
 	return cur

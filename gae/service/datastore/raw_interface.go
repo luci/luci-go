@@ -52,8 +52,7 @@ type DeleteMultiCB func(err error)
 
 type nullMetaGetterType struct{}
 
-func (nullMetaGetterType) GetMeta(string) (interface{}, error)                   { return nil, ErrMetaFieldUnset }
-func (nullMetaGetterType) GetMetaDefault(_ string, dflt interface{}) interface{} { return dflt }
+func (nullMetaGetterType) GetMeta(string) (interface{}, bool) { return nil, false }
 
 var nullMetaGetter MetaGetter = nullMetaGetterType{}
 
@@ -78,15 +77,8 @@ func NewMultiMetaGetter(data []PropertyMap) MultiMetaGetter {
 // GetMeta is like PropertyLoadSaver.GetMeta, but it also takes an index
 // indicating which slot you want metadata for. If idx isn't there, this
 // returns (nil, ErrMetaFieldUnset).
-func (m MultiMetaGetter) GetMeta(idx int, key string) (interface{}, error) {
+func (m MultiMetaGetter) GetMeta(idx int, key string) (interface{}, bool) {
 	return m.GetSingle(idx).GetMeta(key)
-}
-
-// GetMetaDefault is like PropertyLoadSaver.GetMetaDefault, but it also takes an
-// index indicating which slot you want metadata for. If idx isn't there, this
-// returns dflt.
-func (m MultiMetaGetter) GetMetaDefault(idx int, key string, dflt interface{}) interface{} {
-	return m.GetSingle(idx).GetMetaDefault(key, dflt)
 }
 
 // GetSingle gets a single MetaGetter at the specified index.

@@ -12,8 +12,6 @@ import (
 )
 
 type multiArgType struct {
-	valid bool
-
 	getKey    func(aid, ns string, slot reflect.Value) (*Key, error)
 	getPM     func(slot reflect.Value) (PropertyMap, error)
 	getMetaPM func(slot reflect.Value) PropertyMap
@@ -50,15 +48,15 @@ func (mat *multiArgType) GetKeysPMs(aid, ns string, slice reflect.Value, meta bo
 // type P such that P or *P implements PropertyLoadSaver.
 func parseMultiArg(e reflect.Type) multiArgType {
 	if e.Kind() != reflect.Slice {
-		return multiArgTypeInvalid()
+		panic(fmt.Errorf("invalid argument type: expected slice, got %s", e))
 	}
-	return parseArg(e.Elem())
+	return parseArg(e.Elem(), true)
 }
 
 // parseArg checks that et is of type S, *S, I, P or *P, for some
 // struct type S, for some interface type I, or some non-interface non-pointer
 // type P such that P or *P implements PropertyLoadSaver.
-func parseArg(et reflect.Type) multiArgType {
+func parseArg(et reflect.Type, multi bool) multiArgType {
 	if reflect.PtrTo(et).Implements(typeOfPropertyLoadSaver) {
 		return multiArgTypePLS(et)
 	}
@@ -76,21 +74,18 @@ func parseArg(et reflect.Type) multiArgType {
 			return multiArgTypeStructPtr(et)
 		}
 	}
-	return multiArgTypeInvalid()
+	if multi {
+		panic(fmt.Errorf("invalid argument type: []%s", et))
+	}
+	panic(fmt.Errorf("invalid argument type: %s", et))
 }
 
 type newKeyFunc func(kind, sid string, iid int64, par Key) Key
-
-func multiArgTypeInvalid() multiArgType {
-	return multiArgType{}
-}
 
 // multiArgTypePLS == []P
 // *P implements PropertyLoadSaver
 func multiArgTypePLS(et reflect.Type) multiArgType {
 	ret := multiArgType{
-		valid: true,
-
 		getKey: func(aid, ns string, slot reflect.Value) (*Key, error) {
 			return newKeyObjErr(aid, ns, slot.Addr().Interface())
 		},
@@ -128,8 +123,6 @@ func multiArgTypePLS(et reflect.Type) multiArgType {
 // *P implements PropertyLoadSaver
 func multiArgTypePLSPtr(et reflect.Type) multiArgType {
 	ret := multiArgType{
-		valid: true,
-
 		getKey: func(aid, ns string, slot reflect.Value) (*Key, error) {
 			return newKeyObjErr(aid, ns, slot.Interface())
 		},
@@ -161,15 +154,10 @@ func multiArgTypePLSPtr(et reflect.Type) multiArgType {
 // multiArgTypeStruct == []S
 func multiArgTypeStruct(et reflect.Type) multiArgType {
 	cdc := getCodec(et)
-	if cdc.problem != nil {
-		return multiArgTypeInvalid()
-	}
 	toPLS := func(slot reflect.Value) *structPLS {
 		return &structPLS{slot, cdc}
 	}
 	return multiArgType{
-		valid: true,
-
 		getKey: func(aid, ns string, slot reflect.Value) (*Key, error) {
 			return newKeyObjErr(aid, ns, toPLS(slot))
 		},
@@ -197,15 +185,10 @@ func multiArgTypeStruct(et reflect.Type) multiArgType {
 // multiArgTypeStructPtr == []*S
 func multiArgTypeStructPtr(et reflect.Type) multiArgType {
 	cdc := getCodec(et)
-	if cdc.problem != nil {
-		return multiArgTypeInvalid()
-	}
 	toPLS := func(slot reflect.Value) *structPLS {
 		return &structPLS{slot.Elem(), cdc}
 	}
 	return multiArgType{
-		valid: true,
-
 		getKey: func(aid, ns string, slot reflect.Value) (*Key, error) {
 			return newKeyObjErr(aid, ns, toPLS(slot))
 		},
@@ -233,22 +216,17 @@ func multiArgTypeStructPtr(et reflect.Type) multiArgType {
 // multiArgTypeInterface == []I
 func multiArgTypeInterface() multiArgType {
 	return multiArgType{
-		valid: true,
-
 		getKey: func(aid, ns string, slot reflect.Value) (*Key, error) {
 			return newKeyObjErr(aid, ns, slot.Elem().Interface())
 		},
 		getPM: func(slot reflect.Value) (PropertyMap, error) {
-			pls := mkPLS(slot.Elem().Interface())
-			return pls.Save(true)
+			return mkPLS(slot.Elem().Interface()).Save(true)
 		},
 		getMetaPM: func(slot reflect.Value) PropertyMap {
-			pls := getMGS(slot.Elem().Interface())
-			return pls.GetAllMeta()
+			return getMGS(slot.Elem().Interface()).GetAllMeta()
 		},
 		setPM: func(slot reflect.Value, pm PropertyMap) error {
-			pls := mkPLS(slot.Elem().Interface())
-			return pls.Load(pm)
+			return mkPLS(slot.Elem().Interface()).Load(pm)
 		},
 		setKey: func(slot reflect.Value, k *Key) {
 			setKey(slot.Elem().Interface(), k)
@@ -258,37 +236,37 @@ func multiArgTypeInterface() multiArgType {
 
 func newKeyObjErr(aid, ns string, src interface{}) (*Key, error) {
 	pls := getMGS(src)
-	if key, _ := pls.GetMetaDefault("key", nil).(*Key); key != nil {
+	if key, _ := GetMetaDefault(pls, "key", nil).(*Key); key != nil {
 		return key, nil
 	}
 
 	// get kind
-	kind := pls.GetMetaDefault("kind", "").(string)
+	kind := GetMetaDefault(pls, "kind", "").(string)
 	if kind == "" {
 		return nil, fmt.Errorf("unable to extract $kind from %T", src)
 	}
 
 	// get id - allow both to be default for default keys
-	sid := pls.GetMetaDefault("id", "").(string)
-	iid := pls.GetMetaDefault("id", 0).(int64)
+	sid := GetMetaDefault(pls, "id", "").(string)
+	iid := GetMetaDefault(pls, "id", 0).(int64)
 
 	// get parent
-	par, _ := pls.GetMetaDefault("parent", nil).(*Key)
+	par, _ := GetMetaDefault(pls, "parent", nil).(*Key)
 
 	return NewKey(aid, ns, kind, sid, iid, par), nil
 }
 
 func setKey(src interface{}, key *Key) {
 	pls := getMGS(src)
-	if pls.SetMeta("key", key) == ErrMetaFieldUnset {
+	if !pls.SetMeta("key", key) {
 		lst := key.LastTok()
 		if lst.StringID != "" {
-			_ = pls.SetMeta("id", lst.StringID)
+			pls.SetMeta("id", lst.StringID)
 		} else {
-			_ = pls.SetMeta("id", lst.IntID)
+			pls.SetMeta("id", lst.IntID)
 		}
-		_ = pls.SetMeta("kind", lst.Kind)
-		_ = pls.SetMeta("parent", key.Parent())
+		pls.SetMeta("kind", lst.Kind)
+		pls.SetMeta("parent", key.Parent())
 	}
 }
 

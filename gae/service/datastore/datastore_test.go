@@ -61,10 +61,7 @@ func (f *fakeDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb PutMultiCB)
 	if keys[0].Kind() == "FailAll" {
 		return errors.New("PutMulti fail all")
 	}
-	assertExtra := false
-	if _, err := vals[0].GetMeta("assertExtra"); err == nil {
-		assertExtra = true
-	}
+	_, assertExtra := vals[0].GetMeta("assertExtra")
 	for i, k := range keys {
 		err := error(nil)
 		if k.Kind() == "Fail" {
@@ -169,54 +166,50 @@ func (f *FakePLS) Save(withMeta bool) (PropertyMap, error) {
 	}
 	if withMeta {
 		id, _ := f.GetMeta("id")
-		So(ret.SetMeta("id", id), ShouldBeNil)
+		So(ret.SetMeta("id", id), ShouldBeTrue)
 		if f.Kind == "" {
-			So(ret.SetMeta("kind", "FakePLS"), ShouldBeNil)
+			So(ret.SetMeta("kind", "FakePLS"), ShouldBeTrue)
 		} else {
-			So(ret.SetMeta("kind", f.Kind), ShouldBeNil)
+			So(ret.SetMeta("kind", f.Kind), ShouldBeTrue)
 		}
-		So(ret.SetMeta("assertExtra", true), ShouldBeNil)
+		So(ret.SetMeta("assertExtra", true), ShouldBeTrue)
 	}
 	return ret, nil
 }
 
-func (f *FakePLS) GetMetaDefault(key string, dflt interface{}) interface{} {
-	return GetMetaDefaultImpl(f.GetMeta, key, dflt)
-}
-
-func (f *FakePLS) GetMeta(key string) (interface{}, error) {
+func (f *FakePLS) GetMeta(key string) (interface{}, bool) {
 	if f.failGetMeta {
-		return nil, errors.New("FakePLS.GetMeta")
+		return nil, false
 	}
 	switch key {
 	case "id":
 		if f.StringID != "" {
-			return f.StringID, nil
+			return f.StringID, true
 		}
-		return f.IntID, nil
+		return f.IntID, true
 	case "kind":
 		if f.Kind == "" {
-			return "FakePLS", nil
+			return "FakePLS", true
 		}
-		return f.Kind, nil
+		return f.Kind, true
 	}
-	return nil, ErrMetaFieldUnset
+	return nil, false
 }
 
 func (f *FakePLS) GetAllMeta() PropertyMap {
 	ret := PropertyMap{}
-	if id, err := f.GetMeta("id"); err != nil {
-		So(ret.SetMeta("id", id), ShouldBeNil)
+	if id, ok := f.GetMeta("id"); !ok {
+		ret.SetMeta("id", id)
 	}
-	if kind, err := f.GetMeta("kind"); err != nil {
-		So(ret.SetMeta("kind", kind), ShouldBeNil)
+	if kind, ok := f.GetMeta("kind"); !ok {
+		ret.SetMeta("kind", kind)
 	}
 	return ret
 }
 
-func (f *FakePLS) SetMeta(key string, val interface{}) error {
+func (f *FakePLS) SetMeta(key string, val interface{}) bool {
 	if f.failSetMeta {
-		return errors.New("FakePL.SetMeta")
+		return false
 	}
 	if key == "id" {
 		switch x := val.(type) {
@@ -225,13 +218,13 @@ func (f *FakePLS) SetMeta(key string, val interface{}) error {
 		case string:
 			f.StringID = x
 		}
-		return nil
+		return true
 	}
 	if key == "kind" {
 		f.Kind = val.(string)
-		return nil
+		return true
 	}
-	return ErrMetaFieldUnset
+	return false
 }
 
 func (f *FakePLS) Problem() error {
@@ -245,20 +238,16 @@ type MGSWithNoKind struct {
 	S string
 }
 
-func (s *MGSWithNoKind) GetMetaDefault(key string, dflt interface{}) interface{} {
-	return GetMetaDefaultImpl(s.GetMeta, key, dflt)
-}
-
-func (s *MGSWithNoKind) GetMeta(key string) (interface{}, error) {
-	return nil, ErrMetaFieldUnset
+func (s *MGSWithNoKind) GetMeta(key string) (interface{}, bool) {
+	return nil, false
 }
 
 func (s *MGSWithNoKind) GetAllMeta() PropertyMap {
 	return PropertyMap{}
 }
 
-func (s *MGSWithNoKind) SetMeta(key string, val interface{}) error {
-	return ErrMetaFieldUnset
+func (s *MGSWithNoKind) SetMeta(key string, val interface{}) bool {
+	return false
 }
 
 var _ MetaGetterSetter = (*MGSWithNoKind)(nil)
@@ -300,17 +289,17 @@ func TestKeyForObj(t *testing.T) {
 
 			Convey("a propmap with $key", func() {
 				pm := PropertyMap{}
-				So(pm.SetMeta("key", k), ShouldBeNil)
+				So(pm.SetMeta("key", k), ShouldBeTrue)
 				So(ds.KeyForObj(pm).String(), ShouldEqual, `s~aid:ns:/Hello,"world"`)
 			})
 
 			Convey("a propmap with $id, $kind, $parent", func() {
 				pm := PropertyMap{}
-				So(pm.SetMeta("id", 100), ShouldBeNil)
-				So(pm.SetMeta("kind", "Sup"), ShouldBeNil)
+				So(pm.SetMeta("id", 100), ShouldBeTrue)
+				So(pm.SetMeta("kind", "Sup"), ShouldBeTrue)
 				So(ds.KeyForObj(pm).String(), ShouldEqual, `s~aid:ns:/Sup,100`)
 
-				So(pm.SetMeta("parent", k), ShouldBeNil)
+				So(pm.SetMeta("parent", k), ShouldBeTrue)
 				So(ds.KeyForObj(pm).String(), ShouldEqual, `s~aid:ns:/Hello,"world"/Sup,100`)
 			})
 
@@ -318,7 +307,7 @@ func TestKeyForObj(t *testing.T) {
 				pls := GetPLS(&CommonStruct{ID: 1})
 				So(ds.KeyForObj(pls).String(), ShouldEqual, `s~aid:ns:/CommonStruct,1`)
 
-				So(pls.SetMeta("parent", k), ShouldBeNil)
+				So(pls.SetMeta("parent", k), ShouldBeTrue)
 				So(ds.KeyForObj(pls).String(), ShouldEqual, `s~aid:ns:/Hello,"world"/CommonStruct,1`)
 			})
 
@@ -340,8 +329,19 @@ func TestKeyForObj(t *testing.T) {
 		Convey("bad", func() {
 			Convey("a propmap without $kind", func() {
 				pm := PropertyMap{}
-				So(pm.SetMeta("id", 100), ShouldBeNil)
+				So(pm.SetMeta("id", 100), ShouldBeTrue)
 				So(func() { ds.KeyForObj(pm) }, ShouldPanic)
+			})
+
+			Convey("a bad object", func() {
+				type BadObj struct {
+					ID int64 `gae:"$id"`
+
+					NonSerializableField complex64
+				}
+
+				So(func() { ds.KeyForObjErr(&BadObj{ID: 1}) }, ShouldPanicLike,
+					`field "NonSerializableField" has invalid type: complex64`)
 			})
 		})
 	})
@@ -358,35 +358,39 @@ func TestPut(t *testing.T) {
 		Convey("bad", func() {
 			Convey("static can't serialize", func() {
 				bss := []badStruct{{}, {}}
-				So(ds.PutMulti(bss).Error(), ShouldContainSubstring, "invalid PutMulti input")
+				So(func() { ds.PutMulti(bss) }, ShouldPanicLike,
+					`field "Compy" has invalid type`)
 			})
 
 			Convey("static ptr can't serialize", func() {
 				bss := []*badStruct{{}, {}}
-				So(ds.PutMulti(bss).Error(), ShouldContainSubstring, "invalid PutMulti input")
+				So(func() { ds.PutMulti(bss) }, ShouldPanicLike,
+					`field "Compy" has invalid type: complex64`)
 			})
 
 			Convey("static bad type (non-slice)", func() {
-				So(ds.PutMulti(100).Error(), ShouldContainSubstring, "invalid PutMulti input")
+				So(func() { ds.PutMulti(100) }, ShouldPanicLike,
+					"invalid argument type: expected slice, got int")
 			})
 
 			Convey("static bad type (slice of bad type)", func() {
-				So(ds.PutMulti([]int{}).Error(), ShouldContainSubstring, "invalid PutMulti input")
+				So(func() { ds.PutMulti([]int{}) }, ShouldPanicLike,
+					"invalid argument type: []int")
 			})
 
 			Convey("dynamic can't serialize", func() {
 				fplss := []FakePLS{{failSave: true}, {}}
-				So(ds.PutMulti(fplss).Error(), ShouldContainSubstring, "FakePLS.Save")
+				So(ds.PutMulti(fplss), ShouldErrLike, "FakePLS.Save")
 			})
 
 			Convey("can't get keys", func() {
 				fplss := []FakePLS{{failGetMeta: true}, {}}
-				So(ds.PutMulti(fplss).Error(), ShouldContainSubstring, "unable to extract $kind")
+				So(ds.PutMulti(fplss), ShouldErrLike, "unable to extract $kind")
 			})
 
 			Convey("get single error for RPC failure", func() {
 				fplss := []FakePLS{{Kind: "FailAll"}, {}}
-				So(ds.PutMulti(fplss).Error(), ShouldEqual, "PutMulti fail all")
+				So(ds.PutMulti(fplss), ShouldErrLike, "PutMulti fail all")
 			})
 
 			Convey("get multi error for individual failures", func() {
@@ -396,12 +400,12 @@ func TestPut(t *testing.T) {
 
 			Convey("put with non-modifyable type is an error", func() {
 				cs := CommonStruct{}
-				So(ds.Put(cs).Error(), ShouldContainSubstring, "invalid Put input type")
+				So(ds.Put(cs), ShouldErrLike, "invalid Put input type")
 			})
 
 			Convey("struct with no $kind is an error", func() {
 				s := MGSWithNoKind{}
-				So(ds.Put(&s).Error(), ShouldContainSubstring, "unable to extract $kind")
+				So(ds.Put(&s), ShouldErrLike, "unable to extract $kind")
 			})
 		})
 
@@ -476,7 +480,7 @@ func TestPut(t *testing.T) {
 						"Value": {MkProperty(i)},
 					}
 					if i == 4 {
-						So(pms[i].SetMeta("id", int64(200)), ShouldBeNil)
+						So(pms[i].SetMeta("id", int64(200)), ShouldBeTrue)
 					}
 				}
 				So(ds.PutMulti(pms), ShouldBeNil)
@@ -515,7 +519,7 @@ func TestPut(t *testing.T) {
 						"Value": {MkProperty(i)},
 					}
 					if i == 4 {
-						So(pms[i].SetMeta("id", int64(200)), ShouldBeNil)
+						So(pms[i].SetMeta("id", int64(200)), ShouldBeTrue)
 					}
 				}
 				So(ds.PutMulti(pms), ShouldBeNil)
@@ -603,12 +607,13 @@ func TestGet(t *testing.T) {
 		Convey("bad", func() {
 			Convey("static can't serialize", func() {
 				toGet := []badStruct{{}, {}}
-				So(ds.GetMulti(toGet).Error(), ShouldContainSubstring, "invalid GetMulti input")
+				So(func() { ds.GetMulti(toGet) }, ShouldPanicLike,
+					`field "Compy" has invalid type: complex64`)
 			})
 
 			Convey("can't get keys", func() {
 				fplss := []FakePLS{{failGetMeta: true}, {}}
-				So(ds.GetMulti(fplss).Error(), ShouldContainSubstring, "unable to extract $kind")
+				So(ds.GetMulti(fplss), ShouldErrLike, "unable to extract $kind")
 			})
 
 			Convey("get single error for RPC failure", func() {
@@ -626,12 +631,13 @@ func TestGet(t *testing.T) {
 
 			Convey("get with non-modifiable type is an error", func() {
 				cs := CommonStruct{}
-				So(ds.Get(cs).Error(), ShouldContainSubstring, "invalid Get input type")
+				So(ds.Get(cs), ShouldErrLike, "invalid Get input type")
 			})
 
-			Convey("failure to save metadata is an issue too", func() {
-				cs := &FakePLS{failGetMeta: true}
-				So(ds.Get(cs).Error(), ShouldContainSubstring, "unable to extract $kind")
+			Convey("failure to save metadata is no problem though", func() {
+				// It just won't save the key
+				cs := &FakePLS{IntID: 10, failSetMeta: true}
+				So(ds.Get(cs), ShouldBeNil)
 			})
 		})
 
@@ -673,21 +679,22 @@ func TestGetAll(t *testing.T) {
 
 		Convey("bad", func() {
 			Convey("nil target", func() {
-				So(ds.GetAll(q, (*[]PropertyMap)(nil)).Error(), ShouldContainSubstring, "dst: <nil>")
+				So(ds.GetAll(q, (*[]PropertyMap)(nil)), ShouldErrLike, "dst: <nil>")
 			})
 
 			Convey("bad type", func() {
 				output := 100
-				So(ds.GetAll(q, &output).Error(), ShouldContainSubstring, "invalid GetAll input type")
+				So(func() { ds.GetAll(q, &output) }, ShouldPanicLike,
+					"invalid argument type: expected slice, got int")
 			})
 
 			Convey("bad type (non pointer)", func() {
-				So(ds.GetAll(q, "moo").Error(), ShouldContainSubstring, "must have a ptr-to-slice")
+				So(ds.GetAll(q, "moo"), ShouldErrLike, "must have a ptr-to-slice")
 			})
 
 			Convey("bad type (underspecified)", func() {
 				output := []PropertyLoadSaver(nil)
-				So(ds.GetAll(q, &output).Error(), ShouldContainSubstring, "invalid GetAll input type")
+				So(ds.GetAll(q, &output), ShouldErrLike, "invalid GetAll input type")
 			})
 		})
 
@@ -728,8 +735,8 @@ func TestGetAll(t *testing.T) {
 				So(ds.GetAll(q, &output), ShouldBeNil)
 				So(len(output), ShouldEqual, 5)
 				for i, o := range output {
-					k, err := o.GetMeta("key")
-					So(err, ShouldBeNil)
+					k, ok := o.GetMeta("key")
+					So(ok, ShouldBeTrue)
 					So(k.(*Key).IntID(), ShouldEqual, i+1)
 					So(o["Value"][0].Value().(int64), ShouldEqual, i)
 				}
@@ -752,8 +759,8 @@ func TestGetAll(t *testing.T) {
 				So(len(output), ShouldEqual, 5)
 				for i, op := range output {
 					o := *op
-					k, err := o.GetMeta("key")
-					So(err, ShouldBeNil)
+					k, ok := o.GetMeta("key")
+					So(ok, ShouldBeTrue)
 					So(k.(*Key).IntID(), ShouldEqual, i+1)
 					So(o["Value"][0].Value().(int64), ShouldEqual, i)
 				}
@@ -785,13 +792,8 @@ func TestRun(t *testing.T) {
 
 		Convey("bad", func() {
 			assertBadTypePanics := func(cb interface{}) {
-				defer func() {
-					err, _ := recover().(error)
-					So(err, ShouldNotBeNil)
-					So(err.Error(), ShouldContainSubstring,
-						"cb does not match the required callback signature")
-				}()
-				So(ds.Run(q, cb), ShouldBeNil)
+				So(func() { ds.Run(q, cb) }, ShouldPanicLike,
+					"cb does not match the required callback signature")
 			}
 
 			Convey("not a function", func() {
@@ -799,9 +801,11 @@ func TestRun(t *testing.T) {
 			})
 
 			Convey("bad proto type", func() {
-				assertBadTypePanics(func(v int, _ CursorCB) bool {
+				cb := func(v int, _ CursorCB) bool {
 					panic("never here!")
-				})
+				}
+				So(func() { ds.Run(q, cb) }, ShouldPanicLike,
+					"invalid argument type: int")
 			})
 
 			Convey("wrong # args", func() {
@@ -868,8 +872,8 @@ func TestRun(t *testing.T) {
 			Convey("*P (map)", func() {
 				i := 0
 				So(ds.Run(q, func(pm *PropertyMap, _ CursorCB) bool {
-					k, err := pm.GetMeta("key")
-					So(err, ShouldBeNil)
+					k, ok := pm.GetMeta("key")
+					So(ok, ShouldBeTrue)
 					So(k.(*Key).IntID(), ShouldEqual, i+1)
 					So((*pm)["Value"][0].Value(), ShouldEqual, i)
 					i++
@@ -901,8 +905,8 @@ func TestRun(t *testing.T) {
 			Convey("P (map)", func() {
 				i := 0
 				So(ds.Run(q, func(pm PropertyMap, _ CursorCB) bool {
-					k, err := pm.GetMeta("key")
-					So(err, ShouldBeNil)
+					k, ok := pm.GetMeta("key")
+					So(ok, ShouldBeTrue)
 					So(k.(*Key).IntID(), ShouldEqual, i+1)
 					So(pm["Value"][0].Value(), ShouldEqual, i)
 					i++

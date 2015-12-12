@@ -53,10 +53,6 @@ func typeMismatchReason(val interface{}, v reflect.Value) string {
 }
 
 func (p *structPLS) Load(propMap PropertyMap) error {
-	if err := p.Problem(); err != nil {
-		return err
-	}
-
 	convFailures := errors.MultiError(nil)
 
 	t := reflect.Type(nil)
@@ -205,10 +201,6 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 }
 
 func (p *structPLS) Save(withMeta bool) (PropertyMap, error) {
-	if err := p.Problem(); err != nil {
-		return nil, err
-	}
-
 	ret := PropertyMap(nil)
 	if withMeta {
 		ret = getMGS(p.o.Addr().Interface()).GetAllMeta()
@@ -229,10 +221,6 @@ func (p *structPLS) getDefaultKind() string {
 }
 
 func (p *structPLS) save(propMap PropertyMap, prefix string, is IndexSetting) (idxCount int, err error) {
-	if err = p.Problem(); err != nil {
-		return
-	}
-
 	saveProp := func(name string, si IndexSetting, v reflect.Value, st *structTag) (err error) {
 		if st.substructCodec != nil {
 			count, err := (&structPLS{v, st.substructCodec}).save(propMap, name, si)
@@ -292,19 +280,15 @@ func (p *structPLS) save(propMap PropertyMap, prefix string, is IndexSetting) (i
 	return
 }
 
-func (p *structPLS) GetMeta(key string) (interface{}, error) {
-	if err := p.Problem(); err != nil {
-		return nil, err
-	}
-
+func (p *structPLS) GetMeta(key string) (interface{}, bool) {
 	if idx, ok := p.c.byMeta[key]; ok {
 		if val, ok := p.getMetaFor(idx); ok {
-			return val, nil
+			return val, true
 		}
 	} else if key == "kind" {
-		return p.getDefaultKind(), nil
+		return p.getDefaultKind(), true
 	}
-	return nil, ErrMetaFieldUnset
+	return nil, false
 }
 
 func (p *structPLS) getMetaFor(idx int) (interface{}, bool) {
@@ -352,25 +336,19 @@ func (p *structPLS) GetAllMeta() PropertyMap {
 	return ret
 }
 
-func (p *structPLS) GetMetaDefault(key string, def interface{}) interface{} {
-	return GetMetaDefaultImpl(p.GetMeta, key, def)
-}
-
-func (p *structPLS) SetMeta(key string, val interface{}) (err error) {
-	if err = p.Problem(); err != nil {
-		return
-	}
+func (p *structPLS) SetMeta(key string, val interface{}) bool {
 	idx, ok := p.c.byMeta[key]
 	if !ok {
-		return ErrMetaFieldUnset
+		return false
 	}
 	st := p.c.byIndex[idx]
 	if !st.canSet {
-		return fmt.Errorf("gae/helper: cannot set meta %q: unexported field", key)
+		return false
 	}
 	if st.convert {
-		return p.o.Field(idx).Addr().Interface().(PropertyConverter).FromProperty(
+		err := p.o.Field(idx).Addr().Interface().(PropertyConverter).FromProperty(
 			MkPropertyNI(val))
+		return err == nil
 	}
 
 	// setting a BoolField
@@ -388,10 +366,8 @@ func (p *structPLS) SetMeta(key string, val interface{}) (err error) {
 		value := reflect.ValueOf(val)
 		f.Set(value.Convert(f.Type()))
 	}
-	return nil
+	return true
 }
-
-func (p *structPLS) Problem() error { return p.c.problem }
 
 var (
 	// The RWMutex is chosen intentionally, as the majority of access to the
@@ -446,6 +422,7 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 		byIndex: make([]structTag, t.NumField()),
 		byName:  make(map[string]int, t.NumField()),
 		byMeta:  make(map[string]int, t.NumField()),
+
 		problem: errRecursiveStruct, // we'll clear this later if it's not recursive
 	}
 	defer func() {

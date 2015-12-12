@@ -5,6 +5,7 @@
 package datastore
 
 import (
+	"fmt"
 	"reflect"
 )
 
@@ -17,11 +18,10 @@ import (
 // field is not exported, it will be skipped by the serialization routines.
 //
 // If a field is of a non-supported type (see Property for the list of supported
-// property types), the resulting PropertyLoadSaver will have a non-nil
-// Problem(). Other problems include duplicate field names (due to tagging),
-// recursively defined structs, nested structures with multiple slices (e.g.
-// slices of slices, either directly `[][]type` or indirectly `[]Embedded` where
-// Embedded contains a slice.)
+// property types), this function will panic. Other problems include duplicate
+// field names (due to tagging), recursively defined structs, nested structures
+// with multiple slices (e.g.  slices of slices, either directly `[][]type` or
+// indirectly `[]Embedded` where Embedded contains a slice.)
 //
 // GetPLS supports the following struct tag syntax:
 //   `gae:"fieldName[,noindex]"` -- an alternate fieldname for an exportable
@@ -160,11 +160,14 @@ func GetPLS(obj interface{}) interface {
 	MetaGetterSetter
 } {
 	v := reflect.ValueOf(obj)
+	if !v.IsValid() {
+		panic(fmt.Errorf("cannot GetPLS(%T): failed to reflect", obj))
+	}
 	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
-		return &structPLS{c: &structCodec{problem: ErrInvalidEntityType}}
+		panic(fmt.Errorf("cannot GetPLS(%T): not a pointer-to-struct", obj))
 	}
 	if v.IsNil() {
-		return &structPLS{c: &structCodec{problem: ErrInvalidEntityType}}
+		panic(fmt.Errorf("cannot GetPLS(%T): pointer-to-struct is nil", obj))
 	}
 	v = v.Elem()
 	c := getCodec(v.Type())
@@ -182,11 +185,13 @@ func getCodec(structType reflect.Type) *structCodec {
 	structCodecsMutex.RLock()
 	c, ok := structCodecs[structType]
 	structCodecsMutex.RUnlock()
-	if ok {
-		return c
+	if !ok {
+		structCodecsMutex.Lock()
+		defer structCodecsMutex.Unlock()
+		c = getStructCodecLocked(structType)
 	}
-
-	structCodecsMutex.Lock()
-	defer structCodecsMutex.Unlock()
-	return getStructCodecLocked(structType)
+	if c.problem != nil {
+		panic(c.problem)
+	}
+	return c
 }

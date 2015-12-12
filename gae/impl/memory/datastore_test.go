@@ -145,7 +145,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					vals := make([]dsS.PropertyMap, len(keys))
 					for i := range vals {
 						vals[i] = dsS.PropertyMap{}
-						So(vals[i].SetMeta("key", keys[i]), ShouldBeNil)
+						So(vals[i].SetMeta("key", keys[i]), ShouldBeTrue)
 					}
 					So(ds.GetMulti(vals), ShouldBeNil)
 
@@ -243,10 +243,10 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 						ds := dsS.Get(c)
 
 						pm := dsS.PropertyMap{}
-						So(pm.SetMeta("key", ds.NewKey("Foo", "", 20, nil)), ShouldBeNil)
+						So(pm.SetMeta("key", ds.NewKey("Foo", "", 20, nil)), ShouldBeTrue)
 						So(ds.Get(pm), ShouldEqual, dsS.ErrNoSuchEntity)
 
-						So(pm.SetMeta("key", k), ShouldBeNil)
+						So(pm.SetMeta("key", k), ShouldBeTrue)
 						So(ds.Get(pm).Error(), ShouldContainSubstring, "cross-group")
 						return nil
 					}, nil)

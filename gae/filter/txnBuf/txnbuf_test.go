@@ -495,7 +495,8 @@ func TestQuerySupport(t *testing.T) {
 					}
 
 					for i, pm := range vals {
-						So(pm.GetMetaDefault("key", nil), ShouldResemble, ds.MakeKey("Parent", 1, "Foo", expect[i].id))
+						So(datastore.GetMetaDefault(pm, "key", nil), ShouldResemble,
+							ds.MakeKey("Parent", 1, "Foo", expect[i].id))
 						So(pm["Value"][0].Value(), ShouldEqual, expect[i].val)
 					}
 
@@ -525,7 +526,8 @@ func TestQuerySupport(t *testing.T) {
 					}
 
 					for i, pm := range vals {
-						So(pm.GetMetaDefault("key", nil), ShouldResemble, ds.MakeKey("Parent", 1, "Foo", expect[i].id))
+						So(datastore.GetMetaDefault(pm, "key", nil), ShouldResemble,
+							ds.MakeKey("Parent", 1, "Foo", expect[i].id))
 						So(pm["Value"][0].Value(), ShouldEqual, expect[i].val)
 					}
 
@@ -554,7 +556,8 @@ func TestQuerySupport(t *testing.T) {
 					}
 
 					for i, pm := range vals {
-						So(pm.GetMetaDefault("key", nil), ShouldResemble, ds.MakeKey("Parent", 1, "Foo", expect[i].id))
+						So(datastore.GetMetaDefault(pm, "key", nil), ShouldResemble,
+							ds.MakeKey("Parent", 1, "Foo", expect[i].id))
 						So(pm["Value"][0].Value(), ShouldEqual, expect[i].val)
 					}
 
@@ -609,7 +612,8 @@ func TestQuerySupport(t *testing.T) {
 
 					for i, pm := range vals {
 						So(pm["Value"][0].Value(), ShouldEqual, expect[i].val)
-						So(pm.GetMetaDefault("key", nil), ShouldResemble, ds.MakeKey("Parent", 1, "Foo", expect[i].id))
+						So(datastore.GetMetaDefault(pm, "key", nil), ShouldResemble,
+							ds.MakeKey("Parent", 1, "Foo", expect[i].id))
 					}
 
 					return nil
@@ -716,7 +720,8 @@ func TestQuerySupport(t *testing.T) {
 
 					for i, pm := range vals {
 						So(pm["Value"][0].Value(), ShouldEqual, expect[i].val)
-						So(pm.GetMetaDefault("key", nil), ShouldResemble, ds.MakeKey("Parent", 1, "Foo", expect[i].id))
+						So(datastore.GetMetaDefault(pm, "key", nil), ShouldResemble,
+							ds.MakeKey("Parent", 1, "Foo", expect[i].id))
 					}
 
 					return nil

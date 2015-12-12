@@ -13,15 +13,9 @@ import (
 
 // These errors are returned by various datastore.Interface methods.
 var (
-	ErrInvalidEntityType     = datastore.ErrInvalidEntityType
 	ErrInvalidKey            = datastore.ErrInvalidKey
 	ErrNoSuchEntity          = datastore.ErrNoSuchEntity
 	ErrConcurrentTransaction = datastore.ErrConcurrentTransaction
-
-	// ErrMetaFieldUnset is returned from PropertyLoadSaver.{Get,Set}Meta
-	// implementations when the specified meta key isn't set on the struct at
-	// all.
-	ErrMetaFieldUnset = fmt.Errorf("gae: meta field unset")
 )
 
 // ErrFieldMismatch is returned when a field is to be loaded into a different

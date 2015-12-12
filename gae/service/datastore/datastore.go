@@ -62,8 +62,8 @@ func (d *datastoreImpl) Run(q *Query, cbIface interface{}) error {
 		if firstArg == typeOfKey {
 			isKey = true
 		} else {
-			mat = parseArg(firstArg)
-			badSig = !mat.valid || mat.newElem == nil
+			mat = parseArg(firstArg, false)
+			badSig = mat.newElem == nil
 		}
 	} else {
 		badSig = true
@@ -143,7 +143,7 @@ func (d *datastoreImpl) GetAll(q *Query, dst interface{}) error {
 
 	slice := v.Elem()
 	mat := parseMultiArg(slice.Type())
-	if !mat.valid || mat.newElem == nil {
+	if mat.newElem == nil {
 		return fmt.Errorf("invalid GetAll input type: %T", dst)
 	}
 
@@ -226,9 +226,6 @@ func (d *datastoreImpl) Delete(key *Key) (err error) {
 func (d *datastoreImpl) GetMulti(dst interface{}) error {
 	slice := reflect.ValueOf(dst)
 	mat := parseMultiArg(slice.Type())
-	if !mat.valid {
-		return fmt.Errorf("invalid GetMulti input type: %T", dst)
-	}
 
 	keys, pms, err := mat.GetKeysPMs(d.aid, d.ns, slice, true)
 	if err != nil {
@@ -254,9 +251,6 @@ func (d *datastoreImpl) GetMulti(dst interface{}) error {
 func (d *datastoreImpl) PutMulti(src interface{}) error {
 	slice := reflect.ValueOf(src)
 	mat := parseMultiArg(slice.Type())
-	if !mat.valid {
-		return fmt.Errorf("invalid PutMulti input type: %T", src)
-	}
 
 	keys, vals, err := mat.GetKeysPMs(d.aid, d.ns, slice, false)
 	if err != nil {

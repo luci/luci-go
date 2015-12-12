@@ -143,36 +143,38 @@ func TestDSPropertyMapImpl(t *testing.T) {
 		Convey("meta", func() {
 			Convey("working", func() {
 				pm := PropertyMap{"": {MkProperty("trap!")}}
-				_, err := pm.GetMeta("foo")
-				So(err, ShouldEqual, ErrMetaFieldUnset)
+				_, ok := pm.GetMeta("foo")
+				So(ok, ShouldBeFalse)
 
-				err = pm.SetMeta("foo", 100)
-				So(err, ShouldBeNil)
+				So(pm.SetMeta("foo", 100), ShouldBeTrue)
 
-				v, err := pm.GetMeta("foo")
-				So(err, ShouldBeNil)
+				v, ok := pm.GetMeta("foo")
+				So(ok, ShouldBeTrue)
 				So(v, ShouldEqual, 100)
-				So(pm.GetMetaDefault("foo", 100), ShouldEqual, 100)
-				So(pm.GetMetaDefault("bar", 100), ShouldEqual, 100)
+
+				So(GetMetaDefault(pm, "foo", 100), ShouldEqual, 100)
+
+				So(GetMetaDefault(pm, "bar", 100), ShouldEqual, 100)
 
 				npm, err := pm.Save(false)
 				So(err, ShouldBeNil)
 				So(len(npm), ShouldEqual, 0)
 			})
 
+			Convey("too many values picks the first one", func() {
+				pm := PropertyMap{
+					"$thing": {MkProperty(100), MkProperty(200)},
+				}
+				v, ok := pm.GetMeta("thing")
+				So(ok, ShouldBeTrue)
+				So(v, ShouldEqual, 100)
+			})
+
 			Convey("errors", func() {
-				Convey("too many values", func() {
-					pm := PropertyMap{
-						"$bad": {MkProperty(100), MkProperty(200)},
-					}
-					_, err := pm.GetMeta("bad")
-					So(err.Error(), ShouldContainSubstring, "too many values")
-				})
 
 				Convey("weird value", func() {
 					pm := PropertyMap{}
-					err := pm.SetMeta("sup", complex(100, 20))
-					So(err.Error(), ShouldContainSubstring, "bad type")
+					So(pm.SetMeta("sup", complex(100, 20)), ShouldBeFalse)
 				})
 			})
 		})
