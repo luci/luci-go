@@ -1,0 +1,30 @@
+// Copyright (c) 2015 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package config;
+
+// BigTable is the set of BigTable configuration parameters.
+message BigTable {
+  // The name of the BigTable instance project.
+  string project = 1;
+  // The name of the BigTable instance zone.
+  string zone = 2;
+  // The name of the BigTable instance cluster.
+  string cluster = 3;
+  // The name of the BigTable instance's log table.
+  string log_table_name = 4;
+}
+
+// Config is the base configuration for a LogDog Coordinator instance.
+message Config {
+  // The name of the authentication group for administrators.
+  string admin_auth_group = 10;
+  // The name of the authentication group for backend services.
+  string service_auth_group = 11;
+
+  // BigTable temporal storage configuration.
+  BigTable bigtable = 20;
+}
