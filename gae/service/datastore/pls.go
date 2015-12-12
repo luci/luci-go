@@ -53,6 +53,46 @@ import (
 //      Only exported fields allow SetMeta, but all fields of appropriate type
 //      allow tagged defaults. See Examples.
 //
+//   `gae:"[-],extra"` -- indicates that any extra, unrecognized or mismatched
+//      property types (type in datastore doesn't match your struct's field
+//      type) should be loaded into and saved from this field. The precise type
+//      of the field must be PropertyMap. This form allows you to control the
+//      behavior of reads and writes when your schema changes, or to implement
+//      something like ndb.Expando with a mix of structured and unstructured
+//      fields.
+//
+//      If the `-` is present, then datastore write operations will not put
+//      elements of this map into the datastore.
+//
+//      If the field is non-exported, then read operations from the datastore
+//      will not populate the members of this map, but extra fields or
+//      structural differences encountered when reading into this struct will be
+//      silently ignored. This is useful if you want to just ignore old fields.
+//
+//      If there is a conflict between a field in the struct and a same-named
+//      Property in the extra field, the field in the struct takes precedence.
+//
+//      Recursive structs are supported, but all extra properties go to the
+//      topmost structure's Extra field. This is a bit non-intuitive, but the
+//      implementation complexity was deemed not worth it, since that sort of
+//      thing is generally only useful on schema changes, which should be
+//      transient.
+//
+//      Examples:
+//        // "black hole": ignore mismatches, ignore on write
+//        _ PropertyMap `gae:"-,extra"
+//
+//        // "expando": full content is read/written
+//        Expando PropertyMap `gae:",extra"
+//
+//        // "convert": content is read from datastore, but lost on writes. This
+//        // is useful for doing conversions from an old schema to a new one,
+//        // since you can retrieve the old data and populate it into new fields,
+//        // for example. Probably should be used in conjunction with an
+//        // implementation of the PropertyLoadSaver interface so that you can
+//        // transparently upconvert to the new schema on load.
+//        Convert PropertyMap `gae:"-,extra"
+//
 // Example "special" structure. This is supposed to be some sort of datastore
 // singleton object.
 //   struct secretFoo {

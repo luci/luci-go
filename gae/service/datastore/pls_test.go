@@ -60,11 +60,11 @@ func makeUint8Slice(n int) []uint8 {
 }
 
 var (
-	testKey0     = mkKey("aid", "", "kind", "name0")
-	testKey1a    = mkKey("aid", "", "kind", "name1")
-	testKey1b    = mkKey("aid", "", "kind", "name1")
-	testKey2a    = mkKey("aid", "", "kind", "name0", "kind", "name2")
-	testKey2b    = mkKey("aid", "", "kind", "name0", "kind", "name2")
+	testKey0     = mkKey("kind", "name0")
+	testKey1a    = mkKey("kind", "name1")
+	testKey1b    = mkKey("kind", "name1")
+	testKey2a    = mkKey("kind", "name0", "kind", "name2")
+	testKey2b    = mkKey("kind", "name0", "kind", "name2")
 	testGeoPt0   = GeoPoint{Lat: 1.2, Lng: 3.4}
 	testGeoPt1   = GeoPoint{Lat: 5, Lng: 10}
 	testBadGeoPt = GeoPoint{Lat: 1000, Lng: 34}

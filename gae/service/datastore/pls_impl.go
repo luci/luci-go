@@ -27,12 +27,15 @@ type structTag struct {
 	substructCodec *structCodec
 	convert        bool
 	metaVal        interface{}
+	isExtra        bool
 	canSet         bool
 }
 
 type structCodec struct {
-	byMeta   map[string]int
-	byName   map[string]int
+	byMeta    map[string]int
+	byName    map[string]int
+	bySpecial map[string]int
+
 	byIndex  []structTag
 	hasSlice bool
 	problem  error
@@ -55,19 +58,38 @@ func typeMismatchReason(val interface{}, v reflect.Value) string {
 func (p *structPLS) Load(propMap PropertyMap) error {
 	convFailures := errors.MultiError(nil)
 
+	useExtra := false
+	extra := (*PropertyMap)(nil)
+	if i, ok := p.c.bySpecial["extra"]; ok {
+		useExtra = true
+		f := p.c.byIndex[i]
+		if f.canSet {
+			extra = p.o.Field(i).Addr().Interface().(*PropertyMap)
+		}
+	}
 	t := reflect.Type(nil)
 	for name, props := range propMap {
 		multiple := len(props) > 1
 		for i, prop := range props {
 			if reason := loadInner(p.c, p.o, i, name, prop, multiple); reason != "" {
-				if t == nil {
-					t = p.o.Type()
+				if useExtra {
+					if extra != nil {
+						if *extra == nil {
+							*extra = make(PropertyMap, 1)
+						}
+						(*extra)[name] = props
+					}
+					break // go to the next property in propMap
+				} else {
+					if t == nil {
+						t = p.o.Type()
+					}
+					convFailures = append(convFailures, &ErrFieldMismatch{
+						StructType: t,
+						FieldName:  name,
+						Reason:     reason,
+					})
 				}
-				convFailures = append(convFailures, &ErrFieldMismatch{
-					StructType: t,
-					FieldName:  name,
-					Reason:     reason,
-				})
 			}
 		}
 	}
@@ -253,7 +275,7 @@ func (p *structPLS) save(propMap PropertyMap, prefix string, is IndexSetting) (i
 	}
 
 	for i, st := range p.c.byIndex {
-		if st.name == "-" {
+		if st.name == "-" || st.isExtra {
 			continue
 		}
 		name := st.name
@@ -277,6 +299,17 @@ func (p *structPLS) save(propMap PropertyMap, prefix string, is IndexSetting) (i
 			}
 		}
 	}
+
+	if i, ok := p.c.bySpecial["extra"]; ok {
+		if p.c.byIndex[i].name != "-" {
+			for fullName, vals := range p.o.Field(i).Interface().(PropertyMap) {
+				if _, ok := propMap[fullName]; !ok {
+					propMap[fullName] = vals
+				}
+			}
+		}
+	}
+
 	return
 }
 
@@ -419,9 +452,10 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 	}
 
 	c = &structCodec{
-		byIndex: make([]structTag, t.NumField()),
-		byName:  make(map[string]int, t.NumField()),
-		byMeta:  make(map[string]int, t.NumField()),
+		byIndex:   make([]structTag, t.NumField()),
+		byName:    make(map[string]int, t.NumField()),
+		byMeta:    make(map[string]int, t.NumField()),
+		bySpecial: make(map[string]int, 1),
 
 		problem: errRecursiveStruct, // we'll clear this later if it's not recursive
 	}
@@ -446,6 +480,24 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 			name, opts = name[:i], name[i+1:]
 		}
 		st.canSet = f.PkgPath == "" // blank == exported
+		if opts == "extra" {
+			if _, ok := c.bySpecial["extra"]; ok {
+				c.problem = me("struct has multiple fields tagged as 'extra'")
+				return
+			}
+			if name != "" && name != "-" {
+				c.problem = me("struct 'extra' field has invalid name %s, expecing `` or `-`", name)
+				return
+			}
+			if ft != typeOfPropertyMap {
+				c.problem = me("struct 'extra' field has invalid type %s, expecing PropertyMap", ft)
+				return
+			}
+			st.isExtra = true
+			st.name = name
+			c.bySpecial["extra"] = i
+			continue
+		}
 		st.convert = reflect.PtrTo(ft).Implements(typeOfPropertyConverter)
 		switch {
 		case name == "":

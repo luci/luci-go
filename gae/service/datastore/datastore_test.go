@@ -926,3 +926,296 @@ func TestRun(t *testing.T) {
 		})
 	})
 }
+
+type fixedDataDatastore struct {
+	RawInterface
+
+	data map[string]PropertyMap
+}
+
+func (d *fixedDataDatastore) GetMulti(keys []*Key, _ MultiMetaGetter, cb GetMultiCB) error {
+	for _, k := range keys {
+		data, ok := d.data[k.String()]
+		if ok {
+			cb(data, nil)
+		} else {
+			cb(nil, ErrNoSuchEntity)
+		}
+	}
+	return nil
+}
+
+func (d *fixedDataDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb PutMultiCB) error {
+	if d.data == nil {
+		d.data = make(map[string]PropertyMap, len(keys))
+	}
+	for i, k := range keys {
+		if k.Incomplete() {
+			panic("key is incomplete, don't do that.")
+		}
+		d.data[k.String()], _ = vals[i].Save(false)
+		cb(k, nil)
+	}
+	return nil
+}
+
+func TestSchemaChange(t *testing.T) {
+	t.Parallel()
+
+	Convey("Test changing schemas", t, func() {
+		fds := fixedDataDatastore{}
+		ds := &datastoreImpl{&fds, "", ""}
+
+		Convey("Can add fields", func() {
+			initial := PropertyMap{
+				"$key": {mpNI(ds.MakeKey("Val", 10))},
+				"Val":  {mp(100)},
+			}
+			So(ds.Put(initial), ShouldBeNil)
+
+			type Val struct {
+				ID int64 `gae:"$id"`
+
+				Val    int64
+				TwoVal int64 // whoa, TWO vals! amazing
+			}
+			tv := &Val{ID: 10, TwoVal: 2}
+			So(ds.Get(tv), ShouldBeNil)
+			So(tv, ShouldResemble, &Val{ID: 10, Val: 100, TwoVal: 2})
+		})
+
+		Convey("Removing fields", func() {
+			initial := PropertyMap{
+				"$key":   {mpNI(ds.MakeKey("Val", 10))},
+				"Val":    {mp(100)},
+				"TwoVal": {mp(200)},
+			}
+			So(ds.Put(initial), ShouldBeNil)
+
+			Convey("is normally an error", func() {
+				type Val struct {
+					ID int64 `gae:"$id"`
+
+					Val int64
+				}
+				tv := &Val{ID: 10}
+				So(ds.Get(tv), ShouldErrLike,
+					`gae: cannot load field "TwoVal" into a "datastore.Val`)
+				So(tv, ShouldResemble, &Val{ID: 10, Val: 100})
+			})
+
+			Convey("Unless you have an ,extra field!", func() {
+				type Val struct {
+					ID int64 `gae:"$id"`
+
+					Val   int64
+					Extra PropertyMap `gae:",extra"`
+				}
+				tv := &Val{ID: 10}
+				So(ds.Get(tv), ShouldBeNil)
+				So(tv, ShouldResembleV, &Val{
+					ID:  10,
+					Val: 100,
+					Extra: PropertyMap{
+						"TwoVal": {mp(200)},
+					},
+				})
+			})
+		})
+
+		Convey("Can round-trip extra fields", func() {
+			type Expando struct {
+				ID int64 `gae:"$id"`
+
+				Something int
+				Extra     PropertyMap `gae:",extra"`
+			}
+			ex := &Expando{10, 17, PropertyMap{
+				"Hello": {mp("Hello")},
+				"World": {mp(true)},
+			}}
+			So(ds.Put(ex), ShouldBeNil)
+
+			ex = &Expando{ID: 10}
+			So(ds.Get(ex), ShouldBeNil)
+			So(ex, ShouldResembleV, &Expando{
+				ID:        10,
+				Something: 17,
+				Extra: PropertyMap{
+					"Hello": {mp("Hello")},
+					"World": {mp(true)},
+				},
+			})
+		})
+
+		Convey("Can read-but-not-write", func() {
+			initial := PropertyMap{
+				"$key":   {mpNI(ds.MakeKey("Convert", 10))},
+				"Val":    {mp(100)},
+				"TwoVal": {mp(200)},
+			}
+			So(ds.Put(initial), ShouldBeNil)
+			type Convert struct {
+				ID int64 `gae:"$id"`
+
+				Val    int64
+				NewVal int64
+				Extra  PropertyMap `gae:"-,extra"`
+			}
+			c := &Convert{ID: 10}
+			So(ds.Get(c), ShouldBeNil)
+			So(c, ShouldResembleV, &Convert{
+				ID: 10, Val: 100, NewVal: 0, Extra: PropertyMap{"TwoVal": {mp(200)}},
+			})
+			c.NewVal = c.Extra["TwoVal"][0].Value().(int64)
+			So(ds.Put(c), ShouldBeNil)
+
+			c = &Convert{ID: 10}
+			So(ds.Get(c), ShouldBeNil)
+			So(c, ShouldResembleV, &Convert{
+				ID: 10, Val: 100, NewVal: 200, Extra: nil,
+			})
+		})
+
+		Convey("Can black hole", func() {
+			initial := PropertyMap{
+				"$key":   {mpNI(ds.MakeKey("BlackHole", 10))},
+				"Val":    {mp(100)},
+				"TwoVal": {mp(200)},
+			}
+			So(ds.Put(initial), ShouldBeNil)
+			type BlackHole struct {
+				ID int64 `gae:"$id"`
+
+				NewStuff  string
+				blackHole PropertyMap `gae:"-,extra"`
+			}
+			b := &BlackHole{ID: 10, NewStuff: "(╯°□°)╯︵ ┻━┻"}
+			So(ds.Get(b), ShouldBeNil)
+			So(b, ShouldResemble, &BlackHole{ID: 10, NewStuff: "(╯°□°)╯︵ ┻━┻"})
+		})
+
+		Convey("Can change field types", func() {
+			initial := PropertyMap{
+				"$key": {mpNI(ds.MakeKey("IntChange", 10))},
+				"Val":  {mp(100)},
+			}
+			So(ds.Put(initial), ShouldBeNil)
+
+			type IntChange struct {
+				ID    int64 `gae:"$id"`
+				Val   string
+				Extra PropertyMap `gae:"-,extra"`
+			}
+			i := &IntChange{ID: 10}
+			So(ds.Get(i), ShouldBeNil)
+			So(i, ShouldResembleV, &IntChange{ID: 10, Extra: PropertyMap{"Val": {mp(100)}}})
+			i.Val = fmt.Sprint(i.Extra["Val"][0].Value())
+			So(ds.Put(i), ShouldBeNil)
+
+			i = &IntChange{ID: 10}
+			So(ds.Get(i), ShouldBeNil)
+			So(i, ShouldResembleV, &IntChange{ID: 10, Val: "100"})
+		})
+
+		Convey("Native fields have priority over Extra fields", func() {
+			type Dup struct {
+				ID    int64 `gae:"$id"`
+				Val   int64
+				Extra PropertyMap `gae:",extra"`
+			}
+			d := &Dup{ID: 10, Val: 100, Extra: PropertyMap{
+				"Val":   {mp(200)},
+				"Other": {mp("other")},
+			}}
+			So(ds.Put(d), ShouldBeNil)
+
+			d = &Dup{ID: 10}
+			So(ds.Get(d), ShouldBeNil)
+			So(d, ShouldResembleV, &Dup{
+				ID: 10, Val: 100, Extra: PropertyMap{"Other": {mp("other")}},
+			})
+		})
+
+		Convey("Can change repeated field to non-repeating field", func() {
+			initial := PropertyMap{
+				"$key": {mpNI(ds.MakeKey("NonRepeating", 10))},
+				"Val":  {mp(100), mp(200), mp(400)},
+			}
+			So(ds.Put(initial), ShouldBeNil)
+
+			type NonRepeating struct {
+				ID    int64 `gae:"$id"`
+				Val   int64
+				Extra PropertyMap `gae:",extra"`
+			}
+			n := &NonRepeating{ID: 10}
+			So(ds.Get(n), ShouldBeNil)
+			So(n, ShouldResembleV, &NonRepeating{
+				ID: 10, Val: 0, Extra: PropertyMap{
+					"Val": {mp(100), mp(200), mp(400)},
+				},
+			})
+		})
+
+		Convey("Deals correctly with recursive types", func() {
+			initial := PropertyMap{
+				"$key": {mpNI(ds.MakeKey("Outer", 10))},
+				"I.A":  {mp(1), mp(2), mp(4)},
+				"I.B":  {mp(10), mp(20), mp(40)},
+				"I.C":  {mp(100), mp(200), mp(400)},
+			}
+			So(ds.Put(initial), ShouldBeNil)
+			type Inner struct {
+				A int64
+				B int64
+			}
+			type Outer struct {
+				ID int64 `gae:"$id"`
+
+				I     []Inner
+				Extra PropertyMap `gae:",extra"`
+			}
+			o := &Outer{ID: 10}
+			So(ds.Get(o), ShouldBeNil)
+			So(o, ShouldResembleV, &Outer{
+				ID: 10,
+				I: []Inner{
+					{1, 10},
+					{2, 20},
+					{4, 40},
+				},
+				Extra: PropertyMap{
+					"I.C": {mp(100), mp(200), mp(400)},
+				},
+			})
+		})
+
+		Convey("Problems", func() {
+			Convey("multiple extra fields", func() {
+				type Bad struct {
+					A PropertyMap `gae:",extra"`
+					B PropertyMap `gae:",extra"`
+				}
+				So(func() { GetPLS(&Bad{}) }, ShouldPanicLike,
+					"multiple fields tagged as 'extra'")
+			})
+
+			Convey("extra field with name", func() {
+				type Bad struct {
+					A PropertyMap `gae:"wut,extra"`
+				}
+				So(func() { GetPLS(&Bad{}) }, ShouldPanicLike,
+					"struct 'extra' field has invalid name wut")
+			})
+
+			Convey("extra field with bad type", func() {
+				type Bad struct {
+					A int64 `gae:",extra"`
+				}
+				So(func() { GetPLS(&Bad{}) }, ShouldPanicLike,
+					"struct 'extra' field has invalid type int64")
+			})
+		})
+	})
+}
