@@ -56,13 +56,12 @@ func loadDeps(ds datastore.Interface, fwd bool, from *types.AttemptID) (*display
 	ret := &display.DepsFromAttempt{From: *from}
 
 	q := datastore.NewQuery(qStr).Ancestor(fromKey)
-	err := ds.Run(q, func(k *datastore.Key, _ datastore.CursorCB) bool {
+	err := ds.Run(q, func(k *datastore.Key) {
 		toAID := types.NewAttemptID(k.StringID())
 		ret.To.Merge(&display.QuestAttempts{
 			QuestID:  toAID.QuestID,
 			Attempts: types.U32s{toAID.AttemptNum},
 		})
-		return true
 	})
 
 	if len(ret.To) == 0 {

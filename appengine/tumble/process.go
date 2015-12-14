@@ -146,7 +146,7 @@ func ProcessShard(c context.Context, timestamp time.Time, shard uint64) error {
 			for {
 				processCounters := []*int64{}
 				err := parallel.FanOutIn(func(ch chan<- func() error) {
-					err := datastore.Get(c).Run(q, func(pm datastore.PropertyMap, _ datastore.CursorCB) bool {
+					err := datastore.Get(c).Run(q, func(pm datastore.PropertyMap) error {
 						root := pm["TargetRoot"][0].Value().(*datastore.Key)
 						encRoot := root.Encode()
 
@@ -172,9 +172,9 @@ func ProcessShard(c context.Context, timestamp time.Time, shard uint64) error {
 
 						if c.Err() != nil {
 							l.Warningf("Lost lock! %s", c.Err())
-							return false
+							return datastore.Stop
 						}
-						return true
+						return nil
 					})
 					if err != nil {
 						l.Errorf("Failure to query: %s", err)
@@ -222,14 +222,17 @@ func getBatchByRoot(c context.Context, root *datastore.Key, banSet stringset.Set
 	ds := datastore.Get(c)
 	q := datastore.NewQuery("tumble.Mutation").Eq("TargetRoot", root)
 	toFetch := make([]*realMutation, 0, cfg.ProcessMaxBatchSize)
-	err := ds.Run(q, func(k *datastore.Key, _ datastore.CursorCB) bool {
+	err := ds.Run(q, func(k *datastore.Key) error {
 		if !banSet.Has(k.Encode()) {
 			toFetch = append(toFetch, &realMutation{
 				ID:     k.StringID(),
 				Parent: k.Parent(),
 			})
 		}
-		return len(toFetch) < cap(toFetch)
+		if len(toFetch) < cap(toFetch) {
+			return nil
+		}
+		return datastore.Stop
 	})
 	return toFetch, err
 }

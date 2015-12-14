@@ -417,24 +417,20 @@ func (e *engineImpl) ListInvocations(c context.Context, jobID string, pageSize i
 	// Fetch pageSize worth of invocations, then grab the cursor.
 	out := make([]*Invocation, 0, pageSize)
 	var newCursor string
-	var cursorErr error
-	err := ds.Run(q, func(obj *Invocation, getCursor datastore.CursorCB) bool {
+	err := ds.Run(q, func(obj *Invocation, getCursor datastore.CursorCB) error {
 		out = append(out, obj)
 		if len(out) < pageSize {
-			return true
+			return nil
 		}
-		var c datastore.Cursor
-		c, cursorErr = getCursor()
-		if cursorErr == nil {
-			newCursor = c.String()
+		c, err := getCursor()
+		if err != nil {
+			return err
 		}
-		return false
+		newCursor = c.String()
+		return datastore.Stop
 	})
 	if err != nil {
 		return nil, "", errors.WrapTransient(err)
-	}
-	if cursorErr != nil {
-		return nil, "", errors.WrapTransient(cursorErr)
 	}
 	return out, newCursor, nil
 }
