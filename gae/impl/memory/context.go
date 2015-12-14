@@ -122,7 +122,7 @@ func UseWithAppID(c context.Context, aid string) context.Context {
 	c = context.WithValue(c, memContextKey, memctx)
 	c = context.WithValue(c, memContextNoTxnKey, memctx)
 	c = context.WithValue(c, giContextKey, &globalInfoData{appid: aid})
-	return useTQ(useRDS(useMC(useGI(c, aid))))
+	return useUser(useTQ(useRDS(useMC(useGI(c, aid)))))
 }
 
 func cur(c context.Context) (p *memContext) {

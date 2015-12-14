@@ -16,4 +16,10 @@ type Interface interface {
 	LogoutURL(dest string) (string, error)
 
 	OAuthConsumerKey() (string, error)
+
+	// If this implementation supports it, this will return an instance of the
+	// Testable object for this service, which will let you 'log in' virtual users
+	// in your test cases. If the implementation doesn't support it, it will
+	// return nil.
+	Testable() Testable
 }

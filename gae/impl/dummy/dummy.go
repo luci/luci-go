@@ -174,6 +174,7 @@ func (u) LoginURL(string) (string, error)                  { panic(ni()) }
 func (u) LoginURLFederated(string, string) (string, error) { panic(ni()) }
 func (u) LogoutURL(string) (string, error)                 { panic(ni()) }
 func (u) OAuthConsumerKey() (string, error)                { panic(ni()) }
+func (u) Testable() user.Testable                          { panic(ni()) }
 
 var dummyUserInst = u{}
 

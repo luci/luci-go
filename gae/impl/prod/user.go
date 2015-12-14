@@ -53,3 +53,7 @@ func (u userImpl) CurrentOAuth(scopes ...string) (*gae_user.User, error) {
 func (u userImpl) OAuthConsumerKey() (string, error) {
 	return user.OAuthConsumerKey(u.aeCtx)
 }
+
+func (u userImpl) Testable() gae_user.Testable {
+	return nil
+}
