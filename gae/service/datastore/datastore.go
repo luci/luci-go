@@ -311,10 +311,9 @@ func (d *datastoreImpl) PutMulti(src interface{}) error {
 	lme := errors.NewLazyMultiError(len(keys))
 	i := 0
 	err = d.RawInterface.PutMulti(keys, vals, func(key *Key, err error) error {
-		if key != keys[i] {
+		if !lme.Assign(i, err) && key != keys[i] {
 			mat.setKey(slice.Index(i), key)
 		}
-		lme.Assign(i, err)
 		i++
 		return nil
 	})

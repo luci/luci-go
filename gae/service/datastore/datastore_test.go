@@ -418,6 +418,16 @@ func TestPut(t *testing.T) {
 				s := MGSWithNoKind{}
 				So(ds.Put(&s), ShouldErrLike, "unable to extract $kind")
 			})
+
+			Convey("struct with invalid but non-nil key is an error", func() {
+				type BadParent struct {
+					ID     int64 `gae:"$id"`
+					Parent *Key  `gae:"$parent"`
+				}
+				// having an Incomplete parent makes an invalid key
+				bp := &BadParent{ID: 1, Parent: ds.MakeKey("Something", 0)}
+				So(ds.Put(bp), ShouldErrLike, ErrInvalidKey)
+			})
 		})
 
 		Convey("ok", func() {
