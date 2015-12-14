@@ -57,7 +57,7 @@ func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMu
 
 		toCas := []memcache.Item{}
 		j := 0
-		err := d.RawInterface.GetMulti(p.toGet, p.toGetMeta, func(pm ds.PropertyMap, err error) {
+		err := d.RawInterface.GetMulti(p.toGet, p.toGetMeta, func(pm ds.PropertyMap, err error) error {
 			i := p.idxMap[j]
 			toSave := p.toSave[j]
 			j++
@@ -81,7 +81,7 @@ func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMu
 			} else {
 				p.lme.Assign(i, err)
 				if err != ds.ErrNoSuchEntity {
-					return // aka continue to the next entry
+					return nil // aka continue to the next entry
 				}
 			}
 
@@ -101,6 +101,7 @@ func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMu
 				}
 				toCas = append(toCas, toSave)
 			}
+			return nil
 		})
 		if err != nil {
 			return err

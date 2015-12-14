@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"sync"
 
+	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
 	"github.com/luci/gkvlite"
 )
@@ -37,9 +38,9 @@ type iterDefinition struct {
 	end []byte
 }
 
-func multiIterate(defs []*iterDefinition, cb func(suffix []byte) bool) {
+func multiIterate(defs []*iterDefinition, cb func(suffix []byte) error) error {
 	if len(defs) == 0 {
-		return
+		return nil
 	}
 
 	ts := make([]*iterator, len(defs))
@@ -92,14 +93,17 @@ func multiIterate(defs []*iterDefinition, cb func(suffix []byte) bool) {
 			}
 		}
 		if stop {
-			return
+			return nil
 		}
 		if restart {
 			continue
 		}
 
-		if !cb(suffix) {
-			return
+		if err := cb(suffix); err != nil {
+			if err == datastore.Stop {
+				return nil
+			}
+			return err
 		}
 		suffix = nil
 		skip = -1

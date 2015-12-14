@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/luci/gae"
 	"google.golang.org/appengine/datastore"
 )
 
@@ -16,6 +17,9 @@ var (
 	ErrInvalidKey            = datastore.ErrInvalidKey
 	ErrNoSuchEntity          = datastore.ErrNoSuchEntity
 	ErrConcurrentTransaction = datastore.ErrConcurrentTransaction
+
+	// Stop is an alias for "github.com/luci/gae".Stop
+	Stop = gae.Stop
 )
 
 // ErrFieldMismatch is returned when a field is to be loaded into a different

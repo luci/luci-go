@@ -58,9 +58,9 @@ func (d *dsTxnBuf) Count(fq *ds.FinalizedQuery) (count int64, err error) {
 			return
 		}
 	}
-	err = d.Run(fq, func(_ *ds.Key, _ ds.PropertyMap, _ ds.CursorCB) bool {
+	err = d.Run(fq, func(_ *ds.Key, _ ds.PropertyMap, _ ds.CursorCB) error {
 		count++
-		return true
+		return nil
 	})
 	return
 }
@@ -84,14 +84,14 @@ func (d *dsTxnBuf) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
 		return d.state.bufDS, d.state.parentDS, d.state.entState.dup()
 	}()
 
-	return runMergedQueries(fq, sizes, bufDS, parentDS, func(key *ds.Key, data ds.PropertyMap) bool {
+	return runMergedQueries(fq, sizes, bufDS, parentDS, func(key *ds.Key, data ds.PropertyMap) error {
 		if offset > 0 {
 			offset--
-			return true
+			return nil
 		}
 		if limitSet {
 			if limit == 0 {
-				return false
+				return ds.Stop
 			}
 			limit--
 		}

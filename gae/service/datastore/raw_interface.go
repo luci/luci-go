@@ -26,8 +26,10 @@ type CursorCB func() (Cursor, error)
 //   - key is the Key of the entity
 //   - val is the data of the entity (or nil, if the query was keys-only)
 //
-// Return true to continue iterating through the query results, or false to stop.
-type RawRunCB func(key *Key, val PropertyMap, getCursor CursorCB) bool
+// Return nil to continue iterating through the query results, or an error to
+// stop. If you return the error `Stop`, then Run will stop the query and
+// return nil.
+type RawRunCB func(key *Key, val PropertyMap, getCursor CursorCB) error
 
 // GetMultiCB is the callback signature provided to RawInterface.GetMulti
 //
@@ -35,7 +37,7 @@ type RawRunCB func(key *Key, val PropertyMap, getCursor CursorCB) bool
 //     * It may be nil if some of the keys to the GetMulti were bad, since all
 //       keys are validated before the RPC occurs!
 //   - err is an error associated with this entity (e.g. ErrNoSuchEntity).
-type GetMultiCB func(val PropertyMap, err error)
+type GetMultiCB func(val PropertyMap, err error) error
 
 // PutMultiCB is the callback signature provided to RawInterface.PutMulti
 //
@@ -43,12 +45,12 @@ type GetMultiCB func(val PropertyMap, err error)
 //     * It may be nil if some of the keys/vals to the PutMulti were bad, since
 //       all keys are validated before the RPC occurs!
 //   - err is an error associated with putting this entity.
-type PutMultiCB func(key *Key, err error)
+type PutMultiCB func(key *Key, err error) error
 
 // DeleteMultiCB is the callback signature provided to RawInterface.DeleteMulti
 //
 //   - err is an error associated with deleting this entity.
-type DeleteMultiCB func(err error)
+type DeleteMultiCB func(err error) error
 
 type nullMetaGetterType struct{}
 

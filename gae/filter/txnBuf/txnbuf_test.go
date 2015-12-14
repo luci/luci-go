@@ -856,20 +856,18 @@ func TestQuerySupport(t *testing.T) {
 					ds := datastore.Get(c)
 
 					q := datastore.NewQuery("Foo").Ancestor(root)
-					return ds.Run(q, func(pm datastore.PropertyMap, _ datastore.CursorCB) bool {
+					return ds.Run(q, func(pm datastore.PropertyMap) {
 						So(ds.RunInTransaction(func(c context.Context) error {
 							ds := datastore.Get(c)
 							pm["Value"] = append(pm["Value"], datastore.MkProperty("wat"))
 							return ds.Put(pm)
 						}, nil), ShouldBeNil)
-						return true
 					})
 				}, &datastore.TransactionOptions{XG: true}), ShouldBeNil)
 
-				So(ds.Run(datastore.NewQuery("Foo"), func(pm datastore.PropertyMap, _ datastore.CursorCB) bool {
+				So(ds.Run(datastore.NewQuery("Foo"), func(pm datastore.PropertyMap) {
 					val := pm["Value"]
 					So(val[len(val)-1].Value(), ShouldResemble, "wat")
-					return true
 				}), ShouldBeNil)
 			})
 

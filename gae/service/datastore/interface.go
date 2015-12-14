@@ -96,14 +96,24 @@ type Interface interface {
 	// retrieved item.
 	//
 	// cb is a callback function whose signature is
-	//   func(obj TYPE, getCursor CursorCB) bool
+	//   func(obj TYPE[, getCursor CursorCB]) [error]
 	//
 	// Where TYPE is one of:
 	//   - S or *S where S is a struct
 	//   - P or *P where *P is a concrete type implementing PropertyLoadSaver
 	//   - *Key (implies a keys-only query)
 	//
-	// Run stops on the first error encountered.
+	// If the error is omitted from the signature, this will run until the query
+	// returns all its results, or has an error/times out.
+	//
+	// If error is in the signature, the query will continue as long as the
+	// callback returns nil. If it returns `Stop`, the query will stop and Run
+	// will return nil. Otherwise, the query will stop and Run will return the
+	// user's error.
+	//
+	// Run may also stop on the first datastore error encountered, which can occur
+	// due to flakiness, timeout, etc. If it encounters such an error, it will
+	// be returned.
 	Run(q *Query, cb interface{}) error
 
 	// Count executes the given query and returns the number of entries which

@@ -25,4 +25,5 @@ var (
 	typeOfToggle            = reflect.TypeOf(Auto)
 	typeOfMGS               = reflect.TypeOf((*MetaGetterSetter)(nil)).Elem()
 	typeOfPropertyMap       = reflect.TypeOf((PropertyMap)(nil))
+	typeOfError             = reflect.TypeOf((*error)(nil)).Elem()
 )

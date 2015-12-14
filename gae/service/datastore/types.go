@@ -2,11 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package datastore
+//go:generate stringer -type=Toggle
 
-import (
-	"fmt"
-)
+package datastore
 
 // GeoPoint represents a location as latitude/longitude in degrees.
 //
@@ -49,16 +47,3 @@ const (
 	On
 	Off
 )
-
-func (b Toggle) String() string {
-	switch b {
-	case Auto:
-		return "Auto"
-	case On:
-		return "On"
-	case Off:
-		return "Off"
-	default:
-		return fmt.Sprintf("UNKNOWN_Toggle(%d)", b)
-	}
-}

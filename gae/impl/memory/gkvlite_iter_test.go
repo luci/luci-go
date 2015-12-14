@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
 	"github.com/luci/gkvlite"
 	"github.com/luci/luci-go/common/cmpbin"
@@ -209,11 +210,11 @@ func TestMultiIteratorSimple(t *testing.T) {
 			}
 
 			i := 1
-			multiIterate(defs, func(suffix []byte) bool {
+			So(multiIterate(defs, func(suffix []byte) error {
 				So(readNum(suffix), ShouldEqual, vals[i][1])
 				i++
-				return true
-			})
+				return nil
+			}), ShouldBeNil)
 
 			So(i, ShouldEqual, 3)
 		})
@@ -226,9 +227,9 @@ func TestMultiIteratorSimple(t *testing.T) {
 			}
 
 			i := 0
-			multiIterate(defs, func(suffix []byte) bool {
+			So(multiIterate(defs, func(suffix []byte) error {
 				panic("never")
-			})
+			}), ShouldBeNil)
 
 			So(i, ShouldEqual, 0)
 		})
@@ -244,11 +245,11 @@ func TestMultiIteratorSimple(t *testing.T) {
 
 			expect := []int64{2, 4}
 			i := 0
-			multiIterate(defs, func(suffix []byte) bool {
+			So(multiIterate(defs, func(suffix []byte) error {
 				So(readNum(suffix), ShouldEqual, expect[i])
 				i++
-				return true
-			})
+				return nil
+			}), ShouldBeNil)
 		})
 
 		Convey("Can stop early", func() {
@@ -258,19 +259,19 @@ func TestMultiIteratorSimple(t *testing.T) {
 			}
 
 			i := 0
-			multiIterate(defs, func(suffix []byte) bool {
+			So(multiIterate(defs, func(suffix []byte) error {
 				So(readNum(suffix), ShouldEqual, vals[i][1])
 				i++
-				return true
-			})
+				return nil
+			}), ShouldBeNil)
 			So(i, ShouldEqual, 5)
 
 			i = 0
-			multiIterate(defs, func(suffix []byte) bool {
+			So(multiIterate(defs, func(suffix []byte) error {
 				So(readNum(suffix), ShouldEqual, vals[i][1])
 				i++
-				return false
-			})
+				return datastore.Stop
+			}), ShouldBeNil)
 			So(i, ShouldEqual, 1)
 		})
 

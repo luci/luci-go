@@ -249,7 +249,7 @@ func (d *dataStoreData) fixKeyLocked(ents *memCollection, key *ds.Key) (*ds.Key,
 	return key, nil
 }
 
-func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) {
+func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
 	ns := keys[0].Namespace()
 
 	for i, k := range keys {
@@ -282,9 +282,15 @@ func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.Pu
 			return
 		}()
 		if cb != nil {
-			cb(k, err)
+			if err := cb(k, err); err != nil {
+				if err == ds.Stop {
+					return nil
+				}
+				return err
+			}
 		}
 	}
+	return nil
 }
 
 func getMultiInner(keys []*ds.Key, cb ds.GetMultiCB, getColl func() (*memCollection, error)) error {
@@ -318,7 +324,7 @@ func (d *dataStoreData) getMulti(keys []*ds.Key, cb ds.GetMultiCB) error {
 	})
 }
 
-func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) {
+func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 	ns := keys[0].Namespace()
 
 	hasEntsInNS := func() bool {
@@ -351,14 +357,25 @@ func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) {
 				return nil
 			}()
 			if cb != nil {
-				cb(err)
+				if err := cb(err); err != nil {
+					if err == ds.Stop {
+						return nil
+					}
+					return err
+				}
 			}
 		}
 	} else if cb != nil {
 		for range keys {
-			cb(nil)
+			if err := cb(nil); err != nil {
+				if err == ds.Stop {
+					return nil
+				}
+				return err
+			}
 		}
 	}
+	return nil
 }
 
 func (d *dataStoreData) canApplyTxn(obj memContextObj) bool {
@@ -395,16 +412,14 @@ func (d *dataStoreData) applyTxn(c context.Context, obj memContextObj) {
 		}
 		// TODO(riannucci): refactor to do just 1 putMulti, and 1 delMulti
 		for _, m := range muts {
-			err := error(nil)
 			k := m.key
 			if m.data == nil {
-				d.delMulti([]*ds.Key{k},
-					func(e error) { err = e })
+				impossible(d.delMulti([]*ds.Key{k},
+					func(e error) error { return e }))
 			} else {
-				d.putMulti([]*ds.Key{m.key}, []ds.PropertyMap{m.data},
-					func(_ *ds.Key, e error) { err = e })
+				impossible(d.putMulti([]*ds.Key{m.key}, []ds.PropertyMap{m.data},
+					func(_ *ds.Key, e error) error { return e }))
 			}
-			impossible(err)
 		}
 	}
 }

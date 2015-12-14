@@ -216,8 +216,11 @@ func (d rdsImpl) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
 		if err != nil {
 			return err
 		}
-		if !cb(dsR2F(k), tf.pm, cfunc) {
-			return nil
+		if err := cb(dsR2F(k), tf.pm, cfunc); err != nil {
+			if err == ds.Stop {
+				return nil
+			}
+			return err
 		}
 	}
 }

@@ -324,7 +324,7 @@ var queryExecutionTests = []qExTest{
 
 					q := nq("").Gt("__key__", key("Kind", 2))
 
-					err := data.Run(q, func(pm ds.PropertyMap, gc ds.CursorCB) bool {
+					err := data.Run(q, func(pm ds.PropertyMap, gc ds.CursorCB) error {
 						So(pm, ShouldResemble, pmap(
 							"$key", key("Kind", 2, "__entity_group__", 1), Next,
 							"__version__", 1))
@@ -332,13 +332,13 @@ var queryExecutionTests = []qExTest{
 						err := error(nil)
 						curs, err = gc()
 						So(err, ShouldBeNil)
-						return false
+						return ds.Stop
 					})
 					So(err, ShouldBeNil)
 
-					err = data.Run(q.Start(curs), func(pm ds.PropertyMap, gc ds.CursorCB) bool {
+					err = data.Run(q.Start(curs), func(pm ds.PropertyMap) error {
 						So(pm, ShouldResemble, stage1Data[2])
-						return false
+						return ds.Stop
 					})
 					So(err, ShouldBeNil)
 				},
@@ -346,9 +346,7 @@ var queryExecutionTests = []qExTest{
 				func(c context.Context) {
 					data := ds.Get(c)
 					q := nq("Something").Eq("Does", 2).Order("Not", "-Work")
-					So(data.Run(q, func(ds.Key, ds.CursorCB) bool {
-						return true
-					}), ShouldErrLike, strings.Join([]string{
+					So(data.Run(q, func(ds.Key) {}), ShouldErrLike, strings.Join([]string{
 						"Consider adding:",
 						"- kind: Something",
 						"  properties:",
@@ -362,9 +360,7 @@ var queryExecutionTests = []qExTest{
 				func(c context.Context) {
 					data := ds.Get(c)
 					q := nq("Something").Ancestor(key("Kind", 3)).Order("Val")
-					So(data.Run(q, func(ds.Key, ds.CursorCB) bool {
-						return true
-					}), ShouldErrLike, strings.Join([]string{
+					So(data.Run(q, func(ds.Key) {}), ShouldErrLike, strings.Join([]string{
 						"Consider adding:",
 						"- kind: Something",
 						"  ancestor: yes",

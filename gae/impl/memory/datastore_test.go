@@ -100,9 +100,10 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 				}
 				So(ds.DeleteMulti(keys), ShouldBeNil)
 				count := 0
-				So(ds.Raw().DeleteMulti(keys, func(err error) {
+				So(ds.Raw().DeleteMulti(keys, func(err error) error {
 					count++
 					So(err, ShouldBeNil)
+					return nil
 				}), ShouldBeNil)
 				So(count, ShouldEqual, len(keys))
 			})
@@ -129,9 +130,8 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					ds.Testable().CatchupIndexes()
 
 					count := 0
-					So(ds.Run(dsS.NewQuery(""), func(_ *dsS.Key, _ dsS.CursorCB) bool {
+					So(ds.Run(dsS.NewQuery(""), func(_ *dsS.Key) {
 						count++
-						return true
 					}), ShouldBeNil)
 					So(count, ShouldEqual, 3)
 

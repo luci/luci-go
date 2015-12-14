@@ -125,9 +125,8 @@ func TestBasicDatastore(t *testing.T) {
 
 			Convey("Can query", func() {
 				q := datastore.NewQuery("TestStruct")
-				ds.Run(q, func(ts *TestStruct, _ datastore.CursorCB) bool {
+				ds.Run(q, func(ts *TestStruct) {
 					So(*ts, ShouldResemble, orig)
-					return true
 				})
 				count, err := ds.Count(q)
 				So(err, ShouldBeNil)

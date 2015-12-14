@@ -38,6 +38,10 @@ func (f *fakeDatastore) mkKey(elems ...interface{}) *Key {
 func (f *fakeDatastore) Run(fq *FinalizedQuery, cb RawRunCB) error {
 	lim, _ := fq.Limit()
 
+	cursCB := func() (Cursor, error) {
+		return fakeCursor("CURSOR"), nil
+	}
+
 	for i := int32(0); i < lim; i++ {
 		if v, ok := fq.eqFilts["$err_single"]; ok {
 			idx := fq.eqFilts["$err_single_idx"][0].Value().(int64)
@@ -50,8 +54,11 @@ func (f *fakeDatastore) Run(fq *FinalizedQuery, cb RawRunCB) error {
 			k = f.mkKey("Kind", "eleven")
 		}
 		pm := PropertyMap{"Value": {MkProperty(i)}}
-		if !cb(k, pm, nil) {
-			break
+		if err := cb(k, pm, cursCB); err != nil {
+			if err == Stop {
+				err = nil
+			}
+			return err
 		}
 	}
 	return nil
@@ -651,9 +658,10 @@ func TestGet(t *testing.T) {
 			Convey("Raw access too", func() {
 				rds := ds.Raw()
 				keys := []*Key{ds.MakeKey("Kind", 1)}
-				So(rds.GetMulti(keys, nil, func(pm PropertyMap, err error) {
+				So(rds.GetMulti(keys, nil, func(pm PropertyMap, err error) error {
 					So(err, ShouldBeNil)
 					So(pm["Value"][0].Value(), ShouldEqual, 1)
+					return nil
 				}), ShouldBeNil)
 			})
 
@@ -800,8 +808,16 @@ func TestRun(t *testing.T) {
 				assertBadTypePanics("I am a potato")
 			})
 
+			Convey("nil", func() {
+				assertBadTypePanics(nil)
+			})
+
+			Convey("interface", func() {
+				assertBadTypePanics(func(pls PropertyLoadSaver) {})
+			})
+
 			Convey("bad proto type", func() {
-				cb := func(v int, _ CursorCB) bool {
+				cb := func(v int) {
 					panic("never here!")
 				}
 				So(func() { ds.Run(q, cb) }, ShouldPanicLike,
@@ -809,19 +825,25 @@ func TestRun(t *testing.T) {
 			})
 
 			Convey("wrong # args", func() {
-				assertBadTypePanics(func(v CommonStruct, _ CursorCB) {
+				assertBadTypePanics(func(v CommonStruct, _ CursorCB, _ int) {
 					panic("never here!")
 				})
 			})
 
 			Convey("wrong ret type", func() {
-				assertBadTypePanics(func(v CommonStruct, _ CursorCB) error {
+				assertBadTypePanics(func(v CommonStruct) bool {
+					panic("never here!")
+				})
+			})
+
+			Convey("wrong # rets", func() {
+				assertBadTypePanics(func(v CommonStruct) (int, error) {
 					panic("never here!")
 				})
 			})
 
 			Convey("bad 2nd arg", func() {
-				assertBadTypePanics(func(v CommonStruct, _ Cursor) bool {
+				assertBadTypePanics(func(v CommonStruct, _ Cursor) error {
 					panic("never here!")
 				})
 			})
@@ -829,34 +851,59 @@ func TestRun(t *testing.T) {
 			Convey("early abort on error", func() {
 				q = q.Eq("$err_single", "Query fail").Eq("$err_single_idx", 3)
 				i := 0
-				So(ds.Run(q, func(c CommonStruct, _ CursorCB) bool {
+				So(ds.Run(q, func(c CommonStruct) {
 					i++
-					return true
 				}), ShouldErrLike, "Query fail")
 				So(i, ShouldEqual, 3)
 			})
 
 			Convey("return error on serialization failure", func() {
-				So(ds.Run(q, func(_ permaBad, _ CursorCB) bool {
+				So(ds.Run(q, func(_ permaBad) {
 					panic("never here")
 				}).Error(), ShouldEqual, "permaBad")
 			})
 		})
 
 		Convey("ok", func() {
+			Convey("can return error to stop", func() {
+				i := 0
+				So(ds.Run(q, func(c CommonStruct) error {
+					i++
+					return Stop
+				}), ShouldBeNil)
+				So(i, ShouldEqual, 1)
+
+				i = 0
+				So(ds.Run(q, func(c CommonStruct, _ CursorCB) error {
+					i++
+					return fmt.Errorf("my error")
+				}), ShouldErrLike, "my error")
+				So(i, ShouldEqual, 1)
+			})
+
+			Convey("Can optionally get cursor function", func() {
+				i := 0
+				So(ds.Run(q, func(c CommonStruct, ccb CursorCB) {
+					i++
+					curs, err := ccb()
+					So(err, ShouldBeNil)
+					So(curs.String(), ShouldEqual, "CURSOR")
+				}), ShouldBeNil)
+				So(i, ShouldEqual, 5)
+			})
+
 			Convey("*S", func() {
 				i := 0
-				So(ds.Run(q, func(cs *CommonStruct, _ CursorCB) bool {
+				So(ds.Run(q, func(cs *CommonStruct) {
 					So(cs.ID, ShouldEqual, i+1)
 					So(cs.Value, ShouldEqual, i)
 					i++
-					return true
 				}), ShouldBeNil)
 			})
 
 			Convey("*P", func() {
 				i := 0
-				So(ds.Run(q.Limit(12), func(fpls *FakePLS, _ CursorCB) bool {
+				So(ds.Run(q.Limit(12), func(fpls *FakePLS) {
 					So(fpls.gotLoaded, ShouldBeTrue)
 					if i == 10 {
 						So(fpls.StringID, ShouldEqual, "eleven")
@@ -865,61 +912,55 @@ func TestRun(t *testing.T) {
 					}
 					So(fpls.Value, ShouldEqual, i)
 					i++
-					return true
 				}), ShouldBeNil)
 			})
 
 			Convey("*P (map)", func() {
 				i := 0
-				So(ds.Run(q, func(pm *PropertyMap, _ CursorCB) bool {
+				So(ds.Run(q, func(pm *PropertyMap) {
 					k, ok := pm.GetMeta("key")
 					So(ok, ShouldBeTrue)
 					So(k.(*Key).IntID(), ShouldEqual, i+1)
 					So((*pm)["Value"][0].Value(), ShouldEqual, i)
 					i++
-					return true
 				}), ShouldBeNil)
 			})
 
 			Convey("S", func() {
 				i := 0
-				So(ds.Run(q, func(cs CommonStruct, _ CursorCB) bool {
+				So(ds.Run(q, func(cs CommonStruct) {
 					So(cs.ID, ShouldEqual, i+1)
 					So(cs.Value, ShouldEqual, i)
 					i++
-					return true
 				}), ShouldBeNil)
 			})
 
 			Convey("P", func() {
 				i := 0
-				So(ds.Run(q, func(fpls FakePLS, _ CursorCB) bool {
+				So(ds.Run(q, func(fpls FakePLS) {
 					So(fpls.gotLoaded, ShouldBeTrue)
 					So(fpls.IntID, ShouldEqual, i+1)
 					So(fpls.Value, ShouldEqual, i)
 					i++
-					return true
 				}), ShouldBeNil)
 			})
 
 			Convey("P (map)", func() {
 				i := 0
-				So(ds.Run(q, func(pm PropertyMap, _ CursorCB) bool {
+				So(ds.Run(q, func(pm PropertyMap) {
 					k, ok := pm.GetMeta("key")
 					So(ok, ShouldBeTrue)
 					So(k.(*Key).IntID(), ShouldEqual, i+1)
 					So(pm["Value"][0].Value(), ShouldEqual, i)
 					i++
-					return true
 				}), ShouldBeNil)
 			})
 
 			Convey("Key", func() {
 				i := 0
-				So(ds.Run(q, func(k *Key, _ CursorCB) bool {
+				So(ds.Run(q, func(k *Key) {
 					So(k.IntID(), ShouldEqual, i+1)
 					i++
-					return true
 				}), ShouldBeNil)
 			})
 

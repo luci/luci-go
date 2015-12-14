@@ -22,7 +22,7 @@ type queryStrategy interface {
 	//   - key is the decoded Key from the index row (the last item in rawData and
 	//     decodedProps)
 	//   - gc is the getCursor function to be passed to the user's callback
-	handle(rawData [][]byte, decodedProps []ds.Property, key *ds.Key, gc func() (ds.Cursor, error)) bool
+	handle(rawData [][]byte, decodedProps []ds.Property, key *ds.Key, gc func() (ds.Cursor, error)) error
 }
 
 type projectionLookup struct {
@@ -60,7 +60,7 @@ func newProjectionStrategy(fq *ds.FinalizedQuery, rq *reducedQuery, cb ds.RawRun
 	return ret
 }
 
-func (s *projectionStrategy) handle(rawData [][]byte, decodedProps []ds.Property, key *ds.Key, gc func() (ds.Cursor, error)) bool {
+func (s *projectionStrategy) handle(rawData [][]byte, decodedProps []ds.Property, key *ds.Key, gc func() (ds.Cursor, error)) error {
 	projectedRaw := [][]byte(nil)
 	if s.distinct != nil {
 		projectedRaw = make([][]byte, len(decodedProps))
@@ -74,7 +74,7 @@ func (s *projectionStrategy) handle(rawData [][]byte, decodedProps []ds.Property
 	}
 	if s.distinct != nil {
 		if !s.distinct.Add(string(serialize.Join(projectedRaw...))) {
-			return true
+			return nil
 		}
 	}
 	return s.cb(key, pmap, gc)
@@ -86,9 +86,9 @@ type keysOnlyStrategy struct {
 	dedup stringset.Set
 }
 
-func (s *keysOnlyStrategy) handle(rawData [][]byte, _ []ds.Property, key *ds.Key, gc func() (ds.Cursor, error)) bool {
+func (s *keysOnlyStrategy) handle(rawData [][]byte, _ []ds.Property, key *ds.Key, gc func() (ds.Cursor, error)) error {
 	if !s.dedup.Add(string(rawData[len(rawData)-1])) {
-		return true
+		return nil
 	}
 	return s.cb(key, nil, gc)
 }
@@ -110,16 +110,16 @@ func newNormalStrategy(aid, ns string, cb ds.RawRunCB, head *memStore) queryStra
 	return &normalStrategy{cb, aid, ns, coll, stringset.New(0)}
 }
 
-func (s *normalStrategy) handle(rawData [][]byte, _ []ds.Property, key *ds.Key, gc func() (ds.Cursor, error)) bool {
+func (s *normalStrategy) handle(rawData [][]byte, _ []ds.Property, key *ds.Key, gc func() (ds.Cursor, error)) error {
 	rawKey := rawData[len(rawData)-1]
 	if !s.dedup.Add(string(rawKey)) {
-		return true
+		return nil
 	}
 
 	rawEnt := s.head.Get(rawKey)
 	if rawEnt == nil {
 		// entity doesn't exist at head
-		return true
+		return nil
 	}
 	pm, err := serialize.ReadPropertyMap(bytes.NewBuffer(rawEnt), serialize.WithoutContext, s.aid, s.ns)
 	memoryCorruption(err)
@@ -171,9 +171,9 @@ func countQuery(fq *ds.FinalizedQuery, aid, ns string, isTxn bool, idx, head *me
 			return
 		}
 	}
-	err = executeQuery(fq, aid, ns, isTxn, idx, head, func(_ *ds.Key, _ ds.PropertyMap, _ ds.CursorCB) bool {
+	err = executeQuery(fq, aid, ns, isTxn, idx, head, func(_ *ds.Key, _ ds.PropertyMap, _ ds.CursorCB) error {
 		ret++
-		return true
+		return nil
 	})
 	return
 }
@@ -225,14 +225,14 @@ func executeQuery(fq *ds.FinalizedQuery, aid, ns string, isTxn bool, idx, head *
 		}
 	}
 
-	multiIterate(idxs, func(suffix []byte) bool {
+	return multiIterate(idxs, func(suffix []byte) error {
 		if offset > 0 {
 			offset--
-			return true
+			return nil
 		}
 		if hasLimit {
 			if limit <= 0 {
-				return false
+				return ds.Stop
 			}
 			limit--
 		}
@@ -248,6 +248,4 @@ func executeQuery(fq *ds.FinalizedQuery, aid, ns string, isTxn bool, idx, head *
 			rawData, decodedProps, keyProp.Value().(*ds.Key),
 			getCursorFn(suffix))
 	})
-
-	return nil
 }

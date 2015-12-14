@@ -50,9 +50,9 @@ func TestCheckFilter(t *testing.T) {
 			So(rds.Run(fq, nil).Error(), ShouldContainSubstring, "callback is nil")
 			hit := false
 			So(func() {
-				So(rds.Run(fq, func(*Key, PropertyMap, CursorCB) bool {
+				So(rds.Run(fq, func(*Key, PropertyMap, CursorCB) error {
 					hit = true
-					return true
+					return nil
 				}), ShouldBeNil)
 			}, ShouldPanic)
 			So(hit, ShouldBeFalse)
@@ -64,16 +64,18 @@ func TestCheckFilter(t *testing.T) {
 
 			// this is in the wrong aid/ns
 			keys := []*Key{MakeKey("wut", "wrong", "Kind", 1)}
-			So(rds.GetMulti(keys, nil, func(pm PropertyMap, err error) {
+			So(rds.GetMulti(keys, nil, func(pm PropertyMap, err error) error {
 				So(pm, ShouldBeNil)
 				So(err, ShouldEqual, ErrInvalidKey)
+				return nil
 			}), ShouldBeNil)
 
 			keys[0] = mkKey("Kind", 1)
 			hit := false
 			So(func() {
-				So(rds.GetMulti(keys, nil, func(pm PropertyMap, err error) {
+				So(rds.GetMulti(keys, nil, func(pm PropertyMap, err error) error {
 					hit = true
+					return nil
 				}), ShouldBeNil)
 			}, ShouldPanic)
 			So(hit, ShouldBeFalse)
@@ -89,23 +91,26 @@ func TestCheckFilter(t *testing.T) {
 			keys = append(keys, mkKey("aid", "ns", "Wut", 0, "Kind", 0))
 			So(rds.PutMulti(keys, vals, nil).Error(), ShouldContainSubstring, "callback is nil")
 
-			So(rds.PutMulti(keys, vals, func(k *Key, err error) {
+			So(rds.PutMulti(keys, vals, func(k *Key, err error) error {
 				So(k, ShouldBeNil)
 				So(err, ShouldEqual, ErrInvalidKey)
+				return nil
 			}), ShouldBeNil)
 
 			keys = []*Key{mkKey("s~aid", "ns", "Kind", 0)}
 			vals = []PropertyMap{nil}
-			So(rds.PutMulti(keys, vals, func(k *Key, err error) {
+			So(rds.PutMulti(keys, vals, func(k *Key, err error) error {
 				So(k, ShouldBeNil)
 				So(err.Error(), ShouldContainSubstring, "nil vals entry")
+				return nil
 			}), ShouldBeNil)
 
 			vals = []PropertyMap{{}}
 			hit := false
 			So(func() {
-				So(rds.PutMulti(keys, vals, func(k *Key, err error) {
+				So(rds.PutMulti(keys, vals, func(k *Key, err error) error {
 					hit = true
+					return nil
 				}), ShouldBeNil)
 			}, ShouldPanic)
 			So(hit, ShouldBeFalse)
@@ -114,14 +119,16 @@ func TestCheckFilter(t *testing.T) {
 		Convey("DeleteMulti", func() {
 			So(rds.DeleteMulti(nil, nil), ShouldBeNil)
 			So(rds.DeleteMulti([]*Key{mkKey("", "", "", "")}, nil).Error(), ShouldContainSubstring, "is nil")
-			So(rds.DeleteMulti([]*Key{mkKey("", "", "", "")}, func(err error) {
+			So(rds.DeleteMulti([]*Key{mkKey("", "", "", "")}, func(err error) error {
 				So(err, ShouldEqual, ErrInvalidKey)
+				return nil
 			}), ShouldBeNil)
 
 			hit := false
 			So(func() {
-				So(rds.DeleteMulti([]*Key{mkKey("s~aid", "ns", "Kind", 1)}, func(error) {
+				So(rds.DeleteMulti([]*Key{mkKey("s~aid", "ns", "Kind", 1)}, func(error) error {
 					hit = true
+					return nil
 				}), ShouldBeNil)
 			}, ShouldPanic)
 			So(hit, ShouldBeFalse)
