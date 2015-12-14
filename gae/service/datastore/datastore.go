@@ -219,6 +219,9 @@ func (d *datastoreImpl) GetAll(q *Query, dst interface{}) error {
 }
 
 func isOkType(v reflect.Type) bool {
+	if v == typeOfKey {
+		return false
+	}
 	if v.Implements(typeOfPropertyLoadSaver) {
 		return true
 	}

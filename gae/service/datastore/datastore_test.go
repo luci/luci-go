@@ -410,6 +410,10 @@ func TestPut(t *testing.T) {
 				So(ds.Put(cs), ShouldErrLike, "invalid Put input type")
 			})
 
+			Convey("get with *Key is an error", func() {
+				So(ds.Get(&Key{}), ShouldErrLike, "invalid Get input type: *datastore.Key")
+			})
+
 			Convey("struct with no $kind is an error", func() {
 				s := MGSWithNoKind{}
 				So(ds.Put(&s), ShouldErrLike, "unable to extract $kind")
