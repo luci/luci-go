@@ -23,6 +23,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
+	"google.golang.org/appengine"
 
 	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/taskqueue"
@@ -204,6 +205,12 @@ func init() {
 	router.POST("/internal/tasks/timers", taskQueueHandler("timers", actionTask))
 	router.POST("/internal/tasks/invocations", taskQueueHandler("invocations", actionTask))
 
+	// Devserver can't accept PubSub pushes, so allow manual pulls instead to
+	// simplify local development.
+	if appengine.IsDevAppServer() {
+		router.GET("/pubsub/pull/:ManagerName/:Publisher", base(wrap(pubsubPullHandler)))
+	}
+
 	http.DefaultServeMux.Handle("/", router)
 }
 
@@ -232,6 +239,22 @@ func pubsubPushHandler(rc *requestContext) {
 		return
 	}
 	rc.ok()
+}
+
+// pubsubPullHandler is called on dev server by developer to pull pubsub
+// messages from a topic created for a publisher.
+func pubsubPullHandler(rc *requestContext) {
+	if !appengine.IsDevAppServer() {
+		rc.fail(403, "Not a dev server")
+		return
+	}
+	err := globalEngine.PullPubSubOnDevServer(
+		rc, rc.p.ByName("ManagerName"), rc.p.ByName("Publisher"))
+	if err != nil {
+		rc.err(err, "Failed to pull PubSub messages")
+	} else {
+		rc.ok()
+	}
 }
 
 // readConfigCron grabs a list of projects from the catalog and datastore and

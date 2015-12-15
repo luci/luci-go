@@ -11,12 +11,15 @@ import (
 	"fmt"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/gorhill/cronexpr"
 	"golang.org/x/net/context"
+	"google.golang.org/api/pubsub/v1"
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
@@ -79,6 +82,13 @@ type Engine interface {
 
 	// ProcessPubSubPush is called whenever incoming PubSub message is received.
 	ProcessPubSubPush(c context.Context, body []byte) error
+
+	// PullPubSubOnDevServer is called on dev server to pull messages from PubSub
+	// subscription associated with given publisher.
+	//
+	// It is needed to be able to manually tests PubSub related workflows on dev
+	// server, since dev server can't accept PubSub push messages.
+	PullPubSubOnDevServer(c context.Context, taskManagerName, publisher string) error
 
 	// TriggerInvocation launches job invocation right now if job isn't running
 	// now. Used by "Run now" UI button.
@@ -731,11 +741,6 @@ func (e *engineImpl) ExecuteSerializedAction(c context.Context, action []byte, r
 	}
 }
 
-func (e *engineImpl) ProcessPubSubPush(c context.Context, body []byte) error {
-	// TODO(vadimsh): Implement.
-	return nil
-}
-
 func (e *engineImpl) TriggerInvocation(c context.Context, jobID string, triggeredBy identity.Identity) error {
 	var err error
 	err2 := e.txn(c, jobID, func(c context.Context, job *CronJob, isNew bool) error {
@@ -937,25 +942,14 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	// point we are already handling the invocation, and thus already using
 	// Controller interface with all its bells and whistles.
 	c = logging.SetField(c, "InvID", inv.ID)
-	ctl := &taskController{
-		ctx:     c,
-		eng:     e,
-		saved:   inv,
-		current: inv,
-	}
-	taskMsg, err := e.Catalog.UnmarshalTask(inv.Task)
+	ctl, err := e.controllerForInvocation(c, &inv)
 	if err != nil {
-		return ctl.launchFailed(fmt.Errorf("failed to unmarshal the task: %s", err))
+		return ctl.launchFailed(err)
 	}
-	manager := e.Catalog.GetTaskManager(taskMsg)
-	if manager == nil {
-		return ctl.launchFailed(fmt.Errorf("TaskManager is unexpectedly missing"))
-	}
-	ctl.manager = manager
 
 	// LaunchTask MUST move the invocation out of StatusStarting, otherwise cron
 	// job will be forever stuck in starting state.
-	err = manager.LaunchTask(c, taskMsg, ctl, invocationNonce)
+	err = ctl.manager.LaunchTask(c, ctl.task, ctl, invocationNonce)
 	if err == nil && ctl.saved.Status == task.StatusStarting {
 		err = fmt.Errorf("LaunchTask didn't move invocation out of StatusStarting")
 	}
@@ -967,6 +961,32 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 
 	return err
 }
+
+// controllerForInvocation returns new instance of taskController configured
+// to work with given invocation.
+//
+// If task definition can't be deserialized, returns both controller and error.
+func (e *engineImpl) controllerForInvocation(c context.Context, inv *Invocation) (*taskController, error) {
+	ctl := &taskController{
+		ctx:     c,
+		eng:     e,
+		saved:   *inv,
+		current: *inv,
+	}
+	var err error
+	ctl.task, err = e.Catalog.UnmarshalTask(inv.Task)
+	if err != nil {
+		return ctl, fmt.Errorf("failed to unmarshal the task - %s", err)
+	}
+	ctl.manager = e.Catalog.GetTaskManager(ctl.task)
+	if ctl.manager == nil {
+		return ctl, fmt.Errorf("TaskManager is unexpectedly missing")
+	}
+	return ctl, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// PubSub stuff
 
 // topicParams is passed to prepareTopic by task.Controller.
 type topicParams struct {
@@ -984,13 +1004,9 @@ var pubsubAuthToken = tokens.TokenKind{
 	Version:    1,
 }
 
-// prepareTopic creates a pubsub topic that can be used to pass task related
-// messages back to the task.Manager that handles the task.
-//
-// It returns full topic name, as well as a token that securely identifies the
-// task. It should be put into 'auth_token' attribute of PubSub messages by
-// whoever publishes them.
-func (e *engineImpl) prepareTopic(c context.Context, params topicParams) (topic string, tok string, err error) {
+// genTopicAndSubNames derives PubSub topic and subscription names to use for
+// notifications from given publisher.
+func (e *engineImpl) genTopicAndSubNames(c context.Context, manager, publisher string) (topic string, sub string) {
 	inf := info.Get(c)
 
 	// Avoid accidental override of the topic when running on dev server.
@@ -1006,15 +1022,26 @@ func (e *engineImpl) prepareTopic(c context.Context, params topicParams) (topic 
 	// all pages correctly.
 	id := fmt.Sprintf("%s+%s+%s",
 		prefix,
-		params.manager.Name(),
-		strings.Replace(params.publisher, "@", "~", -1))
+		manager,
+		strings.Replace(publisher, "@", "~", -1))
 	topic = fmt.Sprintf("projects/%s/topics/%s", inf.AppID(), id)
-	sub := fmt.Sprintf("projects/%s/subscriptions/%s", inf.AppID(), id)
+	sub = fmt.Sprintf("projects/%s/subscriptions/%s", inf.AppID(), id)
+	return
+}
+
+// prepareTopic creates a pubsub topic that can be used to pass task related
+// messages back to the task.Manager that handles the task.
+//
+// It returns full topic name, as well as a token that securely identifies the
+// task. It should be put into 'auth_token' attribute of PubSub messages by
+// whoever publishes them.
+func (e *engineImpl) prepareTopic(c context.Context, params topicParams) (topic string, tok string, err error) {
+	topic, sub := e.genTopicAndSubNames(c, params.manager.Name(), params.publisher)
 
 	// Put same parameters in push URL to make them visible in logs. On dev server
 	// use pull based subscription, since localhost push URL is not valid.
 	pushURL := ""
-	if !inf.IsDevAppServer() {
+	if inf := info.Get(c); !inf.IsDevAppServer() {
 		urlParams := url.Values{}
 		urlParams.Add("kind", params.manager.Name())
 		urlParams.Add("publisher", params.publisher)
@@ -1046,12 +1073,86 @@ func (e *engineImpl) prepareTopic(c context.Context, params topicParams) (topic 
 	return topic, tok, nil
 }
 
+func (e *engineImpl) ProcessPubSubPush(c context.Context, body []byte) error {
+	var pushBody struct {
+		Message pubsub.PubsubMessage `json:"message"`
+	}
+	if err := json.Unmarshal(body, &pushBody); err != nil {
+		return err
+	}
+	return e.handlePubSubMessage(c, &pushBody.Message)
+}
+
+func (e *engineImpl) PullPubSubOnDevServer(c context.Context, taskManagerName, publisher string) error {
+	_, sub := e.genTopicAndSubNames(c, taskManagerName, publisher)
+	msg, ack, err := pullSubcription(c, sub, "")
+	if err != nil {
+		return err
+	}
+	if msg == nil {
+		logging.Infof(c, "No new PubSub messages")
+		return nil
+	}
+	err = e.handlePubSubMessage(c, msg)
+	if err == nil || !errors.IsTransient(err) {
+		ack() // ack only on success of fatal errors (to stop redelivery)
+	}
+	return err
+}
+
+func (e *engineImpl) handlePubSubMessage(c context.Context, msg *pubsub.PubsubMessage) error {
+	logging.Infof(c, "Received PubSub message %q", msg.MessageId)
+
+	// Extract Job and Invocation ID from validated auth_token.
+	var jobID string
+	var invID int64
+	data, err := pubsubAuthToken.Validate(c, msg.Attributes["auth_token"], nil)
+	if err != nil {
+		logging.Errorf(c, "Bad auth_token attribute - %s", err)
+		return err
+	}
+	jobID = data["job"]
+	if invID, err = strconv.ParseInt(data["inv"], 10, 64); err != nil {
+		logging.Errorf(c, "Could not parse 'inv' %q - %s", data["inv"], err)
+		return err
+	}
+
+	c = logging.SetField(c, "JobID", jobID)
+	c = logging.SetField(c, "InvID", invID)
+	inv, err := e.GetInvocation(c, jobID, invID)
+	if err != nil {
+		logging.Errorf(c, "Failed to fetch the invocation")
+		return err
+	}
+	if inv == nil {
+		return errors.New("the invocation doesn't exist")
+	}
+
+	// Finished invocations are immutable, skip the message.
+	if inv.Status.Final() {
+		logging.Warningf(c, "The invocation is in final state %q", inv.Status)
+		return nil
+	}
+
+	// Build corresponding controller.
+	ctl, err := e.controllerForInvocation(c, inv)
+	if err != nil {
+		logging.Errorf(c, "Cannot get controller - %s", err)
+		return err
+	}
+
+	// Hand the message to the TaskManager.
+	return ctl.manager.HandleNotification(c, ctl, msg)
+}
+
 ////////////////////////////////////////////////////////////////////////////////
+// TaskController.
 
 type taskController struct {
 	ctx     context.Context
 	eng     *engineImpl
 	manager task.Manager
+	task    proto.Message
 
 	saved   Invocation // what have been given initially or saved in Save()
 	current Invocation // what is currently being mutated

@@ -5,14 +5,15 @@
 package engine
 
 import (
+	"encoding/json"
 	"math/rand"
 	"sort"
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
-
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
+	"google.golang.org/api/pubsub/v1"
 
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
@@ -30,6 +31,7 @@ import (
 	"github.com/luci/luci-go/appengine/cmd/cron/task"
 	"github.com/luci/luci-go/appengine/cmd/cron/task/noop"
 
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -626,6 +628,91 @@ func TestPrepareTopic(t *testing.T) {
 	})
 }
 
+func TestProcessPubSubPush(t *testing.T) {
+	Convey("with mock invocation", t, func() {
+		c := newTestContext(epoch)
+		e, mgr := newTestEngine()
+		ds := datastore.Get(c)
+
+		So(ds.Put(&CronJob{
+			JobID:     "abc/1",
+			ProjectID: "abc",
+			Enabled:   true,
+		}), ShouldBeNil)
+
+		task, err := proto.Marshal(&messages.Task{
+			Noop: &messages.NoopTask{},
+		})
+		So(err, ShouldBeNil)
+
+		inv := Invocation{
+			ID:     1,
+			JobKey: ds.NewKey("CronJob", "abc/1", 0, nil),
+			Task:   task,
+		}
+		So(ds.Put(&inv), ShouldBeNil)
+
+		// Skip talking to PubSub for real.
+		e.configureTopic = func(c context.Context, topic, sub, pushURL, publisher string) error {
+			return nil
+		}
+
+		ctl, err := e.controllerForInvocation(c, &inv)
+		So(err, ShouldBeNil)
+
+		// Grab the working auth token.
+		_, token, err := ctl.PrepareTopic("some@publisher.com")
+		So(err, ShouldBeNil)
+		So(token, ShouldNotEqual, "")
+
+		Convey("ProcessPubSubPush works", func() {
+			msg := struct {
+				Message pubsub.PubsubMessage `json:"message"`
+			}{
+				Message: pubsub.PubsubMessage{
+					Attributes: map[string]string{"auth_token": token},
+					Data:       "blah",
+				},
+			}
+			blob, err := json.Marshal(&msg)
+			So(err, ShouldBeNil)
+
+			handled := false
+			mgr.handleNotification = func(msg *pubsub.PubsubMessage) error {
+				So(msg.Data, ShouldEqual, "blah")
+				handled = true
+				return nil
+			}
+			So(e.ProcessPubSubPush(c, blob), ShouldBeNil)
+			So(handled, ShouldBeTrue)
+		})
+
+		Convey("ProcessPubSubPush handles bad token", func() {
+			msg := struct {
+				Message pubsub.PubsubMessage `json:"message"`
+			}{
+				Message: pubsub.PubsubMessage{
+					Attributes: map[string]string{"auth_token": token + "blah"},
+					Data:       "blah",
+				},
+			}
+			blob, err := json.Marshal(&msg)
+			So(err, ShouldBeNil)
+			So(e.ProcessPubSubPush(c, blob), ShouldErrLike, "bad token")
+		})
+
+		Convey("ProcessPubSubPush handles missing invocation", func() {
+			ds.Delete(ds.KeyForObj(&inv))
+			msg := pubsub.PubsubMessage{
+				Attributes: map[string]string{"auth_token": token},
+			}
+			blob, err := json.Marshal(&msg)
+			So(err, ShouldBeNil)
+			So(errors.IsTransient(e.ProcessPubSubPush(c, blob)), ShouldBeFalse)
+		})
+	})
+}
+
 ////
 
 func newTestContext(now time.Time) context.Context {
@@ -668,7 +755,8 @@ func newTestEngine() (*engineImpl, *fakeTaskManager) {
 
 // fakeTaskManager implement task.Manager interface.
 type fakeTaskManager struct {
-	launchTask func(ctl task.Controller) error
+	launchTask         func(ctl task.Controller) error
+	handleNotification func(msg *pubsub.PubsubMessage) error
 }
 
 func (m *fakeTaskManager) Name() string {
@@ -687,8 +775,8 @@ func (m *fakeTaskManager) LaunchTask(c context.Context, msg proto.Message, ctl t
 	return m.launchTask(ctl)
 }
 
-func (m *fakeTaskManager) HandleNotification(c context.Context, ctl task.Controller) error {
-	return errors.New("not implemented")
+func (m *fakeTaskManager) HandleNotification(c context.Context, ctl task.Controller, msg *pubsub.PubsubMessage) error {
+	return m.handleNotification(msg)
 }
 
 ////

@@ -11,6 +11,7 @@ package task
 import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
+	"google.golang.org/api/pubsub/v1"
 )
 
 // Status is status of a single cron job invocation.
@@ -73,7 +74,7 @@ type Manager interface {
 
 	// HandleNotification is called whenever engine receives a PubSub message sent
 	// to a topic created with Controller.PrepareTopic.
-	HandleNotification(c context.Context, ctl Controller) error
+	HandleNotification(c context.Context, ctl Controller, msg *pubsub.PubsubMessage) error
 }
 
 // Controller is passed to LaunchTask by cron engine. It gives Manager control

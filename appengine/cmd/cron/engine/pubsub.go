@@ -19,7 +19,30 @@ import (
 	"github.com/luci/luci-go/common/stringset"
 )
 
-// configureTopic creates PubSub topic and subscription , allowing given
+// createPubSubService returns configured instance of pubsub.Service.
+func createPubSubService(c context.Context, pubSubURL string) (*pubsub.Service, error) {
+	// In real mode (not a unit test), use authenticated transport.
+	var transport http.RoundTripper
+	if pubSubURL == "" {
+		var err error
+		transport, err = client.Transport(c, []string{pubsub.PubsubScope}, nil)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		transport = http.DefaultTransport
+	}
+	service, err := pubsub.New(&http.Client{Transport: transport})
+	if err != nil {
+		return nil, err
+	}
+	if pubSubURL != "" {
+		service.BasePath = pubSubURL
+	}
+	return service, nil
+}
+
+// configureTopic creates PubSub topic and subscription, allowing given
 // publisher to send messages to the topic.
 //
 // Both topic and subscription names are fully qualified PubSub resource IDs,
@@ -27,23 +50,9 @@ import (
 //
 // Idempotent.
 func configureTopic(c context.Context, topic, sub, pushURL, publisher, pubSubURL string) error {
-	// In real mode (not a unit test), use authenticated transport.
-	var transport http.RoundTripper
-	if pubSubURL == "" {
-		var err error
-		transport, err = client.Transport(c, []string{pubsub.PubsubScope}, nil)
-		if err != nil {
-			return err
-		}
-	} else {
-		transport = http.DefaultTransport
-	}
-	service, err := pubsub.New(&http.Client{Transport: transport})
+	service, err := createPubSubService(c, pubSubURL)
 	if err != nil {
 		return err
-	}
-	if pubSubURL != "" {
-		service.BasePath = pubSubURL
 	}
 
 	// Create the topic. Ignore HTTP 409 (it means the topic already exists).
@@ -69,7 +78,7 @@ func configureTopic(c context.Context, topic, sub, pushURL, publisher, pubSubURL
 	}
 
 	// Modify topic's IAM policy to allow publisher to publish.
-	if strings.HasPrefix(publisher, ".gserviceaccount.com") {
+	if strings.HasSuffix(publisher, ".gserviceaccount.com") {
 		publisher = "serviceAccount:" + publisher
 	} else {
 		publisher = "user:" + publisher
@@ -90,6 +99,43 @@ func configureTopic(c context.Context, topic, sub, pushURL, publisher, pubSubURL
 		logging.Errorf(c, "Failed - %s", err)
 	}
 	return errors.WrapTransient(err)
+}
+
+// pullSubcription pulls one message from PubSub subscription.
+//
+// Used on dev server only. Returns the message and callback to call to
+// acknowledge the message.
+func pullSubcription(c context.Context, subscription, pubSubURL string) (*pubsub.PubsubMessage, func(), error) {
+	service, err := createPubSubService(c, pubSubURL)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	resp, err := service.Projects.Subscriptions.Pull(subscription, &pubsub.PullRequest{
+		ReturnImmediately: true,
+		MaxMessages:       1,
+	}).Context(c).Do()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	switch len(resp.ReceivedMessages) {
+	case 0:
+		return nil, nil, nil
+	case 1:
+		ackID := resp.ReceivedMessages[0].AckId
+		ackCb := func() {
+			_, err := service.Projects.Subscriptions.Acknowledge(subscription, &pubsub.AcknowledgeRequest{
+				AckIds: []string{ackID},
+			}).Context(c).Do()
+			if err != nil {
+				logging.Errorf(c, "Failed to acknowledge the message - %s", err)
+			}
+		}
+		return resp.ReceivedMessages[0].Message, ackCb, nil
+	default:
+		panic(errors.New("received more than one message from PubSub while asking only one"))
+	}
 }
 
 func isHTTP409(err error) bool {

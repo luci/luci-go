@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
+	"google.golang.org/api/pubsub/v1"
 
 	memcfg "github.com/luci/luci-go/common/config/impl/memory"
 
@@ -186,7 +187,7 @@ func (m noopTaskManager) LaunchTask(c context.Context, msg proto.Message, ctl ta
 	return nil
 }
 
-func (m noopTaskManager) HandleNotification(c context.Context, ctl task.Controller) error {
+func (m noopTaskManager) HandleNotification(c context.Context, ctl task.Controller, msg *pubsub.PubsubMessage) error {
 	return errors.New("not implemented")
 }
 

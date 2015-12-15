@@ -17,6 +17,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
+	"google.golang.org/api/pubsub/v1"
 
 	"github.com/luci/gae/service/urlfetch"
 	"github.com/luci/luci-go/appengine/cmd/cron/messages"
@@ -146,7 +147,7 @@ func (m TaskManager) LaunchTask(c context.Context, msg proto.Message, ctl task.C
 }
 
 // HandleNotification is part of Manager interface.
-func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller) error {
+func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, msg *pubsub.PubsubMessage) error {
 	return errors.New("not implemented")
 }
 
