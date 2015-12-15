@@ -301,16 +301,17 @@ func (s *LuciConfigProject) MarshalJSON() ([]byte, error) {
 // method id "config.get_config":
 
 type GetConfigCall struct {
-	s         *Service
-	configSet string
-	path      string
-	opt_      map[string]interface{}
-	ctx_      context.Context
+	s            *Service
+	configSet    string
+	path         string
+	urlParams_   gensupport.URLParams
+	ifNoneMatch_ string
+	ctx_         context.Context
 }
 
 // GetConfig: Gets a config file.
 func (s *Service) GetConfig(configSet string, path string) *GetConfigCall {
-	c := &GetConfigCall{s: s, opt_: make(map[string]interface{})}
+	c := &GetConfigCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.configSet = configSet
 	c.path = path
 	return c
@@ -318,21 +319,21 @@ func (s *Service) GetConfig(configSet string, path string) *GetConfigCall {
 
 // HashOnly sets the optional parameter "hash_only":
 func (c *GetConfigCall) HashOnly(hashOnly bool) *GetConfigCall {
-	c.opt_["hash_only"] = hashOnly
+	c.urlParams_.Set("hash_only", fmt.Sprint(hashOnly))
 	return c
 }
 
 // Revision sets the optional parameter "revision":
 func (c *GetConfigCall) Revision(revision string) *GetConfigCall {
-	c.opt_["revision"] = revision
+	c.urlParams_.Set("revision", revision)
 	return c
 }
 
-// Fields allows partial responses to be retrieved.
-// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
 // for more information.
 func (c *GetConfigCall) Fields(s ...googleapi.Field) *GetConfigCall {
-	c.opt_["fields"] = googleapi.CombineFields(s)
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
 	return c
 }
 
@@ -342,13 +343,13 @@ func (c *GetConfigCall) Fields(s ...googleapi.Field) *GetConfigCall {
 // request. Use googleapi.IsNotModified to check whether the response
 // error from Do is the result of In-None-Match.
 func (c *GetConfigCall) IfNoneMatch(entityTag string) *GetConfigCall {
-	c.opt_["ifNoneMatch"] = entityTag
+	c.ifNoneMatch_ = entityTag
 	return c
 }
 
-// Context sets the context to be used in this call's Do method.
-// Any pending HTTP request will be aborted if the provided context
-// is canceled.
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
 func (c *GetConfigCall) Context(ctx context.Context) *GetConfigCall {
 	c.ctx_ = ctx
 	return c
@@ -356,27 +357,17 @@ func (c *GetConfigCall) Context(ctx context.Context) *GetConfigCall {
 
 func (c *GetConfigCall) doRequest(alt string) (*http.Response, error) {
 	var body io.Reader = nil
-	params := make(url.Values)
-	params.Set("alt", alt)
-	if v, ok := c.opt_["hash_only"]; ok {
-		params.Set("hash_only", fmt.Sprintf("%v", v))
-	}
-	if v, ok := c.opt_["revision"]; ok {
-		params.Set("revision", fmt.Sprintf("%v", v))
-	}
-	if v, ok := c.opt_["fields"]; ok {
-		params.Set("fields", fmt.Sprintf("%v", v))
-	}
+	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "config_sets/{config_set}/config/{path}")
-	urls += "?" + params.Encode()
+	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
 	googleapi.Expand(req.URL, map[string]string{
 		"config_set": c.configSet,
 		"path":       c.path,
 	})
 	req.Header.Set("User-Agent", c.s.userAgent())
-	if v, ok := c.opt_["ifNoneMatch"]; ok {
-		req.Header.Set("If-None-Match", fmt.Sprintf("%v", v))
+	if c.ifNoneMatch_ != "" {
+		req.Header.Set("If-None-Match", c.ifNoneMatch_)
 	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
@@ -462,24 +453,25 @@ func (c *GetConfigCall) Do() (*LuciConfigGetConfigResponseMessage, error) {
 // method id "config.get_config_by_hash":
 
 type GetConfigByHashCall struct {
-	s           *Service
-	contentHash string
-	opt_        map[string]interface{}
-	ctx_        context.Context
+	s            *Service
+	contentHash  string
+	urlParams_   gensupport.URLParams
+	ifNoneMatch_ string
+	ctx_         context.Context
 }
 
 // GetConfigByHash: Gets a config file by its hash.
 func (s *Service) GetConfigByHash(contentHash string) *GetConfigByHashCall {
-	c := &GetConfigByHashCall{s: s, opt_: make(map[string]interface{})}
+	c := &GetConfigByHashCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.contentHash = contentHash
 	return c
 }
 
-// Fields allows partial responses to be retrieved.
-// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
 // for more information.
 func (c *GetConfigByHashCall) Fields(s ...googleapi.Field) *GetConfigByHashCall {
-	c.opt_["fields"] = googleapi.CombineFields(s)
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
 	return c
 }
 
@@ -489,13 +481,13 @@ func (c *GetConfigByHashCall) Fields(s ...googleapi.Field) *GetConfigByHashCall 
 // request. Use googleapi.IsNotModified to check whether the response
 // error from Do is the result of In-None-Match.
 func (c *GetConfigByHashCall) IfNoneMatch(entityTag string) *GetConfigByHashCall {
-	c.opt_["ifNoneMatch"] = entityTag
+	c.ifNoneMatch_ = entityTag
 	return c
 }
 
-// Context sets the context to be used in this call's Do method.
-// Any pending HTTP request will be aborted if the provided context
-// is canceled.
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
 func (c *GetConfigByHashCall) Context(ctx context.Context) *GetConfigByHashCall {
 	c.ctx_ = ctx
 	return c
@@ -503,20 +495,16 @@ func (c *GetConfigByHashCall) Context(ctx context.Context) *GetConfigByHashCall 
 
 func (c *GetConfigByHashCall) doRequest(alt string) (*http.Response, error) {
 	var body io.Reader = nil
-	params := make(url.Values)
-	params.Set("alt", alt)
-	if v, ok := c.opt_["fields"]; ok {
-		params.Set("fields", fmt.Sprintf("%v", v))
-	}
+	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "config/{content_hash}")
-	urls += "?" + params.Encode()
+	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
 	googleapi.Expand(req.URL, map[string]string{
 		"content_hash": c.contentHash,
 	})
 	req.Header.Set("User-Agent", c.s.userAgent())
-	if v, ok := c.opt_["ifNoneMatch"]; ok {
-		req.Header.Set("If-None-Match", fmt.Sprintf("%v", v))
+	if c.ifNoneMatch_ != "" {
+		req.Header.Set("If-None-Match", c.ifNoneMatch_)
 	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
@@ -589,28 +577,29 @@ func (c *GetConfigByHashCall) Do() (*LuciConfigGetConfigByHashResponseMessage, e
 // method id "config.get_mapping":
 
 type GetMappingCall struct {
-	s    *Service
-	opt_ map[string]interface{}
-	ctx_ context.Context
+	s            *Service
+	urlParams_   gensupport.URLParams
+	ifNoneMatch_ string
+	ctx_         context.Context
 }
 
 // GetMapping: Returns config-set mapping, one or all.
 func (s *Service) GetMapping() *GetMappingCall {
-	c := &GetMappingCall{s: s, opt_: make(map[string]interface{})}
+	c := &GetMappingCall{s: s, urlParams_: make(gensupport.URLParams)}
 	return c
 }
 
 // ConfigSet sets the optional parameter "config_set":
 func (c *GetMappingCall) ConfigSet(configSet string) *GetMappingCall {
-	c.opt_["config_set"] = configSet
+	c.urlParams_.Set("config_set", configSet)
 	return c
 }
 
-// Fields allows partial responses to be retrieved.
-// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
 // for more information.
 func (c *GetMappingCall) Fields(s ...googleapi.Field) *GetMappingCall {
-	c.opt_["fields"] = googleapi.CombineFields(s)
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
 	return c
 }
 
@@ -620,13 +609,13 @@ func (c *GetMappingCall) Fields(s ...googleapi.Field) *GetMappingCall {
 // request. Use googleapi.IsNotModified to check whether the response
 // error from Do is the result of In-None-Match.
 func (c *GetMappingCall) IfNoneMatch(entityTag string) *GetMappingCall {
-	c.opt_["ifNoneMatch"] = entityTag
+	c.ifNoneMatch_ = entityTag
 	return c
 }
 
-// Context sets the context to be used in this call's Do method.
-// Any pending HTTP request will be aborted if the provided context
-// is canceled.
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
 func (c *GetMappingCall) Context(ctx context.Context) *GetMappingCall {
 	c.ctx_ = ctx
 	return c
@@ -634,21 +623,14 @@ func (c *GetMappingCall) Context(ctx context.Context) *GetMappingCall {
 
 func (c *GetMappingCall) doRequest(alt string) (*http.Response, error) {
 	var body io.Reader = nil
-	params := make(url.Values)
-	params.Set("alt", alt)
-	if v, ok := c.opt_["config_set"]; ok {
-		params.Set("config_set", fmt.Sprintf("%v", v))
-	}
-	if v, ok := c.opt_["fields"]; ok {
-		params.Set("fields", fmt.Sprintf("%v", v))
-	}
+	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "mapping")
-	urls += "?" + params.Encode()
+	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
 	googleapi.SetOpaque(req.URL)
 	req.Header.Set("User-Agent", c.s.userAgent())
-	if v, ok := c.opt_["ifNoneMatch"]; ok {
-		req.Header.Set("If-None-Match", fmt.Sprintf("%v", v))
+	if c.ifNoneMatch_ != "" {
+		req.Header.Set("If-None-Match", c.ifNoneMatch_)
 	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
@@ -716,30 +698,31 @@ func (c *GetMappingCall) Do() (*LuciConfigGetMappingResponseMessage, error) {
 // method id "config.get_project_configs":
 
 type GetProjectConfigsCall struct {
-	s    *Service
-	path string
-	opt_ map[string]interface{}
-	ctx_ context.Context
+	s            *Service
+	path         string
+	urlParams_   gensupport.URLParams
+	ifNoneMatch_ string
+	ctx_         context.Context
 }
 
 // GetProjectConfigs: Gets configs in all project config sets.
 func (s *Service) GetProjectConfigs(path string) *GetProjectConfigsCall {
-	c := &GetProjectConfigsCall{s: s, opt_: make(map[string]interface{})}
+	c := &GetProjectConfigsCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.path = path
 	return c
 }
 
 // HashesOnly sets the optional parameter "hashes_only":
 func (c *GetProjectConfigsCall) HashesOnly(hashesOnly bool) *GetProjectConfigsCall {
-	c.opt_["hashes_only"] = hashesOnly
+	c.urlParams_.Set("hashes_only", fmt.Sprint(hashesOnly))
 	return c
 }
 
-// Fields allows partial responses to be retrieved.
-// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
 // for more information.
 func (c *GetProjectConfigsCall) Fields(s ...googleapi.Field) *GetProjectConfigsCall {
-	c.opt_["fields"] = googleapi.CombineFields(s)
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
 	return c
 }
 
@@ -749,13 +732,13 @@ func (c *GetProjectConfigsCall) Fields(s ...googleapi.Field) *GetProjectConfigsC
 // request. Use googleapi.IsNotModified to check whether the response
 // error from Do is the result of In-None-Match.
 func (c *GetProjectConfigsCall) IfNoneMatch(entityTag string) *GetProjectConfigsCall {
-	c.opt_["ifNoneMatch"] = entityTag
+	c.ifNoneMatch_ = entityTag
 	return c
 }
 
-// Context sets the context to be used in this call's Do method.
-// Any pending HTTP request will be aborted if the provided context
-// is canceled.
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
 func (c *GetProjectConfigsCall) Context(ctx context.Context) *GetProjectConfigsCall {
 	c.ctx_ = ctx
 	return c
@@ -763,23 +746,16 @@ func (c *GetProjectConfigsCall) Context(ctx context.Context) *GetProjectConfigsC
 
 func (c *GetProjectConfigsCall) doRequest(alt string) (*http.Response, error) {
 	var body io.Reader = nil
-	params := make(url.Values)
-	params.Set("alt", alt)
-	if v, ok := c.opt_["hashes_only"]; ok {
-		params.Set("hashes_only", fmt.Sprintf("%v", v))
-	}
-	if v, ok := c.opt_["fields"]; ok {
-		params.Set("fields", fmt.Sprintf("%v", v))
-	}
+	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "configs/projects/{path}")
-	urls += "?" + params.Encode()
+	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
 	googleapi.Expand(req.URL, map[string]string{
 		"path": c.path,
 	})
 	req.Header.Set("User-Agent", c.s.userAgent())
-	if v, ok := c.opt_["ifNoneMatch"]; ok {
-		req.Header.Set("If-None-Match", fmt.Sprintf("%v", v))
+	if c.ifNoneMatch_ != "" {
+		req.Header.Set("If-None-Match", c.ifNoneMatch_)
 	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
@@ -855,23 +831,24 @@ func (c *GetProjectConfigsCall) Do() (*LuciConfigGetConfigMultiResponseMessage, 
 // method id "config.get_projects":
 
 type GetProjectsCall struct {
-	s    *Service
-	opt_ map[string]interface{}
-	ctx_ context.Context
+	s            *Service
+	urlParams_   gensupport.URLParams
+	ifNoneMatch_ string
+	ctx_         context.Context
 }
 
 // GetProjects: Gets list of registered projects. The project list is
 // stored in services/luci-config:projects.cfg.
 func (s *Service) GetProjects() *GetProjectsCall {
-	c := &GetProjectsCall{s: s, opt_: make(map[string]interface{})}
+	c := &GetProjectsCall{s: s, urlParams_: make(gensupport.URLParams)}
 	return c
 }
 
-// Fields allows partial responses to be retrieved.
-// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
 // for more information.
 func (c *GetProjectsCall) Fields(s ...googleapi.Field) *GetProjectsCall {
-	c.opt_["fields"] = googleapi.CombineFields(s)
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
 	return c
 }
 
@@ -881,13 +858,13 @@ func (c *GetProjectsCall) Fields(s ...googleapi.Field) *GetProjectsCall {
 // request. Use googleapi.IsNotModified to check whether the response
 // error from Do is the result of In-None-Match.
 func (c *GetProjectsCall) IfNoneMatch(entityTag string) *GetProjectsCall {
-	c.opt_["ifNoneMatch"] = entityTag
+	c.ifNoneMatch_ = entityTag
 	return c
 }
 
-// Context sets the context to be used in this call's Do method.
-// Any pending HTTP request will be aborted if the provided context
-// is canceled.
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
 func (c *GetProjectsCall) Context(ctx context.Context) *GetProjectsCall {
 	c.ctx_ = ctx
 	return c
@@ -895,18 +872,14 @@ func (c *GetProjectsCall) Context(ctx context.Context) *GetProjectsCall {
 
 func (c *GetProjectsCall) doRequest(alt string) (*http.Response, error) {
 	var body io.Reader = nil
-	params := make(url.Values)
-	params.Set("alt", alt)
-	if v, ok := c.opt_["fields"]; ok {
-		params.Set("fields", fmt.Sprintf("%v", v))
-	}
+	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "projects")
-	urls += "?" + params.Encode()
+	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
 	googleapi.SetOpaque(req.URL)
 	req.Header.Set("User-Agent", c.s.userAgent())
-	if v, ok := c.opt_["ifNoneMatch"]; ok {
-		req.Header.Set("If-None-Match", fmt.Sprintf("%v", v))
+	if c.ifNoneMatch_ != "" {
+		req.Header.Set("If-None-Match", c.ifNoneMatch_)
 	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
@@ -968,30 +941,31 @@ func (c *GetProjectsCall) Do() (*LuciConfigGetProjectsResponseMessage, error) {
 // method id "config.get_ref_configs":
 
 type GetRefConfigsCall struct {
-	s    *Service
-	path string
-	opt_ map[string]interface{}
-	ctx_ context.Context
+	s            *Service
+	path         string
+	urlParams_   gensupport.URLParams
+	ifNoneMatch_ string
+	ctx_         context.Context
 }
 
 // GetRefConfigs: Gets configs in all ref config sets.
 func (s *Service) GetRefConfigs(path string) *GetRefConfigsCall {
-	c := &GetRefConfigsCall{s: s, opt_: make(map[string]interface{})}
+	c := &GetRefConfigsCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.path = path
 	return c
 }
 
 // HashesOnly sets the optional parameter "hashes_only":
 func (c *GetRefConfigsCall) HashesOnly(hashesOnly bool) *GetRefConfigsCall {
-	c.opt_["hashes_only"] = hashesOnly
+	c.urlParams_.Set("hashes_only", fmt.Sprint(hashesOnly))
 	return c
 }
 
-// Fields allows partial responses to be retrieved.
-// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
 // for more information.
 func (c *GetRefConfigsCall) Fields(s ...googleapi.Field) *GetRefConfigsCall {
-	c.opt_["fields"] = googleapi.CombineFields(s)
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
 	return c
 }
 
@@ -1001,13 +975,13 @@ func (c *GetRefConfigsCall) Fields(s ...googleapi.Field) *GetRefConfigsCall {
 // request. Use googleapi.IsNotModified to check whether the response
 // error from Do is the result of In-None-Match.
 func (c *GetRefConfigsCall) IfNoneMatch(entityTag string) *GetRefConfigsCall {
-	c.opt_["ifNoneMatch"] = entityTag
+	c.ifNoneMatch_ = entityTag
 	return c
 }
 
-// Context sets the context to be used in this call's Do method.
-// Any pending HTTP request will be aborted if the provided context
-// is canceled.
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
 func (c *GetRefConfigsCall) Context(ctx context.Context) *GetRefConfigsCall {
 	c.ctx_ = ctx
 	return c
@@ -1015,23 +989,16 @@ func (c *GetRefConfigsCall) Context(ctx context.Context) *GetRefConfigsCall {
 
 func (c *GetRefConfigsCall) doRequest(alt string) (*http.Response, error) {
 	var body io.Reader = nil
-	params := make(url.Values)
-	params.Set("alt", alt)
-	if v, ok := c.opt_["hashes_only"]; ok {
-		params.Set("hashes_only", fmt.Sprintf("%v", v))
-	}
-	if v, ok := c.opt_["fields"]; ok {
-		params.Set("fields", fmt.Sprintf("%v", v))
-	}
+	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "configs/refs/{path}")
-	urls += "?" + params.Encode()
+	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
 	googleapi.Expand(req.URL, map[string]string{
 		"path": c.path,
 	})
 	req.Header.Set("User-Agent", c.s.userAgent())
-	if v, ok := c.opt_["ifNoneMatch"]; ok {
-		req.Header.Set("If-None-Match", fmt.Sprintf("%v", v))
+	if c.ifNoneMatch_ != "" {
+		req.Header.Set("If-None-Match", c.ifNoneMatch_)
 	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
@@ -1107,24 +1074,25 @@ func (c *GetRefConfigsCall) Do() (*LuciConfigGetConfigMultiResponseMessage, erro
 // method id "config.get_refs":
 
 type GetRefsCall struct {
-	s         *Service
-	projectId string
-	opt_      map[string]interface{}
-	ctx_      context.Context
+	s            *Service
+	projectId    string
+	urlParams_   gensupport.URLParams
+	ifNoneMatch_ string
+	ctx_         context.Context
 }
 
 // GetRefs: Gets list of refs of a project.
 func (s *Service) GetRefs(projectId string) *GetRefsCall {
-	c := &GetRefsCall{s: s, opt_: make(map[string]interface{})}
+	c := &GetRefsCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
 	return c
 }
 
-// Fields allows partial responses to be retrieved.
-// See https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
 // for more information.
 func (c *GetRefsCall) Fields(s ...googleapi.Field) *GetRefsCall {
-	c.opt_["fields"] = googleapi.CombineFields(s)
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
 	return c
 }
 
@@ -1134,13 +1102,13 @@ func (c *GetRefsCall) Fields(s ...googleapi.Field) *GetRefsCall {
 // request. Use googleapi.IsNotModified to check whether the response
 // error from Do is the result of In-None-Match.
 func (c *GetRefsCall) IfNoneMatch(entityTag string) *GetRefsCall {
-	c.opt_["ifNoneMatch"] = entityTag
+	c.ifNoneMatch_ = entityTag
 	return c
 }
 
-// Context sets the context to be used in this call's Do method.
-// Any pending HTTP request will be aborted if the provided context
-// is canceled.
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
 func (c *GetRefsCall) Context(ctx context.Context) *GetRefsCall {
 	c.ctx_ = ctx
 	return c
@@ -1148,20 +1116,16 @@ func (c *GetRefsCall) Context(ctx context.Context) *GetRefsCall {
 
 func (c *GetRefsCall) doRequest(alt string) (*http.Response, error) {
 	var body io.Reader = nil
-	params := make(url.Values)
-	params.Set("alt", alt)
-	if v, ok := c.opt_["fields"]; ok {
-		params.Set("fields", fmt.Sprintf("%v", v))
-	}
+	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "projects/{project_id}/refs")
-	urls += "?" + params.Encode()
+	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
 	googleapi.Expand(req.URL, map[string]string{
 		"project_id": c.projectId,
 	})
 	req.Header.Set("User-Agent", c.s.userAgent())
-	if v, ok := c.opt_["ifNoneMatch"]; ok {
-		req.Header.Set("If-None-Match", fmt.Sprintf("%v", v))
+	if c.ifNoneMatch_ != "" {
+		req.Header.Set("If-None-Match", c.ifNoneMatch_)
 	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
