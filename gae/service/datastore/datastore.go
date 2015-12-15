@@ -165,10 +165,10 @@ func (d *datastoreImpl) Count(q *Query) (int64, error) {
 func (d *datastoreImpl) GetAll(q *Query, dst interface{}) error {
 	v := reflect.ValueOf(dst)
 	if v.Kind() != reflect.Ptr {
-		return fmt.Errorf("invalid GetAll dst: must have a ptr-to-slice: %T", dst)
+		panic(fmt.Errorf("invalid GetAll dst: must have a ptr-to-slice: %T", dst))
 	}
 	if !v.IsValid() || v.IsNil() {
-		return errors.New("invalid GetAll dst: <nil>")
+		panic(errors.New("invalid GetAll dst: <nil>"))
 	}
 
 	if keys, ok := dst.(*[]*Key); ok {
@@ -190,7 +190,7 @@ func (d *datastoreImpl) GetAll(q *Query, dst interface{}) error {
 	slice := v.Elem()
 	mat := parseMultiArg(slice.Type())
 	if mat.newElem == nil {
-		return fmt.Errorf("invalid GetAll input type: %T", dst)
+		panic(fmt.Errorf("invalid GetAll dst (non-concrete element type): %T", dst))
 	}
 
 	errs := map[int]error{}
@@ -218,17 +218,23 @@ func (d *datastoreImpl) GetAll(q *Query, dst interface{}) error {
 	return err
 }
 
-func isOkType(v reflect.Type) bool {
-	if v == typeOfKey {
-		return false
+func isOkType(t reflect.Type) error {
+	if t == nil {
+		return errors.New("no type information")
 	}
-	if v.Implements(typeOfPropertyLoadSaver) {
-		return true
+	if t.Implements(typeOfPropertyLoadSaver) {
+		return nil
 	}
-	if v.Kind() == reflect.Ptr && v.Elem().Kind() == reflect.Struct {
-		return true
+	if t == typeOfKey {
+		return errors.New("not user datatype")
 	}
-	return false
+	if t.Kind() != reflect.Ptr {
+		return errors.New("not a pointer")
+	}
+	if t.Elem().Kind() != reflect.Struct {
+		return errors.New("does not point to a struct")
+	}
+	return nil
 }
 
 func (d *datastoreImpl) ExistsMulti(keys []*Key) ([]bool, error) {
@@ -256,15 +262,15 @@ func (d *datastoreImpl) Exists(k *Key) (bool, error) {
 }
 
 func (d *datastoreImpl) Get(dst interface{}) (err error) {
-	if !isOkType(reflect.TypeOf(dst)) {
-		return fmt.Errorf("invalid Get input type: %T", dst)
+	if err := isOkType(reflect.TypeOf(dst)); err != nil {
+		panic(fmt.Errorf("invalid Get input type (%T): %s", dst, err))
 	}
 	return errors.SingleError(d.GetMulti([]interface{}{dst}))
 }
 
 func (d *datastoreImpl) Put(src interface{}) (err error) {
-	if !isOkType(reflect.TypeOf(src)) {
-		return fmt.Errorf("invalid Put input type: %T", src)
+	if err := isOkType(reflect.TypeOf(src)); err != nil {
+		panic(fmt.Errorf("invalid Put input type (%T): %s", src, err))
 	}
 	return errors.SingleError(d.PutMulti([]interface{}{src}))
 }

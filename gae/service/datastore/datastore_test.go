@@ -407,11 +407,13 @@ func TestPut(t *testing.T) {
 
 			Convey("put with non-modifyable type is an error", func() {
 				cs := CommonStruct{}
-				So(ds.Put(cs), ShouldErrLike, "invalid Put input type")
+				So(func() { ds.Put(cs) }, ShouldPanicLike,
+					"invalid Put input type (datastore.CommonStruct): not a pointer")
 			})
 
 			Convey("get with *Key is an error", func() {
-				So(ds.Get(&Key{}), ShouldErrLike, "invalid Get input type: *datastore.Key")
+				So(func() { ds.Get(&Key{}) }, ShouldPanicLike,
+					"invalid Get input type (*datastore.Key): not user datatype")
 			})
 
 			Convey("struct with no $kind is an error", func() {
@@ -652,7 +654,19 @@ func TestGet(t *testing.T) {
 
 			Convey("get with non-modifiable type is an error", func() {
 				cs := CommonStruct{}
-				So(ds.Get(cs), ShouldErrLike, "invalid Get input type")
+				So(func() { ds.Get(cs) }, ShouldPanicLike,
+					"invalid Get input type (datastore.CommonStruct): not a pointer")
+			})
+
+			Convey("get with nil is an error", func() {
+				So(func() { ds.Get(nil) }, ShouldPanicLike,
+					"invalid Get input type (<nil>): no type information")
+			})
+
+			Convey("get with ptr-to-nonstruct is an error", func() {
+				val := 100
+				So(func() { ds.Get(&val) }, ShouldPanicLike,
+					"invalid Get input type (*int): does not point to a struct")
 			})
 
 			Convey("failure to save metadata is no problem though", func() {
@@ -701,7 +715,8 @@ func TestGetAll(t *testing.T) {
 
 		Convey("bad", func() {
 			Convey("nil target", func() {
-				So(ds.GetAll(q, (*[]PropertyMap)(nil)), ShouldErrLike, "dst: <nil>")
+				So(func() { ds.GetAll(q, (*[]PropertyMap)(nil)) }, ShouldPanicLike,
+					"invalid GetAll dst: <nil>")
 			})
 
 			Convey("bad type", func() {
@@ -711,12 +726,14 @@ func TestGetAll(t *testing.T) {
 			})
 
 			Convey("bad type (non pointer)", func() {
-				So(ds.GetAll(q, "moo"), ShouldErrLike, "must have a ptr-to-slice")
+				So(func() { ds.GetAll(q, "moo") }, ShouldPanicLike,
+					"invalid GetAll dst: must have a ptr-to-slice")
 			})
 
 			Convey("bad type (underspecified)", func() {
 				output := []PropertyLoadSaver(nil)
-				So(ds.GetAll(q, &output), ShouldErrLike, "invalid GetAll input type")
+				So(func() { ds.GetAll(q, &output) }, ShouldPanicLike,
+					"invalid GetAll dst (non-concrete element type): *[]datastore.PropertyLoadSaver")
 			})
 		})
 
