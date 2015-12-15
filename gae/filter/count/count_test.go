@@ -14,6 +14,7 @@ import (
 	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/memcache"
 	"github.com/luci/gae/service/taskqueue"
+	"github.com/luci/gae/service/user"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
@@ -139,6 +140,23 @@ func TestCount(t *testing.T) {
 		So(err, ShouldErrLike, `"Namespace" is broken`)
 
 		So(ctr.Namespace, shouldHaveSuccessesAndErrors, 1, 1)
+	})
+
+	Convey("works for user", t, func() {
+		c, fb := featureBreaker.FilterUser(memory.Use(context.Background()), nil)
+		c, ctr := FilterUser(c)
+		So(c, ShouldNotBeNil)
+		So(ctr, ShouldNotBeNil)
+
+		u := user.Get(c)
+
+		_, err := u.CurrentOAuth("foo")
+		die(err)
+		fb.BreakFeatures(nil, "CurrentOAuth")
+		_, err = u.CurrentOAuth("foo")
+		So(err, ShouldErrLike, `"CurrentOAuth" is broken`)
+
+		So(ctr.CurrentOAuth, shouldHaveSuccessesAndErrors, 1, 1)
 	})
 }
 
