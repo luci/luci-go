@@ -683,7 +683,7 @@ func (m *fakeTaskManager) ValidateProtoMessage(msg proto.Message) error {
 	return nil
 }
 
-func (m *fakeTaskManager) LaunchTask(c context.Context, msg proto.Message, ctl task.Controller) error {
+func (m *fakeTaskManager) LaunchTask(c context.Context, msg proto.Message, ctl task.Controller, invNonce int64) error {
 	return m.launchTask(ctl)
 }
 

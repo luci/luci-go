@@ -180,7 +180,7 @@ func (m noopTaskManager) ValidateProtoMessage(msg proto.Message) error {
 	return m.validationErr
 }
 
-func (m noopTaskManager) LaunchTask(c context.Context, msg proto.Message, ctl task.Controller) error {
+func (m noopTaskManager) LaunchTask(c context.Context, msg proto.Message, ctl task.Controller, invNonce int64) error {
 	// Let it panic on a wrong type.
 	So(msg.(*messages.NoopTask), ShouldNotBeNil)
 	return nil

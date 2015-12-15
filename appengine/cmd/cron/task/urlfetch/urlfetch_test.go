@@ -89,7 +89,7 @@ func TestLaunchTask(t *testing.T) {
 			Url: strPtr(ts.URL),
 		}
 		ctl := &dumbController{}
-		So(tm.LaunchTask(ctx, msg, ctl), ShouldBeNil)
+		So(tm.LaunchTask(ctx, msg, ctl, 0), ShouldBeNil)
 		So(ctl.log[:2], ShouldResemble, []string{
 			"GET " + ts.URL,
 			"Finished with overall status SUCCEEDED in 0",

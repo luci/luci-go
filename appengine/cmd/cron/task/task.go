@@ -56,13 +56,20 @@ type Manager interface {
 	ValidateProtoMessage(msg proto.Message) error
 
 	// LaunchTask starts (or starts and finishes in one go) the given task,
-	// described by its proto message. msg must have same underlying type as
-	// ProtoMessageType() return value. Manager responsibilities:
+	// described by its proto message.
+	//
+	// `msg` must have same underlying type as ProtoMessageType() return value.
+	//
+	// Manager responsibilities:
 	//  * To move the task to some state other than StatusStarting
 	//    (by calling ctl.Save(...)).
+	//  * Be idempotent, if possible, using invNonce as an operation key.
 	//  * Not to use supplied controller outside of LaunchTask call.
 	//  * Not to use supplied controller concurrently without synchronization.
-	LaunchTask(c context.Context, msg proto.Message, ctl Controller) error
+	//
+	// If `LaunchTask` crashes before calling `ctl.Save`, it will be called again
+	// later, receiving exact same invNonce.
+	LaunchTask(c context.Context, msg proto.Message, ctl Controller, invNonce int64) error
 
 	// HandleNotification is called whenever engine receives a PubSub message sent
 	// to a topic created with Controller.PrepareTopic.

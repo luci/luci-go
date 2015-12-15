@@ -96,7 +96,7 @@ func validateKVList(kind string, list []string, sep rune) error {
 }
 
 // LaunchTask is part of Manager interface.
-func (m TaskManager) LaunchTask(c context.Context, msg proto.Message, ctl task.Controller) error {
+func (m TaskManager) LaunchTask(c context.Context, msg proto.Message, ctl task.Controller, invNonce int64) error {
 	// TODO(vadimsh): Implement.
 	return ctl.Save(task.StatusSucceeded)
 }

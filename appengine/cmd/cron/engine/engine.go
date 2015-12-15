@@ -955,7 +955,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 
 	// LaunchTask MUST move the invocation out of StatusStarting, otherwise cron
 	// job will be forever stuck in starting state.
-	err = manager.LaunchTask(c, taskMsg, ctl)
+	err = manager.LaunchTask(c, taskMsg, ctl, invocationNonce)
 	if err == nil && ctl.saved.Status == task.StatusStarting {
 		err = fmt.Errorf("LaunchTask didn't move invocation out of StatusStarting")
 	}

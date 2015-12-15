@@ -37,7 +37,7 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 }
 
 // LaunchTask is part of Manager interface.
-func (m TaskManager) LaunchTask(c context.Context, msg proto.Message, ctl task.Controller) error {
+func (m TaskManager) LaunchTask(c context.Context, msg proto.Message, ctl task.Controller, invNonce int64) error {
 	ctl.DebugLog("Running noop task")
 	return ctl.Save(task.StatusSucceeded)
 }
