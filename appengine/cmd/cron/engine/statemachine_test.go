@@ -59,7 +59,7 @@ func TestStateMachine(t *testing.T) {
 		So(m.state.State, ShouldEqual, JobStateQueued)
 		So(m.actions, ShouldResemble, []Action{
 			TickLaterAction{epoch.Add(10 * time.Second), 2},
-			StartInvocationAction{3},
+			StartInvocationAction{InvocationNonce: 3},
 		})
 		m.actions = nil
 
@@ -116,7 +116,7 @@ func TestStateMachine(t *testing.T) {
 		So(m.state.State, ShouldEqual, JobStateQueued)
 		So(m.actions, ShouldResemble, []Action{
 			TickLaterAction{epoch.Add(10 * time.Second), 2},
-			StartInvocationAction{3},
+			StartInvocationAction{InvocationNonce: 3},
 		})
 		m.actions = nil
 
@@ -158,7 +158,7 @@ func TestStateMachine(t *testing.T) {
 		So(m.state.State, ShouldEqual, JobStateQueued)
 		So(m.actions, ShouldResemble, []Action{
 			TickLaterAction{epoch.Add(10 * time.Second), 2},
-			StartInvocationAction{3},
+			StartInvocationAction{InvocationNonce: 3},
 		})
 		m.actions = nil
 
@@ -214,6 +214,35 @@ func TestStateMachine(t *testing.T) {
 		So(m.actions, ShouldResemble, []Action{
 			TickLaterAction{epoch.Add(1 * time.Second), 2},
 		})
+	})
+
+	Convey("OnManualInvocation works", t, func() {
+		m := newTestStateMachine()
+
+		// Enabling schedules a tick after 5 sec.
+		So(m.roll(func(sm *StateMachine) error { return sm.OnJobEnabled() }), ShouldBeNil)
+		So(m.state.State, ShouldEqual, JobStateScheduled)
+		So(m.actions, ShouldResemble, []Action{
+			TickLaterAction{epoch.Add(5 * time.Second), 1},
+		})
+		m.actions = nil
+
+		// Asking to run the job works. It also reschedules the timer tick
+		// accordingly.
+		So(m.roll(func(sm *StateMachine) error { return sm.OnManualInvocation("user:abc") }), ShouldBeNil)
+		So(m.state.State, ShouldEqual, JobStateQueued)
+		So(m.actions, ShouldResemble, []Action{
+			TickLaterAction{epoch.Add(5 * time.Second), 2},
+			StartInvocationAction{
+				InvocationNonce: 3,
+				TriggeredBy:     "user:abc",
+			},
+		})
+		m.actions = nil
+
+		// Second call doesn't work. The job is queued already.
+		err := m.roll(func(sm *StateMachine) error { return sm.OnManualInvocation("user:abc") })
+		So(err, ShouldNotBeNil)
 	})
 }
 

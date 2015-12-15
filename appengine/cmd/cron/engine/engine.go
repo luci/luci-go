@@ -28,6 +28,7 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/mathrand"
 	"github.com/luci/luci-go/common/stringset"
+	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/tokens"
 
 	"github.com/luci/luci-go/appengine/cmd/cron/catalog"
@@ -78,6 +79,10 @@ type Engine interface {
 
 	// ProcessPubSubPush is called whenever incoming PubSub message is received.
 	ProcessPubSubPush(c context.Context, body []byte) error
+
+	// TriggerInvocation launches job invocation right now if job isn't running
+	// now. Used by "Run now" UI button.
+	TriggerInvocation(c context.Context, jobID string, triggeredBy identity.Identity) error
 }
 
 // Config contains parameters for the engine.
@@ -108,6 +113,7 @@ type actionTaskPayload struct {
 	Kind            string // defines what fields below to examine
 	TickNonce       int64  // valid for "TickLaterAction" kind
 	InvocationNonce int64  // valid for "StartInvocationAction" kind
+	TriggeredBy     string // valid for "StartInvocationAction" kind
 }
 
 // CronJob stores the last known definition of a cron job, as well as its
@@ -178,6 +184,12 @@ type Invocation struct {
 	// InvocationNonce identifies a request to start a job, produced by
 	// StateMachine.
 	InvocationNonce int64 `gae:",noindex"`
+
+	// TriggeredBy is identity of whoever triggered the invocation, if it was
+	// triggered via TriggerInvocation ("Run now" button).
+	//
+	// Empty identity string if it was triggered by cron service itself.
+	TriggeredBy identity.Identity
 
 	// Revision is revision number of cron.cfg when this invocation was created.
 	// For informational purpose.
@@ -672,6 +684,7 @@ func (e *engineImpl) enqueueActions(c context.Context, jobID string, actions []A
 				JobID:           jobID,
 				Kind:            "StartInvocationAction",
 				InvocationNonce: a.InvocationNonce,
+				TriggeredBy:     string(a.TriggeredBy),
 			})
 			if err != nil {
 				return err
@@ -710,7 +723,9 @@ func (e *engineImpl) ExecuteSerializedAction(c context.Context, action []byte, r
 	case "TickLaterAction":
 		return e.timerTick(c, payload.JobID, payload.TickNonce)
 	case "StartInvocationAction":
-		return e.startInvocation(c, payload.JobID, payload.InvocationNonce, retryCount)
+		return e.startInvocation(
+			c, payload.JobID, payload.InvocationNonce,
+			identity.Identity(payload.TriggeredBy), retryCount)
 	default:
 		return fmt.Errorf("unexpected action kind %q", payload.Kind)
 	}
@@ -719,6 +734,27 @@ func (e *engineImpl) ExecuteSerializedAction(c context.Context, action []byte, r
 func (e *engineImpl) ProcessPubSubPush(c context.Context, body []byte) error {
 	// TODO(vadimsh): Implement.
 	return nil
+}
+
+func (e *engineImpl) TriggerInvocation(c context.Context, jobID string, triggeredBy identity.Identity) error {
+	var err error
+	err2 := e.txn(c, jobID, func(c context.Context, job *CronJob, isNew bool) error {
+		if isNew {
+			err = errors.New("no such job")
+			return errSkipPut
+		}
+		if !job.Enabled {
+			err = errors.New("the job is disabled")
+			return errSkipPut
+		}
+		return e.rollSM(c, job, func(sm *StateMachine) error {
+			return sm.OnManualInvocation(triggeredBy)
+		})
+	})
+	if err == nil {
+		err = err2
+	}
+	return err
 }
 
 // updateJob updates an existing job if its definition has changed, adds
@@ -812,7 +848,9 @@ func (e *engineImpl) timerTick(c context.Context, jobID string, tickNonce int64)
 
 // startInvocation is called via task queue to start running a job. This call
 // may be retried by task queue service.
-func (e *engineImpl) startInvocation(c context.Context, jobID string, invocationNonce int64, retryCount int) error {
+func (e *engineImpl) startInvocation(c context.Context, jobID string, invocationNonce int64,
+	triggeredBy identity.Identity, retryCount int) error {
+
 	c = logging.SetField(c, "JobID", jobID)
 	c = logging.SetField(c, "InvNonce", invocationNonce)
 	c = logging.SetField(c, "Attempt", retryCount)
@@ -823,10 +861,10 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	// 1) It is a first attempt. In that case we generate new Invocation in
 	//    state STARTING and update CronJob with a reference to it.
 	// 2) It is a retry and previous attempt is still starting (indicated by
-	//    IsExpectingInvocationStart returning true). Assume it failed to start
+	//    IsExpectingInvocation returning true). Assume it failed to start
 	//    and launch a new one. Mark old one as obsolete.
 	// 3) It is a retry and previous attempt has already started (in this case
-	//    cron job is in RUNNING state and IsExpectingInvocationStart returns
+	//    cron job is in RUNNING state and IsExpectingInvocation returns
 	//    false). Assume this retry was unnecessary and skip it.
 	var inv Invocation
 	var skip bool
@@ -853,12 +891,16 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 			JobKey:          jobKey,
 			Started:         clock.Now(c),
 			InvocationNonce: invocationNonce,
+			TriggeredBy:     triggeredBy,
 			Revision:        job.Revision,
 			Task:            job.Task,
 			RetryCount:      int64(retryCount),
 			Status:          task.StatusStarting,
 		}
-		inv.debugLog(c, "Invocation initiated")
+		inv.debugLog(c, "Invocation initiated (attempt %d)", retryCount+1)
+		if triggeredBy != "" {
+			inv.debugLog(c, "Manually triggered by %s", triggeredBy)
+		}
 		if err := ds.Put(&inv); err != nil {
 			return err
 		}

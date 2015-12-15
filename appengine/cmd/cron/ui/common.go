@@ -15,6 +15,7 @@ import (
 	"github.com/luci/gae/service/info"
 
 	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/xsrf"
 	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/templates"
 
@@ -45,6 +46,9 @@ func InstallHandlers(r *httprouter.Router, base middleware.Base, cfg Config) {
 	r.GET("/jobs/:ProjectID", wrap(projectPage))
 	r.GET("/jobs/:ProjectID/:JobID", wrap(jobPage))
 	r.GET("/jobs/:ProjectID/:JobID/:InvID", wrap(invocationPage))
+
+	// All POST forms must be protected with XSRF token.
+	r.POST("/actions/runJob/:ProjectID/:JobID", wrap(xsrf.WithTokenCheck(runJobAction)))
 }
 
 type configContextKey int

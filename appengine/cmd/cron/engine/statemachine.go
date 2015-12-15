@@ -5,8 +5,11 @@
 package engine
 
 import (
+	"errors"
 	"fmt"
 	"time"
+
+	"github.com/luci/luci-go/server/auth/identity"
 )
 
 // StateKind defines high-level state of the job. See JobState for full state
@@ -109,6 +112,7 @@ func (a TickLaterAction) IsAction() bool { return true }
 // is done.
 type StartInvocationAction struct {
 	InvocationNonce int64
+	TriggeredBy     identity.Identity
 }
 
 // IsAction makes StartInvocationAction implement Action interface.
@@ -177,7 +181,9 @@ func (m *StateMachine) OnTimerTick(tickNonce int64) error {
 		m.schedule(JobStateQueued, JobState{})
 		m.OutputState.InvocationTime = m.Now
 		m.OutputState.InvocationNonce = m.Nonce()
-		m.emitAction(StartInvocationAction{m.OutputState.InvocationNonce})
+		m.emitAction(StartInvocationAction{
+			InvocationNonce: m.OutputState.InvocationNonce,
+		})
 		return nil
 	}
 
@@ -263,6 +269,23 @@ func (m *StateMachine) OnScheduleChange() error {
 	m.OutputState.TickTime = m.NextInvocationTime
 	m.OutputState.TickNonce = m.Nonce()
 	m.emitAction(TickLaterAction{m.OutputState.TickTime, m.OutputState.TickNonce})
+	return nil
+}
+
+// OnManualInvocation happens when user starts invocation via "Run now" button.
+// Manual invocation only works if the job is currently not running or not
+// queued for run (i.e. it is in Scheduled state waiting for a timer tick).
+func (m *StateMachine) OnManualInvocation(triggeredBy identity.Identity) error {
+	if m.InputState.State != JobStateScheduled {
+		return errors.New("the job is already running or about to start")
+	}
+	m.schedule(JobStateQueued, JobState{})
+	m.OutputState.InvocationTime = m.Now
+	m.OutputState.InvocationNonce = m.Nonce()
+	m.emitAction(StartInvocationAction{
+		InvocationNonce: m.OutputState.InvocationNonce,
+		TriggeredBy:     triggeredBy,
+	})
 	return nil
 }
 

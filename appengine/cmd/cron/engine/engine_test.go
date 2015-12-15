@@ -360,7 +360,7 @@ func TestFullFlow(t *testing.T) {
 			Started:         epoch.Add(5 * time.Second),
 			Finished:        epoch.Add(5 * time.Second),
 			Task:            taskBytes,
-			DebugLog: "[22:42:05.000] Invocation initiated\n" +
+			DebugLog: "[22:42:05.000] Invocation initiated (attempt 1)\n" +
 				"[22:42:05.000] oops, fail\n" +
 				"[22:42:05.000] Failed to run the task: oops\n" +
 				"[22:42:05.000] Invocation finished in 0 with status FAILED\n",
@@ -400,7 +400,7 @@ func TestFullFlow(t *testing.T) {
 				Revision:        "rev1",
 				Started:         epoch.Add(5 * time.Second),
 				Task:            taskBytes,
-				DebugLog:        "[22:42:05.000] Invocation initiated\n[22:42:05.000] Starting\n",
+				DebugLog:        "[22:42:05.000] Invocation initiated (attempt 2)\n[22:42:05.000] Starting\n",
 				RetryCount:      1,
 				Status:          task.StatusRunning,
 			})
@@ -423,7 +423,7 @@ func TestFullFlow(t *testing.T) {
 			Started:         epoch.Add(5 * time.Second),
 			Finished:        epoch.Add(5 * time.Second),
 			Task:            taskBytes,
-			DebugLog: "[22:42:05.000] Invocation initiated\n" +
+			DebugLog: "[22:42:05.000] Invocation initiated (attempt 2)\n" +
 				"[22:42:05.000] Starting\n" +
 				"[22:42:05.000] Invocation finished in 0 with status SUCCEEDED\n",
 			RetryCount: 1,
@@ -441,7 +441,7 @@ func TestFullFlow(t *testing.T) {
 			Started:         epoch.Add(5 * time.Second),
 			Finished:        epoch.Add(5 * time.Second),
 			Task:            taskBytes,
-			DebugLog: "[22:42:05.000] Invocation initiated\n" +
+			DebugLog: "[22:42:05.000] Invocation initiated (attempt 1)\n" +
 				"[22:42:05.000] oops, fail\n" +
 				"[22:42:05.000] Failed to run the task: oops\n" +
 				"[22:42:05.000] Invocation finished in 0 with status FAILED\n",

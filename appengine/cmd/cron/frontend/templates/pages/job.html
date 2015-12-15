@@ -20,8 +20,18 @@
   <div class="row">
     <div class="col-sm-3"><b>State:</b> {{.Job.State}}</div>
     <div class="col-sm-3"><b>Schedule:</b> {{.Job.Schedule}}</div>
-    <div class="col-sm-3"><b>Overruns:</b> {{.Job.Overruns}}</div>
-    <div class="col-sm-3"><b>Next run:</b> {{.Job.NextRun}}</div>
+    <div class="col-sm-2"><b>Overruns:</b> {{.Job.Overruns}}</div>
+    <div class="col-sm-4">
+      <b>Next run:</b> {{.Job.NextRun}}
+      <form style="display: inline"
+            action="/actions/runJob/{{.Job.ProjectID}}/{{.Job.JobID}}"
+            method="POST">
+        {{.XsrfTokenField}}
+        <button style="display: inline" type="submit" class="btn btn-danger btn-xs">
+          Run now
+        </button>
+      </form>
+    </div>
   </div>
 
   <div class="col-sm-12">
@@ -42,6 +52,7 @@
           <tr>
             <th>ID</th>
             <th>Started</th>
+            <th>Triggered by</th>
             <th>Duration</th>
             <th>Status</th>
           </tr>
@@ -51,6 +62,7 @@
           <tr class="{{.RowClass}}">
             <td><a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobID}}/{{.InvID}}">{{.InvID}}</a></td>
             <td>{{.Started}}</td>
+            <td>{{.TriggeredBy}}</td>
             <td>{{.Duration}}</td>
             <td>{{.Status}}</td>
           </tr>

@@ -11,14 +11,11 @@ import (
 const project1CronCfg = `
 job {
   id: "noop-job-1"
-  schedule: "*/10 * * * * * *"
+  schedule: "* * * 1 * * *"
   task: {
     noop: {}
   }
 }
-`
-
-const project2CronCfg = `
 `
 
 // devServerConfig returns mocked luci-config configs to use locally on dev
@@ -27,9 +24,6 @@ func devServerConfigs() map[string]cfg.ConfigSet {
 	return map[string]cfg.ConfigSet{
 		"projects/project1": {
 			"cron.cfg": project1CronCfg,
-		},
-		"projects/project2": {
-			"cron.cfg": project2CronCfg,
 		},
 	}
 }

@@ -87,15 +87,16 @@ func convertToSortedCronJobs(jobs []*engine.CronJob, now time.Time) sortedCronJo
 }
 
 type invocation struct {
-	InvID      int64
-	Attempt    int64
-	Revision   string
-	Definition string
-	Started    string
-	Duration   string
-	Status     string
-	DebugLog   string
-	RowClass   string
+	InvID       int64
+	Attempt     int64
+	Revision    string
+	Definition  string
+	TriggeredBy string
+	Started     string
+	Duration    string
+	Status      string
+	DebugLog    string
+	RowClass    string
 }
 
 var statusToRowClass = map[task.Status]string{
@@ -106,6 +107,13 @@ var statusToRowClass = map[task.Status]string{
 }
 
 func makeInvocation(i *engine.Invocation, now time.Time) *invocation {
+	triggeredBy := "-"
+	if i.TriggeredBy != "" {
+		triggeredBy = string(i.TriggeredBy)
+		if i.TriggeredBy.Email() != "" {
+			triggeredBy = i.TriggeredBy.Email() // triggered by a user (not a service)
+		}
+	}
 	finished := i.Finished
 	if finished.IsZero() {
 		finished = now
@@ -115,15 +123,16 @@ func makeInvocation(i *engine.Invocation, now time.Time) *invocation {
 		duration = "1 second" // "now" looks weird for durations
 	}
 	return &invocation{
-		InvID:      i.ID,
-		Attempt:    i.RetryCount + 1,
-		Revision:   i.Revision,
-		Definition: taskToText(i.Task),
-		Started:    humanize.RelTime(i.Started, now, "ago", "from now"),
-		Duration:   duration,
-		Status:     string(i.Status),
-		DebugLog:   i.DebugLog,
-		RowClass:   statusToRowClass[i.Status],
+		InvID:       i.ID,
+		Attempt:     i.RetryCount + 1,
+		Revision:    i.Revision,
+		Definition:  taskToText(i.Task),
+		TriggeredBy: triggeredBy,
+		Started:     humanize.RelTime(i.Started, now, "ago", "from now"),
+		Duration:    duration,
+		Status:      string(i.Status),
+		DebugLog:    i.DebugLog,
+		RowClass:    statusToRowClass[i.Status],
 	}
 }
 
