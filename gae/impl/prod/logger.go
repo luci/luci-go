@@ -16,12 +16,13 @@ import (
 // appengine's log handler.
 func useLogging(c context.Context) context.Context {
 	return logging.SetFactory(c, func(ic context.Context) logging.Logger {
-		return &loggerImpl{AEContext(ic)}
+		return &loggerImpl{AEContext(ic), ic}
 	})
 }
 
 type loggerImpl struct {
 	aeCtx context.Context
+	ic    context.Context
 }
 
 func (gl *loggerImpl) Debugf(format string, args ...interface{}) {
@@ -58,7 +59,7 @@ func (gl *loggerImpl) LogCall(l logging.Level, calldepth int, format string, arg
 		logf = log.Errorf
 	}
 
-	fields := logging.GetFields(gl.aeCtx)
+	fields := logging.GetFields(gl.ic)
 	if len(fields) > 0 {
 		logf(gl.aeCtx, "%s :: %s", fmt.Sprintf(format, args...), fields.FieldString(true))
 	} else {
