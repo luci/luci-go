@@ -37,6 +37,13 @@ func NewFields(v map[string]interface{}) Fields {
 	return fields
 }
 
+// WithError returns a Fields instance containing an error.
+func WithError(err error) Fields {
+	return Fields{
+		ErrorKey: err,
+	}
+}
+
 // Copy implements the Fields interface.
 func (f Fields) Copy(other Fields) Fields {
 	if len(f) == 0 && len(other) == 0 {
