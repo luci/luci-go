@@ -4,12 +4,6 @@
 
 package parallel
 
-import (
-	"sync"
-
-	"github.com/luci/luci-go/common/errors"
-)
-
 // FanOutIn is useful to quickly parallelize a group of tasks.
 //
 // You pass it a function which is expected to push simple `func() error`
@@ -19,28 +13,8 @@ import (
 // The function blocks until all functions are executed, and an
 // errors.MultiError is returned if one or more of your fan-out tasks failed,
 // otherwise this function returns nil.
+//
+// This function is equivalent to WorkPool(0, gen).
 func FanOutIn(gen func(chan<- func() error)) error {
-	funchan := make(chan func() error)
-	go func() {
-		defer close(funchan)
-		gen(funchan)
-	}()
-
-	errchan := make(chan error)
-	grp := sync.WaitGroup{}
-	for fn := range funchan {
-		grp.Add(1)
-		fn := fn
-		go func() {
-			defer grp.Done()
-			if err := fn(); err != nil {
-				errchan <- err
-			}
-		}()
-	}
-	go func() {
-		grp.Wait()
-		close(errchan)
-	}()
-	return errors.MultiErrorFromErrors(errchan)
+	return WorkPool(0, gen)
 }

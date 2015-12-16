@@ -6,6 +6,8 @@ package parallel
 
 import (
 	"sync"
+
+	"github.com/luci/luci-go/common/errors"
 )
 
 // WorkPool creates a fixed-size pool of worker goroutines. A supplied generator
@@ -13,28 +15,52 @@ import (
 // Available workers will consume tasks from the pool and execute them until the
 // generator is finished.
 //
-// WorkPool blocks until all the generaetor completes and all workers have
+// WorkPool blocks until all the generator completes and all workers have
 // finished their tasks.
-func WorkPool(workers int, gen func(chan<- func())) {
-	if workers <= 0 {
-		return
+func WorkPool(workers int, gen func(chan<- func() error)) error {
+	if workers < 0 {
+		return errors.New("invalid number of workers")
 	}
 
-	// Spawn worker goroutines.
-	wg := sync.WaitGroup{}
-	wg.Add(workers)
-	workC := make(chan func(), workers)
-	for i := 0; i < workers; i++ {
-		go func() {
-			defer wg.Done()
+	errchan := make(chan error, workers)
 
-			for work := range workC {
-				work()
-			}
-		}()
+	inc := func() {}
+	dec := func() {}
+	if workers != 0 {
+		sem := make(chan struct{}, workers)
+		inc = func() { <-sem }
+		dec = func() { sem <- struct{}{} }
 	}
 
-	gen(workC)
-	close(workC)
-	wg.Wait()
+	funchan := make(chan func() error, workers)
+
+	go func() {
+		defer close(funchan)
+		gen(funchan)
+	}()
+
+	go func() {
+		grp := sync.WaitGroup{}
+
+		for fn := range funchan {
+			dec()
+
+			grp.Add(1)
+			fn := fn
+
+			go func() {
+				defer func() {
+					inc()
+					grp.Done()
+				}()
+
+				errchan <- fn()
+			}()
+		}
+
+		grp.Wait()
+		close(errchan)
+	}()
+
+	return errors.MultiErrorFromErrors(errchan)
 }
