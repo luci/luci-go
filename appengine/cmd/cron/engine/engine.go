@@ -129,7 +129,8 @@ type actionTaskPayload struct {
 // CronJob stores the last known definition of a cron job, as well as its
 // current state. Root entity, its kind is "CronJob".
 type CronJob struct {
-	_kind string `gae:"$kind,CronJob"`
+	_kind  string                `gae:"$kind,CronJob"`
+	_extra datastore.PropertyMap `gae:"-,extra"`
 
 	// JobID is '<ProjectID>/<JobName>' string. JobName is unique with a project,
 	// but not globally. JobID is unique globally.
@@ -175,7 +176,8 @@ func (e *CronJob) matches(def catalog.Definition) bool {
 // Invocation entity stores single attempt to run a cron job. Its parent entity
 // is corresponding CronJob, its ID is generated based on time.
 type Invocation struct {
-	_kind string `gae:"$kind,Invocation"`
+	_kind  string                `gae:"$kind,Invocation"`
+	_extra datastore.PropertyMap `gae:"-,extra"`
 
 	// ID is identifier of this particular attempt to run a job. Multiple attempts
 	// to start an invocation result in multiple entities with different IDs, but

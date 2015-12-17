@@ -72,7 +72,6 @@ func TestStateMachine(t *testing.T) {
 		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(3, 1000) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateQueued)
 		So(m.state.InvocationID, ShouldEqual, 1000)
-		So(m.state.InvocationStarting, ShouldBeTrue)
 
 		// Skip wrong invocation ID.
 		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarted(1001) }), ShouldBeNil)
@@ -81,7 +80,6 @@ func TestStateMachine(t *testing.T) {
 		// Started.
 		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarted(1000) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateRunning)
-		So(m.state.InvocationStarting, ShouldBeFalse)
 
 		// Skip wrong invocation ID.
 		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationDone(1001) }), ShouldBeNil)

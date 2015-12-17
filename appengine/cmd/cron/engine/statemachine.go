@@ -68,11 +68,6 @@ type JobState struct {
 
 	// InvocationID is ID of currently running invocation or 0 if none is running.
 	InvocationID int64 `gae:",noindex"`
-
-	// InvocationStarting is true if invocation identified by InvocationID is
-	// being started right now. InvocationStarting is false if invocation has been
-	// successfully started and running now.
-	InvocationStarting bool
 }
 
 // IsExpectingInvocation returns true if the state machine accepts
@@ -214,7 +209,6 @@ func (m *StateMachine) OnInvocationStarting(invocationNonce, invocationID int64)
 		cp := m.InputState
 		m.OutputState = &cp
 		m.OutputState.InvocationID = invocationID
-		m.OutputState.InvocationStarting = true
 	}
 	return nil
 }
@@ -229,7 +223,6 @@ func (m *StateMachine) OnInvocationStarted(invocationID int64) error {
 		} else { // JobStateSlowQueue
 			m.OutputState.State = JobStateOverrun
 		}
-		m.OutputState.InvocationStarting = false
 	}
 	return nil
 }
