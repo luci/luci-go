@@ -9,6 +9,7 @@ import (
 
 	dsS "github.com/luci/gae/service/datastore"
 	infoS "github.com/luci/gae/service/info"
+	mailS "github.com/luci/gae/service/mail"
 	mcS "github.com/luci/gae/service/memcache"
 	tqS "github.com/luci/gae/service/taskqueue"
 	userS "github.com/luci/gae/service/user"
@@ -80,6 +81,15 @@ func TestContextAccess(t *testing.T) {
 				defer p()
 				_ = userS.Get(c).IsAdmin()
 			}, ShouldPanicWith, "dummy: method User.IsAdmin is not implemented")
+		})
+
+		Convey("Mail", func() {
+			c = mailS.Set(c, Mail())
+			So(mailS.Get(c), ShouldNotBeNil)
+			So(func() {
+				defer p()
+				_ = mailS.Get(c).Send(nil)
+			}, ShouldPanicWith, "dummy: method Mail.Send is not implemented")
 		})
 
 	})

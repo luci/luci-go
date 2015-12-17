@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
+	"net/mail"
 	"net/url"
 	"strings"
 	"sync"
@@ -93,6 +94,12 @@ func (u *userImpl) SetUser(user *user.User) {
 }
 
 func (u *userImpl) Login(email, clientID string, admin bool) {
+	adr, err := mail.ParseAddress(email)
+	if err != nil {
+		panic(err)
+	}
+	email = adr.Address
+
 	parts := strings.Split(email, "@")
 	if len(parts) != 2 {
 		panic(fmt.Errorf("%q doesn't seem to be a valid email", email))

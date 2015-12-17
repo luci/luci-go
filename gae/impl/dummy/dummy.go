@@ -12,6 +12,7 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
+	"github.com/luci/gae/service/mail"
 	"github.com/luci/gae/service/memcache"
 	"github.com/luci/gae/service/taskqueue"
 	"github.com/luci/gae/service/user"
@@ -48,6 +49,8 @@ func ni() error {
 					iface = "Datastore"
 				case "i":
 					iface = "Info"
+				case "m":
+					iface = "Mail"
 				case "mc":
 					iface = "Memcache"
 				case "tq":
@@ -182,3 +185,18 @@ var dummyUserInst = u{}
 // Every method panics with a message containing the name of the method which
 // was unimplemented.
 func User() user.Interface { return dummyUserInst }
+
+////////////////////////////////////// m ///////////////////////////////////////
+
+type m struct{}
+
+func (m) Send(*mail.Message) error         { panic(ni()) }
+func (m) SendToAdmins(*mail.Message) error { panic(ni()) }
+func (m) Testable() mail.Testable          { panic(ni()) }
+
+var dummyMailInst = m{}
+
+// Mail returns a dummy mail.Interface implementation suitable for embedding.
+// Every method panics with a message containing the name of the method which
+// was unimplemented.
+func Mail() mail.Interface { return dummyMailInst }

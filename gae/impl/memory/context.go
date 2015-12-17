@@ -97,9 +97,10 @@ func Use(c context.Context) context.Context {
 // UseWithAppID adds implementations for the following gae services to the
 // context:
 //   * github.com/luci/gae/service/datastore
-//   * github.com/luci/gae/service/taskqueue
-//   * github.com/luci/gae/service/memcache
 //   * github.com/luci/gae/service/info
+//   * github.com/luci/gae/service/mail
+//   * github.com/luci/gae/service/memcache
+//   * github.com/luci/gae/service/taskqueue
 //   * github.com/luci/gae/service/user
 //   * github.com/luci/luci-go/common/logger (using memlogger)
 //
@@ -122,7 +123,7 @@ func UseWithAppID(c context.Context, aid string) context.Context {
 	c = context.WithValue(c, memContextKey, memctx)
 	c = context.WithValue(c, memContextNoTxnKey, memctx)
 	c = context.WithValue(c, giContextKey, &globalInfoData{appid: aid})
-	return useUser(useTQ(useRDS(useMC(useGI(c, aid)))))
+	return useMail(useUser(useTQ(useRDS(useMC(useGI(c, aid))))))
 }
 
 func cur(c context.Context) (p *memContext) {

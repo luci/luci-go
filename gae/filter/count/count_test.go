@@ -12,6 +12,7 @@ import (
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
+	"github.com/luci/gae/service/mail"
 	"github.com/luci/gae/service/memcache"
 	"github.com/luci/gae/service/taskqueue"
 	"github.com/luci/gae/service/user"
@@ -157,6 +158,32 @@ func TestCount(t *testing.T) {
 		So(err, ShouldErrLike, `"CurrentOAuth" is broken`)
 
 		So(ctr.CurrentOAuth, shouldHaveSuccessesAndErrors, 1, 1)
+	})
+
+	Convey("works for mail", t, func() {
+		c, fb := featureBreaker.FilterMail(memory.Use(context.Background()), nil)
+		c, ctr := FilterMail(c)
+		So(c, ShouldNotBeNil)
+		So(ctr, ShouldNotBeNil)
+
+		m := mail.Get(c)
+
+		err := m.Send(&mail.Message{
+			Sender: "admin@example.com",
+			To:     []string{"coolDood@example.com"},
+			Body:   "hi",
+		})
+		die(err)
+
+		fb.BreakFeatures(nil, "Send")
+		err = m.Send(&mail.Message{
+			Sender: "admin@example.com",
+			To:     []string{"coolDood@example.com"},
+			Body:   "hi",
+		})
+		So(err, ShouldErrLike, `"Send" is broken`)
+
+		So(ctr.Send, shouldHaveSuccessesAndErrors, 1, 1)
 	})
 }
 
