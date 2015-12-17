@@ -56,32 +56,66 @@ type Manager interface {
 	// msg must have same underlying type as ProtoMessageType() return value.
 	ValidateProtoMessage(msg proto.Message) error
 
-	// LaunchTask starts (or starts and finishes in one go) the given task,
-	// described by its proto message.
+	// LaunchTask starts (or starts and finishes in one go) the task.
 	//
-	// `msg` must have same underlying type as ProtoMessageType() return value.
-	//
-	// Manager responsibilities:
+	// Manager's responsibilities:
 	//  * To move the task to some state other than StatusStarting
-	//    (by calling ctl.Save(...)).
-	//  * Be idempotent, if possible, using invNonce as an operation key.
+	//    (by changing ctl.State().Status).
+	//  * Be idempotent, if possible, using ctl.InvocationNonce() as an operation
+	//    key.
 	//  * Not to use supplied controller outside of LaunchTask call.
 	//  * Not to use supplied controller concurrently without synchronization.
 	//
-	// If `LaunchTask` crashes before calling `ctl.Save`, it will be called again
-	// later, receiving exact same invNonce.
-	LaunchTask(c context.Context, msg proto.Message, ctl Controller, invNonce int64) error
+	// If `LaunchTask` crashes before returning or returns a transient error, it
+	// will be called again later, receiving exact same ctl.InvocationNonce(), but
+	// different ctl.InvocationID().
+	//
+	// TaskManager may optionally use ctl.Save() to checkpoint a progress, in this
+	// case returned error will switch invocation status to StatusFailed only if
+	// its currently saved status is still StatusStarting.
+	LaunchTask(c context.Context, ctl Controller) error
 
 	// HandleNotification is called whenever engine receives a PubSub message sent
-	// to a topic created with Controller.PrepareTopic.
+	// to a topic created with Controller.PrepareTopic. Expect duplicated and
+	// out-of-order messages here. HandleNotification must be idempotent.
+	//
+	// Returns transient error to trigger a redeliver of the message, or a fatal
+	// error (or no error at all) to acknowledge the message.
+	//
+	// Any modifications made to the invocation state (via ctl.State()) will be
+	// saved regardless of the return value.
 	HandleNotification(c context.Context, ctl Controller, msg *pubsub.PubsubMessage) error
 }
 
 // Controller is passed to LaunchTask by cron engine. It gives Manager control
-// over one task. Manager must not use it outside of LaunchTask. Controller
-// implementation is generally not thread safe (but it's fine to use it from
-// multiple goroutines if access is protected by a lock).
+// over one cron job invocation. Manager must not use it outside of LaunchTask.
+// Controller implementation is generally not thread safe (but it's fine to use
+// it from multiple goroutines if access is protected by a lock).
 type Controller interface {
+	// JobID returns full cron job ID the controller is operating on.
+	JobID() string
+
+	// InvocationID returns unique identifier of this particular invocation.
+	InvocationID() int64
+
+	// InvocationNonce returns an identifier for the task launch request.
+	//
+	// If for whatever reason LaunchTask crashed or returned transient error, cron
+	// engine will create new invocation (with new InvocationID), that has same
+	// InvocationNonce. TaskManager implementation thus can use it to add
+	// idempotency to LaunchTask calls.
+	InvocationNonce() int64
+
+	// Task is proto message with task definition.
+	//
+	// It is guaranteed to have same underlying type as manager.ProtoMessageType()
+	// return value.
+	Task() proto.Message
+
+	// State returns a mutable portion of task invocation state. TaskManager can
+	// modify it in-place and then call Controller.Save to persist the changes.
+	State() *State
+
 	// PrepareTopic create PubSub topic for notifications related to the task and
 	// adds given publisher to its ACL.
 	//
@@ -96,9 +130,18 @@ type Controller interface {
 	// For debugging.
 	DebugLog(format string, args ...interface{})
 
-	// Save updates state of the task in the persistent store. Save must be called
-	// at least once, otherwise no changes will be stored. May be called multiple
-	// times (e.g. once to notify that task has started, second time to notify it
-	// has finished).
-	Save(status Status) error
+	// Save updates the state of the task in the persistent store. Save must be
+	// called at least once, otherwise no changes will be stored. May be called
+	// multiple times (e.g. once to notify that task has started, second time to
+	// notify it has finished).
+	Save() error
+}
+
+// State is mutable portion of the task invocation state.
+//
+// It can be mutated by TaskManager directly.
+type State struct {
+	Status   Status // overall status of the invocation, see the enum
+	TaskData []byte // storage for TaskManager-specific task data
+	ViewURL  string // URL to human readable task page, shows in UI
 }

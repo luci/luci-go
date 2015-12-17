@@ -218,6 +218,18 @@ type Invocation struct {
 
 	// Status is current status of the invocation (e.g. "RUNNING"), see the enum.
 	Status task.Status
+
+	// ViewURL is optional URL to a human readable page with task status, e.g.
+	// Swarming task page. Populated by corresponding TaskManager.
+	ViewURL string `gae:",noindex"`
+
+	// TaskData is a storage where TaskManager can keep task-specific state
+	// between calls.
+	TaskData []byte `gae:",noindex"`
+
+	// MutationsCount is used for simple compare-and-swap transaction control.
+	// It is incremented on each change to the entity. See 'saveImpl' below.
+	MutationsCount int64 `gae:",noindex"`
 }
 
 // isEqual returns true iff 'e' is equal to 'other'.
@@ -231,20 +243,15 @@ func (e *Invocation) isEqual(other *Invocation) bool {
 		bytes.Equal(e.Task, other.Task) &&
 		e.DebugLog == other.DebugLog &&
 		e.RetryCount == other.RetryCount &&
-		e.Status == other.Status)
+		e.Status == other.Status &&
+		e.ViewURL == other.ViewURL &&
+		bytes.Equal(e.TaskData, other.TaskData) &&
+		e.MutationsCount == other.MutationsCount)
 }
 
 // debugLog appends a line to DebugLog field.
 func (e *Invocation) debugLog(c context.Context, format string, args ...interface{}) {
-	const maxSize = 32 * 1024
-	if len(e.DebugLog) < maxSize {
-		prefix := clock.Now(c).Format("[15:04:05.000] ")
-		log := e.DebugLog + prefix + fmt.Sprintf(format+"\n", args...)
-		if len(log) > maxSize {
-			log = log[:maxSize] + "\n<truncated>\n"
-		}
-		e.DebugLog = log
-	}
+	debugLog(c, &e.DebugLog, format, args...)
 }
 
 // Jan 1 2015, in UTC.
@@ -288,6 +295,12 @@ func generateInvocationID(c context.Context, parent *datastore.Key) (int64, erro
 	}
 
 	return 0, errors.New("could not find available invocationID after 10 attempts")
+}
+
+// debugLog mutates a string by appending a line to it.
+func debugLog(c context.Context, str *string, format string, args ...interface{}) {
+	prefix := clock.Now(c).Format("[15:04:05.000] ")
+	*str += prefix + fmt.Sprintf(format+"\n", args...)
 }
 
 ////
@@ -860,6 +873,9 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	c = logging.SetField(c, "InvNonce", invocationNonce)
 	c = logging.SetField(c, "Attempt", retryCount)
 
+	// Create new Invocation entity in StatusStarting state and associated it with
+	// CronJob entity.
+	//
 	// Task queue guarantees not to execute same task concurrently (i.e. retry
 	// happens only if previous attempt finished already).
 	// There are 3 possibilities here:
@@ -881,7 +897,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 			return errSkipPut
 		}
 		if !job.State.IsExpectingInvocation(invocationNonce) {
-			logging.Errorf(c, "No longer need to start invocation %d", invocationNonce)
+			logging.Errorf(c, "No longer need to start invocation with nonce %d", invocationNonce)
 			skip = true
 			return nil
 		}
@@ -924,6 +940,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 				prev.debugLog(c, "New invocation is running (%d), marking this one as failed.", inv.ID)
 				prev.Status = task.StatusFailed
 				prev.Finished = clock.Now(c)
+				prev.MutationsCount++
 				if err := ds.Put(&prev); err != nil {
 					return err
 				}
@@ -937,28 +954,45 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	if err != nil || skip {
 		return err
 	}
-
-	// Grab corresponding manager and launch task through it. Note that at this
-	// point we are already handling the invocation, and thus already using
-	// Controller interface with all its bells and whistles.
 	c = logging.SetField(c, "InvID", inv.ID)
+
+	// Now we have a new Invocation entity in the datastore in StatusStarting
+	// state. Grab corresponding TaskManager and launch task through it, keeping
+	// track of the progress in created Invocation entity.
 	ctl, err := e.controllerForInvocation(c, &inv)
 	if err != nil {
-		return ctl.launchFailed(err)
+		// Note: controllerForInvocation returns both ctl and err on errors, with
+		// ctl not fully initialized (but good enough for what's done below).
+		ctl.DebugLog("Failed to initialize task controller - %s", err)
+		ctl.State().Status = task.StatusFailed
+		return ctl.Save()
 	}
 
-	// LaunchTask MUST move the invocation out of StatusStarting, otherwise cron
-	// job will be forever stuck in starting state.
-	err = ctl.manager.LaunchTask(c, ctl.task, ctl, invocationNonce)
-	if err == nil && ctl.saved.Status == task.StatusStarting {
-		err = fmt.Errorf("LaunchTask didn't move invocation out of StatusStarting")
-	}
-	if err != nil {
-		if saveErr := ctl.launchFailed(err); saveErr != nil {
-			logging.Errorf(c, "Failed to save invocation state: %s", saveErr)
+	// Ask manager to start the task. If it returns no errors, it should also move
+	// invocation out of StatusStarting state (a failure to do so is an error). If
+	// it returns an error, invocation is forcefully moved to StatusFailed state.
+	// In either case, invocation never ends up in StatusStarting state.
+	err = ctl.manager.LaunchTask(c, ctl)
+	retryInvocation := false
+	if ctl.State().Status == task.StatusStarting {
+		ctl.State().Status = task.StatusFailed
+		if err != nil {
+			retryInvocation = errors.IsTransient(err)
+		} else {
+			err = fmt.Errorf("LaunchTask didn't move invocation out of StatusStarting")
+			retryInvocation = false
 		}
 	}
 
+	// If asked to retry the invocation, do not touch CronJob entity when saving
+	// the current (failed) invocation. That way CronJob stays in "QUEUED" state
+	// (indicating it's queued for a new invocation).
+	if saveErr := ctl.saveImpl(!retryInvocation); saveErr != nil {
+		logging.Errorf(ctl.ctx, "Failed to save invocation state - %s", saveErr)
+		if err == nil {
+			err = saveErr
+		}
+	}
 	return err
 }
 
@@ -968,11 +1002,11 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 // If task definition can't be deserialized, returns both controller and error.
 func (e *engineImpl) controllerForInvocation(c context.Context, inv *Invocation) (*taskController, error) {
 	ctl := &taskController{
-		ctx:     c,
-		eng:     e,
-		saved:   *inv,
-		current: *inv,
+		ctx:   c,
+		eng:   e,
+		saved: *inv,
 	}
+	ctl.populateState()
 	var err error
 	ctl.task, err = e.Catalog.UnmarshalTask(inv.Task)
 	if err != nil {
@@ -1142,7 +1176,27 @@ func (e *engineImpl) handlePubSubMessage(c context.Context, msg *pubsub.PubsubMe
 	}
 
 	// Hand the message to the TaskManager.
-	return ctl.manager.HandleNotification(c, ctl, msg)
+	err = ctl.manager.HandleNotification(c, ctl, msg)
+	if err != nil {
+		logging.Errorf(c, "Error when handling the message - %s", err)
+	}
+
+	// Save anyway, to preserve the invocation log.
+	saveErr := ctl.Save()
+	if saveErr != nil {
+		logging.Errorf(c, "Error when saving the invocation - %s", saveErr)
+	}
+
+	// Retry the delivery if at least one error is transient. HandleNotification
+	// must be idempotent.
+	switch {
+	case err == nil && saveErr == nil:
+		return nil
+	case errors.IsTransient(saveErr):
+		return saveErr
+	default:
+		return err // transient or fatal
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1152,16 +1206,51 @@ type taskController struct {
 	ctx     context.Context
 	eng     *engineImpl
 	manager task.Manager
-	task    proto.Message
+	task    proto.Message // extracted from saved.Task blob
 
-	saved   Invocation // what have been given initially or saved in Save()
-	current Invocation // what is currently being mutated
+	saved    Invocation // what have been given initially or saved in Save()
+	state    task.State // state mutated by TaskManager
+	debugLog string     // mutated by DebugLog
+}
+
+// populateState populates 'state' using data in 'saved'.
+func (ctl *taskController) populateState() {
+	ctl.state = task.State{
+		Status:   ctl.saved.Status,
+		ViewURL:  ctl.saved.ViewURL,
+		TaskData: append([]byte(nil), ctl.saved.TaskData...), // copy
+	}
+}
+
+// JobID is part of task.Controller interface.
+func (ctl *taskController) JobID() string {
+	return ctl.saved.JobKey.StringID()
+}
+
+// InvocationID is part of task.Controller interface.
+func (ctl *taskController) InvocationID() int64 {
+	return ctl.saved.ID
+}
+
+// InvocationNonce is part of task.Controller interface.
+func (ctl *taskController) InvocationNonce() int64 {
+	return ctl.saved.InvocationNonce
+}
+
+// Task is part of task.Controller interface.
+func (ctl *taskController) Task() proto.Message {
+	return ctl.task
+}
+
+// State is part of task.Controller interface.
+func (ctl *taskController) State() *task.State {
+	return &ctl.state
 }
 
 // PrepareTopic is part of task.Controller interface.
 func (ctl *taskController) PrepareTopic(publisher string) (topic string, token string, err error) {
 	return ctl.eng.prepareTopic(ctl.ctx, topicParams{
-		inv:       &ctl.current,
+		inv:       &ctl.saved,
 		manager:   ctl.manager,
 		publisher: publisher,
 	})
@@ -1170,27 +1259,44 @@ func (ctl *taskController) PrepareTopic(publisher string) (topic string, token s
 // DebugLog is part of task.Controller interface.
 func (ctl *taskController) DebugLog(format string, args ...interface{}) {
 	logging.Infof(ctl.ctx, format, args...)
-	ctl.current.debugLog(ctl.ctx, format, args...)
+	debugLog(ctl.ctx, &ctl.debugLog, format, args...)
 }
 
 // Save is part of task.Controller interface.
-func (ctl *taskController) Save(status task.Status) error {
-	return ctl.saveImpl(status, true)
+func (ctl *taskController) Save() error {
+	return ctl.saveImpl(true)
 }
+
+// errUpdateConflict means Invocation is being modified by two TaskController's
+// concurrently. It should not be happening often. If it happens, task queue
+// call is retried to rerun the two-part transaction from scratch.
+var errUpdateConflict = errors.WrapTransient(errors.New("concurrent modifications of single Invocation"))
 
 // saveImpl uploads updated Invocation to the datastore. If updateCronJob
 // is true, it will also roll corresponding state machine forward.
-func (ctl *taskController) saveImpl(status task.Status, updateCronJob bool) error {
-	// Mutate copy in case transaction below fails.
-	saving := ctl.current
-	saving.Status = status
-	if saving.isEqual(&ctl.saved) {
-		ctl.current = saving
+func (ctl *taskController) saveImpl(updateCronJob bool) (err error) {
+	// Mutate copy in case transaction below fails. Also unpacks ctl.state back
+	// into the entity (reverse of 'populateState').
+	saving := ctl.saved
+	saving.Status = ctl.state.Status
+	saving.TaskData = append([]byte(nil), ctl.state.TaskData...)
+	saving.ViewURL = ctl.state.ViewURL
+	saving.DebugLog += ctl.debugLog
+	if saving.isEqual(&ctl.saved) { // no changes at all?
 		return nil
 	}
+	saving.MutationsCount++
 
-	hasStarted := ctl.saved.Status == task.StatusStarting && status != task.StatusStarting
-	hasFinished := !ctl.saved.Status.Final() && status.Final()
+	// Update local copy of Invocation with what's in the datastore on success.
+	defer func() {
+		if err == nil {
+			ctl.saved = saving
+			ctl.debugLog = "" // debug log was successfully flushed
+		}
+	}()
+
+	hasStartedOrFailed := ctl.saved.Status == task.StatusStarting && saving.Status != task.StatusStarting
+	hasFinished := !ctl.saved.Status.Final() && saving.Status.Final()
 	if hasFinished {
 		saving.Finished = clock.Now(ctl.ctx)
 		saving.debugLog(
@@ -1198,37 +1304,53 @@ func (ctl *taskController) saveImpl(status task.Status, updateCronJob bool) erro
 			saving.Finished.Sub(saving.Started), saving.Status)
 	}
 
-	// No changes to Status field? Don't bother touching parent CronJob then,
-	// it won't be modified. Avoiding transaction that way. Also don't bother with
-	// transaction if we are explicitly asked not to touch CronJob entity.
-	if ctl.saved.Status == saving.Status || !updateCronJob {
-		if err := datastore.Get(ctl.ctx).Put(&saving); err != nil {
+	// Store the invocation entity and mutate CronJob state accordingly.
+	return ctl.eng.txn(ctl.ctx, saving.JobKey.StringID(), func(c context.Context, job *CronJob, isNew bool) error {
+		ds := datastore.Get(c)
+
+		// Grab what's currently in the store to compare MutationsCount to what we
+		// expect it to be.
+		mostRecent := Invocation{
+			ID:     saving.ID,
+			JobKey: saving.JobKey,
+		}
+		switch err := ds.Get(&mostRecent); {
+		case err == datastore.ErrNoSuchEntity: // should not happen
+			logging.Errorf(c, "Invocation is suddenly gone")
+			return errors.New("invocation is suddenly gone")
+		case err != nil:
 			return errors.WrapTransient(err)
 		}
-		ctl.current = saving
-		ctl.saved = ctl.current
-		return nil
-	}
 
-	// Store the invocation entity and mutate CronJob state accordingly.
-	jobID := saving.JobKey.StringID()
-	err := ctl.eng.txn(ctl.ctx, jobID, func(c context.Context, job *CronJob, isNew bool) error {
-		// Store the invocation entity regardless of what the current state of the
-		// CronJob entity. Table of all invocations is useful on its own (e.g. for
-		// debugging) even if CronJob entity state has desynchronized for some
+		// Make sure no one touched it while we were handling the invocation.
+		if saving.MutationsCount != mostRecent.MutationsCount+1 {
+			logging.Errorf(c, "Invocation was modified by someone else while we were handling it")
+			return errUpdateConflict
+		}
+
+		// Store the invocation entity regardless of the current state of the
+		// CronJob entity. The table of all invocations is useful on its own (e.g.
+		// for debugging) even if CronJob entity state has desynchronized for some
 		// reason.
 		if err := datastore.Get(c).Put(&saving); err != nil {
 			return err
 		}
-		if isNew {
+
+		// Is CronJob entity still have this invocation as a current one?
+		switch {
+		case !updateCronJob:
+			logging.Warningf(c, "Asked not to touch CronJob entity")
+			return errSkipPut
+		case isNew:
 			logging.Errorf(c, "Active job is unexpectedly gone")
 			return errSkipPut
-		}
-		if job.State.InvocationID != saving.ID {
-			logging.Errorf(c, "The invocation is no longer current, the current is %d", job.State.InvocationID)
+		case job.State.InvocationID != saving.ID:
+			logging.Warningf(c, "The invocation is no longer current, the current is %d", job.State.InvocationID)
 			return errSkipPut
 		}
-		if hasStarted {
+
+		// Make cron job state machine transitions.
+		if hasStartedOrFailed {
 			err := ctl.eng.rollSM(c, job, func(sm *StateMachine) error {
 				return sm.OnInvocationStarted(saving.ID)
 			})
@@ -1243,21 +1365,4 @@ func (ctl *taskController) saveImpl(status task.Status, updateCronJob bool) erro
 		}
 		return nil
 	})
-	if err != nil {
-		return err
-	}
-	ctl.current = saving
-	ctl.saved = saving
-	return nil
-}
-
-// launchFailed is called if there were errors when launching a task.
-func (ctl *taskController) launchFailed(err error) error {
-	// Don't touch CronJob entity if invocation is still in Starting state and
-	// the error was transient. Such invocations are retried (see comment on top
-	// of startInvocation), we need CronJob entity to be expecting the invocation
-	// for retry to succeed.
-	ctl.DebugLog("Failed to run the task: %s", err)
-	return ctl.saveImpl(task.StatusFailed,
-		(ctl.saved.Status != task.StatusStarting) || !errors.IsTransient(err))
 }

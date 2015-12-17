@@ -323,6 +323,12 @@ func TestFullFlow(t *testing.T) {
 
 		// Time to run the job and it fails to launch with a transient error.
 		mgr.launchTask = func(ctl task.Controller) error {
+			// Check data provided via the controller.
+			So(ctl.JobID(), ShouldEqual, "abc/1")
+			So(ctl.InvocationID(), ShouldEqual, int64(9200093518582666224))
+			So(ctl.InvocationNonce(), ShouldEqual, int64(631000787647335445))
+			So(ctl.Task(), ShouldResemble, &messages.NoopTask{})
+
 			ctl.DebugLog("oops, fail")
 			return errors.WrapTransient(errors.New("oops"))
 		}
@@ -364,15 +370,17 @@ func TestFullFlow(t *testing.T) {
 			Task:            taskBytes,
 			DebugLog: "[22:42:05.000] Invocation initiated (attempt 1)\n" +
 				"[22:42:05.000] oops, fail\n" +
-				"[22:42:05.000] Failed to run the task: oops\n" +
 				"[22:42:05.000] Invocation finished in 0 with status FAILED\n",
-			Status: task.StatusFailed,
+			Status:         task.StatusFailed,
+			MutationsCount: 1,
 		})
 
 		// Second attempt. Now starts, hangs midway, they finishes.
 		mgr.launchTask = func(ctl task.Controller) error {
+			// Make sure Save() checkpoints the progress.
 			ctl.DebugLog("Starting")
-			So(ctl.Save(task.StatusRunning), ShouldBeNil)
+			ctl.State().Status = task.StatusRunning
+			So(ctl.Save(), ShouldBeNil)
 
 			// After first Save the job and the invocation are in running state.
 			So(allJobs(c), ShouldResemble, []CronJob{
@@ -405,12 +413,17 @@ func TestFullFlow(t *testing.T) {
 				DebugLog:        "[22:42:05.000] Invocation initiated (attempt 2)\n[22:42:05.000] Starting\n",
 				RetryCount:      1,
 				Status:          task.StatusRunning,
+				MutationsCount:  1,
 			})
 
-			// Noop save, just for code coverage.
-			So(ctl.Save(task.StatusRunning), ShouldBeNil)
+			// Noop save, just for the code coverage.
+			So(ctl.Save(), ShouldBeNil)
 
-			return ctl.Save(task.StatusSucceeded)
+			// Change state to the final one.
+			ctl.State().Status = task.StatusSucceeded
+			ctl.State().ViewURL = "http://view_url"
+			ctl.State().TaskData = []byte("blah")
+			return nil
 		}
 		So(e.ExecuteSerializedAction(c, invTask.Payload, 1), ShouldBeNil)
 
@@ -428,8 +441,11 @@ func TestFullFlow(t *testing.T) {
 			DebugLog: "[22:42:05.000] Invocation initiated (attempt 2)\n" +
 				"[22:42:05.000] Starting\n" +
 				"[22:42:05.000] Invocation finished in 0 with status SUCCEEDED\n",
-			RetryCount: 1,
-			Status:     task.StatusSucceeded,
+			RetryCount:     1,
+			Status:         task.StatusSucceeded,
+			ViewURL:        "http://view_url",
+			TaskData:       []byte("blah"),
+			MutationsCount: 2,
 		})
 
 		// Previous invocation is canceled.
@@ -445,9 +461,9 @@ func TestFullFlow(t *testing.T) {
 			Task:            taskBytes,
 			DebugLog: "[22:42:05.000] Invocation initiated (attempt 1)\n" +
 				"[22:42:05.000] oops, fail\n" +
-				"[22:42:05.000] Failed to run the task: oops\n" +
 				"[22:42:05.000] Invocation finished in 0 with status FAILED\n",
-			Status: task.StatusFailed,
+			Status:         task.StatusFailed,
+			MutationsCount: 1,
 		})
 
 		// Job is in scheduled state again.
@@ -602,11 +618,12 @@ func TestPrepareTopic(t *testing.T) {
 			ctx:     c,
 			eng:     e,
 			manager: &noop.TaskManager{},
-			current: Invocation{
+			saved: Invocation{
 				ID:     123456,
 				JobKey: datastore.Get(c).NewKey("CronJob", "job_id", 0, nil),
 			},
 		}
+		ctl.populateState()
 
 		// Once.
 		topic, token, err := ctl.PrepareTopic("some@publisher.com")
@@ -771,7 +788,7 @@ func (m *fakeTaskManager) ValidateProtoMessage(msg proto.Message) error {
 	return nil
 }
 
-func (m *fakeTaskManager) LaunchTask(c context.Context, msg proto.Message, ctl task.Controller, invNonce int64) error {
+func (m *fakeTaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	return m.launchTask(ctl)
 }
 

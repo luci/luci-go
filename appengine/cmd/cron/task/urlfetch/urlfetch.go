@@ -80,12 +80,12 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 }
 
 // LaunchTask is part of Manager interface.
-func (m TaskManager) LaunchTask(c context.Context, msg proto.Message, ctl task.Controller, invNonce int64) error {
-	cfg := msg.(*messages.UrlFetchTask)
+func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
+	cfg := ctl.Task().(*messages.UrlFetchTask)
 	started := clock.Now(c)
 	ctl.DebugLog("%s %s", cfg.GetMethod(), cfg.GetUrl())
 
-	// There must be no errors here in reality, since msg is validated already by
+	// There must be no errors here in reality, since cfg is validated already by
 	// ValidateProtoMessage.
 	u, err := url.Parse(cfg.GetUrl())
 	if err != nil {
@@ -124,7 +124,8 @@ func (m TaskManager) LaunchTask(c context.Context, msg proto.Message, ctl task.C
 	// Notify outside world that the task is running (since URL fetch can take up
 	// to 8 minutes). Ignore errors. As long as final Save is OK, we don't care
 	// about this one.
-	if err := ctl.Save(task.StatusRunning); err != nil {
+	ctl.State().Status = task.StatusRunning
+	if err := ctl.Save(); err != nil {
 		logging.Warningf(c, "Failed to save invocation state: %s", err)
 	}
 
@@ -143,7 +144,8 @@ func (m TaskManager) LaunchTask(c context.Context, msg proto.Message, ctl task.C
 	} else {
 		ctl.DebugLog(dumpResponse(res.resp, res.body))
 	}
-	return ctl.Save(status)
+	ctl.State().Status = status
+	return nil
 }
 
 // HandleNotification is part of Manager interface.

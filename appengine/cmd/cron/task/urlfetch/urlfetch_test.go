@@ -14,6 +14,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/luci/gae/service/urlfetch"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -88,8 +89,8 @@ func TestLaunchTask(t *testing.T) {
 		msg := &messages.UrlFetchTask{
 			Url: strPtr(ts.URL),
 		}
-		ctl := &dumbController{}
-		So(tm.LaunchTask(ctx, msg, ctl, 0), ShouldBeNil)
+		ctl := &dumbController{task: msg}
+		So(tm.LaunchTask(ctx, ctl), ShouldBeNil)
 		So(ctl.log[:2], ShouldResemble, []string{
 			"GET " + ts.URL,
 			"Finished with overall status SUCCEEDED in 0",
@@ -117,16 +118,36 @@ func newTestContext(now time.Time) (*httptest.Server, context.Context) {
 }
 
 type dumbController struct {
-	log    []string
-	status task.Status
+	log   []string
+	task  proto.Message
+	state task.State
+}
+
+func (c *dumbController) JobID() string {
+	return "some-project/some-job"
+}
+
+func (c *dumbController) InvocationID() int64 {
+	return 1
+}
+
+func (c *dumbController) InvocationNonce() int64 {
+	return 2
+}
+
+func (c *dumbController) Task() proto.Message {
+	return c.task
+}
+
+func (c *dumbController) State() *task.State {
+	return &c.state
 }
 
 func (c *dumbController) DebugLog(format string, args ...interface{}) {
 	c.log = append(c.log, fmt.Sprintf(format, args...))
 }
 
-func (c *dumbController) Save(status task.Status) error {
-	c.status = status
+func (c *dumbController) Save() error {
 	return nil
 }
 
