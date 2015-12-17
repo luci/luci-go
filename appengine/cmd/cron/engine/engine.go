@@ -32,6 +32,7 @@ import (
 	"github.com/luci/luci-go/common/mathrand"
 	"github.com/luci/luci-go/common/stringset"
 	"github.com/luci/luci-go/server/auth/identity"
+	authinfo "github.com/luci/luci-go/server/auth/info"
 	"github.com/luci/luci-go/server/tokens"
 
 	"github.com/luci/luci-go/appengine/cmd/cron/catalog"
@@ -1072,6 +1073,20 @@ func (e *engineImpl) genTopicAndSubNames(c context.Context, manager, publisher s
 // task. It should be put into 'auth_token' attribute of PubSub messages by
 // whoever publishes them.
 func (e *engineImpl) prepareTopic(c context.Context, params topicParams) (topic string, tok string, err error) {
+	// If given URL, ask the service for name of its default service account.
+	// FetchServiceInfo implements efficient cache internally, so it's fine to
+	// call it often.
+	if strings.HasPrefix(params.publisher, "https://") {
+		logging.Infof(c, "Fetching info about %q", params.publisher)
+		serviceInfo, err := authinfo.FetchServiceInfo(c, params.publisher)
+		if err != nil {
+			logging.Errorf(c, "Failed to fetch info about %q - %s", params.publisher, err)
+			return "", "", err
+		}
+		logging.Infof(c, "%q is using %q", params.publisher, serviceInfo.ServiceAccountName)
+		params.publisher = serviceInfo.ServiceAccountName
+	}
+
 	topic, sub := e.genTopicAndSubNames(c, params.manager.Name(), params.publisher)
 
 	// Put same parameters in push URL to make them visible in logs. On dev server

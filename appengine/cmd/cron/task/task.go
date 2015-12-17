@@ -124,6 +124,11 @@ type Controller interface {
 	// controlled by the Engine. The publisher to the topic must be instructed to
 	// put the token into 'auth_token' attribute of PubSub messages. Cron engine
 	// will know how to route such messages to Manager.HandleNotification.
+	//
+	// 'publisher' can be a service account email, or an URL to some luci service.
+	// If URL is given, its /auth/api/v1/server/info endpoint will be used to
+	// grab a corresponding service account name. All service that use luci auth
+	// component expose this endpoint.
 	PrepareTopic(publisher string) (topic string, token string, err error)
 
 	// DebugLog appends a line to the free form text log of the task.
