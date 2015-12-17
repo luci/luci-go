@@ -5,8 +5,6 @@
 package urlfetch
 
 import (
-	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -14,13 +12,12 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/luci/gae/service/urlfetch"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 
 	"github.com/luci/luci-go/appengine/cmd/cron/messages"
-	"github.com/luci/luci-go/appengine/cmd/cron/task"
+	"github.com/luci/luci-go/appengine/cmd/cron/task/tasktest"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -86,12 +83,14 @@ func TestLaunchTask(t *testing.T) {
 	Convey("LaunchTask works", t, func(c C) {
 		ts, ctx := newTestContext(time.Unix(0, 1))
 		defer ts.Close()
-		msg := &messages.UrlFetchTask{
-			Url: strPtr(ts.URL),
+		ctl := &tasktest.TestController{
+			TaskMessage: &messages.UrlFetchTask{
+				Url: strPtr(ts.URL),
+			},
+			SaveCallback: func() error { return nil },
 		}
-		ctl := &dumbController{task: msg}
 		So(tm.LaunchTask(ctx, ctl), ShouldBeNil)
-		So(ctl.log[:2], ShouldResemble, []string{
+		So(ctl.Log[:2], ShouldResemble, []string{
 			"GET " + ts.URL,
 			"Finished with overall status SUCCEEDED in 0",
 		})
@@ -115,42 +114,4 @@ func newTestContext(now time.Time) (*httptest.Server, context.Context) {
 	c = clock.Set(c, testclock.New(now))
 	c = urlfetch.Set(c, http.DefaultTransport)
 	return ts, c
-}
-
-type dumbController struct {
-	log   []string
-	task  proto.Message
-	state task.State
-}
-
-func (c *dumbController) JobID() string {
-	return "some-project/some-job"
-}
-
-func (c *dumbController) InvocationID() int64 {
-	return 1
-}
-
-func (c *dumbController) InvocationNonce() int64 {
-	return 2
-}
-
-func (c *dumbController) Task() proto.Message {
-	return c.task
-}
-
-func (c *dumbController) State() *task.State {
-	return &c.state
-}
-
-func (c *dumbController) DebugLog(format string, args ...interface{}) {
-	c.log = append(c.log, fmt.Sprintf(format, args...))
-}
-
-func (c *dumbController) Save() error {
-	return nil
-}
-
-func (c *dumbController) PrepareTopic(publisher string) (topic string, token string, err error) {
-	return "", "", errors.New("not implemented")
 }

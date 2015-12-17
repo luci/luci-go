@@ -10,10 +10,17 @@ import (
 
 const project1CronCfg = `
 job {
-  id: "noop-job-1"
+  id: "swarming-job"
   schedule: "* * * 1 * * *"
   task: {
-    noop: {}
+    swarming_task: {
+      server: "https://chromium-swarm-dev.appspot.com"
+
+      command: "echo"
+      command: "Hello, world"
+
+      dimensions: "os:Ubuntu"
+    }
   }
 }
 `

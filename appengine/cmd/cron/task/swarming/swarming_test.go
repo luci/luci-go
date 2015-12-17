@@ -5,9 +5,17 @@
 package swarming
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
+	"google.golang.org/api/pubsub/v1"
+
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/appengine/cmd/cron/messages"
+	"github.com/luci/luci-go/appengine/cmd/cron/task"
+	"github.com/luci/luci-go/appengine/cmd/cron/task/tasktest"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -103,6 +111,64 @@ func TestValidateProtoMessage(t *testing.T) {
 		}), ShouldErrLike, "only one of 'command' or 'isolated_ref' must be specified")
 	})
 }
+
+func TestFullFlow(t *testing.T) {
+	Convey("LaunchTask and HandleNotification work", t, func(ctx C) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			resp := ""
+			switch r.URL.Path {
+			case "/_ah/api/swarming/v1/tasks/new":
+				resp = `{"task_id": "task_id"}`
+			case "/_ah/api/swarming/v1/task/task_id/result":
+				resp = `{"state":"COMPLETED"}`
+			default:
+				ctx.Printf("Unknown URL fetch - %s\n", r.URL.Path)
+				w.WriteHeader(400)
+				return
+			}
+			w.WriteHeader(200)
+			w.Write([]byte(resp))
+		}))
+		defer ts.Close()
+
+		c := context.Background()
+		mgr := TaskManager{}
+		ctl := &tasktest.TestController{
+			TaskMessage: &messages.SwarmingTask{
+				Server: strPtr(ts.URL),
+				IsolatedRef: &messages.SwarmingTask_IsolatedRef{
+					Isolated:       strPtr("abcdef"),
+					IsolatedServer: strPtr("https://isolated-server"),
+					Namespace:      strPtr("default-gzip"),
+				},
+				Env:        []string{"A=B", "C=D"},
+				Dimensions: []string{"OS:Linux"},
+				Tags:       []string{"a:b", "c:d"},
+				Priority:   intPtr(50),
+			},
+			SaveCallback: func() error { return nil },
+			PrepareTopicCallback: func(publisher string) (string, string, error) {
+				So(publisher, ShouldEqual, ts.URL)
+				return "topic", "auth_token", nil
+			},
+		}
+
+		// Launch.
+		So(mgr.LaunchTask(c, ctl), ShouldBeNil)
+		So(ctl.TaskState, ShouldResemble, task.State{
+			Status:   task.StatusRunning,
+			TaskData: []byte(`{"swarming_task_id":"task_id"}`),
+			ViewURL:  ts.URL + "/user/task/task_id",
+		})
+
+		// Process finish notification.
+		So(mgr.HandleNotification(c, ctl, &pubsub.PubsubMessage{}), ShouldBeNil)
+		So(ctl.TaskState.Status, ShouldEqual, task.StatusSucceeded)
+	})
+}
+
+//////////////
 
 func strPtr(s string) *string {
 	return &s
