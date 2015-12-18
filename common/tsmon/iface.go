@@ -29,6 +29,8 @@ var (
 	// Target contains information about this process, and is included in all
 	// metrics reported by this process.
 	Target target.Target
+
+	cancelAutoFlush context.CancelFunc
 )
 
 // InitializeFromFlags configures the tsmon library from flag values.
@@ -82,6 +84,18 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 		return err
 	}
 	Target = t
+
+	if cancelAutoFlush != nil {
+		logger.Infof("Cancelling previous tsmon auto flush")
+		cancelAutoFlush()
+		cancelAutoFlush = nil
+	}
+
+	if fl.Flush == "auto" {
+		var flushCtx context.Context
+		flushCtx, cancelAutoFlush = context.WithCancel(c)
+		go autoFlush(flushCtx, fl.FlushInterval)
+	}
 
 	return nil
 }

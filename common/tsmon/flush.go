@@ -6,7 +6,9 @@ package tsmon
 
 import (
 	"errors"
+	"time"
 
+	"github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
 
@@ -38,4 +40,20 @@ func Flush(ctx context.Context) error {
 		cells = cells[count:]
 	}
 	return nil
+}
+
+func autoFlush(ctx context.Context, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	logger := logging.Get(ctx)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if err := Flush(ctx); err != nil {
+				logger.Warningf("Failed to flush tsmon metrics: %v", err)
+			}
+		}
+	}
 }
