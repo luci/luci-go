@@ -5,12 +5,9 @@
 package tsmon
 
 import (
-	"flag"
 	"fmt"
 	"net/url"
-	"runtime"
 	"strings"
-	"time"
 
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/tsmon/monitor"
@@ -37,20 +34,20 @@ var (
 // InitializeFromFlags configures the tsmon library from flag values.
 // This will set a Target (information about what's reporting metrics) and a
 // Monitor (where to send the metrics to).
-func InitializeFromFlags(c context.Context) error {
+func InitializeFromFlags(c context.Context, fl *Flags) error {
 	logger := logging.Get(c)
 
 	// Load the config file, and override its values with flags.
-	config, err := loadConfig(*configFile)
+	config, err := loadConfig(fl.ConfigFile)
 	if err != nil {
 		return err
 	}
 
-	if *endpoint != "" {
-		config.Endpoint = *endpoint
+	if fl.Endpoint != "" {
+		config.Endpoint = fl.Endpoint
 	}
-	if *credentials != "" {
-		config.Credentials = *credentials
+	if fl.Credentials != "" {
+		config.Credentials = fl.Credentials
 	}
 
 	if config.Endpoint != "" {
@@ -72,42 +69,19 @@ func InitializeFromFlags(c context.Context) error {
 		default:
 			return fmt.Errorf("unknown tsmon endpoint url: %s", config.Endpoint)
 		}
+
+		// Monitoring is enabled, so get the expensive default values for hostname,
+		// etc.
+		fl.Target.SetDefaultsFromHostname()
 	} else {
 		logger.Warningf("Monitoring is disabled because no endpoint is configured")
 	}
 
-	t, err := target.NewFromFlags()
+	t, err := target.NewFromFlags(&fl.Target)
 	if err != nil {
 		return err
 	}
 	Target = t
 
 	return nil
-}
-
-var (
-	configFile = flag.String("ts-mon-config-file", defaultConfigFile(),
-		"path to a JSON config file that contains suitable values for "+
-			"\"endpoint\" and \"credentials\" for this machine. This config file is "+
-			"intended to be shared by all processes on the machine, as the values "+
-			"depend on the machine's position in the network, IP whitelisting and "+
-			"deployment of credentials.")
-	endpoint = flag.String("ts-mon-endpoint", "",
-		"url (including file://, pubsub://project/topic) to post monitoring "+
-			"metrics to. If set, overrides the value in --ts-mon-config-file")
-	credentials = flag.String("ts-mon-credentials", "",
-		"path to a pkcs8 json credential file. If set, overrides the value in "+
-			"--ts-mon-config-file")
-	flush = flag.String("ts-mon-flush", "manual",
-		"metric push behavior: manual (only send when Flush() is called), or auto "+
-			"(send automatically every --ts-mon-flush-interval)")
-	flushInterval = flag.Duration("ts-mon-flush-interval", 60*time.Second,
-		"automatically push metrics on this interval if --ts-mon-flush=auto")
-)
-
-func defaultConfigFile() string {
-	if runtime.GOOS == "windows" {
-		return "C:\\chrome-infra\\ts-mon.json"
-	}
-	return "/etc/chrome-infra/ts-mon.json"
 }

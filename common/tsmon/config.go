@@ -7,6 +7,7 @@ package tsmon
 import (
 	"encoding/json"
 	"os"
+	"runtime"
 )
 
 // config is the representation of a tsmon JSON config file.
@@ -31,4 +32,11 @@ func loadConfig(path string) (config, error) {
 	}
 
 	return ret, nil
+}
+
+func defaultConfigFilePath() string {
+	if runtime.GOOS == "windows" {
+		return "C:\\chrome-infra\\ts-mon.json"
+	}
+	return "/etc/chrome-infra/ts-mon.json"
 }
