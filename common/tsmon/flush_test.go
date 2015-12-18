@@ -1,19 +1,20 @@
 // Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-package iface
+
+package tsmon
 
 import (
 	"testing"
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/ts_mon/field"
-	"github.com/luci/luci-go/common/ts_mon/target"
-	"github.com/luci/luci-go/common/ts_mon/types"
+	"github.com/luci/luci-go/common/tsmon/field"
+	"github.com/luci/luci-go/common/tsmon/target"
+	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
 
-	pb "github.com/luci/luci-go/common/ts_mon/ts_mon_proto"
+	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

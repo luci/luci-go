@@ -6,8 +6,8 @@ package monitor
 
 import (
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/ts_mon/target"
-	"github.com/luci/luci-go/common/ts_mon/types"
+	"github.com/luci/luci-go/common/tsmon/target"
+	"github.com/luci/luci-go/common/tsmon/types"
 )
 
 type debugMonitor struct {
@@ -30,6 +30,6 @@ func (m *debugMonitor) ChunkSize() int {
 
 func (m *debugMonitor) Send(cells []types.Cell, t target.Target) error {
 	collection := serializeCells(cells, t)
-	m.logger.Infof("Sending ts_mon metrics:\n%s", collection.String())
+	m.logger.Infof("Sending tsmon metrics:\n%s", collection.String())
 	return nil
 }

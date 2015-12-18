@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package iface
+package tsmon
 
 import (
 	"flag"
@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luci/luci-go/common/logging/gologger"
-	"github.com/luci/luci-go/common/ts_mon/monitor"
-	"github.com/luci/luci-go/common/ts_mon/store"
-	"github.com/luci/luci-go/common/ts_mon/target"
+	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/tsmon/monitor"
+	"github.com/luci/luci-go/common/tsmon/store"
+	"github.com/luci/luci-go/common/tsmon/target"
 	"golang.org/x/net/context"
 )
 
@@ -34,10 +34,12 @@ var (
 	Target target.Target
 )
 
-// InitializeFromFlags configures the ts_mon library from flag values.
+// InitializeFromFlags configures the tsmon library from flag values.
 // This will set a Target (information about what's reporting metrics) and a
 // Monitor (where to send the metrics to).
 func InitializeFromFlags(c context.Context) error {
+	logger := logging.Get(c)
+
 	// Load the config file, and override its values with flags.
 	config, err := loadConfig(*configFile)
 	if err != nil {
@@ -59,8 +61,7 @@ func InitializeFromFlags(c context.Context) error {
 
 		switch endpointURL.Scheme {
 		case "file":
-			// TODO(dsansome): Pass the path through.
-			Monitor = monitor.NewDebugMonitor(gologger.Get())
+			Monitor = monitor.NewDebugMonitor(logger)
 		case "pubsub":
 			m, err := monitor.NewPubsubMonitor(
 				config.Credentials, endpointURL.Host, strings.TrimPrefix(endpointURL.Path, "/"))
@@ -69,8 +70,10 @@ func InitializeFromFlags(c context.Context) error {
 			}
 			Monitor = m
 		default:
-			return fmt.Errorf("unknown ts_mon endpoint url: %s", config.Endpoint)
+			return fmt.Errorf("unknown tsmon endpoint url: %s", config.Endpoint)
 		}
+	} else {
+		logger.Warningf("Monitoring is disabled because no endpoint is configured")
 	}
 
 	t, err := target.NewFromFlags()

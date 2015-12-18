@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"hash/fnv"
 
-	pb "github.com/luci/luci-go/common/ts_mon/ts_mon_proto"
+	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
 )
 
 // Canonicalize returns a copy of fieldVals converted to the canonical types for

@@ -2,20 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package iface
+package tsmon
 
 import (
 	"encoding/json"
 	"os"
 )
 
-// config is the representation of a ts_mon JSON config file.
+// config is the representation of a tsmon JSON config file.
 type config struct {
 	Endpoint    string `json:"endpoint"`
 	Credentials string `json:"credentials"`
 }
 
-// loadConfig loads a ts_mon JSON config from a file.
+// loadConfig loads a tsmon JSON config from a file.
 func loadConfig(path string) (config, error) {
 	var ret config
 

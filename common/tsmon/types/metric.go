@@ -5,7 +5,7 @@
 package types
 
 import (
-	"github.com/luci/luci-go/common/ts_mon/field"
+	"github.com/luci/luci-go/common/tsmon/field"
 )
 
 // Metric is the low-level interface provided by all metrics.

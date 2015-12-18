@@ -9,7 +9,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	pb "github.com/luci/luci-go/common/ts_mon/ts_mon_proto"
+	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
 )
 
 // Field is the definition of a metric field.  It has a name and a type

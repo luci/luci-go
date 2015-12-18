@@ -17,7 +17,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	pb "github.com/luci/luci-go/common/ts_mon/ts_mon_proto"
+	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
 )
 
 var (
@@ -51,7 +51,7 @@ type Target interface {
 // A Task is a process or a service running on one or more machine.
 type Task pb.Task
 
-// AsProto returns this object as a ts_mon.proto.Task message.
+// AsProto returns this object as a tsmon.proto.Task message.
 func (t *Task) AsProto() *pb.Task { return (*pb.Task)(t) }
 
 // PopulateProto implements Target.
@@ -60,7 +60,7 @@ func (t *Task) PopulateProto(d *pb.MetricsData) { d.Task = t.AsProto() }
 // A NetworkDevice is a machine that has a hostname.
 type NetworkDevice pb.NetworkDevice
 
-// AsProto returns this object as a ts_mon.proto.NetworkDevice message.
+// AsProto returns this object as a tsmon.proto.NetworkDevice message.
 func (t *NetworkDevice) AsProto() *pb.NetworkDevice { return (*pb.NetworkDevice)(t) }
 
 // PopulateProto implements Target.

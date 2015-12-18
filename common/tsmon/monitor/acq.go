@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/ts_mon/field"
-	"github.com/luci/luci-go/common/ts_mon/target"
-	"github.com/luci/luci-go/common/ts_mon/types"
+	"github.com/luci/luci-go/common/tsmon/field"
+	"github.com/luci/luci-go/common/tsmon/target"
+	"github.com/luci/luci-go/common/tsmon/types"
 
-	pb "github.com/luci/luci-go/common/ts_mon/ts_mon_proto"
+	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
 )
 
 const (

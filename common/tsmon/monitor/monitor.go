@@ -7,8 +7,8 @@
 package monitor
 
 import (
-	"github.com/luci/luci-go/common/ts_mon/target"
-	"github.com/luci/luci-go/common/ts_mon/types"
+	"github.com/luci/luci-go/common/tsmon/target"
+	"github.com/luci/luci-go/common/tsmon/types"
 )
 
 // AppengineCredentials and GCECredentials are special values that can be passed

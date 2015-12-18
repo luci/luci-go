@@ -23,9 +23,9 @@
 package metric
 
 import (
-	"github.com/luci/luci-go/common/ts_mon/field"
-	"github.com/luci/luci-go/common/ts_mon/iface"
-	"github.com/luci/luci-go/common/ts_mon/types"
+	"github.com/luci/luci-go/common/tsmon"
+	"github.com/luci/luci-go/common/tsmon/field"
+	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
 )
 
@@ -79,7 +79,7 @@ type Bool interface {
 // another metric already exists with this name.
 func NewInt(name string, fields ...field.Field) Int {
 	m := &intMetric{metric{name: name, fields: fields, typ: types.NonCumulativeIntType}}
-	if err := iface.Store.Register(m); err != nil {
+	if err := tsmon.Store.Register(m); err != nil {
 		panic(err)
 	}
 	return m
@@ -89,7 +89,7 @@ func NewInt(name string, fields ...field.Field) Int {
 // another metric already exists with this name.
 func NewCounter(name string, fields ...field.Field) Counter {
 	m := &counter{intMetric{metric{name: name, fields: fields, typ: types.CumulativeIntType}}}
-	if err := iface.Store.Register(m); err != nil {
+	if err := tsmon.Store.Register(m); err != nil {
 		panic(err)
 	}
 	return m
@@ -99,7 +99,7 @@ func NewCounter(name string, fields ...field.Field) Counter {
 // panic if another metric already exists with this name.
 func NewFloat(name string, fields ...field.Field) Float {
 	m := &floatMetric{metric{name: name, fields: fields, typ: types.NonCumulativeFloatType}}
-	if err := iface.Store.Register(m); err != nil {
+	if err := tsmon.Store.Register(m); err != nil {
 		panic(err)
 	}
 	return m
@@ -109,7 +109,7 @@ func NewFloat(name string, fields ...field.Field) Float {
 // panic if another metric already exists with this name.
 func NewFloatCounter(name string, fields ...field.Field) FloatCounter {
 	m := &floatCounter{floatMetric{metric{name: name, fields: fields, typ: types.CumulativeFloatType}}}
-	if err := iface.Store.Register(m); err != nil {
+	if err := tsmon.Store.Register(m); err != nil {
 		panic(err)
 	}
 	return m
@@ -119,7 +119,7 @@ func NewFloatCounter(name string, fields ...field.Field) FloatCounter {
 // metric already exists with this name.
 func NewString(name string, fields ...field.Field) String {
 	m := &stringMetric{metric{name: name, fields: fields, typ: types.StringType}}
-	if err := iface.Store.Register(m); err != nil {
+	if err := tsmon.Store.Register(m); err != nil {
 		panic(err)
 	}
 	return m
@@ -129,7 +129,7 @@ func NewString(name string, fields ...field.Field) String {
 // metric already exists with this name.
 func NewBool(name string, fields ...field.Field) Bool {
 	m := &boolMetric{metric{name: name, fields: fields, typ: types.BoolType}}
-	if err := iface.Store.Register(m); err != nil {
+	if err := tsmon.Store.Register(m); err != nil {
 		panic(err)
 	}
 	return m
@@ -148,7 +148,7 @@ func (m *metric) ValueType() types.ValueType { return m.typ }
 type intMetric struct{ metric }
 
 func (m *intMetric) Get(ctx context.Context, fieldVals ...interface{}) (int64, error) {
-	ret, err := iface.Store.Get(ctx, m.name, fieldVals)
+	ret, err := tsmon.Store.Get(ctx, m.name, fieldVals)
 	if err != nil {
 		return 0, err
 	}
@@ -159,19 +159,19 @@ func (m *intMetric) Get(ctx context.Context, fieldVals ...interface{}) (int64, e
 }
 
 func (m *intMetric) Set(ctx context.Context, v int64, fieldVals ...interface{}) error {
-	return iface.Store.Set(ctx, m.name, fieldVals, v)
+	return tsmon.Store.Set(ctx, m.name, fieldVals, v)
 }
 
 type counter struct{ intMetric }
 
 func (m *counter) Add(ctx context.Context, n int64, fieldVals ...interface{}) error {
-	return iface.Store.Incr(ctx, m.name, fieldVals, n)
+	return tsmon.Store.Incr(ctx, m.name, fieldVals, n)
 }
 
 type floatMetric struct{ metric }
 
 func (m *floatMetric) Get(ctx context.Context, fieldVals ...interface{}) (float64, error) {
-	ret, err := iface.Store.Get(ctx, m.name, fieldVals)
+	ret, err := tsmon.Store.Get(ctx, m.name, fieldVals)
 	if err != nil {
 		return 0, err
 	}
@@ -182,19 +182,19 @@ func (m *floatMetric) Get(ctx context.Context, fieldVals ...interface{}) (float6
 }
 
 func (m *floatMetric) Set(ctx context.Context, v float64, fieldVals ...interface{}) error {
-	return iface.Store.Set(ctx, m.name, fieldVals, v)
+	return tsmon.Store.Set(ctx, m.name, fieldVals, v)
 }
 
 type floatCounter struct{ floatMetric }
 
 func (m *floatCounter) Add(ctx context.Context, n float64, fieldVals ...interface{}) error {
-	return iface.Store.Incr(ctx, m.name, fieldVals, n)
+	return tsmon.Store.Incr(ctx, m.name, fieldVals, n)
 }
 
 type stringMetric struct{ metric }
 
 func (m *stringMetric) Get(ctx context.Context, fieldVals ...interface{}) (string, error) {
-	ret, err := iface.Store.Get(ctx, m.name, fieldVals)
+	ret, err := tsmon.Store.Get(ctx, m.name, fieldVals)
 	if err != nil {
 		return "", err
 	}
@@ -205,13 +205,13 @@ func (m *stringMetric) Get(ctx context.Context, fieldVals ...interface{}) (strin
 }
 
 func (m *stringMetric) Set(ctx context.Context, v string, fieldVals ...interface{}) error {
-	return iface.Store.Set(ctx, m.name, fieldVals, v)
+	return tsmon.Store.Set(ctx, m.name, fieldVals, v)
 }
 
 type boolMetric struct{ metric }
 
 func (m *boolMetric) Get(ctx context.Context, fieldVals ...interface{}) (bool, error) {
-	ret, err := iface.Store.Get(ctx, m.name, fieldVals)
+	ret, err := tsmon.Store.Get(ctx, m.name, fieldVals)
 	if err != nil {
 		return false, err
 	}
@@ -222,5 +222,5 @@ func (m *boolMetric) Get(ctx context.Context, fieldVals ...interface{}) (bool, e
 }
 
 func (m *boolMetric) Set(ctx context.Context, v bool, fieldVals ...interface{}) error {
-	return iface.Store.Set(ctx, m.name, fieldVals, v)
+	return tsmon.Store.Set(ctx, m.name, fieldVals, v)
 }

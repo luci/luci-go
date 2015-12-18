@@ -6,7 +6,7 @@
 package store
 
 import (
-	"github.com/luci/luci-go/common/ts_mon/types"
+	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
 )
 

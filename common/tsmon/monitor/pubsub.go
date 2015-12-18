@@ -8,8 +8,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/gcloud/gcps"
-	"github.com/luci/luci-go/common/ts_mon/target"
-	"github.com/luci/luci-go/common/ts_mon/types"
+	"github.com/luci/luci-go/common/tsmon/target"
+	"github.com/luci/luci-go/common/tsmon/types"
 	"google.golang.org/cloud"
 	"google.golang.org/cloud/pubsub"
 )

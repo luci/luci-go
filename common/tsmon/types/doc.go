@@ -3,6 +3,6 @@
 // found in the LICENSE file.
 
 // Package types contains miscellaneous structs and interfaces used throughout
-// ts_mon.  They live here to avoid circular dependencies between other
+// tsmon.  They live here to avoid circular dependencies between other
 // packages.
 package types

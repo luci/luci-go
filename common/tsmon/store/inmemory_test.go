@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/ts_mon/field"
-	"github.com/luci/luci-go/common/ts_mon/types"
+	"github.com/luci/luci-go/common/tsmon/field"
+	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"

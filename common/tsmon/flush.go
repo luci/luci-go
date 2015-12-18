@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package iface
+package tsmon
 
 import (
 	"errors"
@@ -20,7 +20,7 @@ func minInt(a, b int) int {
 // Flush sends all the metrics that are registered in the application.
 func Flush(ctx context.Context) error {
 	if Monitor == nil {
-		return errors.New("no ts_mon Monitor is configured")
+		return errors.New("no tsmon Monitor is configured")
 	}
 
 	// Split up the payload into chunks if there are too many cells.
@@ -32,7 +32,9 @@ func Flush(ctx context.Context) error {
 	}
 	for len(cells) > 0 {
 		count := minInt(chunkSize, len(cells))
-		Monitor.Send(cells[:count], Target)
+		if err := Monitor.Send(cells[:count], Target); err != nil {
+			return err
+		}
 		cells = cells[count:]
 	}
 	return nil
