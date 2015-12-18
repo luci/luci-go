@@ -20,8 +20,15 @@ import (
 // success, the returned instance will need to be Close()'d when the caller has
 // finished with it.
 func GetStorage(c context.Context) (storage.Storage, error) {
-	cfg, err := Get(c)
+	gcfg, err := LoadGlobalConfig(c)
 	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to load global configuration.")
+		return nil, err
+	}
+
+	cfg, err := gcfg.LoadConfig(c)
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to load instance configuration.")
 		return nil, err
 	}
 
@@ -56,7 +63,7 @@ func GetStorage(c context.Context) (storage.Storage, error) {
 	}
 
 	// Get an Authenticator bound to the token scopes that we need for BigTable.
-	auth, err := gaeauthClient.Authenticator(c, bigtable.StorageReadOnlyScopes, nil)
+	a, err := gaeauthClient.Authenticator(c, bigtable.StorageScopes, gcfg.BigTableServiceAccountJSON)
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,
@@ -70,7 +77,7 @@ func GetStorage(c context.Context) (storage.Storage, error) {
 		Cluster:  bt.Cluster,
 		LogTable: bt.LogTableName,
 		ClientOptions: []cloud.ClientOption{
-			cloud.WithTokenSource(auth.TokenSource()),
+			cloud.WithTokenSource(a.TokenSource()),
 		},
 	})
 }

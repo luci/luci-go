@@ -7,6 +7,11 @@ package config
 import (
 	"errors"
 
+	"github.com/golang/protobuf/proto"
+	gaeauthClient "github.com/luci/luci-go/appengine/gaeauth/client"
+	"github.com/luci/luci-go/appengine/gaeconfig"
+	"github.com/luci/luci-go/common/config"
+	"github.com/luci/luci-go/common/config/impl/remote"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/settings"
@@ -24,16 +29,22 @@ const globalConfigSettingsKey = "LogDogCoordinatorGlobalSettings"
 type GlobalConfig struct {
 	// ConfigServiceURL is the API URL of the base "luci-config" service. If
 	// empty, the defualt service URL will be used.
-	ConfigServiceURL string `json:"configService"`
+	ConfigServiceURL string `json:"configService" endpoints:"req"`
 
 	// ConfigSet is the name of the configuration set to load from.
-	ConfigSet string `json:"configSet"`
+	ConfigSet string `json:"configSet" endpoints:"req"`
 	// ConfigPath is the path of the text-serialized configuration protobuf.
-	ConfigPath string `json:"configPath"`
+	ConfigPath string `json:"configPath" endpoints:"req"`
+
+	// BigTableServiceAccountJSON, if not empty, is the service account JSON file
+	// data that will be used for BigTable access.
+	//
+	// TODO(dnj): Remove this option once Cloud BigTable has cross-project ACLs.
+	BigTableServiceAccountJSON []byte `json:"bigTableServiceAccountJson,omitempty"`
 }
 
-// Load loads the global configuration from the AppEngine settings.
-func Load(c context.Context) (*GlobalConfig, error) {
+// LoadGlobalConfig loads the global configuration from the AppEngine settings.
+func LoadGlobalConfig(c context.Context) (*GlobalConfig, error) {
 	gc := GlobalConfig{}
 	if err := settings.Get(c, globalConfigSettingsKey, &gc); err != nil {
 		return nil, err
@@ -64,4 +75,50 @@ func (gcfg *GlobalConfig) Validate() error {
 		return errors.New("missing config path")
 	}
 	return nil
+}
+
+func (gcfg *GlobalConfig) LoadConfig(c context.Context) (*Config, error) {
+	// Prepare the "luci-config" parameters.
+	//
+	// Use an e-mail OAuth2-authenticated transport to pull from "luci-config".
+	c = gaeauthClient.UseServiceAccountTransport(c, nil, nil)
+	c = remote.Use(c, gcfg.ConfigServiceURL)
+
+	// Add a memcache-based caching filter.
+	c = gaeconfig.AddFilter(c, gaeconfig.DefaultExpire)
+
+	// Load our LUCI-Config values.
+	cfg, err := config.Get(c).GetConfig(gcfg.ConfigSet, gcfg.ConfigPath, false)
+	if err != nil {
+		log.Fields{
+			log.ErrorKey: err,
+			"serviceURL": gcfg.ConfigServiceURL,
+			"configSet":  gcfg.ConfigSet,
+			"configPath": gcfg.ConfigPath,
+		}.Errorf(c, "Failed to load config.")
+		return nil, errors.New("unable to load config")
+	}
+
+	cc := Config{}
+	if err := proto.UnmarshalText(cfg.Content, &cc); err != nil {
+		log.Fields{
+			log.ErrorKey:  err,
+			"size":        len(cfg.Content),
+			"contentHash": cfg.ContentHash,
+			"configSet":   cfg.ConfigSet,
+			"revision":    cfg.Revision,
+		}.Errorf(c, "Failed to unmarshal configuration protobuf.")
+		return nil, errors.New("configuration is invalid or corrupt")
+	}
+
+	return &cc, nil
+}
+
+// Load loads the current configuration from "luci-config".
+func Load(c context.Context) (*Config, error) {
+	gcfg, err := LoadGlobalConfig(c)
+	if err != nil {
+		return nil, err
+	}
+	return gcfg.LoadConfig(c)
 }

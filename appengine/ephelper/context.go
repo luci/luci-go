@@ -67,11 +67,11 @@ func (s *ServiceBase) Use(c context.Context, mi *endpoints.MethodInfo) (context.
 
 	// If an initializer is configured, use it.
 	if s.InstallServices != nil {
-		err := error(nil)
-		c, err = s.InstallServices(c)
+		ic, err := s.InstallServices(c)
 		if err != nil {
-			return c, err
+			return nil, err
 		}
+		c = ic
 	} else {
 		// Otherwise, use Prod.
 		c = gaemiddleware.WithProd(c, req)

@@ -3,16 +3,11 @@
 # found in the LICENSE file.
 
 runtime: go
-vm: true
 api_version: 1
-module: vmuser
+vm: true
 
 beta_settings:
-  service_account_scopes:
-    - "https://www.googleapis.com/auth/userinfo.email"
-    - "https://www.googleapis.com/auth/devstorage.full_control"
-    - "https://www.googleapis.com/auth/cloud-platform"
-    - "https://www.googleapis.com/auth/bigtable.data"
+  service_account_scopes: "https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/devstorage.full_control,https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/bigtable.data"
 
 handlers:
 - url: /static

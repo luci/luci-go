@@ -11,10 +11,14 @@
  "rootUrl": "http://localhost:8080/api/",
  "servicePath": "admin/v1/",
  "schemas": {
-  "SetConfigRequest": {
-   "id": "SetConfigRequest",
+  "GlobalConfig": {
+   "id": "GlobalConfig",
    "type": "object",
    "properties": {
+    "bigTableServiceAccountJson": {
+     "type": "string",
+     "format": "byte"
+    },
     "configPath": {
      "type": "string",
      "required": true
@@ -33,11 +37,11 @@
  "methods": {
   "setConfig": {
    "id": "admin.setConfig",
-   "path": "setconfig",
+   "path": "setConfig",
    "httpMethod": "POST",
    "description": "Set the instance's global configuration parameters.",
    "request": {
-    "$ref": "SetConfigRequest",
+    "$ref": "GlobalConfig",
     "parameterName": "resource"
    },
    "scopes": [

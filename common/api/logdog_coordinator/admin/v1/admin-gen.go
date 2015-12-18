@@ -68,24 +68,27 @@ func (s *Service) userAgent() string {
 	return googleapi.UserAgent + " " + s.UserAgent
 }
 
-type SetConfigRequest struct {
+type GlobalConfig struct {
+	BigTableServiceAccountJson string `json:"bigTableServiceAccountJson,omitempty"`
+
 	ConfigPath string `json:"configPath,omitempty"`
 
 	ConfigService string `json:"configService,omitempty"`
 
 	ConfigSet string `json:"configSet,omitempty"`
 
-	// ForceSendFields is a list of field names (e.g. "ConfigPath") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// ForceSendFields is a list of field names (e.g.
+	// "BigTableServiceAccountJson") to unconditionally include in API
+	// requests. By default, fields with empty values are omitted from API
+	// requests. However, any non-pointer, non-interface field appearing in
+	// ForceSendFields will be sent to the server regardless of whether the
+	// field is empty or not. This may be used to include empty fields in
+	// Patch requests.
 	ForceSendFields []string `json:"-"`
 }
 
-func (s *SetConfigRequest) MarshalJSON() ([]byte, error) {
-	type noMethod SetConfigRequest
+func (s *GlobalConfig) MarshalJSON() ([]byte, error) {
+	type noMethod GlobalConfig
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields)
 }
@@ -93,16 +96,16 @@ func (s *SetConfigRequest) MarshalJSON() ([]byte, error) {
 // method id "admin.setConfig":
 
 type SetConfigCall struct {
-	s                *Service
-	setconfigrequest *SetConfigRequest
-	opt_             map[string]interface{}
-	ctx_             context.Context
+	s            *Service
+	globalconfig *GlobalConfig
+	opt_         map[string]interface{}
+	ctx_         context.Context
 }
 
 // SetConfig: Set the instance's global configuration parameters.
-func (s *Service) SetConfig(setconfigrequest *SetConfigRequest) *SetConfigCall {
+func (s *Service) SetConfig(globalconfig *GlobalConfig) *SetConfigCall {
 	c := &SetConfigCall{s: s, opt_: make(map[string]interface{})}
-	c.setconfigrequest = setconfigrequest
+	c.globalconfig = globalconfig
 	return c
 }
 
@@ -124,7 +127,7 @@ func (c *SetConfigCall) Context(ctx context.Context) *SetConfigCall {
 
 func (c *SetConfigCall) doRequest(alt string) (*http.Response, error) {
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.setconfigrequest)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.globalconfig)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +137,7 @@ func (c *SetConfigCall) doRequest(alt string) (*http.Response, error) {
 	if v, ok := c.opt_["fields"]; ok {
 		params.Set("fields", fmt.Sprintf("%v", v))
 	}
-	urls := googleapi.ResolveRelative(c.s.BasePath, "setconfig")
+	urls := googleapi.ResolveRelative(c.s.BasePath, "setConfig")
 	urls += "?" + params.Encode()
 	req, _ := http.NewRequest("POST", urls, body)
 	googleapi.SetOpaque(req.URL)
@@ -161,9 +164,9 @@ func (c *SetConfigCall) Do() error {
 	//   "description": "Set the instance's global configuration parameters.",
 	//   "httpMethod": "POST",
 	//   "id": "admin.setConfig",
-	//   "path": "setconfig",
+	//   "path": "setConfig",
 	//   "request": {
-	//     "$ref": "SetConfigRequest",
+	//     "$ref": "GlobalConfig",
 	//     "parameterName": "resource"
 	//   },
 	//   "scopes": [

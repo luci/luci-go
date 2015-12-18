@@ -11,6 +11,7 @@ import (
 	mc "github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/config/filters/caching"
+	log "github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
 
@@ -39,14 +40,27 @@ type memCache struct {
 
 func (c *memCache) Store(ctx context.Context, key string, expire time.Duration, value []byte) {
 	mi := mc.Get(ctx)
-	mi.Set(mi.NewItem(c.key(key)).SetExpiration(expire).SetValue(value))
+	if err := mi.Set(mi.NewItem(c.key(key)).SetExpiration(expire).SetValue(value)); err != nil {
+		log.Fields{
+			log.ErrorKey: err,
+			"key":        key,
+			"expire":     expire,
+		}.Warningf(ctx, "Failed to store cache value.")
+	}
 }
 
 func (c *memCache) Retrieve(ctx context.Context, key string) []byte {
 	item, err := mc.Get(ctx).Get(c.key(key))
 	if err != nil {
+		if err != mc.ErrCacheMiss {
+			log.Fields{
+				log.ErrorKey: err,
+				"key":        key,
+			}.Warningf(ctx, "Failed to retrieve cache value.")
+		}
 		return nil
 	}
+
 	return item.Value()
 }
 

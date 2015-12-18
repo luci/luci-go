@@ -26,6 +26,7 @@ var (
 		"SetConfig": &endpoints.MethodInfo{
 			Desc:   "Set the instance's global configuration parameters.",
 			Name:   "setConfig",
+			Path:   "setConfig",
 			Scopes: Scopes,
 		},
 	}

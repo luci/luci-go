@@ -53,163 +53,163 @@ type Options struct {
 
 // NewFilter constructs a new caching config.Filter function.
 func NewFilter(o Options) config.Filter {
-	return func(c context.Context, cfg config.Interface) config.Interface {
-		return &gaeConfig{
+	return func(c context.Context, cc config.Interface) config.Interface {
+		return &cacheConfig{
 			Context: c,
 			Options: &o,
-			inner:   cfg,
+			inner:   cc,
 		}
 	}
 }
 
-// gaeConfig implements a config.Interface that caches results in MemCache.
-type gaeConfig struct {
+// cacheConfig implements a config.Interface that caches results in MemCache.
+type cacheConfig struct {
 	context.Context
 	*Options
 
 	inner config.Interface
 }
 
-func (cfg *gaeConfig) GetConfig(configSet, path string, hashOnly bool) (*config.Config, error) {
+func (cc *cacheConfig) GetConfig(configSet, path string, hashOnly bool) (*config.Config, error) {
 	// If we're doing hash-only lookup, we're okay with either full or hash-only
 	// result. However, if we have to do the lookup, we will store the result in
 	// a hash-only cache bucket.
 	c := config.Config{}
-	key := cfg.cacheKey("configs", "full", configSet, path)
-	if cfg.retrieve(key, &c) {
+	key := cc.cacheKey("configs", "full", configSet, path)
+	if cc.retrieve(key, &c) {
 		return &c, nil
 	}
 
 	if hashOnly {
-		key = cfg.cacheKey("configs", "hashOnly", configSet, path)
-		if cfg.retrieve(key, &c) {
+		key = cc.cacheKey("configs", "hashOnly", configSet, path)
+		if cc.retrieve(key, &c) {
 			return &c, nil
 		}
 	}
 
-	ic, err := cfg.inner.GetConfig(configSet, path, hashOnly)
+	ic, err := cc.inner.GetConfig(configSet, path, hashOnly)
 	if err != nil {
 		return nil, err
 	}
 
-	cfg.store(key, ic)
+	cc.store(key, ic)
 	return ic, nil
 }
 
-func (cfg *gaeConfig) GetConfigByHash(contentHash string) (string, error) {
+func (cc *cacheConfig) GetConfigByHash(contentHash string) (string, error) {
 	c := ""
-	key := cfg.cacheKey("configsByHash", contentHash)
-	if cfg.retrieve(key, &c) {
+	key := cc.cacheKey("configsByHash", contentHash)
+	if cc.retrieve(key, &c) {
 		return c, nil
 	}
 
-	c, err := cfg.inner.GetConfigByHash(contentHash)
+	c, err := cc.inner.GetConfigByHash(contentHash)
 	if err != nil {
 		return "", err
 	}
 
-	cfg.store(key, c)
+	cc.store(key, c)
 	return c, nil
 }
 
-func (cfg *gaeConfig) GetConfigSetLocation(configSet string) (*url.URL, error) {
+func (cc *cacheConfig) GetConfigSetLocation(configSet string) (*url.URL, error) {
 	v := ""
-	key := cfg.cacheKey("configSet", "location", configSet)
-	if cfg.retrieve(key, &v) {
+	key := cc.cacheKey("configSet", "location", configSet)
+	if cc.retrieve(key, &v) {
 		u, err := url.Parse(v)
 		if err != nil {
 			return u, nil
 		}
 	}
 
-	u, err := cfg.inner.GetConfigSetLocation(configSet)
+	u, err := cc.inner.GetConfigSetLocation(configSet)
 	if err != nil {
 		return nil, err
 	}
 
-	cfg.store(key, u.String())
+	cc.store(key, u.String())
 	return u, nil
 }
 
-func (cfg *gaeConfig) GetProjectConfigs(path string, hashesOnly bool) ([]config.Config, error) {
+func (cc *cacheConfig) GetProjectConfigs(path string, hashesOnly bool) ([]config.Config, error) {
 	var c []config.Config
-	key := cfg.cacheKey("projectConfigs", "full", path)
-	if cfg.retrieve(key, &c) {
+	key := cc.cacheKey("projectConfigs", "full", path)
+	if cc.retrieve(key, &c) {
 		return c, nil
 	}
 
 	if hashesOnly {
-		key = cfg.cacheKey("projectConfigs", "hashesOnly", path)
+		key = cc.cacheKey("projectConfigs", "hashesOnly", path)
 	}
 
-	c, err := cfg.inner.GetProjectConfigs(path, hashesOnly)
+	c, err := cc.inner.GetProjectConfigs(path, hashesOnly)
 	if err != nil {
 		return nil, err
 	}
 
-	cfg.store(key, c)
+	cc.store(key, c)
 	return c, nil
 }
 
-func (cfg *gaeConfig) GetProjects() ([]config.Project, error) {
+func (cc *cacheConfig) GetProjects() ([]config.Project, error) {
 	p := []config.Project(nil)
-	key := cfg.cacheKey("projects")
-	if cfg.retrieve(key, &p) {
+	key := cc.cacheKey("projects")
+	if cc.retrieve(key, &p) {
 		return p, nil
 	}
 
-	p, err := cfg.inner.GetProjects()
+	p, err := cc.inner.GetProjects()
 	if err != nil {
 		return nil, err
 	}
 
-	cfg.store(key, p)
+	cc.store(key, p)
 	return p, nil
 }
 
-func (cfg *gaeConfig) GetRefConfigs(path string, hashesOnly bool) ([]config.Config, error) {
+func (cc *cacheConfig) GetRefConfigs(path string, hashesOnly bool) ([]config.Config, error) {
 	c := []config.Config(nil)
-	key := cfg.cacheKey("refConfigs", "full", path)
-	if cfg.retrieve(key, &c) {
+	key := cc.cacheKey("refConfigs", "full", path)
+	if cc.retrieve(key, &c) {
 		return c, nil
 	}
 
 	if hashesOnly {
-		key = cfg.cacheKey("refConfigs", "hashesOnly", path)
+		key = cc.cacheKey("refConfigs", "hashesOnly", path)
 	}
 
-	c, err := cfg.inner.GetRefConfigs(path, hashesOnly)
+	c, err := cc.inner.GetRefConfigs(path, hashesOnly)
 	if err != nil {
 		return nil, err
 	}
 
-	cfg.store(key, c)
+	cc.store(key, c)
 	return c, nil
 }
 
-func (cfg *gaeConfig) GetRefs(projectID string) ([]string, error) {
+func (cc *cacheConfig) GetRefs(projectID string) ([]string, error) {
 	var refs []string
-	key := cfg.cacheKey("refs", projectID)
-	if cfg.retrieve(key, &refs) {
+	key := cc.cacheKey("refs", projectID)
+	if cc.retrieve(key, &refs) {
 		return refs, nil
 	}
 
-	refs, err := cfg.inner.GetRefs(projectID)
+	refs, err := cc.inner.GetRefs(projectID)
 	if err != nil {
 		return nil, err
 	}
 
-	cfg.store(key, refs)
+	cc.store(key, refs)
 	return refs, nil
 }
 
-func (cfg *gaeConfig) retrieve(key string, v interface{}) bool {
-	if cfg.Cache == nil {
+func (cc *cacheConfig) retrieve(key string, v interface{}) bool {
+	if cc.Cache == nil {
 		return false
 	}
 
 	// Load the cache value.
-	d := cfg.Cache.Retrieve(cfg, key)
+	d := cc.Cache.Retrieve(cc, key)
 	if d == nil {
 		return false
 	}
@@ -234,8 +234,8 @@ func (cfg *gaeConfig) retrieve(key string, v interface{}) bool {
 	return true
 }
 
-func (cfg *gaeConfig) store(key string, v interface{}) {
-	if cfg.Cache == nil {
+func (cc *cacheConfig) store(key string, v interface{}) {
+	if cc.Cache == nil {
 		return
 	}
 
@@ -256,7 +256,7 @@ func (cfg *gaeConfig) store(key string, v interface{}) {
 		return
 	}
 
-	cfg.Cache.Store(cfg, key, cfg.Expiration, buf.Bytes())
+	cc.Cache.Store(cc, key, cc.Expiration, buf.Bytes())
 }
 
 // cacheKey constructs a cache key from a set of value segments.
@@ -266,8 +266,8 @@ func (cfg *gaeConfig) store(key string, v interface{}) {
 // character, "|".
 //
 //   For example, ["a|b", "c"] => "a%7Cb|c"
-func (cfg *gaeConfig) cacheKey(values ...string) string {
-	version := cfg.Version
+func (cc *cacheConfig) cacheKey(values ...string) string {
+	version := cc.Version
 	if version == "" {
 		version = defaultVersion
 	}
