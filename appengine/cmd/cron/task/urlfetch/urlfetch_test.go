@@ -17,7 +17,7 @@ import (
 	"github.com/luci/luci-go/common/clock/testclock"
 
 	"github.com/luci/luci-go/appengine/cmd/cron/messages"
-	"github.com/luci/luci-go/appengine/cmd/cron/task/tasktest"
+	"github.com/luci/luci-go/appengine/cmd/cron/task/utils/tasktest"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"

@@ -44,6 +44,7 @@ import (
 	"github.com/luci/luci-go/appengine/cmd/cron/catalog"
 	"github.com/luci/luci-go/appengine/cmd/cron/engine"
 	"github.com/luci/luci-go/appengine/cmd/cron/task"
+	"github.com/luci/luci-go/appengine/cmd/cron/task/buildbucket"
 	"github.com/luci/luci-go/appengine/cmd/cron/task/noop"
 	"github.com/luci/luci-go/appengine/cmd/cron/task/swarming"
 	"github.com/luci/luci-go/appengine/cmd/cron/task/urlfetch"
@@ -58,6 +59,7 @@ var (
 
 	// Known kinds of tasks.
 	managers = []task.Manager{
+		&buildbucket.TaskManager{},
 		&noop.TaskManager{},
 		&swarming.TaskManager{},
 		&urlfetch.TaskManager{},

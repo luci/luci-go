@@ -20,6 +20,7 @@ import (
 
 	"github.com/luci/luci-go/appengine/cmd/cron/messages"
 	"github.com/luci/luci-go/appengine/cmd/cron/task"
+	"github.com/luci/luci-go/appengine/cmd/cron/task/utils"
 	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/common/api/swarming/swarming/v1"
 	"github.com/luci/luci-go/common/errors"
@@ -64,13 +65,13 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 	}
 
 	// Validate environ, dimensions, tags.
-	if err = validateKVList("environment variable", cfg.GetEnv(), '='); err != nil {
+	if err = utils.ValidateKVList("environment variable", cfg.GetEnv(), '='); err != nil {
 		return err
 	}
-	if err = validateKVList("dimension", cfg.GetDimensions(), ':'); err != nil {
+	if err = utils.ValidateKVList("dimension", cfg.GetDimensions(), ':'); err != nil {
 		return err
 	}
-	if err = validateKVList("tag", cfg.GetTags(), ':'); err != nil {
+	if err = utils.ValidateKVList("tag", cfg.GetTags(), ':'); err != nil {
 		return err
 	}
 
@@ -93,24 +94,11 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 	return nil
 }
 
-func validateKVList(kind string, list []string, sep rune) error {
-	for _, item := range list {
-		if strings.IndexRune(item, sep) == -1 {
-			return fmt.Errorf("bad %s, not a 'key%svalue' pair: %q", kind, string(sep), item)
-		}
-	}
-	return nil
-}
-
-func decodeKVList(list []string, sep rune) (out []*swarming.SwarmingRpcsStringPair) {
-	for _, item := range list {
-		idx := strings.IndexRune(item, sep)
-		if idx == -1 {
-			continue // should not happen, the list was validated by validateKVList
-		}
+func kvListToStringPairs(list []string, sep rune) (out []*swarming.SwarmingRpcsStringPair) {
+	for _, pair := range utils.UnpackKVList(list, sep) {
 		out = append(out, &swarming.SwarmingRpcsStringPair{
-			Key:   item[:idx],
-			Value: item[idx+1:],
+			Key:   pair.Key,
+			Value: pair.Value,
 		})
 	}
 	return out
@@ -189,8 +177,8 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 		PubsubTopic:     topic,
 		Tags:            tags,
 		Properties: &swarming.SwarmingRpcsTaskProperties{
-			Dimensions:           decodeKVList(cfg.Dimensions, ':'),
-			Env:                  decodeKVList(cfg.Env, '='),
+			Dimensions:           kvListToStringPairs(cfg.Dimensions, ':'),
+			Env:                  kvListToStringPairs(cfg.Env, '='),
 			ExecutionTimeoutSecs: executionTimeoutSecs,
 			ExtraArgs:            cfg.ExtraArgs,
 			GracePeriodSecs:      int64(cfg.GetGracePeriodSecs()),

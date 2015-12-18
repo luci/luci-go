@@ -28,6 +28,8 @@ message Task {
   optional UrlFetchTask url_fetch = 2;
   // SwarmingTask can be used to schedule swarming job.
   optional SwarmingTask swarming_task = 3;
+  // BuildbucketTask can be used to schedule buildbucket job.
+  optional BuildbucketTask buildbucket_task = 4;
 }
 
 
@@ -81,6 +83,21 @@ message SwarmingTask {
   optional int32 execution_timeout_secs = 9;
   optional int32 grace_period_secs = 10 [default = 30];
   optional int32 io_timeout_secs = 11;
+}
+
+
+// BuildbucketTask specifies parameters of Buildbucket-based cron job.
+message BuildbucketTask {
+  // Server is URL of the bulildbucket service to use.
+  optional string server = 1;
+  // Bucket defines what bucket to add the task to.
+  optional string bucket = 2;
+  // Builder defines what to run.
+  optional string builder = 3;
+  // Properties is arbitrary "key:value" pairs describing the task.
+  repeated string properties = 4;
+  // Tags is a list of tags (as "key:value" pairs) to assign to the task.
+  repeated string tags = 5;
 }
 
 
