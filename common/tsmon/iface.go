@@ -61,7 +61,7 @@ func InitializeFromFlags(c context.Context) error {
 
 		switch endpointURL.Scheme {
 		case "file":
-			Monitor = monitor.NewDebugMonitor(logger)
+			Monitor = monitor.NewDebugMonitor(logger, endpointURL.Path)
 		case "pubsub":
 			m, err := monitor.NewPubsubMonitor(
 				config.Credentials, endpointURL.Host, strings.TrimPrefix(endpointURL.Path, "/"))
