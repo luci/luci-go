@@ -193,7 +193,7 @@ import (
 //   }
 //
 //   type Person struct {
-//     Name `gae:"$id"`
+//     ID Name `gae:"$id"`
 //   }
 func GetPLS(obj interface{}) interface {
 	PropertyLoadSaver
