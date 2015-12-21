@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/gorhill/cronexpr"
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
 
@@ -36,6 +35,7 @@ import (
 	"github.com/luci/luci-go/server/tokens"
 
 	"github.com/luci/luci-go/appengine/cmd/cron/catalog"
+	"github.com/luci/luci-go/appengine/cmd/cron/schedule"
 	"github.com/luci/luci-go/appengine/cmd/cron/task"
 )
 
@@ -650,17 +650,17 @@ func (e *engineImpl) txn(c context.Context, jobID string, txn txnCallback) error
 // job.State in place (with a new state) and enqueues all emitted actions to
 // task queues.
 func (e *engineImpl) rollSM(c context.Context, job *CronJob, cb func(*StateMachine) error) error {
-	expr, err := cronexpr.Parse(job.Schedule)
+	sched, err := schedule.Parse(job.Schedule)
 	if err != nil {
 		return fmt.Errorf("bad schedule %q - %s", job.Schedule, err)
 	}
 	now := clock.Now(c).UTC()
 	rnd := mathrand.Get(c)
 	sm := StateMachine{
-		InputState:         job.State,
-		Now:                now,
-		NextInvocationTime: expr.Next(now),
-		Nonce:              func() int64 { return rnd.Int63() + 1 },
+		InputState: job.State,
+		Now:        now,
+		Schedule:   sched,
+		Nonce:      func() int64 { return rnd.Int63() + 1 },
 	}
 	// All errors returned by state machine transition changes are transient.
 	// Fatal errors (when we have them) should be reflected as a state changing

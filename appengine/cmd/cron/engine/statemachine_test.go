@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gorhill/cronexpr"
+	"github.com/luci/luci-go/appengine/cmd/cron/schedule"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -193,7 +193,7 @@ func TestStateMachine(t *testing.T) {
 		})
 		m.actions = nil
 
-		// Rescheduling event with same NextInvocationTime time is noop.
+		// Rescheduling event with same next tick time is noop.
 		So(m.roll(func(sm *StateMachine) error { return sm.OnScheduleChange() }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateScheduled)
 		So(m.state.TickNonce, ShouldEqual, 1)
@@ -201,8 +201,8 @@ func TestStateMachine(t *testing.T) {
 		So(m.actions, ShouldBeNil)
 
 		// Suddenly ticking each second.
-		expr, _ := cronexpr.Parse("*/1 * * * * * *")
-		m.schedule = expr
+		sched, _ := schedule.Parse("*/1 * * * * * *")
+		m.schedule = sched
 
 		// Should be rescheduled to run earlier
 		So(m.roll(func(sm *StateMachine) error { return sm.OnScheduleChange() }), ShouldBeNil)
@@ -248,28 +248,28 @@ type testStateMachine struct {
 	state    JobState
 	now      time.Time
 	nonce    int64
-	schedule *cronexpr.Expression
+	schedule *schedule.Schedule
 	actions  []Action
 }
 
 func newTestStateMachine() *testStateMachine {
 	// Each 5 sec.
-	expr, _ := cronexpr.Parse("*/5 * * * * * *")
+	sched, _ := schedule.Parse("*/5 * * * * * *")
 	return &testStateMachine{
 		state: JobState{
 			State: JobStateDisabled,
 		},
 		now:      epoch,
-		schedule: expr,
+		schedule: sched,
 	}
 }
 
 func (t *testStateMachine) roll(cb func(sm *StateMachine) error) error {
 	nonce := t.nonce
 	sm := StateMachine{
-		InputState:         t.state,
-		Now:                t.now,
-		NextInvocationTime: t.schedule.Next(t.now),
+		InputState: t.state,
+		Now:        t.now,
+		Schedule:   t.schedule,
 		Nonce: func() int64 {
 			nonce++
 			return nonce

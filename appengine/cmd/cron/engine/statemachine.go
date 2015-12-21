@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/luci/luci-go/appengine/cmd/cron/schedule"
 	"github.com/luci/luci-go/server/auth/identity"
 )
 
@@ -129,10 +130,10 @@ func (a StartInvocationAction) IsAction() bool { return true }
 // DISABLED -> SCHEDULED -> QUEUED -> QUEUED (starting) -> RUNNING -> SCHEDULED
 type StateMachine struct {
 	// Inputs.
-	InputState         JobState     // job's current state
-	Now                time.Time    // current time
-	NextInvocationTime time.Time    // when to run the job next time
-	Nonce              func() int64 // produces a series of nonces on demand
+	InputState JobState           // job's current state
+	Now        time.Time          // current time
+	Schedule   *schedule.Schedule // knows when to run the job next time
+	Nonce      func() int64       // produces a series of nonces on demand
 
 	// Outputs.
 	OutputState *JobState // state after the transition or nil if same as input
@@ -252,14 +253,19 @@ func (m *StateMachine) OnInvocationDone(invocationID int64) error {
 // OnScheduleChange happens when job's schedule changes (and the job potentially
 // needs to be rescheduled).
 func (m *StateMachine) OnScheduleChange() error {
+	// Not scheduled?
+	if !m.InputState.IsExpectingTick() {
+		return nil
+	}
 	// Did it really change next invocation time?
-	if !m.InputState.IsExpectingTick() || m.NextInvocationTime == m.InputState.TickTime {
+	nextTick := m.Schedule.Next(m.Now)
+	if nextTick == m.InputState.TickTime {
 		return nil
 	}
 	// Change the next tick time, carry over the rest of the state.
 	cp := m.InputState
 	m.OutputState = &cp
-	m.OutputState.TickTime = m.NextInvocationTime
+	m.OutputState.TickTime = nextTick
 	m.OutputState.TickNonce = m.Nonce()
 	m.emitAction(TickLaterAction{m.OutputState.TickTime, m.OutputState.TickNonce})
 	return nil
@@ -291,7 +297,7 @@ func (m *StateMachine) OnManualInvocation(triggeredBy identity.Identity) error {
 func (m *StateMachine) schedule(s StateKind, prev JobState) {
 	m.OutputState = &prev
 	m.OutputState.State = s
-	m.OutputState.TickTime = m.NextInvocationTime
+	m.OutputState.TickTime = m.Schedule.Next(m.Now)
 	m.OutputState.TickNonce = m.Nonce()
 	m.emitAction(TickLaterAction{m.OutputState.TickTime, m.OutputState.TickNonce})
 }

@@ -13,10 +13,10 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/golang/protobuf/proto"
-	"github.com/gorhill/cronexpr"
 
 	"github.com/luci/luci-go/appengine/cmd/cron/engine"
 	"github.com/luci/luci-go/appengine/cmd/cron/messages"
+	"github.com/luci/luci-go/appengine/cmd/cron/schedule"
 	"github.com/luci/luci-go/appengine/cmd/cron/task"
 )
 
@@ -35,9 +35,9 @@ type cronJob struct {
 
 func makeCronJob(j *engine.CronJob, now time.Time) *cronJob {
 	nextRun := ""
-	expr, err := cronexpr.Parse(j.Schedule)
+	sched, err := schedule.Parse(j.Schedule)
 	if err == nil {
-		nextRun = humanize.RelTime(expr.Next(now), now, "ago", "from now")
+		nextRun = humanize.RelTime(sched.Next(now), now, "ago", "from now")
 	} else {
 		nextRun = fmt.Sprintf("bad schedule %q", j.Schedule)
 	}

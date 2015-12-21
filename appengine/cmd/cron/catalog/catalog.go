@@ -16,11 +16,11 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/gorhill/cronexpr"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logging"
 
 	"github.com/luci/luci-go/appengine/cmd/cron/messages"
+	"github.com/luci/luci-go/appengine/cmd/cron/schedule"
 	"github.com/luci/luci-go/appengine/cmd/cron/task"
 )
 
@@ -201,7 +201,7 @@ func (cat *catalog) validateJobProto(j *messages.Job) error {
 	if j.Schedule == nil {
 		return fmt.Errorf("missing 'schedule' field")
 	}
-	if _, err := cronexpr.Parse(*j.Schedule); err != nil {
+	if _, err := schedule.Parse(*j.Schedule); err != nil {
 		return fmt.Errorf("%s is not valid value for 'schedule' field - %s", *j.Schedule, err)
 	}
 	_, err := cat.extractTaskProto(j.Task)
