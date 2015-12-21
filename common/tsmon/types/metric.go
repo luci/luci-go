@@ -5,6 +5,7 @@
 package types
 
 import (
+	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
 )
 
@@ -14,4 +15,13 @@ type Metric interface {
 	Name() string
 	Fields() []field.Field
 	ValueType() ValueType
+}
+
+// DistributionMetric is the low-level interface provided by all distribution
+// metrics.  It has a Bucketer which is responsible for assigning buckets to
+// samples.  Concrete types are defined in the "metrics" package.
+type DistributionMetric interface {
+	Metric
+
+	Bucketer() *distribution.Bucketer
 }

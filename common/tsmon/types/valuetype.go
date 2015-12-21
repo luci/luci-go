@@ -15,4 +15,6 @@ const (
 	CumulativeFloatType
 	StringType
 	BoolType
+	NonCumulativeDistributionType
+	CumulativeDistributionType
 )

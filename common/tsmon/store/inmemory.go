@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
@@ -22,6 +23,8 @@ type metricData struct {
 	fields []field.Field
 	typ    types.ValueType
 	cells  map[uint64][]*cell
+
+	bucketer *distribution.Bucketer
 }
 
 type cell struct {
@@ -58,11 +61,17 @@ func (s InMemoryStore) Register(m types.Metric) error {
 		return fmt.Errorf("A metric with the name '%s' was already registered", m.Name())
 	}
 
-	s[m.Name()] = metricData{
+	d := metricData{
 		fields: m.Fields(),
 		cells:  map[uint64][]*cell{},
 		typ:    m.ValueType(),
 	}
+
+	if dist, ok := m.(types.DistributionMetric); ok {
+		d.bucketer = dist.Bucketer()
+	}
+
+	s[m.Name()] = d
 	return nil
 }
 
@@ -114,21 +123,34 @@ func (s InMemoryStore) Incr(ctx context.Context, name string, fieldVals []interf
 		return err
 	}
 
-	switch d := delta.(type) {
-	case int64:
-		if v, ok := c.value.(int64); ok {
-			c.value = v + d
-		} else {
-			c.value = d
+	if m.typ == types.CumulativeDistributionType || m.typ == types.NonCumulativeDistributionType {
+		d, ok := delta.(float64)
+		if !ok {
+			return fmt.Errorf("Incr got a delta of unsupported type (%v)", delta)
 		}
-	case float64:
-		if v, ok := c.value.(float64); ok {
-			c.value = v + d
-		} else {
-			c.value = d
+		v, ok := c.value.(*distribution.Distribution)
+		if !ok {
+			v = distribution.New(m.bucketer)
+			c.value = v
 		}
-	default:
-		return fmt.Errorf("Incr got a delta of unsupported type (%v)", delta)
+		v.Add(float64(d))
+	} else {
+		switch d := delta.(type) {
+		case int64:
+			if v, ok := c.value.(int64); ok {
+				c.value = v + d
+			} else {
+				c.value = d
+			}
+		case float64:
+			if v, ok := c.value.(float64); ok {
+				c.value = v + d
+			} else {
+				c.value = d
+			}
+		default:
+			return fmt.Errorf("Incr got a delta of unsupported type (%v)", delta)
+		}
 	}
 
 	return nil

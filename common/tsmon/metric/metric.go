@@ -24,6 +24,7 @@ package metric
 
 import (
 	"github.com/luci/luci-go/common/tsmon"
+	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
@@ -73,6 +74,21 @@ type Bool interface {
 
 	Get(ctx context.Context, fieldVals ...interface{}) (bool, error)
 	Set(ctx context.Context, v bool, fieldVals ...interface{}) error
+}
+
+// CumulativeDistribution is a cumulative-distribution-valued metric.
+type CumulativeDistribution interface {
+	types.DistributionMetric
+
+	Get(ctx context.Context, fieldVals ...interface{}) (*distribution.Distribution, error)
+	Add(ctx context.Context, v float64, fieldVals ...interface{}) error
+}
+
+// NonCumulativeDistribution is a non-cumulative-distribution-valued metric.
+type NonCumulativeDistribution interface {
+	CumulativeDistribution
+
+	Set(ctx context.Context, d *distribution.Distribution, fieldVals ...interface{}) error
 }
 
 // NewInt returns a new non-cumulative integer gauge metric.  This will panic if
@@ -129,6 +145,34 @@ func NewString(name string, fields ...field.Field) String {
 // metric already exists with this name.
 func NewBool(name string, fields ...field.Field) Bool {
 	m := &boolMetric{metric{name: name, fields: fields, typ: types.BoolType}}
+	if err := tsmon.Store.Register(m); err != nil {
+		panic(err)
+	}
+	return m
+}
+
+// NewCumulativeDistribution returns a new cumulative-distribution-valued
+// metric.  This will panic if another metric already exists with this name.
+func NewCumulativeDistribution(name string, bucketer *distribution.Bucketer, fields ...field.Field) CumulativeDistribution {
+	m := &cumulativeDistributionMetric{
+		metric:   metric{name: name, fields: fields, typ: types.CumulativeDistributionType},
+		bucketer: bucketer,
+	}
+	if err := tsmon.Store.Register(m); err != nil {
+		panic(err)
+	}
+	return m
+}
+
+// NewNonCumulativeDistribution returns a new non-cumulative-distribution-valued
+// metric.  This will panic if another metric already exists with this name.
+func NewNonCumulativeDistribution(name string, bucketer *distribution.Bucketer, fields ...field.Field) NonCumulativeDistribution {
+	m := &nonCumulativeDistributionMetric{
+		cumulativeDistributionMetric{
+			metric:   metric{name: name, fields: fields, typ: types.NonCumulativeDistributionType},
+			bucketer: bucketer,
+		},
+	}
 	if err := tsmon.Store.Register(m); err != nil {
 		panic(err)
 	}
@@ -222,5 +266,33 @@ func (m *boolMetric) Get(ctx context.Context, fieldVals ...interface{}) (bool, e
 }
 
 func (m *boolMetric) Set(ctx context.Context, v bool, fieldVals ...interface{}) error {
+	return tsmon.Store.Set(ctx, m.name, fieldVals, v)
+}
+
+type cumulativeDistributionMetric struct {
+	metric
+	bucketer *distribution.Bucketer
+}
+
+func (m *cumulativeDistributionMetric) Bucketer() *distribution.Bucketer { return m.bucketer }
+
+func (m *cumulativeDistributionMetric) Get(ctx context.Context, fieldVals ...interface{}) (*distribution.Distribution, error) {
+	ret, err := tsmon.Store.Get(ctx, m.name, fieldVals)
+	if err != nil {
+		return nil, err
+	}
+	if ret == nil {
+		return nil, nil
+	}
+	return ret.(*distribution.Distribution), nil
+}
+
+func (m *cumulativeDistributionMetric) Add(ctx context.Context, v float64, fieldVals ...interface{}) error {
+	return tsmon.Store.Incr(ctx, m.name, fieldVals, v)
+}
+
+type nonCumulativeDistributionMetric struct{ cumulativeDistributionMetric }
+
+func (m *nonCumulativeDistributionMetric) Set(ctx context.Context, v *distribution.Distribution, fieldVals ...interface{}) error {
 	return tsmon.Store.Set(ctx, m.name, fieldVals, v)
 }
