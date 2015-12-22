@@ -9,10 +9,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
 
-	"golang.org/x/net/context"
-
+	"github.com/luci/gae/impl/memory"
 	"github.com/luci/luci-go/appengine/cmd/cron/messages"
 	"github.com/luci/luci-go/appengine/cmd/cron/task"
 	"github.com/luci/luci-go/appengine/cmd/cron/task/utils/tasktest"
@@ -87,6 +87,14 @@ func TestValidateProtoMessage(t *testing.T) {
 		}), ShouldErrLike, "bad tag, not a 'key:value' pair")
 	})
 
+	Convey("ValidateProtoMessage forbids default tags overwrite", t, func() {
+		So(tm.ValidateProtoMessage(&messages.SwarmingTask{
+			Server:  strPtr("https://blah.com"),
+			Command: []string{"echo", "Hi!"},
+			Tags:    []string{"cron_job_id:blah"},
+		}), ShouldErrLike, "tag \"cron_job_id\" is reserved")
+	})
+
 	Convey("ValidateProtoMessage validates priority", t, func() {
 		call := func(priority int32) error {
 			return tm.ValidateProtoMessage(&messages.SwarmingTask{
@@ -132,7 +140,7 @@ func TestFullFlow(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		c := context.Background()
+		c := memory.Use(context.Background())
 		mgr := TaskManager{}
 		ctl := &tasktest.TestController{
 			TaskMessage: &messages.SwarmingTask{
@@ -147,6 +155,7 @@ func TestFullFlow(t *testing.T) {
 				Tags:       []string{"a:b", "c:d"},
 				Priority:   intPtr(50),
 			},
+			Client:       http.DefaultClient,
 			SaveCallback: func() error { return nil },
 			PrepareTopicCallback: func(publisher string) (string, string, error) {
 				So(publisher, ShouldEqual, ts.URL)

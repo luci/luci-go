@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Package utils contains a bunch of small functions used by task/ subpackages.
 package utils
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -15,6 +15,9 @@ type KV struct {
 	Key   string
 	Value string
 }
+
+// KVList if list of KV pairs.
+type KVList []KV
 
 // ValidateKVList makes sure each string in the list is valid key-value pair.
 func ValidateKVList(kind string, list []string, sep rune) error {
@@ -26,12 +29,29 @@ func ValidateKVList(kind string, list []string, sep rune) error {
 	return nil
 }
 
+// KVListFromMap converts a map to KVList.
+func KVListFromMap(m map[string]string) KVList {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	kvList := make([]KV, len(keys))
+	for i, k := range keys {
+		kvList[i] = KV{
+			Key:   k,
+			Value: m[k],
+		}
+	}
+	return kvList
+}
+
 // UnpackKVList takes validated list of k-v pair strings and returns list of
 // structs.
 //
 // Silently skips malformed strings. Use ValidateKVList to detect them before
 // calling this function.
-func UnpackKVList(list []string, sep rune) (out []KV) {
+func UnpackKVList(list []string, sep rune) (out KVList) {
 	for _, item := range list {
 		idx := strings.IndexRune(item, sep)
 		if idx == -1 {
@@ -41,6 +61,15 @@ func UnpackKVList(list []string, sep rune) (out []KV) {
 			Key:   item[:idx],
 			Value: item[idx+1:],
 		})
+	}
+	return out
+}
+
+// Pack converts KV list to a list of strings.
+func (l KVList) Pack(sep rune) []string {
+	out := make([]string, len(l))
+	for i, kv := range l {
+		out[i] = kv.Key + string(sep) + kv.Value
 	}
 	return out
 }

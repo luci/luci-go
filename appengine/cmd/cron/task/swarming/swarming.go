@@ -8,20 +8,17 @@ package swarming
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
-	"google.golang.org/api/googleapi"
 	"google.golang.org/api/pubsub/v1"
 
+	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/cmd/cron/messages"
 	"github.com/luci/luci-go/appengine/cmd/cron/task"
 	"github.com/luci/luci-go/appengine/cmd/cron/task/utils"
-	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/common/api/swarming/swarming/v1"
 	"github.com/luci/luci-go/common/errors"
 )
@@ -75,6 +72,14 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 		return err
 	}
 
+	// Default tags can not be overridden.
+	defTags := defaultTags(nil, nil)
+	for _, kv := range utils.UnpackKVList(cfg.GetTags(), ':') {
+		if _, ok := defTags[kv.Key]; ok {
+			return fmt.Errorf("tag %q is reserved", kv.Key)
+		}
+	}
+
 	// Validate priority.
 	priority := cfg.GetPriority()
 	if priority < 0 || priority > 255 {
@@ -104,6 +109,24 @@ func kvListToStringPairs(list []string, sep rune) (out []*swarming.SwarmingRpcsS
 	return out
 }
 
+// defaultTags returns map with default set of tags.
+//
+// If context is nil, only keys are set.
+func defaultTags(c context.Context, ctl task.Controller) map[string]string {
+	if c != nil {
+		return map[string]string{
+			"cron_invocation_id": fmt.Sprintf("%d", ctl.InvocationID()),
+			"cron_job_id":        ctl.JobID(),
+			"user_agent":         info.Get(c).AppID(),
+		}
+	}
+	return map[string]string{
+		"cron_invocation_id": "",
+		"cron_job_id":        "",
+		"user_agent":         "",
+	}
+}
+
 // defaultExpirationTimeout derives Swarming queuing timeout: max time a task
 // is kept in the queue (not being picked up by bots), before it is marked as
 // failed.
@@ -121,19 +144,6 @@ func defaultExecutionTimeout(ctl task.Controller) time.Duration {
 	return time.Hour
 }
 
-// isTransientAPIError returns true if error from Google API client indicates
-// an error that can go away on its own in the future.
-func isTransientAPIError(err error) bool {
-	if err == nil {
-		return false
-	}
-	apiErr, _ := err.(*googleapi.Error)
-	if apiErr == nil {
-		return true // failed to get HTTP code => connectivity error => transient
-	}
-	return apiErr.Code >= 500 || apiErr.Code == 429
-}
-
 // taskData is saved in Invocation.TaskData field.
 type taskData struct {
 	SwarmingTaskID string `json:"swarming_task_id"`
@@ -145,7 +155,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	cfg := ctl.Task().(*messages.SwarmingTask)
 
 	// Default set of tags.
-	tags := []string{"cron:" + ctl.JobID()}
+	tags := utils.KVListFromMap(defaultTags(c, ctl)).Pack(':')
 	tags = append(tags, cfg.Tags...)
 
 	// How long to keep a task in swarming queue (not running) before marking it
@@ -214,10 +224,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	resp, err := service.Tasks.New(&request).Context(c).Do()
 	if err != nil {
 		ctl.DebugLog("Failed to trigger the task - %s", err)
-		if isTransientAPIError(err) {
-			return errors.WrapTransient(err)
-		}
-		return err
+		return utils.WrapAPIError(err)
 	}
 
 	// Dump response in full to the debug log. It doesn't contain any secrets.
@@ -280,35 +287,35 @@ func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, 
 	resp, err := service.Task.Result(taskData.SwarmingTaskID).Context(c).Do()
 	if err != nil {
 		ctl.DebugLog("Failed to fetch task results - %s", err)
-		if isTransientAPIError(err) {
-			err = errors.WrapTransient(err)
-		} else {
+		err = utils.WrapAPIError(err)
+		if !errors.IsTransient(err) {
 			ctl.State().Status = task.StatusFailed
 		}
 		return err
 	}
+
+	// Dump response in full to the debug log. It doesn't contain any secrets.
+	blob, err := json.MarshalIndent(resp, "", "  ")
+	if err != nil {
+		return err
+	}
+	ctl.DebugLog("Swarming response:\n%s", string(blob))
+
 	m.handleTaskResult(c, ctl, resp)
 	return nil
 }
 
 // createSwarmingService makes a configured Swarming API client.
 func (m TaskManager) createSwarmingService(c context.Context, ctl task.Controller) (*swarming.Service, error) {
-	// TODO(vadimsh): Use per-project service accounts, not a global cron service
-	// account.
-	cfg := ctl.Task().(*messages.SwarmingTask)
-	var transport http.RoundTripper
-	if strings.HasPrefix(*cfg.Server, "http://") {
-		transport = http.DefaultTransport // local tests
-	} else {
-		var err error
-		if transport, err = client.Transport(c, nil, nil); err != nil {
-			return nil, err
-		}
-	}
-	service, err := swarming.New(&http.Client{Transport: transport})
+	client, err := ctl.GetClient()
 	if err != nil {
 		return nil, err
 	}
+	service, err := swarming.New(client)
+	if err != nil {
+		return nil, err
+	}
+	cfg := ctl.Task().(*messages.SwarmingTask)
 	service.BasePath = *cfg.Server + "/_ah/api/swarming/v1/"
 	return service, nil
 }

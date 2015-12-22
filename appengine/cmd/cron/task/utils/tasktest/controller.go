@@ -7,6 +7,7 @@ package tasktest
 import (
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/appengine/cmd/cron/task"
@@ -20,6 +21,7 @@ type TestController struct {
 
 	TaskMessage proto.Message // return value of Task
 	TaskState   task.State    // return value of State(), mutated in place
+	Client      *http.Client  // return value by GetClient()
 	Log         []string      // individual log lines passed to DebugLog()
 
 	SaveCallback         func() error                         // mock for Save()
@@ -79,6 +81,14 @@ func (c *TestController) PrepareTopic(publisher string) (topic string, token str
 		return c.PrepareTopicCallback(publisher)
 	}
 	return "", "", errors.New("PrepareTopic must not be called (not mocked)")
+}
+
+// GetClient is part of Controller interface.
+func (c *TestController) GetClient() (*http.Client, error) {
+	if c.Client != nil {
+		return c.Client, nil
+	}
+	return nil, errors.New("GetClient must not be called (not mocked)")
 }
 
 var _ task.Controller = (*TestController)(nil)

@@ -9,6 +9,8 @@
 package task
 
 import (
+	"net/http"
+
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
@@ -130,6 +132,10 @@ type Controller interface {
 	// grab a corresponding service account name. All service that use luci auth
 	// component expose this endpoint.
 	PrepareTopic(publisher string) (topic string, token string, err error)
+
+	// GetClient returns http.Client that is configured to use job's service
+	// account credentials to talk to other services.
+	GetClient() (*http.Client, error)
 
 	// DebugLog appends a line to the free form text log of the task.
 	// For debugging.

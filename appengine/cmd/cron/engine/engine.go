@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"sort"
 	"strconv"
@@ -25,6 +26,7 @@ import (
 	"github.com/luci/gae/service/memcache"
 	"github.com/luci/gae/service/taskqueue"
 
+	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
@@ -1196,6 +1198,10 @@ func (e *engineImpl) handlePubSubMessage(c context.Context, msg *pubsub.PubsubMe
 	err = ctl.manager.HandleNotification(c, ctl, msg)
 	if err != nil {
 		logging.Errorf(c, "Error when handling the message - %s", err)
+		if !errors.IsTransient(err) && ctl.State().Status != task.StatusFailed {
+			ctl.DebugLog("Fatal error when handling PubSub notification, aborting invocation - %s", err)
+			ctl.State().Status = task.StatusFailed
+		}
 	}
 
 	// Save anyway, to preserve the invocation log.
@@ -1271,6 +1277,17 @@ func (ctl *taskController) PrepareTopic(publisher string) (topic string, token s
 		manager:   ctl.manager,
 		publisher: publisher,
 	})
+}
+
+// GetClient is part of task.Controller interface
+func (ctl *taskController) GetClient() (*http.Client, error) {
+	// TODO(vadimsh): Use per-project service accounts, not a global cron service
+	// account.
+	transport, err := client.Transport(ctl.ctx, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &http.Client{Transport: transport}, nil
 }
 
 // DebugLog is part of task.Controller interface.
