@@ -60,6 +60,9 @@ func makeCronJob(j *engine.CronJob, now time.Time) *cronJob {
 }
 
 func taskToText(task []byte) string {
+	if len(task) == 0 {
+		return ""
+	}
 	msg := messages.Task{}
 	if err := proto.Unmarshal(task, &msg); err != nil {
 		return fmt.Sprintf("Failed to unmarshal the task - %s", err)

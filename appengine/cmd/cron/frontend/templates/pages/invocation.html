@@ -24,12 +24,14 @@
     <hr>
   </div>
 
+  {{if .Inv.Revision}}
   <h4>Definition (rev {{.Inv.Revision}})</h4>
   <div class="row">
     <div class="col-sm-12">
       <pre>{{.Inv.Definition}}</pre>
     </div>
   </div>
+  {{end}}
 
   <h4>Debug log</h4>
   <div class="row">

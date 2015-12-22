@@ -122,11 +122,13 @@ func NewEngine(conf Config) Engine {
 // Serialized as JSON, produced by enqueueActions, used as inputs in
 // ExecuteSerializedAction. Union of all possible payloads for simplicity.
 type actionTaskPayload struct {
-	JobID           string // ID of relevant CronJob
-	Kind            string // defines what fields below to examine
-	TickNonce       int64  // valid for "TickLaterAction" kind
-	InvocationNonce int64  // valid for "StartInvocationAction" kind
-	TriggeredBy     string // valid for "StartInvocationAction" kind
+	JobID               string `json:",omitempty"` // ID of relevant CronJob
+	Kind                string `json:",omitempty"` // defines what fields below to examine
+	TickNonce           int64  `json:",omitempty"` // valid for "TickLaterAction" kind
+	InvocationNonce     int64  `json:",omitempty"` // valid for "StartInvocationAction" kind
+	TriggeredBy         string `json:",omitempty"` // valid for "StartInvocationAction" kind
+	Overruns            int    `json:",omitempty"` // valid for "RecordOverrunAction" kind
+	RunningInvocationID int64  `json:",omitempty"` // valid for "RecordOverrunAction" kind
 }
 
 // CronJob stores the last known definition of a cron job, as well as its
@@ -722,6 +724,21 @@ func (e *engineImpl) enqueueActions(c context.Context, jobID string, actions []A
 				Delay:   time.Second, // give the transaction time to land
 				Payload: payload,
 			})
+		case RecordOverrunAction:
+			payload, err := json.Marshal(actionTaskPayload{
+				JobID:               jobID,
+				Kind:                "RecordOverrunAction",
+				Overruns:            a.Overruns,
+				RunningInvocationID: a.RunningInvocationID,
+			})
+			if err != nil {
+				return err
+			}
+			qs[e.InvocationsQueueName] = append(qs[e.InvocationsQueueName], &taskqueue.Task{
+				Path:    e.InvocationsQueuePath,
+				Delay:   time.Second, // give the transaction time to land
+				Payload: payload,
+			})
 		default:
 			logging.Errorf(c, "Unexpected action type %T, skipping", a)
 		}
@@ -754,6 +771,8 @@ func (e *engineImpl) ExecuteSerializedAction(c context.Context, action []byte, r
 		return e.startInvocation(
 			c, payload.JobID, payload.InvocationNonce,
 			identity.Identity(payload.TriggeredBy), retryCount)
+	case "RecordOverrunAction":
+		return e.recordOverrun(c, payload.JobID, payload.Overruns, payload.RunningInvocationID)
 	default:
 		return fmt.Errorf("unexpected action kind %q", payload.Kind)
 	}
@@ -867,6 +886,35 @@ func (e *engineImpl) timerTick(c context.Context, jobID string, tickNonce int64)
 		logging.Infof(c, "Tick %d has arrived", tickNonce)
 		return e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnTimerTick(tickNonce) })
 	})
+}
+
+// recordOverrun is invoked via task queue when a job should have been started,
+// but previous invocation was still running.
+//
+// It creates new Invocation entity (in 'FAILED' state) in the datastore,
+// to keep record of all overruns. Doesn't modify CronJob entity.
+func (e *engineImpl) recordOverrun(c context.Context, jobID string, overruns int, runningInvID int64) error {
+	ds := datastore.Get(c)
+	now := clock.Now(c)
+	jobKey := ds.NewKey("CronJob", jobID, 0, nil)
+	invID, err := generateInvocationID(c, jobKey)
+	if err != nil {
+		return err
+	}
+	inv := Invocation{
+		ID:       invID,
+		JobKey:   jobKey,
+		Started:  now,
+		Finished: now,
+		Status:   task.StatusFailed,
+	}
+	if runningInvID == 0 {
+		inv.debugLog(c, "New invocation should be starting now, but previous one is still starting")
+	} else {
+		inv.debugLog(c, "New invocation should be starting now, but previous one is still running: %d", runningInvID)
+	}
+	inv.debugLog(c, "Total overruns thus far: %d", overruns)
+	return errors.WrapTransient(ds.Put(&inv))
 }
 
 // startInvocation is called via task queue to start running a job. This call

@@ -125,6 +125,7 @@ func TestStateMachine(t *testing.T) {
 		So(m.state.Overruns, ShouldEqual, 1)
 		So(m.actions, ShouldResemble, []Action{
 			TickLaterAction{epoch.Add(15 * time.Second), 4},
+			RecordOverrunAction{Overruns: 1},
 		})
 		m.actions = nil
 
@@ -172,6 +173,7 @@ func TestStateMachine(t *testing.T) {
 		So(m.state.Overruns, ShouldEqual, 1)
 		So(m.actions, ShouldResemble, []Action{
 			TickLaterAction{epoch.Add(15 * time.Second), 4},
+			RecordOverrunAction{Overruns: 1, RunningInvocationID: 100},
 		})
 		m.actions = nil
 

@@ -114,6 +114,18 @@ type StartInvocationAction struct {
 // IsAction makes StartInvocationAction implement Action interface.
 func (a StartInvocationAction) IsAction() bool { return true }
 
+// RecordOverrunAction instructs Engine to record overrun event.
+//
+// An overrun happens when job's schedule indicates that a new job invocation
+// should start now, but previous one is still running.
+type RecordOverrunAction struct {
+	Overruns            int
+	RunningInvocationID int64
+}
+
+// IsAction makes RecordOverrunAction implement Action interface.
+func (a RecordOverrunAction) IsAction() bool { return true }
+
 // StateMachine advances state of some single cron job. It performs a single
 // step only (one On* call). As input it takes the state of the job and state of
 // the world (the schedule is considered to be a part of the world state).
@@ -198,6 +210,10 @@ func (m *StateMachine) OnTimerTick(tickNonce int64) error {
 		panic("Impossible, see IsExpectingTick()")
 	}
 	m.OutputState.Overruns++
+	m.emitAction(RecordOverrunAction{
+		Overruns:            m.OutputState.Overruns,
+		RunningInvocationID: m.InputState.InvocationID,
+	})
 	return nil
 }
 
