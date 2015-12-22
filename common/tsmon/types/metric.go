@@ -5,6 +5,8 @@
 package types
 
 import (
+	"time"
+
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
 )
@@ -15,6 +17,11 @@ type Metric interface {
 	Name() string
 	Fields() []field.Field
 	ValueType() ValueType
+
+	// SetFixedResetTime overrides the reset time for this metric.  Usually cells
+	// take the current time when they're first assigned a value, but it can be
+	// useful to override the reset time when tracking an external counter.
+	SetFixedResetTime(t time.Time)
 }
 
 // DistributionMetric is the low-level interface provided by all distribution

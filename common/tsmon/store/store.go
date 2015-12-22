@@ -6,6 +6,8 @@
 package store
 
 import (
+	"time"
+
 	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
 )
@@ -15,9 +17,9 @@ type Store interface {
 	Register(m types.Metric) error
 	Unregister(name string)
 
-	Get(ctx context.Context, name string, fieldVals []interface{}) (value interface{}, err error)
-	Set(ctx context.Context, name string, fieldVals []interface{}, value interface{}) error
-	Incr(ctx context.Context, name string, fieldVals []interface{}, delta interface{}) error
+	Get(ctx context.Context, name string, resetTime time.Time, fieldVals []interface{}) (value interface{}, err error)
+	Set(ctx context.Context, name string, resetTime time.Time, fieldVals []interface{}, value interface{}) error
+	Incr(ctx context.Context, name string, resetTime time.Time, fieldVals []interface{}, delta interface{}) error
 
 	GetAll(ctx context.Context) []types.Cell
 

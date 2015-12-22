@@ -23,13 +23,19 @@ type fakeStore struct {
 	cells []types.Cell
 }
 
-func (s *fakeStore) Register(types.Metric) error                                     { return nil }
-func (s *fakeStore) Unregister(string)                                               {}
-func (s *fakeStore) Get(context.Context, string, []interface{}) (interface{}, error) { return nil, nil }
-func (s *fakeStore) Set(context.Context, string, []interface{}, interface{}) error   { return nil }
-func (s *fakeStore) Incr(context.Context, string, []interface{}, interface{}) error  { return nil }
-func (s *fakeStore) GetAll(context.Context) []types.Cell                             { return s.cells }
-func (s *fakeStore) ResetForUnittest()                                               {}
+func (s *fakeStore) Register(types.Metric) error { return nil }
+func (s *fakeStore) Unregister(string)           {}
+func (s *fakeStore) Get(context.Context, string, time.Time, []interface{}) (interface{}, error) {
+	return nil, nil
+}
+func (s *fakeStore) Set(context.Context, string, time.Time, []interface{}, interface{}) error {
+	return nil
+}
+func (s *fakeStore) Incr(context.Context, string, time.Time, []interface{}, interface{}) error {
+	return nil
+}
+func (s *fakeStore) GetAll(context.Context) []types.Cell { return s.cells }
+func (s *fakeStore) ResetForUnittest()                   {}
 
 type fakeMonitor struct {
 	chunkSize int

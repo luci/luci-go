@@ -81,10 +81,14 @@ func (s InMemoryStore) Unregister(name string) {
 }
 
 // Get returns the value for a given metric cell.
-func (s InMemoryStore) Get(ctx context.Context, name string, fieldVals []interface{}) (value interface{}, err error) {
+func (s InMemoryStore) Get(ctx context.Context, name string, resetTime time.Time, fieldVals []interface{}) (value interface{}, err error) {
 	m, ok := s[name]
 	if !ok {
 		return nil, fmt.Errorf("metric %s is not registered", name)
+	}
+
+	if resetTime.IsZero() {
+		resetTime = clock.Now(ctx)
 	}
 
 	c, err := m.get(fieldVals, clock.Now(ctx))
@@ -96,13 +100,17 @@ func (s InMemoryStore) Get(ctx context.Context, name string, fieldVals []interfa
 }
 
 // Set writes the value into the given metric cell.
-func (s InMemoryStore) Set(ctx context.Context, name string, fieldVals []interface{}, value interface{}) error {
+func (s InMemoryStore) Set(ctx context.Context, name string, resetTime time.Time, fieldVals []interface{}, value interface{}) error {
 	m, ok := s[name]
 	if !ok {
 		return fmt.Errorf("metric %s is not registered", name)
 	}
 
-	c, err := m.get(fieldVals, clock.Now(ctx))
+	if resetTime.IsZero() {
+		resetTime = clock.Now(ctx)
+	}
+
+	c, err := m.get(fieldVals, resetTime)
 	if err != nil {
 		return err
 	}
@@ -112,13 +120,17 @@ func (s InMemoryStore) Set(ctx context.Context, name string, fieldVals []interfa
 }
 
 // Incr increments the value in a given metric cell by the given delta.
-func (s InMemoryStore) Incr(ctx context.Context, name string, fieldVals []interface{}, delta interface{}) error {
+func (s InMemoryStore) Incr(ctx context.Context, name string, resetTime time.Time, fieldVals []interface{}, delta interface{}) error {
 	m, ok := s[name]
 	if !ok {
 		return fmt.Errorf("metric %s is not registered", name)
 	}
 
-	c, err := m.get(fieldVals, clock.Now(ctx))
+	if resetTime.IsZero() {
+		resetTime = clock.Now(ctx)
+	}
+
+	c, err := m.get(fieldVals, resetTime)
 	if err != nil {
 		return err
 	}

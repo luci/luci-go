@@ -23,6 +23,8 @@
 package metric
 
 import (
+	"time"
+
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
@@ -183,16 +185,19 @@ type metric struct {
 	name   string
 	fields []field.Field
 	typ    types.ValueType
+
+	fixedResetTime time.Time
 }
 
-func (m *metric) Name() string               { return m.name }
-func (m *metric) Fields() []field.Field      { return m.fields }
-func (m *metric) ValueType() types.ValueType { return m.typ }
+func (m *metric) Name() string                  { return m.name }
+func (m *metric) Fields() []field.Field         { return m.fields }
+func (m *metric) ValueType() types.ValueType    { return m.typ }
+func (m *metric) SetFixedResetTime(t time.Time) { m.fixedResetTime = t }
 
 type intMetric struct{ metric }
 
 func (m *intMetric) Get(ctx context.Context, fieldVals ...interface{}) (int64, error) {
-	ret, err := tsmon.Store.Get(ctx, m.name, fieldVals)
+	ret, err := tsmon.Store.Get(ctx, m.name, m.fixedResetTime, fieldVals)
 	if err != nil {
 		return 0, err
 	}
@@ -203,19 +208,19 @@ func (m *intMetric) Get(ctx context.Context, fieldVals ...interface{}) (int64, e
 }
 
 func (m *intMetric) Set(ctx context.Context, v int64, fieldVals ...interface{}) error {
-	return tsmon.Store.Set(ctx, m.name, fieldVals, v)
+	return tsmon.Store.Set(ctx, m.name, m.fixedResetTime, fieldVals, v)
 }
 
 type counter struct{ intMetric }
 
 func (m *counter) Add(ctx context.Context, n int64, fieldVals ...interface{}) error {
-	return tsmon.Store.Incr(ctx, m.name, fieldVals, n)
+	return tsmon.Store.Incr(ctx, m.name, m.fixedResetTime, fieldVals, n)
 }
 
 type floatMetric struct{ metric }
 
 func (m *floatMetric) Get(ctx context.Context, fieldVals ...interface{}) (float64, error) {
-	ret, err := tsmon.Store.Get(ctx, m.name, fieldVals)
+	ret, err := tsmon.Store.Get(ctx, m.name, m.fixedResetTime, fieldVals)
 	if err != nil {
 		return 0, err
 	}
@@ -226,19 +231,19 @@ func (m *floatMetric) Get(ctx context.Context, fieldVals ...interface{}) (float6
 }
 
 func (m *floatMetric) Set(ctx context.Context, v float64, fieldVals ...interface{}) error {
-	return tsmon.Store.Set(ctx, m.name, fieldVals, v)
+	return tsmon.Store.Set(ctx, m.name, m.fixedResetTime, fieldVals, v)
 }
 
 type floatCounter struct{ floatMetric }
 
 func (m *floatCounter) Add(ctx context.Context, n float64, fieldVals ...interface{}) error {
-	return tsmon.Store.Incr(ctx, m.name, fieldVals, n)
+	return tsmon.Store.Incr(ctx, m.name, m.fixedResetTime, fieldVals, n)
 }
 
 type stringMetric struct{ metric }
 
 func (m *stringMetric) Get(ctx context.Context, fieldVals ...interface{}) (string, error) {
-	ret, err := tsmon.Store.Get(ctx, m.name, fieldVals)
+	ret, err := tsmon.Store.Get(ctx, m.name, m.fixedResetTime, fieldVals)
 	if err != nil {
 		return "", err
 	}
@@ -249,13 +254,13 @@ func (m *stringMetric) Get(ctx context.Context, fieldVals ...interface{}) (strin
 }
 
 func (m *stringMetric) Set(ctx context.Context, v string, fieldVals ...interface{}) error {
-	return tsmon.Store.Set(ctx, m.name, fieldVals, v)
+	return tsmon.Store.Set(ctx, m.name, m.fixedResetTime, fieldVals, v)
 }
 
 type boolMetric struct{ metric }
 
 func (m *boolMetric) Get(ctx context.Context, fieldVals ...interface{}) (bool, error) {
-	ret, err := tsmon.Store.Get(ctx, m.name, fieldVals)
+	ret, err := tsmon.Store.Get(ctx, m.name, m.fixedResetTime, fieldVals)
 	if err != nil {
 		return false, err
 	}
@@ -266,7 +271,7 @@ func (m *boolMetric) Get(ctx context.Context, fieldVals ...interface{}) (bool, e
 }
 
 func (m *boolMetric) Set(ctx context.Context, v bool, fieldVals ...interface{}) error {
-	return tsmon.Store.Set(ctx, m.name, fieldVals, v)
+	return tsmon.Store.Set(ctx, m.name, m.fixedResetTime, fieldVals, v)
 }
 
 type cumulativeDistributionMetric struct {
@@ -277,7 +282,7 @@ type cumulativeDistributionMetric struct {
 func (m *cumulativeDistributionMetric) Bucketer() *distribution.Bucketer { return m.bucketer }
 
 func (m *cumulativeDistributionMetric) Get(ctx context.Context, fieldVals ...interface{}) (*distribution.Distribution, error) {
-	ret, err := tsmon.Store.Get(ctx, m.name, fieldVals)
+	ret, err := tsmon.Store.Get(ctx, m.name, m.fixedResetTime, fieldVals)
 	if err != nil {
 		return nil, err
 	}
@@ -288,11 +293,11 @@ func (m *cumulativeDistributionMetric) Get(ctx context.Context, fieldVals ...int
 }
 
 func (m *cumulativeDistributionMetric) Add(ctx context.Context, v float64, fieldVals ...interface{}) error {
-	return tsmon.Store.Incr(ctx, m.name, fieldVals, v)
+	return tsmon.Store.Incr(ctx, m.name, m.fixedResetTime, fieldVals, v)
 }
 
 type nonCumulativeDistributionMetric struct{ cumulativeDistributionMetric }
 
 func (m *nonCumulativeDistributionMetric) Set(ctx context.Context, v *distribution.Distribution, fieldVals ...interface{}) error {
-	return tsmon.Store.Set(ctx, m.name, fieldVals, v)
+	return tsmon.Store.Set(ctx, m.name, m.fixedResetTime, fieldVals, v)
 }
