@@ -100,6 +100,7 @@ type invocation struct {
 	Status      string
 	DebugLog    string
 	RowClass    string
+	ViewURL     string
 }
 
 var statusToRowClass = map[task.Status]string{
@@ -136,6 +137,7 @@ func makeInvocation(i *engine.Invocation, now time.Time) *invocation {
 		Status:      string(i.Status),
 		DebugLog:    i.DebugLog,
 		RowClass:    statusToRowClass[i.Status],
+		ViewURL:     i.ViewURL,
 	}
 }
 

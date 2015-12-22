@@ -64,7 +64,13 @@
             <td>{{.Started}}</td>
             <td>{{.TriggeredBy}}</td>
             <td>{{.Duration}}</td>
-            <td>{{.Status}}</td>
+            <td>
+            {{if .ViewURL}}
+              <a href="{{.ViewURL}}" target="_blank">{{.Status}}</a>
+            {{else}}
+              {{.Status}}
+            {{end}}
+            </td>
           </tr>
         {{end}}
         </tbody>
