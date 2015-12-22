@@ -432,7 +432,7 @@ func (e *engineImpl) GetCronJob(c context.Context, jobID string) (*CronJob, erro
 }
 
 func (e *engineImpl) ListInvocations(c context.Context, jobID string, pageSize int, cursor string) ([]*Invocation, string, error) {
-	if pageSize == 0 {
+	if pageSize == 0 || pageSize > 500 {
 		pageSize = 500
 	}
 
@@ -448,10 +448,11 @@ func (e *engineImpl) ListInvocations(c context.Context, jobID string, pageSize i
 		}
 	}
 
-	// Prepare the query.
+	// Prepare the query. Fetch 'pageSize' worth of entities as a single batch.
 	q := datastore.NewQuery("Invocation").
 		Ancestor(ds.NewKey("CronJob", jobID, 0, nil)).
 		Order("__key__")
+	q.Limit(int32(pageSize))
 	if cursorObj != nil {
 		q = q.Start(cursorObj)
 	}

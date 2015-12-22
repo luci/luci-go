@@ -75,6 +75,36 @@
         {{end}}
         </tbody>
       </table>
+      <nav>
+        <ul class="pager">
+          {{if .PrevCursor}}
+            <li class="previous">
+              {{if eq .PrevCursor "NULL"}}
+              <a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobID}}">
+              {{else}}
+              <a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobID}}?c={{.PrevCursor}}">
+              {{end}}
+                <span aria-hidden="true">&larr;</span> Newer
+              </a>
+            </li>
+          {{else}}
+            <li class="previous disabled">
+              <a href="#"><span aria-hidden="true">&larr;</span> Newer</a>
+            </li>
+          {{end}}
+          {{if .NextCursor}}
+            <li class="next">
+              <a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobID}}?c={{.NextCursor}}">
+                Older <span aria-hidden="true">&rarr;</span>
+              </a>
+            </li>
+          {{else}}
+            <li class="next disabled">
+              <a href="#">Older <span aria-hidden="true">&rarr;</span></a>
+            </li>
+          {{end}}
+        </ul>
+      </nav>
     </div>
   </div>
 
