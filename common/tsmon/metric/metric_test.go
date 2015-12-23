@@ -19,7 +19,7 @@ func TestMetrics(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("Int", t, func() {
-		tsmon.Store = store.InMemoryStore{}
+		tsmon.Store = store.NewInMemory()
 
 		m := NewInt("foo")
 		v, err := m.Get(ctx)
@@ -43,7 +43,7 @@ func TestMetrics(t *testing.T) {
 	})
 
 	Convey("Counter", t, func() {
-		tsmon.Store = store.InMemoryStore{}
+		tsmon.Store = store.NewInMemory()
 
 		m := NewCounter("foo")
 		v, err := m.Get(ctx)
@@ -68,7 +68,7 @@ func TestMetrics(t *testing.T) {
 	})
 
 	Convey("Float", t, func() {
-		tsmon.Store = store.InMemoryStore{}
+		tsmon.Store = store.NewInMemory()
 
 		m := NewFloat("foo")
 		v, err := m.Get(ctx)
@@ -92,7 +92,7 @@ func TestMetrics(t *testing.T) {
 	})
 
 	Convey("FloatCounter", t, func() {
-		tsmon.Store = store.InMemoryStore{}
+		tsmon.Store = store.NewInMemory()
 
 		m := NewFloatCounter("foo")
 		v, err := m.Get(ctx)
@@ -117,7 +117,7 @@ func TestMetrics(t *testing.T) {
 	})
 
 	Convey("String", t, func() {
-		tsmon.Store = store.InMemoryStore{}
+		tsmon.Store = store.NewInMemory()
 
 		m := NewString("foo")
 		v, err := m.Get(ctx)
@@ -141,7 +141,7 @@ func TestMetrics(t *testing.T) {
 	})
 
 	Convey("Bool", t, func() {
-		tsmon.Store = store.InMemoryStore{}
+		tsmon.Store = store.NewInMemory()
 
 		m := NewBool("foo")
 		v, err := m.Get(ctx)
@@ -165,7 +165,7 @@ func TestMetrics(t *testing.T) {
 	})
 
 	Convey("CumulativeDistribution", t, func() {
-		tsmon.Store = store.InMemoryStore{}
+		tsmon.Store = store.NewInMemory()
 
 		m := NewCumulativeDistribution("foo", distribution.FixedWidthBucketer(10, 20))
 		v, err := m.Get(ctx)
@@ -194,7 +194,7 @@ func TestMetrics(t *testing.T) {
 	})
 
 	Convey("NonCumulativeDistribution", t, func() {
-		tsmon.Store = store.InMemoryStore{}
+		tsmon.Store = store.NewInMemory()
 
 		m := NewNonCumulativeDistribution("foo", distribution.FixedWidthBucketer(10, 20))
 		v, err := m.Get(ctx)

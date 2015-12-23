@@ -20,7 +20,7 @@ var (
 	// Store contains all the metric values for this process.  Applications
 	// shouldn't need to access this directly - instead use the metric objects
 	// which provide type-safe accessors.
-	Store store.Store = &store.InMemoryStore{}
+	Store = store.NewInMemory()
 
 	// Monitor is the thing that sends metrics to monitoring endpoints.  Defaults
 	// to a nil monitor, but changed by InitializeFromFlags.

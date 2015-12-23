@@ -15,10 +15,19 @@ import (
 // a Cell is one value in that map, with information about its fields and its
 // type.
 type Cell struct {
+	MetricInfo
+	CellData
+}
+
+// MetricInfo contains the definition of a metric.
+type MetricInfo struct {
 	MetricName string
 	Fields     []field.Field
 	ValueType  ValueType
+}
 
+// CellData contains the value of a single cell.
+type CellData struct {
 	FieldVals []interface{}
 	ResetTime time.Time
 	Value     interface{}

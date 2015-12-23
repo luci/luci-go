@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/tsmon/field"
+	"github.com/luci/luci-go/common/tsmon/store"
 	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
@@ -23,15 +24,15 @@ type fakeStore struct {
 	cells []types.Cell
 }
 
-func (s *fakeStore) Register(types.Metric) error { return nil }
-func (s *fakeStore) Unregister(string)           {}
-func (s *fakeStore) Get(context.Context, string, time.Time, []interface{}) (interface{}, error) {
+func (s *fakeStore) Register(types.Metric) (store.MetricHandle, error) { return nil, nil }
+func (s *fakeStore) Unregister(store.MetricHandle)                     {}
+func (s *fakeStore) Get(context.Context, store.MetricHandle, time.Time, []interface{}) (interface{}, error) {
 	return nil, nil
 }
-func (s *fakeStore) Set(context.Context, string, time.Time, []interface{}, interface{}) error {
+func (s *fakeStore) Set(context.Context, store.MetricHandle, time.Time, []interface{}, interface{}) error {
 	return nil
 }
-func (s *fakeStore) Incr(context.Context, string, time.Time, []interface{}, interface{}) error {
+func (s *fakeStore) Incr(context.Context, store.MetricHandle, time.Time, []interface{}, interface{}) error {
 	return nil
 }
 func (s *fakeStore) GetAll(context.Context) []types.Cell { return s.cells }
@@ -62,12 +63,16 @@ func TestFlush(t *testing.T) {
 		s := fakeStore{
 			cells: []types.Cell{
 				{
-					MetricName: "foo",
-					Fields:     []field.Field{},
-					ValueType:  types.StringType,
-					FieldVals:  []interface{}{},
-					ResetTime:  time.Unix(1234, 1000),
-					Value:      "bar",
+					types.MetricInfo{
+						MetricName: "foo",
+						Fields:     []field.Field{},
+						ValueType:  types.StringType,
+					},
+					types.CellData{
+						FieldVals: []interface{}{},
+						ResetTime: time.Unix(1234, 1000),
+						Value:     "bar",
+					},
 				},
 			},
 		}
@@ -84,12 +89,16 @@ func TestFlush(t *testing.T) {
 		So(len(m.cells), ShouldEqual, 1)
 		So(len(m.cells[0]), ShouldEqual, 1)
 		So(m.cells[0][0], ShouldResemble, types.Cell{
-			MetricName: "foo",
-			Fields:     []field.Field{},
-			ValueType:  types.StringType,
-			FieldVals:  []interface{}{},
-			ResetTime:  time.Unix(1234, 1000),
-			Value:      "bar",
+			types.MetricInfo{
+				MetricName: "foo",
+				Fields:     []field.Field{},
+				ValueType:  types.StringType,
+			},
+			types.CellData{
+				FieldVals: []interface{}{},
+				ResetTime: time.Unix(1234, 1000),
+				Value:     "bar",
+			},
 		})
 	})
 
@@ -107,12 +116,16 @@ func TestFlush(t *testing.T) {
 
 		for i := 0; i < 43; i++ {
 			s.cells[i] = types.Cell{
-				MetricName: "foo",
-				Fields:     []field.Field{},
-				ValueType:  types.StringType,
-				FieldVals:  []interface{}{},
-				ResetTime:  time.Unix(1234, 1000),
-				Value:      "bar",
+				types.MetricInfo{
+					MetricName: "foo",
+					Fields:     []field.Field{},
+					ValueType:  types.StringType,
+				},
+				types.CellData{
+					FieldVals: []interface{}{},
+					ResetTime: time.Unix(1234, 1000),
+					Value:     "bar",
+				},
 			}
 		}
 
@@ -137,12 +150,16 @@ func TestFlush(t *testing.T) {
 
 		for i := 0; i < 43; i++ {
 			s.cells[i] = types.Cell{
-				MetricName: "foo",
-				Fields:     []field.Field{},
-				ValueType:  types.StringType,
-				FieldVals:  []interface{}{},
-				ResetTime:  time.Unix(1234, 1000),
-				Value:      "bar",
+				types.MetricInfo{
+					MetricName: "foo",
+					Fields:     []field.Field{},
+					ValueType:  types.StringType,
+				},
+				types.CellData{
+					FieldVals: []interface{}{},
+					ResetTime: time.Unix(1234, 1000),
+					Value:     "bar",
+				},
 			}
 		}
 
