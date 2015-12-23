@@ -107,6 +107,14 @@ func TestMemcache(t *testing.T) {
 				})
 			})
 
+			Convey("Set (nil) is equivalent to Set([]byte{})", func() {
+				So(mc.Set(mc.NewItem("bob")), ShouldBeNil)
+
+				bob, err := mc.Get("bob")
+				So(err, ShouldBeNil)
+				So(bob.Value(), ShouldResemble, []byte{})
+			})
+
 			Convey("Increment", func() {
 				val, err := mc.Increment("num", 7, 2)
 				So(err, ShouldBeNil)

@@ -13,6 +13,7 @@ import (
 	"github.com/luci/gae/service/blobstore"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
+	"github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/common/logging"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
@@ -52,6 +53,7 @@ func TestBasicDatastore(t *testing.T) {
 
 		ctx := Use(context.Background(), req)
 		ds := datastore.Get(ctx)
+		mc := memcache.Get(ctx)
 		inf := info.Get(ctx)
 
 		// You have to visually confirm that this actually happens in the stdout
@@ -213,6 +215,14 @@ func TestBasicDatastore(t *testing.T) {
 			}
 			So(ds.Get(&ent), ShouldBeNil)
 			So(ent["Time"], ShouldResemble, pm["Time"])
+		})
+
+		Convey("memcache: Set (nil) is the same as Set ([]byte{})", func() {
+			So(mc.Set(mc.NewItem("bob")), ShouldBeNil) // normally would panic because Value is nil
+
+			bob, err := mc.Get("bob")
+			So(err, ShouldBeNil)
+			So(bob.Value(), ShouldResemble, []byte{})
 		})
 	})
 }

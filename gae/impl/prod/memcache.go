@@ -74,8 +74,15 @@ func mcR2FErr(i *memcache.Item, err error) (mc.Item, error) {
 
 // mcF2R (MC fake-to-real) converts a mc.Item. i must originate from inside
 // this package for this function to work (see the panic message for why).
+//
+// If the item's Value == nil, it will be copied and replaced with []byte{}.
 func mcF2R(i mc.Item) *memcache.Item {
 	if mci, ok := i.(mcItem); ok {
+		if mci.i.Value == nil {
+			ret := *mci.i
+			ret.Value = []byte{}
+			return &ret
+		}
 		return mci.i
 	}
 	panic(
