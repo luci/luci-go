@@ -260,7 +260,26 @@ func TestGetAll(t *testing.T) {
 func TestFixedResetTime(t *testing.T) {
 	ctx := context.Background()
 
-	Convey("Fixed reset time", t, func() {
+	Convey("Get", t, func() {
+		s := InMemoryStore{}
+		s.Register(&fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType})
+
+		t := time.Date(1234, 5, 6, 7, 8, 9, 10, time.UTC)
+		v, err := s.Get(ctx, "m", t, []interface{}{})
+		So(v, ShouldBeNil)
+		So(err, ShouldBeNil)
+		So(s.Incr(ctx, "m", time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
+
+		v, err = s.Get(ctx, "m", time.Time{}, []interface{}{})
+		So(v, ShouldEqual, 1)
+		So(err, ShouldBeNil)
+
+		all := s.GetAll(ctx)
+		So(len(all), ShouldEqual, 1)
+		So(all[0].ResetTime.String(), ShouldEqual, t.String())
+	})
+
+	Convey("Incr", t, func() {
 		s := InMemoryStore{}
 		s.Register(&fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType})
 
@@ -270,6 +289,23 @@ func TestFixedResetTime(t *testing.T) {
 
 		v, err := s.Get(ctx, "m", time.Time{}, []interface{}{})
 		So(v, ShouldEqual, 2)
+		So(err, ShouldBeNil)
+
+		all := s.GetAll(ctx)
+		So(len(all), ShouldEqual, 1)
+		So(all[0].ResetTime.String(), ShouldEqual, t.String())
+	})
+
+	Convey("Set", t, func() {
+		s := InMemoryStore{}
+		s.Register(&fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType})
+
+		t := time.Date(1234, 5, 6, 7, 8, 9, 10, time.UTC)
+		So(s.Set(ctx, "m", t, []interface{}{}, int64(42)), ShouldBeNil)
+		So(s.Incr(ctx, "m", time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
+
+		v, err := s.Get(ctx, "m", time.Time{}, []interface{}{})
+		So(v, ShouldEqual, 43)
 		So(err, ShouldBeNil)
 
 		all := s.GetAll(ctx)

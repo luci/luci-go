@@ -91,7 +91,7 @@ func (s InMemoryStore) Get(ctx context.Context, name string, resetTime time.Time
 		resetTime = clock.Now(ctx)
 	}
 
-	c, err := m.get(fieldVals, clock.Now(ctx))
+	c, err := m.get(fieldVals, resetTime)
 	if err != nil {
 		return nil, err
 	}
