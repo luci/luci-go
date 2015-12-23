@@ -9,7 +9,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/common/tsmon/types"
 )
 
@@ -31,8 +30,8 @@ func (m *debugMonitor) ChunkSize() int {
 	return 0
 }
 
-func (m *debugMonitor) Send(cells []types.Cell, t target.Target) error {
-	collection := serializeCells(cells, t)
+func (m *debugMonitor) Send(cells []types.Cell, defaultTarget types.Target) error {
+	collection := serializeCells(cells, defaultTarget)
 	str := proto.MarshalTextString(collection)
 	m.logger.Infof("Sending ts_mon metrics:\n%s", str)
 

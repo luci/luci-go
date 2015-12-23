@@ -10,8 +10,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/tsmon/field"
+	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
 
@@ -376,5 +378,41 @@ func TestConcurrency(t *testing.T) {
 		val, err := s.Get(ctx, h, time.Time{}, []interface{}{})
 		So(val, ShouldEqual, numIterations*numGoroutines)
 		So(err, ShouldBeNil)
+	})
+}
+
+func TestDifferentTargets(t *testing.T) {
+	ctx := context.Background()
+
+	Convey("Gets from context", t, func() {
+		s := NewInMemory()
+		h, _ := s.Register(&fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType})
+
+		t := target.Task{}
+		t.AsProto().ServiceName = proto.String("foo")
+		ctxWithTarget := target.Set(ctx, &t)
+
+		So(s.Set(ctx, h, time.Time{}, []interface{}{}, int64(42)), ShouldBeNil)
+		So(s.Set(ctxWithTarget, h, time.Time{}, []interface{}{}, int64(43)), ShouldBeNil)
+
+		val, err := s.Get(ctx, h, time.Time{}, []interface{}{})
+		So(err, ShouldBeNil)
+		So(val, ShouldEqual, 42)
+
+		val, err = s.Get(ctxWithTarget, h, time.Time{}, []interface{}{})
+		So(err, ShouldBeNil)
+		So(val, ShouldEqual, 43)
+
+		all := s.GetAll(ctx)
+		So(len(all), ShouldEqual, 2)
+
+		// The order is undefined.
+		if all[0].Value.(int64) == 42 {
+			So(all[0].Target, ShouldBeNil)
+			So(all[1].Target, ShouldEqual, &t)
+		} else {
+			So(all[0].Target, ShouldEqual, &t)
+			So(all[1].Target, ShouldBeNil)
+		}
 	})
 }

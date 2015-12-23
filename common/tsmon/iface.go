@@ -13,6 +13,7 @@ import (
 	"github.com/luci/luci-go/common/tsmon/monitor"
 	"github.com/luci/luci-go/common/tsmon/store"
 	"github.com/luci/luci-go/common/tsmon/target"
+	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
 )
 
@@ -28,7 +29,7 @@ var (
 
 	// Target contains information about this process, and is included in all
 	// metrics reported by this process.
-	Target target.Target
+	Target types.Target
 
 	cancelAutoFlush context.CancelFunc
 )

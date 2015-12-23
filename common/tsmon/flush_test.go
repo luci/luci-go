@@ -47,7 +47,7 @@ func (m *fakeMonitor) ChunkSize() int {
 	return m.chunkSize
 }
 
-func (m *fakeMonitor) Send(cells []types.Cell, t target.Target) error {
+func (m *fakeMonitor) Send(cells []types.Cell, t types.Target) error {
 	m.cells = append(m.cells, cells)
 	return nil
 }

@@ -7,7 +7,6 @@
 package monitor
 
 import (
-	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/common/tsmon/types"
 )
 
@@ -26,5 +25,5 @@ type Monitor interface {
 	// Send will be called multiple times.  A ChunkSize of 0 disables chunking.
 	ChunkSize() int
 
-	Send(cells []types.Cell, t target.Target) error
+	Send(cells []types.Cell, defaultTarget types.Target) error
 }

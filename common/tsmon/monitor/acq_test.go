@@ -8,9 +8,13 @@ import (
 	"fmt"
 	"math"
 	"testing"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/tsmon/distribution"
+	"github.com/luci/luci-go/common/tsmon/field"
+	"github.com/luci/luci-go/common/tsmon/target"
+	"github.com/luci/luci-go/common/tsmon/types"
 
 	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
 	. "github.com/smartystreets/goconvey/convey"
@@ -120,6 +124,186 @@ func TestSerializeDistribution(t *testing.T) {
 			Underflow: proto.Int64(0),
 			Overflow:  proto.Int64(1),
 			Mean:      proto.Float64(5.75),
+		})
+	})
+}
+
+func TestSerializeCell(t *testing.T) {
+	defaultTarget := &target.Task{}
+
+	Convey("Int", t, func() {
+		ret := serializeCell(types.Cell{
+			types.MetricInfo{
+				MetricName: "foo",
+				Fields:     []field.Field{},
+				ValueType:  types.NonCumulativeIntType,
+			},
+			types.CellData{
+				FieldVals: []interface{}{},
+				Target:    nil,
+				ResetTime: time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
+				Value:     int64(42),
+			},
+		}, defaultTarget)
+		So(ret, ShouldResemble, &pb.MetricsData{
+			Name:             proto.String("foo"),
+			MetricNamePrefix: proto.String("/chrome/infra"),
+			Fields:           []*pb.MetricsField{},
+			StartTimestampUs: proto.Uint64(946782245000000),
+			Task:             &pb.Task{},
+			Gauge:            proto.Int64(42),
+		})
+	})
+
+	Convey("Counter", t, func() {
+		ret := serializeCell(types.Cell{
+			types.MetricInfo{
+				MetricName: "foo",
+				Fields:     []field.Field{},
+				ValueType:  types.CumulativeIntType,
+			},
+			types.CellData{
+				FieldVals: []interface{}{},
+				Target:    nil,
+				ResetTime: time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
+				Value:     int64(42),
+			},
+		}, defaultTarget)
+		So(ret, ShouldResemble, &pb.MetricsData{
+			Name:             proto.String("foo"),
+			MetricNamePrefix: proto.String("/chrome/infra"),
+			Fields:           []*pb.MetricsField{},
+			StartTimestampUs: proto.Uint64(946782245000000),
+			Task:             &pb.Task{},
+			Counter:          proto.Int64(42),
+		})
+	})
+
+	Convey("Float", t, func() {
+		ret := serializeCell(types.Cell{
+			types.MetricInfo{
+				MetricName: "foo",
+				Fields:     []field.Field{},
+				ValueType:  types.NonCumulativeFloatType,
+			},
+			types.CellData{
+				FieldVals: []interface{}{},
+				Target:    nil,
+				ResetTime: time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
+				Value:     float64(42),
+			},
+		}, defaultTarget)
+		So(ret, ShouldResemble, &pb.MetricsData{
+			Name:             proto.String("foo"),
+			MetricNamePrefix: proto.String("/chrome/infra"),
+			Fields:           []*pb.MetricsField{},
+			StartTimestampUs: proto.Uint64(946782245000000),
+			Task:             &pb.Task{},
+			NoncumulativeDoubleValue: proto.Float64(42),
+		})
+	})
+
+	Convey("FloatCounter", t, func() {
+		ret := serializeCell(types.Cell{
+			types.MetricInfo{
+				MetricName: "foo",
+				Fields:     []field.Field{},
+				ValueType:  types.CumulativeFloatType,
+			},
+			types.CellData{
+				FieldVals: []interface{}{},
+				Target:    nil,
+				ResetTime: time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
+				Value:     float64(42),
+			},
+		}, defaultTarget)
+		So(ret, ShouldResemble, &pb.MetricsData{
+			Name:             proto.String("foo"),
+			MetricNamePrefix: proto.String("/chrome/infra"),
+			Fields:           []*pb.MetricsField{},
+			StartTimestampUs: proto.Uint64(946782245000000),
+			Task:             &pb.Task{},
+			CumulativeDoubleValue: proto.Float64(42),
+		})
+	})
+
+	Convey("String", t, func() {
+		ret := serializeCell(types.Cell{
+			types.MetricInfo{
+				MetricName: "foo",
+				Fields:     []field.Field{},
+				ValueType:  types.StringType,
+			},
+			types.CellData{
+				FieldVals: []interface{}{},
+				Target:    nil,
+				ResetTime: time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
+				Value:     "hello",
+			},
+		}, defaultTarget)
+		So(ret, ShouldResemble, &pb.MetricsData{
+			Name:             proto.String("foo"),
+			MetricNamePrefix: proto.String("/chrome/infra"),
+			Fields:           []*pb.MetricsField{},
+			StartTimestampUs: proto.Uint64(946782245000000),
+			Task:             &pb.Task{},
+			StringValue:      proto.String("hello"),
+		})
+	})
+
+	Convey("Boolean", t, func() {
+		ret := serializeCell(types.Cell{
+			types.MetricInfo{
+				MetricName: "foo",
+				Fields:     []field.Field{},
+				ValueType:  types.BoolType,
+			},
+			types.CellData{
+				FieldVals: []interface{}{},
+				Target:    nil,
+				ResetTime: time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
+				Value:     true,
+			},
+		}, defaultTarget)
+		So(ret, ShouldResemble, &pb.MetricsData{
+			Name:             proto.String("foo"),
+			MetricNamePrefix: proto.String("/chrome/infra"),
+			Fields:           []*pb.MetricsField{},
+			StartTimestampUs: proto.Uint64(946782245000000),
+			Task:             &pb.Task{},
+			BooleanValue:     proto.Bool(true),
+		})
+	})
+
+	Convey("NonDefaultTarget", t, func() {
+		target := target.Task{
+			ServiceName: proto.String("hello"),
+			JobName:     proto.String("world"),
+		}
+
+		ret := serializeCell(types.Cell{
+			types.MetricInfo{
+				MetricName: "foo",
+				Fields:     []field.Field{},
+				ValueType:  types.NonCumulativeIntType,
+			},
+			types.CellData{
+				FieldVals: []interface{}{},
+				Target:    &target,
+				ResetTime: time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
+				Value:     int64(42),
+			},
+		}, defaultTarget)
+		So(ret, ShouldResemble, &pb.MetricsData{
+			Name:             proto.String("foo"),
+			MetricNamePrefix: proto.String("/chrome/infra"),
+			Fields:           []*pb.MetricsField{},
+			StartTimestampUs: proto.Uint64(946782245000000),
+			Task: &pb.Task{
+				ServiceName: proto.String("hello"),
+				JobName:     proto.String("world"),
+			},
+			Gauge: proto.Int64(42),
 		})
 	})
 }

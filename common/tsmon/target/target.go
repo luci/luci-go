@@ -4,21 +4,21 @@
 
 // Package target contains information about the thing that is sending metrics -
 // either a NetworkDevice (a machine) or a Task (a service).
+// There is a default target that is usually configured with commandline flags
+// (flags.go), but a target can also be passed through the Context (context.go)
+// if you need to set metric values for a different target.
 package target
 
 import (
 	"errors"
 	"fmt"
+	"hash/fnv"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/luci/luci-go/common/tsmon/types"
 
 	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
 )
-
-// A Target knows how to put information about itself in a MetricsData message.
-type Target interface {
-	PopulateProto(d *pb.MetricsData)
-}
 
 // A Task is a process or a service running on one or more machine.
 type Task pb.Task
@@ -29,6 +29,18 @@ func (t *Task) AsProto() *pb.Task { return (*pb.Task)(t) }
 // PopulateProto implements Target.
 func (t *Task) PopulateProto(d *pb.MetricsData) { d.Task = t.AsProto() }
 
+// Hash returns a uint64 hash of this target.
+func (t *Task) Hash() uint64 {
+	h := fnv.New64a()
+	fmt.Fprintf(h, "%s\n%s\n%s\n%s\n%d",
+		t.AsProto().GetServiceName(),
+		t.AsProto().GetJobName(),
+		t.AsProto().GetDataCenter(),
+		t.AsProto().GetHostName(),
+		t.AsProto().GetTaskNum())
+	return h.Sum64()
+}
+
 // A NetworkDevice is a machine that has a hostname.
 type NetworkDevice pb.NetworkDevice
 
@@ -38,8 +50,21 @@ func (t *NetworkDevice) AsProto() *pb.NetworkDevice { return (*pb.NetworkDevice)
 // PopulateProto implements Target.
 func (t *NetworkDevice) PopulateProto(d *pb.MetricsData) { d.NetworkDevice = t.AsProto() }
 
+// Hash returns a uint64 hash of this target.
+func (t *NetworkDevice) Hash() uint64 {
+	h := fnv.New64a()
+	fmt.Fprintf(h, "%t%s\n%s\n%s\n%s\n%s",
+		t.AsProto().GetAlertable(),
+		t.AsProto().GetRealm(),
+		t.AsProto().GetMetro(),
+		t.AsProto().GetRole(),
+		t.AsProto().GetHostname(),
+		t.AsProto().GetHostgroup())
+	return h.Sum64()
+}
+
 // NewFromFlags returns a Target configured from commandline flags.
-func NewFromFlags(fl *Flags) (Target, error) {
+func NewFromFlags(fl *Flags) (types.Target, error) {
 	if fl.TargetType == "task" {
 		if fl.TaskServiceName == "" {
 			return nil, errors.New(

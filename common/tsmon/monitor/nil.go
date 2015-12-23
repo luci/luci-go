@@ -5,7 +5,6 @@
 package monitor
 
 import (
-	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/common/tsmon/types"
 )
 
@@ -20,6 +19,6 @@ func (m *nilMonitor) ChunkSize() int {
 	return 0
 }
 
-func (m *nilMonitor) Send(cells []types.Cell, t target.Target) error {
+func (m *nilMonitor) Send(cells []types.Cell, defaultTarget types.Target) error {
 	return nil
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/gcloud/gcps"
-	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/common/tsmon/types"
 	"google.golang.org/cloud"
 	"google.golang.org/cloud/pubsub"
@@ -42,8 +41,8 @@ func (m *pubSubMonitor) ChunkSize() int {
 	return 1000
 }
 
-func (m *pubSubMonitor) Send(cells []types.Cell, t target.Target) error {
-	collection := serializeCells(cells, t)
+func (m *pubSubMonitor) Send(cells []types.Cell, defaultTarget types.Target) error {
+	collection := serializeCells(cells, defaultTarget)
 
 	data, err := proto.Marshal(collection)
 	if err != nil {

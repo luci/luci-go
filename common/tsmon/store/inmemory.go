@@ -13,6 +13,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
+	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
 )
@@ -22,32 +23,42 @@ type inMemoryStore struct {
 	lock sync.RWMutex
 }
 
+type cellKey struct {
+	fieldValuesHash, targetHash uint64
+}
+
 type metricData struct {
 	types.MetricInfo
 
-	cells map[uint64][]*types.CellData
+	cells map[cellKey][]*types.CellData
 	lock  sync.Mutex
 
 	bucketer *distribution.Bucketer
 }
 
-func (m *metricData) get(fieldVals []interface{}, resetTime time.Time) (*types.CellData, error) {
+func (m *metricData) get(fieldVals []interface{}, t types.Target, resetTime time.Time) (*types.CellData, error) {
 	fieldVals, err := field.Canonicalize(m.Fields, fieldVals)
 	if err != nil {
 		return nil, err
 	}
 
-	key := field.Hash(fieldVals)
+	var targetHash uint64
+	if t != nil {
+		targetHash = t.Hash()
+	}
+
+	key := cellKey{field.Hash(fieldVals), targetHash}
 	cells, ok := m.cells[key]
 	if ok {
 		for _, cell := range cells {
-			if reflect.DeepEqual(fieldVals, cell.FieldVals) {
+			if reflect.DeepEqual(fieldVals, cell.FieldVals) &&
+				reflect.DeepEqual(t, cell.Target) {
 				return cell, nil
 			}
 		}
 	}
 
-	cell := &types.CellData{fieldVals, resetTime, nil}
+	cell := &types.CellData{fieldVals, t, resetTime, nil}
 	m.cells[key] = append(cells, cell)
 	return cell, nil
 }
@@ -76,7 +87,7 @@ func (s *inMemoryStore) Register(m types.Metric) (MetricHandle, error) {
 			Fields:     m.Fields(),
 			ValueType:  m.ValueType(),
 		},
-		cells: map[uint64][]*types.CellData{},
+		cells: map[cellKey][]*types.CellData{},
 	}
 
 	if dist, ok := m.(types.DistributionMetric); ok {
@@ -107,7 +118,7 @@ func (s *inMemoryStore) Get(ctx context.Context, h MetricHandle, resetTime time.
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	c, err := m.get(fieldVals, resetTime)
+	c, err := m.get(fieldVals, target.Get(ctx), resetTime)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +136,7 @@ func (s *inMemoryStore) Set(ctx context.Context, h MetricHandle, resetTime time.
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	c, err := m.get(fieldVals, resetTime)
+	c, err := m.get(fieldVals, target.Get(ctx), resetTime)
 	if err != nil {
 		return err
 	}
@@ -144,7 +155,7 @@ func (s *inMemoryStore) Incr(ctx context.Context, h MetricHandle, resetTime time
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	c, err := m.get(fieldVals, resetTime)
+	c, err := m.get(fieldVals, target.Get(ctx), resetTime)
 	if err != nil {
 		return err
 	}
@@ -190,7 +201,7 @@ func (s *inMemoryStore) ResetForUnittest() {
 
 	for _, m := range s.data {
 		m.lock.Lock()
-		m.cells = make(map[uint64][]*types.CellData)
+		m.cells = make(map[cellKey][]*types.CellData)
 		m.lock.Unlock()
 	}
 }

@@ -29,6 +29,7 @@ type MetricInfo struct {
 // CellData contains the value of a single cell.
 type CellData struct {
 	FieldVals []interface{}
+	Target    Target
 	ResetTime time.Time
 	Value     interface{}
 }
