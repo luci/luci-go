@@ -1329,10 +1329,11 @@ func (ctl *taskController) PrepareTopic(publisher string) (topic string, token s
 }
 
 // GetClient is part of task.Controller interface
-func (ctl *taskController) GetClient() (*http.Client, error) {
+func (ctl *taskController) GetClient(timeout time.Duration) (*http.Client, error) {
 	// TODO(vadimsh): Use per-project service accounts, not a global cron service
 	// account.
-	transport, err := client.Transport(ctl.ctx, nil, nil)
+	ctx, _ := clock.WithTimeout(ctl.ctx, timeout)
+	transport, err := client.Transport(ctx, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1385,6 +1386,9 @@ func (ctl *taskController) saveImpl(updateCronJob bool) (err error) {
 		saving.debugLog(
 			ctl.ctx, "Invocation finished in %s with status %s",
 			saving.Finished.Sub(saving.Started), saving.Status)
+		if !updateCronJob {
+			saving.debugLog(ctl.ctx, "It will probably be retried")
+		}
 	}
 
 	// Store the invocation entity and mutate CronJob state accordingly.

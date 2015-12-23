@@ -369,7 +369,8 @@ func TestFullFlow(t *testing.T) {
 			Task:            taskBytes,
 			DebugLog: "[22:42:05.000] Invocation initiated (attempt 1)\n" +
 				"[22:42:05.000] oops, fail\n" +
-				"[22:42:05.000] Invocation finished in 0 with status FAILED\n",
+				"[22:42:05.000] Invocation finished in 0 with status FAILED\n" +
+				"[22:42:05.000] It will probably be retried\n",
 			Status:         task.StatusFailed,
 			MutationsCount: 1,
 		})
@@ -460,7 +461,8 @@ func TestFullFlow(t *testing.T) {
 			Task:            taskBytes,
 			DebugLog: "[22:42:05.000] Invocation initiated (attempt 1)\n" +
 				"[22:42:05.000] oops, fail\n" +
-				"[22:42:05.000] Invocation finished in 0 with status FAILED\n",
+				"[22:42:05.000] Invocation finished in 0 with status FAILED\n" +
+				"[22:42:05.000] It will probably be retried\n",
 			Status:         task.StatusFailed,
 			MutationsCount: 1,
 		})

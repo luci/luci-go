@@ -221,7 +221,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	if err != nil {
 		return err
 	}
-	resp, err := service.Tasks.New(&request).Context(c).Do()
+	resp, err := service.Tasks.New(&request).Do()
 	if err != nil {
 		ctl.DebugLog("Failed to trigger the task - %s", err)
 		return utils.WrapAPIError(err)
@@ -284,7 +284,7 @@ func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, 
 	if err != nil {
 		return err
 	}
-	resp, err := service.Task.Result(taskData.SwarmingTaskID).Context(c).Do()
+	resp, err := service.Task.Result(taskData.SwarmingTaskID).Do()
 	if err != nil {
 		ctl.DebugLog("Failed to fetch task results - %s", err)
 		err = utils.WrapAPIError(err)
@@ -307,7 +307,7 @@ func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, 
 
 // createSwarmingService makes a configured Swarming API client.
 func (m TaskManager) createSwarmingService(c context.Context, ctl task.Controller) (*swarming.Service, error) {
-	client, err := ctl.GetClient()
+	client, err := ctl.GetClient(time.Minute)
 	if err != nil {
 		return nil, err
 	}

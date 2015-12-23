@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/appengine/cmd/cron/task"
@@ -84,7 +85,7 @@ func (c *TestController) PrepareTopic(publisher string) (topic string, token str
 }
 
 // GetClient is part of Controller interface.
-func (c *TestController) GetClient() (*http.Client, error) {
+func (c *TestController) GetClient(timeout time.Duration) (*http.Client, error) {
 	if c.Client != nil {
 		return c.Client, nil
 	}

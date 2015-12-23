@@ -10,6 +10,7 @@ package task
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
@@ -135,7 +136,10 @@ type Controller interface {
 
 	// GetClient returns http.Client that is configured to use job's service
 	// account credentials to talk to other services.
-	GetClient() (*http.Client, error)
+	//
+	// All requests made by the client must finish before given deadline time
+	// (or they will be forcefully aborted).
+	GetClient(timeout time.Duration) (*http.Client, error)
 
 	// DebugLog appends a line to the free form text log of the task.
 	// For debugging.

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
@@ -171,7 +172,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	if err != nil {
 		return err
 	}
-	resp, err := service.Put(&request).Context(c).Do()
+	resp, err := service.Put(&request).Do()
 	if err != nil {
 		ctl.DebugLog("Failed to add buildbucket build - %s", err)
 		return utils.WrapAPIError(err)
@@ -240,7 +241,7 @@ func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, 
 	if err != nil {
 		return err
 	}
-	resp, err := service.Get(taskData.BuildID).Context(c).Do()
+	resp, err := service.Get(taskData.BuildID).Do()
 	if err != nil {
 		ctl.DebugLog("Failed to fetch buildbucket build - %s", err)
 		err = utils.WrapAPIError(err)
@@ -275,7 +276,7 @@ func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, 
 
 // createBuildbucketService makes a configured Buildbucket API client.
 func (m TaskManager) createBuildbucketService(c context.Context, ctl task.Controller) (*buildbucket.Service, error) {
-	client, err := ctl.GetClient()
+	client, err := ctl.GetClient(time.Minute)
 	if err != nil {
 		return nil, err
 	}
