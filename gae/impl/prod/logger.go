@@ -40,7 +40,7 @@ func (gl *loggerImpl) Errorf(format string, args ...interface{}) {
 
 // TODO(riannucci): prefix with caller's code location.
 func (gl *loggerImpl) LogCall(l logging.Level, calldepth int, format string, args []interface{}) {
-	if gl.aeCtx == nil || !logging.IsLogging(gl.aeCtx, l) {
+	if gl.aeCtx == nil || !logging.IsLogging(gl.ic, l) {
 		return
 	}
 

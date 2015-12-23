@@ -56,9 +56,16 @@ func TestBasicDatastore(t *testing.T) {
 		mc := memcache.Get(ctx)
 		inf := info.Get(ctx)
 
-		// You have to visually confirm that this actually happens in the stdout
-		// of the test... yeah I know.
-		logging.Infof(ctx, "I am a banana")
+		Convey("logging allows you to tweak the level", func() {
+			// You have to visually confirm that this actually happens in the stdout
+			// of the test... yeah I know.
+			logging.Debugf(ctx, "SHOULD NOT SEE")
+			logging.Infof(ctx, "SHOULD SEE")
+
+			ctx = logging.SetLevel(ctx, logging.Debug)
+			logging.Debugf(ctx, "SHOULD SEE")
+			logging.Infof(ctx, "SHOULD SEE (2)")
+		})
 
 		Convey("Can probe/change Namespace", func() {
 			So(inf.GetNamespace(), ShouldEqual, "")
