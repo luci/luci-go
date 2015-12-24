@@ -113,8 +113,8 @@ type Butler struct {
 
 	// shutdownMu is a mutex to protect shutdown parameters.
 	shutdownMu sync.Mutex
-	// shutdown is true if the Butler been shut down.
-	shutdown bool
+	// isShutdown is true if the Butler been shut down.
+	isShutdown bool
 	// runErr is the error returned by Run.
 	runErr error
 	// streamStopC is a stop signal channel for stream. This will cause streams
@@ -181,6 +181,17 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 	go func() {
 		defer close(b.streamsFinishedC)
 		b.runStreams(b.activateC)
+	}()
+
+	// Shutdown our Butler if our Context is cancelled.
+	go func() {
+		select {
+		case <-b.streamStopC:
+			break
+		case <-b.ctx.Done():
+			log.WithError(b.ctx.Err()).Warningf(b.ctx, "Butler Context was cancelled. Initiating shutdown.")
+			b.shutdown(b.ctx.Err())
+		}
 	}()
 
 	return b, nil
@@ -260,7 +271,7 @@ func (b *Butler) AddStreamServer(streamServer streamserver.StreamServer) {
 			log.Fields{
 				"panic.error": p.Reason,
 			}.Errorf(b.ctx, "Panic while running StreamServer:\n%s", p.Stack)
-			b.Shutdown(fmt.Errorf("butler: panic while running StreamServer: %v", p.Reason))
+			b.shutdown(fmt.Errorf("butler: panic while running StreamServer: %v", p.Reason))
 		})
 
 		for {
@@ -472,19 +483,19 @@ func (b *Butler) Activate() {
 	})
 }
 
-// Shutdown is a goroutine-safe method instructing the Butler to terminate
+// shutdown is a goroutine-safe method instructing the Butler to terminate
 // with the supplied error code. It may be called more than once, although
 // the first supplied error message will be the one returned by Run.
-func (b *Butler) Shutdown(err error) {
+func (b *Butler) shutdown(err error) {
 	log.Fields{
 		log.ErrorKey: err,
-	}.Debugf(b.ctx, "Received 'Shutdown()' command; shutting down streams.")
+	}.Debugf(b.ctx, "Received 'shutdown()' command; shutting down streams.")
 
 	func() {
 		b.shutdownMu.Lock()
 		defer b.shutdownMu.Unlock()
 
-		if b.shutdown {
+		if b.isShutdown {
 			// Already shut down.
 			return
 		}
@@ -493,7 +504,7 @@ func (b *Butler) Shutdown(err error) {
 		close(b.streamStopC)
 
 		b.runErr = err
-		b.shutdown = true
+		b.isShutdown = true
 	}()
 
 	// Activate the Butler, if it hasn't already been activated. The Butler will

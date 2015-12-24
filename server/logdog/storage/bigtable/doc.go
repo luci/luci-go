@@ -27,6 +27,11 @@
 // values, they will both be hashed using SHA256 to produce a unique key
 // representing that specific log stream.
 //
+// This allows a key to be generated representing "immediately after the row"
+// by appending two '~' characters to the base hash. Since the second '~'
+// character is always greater than any HEX(cmpbin(*)) value, this will
+// effectively upper-bound the row.
+//
 // "cmpbin" (github.com/luci/luci-go/common/cmpbin) will be used to format the
 // stream index. It is a variable-width number encoding scheme that offers the
 // guarantee that byte-sorted encoded numbers will maintain the same order as

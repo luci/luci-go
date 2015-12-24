@@ -15,6 +15,8 @@ import (
 type cmdResult struct {
 	// err is the acutal error to return from Wait.
 	err error
+	// state is the process' returned state.
+	state *os.ProcessState
 	// procErr is the process' returned error. Depending on whether the process
 	// was cancelled, this may equal err.
 	procErr error
@@ -80,40 +82,41 @@ func (cc *CtxCmd) Start(c context.Context) error {
 
 	// Begin Waiting on the process. This is asynchronous and will ultimately
 	// feed back into Wait().
-	finishedC := make(chan error)
+	finishedC := make(chan *cmdResult)
 	go func() {
-		var err error
+		var r cmdResult
 		defer func() {
-			finishedC <- err
+			finishedC <- &r
 			close(finishedC)
 		}()
 
-		err = cc.Cmd.Wait()
+		r.state, r.procErr = cc.Process.Wait()
 	}()
 
 	// Start a monitor to wait on Context cancel or process exit.
 	waitC := make(chan *cmdResult)
 	go func() {
 		// Write the process result to "waitC".
-		r := cmdResult{}
+		var r *cmdResult
 		defer func() {
+			defer close(waitC)
+
 			// (Testing)
 			if cc.testProcFinishedC != nil {
 				cc.testProcFinishedC <- struct{}{}
 			}
 
-			waitC <- &r
-			close(waitC)
+			waitC <- r
 		}()
 
 		select {
-		case r.procErr = <-finishedC:
+		case r = <-finishedC:
 			r.err = r.procErr
 
 		case <-c.Done():
 			// Make sure the process didn't already finish.
 			select {
-			case r.procErr = <-finishedC:
+			case r = <-finishedC:
 				r.err = r.procErr
 				return
 
@@ -123,8 +126,8 @@ func (cc *CtxCmd) Start(c context.Context) error {
 			}
 
 			cc.cancel()
+			r = <-finishedC
 			r.err = c.Err()
-			r.procErr = <-finishedC
 		}
 	}()
 
@@ -139,7 +142,11 @@ func (cc *CtxCmd) Start(c context.Context) error {
 func (cc *CtxCmd) Wait() error {
 	r := <-cc.waitC
 	cc.waitC = nil
-	cc.ProcessError = r.procErr
+	cc.ProcessState = r.state
+	if r.procErr == nil && !r.state.Success() {
+		cc.ProcessError = &exec.ExitError{cc.ProcessState}
+	}
+
 	return r.err
 }
 

@@ -275,14 +275,14 @@ func TestButler(t *testing.T) {
 			conf.BufferLogs = true // (Coverage)
 
 			b := mkb(c, conf)
-			b.Shutdown(errors.New("shutdown error"))
+			b.shutdown(errors.New("shutdown error"))
 			So(b.Wait(), ShouldErrLike, "shutdown error")
 		})
 
 		Convey(`Will retain the first error and ignore duplicate shutdowns.`, func() {
 			b := mkb(c, conf)
-			b.Shutdown(errors.New("first error"))
-			b.Shutdown(errors.New("second error"))
+			b.shutdown(errors.New("first error"))
+			b.shutdown(errors.New("second error"))
 			So(b.Wait(), ShouldErrLike, "first error")
 		})
 
@@ -376,7 +376,7 @@ func TestButler(t *testing.T) {
 					s.data([]byte("stream data 1!\n"), nil)
 				}
 
-				b.Shutdown(errors.New("test shutdown"))
+				b.shutdown(errors.New("test shutdown"))
 
 				// Add data to the streams after shutdown.
 				for _, s := range streams {

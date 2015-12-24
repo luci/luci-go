@@ -14,6 +14,7 @@ import (
 	"github.com/luci/luci-go/client/logdog/annotee"
 	"github.com/luci/luci-go/client/logdog/annotee/annotation"
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamclient"
+	"github.com/luci/luci-go/common/ctxcmd"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/milo"
 	"golang.org/x/net/context"
@@ -43,6 +44,10 @@ type Executor struct {
 
 	// Annoate describes how annotations in the STDOUT stream should be handled.
 	Annotate AnnotationMode
+
+	// NameBase, if not empty, is the name value to prepend to annotee-generated
+	// stream names.
+	NameBase types.StreamName
 
 	// Stdin, if not nil, will be used as standard input for the bootstrapped
 	// process.
@@ -75,7 +80,10 @@ func (e *Executor) Run(ctx context.Context) error {
 		return errors.New("no stream client supplied")
 	}
 
-	cmd := exec.Command(e.Command[0], e.Command[1:]...)
+	ctx, cancelFunc := context.WithCancel(ctx)
+	cmd := ctxcmd.CtxCmd{
+		Cmd: exec.Command(e.Command[0], e.Command[1:]...),
+	}
 
 	// STDOUT
 	stdoutRC, err := cmd.StdoutPipe()
@@ -93,13 +101,13 @@ func (e *Executor) Run(ctx context.Context) error {
 	stderr := e.configStream(stderrRC, types.StreamName("stderr"), e.TeeStderr)
 
 	// Start our process.
-	if err := cmd.Start(); err != nil {
+	if err := cmd.Start(ctx); err != nil {
 		return fmt.Errorf("failed to start bootstrapped process: %s", err)
 	}
 	processRunning := true
 	defer func() {
+		cancelFunc()
 		if processRunning {
-			_ = cmd.Process.Kill()
 			_ = cmd.Wait()
 		}
 	}()
@@ -110,6 +118,7 @@ func (e *Executor) Run(ctx context.Context) error {
 	// Configure our Processor.
 	proc := annotee.Processor{
 		Context:   ctx,
+		Base:      e.NameBase,
 		Client:    e.Client,
 		Execution: execution,
 	}

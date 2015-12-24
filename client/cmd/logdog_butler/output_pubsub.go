@@ -31,7 +31,7 @@ type pubsubOutputFactory struct {
 var _ outputFactory = (*pubsubOutputFactory)(nil)
 
 func (f *pubsubOutputFactory) option() multiflag.Option {
-	opt := newOutputOption("gcps", "Output to a Google Cloud PubSub endpoint", f)
+	opt := newOutputOption("pubsub", "Output to a Google Cloud PubSub endpoint", f)
 
 	flags := opt.Flags()
 	flags.StringVar(&f.project, "project", "",
@@ -46,24 +46,28 @@ func (f *pubsubOutputFactory) option() multiflag.Option {
 
 func (f *pubsubOutputFactory) configOutput(a *butlerApplication) (output.Output, error) {
 	if f.project == "" {
-		return nil, fmt.Errorf("gcps: must supply a project name (-project)")
+		return nil, fmt.Errorf("pubsub: must supply a project name (-project)")
 	}
 	if err := f.topic.Validate(); err != nil {
-		return nil, fmt.Errorf("gcps: invalid topic name: %s", err)
+		return nil, fmt.Errorf("pubsub: invalid topic name: %s", err)
 	}
 
-	ctx := log.SetFields(a, log.Fields{
+	// Instantiate our Pub/Sub instance. We will use the non-cancelling context,
+	// as we want Pub/Sub system to drain without interruption if the application
+	// is otherwise interrupted.
+	ctx := log.SetFields(a.ncCtx, log.Fields{
 		"topic":   f.topic,
 		"project": f.project,
 	})
 	ctx, err := a.authenticatedContext(ctx, f.project)
 	if err != nil {
-		return nil, fmt.Errorf("gcps: failed to initialize GCPS context: %s", err)
+		return nil, fmt.Errorf("pubsub: failed to initialize Pub/Sub context: %s", err)
 	}
 	ps := gcps.New(ctx)
 
 	// Assert that our Topic exists.
 	if err := f.assertTopicExists(ctx, ps); err != nil {
+		log.WithError(err).Errorf(ctx, "Topic does not exist.")
 		return nil, err
 	}
 
@@ -92,10 +96,10 @@ func (f *pubsubOutputFactory) assertTopicExists(ctx context.Context, ps gcps.Pub
 		}.Warningf(ctx, "Transient error during topic check; retrying.")
 	})
 	if err != nil {
-		return fmt.Errorf("gcps: failed to check for topic: %s", err)
+		return fmt.Errorf("pubsub: failed to check for topic: %s", err)
 	}
 	if !exists {
-		return fmt.Errorf("gcps: topic [%s] does not exist", f.topic)
+		return fmt.Errorf("pubsub: topic [%s] does not exist", f.topic)
 	}
 	return nil
 }

@@ -42,13 +42,49 @@ type rowKeyBuffers struct {
 	binBuf bytes.Buffer
 	// key is where the encoded key get built.
 	key []byte
+	// size is the current number of bytes used in "key".
+	size int
+}
+
+func withRowKeyBuffers(f func(rkb *rowKeyBuffers)) {
+	rkb := rowKeyBufferPool.Get().(*rowKeyBuffers)
+	defer rowKeyBufferPool.Put(rkb)
+
+	rkb.reset()
+	f(rkb)
 }
 
 func (rkb *rowKeyBuffers) reset() {
-	rkb.binBuf.Reset()
 	if rkb.key == nil {
 		rkb.key = make([]byte, maxEncodedKeySize)
 	}
+	rkb.size = 0
+}
+
+func (rkb *rowKeyBuffers) appendPathPrefix(pathHash []byte) {
+	base64.URLEncoding.Encode(rkb.remaining(), pathHash)
+	rkb.size += base64.URLEncoding.EncodedLen(len(pathHash))
+	rkb.appendRune('~')
+}
+
+func (rkb *rowKeyBuffers) appendIndex(i int64) {
+	// Encode index to "cmpbin".
+	rkb.binBuf.Reset()
+	cmpbin.WriteInt(&rkb.binBuf, i)
+
+	rkb.size += hex.Encode(rkb.remaining(), rkb.binBuf.Bytes())
+}
+
+func (rkb *rowKeyBuffers) appendRune(r rune) {
+	rkb.size += utf8.EncodeRune(rkb.remaining(), r)
+}
+
+func (rkb *rowKeyBuffers) remaining() []byte {
+	return rkb.key[rkb.size:]
+}
+
+func (rkb *rowKeyBuffers) value() string {
+	return string(rkb.key[:rkb.size])
 }
 
 // rowKey is a BigTable row key.
@@ -119,27 +155,42 @@ func (rk *rowKey) String() string {
 }
 
 // newRowKey instantiates a new rowKey from its components.
-func (rk *rowKey) encode() string {
-	rkb := rowKeyBufferPool.Get().(*rowKeyBuffers)
-	defer rowKeyBufferPool.Put(rkb)
-	rkb.reset()
-
-	// Encode index to "cmpbin".
-	cmpbin.WriteInt(&rkb.binBuf, rk.index)
-
+func (rk *rowKey) encode() (v string) {
 	// Write the final key to "key": (base64(HASH)~hex(INDEX))
-	l := 0
-	base64.URLEncoding.Encode(rkb.key[l:], rk.pathHash)
-	l += base64.URLEncoding.EncodedLen(len(rk.pathHash))
-	l += utf8.EncodeRune(rkb.key[l:], '~')
-	l += hex.Encode(rkb.key[l:], rkb.binBuf.Bytes())
-
-	return string(rkb.key[:l])
+	withRowKeyBuffers(func(rkb *rowKeyBuffers) {
+		rkb.appendPathPrefix(rk.pathHash)
+		rkb.appendIndex(rk.index)
+		v = rkb.value()
+	})
+	return
 }
 
 // prefix returns the encoded path prefix for the row key.
-func (rk *rowKey) pathPrefix() string {
-	return rk.encode()[:encodedPrefixSize]
+func (rk *rowKey) pathPrefix() (v string) {
+	withRowKeyBuffers(func(rkb *rowKeyBuffers) {
+		rkb.appendPathPrefix(rk.pathHash)
+		v = rkb.value()
+	})
+	return
+}
+
+// pathPrefixUpperBound returns the path prefix that is higher than any path
+// allowed in the row key space.
+//
+// This is accomplished by appending a "~" character to the path prefix,
+// creating something like this:
+//
+//     prefix~~
+//
+// The "prefix~" is shared with all keys in "rk", but the extra "~" is larger
+// than any hex-encoded row index, so this key will always be larger.
+func (rk *rowKey) pathPrefixUpperBound() (v string) {
+	withRowKeyBuffers(func(rkb *rowKeyBuffers) {
+		rkb.appendPathPrefix(rk.pathHash)
+		rkb.appendRune('~')
+		v = rkb.value()
+	})
+	return
 }
 
 // sharesPrefixWith tests if the "path" component of the row key "rk" matches

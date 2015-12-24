@@ -5,9 +5,11 @@
 package streamserver
 
 import (
+	"fmt"
 	"io"
 	"net"
 	"sync"
+	"sync/atomic"
 
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
 	"github.com/luci/luci-go/common/iotools"
@@ -33,12 +35,17 @@ type listenerStreamServer struct {
 	// gen is a generator function that is called to produce the stream server's
 	// Listener. On success, it returns the instantiated Listener, which will be
 	// closed when the stream server is closed.
-	gen func() (net.Listener, error)
-	l   net.Listener
+	gen   func() (net.Listener, error)
+	l     net.Listener
+	laddr string
 
 	streamParamsC   chan *streamParams
 	closedC         chan struct{}
 	acceptFinishedC chan struct{}
+
+	// closed is an atomically-protected integer. If its value is 1, the stream
+	// server has been closed.
+	closed int32
 
 	// discardC is a testing channel. If not nil, failed client connections will
 	// be written here.
@@ -46,6 +53,10 @@ type listenerStreamServer struct {
 }
 
 var _ StreamServer = (*listenerStreamServer)(nil)
+
+func (s *listenerStreamServer) String() string {
+	return fmt.Sprintf("%T(%s)", s, s.laddr)
+}
 
 func (s *listenerStreamServer) Listen() error {
 	// Create a listener (OS-specific).
@@ -55,6 +66,7 @@ func (s *listenerStreamServer) Listen() error {
 		return err
 	}
 
+	s.laddr = s.l.Addr().String()
 	s.streamParamsC = make(chan *streamParams)
 	s.closedC = make(chan struct{})
 	s.acceptFinishedC = make(chan struct{})
@@ -78,6 +90,9 @@ func (s *listenerStreamServer) Close() {
 		panic("server is not currently serving")
 	}
 
+	// Mark that we've been closed.
+	atomic.StoreInt32(&s.closed, 1)
+
 	// Close our Listener. This will cause our 'Accept' goroutine to terminate.
 	s.l.Close()
 	close(s.closedC)
@@ -100,9 +115,11 @@ func (s *listenerStreamServer) serve() {
 		log.Debugf(s, "Beginning Accept() loop cycle.")
 		conn, err := s.l.Accept()
 		if err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-			}.Errorf(s, "Error during Accept().")
+			if atomic.LoadInt32(&s.closed) != 0 {
+				log.WithError(err).Debugf(s, "Error during Accept() encountered (closed).")
+			} else {
+				log.WithError(err).Errorf(s, "Error during Accept().")
+			}
 			break
 		}
 
@@ -166,7 +183,6 @@ func (s *listenerStreamServer) serve() {
 	// Wait for client connections to finish.
 	clientWG.Wait()
 	log.Fields{
-		"streamServer":     s,
 		"totalConnections": nextID,
 	}.Infof(s, "Exiting serve loop.")
 }

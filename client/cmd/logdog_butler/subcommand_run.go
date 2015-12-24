@@ -17,8 +17,10 @@ import (
 	"github.com/luci/luci-go/client/internal/logdog/butler"
 	"github.com/luci/luci-go/client/internal/logdog/butler/streamserver"
 	"github.com/luci/luci-go/client/logdog/butlerlib/bootstrap"
+	"github.com/luci/luci-go/common/ctxcmd"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
 )
 
 var subcommandRun = &subcommands.Command{
@@ -37,6 +39,8 @@ var subcommandRun = &subcommands.Command{
 			"The stream server URI to bind to (e.g., "+string(exampleStreamServerURI)+").")
 		cmd.Flags.BoolVar(&cmd.attach, "attach", true,
 			"If true, attaches the bootstrapped process' STDOUT and STDERR streams.")
+		cmd.Flags.BoolVar(&cmd.stdin, "forward-stdin", false,
+			"If true, forward STDIN to the bootstrapped process.")
 
 		// "stdout" command-line option.
 		cmd.stdout.Name = "stdout"
@@ -73,6 +77,7 @@ type runCommandRun struct {
 	// attach, if true, automatically attaches the subprocess' STDOUT and STDERR
 	// streams to the Butler.
 	attach bool
+	stdin  bool
 	stdout streamConfig // Stream configuration for STDOUT.
 	stderr streamConfig // Stream configuration for STDERR.
 }
@@ -177,12 +182,15 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 	}
 
 	// Construct and execute the command
-	proc := exec.Command(commandPath, args...)
+	proc := ctxcmd.CtxCmd{
+		Cmd: exec.Command(commandPath, args...),
+	}
 	proc.Dir = cmd.chdir
 	proc.Env = env.sorted()
-	proc.Stdin = os.Stdin
+	if cmd.stdin {
+		proc.Stdin = os.Stdin
+	}
 
-	// Execute our subprocess (and block)
 	if log.IsLogging(a, log.Debug) {
 		log.Fields{
 			"commandPath": commandPath,
@@ -223,10 +231,11 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 	// Execute our bootstrapped command. Monitor it in a goroutine. We must wait
 	// for our streams to finish being read prior to invoking the subprocess' Wait
 	// method, as per exec.Cmd StdoutPipe/StderrPipe documentation.
-	if err := proc.Start(); err != nil {
+	ctx, cancelFunc := context.WithCancel(a)
+	if err := proc.Start(ctx); err != nil {
 		log.Fields{
 			log.ErrorKey: err,
-		}.Errorf(a, "Failed to start bootstrapped process.")
+		}.Errorf(ctx, "Failed to start bootstrapped process.")
 		return runtimeErrorReturnCode
 	}
 
@@ -250,12 +259,12 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 				returnCode = status.ExitStatus()
 				log.Fields{
 					"exitStatus": returnCode,
-				}.Errorf(a, "Command failed.")
+				}.Errorf(ctx, "Command failed.")
 
 			default:
 				log.Fields{
 					log.ErrorKey: err,
-				}.Errorf(a, "Command failed.")
+				}.Errorf(ctx, "Command failed.")
 				returnCode = runtimeErrorReturnCode
 			}
 		} else {
@@ -264,7 +273,7 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 
 		log.Fields{
 			"returnCode": returnCode,
-		}.Infof(a, "Process completed.")
+		}.Infof(ctx, "Process completed.")
 	}()
 
 	err = a.Main(func(b *butler.Butler) error {
@@ -301,7 +310,7 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 			defer b.Activate()
 
 			<-processFinishedC
-			log.Debugf(a, "Process has terminated. Activating Butler.")
+			log.Debugf(ctx, "Process has terminated. Activating Butler.")
 		}()
 
 		return nil
@@ -309,14 +318,9 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,
-		}.Errorf(a, "Error executing Butler; terminating process.")
+		}.Errorf(ctx, "Error executing Butler; terminating process.")
 
-		if err := proc.Process.Kill(); err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-			}.Errorf(a, "Failed to terminate process.")
-			return -1
-		}
+		cancelFunc()
 	}
 
 	// Reap the process' return code.

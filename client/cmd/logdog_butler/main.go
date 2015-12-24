@@ -68,8 +68,8 @@ type butlerApplication struct {
 	subcommands.DefaultApplication
 	context.Context
 
-	butler butler.Config
-	output outputConfigFlag
+	butler       butler.Config
+	outputConfig outputConfigFlag
 
 	authFlags authcli.Flags
 
@@ -80,25 +80,31 @@ type butlerApplication struct {
 	cpuProfile string
 
 	client *http.Client
+
+	// ncCtx is a context that will not be cancelled when cancelFunc is called.
+	ncCtx      context.Context
+	cancelFunc func()
+
+	output output.Output
 }
 
 func (a *butlerApplication) addFlags(fs *flag.FlagSet) {
-	a.output.Output = os.Stdout
-	a.output.Description = "Select and configure message output adapter."
-	a.output.Options = []multiflag.Option{
-		multiflag.HelpOption(&a.output.MultiFlag),
+	a.outputConfig.Output = os.Stdout
+	a.outputConfig.Description = "Select and configure message output adapter."
+	a.outputConfig.Options = []multiflag.Option{
+		multiflag.HelpOption(&a.outputConfig.MultiFlag),
 	}
 
 	// Add registered conditional (build tag) options.
 	for _, f := range getOutputFactories() {
-		a.output.AddFactory(f)
+		a.outputConfig.AddFactory(f)
 	}
 
 	a.maxBufferAge = clockflag.Duration(butler.DefaultMaxBufferAge)
 
 	fs.Var(&a.prefix, "prefix",
 		"Prefix to apply to all stream names.")
-	fs.Var(&a.output, "output",
+	fs.Var(&a.outputConfig, "output",
 		"The output name and configuration. Specify 'help' for more information.")
 	fs.StringVar(&a.cpuProfile,
 		"cpuprofile", "", "If specified, enables CPU profiling and profiles to the specified path.")
@@ -142,7 +148,7 @@ func (a *butlerApplication) authenticatedContext(ctx context.Context, project st
 }
 
 func (a *butlerApplication) configOutput() (output.Output, error) {
-	factory := a.output.getFactory()
+	factory := a.outputConfig.getFactory()
 	if factory == nil {
 		return nil, errors.New("main: No output is configured")
 	}
@@ -167,17 +173,12 @@ func (a *butlerApplication) Main(runFunc func(b *butler.Butler) error) error {
 		defer pprof.StopCPUProfile()
 	}
 
-	// Configure our Butler Output.
-	output, err := a.configOutput()
-	if err != nil {
-		log.Errorf(log.SetError(a, err), "Failed to create output instance.")
-		return err
-	}
-
-	// Instantiate out Butler.
+	// Instantiate our Butler.
 	a.butler.MaxBufferAge = time.Duration(a.maxBufferAge)
 	a.butler.BufferLogs = !a.noBufferLogs
-	a.butler.Output = output
+	a.butler.Output = a.output
+	a.butler.TeeStdout = os.Stdout
+	a.butler.TeeStderr = os.Stderr
 	if err := a.butler.Validate(); err != nil {
 		return err
 	}
@@ -187,37 +188,12 @@ func (a *butlerApplication) Main(runFunc func(b *butler.Butler) error) error {
 		return err
 	}
 
-	// Signal handler to catch 'Control-C'. This will gracefully shutdown the
-	// butler the first time a signal is received. It will die abruptly if the
-	// signal continues to be received.
-	signalC := make(chan os.Signal, 1)
-	signal.Notify(signalC, os.Interrupt)
-	go func() {
-		signalled := false
-		for range signalC {
-			if !signalled {
-				signalled = true
-
-				// First '^C'; soft-terminate
-				log.Infof(a, "Received Control-C (keyboard interrupt); terminating")
-				b.Shutdown(errors.New("main: received interrupt signal"))
-			} else {
-				// Multiple '^C'; terminate immediately
-				os.Exit(1)
-			}
-		}
-	}()
-	defer func() {
-		signal.Stop(signalC)
-		close(signalC)
-	}()
-
 	// Execute our Butler run function with the instantiated Butler.
 	if err := runFunc(b); err != nil {
 		log.Fields{
 			log.ErrorKey: err,
 		}.Errorf(a, "Butler terminated with error.")
-		b.Shutdown(err)
+		a.cancelFunc()
 	}
 	return b.Wait()
 }
@@ -263,30 +239,66 @@ func mainImpl(ctx context.Context, argv []string) int {
 		return configErrorReturnCode
 	}
 
-	// Install our log formatter as our application Context.
-	a.Context = logConfig.Set(ctx)
+	ctx = logConfig.Set(ctx)
 
 	// Validate our Prefix; generate a user prefix if one was not supplied.
 	prefix := a.butler.Prefix
 	if prefix == "" {
 		// Auto-generate a prefix.
-		prefix, err := generateRandomUserPrefix(a)
+		prefix, err := generateRandomUserPrefix(ctx)
 		if err != nil {
-			log.Errorf(log.SetError(a, err), "Failed to generate user prefix.")
+			log.Errorf(log.SetError(ctx, err), "Failed to generate user prefix.")
 			return configErrorReturnCode
 		}
 		a.butler.Prefix = prefix
 	}
 
+	// Signal handler to catch 'Control-C'. This will gracefully shutdown the
+	// butler the first time a signal is received. It will die abruptly if the
+	// signal continues to be received.
+	a.ncCtx = ctx
+	ctx, a.cancelFunc = context.WithCancel(ctx)
+	signalC := make(chan os.Signal, 1)
+	signal.Notify(signalC, os.Interrupt)
+	go func() {
+		signalled := false
+		for range signalC {
+			if !signalled {
+				signalled = true
+
+				// First '^C'; soft-terminate
+				log.Infof(a, "Flushing in response to Control-C (keyboard interrupt). Interrupt again for immediate exit.")
+				a.cancelFunc()
+			} else {
+				// Multiple '^C'; terminate immediately
+				os.Exit(1)
+			}
+		}
+	}()
+	defer func() {
+		signal.Stop(signalC)
+		close(signalC)
+	}()
+
 	log.Fields{
 		"prefix": a.butler.Prefix,
-	}.Infof(a, "Using session prefix.")
+	}.Infof(ctx, "Using session prefix.")
 	if err := a.butler.Prefix.Validate(); err != nil {
 		log.Errorf(log.SetError(a, err), "Invalid session prefix.")
 		return configErrorReturnCode
 	}
 
+	// Configure our Butler Output.
+	var err error
+	a.output, err = a.configOutput()
+	if err != nil {
+		log.Errorf(log.SetError(ctx, err), "Failed to create output instance.")
+		return runtimeErrorReturnCode
+	}
+	defer a.output.Close()
+
 	// Run our subcommand (and parse subcommand flags).
+	a.Context = ctx
 	return subcommands.Run(a, flags.Args())
 }
 

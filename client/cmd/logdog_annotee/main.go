@@ -15,6 +15,8 @@ import (
 	"github.com/luci/luci-go/client/logdog/annotee/executor"
 	"github.com/luci/luci-go/client/logdog/butlerlib/bootstrap"
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamclient"
+	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
+	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"golang.org/x/net/context"
@@ -48,6 +50,7 @@ type application struct {
 	tee                bool
 	printSummary       bool
 	testingDir         string
+	nameBase           streamproto.StreamNameFlag
 }
 
 func (a *application) addToFlagSet(fs *flag.FlagSet) {
@@ -66,6 +69,7 @@ func (a *application) addToFlagSet(fs *flag.FlagSet) {
 	fs.StringVar(&a.testingDir, "testing-dir", "",
 		"Rather than coupling to a Butler instance, output generated annotations "+
 			"and streams to this directory.")
+	fs.Var(&a.nameBase, "name-base", "Base stream name to prepend to generated names.")
 }
 
 func (a *application) loadJSONArgs() ([]string, error) {
@@ -165,6 +169,7 @@ func mainImpl(args []string) int {
 		Stdin:    os.Stdin,
 		Command:  args,
 		Client:   client,
+		NameBase: types.StreamName(a.nameBase),
 	}
 	if a.tee {
 		e.TeeStdout = os.Stdout

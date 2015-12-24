@@ -88,7 +88,9 @@ func (t *btTableProd) getLogData(c context.Context, rk *rowKey, limit int, keysO
 		ropts = append(ropts, bigtable.LimitRows(int64(limit)))
 	}
 
-	rng := bigtable.PrefixRange(rk.pathPrefix())
+	// This will limit the range to the immediate row key ("ASDF~INDEX") to
+	// immediately after the row key ("ASDF~~"). See rowKey for more information.
+	rng := bigtable.NewRange(rk.encode(), rk.pathPrefixUpperBound())
 
 	innerErr := error(nil)
 	err := t.ReadRows(c, rng, func(row bigtable.Row) bool {

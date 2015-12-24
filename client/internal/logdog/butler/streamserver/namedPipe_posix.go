@@ -48,6 +48,10 @@ func NewNamedPipeServer(ctx context.Context, path string) StreamServer {
 
 // Wrapper around the "unix"-type Listener that cleans up the named pipe on
 // creation and 'Close()'
+//
+// The standard Go Listener will unlink the file when Closed. However, it
+// doesn't do it in a deferred, so this will clean up if a panic is encountered
+// during close.
 type selfCleaningUNIXListener struct {
 	context.Context
 	net.Listener
@@ -56,14 +60,16 @@ type selfCleaningUNIXListener struct {
 }
 
 func (l *selfCleaningUNIXListener) Close() error {
+	defer func() {
+		if err := os.Remove(l.path); err != nil {
+			log.Fields{
+				log.ErrorKey: err,
+			}.Debugf(l, "Failed to remove named pipe file on Close().")
+		}
+	}()
+
 	if err := l.Listener.Close(); err != nil {
 		return err
-	}
-
-	if err := os.Remove(l.path); err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-		}.Warningf(l, "Failed to remove named pipe file on Close().")
 	}
 	return nil
 }
