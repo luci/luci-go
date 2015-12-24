@@ -95,7 +95,7 @@ func generateTimestampID(t time.Time) string {
 	// Encode the time, inverting so that newer times have smaller key values.
 	buf := serialize.Invertible(&bytes.Buffer{})
 	buf.SetInvert(true)
-	cmpbin.WriteInt(buf, normalizeTime(t).UnixNano())
+	cmpbin.WriteInt(buf, NormalizeTime(t).UnixNano())
 	return hex.EncodeToString(buf.Bytes())
 }
 

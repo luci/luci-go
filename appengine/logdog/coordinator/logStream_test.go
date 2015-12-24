@@ -101,8 +101,8 @@ func TestLogStream(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey(`Can populate the LogStream with descriptor state.`, func() {
-				ls.Created = normalizeTime(clock.Now(c).UTC())
-				ls.Updated = normalizeTime(clock.Now(c).UTC())
+				ls.Created = NormalizeTime(clock.Now(c).UTC())
+				ls.Updated = NormalizeTime(clock.Now(c).UTC())
 				ls.Secret = bytes.Repeat([]byte{0x6F}, types.StreamSecretLength)
 				So(ls.LoadDescriptor(&desc), ShouldBeNil)
 				So(ls.Validate(), ShouldBeNil)

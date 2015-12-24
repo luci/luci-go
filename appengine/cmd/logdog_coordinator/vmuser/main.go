@@ -19,6 +19,7 @@ import (
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/endpoints/admin"
+	"github.com/luci/luci-go/appengine/logdog/coordinator/endpoints/service"
 	"github.com/luci/luci-go/common/config/impl/remote"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
@@ -77,6 +78,13 @@ func configureEndpoints(h *ephelper.Helper, s *endpoints.Server, sb *ephelper.Se
 	if err := h.Register(s, &admin.Admin{ServiceBase: *sb}, &admin.Info, admin.MethodInfoMap); err != nil {
 		return fmt.Errorf("failed to register 'admin' endpoint: %v", err)
 	}
+
+	// Service endpoint.
+	err := h.Register(s, &service.Service{ServiceBase: *sb}, &service.Info, service.MethodInfoMap)
+	if err != nil {
+		return fmt.Errorf("failed to install 'service' endpoint: %v", err)
+	}
+
 	return nil
 }
 

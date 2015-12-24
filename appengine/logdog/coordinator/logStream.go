@@ -253,7 +253,7 @@ func (s *LogStream) LoadDescriptor(desc *protocol.LogStreamDescriptor) error {
 
 	// We know that the timestamp is valid b/c it's checked in ValidateDescriptor.
 	if ts := desc.Timestamp; ts != nil {
-		s.Timestamp = normalizeTime(ts.Time().UTC())
+		s.Timestamp = NormalizeTime(ts.Time().UTC())
 	}
 
 	// Note: tag content was validated via ValidateDescriptor.
