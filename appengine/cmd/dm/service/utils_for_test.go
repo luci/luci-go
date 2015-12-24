@@ -13,13 +13,14 @@ import (
 	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
+	"github.com/luci/luci-go/appengine/ephelper"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
 
 func getService() *DungeonMaster {
 	s := &DungeonMaster{}
-	s.TestMode = true
+	s.ServiceBase.Middleware = ephelper.TestMode
 	return s
 }
 

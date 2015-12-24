@@ -8,11 +8,16 @@ import (
 	"fmt"
 
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
-	gaeauth "github.com/luci/luci-go/appengine/gaeauth/server"
-	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/server/auth"
 	"golang.org/x/net/context"
 )
+
+type serviceCallKeyType int
+
+var serviceCallKey serviceCallKeyType
+
+type serviceCall struct {
+	mi *endpoints.MethodInfo
+}
 
 // ServiceBase is an embeddable base class for endpoints services.
 //
@@ -30,25 +35,11 @@ import (
 //     ...
 //   }
 type ServiceBase struct {
-	// InstallServices, if not nil, is the setup function called in Use to install
-	// a baseline set of services into the Context. This can be used for testing
-	// to install testing services into the context.
+	// Middleware is the set of middleware context manipulators to run for this
+	// service.
 	//
-	// If nil, gaemiddleware.WithProd will be used to install production services.
-	InstallServices func(c context.Context) (context.Context, error)
-
-	// Authenticator, if not nil, is the auth.Authenticator factory to use for
-	// this service. For each incoming request it returns a list of authentication
-	// methods to try when authenticating that request.
-	//
-	// If nil, default OAuth2 authentication will be used.
-	Authenticator func(c context.Context, mi *endpoints.MethodInfo) auth.Authenticator
-
-	// TestMode if true, will cause Use to short-circuit and just return context
-	// without calling InstallServices or Authenticator. This allows you to write
-	// unit tests for endpoints handlers without needing an httptest server
-	// instance.
-	TestMode bool
+	// If nil, the middleware stack returned by DefaultMiddleware will be used.
+	Middleware []Middleware
 }
 
 // Use should be called at the beginning of a Cloud Endpoint handler to
@@ -59,33 +50,31 @@ func (s *ServiceBase) Use(c context.Context, mi *endpoints.MethodInfo) (context.
 		return c, fmt.Errorf("no ServiceBase is configured for: %#v", mi)
 	}
 
-	if s.TestMode {
-		return c, nil
+	// Embed our service context.
+	sc := serviceCall{
+		mi: mi,
 	}
+	c = context.WithValue(c, serviceCallKey, &sc)
 
-	req := endpoints.HTTPRequest(c)
-
-	// If an initializer is configured, use it.
-	if s.InstallServices != nil {
-		ic, err := s.InstallServices(c)
+	middleware := s.Middleware
+	if middleware == nil {
+		middleware = []Middleware{DefaultMiddleware(nil)}
+	}
+	for _, mw := range middleware {
+		ic, err := mw(c)
 		if err != nil {
-			return nil, err
+			return c, err
 		}
 		c = ic
-	} else {
-		// Otherwise, use Prod.
-		c = gaemiddleware.WithProd(c, req)
 	}
 
-	// Install and authenticate.
-	authenticator := (auth.Authenticator)(nil)
-	if s.Authenticator == nil {
-		authenticator = auth.Authenticator{
-			&gaeauth.OAuth2Method{Scopes: mi.Scopes},
-		}
-	} else {
-		authenticator = s.Authenticator(c, mi)
+	return c, nil
+}
+
+// MethodInfo returns the endpoints.MethodInfo for the current service call.
+func MethodInfo(c context.Context) *endpoints.MethodInfo {
+	if sc, ok := c.Value(serviceCallKey).(*serviceCall); ok {
+		return sc.mi
 	}
-	c = auth.SetAuthenticator(c, authenticator)
-	return authenticator.Authenticate(c, req)
+	return nil
 }
