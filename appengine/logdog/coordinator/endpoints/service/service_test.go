@@ -15,7 +15,7 @@ import (
 	"github.com/luci/luci-go/server/auth/authtest"
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/appengine/ephelper/eptest"
+	. "github.com/luci/luci-go/appengine/ephelper/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

@@ -18,7 +18,7 @@ import (
 	"github.com/luci/luci-go/server/settings"
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/appengine/ephelper/eptest"
+	. "github.com/luci/luci-go/appengine/ephelper/assertions"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
