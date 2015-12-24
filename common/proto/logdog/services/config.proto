@@ -1,0 +1,40 @@
+// Copyright (c) 2015 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package services;
+
+import "transport.proto";
+import "storage.proto";
+
+// Config is the overall instance configuration.
+message Config {
+  // Configuration for the Pub/Sub instances.
+  Transport transport = 10;
+  // Configuration for Storage.
+  Storage storage = 11;
+
+  // Coordinator is the coordinator service configuration.
+  Coordinator coordinator = 20;
+  // Collector is the collector fleet configuration.
+  Collector collector = 21;
+}
+
+// Coordinator is the Coordinator service configuration.
+message Coordinator {
+  // The name of the authentication group for administrators.
+  string admin_auth_group = 10;
+  // The name of the authentication group for backend services.
+  string service_auth_group = 11;
+}
+
+// Collector is the set of configuration parameters for Collector instances.
+message Collector {
+  // Workers is the number of ingest workers to run.
+  int32 workers = 1;
+
+  // The number of transport worker goroutines to run.
+  int32 transport_workers = 2;
+}

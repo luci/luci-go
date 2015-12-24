@@ -33,7 +33,11 @@ func GetStorage(c context.Context) (storage.Storage, error) {
 	}
 
 	// Is BigTable configured?
-	bt := cfg.Bigtable
+	if cfg.Storage == nil {
+		return nil, errors.New("no storage configuration")
+	}
+
+	bt := cfg.Storage.GetBigtable()
 	if bt == nil {
 		return nil, errors.New("no BigTable configuration")
 	}

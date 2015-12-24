@@ -13,7 +13,7 @@ import (
 	"log"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
+	"github.com/luci/luci-go/common/proto/logdog/services"
 	"github.com/luci/luci-go/common/render"
 )
 
@@ -30,7 +30,7 @@ func main() {
 		log.Fatalln("Failed to read input file: %v", err)
 	}
 
-	c := config.Config{}
+	c := services.Config{}
 	if err := proto.UnmarshalText(string(d), &c); err != nil {
 		log.Fatalln("Failed to unmarshal input file: %v", err)
 	}

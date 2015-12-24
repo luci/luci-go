@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-//go:generate protoc --go_out=. config.proto
+//go:generate protoc --go_out=. config.proto storage.proto transport.proto
 
-// Package config contains LogDog Coordinator configuration protobufs.
+// Package services contains LogDog service configuration protobufs.
 //
 // The package name here must match the protobuf package name, as the generated
 // files will reside in the same directory.
-package config
+package services
 
 import (
 	"github.com/golang/protobuf/proto"

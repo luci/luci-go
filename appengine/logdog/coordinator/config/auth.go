@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/luci/luci-go/common/proto/logdog/services"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
 	"golang.org/x/net/context"
@@ -16,7 +17,7 @@ import (
 // IsAdminUser tests whether the current user belongs to the administrative
 // users group. It will return an error if the user does not.
 func IsAdminUser(c context.Context) error {
-	return isMember(c, func(cfg *Config) string {
+	return isMember(c, func(cfg *services.Coordinator) string {
 		return cfg.AdminAuthGroup
 	})
 }
@@ -24,18 +25,22 @@ func IsAdminUser(c context.Context) error {
 // IsServiceUser tests whether the current user belongs to the backend services
 // users group. It will return an error if the user does not.
 func IsServiceUser(c context.Context) error {
-	return isMember(c, func(cfg *Config) string {
+	return isMember(c, func(cfg *services.Coordinator) string {
 		return cfg.ServiceAuthGroup
 	})
 }
 
-func isMember(c context.Context, groupNameFunc func(*Config) string) error {
+func isMember(c context.Context, groupNameFunc func(*services.Coordinator) string) error {
 	cfg, err := Load(c)
 	if err != nil {
 		return err
 	}
 
-	groupName := groupNameFunc(cfg)
+	if cfg.Coordinator == nil {
+		return errors.New("no coordinator configuration")
+	}
+
+	groupName := groupNameFunc(cfg.Coordinator)
 	if groupName == "" {
 		return errors.New("no auth group is configured")
 	}

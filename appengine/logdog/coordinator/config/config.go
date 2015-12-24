@@ -8,11 +8,9 @@ import (
 	"errors"
 
 	"github.com/golang/protobuf/proto"
-	gaeauthClient "github.com/luci/luci-go/appengine/gaeauth/client"
-	"github.com/luci/luci-go/appengine/gaeconfig"
 	"github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/config/impl/remote"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/logdog/services"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/settings"
 	"golang.org/x/net/context"
@@ -77,16 +75,10 @@ func (gcfg *GlobalConfig) Validate() error {
 	return nil
 }
 
-func (gcfg *GlobalConfig) LoadConfig(c context.Context) (*Config, error) {
-	// Prepare the "luci-config" parameters.
-	//
-	// Use an e-mail OAuth2-authenticated transport to pull from "luci-config".
-	c = gaeauthClient.UseServiceAccountTransport(c, nil, nil)
-	c = remote.Use(c, gcfg.ConfigServiceURL)
-
-	// Add a memcache-based caching filter.
-	c = gaeconfig.AddFilter(c, gaeconfig.DefaultExpire)
-
+// LoadConfig loads the services configuration from the current Context.
+//
+// The Context must have a luci-config interface installed.
+func (gcfg *GlobalConfig) LoadConfig(c context.Context) (*services.Config, error) {
 	// Load our LUCI-Config values.
 	cfg, err := config.Get(c).GetConfig(gcfg.ConfigSet, gcfg.ConfigPath, false)
 	if err != nil {
@@ -99,7 +91,7 @@ func (gcfg *GlobalConfig) LoadConfig(c context.Context) (*Config, error) {
 		return nil, errors.New("unable to load config")
 	}
 
-	cc := Config{}
+	cc := services.Config{}
 	if err := proto.UnmarshalText(cfg.Content, &cc); err != nil {
 		log.Fields{
 			log.ErrorKey:  err,
@@ -115,7 +107,7 @@ func (gcfg *GlobalConfig) LoadConfig(c context.Context) (*Config, error) {
 }
 
 // Load loads the current configuration from "luci-config".
-func Load(c context.Context) (*Config, error) {
+func Load(c context.Context) (*services.Config, error) {
 	gcfg, err := LoadGlobalConfig(c)
 	if err != nil {
 		return nil, err
