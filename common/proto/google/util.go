@@ -45,5 +45,8 @@ func NewDuration(d time.Duration) *Duration {
 
 // Duration returns the time.Duration associated with a Duration protobuf.
 func (d *Duration) Duration() time.Duration {
+	if d == nil {
+		return 0
+	}
 	return (time.Duration(d.Seconds) * time.Second) + (time.Duration(d.Nanos) * time.Nanosecond)
 }
