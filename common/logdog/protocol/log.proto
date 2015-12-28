@@ -217,6 +217,11 @@ message LogIndex {
    */
   message Entry {
     /*
+     * The byte offset in the emitted log stream of the RecordIO entry for the
+     * LogEntry corresponding to this Entry.
+     */
+    uint64 offset = 1;
+    /*
      * The sequence number of the first content entry.
      *
      * Text: This is the line index of the first included line. Line indices
@@ -225,7 +230,7 @@ message LogIndex {
      * Datagram: This is the index of the datagram. The first datagram has index
      *     zero.
      */
-    uint64 sequence = 1;
+    uint64 sequence = 2;
 
     /*
      * The log index that this entry describes (required).
@@ -233,7 +238,7 @@ message LogIndex {
      * This is used by clients to identify a specific LogEntry within a set of
      * streams sharing a Prefix.
      */
-    uint64 prefix_index = 2;
+    uint64 prefix_index = 3;
 
     /*
      * The time offset of this log entry (required).
@@ -241,7 +246,7 @@ message LogIndex {
      * This is used by clients to identify a specific LogEntry within a log
      * stream.
      */
-    uint64 stream_index = 3;
+    uint64 stream_index = 4;
 
     /*
      * The time offset of this log entry, in microseconds.
@@ -250,7 +255,7 @@ message LogIndex {
      * specific timestamp of this log. It is used by clients to identify a
      * specific LogEntry by time.
      */
-    google.protobuf.Duration time_offset = 4;
+    google.protobuf.Duration time_offset = 5;
   }
 
   /*
