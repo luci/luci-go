@@ -13,31 +13,31 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// testFetcher implements the fetcher interface using stubbed data.
-type testFetcher struct {
+// testSource implements the Source interface using stubbed data.
+type testSource struct {
 	logs []*protocol.LogEntry
 	err  error
 }
 
-func (tf *testFetcher) NextLogEntry() (*protocol.LogEntry, error) {
-	if tf.err != nil {
-		return nil, tf.err
+func (ts *testSource) NextLogEntry() (*protocol.LogEntry, error) {
+	if ts.err != nil {
+		return nil, ts.err
 	}
-	if len(tf.logs) == 0 {
+	if len(ts.logs) == 0 {
 		return nil, io.EOF
 	}
 
 	var le *protocol.LogEntry
-	le, tf.logs = tf.logs[0], tf.logs[1:]
+	le, ts.logs = ts.logs[0], ts.logs[1:]
 	return le, nil
 }
 
-func (tf *testFetcher) loadLogEntry(le *protocol.LogEntry) {
-	tf.logs = append(tf.logs, le)
+func (ts *testSource) loadLogEntry(le *protocol.LogEntry) {
+	ts.logs = append(ts.logs, le)
 }
 
-func (tf *testFetcher) loadText(line, delim string) {
-	tf.loadLogEntry(&protocol.LogEntry{
+func (ts *testSource) loadText(line, delim string) {
+	ts.loadLogEntry(&protocol.LogEntry{
 		Content: &protocol.LogEntry_Text{
 			Text: &protocol.Text{
 				Lines: []*protocol.Text_Line{
@@ -51,8 +51,8 @@ func (tf *testFetcher) loadText(line, delim string) {
 	})
 }
 
-func (tf *testFetcher) loadBinary(data []byte) {
-	tf.loadLogEntry(&protocol.LogEntry{
+func (ts *testSource) loadBinary(data []byte) {
+	ts.loadLogEntry(&protocol.LogEntry{
 		Content: &protocol.LogEntry_Binary{
 			Binary: &protocol.Binary{
 				Data: data,
@@ -64,11 +64,11 @@ func (tf *testFetcher) loadBinary(data []byte) {
 func TestRenderer(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A Renderer connected to a test fetcher`, t, func() {
-		tf := testFetcher{}
+	Convey(`A Renderer connected to a test Source`, t, func() {
+		ts := testSource{}
 		b := bytes.Buffer{}
 		r := &Renderer{
-			fetcher: &tf,
+			Source: &ts,
 		}
 
 		Convey(`With no log data, will render nothing and return.`, func() {
@@ -78,8 +78,8 @@ func TestRenderer(t *testing.T) {
 		})
 
 		Convey(`With TEXT log entries ["1", "2"] using "DELIM" as the delimiter`, func() {
-			tf.loadText("1", "DELIM")
-			tf.loadText("2", "DELIM")
+			ts.loadText("1", "DELIM")
+			ts.loadText("2", "DELIM")
 
 			Convey(`When not configured to reproduce, renders "1\n2\n".`, func() {
 				_, err := b.ReadFrom(r)
@@ -97,10 +97,10 @@ func TestRenderer(t *testing.T) {
 		})
 
 		Convey(`With BINARY log entries {{0x00}, {0x01, 0x02}, {}, {0x03}}`, func() {
-			tf.loadBinary([]byte{0x00})
-			tf.loadBinary([]byte{0x01, 0x02})
-			tf.loadBinary([]byte{})
-			tf.loadBinary([]byte{0x03})
+			ts.loadBinary([]byte{0x00})
+			ts.loadBinary([]byte{0x01, 0x02})
+			ts.loadBinary([]byte{})
+			ts.loadBinary([]byte{0x03})
 
 			Convey(`Renders {0x00, 0x01, 0x02, 0x03}.`, func() {
 				_, err := b.ReadFrom(r)
@@ -138,7 +138,7 @@ func TestRenderer(t *testing.T) {
 		})
 
 		Convey(`With empty log entries, renders nothing.`, func() {
-			tf.loadLogEntry(&protocol.LogEntry{})
+			ts.loadLogEntry(&protocol.LogEntry{})
 			c, err := b.ReadFrom(r)
 			So(err, ShouldBeNil)
 			So(c, ShouldEqual, 0)
