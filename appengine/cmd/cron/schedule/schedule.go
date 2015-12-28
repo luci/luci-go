@@ -5,7 +5,10 @@
 package schedule
 
 import (
-	"sync"
+	"errors"
+	"fmt"
+	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/gorhill/cronexpr"
@@ -17,12 +20,50 @@ import (
 // See 'Parse' for a list of supported kinds of schedules.
 type Schedule struct {
 	asString string
-	cronExpr *cronexpr.Expression
+	randSeed uint64
+
+	cronExpr *cronexpr.Expression // set for absolute schedules
+	interval time.Duration        // set for relative schedules
+}
+
+// IsAbsolute is true for schedules that do not depend on a job state.
+//
+// Absolute schedules are basically static time tables specifying when to
+// attempt to run a job.
+//
+// Non-absolute (aka relative) schedules may use job state transition times to
+// make decisions.
+//
+// See comment for 'Parse' for some examples.
+func (s *Schedule) IsAbsolute() bool {
+	return s.cronExpr != nil
 }
 
 // Next tells when to run the job the next time.
-func (s *Schedule) Next(now time.Time) time.Time {
-	return s.cronExpr.Next(now)
+//
+// 'now' is current time. 'prev' is when previous invocation has finished (or
+// zero time for first invocation).
+func (s *Schedule) Next(now, prev time.Time) time.Time {
+	// For an absolute schedule just look at the time table.
+	if s.cronExpr != nil {
+		return s.cronExpr.Next(now)
+	}
+
+	// Using relative schedule and this is a first invocation ever? Randomize
+	// start time, so that a bunch of newly registered cron jobs do not start all
+	// at once. Otherwise just wait for 'interval' seconds after previous
+	// invocation.
+	if prev.IsZero() {
+		// Pass seed through math/rand to make small seeds (used by unit tests),
+		// less special.
+		rnd := rand.New(rand.NewSource(int64(s.randSeed))).Float64()
+		return now.Add(time.Duration(float64(s.interval) * rnd))
+	}
+	next := prev.Add(s.interval)
+	if next.Sub(now) < 0 {
+		next = now
+	}
+	return next
 }
 
 // String serializes the schedule to a human readable string.
@@ -39,78 +80,45 @@ func (s *Schedule) String() string {
 //     to start a job at specified moments in time (based on UTC clock). If when
 //     triggering a job, previous invocation is still running, an overrun will
 //     be recorded (and next attempt to start a job happens based on the
-//     schedule, not when the previous invocation finishes).
-func Parse(expr string) (*Schedule, error) {
-	gotIt, sched, err := cache.get(expr)
-	if !gotIt {
-		sched, err = doParse(expr)
-		cache.put(expr, sched, err)
+//     schedule, not when the previous invocation finishes). This is absolute
+//     schedule (i.e. doesn't depend on job state).
+//   - "with 10s interval": runs invocations in a loop, waiting 10s after
+//     finishing invocation before starting a new one. This is relative
+//     schedule. Overruns are not possible.
+func Parse(expr string, randSeed uint64) (sched *Schedule, err error) {
+	if strings.HasPrefix(expr, "with ") {
+		sched, err = parseWithSchedule(expr, randSeed)
+	} else {
+		sched, err = parseCronSchedule(expr, randSeed)
+	}
+	if sched != nil {
+		sched.asString = expr
+		sched.randSeed = randSeed
 	}
 	return sched, err
 }
 
-// doParse does the actual parsing (not using the cache).
-func doParse(expr string) (*Schedule, error) {
+// parseWithSchedule parses "with <interval> interval" schedule string.
+func parseWithSchedule(expr string, randSeed uint64) (*Schedule, error) {
+	tokens := strings.SplitN(expr, " ", 3)
+	if len(tokens) != 3 || tokens[0] != "with" || tokens[2] != "interval" {
+		return nil, errors.New("expecting format \"with <duration> interval\"")
+	}
+	interval, err := time.ParseDuration(tokens[1])
+	if err != nil {
+		return nil, fmt.Errorf("bad duration %q - %s", tokens[1], err)
+	}
+	if interval < 0 {
+		return nil, fmt.Errorf("bad interval %q - it must be positive", tokens[1])
+	}
+	return &Schedule{interval: interval}, nil
+}
+
+// parseCronSchedule parses crontab-like schedule string.
+func parseCronSchedule(expr string, randSeed uint64) (*Schedule, error) {
 	exp, err := cronexpr.Parse(expr)
 	if err != nil {
 		return nil, err
 	}
-	return &Schedule{
-		asString: expr,
-		cronExpr: exp,
-	}, nil
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-// scheduleCache implements dumb process-global cache for Schedules.
-//
-// Exists to save time on parsing schedules all the time when reading cron jobs
-// from the datastore. Caches both valid and invalid schedules.
-type scheduleCache struct {
-	lock    sync.RWMutex
-	entries map[string]interface{} // map of '*Schedule' or 'error' items
-}
-
-func (c *scheduleCache) init() {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	c.entries = make(map[string]interface{}, 50)
-}
-
-func (c *scheduleCache) get(expr string) (bool, *Schedule, error) {
-	c.lock.RLock()
-	defer c.lock.RUnlock()
-	if val, ok := c.entries[expr]; ok {
-		if sched, ok := val.(*Schedule); ok {
-			return true, sched, nil
-		}
-		return true, nil, val.(error)
-	}
-	return false, nil, nil
-}
-
-func (c *scheduleCache) put(expr string, sched *Schedule, err error) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	if _, gotIt := c.entries[expr]; gotIt {
-		return
-	}
-	// This cache called "dumb" for a reason.
-	if len(c.entries) >= 500 {
-		c.entries = make(map[string]interface{}, 50)
-	}
-	if sched != nil {
-		c.entries[expr] = sched
-	} else {
-		c.entries[expr] = err
-	}
-}
-
-//////////////
-
-var cache scheduleCache
-
-func init() {
-	cache.init()
+	return &Schedule{cronExpr: exp}, nil
 }

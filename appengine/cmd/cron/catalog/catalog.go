@@ -201,7 +201,7 @@ func (cat *catalog) validateJobProto(j *messages.Job) error {
 	if j.Schedule == nil {
 		return fmt.Errorf("missing 'schedule' field")
 	}
-	if _, err := schedule.Parse(*j.Schedule); err != nil {
+	if _, err := schedule.Parse(*j.Schedule, 0); err != nil {
 		return fmt.Errorf("%s is not valid value for 'schedule' field - %s", *j.Schedule, err)
 	}
 	_, err := cat.extractTaskProto(j.Task)

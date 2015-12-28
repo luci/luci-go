@@ -480,6 +480,7 @@ func TestFullFlow(t *testing.T) {
 					State:     "SCHEDULED",
 					TickNonce: 9111178027324032851,
 					TickTime:  epoch.Add(10 * time.Second),
+					PrevTime:  epoch.Add(5 * time.Second),
 				},
 			},
 		})

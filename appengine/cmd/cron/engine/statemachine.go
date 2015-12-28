@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/appengine/cmd/cron/schedule"
 	"github.com/luci/luci-go/server/auth/identity"
 )
@@ -57,6 +59,9 @@ type JobState struct {
 	// TickTime is when the OnTimerTick event is expected.
 	TickTime time.Time `gae:",noindex"`
 
+	// PrevTime is when last invocation has finished (successfully or not).
+	PrevTime time.Time `gae:",noindex"`
+
 	// InvocationNonce is id of the currently queued or running invocation
 	// request. Once it is processed, it produces some new invocation identified
 	// by InvocationID. Single InvocationNonce can spawn many InvocationIDs due to
@@ -75,16 +80,6 @@ type JobState struct {
 // OnInvocationStarting event with given nonce.
 func (s *JobState) IsExpectingInvocation(invocationNonce int64) bool {
 	return (s.State == JobStateQueued || s.State == JobStateSlowQueue) && s.InvocationNonce == invocationNonce
-}
-
-// IsExpectingTick returns true if the state implies that the state machine is
-// waiting for a timer tick.
-func (s *JobState) IsExpectingTick() bool {
-	switch s.State {
-	case JobStateScheduled, JobStateQueued, JobStateRunning, JobStateOverrun, JobStateSlowQueue:
-		return true
-	}
-	return false
 }
 
 // Action is a particular action to perform when switching the state. Can be
@@ -133,30 +128,33 @@ func (a RecordOverrunAction) IsAction() bool { return true }
 // machine must guarantee that if state change was committed, all actions will
 // be executed at least once.
 //
-// On* methods mutate OutputState or Actions and return errors only on transient
-// conditions fixable by a retry. OutputState and Actions are mutated in place
+// On* methods mutate State or Actions and return errors only on transient
+// conditions fixable by a retry. State and Actions are mutated in place
 // just to simplify APIs. Otherwise all On* transitions can be considered as
-// pure functions (InputState, World) -> (OutputState, Actions).
+// pure functions (State, World) -> (State, Actions).
 //
 // The lifecycle of a healthy cron job:
 // DISABLED -> SCHEDULED -> QUEUED -> QUEUED (starting) -> RUNNING -> SCHEDULED
 type StateMachine struct {
 	// Inputs.
-	InputState JobState           // job's current state
-	Now        time.Time          // current time
-	Schedule   *schedule.Schedule // knows when to run the job next time
-	Nonce      func() int64       // produces a series of nonces on demand
+	Now      time.Time          // current time
+	Schedule *schedule.Schedule // knows when to run the job next time
+	Nonce    func() int64       // produces a series of nonces on demand
 
-	// Outputs.
-	OutputState *JobState // state after the transition or nil if same as input
-	Actions     []Action  // emitted actions
+	// Mutated.
+	State   JobState // state of the job, mutated in On* methods
+	Actions []Action // emitted actions
+
+	// For adhoc logging when debugging locally.
+	Context context.Context
 }
 
 // OnJobEnabled happens when a new job (never seen before) was discovered or
 // a previously disabled job was enabled.
 func (m *StateMachine) OnJobEnabled() error {
-	if m.InputState.State == JobStateDisabled {
-		m.schedule(JobStateScheduled, JobState{})
+	if m.State.State == JobStateDisabled {
+		m.State = JobState{State: JobStateScheduled} // clean state
+		m.scheduleTick()
 	}
 	return nil
 }
@@ -164,55 +162,58 @@ func (m *StateMachine) OnJobEnabled() error {
 // OnJobDisabled happens when job was disabled or removed. It clears the state
 // and cancels any pending invocations (running ones continue to run though).
 func (m *StateMachine) OnJobDisabled() error {
-	m.OutputState = &JobState{State: JobStateDisabled}
+	m.State = JobState{State: JobStateDisabled} // clean state
 	return nil
 }
 
 // OnTimerTick happens when scheduled timer (added with TickLaterAction) ticks.
 func (m *StateMachine) OnTimerTick(tickNonce int64) error {
 	// Skip unexpected, late or canceled ticks.
-	if !m.InputState.IsExpectingTick() || m.InputState.TickNonce != tickNonce {
+	if m.State.State == JobStateDisabled || m.State.TickNonce != tickNonce {
 		return nil
 	}
 
-	// Report transient error (to trigger retry) if the tick happened unexpectedly
-	// soon.
-	//
-	// TODO(vadimsh): Do something with huge delays? Skip very late jobs?
-	delay := m.Now.Sub(m.InputState.TickTime)
+	// Report error (to trigger retry) if the tick happened unexpectedly soon.
+	// Absolute schedules may report "wrong" next tick time if asked for a next
+	// tick before previous one has happened.
+	delay := m.Now.Sub(m.State.TickTime)
 	if delay < 0 {
 		return fmt.Errorf("tick happened %.1f sec before it was expected", -delay.Seconds())
 	}
 
+	// Start waiting for a new tick right away if on an absolute schedule (or just
+	// clear the tick state if on a relative one, new tick will be set when
+	// invocation completes, see OnInvocationDone).
+	if m.Schedule.IsAbsolute() {
+		m.scheduleTick()
+	} else {
+		m.resetTick()
+	}
+
 	// Was waiting for a tick to start a job? Add invocation to the queue.
-	if m.InputState.State == JobStateScheduled {
-		m.schedule(JobStateQueued, JobState{})
-		m.OutputState.InvocationTime = m.Now
-		m.OutputState.InvocationNonce = m.Nonce()
-		m.emitAction(StartInvocationAction{
-			InvocationNonce: m.OutputState.InvocationNonce,
-		})
+	if m.State.State == JobStateScheduled {
+		m.State.State = JobStateQueued
+		m.queueInvocation("")
 		return nil
 	}
 
 	// Already running a job (or have one in the queue) and it's time to launch
-	// a new invocation? Skip this tick completely (schedule the next tick, carry
-	// over invocation state), we do not want two copies of a job running.
+	// a new invocation? Skip this tick completely.
 	//
 	// TODO(vadimsh): Make overrun policy configurable. Also handle permanently
 	// stuck jobs.
-	switch m.InputState.State {
+	switch m.State.State {
 	case JobStateRunning, JobStateOverrun:
-		m.schedule(JobStateOverrun, m.InputState)
+		m.State.State = JobStateOverrun
 	case JobStateQueued, JobStateSlowQueue:
-		m.schedule(JobStateSlowQueue, m.InputState)
+		m.State.State = JobStateSlowQueue
 	default:
-		panic("Impossible, see IsExpectingTick()")
+		impossible("impossible state %s", m.State.State)
 	}
-	m.OutputState.Overruns++
+	m.State.Overruns++
 	m.emitAction(RecordOverrunAction{
-		Overruns:            m.OutputState.Overruns,
-		RunningInvocationID: m.InputState.InvocationID,
+		Overruns:            m.State.Overruns,
+		RunningInvocationID: m.State.InvocationID,
 	})
 	return nil
 }
@@ -222,23 +223,22 @@ func (m *StateMachine) OnTimerTick(tickNonce int64) error {
 // launching the invocation. Engine calls OnInvocationStarting again with
 // another invocationID if previous launch attempt failed.
 func (m *StateMachine) OnInvocationStarting(invocationNonce, invocationID int64) error {
-	if m.InputState.IsExpectingInvocation(invocationNonce) {
-		cp := m.InputState
-		m.OutputState = &cp
-		m.OutputState.InvocationID = invocationID
+	if m.State.IsExpectingInvocation(invocationNonce) {
+		m.State.InvocationID = invocationID
 	}
 	return nil
 }
 
 // OnInvocationStarted happens when enqueued invocation finally starts to run.
 func (m *StateMachine) OnInvocationStarted(invocationID int64) error {
-	if m.InputState.InvocationID == invocationID {
-		cp := m.InputState
-		m.OutputState = &cp
-		if m.InputState.State == JobStateQueued {
-			m.OutputState.State = JobStateRunning
-		} else { // JobStateSlowQueue
-			m.OutputState.State = JobStateOverrun
+	if m.State.InvocationID == invocationID {
+		switch m.State.State {
+		case JobStateQueued:
+			m.State.State = JobStateRunning
+		case JobStateSlowQueue:
+			m.State.State = JobStateOverrun
+		default:
+			impossible("impossible state %s", m.State.State)
 		}
 	}
 	return nil
@@ -248,42 +248,54 @@ func (m *StateMachine) OnInvocationStarted(invocationID int64) error {
 func (m *StateMachine) OnInvocationDone(invocationID int64) error {
 	// Ignore unexpected events. Can happen if job was moved to disabled state
 	// while invocation was still running.
-	if m.InputState.State != JobStateRunning && m.InputState.State != JobStateOverrun {
+	if m.State.State != JobStateRunning && m.State.State != JobStateOverrun {
 		return nil
 	}
-	if m.InputState.InvocationID != invocationID {
+	if m.State.InvocationID != invocationID {
 		return nil
 	}
-	// Do not schedule another tick. It was already scheduled when job entered
-	// JobStateQueued state.
-	// TODO(vadimsh): Start the job right away if overrun happened? Retry job on
-	// failure?
-	m.OutputState = &JobState{
-		State:     JobStateScheduled,
-		TickTime:  m.InputState.TickTime,
-		TickNonce: m.InputState.TickNonce,
-	}
+	m.State.State = JobStateScheduled
+	m.State.PrevTime = m.Now
+	m.resetInvocation() // forget about just finished invocation
+	m.scheduleTick()    // start waiting for a new one
 	return nil
 }
 
 // OnScheduleChange happens when job's schedule changes (and the job potentially
 // needs to be rescheduled).
 func (m *StateMachine) OnScheduleChange() error {
-	// Not scheduled?
-	if !m.InputState.IsExpectingTick() {
+	// Do not touch timers on disabled jobs.
+	if m.State.State == JobStateDisabled {
 		return nil
 	}
-	// Did it really change next invocation time?
-	nextTick := m.Schedule.Next(m.Now)
-	if nextTick == m.InputState.TickTime {
+
+	// If the job was running on a relative schedule (and thus has no pending
+	// ticks), and the new schedule is absolute, we'd need to schedule a new tick
+	// now. If the new schedule is also relative, do nothing: it will be used as
+	// usual when currently running invocation finishes.
+	if m.State.TickTime.IsZero() {
+		if m.Schedule.IsAbsolute() {
+			m.scheduleTick()
+		}
 		return nil
 	}
-	// Change the next tick time, carry over the rest of the state.
-	cp := m.InputState
-	m.OutputState = &cp
-	m.OutputState.TickTime = nextTick
-	m.OutputState.TickNonce = m.Nonce()
-	m.emitAction(TickLaterAction{m.OutputState.TickTime, m.OutputState.TickNonce})
+
+	// When switching from an absolute to a relative schedule, cancel pending
+	// tick, so that the new schedule is used when the current invocation ends.
+	// Don't do it if the job in Scheduled state (e.g. waiting to start a new
+	// invocation): we'd need to move the tick in this case (not cancel it).
+	// This situation is handled below.
+	if !m.Schedule.IsAbsolute() && m.State.State != JobStateScheduled {
+		m.resetTick()
+		return nil
+	}
+
+	// At this point we know that the job must have a tick enabled, because
+	// either it's running on an absolute schedule (such jobs always "tick",
+	// regardless of the state), or it's running on a relative schedule, and
+	// currently it's in between invocations (in Scheduled state). Reschedule
+	// the tick if it changed.
+	m.scheduleTick()
 	return nil
 }
 
@@ -291,34 +303,66 @@ func (m *StateMachine) OnScheduleChange() error {
 // Manual invocation only works if the job is currently not running or not
 // queued for run (i.e. it is in Scheduled state waiting for a timer tick).
 func (m *StateMachine) OnManualInvocation(triggeredBy identity.Identity) error {
-	if m.InputState.State != JobStateScheduled {
+	if m.State.State != JobStateScheduled {
 		return errors.New("the job is already running or about to start")
 	}
-	m.schedule(JobStateQueued, JobState{})
-	m.OutputState.InvocationTime = m.Now
-	m.OutputState.InvocationNonce = m.Nonce()
-	m.emitAction(StartInvocationAction{
-		InvocationNonce: m.OutputState.InvocationNonce,
-		TriggeredBy:     triggeredBy,
-	})
+	m.State.State = JobStateQueued
+	m.queueInvocation(triggeredBy)
+	if !m.Schedule.IsAbsolute() {
+		m.resetTick() // will be set again when invocation ends
+	}
 	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// schedule emits TickLaterAction action according to job's schedule and
-// generates OutputState putting tick time and tick ID there. It does NOT
-// preserve invocation ID and related fields from InputState. Copy them from
-// InputState if needed.
-func (m *StateMachine) schedule(s StateKind, prev JobState) {
-	m.OutputState = &prev
-	m.OutputState.State = s
-	m.OutputState.TickTime = m.Schedule.Next(m.Now)
-	m.OutputState.TickNonce = m.Nonce()
-	m.emitAction(TickLaterAction{m.OutputState.TickTime, m.OutputState.TickNonce})
+// scheduleTick emits TickLaterAction action according to job's schedule. Does
+// nothing if the tick is already scheduled.
+func (m *StateMachine) scheduleTick() {
+	nextTick := m.Schedule.Next(m.Now, m.State.PrevTime)
+	if nextTick != m.State.TickTime {
+		m.State.TickTime = nextTick
+		m.State.TickNonce = m.Nonce()
+		m.emitAction(TickLaterAction{
+			When:      m.State.TickTime,
+			TickNonce: m.State.TickNonce,
+		})
+	}
 }
 
-// emitAction adds an action to 'actions' array.
+// resetTick clears tick time and nonce, effectively canceling a tick.
+func (m *StateMachine) resetTick() {
+	m.State.TickTime = time.Time{}
+	m.State.TickNonce = 0
+}
+
+// queueInvocation generates a new invocation nonce and asks engine to start
+// a new invocation.
+func (m *StateMachine) queueInvocation(triggeredBy identity.Identity) {
+	m.State.InvocationTime = m.Now
+	m.State.InvocationNonce = m.Nonce()
+	m.State.InvocationID = 0
+	m.State.Overruns = 0
+	m.emitAction(StartInvocationAction{
+		InvocationNonce: m.State.InvocationNonce,
+		TriggeredBy:     triggeredBy,
+	})
+}
+
+// resetInvocation clears invocation related part of the state.
+func (m *StateMachine) resetInvocation() {
+	m.State.InvocationNonce = 0
+	m.State.InvocationTime = time.Time{}
+	m.State.InvocationID = 0
+	m.State.Overruns = 0
+}
+
+// emitAction adds a generic action to 'actions' array.
 func (m *StateMachine) emitAction(a Action) {
 	m.Actions = append(m.Actions, a)
+}
+
+// impossible is never actually called.
+func impossible(msg string, args ...interface{}) {
+	panic(fmt.Errorf(msg, args...))
 }

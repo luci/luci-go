@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"net/http"
 	"net/url"
 	"sort"
@@ -137,6 +138,10 @@ type CronJob struct {
 	_kind  string                `gae:"$kind,CronJob"`
 	_extra datastore.PropertyMap `gae:"-,extra"`
 
+	// cachedSchedule and cachedScheduleErr are used by parseSchedule().
+	cachedSchedule    *schedule.Schedule `gae:"-"`
+	cachedScheduleErr error              `gae:"-"`
+
 	// JobID is '<ProjectID>/<JobName>' string. JobName is unique with a project,
 	// but not globally. JobID is unique globally.
 	JobID string `gae:"$id"`
@@ -159,6 +164,20 @@ type CronJob struct {
 
 	// State is cron job state machine state, see StateMachine.
 	State JobState
+}
+
+// parseSchedule returns *Schedule object, parsing e.Schedule field.
+func (e *CronJob) parseSchedule() (*schedule.Schedule, error) {
+	if e.cachedSchedule == nil && e.cachedScheduleErr == nil {
+		hash := fnv.New64()
+		hash.Write([]byte(e.JobID))
+		seed := hash.Sum64()
+		e.cachedSchedule, e.cachedScheduleErr = schedule.Parse(e.Schedule, seed)
+		if e.cachedSchedule == nil && e.cachedScheduleErr == nil {
+			panic("no schedule and no error")
+		}
+	}
+	return e.cachedSchedule, e.cachedScheduleErr
 }
 
 // isEqual returns true iff 'e' is equal to 'other'.
@@ -306,7 +325,7 @@ func generateInvocationID(c context.Context, parent *datastore.Key) (int64, erro
 
 // debugLog mutates a string by appending a line to it.
 func debugLog(c context.Context, str *string, format string, args ...interface{}) {
-	prefix := clock.Now(c).Format("[15:04:05.000] ")
+	prefix := clock.Now(c).UTC().Format("[15:04:05.000] ")
 	*str += prefix + fmt.Sprintf(format+"\n", args...)
 }
 
@@ -655,17 +674,18 @@ func (e *engineImpl) txn(c context.Context, jobID string, txn txnCallback) error
 // job.State in place (with a new state) and enqueues all emitted actions to
 // task queues.
 func (e *engineImpl) rollSM(c context.Context, job *CronJob, cb func(*StateMachine) error) error {
-	sched, err := schedule.Parse(job.Schedule)
+	sched, err := job.parseSchedule()
 	if err != nil {
 		return fmt.Errorf("bad schedule %q - %s", job.Schedule, err)
 	}
 	now := clock.Now(c).UTC()
 	rnd := mathrand.Get(c)
 	sm := StateMachine{
-		InputState: job.State,
-		Now:        now,
-		Schedule:   sched,
-		Nonce:      func() int64 { return rnd.Int63() + 1 },
+		State:    job.State,
+		Now:      now,
+		Schedule: sched,
+		Nonce:    func() int64 { return rnd.Int63() + 1 },
+		Context:  c,
 	}
 	// All errors returned by state machine transition changes are transient.
 	// Fatal errors (when we have them) should be reflected as a state changing
@@ -678,12 +698,10 @@ func (e *engineImpl) rollSM(c context.Context, job *CronJob, cb func(*StateMachi
 			return err
 		}
 	}
-	if sm.OutputState != nil {
-		if sm.OutputState.State != job.State.State {
-			logging.Infof(c, "%s -> %s", job.State.State, sm.OutputState.State)
-		}
-		job.State = *sm.OutputState
+	if sm.State.State != job.State.State {
+		logging.Infof(c, "%s -> %s", job.State.State, sm.State.State)
 	}
+	job.State = sm.State
 	return nil
 }
 
@@ -896,7 +914,7 @@ func (e *engineImpl) timerTick(c context.Context, jobID string, tickNonce int64)
 // to keep record of all overruns. Doesn't modify CronJob entity.
 func (e *engineImpl) recordOverrun(c context.Context, jobID string, overruns int, runningInvID int64) error {
 	ds := datastore.Get(c)
-	now := clock.Now(c)
+	now := clock.Now(c).UTC()
 	jobKey := ds.NewKey("CronJob", jobID, 0, nil)
 	invID, err := generateInvocationID(c, jobKey)
 	if err != nil {
@@ -964,7 +982,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 		inv = Invocation{
 			ID:              invID,
 			JobKey:          jobKey,
-			Started:         clock.Now(c),
+			Started:         clock.Now(c).UTC(),
 			InvocationNonce: invocationNonce,
 			TriggeredBy:     triggeredBy,
 			Revision:        job.Revision,
@@ -993,7 +1011,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 			if err == nil && !prev.Status.Final() {
 				prev.debugLog(c, "New invocation is running (%d), marking this one as failed.", inv.ID)
 				prev.Status = task.StatusFailed
-				prev.Finished = clock.Now(c)
+				prev.Finished = clock.Now(c).UTC()
 				prev.MutationsCount++
 				if err := ds.Put(&prev); err != nil {
 					return err

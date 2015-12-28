@@ -16,7 +16,6 @@ import (
 
 	"github.com/luci/luci-go/appengine/cmd/cron/engine"
 	"github.com/luci/luci-go/appengine/cmd/cron/messages"
-	"github.com/luci/luci-go/appengine/cmd/cron/schedule"
 	"github.com/luci/luci-go/appengine/cmd/cron/task"
 )
 
@@ -35,11 +34,10 @@ type cronJob struct {
 
 func makeCronJob(j *engine.CronJob, now time.Time) *cronJob {
 	nextRun := ""
-	sched, err := schedule.Parse(j.Schedule)
-	if err == nil {
-		nextRun = humanize.RelTime(sched.Next(now), now, "ago", "from now")
+	if ts := j.State.TickTime; !ts.IsZero() {
+		nextRun = humanize.RelTime(ts, now, "ago", "from now")
 	} else {
-		nextRun = fmt.Sprintf("bad schedule %q", j.Schedule)
+		nextRun = "waiting"
 	}
 
 	// JobID has form <project>/<id>. Split it into components.

@@ -23,6 +23,14 @@ job {
     }
   }
 }
+
+job {
+  id: "noop-job"
+  schedule: "with 0s interval"
+  task: {
+    noop: {}
+  }
+}
 `
 
 // devServerConfig returns mocked luci-config configs to use locally on dev
