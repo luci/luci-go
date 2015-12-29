@@ -26,9 +26,12 @@ var registry = map[string]reflect.Type{}
 // Register allows |mut| to be played by the tumble backend. This should be
 // called at init() time once for every Mutation implementation.
 //
+// This will also gob.Register your mutation implementation.
+//
 // Example:
 //   Register((*MyMutationImpl)(nil))
 func Register(mut Mutation) {
+	gob.Register(mut)
 	t := reflect.TypeOf(mut)
 	registry[t.String()] = t
 }

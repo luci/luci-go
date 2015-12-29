@@ -5,7 +5,9 @@
 package tumble
 
 import (
+	"bytes"
 	"encoding/base64"
+	"encoding/gob"
 	"fmt"
 	"sort"
 	"testing"
@@ -14,6 +16,7 @@ import (
 	"github.com/luci/luci-go/common/bit_field"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/memlogger"
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -136,10 +139,35 @@ func (w *WriteReceipt) RollForward(c context.Context) ([]Mutation, error) {
 	return nil, ds.Put(m)
 }
 
+// Embedder is just to prove that gob doesn't flip out when serializing
+// Mutations within Mutations now. Presumably in a real instance of this you
+// would have some other fields and do some general bookkeeping in Root() before
+// returning Next from RollForward.
+type Embedder struct {
+	Next Mutation
+}
+
+func (*Embedder) Root(c context.Context) *datastore.Key {
+	return datastore.Get(c).MakeKey("GeneralBookkeeping", 1)
+}
+
+func (e *Embedder) RollForward(context.Context) ([]Mutation, error) {
+	// do something inside of Root()
+	return []Mutation{e.Next}, nil
+}
+
+// NotRegistered is just to prove that gob does flip out if we don't
+// gob.Register Mutations
+type NotRegistered struct{}
+
+func (*NotRegistered) Root(c context.Context) *datastore.Key           { return nil }
+func (*NotRegistered) RollForward(context.Context) ([]Mutation, error) { return nil, nil }
+
 func init() {
 	Register((*WriteMessage)(nil))
 	Register((*SendMessage)(nil))
 	Register((*WriteReceipt)(nil))
+	Register((*Embedder)(nil))
 }
 
 func TestHighLevel(t *testing.T) {
@@ -148,6 +176,14 @@ func TestHighLevel(t *testing.T) {
 	Convey("Tumble", t, func() {
 		Convey("Check registration", func() {
 			So(registry, ShouldContainKey, "*tumble.SendMessage")
+
+			Convey("registered mutations can be embedded within each other", func() {
+				buf := &bytes.Buffer{}
+				enc := gob.NewEncoder(buf)
+				So(enc.Encode(&Embedder{&WriteMessage{}}), ShouldBeNil)
+				So(enc.Encode(&Embedder{&NotRegistered{}}), ShouldErrLike,
+					"type not registered for interface")
+			})
 		})
 
 		Convey("Good", func() {
