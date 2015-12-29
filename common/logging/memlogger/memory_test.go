@@ -16,6 +16,14 @@ import (
 )
 
 func TestLogger(t *testing.T) {
+	Convey("Zero", t, func() {
+		var l MemLogger
+		l.Debugf("test %s", logging.Debug)
+		l.Infof("test %s", logging.Info)
+
+		So(&l, ShouldHaveLog, logging.Debug, "test debug")
+		So(&l, ShouldHaveLog, logging.Info, "test info")
+	})
 	Convey("logger", t, func() {
 		c := Use(logging.SetLevel(context.Background(), logging.Debug))
 		l := logging.Get(c)

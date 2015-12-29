@@ -24,6 +24,7 @@ type LogEntry struct {
 }
 
 // MemLogger is an implementation of Logger.
+// Zero value is a valid logger.
 type MemLogger struct {
 	lock   *sync.Mutex
 	data   *[]LogEntry
@@ -54,16 +55,26 @@ func (m *MemLogger) Errorf(format string, args ...interface{}) {
 
 // LogCall implements the logging.Logger interface.
 func (m *MemLogger) LogCall(lvl logging.Level, calldepth int, format string, args []interface{}) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
+	if m.lock != nil {
+		m.lock.Lock()
+		defer m.lock.Unlock()
+	}
+	if m.data == nil {
+		m.data = new([]LogEntry)
+	}
 	*m.data = append(*m.data, LogEntry{lvl, fmt.Sprintf(format, args...), m.fields, calldepth + 1})
 }
 
 // Messages returns all of the log messages that this memory logger has
 // recorded.
 func (m *MemLogger) Messages() []LogEntry {
-	m.lock.Lock()
-	defer m.lock.Unlock()
+	if m.lock != nil {
+		m.lock.Lock()
+		defer m.lock.Unlock()
+	}
+	if m.data == nil || len(*m.data) == 0 {
+		return nil
+	}
 	ret := make([]LogEntry, len(*m.data))
 	copy(ret, *m.data)
 	return ret
@@ -71,23 +82,31 @@ func (m *MemLogger) Messages() []LogEntry {
 
 // Reset resets the logged messages recorded so far.
 func (m *MemLogger) Reset() {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-	*m.data = []LogEntry{}
+	if m.lock != nil {
+		m.lock.Lock()
+		defer m.lock.Unlock()
+	}
+	if m.data != nil {
+		*m.data = nil
+	}
 }
 
 // Get returns the log entry iff the MemLogger contains the specified log message.
 // Note that lvl, msg and data have to match the entry precisely.
 func (m *MemLogger) Get(lvl logging.Level, msg string, data map[string]interface{}) *LogEntry {
-	m.lock.Lock()
-	defer m.lock.Unlock()
+	if m.lock != nil {
+		m.lock.Lock()
+		defer m.lock.Unlock()
+	}
+	if m.data == nil {
+		return nil
+	}
 	for _, ent := range *m.data {
 		if ent.Level == lvl && ent.Msg == msg && reflect.DeepEqual(data, ent.Data) {
 			clone := ent
 			return &clone
 		}
 	}
-
 	return nil
 }
 
