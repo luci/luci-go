@@ -42,6 +42,7 @@ func TestLogStream(c context.Context, desc *protocol.LogStreamDescriptor) (*coor
 		return nil, err
 	}
 
+	ls.ProtoVersion = protocol.Version
 	ls.Created = coordinator.NormalizeTime(clock.Now(c).UTC())
 	ls.Updated = coordinator.NormalizeTime(clock.Now(c).UTC())
 	ls.Secret = bytes.Repeat([]byte{0x6F}, types.StreamSecretLength)
