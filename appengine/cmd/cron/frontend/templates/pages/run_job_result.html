@@ -5,6 +5,12 @@
 
 {{define "content"}}
 
+<ol class="breadcrumb">
+  <li><a href="/">All projects</a></li>
+  <li><a href="/jobs/{{.ProjectID}}">{{.ProjectID}}</a></li>
+  <li class="active"><a href="/jobs/{{.ProjectID}}/{{.JobID}}">{{.JobID}}</a></li>
+</ol>
+
 <div class="container">
   <h3>{{if .Error}}Error{{else}}Success{{end}}</h3>
   <hr>
@@ -14,7 +20,6 @@
     <p>The invocation was successfully queued.</p>
     <p>It will appear in the invocations list in a few moments.</p>
   {{end}}
-  <a href="/jobs/{{.ProjectID}}/{{.JobID}}">Back to invocations list</a>
 </div>
 
 {{end}}

@@ -12,7 +12,7 @@
 
 <ol class="breadcrumb">
   <li><a href="/">All projects</a></li>
-  <li class="active">{{.ProjectID}}</li>
+  <li class="active"><a href="/jobs/{{.ProjectID}}">{{.ProjectID}}</a></li>
 </ol>
 
 <div class="container">
@@ -21,11 +21,11 @@
       <table class="table" id="jobs-table">
         <thead>
           <tr>
-            <th>Job</th>
-            <th>Schedule</th>
-            <th>State</th>
-            <th>Overruns</th>
+            <th style="width: 350px;">Job</th>
+            <th style="width: 250px;">Schedule</th>
+            <th style="width: 120px;">State</th>
             <th>Next run</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -34,9 +34,8 @@
             <td><a href="/jobs/{{.ProjectID}}/{{.JobID}}">{{.JobID}}</a></td>
             <td>{{.Schedule}}</td>
             <td>{{.State}}</td>
-            <td>{{.Overruns}}</td>
+            <td>{{.NextRun}}</td>
             <td>
-              {{.NextRun}}
               <form style="display: inline"
                     action="/actions/runJob/{{.ProjectID}}/{{.JobID}}"
                     method="POST">

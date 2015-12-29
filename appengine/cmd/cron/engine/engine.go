@@ -69,6 +69,13 @@ type Engine interface {
 	// GetInvocation returns single invocation of some cron job given its ID.
 	GetInvocation(c context.Context, jobID string, invID int64) (*Invocation, error)
 
+	// GetInvocationsByNonce returns a list of Invocations with given nonce.
+	//
+	// Invocation nonce is a random number that identifies an intent to start
+	// an invocation. Normally one nonce corresponds to one Invocation entity,
+	// but there can be more if job fails to start with a transient error.
+	GetInvocationsByNonce(c context.Context, invNonce int64) ([]*Invocation, error)
+
 	// UpdateProjectJobs adds new, removes old and updates existing jobs.
 	UpdateProjectJobs(c context.Context, projectID string, defs []catalog.Definition) error
 
@@ -96,7 +103,11 @@ type Engine interface {
 
 	// TriggerInvocation launches job invocation right now if job isn't running
 	// now. Used by "Run now" UI button.
-	TriggerInvocation(c context.Context, jobID string, triggeredBy identity.Identity) error
+	//
+	// Returns new invocation nonce (a random number that identifies an intent to
+	// start an invocation). Normally one nonce corresponds to one Invocation
+	// entity, but there can be more if job fails to start with a transient error.
+	TriggerInvocation(c context.Context, jobID string, triggeredBy identity.Identity) (int64, error)
 }
 
 // Config contains parameters for the engine.
@@ -219,7 +230,7 @@ type Invocation struct {
 
 	// InvocationNonce identifies a request to start a job, produced by
 	// StateMachine.
-	InvocationNonce int64 `gae:",noindex"`
+	InvocationNonce int64
 
 	// TriggeredBy is identity of whoever triggered the invocation, if it was
 	// triggered via TriggerInvocation ("Run now" button).
@@ -513,6 +524,15 @@ func (e *engineImpl) GetInvocation(c context.Context, jobID string, invID int64)
 	}
 }
 
+func (e *engineImpl) GetInvocationsByNonce(c context.Context, invNonce int64) ([]*Invocation, error) {
+	q := datastore.NewQuery("Invocation").Eq("InvocationNonce", invNonce)
+	entities := []*Invocation{}
+	if err := datastore.Get(c).GetAll(q, &entities); err != nil {
+		return nil, errors.WrapTransient(err)
+	}
+	return entities, nil
+}
+
 func (e *engineImpl) UpdateProjectJobs(c context.Context, projectID string, defs []catalog.Definition) error {
 	// JobID -> *CronJob map.
 	existing, err := e.getProjectJobs(c, projectID)
@@ -797,8 +817,9 @@ func (e *engineImpl) ExecuteSerializedAction(c context.Context, action []byte, r
 	}
 }
 
-func (e *engineImpl) TriggerInvocation(c context.Context, jobID string, triggeredBy identity.Identity) error {
+func (e *engineImpl) TriggerInvocation(c context.Context, jobID string, triggeredBy identity.Identity) (int64, error) {
 	var err error
+	var invNonce int64
 	err2 := e.txn(c, jobID, func(c context.Context, job *CronJob, isNew bool) error {
 		if isNew {
 			err = errors.New("no such job")
@@ -808,14 +829,19 @@ func (e *engineImpl) TriggerInvocation(c context.Context, jobID string, triggere
 			err = errors.New("the job is disabled")
 			return errSkipPut
 		}
+		invNonce = 0
 		return e.rollSM(c, job, func(sm *StateMachine) error {
-			return sm.OnManualInvocation(triggeredBy)
+			if err := sm.OnManualInvocation(triggeredBy); err != nil {
+				return err
+			}
+			invNonce = sm.State.InvocationNonce
+			return nil
 		})
 	})
 	if err == nil {
 		err = err2
 	}
-	return err
+	return invNonce, err
 }
 
 // updateJob updates an existing job if its definition has changed, adds

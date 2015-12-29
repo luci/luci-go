@@ -13,8 +13,11 @@
 package frontend
 
 import (
+	cryptorand "crypto/rand"
+	"encoding/binary"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -175,6 +178,15 @@ func taskQueueHandler(name string, h handler) httprouter.Handle {
 //// Routes.
 
 func init() {
+	// Dev server likes to restart a lot, and upon a restart math/rand seed is
+	// always set to 1, resulting in lots of presumably "random" IDs not being
+	// very random. Seed it with real randomness.
+	var seed int64
+	if err := binary.Read(cryptorand.Reader, binary.LittleEndian, &seed); err != nil {
+		panic(err)
+	}
+	rand.Seed(seed)
+
 	// Setup global singletons.
 	globalCatalog = catalog.New(getConfigImpl)
 	for _, m := range managers {

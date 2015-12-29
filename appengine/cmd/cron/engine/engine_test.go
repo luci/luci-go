@@ -534,8 +534,8 @@ func TestQueries(t *testing.T) {
 		job1 := ds.NewKey("CronJob", "abc/1", 0, nil)
 		job2 := ds.NewKey("CronJob", "abc/2", 0, nil)
 		So(ds.PutMulti([]Invocation{
-			{ID: 1, JobKey: job1},
-			{ID: 2, JobKey: job1},
+			{ID: 1, JobKey: job1, InvocationNonce: 123},
+			{ID: 2, JobKey: job1, InvocationNonce: 123},
 			{ID: 3, JobKey: job1},
 			{ID: 1, JobKey: job2},
 			{ID: 2, JobKey: job2},
@@ -595,6 +595,16 @@ func TestQueries(t *testing.T) {
 
 			inv, err = e.GetInvocation(c, "abc/1", 1)
 			So(inv, ShouldNotBeNil)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("GetInvocationsByNonce works", func() {
+			inv, err := e.GetInvocationsByNonce(c, 11111) // unknown
+			So(len(inv), ShouldEqual, 0)
+			So(err, ShouldBeNil)
+
+			inv, err = e.GetInvocationsByNonce(c, 123)
+			So(len(inv), ShouldEqual, 2)
 			So(err, ShouldBeNil)
 		})
 	})

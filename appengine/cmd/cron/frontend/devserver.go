@@ -25,8 +25,8 @@ job {
 }
 
 job {
-  id: "noop-job"
-  schedule: "with 0s interval"
+  id: "some-really-really-long-job-name-to-test-the-table"
+  schedule: "0 0,10,20,30,40,50 * * * * *"
   task: {
     noop: {}
   }

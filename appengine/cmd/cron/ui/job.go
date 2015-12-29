@@ -84,11 +84,48 @@ func runJobAction(c context.Context, w http.ResponseWriter, r *http.Request, p h
 
 	projectID := p.ByName("ProjectID")
 	jobID := p.ByName("JobID")
+	fullJobID := projectID + "/" + jobID
 
-	err := config(c).Engine.TriggerInvocation(c, projectID+"/"+jobID, auth.CurrentIdentity(c))
-	templates.MustRender(c, w, "pages/run_job_result.html", map[string]interface{}{
-		"ProjectID": projectID,
-		"JobID":     jobID,
-		"Error":     err,
-	})
+	// genericReply renders "we did something (or we failed to do something)"
+	// page, shown on error or if invocation is starting for too long.
+	genericReply := func(err error) {
+		templates.MustRender(c, w, "pages/run_job_result.html", map[string]interface{}{
+			"ProjectID": projectID,
+			"JobID":     jobID,
+			"Error":     err,
+		})
+	}
+
+	// Enqueue new invocation request, and wait for corresponding invocation to
+	// appear. Give up if task queue or datastore indexes are lagging too much.
+	e := config(c).Engine
+	invNonce, err := e.TriggerInvocation(c, fullJobID, auth.CurrentIdentity(c))
+	if err != nil {
+		genericReply(err)
+		return
+	}
+
+	invID := int64(0)
+	deadline := clock.Now(c).Add(10 * time.Second)
+	for invID == 0 && deadline.Sub(clock.Now(c)) > 0 {
+		// Asking for invocation immediately after triggering it never works,
+		// so sleep a bit first.
+		clock.Sleep(c, 600*time.Millisecond)
+		// Find most recent invocation with requested nonce. Ignore errors here,
+		// since GetInvocationsByNonce can return only transient ones.
+		invs, _ := e.GetInvocationsByNonce(c, invNonce)
+		bestTS := time.Time{}
+		for _, inv := range invs {
+			if inv.JobKey.StringID() == fullJobID && inv.Started.Sub(bestTS) > 0 {
+				invID = inv.ID
+				bestTS = inv.Started
+			}
+		}
+	}
+
+	if invID != 0 {
+		http.Redirect(w, r, fmt.Sprintf("/jobs/%s/%s/%d", projectID, jobID, invID), http.StatusFound)
+	} else {
+		genericReply(nil) // deadline
+	}
 }

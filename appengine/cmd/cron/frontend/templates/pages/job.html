@@ -13,16 +13,15 @@
 <ol class="breadcrumb">
   <li><a href="/">All projects</a></li>
   <li><a href="/jobs/{{.Job.ProjectID}}">{{.Job.ProjectID}}</a></li>
-  <li class="active">{{.Job.JobID}}</li>
+  <li class="active"><a href="/jobs/{{.Job.ProjectID}}/{{.Job.JobID}}">{{.Job.JobID}}</a></li>
 </ol>
 
 <div class="container">
   <div class="row">
     <div class="col-sm-3"><b>State:</b> {{.Job.State}}</div>
     <div class="col-sm-3"><b>Schedule:</b> {{.Job.Schedule}}</div>
-    <div class="col-sm-2"><b>Overruns:</b> {{.Job.Overruns}}</div>
-    <div class="col-sm-4">
-      <b>Next run:</b> {{.Job.NextRun}}
+    <div class="col-sm-3"><b>Next run:</b> {{.Job.NextRun}}</div>
+    <div class="col-sm-3"><b>Actions:</b>
       <form style="display: inline"
             action="/actions/runJob/{{.Job.ProjectID}}/{{.Job.JobID}}"
             method="POST">
