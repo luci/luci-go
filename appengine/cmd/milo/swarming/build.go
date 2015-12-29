@@ -14,7 +14,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/client/logdog/annotee"
-	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/logging"
 	miloProto "github.com/luci/luci-go/common/proto/milo"
@@ -176,8 +175,6 @@ func miloBuildStep(
 func buildFromClient(c context.Context, swarmingID string, url string, s *memoryClient) (*resp.MiloBuild, error) {
 	// Build the basic page response.
 	build := &resp.MiloBuild{}
-	build.Navi = getNavi(swarmingID, url)
-	build.CurrentTime = clock.Now(c).String()
 
 	// Now Fetch the main annotation of the build.
 	mainAnno := &miloProto.Step{}

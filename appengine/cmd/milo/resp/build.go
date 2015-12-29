@@ -10,9 +10,6 @@ import "encoding/json"
 
 // MiloBuild denotes a full renderable Milo build page.
 type MiloBuild struct {
-	// Navi is the very top bar, used for Title and Navigation.
-	Navi *Navigation
-
 	// Summary is a top level summary of the page.
 	Summary []*BuildComponent
 
@@ -29,9 +26,6 @@ type MiloBuild struct {
 	// Blame is a list of people and commits that is likely to be in relation to
 	// the thing displayed on this page.
 	Blame []*Commit
-
-	// CurrentTime is when the page was constructed.
-	CurrentTime string
 }
 
 // Property specifies the source of the property. k/v pair representing some

@@ -6,4 +6,4 @@ mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 projdir := $(patsubst %/,%,$(dir $(mkfile_path)))
 
 dev:
-	$(projdir)/../../../../../../../../luci/appengine/components/tools/gae.py devserver --app-dir $(projdir) -- --host 0.0.0.0 --port 8081
+	$(projdir)/../../../../../../../../luci/appengine/components/tools/gae.py devserver --app-dir $(projdir) -- --host 0.0.0.0 --port 8081 --log_level debug

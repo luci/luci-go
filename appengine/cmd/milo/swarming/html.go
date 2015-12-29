@@ -5,29 +5,39 @@
 package swarming
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/appengine/cmd/milo/miloerror"
+	"github.com/luci/luci-go/appengine/cmd/milo/settings"
 	"github.com/luci/luci-go/server/templates"
 )
 
-// WriteBuildLog writes the build log to the given response writer.
-func WriteBuildLog(
-	c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
+// Log is for fetching logs from swarming.
+type Log struct{}
+
+// Build is for deciphering recipe builds from swarming based off of logs.
+type Build struct{}
+
+// GetTemplateName for Log returns the template name for log pages.
+func (l Log) GetTemplateName(t settings.Theme) string {
+	return "log.html"
+}
+
+// Render writes the build log to the given response writer.
+func (l Log) Render(c context.Context, r *http.Request, p httprouter.Params) (*templates.Args, error) {
 	id := p.ByName("id")
 	if id == "" {
-		return &miloerror.Error{
+		return nil, &miloerror.Error{
 			Message: "No id",
 			Code:    http.StatusBadRequest,
 		}
 	}
 	logname := p.ByName("logname")
 	if logname == "" {
-		return &miloerror.Error{
+		return nil, &miloerror.Error{
 			Message: "No log name",
 			Code:    http.StatusBadRequest,
 		}
@@ -35,19 +45,26 @@ func WriteBuildLog(
 	server := p.ByName("server") // This one may be blank.
 	b, err := swarmingBuildLogImpl(c, server, id, logname)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	fmt.Fprintf(w, "<pre>%s</pre>", b.log)
-	return nil
+
+	args := &templates.Args{
+		"Log": b.log,
+	}
+	return args, nil
+}
+
+// GetTemplateName for Build returns the template name for build pages.
+func (b Build) GetTemplateName(t settings.Theme) string {
+	return "build.html"
 }
 
 // Render renders both the build page and the log.
-func Render(
-	c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
+func (b Build) Render(c context.Context, r *http.Request, p httprouter.Params) (*templates.Args, error) {
 	// Get the swarming ID
 	id := p.ByName("id")
 	if id == "" {
-		return &miloerror.Error{
+		return nil, &miloerror.Error{
 			Message: "No id",
 			Code:    http.StatusBadRequest,
 		}
@@ -56,12 +73,12 @@ func Render(
 
 	result, err := swarmingBuildImpl(c, r.URL.String(), server, id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Render into the template
-	templates.MustRender(c, w, "pages/buildbot/build.html", templates.Args{
+	args := &templates.Args{
 		"Build": result,
-	})
-	return nil
+	}
+	return args, nil
 }

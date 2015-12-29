@@ -1,22 +1,4 @@
 {
-  "Navi": {
-    "SiteTitle": {
-      "Label": "Milo",
-      "Img": "",
-      "Subtitle": "",
-      "URL": "/",
-      "Alt": ""
-    },
-    "PageTitle": {
-      "Label": "debug:build-patch-failure",
-      "Img": "",
-      "Subtitle": "",
-      "URL": "foo",
-      "Alt": ""
-    },
-    "Breadcrumbs": null,
-    "Right": null
-  },
   "Summary": null,
   "Components": [
     {
@@ -205,6 +187,5 @@
       ]
     }
   ],
-  "Blame": null,
-  "CurrentTime": "0001-02-03 04:05:06.000000007 +0000 UTC"
+  "Blame": null
 }

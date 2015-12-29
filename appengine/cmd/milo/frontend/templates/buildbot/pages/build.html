@@ -1,20 +1,14 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<!-- TODO(estaab): Investigate https://github.com/luci/luci-go/tree/master/server/templates
-    once we need a base template for layout. -->
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <title>Buildbot: builds Build #{{ .Navi.PageTitle.Label }}</title>
-  <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css" />
-</head>
-<body class="interface">
+{{define "title"}}Buildbot: builds Build #{{ .Navi.PageTitle.Label }}{{end}}
+
+{{define "script"}}{{end}}
+
+{{define "body"}}
   <div class="header">
-    <a href="{{ .Build.Navi.SiteTitle.URL }}">{{ .Build.Navi.SiteTitle.Label }}</a>
+    [Insert title here]
   </div>
   <hr/>
   <div class="content">
-    <h1>Build {{ .Build.Navi.PageTitle.Label }}</h1>
+    <h1>[Insert title here]</h1>
 
     <div class="column">
 
@@ -96,16 +90,6 @@
       </table>
 
     </div>
-
-    <div class="footer" style="clear:both">
-      <hr/>
-      <a href="https://github.com/luci">luci</a>,
-      working for the&nbsp;<a href="https://chromium.org/">Chromium</a>&nbsp;project.<br/>
-      Page built: <b>{{.Build.CurrentTime}}</b>
-    </div>
   </div>
 </div>
-
-</body>
-</html>
-
+{{end}}

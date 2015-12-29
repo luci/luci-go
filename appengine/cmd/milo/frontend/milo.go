@@ -5,25 +5,17 @@
 package frontend
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
 	"github.com/julienschmidt/httprouter"
-	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/server/templates"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/appengine/cmd/milo/assets"
-	"github.com/luci/luci-go/appengine/cmd/milo/miloerror"
+	"github.com/luci/luci-go/appengine/cmd/milo/settings"
 	"github.com/luci/luci-go/appengine/cmd/milo/swarming"
-)
-
-var (
-	tmpl = &templates.Bundle{
-		Loader: templates.AssetsLoader(assets.Assets()),
-	}
+	"github.com/luci/luci-go/appengine/gaeauth/server"
 )
 
 // Where it all begins!!!
@@ -38,41 +30,37 @@ func init() {
 			m := api.MethodByName(orig)
 			i := m.Info()
 			i.Name, i.HTTPMethod, i.Path, i.Desc = name, method, path, desc
-			return
 		}
 		register("Build", "swarming.build", "GET", "swarming", "Swarming Build view.")
 	}
 
 	// Register plain ol' http services.
 	r := httprouter.New()
-	r.GET("/", wrap(root))
-	r.GET("/swarming/:server/:id/steps/*logname", wrap(swarming.WriteBuildLog))
-	r.GET("/swarming/:server/:id", wrap(swarming.Render))
+	server.InstallHandlers(r, settings.Base)
+	r.GET("/", wrap(dummy{}))
+	r.GET("/swarming/:server/:id/steps/*logname", wrap(swarming.Log{}))
+	r.GET("/swarming/:server/:id", wrap(swarming.Build{}))
+
+	// User settings
+	r.GET("/settings", wrap(settings.Settings{}))
+	r.POST("/settings", wrap(settings.Settings{}))
+
 	http.Handle("/", r)
 
 	endpoints.HandleHTTP()
 }
 
-// Dummy page to serve "/"
-func root(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) error {
-	fmt.Fprintf(w, `This is the root page`)
-	return nil
+type dummy struct{}
+
+func (d dummy) GetTemplateName(t settings.Theme) string {
+	return "base.html"
 }
 
-type handler func(context.Context, http.ResponseWriter, *http.Request, httprouter.Params) error
+func (d dummy) Render(c context.Context, r *http.Request, p httprouter.Params) (*templates.Args, error) {
+	return &templates.Args{"contents": "This is the root page"}, nil
+}
 
-// Wrapper around handler functions so that they can return errors and be
-// rendered as 400's
-func wrap(h handler) httprouter.Handle {
-	hx := func(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		if err := h(c, w, r, p); err != nil {
-			if merr, ok := err.(*miloerror.Error); ok {
-				http.Error(w, merr.Message, merr.Code)
-			} else {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			}
-		}
-	}
-	hx = templates.WithTemplates(hx, tmpl)
-	return gaemiddleware.BaseProd(hx)
+// Do all the middleware initilization and theme handling.
+func wrap(h settings.ThemedHandler) httprouter.Handle {
+	return settings.Wrap(h)
 }
