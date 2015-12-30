@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	defaultVersion = "_default"
+	version = "v1"
 )
 
 // Cache implements a generic caching layer.
@@ -36,10 +36,6 @@ type Cache interface {
 
 // Options is the set of configuration options for the caching layer.
 type Options struct {
-	// Version is the version string, if any, to add to the keys to differentiate
-	// it from any other versions. If empty, no version string will be prepended.
-	Version string
-
 	// Cache is the caching layer to use.
 	Cache Cache
 
@@ -267,11 +263,6 @@ func (cc *cacheConfig) store(key string, v interface{}) {
 //
 //   For example, ["a|b", "c"] => "a%7Cb|c"
 func (cc *cacheConfig) cacheKey(values ...string) string {
-	version := cc.Version
-	if version == "" {
-		version = defaultVersion
-	}
-
 	enc := url.QueryEscape
 	parts := make([]string, 0, len(values)+1)
 	parts = append(parts, enc(version))

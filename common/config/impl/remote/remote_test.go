@@ -53,6 +53,7 @@ func TestRemoteCalls(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(*res, ShouldResemble, config.Config{
 				ConfigSet:   "a",
+				Path:        "b",
 				Content:     "hi",
 				ContentHash: "bar",
 				Revision:    "3",
@@ -99,13 +100,14 @@ func TestRemoteCalls(t *testing.T) {
 			})
 			defer server.Close()
 
-			res, err := remoteImpl.GetProjectConfigs("a", false)
+			res, err := remoteImpl.GetProjectConfigs("b", false)
 
 			So(err, ShouldBeNil)
 			So(res, ShouldNotBeEmpty)
 			So(len(res), ShouldEqual, 1)
 			So(res[0], ShouldResemble, config.Config{
 				ConfigSet:   "a",
+				Path:        "b",
 				Content:     "hi",
 				ContentHash: "bar",
 				Revision:    "3",
@@ -121,13 +123,14 @@ func TestRemoteCalls(t *testing.T) {
 			})
 			defer server.Close()
 
-			res, err := remoteImpl.GetProjectConfigs("a", true)
+			res, err := remoteImpl.GetProjectConfigs("b", true)
 
 			So(err, ShouldBeNil)
 			So(res, ShouldNotBeEmpty)
 			So(len(res), ShouldEqual, 1)
 			So(res[0], ShouldResemble, config.Config{
 				ConfigSet:   "a",
+				Path:        "b",
 				Content:     "",
 				ContentHash: "bar",
 				Revision:    "3",
@@ -174,13 +177,14 @@ func TestRemoteCalls(t *testing.T) {
 			})
 			defer server.Close()
 
-			res, err := remoteImpl.GetRefConfigs("a", false)
+			res, err := remoteImpl.GetRefConfigs("b", false)
 
 			So(err, ShouldBeNil)
 			So(res, ShouldNotBeEmpty)
 			So(len(res), ShouldEqual, 1)
 			So(res[0], ShouldResemble, config.Config{
 				ConfigSet:   "a",
+				Path:        "b",
 				Content:     "hi",
 				ContentHash: "bar",
 				Revision:    "3",
@@ -196,13 +200,14 @@ func TestRemoteCalls(t *testing.T) {
 			})
 			defer server.Close()
 
-			res, err := remoteImpl.GetRefConfigs("a", true)
+			res, err := remoteImpl.GetRefConfigs("b", true)
 
 			So(err, ShouldBeNil)
 			So(res, ShouldNotBeEmpty)
 			So(len(res), ShouldEqual, 1)
 			So(res[0], ShouldResemble, config.Config{
 				ConfigSet:   "a",
+				Path:        "b",
 				ContentHash: "bar",
 				Revision:    "3",
 			})

@@ -15,8 +15,14 @@ var ErrNoConfig = errors.New("no such config")
 // Config is a configuration entry in the luci-config service.
 type Config struct {
 	// ConfigSet is the config set name (e.g. "projects/<id>") this config
-	// belongs to. May be the empty string if this is unknown.
+	// belongs to.
+	// May be the empty string if this is unknown.
 	ConfigSet string `json:"configSet,omitempty"`
+
+	// Path is the filename relative to the root of the config set,
+	// without leading slash, e.g. "luci-cron.cfg".
+	// May be the empty string if this is unknown.
+	Path string
 
 	// Error is not nil if there where troubles fetching this config. Used only
 	// by functions that operate with multiple configs at once, such as

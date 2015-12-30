@@ -138,6 +138,7 @@ func (b ConfigSet) configMaybe(configSet, path string, hashesOnly bool) *config.
 	if body, ok := b[path]; ok {
 		cfg := &config.Config{
 			ConfigSet:   configSet,
+			Path:        path,
 			ContentHash: hash(body),
 			Revision:    b.rev(),
 		}

@@ -63,11 +63,12 @@ func (r *remoteImpl) GetConfig(configSet, path string, hashOnly bool) (*config.C
 	}
 
 	return &config.Config{
-		configSet,
-		nil,
-		string(decoded),
-		resp.ContentHash,
-		resp.Revision}, nil
+		ConfigSet:   configSet,
+		Path:        path,
+		Content:     string(decoded),
+		ContentHash: resp.ContentHash,
+		Revision:    resp.Revision,
+	}, nil
 }
 
 func (r *remoteImpl) GetConfigByHash(configSet string) (string, error) {
@@ -146,7 +147,7 @@ func (r *remoteImpl) GetProjectConfigs(path string, hashesOnly bool) ([]config.C
 		return nil, apiErr(err)
 	}
 	c := logging.SetField(r.c, "path", path)
-	return convertMultiWireConfigs(c, resp, hashesOnly)
+	return convertMultiWireConfigs(c, path, resp, hashesOnly)
 }
 
 func (r *remoteImpl) GetRefConfigs(path string, hashesOnly bool) ([]config.Config, error) {
@@ -155,7 +156,7 @@ func (r *remoteImpl) GetRefConfigs(path string, hashesOnly bool) ([]config.Confi
 		return nil, apiErr(err)
 	}
 	c := logging.SetField(r.c, "path", path)
-	return convertMultiWireConfigs(c, resp, hashesOnly)
+	return convertMultiWireConfigs(c, path, resp, hashesOnly)
 }
 
 func (r *remoteImpl) GetRefs(projectID string) ([]string, error) {
@@ -173,7 +174,7 @@ func (r *remoteImpl) GetRefs(projectID string) ([]string, error) {
 
 // convertMultiWireConfigs is a utility to convert what we get over the wire
 // into the structs we use in the config package.
-func convertMultiWireConfigs(ctx context.Context, wireConfigs *configApi.LuciConfigGetConfigMultiResponseMessage, hashesOnly bool) ([]config.Config, error) {
+func convertMultiWireConfigs(ctx context.Context, path string, wireConfigs *configApi.LuciConfigGetConfigMultiResponseMessage, hashesOnly bool) ([]config.Config, error) {
 	configs := make([]config.Config, len(wireConfigs.Configs))
 	for i, c := range wireConfigs.Configs {
 		var decoded []byte
@@ -188,11 +189,12 @@ func convertMultiWireConfigs(ctx context.Context, wireConfigs *configApi.LuciCon
 		}
 
 		configs[i] = config.Config{
-			c.ConfigSet,
-			err,
-			string(decoded),
-			c.ContentHash,
-			c.Revision,
+			ConfigSet:   c.ConfigSet,
+			Path:        path,
+			Error:       err,
+			Content:     string(decoded),
+			ContentHash: c.ContentHash,
+			Revision:    c.Revision,
 		}
 	}
 
