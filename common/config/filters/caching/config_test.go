@@ -97,6 +97,12 @@ func TestConfig(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(v, ShouldResembleV, exp)
 				})
+
+				Convey(`A non-hash-only query caches by hash too.`, func() {
+					byHash, err := cfg.GetConfigByHash(v.ContentHash)
+					So(err, ShouldBeNil)
+					So(byHash, ShouldResembleV, v.Content)
+				})
 			})
 
 			Convey(`A hash-only query will cache the hashed version.`, func() {
@@ -117,6 +123,11 @@ func TestConfig(t *testing.T) {
 					v, err = cfg.GetConfig("services/foo", "file", false)
 					So(err, ShouldBeNil)
 					So(v, ShouldResembleV, exp)
+				})
+
+				Convey(`A hash-only query does not cache the full config by hash.`, func() {
+					_, err := cfg.GetConfigByHash(v.ContentHash)
+					So(err, ShouldNotBeNil)
 				})
 			})
 		})

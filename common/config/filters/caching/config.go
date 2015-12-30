@@ -89,12 +89,15 @@ func (cc *cacheConfig) GetConfig(configSet, path string, hashOnly bool) (*config
 	}
 
 	cc.store(key, ic)
+	if !hashOnly {
+		cc.store(cc.configByHashCacheKey(ic.ContentHash), ic.Content)
+	}
 	return ic, nil
 }
 
 func (cc *cacheConfig) GetConfigByHash(contentHash string) (string, error) {
 	c := ""
-	key := cc.cacheKey("configsByHash", contentHash)
+	key := cc.configByHashCacheKey(contentHash)
 	if cc.retrieve(key, &c) {
 		return c, nil
 	}
@@ -106,6 +109,10 @@ func (cc *cacheConfig) GetConfigByHash(contentHash string) (string, error) {
 
 	cc.store(key, c)
 	return c, nil
+}
+
+func (cc *cacheConfig) configByHashCacheKey(contentHash string) string {
+	return cc.cacheKey("configsByHash", contentHash)
 }
 
 func (cc *cacheConfig) GetConfigSetLocation(configSet string) (*url.URL, error) {
