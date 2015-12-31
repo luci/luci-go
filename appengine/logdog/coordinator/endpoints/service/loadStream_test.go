@@ -69,6 +69,7 @@ func TestLoadStream(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(lsr, ShouldResembleV, &LoadStreamResponse{
 						Path:       "testing/+/foo/bar",
+						Secret:     ls.Secret,
 						State:      lep.LoadLogStreamState(ls),
 						Descriptor: d,
 					})
@@ -82,6 +83,7 @@ func TestLoadStream(t *testing.T) {
 
 					So(lsr, ShouldResembleV, &LoadStreamResponse{
 						Path:       "testing/+/foo/bar",
+						Secret:     ls.Secret,
 						State:      lep.LoadLogStreamState(ls),
 						Descriptor: d,
 					})

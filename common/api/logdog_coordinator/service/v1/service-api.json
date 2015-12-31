@@ -26,16 +26,6 @@
     }
    }
   },
-  "LoadStreamRequest": {
-   "id": "LoadStreamRequest",
-   "type": "object",
-   "properties": {
-    "path": {
-     "type": "string",
-     "required": true
-    }
-   }
-  },
   "LoadStreamResponse": {
    "id": "LoadStreamResponse",
    "type": "object",
@@ -46,6 +36,10 @@
     },
     "path": {
      "type": "string"
+    },
+    "secret": {
+     "type": "string",
+     "format": "byte"
     },
     "state": {
      "$ref": "LogStreamState"
@@ -160,11 +154,13 @@
   "LoadStream": {
    "id": "service.LoadStream",
    "path": "loadStream",
-   "httpMethod": "POST",
+   "httpMethod": "GET",
    "description": "Loads log stream metadata.",
-   "request": {
-    "$ref": "LoadStreamRequest",
-    "parameterName": "resource"
+   "parameters": {
+    "Path": {
+     "type": "string",
+     "location": "query"
+    }
    },
    "response": {
     "$ref": "LoadStreamResponse",

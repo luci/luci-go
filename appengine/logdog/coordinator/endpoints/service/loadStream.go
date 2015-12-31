@@ -17,7 +17,7 @@ import (
 // endpoint.
 type LoadStreamRequest struct {
 	// Path is the log stream's path.
-	Path string `json:"path,omitempty" endpoints:"req"`
+	Path string `endpoints:"required"`
 }
 
 // LoadStreamResponse is the response structure from the service's Load
@@ -26,6 +26,8 @@ type LoadStreamResponse struct {
 	// Path is the log stream's path, or a hash of the log stream's path.
 	Path string `json:"path,omitempty"`
 
+	// Secret is the log stream's secret.
+	Secret []byte `json:"secret,omitempty"`
 	// State is the request log stream. On error, this will be nil.
 	State *lep.LogStreamState `json:"state,omitempty"`
 	// Descriptor is the serialized LogStreamDescriptor protobuf for this stream.
@@ -64,9 +66,9 @@ func (s *Service) LoadStream(c context.Context, req *LoadStreamRequest) (*LoadSt
 
 	resp := LoadStreamResponse{
 		Path:       string(ls.Path()),
+		Secret:     ls.Secret,
 		State:      lep.LoadLogStreamState(ls),
 		Descriptor: ls.Descriptor,
 	}
-
 	return &resp, nil
 }

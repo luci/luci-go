@@ -94,28 +94,12 @@ func (s *GetConfigResponse) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields)
 }
 
-type LoadStreamRequest struct {
-	Path string `json:"path,omitempty"`
-
-	// ForceSendFields is a list of field names (e.g. "Path") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-}
-
-func (s *LoadStreamRequest) MarshalJSON() ([]byte, error) {
-	type noMethod LoadStreamRequest
-	raw := noMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields)
-}
-
 type LoadStreamResponse struct {
 	Descriptor string `json:"descriptor,omitempty"`
 
 	Path string `json:"path,omitempty"`
+
+	Secret string `json:"secret,omitempty"`
 
 	State *LogStreamState `json:"state,omitempty"`
 
@@ -357,16 +341,20 @@ func (c *GetConfigCall) Do() (*GetConfigResponse, error) {
 // method id "service.LoadStream":
 
 type LoadStreamCall struct {
-	s                 *Service
-	loadstreamrequest *LoadStreamRequest
-	opt_              map[string]interface{}
-	ctx_              context.Context
+	s    *Service
+	opt_ map[string]interface{}
+	ctx_ context.Context
 }
 
 // LoadStream: Loads log stream metadata.
-func (s *Service) LoadStream(loadstreamrequest *LoadStreamRequest) *LoadStreamCall {
+func (s *Service) LoadStream() *LoadStreamCall {
 	c := &LoadStreamCall{s: s, opt_: make(map[string]interface{})}
-	c.loadstreamrequest = loadstreamrequest
+	return c
+}
+
+// Path sets the optional parameter "Path":
+func (c *LoadStreamCall) Path(Path string) *LoadStreamCall {
+	c.opt_["Path"] = Path
 	return c
 }
 
@@ -375,6 +363,16 @@ func (s *Service) LoadStream(loadstreamrequest *LoadStreamRequest) *LoadStreamCa
 // for more information.
 func (c *LoadStreamCall) Fields(s ...googleapi.Field) *LoadStreamCall {
 	c.opt_["fields"] = googleapi.CombineFields(s)
+	return c
+}
+
+// IfNoneMatch sets the optional parameter which makes the operation
+// fail if the object's ETag matches the given value. This is useful for
+// getting updates only after the object has changed since the last
+// request. Use googleapi.IsNotModified to check whether the response
+// error from Do is the result of In-None-Match.
+func (c *LoadStreamCall) IfNoneMatch(entityTag string) *LoadStreamCall {
+	c.opt_["ifNoneMatch"] = entityTag
 	return c
 }
 
@@ -388,22 +386,22 @@ func (c *LoadStreamCall) Context(ctx context.Context) *LoadStreamCall {
 
 func (c *LoadStreamCall) doRequest(alt string) (*http.Response, error) {
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.loadstreamrequest)
-	if err != nil {
-		return nil, err
-	}
-	ctype := "application/json"
 	params := make(url.Values)
 	params.Set("alt", alt)
+	if v, ok := c.opt_["Path"]; ok {
+		params.Set("Path", fmt.Sprintf("%v", v))
+	}
 	if v, ok := c.opt_["fields"]; ok {
 		params.Set("fields", fmt.Sprintf("%v", v))
 	}
 	urls := googleapi.ResolveRelative(c.s.BasePath, "loadStream")
 	urls += "?" + params.Encode()
-	req, _ := http.NewRequest("POST", urls, body)
+	req, _ := http.NewRequest("GET", urls, body)
 	googleapi.SetOpaque(req.URL)
-	req.Header.Set("Content-Type", ctype)
 	req.Header.Set("User-Agent", c.s.userAgent())
+	if v, ok := c.opt_["ifNoneMatch"]; ok {
+		req.Header.Set("If-None-Match", fmt.Sprintf("%v", v))
+	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
 	}
@@ -447,13 +445,15 @@ func (c *LoadStreamCall) Do() (*LoadStreamResponse, error) {
 	return ret, nil
 	// {
 	//   "description": "Loads log stream metadata.",
-	//   "httpMethod": "POST",
+	//   "httpMethod": "GET",
 	//   "id": "service.LoadStream",
-	//   "path": "loadStream",
-	//   "request": {
-	//     "$ref": "LoadStreamRequest",
-	//     "parameterName": "resource"
+	//   "parameters": {
+	//     "Path": {
+	//       "location": "query",
+	//       "type": "string"
+	//     }
 	//   },
+	//   "path": "loadStream",
 	//   "response": {
 	//     "$ref": "LoadStreamResponse",
 	//     "parameterName": "resource"

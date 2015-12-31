@@ -24,6 +24,10 @@ message Config {
 
 // Coordinator is the Coordinator service configuration.
 message Coordinator {
+  // Project is the name of the AppEngine Project that the Coordinator belongs
+  // to.
+  string project = 1;
+
   // The name of the authentication group for administrators.
   string admin_auth_group = 10;
   // The name of the authentication group for backend services.

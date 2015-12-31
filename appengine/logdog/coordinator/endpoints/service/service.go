@@ -27,10 +27,11 @@ var (
 	// MethodInfoMap maps method names to their MethodInfo structures.
 	MethodInfoMap = ephelper.MethodInfoMap{
 		"LoadStream": &endpoints.MethodInfo{
-			Name:   "LoadStream",
-			Path:   "loadStream",
-			Desc:   "Loads log stream metadata.",
-			Scopes: Scopes,
+			Name:       "LoadStream",
+			Path:       "loadStream",
+			Desc:       "Loads log stream metadata.",
+			HTTPMethod: "GET",
+			Scopes:     Scopes,
 		},
 
 		"RegisterStream": &endpoints.MethodInfo{
