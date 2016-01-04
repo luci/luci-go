@@ -9,7 +9,9 @@ import (
 
 	"github.com/luci/gae/service/info"
 	"golang.org/x/net/context"
+	gOAuth "golang.org/x/oauth2/google"
 	"google.golang.org/appengine"
+	"google.golang.org/appengine/remote_api"
 )
 
 type key int
@@ -47,6 +49,12 @@ func AEContextNoTxn(c context.Context) context.Context {
 	return aeCtx
 }
 
+func setupAECtx(c, aeCtx context.Context) context.Context {
+	c = context.WithValue(c, prodContextKey, aeCtx)
+	c = context.WithValue(c, prodContextNoTxnKey, aeCtx)
+	return useMail(useUser(useURLFetch(useRDS(useMC(useTQ(useGI(useLogging(c))))))))
+}
+
 // Use adds production implementations for all the gae services to the
 // context.
 //
@@ -64,8 +72,36 @@ func AEContextNoTxn(c context.Context) context.Context {
 //
 // The implementations are all backed by the real appengine SDK functionality,
 func Use(c context.Context, r *http.Request) context.Context {
-	aeCtx := appengine.NewContext(r)
-	c = context.WithValue(c, prodContextKey, aeCtx)
-	c = context.WithValue(c, prodContextNoTxnKey, aeCtx)
-	return useMail(useUser(useURLFetch(useRDS(useMC(useTQ(useGI(useLogging(c))))))))
+	return setupAECtx(c, appengine.NewContext(r))
+}
+
+// UseRemote is the same as Use, except that it lets you attach a context to
+// a remote host using the Remote API feature. See the docs for the
+// prerequisites.
+//
+// docs: https://cloud.google.com/appengine/docs/go/tools/remoteapi
+//
+// If client is nil, this will use a default Google OAuth2 client. Otherwise the
+// client must be configured to have the following OAuth2 scopes:
+//		"https://www.googleapis.com/auth/appengine.apis"
+//		"https://www.googleapis.com/auth/userinfo.email"
+//		"https://www.googleapis.com/auth/cloud.platform"
+func UseRemote(c context.Context, host string, client *http.Client) (context.Context, error) {
+	err := error(nil)
+	if client == nil {
+		client, err = gOAuth.DefaultClient(context.Background(),
+			"https://www.googleapis.com/auth/appengine.apis",
+			"https://www.googleapis.com/auth/userinfo.email",
+			"https://www.googleapis.com/auth/cloud.platform",
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	aeCtx, err := remote_api.NewRemoteContext(host, client)
+	if err != nil {
+		return nil, err
+	}
+	return setupAECtx(c, aeCtx), nil
 }
