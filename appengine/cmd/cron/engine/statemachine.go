@@ -28,6 +28,13 @@ const (
 	// the future and previous invocation is NOT running currently.
 	JobStateScheduled StateKind = "SCHEDULED"
 
+	// JobStateSuspended means the job is not running now, and no ticks are
+	// scheduled. It's used for jobs on "manual" schedule or for paused jobs.
+	//
+	// Technically SUSPENDED is like SCHEDULED with the tick in the distant
+	// future.
+	JobStateSuspended StateKind = "SUSPENDED"
+
 	// JobStateQueued means the job's invocation has been added to the task queue
 	// and the job should start (switch to RUNNING state) really soon now.
 	JobStateQueued StateKind = "QUEUED"
@@ -155,6 +162,7 @@ func (m *StateMachine) OnJobEnabled() error {
 	if m.State.State == JobStateDisabled {
 		m.State = JobState{State: JobStateScheduled} // clean state
 		m.scheduleTick()
+		m.maybeSuspendOrResume()
 	}
 	return nil
 }
@@ -169,7 +177,12 @@ func (m *StateMachine) OnJobDisabled() error {
 // OnTimerTick happens when scheduled timer (added with TickLaterAction) ticks.
 func (m *StateMachine) OnTimerTick(tickNonce int64) error {
 	// Skip unexpected, late or canceled ticks.
-	if m.State.State == JobStateDisabled || m.State.TickNonce != tickNonce {
+	switch {
+	case m.State.State == JobStateDisabled:
+		return nil
+	case m.State.State == JobStateSuspended:
+		return nil
+	case m.State.TickNonce != tickNonce:
 		return nil
 	}
 
@@ -256,8 +269,9 @@ func (m *StateMachine) OnInvocationDone(invocationID int64) error {
 	}
 	m.State.State = JobStateScheduled
 	m.State.PrevTime = m.Now
-	m.resetInvocation() // forget about just finished invocation
-	m.scheduleTick()    // start waiting for a new one
+	m.resetInvocation()      // forget about just finished invocation
+	m.scheduleTick()         // start waiting for a new one
+	m.maybeSuspendOrResume() // switch back to suspended state if necessary
 	return nil
 }
 
@@ -282,10 +296,10 @@ func (m *StateMachine) OnScheduleChange() error {
 
 	// When switching from an absolute to a relative schedule, cancel pending
 	// tick, so that the new schedule is used when the current invocation ends.
-	// Don't do it if the job in Scheduled state (e.g. waiting to start a new
-	// invocation): we'd need to move the tick in this case (not cancel it).
-	// This situation is handled below.
-	if !m.Schedule.IsAbsolute() && m.State.State != JobStateScheduled {
+	// Don't do it if the job is waiting to start a new invocation: we'd need to
+	// move the tick in this case, not cancel it. This situation is handled below.
+	isWaiting := m.State.State == JobStateScheduled || m.State.State == JobStateSuspended
+	if !m.Schedule.IsAbsolute() && !isWaiting {
 		m.resetTick()
 		return nil
 	}
@@ -296,6 +310,7 @@ func (m *StateMachine) OnScheduleChange() error {
 	// currently it's in between invocations (in Scheduled state). Reschedule
 	// the tick if it changed.
 	m.scheduleTick()
+	m.maybeSuspendOrResume()
 	return nil
 }
 
@@ -303,7 +318,7 @@ func (m *StateMachine) OnScheduleChange() error {
 // Manual invocation only works if the job is currently not running or not
 // queued for run (i.e. it is in Scheduled state waiting for a timer tick).
 func (m *StateMachine) OnManualInvocation(triggeredBy identity.Identity) error {
-	if m.State.State != JobStateScheduled {
+	if m.State.State != JobStateScheduled && m.State.State != JobStateSuspended {
 		return errors.New("the job is already running or about to start")
 	}
 	m.State.State = JobStateQueued
@@ -323,10 +338,24 @@ func (m *StateMachine) scheduleTick() {
 	if nextTick != m.State.TickTime {
 		m.State.TickTime = nextTick
 		m.State.TickNonce = m.Nonce()
-		m.emitAction(TickLaterAction{
-			When:      m.State.TickTime,
-			TickNonce: m.State.TickNonce,
-		})
+		if nextTick != schedule.DistantFuture {
+			m.emitAction(TickLaterAction{
+				When:      m.State.TickTime,
+				TickNonce: m.State.TickNonce,
+			})
+		}
+	}
+}
+
+// maybeSuspendOrResume switches SCHEDULED state to SUSPENDED state in case
+// current tick is scheduled for DistantFuture, or switches SUSPENDED to
+// SCHEDULED if current tick is not scheduled for DistantFuture.
+func (m *StateMachine) maybeSuspendOrResume() {
+	switch {
+	case m.State.State == JobStateScheduled && m.State.TickTime == schedule.DistantFuture:
+		m.State.State = JobStateSuspended
+	case m.State.State == JobStateSuspended && m.State.TickTime != schedule.DistantFuture:
+		m.State.State = JobStateScheduled
 	}
 }
 

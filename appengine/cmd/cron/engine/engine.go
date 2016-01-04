@@ -108,6 +108,15 @@ type Engine interface {
 	// start an invocation). Normally one nonce corresponds to one Invocation
 	// entity, but there can be more if job fails to start with a transient error.
 	TriggerInvocation(c context.Context, jobID string, triggeredBy identity.Identity) (int64, error)
+
+	// PauseJob replaces job's schedule with "manual", effectively preventing it
+	// from running automatically (until it is resumed). Manual invocations are
+	// still allowed. Does nothing if job is already paused. Any pending or
+	// running invocations are still executed.
+	PauseJob(c context.Context, jobID string, who identity.Identity) error
+
+	// ResumeJob resumed paused job. Doesn't nothing if the job is not paused.
+	ResumeJob(c context.Context, jobID string, who identity.Identity) error
 }
 
 // Config contains parameters for the engine.
@@ -161,7 +170,14 @@ type CronJob struct {
 	ProjectID string
 
 	// Enabled is false if cron job was disabled or removed from config.
+	//
+	// Disabled jobs do not show up in UI at all (they are still kept in the
+	// datastore though, for audit purposes).
 	Enabled bool
+
+	// Paused is true if job's schedule is ignored and job can only be started
+	// manually via "Run now" button.
+	Paused bool `gae:",noindex"`
 
 	// Revision is last seen job definition revision, to skip useless updates.
 	Revision string `gae:",noindex"`
@@ -177,13 +193,26 @@ type CronJob struct {
 	State JobState
 }
 
+// effectiveSchedule returns schedule string to use for the job, considering its
+// Paused field.
+//
+// Paused jobs always use "manual" schedule.
+func (e *CronJob) effectiveSchedule() string {
+	if e.Paused {
+		return "manual"
+	}
+	return e.Schedule
+}
+
 // parseSchedule returns *Schedule object, parsing e.Schedule field.
+// If job is paused e.Schedule field is ignored and manual schedule is returned
+// instead.
 func (e *CronJob) parseSchedule() (*schedule.Schedule, error) {
 	if e.cachedSchedule == nil && e.cachedScheduleErr == nil {
 		hash := fnv.New64()
 		hash.Write([]byte(e.JobID))
 		seed := hash.Sum64()
-		e.cachedSchedule, e.cachedScheduleErr = schedule.Parse(e.Schedule, seed)
+		e.cachedSchedule, e.cachedScheduleErr = schedule.Parse(e.effectiveSchedule(), seed)
 		if e.cachedSchedule == nil && e.cachedScheduleErr == nil {
 			panic("no schedule and no error")
 		}
@@ -195,15 +224,17 @@ func (e *CronJob) parseSchedule() (*schedule.Schedule, error) {
 func (e *CronJob) isEqual(other *CronJob) bool {
 	return e == other || (e.JobID == other.JobID &&
 		e.ProjectID == other.ProjectID &&
-		e.Revision == other.Revision &&
 		e.Enabled == other.Enabled &&
+		e.Paused == other.Paused &&
+		e.Revision == other.Revision &&
 		e.Schedule == other.Schedule &&
 		bytes.Equal(e.Task, other.Task) &&
 		e.State == other.State)
 }
 
 // matches returns true if job definition in the entity matches the one
-// specified by catalog.Definition struct.
+// specified by catalog.Definition struct. UpdateProjectJobs skips updates for
+// such jobs (assuming they are up-to-date).
 func (e *CronJob) matches(def catalog.Definition) bool {
 	return e.JobID == def.JobID && e.Schedule == def.Schedule && bytes.Equal(e.Task, def.Task)
 }
@@ -601,7 +632,7 @@ func (e *engineImpl) ResetAllJobsOnDevServer(c context.Context) error {
 	for i, key := range keys {
 		wg.Add(1)
 		go func(i int, key *datastore.Key) {
-			errs.Assign(i, e.resetJob(c, key.StringID()))
+			errs.Assign(i, e.resetJobOnDevServer(c, key.StringID()))
 			wg.Done()
 		}(i, key)
 	}
@@ -696,7 +727,7 @@ func (e *engineImpl) txn(c context.Context, jobID string, txn txnCallback) error
 func (e *engineImpl) rollSM(c context.Context, job *CronJob, cb func(*StateMachine) error) error {
 	sched, err := job.parseSchedule()
 	if err != nil {
-		return fmt.Errorf("bad schedule %q - %s", job.Schedule, err)
+		return fmt.Errorf("bad schedule %q - %s", job.effectiveSchedule(), err)
 	}
 	now := clock.Now(c).UTC()
 	rnd := mathrand.Get(c)
@@ -844,6 +875,32 @@ func (e *engineImpl) TriggerInvocation(c context.Context, jobID string, triggere
 	return invNonce, err
 }
 
+func (e *engineImpl) PauseJob(c context.Context, jobID string, who identity.Identity) error {
+	return e.setPausedFlag(c, jobID, true, who)
+}
+
+func (e *engineImpl) ResumeJob(c context.Context, jobID string, who identity.Identity) error {
+	return e.setPausedFlag(c, jobID, false, who)
+}
+
+func (e *engineImpl) setPausedFlag(c context.Context, jobID string, paused bool, who identity.Identity) error {
+	return e.txn(c, jobID, func(c context.Context, job *CronJob, isNew bool) error {
+		if isNew || !job.Enabled {
+			return errors.New("no such job")
+		}
+		if job.Paused == paused {
+			return errSkipPut
+		}
+		if paused {
+			logging.Warningf(c, "Job is paused by %s", who)
+		} else {
+			logging.Warningf(c, "Job is resumed by %s", who)
+		}
+		job.Paused = paused
+		return e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnScheduleChange() })
+	})
+}
+
 // updateJob updates an existing job if its definition has changed, adds
 // a completely new job or enables a previously disabled job.
 func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error {
@@ -867,7 +924,7 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 			}
 		}
 		oldEnabled := job.Enabled
-		oldSchedule := job.Schedule
+		oldEffectiveSchedule := job.effectiveSchedule()
 
 		// Update the job in full before running any state changes.
 		job.Revision = def.Revision
@@ -882,12 +939,9 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 				return err
 			}
 		}
-		if job.Schedule != oldSchedule {
+		if job.effectiveSchedule() != oldEffectiveSchedule {
 			logging.Infof(c, "Job's schedule changed")
-			err := e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnScheduleChange() })
-			if err != nil {
-				return err
-			}
+			return e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnScheduleChange() })
 		}
 		return nil
 	})
@@ -904,9 +958,11 @@ func (e *engineImpl) disableJob(c context.Context, jobID string) error {
 	})
 }
 
-// resetJob sends "off" signal followed by "on" signal. It effectively cancels
-// any pending actions and schedules new ones.
-func (e *engineImpl) resetJob(c context.Context, jobID string) error {
+// resetJobOnDevServer sends "off" signal followed by "on" signal.
+//
+// It effectively cancels any pending actions and schedules new ones. Used only
+// on dev server.
+func (e *engineImpl) resetJobOnDevServer(c context.Context, jobID string) error {
 	return e.txn(c, jobID, func(c context.Context, job *CronJob, isNew bool) error {
 		if isNew || !job.Enabled {
 			return errSkipPut

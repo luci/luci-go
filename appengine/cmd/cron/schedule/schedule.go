@@ -14,6 +14,10 @@ import (
 	"github.com/gorhill/cronexpr"
 )
 
+// DistantFuture is Jan 2116. It is used to indicate that next tick should not
+// happen.
+var DistantFuture = time.Unix(4604952467, 0).UTC()
+
 // Schedule knows when to run the job (given current time and possibly current
 // state of the job).
 //
@@ -24,6 +28,7 @@ type Schedule struct {
 
 	cronExpr *cronexpr.Expression // set for absolute schedules
 	interval time.Duration        // set for relative schedules
+	manual   bool                 // set for manual schedule
 }
 
 // IsAbsolute is true for schedules that do not depend on a job state.
@@ -36,7 +41,7 @@ type Schedule struct {
 //
 // See comment for 'Parse' for some examples.
 func (s *Schedule) IsAbsolute() bool {
-	return s.cronExpr != nil
+	return s.cronExpr != nil || s.manual
 }
 
 // Next tells when to run the job the next time.
@@ -44,6 +49,10 @@ func (s *Schedule) IsAbsolute() bool {
 // 'now' is current time. 'prev' is when previous invocation has finished (or
 // zero time for first invocation).
 func (s *Schedule) Next(now, prev time.Time) time.Time {
+	if s.manual {
+		return DistantFuture
+	}
+
 	// For an absolute schedule just look at the time table.
 	if s.cronExpr != nil {
 		return s.cronExpr.Next(now)
@@ -85,11 +94,28 @@ func (s *Schedule) String() string {
 //   - "with 10s interval": runs invocations in a loop, waiting 10s after
 //     finishing invocation before starting a new one. This is relative
 //     schedule. Overruns are not possible.
+//   - "continuously" is alias for "with 0s interval", meaning the job will run
+//     in a loop without any pauses.
+//   - "manual" schedule indicates that job is always started via "Run now"
+//     button. 'Next' always returns DistantFuture constant.
 func Parse(expr string, randSeed uint64) (sched *Schedule, err error) {
-	if strings.HasPrefix(expr, "with ") {
-		sched, err = parseWithSchedule(expr, randSeed)
+	toParse := ""
+	switch expr {
+	case "manual":
+		return &Schedule{
+			asString: "manual",
+			randSeed: randSeed,
+			manual:   true,
+		}, nil
+	case "continuously":
+		toParse = "with 0s interval"
+	default:
+		toParse = expr
+	}
+	if strings.HasPrefix(toParse, "with ") {
+		sched, err = parseWithSchedule(toParse, randSeed)
 	} else {
-		sched, err = parseCronSchedule(expr, randSeed)
+		sched, err = parseCronSchedule(toParse, randSeed)
 	}
 	if sched != nil {
 		sched.asString = expr
