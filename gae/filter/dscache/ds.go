@@ -40,9 +40,9 @@ func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMu
 	}
 
 	if err := d.mc.AddMulti(lockItems); err != nil {
-		(log.Fields{log.ErrorKey: err}).Warningf(
-			d.c, "dscache: GetMulti: memcache.AddMulti")
-
+		// Ignore this error. Either we couldn't add them because they exist
+		// (so, not an issue), or because memcache is having sad times (in which
+		// case we'll see so in the GetMulti which immediately follows this).
 	}
 	if err := d.mc.GetMulti(lockItems); err != nil {
 		(log.Fields{log.ErrorKey: err}).Warningf(
