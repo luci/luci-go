@@ -23,7 +23,7 @@ import (
 
 func TestRegisterTaskManagerAndFriends(t *testing.T) {
 	Convey("RegisterTaskManager works", t, func() {
-		c := New(nil)
+		c := New(nil, "cron.cfg")
 		So(c.RegisterTaskManager(noopTaskManager{}), ShouldBeNil)
 		So(c.GetTaskManager(&messages.NoopTask{}), ShouldNotBeNil)
 		So(c.GetTaskManager(&messages.UrlFetchTask{}), ShouldBeNil)
@@ -31,12 +31,12 @@ func TestRegisterTaskManagerAndFriends(t *testing.T) {
 	})
 
 	Convey("RegisterTaskManager bad proto type", t, func() {
-		c := New(nil)
+		c := New(nil, "cron.cfg")
 		So(c.RegisterTaskManager(brokenTaskManager{}), ShouldErrLike, "expecting pointer to a struct")
 	})
 
 	Convey("RegisterTaskManager twice", t, func() {
-		c := New(nil)
+		c := New(nil, "cron.cfg")
 		So(c.RegisterTaskManager(noopTaskManager{}), ShouldBeNil)
 		So(c.RegisterTaskManager(noopTaskManager{}), ShouldNotBeNil)
 	})
@@ -44,7 +44,7 @@ func TestRegisterTaskManagerAndFriends(t *testing.T) {
 
 func TestProtoValidation(t *testing.T) {
 	Convey("validateJobProto works", t, func() {
-		c := New(nil).(*catalog)
+		c := New(nil, "cron.cfg").(*catalog)
 		c.RegisterTaskManager(noopTaskManager{})
 		So(c.validateJobProto(nil), ShouldErrLike, "job must be specified")
 		So(c.validateJobProto(&messages.Job{}), ShouldErrLike, "missing 'id' field'")
@@ -66,7 +66,7 @@ func TestProtoValidation(t *testing.T) {
 	})
 
 	Convey("extractTaskProto works", t, func() {
-		c := New(nil).(*catalog)
+		c := New(nil, "cron.cfg").(*catalog)
 
 		msg, err := c.extractTaskProto(nil)
 		So(err, ShouldErrLike, "missing 'task' field")
@@ -87,13 +87,13 @@ func TestProtoValidation(t *testing.T) {
 		So(err, ShouldErrLike, "unknown task type")
 		So(msg, ShouldBeNil)
 
-		c = New(nil).(*catalog)
+		c = New(nil, "cron.cfg").(*catalog)
 		c.RegisterTaskManager(noopTaskManager{errors.New("boo")})
 		msg, err = c.extractTaskProto(&messages.Task{Noop: &messages.NoopTask{}})
 		So(err, ShouldErrLike, "boo")
 		So(msg, ShouldBeNil)
 
-		c = New(nil).(*catalog)
+		c = New(nil, "cron.cfg").(*catalog)
 		c.RegisterTaskManager(noopTaskManager{})
 		msg, err = c.extractTaskProto(&messages.Task{Noop: &messages.NoopTask{}})
 		So(err, ShouldBeNil)
@@ -104,7 +104,7 @@ func TestProtoValidation(t *testing.T) {
 func TestConfigReading(t *testing.T) {
 	Convey("with mocked config", t, func() {
 		ctx := memcfg.Use(context.Background(), mockedConfigs)
-		cat := New(nil)
+		cat := New(nil, "cron.cfg")
 		cat.RegisterTaskManager(noopTaskManager{})
 
 		Convey("GetAllProjects works", func() {

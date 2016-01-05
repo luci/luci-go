@@ -13,9 +13,10 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"github.com/golang/protobuf/proto"
+	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logging"
 
@@ -27,10 +28,6 @@ import (
 var (
 	// jobIDRe is used to validate job ID field.
 	jobIDRe = regexp.MustCompile(`^[0-9A-Za-z_\-]{1,100}$`)
-
-	// configFile is name of project config file with all cron job definitions
-	// for that project. It contains text-encoded cron.ProjectConfig message.
-	configFile = "cron.cfg"
 )
 
 // Catalog knows how to enumerate all cron job configs across all projects.
@@ -78,21 +75,26 @@ type Definition struct {
 type LazyConfig func(c context.Context) (config.Interface, error)
 
 // New returns implementation of Catalog.
-func New(c LazyConfig) Catalog {
+//
+// If configFileName is not "", it specifies name of *.cfg file to read cron job
+// definition from. If it is "", <gae-app-id>.cfg will be used instead.
+func New(c LazyConfig, configFileName string) Catalog {
 	if c == nil {
 		c = func(ctx context.Context) (config.Interface, error) {
 			return config.Get(ctx), nil
 		}
 	}
 	return &catalog{
-		managers:   map[reflect.Type]task.Manager{},
-		lazyConfig: c,
+		managers:       map[reflect.Type]task.Manager{},
+		lazyConfig:     c,
+		configFileName: configFileName,
 	}
 }
 
 type catalog struct {
-	managers   map[reflect.Type]task.Manager
-	lazyConfig LazyConfig
+	managers       map[reflect.Type]task.Manager
+	lazyConfig     LazyConfig
+	configFileName string
 }
 
 func (cat *catalog) RegisterTaskManager(m task.Manager) error {
@@ -126,7 +128,7 @@ func (cat *catalog) GetAllProjects(c context.Context) ([]string, error) {
 		return nil, err
 	}
 	// Enumerate all projects that have cron.cfg. Do not fetch actual configs yet.
-	cfgs, err := cfgService.GetProjectConfigs(configFile, true)
+	cfgs, err := cfgService.GetProjectConfigs(cat.configFile(c), true)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +150,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	if err != nil {
 		return nil, err
 	}
-	rawCfg, err := cfgService.GetConfig("projects/"+projectID, configFile, false)
+	rawCfg, err := cfgService.GetConfig("projects/"+projectID, cat.configFile(c), false)
 	if err == config.ErrNoConfig {
 		return nil, nil
 	}
@@ -185,6 +187,16 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		})
 	}
 	return out, nil
+}
+
+// configFile returns a name of *.cfg file (inside project's config set) with
+// all cron job definitions for a project. This file contains text-encoded
+// cron.ProjectConfig message.
+func (cat *catalog) configFile(c context.Context) string {
+	if cat.configFileName != "" {
+		return cat.configFileName
+	}
+	return info.Get(c).AppID() + ".cfg"
 }
 
 // validateJobProto verifies that messages.Job protobuf message makes sense.

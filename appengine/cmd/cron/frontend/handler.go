@@ -188,7 +188,7 @@ func init() {
 	rand.Seed(seed)
 
 	// Setup global singletons.
-	globalCatalog = catalog.New(getConfigImpl)
+	globalCatalog = catalog.New(getConfigImpl, "")
 	for _, m := range managers {
 		if err := globalCatalog.RegisterTaskManager(m); err != nil {
 			panic(err)
