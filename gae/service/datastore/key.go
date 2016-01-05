@@ -37,9 +37,9 @@ func (k KeyTok) Special() bool {
 // ID returns the 'active' id as a Property (either the StringID or the IntID).
 func (k KeyTok) ID() Property {
 	if k.StringID != "" {
-		return Property{value: k.StringID, propType: PTString}
+		return MkProperty(k.StringID)
 	}
-	return Property{value: k.IntID, propType: PTInt}
+	return MkProperty(k.IntID)
 }
 
 // Less returns true iff k would sort before other.

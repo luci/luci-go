@@ -116,12 +116,37 @@ func TestProperties(t *testing.T) {
 				So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
 				So(pv.Type().String(), ShouldEqual, "PTTime")
 			})
+			Convey("zero time", func() {
+				now := time.Time{}
+				So(now.IsZero(), ShouldBeTrue)
+
+				pv := Property{}
+				So(pv.SetValue(now, ShouldIndex), ShouldBeNil)
+				So(pv.Value(), ShouldResemble, now)
+				v, err := pv.Project(PTInt)
+				So(err, ShouldBeNil)
+				So(v, ShouldEqual, 0)
+
+				So(pv.SetValue(0, ShouldIndex), ShouldBeNil)
+				So(pv.Value(), ShouldEqual, 0)
+				v, err = pv.Project(PTTime)
+				So(err, ShouldBeNil)
+				So(v.(time.Time).IsZero(), ShouldBeTrue)
+			})
 			Convey("[]byte allows IndexSetting", func() {
 				pv := Property{}
 				So(pv.SetValue([]byte("hello"), ShouldIndex), ShouldBeNil)
 				So(pv.Value(), ShouldResemble, []byte("hello"))
 				So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
 				So(pv.Type().String(), ShouldEqual, "PTBytes")
+			})
+		})
+
+		Convey("Comparison", func() {
+			Convey(`A []byte property should equal a string property with the same value.`, func() {
+				a := MkProperty([]byte("ohaithere"))
+				b := MkProperty("ohaithere")
+				So(a.Equal(&b), ShouldBeTrue)
 			})
 		})
 	})

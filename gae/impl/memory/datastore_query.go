@@ -107,7 +107,7 @@ func numComponents(fq *ds.FinalizedQuery) int {
 // it is nil.
 //
 // NOTE: if fq specifies a descending sort order for the inequality, the bounds
-// will be inverted, incremented, and fliped.
+// will be inverted, incremented, and flipped.
 func GetBinaryBounds(fq *ds.FinalizedQuery) (lower, upper []byte) {
 	// Pick up the start/end range from the inequalities, if any.
 	//

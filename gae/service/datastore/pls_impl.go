@@ -196,7 +196,7 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 				project = PTGeoPoint
 				set = func(x interface{}) { v.Set(reflect.ValueOf(x)) }
 			default:
-				panic(fmt.Errorf("helper: impossible: %s", typeMismatchReason(p.value, v)))
+				panic(fmt.Errorf("helper: impossible: %s", typeMismatchReason(p.Value(), v)))
 			}
 		case reflect.Slice:
 			project = PTBytes
@@ -204,12 +204,12 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 				v.SetBytes(reflect.ValueOf(x).Bytes())
 			}
 		default:
-			panic(fmt.Errorf("helper: impossible: %s", typeMismatchReason(p.value, v)))
+			panic(fmt.Errorf("helper: impossible: %s", typeMismatchReason(p.Value(), v)))
 		}
 
 		pVal, err := p.Project(project)
 		if err != nil {
-			return typeMismatchReason(p.value, v)
+			return typeMismatchReason(p.Value(), v)
 		}
 		if overflow != nil && overflow(pVal) {
 			return fmt.Sprintf("value %v overflows struct field of type %v", pVal, v.Type())
@@ -334,7 +334,7 @@ func (p *structPLS) getMetaFor(idx int) (interface{}, bool) {
 			if err != nil {
 				return nil, false
 			}
-			return prop.value, true
+			return prop.Value(), true
 		}
 
 		if !reflect.DeepEqual(reflect.Zero(f.Type()).Interface(), f.Interface()) {

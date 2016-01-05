@@ -10,11 +10,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luci/gae/service/blobstore"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
+	"golang.org/x/net/context"
+
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
 
 type qExpect struct {
@@ -82,6 +84,32 @@ var stage2Data = []ds.PropertyMap{
 	pmap("$key", key("Kind", 3, "Kind", 3), Next,
 		"Val", 3, 4, 2, 1, Next,
 		"Extra", "nuts",
+	),
+}
+
+var collapsedData = []ds.PropertyMap{
+	// PTTime
+	pmap("$key", key("Kind", 1), Next,
+		"Date", time.Date(2000, time.January, 1, 1, 1, 1, 1, time.UTC), Next,
+	),
+	pmap("$key", key("Kind", 2), Next,
+		"Date", time.Date(2000, time.March, 1, 1, 1, 1, 1, time.UTC), Next,
+	),
+
+	// PTBlobKey
+	pmap("$key", key("Kind", 3), Next,
+		"Key", blobstore.Key("foo"), Next,
+	),
+	pmap("$key", key("Kind", 4), Next,
+		"Key", blobstore.Key("qux"), Next,
+	),
+
+	// PTBytes
+	pmap("$key", key("Kind", 5), Next,
+		"Val", []byte("ohai"), Next,
+	),
+	pmap("$key", key("Kind", 6), Next,
+		"Val", []byte("uwutm8"), Next,
 	),
 }
 
@@ -385,6 +413,56 @@ var queryExecutionTests = []qExTest{
 			},
 		},
 	}},
+	{"collapsed types", []qExStage{
+		{
+			putEnts: collapsedData,
+		},
+		{
+			expect: []qExpect{
+				// PTTime
+				{
+					q: nq("Kind").Lte("Date", time.Date(2000, time.February, 1, 1, 1, 1, 1, time.UTC)),
+					get: []ds.PropertyMap{
+						collapsedData[0],
+					},
+				},
+				{
+					q: nq("Kind").Eq("Date", time.Date(2000, time.March, 1, 1, 1, 1, 1, time.UTC)),
+					get: []ds.PropertyMap{
+						collapsedData[1],
+					},
+				},
+
+				// PTBlobKey
+				{
+					q: nq("Kind").Lte("Key", blobstore.Key("foo")),
+					get: []ds.PropertyMap{
+						collapsedData[2],
+					},
+				},
+				{
+					q: nq("Kind").Eq("Key", blobstore.Key("qux")),
+					get: []ds.PropertyMap{
+						collapsedData[3],
+					},
+				},
+
+				// PTBytes
+				{
+					q: nq("Kind").Lte("Val", []byte("ohai")),
+					get: []ds.PropertyMap{
+						collapsedData[4],
+					},
+				},
+				{
+					q: nq("Kind").Eq("Val", []byte("uwutm8")),
+					get: []ds.PropertyMap{
+						collapsedData[5],
+					},
+				},
+			},
+		},
+	}},
 }
 
 func TestQueryExecution(t *testing.T) {
@@ -468,7 +546,7 @@ func TestQueryExecution(t *testing.T) {
 										So(data.GetAll(expect.q, &rslt), ShouldBeNil)
 										So(len(rslt), ShouldEqual, len(expect.get))
 										for i, r := range rslt {
-											So(r, ShouldResemble, expect.get[i])
+											So(r, ShouldResembleV, expect.get[i])
 										}
 										return nil
 									}, &ds.TransactionOptions{XG: true})

@@ -5,6 +5,7 @@
 package datastore
 
 import (
+	"bytes"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -174,7 +175,15 @@ func init() {
 // Property is a value plus an indicator of whether the value should be
 // indexed. Name and Multiple are stored in the PropertyMap object.
 type Property struct {
-	value        interface{}
+	// value is the Property's value. It is stored in an internal, opaque type and
+	// should not be directly exported to consumers. Rather, it can be accessed
+	// in its original value via Value().
+	//
+	// Specifically:
+	//	- []byte- and string-based values are stored in a bytesByteSequence and
+	//	  stringByteSequence respectively.
+	value interface{}
+
 	indexSetting IndexSetting
 	propType     PropertyType
 }
@@ -245,6 +254,33 @@ func PropertyTypeOf(v interface{}, checkValid bool) (PropertyType, error) {
 	}
 }
 
+// RoundTime rounds a time.Time to microseconds, which is the (undocumented)
+// way that the AppEngine SDK stores it.
+func RoundTime(t time.Time) time.Time {
+	return t.Round(time.Microsecond)
+}
+
+// TimeToInt converts a time value to a datastore-appropraite integer value.
+//
+// This method truncates the time to microseconds and drops the timezone,
+// because that's the (undocumented) way that the appengine SDK does it.
+func TimeToInt(t time.Time) int64 {
+	if t.IsZero() {
+		return 0
+	}
+
+	t = RoundTime(t)
+	return t.Unix()*1e6 + int64(t.Nanosecond()/1e3)
+}
+
+// IntToTime converts a datastore time integer into its time.Time value.
+func IntToTime(v int64) time.Time {
+	if v == 0 {
+		return time.Time{}
+	}
+	return RoundTime(time.Unix(int64(v/1e6), int64((v%1e6)*1e3))).UTC()
+}
+
 // timeLocationIsUTC tests if two time.Location are equal.
 //
 // This is tricky using the standard time API, as time is implicitly normalized
@@ -282,10 +318,9 @@ func UpconvertUnderlyingType(o interface{}) interface{} {
 		}
 	case reflect.Struct:
 		if t == typeOfTime {
-			// time in a Property can only hold microseconds
 			tim := v.Interface().(time.Time)
 			if !tim.IsZero() {
-				o = v.Interface().(time.Time).Round(time.Microsecond)
+				o = RoundTime(v.Interface().(time.Time))
 			}
 		}
 	}
@@ -295,7 +330,18 @@ func UpconvertUnderlyingType(o interface{}) interface{} {
 // Value returns the current value held by this property. It's guaranteed to
 // be a valid value type (i.e. `p.SetValue(p.Value(), true)` will never return
 // an error).
-func (p *Property) Value() interface{} { return p.value }
+func (p *Property) Value() interface{} {
+	switch p.propType {
+	case PTBytes:
+		return p.value.(byteSequence).bytes()
+	case PTString:
+		return p.value.(byteSequence).string()
+	case PTBlobKey:
+		return blobstore.Key(p.value.(byteSequence).string())
+	default:
+		return p.value
+	}
+}
 
 // IndexSetting says whether or not the datastore should create indicies for
 // this value.
@@ -342,73 +388,103 @@ func (p *Property) SetValue(value interface{}, is IndexSetting) (err error) {
 			return
 		}
 	}
+
+	// Convert value to internal Property storage type.
+	switch t := value.(type) {
+	case string:
+		value = stringByteSequence(t)
+	case blobstore.Key:
+		value = stringByteSequence(t)
+	case []byte:
+		value = bytesByteSequence(t)
+	case time.Time:
+		value = RoundTime(t)
+	}
+
 	p.propType = pt
 	p.value = value
 	p.indexSetting = is
 	return
 }
 
-// ForIndex gets a new Property with its value and type converted as if it were
-// being stored in a datastore index. See the doc on PropertyType for more info.
-func (p Property) ForIndex() Property {
-	switch p.propType {
-	case PTNull, PTInt, PTBool, PTString, PTFloat, PTGeoPoint, PTKey:
-		return p
+// IndexTypeAndValue returns the type and value of the Property as it would
+// show up in a datastore index.
+//
+// This is used to operate on the Property as it would be stored in a datastore
+// index, specifically for serialization and comparison.
+//
+// The returned type will be the PropertyType used in the index. The returned
+// value will be one of:
+//	- bool
+//	- int64
+//	- float64
+//	- string
+//	- []byte
+//	- GeoPoint
+//	- *Key
+func (p Property) IndexTypeAndValue() (PropertyType, interface{}) {
+	switch t := p.propType; t {
+	case PTNull, PTInt, PTBool, PTFloat, PTGeoPoint, PTKey:
+		return t, p.Value()
 
 	case PTTime:
-		v, _ := p.Project(PTInt)
-		return Property{v, p.indexSetting, PTInt}
+		return PTInt, TimeToInt(p.value.(time.Time))
 
-	case PTBytes, PTBlobKey:
-		v, _ := p.Project(PTString)
-		return Property{v, p.indexSetting, PTString}
+	case PTString, PTBytes, PTBlobKey:
+		return PTString, p.value.(byteSequence).value()
+
+	default:
+		panic(fmt.Errorf("unknown PropertyType: %s", t))
 	}
-	panic(fmt.Errorf("unknown PropertyType: %s", p.propType))
 }
 
 // Project can be used to project a Property retrieved from a Projection query
 // into a different datatype. For example, if you have a PTInt property, you
 // could Project(PTTime) to convert it to a time.Time. The following conversions
 // are supported:
-//   PTXXX <-> PTXXX (i.e. identity)
-//   PTInt <-> PTTime
 //   PTString <-> PTBlobKey
 //   PTString <-> PTBytes
+//   PTXXX <-> PTXXX (i.e. identity)
+//   PTInt <-> PTTime
 //   PTNull <-> Anything
 func (p *Property) Project(to PropertyType) (interface{}, error) {
-	switch {
-	case to == p.propType:
-		return p.value, nil
-
-	case to == PTInt && p.propType == PTTime:
-		t := p.value.(time.Time)
-		v := uint64(t.Unix())*1e6 + uint64(t.Nanosecond()/1e3)
-		return int64(v), nil
-
-	case to == PTTime && p.propType == PTInt:
-		v := p.value.(int64)
-		t := time.Unix(int64(v/1e6), int64((v%1e6)*1e3))
-		if t.IsZero() {
-			return time.Time{}, nil
-		}
-		return t.UTC(), nil
-
-	case to == PTString && p.propType == PTBytes:
-		return string(p.value.([]byte)), nil
-
-	case to == PTString && p.propType == PTBlobKey:
-		return string(p.value.(blobstore.Key)), nil
-
-	case to == PTBytes && p.propType == PTString:
-		return []byte(p.value.(string)), nil
-
-	case to == PTBlobKey && p.propType == PTString:
-		return blobstore.Key(p.value.(string)), nil
-
-	case to == PTNull:
+	if to == PTNull {
 		return nil, nil
+	}
 
-	case p.propType == PTNull:
+	pt, v := p.propType, p.value
+	switch pt {
+	case PTBytes, PTString, PTBlobKey:
+		v := v.(byteSequence)
+		switch to {
+		case PTBytes:
+			return v.bytes(), nil
+		case PTString:
+			return v.string(), nil
+		case PTBlobKey:
+			return blobstore.Key(v.string()), nil
+		}
+
+	case PTTime:
+		switch to {
+		case PTInt:
+			return TimeToInt(v.(time.Time)), nil
+		case PTTime:
+			return v, nil
+		}
+
+	case PTInt:
+		switch to {
+		case PTInt:
+			return v, nil
+		case PTTime:
+			return IntToTime(v.(int64)), nil
+		}
+
+	case to:
+		return v, nil
+
+	case PTNull:
 		switch to {
 		case PTInt:
 			return int64(0), nil
@@ -429,29 +505,62 @@ func (p *Property) Project(to PropertyType) (interface{}, error) {
 		case PTBlobKey:
 			return blobstore.Key(""), nil
 		}
-		fallthrough
-	default:
-		return nil, fmt.Errorf("unable to project %s to %s", p.propType, to)
 	}
+	return nil, fmt.Errorf("unable to project %s to %s", pt, to)
 }
 
-func cmpVals(a, b interface{}, t PropertyType) int {
-	cmpFloat := func(a, b float64) int {
-		if a == b {
-			return 0
-		}
-		if a > b {
-			return 1
-		}
+func cmpFloat(a, b float64) int {
+	if a == b {
+		return 0
+	}
+	if a > b {
+		return 1
+	}
+	return -1
+}
+
+// Less returns true iff p would sort before other.
+//
+// This uses datastore's index rules for sorting (see GetIndexTypeAndValue).
+func (p *Property) Less(other *Property) bool {
+	return p.Compare(other) < 0
+}
+
+// Equal returns true iff p and other have identical index representations.
+//
+// This uses datastore's index rules for sorting (see GetIndexTypeAndValue).
+func (p *Property) Equal(other *Property) bool {
+	return p.Compare(other) == 0
+}
+
+// Compare compares this Property to another, returning a trinary value
+// indicating where it would sort relative to the other in datastore.
+//
+// It returns:
+//	<0 if the Property would sort before `other`.
+//	>0 if the Property would after before `other`.
+//	0 if the Property equals `other`.
+//
+// This uses datastore's index rules for sorting (see GetIndexTypeAndValue).
+func (p *Property) Compare(other *Property) int {
+	if p.indexSetting && !other.indexSetting {
+		return 1
+	} else if !p.indexSetting && other.indexSetting {
 		return -1
 	}
 
-	switch t {
+	at, av := p.IndexTypeAndValue()
+	bt, bv := other.IndexTypeAndValue()
+	if cmp := int(at) - int(bt); cmp != 0 {
+		return cmp
+	}
+
+	switch t := at; t {
 	case PTNull:
 		return 0
 
 	case PTBool:
-		a, b := a.(bool), b.(bool)
+		a, b := av.(bool), bv.(bool)
 		if a == b {
 			return 0
 		}
@@ -461,7 +570,7 @@ func cmpVals(a, b interface{}, t PropertyType) int {
 		return -1
 
 	case PTInt:
-		a, b := a.(int64), b.(int64)
+		a, b := av.(int64), bv.(int64)
 		if a == b {
 			return 0
 		}
@@ -471,20 +580,13 @@ func cmpVals(a, b interface{}, t PropertyType) int {
 		return -1
 
 	case PTString:
-		a, b := a.(string), b.(string)
-		if a == b {
-			return 0
-		}
-		if a > b {
-			return 1
-		}
-		return -1
+		return cmpByteSequence(p.value.(byteSequence), other.value.(byteSequence))
 
 	case PTFloat:
-		return cmpFloat(a.(float64), b.(float64))
+		return cmpFloat(av.(float64), bv.(float64))
 
 	case PTGeoPoint:
-		a, b := a.(GeoPoint), b.(GeoPoint)
+		a, b := av.(GeoPoint), bv.(GeoPoint)
 		cmp := cmpFloat(a.Lat, b.Lat)
 		if cmp != 0 {
 			return cmp
@@ -492,7 +594,7 @@ func cmpVals(a, b interface{}, t PropertyType) int {
 		return cmpFloat(a.Lng, b.Lng)
 
 	case PTKey:
-		a, b := a.(*Key), b.(*Key)
+		a, b := av.(*Key), bv.(*Key)
 		if a.Equal(b) {
 			return 0
 		}
@@ -506,39 +608,6 @@ func cmpVals(a, b interface{}, t PropertyType) int {
 	}
 }
 
-// Less returns true iff p would sort before other.
-//
-// This uses datastore's index rules for sorting (e.g.
-// []byte("hello") == "hello")
-func (p *Property) Less(other *Property) bool {
-	if p.indexSetting && !other.indexSetting {
-		return true
-	} else if !p.indexSetting && other.indexSetting {
-		return false
-	}
-	a, b := p.ForIndex(), other.ForIndex()
-	cmp := int(a.propType) - int(b.propType)
-	if cmp < 0 {
-		return true
-	} else if cmp > 0 {
-		return false
-	}
-	return cmpVals(a.value, b.value, a.propType) < 0
-}
-
-// Equal returns true iff p and other have identical index representations.
-//
-// This uses datastore's index rules for sorting (e.g.
-// []byte("hello") == "hello")
-func (p *Property) Equal(other *Property) bool {
-	ret := p.indexSetting == other.indexSetting
-	if ret {
-		a, b := p.ForIndex(), other.ForIndex()
-		ret = a.propType == b.propType && cmpVals(a.value, b.value, a.propType) == 0
-	}
-	return ret
-}
-
 // GQL returns a correctly formatted Cloud Datastore GQL literal which
 // is valid for a comparison value in the `WHERE` clause.
 //
@@ -548,34 +617,35 @@ func (p *Property) Equal(other *Property) bool {
 // NOTE: GeoPoint values are emitted with speculated future syntax. There is
 // currently no syntax for literal GeoPoint values.
 func (p *Property) GQL() string {
+	v := p.Value()
 	switch p.propType {
 	case PTNull:
 		return "NULL"
 
 	case PTInt, PTFloat, PTBool:
-		return fmt.Sprint(p.value)
+		return fmt.Sprint(v)
 
 	case PTString:
-		return gqlQuoteString(p.value.(string))
+		return gqlQuoteString(v.(string))
 
 	case PTBytes:
 		return fmt.Sprintf("BLOB(%q)",
-			base64.URLEncoding.EncodeToString(p.value.([]byte)))
+			base64.URLEncoding.EncodeToString(v.([]byte)))
 
 	case PTBlobKey:
 		return fmt.Sprintf("BLOBKEY(%s)", gqlQuoteString(
-			string(p.value.(blobstore.Key))))
+			string(v.(blobstore.Key))))
 
 	case PTKey:
-		return p.value.(*Key).GQL()
+		return v.(*Key).GQL()
 
 	case PTTime:
-		return fmt.Sprintf("DATETIME(%s)", p.value.(time.Time).Format(time.RFC3339Nano))
+		return fmt.Sprintf("DATETIME(%s)", v.(time.Time).Format(time.RFC3339Nano))
 
 	case PTGeoPoint:
 		// note that cloud SQL doesn't support this yet, but take a good guess at
 		// it.
-		v := p.value.(GeoPoint)
+		v := v.(GeoPoint)
 		return fmt.Sprintf("GEOPOINT(%v, %v)", v.Lat, v.Lng)
 	}
 	panic(fmt.Errorf("bad type: %s", p.propType))
@@ -604,13 +674,13 @@ func (p *Property) EstimateSize() int64 {
 	case PTGeoPoint:
 		return 1 + (8 * 2)
 	case PTString:
-		return 1 + int64(len(p.value.(string)))
+		return 1 + int64(len(p.Value().(string)))
 	case PTBlobKey:
-		return 1 + int64(len(p.value.(blobstore.Key)))
+		return 1 + int64(len(p.Value().(blobstore.Key)))
 	case PTBytes:
-		return 1 + int64(len(p.value.([]byte)))
+		return 1 + int64(len(p.Value().([]byte)))
 	case PTKey:
-		return 1 + p.value.(*Key).EstimateSize()
+		return 1 + p.Value().(*Key).EstimateSize()
 	}
 	panic(fmt.Errorf("Unknown property type: %s", p.Type().String()))
 }
@@ -827,4 +897,85 @@ func GetMetaDefault(getter MetaGetter, key string, dflt interface{}) interface{}
 		return dflt
 	}
 	return cur
+}
+
+// byteSequence is a generic interface for an object that can be represented as
+// a sequence of bytes. Its implementations are used internally by Property to
+// enable zero-copy conversion and comparisons between byte sequence types.
+type byteSequence interface {
+	// len returns the number of bytes in the sequence.
+	len() int
+	// get returns the byte at the specified index.
+	get(int) byte
+	// value returns the sequence's primitive type.
+	value() interface{}
+	// string returns the sequence as a string (may cause a copy if not native).
+	string() string
+	// bytes returns the sequence as a []byte (may cause a copy if not native).
+	bytes() []byte
+	// fastCmp is an implementation-specific comparison method. If it returns
+	// true in its second return value, the comparison was performed and its
+	// result is in the first return value. Otherwise, the fast comparison could
+	// not be performed.
+	fastCmp(o byteSequence) (int, bool)
+}
+
+func cmpByteSequence(a, b byteSequence) int {
+	if v, ok := a.fastCmp(b); ok {
+		return v
+	}
+
+	// Byte-by-byte "slow" comparison.
+	ld := a.len() - b.len()
+	if ld < 0 {
+		ld = -ld
+	}
+	for i := 0; i < ld; i++ {
+		av, bv := a.get(i), b.get(i)
+		switch {
+		case av < bv:
+			return -1
+		case av > bv:
+			return 1
+		}
+	}
+
+	return ld
+}
+
+// bytesByteSequence is a byteSequence implementation for a byte slice.
+type bytesByteSequence []byte
+
+func (s bytesByteSequence) len() int           { return len(s) }
+func (s bytesByteSequence) get(i int) byte     { return s[i] }
+func (s bytesByteSequence) value() interface{} { return []byte(s) }
+func (s bytesByteSequence) string() string     { return string(s) }
+func (s bytesByteSequence) bytes() []byte      { return []byte(s) }
+func (s bytesByteSequence) fastCmp(o byteSequence) (int, bool) {
+	if t, ok := o.(bytesByteSequence); ok {
+		return bytes.Compare([]byte(s), []byte(t)), true
+	}
+	return 0, false
+}
+
+// stringByteSequence is a byteSequence implementation for a string.
+type stringByteSequence string
+
+func (s stringByteSequence) len() int           { return len(s) }
+func (s stringByteSequence) get(i int) byte     { return s[i] }
+func (s stringByteSequence) value() interface{} { return string(s) }
+func (s stringByteSequence) string() string     { return string(s) }
+func (s stringByteSequence) bytes() []byte      { return []byte(s) }
+func (s stringByteSequence) fastCmp(o byteSequence) (int, bool) {
+	if t, ok := o.(stringByteSequence); ok {
+		// This pattern is used for string comparison in strings.Compare.
+		if string(s) == string(t) {
+			return 0, true
+		}
+		if string(s) < string(t) {
+			return -1, true
+		}
+		return 0, true
+	}
+	return 0, false
 }

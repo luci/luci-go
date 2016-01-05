@@ -52,6 +52,7 @@ func ShouldEqualKey(actual interface{}, expected ...interface{}) string {
 func TestPropertyMapSerialization(t *testing.T) {
 	t.Parallel()
 
+	now := time.Now().UTC()
 	tests := []dspmapTC{
 		{
 			"basic",
@@ -84,8 +85,9 @@ func TestPropertyMapSerialization(t *testing.T) {
 			"time",
 			ds.PropertyMap{
 				"T": {
-					mp(time.Now().UTC()),
-					mp(time.Now().Add(time.Second).UTC())},
+					mp(now),
+					mp(now.Add(time.Second)),
+				},
 			},
 		},
 		{
@@ -190,12 +192,7 @@ func TestSerializationReadMisc(t *testing.T) {
 			So(WriteTime(buf, time.Time{}), ShouldBeNil)
 			t, err := ReadTime(mkBuf(buf.Bytes()))
 			So(err, ShouldBeNil)
-			So(t, ShouldResemble, time.Time{})
-		})
-
-		Convey("Bad ToBytes", func() {
-			So(func() { ToBytes(100.7) }, ShouldPanic)
-			So(func() { ToBytesWithContext(100.7) }, ShouldPanic)
+			So(t.Equal(time.Time{}), ShouldBeTrue)
 		})
 
 		Convey("ReadKey", func() {

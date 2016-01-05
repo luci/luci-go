@@ -189,16 +189,17 @@ func ReadGeoPoint(buf Buffer) (gp ds.GeoPoint, err error) {
 	return
 }
 
-// WriteTime writes a time.Time in a byte-sortable way.
+// WriteTime writes a time.Time to the buffer.
 //
-// This method truncates the time to microseconds and drops the timezone,
-// because that's the (undocumented) way that the appengine SDK does it.
+// The supplied time is rounded via datastore.RoundTime and written as a
+// microseconds-since-epoch integer to comform to datastore storage standards.
 func WriteTime(buf Buffer, t time.Time) error {
 	name, off := t.Zone()
 	if name != "UTC" || off != 0 {
 		panic(fmt.Errorf("helper: UTC OR DEATH: %s", t))
 	}
-	_, err := cmpbin.WriteInt(buf, t.Unix()*1e6+int64(t.Nanosecond()/1e3))
+
+	_, err := cmpbin.WriteInt(buf, ds.TimeToInt(t))
 	return err
 }
 
@@ -208,48 +209,70 @@ func ReadTime(buf Buffer) (time.Time, error) {
 	if err != nil {
 		return time.Time{}, err
 	}
-	t := time.Unix(v/1e6, (v%1e6)*1e3)
-	if t.IsZero() {
-		return time.Time{}, nil
-	}
-	return t.UTC(), nil
+	return ds.IntToTime(v), nil
 }
 
 // WriteProperty writes a Property to the buffer. `context` behaves the same
 // way that it does for WriteKey, but only has an effect if `p` contains a
-// Key as its Value.
-func WriteProperty(buf Buffer, context KeyContext, p ds.Property) (err error) {
+// Key as its IndexValue.
+func WriteProperty(buf Buffer, context KeyContext, p ds.Property) error {
+	return writePropertyImpl(buf, context, &p, false)
+}
+
+// WriteIndexProperty writes a Property to the buffer as its native index type.
+// `context` behaves the same way that it does for WriteKey, but only has an
+// effect if `p` contains a Key as its IndexValue.
+func WriteIndexProperty(buf Buffer, context KeyContext, p ds.Property) error {
+	return writePropertyImpl(buf, context, &p, true)
+}
+
+// writePropertyImpl is an implementation of WriteProperty and
+// WriteIndexProperty.
+func writePropertyImpl(buf Buffer, context KeyContext, p *ds.Property, index bool) (err error) {
 	defer recoverTo(&err)
-	typb := byte(p.Type())
+
+	it, v := p.IndexTypeAndValue()
+	if !index {
+		it = p.Type()
+	}
+	typb := byte(it)
 	if p.IndexSetting() != ds.NoIndex {
 		typb |= 0x80
 	}
 	panicIf(buf.WriteByte(typb))
-	switch p.Type() {
-	case ds.PTNull:
-	case ds.PTBool:
-		b := p.Value().(bool)
-		if b {
-			err = buf.WriteByte(1)
-		} else {
-			err = buf.WriteByte(0)
+
+	err = writeIndexValue(buf, context, v)
+	return
+}
+
+// writeIndexValue writes the index value of v to buf.
+//
+// v may be one of the return types from ds.Property's GetIndexTypeAndValue
+// method.
+func writeIndexValue(buf Buffer, context KeyContext, v interface{}) (err error) {
+	switch t := v.(type) {
+	case nil:
+	case bool:
+		b := byte(0)
+		if t {
+			b = 1
 		}
-	case ds.PTInt:
-		_, err = cmpbin.WriteInt(buf, p.Value().(int64))
-	case ds.PTFloat:
-		_, err = cmpbin.WriteFloat64(buf, p.Value().(float64))
-	case ds.PTString:
-		_, err = cmpbin.WriteString(buf, p.Value().(string))
-	case ds.PTBytes:
-		_, err = cmpbin.WriteBytes(buf, p.Value().([]byte))
-	case ds.PTTime:
-		err = WriteTime(buf, p.Value().(time.Time))
-	case ds.PTGeoPoint:
-		err = WriteGeoPoint(buf, p.Value().(ds.GeoPoint))
-	case ds.PTKey:
-		err = WriteKey(buf, context, p.Value().(*ds.Key))
-	case ds.PTBlobKey:
-		_, err = cmpbin.WriteString(buf, string(p.Value().(blobstore.Key)))
+		err = buf.WriteByte(b)
+	case int64:
+		_, err = cmpbin.WriteInt(buf, t)
+	case float64:
+		_, err = cmpbin.WriteFloat64(buf, t)
+	case string:
+		_, err = cmpbin.WriteString(buf, t)
+	case []byte:
+		_, err = cmpbin.WriteBytes(buf, t)
+	case ds.GeoPoint:
+		err = WriteGeoPoint(buf, t)
+	case *ds.Key:
+		err = WriteKey(buf, context, t)
+
+	default:
+		err = fmt.Errorf("unsupported type: %T", t)
 	}
 	return
 }
@@ -301,11 +324,12 @@ func ReadProperty(buf Buffer, context KeyContext, appid, namespace string) (p ds
 	return
 }
 
-// WritePropertyMap writes an entire PropertyMap to the buffer. `context` behaves the same
-// way that it does for WriteKey. If WritePropertyMapDeterministic is true, then
-// the rows will be sorted by property name before they're serialized to buf
-// (mostly useful for testing, but also potentially useful if you need to make
-// a hash of the property data).
+// WritePropertyMap writes an entire PropertyMap to the buffer. `context`
+// behaves the same way that it does for WriteKey.
+//
+// If WritePropertyMapDeterministic is true, then the rows will be sorted by
+// property name before they're serialized to buf (mostly useful for testing,
+// but also potentially useful if you need to make a hash of the property data).
 //
 // Write skips metadata keys.
 func WritePropertyMap(buf Buffer, context KeyContext, pm ds.PropertyMap) (err error) {
@@ -466,7 +490,8 @@ func PropertySlice(vals ds.PropertySlice) SerializedPslice {
 		if v.IndexSetting() == ds.NoIndex {
 			continue
 		}
-		data := ToBytes(v.ForIndex())
+
+		data := ToBytes(v)
 		dataS := string(data)
 		if !dups.Add(dataS) {
 			continue
@@ -504,35 +529,29 @@ func PropertyMapPartially(k *ds.Key, pm ds.PropertyMap) (ret SerializedPmap) {
 }
 
 func toBytesErr(i interface{}, ctx KeyContext) (ret []byte, err error) {
-	buf := &bytes.Buffer{}
-	switch x := i.(type) {
-	case ds.GeoPoint:
-		err = WriteGeoPoint(buf, x)
+	buf := bytes.Buffer{}
 
+	switch t := i.(type) {
 	case ds.IndexColumn:
-		err = WriteIndexColumn(buf, x)
+		err = WriteIndexColumn(&buf, t)
 
 	case ds.IndexDefinition:
-		err = WriteIndexDefinition(buf, x)
-
-	case *ds.Key:
-		err = WriteKey(buf, ctx, x)
+		err = WriteIndexDefinition(&buf, t)
 
 	case ds.KeyTok:
-		err = WriteKeyTok(buf, x)
+		err = WriteKeyTok(&buf, t)
 
 	case ds.Property:
-		err = WriteProperty(buf, ctx, x)
+		err = WriteIndexProperty(&buf, ctx, t)
 
 	case ds.PropertyMap:
-		err = WritePropertyMap(buf, ctx, x)
-
-	case time.Time:
-		err = WriteTime(buf, x)
+		err = WritePropertyMap(&buf, ctx, t)
 
 	default:
-		err = fmt.Errorf("unknown type for ToBytes: %T", i)
+		_, v := ds.MkProperty(i).IndexTypeAndValue()
+		err = writeIndexValue(&buf, ctx, v)
 	}
+
 	if err == nil {
 		ret = buf.Bytes()
 	}

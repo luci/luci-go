@@ -20,7 +20,9 @@ var fakeKey = key("parentKind", "sid", "knd", 10)
 var rgenComplexTime = time.Date(
 	1986, time.October, 26, 1, 20, 00, 00, time.UTC)
 var rgenComplexKey = key("kind", "id")
-var rgenComplexTimeIdx = prop(rgenComplexTime).ForIndex()
+
+var _, rgenComplexTimeInt = prop(rgenComplexTime).IndexTypeAndValue()
+var rgenComplexTimeIdx = prop(rgenComplexTimeInt)
 
 var rowGenTestCases = []struct {
 	name        string
