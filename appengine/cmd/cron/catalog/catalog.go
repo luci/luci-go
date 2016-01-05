@@ -9,6 +9,7 @@ package catalog
 
 import (
 	"fmt"
+	"net/url"
 	"reflect"
 	"regexp"
 	"strings"
@@ -62,6 +63,9 @@ type Definition struct {
 
 	// Revision is config revision this definition was fetched from.
 	Revision string
+
+	// RevisionURL is URL to human readable page with config file.
+	RevisionURL string
 
 	// Schedule is cron job schedule in regular cron expression format.
 	Schedule string
@@ -150,12 +154,20 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	if err != nil {
 		return nil, err
 	}
+	configSetURL, err := cfgService.GetConfigSetLocation("projects/" + projectID)
+	if err != nil {
+		return nil, err
+	}
 	rawCfg, err := cfgService.GetConfig("projects/"+projectID, cat.configFile(c), false)
 	if err == config.ErrNoConfig {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
+	}
+	revisionURL := getRevisionURL(configSetURL, rawCfg.Revision, rawCfg.Path)
+	if revisionURL != "" {
+		logging.Infof(c, "Importing %s", revisionURL)
 	}
 	cfg := messages.ProjectConfig{}
 	if err = proto.UnmarshalText(rawCfg.Content, &cfg); err != nil {
@@ -180,10 +192,11 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 			continue
 		}
 		out = append(out, Definition{
-			JobID:    fmt.Sprintf("%s/%s", projectID, *job.Id),
-			Revision: rawCfg.Revision,
-			Schedule: *job.Schedule,
-			Task:     packed,
+			JobID:       fmt.Sprintf("%s/%s", projectID, *job.Id),
+			Revision:    rawCfg.Revision,
+			RevisionURL: revisionURL,
+			Schedule:    *job.Schedule,
+			Task:        packed,
 		})
 	}
 	return out, nil
@@ -197,6 +210,24 @@ func (cat *catalog) configFile(c context.Context) string {
 		return cat.configFileName
 	}
 	return info.Get(c).AppID() + ".cfg"
+}
+
+// getRevisionURL derives URL to a config file revision, given URL of a config
+// set (e.g. "https://host/repo/+/ref").
+func getRevisionURL(configSetURL *url.URL, rev, path string) string {
+	if path == "" || configSetURL == nil {
+		return ""
+	}
+	// repoAndRef is something like /infra/experimental/+/refs/heads/infra/config
+	repoAndRef := configSetURL.Path
+	plus := strings.Index(repoAndRef, "/+/")
+	if plus == -1 {
+		return ""
+	}
+	// Replace ref in path with revision, add path.
+	urlCpy := *configSetURL
+	urlCpy.Path = fmt.Sprintf("%s/+/%s/%s", repoAndRef[:plus], rev, path)
+	return urlCpy.String()
 }
 
 // validateJobProto verifies that messages.Job protobuf message makes sense.

@@ -34,7 +34,13 @@
     <hr>
   </div>
 
-  <h4>Definition (rev {{.Job.Revision}})</h4>
+  <h4>Definition
+  {{if .Job.RevisionURL}}
+    (rev <a href="{{.Job.RevisionURL}}" target="_blank">{{.Job.Revision}}</a>)
+  {{else}}
+    (rev {{.Job.Revision}})
+  {{end}}
+  </h4>
   <div class="row">
     <div class="col-sm-12">
       <pre>{{.Job.Definition}}</pre>

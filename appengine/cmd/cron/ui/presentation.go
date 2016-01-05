@@ -21,16 +21,17 @@ import (
 )
 
 type cronJob struct {
-	ProjectID  string
-	JobID      string
-	Schedule   string
-	Definition string
-	Revision   string
-	State      string
-	Overruns   int
-	NextRun    string
-	Paused     bool
-	LabelClass string
+	ProjectID   string
+	JobID       string
+	Schedule    string
+	Definition  string
+	Revision    string
+	RevisionURL string
+	State       string
+	Overruns    int
+	NextRun     string
+	Paused      bool
+	LabelClass  string
 
 	sortKey string
 }
@@ -60,16 +61,17 @@ func makeCronJob(j *engine.CronJob, now time.Time) *cronJob {
 	chunks := strings.Split(j.JobID, "/")
 
 	return &cronJob{
-		ProjectID:  chunks[0],
-		JobID:      chunks[1],
-		Schedule:   j.Schedule,
-		Definition: taskToText(j.Task),
-		Revision:   j.Revision,
-		State:      string(j.State.State),
-		Overruns:   j.State.Overruns,
-		NextRun:    nextRun,
-		Paused:     j.Paused,
-		LabelClass: stateToLabelClass[j.State.State],
+		ProjectID:   chunks[0],
+		JobID:       chunks[1],
+		Schedule:    j.Schedule,
+		Definition:  taskToText(j.Task),
+		Revision:    j.Revision,
+		RevisionURL: j.RevisionURL,
+		State:       string(j.State.State),
+		Overruns:    j.State.Overruns,
+		NextRun:     nextRun,
+		Paused:      j.Paused,
+		LabelClass:  stateToLabelClass[j.State.State],
 
 		sortKey: j.JobID,
 	}
@@ -109,6 +111,7 @@ type invocation struct {
 	InvID       int64
 	Attempt     int64
 	Revision    string
+	RevisionURL string
 	Definition  string
 	TriggeredBy string
 	Started     string
@@ -154,6 +157,7 @@ func makeInvocation(i *engine.Invocation, now time.Time) *invocation {
 		InvID:       i.ID,
 		Attempt:     i.RetryCount + 1,
 		Revision:    i.Revision,
+		RevisionURL: i.RevisionURL,
 		Definition:  taskToText(i.Task),
 		TriggeredBy: triggeredBy,
 		Started:     humanize.RelTime(i.Started, now, "ago", "from now"),

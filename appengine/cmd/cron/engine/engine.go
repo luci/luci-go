@@ -179,8 +179,12 @@ type CronJob struct {
 	// manually via "Run now" button.
 	Paused bool `gae:",noindex"`
 
-	// Revision is last seen job definition revision, to skip useless updates.
+	// Revision is last seen job definition revision.
 	Revision string `gae:",noindex"`
+
+	// RevisionURL is URL to human readable page with config file at
+	// an appropriate revision.
+	RevisionURL string `gae:",noindex"`
 
 	// Schedule is cron job schedule in regular cron expression format.
 	Schedule string `gae:",noindex"`
@@ -227,6 +231,7 @@ func (e *CronJob) isEqual(other *CronJob) bool {
 		e.Enabled == other.Enabled &&
 		e.Paused == other.Paused &&
 		e.Revision == other.Revision &&
+		e.RevisionURL == other.RevisionURL &&
 		e.Schedule == other.Schedule &&
 		bytes.Equal(e.Task, other.Task) &&
 		e.State == other.State)
@@ -273,6 +278,10 @@ type Invocation struct {
 	// For informational purpose.
 	Revision string `gae:",noindex"`
 
+	// RevisionURL is URL to human readable page with config file at
+	// an appropriate revision. For informational purpose.
+	RevisionURL string `gae:",noindex"`
+
 	// Task is cron job payload for this invocation in binary serialized form.
 	// For informational purpose. See Catalog.UnmarshalTask().
 	Task []byte `gae:",noindex"`
@@ -308,6 +317,7 @@ func (e *Invocation) isEqual(other *Invocation) bool {
 		e.Finished == other.Finished &&
 		e.InvocationNonce == other.InvocationNonce &&
 		e.Revision == other.Revision &&
+		e.RevisionURL == other.RevisionURL &&
 		bytes.Equal(e.Task, other.Task) &&
 		e.DebugLog == other.DebugLog &&
 		e.RetryCount == other.RetryCount &&
@@ -928,6 +938,7 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 
 		// Update the job in full before running any state changes.
 		job.Revision = def.Revision
+		job.RevisionURL = def.RevisionURL
 		job.Enabled = true
 		job.Schedule = def.Schedule
 		job.Task = def.Task
@@ -1068,6 +1079,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 			InvocationNonce: invocationNonce,
 			TriggeredBy:     triggeredBy,
 			Revision:        job.Revision,
+			RevisionURL:     job.RevisionURL,
 			Task:            job.Task,
 			RetryCount:      int64(retryCount),
 			Status:          task.StatusStarting,
