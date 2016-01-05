@@ -6,6 +6,7 @@
   table-layout: fixed;
 }
 </style>
+{{template "job-action-scripts" .}}
 {{end}}
 
 {{define "content"}}
@@ -33,18 +34,9 @@
           <tr>
             <td><a href="/jobs/{{.ProjectID}}/{{.JobID}}">{{.JobID}}</a></td>
             <td>{{.Schedule}}</td>
-            <td>{{.State}}</td>
+            <td><span class="label {{.LabelClass}}">{{.State}}</span></td>
             <td>{{.NextRun}}</td>
-            <td>
-              <form style="display: inline"
-                    action="/actions/runJob/{{.ProjectID}}/{{.JobID}}"
-                    method="POST">
-                {{$.XsrfTokenField}}
-                <button style="display: inline" type="submit" class="btn btn-danger btn-xs">
-                  Run now
-                </button>
-              </form>
-            </td>
+            <td>{{template "job-action-buttons" .}}</td>
           </tr>
         {{end}}
         </tbody>

@@ -16,6 +16,7 @@ import (
 
 	"github.com/luci/luci-go/appengine/cmd/cron/engine"
 	"github.com/luci/luci-go/appengine/cmd/cron/messages"
+	"github.com/luci/luci-go/appengine/cmd/cron/schedule"
 	"github.com/luci/luci-go/appengine/cmd/cron/task"
 )
 
@@ -28,16 +29,31 @@ type cronJob struct {
 	State      string
 	Overruns   int
 	NextRun    string
+	Paused     bool
+	LabelClass string
 
 	sortKey string
 }
 
+var stateToLabelClass = map[engine.StateKind]string{
+	engine.JobStateDisabled:  "label-default",
+	engine.JobStateScheduled: "label-primary",
+	engine.JobStateSuspended: "label-default",
+	engine.JobStateQueued:    "label-primary",
+	engine.JobStateRunning:   "label-warning",
+	engine.JobStateOverrun:   "label-danger",
+	engine.JobStateSlowQueue: "label-danger",
+}
+
 func makeCronJob(j *engine.CronJob, now time.Time) *cronJob {
 	nextRun := ""
-	if ts := j.State.TickTime; !ts.IsZero() {
+	switch ts := j.State.TickTime; {
+	case ts == schedule.DistantFuture:
+		nextRun = "-"
+	case !ts.IsZero():
 		nextRun = humanize.RelTime(ts, now, "ago", "from now")
-	} else {
-		nextRun = "waiting"
+	default:
+		nextRun = "not scheduled yet"
 	}
 
 	// JobID has form <project>/<id>. Split it into components.
@@ -52,6 +68,8 @@ func makeCronJob(j *engine.CronJob, now time.Time) *cronJob {
 		State:      string(j.State.State),
 		Overruns:   j.State.Overruns,
 		NextRun:    nextRun,
+		Paused:     j.Paused,
+		LabelClass: stateToLabelClass[j.State.State],
 
 		sortKey: j.JobID,
 	}
@@ -98,6 +116,7 @@ type invocation struct {
 	Status      string
 	DebugLog    string
 	RowClass    string
+	LabelClass  string
 	ViewURL     string
 }
 
@@ -106,6 +125,13 @@ var statusToRowClass = map[task.Status]string{
 	task.StatusRunning:   "warning",
 	task.StatusSucceeded: "success",
 	task.StatusFailed:    "danger",
+}
+
+var statusToLabelClass = map[task.Status]string{
+	task.StatusStarting:  "label-default",
+	task.StatusRunning:   "label-warning",
+	task.StatusSucceeded: "label-success",
+	task.StatusFailed:    "label-danger",
 }
 
 func makeInvocation(i *engine.Invocation, now time.Time) *invocation {
@@ -135,6 +161,7 @@ func makeInvocation(i *engine.Invocation, now time.Time) *invocation {
 		Status:      string(i.Status),
 		DebugLog:    i.DebugLog,
 		RowClass:    statusToRowClass[i.Status],
+		LabelClass:  statusToLabelClass[i.Status],
 		ViewURL:     i.ViewURL,
 	}
 }

@@ -11,7 +11,6 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/server/auth/xsrf"
 	"github.com/luci/luci-go/server/templates"
 )
 
@@ -21,7 +20,6 @@ func indexPage(c context.Context, w http.ResponseWriter, r *http.Request, p http
 		panic(err)
 	}
 	templates.MustRender(c, w, "pages/index.html", map[string]interface{}{
-		"XsrfTokenField": xsrf.TokenField(c),
-		"Jobs":           convertToSortedCronJobs(jobs, clock.Now(c).UTC()),
+		"Jobs": convertToSortedCronJobs(jobs, clock.Now(c).UTC()),
 	})
 }

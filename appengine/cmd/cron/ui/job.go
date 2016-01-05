@@ -15,7 +15,6 @@ import (
 	"github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/xsrf"
 	"github.com/luci/luci-go/server/templates"
 )
 
@@ -64,27 +63,32 @@ func jobPage(c context.Context, w http.ResponseWriter, r *http.Request, p httpro
 
 	now := clock.Now(c).UTC()
 	templates.MustRender(c, w, "pages/job.html", map[string]interface{}{
-		"XsrfTokenField": xsrf.TokenField(c),
-		"Job":            makeCronJob(job, now),
-		"Invocations":    convertToInvocations(invs, now),
-		"PrevCursor":     prevCursor,
-		"NextCursor":     nextCursor,
+		"Job":         makeCronJob(job, now),
+		"Invocations": convertToInvocations(invs, now),
+		"PrevCursor":  prevCursor,
+		"NextCursor":  nextCursor,
 	})
 }
 
-func runJobAction(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+////////////////////////////////////////////////////////////////////////////////
+// Actions.
+
+func isJobOwner(c context.Context, projectID, jobID string) bool {
 	// TODO(vadimsh): Do real ACLs.
-	switch ok, err := auth.IsMember(c, "administrators"); {
-	case err != nil:
+	ok, err := auth.IsMember(c, "administrators")
+	if err != nil {
 		panic(err)
-	case !ok:
+	}
+	return ok
+}
+
+func runJobAction(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	projectID := p.ByName("ProjectID")
+	jobID := p.ByName("JobID")
+	if !isJobOwner(c, projectID, jobID) {
 		http.Error(w, "Forbidden", 403)
 		return
 	}
-
-	projectID := p.ByName("ProjectID")
-	jobID := p.ByName("JobID")
-	fullJobID := projectID + "/" + jobID
 
 	// genericReply renders "we did something (or we failed to do something)"
 	// page, shown on error or if invocation is starting for too long.
@@ -99,6 +103,7 @@ func runJobAction(c context.Context, w http.ResponseWriter, r *http.Request, p h
 	// Enqueue new invocation request, and wait for corresponding invocation to
 	// appear. Give up if task queue or datastore indexes are lagging too much.
 	e := config(c).Engine
+	fullJobID := projectID + "/" + jobID
 	invNonce, err := e.TriggerInvocation(c, fullJobID, auth.CurrentIdentity(c))
 	if err != nil {
 		genericReply(err)
@@ -128,4 +133,31 @@ func runJobAction(c context.Context, w http.ResponseWriter, r *http.Request, p h
 	} else {
 		genericReply(nil) // deadline
 	}
+}
+
+func pauseJobAction(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	handleJobAction(c, w, r, p, func(jobID string) error {
+		who := auth.CurrentIdentity(c)
+		return config(c).Engine.PauseJob(c, jobID, who)
+	})
+}
+
+func resumeJobAction(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	handleJobAction(c, w, r, p, func(jobID string) error {
+		who := auth.CurrentIdentity(c)
+		return config(c).Engine.ResumeJob(c, jobID, who)
+	})
+}
+
+func handleJobAction(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params, cb func(string) error) {
+	projectID := p.ByName("ProjectID")
+	jobID := p.ByName("JobID")
+	if !isJobOwner(c, projectID, jobID) {
+		http.Error(w, "Forbidden", 403)
+		return
+	}
+	if err := cb(projectID + "/" + jobID); err != nil {
+		panic(err)
+	}
+	http.Redirect(w, r, fmt.Sprintf("/jobs/%s/%s", projectID, jobID), http.StatusFound)
 }

@@ -49,6 +49,8 @@ func InstallHandlers(r *httprouter.Router, base middleware.Base, cfg Config) {
 
 	// All POST forms must be protected with XSRF token.
 	r.POST("/actions/runJob/:ProjectID/:JobID", wrap(xsrf.WithTokenCheck(runJobAction)))
+	r.POST("/actions/pauseJob/:ProjectID/:JobID", wrap(xsrf.WithTokenCheck(pauseJobAction)))
+	r.POST("/actions/resumeJob/:ProjectID/:JobID", wrap(xsrf.WithTokenCheck(resumeJobAction)))
 }
 
 type configContextKey int
@@ -79,12 +81,17 @@ func prepareTemplates(templatesPath string) *templates.Bundle {
 			if err != nil {
 				return nil, err
 			}
+			token, err := xsrf.Token(c)
+			if err != nil {
+				return nil, err
+			}
 			return templates.Args{
 				"AppVersion":  strings.Split(info.Get(c).VersionID(), ".")[0],
 				"IsAnonymous": auth.CurrentIdentity(c) == "anonymous:anonymous",
 				"User":        auth.CurrentUser(c),
 				"LoginURL":    loginURL,
 				"LogoutURL":   logoutURL,
+				"XsrfToken":   token,
 			}, nil
 		},
 	}

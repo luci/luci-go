@@ -5,7 +5,11 @@
 #invocations-table {
   table-layout: fixed;
 }
+.underline {
+  text-decoration: underline !important;
+}
 </style>
+{{template "job-action-scripts" .}}
 {{end}}
 
 {{define "content"}}
@@ -18,19 +22,12 @@
 
 <div class="container">
   <div class="row">
-    <div class="col-sm-3"><b>State:</b> {{.Job.State}}</div>
+    <div class="col-sm-3"><b>State:</b>
+      <span class="label {{.Job.LabelClass}}">{{.Job.State}}</span>
+    </div>
     <div class="col-sm-3"><b>Schedule:</b> {{.Job.Schedule}}</div>
     <div class="col-sm-3"><b>Next run:</b> {{.Job.NextRun}}</div>
-    <div class="col-sm-3"><b>Actions:</b>
-      <form style="display: inline"
-            action="/actions/runJob/{{.Job.ProjectID}}/{{.Job.JobID}}"
-            method="POST">
-        {{.XsrfTokenField}}
-        <button style="display: inline" type="submit" class="btn btn-danger btn-xs">
-          Run now
-        </button>
-      </form>
-    </div>
+    <div class="col-sm-3"><b>Actions:</b>{{template "job-action-buttons" .Job}}</div>
   </div>
 
   <div class="col-sm-12">
@@ -65,9 +62,9 @@
             <td>{{.Duration}}</td>
             <td>
             {{if .ViewURL}}
-              <a href="{{.ViewURL}}" target="_blank">{{.Status}}</a>
+              <a href="{{.ViewURL}}" target="_blank" class="underline label {{.LabelClass}}">{{.Status}}</a>
             {{else}}
-              {{.Status}}
+              <span class="label {{.LabelClass}}">{{.Status}}</span>
             {{end}}
             </td>
           </tr>

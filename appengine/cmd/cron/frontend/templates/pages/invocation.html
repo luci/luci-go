@@ -1,6 +1,11 @@
 {{define "title"}}Cron Service :: {{.ProjectID}} :: {{.JobID}} :: {{.Inv.InvID}}{{end}}
 
 {{define "head"}}
+<style type="text/css">
+.underline {
+  text-decoration: underline !important;
+}
+</style>
 {{end}}
 
 {{define "content"}}
@@ -14,7 +19,13 @@
 
 <div class="container">
   <div class="row">
-    <div class="col-sm-3"><b>Status:</b> {{.Inv.Status}}</div>
+    <div class="col-sm-3"><b>Status:</b>
+      {{if .Inv.ViewURL}}
+        <a href="{{.Inv.ViewURL}}" target="_blank" class="underline label {{.Inv.LabelClass}}">{{.Inv.Status}}</a>
+      {{else}}
+        <span class="label {{.Inv.LabelClass}}">{{.Inv.Status}}</span>
+      {{end}}
+    </div>
     <div class="col-sm-3"><b>Started:</b> {{.Inv.Started}}</div>
     <div class="col-sm-3"><b>Triggered by:</b> {{.Inv.TriggeredBy}}</div>
     <div class="col-sm-3"><b>Duration:</b> {{.Inv.Duration}}</div>
