@@ -147,7 +147,7 @@ func TestSerializeCell(t *testing.T) {
 		}, defaultTarget)
 		So(ret, ShouldResemble, &pb.MetricsData{
 			Name:             proto.String("foo"),
-			MetricNamePrefix: proto.String("/chrome/infra"),
+			MetricNamePrefix: proto.String("/chrome/infra/"),
 			Fields:           []*pb.MetricsField{},
 			StartTimestampUs: proto.Uint64(946782245000000),
 			Task:             &pb.Task{},
@@ -171,7 +171,7 @@ func TestSerializeCell(t *testing.T) {
 		}, defaultTarget)
 		So(ret, ShouldResemble, &pb.MetricsData{
 			Name:             proto.String("foo"),
-			MetricNamePrefix: proto.String("/chrome/infra"),
+			MetricNamePrefix: proto.String("/chrome/infra/"),
 			Fields:           []*pb.MetricsField{},
 			StartTimestampUs: proto.Uint64(946782245000000),
 			Task:             &pb.Task{},
@@ -195,7 +195,7 @@ func TestSerializeCell(t *testing.T) {
 		}, defaultTarget)
 		So(ret, ShouldResemble, &pb.MetricsData{
 			Name:             proto.String("foo"),
-			MetricNamePrefix: proto.String("/chrome/infra"),
+			MetricNamePrefix: proto.String("/chrome/infra/"),
 			Fields:           []*pb.MetricsField{},
 			StartTimestampUs: proto.Uint64(946782245000000),
 			Task:             &pb.Task{},
@@ -219,7 +219,7 @@ func TestSerializeCell(t *testing.T) {
 		}, defaultTarget)
 		So(ret, ShouldResemble, &pb.MetricsData{
 			Name:             proto.String("foo"),
-			MetricNamePrefix: proto.String("/chrome/infra"),
+			MetricNamePrefix: proto.String("/chrome/infra/"),
 			Fields:           []*pb.MetricsField{},
 			StartTimestampUs: proto.Uint64(946782245000000),
 			Task:             &pb.Task{},
@@ -243,7 +243,7 @@ func TestSerializeCell(t *testing.T) {
 		}, defaultTarget)
 		So(ret, ShouldResemble, &pb.MetricsData{
 			Name:             proto.String("foo"),
-			MetricNamePrefix: proto.String("/chrome/infra"),
+			MetricNamePrefix: proto.String("/chrome/infra/"),
 			Fields:           []*pb.MetricsField{},
 			StartTimestampUs: proto.Uint64(946782245000000),
 			Task:             &pb.Task{},
@@ -267,7 +267,7 @@ func TestSerializeCell(t *testing.T) {
 		}, defaultTarget)
 		So(ret, ShouldResemble, &pb.MetricsData{
 			Name:             proto.String("foo"),
-			MetricNamePrefix: proto.String("/chrome/infra"),
+			MetricNamePrefix: proto.String("/chrome/infra/"),
 			Fields:           []*pb.MetricsField{},
 			StartTimestampUs: proto.Uint64(946782245000000),
 			Task:             &pb.Task{},
@@ -296,7 +296,7 @@ func TestSerializeCell(t *testing.T) {
 		}, defaultTarget)
 		So(ret, ShouldResemble, &pb.MetricsData{
 			Name:             proto.String("foo"),
-			MetricNamePrefix: proto.String("/chrome/infra"),
+			MetricNamePrefix: proto.String("/chrome/infra/"),
 			Fields:           []*pb.MetricsField{},
 			StartTimestampUs: proto.Uint64(946782245000000),
 			Task: &pb.Task{

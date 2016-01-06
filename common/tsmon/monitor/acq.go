@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	metricNamePrefix = "/chrome/infra"
+	metricNamePrefix = "/chrome/infra/"
 )
 
 func serializeCells(cells []types.Cell, defaultTarget types.Target) *pb.MetricsCollection {
