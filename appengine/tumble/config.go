@@ -56,6 +56,12 @@ type Config struct {
 	//
 	// It defaults to 128. A negative value means no limit.
 	ProcessMaxBatchSize int32
+
+	// DelayedMutations enables the 'DelayedMutation' mutation subtype.
+	//
+	// If you set this to true, you MUST also add the second index mentioned
+	// in the package docs.
+	DelayedMutations bool
 }
 
 type key int
@@ -133,10 +139,10 @@ func (c *Config) ProcessURLPattern() string {
 
 // ProcessURL creates a new url for a process shard taskqueue task, including
 // the given timestamp and shard number.
-func (c *Config) ProcessURL(ts time.Time, shard uint64) string {
+func (c *Config) ProcessURL(ts timestamp, shard uint64) string {
 	return strings.NewReplacer(
 		":shard_id", fmt.Sprint(shard),
-		":timestamp", fmt.Sprint(ts.Unix())).Replace(c.ProcessURLPattern())
+		":timestamp", fmt.Sprint(ts)).Replace(c.ProcessURLPattern())
 }
 
 // FireAllTasksURL returns the url intended to be hit by appengine cron to fire

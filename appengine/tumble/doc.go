@@ -71,6 +71,12 @@
 //     - name: ExpandedShard
 //     - name: TargetRoot
 //
+// 2a. If you enable DelayedMutations in your configuration, you must also add
+//   - kind: tumble.Mutation
+//     properties:
+//     - name: TargetRoot
+//     - name: ProcessAfter
+//
 // 3. You must add a new taskqueue for tumble (example parameters):
 //
 //   - name: tumble  # NOTE: name must match the name in the tumble.Config.

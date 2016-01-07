@@ -11,9 +11,12 @@ import (
 	"fmt"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/bit_field"
+	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/memlogger"
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -74,6 +77,8 @@ type OutgoingMessage struct {
 
 	Success bf.BitField
 	Failure bf.BitField
+
+	Notified bool
 }
 
 type IncomingMessage struct {
@@ -136,8 +141,47 @@ func (w *WriteReceipt) RollForward(c context.Context) ([]Mutation, error) {
 		m.Failure.Set(idx)
 	}
 
+	err := ds.Put(m)
+	if err != nil {
+		return nil, err
+	}
+
+	if m.Success.CountSet()+m.Failure.CountSet() == uint64(len(m.Recipients)) {
+		return []Mutation{&ReminderMessage{
+			w.Message, m.FromUser.StringID(), clock.Now(c).UTC().Add(time.Minute * 5)},
+		}, nil
+	}
+
+	return nil, nil
+}
+
+type ReminderMessage struct {
+	Message   *datastore.Key
+	Recipient string
+	When      time.Time
+}
+
+var _ DelayedMutation = (*ReminderMessage)(nil)
+
+func (r *ReminderMessage) Root(ctx context.Context) *datastore.Key {
+	return r.Message.Root()
+}
+
+func (r *ReminderMessage) RollForward(c context.Context) ([]Mutation, error) {
+	ds := datastore.Get(c)
+	m := &OutgoingMessage{ID: r.Message.IntID(), FromUser: r.Message.Parent()}
+	if err := ds.Get(m); err != nil {
+		return nil, err
+	}
+	if m.Notified {
+		return nil, nil
+	}
+	m.Notified = true
 	return nil, ds.Put(m)
 }
+
+func (r *ReminderMessage) HighPriority() bool      { return false }
+func (r *ReminderMessage) ProcessAfter() time.Time { return r.When }
 
 // Embedder is just to prove that gob doesn't flip out when serializing
 // Mutations within Mutations now. Presumably in a real instance of this you
@@ -166,6 +210,7 @@ func (*NotRegistered) RollForward(context.Context) ([]Mutation, error) { return 
 func init() {
 	Register((*WriteMessage)(nil))
 	Register((*SendMessage)(nil))
+	Register((*ReminderMessage)(nil))
 	Register((*WriteReceipt)(nil))
 	Register((*Embedder)(nil))
 }
@@ -292,11 +337,14 @@ func TestHighLevel(t *testing.T) {
 
 				// hacky proof that all 200 incoming message reciepts were buffered
 				// appropriately.
+				//
+				// The extra mutation at the end is supposed to be delayed, but we
+				// didn't enable Delayed messages in this config.
 				So(l.Has(logging.Info, "successfully processed 128 mutations (0 tail-call), adding 0 more", map[string]interface{}{
 					"key":      "tumble.23.lock",
 					"clientID": "-62132730884_23",
 				}), ShouldBeTrue)
-				So(l.Has(logging.Info, "successfully processed 72 mutations (0 tail-call), adding 0 more", map[string]interface{}{
+				So(l.Has(logging.Info, "successfully processed 73 mutations (1 tail-call), adding 0 more", map[string]interface{}{
 					"key":      "tumble.23.lock",
 					"clientID": "-62132730884_23",
 				}), ShouldBeTrue)
@@ -305,6 +353,65 @@ func TestHighLevel(t *testing.T) {
 				So(outMsg.Success.All(true), ShouldBeTrue)
 				So(outMsg.Success.Size(), ShouldEqual, 200)
 
+			})
+
+			Convey("delaying messages works", func() {
+				ds.Testable().Consistent(false)
+				cfg.DelayedMutations = true
+				ctx = Use(ctx, cfg)
+
+				So(ds.PutMulti([]User{
+					{"sender"},
+					{"recipient"},
+				}), ShouldBeNil)
+
+				outMsg, err := charlie.SendMessage(ctx, "Hey there", "recipient")
+				So(err, ShouldBeNil)
+
+				// do all the SendMessages
+				l.Reset()
+				ds.Testable().CatchupIndexes()
+				testing.AdvanceTime(ctx)
+
+				// forgot to add the extra index!
+				So(func() { testing.Iterate(ctx) }, ShouldPanicLike, "Insufficient indexes")
+				ds.Testable().AddIndexes(&datastore.IndexDefinition{
+					Kind: "tumble.Mutation",
+					SortBy: []datastore.IndexColumn{
+						{Property: "TargetRoot"},
+						{Property: "ProcessAfter"},
+					},
+				})
+				ds.Testable().CatchupIndexes()
+
+				So(testing.Iterate(ctx), ShouldEqual, 1)
+
+				// do all the WriteReceipts
+				ds.Testable().CatchupIndexes()
+				testing.AdvanceTime(ctx)
+				So(testing.Iterate(ctx), ShouldEqual, 1)
+
+				So(ds.Get(outMsg), ShouldBeNil)
+				So(outMsg.Success.All(true), ShouldBeTrue)
+				So(outMsg.Success.Size(), ShouldEqual, 1)
+				So(outMsg.Notified, ShouldBeFalse)
+
+				// Running another iteration should find nothing
+				l.Reset()
+				ds.Testable().CatchupIndexes()
+				testing.AdvanceTime(ctx)
+				So(testing.Iterate(ctx), ShouldEqual, 0)
+				So(l.Has(
+					logging.Info, "skipping task: "+cfg.ProcessURL(-62132730576, 23), nil,
+				), ShouldBeTrue)
+
+				// Now it'll find something
+				ds.Testable().CatchupIndexes()
+				clock.Get(ctx).(testclock.TestClock).Add(time.Minute * 5)
+				So(testing.Iterate(ctx), ShouldEqual, 1)
+
+				So(ds.Get(outMsg), ShouldBeNil)
+				So(outMsg.Notified, ShouldBeTrue)
 			})
 
 		})

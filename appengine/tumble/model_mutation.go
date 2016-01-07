@@ -13,10 +13,12 @@ import (
 	"math"
 	"reflect"
 	"sync"
+	"time"
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/meta"
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
@@ -68,6 +70,40 @@ type Mutation interface {
 	RollForward(c context.Context) ([]Mutation, error)
 }
 
+// DelayedMutation is a Mutation which allows you to defer its processing
+// until a certain absolute time.
+//
+// As a side effect, tumble will /mostly/ process items in their chronological
+// ProcessAfter order, instead of the undefined order.
+//
+// Your tumble configuration must have DelayedMutations set, and you must have
+// added the appropriate index to use these. If DelayedMutations is not set,
+// then tumble will ignore the ProcessAfter and HighPriorty values here, and
+// process mutations as quickly as possible in no particular order.
+type DelayedMutation interface {
+	Mutation
+
+	// ProcessAfter will be called once when scheduling this Mutation. The
+	// mutation will be recorded to datastore immediately, but tumble will skip it
+	// for processing until at least the time that's returned here. Multiple calls
+	// to this method should always return the same time.
+	//
+	// A Time value in the past will get reset to "next available time slot",
+	// unless HighPriority() returns true.
+	ProcessAfter() time.Time
+
+	// HighPriority indicates that this mutation should be processed before
+	// others, if possible, and must be set in conjunction with a ProcessAfter
+	// timestamp that occurs in the past.
+	//
+	// Tumble works by processing Mutations in the order of their creation, or
+	// ProcessAfter times, whichever is later. If HighPriority is true, then a
+	// ProcessAfter time in the past will take precedence over Mutations which
+	// may actually have been recorded after this one, in the event that tumble
+	// is processing tasks slower than they're being created.
+	HighPriority() bool
+}
+
 type realMutation struct {
 	// TODO(riannucci): add functionality to luci/gae/service/datastore so that
 	// GetMeta/SetMeta may be overridden by the struct.
@@ -76,6 +112,7 @@ type realMutation struct {
 	Parent *datastore.Key `gae:"$parent"`
 
 	ExpandedShard int64
+	ProcessAfter  time.Time
 	TargetRoot    *datastore.Key
 
 	Version string
@@ -83,17 +120,17 @@ type realMutation struct {
 	Data    []byte `gae:",noindex"`
 }
 
-func (r *realMutation) shard(cfg *Config) uint64 {
+func (r *realMutation) shard(cfg *Config) taskShard {
 	expandedShardsPerShard := math.MaxUint64 / cfg.NumShards
 	ret := uint64(r.ExpandedShard-math.MinInt64) / expandedShardsPerShard
 	// account for rounding errors on the last shard.
 	if ret >= cfg.NumShards {
 		ret = cfg.NumShards - 1
 	}
-	return ret
+	return taskShard{ret, mkTimestamp(cfg, r.ProcessAfter)}
 }
 
-func putMutations(c context.Context, fromRoot *datastore.Key, muts []Mutation, round uint64) (shardSet map[uint64]struct{}, mutKeys []*datastore.Key, err error) {
+func putMutations(c context.Context, fromRoot *datastore.Key, muts []Mutation, round uint64) (shardSet map[taskShard]struct{}, mutKeys []*datastore.Key, err error) {
 	cfg := GetConfig(c)
 
 	if len(muts) == 0 {
@@ -107,12 +144,24 @@ func putMutations(c context.Context, fromRoot *datastore.Key, muts []Mutation, r
 
 	ds := datastore.Get(c)
 
-	shardSet = map[uint64]struct{}{}
+	now := clock.Now(c).UTC()
+
+	shardSet = map[taskShard]struct{}{}
 	toPut := make([]*realMutation, len(muts))
 	mutKeys = make([]*datastore.Key, len(muts))
 	for i, m := range muts {
+		when := now
+		if cfg.DelayedMutations {
+			if dm, ok := m.(DelayedMutation); ok {
+				targetTime := dm.ProcessAfter()
+				if dm.HighPriority() || targetTime.After(now) {
+					when = targetTime
+				}
+			}
+		}
+
 		id := fmt.Sprintf("%016x_%08x_%08x", version, round, i)
-		toPut[i], err = newRealMutation(c, id, fromRoot, m)
+		toPut[i], err = newRealMutation(c, id, fromRoot, m, when)
 		if err != nil {
 			logging.Errorf(c, "error creating real mutation for %v: %s", m, err)
 			return
@@ -140,7 +189,7 @@ func getAppVersion(c context.Context) string {
 	return appVersion.version
 }
 
-func newRealMutation(c context.Context, id string, parent *datastore.Key, m Mutation) (*realMutation, error) {
+func newRealMutation(c context.Context, id string, parent *datastore.Key, m Mutation, when time.Time) (*realMutation, error) {
 	t := reflect.TypeOf(m).String()
 	if _, ok := registry[t]; !ok {
 		return nil, fmt.Errorf("Attempting to add unregistered mutation %v: %v", t, m)
@@ -162,6 +211,7 @@ func newRealMutation(c context.Context, id string, parent *datastore.Key, m Muta
 		Parent: parent,
 
 		ExpandedShard: eshard,
+		ProcessAfter:  when,
 		TargetRoot:    root,
 
 		Version: getAppVersion(c),

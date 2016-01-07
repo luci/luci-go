@@ -58,6 +58,16 @@ func (t Testing) Context() context.Context {
 			{Property: "TargetRoot"},
 		},
 	})
+
+	if cfg.DelayedMutations {
+		ds.Testable().AddIndexes(&datastore.IndexDefinition{
+			Kind: "tumble.Mutation",
+			SortBy: []datastore.IndexColumn{
+				{Property: "TargetRoot"},
+				{Property: "ProcessAfter"},
+			},
+		})
+	}
 	ds.Testable().Consistent(true)
 
 	return ctx
@@ -75,8 +85,11 @@ func (t Testing) Iterate(c context.Context) int {
 
 	ret := 0
 	tsks := tq.Testable().GetScheduledTasks()[cfg.Name]
+	logging.Debugf(c, "got tasks: %v", tsks)
 	for _, tsk := range tsks {
-		if tsk.ETA.After(clk.Now()) {
+		logging.Debugf(c, "found task: %v", tsk)
+		if tsk.ETA.After(clk.Now().UTC()) {
+			logging.Infof(c, "skipping task: %s", tsk.Path)
 			continue
 		}
 		toks := strings.Split(tsk.Path, "/")
@@ -88,7 +101,8 @@ func (t Testing) Iterate(c context.Context) int {
 			{Key: "timestamp", Value: toks[6]},
 		})
 		if rec.Code != 200 {
-			panic(fmt.Errorf("ProcessShardHandler returned !200: %d", rec.Code))
+			lmsg := logging.Get(c).(*memlogger.MemLogger).Messages()
+			panic(fmt.Errorf("ProcessShardHandler returned !200: %d: %#v", rec.Code, lmsg))
 		}
 		if err := tq.Delete(tsk, cfg.Name); err != nil {
 			panic(fmt.Errorf("Deleting task failed: %s", err))
@@ -115,7 +129,7 @@ func (t Testing) AdvanceTime(c context.Context) {
 	clk := clock.Get(c).(testclock.TestClock)
 	cfg := GetConfig(c)
 	toAdd := cfg.TemporalMinDelay + cfg.TemporalRoundFactor + time.Second
-	logging.Infof(c, "adding %s to %s", toAdd, clk.Now())
+	logging.Infof(c, "adding %s to %s", toAdd, clk.Now().UTC())
 	clk.Add(toAdd)
 }
 

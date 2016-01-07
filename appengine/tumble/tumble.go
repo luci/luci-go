@@ -28,14 +28,14 @@ func RunMutation(c context.Context, m Mutation) error {
 	return nil
 }
 
-func enterTransactionInternal(c context.Context, m Mutation, round uint64) (map[uint64]struct{}, []Mutation, []*datastore.Key, error) {
+func enterTransactionInternal(c context.Context, m Mutation, round uint64) (map[taskShard]struct{}, []Mutation, []*datastore.Key, error) {
 	fromRoot := m.Root(c)
 
 	if fromRoot == nil {
 		return nil, nil, nil, fmt.Errorf("tumble: Passing nil as fromRoot is illegal")
 	}
 
-	shardSet := map[uint64]struct{}(nil)
+	shardSet := map[taskShard]struct{}(nil)
 	retMuts := []Mutation(nil)
 	retMutKeys := []*datastore.Key(nil)
 

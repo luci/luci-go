@@ -6,7 +6,9 @@ package tumble
 
 import (
 	"fmt"
+	"math"
 	"net/http"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/service/taskqueue"
@@ -16,7 +18,26 @@ import (
 	"golang.org/x/net/context"
 )
 
-func fireTasks(c context.Context, shards map[uint64]struct{}) bool {
+type timestamp int64
+
+const minTS timestamp = math.MinInt64
+
+func (t timestamp) Unix() time.Time {
+	return time.Unix((int64)(t), 0).UTC()
+}
+
+func mkTimestamp(cfg *Config, t time.Time) timestamp {
+	trf := cfg.TemporalRoundFactor
+	eta := t.UTC().Add(cfg.TemporalMinDelay + trf).Round(trf)
+	return timestamp(eta.Unix())
+}
+
+type taskShard struct {
+	shard uint64
+	time  timestamp
+}
+
+func fireTasks(c context.Context, shards map[taskShard]struct{}) bool {
 	if len(shards) == 0 {
 		return true
 	}
@@ -24,34 +45,44 @@ func fireTasks(c context.Context, shards map[uint64]struct{}) bool {
 	tq := taskqueue.Get(c)
 
 	cfg := GetConfig(c)
+	nextSlot := mkTimestamp(&cfg, clock.Now(c).UTC())
+	logging.Fields{
+		"slot": nextSlot,
+	}.Debugf(c, "got next slot")
 
-	trf := cfg.TemporalRoundFactor
-	eta := clock.Now(c).UTC().Add(cfg.TemporalMinDelay + trf).Round(trf)
 	tasks := make([]*taskqueue.Task, 0, len(shards))
 
 	for shard := range shards {
-		tasks = append(tasks, &taskqueue.Task{
-			Name: fmt.Sprintf("%d_%d", eta.Unix(), shard),
+		eta := nextSlot
+		if cfg.DelayedMutations && shard.time > eta {
+			eta = shard.time
+		}
+		tsk := &taskqueue.Task{
+			Name: fmt.Sprintf("%d_%d", eta, shard.shard),
 
-			Path: cfg.ProcessURL(eta, shard),
+			Path: cfg.ProcessURL(eta, shard.shard),
 
-			ETA: eta,
+			ETA: eta.Unix(),
 
 			// TODO(riannucci): Tune RetryOptions?
-		})
+		}
+		tasks = append(tasks, tsk)
+		logging.Infof(c, "added task %q %s %s", tsk.Name, tsk.Path, tsk.ETA)
 	}
 
 	err := tq.AddMulti(tasks, cfg.Name)
 	if err != nil {
 		if merr, ok := err.(errors.MultiError); ok {
-			lme := errors.NewLazyMultiError(len(merr))
-			for i, err := range merr {
+			me := errors.MultiError(nil)
+			for _, err := range merr {
 				if err == taskqueue.ErrTaskAlreadyAdded {
 					continue
 				}
-				lme.Assign(i, err)
+				me = append(me, err)
 			}
-			err = lme.Get()
+			if me != nil {
+				err = me
+			}
 		}
 		if err != nil {
 			logging.Warningf(c, "attempted to fire tasks %v, but failed: %s", shards, err)
@@ -65,9 +96,9 @@ func fireTasks(c context.Context, shards map[uint64]struct{}) bool {
 // good tumble key distribution.
 func FireAllTasks(c context.Context) error {
 	num := GetConfig(c).NumShards
-	shards := make(map[uint64]struct{}, num)
+	shards := make(map[taskShard]struct{}, num)
 	for i := uint64(0); i < num; i++ {
-		shards[i] = struct{}{}
+		shards[taskShard{i, minTS}] = struct{}{}
 	}
 
 	err := error(nil)

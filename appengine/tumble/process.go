@@ -27,7 +27,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-// expandedShardBounds returns the boundary of the expandedShard query that
+// expandedShardBounds returns the boundary of the expandedShard order that
 // currently corresponds to this shard number. If Shard is < 0 or > NumShards
 // (the currently configured number of shards), this will return a low > high.
 // Otherwise low < high.
@@ -84,6 +84,7 @@ func ProcessShardHandler(c context.Context, rw http.ResponseWriter, r *http.Requ
 
 	err = ProcessShard(c, time.Unix(tstamp, 0).UTC(), sid)
 	if err != nil {
+		logging.Errorf(c, "failure! %s", err)
 		rw.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(rw, "error: %s", err)
 	} else {
@@ -195,7 +196,7 @@ func ProcessShard(c context.Context, timestamp time.Time, shard uint64) error {
 					break
 				}
 
-				err = mc.Set(mc.NewItem(lastKey).SetValue(serialize.ToBytes(clock.Now(c))))
+				err = mc.Set(mc.NewItem(lastKey).SetValue(serialize.ToBytes(clock.Now(c).UTC())))
 				if err != nil {
 					l.Warningf("could not update last process memcache key %s: %s", lastKey, err)
 				}
@@ -221,6 +222,10 @@ func getBatchByRoot(c context.Context, root *datastore.Key, banSet stringset.Set
 	cfg := GetConfig(c)
 	ds := datastore.Get(c)
 	q := datastore.NewQuery("tumble.Mutation").Eq("TargetRoot", root)
+	if cfg.DelayedMutations {
+		q = q.Lte("ProcessAfter", clock.Now(c).UTC())
+	}
+
 	toFetch := make([]*realMutation, 0, cfg.ProcessMaxBatchSize)
 	err := ds.Run(q, func(k *datastore.Key) error {
 		if !banSet.Has(k.Encode()) {
@@ -286,6 +291,7 @@ func (o overrideRoot) Root(context.Context) *datastore.Key {
 }
 
 func processRoot(c context.Context, root *datastore.Key, banSet stringset.Set, counter *int64) error {
+	cfg := GetConfig(c)
 	l := logging.Get(c)
 
 	toFetch, err := getBatchByRoot(c, root, banSet)
@@ -303,7 +309,7 @@ func processRoot(c context.Context, root *datastore.Key, banSet stringset.Set, c
 		return nil
 	}
 
-	allShards := map[uint64]struct{}{}
+	allShards := map[taskShard]struct{}{}
 
 	toDel := make([]*datastore.Key, 0, len(muts))
 	numMuts := uint64(0)
@@ -329,8 +335,15 @@ func processRoot(c context.Context, root *datastore.Key, banSet stringset.Set, c
 			processedMuts++
 			for j, nm := range newMuts {
 				if nm.Root(c).HasAncestor(root) {
-					iterMuts = append(iterMuts, nm)
-					iterMutKeys = append(iterMutKeys, newMutKeys[j])
+					runNow := !cfg.DelayedMutations
+					if !runNow {
+						dm, isDelayedMutation := nm.(DelayedMutation)
+						runNow = !isDelayedMutation || clock.Now(c).UTC().After(dm.ProcessAfter())
+					}
+					if runNow {
+						iterMuts = append(iterMuts, nm)
+						iterMutKeys = append(iterMutKeys, newMutKeys[j])
+					}
 				}
 			}
 
