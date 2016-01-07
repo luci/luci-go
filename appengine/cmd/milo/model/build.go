@@ -60,6 +60,20 @@ func GetBuilds(c context.Context, sources []BuildRoot, n int32) ([][]*Build, err
 	return rootBuilds, err
 }
 
+// RevisionInfo is a small struct used to refer to a particular Revision by a
+// Build. Its main use is allowing Builds to be sorted by generation number.
+type RevisionInfo struct {
+	Repository string `gae:"repo"`
+	Digest     string `gae:"hash,noindex"`
+	Generation int    `gae:"generation"`
+}
+
+// GetKey returns the corresponding Revision for this RevisionInfo.
+func (r *RevisionInfo) GetKey(c context.Context) *datastore.Key {
+	ds := datastore.Get(c)
+	return ds.MakeKey("Revision", r.Digest, 0, GetRepository(c, r.Repository))
+}
+
 // Build represents an execution of some code at specific revision(s), which
 // milo caches for display to end-users.
 type Build struct {
@@ -69,9 +83,8 @@ type Build struct {
 	// BuildRoot is the key of the BuildRoot this Build belongs to.
 	BuildRoot *datastore.Key `gae:"$parent"`
 
-	// Revisions is all of the Revisions (as keys) that are relevant to this
-	// Build.
-	Revisions []revisionKey `gae:"revisions"`
+	// Revisions is all of the Revisions that are relevant to this Build.
+	Revisions []RevisionInfo `gae:"revisions"`
 
 	// BuildLogKey is needed to look up the build log for this Build. Currently,
 	// this is the swarming task ID.

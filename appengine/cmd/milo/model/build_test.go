@@ -47,7 +47,7 @@ func TestBuildRoot(t *testing.T) {
 		build := &Build{
 			ExecutionTime: t,
 			BuildRoot:     b.Key,
-			Revisions: []revisionKey{
+			Revisions: []RevisionInfo{
 				{Generation: 1},
 			},
 		}
@@ -55,7 +55,7 @@ func TestBuildRoot(t *testing.T) {
 		build2 := &Build{
 			ExecutionTime: TimeID{t.Add(time.Second)},
 			BuildRoot:     b.Key,
-			Revisions: []revisionKey{
+			Revisions: []RevisionInfo{
 				{Generation: 2},
 			},
 		}
@@ -81,7 +81,7 @@ func TestBuildRoot(t *testing.T) {
 			otherBuild := &Build{
 				ExecutionTime: t,
 				BuildRoot:     b2.Key,
-				Revisions: []revisionKey{
+				Revisions: []RevisionInfo{
 					{Generation: 3},
 				},
 			}

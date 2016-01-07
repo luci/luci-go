@@ -69,17 +69,3 @@ type Revision struct {
 	// See http://www.spinics.net/lists/git/msg161165.html for background.
 	Generation int
 }
-
-// revisionKey is a small struct used to refer to a particular Revision by a
-// Build. Its main use is allowing Builds to be sorted by generation number.
-type revisionKey struct {
-	Repository string `gae:"repo"`
-	Digest     string `gae:"hash,noindex"`
-	Generation int    `gae:"generation"`
-}
-
-// Get returns the corresponding Revision for this RevisionKey.
-func (r *revisionKey) GetKey(c context.Context) *datastore.Key {
-	ds := datastore.Get(c)
-	return ds.MakeKey("Revision", r.Digest, 0, GetRepository(c, r.Repository))
-}
