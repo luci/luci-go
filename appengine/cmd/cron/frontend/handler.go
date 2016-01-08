@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Package frontend implements GAE web server for luci-cron service.
+// Package main implements GAE web server for luci-cron service.
 //
 // Due to the way classic GAE imports work, this package can not have
 // subpackages (or at least subpackages referenced via absolute import path).
@@ -10,7 +10,7 @@
 // by regular (non GAE) toolset.
 //
 // See https://groups.google.com/forum/#!topic/google-appengine-go/dNhqV6PBqVc.
-package frontend
+package main
 
 import (
 	cryptorand "crypto/rand"
@@ -177,7 +177,7 @@ func taskQueueHandler(name string, h handler) httprouter.Handle {
 
 //// Routes.
 
-func init() {
+func main() {
 	// Dev server likes to restart a lot, and upon a restart math/rand seed is
 	// always set to 1, resulting in lots of presumably "random" IDs not being
 	// very random. Seed it with real randomness.
@@ -213,6 +213,7 @@ func init() {
 	})
 
 	router.GET("/_ah/warmup", base(wrap(warmupHandler)))
+	router.GET("/_ah/start", base(wrap(warmupHandler)))
 	router.POST("/pubsub", base(wrap(pubsubPushHandler)))
 	router.GET("/internal/cron/read-config", cronHandler(readConfigCron))
 	router.POST("/internal/tasks/read-project-config", taskQueueHandler("read-project-config", readProjectConfigTask))
@@ -226,6 +227,8 @@ func init() {
 	}
 
 	http.DefaultServeMux.Handle("/", router)
+
+	appengine.Main()
 }
 
 // warmupHandler warms in-memory caches.

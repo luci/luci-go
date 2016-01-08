@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package frontend
+package main
 
 import (
 	cfg "github.com/luci/luci-go/common/config/impl/memory"
@@ -38,7 +38,7 @@ job {
 func devServerConfigs() map[string]cfg.ConfigSet {
 	return map[string]cfg.ConfigSet{
 		"projects/project1": {
-			"cron.cfg": project1CronCfg,
+			"luci-cron.cfg": project1CronCfg,
 		},
 	}
 }
