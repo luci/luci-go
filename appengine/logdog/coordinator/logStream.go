@@ -17,6 +17,22 @@ import (
 	"github.com/luci/luci-go/common/logdog/types"
 )
 
+// LogStreamState is the archival state of the log stream.
+type LogStreamState int
+
+const (
+	// LSPending indicates that no archival has occurred yet.
+	LSPending LogStreamState = iota
+	// LSTerminated indicates that the log stream has received a terminal index
+	// and is awaiting archival.
+	LSTerminated
+	// LSArchived indicates that the log stream has been successfully archived but
+	// has not yet been cleaned up.
+	LSArchived
+	// LSDone indicates that log stream processing is complete.
+	LSDone
+)
+
 // LogStream is the primary datastore model containing information and state of
 // an individual log stream.
 //
@@ -30,6 +46,9 @@ type LogStream struct {
 	// this is populated, ID metadata will be retrieved from this field instead of
 	// generated.
 	hashID string
+
+	// State is the log stream's current state.
+	State LogStreamState
 
 	// Secret is the Butler secret value for this stream.
 	//
@@ -52,7 +71,7 @@ type LogStream struct {
 	// If the value is -1, the log is still streaming.
 	TerminalIndex int64 `gae:",noindex"`
 
-	//ArchiveIndexURL is the Google Storage URL where the log stream's index is
+	// ArchiveIndexURL is the Google Storage URL where the log stream's index is
 	// archived.
 	ArchiveIndexURL string `gae:",noindex"`
 	// ArchiveStreamURL is the Google Storage URL where the log stream's raw
@@ -63,6 +82,10 @@ type LogStream struct {
 	// data is archived. If this is not empty, the log stream is considered
 	// archived.
 	ArchiveDataURL string `gae:",noindex"`
+
+	// _ causes datastore to ignore unrecognized fields and strip them in future
+	// writes.
+	_ ds.PropertyMap `gae:"-,extra"`
 }
 
 var _ interface {
@@ -208,21 +231,21 @@ func (s *LogStream) Validate() error {
 	return nil
 }
 
-// Archived returns true if this stream has been archived. A stream is archived
-// if it has any of its archival properties set.
-func (s *LogStream) Archived() bool {
-	return !s.ArchiveMatches("", "", "")
-}
-
 // Terminated returns true if this stream has been terminated.
 func (s *LogStream) Terminated() bool {
 	return s.TerminalIndex >= 0
 }
 
-// ArchiveMatches tests if hte supplied Stream, Index, and Data archival URLs
+// ArchiveMatches tests if the supplied Stream, Index, and Data archival URLs
 // match the current values.
 func (s *LogStream) ArchiveMatches(sURL, iURL, dURL string) bool {
 	return (s.ArchiveStreamURL == sURL && s.ArchiveIndexURL == iURL && s.ArchiveDataURL == dURL)
+}
+
+// Archived returns true if this stream has been archived. A stream is archived
+// if it has any of its archival properties set.
+func (s *LogStream) Archived() bool {
+	return s.State >= LSArchived
 }
 
 // LoadDescriptor loads the fields in the log stream descriptor into this

@@ -6,6 +6,7 @@ package coordinatorTest
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/common/clock"
@@ -48,4 +49,23 @@ func TestLogStream(c context.Context, desc *protocol.LogStreamDescriptor) (*coor
 	ls.Secret = bytes.Repeat([]byte{0x6F}, types.StreamSecretLength)
 	ls.TerminalIndex = -1
 	return ls, nil
+}
+
+// TestLogEntry generates a standard testing text protocol.LogEntry.
+func TestLogEntry(c context.Context, ls *coordinator.LogStream, i int) *protocol.LogEntry {
+	return &protocol.LogEntry{
+		TimeOffset:  google.NewDuration(clock.Now(c).Sub(ls.Created)),
+		StreamIndex: uint64(i),
+
+		Content: &protocol.LogEntry_Text{
+			&protocol.Text{
+				Lines: []*protocol.Text_Line{
+					{
+						Value:     fmt.Sprintf("log entry #%d", i),
+						Delimiter: "\n",
+					},
+				},
+			},
+		},
+	}
 }

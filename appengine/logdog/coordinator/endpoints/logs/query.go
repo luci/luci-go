@@ -46,6 +46,22 @@ const (
 	TrinaryNo TrinaryValue = "no"
 )
 
+// apply adds a query equality filter for the specified field based on the
+// TrinaryValue's value.
+func (v TrinaryValue) apply(q *ds.Query, field string) *ds.Query {
+	switch v {
+	case TrinaryYes:
+		return q.Eq(field, true)
+
+	case TrinaryNo:
+		return q.Eq(field, false)
+
+	default:
+		// Default is "both".
+		return q
+	}
+}
+
 // QueryRequest is the request structure for the user Query endpoint.
 type QueryRequest struct {
 	// Path is the query parameter.
@@ -83,13 +99,20 @@ type QueryRequest struct {
 
 	// Terminated, if not nil, restricts the query to streams that have or haven't
 	// been terminated.
-	Terminated TrinaryValue `json:"terminated,omitempty" endpoints:"d=both"`
+	//
+	// TODO(dnj): Set endpoint default to "both" once the upconvert bug is fixed.
+	// See https://github.com/GoogleCloudPlatform/go-endpoints/issues/139
+	Terminated TrinaryValue `json:"terminated,omitempty"`
 	// Archived, if not nil, restricts the query to streams that have or haven't
 	// been archived.
-	Archived TrinaryValue `json:"archived,omitempty" endpoints:"d=both"`
+	//
+	// TODO(dnj): Set endpoint default to "both" once the upconvert bug is fixed.
+	Archived TrinaryValue `json:"archived,omitempty"`
 	// Purged, if not nil, restricts the query to streams that have or haven't
 	// been purged.
-	Purged TrinaryValue `json:"purged,omitempty" endpoints:"d=both"`
+	//
+	// TODO(dnj): Set endpoint default to "both" once the upconvert bug is fixed.
+	Purged TrinaryValue `json:"purged,omitempty"`
 
 	// Newer restricts results to streams created on or after the specified
 	// RFC3339 timestamp string.
@@ -339,14 +362,14 @@ func (r *queryRunner) addStandardQueryFilters(q *ds.Query) (*ds.Query, error) {
 		q = q.Eq("StreamType", st)
 	}
 
-	q = trinary(q, "Terminated", r.Terminated)
-	q = trinary(q, "Archived", r.Archived)
+	q = r.Terminated.apply(q, "Terminated")
+	q = r.Archived.apply(q, "Archived")
 
 	if !r.canSeePurged {
 		// Force non-purged results for non-admin users.
 		q = q.Eq("Purged", false)
 	} else {
-		q = trinary(q, "Purged", r.Purged)
+		q = r.Purged.apply(q, "Purged")
 	}
 
 	if r.ProtoVersion != "" {
@@ -379,20 +402,6 @@ func (r *queryRunner) addStandardQueryFilters(q *ds.Query) (*ds.Query, error) {
 	}
 
 	return q, nil
-}
-
-func trinary(q *ds.Query, field string, v TrinaryValue) *ds.Query {
-	switch v {
-	case TrinaryYes:
-		return q.Eq(field, true)
-
-	case TrinaryNo:
-		return q.Eq(field, false)
-
-	default:
-		// Default is "both".
-		return q
-	}
 }
 
 type queryExecutor interface {

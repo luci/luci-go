@@ -8,6 +8,8 @@ import (
 	"errors"
 
 	"github.com/golang/protobuf/proto"
+	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/logdog/services"
@@ -41,7 +43,21 @@ type GlobalConfig struct {
 	BigTableServiceAccountJSON []byte `json:"bigTableServiceAccountJson,omitempty"`
 }
 
+// DevConfig is an auxiliary development configuration. It is only active when
+// running under the dev appserver.
+type DevConfig struct {
+	// ID is the key ID of this configuration.
+	ID int64 `gae:"$id"`
+
+	// Config, is set, is the application's text-format configuration protobuf.
+	// This is only used when running under dev-appserver.
+	Config string `gae:",noindex"`
+}
+
 // LoadGlobalConfig loads the global configuration from the AppEngine settings.
+//
+// If no global configuration is present, settings.ErrNoSettings will be
+// returned.
 func LoadGlobalConfig(c context.Context) (*GlobalConfig, error) {
 	gc := GlobalConfig{}
 	if err := settings.Get(c, globalConfigSettingsKey, &gc); err != nil {
@@ -55,7 +71,10 @@ func (gcfg *GlobalConfig) Store(c context.Context, why string) error {
 	if err := gcfg.Validate(); err != nil {
 		return err
 	}
+	return gcfg.storeNoValidate(c, why)
+}
 
+func (gcfg *GlobalConfig) storeNoValidate(c context.Context, why string) error {
 	id := auth.CurrentIdentity(c)
 	log.Fields{
 		"identity": id,
@@ -79,16 +98,41 @@ func (gcfg *GlobalConfig) Validate() error {
 //
 // The Context must have a luci-config interface installed.
 func (gcfg *GlobalConfig) LoadConfig(c context.Context) (*services.Config, error) {
-	// Load our LUCI-Config values.
-	cfg, err := config.Get(c).GetConfig(gcfg.ConfigSet, gcfg.ConfigPath, false)
-	if err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-			"serviceURL": gcfg.ConfigServiceURL,
-			"configSet":  gcfg.ConfigSet,
-			"configPath": gcfg.ConfigPath,
-		}.Errorf(c, "Failed to load config.")
-		return nil, errors.New("unable to load config")
+	var cfg *config.Config
+	if err := gcfg.Validate(); err != nil {
+		if !info.Get(c).IsDevAppServer() {
+			log.WithError(err).Errorf(c, "Application configuration service is not configured.")
+			return nil, settings.ErrNoSettings
+		}
+
+		// Dev: Load from DevConfig datastore entry, if present.
+		var err error
+		cfg, err = getSetupDevConfig(c)
+		if err != nil {
+			log.WithError(err).Errorf(c, "Failed to load development configuration.")
+			return nil, settings.ErrNoSettings
+		}
+		log.Infof(c, "Using development configuration.")
+	} else {
+		// Load from remote luci-config service.
+		ci := config.Get(c)
+		if ci == nil {
+			log.Errorf(c, "No configuration instance installed.")
+			return nil, settings.ErrNoSettings
+		}
+
+		// Load our LUCI-Config values.
+		var err error
+		cfg, err = ci.GetConfig(gcfg.ConfigSet, gcfg.ConfigPath, false)
+		if err != nil {
+			log.Fields{
+				log.ErrorKey: err,
+				"serviceURL": gcfg.ConfigServiceURL,
+				"configSet":  gcfg.ConfigSet,
+				"configPath": gcfg.ConfigPath,
+			}.Errorf(c, "Failed to load config.")
+			return nil, settings.ErrNoSettings
+		}
 	}
 
 	cc := services.Config{}
@@ -100,7 +144,7 @@ func (gcfg *GlobalConfig) LoadConfig(c context.Context) (*services.Config, error
 			"configSet":   cfg.ConfigSet,
 			"revision":    cfg.Revision,
 		}.Errorf(c, "Failed to unmarshal configuration protobuf.")
-		return nil, errors.New("configuration is invalid or corrupt")
+		return nil, settings.ErrNoSettings
 	}
 
 	return &cc, nil
@@ -110,7 +154,43 @@ func (gcfg *GlobalConfig) LoadConfig(c context.Context) (*services.Config, error
 func Load(c context.Context) (*services.Config, error) {
 	gcfg, err := LoadGlobalConfig(c)
 	if err != nil {
+		// If we're running the dev appserver, install some configuration stubs so
+		// they can be tweaked locally.
+		if err == settings.ErrNoSettings {
+			if info.Get(c).IsDevAppServer() {
+				log.Infof(c, "Setting up development configuration...")
+				gcfg = &GlobalConfig{}
+				if err := gcfg.storeNoValidate(c, "development setup"); err != nil {
+					log.WithError(err).Warningf(c, "Failed to install development global config stub.")
+				}
+				if _, err := getSetupDevConfig(c); err != nil {
+					log.WithError(err).Warningf(c, "Failed to install development configuration entry stub.")
+				}
+			}
+		}
+
 		return nil, err
 	}
 	return gcfg.LoadConfig(c)
+}
+
+func getSetupDevConfig(c context.Context) (*config.Config, error) {
+	dcfg := DevConfig{ID: 1}
+	switch err := ds.Get(c).Get(&dcfg); err {
+	case nil:
+		break
+
+	case ds.ErrNoSuchEntity:
+		log.Infof(c, "Installing empty development configuration datastore entry.")
+		if err := ds.Get(c).Put(&dcfg); err != nil {
+			log.WithError(err).Warningf(c, "Failed to install empty development configuration.")
+		}
+
+	default:
+		return nil, err
+	}
+
+	return &config.Config{
+		Content: dcfg.Config,
+	}, nil
 }

@@ -13,19 +13,14 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/appengine/ephelper"
 	"github.com/luci/luci-go/appengine/ephelper/epfrontend"
-	gaeauthClient "github.com/luci/luci-go/appengine/gaeauth/client"
 	gaeauthServer "github.com/luci/luci-go/appengine/gaeauth/server"
-	"github.com/luci/luci-go/appengine/gaeconfig"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/endpoints/admin"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/endpoints/logs"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/endpoints/service"
-	"github.com/luci/luci-go/common/config/impl/remote"
-	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/middleware"
-	"github.com/luci/luci-go/server/settings"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 )
@@ -49,29 +44,7 @@ func base(h middleware.Handler) httprouter.Handle {
 }
 
 func endpointMiddleware(c context.Context) (context.Context, error) {
-	gcfg, err := config.LoadGlobalConfig(c)
-	switch err {
-	case nil:
-		// Install remote "luci-config" service.
-		//
-		// Use an e-mail OAuth2-authenticated transport to pull from "luci-config".
-		c = gaeauthClient.UseServiceAccountTransport(c, nil, nil)
-		c = remote.Use(c, gcfg.ConfigServiceURL)
-
-		// Add a memcache-based caching filter.
-		c = gaeconfig.AddFilter(c, gaeconfig.DefaultExpire)
-
-	case settings.ErrNoSettings:
-		// No settings, so no configuration will be installed.
-		logging.Warningf(c, "No luci-config endpoint is set.")
-		break
-
-	default:
-		logging.WithError(err).Errorf(c, "Failed to load application configuration.")
-		return nil, endpoints.InternalServerError
-	}
-
-	return c, nil
+	return config.WithConfig(c), nil
 }
 
 func configureEndpoints(h *ephelper.Helper, s *endpoints.Server, sb *ephelper.ServiceBase) error {

@@ -135,11 +135,13 @@ func TestQuery(t *testing.T) {
 					case "purged":
 						ls.Purged = true
 
+					case "terminated":
+						ls.State = coordinator.LSTerminated
+						ls.TerminalIndex = 1337
+
 					case "archived":
 						ls.ArchiveStreamURL = "http://example.com"
-
-					case "terminated":
-						ls.TerminalIndex = 1337
+						ls.State = coordinator.LSArchived
 
 					case "datagram":
 						ls.StreamType = protocol.LogStreamDescriptor_DATAGRAM

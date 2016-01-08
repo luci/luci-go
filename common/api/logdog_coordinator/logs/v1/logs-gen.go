@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2016 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -245,6 +245,8 @@ type LogStreamState struct {
 
 	ArchiveStreamURL string `json:"archiveStreamURL,omitempty"`
 
+	Archived bool `json:"archived,omitempty"`
+
 	Created string `json:"created,omitempty"`
 
 	ProtoVersion string `json:"protoVersion,omitempty"`
@@ -366,15 +368,13 @@ func (s *QueryResponseStream) MarshalJSON() ([]byte, error) {
 
 type GetCall struct {
 	s    *Service
-	Path string
 	opt_ map[string]interface{}
 	ctx_ context.Context
 }
 
 // Get: Get log stream data.
-func (s *Service) Get(Path string) *GetCall {
+func (s *Service) Get() *GetCall {
 	c := &GetCall{s: s, opt_: make(map[string]interface{})}
-	c.Path = Path
 	return c
 }
 
@@ -405,6 +405,12 @@ func (c *GetCall) Newlines(newlines bool) *GetCall {
 // Noncontiguous sets the optional parameter "noncontiguous":
 func (c *GetCall) Noncontiguous(noncontiguous bool) *GetCall {
 	c.opt_["noncontiguous"] = noncontiguous
+	return c
+}
+
+// Path sets the optional parameter "path":
+func (c *GetCall) Path(path string) *GetCall {
+	c.opt_["path"] = path
 	return c
 }
 
@@ -471,6 +477,9 @@ func (c *GetCall) doRequest(alt string) (*http.Response, error) {
 	if v, ok := c.opt_["noncontiguous"]; ok {
 		params.Set("noncontiguous", fmt.Sprintf("%v", v))
 	}
+	if v, ok := c.opt_["path"]; ok {
+		params.Set("path", fmt.Sprintf("%v", v))
+	}
 	if v, ok := c.opt_["proto"]; ok {
 		params.Set("proto", fmt.Sprintf("%v", v))
 	}
@@ -483,12 +492,10 @@ func (c *GetCall) doRequest(alt string) (*http.Response, error) {
 	if v, ok := c.opt_["fields"]; ok {
 		params.Set("fields", fmt.Sprintf("%v", v))
 	}
-	urls := googleapi.ResolveRelative(c.s.BasePath, "get/{Path}")
+	urls := googleapi.ResolveRelative(c.s.BasePath, "get")
 	urls += "?" + params.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
-	googleapi.Expand(req.URL, map[string]string{
-		"Path": c.Path,
-	})
+	googleapi.SetOpaque(req.URL)
 	req.Header.Set("User-Agent", c.s.userAgent())
 	if v, ok := c.opt_["ifNoneMatch"]; ok {
 		req.Header.Set("If-None-Match", fmt.Sprintf("%v", v))
@@ -538,15 +545,7 @@ func (c *GetCall) Do() (*GetResponse, error) {
 	//   "description": "Get log stream data.",
 	//   "httpMethod": "GET",
 	//   "id": "logs.get",
-	//   "parameterOrder": [
-	//     "Path"
-	//   ],
 	//   "parameters": {
-	//     "Path": {
-	//       "location": "path",
-	//       "required": true,
-	//       "type": "string"
-	//     },
 	//     "bytes": {
 	//       "format": "int32",
 	//       "location": "query",
@@ -570,6 +569,10 @@ func (c *GetCall) Do() (*GetResponse, error) {
 	//       "location": "query",
 	//       "type": "boolean"
 	//     },
+	//     "path": {
+	//       "location": "query",
+	//       "type": "string"
+	//     },
 	//     "proto": {
 	//       "location": "query",
 	//       "type": "boolean"
@@ -583,7 +586,7 @@ func (c *GetCall) Do() (*GetResponse, error) {
 	//       "type": "boolean"
 	//     }
 	//   },
-	//   "path": "get/{Path}",
+	//   "path": "get",
 	//   "response": {
 	//     "$ref": "GetResponse",
 	//     "parameterName": "resource"

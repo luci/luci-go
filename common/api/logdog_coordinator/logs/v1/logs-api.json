@@ -165,6 +165,9 @@
     "archiveStreamURL": {
      "type": "string"
     },
+    "archived": {
+     "type": "boolean"
+    },
     "created": {
      "type": "string"
     },
@@ -276,15 +279,10 @@
  "methods": {
   "get": {
    "id": "logs.get",
-   "path": "get/{Path}",
+   "path": "get",
    "httpMethod": "GET",
    "description": "Get log stream data.",
    "parameters": {
-    "Path": {
-     "type": "string",
-     "location": "path",
-     "required": true
-    },
     "bytes": {
      "type": "integer",
      "format": "int32",
@@ -308,6 +306,10 @@
      "type": "boolean",
      "location": "query"
     },
+    "path": {
+     "type": "string",
+     "location": "query"
+    },
     "proto": {
      "type": "boolean",
      "location": "query"
@@ -321,9 +323,6 @@
      "location": "query"
     }
    },
-   "parameterOrder": [
-    "Path"
-   ],
    "response": {
     "$ref": "GetResponse",
     "parameterName": "resource"

@@ -10,11 +10,12 @@ import (
 
 	"github.com/luci/gkvlite"
 	"github.com/luci/luci-go/common/logdog/types"
-	"github.com/luci/luci-go/common/testing/assertions"
 	"github.com/luci/luci-go/server/logdog/storage"
-	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 	"google.golang.org/cloud/bigtable"
+
+	. "github.com/luci/luci-go/common/testing/assertions"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 // btTableTest is an in-memory implementation of btTable interface for testing.
@@ -70,11 +71,15 @@ func (t *btTableTest) getLogData(c context.Context, rk *rowKey, limit int, keysO
 	}
 
 	enc := []byte(rk.encode())
+	prefix := rk.pathPrefix()
 	var ierr error
 	err := t.collection().VisitItemsAscend(enc, !keysOnly, func(i *gkvlite.Item) bool {
 		var drk *rowKey
 		drk, ierr = decodeRowKey(string(i.Key))
 		if ierr != nil {
+			return false
+		}
+		if drk.pathPrefix() != prefix {
 			return false
 		}
 
@@ -140,34 +145,6 @@ func TestStorage(t *testing.T) {
 			})
 		}
 
-		get := func(path string, index int, limit int) ([]string, error) {
-			req := storage.GetRequest{
-				Path:  types.StreamPath(path),
-				Index: types.MessageIndex(index),
-				Limit: limit,
-			}
-			got := []string{}
-			err := s.Get(&req, func(idx types.MessageIndex, d []byte) bool {
-				got = append(got, string(d))
-				return true
-			})
-			return got, err
-		}
-
-		tail := func(path string, index int, limit int) ([]string, error) {
-			req := storage.GetRequest{
-				Path:  types.StreamPath(path),
-				Index: types.MessageIndex(index),
-				Limit: limit,
-			}
-			got := []string{}
-			err := s.Tail(&req, func(idx types.MessageIndex, d []byte) bool {
-				got = append(got, string(d))
-				return true
-			})
-			return got, err
-		}
-
 		Convey(`With row data: A{0, 1, 2}, B{10, 12, 13}`, func() {
 			So(put("A", 0, "0"), ShouldBeNil)
 			So(put("A", 1, "1"), ShouldBeNil)
@@ -182,7 +159,7 @@ func TestStorage(t *testing.T) {
 
 			Convey(`Testing "Put"...`, func() {
 				Convey(`Loads the row data.`, func() {
-					So(bt.dataMap(), assertions.ShouldResembleV, map[string][]byte{
+					So(bt.dataMap(), ShouldResembleV, map[string][]byte{
 						ekey("A", 0):  []byte("0"),
 						ekey("A", 1):  []byte("1"),
 						ekey("A", 2):  []byte("2"),
@@ -194,69 +171,71 @@ func TestStorage(t *testing.T) {
 			})
 
 			Convey(`Testing "Get"...`, func() {
+				get := func(path string, index int, limit int) ([]string, error) {
+					req := storage.GetRequest{
+						Path:  types.StreamPath(path),
+						Index: types.MessageIndex(index),
+						Limit: limit,
+					}
+					got := []string{}
+					err := s.Get(&req, func(idx types.MessageIndex, d []byte) bool {
+						got = append(got, string(d))
+						return true
+					})
+					return got, err
+				}
+
 				Convey(`Can fetch the full row, "A".`, func() {
 					got, err := get("A", 0, 0)
 					So(err, ShouldBeNil)
-					So(got, assertions.ShouldResembleV, []string{"0", "1", "2"})
+					So(got, ShouldResembleV, []string{"0", "1", "2"})
 				})
 
 				Convey(`Will fetch A{1, 2} with when index=1 and limit=2.`, func() {
 					got, err := get("A", 1, 2)
 					So(err, ShouldBeNil)
-					So(got, assertions.ShouldResembleV, []string{"1", "2"})
+					So(got, ShouldResembleV, []string{"1", "2"})
 				})
 
 				Convey(`Will fetch B{10, 12, 13} for B.`, func() {
 					got, err := get("B", 0, 0)
 					So(err, ShouldBeNil)
-					So(got, assertions.ShouldResembleV, []string{"10", "12", "13"})
+					So(got, ShouldResembleV, []string{"10", "12", "13"})
 				})
 
 				Convey(`Will fetch B{12, 13} when index=11.`, func() {
 					got, err := get("B", 11, 0)
 					So(err, ShouldBeNil)
-					So(got, assertions.ShouldResembleV, []string{"12", "13"})
+					So(got, ShouldResembleV, []string{"12", "13"})
 				})
 
 				Convey(`Will fetch {} for INVALID.`, func() {
 					got, err := get("INVALID", 0, 0)
 					So(err, ShouldBeNil)
-					So(got, assertions.ShouldResembleV, []string{})
+					So(got, ShouldResembleV, []string{})
 				})
 			})
 
 			Convey(`Testing "Tail"...`, func() {
+				tail := func(path string) (string, error) {
+					got, _, err := s.Tail(types.StreamPath(path))
+					return string(got), err
+				}
+
 				Convey(`A tail request for "A" returns A{2, 1, 0}.`, func() {
-					got, err := tail("A", 0, 0)
+					got, err := tail("A")
 					So(err, ShouldBeNil)
-					So(got, assertions.ShouldResembleV, []string{"2", "1", "0"})
+					So(got, ShouldEqual, "2")
 				})
 
-				Convey(`A tail request for "A" with limit 2 returns A{1, 0}.`, func() {
-					got, err := tail("A", 0, 2)
+				Convey(`A tail request for "B" returns B{13}.`, func() {
+					got, err := tail("B")
 					So(err, ShouldBeNil)
-					So(got, assertions.ShouldResembleV, []string{"1", "0"})
-				})
-
-				Convey(`A tail request for "B" with index 10 returns B{10}.`, func() {
-					got, err := tail("B", 10, 0)
-					So(err, ShouldBeNil)
-					So(got, assertions.ShouldResembleV, []string{"10"})
-				})
-
-				Convey(`A tail request for "B" with index 11 errors NOT FOUND.`, func() {
-					_, err := tail("B", 11, 0)
-					So(err, ShouldEqual, storage.ErrDoesNotExist)
-				})
-
-				Convey(`A tail request for "B" with index 12 returns B{13, 12}.`, func() {
-					got, err := tail("B", 12, 0)
-					So(err, ShouldBeNil)
-					So(got, assertions.ShouldResembleV, []string{"13", "12"})
+					So(got, ShouldEqual, "13")
 				})
 
 				Convey(`A tail request for "INVALID" errors NOT FOUND.`, func() {
-					_, err := tail("INVALID", 0, 0)
+					_, err := tail("INVALID")
 					So(err, ShouldEqual, storage.ErrDoesNotExist)
 				})
 			})

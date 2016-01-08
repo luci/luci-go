@@ -80,6 +80,7 @@ func (s *Service) TerminateStream(c context.Context, req *TerminateStreamRequest
 		switch updateTerminalIndex(c, ls, req) {
 		case nil:
 			ls.Updated = now
+			ls.State = coordinator.LSTerminated
 			if err := ls.Put(di); err != nil {
 				log.Fields{
 					log.ErrorKey: err,
@@ -132,7 +133,7 @@ func updateTerminalIndex(c context.Context, ls *coordinator.LogStream, req *Term
 		// Idempotent: already updated to this value.
 		return errAlreadyUpdated
 
-	case ls.TerminalIndex >= 0:
+	case ls.Terminated():
 		// Idempotent: already updated to this value.
 		return endpoints.NewConflictError("terminal index is already set")
 

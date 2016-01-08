@@ -82,10 +82,6 @@ type btStorage struct {
 	table btTable
 }
 
-func streamRecordRowKey(path types.StreamPath, index types.MessageIndex) *rowKey {
-	return newRowKey(string(path), int64(index))
-}
-
 // New instantiates a new Storage instance connected to a BigTable cluster.
 //
 // The returned Storage instance will close the Client when its Close() method
@@ -109,7 +105,7 @@ func (s *btStorage) Close() {
 }
 
 func (s *btStorage) Put(r *storage.PutRequest) error {
-	rk := streamRecordRowKey(r.Path, r.Index)
+	rk := newRowKey(string(r.Path), int64(r.Index))
 	ctx := log.SetFields(s.ctx, log.Fields{
 		"rowKey": rk,
 		"path":   r.Path,
@@ -122,7 +118,7 @@ func (s *btStorage) Put(r *storage.PutRequest) error {
 }
 
 func (s *btStorage) Get(r *storage.GetRequest, cb storage.GetCallback) error {
-	startKey := streamRecordRowKey(r.Path, r.Index)
+	startKey := newRowKey(string(r.Path), int64(r.Index))
 	c := log.SetFields(s.ctx, log.Fields{
 		"path":        r.Path,
 		"index":       r.Index,
@@ -155,139 +151,52 @@ func (s *btStorage) Get(r *storage.GetRequest, cb storage.GetCallback) error {
 	return nil
 }
 
-func (s *btStorage) Tail(r *storage.GetRequest, cb storage.GetCallback) error {
+func (s *btStorage) Tail(p types.StreamPath) ([]byte, types.MessageIndex, error) {
 	c := log.SetFields(s.ctx, log.Fields{
-		"path":  r.Path,
-		"index": r.Index,
+		"path": p,
 	})
 
-	// The current strategy for implementing Tail works in multiple passes:
-	//
-	// First Pass: SCAN
-	// Scan forwards (keys-only) from the starting key looking for the last
-	// contiguous index.
-	ridx, err := s.getLastContiguousIndex(c, r.Path, r.Index, r.Limit)
-	if err != nil {
-		return err
-	}
-
-	if ridx < int64(r.Index) {
-		return storage.ErrDoesNotExist
-	}
-	count := ridx - int64(r.Index) + 1
-
-	// Second pass: EMIT
-	// Read rows in fixed-size chunks starting from the end. Punt them in reverse
-	// order to the callback.
-	rowCount := tailRowCount
-	if int64(rowCount) > count {
-		rowCount = int(count)
-	}
-	rows := make([][]byte, 0, rowCount)
-
-	greq := storage.GetRequest{
-		Path:  r.Path,
-		Index: r.Index,
-	}
-
-	for count > 0 {
-		// How many records to pull this round?
-		amount := int64(cap(rows))
-		if amount > count {
-			amount = count
-		}
-
-		// Pull the marked rows for export. We don't have to do any specific checks
-		// here since the rows have already been vetted.
-		rows = rows[:0]
-		greq.Index = types.MessageIndex(ridx - amount + 1)
-		greq.Limit = int(amount)
-		rk := streamRecordRowKey(r.Path, r.Index)
-		err := s.table.getLogData(c, rk, greq.Limit, false, func(rk *rowKey, data []byte) error {
-			rows = append(rows, data)
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-
-		// Issue our callbacks in reverse.
-		for i := 0; i < len(rows); i++ {
-			if !cb(types.MessageIndex(ridx-int64(i)), rows[len(rows)-i-1]) {
-				return nil
-			}
-		}
-		count -= amount
-	}
-	return nil
-}
-
-// getLastContiguousIndex returns the stream index of the last contiguous
-// LogEntry in the specified stream.
-//
-// Currently, this operates by iterating forwards from the start index and
-// identifying the first row that has a different stream path or a
-// non-contiguous index.
-//
-// This is fairly cheap, but certainly more costly than is necessary. A few
-// optimizations are possible:
-// - Stream rows can be stored in a parallel reverse table making the search
-//   trivial.
-// - The last contiguous row for a given stream could be cached in a separate
-//   table. Future searches would start with that index. This would avoid
-//   traversing the massive row space more times than necessary.
-func (s *btStorage) getLastContiguousIndex(c context.Context, path types.StreamPath,
-	index types.MessageIndex, limit int) (int64, error) {
-	lastIndex := int64(index) - 1
-	startKey := streamRecordRowKey(path, index)
-	err := s.table.getLogData(c, startKey, limit, true, func(rk *rowKey, data []byte) error {
-		if !rk.sharesPathWith(startKey) {
-			return errStop
-		}
-
-		if rk.index != lastIndex+1 {
-			// We have encountered a non-contiguous row.
-			return errStop
-		}
-
-		lastIndex = rk.index
+	// Iterate through all log keys in the stream. Record the latest one.
+	rk := newRowKey(string(p), 0)
+	var latest *rowKey
+	err := s.table.getLogData(c, rk, 0, true, func(rk *rowKey, data []byte) error {
+		latest = rk
 		return nil
 	})
 	if err != nil {
-		return -1, err
+		log.Fields{
+			log.ErrorKey: err,
+			"project":    s.Project,
+			"zone":       s.Zone,
+			"cluster":    s.Cluster,
+			"table":      s.LogTable,
+		}.Errorf(c, "Failed to scan for tail.")
 	}
-	return lastIndex, nil
+
+	if latest == nil {
+		// No rows for the specified stream.
+		return nil, 0, storage.ErrDoesNotExist
+	}
+
+	// Fetch the latest row's data.
+	var d []byte
+	err = s.table.getLogData(c, latest, 1, false, func(rk *rowKey, data []byte) error {
+		d = data
+		return errStop
+	})
+	if err != nil {
+		log.Fields{
+			log.ErrorKey: err,
+			"project":    s.Project,
+			"zone":       s.Zone,
+			"cluster":    s.Cluster,
+			"table":      s.LogTable,
+		}.Errorf(c, "Failed to retrieve tail row.")
+	}
+
+	return d, types.MessageIndex(latest.index), nil
 }
 
 func (s *btStorage) Purge(p types.StreamPath) error {
 	panic("Not implemented.")
-}
-
-// getLogData loads the "data" column from the "log" column family, Unmarshals
-// it into a LogRecord, and
-// it to
-func getLogData(row bigtable.Row) ([]byte, error) {
-	ri := getReadItem(row, "log", "data")
-	if ri == nil {
-		return nil, storage.ErrDoesNotExist
-	}
-	return ri.Value, nil
-}
-
-// getReadItem retrieves a specific RowItem from the supplied Row.
-func getReadItem(row bigtable.Row, family, column string) *bigtable.ReadItem {
-	// Get the row for our family.
-	items, ok := row[family]
-	if !ok {
-		return nil
-	}
-
-	// Get the specific ReadItem for our column
-	colName := fmt.Sprintf("%s:%s", family, column)
-	for _, item := range items {
-		if item.Column == colName {
-			return &item
-		}
-	}
-	return nil
 }

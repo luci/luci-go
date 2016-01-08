@@ -13,6 +13,7 @@ import (
 	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/ephelper"
+	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/proto/logdog/services"
@@ -70,10 +71,8 @@ func TestTerminateStream(t *testing.T) {
 					// Reload "ls" and confirm.
 					So(ds.Get(c).Get(ls), ShouldBeNil)
 					So(ls.TerminalIndex, ShouldEqual, 1337)
-
-					Convey(`The stream's Updated timestamp is updated.`, func() {
-						So(ls.Updated, ShouldResembleV, ls.Created.Add(time.Second))
-					})
+					So(ls.State, ShouldEqual, coordinator.LSTerminated)
+					So(ls.Updated, ShouldResembleV, ls.Created.Add(time.Second))
 
 					Convey(`Can be marked terminal again (idempotent).`, func() {
 						So(s.TerminateStream(c, &req), ShouldBeNil)
@@ -81,6 +80,7 @@ func TestTerminateStream(t *testing.T) {
 						// Reload "ls" and confirm.
 						So(ds.Get(c).Get(ls), ShouldBeNil)
 						So(ls.TerminalIndex, ShouldEqual, 1337)
+						So(ls.State, ShouldEqual, coordinator.LSTerminated)
 					})
 
 					Convey(`Will reject attempts to change the terminal index.`, func() {
@@ -89,6 +89,7 @@ func TestTerminateStream(t *testing.T) {
 
 						// Reload "ls" and confirm.
 						So(ds.Get(c).Get(ls), ShouldBeNil)
+						So(ls.State, ShouldEqual, coordinator.LSTerminated)
 						So(ls.TerminalIndex, ShouldEqual, 1337)
 					})
 
@@ -98,6 +99,7 @@ func TestTerminateStream(t *testing.T) {
 
 						// Reload "ls" and confirm.
 						So(ds.Get(c).Get(ls), ShouldBeNil)
+						So(ls.State, ShouldEqual, coordinator.LSTerminated)
 						So(ls.TerminalIndex, ShouldEqual, 1337)
 					})
 				})

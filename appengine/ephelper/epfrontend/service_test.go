@@ -75,7 +75,7 @@ func (s *ServiceTestService) PathReq(c context.Context, req *ServiceTestPathReq)
 
 type ServiceTestQueryReq struct {
 	Name  string `endpoints:"required"`
-	Count int64  `json:"count"`
+	Count int64  `json:"count,string"`
 
 	S  string
 	F  float32
@@ -192,7 +192,7 @@ func TestService(t *testing.T) {
 				_, err := c.Get(fmt.Sprintf("%s%s", ts.URL, "/_ah/api/test/v1/pathreq/testname/12345"))
 				So(err, ShouldBeNil)
 
-				So(be.body.String(), ShouldEqual, `{"Count":12345,"Name":"testname"}`+"\n")
+				So(be.body.String(), ShouldEqual, `{"Count":"12345","Name":"testname"}`+"\n")
 			})
 
 			Convey(`Will return an error if an invalid "pathreq" path parameter is supplied.`, func() {
@@ -212,7 +212,7 @@ func TestService(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				So(be.body.String(), ShouldEqual,
-					`{"B":true,"B2":false,"F":3.14,"I":1337,"Name":"testname","S":"foo","count":12345}`+"\n")
+					`{"B":true,"B2":false,"F":3.14,"I":1337,"Name":"testname","S":"foo","count":"12345"}`+"\n")
 			})
 
 			Convey(`Will return an error if an invalid "queryreq" query parameter is supplied.`, func() {

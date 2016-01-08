@@ -18,12 +18,12 @@ type LogEntry struct {
 	Timestamp string `json:"timestamp,omitempty"`
 
 	// PrefixIndex is the message index within the Prefix.
-	PrefixIndex int64 `json:"prefix_index,string"`
+	PrefixIndex int64 `json:"prefix_index,string,omitempty"`
 	// StreamIndex is the message index within its Stream.
-	StreamIndex int64 `json:"stream_index,string"`
+	StreamIndex int64 `json:"stream_index,string,omitempty"`
 	// Sequence is the sequence number of the first content entry in this
 	// LogEntry.
-	Sequence int64 `json:"sequence,string"`
+	Sequence int64 `json:"sequence,string,omitempty"`
 
 	// Text is the data component of a text LogEntry.
 	Text []string `json:"text,omitempty"`
@@ -39,7 +39,7 @@ type LogEntryDatagramPartial struct {
 	// Index is this datagram fragment's index in the overall composite datagram.
 	Index int32 `json:"index"`
 	// The size in bytes of the overall datagram.
-	Size int64 `json:"size,omitempty,string"`
+	Size int64 `json:"size,string,omitempty"`
 	// Last, if true, means that this is the last datagram in the fragment.
 	Last bool `json:"last,omitempty"`
 }

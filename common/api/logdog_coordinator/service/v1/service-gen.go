@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2016 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -128,6 +128,8 @@ type LogStreamState struct {
 	ArchiveIndexURL string `json:"archiveIndexURL,omitempty"`
 
 	ArchiveStreamURL string `json:"archiveStreamURL,omitempty"`
+
+	Archived bool `json:"archived,omitempty"`
 
 	Created string `json:"created,omitempty"`
 
@@ -342,19 +344,15 @@ func (c *GetConfigCall) Do() (*GetConfigResponse, error) {
 
 type LoadStreamCall struct {
 	s    *Service
+	Path string
 	opt_ map[string]interface{}
 	ctx_ context.Context
 }
 
 // LoadStream: Loads log stream metadata.
-func (s *Service) LoadStream() *LoadStreamCall {
+func (s *Service) LoadStream(Path string) *LoadStreamCall {
 	c := &LoadStreamCall{s: s, opt_: make(map[string]interface{})}
-	return c
-}
-
-// Path sets the optional parameter "Path":
-func (c *LoadStreamCall) Path(Path string) *LoadStreamCall {
-	c.opt_["Path"] = Path
+	c.Path = Path
 	return c
 }
 
@@ -388,16 +386,15 @@ func (c *LoadStreamCall) doRequest(alt string) (*http.Response, error) {
 	var body io.Reader = nil
 	params := make(url.Values)
 	params.Set("alt", alt)
-	if v, ok := c.opt_["Path"]; ok {
-		params.Set("Path", fmt.Sprintf("%v", v))
-	}
 	if v, ok := c.opt_["fields"]; ok {
 		params.Set("fields", fmt.Sprintf("%v", v))
 	}
-	urls := googleapi.ResolveRelative(c.s.BasePath, "loadStream")
+	urls := googleapi.ResolveRelative(c.s.BasePath, "loadstream/{Path}")
 	urls += "?" + params.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
-	googleapi.SetOpaque(req.URL)
+	googleapi.Expand(req.URL, map[string]string{
+		"Path": c.Path,
+	})
 	req.Header.Set("User-Agent", c.s.userAgent())
 	if v, ok := c.opt_["ifNoneMatch"]; ok {
 		req.Header.Set("If-None-Match", fmt.Sprintf("%v", v))
@@ -447,13 +444,17 @@ func (c *LoadStreamCall) Do() (*LoadStreamResponse, error) {
 	//   "description": "Loads log stream metadata.",
 	//   "httpMethod": "GET",
 	//   "id": "service.LoadStream",
+	//   "parameterOrder": [
+	//     "Path"
+	//   ],
 	//   "parameters": {
 	//     "Path": {
-	//       "location": "query",
+	//       "location": "path",
+	//       "required": true,
 	//       "type": "string"
 	//     }
 	//   },
-	//   "path": "loadStream",
+	//   "path": "loadstream/{Path}",
 	//   "response": {
 	//     "$ref": "LoadStreamResponse",
 	//     "parameterName": "resource"

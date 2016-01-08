@@ -9,13 +9,11 @@ import (
 	"github.com/luci/luci-go/appengine/apigen_examples/dumb_counter/dumbCounter"
 	"github.com/luci/luci-go/appengine/ephelper"
 	"github.com/luci/luci-go/appengine/ephelper/epfrontend"
-	"github.com/luci/luci-go/common/logging/gologger"
 	"google.golang.org/appengine"
 )
 
 func main() {
 	epfe := epfrontend.New("/api/", nil)
-	epfe.Logger = gologger.Get()
 	h := ephelper.Helper{
 		Frontend: epfe,
 	}

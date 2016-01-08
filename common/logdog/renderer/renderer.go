@@ -40,25 +40,26 @@ type Renderer struct {
 	buf bytes.Buffer
 	// bufPos is the current position in the buffer.
 	bufPos int
+	// err is the error returned by bufferNext. Once this is set, no more logs
+	// will be read and any buffered logs will be drained.
+	err error
 }
 
 var _ io.Reader = (*Renderer)(nil)
 
 func (r *Renderer) Read(b []byte) (int, error) {
 	buffered := r.buffered()
-	for len(buffered) == 0 {
+	for r.err == nil && len(buffered) == 0 {
 		r.buf.Reset()
 		r.bufPos = 0
-		if err := r.bufferNext(); err != nil {
-			return 0, err
-		}
+		r.err = r.bufferNext()
 
 		buffered = r.buffered()
 	}
 
 	count := copy(b, buffered)
 	r.bufPos += count
-	return count, nil
+	return count, r.err
 }
 
 func (r *Renderer) buffered() []byte {
@@ -68,27 +69,21 @@ func (r *Renderer) buffered() []byte {
 func (r *Renderer) bufferNext() error {
 	// Fetch and buffer the next log entry.
 	le, err := r.Source.NextLogEntry()
-	if err != nil {
-		return err
-	}
-
-	switch {
-	case le.GetText() != nil:
-		for _, line := range le.GetText().Lines {
-			r.buf.WriteString(line.Value)
-			if !r.Reproduce {
-				r.buf.WriteRune('\n')
-			} else {
-				r.buf.WriteString(line.Delimiter)
+	if le != nil {
+		switch {
+		case le.GetText() != nil:
+			for _, line := range le.GetText().Lines {
+				r.buf.WriteString(line.Value)
+				if !r.Reproduce {
+					r.buf.WriteRune('\n')
+				} else {
+					r.buf.WriteString(line.Delimiter)
+				}
 			}
+
+		case le.GetBinary() != nil:
+			r.buf.Write(le.GetBinary().Data)
 		}
-
-	case le.GetBinary() != nil:
-		r.buf.Write(le.GetBinary().Data)
-
-	default:
-		break
 	}
-
-	return nil
+	return err
 }

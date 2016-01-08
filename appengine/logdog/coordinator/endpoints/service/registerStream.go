@@ -177,6 +177,7 @@ func (s *Service) RegisterStream(c context.Context, req *RegisterStreamRequest) 
 
 			ls.Secret = req.Secret
 			ls.ProtoVersion = req.ProtoVersion
+			ls.State = coordinator.LSPending
 			ls.Created = now
 			ls.Updated = now
 			ls.TerminalIndex = -1

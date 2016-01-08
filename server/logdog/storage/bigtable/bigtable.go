@@ -5,6 +5,7 @@
 package bigtable
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/luci/luci-go/common/errors"
@@ -153,4 +154,34 @@ func isTransient(err error) bool {
 		return true
 	}
 	return false
+}
+
+// getLogData loads the "data" column from the "log" column family and returns
+// its []byte contents.
+//
+// If the row doesn't exist, storage.ErrDoesNotExist will be returned.
+func getLogData(row bigtable.Row) ([]byte, error) {
+	ri := getReadItem(row, "log", "data")
+	if ri == nil {
+		return nil, storage.ErrDoesNotExist
+	}
+	return ri.Value, nil
+}
+
+// getReadItem retrieves a specific RowItem from the supplied Row.
+func getReadItem(row bigtable.Row, family, column string) *bigtable.ReadItem {
+	// Get the row for our family.
+	items, ok := row[family]
+	if !ok {
+		return nil
+	}
+
+	// Get the specific ReadItem for our column
+	colName := fmt.Sprintf("%s:%s", family, column)
+	for _, item := range items {
+		if item.Column == colName {
+			return &item
+		}
+	}
+	return nil
 }

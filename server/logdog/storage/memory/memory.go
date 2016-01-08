@@ -114,56 +114,26 @@ func (s *Storage) Get(req *storage.GetRequest, cb storage.GetCallback) error {
 }
 
 // Tail implements storage.Storage.
-func (s *Storage) Tail(req *storage.GetRequest, cb storage.GetCallback) error {
-	recs := []*rec(nil)
+func (s *Storage) Tail(p types.StreamPath) ([]byte, types.MessageIndex, error) {
+	var r *rec
 
-	// Aggregate all logs between start and end indexes.
+	// Find the latest log, then return it.
 	err := s.run(func() error {
-		ls := s.getLogStreamLocked(req.Path, false)
+		ls := s.getLogStreamLocked(p, false)
 		if ls == nil {
 			return storage.ErrDoesNotExist
 		}
 
-		// Determine our limit (locked).
-		limit := len(ls.logs)
-		if req.Limit > 0 && req.Limit < limit {
-			limit = req.Limit
-		}
-		if s.MaxGetCount > 0 && s.MaxGetCount < limit {
-			limit = s.MaxGetCount
-		}
-
-		for idx := req.Index; idx <= ls.latestIndex; idx++ {
-			le, ok := ls.logs[idx]
-			if !ok {
-				return nil
-			}
-			recs = append(recs, &rec{
-				index: idx,
-				data:  le,
-			})
-
-			limit--
-			if limit <= 0 {
-				break
-			}
+		r = &rec{
+			index: ls.latestIndex,
+			data:  ls.logs[ls.latestIndex],
 		}
 		return nil
 	})
 	if err != nil {
-		return err
+		return nil, 0, err
 	}
-
-	// Iterate over the resulting logs in reverse order.
-	for i := len(recs) - 1; i >= 0; i-- {
-		r := recs[i]
-		dataCopy := make([]byte, len(r.data))
-		copy(dataCopy, r.data)
-		if !cb(r.index, dataCopy) {
-			break
-		}
-	}
-	return nil
+	return r.data, r.index, nil
 }
 
 // Purge implements storage.Storage.

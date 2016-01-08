@@ -187,13 +187,13 @@ func TestFetcher(t *testing.T) {
 			f := newFetcher(c, o)
 			defer reap(f)
 
-			So(f.o.Count, ShouldEqual, 0)
-			So(f.o.Bytes, ShouldEqual, DefaultBufferBytes)
+			So(f.o.BufferCount, ShouldEqual, 0)
+			So(f.o.BufferBytes, ShouldEqual, DefaultBufferBytes)
 			So(f.o.PrefetchFactor, ShouldEqual, 1)
 		})
 
 		Convey(`With a Count limit of 3.`, func() {
-			o.Count = 3
+			o.BufferCount = 3
 			f := newFetcher(c, o)
 			defer reap(f)
 
@@ -265,7 +265,7 @@ func TestFetcher(t *testing.T) {
 		})
 
 		Convey(`With a byte limit of 15`, func() {
-			o.Bytes = 15
+			o.BufferBytes = 15
 			o.PrefetchFactor = 2
 			f := newFetcher(c, o)
 			defer reap(f)
@@ -280,6 +280,23 @@ func TestFetcher(t *testing.T) {
 			So(logs, ShouldResemble, []types.MessageIndex{0, 1, 2, 3, 4, 5, 6})
 
 			So(fs.getHistory(), ShouldResemble, []int{6, 1})
+		})
+
+		Convey(`With an index of 1 and a maximum count of 1, fetches exactly 1 log.`, func() {
+			o.Index = 1
+			o.Count = 1
+			f := newFetcher(c, o)
+			defer reap(f)
+
+			fs.setTerminal(6)
+			fs.addLogs(0, 1, 2, 3, 4, 5, 6)
+
+			// First fetch will ask for exactly one log.
+			logs, err := loadLogs(f, 0)
+			So(err, ShouldEqual, io.EOF)
+			So(logs, ShouldResemble, []types.MessageIndex{1})
+
+			So(fs.getHistory(), ShouldResemble, []int{1})
 		})
 	})
 }

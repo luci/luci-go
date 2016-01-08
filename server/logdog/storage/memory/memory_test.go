@@ -10,8 +10,9 @@ import (
 	"testing"
 
 	"github.com/luci/luci-go/common/logdog/types"
-	. "github.com/luci/luci-go/common/testing/assertions"
 	"github.com/luci/luci-go/server/logdog/storage"
+
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -141,83 +142,16 @@ func TestBigTable(t *testing.T) {
 			})
 
 			Convey(`Tail()`, func() {
-				// Build reverse record set.
-				rrecs := make([]*rec, len(recs))
-				for i, r := range recs {
-					rrecs[len(recs)-i-1] = r
-				}
-				ridx := index(rrecs)
-
-				Convey(`Can retrieve all of the records correctly.`, func() {
-					req := storage.GetRequest{
-						Path: path,
-					}
-
-					So(st.Tail(&req, getAllCB), ShouldBeNil)
-					So(getRecs, ShouldResembleV, rrecs[ridx[5]:])
-				})
-
-				Convey(`Can retrieve records 7 correctly.`, func() {
-					req := storage.GetRequest{
-						Path:  path,
-						Index: 7,
-					}
-
-					So(st.Tail(&req, getAllCB), ShouldBeNil)
-					So(getRecs, ShouldResembleV, []*rec{rrecs[ridx[8]], rrecs[ridx[7]]})
-				})
-
-				Convey(`Returns no records when indexed at 9.`, func() {
-					req := storage.GetRequest{
-						Path:  path,
-						Index: 9,
-					}
-
-					So(st.Tail(&req, getAllCB), ShouldBeNil)
-					So(getRecs, ShouldResembleV, []*rec(nil))
-				})
-
-				Convey(`Will adhere to GetRequest limit.`, func() {
-					req := storage.GetRequest{
-						Path:  path,
-						Limit: 4, // Only look "4" records ahead for end-of-stream.
-					}
-
-					So(st.Tail(&req, getAllCB), ShouldBeNil)
-					So(getRecs, ShouldResembleV, rrecs[ridx[3]:])
-				})
-
-				Convey(`Will adhere to hard limit.`, func() {
-					st.MaxGetCount = 3 // Only look "3" records ahead for end-of-stream.
-					req := storage.GetRequest{
-						Path:  path,
-						Limit: 4,
-					}
-
-					So(st.Tail(&req, getAllCB), ShouldBeNil)
-					So(getRecs, ShouldResembleV, rrecs[ridx[2]:])
-				})
-
-				Convey(`Will stop iterating if callback returns false.`, func() {
-					req := storage.GetRequest{
-						Path: path,
-					}
-
-					count := 0
-					err := st.Tail(&req, func(types.MessageIndex, []byte) bool {
-						count++
-						return false
-					})
+				Convey(`Can retrieve the tail record, 10.`, func() {
+					d, idx, err := st.Tail(path)
 					So(err, ShouldBeNil)
-					So(count, ShouldEqual, 1)
+					So(d, ShouldResembleV, numRec(10).data)
+					So(idx, ShouldEqual, 10)
 				})
 
 				Convey(`Will fail to retrieve records if the stream doesn't exist.`, func() {
-					req := storage.GetRequest{
-						Path: "testing/+/does/not/exist",
-					}
-
-					So(st.Tail(&req, getAllCB), ShouldEqual, storage.ErrDoesNotExist)
+					_, _, err := st.Tail("testing/+/does/not/exist")
+					So(err, ShouldEqual, storage.ErrDoesNotExist)
 				})
 			})
 

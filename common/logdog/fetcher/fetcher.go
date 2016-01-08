@@ -56,21 +56,24 @@ type Options struct {
 	// Source is the log stream source.
 	Source Source
 
-	// StartIndex is the starting stream index to retrieve.
-	StartIndex types.MessageIndex
+	// Index is the starting stream index to retrieve.
+	Index types.MessageIndex
+	// Count is the total number of logs to retrieve. If zero, the full stream
+	// will be fetched.
+	Count int64
 
 	// Count is the minimum amount of LogEntry records to buffer. If the buffered
 	// amount dips below Count, more logs will be fetched.
 	//
 	// If zero, no count target will be applied.
-	Count int
+	BufferCount int
 
 	// BufferBytes is the target number of LogEntry bytes to buffer. If the
 	// buffered amount dips below Bytes, more logs will be fetched.
 	//
 	// If zero, no byte target will be applied unless Count is also zero, in which
 	// case DefaultBufferBytes byte constraint will be applied.
-	Bytes int64
+	BufferBytes int64
 
 	// PrefetchFactor constrains the amount of additional data to fetch when
 	// refilling the buffer. Effective Count and Bytes values are multiplied
@@ -89,9 +92,6 @@ type Options struct {
 type Fetcher struct {
 	// o is the set of Options.
 	o *Options
-
-	// ctx is the retained context. The Fetcher must respond to it being closed.
-	ctx context.Context
 
 	// logC is the communication channel between the fetch goroutine and
 	// the user-facing NextLogEntry. Logs are punted through this channel
@@ -115,8 +115,8 @@ func New(c context.Context, o Options) *Fetcher {
 	if o.Delay <= 0 {
 		o.Delay = DefaultDelay
 	}
-	if o.Bytes <= 0 && o.Count <= 0 {
-		o.Bytes = DefaultBufferBytes
+	if o.BufferBytes <= 0 && o.BufferCount <= 0 {
+		o.BufferBytes = DefaultBufferBytes
 	}
 	if o.PrefetchFactor <= 1 {
 		o.PrefetchFactor = 1
@@ -131,9 +131,10 @@ func New(c context.Context, o Options) *Fetcher {
 }
 
 type logResponse struct {
-	log  *protocol.LogEntry
-	size int64
-	err  error
+	log   *protocol.LogEntry
+	size  int64
+	index types.MessageIndex
+	err   error
 }
 
 // NextLogEntry returns the next buffered LogEntry, blocking until it becomes
@@ -151,8 +152,7 @@ func (f *Fetcher) NextLogEntry() (*protocol.LogEntry, error) {
 			f.fetchErr = resp.err
 		}
 		if resp.log != nil {
-			logCopy := *resp.log
-			le = &logCopy
+			le = resp.log
 		}
 	}
 	return le, f.fetchErr
@@ -177,7 +177,7 @@ func (f *Fetcher) fetch(c context.Context) {
 	defer close(f.logC)
 
 	lb := logBuffer{}
-	nextFetchIndex := types.MessageIndex(0)
+	nextFetchIndex := f.o.Index
 	lastSentIndex := types.MessageIndex(-1)
 	tidx := types.MessageIndex(-1)
 
@@ -198,65 +198,93 @@ func (f *Fetcher) fetch(c context.Context) {
 		f.logC <- &logResponse{err: err}
 	}
 
+	count := int64(0)
 	for tidx < 0 || lastSentIndex < tidx {
+		if f.o.Count > 0 && count >= f.o.Count {
+			log.Fields{
+				"count": count,
+			}.Debugf(c, "Exceeded maximum log count.")
+			break
+		}
+
 		// If we have a buffered log, prepare it for sending.
 		var sendC chan<- *logResponse
 		var lr *logResponse
 		if le := lb.current(); le != nil {
-			lr = &logResponse{log: le}
+			lr = &logResponse{
+				log:   le,
+				size:  f.sizeOf(le),
+				index: types.MessageIndex(le.StreamIndex),
+			}
 			sendC = f.logC
 		}
 
 		// If we're not currently fetching logs, and we are below our thresholds,
 		// request a new batch of logs.
-		if logFetchC == nil && (tidx < 0 || nextFetchIndex <= tidx) && (lb.size() < f.o.Count || bytes < f.o.Bytes) {
+		if logFetchC == nil && (tidx < 0 || nextFetchIndex <= tidx) &&
+			(lb.size() < f.o.BufferCount || bytes < f.o.BufferBytes) {
 			logFetchC = logFetchBaseC
 			req := fetchRequest{
 				index: nextFetchIndex,
-				count: (f.o.Count * f.o.PrefetchFactor) - lb.size(),
-				bytes: (f.o.Bytes * int64(f.o.PrefetchFactor)) - bytes,
+				count: (f.o.BufferCount * f.o.PrefetchFactor) - lb.size(),
+				bytes: (f.o.BufferBytes * int64(f.o.PrefetchFactor)) - bytes,
 				respC: logFetchC,
 			}
-			go f.fetchLogs(c, &req)
+
+			doFetch := true
+			if f.o.Count > 0 {
+				// Constrain our logs to the maximim that we'll actually need.
+				remaining := f.o.Count - count - int64(lb.size())
+				if req.count == 0 || remaining < int64(req.count) {
+					req.count = int(remaining)
+				}
+				if req.count <= 0 {
+					// We have enough buffered logs.
+					doFetch = false
+				}
+			}
+			if doFetch {
+				log.Fields{
+					"index": req.index,
+					"count": req.count,
+					"bytes": req.bytes,
+				}.Debugf(c, "Buffering next round of logs...")
+				go f.fetchLogs(c, &req)
+			}
 		}
 
 		select {
 		case <-c.Done():
 			// Our Context has been cancelled. Terminate and propagate that error.
+			log.WithError(c.Err()).Debugf(c, "Context has been cancelled.")
 			errOut(c.Err())
 			return
 
 		case resp := <-logFetchC:
 			logFetchC = nil
 			if resp.err != nil {
+				log.WithError(resp.err).Errorf(c, "Error fetching logs.")
 				errOut(resp.err)
 				return
 			}
 
 			// Account for each log and add it to our buffer.
-			for i, le := range resp.logs {
-				if types.MessageIndex(le.StreamIndex) != nextFetchIndex+types.MessageIndex(i) {
-					// We have hit a non-contiguous index. Discard the remainder of the
-					// response. We will re-request.
-					log.Fields{
-						"nextFetchIndex": nextFetchIndex,
-						"logEntryIndex":  le.StreamIndex,
-					}.Warningf(c, "Non-contiguous log entry received.")
-					resp.logs = resp.logs[:i]
-					break
+			if len(resp.logs) > 0 {
+				for _, le := range resp.logs {
+					bytes += int64(f.sizeOf(le))
 				}
-
-				bytes += int64(f.sizeOf(le))
+				nextFetchIndex = types.MessageIndex(resp.logs[len(resp.logs)-1].StreamIndex) + 1
+				lb.append(resp.logs...)
 			}
-			nextFetchIndex += types.MessageIndex(len(resp.logs))
-			lb.append(resp.logs...)
 			if resp.tidx >= 0 {
 				tidx = resp.tidx
 			}
 
 		case sendC <- lr:
-			bytes -= f.sizeOf(lr.log)
-			lastSentIndex = types.MessageIndex(lr.log.StreamIndex)
+			bytes -= lr.size
+			lastSentIndex = lr.index
+
+			count++
 			lb.next()
 		}
 	}
@@ -301,6 +329,13 @@ func (f *Fetcher) fetchLogs(c context.Context, req *fetchRequest) {
 			return
 
 		case len(resp.logs) > 0:
+			log.Fields{
+				"index":         req.index,
+				"count":         len(resp.logs),
+				"terminalIndex": resp.tidx,
+				"firstLog":      resp.logs[0].StreamIndex,
+				"lastLog":       resp.logs[len(resp.logs)-1].StreamIndex,
+			}.Debugf(c, "Fetched log entries.")
 			return
 
 		case resp.tidx >= 0 && req.index > resp.tidx:

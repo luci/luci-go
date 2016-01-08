@@ -28,7 +28,6 @@ var (
 	MethodInfoMap = ephelper.MethodInfoMap{
 		"LoadStream": &endpoints.MethodInfo{
 			Name:       "LoadStream",
-			Path:       "loadStream",
 			Desc:       "Loads log stream metadata.",
 			HTTPMethod: "GET",
 			Scopes:     Scopes,

@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/luci/gae/service/info"
+	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/logdog/services"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
@@ -34,6 +36,17 @@ func isMember(c context.Context, groupNameFunc func(*services.Coordinator) strin
 	cfg, err := Load(c)
 	if err != nil {
 		return err
+	}
+
+	// On dev-appserver, the superuser has implicit group membership to
+	// everything.
+	if info.Get(c).IsDevAppServer() {
+		if u := auth.CurrentUser(c); u.Superuser {
+			log.Fields{
+				"identity": u.Identity,
+			}.Infof(c, "Granting superuser implicit group membership on development server.")
+			return nil
+		}
 	}
 
 	if cfg.Coordinator == nil {

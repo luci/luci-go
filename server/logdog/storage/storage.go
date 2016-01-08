@@ -84,16 +84,9 @@ type Storage interface {
 	// during retrieval.
 	Get(*GetRequest, GetCallback) error
 
-	// Tail invokes a callback over a range of contiguous LogEntry records,
-	// starting with the largest entry.
-	//
-	// The contiguous space is started from the specified Index. If a Limit is
-	// supplied, the tail record will begin at most Limit records from the Index.
-	//
-	// Returns nil if retrieval executed successfully, ErrDoesNotExist if
-	// the requested stream does not exist, and an error if an error occurred
-	// during retrieval.
-	Tail(*GetRequest, GetCallback) error
+	// Tail retrieves the latest log in the stream. If the stream has no logs, it
+	// will return ErrDoesNotExist.
+	Tail(types.StreamPath) ([]byte, types.MessageIndex, error)
 
 	// Purges a stream and all of its data from the store.
 	//

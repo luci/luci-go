@@ -59,6 +59,9 @@
     "archiveStreamURL": {
      "type": "string"
     },
+    "archived": {
+     "type": "boolean"
+    },
     "created": {
      "type": "string"
     },
@@ -153,15 +156,19 @@
   },
   "LoadStream": {
    "id": "service.LoadStream",
-   "path": "loadStream",
+   "path": "loadstream/{Path}",
    "httpMethod": "GET",
    "description": "Loads log stream metadata.",
    "parameters": {
     "Path": {
      "type": "string",
-     "location": "query"
+     "location": "path",
+     "required": true
     }
    },
+   "parameterOrder": [
+    "Path"
+   ],
    "response": {
     "$ref": "LoadStreamResponse",
     "parameterName": "resource"

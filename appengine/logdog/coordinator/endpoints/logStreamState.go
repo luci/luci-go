@@ -26,6 +26,8 @@ type LogStreamState struct {
 	// If the value is -1, the log is still streaming.
 	TerminalIndex int64 `json:"terminalIndex,string,omitempty"`
 
+	// Archived is true if the log stream has been archived.
+	Archived bool `json:"archived,omitempty"`
 	// ArchiveIndexURL is the Google Storage URL where the log stream's index is
 	// archived.
 	ArchiveIndexURL string `json:"archiveIndexURL,omitempty"`
@@ -49,11 +51,17 @@ type LogStreamState struct {
 // If desc is true, deserialize the LogStream's LogStreamDescriptor protobuf
 // into the Descriptor field.
 func LoadLogStreamState(ls *coordinator.LogStream) *LogStreamState {
+	tidx := ls.TerminalIndex
+	if !ls.Terminated() {
+		tidx = -1
+	}
+
 	return &LogStreamState{
 		ProtoVersion:     ls.ProtoVersion,
 		Created:          ToRFC3339(ls.Created),
 		Updated:          ToRFC3339(ls.Updated),
-		TerminalIndex:    ls.TerminalIndex,
+		TerminalIndex:    tidx,
+		Archived:         ls.Archived(),
 		ArchiveIndexURL:  ls.ArchiveIndexURL,
 		ArchiveStreamURL: ls.ArchiveStreamURL,
 		ArchiveDataURL:   ls.ArchiveDataURL,

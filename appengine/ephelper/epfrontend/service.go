@@ -15,6 +15,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/paniccatcher"
 )
 
 const (
@@ -137,14 +138,20 @@ func (c *serviceCall) addParam(k string, v interface{}) {
 
 // Server is an HTTP handler
 type Server struct {
-	// Logger will be used to log messages during frontend execution. It defaults
-	// to logging.Null().
-	Logger logging.Logger
+	// Logger is a function that is called to obtain a logger for the current
+	// http.Request. Logger will be called with a nil http.Request when a logger
+	// is needed outside of the scope of request handling.
+	//
+	// If Logger is nil, or if Logger returns nil, a logging.Null logger will be
+	// used.
+	Logger func(*http.Request) logging.Logger
 
 	// root is the root path of this Server.
 	root string
 	// backend is the endpoints Server instance to bind to.
 	backend http.Handler
+	// logger is the resolved no-context logger.
+	logger logging.Logger
 	// endpoints is a map of method to endpoint path component tree.
 	endpoints map[string]*endpointNode
 	// services is a map of registered services.
@@ -168,8 +175,9 @@ func New(root string, backend http.Handler) *Server {
 	s := &Server{
 		root:    root,
 		backend: backend,
-		Logger:  logging.Null(),
 	}
+	s.logger = s.getLogger(nil)
+
 	s.registerPath(safeURLPathJoin("discovery", "v1", "apis"), s.serveGetJSON(s.handleDirectoryList))
 	s.registerPath(safeURLPathJoin("explorer"), func(w http.ResponseWriter, r *http.Request) error {
 		http.Redirect(w, r, fmt.Sprintf("http://apis-explorer.appspot.com/apis-explorer/?base=%s",
@@ -220,7 +228,7 @@ func (s *Server) RegisterService(svc *endpoints.RPCService) error {
 }
 
 func (s *Server) registerEndpoint(method string, apipath []string, ep *endpoint) error {
-	s.Logger.Debugf("Registering %s %s => %#v", method, apipath, ep)
+	s.logger.Debugf("Registering %s %s => %#v", method, apipath, ep)
 	if s.endpoints == nil {
 		s.endpoints = map[string]*endpointNode{}
 	}
@@ -255,171 +263,11 @@ func (s *Server) HandleHTTP(mux *http.ServeMux) {
 
 // ServeHTTP is the Server's implementation of the http.Handler interface.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	err := error(nil)
-	iw := &errorResponseWriter{ResponseWriter: w}
-	defer func() {
-		if r := recover(); r != nil {
-			s.Logger.Errorf("Panic during endpoint handling: %v", r)
-			err = endpoints.InternalServerError
-		}
-
-		if err != nil {
-			iw.setError(err)
-		}
-		iw.forwardError()
-	}()
-
-	err = s.serveHTTPImpl(iw, r)
-}
-
-func (s *Server) serveHTTPImpl(w http.ResponseWriter, r *http.Request) error {
-	if r.Body != nil {
-		defer r.Body.Close()
+	h := requestHandler{
+		Server: s,
+		logger: s.getLogger(r),
 	}
-
-	// Strip our root from the request path, leaving the endpoint path.
-	if !strings.HasPrefix(r.URL.Path, s.root) {
-		s.Logger.Debugf("Path (%s) does not begin with root (%s)", r.URL.Path, s.root)
-		return endpoints.NotFoundError
-	}
-	path := strings.TrimPrefix(r.URL.Path, s.root)
-	s.Logger.Debugf("Received HTTP %s request [%s]: [%s]", r.Method, r.URL.Path, path)
-
-	// If we have an explicit path handler set up for this path, use it.
-	if h := s.paths[path]; h != nil {
-		return h(w, r)
-	}
-
-	// Resolve path to a service call.
-	call, err := s.resolveRequest(r.Method, path)
-	if err != nil {
-		s.Logger.Warningf("Could not resolve %s request [%s] to a backend endpoint: %v",
-			r.Method, path, err)
-		return err
-	}
-	// Add query strings to call parameters.
-	for k, vs := range r.URL.Query() {
-		// If there are multiple values, add the last.
-		if len(vs) > 0 {
-			param := vs[len(vs)-1]
-			v, err := convertQueryParam(k, param, call.ep.method)
-			if err != nil {
-				s.Logger.Errorf("Could not convert query param %q (%q): %v", k, param, err)
-				return endpoints.BadRequestError
-			}
-			call.addParam(k, v)
-		}
-	}
-	s.Logger.Debugf("Resolved %s request [%s] to endpoint [%s].", r.Method, path, call.ep.backendPath)
-
-	// Read the body for forwarding.
-	buf := bytes.Buffer{}
-	if _, err := buf.ReadFrom(r.Body); err != nil {
-		s.Logger.Errorf("failed to read request body: %v", err)
-		return endpoints.InternalServerError
-	}
-
-	// Replace the body with a JSON object, if necessary.
-	if buf.Len() == 0 || len(call.params) > 0 {
-		data := map[string]*jsonRWRawMessage{}
-		if buf.Len() > 0 {
-			if err := json.Unmarshal(buf.Bytes(), &data); err != nil {
-				s.Logger.Errorf("Failed to unmarshal request JSON: %v", err)
-				return endpoints.BadRequestError
-			}
-		}
-
-		for k, v := range call.params {
-			data[k] = &jsonRWRawMessage{
-				v: v,
-			}
-		}
-
-		buf.Reset()
-		m := json.NewEncoder(&buf)
-		if err := m.Encode(data); err != nil {
-			s.Logger.Errorf("Failed to re-marshal request JSON: %v", err)
-			return endpoints.InternalServerError
-		}
-	}
-	r.Body = ioutil.NopCloser(&buf)
-
-	// Mutate our request to pretend it's a frontend-to-backend request, then
-	// forward it to the backend for actual API processing!
-	//
-	// The actual Path prefix doesn't matter, as the service only looks at the
-	// last component to derive the service call.
-	r.Method = "POST"
-	r.RequestURI = "/_ah/spi/" + call.ep.backendPath // Strips query parameters.
-	r.URL.Path = r.RequestURI
-	s.backend.ServeHTTP(w, r)
-	return nil
-}
-
-func (s *Server) resolveRequest(method, path string) (*serviceCall, error) {
-	call := serviceCall{
-		path: path,
-	}
-
-	parts := strings.Split(path, "/")
-
-	s.Logger.Debugf("Resolving %s request %s...", method, parts)
-	n := s.endpoints[method]
-	if n != nil {
-		n = n.lookup(parts...)
-	}
-	if n == nil {
-		return nil, endpoints.NotFoundError
-	}
-	ep := n.ep
-	call.ep = ep
-
-	// Build our query parameters by reverse-traversing the tree towards its root.
-	//
-	// The endpoints node path will have the same size as parts, since it matched.
-	for len(parts) > 0 {
-		if n.paramName != "" {
-			param := parts[len(parts)-1]
-			v, err := convertQueryParam(n.paramName, param, ep.method)
-			if err != nil {
-				s.Logger.Errorf("Could not convert path param %q (%q): %v", n.paramName, param, err)
-				return nil, endpoints.BadRequestError
-			}
-			call.addParam(n.paramName, v)
-		}
-
-		parts = parts[:len(parts)-1]
-		n = n.parent
-	}
-
-	return &call, nil
-}
-
-func convertQueryParam(k, v string, m *endpoints.APIMethod) (interface{}, error) {
-	// Find the parameter for "k".
-	p := m.Request.Params[k]
-	if p == nil {
-		return v, nil
-	}
-
-	switch p.Type {
-	case "int32", "int64", "uint32", "uint64":
-		return strconv.ParseInt(v, 10, 64)
-	case "float", "double":
-		return strconv.ParseFloat(v, 64)
-	case "boolean":
-		switch v {
-		case "", "false":
-			return false, nil
-		default:
-			return true, nil
-		}
-	case "string", "bytes":
-		return v, nil
-
-	default:
-		return nil, fmt.Errorf("unknown type %q", p.Type)
-	}
+	h.handle(w, r)
 }
 
 // serveGetJSON returns an HTTP handler that serves the marshalled JSON form of
@@ -443,5 +291,200 @@ func (s *Server) serveGetJSON(f func(*http.Request) (interface{}, error)) handle
 		w.Header().Add("Content-Type", "application/json")
 		_, err = w.Write(data)
 		return err
+	}
+}
+
+func (s *Server) getLogger(r *http.Request) (l logging.Logger) {
+	if s.Logger != nil {
+		l = s.Logger(r)
+	}
+	if l == nil {
+		l = logging.Null()
+	}
+	return
+}
+
+type requestHandler struct {
+	*Server
+
+	// logger shadows Server.logger and is bound to an http.Request.
+	logger logging.Logger
+}
+
+func (h *requestHandler) handle(w http.ResponseWriter, r *http.Request) {
+	var err error
+	iw := &errorResponseWriter{ResponseWriter: w}
+	defer func() {
+		if err != nil {
+			iw.setError(err)
+		}
+		iw.forwardError()
+	}()
+
+	paniccatcher.Do(func() {
+		err = h.handleImpl(iw, r)
+	}, func(p *paniccatcher.Panic) {
+		h.logger.Errorf("Panic during endpoint handling: %s\n%s", p.Reason, p.Stack)
+		err = endpoints.InternalServerError
+	})
+}
+
+func (h *requestHandler) handleImpl(w http.ResponseWriter, r *http.Request) error {
+	if r.Body != nil {
+		defer r.Body.Close()
+	}
+
+	// Strip our root from the request path, leaving the endpoint path.
+	if !strings.HasPrefix(r.URL.Path, h.root) {
+		h.logger.Debugf("Path (%s) does not begin with root (%s)", r.URL.Path, h.root)
+		return endpoints.NotFoundError
+	}
+	path := strings.TrimPrefix(r.URL.Path, h.root)
+	h.logger.Debugf("Received HTTP %s request [%s]: [%s]", r.Method, r.URL.Path, path)
+
+	// If we have an explicit path handler set up for this path, use it.
+	if ph := h.paths[path]; ph != nil {
+		return ph(w, r)
+	}
+
+	// Resolve path to a service call.
+	call, err := h.resolveRequest(r.Method, path)
+	if err != nil {
+		h.logger.Warningf("Could not resolve %s request [%s] to a backend endpoint: %v",
+			r.Method, path, err)
+		return err
+	}
+	// Add query strings to call parameters.
+	for k, vs := range r.URL.Query() {
+		// If there are multiple values, add the last.
+		if len(vs) > 0 {
+			param := vs[len(vs)-1]
+			v, err := convertQueryParam(k, param, call.ep.method)
+			if err != nil {
+				h.logger.Errorf("Could not convert query param %q (%q): %v", k, param, err)
+				return endpoints.BadRequestError
+			}
+			call.addParam(k, v)
+		}
+	}
+	h.logger.Debugf("Resolved %s request [%s] to endpoint [%s].", r.Method, path, call.ep.backendPath)
+
+	// Read the body for forwarding.
+	buf := bytes.Buffer{}
+	if _, err := buf.ReadFrom(r.Body); err != nil {
+		h.logger.Errorf("failed to read request body: %v", err)
+		return endpoints.InternalServerError
+	}
+
+	// Replace the body with a JSON object, if necessary.
+	if buf.Len() == 0 || len(call.params) > 0 {
+		data := map[string]*jsonRWRawMessage{}
+		if buf.Len() > 0 {
+			if err := json.Unmarshal(buf.Bytes(), &data); err != nil {
+				h.logger.Errorf("Failed to unmarshal request JSON: %v", err)
+				return endpoints.BadRequestError
+			}
+		}
+
+		for k, v := range call.params {
+			data[k] = &jsonRWRawMessage{
+				v: v,
+			}
+		}
+
+		buf.Reset()
+		m := json.NewEncoder(&buf)
+		if err := m.Encode(data); err != nil {
+			h.logger.Errorf("Failed to re-marshal request JSON: %v", err)
+			return endpoints.InternalServerError
+		}
+	}
+	r.Body = ioutil.NopCloser(&buf)
+
+	// Mutate our request to pretend it's a frontend-to-backend request, then
+	// forward it to the backend for actual API processing!
+	//
+	// The actual Path prefix doesn't matter, as the service only looks at the
+	// last component to derive the service call.
+	r.Method = "POST"
+	r.RequestURI = "/_ah/spi/" + call.ep.backendPath // Strips query parameters.
+	r.URL.Path = r.RequestURI
+	h.backend.ServeHTTP(w, r)
+	return nil
+}
+
+func (h *requestHandler) resolveRequest(method, path string) (*serviceCall, error) {
+	call := serviceCall{
+		path: path,
+	}
+
+	parts := strings.Split(path, "/")
+
+	h.logger.Debugf("Resolving %s request %s...", method, parts)
+	n := h.endpoints[method]
+	if n != nil {
+		n = n.lookup(parts...)
+	}
+	if n == nil {
+		return nil, endpoints.NotFoundError
+	}
+	ep := n.ep
+	call.ep = ep
+
+	// Build our query parameters by reverse-traversing the tree towards its root.
+	//
+	// The endpoints node path will have the same size as parts, since it matched.
+	for len(parts) > 0 {
+		if n.paramName != "" {
+			param := parts[len(parts)-1]
+			v, err := convertQueryParam(n.paramName, param, ep.method)
+			if err != nil {
+				h.logger.Errorf("Could not convert path param %q (%q): %v", n.paramName, param, err)
+				return nil, endpoints.BadRequestError
+			}
+			call.addParam(n.paramName, v)
+		}
+
+		parts = parts[:len(parts)-1]
+		n = n.parent
+	}
+
+	return &call, nil
+}
+
+func convertQueryParam(k, v string, m *endpoints.APIMethod) (interface{}, error) {
+	// Find the parameter for "k".
+	p := m.Request.Params[k]
+	if p == nil {
+		return v, nil
+	}
+
+	switch p.Type {
+	case "int64", "uint64":
+		// Assume all int64 are "string"-quoted integers. If there are quotes, strip
+		// them. Return the result as a string.
+		if len(v) >= 2 && strings.HasPrefix(v, `"`) && strings.HasSuffix(v, `"`) {
+			v = v[1 : len(v)-1]
+		}
+		if _, err := strconv.ParseInt(v, 10, 64); err != nil {
+			return nil, err
+		}
+		return v, nil
+	case "int32", "uint32":
+		return strconv.ParseInt(v, 10, 32)
+	case "float", "double":
+		return strconv.ParseFloat(v, 64)
+	case "boolean":
+		switch v {
+		case "", "false":
+			return false, nil
+		default:
+			return true, nil
+		}
+	case "string", "bytes":
+		return v, nil
+
+	default:
+		return nil, fmt.Errorf("unknown type %q", p.Type)
 	}
 }

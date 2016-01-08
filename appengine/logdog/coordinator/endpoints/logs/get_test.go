@@ -20,7 +20,6 @@ import (
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
-	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/services"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
@@ -78,7 +77,7 @@ func TestGet(t *testing.T) {
 	t.Parallel()
 
 	Convey(`With a testing configuration, a Get request`, t, func() {
-		c, _ := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
+		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 		c = memory.Use(c)
 
 		fs := authtest.FakeState{}
@@ -95,28 +94,6 @@ func TestGet(t *testing.T) {
 		// Define and populate our Storage.
 		protobufs := map[int][]byte{}
 		ms := memoryStorage.Storage{}
-		for _, v := range []int{0, 1, 2, 4, 5, 7} {
-			le := protocol.LogEntry{
-				TimeOffset:  google.NewDuration(time.Second),
-				StreamIndex: uint64(v),
-
-				// Fill in content so zero-indexed LogEntry isn't zero bytes.
-				Content: &protocol.LogEntry_Text{
-					&protocol.Text{
-						Lines: []*protocol.Text_Line{
-							{
-								Value:     "line of text",
-								Delimiter: "\n",
-							},
-							{
-								Value: "another line of text",
-							},
-						},
-					},
-				},
-			}
-			protobufs[v] = putLogEntry(&ms, types.StreamPath(req.Path), &le)
-		}
 
 		s := Logs{
 			ServiceBase: ephelper.ServiceBase{
@@ -131,6 +108,15 @@ func TestGet(t *testing.T) {
 		ls, err := ct.TestLogStream(c, desc)
 		So(err, ShouldBeNil)
 		So(ls.Put(ds.Get(c)), ShouldBeNil)
+
+		tc.Add(time.Second)
+		for _, v := range []int{0, 1, 2, 4, 5, 7} {
+			le := ct.TestLogEntry(c, ls, v)
+			le.GetText().Lines = append(le.GetText().Lines, &protocol.Text_Line{
+				Value: "another line of text",
+			})
+			protobufs[v] = putLogEntry(&ms, types.StreamPath(req.Path), le)
+		}
 
 		Convey(`Will fail if the Path is not a stream path or a hash.`, func() {
 			req.Path = "not/a/full/stream/path"
@@ -170,124 +156,117 @@ func TestGet(t *testing.T) {
 			})
 		})
 
-		Convey(`Will return nil if no records were requested.`, func() {
-			req.Count = -1
-			req.State = false
-
-			resp, err := s.Get(c, &req)
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeNil)
-		})
-
-		Convey(`Will successfully retrieve a stream path.`, func() {
-			resp, err := s.Get(c, &req)
-			So(err, ShouldBeNil)
-			So(resp, shouldHaveLogs, 0, 1, 2)
-		})
-
-		Convey(`Will successfully retrieve a stream path offset at 4.`, func() {
-			req.Index = 4
-
-			resp, err := s.Get(c, &req)
-			So(err, ShouldBeNil)
-			So(resp, shouldHaveLogs, 4, 5)
-		})
-
-		Convey(`Will retrieve no logs for contiguous offset 6.`, func() {
-			req.Index = 6
-
-			resp, err := s.Get(c, &req)
-			So(err, ShouldBeNil)
-			So(len(resp.Logs), ShouldEqual, 0)
-		})
-
-		Convey(`Will retrieve log 7 for non-contiguous offset 6.`, func() {
-			req.NonContiguous = true
-			req.Index = 6
-
-			resp, err := s.Get(c, &req)
-			So(err, ShouldBeNil)
-			So(resp, shouldHaveLogs, 7)
-		})
-
-		Convey(`With a byte limit of 1, will still return at least one log entry.`, func() {
-			req.Bytes = 1
-
-			resp, err := s.Get(c, &req)
-			So(err, ShouldBeNil)
-			So(resp, shouldHaveLogs, 0)
-		})
-
-		Convey(`With a byte limit of sizeof(0), will return log entry 0.`, func() {
-			req.Bytes = len(protobufs[0])
-
-			resp, err := s.Get(c, &req)
-			So(err, ShouldBeNil)
-			So(resp, shouldHaveLogs, 0)
-		})
-
-		Convey(`With a byte limit of sizeof(0)+1, will return log entry 0.`, func() {
-			req.Bytes = len(protobufs[0])
-
-			resp, err := s.Get(c, &req)
-			So(err, ShouldBeNil)
-			So(resp, shouldHaveLogs, 0)
-		})
-
-		Convey(`With a byte limit of sizeof({0, 1}), will return log entries {0, 1}.`, func() {
-			req.Bytes = len(protobufs[0]) + len(protobufs[1])
-
-			resp, err := s.Get(c, &req)
-			So(err, ShouldBeNil)
-			So(resp, shouldHaveLogs, 0, 1)
-		})
-
-		Convey(`With a byte limit of sizeof({0, 1, 2}), will return log entries {0, 1, 2}.`, func() {
-			req.Bytes = len(protobufs[0]) + len(protobufs[1]) + len(protobufs[2])
-
-			resp, err := s.Get(c, &req)
-			So(err, ShouldBeNil)
-			So(resp, shouldHaveLogs, 0, 1, 2)
-		})
-
-		Convey(`With a byte limit of sizeof({0, 1, 2})+1, will return log entries {0, 1, 2}.`, func() {
-			req.Bytes = len(protobufs[0]) + len(protobufs[1]) + len(protobufs[2]) + 1
-
-			resp, err := s.Get(c, &req)
-			So(err, ShouldBeNil)
-			So(resp, shouldHaveLogs, 0, 1, 2)
-		})
-
-		Convey(`Will successfully retrieve a stream path hash.`, func() {
-			req.Path = ls.HashID()
-			resp, err := s.Get(c, &req)
-			So(err, ShouldBeNil)
-			So(resp, shouldHaveLogs, 0, 1, 2)
-		})
-
-		Convey(`When tailing logs`, func() {
-			req.Tail = true
-
-			Convey(`Can retrieve logs.`, func() {
-				resp, err := s.Get(c, &req)
-				So(err, ShouldBeNil)
-				So(resp, shouldHaveLogs, 2, 1, 0)
-			})
-
-			Convey(`Can retrieve logs, and ignores NonContiguous setting.`, func() {
-				req.NonContiguous = true
+		Convey(`Testing head requests`, func() {
+			Convey(`Will return nil if no records were requested.`, func() {
+				req.Count = -1
+				req.State = false
 
 				resp, err := s.Get(c, &req)
 				So(err, ShouldBeNil)
-				So(resp, shouldHaveLogs, 2, 1, 0)
+				So(resp, ShouldBeNil)
 			})
 
-			Convey(`Can retrieve logs starting at contiguous space offset 4.`, func() {
+			Convey(`Will successfully retrieve a stream path.`, func() {
+				resp, err := s.Get(c, &req)
+				So(err, ShouldBeNil)
+				So(resp, shouldHaveLogs, 0, 1, 2)
+			})
+
+			Convey(`Will successfully retrieve a stream path offset at 4.`, func() {
 				req.Index = 4
 
 				resp, err := s.Get(c, &req)
 				So(err, ShouldBeNil)
-				So(resp, shouldHaveLogs, 5, 4)
+				So(resp, shouldHaveLogs, 4, 5)
+			})
+
+			Convey(`Will retrieve no logs for contiguous offset 6.`, func() {
+				req.Index = 6
+
+				resp, err := s.Get(c, &req)
+				So(err, ShouldBeNil)
+				So(len(resp.Logs), ShouldEqual, 0)
+			})
+
+			Convey(`Will retrieve log 7 for non-contiguous offset 6.`, func() {
+				req.NonContiguous = true
+				req.Index = 6
+
+				resp, err := s.Get(c, &req)
+				So(err, ShouldBeNil)
+				So(resp, shouldHaveLogs, 7)
+			})
+
+			Convey(`With a byte limit of 1, will still return at least one log entry.`, func() {
+				req.Bytes = 1
+
+				resp, err := s.Get(c, &req)
+				So(err, ShouldBeNil)
+				So(resp, shouldHaveLogs, 0)
+			})
+
+			Convey(`With a byte limit of sizeof(0), will return log entry 0.`, func() {
+				req.Bytes = len(protobufs[0])
+
+				resp, err := s.Get(c, &req)
+				So(err, ShouldBeNil)
+				So(resp, shouldHaveLogs, 0)
+			})
+
+			Convey(`With a byte limit of sizeof(0)+1, will return log entry 0.`, func() {
+				req.Bytes = len(protobufs[0])
+
+				resp, err := s.Get(c, &req)
+				So(err, ShouldBeNil)
+				So(resp, shouldHaveLogs, 0)
+			})
+
+			Convey(`With a byte limit of sizeof({0, 1}), will return log entries {0, 1}.`, func() {
+				req.Bytes = len(protobufs[0]) + len(protobufs[1])
+
+				resp, err := s.Get(c, &req)
+				So(err, ShouldBeNil)
+				So(resp, shouldHaveLogs, 0, 1)
+			})
+
+			Convey(`With a byte limit of sizeof({0, 1, 2}), will return log entries {0, 1, 2}.`, func() {
+				req.Bytes = len(protobufs[0]) + len(protobufs[1]) + len(protobufs[2])
+
+				resp, err := s.Get(c, &req)
+				So(err, ShouldBeNil)
+				So(resp, shouldHaveLogs, 0, 1, 2)
+			})
+
+			Convey(`With a byte limit of sizeof({0, 1, 2})+1, will return log entries {0, 1, 2}.`, func() {
+				req.Bytes = len(protobufs[0]) + len(protobufs[1]) + len(protobufs[2]) + 1
+
+				resp, err := s.Get(c, &req)
+				So(err, ShouldBeNil)
+				So(resp, shouldHaveLogs, 0, 1, 2)
+			})
+
+			Convey(`Will successfully retrieve a stream path hash.`, func() {
+				req.Path = ls.HashID()
+				resp, err := s.Get(c, &req)
+				So(err, ShouldBeNil)
+				So(resp, shouldHaveLogs, 0, 1, 2)
+			})
+		})
+
+		Convey(`Testing tail requests`, func() {
+			req.Tail = true
+
+			Convey(`Will successfully retrieve a stream path.`, func() {
+				resp, err := s.Get(c, &req)
+				So(err, ShouldBeNil)
+				So(resp, shouldHaveLogs, 7)
+			})
+
+			Convey(`Will successfully retrieve a stream path hash.`, func() {
+				req.Path = ls.HashID()
+				resp, err := s.Get(c, &req)
+				So(err, ShouldBeNil)
+				So(resp, shouldHaveLogs, 7)
 			})
 		})
 
@@ -384,7 +363,7 @@ func TestGet(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(resp, shouldHaveLogs, 0)
 
-			So(resp.Logs[0].Entry.Text, ShouldResembleV, []string{"line of text", "another line of text"})
+			So(resp.Logs[0].Entry.Text, ShouldResembleV, []string{"log entry #0", "another line of text"})
 		})
 
 		Convey(`When newlines are requested, will include delimiters.`, func() {
@@ -395,7 +374,7 @@ func TestGet(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(resp, shouldHaveLogs, 0)
 
-			So(resp.Logs[0].Entry.Text, ShouldResembleV, []string{"line of text\n", "another line of text"})
+			So(resp.Logs[0].Entry.Text, ShouldResembleV, []string{"log entry #0\n", "another line of text"})
 		})
 
 		Convey(`A Binary LogEntry`, func() {
