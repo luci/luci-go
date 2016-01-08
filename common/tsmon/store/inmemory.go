@@ -193,6 +193,21 @@ func (s *inMemoryStore) Incr(ctx context.Context, h MetricHandle, resetTime time
 	return nil
 }
 
+func (s *inMemoryStore) ModifyMulti(ctx context.Context, mods []Modification) error {
+	for _, m := range mods {
+		if m.SetValue != nil {
+			if err := s.Set(ctx, m.Handle, m.ResetTime, m.FieldVals, m.SetValue); err != nil {
+				return err
+			}
+		} else if m.IncrDelta != nil {
+			if err := s.Incr(ctx, m.Handle, m.ResetTime, m.FieldVals, m.IncrDelta); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // ResetForUnittest resets all metric values without unregistering any metrics.
 // Useful for unit tests.
 func (s *inMemoryStore) ResetForUnittest() {

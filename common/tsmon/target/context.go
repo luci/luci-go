@@ -11,7 +11,7 @@ import (
 
 type key int
 
-const targetKey = iota
+const targetKey key = iota
 
 // Set returns a new context with the given target set.  If this context is
 // passed to metric Set, Get or Incr methods the metrics for that target will be

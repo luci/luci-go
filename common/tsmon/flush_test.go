@@ -35,8 +35,9 @@ func (s *fakeStore) Set(context.Context, store.MetricHandle, time.Time, []interf
 func (s *fakeStore) Incr(context.Context, store.MetricHandle, time.Time, []interface{}, interface{}) error {
 	return nil
 }
-func (s *fakeStore) GetAll(context.Context) []types.Cell { return s.cells }
-func (s *fakeStore) ResetForUnittest()                   {}
+func (s *fakeStore) ModifyMulti(ctx context.Context, mods []store.Modification) error { return nil }
+func (s *fakeStore) GetAll(context.Context) []types.Cell                              { return s.cells }
+func (s *fakeStore) ResetForUnittest()                                                {}
 
 type fakeMonitor struct {
 	chunkSize int
