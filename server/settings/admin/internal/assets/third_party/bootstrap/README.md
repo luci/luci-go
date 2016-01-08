@@ -8,5 +8,7 @@ http://getbootstrap.com/customize/):
   - Grid system
   - Forms
   - Buttons
+  - Breadcrumbs
+  - Alerts
 
 Everything else (all components and all JS) is turned off.

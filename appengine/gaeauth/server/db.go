@@ -22,7 +22,7 @@ import (
 // errNotConfigured is returned on real GAE if auth service URL is not set.
 var errNotConfigured = errors.New(
 	"Auth Service URL is not configured, you MUST configure it for apps used " +
-		"in production, visit /auth/admin/settings to do so.")
+		"in production, visit /admin/settings/auth_service to do so.")
 
 // GetAuthDB fetches AuthDB snapshot from the datastore and returns auth.DB
 // interface wrapping it.

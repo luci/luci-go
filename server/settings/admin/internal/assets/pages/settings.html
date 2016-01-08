@@ -1,0 +1,51 @@
+{{define "title"}}Settings - {{.Title}}{{end}}
+
+{{define "content"}}
+<div class="row">
+<div class="col-md-offset-2 col-md-8">
+
+<h2>{{.Title}}</h2>
+<hr>
+
+<form class="form-horizontal" method="POST">
+  {{.XsrfTokenField}}
+
+  {{if .Overview}}
+  <div class="form-group">
+    <div class="col-sm-9">{{.Overview}}</div>
+  </div>
+  <hr>
+  {{end}}
+
+  {{range .Fields}}
+  <div class="form-group">
+    <label for="{{.ID}}" class="col-sm-3 control-label">{{.Title}}</label>
+    <div class="col-sm-9">
+      {{if eq .Type "text"}}
+        <input
+          type="text" class="form-control" aria-describedby="{{.ID}}-help"
+          name="{{.ID}}" value="{{.Value}}">
+      {{else if eq .Type "static"}}
+        <p class="form-control-static">{{.Value}}</p>
+      {{end}}
+      {{if .Help}}
+        <span id="{{.ID}}-help" class="help-block">{{.Help}}</span>
+      {{end}}
+    </div>
+  </div>
+  {{end}}
+
+  <hr>
+  <div class="form-group">
+    <div class="col-sm-2">
+      <button type="submit" class="btn btn-primary">Save settings</button>
+    </div>
+    <div class="col-sm-2">
+      <a href="/admin/settings" class="btn btn-default">Back</a>
+    </div>
+  </div>
+</form>
+
+</div>
+</div>
+{{end}}
