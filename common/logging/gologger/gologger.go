@@ -13,14 +13,18 @@ import (
 	"golang.org/x/net/context"
 )
 
+// StandardFormat first prints process ID, time, filename, logging level
+// and sequence number, all colored. Then the message.
+const StandardFormat = `%{color} [P%{pid} %{time:15:04:05.000} %{shortfile} %{level:.4s} %{id:03x}]` +
+	`%{color:reset} %{message}`
+
 var (
 	// standardConfig is the LoggerConfig instance used by the package-level
 	// methods.
 	standardConfig = LoggerConfig{
-		Format: `%{color} [P%{pid} %{time:15:04:05.000} %{shortfile} %{level:.4s} %{id:03x}]` +
-			`%{color:reset} %{message}`,
-		Out:   os.Stderr,
-		Level: gol.DEBUG,
+		Format: StandardFormat,
+		Out:    os.Stderr,
+		Level:  gol.DEBUG,
 	}
 )
 

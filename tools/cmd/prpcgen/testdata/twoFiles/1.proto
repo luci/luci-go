@@ -1,0 +1,19 @@
+// Copyright 2016 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package test;
+
+service S1 {
+    rpc M(Req) returns (Res) {};
+}
+
+message Req {
+    int64 x = 1;
+}
+
+message Res {
+    int64 x = 1;
+}
