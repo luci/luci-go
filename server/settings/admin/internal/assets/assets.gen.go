@@ -29,8 +29,6 @@ func Assets() map[string]string {
 	return cpy
 }
 
-var importPath = "github.com/luci/luci-go/server/settings/admin/internal/assets"
-
 var files = map[string]string{
 	"includes/base.html": string([]byte{123, 123,
 		100, 101, 102, 105, 110, 101, 32, 34, 98, 97, 115, 101, 34, 125,

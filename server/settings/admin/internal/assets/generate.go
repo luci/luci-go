@@ -3,6 +3,6 @@
 // found in the LICENSE file.
 
 //go:generate go install github.com/luci/luci-go/tools/cmd/assets
-//go:generate assets github.com/luci/luci-go/server/settings/admin/internal/assets
+//go:generate assets
 
 package assets

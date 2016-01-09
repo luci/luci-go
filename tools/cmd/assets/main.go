@@ -8,7 +8,7 @@
 //
 // This utility is used via `go generate`. Corresponding incantation:
 //   //go:generate go install github.com/luci/luci-go/tools/cmd/assets
-//   //go:generate assets <import path of package with assets>
+//   //go:generate assets
 package main
 
 import (
@@ -71,8 +71,6 @@ func Assets() map[string]string {
 	return cpy
 }
 
-var importPath = {{.ImportPath | printf "%q"}}
-
 var files = map[string]string{
 {{range .Assets}}{{.Path | printf "%q"}}: string({{.Body | asByteArray }}),
 {{end}}
@@ -104,9 +102,9 @@ import (
 func TestAssets(t *testing.T) {
 	t.Parallel()
 
-	pkg, err := build.Import(importPath, "", build.FindOnly)
+	pkg, err := build.ImportDir(".", build.FindOnly)
 	if err != nil {
-		t.Fatalf("can't find package %q", importPath)
+		t.Fatalf("can't load package: %s", err)
 	}
 
 	fail := false
@@ -124,7 +122,7 @@ func TestAssets(t *testing.T) {
 	}
 
 	if fail {
-		t.Fatalf("run 'go generate %s' to update assets.gen.go", importPath)
+		t.Fatalf("run 'go generate' to update assets.gen.go")
 	}
 }
 `)))
@@ -133,7 +131,6 @@ func TestAssets(t *testing.T) {
 type templateData struct {
 	Patterns    []string
 	PackageName string
-	ImportPath  string
 	Assets      []asset
 }
 
@@ -146,22 +143,28 @@ type asset struct {
 type assetMap map[string]asset
 
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Fprintf(os.Stderr, "Expecting single command line argument: full package name.\n")
+	var dir string
+	switch len(os.Args) {
+	case 1:
+		dir = "."
+	case 2:
+		dir = os.Args[1]
+	default:
+		fmt.Fprintf(os.Stderr, "usage: assets [dir]\n")
 		os.Exit(2)
 	}
-	if err := run(os.Args[1]); err != nil {
+
+	if err := run(dir); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	}
 }
 
-// run generates assets.gen.go file with all assets discovered in the directory
-// containing the given package.
-func run(packageName string) error {
-	pkg, err := build.Import(packageName, "", build.ImportComment)
+// run generates assets.gen.go file with all assets discovered in the directory.
+func run(dir string) error {
+	pkg, err := build.ImportDir(dir, build.ImportComment)
 	if err != nil {
-		return fmt.Errorf("can't find the package %s - %s", packageName, err)
+		return fmt.Errorf("can't import dir %q - %s", dir, err)
 	}
 
 	assets, err := findAssets(pkg.Dir)
@@ -234,7 +237,6 @@ func generate(t *template.Template, pkg *build.Package, assets assetMap, path st
 	data := templateData{
 		Patterns:    recognizedAssets,
 		PackageName: pkg.Name,
-		ImportPath:  pkg.ImportPath,
 	}
 	for _, key := range keys {
 		data.Assets = append(data.Assets, assets[key])

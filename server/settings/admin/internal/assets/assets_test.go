@@ -21,9 +21,9 @@ import (
 func TestAssets(t *testing.T) {
 	t.Parallel()
 
-	pkg, err := build.Import(importPath, "", build.FindOnly)
+	pkg, err := build.ImportDir(".", build.FindOnly)
 	if err != nil {
-		t.Fatalf("can't find package %q", importPath)
+		t.Fatalf("can't load package: %s", err)
 	}
 
 	fail := false
@@ -41,6 +41,6 @@ func TestAssets(t *testing.T) {
 	}
 
 	if fail {
-		t.Fatalf("run 'go generate %s' to update assets.gen.go", importPath)
+		t.Fatalf("run 'go generate' to update assets.gen.go")
 	}
 }
