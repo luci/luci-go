@@ -114,7 +114,7 @@ func UseRemote(inOutCtx *context.Context, host string, client *http.Client) (err
 		if strings.HasPrefix(host, "localhost") {
 			transp := http.DefaultTransport
 			if aeCtx := AEContextNoTxn(*inOutCtx); aeCtx != nil {
-				transp = urlfetch.Get(aeCtx)
+				transp = urlfetch.Get(*inOutCtx)
 			}
 
 			client = &http.Client{Transport: transp}
