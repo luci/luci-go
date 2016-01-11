@@ -43,11 +43,12 @@ type UIPage interface {
 //
 // Its ID acts as a key in map used by ReadSettings\WriteSettings.
 type UIField struct {
-	ID        string             // page unique ID
-	Title     string             // human friendly name
-	Type      UIFieldType        // how the field is displayed and behaves
-	Validator func(string) error // optional value validation
-	Help      template.HTML      // optional help text
+	ID             string             // page unique ID
+	Title          string             // human friendly name
+	Type           UIFieldType        // how the field is displayed and behaves
+	Validator      func(string) error // optional value validation
+	Help           template.HTML      // optional help text
+	ChoiceVariants []string           // valid only for UIFieldChoice
 }
 
 // UIFieldType describes look and feel of UI field, see the enum below.
@@ -57,6 +58,7 @@ type UIFieldType string
 // template that renders the settings page. See server/settings/admin/*.
 const (
 	UIFieldText   UIFieldType = "text"   // one line of text, editable
+	UIFieldChoice UIFieldType = "choice" // pick one of predefined choices
 	UIFieldStatic UIFieldType = "static" // one line of text, read only
 )
 

@@ -44,11 +44,18 @@ var (
 //   * github.com/luci/luci-go/appengine/gaeauth/server/gaesigner (RSA signer)
 //   * github.com/luci/luci-go/appengine/gaeauth/server/auth (user groups database)
 func WithProd(c context.Context, req *http.Request) context.Context {
+	// These are needed to use fetchCachedSettings.
 	c = logging.SetLevel(c, logging.Debug)
 	c = prod.Use(c, req)
-	c = client.UseAnonymousTransport(c)
-	c = proccache.Use(c, globalProcessCache)
 	c = settings.Use(c, globalSettings)
+
+	// Fetch and apply configuration stored in the datastore.
+	settings := fetchCachedSettings(c)
+	c = logging.SetLevel(c, settings.LoggingLevel)
+
+	// The rest of the service may use applied configuration.
+	c = proccache.Use(c, globalProcessCache)
+	c = client.UseAnonymousTransport(c)
 	c = gaesecrets.Use(c, nil)
 	c = gaesigner.Use(c)
 	c = auth.UseDB(c, globalAuthDBCache)
