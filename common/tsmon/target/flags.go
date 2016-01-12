@@ -107,7 +107,11 @@ func getFQDN() (string, string) {
 			}
 		}
 	}
-	if hostname, err := os.Hostname(); err != nil {
+	if hostname, err := os.Hostname(); err == nil {
+		parts := strings.Split(hostname, ".")
+		if len(parts) > 1 {
+			return strings.ToLower(parts[0]), strings.ToLower(parts[1])
+		}
 		return strings.ToLower(hostname), "unknown"
 	}
 	return "unknown", "unknown"
