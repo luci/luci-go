@@ -89,6 +89,20 @@ type Storage interface {
 	UpdateSetting(c context.Context, key string, value json.RawMessage, who, why string) error
 }
 
+// EventualConsistentStorage is Storage where settings changes take effect not
+// immediately but by some predefined moment in the future.
+type EventualConsistentStorage interface {
+	Storage
+
+	// GetConsistencyTime returns "last modification time" + "expiration period".
+	//
+	// It indicates moment in time when last setting change is fully propagated to
+	// all instances.
+	//
+	// Returns zero time if there are no settings stored.
+	GetConsistencyTime(c context.Context) (time.Time, error)
+}
+
 // Settings represent process global cache of all settings. Exact same instance
 // of Settings should be injected into the context used by request handlers.
 type Settings struct {
@@ -114,6 +128,11 @@ func New(storage Storage) *Settings {
 			},
 		},
 	}
+}
+
+// GetStorage returns underlying Storage instance.
+func (s *Settings) GetStorage() Storage {
+	return s.storage
 }
 
 // Get returns setting value (possibly cached) for the given key.

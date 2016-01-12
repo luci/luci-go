@@ -23,6 +23,8 @@ import (
 )
 
 // Storage knows how to store JSON blobs with settings in the datastore.
+//
+// It implements server/settings.EventualConsistentStorage interface.
 type Storage struct{}
 
 // settingsEntity is used to store all settings as JSON blob. Latest settings
@@ -54,19 +56,26 @@ func defaultDS(c context.Context) datastore.Interface {
 	return datastore.Get(c)
 }
 
-// expirationTime returns time when to discard settings memory cache. One minute
-// in prod, one second on dev server (since long expiration time on dev server
-// is very annoying).
-func (s Storage) expirationTime(c context.Context) time.Time {
+// latestSettings returns settingsEntity with prefilled key pointing to latest
+// settings.
+func latestSettings() settingsEntity {
+	return settingsEntity{Kind: "gaesettings.Settings", ID: "latest"}
+}
+
+// expirationDuration returns how long to hold settings in memory cache.
+//
+// One minute in prod, one second on dev server (since long expiration time on
+// dev server is very annoying).
+func (s Storage) expirationDuration(c context.Context) time.Duration {
 	if info.Get(c).IsDevAppServer() {
-		return clock.Now(c).Add(time.Second)
+		return time.Second
 	}
-	return clock.Now(c).Add(time.Minute)
+	return time.Minute
 }
 
 // FetchAllSettings fetches all latest settings at once.
 func (s Storage) FetchAllSettings(c context.Context) (*settings.Bundle, error) {
-	latest := settingsEntity{Kind: "gaesettings.Settings", ID: "latest"}
+	latest := latestSettings()
 	switch err := defaultDS(c).Get(&latest); {
 	case err == datastore.ErrNoSuchEntity:
 		break
@@ -80,7 +89,10 @@ func (s Storage) FetchAllSettings(c context.Context) (*settings.Bundle, error) {
 			return nil, err
 		}
 	}
-	return &settings.Bundle{Values: pairs, Exp: s.expirationTime(c)}, nil
+	return &settings.Bundle{
+		Values: pairs,
+		Exp:    clock.Now(c).Add(s.expirationDuration(c)),
+	}, nil
 }
 
 // UpdateSetting updates a setting at the given key.
@@ -90,7 +102,7 @@ func (s Storage) UpdateSetting(c context.Context, key string, value json.RawMess
 		ds := datastore.Get(c)
 
 		// Fetch the most recent values.
-		latest := settingsEntity{Kind: "gaesettings.Settings", ID: "latest"}
+		latest := latestSettings()
 		if err := ds.Get(&latest); err != nil && err != datastore.ErrNoSuchEntity {
 			return err
 		}
@@ -139,4 +151,22 @@ func (s Storage) UpdateSetting(c context.Context, key string, value json.RawMess
 		return fatalFail
 	}
 	return errors.WrapTransient(err)
+}
+
+// GetConsistencyTime returns "last modification time" + "expiration period".
+//
+// It indicates moment in time when last setting change is fully propagated to
+// all instances.
+//
+// Returns zero time if there are no settings stored.
+func (s Storage) GetConsistencyTime(c context.Context) (time.Time, error) {
+	latest := latestSettings()
+	switch err := defaultDS(c).Get(&latest); err {
+	case nil:
+		return latest.When.Add(s.expirationDuration(c)), nil
+	case datastore.ErrNoSuchEntity:
+		return time.Time{}, nil
+	default:
+		return time.Time{}, errors.WrapTransient(err)
+	}
 }

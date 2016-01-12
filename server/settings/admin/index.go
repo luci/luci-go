@@ -7,10 +7,13 @@ package admin
 import (
 	"net/http"
 	"sort"
+	"time"
 
+	"github.com/dustin/go-humanize"
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/server/settings"
 	"github.com/luci/luci-go/server/templates"
 )
@@ -40,7 +43,23 @@ func indexPage(c context.Context, rw http.ResponseWriter, r *http.Request, p htt
 		})
 	}
 	sort.Sort(entries)
+
+	// Grab timestamp when last settings change hits all instances.
+	consistencyTime := time.Time{}
+	if s := settings.GetSettings(c); s != nil {
+		if storage, _ := s.GetStorage().(settings.EventualConsistentStorage); storage != nil {
+			var err error
+			if consistencyTime, err = storage.GetConsistencyTime(c); err != nil {
+				replyError(c, rw, err)
+				return
+			}
+		}
+	}
+
+	now := clock.Now(c).UTC()
 	templates.MustRender(c, rw, "pages/index.html", templates.Args{
-		"Entries": entries,
+		"Entries":               entries,
+		"WaitingForConsistency": !consistencyTime.IsZero() && now.Before(consistencyTime),
+		"TimeToConsistency":     humanize.RelTime(consistencyTime, now, "", ""),
 	})
 }

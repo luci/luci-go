@@ -38,6 +38,10 @@ func TestWorks(t *testing.T) {
 		So(bundle.Exp, ShouldResemble, clock.Now(c).Add(time.Second))
 		So(len(bundle.Values), ShouldEqual, 0)
 
+		conTime, err := s.GetConsistencyTime(c)
+		So(conTime.IsZero(), ShouldBeTrue)
+		So(err, ShouldBeNil)
+
 		// Produce a bunch of versions.
 		tc.Add(time.Minute)
 		So(s.UpdateSetting(c, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
@@ -50,6 +54,10 @@ func TestWorks(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(bundle.Exp, ShouldResemble, clock.Now(c).Add(time.Second))
 		So(*bundle.Values["key"], ShouldResemble, json.RawMessage(`"val3"`))
+
+		conTime, err = s.GetConsistencyTime(c)
+		So(conTime, ShouldResemble, clock.Now(c).UTC().Add(time.Second))
+		So(err, ShouldBeNil)
 
 		// Check all log entities is there.
 		ds := datastore.Get(c)

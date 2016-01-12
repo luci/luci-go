@@ -13,6 +13,13 @@
   {{end}}
 </ul>
 
+{{if .WaitingForConsistency}}
+  <hr>
+  <small>
+    {{.TimeToConsistency}} until last setting change is propagated everywhere.
+  </small>
+{{end}}
+
 </div>
 </div>
 {{end}}
