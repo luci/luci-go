@@ -18,6 +18,10 @@ var dsTxnCacheKey key
 
 // FilterRDS installs a caching RawDatastore filter in the context.
 //
+// It does nothing if IsGloballyEnabled returns false. That way it is possible
+// to disable the cache in runtime (e.g. in case memcache service is having
+// issues).
+//
 // shardsForKey is a user-controllable function which calculates the number of
 // shards to use for a certain datastore key. The provided key will always be
 // valid and complete.
@@ -32,7 +36,14 @@ func FilterRDS(c context.Context, shardsForKey func(*ds.Key) int) context.Contex
 	if !IsGloballyEnabled(c) {
 		return c
 	}
+	return AlwaysFilterRDS(c, shardsForKey)
+}
 
+// AlwaysFilterRDS installs a caching RawDatastore filter in the context.
+//
+// Unlike FilterRDS it doesn't check GlobalConfig via IsGloballyEnabled call,
+// assuming caller already knows whether filter should be applied or not.
+func AlwaysFilterRDS(c context.Context, shardsForKey func(*ds.Key) int) context.Context {
 	return ds.AddRawFilters(c, func(c context.Context, ds ds.RawInterface) ds.RawInterface {
 		i := info.Get(c)
 
