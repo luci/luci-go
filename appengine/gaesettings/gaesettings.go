@@ -39,6 +39,10 @@ type settingsEntity struct {
 	Who     string         `gae:",noindex"`
 	Why     string         `gae:",noindex"`
 	When    time.Time      `gae:",noindex"`
+
+	// Disable dscache, since settings must remain functional in case memcache is
+	// malfunctioning.
+	_ datastore.Toggle `gae:"$dscache.enable,false"`
 }
 
 // defaultDS returns datastore interface configured to use default namespace.

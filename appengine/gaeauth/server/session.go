@@ -21,8 +21,6 @@ import (
 	"github.com/luci/luci-go/server/auth/identity"
 )
 
-// TODO(vadimsh): Add memcache.
-
 // SessionStore stores auth sessions in the datastore (always in the default
 // namespace). It implements auth.SessionStore.
 type SessionStore struct {

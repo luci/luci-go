@@ -11,6 +11,8 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/gae/filter/count"
+	"github.com/luci/gae/filter/dscache"
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
@@ -21,7 +23,13 @@ import (
 
 func TestWorks(t *testing.T) {
 	Convey("Works", t, func() {
-		c, tc := testclock.UseTime(memory.Use(context.Background()), time.Unix(1444945245, 0))
+		c := memory.Use(context.Background())
+		c = dscache.AlwaysFilterRDS(c, nil)
+		c, tc := testclock.UseTime(c, time.Unix(1444945245, 0))
+
+		// Record access to memcache. There should be none.
+		c, mcOps := count.FilterMC(c)
+
 		s := Storage{}
 
 		// Nothing's there yet.
@@ -75,5 +83,15 @@ func TestWorks(t *testing.T) {
 				Why:     "why2",
 			},
 		})
+
+		// Memcache must not be used even if dscache is installed in the context.
+		So(mcOps.AddMulti.Total(), ShouldEqual, 0)
+		So(mcOps.GetMulti.Total(), ShouldEqual, 0)
+
+		// TODO(iannucci): There's a bug in dscache that causes calls to memcache
+		// sets and deletes even if dscache is disabled. This should be switched to
+		// 0 when it is fixed (the test will break at that moment).
+		So(mcOps.SetMulti.Total(), ShouldEqual, 3)
+		So(mcOps.DeleteMulti.Total(), ShouldEqual, 3)
 	})
 }

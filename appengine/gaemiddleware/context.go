@@ -8,6 +8,9 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	"golang.org/x/net/context"
+
+	"github.com/luci/gae/filter/dscache"
 	"github.com/luci/gae/impl/prod"
 	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/appengine/gaeauth/server"
@@ -19,7 +22,6 @@ import (
 	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/proccache"
 	"github.com/luci/luci-go/server/settings"
-	"golang.org/x/net/context"
 )
 
 var (
@@ -52,6 +54,9 @@ func WithProd(c context.Context, req *http.Request) context.Context {
 	// Fetch and apply configuration stored in the datastore.
 	settings := fetchCachedSettings(c)
 	c = logging.SetLevel(c, settings.LoggingLevel)
+	if !settings.DisableDSCache {
+		c = dscache.AlwaysFilterRDS(c, nil)
+	}
 
 	// The rest of the service may use applied configuration.
 	c = proccache.Use(c, globalProcessCache)
