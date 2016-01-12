@@ -67,6 +67,19 @@ func TestProperties(t *testing.T) {
 					So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
 					So(pv.Type().String(), ShouldEqual, "PTBlobKey")
 				})
+				Convey("datastore Key is distinguished", func() {
+					k := MakeKey("appid", "ns", "kind", "1")
+					pv := MkProperty(k)
+					So(pv.Value(), ShouldHaveSameTypeAs, k)
+					So(pv.Value().(*Key).Equal(k), ShouldBeTrue)
+					So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
+					So(pv.Type().String(), ShouldEqual, "PTKey")
+
+					pv = MkProperty((*Key)(nil))
+					So(pv.Value(), ShouldBeNil)
+					So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
+					So(pv.Type().String(), ShouldEqual, "PTNull")
+				})
 				Convey("float", func() {
 					pv := Property{}
 					So(pv.SetValue(myfloat(19.7), ShouldIndex), ShouldBeNil)

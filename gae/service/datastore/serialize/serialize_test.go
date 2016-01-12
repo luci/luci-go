@@ -64,7 +64,11 @@ func TestPropertyMapSerialization(t *testing.T) {
 		{
 			"keys",
 			ds.PropertyMap{
-				"DS":        {mp(mkKey("appy", "ns", "Foo", 7)), mp(mkKey("other", "", "Yot", "wheeep"))},
+				"DS": {
+					mp(mkKey("appy", "ns", "Foo", 7)),
+					mp(mkKey("other", "", "Yot", "wheeep")),
+					mp((*ds.Key)(nil)),
+				},
 				"blobstore": {mp(blobstore.Key("sup")), mp(blobstore.Key("nerds"))},
 			},
 		},

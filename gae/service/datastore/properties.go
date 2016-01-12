@@ -324,6 +324,13 @@ func UpconvertUnderlyingType(o interface{}) interface{} {
 			}
 		}
 	}
+
+	switch t {
+	case typeOfKey:
+		if v.IsNil() {
+			return nil
+		}
+	}
 	return o
 }
 
