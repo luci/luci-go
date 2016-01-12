@@ -6,6 +6,8 @@
 //
 // It is not super secure, but we have what we have: there's no other better
 // mechanism to persistently store non-static secrets on GAE.
+//
+// All secrets are global (live in default GAE namespace).
 package gaesecrets
 
 import (
@@ -18,6 +20,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/server/proccache"
@@ -83,11 +86,16 @@ func (s *storeImpl) GetSecret(k secrets.Key) (secrets.Secret, error) {
 
 // getSecretImpl uses datastore to grab a secret.
 func (s *storeImpl) getSecretFromDatastore(k secrets.Key) (secrets.Secret, error) {
-	ds := datastore.Get(s.ctx)
+	// Switch to default namespace.
+	c, err := info.Get(s.ctx).Namespace("")
+	if err != nil {
+		panic(err) // should not happen, Namespace errors only on bad namespace name
+	}
+	ds := datastore.Get(c)
 
 	// Grab existing.
 	ent := secretEntity{ID: s.cfg.Prefix + ":" + string(k)}
-	err := ds.Get(&ent)
+	err = ds.Get(&ent)
 	if err != nil && err != datastore.ErrNoSuchEntity {
 		return secrets.Secret{}, errors.WrapTransient(err)
 	}
@@ -105,7 +113,7 @@ func (s *storeImpl) getSecretFromDatastore(k secrets.Key) (secrets.Secret, error
 			return secrets.Secret{}, errors.WrapTransient(err)
 		}
 		err = ds.RunInTransaction(func(c context.Context) error {
-			ds := datastore.Get(s.ctx)
+			ds := datastore.Get(c)
 			newOne := secretEntity{ID: ent.ID}
 			switch err := ds.Get(&newOne); err {
 			case nil:

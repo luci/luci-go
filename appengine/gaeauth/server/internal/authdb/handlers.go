@@ -114,6 +114,7 @@ type notifcationGetter func(context.Context, authService, string) (*service.Noti
 // to actually get service.Notification, since this part is different from Pull
 // and Push subscriptions.
 func processPubSubRequest(c context.Context, rw http.ResponseWriter, r *http.Request, callback notifcationGetter) {
+	c = defaultNS(c)
 	c = authenticatePubSub(c)
 	info, err := GetLatestSnapshotInfo(c)
 	if err != nil {

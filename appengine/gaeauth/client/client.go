@@ -20,7 +20,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/memcache"
 	"github.com/luci/gae/service/urlfetch"
@@ -45,24 +44,12 @@ const (
 // tokens minted for a given set of scopes, or 'email' scope if empty.
 //
 // If serviceAccountJSON is given, it must be a byte blob with service account
-// JSON key to use instead of app's own account.  If it is not given, and
-// unning on devserver, it will be read from the datastore via
-// FetchServiceAccountJSON(c, "devserver").
+// JSON key to use instead of app's own account.
 //
 // Prefer to use Authenticator(...) lazily (e.g. only when really going to
 // send the request), since it does a bunch of datastore and memcache reads to
 // initialize http.RoundTripper.
 func Authenticator(c context.Context, scopes []string, serviceAccountJSON []byte) (*auth.Authenticator, error) {
-	if len(serviceAccountJSON) == 0 && info.Get(c).IsDevAppServer() {
-		var err error
-		if serviceAccountJSON, err = FetchServiceAccountJSON(c, "devserver"); err != nil {
-			return nil, err
-		}
-		if len(serviceAccountJSON) == 0 {
-			// Make an empty stub for user to fill in via dev server admin console.
-			StoreServiceAccountJSON(c, "devserver", nil)
-		}
-	}
 	opts := auth.Options{
 		Context:   c,
 		Transport: urlfetch.Get(c),
@@ -89,29 +76,6 @@ func Transport(c context.Context, scopes []string, serviceAccountJSON []byte) (h
 		return nil, err
 	}
 	return a.Transport()
-}
-
-// FetchServiceAccountJSON returns service account JSON key blob by reading it
-// from the datastore.
-func FetchServiceAccountJSON(c context.Context, id string) ([]byte, error) {
-	ent := serviceAccount{ID: id}
-	err := datastore.Get(c).Get(&ent)
-	if err == datastore.ErrNoSuchEntity {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return []byte(ent.ServiceAccount), nil
-}
-
-// StoreServiceAccountJSON puts service account JSON key blob in the datastore.
-func StoreServiceAccountJSON(c context.Context, id string, blob []byte) error {
-	// Store as a string so the entity is editable via devserver admin console.
-	return datastore.Get(c).Put(&serviceAccount{
-		ID:             id,
-		ServiceAccount: string(blob),
-	})
 }
 
 // UseServiceAccountTransport injects authenticating transport into
@@ -159,14 +123,6 @@ func (f failTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 }
 
 //// Internal stuff.
-
-// serviceAccount is entity that stores service account JSON key.
-type serviceAccount struct {
-	_kind string `gae:"$kind,AuthServiceAccount"`
-
-	ID             string `gae:"$id"`
-	ServiceAccount string `gae:",noindex"`
-}
 
 // tokenMinter implements auth.TokenMinter on top of GAE API.
 type tokenMinter struct {

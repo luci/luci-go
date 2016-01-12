@@ -7,6 +7,7 @@ package authdb
 import (
 	"golang.org/x/net/context"
 
+	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/server/auth/service"
 )
 
@@ -38,4 +39,18 @@ func getAuthService(c context.Context, url string) authService {
 		return s
 	}
 	return &service.AuthService{URL: url}
+}
+
+// defaultNS returns GAE context configured to use default namespace.
+//
+// All publicly callable functions must use it to switch to default namespace.
+// All internal functions expect the context to be in the default namespace.
+//
+// Idempotent.
+func defaultNS(c context.Context) context.Context {
+	c, err := info.Get(c).Namespace("")
+	if err != nil {
+		panic(err) // should not happen, Namespace errors only on bad namespace name
+	}
+	return c
 }

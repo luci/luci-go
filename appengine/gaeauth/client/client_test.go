@@ -92,22 +92,6 @@ func TestTokenCache(t *testing.T) {
 	})
 }
 
-func TestFetchStoreServiceAccountJSON(t *testing.T) {
-	Convey("works", t, func() {
-		c := testContext()
-
-		sa, err := FetchServiceAccountJSON(c, "account")
-		So(err, ShouldBeNil)
-		So(sa, ShouldBeNil)
-
-		So(StoreServiceAccountJSON(c, "account", []byte("blah")), ShouldBeNil)
-
-		sa, err = FetchServiceAccountJSON(c, "account")
-		So(err, ShouldBeNil)
-		So(string(sa), ShouldEqual, "blah")
-	})
-}
-
 func TestAuthenticatorAndTransport(t *testing.T) {
 	Convey("with mocked context", t, func() {
 		c := testContext()

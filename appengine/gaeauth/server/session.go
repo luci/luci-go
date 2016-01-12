@@ -13,6 +13,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
@@ -22,17 +23,26 @@ import (
 
 // TODO(vadimsh): Add memcache.
 
-// SessionStore stores auth sessions in the datastore. It implements
-// auth.SessionStore.
+// SessionStore stores auth sessions in the datastore (always in the default
+// namespace). It implements auth.SessionStore.
 type SessionStore struct {
-	Namespace string // used for namespacing in the datastore
+	Prefix string // used as prefix for datastore keys
+}
+
+// defaultNS returns GAE context configured to use default namespace.
+func defaultNS(c context.Context) context.Context {
+	c, err := info.Get(c).Namespace("")
+	if err != nil {
+		panic(err) // should not happen, Namespace errors only on bad namespace name
+	}
+	return c
 }
 
 // OpenSession create a new session for a user with given expiration time.
 // It returns unique session ID.
 func (s *SessionStore) OpenSession(c context.Context, userID string, u *auth.User, exp time.Time) (string, error) {
-	if strings.IndexByte(s.Namespace, '/') != -1 {
-		return "", fmt.Errorf("gaeauth: bad namespace (%q) in SessionStore", s.Namespace)
+	if strings.IndexByte(s.Prefix, '/') != -1 {
+		return "", fmt.Errorf("gaeauth: bad prefix (%q) in SessionStore", s.Prefix)
 	}
 	if strings.IndexByte(userID, '/') != -1 {
 		return "", fmt.Errorf("gaeauth: bad userID (%q), cannot have '/' inside", userID)
@@ -40,6 +50,7 @@ func (s *SessionStore) OpenSession(c context.Context, userID string, u *auth.Use
 	if err := u.Identity.Validate(); err != nil {
 		return "", fmt.Errorf("gaeauth: bad identity string (%q) - %s", u.Identity, err)
 	}
+	c = defaultNS(c)
 
 	now := clock.Now(c).UTC()
 	prof := profile{
@@ -57,7 +68,7 @@ func (s *SessionStore) OpenSession(c context.Context, userID string, u *auth.Use
 		ds := datastore.Get(c)
 
 		// Grab existing userEntity or initialize a new one.
-		userEnt := userEntity{ID: s.Namespace + "/" + userID}
+		userEnt := userEntity{ID: s.Prefix + "/" + userID}
 		err := ds.Get(&userEnt)
 		if err != nil && err != datastore.ErrNoSuchEntity {
 			return err
@@ -79,7 +90,7 @@ func (s *SessionStore) OpenSession(c context.Context, userID string, u *auth.Use
 			return err
 		}
 
-		sessionID = fmt.Sprintf("%s/%s/%d", s.Namespace, userID, sessionEnt.ID)
+		sessionID = fmt.Sprintf("%s/%s/%d", s.Prefix, userID, sessionEnt.ID)
 		return nil
 	}, nil)
 
@@ -92,6 +103,7 @@ func (s *SessionStore) OpenSession(c context.Context, userID string, u *auth.Use
 // CloseSession closes a session given its ID. Does nothing if session is
 // already closed or doesn't exist. Returns only transient errors.
 func (s *SessionStore) CloseSession(c context.Context, sessionID string) error {
+	c = defaultNS(c)
 	ent, err := s.fetchSession(c, sessionID)
 	switch {
 	case err != nil:
@@ -108,13 +120,14 @@ func (s *SessionStore) CloseSession(c context.Context, sessionID string) error {
 // GetSession returns existing non-expired session given its ID. Returns nil
 // if session doesn't exist, closed or expired. Returns only transient errors.
 func (s *SessionStore) GetSession(c context.Context, sessionID string) (*auth.Session, error) {
+	c = defaultNS(c)
 	ent, err := s.fetchSession(c, sessionID)
 	if ent == nil {
 		return nil, err
 	}
 	return &auth.Session{
 		SessionID: sessionID,
-		UserID:    ent.Parent.StringID()[len(s.Namespace)+1:],
+		UserID:    ent.Parent.StringID()[len(s.Prefix)+1:],
 		User: auth.User{
 			Identity:  identity.Identity(ent.Profile.Identity),
 			Superuser: ent.Profile.Superuser,
@@ -132,7 +145,7 @@ func (s *SessionStore) GetSession(c context.Context, sessionID string) (*auth.Se
 // only transient errors.
 func (s *SessionStore) fetchSession(c context.Context, sessionID string) (*sessionEntity, error) {
 	chunks := strings.Split(sessionID, "/")
-	if len(chunks) != 3 || chunks[0] != s.Namespace {
+	if len(chunks) != 3 || chunks[0] != s.Prefix {
 		logging.Warningf(c, "Malformed session ID %q, ignoring", sessionID)
 		return nil, nil
 	}
@@ -172,8 +185,8 @@ type profile struct {
 }
 
 // userEntity holds profile information of some user. It is root entity.
-// ID is "<namespace>/<userID>" where <namespace> is SessionStore.Namespace,
-// and <userID> is what is passed to OpenSession (unique user id as returned by
+// ID is "<prefix>/<userID>" where <prefix> is SessionStore.Prefix, and <userID>
+// is what is passed to OpenSession (unique user id as returned by
 // authentication backend). Created or refreshed in OpenSession.
 type userEntity struct {
 	_kind string `gae:"$kind,gaeauth.User"`

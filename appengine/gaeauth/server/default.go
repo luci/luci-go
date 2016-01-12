@@ -93,7 +93,7 @@ func init() {
 	} else {
 		CookieAuth = cookieAuthMethod{
 			&openid.AuthMethod{
-				SessionStore:        &SessionStore{Namespace: "openid"},
+				SessionStore:        &SessionStore{Prefix: "openid"},
 				IncompatibleCookies: []string{"SACSID", "dev_appserver_login"},
 			},
 		}

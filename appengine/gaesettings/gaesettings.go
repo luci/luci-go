@@ -41,6 +41,15 @@ type settingsEntity struct {
 	When    time.Time      `gae:",noindex"`
 }
 
+// defaultDS returns datastore interface configured to use default namespace.
+func defaultDS(c context.Context) datastore.Interface {
+	c, err := info.Get(c).Namespace("")
+	if err != nil {
+		panic(err) // should not happen, Namespace errors only on bad namespace name
+	}
+	return datastore.Get(c)
+}
+
 // expirationTime returns time when to discard settings memory cache. One minute
 // in prod, one second on dev server (since long expiration time on dev server
 // is very annoying).
@@ -54,11 +63,10 @@ func (s Storage) expirationTime(c context.Context) time.Time {
 // FetchAllSettings fetches all latest settings at once.
 func (s Storage) FetchAllSettings(c context.Context) (*settings.Bundle, error) {
 	latest := settingsEntity{Kind: "gaesettings.Settings", ID: "latest"}
-	err := datastore.Get(c).Get(&latest)
-	if err == datastore.ErrNoSuchEntity {
-		err = nil
-	}
-	if err != nil {
+	switch err := defaultDS(c).Get(&latest); {
+	case err == datastore.ErrNoSuchEntity:
+		break
+	case err != nil:
 		return nil, errors.WrapTransient(err)
 	}
 
@@ -74,8 +82,7 @@ func (s Storage) FetchAllSettings(c context.Context) (*settings.Bundle, error) {
 // UpdateSetting updates a setting at the given key.
 func (s Storage) UpdateSetting(c context.Context, key string, value json.RawMessage, who, why string) error {
 	var fatalFail error // set in transaction on fatal errors
-
-	err := datastore.Get(c).RunInTransaction(func(c context.Context) error {
+	err := defaultDS(c).RunInTransaction(func(c context.Context) error {
 		ds := datastore.Get(c)
 
 		// Fetch the most recent values.

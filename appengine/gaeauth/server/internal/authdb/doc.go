@@ -7,4 +7,7 @@
 //
 // It uses server/auth/service to communicate with auth_service to fetch AuthDB
 // snapshots and subscribe to PubSub notifications.
+//
+// It always uses default datastore namespace for storage, and thus auth groups
+// are global to the service.
 package authdb

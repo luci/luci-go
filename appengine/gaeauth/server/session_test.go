@@ -22,7 +22,7 @@ func TestWorks(t *testing.T) {
 	Convey("Works", t, func() {
 		c := memory.Use(context.Background())
 		c, _ = testclock.UseTime(c, time.Unix(1442540000, 0))
-		s := SessionStore{Namespace: "ns"}
+		s := SessionStore{Prefix: "ns"}
 		u := auth.User{
 			Identity: "user:abc@example.com",
 			Email:    "abc@example.com",
@@ -56,7 +56,7 @@ func TestWorks(t *testing.T) {
 	Convey("Test expiration", t, func() {
 		c := memory.Use(context.Background())
 		c, tc := testclock.UseTime(c, time.Unix(1442540000, 0))
-		s := SessionStore{Namespace: "ns"}
+		s := SessionStore{Prefix: "ns"}
 		u := auth.User{Identity: "user:abc@example.com"}
 
 		sid, err := s.OpenSession(c, "uid", &u, clock.Now(c).Add(time.Hour))
@@ -79,11 +79,11 @@ func TestWorks(t *testing.T) {
 		u := auth.User{Identity: "user:abc@example.com"}
 		exp := time.Unix(1442540000, 0)
 
-		s := SessionStore{Namespace: "/"}
+		s := SessionStore{Prefix: "/"}
 		_, err := s.OpenSession(c, "uid", &u, exp)
 		So(err, ShouldNotBeNil)
 
-		s = SessionStore{Namespace: "ns"}
+		s = SessionStore{Prefix: "ns"}
 		_, err = s.OpenSession(c, "u/i/d", &u, exp)
 		So(err, ShouldNotBeNil)
 
@@ -93,7 +93,7 @@ func TestWorks(t *testing.T) {
 
 	Convey("Test bad session ID", t, func() {
 		c := memory.Use(context.Background())
-		s := SessionStore{Namespace: "ns"}
+		s := SessionStore{Prefix: "ns"}
 
 		session, err := s.GetSession(c, "ns/uid")
 		So(session, ShouldBeNil)
