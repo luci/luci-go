@@ -1,7 +1,11 @@
+application: luci-cron
+version: 1
 module: default
 runtime: go
-vm: true
 api_version: go1
+
+automatic_scaling:
+  min_idle_instances: 1
 
 handlers:
 - url: /internal.*
