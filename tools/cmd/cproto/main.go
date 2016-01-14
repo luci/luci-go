@@ -30,6 +30,9 @@ var (
 	withGoogleProtobuf = flag.Bool(
 		"with-google-protobuf", true,
 		"map .proto files in gitub.com/luci/luci-go/common/proto/google to google/protobuf/*.proto")
+	renameToTestGo = flag.Bool(
+		"test", false,
+		"rename generated files from *.go to *_test.go")
 )
 
 func resolveGoogleProtobufPackages(c context.Context) (map[string]string, error) {
@@ -140,12 +143,25 @@ func run(c context.Context, dir string) error {
 		if err := t.transformGoFile(goFile); err != nil {
 			return fmt.Errorf("could not transform %s: %s", goFile, err)
 		}
+
 		if packageName == "" {
 			packageName = t.PackageName
 		}
+
+		if *renameToTestGo {
+			newName := strings.TrimSuffix(goFile, ".go") + "_test.go"
+			if err := os.Rename(goFile, newName); err != nil {
+				return err
+			}
+		}
 	}
 
-	return genDiscoveryFile(c, filepath.Join(dir, "pb.discovery.go"), descPath, packageName)
+	// Generate pb.prpc.go
+	discoveryFile := "pb.discovery.go"
+	if *renameToTestGo {
+		discoveryFile = "pb.discovery_test.go"
+	}
+	return genDiscoveryFile(c, filepath.Join(dir, discoveryFile), descPath, packageName)
 }
 
 func setupLogging(c context.Context) context.Context {
