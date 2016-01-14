@@ -66,6 +66,34 @@ func TestFetchCertificates(t *testing.T) {
 	})
 }
 
+func TestFetchServiceAccountCertificates(t *testing.T) {
+	Convey("Works", t, func() {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path != "/robot@robots.gserviceaccount.com" {
+				http.Error(w, "Wrong URL", 404)
+				return
+			}
+			w.Write([]byte(`{
+					"0392f9886770640357cbb29e57d3698291b1e805": "-----BEGIN CERTIFICATE-----\nblah 1\n-----END CERTIFICATE-----\n",
+					"f5db308971078d1496c262cc06b6e7f87652af55": "-----BEGIN CERTIFICATE-----\nblah 2\n-----END CERTIFICATE-----\n"
+			}`))
+		}))
+		c := context.WithValue(context.Background(), robotCertURLKey(0), ts.URL+"/")
+		certs, err := FetchServiceAccountCertificates(c, "robot@robots.gserviceaccount.com")
+		So(err, ShouldBeNil)
+		So(certs.Certificates, ShouldResemble, []Certificate{
+			{
+				KeyName:            "0392f9886770640357cbb29e57d3698291b1e805",
+				X509CertificatePEM: "-----BEGIN CERTIFICATE-----\nblah 1\n-----END CERTIFICATE-----\n",
+			},
+			{
+				KeyName:            "f5db308971078d1496c262cc06b6e7f87652af55",
+				X509CertificatePEM: "-----BEGIN CERTIFICATE-----\nblah 2\n-----END CERTIFICATE-----\n",
+			},
+		})
+	})
+}
+
 func TestCertificateForKey(t *testing.T) {
 	Convey("Works", t, func() {
 		certs := PublicCertificates{
