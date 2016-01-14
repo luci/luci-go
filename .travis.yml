@@ -18,4 +18,4 @@ before_install:
   - go get github.com/maruel/pre-commit-go/cmd/pcg
 
 script:
-  - pcg
+  - pcg -C 20
