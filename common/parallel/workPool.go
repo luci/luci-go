@@ -22,16 +22,8 @@ func WorkPool(workers int, gen func(chan<- func() error)) error {
 		return errors.New("invalid number of workers")
 	}
 
+	sem := make(Semaphore, workers)
 	errchan := make(chan error, workers)
-
-	inc := func() {}
-	dec := func() {}
-	if workers != 0 {
-		sem := make(chan struct{}, workers)
-		inc = func() { <-sem }
-		dec = func() { sem <- struct{}{} }
-	}
-
 	funchan := make(chan func() error, workers)
 
 	go func() {
@@ -43,14 +35,14 @@ func WorkPool(workers int, gen func(chan<- func() error)) error {
 		grp := sync.WaitGroup{}
 
 		for fn := range funchan {
-			dec()
+			sem.Lock()
 
 			grp.Add(1)
 			fn := fn
 
 			go func() {
 				defer func() {
-					inc()
+					sem.Unlock()
 					grp.Done()
 				}()
 
