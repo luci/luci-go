@@ -8,8 +8,10 @@ import (
 	"flag"
 	"fmt"
 	"go/build"
+	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -57,7 +59,7 @@ func resolveGoogleProtobufPackages(c context.Context) (map[string]string, error)
 	return result, nil
 }
 
-func protoc(c context.Context, protoFiles []string, dir, descSetFile string) error {
+func protoc(c context.Context, protoFiles []string, dir, descSetOut string) error {
 	var params []string
 
 	if *withGoogleProtobuf {
@@ -76,7 +78,7 @@ func protoc(c context.Context, protoFiles []string, dir, descSetFile string) err
 	args := []string{
 		"--proto_path=" + dir,
 		"--go_out=" + goOut,
-		"--descriptor_set_out=" + filepath.Join(dir, descSetFile),
+		"--descriptor_set_out=" + descSetOut,
 		"--include_imports",
 		"--include_source_info",
 	}
@@ -120,19 +122,30 @@ func run(c context.Context, dir string) error {
 	}
 
 	// Compile all .proto files.
-	if err := protoc(c, protoFiles, dir, "package.desc"); err != nil {
+	tmpDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(tmpDir)
+	descPath := filepath.Join(tmpDir, "package.desc")
+	if err := protoc(c, protoFiles, dir, descPath); err != nil {
 		return err
 	}
 
 	// Transform .go files
+	var packageName string
 	for _, p := range protoFiles {
 		goFile := strings.TrimSuffix(p, ".proto") + ".pb.go"
-		if err := transformGoFile(goFile); err != nil {
+		var t transformer
+		if err := t.transformGoFile(goFile); err != nil {
 			return fmt.Errorf("could not transform %s: %s", goFile, err)
+		}
+		if packageName == "" {
+			packageName = t.PackageName
 		}
 	}
 
-	return nil
+	return genDiscoveryFile(c, filepath.Join(dir, "pb.discovery.go"), descPath, packageName)
 }
 
 func setupLogging(c context.Context) context.Context {
@@ -150,7 +163,7 @@ func setupLogging(c context.Context) context.Context {
 func usage() {
 	fmt.Fprintln(os.Stderr,
 		`Compiles all .proto files in a directory to .go with grpc+prpc support.
-usage: prpcgen [flags] [dir]
+usage: cproto [flags] [dir]
 
 Flags:`)
 	flag.PrintDefaults()
@@ -185,4 +198,27 @@ func main() {
 
 func findProtoFiles(dir string) ([]string, error) {
 	return filepath.Glob(filepath.Join(dir, "*.proto"))
+}
+
+// isInPackage returns true if the filename is a part of the package.
+func isInPackage(fileName string, pkg string) (bool, error) {
+	dir, err := filepath.Abs(filepath.Dir(fileName))
+	if err != nil {
+		return false, err
+	}
+	dir = path.Clean(dir)
+	pkg = path.Clean(pkg)
+	if !strings.HasSuffix(dir, pkg) {
+		return false, nil
+	}
+
+	src := strings.TrimSuffix(dir, pkg)
+	src = path.Clean(src)
+	goPaths := strings.Split(os.Getenv("GOPATH"), string(filepath.ListSeparator))
+	for _, goPath := range goPaths {
+		if filepath.Join(goPath, "src") == src {
+			return true, nil
+		}
+	}
+	return false, nil
 }

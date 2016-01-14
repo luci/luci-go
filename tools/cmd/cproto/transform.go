@@ -16,23 +16,33 @@ import (
 )
 
 const (
-	prpcPackagePath = `"github.com/luci/luci-go/server/prpc"`
+	prpcPackagePath = `github.com/luci/luci-go/common/prpc`
 )
 
 var (
 	prpcPkg       = ast.NewIdent("prpc")
-	registrarType = &ast.SelectorExpr{prpcPkg, ast.NewIdent("Registrar")}
+	registrarName = ast.NewIdent("Registrar")
 )
 
+type transformer struct {
+	inPRPCPackage bool
+	PackageName   string
+}
+
 // transformGoFile rewrites a .go file to work with prpc.
-func transformGoFile(filename string) error {
+func (t *transformer) transformGoFile(filename string) error {
 	fset := token.NewFileSet()
-	file, err := parser.ParseFile(fset, filename, nil, 0)
+	file, err := parser.ParseFile(fset, filename, nil, parser.ParseComments)
 	if err != nil {
 		return err
 	}
 
-	transformFile(file)
+	t.PackageName = file.Name.Name
+	t.inPRPCPackage, err = isInPackage(filename, prpcPackagePath)
+	if err != nil {
+		return err
+	}
+	t.transformFile(file)
 
 	out, err := os.Create(filename)
 	if err != nil {
@@ -42,16 +52,21 @@ func transformGoFile(filename string) error {
 	return printer.Fprint(out, fset, file)
 }
 
-func transformFile(file *ast.File) {
-	if transformRegisterServerFuncs(file) {
-		insertPrpcImport(file)
+func (t *transformer) transformFile(file *ast.File) {
+	if t.transformRegisterServerFuncs(file) && !t.inPRPCPackage {
+		t.insertPrpcImport(file)
 	}
 }
 
 // transformRegisterServerFuncs finds RegisterXXXServer functions and
 // checks its first parameter type to prpc.Registrar.
 // Returns true if modified ast.
-func transformRegisterServerFuncs(file *ast.File) bool {
+func (t *transformer) transformRegisterServerFuncs(file *ast.File) bool {
+	var registrarType ast.Expr = registrarName
+	if !t.inPRPCPackage {
+		registrarType = &ast.SelectorExpr{prpcPkg, registrarName}
+	}
+
 	changed := false
 	for _, decl := range file.Decls {
 		funcDecl, ok := decl.(*ast.FuncDecl)
@@ -66,18 +81,19 @@ func transformRegisterServerFuncs(file *ast.File) bool {
 		if params == nil || len(params.List) != 2 {
 			continue
 		}
+
 		params.List[0].Type = registrarType
 		changed = true
 	}
 	return changed
 }
 
-func insertPrpcImport(file *ast.File) {
+func (t *transformer) insertPrpcImport(file *ast.File) {
 	spec := &ast.ImportSpec{
 		Name: prpcPkg,
 		Path: &ast.BasicLit{
 			Kind:  token.STRING,
-			Value: prpcPackagePath,
+			Value: `"` + prpcPackagePath + `"`,
 		},
 	}
 	importDecl := &ast.GenDecl{

@@ -8,14 +8,11 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/proto/google/descriptor"
 	"golang.org/x/net/context"
-
-	"runtime"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -40,7 +37,7 @@ func TestMain(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		runOn := func(sourceDir string, test func(tmpDir string)) {
-			tmpDir, err := ioutil.TempDir("", "prpcgen-test")
+			tmpDir, err := ioutil.TempDir("", "cproto-test")
 			So(err, ShouldBeNil)
 			defer os.RemoveAll(tmpDir)
 
@@ -55,7 +52,7 @@ func TestMain(t *testing.T) {
 				So(err, ShouldBeNil)
 			}
 
-			// Run prpcgen.
+			// Run cproto.
 			err = run(context.Background(), tmpDir)
 			So(err, ShouldBeNil)
 
@@ -63,8 +60,14 @@ func TestMain(t *testing.T) {
 		}
 
 		for _, testDir := range testCaseDirs {
+			testDir := filepath.Join(testDataDir, testDir)
+			info, err := os.Stat(testDir)
+			So(err, ShouldBeNil)
+			if !info.IsDir() {
+				continue
+			}
+
 			Convey("Check generated .go files for "+testDir, func() {
-				testDir := filepath.Join(testDataDir, testDir)
 				runOn(testDir, func(tmpDir string) {
 					goldenFiles, err := filepath.Glob(filepath.Join(testDir, "*.golden"))
 					So(err, ShouldBeNil)
@@ -83,38 +86,6 @@ func TestMain(t *testing.T) {
 				})
 			})
 		}
-
-		Convey("Check generated package.desc file.", func() {
-			runOn(filepath.Join(testDataDir, "helloworld"), func(tmpDir string) {
-				descBytes, err := ioutil.ReadFile(filepath.Join(tmpDir, "package.desc"))
-				So(err, ShouldBeNil)
-				var descs descriptor.FileDescriptorSet
-				err = proto.Unmarshal(descBytes, &descs)
-				So(err, ShouldBeNil)
-
-				file := descs.FindFile("test.proto")
-				So(file, ShouldNotBeNil)
-
-				greeter := file.FindService("Greeter")
-				So(greeter, ShouldNotBeNil)
-
-				sayHello := greeter.FindMethod("SayHello")
-				So(sayHello, ShouldNotBeNil)
-
-				So(sayHello.GetInputType(), ShouldEqual, ".test.HelloRequest")
-				So(sayHello.GetOutputType(), ShouldEqual, ".test.HelloReply")
-
-				helloRequest := file.FindMessage("HelloRequest")
-				So(helloRequest, ShouldNotBeNil)
-				name := helloRequest.FindField("name")
-				So(name, ShouldNotBeNil)
-
-				helloReply := file.FindMessage("HelloReply")
-				So(helloReply, ShouldNotBeNil)
-				message := helloReply.FindField("message")
-				So(message, ShouldNotBeNil)
-			})
-		})
 	})
 }
 
