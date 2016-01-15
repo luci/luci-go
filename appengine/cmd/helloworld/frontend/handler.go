@@ -15,10 +15,12 @@ import (
 	"google.golang.org/appengine"
 
 	"github.com/luci/gae/service/info"
+	"github.com/luci/luci-go/appengine/cmd/helloworld/proto"
 	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/prpc"
 	"github.com/luci/luci-go/server/templates"
 )
 
@@ -72,6 +74,11 @@ func init() {
 	router := httprouter.New()
 	server.InstallHandlers(router, base)
 	router.GET("/", base(auth.Authenticate(indexPage)))
+
+	var api prpc.Server
+	helloworld.RegisterGreeterServer(&api, &greeterService{})
+	api.InstallHandlers(router, base)
+
 	http.DefaultServeMux.Handle("/", router)
 }
 

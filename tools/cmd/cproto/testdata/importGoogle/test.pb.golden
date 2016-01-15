@@ -13,7 +13,7 @@ It has these top-level messages:
 */
 package test
 
-import prpc "github.com/luci/luci-go/common/prpc"
+import prpc "github.com/luci/luci-go/server/prpc"
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"

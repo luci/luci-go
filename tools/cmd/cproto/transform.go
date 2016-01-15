@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	prpcPackagePath = `github.com/luci/luci-go/common/prpc`
+	prpcPackagePath = `github.com/luci/luci-go/server/prpc`
 )
 
 var (

@@ -68,7 +68,10 @@ def header(input_api):
 def source_file_filter(input_api):
   """Returns filter that selects source code files only."""
   bl = list(input_api.DEFAULT_BLACK_LIST) + [
+    r'.+/pb\.discovery\.go$',
+    r'.+/pb\.discovery_test\.go$',
     r'.+\.pb\.go$',
+    r'.+\.pb_test\.go$',
     r'.+_string\.go$',
     r'.+gae\.py$', # symlinks from outside
   ]

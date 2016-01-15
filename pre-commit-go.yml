@@ -71,8 +71,10 @@ modes:
     max_duration: 35
 
 ignore_patterns:
+- '*-gen.go'
+- '*.pb.go'
+- '*.pb_test.go'
+- '*_string.go'
+- 'pb.discovery.go'
 - .*
 - _*
-- '*.pb.go'
-- '*_string.go'
-- '*-gen.go'
