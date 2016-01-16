@@ -54,20 +54,24 @@ func TestDiscovery(t *testing.T) {
 		// this checks that file deduplication actually works.
 		So(len(desc.File), ShouldEqual, 2)
 
-		discovery := desc.FindService("discovery.Discovery")
-		So(discovery, ShouldNotBeNil)
+		_, discoveryIndex := desc.FindService("discovery.Discovery")
+		So(discoveryIndex, ShouldNotEqual, -1)
 
-		calc := desc.FindService("testservices.Calc")
-		So(calc, ShouldNotBeNil)
+		_, calcIndex := desc.FindService("testservices.Calc")
+		So(calcIndex, ShouldNotEqual, -1)
 
-		serviceDesc := desc.FindService("testservices.Greeter")
-		So(serviceDesc, ShouldNotBeNil)
+		file, greeterIndex := desc.FindService("testservices.Greeter")
+		So(greeterIndex, ShouldNotEqual, -1)
+		greeter := file.Service[greeterIndex]
 
-		sayHelloDesc := serviceDesc.FindMethod("SayHello")
-		So(sayHelloDesc, ShouldNotBeNil)
+		sayHelloIndex := greeter.FindMethod("SayHello")
+		So(sayHelloIndex, ShouldNotEqual, -1)
+		sayHello := greeter.Method[sayHelloIndex]
 
-		So(sayHelloDesc.GetInputType(), ShouldEqual, ".testservices.HelloRequest")
-		helloReq := desc.FindMessage("testservices.HelloRequest")
+		So(sayHello.GetInputType(), ShouldEqual, ".testservices.HelloRequest")
+		_, obj, _ := desc.Resolve("testservices.HelloRequest")
+		So(obj, ShouldNotBeNil)
+		helloReq := obj.(*descriptor.DescriptorProto)
 		So(helloReq, ShouldNotBeNil)
 		So(helloReq.Field, ShouldHaveLength, 1)
 		So(helloReq.Field[0].GetName(), ShouldEqual, "name")

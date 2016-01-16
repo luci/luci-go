@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 //go:generate protoc --go_out=import_path=github.com/luci/luci-go/common/proto/google:. descriptor.proto
+//go:generate protoc -outil_test.desc util_test.proto
 
 package descriptor
 
