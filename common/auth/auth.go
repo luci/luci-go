@@ -2,30 +2,29 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-/*
-Package auth defines an opinionated wrapper around OAuth2.
-
-It hides configurability of base oauth2 library and instead makes a predefined
-set of choices regarding where the credentials should be stored and how OAuth2
-should be used. It makes authentication flows look more uniform across tools
-that use infra.libs.auth and allow credentials reuse across multiple binaries.
-
-Also it knows about various environments Chrome Infra tools are running under
-(GCE, Chrome Infra Golo, GAE, developers' machine) and switches default
-authentication scheme accordingly (e.g. on GCE machine the default is to use
-GCE metadata server).
-
-All tools that use infra.libs.auth share same credentials by default, meaning
-a user needs to authenticate only once to use them all. Credentials are cached
-in ~/.config/chrome_infra/auth/* and reused by all processes running under
-the same user account.
-*/
+// Package auth implements an opinionated wrapper around OAuth2.
+//
+// It hides configurability of base oauth2 library and instead makes a
+// predefined set of choices regarding where the credentials should be stored,
+// how they should be cached and how OAuth2 flow should be invoked.
+//
+// It makes authentication flows look more uniform across tools that use this
+// package and allow credentials reuse across multiple binaries.
+//
+// Also it knows about various environments luci tools are running under
+// (GCE, regular datacenter, GAE, developers' machines) and switches default
+// authentication scheme accordingly (e.g. on GCE machine the default is to use
+// GCE metadata server).
+//
+// All tools that use auth library share same credentials by default, meaning
+// a user needs to authenticate only once to use them all. Credentials are
+// cached in ~/.config/chrome_infra/auth/*.tok and may be reused by all
+// processes running under the same user account.
 package auth
 
 import (
 	"crypto/sha1"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -56,6 +55,11 @@ var (
 	// can't be minted for given OAuth scopes. For example if GCE instance wasn't
 	// granted access to requested scopes when it was created.
 	ErrInsufficientAccess = internal.ErrInsufficientAccess
+
+	// ErrBadCredentials is returned by authenticating RoundTripper if service
+	// account key used to generate access tokens is revoked, malformed or can not
+	// be read from disk.
+	ErrBadCredentials = internal.ErrBadCredentials
 )
 
 // Known Google API OAuth scopes.
@@ -118,52 +122,74 @@ const (
 // sane default values.
 type Options struct {
 	// Context carries the local goroutine state such as transport and logger.
+	//
 	// Context must be set to GAE request context if this library is used on
 	// appengine. On non-appegine it is fine to pass nil to use default values.
 	// Note that Authenticator will be bound to the context and should not
 	// outlive it.
 	Context context.Context
+
 	// Logger is used to write log messages. If nil, extract it from the context.
+	//
+	// It exists mostly for backward compatibility with callers that do not use
+	// logger in the context (or do not use context at all).
 	Logger logging.Logger
-	// Transport is underlying round tripper to use for requests. If nil, will
-	// be extracted from the context. If not there, http.DefaultTransport will
-	// be used.
+
+	// Transport is underlying round tripper to use for requests.
+	//
+	// If nil, will be extracted from the context. If not there,
+	// http.DefaultTransport will be used.
 	Transport http.RoundTripper
 
 	// Method defaults to AutoSelectMethod.
 	Method Method
+
 	// Scopes is a list of OAuth scopes to request, defaults to [OAuthScopeEmail].
 	Scopes []string
 
 	// ClientID is OAuth client_id to use with UserCredentialsMethod.
 	// Default: provided by DefaultClient().
 	ClientID string
+
 	// ClientID is OAuth client_secret to use with UserCredentialsMethod.
 	// Default: provided by DefaultClient().
 	ClientSecret string
 
-	// ServiceAccountJSONPath is a path to a JSON blob with a private key to use
-	// with ServiceAccountMethod. See the "Credentials" page under "APIs & Auth"
-	// for your project at Cloud Console.
+	// ServiceAccountJSONPath is a path to a JSON blob with a private key to use.
+	//
+	// Used only with ServiceAccountMethod.
 	// Default: ~/.config/chrome_infra/auth/service_account.json.
 	ServiceAccountJSONPath string
-	// ServiceAccountJSON is a body of JSON key file to use. Overrides
-	// ServiceAccountJSONPath if given.
+
+	// ServiceAccountJSON is a body of JSON key file to use.
+	//
+	// Overrides ServiceAccountJSONPath if given.
 	ServiceAccountJSON []byte
 
 	// GCEAccountName is an account name to query to fetch token for from metadata
-	// server when GCEMetadataMethod is used. If given account wasn't granted
-	// required set of scopes during instance creation time, Transport() call
-	// fails with ErrInsufficientAccess.
+	// server when GCEMetadataMethod is used.
+	//
+	// If given account wasn't granted required set of scopes during instance
+	// creation time, Transport() call fails with ErrInsufficientAccess.
 	// Default: "default" account.
 	GCEAccountName string
 
 	// TokenCacheFactory is a factory method to use to grab TokenCache object.
+	//
 	// If not set, a file system cache will be used.
 	TokenCacheFactory func(entryName string) (TokenCache, error)
 
 	// CustomTokenMinter is a factory to make new tokens if CustomMethod is used.
 	CustomTokenMinter TokenMinter
+
+	// SecretsDir can be used to override a path to a directory where tokens
+	// are cached and default service account key is located.
+	//
+	// If not set, SecretsDir() will be used.
+	SecretsDir string
+
+	// customTokenProvider is used in unit tests.
+	customTokenProvider internal.TokenProvider
 }
 
 // Authenticator is a factory for http.RoundTripper objects that know how to use
@@ -177,14 +203,14 @@ type Authenticator struct {
 	loginMode LoginMode
 	opts      *Options
 	transport http.RoundTripper
-	log       logging.Logger
+	ctx       context.Context
 
 	// Mutable members.
-	lock     sync.Mutex
+	lock     sync.RWMutex
 	cache    TokenCache
 	provider internal.TokenProvider
 	err      error
-	token    internal.Token
+	token    *oauth2.Token
 }
 
 // TokenCache implements a scheme to cache access tokens between the calls. It
@@ -210,6 +236,9 @@ type Token struct {
 
 	// Expiry is the expiration time of the token or zero if it does not expire.
 	Expiry time.Time `json:"expiry"`
+
+	// TokenType is the type of token (e.g. "Bearer", which is default).
+	TokenType string `json:"token_type,omitempty"`
 }
 
 // TokenMinter is a factory for access tokens when using CustomMode. It is
@@ -228,11 +257,10 @@ func NewAuthenticator(loginMode LoginMode, opts Options) *Authenticator {
 	// Add default scope, sort scopes.
 	if len(opts.Scopes) == 0 {
 		opts.Scopes = []string{OAuthScopeEmail}
+	} else {
+		opts.Scopes = append([]string(nil), opts.Scopes...) // copy
+		sort.Strings(opts.Scopes)
 	}
-	tmp := make([]string, len(opts.Scopes))
-	copy(tmp, opts.Scopes)
-	sort.Strings(tmp)
-	opts.Scopes = tmp
 
 	// Fill in blanks with default values.
 	if opts.ClientID == "" || opts.ClientSecret == "" {
@@ -241,21 +269,25 @@ func NewAuthenticator(loginMode LoginMode, opts Options) *Authenticator {
 	if opts.GCEAccountName == "" {
 		opts.GCEAccountName = "default"
 	}
-	if opts.Context == nil {
-		opts.Context = context.Background()
-	}
-	if opts.Logger == nil {
-		opts.Logger = logging.Get(opts.Context)
-	}
 	if opts.Transport == nil {
 		opts.Transport = internal.TransportFromContext(opts.Context)
 	}
+
+	// Prepare a context with the logger.
+	ctx := opts.Context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if opts.Logger != nil {
+		ctx = logging.Set(ctx, opts.Logger)
+	}
+	ctx = logging.SetField(ctx, "pkg", "auth")
 
 	// See ensureInitialized for the rest of the initialization.
 	auth := &Authenticator{
 		loginMode: loginMode,
 		opts:      &opts,
-		log:       opts.Logger,
+		ctx:       ctx,
 	}
 	transportCanceler, _ := opts.Transport.(canceler)
 	auth.transport = &authTransport{
@@ -322,13 +354,13 @@ func (a *Authenticator) TransportIfAvailable() (http.RoundTripper, error) {
 	if a.token == nil && a.provider.RequiresInteraction() {
 		return nil, ErrLoginRequired
 	}
+
 	return a.transport, nil
 }
 
 // Login perform an interaction with the user to get a long term refresh token
-// and cache it. Blocks for user input, can use stdin. Returns ErrNoTerminal
-// if interaction with a user is required, but the process is not running
-// under a terminal. It overwrites currently cached credentials, if any.
+// and cache it. Blocks for user input, can use stdin. It overwrites currently
+// cached credentials, if any.
 func (a *Authenticator) Login() error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -353,7 +385,7 @@ func (a *Authenticator) Login() error {
 	// Store the initial token in the cache. Don't abort if it fails, the token
 	// is still usable from the memory.
 	if err = a.cacheToken(a.token); err != nil {
-		a.log.Warningf("auth: failed to write token to cache: %s", err)
+		logging.Warningf(a.ctx, "Failed to write token to cache: %s", err)
 	}
 
 	return nil
@@ -371,6 +403,7 @@ func (a *Authenticator) PurgeCredentialsCache() error {
 }
 
 // GetAccessToken returns a valid access token with specified minimum lifetime.
+//
 // Does not interact with the user. May return ErrLoginRequered.
 func (a *Authenticator) GetAccessToken(lifetime time.Duration) (Token, error) {
 	a.lock.Lock()
@@ -381,19 +414,20 @@ func (a *Authenticator) GetAccessToken(lifetime time.Duration) (Token, error) {
 	tok := a.token
 	a.lock.Unlock()
 
-	if a.expiresIn(tok, lifetime) {
+	if tok == nil || internal.TokenExpiresIn(a.ctx, tok, lifetime) {
 		var err error
 		tok, err = a.refreshToken(tok, lifetime)
 		if err != nil {
 			return Token{}, err
 		}
-		if a.expiresIn(tok, lifetime) {
+		if internal.TokenExpiresIn(a.ctx, tok, lifetime) {
 			return Token{}, fmt.Errorf("auth: failed to refresh the token")
 		}
 	}
 	return Token{
-		AccessToken: tok.AccessToken(),
-		Expiry:      tok.Expiry(),
+		AccessToken: tok.AccessToken,
+		Expiry:      tok.Expiry,
+		TokenType:   tok.Type(),
 	}, nil
 }
 
@@ -412,22 +446,23 @@ type tokenSource struct {
 
 // Token is part of oauth2.TokenSource inteface.
 func (s tokenSource) Token() (*oauth2.Token, error) {
-	// Assume token is going to be used in next minute.
-	tok, err := s.a.GetAccessToken(time.Minute)
+	tok, err := s.a.GetAccessToken(minAcceptedLifetime)
 	if err != nil {
 		return nil, err
 	}
 	return &oauth2.Token{
 		AccessToken: tok.AccessToken,
 		Expiry:      tok.Expiry,
-		TokenType:   "Bearer",
+		TokenType:   tok.TokenType,
 	}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Authenticator private methods.
 
-// ensureInitialized is supposed to be called under the lock.
+// ensureInitialized instantiates TokenProvider and reads token from cache.
+//
+// It is supposed to be called under the lock.
 func (a *Authenticator) ensureInitialized() error {
 	if a.err != nil || a.provider != nil {
 		return a.err
@@ -438,7 +473,7 @@ func (a *Authenticator) ensureInitialized() error {
 	if a.opts.Method == AutoSelectMethod {
 		a.opts.Method = selectDefaultMethod(a.opts)
 	}
-	a.provider, a.err = makeTokenProvider(a.opts)
+	a.provider, a.err = makeTokenProvider(a.ctx, a.opts)
 	if a.err != nil {
 		return a.err
 	}
@@ -452,127 +487,137 @@ func (a *Authenticator) ensureInitialized() error {
 		}
 	} else {
 		a.cache = &tokenFileCache{
-			path: filepath.Join(SecretsDir(), cacheName+".tok"),
-			log:  a.log,
+			path: filepath.Join(a.opts.secretsDir(), cacheName+".tok"),
+			ctx:  a.ctx,
 		}
 	}
 
-	// Broken token cache is not a fatal error. So just log it and forget, a new
-	// token will be minted.
-	var err error
-	a.token, err = a.readTokenCache()
-	if err != nil {
-		a.log.Warningf("auth: failed to read token from cache: %s", err)
+	// Interactive providers need to know whether there's a cached token (to ask
+	// to run interactive login if there's none). Non-interactive providers do not
+	// care about state of the cache that much (they know how to update it
+	// themselves). So examine the cache here only when using interactive
+	// provider. Non interactive providers will do it lazily on a first
+	// refreshToken(...) call. It saves one memcache call in certain situations
+	// when auth library is used from GAE.
+	if a.provider.RequiresInteraction() {
+		// Broken token cache is not a fatal error. So just log it and forget, a new
+		// token will be minted.
+		var err error
+		a.token, err = a.readTokenCache()
+		if err != nil {
+			logging.Warningf(a.ctx, "Failed to read token from cache: %s", err)
+		}
 	}
+
 	return nil
 }
 
-// readTokenCache may be called with a.lock held or not held. It works either way.
-func (a *Authenticator) readTokenCache() (internal.Token, error) {
-	// 'read' returns (nil, nil) if cache is empty.
+// readTokenCache reads token from cache (if it is there) and unmarshals it.
+//
+// It may be called with a.lock held or not held. It works either way. Returns
+// (nil, nil) if cache is empty.
+func (a *Authenticator) readTokenCache() (*oauth2.Token, error) {
+	// 'Read' returns (nil, nil) if cache is empty.
 	buf, err := a.cache.Read()
 	if err != nil || buf == nil {
 		return nil, err
 	}
-	token, err := a.provider.UnmarshalToken(buf)
+	token, err := internal.UnmarshalToken(buf)
 	if err != nil {
 		return nil, err
 	}
 	return token, nil
 }
 
-// cacheToken may be called with a.lock held or not held. It works either way.
-func (a *Authenticator) cacheToken(tok internal.Token) error {
-	buf, err := a.provider.MarshalToken(tok)
+// cacheToken marshals the token and puts it in the cache.
+//
+// It may be called with a.lock held or not held. It works either way.
+func (a *Authenticator) cacheToken(tok *oauth2.Token) error {
+	buf, err := internal.MarshalToken(tok)
 	if err != nil {
 		return err
 	}
-	return a.cache.Write(buf, tok.Expiry())
+	return a.cache.Write(buf, tok.Expiry)
 }
 
-// currentToken lock a.lock inside. It MUST NOT be called when a.lock is held.
-func (a *Authenticator) currentToken() internal.Token {
-	// TODO(vadimsh): Test with go test -race. The lock may be unnecessary.
-	a.lock.Lock()
-	defer a.lock.Unlock()
+// currentToken returns currently loaded token (or nil).
+//
+// It lock a.lock inside. It MUST NOT be called when a.lock is held.
+func (a *Authenticator) currentToken() *oauth2.Token {
+	a.lock.RLock()
+	defer a.lock.RUnlock()
 	return a.token
 }
 
-// expiresIn returns True if token is not valid or expires within given
-// duration.
-func (a *Authenticator) expiresIn(t internal.Token, lifetime time.Duration) bool {
-	if t == nil {
-		return true
-	}
-	if t.AccessToken() == "" {
-		return true
-	}
-	if t.Expiry().IsZero() {
-		return false
-	}
-	expiry := t.Expiry().Add(-lifetime)
-	return expiry.Before(clock.Now(a.opts.Context))
-}
-
 // refreshToken compares current token to 'prev' and launches token refresh
-// procedure if they still match. Returns a refreshed token (if a refresh
-// procedure happened) or the current token (i.e. if it's different from prev).
-// Acts as "Compare-And-Swap" where "Swap" is a token refresh procedure.
+// procedure if they still match.
+//
+// Returns a refreshed token (if a refresh procedure happened) or the current
+// token, if it's already different from 'prev'. Acts as "Compare-And-Swap"
+// where "Swap" is a token refresh procedure.
+//
 // If token can't be refreshed (e.g. it was revoked), sets current token to nil
-// and returns ErrLoginRequired.
-func (a *Authenticator) refreshToken(prev internal.Token, lifetime time.Duration) (internal.Token, error) {
+// and returns ErrLoginRequired or ErrBadCredentials.
+func (a *Authenticator) refreshToken(prev *oauth2.Token, lifetime time.Duration) (*oauth2.Token, error) {
 	// Refresh the token under the lock.
-	tok, cache, err := func() (internal.Token, bool, error) {
+	tok, cache, err := func() (*oauth2.Token, bool, error) {
 		a.lock.Lock()
 		defer a.lock.Unlock()
 
-		// Some other goroutine already updated the token, just return the token.
-		if a.token != nil && !a.token.Equals(prev) {
+		// Some other goroutine already updated the token, just return new token.
+		if a.token != nil && !internal.EqualTokens(a.token, prev) {
 			return a.token, false, nil
 		}
 
-		// Rescan the cache. Maybe some other process updated the token.
-		cached, err := a.readTokenCache()
-		if err == nil && !a.expiresIn(cached, lifetime) && !cached.Equals(prev) {
-			a.log.Debugf("auth: some other process put refreshed token in the cache")
+		// Rescan the cache. Maybe some other process updated the token. This branch
+		// is also responsible for lazy-loading of token for non-interactive
+		// providers, see ensureInitialized().
+		if cached, _ := a.readTokenCache(); cached != nil {
 			a.token = cached
-			return a.token, false, nil
+			if !internal.EqualTokens(cached, prev) && !internal.TokenExpiresIn(a.ctx, cached, lifetime) {
+				return cached, false, nil
+			}
 		}
 
 		// Mint a new token or refresh the existing one.
+		var err error
 		if a.token == nil {
 			// Can't do user interaction outside of Login.
 			if a.provider.RequiresInteraction() {
 				return nil, false, ErrLoginRequired
 			}
-			a.log.Debugf("auth: minting a new token, using %s", a.opts.Method)
+			logging.Debugf(a.ctx, "Minting a new token, using %s", a.opts.Method)
 			a.token, err = a.mintTokenWithRetries()
 			if err != nil {
-				a.log.Warningf("auth: failed to mint a token: %s", err)
+				logging.Warningf(a.ctx, "Failed to mint a token: %s", err)
 				return nil, false, err
 			}
 		} else {
-			a.log.Debugf("auth: refreshing the token")
+			logging.Debugf(a.ctx, "Refreshing the token")
 			a.token, err = a.refreshTokenWithRetries(a.token)
 			if err != nil {
-				a.log.Warningf("auth: failed to refresh the token: %s", err)
+				logging.Warningf(a.ctx, "Failed to refresh the token: %s", err)
 				if err == internal.ErrBadRefreshToken && a.loginMode == OptionalLogin {
-					a.log.Warningf("auth: switching to anonymous calls")
+					logging.Warningf(a.ctx, "Switching to anonymous calls")
 				}
 				return nil, false, err
 			}
 		}
-		lifetime := a.token.Expiry().Sub(clock.Now(a.opts.Context))
-		a.log.Debugf("auth: token expires in %s", lifetime)
+		lifetime := a.token.Expiry.Sub(clock.Now(a.ctx))
+		logging.Debugf(a.ctx, "Token expires in %s", lifetime)
 		return a.token, true, nil
 	}()
 
-	if err == internal.ErrBadRefreshToken {
-		// Do not keep revoked token in the cache. It is unusable.
+	if err == internal.ErrBadRefreshToken || err == internal.ErrBadCredentials {
+		// Do not keep broken token in the cache. It is unusable.
 		if err := a.cache.Clear(); err != nil {
-			a.log.Warningf("auth: failed to remove revoked token from the cache: %s", err)
+			logging.Warningf(a.ctx, "Failed to remove broken token from the cache: %s", err)
 		}
-		return nil, ErrLoginRequired
+		// Bad refresh token can be fixed by interactive logic. Bad credentials are
+		// not fixable, so return the error as is in that case.
+		if err == internal.ErrBadRefreshToken {
+			err = ErrLoginRequired
+		}
 	}
 
 	if err != nil {
@@ -583,7 +628,7 @@ func (a *Authenticator) refreshToken(prev internal.Token, lifetime time.Duration
 	// Do not die if failed, token is still usable from the memory.
 	if cache && tok != nil {
 		if err = a.cacheToken(tok); err != nil {
-			a.log.Warningf("auth: failed to write refreshed token to the cache: %s", err)
+			logging.Warningf(a.ctx, "Failed to write refreshed token to the cache: %s", err)
 		}
 	}
 
@@ -592,20 +637,25 @@ func (a *Authenticator) refreshToken(prev internal.Token, lifetime time.Duration
 
 // mintTokenWithRetries calls provider's MintToken() retrying on transient
 // errors a bunch of times. Called only for non-interactive providers.
-func (a *Authenticator) mintTokenWithRetries() (internal.Token, error) {
+func (a *Authenticator) mintTokenWithRetries() (*oauth2.Token, error) {
 	// TODO(vadimsh): Implement retries.
 	return a.provider.MintToken()
 }
 
 // refreshTokenWithRetries calls providers' RefreshToken(...) retrying on
 // transient errors a bunch of times.
-func (a *Authenticator) refreshTokenWithRetries(t internal.Token) (internal.Token, error) {
+func (a *Authenticator) refreshTokenWithRetries(t *oauth2.Token) (*oauth2.Token, error) {
 	// TODO(vadimsh): Implement retries.
 	return a.provider.RefreshToken(a.token)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // authTransport implementation.
+
+// minAcceptedLifetime is minimal lifetime of a token that is still accepted.
+//
+// If token is expected to live less than this duration, it will be refreshed.
+const minAcceptedLifetime = 15 * time.Second
 
 type canceler interface {
 	CancelRequest(*http.Request)
@@ -625,9 +675,10 @@ func (t *authTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Attempt to refresh the token, if required. Revert to non-authed call if
 	// token can't be refreshed and running in OptionalLogin mode.
 	tok := t.parent.currentToken()
-	if tok == nil || t.parent.expiresIn(tok, time.Minute) {
+	ctx := t.parent.ctx
+	if tok == nil || internal.TokenExpiresIn(ctx, tok, minAcceptedLifetime) {
 		var err error
-		tok, err = t.parent.refreshToken(tok, time.Minute)
+		tok, err = t.parent.refreshToken(tok, minAcceptedLifetime)
 		switch {
 		case err == ErrLoginRequired && t.parent.loginMode == OptionalLogin:
 			// Need to put it in 'inflight' to make CancelRequest work.
@@ -637,7 +688,7 @@ func (t *authTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 			return t.roundTripAndForget(req, req)
 		case err != nil:
 			return nil, err
-		case t.parent.expiresIn(tok, time.Minute):
+		case internal.TokenExpiresIn(ctx, tok, minAcceptedLifetime):
 			return nil, fmt.Errorf("auth: failed to refresh the token")
 		}
 	}
@@ -650,7 +701,7 @@ func (t *authTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	for k, v := range req.Header {
 		clone.Header[k] = v
 	}
-	clone.Header.Set("Authorization", "Bearer "+tok.AccessToken())
+	tok.SetAuthHeader(clone)
 	return t.roundTripAndForget(clone, req)
 }
 
@@ -734,10 +785,12 @@ func (r *onEOFReader) runFunc() {
 ////////////////////////////////////////////////////////////////////////////////
 // tokenFileCache implementation.
 
-// tokenFileCache implements TokenCache on top of  the file system.
+// tokenFileCache implements TokenCache on top of the file system file.
+//
+// It caches only single token.
 type tokenFileCache struct {
 	path string
-	log  logging.Logger
+	ctx  context.Context
 	lock sync.Mutex
 }
 
@@ -754,7 +807,7 @@ func (c *tokenFileCache) Read() (buf []byte, err error) {
 func (c *tokenFileCache) Write(buf []byte, exp time.Time) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	c.log.Debugf("auth: writing token to %s", c.path)
+	logging.Debugf(c.ctx, "Writing token to %s", c.path)
 	err := os.MkdirAll(filepath.Dir(c.path), 0700)
 	if err != nil {
 		return err
@@ -776,10 +829,18 @@ func (c *tokenFileCache) Clear() error {
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions.
 
+// secretsDir returns directory with token cache files.
+func (opts *Options) secretsDir() string {
+	if opts.SecretsDir != "" {
+		return opts.SecretsDir
+	}
+	return SecretsDir()
+}
+
+// cacheEntryName constructs a name of cache entry from data that identifies
+// requested credential, to allow multiple differently configured instances of
+// Authenticator to coexist.
 func cacheEntryName(opts *Options, p internal.TokenProvider) string {
-	// Construct a name of cache entry from data that identifies requested
-	// credential, to allow multiple differently configured instances of
-	// Authenticator to coexist.
 	sum := sha1.New()
 	sum.Write([]byte(opts.Method))
 	sum.Write([]byte{0})
@@ -796,21 +857,25 @@ func cacheEntryName(opts *Options, p internal.TokenProvider) string {
 	return hex.EncodeToString(sum.Sum(nil))[:16]
 }
 
-// defaultServiceAccountPath returns a path to JSON key to look for by default.
-func defaultServiceAccountPath() string {
-	return filepath.Join(SecretsDir(), "service_account.json")
+// pickServiceAccount returns a path to a JSON key to load.
+//
+// It is either the one specified in options or default one.
+func pickServiceAccount(opts *Options) string {
+	if opts.ServiceAccountJSONPath != "" {
+		return opts.ServiceAccountJSONPath
+	}
+	return filepath.Join(opts.secretsDir(), "service_account.json")
 }
 
-// selectDefaultMethod is mocked in tests.
-var selectDefaultMethod = func(opts *Options) Method {
+// selectDefaultMethod is invoked in AutoSelectMethod mode.
+//
+// It looks at the options and the environment and picks the most appropriate
+// authentication method.
+func selectDefaultMethod(opts *Options) Method {
 	if len(opts.ServiceAccountJSON) != 0 {
 		return ServiceAccountMethod
 	}
-	// Try to find service account JSON file at provided or default location.
-	serviceAccountPath := opts.ServiceAccountJSONPath
-	if serviceAccountPath == "" {
-		serviceAccountPath = defaultServiceAccountPath()
-	}
+	serviceAccountPath := pickServiceAccount(opts)
 	info, _ := os.Stat(serviceAccountPath)
 	if info != nil && info.Mode().IsRegular() {
 		return ServiceAccountMethod
@@ -821,20 +886,16 @@ var selectDefaultMethod = func(opts *Options) Method {
 	return UserCredentialsMethod
 }
 
-// secretsDir is mocked in tests. Called by publicly visible SecretsDir().
-var secretsDir = func() string {
-	usr, err := user.Current()
-	if err != nil {
-		panic(err.Error())
+// makeTokenProvider creates TokenProvider implementation based on options.
+//
+// Called by ensureInitialized.
+func makeTokenProvider(ctx context.Context, opts *Options) (internal.TokenProvider, error) {
+	// customTokenProvider is set only in unit tests.
+	if opts.customTokenProvider != nil {
+		return opts.customTokenProvider, nil
 	}
-	// TODO(vadimsh): On Windows use SHGetFolderPath with CSIDL_LOCAL_APPDATA to
-	// locate a directory to store app files.
-	return filepath.Join(usr.HomeDir, ".config", "chrome_infra", "auth")
-}
 
-// makeTokenProvider is mocked in tests. Called by ensureInitialized.
-var makeTokenProvider = func(opts *Options) (internal.TokenProvider, error) {
-	// Note: on appengine opts.Context actually carries the transport used to
+	// Note: on appengine context.Context actually carries the transport used to
 	// run OAuth2 flows. oauth2 library provides no way to customize it. So on
 	// appengine opts.Context must be set and it must be derived from GAE request
 	// context. opts.Transport is not used for token exchange flow itself, only
@@ -842,37 +903,32 @@ var makeTokenProvider = func(opts *Options) (internal.TokenProvider, error) {
 	switch opts.Method {
 	case UserCredentialsMethod:
 		return internal.NewUserAuthTokenProvider(
-			opts.Context,
-			opts.Logger,
+			ctx,
 			opts.ClientID,
 			opts.ClientSecret,
 			opts.Scopes)
 	case ServiceAccountMethod:
-		keyBody := opts.ServiceAccountJSON
-		if len(keyBody) == 0 {
-			serviceAccountPath := opts.ServiceAccountJSONPath
-			if serviceAccountPath == "" {
-				serviceAccountPath = defaultServiceAccountPath()
-			}
-			var err error
-			if keyBody, err = ioutil.ReadFile(serviceAccountPath); err != nil {
-				return nil, err
-			}
+		serviceAccountPath := ""
+		if len(opts.ServiceAccountJSON) == 0 {
+			serviceAccountPath = pickServiceAccount(opts)
 		}
-		return internal.NewServiceAccountTokenProvider(opts.Context, keyBody, opts.Scopes)
+		return internal.NewServiceAccountTokenProvider(
+			ctx,
+			opts.ServiceAccountJSON,
+			serviceAccountPath,
+			opts.Scopes)
 	case GCEMetadataMethod:
 		return internal.NewGCETokenProvider(opts.GCEAccountName, opts.Scopes)
 	case CustomMethod:
 		if opts.CustomTokenMinter == nil {
-			return nil, fmt.Errorf("CustomTokenMinter must be set")
+			return nil, fmt.Errorf("auth: bad Options - CustomTokenMinter must be set")
 		}
 		return &customTokenProvider{
-			c:      opts.Context,
 			scopes: opts.Scopes,
 			minter: opts.CustomTokenMinter,
 		}, nil
 	default:
-		return nil, fmt.Errorf("unrecognized authentication method: %s", opts.Method)
+		return nil, fmt.Errorf("auth: unrecognized authentication method: %s", opts.Method)
 	}
 }
 
@@ -890,40 +946,21 @@ func DefaultClient() (clientID string, clientSecret string) {
 
 // SecretsDir returns an absolute path to a directory to keep secret files in.
 func SecretsDir() string {
-	return secretsDir()
+	usr, err := user.Current()
+	if err != nil {
+		panic(err.Error())
+	}
+	// TODO(vadimsh): On Windows use SHGetFolderPath with CSIDL_LOCAL_APPDATA to
+	// locate a directory to store app files.
+	return filepath.Join(usr.HomeDir, ".config", "chrome_infra", "auth")
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // CustomMethod implementation.
 
-// customToken adapts Token to internal.Token interface.
-type customToken struct {
-	Token
-}
-
-func (t *customToken) Expiry() time.Time {
-	return t.Token.Expiry
-}
-
-func (t *customToken) AccessToken() string {
-	return t.Token.AccessToken
-}
-
-func (t *customToken) Equals(another internal.Token) bool {
-	if another == nil {
-		return t == nil
-	}
-	casted, ok := another.(*customToken)
-	if !ok {
-		return false
-	}
-	return t.Token == casted.Token
-}
-
 // customTokenProvider implements internal.TokenProvider interface on top of
 // TokenMinter.
 type customTokenProvider struct {
-	c      context.Context
 	scopes []string
 	minter TokenMinter
 }
@@ -936,31 +973,19 @@ func (p *customTokenProvider) CacheSeed() []byte {
 	return p.minter.CacheSeed()
 }
 
-func (p *customTokenProvider) MintToken() (internal.Token, error) {
+func (p *customTokenProvider) MintToken() (*oauth2.Token, error) {
 	tok, err := p.minter.MintToken(p.scopes)
 	if err != nil {
 		return nil, err
 	}
-	return &customToken{tok}, nil
+	return &oauth2.Token{
+		AccessToken: tok.AccessToken,
+		Expiry:      tok.Expiry,
+		TokenType:   tok.TokenType,
+	}, nil
 }
 
-func (p *customTokenProvider) RefreshToken(internal.Token) (internal.Token, error) {
+func (p *customTokenProvider) RefreshToken(*oauth2.Token) (*oauth2.Token, error) {
 	// Refreshing is the same as making a new one.
 	return p.MintToken()
-}
-
-func (p *customTokenProvider) MarshalToken(t internal.Token) ([]byte, error) {
-	casted, ok := t.(*customToken)
-	if !ok {
-		return nil, fmt.Errorf("wrong token kind: %T", t)
-	}
-	return json.Marshal(&casted.Token)
-}
-
-func (p *customTokenProvider) UnmarshalToken(data []byte) (internal.Token, error) {
-	tok := Token{}
-	if err := json.Unmarshal(data, &tok); err != nil {
-		return nil, err
-	}
-	return &customToken{tok}, nil
 }

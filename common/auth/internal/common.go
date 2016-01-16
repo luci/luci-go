@@ -2,23 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-/*
-Package internal contains interfaces and structs used internally
-by infra.libs.auth. They are moved to a separate package for a better
-readability of main infra.libs.auth code: infra.libs.auth implements top level
-logic, infra.libs.auth.internal implements dirty details.
-*/
+// Package internal contains code used internally by common/auth.
 package internal
 
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
+
+	"github.com/luci/luci-go/common/clock"
 )
 
 var (
@@ -31,29 +28,17 @@ var (
 	// or otherwise invalid. It means MintToken must be used to get a new refresh
 	// token.
 	ErrBadRefreshToken = errors.New("refresh_token is not valid")
+
+	// ErrBadCredentials is returned by MintToken or RefreshToken if provided
+	// offline credentials (like service account key) are invalid.
+	ErrBadCredentials = errors.New("invalid service account credentials")
 )
 
-// Token is immutable object that internally holds authentication credentials
-// (short term, long term, or both). Token knows how to modify http.Request to
-// apply the credentials to it. TokenProvider acts as a factory for Tokens.
-type Token interface {
-	// Equals compares this token to another token of the same kind.
-	Equals(Token) bool
-
-	// Expiry is the optional expiration time of the access token.
-	// Zero if it does not expire.
-	Expiry() time.Time
-
-	// AccessToken returns a token that authorizes and authenticates the requests.
-	AccessToken() string
-}
-
 // TokenProvider knows how to mint new tokens, refresh existing ones, marshal
-// and umarshal tokens to byte buffer. TokenProvider acts as a factory for
-// particular implementations of Token interface. Tokens from two different
-// provider instances must not be mixed together.
+// and unmarshal tokens to byte buffers.
 type TokenProvider interface {
-	// RequiresInteraction is true if provider may start user interaction in MintToken.
+	// RequiresInteraction is true if provider may start user interaction
+	// in MintToken.
 	RequiresInteraction() bool
 
 	// CacheSeed is an optional byte string to use when constructing cache entry
@@ -62,20 +47,13 @@ type TokenProvider interface {
 	CacheSeed() []byte
 
 	// MintToken launches authentication flow (possibly interactive) and returns
-	// a new refreshable token.
-	MintToken() (Token, error)
+	// a new refreshable token (or error). It must never return (nil, nil).
+	MintToken() (*oauth2.Token, error)
 
 	// RefreshToken takes existing token (probably expired, but not necessarily)
 	// and returns a new refreshed token. It should never do any user interaction.
 	// If a user interaction is required, a error should be returned instead.
-	RefreshToken(Token) (Token, error)
-
-	// MarshalToken converts a token to byte buffer.
-	MarshalToken(Token) ([]byte, error)
-
-	// UnmarshalToken takes byte buffer produced by MarshalToken and returns
-	// original Token.
-	UnmarshalToken([]byte) (Token, error)
+	RefreshToken(*oauth2.Token) (*oauth2.Token, error)
 }
 
 // TransportFromContext returns http.RoundTripper buried inside the given
@@ -90,99 +68,74 @@ func TransportFromContext(ctx context.Context) http.RoundTripper {
 	return c.Transport
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
-// tokenImpl implements Token interface by adapting oauth2.Token.
-type tokenImpl struct {
-	oauth2.Token
-}
-
-// makeToken builds Token from oauth2.Token by copying it.
-func makeToken(tok *oauth2.Token) Token {
-	return &tokenImpl{
-		Token: *tok,
-	}
-}
-
-// extractOAuthToken takes Token, checks its type and return oauth2.Token.
-// It returns a copy that can be safely mutated.
-func extractOAuthToken(tok Token) oauth2.Token {
-	// It's OK to panic here on type mismatch.
-	return tok.(*tokenImpl).Token
-}
-
-func (t *tokenImpl) Equals(another Token) bool {
-	if another == nil {
-		return t == nil
-	}
-	casted, ok := another.(*tokenImpl)
-	if !ok {
-		return false
-	}
-	return t.Token.AccessToken == casted.Token.AccessToken
-}
-
-func (t *tokenImpl) Expiry() time.Time {
-	return t.Token.Expiry
-}
-
-func (t *tokenImpl) AccessToken() string {
-	return t.Token.AccessToken
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-// oauthTokenProvider partially implements a TokenProvider built on top of oauth
-// library. Concrete implementations embed this struct and provide missing
-// MintToken and RefreshToken methods.
-type oauthTokenProvider struct {
-	interactive bool
-	tokenFlavor string
-}
-
-type tokenOnDisk struct {
-	Version      string `json:"version"`
-	Flavor       string `json:"flavor"`
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token,omitempty"`
-	ExpiresAtSec int64  `json:"expires_at,omitempty"`
-}
-
-const tokFormatVersion = "1"
-
-func (p *oauthTokenProvider) RequiresInteraction() bool {
-	return p.interactive
-}
-
-func (p *oauthTokenProvider) CacheSeed() []byte {
-	return nil
-}
-
-func (p *oauthTokenProvider) MarshalToken(t Token) ([]byte, error) {
-	tok := extractOAuthToken(t)
-	return json.Marshal(&tokenOnDisk{
-		Version:      tokFormatVersion,
-		Flavor:       p.tokenFlavor,
+// MarshalToken converts a token into byte buffer.
+func MarshalToken(tok *oauth2.Token) ([]byte, error) {
+	return json.MarshalIndent(&tokenOnDisk{
 		AccessToken:  tok.AccessToken,
+		TokenType:    tok.Type(),
 		RefreshToken: tok.RefreshToken,
 		ExpiresAtSec: tok.Expiry.Unix(),
-	})
+	}, "", "\t")
 }
 
-func (p *oauthTokenProvider) UnmarshalToken(data []byte) (Token, error) {
+// UnmarshalToken takes byte buffer produced by MarshalToken and returns
+// original token.
+func UnmarshalToken(data []byte) (*oauth2.Token, error) {
 	onDisk := tokenOnDisk{}
 	if err := json.Unmarshal(data, &onDisk); err != nil {
 		return nil, err
 	}
-	if onDisk.Version != tokFormatVersion {
-		return nil, fmt.Errorf("auth: bad token version %q, expected %q", onDisk.Version, tokFormatVersion)
-	}
-	if onDisk.Flavor != p.tokenFlavor {
-		return nil, fmt.Errorf("auth: bad token flavor %q, expected %q", onDisk.Flavor, p.tokenFlavor)
-	}
-	return makeToken(&oauth2.Token{
+	return &oauth2.Token{
 		AccessToken:  onDisk.AccessToken,
+		TokenType:    onDisk.TokenType,
 		RefreshToken: onDisk.RefreshToken,
 		Expiry:       time.Unix(onDisk.ExpiresAtSec, 0),
-	}), nil
+	}, nil
+}
+
+// TokenExpiresIn returns True if the token is not valid or expires within given
+// duration.
+func TokenExpiresIn(ctx context.Context, t *oauth2.Token, lifetime time.Duration) bool {
+	if t == nil || t.AccessToken == "" {
+		return true
+	}
+	if t.Expiry.IsZero() {
+		return false
+	}
+	expiry := t.Expiry.Add(-lifetime)
+	return expiry.Before(clock.Now(ctx))
+}
+
+// EqualTokens returns true if both token object have same access token.
+//
+// 'nil' token corresponds to an empty access token.
+func EqualTokens(a, b *oauth2.Token) bool {
+	if a == b {
+		return true
+	}
+	aTok := ""
+	if a != nil {
+		aTok = a.AccessToken
+	}
+	bTok := ""
+	if b != nil {
+		bTok = b.AccessToken
+	}
+	return aTok == bTok
+}
+
+// tokenOnDisk describes JSON produced by MarshalToken.
+type tokenOnDisk struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token,omitempty"`
+	TokenType    string `json:"token_type,omitempty"`
+	ExpiresAtSec int64  `json:"expires_at,omitempty"`
+}
+
+// isBadTokenError sniffs out HTTP 400 from token source errors.
+func isBadTokenError(err error) bool {
+	// See https://github.com/golang/oauth2/blob/master/internal/token.go.
+	// Unfortunately, fmt.Errorf is used there, so there's no other way to
+	// differentiate between bad tokens and transient errors.
+	return err != nil && strings.Contains(err.Error(), "400 Bad Request")
 }

@@ -45,10 +45,6 @@ const (
 //
 // If serviceAccountJSON is given, it must be a byte blob with service account
 // JSON key to use instead of app's own account.
-//
-// Prefer to use Authenticator(...) lazily (e.g. only when really going to
-// send the request), since it does a bunch of datastore and memcache reads to
-// initialize http.RoundTripper.
 func Authenticator(c context.Context, scopes []string, serviceAccountJSON []byte) (*auth.Authenticator, error) {
 	opts := auth.Options{
 		Context:   c,

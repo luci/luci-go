@@ -6,7 +6,6 @@ package internal
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"golang.org/x/net/context"
@@ -16,23 +15,15 @@ import (
 )
 
 type userAuthTokenProvider struct {
-	oauthTokenProvider
-
 	ctx    context.Context
-	logger logging.Logger
 	config *oauth2.Config
 }
 
 // NewUserAuthTokenProvider returns TokenProvider that can perform 3-legged
 // OAuth flow involving interaction with a user.
-func NewUserAuthTokenProvider(ctx context.Context, logger logging.Logger, clientID, clientSecret string, scopes []string) (TokenProvider, error) {
+func NewUserAuthTokenProvider(ctx context.Context, clientID, clientSecret string, scopes []string) (TokenProvider, error) {
 	return &userAuthTokenProvider{
-		oauthTokenProvider: oauthTokenProvider{
-			interactive: true,
-			tokenFlavor: "user",
-		},
-		ctx:    ctx,
-		logger: logger,
+		ctx: ctx,
 		config: &oauth2.Config{
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
@@ -46,7 +37,15 @@ func NewUserAuthTokenProvider(ctx context.Context, logger logging.Logger, client
 	}, nil
 }
 
-func (p *userAuthTokenProvider) MintToken() (Token, error) {
+func (p *userAuthTokenProvider) RequiresInteraction() bool {
+	return true
+}
+
+func (p *userAuthTokenProvider) CacheSeed() []byte {
+	return nil
+}
+
+func (p *userAuthTokenProvider) MintToken() (*oauth2.Token, error) {
 	// Grab the authorization code by redirecting a user to a consent screen.
 	url := p.config.AuthCodeURL("", oauth2.AccessTypeOffline, oauth2.ApprovalForce)
 	fmt.Printf("Visit the URL to get authorization code.\n\n%s\n\n", url)
@@ -56,33 +55,22 @@ func (p *userAuthTokenProvider) MintToken() (Token, error) {
 		return nil, err
 	}
 	// Exchange it for a token.
-	tok, err := p.config.Exchange(p.ctx, code)
-	if err != nil {
-		return nil, err
-	}
-	return makeToken(tok), nil
+	return p.config.Exchange(p.ctx, code)
 }
 
-func (p *userAuthTokenProvider) RefreshToken(tok Token) (Token, error) {
+func (p *userAuthTokenProvider) RefreshToken(tok *oauth2.Token) (*oauth2.Token, error) {
 	// Clear expiration time to force token refresh. Do not use 0 since it means
 	// that token never expires.
-	t := extractOAuthToken(tok)
+	t := *tok
 	t.Expiry = time.Unix(1, 0)
 	switch newTok, err := p.config.TokenSource(p.ctx, &t).Token(); {
 	case isBadTokenError(err):
-		p.logger.Warningf("auth: bad refresh token - %s", err)
+		logging.Warningf(p.ctx, "Bad refresh token - %s", err)
 		return nil, ErrBadRefreshToken
 	case err != nil:
-		p.logger.Warningf("auth: error when refreshing the token - %s", err)
+		logging.Warningf(p.ctx, "Error when refreshing the token - %s", err)
 		return nil, err
 	default:
-		return makeToken(newTok), nil
+		return newTok, nil
 	}
-}
-
-func isBadTokenError(err error) bool {
-	// See https://github.com/golang/oauth2/blob/master/internal/token.go.
-	// Unfortunately, fmt.Errorf is used there, so there's no other way to
-	// differentiate between bad tokens and transient errors.
-	return err != nil && strings.Contains(err.Error(), "400 Bad Request")
 }

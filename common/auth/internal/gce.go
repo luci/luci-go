@@ -5,13 +5,12 @@
 package internal
 
 import (
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/cloud/compute/metadata"
 )
 
 type gceTokenProvider struct {
-	oauthTokenProvider
-
 	account string
 }
 
@@ -34,25 +33,23 @@ func NewGCETokenProvider(account string, scopes []string) (TokenProvider, error)
 			return nil, ErrInsufficientAccess
 		}
 	}
-	return &gceTokenProvider{
-		oauthTokenProvider: oauthTokenProvider{
-			interactive: false,
-			tokenFlavor: "gce",
-		},
-		account: account,
-	}, nil
+	return &gceTokenProvider{account: account}, nil
 }
 
-func (p *gceTokenProvider) MintToken() (Token, error) {
+func (p *gceTokenProvider) RequiresInteraction() bool {
+	return false
+}
+
+func (p *gceTokenProvider) CacheSeed() []byte {
+	return nil
+}
+
+func (p *gceTokenProvider) MintToken() (*oauth2.Token, error) {
 	src := google.ComputeTokenSource(p.account)
-	tok, err := src.Token()
-	if err != nil {
-		return nil, err
-	}
-	return makeToken(tok), nil
+	return src.Token()
 }
 
-func (p *gceTokenProvider) RefreshToken(Token) (Token, error) {
+func (p *gceTokenProvider) RefreshToken(*oauth2.Token) (*oauth2.Token, error) {
 	// Minting and refreshing on GCE is the same thing: a call to metadata server.
 	return p.MintToken()
 }
