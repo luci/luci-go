@@ -11,6 +11,7 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 )
 
@@ -63,14 +64,14 @@ func (p *userAuthTokenProvider) RefreshToken(tok *oauth2.Token) (*oauth2.Token, 
 	// that token never expires.
 	t := *tok
 	t.Expiry = time.Unix(1, 0)
-	switch newTok, err := p.config.TokenSource(p.ctx, &t).Token(); {
-	case isBadTokenError(err):
-		logging.Warningf(p.ctx, "Bad refresh token - %s", err)
-		return nil, ErrBadRefreshToken
-	case err != nil:
-		logging.Warningf(p.ctx, "Error when refreshing the token - %s", err)
+	switch newTok, err := grabToken(p.config.TokenSource(p.ctx, &t)); {
+	case err == nil:
+		return newTok, nil
+	case errors.IsTransient(err):
+		logging.Warningf(p.ctx, "Transient error when refreshing the token - %s", err)
 		return nil, err
 	default:
-		return newTok, nil
+		logging.Warningf(p.ctx, "Bad refresh token - %s", err)
+		return nil, ErrBadRefreshToken
 	}
 }

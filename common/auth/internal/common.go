@@ -7,7 +7,6 @@ package internal
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -16,6 +15,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/errors"
 )
 
 var (
@@ -138,4 +138,24 @@ func isBadTokenError(err error) bool {
 	// Unfortunately, fmt.Errorf is used there, so there's no other way to
 	// differentiate between bad tokens and transient errors.
 	return err != nil && strings.Contains(err.Error(), "400 Bad Request")
+}
+
+// grabToken uses token source to create a new token.
+//
+// It recognizes transient errors.
+func grabToken(src oauth2.TokenSource) (*oauth2.Token, error) {
+	switch tok, err := src.Token(); {
+	case isBadTokenError(err):
+		return nil, err
+	case err != nil:
+		// More often than not errors here are transient (network connectivity
+		// errors, HTTP 500 responses, etc). It is difficult to categorize them,
+		// since oauth2 library uses fmt.Errorf(...) for errors. Retrying a fatal
+		// error a bunch of times is not very bad, so pick safer approach and assume
+		// any error is transient. Revoked refresh token or bad credentials (most
+		// common source of fatal errors) is already handled above.
+		return nil, errors.WrapTransient(err)
+	default:
+		return tok, nil
+	}
 }

@@ -44,6 +44,7 @@ import (
 	"github.com/luci/luci-go/common/auth/internal"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry"
 )
 
 var (
@@ -635,18 +636,40 @@ func (a *Authenticator) refreshToken(prev *oauth2.Token, lifetime time.Duration)
 	return tok, nil
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// Handling of transient errors.
+
+// retryParams defines retry strategy for handling transient errors when minting
+// or refreshing tokens.
+func retryParams() retry.Iterator {
+	return &retry.ExponentialBackoff{
+		Limited: retry.Limited{
+			Delay:    10 * time.Millisecond,
+			Retries:  50,
+			MaxTotal: 10 * time.Second,
+		},
+		Multiplier: 1.5,
+	}
+}
+
 // mintTokenWithRetries calls provider's MintToken() retrying on transient
 // errors a bunch of times. Called only for non-interactive providers.
-func (a *Authenticator) mintTokenWithRetries() (*oauth2.Token, error) {
-	// TODO(vadimsh): Implement retries.
-	return a.provider.MintToken()
+func (a *Authenticator) mintTokenWithRetries() (tok *oauth2.Token, err error) {
+	err = retry.Retry(a.ctx, retry.TransientOnly(retryParams()), func() error {
+		tok, err = a.provider.MintToken()
+		return err
+	}, nil)
+	return
 }
 
 // refreshTokenWithRetries calls providers' RefreshToken(...) retrying on
 // transient errors a bunch of times.
-func (a *Authenticator) refreshTokenWithRetries(t *oauth2.Token) (*oauth2.Token, error) {
-	// TODO(vadimsh): Implement retries.
-	return a.provider.RefreshToken(a.token)
+func (a *Authenticator) refreshTokenWithRetries(t *oauth2.Token) (tok *oauth2.Token, err error) {
+	err = retry.Retry(a.ctx, retry.TransientOnly(retryParams()), func() error {
+		tok, err = a.provider.RefreshToken(a.token)
+		return err
+	}, nil)
+	return
 }
 
 ////////////////////////////////////////////////////////////////////////////////

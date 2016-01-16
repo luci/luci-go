@@ -26,6 +26,8 @@ import (
 
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/mathrand"
 	"github.com/luci/luci-go/common/transport"
 )
@@ -36,6 +38,8 @@ const cacheSchema = "gaeauth/v1/"
 const (
 	// minExpirationTime defines minimum acceptable lifetime of a token.
 	minExpirationTime = time.Minute
+	// maxExpirationTime defines maximum acceptable lifetime of a token.
+	maxExpirationTime = 5 * time.Hour
 	// expirationRandomization defines how much to randomize expiration time.
 	expirationRandomization = 5 * time.Minute
 )
@@ -151,20 +155,29 @@ func (c tokenCache) Read() ([]byte, error) {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, err
+		return nil, errors.WrapTransient(err)
 	}
 	buf := bytes.NewReader(itm.Value())
+
+	// Skip broken token (logging the error first).
+	expTs := int64(0)
+	if err = binary.Read(buf, binary.LittleEndian, &expTs); err != nil {
+		logging.Warningf(c.c, "Could not deserialize cached token - %s", err)
+		return nil, nil
+	}
 
 	// Randomize cache expiration time to avoid thundering herd effect when
 	// token expires. Also start refreshing 1 min before real expiration time to
 	// account for possible clock desync.
-	expTs := int64(0)
-	if err = binary.Read(buf, binary.LittleEndian, &expTs); err != nil {
-		return nil, err
-	}
 	lifetime := time.Unix(expTs, 0).Sub(clock.Now(c.c))
-	rnd := mathrand.Get(c.c).Int31n(int32(expirationRandomization / time.Second))
+	rnd := mathrand.Get(c.c).Int31n(int32(expirationRandomization.Seconds()))
 	if lifetime < minExpirationTime+time.Duration(rnd)*time.Second {
+		return nil, nil
+	}
+
+	// Sanity check for broken entries. Lifetime should be bounded.
+	if lifetime > maxExpirationTime {
+		logging.Warningf(c.c, "Token lifetime is unexpectedly huge (%v), probably the token cache is broken", lifetime)
 		return nil, nil
 	}
 
@@ -181,13 +194,14 @@ func (c tokenCache) Write(tok []byte, expiry time.Time) error {
 	binary.Write(buf, binary.LittleEndian, expiry.Unix())
 	buf.Write(tok)
 	mem := memcache.Get(c.c)
-	return mem.Set(mem.NewItem(c.key).SetValue(buf.Bytes()).SetExpiration(lifetime))
+	err := mem.Set(mem.NewItem(c.key).SetValue(buf.Bytes()).SetExpiration(lifetime))
+	return errors.WrapTransient(err)
 }
 
 func (c tokenCache) Clear() error {
 	err := memcache.Get(c.c).Delete(c.key)
 	if err != nil && err != memcache.ErrCacheMiss {
-		return err
+		return errors.WrapTransient(err)
 	}
 	return nil
 }

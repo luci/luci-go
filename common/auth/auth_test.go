@@ -5,6 +5,7 @@
 package auth
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -18,7 +19,9 @@ import (
 	"github.com/luci/luci-go/common/auth/internal"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/errors"
 
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -209,6 +212,49 @@ func TestRefreshToken(t *testing.T) {
 		_, err = auth.GetAccessToken(time.Minute)
 		So(err, ShouldEqual, ErrBadCredentials)
 	})
+
+	Convey("Test transient errors when refreshing, success", t, func() {
+		tokenProvider := &fakeTokenProvider{
+			interactive:            false,
+			transientRefreshErrors: 5,
+			tokenToRefresh:         &oauth2.Token{AccessToken: "refreshed"},
+		}
+		tokenInCache := &oauth2.Token{AccessToken: "cached", Expiry: past}
+		auth, _ := newTestAuthenticator(SilentLogin, tokenProvider, tokenInCache)
+		_, err := auth.TransportIfAvailable()
+		So(err, ShouldBeNil)
+
+		// Attempting to use expired cached token triggers a refresh that fails a
+		// bunch of times, but the succeeds.
+		tok, err := auth.GetAccessToken(time.Minute)
+		So(err, ShouldBeNil)
+		So(tok.AccessToken, ShouldEqual, "refreshed")
+
+		// All calls were actually made.
+		So(tokenProvider.transientRefreshErrors, ShouldEqual, 0)
+	})
+
+	Convey("Test transient errors when refreshing, timeout", t, func() {
+		tokenProvider := &fakeTokenProvider{
+			interactive:            false,
+			transientRefreshErrors: 5000, // never succeeds
+		}
+		tokenInCache := &oauth2.Token{AccessToken: "cached", Expiry: past}
+		auth, ctx := newTestAuthenticator(SilentLogin, tokenProvider, tokenInCache)
+		_, err := auth.TransportIfAvailable()
+		So(err, ShouldBeNil)
+
+		// Attempting to use expired cached token triggers a refresh that constantly
+		// fails. Eventually we give up (on 17th attempt).
+		before := clock.Now(ctx)
+		_, err = auth.GetAccessToken(time.Minute)
+		So(err, ShouldErrLike, "transient error")
+		after := clock.Now(ctx)
+
+		// It took reasonable amount of time and number of attempts.
+		So(after.Sub(before), ShouldBeLessThan, 15*time.Second)
+		So(5000-tokenProvider.transientRefreshErrors, ShouldEqual, 17)
+	})
 }
 
 func TestTransport(t *testing.T) {
@@ -328,9 +374,12 @@ func TestOptionalLogin(t *testing.T) {
 }
 
 func newTestAuthenticator(loginMode LoginMode, p internal.TokenProvider, cached *oauth2.Token) (*Authenticator, context.Context) {
-	// Use fake time.
+	// Use auto-advancing fake time.
 	ctx := context.Background()
-	ctx, _ = testclock.UseTime(ctx, now)
+	ctx, tc := testclock.UseTime(ctx, now)
+	tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+		tc.Add(d)
+	})
 
 	// Use temporary directory to store secrets.
 	tempDir, err := ioutil.TempDir("", "auth_test")
@@ -362,11 +411,12 @@ func newTestAuthenticator(loginMode LoginMode, p internal.TokenProvider, cached 
 ////////////////////////////////////////////////////////////////////////////////
 
 type fakeTokenProvider struct {
-	interactive    bool
-	revokedCreds   bool
-	revokedToken   bool
-	tokenToMint    *oauth2.Token
-	tokenToRefresh *oauth2.Token
+	interactive            bool
+	revokedCreds           bool
+	revokedToken           bool
+	transientRefreshErrors int
+	tokenToMint            *oauth2.Token
+	tokenToRefresh         *oauth2.Token
 }
 
 func (p *fakeTokenProvider) RequiresInteraction() bool {
@@ -388,6 +438,10 @@ func (p *fakeTokenProvider) MintToken() (*oauth2.Token, error) {
 }
 
 func (p *fakeTokenProvider) RefreshToken(*oauth2.Token) (*oauth2.Token, error) {
+	if p.transientRefreshErrors != 0 {
+		p.transientRefreshErrors--
+		return nil, errors.WrapTransient(fmt.Errorf("transient error"))
+	}
 	if p.revokedCreds {
 		return nil, internal.ErrBadCredentials
 	}

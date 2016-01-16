@@ -13,6 +13,7 @@ import (
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
 
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 )
 
@@ -70,15 +71,15 @@ func (p *serviceAccountTokenProvider) MintToken() (*oauth2.Token, error) {
 		logging.Warningf(p.ctx, "Failed to load private key JSON - %s", err)
 		return nil, ErrBadCredentials
 	}
-	switch newTok, err := cfg.TokenSource(p.ctx).Token(); {
-	case isBadTokenError(err):
-		logging.Warningf(p.ctx, "Invalid or revoked service account key - %s", err)
-		return nil, ErrBadCredentials
-	case err != nil:
-		logging.Warningf(p.ctx, "Error when creating access token - %s", err)
+	switch newTok, err := grabToken(cfg.TokenSource(p.ctx)); {
+	case err == nil:
+		return newTok, nil
+	case errors.IsTransient(err):
+		logging.Warningf(p.ctx, "Transient error when creating access token - %s", err)
 		return nil, err
 	default:
-		return newTok, nil
+		logging.Warningf(p.ctx, "Invalid or revoked service account key - %s", err)
+		return nil, ErrBadCredentials
 	}
 }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2015 The Chromium Authors. All rights reserved.
+// Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -25,14 +25,14 @@ type Iterator interface {
 	Next(context.Context, error) time.Duration
 }
 
-// Retry executes a function. If the function returns an error, it will
+// Retry executes a function 'f'. If the function returns an error, it will
 // be re-executed according to a retry plan.
 //
-// If the supplied context is cancelled, retry will stop executing. Retry will
-// not execute the supplied function at all if the context is canelled when
+// If the supplied context is canceled, retry will stop executing. Retry will
+// not execute the supplied function at all if the context is canceled when
 // Retry is invoked.
 //
-// If notify is not nil, it will be invoked if an error occurs (prior to
+// If 'callback' is not nil, it will be invoked if an error occurs (prior to
 // sleeping).
 func Retry(ctx context.Context, it Iterator, f func() error, callback Callback) (err error) {
 	for {
