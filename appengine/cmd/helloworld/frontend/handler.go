@@ -19,6 +19,7 @@ import (
 	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/discovery"
 	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/prpc"
 	"github.com/luci/luci-go/server/templates"
@@ -77,6 +78,7 @@ func init() {
 
 	var api prpc.Server
 	helloworld.RegisterGreeterServer(&api, &greeterService{})
+	discovery.Enable(&api)
 	api.InstallHandlers(router, base)
 
 	http.DefaultServeMux.Handle("/", router)

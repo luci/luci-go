@@ -1,0 +1,27 @@
+// Copyright 2016 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package discovery;
+
+// Describes services.
+service Discovery {
+    // Returns a list of services and a
+    // descriptor.FileDescriptorSet that covers them all.
+    rpc Describe (Void) returns (DescribeResponse) {}
+}
+
+// Void is an empty message.
+message Void {}
+
+// DescribeResponse describes services.
+message DescribeResponse {
+    // FileDescriptionSet is a binary-encoded FileDescriptorSet message.
+    // Contains descriptions of all services, their types and all transitive
+    // dependencies.
+    bytes fileDescriptionSet = 1;
+    // Services are service names provided by a server.
+    repeated string services = 2;
+}

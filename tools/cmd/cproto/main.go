@@ -23,7 +23,10 @@ import (
 )
 
 var (
-	verbose    = flag.Bool("verbose", false, "print debug messages to stderr")
+	verbose       = flag.Bool("verbose", false, "print debug messages to stderr")
+	withDiscovery = flag.Bool(
+		"discovery", true,
+		"generate pb.discovery.go file")
 	withGithub = flag.Bool(
 		"with-github", true,
 		"include $GOPATH/src/github.com in proto search path")
@@ -156,6 +159,9 @@ func run(c context.Context, dir string) error {
 		}
 	}
 
+	if !*withDiscovery {
+		return nil
+	}
 	// Generate pb.prpc.go
 	discoveryFile := "pb.discovery.go"
 	if *renameToTestGo {

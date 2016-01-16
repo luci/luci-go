@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package prpc
+package discovery
 
 //go:generate go install github.com/luci/luci-go/tools/cmd/cproto
-//go:generate cproto -test -discovery=false
+//go:generate cproto
