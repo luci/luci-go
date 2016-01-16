@@ -19,7 +19,7 @@
 //
 // Server example
 //
-// See https://github.com/luci/luci-go/appengine/cmd/helloworld
+// See https://github.com/luci/luci-go/tree/master/appengine/cmd/helloworld
 //
 // HTTP headers
 //
