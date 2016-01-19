@@ -4,4 +4,4 @@
 
 package main
 
-//go:generate protoc -oprinter_test.desc --include_source_info printer_test.proto
+//go:generate cproto -desc=printer_test.desc -test -discovery=false

@@ -36,6 +36,11 @@ var (
 	renameToTestGo = flag.Bool(
 		"test", false,
 		"rename generated files from *.go to *_test.go")
+	descFile = flag.String(
+		"desc",
+		"",
+		"Writes a FileDescriptorSet file containing all the the .proto files and their transitive dependencies",
+	)
 )
 
 func resolveGoogleProtobufPackages(c context.Context) (map[string]string, error) {
@@ -128,12 +133,15 @@ func run(c context.Context, dir string) error {
 	}
 
 	// Compile all .proto files.
-	tmpDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		return err
+	descPath := *descFile
+	if descPath == "" {
+		tmpDir, err := ioutil.TempDir("", "")
+		if err != nil {
+			return err
+		}
+		defer os.RemoveAll(tmpDir)
+		descPath = filepath.Join(tmpDir, "package.desc")
 	}
-	defer os.RemoveAll(tmpDir)
-	descPath := filepath.Join(tmpDir, "package.desc")
 	if err := protoc(c, protoFiles, dir, descPath); err != nil {
 		return err
 	}
