@@ -7,11 +7,12 @@
 package main
 
 import (
+	"bytes"
 	"go/ast"
 	"go/parser"
 	"go/printer"
 	"go/token"
-	"os"
+	"io/ioutil"
 	"strings"
 )
 
@@ -44,12 +45,16 @@ func (t *transformer) transformGoFile(filename string) error {
 	}
 	t.transformFile(file)
 
-	out, err := os.Create(filename)
+	var buf bytes.Buffer
+	if err := printer.Fprint(&buf, fset, file); err != nil {
+		return err
+	}
+	formatted, err := gofmt(buf.Bytes())
 	if err != nil {
 		return err
 	}
-	defer out.Close()
-	return printer.Fprint(out, fset, file)
+
+	return ioutil.WriteFile(filename, formatted, 0666)
 }
 
 func (t *transformer) transformFile(file *ast.File) {

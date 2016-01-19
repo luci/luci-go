@@ -47,10 +47,10 @@ func RegisterS2Server(s prpc.Registrar, srv S2Server) {
 }
 
 var _S2_serviceDesc = grpc.ServiceDesc{
-	ServiceName:	"test.S2",
-	HandlerType:	(*S2Server)(nil),
-	Methods:	[]grpc.MethodDesc{},
-	Streams:	[]grpc.StreamDesc{},
+	ServiceName: "test.S2",
+	HandlerType: (*S2Server)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams:     []grpc.StreamDesc{},
 }
 
 var fileDescriptor1 = []byte{
