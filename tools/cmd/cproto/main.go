@@ -27,9 +27,9 @@ var (
 	withDiscovery = flag.Bool(
 		"discovery", true,
 		"generate pb.discovery.go file")
-	withGithub = flag.Bool(
-		"with-github", true,
-		"include $GOPATH/src/github.com in proto search path")
+	withGopath = flag.Bool(
+		"with-gopath", true,
+		"include $GOPATH/src in proto search path")
 	withGoogleProtobuf = flag.Bool(
 		"with-google-protobuf", true,
 		"map .proto files in gitub.com/luci/luci-go/common/proto/google to google/protobuf/*.proto")
@@ -94,9 +94,9 @@ func protoc(c context.Context, protoFiles []string, dir, descSetOut string) erro
 		"--include_source_info",
 	}
 
-	if *withGithub {
+	if *withGopath {
 		for _, p := range strings.Split(os.Getenv("GOPATH"), string(filepath.ListSeparator)) {
-			path := filepath.Join(p, "src", "github.com")
+			path := filepath.Join(p, "src")
 			if info, err := os.Stat(path); os.IsNotExist(err) || !info.IsDir() {
 				continue
 			} else if err != nil {
