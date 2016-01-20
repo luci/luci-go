@@ -46,6 +46,10 @@ func TestServer(t *testing.T) {
 
 	Convey("Greeter service", t, func() {
 		var server Server
+
+		// auth.Authenticator.Authenticate is not designed to be called in tests.
+		server.CustomAuthenticator = true
+
 		RegisterGreeterServer(&server, &greeterService{})
 
 		Convey("Register Calc service", func() {

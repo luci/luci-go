@@ -5,18 +5,25 @@
 package prpc
 
 import (
+	"net/http"
 	"sort"
 	"sync"
 
 	"github.com/julienschmidt/httprouter"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
+	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/middleware"
 )
 
 // Server is a pRPC server to serve RPC requests.
 // Zero value is valid.
 type Server struct {
+	// CustomAuthenticator, if true, disables the forced authentication set by
+	// RegisterDefaultAuth.
+	CustomAuthenticator bool
+
 	mu       sync.Mutex
 	services map[string]*service
 }
@@ -54,14 +61,36 @@ func (s *Server) RegisterService(desc *grpc.ServiceDesc, impl interface{}) {
 	s.services[desc.ServiceName] = serv
 }
 
-// InstallHandlers installs HTTP handlers at /prpc/{service_name}/{method_name}
-// for all registered services.
-//
-// All service methods accept POST requests.
-// Those whose input message has no fields, accept GET requests as well.
+// authenticate forces authentication set by RegisterDefaultAuth.
+func (s *Server) authenticate(base middleware.Base) middleware.Base {
+	a := GetDefaultAuth()
+	if a == nil {
+		panicf("prpc: CustomAuthenticator is false, but default authenticator was not registered. " +
+			"Forgot to import appengine/gaeauth/server package?")
+	}
+
+	return func(h middleware.Handler) httprouter.Handle {
+		return base(func(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+			c = auth.SetAuthenticator(c, a)
+			c, err := a.Authenticate(c, r)
+			if err != nil {
+				writeError(c, w, withStatus(err, http.StatusUnauthorized))
+				return
+			}
+			h(c, w, r, p)
+		})
+	}
+}
+
+// InstallHandlers installs HTTP POST handlers at
+// /prpc/{service_name}/{method_name} for all registered services.
 func (s *Server) InstallHandlers(r *httprouter.Router, base middleware.Base) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	if !s.CustomAuthenticator {
+		base = s.authenticate(base)
+	}
 
 	for _, service := range s.services {
 		for _, m := range service.methods {
