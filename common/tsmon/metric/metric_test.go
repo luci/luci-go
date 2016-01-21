@@ -208,17 +208,6 @@ func TestMetrics(t *testing.T) {
 		v, err = m.Get(ctx, "field")
 		So(err, ShouldNotBeNil)
 
-		err = m.Add(ctx, 5)
-		So(err, ShouldBeNil)
-
-		v, err = m.Get(ctx)
-		So(v.Bucketer().GrowthFactor(), ShouldEqual, 0)
-		So(v.Bucketer().Width(), ShouldEqual, 10)
-		So(v.Bucketer().NumFiniteBuckets(), ShouldEqual, 20)
-		So(v.Sum(), ShouldEqual, 5)
-		So(v.Count(), ShouldEqual, 1)
-		So(err, ShouldBeNil)
-
 		d := distribution.New(m.Bucketer())
 		d.Add(15)
 		err = m.Set(ctx, d)
