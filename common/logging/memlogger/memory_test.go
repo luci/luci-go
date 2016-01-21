@@ -103,6 +103,9 @@ func TestLoggerAssertion(t *testing.T) {
 			}
 
 			So(ShouldHaveLog(m, logging.Error, "HI THAR", map[string]interface{}{"hi": 3}), ShouldEqual, "")
+			So(ShouldHaveLog(m, logging.Error, "HI THAR", map[string]interface{}{"hi": 4}), ShouldNotEqual, "")
+			So(ShouldHaveLog(m, logging.Error, "Hi THAR", map[string]interface{}{"hi": 4}), ShouldNotEqual, "")
+			So(ShouldHaveLog(m, logging.Error, "THAR", map[string]interface{}{"hi": 4}), ShouldNotEqual, "")
 		})
 
 		Convey("level and message", func() {
@@ -112,7 +115,7 @@ func TestLoggerAssertion(t *testing.T) {
 					{
 						Level: logging.Error,
 						Msg:   "HI THAR",
-						Data:  nil,
+						Data:  map[string]interface{}{"hi": 3},
 					},
 				},
 			}
@@ -133,7 +136,8 @@ func TestLoggerAssertion(t *testing.T) {
 				},
 			}
 
-			So(ShouldHaveLog(m, logging.Error), ShouldNotEqual, "")
+			So(ShouldHaveLog(m, logging.Error, "BYE"), ShouldNotEqual, "")
+			So(ShouldHaveLog(m, logging.Error), ShouldEqual, "")
 		})
 
 		Convey("bad logger", func() {

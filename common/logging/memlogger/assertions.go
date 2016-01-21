@@ -6,6 +6,8 @@ package memlogger
 
 import (
 	"fmt"
+	"reflect"
+	"strings"
 
 	"github.com/luci/luci-go/common/logging"
 )
@@ -13,8 +15,8 @@ import (
 // ShouldHaveLog is a goconvey custom assertion which asserts that the logger has
 // received a log. It takes up to 3 arguments.
 // argument 1 (expected[0]) is the log level.
-// argument 2 (expected[1]) is the message. If omitted or the empty string, this value is not checked.
-// argument 3 (expected[2]) is the fields data. If omitted, this value is not checked.
+// argument 2 (expected[1]) is a substring the message. If omitted or the empty string, this value is not checked.
+// argument 3 (expected[2]) is the fields data. If omitted or nil, this value is not checked.
 func ShouldHaveLog(actual interface{}, expected ...interface{}) string {
 	m, ok := actual.(*MemLogger)
 	if !ok {
@@ -53,7 +55,22 @@ func ShouldHaveLog(actual interface{}, expected ...interface{}) string {
 			"This assertion requires at least 1 comparison value (you provided %d)", len(expected))
 	}
 
-	if m.Has(level, msg, data) {
+	predicate := func(e *LogEntry) bool {
+		switch {
+		case e.Level != level:
+			return false
+
+		case msg != "" && !strings.Contains(e.Msg, msg):
+			return false
+
+		case data != nil && !reflect.DeepEqual(data, e.Data):
+			return false
+
+		default:
+			return true
+		}
+	}
+	if m.HasFunc(predicate) {
 		return ""
 	}
 

@@ -91,9 +91,8 @@ func (m *MemLogger) Reset() {
 	}
 }
 
-// Get returns the log entry iff the MemLogger contains the specified log message.
-// Note that lvl, msg and data have to match the entry precisely.
-func (m *MemLogger) Get(lvl logging.Level, msg string, data map[string]interface{}) *LogEntry {
+// GetFunc returns the first matching log entry.
+func (m *MemLogger) GetFunc(f func(*LogEntry) bool) *LogEntry {
 	if m.lock != nil {
 		m.lock.Lock()
 		defer m.lock.Unlock()
@@ -102,7 +101,7 @@ func (m *MemLogger) Get(lvl logging.Level, msg string, data map[string]interface
 		return nil
 	}
 	for _, ent := range *m.data {
-		if ent.Level == lvl && ent.Msg == msg && reflect.DeepEqual(data, ent.Data) {
+		if f(&ent) {
 			clone := ent
 			return &clone
 		}
@@ -110,8 +109,21 @@ func (m *MemLogger) Get(lvl logging.Level, msg string, data map[string]interface
 	return nil
 }
 
-// Has returns true iff the MemLogger contains the specified log message. Note
-// that lvl, msg and data have to match the entry precisely.
+// Get returns the first matching log entry.
+// Note that lvl, msg and data have to match the entry precisely.
+func (m *MemLogger) Get(lvl logging.Level, msg string, data map[string]interface{}) *LogEntry {
+	return m.GetFunc(func(ent *LogEntry) bool {
+		return ent.Level == lvl && ent.Msg == msg && reflect.DeepEqual(data, ent.Data)
+	})
+}
+
+// HasFunc returns true iff the MemLogger contains a matching log message.
+func (m *MemLogger) HasFunc(f func(*LogEntry) bool) bool {
+	return m.GetFunc(f) != nil
+}
+
+// Has returns true iff the MemLogger contains the specified log message.
+// Note that lvl, msg and data have to match the entry precisely.
 func (m *MemLogger) Has(lvl logging.Level, msg string, data map[string]interface{}) bool {
 	return m.Get(lvl, msg, data) != nil
 }
