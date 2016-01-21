@@ -128,11 +128,15 @@ func (s *inMemoryStore) Set(ctx context.Context, h types.Metric, resetTime time.
 	if resetTime.IsZero() {
 		resetTime = clock.Now(ctx)
 	}
+	return s.set(h, resetTime, fieldVals, target.Get(ctx), value)
+}
+
+func (s *inMemoryStore) set(h types.Metric, resetTime time.Time, fieldVals []interface{}, t types.Target, value interface{}) error {
 	m := s.getOrCreateData(h)
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	c, err := m.get(fieldVals, target.Get(ctx), resetTime)
+	c, err := m.get(fieldVals, t, resetTime)
 	if err != nil {
 		return err
 	}
@@ -146,11 +150,15 @@ func (s *inMemoryStore) Incr(ctx context.Context, h types.Metric, resetTime time
 	if resetTime.IsZero() {
 		resetTime = clock.Now(ctx)
 	}
+	return s.incr(h, resetTime, fieldVals, target.Get(ctx), delta)
+}
+
+func (s *inMemoryStore) incr(h types.Metric, resetTime time.Time, fieldVals []interface{}, t types.Target, delta interface{}) error {
 	m := s.getOrCreateData(h)
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	c, err := m.get(fieldVals, target.Get(ctx), resetTime)
+	c, err := m.get(fieldVals, t, resetTime)
 	if err != nil {
 		return err
 	}
@@ -191,13 +199,25 @@ func (s *inMemoryStore) Incr(ctx context.Context, h types.Metric, resetTime time
 }
 
 func (s *inMemoryStore) ModifyMulti(ctx context.Context, mods []Modification) error {
+	contextTarget := target.Get(ctx)
+
 	for _, m := range mods {
+		resetTime := m.ResetTime
+		if resetTime.IsZero() {
+			resetTime = clock.Now(ctx)
+		}
+
+		t := m.Target
+		if t == nil {
+			t = contextTarget
+		}
+
 		if m.SetValue != nil {
-			if err := s.Set(ctx, m.Metric, m.ResetTime, m.FieldVals, m.SetValue); err != nil {
+			if err := s.set(m.Metric, resetTime, m.FieldVals, t, m.SetValue); err != nil {
 				return err
 			}
 		} else if m.IncrDelta != nil {
-			if err := s.Incr(ctx, m.Metric, m.ResetTime, m.FieldVals, m.IncrDelta); err != nil {
+			if err := s.incr(m.Metric, resetTime, m.FieldVals, t, m.IncrDelta); err != nil {
 				return err
 			}
 		}

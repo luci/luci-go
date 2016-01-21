@@ -17,6 +17,8 @@ type Modification struct {
 	Metric    types.Metric
 	ResetTime time.Time
 	FieldVals []interface{}
+	Target    types.Target
+
 	SetValue  interface{} // nil unless this is a Set.
 	IncrDelta interface{} // nil unless this is an Incr.
 }

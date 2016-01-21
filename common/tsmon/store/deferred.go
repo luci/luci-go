@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
 )
@@ -49,6 +50,7 @@ func (s *DeferredStore) Set(ctx context.Context, h types.Metric, resetTime time.
 		Metric:    h,
 		ResetTime: resetTime,
 		FieldVals: fieldVals,
+		Target:    target.Get(ctx),
 		SetValue:  value,
 	})
 	return nil
@@ -70,6 +72,7 @@ func (s *DeferredStore) Incr(ctx context.Context, h types.Metric, resetTime time
 		Metric:    h,
 		ResetTime: resetTime,
 		FieldVals: fieldVals,
+		Target:    target.Get(ctx),
 		IncrDelta: delta,
 	})
 	return nil
