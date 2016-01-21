@@ -50,7 +50,7 @@ type LogEntryDatagram struct {
 	Data []byte `json:"data,omitempty"`
 	// Partial, if not nil, marks this datagram as a fragment and describes its
 	// partial fields.
-	Partial *LogEntryDatagramPartial
+	Partial *LogEntryDatagramPartial `json:"partial,omitempty"`
 }
 
 func logEntryFromProto(le *protocol.LogEntry, timeBase time.Time, newlines bool) *LogEntry {
