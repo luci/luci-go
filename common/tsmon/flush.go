@@ -21,20 +21,21 @@ func minInt(a, b int) int {
 
 // Flush sends all the metrics that are registered in the application.
 func Flush(ctx context.Context) error {
-	if Monitor == nil {
+	mon := Monitor()
+	if mon == nil {
 		return errors.New("no tsmon Monitor is configured")
 	}
 
 	// Split up the payload into chunks if there are too many cells.
-	cells := Store.GetAll(ctx)
-	chunkSize := Monitor.ChunkSize()
+	cells := Store().GetAll(ctx)
 
+	chunkSize := mon.ChunkSize()
 	if chunkSize == 0 {
 		chunkSize = len(cells)
 	}
 	for len(cells) > 0 {
 		count := minInt(chunkSize, len(cells))
-		if err := Monitor.Send(cells[:count], Target); err != nil {
+		if err := mon.Send(cells[:count], Target); err != nil {
 			return err
 		}
 		cells = cells[count:]

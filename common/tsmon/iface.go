@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/tsmon/monitor"
@@ -18,21 +19,86 @@ import (
 )
 
 var (
-	// Store contains all the metric values for this process.  Applications
-	// shouldn't need to access this directly - instead use the metric objects
-	// which provide type-safe accessors.
-	Store = store.NewInMemory()
-
-	// Monitor is the thing that sends metrics to monitoring endpoints.  Defaults
-	// to a nil monitor, but changed by InitializeFromFlags.
-	Monitor = monitor.NewNilMonitor()
-
 	// Target contains information about this process, and is included in all
 	// metrics reported by this process.
 	Target types.Target
 
+	globalStore   store.Store
+	globalMonitor = monitor.NewNilMonitor()
+
+	registeredMetrics     = map[string]types.Metric{}
+	registeredMetricsLock sync.RWMutex
+
 	cancelAutoFlush context.CancelFunc
 )
+
+// Store returns the global metric store that contains all the metric values for
+// this process.  Applications shouldn't need to access this directly - instead
+// use the metric objects which provide type-safe accessors.
+func Store() store.Store {
+	return globalStore
+}
+
+// Monitor returns the global monitor that sends metrics to monitoring
+// endpoints.  Defaults to a nil monitor, but changed by InitializeFromFlags.
+func Monitor() monitor.Monitor {
+	return globalMonitor
+}
+
+// Register is called by metric objects to register themselves.  This will panic
+// if another metric with the same name is already registered.
+func Register(m types.Metric) {
+	registeredMetricsLock.Lock()
+	defer registeredMetricsLock.Unlock()
+
+	if _, ok := registeredMetrics[m.Info().Name]; ok {
+		panic(fmt.Sprintf("A metric with the name '%s' was already registered", m.Info().Name))
+	}
+
+	registeredMetrics[m.Info().Name] = m
+
+	if globalStore != nil {
+		globalStore.Register(m)
+	}
+}
+
+// Unregister is called by metric objects to unregister themselves.
+func Unregister(m types.Metric) {
+	registeredMetricsLock.Lock()
+	defer registeredMetricsLock.Unlock()
+
+	delete(registeredMetrics, m.Info().Name)
+
+	if globalStore != nil {
+		globalStore.Unregister(m)
+	}
+}
+
+// SetStore changes the global metric store.  All metrics that were registered
+// with the old store will be re-registered on the new store.
+func SetStore(s store.Store) {
+	if s == globalStore {
+		return
+	}
+
+	registeredMetricsLock.RLock()
+	defer registeredMetricsLock.RUnlock()
+
+	// Register metrics on the new store.
+	for _, m := range registeredMetrics {
+		s.Register(m)
+	}
+
+	oldStore := globalStore
+	globalStore = s
+
+	// Unregister metrics from the old store.
+	if oldStore != nil {
+		for _, m := range registeredMetrics {
+			globalStore.Unregister(m)
+		}
+	}
+}
 
 // InitializeFromFlags configures the tsmon library from flag values.
 // This will set a Target (information about what's reporting metrics) and a
@@ -61,14 +127,14 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 
 		switch endpointURL.Scheme {
 		case "file":
-			Monitor = monitor.NewDebugMonitor(logger, endpointURL.Path)
+			globalMonitor = monitor.NewDebugMonitor(logger, endpointURL.Path)
 		case "pubsub":
 			m, err := monitor.NewPubsubMonitor(
 				config.Credentials, endpointURL.Host, strings.TrimPrefix(endpointURL.Path, "/"))
 			if err != nil {
 				return err
 			}
-			Monitor = m
+			globalMonitor = m
 		default:
 			return fmt.Errorf("unknown tsmon endpoint url: %s", config.Endpoint)
 		}
@@ -85,6 +151,8 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 		return err
 	}
 	Target = t
+
+	SetStore(store.NewInMemory())
 
 	if cancelAutoFlush != nil {
 		logger.Infof("Cancelling previous tsmon auto flush")

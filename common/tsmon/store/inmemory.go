@@ -32,8 +32,6 @@ type metricData struct {
 
 	cells map[cellKey][]*types.CellData
 	lock  sync.Mutex
-
-	bucketer *distribution.Bucketer
 }
 
 func (m *metricData) get(fieldVals []interface{}, t types.Target, resetTime time.Time) (*types.CellData, error) {
@@ -71,46 +69,49 @@ func NewInMemory() Store {
 	}
 }
 
-// Register adds the metric to the store.  Must be called before Get, Set or
-// Incr for this metric.  Returns an error if the metric is already registered.
-func (s *inMemoryStore) Register(m types.Metric) (MetricHandle, error) {
+// Register does nothing.
+func (s *inMemoryStore) Register(m types.Metric) {}
+
+// Unregister removes the metric (along with all its values) from the store.
+func (s *inMemoryStore) Unregister(h types.Metric) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if _, ok := s.data[m.Info().Name]; ok {
-		return nil, fmt.Errorf("A metric with the name '%s' was already registered", m.Info().Name)
+	delete(s.data, h.Info().Name)
+}
+
+func (s *inMemoryStore) getOrCreateData(m types.Metric) *metricData {
+	s.lock.RLock()
+	d, ok := s.data[m.Info().Name]
+	s.lock.RUnlock()
+	if ok {
+		return d
 	}
 
-	d := &metricData{
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	// Check again in case another goroutine got the lock before us.
+	if d, ok := s.data[m.Info().Name]; ok {
+		return d
+	}
+
+	d = &metricData{
 		MetricInfo: m.Info(),
 		cells:      map[cellKey][]*types.CellData{},
 	}
 
-	if dist, ok := m.(types.DistributionMetric); ok {
-		d.bucketer = dist.Bucketer()
-	}
-
 	s.data[m.Info().Name] = d
-	return d, nil
-}
-
-// Unregister removes the metric (along with all its values) from the store.
-func (s *inMemoryStore) Unregister(h MetricHandle) {
-	name := h.(*metricData).Name
-
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	delete(s.data, name)
+	return d
 }
 
 // Get returns the value for a given metric cell.
-func (s *inMemoryStore) Get(ctx context.Context, h MetricHandle, resetTime time.Time, fieldVals []interface{}) (value interface{}, err error) {
+func (s *inMemoryStore) Get(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []interface{}) (value interface{}, err error) {
 	if resetTime.IsZero() {
 		resetTime = clock.Now(ctx)
 	}
 
-	m := h.(*metricData)
+	m := s.getOrCreateData(h)
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -123,12 +124,11 @@ func (s *inMemoryStore) Get(ctx context.Context, h MetricHandle, resetTime time.
 }
 
 // Set writes the value into the given metric cell.
-func (s *inMemoryStore) Set(ctx context.Context, h MetricHandle, resetTime time.Time, fieldVals []interface{}, value interface{}) error {
+func (s *inMemoryStore) Set(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []interface{}, value interface{}) error {
 	if resetTime.IsZero() {
 		resetTime = clock.Now(ctx)
 	}
-
-	m := h.(*metricData)
+	m := s.getOrCreateData(h)
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -142,12 +142,11 @@ func (s *inMemoryStore) Set(ctx context.Context, h MetricHandle, resetTime time.
 }
 
 // Incr increments the value in a given metric cell by the given delta.
-func (s *inMemoryStore) Incr(ctx context.Context, h MetricHandle, resetTime time.Time, fieldVals []interface{}, delta interface{}) error {
+func (s *inMemoryStore) Incr(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []interface{}, delta interface{}) error {
 	if resetTime.IsZero() {
 		resetTime = clock.Now(ctx)
 	}
-
-	m := h.(*metricData)
+	m := s.getOrCreateData(h)
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -156,34 +155,36 @@ func (s *inMemoryStore) Incr(ctx context.Context, h MetricHandle, resetTime time
 		return err
 	}
 
-	if m.ValueType == types.CumulativeDistributionType || m.ValueType == types.NonCumulativeDistributionType {
+	switch m.ValueType {
+	case types.CumulativeDistributionType:
 		d, ok := delta.(float64)
 		if !ok {
 			return fmt.Errorf("Incr got a delta of unsupported type (%v)", delta)
 		}
 		v, ok := c.Value.(*distribution.Distribution)
 		if !ok {
-			v = distribution.New(m.bucketer)
+			v = distribution.New(h.(types.DistributionMetric).Bucketer())
 			c.Value = v
 		}
 		v.Add(float64(d))
-	} else {
-		switch d := delta.(type) {
-		case int64:
-			if v, ok := c.Value.(int64); ok {
-				c.Value = v + d
-			} else {
-				c.Value = d
-			}
-		case float64:
-			if v, ok := c.Value.(float64); ok {
-				c.Value = v + d
-			} else {
-				c.Value = d
-			}
-		default:
-			return fmt.Errorf("Incr got a delta of unsupported type (%v)", delta)
+
+	case types.CumulativeIntType:
+		if v, ok := c.Value.(int64); ok {
+			c.Value = v + delta.(int64)
+		} else {
+			c.Value = delta.(int64)
 		}
+
+	case types.CumulativeFloatType:
+		if v, ok := c.Value.(float64); ok {
+			c.Value = v + delta.(float64)
+		} else {
+			c.Value = delta.(float64)
+		}
+
+	default:
+		return fmt.Errorf("attempted to increment non-cumulative metric %s by %v",
+			m.Name, delta)
 	}
 
 	return nil
@@ -192,11 +193,11 @@ func (s *inMemoryStore) Incr(ctx context.Context, h MetricHandle, resetTime time
 func (s *inMemoryStore) ModifyMulti(ctx context.Context, mods []Modification) error {
 	for _, m := range mods {
 		if m.SetValue != nil {
-			if err := s.Set(ctx, m.Handle, m.ResetTime, m.FieldVals, m.SetValue); err != nil {
+			if err := s.Set(ctx, m.Metric, m.ResetTime, m.FieldVals, m.SetValue); err != nil {
 				return err
 			}
 		} else if m.IncrDelta != nil {
-			if err := s.Incr(ctx, m.Handle, m.ResetTime, m.FieldVals, m.IncrDelta); err != nil {
+			if err := s.Incr(ctx, m.Metric, m.ResetTime, m.FieldVals, m.IncrDelta); err != nil {
 				return err
 			}
 		}

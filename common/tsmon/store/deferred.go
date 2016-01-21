@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
 )
 
@@ -35,7 +36,7 @@ func NewDeferred(baseStore Store) *DeferredStore {
 // Set stores a modification in the context to be applied when Finalize is
 // called.  If Start has not been called yet this logs a warning and calls the
 // base store's Set method immediately.
-func (s *DeferredStore) Set(ctx context.Context, h MetricHandle, resetTime time.Time, fieldVals []interface{}, value interface{}) error {
+func (s *DeferredStore) Set(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []interface{}, value interface{}) error {
 	state := s.state(ctx)
 	if state == nil {
 		logging.Warningf(ctx, "DeferredStore used before Start() was called")
@@ -45,7 +46,7 @@ func (s *DeferredStore) Set(ctx context.Context, h MetricHandle, resetTime time.
 	state.lock.Lock()
 	defer state.lock.Unlock()
 	state.mods = append(state.mods, Modification{
-		Handle:    h,
+		Metric:    h,
 		ResetTime: resetTime,
 		FieldVals: fieldVals,
 		SetValue:  value,
@@ -56,7 +57,7 @@ func (s *DeferredStore) Set(ctx context.Context, h MetricHandle, resetTime time.
 // Incr stores a modification in the context to be applied when Finalize is
 // called.  If Start has not been called yet this logs a warning and calls the
 // base store's Incr method immediately.
-func (s *DeferredStore) Incr(ctx context.Context, h MetricHandle, resetTime time.Time, fieldVals []interface{}, delta interface{}) error {
+func (s *DeferredStore) Incr(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []interface{}, delta interface{}) error {
 	state := s.state(ctx)
 	if state == nil {
 		logging.Warningf(ctx, "DeferredStore used before Start() was called")
@@ -66,7 +67,7 @@ func (s *DeferredStore) Incr(ctx context.Context, h MetricHandle, resetTime time
 	state.lock.Lock()
 	defer state.lock.Unlock()
 	state.mods = append(state.mods, Modification{
-		Handle:    h,
+		Metric:    h,
 		ResetTime: resetTime,
 		FieldVals: fieldVals,
 		IncrDelta: delta,

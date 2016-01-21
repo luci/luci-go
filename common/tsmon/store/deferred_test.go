@@ -24,25 +24,28 @@ func TestDeferredBase(t *testing.T) {
 
 func TestDeferred(t *testing.T) {
 	s := NewDeferred(NewInMemory())
-	h, _ := s.Register(&fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType})
-	h2, _ := s.Register(&fakeMetric{"m2", []field.Field{field.String("f")}, types.NonCumulativeIntType})
-	h3, _ := s.Register(&fakeDistributionMetric{
+	m := &fakeMetric{"m", []field.Field{}, types.CumulativeIntType}
+	m2 := &fakeMetric{"m2", []field.Field{field.String("f")}, types.CumulativeIntType}
+	m3 := &fakeDistributionMetric{
 		fakeMetric{"m3", []field.Field{}, types.CumulativeDistributionType},
 		distribution.DefaultBucketer,
-	})
+	}
+	s.Register(m)
+	s.Register(m2)
+	s.Register(m3)
 
 	ctx := context.Background()
 
 	Convey("Deferred set", t, func() {
 		c := s.Start(ctx)
 
-		So(s.Set(c, h, time.Time{}, []interface{}{}, int64(123)), ShouldBeNil)
-		v, err := s.Get(c, h, time.Time{}, []interface{}{})
+		So(s.Set(c, m, time.Time{}, []interface{}{}, int64(123)), ShouldBeNil)
+		v, err := s.Get(c, m, time.Time{}, []interface{}{})
 		So(v, ShouldBeNil)
 		So(err, ShouldBeNil)
 
 		So(s.Finalize(c), ShouldBeNil)
-		v, err = s.Get(c, h, time.Time{}, []interface{}{})
+		v, err = s.Get(c, m, time.Time{}, []interface{}{})
 		So(v, ShouldEqual, 123)
 		So(err, ShouldBeNil)
 	})
@@ -51,13 +54,13 @@ func TestDeferred(t *testing.T) {
 	Convey("Deferred incr", t, func() {
 		c := s.Start(ctx)
 
-		So(s.Incr(c, h, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
-		v, err := s.Get(c, h, time.Time{}, []interface{}{})
+		So(s.Incr(c, m, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
+		v, err := s.Get(c, m, time.Time{}, []interface{}{})
 		So(v, ShouldBeNil)
 		So(err, ShouldBeNil)
 
 		So(s.Finalize(c), ShouldBeNil)
-		v, err = s.Get(c, h, time.Time{}, []interface{}{})
+		v, err = s.Get(c, m, time.Time{}, []interface{}{})
 		So(v, ShouldEqual, 1)
 		So(err, ShouldBeNil)
 	})
@@ -65,11 +68,11 @@ func TestDeferred(t *testing.T) {
 	s.ResetForUnittest()
 	Convey("Deferred set then incr", t, func() {
 		c := s.Start(ctx)
-		So(s.Set(c, h, time.Time{}, []interface{}{}, int64(42)), ShouldBeNil)
-		So(s.Incr(c, h, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
+		So(s.Set(c, m, time.Time{}, []interface{}{}, int64(42)), ShouldBeNil)
+		So(s.Incr(c, m, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
 		So(s.Finalize(c), ShouldBeNil)
 
-		v, err := s.Get(c, h, time.Time{}, []interface{}{})
+		v, err := s.Get(c, m, time.Time{}, []interface{}{})
 		So(v, ShouldEqual, 43)
 		So(err, ShouldBeNil)
 	})
@@ -77,11 +80,11 @@ func TestDeferred(t *testing.T) {
 	s.ResetForUnittest()
 	Convey("Deferred set then set", t, func() {
 		c := s.Start(ctx)
-		So(s.Set(c, h, time.Time{}, []interface{}{}, int64(42)), ShouldBeNil)
-		So(s.Set(c, h, time.Time{}, []interface{}{}, int64(45)), ShouldBeNil)
+		So(s.Set(c, m, time.Time{}, []interface{}{}, int64(42)), ShouldBeNil)
+		So(s.Set(c, m, time.Time{}, []interface{}{}, int64(45)), ShouldBeNil)
 		So(s.Finalize(c), ShouldBeNil)
 
-		v, err := s.Get(c, h, time.Time{}, []interface{}{})
+		v, err := s.Get(c, m, time.Time{}, []interface{}{})
 		So(v, ShouldEqual, 45)
 		So(err, ShouldBeNil)
 	})
@@ -89,11 +92,11 @@ func TestDeferred(t *testing.T) {
 	s.ResetForUnittest()
 	Convey("Deferred incr then set", t, func() {
 		c := s.Start(ctx)
-		So(s.Incr(c, h, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
-		So(s.Set(c, h, time.Time{}, []interface{}{}, int64(42)), ShouldBeNil)
+		So(s.Incr(c, m, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
+		So(s.Set(c, m, time.Time{}, []interface{}{}, int64(42)), ShouldBeNil)
 		So(s.Finalize(c), ShouldBeNil)
 
-		v, err := s.Get(c, h, time.Time{}, []interface{}{})
+		v, err := s.Get(c, m, time.Time{}, []interface{}{})
 		So(v, ShouldEqual, 42)
 		So(err, ShouldBeNil)
 	})
@@ -101,11 +104,11 @@ func TestDeferred(t *testing.T) {
 	s.ResetForUnittest()
 	Convey("Deferred incr then incr", t, func() {
 		c := s.Start(ctx)
-		So(s.Incr(c, h, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
-		So(s.Incr(c, h, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
+		So(s.Incr(c, m, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
+		So(s.Incr(c, m, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
 		So(s.Finalize(c), ShouldBeNil)
 
-		v, err := s.Get(c, h, time.Time{}, []interface{}{})
+		v, err := s.Get(c, m, time.Time{}, []interface{}{})
 		So(v, ShouldEqual, 2)
 		So(err, ShouldBeNil)
 	})
@@ -113,15 +116,15 @@ func TestDeferred(t *testing.T) {
 	s.ResetForUnittest()
 	Convey("Deferred set with fields", t, func() {
 		c := s.Start(ctx)
-		So(s.Set(c, h2, time.Time{}, makeInterfaceSlice("foo"), int64(1)), ShouldBeNil)
-		So(s.Set(c, h2, time.Time{}, makeInterfaceSlice("bar"), int64(2)), ShouldBeNil)
+		So(s.Set(c, m2, time.Time{}, makeInterfaceSlice("foo"), int64(1)), ShouldBeNil)
+		So(s.Set(c, m2, time.Time{}, makeInterfaceSlice("bar"), int64(2)), ShouldBeNil)
 		So(s.Finalize(c), ShouldBeNil)
 
-		v, err := s.Get(c, h2, time.Time{}, makeInterfaceSlice("foo"))
+		v, err := s.Get(c, m2, time.Time{}, makeInterfaceSlice("foo"))
 		So(v, ShouldEqual, 1)
 		So(err, ShouldBeNil)
 
-		v, err = s.Get(c, h2, time.Time{}, makeInterfaceSlice("bar"))
+		v, err = s.Get(c, m2, time.Time{}, makeInterfaceSlice("bar"))
 		So(v, ShouldEqual, 2)
 		So(err, ShouldBeNil)
 	})
@@ -129,10 +132,10 @@ func TestDeferred(t *testing.T) {
 	s.ResetForUnittest()
 	Convey("Deferred distribution incr", t, func() {
 		c := s.Start(ctx)
-		So(s.Incr(c, h3, time.Time{}, []interface{}{}, float64(6)), ShouldBeNil)
+		So(s.Incr(c, m3, time.Time{}, []interface{}{}, float64(6)), ShouldBeNil)
 		So(s.Finalize(c), ShouldBeNil)
 
-		v, err := s.Get(c, h3, time.Time{}, []interface{}{})
+		v, err := s.Get(c, m3, time.Time{}, []interface{}{})
 		So(err, ShouldBeNil)
 
 		dist := v.(*distribution.Distribution)
@@ -143,11 +146,11 @@ func TestDeferred(t *testing.T) {
 	s.ResetForUnittest()
 	Convey("Deferred distribution incr then incr", t, func() {
 		c := s.Start(ctx)
-		So(s.Incr(c, h3, time.Time{}, []interface{}{}, float64(4)), ShouldBeNil)
-		So(s.Incr(c, h3, time.Time{}, []interface{}{}, float64(1)), ShouldBeNil)
+		So(s.Incr(c, m3, time.Time{}, []interface{}{}, float64(4)), ShouldBeNil)
+		So(s.Incr(c, m3, time.Time{}, []interface{}{}, float64(1)), ShouldBeNil)
 		So(s.Finalize(c), ShouldBeNil)
 
-		v, err := s.Get(c, h3, time.Time{}, []interface{}{})
+		v, err := s.Get(c, m3, time.Time{}, []interface{}{})
 		So(err, ShouldBeNil)
 
 		dist := v.(*distribution.Distribution)

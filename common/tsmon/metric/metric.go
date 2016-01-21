@@ -28,7 +28,6 @@ import (
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
-	"github.com/luci/luci-go/common/tsmon/store"
 	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
 )
@@ -105,11 +104,7 @@ func NewInt(name string, fields ...field.Field) Int {
 		Fields:    fields,
 		ValueType: types.NonCumulativeIntType,
 	}}}
-	h, err := tsmon.Store.Register(m)
-	if err != nil {
-		panic(err)
-	}
-	m.handle = h
+	tsmon.Register(m)
 	return m
 }
 
@@ -121,11 +116,7 @@ func NewCounter(name string, fields ...field.Field) Counter {
 		Fields:    fields,
 		ValueType: types.CumulativeIntType,
 	}}}
-	h, err := tsmon.Store.Register(m)
-	if err != nil {
-		panic(err)
-	}
-	m.handle = h
+	tsmon.Register(m)
 	return m
 }
 
@@ -137,11 +128,7 @@ func NewFloat(name string, fields ...field.Field) Float {
 		Fields:    fields,
 		ValueType: types.NonCumulativeFloatType,
 	}}}
-	h, err := tsmon.Store.Register(m)
-	if err != nil {
-		panic(err)
-	}
-	m.handle = h
+	tsmon.Register(m)
 	return m
 }
 
@@ -153,11 +140,7 @@ func NewFloatCounter(name string, fields ...field.Field) FloatCounter {
 		Fields:    fields,
 		ValueType: types.CumulativeFloatType,
 	}}}
-	h, err := tsmon.Store.Register(m)
-	if err != nil {
-		panic(err)
-	}
-	m.handle = h
+	tsmon.Register(m)
 	return m
 }
 
@@ -169,11 +152,7 @@ func NewString(name string, fields ...field.Field) String {
 		Fields:    fields,
 		ValueType: types.StringType,
 	}}}
-	h, err := tsmon.Store.Register(m)
-	if err != nil {
-		panic(err)
-	}
-	m.handle = h
+	tsmon.Register(m)
 	return m
 }
 
@@ -185,11 +164,7 @@ func NewBool(name string, fields ...field.Field) Bool {
 		Fields:    fields,
 		ValueType: types.BoolType,
 	}}}
-	h, err := tsmon.Store.Register(m)
-	if err != nil {
-		panic(err)
-	}
-	m.handle = h
+	tsmon.Register(m)
 	return m
 }
 
@@ -204,11 +179,7 @@ func NewCumulativeDistribution(name string, bucketer *distribution.Bucketer, fie
 		}},
 		bucketer: bucketer,
 	}
-	h, err := tsmon.Store.Register(m)
-	if err != nil {
-		panic(err)
-	}
-	m.handle = h
+	tsmon.Register(m)
 	return m
 }
 
@@ -223,18 +194,14 @@ func NewNonCumulativeDistribution(name string, bucketer *distribution.Bucketer, 
 		}},
 		bucketer: bucketer,
 	}
-	h, err := tsmon.Store.Register(m)
-	if err != nil {
-		panic(err)
-	}
-	m.handle = h
+	tsmon.Register(m)
 	return m
 }
 
 // genericGet is a convenience function that tries to get a metric value from
 // the store and returns the zero value if it didn't exist.
 func (m *metric) genericGet(zero interface{}, ctx context.Context, fieldVals []interface{}) (interface{}, error) {
-	switch ret, err := tsmon.Store.Get(ctx, m.handle, m.fixedResetTime, fieldVals); {
+	switch ret, err := tsmon.Store().Get(ctx, m, m.fixedResetTime, fieldVals); {
 	case err != nil:
 		return zero, err
 	case ret == nil:
@@ -246,8 +213,6 @@ func (m *metric) genericGet(zero interface{}, ctx context.Context, fieldVals []i
 
 type metric struct {
 	types.MetricInfo
-
-	handle         store.MetricHandle
 	fixedResetTime time.Time
 }
 
@@ -262,7 +227,7 @@ func (m *intMetric) Get(ctx context.Context, fieldVals ...interface{}) (int64, e
 }
 
 func (m *intMetric) Set(ctx context.Context, v int64, fieldVals ...interface{}) error {
-	return tsmon.Store.Set(ctx, m.handle, m.fixedResetTime, fieldVals, v)
+	return tsmon.Store().Set(ctx, m, m.fixedResetTime, fieldVals, v)
 }
 
 type counter struct{ metric }
@@ -273,7 +238,7 @@ func (m *counter) Get(ctx context.Context, fieldVals ...interface{}) (int64, err
 }
 
 func (m *counter) Add(ctx context.Context, n int64, fieldVals ...interface{}) error {
-	return tsmon.Store.Incr(ctx, m.handle, m.fixedResetTime, fieldVals, n)
+	return tsmon.Store().Incr(ctx, m, m.fixedResetTime, fieldVals, n)
 }
 
 type floatMetric struct{ metric }
@@ -284,7 +249,7 @@ func (m *floatMetric) Get(ctx context.Context, fieldVals ...interface{}) (float6
 }
 
 func (m *floatMetric) Set(ctx context.Context, v float64, fieldVals ...interface{}) error {
-	return tsmon.Store.Set(ctx, m.handle, m.fixedResetTime, fieldVals, v)
+	return tsmon.Store().Set(ctx, m, m.fixedResetTime, fieldVals, v)
 }
 
 type floatCounter struct{ metric }
@@ -295,7 +260,7 @@ func (m *floatCounter) Get(ctx context.Context, fieldVals ...interface{}) (float
 }
 
 func (m *floatCounter) Add(ctx context.Context, n float64, fieldVals ...interface{}) error {
-	return tsmon.Store.Incr(ctx, m.handle, m.fixedResetTime, fieldVals, n)
+	return tsmon.Store().Incr(ctx, m, m.fixedResetTime, fieldVals, n)
 }
 
 type stringMetric struct{ metric }
@@ -306,7 +271,7 @@ func (m *stringMetric) Get(ctx context.Context, fieldVals ...interface{}) (strin
 }
 
 func (m *stringMetric) Set(ctx context.Context, v string, fieldVals ...interface{}) error {
-	return tsmon.Store.Set(ctx, m.handle, m.fixedResetTime, fieldVals, v)
+	return tsmon.Store().Set(ctx, m, m.fixedResetTime, fieldVals, v)
 }
 
 type boolMetric struct{ metric }
@@ -317,7 +282,7 @@ func (m *boolMetric) Get(ctx context.Context, fieldVals ...interface{}) (bool, e
 }
 
 func (m *boolMetric) Set(ctx context.Context, v bool, fieldVals ...interface{}) error {
-	return tsmon.Store.Set(ctx, m.handle, m.fixedResetTime, fieldVals, v)
+	return tsmon.Store().Set(ctx, m, m.fixedResetTime, fieldVals, v)
 }
 
 type cumulativeDistributionMetric struct {
@@ -333,7 +298,7 @@ func (m *cumulativeDistributionMetric) Get(ctx context.Context, fieldVals ...int
 }
 
 func (m *cumulativeDistributionMetric) Add(ctx context.Context, v float64, fieldVals ...interface{}) error {
-	return tsmon.Store.Incr(ctx, m.handle, m.fixedResetTime, fieldVals, v)
+	return tsmon.Store().Incr(ctx, m, m.fixedResetTime, fieldVals, v)
 }
 
 type nonCumulativeDistributionMetric struct {
@@ -349,5 +314,5 @@ func (m *nonCumulativeDistributionMetric) Get(ctx context.Context, fieldVals ...
 }
 
 func (m *nonCumulativeDistributionMetric) Set(ctx context.Context, v *distribution.Distribution, fieldVals ...interface{}) error {
-	return tsmon.Store.Set(ctx, m.handle, m.fixedResetTime, fieldVals, v)
+	return tsmon.Store().Set(ctx, m, m.fixedResetTime, fieldVals, v)
 }

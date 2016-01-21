@@ -52,19 +52,20 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 	Convey("Register, set and get", t, func() {
 		Convey("Registered metric with no fields", func() {
 			s := factory()
-			h, _ := s.Register(&fakeMetric{"foo", []field.Field{}, types.NonCumulativeIntType})
+			foo := &fakeMetric{"foo", []field.Field{}, types.NonCumulativeIntType}
+			s.Register(foo)
 
 			Convey("Initial Get should return nil", func() {
-				v, err := s.Get(ctx, h, time.Time{}, []interface{}{})
+				v, err := s.Get(ctx, foo, time.Time{}, []interface{}{})
 				So(v, ShouldBeNil)
 				So(err, ShouldBeNil)
 			})
 
 			Convey("Set and Get", func() {
-				err := s.Set(ctx, h, time.Time{}, []interface{}{}, "value")
+				err := s.Set(ctx, foo, time.Time{}, []interface{}{}, "value")
 				So(err, ShouldBeNil)
 
-				v, err := s.Get(ctx, h, time.Time{}, []interface{}{})
+				v, err := s.Get(ctx, foo, time.Time{}, []interface{}{})
 				So(v, ShouldEqual, "value")
 				So(err, ShouldBeNil)
 			})
@@ -72,28 +73,29 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 
 		Convey("Registered metric with a field", func() {
 			s := factory()
-			h, _ := s.Register(&fakeMetric{"foo", []field.Field{field.String("f")}, types.NonCumulativeIntType})
+			foo := &fakeMetric{"foo", []field.Field{field.String("f")}, types.NonCumulativeIntType}
+			s.Register(foo)
 
 			Convey("Initial Get should return nil", func() {
-				v, err := s.Get(ctx, h, time.Time{}, makeInterfaceSlice("one"))
+				v, err := s.Get(ctx, foo, time.Time{}, makeInterfaceSlice("one"))
 				So(v, ShouldBeNil)
 				So(err, ShouldBeNil)
 			})
 
 			Convey("Set and Get", func() {
-				So(s.Set(ctx, h, time.Time{}, makeInterfaceSlice("one"), 111), ShouldBeNil)
-				So(s.Set(ctx, h, time.Time{}, makeInterfaceSlice("two"), 222), ShouldBeNil)
-				So(s.Set(ctx, h, time.Time{}, makeInterfaceSlice(""), 333), ShouldBeNil)
+				So(s.Set(ctx, foo, time.Time{}, makeInterfaceSlice("one"), 111), ShouldBeNil)
+				So(s.Set(ctx, foo, time.Time{}, makeInterfaceSlice("two"), 222), ShouldBeNil)
+				So(s.Set(ctx, foo, time.Time{}, makeInterfaceSlice(""), 333), ShouldBeNil)
 
-				v, err := s.Get(ctx, h, time.Time{}, makeInterfaceSlice("one"))
+				v, err := s.Get(ctx, foo, time.Time{}, makeInterfaceSlice("one"))
 				So(v, ShouldEqual, 111)
 				So(err, ShouldBeNil)
 
-				v, err = s.Get(ctx, h, time.Time{}, makeInterfaceSlice("two"))
+				v, err = s.Get(ctx, foo, time.Time{}, makeInterfaceSlice("two"))
 				So(v, ShouldEqual, 222)
 				So(err, ShouldBeNil)
 
-				v, err = s.Get(ctx, h, time.Time{}, makeInterfaceSlice(""))
+				v, err = s.Get(ctx, foo, time.Time{}, makeInterfaceSlice(""))
 				So(v, ShouldEqual, 333)
 				So(err, ShouldBeNil)
 			})
@@ -104,84 +106,76 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 		Convey("Increments from 0 to 1", func() {
 			Convey("Int64 type", func() {
 				s := factory()
-				h, _ := s.Register(&fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType})
-				So(s.Incr(ctx, h, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
+				m := &fakeMetric{"m", []field.Field{}, types.CumulativeIntType}
+				s.Register(m)
+				So(s.Incr(ctx, m, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
 
-				v, err := s.Get(ctx, h, time.Time{}, []interface{}{})
+				v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
 				So(v, ShouldEqual, 1)
 				So(err, ShouldBeNil)
 			})
 
 			Convey("Float64 type", func() {
 				s := factory()
-				h, _ := s.Register(&fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType})
-				So(s.Incr(ctx, h, time.Time{}, []interface{}{}, float64(1)), ShouldBeNil)
+				m := &fakeMetric{"m", []field.Field{}, types.CumulativeFloatType}
+				s.Register(m)
+				So(s.Incr(ctx, m, time.Time{}, []interface{}{}, float64(1)), ShouldBeNil)
 
-				v, err := s.Get(ctx, h, time.Time{}, []interface{}{})
+				v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
 				So(v, ShouldEqual, 1.0)
 				So(err, ShouldBeNil)
 			})
 
 			Convey("String type", func() {
 				s := factory()
-				h, _ := s.Register(&fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType})
-				So(s.Incr(ctx, h, time.Time{}, []interface{}{}, "1"), ShouldNotBeNil)
+				m := &fakeMetric{"m", []field.Field{}, types.StringType}
+				s.Register(m)
+				So(s.Incr(ctx, m, time.Time{}, []interface{}{}, "1"), ShouldNotBeNil)
 			})
 		})
 
 		Convey("Increments from 42 to 43", func() {
 			Convey("Int64 type", func() {
 				s := factory()
-				h, _ := s.Register(&fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType})
-				So(s.Set(ctx, h, time.Time{}, []interface{}{}, int64(42)), ShouldBeNil)
-				So(s.Incr(ctx, h, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
+				m := &fakeMetric{"m", []field.Field{}, types.CumulativeIntType}
+				s.Register(m)
+				So(s.Set(ctx, m, time.Time{}, []interface{}{}, int64(42)), ShouldBeNil)
+				So(s.Incr(ctx, m, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
 
-				v, err := s.Get(ctx, h, time.Time{}, []interface{}{})
+				v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
 				So(v, ShouldEqual, int64(43))
 				So(err, ShouldBeNil)
 			})
 
 			Convey("Float64 type", func() {
 				s := factory()
-				h, _ := s.Register(&fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType})
-				So(s.Set(ctx, h, time.Time{}, []interface{}{}, float64(42)), ShouldBeNil)
-				So(s.Incr(ctx, h, time.Time{}, []interface{}{}, float64(1)), ShouldBeNil)
+				m := &fakeMetric{"m", []field.Field{}, types.CumulativeFloatType}
+				s.Register(m)
+				So(s.Set(ctx, m, time.Time{}, []interface{}{}, float64(42)), ShouldBeNil)
+				So(s.Incr(ctx, m, time.Time{}, []interface{}{}, float64(1)), ShouldBeNil)
 
-				v, err := s.Get(ctx, h, time.Time{}, []interface{}{})
+				v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
 				So(v, ShouldEqual, float64(43))
 				So(err, ShouldBeNil)
 			})
 		})
 	})
 
-	Convey("Register a metric twice", t, func() {
-		s := factory()
-		h, err := s.Register(&fakeMetric{"foo", []field.Field{}, types.NonCumulativeIntType})
-		So(err, ShouldBeNil)
-
-		_, err = s.Register(&fakeMetric{"foo", []field.Field{}, types.NonCumulativeIntType})
-		So(err, ShouldNotBeNil)
-
-		s.Unregister(h)
-		_, err = s.Register(&fakeMetric{"foo", []field.Field{}, types.NonCumulativeIntType})
-		So(err, ShouldBeNil)
-	})
-
 	Convey("GetAll", t, func() {
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 
 		s := factory()
-		foo, err := s.Register(&fakeMetric{"foo", []field.Field{}, types.NonCumulativeIntType})
-		So(err, ShouldBeNil)
-		bar, err := s.Register(&fakeMetric{"bar", []field.Field{field.String("f")}, types.StringType})
-		So(err, ShouldBeNil)
-		baz, err := s.Register(&fakeMetric{"baz", []field.Field{field.String("f")}, types.CumulativeFloatType})
-		So(err, ShouldBeNil)
+		foo := &fakeMetric{"foo", []field.Field{}, types.NonCumulativeIntType}
+		bar := &fakeMetric{"bar", []field.Field{field.String("f")}, types.StringType}
+		baz := &fakeMetric{"baz", []field.Field{field.String("f")}, types.CumulativeFloatType}
+		s.Register(foo)
+		s.Register(bar)
+		s.Register(baz)
 
 		// Add test records. We increment the test clock each time so that the added
 		// records sort deterministically using sortableCellSlice.
 		for _, m := range []struct {
-			handle    MetricHandle
+			metric    types.Metric
 			fieldvals []interface{}
 			value     interface{}
 		}{
@@ -191,7 +185,7 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 			{baz, makeInterfaceSlice("three"), 1.23},
 			{baz, makeInterfaceSlice("four"), 4.56},
 		} {
-			So(s.Set(ctx, m.handle, time.Time{}, m.fieldvals, m.value), ShouldBeNil)
+			So(s.Set(ctx, m.metric, time.Time{}, m.fieldvals, m.value), ShouldBeNil)
 			tc.Add(time.Second)
 		}
 
@@ -270,34 +264,16 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 	})
 
 	Convey("Fixed reset time", t, func() {
-		Convey("Get", func() {
-			s := factory()
-			h, err := s.Register(&fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType})
-
-			t := time.Date(1234, 5, 6, 7, 8, 9, 10, time.UTC)
-			v, err := s.Get(ctx, h, t, []interface{}{})
-			So(v, ShouldBeNil)
-			So(err, ShouldBeNil)
-			So(s.Incr(ctx, h, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
-
-			v, err = s.Get(ctx, h, time.Time{}, []interface{}{})
-			So(v, ShouldEqual, 1)
-			So(err, ShouldBeNil)
-
-			all := s.GetAll(ctx)
-			So(len(all), ShouldEqual, 1)
-			So(all[0].ResetTime.String(), ShouldEqual, t.String())
-		})
-
 		Convey("Incr", func() {
 			s := factory()
-			h, err := s.Register(&fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType})
+			m := &fakeMetric{"m", []field.Field{}, types.CumulativeIntType}
+			s.Register(m)
 
 			t := time.Date(1234, 5, 6, 7, 8, 9, 10, time.UTC)
-			So(s.Incr(ctx, h, t, []interface{}{}, int64(1)), ShouldBeNil)
-			So(s.Incr(ctx, h, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
+			So(s.Incr(ctx, m, t, []interface{}{}, int64(1)), ShouldBeNil)
+			So(s.Incr(ctx, m, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
 
-			v, err := s.Get(ctx, h, time.Time{}, []interface{}{})
+			v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
 			So(v, ShouldEqual, 2)
 			So(err, ShouldBeNil)
 
@@ -308,13 +284,14 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 
 		Convey("Set", func() {
 			s := factory()
-			h, err := s.Register(&fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType})
+			m := &fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType}
+			s.Register(m)
 
 			t := time.Date(1234, 5, 6, 7, 8, 9, 10, time.UTC)
-			So(s.Set(ctx, h, t, []interface{}{}, int64(42)), ShouldBeNil)
-			So(s.Incr(ctx, h, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
+			So(s.Set(ctx, m, t, []interface{}{}, int64(42)), ShouldBeNil)
+			So(s.Set(ctx, m, time.Time{}, []interface{}{}, int64(43)), ShouldBeNil)
 
-			v, err := s.Get(ctx, h, time.Time{}, []interface{}{})
+			v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
 			So(v, ShouldEqual, 43)
 			So(err, ShouldBeNil)
 
@@ -328,44 +305,16 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 		const numIterations = 100
 		const numGoroutines = 32
 
-		Convey("Register", func(c C) {
-			s := factory()
-
-			wg := sync.WaitGroup{}
-			f := func(n int) {
-				defer wg.Done()
-				for i := 0; i < numIterations; i++ {
-					name := fmt.Sprintf("%d-%d", n, i)
-					_, err := s.Register(&fakeMetric{name, []field.Field{}, types.NonCumulativeIntType})
-					c.So(err, ShouldBeNil)
-				}
-			}
-
-			for n := 0; n < numGoroutines; n++ {
-				wg.Add(1)
-				go f(n)
-			}
-			wg.Wait()
-
-			// Get the number of registered metrics by poking around at the store
-			// implementation's private members.
-			if memory, ok := s.(*inMemoryStore); ok {
-				So(len(memory.data), ShouldEqual, numGoroutines*numIterations)
-			} else if deferred, ok := s.(*DeferredStore); ok {
-				So(len(deferred.Store.(*inMemoryStore).data), ShouldEqual, numGoroutines*numIterations)
-			}
-		})
-
 		Convey("Incr", func(c C) {
 			s := factory()
-			h, err := s.Register(&fakeMetric{"m", []field.Field{}, types.CumulativeIntType})
-			So(err, ShouldBeNil)
+			m := &fakeMetric{"m", []field.Field{}, types.CumulativeIntType}
+			s.Register(m)
 
 			wg := sync.WaitGroup{}
 			f := func(n int) {
 				defer wg.Done()
 				for i := 0; i < numIterations; i++ {
-					c.So(s.Incr(ctx, h, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
+					c.So(s.Incr(ctx, m, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
 				}
 			}
 
@@ -375,7 +324,7 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 			}
 			wg.Wait()
 
-			val, err := s.Get(ctx, h, time.Time{}, []interface{}{})
+			val, err := s.Get(ctx, m, time.Time{}, []interface{}{})
 			So(val, ShouldEqual, numIterations*numGoroutines)
 			So(err, ShouldBeNil)
 		})
@@ -384,20 +333,21 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 	Convey("Different targets", t, func() {
 		Convey("Gets from context", func() {
 			s := factory()
-			h, _ := s.Register(&fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType})
+			m := &fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType}
+			s.Register(m)
 
 			t := target.Task{}
 			t.AsProto().ServiceName = proto.String("foo")
 			ctxWithTarget := target.Set(ctx, &t)
 
-			So(s.Set(ctx, h, time.Time{}, []interface{}{}, int64(42)), ShouldBeNil)
-			So(s.Set(ctxWithTarget, h, time.Time{}, []interface{}{}, int64(43)), ShouldBeNil)
+			So(s.Set(ctx, m, time.Time{}, []interface{}{}, int64(42)), ShouldBeNil)
+			So(s.Set(ctxWithTarget, m, time.Time{}, []interface{}{}, int64(43)), ShouldBeNil)
 
-			val, err := s.Get(ctx, h, time.Time{}, []interface{}{})
+			val, err := s.Get(ctx, m, time.Time{}, []interface{}{})
 			So(err, ShouldBeNil)
 			So(val, ShouldEqual, 42)
 
-			val, err = s.Get(ctxWithTarget, h, time.Time{}, []interface{}{})
+			val, err = s.Get(ctxWithTarget, m, time.Time{}, []interface{}{})
 			So(err, ShouldBeNil)
 			So(val, ShouldEqual, 43)
 

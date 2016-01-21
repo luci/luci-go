@@ -24,15 +24,15 @@ type fakeStore struct {
 	cells []types.Cell
 }
 
-func (s *fakeStore) Register(types.Metric) (store.MetricHandle, error) { return nil, nil }
-func (s *fakeStore) Unregister(store.MetricHandle)                     {}
-func (s *fakeStore) Get(context.Context, store.MetricHandle, time.Time, []interface{}) (interface{}, error) {
+func (s *fakeStore) Register(types.Metric)   {}
+func (s *fakeStore) Unregister(types.Metric) {}
+func (s *fakeStore) Get(context.Context, types.Metric, time.Time, []interface{}) (interface{}, error) {
 	return nil, nil
 }
-func (s *fakeStore) Set(context.Context, store.MetricHandle, time.Time, []interface{}, interface{}) error {
+func (s *fakeStore) Set(context.Context, types.Metric, time.Time, []interface{}, interface{}) error {
 	return nil
 }
-func (s *fakeStore) Incr(context.Context, store.MetricHandle, time.Time, []interface{}, interface{}) error {
+func (s *fakeStore) Incr(context.Context, types.Metric, time.Time, []interface{}, interface{}) error {
 	return nil
 }
 func (s *fakeStore) ModifyMulti(ctx context.Context, mods []store.Modification) error { return nil }
@@ -77,13 +77,13 @@ func TestFlush(t *testing.T) {
 				},
 			},
 		}
-		Store = &s
+		globalStore = &s
 
 		m := fakeMonitor{
 			chunkSize: 42,
 			cells:     [][]types.Cell{},
 		}
-		Monitor = &m
+		globalMonitor = &m
 
 		Flush(ctx)
 
@@ -107,13 +107,13 @@ func TestFlush(t *testing.T) {
 		s := fakeStore{
 			cells: make([]types.Cell, 43),
 		}
-		Store = &s
+		globalStore = &s
 
 		m := fakeMonitor{
 			chunkSize: 42,
 			cells:     [][]types.Cell{},
 		}
-		Monitor = &m
+		globalMonitor = &m
 
 		for i := 0; i < 43; i++ {
 			s.cells[i] = types.Cell{
@@ -141,13 +141,13 @@ func TestFlush(t *testing.T) {
 		s := fakeStore{
 			cells: make([]types.Cell, 43),
 		}
-		Store = &s
+		globalStore = &s
 
 		m := fakeMonitor{
 			chunkSize: 0,
 			cells:     [][]types.Cell{},
 		}
-		Monitor = &m
+		globalMonitor = &m
 
 		for i := 0; i < 43; i++ {
 			s.cells[i] = types.Cell{
@@ -171,7 +171,7 @@ func TestFlush(t *testing.T) {
 	})
 
 	Convey("No Monitor configured", t, func() {
-		Monitor = nil
+		globalMonitor = nil
 
 		err := Flush(ctx)
 		So(err, ShouldNotBeNil)
