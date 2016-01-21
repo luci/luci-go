@@ -25,15 +25,9 @@ func makeInterfaceSlice(v ...interface{}) []interface{} {
 	return v
 }
 
-type fakeMetric struct {
-	name   string
-	fields []field.Field
-	typ    types.ValueType
-}
+type fakeMetric types.MetricInfo
 
-func (m *fakeMetric) Name() string                  { return m.name }
-func (m *fakeMetric) Fields() []field.Field         { return m.fields }
-func (m *fakeMetric) ValueType() types.ValueType    { return m.typ }
+func (m *fakeMetric) Info() types.MetricInfo        { return types.MetricInfo(*m) }
 func (m *fakeMetric) SetFixedResetTime(t time.Time) {}
 
 type fakeDistributionMetric struct {
@@ -206,9 +200,9 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 		want := []types.Cell{
 			{
 				types.MetricInfo{
-					MetricName: "foo",
-					Fields:     []field.Field{},
-					ValueType:  types.NonCumulativeIntType,
+					Name:      "foo",
+					Fields:    []field.Field{},
+					ValueType: types.NonCumulativeIntType,
 				},
 				types.CellData{
 					FieldVals: []interface{}{},
@@ -217,9 +211,9 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 			},
 			{
 				types.MetricInfo{
-					MetricName: "bar",
-					Fields:     []field.Field{field.String("f")},
-					ValueType:  types.StringType,
+					Name:      "bar",
+					Fields:    []field.Field{field.String("f")},
+					ValueType: types.StringType,
 				},
 				types.CellData{
 					FieldVals: makeInterfaceSlice("one"),
@@ -228,9 +222,9 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 			},
 			{
 				types.MetricInfo{
-					MetricName: "bar",
-					Fields:     []field.Field{field.String("f")},
-					ValueType:  types.StringType,
+					Name:      "bar",
+					Fields:    []field.Field{field.String("f")},
+					ValueType: types.StringType,
 				},
 				types.CellData{
 					FieldVals: makeInterfaceSlice("two"),
@@ -239,9 +233,9 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 			},
 			{
 				types.MetricInfo{
-					MetricName: "baz",
-					Fields:     []field.Field{field.String("f")},
-					ValueType:  types.CumulativeFloatType,
+					Name:      "baz",
+					Fields:    []field.Field{field.String("f")},
+					ValueType: types.CumulativeFloatType,
 				},
 				types.CellData{
 					FieldVals: makeInterfaceSlice("three"),
@@ -250,9 +244,9 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 			},
 			{
 				types.MetricInfo{
-					MetricName: "baz",
-					Fields:     []field.Field{field.String("f")},
-					ValueType:  types.CumulativeFloatType,
+					Name:      "baz",
+					Fields:    []field.Field{field.String("f")},
+					ValueType: types.CumulativeFloatType,
 				},
 				types.CellData{
 					FieldVals: makeInterfaceSlice("four"),
@@ -266,7 +260,7 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 			w := want[i]
 
 			Convey(fmt.Sprintf("%d", i), func() {
-				So(g.MetricName, ShouldEqual, w.MetricName)
+				So(g.Name, ShouldEqual, w.Name)
 				So(len(g.Fields), ShouldEqual, len(w.Fields))
 				So(g.ValueType, ShouldEqual, w.ValueType)
 				So(g.FieldVals, ShouldResemble, w.FieldVals)

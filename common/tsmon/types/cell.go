@@ -21,9 +21,9 @@ type Cell struct {
 
 // MetricInfo contains the definition of a metric.
 type MetricInfo struct {
-	MetricName string
-	Fields     []field.Field
-	ValueType  ValueType
+	Name      string
+	Fields    []field.Field
+	ValueType ValueType
 }
 
 // CellData contains the value of a single cell.

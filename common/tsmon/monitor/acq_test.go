@@ -134,9 +134,9 @@ func TestSerializeCell(t *testing.T) {
 	Convey("Int", t, func() {
 		ret := serializeCell(types.Cell{
 			types.MetricInfo{
-				MetricName: "foo",
-				Fields:     []field.Field{},
-				ValueType:  types.NonCumulativeIntType,
+				Name:      "foo",
+				Fields:    []field.Field{},
+				ValueType: types.NonCumulativeIntType,
 			},
 			types.CellData{
 				FieldVals: []interface{}{},
@@ -158,9 +158,9 @@ func TestSerializeCell(t *testing.T) {
 	Convey("Counter", t, func() {
 		ret := serializeCell(types.Cell{
 			types.MetricInfo{
-				MetricName: "foo",
-				Fields:     []field.Field{},
-				ValueType:  types.CumulativeIntType,
+				Name:      "foo",
+				Fields:    []field.Field{},
+				ValueType: types.CumulativeIntType,
 			},
 			types.CellData{
 				FieldVals: []interface{}{},
@@ -182,9 +182,9 @@ func TestSerializeCell(t *testing.T) {
 	Convey("Float", t, func() {
 		ret := serializeCell(types.Cell{
 			types.MetricInfo{
-				MetricName: "foo",
-				Fields:     []field.Field{},
-				ValueType:  types.NonCumulativeFloatType,
+				Name:      "foo",
+				Fields:    []field.Field{},
+				ValueType: types.NonCumulativeFloatType,
 			},
 			types.CellData{
 				FieldVals: []interface{}{},
@@ -206,9 +206,9 @@ func TestSerializeCell(t *testing.T) {
 	Convey("FloatCounter", t, func() {
 		ret := serializeCell(types.Cell{
 			types.MetricInfo{
-				MetricName: "foo",
-				Fields:     []field.Field{},
-				ValueType:  types.CumulativeFloatType,
+				Name:      "foo",
+				Fields:    []field.Field{},
+				ValueType: types.CumulativeFloatType,
 			},
 			types.CellData{
 				FieldVals: []interface{}{},
@@ -230,9 +230,9 @@ func TestSerializeCell(t *testing.T) {
 	Convey("String", t, func() {
 		ret := serializeCell(types.Cell{
 			types.MetricInfo{
-				MetricName: "foo",
-				Fields:     []field.Field{},
-				ValueType:  types.StringType,
+				Name:      "foo",
+				Fields:    []field.Field{},
+				ValueType: types.StringType,
 			},
 			types.CellData{
 				FieldVals: []interface{}{},
@@ -254,9 +254,9 @@ func TestSerializeCell(t *testing.T) {
 	Convey("Boolean", t, func() {
 		ret := serializeCell(types.Cell{
 			types.MetricInfo{
-				MetricName: "foo",
-				Fields:     []field.Field{},
-				ValueType:  types.BoolType,
+				Name:      "foo",
+				Fields:    []field.Field{},
+				ValueType: types.BoolType,
 			},
 			types.CellData{
 				FieldVals: []interface{}{},
@@ -283,9 +283,9 @@ func TestSerializeCell(t *testing.T) {
 
 		ret := serializeCell(types.Cell{
 			types.MetricInfo{
-				MetricName: "foo",
-				Fields:     []field.Field{},
-				ValueType:  types.NonCumulativeIntType,
+				Name:      "foo",
+				Fields:    []field.Field{},
+				ValueType: types.NonCumulativeIntType,
 			},
 			types.CellData{
 				FieldVals: []interface{}{},

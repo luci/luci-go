@@ -34,7 +34,7 @@ func serializeCells(cells []types.Cell, defaultTarget types.Target) *pb.MetricsC
 
 func serializeCell(c types.Cell, defaultTarget types.Target) *pb.MetricsData {
 	d := pb.MetricsData{}
-	d.Name = proto.String(c.MetricName)
+	d.Name = proto.String(c.Name)
 	d.MetricNamePrefix = proto.String(metricNamePrefix)
 	d.Fields = field.Serialize(c.Fields, c.FieldVals)
 	d.StartTimestampUs = proto.Uint64(uint64(c.ResetTime.UnixNano() / int64(time.Microsecond)))

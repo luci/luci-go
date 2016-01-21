@@ -101,9 +101,9 @@ type NonCumulativeDistribution interface {
 // another metric already exists with this name.
 func NewInt(name string, fields ...field.Field) Int {
 	m := &intMetric{metric{MetricInfo: types.MetricInfo{
-		MetricName: name,
-		Fields:     fields,
-		ValueType:  types.NonCumulativeIntType,
+		Name:      name,
+		Fields:    fields,
+		ValueType: types.NonCumulativeIntType,
 	}}}
 	h, err := tsmon.Store.Register(m)
 	if err != nil {
@@ -117,9 +117,9 @@ func NewInt(name string, fields ...field.Field) Int {
 // another metric already exists with this name.
 func NewCounter(name string, fields ...field.Field) Counter {
 	m := &counter{metric{MetricInfo: types.MetricInfo{
-		MetricName: name,
-		Fields:     fields,
-		ValueType:  types.CumulativeIntType,
+		Name:      name,
+		Fields:    fields,
+		ValueType: types.CumulativeIntType,
 	}}}
 	h, err := tsmon.Store.Register(m)
 	if err != nil {
@@ -133,9 +133,9 @@ func NewCounter(name string, fields ...field.Field) Counter {
 // panic if another metric already exists with this name.
 func NewFloat(name string, fields ...field.Field) Float {
 	m := &floatMetric{metric{MetricInfo: types.MetricInfo{
-		MetricName: name,
-		Fields:     fields,
-		ValueType:  types.NonCumulativeFloatType,
+		Name:      name,
+		Fields:    fields,
+		ValueType: types.NonCumulativeFloatType,
 	}}}
 	h, err := tsmon.Store.Register(m)
 	if err != nil {
@@ -149,9 +149,9 @@ func NewFloat(name string, fields ...field.Field) Float {
 // panic if another metric already exists with this name.
 func NewFloatCounter(name string, fields ...field.Field) FloatCounter {
 	m := &floatCounter{metric{MetricInfo: types.MetricInfo{
-		MetricName: name,
-		Fields:     fields,
-		ValueType:  types.CumulativeFloatType,
+		Name:      name,
+		Fields:    fields,
+		ValueType: types.CumulativeFloatType,
 	}}}
 	h, err := tsmon.Store.Register(m)
 	if err != nil {
@@ -165,9 +165,9 @@ func NewFloatCounter(name string, fields ...field.Field) FloatCounter {
 // metric already exists with this name.
 func NewString(name string, fields ...field.Field) String {
 	m := &stringMetric{metric{MetricInfo: types.MetricInfo{
-		MetricName: name,
-		Fields:     fields,
-		ValueType:  types.StringType,
+		Name:      name,
+		Fields:    fields,
+		ValueType: types.StringType,
 	}}}
 	h, err := tsmon.Store.Register(m)
 	if err != nil {
@@ -181,9 +181,9 @@ func NewString(name string, fields ...field.Field) String {
 // metric already exists with this name.
 func NewBool(name string, fields ...field.Field) Bool {
 	m := &boolMetric{metric{MetricInfo: types.MetricInfo{
-		MetricName: name,
-		Fields:     fields,
-		ValueType:  types.BoolType,
+		Name:      name,
+		Fields:    fields,
+		ValueType: types.BoolType,
 	}}}
 	h, err := tsmon.Store.Register(m)
 	if err != nil {
@@ -198,9 +198,9 @@ func NewBool(name string, fields ...field.Field) Bool {
 func NewCumulativeDistribution(name string, bucketer *distribution.Bucketer, fields ...field.Field) CumulativeDistribution {
 	m := &cumulativeDistributionMetric{
 		metric: metric{MetricInfo: types.MetricInfo{
-			MetricName: name,
-			Fields:     fields,
-			ValueType:  types.CumulativeDistributionType,
+			Name:      name,
+			Fields:    fields,
+			ValueType: types.CumulativeDistributionType,
 		}},
 		bucketer: bucketer,
 	}
@@ -217,9 +217,9 @@ func NewCumulativeDistribution(name string, bucketer *distribution.Bucketer, fie
 func NewNonCumulativeDistribution(name string, bucketer *distribution.Bucketer, fields ...field.Field) NonCumulativeDistribution {
 	m := &nonCumulativeDistributionMetric{
 		metric: metric{MetricInfo: types.MetricInfo{
-			MetricName: name,
-			Fields:     fields,
-			ValueType:  types.NonCumulativeDistributionType,
+			Name:      name,
+			Fields:    fields,
+			ValueType: types.NonCumulativeDistributionType,
 		}},
 		bucketer: bucketer,
 	}
@@ -251,9 +251,7 @@ type metric struct {
 	fixedResetTime time.Time
 }
 
-func (m *metric) Name() string                  { return m.MetricInfo.MetricName }
-func (m *metric) Fields() []field.Field         { return m.MetricInfo.Fields }
-func (m *metric) ValueType() types.ValueType    { return m.MetricInfo.ValueType }
+func (m *metric) Info() types.MetricInfo        { return m.MetricInfo }
 func (m *metric) SetFixedResetTime(t time.Time) { m.fixedResetTime = t }
 
 type intMetric struct{ metric }

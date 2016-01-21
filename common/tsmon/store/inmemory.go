@@ -77,30 +77,26 @@ func (s *inMemoryStore) Register(m types.Metric) (MetricHandle, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if _, ok := s.data[m.Name()]; ok {
-		return nil, fmt.Errorf("A metric with the name '%s' was already registered", m.Name())
+	if _, ok := s.data[m.Info().Name]; ok {
+		return nil, fmt.Errorf("A metric with the name '%s' was already registered", m.Info().Name)
 	}
 
 	d := &metricData{
-		MetricInfo: types.MetricInfo{
-			MetricName: m.Name(),
-			Fields:     m.Fields(),
-			ValueType:  m.ValueType(),
-		},
-		cells: map[cellKey][]*types.CellData{},
+		MetricInfo: m.Info(),
+		cells:      map[cellKey][]*types.CellData{},
 	}
 
 	if dist, ok := m.(types.DistributionMetric); ok {
 		d.bucketer = dist.Bucketer()
 	}
 
-	s.data[m.Name()] = d
+	s.data[m.Info().Name] = d
 	return d, nil
 }
 
 // Unregister removes the metric (along with all its values) from the store.
 func (s *inMemoryStore) Unregister(h MetricHandle) {
-	name := h.(*metricData).MetricName
+	name := h.(*metricData).Name
 
 	s.lock.Lock()
 	defer s.lock.Unlock()

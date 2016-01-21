@@ -8,15 +8,12 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/tsmon/distribution"
-	"github.com/luci/luci-go/common/tsmon/field"
 )
 
 // Metric is the low-level interface provided by all metrics.
 // Concrete types are defined in the "metrics" package.
 type Metric interface {
-	Name() string
-	Fields() []field.Field
-	ValueType() ValueType
+	Info() MetricInfo
 
 	// SetFixedResetTime overrides the reset time for this metric.  Usually cells
 	// take the current time when they're first assigned a value, but it can be

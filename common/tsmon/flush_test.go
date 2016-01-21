@@ -65,9 +65,9 @@ func TestFlush(t *testing.T) {
 			cells: []types.Cell{
 				{
 					types.MetricInfo{
-						MetricName: "foo",
-						Fields:     []field.Field{},
-						ValueType:  types.StringType,
+						Name:      "foo",
+						Fields:    []field.Field{},
+						ValueType: types.StringType,
 					},
 					types.CellData{
 						FieldVals: []interface{}{},
@@ -91,9 +91,9 @@ func TestFlush(t *testing.T) {
 		So(len(m.cells[0]), ShouldEqual, 1)
 		So(m.cells[0][0], ShouldResemble, types.Cell{
 			types.MetricInfo{
-				MetricName: "foo",
-				Fields:     []field.Field{},
-				ValueType:  types.StringType,
+				Name:      "foo",
+				Fields:    []field.Field{},
+				ValueType: types.StringType,
 			},
 			types.CellData{
 				FieldVals: []interface{}{},
@@ -118,9 +118,9 @@ func TestFlush(t *testing.T) {
 		for i := 0; i < 43; i++ {
 			s.cells[i] = types.Cell{
 				types.MetricInfo{
-					MetricName: "foo",
-					Fields:     []field.Field{},
-					ValueType:  types.StringType,
+					Name:      "foo",
+					Fields:    []field.Field{},
+					ValueType: types.StringType,
 				},
 				types.CellData{
 					FieldVals: []interface{}{},
@@ -152,9 +152,9 @@ func TestFlush(t *testing.T) {
 		for i := 0; i < 43; i++ {
 			s.cells[i] = types.Cell{
 				types.MetricInfo{
-					MetricName: "foo",
-					Fields:     []field.Field{},
-					ValueType:  types.StringType,
+					Name:      "foo",
+					Fields:    []field.Field{},
+					ValueType: types.StringType,
 				},
 				types.CellData{
 					FieldVals: []interface{}{},
