@@ -16,7 +16,7 @@ import (
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/proto/logdog/services"
+	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"golang.org/x/net/context"
@@ -48,7 +48,7 @@ func TestTerminateStream(t *testing.T) {
 			TerminalIndex: 1337,
 		}
 
-		c = ct.UseConfig(c, &services.Coordinator{
+		c = ct.UseConfig(c, &svcconfig.Coordinator{
 			ServiceAuthGroup: "test-services",
 		})
 		fs := authtest.FakeState{}

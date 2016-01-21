@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/recordio"
 	"github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -52,11 +52,11 @@ func TestReader(t *testing.T) {
 		}
 
 		// Test case templates.
-		md := protocol.ButlerMetadata{
-			Type:         protocol.ButlerMetadata_ButlerLogBundle,
-			ProtoVersion: protocol.Version,
+		md := logpb.ButlerMetadata{
+			Type:         logpb.ButlerMetadata_ButlerLogBundle,
+			ProtoVersion: logpb.Version,
 		}
-		bundle := protocol.ButlerLogBundle{
+		bundle := logpb.ButlerLogBundle{
 			Source: "test source",
 		}
 
@@ -71,8 +71,8 @@ func TestReader(t *testing.T) {
 
 		Convey(`Will fail to Read an unknown type.`, func() {
 			// Assert that we are testing an unknown type.
-			unknownType := protocol.ButlerMetadata_ContentType(-1)
-			So(protocol.ButlerMetadata_ContentType_name[int32(unknownType)], ShouldEqual, "")
+			unknownType := logpb.ButlerMetadata_ContentType(-1)
+			So(logpb.ButlerMetadata_ContentType_name[int32(unknownType)], ShouldEqual, "")
 
 			md.Type = unknownType
 			push(&md)
@@ -114,7 +114,7 @@ func TestReader(t *testing.T) {
 		})
 
 		Convey(`With a proper compressed Metadata frame`, func() {
-			md.Compression = protocol.ButlerMetadata_ZLIB
+			md.Compression = logpb.ButlerMetadata_ZLIB
 			push(&md)
 
 			Convey(`Will fail if the data frame is missing.`, func() {
@@ -153,7 +153,7 @@ func TestReader(t *testing.T) {
 				Compress:          true,
 				CompressThreshold: 0,
 			}
-			So(w.writeData(recordio.NewWriter(&buf), protocol.ButlerMetadata_ButlerLogBundle,
+			So(w.writeData(recordio.NewWriter(&buf), logpb.ButlerMetadata_ButlerLogBundle,
 				bytes.Repeat([]byte{0x55}, 64)), ShouldBeNil)
 
 			err := r.Read(&buf)
@@ -167,9 +167,9 @@ func TestWriter(t *testing.T) {
 	Convey(`A Writer instance outputting to a Buffer`, t, func() {
 		buf := bytes.Buffer{}
 		w := Writer{}
-		bundle := protocol.ButlerLogBundle{
+		bundle := logpb.ButlerLogBundle{
 			Source: "test source",
-			Entries: []*protocol.ButlerLogBundle_Entry{
+			Entries: []*logpb.ButlerLogBundle_Entry{
 				{},
 			},
 		}
@@ -183,8 +183,8 @@ func TestWriter(t *testing.T) {
 
 				r, err := read(&buf)
 				So(err, ShouldBeNil)
-				So(r.Metadata.Compression, ShouldEqual, protocol.ButlerMetadata_NONE)
-				So(r.Metadata.ProtoVersion, ShouldEqual, protocol.Version)
+				So(r.Metadata.Compression, ShouldEqual, logpb.ButlerMetadata_NONE)
+				So(r.Metadata.ProtoVersion, ShouldEqual, logpb.Version)
 			})
 
 			Convey(`Will not write data larger than the maximum bundle size.`, func() {
@@ -201,9 +201,9 @@ func TestWriter(t *testing.T) {
 
 				r, err := read(&buf)
 				So(err, ShouldBeNil)
-				So(r.Metadata.Compression, ShouldEqual, protocol.ButlerMetadata_ZLIB)
+				So(r.Metadata.Compression, ShouldEqual, logpb.ButlerMetadata_ZLIB)
 				So(r.Bundle.Source, ShouldResemble, bundle.Source)
-				So(r.Metadata.ProtoVersion, ShouldEqual, protocol.Version)
+				So(r.Metadata.ProtoVersion, ShouldEqual, logpb.Version)
 
 				Convey(`And can be reused.`, func() {
 					bundle.Source = strings.Repeat("A", 64)
@@ -211,9 +211,9 @@ func TestWriter(t *testing.T) {
 
 					r, err := read(&buf)
 					So(err, ShouldBeNil)
-					So(r.Metadata.Compression, ShouldEqual, protocol.ButlerMetadata_ZLIB)
+					So(r.Metadata.Compression, ShouldEqual, logpb.ButlerMetadata_ZLIB)
 					So(r.Bundle.Source, ShouldEqual, bundle.Source)
-					So(r.Metadata.ProtoVersion, ShouldEqual, protocol.Version)
+					So(r.Metadata.ProtoVersion, ShouldEqual, logpb.Version)
 				})
 			})
 		})

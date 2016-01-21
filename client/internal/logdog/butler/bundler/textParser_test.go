@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -31,8 +31,8 @@ type textTestOutput struct {
 	increment time.Duration
 }
 
-func (o *textTestOutput) testLines() protocol.Text {
-	t := protocol.Text{}
+func (o *textTestOutput) testLines() logpb.Text {
+	t := logpb.Text{}
 	for _, line := range o.lines {
 		delim := ""
 		switch {
@@ -42,7 +42,7 @@ func (o *textTestOutput) testLines() protocol.Text {
 			delim = posixNewline
 		}
 
-		t.Lines = append(t.Lines, &protocol.Text_Line{
+		t.Lines = append(t.Lines, &logpb.Text_Line{
 			Value:     line[:len(line)-len(delim)],
 			Delimiter: delim,
 		})

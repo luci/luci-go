@@ -10,22 +10,22 @@ import (
 
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"golang.org/x/net/context"
 )
 
 // TestLogStreamDescriptor generates a stock testing LogStreamDescriptor
 // protobuf.
-func TestLogStreamDescriptor(c context.Context, name string) *protocol.LogStreamDescriptor {
-	return &protocol.LogStreamDescriptor{
+func TestLogStreamDescriptor(c context.Context, name string) *logpb.LogStreamDescriptor {
+	return &logpb.LogStreamDescriptor{
 		Prefix:      "testing",
 		Name:        name,
-		StreamType:  protocol.LogStreamDescriptor_TEXT,
+		StreamType:  logpb.LogStreamDescriptor_TEXT,
 		ContentType: "application/text",
 		Timestamp:   google.NewTimestamp(clock.Now(c)),
-		Tags: []*protocol.LogStreamDescriptor_Tag{
+		Tags: []*logpb.LogStreamDescriptor_Tag{
 			{"foo", "bar"},
 			{"baz", "qux"},
 			{"quux", ""},
@@ -34,7 +34,7 @@ func TestLogStreamDescriptor(c context.Context, name string) *protocol.LogStream
 }
 
 // TestLogStream generates a stock testing LogStream from a LogStreamDescriptor.
-func TestLogStream(c context.Context, desc *protocol.LogStreamDescriptor) (*coordinator.LogStream, error) {
+func TestLogStream(c context.Context, desc *logpb.LogStreamDescriptor) (*coordinator.LogStream, error) {
 	ls, err := coordinator.NewLogStream(string(desc.Path()))
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func TestLogStream(c context.Context, desc *protocol.LogStreamDescriptor) (*coor
 		return nil, err
 	}
 
-	ls.ProtoVersion = protocol.Version
+	ls.ProtoVersion = logpb.Version
 	ls.Created = coordinator.NormalizeTime(clock.Now(c).UTC())
 	ls.Updated = coordinator.NormalizeTime(clock.Now(c).UTC())
 	ls.Secret = bytes.Repeat([]byte{0x6F}, types.StreamSecretLength)
@@ -51,15 +51,15 @@ func TestLogStream(c context.Context, desc *protocol.LogStreamDescriptor) (*coor
 	return ls, nil
 }
 
-// TestLogEntry generates a standard testing text protocol.LogEntry.
-func TestLogEntry(c context.Context, ls *coordinator.LogStream, i int) *protocol.LogEntry {
-	return &protocol.LogEntry{
+// TestLogEntry generates a standard testing text logpb.LogEntry.
+func TestLogEntry(c context.Context, ls *coordinator.LogStream, i int) *logpb.LogEntry {
+	return &logpb.LogEntry{
 		TimeOffset:  google.NewDuration(clock.Now(c).Sub(ls.Created)),
 		StreamIndex: uint64(i),
 
-		Content: &protocol.LogEntry_Text{
-			&protocol.Text{
-				Lines: []*protocol.Text_Line{
+		Content: &logpb.LogEntry_Text{
+			&logpb.Text{
+				Lines: []*logpb.Text_Line{
 					{
 						Value:     fmt.Sprintf("log entry #%d", i),
 						Delimiter: "\n",

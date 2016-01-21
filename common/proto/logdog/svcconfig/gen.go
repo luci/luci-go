@@ -4,11 +4,11 @@
 
 //go:generate cproto
 
-// Package services contains LogDog service configuration protobufs.
+// Package svcconfig contains LogDog service configuration protobufs.
 //
 // The package name here must match the protobuf package name, as the generated
 // files will reside in the same directory.
-package services
+package svcconfig
 
 import (
 	"github.com/golang/protobuf/proto"

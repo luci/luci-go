@@ -7,7 +7,7 @@ package output
 import (
 	"fmt"
 
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 // Output is a sink endpoint for groups of messages.
@@ -22,7 +22,7 @@ type Output interface {
 	// If an error is returned, it indicates a failure to send the bundle.
 	// If there is a data error or a message type is not supported by the
 	// Output, it should log the error and return nil.
-	SendBundle(*protocol.ButlerLogBundle) error
+	SendBundle(*logpb.ButlerLogBundle) error
 
 	// MaxSize returns the maximum number of bytes that this Output can process
 	// with a single send. A return value <=0 indicates that there si no fixed

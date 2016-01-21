@@ -8,13 +8,13 @@ import (
 	"io"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 // indexBuilder is a stateful engine that constructs an archival index.
 type indexBuilder struct {
 	*Manifest
-	index protocol.LogIndex
+	index logpb.LogIndex
 
 	lastPrefixIndex uint64
 	lastStreamIndex uint64
@@ -23,7 +23,7 @@ type indexBuilder struct {
 	sizeFunc func(proto.Message) int
 }
 
-func (i *indexBuilder) addLogEntry(le *protocol.LogEntry, offset int64) {
+func (i *indexBuilder) addLogEntry(le *logpb.LogEntry, offset int64) {
 	// Only calculate the size if we actually use it.
 	if i.ByteRange > 0 {
 		i.lastBytes += uint64(i.size(le))
@@ -41,7 +41,7 @@ func (i *indexBuilder) addLogEntry(le *protocol.LogEntry, offset int64) {
 		i.lastBytes = 0
 	}
 
-	i.index.Entries = append(i.index.Entries, &protocol.LogIndex_Entry{
+	i.index.Entries = append(i.index.Entries, &logpb.LogIndex_Entry{
 		Sequence:    le.Sequence,
 		PrefixIndex: le.PrefixIndex,
 		StreamIndex: le.StreamIndex,

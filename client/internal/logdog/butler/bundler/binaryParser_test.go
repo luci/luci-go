@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -38,7 +38,7 @@ func TestBinaryParser(t *testing.T) {
 				c.allowSplit = true
 				le, err := p.nextEntry(c)
 				So(err, ShouldBeNil)
-				So(le, shouldMatchLogEntry, s.le(0, protocol.Binary{
+				So(le, shouldMatchLogEntry, s.le(0, logpb.Binary{
 					Data: []byte{1},
 				}))
 
@@ -54,7 +54,7 @@ func TestBinaryParser(t *testing.T) {
 			Convey(`Should yield all data with a limit of 32.`, func() {
 				le, err := p.nextEntry(c)
 				So(err, ShouldBeNil)
-				So(le, shouldMatchLogEntry, s.le(0, protocol.Binary{
+				So(le, shouldMatchLogEntry, s.le(0, logpb.Binary{
 					Data: []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
 				}))
 
@@ -67,13 +67,13 @@ func TestBinaryParser(t *testing.T) {
 				c.limit = 6
 				le, err := p.nextEntry(c)
 				So(err, ShouldBeNil)
-				So(le, shouldMatchLogEntry, s.le(0, protocol.Binary{
+				So(le, shouldMatchLogEntry, s.le(0, logpb.Binary{
 					Data: []byte{0, 1, 2, 3, 4, 5},
 				}))
 
 				le, err = p.nextEntry(c)
 				So(err, ShouldBeNil)
-				So(le, shouldMatchLogEntry, s.le(6, protocol.Binary{
+				So(le, shouldMatchLogEntry, s.le(6, logpb.Binary{
 					Offset: 6,
 					Data:   []byte{6, 7, 8, 9},
 				}))
@@ -92,7 +92,7 @@ func TestBinaryParser(t *testing.T) {
 			Convey(`Ignores the time boundary and returns all 8 bytes.`, func() {
 				le, err := p.nextEntry(c)
 				So(err, ShouldBeNil)
-				So(le, shouldMatchLogEntry, s.le(0, protocol.Binary{
+				So(le, shouldMatchLogEntry, s.le(0, logpb.Binary{
 					Data: []byte{0, 1, 2, 3, 4, 5, 6, 7},
 				}))
 

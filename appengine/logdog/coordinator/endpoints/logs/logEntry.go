@@ -8,10 +8,10 @@ import (
 	"time"
 
 	lep "github.com/luci/luci-go/appengine/logdog/coordinator/endpoints"
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
-// LogEntry is an endpoints-exported version of the protocol.LogEntry protobuf.
+// LogEntry is an endpoints-exported version of the logpb.LogEntry protobuf.
 type LogEntry struct {
 	// Timestamp is the timestamp of this LogEntry, expressed as an RFC3339
 	// string.
@@ -53,7 +53,7 @@ type LogEntryDatagram struct {
 	Partial *LogEntryDatagramPartial `json:"partial,omitempty"`
 }
 
-func logEntryFromProto(le *protocol.LogEntry, timeBase time.Time, newlines bool) *LogEntry {
+func logEntryFromProto(le *logpb.LogEntry, timeBase time.Time, newlines bool) *LogEntry {
 	res := LogEntry{
 		PrefixIndex: int64(le.PrefixIndex),
 		StreamIndex: int64(le.StreamIndex),

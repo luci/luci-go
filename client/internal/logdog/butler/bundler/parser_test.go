@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/testing/assertions"
 )
 
@@ -37,10 +37,10 @@ func dstr(ts time.Time, s string) *testData {
 }
 
 func shouldMatchLogEntry(actual interface{}, expected ...interface{}) string {
-	if actual == (*protocol.LogEntry)(nil) {
+	if actual == (*logpb.LogEntry)(nil) {
 		return fmt.Sprintf("actual should not be nil")
 	}
-	if len(expected) != 1 || expected[0] == (*protocol.LogEntry)(nil) {
+	if len(expected) != 1 || expected[0] == (*logpb.LogEntry)(nil) {
 		return fmt.Sprintf("expected should not be nil")
 	}
 
@@ -64,22 +64,22 @@ func (s *parserTestStream) base() baseParser {
 	}
 }
 
-func (s *parserTestStream) next(d interface{}) *protocol.LogEntry {
-	le := &protocol.LogEntry{
+func (s *parserTestStream) next(d interface{}) *logpb.LogEntry {
+	le := &logpb.LogEntry{
 		TimeOffset:  google.NewDuration(s.offset),
 		PrefixIndex: uint64(s.prefixIndex),
 		StreamIndex: uint64(s.streamIndex),
 	}
 
 	switch t := d.(type) {
-	case protocol.Text:
-		le.Content = &protocol.LogEntry_Text{Text: &t}
+	case logpb.Text:
+		le.Content = &logpb.LogEntry_Text{Text: &t}
 
-	case protocol.Binary:
-		le.Content = &protocol.LogEntry_Binary{Binary: &t}
+	case logpb.Binary:
+		le.Content = &logpb.LogEntry_Binary{Binary: &t}
 
-	case protocol.Datagram:
-		le.Content = &protocol.LogEntry_Datagram{Datagram: &t}
+	case logpb.Datagram:
+		le.Content = &logpb.LogEntry_Datagram{Datagram: &t}
 
 	default:
 		panic(fmt.Errorf("unknown content type: %T", t))
@@ -95,7 +95,7 @@ func (s *parserTestStream) add(d time.Duration) *parserTestStream {
 	return s
 }
 
-func (s *parserTestStream) le(seq int64, d interface{}) *protocol.LogEntry {
+func (s *parserTestStream) le(seq int64, d interface{}) *logpb.LogEntry {
 	le := s.next(d)
 	le.Sequence = uint64(seq)
 	return le

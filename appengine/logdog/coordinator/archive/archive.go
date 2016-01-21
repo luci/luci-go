@@ -10,16 +10,16 @@ import (
 	"io"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/parallel"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/recordio"
 )
 
 // Manifest is a set of archival parameters.
 type Manifest struct {
-	// Descriptor is the protocol.LogStreamDescriptor for the stream.
-	Descriptor *protocol.LogStreamDescriptor
+	// Descriptor is the logpb.LogStreamDescriptor for the stream.
+	Descriptor *logpb.LogStreamDescriptor
 	// Source is the LogEntry source for the stream.
 	Source LogEntrySource
 
@@ -78,7 +78,7 @@ func Archive(m Manifest) error {
 	if m.IndexWriter != nil {
 		idx = &indexBuilder{
 			Manifest: &m,
-			index: protocol.LogIndex{
+			index: logpb.LogIndex{
 				Desc: m.Descriptor,
 			},
 			sizeFunc: m.sizeFunc,
@@ -86,9 +86,9 @@ func Archive(m Manifest) error {
 	}
 
 	return parallel.FanOutIn(func(taskC chan<- func() error) {
-		var logC chan *protocol.LogEntry
+		var logC chan *logpb.LogEntry
 		if m.LogWriter != nil {
-			logC = make(chan *protocol.LogEntry)
+			logC = make(chan *logpb.LogEntry)
 			defer close(logC)
 
 			taskC <- func() error {
@@ -105,9 +105,9 @@ func Archive(m Manifest) error {
 			}
 		}
 
-		var dataC chan *protocol.LogEntry
+		var dataC chan *logpb.LogEntry
 		if m.DataWriter != nil {
-			dataC = make(chan *protocol.LogEntry)
+			dataC = make(chan *logpb.LogEntry)
 			defer close(dataC)
 
 			taskC <- func() error {
@@ -127,7 +127,7 @@ func Archive(m Manifest) error {
 	})
 }
 
-func archiveLogs(w io.Writer, d *protocol.LogStreamDescriptor, logC <-chan *protocol.LogEntry, idx *indexBuilder) error {
+func archiveLogs(w io.Writer, d *logpb.LogStreamDescriptor, logC <-chan *logpb.LogEntry, idx *indexBuilder) error {
 	offset := int64(0)
 	out := func(pb proto.Message) error {
 		d, err := proto.Marshal(pb)

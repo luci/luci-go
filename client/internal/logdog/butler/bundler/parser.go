@@ -10,9 +10,9 @@ import (
 
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
 	"github.com/luci/luci-go/common/chunkstream"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 // constraints is the set of Constraints to apply when generating a LogEntry.
@@ -47,7 +47,7 @@ type parser interface {
 	//
 	// This method may return nil if there is insuffuicient data to produce a
 	// LogEntry given the
-	nextEntry(*constraints) (*protocol.LogEntry, error)
+	nextEntry(*constraints) (*logpb.LogEntry, error)
 
 	bufferedBytes() int64
 
@@ -61,17 +61,17 @@ func newParser(p *streamproto.Properties, c *counter) (parser, error) {
 	}
 
 	switch p.StreamType {
-	case protocol.LogStreamDescriptor_TEXT:
+	case logpb.LogStreamDescriptor_TEXT:
 		return &textParser{
 			baseParser: base,
 		}, nil
 
-	case protocol.LogStreamDescriptor_BINARY:
+	case logpb.LogStreamDescriptor_BINARY:
 		return &binaryParser{
 			baseParser: base,
 		}, nil
 
-	case protocol.LogStreamDescriptor_DATAGRAM:
+	case logpb.LogStreamDescriptor_DATAGRAM:
 		return &datagramParser{
 			baseParser: base,
 			maxSize:    int64(types.MaxDatagramSize),
@@ -92,8 +92,8 @@ type baseParser struct {
 	nextIndex int64
 }
 
-func (p *baseParser) baseLogEntry(ts time.Time) *protocol.LogEntry {
-	e := protocol.LogEntry{
+func (p *baseParser) baseLogEntry(ts time.Time) *logpb.LogEntry {
+	e := logpb.LogEntry{
 		TimeOffset:  google.NewDuration(ts.Sub(p.timeBase)),
 		PrefixIndex: uint64(p.counter.next()),
 		StreamIndex: uint64(p.nextIndex),

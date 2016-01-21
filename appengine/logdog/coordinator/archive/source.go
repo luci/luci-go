@@ -10,14 +10,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 // A LogEntrySource returns ordered log entries for archival.
 type LogEntrySource interface {
 	// NextLogEntry returns the next sequential log entry. If there are no more
 	// log entries, nil is returned.
-	NextLogEntry() *protocol.LogEntry
+	NextLogEntry() *logpb.LogEntry
 }
 
 // safeLogEntrySource wraps a LogEntrySource and guarantees that all emitted log
@@ -34,7 +34,7 @@ type safeLogEntrySource struct {
 	lastTimeOffset  time.Duration
 }
 
-func (s *safeLogEntrySource) NextLogEntry() *protocol.LogEntry {
+func (s *safeLogEntrySource) NextLogEntry() *logpb.LogEntry {
 	// Loop until we find a LogEntry to return.
 	for {
 		le := s.LogEntrySource.NextLogEntry()

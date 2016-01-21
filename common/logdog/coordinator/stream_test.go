@@ -9,20 +9,20 @@ import (
 	"testing"
 
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func genLog(idx int64, id string) *protocol.LogEntry {
-	return &protocol.LogEntry{
+func genLog(idx int64, id string) *logpb.LogEntry {
+	return &logpb.LogEntry{
 		StreamIndex: uint64(idx),
-		Content: &protocol.LogEntry_Text{
-			Text: &protocol.Text{
-				Lines: []*protocol.Text_Line{
+		Content: &logpb.LogEntry_Text{
+			Text: &logpb.Text{
+				Lines: []*logpb.Text_Line{
 					{Value: id},
 				},
 			},
@@ -77,7 +77,7 @@ func TestStream(t *testing.T) {
 				})
 
 				Convey(`Will request a specific number of logs if a slice is supplied.`, func() {
-					logSlice := make([]*protocol.LogEntry, 64)
+					logSlice := make([]*logpb.LogEntry, 64)
 					p = p.Logs(logSlice, 32)
 
 					var req *http.Request
@@ -93,7 +93,7 @@ func TestStream(t *testing.T) {
 
 					l, err := s.Get(ctx, p)
 					So(err, ShouldBeNil)
-					So(l, ShouldResembleV, []*protocol.LogEntry{genLog(1337, "ohai")})
+					So(l, ShouldResembleV, []*logpb.LogEntry{genLog(1337, "ohai")})
 
 					// It should have populated the input "logSlice".
 					So(l, ShouldResembleV, logSlice[:1])
@@ -144,24 +144,24 @@ func TestStream(t *testing.T) {
 								Created: timeString(now),
 								Updated: timeString(now),
 							},
-							DescriptorProto: b64Proto(&protocol.LogStreamDescriptor{
+							DescriptorProto: b64Proto(&logpb.LogStreamDescriptor{
 								Prefix:     "test",
 								Name:       "a",
-								StreamType: protocol.LogStreamDescriptor_TEXT,
+								StreamType: logpb.LogStreamDescriptor_TEXT,
 							}),
 						}, nil
 					}
 
 					l, err := s.Get(ctx, p)
 					So(err, ShouldBeNil)
-					So(l, ShouldResembleV, []*protocol.LogEntry{genLog(1337, "kthxbye")})
+					So(l, ShouldResembleV, []*logpb.LogEntry{genLog(1337, "kthxbye")})
 					So(st, ShouldResembleV, StreamState{
 						Created: now.UTC(),
 						Updated: now.UTC(),
-						Descriptor: &protocol.LogStreamDescriptor{
+						Descriptor: &logpb.LogStreamDescriptor{
 							Prefix:     "test",
 							Name:       "a",
-							StreamType: protocol.LogStreamDescriptor_TEXT,
+							StreamType: logpb.LogStreamDescriptor_TEXT,
 						},
 					})
 				})
@@ -204,10 +204,10 @@ func TestStream(t *testing.T) {
 								Created: timeString(now),
 								Updated: timeString(now),
 							},
-							DescriptorProto: b64Proto(&protocol.LogStreamDescriptor{
+							DescriptorProto: b64Proto(&logpb.LogStreamDescriptor{
 								Prefix:     "test",
 								Name:       "a",
-								StreamType: protocol.LogStreamDescriptor_TEXT,
+								StreamType: logpb.LogStreamDescriptor_TEXT,
 							}),
 							Logs: []*logs.GetLogEntry{
 								{Proto: b64Proto(genLog(1337, "kthxbye"))},
@@ -231,10 +231,10 @@ func TestStream(t *testing.T) {
 					So(st, ShouldResembleV, StreamState{
 						Created: now.UTC(),
 						Updated: now.UTC(),
-						Descriptor: &protocol.LogStreamDescriptor{
+						Descriptor: &logpb.LogStreamDescriptor{
 							Prefix:     "test",
 							Name:       "a",
-							StreamType: protocol.LogStreamDescriptor_TEXT,
+							StreamType: logpb.LogStreamDescriptor_TEXT,
 						},
 					})
 				})
@@ -246,10 +246,10 @@ func TestStream(t *testing.T) {
 								Created: timeString(now),
 								Updated: timeString(now),
 							},
-							DescriptorProto: b64Proto(&protocol.LogStreamDescriptor{
+							DescriptorProto: b64Proto(&logpb.LogStreamDescriptor{
 								Prefix:     "test",
 								Name:       "a",
-								StreamType: protocol.LogStreamDescriptor_TEXT,
+								StreamType: logpb.LogStreamDescriptor_TEXT,
 							}),
 						}, nil
 					}
@@ -261,10 +261,10 @@ func TestStream(t *testing.T) {
 					So(st, ShouldResembleV, StreamState{
 						Created: now.UTC(),
 						Updated: now.UTC(),
-						Descriptor: &protocol.LogStreamDescriptor{
+						Descriptor: &logpb.LogStreamDescriptor{
 							Prefix:     "test",
 							Name:       "a",
-							StreamType: protocol.LogStreamDescriptor_TEXT,
+							StreamType: logpb.LogStreamDescriptor_TEXT,
 						},
 					})
 				})

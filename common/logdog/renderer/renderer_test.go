@@ -9,17 +9,17 @@ import (
 	"io"
 	"testing"
 
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 // testSource implements the Source interface using stubbed data.
 type testSource struct {
-	logs []*protocol.LogEntry
+	logs []*logpb.LogEntry
 	err  error
 }
 
-func (ts *testSource) NextLogEntry() (*protocol.LogEntry, error) {
+func (ts *testSource) NextLogEntry() (*logpb.LogEntry, error) {
 	if ts.err != nil {
 		return nil, ts.err
 	}
@@ -27,20 +27,20 @@ func (ts *testSource) NextLogEntry() (*protocol.LogEntry, error) {
 		return nil, io.EOF
 	}
 
-	var le *protocol.LogEntry
+	var le *logpb.LogEntry
 	le, ts.logs = ts.logs[0], ts.logs[1:]
 	return le, nil
 }
 
-func (ts *testSource) loadLogEntry(le *protocol.LogEntry) {
+func (ts *testSource) loadLogEntry(le *logpb.LogEntry) {
 	ts.logs = append(ts.logs, le)
 }
 
 func (ts *testSource) loadText(line, delim string) {
-	ts.loadLogEntry(&protocol.LogEntry{
-		Content: &protocol.LogEntry_Text{
-			Text: &protocol.Text{
-				Lines: []*protocol.Text_Line{
+	ts.loadLogEntry(&logpb.LogEntry{
+		Content: &logpb.LogEntry_Text{
+			Text: &logpb.Text{
+				Lines: []*logpb.Text_Line{
 					{
 						Value:     line,
 						Delimiter: delim,
@@ -52,9 +52,9 @@ func (ts *testSource) loadText(line, delim string) {
 }
 
 func (ts *testSource) loadBinary(data []byte) {
-	ts.loadLogEntry(&protocol.LogEntry{
-		Content: &protocol.LogEntry_Binary{
-			Binary: &protocol.Binary{
+	ts.loadLogEntry(&logpb.LogEntry{
+		Content: &logpb.LogEntry_Binary{
+			Binary: &logpb.Binary{
 				Data: data,
 			},
 		},
@@ -138,7 +138,7 @@ func TestRenderer(t *testing.T) {
 		})
 
 		Convey(`With empty log entries, renders nothing.`, func() {
-			ts.loadLogEntry(&protocol.LogEntry{})
+			ts.loadLogEntry(&logpb.LogEntry{})
 			c, err := b.ReadFrom(r)
 			So(err, ShouldBeNil)
 			So(c, ShouldEqual, 0)

@@ -14,9 +14,9 @@ import (
 
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	ta "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
@@ -111,10 +111,10 @@ func testHandshakeProtocol(t *testing.T, verbose bool) {
 
 			Convey(`Should produce a valid stream configuration.`, func() {
 				So(props, ta.ShouldResembleV, &streamproto.Properties{
-					LogStreamDescriptor: protocol.LogStreamDescriptor{
+					LogStreamDescriptor: logpb.LogStreamDescriptor{
 						Name:        "test",
 						Timestamp:   google.NewTimestamp(tc.Now()),
-						StreamType:  protocol.LogStreamDescriptor_TEXT,
+						StreamType:  logpb.LogStreamDescriptor_TEXT,
 						ContentType: string(types.ContentTypeText),
 					},
 				})
@@ -132,11 +132,11 @@ func testHandshakeProtocol(t *testing.T, verbose bool) {
 
 			Convey(`Should produce a specific configuration.`, func() {
 				So(props, ta.ShouldResembleV, &streamproto.Properties{
-					LogStreamDescriptor: protocol.LogStreamDescriptor{
+					LogStreamDescriptor: logpb.LogStreamDescriptor{
 						Name:        "test",
 						ContentType: "text/plain",
 						Timestamp:   google.NewTimestamp(time.Date(2015, 05, 07, 1, 29, 51, 0, time.UTC)),
-						Tags: []*protocol.LogStreamDescriptor_Tag{
+						Tags: []*logpb.LogStreamDescriptor_Tag{
 							{Key: "baz", Value: "qux"},
 							{Key: "foo", Value: "bar"},
 						},

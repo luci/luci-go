@@ -11,9 +11,9 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/client/internal/logdog/butler/output"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"golang.org/x/net/context"
 )
 
@@ -44,7 +44,7 @@ func New(ctx context.Context, bundleSize int) output.Output {
 	return &o
 }
 
-func (o *logOutput) SendBundle(bundle *protocol.ButlerLogBundle) error {
+func (o *logOutput) SendBundle(bundle *logpb.ButlerLogBundle) error {
 	o.Lock()
 	defer o.Unlock()
 

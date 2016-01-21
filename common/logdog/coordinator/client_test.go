@@ -15,7 +15,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 // "now" for our tests.
@@ -69,14 +69,14 @@ func (t *testRT) RoundTrip(req *http.Request) (*http.Response, error) {
 	return &resp, nil
 }
 
-func gen(name string, pb *protocol.LogStreamDescriptor, state *logs.LogStreamState) *logs.QueryResponseStream {
+func gen(name string, pb *logpb.LogStreamDescriptor, state *logs.LogStreamState) *logs.QueryResponseStream {
 	qrs := logs.QueryResponseStream{
 		Path:  fmt.Sprintf("test/+/%s", name),
 		State: state,
 	}
 
 	if pb != nil {
-		d, err := proto.Marshal(&protocol.LogStreamDescriptor{
+		d, err := proto.Marshal(&logpb.LogStreamDescriptor{
 			Prefix: "test",
 			Name:   name,
 		})

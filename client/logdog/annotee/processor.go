@@ -19,11 +19,11 @@ import (
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/clockflag"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/meter"
 	"github.com/luci/luci-go/common/parallel"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"golang.org/x/net/context"
 )
 
@@ -40,12 +40,12 @@ const (
 var (
 	textStreamArchetype = streamproto.Flags{
 		ContentType: string(types.ContentTypeText),
-		Type:        streamproto.StreamType(protocol.LogStreamDescriptor_TEXT),
+		Type:        streamproto.StreamType(logpb.LogStreamDescriptor_TEXT),
 	}
 
 	metadataStreamArchetype = streamproto.Flags{
 		ContentType: string(types.ContentTypeAnnotations),
-		Type:        streamproto.StreamType(protocol.LogStreamDescriptor_DATAGRAM),
+		Type:        streamproto.StreamType(logpb.LogStreamDescriptor_DATAGRAM),
 	}
 )
 

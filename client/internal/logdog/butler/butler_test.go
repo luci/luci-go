@@ -16,8 +16,8 @@ import (
 	"github.com/luci/luci-go/client/internal/logdog/butler/output"
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
@@ -28,11 +28,11 @@ type testOutput struct {
 
 	err     error
 	maxSize int
-	streams map[string][]*protocol.LogEntry
+	streams map[string][]*logpb.LogEntry
 	closed  bool
 }
 
-func (to *testOutput) SendBundle(b *protocol.ButlerLogBundle) error {
+func (to *testOutput) SendBundle(b *logpb.ButlerLogBundle) error {
 	if to.err != nil {
 		return to.err
 	}
@@ -41,7 +41,7 @@ func (to *testOutput) SendBundle(b *protocol.ButlerLogBundle) error {
 	defer to.Unlock()
 
 	if to.streams == nil {
-		to.streams = map[string][]*protocol.LogEntry{}
+		to.streams = map[string][]*logpb.LogEntry{}
 	}
 	for _, be := range b.Entries {
 		path := string(be.Desc.Path())
@@ -65,7 +65,7 @@ func (to *testOutput) Close() {
 	to.closed = true
 }
 
-func (to *testOutput) logs(stream string) []*protocol.LogEntry {
+func (to *testOutput) logs(stream string) []*logpb.LogEntry {
 	to.Lock()
 	defer to.Unlock()
 
@@ -75,7 +75,7 @@ func (to *testOutput) logs(stream string) []*protocol.LogEntry {
 func shouldHaveTextLogs(actual interface{}, expected ...interface{}) string {
 	unexpected := []string(nil)
 	count := 0
-	for _, le := range actual.([]*protocol.LogEntry) {
+	for _, le := range actual.([]*logpb.LogEntry) {
 		if le.GetText() == nil {
 			return fmt.Sprintf("non-text entry: %T %#v", le, le)
 		}
@@ -288,9 +288,9 @@ func TestButler(t *testing.T) {
 
 		Convey(`Using a generic stream Properties`, func() {
 			props := streamproto.Properties{
-				LogStreamDescriptor: protocol.LogStreamDescriptor{
+				LogStreamDescriptor: logpb.LogStreamDescriptor{
 					Name:        "test",
-					StreamType:  protocol.LogStreamDescriptor_TEXT,
+					StreamType:  logpb.LogStreamDescriptor_TEXT,
 					ContentType: string(types.ContentTypeText),
 				},
 			}

@@ -13,8 +13,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 // LogStreamState is the archival state of the log stream.
@@ -211,8 +211,8 @@ func (s *LogStream) Validate() error {
 	}
 
 	switch s.StreamType {
-	case protocol.LogStreamDescriptor_TEXT, protocol.LogStreamDescriptor_BINARY,
-		protocol.LogStreamDescriptor_DATAGRAM:
+	case logpb.LogStreamDescriptor_TEXT, logpb.LogStreamDescriptor_BINARY,
+		logpb.LogStreamDescriptor_DATAGRAM:
 		break
 
 	default:
@@ -257,7 +257,7 @@ func (s *LogStream) Archived() bool {
 //   - Descriptor
 //   - Timestamp
 //   - Tags
-func (s *LogStream) LoadDescriptor(desc *protocol.LogStreamDescriptor) error {
+func (s *LogStream) LoadDescriptor(desc *logpb.LogStreamDescriptor) error {
 	if err := desc.Validate(true); err != nil {
 		return fmt.Errorf("invalid descriptor: %s", err)
 	}
@@ -291,8 +291,8 @@ func (s *LogStream) LoadDescriptor(desc *protocol.LogStreamDescriptor) error {
 
 // DescriptorProto unmarshals a LogStreamDescriptor from the stream's Descriptor
 // field. It will return an error if the unmarshalling fails.
-func (s *LogStream) DescriptorProto() (*protocol.LogStreamDescriptor, error) {
-	desc := protocol.LogStreamDescriptor{}
+func (s *LogStream) DescriptorProto() (*logpb.LogStreamDescriptor, error) {
+	desc := logpb.LogStreamDescriptor{}
 	if err := proto.Unmarshal(s.Descriptor, &desc); err != nil {
 		return nil, err
 	}

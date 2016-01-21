@@ -9,24 +9,24 @@ import (
 	"flag"
 
 	"github.com/luci/luci-go/client/internal/flags/flagenum"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 // StreamType is a flag- and JSON-compatible wrapper around the StreamType
 // protobuf field.
-type StreamType protocol.LogStreamDescriptor_StreamType
+type StreamType logpb.LogStreamDescriptor_StreamType
 
 // DefaultContentType returns the default ContentType for a given stream type.
 func (t StreamType) DefaultContentType() types.ContentType {
-	switch protocol.LogStreamDescriptor_StreamType(t) {
-	case protocol.LogStreamDescriptor_TEXT:
+	switch logpb.LogStreamDescriptor_StreamType(t) {
+	case logpb.LogStreamDescriptor_TEXT:
 		return types.ContentTypeText
 
-	case protocol.LogStreamDescriptor_DATAGRAM:
+	case logpb.LogStreamDescriptor_DATAGRAM:
 		return types.ContentTypeLogdogDatagram
 
-	case protocol.LogStreamDescriptor_BINARY:
+	case logpb.LogStreamDescriptor_BINARY:
 		fallthrough
 	default:
 		return types.ContentTypeBinary
@@ -42,9 +42,9 @@ var _ interface {
 var (
 	// StreamTypeFlagEnum maps configuration strings to their underlying StreamTypes.
 	StreamTypeFlagEnum = flagenum.Enum{
-		"text":     StreamType(protocol.LogStreamDescriptor_TEXT),
-		"binary":   StreamType(protocol.LogStreamDescriptor_BINARY),
-		"datagram": StreamType(protocol.LogStreamDescriptor_DATAGRAM),
+		"text":     StreamType(logpb.LogStreamDescriptor_TEXT),
+		"binary":   StreamType(logpb.LogStreamDescriptor_BINARY),
+		"datagram": StreamType(logpb.LogStreamDescriptor_DATAGRAM),
 	}
 )
 

@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 var (
@@ -30,10 +30,10 @@ const (
 )
 
 func init() {
-	b := &protocol.ButlerLogBundle{}
+	b := &logpb.ButlerLogBundle{}
 	sizeOfBundleEntryTag = mustCalculateTagSize(b, "Entries")
 
-	be := &protocol.ButlerLogBundle_Entry{}
+	be := &logpb.ButlerLogBundle_Entry{}
 	sizeOfLogEntryTag = mustCalculateTagSize(be, "Logs")
 	sizeOfTerminalTag = mustCalculateTagSize(be, "Terminal")
 	sizeOfTerminalIndexTag = mustCalculateTagSize(be, "TerminalIndex")

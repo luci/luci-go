@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/chunkstream"
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/recordio"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -71,17 +71,17 @@ func TestDatagramParser(t *testing.T) {
 			Convey(`Yields the 3 datagrams as individual LogEntry.`, func() {
 				le, err := p.nextEntry(c)
 				So(err, ShouldBeNil)
-				So(le, shouldMatchLogEntry, s.le(0, protocol.Datagram{
+				So(le, shouldMatchLogEntry, s.le(0, logpb.Datagram{
 					Data: []byte{0xca, 0xfe},
 				}))
 
 				le, err = p.nextEntry(c)
 				So(err, ShouldBeNil)
-				So(le, shouldMatchLogEntry, s.add(2*time.Second).le(1, protocol.Datagram{}))
+				So(le, shouldMatchLogEntry, s.add(2*time.Second).le(1, logpb.Datagram{}))
 
 				le, err = p.nextEntry(c)
 				So(err, ShouldBeNil)
-				So(le, shouldMatchLogEntry, s.add(time.Second).le(2, protocol.Datagram{
+				So(le, shouldMatchLogEntry, s.add(time.Second).le(2, logpb.Datagram{
 					Data: []byte{0xd0, 0x65, 0x10, 0xbb, 0x12},
 				}))
 			})
@@ -92,13 +92,13 @@ func TestDatagramParser(t *testing.T) {
 				Convey(`When not truncating, only yields the first two datagrams.`, func() {
 					le, err := p.nextEntry(c)
 					So(err, ShouldBeNil)
-					So(le, shouldMatchLogEntry, s.le(0, protocol.Datagram{
+					So(le, shouldMatchLogEntry, s.le(0, logpb.Datagram{
 						Data: []byte{0xca, 0xfe},
 					}))
 
 					le, err = p.nextEntry(c)
 					So(err, ShouldBeNil)
-					So(le, shouldMatchLogEntry, s.add(2*time.Second).le(1, protocol.Datagram{}))
+					So(le, shouldMatchLogEntry, s.add(2*time.Second).le(1, logpb.Datagram{}))
 
 					le, err = p.nextEntry(c)
 					So(err, ShouldBeNil)
@@ -111,19 +111,19 @@ func TestDatagramParser(t *testing.T) {
 
 					le, err := p.nextEntry(c)
 					So(err, ShouldBeNil)
-					So(le, shouldMatchLogEntry, s.le(0, protocol.Datagram{
+					So(le, shouldMatchLogEntry, s.le(0, logpb.Datagram{
 						Data: []byte{0xca, 0xfe},
 					}))
 
 					le, err = p.nextEntry(c)
 					So(err, ShouldBeNil)
-					So(le, shouldMatchLogEntry, s.add(2*time.Second).le(1, protocol.Datagram{}))
+					So(le, shouldMatchLogEntry, s.add(2*time.Second).le(1, logpb.Datagram{}))
 
 					le, err = p.nextEntry(c)
 					So(err, ShouldBeNil)
-					So(le, shouldMatchLogEntry, s.add(time.Second).le(2, protocol.Datagram{
+					So(le, shouldMatchLogEntry, s.add(time.Second).le(2, logpb.Datagram{
 						Data: []byte{0xd0, 0x65},
-						Partial: &protocol.Datagram_Partial{
+						Partial: &logpb.Datagram_Partial{
 							Size:  5,
 							Index: 0,
 						},
@@ -131,9 +131,9 @@ func TestDatagramParser(t *testing.T) {
 
 					le, err = p.nextEntry(c)
 					So(err, ShouldBeNil)
-					So(le, shouldMatchLogEntry, s.add(time.Second).le(2, protocol.Datagram{
+					So(le, shouldMatchLogEntry, s.add(time.Second).le(2, logpb.Datagram{
 						Data: []byte{0x10, 0xbb},
-						Partial: &protocol.Datagram_Partial{
+						Partial: &logpb.Datagram_Partial{
 							Size:  5,
 							Index: 1,
 						},
@@ -141,9 +141,9 @@ func TestDatagramParser(t *testing.T) {
 
 					le, err = p.nextEntry(c)
 					So(err, ShouldBeNil)
-					So(le, shouldMatchLogEntry, s.add(time.Second).le(2, protocol.Datagram{
+					So(le, shouldMatchLogEntry, s.add(time.Second).le(2, logpb.Datagram{
 						Data: []byte{0x12},
-						Partial: &protocol.Datagram_Partial{
+						Partial: &logpb.Datagram_Partial{
 							Size:  5,
 							Index: 2,
 							Last:  true,

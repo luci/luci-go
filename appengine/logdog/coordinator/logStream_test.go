@@ -14,9 +14,9 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
@@ -61,13 +61,13 @@ func TestLogStream(t *testing.T) {
 		c = memory.Use(c)
 		tds := ds.Get(c).Testable()
 
-		desc := protocol.LogStreamDescriptor{
+		desc := logpb.LogStreamDescriptor{
 			Prefix:      "testing",
 			Name:        "log/stream",
-			StreamType:  protocol.LogStreamDescriptor_TEXT,
+			StreamType:  logpb.LogStreamDescriptor_TEXT,
 			ContentType: "application/text",
 			Timestamp:   google.NewTimestamp(clock.Now(c)),
-			Tags: []*protocol.LogStreamDescriptor_Tag{
+			Tags: []*logpb.LogStreamDescriptor_Tag{
 				{"foo", "bar"},
 				{"baz", "qux"},
 				{"quux", ""},

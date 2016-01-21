@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -24,7 +24,7 @@ func TestStreamType(t *testing.T) {
 		Convey(`Can be loaded as a flag.`, func() {
 			err := fs.Parse([]string{"-stream-type", "datagram"})
 			So(err, ShouldBeNil)
-			So(value, ShouldEqual, protocol.LogStreamDescriptor_DATAGRAM)
+			So(value, ShouldEqual, logpb.LogStreamDescriptor_DATAGRAM)
 		})
 
 		Convey(`Will unmmarshal from JSON.`, func() {
@@ -34,24 +34,24 @@ func TestStreamType(t *testing.T) {
 
 			err := json.Unmarshal([]byte(`{"value": "text"}`), &s)
 			So(err, ShouldBeNil)
-			So(s.Value, ShouldEqual, protocol.LogStreamDescriptor_TEXT)
+			So(s.Value, ShouldEqual, logpb.LogStreamDescriptor_TEXT)
 		})
 
 		Convey(`Will marshal to JSON.`, func() {
 			var s struct {
 				Value StreamType `json:"value"`
 			}
-			s.Value = StreamType(protocol.LogStreamDescriptor_BINARY)
+			s.Value = StreamType(logpb.LogStreamDescriptor_BINARY)
 
 			v, err := json.Marshal(&s)
 			So(err, ShouldBeNil)
 			So(string(v), ShouldResemble, `{"value":"binary"}`)
 		})
 
-		for _, t := range []protocol.LogStreamDescriptor_StreamType{
-			protocol.LogStreamDescriptor_TEXT,
-			protocol.LogStreamDescriptor_BINARY,
-			protocol.LogStreamDescriptor_DATAGRAM,
+		for _, t := range []logpb.LogStreamDescriptor_StreamType{
+			logpb.LogStreamDescriptor_TEXT,
+			logpb.LogStreamDescriptor_BINARY,
+			logpb.LogStreamDescriptor_DATAGRAM,
 		} {
 			Convey(fmt.Sprintf(`Stream type [%s] has a default content type.`, t), func() {
 				st := StreamType(t)

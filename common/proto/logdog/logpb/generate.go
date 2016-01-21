@@ -4,11 +4,11 @@
 
 //go:generate cproto
 
-// Package protocol contains LogDog protobuf source and generated protobuf data.
+// Package logpb contains LogDog protobuf source and generated protobuf data.
 //
 // The package name here must match the protobuf package name, as the generated
 // files will reside in the same directory.
-package protocol
+package logpb
 
 import (
 	"github.com/golang/protobuf/proto"

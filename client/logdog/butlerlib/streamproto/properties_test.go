@@ -11,9 +11,9 @@ import (
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	ta "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
@@ -28,7 +28,7 @@ func TestProperties(t *testing.T) {
 
 			Convey(`Returns the configured ContentType if one is set.`, func() {
 				p.ContentType = "foo/bar"
-				p.StreamType = protocol.LogStreamDescriptor_TEXT
+				p.StreamType = logpb.LogStreamDescriptor_TEXT
 				So(p.ContentType, ShouldEqual, "foo/bar")
 			})
 
@@ -61,10 +61,10 @@ func TestFlags(t *testing.T) {
 		Convey(`Converts to Properties.`, func() {
 			p := f.Properties()
 			So(p, ta.ShouldResembleV, &Properties{
-				LogStreamDescriptor: protocol.LogStreamDescriptor{
+				LogStreamDescriptor: logpb.LogStreamDescriptor{
 					Name:        "my/stream",
 					ContentType: "foo/bar",
-					StreamType:  protocol.LogStreamDescriptor_TEXT,
+					StreamType:  logpb.LogStreamDescriptor_TEXT,
 				},
 				Tee: TeeNone,
 			})
@@ -80,10 +80,10 @@ func TestFlagsJSON(t *testing.T) {
 			So(json.Unmarshal([]byte(t), &f), ShouldBeNil)
 
 			So(f.Properties(), ta.ShouldResembleV, &Properties{
-				LogStreamDescriptor: protocol.LogStreamDescriptor{
+				LogStreamDescriptor: logpb.LogStreamDescriptor{
 					Name:        "my/stream",
 					ContentType: "foo/bar",
-					StreamType:  protocol.LogStreamDescriptor_TEXT,
+					StreamType:  logpb.LogStreamDescriptor_TEXT,
 				},
 				Tee: TeeNone,
 			})
@@ -99,9 +99,9 @@ func TestFlagsJSON(t *testing.T) {
 			So(json.Unmarshal([]byte(t), &f), ShouldBeNil)
 
 			So(f.Properties(), ta.ShouldResembleV, &Properties{
-				LogStreamDescriptor: protocol.LogStreamDescriptor{
+				LogStreamDescriptor: logpb.LogStreamDescriptor{
 					Name:        "my/stream",
-					StreamType:  protocol.LogStreamDescriptor_BINARY,
+					StreamType:  logpb.LogStreamDescriptor_BINARY,
 					ContentType: string(types.ContentTypeBinary),
 				},
 				Tee: TeeNone,
@@ -113,9 +113,9 @@ func TestFlagsJSON(t *testing.T) {
 			So(json.Unmarshal([]byte(t), &f), ShouldBeNil)
 
 			So(f.Properties(), ta.ShouldResembleV, &Properties{
-				LogStreamDescriptor: protocol.LogStreamDescriptor{
+				LogStreamDescriptor: logpb.LogStreamDescriptor{
 					Name:        "my/stream",
-					StreamType:  protocol.LogStreamDescriptor_DATAGRAM,
+					StreamType:  logpb.LogStreamDescriptor_DATAGRAM,
 					ContentType: string(types.ContentTypeLogdogDatagram),
 				},
 				Tee: TeeNone,

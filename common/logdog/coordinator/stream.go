@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"golang.org/x/net/context"
 )
 
@@ -27,7 +27,7 @@ type StreamState struct {
 	Updated time.Time
 
 	// Descriptor is the log stream's descriptor message.
-	Descriptor *protocol.LogStreamDescriptor
+	Descriptor *logpb.LogStreamDescriptor
 
 	// TerminalIndex is the stream index of the log stream's terminal message. If
 	// its value is <0, then the log stream has not terminated yet.
@@ -94,7 +94,7 @@ type Stream struct {
 // Get retrieves log stream entries from the Coordinator. The supplied
 // parameters shape which entries are requested and what information is
 // returned.
-func (s *Stream) Get(ctx context.Context, p *StreamGetParams) ([]*protocol.LogEntry, error) {
+func (s *Stream) Get(ctx context.Context, p *StreamGetParams) ([]*logpb.LogEntry, error) {
 	if p == nil {
 		p = &StreamGetParams{}
 	}
@@ -147,7 +147,7 @@ func (s *Stream) Get(ctx context.Context, p *StreamGetParams) ([]*protocol.LogEn
 // Tail performs a tail call, returning the last log entry in the stream. If
 // stateP is not nil, the stream's state will be requested and loaded into the
 // variable.
-func (s *Stream) Tail(ctx context.Context, stateP *StreamState) (*protocol.LogEntry, error) {
+func (s *Stream) Tail(ctx context.Context, stateP *StreamState) (*logpb.LogEntry, error) {
 	req := s.c.svc.Get().Path(string(s.path))
 	req.Tail(true)
 	if stateP != nil {
@@ -164,7 +164,7 @@ func (s *Stream) Tail(ctx context.Context, stateP *StreamState) (*protocol.LogEn
 		return nil, err
 	}
 
-	var le *protocol.LogEntry
+	var le *logpb.LogEntry
 	switch len(resp.Logs) {
 	case 0:
 		break
@@ -194,7 +194,7 @@ func loadStatePointer(stateP *StreamState, resp *logs.GetResponse) error {
 		return err
 	}
 
-	desc := protocol.LogStreamDescriptor{}
+	desc := logpb.LogStreamDescriptor{}
 	if err := b64Decode(resp.DescriptorProto, &desc); err != nil {
 		return fmt.Errorf("failed to base64-decode LogStreamDescriptor: %v", err)
 	}
@@ -204,8 +204,8 @@ func loadStatePointer(stateP *StreamState, resp *logs.GetResponse) error {
 	return nil
 }
 
-func decodeLogEntry(gle *logs.GetLogEntry) (*protocol.LogEntry, error) {
-	le := protocol.LogEntry{}
+func decodeLogEntry(gle *logs.GetLogEntry) (*logpb.LogEntry, error) {
+	le := logpb.LogEntry{}
 	if err := b64Decode(gle.Proto, &le); err != nil {
 		return nil, err
 	}

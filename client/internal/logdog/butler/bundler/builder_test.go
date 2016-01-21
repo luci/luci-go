@@ -12,22 +12,22 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func parse(desc string) (*protocol.ButlerLogBundle_Entry, []*protocol.LogEntry) {
+func parse(desc string) (*logpb.ButlerLogBundle_Entry, []*logpb.LogEntry) {
 	comp := strings.Split(desc, ":")
 	name, entries := comp[0], comp[1:]
 
-	be := &protocol.ButlerLogBundle_Entry{
-		Desc: &protocol.LogStreamDescriptor{
+	be := &logpb.ButlerLogBundle_Entry{
+		Desc: &logpb.LogStreamDescriptor{
 			Name: name,
 		},
 	}
 
-	logs := make([]*protocol.LogEntry, len(entries))
+	logs := make([]*logpb.LogEntry, len(entries))
 	for idx, l := range entries {
 		comp := strings.SplitN(l, "@", 2)
 		key, size := comp[0], 0
@@ -35,9 +35,9 @@ func parse(desc string) (*protocol.ButlerLogBundle_Entry, []*protocol.LogEntry) 
 			size, _ = strconv.Atoi(comp[1])
 		}
 
-		le := &protocol.LogEntry{
-			Content: &protocol.LogEntry_Text{Text: &protocol.Text{
-				Lines: []*protocol.Text_Line{
+		le := &logpb.LogEntry{
+			Content: &logpb.LogEntry_Text{Text: &logpb.Text{
+				Lines: []*logpb.Text_Line{
 					{Value: key},
 				},
 			}},
@@ -47,7 +47,7 @@ func parse(desc string) (*protocol.ButlerLogBundle_Entry, []*protocol.LogEntry) 
 		if size > 0 {
 			missing := size - protoSize(le)
 			if missing > 0 {
-				le.GetText().Lines = append(le.GetText().Lines, &protocol.Text_Line{
+				le.GetText().Lines = append(le.GetText().Lines, &logpb.Text_Line{
 					Value: strings.Repeat("!", missing),
 				})
 			}
@@ -69,13 +69,13 @@ func parse(desc string) (*protocol.ButlerLogBundle_Entry, []*protocol.LogEntry) 
 // cause additional data to be generated to pad the LogEntry out to the desired
 // size. This is currently an approximation, as it doesn't take into account
 // tag/array size overhead of the additional data.
-func gen(desc string) *protocol.ButlerLogBundle_Entry {
+func gen(desc string) *logpb.ButlerLogBundle_Entry {
 	be, logs := parse(desc)
 	be.Logs = logs
 	return be
 }
 
-func logEntryName(le *protocol.LogEntry) string {
+func logEntryName(le *logpb.LogEntry) string {
 	t := le.GetText()
 	if t == nil || len(t.Lines) == 0 {
 		return ""
@@ -89,7 +89,7 @@ func logEntryName(le *protocol.LogEntry) string {
 //   "a:1:2:3": a bundle entry keyed on "a" with three log entries, each keyed on
 //            "1", "2", and "3" respectively.
 func shouldHaveBundleEntries(actual interface{}, expected ...interface{}) string {
-	bundle := actual.(*protocol.ButlerLogBundle)
+	bundle := actual.(*logpb.ButlerLogBundle)
 
 	errors := []string{}
 	fail := func(f string, args ...interface{}) {
@@ -121,7 +121,7 @@ func shouldHaveBundleEntries(actual interface{}, expected ...interface{}) string
 		}
 	}
 
-	entries := make(map[string]*protocol.ButlerLogBundle_Entry)
+	entries := make(map[string]*logpb.ButlerLogBundle_Entry)
 	for _, be := range bundle.Entries {
 		entries[be.Desc.Name] = be
 	}
@@ -168,7 +168,7 @@ func TestBuilder(t *testing.T) {
 	Convey(`A builder`, t, func() {
 		tc := testclock.New(time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 		b := &builder{
-			template: protocol.ButlerLogBundle{
+			template: logpb.ButlerLogBundle{
 				Source:    "Test Source",
 				Timestamp: google.NewTimestamp(tc.Now()),
 			},

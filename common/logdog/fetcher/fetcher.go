@@ -11,9 +11,9 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"golang.org/x/net/context"
 )
 
@@ -48,7 +48,7 @@ type Source interface {
 	//
 	// Upon success, the requested logs and terminal message index is returned. If
 	// no terminal index is known, a value <0 will be returned.
-	LogEntries(context.Context, *LogRequest) ([]*protocol.LogEntry, types.MessageIndex, error)
+	LogEntries(context.Context, *LogRequest) ([]*logpb.LogEntry, types.MessageIndex, error)
 }
 
 // Options is the set of configuration parameters for a Fetcher.
@@ -131,7 +131,7 @@ func New(c context.Context, o Options) *Fetcher {
 }
 
 type logResponse struct {
-	log   *protocol.LogEntry
+	log   *logpb.LogEntry
 	size  int64
 	index types.MessageIndex
 	err   error
@@ -144,8 +144,8 @@ type logResponse struct {
 // io.EOF.
 //
 // If the Fetcher is cancelled, a context.Canceled error will be returned.
-func (f *Fetcher) NextLogEntry() (*protocol.LogEntry, error) {
-	var le *protocol.LogEntry
+func (f *Fetcher) NextLogEntry() (*logpb.LogEntry, error) {
+	var le *logpb.LogEntry
 	if f.fetchErr == nil {
 		resp := <-f.logC
 		if resp.err != nil {
@@ -166,7 +166,7 @@ type fetchRequest struct {
 }
 
 type fetchResponse struct {
-	logs []*protocol.LogEntry
+	logs []*logpb.LogEntry
 	tidx types.MessageIndex
 	err  error
 }
@@ -354,7 +354,7 @@ func (f *Fetcher) fetchLogs(c context.Context, req *fetchRequest) {
 	}
 }
 
-func (f *Fetcher) sizeOf(le *protocol.LogEntry) int64 {
+func (f *Fetcher) sizeOf(le *logpb.LogEntry) int64 {
 	sf := f.sizeFunc
 	if sf == nil {
 		sf = proto.Size

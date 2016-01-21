@@ -15,8 +15,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamclient"
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/proto/milo"
 )
 
@@ -67,7 +67,7 @@ func (c *filesystemClient) NewStream(f streamproto.Flags) (streamclient.Stream, 
 		filesystemClient: c,
 		baseName:         sanitize(string(f.Name)),
 		contentType:      f.ContentType,
-		streamType:       protocol.LogStreamDescriptor_StreamType(f.Type),
+		streamType:       logpb.LogStreamDescriptor_StreamType(f.Type),
 	}
 
 	// Open our output file for writing.
@@ -79,7 +79,7 @@ type filesystemClientStream struct {
 
 	baseName    string
 	contentType string
-	streamType  protocol.LogStreamDescriptor_StreamType
+	streamType  logpb.LogStreamDescriptor_StreamType
 
 	writer io.WriteCloser
 	dgIdx  int
@@ -98,7 +98,7 @@ func (s *filesystemClientStream) Write(d []byte) (int, error) {
 	if s.writer == nil {
 		filename := ""
 		switch s.streamType {
-		case protocol.LogStreamDescriptor_TEXT:
+		case logpb.LogStreamDescriptor_TEXT:
 			filename = s.getFilename(s.baseName, "txt")
 
 		default:

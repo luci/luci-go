@@ -11,8 +11,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"golang.org/x/net/context"
 )
 
@@ -105,14 +105,14 @@ type QueryStream struct {
 	State *StreamState
 
 	// descriptor is the cached decoded LogStreamDescriptor protobuf.
-	descriptor *protocol.LogStreamDescriptor
+	descriptor *logpb.LogStreamDescriptor
 }
 
 // Descriptor returns the unmarshalled LogStreamDescriptor protobuf for this
 // query response.
-func (qs *QueryStream) Descriptor() (*protocol.LogStreamDescriptor, error) {
+func (qs *QueryStream) Descriptor() (*logpb.LogStreamDescriptor, error) {
 	if qs.descriptor == nil {
-		desc := protocol.LogStreamDescriptor{}
+		desc := logpb.LogStreamDescriptor{}
 		if err := proto.Unmarshal(qs.DescriptorProto, &desc); err != nil {
 			return nil, err
 		}

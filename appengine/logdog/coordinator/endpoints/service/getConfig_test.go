@@ -12,7 +12,7 @@ import (
 	"github.com/luci/luci-go/appengine/gaesettings"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
-	"github.com/luci/luci-go/common/proto/logdog/services"
+	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/settings"
@@ -35,7 +35,7 @@ func TestGetConfig(t *testing.T) {
 			},
 		}
 
-		c = ct.UseConfig(c, &services.Coordinator{
+		c = ct.UseConfig(c, &svcconfig.Coordinator{
 			ServiceAuthGroup: "test-services",
 		})
 		fs := authtest.FakeState{}
@@ -48,7 +48,7 @@ func TestGetConfig(t *testing.T) {
 
 		Convey(`When logged in as a service, can retrieve the configuration.`, func() {
 
-			c = ct.UseConfig(c, &services.Coordinator{
+			c = ct.UseConfig(c, &svcconfig.Coordinator{
 				ServiceAuthGroup: "test-services",
 			})
 			fs := authtest.FakeState{}

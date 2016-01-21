@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -111,7 +111,7 @@ func (p *testParser) appendData(d Data) {
 	p.addData(d.Bytes(), d.Timestamp())
 }
 
-func (p *testParser) nextEntry(c *constraints) (*protocol.LogEntry, error) {
+func (p *testParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 	// Process records until we hit data or run out.
 	for p.err == nil {
 		rec := p.nextCommand(false)
@@ -151,9 +151,9 @@ func (p *testParser) nextEntry(c *constraints) (*protocol.LogEntry, error) {
 
 	// Consume this record.
 	rec := p.nextCommand(true)
-	return &protocol.LogEntry{
-		Content: &protocol.LogEntry_Text{Text: &protocol.Text{
-			Lines: []*protocol.Text_Line{
+	return &logpb.LogEntry{
+		Content: &logpb.LogEntry_Text{Text: &logpb.Text{
+			Lines: []*logpb.Text_Line{
 				{Value: string(rec.data)},
 			},
 		}},
@@ -183,8 +183,8 @@ func TestStream(t *testing.T) {
 		c := streamConfig{
 			name:   "test",
 			parser: &tp,
-			template: protocol.ButlerLogBundle_Entry{
-				Desc: &protocol.LogStreamDescriptor{
+			template: logpb.ButlerLogBundle_Entry{
+				Desc: &logpb.LogStreamDescriptor{
 					Prefix: "test-prefix",
 					Name:   "test",
 				},
@@ -373,8 +373,8 @@ func TestStreamSmoke(t *testing.T) {
 		c := streamConfig{
 			name:   "test",
 			parser: &tp,
-			template: protocol.ButlerLogBundle_Entry{
-				Desc: &protocol.LogStreamDescriptor{
+			template: logpb.ButlerLogBundle_Entry{
+				Desc: &logpb.LogStreamDescriptor{
 					Prefix: "test-prefix",
 					Name:   "test",
 				},
@@ -402,7 +402,7 @@ func TestStreamSmoke(t *testing.T) {
 
 		// The consumer goroutine will consume bundles from the stream.
 		consumerC := make(chan struct{})
-		bundleC := make(chan *protocol.ButlerLogBundle)
+		bundleC := make(chan *logpb.ButlerLogBundle)
 		for i := 0; i < 32; i++ {
 			go func() {
 				defer func() {

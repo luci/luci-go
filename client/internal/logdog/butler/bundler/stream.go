@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 var (
@@ -55,7 +55,7 @@ type streamConfig struct {
 	maximumBufferDuration time.Duration
 
 	// template is the minimally-populated Butler log bundle entry.
-	template protocol.ButlerLogBundle_Entry
+	template logpb.ButlerLogBundle_Entry
 
 	// onAppend, if not nil, is invoked when an attempt to append data to the
 	// stream occurs. If true is passed, the data was successfully appended. If
@@ -99,7 +99,7 @@ type streamImpl struct {
 	// lastLogEntry is a pointer to the last LogEntry that was exported.
 	//
 	// stateLock must be held when accessing this field.
-	lastLogEntry *protocol.LogEntry
+	lastLogEntry *logpb.LogEntry
 
 	// testAppendWaitCallback, if not nil, is called before Append blocks.
 	// This callback is used for testing coordination.

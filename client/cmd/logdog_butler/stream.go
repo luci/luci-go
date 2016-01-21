@@ -9,8 +9,8 @@ import (
 	"fmt"
 
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 // Holds common command-line stream configuration parameters.
@@ -23,7 +23,7 @@ func (s *streamConfig) addFlags(fs *flag.FlagSet) {
 	if s.ContentType == "" {
 		s.ContentType = string(types.ContentTypeText)
 	}
-	s.Type = streamproto.StreamType(protocol.LogStreamDescriptor_TEXT)
+	s.Type = streamproto.StreamType(logpb.LogStreamDescriptor_TEXT)
 	s.Tee = streamproto.TeeNone
 
 	fs.Var(&s.Name, "name", "The name of the stream")

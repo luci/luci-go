@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 // QueryBase is a datastore model containing queryable information about a log
@@ -46,7 +46,7 @@ type QueryBase struct {
 	// ContentType is the MIME-style content type string for this stream.
 	ContentType string
 	// StreamType is the data type of the stream.
-	StreamType protocol.LogStreamDescriptor_StreamType
+	StreamType logpb.LogStreamDescriptor_StreamType
 
 	// Source is the set of source strings sent by the Butler.
 	Source []string

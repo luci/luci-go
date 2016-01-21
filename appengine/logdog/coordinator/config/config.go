@@ -12,7 +12,7 @@ import (
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/proto/logdog/services"
+	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/settings"
 	"golang.org/x/net/context"
@@ -97,7 +97,7 @@ func (gcfg *GlobalConfig) Validate() error {
 // LoadConfig loads the services configuration from the current Context.
 //
 // The Context must have a luci-config interface installed.
-func (gcfg *GlobalConfig) LoadConfig(c context.Context) (*services.Config, error) {
+func (gcfg *GlobalConfig) LoadConfig(c context.Context) (*svcconfig.Config, error) {
 	var cfg *config.Config
 	if err := gcfg.Validate(); err != nil {
 		if !info.Get(c).IsDevAppServer() {
@@ -135,7 +135,7 @@ func (gcfg *GlobalConfig) LoadConfig(c context.Context) (*services.Config, error
 		}
 	}
 
-	cc := services.Config{}
+	cc := svcconfig.Config{}
 	if err := proto.UnmarshalText(cfg.Content, &cc); err != nil {
 		log.Fields{
 			log.ErrorKey:  err,
@@ -151,7 +151,7 @@ func (gcfg *GlobalConfig) LoadConfig(c context.Context) (*services.Config, error
 }
 
 // Load loads the current configuration from "luci-config".
-func Load(c context.Context) (*services.Config, error) {
+func Load(c context.Context) (*svcconfig.Config, error) {
 	gcfg, err := LoadGlobalConfig(c)
 	if err != nil {
 		// If we're running the dev appserver, install some configuration stubs so

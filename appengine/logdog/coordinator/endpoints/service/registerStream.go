@@ -16,9 +16,9 @@ import (
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	lep "github.com/luci/luci-go/appengine/logdog/coordinator/endpoints"
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"golang.org/x/net/context"
 )
 
@@ -92,7 +92,7 @@ func (s *Service) RegisterStream(c context.Context, req *RegisterStreamRequest) 
 	if req.ProtoVersion == "" {
 		return nil, endpoints.NewBadRequestError("No protobuf version supplied.")
 	}
-	if req.ProtoVersion != protocol.Version {
+	if req.ProtoVersion != logpb.Version {
 		return nil, endpoints.NewBadRequestError("Unrecognized protobuf version.")
 	}
 
@@ -107,7 +107,7 @@ func (s *Service) RegisterStream(c context.Context, req *RegisterStreamRequest) 
 
 	// Validate our descriptor.
 	prefix, name := path.Split()
-	desc := protocol.LogStreamDescriptor{}
+	desc := logpb.LogStreamDescriptor{}
 	if err := proto.Unmarshal(req.Descriptor, &desc); err != nil {
 		log.Fields{
 			log.ErrorKey: err,

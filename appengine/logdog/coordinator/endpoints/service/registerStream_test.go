@@ -17,9 +17,9 @@ import (
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	lep "github.com/luci/luci-go/appengine/logdog/coordinator/endpoints"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
-	"github.com/luci/luci-go/common/proto/logdog/services"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
+	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"golang.org/x/net/context"
@@ -41,7 +41,7 @@ func TestRegisterStream(t *testing.T) {
 			},
 		}
 
-		c = ct.UseConfig(c, &services.Coordinator{
+		c = ct.UseConfig(c, &svcconfig.Coordinator{
 			ServiceAuthGroup: "test-services",
 		})
 		fs := authtest.FakeState{}
@@ -65,7 +65,7 @@ func TestRegisterStream(t *testing.T) {
 				req := RegisterStreamRequest{
 					Path:         "testing/+/foo/bar",
 					Secret:       secret,
-					ProtoVersion: protocol.Version,
+					ProtoVersion: logpb.Version,
 					Descriptor:   pb,
 				}
 
@@ -73,7 +73,7 @@ func TestRegisterStream(t *testing.T) {
 					Path:   "testing/+/foo/bar",
 					Secret: secret,
 					State: &lep.LogStreamState{
-						ProtoVersion:  protocol.Version,
+						ProtoVersion:  logpb.Version,
 						Created:       lep.ToRFC3339(coordinator.NormalizeTime(tc.Now().UTC())),
 						Updated:       lep.ToRFC3339(coordinator.NormalizeTime(tc.Now().UTC())),
 						TerminalIndex: -1,
@@ -98,7 +98,7 @@ func TestRegisterStream(t *testing.T) {
 					})
 
 					Convey(`Will not re-register if descriptor data differs.`, func() {
-						desc.Tags = append(desc.Tags, &protocol.LogStreamDescriptor_Tag{"testing", "value"})
+						desc.Tags = append(desc.Tags, &logpb.LogStreamDescriptor_Tag{"testing", "value"})
 						req.Descriptor, err = proto.Marshal(desc)
 						So(err, ShouldBeNil)
 

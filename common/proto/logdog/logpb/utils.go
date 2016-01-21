@@ -2,11 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package protocol
+package logpb
 
 import (
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/luci/luci-go/common/logdog/types"
 )
@@ -51,16 +52,18 @@ func (d *LogStreamDescriptor) Validate(prefix bool) error {
 	if d.Timestamp == nil {
 		return errors.New("missing timestamp")
 	}
-	for i, tag := range d.GetTags() {
-		t := types.StreamTag{
-			Key:   tag.Key,
-			Value: tag.Value,
-		}
-		if err := t.Validate(); err != nil {
-			return fmt.Errorf("invalid tag #%d: %s", i, err)
+	for _, t := range d.GetTags() {
+		st := types.StreamTag{t.Key, t.Value}
+		if err := st.Validate(); err != nil {
+			return fmt.Errorf("invalid tag %q: %v", t.Key, err)
 		}
 	}
 	return nil
+}
+
+// Equal tests if two LogStreamDescriptor instances have the same data.
+func (d *LogStreamDescriptor) Equal(o *LogStreamDescriptor) bool {
+	return reflect.DeepEqual(d, o)
 }
 
 // Path returns a types.StreamPath constructed from the LogStreamDesciptor's

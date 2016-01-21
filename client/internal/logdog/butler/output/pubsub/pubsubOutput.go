@@ -14,8 +14,8 @@ import (
 	"github.com/luci/luci-go/client/internal/logdog/butler/output"
 	"github.com/luci/luci-go/common/gcloud/gcps"
 	"github.com/luci/luci-go/common/logdog/butlerproto"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/recordio"
 	"github.com/luci/luci-go/common/retry"
 	"golang.org/x/net/context"
@@ -79,7 +79,7 @@ func (o *gcpsOutput) String() string {
 	return fmt.Sprintf("gcps(%s)", o.Topic)
 }
 
-func (o *gcpsOutput) SendBundle(bundle *protocol.ButlerLogBundle) error {
+func (o *gcpsOutput) SendBundle(bundle *logpb.ButlerLogBundle) error {
 	st := output.StatsBase{}
 	defer o.mergeStats(&st)
 
@@ -134,7 +134,7 @@ func (o *gcpsOutput) Close() {
 // The first frame will be a ButlerMetadata message describing the second
 // frame. The second frame will be a ButlerLogBundle containing the bundle
 // data.
-func (o *gcpsOutput) buildMessage(buf *gcpsBuffer, bundle *protocol.ButlerLogBundle) (*pubsub.Message, error) {
+func (o *gcpsOutput) buildMessage(buf *gcpsBuffer, bundle *logpb.ButlerLogBundle) (*pubsub.Message, error) {
 	if buf.protoWriter == nil {
 		buf.protoWriter = &butlerproto.Writer{
 			Compress:          o.Compress,

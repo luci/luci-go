@@ -7,7 +7,7 @@ package bundler
 import (
 	"errors"
 
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 // binaryThreshold is the amount of binary data that we will willingly yield
@@ -24,7 +24,7 @@ type binaryParser struct {
 
 var _ parser = (*binaryParser)(nil)
 
-func (p *binaryParser) nextEntry(c *constraints) (*protocol.LogEntry, error) {
+func (p *binaryParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 	threshold := p.getThreshold()
 	if c.allowSplit {
 		// If we're allowed to split, return _any_ available data.
@@ -48,7 +48,7 @@ func (p *binaryParser) nextEntry(c *constraints) (*protocol.LogEntry, error) {
 
 	ts, _ := p.firstChunkTime()
 	e := p.baseLogEntry(ts)
-	e.Content = &protocol.LogEntry_Binary{Binary: &protocol.Binary{
+	e.Content = &logpb.LogEntry_Binary{Binary: &logpb.Binary{
 		Offset: uint64(p.offset),
 		Data:   data[:size],
 	}}

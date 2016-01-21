@@ -10,8 +10,8 @@ import (
 	"sort"
 
 	"github.com/luci/luci-go/client/internal/flags/stringmapflag"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 // TagMap is a flags-compatible map used to store stream tags.
@@ -49,15 +49,15 @@ func (t TagMap) SortedKeys() []string {
 
 // Proto returns a LogStreamDescriptor_Tag protobuf entry populated with the
 // contents of the TagMap.
-func (t TagMap) Proto() []*protocol.LogStreamDescriptor_Tag {
+func (t TagMap) Proto() []*logpb.LogStreamDescriptor_Tag {
 	if len(t) == 0 {
 		return nil
 	}
 
 	keys := t.SortedKeys()
-	tags := make([]*protocol.LogStreamDescriptor_Tag, len(keys))
+	tags := make([]*logpb.LogStreamDescriptor_Tag, len(keys))
 	for i, k := range keys {
-		tags[i] = &protocol.LogStreamDescriptor_Tag{
+		tags[i] = &logpb.LogStreamDescriptor_Tag{
 			Key:   k,
 			Value: t[k],
 		}

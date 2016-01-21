@@ -15,23 +15,23 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/iotools"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/recordio"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func gen(i int) *protocol.LogEntry {
-	return &protocol.LogEntry{
+func gen(i int) *logpb.LogEntry {
+	return &logpb.LogEntry{
 		TimeOffset:  google.NewDuration(time.Duration(i) * time.Second),
 		PrefixIndex: uint64(i) * 2,
 		StreamIndex: uint64(i),
 		Sequence:    uint64(i),
-		Content: &protocol.LogEntry_Text{
-			Text: &protocol.Text{
-				Lines: []*protocol.Text_Line{
+		Content: &logpb.LogEntry_Text{
+			Text: &logpb.Text{
+				Lines: []*logpb.Text_Line{
 					{Value: strconv.Itoa(i), Delimiter: "\n"},
 				},
 			},
@@ -40,7 +40,7 @@ func gen(i int) *protocol.LogEntry {
 }
 
 type testSource struct {
-	logs []*protocol.LogEntry
+	logs []*logpb.LogEntry
 }
 
 func (s *testSource) add(indices ...int) {
@@ -49,11 +49,11 @@ func (s *testSource) add(indices ...int) {
 	}
 }
 
-func (s *testSource) addEntries(entries ...*protocol.LogEntry) {
+func (s *testSource) addEntries(entries ...*logpb.LogEntry) {
 	s.logs = append(s.logs, entries...)
 }
 
-func (s *testSource) NextLogEntry() (le *protocol.LogEntry) {
+func (s *testSource) NextLogEntry() (le *logpb.LogEntry) {
 	if len(s.logs) > 0 {
 		le, s.logs = s.logs[0], s.logs[1:]
 	}
@@ -100,12 +100,12 @@ func (ic *indexChecker) shouldContainIndexFor(actual interface{}, expected ...in
 	if len(expected) < 2 {
 		return "at least two expected arguments are required"
 	}
-	desc := expected[0].(*protocol.LogStreamDescriptor)
+	desc := expected[0].(*logpb.LogStreamDescriptor)
 	logB := expected[1].(*bytes.Buffer)
 	expected = expected[2:]
 
 	// Load our log index.
-	index := protocol.LogIndex{}
+	index := logpb.LogIndex{}
 	if err := proto.Unmarshal(indexB.Bytes(), &index); err != nil {
 		return fmt.Sprintf("failed to unmarshal index protobuf: %v", err)
 	}
@@ -116,7 +116,7 @@ func (ic *indexChecker) shouldContainIndexFor(actual interface{}, expected ...in
 	}
 
 	// Catalogue the log entries in "expected".
-	entries := map[uint64]*protocol.LogEntry{}
+	entries := map[uint64]*logpb.LogEntry{}
 	offsets := map[uint64]int64{}
 	csizes := map[uint64]uint64{}
 	var eidx []uint64
@@ -141,7 +141,7 @@ func (ic *indexChecker) shouldContainIndexFor(actual interface{}, expected ...in
 			return fmt.Sprintf("failed to read entry #%d: %v", len(entries), err)
 		}
 
-		le := protocol.LogEntry{}
+		le := logpb.LogEntry{}
 		if err := proto.Unmarshal(d, &le); err != nil {
 			return fmt.Sprintf("failed to unmarshal entry #%d: %v", len(entries), err)
 		}
@@ -199,7 +199,7 @@ func (ic *indexChecker) shouldContainIndexFor(actual interface{}, expected ...in
 func TestArchive(t *testing.T) {
 	Convey(`A Manifest connected to Buffer Writers`, t, func() {
 		var logB, indexB, dataB bytes.Buffer
-		desc := &protocol.LogStreamDescriptor{
+		desc := &logpb.LogStreamDescriptor{
 			Prefix: "test",
 			Name:   "foo",
 		}

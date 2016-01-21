@@ -7,8 +7,8 @@ package archive
 import (
 	"io"
 
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/renderer"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 // channelRendererSource is a renderer.Source implementation that reads LogEntry
@@ -18,17 +18,17 @@ import (
 //
 // When the channel has closed, it will return io.EOF conformant to
 // renderer.Source.
-type channelRendererSource <-chan *protocol.LogEntry
+type channelRendererSource <-chan *logpb.LogEntry
 
-func (cs channelRendererSource) NextLogEntry() (*protocol.LogEntry, error) {
+func (cs channelRendererSource) NextLogEntry() (*logpb.LogEntry, error) {
 	if le, ok := <-cs; ok {
 		return le, nil
 	}
 	return nil, io.EOF
 }
 
-func archiveData(w io.Writer, dataC <-chan *protocol.LogEntry) error {
-	entryC := make(chan *protocol.LogEntry)
+func archiveData(w io.Writer, dataC <-chan *logpb.LogEntry) error {
+	entryC := make(chan *logpb.LogEntry)
 	r := renderer.Renderer{
 		Source:    channelRendererSource(entryC),
 		Reproduce: true,

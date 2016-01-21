@@ -7,23 +7,23 @@ package fetcher
 import (
 	"container/list"
 
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 type logBuffer struct {
 	l      list.List
-	cur    []*protocol.LogEntry
+	cur    []*logpb.LogEntry
 	curIdx int
 
 	count int
 }
 
-func (b *logBuffer) current() *protocol.LogEntry {
+func (b *logBuffer) current() *logpb.LogEntry {
 	for b.curIdx >= len(b.cur) {
 		if b.l.Len() == 0 {
 			return nil
 		}
-		b.cur = b.l.Remove(b.l.Front()).([]*protocol.LogEntry)
+		b.cur = b.l.Remove(b.l.Front()).([]*logpb.LogEntry)
 		b.curIdx = 0
 	}
 
@@ -35,7 +35,7 @@ func (b *logBuffer) next() {
 	b.count--
 }
 
-func (b *logBuffer) append(le ...*protocol.LogEntry) {
+func (b *logBuffer) append(le ...*logpb.LogEntry) {
 	b.l.PushBack(le)
 	b.count += len(le)
 }

@@ -14,7 +14,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -136,7 +136,7 @@ func TestClientQuery(t *testing.T) {
 			})
 
 			Convey(`Will properly handle state and protobuf deserialization.`, func() {
-				pb := protocol.LogStreamDescriptor{
+				pb := logpb.LogStreamDescriptor{
 					Prefix: "test",
 					Name:   "a",
 				}

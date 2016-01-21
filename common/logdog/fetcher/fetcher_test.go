@@ -14,8 +14,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
@@ -24,7 +24,7 @@ import (
 type testSource struct {
 	sync.Mutex
 
-	logs  map[types.MessageIndex]*protocol.LogEntry
+	logs  map[types.MessageIndex]*logpb.LogEntry
 	err   error
 	panic bool
 
@@ -38,11 +38,11 @@ type testSource struct {
 func newTestSource() *testSource {
 	return &testSource{
 		terminal: -1,
-		logs:     map[types.MessageIndex]*protocol.LogEntry{},
+		logs:     map[types.MessageIndex]*logpb.LogEntry{},
 	}
 }
 
-func (ts *testSource) LogEntries(c context.Context, req *LogRequest) ([]*protocol.LogEntry, types.MessageIndex, error) {
+func (ts *testSource) LogEntries(c context.Context, req *LogRequest) ([]*logpb.LogEntry, types.MessageIndex, error) {
 	ts.Lock()
 	defer ts.Unlock()
 
@@ -66,7 +66,7 @@ func (ts *testSource) LogEntries(c context.Context, req *LogRequest) ([]*protoco
 		maxBytes = ts.maxBytes
 	}
 
-	var logs []*protocol.LogEntry
+	var logs []*logpb.LogEntry
 	bytes := int64(0)
 	index := req.Index
 	for {
@@ -91,7 +91,7 @@ func (ts *testSource) LogEntries(c context.Context, req *LogRequest) ([]*protoco
 	return logs, ts.terminal, nil
 }
 
-func (ts *testSource) addLogEntry(entries ...*protocol.LogEntry) {
+func (ts *testSource) addLogEntry(entries ...*logpb.LogEntry) {
 	ts.Lock()
 	defer ts.Unlock()
 
@@ -103,9 +103,9 @@ func (ts *testSource) addLogEntry(entries ...*protocol.LogEntry) {
 // addLogs adds a text log entry for each named indices. The text entry contains
 // a single line, "#x", where "x" is the log index.
 func (ts *testSource) addLogs(indices ...int64) {
-	entries := make([]*protocol.LogEntry, len(indices))
+	entries := make([]*logpb.LogEntry, len(indices))
 	for i, idx := range indices {
-		entries[i] = &protocol.LogEntry{
+		entries[i] = &logpb.LogEntry{
 			StreamIndex: uint64(idx),
 		}
 	}
@@ -140,7 +140,7 @@ func loadLogs(f *Fetcher, count int) (result []types.MessageIndex, err error) {
 			return
 		}
 
-		var le *protocol.LogEntry
+		var le *logpb.LogEntry
 		le, err = f.NextLogEntry()
 		if le != nil {
 			result = append(result, types.MessageIndex(le.StreamIndex))

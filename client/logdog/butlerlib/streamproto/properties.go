@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/clock/clockflag"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 // Properties is the set of properties needed to define a LogDog Butler Stream.
@@ -19,7 +19,7 @@ type Properties struct {
 	//
 	// Note that the Prefix value, if filled, will be overridden by the Butler's
 	// Prefix.
-	protocol.LogStreamDescriptor
+	logpb.LogStreamDescriptor
 
 	// Tee is the tee configuration for this stream. If empty, the stream will
 	// not be tee'd.
@@ -74,10 +74,10 @@ func (f *Flags) Properties() *Properties {
 	}
 
 	p := &Properties{
-		LogStreamDescriptor: protocol.LogStreamDescriptor{
+		LogStreamDescriptor: logpb.LogStreamDescriptor{
 			Name:          string(f.Name),
 			ContentType:   string(contentType),
-			StreamType:    protocol.LogStreamDescriptor_StreamType(f.Type),
+			StreamType:    logpb.LogStreamDescriptor_StreamType(f.Type),
 			Timestamp:     google.NewTimestamp(time.Time(f.Timestamp)),
 			BinaryFileExt: f.BinaryFileExtension,
 			Tags:          f.Tags.Proto(),

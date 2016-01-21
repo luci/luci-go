@@ -9,7 +9,7 @@ import (
 	"io"
 
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/recordio"
 )
 
@@ -65,5 +65,5 @@ func (s *streamImpl) writeRecord(r []byte) error {
 }
 
 func (s *streamImpl) isDatagramStream() bool {
-	return s.StreamType == protocol.LogStreamDescriptor_DATAGRAM
+	return s.StreamType == logpb.LogStreamDescriptor_DATAGRAM
 }

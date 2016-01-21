@@ -10,7 +10,7 @@ import (
 	"github.com/luci/gae/impl/memory"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/proto/logdog/services"
+	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"golang.org/x/net/context"
@@ -32,7 +32,7 @@ func TestServiceAuth(t *testing.T) {
 		})
 
 		Convey(`With an application config installed`, func() {
-			c := ct.UseConfig(c, &services.Coordinator{
+			c := ct.UseConfig(c, &svcconfig.Coordinator{
 				ServiceAuthGroup: "test-services",
 			})
 

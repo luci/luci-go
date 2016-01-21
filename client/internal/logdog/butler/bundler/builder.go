@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 // builderStream is builder data that is tracked for each individual stream.
 type builderStream struct {
 	// ButlerLogBundle_Entry is the stream's in-progress bundle entry.
-	protocol.ButlerLogBundle_Entry
+	logpb.ButlerLogBundle_Entry
 	// size incrementally tracks the size of the stream's entry.
 	size int
 }
@@ -25,7 +25,7 @@ type builder struct {
 	size int
 
 	// template is the base bundle template.
-	template protocol.ButlerLogBundle
+	template logpb.ButlerLogBundle
 	// templateCachedSize is the cached size of the ButlerLogBundle template.
 	templateCachedSize int
 
@@ -59,7 +59,7 @@ func (b *builder) hasContent() bool {
 	return len(b.streams) > 0
 }
 
-func (b *builder) add(template *protocol.ButlerLogBundle_Entry, le *protocol.LogEntry) {
+func (b *builder) add(template *logpb.ButlerLogBundle_Entry, le *logpb.LogEntry) {
 	bs := b.getCreateBuilderStream(template)
 
 	bs.Logs = append(bs.Logs, le)
@@ -69,7 +69,7 @@ func (b *builder) add(template *protocol.ButlerLogBundle_Entry, le *protocol.Log
 	bs.size += sizeOfLogEntryTag + varintLength(uint64(psize)) + psize
 }
 
-func (b *builder) setStreamTerminal(template *protocol.ButlerLogBundle_Entry, tidx uint64) {
+func (b *builder) setStreamTerminal(template *logpb.ButlerLogBundle_Entry, tidx uint64) {
 	bs := b.getCreateBuilderStream(template)
 	if bs.Terminal {
 		if bs.TerminalIndex != tidx {
@@ -86,7 +86,7 @@ func (b *builder) setStreamTerminal(template *protocol.ButlerLogBundle_Entry, ti
 		(sizeOfTerminalIndexTag + varintLength(bs.TerminalIndex)))
 }
 
-func (b *builder) bundle() *protocol.ButlerLogBundle {
+func (b *builder) bundle() *logpb.ButlerLogBundle {
 	bundle := b.template
 
 	names := make([]string, 0, len(b.streams))
@@ -95,7 +95,7 @@ func (b *builder) bundle() *protocol.ButlerLogBundle {
 	}
 	sort.Strings(names)
 
-	bundle.Entries = make([]*protocol.ButlerLogBundle_Entry, len(names))
+	bundle.Entries = make([]*logpb.ButlerLogBundle_Entry, len(names))
 	for idx, name := range names {
 		bundle.Entries[idx] = &b.streams[name].ButlerLogBundle_Entry
 	}
@@ -103,7 +103,7 @@ func (b *builder) bundle() *protocol.ButlerLogBundle {
 	return &bundle
 }
 
-func (b *builder) getCreateBuilderStream(template *protocol.ButlerLogBundle_Entry) *builderStream {
+func (b *builder) getCreateBuilderStream(template *logpb.ButlerLogBundle_Entry) *builderStream {
 	if bs := b.streams[template.Desc.Name]; bs != nil {
 		return bs
 	}

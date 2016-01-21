@@ -19,9 +19,9 @@ import (
 	lep "github.com/luci/luci-go/appengine/logdog/coordinator/endpoints"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
-	"github.com/luci/luci-go/common/proto/logdog/services"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
+	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"golang.org/x/net/context"
@@ -81,7 +81,7 @@ func TestQuery(t *testing.T) {
 		fs := authtest.FakeState{}
 		c = auth.WithState(c, &fs)
 
-		c = ct.UseConfig(c, &services.Coordinator{
+		c = ct.UseConfig(c, &svcconfig.Coordinator{
 			AdminAuthGroup: "test-administrators",
 		})
 
@@ -97,7 +97,7 @@ func TestQuery(t *testing.T) {
 		var streamPaths []string
 		var purgedStreamPaths []string
 		streams := map[string]*coordinator.LogStream{}
-		descs := map[string]*protocol.LogStreamDescriptor{}
+		descs := map[string]*logpb.LogStreamDescriptor{}
 		for i, v := range []types.StreamPath{
 			"testing/+/foo",
 			"testing/+/foo/bar",
@@ -118,7 +118,7 @@ func TestQuery(t *testing.T) {
 			desc := ct.TestLogStreamDescriptor(c, string(name))
 			desc.Prefix = string(prefix)
 			desc.ContentType = string(prefix)
-			desc.Tags = []*protocol.LogStreamDescriptor_Tag{
+			desc.Tags = []*logpb.LogStreamDescriptor_Tag{
 				{Key: "prefix", Value: string(prefix)},
 				{Key: "name", Value: string(name)},
 			}
@@ -144,10 +144,10 @@ func TestQuery(t *testing.T) {
 						ls.State = coordinator.LSArchived
 
 					case "datagram":
-						ls.StreamType = protocol.LogStreamDescriptor_DATAGRAM
+						ls.StreamType = logpb.LogStreamDescriptor_DATAGRAM
 
 					case "binary":
-						ls.StreamType = protocol.LogStreamDescriptor_BINARY
+						ls.StreamType = logpb.LogStreamDescriptor_BINARY
 					}
 				}
 			}
@@ -480,7 +480,7 @@ func TestQuery(t *testing.T) {
 		})
 
 		Convey(`When querying for proto version, the current version returns all non-purged streams.`, func() {
-			req.ProtoVersion = protocol.Version
+			req.ProtoVersion = logpb.Version
 
 			resp, err := s.Query(c, &req)
 			So(err, ShouldBeNil)

@@ -15,14 +15,14 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 // Source returns successive LogEntry records for the Renderer to render.
 type Source interface {
 	// NextLogEntry returns the next successive LogEntry record to render, or an
 	// error if it could not be retrieved.
-	NextLogEntry() (*protocol.LogEntry, error)
+	NextLogEntry() (*logpb.LogEntry, error)
 }
 
 // Renderer is a stateful instance that provides an io.Reader interface to a

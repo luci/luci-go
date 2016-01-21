@@ -9,7 +9,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 const (
@@ -31,10 +31,10 @@ type textParser struct {
 
 var _ parser = (*textParser)(nil)
 
-func (p *textParser) nextEntry(c *constraints) (*protocol.LogEntry, error) {
+func (p *textParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 	limit := int64(c.limit)
 	ts := time.Time{}
-	txt := protocol.Text{}
+	txt := logpb.Text{}
 	lineCount := 0
 	for limit > 0 {
 		br := p.ViewLimit(limit)
@@ -117,7 +117,7 @@ func (p *textParser) nextEntry(c *constraints) (*protocol.LogEntry, error) {
 			p.buf.Truncate(lidx)
 		}
 
-		txt.Lines = append(txt.Lines, &protocol.Text_Line{
+		txt.Lines = append(txt.Lines, &logpb.Text_Line{
 			Value:     p.buf.String(),
 			Delimiter: newline,
 		})
@@ -130,7 +130,7 @@ func (p *textParser) nextEntry(c *constraints) (*protocol.LogEntry, error) {
 	}
 	le := p.baseLogEntry(ts)
 	le.Sequence = uint64(p.sequence)
-	le.Content = &protocol.LogEntry_Text{Text: &txt}
+	le.Content = &logpb.LogEntry_Text{Text: &txt}
 
 	p.sequence += int64(lineCount)
 	return le, nil

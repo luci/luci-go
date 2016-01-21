@@ -18,9 +18,9 @@ import (
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	lep "github.com/luci/luci-go/appengine/logdog/coordinator/endpoints"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
-	"github.com/luci/luci-go/common/proto/logdog/services"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
+	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/logdog/storage"
@@ -38,7 +38,7 @@ func shouldHaveLogs(actual interface{}, expected ...interface{}) string {
 	logs := make([]int, len(resp.Logs))
 	for i, le := range resp.Logs {
 		if le.Proto != nil {
-			leProto := protocol.LogEntry{}
+			leProto := logpb.LogEntry{}
 			if err := proto.Unmarshal(le.Proto, &leProto); err != nil {
 				return fmt.Sprintf("Failed to unmarshal entry #%d protobuf: %v", i, err)
 			}
@@ -56,7 +56,7 @@ func shouldHaveLogs(actual interface{}, expected ...interface{}) string {
 	return ShouldResembleV(logs, expLogs)
 }
 
-func putLogEntry(st storage.Storage, path types.StreamPath, le *protocol.LogEntry) []byte {
+func putLogEntry(st storage.Storage, path types.StreamPath, le *logpb.LogEntry) []byte {
 	d, err := proto.Marshal(le)
 	if err != nil {
 		panic(fmt.Errorf("failed to marshal protobuf: %v", err))
@@ -83,7 +83,7 @@ func TestGet(t *testing.T) {
 		fs := authtest.FakeState{}
 		c = auth.WithState(c, &fs)
 
-		c = ct.UseConfig(c, &services.Coordinator{
+		c = ct.UseConfig(c, &svcconfig.Coordinator{
 			AdminAuthGroup: "test-administrators",
 		})
 
@@ -112,7 +112,7 @@ func TestGet(t *testing.T) {
 		tc.Add(time.Second)
 		for _, v := range []int{0, 1, 2, 4, 5, 7} {
 			le := ct.TestLogEntry(c, ls, v)
-			le.GetText().Lines = append(le.GetText().Lines, &protocol.Text_Line{
+			le.GetText().Lines = append(le.GetText().Lines, &logpb.Text_Line{
 				Value: "another line of text",
 			})
 			protobufs[v] = putLogEntry(&ms, types.StreamPath(req.Path), le)
@@ -340,7 +340,7 @@ func TestGet(t *testing.T) {
 
 			// Confirm that there is a descriptor protobuf.
 			So(resp.DescriptorProto, ShouldNotBeNil)
-			respDesc := protocol.LogStreamDescriptor{}
+			respDesc := logpb.LogStreamDescriptor{}
 			err = proto.Unmarshal(resp.DescriptorProto, &respDesc)
 			So(err, ShouldBeNil)
 			So(&respDesc, ShouldResembleV, desc)
@@ -378,12 +378,12 @@ func TestGet(t *testing.T) {
 		})
 
 		Convey(`A Binary LogEntry`, func() {
-			le := protocol.LogEntry{
+			le := logpb.LogEntry{
 				StreamIndex: 777,
 
 				// Fill in content so zero-indexed LogEntry isn't zero bytes.
-				Content: &protocol.LogEntry_Binary{
-					&protocol.Binary{
+				Content: &logpb.LogEntry_Binary{
+					&logpb.Binary{
 						Data: []byte{0x00, 0x01, 0x02, 0x03},
 					},
 				},
@@ -402,14 +402,14 @@ func TestGet(t *testing.T) {
 		})
 
 		Convey(`A partial Datagram LogEntry`, func() {
-			le := protocol.LogEntry{
+			le := logpb.LogEntry{
 				StreamIndex: 777,
 
 				// Fill in content so zero-indexed LogEntry isn't zero bytes.
-				Content: &protocol.LogEntry_Datagram{
-					&protocol.Datagram{
+				Content: &logpb.LogEntry_Datagram{
+					&logpb.Datagram{
 						Data: []byte{0x00, 0x01, 0x02, 0x03},
-						Partial: &protocol.Datagram_Partial{
+						Partial: &logpb.Datagram_Partial{
 							Index: 2,
 							Size:  1024,
 							Last:  false,

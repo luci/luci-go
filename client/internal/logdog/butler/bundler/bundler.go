@@ -13,9 +13,9 @@ import (
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
 	"github.com/luci/luci-go/common/cancelcond"
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"golang.org/x/net/context"
 )
 
@@ -59,7 +59,7 @@ type Bundler struct {
 
 	// finishedC is closed when makeBundles goroutine has terminated.
 	finishedC chan struct{}
-	bundleC   chan *protocol.ButlerLogBundle
+	bundleC   chan *logpb.ButlerLogBundle
 
 	// streamsLock is a lock around the `streams` map and its contents.
 	streamsLock sync.Mutex
@@ -80,7 +80,7 @@ func New(c Config) *Bundler {
 	b := Bundler{
 		c:         &c,
 		finishedC: make(chan struct{}),
-		bundleC:   make(chan *protocol.ButlerLogBundle),
+		bundleC:   make(chan *logpb.ButlerLogBundle),
 		streams:   map[string]bundlerStream{},
 	}
 	b.streamsCond = cancelcond.New(&b.streamsLock)
@@ -100,7 +100,7 @@ func (b *Bundler) Register(p streamproto.Properties) (Stream, error) {
 	// Construct a parser for this stream.
 	c := streamConfig{
 		name: p.Name,
-		template: protocol.ButlerLogBundle_Entry{
+		template: logpb.ButlerLogBundle_Entry{
 			Desc: &p.LogStreamDescriptor,
 		},
 		maximumBufferDuration: b.c.MaxBufferDelay,
@@ -151,7 +151,7 @@ func (b *Bundler) CloseAndFlush() {
 }
 
 // Next returns the next bundle, blocking until it is available.
-func (b *Bundler) Next() *protocol.ButlerLogBundle {
+func (b *Bundler) Next() *logpb.ButlerLogBundle {
 	return <-b.bundleC
 }
 
@@ -187,7 +187,7 @@ func (b *Bundler) makeBundles() {
 	for {
 		bb = &builder{
 			size: b.c.MaxBundleSize,
-			template: protocol.ButlerLogBundle{
+			template: logpb.ButlerLogBundle{
 				Source:    b.c.Source,
 				Timestamp: google.NewTimestamp(b.getClock().Now()),
 			},

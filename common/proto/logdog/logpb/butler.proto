@@ -4,7 +4,7 @@
 
 syntax = "proto3";
 
-package protocol;
+package logpb;
 
 import "log.proto";
 import "google/protobuf/timestamp.proto";
@@ -75,7 +75,7 @@ message ButlerLogBundle {
      *
      * Each LogEntry in the "logs" field is shares this common descriptor.
      */
-    LogStreamDescriptor desc = 1;
+    logpb.LogStreamDescriptor desc = 1;
 
     /*
      * The log prefix's secret value (required).
@@ -119,7 +119,7 @@ message ButlerLogBundle {
      *
      * This is the main log entry content.
      */
-    repeated protocol.LogEntry logs = 5;
+    repeated logpb.LogEntry logs = 5;
   }
 
   /**

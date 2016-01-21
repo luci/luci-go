@@ -5,8 +5,8 @@
 package coordinator
 
 import (
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 // StreamGetParams is an accumulating set of Stream Get request parameters.
@@ -17,7 +17,7 @@ type StreamGetParams struct {
 	nonContiguous bool
 
 	// logs is the user-supplied log slice to populate.
-	logs []*protocol.LogEntry
+	logs []*logpb.LogEntry
 	// bytes is the maximum number of bytes of log data to return. It is set by
 	// Logs if a byte constraint is specified.
 	bytes int64
@@ -71,7 +71,7 @@ func (p *StreamGetParams) Index(i types.MessageIndex) *StreamGetParams {
 //
 // If neither logs nor bytes is supplied, the server will choose how many logs
 // to return.
-func (p *StreamGetParams) Logs(logs []*protocol.LogEntry, bytes int) *StreamGetParams {
+func (p *StreamGetParams) Logs(logs []*logpb.LogEntry, bytes int) *StreamGetParams {
 	p = p.clone()
 
 	if len(logs) > 0 {

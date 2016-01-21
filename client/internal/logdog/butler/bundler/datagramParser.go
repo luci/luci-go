@@ -7,7 +7,7 @@ package bundler
 import (
 	"io"
 
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/recordio"
 )
 
@@ -41,7 +41,7 @@ type datagramParser struct {
 
 var _ parser = (*datagramParser)(nil)
 
-func (s *datagramParser) nextEntry(c *constraints) (*protocol.LogEntry, error) {
+func (s *datagramParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 	// Use the current Buffer timestamp.
 	ts, has := s.firstChunkTime()
 	if !has {
@@ -108,9 +108,9 @@ func (s *datagramParser) nextEntry(c *constraints) (*protocol.LogEntry, error) {
 		return nil, nil
 	}
 
-	dg := protocol.Datagram{}
+	dg := logpb.Datagram{}
 	if continued || s.index > 0 {
-		dg.Partial = &protocol.Datagram_Partial{
+		dg.Partial = &logpb.Datagram_Partial{
 			Index: uint32(s.index),
 			Size:  uint64(s.size),
 			Last:  !continued,
@@ -124,7 +124,7 @@ func (s *datagramParser) nextEntry(c *constraints) (*protocol.LogEntry, error) {
 
 	le := s.baseLogEntry(ts)
 	le.Sequence = uint64(s.seq)
-	le.Content = &protocol.LogEntry_Datagram{Datagram: &dg}
+	le.Content = &logpb.LogEntry_Datagram{Datagram: &dg}
 
 	if !continued {
 		s.seq++

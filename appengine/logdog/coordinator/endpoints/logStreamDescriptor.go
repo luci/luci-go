@@ -6,11 +6,11 @@ package endpoints
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/logdog/protocol"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 // LogStreamDescriptor is an endpoints-exported version of the
-// protocol.LogStreamDescriptor protobuf.
+// logpb.LogStreamDescriptor protobuf.
 type LogStreamDescriptor struct {
 	// Prefix is the stream's prefix.
 	Prefix string `json:"prefix,omitempty"`
@@ -52,7 +52,7 @@ type LogStreamDescriptorTag struct {
 
 // DescriptorFromProto builds an endpoints LogStreamDescriptor from the source
 // protobuf.
-func DescriptorFromProto(p *protocol.LogStreamDescriptor) *LogStreamDescriptor {
+func DescriptorFromProto(p *logpb.LogStreamDescriptor) *LogStreamDescriptor {
 	d := LogStreamDescriptor{
 		Prefix:        p.Prefix,
 		Name:          p.Name,
@@ -77,9 +77,9 @@ func DescriptorFromProto(p *protocol.LogStreamDescriptor) *LogStreamDescriptor {
 }
 
 // DescriptorFromSerializedProto builds an endpoints LogStreamDescriptor from
-// a binary stream that is a serialized protocol.LogStreamDescriptor.
+// a binary stream that is a serialized logpb.LogStreamDescriptor.
 func DescriptorFromSerializedProto(data []byte) (*LogStreamDescriptor, error) {
-	desc := protocol.LogStreamDescriptor{}
+	desc := logpb.LogStreamDescriptor{}
 	if err := proto.Unmarshal(data, &desc); err != nil {
 		return nil, err
 	}

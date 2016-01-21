@@ -15,9 +15,9 @@ import (
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	lep "github.com/luci/luci-go/appengine/logdog/coordinator/endpoints"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/retry"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"golang.org/x/net/context"
@@ -278,7 +278,7 @@ func (s *Logs) getLogs(c context.Context, req *GetRequest, ls *coordinator.LogSt
 			gle.Proto = ld
 		} else {
 			// Deserialize the log entry, then convert it to output value.
-			le := protocol.LogEntry{}
+			le := logpb.LogEntry{}
 			if err := proto.Unmarshal(ld, &le); err != nil {
 				log.Fields{
 					log.ErrorKey: err,

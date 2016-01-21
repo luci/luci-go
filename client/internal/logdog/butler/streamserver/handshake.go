@@ -14,9 +14,9 @@ import (
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/iotools"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/recordio"
 	"golang.org/x/net/context"
 )
@@ -35,7 +35,7 @@ const (
 
 func (p *handshakeProtocol) defaultFlags() *streamproto.Flags {
 	return &streamproto.Flags{
-		Type: streamproto.StreamType(protocol.LogStreamDescriptor_TEXT),
+		Type: streamproto.StreamType(logpb.LogStreamDescriptor_TEXT),
 		Tee:  streamproto.TeeNone,
 	}
 }

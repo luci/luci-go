@@ -18,8 +18,8 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/gcloud/gcps"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/recordio"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
@@ -96,7 +96,7 @@ func TestConfig(t *testing.T) {
 	})
 }
 
-func deconstructMessage(msg *pubsub.Message) (*protocol.ButlerMetadata, *protocol.ButlerLogBundle, error) {
+func deconstructMessage(msg *pubsub.Message) (*logpb.ButlerMetadata, *logpb.ButlerLogBundle, error) {
 	fr := recordio.NewReader(bytes.NewBuffer(msg.Data), gcps.MaxPublishSize)
 
 	// Validate header frame.
@@ -105,12 +105,12 @@ func deconstructMessage(msg *pubsub.Message) (*protocol.ButlerMetadata, *protoco
 		return nil, nil, fmt.Errorf("test: failed to read header frame: %s", err)
 	}
 
-	header := protocol.ButlerMetadata{}
+	header := logpb.ButlerMetadata{}
 	if err := proto.Unmarshal(headerBytes, &header); err != nil {
 		return nil, nil, fmt.Errorf("test: failed to unmarshal header: %s", err)
 	}
 
-	if header.Type != protocol.ButlerMetadata_ButlerLogBundle {
+	if header.Type != logpb.ButlerMetadata_ButlerLogBundle {
 		return nil, nil, fmt.Errorf("test: unknown frame data type: %v", header.Type)
 	}
 
@@ -121,7 +121,7 @@ func deconstructMessage(msg *pubsub.Message) (*protocol.ButlerMetadata, *protoco
 	}
 
 	switch header.Compression {
-	case protocol.ButlerMetadata_ZLIB:
+	case logpb.ButlerMetadata_ZLIB:
 		r, err := zlib.NewReader(bytes.NewReader(data))
 		if err != nil {
 			return nil, nil, fmt.Errorf("test: failed to create zlib reader: %s", err)
@@ -134,7 +134,7 @@ func deconstructMessage(msg *pubsub.Message) (*protocol.ButlerMetadata, *protoco
 		}
 	}
 
-	dataBundle := protocol.ButlerLogBundle{}
+	dataBundle := logpb.ButlerLogBundle{}
 	if err := proto.Unmarshal(data, &dataBundle); err != nil {
 		return nil, nil, fmt.Errorf("test: failed to unmarshal bundle: %s", err)
 	}
@@ -157,10 +157,10 @@ func TestOutput(t *testing.T) {
 		So(o, ShouldNotBeNil)
 		defer o.Close()
 
-		bundle := &protocol.ButlerLogBundle{
+		bundle := &logpb.ButlerLogBundle{
 			Source:    "GCPS Test",
 			Timestamp: google.NewTimestamp(clock.Now(ctx)),
-			Entries: []*protocol.ButlerLogBundle_Entry{
+			Entries: []*logpb.ButlerLogBundle_Entry{
 				{},
 			},
 		}
@@ -170,7 +170,7 @@ func TestOutput(t *testing.T) {
 
 			h, b, err := deconstructMessage(<-ps.msgC)
 			So(err, ShouldBeNil)
-			So(h.Compression, ShouldEqual, protocol.ButlerMetadata_NONE)
+			So(h.Compression, ShouldEqual, logpb.ButlerMetadata_NONE)
 			So(b, ShouldResemble, bundle)
 
 			Convey(`And records stats.`, func() {

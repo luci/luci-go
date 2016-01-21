@@ -12,8 +12,8 @@ import (
 	"io"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/recordio"
 )
 
@@ -51,12 +51,12 @@ type Reader struct {
 
 	// Metadata is the unpacked ButlerMetadata. It is populated when the
 	// metadata has been read.
-	Metadata *protocol.ButlerMetadata
+	Metadata *logpb.ButlerMetadata
 
 	// Bundle is the unpacked ButlerLogBundle. It is populated when the
 	// protocol data has been read and the Metadata indicates a ButlerLogBundle
 	// type.
-	Bundle *protocol.ButlerLogBundle
+	Bundle *logpb.ButlerLogBundle
 }
 
 // ReadMetadata reads the metadata header frame.
@@ -66,7 +66,7 @@ func (r *Reader) readMetadata(fr recordio.Reader) error {
 		return err
 	}
 
-	md := protocol.ButlerMetadata{}
+	md := logpb.ButlerMetadata{}
 	if err := proto.Unmarshal(data, &md); err != nil {
 		return fmt.Errorf("butlerproto: failed to unmarshal Metadata frame: %s", err)
 	}
@@ -82,10 +82,10 @@ func (r *Reader) readData(fr recordio.Reader) ([]byte, error) {
 
 	// Read the frame through a zlib reader.
 	switch r.Metadata.Compression {
-	case protocol.ButlerMetadata_NONE:
+	case logpb.ButlerMetadata_NONE:
 		break
 
-	case protocol.ButlerMetadata_ZLIB:
+	case logpb.ButlerMetadata_ZLIB:
 		br, err = zlib.NewReader(br)
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize zlib reader: %s", err)
@@ -120,18 +120,18 @@ func (r *Reader) Read(ir io.Reader) error {
 	}
 
 	switch r.Metadata.Type {
-	case protocol.ButlerMetadata_ButlerLogBundle:
+	case logpb.ButlerMetadata_ButlerLogBundle:
 		data, err := r.readData(fr)
 		if err != nil {
 			return fmt.Errorf("butlerproto: failed to read Bundle data: %s", err)
 		}
 
-		if r.Metadata.ProtoVersion != protocol.Version {
+		if r.Metadata.ProtoVersion != logpb.Version {
 			return fmt.Errorf("butlerproto: unknown protobuf version (%q != %q)",
-				r.Metadata.ProtoVersion, protocol.Version)
+				r.Metadata.ProtoVersion, logpb.Version)
 		}
 
-		bundle := protocol.ButlerLogBundle{}
+		bundle := logpb.ButlerLogBundle{}
 		if err := proto.Unmarshal(data, &bundle); err != nil {
 			return fmt.Errorf("butlerproto: failed to unmarshal Bundle frame: %s", err)
 		}
@@ -180,14 +180,14 @@ type Writer struct {
 	compressWriter *zlib.Writer
 }
 
-func (w *Writer) writeData(fw recordio.Writer, t protocol.ButlerMetadata_ContentType, data []byte) error {
+func (w *Writer) writeData(fw recordio.Writer, t logpb.ButlerMetadata_ContentType, data []byte) error {
 	if int64(len(data)) > w.getMaxSize() {
 		return fmt.Errorf("butlerproto: serialized size exceeds soft cap (%d > %d)", len(data), w.getMaxSize())
 	}
 
-	md := protocol.ButlerMetadata{
+	md := logpb.ButlerMetadata{
 		Type:         t,
-		ProtoVersion: protocol.Version,
+		ProtoVersion: logpb.Version,
 	}
 
 	// If we're configured to compress and the data is below our threshold,
@@ -208,7 +208,7 @@ func (w *Writer) writeData(fw recordio.Writer, t protocol.ButlerMetadata_Content
 
 		compressed := true
 		if compressed {
-			md.Compression = protocol.ButlerMetadata_ZLIB
+			md.Compression = logpb.ButlerMetadata_ZLIB
 		}
 		data = w.compressBuf.Bytes()
 	}
@@ -238,16 +238,16 @@ func (w *Writer) writeData(fw recordio.Writer, t protocol.ButlerMetadata_Content
 }
 
 // WriteWith writes a ButlerLogBundle to the supplied Writer.
-func (w *Writer) Write(iw io.Writer, b *protocol.ButlerLogBundle) error {
+func (w *Writer) Write(iw io.Writer, b *logpb.ButlerLogBundle) error {
 	return w.WriteWith(recordio.NewWriter(iw), b)
 }
 
 // WriteWith writes a ButlerLogBundle to the supplied recordio.Writer.
-func (w *Writer) WriteWith(fw recordio.Writer, b *protocol.ButlerLogBundle) error {
+func (w *Writer) WriteWith(fw recordio.Writer, b *logpb.ButlerLogBundle) error {
 	data, err := proto.Marshal(b)
 	if err != nil {
 		return fmt.Errorf("butlerproto: failed to marshal Bundle: %s", b)
 	}
 
-	return w.writeData(fw, protocol.ButlerMetadata_ButlerLogBundle, data)
+	return w.writeData(fw, logpb.ButlerMetadata_ButlerLogBundle, data)
 }

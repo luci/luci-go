@@ -11,9 +11,9 @@ import (
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	lep "github.com/luci/luci-go/appengine/logdog/coordinator/endpoints"
-	"github.com/luci/luci-go/common/logdog/protocol"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"golang.org/x/net/context"
 )
 
@@ -27,10 +27,10 @@ const (
 var (
 	// streamTypeFilterMap maps StreamType query filter field strings to log
 	// stream types.
-	streamTypeFilterMap = map[string]protocol.LogStreamDescriptor_StreamType{
-		"text":     protocol.LogStreamDescriptor_TEXT,
-		"binary":   protocol.LogStreamDescriptor_BINARY,
-		"datagram": protocol.LogStreamDescriptor_DATAGRAM,
+	streamTypeFilterMap = map[string]logpb.LogStreamDescriptor_StreamType{
+		"text":     logpb.LogStreamDescriptor_TEXT,
+		"binary":   logpb.LogStreamDescriptor_BINARY,
+		"datagram": logpb.LogStreamDescriptor_DATAGRAM,
 	}
 )
 
