@@ -39,40 +39,40 @@ type E1 int32
 const (
 	// V0
 	// next line.
-	E1_V0	E1	= 0
+	E1_V0 E1 = 0
 	// V1
 	// next line.
-	E1_V1	E1	= 1
+	E1_V1 E1 = 1
 )
 
 var E1_name = map[int32]string{
-	0:	"V0",
-	1:	"V1",
+	0: "V0",
+	1: "V1",
 }
 var E1_value = map[string]int32{
-	"V0":	0,
-	"V1":	1,
+	"V0": 0,
+	"V1": 1,
 }
 
 func (x E1) String() string {
 	return proto.EnumName(E1_name, int32(x))
 }
-func (E1) EnumDescriptor() ([]byte, []int)	{ return fileDescriptor0, []int{0} }
+func (E1) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
 type NestedMessageParent_NestedEnum int32
 
 const (
-	NestedMessageParent_V0	NestedMessageParent_NestedEnum	= 0
-	NestedMessageParent_V1	NestedMessageParent_NestedEnum	= 1
+	NestedMessageParent_V0 NestedMessageParent_NestedEnum = 0
+	NestedMessageParent_V1 NestedMessageParent_NestedEnum = 1
 )
 
 var NestedMessageParent_NestedEnum_name = map[int32]string{
-	0:	"V0",
-	1:	"V1",
+	0: "V0",
+	1: "V1",
 }
 var NestedMessageParent_NestedEnum_value = map[string]int32{
-	"V0":	0,
-	"V1":	1,
+	"V0": 0,
+	"V1": 1,
 }
 
 func (x NestedMessageParent_NestedEnum) String() string {
@@ -90,26 +90,26 @@ type M1 struct {
 	F1 string `protobuf:"bytes,1,opt,name=f1" json:"f1,omitempty"`
 }
 
-func (m *M1) Reset()			{ *m = M1{} }
-func (m *M1) String() string		{ return proto.CompactTextString(m) }
-func (*M1) ProtoMessage()		{}
-func (*M1) Descriptor() ([]byte, []int)	{ return fileDescriptor0, []int{0} }
+func (m *M1) Reset()                    { *m = M1{} }
+func (m *M1) String() string            { return proto.CompactTextString(m) }
+func (*M1) ProtoMessage()               {}
+func (*M1) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
 // M2
 // next line.
 type M2 struct {
 	// f1
 	// next line.
-	F1	[]*M1	`protobuf:"bytes,1,rep,name=f1" json:"f1,omitempty"`
+	F1 []*M1 `protobuf:"bytes,1,rep,name=f1" json:"f1,omitempty"`
 	// f2
 	// next line.
-	F2	E1	`protobuf:"varint,2,opt,name=f2,enum=main.E1" json:"f2,omitempty"`
+	F2 E1 `protobuf:"varint,2,opt,name=f2,enum=main.E1" json:"f2,omitempty"`
 }
 
-func (m *M2) Reset()			{ *m = M2{} }
-func (m *M2) String() string		{ return proto.CompactTextString(m) }
-func (*M2) ProtoMessage()		{}
-func (*M2) Descriptor() ([]byte, []int)	{ return fileDescriptor0, []int{1} }
+func (m *M2) Reset()                    { *m = M2{} }
+func (m *M2) String() string            { return proto.CompactTextString(m) }
+func (*M2) ProtoMessage()               {}
+func (*M2) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
 func (m *M2) GetF1() []*M1 {
 	if m != nil {
@@ -125,23 +125,23 @@ type M3 struct {
 	// Types that are valid to be assigned to O1:
 	//	*M3_F1
 	//	*M3_F2
-	O1	isM3_O1	`protobuf_oneof:"O1"`
+	O1 isM3_O1 `protobuf_oneof:"O1"`
 	// O2
 	//
 	// Types that are valid to be assigned to O2:
 	//	*M3_F3
 	//	*M3_F4
-	O2	isM3_O2	`protobuf_oneof:"O2"`
+	O2 isM3_O2 `protobuf_oneof:"O2"`
 	// f5
-	F5	string	`protobuf:"bytes,5,opt,name=f5" json:"f5,omitempty"`
+	F5 string `protobuf:"bytes,5,opt,name=f5" json:"f5,omitempty"`
 	// f6
-	F6	int32	`protobuf:"varint,6,opt,name=f6" json:"f6,omitempty"`
+	F6 int32 `protobuf:"varint,6,opt,name=f6" json:"f6,omitempty"`
 }
 
-func (m *M3) Reset()			{ *m = M3{} }
-func (m *M3) String() string		{ return proto.CompactTextString(m) }
-func (*M3) ProtoMessage()		{}
-func (*M3) Descriptor() ([]byte, []int)	{ return fileDescriptor0, []int{2} }
+func (m *M3) Reset()                    { *m = M3{} }
+func (m *M3) String() string            { return proto.CompactTextString(m) }
+func (*M3) ProtoMessage()               {}
+func (*M3) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
 type isM3_O1 interface {
 	isM3_O1()
@@ -163,10 +163,10 @@ type M3_F4 struct {
 	F4 int32 `protobuf:"varint,4,opt,name=f4,oneof"`
 }
 
-func (*M3_F1) isM3_O1()	{}
-func (*M3_F2) isM3_O1()	{}
-func (*M3_F3) isM3_O2()	{}
-func (*M3_F4) isM3_O2()	{}
+func (*M3_F1) isM3_O1() {}
+func (*M3_F2) isM3_O1() {}
+func (*M3_F3) isM3_O2() {}
+func (*M3_F4) isM3_O2() {}
 
 func (m *M3) GetO1() isM3_O1 {
 	if m != nil {
@@ -251,28 +251,28 @@ func _M3_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
 func _M3_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
 	m := msg.(*M3)
 	switch tag {
-	case 1:	// O1.f1
+	case 1: // O1.f1
 		if wire != proto.WireVarint {
 			return true, proto.ErrInternalBadWireType
 		}
 		x, err := b.DecodeVarint()
 		m.O1 = &M3_F1{int32(x)}
 		return true, err
-	case 2:	// O1.f2
+	case 2: // O1.f2
 		if wire != proto.WireVarint {
 			return true, proto.ErrInternalBadWireType
 		}
 		x, err := b.DecodeVarint()
 		m.O1 = &M3_F2{int32(x)}
 		return true, err
-	case 3:	// O2.f3
+	case 3: // O2.f3
 		if wire != proto.WireVarint {
 			return true, proto.ErrInternalBadWireType
 		}
 		x, err := b.DecodeVarint()
 		m.O2 = &M3_F3{int32(x)}
 		return true, err
-	case 4:	// O2.f4
+	case 4: // O2.f4
 		if wire != proto.WireVarint {
 			return true, proto.ErrInternalBadWireType
 		}
@@ -287,19 +287,19 @@ func _M3_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bo
 type NestedMessageParent struct {
 }
 
-func (m *NestedMessageParent) Reset()				{ *m = NestedMessageParent{} }
-func (m *NestedMessageParent) String() string			{ return proto.CompactTextString(m) }
-func (*NestedMessageParent) ProtoMessage()			{}
-func (*NestedMessageParent) Descriptor() ([]byte, []int)	{ return fileDescriptor0, []int{3} }
+func (m *NestedMessageParent) Reset()                    { *m = NestedMessageParent{} }
+func (m *NestedMessageParent) String() string            { return proto.CompactTextString(m) }
+func (*NestedMessageParent) ProtoMessage()               {}
+func (*NestedMessageParent) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
 
 type NestedMessageParent_NestedMessage struct {
-	F1	int32	`protobuf:"varint,1,opt,name=f1" json:"f1,omitempty"`
-	F2	int32	`protobuf:"varint,2,opt,name=f2" json:"f2,omitempty"`
+	F1 int32 `protobuf:"varint,1,opt,name=f1" json:"f1,omitempty"`
+	F2 int32 `protobuf:"varint,2,opt,name=f2" json:"f2,omitempty"`
 }
 
-func (m *NestedMessageParent_NestedMessage) Reset()		{ *m = NestedMessageParent_NestedMessage{} }
-func (m *NestedMessageParent_NestedMessage) String() string	{ return proto.CompactTextString(m) }
-func (*NestedMessageParent_NestedMessage) ProtoMessage()	{}
+func (m *NestedMessageParent_NestedMessage) Reset()         { *m = NestedMessageParent_NestedMessage{} }
+func (m *NestedMessageParent_NestedMessage) String() string { return proto.CompactTextString(m) }
+func (*NestedMessageParent_NestedMessage) ProtoMessage()    {}
 func (*NestedMessageParent_NestedMessage) Descriptor() ([]byte, []int) {
 	return fileDescriptor0, []int{3, 0}
 }
@@ -366,15 +366,15 @@ func _S1_R1_Handler(srv interface{}, ctx context.Context, dec func(interface{}) 
 }
 
 var _S1_serviceDesc = grpc.ServiceDesc{
-	ServiceName:	"main.S1",
-	HandlerType:	(*S1Server)(nil),
+	ServiceName: "main.S1",
+	HandlerType: (*S1Server)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName:	"R1",
-			Handler:	_S1_R1_Handler,
+			MethodName: "R1",
+			Handler:    _S1_R1_Handler,
 		},
 	},
-	Streams:	[]grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{},
 }
 
 // Client API for S2 service
@@ -450,19 +450,19 @@ func _S2_R2_Handler(srv interface{}, ctx context.Context, dec func(interface{}) 
 }
 
 var _S2_serviceDesc = grpc.ServiceDesc{
-	ServiceName:	"main.S2",
-	HandlerType:	(*S2Server)(nil),
+	ServiceName: "main.S2",
+	HandlerType: (*S2Server)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName:	"R1",
-			Handler:	_S2_R1_Handler,
+			MethodName: "R1",
+			Handler:    _S2_R1_Handler,
 		},
 		{
-			MethodName:	"R2",
-			Handler:	_S2_R2_Handler,
+			MethodName: "R2",
+			Handler:    _S2_R2_Handler,
 		},
 	},
-	Streams:	[]grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{},
 }
 
 var fileDescriptor0 = []byte{

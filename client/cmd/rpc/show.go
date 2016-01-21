@@ -54,7 +54,9 @@ func (r *showRun) Run(a subcommands.Application, args []string) int {
 		name = args[1]
 	}
 
-	return r.done(show(r.initContext(), server, name))
+	return r.run(func(c context.Context) error {
+		return show(c, server, name)
+	})
 }
 
 // show prints a definition of an object referenced by name in proto3 style.

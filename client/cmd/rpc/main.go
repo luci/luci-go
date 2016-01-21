@@ -14,6 +14,8 @@ import (
 	gol "github.com/op/go-logging"
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/client/authcli"
+	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/logging/gologger"
 )
 
@@ -21,30 +23,51 @@ const (
 	userAgent = "luci-rpc"
 )
 
+var logCfg = gologger.LoggerConfig{
+	Format: `%{message}`,
+	Out:    os.Stderr,
+	Level:  gol.WARNING,
+}
+
 // cmdRun is a base of all rpc subcommands.
-// It defines some common flags, such as logging, and useful methods.
+// It defines some common flags, such as logging and auth, and useful methods.
 type cmdRun struct {
 	subcommands.CommandRunBase
 	verbose bool
+	auth    authcli.Flags
 }
 
 // registerBaseFlags registers common flags used by all subcommands.
 func (r *cmdRun) registerBaseFlags() {
 	r.Flags.BoolVar(&r.verbose, "verbose", false, "Enable more logging.")
+	r.auth.Register(&r.Flags, auth.Options{
+		Logger: logCfg.Get(),
+	})
 }
 
-// initContext creates a context with installed logger.
-func (r *cmdRun) initContext() context.Context {
+// initContext creates a context. Must be called after flags are parsed.
+func (r *cmdRun) initContext() (context.Context, error) {
 	// Setup logger.
-	loggerConfig := gologger.LoggerConfig{
-		Format: `%{message}`,
-		Out:    os.Stderr,
-		Level:  gol.WARNING,
-	}
+	logCfg := logCfg
 	if r.verbose {
-		loggerConfig.Level = gol.DEBUG
+		logCfg.Level = gol.DEBUG
 	}
-	return loggerConfig.Use(context.Background())
+
+	// Setup authenticated HTTP client.
+	c := logCfg.Use(context.Background())
+	authOpts, err := r.auth.Options()
+	if err != nil {
+		return nil, err
+	}
+	a := auth.NewAuthenticator(auth.OptionalLogin, authOpts)
+	httpClient, err := a.Client()
+	if err != nil {
+		return nil, err
+	}
+	client := &clientImpl{*httpClient, a}
+	c = context.WithValue(c, clientKey, client)
+
+	return c, nil
 }
 
 // argErr prints an err and usage to stderr and returns an exit code.
@@ -68,12 +91,24 @@ func (r *cmdRun) done(err error) int {
 	return 0
 }
 
+// run initializes a context and runs f.
+// if f returns an error, prints the error and returns a non-zero exit code.
+func (r *cmdRun) run(f func(context.Context) error) int {
+	ctx, err := r.initContext()
+	if err != nil {
+		return r.done(err)
+	}
+	return r.done(f(ctx))
+}
+
 var application = &subcommands.DefaultApplication{
 	Name:  "rpc",
 	Title: "Remote Procedure Call CLI",
 	Commands: []*subcommands.Command{
 		cmdCall,
 		cmdShow,
+		authcli.SubcommandLogin(auth.Options{Logger: logCfg.Get()}, "login"),
+		authcli.SubcommandLogout(auth.Options{Logger: logCfg.Get()}, "logout"),
 	},
 }
 

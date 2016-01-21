@@ -87,7 +87,10 @@ func (r *callRun) Run(a subcommands.Application, args []string) int {
 		return r.done(fmt.Errorf("could not read message from stdin: %s", err))
 	}
 	req.message = msg.Bytes()
-	return r.done(call(r.initContext(), &req, os.Stdout))
+
+	return r.run(func(c context.Context) error {
+		return call(c, &req, os.Stdout)
+	})
 }
 
 func splitServiceAndMethod(fullName string) (service string, method string, err error) {
@@ -138,7 +141,7 @@ func call(c context.Context, req *request, out io.Writer) error {
 	logging.Infof(c, ">")
 
 	// Send the request.
-	var client http.Client
+	client := getClient(c)
 	res, err := client.Do(hr)
 	if err != nil {
 		return fmt.Errorf("failed to send request: %s", err)
@@ -149,7 +152,14 @@ func call(c context.Context, req *request, out io.Writer) error {
 	logResponse(c, res)
 	logging.Infof(c, "<")
 
-	if res.StatusCode != http.StatusOK {
+	switch {
+	case
+		res.StatusCode == http.StatusUnauthorized,
+		res.StatusCode == http.StatusForbidden && !client.hasToken():
+
+		return fmt.Errorf("%s: perhaps API requires authentication. Try `rpc login`", res.Status)
+
+	case res.StatusCode != http.StatusOK:
 		return fmt.Errorf("%s", res.Status)
 	}
 

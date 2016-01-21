@@ -405,7 +405,7 @@ func (a *Authenticator) PurgeCredentialsCache() error {
 
 // GetAccessToken returns a valid access token with specified minimum lifetime.
 //
-// Does not interact with the user. May return ErrLoginRequered.
+// Does not interact with the user. May return ErrLoginRequired.
 func (a *Authenticator) GetAccessToken(lifetime time.Duration) (Token, error) {
 	a.lock.Lock()
 	if err := a.ensureInitialized(); err != nil {
