@@ -70,7 +70,15 @@ func TransportFromContext(ctx context.Context) http.RoundTripper {
 
 // MarshalToken converts a token into byte buffer.
 func MarshalToken(tok *oauth2.Token) ([]byte, error) {
+	// TODO(vadimsh): Remove 'flavor' and 'version' when new code that doesn't use
+	// them is deployed everywhere.
+	flavor := "service_account"
+	if tok.RefreshToken != "" {
+		flavor = "user"
+	}
 	return json.MarshalIndent(&tokenOnDisk{
+		Version:      "1",    // not actually used, exists for backward compatibility
+		Flavor:       flavor, // same
 		AccessToken:  tok.AccessToken,
 		TokenType:    tok.Type(),
 		RefreshToken: tok.RefreshToken,
@@ -126,6 +134,8 @@ func EqualTokens(a, b *oauth2.Token) bool {
 
 // tokenOnDisk describes JSON produced by MarshalToken.
 type tokenOnDisk struct {
+	Version      string `json:"version,omitempty"` // not actually used, exists for backward compatibility
+	Flavor       string `json:"flavor,omitempty"`  // same
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token,omitempty"`
 	TokenType    string `json:"token_type,omitempty"`
