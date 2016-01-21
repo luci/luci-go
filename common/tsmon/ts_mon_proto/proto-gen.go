@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-//go:generate protoc --go_out=. acquisition_network_device.proto acquisition_task.proto metrics.proto
+//go:generate cproto
 
 // Package ts_mon_proto contains ts_mon protobuf source and generated protobuf
 // data.

@@ -2,6 +2,17 @@
 // source: duration.proto
 // DO NOT EDIT!
 
+/*
+Package google is a generated protocol buffer package.
+
+It is generated from these files:
+	duration.proto
+	timestamp.proto
+
+It has these top-level messages:
+	Duration
+	Timestamp
+*/
 package google
 
 import proto "github.com/golang/protobuf/proto"
@@ -70,13 +81,13 @@ type Duration struct {
 func (m *Duration) Reset()                    { *m = Duration{} }
 func (m *Duration) String() string            { return proto.CompactTextString(m) }
 func (*Duration) ProtoMessage()               {}
-func (*Duration) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (*Duration) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
 func init() {
 	proto.RegisterType((*Duration)(nil), "google.protobuf.Duration")
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor0 = []byte{
 	// 148 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0xe2, 0x4b, 0x29, 0x2d, 0x4a,
 	0x2c, 0xc9, 0xcc, 0xcf, 0xd3, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0xe2, 0x4f, 0xcf, 0xcf, 0x4f,

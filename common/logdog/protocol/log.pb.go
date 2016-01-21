@@ -2,23 +2,6 @@
 // source: log.proto
 // DO NOT EDIT!
 
-/*
-Package protocol is a generated protocol buffer package.
-
-It is generated from these files:
-	log.proto
-	butler.proto
-
-It has these top-level messages:
-	LogStreamDescriptor
-	Text
-	Binary
-	Datagram
-	LogEntry
-	LogIndex
-	ButlerMetadata
-	ButlerLogBundle
-*/
 package protocol
 
 import proto "github.com/golang/protobuf/proto"
@@ -56,7 +39,7 @@ func (x LogStreamDescriptor_StreamType) String() string {
 	return proto.EnumName(LogStreamDescriptor_StreamType_name, int32(x))
 }
 func (LogStreamDescriptor_StreamType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor0, []int{0, 0}
+	return fileDescriptor1, []int{0, 0}
 }
 
 // *
@@ -105,7 +88,7 @@ type LogStreamDescriptor struct {
 func (m *LogStreamDescriptor) Reset()                    { *m = LogStreamDescriptor{} }
 func (m *LogStreamDescriptor) String() string            { return proto.CompactTextString(m) }
 func (*LogStreamDescriptor) ProtoMessage()               {}
-func (*LogStreamDescriptor) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+func (*LogStreamDescriptor) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
 
 func (m *LogStreamDescriptor) GetTimestamp() *google_protobuf.Timestamp {
 	if m != nil {
@@ -135,7 +118,7 @@ type LogStreamDescriptor_Tag struct {
 func (m *LogStreamDescriptor_Tag) Reset()                    { *m = LogStreamDescriptor_Tag{} }
 func (m *LogStreamDescriptor_Tag) String() string            { return proto.CompactTextString(m) }
 func (*LogStreamDescriptor_Tag) ProtoMessage()               {}
-func (*LogStreamDescriptor_Tag) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 0} }
+func (*LogStreamDescriptor_Tag) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 0} }
 
 // Text stream content.
 type Text struct {
@@ -145,7 +128,7 @@ type Text struct {
 func (m *Text) Reset()                    { *m = Text{} }
 func (m *Text) String() string            { return proto.CompactTextString(m) }
 func (*Text) ProtoMessage()               {}
-func (*Text) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+func (*Text) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
 
 func (m *Text) GetLines() []*Text_Line {
 	if m != nil {
@@ -169,7 +152,7 @@ type Text_Line struct {
 func (m *Text_Line) Reset()                    { *m = Text_Line{} }
 func (m *Text_Line) String() string            { return proto.CompactTextString(m) }
 func (*Text_Line) ProtoMessage()               {}
-func (*Text_Line) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1, 0} }
+func (*Text_Line) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1, 0} }
 
 // Binary stream content.
 type Binary struct {
@@ -182,7 +165,7 @@ type Binary struct {
 func (m *Binary) Reset()                    { *m = Binary{} }
 func (m *Binary) String() string            { return proto.CompactTextString(m) }
 func (*Binary) ProtoMessage()               {}
-func (*Binary) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+func (*Binary) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
 
 // Datagram stream content type.
 type Datagram struct {
@@ -194,7 +177,7 @@ type Datagram struct {
 func (m *Datagram) Reset()                    { *m = Datagram{} }
 func (m *Datagram) String() string            { return proto.CompactTextString(m) }
 func (*Datagram) ProtoMessage()               {}
-func (*Datagram) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+func (*Datagram) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
 
 func (m *Datagram) GetPartial() *Datagram_Partial {
 	if m != nil {
@@ -220,7 +203,7 @@ type Datagram_Partial struct {
 func (m *Datagram_Partial) Reset()                    { *m = Datagram_Partial{} }
 func (m *Datagram_Partial) String() string            { return proto.CompactTextString(m) }
 func (*Datagram_Partial) ProtoMessage()               {}
-func (*Datagram_Partial) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3, 0} }
+func (*Datagram_Partial) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3, 0} }
 
 // *
 // An individual log entry.
@@ -270,7 +253,7 @@ type LogEntry struct {
 func (m *LogEntry) Reset()                    { *m = LogEntry{} }
 func (m *LogEntry) String() string            { return proto.CompactTextString(m) }
 func (*LogEntry) ProtoMessage()               {}
-func (*LogEntry) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+func (*LogEntry) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{4} }
 
 type isLogEntry_Content interface {
 	isLogEntry_Content()
@@ -422,7 +405,7 @@ type LogIndex struct {
 func (m *LogIndex) Reset()                    { *m = LogIndex{} }
 func (m *LogIndex) String() string            { return proto.CompactTextString(m) }
 func (*LogIndex) ProtoMessage()               {}
-func (*LogIndex) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+func (*LogIndex) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{5} }
 
 func (m *LogIndex) GetDesc() *LogStreamDescriptor {
 	if m != nil {
@@ -481,7 +464,7 @@ type LogIndex_Entry struct {
 func (m *LogIndex_Entry) Reset()                    { *m = LogIndex_Entry{} }
 func (m *LogIndex_Entry) String() string            { return proto.CompactTextString(m) }
 func (*LogIndex_Entry) ProtoMessage()               {}
-func (*LogIndex_Entry) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5, 0} }
+func (*LogIndex_Entry) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{5, 0} }
 
 func (m *LogIndex_Entry) GetTimeOffset() *google_protobuf1.Duration {
 	if m != nil {
@@ -504,7 +487,7 @@ func init() {
 	proto.RegisterEnum("protocol.LogStreamDescriptor_StreamType", LogStreamDescriptor_StreamType_name, LogStreamDescriptor_StreamType_value)
 }
 
-var fileDescriptor0 = []byte{
+var fileDescriptor1 = []byte{
 	// 598 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x84, 0x52, 0x4d, 0x6f, 0xd3, 0x40,
 	0x10, 0x6d, 0x62, 0x27, 0x71, 0xc6, 0x69, 0x09, 0x5b, 0x24, 0x8c, 0x25, 0x4a, 0xeb, 0x43, 0x15,

@@ -23,7 +23,11 @@ import (
 )
 
 var (
-	verbose       = flag.Bool("verbose", false, "print debug messages to stderr")
+	verbose    = flag.Bool("verbose", false, "print debug messages to stderr")
+	importPath = flag.String(
+		"import-path",
+		"",
+		"Override the generated Go import path with this value.")
 	withDiscovery = flag.Bool(
 		"discovery", true,
 		"generate pb.discovery.go file")
@@ -81,6 +85,9 @@ func protoc(c context.Context, protoFiles []string, dir, descSetOut string) erro
 		for k, v := range googlePackages {
 			params = append(params, fmt.Sprintf("M%s=%s", k, v))
 		}
+	}
+	if p := *importPath; p != "" {
+		params = append(params, fmt.Sprintf("import_path=%s", p))
 	}
 
 	params = append(params, "plugins=grpc")

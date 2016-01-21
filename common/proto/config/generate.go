@@ -16,4 +16,4 @@ import (
 
 var _ = proto.Marshal
 
-//go:generate protoc --go_out=. project_config.proto service_config.proto
+//go:generate cproto

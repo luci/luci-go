@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-//go:generate protoc --go_out=. config.proto storage.proto transport.proto
+//go:generate cproto
 
 // Package services contains LogDog service configuration protobufs.
 //

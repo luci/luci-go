@@ -2,6 +2,23 @@
 // source: butler.proto
 // DO NOT EDIT!
 
+/*
+Package protocol is a generated protocol buffer package.
+
+It is generated from these files:
+	butler.proto
+	log.proto
+
+It has these top-level messages:
+	ButlerMetadata
+	ButlerLogBundle
+	LogStreamDescriptor
+	Text
+	Binary
+	Datagram
+	LogEntry
+	LogIndex
+*/
 package protocol
 
 import proto "github.com/golang/protobuf/proto"
@@ -38,7 +55,7 @@ func (x ButlerMetadata_ContentType) String() string {
 	return proto.EnumName(ButlerMetadata_ContentType_name, int32(x))
 }
 func (ButlerMetadata_ContentType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{0, 0}
+	return fileDescriptor0, []int{0, 0}
 }
 
 // Compression scheme of attached data.
@@ -62,7 +79,7 @@ func (x ButlerMetadata_Compression) String() string {
 	return proto.EnumName(ButlerMetadata_Compression_name, int32(x))
 }
 func (ButlerMetadata_Compression) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{0, 1}
+	return fileDescriptor0, []int{0, 1}
 }
 
 //
@@ -79,7 +96,7 @@ type ButlerMetadata struct {
 func (m *ButlerMetadata) Reset()                    { *m = ButlerMetadata{} }
 func (m *ButlerMetadata) String() string            { return proto.CompactTextString(m) }
 func (*ButlerMetadata) ProtoMessage()               {}
-func (*ButlerMetadata) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (*ButlerMetadata) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
 //
 // A message containing log data in transit from the Butler.
@@ -112,7 +129,7 @@ type ButlerLogBundle struct {
 func (m *ButlerLogBundle) Reset()                    { *m = ButlerLogBundle{} }
 func (m *ButlerLogBundle) String() string            { return proto.CompactTextString(m) }
 func (*ButlerLogBundle) ProtoMessage()               {}
-func (*ButlerLogBundle) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (*ButlerLogBundle) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
 func (m *ButlerLogBundle) GetTimestamp() *google_protobuf.Timestamp {
 	if m != nil {
@@ -178,7 +195,7 @@ type ButlerLogBundle_Entry struct {
 func (m *ButlerLogBundle_Entry) Reset()                    { *m = ButlerLogBundle_Entry{} }
 func (m *ButlerLogBundle_Entry) String() string            { return proto.CompactTextString(m) }
 func (*ButlerLogBundle_Entry) ProtoMessage()               {}
-func (*ButlerLogBundle_Entry) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1, 0} }
+func (*ButlerLogBundle_Entry) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1, 0} }
 
 func (m *ButlerLogBundle_Entry) GetDesc() *LogStreamDescriptor {
 	if m != nil {
@@ -202,7 +219,7 @@ func init() {
 	proto.RegisterEnum("protocol.ButlerMetadata_Compression", ButlerMetadata_Compression_name, ButlerMetadata_Compression_value)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor0 = []byte{
 	// 367 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x84, 0x92, 0xc1, 0x4e, 0x83, 0x40,
 	0x10, 0x86, 0xa5, 0xa5, 0x2d, 0x0c, 0x15, 0x9b, 0x35, 0x1a, 0x42, 0x62, 0x5a, 0x1b, 0x0f, 0x26,
