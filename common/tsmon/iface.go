@@ -23,7 +23,7 @@ var (
 	// metrics reported by this process.
 	Target types.Target
 
-	globalStore   store.Store
+	globalStore   = store.NewInMemory()
 	globalMonitor = monitor.NewNilMonitor()
 
 	registeredMetrics     = map[string]types.Metric{}
