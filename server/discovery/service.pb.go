@@ -34,25 +34,25 @@ var _ = math.Inf
 type Void struct {
 }
 
-func (m *Void) Reset()				{ *m = Void{} }
-func (m *Void) String() string			{ return proto.CompactTextString(m) }
-func (*Void) ProtoMessage()			{}
-func (*Void) Descriptor() ([]byte, []int)	{ return fileDescriptor0, []int{0} }
+func (m *Void) Reset()                    { *m = Void{} }
+func (m *Void) String() string            { return proto.CompactTextString(m) }
+func (*Void) ProtoMessage()               {}
+func (*Void) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
 // DescribeResponse describes services.
 type DescribeResponse struct {
 	// FileDescriptionSet is a binary-encoded FileDescriptorSet message.
 	// Contains descriptions of all services, their types and all transitive
 	// dependencies.
-	FileDescriptionSet	[]byte	`protobuf:"bytes,1,opt,name=fileDescriptionSet,proto3" json:"fileDescriptionSet,omitempty"`
+	FileDescriptionSet []byte `protobuf:"bytes,1,opt,name=fileDescriptionSet,proto3" json:"fileDescriptionSet,omitempty"`
 	// Services are service names provided by a server.
-	Services	[]string	`protobuf:"bytes,2,rep,name=services" json:"services,omitempty"`
+	Services []string `protobuf:"bytes,2,rep,name=services" json:"services,omitempty"`
 }
 
-func (m *DescribeResponse) Reset()			{ *m = DescribeResponse{} }
-func (m *DescribeResponse) String() string		{ return proto.CompactTextString(m) }
-func (*DescribeResponse) ProtoMessage()			{}
-func (*DescribeResponse) Descriptor() ([]byte, []int)	{ return fileDescriptor0, []int{1} }
+func (m *DescribeResponse) Reset()                    { *m = DescribeResponse{} }
+func (m *DescribeResponse) String() string            { return proto.CompactTextString(m) }
+func (*DescribeResponse) ProtoMessage()               {}
+func (*DescribeResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
 func init() {
 	proto.RegisterType((*Void)(nil), "discovery.Void")
@@ -113,15 +113,15 @@ func _Discovery_Describe_Handler(srv interface{}, ctx context.Context, dec func(
 }
 
 var _Discovery_serviceDesc = grpc.ServiceDesc{
-	ServiceName:	"discovery.Discovery",
-	HandlerType:	(*DiscoveryServer)(nil),
+	ServiceName: "discovery.Discovery",
+	HandlerType: (*DiscoveryServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName:	"Describe",
-			Handler:	_Discovery_Describe_Handler,
+			MethodName: "Describe",
+			Handler:    _Discovery_Describe_Handler,
 		},
 	},
-	Streams:	[]grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{},
 }
 
 var fileDescriptor0 = []byte{

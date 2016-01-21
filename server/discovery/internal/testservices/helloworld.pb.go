@@ -37,39 +37,39 @@ type HelloRequest struct {
 	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 }
 
-func (m *HelloRequest) Reset()				{ *m = HelloRequest{} }
-func (m *HelloRequest) String() string			{ return proto.CompactTextString(m) }
-func (*HelloRequest) ProtoMessage()			{}
-func (*HelloRequest) Descriptor() ([]byte, []int)	{ return fileDescriptor0, []int{0} }
+func (m *HelloRequest) Reset()                    { *m = HelloRequest{} }
+func (m *HelloRequest) String() string            { return proto.CompactTextString(m) }
+func (*HelloRequest) ProtoMessage()               {}
+func (*HelloRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
 // The response message containing the greetings
 type HelloReply struct {
 	Message string `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
 }
 
-func (m *HelloReply) Reset()			{ *m = HelloReply{} }
-func (m *HelloReply) String() string		{ return proto.CompactTextString(m) }
-func (*HelloReply) ProtoMessage()		{}
-func (*HelloReply) Descriptor() ([]byte, []int)	{ return fileDescriptor0, []int{1} }
+func (m *HelloReply) Reset()                    { *m = HelloReply{} }
+func (m *HelloReply) String() string            { return proto.CompactTextString(m) }
+func (*HelloReply) ProtoMessage()               {}
+func (*HelloReply) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
 type MultiplyRequest struct {
-	X	int32	`protobuf:"varint,1,opt,name=x" json:"x,omitempty"`
-	Y	int32	`protobuf:"varint,2,opt,name=y" json:"y,omitempty"`
+	X int32 `protobuf:"varint,1,opt,name=x" json:"x,omitempty"`
+	Y int32 `protobuf:"varint,2,opt,name=y" json:"y,omitempty"`
 }
 
-func (m *MultiplyRequest) Reset()			{ *m = MultiplyRequest{} }
-func (m *MultiplyRequest) String() string		{ return proto.CompactTextString(m) }
-func (*MultiplyRequest) ProtoMessage()			{}
-func (*MultiplyRequest) Descriptor() ([]byte, []int)	{ return fileDescriptor0, []int{2} }
+func (m *MultiplyRequest) Reset()                    { *m = MultiplyRequest{} }
+func (m *MultiplyRequest) String() string            { return proto.CompactTextString(m) }
+func (*MultiplyRequest) ProtoMessage()               {}
+func (*MultiplyRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
 type MultiplyResponse struct {
 	Z int32 `protobuf:"varint,1,opt,name=z" json:"z,omitempty"`
 }
 
-func (m *MultiplyResponse) Reset()			{ *m = MultiplyResponse{} }
-func (m *MultiplyResponse) String() string		{ return proto.CompactTextString(m) }
-func (*MultiplyResponse) ProtoMessage()			{}
-func (*MultiplyResponse) Descriptor() ([]byte, []int)	{ return fileDescriptor0, []int{3} }
+func (m *MultiplyResponse) Reset()                    { *m = MultiplyResponse{} }
+func (m *MultiplyResponse) String() string            { return proto.CompactTextString(m) }
+func (*MultiplyResponse) ProtoMessage()               {}
+func (*MultiplyResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
 
 func init() {
 	proto.RegisterType((*HelloRequest)(nil), "testservices.HelloRequest")
@@ -130,15 +130,15 @@ func _Greeter_SayHello_Handler(srv interface{}, ctx context.Context, dec func(in
 }
 
 var _Greeter_serviceDesc = grpc.ServiceDesc{
-	ServiceName:	"testservices.Greeter",
-	HandlerType:	(*GreeterServer)(nil),
+	ServiceName: "testservices.Greeter",
+	HandlerType: (*GreeterServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName:	"SayHello",
-			Handler:	_Greeter_SayHello_Handler,
+			MethodName: "SayHello",
+			Handler:    _Greeter_SayHello_Handler,
 		},
 	},
-	Streams:	[]grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{},
 }
 
 // Client API for Calc service
@@ -187,15 +187,15 @@ func _Calc_Multiply_Handler(srv interface{}, ctx context.Context, dec func(inter
 }
 
 var _Calc_serviceDesc = grpc.ServiceDesc{
-	ServiceName:	"testservices.Calc",
-	HandlerType:	(*CalcServer)(nil),
+	ServiceName: "testservices.Calc",
+	HandlerType: (*CalcServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName:	"Multiply",
-			Handler:	_Calc_Multiply_Handler,
+			MethodName: "Multiply",
+			Handler:    _Calc_Multiply_Handler,
 		},
 	},
-	Streams:	[]grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{},
 }
 
 var fileDescriptor0 = []byte{
