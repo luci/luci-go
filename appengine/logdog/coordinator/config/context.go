@@ -29,7 +29,7 @@ func WithConfig(c context.Context) context.Context {
 		c = remote.Use(c, gcfg.ConfigServiceURL)
 
 		// Add a memcache-based caching filter.
-		c = gaeconfig.AddFilter(c, gaeconfig.DefaultExpire)
+		c = gaeconfig.AddCacheFilter(c, gaeconfig.DefaultExpire)
 
 	case settings.ErrNoSettings:
 		// No settings, so no configuration will be installed.

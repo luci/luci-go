@@ -34,13 +34,12 @@ import (
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/middleware"
 
-	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/appengine/gaeauth/server"
+	"github.com/luci/luci-go/appengine/gaeconfig"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/config/impl/memory"
-	"github.com/luci/luci-go/common/config/impl/remote"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 
@@ -130,15 +129,7 @@ func getConfigImpl(c context.Context) (config.Interface, error) {
 	if info.Get(c).IsDevAppServer() {
 		return memory.New(devServerConfigs()), nil
 	}
-	settings, err := fetchAppSettings(c)
-	if err != nil {
-		return nil, err
-	}
-	if settings.ConfigServiceURL == "" {
-		return memory.New(nil), nil
-	}
-	c = client.UseServiceAccountTransport(c, nil, nil)
-	return remote.New(c, settings.ConfigServiceURL+"/_ah/api/config/v1/"), nil
+	return gaeconfig.New(c)
 }
 
 // wrap converts the handler to format accepted by middleware lib. It also adds
@@ -231,10 +222,6 @@ func init() {
 
 // warmupHandler warms in-memory caches.
 func warmupHandler(rc *requestContext) {
-	if _, err := fetchAppSettings(rc); err != nil {
-		rc.fail(500, "Failed to load app settings: %s", err)
-		return
-	}
 	if err := server.Warmup(rc); err != nil {
 		rc.fail(500, "Failed to warmup OpenID: %s", err)
 		return

@@ -15,23 +15,25 @@ import (
 	"golang.org/x/net/context"
 )
 
-// DefaultExpire is a reasonable default expiration value.
-const DefaultExpire = 10 * time.Minute
-
-// AddFilter adds a memcache-caching config filter to the context.
+// AddCacheFilter adds a memcache-caching config filter to the context.
 //
 // A Transport from "gaeauth/client" capable of talking to the underlying
 // service should be installed prior to calling this method.
-func AddFilter(c context.Context, expire time.Duration) context.Context {
+func AddCacheFilter(c context.Context, expire time.Duration) context.Context {
 	return config.AddFilters(c, func(ic context.Context, cfg config.Interface) config.Interface {
-		o := caching.Options{
-			Cache: &memCache{
-				Context: ic,
-			},
-			Expiration: expire,
-		}
-		return caching.NewFilter(o)(ic, cfg)
+		return NewCacheFilter(ic, expire)(ic, cfg)
 	})
+}
+
+// NewCacheFilter returns memcache-caching config filter.
+func NewCacheFilter(c context.Context, expire time.Duration) config.Filter {
+	o := caching.Options{
+		Cache: &memCache{
+			Context: c,
+		},
+		Expiration: expire,
+	}
+	return caching.NewFilter(o)
 }
 
 type memCache struct {

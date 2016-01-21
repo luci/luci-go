@@ -168,7 +168,7 @@ func (settingsUIPage) WriteSettings(c context.Context, values map[string]string,
 		return nil
 	}
 
-	logging.Warningf(c, "GAE settings changed from %q to %q", existing, modified)
+	logging.Warningf(c, "GAE settings changed from %q to %q by %q", existing, modified, who)
 
 	// When switching dscache back on, wipe memcache.
 	if existing.DisableDSCache && !modified.DisableDSCache {
