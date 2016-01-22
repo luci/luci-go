@@ -1313,6 +1313,15 @@ var testCases = []testCase{
 		},
 	},
 	{
+		desc: "exotic type projection",
+		src: PropertyMap{
+			"BS": {mp([]byte("I'mABlobKey"))},
+		},
+		want: &ExoticTypes{
+			BS: "I'mABlobKey",
+		},
+	},
+	{
 		desc:   "underspecified types",
 		src:    &Underspecified{},
 		plsErr: "non-concrete interface",
