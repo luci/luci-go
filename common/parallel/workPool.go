@@ -23,8 +23,17 @@ func WorkPool(workers int, gen func(chan<- func() error)) error {
 	}
 
 	sem := make(Semaphore, workers)
-	errchan := make(chan error, workers)
-	funchan := make(chan func() error, workers)
+	return Run(sem, gen)
+}
+
+// Run executes task functions produced by a generator method. Execution is
+// throttled by an optional Semaphore, requiring a token prior to dispatch.
+//
+// Run blocks until all the generator completes and all workers have finished
+// their tasks, returning a MultiError if a failure was encountered.
+func Run(sem Semaphore, gen func(chan<- func() error)) error {
+	errchan := make(chan error, cap(sem))
+	funchan := make(chan func() error, cap(sem))
 
 	go func() {
 		defer close(funchan)

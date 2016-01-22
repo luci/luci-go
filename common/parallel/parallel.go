@@ -16,5 +16,5 @@ package parallel
 //
 // This function is equivalent to WorkPool(0, gen).
 func FanOutIn(gen func(chan<- func() error)) error {
-	return WorkPool(0, gen)
+	return Run(nil, gen)
 }
