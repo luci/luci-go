@@ -44,7 +44,7 @@ func (f *pubsubOutputFactory) option() multiflag.Option {
 	return opt
 }
 
-func (f *pubsubOutputFactory) configOutput(a *butlerApplication) (output.Output, error) {
+func (f *pubsubOutputFactory) configOutput(a *application) (output.Output, error) {
 	if f.project == "" {
 		return nil, fmt.Errorf("pubsub: must supply a project name (-project)")
 	}

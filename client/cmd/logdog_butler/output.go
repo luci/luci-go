@@ -11,7 +11,7 @@ import (
 
 type outputFactory interface {
 	option() multiflag.Option
-	configOutput(a *butlerApplication) (output.Output, error)
+	configOutput(a *application) (output.Output, error)
 }
 
 // outputConfigFlag instance that produces a MessageOutput instance when run.

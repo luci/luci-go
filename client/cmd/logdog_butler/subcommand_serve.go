@@ -30,7 +30,7 @@ type serveCommandRun struct {
 }
 
 func (cmd *serveCommandRun) Run(app subcommands.Application, args []string) int {
-	a := app.(*butlerApplication)
+	a := app.(*application)
 
 	if err := cmd.uri.Validate(); err != nil {
 		log.Fields{

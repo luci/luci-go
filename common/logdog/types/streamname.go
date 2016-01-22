@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"unicode/utf8"
 )
@@ -289,3 +290,13 @@ func (p StreamPath) MarshalJSON() ([]byte, error) {
 	v := string(p)
 	return json.Marshal(&v)
 }
+
+// StreamNameSlice is a slice of StreamName entries. It implements
+// sort.Interface.
+type StreamNameSlice []StreamName
+
+var _ sort.Interface = StreamNameSlice(nil)
+
+func (s StreamNameSlice) Len() int           { return len(s) }
+func (s StreamNameSlice) Less(i, j int) bool { return s[i] < s[j] }
+func (s StreamNameSlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }

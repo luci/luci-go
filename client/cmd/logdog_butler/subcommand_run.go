@@ -83,7 +83,7 @@ type runCommandRun struct {
 }
 
 func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
-	a := app.(*butlerApplication)
+	a := app.(*application)
 
 	if cmd.jsonArgsPath != "" {
 		if len(args) > 0 {
@@ -344,7 +344,7 @@ func (cmd *runCommandRun) loadJSONArgs() ([]string, error) {
 
 // updateEnvironment adds common Butler bootstrapping environment variables
 // to the environment.
-func (cmd *runCommandRun) updateEnvironment(e environ, a *butlerApplication) {
+func (cmd *runCommandRun) updateEnvironment(e environ, a *application) {
 	e.set(bootstrap.EnvStreamPrefix, string(a.butler.Prefix))
 
 	// Set stream server path (if applicable)

@@ -26,6 +26,6 @@ func (f *logOutputFactory) option() multiflag.Option {
 	return opt
 }
 
-func (f *logOutputFactory) configOutput(a *butlerApplication) (output.Output, error) {
+func (f *logOutputFactory) configOutput(a *application) (output.Output, error) {
 	return logOutput.New(a, f.bundleSize), nil
 }

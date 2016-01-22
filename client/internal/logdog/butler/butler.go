@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
 	"sync"
 	"time"
 
@@ -251,6 +252,25 @@ func (b *Butler) Wait() error {
 		"stats": b.c.Output.Stats(),
 	}.Debugf(b.ctx, "Message output has closed")
 	return b.getRunErr()
+}
+
+// Streams returns a sorted list of stream names that have been registered to
+// the Butler.
+func (b *Butler) Streams() []types.StreamName {
+	var streams types.StreamNameSlice
+	func() {
+		b.streamSeenLock.Lock()
+		defer b.streamSeenLock.Unlock()
+
+		streams = make([]types.StreamName, 0, b.streamSeen.Len())
+		b.streamSeen.Iter(func(s string) bool {
+			streams = append(streams, types.StreamName(s))
+			return true
+		})
+	}()
+
+	sort.Sort(streams)
+	return ([]types.StreamName)(streams)
 }
 
 // AddStreamServer adds a StreamServer to the Butler. This is goroutine-safe

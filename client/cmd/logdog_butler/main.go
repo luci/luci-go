@@ -62,9 +62,9 @@ func buildScopes(parts ...[]string) []string {
 	return result
 }
 
-// butlerApplication is Butler application instance and its runtime
-// configuration and state.
-type butlerApplication struct {
+// application is the Butler application instance and its runtime configuration
+// and state.
+type application struct {
 	subcommands.DefaultApplication
 	context.Context
 
@@ -76,7 +76,6 @@ type butlerApplication struct {
 	maxBufferAge clockflag.Duration
 	noBufferLogs bool
 
-	prefix     types.StreamName
 	cpuProfile string
 
 	client *http.Client
@@ -88,7 +87,7 @@ type butlerApplication struct {
 	output output.Output
 }
 
-func (a *butlerApplication) addFlags(fs *flag.FlagSet) {
+func (a *application) addFlags(fs *flag.FlagSet) {
 	a.outputConfig.Output = os.Stdout
 	a.outputConfig.Description = "Select and configure message output adapter."
 	a.outputConfig.Options = []multiflag.Option{
@@ -102,7 +101,7 @@ func (a *butlerApplication) addFlags(fs *flag.FlagSet) {
 
 	a.maxBufferAge = clockflag.Duration(butler.DefaultMaxBufferAge)
 
-	fs.Var(&a.prefix, "prefix",
+	fs.Var(&a.butler.Prefix, "prefix",
 		"Prefix to apply to all stream names.")
 	fs.Var(&a.outputConfig, "output",
 		"The output name and configuration. Specify 'help' for more information.")
@@ -117,7 +116,7 @@ func (a *butlerApplication) addFlags(fs *flag.FlagSet) {
 			"of wire-format efficiency.")
 }
 
-func (a *butlerApplication) authenticatedClient(ctx context.Context) (*http.Client, error) {
+func (a *application) authenticatedClient(ctx context.Context) (*http.Client, error) {
 	if a.client == nil {
 		opts, err := a.authFlags.Options()
 		if err != nil {
@@ -134,7 +133,7 @@ func (a *butlerApplication) authenticatedClient(ctx context.Context) (*http.Clie
 	return a.client, nil
 }
 
-func (a *butlerApplication) authenticatedContext(ctx context.Context, project string) (context.Context, error) {
+func (a *application) authenticatedContext(ctx context.Context, project string) (context.Context, error) {
 	if project == "" {
 		return nil, errors.New("must supply a project name")
 	}
@@ -147,7 +146,7 @@ func (a *butlerApplication) authenticatedContext(ctx context.Context, project st
 	return cloud.WithContext(ctx, project, client), nil
 }
 
-func (a *butlerApplication) configOutput() (output.Output, error) {
+func (a *application) configOutput() (output.Output, error) {
 	factory := a.outputConfig.getFactory()
 	if factory == nil {
 		return nil, errors.New("main: No output is configured")
@@ -162,7 +161,7 @@ func (a *butlerApplication) configOutput() (output.Output, error) {
 }
 
 // An execution harness that adds application-level management to a Butler run.
-func (a *butlerApplication) Main(runFunc func(b *butler.Butler) error) error {
+func (a *application) Main(runFunc func(b *butler.Butler) error) error {
 	// Enable CPU profiling if specified
 	if a.cpuProfile != "" {
 		f, err := os.Create(a.cpuProfile)
@@ -188,6 +187,19 @@ func (a *butlerApplication) Main(runFunc func(b *butler.Butler) error) error {
 		return err
 	}
 
+	// Log the Butler's emitted streams.
+	defer func() {
+		s := b.Streams()
+		paths := make([]types.StreamPath, len(s))
+		for i, sn := range s {
+			paths[i] = a.butler.Prefix.Join(sn)
+		}
+		log.Fields{
+			"count":   len(paths),
+			"streams": paths,
+		}.Infof(a, "Butler emitted %d stream(s).", len(paths))
+	}()
+
 	// Execute our Butler run function with the instantiated Butler.
 	if err := runFunc(b); err != nil {
 		log.Fields{
@@ -195,6 +207,7 @@ func (a *butlerApplication) Main(runFunc func(b *butler.Butler) error) error {
 		}.Errorf(a, "Butler terminated with error.")
 		a.cancelFunc()
 	}
+
 	return b.Wait()
 }
 
@@ -208,7 +221,8 @@ func mainImpl(ctx context.Context, argv []string) int {
 		Logger:  log.Get(ctx),
 	}
 
-	a := &butlerApplication{
+	a := &application{
+		Context: ctx,
 		DefaultApplication: subcommands.DefaultApplication{
 			Name:  "butler",
 			Title: "Log collection and streaming bootstrap.",
@@ -235,19 +249,19 @@ func mainImpl(ctx context.Context, argv []string) int {
 
 	// Parse the top-level flag set.
 	if err := flags.Parse(argv); err != nil {
-		log.Errorf(log.SetError(a, err), "Failed to parse command-line.")
+		log.WithError(err).Errorf(a, "Failed to parse command-line.")
 		return configErrorReturnCode
 	}
 
-	ctx = logConfig.Set(ctx)
+	a.Context = logConfig.Set(a.Context)
 
 	// Validate our Prefix; generate a user prefix if one was not supplied.
 	prefix := a.butler.Prefix
 	if prefix == "" {
 		// Auto-generate a prefix.
-		prefix, err := generateRandomUserPrefix(ctx)
+		prefix, err := generateRandomUserPrefix(a)
 		if err != nil {
-			log.Errorf(log.SetError(ctx, err), "Failed to generate user prefix.")
+			log.WithError(err).Errorf(a, "Failed to generate user prefix.")
 			return configErrorReturnCode
 		}
 		a.butler.Prefix = prefix
@@ -256,8 +270,8 @@ func mainImpl(ctx context.Context, argv []string) int {
 	// Signal handler to catch 'Control-C'. This will gracefully shutdown the
 	// butler the first time a signal is received. It will die abruptly if the
 	// signal continues to be received.
-	a.ncCtx = ctx
-	ctx, a.cancelFunc = context.WithCancel(ctx)
+	a.ncCtx = a.Context
+	a.Context, a.cancelFunc = context.WithCancel(a.Context)
 	signalC := make(chan os.Signal, 1)
 	signal.Notify(signalC, os.Interrupt)
 	go func() {
@@ -282,9 +296,9 @@ func mainImpl(ctx context.Context, argv []string) int {
 
 	log.Fields{
 		"prefix": a.butler.Prefix,
-	}.Infof(ctx, "Using session prefix.")
+	}.Infof(a, "Using session prefix.")
 	if err := a.butler.Prefix.Validate(); err != nil {
-		log.Errorf(log.SetError(a, err), "Invalid session prefix.")
+		log.WithError(err).Errorf(a, "Invalid session prefix.")
 		return configErrorReturnCode
 	}
 
@@ -292,13 +306,12 @@ func mainImpl(ctx context.Context, argv []string) int {
 	var err error
 	a.output, err = a.configOutput()
 	if err != nil {
-		log.Errorf(log.SetError(ctx, err), "Failed to create output instance.")
+		log.WithError(err).Errorf(a, "Failed to create output instance.")
 		return runtimeErrorReturnCode
 	}
 	defer a.output.Close()
 
 	// Run our subcommand (and parse subcommand flags).
-	a.Context = ctx
 	return subcommands.Run(a, flags.Args())
 }
 

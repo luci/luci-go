@@ -41,7 +41,7 @@ type streamCommandRun struct {
 
 // subcommands.Run
 func (cmd *streamCommandRun) Run(app subcommands.Application, args []string) int {
-	a := app.(*butlerApplication)
+	a := app.(*application)
 
 	streamFile := (*os.File)(nil)
 	if cmd.path == "-" {
