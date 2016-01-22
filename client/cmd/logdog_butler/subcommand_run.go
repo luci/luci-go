@@ -13,11 +13,11 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/luci/luci-go/client/internal/flags/nestedflagset"
 	"github.com/luci/luci-go/client/internal/logdog/butler"
 	"github.com/luci/luci-go/client/internal/logdog/butler/streamserver"
 	"github.com/luci/luci-go/client/logdog/butlerlib/bootstrap"
 	"github.com/luci/luci-go/common/ctxcmd"
+	"github.com/luci/luci-go/common/flag/nestedflagset"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"

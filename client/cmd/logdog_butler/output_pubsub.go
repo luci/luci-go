@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luci/luci-go/client/internal/flags/multiflag"
 	"github.com/luci/luci-go/client/internal/logdog/butler/output"
 	"github.com/luci/luci-go/client/internal/logdog/butler/output/pubsub"
+	"github.com/luci/luci-go/common/flag/multiflag"
 	"github.com/luci/luci-go/common/gcloud/gcps"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"

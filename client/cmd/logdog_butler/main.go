@@ -15,11 +15,11 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/client/authcli"
-	"github.com/luci/luci-go/client/internal/flags/multiflag"
 	"github.com/luci/luci-go/client/internal/logdog/butler"
 	"github.com/luci/luci-go/client/internal/logdog/butler/output"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/clock/clockflag"
+	"github.com/luci/luci-go/common/flag/multiflag"
 	"github.com/luci/luci-go/common/gcloud/gcps"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"

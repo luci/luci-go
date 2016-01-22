@@ -7,9 +7,9 @@ package main
 import (
 	"os"
 
-	"github.com/luci/luci-go/client/internal/flags/nestedflagset"
 	"github.com/luci/luci-go/client/internal/logdog/butler"
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
+	"github.com/luci/luci-go/common/flag/nestedflagset"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/maruel/subcommands"

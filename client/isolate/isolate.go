@@ -18,8 +18,8 @@ import (
 
 	"github.com/luci/luci-go/client/archiver"
 	"github.com/luci/luci-go/client/internal/common"
-	"github.com/luci/luci-go/client/internal/flags/stringmapflag"
 	"github.com/luci/luci-go/client/internal/tracer"
+	"github.com/luci/luci-go/common/flag/stringmapflag"
 	"github.com/luci/luci-go/common/isolated"
 )
 

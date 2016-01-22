@@ -11,7 +11,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/luci/luci-go/client/internal/flags/flagenum"
+	"github.com/luci/luci-go/common/flag/flagenum"
 )
 
 // TeeType is an enumeration of tee configuration options.

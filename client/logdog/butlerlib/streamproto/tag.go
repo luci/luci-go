@@ -9,7 +9,7 @@ import (
 	"flag"
 	"sort"
 
-	"github.com/luci/luci-go/client/internal/flags/stringmapflag"
+	"github.com/luci/luci-go/common/flag/stringmapflag"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )

@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/luci/luci-go/client/internal/common"
-	"github.com/luci/luci-go/client/internal/flags/stringmapflag"
+	"github.com/luci/luci-go/common/flag/stringmapflag"
 	"github.com/maruel/ut"
 )
 

@@ -7,8 +7,8 @@ package main
 import (
 	"flag"
 
-	"github.com/luci/luci-go/client/internal/flags/flagenum"
 	"github.com/luci/luci-go/client/logdog/annotee/executor"
+	"github.com/luci/luci-go/common/flag/flagenum"
 )
 
 type annotationMode executor.AnnotationMode

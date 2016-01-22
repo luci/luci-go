@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"flag"
 
-	"github.com/luci/luci-go/client/internal/flags/flagenum"
+	"github.com/luci/luci-go/common/flag/flagenum"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
