@@ -5,6 +5,7 @@
 package gcps
 
 import (
+	"golang.org/x/net/context"
 	"google.golang.org/cloud/pubsub"
 )
 
@@ -22,24 +23,24 @@ var (
 	}
 )
 
-// PubSub is an interface around Pub/Sub functionality.
+// Connection is an interface to a Pub/Sub connection.
 //
 // Any method may return an errors.TransientError to indicate that the
 // encountered error was transient.
-type PubSub interface {
+type Connection interface {
 	// TopicExists tests if a given Topic exists.
-	TopicExists(Topic) (bool, error)
+	TopicExists(context.Context, Topic) (bool, error)
 
 	// SubscriptionExists tests if a given Subscription exists.
-	SubExists(Subscription) (bool, error)
+	SubExists(context.Context, Subscription) (bool, error)
 
 	// Publish publishes a batch of Pub/Sub messages.
-	Publish(Topic, ...*pubsub.Message) ([]string, error)
+	Publish(context.Context, Topic, ...*pubsub.Message) ([]string, error)
 
 	// Pull pulls messages from the subscription. It returns up the requested
 	// number of messages.
-	Pull(Subscription, int) ([]*pubsub.Message, error)
+	Pull(context.Context, Subscription, int) ([]*pubsub.Message, error)
 
 	// Ack acknowledges one or more Pub/Sub message ACK IDs.
-	Ack(Subscription, ...string) error
+	Ack(context.Context, Subscription, ...string) error
 }

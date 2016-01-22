@@ -13,8 +13,6 @@ import (
 	"github.com/luci/luci-go/common/flag/multiflag"
 	"github.com/luci/luci-go/common/gcloud/gcps"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry"
-	"golang.org/x/net/context"
 )
 
 func init() {
@@ -59,47 +57,36 @@ func (f *pubsubOutputFactory) configOutput(a *application) (output.Output, error
 		"topic":   f.topic,
 		"project": f.project,
 	})
-	ctx, err := a.authenticatedContext(ctx, f.project)
+	client, err := a.authenticatedClient(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("pubsub: failed to initialize Pub/Sub context: %s", err)
 	}
-	ps := gcps.New(ctx)
+	ps := &gcps.Retry{
+		Connection: gcps.NewConnection(client, f.project),
+		Callback: func(err error, d time.Duration) {
+			log.Fields{
+				log.ErrorKey: err,
+				"delay":      d,
+			}.Warningf(ctx, "Transient error during Pub/Sub operation; retrying...")
+		},
+	}
 
 	// Assert that our Topic exists.
-	if err := f.assertTopicExists(ctx, ps); err != nil {
-		log.WithError(err).Errorf(ctx, "Topic does not exist.")
+	exists, err := ps.TopicExists(ctx, f.topic)
+	if err != nil {
+		log.WithError(err).Errorf(ctx, "Failed to check for topic.")
 		return nil, err
+	}
+	if !exists {
+		log.Fields{
+			"topic": f.topic,
+		}.Errorf(ctx, "Pub/Sub Topic does not exist.")
+		return nil, fmt.Errorf("pubsub: topic %q does not exist", f.topic)
 	}
 
 	return pubsub.New(ctx, pubsub.Config{
-		PubSub:   ps,
-		Topic:    f.topic,
-		Compress: !f.noCompress,
+		Publisher: ps,
+		Topic:     f.topic,
+		Compress:  !f.noCompress,
 	}), nil
-}
-
-func (f *pubsubOutputFactory) assertTopicExists(ctx context.Context, ps gcps.PubSub) error {
-	log.Infof(ctx, "Checking that Pub/Sub topic exists.")
-
-	exists := false
-	err := retry.Retry(ctx, retry.TransientOnly(retry.Default), func() error {
-		e, err := ps.TopicExists(f.topic)
-		if err != nil {
-			return err
-		}
-		exists = e
-		return nil
-	}, func(err error, d time.Duration) {
-		log.Fields{
-			log.ErrorKey: err,
-			"delay":      d,
-		}.Warningf(ctx, "Transient error during topic check; retrying.")
-	})
-	if err != nil {
-		return fmt.Errorf("pubsub: failed to check for topic: %s", err)
-	}
-	if !exists {
-		return fmt.Errorf("pubsub: topic [%s] does not exist", f.topic)
-	}
-	return nil
 }

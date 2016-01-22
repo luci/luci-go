@@ -9,12 +9,13 @@ import (
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/gcloud/gcps"
 	"github.com/luci/luci-go/common/tsmon/types"
-	"google.golang.org/cloud"
+	"golang.org/x/net/context"
 	"google.golang.org/cloud/pubsub"
 )
 
 type pubSubMonitor struct {
-	ps    gcps.PubSub
+	context.Context
+	ps    gcps.Connection
 	topic gcps.Topic
 }
 
@@ -32,8 +33,9 @@ func NewPubsubMonitor(credentialPath string, project string, topic string) (Moni
 	}
 
 	return &pubSubMonitor{
-		ps:    gcps.New(cloud.NewContext(project, httpClient)),
-		topic: gcps.Topic(topic),
+		Context: context.Background(),
+		ps:      gcps.NewConnection(httpClient, project),
+		topic:   gcps.Topic(topic),
 	}, nil
 }
 
@@ -49,6 +51,6 @@ func (m *pubSubMonitor) Send(cells []types.Cell, defaultTarget types.Target) err
 		return err
 	}
 
-	_, err = m.ps.Publish(m.topic, &pubsub.Message{Data: data})
+	_, err = m.ps.Publish(m, m.topic, &pubsub.Message{Data: data})
 	return err
 }

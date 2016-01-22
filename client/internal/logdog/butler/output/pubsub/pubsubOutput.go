@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/luci/luci-go/client/internal/logdog/butler/output"
 	"github.com/luci/luci-go/common/gcloud/gcps"
@@ -17,15 +16,24 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/recordio"
-	"github.com/luci/luci-go/common/retry"
 	"golang.org/x/net/context"
 	"google.golang.org/cloud/pubsub"
 )
 
+// Publisher is an interface for something that publishes Pub/Sub messages.
+//
+// gcps.Connection implements this interface.
+type Publisher interface {
+	// Publish mirrors the gcps.Connection Publish method.
+	Publish(context.Context, gcps.Topic, ...*pubsub.Message) ([]string, error)
+}
+
+var _ Publisher = gcps.Connection(nil)
+
 // Config is a configuration structure for GCPS output.
 type Config struct {
-	// Pubsub is the Pub/Sub instance to use.
-	PubSub gcps.PubSub
+	// Publisher is the Pub/Sub instance to use.
+	Publisher Publisher
 
 	// Topic is the name of the Cloud Pub/Sub topic to publish to.
 	Topic gcps.Topic
@@ -36,7 +44,7 @@ type Config struct {
 
 // Validate validates the Output configuration.
 func (c *Config) Validate() error {
-	if c.PubSub == nil {
+	if c.Publisher == nil {
 		return errors.New("gcps: no pub/sub instance configured")
 	}
 	if err := c.Topic.Validate(); err != nil {
@@ -162,23 +170,10 @@ func (o *gcpsOutput) buildMessage(buf *gcpsBuffer, bundle *logpb.ButlerLogBundle
 // publishMessages handles an individual publish request. It will indefinitely
 // retry transient errors until the publish succeeds.
 func (o *gcpsOutput) publishMessages(messages []*pubsub.Message) error {
-	var messageIDs []string
-	count := 0
-	err := retry.Retry(o, retry.TransientOnly(retry.Default), func() error {
-		ids, err := o.PubSub.Publish(o.Topic, messages...)
-		if err != nil {
-			return err
-		}
-		messageIDs = ids
-		return nil
-	}, func(err error, d time.Duration) {
-		log.Fields{
-			log.ErrorKey: err,
-			"count":      count,
-			"delay":      d,
-		}.Warningf(o, "Transient publish error; retrying.")
-		count++
-	})
+	messageIDs, err := o.Publisher.Publish(o, o.Topic, messages...)
+	if err != nil {
+		return err
+	}
 	if err != nil {
 		log.Errorf(log.SetError(o, err), "Failed to send PubSub message.")
 		return err

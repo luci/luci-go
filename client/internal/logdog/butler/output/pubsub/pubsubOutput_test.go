@@ -26,7 +26,7 @@ import (
 	"google.golang.org/cloud/pubsub"
 )
 
-type testPubSub struct {
+type testPublisher struct {
 	sync.Mutex
 
 	err   error
@@ -36,12 +36,7 @@ type testPubSub struct {
 	nextMessageID int
 }
 
-func (*testPubSub) TopicExists(gcps.Topic) (bool, error)                   { panic("not implemented") }
-func (*testPubSub) SubExists(gcps.Subscription) (bool, error)              { panic("not implemented") }
-func (*testPubSub) Pull(gcps.Subscription, int) ([]*pubsub.Message, error) { panic("not implemented") }
-func (*testPubSub) Ack(gcps.Subscription, ...string) error                 { panic("not implemented") }
-
-func (ps *testPubSub) Publish(t gcps.Topic, msgs ...*pubsub.Message) ([]string, error) {
+func (ps *testPublisher) Publish(c context.Context, t gcps.Topic, msgs ...*pubsub.Message) ([]string, error) {
 	if ps.err != nil {
 		return nil, ps.err
 	}
@@ -57,7 +52,7 @@ func (ps *testPubSub) Publish(t gcps.Topic, msgs ...*pubsub.Message) ([]string, 
 	return ids, nil
 }
 
-func (ps *testPubSub) getNextMessageID() string {
+func (ps *testPublisher) getNextMessageID() string {
 	ps.Lock()
 	defer ps.Unlock()
 
@@ -68,10 +63,10 @@ func (ps *testPubSub) getNextMessageID() string {
 
 func TestConfig(t *testing.T) {
 	Convey(`A configuration instance`, t, func() {
-		ps := &testPubSub{}
+		ps := &testPublisher{}
 		conf := Config{
-			PubSub: ps,
-			Topic:  gcps.Topic("test-topic"),
+			Publisher: ps,
+			Topic:     gcps.Topic("test-topic"),
 		}
 
 		Convey(`Will successfully validate.`, func() {
@@ -79,7 +74,7 @@ func TestConfig(t *testing.T) {
 		})
 
 		Convey(`Will not validate without a PubSub instance.`, func() {
-			conf.PubSub = nil
+			conf.Publisher = nil
 			So(conf.Validate(), ShouldNotBeNil)
 		})
 
@@ -145,13 +140,13 @@ func deconstructMessage(msg *pubsub.Message) (*logpb.ButlerMetadata, *logpb.Butl
 func TestOutput(t *testing.T) {
 	Convey(`An Output using a test Pub/Sub instance`, t, func() {
 		ctx, _ := testclock.UseTime(context.Background(), time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
-		ps := &testPubSub{
+		ps := &testPublisher{
 			topic: gcps.Topic("test-topic"),
 			msgC:  make(chan *pubsub.Message, 1),
 		}
 		conf := Config{
-			PubSub: ps,
-			Topic:  gcps.Topic("test-topic"),
+			Publisher: ps,
+			Topic:     gcps.Topic("test-topic"),
 		}
 		o := New(ctx, conf).(*gcpsOutput)
 		So(o, ShouldNotBeNil)

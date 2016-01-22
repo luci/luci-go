@@ -31,7 +31,7 @@ const (
 // PubSubPull is an interface for something that can return Pub/Sub messages on
 // request.
 //
-// gcps.PubSub naturally implements this interface.
+// gcps.Connection naturally implements this interface.
 type PubSubPull interface {
 	// Pull pulls messages from the subscription. It returns up the requested
 	// number of messages.

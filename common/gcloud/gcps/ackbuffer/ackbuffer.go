@@ -37,7 +37,7 @@ type DiscardCallback func(ackIDs []string)
 
 // PubSubACK sends ACKs to a Pub/Sub interface.
 //
-// gcps.PubSub naturally implements this interface.
+// gcps.Connection naturally implements this interface.
 type PubSubACK interface {
 	// Ack acknowledges one or more Pub/Sub message ACK IDs.
 	Ack(s gcps.Subscription, ackIDs ...string) error

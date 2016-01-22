@@ -27,7 +27,6 @@ import (
 	"github.com/luci/luci-go/common/paniccatcher"
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
-	"google.golang.org/cloud"
 )
 
 const (
@@ -131,19 +130,6 @@ func (a *application) authenticatedClient(ctx context.Context) (*http.Client, er
 		a.client = client
 	}
 	return a.client, nil
-}
-
-func (a *application) authenticatedContext(ctx context.Context, project string) (context.Context, error) {
-	if project == "" {
-		return nil, errors.New("must supply a project name")
-	}
-
-	client, err := a.authenticatedClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return cloud.WithContext(ctx, project, client), nil
 }
 
 func (a *application) configOutput() (output.Output, error) {
