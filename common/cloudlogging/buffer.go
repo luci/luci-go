@@ -177,7 +177,7 @@ func (b *bufferImpl) process() {
 // PushEntries call will be retried.
 func (b *bufferImpl) publishLogs(entries []*Entry) {
 	// If we are aborted, Retry will detect this and abort.
-	err := retry.Retry(b.ctx, b.newRetryIterator(), func() error {
+	err := retry.Retry(b.ctx, b.newRetryIterator, func() error {
 		return b.client.PushEntries(entries)
 	}, func(err error, delay time.Duration) {
 		b.writeError("cloudlogging: Failed to push entries, retrying in %v: %v", delay, err)

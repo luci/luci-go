@@ -19,7 +19,8 @@ var defaultIteratorTemplate = ExponentialBackoff{
 	Multiplier: 2,
 }
 
-// Default returns a new instance of the default iterator configuration.
+// Default is a Factory that returns a new instance of the default iterator
+// configuration.
 func Default() Iterator {
 	it := defaultIteratorTemplate
 	return &it

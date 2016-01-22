@@ -46,11 +46,13 @@ func TestRetry(t *testing.T) {
 		})
 
 		Convey(`A test Iterator with three retries`, func() {
-			it := &testIterator{total: 3}
+			g := func() Iterator {
+				return &testIterator{total: 3}
+			}
 
 			Convey(`Executes a successful function once.`, func() {
 				var count, callbacks int
-				err := Retry(ctx, it, func() error {
+				err := Retry(ctx, g, func() error {
 					count++
 					return nil
 				}, func(error, time.Duration) {
@@ -64,7 +66,7 @@ func TestRetry(t *testing.T) {
 
 			Convey(`Executes a failing function three times.`, func() {
 				var count, callbacks int
-				err := Retry(ctx, it, func() error {
+				err := Retry(ctx, g, func() error {
 					count++
 					return failure
 				}, func(error, time.Duration) {
@@ -79,7 +81,7 @@ func TestRetry(t *testing.T) {
 			Convey(`Executes a function that fails once, then succeeds once.`, func() {
 				failure := errors.New("retry: test error")
 				var count, callbacks int
-				err := Retry(ctx, it, func() error {
+				err := Retry(ctx, g, func() error {
 					defer func() { count++ }()
 					if count == 0 {
 						return failure

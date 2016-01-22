@@ -82,7 +82,7 @@ func (f *pubsubOutputFactory) assertTopicExists(ctx context.Context, ps gcps.Pub
 	log.Infof(ctx, "Checking that Pub/Sub topic exists.")
 
 	exists := false
-	err := retry.Retry(ctx, retry.TransientOnly(retry.Default()), func() error {
+	err := retry.Retry(ctx, retry.TransientOnly(retry.Default), func() error {
 		e, err := ps.TopicExists(f.topic)
 		if err != nil {
 			return err

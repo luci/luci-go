@@ -655,7 +655,7 @@ func retryParams() retry.Iterator {
 // mintTokenWithRetries calls provider's MintToken() retrying on transient
 // errors a bunch of times. Called only for non-interactive providers.
 func (a *Authenticator) mintTokenWithRetries() (tok *oauth2.Token, err error) {
-	err = retry.Retry(a.ctx, retry.TransientOnly(retryParams()), func() error {
+	err = retry.Retry(a.ctx, retry.TransientOnly(retryParams), func() error {
 		tok, err = a.provider.MintToken()
 		return err
 	}, nil)
@@ -665,7 +665,7 @@ func (a *Authenticator) mintTokenWithRetries() (tok *oauth2.Token, err error) {
 // refreshTokenWithRetries calls providers' RefreshToken(...) retrying on
 // transient errors a bunch of times.
 func (a *Authenticator) refreshTokenWithRetries(t *oauth2.Token) (tok *oauth2.Token, err error) {
-	err = retry.Retry(a.ctx, retry.TransientOnly(retryParams()), func() error {
+	err = retry.Retry(a.ctx, retry.TransientOnly(retryParams), func() error {
 		tok, err = a.provider.RefreshToken(a.token)
 		return err
 	}, nil)

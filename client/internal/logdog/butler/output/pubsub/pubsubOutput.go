@@ -164,7 +164,7 @@ func (o *gcpsOutput) buildMessage(buf *gcpsBuffer, bundle *logpb.ButlerLogBundle
 func (o *gcpsOutput) publishMessages(messages []*pubsub.Message) error {
 	var messageIDs []string
 	count := 0
-	err := retry.Retry(o, retry.TransientOnly(retry.Default()), func() error {
+	err := retry.Retry(o, retry.TransientOnly(retry.Default), func() error {
 		ids, err := o.PubSub.Publish(o.Topic, messages...)
 		if err != nil {
 			return err

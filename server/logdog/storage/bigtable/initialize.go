@@ -40,7 +40,7 @@ func tableExists(ctx context.Context, c *bigtable.AdminClient, name string) (boo
 }
 
 func waitForTable(ctx context.Context, c *bigtable.AdminClient, name string) error {
-	return retry.Retry(ctx, retry.TransientOnly(retry.Default()), func() error {
+	return retry.Retry(ctx, retry.TransientOnly(retry.Default), func() error {
 		exists, err := tableExists(ctx, c, name)
 		if err != nil {
 			return err

@@ -321,7 +321,7 @@ func getHead(c context.Context, req *GetRequest, st storage.Storage, p types.Str
 	}
 
 	count := 0
-	err := retry.Retry(c, retry.TransientOnly(retry.Default()), func() error {
+	err := retry.Retry(c, retry.TransientOnly(retry.Default), func() error {
 		// Issue the Get request. This may return a transient error, in which case
 		// we will retry.
 		return st.Get(&sreq, func(idx types.MessageIndex, ld []byte) bool {
@@ -363,7 +363,7 @@ func getHead(c context.Context, req *GetRequest, st storage.Storage, p types.Str
 
 func getTail(c context.Context, st storage.Storage, p types.StreamPath) ([][]byte, error) {
 	var data []byte
-	err := retry.Retry(c, retry.TransientOnly(retry.Default()), func() (err error) {
+	err := retry.Retry(c, retry.TransientOnly(retry.Default), func() (err error) {
 		data, _, err = st.Tail(p)
 		return
 	}, func(err error, delay time.Duration) {

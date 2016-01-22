@@ -165,7 +165,7 @@ func (b *AckBuffer) meterCallback(work []interface{}) {
 //
 // This method will discard the ACKs if they fail.
 func (b *AckBuffer) acknowledge(ackIDs []string) {
-	err := retry.Retry(b.ctx, retry.TransientOnly(retry.Default()), func() error {
+	err := retry.Retry(b.ctx, retry.TransientOnly(retry.Default), func() error {
 		return b.cfg.PubSub.Ack(b.cfg.Subscription, ackIDs...)
 	}, func(err error, delay time.Duration) {
 		log.Fields{

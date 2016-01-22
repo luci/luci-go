@@ -113,7 +113,7 @@ func (s *Subscriber) Run(ctx context.Context, cb Callback) {
 func (s *Subscriber) pullMessages(ctx context.Context, batchSize int, noDataMu sync.Locker, cb Callback) error {
 	// Pull a set of messages.
 	var messages []*pubsub.Message
-	err := retry.Retry(ctx, retry.TransientOnly(retry.Default()), func() (ierr error) {
+	err := retry.Retry(ctx, retry.TransientOnly(retry.Default), func() (ierr error) {
 		messages, ierr = s.PubSub.Pull(s.Subscription, batchSize)
 		return
 	}, func(err error, d time.Duration) {

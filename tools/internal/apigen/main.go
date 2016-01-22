@@ -117,13 +117,15 @@ func resolveExecutable(path *string) error {
 func retryHTTP(c context.Context, u url.URL, method, body string) ([]byte, error) {
 	client := http.Client{}
 
-	it := retry.Limited{
-		Delay:   2 * time.Second,
-		Retries: 20,
+	gen := func() retry.Iterator {
+		return &retry.Limited{
+			Delay:   2 * time.Second,
+			Retries: 20,
+		}
 	}
 
 	output := []byte(nil)
-	err := retry.Retry(c, &it, func() error {
+	err := retry.Retry(c, gen, func() error {
 		req := http.Request{
 			Method: method,
 			URL:    &u,

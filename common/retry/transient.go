@@ -29,9 +29,8 @@ func (i *transientOnlyIterator) Next(ctx context.Context, err error) time.Durati
 // TransientOnly returns an Iterator that wraps another Iterator. It will fall
 // through to the wrapped Iterator if a transient error is encountered;
 // otherwise, it will not retry.
-func TransientOnly(i Iterator) Iterator {
-	if i == nil {
-		return nil
-	}
-	return &transientOnlyIterator{i}
+func TransientOnly(f Factory) Factory {
+	return wrap(f, func(it Iterator) Iterator {
+		return &transientOnlyIterator{it}
+	})
 }

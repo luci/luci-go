@@ -25,8 +25,20 @@ type Iterator interface {
 	Next(context.Context, error) time.Duration
 }
 
-// Retry executes a function 'f'. If the function returns an error, it will
+// Factory is a function that produces an independent Iterator instance.
+//
+// Since each Iterator is mutated as it is iterated through, this is used to
+// produce a fresh Iterator for a new round of retries. Unless the caller is
+// fully aware of what they're doing, this should not return the an Iterator
+// instance more than once.
+type Factory func() Iterator
+
+// Retry executes a function 'fn'. If the function returns an error, it will
 // be re-executed according to a retry plan.
+//
+// If a Factory is supplied, it will be called to generate a single retry
+// Iterator for this Retry round. If nil, Retry will execute the target function
+// exactly once regardless of return value.
 //
 // If the supplied context is canceled, retry will stop executing. Retry will
 // not execute the supplied function at all if the context is canceled when
@@ -34,7 +46,12 @@ type Iterator interface {
 //
 // If 'callback' is not nil, it will be invoked if an error occurs (prior to
 // sleeping).
-func Retry(ctx context.Context, it Iterator, f func() error, callback Callback) (err error) {
+func Retry(ctx context.Context, f Factory, fn func() error, callback Callback) (err error) {
+	var it Iterator
+	if f != nil {
+		it = f()
+	}
+
 	for {
 		// If we've been cancelled, don't try/retry.
 		select {
@@ -46,7 +63,7 @@ func Retry(ctx context.Context, it Iterator, f func() error, callback Callback) 
 		}
 
 		// Execute the function.
-		err = f()
+		err = fn()
 		if err == nil || it == nil {
 			return
 		}
