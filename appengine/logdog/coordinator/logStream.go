@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -39,16 +40,47 @@ const (
 // This structure contains the standard queryable fields, and is the source of
 // truth for log stream state. Writes to LogStream should be done via Put, which
 // will ensure that the LogStream's related query objects are kept in sync.
+//
+// This structure has additional datastore fields imposed by the
+// PropertyLoadSaver. These fields enable querying against some of the complex
+// data types:
+//	  - _C breaks the the Prefix and Name fields into positionally-queryable
+//	    entries. It is used to build globbing queries.
+//
+//	    It is composed of entries detailing (T is the path [P]refix or [N]ame):
+//	    - TF:n:value ("T" has a component, "value", at index "n").
+//	    - TR:n:value ("T" has a component, "value", at reverse-index "n").
+//	    - TC:count ("T" has "count" total elements).
+//
+//	    For example, the path "foo/bar/+/baz" would break into:
+//	    ["PF:0:foo", "PF:1:bar", "PR:0:bar", "PR:1:foo", "PC:2", "NF:0:baz",
+//	     "NR:0:baz", "NC:1"].
+//
+//	  - _Tags is a string slice containing:
+//	    - KEY=[VALUE] key/value tags.
+//	    - KEY key presence tags.
+//
+//	  - _Terminated is true if the LogStream has been terminated.
+//	  - _Archived is true if the LogStream has been archived.
+//
+// Most of the values in QueryBase are static. Those that change can only be
+// changed through service endpoint methods.
+//
+// LogStream's QueryBase is authortative.
 type LogStream struct {
-	QueryBase
-
-	// hashID is the cached generated ID from the stream's Prefix/Name fields. If
-	// this is populated, ID metadata will be retrieved from this field instead of
-	// generated.
-	hashID string
+	// Prefix is this log stream's prefix value. Log streams with the same prefix
+	// are logically grouped.
+	Prefix string
+	// Name is the unique name of this log stream within the Prefix scope.
+	Name string
 
 	// State is the log stream's current state.
 	State LogStreamState
+
+	// Purged, if true, indicates that this log stream has been marked as purged.
+	// Non-administrative queries and requests for this stream will operate as
+	// if this entry doesn't exist.
+	Purged bool
 
 	// Secret is the Butler secret value for this stream.
 	//
@@ -61,11 +93,27 @@ type LogStream struct {
 	// updated.
 	Updated time.Time
 
+	// ProtoVersion is the version string of the protobuf, as reported by the
+	// Collector (and ultimately self-identified by the Butler).
+	ProtoVersion string
+	// Descriptor is the binary protobuf data LogStreamDescriptor.
+	Descriptor []byte `gae:",noindex"`
+	// ContentType is the MIME-style content type string for this stream.
+	ContentType string
+	// StreamType is the data type of the stream.
+	StreamType logpb.LogStreamDescriptor_StreamType
 	// Timestamp is the Descriptor's recorded client-side timestamp.
 	Timestamp time.Time
 
-	// Descriptor is the binary protobuf data LogStreamDescriptor.
-	Descriptor []byte `gae:",noindex"`
+	// Tags is a set of arbitrary key/value tags associated with this stream. Tags
+	// can be queried against.
+	//
+	// The serialization/deserialization is handled manually in order to enable
+	// key/value queries.
+	Tags TagMap `gae:"-"`
+
+	// Source is the set of source strings sent by the Butler.
+	Source []string
 
 	// TerminalIndex is the log stream index of the last log entry in the stream.
 	// If the value is -1, the log is still streaming.
@@ -86,6 +134,11 @@ type LogStream struct {
 	// _ causes datastore to ignore unrecognized fields and strip them in future
 	// writes.
 	_ ds.PropertyMap `gae:"-,extra"`
+
+	// hashID is the cached generated ID from the stream's Prefix/Name fields. If
+	// this is populated, ID metadata will be retrieved from this field instead of
+	// generated.
+	hashID string
 }
 
 var _ interface {
@@ -99,7 +152,8 @@ var _ interface {
 // The supplied value is a LogDog stream path or a hash of the LogDog stream
 // path.
 func NewLogStream(value string) (*LogStream, error) {
-	if err := types.StreamPath(value).Validate(); err != nil {
+	path := types.StreamPath(value)
+	if err := path.Validate(); err != nil {
 		// If it's not a path, see if it's a SHA256 sum.
 		hash, hashErr := normalizeHash(value)
 		if hashErr != nil {
@@ -111,14 +165,8 @@ func NewLogStream(value string) (*LogStream, error) {
 		return LogStreamFromID(hash), nil
 	}
 
-	// Load the prefix/name fields into the log stream.
-	prefix, name := types.StreamPath(value).Split()
-	return &LogStream{
-		QueryBase: QueryBase{
-			Prefix: string(prefix),
-			Name:   string(name),
-		},
-	}, nil
+	// It is a valid path.
+	return LogStreamFromPath(path), nil
 }
 
 // LogStreamFromID returns an empty LogStream instance with a known hash ID.
@@ -128,11 +176,42 @@ func LogStreamFromID(hashID string) *LogStream {
 	}
 }
 
+// LogStreamFromPath returns an empty LogStream instance initialized from a
+// known path value.
+//
+// The supplied path is assumed to be valid and is not checked.
+func LogStreamFromPath(path types.StreamPath) *LogStream {
+	// Load the prefix/name fields into the log stream.
+	prefix, name := path.Split()
+	return &LogStream{
+		Prefix: string(prefix),
+		Name:   string(name),
+	}
+}
+
+// Path returns the LogDog path for this log stream.
+func (s *LogStream) Path() types.StreamPath {
+	return types.StreamName(s.Prefix).Join(types.StreamName(s.Name))
+}
+
 // Load implements ds.PropertyLoadSaver.
 func (s *LogStream) Load(pmap ds.PropertyMap) error {
-	if err := s.QueryBase.PLSLoadFrom(pmap); err != nil {
-		return err
+	// Handle custom properties. Consume them before using the default
+	// PropertyLoadSaver.
+	for k, v := range pmap {
+		if !strings.HasPrefix(k, "_") {
+			continue
+		}
+
+		switch k {
+		case "_Tags":
+			// Load the tag map. Ignore errors.
+			tm, _ := tagMapFromProperties(v)
+			s.Tags = tm
+		}
+		delete(pmap, k)
 	}
+
 	return ds.GetPLS(s).Load(pmap)
 }
 
@@ -142,9 +221,20 @@ func (s *LogStream) Save(withMeta bool) (ds.PropertyMap, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := s.QueryBase.PLSSaveTo(pmap, withMeta); err != nil {
-		return nil, err
+
+	// Encode _Tags.
+	pmap["_Tags"], err = s.Tags.toProperties()
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode tags: %v", err)
 	}
+
+	// Generate our path components, "_C".
+	pmap["_C"] = generatePathComponents(s.Prefix, s.Name)
+
+	// Add our derived statuses.
+	pmap["_Terminated"] = []ds.Property{ds.MkProperty(s.Terminated())}
+	pmap["_Archived"] = []ds.Property{ds.MkProperty(s.Archived())}
+
 	return pmap, nil
 }
 
@@ -183,6 +273,15 @@ func (s *LogStream) HashID() string {
 		s.hashID = hex.EncodeToString(hash[:])
 	}
 	return s.hashID
+}
+
+// Put writes this LogStream to the Datastore. Before writing, it validates that
+// LogStream is complete.
+func (s *LogStream) Put(di ds.Interface) error {
+	if err := s.Validate(); err != nil {
+		return err
+	}
+	return di.Put(s)
 }
 
 // Validate evaluates the state and data contents of the LogStream and returns
@@ -233,19 +332,19 @@ func (s *LogStream) Validate() error {
 
 // Terminated returns true if this stream has been terminated.
 func (s *LogStream) Terminated() bool {
-	return s.TerminalIndex >= 0
-}
-
-// ArchiveMatches tests if the supplied Stream, Index, and Data archival URLs
-// match the current values.
-func (s *LogStream) ArchiveMatches(sURL, iURL, dURL string) bool {
-	return (s.ArchiveStreamURL == sURL && s.ArchiveIndexURL == iURL && s.ArchiveDataURL == dURL)
+	return s.State >= LSTerminated
 }
 
 // Archived returns true if this stream has been archived. A stream is archived
 // if it has any of its archival properties set.
 func (s *LogStream) Archived() bool {
 	return s.State >= LSArchived
+}
+
+// ArchiveMatches tests if the supplied Stream, Index, and Data archival URLs
+// match the current values.
+func (s *LogStream) ArchiveMatches(sURL, iURL, dURL string) bool {
+	return (s.ArchiveStreamURL == sURL && s.ArchiveIndexURL == iURL && s.ArchiveDataURL == dURL)
 }
 
 // LoadDescriptor loads the fields in the log stream descriptor into this
@@ -299,32 +398,6 @@ func (s *LogStream) DescriptorProto() (*logpb.LogStreamDescriptor, error) {
 	return &desc, nil
 }
 
-// Put adds this LogStream instance to the datastore. It also generates and
-// updates the derived QueryBases for this LogStream instance. It should
-// be executed as part of a cross-group transaction so that the updates are
-// transactionally applied.
-func (s *LogStream) Put(di ds.Interface) error {
-	if err := s.Validate(); err != nil {
-		return err
-	}
-
-	// Update our QueryBase to include derived fields.
-	s.QueryBase.Archived = s.Archived()
-	s.QueryBase.Terminated = s.Terminated()
-
-	// Add timestamp-indexed LogStream based on Created timestamp.
-	tiqf := &TimestampIndexedQueryFields{
-		QueryBase: s.QueryBase,
-		LogStream: di.KeyForObj(s),
-		Timestamp: s.Created,
-	}
-
-	if err := di.PutMulti([]interface{}{s, tiqf}); err != nil {
-		return err
-	}
-	return nil
-}
-
 // normalizeHash takes a SHA256 hexadecimal string as input. It validates that
 // it is a valid SHA256 hash and, if so, returns a normalized version that can
 // be used as a log stream key.
@@ -337,4 +410,162 @@ func normalizeHash(v string) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(b), nil
+}
+
+// generatePathComponents generates the "_C" property path components for path
+// glob querying.
+//
+// See the comment on LogStream for more infromation.
+func generatePathComponents(prefix, name string) []ds.Property {
+	ps, ns := types.StreamName(prefix).Segments(), types.StreamName(name).Segments()
+
+	// Allocate our components array. For each component, there are two entries
+	// (forward and reverse), as well as one count entry per component type.
+	c := make([]ds.Property, 0, (len(ps)+len(ns)+1)*2)
+
+	gen := func(b string, segs []string) {
+		// Generate count component (PC:4).
+		c = append(c, ds.MkProperty(fmt.Sprintf("%sC:%d", b, len(segs))))
+
+		// Generate forward and reverse components.
+		for i, s := range segs {
+			c = append(c,
+				// Forward (PF:0:foo).
+				ds.MkProperty(fmt.Sprintf("%sF:%d:%s", b, i, s)),
+				// Reverse (PR:3:foo)
+				ds.MkProperty(fmt.Sprintf("%sR:%d:%s", b, len(segs)-i-1, s)),
+			)
+		}
+	}
+	gen("P", ps)
+	gen("N", ns)
+	return c
+}
+
+func addComponentFilter(q *ds.Query, full, f, base string, value types.StreamName) (*ds.Query, error) {
+	segments := value.Segments()
+	if len(segments) == 0 {
+		// All-component query; impose no constraints.
+		return q, nil
+	}
+
+	// Profile the string. If it doesn't have any glob characters in it,
+	// fully constrain the base field.
+	hasGlob := false
+	for i, seg := range segments {
+		switch seg {
+		case "*", "**":
+			hasGlob = true
+
+		default:
+			// Regular segment. Assert that it is valid.
+			if err := types.StreamName(seg).Validate(); err != nil {
+				return nil, fmt.Errorf("invalid %s component at index %d (%s): %s", full, i, seg, err)
+			}
+		}
+	}
+	if !hasGlob {
+		// Direct field (full) query.
+		return q.Eq(full, string(value)), nil
+	}
+
+	// Add specific field constraints for each non-glob segment.
+	greedy := false
+	rstack := []string(nil)
+	for i, seg := range segments {
+		switch seg {
+		case "*":
+			// Skip asserting this segment.
+			if greedy {
+				// Add a placeholder (e.g., .../**/a/*/b, placeholder ensures "a" gets
+				// position -2 instead of -1.
+				//
+				// Note that "" can never be a segment, because we validate each
+				// non-glob path segment and "" is not a valid stream name component.
+				rstack = append(rstack, "")
+			}
+			continue
+
+		case "**":
+			if greedy {
+				return nil, fmt.Errorf("cannot have more than one greedy glob")
+			}
+
+			// Mark that we're greedy, and skip asserting this segment.
+			greedy = true
+			continue
+
+		default:
+			if greedy {
+				// Add this to our reverse stack. We'll query the reverse field from
+				// this stack after we know how many elements are ultimately in it.
+				rstack = append(rstack, seg)
+			} else {
+				q = q.Eq(f, fmt.Sprintf("%sF:%d:%s", base, i, seg))
+			}
+		}
+	}
+
+	// Add the reverse stack to pin the elements at the end of the path name
+	// (e.g., a/b/**/c/d, stack will be {c, d}, need to map to {r.0=d, r.1=c}.
+	for i, seg := range rstack {
+		if seg == "" {
+			// Placeholder, skip.
+			continue
+		}
+		q = q.Eq(f, fmt.Sprintf("%sR:%d:%s", base, len(rstack)-i-1, seg))
+	}
+
+	// If we're not greedy, fix this size of this component.
+	if !greedy {
+		q = q.Eq(f, fmt.Sprintf("%sC:%d", base, len(segments)))
+	}
+	return q, nil
+}
+
+// AddLogStreamPathFilter constructs a compiled LogStreamPathQuery. It will
+// return an error if the supllied query string describes an invalid query.
+func AddLogStreamPathFilter(q *ds.Query, path string) (*ds.Query, error) {
+	prefix, name := types.StreamPath(path).Split()
+
+	err := error(nil)
+	q, err = addComponentFilter(q, "Prefix", "_C", "P", prefix)
+	if err != nil {
+		return nil, err
+	}
+	q, err = addComponentFilter(q, "Name", "_C", "N", name)
+	if err != nil {
+		return nil, err
+	}
+	return q, nil
+}
+
+// AddLogStreamTerminatedFilter returns a derived query that asserts that a log
+// stream has been terminated.
+func AddLogStreamTerminatedFilter(q *ds.Query, v bool) *ds.Query {
+	return q.Eq("_Terminated", v)
+}
+
+// AddLogStreamArchivedFilter returns a derived query that asserts that a log
+// stream has been archived.
+func AddLogStreamArchivedFilter(q *ds.Query, v bool) *ds.Query {
+	return q.Eq("_Archived", v)
+}
+
+// AddLogStreamPurgedFilter returns a derived query that asserts that a log
+// stream has been archived.
+func AddLogStreamPurgedFilter(q *ds.Query, v bool) *ds.Query {
+	return q.Eq("Purged", v)
+}
+
+// AddOlderFilter adds a filter to queries that restricts them to results that
+// were created before the supplied time.
+func AddOlderFilter(q *ds.Query, t time.Time) *ds.Query {
+	return q.Lt("Created", t.UTC()).Order("-Created")
+}
+
+// AddNewerFilter adds a filter to queries that restricts them to results that
+// were created after the supplied time.
+func AddNewerFilter(q *ds.Query, t time.Time) *ds.Query {
+	return q.Gt("Created", t.UTC()).Order("-Created")
 }

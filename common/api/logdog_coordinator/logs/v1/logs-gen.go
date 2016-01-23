@@ -147,11 +147,11 @@ func (s *LogEntry) MarshalJSON() ([]byte, error) {
 }
 
 type LogEntryDatagram struct {
-	Partial *LogEntryDatagramPartial `json:"Partial,omitempty"`
-
 	Data string `json:"data,omitempty"`
 
-	// ForceSendFields is a list of field names (e.g. "Partial") to
+	Partial *LogEntryDatagramPartial `json:"partial,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "Data") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
 	// non-interface field appearing in ForceSendFields will be sent to the

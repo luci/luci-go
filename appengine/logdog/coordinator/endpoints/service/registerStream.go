@@ -194,7 +194,7 @@ func (s *Service) RegisterStream(c context.Context, req *RegisterStreamRequest) 
 		}
 
 		return nil
-	}, &ds.TransactionOptions{XG: true})
+	}, nil)
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,

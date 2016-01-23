@@ -84,12 +84,12 @@
    "id": "LogEntryDatagram",
    "type": "object",
    "properties": {
-    "Partial": {
-     "$ref": "LogEntryDatagramPartial"
-    },
     "data": {
      "type": "string",
      "format": "byte"
+    },
+    "partial": {
+     "$ref": "LogEntryDatagramPartial"
     }
    }
   },
@@ -191,8 +191,7 @@
    "type": "object",
    "properties": {
     "archived": {
-     "type": "string",
-     "default": "both"
+     "type": "string"
     },
     "contentType": {
      "type": "string"
@@ -220,8 +219,7 @@
      "type": "string"
     },
     "purged": {
-     "type": "string",
-     "default": "both"
+     "type": "string"
     },
     "state": {
      "type": "boolean"
@@ -236,8 +234,7 @@
      }
     },
     "terminated": {
-     "type": "string",
-     "default": "both"
+     "type": "string"
     }
    }
   },

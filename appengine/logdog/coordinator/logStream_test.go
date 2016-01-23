@@ -33,11 +33,6 @@ func shouldHaveLogStreams(actual interface{}, expected ...interface{}) string {
 			names = append(names, ls.Name)
 		}
 
-	case []*TimestampIndexedQueryFields:
-		for _, ls := range t {
-			names = append(names, ls.Name)
-		}
-
 	default:
 		return fmt.Sprintf("unknown 'actual' type: %T", t)
 	}
@@ -53,13 +48,48 @@ func shouldHaveLogStreams(actual interface{}, expected ...interface{}) string {
 	return ShouldResembleV(names, exp)
 }
 
+// sps constructs a []ds.Property slice from a single interface.
+func sps(values ...interface{}) ds.PropertySlice {
+	ps := make(ds.PropertySlice, len(values))
+	for i, v := range values {
+		ps[i] = ds.MkProperty(v)
+	}
+	return ps
+}
+
 func TestLogStream(t *testing.T) {
 	t.Parallel()
+
+	Convey(`A LogStream with invalid tags will fail to encode.`, t, func() {
+		ls := &LogStream{
+			Prefix: "foo",
+			Name:   "bar",
+			Tags: TagMap{
+				"!!!invalid key!!!": "value",
+			},
+		}
+		_, err := ls.Save(true)
+		So(err, ShouldErrLike, "failed to encode tags")
+	})
+
+	Convey(`A LogStream will skip invalid tags when loading.`, t, func() {
+		ls := &LogStream{
+			Prefix: "foo",
+			Name:   "bar",
+		}
+		pmap := ds.PropertyMap{
+			"_Tags": sps(encodeKey("!!!invalid key!!!")),
+		}
+		So(ls.Load(pmap), ShouldBeNil)
+		So(ls.Tags, ShouldResembleV, TagMap(nil))
+	})
 
 	Convey(`With a testing configuration`, t, func() {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 		c = memory.Use(c)
-		tds := ds.Get(c).Testable()
+		di := ds.Get(c)
+		di.Testable().AutoIndex(true)
+		di.Testable().Consistent(true)
 
 		desc := logpb.LogStreamDescriptor{
 			Prefix:      "testing",
@@ -155,33 +185,13 @@ func TestLogStream(t *testing.T) {
 				})
 
 				Convey(`Can write the LogStream to the Datastore.`, func() {
-					So(ls.Put(ds.Get(c)), ShouldBeNil)
-					tds.CatchupIndexes()
+					So(di.Put(ls), ShouldBeNil)
 
 					Convey(`Can read the LogStream back from the Datastore.`, func() {
 						ls2 := LogStreamFromID(ls.HashID())
-						So(ds.Get(c).Get(ls2), ShouldBeNil)
-						So(ls, ShouldResembleV, ls2)
+						So(di.Get(ls2), ShouldBeNil)
+						So(ls2, ShouldResembleV, ls)
 					})
-
-					Convey(`Will also write a timestamp entry.`, func() {
-						q := ds.NewQuery("TimestampIndexedQueryFields")
-
-						qfs := []*TimestampIndexedQueryFields(nil)
-						So(ds.Get(c).Run(q, func(qf *TimestampIndexedQueryFields) error {
-							qfs = append(qfs, qf)
-							return nil
-						}), ShouldBeNil)
-
-						So(len(qfs), ShouldEqual, 1)
-						So(qfs[0].QueryBase, ShouldResembleV, ls.QueryBase)
-						So(qfs[0].LogStream.Equal(ds.Get(c).KeyForObj(ls)), ShouldBeTrue)
-					})
-				})
-
-				Convey(`Will refuse to write an invalid LogStream.`, func() {
-					ls.Secret = nil
-					So(ls.Put(ds.Get(c)), ShouldErrLike, "invalid secret length")
 				})
 			})
 
@@ -192,8 +202,6 @@ func TestLogStream(t *testing.T) {
 		})
 
 		Convey(`Writing multiple LogStream entries`, func() {
-			di := ds.Get(c)
-
 			times := map[string]time.Time{}
 			streamNames := []string{
 				"foo/bar",
@@ -214,110 +222,200 @@ func TestLogStream(t *testing.T) {
 				So(ls.LoadDescriptor(&desc), ShouldBeNil)
 				ls.Created = clock.Now(c).UTC()
 				ls.Updated = ls.Created
-				So(ls.Put(di), ShouldBeNil)
+				So(di.Put(ls), ShouldBeNil)
 
 				times[name] = clock.Now(c)
 				tc.Add(time.Second)
 			}
-			di.Testable().CatchupIndexes()
 
-			Convey(`LogStream path queries`, func() {
-				Convey(`A query for "foo/bar" should return "foo/bar".`, func() {
-					q := ds.NewQuery("LogStream")
-					q, err := AddLogStreamPathQuery(q, "**/+/foo/bar")
-					So(err, ShouldBeNil)
+			Convey(`When querying LogStream by -Created`, func() {
+				q := ds.NewQuery("LogStream").Order("-Created")
 
-					var streams []*LogStream
-					So(di.GetAll(q, &streams), ShouldBeNil)
-					So(streams, shouldHaveLogStreams, "foo/bar")
+				Convey(`LogStream path queries`, func() {
+					Convey(`A query for "foo/bar" should return "foo/bar".`, func() {
+						q, err := AddLogStreamPathFilter(q, "**/+/foo/bar")
+						So(err, ShouldBeNil)
+
+						var streams []*LogStream
+						So(di.GetAll(q, &streams), ShouldBeNil)
+						So(streams, shouldHaveLogStreams, "foo/bar")
+					})
+
+					Convey(`A query for "foo/bar/*" should return "foo/bar/baz".`, func() {
+						q, err := AddLogStreamPathFilter(q, "**/+/foo/bar/*")
+						So(err, ShouldBeNil)
+
+						var streams []*LogStream
+						So(di.GetAll(q, &streams), ShouldBeNil)
+						So(streams, shouldHaveLogStreams, "foo/bar/baz")
+					})
+
+					Convey(`A query for "foo/**" should return "foo/bar/baz" and "foo/bar".`, func() {
+						q, err := AddLogStreamPathFilter(q, "**/+/foo/**")
+						So(err, ShouldBeNil)
+
+						var streams []*LogStream
+						So(di.GetAll(q, &streams), ShouldBeNil)
+						So(streams, shouldHaveLogStreams, "foo/bar/baz", "foo/bar")
+					})
+
+					Convey(`A query for "cat/**/dog" should return "cat/dog" and "cat/bird/dog".`, func() {
+						q, err := AddLogStreamPathFilter(q, "**/+/cat/**/dog")
+						So(err, ShouldBeNil)
+
+						var streams []*LogStream
+						So(di.GetAll(q, &streams), ShouldBeNil)
+						So(streams, shouldHaveLogStreams, "cat/bird/dog", "cat/dog")
+					})
 				})
 
-				Convey(`A query for "foo/bar/*" should return "foo/bar/baz".`, func() {
-					q := ds.NewQuery("LogStream")
-					q, err := AddLogStreamPathQuery(q, "**/+/foo/bar/*")
-					So(err, ShouldBeNil)
-
-					var streams []*LogStream
-					So(di.GetAll(q, &streams), ShouldBeNil)
-					So(streams, shouldHaveLogStreams, "foo/bar/baz")
-				})
-
-				Convey(`A query for "foo/**" should return "foo/bar/baz" and "foo/bar".`, func() {
-					q := ds.NewQuery("LogStream")
-					q, err := AddLogStreamPathQuery(q, "**/+/foo/**")
-					So(err, ShouldBeNil)
-
-					var streams []*LogStream
-					So(di.GetAll(q, &streams), ShouldBeNil)
-					So(streams, shouldHaveLogStreams, "foo/bar/baz", "foo/bar")
-				})
-
-				Convey(`A query for "cat/**/dog" should return "cat/dog" and "cat/bird/dog".`, func() {
-					q := ds.NewQuery("LogStream")
-					q, err := AddLogStreamPathQuery(q, "**/+/cat/**/dog")
-					So(err, ShouldBeNil)
-
-					var streams []*LogStream
-					So(di.GetAll(q, &streams), ShouldBeNil)
-					So(streams, shouldHaveLogStreams, "cat/bird/dog", "cat/dog")
-				})
-			})
-
-			Convey(`TimestampIndexedQueryFields queries (keyed newest-to-oldest`, func() {
-				Convey(`A query for all records returns them in reverse order.`, func() {
-					q := ds.NewQuery("TimestampIndexedQueryFields")
-
+				Convey(`A timestamp inequality query for all records returns them in reverse order.`, func() {
 					// Reverse "streamNames".
 					si := make([]interface{}, len(streamNames))
 					for i := 0; i < len(streamNames); i++ {
 						si[i] = interface{}(streamNames[len(streamNames)-i-1])
 					}
 
-					var streams []*TimestampIndexedQueryFields
+					var streams []*LogStream
 					So(di.GetAll(q, &streams), ShouldBeNil)
 					So(streams, shouldHaveLogStreams, si...)
 				})
 
 				Convey(`A query for "cat/**/dog" should return "cat/bird/dog" and "cat/dog".`, func() {
-					q := ds.NewQuery("TimestampIndexedQueryFields")
-					q, err := AddLogStreamPathQuery(q, "**/+/cat/**/dog")
+					q, err := AddLogStreamPathFilter(q, "**/+/cat/**/dog")
 					So(err, ShouldBeNil)
 
-					var streams []*TimestampIndexedQueryFields
+					var streams []*LogStream
 					So(di.GetAll(q, &streams), ShouldBeNil)
 					So(streams, shouldHaveLogStreams, "cat/bird/dog", "cat/dog")
 				})
 
-				Convey(`A query for streams older than "baz/qux" returns {"baz/qux", "foo/bar/baz", and "foo/bar"}.`, func() {
-					q := ds.NewQuery("TimestampIndexedQueryFields")
-					q = AddOlderFilter(q, di, times["baz/qux"])
+				Convey(`A query for streams older than "baz/qux" returns {"foo/bar/baz", and "foo/bar"}.`, func() {
+					q = AddOlderFilter(q, times["baz/qux"])
 
-					var streams []*TimestampIndexedQueryFields
+					var streams []*LogStream
 					So(di.GetAll(q, &streams), ShouldBeNil)
-					So(streams, shouldHaveLogStreams, "baz/qux", "foo/bar/baz", "foo/bar")
+					So(streams, shouldHaveLogStreams, "foo/bar/baz", "foo/bar")
 				})
 
-				Convey(`A query for streams newer than "cat/dog" returns {"bird/plane", "cat/bird/dog", "cat/dog"}.`, func() {
-					q := ds.NewQuery("TimestampIndexedQueryFields")
-					q = AddNewerFilter(q, di, times["cat/dog"])
+				Convey(`A query for streams newer than "cat/dog" returns {"bird/plane", "cat/bird/dog"}.`, func() {
+					q = AddNewerFilter(q, times["cat/dog"])
 
-					var streams []*TimestampIndexedQueryFields
+					var streams []*LogStream
 					So(di.GetAll(q, &streams), ShouldBeNil)
-					So(streams, shouldHaveLogStreams, "bird/plane", "cat/bird/dog", "cat/dog")
+					So(streams, shouldHaveLogStreams, "bird/plane", "cat/bird/dog")
 				})
 
-				Convey(`A query for "cat/**/dog" newer than "cat/dog" returns {"cat/bird/dog", "cat/dog"}.`, func() {
-					q := ds.NewQuery("TimestampIndexedQueryFields")
-					q = AddNewerFilter(q, di, times["cat/dog"])
+				Convey(`A query for "cat/**/dog" newer than "cat/dog" returns {"cat/bird/dog"}.`, func() {
+					q = AddNewerFilter(q, times["cat/dog"])
 
-					q, err := AddLogStreamPathQuery(q, "**/+/cat/**/dog")
+					q, err := AddLogStreamPathFilter(q, "**/+/cat/**/dog")
 					So(err, ShouldBeNil)
 
-					var streams []*TimestampIndexedQueryFields
+					var streams []*LogStream
 					So(di.GetAll(q, &streams), ShouldBeNil)
-					So(streams, shouldHaveLogStreams, "cat/bird/dog", "cat/dog")
+					So(streams, shouldHaveLogStreams, "cat/bird/dog")
 				})
 			})
+		})
+	})
+}
+
+func TestLogStreamPathFilter(t *testing.T) {
+	t.Parallel()
+
+	Convey(`A testing query`, t, func() {
+		q := ds.NewQuery("LogStream")
+
+		Convey(`Will construct a non-globbing query as Prefix/Name equality.`, func() {
+			q, err := AddLogStreamPathFilter(q, "foo/bar/+/baz/qux")
+			So(err, ShouldBeNil)
+
+			fq, err := q.Finalize()
+			So(err, ShouldBeNil)
+			So(fq.EqFilters(), ShouldResembleV, map[string]ds.PropertySlice{
+				"Prefix": sps("foo/bar"),
+				"Name":   sps("baz/qux"),
+			})
+		})
+
+		Convey(`Will refuse to query an invalid Prefix/Name.`, func() {
+			_, err := AddLogStreamPathFilter(q, "////+/baz/qux")
+			So(err, ShouldErrLike, "invalid Prefix component")
+
+			_, err = AddLogStreamPathFilter(q, "foo/bar/+//////")
+			So(err, ShouldErrLike, "invalid Name component")
+		})
+
+		Convey(`Will not impose any filters on an empty Prefix.`, func() {
+			q, err := AddLogStreamPathFilter(q, "/+/baz/qux")
+			So(err, ShouldBeNil)
+
+			fq, err := q.Finalize()
+			So(err, ShouldBeNil)
+			So(fq.EqFilters(), ShouldResembleV, map[string]ds.PropertySlice{
+				"Name": sps("baz/qux"),
+			})
+		})
+
+		Convey(`Will not impose any filters on an empty Name.`, func() {
+			q, err := AddLogStreamPathFilter(q, "baz/qux")
+			So(err, ShouldBeNil)
+
+			fq, err := q.Finalize()
+			So(err, ShouldBeNil)
+			So(fq.EqFilters(), ShouldResembleV, map[string]ds.PropertySlice{
+				"Prefix": sps("baz/qux"),
+			})
+		})
+
+		Convey(`Will glob out single Prefix components.`, func() {
+			q, err := AddLogStreamPathFilter(q, "foo/*/*/bar/*/baz/qux/*")
+			So(err, ShouldBeNil)
+
+			fq, err := q.Finalize()
+			So(err, ShouldBeNil)
+			So(fq.EqFilters(), ShouldResembleV, map[string]ds.PropertySlice{
+				"_C": sps("PC:8", "PF:0:foo", "PF:3:bar", "PF:5:baz", "PF:6:qux"),
+			})
+		})
+
+		Convey(`Will handle end-of-query globbing.`, func() {
+			q, err := AddLogStreamPathFilter(q, "foo/*/bar/**")
+			So(err, ShouldBeNil)
+
+			fq, err := q.Finalize()
+			So(err, ShouldBeNil)
+			So(fq.EqFilters(), ShouldResembleV, map[string]ds.PropertySlice{
+				"_C": sps("PF:0:foo", "PF:2:bar"),
+			})
+		})
+
+		Convey(`Will handle beginning-of-query globbing.`, func() {
+			q, err := AddLogStreamPathFilter(q, "**/foo/*/bar")
+			So(err, ShouldBeNil)
+
+			fq, err := q.Finalize()
+			So(err, ShouldBeNil)
+			So(fq.EqFilters(), ShouldResembleV, map[string]ds.PropertySlice{
+				"_C": sps("PR:0:bar", "PR:2:foo"),
+			})
+		})
+
+		Convey(`Can handle middle-of-query globbing.`, func() {
+			q, err := AddLogStreamPathFilter(q, "*/foo/*/**/bar/*/baz/*")
+			So(err, ShouldBeNil)
+
+			fq, err := q.Finalize()
+			So(err, ShouldBeNil)
+			So(fq.EqFilters(), ShouldResembleV, map[string]ds.PropertySlice{
+				"_C": sps("PF:1:foo", "PR:1:baz", "PR:3:bar"),
+			})
+		})
+
+		Convey(`Will error if more than one greedy glob is present.`, func() {
+			_, err := AddLogStreamPathFilter(q, "*/foo/**/bar/**")
+			So(err, ShouldErrLike, "cannot have more than one greedy glob")
 		})
 	})
 }

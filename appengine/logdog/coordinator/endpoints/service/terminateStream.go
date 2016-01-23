@@ -108,7 +108,7 @@ func (s *Service) TerminateStream(c context.Context, req *TerminateStreamRequest
 			}.Errorf(c, "Error retriving log stream.")
 			return endpoints.NewInternalServerError("failed to retrieve log stream")
 		}
-	}, &ds.TransactionOptions{XG: true})
+	}, nil)
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,

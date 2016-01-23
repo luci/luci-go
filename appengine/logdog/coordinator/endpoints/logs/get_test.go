@@ -107,7 +107,7 @@ func TestGet(t *testing.T) {
 		desc := ct.TestLogStreamDescriptor(c, "foo/bar")
 		ls, err := ct.TestLogStream(c, desc)
 		So(err, ShouldBeNil)
-		So(ls.Put(ds.Get(c)), ShouldBeNil)
+		So(ds.Get(c).Put(ls), ShouldBeNil)
 
 		tc.Add(time.Second)
 		for _, v := range []int{0, 1, 2, 4, 5, 7} {
@@ -140,7 +140,7 @@ func TestGet(t *testing.T) {
 
 		Convey(`When the log stream is purged`, func() {
 			ls.Purged = true
-			So(ls.Put(ds.Get(c)), ShouldBeNil)
+			So(ds.Get(c).Put(ls), ShouldBeNil)
 
 			Convey(`Will return NotFound if the user is not an administrator.`, func() {
 				_, err := s.Get(c, &req)

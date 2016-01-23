@@ -48,13 +48,13 @@ const (
 
 // apply adds a query equality filter for the specified field based on the
 // TrinaryValue's value.
-func (v TrinaryValue) apply(q *ds.Query, field string) *ds.Query {
+func (v TrinaryValue) apply(q *ds.Query, f func(*ds.Query, bool) *ds.Query) *ds.Query {
 	switch v {
 	case TrinaryYes:
-		return q.Eq(field, true)
+		return f(q, true)
 
 	case TrinaryNo:
-		return q.Eq(field, false)
+		return f(q, false)
 
 	default:
 		// Default is "both".
@@ -114,11 +114,11 @@ type QueryRequest struct {
 	// TODO(dnj): Set endpoint default to "both" once the upconvert bug is fixed.
 	Purged TrinaryValue `json:"purged,omitempty"`
 
-	// Newer restricts results to streams created on or after the specified
-	// RFC3339 timestamp string.
+	// Newer restricts results to streams created after the specified RFC3339
+	// timestamp string.
 	Newer string `json:"newer,omitempty"`
-	// Older restricts results to streams created on or before the specified
-	// RFC3339 timestamp string.
+	// Older restricts results to streams created before the specified RFC3339
+	// timestamp string.
 	Older string `json:"older,omitempty"`
 
 	// ProtoVersion, if not "", constrains the results to those whose protobuf
@@ -261,32 +261,134 @@ func (r *queryRunner) runQuery(resp *QueryResponse) error {
 		r.limit = r.MaxResults
 	}
 
-	exec := queryExecutor(nil)
-	if r.Newer != "" || r.Older != "" {
-		exec = &timestampSortedQueryExecutor{}
-	} else {
-		exec = &logStreamQueryExecutor{}
+	q := ds.NewQuery("LogStream").Order("-Created")
+
+	// Determine which entity to query against based on our sorting constraints.
+	if r.Next != "" {
+		cursor, err := ds.Get(r).DecodeCursor(r.Next)
+		if err != nil {
+			log.Fields{
+				log.ErrorKey: err,
+				"cursor":     r.Next,
+			}.Errorf(r, "Failed to decode cursor.")
+			return endpoints.NewBadRequestError("invalid `next` value")
+		}
+		q = q.Start(cursor)
 	}
 
-	q, err := exec.getQueryBase(r)
-	if err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-		}.Errorf(r, "Failed to get query base.")
-		return err
+	// Add Path constraints.
+	if r.Path != "" {
+		err := error(nil)
+		q, err = coordinator.AddLogStreamPathFilter(q, r.Path)
+		if err != nil {
+			log.Fields{
+				log.ErrorKey: err,
+				"path":       r.Path,
+			}.Errorf(r, "Invalid query path.")
+			return endpoints.NewBadRequestError("invalid query `path`")
+		}
 	}
-	q, err = r.addStandardQueryFilters(q)
-	if err != nil {
-		return err
+
+	if r.ContentType != "" {
+		q = q.Eq("ContentType", r.ContentType)
 	}
+
+	if r.StreamType != "" {
+		st, ok := streamTypeFilterMap[r.StreamType]
+		if !ok {
+			return endpoints.NewBadRequestError("invalid query `streamType`")
+		}
+		q = q.Eq("StreamType", st)
+	}
+
+	q = r.Terminated.apply(q, coordinator.AddLogStreamTerminatedFilter)
+	q = r.Archived.apply(q, coordinator.AddLogStreamArchivedFilter)
+
+	if !r.canSeePurged {
+		// Force non-purged results for non-admin users.
+		q = q.Eq("Purged", false)
+	} else {
+		q = r.Purged.apply(q, coordinator.AddLogStreamPurgedFilter)
+	}
+
+	if r.Newer != "" {
+		ts, err := lep.ParseRFC3339(r.Newer)
+		if err != nil {
+			log.Fields{
+				log.ErrorKey: err,
+				"newer":      r.Newer,
+			}.Errorf(r, "Unable to parse 'Newer' field.")
+			return endpoints.NewBadRequestError("invalid 'newer' value")
+		}
+		q = coordinator.AddNewerFilter(q, ts)
+	}
+	if r.Older != "" {
+		ts, err := lep.ParseRFC3339(r.Older)
+		if err != nil {
+			log.Fields{
+				log.ErrorKey: err,
+				"newer":      r.Older,
+			}.Errorf(r, "Unable to parse 'Older' field.")
+			return endpoints.NewBadRequestError("invalid 'newer' value")
+		}
+		q = coordinator.AddOlderFilter(q, ts)
+	}
+
+	if r.ProtoVersion != "" {
+		q = q.Eq("ProtoVersion", r.ProtoVersion)
+	}
+
+	// Add tag constraints.
+	tagsSeen := map[string]string{}
+	for i, t := range r.Tags {
+		tag := types.StreamTag{
+			Key:   t.Key,
+			Value: t.Value,
+		}
+		if err := tag.Validate(); err != nil {
+			log.Fields{
+				log.ErrorKey: err,
+				"key":        tag.Key,
+				"value":      tag.Value,
+			}.Errorf(r, "Invalid tag constraint.")
+			return endpoints.NewBadRequestError("invalid tag constraint #%d", i)
+		}
+
+		// Avoid duplicate tags.
+		if v, ok := tagsSeen[tag.Key]; ok && t.Value != v {
+			return endpoints.NewBadRequestError("conflicting tag query parameters #%d: [%s]", i, tag.Key)
+		}
+		tagsSeen[tag.Key] = tag.Value
+
+		q = coordinator.AddLogStreamTagFilter(q, tag.Key, tag.Value)
+	}
+
 	q = q.Limit(int32(r.limit))
 
-	entries, cursor, err := exec.runQuery(r, q)
+	cursor := ds.Cursor(nil)
+	entries := make([]*coordinator.LogStream, 0, r.limit)
+	err := ds.Get(r).Run(q, func(ls *coordinator.LogStream, cb ds.CursorCB) error {
+		// If we hit our limit, add a cursor for the next iteration.
+		entries = append(entries, ls)
+		if len(entries) == r.limit {
+			var err error
+			cursor, err = cb()
+			if err != nil {
+				log.Fields{
+					log.ErrorKey: err,
+					"count":      len(entries),
+				}.Errorf(r, "Failed to get cursor value.")
+				return err
+			}
+			return ds.Stop
+		}
+		return nil
+	})
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,
 		}.Errorf(r, "Failed to execute query.")
-		return err
+		return endpoints.InternalServerError
 	}
 
 	if cursor != nil {
@@ -317,218 +419,14 @@ func (r *queryRunner) runQuery(resp *QueryResponse) error {
 				}
 			}
 		}
+		if err != nil {
+			log.Fields{
+				log.ErrorKey: err,
+			}.Errorf(r, "Failed to execute query.")
+			return err
+		}
 
 		resp.Streams[i] = &stream
 	}
 	return nil
-}
-
-func (r *queryRunner) addStandardQueryFilters(q *ds.Query) (*ds.Query, error) {
-	// Determine which entity to query against based on our sorting constraints.
-	if r.Next != "" {
-		cursor, err := ds.Get(r).DecodeCursor(r.Next)
-		if err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-				"cursor":     r.Next,
-			}.Errorf(r, "Failed to decode cursor.")
-			return nil, endpoints.NewBadRequestError("invalid `next` value")
-		}
-		q = q.Start(cursor)
-	}
-
-	// Add Path constraints.
-	if r.Path != "" {
-		err := error(nil)
-		q, err = coordinator.AddLogStreamPathQuery(q, r.Path)
-		if err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-				"path":       r.Path,
-			}.Errorf(r, "Invalid query path.")
-			return nil, endpoints.NewBadRequestError("invalid query `path`")
-		}
-	}
-
-	if r.ContentType != "" {
-		q = q.Eq("ContentType", r.ContentType)
-	}
-
-	if r.StreamType != "" {
-		st, ok := streamTypeFilterMap[r.StreamType]
-		if !ok {
-			return nil, endpoints.NewBadRequestError("invalid query `streamType`")
-		}
-		q = q.Eq("StreamType", st)
-	}
-
-	q = r.Terminated.apply(q, "Terminated")
-	q = r.Archived.apply(q, "Archived")
-
-	if !r.canSeePurged {
-		// Force non-purged results for non-admin users.
-		q = q.Eq("Purged", false)
-	} else {
-		q = r.Purged.apply(q, "Purged")
-	}
-
-	if r.ProtoVersion != "" {
-		q = q.Eq("ProtoVersion", r.ProtoVersion)
-	}
-
-	// Add tag constraints.
-	tagsSeen := map[string]string{}
-	for i, t := range r.Tags {
-		tag := types.StreamTag{
-			Key:   t.Key,
-			Value: t.Value,
-		}
-		if err := tag.Validate(); err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-				"key":        tag.Key,
-				"value":      tag.Value,
-			}.Errorf(r, "Invalid tag constraint.")
-			return nil, endpoints.NewBadRequestError("invalid tag constraint #%d", i)
-		}
-
-		// Avoid duplicate tags.
-		if v, ok := tagsSeen[tag.Key]; ok && t.Value != v {
-			return nil, endpoints.NewBadRequestError("conflicting tag query parameters #%d: [%s]", i, tag.Key)
-		}
-		tagsSeen[tag.Key] = tag.Value
-
-		q = coordinator.AddLogStreamTagFilter(q, tag.Key, tag.Value)
-	}
-
-	return q, nil
-}
-
-type queryExecutor interface {
-	getQueryBase(*queryRunner) (*ds.Query, error)
-	runQuery(*queryRunner, *ds.Query) ([]*coordinator.LogStream, ds.Cursor, error)
-}
-
-type logStreamQueryExecutor struct{}
-
-func (e *logStreamQueryExecutor) getQueryBase(*queryRunner) (*ds.Query, error) {
-	return ds.NewQuery("LogStream"), nil
-}
-
-func (e *logStreamQueryExecutor) runQuery(r *queryRunner, q *ds.Query) (
-	[]*coordinator.LogStream, ds.Cursor, error) {
-	cursor := ds.Cursor(nil)
-	entries := make([]*coordinator.LogStream, 0, r.limit)
-	err := ds.Get(r).Run(q, func(ls *coordinator.LogStream, cb ds.CursorCB) error {
-		// If we hit our limit, add a cursor for the next iteration.
-		entries = append(entries, ls)
-		if len(entries) == r.limit {
-			var err error
-			cursor, err = cb()
-			if err != nil {
-				log.Fields{
-					log.ErrorKey: err,
-					"count":      len(entries),
-				}.Errorf(r, "Failed to get cursor value.")
-				return err
-			}
-			return ds.Stop
-		}
-		return nil
-	})
-	if err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-		}.Errorf(r, "Failed to execute query.")
-		return nil, nil, endpoints.InternalServerError
-	}
-	return entries, cursor, err
-}
-
-type timestampSortedQueryExecutor struct{}
-
-func (e *timestampSortedQueryExecutor) getQueryBase(r *queryRunner) (*ds.Query, error) {
-	di := ds.Get(r)
-	q := ds.NewQuery("TimestampIndexedQueryFields")
-
-	// This is probably implicit, but might as well.
-	q.Order("__key__")
-
-	if r.Newer != "" {
-		ts, err := lep.ParseRFC3339(r.Newer)
-		if err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-				"newer":      r.Newer,
-			}.Errorf(r, "Unable to parse 'Newer' field.")
-			return nil, endpoints.NewBadRequestError("invalid 'newer' value")
-		}
-
-		q = coordinator.AddNewerFilter(q, di, ts)
-	}
-
-	if r.Older != "" {
-		ts, err := lep.ParseRFC3339(r.Older)
-		if err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-				"older":      r.Older,
-			}.Errorf(r, "Unable to parse 'Older' field.")
-			return nil, endpoints.NewBadRequestError("invalid 'older' value")
-		}
-
-		q = coordinator.AddOlderFilter(q, di, ts)
-	}
-
-	return q, nil
-}
-
-func (e *timestampSortedQueryExecutor) runQuery(r *queryRunner, q *ds.Query) (
-	[]*coordinator.LogStream, ds.Cursor, error) {
-	// First pass: project the LogStream key field from the
-	// TimestampIndexedQueryFields entity, since we only need to do the lookup.
-	di := ds.Get(r)
-	keys := make([]*ds.Key, 0, r.limit)
-	cursor := ds.Cursor(nil)
-	err := di.Run(q, func(tiqf *coordinator.TimestampIndexedQueryFields, cb ds.CursorCB) error {
-		keys = append(keys, tiqf.LogStream)
-		if len(keys) == r.limit {
-			var err error
-			cursor, err = cb()
-			if err != nil {
-				log.Fields{
-					log.ErrorKey: err,
-					"count":      len(keys),
-				}.Errorf(r, "Failed to get cursor value.")
-			}
-			return ds.Stop
-		}
-		return nil
-	})
-	if err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-		}.Errorf(r, "Failed to execute query.")
-		return nil, nil, endpoints.InternalServerError
-	}
-
-	// Fetch LogStream records for the retrieved keys.
-	entries := make([]*coordinator.LogStream, 0, len(keys))
-	for i, k := range keys {
-		if k == nil || k.StringID() == "" {
-			log.Fields{
-				"index": i,
-			}.Warningf(r, "Timestamp query returned invalid LogStream key.")
-			continue
-		}
-
-		entries = append(entries, coordinator.LogStreamFromID(k.StringID()))
-	}
-	if err := di.GetMulti(entries); err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-		}.Errorf(r, "Failed to fetch LogStream records.")
-		return nil, nil, endpoints.InternalServerError
-	}
-	return entries, cursor, nil
 }
