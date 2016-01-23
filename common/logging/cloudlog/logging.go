@@ -102,7 +102,7 @@ func (l *boundCloudLogger) LogCall(level logging.Level, calldepth int, f string,
 	text := fmt.Sprintf(f, args...)
 	fields := logging.GetFields(l.ctx)
 	if len(fields) > 0 {
-		text = text + " " + fields.FieldString(true)
+		text = text + " " + fields.String()
 	}
 
 	// Add logging fields to labels.

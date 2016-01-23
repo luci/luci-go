@@ -12,31 +12,17 @@ import (
 
 // Config is a logging configuration structure.
 type Config struct {
-	Level  Level
-	Filter Filter
+	Level Level
 }
 
 // AddFlags adds common flags to a supplied FlagSet.
 func (c *Config) AddFlags(fs *flag.FlagSet) {
-	fs.Var(&c.Level, "log_level",
+	fs.Var(&c.Level, "log-level",
 		"The logging level. Valid options are: debug, info, warning, error.")
-	fs.Var(&c.Filter, "log_filter",
-		"Log filter keywords. Can be specified multiple times.")
 }
 
-// Set installs a filter-aware logger that wraps the currently-installed Logger
-// and selectively discards messages based on the logging configuration.
+// Set installs a logger that wraps the currently-installed Logger and sets
+// the level via the command-line level flag.
 func (c *Config) Set(ctx context.Context) context.Context {
-	filterFunc := c.Filter.Get()
-	baseFactory := GetFactory(ctx)
-
-	ctx = SetLevel(ctx, c.Level)
-	return SetFactory(ctx, func(ctx context.Context) Logger {
-		if value, ok := GetFields(ctx)[FilterOnKey]; ok {
-			if !filterFunc(value) {
-				return Null()
-			}
-		}
-		return baseFactory(ctx)
-	})
+	return SetLevel(ctx, c.Level)
 }

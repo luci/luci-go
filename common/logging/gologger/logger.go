@@ -81,7 +81,7 @@ func (li *loggerImpl) LogCall(l logging.Level, calldepth int, format string, arg
 // '%' characters in the fields string are escaped so they can't be interpreted
 // as format characters when appended to the initial format string.
 func formatWithFields(format string, fields logging.Fields, args []interface{}) string {
-	fieldString := strings.Replace(fields.FieldString(true), "%", "%%", -1)
+	fieldString := strings.Replace(fields.String(), "%", "%%", -1)
 
 	buf := bytes.Buffer{}
 	buf.Grow(len(format) + logMessageFieldPadding + len(fieldString))

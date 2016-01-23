@@ -62,31 +62,24 @@ func (f Fields) Copy(other Fields) Fields {
 
 // SortedEntries processes a Fields object, pruning invisible fields, placing
 // the ErrorKey field first, and then sorting the remaining fields by key.
-//
-// If prune is true, internally-used field keys will be pruned from the output
-// if present.
-func (f Fields) SortedEntries(prune bool) (s []*FieldEntry) {
+func (f Fields) SortedEntries() (s []*FieldEntry) {
 	if len(f) == 0 {
 		return nil
 	}
 	s = make([]*FieldEntry, 0, len(f))
 	for k, v := range f {
-		if !(prune && k == FilterOnKey) {
-			s = append(s, &FieldEntry{k, v})
-		}
+		s = append(s, &FieldEntry{k, v})
 	}
 	sort.Sort(fieldEntrySlice(s))
 	return
 }
 
-// FieldString returns a string describing the contents of f in a sorted,
+// String returns a string describing the contents of f in a sorted,
 // dictionary-like format.
-//
-// If prune is true, pruned fields will be omitted from the resulting string.
-func (f Fields) FieldString(prune bool) string {
+func (f Fields) String() string {
 	b := bytes.Buffer{}
 	b.WriteRune('{')
-	for idx, e := range f.SortedEntries(prune) {
+	for idx, e := range f.SortedEntries() {
 		if idx > 0 {
 			b.WriteString(", ")
 		}
@@ -94,12 +87,6 @@ func (f Fields) FieldString(prune bool) string {
 	}
 	b.WriteRune('}')
 	return b.String()
-}
-
-// String returns a full string representation of Fields. This should not be
-// used for logging otuput, as it doesn't prune fields.
-func (f Fields) String() string {
-	return f.FieldString(false)
 }
 
 // Debugf is a shorthand method to call the current logger's Errorf method.

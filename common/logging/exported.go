@@ -8,11 +8,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-// SetFilter sets the context's logging filter value.
-func SetFilter(c context.Context, filter string) context.Context {
-	return SetField(c, FilterOnKey, filter)
-}
-
 // SetError returns a context with its error field set.
 func SetError(c context.Context, err error) context.Context {
 	return SetField(c, ErrorKey, err)

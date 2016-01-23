@@ -120,10 +120,8 @@ func (m *meter) consumeWork() {
 	// Acknowledge when this goroutine finishes.
 	defer close(m.closeAckC)
 
-	ctx := log.SetFilter(m.ctx, "meter")
-
 	timerRunning := false
-	flushTimer := clock.NewTimer(ctx)
+	flushTimer := clock.NewTimer(m.ctx)
 	defer func() {
 		flushTimer.Stop()
 	}()
@@ -139,7 +137,7 @@ func (m *meter) consumeWork() {
 	}
 	bufferedWork := make([]interface{}, 0, workBufferSize)
 
-	log.Debugf(ctx, "Starting work loop.")
+	log.Debugf(m.ctx, "Starting work loop.")
 	active := true
 	for active {
 		flushRound := false
@@ -147,7 +145,7 @@ func (m *meter) consumeWork() {
 		select {
 		case work, ok := <-m.workC:
 			if !ok {
-				log.Debugf(ctx, "Received instance close signal; terminating.")
+				log.Debugf(m.ctx, "Received instance close signal; terminating.")
 
 				// Don't immediately exit the loop, since there may still be buffered
 				// Work to flush.
@@ -169,7 +167,7 @@ func (m *meter) consumeWork() {
 			// doing this if we're not already flushing, since flushing will clear the
 			// timer.
 			if !flushRound && flushTime > 0 && !timerRunning {
-				log.Infof(log.SetFields(ctx, log.Fields{
+				log.Infof(log.SetFields(m.ctx, log.Fields{
 					"flushInterval": flushTime,
 				}), "Starting flush timer.")
 				flushTimer.Reset(flushTime)
@@ -185,7 +183,7 @@ func (m *meter) consumeWork() {
 			flushRound = true
 
 		case <-flushTimer.GetC():
-			log.Infof(ctx, "Flush timer has triggered.")
+			log.Infof(m.ctx, "Flush timer has triggered.")
 			timerRunning = false
 			flushRound = true
 		}

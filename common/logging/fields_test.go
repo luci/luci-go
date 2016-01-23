@@ -128,17 +128,7 @@ func TestFields(t *testing.T) {
 		})
 
 		Convey(`Has a String representation: {"baz":"qux", "foo":"bar"}`, func() {
-			So(fm.FieldString(false), ShouldEqual, `{"baz":"qux", "foo":"bar"}`)
-		})
-
-		Convey(`With a FilterOn key`, func() {
-			fm = fm.Copy(Fields{
-				FilterOnKey: "test",
-			})
-
-			Convey(`Has a pruned String representation: {"baz":"qux", "foo":"bar"}`, func() {
-				So(fm.FieldString(true), ShouldEqual, `{"baz":"qux", "foo":"bar"}`)
-			})
+			So(fm.String(), ShouldEqual, `{"baz":"qux", "foo":"bar"}`)
 		})
 	})
 }
