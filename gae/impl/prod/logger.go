@@ -61,7 +61,7 @@ func (gl *loggerImpl) LogCall(l logging.Level, calldepth int, format string, arg
 
 	fields := logging.GetFields(gl.ic)
 	if len(fields) > 0 {
-		logf(gl.aeCtx, "%s :: %s", fmt.Sprintf(format, args...), fields.FieldString(true))
+		logf(gl.aeCtx, "%s :: %s", fmt.Sprintf(format, args...), fields.String())
 	} else {
 		logf(gl.aeCtx, format, args...)
 	}
