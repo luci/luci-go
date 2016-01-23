@@ -5,7 +5,9 @@
 package datastore
 
 import (
+	"fmt"
 	"math"
+	"sort"
 	"testing"
 	"time"
 
@@ -216,5 +218,80 @@ func TestDSPropertyMapImpl(t *testing.T) {
 				})
 			})
 		})
+	})
+}
+
+func TestByteSequences(t *testing.T) {
+	t.Parallel()
+
+	conversions := []struct {
+		desc string
+		conv func(v string) (byteSequence, interface{})
+	}{
+		{"string", func(v string) (byteSequence, interface{}) { return stringByteSequence(v), v }},
+		{"[]byte", func(v string) (byteSequence, interface{}) { return bytesByteSequence(v), []byte(v) }},
+	}
+
+	testCases := map[string][]struct {
+		assertion func(interface{}, ...interface{}) string
+		cmpS      string
+	}{
+		"": {
+			{ShouldEqual, ""},
+			{ShouldBeLessThan, "foo"},
+		},
+		"bar": {
+			{ShouldEqual, "bar"},
+			{ShouldBeGreaterThan, "ba"},
+		},
+		"ba": {
+			{ShouldBeLessThan, "bar"},
+			{ShouldBeLessThan, "z"},
+		},
+		"foo": {
+			{ShouldBeGreaterThan, ""},
+		},
+		"bz": {
+			{ShouldBeGreaterThan, "bar"},
+		},
+		"qux": {
+			{ShouldBeGreaterThan, "bar"},
+		},
+	}
+
+	keys := make([]string, 0, len(testCases))
+	for k := range testCases {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	Convey(`When testing byte sequences`, t, func() {
+		for _, s := range keys {
+			for _, c := range conversions {
+				Convey(fmt.Sprintf(`A %s sequence with test data %q`, c.desc, s), func() {
+					bs, effectiveValue := c.conv(s)
+
+					Convey(`Basic stuff works.`, func() {
+						So(bs.len(), ShouldEqual, len(s))
+						for i, c := range s {
+							So(bs.get(i), ShouldEqual, c)
+						}
+						So(bs.value(), ShouldResemble, effectiveValue)
+						So(bs.string(), ShouldEqual, s)
+						So(bs.bytes(), ShouldResemble, []byte(s))
+					})
+
+					// Test comparison with other byteSequence types.
+					for _, tc := range testCases[s] {
+						for _, c := range conversions {
+							Convey(fmt.Sprintf(`Compares properly with %s %q`, c.desc, tc.cmpS), func() {
+								cmpBS, _ := c.conv(tc.cmpS)
+								So(cmpByteSequence(bs, cmpBS), tc.assertion, 0)
+							})
+						}
+					}
+				})
+			}
+		}
 	})
 }

@@ -933,11 +933,12 @@ func cmpByteSequence(a, b byteSequence) int {
 	}
 
 	// Byte-by-byte "slow" comparison.
-	ld := a.len() - b.len()
-	if ld < 0 {
-		ld = -ld
+	ln := a.len()
+	if bln := b.len(); bln < ln {
+		ln = bln
 	}
-	for i := 0; i < ld; i++ {
+
+	for i := 0; i < ln; i++ {
 		av, bv := a.get(i), b.get(i)
 		switch {
 		case av < bv:
@@ -947,7 +948,7 @@ func cmpByteSequence(a, b byteSequence) int {
 		}
 	}
 
-	return ld
+	return a.len() - b.len()
 }
 
 // bytesByteSequence is a byteSequence implementation for a byte slice.
@@ -982,7 +983,7 @@ func (s stringByteSequence) fastCmp(o byteSequence) (int, bool) {
 		if string(s) < string(t) {
 			return -1, true
 		}
-		return 0, true
+		return 1, true
 	}
 	return 0, false
 }
