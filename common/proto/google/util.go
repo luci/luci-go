@@ -18,15 +18,17 @@ func NewTimestamp(t time.Time) *Timestamp {
 		return nil
 	}
 
-	nanos := t.UnixNano()
 	return &Timestamp{
-		Seconds: nanos / nanosecondsInASecond,
-		Nanos:   int32(nanos % nanosecondsInASecond),
+		Seconds: t.Unix(),
+		Nanos:   int32(t.Nanosecond()),
 	}
 }
 
 // Time returns the time.Time associated with a Timestamp protobuf.
 func (t *Timestamp) Time() time.Time {
+	if t == nil {
+		return time.Time{}
+	}
 	return time.Unix(t.Seconds, int64(t.Nanos)).UTC()
 }
 
