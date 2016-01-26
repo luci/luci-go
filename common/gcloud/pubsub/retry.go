@@ -2,12 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package gcps
+package pubsub
 
 import (
 	"github.com/luci/luci-go/common/retry"
 	"golang.org/x/net/context"
-	"google.golang.org/cloud/pubsub"
 )
 
 // Retry wraps a Connection and retries on transient errors.
@@ -41,7 +40,7 @@ func (r *Retry) SubExists(c context.Context, s Subscription) (exists bool, err e
 }
 
 // Publish implements the Connection interface.
-func (r *Retry) Publish(c context.Context, t Topic, msgs ...*pubsub.Message) (ids []string, err error) {
+func (r *Retry) Publish(c context.Context, t Topic, msgs ...*Message) (ids []string, err error) {
 	err = retry.Retry(c, r.retryFactory(), func() (err error) {
 		ids, err = r.Connection.Publish(c, t, msgs...)
 		return
@@ -50,7 +49,7 @@ func (r *Retry) Publish(c context.Context, t Topic, msgs ...*pubsub.Message) (id
 }
 
 // Pull implements the Connection interface.
-func (r *Retry) Pull(c context.Context, s Subscription, batch int) (msgs []*pubsub.Message, err error) {
+func (r *Retry) Pull(c context.Context, s Subscription, batch int) (msgs []*Message, err error) {
 	err = retry.Retry(c, r.retryFactory(), func() (err error) {
 		msgs, err = r.Connection.Pull(c, s, batch)
 		return

@@ -7,23 +7,22 @@ package monitor
 import (
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/gcloud/gcps"
+	"github.com/luci/luci-go/common/gcloud/pubsub"
 	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
-	"google.golang.org/cloud/pubsub"
 )
 
 type pubSubMonitor struct {
 	context.Context
-	ps    gcps.Connection
-	topic gcps.Topic
+	ps    pubsub.Connection
+	topic pubsub.Topic
 }
 
 // NewPubsubMonitor returns a Monitor that sends metrics to the Cloud Pub/Sub
 // API.
 func NewPubsubMonitor(credentialPath string, project string, topic string) (Monitor, error) {
 	authOpts := auth.Options{
-		Scopes:                 gcps.PublisherScopes,
+		Scopes:                 pubsub.PublisherScopes,
 		ServiceAccountJSONPath: credentialPath,
 	}
 
@@ -34,8 +33,8 @@ func NewPubsubMonitor(credentialPath string, project string, topic string) (Moni
 
 	return &pubSubMonitor{
 		Context: context.Background(),
-		ps:      gcps.NewConnection(httpClient, project),
-		topic:   gcps.Topic(topic),
+		ps:      pubsub.NewConnection(httpClient, project),
+		topic:   pubsub.Topic(topic),
 	}, nil
 }
 

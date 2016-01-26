@@ -5,13 +5,11 @@
 package ackbuffer
 
 import (
-	"github.com/luci/luci-go/common/gcloud/gcps"
+	"github.com/luci/luci-go/common/gcloud/pubsub"
 	"golang.org/x/net/context"
 )
 
 // Acknowledger sends ACKs to a Pub/Sub interface.
-//
-// gcps.Connection naturally implements this interface.
 type Acknowledger interface {
 	// Ack acknowledges one or more Pub/Sub message ACK IDs.
 	Ack(ctx context.Context, ackIDs ...string) error
@@ -20,31 +18,32 @@ type Acknowledger interface {
 	AckBatchSize() int
 }
 
-type gcpsACK struct {
-	ps    gcps.Connection
-	sub   gcps.Subscription
+type pubsubACK struct {
+	ps    pubsub.Connection
+	sub   pubsub.Subscription
 	batch int
 }
 
-// NewACK creates a Acknowledger instance from a gcps.Connection implementation.
+// NewACK creates a Acknowledger instance from a pubsub.Connection
+// implementation.
 //
 // If batch is <= 0, the maximum ACK batch size will be used.
-func NewACK(ps gcps.Connection, s gcps.Subscription, batch int) Acknowledger {
+func NewACK(ps pubsub.Connection, s pubsub.Subscription, batch int) Acknowledger {
 	if batch <= 0 {
-		batch = gcps.MaxMessageAckPerRequest
+		batch = pubsub.MaxMessageAckPerRequest
 	}
 
-	return &gcpsACK{
+	return &pubsubACK{
 		ps:    ps,
 		sub:   s,
 		batch: batch,
 	}
 }
 
-func (a *gcpsACK) Ack(c context.Context, ackIDs ...string) error {
+func (a *pubsubACK) Ack(c context.Context, ackIDs ...string) error {
 	return a.ps.Ack(c, a.sub, ackIDs...)
 }
 
-func (a *gcpsACK) AckBatchSize() int {
+func (a *pubsubACK) AckBatchSize() int {
 	return a.batch
 }

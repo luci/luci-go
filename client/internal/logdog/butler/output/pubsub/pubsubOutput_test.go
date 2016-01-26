@@ -17,26 +17,25 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/gcloud/gcps"
+	"github.com/luci/luci-go/common/gcloud/pubsub"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/recordio"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
-	"google.golang.org/cloud/pubsub"
 )
 
 type testPublisher struct {
 	sync.Mutex
 
 	err   error
-	topic gcps.Topic
+	topic pubsub.Topic
 
 	msgC          chan *pubsub.Message
 	nextMessageID int
 }
 
-func (ps *testPublisher) Publish(c context.Context, t gcps.Topic, msgs ...*pubsub.Message) ([]string, error) {
+func (ps *testPublisher) Publish(c context.Context, t pubsub.Topic, msgs ...*pubsub.Message) ([]string, error) {
 	if ps.err != nil {
 		return nil, ps.err
 	}
@@ -66,7 +65,7 @@ func TestConfig(t *testing.T) {
 		ps := &testPublisher{}
 		conf := Config{
 			Publisher: ps,
-			Topic:     gcps.Topic("test-topic"),
+			Topic:     pubsub.Topic("test-topic"),
 		}
 
 		Convey(`Will successfully validate.`, func() {
@@ -84,7 +83,7 @@ func TestConfig(t *testing.T) {
 		})
 
 		Convey(`Will not validate with an invalid Topic.`, func() {
-			conf.Topic = gcps.Topic("a!")
+			conf.Topic = pubsub.Topic("a!")
 			So(conf.Topic.Validate(), ShouldNotBeNil)
 			So(conf.Validate(), ShouldNotBeNil)
 		})
@@ -92,7 +91,7 @@ func TestConfig(t *testing.T) {
 }
 
 func deconstructMessage(msg *pubsub.Message) (*logpb.ButlerMetadata, *logpb.ButlerLogBundle, error) {
-	fr := recordio.NewReader(bytes.NewBuffer(msg.Data), gcps.MaxPublishSize)
+	fr := recordio.NewReader(bytes.NewBuffer(msg.Data), pubsub.MaxPublishSize)
 
 	// Validate header frame.
 	headerBytes, err := fr.ReadFrameAll()
@@ -141,19 +140,19 @@ func TestOutput(t *testing.T) {
 	Convey(`An Output using a test Pub/Sub instance`, t, func() {
 		ctx, _ := testclock.UseTime(context.Background(), time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 		ps := &testPublisher{
-			topic: gcps.Topic("test-topic"),
+			topic: pubsub.Topic("test-topic"),
 			msgC:  make(chan *pubsub.Message, 1),
 		}
 		conf := Config{
 			Publisher: ps,
-			Topic:     gcps.Topic("test-topic"),
+			Topic:     pubsub.Topic("test-topic"),
 		}
-		o := New(ctx, conf).(*gcpsOutput)
+		o := New(ctx, conf).(*pubSubOutput)
 		So(o, ShouldNotBeNil)
 		defer o.Close()
 
 		bundle := &logpb.ButlerLogBundle{
-			Source:    "GCPS Test",
+			Source:    "Pub/Sub Test",
 			Timestamp: google.NewTimestamp(clock.Now(ctx)),
 			Entries: []*logpb.ButlerLogBundle_Entry{
 				{},

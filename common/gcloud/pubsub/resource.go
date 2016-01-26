@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package gcps
+package pubsub
 
 import (
 	"errors"
@@ -49,12 +49,12 @@ func validateResource(s string) error {
 		if !((r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')) {
 			// Must begin with an ASCII letter?
 			if i == 0 {
-				return errors.New("gcps: resource names must begin with a letter")
+				return errors.New("pubsub: resource names must begin with a letter")
 			}
 
 			// Is this a valid mid-resource value?
 			if !((r >= '0' && r <= '9') || strings.ContainsRune(validMidResourceRunes, r)) {
-				return fmt.Errorf("gcps: invalid resource rune at %d: %c", i, r)
+				return fmt.Errorf("pubsub: invalid resource rune at %d: %c", i, r)
 			}
 		}
 	}

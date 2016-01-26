@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luci/luci-go/common/gcloud/gcps"
+	"github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/meter"
 	"github.com/luci/luci-go/common/parallel"
@@ -23,7 +23,7 @@ const (
 	// buffered before being sent.
 	//
 	// We base this off the default acknowledgement delay.
-	DefaultMaxBufferTime = (gcps.DefaultMaxAckDelay / 6)
+	DefaultMaxBufferTime = (pubsub.DefaultMaxAckDelay / 6)
 
 	// DefaultMaxParallelACK is the default maximum number of simultaneous
 	// parallel ACK request goroutines.

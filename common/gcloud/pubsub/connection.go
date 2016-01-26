@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package gcps
+package pubsub
 
 import (
 	"golang.org/x/net/context"
@@ -35,11 +35,11 @@ type Connection interface {
 	SubExists(context.Context, Subscription) (bool, error)
 
 	// Publish publishes a batch of Pub/Sub messages.
-	Publish(context.Context, Topic, ...*pubsub.Message) ([]string, error)
+	Publish(context.Context, Topic, ...*Message) ([]string, error)
 
 	// Pull pulls messages from the subscription. It returns up the requested
 	// number of messages.
-	Pull(context.Context, Subscription, int) ([]*pubsub.Message, error)
+	Pull(context.Context, Subscription, int) ([]*Message, error)
 
 	// Ack acknowledges one or more Pub/Sub message ACK IDs.
 	Ack(context.Context, Subscription, ...string) error

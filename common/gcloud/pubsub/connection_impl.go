@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package gcps
+package pubsub
 
 import (
 	"net/http"
@@ -44,14 +44,14 @@ func (p *connectionImpl) SubExists(c context.Context, s Subscription) (bool, err
 	return exists, errors.WrapTransient(err)
 }
 
-func (p *connectionImpl) Publish(c context.Context, t Topic, msgs ...*pubsub.Message) ([]string, error) {
-	ids, err := pubsub.Publish(p.with(c), string(t), msgs...)
+func (p *connectionImpl) Publish(c context.Context, t Topic, msgs ...*Message) ([]string, error) {
+	ids, err := pubsub.Publish(p.with(c), string(t), localMessageToPubSub(msgs)...)
 	return ids, errors.WrapTransient(err)
 }
 
-func (p *connectionImpl) Pull(c context.Context, s Subscription, n int) ([]*pubsub.Message, error) {
+func (p *connectionImpl) Pull(c context.Context, s Subscription, n int) ([]*Message, error) {
 	msgs, err := pubsub.Pull(p.with(c), string(s), n)
-	return msgs, errors.WrapTransient(err)
+	return pubSubMessageToLocal(msgs), errors.WrapTransient(err)
 }
 
 func (p *connectionImpl) Ack(c context.Context, s Subscription, ackIDs ...string) error {

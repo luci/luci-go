@@ -11,7 +11,7 @@ import (
 	"github.com/luci/luci-go/client/internal/logdog/butler/output"
 	"github.com/luci/luci-go/client/internal/logdog/butler/output/pubsub"
 	"github.com/luci/luci-go/common/flag/multiflag"
-	"github.com/luci/luci-go/common/gcloud/gcps"
+	ps "github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
 )
 
@@ -21,7 +21,7 @@ func init() {
 
 // pubsubOutputFactory for Google Cloud PubSub.
 type pubsubOutputFactory struct {
-	topic      gcps.Topic
+	topic      ps.Topic
 	project    string
 	noCompress bool
 }
@@ -61,8 +61,8 @@ func (f *pubsubOutputFactory) configOutput(a *application) (output.Output, error
 	if err != nil {
 		return nil, fmt.Errorf("pubsub: failed to initialize Pub/Sub context: %s", err)
 	}
-	ps := &gcps.Retry{
-		Connection: gcps.NewConnection(client, f.project),
+	ps := &ps.Retry{
+		Connection: ps.NewConnection(client, f.project),
 		Callback: func(err error, d time.Duration) {
 			log.Fields{
 				log.ErrorKey: err,

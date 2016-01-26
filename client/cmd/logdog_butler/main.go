@@ -20,7 +20,7 @@ import (
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/clock/clockflag"
 	"github.com/luci/luci-go/common/flag/multiflag"
-	"github.com/luci/luci-go/common/gcloud/gcps"
+	"github.com/luci/luci-go/common/gcloud/pubsub"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
@@ -201,7 +201,7 @@ func mainImpl(ctx context.Context, argv []string) int {
 	authOptions := auth.Options{
 		Scopes: buildScopes(
 			[]string{auth.OAuthScopeEmail},
-			gcps.PublisherScopes,
+			pubsub.PublisherScopes,
 		),
 		Context: ctx,
 		Logger:  log.Get(ctx),
