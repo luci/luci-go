@@ -52,6 +52,14 @@ type btTable interface {
 	getLogData(c context.Context, rk *rowKey, limit int, keysOnly bool, cb btGetCallback) error
 }
 
+// btTransientSubstrings is the set of known error substrings returned by
+// BigTable that indicate failures that aren't related to the specific data
+// content.
+var btTransientSubstrings = []string{
+	"Internal error encountered",
+	"interactive login is required",
+}
+
 // btTableProd is an implementation of the btTable interface that uses a real
 // production BigTable connection.
 type btTableProd struct {
@@ -150,8 +158,10 @@ func isTransient(err error) bool {
 	}
 
 	msg := err.Error()
-	if strings.Contains(msg, "Internal error encountered") {
-		return true
+	for _, s := range btTransientSubstrings {
+		if strings.Contains(msg, s) {
+			return true
+		}
 	}
 	return false
 }
