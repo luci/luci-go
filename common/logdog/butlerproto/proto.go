@@ -126,16 +126,13 @@ func (r *Reader) Read(ir io.Reader) error {
 			return fmt.Errorf("butlerproto: failed to read Bundle data: %s", err)
 		}
 
-		if r.Metadata.ProtoVersion != logpb.Version {
-			return fmt.Errorf("butlerproto: unknown protobuf version (%q != %q)",
-				r.Metadata.ProtoVersion, logpb.Version)
+		if r.Metadata.ProtoVersion == logpb.Version {
+			bundle := logpb.ButlerLogBundle{}
+			if err := proto.Unmarshal(data, &bundle); err != nil {
+				return fmt.Errorf("butlerproto: failed to unmarshal Bundle frame: %s", err)
+			}
+			r.Bundle = &bundle
 		}
-
-		bundle := logpb.ButlerLogBundle{}
-		if err := proto.Unmarshal(data, &bundle); err != nil {
-			return fmt.Errorf("butlerproto: failed to unmarshal Bundle frame: %s", err)
-		}
-		r.Bundle = &bundle
 		return nil
 
 	default:
@@ -169,6 +166,10 @@ func (r *limitErrorReader) Read(p []byte) (int, error) {
 type Writer struct {
 	protoBase
 
+	// ProtoVersion is the protocol version string to use. If empty, the current
+	// ProtoVersion will be used.
+	ProtoVersion string
+
 	// Compress, if true, allows the Writer to choose to compress data when
 	// applicable.
 	Compress bool
@@ -185,9 +186,13 @@ func (w *Writer) writeData(fw recordio.Writer, t logpb.ButlerMetadata_ContentTyp
 		return fmt.Errorf("butlerproto: serialized size exceeds soft cap (%d > %d)", len(data), w.getMaxSize())
 	}
 
+	pv := w.ProtoVersion
+	if pv == "" {
+		pv = logpb.Version
+	}
 	md := logpb.ButlerMetadata{
 		Type:         t,
-		ProtoVersion: logpb.Version,
+		ProtoVersion: pv,
 	}
 
 	// If we're configured to compress and the data is below our threshold,

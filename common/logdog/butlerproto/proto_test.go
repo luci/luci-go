@@ -82,15 +82,14 @@ func TestReader(t *testing.T) {
 			So(err, assertions.ShouldErrLike, "unknown data type")
 		})
 
-		Convey(`Will fail to read if an unknown protocol version is identified.`, func() {
+		Convey(`Will not decode contents if an unknown protocol version is identified.`, func() {
 			// Assert that we are testing an unknown type.
 			md.ProtoVersion = "DEFINITELY NOT VALID"
 			push(&md)
 			push(&bundle)
 
-			err := r.Read(&buf)
-			So(err, ShouldNotBeNil)
-			So(err, assertions.ShouldErrLike, "unknown protobuf version")
+			So(r.Read(&buf), ShouldBeNil)
+			So(r.Bundle, ShouldBeNil)
 		})
 
 		Convey(`Will fail to read junk metadata.`, func() {
