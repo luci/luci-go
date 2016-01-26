@@ -19,6 +19,13 @@ import (
 	"google.golang.org/appengine/remote_api"
 )
 
+// RemoteAPIScopes is the set of OAuth2 scopes needed for Remote API access.
+var RemoteAPIScopes = []string{
+	"https://www.googleapis.com/auth/appengine.apis",
+	"https://www.googleapis.com/auth/userinfo.email",
+	"https://www.googleapis.com/auth/cloud.platform",
+}
+
 type key int
 
 var (
@@ -139,11 +146,7 @@ func UseRemote(inOutCtx *context.Context, host string, client *http.Client) (err
 			if aeCtx == nil {
 				aeCtx = context.Background()
 			}
-			client, err = gOAuth.DefaultClient(aeCtx,
-				"https://www.googleapis.com/auth/appengine.apis",
-				"https://www.googleapis.com/auth/userinfo.email",
-				"https://www.googleapis.com/auth/cloud.platform",
-			)
+			client, err = gOAuth.DefaultClient(aeCtx, RemoteAPIScopes...)
 			if err != nil {
 				return
 			}
