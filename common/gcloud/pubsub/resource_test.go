@@ -13,31 +13,51 @@ import (
 )
 
 func TestResource(t *testing.T) {
-	for _, r := range []string{
-		"googResource",
-		"yo",
-		strings.Repeat("a", 256),
-		"1ring",
-		"allAboutThe$",
-		"アップ",
-	} {
-		Convey(fmt.Sprintf(`An invalid resource [%s] will not validate.`, r), t, func() {
-			So(validateResource(r), ShouldNotBeNil)
-		})
-	}
+	Convey(`Resource validation`, t, func() {
+		for _, tc := range []struct {
+			v     string
+			c     string
+			valid bool
+		}{
+			{"projects/foo/topics/googResource", "topics", false},
+			{"projects/foo/topics/yo", "topics", false},
+			{fmt.Sprintf("projects/foo/topics/%s", strings.Repeat("a", 256)), "topics", false},
+			{"projects/foo/topics/1ring", "topics", false},
+			{"projects/foo/topics/allAboutThe$", "topics", false},
+			{"projects/foo/topics/アップ", "topics", false},
 
-	for _, r := range []string{
-		"AAA",
-		"testResource",
-		strings.Repeat("a", 255),
-		"myResource-a_b.c~d+e%%f",
-	} {
-		Convey(fmt.Sprintf(`A valid resource [%s] will validate.`, r), t, func() {
-			So(validateResource(r), ShouldBeNil)
-		})
-	}
+			{"projects/foo/topics/AAA", "topics", true},
+			{"projects/foo/topics/testResource", "topics", true},
+			{fmt.Sprintf("projects/foo/topics/%s", strings.Repeat("a", 255)), "topics", true},
+			{"projects/foo/topics/myResource-a_b.c~d+e%%f", "topics", true},
+		} {
+			if tc.valid {
+				Convey(fmt.Sprintf(`A valid resource [%s] will validate.`, tc.v), func() {
+					So(validateResource(tc.v, tc.c), ShouldBeNil)
+				})
+			} else {
+				Convey(fmt.Sprintf(`An invalid resource [%s] will not validate.`, tc.v), func() {
+					So(validateResource(tc.v, tc.c), ShouldNotBeNil)
+				})
+			}
+		}
+	})
 
-	Convey(`Can calculate a resource path.`, t, func() {
-		So(resourcePath("proj", "subscriptions", "mySub"), ShouldEqual, "projects/proj/subscriptions/mySub")
+	Convey(`Can create a new, valid Topic.`, t, func() {
+		t := NewTopic("foo", "testTopic")
+		So(t, ShouldEqual, "projects/foo/topics/testTopic")
+		So(t.Validate(), ShouldBeNil)
+	})
+
+	Convey(`Can create a new, valid Subscription.`, t, func() {
+		t := NewSubscription("foo", "testSubscription")
+		So(t, ShouldEqual, "projects/foo/subscriptions/testSubscription")
+		So(t.Validate(), ShouldBeNil)
+	})
+
+	Convey(`Can extract a resource project.`, t, func() {
+		p, err := resourceProject("projects/foo/topics/bar")
+		So(err, ShouldBeNil)
+		So(p, ShouldEqual, "foo")
 	})
 }

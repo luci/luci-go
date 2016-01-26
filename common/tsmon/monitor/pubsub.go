@@ -33,8 +33,8 @@ func NewPubsubMonitor(credentialPath string, project string, topic string) (Moni
 
 	return &pubSubMonitor{
 		Context: context.Background(),
-		ps:      pubsub.NewConnection(httpClient, project),
-		topic:   pubsub.Topic(topic),
+		ps:      pubsub.NewConnection(httpClient),
+		topic:   pubsub.NewTopic(project, topic),
 	}, nil
 }
 

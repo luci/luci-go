@@ -22,7 +22,6 @@ func init() {
 // pubsubOutputFactory for Google Cloud PubSub.
 type pubsubOutputFactory struct {
 	topic      ps.Topic
-	project    string
 	noCompress bool
 }
 
@@ -32,10 +31,8 @@ func (f *pubsubOutputFactory) option() multiflag.Option {
 	opt := newOutputOption("pubsub", "Output to a Google Cloud PubSub endpoint", f)
 
 	flags := opt.Flags()
-	flags.StringVar(&f.project, "project", "",
-		"The Google Cloud project that the Pub/Sub belongs to.")
 	flags.Var(&f.topic, "topic",
-		"The base Google Cloud PubSub topic name.")
+		"The Google Cloud PubSub topic name (projects/<project>/topics/<topic>).")
 	flags.BoolVar(&f.noCompress, "nocompress", false,
 		"Disable compression in published Pub/Sub messages.")
 
@@ -43,9 +40,6 @@ func (f *pubsubOutputFactory) option() multiflag.Option {
 }
 
 func (f *pubsubOutputFactory) configOutput(a *application) (output.Output, error) {
-	if f.project == "" {
-		return nil, fmt.Errorf("pubsub: must supply a project name (-project)")
-	}
 	if err := f.topic.Validate(); err != nil {
 		return nil, fmt.Errorf("pubsub: invalid topic name: %s", err)
 	}
@@ -54,15 +48,14 @@ func (f *pubsubOutputFactory) configOutput(a *application) (output.Output, error
 	// as we want Pub/Sub system to drain without interruption if the application
 	// is otherwise interrupted.
 	ctx := log.SetFields(a.ncCtx, log.Fields{
-		"topic":   f.topic,
-		"project": f.project,
+		"topic": f.topic,
 	})
 	client, err := a.authenticatedClient(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("pubsub: failed to initialize Pub/Sub context: %s", err)
 	}
-	ps := &ps.Retry{
-		Connection: ps.NewConnection(client, f.project),
+	psConn := &ps.Retry{
+		Connection: ps.NewConnection(client),
 		Callback: func(err error, d time.Duration) {
 			log.Fields{
 				log.ErrorKey: err,
@@ -72,7 +65,7 @@ func (f *pubsubOutputFactory) configOutput(a *application) (output.Output, error
 	}
 
 	// Assert that our Topic exists.
-	exists, err := ps.TopicExists(ctx, f.topic)
+	exists, err := psConn.TopicExists(ctx, f.topic)
 	if err != nil {
 		log.WithError(err).Errorf(ctx, "Failed to check for topic.")
 		return nil, err
@@ -85,7 +78,7 @@ func (f *pubsubOutputFactory) configOutput(a *application) (output.Output, error
 	}
 
 	return pubsub.New(ctx, pubsub.Config{
-		Publisher: ps,
+		Publisher: psConn,
 		Topic:     f.topic,
 		Compress:  !f.noCompress,
 	}), nil

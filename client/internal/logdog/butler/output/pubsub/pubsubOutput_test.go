@@ -65,7 +65,7 @@ func TestConfig(t *testing.T) {
 		ps := &testPublisher{}
 		conf := Config{
 			Publisher: ps,
-			Topic:     pubsub.Topic("test-topic"),
+			Topic:     pubsub.NewTopic("test-project", "test-topic"),
 		}
 
 		Convey(`Will successfully validate.`, func() {
@@ -83,7 +83,7 @@ func TestConfig(t *testing.T) {
 		})
 
 		Convey(`Will not validate with an invalid Topic.`, func() {
-			conf.Topic = pubsub.Topic("a!")
+			conf.Topic = pubsub.NewTopic("test-project", "a!")
 			So(conf.Topic.Validate(), ShouldNotBeNil)
 			So(conf.Validate(), ShouldNotBeNil)
 		})
@@ -140,12 +140,12 @@ func TestOutput(t *testing.T) {
 	Convey(`An Output using a test Pub/Sub instance`, t, func() {
 		ctx, _ := testclock.UseTime(context.Background(), time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 		ps := &testPublisher{
-			topic: pubsub.Topic("test-topic"),
+			topic: pubsub.NewTopic("test-project", "test-topic"),
 			msgC:  make(chan *pubsub.Message, 1),
 		}
 		conf := Config{
 			Publisher: ps,
-			Topic:     pubsub.Topic("test-topic"),
+			Topic:     pubsub.NewTopic("test-project", "test-topic"),
 		}
 		o := New(ctx, conf).(*pubSubOutput)
 		So(o, ShouldNotBeNil)

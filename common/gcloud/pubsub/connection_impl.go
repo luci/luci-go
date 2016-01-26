@@ -18,8 +18,7 @@ import (
 //
 // Currently, all errors are regarded as transient.
 type connectionImpl struct {
-	client  *http.Client
-	project string
+	client *http.Client
 }
 
 // NewConnection instantiates a new Connection instance configured to use the
@@ -27,37 +26,61 @@ type connectionImpl struct {
 //
 // The supplied Client must be properly authenticated to interface with the
 // named Pub/Sub system.
-func NewConnection(c *http.Client, project string) Connection {
+func NewConnection(c *http.Client) Connection {
 	return &connectionImpl{
-		client:  c,
-		project: project,
+		client: c,
 	}
 }
 
 func (p *connectionImpl) TopicExists(c context.Context, t Topic) (bool, error) {
-	exists, err := pubsub.TopicExists(p.with(c), string(t))
+	proj, err := t.ProjectErr()
+	if err != nil {
+		return false, err
+	}
+
+	exists, err := pubsub.TopicExists(p.with(c, proj), string(t))
 	return exists, (err)
 }
 
 func (p *connectionImpl) SubExists(c context.Context, s Subscription) (bool, error) {
-	exists, err := pubsub.SubExists(p.with(c), string(s))
+	proj, err := s.ProjectErr()
+	if err != nil {
+		return false, err
+	}
+
+	exists, err := pubsub.SubExists(p.with(c, proj), string(s))
 	return exists, errors.WrapTransient(err)
 }
 
 func (p *connectionImpl) Publish(c context.Context, t Topic, msgs ...*Message) ([]string, error) {
-	ids, err := pubsub.Publish(p.with(c), string(t), localMessageToPubSub(msgs)...)
+	proj, err := t.ProjectErr()
+	if err != nil {
+		return nil, err
+	}
+
+	ids, err := pubsub.Publish(p.with(c, proj), string(t), localMessageToPubSub(msgs)...)
 	return ids, errors.WrapTransient(err)
 }
 
 func (p *connectionImpl) Pull(c context.Context, s Subscription, n int) ([]*Message, error) {
-	msgs, err := pubsub.Pull(p.with(c), string(s), n)
+	proj, err := s.ProjectErr()
+	if err != nil {
+		return nil, err
+	}
+
+	msgs, err := pubsub.Pull(p.with(c, proj), string(s), n)
 	return pubSubMessageToLocal(msgs), errors.WrapTransient(err)
 }
 
 func (p *connectionImpl) Ack(c context.Context, s Subscription, ackIDs ...string) error {
-	return errors.WrapTransient(pubsub.Ack(p.with(c), string(s), ackIDs...))
+	proj, err := s.ProjectErr()
+	if err != nil {
+		return err
+	}
+
+	return errors.WrapTransient(pubsub.Ack(p.with(c, proj), string(s), ackIDs...))
 }
 
-func (p *connectionImpl) with(c context.Context) context.Context {
-	return cloud.WithContext(c, p.project, p.client)
+func (p *connectionImpl) with(c context.Context, project string) context.Context {
+	return cloud.WithContext(c, project, p.client)
 }

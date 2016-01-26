@@ -11,17 +11,72 @@ import (
 	"unicode"
 )
 
-// validMidResourceRunes is the set of runes that a resource may contain, not
-// including letters and numbers.
-const validMidResourceRunes = "-_.~+%"
-
-// resourcePath constructs the resource's endpoint path.
-func resourcePath(project, collection, name string) string {
-	return fmt.Sprintf("projects/%s/%s/%s", project, collection, name)
+func newResource(project, collection, name string) string {
+	return strings.Join([]string{"projects", project, collection, name}, "/")
 }
 
-// validateResource validates a resource name. Resource naming is described in:
-// https://cloud.google.com/pubsub/overview#names
+func splitResource(v string) []string {
+	return strings.Split(v, "/")
+}
+
+// resourceProject returns the resource's project component.
+func resourceProject(v string) (string, error) {
+	parts := splitResource(v)
+	if len(parts) != 4 {
+		return "", errors.New("malformed resource")
+	}
+	if parts[0] != "projects" {
+		return "", errors.New("missing project component")
+	}
+	return parts[1], nil
+}
+
+func resourceName(v string) (string, error) {
+	parts := splitResource(v)
+	if len(parts) != 4 {
+		return "", errors.New("malformed resource")
+	}
+	return parts[3], nil
+}
+
+// validateResource validates that a resource is well-formed.
+//
+// A resource is in the form:
+// projects/<project>/<collection>/<value>
+func validateResource(v, collection string) error {
+	// A resource must contain exactly three forward slashes.
+	parts := splitResource(v)
+	switch len(parts) {
+	case 0:
+		return errors.New("missing project component")
+	case 1:
+		return errors.New("missing project name")
+	case 2:
+		return errors.New("missing collection type")
+	case 3:
+		return errors.New("missing resource name")
+	case 4:
+		break
+	default:
+		return fmt.Errorf("too many components (%d) in resource name", len(parts))
+	}
+
+	switch {
+	case parts[0] != "projects":
+		return errors.New("first resource component must be 'projects'")
+	case parts[2] != collection:
+		return fmt.Errorf("third resource component must be '%s'", collection)
+	}
+
+	// Validate the resource name.
+	if err := validateResourceName(parts[3]); err != nil {
+		return err
+	}
+	return nil
+}
+
+// validateResourceName validates a resource name. Resource naming is described
+// in: https://cloud.google.com/pubsub/overview#names
 //
 // As of 'v1', a resource must:
 // - start with a letter.
@@ -31,7 +86,7 @@ func resourcePath(project, collection, name string) string {
 // - be between 3 and 255 characters in length.
 // - cannot begin with the string goog.
 //
-func validateResource(s string) error {
+func validateResourceName(s string) error {
 	if l := len(s); l < 3 || l > 255 {
 		return fmt.Errorf("length (%d) must be between 3 and 255", l)
 	}
@@ -53,6 +108,7 @@ func validateResource(s string) error {
 			}
 
 			// Is this a valid mid-resource value?
+			const validMidResourceRunes = "-_.~+%"
 			if !((r >= '0' && r <= '9') || strings.ContainsRune(validMidResourceRunes, r)) {
 				return fmt.Errorf("pubsub: invalid resource rune at %d: %c", i, r)
 			}

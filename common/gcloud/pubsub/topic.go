@@ -8,10 +8,15 @@ import (
 	"flag"
 )
 
-// Topic is a Pub/Sub topic name.
+// Topic is a fully-qualified Pub/Sub project/topic name.
 type Topic string
 
 var _ flag.Value = (*Topic)(nil)
+
+// NewTopic generates a new Subscritpion for a given project and topic name.
+func NewTopic(project, name string) Topic {
+	return Topic(newResource(project, "topics", name))
+}
 
 func (t *Topic) String() string {
 	return string(*t)
@@ -27,12 +32,27 @@ func (t *Topic) Set(value string) error {
 	return nil
 }
 
-// Path returns the topic's endpoint path.
-func (t Topic) Path(project string) string {
-	return resourcePath(project, "topics", string(t))
-}
-
 // Validate returns an error if the topic name is invalid.
 func (t Topic) Validate() error {
-	return validateResource(string(t))
+	return validateResource(string(t), "topics")
+}
+
+// Project returns the Topic's project component. If no project is defined
+// (malformed), an empty string will be returned.
+func (t Topic) Project() (v string) {
+	v, _ = t.ProjectErr()
+	return
+}
+
+// ProjectErr returns the Subscription's project component.
+func (t Topic) ProjectErr() (v string, err error) {
+	v, err = resourceProject(string(t))
+	return
+}
+
+// Name returns the Topic's name component. If no name is defined (malformed),
+// an empty string will be returned.
+func (t Topic) Name() (v string) {
+	v, _ = resourceName(string(t))
+	return
 }
