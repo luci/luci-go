@@ -31,7 +31,7 @@
 // This section describes the pRPC protocol. It is based on HTTP 1.x and employs
 // gRPC codes.
 //
-// A pRPC server MUST handle HTTP requests at `/prpc/{service}/{method}` path,
+// A pRPC server MUST handle HTTP POST requests at `/prpc/{service}/{method}`,
 // decode an input message from an HTTP request,
 // call the service method implementation and
 // encode the returned output message or error to the HTTP response.
@@ -87,7 +87,4 @@
 //
 // If a service/method is not found, the server MUST respond with Unimplemented
 // gRPC code and SHOULD specify HTTP 501 status.
-//
-// If HTTP method is not POST, the server MUST respond with Unimplemented
-// gRPC code and SHOULD specify HTTP 405 status.
 package prpc

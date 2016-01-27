@@ -13,7 +13,3 @@ type service struct {
 	methods map[string]*method
 	impl    interface{}
 }
-
-func (s *service) Name() string {
-	return s.desc.ServiceName
-}

@@ -5,15 +5,14 @@
 package prpc
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/common/grpcutil"
 )
 
 type method struct {
@@ -21,72 +20,46 @@ type method struct {
 	desc    grpc.MethodDesc
 }
 
-func (m *method) Name() string {
-	return m.desc.MethodName
-}
-
-// Handle decodes an input protobuf message from the HTTP request,
+// handle decodes an input protobuf message from the HTTP request,
 // delegates RPC handling to the inner implementation and
 // encodes the output message back to the HTTP response.
 //
 // If the inner handler returns an error, HTTP status is determined using
-// ErrorStatus.
-// If the status is http.StatusInternalServerError, only "Internal server error"
-// is printed.
-// All errors with status >= 500 are logged.
-func (m *method) Handle(c context.Context, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	if err := m.handle(c, w, r); err != nil {
-		writeError(c, w, err)
-	}
-}
-
-// handle decodes an input protobuf message from the HTTP request,
-// delegates RPC handling to the inner implementation and
-// encodes the output message back to the HTTP response.
-func (m *method) handle(c context.Context, w http.ResponseWriter, r *http.Request) *httpError {
+// errorStatus.
+// Prints only "Internal server error" if the code is Internal.
+// Logs the error if code is Internal or Unknown.
+func (m *method) handle(c context.Context, w http.ResponseWriter, r *http.Request) *response {
 	defer r.Body.Close()
-	format, err := responseFormat(r.Header.Get(headerAccept))
+
+	format, perr := responseFormat(r.Header.Get(headerAccept))
+	if perr != nil {
+		return respondProtocolError(perr)
+	}
+
+	c, err := parseHeader(c, r.Header)
 	if err != nil {
-		return err
+		return respondProtocolError(withStatus(err, http.StatusBadRequest))
 	}
 
-	c, rawErr := parseHeader(c, r.Header)
-	if rawErr != nil {
-		return withStatus(rawErr, http.StatusBadRequest)
-	}
-
-	res, rawErr := m.desc.Handler(m.service.impl, c, func(msg interface{}) error {
-		if msg == nil {
-			panicf("cannot decode to nil")
+	out, err := m.desc.Handler(m.service.impl, c, func(in interface{}) error {
+		if in == nil {
+			return grpcutil.Errf(codes.Internal, "input message is nil")
 		}
 		// Do not collapse it to one line. There is implicit err type conversion.
-		if err := readMessage(r, msg.(proto.Message)); err != nil {
-			return err
+		if perr := readMessage(r, in.(proto.Message)); perr != nil {
+			return perr
 		}
 		return nil
 	})
-	if rawErr != nil {
-		if err, ok := rawErr.(*httpError); ok {
-			return err
+	if err != nil {
+		if perr, ok := err.(*protocolError); ok {
+			return respondProtocolError(perr)
 		}
-		return withStatus(rawErr, ErrorStatus(rawErr))
+		return errResponse(errorCode(err), 0, escapeFmt(grpc.ErrorDesc(err)))
 	}
-	if res == nil {
-		return m.internalServerError("service returned nil message")
-	}
-	if err := writeMessage(w, res.(proto.Message), format); err != nil {
-		return m.internalServerError("could not respond: %s", err)
-	}
-	return nil
-}
 
-// InstallHandlers installs a POST HTTP handlers at /prpc/{service_name}/{method_name}.
-func (m *method) InstallHandlers(r *httprouter.Router, base middleware.Base) {
-	path := fmt.Sprintf("/prpc/%s/%s", m.service.Name(), m.Name())
-	r.POST(path, base(m.Handle))
-}
-
-func (m *method) internalServerError(format string, a ...interface{}) *httpError {
-	format = fmt.Sprintf("%s.%s: ", m.service.Name(), m.Name()) + format
-	return errorf(http.StatusInternalServerError, format, a...)
+	if out == nil {
+		return errResponse(codes.Internal, 0, "service returned nil message")
+	}
+	return respondMessage(out.(proto.Message), format)
 }

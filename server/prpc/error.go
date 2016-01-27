@@ -4,45 +4,33 @@
 
 package prpc
 
-import "fmt"
+import (
+	"fmt"
+)
 
-// httpError is an error with HTTP status.
-// Many internal functions return *httpError instead of error
-// to guarantee expected HTTP status via type-system.
-// Supported by ErrorStatus and ErrorDesc.
-type httpError struct {
+// protocolError is returned if a pRPC request is malformed.
+type protocolError struct {
 	err    error
-	status int
+	status int // HTTP status to use in response.
 }
 
-func (e *httpError) Error() string {
-	return fmt.Sprintf("HTTP %d: %s", e.status, e.err)
+func (e *protocolError) Error() string {
+	return fmt.Sprintf("pRPC: %s", e.err)
 }
 
 // withStatus wraps an error with an HTTP status.
 // If err is nil, returns nil.
-func withStatus(err error, status int) *httpError {
-	if _, ok := err.(*httpError); ok {
-		panicf("httpError in httpError")
+func withStatus(err error, status int) *protocolError {
+	if _, ok := err.(*protocolError); ok {
+		panic("protocolError in protocolError")
 	}
 	if err == nil {
 		return nil
 	}
-	return &httpError{err, status}
+	return &protocolError{err, status}
 }
 
-// errorf creates a new error with an HTTP status.
-func errorf(status int, format string, a ...interface{}) *httpError {
+// errorf creates a new protocol error.
+func errorf(status int, format string, a ...interface{}) *protocolError {
 	return withStatus(fmt.Errorf(format, a...), status)
-}
-
-// Errorf creates a new error with an HTTP status.
-//
-// See also grpc.Errorf that accepts a gRPC code.
-func Errorf(status int, format string, a ...interface{}) error {
-	return errorf(status, format, a...)
-}
-
-func panicf(format string, a ...interface{}) {
-	panic(fmt.Errorf(format, a...))
 }

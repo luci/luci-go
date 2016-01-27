@@ -56,7 +56,7 @@ func TestDecoding(t *testing.T) {
 
 	Convey("readMessage", t, func() {
 		var msg HelloRequest
-		read := func(contentType string, body []byte) error {
+		read := func(contentType string, body []byte) *protocolError {
 			req := &http.Request{
 				Body:   ioutil.NopCloser(bytes.NewBuffer(body)),
 				Header: http.Header{},
@@ -85,7 +85,7 @@ func TestDecoding(t *testing.T) {
 			Convey("malformed body", func() {
 				err := read(mtPRPCBinary, []byte{0})
 				So(err, ShouldNotBeNil)
-				So(ErrorStatus(err), ShouldEqual, http.StatusBadRequest)
+				So(err.status, ShouldEqual, http.StatusBadRequest)
 			})
 			Convey("empty body", func() {
 				err := read(mtPRPCBinary, nil)
@@ -104,11 +104,12 @@ func TestDecoding(t *testing.T) {
 			Convey("malformed body", func() {
 				err := read(mtPRPCJSNOPB, []byte{0})
 				So(err, ShouldNotBeNil)
-				So(ErrorStatus(err), ShouldEqual, http.StatusBadRequest)
+				So(err.status, ShouldEqual, http.StatusBadRequest)
 			})
 			Convey("empty body", func() {
 				err := read(mtPRPCJSNOPB, nil)
-				So(err, ShouldBeNil)
+				So(err, ShouldNotBeNil)
+				So(err.status, ShouldEqual, http.StatusBadRequest)
 			})
 		})
 
@@ -120,7 +121,7 @@ func TestDecoding(t *testing.T) {
 			Convey("malformed body", func() {
 				err := read(mtPRPCText, []byte{0})
 				So(err, ShouldNotBeNil)
-				So(ErrorStatus(err), ShouldEqual, http.StatusBadRequest)
+				So(err.status, ShouldEqual, http.StatusBadRequest)
 			})
 			Convey("empty body", func() {
 				err := read(mtPRPCText, nil)
@@ -131,7 +132,7 @@ func TestDecoding(t *testing.T) {
 		Convey("unsupported media type", func() {
 			err := read("blah", nil)
 			So(err, ShouldNotBeNil)
-			So(ErrorStatus(err), ShouldEqual, http.StatusUnsupportedMediaType)
+			So(err.status, ShouldEqual, http.StatusUnsupportedMediaType)
 		})
 	})
 

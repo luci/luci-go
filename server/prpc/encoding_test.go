@@ -5,19 +5,12 @@
 package prpc
 
 import (
-	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/logging/memlogger"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -71,27 +64,26 @@ func TestEncoding(t *testing.T) {
 		test("foo/bar;q=0.1,{json}", formatJSONPB, nil)
 
 		// only unsupported types
-		const err406 = "HTTP 406: Accept header: specified media types are not not supported"
+		const err406 = "pRPC: Accept header: specified media types are not not supported"
 		test(mtPRPC+"; boo=true", 0, err406)
 		test(mtPRPC+"; encoding=blah", 0, err406)
 		test("x", 0, err406)
 		test("x,y", 0, err406)
 
-		test("x//y", 0, "HTTP 400: Accept header: expected token after slash")
+		test("x//y", 0, "pRPC: Accept header: expected token after slash")
 	})
 
-	Convey("writeMessage", t, func() {
+	Convey("respondMessage", t, func() {
 		msg := &HelloReply{Message: "Hi"}
 
 		test := func(f format, body []byte, contentType string) {
 			Convey(contentType, func() {
-				res := httptest.NewRecorder()
-				err := writeMessage(res, msg, f)
-				So(err, ShouldBeNil)
-
-				So(res.Code, ShouldEqual, http.StatusOK)
-				So(res.Body.Bytes(), ShouldResembleV, body)
-				So(res.Header().Get("Content-Type"), ShouldEqual, contentType)
+				res := respondMessage(msg, f)
+				So(res.code, ShouldEqual, codes.OK)
+				So(res.header, ShouldResembleV, http.Header{
+					headerContentType: []string{contentType},
+				})
+				So(res.body, ShouldResembleV, body)
 			})
 		}
 
@@ -99,37 +91,7 @@ func TestEncoding(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		test(formatBinary, msgBytes, mtPRPCBinary)
-		test(formatJSONPB, []byte("{\n\t\"message\": \"Hi\"\n}\n"), mtPRPCJSNOPB)
+		test(formatJSONPB, []byte(csrfPrefix+"{\"message\":\"Hi\"}\n"), mtPRPCJSNOPB)
 		test(formatText, []byte("message: \"Hi\"\n"), mtPRPCText)
-	})
-
-	Convey("writeError", t, func() {
-		test := func(err error, status int, body string, logMsgs ...memlogger.LogEntry) {
-			Convey(err.Error(), func() {
-				c := context.Background()
-				c = memlogger.Use(c)
-				log := logging.Get(c).(*memlogger.MemLogger)
-
-				rec := httptest.NewRecorder()
-				writeError(c, rec, err)
-				So(rec.Code, ShouldEqual, status)
-				So(rec.Body.String(), ShouldEqual, body)
-
-				actualMsgs := log.Messages()
-				for i := range actualMsgs {
-					actualMsgs[i].CallDepth = 0
-				}
-				So(actualMsgs, ShouldResembleV, logMsgs)
-			})
-		}
-
-		test(Errorf(http.StatusNotFound, "not found"), http.StatusNotFound, "not found\n")
-		test(grpc.Errorf(codes.NotFound, "not found"), http.StatusNotFound, "not found\n")
-		test(
-			fmt.Errorf("unhandled"),
-			http.StatusInternalServerError,
-			"Internal server error\n",
-			memlogger.LogEntry{Level: logging.Error, Msg: "HTTP 500: unhandled"},
-		)
 	})
 }

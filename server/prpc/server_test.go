@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	"github.com/julienschmidt/httprouter"
@@ -15,6 +16,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"github.com/luci/luci-go/common/prpc"
 	"github.com/luci/luci-go/server/middleware"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -66,14 +68,18 @@ func TestServer(t *testing.T) {
 			server.InstallHandlers(r, middleware.TestingBase(c))
 			res := httptest.NewRecorder()
 			hiMsg := bytes.NewBufferString(`name: "Lucy"`)
-			req, err := http.NewRequest("POST", "http://localhost/prpc/prpc.Greeter/SayHello", hiMsg)
+			req, err := http.NewRequest("POST", "/prpc/prpc.Greeter/SayHello", hiMsg)
 			So(err, ShouldBeNil)
 			req.Header.Set("Content-Type", mtPRPCText)
+
+			invalidArgument := strconv.Itoa(int(codes.InvalidArgument))
+			unimplemented := strconv.Itoa(int(codes.Unimplemented))
 
 			Convey("Works", func() {
 				req.Header.Set("Accept", mtPRPCText)
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusOK)
+				So(res.Header().Get(prpc.HeaderGRPCCode), ShouldEqual, "0")
 				So(res.Body.String(), ShouldEqual, "message: \"Hello Lucy\"\n")
 			})
 
@@ -81,25 +87,42 @@ func TestServer(t *testing.T) {
 				req.Header.Set("Accept", "blah")
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusNotAcceptable)
+				So(res.Header().Get(prpc.HeaderGRPCCode), ShouldEqual, invalidArgument)
 			})
 
 			Convey("Invalid header", func() {
 				req.Header.Set("X-Bin", "zzz")
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusBadRequest)
+				So(res.Header().Get(prpc.HeaderGRPCCode), ShouldEqual, invalidArgument)
 			})
 
 			Convey("Malformed request message", func() {
 				hiMsg.WriteString("\nblah")
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusBadRequest)
+				So(res.Header().Get(prpc.HeaderGRPCCode), ShouldEqual, invalidArgument)
 			})
 
 			Convey("Invalid request message", func() {
 				hiMsg.Reset()
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusBadRequest)
+				So(res.Header().Get(prpc.HeaderGRPCCode), ShouldEqual, invalidArgument)
 				So(res.Body.String(), ShouldEqual, "Name unspecified\n")
+			})
+
+			Convey("no such service", func() {
+				req.URL.Path = "/prpc/xxx/SayHello"
+				r.ServeHTTP(res, req)
+				So(res.Code, ShouldEqual, http.StatusNotImplemented)
+				So(res.Header().Get(prpc.HeaderGRPCCode), ShouldEqual, unimplemented)
+			})
+			Convey("no such method", func() {
+				req.URL.Path = "/prpc/prpc.Greeter/xxx"
+				r.ServeHTTP(res, req)
+				So(res.Code, ShouldEqual, http.StatusNotImplemented)
+				So(res.Header().Get(prpc.HeaderGRPCCode), ShouldEqual, unimplemented)
 			})
 		})
 	})

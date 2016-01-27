@@ -8,7 +8,6 @@ package prpc
 
 import (
 	"bytes"
-	"io"
 	"net/http"
 	"sort"
 
@@ -17,18 +16,17 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-
-	"github.com/luci/luci-go/common/logging"
 )
 
 const (
 	headerAccept = "Accept"
+	csrfPrefix   = ")]}'\n"
 )
 
 // responseFormat returns the format to be used in a response.
 // Can return only formatBinary (preferred), formatJSONPB or formatText.
-// In case of an error, format is undefined and the error has an HTTP status.
-func responseFormat(acceptHeader string) (format, *httpError) {
+// In case of an error, format is undefined.
+func responseFormat(acceptHeader string) (format, *protocolError) {
 	if acceptHeader == "" {
 		return formatBinary, nil
 	}
@@ -37,7 +35,6 @@ func responseFormat(acceptHeader string) (format, *httpError) {
 	if err != nil {
 		return formatBinary, errorf(http.StatusBadRequest, "Accept header: %s", err)
 	}
-	assert(len(parsed) > 0)
 	formats := make(acceptFormatSlice, 0, len(parsed))
 	for _, at := range parsed {
 		f, err := parseFormat(at.MediaType, at.MediaTypeParams)
@@ -53,14 +50,10 @@ func responseFormat(acceptHeader string) (format, *httpError) {
 		case formatUnspecified:
 			f = formatBinary // prefer binary
 
-		case formatUnrecognized:
-			continue
-
 		default:
-			panicf("cannot happen")
+			continue
 		}
 
-		assert(f == formatBinary || f == formatJSONPB || f == formatText)
 		formats = append(formats, acceptFormat{f, at.QualityFactor})
 	}
 	if len(formats) == 0 {
@@ -77,41 +70,63 @@ func responseFormat(acceptHeader string) (format, *httpError) {
 	return formats[0].Format, nil
 }
 
-// writeMessage writes a protobuf message to response in the specified format.
-func writeMessage(w http.ResponseWriter, msg proto.Message, format format) error {
+// respondMessage encodes msg to a response in the specified format.
+func respondMessage(msg proto.Message, format format) *response {
 	if msg == nil {
-		panic("msg is nil")
+		return errResponse(codes.Internal, 0, "pRPC: responseMessage: msg is nil")
 	}
-	var (
-		contentType string
-		res         []byte
-		err         error
-	)
+	res := response{header: http.Header{}}
+	var err error
 	switch format {
 	case formatBinary:
-		contentType = mtPRPCBinary
-		res, err = proto.Marshal(msg)
+		res.header.Set(headerContentType, mtPRPCBinary)
+		res.body, err = proto.Marshal(msg)
 
 	case formatJSONPB:
-		contentType = mtPRPCJSNOPB
-		m := jsonpb.Marshaler{Indent: "\t"}
+		res.header.Set(headerContentType, mtPRPCJSNOPB)
 		var buf bytes.Buffer
+		buf.WriteString(csrfPrefix)
+		m := jsonpb.Marshaler{}
 		err = m.Marshal(&buf, msg)
-		buf.WriteString("\n")
-		res = buf.Bytes()
+		if err == nil {
+			_, err = buf.WriteRune('\n')
+		}
+		res.body = buf.Bytes()
 
 	case formatText:
-		contentType = mtPRPCText
+		res.header.Set(headerContentType, mtPRPCText)
 		var buf bytes.Buffer
 		err = proto.MarshalText(&buf, msg)
-		res = buf.Bytes()
+		res.body = buf.Bytes()
+
+	default:
+		return errResponse(codes.Internal, 0, "pRPC: responseMessage: invalid format %s", format)
+
 	}
 	if err != nil {
-		return err
+		return errResponse(codes.Internal, 0, escapeFmt(err.Error()))
 	}
-	w.Header().Set(headerContentType, contentType)
-	_, err = w.Write(res)
-	return err
+
+	return &res
+}
+
+// respondProtocolError creates a response for a pRPC protocol error.
+func respondProtocolError(err *protocolError) *response {
+	return errResponse(codes.InvalidArgument, err.status, escapeFmt(err.err.Error()))
+}
+
+// errorCode returns a most appropriate gRPC code for an error
+func errorCode(err error) codes.Code {
+	switch err {
+	case context.DeadlineExceeded:
+		return codes.DeadlineExceeded
+
+	case context.Canceled:
+		return codes.Canceled
+
+	default:
+		return grpc.Code(err)
+	}
 }
 
 // codeToStatus maps gRPC codes to HTTP statuses.
@@ -121,7 +136,6 @@ func writeMessage(w http.ResponseWriter, msg proto.Message, format format) error
 var codeToStatus = map[codes.Code]int{
 	codes.OK:                 http.StatusOK,
 	codes.Canceled:           http.StatusNoContent,
-	codes.Unknown:            http.StatusInternalServerError,
 	codes.InvalidArgument:    http.StatusBadRequest,
 	codes.DeadlineExceeded:   http.StatusServiceUnavailable,
 	codes.NotFound:           http.StatusNotFound,
@@ -130,78 +144,16 @@ var codeToStatus = map[codes.Code]int{
 	codes.Unauthenticated:    http.StatusUnauthorized,
 	codes.ResourceExhausted:  http.StatusServiceUnavailable,
 	codes.FailedPrecondition: http.StatusPreconditionFailed,
-	codes.Aborted:            http.StatusInternalServerError,
 	codes.OutOfRange:         http.StatusBadRequest,
 	codes.Unimplemented:      http.StatusNotImplemented,
-	codes.Internal:           http.StatusInternalServerError,
 	codes.Unavailable:        http.StatusServiceUnavailable,
-	codes.DataLoss:           http.StatusInternalServerError,
 }
 
-// ErrorStatus returns HTTP status for an error.
-// In particular, it maps gRPC codes to HTTP statuses.
-// Status of nil is 200.
-//
-// See also grpc.Code.
-func ErrorStatus(err error) int {
-	if err, ok := err.(*httpError); ok {
-		return err.status
+// codeStatus maps gRPC codes to HTTP status codes.
+// Falls back to http.StatusInternalServerError.
+func codeStatus(code codes.Code) int {
+	if status, ok := codeToStatus[code]; ok {
+		return status
 	}
-
-	status, ok := codeToStatus[grpc.Code(err)]
-	if !ok {
-		status = http.StatusInternalServerError
-	}
-	return status
-}
-
-// ErrorDesc returns the error description of err if it was produced by pRPC or gRPC.
-// Otherwise, it returns err.Error() or empty string when err is nil.
-//
-// See also grpc.ErrorDesc.
-func ErrorDesc(err error) string {
-	if err == nil {
-		return ""
-	}
-	if e, ok := err.(*httpError); ok {
-		err = e.err
-	}
-	return grpc.ErrorDesc(err)
-}
-
-// writeError writes an error to an HTTP response.
-//
-// HTTP status is determined by ErrorStatus.
-// If it is http.StatusInternalServerError, prints only "Internal server error",
-// otherwise uses ErrorDesc.
-//
-// Logs all errors with status >= 500.
-func writeError(c context.Context, w http.ResponseWriter, err error) {
-	if err == nil {
-		panic("err is nil")
-	}
-
-	status := ErrorStatus(err)
-	if status >= 500 {
-		logging.Errorf(c, "HTTP %d: %s", status, ErrorDesc(err))
-	}
-
-	w.Header().Set(headerContentType, "text/plain")
-	w.WriteHeader(status)
-
-	var body string
-	if status == http.StatusInternalServerError {
-		body = "Internal server error"
-	} else {
-		body = ErrorDesc(err)
-	}
-	if _, err := io.WriteString(w, body+"\n"); err != nil {
-		logging.Errorf(c, "could not write error: %s", err)
-	}
-}
-
-func assert(condition bool) {
-	if !condition {
-		panicf("assertion failed")
-	}
+	return http.StatusInternalServerError
 }

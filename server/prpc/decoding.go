@@ -51,23 +51,17 @@ func requestFormat(contentType string) (format, error) {
 	case formatUnrecognized:
 		return f, fmt.Errorf("%q is not supported", contentType)
 
-	case formatUnspecified:
-		return formatBinary, nil
-
 	case formatBinary, formatJSONPB, formatText:
 		return f, nil
 
 	default:
-		panic("cannot happen")
+		return formatBinary, nil
 	}
 }
 
 // readMessage decodes a protobuf message from an HTTP request.
 // Does not close the request body.
-func readMessage(r *http.Request, msg proto.Message) *httpError {
-	if msg == nil {
-		panicf("cannot decode to nil")
-	}
+func readMessage(r *http.Request, msg proto.Message) *protocolError {
 	format, err := requestFormat(r.Header.Get(headerContentType))
 	if err != nil {
 		// Spec: http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.16
@@ -78,11 +72,6 @@ func readMessage(r *http.Request, msg proto.Message) *httpError {
 	if err != nil {
 		return errorf(http.StatusBadRequest, "could not read body: %s", err)
 	}
-	if len(buf) == 0 {
-		// no body, no message
-		return nil
-	}
-
 	switch format {
 	// Do not redefine "err" below.
 
@@ -96,7 +85,7 @@ func readMessage(r *http.Request, msg proto.Message) *httpError {
 		err = proto.UnmarshalText(string(buf), msg)
 
 	default:
-		panicf("cannot happen")
+		err = fmt.Errorf("unknown message format: %d", format)
 	}
 	if err != nil {
 		return errorf(http.StatusBadRequest, "could not decode body: %s", err)
