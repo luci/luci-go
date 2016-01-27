@@ -19,6 +19,7 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"github.com/luci/luci-go/common/clock"
+	prpccommon "github.com/luci/luci-go/common/prpc"
 )
 
 // This file implements decoding of HTTP requests to RPC parameters.
@@ -94,7 +95,7 @@ func readMessage(r *http.Request, msg proto.Message) *protocolError {
 }
 
 // parseHeader parses HTTP headers and derives a new context.
-// Supports headerTimeout.
+// Supports HeaderTimeout.
 // Ignores "Accept" and "Content-Type" headers.
 //
 // If there are unrecognized HTTP headers, with or without headerSuffixBinary,
@@ -120,12 +121,12 @@ func parseHeader(c context.Context, header http.Header) (context.Context, error)
 		name = http.CanonicalHeaderKey(name)
 		switch name {
 
-		case headerTimeout:
+		case prpccommon.HeaderTimeout:
 			// Decode only first value, ignore the rest
 			// to be consistent with http.Header.Get.
-			timeout, err := decodeTimeout(values[0])
+			timeout, err := prpccommon.DecodeTimeout(values[0])
 			if err != nil {
-				return origC, fmt.Errorf("%s header: %s", headerTimeout, err)
+				return origC, fmt.Errorf("%s header: %s", prpccommon.HeaderTimeout, err)
 			}
 			c, _ = clock.WithTimeout(c, timeout)
 

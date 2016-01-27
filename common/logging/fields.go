@@ -163,7 +163,7 @@ func (s fieldEntrySlice) Len() int {
 
 // SetFields adds the additional fields as context for the current Logger. The
 // display of these fields depends on the implementation of the Logger. The
-// new Logger will contain the combination of its current Fields, updated with
+// new context will contain the combination of its current Fields, updated with
 // the new ones (see Fields.Copy). Specifying the new fields as nil will
 // clear the currently set fields.
 func SetFields(c context.Context, fields Fields) context.Context {

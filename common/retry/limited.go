@@ -1,4 +1,4 @@
-// Copyright (c) 2015 The Chromium Authors. All rights reserved.
+// Copyright 2016 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -14,10 +14,10 @@ import (
 // Limited is an Iterator implementation that is limited by a maximum number of
 // retries or time.
 type Limited struct {
-	Delay   time.Duration // The next generated delay. If zero, 1 second will be used.
+	Delay   time.Duration // The next generated delay.
 	Retries int           // The number of remaining retries.
 
-	MaxTotal time.Duration // The maximum total elasped time. If zero, no maximum will be enfored.
+	MaxTotal time.Duration // The maximum total elapsed time. If zero, no maximum will be enforced.
 
 	startTime time.Time // The time when the generator initially started.
 }

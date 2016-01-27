@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"github.com/luci/luci-go/common/clock/testclock"
+	prpccommon "github.com/luci/luci-go/common/prpc"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -145,12 +146,12 @@ func TestDecoding(t *testing.T) {
 			}
 		}
 
-		Convey(headerTimeout, func() {
+		Convey(prpccommon.HeaderTimeout, func() {
 			Convey("Works", func() {
 				now := time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC)
 				c, _ = testclock.UseTime(c, now)
 
-				c, err := parseHeader(c, header(headerTimeout, "1M"))
+				c, err := parseHeader(c, header(prpccommon.HeaderTimeout, "1M"))
 				So(err, ShouldBeNil)
 
 				deadline, ok := c.Deadline()
@@ -159,9 +160,9 @@ func TestDecoding(t *testing.T) {
 			})
 
 			Convey("Fails", func() {
-				c2, err := parseHeader(c, header(headerTimeout, "blah"))
+				c2, err := parseHeader(c, header(prpccommon.HeaderTimeout, "blah"))
 				So(c2, ShouldEqual, c)
-				So(err, ShouldErrLike, headerTimeout+` header: unit is not recognized: "blah"`)
+				So(err, ShouldErrLike, prpccommon.HeaderTimeout+` header: unit is not recognized: "blah"`)
 			})
 		})
 

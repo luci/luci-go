@@ -17,8 +17,17 @@ type transientWrapper struct {
 	error
 }
 
+var _ interface {
+	Transient
+	Wrapped
+} = transientWrapper{}
+
 func (t transientWrapper) IsTransient() bool {
 	return true
+}
+
+func (t transientWrapper) InnerError() error {
+	return t.error
 }
 
 // IsTransient tests if a given error is Transient.
