@@ -4,6 +4,7 @@
 
 package test
 
+import prpccommon "github.com/luci/luci-go/common/prpc"
 import prpc "github.com/luci/luci-go/server/prpc"
 
 import proto "github.com/golang/protobuf/proto"
@@ -27,6 +28,13 @@ var _ grpc.ClientConn
 // Client API for S2 service
 
 type S2Client interface {
+}
+type s2PRPCClient struct {
+	client *prpccommon.Client
+}
+
+func NewS2PRPCClient(client *prpccommon.Client) S2Client {
+	return &s2PRPCClient{client}
 }
 
 type s2Client struct {

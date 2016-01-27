@@ -13,6 +13,7 @@ It has these top-level messages:
 */
 package test
 
+import prpccommon "github.com/luci/luci-go/common/prpc"
 import prpc "github.com/luci/luci-go/server/prpc"
 
 import proto "github.com/golang/protobuf/proto"
@@ -52,6 +53,31 @@ var _ grpc.ClientConn
 type GreeterClient interface {
 	Describe(ctx context.Context, in *Void, opts ...grpc.CallOption) (*google_protobuf.FileDescriptorProto, error)
 	Timestamp(ctx context.Context, in *Void, opts ...grpc.CallOption) (*google_protobuf1.Timestamp, error)
+}
+type greeterPRPCClient struct {
+	client *prpccommon.Client
+}
+
+func NewGreeterPRPCClient(client *prpccommon.Client) GreeterClient {
+	return &greeterPRPCClient{client}
+}
+
+func (c *greeterPRPCClient) Describe(ctx context.Context, in *Void, opts ...grpc.CallOption) (*google_protobuf.FileDescriptorProto, error) {
+	out := new(google_protobuf.FileDescriptorProto)
+	err := c.client.Call(ctx, "test.Greeter", "Describe", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *greeterPRPCClient) Timestamp(ctx context.Context, in *Void, opts ...grpc.CallOption) (*google_protobuf1.Timestamp, error) {
+	out := new(google_protobuf1.Timestamp)
+	err := c.client.Call(ctx, "test.Greeter", "Timestamp", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 type greeterClient struct {

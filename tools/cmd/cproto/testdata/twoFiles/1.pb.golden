@@ -15,6 +15,7 @@ It has these top-level messages:
 */
 package test
 
+import prpccommon "github.com/luci/luci-go/common/prpc"
 import prpc "github.com/luci/luci-go/server/prpc"
 
 import proto "github.com/golang/protobuf/proto"
@@ -62,6 +63,22 @@ var _ grpc.ClientConn
 
 type S1Client interface {
 	M(ctx context.Context, in *Req, opts ...grpc.CallOption) (*Res, error)
+}
+type s1PRPCClient struct {
+	client *prpccommon.Client
+}
+
+func NewS1PRPCClient(client *prpccommon.Client) S1Client {
+	return &s1PRPCClient{client}
+}
+
+func (c *s1PRPCClient) M(ctx context.Context, in *Req, opts ...grpc.CallOption) (*Res, error) {
+	out := new(Res)
+	err := c.client.Call(ctx, "test.S1", "M", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 type s1Client struct {

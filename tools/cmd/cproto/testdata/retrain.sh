@@ -10,7 +10,9 @@ for dir in */; do
     pushd $dir
     cproto
     for go in *.go; do
-      mv $go ${go%*.go}.golden
+      golden=${go%*.go}.golden
+      mv $go $golden
+      gofmt -w -s $golden
     done
     popd
 done

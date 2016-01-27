@@ -14,6 +14,7 @@ It has these top-level messages:
 */
 package discovery
 
+import prpccommon "github.com/luci/luci-go/common/prpc"
 import prpc "github.com/luci/luci-go/server/prpc"
 
 import proto "github.com/golang/protobuf/proto"
@@ -69,6 +70,22 @@ type DiscoveryClient interface {
 	// Returns a list of services and a
 	// descriptor.FileDescriptorSet that covers them all.
 	Describe(ctx context.Context, in *Void, opts ...grpc.CallOption) (*DescribeResponse, error)
+}
+type discoveryPRPCClient struct {
+	client *prpccommon.Client
+}
+
+func NewDiscoveryPRPCClient(client *prpccommon.Client) DiscoveryClient {
+	return &discoveryPRPCClient{client}
+}
+
+func (c *discoveryPRPCClient) Describe(ctx context.Context, in *Void, opts ...grpc.CallOption) (*DescribeResponse, error) {
+	out := new(DescribeResponse)
+	err := c.client.Call(ctx, "discovery.Discovery", "Describe", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 type discoveryClient struct {

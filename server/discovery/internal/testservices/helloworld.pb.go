@@ -16,6 +16,7 @@ It has these top-level messages:
 */
 package testservices
 
+import prpccommon "github.com/luci/luci-go/common/prpc"
 import prpc "github.com/luci/luci-go/server/prpc"
 
 import proto "github.com/golang/protobuf/proto"
@@ -88,6 +89,22 @@ type GreeterClient interface {
 	// Sends a greeting
 	SayHello(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (*HelloReply, error)
 }
+type greeterPRPCClient struct {
+	client *prpccommon.Client
+}
+
+func NewGreeterPRPCClient(client *prpccommon.Client) GreeterClient {
+	return &greeterPRPCClient{client}
+}
+
+func (c *greeterPRPCClient) SayHello(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (*HelloReply, error) {
+	out := new(HelloReply)
+	err := c.client.Call(ctx, "testservices.Greeter", "SayHello", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
 
 type greeterClient struct {
 	cc *grpc.ClientConn
@@ -145,6 +162,22 @@ var _Greeter_serviceDesc = grpc.ServiceDesc{
 
 type CalcClient interface {
 	Multiply(ctx context.Context, in *MultiplyRequest, opts ...grpc.CallOption) (*MultiplyResponse, error)
+}
+type calcPRPCClient struct {
+	client *prpccommon.Client
+}
+
+func NewCalcPRPCClient(client *prpccommon.Client) CalcClient {
+	return &calcPRPCClient{client}
+}
+
+func (c *calcPRPCClient) Multiply(ctx context.Context, in *MultiplyRequest, opts ...grpc.CallOption) (*MultiplyResponse, error) {
+	out := new(MultiplyResponse)
+	err := c.client.Call(ctx, "testservices.Calc", "Multiply", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 type calcClient struct {
