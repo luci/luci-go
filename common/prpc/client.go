@@ -219,7 +219,7 @@ func (c *Client) Call(ctx context.Context, serviceName, methodName string, in, o
 			if code != codes.OK {
 				desc := strings.TrimSuffix(buf.String(), "\n")
 				err := grpcutil.Errf(code, "%s", desc)
-				if isTransientCode(code) {
+				if grpcutil.IsTransientCode(code) {
 					err = errors.WrapTransient(err)
 				}
 				return err
@@ -277,16 +277,6 @@ func prepareRequest(host, serviceName, methodName string, contentLength int, opt
 	req.Header.Set("Content-Length", strconv.Itoa(contentLength))
 	// TODO(nodir): add "Accept-Encoding: gzip" when pRPC server supports it.
 	return req
-}
-
-func isTransientCode(code codes.Code) bool {
-	switch code {
-	case codes.Internal, codes.Unknown, codes.Unavailable:
-		return true
-
-	default:
-		return false
-	}
 }
 
 // metadataFromHeaders copies an http.Header object into a metadata.MD map.

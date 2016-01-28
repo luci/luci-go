@@ -65,3 +65,20 @@ var (
 	// DataLoss is an empty grpc.DataLoss error.
 	DataLoss = Errf(codes.DataLoss, "")
 )
+
+// IsTransient returns true if a given gRPC error is transient.
+func IsTransient(err error) bool {
+	return err != nil && IsTransientCode(grpc.Code(err))
+}
+
+// IsTransientCode returns true if a given gRPC code is associated with a
+// transient gRPC error type.
+func IsTransientCode(code codes.Code) bool {
+	switch code {
+	case codes.Internal, codes.Unknown, codes.Unavailable:
+		return true
+
+	default:
+		return false
+	}
+}
