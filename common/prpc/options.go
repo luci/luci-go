@@ -46,7 +46,7 @@ func DefaultOptions() *Options {
 
 func (o *Options) apply(callOptions []grpc.CallOption) error {
 	for _, co := range callOptions {
-		prpcCo, ok := co.(CallOption)
+		prpcCo, ok := co.(*CallOption)
 		if !ok {
 			return fmt.Errorf("non-pRPC call option %T is used with pRPC client", co)
 		}

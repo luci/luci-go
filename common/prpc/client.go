@@ -154,7 +154,7 @@ func (c *Client) Call(ctx context.Context, serviceName, methodName string, in, o
 			defer res.Body.Close()
 
 			if options.resHeaderMetadata != nil {
-				*options.resHeaderMetadata = metadata.MD(res.Header).Copy()
+				*options.resHeaderMetadata = metadataFromHeaders(res.Header)
 			}
 
 			// Read the response body.
@@ -192,7 +192,7 @@ func (c *Client) Call(ctx context.Context, serviceName, methodName string, in, o
 			}
 
 			if options.resTrailerMetadata != nil {
-				*options.resTrailerMetadata = metadata.MD(res.Trailer).Copy()
+				*options.resTrailerMetadata = metadataFromHeaders(res.Trailer)
 			}
 
 			codeHeader := res.Header.Get(HeaderGRPCCode)
@@ -287,4 +287,21 @@ func isTransientCode(code codes.Code) bool {
 	default:
 		return false
 	}
+}
+
+// metadataFromHeaders copies an http.Header object into a metadata.MD map.
+//
+// In order to conform with gRPC, which relies on HTTP/2's forced lower-case
+// headers, we convert the headers to lower-case before entering them in the
+// metadata map.
+func metadataFromHeaders(h http.Header) metadata.MD {
+	if len(h) == 0 {
+		return nil
+	}
+
+	md := make(metadata.MD, len(h))
+	for k, v := range h {
+		md[strings.ToLower(k)] = v
+	}
+	return md
 }

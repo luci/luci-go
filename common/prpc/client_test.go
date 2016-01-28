@@ -18,6 +18,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -25,6 +26,7 @@ import (
 	"github.com/luci/luci-go/common/logging/memlogger"
 	"github.com/luci/luci-go/common/retry"
 
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -50,12 +52,14 @@ func sayHello(c C) http.HandlerFunc {
 		if req.Name == "TOO BIG" {
 			w.Header().Set("Content-Length", "999999999999")
 		}
+		w.Header().Set("X-Lower-Case-Header", "CamelCaseValueStays")
 
 		res := HelloReply{"Hello " + req.Name}
 		buf, err := proto.Marshal(&res)
 		c.So(err, ShouldBeNil)
 
 		w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(codes.OK)))
+
 		_, err = w.Write(buf)
 		c.So(err, ShouldBeNil)
 	}
@@ -131,9 +135,11 @@ func TestClient(t *testing.T) {
 				client, server := setUp(sayHello(c))
 				defer server.Close()
 
-				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
+				var hd metadata.MD
+				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res, Header(&hd))
 				So(err, ShouldBeNil)
 				So(res.Message, ShouldEqual, "Hello John")
+				So(hd["x-lower-case-header"], ShouldResembleV, []string{"CamelCaseValueStays"})
 
 				So(log, shouldHaveMessagesLike, expectedCallLogEntry(client))
 			})
