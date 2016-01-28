@@ -19,16 +19,15 @@ func splitResource(v string) []string {
 	return strings.Split(v, "/")
 }
 
-// resourceProject returns the resource's project component.
-func resourceProject(v string) (string, error) {
+// resourceProjectName returns the resource's project and name components.
+func resourceProjectName(v string) (p, n string, err error) {
 	parts := splitResource(v)
 	if len(parts) != 4 {
-		return "", errors.New("malformed resource")
+		err = errors.New("malformed resource")
+		return
 	}
-	if parts[0] != "projects" {
-		return "", errors.New("missing project component")
-	}
-	return parts[1], nil
+	p, n = parts[1], parts[3]
+	return
 }
 
 func resourceName(v string) (string, error) {

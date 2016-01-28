@@ -33,52 +33,52 @@ func NewConnection(c *http.Client) Connection {
 }
 
 func (p *connectionImpl) TopicExists(c context.Context, t Topic) (bool, error) {
-	proj, err := t.ProjectErr()
+	proj, name, err := t.SplitErr()
 	if err != nil {
 		return false, err
 	}
 
-	exists, err := pubsub.TopicExists(p.with(c, proj), string(t))
+	exists, err := pubsub.TopicExists(p.with(c, proj), name)
 	return exists, (err)
 }
 
 func (p *connectionImpl) SubExists(c context.Context, s Subscription) (bool, error) {
-	proj, err := s.ProjectErr()
+	proj, name, err := s.SplitErr()
 	if err != nil {
 		return false, err
 	}
 
-	exists, err := pubsub.SubExists(p.with(c, proj), string(s))
+	exists, err := pubsub.SubExists(p.with(c, proj), name)
 	return exists, errors.WrapTransient(err)
 }
 
 func (p *connectionImpl) Publish(c context.Context, t Topic, msgs ...*Message) ([]string, error) {
-	proj, err := t.ProjectErr()
+	proj, name, err := t.SplitErr()
 	if err != nil {
 		return nil, err
 	}
 
-	ids, err := pubsub.Publish(p.with(c, proj), string(t), localMessageToPubSub(msgs)...)
+	ids, err := pubsub.Publish(p.with(c, proj), name, localMessageToPubSub(msgs)...)
 	return ids, errors.WrapTransient(err)
 }
 
 func (p *connectionImpl) Pull(c context.Context, s Subscription, n int) ([]*Message, error) {
-	proj, err := s.ProjectErr()
+	proj, name, err := s.SplitErr()
 	if err != nil {
 		return nil, err
 	}
 
-	msgs, err := pubsub.Pull(p.with(c, proj), string(s), n)
+	msgs, err := pubsub.Pull(p.with(c, proj), name, n)
 	return pubSubMessageToLocal(msgs), errors.WrapTransient(err)
 }
 
 func (p *connectionImpl) Ack(c context.Context, s Subscription, ackIDs ...string) error {
-	proj, err := s.ProjectErr()
+	proj, name, err := s.SplitErr()
 	if err != nil {
 		return err
 	}
 
-	return errors.WrapTransient(pubsub.Ack(p.with(c, proj), string(s), ackIDs...))
+	return errors.WrapTransient(pubsub.Ack(p.with(c, proj), name, ackIDs...))
 }
 
 func (p *connectionImpl) with(c context.Context, project string) context.Context {

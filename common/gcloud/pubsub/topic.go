@@ -37,22 +37,15 @@ func (t Topic) Validate() error {
 	return validateResource(string(t), "topics")
 }
 
-// Project returns the Topic's project component. If no project is defined
-// (malformed), an empty string will be returned.
-func (t Topic) Project() (v string) {
-	v, _ = t.ProjectErr()
+// Split returns the Topic's project component. If no project is
+// defined (malformed), an empty string will be returned.
+func (t Topic) Split() (p, n string) {
+	p, n, _ = t.SplitErr()
 	return
 }
 
-// ProjectErr returns the Subscription's project component.
-func (t Topic) ProjectErr() (v string, err error) {
-	v, err = resourceProject(string(t))
-	return
-}
-
-// Name returns the Topic's name component. If no name is defined (malformed),
-// an empty string will be returned.
-func (t Topic) Name() (v string) {
-	v, _ = resourceName(string(t))
+// SplitErr returns the Topic's project and name components.
+func (t Topic) SplitErr() (p, n string, err error) {
+	p, n, err = resourceProjectName(string(t))
 	return
 }

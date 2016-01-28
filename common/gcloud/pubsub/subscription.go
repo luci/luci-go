@@ -38,22 +38,15 @@ func (s Subscription) Validate() error {
 	return validateResource(string(s), "subscriptions")
 }
 
-// Project returns the Subscription's project component. If no project is
+// Split returns the Subscription's project component. If no project is
 // defined (malformed), an empty string will be returned.
-func (s Subscription) Project() (v string) {
-	v, _ = s.ProjectErr()
+func (s Subscription) Split() (p, n string) {
+	p, n, _ = s.SplitErr()
 	return
 }
 
-// ProjectErr returns the Subscription's project component.
-func (s Subscription) ProjectErr() (v string, err error) {
-	v, err = resourceProject(string(s))
-	return
-}
-
-// Name returns the Subscription's name component. If no name is defined
-// (malformed), an empty string will be returned.
-func (s Subscription) Name() (v string) {
-	v, _ = resourceName(string(s))
+// SplitErr returns the Subscription's project and name components.
+func (s Subscription) SplitErr() (p, n string, err error) {
+	p, n, err = resourceProjectName(string(s))
 	return
 }

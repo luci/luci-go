@@ -56,8 +56,9 @@ func TestResource(t *testing.T) {
 	})
 
 	Convey(`Can extract a resource project.`, t, func() {
-		p, err := resourceProject("projects/foo/topics/bar")
+		p, n, err := resourceProjectName("projects/foo/topics/bar")
 		So(err, ShouldBeNil)
 		So(p, ShouldEqual, "foo")
+		So(n, ShouldEqual, "bar")
 	})
 }
