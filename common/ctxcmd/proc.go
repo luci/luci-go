@@ -7,6 +7,7 @@ package ctxcmd
 import (
 	"os"
 	"os/exec"
+	"syscall"
 
 	"golang.org/x/net/context"
 )
@@ -142,11 +143,20 @@ func (cc *CtxCmd) Start(c context.Context) error {
 func (cc *CtxCmd) Wait() error {
 	r := <-cc.waitC
 	cc.waitC = nil
-	cc.ProcessState = r.state
-	if r.procErr == nil && !r.state.Success() {
-		cc.ProcessError = &exec.ExitError{cc.ProcessState}
-	}
 
+	// Record our process' immediate results.
+	cc.ProcessState, cc.ProcessError = r.state, r.procErr
+
+	// If our process ran, but exited with a non-zero error code, return an error
+	// (follows contract of exec.Cmd's Wait)
+	if r.procErr == nil {
+		// Forge an ExitError.
+		cc.ProcessError = &exec.ExitError{cc.ProcessState}
+		if r.err == nil && !r.state.Success() {
+			// If there wasn't a higher-level error, exit with the process error.
+			return cc.ProcessError
+		}
+	}
 	return r.err
 }
 
@@ -167,4 +177,13 @@ func (cc *CtxCmd) Kill() error {
 // Process is currently running.
 func (cc *CtxCmd) Signal(sig os.Signal) error {
 	return cc.Cmd.Process.Signal(sig)
+}
+
+// ExitCode returns the process exit code given an error. If no exit code is
+// present, 0 will be returned.
+func ExitCode(err error) (int, bool) {
+	if ee, ok := err.(*exec.ExitError); ok {
+		return ee.Sys().(syscall.WaitStatus).ExitStatus(), true
+	}
+	return 0, false
 }

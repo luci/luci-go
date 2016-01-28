@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"syscall"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -76,7 +75,11 @@ func TestCtxCmd(t *testing.T) {
 				// Make sure that we got a process return value.
 				err := cc.Wait()
 				So(err, ShouldBeNil)
-				So(cc.ProcessError, ShouldBeNil)
+				So(cc.ProcessError, ShouldNotBeNil)
+
+				ec, ok := ExitCode(cc.ProcessError)
+				So(ok, ShouldBeTrue)
+				So(ec, ShouldEqual, 0)
 			})
 		})
 
@@ -93,8 +96,9 @@ func TestCtxCmd(t *testing.T) {
 
 				So(cc.ProcessError, ShouldHaveSameTypeAs, (*exec.ExitError)(nil))
 
-				exitErr := cc.ProcessError.(*exec.ExitError)
-				So(exitErr.Sys().(syscall.WaitStatus).ExitStatus(), ShouldNotEqual, 0)
+				ec, ok := ExitCode(cc.ProcessError)
+				So(ok, ShouldBeTrue)
+				So(ec, ShouldNotEqual, 0)
 			})
 
 			Convey(`Interrupting the process causes it to exit with return code 5 (see main()).`, func() {
@@ -124,8 +128,25 @@ func TestCtxCmd(t *testing.T) {
 
 				So(cc.ProcessError, ShouldHaveSameTypeAs, (*exec.ExitError)(nil))
 
-				exitErr := cc.ProcessError.(*exec.ExitError)
-				So(exitErr.Sys().(syscall.WaitStatus).ExitStatus(), ShouldEqual, 5)
+				ec, ok := ExitCode(cc.ProcessError)
+				So(ok, ShouldBeTrue)
+				So(ec, ShouldEqual, 5)
+			})
+		})
+
+		Convey(`When running a process with a non-zero exit code`, func() {
+			cc := CtxCmd{
+				Cmd: helperCommand(t, "TestExitWithError"),
+			}
+
+			Convey(`Run returns an error.`, func() {
+				err := cc.Run(c)
+				So(err, ShouldNotBeNil)
+				So(cc.ProcessError, ShouldHaveSameTypeAs, (*exec.ExitError)(nil))
+
+				ec, ok := ExitCode(err)
+				So(ok, ShouldBeTrue)
+				So(ec, ShouldEqual, 42)
 			})
 		})
 	})
