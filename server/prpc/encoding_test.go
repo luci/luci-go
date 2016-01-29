@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
+	pc "github.com/luci/luci-go/common/prpc"
 	"google.golang.org/grpc/codes"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -20,8 +21,8 @@ func TestEncoding(t *testing.T) {
 	t.Parallel()
 
 	Convey("responseFormat", t, func() {
-		test := func(acceptHeader string, expectedFormat format, expectedErr interface{}) {
-			acceptHeader = strings.Replace(acceptHeader, "{json}", mtPRPCJSNOPB, -1)
+		test := func(acceptHeader string, expectedFormat pc.Format, expectedErr interface{}) {
+			acceptHeader = strings.Replace(acceptHeader, "{json}", mtPRPCJSONPB, -1)
 			acceptHeader = strings.Replace(acceptHeader, "{binary}", mtPRPCBinary, -1)
 			acceptHeader = strings.Replace(acceptHeader, "{text}", mtPRPCText, -1)
 
@@ -34,39 +35,39 @@ func TestEncoding(t *testing.T) {
 			})
 		}
 
-		test("", formatBinary, nil)
-		test(mtPRPC, formatBinary, nil)
-		test(mtPRPCBinary, formatBinary, nil)
-		test(mtPRPCJSNOPB, formatJSONPB, nil)
-		test(mtPRPCText, formatText, nil)
-		test(mtJSON, formatJSONPB, nil)
+		test("", pc.FormatBinary, nil)
+		test(pc.ContentTypePRPC, pc.FormatBinary, nil)
+		test(mtPRPCBinary, pc.FormatBinary, nil)
+		test(mtPRPCJSONPB, pc.FormatJSONPB, nil)
+		test(mtPRPCText, pc.FormatText, nil)
+		test(pc.ContentTypeJSON, pc.FormatJSONPB, nil)
 
-		test("application/*", formatBinary, nil)
-		test("*/*", formatBinary, nil)
+		test("application/*", pc.FormatBinary, nil)
+		test("*/*", pc.FormatBinary, nil)
 
 		// test cases with multiple types
-		test("{json},{binary}", formatBinary, nil)
-		test("{json},{binary};q=0.9", formatJSONPB, nil)
-		test("{json};q=1,{binary};q=0.9", formatJSONPB, nil)
-		test("{json},{text}", formatJSONPB, nil)
-		test("{json};q=0.9,{text}", formatText, nil)
-		test("{binary},{json},{text}", formatBinary, nil)
+		test("{json},{binary}", pc.FormatBinary, nil)
+		test("{json},{binary};q=0.9", pc.FormatJSONPB, nil)
+		test("{json};q=1,{binary};q=0.9", pc.FormatJSONPB, nil)
+		test("{json},{text}", pc.FormatJSONPB, nil)
+		test("{json};q=0.9,{text}", pc.FormatText, nil)
+		test("{binary},{json},{text}", pc.FormatBinary, nil)
 
-		test("{json},{binary},*/*", formatBinary, nil)
-		test("{json},{binary},*/*;q=0.9", formatBinary, nil)
-		test("{json},{binary},*/*;x=y", formatBinary, nil)
-		test("{json},{binary};q=0.9,*/*", formatBinary, nil)
-		test("{json},{binary};q=0.9,*/*;q=0.8", formatJSONPB, nil)
+		test("{json},{binary},*/*", pc.FormatBinary, nil)
+		test("{json},{binary},*/*;q=0.9", pc.FormatBinary, nil)
+		test("{json},{binary},*/*;x=y", pc.FormatBinary, nil)
+		test("{json},{binary};q=0.9,*/*", pc.FormatBinary, nil)
+		test("{json},{binary};q=0.9,*/*;q=0.8", pc.FormatJSONPB, nil)
 
 		// supported and unsupported mix
-		test("{json},foo/bar", formatJSONPB, nil)
-		test("{json};q=0.1,foo/bar", formatJSONPB, nil)
-		test("foo/bar;q=0.1,{json}", formatJSONPB, nil)
+		test("{json},foo/bar", pc.FormatJSONPB, nil)
+		test("{json};q=0.1,foo/bar", pc.FormatJSONPB, nil)
+		test("foo/bar;q=0.1,{json}", pc.FormatJSONPB, nil)
 
 		// only unsupported types
 		const err406 = "pRPC: Accept header: specified media types are not not supported"
-		test(mtPRPC+"; boo=true", 0, err406)
-		test(mtPRPC+"; encoding=blah", 0, err406)
+		test(pc.ContentTypePRPC+"; boo=true", 0, err406)
+		test(pc.ContentTypePRPC+"; encoding=blah", 0, err406)
 		test("x", 0, err406)
 		test("x,y", 0, err406)
 
@@ -76,7 +77,7 @@ func TestEncoding(t *testing.T) {
 	Convey("respondMessage", t, func() {
 		msg := &HelloReply{Message: "Hi"}
 
-		test := func(f format, body []byte, contentType string) {
+		test := func(f pc.Format, body []byte, contentType string) {
 			Convey(contentType, func() {
 				res := respondMessage(msg, f)
 				So(res.code, ShouldEqual, codes.OK)
@@ -90,8 +91,8 @@ func TestEncoding(t *testing.T) {
 		msgBytes, err := proto.Marshal(msg)
 		So(err, ShouldBeNil)
 
-		test(formatBinary, msgBytes, mtPRPCBinary)
-		test(formatJSONPB, []byte(csrfPrefix+"{\"message\":\"Hi\"}\n"), mtPRPCJSNOPB)
-		test(formatText, []byte("message: \"Hi\"\n"), mtPRPCText)
+		test(pc.FormatBinary, msgBytes, mtPRPCBinary)
+		test(pc.FormatJSONPB, []byte(csrfPrefix+"{\"message\":\"Hi\"}\n"), mtPRPCJSONPB)
+		test(pc.FormatText, []byte("message: \"Hi\"\n"), mtPRPCText)
 	})
 }

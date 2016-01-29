@@ -8,6 +8,7 @@ package prpc
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"sort"
 
@@ -16,6 +17,8 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+
+	prpccommon "github.com/luci/luci-go/common/prpc"
 )
 
 const (
@@ -24,46 +27,34 @@ const (
 )
 
 // responseFormat returns the format to be used in a response.
-// Can return only formatBinary (preferred), formatJSONPB or formatText.
+// Can return only FormatBinary (preferred), FormatJSONPB or FormatText.
 // In case of an error, format is undefined.
-func responseFormat(acceptHeader string) (format, *protocolError) {
+func responseFormat(acceptHeader string) (prpccommon.Format, *protocolError) {
 	if acceptHeader == "" {
-		return formatBinary, nil
+		return prpccommon.FormatBinary, nil
 	}
 
 	parsed, err := parseAccept(acceptHeader)
 	if err != nil {
-		return formatBinary, errorf(http.StatusBadRequest, "Accept header: %s", err)
+		return prpccommon.FormatBinary, errorf(http.StatusBadRequest, "Accept header: %s", err)
 	}
 	formats := make(acceptFormatSlice, 0, len(parsed))
 	for _, at := range parsed {
-		f, err := parseFormat(at.MediaType, at.MediaTypeParams)
+		f, err := prpccommon.FormatFromMediaType(at.MediaType, at.MediaTypeParams)
 		if err != nil {
 			// Ignore invalid format. Check further.
 			continue
 		}
-		switch f {
-
-		case formatBinary, formatJSONPB, formatText:
-			// fine
-
-		case formatUnspecified:
-			f = formatBinary // prefer binary
-
-		default:
-			continue
-		}
-
 		formats = append(formats, acceptFormat{f, at.QualityFactor})
 	}
 	if len(formats) == 0 {
-		return formatBinary, errorf(
+		return prpccommon.FormatBinary, errorf(
 			http.StatusNotAcceptable,
 			"Accept header: specified media types are not not supported. Supported types: %q, %q, %q, %q.",
-			mtPRPCBinary,
-			mtPRPCJSNOPB,
-			mtPRPCText,
-			mtJSON,
+			prpccommon.FormatBinary.ContentType(),
+			prpccommon.FormatJSONPB.ContentType(),
+			prpccommon.FormatText.ContentType(),
+			prpccommon.ContentTypeJSON,
 		)
 	}
 	sort.Sort(formats) // order by quality factor and format preference.
@@ -71,19 +62,20 @@ func responseFormat(acceptHeader string) (format, *protocolError) {
 }
 
 // respondMessage encodes msg to a response in the specified format.
-func respondMessage(msg proto.Message, format format) *response {
+func respondMessage(msg proto.Message, format prpccommon.Format) *response {
 	if msg == nil {
 		return errResponse(codes.Internal, 0, "pRPC: responseMessage: msg is nil")
 	}
+
 	res := response{header: http.Header{}}
+	res.header.Set(headerContentType, format.ContentType())
+
 	var err error
 	switch format {
-	case formatBinary:
-		res.header.Set(headerContentType, mtPRPCBinary)
+	case prpccommon.FormatBinary:
 		res.body, err = proto.Marshal(msg)
 
-	case formatJSONPB:
-		res.header.Set(headerContentType, mtPRPCJSNOPB)
+	case prpccommon.FormatJSONPB:
 		var buf bytes.Buffer
 		buf.WriteString(csrfPrefix)
 		m := jsonpb.Marshaler{}
@@ -93,14 +85,13 @@ func respondMessage(msg proto.Message, format format) *response {
 		}
 		res.body = buf.Bytes()
 
-	case formatText:
-		res.header.Set(headerContentType, mtPRPCText)
+	case prpccommon.FormatText:
 		var buf bytes.Buffer
 		err = proto.MarshalText(&buf, msg)
 		res.body = buf.Bytes()
 
 	default:
-		return errResponse(codes.Internal, 0, "pRPC: responseMessage: invalid format %s", format)
+		panic(fmt.Errorf("impossible: invalid format %s", format))
 
 	}
 	if err != nil {

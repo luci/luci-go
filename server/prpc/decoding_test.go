@@ -17,43 +17,20 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"github.com/luci/luci-go/common/clock/testclock"
-	prpccommon "github.com/luci/luci-go/common/prpc"
+	pc "github.com/luci/luci-go/common/prpc"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+var (
+	mtPRPCBinary = pc.FormatBinary.ContentType()
+	mtPRPCText   = pc.FormatText.ContentType()
+	mtPRPCJSONPB = pc.FormatJSONPB.ContentType()
+)
+
 func TestDecoding(t *testing.T) {
 	t.Parallel()
-
-	Convey("requestFormat", t, func() {
-		test := func(contentType string, expectedFormat format, expectedErr interface{}) {
-			Convey("Content-Type: "+contentType, func() {
-				actualFormat, err := requestFormat(contentType)
-				So(err, ShouldErrLike, expectedErr)
-				if err == nil {
-					So(actualFormat, ShouldEqual, expectedFormat)
-				}
-			})
-		}
-
-		test("", formatBinary, nil)
-		test(mtPRPC, formatBinary, nil)
-		test(mtPRPCBinary, formatBinary, nil)
-		test(mtPRPCJSNOPB, formatJSONPB, nil)
-		test(mtPRPCText, formatText, nil)
-		test(
-			mtPRPC+"; encoding=blah",
-			0,
-			`encoding parameter: invalid value "blah". Valid values: "json", "binary", "text"`)
-		test(mtPRPC+"; boo=true", 0, `unexpected parameter "boo"`)
-
-		test(mtJSON, formatJSONPB, nil)
-		test(mtJSON+"; whatever=true", formatJSONPB, nil)
-
-		test("x", 0, `"x" is not supported`)
-		test("x,y", 0, "mime: expected slash after first token")
-	})
 
 	Convey("readMessage", t, func() {
 		var msg HelloRequest
@@ -77,8 +54,8 @@ func TestDecoding(t *testing.T) {
 			body, err := proto.Marshal(testMsg)
 			So(err, ShouldBeNil)
 
-			Convey(mtPRPC, func() {
-				testLucy(mtPRPC, body)
+			Convey(pc.ContentTypePRPC, func() {
+				testLucy(pc.ContentTypePRPC, body)
 			})
 			Convey(mtPRPCBinary, func() {
 				testLucy(mtPRPCBinary, body)
@@ -96,19 +73,19 @@ func TestDecoding(t *testing.T) {
 
 		Convey("json", func() {
 			body := []byte(`{"name": "Lucy"}`)
-			Convey(mtJSON, func() {
-				testLucy(mtJSON, body)
+			Convey(pc.ContentTypeJSON, func() {
+				testLucy(pc.ContentTypeJSON, body)
 			})
-			Convey(mtPRPCJSNOPB, func() {
-				testLucy(mtPRPCJSNOPB, body)
+			Convey(mtPRPCJSONPB, func() {
+				testLucy(mtPRPCJSONPB, body)
 			})
 			Convey("malformed body", func() {
-				err := read(mtPRPCJSNOPB, []byte{0})
+				err := read(mtPRPCJSONPB, []byte{0})
 				So(err, ShouldNotBeNil)
 				So(err.status, ShouldEqual, http.StatusBadRequest)
 			})
 			Convey("empty body", func() {
-				err := read(mtPRPCJSNOPB, nil)
+				err := read(mtPRPCJSONPB, nil)
 				So(err, ShouldNotBeNil)
 				So(err.status, ShouldEqual, http.StatusBadRequest)
 			})
@@ -146,12 +123,12 @@ func TestDecoding(t *testing.T) {
 			}
 		}
 
-		Convey(prpccommon.HeaderTimeout, func() {
+		Convey(pc.HeaderTimeout, func() {
 			Convey("Works", func() {
 				now := time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC)
 				c, _ = testclock.UseTime(c, now)
 
-				c, err := parseHeader(c, header(prpccommon.HeaderTimeout, "1M"))
+				c, err := parseHeader(c, header(pc.HeaderTimeout, "1M"))
 				So(err, ShouldBeNil)
 
 				deadline, ok := c.Deadline()
@@ -160,9 +137,9 @@ func TestDecoding(t *testing.T) {
 			})
 
 			Convey("Fails", func() {
-				c2, err := parseHeader(c, header(prpccommon.HeaderTimeout, "blah"))
+				c2, err := parseHeader(c, header(pc.HeaderTimeout, "blah"))
 				So(c2, ShouldEqual, c)
-				So(err, ShouldErrLike, prpccommon.HeaderTimeout+` header: unit is not recognized: "blah"`)
+				So(err, ShouldErrLike, pc.HeaderTimeout+` header: unit is not recognized: "blah"`)
 			})
 		})
 

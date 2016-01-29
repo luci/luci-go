@@ -6,7 +6,6 @@ package main
 
 import (
 	"fmt"
-	"net/url"
 	"os"
 	"strings"
 
@@ -17,6 +16,7 @@ import (
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/logging/gologger"
+	"github.com/luci/luci-go/common/prpc"
 )
 
 const (
@@ -46,7 +46,7 @@ func (r *cmdRun) registerBaseFlags() {
 }
 
 // initContext creates a context. Must be called after flags are parsed.
-func (r *cmdRun) initContext() (context.Context, error) {
+func (r *cmdRun) initContext() context.Context {
 	// Setup logger.
 	logCfg := logCfg
 	if r.verbose {
@@ -54,7 +54,10 @@ func (r *cmdRun) initContext() (context.Context, error) {
 	}
 
 	// Setup authenticated HTTP client.
-	c := logCfg.Use(context.Background())
+	return logCfg.Use(context.Background())
+}
+
+func (r *cmdRun) authenticatedClient(host string) (*prpc.Client, error) {
 	authOpts, err := r.auth.Options()
 	if err != nil {
 		return nil, err
@@ -64,10 +67,14 @@ func (r *cmdRun) initContext() (context.Context, error) {
 	if err != nil {
 		return nil, err
 	}
-	client := &clientImpl{*httpClient, a}
-	c = context.WithValue(c, clientKey, client)
 
-	return c, nil
+	client := prpc.Client{
+		C:       httpClient,
+		Host:    host,
+		Options: prpc.DefaultOptions(),
+	}
+	client.Options.Insecure = isLocalHost(host)
+	return &client, nil
 }
 
 // argErr prints an err and usage to stderr and returns an exit code.
@@ -94,11 +101,13 @@ func (r *cmdRun) done(err error) int {
 // run initializes a context and runs f.
 // if f returns an error, prints the error and returns a non-zero exit code.
 func (r *cmdRun) run(f func(context.Context) error) int {
-	ctx, err := r.initContext()
-	if err != nil {
-		return r.done(err)
-	}
+	ctx := r.initContext()
 	return r.done(f(ctx))
+}
+
+func isLocalHost(host string) bool {
+	return host == "localhost" || strings.HasPrefix(host, "localhost:") ||
+		host == "127.0.0.1" || strings.HasPrefix(host, "127.0.0.1:")
 }
 
 var application = &subcommands.DefaultApplication{
@@ -114,37 +123,4 @@ var application = &subcommands.DefaultApplication{
 
 func main() {
 	os.Exit(subcommands.Run(application, os.Args[1:]))
-}
-
-// parseServer validates and parses a server URL.
-func parseServer(host string) (*url.URL, error) {
-	host = strings.TrimSuffix(host, "/")
-
-	switch {
-	case host == "":
-		return nil, fmt.Errorf("unspecified")
-
-	case strings.Contains(host, "://"):
-		return nil, fmt.Errorf("must not have scheme")
-
-	case strings.ContainsAny(host, "?/#"):
-		return nil, fmt.Errorf("must not have query, path or fragment")
-
-	case strings.HasPrefix(host, ":"):
-		host = "localhost" + host
-	}
-
-	u := &url.URL{
-		Scheme: "https",
-		Host:   host,
-	}
-	if isLocalHost(host) {
-		u.Scheme = "http"
-	}
-	return u, nil
-}
-
-func isLocalHost(host string) bool {
-	return host == "localhost" || strings.HasPrefix(host, "localhost:") ||
-		host == "127.0.0.1" || strings.HasPrefix(host, "127.0.0.1:")
 }

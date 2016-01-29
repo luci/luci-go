@@ -9,7 +9,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
-	"mime"
 	"net/http"
 	"strings"
 
@@ -32,38 +31,10 @@ const (
 	headerContentType  = "Content-Type"
 )
 
-// requestFormat converts Content-Type header value from a request to a format.
-// Can return only formatBinary, formatJSONPB or formatText.
-// In case of an error, format is undefined.
-func requestFormat(contentType string) (format, error) {
-	if contentType == "" {
-		return formatBinary, nil
-	}
-	mediaType, mediaTypeParams, err := mime.ParseMediaType(contentType)
-	if err != nil {
-		return formatBinary, err
-	}
-	f, err := parseFormat(mediaType, mediaTypeParams)
-	if err != nil {
-		return f, err
-	}
-
-	switch f {
-	case formatUnrecognized:
-		return f, fmt.Errorf("%q is not supported", contentType)
-
-	case formatBinary, formatJSONPB, formatText:
-		return f, nil
-
-	default:
-		return formatBinary, nil
-	}
-}
-
 // readMessage decodes a protobuf message from an HTTP request.
 // Does not close the request body.
 func readMessage(r *http.Request, msg proto.Message) *protocolError {
-	format, err := requestFormat(r.Header.Get(headerContentType))
+	format, err := prpccommon.FormatFromContentType(r.Header.Get(headerContentType))
 	if err != nil {
 		// Spec: http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.16
 		return errorf(http.StatusUnsupportedMediaType, "Content-Type header: %s", err)
@@ -76,17 +47,17 @@ func readMessage(r *http.Request, msg proto.Message) *protocolError {
 	switch format {
 	// Do not redefine "err" below.
 
-	case formatBinary:
-		err = proto.Unmarshal(buf, msg)
-
-	case formatJSONPB:
+	case prpccommon.FormatJSONPB:
 		err = jsonpb.Unmarshal(bytes.NewBuffer(buf), msg)
 
-	case formatText:
+	case prpccommon.FormatText:
 		err = proto.UnmarshalText(string(buf), msg)
 
+	case prpccommon.FormatBinary:
+		err = proto.Unmarshal(buf, msg)
+
 	default:
-		err = fmt.Errorf("unknown message format: %d", format)
+		panic(fmt.Errorf("impossible: invalid format %s", format))
 	}
 	if err != nil {
 		return errorf(http.StatusBadRequest, "could not decode body: %s", err)

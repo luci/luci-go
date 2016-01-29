@@ -34,8 +34,8 @@ func sayHello(c C) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c.So(r.Method, ShouldEqual, "POST")
 		c.So(r.URL.Path, ShouldEqual, "/prpc/prpc.Greeter/SayHello")
-		c.So(r.Header.Get("Accept"), ShouldEqual, "application/prpc")
-		c.So(r.Header.Get("Content-Type"), ShouldEqual, "application/prpc")
+		c.So(r.Header.Get("Accept"), ShouldEqual, "application/prpc; encoding=binary")
+		c.So(r.Header.Get("Content-Type"), ShouldEqual, "application/prpc; encoding=binary")
 		c.So(r.Header.Get("User-Agent"), ShouldEqual, "prpc-test")
 
 		if timeout := r.Header.Get(HeaderTimeout); timeout != "" {
@@ -59,7 +59,7 @@ func sayHello(c C) http.HandlerFunc {
 		c.So(err, ShouldBeNil)
 
 		w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(codes.OK)))
-
+		w.Header().Set("Content-Type", ContentTypePRPC)
 		_, err = w.Write(buf)
 		c.So(err, ShouldBeNil)
 	}

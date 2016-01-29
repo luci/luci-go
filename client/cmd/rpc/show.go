@@ -5,9 +5,7 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"net/url"
 	"os"
 	"strings"
 
@@ -16,6 +14,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/proto/google/descriptor"
+	"github.com/luci/luci-go/common/prpc"
 	"github.com/luci/luci-go/server/discovery"
 )
 
@@ -41,27 +40,31 @@ type showRun struct {
 }
 
 func (r *showRun) Run(a subcommands.Application, args []string) int {
-	if len(args) == 0 || len(args) > 2 {
+	var host, name string
+	switch len(args) {
+	case 2:
+		name = args[1]
+		fallthrough
+	case 1:
+		host = args[0]
+
+	default:
 		return r.argErr("")
 	}
 
-	server, err := parseServer(args[0])
+	client, err := r.authenticatedClient(host)
 	if err != nil {
-		return r.argErr("server: %s", err)
-	}
-	var name string
-	if len(args) > 1 {
-		name = args[1]
+		return 2
 	}
 
 	return r.run(func(c context.Context) error {
-		return show(c, server, name)
+		return show(c, client, name)
 	})
 }
 
 // show prints a definition of an object referenced by name in proto3 style.
-func show(c context.Context, server *url.URL, name string) error {
-	desc, err := loadDescription(c, server)
+func show(c context.Context, client *prpc.Client, name string) error {
+	desc, err := loadDescription(c, client)
 	if err != nil {
 		return fmt.Errorf("could not load server description: %s", err)
 	}
@@ -75,7 +78,7 @@ func show(c context.Context, server *url.URL, name string) error {
 
 	file, obj, path := desc.descriptor.Resolve(name)
 	if obj == nil {
-		return fmt.Errorf("name %q could not resolved against %s", name, server)
+		return fmt.Errorf("name %q could not resolved", name)
 	}
 
 	print := newPrinter(os.Stdout)
@@ -130,22 +133,13 @@ type serverDescription struct {
 	descriptor *descriptor.FileDescriptorSet
 }
 
-func loadDescription(c context.Context, server *url.URL) (*serverDescription, error) {
-	// TODO(nodir): cache description on the file system.
-	req := &request{
-		server:  server,
-		service: "discovery.Discovery",
-		method:  "Describe",
-		format:  formatBinary,
-	}
-	var buf bytes.Buffer
-	if err := call(c, req, &buf); err != nil {
+func loadDescription(c context.Context, client *prpc.Client) (*serverDescription, error) {
+	dc := discovery.NewDiscoveryPRPCClient(client)
+	res, err := dc.Describe(c, &discovery.Void{})
+	if err != nil {
 		return nil, fmt.Errorf("could not load server description: %s", err)
 	}
-	var res discovery.DescribeResponse
-	if err := proto.Unmarshal(buf.Bytes(), &res); err != nil {
-		return nil, fmt.Errorf("could not unmarshal response: %s", err)
-	}
+
 	result := &serverDescription{
 		services:   res.Services,
 		descriptor: &descriptor.FileDescriptorSet{},

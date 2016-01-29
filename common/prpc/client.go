@@ -104,19 +104,39 @@ func (c *Client) getHTTPClient() *http.Client {
 // Called from generated code.
 //
 // If there is a Deadline applied to the Context, it will be forwarded to the
-// server using the HeaderTimeout haeder.
+// server using the HeaderTimeout header.
 func (c *Client) Call(ctx context.Context, serviceName, methodName string, in, out proto.Message, opts ...grpc.CallOption) error {
-	options, err := c.renderOptions(opts)
-	if err != nil {
-		return err
-	}
-
 	reqBody, err := proto.Marshal(in)
 	if err != nil {
 		return err
 	}
 
-	req := prepareRequest(c.Host, serviceName, methodName, len(reqBody), options)
+	resp, err := c.CallRaw(ctx, serviceName, methodName, reqBody, FormatBinary, opts...)
+	if err != nil {
+		return err
+	}
+	return proto.Unmarshal(resp, out)
+}
+
+// CallRaw makes an RPC, sending and returning the raw data without
+// unmarshalling it.
+// Retries on transient errors according to retry options.
+// Logs HTTP errors.
+//
+// opts must be created by this package.
+// Calling from multiple goroutines concurrently is safe, unless Client is mutated.
+// Called from generated code.
+//
+// If there is a Deadline applied to the Context, it will be forwarded to the
+// server using the HeaderTimeout header.
+func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in []byte, inf Format,
+	opts ...grpc.CallOption) ([]byte, error) {
+	options, err := c.renderOptions(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	req := prepareRequest(c.Host, serviceName, methodName, len(in), inf, options)
 	ctx = logging.SetFields(ctx, logging.Fields{
 		"host":    c.Host,
 		"service": serviceName,
@@ -125,6 +145,7 @@ func (c *Client) Call(ctx context.Context, serviceName, methodName string, in, o
 
 	// Send the request in a retry loop.
 	var buf bytes.Buffer
+	var contentType string
 	err = retry.Retry(
 		ctx,
 		retry.TransientOnly(options.Retry),
@@ -146,7 +167,7 @@ func (c *Client) Call(ctx context.Context, serviceName, methodName string, in, o
 			}
 
 			// Send the request.
-			req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
+			req.Body = ioutil.NopCloser(bytes.NewReader(in))
 			res, err := ctxhttp.Do(ctx, c.getHTTPClient(), req)
 			if err != nil {
 				return errors.WrapTransient(fmt.Errorf("failed to send request: %s", err))
@@ -156,6 +177,7 @@ func (c *Client) Call(ctx context.Context, serviceName, methodName string, in, o
 			if options.resHeaderMetadata != nil {
 				*options.resHeaderMetadata = metadataFromHeaders(res.Header)
 			}
+			contentType = res.Header.Get("Content-Type")
 
 			// Read the response body.
 			buf.Reset()
@@ -224,8 +246,7 @@ func (c *Client) Call(ctx context.Context, serviceName, methodName string, in, o
 				}
 				return err
 			}
-
-			return proto.Unmarshal(buf.Bytes(), out) // non-transient error
+			return nil
 		},
 		func(err error, sleepTime time.Duration) {
 			logging.Fields{
@@ -235,19 +256,28 @@ func (c *Client) Call(ctx context.Context, serviceName, methodName string, in, o
 		},
 	)
 
-	if err != nil {
-		logging.WithError(err).Warningf(ctx, "RPC failed permanently: %s", err)
-	}
-
 	// We have to unwrap gRPC errors because
 	// grpc.Code and grpc.ErrorDesc functions do not work with error wrappers.
 	// https://github.com/grpc/grpc-go/issues/494
-	return errors.UnwrapAll(err)
+	if err != nil {
+		logging.WithError(err).Warningf(ctx, "RPC failed permanently: %s", err)
+		return nil, errors.UnwrapAll(err)
+	}
+
+	// Parse the response content type.
+	f, err := FormatFromContentType(contentType)
+	if err != nil {
+		return nil, err
+	}
+	if f != inf {
+		return nil, fmt.Errorf("output format (%s) doesn't match input format (%s)", f.ContentType(), inf.ContentType())
+	}
+	return buf.Bytes(), nil
 }
 
 // prepareRequest creates an HTTP request for an RPC,
 // except it does not set the request body.
-func prepareRequest(host, serviceName, methodName string, contentLength int, options *Options) *http.Request {
+func prepareRequest(host, serviceName, methodName string, contentLength int, f Format, options *Options) *http.Request {
 	if host == "" {
 		panic("Host is not set")
 	}
@@ -265,7 +295,7 @@ func prepareRequest(host, serviceName, methodName string, contentLength int, opt
 	}
 
 	// Set headers.
-	const mediaType = "application/prpc" // binary
+	mediaType := f.ContentType()
 	req.Header.Set("Content-Type", mediaType)
 	req.Header.Set("Accept", mediaType)
 	userAgent := options.UserAgent
