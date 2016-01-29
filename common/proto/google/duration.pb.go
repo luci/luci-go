@@ -7,10 +7,12 @@ Package google is a generated protocol buffer package.
 
 It is generated from these files:
 	duration.proto
+	empty.proto
 	timestamp.proto
 
 It has these top-level messages:
 	Duration
+	Empty
 	Timestamp
 */
 package google

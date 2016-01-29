@@ -1,0 +1,112 @@
+// Copyright 2016 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+import "types.proto";
+
+package dm;
+
+// GraphData defines all of the DM graph data that may be returned from DM.
+//
+// Currently only WalkGraph returns GraphData, but in the future other APIs will
+// explore the graph in other ways, and they'll return this same data structure.
+//
+// The design of this message is intended to allow clients to easily accumulate
+// various GraphData from different sources in order to maintain an in-memory
+// cache of data that exists in DM, where that data is discovered across
+// multiple RPCs.
+message GraphData {
+  message Quest {
+    dm.QuestID id = 1;
+
+    message Data {
+      google.protobuf.Timestamp created = 1;
+      dm.QuestDescriptor descriptor = 2;
+    }
+    Data data = 2;
+
+    // key is the `id` field of the AttemptID
+    map<uint64, Attempt> attempts = 3;
+  }
+
+  message Attempt {
+    dm.AttemptID id = 1;
+
+    message Data {
+      google.protobuf.Timestamp created = 1;
+
+      message NeedsExecution {
+        google.protobuf.Timestamp pending = 1;
+      }
+
+      message Executing {
+        uint64 cur_execution_id = 1;
+      }
+
+      message AddingDeps {
+        uint64 num_adding = 1;
+        uint64 num_waiting = 2;
+      }
+
+      message Blocked {
+        uint64 num_waiting = 1;
+      }
+
+      message Finished {
+        google.protobuf.Timestamp expiration = 1;
+        bytes json_result = 2;
+      }
+
+      oneof attempt_type {
+        NeedsExecution needs_execution = 2;
+        Executing executing = 3;
+        AddingDeps adding_deps = 4;
+        Blocked blocked = 5;
+        Finished finished = 6;
+      }
+    }
+    Data data = 2;
+
+    // key is the `id` field of the ExecutionID
+    map<uint64,Execution> executions = 3;
+
+    repeated dm.AttemptID fwd_deps = 4;
+    repeated dm.AttemptID back_deps = 5;
+  }
+
+  message Execution {
+    dm.ExecutionID id = 1;
+
+    message Data {
+      google.protobuf.Timestamp created = 1;
+      string distributor_token = 2;
+      string distributor_info_url = 3;
+    }
+    Data data = 2;
+  }
+
+  // Quests is the main entry point for all the graph data.
+  // key is the `id` field of the QuestID
+  map<string, Quest> quests = 1;
+
+  // HadErrors is set to true if the data represented here is a partial view
+  // of the requested data due to internal errors. The request may be repeated
+  // or the client may chose to make smaller queries into the portions of the
+  // graph that are missing.
+  //
+  // If HadErrors is set HadMore will also be set.
+  bool had_errors = 2;
+
+  // HadMore is set to true if the request stopped short of the full result set
+  // due to things like:
+  //   * max response size limit
+  //   * max time limit (e.g. WalkGraphReq.MaxTime) being hit
+  //   * non-terminal errors encountered during the request (HadErrors will also
+  //     be true in this case).
+  bool had_more = 3;
+}
+

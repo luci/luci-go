@@ -1,0 +1,29 @@
+// Copyright 2016 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+import "types.proto";
+
+package dm;
+
+// AddDepsReq allows an execution to cause its attempt to depend on the results
+// of one or more other attempts.
+//
+// Any quests referred to by this method must already have been established with
+// DM by calling EnsureQuests.
+message AddDepsReq {
+  // required
+  dm.ExecutionAuth auth = 1;
+
+  // To is the list of other attempts to depend on.
+  repeated dm.AttemptID to = 2;
+}
+
+message AddDepsRsp {
+  // ShouldHalt informs the execution that it should halt. If this is true, then
+  // it also implies that this Execution's activation has been revoked, and all
+  // subsequent attemts to use that execution token will be rejected.
+  bool should_halt = 1;
+}

@@ -1,0 +1,27 @@
+// Copyright 2016 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+import "types.proto";
+
+package dm;
+
+// EnsureQuestsReq allows either a human or a client to ensure that various
+// Quests exist in DM.
+message EnsureQuestsReq {
+  // optional: Only needed if this is being called from an execution.
+  dm.ExecutionAuth auth = 1;
+
+  // ToEnsure is a list of quest descriptors. DM will ensure that the
+  // corresponding Quests exist. If they don't, they'll be created.
+  repeated dm.QuestDescriptor to_ensure = 2;
+}
+
+message EnsureQuestsRsp {
+  // QuestIds is a list that matches 1:1 with the QuestDescriptors listed in the
+  // request. These IDs are the canonical ids of the Quests.
+  repeated dm.QuestID quest_ids = 1;
+}
+

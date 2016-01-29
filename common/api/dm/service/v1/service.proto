@@ -1,0 +1,27 @@
+// Copyright 2016 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+import "graph_data.proto";
+
+import "activate_execution.proto";
+import "add_deps.proto";
+import "ensure_attempt.proto";
+import "ensure_quests.proto";
+import "finish_attempt.proto";
+import "walk_graph.proto";
+
+package dm;
+
+service Deps {
+  rpc ActivateExecution(dm.ActivateExecutionReq) returns (google.protobuf.Empty);
+  rpc AddDeps(dm.AddDepsReq) returns (dm.AddDepsRsp);
+  rpc EnsureAttempt(dm.EnsureAttemptReq) returns (google.protobuf.Empty);
+  rpc EnsureQuests(dm.EnsureQuestsReq) returns (dm.EnsureQuestsRsp);
+  rpc FinishAttempt(dm.FinishAttemptReq) returns (google.protobuf.Empty);
+  rpc WalkGraph(dm.WalkGraphReq) returns (dm.GraphData);
+}
