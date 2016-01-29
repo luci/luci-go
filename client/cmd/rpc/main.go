@@ -33,6 +33,7 @@ var logCfg = gologger.LoggerConfig{
 // It defines some common flags, such as logging and auth, and useful methods.
 type cmdRun struct {
 	subcommands.CommandRunBase
+	cmd     *subcommands.Command
 	verbose bool
 	auth    authcli.Flags
 }
@@ -82,8 +83,8 @@ func (r *cmdRun) argErr(format string, a ...interface{}) int {
 	if format != "" {
 		fmt.Fprintf(os.Stderr, format+"\n", a...)
 	}
-	fmt.Fprintln(os.Stderr, cmdCall.ShortDesc)
-	fmt.Fprintln(os.Stderr, cmdCall.UsageLine)
+	fmt.Fprintln(os.Stderr, r.cmd.ShortDesc)
+	fmt.Fprintln(os.Stderr, r.cmd.UsageLine)
 	fmt.Fprintln(os.Stderr, "\nFlags:")
 	r.Flags.PrintDefaults()
 	return 1

@@ -38,6 +38,10 @@ type showRun struct {
 }
 
 func (r *showRun) Run(a subcommands.Application, args []string) int {
+	if r.cmd == nil {
+		r.cmd = cmdShow
+	}
+
 	var host, name string
 	switch len(args) {
 	case 2:

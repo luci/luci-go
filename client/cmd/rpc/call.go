@@ -49,6 +49,10 @@ type callRun struct {
 }
 
 func (r *callRun) Run(a subcommands.Application, args []string) int {
+	if r.cmd == nil {
+		r.cmd = cmdCall
+	}
+
 	if len(args) != 2 {
 		return r.argErr("")
 	}
