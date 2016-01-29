@@ -4,7 +4,7 @@
 
 syntax = "proto3";
 
-import "types.proto";
+import "graph_data.proto";
 
 package dm;
 
@@ -34,7 +34,7 @@ package dm;
 message ActivateExecutionReq {
   // Execution is the ExecutionID provided to the distributor when this
   // Execution was created.
-  dm.ExecutionID execution = 1;
+  dm.Execution.ID execution = 1;
 
   // ActivationToken is an opaque nonce provided to the distributor when this
   // Execution was created.

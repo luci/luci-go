@@ -4,6 +4,7 @@
 
 syntax = "proto3";
 
+import "graph_data.proto";
 import "types.proto";
 
 package dm;
@@ -12,27 +13,27 @@ message GraphQuery {
   // AttemptRange represents a (quest, attempt) -> (quest, attempt) pair. All
   // attempts within the range will be returned as the result of the query.
   message AttemptRange {
-    dm.AttemptID start = 1;
-    dm.AttemptID end = 2;
+    dm.Attempt.ID start = 1;
+    dm.Attempt.ID end = 2;
   }
 
   // AttemptList allows you to list one or more specific attempts as the result
   // of the query.
   message AttemptList {
-    repeated dm.AttemptID attempt = 1;
+    repeated dm.Attempt.ID attempt = 1;
   }
 
   // QuestRange represents a quest->quest pair. All Attempts of all Quests
   // within the range will be returned as the result of the query.
   message QuestRange {
-    dm.QuestID start = 1;
-    dm.QuestID end = 2;
+    dm.Quest.ID start = 1;
+    dm.Quest.ID end = 2;
   }
 
   // QuestList allows you to list one or more specific quests as the result of
   // the query.
   message QuestList {
-    repeated dm.QuestID quest = 1;
+    repeated dm.Quest.ID quest = 1;
   }
 
   // A Search allows you to query objects whose properties match all of the

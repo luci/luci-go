@@ -4,7 +4,7 @@
 
 syntax = "proto3";
 
-import "types.proto";
+import "graph_data.proto";
 
 package dm;
 
@@ -19,5 +19,5 @@ package dm;
 // Any quests referred to by this method must already have been established with
 // DM by calling EnsureQuests.
 message EnsureAttemptReq {
-  dm.AttemptID to_ensure = 1;
+  dm.Attempt.ID to_ensure = 1;
 }

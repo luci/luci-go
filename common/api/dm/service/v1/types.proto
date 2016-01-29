@@ -7,26 +7,9 @@ syntax = "proto3";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
+import "graph_data.proto";
+
 package dm;
-
-message QuestID {
-  string id = 1;
-}
-
-message AttemptID {
-  QuestID quest = 1;
-  uint64 id = 2;
-}
-
-message ExecutionID {
-  AttemptID attempt = 1;
-  uint64 id = 2;
-}
-
-message QuestDescriptor {
-  string distributor_config_name = 1;
-  string json_payload = 2;
-}
 
 message MultiPropertyValue {
   repeated PropertyValue values = 1;
@@ -56,6 +39,6 @@ message PropertyValue {
 // ExecutionAuth is a tuple of the requesting ExecutionID and the activated
 // ExecutionToken (see the ActivateExecution rpc).
 message ExecutionAuth {
-  ExecutionID id = 1;
+  dm.Execution.ID id = 1;
   bytes execution_token = 2;
 }

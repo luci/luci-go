@@ -4,6 +4,7 @@
 
 syntax = "proto3";
 
+import "graph_data.proto";
 import "types.proto";
 
 package dm;
@@ -16,12 +17,12 @@ message EnsureQuestsReq {
 
   // ToEnsure is a list of quest descriptors. DM will ensure that the
   // corresponding Quests exist. If they don't, they'll be created.
-  repeated dm.QuestDescriptor to_ensure = 2;
+  repeated dm.Quest.Descriptor to_ensure = 2;
 }
 
 message EnsureQuestsRsp {
   // QuestIds is a list that matches 1:1 with the QuestDescriptors listed in the
   // request. These IDs are the canonical ids of the Quests.
-  repeated dm.QuestID quest_ids = 1;
+  repeated dm.Quest.ID quest_ids = 1;
 }
 

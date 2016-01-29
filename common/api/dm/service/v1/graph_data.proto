@@ -6,9 +6,113 @@ syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
 
-import "types.proto";
-
 package dm;
+
+message Quest {
+  message ID {
+    string id = 1;
+  }
+  ID id = 1;
+
+  message Descriptor {
+    string distributor_config_name = 1;
+    string json_payload = 2;
+  }
+
+  message Data {
+    google.protobuf.Timestamp created = 1;
+    Quest.Descriptor descriptor = 2;
+  }
+  Data data = 2;
+
+  // key is the `id` field of the Attempt.ID
+  map<uint64, Attempt> attempts = 3;
+}
+
+message Attempt {
+  message ID {
+    string quest = 1;
+    uint64 id = 2;
+  }
+  ID id = 1;
+
+  enum State {
+    Unknown = 0;
+    NeedsExecution = 1;
+    Executing = 2;
+    AddingDeps = 3;
+    Blocked = 4;
+    Finished = 5;
+  }
+
+  message Data {
+    google.protobuf.Timestamp created = 1;
+
+    message NeedsExecution {
+      google.protobuf.Timestamp pending = 1;
+    }
+
+    message Executing {
+      uint64 cur_execution_id = 1;
+    }
+
+    message AddingDeps {
+      uint64 num_adding = 1;
+      uint64 num_waiting = 2;
+    }
+
+    message Blocked {
+      uint64 num_waiting = 1;
+    }
+
+    message Finished {
+      google.protobuf.Timestamp expiration = 1;
+      bytes json_result = 2;
+    }
+
+    oneof attempt_type {
+      NeedsExecution needs_execution = 2;
+      Executing executing = 3;
+      AddingDeps adding_deps = 4;
+      Blocked blocked = 5;
+      Finished finished = 6;
+    }
+  }
+  Data data = 2;
+
+  // key is the `id` field of the Execution.ID
+  map<uint64, Execution> executions = 3;
+
+  repeated Attempt.ID fwd_deps = 4;
+  repeated Attempt.ID back_deps = 5;
+}
+
+message Execution {
+  message ID {
+    string quest = 1;
+    uint64 attempt = 2;
+    uint64 id = 3;
+  }
+  ID id = 1;
+
+  enum State {
+    Unknown = 0;
+
+    Scheduled = 1;
+    Running = 2;
+
+    Rejected = 3;
+    Finished = 4;
+    Crashed = 5;
+  }
+
+  message Data {
+    google.protobuf.Timestamp created = 1;
+    string distributor_token = 2;
+    string distributor_info_url = 3;
+  }
+  Data data = 2;
+}
 
 // GraphData defines all of the DM graph data that may be returned from DM.
 //
@@ -20,75 +124,6 @@ package dm;
 // cache of data that exists in DM, where that data is discovered across
 // multiple RPCs.
 message GraphData {
-  message Quest {
-    dm.QuestID id = 1;
-
-    message Data {
-      google.protobuf.Timestamp created = 1;
-      dm.QuestDescriptor descriptor = 2;
-    }
-    Data data = 2;
-
-    // key is the `id` field of the AttemptID
-    map<uint64, Attempt> attempts = 3;
-  }
-
-  message Attempt {
-    dm.AttemptID id = 1;
-
-    message Data {
-      google.protobuf.Timestamp created = 1;
-
-      message NeedsExecution {
-        google.protobuf.Timestamp pending = 1;
-      }
-
-      message Executing {
-        uint64 cur_execution_id = 1;
-      }
-
-      message AddingDeps {
-        uint64 num_adding = 1;
-        uint64 num_waiting = 2;
-      }
-
-      message Blocked {
-        uint64 num_waiting = 1;
-      }
-
-      message Finished {
-        google.protobuf.Timestamp expiration = 1;
-        bytes json_result = 2;
-      }
-
-      oneof attempt_type {
-        NeedsExecution needs_execution = 2;
-        Executing executing = 3;
-        AddingDeps adding_deps = 4;
-        Blocked blocked = 5;
-        Finished finished = 6;
-      }
-    }
-    Data data = 2;
-
-    // key is the `id` field of the ExecutionID
-    map<uint64,Execution> executions = 3;
-
-    repeated dm.AttemptID fwd_deps = 4;
-    repeated dm.AttemptID back_deps = 5;
-  }
-
-  message Execution {
-    dm.ExecutionID id = 1;
-
-    message Data {
-      google.protobuf.Timestamp created = 1;
-      string distributor_token = 2;
-      string distributor_info_url = 3;
-    }
-    Data data = 2;
-  }
-
   // Quests is the main entry point for all the graph data.
   // key is the `id` field of the QuestID
   map<string, Quest> quests = 1;

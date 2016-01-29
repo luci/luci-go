@@ -4,6 +4,7 @@
 
 syntax = "proto3";
 
+import "graph_data.proto";
 import "types.proto";
 
 package dm;
@@ -18,7 +19,7 @@ message AddDepsReq {
   dm.ExecutionAuth auth = 1;
 
   // To is the list of other attempts to depend on.
-  repeated dm.AttemptID to = 2;
+  repeated dm.Attempt.ID to = 2;
 }
 
 message AddDepsRsp {

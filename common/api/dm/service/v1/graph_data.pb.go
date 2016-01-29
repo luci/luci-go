@@ -14,6 +14,509 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+type Attempt_State int32
+
+const (
+	Attempt_Unknown        Attempt_State = 0
+	Attempt_NeedsExecution Attempt_State = 1
+	Attempt_Executing      Attempt_State = 2
+	Attempt_AddingDeps     Attempt_State = 3
+	Attempt_Blocked        Attempt_State = 4
+	Attempt_Finished       Attempt_State = 5
+)
+
+var Attempt_State_name = map[int32]string{
+	0: "Unknown",
+	1: "NeedsExecution",
+	2: "Executing",
+	3: "AddingDeps",
+	4: "Blocked",
+	5: "Finished",
+}
+var Attempt_State_value = map[string]int32{
+	"Unknown":        0,
+	"NeedsExecution": 1,
+	"Executing":      2,
+	"AddingDeps":     3,
+	"Blocked":        4,
+	"Finished":       5,
+}
+
+func (x Attempt_State) String() string {
+	return proto.EnumName(Attempt_State_name, int32(x))
+}
+func (Attempt_State) EnumDescriptor() ([]byte, []int) { return fileDescriptor5, []int{1, 0} }
+
+type Execution_State int32
+
+const (
+	Execution_Unknown   Execution_State = 0
+	Execution_Scheduled Execution_State = 1
+	Execution_Running   Execution_State = 2
+	Execution_Rejected  Execution_State = 3
+	Execution_Finished  Execution_State = 4
+	Execution_Crashed   Execution_State = 5
+)
+
+var Execution_State_name = map[int32]string{
+	0: "Unknown",
+	1: "Scheduled",
+	2: "Running",
+	3: "Rejected",
+	4: "Finished",
+	5: "Crashed",
+}
+var Execution_State_value = map[string]int32{
+	"Unknown":   0,
+	"Scheduled": 1,
+	"Running":   2,
+	"Rejected":  3,
+	"Finished":  4,
+	"Crashed":   5,
+}
+
+func (x Execution_State) String() string {
+	return proto.EnumName(Execution_State_name, int32(x))
+}
+func (Execution_State) EnumDescriptor() ([]byte, []int) { return fileDescriptor5, []int{2, 0} }
+
+type Quest struct {
+	Id   *Quest_ID   `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Data *Quest_Data `protobuf:"bytes,2,opt,name=data" json:"data,omitempty"`
+	// key is the `id` field of the Attempt.ID
+	Attempts map[uint64]*Attempt `protobuf:"bytes,3,rep,name=attempts" json:"attempts,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+}
+
+func (m *Quest) Reset()                    { *m = Quest{} }
+func (m *Quest) String() string            { return proto.CompactTextString(m) }
+func (*Quest) ProtoMessage()               {}
+func (*Quest) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0} }
+
+func (m *Quest) GetId() *Quest_ID {
+	if m != nil {
+		return m.Id
+	}
+	return nil
+}
+
+func (m *Quest) GetData() *Quest_Data {
+	if m != nil {
+		return m.Data
+	}
+	return nil
+}
+
+func (m *Quest) GetAttempts() map[uint64]*Attempt {
+	if m != nil {
+		return m.Attempts
+	}
+	return nil
+}
+
+type Quest_ID struct {
+	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+}
+
+func (m *Quest_ID) Reset()                    { *m = Quest_ID{} }
+func (m *Quest_ID) String() string            { return proto.CompactTextString(m) }
+func (*Quest_ID) ProtoMessage()               {}
+func (*Quest_ID) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0, 0} }
+
+type Quest_Descriptor struct {
+	DistributorConfigName string `protobuf:"bytes,1,opt,name=distributor_config_name" json:"distributor_config_name,omitempty"`
+	JsonPayload           string `protobuf:"bytes,2,opt,name=json_payload" json:"json_payload,omitempty"`
+}
+
+func (m *Quest_Descriptor) Reset()                    { *m = Quest_Descriptor{} }
+func (m *Quest_Descriptor) String() string            { return proto.CompactTextString(m) }
+func (*Quest_Descriptor) ProtoMessage()               {}
+func (*Quest_Descriptor) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0, 1} }
+
+type Quest_Data struct {
+	Created     *google_protobuf.Timestamp `protobuf:"bytes,1,opt,name=created" json:"created,omitempty"`
+	Descriptor_ *Quest_Descriptor          `protobuf:"bytes,2,opt,name=descriptor" json:"descriptor,omitempty"`
+}
+
+func (m *Quest_Data) Reset()                    { *m = Quest_Data{} }
+func (m *Quest_Data) String() string            { return proto.CompactTextString(m) }
+func (*Quest_Data) ProtoMessage()               {}
+func (*Quest_Data) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0, 2} }
+
+func (m *Quest_Data) GetCreated() *google_protobuf.Timestamp {
+	if m != nil {
+		return m.Created
+	}
+	return nil
+}
+
+func (m *Quest_Data) GetDescriptor_() *Quest_Descriptor {
+	if m != nil {
+		return m.Descriptor_
+	}
+	return nil
+}
+
+type Attempt struct {
+	Id   *Attempt_ID   `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Data *Attempt_Data `protobuf:"bytes,2,opt,name=data" json:"data,omitempty"`
+	// key is the `id` field of the Execution.ID
+	Executions map[uint64]*Execution `protobuf:"bytes,3,rep,name=executions" json:"executions,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	FwdDeps    []*Attempt_ID         `protobuf:"bytes,4,rep,name=fwd_deps" json:"fwd_deps,omitempty"`
+	BackDeps   []*Attempt_ID         `protobuf:"bytes,5,rep,name=back_deps" json:"back_deps,omitempty"`
+}
+
+func (m *Attempt) Reset()                    { *m = Attempt{} }
+func (m *Attempt) String() string            { return proto.CompactTextString(m) }
+func (*Attempt) ProtoMessage()               {}
+func (*Attempt) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{1} }
+
+func (m *Attempt) GetId() *Attempt_ID {
+	if m != nil {
+		return m.Id
+	}
+	return nil
+}
+
+func (m *Attempt) GetData() *Attempt_Data {
+	if m != nil {
+		return m.Data
+	}
+	return nil
+}
+
+func (m *Attempt) GetExecutions() map[uint64]*Execution {
+	if m != nil {
+		return m.Executions
+	}
+	return nil
+}
+
+func (m *Attempt) GetFwdDeps() []*Attempt_ID {
+	if m != nil {
+		return m.FwdDeps
+	}
+	return nil
+}
+
+func (m *Attempt) GetBackDeps() []*Attempt_ID {
+	if m != nil {
+		return m.BackDeps
+	}
+	return nil
+}
+
+type Attempt_ID struct {
+	Quest string `protobuf:"bytes,1,opt,name=quest" json:"quest,omitempty"`
+	Id    uint64 `protobuf:"varint,2,opt,name=id" json:"id,omitempty"`
+}
+
+func (m *Attempt_ID) Reset()                    { *m = Attempt_ID{} }
+func (m *Attempt_ID) String() string            { return proto.CompactTextString(m) }
+func (*Attempt_ID) ProtoMessage()               {}
+func (*Attempt_ID) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{1, 0} }
+
+type Attempt_Data struct {
+	Created *google_protobuf.Timestamp `protobuf:"bytes,1,opt,name=created" json:"created,omitempty"`
+	// Types that are valid to be assigned to AttemptType:
+	//	*Attempt_Data_NeedsExecution_
+	//	*Attempt_Data_Executing_
+	//	*Attempt_Data_AddingDeps_
+	//	*Attempt_Data_Blocked_
+	//	*Attempt_Data_Finished_
+	AttemptType isAttempt_Data_AttemptType `protobuf_oneof:"attempt_type"`
+}
+
+func (m *Attempt_Data) Reset()                    { *m = Attempt_Data{} }
+func (m *Attempt_Data) String() string            { return proto.CompactTextString(m) }
+func (*Attempt_Data) ProtoMessage()               {}
+func (*Attempt_Data) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{1, 1} }
+
+type isAttempt_Data_AttemptType interface {
+	isAttempt_Data_AttemptType()
+}
+
+type Attempt_Data_NeedsExecution_ struct {
+	NeedsExecution *Attempt_Data_NeedsExecution `protobuf:"bytes,2,opt,name=needs_execution,oneof"`
+}
+type Attempt_Data_Executing_ struct {
+	Executing *Attempt_Data_Executing `protobuf:"bytes,3,opt,name=executing,oneof"`
+}
+type Attempt_Data_AddingDeps_ struct {
+	AddingDeps *Attempt_Data_AddingDeps `protobuf:"bytes,4,opt,name=adding_deps,oneof"`
+}
+type Attempt_Data_Blocked_ struct {
+	Blocked *Attempt_Data_Blocked `protobuf:"bytes,5,opt,name=blocked,oneof"`
+}
+type Attempt_Data_Finished_ struct {
+	Finished *Attempt_Data_Finished `protobuf:"bytes,6,opt,name=finished,oneof"`
+}
+
+func (*Attempt_Data_NeedsExecution_) isAttempt_Data_AttemptType() {}
+func (*Attempt_Data_Executing_) isAttempt_Data_AttemptType()      {}
+func (*Attempt_Data_AddingDeps_) isAttempt_Data_AttemptType()     {}
+func (*Attempt_Data_Blocked_) isAttempt_Data_AttemptType()        {}
+func (*Attempt_Data_Finished_) isAttempt_Data_AttemptType()       {}
+
+func (m *Attempt_Data) GetAttemptType() isAttempt_Data_AttemptType {
+	if m != nil {
+		return m.AttemptType
+	}
+	return nil
+}
+
+func (m *Attempt_Data) GetCreated() *google_protobuf.Timestamp {
+	if m != nil {
+		return m.Created
+	}
+	return nil
+}
+
+func (m *Attempt_Data) GetNeedsExecution() *Attempt_Data_NeedsExecution {
+	if x, ok := m.GetAttemptType().(*Attempt_Data_NeedsExecution_); ok {
+		return x.NeedsExecution
+	}
+	return nil
+}
+
+func (m *Attempt_Data) GetExecuting() *Attempt_Data_Executing {
+	if x, ok := m.GetAttemptType().(*Attempt_Data_Executing_); ok {
+		return x.Executing
+	}
+	return nil
+}
+
+func (m *Attempt_Data) GetAddingDeps() *Attempt_Data_AddingDeps {
+	if x, ok := m.GetAttemptType().(*Attempt_Data_AddingDeps_); ok {
+		return x.AddingDeps
+	}
+	return nil
+}
+
+func (m *Attempt_Data) GetBlocked() *Attempt_Data_Blocked {
+	if x, ok := m.GetAttemptType().(*Attempt_Data_Blocked_); ok {
+		return x.Blocked
+	}
+	return nil
+}
+
+func (m *Attempt_Data) GetFinished() *Attempt_Data_Finished {
+	if x, ok := m.GetAttemptType().(*Attempt_Data_Finished_); ok {
+		return x.Finished
+	}
+	return nil
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*Attempt_Data) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), []interface{}) {
+	return _Attempt_Data_OneofMarshaler, _Attempt_Data_OneofUnmarshaler, []interface{}{
+		(*Attempt_Data_NeedsExecution_)(nil),
+		(*Attempt_Data_Executing_)(nil),
+		(*Attempt_Data_AddingDeps_)(nil),
+		(*Attempt_Data_Blocked_)(nil),
+		(*Attempt_Data_Finished_)(nil),
+	}
+}
+
+func _Attempt_Data_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*Attempt_Data)
+	// attempt_type
+	switch x := m.AttemptType.(type) {
+	case *Attempt_Data_NeedsExecution_:
+		b.EncodeVarint(2<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.NeedsExecution); err != nil {
+			return err
+		}
+	case *Attempt_Data_Executing_:
+		b.EncodeVarint(3<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Executing); err != nil {
+			return err
+		}
+	case *Attempt_Data_AddingDeps_:
+		b.EncodeVarint(4<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.AddingDeps); err != nil {
+			return err
+		}
+	case *Attempt_Data_Blocked_:
+		b.EncodeVarint(5<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Blocked); err != nil {
+			return err
+		}
+	case *Attempt_Data_Finished_:
+		b.EncodeVarint(6<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Finished); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("Attempt_Data.AttemptType has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _Attempt_Data_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*Attempt_Data)
+	switch tag {
+	case 2: // attempt_type.needs_execution
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(Attempt_Data_NeedsExecution)
+		err := b.DecodeMessage(msg)
+		m.AttemptType = &Attempt_Data_NeedsExecution_{msg}
+		return true, err
+	case 3: // attempt_type.executing
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(Attempt_Data_Executing)
+		err := b.DecodeMessage(msg)
+		m.AttemptType = &Attempt_Data_Executing_{msg}
+		return true, err
+	case 4: // attempt_type.adding_deps
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(Attempt_Data_AddingDeps)
+		err := b.DecodeMessage(msg)
+		m.AttemptType = &Attempt_Data_AddingDeps_{msg}
+		return true, err
+	case 5: // attempt_type.blocked
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(Attempt_Data_Blocked)
+		err := b.DecodeMessage(msg)
+		m.AttemptType = &Attempt_Data_Blocked_{msg}
+		return true, err
+	case 6: // attempt_type.finished
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(Attempt_Data_Finished)
+		err := b.DecodeMessage(msg)
+		m.AttemptType = &Attempt_Data_Finished_{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+type Attempt_Data_NeedsExecution struct {
+	Pending *google_protobuf.Timestamp `protobuf:"bytes,1,opt,name=pending" json:"pending,omitempty"`
+}
+
+func (m *Attempt_Data_NeedsExecution) Reset()         { *m = Attempt_Data_NeedsExecution{} }
+func (m *Attempt_Data_NeedsExecution) String() string { return proto.CompactTextString(m) }
+func (*Attempt_Data_NeedsExecution) ProtoMessage()    {}
+func (*Attempt_Data_NeedsExecution) Descriptor() ([]byte, []int) {
+	return fileDescriptor5, []int{1, 1, 0}
+}
+
+func (m *Attempt_Data_NeedsExecution) GetPending() *google_protobuf.Timestamp {
+	if m != nil {
+		return m.Pending
+	}
+	return nil
+}
+
+type Attempt_Data_Executing struct {
+	CurExecutionId uint64 `protobuf:"varint,1,opt,name=cur_execution_id" json:"cur_execution_id,omitempty"`
+}
+
+func (m *Attempt_Data_Executing) Reset()                    { *m = Attempt_Data_Executing{} }
+func (m *Attempt_Data_Executing) String() string            { return proto.CompactTextString(m) }
+func (*Attempt_Data_Executing) ProtoMessage()               {}
+func (*Attempt_Data_Executing) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{1, 1, 1} }
+
+type Attempt_Data_AddingDeps struct {
+	NumAdding  uint64 `protobuf:"varint,1,opt,name=num_adding" json:"num_adding,omitempty"`
+	NumWaiting uint64 `protobuf:"varint,2,opt,name=num_waiting" json:"num_waiting,omitempty"`
+}
+
+func (m *Attempt_Data_AddingDeps) Reset()                    { *m = Attempt_Data_AddingDeps{} }
+func (m *Attempt_Data_AddingDeps) String() string            { return proto.CompactTextString(m) }
+func (*Attempt_Data_AddingDeps) ProtoMessage()               {}
+func (*Attempt_Data_AddingDeps) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{1, 1, 2} }
+
+type Attempt_Data_Blocked struct {
+	NumWaiting uint64 `protobuf:"varint,1,opt,name=num_waiting" json:"num_waiting,omitempty"`
+}
+
+func (m *Attempt_Data_Blocked) Reset()                    { *m = Attempt_Data_Blocked{} }
+func (m *Attempt_Data_Blocked) String() string            { return proto.CompactTextString(m) }
+func (*Attempt_Data_Blocked) ProtoMessage()               {}
+func (*Attempt_Data_Blocked) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{1, 1, 3} }
+
+type Attempt_Data_Finished struct {
+	Expiration *google_protobuf.Timestamp `protobuf:"bytes,1,opt,name=expiration" json:"expiration,omitempty"`
+	JsonResult []byte                     `protobuf:"bytes,2,opt,name=json_result,proto3" json:"json_result,omitempty"`
+}
+
+func (m *Attempt_Data_Finished) Reset()                    { *m = Attempt_Data_Finished{} }
+func (m *Attempt_Data_Finished) String() string            { return proto.CompactTextString(m) }
+func (*Attempt_Data_Finished) ProtoMessage()               {}
+func (*Attempt_Data_Finished) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{1, 1, 4} }
+
+func (m *Attempt_Data_Finished) GetExpiration() *google_protobuf.Timestamp {
+	if m != nil {
+		return m.Expiration
+	}
+	return nil
+}
+
+type Execution struct {
+	Id   *Execution_ID   `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Data *Execution_Data `protobuf:"bytes,2,opt,name=data" json:"data,omitempty"`
+}
+
+func (m *Execution) Reset()                    { *m = Execution{} }
+func (m *Execution) String() string            { return proto.CompactTextString(m) }
+func (*Execution) ProtoMessage()               {}
+func (*Execution) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{2} }
+
+func (m *Execution) GetId() *Execution_ID {
+	if m != nil {
+		return m.Id
+	}
+	return nil
+}
+
+func (m *Execution) GetData() *Execution_Data {
+	if m != nil {
+		return m.Data
+	}
+	return nil
+}
+
+type Execution_ID struct {
+	Quest   string `protobuf:"bytes,1,opt,name=quest" json:"quest,omitempty"`
+	Attempt uint64 `protobuf:"varint,2,opt,name=attempt" json:"attempt,omitempty"`
+	Id      uint64 `protobuf:"varint,3,opt,name=id" json:"id,omitempty"`
+}
+
+func (m *Execution_ID) Reset()                    { *m = Execution_ID{} }
+func (m *Execution_ID) String() string            { return proto.CompactTextString(m) }
+func (*Execution_ID) ProtoMessage()               {}
+func (*Execution_ID) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{2, 0} }
+
+type Execution_Data struct {
+	Created            *google_protobuf.Timestamp `protobuf:"bytes,1,opt,name=created" json:"created,omitempty"`
+	DistributorToken   string                     `protobuf:"bytes,2,opt,name=distributor_token" json:"distributor_token,omitempty"`
+	DistributorInfoUrl string                     `protobuf:"bytes,3,opt,name=distributor_info_url" json:"distributor_info_url,omitempty"`
+}
+
+func (m *Execution_Data) Reset()                    { *m = Execution_Data{} }
+func (m *Execution_Data) String() string            { return proto.CompactTextString(m) }
+func (*Execution_Data) ProtoMessage()               {}
+func (*Execution_Data) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{2, 1} }
+
+func (m *Execution_Data) GetCreated() *google_protobuf.Timestamp {
+	if m != nil {
+		return m.Created
+	}
+	return nil
+}
+
 // GraphData defines all of the DM graph data that may be returned from DM.
 //
 // Currently only WalkGraph returns GraphData, but in the future other APIs will
@@ -26,7 +529,7 @@ var _ = math.Inf
 type GraphData struct {
 	// Quests is the main entry point for all the graph data.
 	// key is the `id` field of the QuestID
-	Quests map[string]*GraphData_Quest `protobuf:"bytes,1,rep,name=quests" json:"quests,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Quests map[string]*Quest `protobuf:"bytes,1,rep,name=quests" json:"quests,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// HadErrors is set to true if the data represented here is a partial view
 	// of the requested data due to internal errors. The request may be repeated
 	// or the client may chose to make smaller queries into the portions of the
@@ -46,478 +549,88 @@ type GraphData struct {
 func (m *GraphData) Reset()                    { *m = GraphData{} }
 func (m *GraphData) String() string            { return proto.CompactTextString(m) }
 func (*GraphData) ProtoMessage()               {}
-func (*GraphData) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0} }
+func (*GraphData) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{3} }
 
-func (m *GraphData) GetQuests() map[string]*GraphData_Quest {
+func (m *GraphData) GetQuests() map[string]*Quest {
 	if m != nil {
 		return m.Quests
 	}
 	return nil
 }
 
-type GraphData_Quest struct {
-	Id   *QuestID              `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Data *GraphData_Quest_Data `protobuf:"bytes,2,opt,name=data" json:"data,omitempty"`
-	// key is the `id` field of the AttemptID
-	Attempts map[uint64]*GraphData_Attempt `protobuf:"bytes,3,rep,name=attempts" json:"attempts,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-}
-
-func (m *GraphData_Quest) Reset()                    { *m = GraphData_Quest{} }
-func (m *GraphData_Quest) String() string            { return proto.CompactTextString(m) }
-func (*GraphData_Quest) ProtoMessage()               {}
-func (*GraphData_Quest) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0, 0} }
-
-func (m *GraphData_Quest) GetId() *QuestID {
-	if m != nil {
-		return m.Id
-	}
-	return nil
-}
-
-func (m *GraphData_Quest) GetData() *GraphData_Quest_Data {
-	if m != nil {
-		return m.Data
-	}
-	return nil
-}
-
-func (m *GraphData_Quest) GetAttempts() map[uint64]*GraphData_Attempt {
-	if m != nil {
-		return m.Attempts
-	}
-	return nil
-}
-
-type GraphData_Quest_Data struct {
-	Created     *google_protobuf.Timestamp `protobuf:"bytes,1,opt,name=created" json:"created,omitempty"`
-	Descriptor_ *QuestDescriptor           `protobuf:"bytes,2,opt,name=descriptor" json:"descriptor,omitempty"`
-}
-
-func (m *GraphData_Quest_Data) Reset()                    { *m = GraphData_Quest_Data{} }
-func (m *GraphData_Quest_Data) String() string            { return proto.CompactTextString(m) }
-func (*GraphData_Quest_Data) ProtoMessage()               {}
-func (*GraphData_Quest_Data) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0, 0, 0} }
-
-func (m *GraphData_Quest_Data) GetCreated() *google_protobuf.Timestamp {
-	if m != nil {
-		return m.Created
-	}
-	return nil
-}
-
-func (m *GraphData_Quest_Data) GetDescriptor_() *QuestDescriptor {
-	if m != nil {
-		return m.Descriptor_
-	}
-	return nil
-}
-
-type GraphData_Attempt struct {
-	Id   *AttemptID              `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Data *GraphData_Attempt_Data `protobuf:"bytes,2,opt,name=data" json:"data,omitempty"`
-	// key is the `id` field of the ExecutionID
-	Executions map[uint64]*GraphData_Execution `protobuf:"bytes,3,rep,name=executions" json:"executions,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	FwdDeps    []*AttemptID                    `protobuf:"bytes,4,rep,name=fwd_deps" json:"fwd_deps,omitempty"`
-	BackDeps   []*AttemptID                    `protobuf:"bytes,5,rep,name=back_deps" json:"back_deps,omitempty"`
-}
-
-func (m *GraphData_Attempt) Reset()                    { *m = GraphData_Attempt{} }
-func (m *GraphData_Attempt) String() string            { return proto.CompactTextString(m) }
-func (*GraphData_Attempt) ProtoMessage()               {}
-func (*GraphData_Attempt) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0, 1} }
-
-func (m *GraphData_Attempt) GetId() *AttemptID {
-	if m != nil {
-		return m.Id
-	}
-	return nil
-}
-
-func (m *GraphData_Attempt) GetData() *GraphData_Attempt_Data {
-	if m != nil {
-		return m.Data
-	}
-	return nil
-}
-
-func (m *GraphData_Attempt) GetExecutions() map[uint64]*GraphData_Execution {
-	if m != nil {
-		return m.Executions
-	}
-	return nil
-}
-
-func (m *GraphData_Attempt) GetFwdDeps() []*AttemptID {
-	if m != nil {
-		return m.FwdDeps
-	}
-	return nil
-}
-
-func (m *GraphData_Attempt) GetBackDeps() []*AttemptID {
-	if m != nil {
-		return m.BackDeps
-	}
-	return nil
-}
-
-type GraphData_Attempt_Data struct {
-	Created *google_protobuf.Timestamp `protobuf:"bytes,1,opt,name=created" json:"created,omitempty"`
-	// Types that are valid to be assigned to AttemptType:
-	//	*GraphData_Attempt_Data_NeedsExecution_
-	//	*GraphData_Attempt_Data_Executing_
-	//	*GraphData_Attempt_Data_AddingDeps_
-	//	*GraphData_Attempt_Data_Blocked_
-	//	*GraphData_Attempt_Data_Finished_
-	AttemptType isGraphData_Attempt_Data_AttemptType `protobuf_oneof:"attempt_type"`
-}
-
-func (m *GraphData_Attempt_Data) Reset()                    { *m = GraphData_Attempt_Data{} }
-func (m *GraphData_Attempt_Data) String() string            { return proto.CompactTextString(m) }
-func (*GraphData_Attempt_Data) ProtoMessage()               {}
-func (*GraphData_Attempt_Data) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0, 1, 0} }
-
-type isGraphData_Attempt_Data_AttemptType interface {
-	isGraphData_Attempt_Data_AttemptType()
-}
-
-type GraphData_Attempt_Data_NeedsExecution_ struct {
-	NeedsExecution *GraphData_Attempt_Data_NeedsExecution `protobuf:"bytes,2,opt,name=needs_execution,oneof"`
-}
-type GraphData_Attempt_Data_Executing_ struct {
-	Executing *GraphData_Attempt_Data_Executing `protobuf:"bytes,3,opt,name=executing,oneof"`
-}
-type GraphData_Attempt_Data_AddingDeps_ struct {
-	AddingDeps *GraphData_Attempt_Data_AddingDeps `protobuf:"bytes,4,opt,name=adding_deps,oneof"`
-}
-type GraphData_Attempt_Data_Blocked_ struct {
-	Blocked *GraphData_Attempt_Data_Blocked `protobuf:"bytes,5,opt,name=blocked,oneof"`
-}
-type GraphData_Attempt_Data_Finished_ struct {
-	Finished *GraphData_Attempt_Data_Finished `protobuf:"bytes,6,opt,name=finished,oneof"`
-}
-
-func (*GraphData_Attempt_Data_NeedsExecution_) isGraphData_Attempt_Data_AttemptType() {}
-func (*GraphData_Attempt_Data_Executing_) isGraphData_Attempt_Data_AttemptType()      {}
-func (*GraphData_Attempt_Data_AddingDeps_) isGraphData_Attempt_Data_AttemptType()     {}
-func (*GraphData_Attempt_Data_Blocked_) isGraphData_Attempt_Data_AttemptType()        {}
-func (*GraphData_Attempt_Data_Finished_) isGraphData_Attempt_Data_AttemptType()       {}
-
-func (m *GraphData_Attempt_Data) GetAttemptType() isGraphData_Attempt_Data_AttemptType {
-	if m != nil {
-		return m.AttemptType
-	}
-	return nil
-}
-
-func (m *GraphData_Attempt_Data) GetCreated() *google_protobuf.Timestamp {
-	if m != nil {
-		return m.Created
-	}
-	return nil
-}
-
-func (m *GraphData_Attempt_Data) GetNeedsExecution() *GraphData_Attempt_Data_NeedsExecution {
-	if x, ok := m.GetAttemptType().(*GraphData_Attempt_Data_NeedsExecution_); ok {
-		return x.NeedsExecution
-	}
-	return nil
-}
-
-func (m *GraphData_Attempt_Data) GetExecuting() *GraphData_Attempt_Data_Executing {
-	if x, ok := m.GetAttemptType().(*GraphData_Attempt_Data_Executing_); ok {
-		return x.Executing
-	}
-	return nil
-}
-
-func (m *GraphData_Attempt_Data) GetAddingDeps() *GraphData_Attempt_Data_AddingDeps {
-	if x, ok := m.GetAttemptType().(*GraphData_Attempt_Data_AddingDeps_); ok {
-		return x.AddingDeps
-	}
-	return nil
-}
-
-func (m *GraphData_Attempt_Data) GetBlocked() *GraphData_Attempt_Data_Blocked {
-	if x, ok := m.GetAttemptType().(*GraphData_Attempt_Data_Blocked_); ok {
-		return x.Blocked
-	}
-	return nil
-}
-
-func (m *GraphData_Attempt_Data) GetFinished() *GraphData_Attempt_Data_Finished {
-	if x, ok := m.GetAttemptType().(*GraphData_Attempt_Data_Finished_); ok {
-		return x.Finished
-	}
-	return nil
-}
-
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*GraphData_Attempt_Data) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), []interface{}) {
-	return _GraphData_Attempt_Data_OneofMarshaler, _GraphData_Attempt_Data_OneofUnmarshaler, []interface{}{
-		(*GraphData_Attempt_Data_NeedsExecution_)(nil),
-		(*GraphData_Attempt_Data_Executing_)(nil),
-		(*GraphData_Attempt_Data_AddingDeps_)(nil),
-		(*GraphData_Attempt_Data_Blocked_)(nil),
-		(*GraphData_Attempt_Data_Finished_)(nil),
-	}
-}
-
-func _GraphData_Attempt_Data_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*GraphData_Attempt_Data)
-	// attempt_type
-	switch x := m.AttemptType.(type) {
-	case *GraphData_Attempt_Data_NeedsExecution_:
-		b.EncodeVarint(2<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.NeedsExecution); err != nil {
-			return err
-		}
-	case *GraphData_Attempt_Data_Executing_:
-		b.EncodeVarint(3<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Executing); err != nil {
-			return err
-		}
-	case *GraphData_Attempt_Data_AddingDeps_:
-		b.EncodeVarint(4<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.AddingDeps); err != nil {
-			return err
-		}
-	case *GraphData_Attempt_Data_Blocked_:
-		b.EncodeVarint(5<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Blocked); err != nil {
-			return err
-		}
-	case *GraphData_Attempt_Data_Finished_:
-		b.EncodeVarint(6<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Finished); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("GraphData_Attempt_Data.AttemptType has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _GraphData_Attempt_Data_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*GraphData_Attempt_Data)
-	switch tag {
-	case 2: // attempt_type.needs_execution
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(GraphData_Attempt_Data_NeedsExecution)
-		err := b.DecodeMessage(msg)
-		m.AttemptType = &GraphData_Attempt_Data_NeedsExecution_{msg}
-		return true, err
-	case 3: // attempt_type.executing
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(GraphData_Attempt_Data_Executing)
-		err := b.DecodeMessage(msg)
-		m.AttemptType = &GraphData_Attempt_Data_Executing_{msg}
-		return true, err
-	case 4: // attempt_type.adding_deps
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(GraphData_Attempt_Data_AddingDeps)
-		err := b.DecodeMessage(msg)
-		m.AttemptType = &GraphData_Attempt_Data_AddingDeps_{msg}
-		return true, err
-	case 5: // attempt_type.blocked
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(GraphData_Attempt_Data_Blocked)
-		err := b.DecodeMessage(msg)
-		m.AttemptType = &GraphData_Attempt_Data_Blocked_{msg}
-		return true, err
-	case 6: // attempt_type.finished
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(GraphData_Attempt_Data_Finished)
-		err := b.DecodeMessage(msg)
-		m.AttemptType = &GraphData_Attempt_Data_Finished_{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-type GraphData_Attempt_Data_NeedsExecution struct {
-	Pending *google_protobuf.Timestamp `protobuf:"bytes,1,opt,name=pending" json:"pending,omitempty"`
-}
-
-func (m *GraphData_Attempt_Data_NeedsExecution) Reset()         { *m = GraphData_Attempt_Data_NeedsExecution{} }
-func (m *GraphData_Attempt_Data_NeedsExecution) String() string { return proto.CompactTextString(m) }
-func (*GraphData_Attempt_Data_NeedsExecution) ProtoMessage()    {}
-func (*GraphData_Attempt_Data_NeedsExecution) Descriptor() ([]byte, []int) {
-	return fileDescriptor5, []int{0, 1, 0, 0}
-}
-
-func (m *GraphData_Attempt_Data_NeedsExecution) GetPending() *google_protobuf.Timestamp {
-	if m != nil {
-		return m.Pending
-	}
-	return nil
-}
-
-type GraphData_Attempt_Data_Executing struct {
-	CurExecutionId uint64 `protobuf:"varint,1,opt,name=cur_execution_id" json:"cur_execution_id,omitempty"`
-}
-
-func (m *GraphData_Attempt_Data_Executing) Reset()         { *m = GraphData_Attempt_Data_Executing{} }
-func (m *GraphData_Attempt_Data_Executing) String() string { return proto.CompactTextString(m) }
-func (*GraphData_Attempt_Data_Executing) ProtoMessage()    {}
-func (*GraphData_Attempt_Data_Executing) Descriptor() ([]byte, []int) {
-	return fileDescriptor5, []int{0, 1, 0, 1}
-}
-
-type GraphData_Attempt_Data_AddingDeps struct {
-	NumAdding  uint64 `protobuf:"varint,1,opt,name=num_adding" json:"num_adding,omitempty"`
-	NumWaiting uint64 `protobuf:"varint,2,opt,name=num_waiting" json:"num_waiting,omitempty"`
-}
-
-func (m *GraphData_Attempt_Data_AddingDeps) Reset()         { *m = GraphData_Attempt_Data_AddingDeps{} }
-func (m *GraphData_Attempt_Data_AddingDeps) String() string { return proto.CompactTextString(m) }
-func (*GraphData_Attempt_Data_AddingDeps) ProtoMessage()    {}
-func (*GraphData_Attempt_Data_AddingDeps) Descriptor() ([]byte, []int) {
-	return fileDescriptor5, []int{0, 1, 0, 2}
-}
-
-type GraphData_Attempt_Data_Blocked struct {
-	NumWaiting uint64 `protobuf:"varint,1,opt,name=num_waiting" json:"num_waiting,omitempty"`
-}
-
-func (m *GraphData_Attempt_Data_Blocked) Reset()         { *m = GraphData_Attempt_Data_Blocked{} }
-func (m *GraphData_Attempt_Data_Blocked) String() string { return proto.CompactTextString(m) }
-func (*GraphData_Attempt_Data_Blocked) ProtoMessage()    {}
-func (*GraphData_Attempt_Data_Blocked) Descriptor() ([]byte, []int) {
-	return fileDescriptor5, []int{0, 1, 0, 3}
-}
-
-type GraphData_Attempt_Data_Finished struct {
-	Expiration *google_protobuf.Timestamp `protobuf:"bytes,1,opt,name=expiration" json:"expiration,omitempty"`
-	JsonResult []byte                     `protobuf:"bytes,2,opt,name=json_result,proto3" json:"json_result,omitempty"`
-}
-
-func (m *GraphData_Attempt_Data_Finished) Reset()         { *m = GraphData_Attempt_Data_Finished{} }
-func (m *GraphData_Attempt_Data_Finished) String() string { return proto.CompactTextString(m) }
-func (*GraphData_Attempt_Data_Finished) ProtoMessage()    {}
-func (*GraphData_Attempt_Data_Finished) Descriptor() ([]byte, []int) {
-	return fileDescriptor5, []int{0, 1, 0, 4}
-}
-
-func (m *GraphData_Attempt_Data_Finished) GetExpiration() *google_protobuf.Timestamp {
-	if m != nil {
-		return m.Expiration
-	}
-	return nil
-}
-
-type GraphData_Execution struct {
-	Id   *ExecutionID              `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Data *GraphData_Execution_Data `protobuf:"bytes,2,opt,name=data" json:"data,omitempty"`
-}
-
-func (m *GraphData_Execution) Reset()                    { *m = GraphData_Execution{} }
-func (m *GraphData_Execution) String() string            { return proto.CompactTextString(m) }
-func (*GraphData_Execution) ProtoMessage()               {}
-func (*GraphData_Execution) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0, 2} }
-
-func (m *GraphData_Execution) GetId() *ExecutionID {
-	if m != nil {
-		return m.Id
-	}
-	return nil
-}
-
-func (m *GraphData_Execution) GetData() *GraphData_Execution_Data {
-	if m != nil {
-		return m.Data
-	}
-	return nil
-}
-
-type GraphData_Execution_Data struct {
-	Created            *google_protobuf.Timestamp `protobuf:"bytes,1,opt,name=created" json:"created,omitempty"`
-	DistributorToken   string                     `protobuf:"bytes,2,opt,name=distributor_token" json:"distributor_token,omitempty"`
-	DistributorInfoUrl string                     `protobuf:"bytes,3,opt,name=distributor_info_url" json:"distributor_info_url,omitempty"`
-}
-
-func (m *GraphData_Execution_Data) Reset()                    { *m = GraphData_Execution_Data{} }
-func (m *GraphData_Execution_Data) String() string            { return proto.CompactTextString(m) }
-func (*GraphData_Execution_Data) ProtoMessage()               {}
-func (*GraphData_Execution_Data) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0, 2, 0} }
-
-func (m *GraphData_Execution_Data) GetCreated() *google_protobuf.Timestamp {
-	if m != nil {
-		return m.Created
-	}
-	return nil
-}
-
 func init() {
+	proto.RegisterType((*Quest)(nil), "dm.Quest")
+	proto.RegisterType((*Quest_ID)(nil), "dm.Quest.ID")
+	proto.RegisterType((*Quest_Descriptor)(nil), "dm.Quest.Descriptor")
+	proto.RegisterType((*Quest_Data)(nil), "dm.Quest.Data")
+	proto.RegisterType((*Attempt)(nil), "dm.Attempt")
+	proto.RegisterType((*Attempt_ID)(nil), "dm.Attempt.ID")
+	proto.RegisterType((*Attempt_Data)(nil), "dm.Attempt.Data")
+	proto.RegisterType((*Attempt_Data_NeedsExecution)(nil), "dm.Attempt.Data.NeedsExecution")
+	proto.RegisterType((*Attempt_Data_Executing)(nil), "dm.Attempt.Data.Executing")
+	proto.RegisterType((*Attempt_Data_AddingDeps)(nil), "dm.Attempt.Data.AddingDeps")
+	proto.RegisterType((*Attempt_Data_Blocked)(nil), "dm.Attempt.Data.Blocked")
+	proto.RegisterType((*Attempt_Data_Finished)(nil), "dm.Attempt.Data.Finished")
+	proto.RegisterType((*Execution)(nil), "dm.Execution")
+	proto.RegisterType((*Execution_ID)(nil), "dm.Execution.ID")
+	proto.RegisterType((*Execution_Data)(nil), "dm.Execution.Data")
 	proto.RegisterType((*GraphData)(nil), "dm.GraphData")
-	proto.RegisterType((*GraphData_Quest)(nil), "dm.GraphData.Quest")
-	proto.RegisterType((*GraphData_Quest_Data)(nil), "dm.GraphData.Quest.Data")
-	proto.RegisterType((*GraphData_Attempt)(nil), "dm.GraphData.Attempt")
-	proto.RegisterType((*GraphData_Attempt_Data)(nil), "dm.GraphData.Attempt.Data")
-	proto.RegisterType((*GraphData_Attempt_Data_NeedsExecution)(nil), "dm.GraphData.Attempt.Data.NeedsExecution")
-	proto.RegisterType((*GraphData_Attempt_Data_Executing)(nil), "dm.GraphData.Attempt.Data.Executing")
-	proto.RegisterType((*GraphData_Attempt_Data_AddingDeps)(nil), "dm.GraphData.Attempt.Data.AddingDeps")
-	proto.RegisterType((*GraphData_Attempt_Data_Blocked)(nil), "dm.GraphData.Attempt.Data.Blocked")
-	proto.RegisterType((*GraphData_Attempt_Data_Finished)(nil), "dm.GraphData.Attempt.Data.Finished")
-	proto.RegisterType((*GraphData_Execution)(nil), "dm.GraphData.Execution")
-	proto.RegisterType((*GraphData_Execution_Data)(nil), "dm.GraphData.Execution.Data")
+	proto.RegisterEnum("dm.Attempt_State", Attempt_State_name, Attempt_State_value)
+	proto.RegisterEnum("dm.Execution_State", Execution_State_name, Execution_State_value)
 }
 
 var fileDescriptor5 = []byte{
-	// 688 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x9c, 0x54, 0x4b, 0x4f, 0x14, 0x4d,
-	0x14, 0x65, 0x5e, 0xcc, 0xf4, 0x6d, 0x5e, 0x5f, 0xf1, 0x19, 0x86, 0x92, 0x08, 0x22, 0x20, 0x68,
-	0xd2, 0x24, 0x10, 0xe2, 0x23, 0xba, 0x90, 0x0c, 0x88, 0x2e, 0x34, 0x26, 0x2e, 0x4d, 0x3a, 0x35,
-	0x5d, 0xc5, 0xd0, 0x4e, 0xbf, 0xac, 0xae, 0x16, 0xd9, 0xf9, 0x3f, 0x5c, 0xba, 0xf2, 0x6f, 0xf8,
-	0xcb, 0xac, 0xaa, 0xae, 0x6e, 0xa6, 0x49, 0x03, 0x09, 0xbb, 0xe9, 0xba, 0xe7, 0xdc, 0x3a, 0xe7,
-	0xcc, 0xbd, 0x05, 0x0b, 0x23, 0x4e, 0x92, 0x33, 0x97, 0x12, 0x41, 0x9c, 0x84, 0xc7, 0x22, 0x46,
-	0x4d, 0x1a, 0xe2, 0xd5, 0x51, 0x1c, 0x8f, 0x02, 0xb6, 0xab, 0x4f, 0x86, 0xd9, 0xe9, 0xae, 0xf0,
-	0x43, 0x96, 0x0a, 0x12, 0x26, 0x39, 0x08, 0xdb, 0xe2, 0x22, 0x61, 0x69, 0xfe, 0xb1, 0xfe, 0x67,
-	0x06, 0xac, 0xb7, 0xaa, 0xcd, 0x40, 0x76, 0x41, 0x3b, 0x30, 0xfd, 0x2d, 0x93, 0xe0, 0xb4, 0xdf,
-	0x58, 0x6b, 0x6d, 0xdb, 0x7b, 0xcb, 0x0e, 0x0d, 0x9d, 0xb2, 0xec, 0x7c, 0xd2, 0xb5, 0xa3, 0x48,
-	0xf0, 0x0b, 0x84, 0x00, 0xce, 0x08, 0x75, 0x19, 0xe7, 0x31, 0x4f, 0xfb, 0xcd, 0xb5, 0xc6, 0x76,
-	0x0f, 0x2d, 0x40, 0x4f, 0x9d, 0x85, 0x31, 0x67, 0xfd, 0x96, 0x3a, 0xc1, 0xbf, 0x9b, 0xd0, 0xd1,
-	0x2c, 0xb4, 0x04, 0x4d, 0x9f, 0xca, 0xb6, 0x0d, 0xd9, 0xd6, 0x56, 0x6d, 0xf5, 0xf1, 0xbb, 0x01,
-	0xda, 0x82, 0xb6, 0x72, 0xa0, 0x5b, 0xd8, 0x7b, 0xfd, 0x9a, 0x1b, 0x1d, 0xad, 0x6d, 0x1f, 0x7a,
-	0x44, 0x08, 0x16, 0x26, 0x52, 0x5d, 0x4b, 0xab, 0x7b, 0x58, 0x87, 0x7d, 0x63, 0x30, 0x5a, 0x25,
-	0xfe, 0x02, 0x6d, 0x4d, 0x7e, 0x0a, 0x5d, 0x8f, 0x33, 0x22, 0x58, 0x21, 0x01, 0x3b, 0x79, 0x4c,
-	0x4e, 0x11, 0x93, 0xf3, 0xb9, 0x88, 0x09, 0x3d, 0x06, 0xa0, 0x2c, 0xf5, 0xb8, 0x9f, 0x88, 0x98,
-	0x1b, 0x5d, 0x8b, 0xa5, 0xe4, 0x41, 0x59, 0xc2, 0xc7, 0x30, 0x5b, 0xb9, 0x0e, 0xd9, 0xd0, 0x1a,
-	0xb3, 0x0b, 0x7d, 0x45, 0x1b, 0x6d, 0x40, 0xe7, 0x3b, 0x09, 0x32, 0x66, 0x3a, 0xdc, 0xab, 0xaa,
-	0x35, 0xc4, 0x97, 0xcd, 0xe7, 0x0d, 0xfc, 0xab, 0x0b, 0x5d, 0xf3, 0x8d, 0x96, 0x27, 0x72, 0x9a,
-	0x55, 0x14, 0x53, 0x90, 0x49, 0x6d, 0x57, 0x92, 0xc2, 0xb5, 0xfd, 0xf2, 0xac, 0x5e, 0x00, 0xb0,
-	0x1f, 0xcc, 0xcb, 0x84, 0x1f, 0x47, 0x45, 0x5a, 0x9b, 0xf5, 0xf8, 0xa3, 0x12, 0x97, 0x5b, 0x58,
-	0x85, 0xde, 0xe9, 0x39, 0x75, 0x29, 0x4b, 0xd2, 0x7e, 0x5b, 0x13, 0xaf, 0xa8, 0x58, 0x03, 0x6b,
-	0x48, 0xbc, 0x71, 0x8e, 0xe8, 0xd4, 0x20, 0xf0, 0xcf, 0xce, 0x5d, 0x52, 0x1f, 0xc0, 0x7c, 0xc4,
-	0x18, 0x4d, 0xdd, 0x52, 0xb9, 0x31, 0xba, 0x73, 0xbd, 0x51, 0xe7, 0x83, 0x62, 0x94, 0x16, 0x4e,
-	0xa6, 0xa4, 0x73, 0xcb, 0xf0, 0xa3, 0x91, 0x9e, 0x41, 0x7b, 0x6f, 0xe3, 0x06, 0xfe, 0x51, 0x81,
-	0x95, 0xd4, 0x57, 0x60, 0x13, 0x4a, 0xe5, 0xef, 0xc2, 0x7c, 0xe3, 0xfa, 0xd4, 0xf2, 0x0f, 0x8d,
-	0x1e, 0x48, 0xb0, 0x64, 0x1f, 0x40, 0x77, 0x18, 0xc4, 0xde, 0x58, 0x7a, 0xed, 0x68, 0xe6, 0xfa,
-	0x0d, 0xcc, 0xc3, 0x1c, 0x29, 0x69, 0xcf, 0x64, 0xdc, 0x7e, 0xe4, 0xa7, 0x67, 0x92, 0x37, 0xad,
-	0x79, 0x8f, 0x6e, 0xe0, 0x1d, 0x1b, 0xe8, 0xc9, 0x14, 0x7e, 0x0d, 0x73, 0x55, 0xf3, 0x2a, 0xed,
-	0x84, 0x45, 0x4a, 0xd2, 0xed, 0x69, 0xe3, 0x4d, 0xb0, 0x4a, 0xef, 0xa8, 0x0f, 0x0b, 0x5e, 0xc6,
-	0x2f, 0x83, 0x77, 0xcd, 0x04, 0xb6, 0xf1, 0x01, 0xc0, 0xa5, 0x4b, 0xb5, 0xf3, 0x51, 0x16, 0xba,
-	0x79, 0x4a, 0x66, 0xca, 0x17, 0xc1, 0x56, 0x67, 0xe7, 0xc4, 0xd7, 0x91, 0x37, 0x35, 0xed, 0x01,
-	0x74, 0x8d, 0xc5, 0xab, 0xf5, 0xbc, 0xed, 0x47, 0xe8, 0x15, 0x56, 0x90, 0xa3, 0x66, 0x35, 0xf1,
-	0x39, 0xd1, 0x7f, 0xf9, 0xed, 0x73, 0x22, 0x1b, 0x7e, 0x4d, 0xa5, 0x46, 0xce, 0xd2, 0x2c, 0x10,
-	0xfa, 0xc2, 0x99, 0xc3, 0x39, 0x98, 0x31, 0x8f, 0x83, 0xab, 0x5e, 0x37, 0xfc, 0x1e, 0xe6, 0xaf,
-	0x0e, 0x76, 0x65, 0x37, 0xb7, 0xaa, 0xbb, 0xb9, 0x54, 0xcd, 0xbc, 0xa4, 0xea, 0xed, 0xfc, 0xdb,
-	0x28, 0xb3, 0x92, 0x29, 0xdf, 0x9f, 0xd8, 0xcf, 0x79, 0x45, 0x2b, 0x4b, 0x72, 0x37, 0x9e, 0x54,
-	0x36, 0x74, 0xe5, 0x9a, 0xae, 0xfa, 0xbf, 0xc4, 0xc1, 0x5d, 0x96, 0x64, 0x19, 0xfe, 0xa3, 0x7e,
-	0x2a, 0xb8, 0x3f, 0xcc, 0xe4, 0x03, 0xe4, 0x8a, 0x78, 0xcc, 0xf2, 0x35, 0xb1, 0xd0, 0x0a, 0xfc,
-	0x3f, 0x59, 0xf2, 0xa3, 0xd3, 0xd8, 0xcd, 0x78, 0xa0, 0x97, 0xc0, 0xc2, 0x87, 0x60, 0x4f, 0xbe,
-	0xde, 0x13, 0x61, 0x58, 0x68, 0xbd, 0x1a, 0xc6, 0x62, 0xcd, 0xb3, 0xaa, 0x82, 0x18, 0x4e, 0x6b,
-	0x41, 0xfb, 0xff, 0x02, 0x00, 0x00, 0xff, 0xff, 0x2c, 0x10, 0xde, 0xee, 0x78, 0x06, 0x00, 0x00,
+	// 827 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x9c, 0x95, 0x51, 0x6f, 0xe3, 0x44,
+	0x10, 0xc7, 0x1b, 0xc7, 0x69, 0xe2, 0x49, 0x9a, 0x1a, 0x53, 0xe9, 0x72, 0xa6, 0xba, 0x84, 0x48,
+	0x48, 0x87, 0x10, 0x2e, 0x3a, 0x84, 0x74, 0x3a, 0x81, 0xc4, 0x5d, 0x53, 0x28, 0x2f, 0x20, 0x5a,
+	0x78, 0xe0, 0x01, 0x59, 0x1b, 0x7b, 0x93, 0xba, 0xb1, 0xd7, 0x66, 0xbd, 0xa6, 0xe4, 0x8b, 0xf0,
+	0x91, 0x78, 0xe4, 0x85, 0x77, 0x3e, 0xcb, 0xcd, 0xae, 0xd7, 0x8e, 0x9d, 0x56, 0xaa, 0xd4, 0xb7,
+	0x76, 0xe7, 0x3f, 0x3b, 0xfb, 0xff, 0xcd, 0x8c, 0x03, 0xf6, 0x9a, 0x93, 0xec, 0xc6, 0x0f, 0x89,
+	0x20, 0x5e, 0xc6, 0x53, 0x91, 0x3a, 0x46, 0x98, 0xb8, 0xd3, 0x75, 0x9a, 0xae, 0x63, 0x7a, 0xa6,
+	0x4e, 0x96, 0xc5, 0xea, 0x4c, 0x44, 0x09, 0xcd, 0x05, 0x49, 0xb2, 0x52, 0x34, 0xff, 0xdf, 0x80,
+	0xde, 0xcf, 0x05, 0x1e, 0x39, 0x13, 0x30, 0xa2, 0x70, 0xd2, 0x99, 0x75, 0x5e, 0x0e, 0x5f, 0x8d,
+	0xbc, 0x30, 0xf1, 0xd4, 0xb1, 0xf7, 0xc3, 0xc2, 0x39, 0x05, 0x53, 0x5e, 0x3b, 0x31, 0x54, 0x6c,
+	0xbc, 0x8b, 0x2d, 0xf0, 0xd4, 0xf9, 0x14, 0x06, 0x44, 0x08, 0x9a, 0x64, 0x22, 0x9f, 0x74, 0x67,
+	0x5d, 0x54, 0x3c, 0xdb, 0x29, 0xde, 0xea, 0xc8, 0x05, 0x13, 0x7c, 0xeb, 0xda, 0x60, 0xe0, 0x75,
+	0x50, 0x17, 0xb2, 0xdc, 0x73, 0x80, 0x05, 0xcd, 0x03, 0x1e, 0x65, 0x22, 0xe5, 0xce, 0x14, 0x9e,
+	0x85, 0x51, 0x2e, 0x78, 0xb4, 0x2c, 0xf0, 0x5f, 0x3f, 0x48, 0xd9, 0x2a, 0x5a, 0xfb, 0x8c, 0x24,
+	0xb4, 0x94, 0x3b, 0x27, 0x30, 0xba, 0xcd, 0x53, 0xe6, 0x67, 0x64, 0x1b, 0xa7, 0x24, 0x54, 0x2f,
+	0xb2, 0xdc, 0xdf, 0xc1, 0x54, 0x2f, 0xf9, 0x0c, 0xfa, 0x01, 0xa7, 0x44, 0xd0, 0xca, 0x86, 0xeb,
+	0x95, 0xf6, 0xbd, 0xca, 0xbe, 0xf7, 0x4b, 0x65, 0xdf, 0x79, 0x09, 0x10, 0xd6, 0x95, 0xb5, 0xb5,
+	0x93, 0x86, 0xb5, 0x3a, 0xe6, 0x7e, 0x0d, 0x47, 0x2d, 0x1b, 0xce, 0x10, 0xba, 0x1b, 0xba, 0x55,
+	0x35, 0x4c, 0xc7, 0x85, 0xde, 0x9f, 0x24, 0x2e, 0xa8, 0xbe, 0x62, 0x28, 0xaf, 0xd0, 0xf2, 0x37,
+	0xc6, 0xeb, 0xce, 0xfc, 0xbf, 0x3e, 0xf4, 0xf5, 0xff, 0xa8, 0xdd, 0x21, 0x1e, 0x37, 0x84, 0x12,
+	0xf2, 0x8b, 0x16, 0x64, 0xbb, 0x19, 0x55, 0xe6, 0xce, 0x00, 0xe8, 0x5f, 0x34, 0x28, 0x44, 0x94,
+	0xb2, 0x0a, 0xf4, 0x47, 0x4d, 0xd5, 0x45, 0x1d, 0x2d, 0x5f, 0x39, 0x83, 0xc1, 0xea, 0x2e, 0xf4,
+	0x43, 0x9a, 0xe5, 0x13, 0x53, 0xc9, 0xf7, 0x4b, 0x7e, 0x0c, 0xd6, 0x92, 0x04, 0x9b, 0x52, 0xd2,
+	0x7b, 0x48, 0xe2, 0x4e, 0x55, 0xc7, 0x8e, 0xa0, 0xf7, 0x87, 0xa4, 0xa2, 0xbb, 0x50, 0x36, 0x50,
+	0x3e, 0xd4, 0x74, 0xff, 0x35, 0x9f, 0x02, 0xff, 0x0d, 0x1c, 0x33, 0x4a, 0xc3, 0xdc, 0xaf, 0x2d,
+	0x69, 0xdf, 0xd3, 0x7d, 0xdf, 0xde, 0x8f, 0x52, 0x57, 0x7b, 0xbb, 0x3c, 0x40, 0x10, 0x96, 0xce,
+	0x62, 0x6b, 0xe4, 0x50, 0x96, 0xda, 0xcf, 0xba, 0xa8, 0x14, 0x98, 0xf0, 0x0a, 0x86, 0x24, 0x0c,
+	0xf1, 0xef, 0x8a, 0x45, 0x67, 0x1f, 0x9d, 0x4a, 0x79, 0xab, 0x34, 0x0b, 0x94, 0x60, 0x0e, 0xba,
+	0x59, 0xc6, 0x69, 0xb0, 0x41, 0x37, 0x3d, 0xa5, 0x9f, 0xdc, 0xd3, 0xbf, 0x2b, 0xe3, 0x28, 0xfe,
+	0x1c, 0x49, 0x47, 0x2c, 0xca, 0x6f, 0x50, 0x7d, 0xa8, 0xd4, 0xcf, 0xef, 0xa9, 0xbf, 0xd3, 0x82,
+	0xcb, 0x03, 0xf7, 0x1b, 0x18, 0xb7, 0x4d, 0xc9, 0x6a, 0x19, 0x65, 0xb2, 0xfc, 0xe3, 0xec, 0xdc,
+	0x4f, 0xc0, 0xaa, 0xdd, 0xe1, 0xd2, 0xda, 0x41, 0xc1, 0x77, 0x18, 0x7d, 0x3d, 0x5f, 0xa6, 0xfb,
+	0x15, 0xc0, 0xce, 0x91, 0x83, 0x3d, 0x63, 0x45, 0xe2, 0x97, 0x1c, 0xf4, 0xe4, 0x7e, 0x08, 0x43,
+	0x79, 0x76, 0x47, 0x22, 0x85, 0xb2, 0xec, 0xe7, 0x0b, 0xe8, 0x6b, 0x63, 0xfb, 0xf1, 0xf2, 0xda,
+	0x9f, 0x60, 0x50, 0x59, 0x71, 0x3c, 0x39, 0x92, 0x59, 0xc4, 0x89, 0x6a, 0xe0, 0xe3, 0x5d, 0xc7,
+	0x0b, 0xd5, 0xf6, 0x72, 0x9a, 0x17, 0xb1, 0x50, 0x05, 0x47, 0xef, 0xc6, 0x30, 0xd2, 0x9f, 0x0f,
+	0x5f, 0x6c, 0x33, 0xea, 0x7e, 0x0b, 0xc7, 0xfb, 0x93, 0xdc, 0xda, 0xb7, 0xd3, 0xf6, 0xbe, 0x1d,
+	0x49, 0xd2, 0x75, 0x82, 0xda, 0xb8, 0x25, 0xf4, 0xae, 0x05, 0x0e, 0x22, 0xe6, 0xf5, 0x7f, 0x65,
+	0x1b, 0x96, 0xde, 0x31, 0xfb, 0x00, 0x09, 0xec, 0x51, 0xb7, 0x3b, 0x38, 0xd7, 0x3b, 0x94, 0xb6,
+	0xe1, 0x8c, 0x9b, 0xc8, 0xec, 0xae, 0xcc, 0xd7, 0x2c, 0x6c, 0xd3, 0x19, 0xed, 0x8c, 0xdb, 0xbd,
+	0xf9, 0x3f, 0x46, 0x9d, 0x8a, 0xfd, 0x3b, 0x6d, 0xec, 0xb5, 0xdd, 0x7a, 0x90, 0x5c, 0xb3, 0x59,
+	0x6b, 0xb3, 0x9d, 0x76, 0x5c, 0x0e, 0x87, 0xfb, 0xc5, 0x43, 0x5b, 0x76, 0x0c, 0x7d, 0x0d, 0xa6,
+	0x6c, 0x8d, 0x5e, 0xbb, 0xae, 0x6a, 0x43, 0xfc, 0x94, 0xad, 0x7b, 0x0e, 0x1f, 0x34, 0x3f, 0xaf,
+	0x22, 0xdd, 0xd0, 0x72, 0xef, 0x2c, 0x74, 0x70, 0xd2, 0x0c, 0x45, 0x6c, 0x95, 0xfa, 0x05, 0x8f,
+	0x55, 0x35, 0x6b, 0xfe, 0xdb, 0x83, 0x44, 0x91, 0xde, 0x75, 0x80, 0x38, 0x8a, 0x18, 0x91, 0x74,
+	0x64, 0xec, 0xaa, 0x60, 0xac, 0x44, 0x89, 0xb4, 0xae, 0xe8, 0x2d, 0x0d, 0xf0, 0x61, 0x08, 0xb2,
+	0xc9, 0xce, 0x94, 0xc2, 0x73, 0x4e, 0x34, 0xc8, 0xbf, 0x3b, 0x60, 0x7d, 0x2f, 0x7f, 0xb9, 0xf4,
+	0x6f, 0xc9, 0xa1, 0x42, 0x90, 0xa3, 0x9b, 0x6e, 0xb5, 0x47, 0x75, 0xb8, 0xfc, 0x34, 0xeb, 0xa1,
+	0x40, 0x1c, 0x37, 0x24, 0xf4, 0x29, 0xe7, 0x29, 0xcf, 0x95, 0x8b, 0x81, 0x63, 0xc3, 0x40, 0x9e,
+	0x25, 0x29, 0xa7, 0xea, 0xe5, 0x03, 0xf7, 0x35, 0x0c, 0x9b, 0x49, 0x8d, 0x49, 0xb2, 0x70, 0x77,
+	0x5a, 0x93, 0x64, 0xd5, 0x1f, 0x7f, 0x39, 0x45, 0xcb, 0x43, 0x05, 0xf0, 0xcb, 0xf7, 0x01, 0x00,
+	0x00, 0xff, 0xff, 0xb4, 0xe1, 0xe6, 0xa0, 0x58, 0x07, 0x00, 0x00,
 }
