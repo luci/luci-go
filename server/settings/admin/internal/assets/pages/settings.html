@@ -24,6 +24,9 @@
       {{if eq $field.Type "text"}}
         <input
           type="text" class="form-control" aria-describedby="{{$field.ID}}-help"
+          {{if $field.Placeholder}}
+          placeholder="{{$field.Placeholder}}"
+          {{end}}
           name="{{$field.ID}}" value="{{$field.Value}}">
       {{else if eq .Type "choice"}}
         <select class="form-control" aria-describedby="{{$field.ID}}-help"

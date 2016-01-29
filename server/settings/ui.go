@@ -46,6 +46,7 @@ type UIField struct {
 	ID             string             // page unique ID
 	Title          string             // human friendly name
 	Type           UIFieldType        // how the field is displayed and behaves
+	Placeholder    string             // optional placeholder value
 	Validator      func(string) error // optional value validation
 	Help           template.HTML      // optional help text
 	ChoiceVariants []string           // valid only for UIFieldChoice
