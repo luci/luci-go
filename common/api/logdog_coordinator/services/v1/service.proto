@@ -1,0 +1,65 @@
+// Copyright 2016 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package services;
+
+import "state.proto";
+import "github.com/luci/luci-go/common/proto/logdog/logpb/log.proto";
+import "google/protobuf/empty.proto";
+
+// GetConfigResponse is the response structure for the user
+// "GetConfig" endpoint.
+message GetConfigResponse {
+  // The API URL of the base "luci-config" service. If empty, the default
+  // service URL will be used.
+  string config_service_url = 1;
+
+  // The name of the configuration set to load from.
+  string config_set = 2;
+  // The path of the text-serialized configuration protobuf.
+  string config_path = 3;
+}
+
+// RegisterStreamRequest is the set of caller-supplied data for the
+// RegisterStream Coordinator service endpoint.
+message RegisterStreamRequest {
+  // The log stream's path.
+  string path = 1;
+  // The log stream's secret.
+  bytes secret = 2;
+
+  // The protobuf version string for this stream.
+  string proto_version = 3;
+  // The serialized LogStreamDescriptor protobuf for this stream.
+  logpb.LogStreamDescriptor desc = 4;
+}
+
+// TerminateStreamRequest is the set of caller-supplied data for the
+// TerminateStream Coordinator service endpoint.
+message TerminateStreamRequest {
+  // The log stream's path.
+  string path = 1;
+  // The log stream's secret.
+  bytes secret = 2;
+
+  // The terminal index of the stream.
+  int64 terminal_index = 3;
+}
+
+// Services service is a LogDog Coordinator endpoint that interfaces with
+// LogDog processing services.
+service Services {
+  // GetConfig allows a service to retrieve the current service configuration
+  // parameters.
+  rpc GetConfig(google.protobuf.Empty) returns (GetConfigResponse);
+
+  // RegisterStream is an idempotent stream state register operation.
+  rpc RegisterStream(RegisterStreamRequest) returns (services.LogStreamState);
+
+  // TerminateStream is an idempotent operation to update the stream's terminal
+  // index.
+  rpc TerminateStream(TerminateStreamRequest) returns (google.protobuf.Empty);
+}

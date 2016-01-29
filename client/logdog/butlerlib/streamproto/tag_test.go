@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -39,14 +38,6 @@ func TestTagMapFlag(t *testing.T) {
 			Convey(`Loaded with {"foo": "bar", "baz": "qux"}`, func() {
 				tm["foo"] = "bar"
 				tm["baz"] = "qux"
-
-				Convey(`Can be converted into a TagMap proto.`, func() {
-					p := tm.Proto()
-					So(p, ShouldResemble, []*logpb.LogStreamDescriptor_Tag{
-						{Key: "baz", Value: "qux"},
-						{Key: "foo", Value: "bar"},
-					})
-				})
 
 				Convey(`Can be converted into JSON.`, func() {
 					d, err := json.Marshal(&tm)

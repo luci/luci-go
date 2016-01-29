@@ -23,7 +23,7 @@ func TestStreamImpl(t *testing.T) {
 			WriteCloser: &nopWriteCloser{Writer: &buf},
 		}
 		Convey(`TEXT`, func() {
-			si.Properties.StreamType = logpb.LogStreamDescriptor_TEXT
+			si.Properties.StreamType = logpb.StreamType_TEXT
 
 			Convey(`Will error if WriteDatagram is called.`, func() {
 				So(si.WriteDatagram([]byte(nil)), ShouldNotBeNil)
@@ -38,7 +38,7 @@ func TestStreamImpl(t *testing.T) {
 		})
 
 		Convey(`DATAGRAM`, func() {
-			si.Properties.StreamType = logpb.LogStreamDescriptor_DATAGRAM
+			si.Properties.StreamType = logpb.StreamType_DATAGRAM
 
 			Convey(`Will error if Write is called.`, func() {
 				_, err := si.Write([]byte(nil))

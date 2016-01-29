@@ -9,6 +9,13 @@ package logpb;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 
+/* A log stream type. */
+enum StreamType {
+  TEXT = 0;
+  BINARY = 1;
+  DATAGRAM = 2;
+}
+
 /**
  * Log stream descriptor data. This is the full set of information that
  * describes a logging stream.
@@ -35,11 +42,6 @@ message LogStreamDescriptor {
   string name = 2;
 
   /* The log stream's content type (required). */
-  enum StreamType {
-    TEXT = 0;
-    BINARY = 1;
-    DATAGRAM = 2;
-  }
   StreamType stream_type = 3;
 
   /*
@@ -64,11 +66,7 @@ message LogStreamDescriptor {
    *
    * LogDog clients can query for log streams based on tag values.
    */
-  message Tag {
-    string key = 1;
-    string value = 2;
-  }
-  repeated Tag tags = 6;
+  map<string, string> tags = 6;
 
   /*
    * If set, the stream will be joined together during archival to recreate the

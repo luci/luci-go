@@ -2,23 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package service
+package services
 
 import (
 	"testing"
 
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/luci-go/appengine/ephelper"
 	"github.com/luci/luci-go/appengine/gaesettings"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
+	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/settings"
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/appengine/ephelper/assertions"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -29,11 +28,7 @@ func TestGetConfig(t *testing.T) {
 	Convey(`With a testing configuration`, t, func() {
 		c := memory.Use(context.Background())
 		c = settings.Use(c, settings.New(&gaesettings.Storage{}))
-		s := Service{
-			ServiceBase: ephelper.ServiceBase{
-				Middleware: ephelper.TestMode,
-			},
-		}
+		be := Server{}
 
 		c = ct.UseConfig(c, &svcconfig.Coordinator{
 			ServiceAuthGroup: "test-services",
@@ -42,8 +37,8 @@ func TestGetConfig(t *testing.T) {
 		c = auth.WithState(c, &fs)
 
 		Convey(`Returns Forbidden error if not a service.`, func() {
-			_, err := s.GetConfig(c)
-			So(err, ShouldBeForbiddenError)
+			_, err := be.GetConfig(c, nil)
+			So(err, ShouldBeRPCPermissionDenied)
 		})
 
 		Convey(`When logged in as a service, can retrieve the configuration.`, func() {
@@ -56,12 +51,12 @@ func TestGetConfig(t *testing.T) {
 			fs.IdentityGroups = []string{"test-services"}
 
 			gcfg, err := config.LoadGlobalConfig(c)
-			So(err, ShouldBeNil)
+			So(err, ShouldBeRPCOK)
 
-			cr, err := s.GetConfig(c)
-			So(err, ShouldBeNil)
-			So(cr, ShouldResembleV, &GetConfigResponse{
-				ConfigServiceURL: gcfg.ConfigServiceURL,
+			cr, err := be.GetConfig(c, nil)
+			So(err, ShouldBeRPCOK)
+			So(cr, ShouldResembleV, &services.GetConfigResponse{
+				ConfigServiceUrl: gcfg.ConfigServiceURL,
 				ConfigSet:        gcfg.ConfigSet,
 				ConfigPath:       gcfg.ConfigPath,
 			})

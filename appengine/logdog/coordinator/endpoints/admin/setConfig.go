@@ -5,22 +5,20 @@
 package admin
 
 import (
-	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
+	"github.com/luci/luci-go/common/api/logdog_coordinator/admin/v1"
+	"github.com/luci/luci-go/common/grpcutil"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/server/auth"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
 )
 
 // SetConfig loads the supplied configuration into a config.GlobalConfig
 // instance.
-func (s *Admin) SetConfig(c context.Context, req *config.GlobalConfig) error {
-	c, err := s.Use(c, MethodInfoMap["SetConfig"])
-	if err != nil {
-		return err
-	}
-
+func (s *Server) SetConfig(c context.Context, req *admin.SetConfigRequest) (*google.Empty, error) {
 	// The user must be an administrator.
 	if err := config.IsAdminUser(c); err != nil {
 		log.Fields{
@@ -31,7 +29,7 @@ func (s *Admin) SetConfig(c context.Context, req *config.GlobalConfig) error {
 		if !info.Get(c).IsDevAppServer() {
 			u := auth.CurrentUser(c)
 			if !(u != nil && u.Superuser) {
-				return endpoints.ForbiddenError
+				return nil, grpcutil.PermissionDenied
 			}
 
 			log.Fields{
@@ -42,18 +40,24 @@ func (s *Admin) SetConfig(c context.Context, req *config.GlobalConfig) error {
 		}
 	}
 
-	if err := req.Validate(); err != nil {
+	gcfg := config.GlobalConfig{
+		ConfigServiceURL:           req.ConfigServiceUrl,
+		ConfigSet:                  req.ConfigSet,
+		ConfigPath:                 req.ConfigPath,
+		BigTableServiceAccountJSON: req.StorageServiceAccountJson,
+	}
+	if err := gcfg.Validate(); err != nil {
 		log.Fields{
 			log.ErrorKey: err,
 		}.Errorf(c, "New configuration did not validate.")
-		return endpoints.NewBadRequestError("config did not validate: %v", err)
+		return nil, grpcutil.Errf(codes.InvalidArgument, "config did not validate: %v", err)
 	}
 
-	if err := req.Store(c, "setConfig endpoint"); err != nil {
+	if err := gcfg.Store(c, "setConfig endpoint"); err != nil {
 		log.Fields{
 			log.ErrorKey: err,
 		}.Errorf(c, "Failed to store new configuration.")
-		return endpoints.InternalServerError
+		return nil, grpcutil.Internal
 	}
-	return nil
+	return &google.Empty{}, nil
 }

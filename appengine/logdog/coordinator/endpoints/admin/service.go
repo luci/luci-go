@@ -5,34 +5,10 @@
 package admin
 
 import (
-	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
-	"github.com/luci/luci-go/appengine/ephelper"
+	"github.com/luci/luci-go/common/api/logdog_coordinator/admin/v1"
 )
 
-var (
-	// Scopes is the set of OAuth scopes required by the service endpoints.
-	Scopes = []string{
-		endpoints.EmailScope,
-	}
+// Server is the Cloud Endpoint service structure for the administrator endpoint.
+type Server struct{}
 
-	// Info is the service info for this endpoint.
-	Info = endpoints.ServiceInfo{
-		Version:     "v1",
-		Description: "LogDog Admin API",
-	}
-
-	// MethodInfoMap is the method info map for the Admin endpoint service.
-	MethodInfoMap = ephelper.MethodInfoMap{
-		"SetConfig": &endpoints.MethodInfo{
-			Desc:   "Set the instance's global configuration parameters.",
-			Name:   "setConfig",
-			Path:   "setConfig",
-			Scopes: Scopes,
-		},
-	}
-)
-
-// Admin is the Cloud Endpoint service structure for the administrator endpoint.
-type Admin struct {
-	ephelper.ServiceBase
-}
+var _ admin.AdminServer = (*Server)(nil)

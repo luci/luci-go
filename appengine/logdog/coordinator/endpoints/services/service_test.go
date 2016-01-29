@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package service
+package services
 
 import (
 	"testing"
@@ -15,7 +15,7 @@ import (
 	"github.com/luci/luci-go/server/auth/authtest"
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/appengine/ephelper/assertions"
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -28,7 +28,7 @@ func TestServiceAuth(t *testing.T) {
 
 		c = auth.SetAuthenticator(c, auth.Authenticator{&authtest.FakeAuth{}})
 		Convey(`Will reject all traffic if no configuration is present.`, func() {
-			So(Auth(c), ShouldBeInternalServerError)
+			So(Auth(c), ShouldBeRPCInternal)
 		})
 
 		Convey(`With an application config installed`, func() {
@@ -37,7 +37,7 @@ func TestServiceAuth(t *testing.T) {
 			})
 
 			Convey(`Will reject users if there is an authentication error (no state).`, func() {
-				So(Auth(c), ShouldBeInternalServerError)
+				So(Auth(c), ShouldBeRPCInternal)
 			})
 
 			Convey(`With an authentication state`, func() {
@@ -45,14 +45,14 @@ func TestServiceAuth(t *testing.T) {
 				c = auth.WithState(c, &fs)
 
 				Convey(`Will reject users who are not logged in.`, func() {
-					So(Auth(c), ShouldBeForbiddenError)
+					So(Auth(c), ShouldBeRPCPermissionDenied)
 				})
 
 				Convey(`When a user is logged in`, func() {
 					fs.Identity = "user:user@example.com"
 
 					Convey(`Will reject users who are not members of the service group.`, func() {
-						So(Auth(c), ShouldBeForbiddenError)
+						So(Auth(c), ShouldBeRPCPermissionDenied)
 					})
 
 					Convey(`Will allow users who are members of the service group.`, func() {

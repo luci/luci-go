@@ -13,26 +13,25 @@ import (
 	"github.com/luci/gae/filter/featureBreaker"
 	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/ephelper"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
-	lep "github.com/luci/luci-go/appengine/logdog/coordinator/endpoints"
+	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logdog/types"
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/appengine/ephelper/assertions"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func shouldHaveLogPaths(actual interface{}, expected ...interface{}) string {
-	resp := actual.(*QueryResponse)
+	resp := actual.(*logs.QueryResponse)
 	var paths []string
 	if len(resp.Streams) > 0 {
 		paths = make([]string, len(resp.Streams))
@@ -70,7 +69,38 @@ func TestQuery(t *testing.T) {
 		c, fb := featureBreaker.FilterRDS(c, nil)
 
 		di := ds.Get(c)
-		di.Testable().AutoIndex(true)
+
+		// Add LogStream indexes.
+		//
+		// These should be kept in sync with the "query endpoint" indexes in the
+		// vmuser module's "index.yaml" file.
+		indexDefs := [][]string{
+			{"Prefix", "-Created"},
+			{"Name", "-Created"},
+			{"State", "-Created"},
+			{"Purged", "-Created"},
+			{"ProtoVersion", "-Created"},
+			{"ContentType", "-Created"},
+			{"StreamType", "-Created"},
+			{"Timestamp", "-Created"},
+			{"_C", "-Created"},
+			{"_Tags", "-Created"},
+			{"_Terminated", "-Created"},
+			{"_Archived", "-Created"},
+		}
+		indexes := make([]*ds.IndexDefinition, len(indexDefs))
+		for i, id := range indexDefs {
+			cols := make([]ds.IndexColumn, len(id))
+			for j, ic := range id {
+				var err error
+				cols[j], err = ds.ParseIndexColumn(ic)
+				if err != nil {
+					panic(fmt.Errorf("failed to parse index %q: %s", ic, err))
+				}
+			}
+			indexes[i] = &ds.IndexDefinition{Kind: "LogStream", SortBy: cols}
+		}
+		di.Testable().AddIndexes(indexes...)
 		di.Testable().Consistent(true)
 
 		fs := authtest.FakeState{}
@@ -80,13 +110,11 @@ func TestQuery(t *testing.T) {
 			AdminAuthGroup: "test-administrators",
 		})
 
-		s := Logs{
-			ServiceBase: ephelper.ServiceBase{
-				Middleware: ephelper.TestMode,
-			},
-		}
+		s := Server{}
 
-		req := QueryRequest{}
+		req := logs.QueryRequest{
+			Tags: map[string]string{},
+		}
 
 		// Install a set of stock log streams to query against.
 		var streamPaths []string
@@ -113,9 +141,14 @@ func TestQuery(t *testing.T) {
 			desc := ct.TestLogStreamDescriptor(c, string(name))
 			desc.Prefix = string(prefix)
 			desc.ContentType = string(prefix)
-			desc.Tags = []*logpb.LogStreamDescriptor_Tag{
-				{Key: "prefix", Value: string(prefix)},
-				{Key: "name", Value: string(name)},
+			desc.Tags = map[string]string{
+				"prefix": string(prefix),
+				"name":   string(name),
+			}
+
+			// Set an empty tag for each name segment.
+			for _, p := range name.Segments() {
+				desc.Tags[p] = ""
 			}
 
 			ls, err := ct.TestLogStream(c, desc)
@@ -139,20 +172,15 @@ func TestQuery(t *testing.T) {
 						ls.State = coordinator.LSArchived
 
 					case "datagram":
-						ls.StreamType = logpb.LogStreamDescriptor_DATAGRAM
+						ls.StreamType = logpb.StreamType_DATAGRAM
 
 					case "binary":
-						ls.StreamType = logpb.LogStreamDescriptor_BINARY
+						ls.StreamType = logpb.StreamType_BINARY
 					}
 				}
 			}
 
-			// Set an empty tag for each name segment.
-			for _, p := range name.Segments() {
-				ls.Tags[p] = ""
-			}
-
-			if err := ls.Put(di); err != nil {
+			if err := ls.Put(ds.Get(c)); err != nil {
 				panic(fmt.Errorf("failed to put log stream %d: %v", i, err))
 			}
 
@@ -179,7 +207,7 @@ func TestQuery(t *testing.T) {
 
 		Convey(`An empty query will return all log streams.`, func() {
 			resp, err := s.Query(c, &req)
-			So(err, ShouldBeNil)
+			So(err, ShouldBeRPCOK)
 			So(resp, shouldHaveLogPaths, streamPaths)
 		})
 
@@ -187,7 +215,7 @@ func TestQuery(t *testing.T) {
 			fs.IdentityGroups = []string{"test-administrators"}
 
 			resp, err := s.Query(c, &req)
-			So(err, ShouldBeNil)
+			So(err, ShouldBeRPCOK)
 			So(resp, shouldHaveLogPaths, purgedStreamPaths)
 		})
 
@@ -195,7 +223,7 @@ func TestQuery(t *testing.T) {
 			req.Path = "***"
 
 			_, err := s.Query(c, &req)
-			So(err, ShouldBeBadRequestError, "invalid query `path`")
+			So(err, ShouldBeRPCInvalidArgument, "invalid query `path`")
 		})
 
 		Convey(`A query with an invalid Next cursor will return BadRequest error.`, func() {
@@ -203,14 +231,14 @@ func TestQuery(t *testing.T) {
 			fb.BreakFeatures(errors.New("testing error"), "DecodeCursor")
 
 			_, err := s.Query(c, &req)
-			So(err, ShouldBeBadRequestError, "invalid `next` value")
+			So(err, ShouldBeRPCInvalidArgument, "invalid `next` value")
 		})
 
 		Convey(`A datastore query error will return InternalServer error.`, func() {
 			fb.BreakFeatures(errors.New("testing error"), "Run")
 
 			_, err := s.Query(c, &req)
-			So(err, ShouldBeInternalServerError)
+			So(err, ShouldBeRPCInternal)
 		})
 
 		Convey(`When querying for "testing/+/baz"`, func() {
@@ -221,13 +249,13 @@ func TestQuery(t *testing.T) {
 
 			Convey(`State is not returned.`, func() {
 				resp, err := s.Query(c, &req)
-				So(err, ShouldBeNil)
+				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "testing/+/baz")
 
 				So(resp.Streams, ShouldHaveLength, 1)
 				So(resp.Streams[0].State, ShouldBeNil)
-				So(resp.Streams[0].Descriptor, ShouldBeNil)
-				So(resp.Streams[0].DescriptorProto, ShouldBeNil)
+				So(resp.Streams[0].Desc, ShouldBeNil)
+				So(resp.Streams[0].DescProto, ShouldBeNil)
 			})
 
 			Convey(`When requesting state`, func() {
@@ -235,13 +263,13 @@ func TestQuery(t *testing.T) {
 
 				Convey(`When not requesting protobufs, returns a descriptor structure.`, func() {
 					resp, err := s.Query(c, &req)
-					So(err, ShouldBeNil)
+					So(err, ShouldBeRPCOK)
 					So(resp, shouldHaveLogPaths, "testing/+/baz")
 
 					So(resp.Streams, ShouldHaveLength, 1)
-					So(resp.Streams[0].State, ShouldResembleV, lep.LoadLogStreamState(stream))
-					So(resp.Streams[0].Descriptor, ShouldResembleV, lep.DescriptorFromProto(desc))
-					So(resp.Streams[0].DescriptorProto, ShouldBeNil)
+					So(resp.Streams[0].State, ShouldResembleV, loadLogStreamState(stream))
+					So(resp.Streams[0].Desc, ShouldResembleV, desc)
+					So(resp.Streams[0].DescProto, ShouldBeNil)
 				})
 
 				Convey(`When not requesting protobufs, and with a corrupt descriptor, returns InternalServer error.`, func() {
@@ -251,7 +279,7 @@ func TestQuery(t *testing.T) {
 					di.Testable().CatchupIndexes()
 
 					_, err := s.Query(c, &req)
-					So(err, ShouldBeInternalServerError)
+					So(err, ShouldBeRPCInternal)
 				})
 
 				Convey(`When requesting protobufs, returns the raw protobuf descriptor.`, func() {
@@ -262,9 +290,8 @@ func TestQuery(t *testing.T) {
 					So(resp, shouldHaveLogPaths, "testing/+/baz")
 
 					So(resp.Streams, ShouldHaveLength, 1)
-					So(resp.Streams[0].State, ShouldResembleV, lep.LoadLogStreamState(stream))
-					So(resp.Streams[0].Descriptor, ShouldBeNil)
-					So(resp.Streams[0].DescriptorProto, ShouldResembleV, stream.Descriptor)
+					So(resp.Streams[0].State, ShouldResembleV, loadLogStreamState(stream))
+					So(resp.Streams[0].Desc, ShouldResembleV, desc)
 				})
 			})
 		})
@@ -280,7 +307,7 @@ func TestQuery(t *testing.T) {
 					req.Next = next
 
 					resp, err := s.Query(c, &req)
-					So(err, ShouldBeNil)
+					So(err, ShouldBeRPCOK)
 
 					for _, s := range resp.Streams {
 						seen = append(seen, s.Path)
@@ -299,7 +326,7 @@ func TestQuery(t *testing.T) {
 		})
 
 		Convey(`When querying against timestamp constraints`, func() {
-			req.Older = lep.ToRFC3339(tc.Now())
+			req.Older = google.NewTimestamp(tc.Now())
 
 			// Invert our streamPaths, since we're going to receive results
 			// newest-to-oldest and this makes it much easier to check/express.
@@ -309,12 +336,10 @@ func TestQuery(t *testing.T) {
 			}
 
 			Convey(`Querying for entries created at or after 2 seconds ago (latest 2 entries).`, func() {
-				// We subtract a millisecond rather than 1 (nanosecond) because of
-				// AppEngine time rounding.
-				req.Newer = lep.ToRFC3339(tc.Now().Add(-2*time.Second - time.Millisecond))
+				req.Newer = google.NewTimestamp(tc.Now().Add(-2*time.Second - time.Millisecond))
 
 				resp, err := s.Query(c, &req)
-				So(err, ShouldBeNil)
+				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "testing/+/baz", "testing/+/foo/bar/baz")
 			})
 
@@ -323,7 +348,7 @@ func TestQuery(t *testing.T) {
 
 				Convey(`A query request will return the newest 3 entries and have a Next cursor for the next 3.`, func() {
 					resp, err := s.Query(c, &req)
-					So(err, ShouldBeNil)
+					So(err, ShouldBeRPCOK)
 					So(resp, shouldHaveLogPaths, "testing/+/baz", "testing/+/foo/bar/baz", "meta/binary/+/foo")
 					So(resp.Next, ShouldNotEqual, "")
 
@@ -331,7 +356,7 @@ func TestQuery(t *testing.T) {
 					req.Next = resp.Next
 
 					resp, err = s.Query(c, &req)
-					So(err, ShouldBeNil)
+					So(err, ShouldBeRPCOK)
 					So(resp, shouldHaveLogPaths, "meta/datagram/+/foo", "meta/archived/+/foo", "meta/terminated/+/foo")
 				})
 
@@ -339,116 +364,102 @@ func TestQuery(t *testing.T) {
 					fb.BreakFeatures(errors.New("testing error"), "Run")
 
 					_, err := s.Query(c, &req)
-					So(err, ShouldBeInternalServerError)
+					So(err, ShouldBeRPCInternal)
 				})
 			})
-		})
-
-		Convey(`An invalid RFC3339 "Older" timestamp will return a BadRequest error.`, func() {
-			req.Older = "invalid"
-
-			_, err := s.Query(c, &req)
-			So(err, ShouldBeBadRequestError)
-		})
-
-		Convey(`An invalid RFC3339 "Newer" timestamp will return a BadRequest error.`, func() {
-			req.Newer = "invalid"
-
-			_, err := s.Query(c, &req)
-			So(err, ShouldBeBadRequestError)
 		})
 
 		Convey(`When querying for meta streams`, func() {
 			req.Path = "meta/**/+/**"
 
-			Convey(`When terminated=yes, returns [terminated].`, func() {
-				req.Terminated = TrinaryYes
+			Convey(`When terminated=yes, returns [archived, terminated].`, func() {
+				req.Terminated = logs.QueryRequest_YES
 
 				resp, err := s.Query(c, &req)
-				So(err, ShouldBeNil)
+				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "meta/archived/+/foo", "meta/terminated/+/foo")
 			})
 
 			Convey(`When terminated=no, returns [binary, datagram]`, func() {
-				req.Terminated = TrinaryNo
+				req.Terminated = logs.QueryRequest_NO
 
 				resp, err := s.Query(c, &req)
-				So(err, ShouldBeNil)
+				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "meta/binary/+/foo", "meta/datagram/+/foo")
 			})
 
 			Convey(`When archived=yes, returns [archived]`, func() {
-				req.Archived = TrinaryYes
+				req.Archived = logs.QueryRequest_YES
 
 				resp, err := s.Query(c, &req)
-				So(err, ShouldBeNil)
+				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "meta/archived/+/foo")
 			})
 
 			Convey(`When archived=no, returns [binary, datagram, terminated]`, func() {
-				req.Archived = TrinaryNo
+				req.Archived = logs.QueryRequest_NO
 
 				resp, err := s.Query(c, &req)
-				So(err, ShouldBeNil)
+				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "meta/binary/+/foo", "meta/datagram/+/foo", "meta/terminated/+/foo")
 			})
 
 			Convey(`When purged=yes, returns BadRequest error.`, func() {
-				req.Purged = TrinaryYes
+				req.Purged = logs.QueryRequest_YES
 
 				_, err := s.Query(c, &req)
-				So(err, ShouldBeBadRequestError, "non-admin user cannot request purged log streams")
+				So(err, ShouldBeRPCInvalidArgument, "non-admin user cannot request purged log streams")
 			})
 
 			Convey(`When the user is an administrator`, func() {
 				fs.IdentityGroups = []string{"test-administrators"}
 
 				Convey(`When purged=yes, returns [terminated/archived/purged, purged]`, func() {
-					req.Purged = TrinaryYes
+					req.Purged = logs.QueryRequest_YES
 
 					resp, err := s.Query(c, &req)
-					So(err, ShouldBeNil)
+					So(err, ShouldBeRPCOK)
 					So(resp, shouldHaveLogPaths, "meta/terminated/archived/purged/+/foo", "meta/purged/+/foo")
 				})
 
 				Convey(`When purged=no, returns [binary, datagram, archived, terminated]`, func() {
-					req.Purged = TrinaryNo
+					req.Purged = logs.QueryRequest_NO
 
 					resp, err := s.Query(c, &req)
-					So(err, ShouldBeNil)
+					So(err, ShouldBeRPCOK)
 					So(resp, shouldHaveLogPaths, "meta/binary/+/foo", "meta/datagram/+/foo", "meta/archived/+/foo", "meta/terminated/+/foo")
 				})
 			})
 
 			Convey(`When querying for text streams, returns [archived, terminated]`, func() {
-				req.StreamType = "text"
+				req.StreamType = &logs.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_TEXT}
 
 				resp, err := s.Query(c, &req)
-				So(err, ShouldBeNil)
+				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "meta/archived/+/foo", "meta/terminated/+/foo")
 			})
 
 			Convey(`When querying for binary streams, returns [binary]`, func() {
-				req.StreamType = "binary"
+				req.StreamType = &logs.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_BINARY}
 
 				resp, err := s.Query(c, &req)
-				So(err, ShouldBeNil)
+				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "meta/binary/+/foo")
 			})
 
 			Convey(`When querying for datagram streams, returns [datagram]`, func() {
-				req.StreamType = "datagram"
+				req.StreamType = &logs.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_DATAGRAM}
 
 				resp, err := s.Query(c, &req)
-				So(err, ShouldBeNil)
+				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "meta/datagram/+/foo")
 			})
 
 			Convey(`When querying for an invalid stream type, returns a BadRequest error.`, func() {
-				req.StreamType = "invalid"
+				req.StreamType = &logs.QueryRequest_StreamTypeFilter{Value: -1}
 
 				_, err := s.Query(c, &req)
-				So(err, ShouldBeBadRequestError)
+				So(err, ShouldBeRPCInvalidArgument)
 			})
 		})
 
@@ -456,7 +467,7 @@ func TestQuery(t *testing.T) {
 			req.ContentType = "other"
 
 			resp, err := s.Query(c, &req)
-			So(err, ShouldBeNil)
+			So(err, ShouldBeRPCOK)
 			So(resp, shouldHaveLogPaths, "other/+/baz", "other/+/foo/bar")
 		})
 
@@ -464,7 +475,7 @@ func TestQuery(t *testing.T) {
 			req.ProtoVersion = logpb.Version
 
 			resp, err := s.Query(c, &req)
-			So(err, ShouldBeNil)
+			So(err, ShouldBeRPCOK)
 			So(resp, shouldHaveLogPaths, streamPaths)
 		})
 
@@ -472,45 +483,33 @@ func TestQuery(t *testing.T) {
 			req.ProtoVersion = "invalid"
 
 			resp, err := s.Query(c, &req)
-			So(err, ShouldBeNil)
+			So(err, ShouldBeRPCOK)
 			So(resp, shouldHaveLogPaths)
 		})
 
 		Convey(`When querying for tags`, func() {
-			addTag := func(k, v string) {
-				req.Tags = append(req.Tags, &lep.LogStreamDescriptorTag{Key: k, Value: v})
-			}
-
 			Convey(`Tag "baz", returns [testing/+/baz, testing/+/foo/bar/baz, other/+/baz]`, func() {
-				addTag("baz", "")
+				req.Tags["baz"] = ""
 
 				resp, err := s.Query(c, &req)
-				So(err, ShouldBeNil)
+				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "testing/+/baz", "testing/+/foo/bar/baz", "other/+/baz")
 			})
 
 			Convey(`Tags "prefix=testing", "baz", returns [testing/+/baz, testing/+/foo/bar/baz]`, func() {
-				addTag("baz", "")
-				addTag("prefix", "testing")
+				req.Tags["baz"] = ""
+				req.Tags["prefix"] = "testing"
 
 				resp, err := s.Query(c, &req)
-				So(err, ShouldBeNil)
+				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "testing/+/baz", "testing/+/foo/bar/baz")
 			})
 
 			Convey(`When an invalid tag is specified, returns BadRequest error`, func() {
-				addTag("+++not a valid tag+++", "")
+				req.Tags["+++not a valid tag+++"] = ""
 
 				_, err := s.Query(c, &req)
-				So(err, ShouldBeBadRequestError, "invalid tag constraint")
-			})
-
-			Convey(`When the same tag is specified with different value, returns BadRequest error.`, func() {
-				addTag("baz", "")
-				addTag("baz", "ohai")
-
-				_, err := s.Query(c, &req)
-				So(err, ShouldBeBadRequestError, "conflicting tag query parameters")
+				So(err, ShouldBeRPCInvalidArgument, "invalid tag constraint")
 			})
 		})
 	})

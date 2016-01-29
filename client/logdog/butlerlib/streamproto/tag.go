@@ -11,7 +11,6 @@ import (
 
 	"github.com/luci/luci-go/common/flag/stringmapflag"
 	"github.com/luci/luci-go/common/logdog/types"
-	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 // TagMap is a flags-compatible map used to store stream tags.
@@ -47,24 +46,6 @@ func (t TagMap) SortedKeys() []string {
 	return keys
 }
 
-// Proto returns a LogStreamDescriptor_Tag protobuf entry populated with the
-// contents of the TagMap.
-func (t TagMap) Proto() []*logpb.LogStreamDescriptor_Tag {
-	if len(t) == 0 {
-		return nil
-	}
-
-	keys := t.SortedKeys()
-	tags := make([]*logpb.LogStreamDescriptor_Tag, len(keys))
-	for i, k := range keys {
-		tags[i] = &logpb.LogStreamDescriptor_Tag{
-			Key:   k,
-			Value: t[k],
-		}
-	}
-	return tags
-}
-
 // MarshalJSON implements the json.Marshaler interface.
 func (t *TagMap) MarshalJSON() ([]byte, error) {
 	m := make(map[string]string, len(*t))
@@ -90,7 +71,7 @@ func (t *TagMap) UnmarshalJSON(data []byte) error {
 
 	tm := make(TagMap, len(m))
 	for k, v := range m {
-		if err := validateTagMapEntry(k, v); err != nil {
+		if err := types.ValidateTag(k, v); err != nil {
 			return err
 		}
 		tm[k] = v
@@ -98,11 +79,4 @@ func (t *TagMap) UnmarshalJSON(data []byte) error {
 
 	*t = tm
 	return nil
-}
-
-func validateTagMapEntry(key, value string) error {
-	return (&types.StreamTag{
-		Key:   key,
-		Value: value,
-	}).Validate()
 }

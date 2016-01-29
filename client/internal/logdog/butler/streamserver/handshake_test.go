@@ -114,7 +114,7 @@ func testHandshakeProtocol(t *testing.T, verbose bool) {
 					LogStreamDescriptor: logpb.LogStreamDescriptor{
 						Name:        "test",
 						Timestamp:   google.NewTimestamp(tc.Now()),
-						StreamType:  logpb.LogStreamDescriptor_TEXT,
+						StreamType:  logpb.StreamType_TEXT,
 						ContentType: string(types.ContentTypeText),
 					},
 				})
@@ -136,9 +136,9 @@ func testHandshakeProtocol(t *testing.T, verbose bool) {
 						Name:        "test",
 						ContentType: "text/plain",
 						Timestamp:   google.NewTimestamp(time.Date(2015, 05, 07, 1, 29, 51, 0, time.UTC)),
-						Tags: []*logpb.LogStreamDescriptor_Tag{
-							{Key: "baz", Value: "qux"},
-							{Key: "foo", Value: "bar"},
+						Tags: map[string]string{
+							"baz": "qux",
+							"foo": "bar",
 						},
 					},
 					Tee: streamproto.TeeStdout,

@@ -101,7 +101,7 @@ type LogStream struct {
 	// ContentType is the MIME-style content type string for this stream.
 	ContentType string
 	// StreamType is the data type of the stream.
-	StreamType logpb.LogStreamDescriptor_StreamType
+	StreamType logpb.StreamType
 	// Timestamp is the Descriptor's recorded client-side timestamp.
 	Timestamp time.Time
 
@@ -165,7 +165,6 @@ func NewLogStream(value string) (*LogStream, error) {
 		return LogStreamFromID(hash), nil
 	}
 
-	// It is a valid path.
 	return LogStreamFromPath(path), nil
 }
 
@@ -310,8 +309,7 @@ func (s *LogStream) Validate() error {
 	}
 
 	switch s.StreamType {
-	case logpb.LogStreamDescriptor_TEXT, logpb.LogStreamDescriptor_BINARY,
-		logpb.LogStreamDescriptor_DATAGRAM:
+	case logpb.StreamType_TEXT, logpb.StreamType_BINARY, logpb.StreamType_DATAGRAM:
 		break
 
 	default:
@@ -319,15 +317,25 @@ func (s *LogStream) Validate() error {
 	}
 
 	for k, v := range s.Tags {
-		tag := types.StreamTag{Key: k, Value: v}
-		if err := tag.Validate(); err != nil {
+		if err := types.ValidateTag(k, v); err != nil {
 			return fmt.Errorf("invalid tag [%s]: %s", k, err)
 		}
 	}
-	if _, err := s.DescriptorProto(); err != nil {
-		return fmt.Errorf("invalid descriptor protobuf: %s", err)
+
+	// Ensure that our Descriptor can be unmarshalled.
+	if _, err := s.DescriptorValue(); err != nil {
+		return fmt.Errorf("could not unmarshal descriptor: %v", err)
 	}
 	return nil
+}
+
+// DescriptorValue returns the unmarshalled Descriptor field protobuf.
+func (s *LogStream) DescriptorValue() (*logpb.LogStreamDescriptor, error) {
+	pb := logpb.LogStreamDescriptor{}
+	if err := proto.Unmarshal(s.Descriptor, &pb); err != nil {
+		return nil, err
+	}
+	return &pb, nil
 }
 
 // Terminated returns true if this stream has been terminated.
@@ -358,33 +366,27 @@ func (s *LogStream) ArchiveMatches(sURL, iURL, dURL string) bool {
 //   - Tags
 func (s *LogStream) LoadDescriptor(desc *logpb.LogStreamDescriptor) error {
 	if err := desc.Validate(true); err != nil {
-		return fmt.Errorf("invalid descriptor: %s", err)
+		return fmt.Errorf("invalid descriptor: %v", err)
 	}
 
-	// Marshal the descriptor.
-	data, err := proto.Marshal(desc)
+	pb, err := proto.Marshal(desc)
 	if err != nil {
-		return fmt.Errorf("failed to marshal descriptor: %s", err)
+		return fmt.Errorf("failed to marshal descriptor: %v", err)
 	}
 
 	s.Prefix = desc.Prefix
 	s.Name = desc.Name
 	s.ContentType = desc.ContentType
 	s.StreamType = desc.StreamType
-	s.Descriptor = data
+	s.Descriptor = pb
 
 	// We know that the timestamp is valid b/c it's checked in ValidateDescriptor.
 	if ts := desc.Timestamp; ts != nil {
-		s.Timestamp = NormalizeTime(ts.Time().UTC())
+		s.Timestamp = ds.RoundTime(ts.Time().UTC())
 	}
 
 	// Note: tag content was validated via ValidateDescriptor.
-	if tags := desc.Tags; len(tags) > 0 {
-		s.Tags = make(TagMap, len(tags))
-		for _, tag := range tags {
-			s.Tags[tag.Key] = tag.Value
-		}
-	}
+	s.Tags = TagMap(desc.Tags)
 	return nil
 }
 

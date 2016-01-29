@@ -44,16 +44,13 @@ func tagMapFromProperties(props []ds.Property) (TagMap, error) {
 			// This is a presence entry. Ignore.
 			continue
 		}
+		k, v := parts[0], parts[1]
 
-		st := types.StreamTag{
-			Key:   parts[0],
-			Value: parts[1],
-		}
-		if err := st.Validate(); err != nil {
-			lme.Assign(idx, fmt.Errorf("invalid tag (%#v): %s", st, err))
+		if err := types.ValidateTag(k, v); err != nil {
+			lme.Assign(idx, fmt.Errorf("invalid tag %q: %s", parts[0], err))
 			continue
 		}
-		tm[st.Key] = st.Value
+		tm[k] = v
 	}
 
 	if len(tm) == 0 {
@@ -77,19 +74,16 @@ func (m TagMap) toProperties() ([]ds.Property, error) {
 
 	parts := make([]ds.Property, 0, len(m)*2)
 	for _, k := range keys {
-		st := types.StreamTag{
-			Key:   k,
-			Value: m[k],
-		}
-		if err := st.Validate(); err != nil {
+		v := m[k]
+		if err := types.ValidateTag(k, v); err != nil {
 			return nil, err
 		}
 
 		// Presence entry.
-		parts = append(parts, ds.MkProperty(encodeKey(st.Key)))
+		parts = append(parts, ds.MkProperty(encodeKey(k)))
 
 		// Value entry.
-		parts = append(parts, ds.MkProperty(encodeKey(fmt.Sprintf("%s=%s", st.Key, st.Value))))
+		parts = append(parts, ds.MkProperty(encodeKey(fmt.Sprintf("%s=%s", k, v))))
 	}
 	return parts, nil
 }

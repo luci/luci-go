@@ -12,6 +12,7 @@ import (
 	"github.com/luci/luci-go/server/logdog/storage/bigtable"
 	"golang.org/x/net/context"
 	"google.golang.org/cloud"
+	"google.golang.org/grpc/metadata"
 )
 
 // GetStorage returns a configured BigTable Storage instance.
@@ -74,6 +75,11 @@ func GetStorage(c context.Context) (storage.Storage, error) {
 		}.Errorf(c, "Failed to create BigTable authenticator.")
 		return nil, errors.New("failed to create BigTable authenticator")
 	}
+
+	// Explicitly clear gRPC metadata from the Context. It is forwarded to
+	// delegate calls by default, and standard request metadata can break BigTable
+	// calls.
+	c = metadata.NewContext(c, nil)
 
 	return bigtable.New(c, bigtable.Options{
 		Project:  bt.Project,

@@ -13,12 +13,12 @@ import (
 	"golang.org/x/net/context"
 )
 
-// WithConfig sets up luci-config as a remote configuration source based on the
+// UseConfig sets up luci-config as a remote configuration source based on the
 // current GlobalConfig.
 //
 // If the GlobalConfig doesn't fully specify a luci-config source, no
 // luci-config will be installed.
-func WithConfig(c context.Context) context.Context {
+func UseConfig(c context.Context) context.Context {
 	gcfg, err := LoadGlobalConfig(c)
 	switch err {
 	case nil:

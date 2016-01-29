@@ -23,7 +23,7 @@ func (s *streamConfig) addFlags(fs *flag.FlagSet) {
 	if s.ContentType == "" {
 		s.ContentType = string(types.ContentTypeText)
 	}
-	s.Type = streamproto.StreamType(logpb.LogStreamDescriptor_TEXT)
+	s.Type = streamproto.StreamType(logpb.StreamType_TEXT)
 	s.Tee = streamproto.TeeNone
 
 	fs.Var(&s.Name, "name", "The name of the stream")

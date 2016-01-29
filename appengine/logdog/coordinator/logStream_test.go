@@ -94,13 +94,13 @@ func TestLogStream(t *testing.T) {
 		desc := logpb.LogStreamDescriptor{
 			Prefix:      "testing",
 			Name:        "log/stream",
-			StreamType:  logpb.LogStreamDescriptor_TEXT,
+			StreamType:  logpb.StreamType_TEXT,
 			ContentType: "application/text",
 			Timestamp:   google.NewTimestamp(clock.Now(c)),
-			Tags: []*logpb.LogStreamDescriptor_Tag{
-				{"foo", "bar"},
-				{"baz", "qux"},
-				{"quux", ""},
+			Tags: map[string]string{
+				"foo":  "bar",
+				"baz":  "qux",
+				"quux": "",
 			},
 		}
 
@@ -131,8 +131,8 @@ func TestLogStream(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey(`Can populate the LogStream with descriptor state.`, func() {
-				ls.Created = NormalizeTime(clock.Now(c).UTC())
-				ls.Updated = NormalizeTime(clock.Now(c).UTC())
+				ls.Created = ds.RoundTime(clock.Now(c).UTC())
+				ls.Updated = ds.RoundTime(clock.Now(c).UTC())
 				ls.Secret = bytes.Repeat([]byte{0x6F}, types.StreamSecretLength)
 				So(ls.LoadDescriptor(&desc), ShouldBeNil)
 				So(ls.Validate(), ShouldBeNil)
@@ -180,7 +180,7 @@ func TestLogStream(t *testing.T) {
 					})
 					Convey(`With an invalid descriptor protobuf`, func() {
 						ls.Descriptor = []byte{0x00} // Invalid tag, "0".
-						So(ls.Validate(), ShouldErrLike, "invalid descriptor protobuf")
+						So(ls.Validate(), ShouldErrLike, "could not unmarshal descriptor")
 					})
 				})
 

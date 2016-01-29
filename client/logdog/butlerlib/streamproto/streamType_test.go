@@ -24,7 +24,7 @@ func TestStreamType(t *testing.T) {
 		Convey(`Can be loaded as a flag.`, func() {
 			err := fs.Parse([]string{"-stream-type", "datagram"})
 			So(err, ShouldBeNil)
-			So(value, ShouldEqual, logpb.LogStreamDescriptor_DATAGRAM)
+			So(value, ShouldEqual, logpb.StreamType_DATAGRAM)
 		})
 
 		Convey(`Will unmmarshal from JSON.`, func() {
@@ -34,24 +34,24 @@ func TestStreamType(t *testing.T) {
 
 			err := json.Unmarshal([]byte(`{"value": "text"}`), &s)
 			So(err, ShouldBeNil)
-			So(s.Value, ShouldEqual, logpb.LogStreamDescriptor_TEXT)
+			So(s.Value, ShouldEqual, logpb.StreamType_TEXT)
 		})
 
 		Convey(`Will marshal to JSON.`, func() {
 			var s struct {
 				Value StreamType `json:"value"`
 			}
-			s.Value = StreamType(logpb.LogStreamDescriptor_BINARY)
+			s.Value = StreamType(logpb.StreamType_BINARY)
 
 			v, err := json.Marshal(&s)
 			So(err, ShouldBeNil)
 			So(string(v), ShouldResemble, `{"value":"binary"}`)
 		})
 
-		for _, t := range []logpb.LogStreamDescriptor_StreamType{
-			logpb.LogStreamDescriptor_TEXT,
-			logpb.LogStreamDescriptor_BINARY,
-			logpb.LogStreamDescriptor_DATAGRAM,
+		for _, t := range []logpb.StreamType{
+			logpb.StreamType_TEXT,
+			logpb.StreamType_BINARY,
+			logpb.StreamType_DATAGRAM,
 		} {
 			Convey(fmt.Sprintf(`Stream type [%s] has a default content type.`, t), func() {
 				st := StreamType(t)

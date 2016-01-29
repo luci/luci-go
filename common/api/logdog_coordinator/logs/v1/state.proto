@@ -1,0 +1,43 @@
+// Copyright 2016 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package logs;
+
+import "google/protobuf/timestamp.proto";
+
+// LogStreamState is a bidirectional state value used in UpdateStream calls.
+//
+// LogStreamState is embeddable in Endpoints request/response structs.
+message LogStreamState {
+	// ProtoVersion is the protobuf version for this stream.
+	string proto_version = 1;
+
+	// The time when the log stream was registered with the Coordinator.
+	google.protobuf.Timestamp created = 2;
+	// The time when the log stream's state was last updated.
+	google.protobuf.Timestamp updated = 3;
+
+	// The stream index of the log stream's terminal message. If the value is -1,
+  // the log is still streaming.
+	int64 terminal_index = 4;
+
+  // ArchiveInfo contains archive details for the log stream.
+  message ArchiveInfo {
+    // The Google Storage URL where the log stream's index is archived.
+    string index_url = 1;
+    // The Google Storage URL where the log stream's raw stream data is archived.
+    string stream_url = 2;
+    // The Google Storage URL where the log stream's assembled data is archived.
+    string data_url = 3;
+  }
+  // If non-nil, the log stream is archived, and this field contains archival
+  // details.
+  ArchiveInfo archive = 5;
+
+	// Indicates the purged state of a log. A log that has been purged is only
+  // acknowledged to administrative clients.
+	bool purged = 6;
+}

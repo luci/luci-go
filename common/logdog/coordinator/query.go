@@ -5,37 +5,64 @@
 package coordinator
 
 import (
-	"encoding/base64"
-	"fmt"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
 	"github.com/luci/luci-go/common/logdog/types"
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"golang.org/x/net/context"
 )
 
-// Trinary is a 3-value query option type.
-type Trinary int
+// QueryTrinary is a 3-value query option type.
+type QueryTrinary int
 
 const (
 	// Both means that the value should not have an effect.
-	Both Trinary = iota
+	Both QueryTrinary = iota
 	// Yes is a positive effect.
 	Yes
 	// No is a negative effect.
 	No
 )
 
-func (t Trinary) queryValue() string {
+func (t QueryTrinary) queryValue() logs.QueryRequest_Trinary {
 	switch t {
 	case Yes:
-		return "yes"
+		return logs.QueryRequest_YES
 	case No:
-		return "no"
+		return logs.QueryRequest_NO
 	default:
-		return ""
+		return logs.QueryRequest_BOTH
+	}
+}
+
+// QueryStreamType is a 3-value query option type.
+type QueryStreamType int
+
+const (
+	// Any means that the value should not have an effect.
+	Any QueryStreamType = iota
+	// Text selects only text streams.
+	Text
+	// Binary selects only binary streams.
+	Binary
+	// Datagram selects only datagram streams.
+	Datagram
+)
+
+// queryValue returns the StreamType for a specified QueryStreamType parameter.
+// If no StreamType is specified (Any), it will return -1 to indicate this.
+func (t QueryStreamType) queryValue() logpb.StreamType {
+	switch t {
+	case Text:
+		return logpb.StreamType_TEXT
+	case Binary:
+		return logpb.StreamType_BINARY
+	case Datagram:
+		return logpb.StreamType_DATAGRAM
+	default:
+		return -1
 	}
 }
 
@@ -72,6 +99,9 @@ type Query struct {
 	// content type.
 	ContentType string
 
+	// StreamType, if not STAny, is the stream type to query for.
+	StreamType QueryStreamType
+
 	// Before, if not zero, specifies that only streams registered at or before
 	// the supplied time should be returned.
 	Before time.Time
@@ -79,73 +109,24 @@ type Query struct {
 	// the supplied time should be returned.
 	After time.Time
 
-	// Terminated, if not Both, selects logs streams that are/aren't terminated.
-	Terminated Trinary
+	// Terminated, if not QBoth, selects logs streams that are/aren't terminated.
+	Terminated QueryTrinary
 
-	// Archived, if not Both, selects logs streams that are/aren't archived.
-	Archived Trinary
+	// Archived, if not QBoth, selects logs streams that are/aren't archived.
+	Archived QueryTrinary
 
-	// Purged, if not Both, selects logs streams that are/aren't purged.
-	Purged Trinary
+	// Purged, if not QBoth, selects logs streams that are/aren't purged.
+	Purged QueryTrinary
 
 	// State, if true, requests that the query results include the log streams'
 	// state.
 	State bool
 }
 
-// QueryStream is a single stream query result.
-type QueryStream struct {
-	// Path is the stream path for this result.
-	Path types.StreamPath
-
-	// DescriptorProto is the binary LogStreamDescriptor protobuf for this stream.
-	DescriptorProto []byte
-	// State is the log stream's state. It is nil if the query request's State
-	// boolean is false.
-	State *StreamState
-
-	// descriptor is the cached decoded LogStreamDescriptor protobuf.
-	descriptor *logpb.LogStreamDescriptor
-}
-
-// Descriptor returns the unmarshalled LogStreamDescriptor protobuf for this
-// query response.
-func (qs *QueryStream) Descriptor() (*logpb.LogStreamDescriptor, error) {
-	if qs.descriptor == nil {
-		desc := logpb.LogStreamDescriptor{}
-		if err := proto.Unmarshal(qs.DescriptorProto, &desc); err != nil {
-			return nil, err
-		}
-		qs.descriptor = &desc
-	}
-	return qs.descriptor, nil
-
-}
-
 // QueryCallback is a callback method type that is used in query requests.
 //
 // If it returns false, additional callbacks and queries will be aborted.
-type QueryCallback func(r *QueryStream) bool
-
-// QueryDecodeError is an error returned when processing a query response
-// failed.
-type QueryDecodeError struct {
-	// Path is the path of the stream where decoding failed.
-	Path types.StreamPath
-	// Err is the underlying decode error.
-	Err error
-}
-
-func (e *QueryDecodeError) Error() string {
-	return fmt.Sprintf("failed to decode [%s]: %v", e.Path, e.Err)
-}
-
-func qde(p types.StreamPath, err error) *QueryDecodeError {
-	return &QueryDecodeError{
-		Path: p,
-		Err:  err,
-	}
-}
+type QueryCallback func(r *LogStream) bool
 
 // Query executes a query, invoking the supplied callback once for each query
 // result.
@@ -153,47 +134,35 @@ func (c *Client) Query(ctx context.Context, q *Query, cb QueryCallback) error {
 	req := logs.QueryRequest{
 		Path:        q.Path,
 		ContentType: q.ContentType,
-		Tags:        make([]*logs.LogStreamDescriptorTag, 0, len(q.Tags)),
+		Older:       google.NewTimestamp(q.Before),
+		Newer:       google.NewTimestamp(q.After),
+		Terminated:  q.Terminated.queryValue(),
+		Archived:    q.Archived.queryValue(),
+		Purged:      q.Purged.queryValue(),
 		State:       q.State,
-		Proto:       true,
 	}
-	if !q.Before.IsZero() {
-		req.Older = q.Before.Format(time.RFC3339Nano)
-	}
-	if !q.After.IsZero() {
-		req.Newer = q.After.Format(time.RFC3339Nano)
+	if st := q.StreamType.queryValue(); st >= 0 {
+		req.StreamType = &logs.QueryRequest_StreamTypeFilter{Value: st}
 	}
 
-	req.Terminated = q.Terminated.queryValue()
-	req.Archived = q.Archived.queryValue()
-	req.Purged = q.Purged.queryValue()
-
-	for k, v := range q.Tags {
-		req.Tags = append(req.Tags, &logs.LogStreamDescriptorTag{Key: k, Value: v})
+	// Clone tags.
+	if len(q.Tags) > 0 {
+		req.Tags = make(map[string]string, len(q.Tags))
+		for k, v := range q.Tags {
+			req.Tags[k] = v
+		}
 	}
 
 	// Iteratively query until either our query is done (Next is empty) or we are
 	// asked to stop via callback.
 	for {
-		resp, err := c.svc.Query(&req).Context(ctx).Do()
+		resp, err := c.C.Query(ctx, &req)
 		if err != nil {
 			return normalizeError(err)
 		}
 
 		for _, s := range resp.Streams {
-			qresp := QueryStream{
-				Path: types.StreamPath(s.Path),
-			}
-			if s.State != nil {
-				qresp.State, err = loadLogStreamState(s.State)
-				if err != nil {
-					return qde(qresp.Path, err)
-				}
-			}
-			if s.DescriptorProto != "" {
-				qresp.DescriptorProto, err = base64.StdEncoding.DecodeString(s.DescriptorProto)
-			}
-			if !cb(&qresp) {
+			if !cb(loadLogStream(types.StreamPath(s.Path), s.State, s.Desc)) {
 				return nil
 			}
 		}

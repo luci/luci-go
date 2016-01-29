@@ -38,6 +38,7 @@ func (s *Server) Start(c context.Context) {
 	// Clean up any active server.
 	s.Close()
 
+	s.CustomAuthenticator = true
 	mwb := s.Base
 	if mwb == nil {
 		mwb = middleware.TestingBase

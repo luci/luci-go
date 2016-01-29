@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"fmt"
 
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logdog/types"
@@ -22,14 +23,9 @@ func TestLogStreamDescriptor(c context.Context, name string) *logpb.LogStreamDes
 	return &logpb.LogStreamDescriptor{
 		Prefix:      "testing",
 		Name:        name,
-		StreamType:  logpb.LogStreamDescriptor_TEXT,
+		StreamType:  logpb.StreamType_TEXT,
 		ContentType: "application/text",
 		Timestamp:   google.NewTimestamp(clock.Now(c)),
-		Tags: []*logpb.LogStreamDescriptor_Tag{
-			{"foo", "bar"},
-			{"baz", "qux"},
-			{"quux", ""},
-		},
 	}
 }
 
@@ -44,8 +40,8 @@ func TestLogStream(c context.Context, desc *logpb.LogStreamDescriptor) (*coordin
 	}
 
 	ls.ProtoVersion = logpb.Version
-	ls.Created = coordinator.NormalizeTime(clock.Now(c).UTC())
-	ls.Updated = coordinator.NormalizeTime(clock.Now(c).UTC())
+	ls.Created = ds.RoundTime(clock.Now(c).UTC())
+	ls.Updated = ds.RoundTime(clock.Now(c).UTC())
 	ls.Secret = bytes.Repeat([]byte{0x6F}, types.StreamSecretLength)
 	ls.TerminalIndex = -1
 	return ls, nil

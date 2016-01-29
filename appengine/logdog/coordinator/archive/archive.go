@@ -18,8 +18,8 @@ import (
 
 // Manifest is a set of archival parameters.
 type Manifest struct {
-	// Descriptor is the logpb.LogStreamDescriptor for the stream.
-	Descriptor *logpb.LogStreamDescriptor
+	// Desc is the logpb.LogStreamDescriptor for the stream.
+	Desc *logpb.LogStreamDescriptor
 	// Source is the LogEntry source for the stream.
 	Source LogEntrySource
 
@@ -79,7 +79,7 @@ func Archive(m Manifest) error {
 		idx = &indexBuilder{
 			Manifest: &m,
 			index: logpb.LogIndex{
-				Desc: m.Descriptor,
+				Desc: m.Desc,
 			},
 			sizeFunc: m.sizeFunc,
 		}
@@ -92,7 +92,7 @@ func Archive(m Manifest) error {
 			defer close(logC)
 
 			taskC <- func() error {
-				if err := archiveLogs(m.LogWriter, m.Descriptor, logC, idx); err != nil {
+				if err := archiveLogs(m.LogWriter, m.Desc, logC, idx); err != nil {
 					return err
 				}
 

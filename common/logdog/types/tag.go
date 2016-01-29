@@ -18,28 +18,16 @@ const (
 	MaxTagValueSize = 4096
 )
 
-// StreamTag is a stream tag key/value pair.
-type StreamTag struct {
-	// Key is the StreamTag's key property.
-	//
-	// A Key may be at most MaxTagKeySize characters, and has the same naming
-	// restrictions as a StreamName.
-	Key string
-	// Value is the StreamTag's value property. It is not subject to any naming
-	// limitations, and may be empty. It may be no longer than MaxTagValueSize.
-	Value string
-}
-
-// Validate returns an error if the Tag contains a nonconfirming value.
-func (t *StreamTag) Validate() error {
-	if err := StreamName(t.Key).Validate(); err != nil {
+// ValidateTag returns an error if a tag contains a nonconfirming value.
+func ValidateTag(k, v string) error {
+	if err := StreamName(k).Validate(); err != nil {
 		return fmt.Errorf("invalid tag key: %s", err)
 	}
-	if len(t.Key) > MaxTagKeySize {
-		return fmt.Errorf("tag key exceeds maximum size (%d > %d)", len(t.Value), MaxTagKeySize)
+	if len(k) > MaxTagKeySize {
+		return fmt.Errorf("tag key exceeds maximum size (%d > %d)", len(k), MaxTagKeySize)
 	}
-	if len(t.Value) > MaxTagValueSize {
-		return fmt.Errorf("tag value exceeds maximum size (%d > %d)", len(t.Value), MaxTagValueSize)
+	if len(v) > MaxTagValueSize {
+		return fmt.Errorf("tag value exceeds maximum size (%d > %d)", len(v), MaxTagValueSize)
 	}
 	return nil
 }

@@ -5,30 +5,18 @@
 package coordinator
 
 import (
+	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
 	"github.com/luci/luci-go/common/logdog/types"
-	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
 // StreamGetParams is an accumulating set of Stream Get request parameters.
 type StreamGetParams struct {
-	// index is the starting index, set by Index.
-	index int64
-	// nonContiguous is true if the user called NonContiguous.
-	nonContiguous bool
-
-	// logs is the user-supplied log slice to populate.
-	logs []*logpb.LogEntry
-	// bytes is the maximum number of bytes of log data to return. It is set by
-	// Logs if a byte constraint is specified.
-	bytes int64
-	// wantsLogs is true if the user has called Logs. If wantsLogs is false, the
-	// request's Count field will be set to "-1", indicating that the service
-	// should not return any logs.
-	wantsLogs bool
+	// r is the Get request to populate.
+	r logs.GetRequest
 
 	// stateP is the stream state pointer. It is set by State, and, if supplied,
 	// will cause the log request to return stream state.
-	stateP *StreamState
+	stateP *LogStream
 }
 
 // NewGetParams returns a new StreamGetParams instance.
@@ -46,40 +34,24 @@ func (p *StreamGetParams) clone() *StreamGetParams {
 // zero.
 func (p *StreamGetParams) Index(i types.MessageIndex) *StreamGetParams {
 	p = p.clone()
-	p.index = int64(i)
+	p.r.Index = int64(i)
 	return p
 }
 
-// Logs indicates that the Get request should return log entries. The log
-// entries will start at index 0 (overridable via Index) and return a series
-// of sequential logs (overridable via NonContiguous) starting from that
-// index.
-//
-// It is valid to send a Get request that asks only for the log stream's state.
-// This is accomplished by not calling Logs.
-//
-// If no logs are available, the request will be successful and none will be
-// returned.
-//
-// If a log slice is supplied, the maximum number of returned entries will be
-// the length of the slice, and it will be returned from Get sized to the number
-// of logs that were returned. Otherwise, a new log array will be allocated and
-// no size constraint will be supplied.
-//
-// If bytes is >0, the request will return no more than that many bytes of log
-// data, with a minimum of one log (regardless of its size) if available.
-//
-// If neither logs nor bytes is supplied, the server will choose how many logs
-// to return.
-func (p *StreamGetParams) Logs(logs []*logpb.LogEntry, bytes int) *StreamGetParams {
+// Limit limits the returned logs either by count or by byte count. If either
+// limit is <= 0, then no limit will be applied and the server will choose how
+// many logs to return.
+func (p *StreamGetParams) Limit(bytes, count int) *StreamGetParams {
 	p = p.clone()
 
-	if len(logs) > 0 {
-		p.logs = logs
+	if bytes < 0 {
+		bytes = 0
+	}
+	if count < 0 {
+		count = 0
 	}
 
-	p.bytes = int64(bytes)
-	p.wantsLogs = true
+	p.r.ByteCount, p.r.LogCount = int32(bytes), int32(count)
 	return p
 }
 
@@ -100,13 +72,13 @@ func (p *StreamGetParams) Logs(logs []*logpb.LogEntry, bytes int) *StreamGetPara
 // loss or corruption occurs.
 func (p *StreamGetParams) NonContiguous() *StreamGetParams {
 	p = p.clone()
-	p.nonContiguous = true
+	p.r.NonContiguous = true
 	return p
 }
 
 // State returns a stream Get parameter that causes the Get request to return
 // its stream state and log stream descriptor.
-func (p *StreamGetParams) State(stateP *StreamState) *StreamGetParams {
+func (p *StreamGetParams) State(stateP *LogStream) *StreamGetParams {
 	p = p.clone()
 	p.stateP = stateP
 	return p

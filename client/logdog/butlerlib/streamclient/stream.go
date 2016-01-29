@@ -65,5 +65,5 @@ func (s *streamImpl) writeRecord(r []byte) error {
 }
 
 func (s *streamImpl) isDatagramStream() bool {
-	return s.StreamType == logpb.LogStreamDescriptor_DATAGRAM
+	return s.StreamType == logpb.StreamType_DATAGRAM
 }

@@ -61,17 +61,17 @@ func newParser(p *streamproto.Properties, c *counter) (parser, error) {
 	}
 
 	switch p.StreamType {
-	case logpb.LogStreamDescriptor_TEXT:
+	case logpb.StreamType_TEXT:
 		return &textParser{
 			baseParser: base,
 		}, nil
 
-	case logpb.LogStreamDescriptor_BINARY:
+	case logpb.StreamType_BINARY:
 		return &binaryParser{
 			baseParser: base,
 		}, nil
 
-	case logpb.LogStreamDescriptor_DATAGRAM:
+	case logpb.StreamType_DATAGRAM:
 		return &datagramParser{
 			baseParser: base,
 			maxSize:    int64(types.MaxDatagramSize),

@@ -206,7 +206,7 @@ func TestArchive(t *testing.T) {
 		ic := indexChecker{}
 		ts := testSource{}
 		m := Manifest{
-			Descriptor:  desc,
+			Desc:        desc,
 			Source:      &ts,
 			LogWriter:   &logB,
 			IndexWriter: &indexB,

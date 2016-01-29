@@ -40,12 +40,12 @@ const (
 var (
 	textStreamArchetype = streamproto.Flags{
 		ContentType: string(types.ContentTypeText),
-		Type:        streamproto.StreamType(logpb.LogStreamDescriptor_TEXT),
+		Type:        streamproto.StreamType(logpb.StreamType_TEXT),
 	}
 
 	metadataStreamArchetype = streamproto.Flags{
 		ContentType: string(types.ContentTypeAnnotations),
-		Type:        streamproto.StreamType(logpb.LogStreamDescriptor_DATAGRAM),
+		Type:        streamproto.StreamType(logpb.StreamType_DATAGRAM),
 	}
 )
 

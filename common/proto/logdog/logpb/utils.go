@@ -38,7 +38,7 @@ func (d *LogStreamDescriptor) Validate(prefix bool) error {
 	}
 
 	switch d.StreamType {
-	case LogStreamDescriptor_TEXT, LogStreamDescriptor_BINARY, LogStreamDescriptor_DATAGRAM:
+	case StreamType_TEXT, StreamType_BINARY, StreamType_DATAGRAM:
 		break
 
 	default:
@@ -52,10 +52,9 @@ func (d *LogStreamDescriptor) Validate(prefix bool) error {
 	if d.Timestamp == nil {
 		return errors.New("missing timestamp")
 	}
-	for _, t := range d.GetTags() {
-		st := types.StreamTag{t.Key, t.Value}
-		if err := st.Validate(); err != nil {
-			return fmt.Errorf("invalid tag %q: %v", t.Key, err)
+	for k, v := range d.GetTags() {
+		if err := types.ValidateTag(k, v); err != nil {
+			return fmt.Errorf("invalid tag %q: %v", k, err)
 		}
 	}
 	return nil
@@ -84,17 +83,17 @@ func (e *LogEntry) Validate(d *LogStreamDescriptor) error {
 
 	// Check for content.
 	switch d.StreamType {
-	case LogStreamDescriptor_TEXT:
+	case StreamType_TEXT:
 		if t := e.GetText(); t == nil || len(t.Lines) == 0 {
 			return ErrNoContent
 		}
 
-	case LogStreamDescriptor_BINARY:
+	case StreamType_BINARY:
 		if b := e.GetBinary(); b == nil || len(b.Data) == 0 {
 			return ErrNoContent
 		}
 
-	case LogStreamDescriptor_DATAGRAM:
+	case StreamType_DATAGRAM:
 		if d := e.GetDatagram(); d == nil {
 			return ErrNoContent
 		}

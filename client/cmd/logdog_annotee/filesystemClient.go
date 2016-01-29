@@ -67,7 +67,7 @@ func (c *filesystemClient) NewStream(f streamproto.Flags) (streamclient.Stream, 
 		filesystemClient: c,
 		baseName:         sanitize(string(f.Name)),
 		contentType:      f.ContentType,
-		streamType:       logpb.LogStreamDescriptor_StreamType(f.Type),
+		streamType:       logpb.StreamType(f.Type),
 	}
 
 	// Open our output file for writing.
@@ -79,7 +79,7 @@ type filesystemClientStream struct {
 
 	baseName    string
 	contentType string
-	streamType  logpb.LogStreamDescriptor_StreamType
+	streamType  logpb.StreamType
 
 	writer io.WriteCloser
 	dgIdx  int
@@ -98,7 +98,7 @@ func (s *filesystemClientStream) Write(d []byte) (int, error) {
 	if s.writer == nil {
 		filename := ""
 		switch s.streamType {
-		case logpb.LogStreamDescriptor_TEXT:
+		case logpb.StreamType_TEXT:
 			filename = s.getFilename(s.baseName, "txt")
 
 		default:

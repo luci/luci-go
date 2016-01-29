@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package service
+package services
 
 import (
 	"errors"
@@ -12,16 +12,15 @@ import (
 	"github.com/luci/gae/filter/featureBreaker"
 	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/ephelper"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
+	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/appengine/ephelper/assertions"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -32,17 +31,13 @@ func TestTerminateStream(t *testing.T) {
 	Convey(`With a testing configuration`, t, func() {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 		c = memory.Use(c)
-		s := Service{
-			ServiceBase: ephelper.ServiceBase{
-				Middleware: ephelper.TestMode,
-			},
-		}
+		be := Server{}
 
 		desc := ct.TestLogStreamDescriptor(c, "foo/bar")
 		ls, err := ct.TestLogStream(c, desc)
 		So(err, ShouldBeNil)
 
-		req := TerminateStreamRequest{
+		req := services.TerminateStreamRequest{
 			Path:          "testing/+/foo/bar",
 			Secret:        ls.Secret,
 			TerminalIndex: 1337,
@@ -55,7 +50,8 @@ func TestTerminateStream(t *testing.T) {
 		c = auth.WithState(c, &fs)
 
 		Convey(`Returns Forbidden error if not a service.`, func() {
-			So(s.TerminateStream(c, &req), ShouldBeForbiddenError)
+			_, err := be.TerminateStream(c, &req)
+			So(err, ShouldBeRPCPermissionDenied)
 		})
 
 		Convey(`When logged in as a service`, func() {
@@ -66,7 +62,8 @@ func TestTerminateStream(t *testing.T) {
 				tc.Add(time.Second)
 
 				Convey(`Can be marked terminal.`, func() {
-					So(s.TerminateStream(c, &req), ShouldBeNil)
+					_, err := be.TerminateStream(c, &req)
+					So(err, ShouldBeRPCOK)
 
 					// Reload "ls" and confirm.
 					So(ds.Get(c).Get(ls), ShouldBeNil)
@@ -75,7 +72,8 @@ func TestTerminateStream(t *testing.T) {
 					So(ls.Updated, ShouldResembleV, ls.Created.Add(time.Second))
 
 					Convey(`Can be marked terminal again (idempotent).`, func() {
-						So(s.TerminateStream(c, &req), ShouldBeNil)
+						_, err := be.TerminateStream(c, &req)
+						So(err, ShouldBeRPCOK)
 
 						// Reload "ls" and confirm.
 						So(ds.Get(c).Get(ls), ShouldBeNil)
@@ -85,7 +83,8 @@ func TestTerminateStream(t *testing.T) {
 
 					Convey(`Will reject attempts to change the terminal index.`, func() {
 						req.TerminalIndex = 1338
-						So(s.TerminateStream(c, &req), ShouldBeConflictError, "terminal index is already set")
+						_, err := be.TerminateStream(c, &req)
+						So(err, ShouldBeRPCAlreadyExists, "Terminal index is already set")
 
 						// Reload "ls" and confirm.
 						So(ds.Get(c).Get(ls), ShouldBeNil)
@@ -95,7 +94,8 @@ func TestTerminateStream(t *testing.T) {
 
 					Convey(`Will reject attempts to clear the terminal index.`, func() {
 						req.TerminalIndex = -1
-						So(s.TerminateStream(c, &req), ShouldBeBadRequestError, "Negative terminal index.")
+						_, err := be.TerminateStream(c, &req)
+						So(err, ShouldBeRPCInvalidArgument, "Negative terminal index.")
 
 						// Reload "ls" and confirm.
 						So(ds.Get(c).Get(ls), ShouldBeNil)
@@ -107,28 +107,33 @@ func TestTerminateStream(t *testing.T) {
 				Convey(`Will return an internal server error if Put() fails.`, func() {
 					c, fb := featureBreaker.FilterRDS(c, nil)
 					fb.BreakFeatures(errors.New("test error"), "PutMulti")
-					So(s.TerminateStream(c, &req), ShouldBeInternalServerError)
+					_, err := be.TerminateStream(c, &req)
+					So(err, ShouldBeRPCInternal)
 				})
 
 				Convey(`Will return an internal server error if Get() fails.`, func() {
 					c, fb := featureBreaker.FilterRDS(c, nil)
 					fb.BreakFeatures(errors.New("test error"), "GetMulti")
-					So(s.TerminateStream(c, &req), ShouldBeInternalServerError)
+					_, err := be.TerminateStream(c, &req)
+					So(err, ShouldBeRPCInternal)
 				})
 
 				Convey(`Will return a bad request error if the secret doesn't match.`, func() {
 					req.Secret[0] ^= 0xFF
-					So(s.TerminateStream(c, &req), ShouldBeBadRequestError, "Request Secret doesn't match the stream secret.")
+					_, err := be.TerminateStream(c, &req)
+					So(err, ShouldBeRPCInvalidArgument, "Request secret doesn't match the stream secret.")
 				})
 			})
 
 			Convey(`Will not try and terminate a stream with an invalid path.`, func() {
 				req.Path = "!!!invalid path!!!"
-				So(s.TerminateStream(c, &req), ShouldBeBadRequestError, "Invalid path")
+				_, err := be.TerminateStream(c, &req)
+				So(err, ShouldBeRPCInvalidArgument, "Invalid path")
 			})
 
 			Convey(`Will fail if the stream is not registered.`, func() {
-				So(s.TerminateStream(c, &req), ShouldBeNotFoundError, "is not registered")
+				_, err := be.TerminateStream(c, &req)
+				So(err, ShouldBeRPCNotFound, "is not registered")
 			})
 		})
 	})

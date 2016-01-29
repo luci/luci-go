@@ -28,7 +28,7 @@ func TestProperties(t *testing.T) {
 
 			Convey(`Returns the configured ContentType if one is set.`, func() {
 				p.ContentType = "foo/bar"
-				p.StreamType = logpb.LogStreamDescriptor_TEXT
+				p.StreamType = logpb.StreamType_TEXT
 				So(p.ContentType, ShouldEqual, "foo/bar")
 			})
 
@@ -64,7 +64,7 @@ func TestFlags(t *testing.T) {
 				LogStreamDescriptor: logpb.LogStreamDescriptor{
 					Name:        "my/stream",
 					ContentType: "foo/bar",
-					StreamType:  logpb.LogStreamDescriptor_TEXT,
+					StreamType:  logpb.StreamType_TEXT,
 				},
 				Tee: TeeNone,
 			})
@@ -83,7 +83,7 @@ func TestFlagsJSON(t *testing.T) {
 				LogStreamDescriptor: logpb.LogStreamDescriptor{
 					Name:        "my/stream",
 					ContentType: "foo/bar",
-					StreamType:  logpb.LogStreamDescriptor_TEXT,
+					StreamType:  logpb.StreamType_TEXT,
 				},
 				Tee: TeeNone,
 			})
@@ -101,7 +101,7 @@ func TestFlagsJSON(t *testing.T) {
 			So(f.Properties(), ta.ShouldResembleV, &Properties{
 				LogStreamDescriptor: logpb.LogStreamDescriptor{
 					Name:        "my/stream",
-					StreamType:  logpb.LogStreamDescriptor_BINARY,
+					StreamType:  logpb.StreamType_BINARY,
 					ContentType: string(types.ContentTypeBinary),
 				},
 				Tee: TeeNone,
@@ -115,7 +115,7 @@ func TestFlagsJSON(t *testing.T) {
 			So(f.Properties(), ta.ShouldResembleV, &Properties{
 				LogStreamDescriptor: logpb.LogStreamDescriptor{
 					Name:        "my/stream",
-					StreamType:  logpb.LogStreamDescriptor_DATAGRAM,
+					StreamType:  logpb.StreamType_DATAGRAM,
 					ContentType: string(types.ContentTypeLogdogDatagram),
 				},
 				Tee: TeeNone,

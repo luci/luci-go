@@ -26,14 +26,13 @@ type StreamState struct {
 	// stream was last updated.
 	Updated time.Time
 
-	// Descriptor is the log stream's descriptor message.
-	Descriptor *logpb.LogStreamDescriptor
-
 	// TerminalIndex is the stream index of the log stream's terminal message. If
 	// its value is <0, then the log stream has not terminated yet.
 	// In this case, FinishedIndex is the index of that terminal message.
 	TerminalIndex types.MessageIndex
 
+	// Archived is true if the stream is marked as archived.
+	Archived bool
 	// ArchiveIndexURL is the Google Storage URL where the log stream's index is
 	// archived.
 	ArchiveIndexURL string
@@ -51,34 +50,40 @@ type StreamState struct {
 	Purged bool
 }
 
-// loadLogStreamState converts a logs.LogStreamState into a StreamState.
-func loadLogStreamState(s *logs.LogStreamState) (*StreamState, error) {
-	ret := StreamState{
-		TerminalIndex:    types.MessageIndex(s.TerminalIndex),
-		ArchiveIndexURL:  s.ArchiveIndexURL,
-		ArchiveStreamURL: s.ArchiveStreamURL,
-		ArchiveDataURL:   s.ArchiveDataURL,
-		Purged:           s.Purged,
-	}
+// LogStream is returned metadata about a log stream.
+type LogStream struct {
+	// Path is the path of the log stream.
+	Path types.StreamPath
 
-	err := error(nil)
-	if ret.Created, err = parseLogStreamStateTimestamp(s.Created); err != nil {
-		return nil, fmt.Errorf("failed to parse 'Created' timestamp: %v", err)
-	}
-	if ret.Updated, err = parseLogStreamStateTimestamp(s.Updated); err != nil {
-		return nil, fmt.Errorf("failed to parse 'Updated' timestamp: %v", err)
-	}
+	// Desc is the log stream's descriptor.
+	Desc *logpb.LogStreamDescriptor
 
-	return &ret, nil
+	// State is the stream's current state.
+	State *StreamState
 }
 
-func parseLogStreamStateTimestamp(s string) (time.Time, error) {
-	return time.Parse(time.RFC3339, s)
-}
+func loadLogStream(p types.StreamPath, s *logs.LogStreamState, d *logpb.LogStreamDescriptor) *LogStream {
+	ls := LogStream{
+		Path: p,
+		Desc: d,
+	}
+	if s != nil {
+		st := StreamState{
+			Created:       s.Created.Time(),
+			Updated:       s.Updated.Time(),
+			TerminalIndex: types.MessageIndex(s.TerminalIndex),
+			Purged:        s.Purged,
+		}
+		if a := s.Archive; a != nil {
+			st.Archived = true
+			st.ArchiveIndexURL = a.IndexUrl
+			st.ArchiveStreamURL = a.StreamUrl
+			st.ArchiveDataURL = a.DataUrl
+		}
 
-// IsArchived returns true if any of the mandatory archival parameters is set.
-func (s *StreamState) IsArchived() bool {
-	return (s.ArchiveIndexURL != "" || s.ArchiveStreamURL != "")
+		ls.State = &st
+	}
+	return &ls
 }
 
 // Stream is an interface to Coordinator stream-level commands. It is bound to
@@ -91,6 +96,21 @@ type Stream struct {
 	path types.StreamPath
 }
 
+// State fetches the LogStreamDescriptor for a given log stream.
+func (s *Stream) State(ctx context.Context) (*LogStream, error) {
+	req := logs.GetRequest{
+		Path:     string(s.path),
+		State:    true,
+		LogCount: -1, // Don't fetch any logs.
+	}
+
+	resp, err := s.c.C.Get(ctx, &req)
+	if err != nil {
+		return nil, normalizeError(err)
+	}
+	return loadLogStream(s.path, resp.State, resp.Desc), nil
+}
+
 // Get retrieves log stream entries from the Coordinator. The supplied
 // parameters shape which entries are requested and what information is
 // returned.
@@ -99,115 +119,65 @@ func (s *Stream) Get(ctx context.Context, p *StreamGetParams) ([]*logpb.LogEntry
 		p = &StreamGetParams{}
 	}
 
-	req := s.c.svc.Get().Path(string(s.path))
-
-	logs := p.logs
-	if p.wantsLogs {
-		if len(logs) > 0 {
-			req.Count(int64(len(logs)))
-		}
-		if p.bytes > 0 {
-			req.Bytes(p.bytes)
-		}
-		if p.nonContiguous {
-			req.Noncontiguous(true)
-		}
-		if p.index > 0 {
-			req.Index(p.index)
-		}
-	} else {
-		req.Count(-1)
-	}
+	req := p.r
+	req.Path = string(s.path)
 	if p.stateP != nil {
-		req.State(true)
+		req.State = true
 	}
-	req.Proto(true)
 
-	resp, err := req.Context(ctx).Do()
+	resp, err := s.c.C.Get(ctx, &req)
 	if err != nil {
 		return nil, normalizeError(err)
 	}
-
 	if err := loadStatePointer(p.stateP, resp); err != nil {
 		return nil, err
 	}
-
-	logs = logs[:0]
-	for i, gle := range resp.Logs {
-		le, err := decodeLogEntry(gle)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decode LogEntry %d: %v", i, err)
-		}
-		logs = append(logs, le)
-	}
-
-	return logs, nil
+	return resp.Logs, nil
 }
 
 // Tail performs a tail call, returning the last log entry in the stream. If
 // stateP is not nil, the stream's state will be requested and loaded into the
 // variable.
-func (s *Stream) Tail(ctx context.Context, stateP *StreamState) (*logpb.LogEntry, error) {
-	req := s.c.svc.Get().Path(string(s.path))
-	req.Tail(true)
-	if stateP != nil {
-		req.State(true)
+func (s *Stream) Tail(ctx context.Context, stateP *LogStream) (*logpb.LogEntry, error) {
+	req := logs.TailRequest{
+		Path: string(s.path),
 	}
-	req.Proto(true)
+	if stateP != nil {
+		req.State = true
+	}
 
-	resp, err := req.Context(ctx).Do()
+	resp, err := s.c.C.Tail(ctx, &req)
 	if err != nil {
 		return nil, normalizeError(err)
 	}
-
 	if err := loadStatePointer(stateP, resp); err != nil {
 		return nil, err
 	}
 
-	var le *logpb.LogEntry
 	switch len(resp.Logs) {
 	case 0:
-		break
+		return nil, nil
 
 	case 1:
-		le, err = decodeLogEntry(resp.Logs[0])
-		if err != nil {
-			return nil, err
-		}
+		return resp.Logs[0], nil
 
 	default:
 		return nil, fmt.Errorf("tail call returned %d logs", len(resp.Logs))
 	}
-	return le, nil
 }
 
-func loadStatePointer(stateP *StreamState, resp *logs.GetResponse) error {
+func loadStatePointer(stateP *LogStream, resp *logs.GetResponse) error {
 	if stateP == nil {
 		return nil
 	}
 
+	if resp.Desc == nil {
+		return errors.New("Requested descriptor was not returned")
+	}
 	if resp.State == nil {
 		return errors.New("Requested state was not returned")
 	}
-	state, err := loadLogStreamState(resp.State)
-	if err != nil {
-		return err
-	}
-
-	desc := logpb.LogStreamDescriptor{}
-	if err := b64Decode(resp.DescriptorProto, &desc); err != nil {
-		return fmt.Errorf("failed to base64-decode LogStreamDescriptor: %v", err)
-	}
-	state.Descriptor = &desc
-
-	*stateP = *state
+	ls := loadLogStream(resp.Desc.Path(), resp.State, resp.Desc)
+	*stateP = *ls
 	return nil
-}
-
-func decodeLogEntry(gle *logs.GetLogEntry) (*logpb.LogEntry, error) {
-	le := logpb.LogEntry{}
-	if err := b64Decode(gle.Proto, &le); err != nil {
-		return nil, err
-	}
-	return &le, nil
 }

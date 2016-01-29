@@ -15,18 +15,18 @@ import (
 
 // StreamType is a flag- and JSON-compatible wrapper around the StreamType
 // protobuf field.
-type StreamType logpb.LogStreamDescriptor_StreamType
+type StreamType logpb.StreamType
 
 // DefaultContentType returns the default ContentType for a given stream type.
 func (t StreamType) DefaultContentType() types.ContentType {
-	switch logpb.LogStreamDescriptor_StreamType(t) {
-	case logpb.LogStreamDescriptor_TEXT:
+	switch logpb.StreamType(t) {
+	case logpb.StreamType_TEXT:
 		return types.ContentTypeText
 
-	case logpb.LogStreamDescriptor_DATAGRAM:
+	case logpb.StreamType_DATAGRAM:
 		return types.ContentTypeLogdogDatagram
 
-	case logpb.LogStreamDescriptor_BINARY:
+	case logpb.StreamType_BINARY:
 		fallthrough
 	default:
 		return types.ContentTypeBinary
@@ -42,9 +42,9 @@ var _ interface {
 var (
 	// StreamTypeFlagEnum maps configuration strings to their underlying StreamTypes.
 	StreamTypeFlagEnum = flagenum.Enum{
-		"text":     StreamType(logpb.LogStreamDescriptor_TEXT),
-		"binary":   StreamType(logpb.LogStreamDescriptor_BINARY),
-		"datagram": StreamType(logpb.LogStreamDescriptor_DATAGRAM),
+		"text":     StreamType(logpb.StreamType_TEXT),
+		"binary":   StreamType(logpb.StreamType_BINARY),
+		"datagram": StreamType(logpb.StreamType_DATAGRAM),
 	}
 )
 

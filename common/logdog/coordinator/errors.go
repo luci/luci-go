@@ -6,9 +6,9 @@ package coordinator
 
 import (
 	"errors"
-	"net/http"
 
-	"google.golang.org/api/googleapi"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 )
 
 var (
@@ -25,19 +25,14 @@ func normalizeError(err error) error {
 	if err == nil {
 		return nil
 	}
-	if e, ok := err.(*googleapi.Error); ok {
-		switch e.Code {
-		case http.StatusNotFound:
-			return ErrNoSuchStream
+	switch grpc.Code(err) {
+	case codes.NotFound:
+		return ErrNoSuchStream
 
-		case http.StatusUnauthorized:
-			fallthrough
-		case http.StatusForbidden:
-			return ErrNoAccess
+	case codes.Unauthenticated, codes.PermissionDenied:
+		return ErrNoAccess
 
-		default:
-			return e
-		}
+	default:
+		return err
 	}
-	return err
 }

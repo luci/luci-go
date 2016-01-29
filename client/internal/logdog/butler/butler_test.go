@@ -290,7 +290,7 @@ func TestButler(t *testing.T) {
 			props := streamproto.Properties{
 				LogStreamDescriptor: logpb.LogStreamDescriptor{
 					Name:        "test",
-					StreamType:  logpb.LogStreamDescriptor_TEXT,
+					StreamType:  logpb.StreamType_TEXT,
 					ContentType: string(types.ContentTypeText),
 				},
 			}

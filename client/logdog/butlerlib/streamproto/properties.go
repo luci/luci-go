@@ -77,10 +77,10 @@ func (f *Flags) Properties() *Properties {
 		LogStreamDescriptor: logpb.LogStreamDescriptor{
 			Name:          string(f.Name),
 			ContentType:   string(contentType),
-			StreamType:    logpb.LogStreamDescriptor_StreamType(f.Type),
+			StreamType:    logpb.StreamType(f.Type),
 			Timestamp:     google.NewTimestamp(time.Time(f.Timestamp)),
 			BinaryFileExt: f.BinaryFileExtension,
-			Tags:          f.Tags.Proto(),
+			Tags:          f.Tags,
 		},
 		Tee:      f.Tee,
 		Timeout:  time.Duration(f.Timeout),

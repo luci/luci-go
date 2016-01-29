@@ -5,12 +5,15 @@
 package coordinator
 
 import (
-	"net/http"
+	"errors"
 	"testing"
 
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
-	"github.com/luci/luci-go/common/logdog/types"
+	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/grpcutil"
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
+	"github.com/luci/luci-go/common/testing/prpctest"
 	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -30,261 +33,380 @@ func genLog(idx int64, id string) *logpb.LogEntry {
 	}
 }
 
-func TestStream(t *testing.T) {
-	Convey(`A testing Client`, t, func() {
-		ctx := context.Background()
-		rt := testRT{}
-		httpClient := http.Client{}
-		httpClient.Transport = &rt
+// testStreamLogsService implements just the Get and Tail endpoints,
+// instrumented for testing.
+type testStreamLogsService struct {
+	testLogsServiceBase
 
-		config := Config{
-			Client:          &httpClient,
-			UserAgent:       "testing-user-agent",
-			LogsAPIBasePath: "http://example.com",
+	// Get
+	GR logs.GetRequest
+	GH func(*logs.GetRequest) (*logs.GetResponse, error)
+
+	// Tail
+	TR logs.TailRequest
+	TH func(*logs.TailRequest) (*logs.GetResponse, error)
+}
+
+func (s *testStreamLogsService) Get(c context.Context, req *logs.GetRequest) (*logs.GetResponse, error) {
+	s.GR = *req
+	if h := s.GH; h != nil {
+		return s.GH(req)
+	}
+	return nil, errors.New("not implemented")
+}
+
+func (s *testStreamLogsService) Tail(c context.Context, req *logs.TailRequest) (*logs.GetResponse, error) {
+	s.TR = *req
+	if h := s.TH; h != nil {
+		return s.TH(req)
+	}
+	return nil, errors.New("not implemented")
+}
+
+func TestStreamGet(t *testing.T) {
+	t.Parallel()
+
+	Convey(`A testing Client`, t, func() {
+		c := context.Background()
+		now := testclock.TestTimeUTC
+
+		ts := prpctest.Server{}
+		svc := testStreamLogsService{}
+		logs.RegisterLogsServer(&ts, &svc)
+
+		// Create a testing server and client.
+		ts.Start(c)
+		defer ts.Close()
+
+		prpcClient, err := ts.NewClient()
+		if err != nil {
+			panic(err)
 		}
-		client, err := New(config)
-		So(err, ShouldBeNil)
+		client := Client{
+			C: logs.NewLogsPRPCClient(prpcClient),
+		}
 
 		Convey(`Can bind a Stream`, func() {
-			s := client.Stream(types.StreamPath("test/+/a"))
+			s := client.Stream("test/+/a")
 
 			Convey(`Test Get`, func() {
 				p := NewGetParams()
 
-				Convey(`Will form a proper Get logs query.`, func() {
-					p = p.Logs(nil, 1024).
-						NonContiguous().
-						Index(1)
-
-					var req *http.Request
-					rt.handler = func(ireq *http.Request) (interface{}, error) {
-						req = ireq
-						return &logs.GetResponse{}, nil
-					}
-
-					l, err := s.Get(ctx, p)
-					So(err, ShouldBeNil)
-					So(l, ShouldBeNil)
-
-					// Validate the HTTP request that we made.
-					So(req, ShouldNotBeNil)
-					v := req.URL.Query()
-					So(v.Get("noncontiguous"), ShouldEqual, "true")
-					So(v.Get("path"), ShouldEqual, "test/+/a")
-					So(v.Get("index"), ShouldEqual, "1")
-					So(v.Get("bytes"), ShouldEqual, "1024")
-					So(v.Get("proto"), ShouldEqual, "true")
-				})
-
-				Convey(`Will request a specific number of logs if a slice is supplied.`, func() {
-					logSlice := make([]*logpb.LogEntry, 64)
-					p = p.Logs(logSlice, 32)
-
-					var req *http.Request
-					rt.handler = func(ireq *http.Request) (interface{}, error) {
-						req = ireq
-
+				Convey(`A default Get query will return logs and no state.`, func() {
+					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
 						return &logs.GetResponse{
-							Logs: []*logs.GetLogEntry{
-								{Proto: b64Proto(genLog(1337, "ohai"))},
+							Logs: []*logpb.LogEntry{
+								genLog(1337, "ohai"),
+								genLog(1338, "kthxbye"),
 							},
 						}, nil
 					}
 
-					l, err := s.Get(ctx, p)
+					l, err := s.Get(c, nil)
+					So(err, ShouldBeNil)
+					So(l, ShouldResembleV, []*logpb.LogEntry{genLog(1337, "ohai"), genLog(1338, "kthxbye")})
+
+					// Validate the correct parameters were sent.
+					So(svc.GR, ShouldResembleV, logs.GetRequest{
+						Path: "test/+/a",
+					})
+				})
+
+				Convey(`Will form a proper Get logs query.`, func() {
+					p = p.NonContiguous().Index(1)
+
+					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
+						return &logs.GetResponse{}, nil
+					}
+
+					l, err := s.Get(c, p)
+					So(err, ShouldBeNil)
+					So(l, ShouldBeNil)
+
+					// Validate the correct parameters were sent.
+					So(svc.GR, ShouldResembleV, logs.GetRequest{
+						Path:          "test/+/a",
+						NonContiguous: true,
+						Index:         1,
+					})
+				})
+
+				Convey(`Will request a specific number of logs if a constraint is supplied.`, func() {
+					p = p.Limit(32, 64)
+
+					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
+						return &logs.GetResponse{
+							Logs: []*logpb.LogEntry{
+								genLog(1337, "ohai"),
+							},
+						}, nil
+					}
+
+					l, err := s.Get(c, p)
 					So(err, ShouldBeNil)
 					So(l, ShouldResembleV, []*logpb.LogEntry{genLog(1337, "ohai")})
 
-					// It should have populated the input "logSlice".
-					So(l, ShouldResembleV, logSlice[:1])
-
 					// Validate the HTTP request that we made.
-					So(req, ShouldNotBeNil)
-					v := req.URL.Query()
-					So(v.Get("count"), ShouldEqual, "64")
-					So(v.Get("bytes"), ShouldEqual, "32")
-				})
-
-				Convey(`Will request just the state if Logs isn't called.`, func() {
-					// Add some log-only parameters to verify that they're not presnet.
-					p = p.Index(1337).NonContiguous()
-
-					var req *http.Request
-					rt.handler = func(ireq *http.Request) (interface{}, error) {
-						req = ireq
-						return &logs.GetResponse{}, nil
-					}
-
-					l, err := s.Get(ctx, p)
-					So(err, ShouldBeNil)
-					So(l, ShouldBeNil)
-
-					// Validate the HTTP request that we made.
-					So(req, ShouldNotBeNil)
-					v := req.URL.Query()
-					So(v.Get("path"), ShouldEqual, "test/+/a")
-					So(v.Get("count"), ShouldEqual, "-1")
-					So(v.Get("proto"), ShouldEqual, "true")
-
-					// Should NOT be set.
-					So(v.Get("noncontiguous"), ShouldEqual, "")
-					So(v.Get("index"), ShouldEqual, "")
+					So(svc.GR, ShouldResembleV, logs.GetRequest{
+						Path:      "test/+/a",
+						LogCount:  64,
+						ByteCount: 32,
+					})
 				})
 
 				Convey(`Can decode a full protobuf and state.`, func() {
-					st := StreamState{}
-					p = p.Logs(nil, 0).State(&st)
+					var ls LogStream
+					p = p.State(&ls)
 
-					rt.handler = func(*http.Request) (interface{}, error) {
+					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
 						return &logs.GetResponse{
-							Logs: []*logs.GetLogEntry{
-								{Proto: b64Proto(genLog(1337, "kthxbye"))},
+							Logs: []*logpb.LogEntry{
+								genLog(1337, "kthxbye"),
 							},
 							State: &logs.LogStreamState{
-								Created: timeString(now),
-								Updated: timeString(now),
+								Created: google.NewTimestamp(now),
+								Updated: google.NewTimestamp(now),
+								Archive: &logs.LogStreamState_ArchiveInfo{
+									IndexUrl:  "index",
+									StreamUrl: "stream",
+									DataUrl:   "data",
+								},
 							},
-							DescriptorProto: b64Proto(&logpb.LogStreamDescriptor{
+							Desc: &logpb.LogStreamDescriptor{
 								Prefix:     "test",
 								Name:       "a",
-								StreamType: logpb.LogStreamDescriptor_TEXT,
-							}),
+								StreamType: logpb.StreamType_TEXT,
+							},
 						}, nil
 					}
 
-					l, err := s.Get(ctx, p)
+					l, err := s.Get(c, p)
 					So(err, ShouldBeNil)
 					So(l, ShouldResembleV, []*logpb.LogEntry{genLog(1337, "kthxbye")})
-					So(st, ShouldResembleV, StreamState{
-						Created: now.UTC(),
-						Updated: now.UTC(),
-						Descriptor: &logpb.LogStreamDescriptor{
+					So(ls, ShouldResembleV, LogStream{
+						Path: "test/+/a",
+						Desc: &logpb.LogStreamDescriptor{
 							Prefix:     "test",
 							Name:       "a",
-							StreamType: logpb.LogStreamDescriptor_TEXT,
+							StreamType: logpb.StreamType_TEXT,
+						},
+						State: &StreamState{
+							Created:          now,
+							Updated:          now,
+							Archived:         true,
+							ArchiveIndexURL:  "index",
+							ArchiveStreamURL: "stream",
+							ArchiveDataURL:   "data",
 						},
 					})
 				})
 
 				Convey(`Will return ErrNoSuchStream if the stream is not found.`, func() {
-					rt.handler = func(ireq *http.Request) (interface{}, error) {
-						return nil, httpError(http.StatusNotFound)
+					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
+						return nil, grpcutil.NotFound
 					}
 
-					_, err := s.Get(ctx, p)
+					_, err := s.Get(c, p)
 					So(err, ShouldEqual, ErrNoSuchStream)
 				})
 
-				Convey(`Will return ErrNoAccess if unauthorized.`, func() {
-					rt.handler = func(ireq *http.Request) (interface{}, error) {
-						return nil, httpError(http.StatusUnauthorized)
+				Convey(`Will return ErrNoAccess if unauthenticated.`, func() {
+					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
+						return nil, grpcutil.Unauthenticated
 					}
 
-					_, err := s.Get(ctx, p)
+					_, err := s.Get(c, p)
 					So(err, ShouldEqual, ErrNoAccess)
 				})
 
-				Convey(`Will return ErrNoAccess if forbidden.`, func() {
-					rt.handler = func(ireq *http.Request) (interface{}, error) {
-						return nil, httpError(http.StatusForbidden)
+				Convey(`Will return ErrNoAccess if permission is denied.`, func() {
+					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
+						return nil, grpcutil.PermissionDenied
 					}
 
-					_, err := s.Get(ctx, p)
+					_, err := s.Get(c, p)
+					So(err, ShouldEqual, ErrNoAccess)
+				})
+			})
+
+			Convey(`Test State`, func() {
+				Convey(`Will request just the state if asked.`, func() {
+					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
+						return &logs.GetResponse{
+							State: &logs.LogStreamState{
+								Created: google.NewTimestamp(now),
+								Updated: google.NewTimestamp(now),
+							},
+						}, nil
+					}
+
+					l, err := s.State(c)
+					So(err, ShouldBeNil)
+					So(l, ShouldResembleV, &LogStream{
+						Path: "test/+/a",
+						State: &StreamState{
+							Created: now.UTC(),
+							Updated: now.UTC(),
+						},
+					})
+
+					// Validate the HTTP request that we made.
+					So(svc.GR, ShouldResembleV, logs.GetRequest{
+						Path:     "test/+/a",
+						LogCount: -1,
+						State:    true,
+					})
+				})
+
+				Convey(`Will return ErrNoSuchStream if the stream is not found.`, func() {
+					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
+						return nil, grpcutil.NotFound
+					}
+
+					_, err := s.State(c)
+					So(err, ShouldEqual, ErrNoSuchStream)
+				})
+
+				Convey(`Will return ErrNoAccess if unauthenticated.`, func() {
+					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
+						return nil, grpcutil.Unauthenticated
+					}
+
+					_, err := s.State(c)
+					So(err, ShouldEqual, ErrNoAccess)
+				})
+
+				Convey(`Will return ErrNoAccess if permission is denied.`, func() {
+					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
+						return nil, grpcutil.PermissionDenied
+					}
+
+					_, err := s.State(c)
 					So(err, ShouldEqual, ErrNoAccess)
 				})
 			})
 
 			Convey(`Test Tail`, func() {
 				Convey(`Will form a proper Tail query.`, func() {
-					var req *http.Request
-					rt.handler = func(ireq *http.Request) (interface{}, error) {
-						req = ireq
+					svc.TH = func(*logs.TailRequest) (*logs.GetResponse, error) {
 						return &logs.GetResponse{
 							State: &logs.LogStreamState{
-								Created: timeString(now),
-								Updated: timeString(now),
+								Created: google.NewTimestamp(now),
+								Updated: google.NewTimestamp(now),
 							},
-							DescriptorProto: b64Proto(&logpb.LogStreamDescriptor{
+							Desc: &logpb.LogStreamDescriptor{
 								Prefix:     "test",
 								Name:       "a",
-								StreamType: logpb.LogStreamDescriptor_TEXT,
-							}),
-							Logs: []*logs.GetLogEntry{
-								{Proto: b64Proto(genLog(1337, "kthxbye"))},
+								StreamType: logpb.StreamType_TEXT,
+							},
+							Logs: []*logpb.LogEntry{
+								genLog(1337, "kthxbye"),
 							},
 						}, nil
 					}
 
-					st := StreamState{}
-					l, err := s.Tail(ctx, &st)
+					var ls LogStream
+					l, err := s.Tail(c, &ls)
 					So(err, ShouldBeNil)
 
 					// Validate the HTTP request that we made.
-					So(req, ShouldNotBeNil)
-					v := req.URL.Query()
-					So(v.Get("path"), ShouldEqual, "test/+/a")
-					So(v.Get("tail"), ShouldEqual, "true")
-					So(v.Get("state"), ShouldEqual, "true")
+					So(svc.TR, ShouldResembleV, logs.TailRequest{
+						Path:  "test/+/a",
+						State: true,
+					})
 
 					// Validate that the log and state were returned.
 					So(l, ShouldResembleV, genLog(1337, "kthxbye"))
-					So(st, ShouldResembleV, StreamState{
-						Created: now.UTC(),
-						Updated: now.UTC(),
-						Descriptor: &logpb.LogStreamDescriptor{
+					So(ls, ShouldResembleV, LogStream{
+						Path: "test/+/a",
+						Desc: &logpb.LogStreamDescriptor{
 							Prefix:     "test",
 							Name:       "a",
-							StreamType: logpb.LogStreamDescriptor_TEXT,
+							StreamType: logpb.StreamType_TEXT,
+						},
+						State: &StreamState{
+							Created: now,
+							Updated: now,
 						},
 					})
 				})
 
 				Convey(`Will return nil with state if no logs are returned from the endpoint.`, func() {
-					rt.handler = func(req *http.Request) (interface{}, error) {
+					svc.TH = func(*logs.TailRequest) (*logs.GetResponse, error) {
 						return &logs.GetResponse{
 							State: &logs.LogStreamState{
-								Created: timeString(now),
-								Updated: timeString(now),
+								Created: google.NewTimestamp(now),
+								Updated: google.NewTimestamp(now),
 							},
-							DescriptorProto: b64Proto(&logpb.LogStreamDescriptor{
+							Desc: &logpb.LogStreamDescriptor{
 								Prefix:     "test",
 								Name:       "a",
-								StreamType: logpb.LogStreamDescriptor_TEXT,
-							}),
+								StreamType: logpb.StreamType_TEXT,
+							},
 						}, nil
 					}
 
-					st := StreamState{}
-					l, err := s.Tail(ctx, &st)
+					var ls LogStream
+					l, err := s.Tail(c, &ls)
 					So(err, ShouldBeNil)
 					So(l, ShouldBeNil)
-					So(st, ShouldResembleV, StreamState{
-						Created: now.UTC(),
-						Updated: now.UTC(),
-						Descriptor: &logpb.LogStreamDescriptor{
+					So(ls, ShouldResembleV, LogStream{
+						Path: "test/+/a",
+						Desc: &logpb.LogStreamDescriptor{
 							Prefix:     "test",
 							Name:       "a",
-							StreamType: logpb.LogStreamDescriptor_TEXT,
+							StreamType: logpb.StreamType_TEXT,
+						},
+						State: &StreamState{
+							Created: now,
+							Updated: now,
 						},
 					})
 				})
 
 				Convey(`Will error if multiple logs are returned from the endpoint.`, func() {
-					rt.handler = func(req *http.Request) (interface{}, error) {
+					svc.TH = func(*logs.TailRequest) (*logs.GetResponse, error) {
 						return &logs.GetResponse{
 							State: &logs.LogStreamState{
-								Created: timeString(now),
-								Updated: timeString(now),
+								Created: google.NewTimestamp(now),
+								Updated: google.NewTimestamp(now),
 							},
-							Logs: []*logs.GetLogEntry{
-								{Proto: b64Proto(genLog(1337, "ohai"))},
-								{Proto: b64Proto(genLog(1338, "kthxbye"))},
+							Logs: []*logpb.LogEntry{
+								genLog(1337, "ohai"),
+								genLog(1338, "kthxbye"),
 							},
 						}, nil
 					}
 
-					_, err := s.Tail(ctx, nil)
+					_, err := s.Tail(c, nil)
 					So(err, ShouldErrLike, "tail call returned 2 logs")
+				})
+
+				Convey(`Will return ErrNoSuchStream if the stream is not found.`, func() {
+					svc.TH = func(*logs.TailRequest) (*logs.GetResponse, error) {
+						return nil, grpcutil.NotFound
+					}
+
+					_, err := s.Tail(c, nil)
+					So(err, ShouldEqual, ErrNoSuchStream)
+				})
+
+				Convey(`Will return ErrNoAccess if unauthenticated.`, func() {
+					svc.TH = func(*logs.TailRequest) (*logs.GetResponse, error) {
+						return nil, grpcutil.Unauthenticated
+					}
+
+					_, err := s.Tail(c, nil)
+					So(err, ShouldEqual, ErrNoAccess)
+				})
+
+				Convey(`Will return ErrNoAccess if permission is denied.`, func() {
+					svc.TH = func(*logs.TailRequest) (*logs.GetResponse, error) {
+						return nil, grpcutil.PermissionDenied
+					}
+
+					_, err := s.Tail(c, nil)
+					So(err, ShouldEqual, ErrNoAccess)
 				})
 			})
 		})
