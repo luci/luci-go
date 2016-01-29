@@ -22,7 +22,12 @@ const (
 	mtPRPCBinary         = ContentTypePRPC + "; " + mtPRPCEncoding + "=" + mtPRPCEncodingBinary
 	mtPRPCJSONPB         = ContentTypePRPC + "; " + mtPRPCEncoding + "=" + mtPRPCEncodingJSONPB
 	mtPRPCText           = ContentTypePRPC + "; " + mtPRPCEncoding + "=" + mtPRPCEncodingText
+
+	// JSONPBPrefix is prepended to a message in JSONPB format to avoid CSRF.
+	JSONPBPrefix = ")]}'\n"
 )
+
+var bytesJSONPBPrefix = []byte(JSONPBPrefix)
 
 // Format is the pRPC protobuf wire format specification.
 type Format int

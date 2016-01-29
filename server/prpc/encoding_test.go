@@ -92,7 +92,7 @@ func TestEncoding(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		test(pc.FormatBinary, msgBytes, mtPRPCBinary)
-		test(pc.FormatJSONPB, []byte(csrfPrefix+"{\"message\":\"Hi\"}\n"), mtPRPCJSONPB)
+		test(pc.FormatJSONPB, []byte(pc.JSONPBPrefix+"{\"message\":\"Hi\"}\n"), mtPRPCJSONPB)
 		test(pc.FormatText, []byte("message: \"Hi\"\n"), mtPRPCText)
 	})
 }

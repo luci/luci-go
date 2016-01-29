@@ -23,7 +23,6 @@ import (
 
 const (
 	headerAccept = "Accept"
-	csrfPrefix   = ")]}'\n"
 )
 
 // responseFormat returns the format to be used in a response.
@@ -77,7 +76,7 @@ func respondMessage(msg proto.Message, format prpccommon.Format) *response {
 
 	case prpccommon.FormatJSONPB:
 		var buf bytes.Buffer
-		buf.WriteString(csrfPrefix)
+		buf.WriteString(prpccommon.JSONPBPrefix)
 		m := jsonpb.Marshaler{}
 		err = m.Marshal(&buf, msg)
 		if err == nil {

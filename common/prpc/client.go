@@ -122,6 +122,7 @@ func (c *Client) Call(ctx context.Context, serviceName, methodName string, in, o
 // unmarshalling it.
 // Retries on transient errors according to retry options.
 // Logs HTTP errors.
+// Trims JSONPBPrefix.
 //
 // opts must be created by this package.
 // Calling from multiple goroutines concurrently is safe, unless Client is mutated.
@@ -272,7 +273,12 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 	if f != inf {
 		return nil, fmt.Errorf("output format (%s) doesn't match input format (%s)", f.ContentType(), inf.ContentType())
 	}
-	return buf.Bytes(), nil
+
+	out := buf.Bytes()
+	if f == FormatJSONPB {
+		out = bytes.TrimPrefix(out, bytesJSONPBPrefix)
+	}
+	return out, nil
 }
 
 // prepareRequest creates an HTTP request for an RPC,
