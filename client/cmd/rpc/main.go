@@ -108,7 +108,8 @@ func (r *cmdRun) run(f func(context.Context) error) int {
 
 func isLocalHost(host string) bool {
 	return host == "localhost" || strings.HasPrefix(host, "localhost:") ||
-		host == "127.0.0.1" || strings.HasPrefix(host, "127.0.0.1:")
+		host == "127.0.0.1" || strings.HasPrefix(host, "127.0.0.1:") ||
+		strings.HasPrefix(host, ":")
 }
 
 var application = &subcommands.DefaultApplication{
