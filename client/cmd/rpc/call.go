@@ -27,9 +27,7 @@ var cmdCall = &subcommands.Command{
 
   server: host ("example.com") or port for localhost (":8080").
   service: full name of a service, e.g. "pkg.service"
-  method: name of the method.
-
-Flags:`,
+  method: name of the method.`,
 	ShortDesc: "calls a service method.",
 	LongDesc:  "Calls a service method.",
 	CommandRun: func() subcommands.CommandRun {

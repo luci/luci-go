@@ -23,9 +23,7 @@ var cmdShow = &subcommands.Command{
 
   server: host ("example.com") or port for localhost (":8080").
   name: a full name of service, method or type. If not specified prints names
-  	of all available services.
-
-Flags:`,
+  	of all available services.`,
 	ShortDesc: "lists services and prints a definition of a referenced object.",
 	LongDesc:  "Lists services and prints a definition of a referenced object.",
 	CommandRun: func() subcommands.CommandRun {
