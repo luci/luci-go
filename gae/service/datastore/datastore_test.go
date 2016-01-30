@@ -7,7 +7,12 @@
 package datastore
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/luci/gae/service/info"
@@ -1288,6 +1293,238 @@ func TestSchemaChange(t *testing.T) {
 				So(func() { GetPLS(&Bad{}) }, ShouldPanicLike,
 					"struct 'extra' field has invalid type int64")
 			})
+		})
+	})
+}
+
+func TestParseIndexYAML(t *testing.T) {
+	t.Parallel()
+
+	Convey("parses properly formatted YAML", t, func() {
+		yaml := `
+indexes:
+
+- kind: Cat
+  ancestor: no
+  properties:
+  - name: name
+  - name: age
+    direction: desc
+
+- kind: Cat
+  properties:
+  - name: name
+    direction: asc
+  - name: whiskers
+    direction: desc
+
+- kind: Store
+  ancestor: yes
+  properties:
+  - name: business
+    direction: asc
+  - name: owner
+    direction: asc
+`
+		ids, err := ParseIndexYAML(bytes.NewBuffer([]byte(yaml)))
+		So(err, ShouldBeNil)
+
+		expected := []*IndexDefinition{
+			{
+				Kind:     "Cat",
+				Ancestor: false,
+				SortBy: []IndexColumn{
+					{
+						Property:   "name",
+						Descending: false,
+					},
+					{
+						Property:   "age",
+						Descending: true,
+					},
+				},
+			},
+			{
+				Kind:     "Cat",
+				Ancestor: false,
+				SortBy: []IndexColumn{
+					{
+						Property:   "name",
+						Descending: false,
+					},
+					{
+						Property:   "whiskers",
+						Descending: true,
+					},
+				},
+			},
+			{
+				Kind:     "Store",
+				Ancestor: true,
+				SortBy: []IndexColumn{
+					{
+						Property:   "business",
+						Descending: false,
+					},
+					{
+						Property:   "owner",
+						Descending: false,
+					},
+				},
+			},
+		}
+		So(ids, ShouldResembleV, expected)
+	})
+
+	Convey("returns non-nil error for incorrectly formatted YAML", t, func() {
+
+		Convey("missing top level `indexes` key", func() {
+			yaml := `
+- kind: Cat
+  properties:
+  - name: name
+  - name: age
+    direction: desc
+`
+			_, err := ParseIndexYAML(bytes.NewBuffer([]byte(yaml)))
+			So(err, ShouldNotBeNil)
+		})
+
+		Convey("missing `name` key in property", func() {
+			yaml := `
+indexes:
+
+- kind: Cat
+  ancestor: no
+  properties:
+  - name: name
+  - direction: desc
+`
+			_, err := ParseIndexYAML(bytes.NewBuffer([]byte(yaml)))
+			So(err, ShouldNotBeNil)
+		})
+	})
+}
+
+func TestFindAndParseIndexYAML(t *testing.T) {
+	t.Parallel()
+
+	Convey("returns parsed index definitions for existing index YAML files", t, func() {
+		// YAML content to write temporarily to disk
+		yaml1 := `
+indexes:
+
+- kind: Test Same Level
+  properties:
+  - name: name
+  - name: age
+    direction: desc
+`
+		yaml2 := `
+indexes:
+
+- kind: Test Higher Level
+  properties:
+  - name: name
+  - name: age
+    direction: desc
+
+- kind: Test Foo
+  properties:
+  - name: height
+  - name: weight
+    direction: asc
+`
+		// determine the directory of this test file
+		_, path, _, ok := runtime.Caller(0)
+		if !ok {
+			panic(fmt.Errorf("failed to determine test file path"))
+		}
+		sameLevelDir := filepath.Dir(path)
+
+		Convey("picks YAML file at same level as test file instead of higher level YAML file", func() {
+			writePath1 := filepath.Join(sameLevelDir, "index.yml")
+			writePath2 := filepath.Join(filepath.Dir(sameLevelDir), "index.yaml")
+
+			setup := func() {
+				ioutil.WriteFile(writePath1, []byte(yaml1), 0600)
+				ioutil.WriteFile(writePath2, []byte(yaml2), 0600)
+			}
+
+			cleanup := func() {
+				os.Remove(writePath1)
+				os.Remove(writePath2)
+			}
+
+			setup()
+			defer cleanup()
+			ids, err := FindAndParseIndexYAML(".")
+			So(err, ShouldBeNil)
+			So(ids[0].Kind, ShouldEqual, "Test Same Level")
+		})
+
+		Convey("finds YAML file two levels up given an empty relative path", func() {
+			writePath := filepath.Join(filepath.Dir(filepath.Dir(sameLevelDir)), "index.yaml")
+
+			setup := func() {
+				ioutil.WriteFile(writePath, []byte(yaml2), 0600)
+			}
+
+			cleanup := func() {
+				os.Remove(writePath)
+			}
+
+			setup()
+			defer cleanup()
+			ids, err := FindAndParseIndexYAML("")
+			So(err, ShouldBeNil)
+			So(ids[1].Kind, ShouldEqual, "Test Foo")
+		})
+
+		Convey("finds YAML file given a relative path", func() {
+			writeDir, err := ioutil.TempDir(filepath.Dir(sameLevelDir), "temp-test-datastore-")
+			if err != nil {
+				panic(err)
+			}
+			writePath := filepath.Join(writeDir, "index.yml")
+
+			setup := func() {
+				ioutil.WriteFile(writePath, []byte(yaml2), 0600)
+			}
+
+			cleanup := func() {
+				os.RemoveAll(writeDir)
+			}
+
+			setup()
+			defer cleanup()
+			ids, err := FindAndParseIndexYAML(filepath.Join("..", filepath.Base(writeDir)))
+			So(err, ShouldBeNil)
+			So(ids[1].Kind, ShouldEqual, "Test Foo")
+		})
+
+		Convey("finds YAML file given an absolute path", func() {
+			writePath := filepath.Join(sameLevelDir, "index.yaml")
+
+			setup := func() {
+				ioutil.WriteFile(writePath, []byte(yaml2), 0600)
+			}
+
+			cleanup := func() {
+				os.Remove(writePath)
+			}
+
+			setup()
+			defer cleanup()
+
+			abs, err := filepath.Abs(sameLevelDir)
+			if err != nil {
+				panic(fmt.Errorf("failed to find absolute path for `%s`", sameLevelDir))
+			}
+
+			ids, err := FindAndParseIndexYAML(abs)
+			So(err, ShouldBeNil)
+			So(ids[1].Kind, ShouldEqual, "Test Foo")
 		})
 	})
 }

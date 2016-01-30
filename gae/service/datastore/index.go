@@ -8,6 +8,8 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+
+	"gopkg.in/yaml.v2"
 )
 
 // IndexColumn represents a sort order for a single entity field.
@@ -49,6 +51,41 @@ func (i IndexColumn) cmp(o IndexColumn) int {
 	return cmpString(i.Property, o.Property)()
 }
 
+// UnmarshalYAML deserializes a index.yml `property` into an IndexColumn.
+func (i *IndexColumn) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var m map[string]string
+	if err := unmarshal(&m); err != nil {
+		return err
+	}
+
+	name, ok := m["name"]
+	if !ok {
+		return fmt.Errorf("datastore: missing required key `name`: %v", m)
+	}
+	i.Property = name
+
+	i.Descending = false // default direction is "asc"
+	if v, ok := m["direction"]; ok && v == "desc" {
+		i.Descending = true
+	}
+
+	return nil
+}
+
+// MarshalYAML serializes an IndexColumn into a index.yml `property`.
+func (i *IndexColumn) MarshalYAML() (interface{}, error) {
+	direction := "asc"
+
+	if i.Descending {
+		direction = "desc"
+	}
+
+	return yaml.Marshal(map[string]string{
+		"name":      i.Property,
+		"direction": direction,
+	})
+}
+
 // String returns a human-readable version of this IndexColumn which is
 // compatible with ParseIndexColumn.
 func (i IndexColumn) String() string {
@@ -73,9 +110,22 @@ func (i IndexColumn) GQL() string {
 
 // IndexDefinition holds the parsed definition of a datastore index definition.
 type IndexDefinition struct {
-	Kind     string
-	Ancestor bool
-	SortBy   []IndexColumn
+	Kind     string        `yaml:"kind"`
+	Ancestor bool          `yaml:"ancestor"`
+	SortBy   []IndexColumn `yaml:"properties"`
+}
+
+// MarshalYAML serializes an IndexDefinition into a index.yml `index`.
+func (id *IndexDefinition) MarshalYAML() (interface{}, error) {
+	if id.Builtin() || !id.Compound() {
+		return nil, fmt.Errorf("cannot generate YAML for %s", id)
+	}
+
+	return yaml.Marshal(map[string]interface{}{
+		"kind":       id.Kind,
+		"ancestor":   id.Ancestor,
+		"properties": id.SortBy,
+	})
 }
 
 // Equal returns true if the two IndexDefinitions are equivalent.

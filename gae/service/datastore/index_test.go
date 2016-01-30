@@ -7,10 +7,12 @@
 package datastore
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"gopkg.in/yaml.v2"
 )
 
 var indexDefinitionTests = []struct {
@@ -77,6 +79,23 @@ func TestIndexDefinition(t *testing.T) {
 				So(tc.id.Compound(), ShouldEqual, tc.compound)
 				yaml, _ := tc.id.YAMLString()
 				So(yaml, ShouldEqual, strings.Join(tc.yaml, "\n"))
+			})
+		}
+	})
+
+	Convey("Test MarshalYAML/UnmarshalYAML", t, func() {
+		for _, tc := range indexDefinitionTests {
+			Convey(fmt.Sprintf("marshallable index definition `%s` is marshalled and unmarshalled correctly", tc.str), func() {
+				if tc.yaml != nil {
+					// marshal
+					_, err := yaml.Marshal(tc.id)
+					So(err, ShouldBeNil)
+
+					// unmarshal
+					var ids []*IndexDefinition
+					yaml.Unmarshal([]byte(strings.Join(tc.yaml, "\n")), &ids)
+					So(ids[0], ShouldResemble, tc.id)
+				}
 			})
 		}
 	})
