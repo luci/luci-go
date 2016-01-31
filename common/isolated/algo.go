@@ -11,7 +11,6 @@ import (
 	"crypto/sha1"
 	"hash"
 	"io"
-
 	// https://crbug.com/552697
 	//"github.com/klauspost/compress/zlib"
 )
