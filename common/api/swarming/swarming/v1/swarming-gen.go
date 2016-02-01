@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2016 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -211,6 +211,8 @@ type SwarmingRpcsBotInfo struct {
 	LastSeenTs string `json:"last_seen_ts,omitempty"`
 
 	Quarantined bool `json:"quarantined,omitempty"`
+
+	State string `json:"state,omitempty"`
 
 	TaskId string `json:"task_id,omitempty"`
 
@@ -908,7 +910,8 @@ func (c *BotDeleteCall) doRequest(alt string) (*http.Response, error) {
 // was returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *BotDeleteCall) Do() (*SwarmingRpcsDeletedResponse, error) {
+func (c *BotDeleteCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsDeletedResponse, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -1030,7 +1033,8 @@ func (c *BotEventsCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *BotEventsCall) Do() (*SwarmingRpcsBotEvents, error) {
+func (c *BotEventsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotEvents, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -1153,7 +1157,8 @@ func (c *BotGetCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *BotGetCall) Do() (*SwarmingRpcsBotInfo, error) {
+func (c *BotGetCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotInfo, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -1279,7 +1284,8 @@ func (c *BotTasksCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *BotTasksCall) Do() (*SwarmingRpcsBotTasks, error) {
+func (c *BotTasksCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotTasks, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -1390,7 +1396,8 @@ func (c *BotTerminateCall) doRequest(alt string) (*http.Response, error) {
 // response was returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *BotTerminateCall) Do() (*SwarmingRpcsTerminateResponse, error) {
+func (c *BotTerminateCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTerminateResponse, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -1520,7 +1527,8 @@ func (c *BotsListCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *BotsListCall) Do() (*SwarmingRpcsBotList, error) {
+func (c *BotsListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotList, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -1640,7 +1648,8 @@ func (c *ServerDetailsCall) doRequest(alt string) (*http.Response, error) {
 // was returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *ServerDetailsCall) Do() (*SwarmingRpcsServerDetails, error) {
+func (c *ServerDetailsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsServerDetails, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -1755,7 +1764,8 @@ func (c *ServerGetBootstrapCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *ServerGetBootstrapCall) Do() (*SwarmingRpcsFileContent, error) {
+func (c *ServerGetBootstrapCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsFileContent, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -1877,7 +1887,8 @@ func (c *ServerGetBotConfigCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *ServerGetBotConfigCall) Do() (*SwarmingRpcsFileContent, error) {
+func (c *ServerGetBotConfigCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsFileContent, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -1986,7 +1997,8 @@ func (c *ServerPutBootstrapCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *ServerPutBootstrapCall) Do() (*SwarmingRpcsFileContent, error) {
+func (c *ServerPutBootstrapCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsFileContent, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -2092,7 +2104,8 @@ func (c *ServerPutBotConfigCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *ServerPutBotConfigCall) Do() (*SwarmingRpcsFileContent, error) {
+func (c *ServerPutBotConfigCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsFileContent, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -2195,7 +2208,8 @@ func (c *TaskCancelCall) doRequest(alt string) (*http.Response, error) {
 // was returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *TaskCancelCall) Do() (*SwarmingRpcsCancelResponse, error) {
+func (c *TaskCancelCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsCancelResponse, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -2317,7 +2331,8 @@ func (c *TaskRequestCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *TaskRequestCall) Do() (*SwarmingRpcsTaskRequest, error) {
+func (c *TaskRequestCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskRequest, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -2443,7 +2458,8 @@ func (c *TaskResultCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *TaskResultCall) Do() (*SwarmingRpcsTaskResult, error) {
+func (c *TaskResultCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskResult, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -2565,7 +2581,8 @@ func (c *TaskStdoutCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *TaskStdoutCall) Do() (*SwarmingRpcsTaskOutput, error) {
+func (c *TaskStdoutCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskOutput, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -2721,7 +2738,8 @@ func (c *TasksCountCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *TasksCountCall) Do() (*SwarmingRpcsTasksCount, error) {
+func (c *TasksCountCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTasksCount, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -2942,7 +2960,8 @@ func (c *TasksListCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *TasksListCall) Do() (*SwarmingRpcsTaskList, error) {
+func (c *TasksListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskList, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -3123,7 +3142,8 @@ func (c *TasksNewCall) doRequest(alt string) (*http.Response, error) {
 // a response was returned at all) in error.(*googleapi.Error).Header.
 // Use googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *TasksNewCall) Do() (*SwarmingRpcsTaskRequestMetadata, error) {
+func (c *TasksNewCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskRequestMetadata, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -3298,7 +3318,8 @@ func (c *TasksRequestsCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *TasksRequestsCall) Do() (*SwarmingRpcsTaskRequests, error) {
+func (c *TasksRequestsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskRequests, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {

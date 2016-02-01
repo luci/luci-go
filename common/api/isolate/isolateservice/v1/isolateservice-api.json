@@ -1,20 +1,20 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/Nw4BK6ujDP2haBvVBGAxAYgpIW4\"",
+ "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/fkyiMP6VyB7dG98Osugsbs5CO20\"",
  "discoveryVersion": "v1",
- "id": "isolateservice:v2",
+ "id": "isolateservice:v1",
  "name": "isolateservice",
- "version": "v2",
- "description": "Version 2 of Isolate Service",
+ "version": "v1",
+ "description": "Version 1 of Isolate Service",
  "icons": {
   "x16": "http://www.google.com/images/icons/product/search-16.gif",
   "x32": "http://www.google.com/images/icons/product/search-32.gif"
  },
  "protocol": "rest",
- "baseUrl": "http://localhost:8080/_ah/api/isolateservice/v2/",
- "basePath": "/_ah/api/isolateservice/v2/",
+ "baseUrl": "http://localhost:8080/_ah/api/isolateservice/v1/",
+ "basePath": "/_ah/api/isolateservice/v1/",
  "rootUrl": "http://localhost:8080/_ah/api/",
- "servicePath": "isolateservice/v2/",
+ "servicePath": "isolateservice/v1/",
  "batchPath": "batch",
  "parameters": {
   "alt": {
@@ -71,8 +71,8 @@
   }
  },
  "schemas": {
-  "HandlersEndpointsV2Digest": {
-   "id": "HandlersEndpointsV2Digest",
+  "HandlersEndpointsV1Digest": {
+   "id": "HandlersEndpointsV1Digest",
    "type": "object",
    "description": "ProtoRPC message containing digest information.",
    "properties": {
@@ -88,8 +88,8 @@
     }
    }
   },
-  "HandlersEndpointsV2DigestCollection": {
-   "id": "HandlersEndpointsV2DigestCollection",
+  "HandlersEndpointsV1DigestCollection": {
+   "id": "HandlersEndpointsV1DigestCollection",
    "type": "object",
    "description": "Endpoints request type analogous to the existing JSON post body.",
    "properties": {
@@ -97,16 +97,17 @@
      "type": "array",
      "description": "ProtoRPC message containing digest information.",
      "items": {
-      "$ref": "HandlersEndpointsV2Digest"
+      "$ref": "HandlersEndpointsV1Digest"
      }
     },
     "namespace": {
-     "type": "string"
+     "$ref": "HandlersEndpointsV1Namespace",
+     "description": "Encapsulates namespace, compression, and hash algorithm."
     }
    }
   },
-  "HandlersEndpointsV2FinalizeRequest": {
-   "id": "HandlersEndpointsV2FinalizeRequest",
+  "HandlersEndpointsV1FinalizeRequest": {
+   "id": "HandlersEndpointsV1FinalizeRequest",
    "type": "object",
    "description": "Request to validate upload of large Google storage entities.",
    "properties": {
@@ -115,8 +116,24 @@
     }
    }
   },
-  "HandlersEndpointsV2PreuploadStatus": {
-   "id": "HandlersEndpointsV2PreuploadStatus",
+  "HandlersEndpointsV1Namespace": {
+   "id": "HandlersEndpointsV1Namespace",
+   "type": "object",
+   "description": "Encapsulates namespace, compression, and hash algorithm.",
+   "properties": {
+    "compression": {
+     "type": "string"
+    },
+    "digest_hash": {
+     "type": "string"
+    },
+    "namespace": {
+     "type": "string"
+    }
+   }
+  },
+  "HandlersEndpointsV1PreuploadStatus": {
+   "id": "HandlersEndpointsV1PreuploadStatus",
    "type": "object",
    "description": "Endpoints response type for a single URL or pair of URLs.",
    "properties": {
@@ -132,8 +149,8 @@
     }
    }
   },
-  "HandlersEndpointsV2PushPing": {
-   "id": "HandlersEndpointsV2PushPing",
+  "HandlersEndpointsV1PushPing": {
+   "id": "HandlersEndpointsV1PushPing",
    "type": "object",
    "description": "Indicates whether data storage executed successfully.",
    "properties": {
@@ -142,8 +159,8 @@
     }
    }
   },
-  "HandlersEndpointsV2RetrieveRequest": {
-   "id": "HandlersEndpointsV2RetrieveRequest",
+  "HandlersEndpointsV1RetrieveRequest": {
+   "id": "HandlersEndpointsV1RetrieveRequest",
    "type": "object",
    "description": "Request to retrieve content from memcache, datastore, or GS.",
    "properties": {
@@ -151,7 +168,8 @@
      "type": "string"
     },
     "namespace": {
-     "type": "string"
+     "$ref": "HandlersEndpointsV1Namespace",
+     "description": "Encapsulates namespace, compression, and hash algorithm."
     },
     "offset": {
      "type": "string",
@@ -159,8 +177,8 @@
     }
    }
   },
-  "HandlersEndpointsV2RetrievedContent": {
-   "id": "HandlersEndpointsV2RetrievedContent",
+  "HandlersEndpointsV1RetrievedContent": {
+   "id": "HandlersEndpointsV1RetrievedContent",
    "type": "object",
    "description": "Content retrieved from DB, or GS URL.",
    "properties": {
@@ -173,8 +191,8 @@
     }
    }
   },
-  "HandlersEndpointsV2ServerDetails": {
-   "id": "HandlersEndpointsV2ServerDetails",
+  "HandlersEndpointsV1ServerDetails": {
+   "id": "HandlersEndpointsV1ServerDetails",
    "type": "object",
    "description": "Reports the current API version.",
    "properties": {
@@ -183,8 +201,8 @@
     }
    }
   },
-  "HandlersEndpointsV2StorageRequest": {
-   "id": "HandlersEndpointsV2StorageRequest",
+  "HandlersEndpointsV1StorageRequest": {
+   "id": "HandlersEndpointsV1StorageRequest",
    "type": "object",
    "description": "ProtoRPC message representing an entity to be added to the data store.",
    "properties": {
@@ -197,8 +215,8 @@
     }
    }
   },
-  "HandlersEndpointsV2UrlCollection": {
-   "id": "HandlersEndpointsV2UrlCollection",
+  "HandlersEndpointsV1UrlCollection": {
+   "id": "HandlersEndpointsV1UrlCollection",
    "type": "object",
    "description": "Endpoints response type analogous to existing JSON response.",
    "properties": {
@@ -206,7 +224,7 @@
      "type": "array",
      "description": "Endpoints response type for a single URL or pair of URLs.",
      "items": {
-      "$ref": "HandlersEndpointsV2PreuploadStatus"
+      "$ref": "HandlersEndpointsV1PreuploadStatus"
      }
     }
    }
@@ -219,11 +237,11 @@
    "httpMethod": "POST",
    "description": "Informs client that large entities have been uploaded to GCS.",
    "request": {
-    "$ref": "HandlersEndpointsV2FinalizeRequest",
+    "$ref": "HandlersEndpointsV1FinalizeRequest",
     "parameterName": "resource"
    },
    "response": {
-    "$ref": "HandlersEndpointsV2PushPing"
+    "$ref": "HandlersEndpointsV1PushPing"
    },
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"
@@ -235,11 +253,11 @@
    "httpMethod": "POST",
    "description": "Checks for entry's existence and generates upload URLs. Arguments: request: the DigestCollection to be posted Returns: the UrlCollection corresponding to the uploaded digests The response list is commensurate to the request's; each UrlMessage has * if an entry is missing: two URLs: the URL to upload a file to and the URL to call when the upload is done (can be null). * if the entry is already present: null URLs (''). UrlCollection([ UrlMessage( upload_url = \"\" finalize_url = \"\" ) UrlMessage( upload_url = '') ... ])",
    "request": {
-    "$ref": "HandlersEndpointsV2DigestCollection",
+    "$ref": "HandlersEndpointsV1DigestCollection",
     "parameterName": "resource"
    },
    "response": {
-    "$ref": "HandlersEndpointsV2UrlCollection"
+    "$ref": "HandlersEndpointsV1UrlCollection"
    },
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"
@@ -251,11 +269,11 @@
    "httpMethod": "POST",
    "description": "Retrieves content from a storage location.",
    "request": {
-    "$ref": "HandlersEndpointsV2RetrieveRequest",
+    "$ref": "HandlersEndpointsV1RetrieveRequest",
     "parameterName": "resource"
    },
    "response": {
-    "$ref": "HandlersEndpointsV2RetrievedContent"
+    "$ref": "HandlersEndpointsV1RetrievedContent"
    },
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"
@@ -266,7 +284,7 @@
    "path": "server_details",
    "httpMethod": "POST",
    "response": {
-    "$ref": "HandlersEndpointsV2ServerDetails"
+    "$ref": "HandlersEndpointsV1ServerDetails"
    },
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"
@@ -278,11 +296,11 @@
    "httpMethod": "POST",
    "description": "Stores relatively small entities in the datastore.",
    "request": {
-    "$ref": "HandlersEndpointsV2StorageRequest",
+    "$ref": "HandlersEndpointsV1StorageRequest",
     "parameterName": "resource"
    },
    "response": {
-    "$ref": "HandlersEndpointsV2PushPing"
+    "$ref": "HandlersEndpointsV1PushPing"
    },
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"

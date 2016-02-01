@@ -6,10 +6,10 @@
 //
 // Usage example:
 //
-//   import "github.com/luci/luci-go/common/api/isolate/isolateservice/v2"
+//   import "github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
 //   ...
 //   isolateserviceService, err := isolateservice.New(oauthHttpClient)
-package isolateservice // import "github.com/luci/luci-go/common/api/isolate/isolateservice/v2"
+package isolateservice // import "github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
 
 import (
 	"bytes"
@@ -42,10 +42,10 @@ var _ = strings.Replace
 var _ = context.Canceled
 var _ = ctxhttp.Do
 
-const apiId = "isolateservice:v2"
+const apiId = "isolateservice:v1"
 const apiName = "isolateservice"
-const apiVersion = "v2"
-const basePath = "http://localhost:8080/_ah/api/isolateservice/v2/"
+const apiVersion = "v1"
+const basePath = "http://localhost:8080/_ah/api/isolateservice/v1/"
 
 // OAuth2 scopes used by this API.
 const (
@@ -74,9 +74,9 @@ func (s *Service) userAgent() string {
 	return googleapi.UserAgent + " " + s.UserAgent
 }
 
-// HandlersEndpointsV2Digest: ProtoRPC message containing digest
+// HandlersEndpointsV1Digest: ProtoRPC message containing digest
 // information.
-type HandlersEndpointsV2Digest struct {
+type HandlersEndpointsV1Digest struct {
 	Digest string `json:"digest,omitempty"`
 
 	IsIsolated bool `json:"is_isolated,omitempty"`
@@ -92,19 +92,20 @@ type HandlersEndpointsV2Digest struct {
 	ForceSendFields []string `json:"-"`
 }
 
-func (s *HandlersEndpointsV2Digest) MarshalJSON() ([]byte, error) {
-	type noMethod HandlersEndpointsV2Digest
+func (s *HandlersEndpointsV1Digest) MarshalJSON() ([]byte, error) {
+	type noMethod HandlersEndpointsV1Digest
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields)
 }
 
-// HandlersEndpointsV2DigestCollection: Endpoints request type analogous
+// HandlersEndpointsV1DigestCollection: Endpoints request type analogous
 // to the existing JSON post body.
-type HandlersEndpointsV2DigestCollection struct {
+type HandlersEndpointsV1DigestCollection struct {
 	// Items: ProtoRPC message containing digest information.
-	Items []*HandlersEndpointsV2Digest `json:"items,omitempty"`
+	Items []*HandlersEndpointsV1Digest `json:"items,omitempty"`
 
-	Namespace string `json:"namespace,omitempty"`
+	// Namespace: Encapsulates namespace, compression, and hash algorithm.
+	Namespace *HandlersEndpointsV1Namespace `json:"namespace,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "Items") to
 	// unconditionally include in API requests. By default, fields with
@@ -115,15 +116,15 @@ type HandlersEndpointsV2DigestCollection struct {
 	ForceSendFields []string `json:"-"`
 }
 
-func (s *HandlersEndpointsV2DigestCollection) MarshalJSON() ([]byte, error) {
-	type noMethod HandlersEndpointsV2DigestCollection
+func (s *HandlersEndpointsV1DigestCollection) MarshalJSON() ([]byte, error) {
+	type noMethod HandlersEndpointsV1DigestCollection
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields)
 }
 
-// HandlersEndpointsV2FinalizeRequest: Request to validate upload of
+// HandlersEndpointsV1FinalizeRequest: Request to validate upload of
 // large Google storage entities.
-type HandlersEndpointsV2FinalizeRequest struct {
+type HandlersEndpointsV1FinalizeRequest struct {
 	UploadTicket string `json:"upload_ticket,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "UploadTicket") to
@@ -135,15 +136,39 @@ type HandlersEndpointsV2FinalizeRequest struct {
 	ForceSendFields []string `json:"-"`
 }
 
-func (s *HandlersEndpointsV2FinalizeRequest) MarshalJSON() ([]byte, error) {
-	type noMethod HandlersEndpointsV2FinalizeRequest
+func (s *HandlersEndpointsV1FinalizeRequest) MarshalJSON() ([]byte, error) {
+	type noMethod HandlersEndpointsV1FinalizeRequest
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields)
 }
 
-// HandlersEndpointsV2PreuploadStatus: Endpoints response type for a
+// HandlersEndpointsV1Namespace: Encapsulates namespace, compression,
+// and hash algorithm.
+type HandlersEndpointsV1Namespace struct {
+	Compression string `json:"compression,omitempty"`
+
+	DigestHash string `json:"digest_hash,omitempty"`
+
+	Namespace string `json:"namespace,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "Compression") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+}
+
+func (s *HandlersEndpointsV1Namespace) MarshalJSON() ([]byte, error) {
+	type noMethod HandlersEndpointsV1Namespace
+	raw := noMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields)
+}
+
+// HandlersEndpointsV1PreuploadStatus: Endpoints response type for a
 // single URL or pair of URLs.
-type HandlersEndpointsV2PreuploadStatus struct {
+type HandlersEndpointsV1PreuploadStatus struct {
 	GsUploadUrl string `json:"gs_upload_url,omitempty"`
 
 	Index int64 `json:"index,omitempty,string"`
@@ -159,15 +184,15 @@ type HandlersEndpointsV2PreuploadStatus struct {
 	ForceSendFields []string `json:"-"`
 }
 
-func (s *HandlersEndpointsV2PreuploadStatus) MarshalJSON() ([]byte, error) {
-	type noMethod HandlersEndpointsV2PreuploadStatus
+func (s *HandlersEndpointsV1PreuploadStatus) MarshalJSON() ([]byte, error) {
+	type noMethod HandlersEndpointsV1PreuploadStatus
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields)
 }
 
-// HandlersEndpointsV2PushPing: Indicates whether data storage executed
+// HandlersEndpointsV1PushPing: Indicates whether data storage executed
 // successfully.
-type HandlersEndpointsV2PushPing struct {
+type HandlersEndpointsV1PushPing struct {
 	Ok bool `json:"ok,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
@@ -183,18 +208,19 @@ type HandlersEndpointsV2PushPing struct {
 	ForceSendFields []string `json:"-"`
 }
 
-func (s *HandlersEndpointsV2PushPing) MarshalJSON() ([]byte, error) {
-	type noMethod HandlersEndpointsV2PushPing
+func (s *HandlersEndpointsV1PushPing) MarshalJSON() ([]byte, error) {
+	type noMethod HandlersEndpointsV1PushPing
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields)
 }
 
-// HandlersEndpointsV2RetrieveRequest: Request to retrieve content from
+// HandlersEndpointsV1RetrieveRequest: Request to retrieve content from
 // memcache, datastore, or GS.
-type HandlersEndpointsV2RetrieveRequest struct {
+type HandlersEndpointsV1RetrieveRequest struct {
 	Digest string `json:"digest,omitempty"`
 
-	Namespace string `json:"namespace,omitempty"`
+	// Namespace: Encapsulates namespace, compression, and hash algorithm.
+	Namespace *HandlersEndpointsV1Namespace `json:"namespace,omitempty"`
 
 	Offset int64 `json:"offset,omitempty,string"`
 
@@ -207,15 +233,15 @@ type HandlersEndpointsV2RetrieveRequest struct {
 	ForceSendFields []string `json:"-"`
 }
 
-func (s *HandlersEndpointsV2RetrieveRequest) MarshalJSON() ([]byte, error) {
-	type noMethod HandlersEndpointsV2RetrieveRequest
+func (s *HandlersEndpointsV1RetrieveRequest) MarshalJSON() ([]byte, error) {
+	type noMethod HandlersEndpointsV1RetrieveRequest
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields)
 }
 
-// HandlersEndpointsV2RetrievedContent: Content retrieved from DB, or GS
+// HandlersEndpointsV1RetrievedContent: Content retrieved from DB, or GS
 // URL.
-type HandlersEndpointsV2RetrievedContent struct {
+type HandlersEndpointsV1RetrievedContent struct {
 	Content string `json:"content,omitempty"`
 
 	Url string `json:"url,omitempty"`
@@ -233,14 +259,14 @@ type HandlersEndpointsV2RetrievedContent struct {
 	ForceSendFields []string `json:"-"`
 }
 
-func (s *HandlersEndpointsV2RetrievedContent) MarshalJSON() ([]byte, error) {
-	type noMethod HandlersEndpointsV2RetrievedContent
+func (s *HandlersEndpointsV1RetrievedContent) MarshalJSON() ([]byte, error) {
+	type noMethod HandlersEndpointsV1RetrievedContent
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields)
 }
 
-// HandlersEndpointsV2ServerDetails: Reports the current API version.
-type HandlersEndpointsV2ServerDetails struct {
+// HandlersEndpointsV1ServerDetails: Reports the current API version.
+type HandlersEndpointsV1ServerDetails struct {
 	ServerVersion string `json:"server_version,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
@@ -256,15 +282,15 @@ type HandlersEndpointsV2ServerDetails struct {
 	ForceSendFields []string `json:"-"`
 }
 
-func (s *HandlersEndpointsV2ServerDetails) MarshalJSON() ([]byte, error) {
-	type noMethod HandlersEndpointsV2ServerDetails
+func (s *HandlersEndpointsV1ServerDetails) MarshalJSON() ([]byte, error) {
+	type noMethod HandlersEndpointsV1ServerDetails
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields)
 }
 
-// HandlersEndpointsV2StorageRequest: ProtoRPC message representing an
+// HandlersEndpointsV1StorageRequest: ProtoRPC message representing an
 // entity to be added to the data store.
-type HandlersEndpointsV2StorageRequest struct {
+type HandlersEndpointsV1StorageRequest struct {
 	Content string `json:"content,omitempty"`
 
 	UploadTicket string `json:"upload_ticket,omitempty"`
@@ -278,17 +304,17 @@ type HandlersEndpointsV2StorageRequest struct {
 	ForceSendFields []string `json:"-"`
 }
 
-func (s *HandlersEndpointsV2StorageRequest) MarshalJSON() ([]byte, error) {
-	type noMethod HandlersEndpointsV2StorageRequest
+func (s *HandlersEndpointsV1StorageRequest) MarshalJSON() ([]byte, error) {
+	type noMethod HandlersEndpointsV1StorageRequest
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields)
 }
 
-// HandlersEndpointsV2UrlCollection: Endpoints response type analogous
+// HandlersEndpointsV1UrlCollection: Endpoints response type analogous
 // to existing JSON response.
-type HandlersEndpointsV2UrlCollection struct {
+type HandlersEndpointsV1UrlCollection struct {
 	// Items: Endpoints response type for a single URL or pair of URLs.
-	Items []*HandlersEndpointsV2PreuploadStatus `json:"items,omitempty"`
+	Items []*HandlersEndpointsV1PreuploadStatus `json:"items,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
 	// server.
@@ -303,8 +329,8 @@ type HandlersEndpointsV2UrlCollection struct {
 	ForceSendFields []string `json:"-"`
 }
 
-func (s *HandlersEndpointsV2UrlCollection) MarshalJSON() ([]byte, error) {
-	type noMethod HandlersEndpointsV2UrlCollection
+func (s *HandlersEndpointsV1UrlCollection) MarshalJSON() ([]byte, error) {
+	type noMethod HandlersEndpointsV1UrlCollection
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields)
 }
@@ -313,16 +339,16 @@ func (s *HandlersEndpointsV2UrlCollection) MarshalJSON() ([]byte, error) {
 
 type FinalizeGsUploadCall struct {
 	s                                  *Service
-	handlersendpointsv2finalizerequest *HandlersEndpointsV2FinalizeRequest
+	handlersendpointsv1finalizerequest *HandlersEndpointsV1FinalizeRequest
 	urlParams_                         gensupport.URLParams
 	ctx_                               context.Context
 }
 
 // FinalizeGsUpload: Informs client that large entities have been
 // uploaded to GCS.
-func (s *Service) FinalizeGsUpload(handlersendpointsv2finalizerequest *HandlersEndpointsV2FinalizeRequest) *FinalizeGsUploadCall {
+func (s *Service) FinalizeGsUpload(handlersendpointsv1finalizerequest *HandlersEndpointsV1FinalizeRequest) *FinalizeGsUploadCall {
 	c := &FinalizeGsUploadCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.handlersendpointsv2finalizerequest = handlersendpointsv2finalizerequest
+	c.handlersendpointsv1finalizerequest = handlersendpointsv1finalizerequest
 	return c
 }
 
@@ -344,7 +370,7 @@ func (c *FinalizeGsUploadCall) Context(ctx context.Context) *FinalizeGsUploadCal
 
 func (c *FinalizeGsUploadCall) doRequest(alt string) (*http.Response, error) {
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.handlersendpointsv2finalizerequest)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.handlersendpointsv1finalizerequest)
 	if err != nil {
 		return nil, err
 	}
@@ -363,13 +389,13 @@ func (c *FinalizeGsUploadCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "isolateservice.finalize_gs_upload" call.
-// Exactly one of *HandlersEndpointsV2PushPing or error will be non-nil.
+// Exactly one of *HandlersEndpointsV1PushPing or error will be non-nil.
 // Any non-2xx status code is an error. Response headers are in either
-// *HandlersEndpointsV2PushPing.ServerResponse.Header or (if a response
+// *HandlersEndpointsV1PushPing.ServerResponse.Header or (if a response
 // was returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *FinalizeGsUploadCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV2PushPing, error) {
+func (c *FinalizeGsUploadCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV1PushPing, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -388,7 +414,7 @@ func (c *FinalizeGsUploadCall) Do(opts ...googleapi.CallOption) (*HandlersEndpoi
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &HandlersEndpointsV2PushPing{
+	ret := &HandlersEndpointsV1PushPing{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -404,11 +430,11 @@ func (c *FinalizeGsUploadCall) Do(opts ...googleapi.CallOption) (*HandlersEndpoi
 	//   "id": "isolateservice.finalize_gs_upload",
 	//   "path": "finalize_gs_upload",
 	//   "request": {
-	//     "$ref": "HandlersEndpointsV2FinalizeRequest",
+	//     "$ref": "HandlersEndpointsV1FinalizeRequest",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "HandlersEndpointsV2PushPing"
+	//     "$ref": "HandlersEndpointsV1PushPing"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -421,7 +447,7 @@ func (c *FinalizeGsUploadCall) Do(opts ...googleapi.CallOption) (*HandlersEndpoi
 
 type PreuploadCall struct {
 	s                                   *Service
-	handlersendpointsv2digestcollection *HandlersEndpointsV2DigestCollection
+	handlersendpointsv1digestcollection *HandlersEndpointsV1DigestCollection
 	urlParams_                          gensupport.URLParams
 	ctx_                                context.Context
 }
@@ -434,9 +460,9 @@ type PreuploadCall struct {
 // when the upload is done (can be null). * if the entry is already
 // present: null URLs (''). UrlCollection([ UrlMessage( upload_url = ""
 // finalize_url = "" ) UrlMessage( upload_url = '') ... ])
-func (s *Service) Preupload(handlersendpointsv2digestcollection *HandlersEndpointsV2DigestCollection) *PreuploadCall {
+func (s *Service) Preupload(handlersendpointsv1digestcollection *HandlersEndpointsV1DigestCollection) *PreuploadCall {
 	c := &PreuploadCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.handlersendpointsv2digestcollection = handlersendpointsv2digestcollection
+	c.handlersendpointsv1digestcollection = handlersendpointsv1digestcollection
 	return c
 }
 
@@ -458,7 +484,7 @@ func (c *PreuploadCall) Context(ctx context.Context) *PreuploadCall {
 
 func (c *PreuploadCall) doRequest(alt string) (*http.Response, error) {
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.handlersendpointsv2digestcollection)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.handlersendpointsv1digestcollection)
 	if err != nil {
 		return nil, err
 	}
@@ -477,13 +503,13 @@ func (c *PreuploadCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "isolateservice.preupload" call.
-// Exactly one of *HandlersEndpointsV2UrlCollection or error will be
+// Exactly one of *HandlersEndpointsV1UrlCollection or error will be
 // non-nil. Any non-2xx status code is an error. Response headers are in
-// either *HandlersEndpointsV2UrlCollection.ServerResponse.Header or (if
+// either *HandlersEndpointsV1UrlCollection.ServerResponse.Header or (if
 // a response was returned at all) in error.(*googleapi.Error).Header.
 // Use googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *PreuploadCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV2UrlCollection, error) {
+func (c *PreuploadCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV1UrlCollection, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -502,7 +528,7 @@ func (c *PreuploadCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV2Ur
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &HandlersEndpointsV2UrlCollection{
+	ret := &HandlersEndpointsV1UrlCollection{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -518,11 +544,11 @@ func (c *PreuploadCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV2Ur
 	//   "id": "isolateservice.preupload",
 	//   "path": "preupload",
 	//   "request": {
-	//     "$ref": "HandlersEndpointsV2DigestCollection",
+	//     "$ref": "HandlersEndpointsV1DigestCollection",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "HandlersEndpointsV2UrlCollection"
+	//     "$ref": "HandlersEndpointsV1UrlCollection"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -535,15 +561,15 @@ func (c *PreuploadCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV2Ur
 
 type RetrieveCall struct {
 	s                                  *Service
-	handlersendpointsv2retrieverequest *HandlersEndpointsV2RetrieveRequest
+	handlersendpointsv1retrieverequest *HandlersEndpointsV1RetrieveRequest
 	urlParams_                         gensupport.URLParams
 	ctx_                               context.Context
 }
 
 // Retrieve: Retrieves content from a storage location.
-func (s *Service) Retrieve(handlersendpointsv2retrieverequest *HandlersEndpointsV2RetrieveRequest) *RetrieveCall {
+func (s *Service) Retrieve(handlersendpointsv1retrieverequest *HandlersEndpointsV1RetrieveRequest) *RetrieveCall {
 	c := &RetrieveCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.handlersendpointsv2retrieverequest = handlersendpointsv2retrieverequest
+	c.handlersendpointsv1retrieverequest = handlersendpointsv1retrieverequest
 	return c
 }
 
@@ -565,7 +591,7 @@ func (c *RetrieveCall) Context(ctx context.Context) *RetrieveCall {
 
 func (c *RetrieveCall) doRequest(alt string) (*http.Response, error) {
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.handlersendpointsv2retrieverequest)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.handlersendpointsv1retrieverequest)
 	if err != nil {
 		return nil, err
 	}
@@ -584,14 +610,14 @@ func (c *RetrieveCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "isolateservice.retrieve" call.
-// Exactly one of *HandlersEndpointsV2RetrievedContent or error will be
+// Exactly one of *HandlersEndpointsV1RetrievedContent or error will be
 // non-nil. Any non-2xx status code is an error. Response headers are in
-// either *HandlersEndpointsV2RetrievedContent.ServerResponse.Header or
+// either *HandlersEndpointsV1RetrievedContent.ServerResponse.Header or
 // (if a response was returned at all) in
 // error.(*googleapi.Error).Header. Use googleapi.IsNotModified to check
 // whether the returned error was because http.StatusNotModified was
 // returned.
-func (c *RetrieveCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV2RetrievedContent, error) {
+func (c *RetrieveCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV1RetrievedContent, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -610,7 +636,7 @@ func (c *RetrieveCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV2Ret
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &HandlersEndpointsV2RetrievedContent{
+	ret := &HandlersEndpointsV1RetrievedContent{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -626,11 +652,11 @@ func (c *RetrieveCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV2Ret
 	//   "id": "isolateservice.retrieve",
 	//   "path": "retrieve",
 	//   "request": {
-	//     "$ref": "HandlersEndpointsV2RetrieveRequest",
+	//     "$ref": "HandlersEndpointsV1RetrieveRequest",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "HandlersEndpointsV2RetrievedContent"
+	//     "$ref": "HandlersEndpointsV1RetrievedContent"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -684,13 +710,13 @@ func (c *ServerDetailsCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "isolateservice.server_details" call.
-// Exactly one of *HandlersEndpointsV2ServerDetails or error will be
+// Exactly one of *HandlersEndpointsV1ServerDetails or error will be
 // non-nil. Any non-2xx status code is an error. Response headers are in
-// either *HandlersEndpointsV2ServerDetails.ServerResponse.Header or (if
+// either *HandlersEndpointsV1ServerDetails.ServerResponse.Header or (if
 // a response was returned at all) in error.(*googleapi.Error).Header.
 // Use googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *ServerDetailsCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV2ServerDetails, error) {
+func (c *ServerDetailsCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV1ServerDetails, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -709,7 +735,7 @@ func (c *ServerDetailsCall) Do(opts ...googleapi.CallOption) (*HandlersEndpoints
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &HandlersEndpointsV2ServerDetails{
+	ret := &HandlersEndpointsV1ServerDetails{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -724,7 +750,7 @@ func (c *ServerDetailsCall) Do(opts ...googleapi.CallOption) (*HandlersEndpoints
 	//   "id": "isolateservice.server_details",
 	//   "path": "server_details",
 	//   "response": {
-	//     "$ref": "HandlersEndpointsV2ServerDetails"
+	//     "$ref": "HandlersEndpointsV1ServerDetails"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -737,15 +763,15 @@ func (c *ServerDetailsCall) Do(opts ...googleapi.CallOption) (*HandlersEndpoints
 
 type StoreInlineCall struct {
 	s                                 *Service
-	handlersendpointsv2storagerequest *HandlersEndpointsV2StorageRequest
+	handlersendpointsv1storagerequest *HandlersEndpointsV1StorageRequest
 	urlParams_                        gensupport.URLParams
 	ctx_                              context.Context
 }
 
 // StoreInline: Stores relatively small entities in the datastore.
-func (s *Service) StoreInline(handlersendpointsv2storagerequest *HandlersEndpointsV2StorageRequest) *StoreInlineCall {
+func (s *Service) StoreInline(handlersendpointsv1storagerequest *HandlersEndpointsV1StorageRequest) *StoreInlineCall {
 	c := &StoreInlineCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.handlersendpointsv2storagerequest = handlersendpointsv2storagerequest
+	c.handlersendpointsv1storagerequest = handlersendpointsv1storagerequest
 	return c
 }
 
@@ -767,7 +793,7 @@ func (c *StoreInlineCall) Context(ctx context.Context) *StoreInlineCall {
 
 func (c *StoreInlineCall) doRequest(alt string) (*http.Response, error) {
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.handlersendpointsv2storagerequest)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.handlersendpointsv1storagerequest)
 	if err != nil {
 		return nil, err
 	}
@@ -786,13 +812,13 @@ func (c *StoreInlineCall) doRequest(alt string) (*http.Response, error) {
 }
 
 // Do executes the "isolateservice.store_inline" call.
-// Exactly one of *HandlersEndpointsV2PushPing or error will be non-nil.
+// Exactly one of *HandlersEndpointsV1PushPing or error will be non-nil.
 // Any non-2xx status code is an error. Response headers are in either
-// *HandlersEndpointsV2PushPing.ServerResponse.Header or (if a response
+// *HandlersEndpointsV1PushPing.ServerResponse.Header or (if a response
 // was returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *StoreInlineCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV2PushPing, error) {
+func (c *StoreInlineCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV1PushPing, error) {
 	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
@@ -811,7 +837,7 @@ func (c *StoreInlineCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV2
 	if err := googleapi.CheckResponse(res); err != nil {
 		return nil, err
 	}
-	ret := &HandlersEndpointsV2PushPing{
+	ret := &HandlersEndpointsV1PushPing{
 		ServerResponse: googleapi.ServerResponse{
 			Header:         res.Header,
 			HTTPStatusCode: res.StatusCode,
@@ -827,11 +853,11 @@ func (c *StoreInlineCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV2
 	//   "id": "isolateservice.store_inline",
 	//   "path": "store_inline",
 	//   "request": {
-	//     "$ref": "HandlersEndpointsV2StorageRequest",
+	//     "$ref": "HandlersEndpointsV1StorageRequest",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "HandlersEndpointsV2PushPing"
+	//     "$ref": "HandlersEndpointsV1PushPing"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"

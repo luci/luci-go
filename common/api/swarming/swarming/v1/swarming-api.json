@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/I-209lefdtaRvgKQMKkSiPYLx7g\"",
+ "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/k8GD4Sa4aKoBwjNiFXWhPwFeEfo\"",
  "discoveryVersion": "v1",
  "id": "swarming:v1",
  "name": "swarming",
@@ -11,9 +11,9 @@
   "x32": "http://www.google.com/images/icons/product/search-32.gif"
  },
  "protocol": "rest",
- "baseUrl": "https://chromium-swarm.appspot.com/_ah/api/swarming/v1/",
+ "baseUrl": "http://localhost:8080/_ah/api/swarming/v1/",
  "basePath": "/_ah/api/swarming/v1/",
- "rootUrl": "https://chromium-swarm.appspot.com/_ah/api/",
+ "rootUrl": "http://localhost:8080/_ah/api/",
  "servicePath": "swarming/v1/",
  "batchPath": "batch",
  "parameters": {
@@ -159,6 +159,9 @@
     },
     "quarantined": {
      "type": "boolean"
+    },
+    "state": {
+     "type": "string"
     },
     "task_id": {
      "type": "string"
