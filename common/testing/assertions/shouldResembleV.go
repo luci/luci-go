@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/luci/luci-go/common/render"
+	"github.com/luci/go-render/render"
 )
 
 type serialized struct {
@@ -29,8 +29,8 @@ func ShouldResembleV(actual interface{}, expected ...interface{}) string {
 		return ""
 	}
 
-	act := render.DeepRender(actual)
-	exp := render.DeepRender(expected[0])
+	act := render.Render(actual)
+	exp := render.Render(expected[0])
 
 	d, _ := json.Marshal(&serialized{
 		Message: fmt.Sprintf(""+
@@ -56,5 +56,5 @@ func ShouldNotResembleV(actual interface{}, expected ...interface{}) string {
 	return fmt.Sprintf(""+
 		"Expected        '%s'\n"+
 		"to NOT resemble '%s'\n"+
-		"(but it did)!", render.DeepRender(expected[0]), render.DeepRender(actual))
+		"(but it did)!", render.Render(expected[0]), render.Render(actual))
 }

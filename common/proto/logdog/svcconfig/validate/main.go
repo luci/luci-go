@@ -13,8 +13,8 @@ import (
 	"log"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/luci/go-render/render"
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
-	"github.com/luci/luci-go/common/render"
 )
 
 func main() {
@@ -34,5 +34,5 @@ func main() {
 	if err := proto.UnmarshalText(string(d), &c); err != nil {
 		log.Fatalln("Failed to unmarshal input file: %v", err)
 	}
-	fmt.Println("Successfully unmarshalled configuration:\n", render.DeepRender(c))
+	fmt.Println("Successfully unmarshalled configuration:\n", render.Render(c))
 }
