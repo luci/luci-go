@@ -151,7 +151,7 @@ func (cc *CtxCmd) Wait() error {
 	// (follows contract of exec.Cmd's Wait)
 	if r.procErr == nil {
 		// Forge an ExitError.
-		cc.ProcessError = &exec.ExitError{cc.ProcessState}
+		cc.ProcessError = &exec.ExitError{ProcessState: cc.ProcessState}
 		if r.err == nil && !r.state.Success() {
 			// If there wasn't a higher-level error, exit with the process error.
 			return cc.ProcessError
