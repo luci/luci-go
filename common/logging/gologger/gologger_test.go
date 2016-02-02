@@ -20,7 +20,7 @@ var (
 	ansiRegexp = regexp.MustCompile(`\033\[.+?m`)
 
 	lre = regexp.MustCompile(
-		`\[P\d+ \d+:\d+:\d+\.\d+.* (.+?):\d+ ([A-Z]+) \d+\]\s+(.*)`)
+		`\[([A-Z]) \d+\-\d+\-\d+T\d+:\d+:\d+\.\d+.* \d+ (.+?):\d+\]\s+(.*)`)
 )
 
 func normalizeLog(s string) string {
@@ -40,18 +40,18 @@ func TestGoLogger(t *testing.T) {
 			F func(string, ...interface{})
 			T string
 		}{
-			{logging.Debug, l.Debugf, "DEBU"},
-			{logging.Info, l.Infof, "INFO"},
-			{logging.Warning, l.Warningf, "WARN"},
-			{logging.Error, l.Errorf, "ERRO"},
+			{logging.Debug, l.Debugf, "D"},
+			{logging.Info, l.Infof, "I"},
+			{logging.Warning, l.Warningf, "W"},
+			{logging.Error, l.Errorf, "E"},
 		} {
 			Convey(fmt.Sprintf("Can log to: %s", entry.L), func() {
 				entry.F("Test logging %s", entry.L)
 				matches := lre.FindAllStringSubmatch(normalizeLog(buf.String()), -1)
 				So(len(matches), ShouldEqual, 1)
 				So(len(matches[0]), ShouldEqual, 4)
-				So(matches[0][1], ShouldEqual, "gologger_test.go")
-				So(matches[0][2], ShouldEqual, entry.T)
+				So(matches[0][1], ShouldEqual, entry.T)
+				So(matches[0][2], ShouldEqual, "gologger_test.go")
 				So(matches[0][3], ShouldEqual, fmt.Sprintf("Test logging %s", entry.L))
 			})
 		}
@@ -72,17 +72,17 @@ func TestGoLogger(t *testing.T) {
 				F func(context.Context, string, ...interface{})
 				T string
 			}{
-				{logging.Info, logging.Infof, "INFO"},
-				{logging.Warning, logging.Warningf, "WARN"},
-				{logging.Error, logging.Errorf, "ERRO"},
+				{logging.Info, logging.Infof, "I"},
+				{logging.Warning, logging.Warningf, "W"},
+				{logging.Error, logging.Errorf, "E"},
 			} {
 				Convey(fmt.Sprintf("Can log to: %s", entry.L), func() {
 					entry.F(c, "Test logging %s", entry.L)
 					matches := lre.FindAllStringSubmatch(normalizeLog(buf.String()), -1)
 					So(len(matches), ShouldEqual, 1)
 					So(len(matches[0]), ShouldEqual, 4)
-					So(matches[0][1], ShouldEqual, "gologger_test.go")
-					So(matches[0][2], ShouldEqual, entry.T)
+					So(matches[0][1], ShouldEqual, entry.T)
+					So(matches[0][2], ShouldEqual, "gologger_test.go")
 					So(matches[0][3], ShouldEqual, fmt.Sprintf("Test logging %s", entry.L))
 				})
 			}
@@ -99,8 +99,8 @@ func TestGoLogger(t *testing.T) {
 				matches := lre.FindAllStringSubmatch(normalizeLog(buf.String()), -1)
 				So(len(matches), ShouldEqual, 1)
 				So(len(matches[0]), ShouldEqual, 4)
-				So(matches[0][1], ShouldEqual, "gologger_test.go")
-				So(matches[0][2], ShouldEqual, "INFO")
+				So(matches[0][1], ShouldEqual, "I")
+				So(matches[0][2], ShouldEqual, "gologger_test.go")
 				So(matches[0][3], ShouldEqual,
 					`Here is a log                               {"error":"An error!", "reason":"test"}`)
 			})
@@ -114,8 +114,8 @@ func TestGoLogger(t *testing.T) {
 				matches := lre.FindAllStringSubmatch(normalizeLog(buf.String()), -1)
 				So(len(matches), ShouldEqual, 1)
 				So(len(matches[0]), ShouldEqual, 4)
-				So(matches[0][1], ShouldEqual, "gologger_test.go")
-				So(matches[0][2], ShouldEqual, "INFO")
+				So(matches[0][1], ShouldEqual, "I")
+				So(matches[0][2], ShouldEqual, "gologger_test.go")
 				So(matches[0][3], ShouldEqual,
 					`Here is another log                         {"error":"An error!", "foo":"bar", "reason":"override"}`)
 			})

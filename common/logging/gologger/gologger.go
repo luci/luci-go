@@ -13,10 +13,11 @@ import (
 	"golang.org/x/net/context"
 )
 
-// StandardFormat first prints process ID, time, filename, logging level
-// and sequence number, all colored. Then the message.
-const StandardFormat = `%{color} [P%{pid} %{time:15:04:05.000} %{shortfile} %{level:.4s} %{id:03x}]` +
-	`%{color:reset} %{message}`
+// StandardFormat first prints
+// logging level, date+time, process ID, filename:linenumber, all colored.
+// Then the message.
+const StandardFormat = `%{color}[%{level:.1s} %{time:2006-01-02T15:04:05.000Z07:00}` +
+	` %{pid} %{shortfile}]%{color:reset} %{message}`
 
 var (
 	// standardConfig is the LoggerConfig instance used by the package-level
@@ -41,7 +42,7 @@ func New(w io.Writer, level gol.Level) logging.Logger {
 }
 
 // Get returns default global go-logging based logger. It writes >=DEBUG message
-// to stderr.
+// to stderr. Use the Get method defined on LoggerConfig for non-default values.
 func Get() logging.Logger {
 	return standardConfig.getImpl()
 }
