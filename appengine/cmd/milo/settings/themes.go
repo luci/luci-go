@@ -96,6 +96,7 @@ func getTemplateBundles() []namedBundle {
 						"CurrentTime": clock.Now(c).String(),
 					}, nil
 				},
+				FuncMap: funcMap,
 			}
 			result = append(result, namedBundle{name, templateBundle})
 		}

@@ -13,6 +13,7 @@ import (
 	"github.com/luci/luci-go/server/templates"
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/appengine/cmd/milo/buildbot"
 	"github.com/luci/luci-go/appengine/cmd/milo/settings"
 	"github.com/luci/luci-go/appengine/cmd/milo/swarming"
 	"github.com/luci/luci-go/appengine/gaeauth/server"
@@ -40,6 +41,9 @@ func init() {
 	r.GET("/", wrap(dummy{}))
 	r.GET("/swarming/:server/:id/steps/*logname", wrap(swarming.Log{}))
 	r.GET("/swarming/:server/:id", wrap(swarming.Build{}))
+
+	// Buildbot
+	r.GET("/buildbot/:master/:builder/:build", wrap(buildbot.Build{}))
 
 	// User settings
 	r.GET("/settings", wrap(settings.Settings{}))

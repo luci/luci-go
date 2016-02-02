@@ -1,36 +1,39 @@
-{{define "title"}}Buildbot: builds Build #{{ .Navi.PageTitle.Label }}{{end}}
+{{define "title"}}{{.Build.Summary.Label}}{{end}}
 
 {{define "script"}}{{end}}
 
 {{define "body"}}
   <div class="header">
-    [Insert title here]
+    {{.Build.Summary.Label}}
   </div>
   <hr/>
   <div class="content">
-    <h1>[Insert title here]</h1>
+    <h1>{{.Build.Summary.Label}}</h1>
 
     <div class="column">
 
       <h2>Results:</h2>
 
-      <p class="success result">
-        Build successful
-      </p>
+      <p class="success result"> Build successful </p>
 
       <h2>Steps and Logfiles:</h2>
       <ol>
         {{ range .Build.Components  }}
         <li>
           <div class="status-{{.Status}} result">
-            {{.Label}}
+            <b>{{.Label}}</b>
             {{ range .Text }} {{ . }} {{ end }}
-            &nbsp;<span style="float:right">( 0 secs )</span>
+            &nbsp;<span style="float:right">( {{ .Duration | humanDuration }} )</span>
           </div>
           <ul>
-            <li><a href="{{.MainLink.URL}}">{{.MainLink.Label}}</a></li>
+            {{ if .MainLink }}
+              <li><a href="{{.MainLink.URL}}">{{.MainLink.Label}}</a></li>
+            {{ end }}
             {{ range .SubLink }}
               <li><a href="{{.URL}}">{{.Label}}</a></li>
+            {{ end }}
+            {{ if not (or .MainLink .SubLink) }}
+              <li> - no logs - </li>
             {{ end }}
           </ul>
         </li>
@@ -51,7 +54,15 @@
           {{ range .Property }}
             <tr>
               <td class="left">{{.Key}}</td>
-              <td>{{.Value}}</td>
+              <td>
+                {{ if (eq .Key "requestedAt") }}
+                  {{ .Value | humanTimeRFC }}
+                {{ else if (startswith .Value "https://") }}
+                  <a href="{{.Value}}">{{.Value}}</a>
+                {{ else }}
+                  {{.Value}}
+                {{ end }}
+              </td>
               <td>{{$name}}</td>
             </tr>
           {{ end }}
@@ -61,32 +72,17 @@
       <h2>Timing:</h2>
       <table class="info" width="100%">
         <tr class="alt"><td class="left">Start</td>
-          <td>
-            {{ if .Build.Summary }}
-              {{ $first := index .Summary 0 }}
-              {{ $first.Started }}
-            {{ else }}
-              No Timing Info
-            {{ end }}
-          </td></tr>
+        <td>
+          {{ .Started | humanTimeRFC }}
+        </td></tr>
         <tr><td class="left">End</td>
-          <td>
-            {{ if .Build.Summary }}
-              {{ $first := index .Summary 0 }}
-              {{ $first.Finished }}
-            {{ else }}
-              No Timing Info
-            {{ end }}
-          </td></tr>
+        <td>
+          {{ .Finished | humanTimeRFC }}
+        </td></tr>
         <tr class="alt"><td class="left">Elapsed</td>
-          <td>
-            {{ if .Build.Summary }}
-              {{ $first := index .Summary 0 }}
-              {{ $first.Duration }}
-            {{ else }}
-              No Timing Info
-            {{ end }}
-          </td></tr>
+        <td>
+          {{ .Duration | humanDuration }}
+        </td></tr>
       </table>
 
     </div>

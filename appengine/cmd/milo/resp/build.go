@@ -11,7 +11,7 @@ import "encoding/json"
 // MiloBuild denotes a full renderable Milo build page.
 type MiloBuild struct {
 	// Summary is a top level summary of the page.
-	Summary []*BuildComponent
+	Summary BuildComponent
 
 	// Components is a detailed list of components and subcomponents of the page.
 	// This is most often used for steps (buildbot/luci) or deps (luci).
@@ -42,6 +42,12 @@ type PropertyGroup struct {
 	GroupName string
 	Property  []*Property
 }
+
+func (p PropertyGroup) Len() int { return len(p.Property) }
+func (p PropertyGroup) Swap(i, j int) {
+	p.Property[i], p.Property[j] = p.Property[j], p.Property[i]
+}
+func (p PropertyGroup) Less(i, j int) bool { return p.Property[i].Key < p.Property[j].Key }
 
 // Commit represents a single commit to a repository, rendered as part of a blamelist.
 type Commit struct {
@@ -95,6 +101,9 @@ const (
 	// Failure if the component has finished executing and contains a failure.
 	Failure // A200 Red
 
+	// Warning just like from the buildbot days.
+	Warning // 200 Yellow
+
 	// InfraFailure if the component has finished incompletely due to a failure in infra.
 	InfraFailure // A100 Purple
 
@@ -121,6 +130,9 @@ const (
 
 	// Step is a single step of a recipe.
 	Step
+
+	// Summary denotes that this does not pretain to any particular step.
+	Summary
 )
 
 // MarshalJSON renders enums into String rather than an int when marshalling.
@@ -145,10 +157,10 @@ type BuildComponent struct {
 	// Designates the progress of the current component. Set null for no progress.
 	Progress *BuildProgress
 
-	// When did this step start. In RFC3339 format. Set nil if not started.
+	// When did this step start. In RFC3339 format. Set "" if not started.
 	Started string
 
-	// When did this step finish. In RFC3339 format.  Set nil if not finished.
+	// When did this step finish. In RFC3339 format.  Set "" if not finished.
 	Finished string
 
 	// The time it took for this step to finish in seconds.  If unfinished, this

@@ -1,5 +1,17 @@
 {
-  "Summary": null,
+  "Summary": {
+    "Label": "",
+    "Status": "NotRun",
+    "MainLink": null,
+    "SubLink": null,
+    "Progress": null,
+    "Started": "",
+    "Finished": "",
+    "Duration": 0,
+    "Type": "Recipe",
+    "LevelsDeep": 0,
+    "Text": null
+  },
   "Components": [
     {
       "Label": "recipe bootstrap",
@@ -51,7 +63,7 @@
     },
     {
       "Label": "bot_update",
-      "Status": "InfraFailure",
+      "Status": "DependencyFailure",
       "MainLink": {
         "Label": "stdio",
         "Img": "",
@@ -78,7 +90,7 @@
     },
     {
       "Label": "Uncaught Exception",
-      "Status": "InfraFailure",
+      "Status": "DependencyFailure",
       "MainLink": {
         "Label": "stdio",
         "Img": "",
