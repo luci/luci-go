@@ -11,6 +11,12 @@ import (
 	"golang.org/x/net/context"
 )
 
+// BuildLog contains the log text retrieved from swarming.
+// TODO(hinoka): Maybe put this somewhere more generic, like under resp/.
+type BuildLog struct {
+	log string
+}
+
 func swarmingBuildLogImpl(c context.Context, server string, id string, logname string) (*BuildLog, error) {
 	// Fetch the data from Swarming
 	body, err := getSwarmingLog(server, id, c)

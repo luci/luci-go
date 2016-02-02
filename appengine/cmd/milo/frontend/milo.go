@@ -5,10 +5,8 @@
 package frontend
 
 import (
-	"log"
 	"net/http"
 
-	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/server/templates"
 	"golang.org/x/net/context"
@@ -21,20 +19,6 @@ import (
 
 // Where it all begins!!!
 func init() {
-	// Register endpoint services.
-	ss := &swarming.Service{}
-	api, err := endpoints.RegisterService(ss, "swarming", "v1", "Milo Swarming API", true)
-	if err != nil {
-		log.Printf("Unable to register endpoint services: %s", err)
-	} else {
-		register := func(orig, name, method, path, desc string) {
-			m := api.MethodByName(orig)
-			i := m.Info()
-			i.Name, i.HTTPMethod, i.Path, i.Desc = name, method, path, desc
-		}
-		register("Build", "swarming.build", "GET", "swarming", "Swarming Build view.")
-	}
-
 	// Register plain ol' http services.
 	r := httprouter.New()
 	server.InstallHandlers(r, settings.Base)
@@ -50,8 +34,6 @@ func init() {
 	r.POST("/settings", wrap(settings.Settings{}))
 
 	http.Handle("/", r)
-
-	endpoints.HandleHTTP()
 }
 
 type dummy struct{}
