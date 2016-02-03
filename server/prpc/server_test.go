@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/luci/luci-go/common/prpc"
+	prpccommon "github.com/luci/luci-go/common/prpc"
 	"github.com/luci/luci-go/server/middleware"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -123,6 +124,58 @@ func TestServer(t *testing.T) {
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusNotImplemented)
 				So(res.Header().Get(prpc.HeaderGRPCCode), ShouldEqual, unimplemented)
+			})
+
+			Convey(`When access control is enabled for "http://example.com"`, func() {
+				server.AccessControl = func(c context.Context, origin string) bool {
+					return origin == "http://example.com"
+				}
+
+				Convey(`When sending an OPTIONS request`, func() {
+					req.Method = "OPTIONS"
+
+					Convey(`Will supply Access-* headers to "http://example.com"`, func() {
+						req.Header.Add("Origin", "http://example.com")
+
+						r.ServeHTTP(res, req)
+						So(res.Code, ShouldEqual, http.StatusOK)
+						So(res.Header().Get("Access-Control-Allow-Origin"), ShouldEqual, "http://example.com")
+						So(res.Header().Get("Access-Control-Allow-Credentials"), ShouldEqual, "true")
+						So(res.Header().Get("Access-Control-Allow-Headers"), ShouldEqual, "Origin, Content-Type, Accept")
+						So(res.Header().Get("Access-Control-Allow-Methods"), ShouldEqual, "OPTIONS, POST")
+						So(res.Header().Get("Access-Control-Max-Age"), ShouldEqual, "600")
+					})
+
+					Convey(`Will not supply access-* headers to "http://foo.bar"`, func() {
+						req.Header.Add("Origin", "http://foo.bar")
+
+						r.ServeHTTP(res, req)
+						So(res.Code, ShouldEqual, http.StatusOK)
+						So(res.Header().Get("Access-Control-Allow-Origin"), ShouldEqual, "")
+					})
+				})
+
+				Convey(`When sending a POST request`, func() {
+					Convey(`Will supply Access-* headers to "http://example.com"`, func() {
+						req.Header.Add("Origin", "http://example.com")
+
+						r.ServeHTTP(res, req)
+						So(res.Code, ShouldEqual, http.StatusOK)
+						So(res.Header().Get(prpc.HeaderGRPCCode), ShouldEqual, "0")
+						So(res.Header().Get("Access-Control-Allow-Origin"), ShouldEqual, "http://example.com")
+						So(res.Header().Get("Access-Control-Allow-Credentials"), ShouldEqual, "true")
+						So(res.Header().Get("Access-Control-Expose-Headers"), ShouldEqual, prpccommon.HeaderGRPCCode)
+					})
+
+					Convey(`Will not supply access-* headers to "http://foo.bar"`, func() {
+						req.Header.Add("Origin", "http://foo.bar")
+
+						r.ServeHTTP(res, req)
+						So(res.Code, ShouldEqual, http.StatusOK)
+						So(res.Header().Get(prpc.HeaderGRPCCode), ShouldEqual, "0")
+						So(res.Header().Get("Access-Control-Allow-Origin"), ShouldEqual, "")
+					})
+				})
 			})
 		})
 	})

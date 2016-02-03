@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/julienschmidt/httprouter"
@@ -18,6 +19,24 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/middleware"
+
+	prpccommon "github.com/luci/luci-go/common/prpc"
+)
+
+var (
+	// Describe the permitted Access Control requests.
+	allowHeaders = strings.Join([]string{"Origin", "Content-Type", "Accept"}, ", ")
+	allowMethods = strings.Join([]string{"OPTIONS", "POST"}, ", ")
+
+	// allowPreflightCacheAgeSecs is the amount of time to enable the browser to
+	// cache the preflight access control response, in seconds.
+	//
+	// 600 seconds is 10 minutes.
+	allowPreflightCacheAgeSecs = "600"
+
+	// exposeHeaders lists the whitelisted non-standard response headers that the
+	// client may accept.
+	exposeHeaders = strings.Join([]string{prpccommon.HeaderGRPCCode}, ", ")
 )
 
 // Server is a pRPC server to serve RPC requests.
@@ -26,6 +45,16 @@ type Server struct {
 	// CustomAuthenticator, if true, disables the forced authentication set by
 	// RegisterDefaultAuth.
 	CustomAuthenticator bool
+
+	// AccessControl, if not nil, is a callback that is invoked per request to
+	// determine if permissive access control headers should be added to the
+	// response.
+	//
+	// This callback includes the request Context and the origin header supplied
+	// by the client. If nil, or if it returns false, no headers will be written.
+	// Otherwise, access control headers for the specified origin will be
+	// included in the response.
+	AccessControl func(c context.Context, origin string) bool
 
 	mu       sync.Mutex
 	services map[string]*service
@@ -97,13 +126,14 @@ func (s *Server) InstallHandlers(r *httprouter.Router, base middleware.Base) {
 		base = s.authenticate(base)
 	}
 
-	r.POST("/prpc/:service/:method", base(s.handle))
+	r.POST("/prpc/:service/:method", base(s.handlePOST))
+	r.OPTIONS("/prpc/:service/:method", base(s.handleOPTIONS))
 }
 
 // handle handles RPCs.
 // See https://godoc.org/github.com/luci/luci-go/common/prpc#hdr-Protocol
 // for pRPC protocol.
-func (s *Server) handle(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (s *Server) handlePOST(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	serviceName := p.ByName("service")
 	methodName := p.ByName("method")
 	res := s.respond(c, w, r, serviceName, methodName)
@@ -112,7 +142,13 @@ func (s *Server) handle(c context.Context, w http.ResponseWriter, r *http.Reques
 		"service": serviceName,
 		"method":  methodName,
 	})
+	s.setAccessControlHeaders(c, r, w, false)
 	res.write(c, w)
+}
+
+func (s *Server) handleOPTIONS(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	s.setAccessControlHeaders(c, r, w, true)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *Server) respond(c context.Context, w http.ResponseWriter, r *http.Request, serviceName, methodName string) *response {
@@ -136,6 +172,27 @@ func (s *Server) respond(c context.Context, w http.ResponseWriter, r *http.Reque
 	}
 
 	return method.handle(c, w, r)
+}
+
+func (s *Server) setAccessControlHeaders(c context.Context, r *http.Request, w http.ResponseWriter, preflight bool) {
+	// Don't write out access control headers if the origin is unspecified.
+	const originHeader = "Origin"
+	origin := r.Header.Get(originHeader)
+	if origin == "" || s.AccessControl == nil || !s.AccessControl(c, origin) {
+		return
+	}
+
+	w.Header().Add("Access-Control-Allow-Origin", origin)
+	w.Header().Add("Vary", originHeader)
+	w.Header().Add("Access-Control-Allow-Credentials", "true")
+
+	if preflight {
+		w.Header().Add("Access-Control-Allow-Headers", allowHeaders)
+		w.Header().Add("Access-Control-Allow-Methods", allowMethods)
+		w.Header().Add("Access-Control-Max-Age", allowPreflightCacheAgeSecs)
+	} else {
+		w.Header().Add("Access-Control-Expose-Headers", exposeHeaders)
+	}
 }
 
 // ServiceNames returns a sorted list of full names of all registered services.
