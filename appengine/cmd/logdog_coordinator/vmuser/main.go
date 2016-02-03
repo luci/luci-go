@@ -17,9 +17,11 @@ import (
 	adminPb "github.com/luci/luci-go/common/api/logdog_coordinator/admin/v1"
 	logsPb "github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
 	servicesPb "github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
+	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/discovery"
 	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/prpc"
+	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 )
 
@@ -37,7 +39,9 @@ func main() {
 	router := httprouter.New()
 
 	// Setup Cloud Endpoints.
-	svr := prpc.Server{}
+	svr := prpc.Server{
+		AccessControl: accessControl,
+	}
 	adminPb.RegisterAdminServer(&svr, &admin.Server{})
 	servicesPb.RegisterServicesServer(&svr, &services.Server{})
 	logsPb.RegisterLogsServer(&svr, &logs.Server{})
@@ -48,4 +52,24 @@ func main() {
 
 	http.Handle("/", router)
 	appengine.Main()
+}
+
+func accessControl(c context.Context, origin string) bool {
+	cfg, err := config.Load(c)
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to get config for access control check.")
+		return false
+	}
+
+	ccfg := cfg.GetCoordinator()
+	if ccfg == nil {
+		return false
+	}
+
+	for _, o := range ccfg.RpcAllowOrigins {
+		if o == origin {
+			return true
+		}
+	}
+	return false
 }

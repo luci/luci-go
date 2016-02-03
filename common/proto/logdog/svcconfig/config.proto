@@ -32,6 +32,9 @@ message Coordinator {
   string admin_auth_group = 10;
   // The name of the authentication group for backend services.
   string service_auth_group = 11;
+
+  // A list of origin URLs that are allowed to perform CORS RPC calls.
+  repeated string rpc_allow_origins = 20;
 }
 
 // Collector is the set of configuration parameters for Collector instances.
