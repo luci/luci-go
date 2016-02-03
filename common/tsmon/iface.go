@@ -106,44 +106,8 @@ func SetStore(s store.Store) {
 func InitializeFromFlags(c context.Context, fl *Flags) error {
 	logger := logging.Get(c)
 
-	// Load the config file, and override its values with flags.
-	config, err := loadConfig(fl.ConfigFile)
-	if err != nil {
+	if err := initEndpoint(c, fl, logger); err != nil {
 		return err
-	}
-
-	if fl.Endpoint != "" {
-		config.Endpoint = fl.Endpoint
-	}
-	if fl.Credentials != "" {
-		config.Credentials = fl.Credentials
-	}
-
-	if config.Endpoint != "" {
-		endpointURL, err := url.Parse(config.Endpoint)
-		if err != nil {
-			return err
-		}
-
-		switch endpointURL.Scheme {
-		case "file":
-			globalMonitor = monitor.NewDebugMonitor(logger, endpointURL.Path)
-		case "pubsub":
-			m, err := monitor.NewPubsubMonitor(
-				config.Credentials, endpointURL.Host, strings.TrimPrefix(endpointURL.Path, "/"))
-			if err != nil {
-				return err
-			}
-			globalMonitor = m
-		default:
-			return fmt.Errorf("unknown tsmon endpoint url: %s", config.Endpoint)
-		}
-
-		// Monitoring is enabled, so get the expensive default values for hostname,
-		// etc.
-		fl.Target.SetDefaultsFromHostname()
-	} else {
-		logger.Warningf("Monitoring is disabled because no endpoint is configured")
 	}
 
 	t, err := target.NewFromFlags(&fl.Target)
@@ -166,5 +130,51 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 		go autoFlush(flushCtx, fl.FlushInterval)
 	}
 
+	return nil
+}
+
+func initEndpoint(c context.Context, fl *Flags, logger logging.Logger) error {
+	// Load the config file, and override its values with flags.
+	config, err := loadConfig(fl.ConfigFile)
+	if err != nil {
+		logger.Warningf("Monitoring is disabled because the config file (%s) could not be loaded: %s",
+			fl.ConfigFile, err)
+		return nil
+	}
+
+	if fl.Endpoint != "" {
+		config.Endpoint = fl.Endpoint
+	}
+	if fl.Credentials != "" {
+		config.Credentials = fl.Credentials
+	}
+
+	if config.Endpoint == "" {
+		logger.Warningf("Monitoring is disabled because no endpoint is configured")
+		return nil
+	}
+
+	endpointURL, err := url.Parse(config.Endpoint)
+	if err != nil {
+		return err
+	}
+
+	switch endpointURL.Scheme {
+	case "file":
+		globalMonitor = monitor.NewDebugMonitor(logger, endpointURL.Path)
+	case "pubsub":
+		m, err := monitor.NewPubsubMonitor(
+			config.Credentials, endpointURL.Host, strings.TrimPrefix(endpointURL.Path, "/"))
+		if err != nil {
+			return err
+		}
+		globalMonitor = m
+	default:
+		return fmt.Errorf("unknown tsmon endpoint url: %s", config.Endpoint)
+	}
+
+	// Monitoring is enabled, so get the expensive default values for hostname,
+	// etc.
+	fl.Target.SetDefaultsFromHostname()
 	return nil
 }
