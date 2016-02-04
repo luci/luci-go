@@ -75,6 +75,10 @@ func (a *ArchiveOptions) PostProcess(cwd string) {
 		// This cannot be generalized as ".*" as there is known use that require
 		// a ".pki" directory to be mapped.
 		a.Blacklist = common.Strings{
+			// Temporary python files.
+			"*.pyc",
+			// Temporary vim files.
+			"*.swp",
 			".git",
 			".hg",
 			".svn",
