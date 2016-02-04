@@ -9,11 +9,14 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/store"
 	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/common/tsmon/types"
-	"golang.org/x/net/context"
 
 	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
 
@@ -56,7 +59,7 @@ func (m *fakeMonitor) Send(cells []types.Cell, t types.Target) error {
 func TestFlush(t *testing.T) {
 	ctx := context.Background()
 
-	Target = (*target.Task)(&pb.Task{
+	globalTarget = (*target.Task)(&pb.Task{
 		ServiceName: proto.String("test"),
 	})
 
@@ -175,5 +178,42 @@ func TestFlush(t *testing.T) {
 
 		err := Flush(ctx)
 		So(err, ShouldNotBeNil)
+	})
+
+	Convey("No Target configured", t, func() {
+		globalTarget = nil
+
+		err := Flush(ctx)
+		So(err, ShouldNotBeNil)
+	})
+
+	Convey("Auto flush works", t, func() {
+		start := time.Unix(1454561232, 0)
+		ctx, tc := testclock.UseTime(ctx, start)
+		tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+			tc.Add(d)
+		})
+
+		moments := make(chan int)
+		flusher := autoFlusher{
+			flush: func(c context.Context) error {
+				select {
+				case <-c.Done():
+				case moments <- int(clock.Now(ctx).Sub(start).Seconds()):
+				}
+				return nil
+			},
+		}
+
+		flusher.start(ctx, time.Second)
+
+		// Each 'flush' gets blocked on sending into 'moments'. Once unblocked, it
+		// advances timer by 'interval' sec (1 sec in the test).
+		So(<-moments, ShouldEqual, 1)
+		So(<-moments, ShouldEqual, 2)
+		// and so on ...
+
+		// Doesn't timeout => works.
+		flusher.stop()
 	})
 }

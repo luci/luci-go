@@ -6,31 +6,37 @@ package tsmon
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 
+	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/common/gcloud/pubsub"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/tsmon/monitor"
 	"github.com/luci/luci-go/common/tsmon/store"
 	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/common/tsmon/types"
-	"golang.org/x/net/context"
 )
 
 var (
-	// Target contains information about this process, and is included in all
-	// metrics reported by this process.
-	Target types.Target
-
-	globalStore   = store.NewInMemory()
+	globalTarget  types.Target
+	globalStore   = store.NewNilStore()
 	globalMonitor = monitor.NewNilMonitor()
+	globalFlusher *autoFlusher
 
 	registeredMetrics     = map[string]types.Metric{}
 	registeredMetricsLock sync.RWMutex
-
-	cancelAutoFlush context.CancelFunc
 )
+
+// Target contains information about this process, and is included in all
+// metrics reported by this process.
+func Target() types.Target {
+	return globalTarget
+}
 
 // Store returns the global metric store that contains all the metric values for
 // this process.  Applications shouldn't need to access this directly - instead
@@ -101,45 +107,84 @@ func SetStore(s store.Store) {
 }
 
 // InitializeFromFlags configures the tsmon library from flag values.
+//
 // This will set a Target (information about what's reporting metrics) and a
 // Monitor (where to send the metrics to).
 func InitializeFromFlags(c context.Context, fl *Flags) error {
-	logger := logging.Get(c)
-
-	if err := initEndpoint(c, fl, logger); err != nil {
+	mon, err := initMonitor(c, fl)
+	switch {
+	case err != nil:
 		return err
+	case mon == nil:
+		return nil // tsmon is disabled
 	}
 
+	// Monitoring is enabled, so get the expensive default values for hostname,
+	// etc.
+	fl.Target.SetDefaultsFromHostname()
 	t, err := target.NewFromFlags(&fl.Target)
 	if err != nil {
 		return err
 	}
-	Target = t
 
+	globalMonitor = mon
+	globalTarget = t
 	SetStore(store.NewInMemory())
 
-	if cancelAutoFlush != nil {
-		logger.Infof("Cancelling previous tsmon auto flush")
-		cancelAutoFlush()
-		cancelAutoFlush = nil
+	if globalFlusher != nil {
+		logging.Infof(c, "Canceling previous tsmon auto flush")
+		globalFlusher.stop()
+		globalFlusher = nil
 	}
 
 	if fl.Flush == "auto" {
-		var flushCtx context.Context
-		flushCtx, cancelAutoFlush = context.WithCancel(c)
-		go autoFlush(flushCtx, fl.FlushInterval)
+		globalFlusher = &autoFlusher{}
+		globalFlusher.start(c, fl.FlushInterval)
 	}
 
 	return nil
 }
 
-func initEndpoint(c context.Context, fl *Flags, logger logging.Logger) error {
+// Shutdown gracefully terminates the tsmon by doing the final flush and
+// disabling auto flush (if it was enabled).
+//
+// It resets Target, Monitor and Store.
+//
+// Logs error to standard logger. Does nothing if tsmon wasn't initialized.
+func Shutdown(c context.Context) {
+	if store.IsNilStore(globalStore) {
+		return
+	}
+
+	if globalFlusher != nil {
+		logging.Debugf(c, "Stopping tsmon auto flush")
+		globalFlusher.stop()
+		globalFlusher = nil
+	}
+
+	logging.Debugf(c, "Doing the final tsmon flush")
+	if err := Flush(c); err != nil {
+		logging.Errorf(c, "Final tsmon flush failed - %s", err)
+	} else {
+		logging.Debugf(c, "Final tsmon flush finished")
+	}
+
+	// Reset the state as if 'InitializeFromFlags' was never called.
+	globalMonitor = monitor.NewNilMonitor()
+	globalTarget = nil
+	SetStore(store.NewNilStore())
+}
+
+// initMonitor examines flags and config and initializes a monitor.
+//
+// It returns (nil, nil) if tsmon should be disabled.
+func initMonitor(c context.Context, fl *Flags) (monitor.Monitor, error) {
 	// Load the config file, and override its values with flags.
 	config, err := loadConfig(fl.ConfigFile)
 	if err != nil {
-		logger.Warningf("Monitoring is disabled because the config file (%s) could not be loaded: %s",
+		logging.Warningf(c, "tsmon is disabled because the config file (%s) could not be loaded: %s",
 			fl.ConfigFile, err)
-		return nil
+		return nil, nil
 	}
 
 	if fl.Endpoint != "" {
@@ -150,31 +195,41 @@ func initEndpoint(c context.Context, fl *Flags, logger logging.Logger) error {
 	}
 
 	if config.Endpoint == "" {
-		logger.Warningf("Monitoring is disabled because no endpoint is configured")
-		return nil
+		logging.Warningf(c, "tsmon is disabled because no endpoint is configured")
+		return nil, nil
 	}
 
 	endpointURL, err := url.Parse(config.Endpoint)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	switch endpointURL.Scheme {
 	case "file":
-		globalMonitor = monitor.NewDebugMonitor(logger, endpointURL.Path)
+		return monitor.NewDebugMonitor(logging.Get(c), endpointURL.Path), nil
 	case "pubsub":
-		m, err := monitor.NewPubsubMonitor(
-			config.Credentials, endpointURL.Host, strings.TrimPrefix(endpointURL.Path, "/"))
+		cl, err := makeClient(c, config.Credentials)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		globalMonitor = m
+		return monitor.NewPubsubMonitor(c, cl, endpointURL.Host, strings.TrimPrefix(endpointURL.Path, "/"))
 	default:
-		return fmt.Errorf("unknown tsmon endpoint url: %s", config.Endpoint)
+		return nil, fmt.Errorf("unknown tsmon endpoint url: %s", config.Endpoint)
 	}
+}
 
-	// Monitoring is enabled, so get the expensive default values for hostname,
-	// etc.
-	fl.Target.SetDefaultsFromHostname()
-	return nil
+// makeClient returns http.Client that knows how to send authenticated requests
+// to PubSub API.
+func makeClient(c context.Context, credentials string) (*http.Client, error) {
+	authOpts := auth.Options{
+		Context: c,
+		Scopes:  pubsub.PublisherScopes,
+	}
+	if credentials == GCECredentials {
+		authOpts.Method = auth.GCEMetadataMethod
+	} else {
+		authOpts.Method = auth.ServiceAccountMethod
+		authOpts.ServiceAccountJSONPath = credentials
+	}
+	return auth.NewAuthenticator(auth.SilentLogin, authOpts).Client()
 }

@@ -10,14 +10,6 @@ import (
 	"github.com/luci/luci-go/common/tsmon/types"
 )
 
-// AppengineCredentials and GCECredentials are special values that can be passed
-// to monitors to indicate that app assertion credentials should be used instead
-// of a real credentials file.
-const (
-	AppengineCredentials = ":appengine"
-	GCECredentials       = ":gce"
-)
-
 // A Monitor can send a collection of metrics somewhere.
 type Monitor interface {
 	// ChunkSize returns the maximum number of metrics this Monitor can Send in

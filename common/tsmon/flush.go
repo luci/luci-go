@@ -8,8 +8,10 @@ import (
 	"errors"
 	"time"
 
-	"github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/logging"
 )
 
 func minInt(a, b int) int {
@@ -22,7 +24,8 @@ func minInt(a, b int) int {
 // Flush sends all the metrics that are registered in the application.
 func Flush(ctx context.Context) error {
 	mon := Monitor()
-	if mon == nil {
+	tar := Target()
+	if mon == nil || tar == nil {
 		return errors.New("no tsmon Monitor is configured")
 	}
 
@@ -35,7 +38,7 @@ func Flush(ctx context.Context) error {
 	}
 	for len(cells) > 0 {
 		count := minInt(chunkSize, len(cells))
-		if err := mon.Send(cells[:count], Target); err != nil {
+		if err := mon.Send(cells[:count], tar); err != nil {
 			return err
 		}
 		cells = cells[count:]
@@ -43,18 +46,44 @@ func Flush(ctx context.Context) error {
 	return nil
 }
 
-func autoFlush(ctx context.Context, interval time.Duration) {
-	ticker := time.NewTicker(interval)
-	logger := logging.Get(ctx)
+// autoFlusher knows how to periodically call 'Flush'.
+type autoFlusher struct {
+	killed chan struct{}
+	cancel context.CancelFunc
 
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			if err := Flush(ctx); err != nil {
-				logger.Warningf("Failed to flush tsmon metrics: %v", err)
+	flush func(context.Context) error // mocked in unit tests
+}
+
+func (f *autoFlusher) start(ctx context.Context, interval time.Duration) {
+	flush := f.flush
+	if flush == nil {
+		flush = Flush
+	}
+
+	// 'killed' is closed when timer goroutine exits.
+	killed := make(chan struct{})
+	f.killed = killed
+
+	ctx, f.cancel = context.WithCancel(ctx)
+	go func() {
+		defer close(killed)
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-clock.After(ctx, interval):
+				if err := flush(ctx); err != nil && err != context.Canceled {
+					logging.Warningf(ctx, "Failed to flush tsmon metrics: %v", err)
+				}
 			}
 		}
-	}
+	}()
+}
+
+func (f *autoFlusher) stop() {
+	f.cancel()
+	<-f.killed
+	f.cancel = nil
+	f.killed = nil
 }

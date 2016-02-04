@@ -5,8 +5,9 @@
 package monitor
 
 import (
+	"net/http"
+
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/gcloud/pubsub"
 	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
@@ -20,20 +21,13 @@ type pubSubMonitor struct {
 
 // NewPubsubMonitor returns a Monitor that sends metrics to the Cloud Pub/Sub
 // API.
-func NewPubsubMonitor(credentialPath string, project string, topic string) (Monitor, error) {
-	authOpts := auth.Options{
-		Scopes:                 pubsub.PublisherScopes,
-		ServiceAccountJSONPath: credentialPath,
-	}
-
-	httpClient, err := auth.NewAuthenticator(auth.SilentLogin, authOpts).Client()
-	if err != nil {
-		return nil, err
-	}
-
+//
+// The provided client should do implement sufficient authentication to send
+// Cloud Pub/Sub requests.
+func NewPubsubMonitor(ctx context.Context, c *http.Client, project string, topic string) (Monitor, error) {
 	return &pubSubMonitor{
-		Context: context.Background(),
-		ps:      pubsub.NewConnection(httpClient),
+		Context: ctx,
+		ps:      pubsub.NewConnection(c),
 		topic:   pubsub.NewTopic(project, topic),
 	}, nil
 }
