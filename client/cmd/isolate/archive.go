@@ -61,11 +61,14 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 		prefix = ""
 	}
 	start := time.Now()
-	arch := archiver.New(isolatedclient.New(c.createClient(), c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace), out)
+	client, err := c.createAuthClient()
+	if err != nil {
+		return err
+	}
+	arch := archiver.New(isolatedclient.New(client, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace), out)
 	common.CancelOnCtrlC(arch)
 	future := isolate.Archive(arch, &c.ArchiveOptions)
 	future.WaitForHashed()
-	var err error
 	if err = future.Error(); err != nil {
 		fmt.Printf("%s%s  %s\n", prefix, filepath.Base(c.Isolate), err)
 	} else {

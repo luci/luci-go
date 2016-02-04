@@ -27,7 +27,7 @@ var application = &subcommands.DefaultApplication{
 		cmdBatchArchive,
 		cmdCheck,
 		subcommands.CmdHelp,
-		authcli.SubcommandInfo(auth.Options{}, "info"),
+		authcli.SubcommandInfo(auth.Options{}, "whoami"),
 		authcli.SubcommandLogin(auth.Options{}, "login"),
 		authcli.SubcommandLogout(auth.Options{}, "logout"),
 		common.CmdVersion(version),

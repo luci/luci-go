@@ -124,7 +124,11 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 		prefix = ""
 	}
 	start := time.Now()
-	arch := archiver.New(isolatedclient.New(c.createClient(), c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace), out)
+	client, err := c.createAuthClient()
+	if err != nil {
+		return err
+	}
+	arch := archiver.New(isolatedclient.New(client, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace), out)
 	common.CancelOnCtrlC(arch)
 	type tmp struct {
 		name   string
@@ -181,7 +185,7 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 			fmt.Fprintf(os.Stderr, "%s%s  %s\n", prefix, item.name, item.future.Error())
 		}
 	}
-	err := arch.Close()
+	err = arch.Close()
 	duration := time.Since(start)
 	// Only write the file once upload is confirmed.
 	if err == nil && c.dumpJSON != "" {

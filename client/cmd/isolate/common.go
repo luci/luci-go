@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/client/isolate"
 	"github.com/luci/luci-go/client/isolatedclient"
@@ -39,23 +40,35 @@ func (c *commonFlags) Parse() error {
 type commonServerFlags struct {
 	commonFlags
 	isolatedFlags isolatedclient.Flags
+	authFlags     authcli.Flags
+
+	parsedAuthOpts auth.Options
 }
 
 func (c *commonServerFlags) Init() {
 	c.commonFlags.Init()
 	c.isolatedFlags.Init(&c.Flags)
+	c.authFlags.Register(&c.Flags, auth.Options{
+		Method: auth.UserCredentialsMethod, // disable GCE service account for now
+	})
 }
 
 func (c *commonServerFlags) Parse() error {
-	if err := c.commonFlags.Parse(); err != nil {
+	var err error
+	if err = c.commonFlags.Parse(); err != nil {
 		return err
 	}
-	return c.isolatedFlags.Parse()
+	if err = c.isolatedFlags.Parse(); err != nil {
+		return err
+	}
+	c.parsedAuthOpts, err = c.authFlags.Options()
+	return err
 }
 
-func (c *commonServerFlags) createClient() *http.Client {
-	client, _ := auth.NewAuthenticator(auth.SilentLogin, auth.Options{}).Client()
-	return client
+func (c *commonServerFlags) createAuthClient() (*http.Client, error) {
+	// OptionalLogin is used here instead of SilentLogin to make IP whitelisted
+	// bots to work without OAuth for now.
+	return auth.NewAuthenticator(auth.OptionalLogin, c.parsedAuthOpts).Client()
 }
 
 type isolateFlags struct {

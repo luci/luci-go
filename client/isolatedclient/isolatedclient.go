@@ -45,6 +45,9 @@ type PushState struct {
 }
 
 // New returns a new IsolateServer client.
+//
+// 'client' must implement authentication sufficient to talk to Isolate server
+// (OAuth tokens with 'email' scope).
 func New(client *http.Client, host, namespace string) IsolateServer {
 	return newIsolateServer(client, host, namespace, retry.Default)
 }
@@ -55,7 +58,9 @@ type isolateServer struct {
 	config    *retry.Config
 	url       string
 	namespace string
-	client    *http.Client
+
+	authClient *http.Client // client that sends auth tokens
+	anonClient *http.Client // client that does NOT send auth tokens
 }
 
 func newIsolateServer(client *http.Client, host, namespace string, config *retry.Config) *isolateServer {
@@ -63,20 +68,22 @@ func newIsolateServer(client *http.Client, host, namespace string, config *retry
 		client = http.DefaultClient
 	}
 	i := &isolateServer{
-		config:    config,
-		url:       strings.TrimRight(host, "/"),
-		namespace: namespace,
-		client:    client,
+		config:     config,
+		url:        strings.TrimRight(host, "/"),
+		namespace:  namespace,
+		authClient: client,
+		anonClient: http.DefaultClient,
 	}
 	tracer.NewPID(i, "isolatedclient:"+i.url)
 	return i
 }
 
+// postJSON does authenticated POST request.
 func (i *isolateServer) postJSON(resource string, in, out interface{}) error {
 	if len(resource) == 0 || resource[0] != '/' {
 		return errors.New("resource must start with '/'")
 	}
-	_, err := lhttp.PostJSON(i.config, i.client, i.url+resource, in, out)
+	_, err := lhttp.PostJSON(i.config, i.authClient, i.url+resource, in, out)
 	return err
 }
 
@@ -174,12 +181,16 @@ func (i *isolateServer) doPushGCS(state *PushState, src io.ReadSeeker) (err erro
 			err = err1
 		}
 	}()
+	// GSUploadURL is signed Google Storage URL that doesn't require additional
+	// authentication. In fact, using authClient causes HTTP 403 because
+	// authClient's tokens don't have Cloud Storage OAuth scope. Use anonymous
+	// client instead.
 	request, err2 := http.NewRequest("PUT", state.status.GSUploadURL, c)
 	if err2 != nil {
 		return err2
 	}
 	request.Header.Set("Content-Type", "application/octet-stream")
-	req, err3 := lhttp.NewRequest(i.client, request, func(resp *http.Response) error {
+	req, err3 := lhttp.NewRequest(i.anonClient, request, func(resp *http.Response) error {
 		_, err4 := io.Copy(ioutil.Discard, resp.Body)
 		err5 := resp.Body.Close()
 		if err4 != nil {
