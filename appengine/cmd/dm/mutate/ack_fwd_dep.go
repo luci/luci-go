@@ -46,11 +46,10 @@ func (f *AckFwdDep) RollForward(c context.Context) (muts []tumble.Mutation, err 
 
 	needPut := false
 
-	idx := uint64(fdep.BitIndex)
+	idx := uint32(fdep.BitIndex)
 
 	if !atmpt.AddingDepsBitmap.IsSet(idx) {
-		err = atmpt.AddingDepsBitmap.Set(idx)
-		impossible(err)
+		atmpt.AddingDepsBitmap.Set(idx)
 
 		if atmpt.AddingDepsBitmap.All(true) {
 			atmpt.State.MustEvolve(attempt.Blocked)
@@ -61,8 +60,7 @@ func (f *AckFwdDep) RollForward(c context.Context) (muts []tumble.Mutation, err 
 
 	if f.DepIsFinished {
 		if !atmpt.WaitingDepBitmap.IsSet(idx) {
-			err = atmpt.WaitingDepBitmap.Set(idx)
-			impossible(err)
+			atmpt.WaitingDepBitmap.Set(idx)
 
 			if atmpt.WaitingDepBitmap.All(true) {
 				atmpt.State.MustEvolve(attempt.NeedsExecution)

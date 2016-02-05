@@ -7,7 +7,6 @@ package model
 import (
 	"time"
 
-	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/display"
 	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
@@ -49,28 +48,6 @@ type Attempt struct {
 
 	// Only valid while Attempt is Finished
 	ResultExpiration time.Time
-}
-
-var _ datastore.PropertyLoadSaver = (*Attempt)(nil)
-
-// Load implements datastore.PropertyLoadSaver
-func (a *Attempt) Load(pm datastore.PropertyMap) error {
-	// nil out these bitmaps so that they don't get append'd to during the
-	// load procedure.
-	a.AddingDepsBitmap.Data = nil
-	a.WaitingDepBitmap.Data = nil
-	return datastore.GetPLS(a).Load(pm)
-}
-
-// Save implements datastore.PropertyLoadSaver
-func (a *Attempt) Save(withMeta bool) (datastore.PropertyMap, error) {
-	return datastore.GetPLS(a).Save(withMeta)
-}
-
-// Problem (DEPRECATED) implements datastore.PropertyLoadSaver
-func (a *Attempt) Problem() error {
-	//return datastore.GetPLS(a).Problem()
-	return nil
 }
 
 // NewAttempt creates a new Attempt for the given quest with the specified

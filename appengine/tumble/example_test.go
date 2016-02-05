@@ -56,8 +56,8 @@ func (u *User) SendMessage(c context.Context, msg string, toUsers ...string) (*O
 		FromUser:   datastore.Get(c).KeyForObj(u),
 		Message:    msg,
 		Recipients: toUsers,
-		Success:    bf.Make(uint64(len(toUsers))),
-		Failure:    bf.Make(uint64(len(toUsers))),
+		Success:    bf.Make(uint32(len(toUsers))),
+		Failure:    bf.Make(uint32(len(toUsers))),
 	}
 
 	err := RunMutation(c, &WriteMessage{outMsg})
@@ -134,7 +134,7 @@ func (w *WriteReceipt) RollForward(c context.Context) ([]Mutation, error) {
 		return nil, err
 	}
 
-	idx := uint64(sort.SearchStrings(m.Recipients, w.Recipient))
+	idx := uint32(sort.SearchStrings(m.Recipients, w.Recipient))
 	if w.Success {
 		m.Success.Set(idx)
 	} else {
@@ -146,7 +146,7 @@ func (w *WriteReceipt) RollForward(c context.Context) ([]Mutation, error) {
 		return nil, err
 	}
 
-	if m.Success.CountSet()+m.Failure.CountSet() == uint64(len(m.Recipients)) {
+	if m.Success.CountSet()+m.Failure.CountSet() == uint32(len(m.Recipients)) {
 		return []Mutation{&ReminderMessage{
 			w.Message, m.FromUser.StringID(), clock.Now(c).UTC().Add(time.Minute * 5)},
 		}, nil

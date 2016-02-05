@@ -46,8 +46,8 @@ func (a *AddDeps) RollForward(c context.Context) (muts []tumble.Mutation, err er
 
 	ds := datastore.Get(c)
 
-	atmpt.AddingDepsBitmap = bf.Make(uint64(len(fwdDeps)))
-	atmpt.WaitingDepBitmap = bf.Make(uint64(len(fwdDeps)))
+	atmpt.AddingDepsBitmap = bf.Make(uint32(len(fwdDeps)))
+	atmpt.WaitingDepBitmap = bf.Make(uint32(len(fwdDeps)))
 	if err = atmpt.State.Evolve(attempt.AddingDeps); err != nil {
 		return
 	}
