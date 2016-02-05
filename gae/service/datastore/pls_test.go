@@ -154,6 +154,10 @@ type N2 struct {
 	White N1 `gae:"-"`
 }
 
+type N3 struct {
+	ID uint32 `gae:"$id,200"`
+}
+
 type O0 struct {
 	I int64
 }
@@ -163,11 +167,15 @@ type O1 struct {
 }
 
 type U0 struct {
-	U uint
+	U uint32
 }
 
 type U1 struct {
-	U string
+	U byte
+}
+
+type U2 struct {
+	U int64
 }
 
 type T struct {
@@ -775,6 +783,12 @@ var testCases = []testCase{
 		loadErr: "overflow",
 	},
 	{
+		desc:    "underflow",
+		src:     &O0{I: math.MaxInt64},
+		want:    &O1{},
+		loadErr: "overflow",
+	},
+	{
 		desc: "time",
 		src:  &T{T: time.Unix(1e9, 0).UTC()},
 		want: &T{T: time.Unix(1e9, 0).UTC()},
@@ -787,15 +801,52 @@ var testCases = []testCase{
 		},
 	},
 	{
-		desc:   "uint save",
-		src:    &U0{U: 1},
-		plsErr: `field "U" has invalid type: uint`,
+		desc: "uint32 save",
+		src:  &U0{U: 1},
+		want: PropertyMap{
+			"U": {mp(1)},
+		},
 	},
 	{
-		desc:       "uint load",
-		src:        &U1{U: "not a uint"},
-		want:       &U0{},
-		plsLoadErr: `field "U" has invalid type: uint`,
+		desc: "uint32 load",
+		src:  &U2{U: 100},
+		want: &U0{U: 100},
+	},
+	{
+		desc:    "uint32 load oob (neg)",
+		src:     &U2{U: -1},
+		want:    &U0{},
+		loadErr: "overflow",
+	},
+	{
+		desc:    "uint32 load oob (huge)",
+		src:     &U2{U: math.MaxInt64},
+		want:    &U0{},
+		loadErr: "overflow",
+	},
+	{
+		desc: "byte save",
+		src:  &U1{U: 1},
+		want: PropertyMap{
+			"U": {mp(1)},
+		},
+	},
+	{
+		desc: "byte load",
+		src:  &U2{U: 100},
+		want: &U1{U: 100},
+	},
+	{
+		desc:    "byte load oob (neg)",
+		src:     &U2{U: -1},
+		want:    &U1{},
+		loadErr: "overflow",
+	},
+	{
+		desc:    "byte load oob (huge)",
+		src:     &U2{U: math.MaxInt64},
+		want:    &U1{},
+		loadErr: "overflow",
 	},
 	{
 		desc: "zero",
@@ -1601,31 +1652,8 @@ var testCases = []testCase{
 	},
 }
 
-// checkErr returns the empty string if either both want and err are zero,
-// or if want is a non-empty substring of err's string representation.
-func checkErr(want string, err error) string {
-	if err != nil {
-		got := err.Error()
-		if want == "" || strings.Index(got, want) == -1 {
-			return got
-		}
-	} else if want != "" {
-		return fmt.Sprintf("want error %q", want)
-	}
-	return ""
-}
-
 func TestRoundTrip(t *testing.T) {
 	t.Parallel()
-
-	checkErr := func(actual interface{}, expected string) bool {
-		if expected == "" {
-			So(actual, ShouldErrLike, nil)
-		} else {
-			So(actual, ShouldErrLike, expected)
-		}
-		return expected != ""
-	}
 
 	getPLSErr := func(obj interface{}) (pls PropertyLoadSaver, err error) {
 		defer func() {
@@ -1645,14 +1673,16 @@ func TestRoundTrip(t *testing.T) {
 				if !ok {
 					var err error
 					pls, err = getPLSErr(tc.src)
-					if checkErr(err, tc.plsErr) {
+					if tc.plsErr != "" {
+						So(err, ShouldErrLike, tc.plsErr)
 						return
 					}
 				}
 				So(pls, ShouldNotBeNil)
 
 				savedProps, err := pls.Save(false)
-				if checkErr(err, tc.saveErr) {
+				if tc.saveErr != "" {
+					So(err, ShouldErrLike, tc.saveErr)
 					return
 				}
 				So(savedProps, ShouldNotBeNil)
@@ -1666,7 +1696,8 @@ func TestRoundTrip(t *testing.T) {
 					if pls, ok = got.(PropertyLoadSaver); !ok {
 						var err error
 						pls, err = getPLSErr(got)
-						if checkErr(err, tc.plsLoadErr) {
+						if tc.plsLoadErr != "" {
+							So(err, ShouldErrLike, tc.plsLoadErr)
 							return
 						}
 					}
@@ -1675,7 +1706,8 @@ func TestRoundTrip(t *testing.T) {
 				So(pls, ShouldNotBeNil)
 
 				err = pls.Load(savedProps)
-				if checkErr(err, tc.loadErr) {
+				if tc.loadErr != "" {
+					So(err, ShouldErrLike, tc.loadErr)
 					return
 				}
 				if tc.want == nil {
@@ -1744,6 +1776,23 @@ func TestMeta(t *testing.T) {
 			mgs := getMGS(o)
 			So(mgs.SetMeta("kind", "hi"), ShouldBeFalse)
 			So(mgs.SetMeta("noob", "hi"), ShouldBeFalse)
+		})
+
+		Convey("unsigned int meta fields work", func() {
+			o := &N3{}
+			mgs := getMGS(o)
+			v, ok := mgs.GetMeta("id")
+			So(v, ShouldEqual, int64(200))
+			So(ok, ShouldBeTrue)
+
+			So(mgs.SetMeta("id", 20), ShouldBeTrue)
+			So(o.ID, ShouldEqual, 20)
+
+			So(mgs.SetMeta("id", math.MaxInt64), ShouldBeFalse)
+			So(o.ID, ShouldEqual, 20)
+
+			So(mgs.SetMeta("id", math.MaxUint32), ShouldBeTrue)
+			So(o.ID, ShouldEqual, math.MaxUint32)
 		})
 	})
 
@@ -1860,6 +1909,27 @@ func TestMeta(t *testing.T) {
 			v, ok = mgs.GetMeta("val")
 			So(ok, ShouldBeTrue)
 			So(v, ShouldEqual, int64(10))
+		})
+
+		Convey("underflow", func() {
+			type UnderflowMeta struct {
+				ID int16 `gae:"$id"`
+			}
+			um := &UnderflowMeta{}
+			mgs := getMGS(um)
+			So(mgs.SetMeta("id", -20), ShouldBeTrue)
+			So(mgs.SetMeta("id", math.MinInt64), ShouldBeFalse)
+		})
+
+		Convey("negative default", func() {
+			type UnderflowMeta struct {
+				ID int16 `gae:"$id,-30"`
+			}
+			um := &UnderflowMeta{}
+			mgs := getMGS(um)
+			val, ok := mgs.GetMeta("id")
+			So(ok, ShouldBeTrue)
+			So(val, ShouldEqual, -30)
 		})
 
 		Convey("Derived metadata fields", func() {

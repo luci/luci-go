@@ -170,6 +170,13 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 			project = PTInt
 			overflow = func(x interface{}) bool { return v.OverflowInt(x.(int64)) }
 			set = func(x interface{}) { v.SetInt(x.(int64)) }
+		case reflect.Uint8, reflect.Uint16, reflect.Uint32:
+			project = PTInt
+			overflow = func(x interface{}) bool {
+				xi := x.(int64)
+				return xi < 0 || v.OverflowUint(uint64(xi))
+			}
+			set = func(x interface{}) { v.SetUint(uint64(x.(int64))) }
 		case reflect.Bool:
 			project = PTBool
 			set = func(x interface{}) { v.SetBool(x.(bool)) }
@@ -384,7 +391,9 @@ func (p *structPLS) SetMeta(key string, val interface{}) bool {
 		return err == nil
 	}
 
-	// setting a BoolField
+	val = UpconvertUnderlyingType(val)
+
+	// setting a Toggle
 	if b, ok := val.(bool); ok {
 		if b {
 			val = On
@@ -397,7 +406,26 @@ func (p *structPLS) SetMeta(key string, val interface{}) bool {
 		f.Set(reflect.Zero(f.Type()))
 	} else {
 		value := reflect.ValueOf(val)
-		f.Set(value.Convert(f.Type()))
+		switch f.Kind() {
+		case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			intVal := value.Int()
+			if f.OverflowInt(intVal) {
+				return false
+			}
+			f.SetInt(intVal)
+		case reflect.Uint8, reflect.Uint16, reflect.Uint32:
+			if f.Type() != typeOfToggle {
+				intVal := value.Int()
+				if intVal < 0 || f.OverflowUint(uint64(intVal)) {
+					return false
+				}
+				f.SetUint(uint64(intVal))
+				break
+			}
+			fallthrough
+		default:
+			f.Set(value.Convert(f.Type()))
+		}
 	}
 	return true
 }
@@ -624,6 +652,15 @@ func convertMeta(val string, t reflect.Type) (interface{}, error) {
 			return int64(0), nil
 		}
 		return strconv.ParseInt(val, 10, 64)
+	case reflect.Uint8, reflect.Uint16, reflect.Uint32:
+		if t == typeOfToggle { // special case this
+			break
+		}
+		if val == "" {
+			return int64(0), nil
+		}
+		ret, err := strconv.ParseUint(val, 10, 32)
+		return int64(ret), err
 	}
 	switch t {
 	case typeOfKey:

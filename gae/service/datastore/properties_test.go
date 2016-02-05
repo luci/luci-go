@@ -51,6 +51,27 @@ func TestProperties(t *testing.T) {
 					So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
 					So(pv.Type().String(), ShouldEqual, "PTInt")
 				})
+				Convey("int32", func() {
+					pv := MkProperty(int32(32))
+					So(pv.Value(), ShouldHaveSameTypeAs, int64(32))
+					So(pv.Value(), ShouldEqual, 32)
+					So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
+					So(pv.Type().String(), ShouldEqual, "PTInt")
+				})
+				Convey("uint32", func() {
+					pv := MkProperty(uint32(32))
+					So(pv.Value(), ShouldHaveSameTypeAs, int64(32))
+					So(pv.Value(), ShouldEqual, 32)
+					So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
+					So(pv.Type().String(), ShouldEqual, "PTInt")
+				})
+				Convey("byte", func() {
+					pv := MkProperty(byte(32))
+					So(pv.Value(), ShouldHaveSameTypeAs, int64(32))
+					So(pv.Value(), ShouldEqual, 32)
+					So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
+					So(pv.Type().String(), ShouldEqual, "PTInt")
+				})
 				Convey("bool (true)", func() {
 					pv := MkProperty(mybool(true))
 					So(pv.Value(), ShouldBeTrue)

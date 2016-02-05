@@ -304,6 +304,8 @@ func UpconvertUnderlyingType(o interface{}) interface{} {
 	switch v.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		o = v.Int()
+	case reflect.Uint8, reflect.Uint16, reflect.Uint32:
+		o = int64(v.Uint())
 	case reflect.Bool:
 		o = v.Bool()
 	case reflect.String:

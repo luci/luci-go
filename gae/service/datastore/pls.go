@@ -23,6 +23,21 @@ import (
 // with multiple slices (e.g.  slices of slices, either directly `[][]type` or
 // indirectly `[]Embedded` where Embedded contains a slice.)
 //
+// The following field types are supported:
+//   * int64, int32, int16, int8, int
+//   * uint32, uint16, uint8, byte
+//   * float64, float32
+//   * string
+//   * []byte
+//   * bool
+//   * time.Time
+//   * GeoPoint
+//   * *Key
+//   * any Type whose underlying type is one of the above types
+//   * Types which implement PropertyConverter on (*Type)
+//   * A struct composed of the above types (except for nested slices)
+//   * A slice of any of the above types
+//
 // GetPLS supports the following struct tag syntax:
 //   `gae:"fieldName[,noindex]"` -- an alternate fieldname for an exportable
 //      field.  When the struct is serialized or deserialized, fieldName will be
@@ -43,15 +58,16 @@ import (
 //   `gae:"$metaKey[,<value>]` -- indicates a field is metadata. Metadata
 //      can be used to control filter behavior, or to store key data when using
 //      the Interface.KeyForObj* methods. The supported field types are:
-//        - Key
-//        - int64
+//        - *Key
+//        - int64, int32, int16, int8, uint32, uint16, uint8, byte
 //        - string
 //        - Toggle (GetMeta and SetMeta treat the field as if it were bool)
-//      Additionally, int64, string and Toggle allow setting a default value
-//      in the struct field tag (the "<value>" portion).
+//        - Any type which implements PropertyConverter
+//      Additionally, numeric, string and Toggle types allow setting a default
+//      value in the struct field tag (the "<value>" portion).
 //
 //      Only exported fields allow SetMeta, but all fields of appropriate type
-//      allow tagged defaults. See Examples.
+//      allow tagged defaults for use with GetMeta. See Examples.
 //
 //   `gae:"[-],extra"` -- indicates that any extra, unrecognized or mismatched
 //      property types (type in datastore doesn't match your struct's field
