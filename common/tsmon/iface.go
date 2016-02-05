@@ -182,7 +182,7 @@ func initMonitor(c context.Context, fl *Flags) (monitor.Monitor, error) {
 	// Load the config file, and override its values with flags.
 	config, err := loadConfig(fl.ConfigFile)
 	if err != nil {
-		logging.Warningf(c, "tsmon is disabled because the config file (%s) could not be loaded: %s",
+		logging.Infof(c, "tsmon is disabled because the config file (%s) could not be loaded: %s",
 			fl.ConfigFile, err)
 		return nil, nil
 	}
@@ -195,7 +195,11 @@ func initMonitor(c context.Context, fl *Flags) (monitor.Monitor, error) {
 	}
 
 	if config.Endpoint == "" {
-		logging.Warningf(c, "tsmon is disabled because no endpoint is configured")
+		logging.Infof(c, "tsmon is disabled because no endpoint is configured")
+		return nil, nil
+	}
+	if strings.ToLower(config.Endpoint) == "none" {
+		logging.Infof(c, "tsmon is explicitly disabled ")
 		return nil, nil
 	}
 
