@@ -297,7 +297,7 @@ func TestQuery(t *testing.T) {
 		})
 
 		Convey(`With a query limit of 3`, func() {
-			s.queryResultLimit = 3
+			s.resultLimit = 3
 
 			Convey(`Can iteratively query to retrieve all stream paths.`, func() {
 				var seen []string
@@ -344,7 +344,7 @@ func TestQuery(t *testing.T) {
 			})
 
 			Convey(`With a query limit of 3`, func() {
-				s.queryResultLimit = 3
+				s.resultLimit = 3
 
 				Convey(`A query request will return the newest 3 entries and have a Next cursor for the next 3.`, func() {
 					resp, err := s.Query(c, &req)

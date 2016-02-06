@@ -234,6 +234,76 @@ message QueryResponse {
   string next = 2;
 }
 
+// ListRequest is the request structure for the user List endpoint.
+message ListRequest {
+  // Path is the query parameter.
+  //
+  // Path should be a prefix fragment of a the valid stream path hierarchy
+  // root to query.
+  string path = 1;
+
+  // If true, returns streams under the specified root recursively. Otherwise,
+  // only path components immediately under the specified root will be returned.
+  bool recursive = 2;
+  // If true, will return only streams. Otherwise, intermediate path components
+  // will also be returned.
+  bool stream_only = 3;
+  // If true, indicates that purged streams should show up in the listing. It is
+  // an error if a non-admin user requests this option.
+  bool include_purged = 4;
+
+  // The maximum number of componts to return.
+  //
+  // If <= 0, no upper bound will be indicated. However, the returned result
+  // count is still be subject to internal constraints.
+  int32 max_results = 5;
+  // If not empty, indicates that this query should continue at the point where
+  // the previous query left off.
+  string next = 6;
+
+  // State, if true, returns that the streams' full state instead of just its
+  // Path.
+  bool state = 7;
+}
+
+// ListResponse is the response structure for the user List endpoint.
+message ListResponse {
+  // Base is the hierarchy base that was requested.
+  string base = 1;
+
+  // If not empty, indicates that there are more list results available.
+  // These results can be requested by repeating the List request with the
+  // same Path field and supplying this value in the Next field.
+  string next = 2;
+
+  // The set of listed stream components.
+  message Component {
+    // Path is the path component for this entry. When combined with the response
+    // Base, this will form the full stream path.
+    string path = 1;
+    // Stream is true if this is a stream component (as opposed to a path
+    // component).
+    bool stream = 2;
+
+    // State is the log stream descriptor and state for this stream. It will only
+    // be filled if this is a stream component.
+    //
+    // It can be requested by setting the request's State field to true. If the
+    // Proto field is true, the State's Descriptor field will not be included.
+    LogStreamState state = 3;
+
+    // Descriptor is the JSON-packed log stream descriptor protobuf. It will only
+    // be filled if this is a stream component.
+    //
+    // A Descriptor entry corresponds to the Path with the same index.
+    //
+    // If the list request's State field is set, the descriptor will be
+    // populated.
+    logpb.LogStreamDescriptor desc = 4;
+  }
+  repeated Component components = 3;
+}
+
 // Logs is the user-facing log access and query endpoint service.
 service Logs {
   // Get returns state and log data for a single log stream.
@@ -244,4 +314,7 @@ service Logs {
 
   // Query returns log stream paths that match the requested query.
   rpc Query(QueryRequest) returns (QueryResponse);
+
+  // List returns log stream paths rooted under the path hierarchy.
+  rpc List(ListRequest) returns (ListResponse);
 }

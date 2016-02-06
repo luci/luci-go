@@ -10,6 +10,7 @@ import (
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
+	"github.com/luci/luci-go/appengine/logdog/coordinator/hierarchy"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/grpcutil"
@@ -111,6 +112,13 @@ func (b *Server) RegisterStream(c context.Context, req *services.RegisterStreamR
 
 		// Return the current stream state.
 		return loadLogStreamState(ls), nil
+	}
+
+	// Write the hierarchy path components. This is idempotent, so it doesn't
+	// need to be run within a transaction.
+	if err := hierarchy.Put(ds.Get(c), ls); err != nil {
+		log.WithError(err).Errorf(c, "Failed to write log stream path.")
+		return nil, grpcutil.Internal
 	}
 
 	// The registration is valid, so retain it.

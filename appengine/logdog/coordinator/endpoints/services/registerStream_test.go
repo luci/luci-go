@@ -13,6 +13,7 @@ import (
 	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
+	"github.com/luci/luci-go/appengine/logdog/coordinator/hierarchy"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/logdog/types"
@@ -71,6 +72,27 @@ func TestRegisterStream(t *testing.T) {
 					resp, err := be.RegisterStream(c, &req)
 					So(err, ShouldBeRPCOK)
 					So(resp, ShouldResembleV, expResp)
+					ds.Get(c).Testable().CatchupIndexes()
+
+					// Should have name components.
+					getNameComponents := func(b string) []string {
+						l, err := hierarchy.Get(ds.Get(c), hierarchy.Request{Base: b})
+						if err != nil {
+							panic(err)
+						}
+						names := make([]string, len(l.Comp))
+						for i, e := range l.Comp {
+							names[i] = e.Name
+							if e.Stream != "" {
+								names[i] += "$"
+							}
+						}
+						return names
+					}
+					So(getNameComponents(""), ShouldResembleV, []string{"testing"})
+					So(getNameComponents("testing"), ShouldResembleV, []string{"+"})
+					So(getNameComponents("testing/+"), ShouldResembleV, []string{"foo"})
+					So(getNameComponents("testing/+/foo"), ShouldResembleV, []string{"bar$"})
 
 					Convey(`Can register the stream again (idempotent).`, func() {
 						resp, err := be.RegisterStream(c, &req)

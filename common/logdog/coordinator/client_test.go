@@ -38,3 +38,7 @@ func (s *testLogsServiceBase) Tail(c context.Context, req *logs.TailRequest) (*l
 func (s *testLogsServiceBase) Query(c context.Context, req *logs.QueryRequest) (*logs.QueryResponse, error) {
 	panic("not implemented")
 }
+
+func (s *testLogsServiceBase) List(c context.Context, req *logs.ListRequest) (*logs.ListResponse, error) {
+	panic("not implemented")
+}

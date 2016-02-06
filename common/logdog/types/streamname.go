@@ -20,8 +20,9 @@ const (
 
 	// StreamPathSep is the separator rune between a stream prefix and its
 	// name.
-	StreamPathSep = '+'
-	pathSepStr    = "+"
+	StreamPathSep    = '+'
+	pathSepStr       = "+"
+	pathSepComponent = "/+/"
 
 	// MaxStreamNameLength is the maximum size, in bytes, of a StreamName. Since
 	// stream names must be valid ASCII, this is also the maximum string length.
@@ -45,6 +46,19 @@ type StreamName string
 
 func isAlnum(r rune) bool {
 	return (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9')
+}
+
+// Construct builds a path string from a series of individual path components.
+// Any leading and trailing separators will be stripped from the components.
+//
+// The result value will be a valid StreamName if all of the parts are
+// valid StreamName strings. Likewise, it may be a valid StreamPath if
+// StreamPathSep is one of the parts.
+func Construct(parts ...string) string {
+	for i, v := range parts {
+		parts[i] = strings.Trim(v, nameSepStr)
+	}
+	return strings.Join(parts, nameSepStr)
 }
 
 // MakeStreamName constructs a new stream name from its segments.
@@ -96,19 +110,11 @@ func MakeStreamName(fill string, s ...string) (StreamName, error) {
 		}
 		s[idx] = v
 	}
-	result := makeStreamName(s...)
+	result := StreamName(Construct(s...))
 	if err := result.Validate(); err != nil {
 		return "", err
 	}
 	return result, nil
-}
-
-// makeStreamName constructs a StreamName by joining segments with the stream
-// name separator.
-//
-// Note that makeStreamName does not validate the resulting stream name.
-func makeStreamName(s ...string) StreamName {
-	return StreamName(strings.Join(s, nameSepStr))
 }
 
 // String implements flag.String.
@@ -165,7 +171,7 @@ func (s StreamName) Concat(o ...StreamName) StreamName {
 	for i, c := range o {
 		parts[i+1] = string(c)
 	}
-	return StreamName(strings.Join(parts, nameSepStr))
+	return StreamName(Construct(parts...))
 }
 
 // Validate tests whether the stream name is valid.
@@ -245,18 +251,44 @@ func (s StreamName) MarshalJSON() ([]byte, error) {
 // separator.
 type StreamPath string
 
+// MakeStreamPath creates a StreamPath by joining prefix and name components.
+func MakeStreamPath(prefix, name []StreamName) StreamPath {
+	o := len(prefix)
+	sp := make([]string, o+len(name)+1)
+	for i, v := range prefix {
+		sp[i] = string(v)
+	}
+	sp[o] = pathSepStr
+	for _, v := range name {
+		o++
+		sp[o] = string(v)
+	}
+	return StreamPath(Construct(sp...))
+}
+
 // Split splits a StreamPath into its prefix and name components.
 //
 // If there is no divider present (e.g., foo/bar/baz), the result will parse
 // as the stream prefix with an empty name component.
-func (p StreamPath) Split() (StreamName, StreamName) {
-	segments := StreamName(p).Segments()
-	for idx, s := range segments {
-		if s == pathSepStr {
-			return makeStreamName(segments[:idx]...), makeStreamName(segments[idx+1:]...)
-		}
+func (p StreamPath) Split() (prefix StreamName, name StreamName) {
+	prefix, _, name = p.SplitParts()
+	return
+}
+
+// SplitParts splits a StreamPath into its prefix and name components.
+//
+// If there is no separator present (e.g., foo/bar/baz), the result will parse
+// as the stream prefix with an empty name component. If there is a separator
+// present but no name component, separator will be returned as true with an
+// empty name.
+func (p StreamPath) SplitParts() (prefix StreamName, sep bool, name StreamName) {
+	if idx := strings.Index(string(p), pathSepComponent); idx >= 0 {
+		sep = true
+		prefix, name = StreamName(p[:idx]), StreamName(p[idx+len(pathSepComponent):])
+	} else {
+		prefix = StreamName(p)
 	}
-	return StreamName(p), ""
+	return
 }
 
 // Validate checks whether a StreamPath is valid. A valid stream path must have

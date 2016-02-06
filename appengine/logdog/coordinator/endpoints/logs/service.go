@@ -13,11 +13,21 @@ import (
 type Server struct {
 	coordinator.Service
 
-	// queryResultLimit is the maximum number of query results to return in a
+	// resultLimit is the maximum number of query results to return in a
 	// single query. If zero, the default will be used.
 	//
 	// This is provided for testing purposes.
-	queryResultLimit int
+	resultLimit int
+}
+
+func (s *Server) limit(v int, d int) int {
+	if s.resultLimit > 0 {
+		d = s.resultLimit
+	}
+	if v <= 0 || v > d {
+		return d
+	}
+	return v
 }
 
 var _ logs.LogsServer = (*Server)(nil)

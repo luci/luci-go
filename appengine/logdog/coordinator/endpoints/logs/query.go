@@ -65,7 +65,7 @@ func (s *Server) Query(c context.Context, req *logs.QueryRequest) (*logs.QueryRe
 	//
 	// If this scaling results in a limit that is <1 per request, we will return
 	// back a BadRequest error.
-	limit := s.queryResultLimit
+	limit := s.resultLimit
 	if limit == 0 {
 		limit = queryResultLimit
 	}
