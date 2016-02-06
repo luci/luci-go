@@ -200,11 +200,17 @@ func (f *Fetcher) fetch(c context.Context) {
 
 	count := int64(0)
 	for tidx < 0 || lastSentIndex < tidx {
-		if f.o.Count > 0 && count >= f.o.Count {
-			log.Fields{
-				"count": count,
-			}.Debugf(c, "Exceeded maximum log count.")
-			break
+		// If we're configured with an upper delivery bound and we've delivered
+		// that many entries, we're done.
+		remaining := int64(-1)
+		if f.o.Count > 0 {
+			remaining = f.o.Count - count
+			if remaining <= 0 {
+				log.Fields{
+					"count": count,
+				}.Debugf(c, "Exceeded maximum log count.")
+				break
+			}
 		}
 
 		// If we have a buffered log, prepare it for sending.
@@ -221,29 +227,36 @@ func (f *Fetcher) fetch(c context.Context) {
 
 		// If we're not currently fetching logs, and we are below our thresholds,
 		// request a new batch of logs.
-		if logFetchC == nil && (tidx < 0 || nextFetchIndex <= tidx) &&
-			(lb.size() < f.o.BufferCount || bytes < f.o.BufferBytes) {
-			logFetchC = logFetchBaseC
-			req := fetchRequest{
-				index: nextFetchIndex,
-				count: (f.o.BufferCount * f.o.PrefetchFactor) - lb.size(),
-				bytes: (f.o.BufferBytes * int64(f.o.PrefetchFactor)) - bytes,
-				respC: logFetchC,
+		if logFetchC == nil && (tidx < 0 || nextFetchIndex <= tidx) {
+
+			// We always have a byte constraint. Are we below it?
+			fetchCount := f.applyConstraint(int64(f.o.BufferCount), int64(lb.size()))
+			fetchBytes := f.applyConstraint(f.o.BufferBytes, bytes)
+
+			// Apply maximum log count constraint, if one is specified.
+			if remaining >= 0 {
+				// Factor in our currently-buffered logs.
+				remaining -= int64(lb.size())
+
+				switch {
+				case remaining <= 0:
+					// No more to fetch, we've buffered all the logs we're going to need.
+					fetchCount = -1
+				case fetchCount == 0, remaining < fetchCount:
+					fetchCount = remaining
+				}
 			}
 
-			doFetch := true
-			if f.o.Count > 0 {
-				// Constrain our logs to the maximim that we'll actually need.
-				remaining := f.o.Count - count - int64(lb.size())
-				if req.count == 0 || remaining < int64(req.count) {
-					req.count = int(remaining)
+			// Fetch logs if neither constraint has vetoed.
+			if fetchCount >= 0 && fetchBytes >= 0 {
+				logFetchC = logFetchBaseC
+				req := fetchRequest{
+					index: nextFetchIndex,
+					count: int(fetchCount),
+					bytes: fetchBytes,
+					respC: logFetchC,
 				}
-				if req.count <= 0 {
-					// We have enough buffered logs.
-					doFetch = false
-				}
-			}
-			if doFetch {
+
 				log.Fields{
 					"index": req.index,
 					"count": req.count,
@@ -360,4 +373,21 @@ func (f *Fetcher) sizeOf(le *logpb.LogEntry) int64 {
 		sf = proto.Size
 	}
 	return int64(sf(le))
+}
+
+func (f *Fetcher) applyConstraint(want, have int64) int64 {
+	switch {
+	case want <= 0:
+		// No constraint, unbounded.
+		return 0
+
+	case want > have:
+		// We have fewer logs buffered. Fetch the difference (including
+		// prefetch).
+		return (want * int64(f.o.PrefetchFactor)) - have
+
+	default:
+		// We're within our constraint. Do not fetch logs.
+		return -1
+	}
 }

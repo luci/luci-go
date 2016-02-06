@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
+
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -61,6 +63,19 @@ func (ts *testSource) loadBinary(data []byte) {
 	})
 }
 
+func (ts *testSource) loadDatagram(data []byte, term bool) {
+	ts.loadLogEntry(&logpb.LogEntry{
+		Content: &logpb.LogEntry_Datagram{
+			Datagram: &logpb.Datagram{
+				Partial: &logpb.Datagram_Partial{
+					Last: term,
+				},
+				Data: data,
+			},
+		},
+	})
+}
+
 func TestRenderer(t *testing.T) {
 	t.Parallel()
 
@@ -105,7 +120,7 @@ func TestRenderer(t *testing.T) {
 			Convey(`Renders {0x00, 0x01, 0x02, 0x03}.`, func() {
 				_, err := b.ReadFrom(r)
 				So(err, ShouldBeNil)
-				So(b.Bytes(), ShouldResemble, []byte{0x00, 0x01, 0x02, 0x03})
+				So(b.Bytes(), ShouldResembleV, []byte{0x00, 0x01, 0x02, 0x03})
 			})
 
 			Convey(`Can read the stream byte-by-byte.`, func() {
@@ -134,6 +149,49 @@ func TestRenderer(t *testing.T) {
 				c, err = r.Read(b[:])
 				So(err, ShouldEqual, io.EOF)
 				So(c, ShouldEqual, 0)
+			})
+		})
+
+		Convey(`With partial DATAGRAM log entries {{0x00}, {0x01, 0x02}, {}, {0x03}}.`, func() {
+			ts.loadDatagram([]byte{0x00}, false)
+			ts.loadDatagram([]byte{0x01, 0x02}, false)
+			ts.loadDatagram([]byte{}, false)
+			ts.loadDatagram([]byte{0x03}, true)
+
+			hexDump := "Datagram #0 (4 bytes)\n" +
+				"00000000  00 01 02 03                                       |....|\n\n"
+
+			Convey(`Renders a full hex dump.`, func() {
+				_, err := b.ReadFrom(r)
+				So(err, ShouldBeNil)
+				So(b.String(), ShouldEqual, hexDump)
+			})
+
+			Convey(`When deferring to a datagram writer`, func() {
+
+				Convey(`Uses the writer instead of a hex dump.`, func() {
+					var bytes []byte
+					r.DatagramWriter = func(w io.Writer, dg []byte) bool {
+						bytes = make([]byte, len(dg))
+						copy(bytes, dg)
+
+						w.Write([]byte("rendered"))
+						return true
+					}
+
+					_, err := b.ReadFrom(r)
+					So(err, ShouldBeNil)
+					So(b.String(), ShouldEqual, "Datagram #0 (4 bytes)\nrendered\n")
+					So(bytes, ShouldResembleV, []byte{0x00, 0x01, 0x02, 0x03})
+				})
+
+				Convey(`Renders a full hex dump when the writer returns false.`, func() {
+					r.DatagramWriter = func(w io.Writer, dg []byte) bool { return false }
+
+					_, err := b.ReadFrom(r)
+					So(err, ShouldBeNil)
+					So(b.String(), ShouldEqual, hexDump)
+				})
 			})
 		})
 

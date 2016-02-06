@@ -13,6 +13,8 @@ package renderer
 
 import (
 	"bytes"
+	"encoding/hex"
+	"fmt"
 	"io"
 
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
@@ -35,6 +37,10 @@ type Renderer struct {
 	// For text streams, this means using the original streams' encoding and
 	// newline delimiters. If this is false, UTF8 and "\n" will be used.
 	Reproduce bool
+	// DatagramWriter is a function to call to render a complete datagram stream.
+	// If it returns false, or if nil, a hex dump renderer will be used to
+	// render the datagram.
+	DatagramWriter func(io.Writer, []byte) bool
 
 	// Currently-buffered data.
 	buf bytes.Buffer
@@ -43,6 +49,9 @@ type Renderer struct {
 	// err is the error returned by bufferNext. Once this is set, no more logs
 	// will be read and any buffered logs will be drained.
 	err error
+
+	// dgBuf is a buffer used for partial datagrams.
+	dgBuf bytes.Buffer
 }
 
 var _ io.Reader = (*Renderer)(nil)
@@ -50,9 +59,8 @@ var _ io.Reader = (*Renderer)(nil)
 func (r *Renderer) Read(b []byte) (int, error) {
 	buffered := r.buffered()
 	for r.err == nil && len(buffered) == 0 {
-		r.buf.Reset()
-		r.bufPos = 0
 		r.err = r.bufferNext()
+		r.bufPos = 0
 
 		buffered = r.buffered()
 	}
@@ -67,6 +75,8 @@ func (r *Renderer) buffered() []byte {
 }
 
 func (r *Renderer) bufferNext() error {
+	r.buf.Reset()
+
 	// Fetch and buffer the next log entry.
 	le, err := r.Source.NextLogEntry()
 	if le != nil {
@@ -83,7 +93,45 @@ func (r *Renderer) bufferNext() error {
 
 		case le.GetBinary() != nil:
 			r.buf.Write(le.GetBinary().Data)
+
+		case le.GetDatagram() != nil:
+			dg := le.GetDatagram()
+			if _, err := r.dgBuf.Write(dg.Data); err != nil {
+				return err
+			}
+
+			if p := dg.GetPartial(); p == nil || p.Last {
+				// Datagram is complete. render it.
+				bytesStr := "bytes"
+				if r.dgBuf.Len() == 1 {
+					bytesStr = "byte"
+				}
+
+				fmt.Fprintf(&r.buf, "Datagram #%d (%d %s)\n", le.Sequence, r.dgBuf.Len(), bytesStr)
+				if f := r.DatagramWriter; f == nil || !f(&r.buf, r.dgBuf.Bytes()) {
+					// Writer failed, or no writer configured. Use a hex dump.
+					if err := dumpHex(&r.buf, r.dgBuf.Bytes()); err != nil {
+						return err
+					}
+				}
+				r.buf.WriteRune('\n')
+
+				r.dgBuf.Reset()
+			}
 		}
 	}
 	return err
+}
+
+func dumpHex(w io.Writer, data []byte) (err error) {
+	// Hex dump.
+	d := hex.Dumper(w)
+	defer func() {
+		if cerr := d.Close(); err == nil && cerr != nil {
+			err = cerr
+		}
+	}()
+
+	_, err = d.Write(data)
+	return
 }
