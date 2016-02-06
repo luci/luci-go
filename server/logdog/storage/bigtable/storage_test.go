@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/luci/gkvlite"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"golang.org/x/net/context"
@@ -17,6 +18,11 @@ import (
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+// errDontReallyDelete is a sentinel error. If btTableTest's deleteErr is
+// configured with this error, the deleteRow operation will not actually delete
+// the row, but will still return success.
+var errDontReallyDelete = errors.New("don't really delete")
 
 // btTableTest is an in-memory implementation of btTable interface for testing.
 //
@@ -27,6 +33,8 @@ type btTableTest struct {
 
 	// err, if true, is the error immediately returned by functions.
 	err error
+	// deleteErr, if not nil, is the error returned by the deleteRow method.
+	deleteErr error
 }
 
 func (t *btTableTest) close() {
@@ -105,6 +113,27 @@ func (t *btTableTest) getLogData(c context.Context, rk *rowKey, limit int, keysO
 	return ierr
 }
 
+func (t *btTableTest) deleteRow(c context.Context, rk *rowKey) error {
+	real := true
+	switch err := t.deleteErr; err {
+	case errDontReallyDelete:
+		real = false
+	case nil:
+		break
+	default:
+		return err
+	}
+
+	if real {
+		if ok, err := t.c.Delete([]byte(rk.encode())); err != nil {
+			return err
+		} else if !ok {
+			return errors.New("row does not exist")
+		}
+	}
+	return nil
+}
+
 func (t *btTableTest) dataMap() map[string][]byte {
 	result := map[string][]byte{}
 
@@ -135,6 +164,20 @@ func TestStorage(t *testing.T) {
 			ctx:    context.Background(),
 			client: nil,
 			table:  &bt,
+		}
+
+		get := func(path string, index int, limit int) ([]string, error) {
+			req := storage.GetRequest{
+				Path:  types.StreamPath(path),
+				Index: types.MessageIndex(index),
+				Limit: limit,
+			}
+			got := []string{}
+			err := s.Get(&req, func(idx types.MessageIndex, d []byte) bool {
+				got = append(got, string(d))
+				return true
+			})
+			return got, err
 		}
 
 		put := func(path string, index int, d string) error {
@@ -171,20 +214,6 @@ func TestStorage(t *testing.T) {
 			})
 
 			Convey(`Testing "Get"...`, func() {
-				get := func(path string, index int, limit int) ([]string, error) {
-					req := storage.GetRequest{
-						Path:  types.StreamPath(path),
-						Index: types.MessageIndex(index),
-						Limit: limit,
-					}
-					got := []string{}
-					err := s.Get(&req, func(idx types.MessageIndex, d []byte) bool {
-						got = append(got, string(d))
-						return true
-					})
-					return got, err
-				}
-
 				Convey(`Can fetch the full row, "A".`, func() {
 					got, err := get("A", 0, 0)
 					So(err, ShouldBeNil)
@@ -241,8 +270,45 @@ func TestStorage(t *testing.T) {
 			})
 
 			Convey(`Testing "Purge"...`, func() {
-				Convey(`Is not implemented, and should panic.`, func() {
-					So(func() { s.Purge("") }, ShouldPanic)
+				Convey(`Can purge log stream "A", then "B".`, func() {
+					// Purge "A".
+					So(s.Purge(types.StreamPath("A")), ShouldBeNil)
+
+					got, err := get("A", 0, 0)
+					So(err, ShouldBeNil)
+					So(got, ShouldResembleV, []string{})
+
+					got, err = get("B", 0, 0)
+					So(err, ShouldBeNil)
+					So(got, ShouldResembleV, []string{"10", "12", "13"})
+
+					// Now purge "B".
+					So(s.Purge(types.StreamPath("B")), ShouldBeNil)
+
+					got, err = get("B", 0, 0)
+					So(err, ShouldBeNil)
+					So(got, ShouldResembleV, []string{})
+				})
+
+				Convey(`Will return an error if Storage failed to purge a row.`, func() {
+					bt.deleteErr = errors.New("testing error")
+
+					err := s.Purge(types.StreamPath("A"))
+					So(err, ShouldErrLike, "testing error")
+					So(errors.IsTransient(err), ShouldBeFalse)
+				})
+
+				Convey(`Will return a transient error if Storage transiently failed to purge a row.`, func() {
+					bt.deleteErr = errors.WrapTransient(errors.New("testing error"))
+
+					err := s.Purge(types.StreamPath("A"))
+					So(err, ShouldErrLike, "testing error")
+					So(errors.IsTransient(err), ShouldBeTrue)
+				})
+
+				Convey(`Will return an error if there are still rows left after delete.`, func() {
+					bt.deleteErr = errDontReallyDelete
+					So(s.Purge(types.StreamPath("A")), ShouldErrLike, "encountered row data post-purge")
 				})
 			})
 		})

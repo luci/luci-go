@@ -47,6 +47,9 @@ type btTable interface {
 	//
 	// If keysOnly is true, then the callback will return nil row data.
 	getLogData(c context.Context, rk *rowKey, limit int, keysOnly bool, cb btGetCallback) error
+
+	// deleteRow deletes the log data associated with a given row.
+	deleteRow(context.Context, *rowKey) error
 }
 
 // btTableProd is an implementation of the btTable interface that uses a real
@@ -124,6 +127,12 @@ func (t *btTableProd) getLogData(c context.Context, rk *rowKey, limit int, keysO
 		err = innerErr
 	}
 	return wrapTransient(err)
+}
+
+func (t *btTableProd) deleteRow(c context.Context, rk *rowKey) error {
+	m := bigtable.NewMutation()
+	m.DeleteRow()
+	return wrapTransient(t.Apply(c, rk.encode(), m))
 }
 
 // wrapTransient wraps the supplied error in an errors.TransientError if it is

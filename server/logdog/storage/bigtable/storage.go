@@ -7,6 +7,7 @@ package bigtable
 import (
 	"fmt"
 
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/logdog/storage"
@@ -197,6 +198,73 @@ func (s *btStorage) Tail(p types.StreamPath) ([]byte, types.MessageIndex, error)
 	return d, types.MessageIndex(latest.index), nil
 }
 
+// Purge iterates over each key sharing a stream prefix and deletes it.
+//
+// We do this by iterating over all rows that share the key, then deleting them.
+// Finally, we will re-iterate over all rows that share the key and return an
+// error if any still exist.
 func (s *btStorage) Purge(p types.StreamPath) error {
-	panic("Not implemented.")
+	c := log.SetField(s.ctx, "path", p)
+
+	// Listen for rows to purge. If any errors are encountered, aggregate them
+	// in a MultiError for handling.
+	rowC := make(chan *rowKey)
+	errC := make(chan errors.MultiError)
+
+	go func() {
+		var deleteErr errors.MultiError
+		defer func() {
+			errC <- deleteErr
+			close(errC)
+		}()
+
+		count := 0
+		for rk := range rowC {
+			if err := s.table.deleteRow(c, rk); err != nil {
+				deleteErr = append(deleteErr, err)
+			} else {
+				count++
+			}
+		}
+
+		log.Fields{
+			"purgedRowCount": count,
+		}.Debugf(c, "Purged rows.")
+	}()
+
+	// Run a keys-only query through the table.
+	rk := newRowKey(string(p), 0)
+	func() {
+		defer close(rowC)
+
+		s.table.getLogData(c, rk, 0, true, func(rk *rowKey, data []byte) error {
+			rowC <- rk
+			return nil
+		})
+	}()
+
+	merr := <-errC
+	if len(merr) > 0 {
+		log.Fields{
+			log.ErrorKey: merr,
+			"errorCount": len(merr),
+		}.Errorf(c, "Failed to purge log stream.")
+
+		// If any of our sub-errors were transient, report the larger error as
+		// transient.
+		for _, e := range merr {
+			if errors.IsTransient(e) {
+				return errors.WrapTransient(merr)
+			}
+		}
+		return merr
+	}
+
+	// Assert that there is no more data.
+	return s.table.getLogData(c, rk, 0, true, func(rk *rowKey, data []byte) error {
+		log.Fields{
+			"rowKey": rk,
+		}.Errorf(c, "Encountered row data post-purge.")
+		return errors.New("encountered row data post-purge")
+	})
 }
