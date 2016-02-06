@@ -5,10 +5,10 @@
 package bigtable
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/grpcutil"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -20,10 +20,12 @@ func TestBigTable(t *testing.T) {
 	})
 
 	Convey(`A regular error is not marked transient.`, t, func() {
-		So(errors.IsTransient(wrapTransient(fmt.Errorf("boring error"))), ShouldBeFalse)
+		So(grpcutil.IsTransient(grpcutil.Canceled), ShouldBeFalse)
+		So(errors.IsTransient(wrapTransient(grpcutil.Canceled)), ShouldBeFalse)
 	})
 
-	Convey(`An error containing "Internal error encountered" is marked transient.`, t, func() {
-		So(errors.IsTransient(wrapTransient(fmt.Errorf("Hey, Internal error encountered!"))), ShouldBeTrue)
+	Convey(`An gRPC transient error is marked transient.`, t, func() {
+		So(grpcutil.IsTransient(grpcutil.Internal), ShouldBeTrue)
+		So(errors.IsTransient(wrapTransient(grpcutil.Internal)), ShouldBeTrue)
 	})
 }

@@ -6,9 +6,9 @@ package bigtable
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/grpcutil"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"golang.org/x/net/context"
@@ -29,9 +29,6 @@ type btGetCallback func(*rowKey, []byte) error
 
 // btTable is a general interface for BigTable operations intended to enable
 // unit tests to stub out BigTable without adding runtime inefficiency.
-//
-// If any of these methods fails with a transient error, it will be wrapped
-// as an errors.Transient error.
 type btTable interface {
 	// putLogData adds new log data to BigTable.
 	//
@@ -50,14 +47,6 @@ type btTable interface {
 	//
 	// If keysOnly is true, then the callback will return nil row data.
 	getLogData(c context.Context, rk *rowKey, limit int, keysOnly bool, cb btGetCallback) error
-}
-
-// btTransientSubstrings is the set of known error substrings returned by
-// BigTable that indicate failures that aren't related to the specific data
-// content.
-var btTransientSubstrings = []string{
-	"Internal error encountered",
-	"interactive login is required",
 }
 
 // btTableProd is an implementation of the btTable interface that uses a real
@@ -150,20 +139,8 @@ func wrapTransient(err error) error {
 //
 // Since the BigTable API doesn't give us this information, we will identify
 // transient errors by parsing their error string :(
-//
-// TODO(dnj): File issue to add error qualifier functions to BigTable API.
 func isTransient(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	msg := err.Error()
-	for _, s := range btTransientSubstrings {
-		if strings.Contains(msg, s) {
-			return true
-		}
-	}
-	return false
+	return grpcutil.IsTransient(err)
 }
 
 // getLogData loads the "data" column from the "log" column family and returns

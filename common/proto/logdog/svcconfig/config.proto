@@ -8,6 +8,7 @@ package svcconfig;
 
 import "transport.proto";
 import "storage.proto";
+import "google/protobuf/duration.proto";
 
 // Config is the overall instance configuration.
 message Config {
@@ -44,4 +45,12 @@ message Collector {
 
   // The number of transport worker goroutines to run.
   int32 transport_workers = 2;
+
+  // The maximum number of log stream states to cache locally. If <= 0, a
+  // default will be used.
+  int32 state_cache_size = 3;
+
+  // The maximum amount of time that cached stream state is valid. If <= 0, a
+  // default will be used.
+  google.protobuf.Duration state_cache_expiration = 4;
 }

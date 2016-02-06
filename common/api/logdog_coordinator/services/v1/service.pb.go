@@ -106,8 +106,7 @@ var _ grpc.ClientConn
 
 // Client API for Services service
 
-type ServicesClient interface {
-	// GetConfig allows a service to retrieve the current service configuration
+type ServicesClient interface { // GetConfig allows a service to retrieve the current service configuration
 	// parameters.
 	GetConfig(ctx context.Context, in *google_protobuf2.Empty, opts ...grpc.CallOption) (*GetConfigResponse, error)
 	// RegisterStream is an idempotent stream state register operation.
