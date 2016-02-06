@@ -1,0 +1,16 @@
+# Copyright 2015 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+queue:
+  # Push queue for backend archival tasking.
+  - name: archive-queue
+    mode: push
+    rate: 20/s
+    target: backend
+
+  # Push queue for backend storage cleanup tasking.
+  - name: storage-cleanup-queue
+    mode: push
+    rate: 20/s
+    target: backend

@@ -36,6 +36,49 @@ message Coordinator {
 
   // A list of origin URLs that are allowed to perform CORS RPC calls.
   repeated string rpc_allow_origins = 20;
+
+  // The name of the archive task queue.
+  string archive_task_queue = 30;
+  // The amount of time after a log has been terminated before it is candidate
+  // for archival.
+  //
+  // Archival triggered by this delay will NOT succeed if any log entries are
+  // missing from intermediate storage.
+  //
+  // This should be based on a period of time where it's reasonable to expect
+  // that all log messages in the transport have arrived for a given log stream.
+  // Since the transport doesn't have to guarantee in-order delivery, this
+  // should allow for the case where the terminal log entry arrives before some
+  // of the intermediate log entries. This will help avoid triggering
+  // archive attempts that are doomed to fail because of standard transport lag.
+  google.protobuf.Duration archive_delay = 31;
+  // The amount of time before a log stream is candidate for archival regardless
+  // of whether or not it's been terminated or complete.
+  //
+  // This endpoint is a failsafe designed to ensure that log streams with
+  // missing records or no terminal record (e.g., Butler crashed) are eventually
+  // moved out of intermediate storage.
+  //
+  // This must be >= `archive_delay`, and should be fairly large (days) to allow
+  // for the log stream to complete and for all available log entries to be
+  // added to intermediate storage.
+  google.protobuf.Duration archive_delay_max = 32;
+
+  // The name of the Google Storage bucket to archive into.
+  string archive_gs_bucket = 33;
+  // If not empty, a base path to prepend to archival Google Storage paths.
+  string archive_gs_base_path = 34;
+  // If not zero, the maximum number of stream indices between index entries.
+  int32 archive_stream_index_range = 35;
+  // If not zero, the maximum number of prefix indices between index entries.
+  int32 archive_prefix_index_range = 36;
+  // If not zero, the maximum number of log data bytes between index entries.
+  int32 archive_byte_range = 37;
+
+  // The name of the storage cleanup task queue.
+  string storage_cleanup_task_queue = 40;
+  // The amount of time to wait before initiating a storage cleanup task.
+  google.protobuf.Duration storage_cleanup_delay = 41;
 }
 
 // Collector is the set of configuration parameters for Collector instances.

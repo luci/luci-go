@@ -147,6 +147,12 @@ func (gcfg *GlobalConfig) LoadConfig(c context.Context) (*svcconfig.Config, erro
 		return nil, settings.ErrNoSettings
 	}
 
+	// Validate the configuration.
+	if err := validateConfig(&cc); err != nil {
+		log.WithError(err).Errorf(c, "Invalid Coordinator configuration.")
+		return nil, settings.ErrNoSettings
+	}
+
 	return &cc, nil
 }
 
@@ -172,6 +178,20 @@ func Load(c context.Context) (*svcconfig.Config, error) {
 		return nil, err
 	}
 	return gcfg.LoadConfig(c)
+}
+
+// validateConfig checks the supplied Coordinator config object to ensure that
+// it meets a minimum configuration standard expected by our endpoitns and
+// handlers.
+func validateConfig(cc *svcconfig.Config) error {
+	switch {
+	case cc == nil:
+		return errors.New("configuration is nil")
+	case cc.GetCoordinator() == nil:
+		return errors.New("no Coordinator configuration")
+	default:
+		return nil
+	}
 }
 
 func getSetupDevConfig(c context.Context) (*config.Config, error) {

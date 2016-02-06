@@ -147,6 +147,18 @@ func (s *Storage) Purge(p types.StreamPath) error {
 	})
 }
 
+// Count returns the number of log records for the given stream.
+func (s *Storage) Count(p types.StreamPath) (c int) {
+	s.run(func() error {
+		st := s.streams[p]
+		if st != nil {
+			c = len(st.logs)
+		}
+		return nil
+	})
+	return
+}
+
 func (s *Storage) run(f func() error) error {
 	s.stateMu.Lock()
 	defer s.stateMu.Unlock()

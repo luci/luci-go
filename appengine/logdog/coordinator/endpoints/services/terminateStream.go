@@ -86,7 +86,7 @@ func (b *Server) TerminateStream(c context.Context, req *services.TerminateStrea
 		default:
 			return err
 		}
-	}, &ds.TransactionOptions{XG: true})
+	}, nil)
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,

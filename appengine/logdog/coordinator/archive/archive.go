@@ -89,7 +89,6 @@ func Archive(m Manifest) error {
 		var logC chan *logpb.LogEntry
 		if m.LogWriter != nil {
 			logC = make(chan *logpb.LogEntry)
-			defer close(logC)
 
 			taskC <- func() error {
 				if err := archiveLogs(m.LogWriter, m.Desc, logC, idx); err != nil {
@@ -108,7 +107,6 @@ func Archive(m Manifest) error {
 		var dataC chan *logpb.LogEntry
 		if m.DataWriter != nil {
 			dataC = make(chan *logpb.LogEntry)
-			defer close(dataC)
 
 			taskC <- func() error {
 				return archiveData(m.DataWriter, dataC)
@@ -116,12 +114,34 @@ func Archive(m Manifest) error {
 		}
 
 		// Iterate through all of our Source's logs and process them.
-		for le := m.Source.NextLogEntry(); le != nil; le = m.Source.NextLogEntry() {
+		taskC <- func() error {
 			if logC != nil {
-				logC <- le
+				defer close(logC)
 			}
 			if dataC != nil {
-				dataC <- le
+				defer close(dataC)
+			}
+
+			sendLog := func(le *logpb.LogEntry) {
+				if logC != nil {
+					logC <- le
+				}
+				if dataC != nil {
+					dataC <- le
+				}
+			}
+
+			for {
+				le, err := m.Source.NextLogEntry()
+				if err != nil {
+					if err == ErrEndOfStream {
+						return nil
+					}
+
+					return err
+				}
+
+				sendLog(le)
 			}
 		}
 	})

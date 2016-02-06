@@ -5,7 +5,6 @@
 package logs
 
 import (
-	"errors"
 	"net/url"
 	"time"
 
@@ -20,6 +19,7 @@ import (
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/retry"
 	"github.com/luci/luci-go/server/logdog/storage"
+	"github.com/luci/luci-go/server/logdog/storage/archive"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )
@@ -99,11 +99,11 @@ func (s *Server) getImpl(c context.Context, req *logs.GetRequest, tail bool) (*l
 	path := ls.Path()
 
 	// If nothing was requested, return nothing.
+	resp := logs.GetResponse{}
 	if !(req.State || tail) && req.LogCount < 0 {
-		return nil, nil
+		return &resp, nil
 	}
 
-	resp := logs.GetResponse{}
 	if req.State {
 		resp.State = loadLogStreamState(ls)
 
@@ -141,12 +141,33 @@ func (s *Server) getLogs(c context.Context, req *logs.GetRequest, tail bool, ls 
 
 		// Logs are not archived. Fetch from intermediate storage.
 		var err error
-		st, err = s.getStorage(c)
+		st, err = s.Storage(c)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		return nil, errors.New("archive fetching is not supported")
+		log.Debugf(c, "Log is archived. Fetching from archive storage.")
+		var err error
+		gs, err := s.GSClient(c)
+		if err != nil {
+			log.WithError(err).Errorf(c, "Failed to create Google Storage client.")
+			return nil, err
+		}
+		defer func() {
+			if err := gs.Close(); err != nil {
+				log.WithError(err).Warningf(c, "Failed to close Google Storage client.")
+			}
+		}()
+
+		st, err = archive.New(c, archive.Options{
+			IndexURL:  ls.ArchiveIndexURL,
+			StreamURL: ls.ArchiveStreamURL,
+			Client:    gs,
+		})
+		if err != nil {
+			log.WithError(err).Errorf(c, "Failed to create Google Storage storage instance.")
+			return nil, err
+		}
 	}
 	defer st.Close()
 

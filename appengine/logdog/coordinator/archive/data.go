@@ -51,7 +51,6 @@ func archiveData(w io.Writer, dataC <-chan *logpb.LogEntry) error {
 		for range entryC {
 			// Discard.
 		}
-
 	}()
 
 	// Consume records from dataC. If we hit an error condition, consume and

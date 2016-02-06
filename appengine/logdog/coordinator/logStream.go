@@ -122,14 +122,23 @@ type LogStream struct {
 	// ArchiveIndexURL is the Google Storage URL where the log stream's index is
 	// archived.
 	ArchiveIndexURL string `gae:",noindex"`
+	// ArchiveIndexSize is the size, in bytes, of the archived Index. It will be
+	// zero if the file is not archived.
+	ArchiveIndexSize int64
 	// ArchiveStreamURL is the Google Storage URL where the log stream's raw
 	// stream data is archived. If this is not empty, the log stream is considered
 	// archived.
 	ArchiveStreamURL string `gae:",noindex"`
+	// ArchiveStreamSize is the size, in bytes, of the archived stream. It will be
+	// zero if the file is not archived.
+	ArchiveStreamSize int64
 	// ArchiveDataURL is the Google Storage URL where the log stream's assembled
 	// data is archived. If this is not empty, the log stream is considered
 	// archived.
 	ArchiveDataURL string `gae:",noindex"`
+	// ArchiveDataSize is the size, in bytes, of the archived data. It will be
+	// zero if the file is not archived.
+	ArchiveDataSize int64
 
 	// _ causes datastore to ignore unrecognized fields and strip them in future
 	// writes.

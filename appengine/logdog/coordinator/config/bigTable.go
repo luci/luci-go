@@ -70,9 +70,7 @@ func GetStorage(c context.Context) (storage.Storage, error) {
 	// Get an Authenticator bound to the token scopes that we need for BigTable.
 	a, err := gaeauthClient.Authenticator(c, bigtable.StorageScopes, gcfg.BigTableServiceAccountJSON)
 	if err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-		}.Errorf(c, "Failed to create BigTable authenticator.")
+		log.WithError(err).Errorf(c, "Failed to create BigTable authenticator.")
 		return nil, errors.New("failed to create BigTable authenticator")
 	}
 

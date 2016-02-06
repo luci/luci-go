@@ -41,11 +41,16 @@ func gen(i int) *logpb.LogEntry {
 
 type testSource struct {
 	logs []*logpb.LogEntry
+	err  error
+}
+
+func (s *testSource) addLogEntry(le *logpb.LogEntry) {
+	s.logs = append(s.logs, le)
 }
 
 func (s *testSource) add(indices ...int) {
 	for _, i := range indices {
-		s.logs = append(s.logs, gen(i))
+		s.addLogEntry(gen(i))
 	}
 }
 
@@ -53,10 +58,16 @@ func (s *testSource) addEntries(entries ...*logpb.LogEntry) {
 	s.logs = append(s.logs, entries...)
 }
 
-func (s *testSource) NextLogEntry() (le *logpb.LogEntry) {
-	if len(s.logs) > 0 {
-		le, s.logs = s.logs[0], s.logs[1:]
+func (s *testSource) NextLogEntry() (le *logpb.LogEntry, err error) {
+	if err = s.err; err != nil {
+		return
 	}
+	if len(s.logs) == 0 {
+		err = ErrEndOfStream
+		return
+	}
+
+	le, s.logs = s.logs[0], s.logs[1:]
 	return
 }
 
@@ -268,6 +279,19 @@ func TestArchive(t *testing.T) {
 				So(Archive(m), ShouldBeNil)
 
 				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 1, 3, 4)
+			})
+		})
+
+		Convey(`Source errors will be returned`, func() {
+			Convey(`nil LogEntry`, func() {
+				ts.addLogEntry(nil)
+				So(Archive(m), ShouldErrLike, "nil LogEntry")
+			})
+
+			Convey(`Error returned`, func() {
+				ts.add(0, 1, 2, 3, 4, 5)
+				ts.err = errors.New("test error")
+				So(Archive(m), ShouldErrLike, "test error")
 			})
 		})
 

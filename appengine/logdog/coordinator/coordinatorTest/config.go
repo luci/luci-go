@@ -27,12 +27,14 @@ func UseConfig(c context.Context, cc *svcconfig.Coordinator) context.Context {
 		panic(fmt.Errorf("failed to store test configuration: %v", err))
 	}
 
-	cfg := svcconfig.Config{
-		Coordinator: cc,
+	cmap := map[string]memory.ConfigSet{
+		"services/logdog-test": map[string]string{},
 	}
-	return memory.Use(c, map[string]memory.ConfigSet{
-		"services/logdog-test": {
-			"coordinator-test.cfg": proto.MarshalTextString(&cfg),
-		},
-	})
+	if cc != nil {
+		cfg := svcconfig.Config{
+			Coordinator: cc,
+		}
+		cmap["services/logdog-test"]["coordinator-test.cfg"] = proto.MarshalTextString(&cfg)
+	}
+	return memory.Use(c, cmap)
 }

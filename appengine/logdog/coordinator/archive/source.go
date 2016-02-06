@@ -7,17 +7,22 @@
 package archive
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
+// ErrEndOfStream is a sentinel error returned by LogEntrySource to indicate
+// that the end of the log stream has been encountered.
+var ErrEndOfStream = errors.New("end of stream")
+
 // A LogEntrySource returns ordered log entries for archival.
 type LogEntrySource interface {
 	// NextLogEntry returns the next sequential log entry. If there are no more
-	// log entries, nil is returned.
-	NextLogEntry() *logpb.LogEntry
+	// log entries, it should return ErrEndOfStream.
+	NextLogEntry() (*logpb.LogEntry, error)
 }
 
 // safeLogEntrySource wraps a LogEntrySource and guarantees that all emitted log
@@ -34,19 +39,21 @@ type safeLogEntrySource struct {
 	lastTimeOffset  time.Duration
 }
 
-func (s *safeLogEntrySource) NextLogEntry() *logpb.LogEntry {
+func (s *safeLogEntrySource) NextLogEntry() (*logpb.LogEntry, error) {
 	// Loop until we find a LogEntry to return.
 	for {
-		le := s.LogEntrySource.NextLogEntry()
+		le, err := s.LogEntrySource.NextLogEntry()
+		if err != nil {
+			return nil, err
+		}
 		if le == nil {
-			return nil
+			return nil, errors.New("source returned nil LogEntry")
 		}
 
 		// Calculate the time offset Duration once.
 		timeOffset := le.TimeOffset.Duration()
 
 		// Are any of our order constraints violated?
-		var err error
 		switch {
 		case le.PrefixIndex < s.lastPrefixIndex:
 			err = fmt.Errorf("prefix index is out of order (%d < %d)", le.PrefixIndex, s.lastPrefixIndex)
@@ -58,7 +65,7 @@ func (s *safeLogEntrySource) NextLogEntry() *logpb.LogEntry {
 			err = fmt.Errorf("time offset is out of order (%s < %s)", timeOffset, s.lastTimeOffset)
 		}
 		if err != nil {
-			s.logger().Warningf("Out-of-order log stream entry %d: %v", le.StreamIndex, err)
+			s.logger().Warningf("Discarding out-of-order log stream entry %d: %v", le.StreamIndex, err)
 			continue
 		}
 
@@ -67,6 +74,6 @@ func (s *safeLogEntrySource) NextLogEntry() *logpb.LogEntry {
 		s.lastSequence = le.Sequence
 		s.lastTimeOffset = timeOffset
 
-		return le
+		return le, nil
 	}
 }

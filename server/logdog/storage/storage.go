@@ -20,6 +20,10 @@ var (
 
 	// ErrBadData is an error returned when the stored data is invalid.
 	ErrBadData = errors.New("storage: bad data")
+
+	// ErrReadOnly can be returned by Storage methods to indicate that the Storage
+	// is read-only.
+	ErrReadOnly = errors.New("storage: read only")
 )
 
 // PutRequest describes adding a single storage record to BigTable.
