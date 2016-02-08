@@ -211,7 +211,7 @@ func clientFromAnnotatedLog(ctx context.Context, log []byte) (*memoryClient, err
 	p := annotee.Processor{
 		Context:                ctx,
 		Client:                 c,
-		MetadataUpdateInterval: time.Hour * 24, // Neverrrrrr send incr updates.
+		MetadataUpdateInterval: -1, // Neverrrrrr send incr updates.
 	}
 	is := annotee.Stream{
 		Reader:           bytes.NewBuffer(log),

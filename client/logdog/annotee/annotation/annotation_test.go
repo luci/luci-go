@@ -234,8 +234,10 @@ func TestState(t *testing.T) {
 				// expectation. Do it deterministically so failures aren't frustrating
 				// to reproduce.
 				s.ForEachStep(func(s *Step) {
-					exp := loadStepProto(t, testCase.name, s.CanonicalName())
-					So(s.Proto(), assertions.ShouldResembleV, exp)
+					Convey(fmt.Sprintf(`Has correct step: %s`, s.CanonicalName()), func() {
+						exp := loadStepProto(t, testCase.name, s.CanonicalName())
+						So(s.Proto(), assertions.ShouldResembleV, exp)
+					})
 				})
 
 				// Iterate over each generated log and assert that it matches its

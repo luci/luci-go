@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"unicode"
 
 	"github.com/golang/protobuf/proto"
@@ -23,8 +24,10 @@ import (
 // filesystemClient is a streamproto.Client implementation that writes generated
 // streams to files in a directory.
 type filesystemClient struct {
-	dir   string
-	fnIdx map[string]int
+	dir string
+
+	fnIdxMu sync.Mutex
+	fnIdx   map[string]int
 }
 
 func newFilesystemClient(dir string) (streamclient.Client, error) {
@@ -48,10 +51,17 @@ func sanitize(s string) string {
 	}, s)
 }
 
-func (c *filesystemClient) getFilename(base, ext string) string {
-	// Get/increment index.
+func (c *filesystemClient) nextFilenameIndex(base string) int {
+	c.fnIdxMu.Lock()
+	defer c.fnIdxMu.Unlock()
+
 	idx := c.fnIdx[base]
 	c.fnIdx[base] = idx + 1
+	return idx
+}
+
+func (c *filesystemClient) getFilename(base, ext string) string {
+	idx := c.nextFilenameIndex(base)
 
 	path := ""
 	if idx == 0 {

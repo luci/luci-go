@@ -10,12 +10,14 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/client/logdog/annotee/executor"
 	"github.com/luci/luci-go/client/logdog/butlerlib/bootstrap"
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamclient"
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
+	"github.com/luci/luci-go/common/clock/clockflag"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
@@ -39,6 +41,9 @@ const (
 	// error return code, allowing users to differentiate between Butler and
 	// Annotee errors.
 	runtimeErrorReturnCode = 251
+
+	// defaultAnnotationInterval is the default annotation interval value.
+	defaultAnnotationInterval = 30 * time.Second
 )
 
 type application struct {
@@ -50,6 +55,7 @@ type application struct {
 	tee                bool
 	printSummary       bool
 	testingDir         string
+	annotationInterval clockflag.Duration
 	nameBase           streamproto.StreamNameFlag
 }
 
@@ -69,6 +75,8 @@ func (a *application) addToFlagSet(fs *flag.FlagSet) {
 	fs.StringVar(&a.testingDir, "testing-dir", "",
 		"Rather than coupling to a Butler instance, output generated annotations "+
 			"and streams to this directory.")
+	fs.Var(&a.annotationInterval, "annotation-interval",
+		"Buffer annotation updates for this amount of time. <=0 sends every update.")
 	fs.Var(&a.nameBase, "name-base", "Base stream name to prepend to generated names.")
 }
 
@@ -117,7 +125,8 @@ func mainImpl(args []string) int {
 		Level: log.Warning,
 	}
 	a := &application{
-		Context: ctx,
+		Context:            ctx,
+		annotationInterval: clockflag.Duration(defaultAnnotationInterval),
 	}
 
 	fs := &flag.FlagSet{}
@@ -164,12 +173,19 @@ func mainImpl(args []string) int {
 		return configErrorReturnCode
 	}
 
+	// Translate "<=0" flag option to Processor's "0", indicating that every
+	// update should be sent.
+	if a.annotationInterval < 0 {
+		a.annotationInterval = 0
+	}
+
 	e := executor.Executor{
-		Annotate: executor.AnnotationMode(a.annotate),
-		Stdin:    os.Stdin,
-		Command:  args,
-		Client:   client,
-		NameBase: types.StreamName(a.nameBase),
+		Annotate:               executor.AnnotationMode(a.annotate),
+		NameBase:               types.StreamName(a.nameBase),
+		Stdin:                  os.Stdin,
+		Command:                args,
+		Client:                 client,
+		MetadataUpdateInterval: time.Duration(a.annotationInterval),
 	}
 	if a.tee {
 		e.TeeStdout = os.Stdout

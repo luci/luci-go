@@ -10,6 +10,7 @@ import (
 	"io"
 	"os/exec"
 	"syscall"
+	"time"
 
 	"github.com/luci/luci-go/client/logdog/annotee"
 	"github.com/luci/luci-go/client/logdog/annotee/annotation"
@@ -62,6 +63,10 @@ type Executor struct {
 
 	// Client is the LogDog Butler straem Client to use.
 	Client streamclient.Client
+
+	// MetadataUpdateInterval is the Processor's MetadataUpdateInterval value to
+	// use. See annotee.Processor for more information.
+	MetadataUpdateInterval time.Duration
 
 	returnCode int
 	steps      []*milo.Step
@@ -117,10 +122,11 @@ func (e *Executor) Run(ctx context.Context) error {
 
 	// Configure our Processor.
 	proc := annotee.Processor{
-		Context:   ctx,
-		Base:      e.NameBase,
-		Client:    e.Client,
-		Execution: execution,
+		Context:                ctx,
+		Base:                   e.NameBase,
+		Client:                 e.Client,
+		Execution:              execution,
+		MetadataUpdateInterval: e.MetadataUpdateInterval,
 	}
 	streams := []*annotee.Stream{
 		stdout,

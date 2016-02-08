@@ -29,9 +29,8 @@ func (s *memoryStream) Close() error {
 }
 
 func (s *memoryStream) WriteDatagram(b []byte) error {
-	nb := make([]byte, len(b))
-	copy(nb, b)
-	s.dg = nb
+	s.dg = make([]byte, len(b))
+	copy(s.dg, b)
 	return nil
 }
 

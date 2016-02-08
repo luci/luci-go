@@ -79,7 +79,7 @@ func (s *State) initialize() {
 	// Add our Command parameters, if applicable.
 	if s.Execution != nil {
 		name = s.Execution.Name
-		env := (*milo.Command_Environment)(nil)
+		var env *milo.Command_Environment
 		if len(s.Execution.Env) > 0 {
 			env = &milo.Command_Environment{}
 			keys := make([]string, 0, len(s.Execution.Env))
@@ -131,7 +131,7 @@ func (s *State) Append(annotation string) error {
 		return nil
 	}
 
-	updated := (*Step)(nil)
+	var updated *Step
 	updatedIf := func(s *Step, b bool) {
 		if b {
 			updated = s
@@ -576,8 +576,8 @@ func (as *Step) closeWithStatus(sp *milo.Status) bool {
 	}
 	as.closed = true
 	as.s.unregisterStep(as)
-	as.s.Callbacks.StepClosed(as)
 	as.s.Callbacks.Updated(as)
+	as.s.Callbacks.StepClosed(as)
 	return true
 }
 
