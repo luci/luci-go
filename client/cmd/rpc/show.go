@@ -9,13 +9,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/proto/google/descriptor"
 	"github.com/luci/luci-go/common/prpc"
-	"github.com/luci/luci-go/server/discovery"
 )
 
 var cmdShow = &subcommands.Command{
@@ -128,26 +126,4 @@ func show(c context.Context, client *prpc.Client, name string) error {
 	}
 
 	return print.Err
-}
-
-type serverDescription struct {
-	services   []string
-	descriptor *descriptor.FileDescriptorSet
-}
-
-func loadDescription(c context.Context, client *prpc.Client) (*serverDescription, error) {
-	dc := discovery.NewDiscoveryPRPCClient(client)
-	res, err := dc.Describe(c, &discovery.Void{})
-	if err != nil {
-		return nil, fmt.Errorf("could not load server description: %s", err)
-	}
-
-	result := &serverDescription{
-		services:   res.Services,
-		descriptor: &descriptor.FileDescriptorSet{},
-	}
-	if err := proto.Unmarshal(res.FileDescriptionSet, result.descriptor); err != nil {
-		return nil, fmt.Errorf("could not unmarshal FileDescriptionSet: %s", err)
-	}
-	return result, nil
 }

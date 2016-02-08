@@ -13,10 +13,13 @@ import (
 
 type formatFlag prpc.Format
 
+const formatFlagPB formatFlag = -1
+
 // formatFlag is a CLI-settable pRPC format flag.
 var formatFlagMap = flagenum.Enum{
-	"json":   formatFlag(prpc.FormatJSONPB),
+	"flag":   formatFlagPB,
 	"binary": formatFlag(prpc.FormatBinary),
+	"json":   formatFlag(prpc.FormatJSONPB),
 	"text":   formatFlag(prpc.FormatText),
 }
 

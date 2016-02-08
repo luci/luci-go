@@ -166,7 +166,7 @@ var fieldTypeName = map[descriptor.FieldDescriptorProto_Type]string{
 // common/proto/google/descriptor/descriptor.proto.
 func (p *printer) Field(field *descriptor.FieldDescriptorProto, path []int) {
 	p.MaybeLeadingComments(path)
-	if field.GetLabel() == descriptor.FieldDescriptorProto_LABEL_REPEATED {
+	if field.Repeated() {
 		p.Printf("repeated ")
 	}
 

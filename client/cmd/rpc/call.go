@@ -6,6 +6,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -15,28 +16,33 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/metadata"
 
+	"github.com/luci/luci-go/client/flagpb"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/prpc"
 )
 
-// TODO(nodir): support specifying message fields with options, e.g.
-//   rpc call :8080 helloworld.Greeter -name Lucy
-// It will be the default request format.
-
 var cmdCall = &subcommands.Command{
-	UsageLine: `call [flags] <server> <service>.<method>
+	UsageLine: `call [flags] <server> <service>.<method> [input message flags]
 
   server: host ("example.com") or port for localhost (":8080").
   service: full name of a service, e.g. "pkg.service"
-  method: name of the method.`,
+  method: name of the method.
+  input message flags: the input message in flagpb format.
+    Ignored if format is json/binary/text, in which case input message is read
+    from stdin.
+    See also fmt subcommand.`,
 	ShortDesc: "calls a service method.",
-	LongDesc:  "Calls a service method.",
+	LongDesc: `Calls a service method.
+Unless format is "flag" (default), the input message is read from stdin`,
 	CommandRun: func() subcommands.CommandRun {
 		c := &callRun{
-			format: formatFlag(prpc.FormatJSONPB),
+			format: formatFlagPB,
 		}
 		c.registerBaseFlags()
 		c.Flags.Var(&c.format, "format", fmt.Sprintf(
-			"Request format, read from stdin. Valid values: %s", formatFlagMap.Choices()))
+			`Message format. Valid values: %s. `+
+				`If format is "flag" (default), the output format is text; otherwise output format is same.`,
+			formatFlagMap.Choices()))
 		return c
 	},
 }
@@ -53,13 +59,16 @@ func (r *callRun) Run(a subcommands.Application, args []string) int {
 		r.cmd = cmdCall
 	}
 
-	if len(args) != 2 {
+	if len(args) < 2 {
 		return r.argErr("")
 	}
 	host, target := args[0], args[1]
+	args = args[2:]
 
 	req := request{
-		format: r.format.Format(),
+		format:       r.format,
+		message:      os.Stdin,
+		messageFlags: args,
 	}
 
 	var err error
@@ -67,12 +76,6 @@ func (r *callRun) Run(a subcommands.Application, args []string) int {
 	if err != nil {
 		return r.argErr("%s", err)
 	}
-
-	var msg bytes.Buffer
-	if _, err := msg.ReadFrom(os.Stdin); err != nil {
-		return r.done(fmt.Errorf("could not read message from stdin: %s", err))
-	}
-	req.message = msg.Bytes()
 
 	client, err := r.authenticatedClient(host)
 	if err != nil {
@@ -96,17 +99,57 @@ func splitServiceAndMethod(fullName string) (service string, method string, err 
 
 // request is an RPC request.
 type request struct {
-	service string
-	method  string
-	message []byte
-	format  prpc.Format
+	service      string
+	method       string
+	message      io.Reader
+	messageFlags []string
+	format       formatFlag
 }
 
 // call makes an RPC and writes response to out.
 func call(c context.Context, client *prpc.Client, req *request, out io.Writer) error {
+	var inf, outf prpc.Format
+	var message []byte
+	switch req.format {
+
+	case formatFlagPB:
+		serverDesc, err := loadDescription(c, client)
+		if err != nil {
+			logging.WithError(err).Errorf(c, "Failed to load description.")
+			return err
+		}
+
+		desc, err := serverDesc.resolveInputMessage(req.service, req.method)
+		if err != nil {
+			return err
+		}
+
+		resolver := flagpb.NewResolver(serverDesc.descriptor)
+		flagMsg, err := flagpb.UnmarshalUntyped(req.messageFlags, desc, resolver)
+		if err != nil {
+			return err
+		}
+
+		message, err = json.Marshal(flagMsg)
+		if err != nil {
+			return err
+		}
+		inf = prpc.FormatJSONPB
+		outf = prpc.FormatText
+
+	default:
+		var buf bytes.Buffer
+		if _, err := buf.ReadFrom(req.message); err != nil {
+			return err
+		}
+		message = buf.Bytes()
+		inf = req.format.Format()
+		outf = inf
+	}
+
 	// Send the request.
 	var hmd, tmd metadata.MD
-	res, err := client.CallRaw(c, req.service, req.method, req.message, req.format, prpc.Header(&hmd), prpc.Trailer(&tmd))
+	res, err := client.CallRaw(c, req.service, req.method, message, inf, outf, prpc.Header(&hmd), prpc.Trailer(&tmd))
 	if err != nil {
 		return err
 	}

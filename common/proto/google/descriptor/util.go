@@ -234,12 +234,30 @@ func (d *DescriptorProto) FindOneOf(name string) int {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// FieldDescriptorProto
+
+// Repeated returns true if the field is repeated.
+func (f *FieldDescriptorProto) Repeated() bool {
+	return f.GetLabel() == FieldDescriptorProto_LABEL_REPEATED
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // EnumDescriptorProto
 
 // FindValue searches for an EnumValueDescriptorProto by name.
 func (e *EnumDescriptorProto) FindValue(name string) int {
 	for i, x := range e.GetValue() {
 		if x.GetName() == name {
+			return i
+		}
+	}
+	return -1
+}
+
+// FindValueByNumber searches for an EnumValueDescriptorProto by number.
+func (e *EnumDescriptorProto) FindValueByNumber(number int32) int {
+	for i, x := range e.GetValue() {
+		if x.GetNumber() == number {
 			return i
 		}
 	}

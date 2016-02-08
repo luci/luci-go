@@ -111,7 +111,7 @@ func (c *Client) Call(ctx context.Context, serviceName, methodName string, in, o
 		return err
 	}
 
-	resp, err := c.CallRaw(ctx, serviceName, methodName, reqBody, FormatBinary, opts...)
+	resp, err := c.CallRaw(ctx, serviceName, methodName, reqBody, FormatBinary, FormatBinary, opts...)
 	if err != nil {
 		return err
 	}
@@ -130,14 +130,14 @@ func (c *Client) Call(ctx context.Context, serviceName, methodName string, in, o
 //
 // If there is a Deadline applied to the Context, it will be forwarded to the
 // server using the HeaderTimeout header.
-func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in []byte, inf Format,
+func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in []byte, inf, outf Format,
 	opts ...grpc.CallOption) ([]byte, error) {
 	options, err := c.renderOptions(opts)
 	if err != nil {
 		return nil, err
 	}
 
-	req := prepareRequest(c.Host, serviceName, methodName, len(in), inf, options)
+	req := prepareRequest(c.Host, serviceName, methodName, len(in), inf, outf, options)
 	ctx = logging.SetFields(ctx, logging.Fields{
 		"host":    c.Host,
 		"service": serviceName,
@@ -270,12 +270,12 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 	if err != nil {
 		return nil, err
 	}
-	if f != inf {
-		return nil, fmt.Errorf("output format (%s) doesn't match input format (%s)", f.ContentType(), inf.ContentType())
+	if f != outf {
+		return nil, fmt.Errorf("output format (%s) doesn't match expected format (%s)", f.ContentType(), outf.ContentType())
 	}
 
 	out := buf.Bytes()
-	if f == FormatJSONPB {
+	if outf == FormatJSONPB {
 		out = bytes.TrimPrefix(out, bytesJSONPBPrefix)
 	}
 	return out, nil
@@ -283,7 +283,7 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 
 // prepareRequest creates an HTTP request for an RPC,
 // except it does not set the request body.
-func prepareRequest(host, serviceName, methodName string, contentLength int, f Format, options *Options) *http.Request {
+func prepareRequest(host, serviceName, methodName string, contentLength int, inf, outf Format, options *Options) *http.Request {
 	if host == "" {
 		panic("Host is not set")
 	}
@@ -301,9 +301,8 @@ func prepareRequest(host, serviceName, methodName string, contentLength int, f F
 	}
 
 	// Set headers.
-	mediaType := f.ContentType()
-	req.Header.Set("Content-Type", mediaType)
-	req.Header.Set("Accept", mediaType)
+	req.Header.Set("Content-Type", inf.ContentType())
+	req.Header.Set("Accept", outf.ContentType())
 	userAgent := options.UserAgent
 	if userAgent == "" {
 		userAgent = DefaultUserAgent

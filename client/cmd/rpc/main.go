@@ -125,6 +125,7 @@ var application = &subcommands.DefaultApplication{
 	Commands: []*subcommands.Command{
 		cmdCall,
 		cmdShow,
+		cmdFmt,
 		authcli.SubcommandLogin(auth.Options{Logger: logCfg.Get()}, "login"),
 		authcli.SubcommandLogout(auth.Options{Logger: logCfg.Get()}, "logout"),
 	},
