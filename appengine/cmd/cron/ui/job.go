@@ -5,6 +5,8 @@
 package ui
 
 import (
+	"crypto/sha1"
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"time"
@@ -39,19 +41,27 @@ func jobPage(c context.Context, w http.ResponseWriter, r *http.Request, p httpro
 		panic(err)
 	}
 
+	// memcacheKey hashes cursor to reduce its length, since full cursor doesn't
+	// fit into memcache key length limits. Use 'v2' scheme for this ('v1' was
+	// used before hashing was added).
+	memcacheKey := func(cursor string) string {
+		blob := sha1.Sum([]byte(job.JobID + ":" + cursor))
+		encoded := base64.StdEncoding.EncodeToString(blob[:])
+		return "v2:cursors:list_invocations:" + encoded
+	}
+
 	// Cheesy way of implementing bidirectional pagination with forward-only
 	// datastore cursors: store mapping from a page cursor to a previous page
 	// cursor in the memcache.
-	keyPrefix := fmt.Sprintf("v1:cursors:list_invocations:%s:", job.JobID)
 	mc := memcache.Get(c)
 	prevCursor := ""
 	if cursor != "" {
-		if itm, err := mc.Get(keyPrefix + cursor); err == nil {
+		if itm, err := mc.Get(memcacheKey(cursor)); err == nil {
 			prevCursor = string(itm.Value())
 		}
 	}
 	if nextCursor != "" {
-		itm := mc.NewItem(keyPrefix + nextCursor)
+		itm := mc.NewItem(memcacheKey(nextCursor))
 		if cursor == "" {
 			itm.SetValue([]byte("NULL"))
 		} else {
