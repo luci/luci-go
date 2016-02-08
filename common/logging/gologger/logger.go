@@ -66,13 +66,13 @@ func (li *loggerImpl) LogCall(l logging.Level, calldepth int, format string, arg
 	li.l.ExtraCalldepth = (calldepth + 1)
 	switch l {
 	case logging.Debug:
-		li.l.Debug(format, args...)
+		li.l.Debugf(format, args...)
 	case logging.Info:
-		li.l.Info(format, args...)
+		li.l.Infof(format, args...)
 	case logging.Warning:
-		li.l.Warning(format, args...)
+		li.l.Warningf(format, args...)
 	case logging.Error:
-		li.l.Error(format, args...)
+		li.l.Errorf(format, args...)
 	}
 }
 
