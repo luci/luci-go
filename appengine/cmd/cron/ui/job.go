@@ -74,7 +74,7 @@ func jobPage(c context.Context, w http.ResponseWriter, r *http.Request, p httpro
 	now := clock.Now(c).UTC()
 	templates.MustRender(c, w, "pages/job.html", map[string]interface{}{
 		"Job":         makeCronJob(job, now),
-		"Invocations": convertToInvocations(invs, now),
+		"Invocations": convertToInvocations(job.ProjectID, job.JobID, invs, now),
 		"PrevCursor":  prevCursor,
 		"NextCursor":  nextCursor,
 	})
@@ -82,15 +82,6 @@ func jobPage(c context.Context, w http.ResponseWriter, r *http.Request, p httpro
 
 ////////////////////////////////////////////////////////////////////////////////
 // Actions.
-
-func isJobOwner(c context.Context, projectID, jobID string) bool {
-	// TODO(vadimsh): Do real ACLs.
-	ok, err := auth.IsMember(c, "administrators")
-	if err != nil {
-		panic(err)
-	}
-	return ok
-}
 
 func runJobAction(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	projectID := p.ByName("ProjectID")

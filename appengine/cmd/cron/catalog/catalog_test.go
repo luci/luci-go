@@ -187,6 +187,10 @@ func (m noopTaskManager) LaunchTask(c context.Context, ctl task.Controller) erro
 	return nil
 }
 
+func (m noopTaskManager) AbortTask(c context.Context, ctl task.Controller) error {
+	return nil
+}
+
 func (m noopTaskManager) HandleNotification(c context.Context, ctl task.Controller, msg *pubsub.PubsubMessage) error {
 	return errors.New("not implemented")
 }

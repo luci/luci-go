@@ -100,9 +100,10 @@ var postJobAction = function(btn, action) {
   var form = $(btn).closest("form");
   var projectID = $("input#projectID", form).val();
   var jobID = $("input#jobID", form).val();
+  var url = "/actions/" + action + "/" + projectID + "/" + jobID;
   if (!form.attr("submitted")) {
     $("input#xsrf_token", form).val(xsrfToken);
-    form.attr("action", "/actions/" + action + "/" + projectID + "/" + jobID);
+    form.attr("action", url);
     form.attr("submitted", "yes");
     form.submit();
   }
@@ -128,6 +129,42 @@ var postJobAction = function(btn, action) {
     {{end}}
     <button type="button" class="btn btn-danger" onclick="postJobAction(this, 'runJob')">
       Run now
+    </button>
+  </div>
+</form>
+{{end}}
+
+
+{{define "invocation-action-scripts"}}
+<script>
+var xsrfToken = "{{.XsrfToken}}";
+
+var postInvocationAction = function(btn, action) {
+  var form = $(btn).closest("form");
+  var projectID = $("input#projectID", form).val();
+  var jobID = $("input#jobID", form).val();
+  var invID = $("input#invID", form).val();
+  var url = "/actions/" + action + "/" + projectID + "/" + jobID + "/" + invID;
+  if (!form.attr("submitted")) {
+    $("input#xsrf_token", form).val(xsrfToken);
+    form.attr("action", url);
+    form.attr("submitted", "yes");
+    form.submit();
+  }
+};
+</script>
+{{end}}
+
+
+{{define "invocation-action-buttons"}}
+<form style="display: inline" method="POST">
+  <input type="hidden" id="xsrf_token" name="xsrf_token" value="">
+  <input type="hidden" id="projectID" value="{{.ProjectID}}">
+  <input type="hidden" id="jobID" value="{{.JobID}}">
+  <input type="hidden" id="invID" value="{{.InvID}}">
+  <div class="btn-group btn-group-xs" role="group">
+    <button type="button" class="btn btn-danger" onclick="postInvocationAction(this, 'abortInvocation')">
+      Abort
     </button>
   </div>
 </form>

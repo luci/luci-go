@@ -51,6 +51,7 @@ func InstallHandlers(r *httprouter.Router, base middleware.Base, cfg Config) {
 	r.POST("/actions/runJob/:ProjectID/:JobID", wrap(xsrf.WithTokenCheck(runJobAction)))
 	r.POST("/actions/pauseJob/:ProjectID/:JobID", wrap(xsrf.WithTokenCheck(pauseJobAction)))
 	r.POST("/actions/resumeJob/:ProjectID/:JobID", wrap(xsrf.WithTokenCheck(resumeJobAction)))
+	r.POST("/actions/abortInvocation/:ProjectID/:JobID/:InvID", wrap(xsrf.WithTokenCheck(abortInvocationAction)))
 }
 
 type configContextKey int

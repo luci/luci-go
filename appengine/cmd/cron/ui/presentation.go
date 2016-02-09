@@ -108,6 +108,8 @@ func convertToSortedCronJobs(jobs []*engine.CronJob, now time.Time) sortedCronJo
 }
 
 type invocation struct {
+	ProjectID   string
+	JobID       string
 	InvID       int64
 	Attempt     int64
 	Revision    string
@@ -137,7 +139,7 @@ var statusToLabelClass = map[task.Status]string{
 	task.StatusFailed:    "label-danger",
 }
 
-func makeInvocation(i *engine.Invocation, now time.Time) *invocation {
+func makeInvocation(projecID, jobID string, i *engine.Invocation, now time.Time) *invocation {
 	triggeredBy := "-"
 	if i.TriggeredBy != "" {
 		triggeredBy = string(i.TriggeredBy)
@@ -154,6 +156,8 @@ func makeInvocation(i *engine.Invocation, now time.Time) *invocation {
 		duration = "1 second" // "now" looks weird for durations
 	}
 	return &invocation{
+		ProjectID:   projecID,
+		JobID:       jobID,
 		InvID:       i.ID,
 		Attempt:     i.RetryCount + 1,
 		Revision:    i.Revision,
@@ -170,10 +174,10 @@ func makeInvocation(i *engine.Invocation, now time.Time) *invocation {
 	}
 }
 
-func convertToInvocations(invs []*engine.Invocation, now time.Time) []*invocation {
+func convertToInvocations(projectID, jobID string, invs []*engine.Invocation, now time.Time) []*invocation {
 	out := make([]*invocation, len(invs))
 	for i, inv := range invs {
-		out[i] = makeInvocation(inv, now)
+		out[i] = makeInvocation(projectID, jobID, inv, now)
 	}
 	return out
 }

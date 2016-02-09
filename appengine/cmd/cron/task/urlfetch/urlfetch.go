@@ -148,6 +148,11 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	return nil
 }
 
+// AbortTask is part of Manager interface.
+func (m TaskManager) AbortTask(c context.Context, ctl task.Controller) error {
+	return nil
+}
+
 // HandleNotification is part of Manager interface.
 func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, msg *pubsub.PubsubMessage) error {
 	return errors.New("not implemented")

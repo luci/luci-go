@@ -6,6 +6,7 @@
   text-decoration: underline !important;
 }
 </style>
+{{template "invocation-action-scripts" .}}
 {{end}}
 
 {{define "content"}}
@@ -26,9 +27,9 @@
         <span class="label {{.Inv.LabelClass}}">{{.Inv.Status}}</span>
       {{end}}
     </div>
-    <div class="col-sm-3"><b>Started:</b> {{.Inv.Started}}</div>
     <div class="col-sm-3"><b>Triggered by:</b> {{.Inv.TriggeredBy}}</div>
     <div class="col-sm-3"><b>Duration:</b> {{.Inv.Duration}}</div>
+    <div class="col-sm-3"><b>Actions:</b>{{template "invocation-action-buttons" .Inv}}</div>
   </div>
 
   <div class="col-sm-12">
@@ -50,7 +51,7 @@
   </div>
   {{end}}
 
-  <h4>Debug log</h4>
+  <h4>Debug log (UTC)</h4>
   <div class="row">
     <div class="col-sm-12">
       <pre>{{.Inv.DebugLog}}</pre>

@@ -117,6 +117,18 @@ type Engine interface {
 
 	// ResumeJob resumed paused job. Doesn't nothing if the job is not paused.
 	ResumeJob(c context.Context, jobID string, who identity.Identity) error
+
+	// AbortInvocation forcefully moves the invocation to failed state.
+	//
+	// It opportunistically tries to send "abort" signal to a job runner if it
+	// supports cancellation, but it doesn't wait for reply. It proceeds to
+	// modifying local state in the cron service datastore immediately.
+	//
+	// AbortInvocation can be used to manually "unstuck" jobs that got stuck due
+	// to missing PubSub notifications or other kinds of unexpected conditions.
+	//
+	// Does nothing if invocation is already in some final state.
+	AbortInvocation(c context.Context, jobID string, invID int64, who identity.Identity) error
 }
 
 // Config contains parameters for the engine.
@@ -909,6 +921,43 @@ func (e *engineImpl) setPausedFlag(c context.Context, jobID string, paused bool,
 		job.Paused = paused
 		return e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnScheduleChange() })
 	})
+}
+
+func (e *engineImpl) AbortInvocation(c context.Context, jobID string, invID int64, who identity.Identity) error {
+	c = logging.SetField(c, "JobID", jobID)
+	c = logging.SetField(c, "InvID", invID)
+
+	var inv *Invocation
+	var err error
+	switch inv, err = e.GetInvocation(c, jobID, invID); {
+	case err != nil:
+		logging.Errorf(c, "Failed to fetch the invocation - %s", err)
+		return err
+	case inv == nil:
+		logging.Errorf(c, "The invocation doesn't exist")
+		return errors.New("the invocation doesn't exist")
+	case inv.Status.Final():
+		return nil
+	}
+
+	ctl, err := e.controllerForInvocation(c, inv)
+	if err != nil {
+		logging.Errorf(c, "Cannot get controller - %s", err)
+		return err
+	}
+
+	ctl.DebugLog("Invocation is manually aborted by %q", who)
+	if err = ctl.manager.AbortTask(c, ctl); err != nil {
+		logging.Errorf(c, "Failed to abort the task - %s", err)
+		return err
+	}
+
+	ctl.State().Status = task.StatusFailed
+	if err = ctl.Save(); err != nil {
+		logging.Errorf(c, "Failed to save the invocation - %s", err)
+		return err
+	}
+	return nil
 }
 
 // updateJob updates an existing job if its definition has changed, adds

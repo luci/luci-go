@@ -5,6 +5,7 @@
 package ui
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -12,6 +13,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/templates"
 )
 
@@ -37,6 +39,35 @@ func invocationPage(c context.Context, w http.ResponseWriter, r *http.Request, p
 	templates.MustRender(c, w, "pages/invocation.html", map[string]interface{}{
 		"ProjectID": projectID,
 		"JobID":     jobID,
-		"Inv":       makeInvocation(inv, now),
+		"Inv":       makeInvocation(projectID, jobID, inv, now),
 	})
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Actions.
+
+func abortInvocationAction(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	handleInvAction(c, w, r, p, func(jobID string, invID int64) error {
+		who := auth.CurrentIdentity(c)
+		return config(c).Engine.AbortInvocation(c, jobID, invID, who)
+	})
+}
+
+func handleInvAction(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params, cb func(string, int64) error) {
+	projectID := p.ByName("ProjectID")
+	jobID := p.ByName("JobID")
+	invID := p.ByName("InvID")
+	if !isJobOwner(c, projectID, jobID) {
+		http.Error(w, "Forbidden", 403)
+		return
+	}
+	invIDAsInt, err := strconv.ParseInt(invID, 10, 64)
+	if err != nil {
+		http.Error(w, "Bad invocation ID", 400)
+		return
+	}
+	if err := cb(projectID+"/"+jobID, invIDAsInt); err != nil {
+		panic(err)
+	}
+	http.Redirect(w, r, fmt.Sprintf("/jobs/%s/%s/%s", projectID, jobID, invID), http.StatusFound)
 }

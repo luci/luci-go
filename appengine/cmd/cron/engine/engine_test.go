@@ -742,6 +742,69 @@ func TestProcessPubSubPush(t *testing.T) {
 	})
 }
 
+func TestAbortInvocation(t *testing.T) {
+	Convey("with mock invocation", t, func() {
+		c := newTestContext(epoch)
+		e, mgr := newTestEngine()
+		ds := datastore.Get(c)
+
+		taskBlob, err := proto.Marshal(&messages.Task{
+			Noop: &messages.NoopTask{},
+		})
+		So(err, ShouldBeNil)
+
+		// A job in "QUEUED" state (about to run an invocation).
+		jobID := "abc/1"
+		invNonce := int64(12345)
+		So(ds.Put(&CronJob{
+			JobID:     jobID,
+			ProjectID: "abc",
+			Enabled:   true,
+			Task:      taskBlob,
+			Schedule:  "manual",
+			State: JobState{
+				State:           JobStateQueued,
+				InvocationNonce: invNonce,
+			},
+		}), ShouldBeNil)
+
+		Convey("AbortInvocation works", func() {
+			// Launch new invocation.
+			var invID int64
+			mgr.launchTask = func(ctl task.Controller) error {
+				invID = ctl.InvocationID()
+				ctl.State().Status = task.StatusRunning
+				So(ctl.Save(), ShouldBeNil)
+				return nil
+			}
+			So(e.startInvocation(c, jobID, invNonce, "", 0), ShouldBeNil)
+
+			// It is alive and cron job entity tracks it.
+			inv, err := e.GetInvocation(c, jobID, invID)
+			So(err, ShouldBeNil)
+			So(inv.Status, ShouldEqual, task.StatusRunning)
+			job, err := e.GetCronJob(c, jobID)
+			So(err, ShouldBeNil)
+			So(job.State.State, ShouldEqual, JobStateRunning)
+			So(job.State.InvocationID, ShouldEqual, invID)
+
+			// Kill it.
+			So(e.AbortInvocation(c, jobID, invID, ""), ShouldBeNil)
+
+			// It is dead.
+			inv, err = e.GetInvocation(c, jobID, invID)
+			So(err, ShouldBeNil)
+			So(inv.Status, ShouldEqual, task.StatusFailed)
+
+			// The cron job moved on with its life.
+			job, err = e.GetCronJob(c, jobID)
+			So(err, ShouldBeNil)
+			So(job.State.State, ShouldEqual, JobStateSuspended)
+			So(job.State.InvocationID, ShouldEqual, 0)
+		})
+	})
+}
+
 ////
 
 func newTestContext(now time.Time) context.Context {
@@ -802,6 +865,10 @@ func (m *fakeTaskManager) ValidateProtoMessage(msg proto.Message) error {
 
 func (m *fakeTaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	return m.launchTask(ctl)
+}
+
+func (m *fakeTaskManager) AbortTask(c context.Context, ctl task.Controller) error {
+	return nil
 }
 
 func (m *fakeTaskManager) HandleNotification(c context.Context, ctl task.Controller, msg *pubsub.PubsubMessage) error {

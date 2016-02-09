@@ -78,6 +78,15 @@ type Manager interface {
 	// its currently saved status is still StatusStarting.
 	LaunchTask(c context.Context, ctl Controller) error
 
+	// AbortTask is called to opportunistically abort launched task.
+	//
+	// It is called right before the job is forcefully switched to a failed state.
+	// The engine does not wait for the task runner to acknowledge this action.
+	//
+	// AbortTask must be idempotent since it may be called multiple times in case
+	// of errors.
+	AbortTask(c context.Context, ctl Controller) error
+
 	// HandleNotification is called whenever engine receives a PubSub message sent
 	// to a topic created with Controller.PrepareTopic. Expect duplicated and
 	// out-of-order messages here. HandleNotification must be idempotent.
