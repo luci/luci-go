@@ -57,7 +57,7 @@ func shouldHaveLogPaths(actual interface{}, expected ...interface{}) string {
 		}
 	}
 
-	return ShouldResembleV(paths, exp)
+	return ShouldResemble(paths, exp)
 }
 
 func TestQuery(t *testing.T) {
@@ -267,8 +267,8 @@ func TestQuery(t *testing.T) {
 					So(resp, shouldHaveLogPaths, "testing/+/baz")
 
 					So(resp.Streams, ShouldHaveLength, 1)
-					So(resp.Streams[0].State, ShouldResembleV, loadLogStreamState(stream))
-					So(resp.Streams[0].Desc, ShouldResembleV, desc)
+					So(resp.Streams[0].State, ShouldResemble, loadLogStreamState(stream))
+					So(resp.Streams[0].Desc, ShouldResemble, desc)
 					So(resp.Streams[0].DescProto, ShouldBeNil)
 				})
 
@@ -290,8 +290,8 @@ func TestQuery(t *testing.T) {
 					So(resp, shouldHaveLogPaths, "testing/+/baz")
 
 					So(resp.Streams, ShouldHaveLength, 1)
-					So(resp.Streams[0].State, ShouldResembleV, loadLogStreamState(stream))
-					So(resp.Streams[0].Desc, ShouldResembleV, desc)
+					So(resp.Streams[0].State, ShouldResemble, loadLogStreamState(stream))
+					So(resp.Streams[0].Desc, ShouldResemble, desc)
 				})
 			})
 		})
@@ -321,7 +321,7 @@ func TestQuery(t *testing.T) {
 
 				sort.Strings(seen)
 				sort.Strings(streamPaths)
-				So(seen, ShouldResembleV, streamPaths)
+				So(seen, ShouldResemble, streamPaths)
 			})
 		})
 

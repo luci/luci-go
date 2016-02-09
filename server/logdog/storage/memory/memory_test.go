@@ -12,7 +12,6 @@ import (
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/server/logdog/storage"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -94,7 +93,7 @@ func TestBigTable(t *testing.T) {
 					}
 
 					So(st.Get(&req, getAllCB), ShouldBeNil)
-					So(getRecs, ShouldResembleV, recs)
+					So(getRecs, ShouldResemble, recs)
 				})
 
 				Convey(`Will adhere to GetRequest limit.`, func() {
@@ -104,7 +103,7 @@ func TestBigTable(t *testing.T) {
 					}
 
 					So(st.Get(&req, getAllCB), ShouldBeNil)
-					So(getRecs, ShouldResembleV, recs[:4])
+					So(getRecs, ShouldResemble, recs[:4])
 				})
 
 				Convey(`Will adhere to hard limit.`, func() {
@@ -115,7 +114,7 @@ func TestBigTable(t *testing.T) {
 					}
 
 					So(st.Get(&req, getAllCB), ShouldBeNil)
-					So(getRecs, ShouldResembleV, recs[:3])
+					So(getRecs, ShouldResemble, recs[:3])
 				})
 
 				Convey(`Will stop iterating if callback returns false.`, func() {
@@ -145,7 +144,7 @@ func TestBigTable(t *testing.T) {
 				Convey(`Can retrieve the tail record, 10.`, func() {
 					d, idx, err := st.Tail(path)
 					So(err, ShouldBeNil)
-					So(d, ShouldResembleV, numRec(10).data)
+					So(d, ShouldResemble, numRec(10).data)
 					So(idx, ShouldEqual, 10)
 				})
 

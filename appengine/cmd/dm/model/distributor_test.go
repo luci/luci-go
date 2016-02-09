@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/luci/luci-go/appengine/cmd/dm/display"
-	. "github.com/luci/luci-go/common/testing/assertions"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -17,7 +17,7 @@ func TestDistributor(t *testing.T) {
 
 	Convey("Distributor.ToDisplay", t, func() {
 		d := &Distributor{"name", "https://www.example.com"}
-		So(d.ToDisplay(), ShouldResembleV, &display.Distributor{
+		So(d.ToDisplay(), ShouldResemble, &display.Distributor{
 			Name: "name", URL: "https://www.example.com"})
 	})
 }

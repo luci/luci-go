@@ -22,7 +22,7 @@ func TestUInt32(t *testing.T) {
 		Convey("ToProperty", func() {
 			p, err := u.ToProperty()
 			So(err, ShouldBeNil)
-			So(p, ShouldResembleV, datastore.MkPropertyNI(17))
+			So(p, ShouldResemble, datastore.MkPropertyNI(17))
 		})
 
 		Convey("FromProperty", func() {
@@ -38,7 +38,7 @@ func TestUInt32(t *testing.T) {
 
 				p = datastore.MkProperty(1394)
 				So(u.FromProperty(p), ShouldBeNil)
-				So(uint32(u), ShouldResembleV, uint32(1394))
+				So(uint32(u), ShouldResemble, uint32(1394))
 			})
 		})
 	})

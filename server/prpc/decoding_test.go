@@ -163,7 +163,7 @@ func TestDecoding(t *testing.T) {
 				So(err, ShouldBeNil)
 				md, ok := metadata.FromContext(c)
 				So(ok, ShouldBeTrue)
-				So(md, ShouldResembleV, expectedMetadata)
+				So(md, ShouldResemble, expectedMetadata)
 			}
 
 			headers := http.Header{

@@ -93,7 +93,7 @@ func TestList(t *testing.T) {
 		Convey(`A default list request will return top-level entries.`, func() {
 			l, err := s.List(c, &req)
 			So(err, ShouldBeRPCOK)
-			So(listPaths(l), ShouldResembleV, []string{"other", "purged", "testing"})
+			So(listPaths(l), ShouldResemble, []string{"other", "purged", "testing"})
 		})
 
 		Convey(`A recursive list will return all elements iteratively.`, func() {
@@ -108,7 +108,7 @@ func TestList(t *testing.T) {
 			} {
 				l, err := s.List(c, &req)
 				So(err, ShouldBeRPCOK)
-				So(listPaths(l), ShouldResembleV, round)
+				So(listPaths(l), ShouldResemble, round)
 
 				if len(round) < int(req.MaxResults) {
 					So(l.Next, ShouldEqual, "")
@@ -137,7 +137,7 @@ func TestList(t *testing.T) {
 
 				l, err := s.List(c, &req)
 				So(err, ShouldBeRPCOK)
-				So(listPaths(l), ShouldResembleV, []string{
+				So(listPaths(l), ShouldResemble, []string{
 					"other/+/baz$",
 					"other/+/foo/bar$",
 					"purged/+/foo$",

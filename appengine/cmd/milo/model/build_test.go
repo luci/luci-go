@@ -11,9 +11,9 @@ import (
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock/testclock"
-	. "github.com/luci/luci-go/common/testing/assertions"
-	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var _ = fmt.Print
@@ -92,7 +92,7 @@ func TestBuildRoot(t *testing.T) {
 				rslt, err := GetBuilds(c, sources, 1)
 				So(err, ShouldBeNil)
 
-				So(rslt, ShouldResembleV, [][]*Build{
+				So(rslt, ShouldResemble, [][]*Build{
 					{build2},
 					{otherBuild},
 				})
@@ -102,7 +102,7 @@ func TestBuildRoot(t *testing.T) {
 				rslt, err := GetBuilds(c, sources, 2)
 				So(err, ShouldBeNil)
 
-				So(rslt, ShouldResembleV, [][]*Build{
+				So(rslt, ShouldResemble, [][]*Build{
 					{build2, build},
 					{otherBuild},
 				})

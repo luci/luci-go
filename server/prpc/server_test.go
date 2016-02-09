@@ -20,7 +20,6 @@ import (
 	prpccommon "github.com/luci/luci-go/common/prpc"
 	"github.com/luci/luci-go/server/middleware"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -57,7 +56,7 @@ func TestServer(t *testing.T) {
 
 		Convey("Register Calc service", func() {
 			RegisterCalcServer(&server, &calcService{})
-			So(server.ServiceNames(), ShouldResembleV, []string{
+			So(server.ServiceNames(), ShouldResemble, []string{
 				"prpc.Calc",
 				"prpc.Greeter",
 			})

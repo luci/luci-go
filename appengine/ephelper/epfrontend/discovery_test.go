@@ -13,7 +13,6 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
-	"github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -55,7 +54,7 @@ func TestBuildRestDescription(t *testing.T) {
 				tc := loadDiscoveryTestCase(tcName)
 				rd, err := buildRestDescription(u, &tc.backend)
 				So(err, ShouldBeNil)
-				So(rd, assertions.ShouldResembleV, &tc.frontend)
+				So(rd, ShouldResemble, &tc.frontend)
 			})
 		}
 	})

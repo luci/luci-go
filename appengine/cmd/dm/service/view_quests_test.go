@@ -40,7 +40,7 @@ func TestViewQuests(t *testing.T) {
 			Convey("no quests", func() {
 				rsp, err := s.ViewQuests(c, &ViewQuestsReq{From: "a", To: "b"})
 				So(err, ShouldBeNil)
-				So(rsp, ShouldResembleV, &display.Data{Quests: display.QuestSlice{}})
+				So(rsp, ShouldResemble, &display.Data{Quests: display.QuestSlice{}})
 			})
 
 			Convey("some quests", func() {
@@ -53,7 +53,7 @@ func TestViewQuests(t *testing.T) {
 
 				rsp, err := s.ViewQuests(c, &ViewQuestsReq{})
 				So(err, ShouldBeNil)
-				So(rsp, ShouldResembleV, &display.Data{Quests: display.QuestSlice{
+				So(rsp, ShouldResemble, &display.Data{Quests: display.QuestSlice{
 					&display.Quest{ID: "dA4ML2hPh3dgKJKz0hTKL32806Kh4UB18VUXwC-EZPs",
 						Distributor: "foof",
 						Created:     clk.Now(),

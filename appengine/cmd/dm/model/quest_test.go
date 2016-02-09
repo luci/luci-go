@@ -30,7 +30,7 @@ func TestQuest(t *testing.T) {
 					qd := &QuestDescriptor{"swarming", []byte(`{  "key"  :  ["value"]}`)}
 					q, err := qd.NewQuest(c)
 					So(err, ShouldBeNil)
-					So(q, ShouldResembleV, &Quest{
+					So(q, ShouldResemble, &Quest{
 						"h0Bgaj7I6oxp08NArY3RWaaPS76mgTHwj_ePu35nMbw",
 						QuestDescriptor{"swarming", []byte(`{"key":["value"]}`)},
 						testclock.TestTimeUTC,
@@ -41,7 +41,7 @@ func TestQuest(t *testing.T) {
 					qd := &QuestDescriptor{"swarming", []byte(`{"key":["value"]} foof`)}
 					q, err := qd.NewQuest(c)
 					So(err, ShouldBeNil)
-					So(q, ShouldResembleV, &Quest{
+					So(q, ShouldResemble, &Quest{
 						"h0Bgaj7I6oxp08NArY3RWaaPS76mgTHwj_ePu35nMbw",
 						QuestDescriptor{"swarming", []byte(`{"key":["value"]}`)},
 						testclock.TestTimeUTC,
@@ -86,7 +86,7 @@ func TestQuest(t *testing.T) {
 		Convey("ToDisplay", func() {
 			q, err := (&QuestDescriptor{"swarming", []byte(`{"key": ["value"]}`)}).NewQuest(c)
 			So(err, ShouldBeNil)
-			So(q.ToDisplay(), ShouldResembleV, &display.Quest{
+			So(q.ToDisplay(), ShouldResemble, &display.Quest{
 				ID:          "h0Bgaj7I6oxp08NArY3RWaaPS76mgTHwj_ePu35nMbw",
 				Payload:     `{"key":["value"]}`,
 				Distributor: "swarming",
@@ -124,7 +124,7 @@ func TestQuest(t *testing.T) {
 			ds.Testable().CatchupIndexes()
 			as, err = q.GetAttempts(c)
 			So(err, ShouldBeNil)
-			So(as, ShouldResembleV, []*Attempt{
+			So(as, ShouldResemble, []*Attempt{
 				{AttemptID: *types.NewAttemptID("h0Bgaj7I6oxp08NArY3RWaaPS76mgTHwj_ePu35nMbw|fffffffd")},
 				{AttemptID: *types.NewAttemptID("h0Bgaj7I6oxp08NArY3RWaaPS76mgTHwj_ePu35nMbw|fffffffe")},
 			})

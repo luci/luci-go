@@ -81,10 +81,10 @@ func TestEncoding(t *testing.T) {
 			Convey(contentType, func() {
 				res := respondMessage(msg, f)
 				So(res.code, ShouldEqual, codes.OK)
-				So(res.header, ShouldResembleV, http.Header{
+				So(res.header, ShouldResemble, http.Header{
 					headerContentType: []string{contentType},
 				})
-				So(res.body, ShouldResembleV, body)
+				So(res.body, ShouldResemble, body)
 			})
 		}
 

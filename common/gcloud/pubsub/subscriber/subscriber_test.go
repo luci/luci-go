@@ -18,7 +18,6 @@ import (
 	"github.com/luci/luci-go/common/gcloud/pubsub"
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -152,8 +151,8 @@ func TestSubscriber(t *testing.T) {
 				}
 			})
 
-			So(dumpStringSet(seen), ShouldResembleV, msgs)
-			So(ack.getACKs(), ShouldResembleV, msgs)
+			So(dumpStringSet(seen), ShouldResemble, msgs)
+			So(ack.getACKs(), ShouldResemble, msgs)
 		})
 
 		Convey(`A Subscriber that encounters an empty message set will sleep and try again.`, func() {
@@ -169,8 +168,8 @@ func TestSubscriber(t *testing.T) {
 				src.message("a", "b", "", "c", "d")
 			})
 
-			So(dumpStringSet(seen), ShouldResembleV, []string{"a", "b", "c", "d"})
-			So(ack.getACKs(), ShouldResembleV, []string{"a", "b", "c", "d"})
+			So(dumpStringSet(seen), ShouldResemble, []string{"a", "b", "c", "d"})
+			So(ack.getACKs(), ShouldResemble, []string{"a", "b", "c", "d"})
 		})
 
 		Convey(`A Subscriber that encounters a Source error will sleep and try again.`, func() {
@@ -188,8 +187,8 @@ func TestSubscriber(t *testing.T) {
 				src.message("c", "d")
 			})
 
-			So(dumpStringSet(seen), ShouldResembleV, []string{"a", "b", "c", "d"})
-			So(ack.getACKs(), ShouldResembleV, []string{"a", "b", "c", "d"})
+			So(dumpStringSet(seen), ShouldResemble, []string{"a", "b", "c", "d"})
+			So(ack.getACKs(), ShouldResemble, []string{"a", "b", "c", "d"})
 		})
 	})
 }

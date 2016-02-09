@@ -34,7 +34,7 @@ func TestAckFwdDep(t *testing.T) {
 		}
 
 		Convey("Root", func() {
-			So(afd.Root(c), ShouldResembleV, ds.MakeKey("Attempt", "quest|fffffffe"))
+			So(afd.Root(c), ShouldResemble, ds.MakeKey("Attempt", "quest|fffffffe"))
 		})
 
 		Convey("RollForward", func() {
@@ -113,7 +113,7 @@ func TestAckFwdDep(t *testing.T) {
 
 						muts, err := afd.RollForward(c)
 						So(err, ShouldBeNil)
-						So(muts, ShouldResembleV, []tumble.Mutation{
+						So(muts, ShouldResemble, []tumble.Mutation{
 							&ScheduleExecution{&a.AttemptID}})
 
 						So(ds.GetMulti([]interface{}{a, fwd}), ShouldBeNil)

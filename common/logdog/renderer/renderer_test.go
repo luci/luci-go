@@ -11,7 +11,6 @@ import (
 
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -120,7 +119,7 @@ func TestRenderer(t *testing.T) {
 			Convey(`Renders {0x00, 0x01, 0x02, 0x03}.`, func() {
 				_, err := b.ReadFrom(r)
 				So(err, ShouldBeNil)
-				So(b.Bytes(), ShouldResembleV, []byte{0x00, 0x01, 0x02, 0x03})
+				So(b.Bytes(), ShouldResemble, []byte{0x00, 0x01, 0x02, 0x03})
 			})
 
 			Convey(`Can read the stream byte-by-byte.`, func() {
@@ -182,7 +181,7 @@ func TestRenderer(t *testing.T) {
 					_, err := b.ReadFrom(r)
 					So(err, ShouldBeNil)
 					So(b.String(), ShouldEqual, "Datagram #0 (4 bytes)\nrendered\n")
-					So(bytes, ShouldResembleV, []byte{0x00, 0x01, 0x02, 0x03})
+					So(bytes, ShouldResemble, []byte{0x00, 0x01, 0x02, 0x03})
 				})
 
 				Convey(`Renders a full hex dump when the writer returns false.`, func() {

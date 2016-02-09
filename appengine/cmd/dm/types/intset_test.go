@@ -8,7 +8,6 @@ import (
 	"sort"
 	"testing"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -27,7 +26,7 @@ func TestU32s(t *testing.T) {
 
 		Convey("sort", func() {
 			sort.Sort(rnd)
-			So(rnd, ShouldResembleV, ord)
+			So(rnd, ShouldResemble, ord)
 
 			Convey("has", func() {
 				So(rnd.Has(592), ShouldBeTrue)

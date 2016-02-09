@@ -52,7 +52,7 @@ func TestAttempt(t *testing.T) {
 			a.WaitingDepBitmap.Set(1)
 			a.WaitingDepBitmap.Set(5)
 			a.WaitingDepBitmap.Set(7)
-			So(a.ToDisplay(), ShouldResembleV, &display.Attempt{
+			So(a.ToDisplay(), ShouldResemble, &display.Attempt{
 				ID:             types.AttemptID{QuestID: "quest", AttemptNum: 10},
 				NumExecutions:  math.MaxUint32,
 				State:          attempt.Finished,

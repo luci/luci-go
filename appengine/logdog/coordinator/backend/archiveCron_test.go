@@ -24,7 +24,6 @@ import (
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -133,7 +132,7 @@ func TestHandleArchiveCron(t *testing.T) {
 					So(resp.StatusCode, ShouldEqual, http.StatusOK)
 
 					tasks2 := tq.Get(c).Testable().GetScheduledTasks()[qName]
-					So(tasks2, ShouldResembleV, tasks)
+					So(tasks2, ShouldResemble, tasks)
 				})
 
 				Convey(`A non-terminal endpoint hit will be successful and idempotent.`, func() {
@@ -151,7 +150,7 @@ func TestHandleArchiveCron(t *testing.T) {
 					So(resp.StatusCode, ShouldEqual, http.StatusOK)
 
 					tasks2 := tq.Get(c).Testable().GetScheduledTasks()[qName]
-					So(tasks2, ShouldResembleV, tasks)
+					So(tasks2, ShouldResemble, tasks)
 				})
 
 				Convey(`A terminal endpoint hit followed by a non-terminal endpoint hit will be successful.`, func() {

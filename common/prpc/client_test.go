@@ -26,7 +26,6 @@ import (
 	"github.com/luci/luci-go/common/logging/memlogger"
 	"github.com/luci/luci-go/common/retry"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -139,7 +138,7 @@ func TestClient(t *testing.T) {
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res, Header(&hd))
 				So(err, ShouldBeNil)
 				So(res.Message, ShouldEqual, "Hello John")
-				So(hd["x-lower-case-header"], ShouldResembleV, []string{"CamelCaseValueStays"})
+				So(hd["x-lower-case-header"], ShouldResemble, []string{"CamelCaseValueStays"})
 
 				So(log, shouldHaveMessagesLike, expectedCallLogEntry(client))
 			})

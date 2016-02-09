@@ -87,8 +87,8 @@ func TestAddDeps(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(len(muts), ShouldEqual, 2*len(fds))
 
-					So(muts[0], ShouldResembleV, &EnsureAttempt{fds[0].Dependee})
-					So(muts[1], ShouldResembleV, &AddBackDep{
+					So(muts[0], ShouldResemble, &EnsureAttempt{fds[0].Dependee})
+					So(muts[1], ShouldResemble, &AddBackDep{
 						Dep: fds[0].Edge(), NeedsAck: true})
 
 					So(ds.Get(a), ShouldBeNil)

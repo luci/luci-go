@@ -254,7 +254,7 @@ func TestHandleArchive(t *testing.T) {
 				So(do("testing/+/foo"), ShouldBeNil)
 
 				So(ds.Get(c).Get(ls), ShouldBeNil)
-				So(ls.Updated, ShouldResembleV, ls.Created)
+				So(ls.Updated, ShouldResemble, ls.Created)
 			})
 
 			Convey(`When we're within the stream's maximum completeness delay`, func() {
@@ -270,7 +270,7 @@ func TestHandleArchive(t *testing.T) {
 						So(do("testing/+/foo"), ShouldBeNil)
 
 						So(ds.Get(c).Get(ls), ShouldBeNil)
-						So(ls.Updated, ShouldResembleV, ds.RoundTime(tc.Now().UTC()))
+						So(ls.Updated, ShouldResemble, ds.RoundTime(tc.Now().UTC()))
 						So(ls.Archived(), ShouldBeTrue)
 						So(ls.TerminalIndex, ShouldEqual, -1)
 					})
@@ -297,7 +297,7 @@ func TestHandleArchive(t *testing.T) {
 
 						So(ds.Get(c).Get(ls), ShouldBeNil)
 						So(ls.State, ShouldEqual, coordinator.LSArchived)
-						So(ls.Updated, ShouldResembleV, ds.RoundTime(tc.Now().UTC()))
+						So(ls.Updated, ShouldResemble, ds.RoundTime(tc.Now().UTC()))
 						So(ls.TerminalIndex, ShouldEqual, 3)
 						So(ls.ArchiveStreamURL, ShouldEqual, "gs://archive-test/path/to/archive/testing/+/foo/logstream.entries")
 						So(ls.ArchiveStreamSize, ShouldBeGreaterThan, 0)
@@ -319,7 +319,7 @@ func TestHandleArchive(t *testing.T) {
 							So(do("testing/+/foo"), ShouldBeNil)
 
 							So(ds.Get(c).Get(ls), ShouldBeNil)
-							So(ls.Updated, ShouldResembleV, ds.RoundTime(tc.Now().UTC()))
+							So(ls.Updated, ShouldResemble, ds.RoundTime(tc.Now().UTC()))
 							So(ls.Archived(), ShouldBeTrue)
 						})
 
@@ -330,7 +330,7 @@ func TestHandleArchive(t *testing.T) {
 
 							So(ds.Get(c).Get(ls), ShouldBeNil)
 							So(ls.State, ShouldEqual, coordinator.LSArchived)
-							So(ls.Updated, ShouldResembleV, ds.RoundTime(tc.Now().UTC()))
+							So(ls.Updated, ShouldResemble, ds.RoundTime(tc.Now().UTC()))
 							So(ls.TerminalIndex, ShouldEqual, 4)
 							So(ls.ArchiveStreamURL, ShouldEqual, "gs://archive-test/path/to/archive/testing/+/foo/logstream.entries")
 							So(ls.ArchiveStreamSize, ShouldBeGreaterThan, 0)
@@ -350,7 +350,7 @@ func TestHandleArchive(t *testing.T) {
 							So(do("testing/+/foo"), ShouldBeNil)
 
 							So(ds.Get(c).Get(ls), ShouldBeNil)
-							So(ls.Updated, ShouldResembleV, ds.RoundTime(tc.Now().UTC()))
+							So(ls.Updated, ShouldResemble, ds.RoundTime(tc.Now().UTC()))
 							So(ls.Archived(), ShouldBeTrue)
 						})
 
@@ -361,7 +361,7 @@ func TestHandleArchive(t *testing.T) {
 
 							So(ds.Get(c).Get(ls), ShouldBeNil)
 							So(ls.State, ShouldEqual, coordinator.LSArchived)
-							So(ls.Updated, ShouldResembleV, ds.RoundTime(tc.Now().UTC()))
+							So(ls.Updated, ShouldResemble, ds.RoundTime(tc.Now().UTC()))
 							So(ls.TerminalIndex, ShouldEqual, 2)
 							So(ls.ArchiveStreamURL, ShouldEqual, "gs://archive-test/path/to/archive/testing/+/foo/logstream.entries")
 							So(ls.ArchiveStreamSize, ShouldBeGreaterThan, 0)
@@ -458,7 +458,7 @@ func TestHandleArchive(t *testing.T) {
 							So(do("testing/+/foo"), ShouldErrLike, "test error")
 
 							So(ds.Get(c).Get(ls), ShouldBeNil)
-							So(ls.Updated, ShouldResembleV, ls.Created)
+							So(ls.Updated, ShouldResemble, ls.Created)
 							So(ls.Archived(), ShouldBeFalse)
 						})
 					}

@@ -10,7 +10,7 @@ import (
 
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
-	"github.com/luci/luci-go/common/testing/assertions"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 type testData struct {
@@ -44,7 +44,7 @@ func shouldMatchLogEntry(actual interface{}, expected ...interface{}) string {
 		return fmt.Sprintf("expected should not be nil")
 	}
 
-	return assertions.ShouldResembleV(actual, expected[0])
+	return ShouldResemble(actual, expected[0])
 }
 
 type parserTestStream struct {

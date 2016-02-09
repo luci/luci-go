@@ -46,7 +46,7 @@ func TestEndToEnd(t *testing.T) {
 
 			resp, err := client.Greet(c, &HelloRequest{Name: "round-trip"})
 			So(err, ShouldBeRPCOK)
-			So(resp, ShouldResembleV, svc.R)
+			So(resp, ShouldResemble, svc.R)
 		})
 	})
 }

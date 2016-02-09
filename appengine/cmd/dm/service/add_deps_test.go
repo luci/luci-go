@@ -65,7 +65,7 @@ func TestAddDeps(t *testing.T) {
 
 				rsp, err := s.AddDeps(c, req)
 				So(err, ShouldBeNil)
-				So(rsp, ShouldResembleV, &AddDepsRsp{false})
+				So(rsp, ShouldResemble, &AddDepsRsp{false})
 			})
 
 			Convey("deps already done", func() {
@@ -74,7 +74,7 @@ func TestAddDeps(t *testing.T) {
 
 				rsp, err := s.AddDeps(c, req)
 				So(err, ShouldBeNil)
-				So(rsp, ShouldResembleV, &AddDepsRsp{false})
+				So(rsp, ShouldResemble, &AddDepsRsp{false})
 
 				So(ds.Get(fwd), ShouldBeNil)
 			})
@@ -84,7 +84,7 @@ func TestAddDeps(t *testing.T) {
 
 				rsp, err := s.AddDeps(c, req)
 				So(err, ShouldBeNil)
-				So(rsp, ShouldResembleV, &AddDepsRsp{true})
+				So(rsp, ShouldResemble, &AddDepsRsp{true})
 
 				So(ds.Get(fwd), ShouldBeNil)
 				So(ds.Get(a), ShouldBeNil)

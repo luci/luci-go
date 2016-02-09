@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -32,7 +31,7 @@ func TestMarshal(t *testing.T) {
 			Convey(strings.Join(flags, " "), func() {
 				actualFlags, err := MarshalUntyped(m)
 				So(err, ShouldBeNil)
-				So(actualFlags, ShouldResembleV, flags)
+				So(actualFlags, ShouldResemble, flags)
 			})
 		}
 

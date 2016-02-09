@@ -12,9 +12,9 @@ import (
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/appengine/tumble"
-	. "github.com/luci/luci-go/common/testing/assertions"
-	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestRecordCompletion(t *testing.T) {
@@ -64,7 +64,7 @@ func TestRecordCompletion(t *testing.T) {
 
 					muts, err := rc.RollForward(c)
 					So(err, ShouldBeNil)
-					So(muts, ShouldResembleV, []tumble.Mutation{
+					So(muts, ShouldResemble, []tumble.Mutation{
 						&AckFwdDep{Dep: bd.Edge(), DepIsFinished: true},
 					})
 
@@ -108,7 +108,7 @@ func TestRecordCompletion(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(len(muts), ShouldEqual, completionLimit+1)
 
-					So(muts[completionLimit], ShouldResembleV, rc)
+					So(muts[completionLimit], ShouldResemble, rc)
 
 					muts, err = rc.RollForward(c)
 					So(err, ShouldBeNil)

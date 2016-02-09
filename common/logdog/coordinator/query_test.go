@@ -17,7 +17,6 @@ import (
 	"github.com/luci/luci-go/common/testing/prpctest"
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -60,7 +59,7 @@ func shouldHaveLogStreams(actual interface{}, expected ...interface{}) string {
 		eList[i] = exp.(string)
 	}
 
-	return ShouldResembleV(aList, eList)
+	return ShouldResemble(aList, eList)
 }
 
 func TestClientQuery(t *testing.T) {
@@ -168,7 +167,7 @@ func TestClientQuery(t *testing.T) {
 
 				So(client.Query(c, &q, accumulate), ShouldBeNil)
 				So(results, shouldHaveLogStreams, "test/+/a")
-				So(results[0], ShouldResembleV, &LogStream{
+				So(results[0], ShouldResemble, &LogStream{
 					Path: "test/+/a",
 					Desc: &logpb.LogStreamDescriptor{Prefix: "test", Name: "a"},
 					State: &StreamState{
@@ -186,19 +185,19 @@ func TestClientQuery(t *testing.T) {
 				Convey(`Text`, func() {
 					q.StreamType = Text
 					So(client.Query(c, &q, accumulate), ShouldBeNil)
-					So(svc.LR.StreamType, ShouldResembleV, &logs.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_TEXT})
+					So(svc.LR.StreamType, ShouldResemble, &logs.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_TEXT})
 				})
 
 				Convey(`Binary`, func() {
 					q.StreamType = Binary
 					So(client.Query(c, &q, accumulate), ShouldBeNil)
-					So(svc.LR.StreamType, ShouldResembleV, &logs.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_BINARY})
+					So(svc.LR.StreamType, ShouldResemble, &logs.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_BINARY})
 				})
 
 				Convey(`Datagram`, func() {
 					q.StreamType = Datagram
 					So(client.Query(c, &q, accumulate), ShouldBeNil)
-					So(svc.LR.StreamType, ShouldResembleV, &logs.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_DATAGRAM})
+					So(svc.LR.StreamType, ShouldResemble, &logs.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_DATAGRAM})
 				})
 			})
 

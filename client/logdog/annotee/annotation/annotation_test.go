@@ -20,7 +20,6 @@ import (
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/milo"
-	"github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -236,7 +235,7 @@ func TestState(t *testing.T) {
 				s.ForEachStep(func(s *Step) {
 					Convey(fmt.Sprintf(`Has correct step: %s`, s.CanonicalName()), func() {
 						exp := loadStepProto(t, testCase.name, s.CanonicalName())
-						So(s.Proto(), assertions.ShouldResembleV, exp)
+						So(s.Proto(), ShouldResemble, exp)
 					})
 				})
 

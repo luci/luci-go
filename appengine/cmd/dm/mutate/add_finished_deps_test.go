@@ -53,7 +53,7 @@ func TestAddFinishedDeps(t *testing.T) {
 
 		Convey("RollForward", func() {
 			err := ds.GetMulti(fs)
-			So(err, ShouldResembleV, errors.MultiError{
+			So(err, ShouldResemble, errors.MultiError{
 				datastore.ErrNoSuchEntity,
 				nil,
 				datastore.ErrNoSuchEntity,
@@ -61,7 +61,7 @@ func TestAddFinishedDeps(t *testing.T) {
 
 			muts, err := f.RollForward(c)
 			So(err, ShouldBeNil)
-			So(muts, ShouldResembleV, []tumble.Mutation{
+			So(muts, ShouldResemble, []tumble.Mutation{
 				&AddBackDep{Dep: fs[0].Edge()},
 				&AddBackDep{Dep: fs[2].Edge()},
 			})

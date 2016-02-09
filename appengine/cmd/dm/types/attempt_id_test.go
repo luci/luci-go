@@ -29,7 +29,7 @@ func TestAttemptID(t *testing.T) {
 
 			p, err := aid.ToProperty()
 			So(err, ShouldBeNil)
-			So(p, ShouldResembleV, datastore.MkPropertyNI("moo|fffffff5"))
+			So(p, ShouldResemble, datastore.MkPropertyNI("moo|fffffff5"))
 		})
 
 		Convey("cmp", func() {
@@ -65,7 +65,7 @@ func TestAttemptID(t *testing.T) {
 
 			sort.Sort(s)
 
-			So(s, ShouldResembleV, AttemptIDSlice{
+			So(s, ShouldResemble, AttemptIDSlice{
 				{"a", 2},
 				{"a", 10},
 				{"b", 20},
@@ -78,10 +78,10 @@ func TestAttemptID(t *testing.T) {
 		Convey("parse", func() {
 			Convey("good", func() {
 				aid := NewAttemptID("something|ffffffff")
-				So(aid, ShouldResembleV, &AttemptID{"something", 0})
+				So(aid, ShouldResemble, &AttemptID{"something", 0})
 
 				So(aid.FromProperty(datastore.MkPropertyNI("wat|fffffffa")), ShouldBeNil)
-				So(aid, ShouldResembleV, &AttemptID{"wat", 5})
+				So(aid, ShouldResemble, &AttemptID{"wat", 5})
 			})
 
 			Convey("err", func() {

@@ -15,7 +15,6 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
-	"github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -172,7 +171,7 @@ func TestService(t *testing.T) {
 				defer resp.Body.Close()
 				So(json.NewDecoder(resp.Body).Decode(&act), ShouldBeNil)
 
-				So(act, assertions.ShouldResembleV, exp)
+				So(act, ShouldResemble, exp)
 			})
 
 			Convey(`Exposes a service REST endpoint.`, func() {
@@ -185,7 +184,7 @@ func TestService(t *testing.T) {
 				defer resp.Body.Close()
 				So(json.NewDecoder(resp.Body).Decode(&act), ShouldBeNil)
 
-				So(act, assertions.ShouldResembleV, exp)
+				So(act, ShouldResemble, exp)
 			})
 
 			Convey(`Can access the "pathreq" endpoint with path elements.`, func() {

@@ -70,7 +70,7 @@ func TestViewAttempt(t *testing.T) {
 
 			Convey("nil options (no dependencies)", func() {
 				req.Options = nil
-				So(view(), ShouldResembleV, &display.Data{
+				So(view(), ShouldResemble, &display.Data{
 					Attempts: display.AttemptSlice{
 						{ID: *mkAid(w, 1), State: attempt.NeedsExecution},
 					},
@@ -78,7 +78,7 @@ func TestViewAttempt(t *testing.T) {
 			})
 
 			Convey("no dependencies", func() {
-				So(view(), ShouldResembleV, &display.Data{
+				So(view(), ShouldResemble, &display.Data{
 					Attempts: display.AttemptSlice{
 						{ID: *mkAid(w, 1), State: attempt.NeedsExecution},
 					},
@@ -96,7 +96,7 @@ func TestViewAttempt(t *testing.T) {
 					clock.Now(c).Add(time.Hour * 24 * 4),
 				}), ShouldBeNil)
 
-				So(view(), ShouldResembleV, &display.Data{
+				So(view(), ShouldResemble, &display.Data{
 					Attempts: display.AttemptSlice{
 						{
 							ID:            *mkAid(w, 1),
@@ -119,7 +119,7 @@ func TestViewAttempt(t *testing.T) {
 				x := mkQuest(c, "x")
 				depOn(c, mkAid(w, 1), mkAid(x, 1), mkAid(x, 2))
 				// don't run tumble, so that x|1 and x|2 don't get created.
-				So(view(), ShouldResembleV, &display.Data{
+				So(view(), ShouldResemble, &display.Data{
 					Attempts: display.AttemptSlice{
 						{ID: *mkAid(w, 1), State: attempt.AddingDeps,
 							NumExecutions: 1, NumWaitingDeps: 2},
@@ -132,7 +132,7 @@ func TestViewAttempt(t *testing.T) {
 				Convey("deps (with dest attempts)", func() {
 					ttest.Drain(c)
 
-					So(view(), ShouldResembleV, &display.Data{
+					So(view(), ShouldResemble, &display.Data{
 						Attempts: display.AttemptSlice{
 							{ID: *mkAid(w, 1), State: attempt.Blocked,
 								NumExecutions: 1, NumWaitingDeps: 2},
@@ -158,7 +158,7 @@ func TestViewAttempt(t *testing.T) {
 					depOn(c, mkAid(x, 2), mkAid(z, 1))
 					ttest.Drain(c)
 
-					So(view(), ShouldResembleV, &display.Data{
+					So(view(), ShouldResemble, &display.Data{
 						Attempts: display.AttemptSlice{
 							{ID: *mkAid(w, 1), State: attempt.Blocked, NumExecutions: 1, NumWaitingDeps: 2},
 							{ID: *mkAid(z, 1), State: attempt.NeedsExecution},
@@ -188,7 +188,7 @@ func TestViewAttempt(t *testing.T) {
 					ttest.Drain(c)
 
 					req.Options.DFS = true
-					So(view(), ShouldResembleV, &display.Data{
+					So(view(), ShouldResemble, &display.Data{
 						Attempts: display.AttemptSlice{
 							{ID: *mkAid(w, 1), State: attempt.Blocked, NumExecutions: 1, NumWaitingDeps: 2},
 							{ID: *mkAid(z, 1), State: attempt.NeedsExecution},
@@ -210,7 +210,7 @@ func TestViewAttempt(t *testing.T) {
 
 				Convey("early stop (simulated)", func() {
 					req.Options.testSimulateTimeout = true
-					So(view(), ShouldResembleV, &display.Data{Timeout: true})
+					So(view(), ShouldResemble, &display.Data{Timeout: true})
 				})
 
 			})

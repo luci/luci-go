@@ -46,7 +46,7 @@ func shouldHaveLogStreams(actual interface{}, expected ...interface{}) string {
 		}
 		exp[i] = s
 	}
-	return ShouldResembleV(names, exp)
+	return ShouldResemble(names, exp)
 }
 
 // sps constructs a []ds.Property slice from a single interface.
@@ -82,7 +82,7 @@ func TestLogStream(t *testing.T) {
 			"_Tags": sps(encodeKey("!!!invalid key!!!")),
 		}
 		So(ls.Load(pmap), ShouldBeNil)
-		So(ls.Tags, ShouldResembleV, TagMap(nil))
+		So(ls.Tags, ShouldResemble, TagMap(nil))
 	})
 
 	Convey(`With a testing configuration`, t, func() {
@@ -191,7 +191,7 @@ func TestLogStream(t *testing.T) {
 					Convey(`Can read the LogStream back from the Datastore.`, func() {
 						ls2 := LogStreamFromID(ls.HashID())
 						So(di.Get(ls2), ShouldBeNil)
-						So(ls2, ShouldResembleV, ls)
+						So(ls2, ShouldResemble, ls)
 					})
 				})
 			})
@@ -334,7 +334,7 @@ func TestLogStreamPathFilter(t *testing.T) {
 
 			fq, err := q.Finalize()
 			So(err, ShouldBeNil)
-			So(fq.EqFilters(), ShouldResembleV, map[string]ds.PropertySlice{
+			So(fq.EqFilters(), ShouldResemble, map[string]ds.PropertySlice{
 				"Prefix": sps("foo/bar"),
 				"Name":   sps("baz/qux"),
 			})
@@ -354,7 +354,7 @@ func TestLogStreamPathFilter(t *testing.T) {
 
 			fq, err := q.Finalize()
 			So(err, ShouldBeNil)
-			So(fq.EqFilters(), ShouldResembleV, map[string]ds.PropertySlice{
+			So(fq.EqFilters(), ShouldResemble, map[string]ds.PropertySlice{
 				"Name": sps("baz/qux"),
 			})
 		})
@@ -365,7 +365,7 @@ func TestLogStreamPathFilter(t *testing.T) {
 
 			fq, err := q.Finalize()
 			So(err, ShouldBeNil)
-			So(fq.EqFilters(), ShouldResembleV, map[string]ds.PropertySlice{
+			So(fq.EqFilters(), ShouldResemble, map[string]ds.PropertySlice{
 				"Prefix": sps("baz/qux"),
 			})
 		})
@@ -376,7 +376,7 @@ func TestLogStreamPathFilter(t *testing.T) {
 
 			fq, err := q.Finalize()
 			So(err, ShouldBeNil)
-			So(fq.EqFilters(), ShouldResembleV, map[string]ds.PropertySlice{
+			So(fq.EqFilters(), ShouldResemble, map[string]ds.PropertySlice{
 				"_C": sps("PC:8", "PF:0:foo", "PF:3:bar", "PF:5:baz", "PF:6:qux"),
 			})
 		})
@@ -387,7 +387,7 @@ func TestLogStreamPathFilter(t *testing.T) {
 
 			fq, err := q.Finalize()
 			So(err, ShouldBeNil)
-			So(fq.EqFilters(), ShouldResembleV, map[string]ds.PropertySlice{
+			So(fq.EqFilters(), ShouldResemble, map[string]ds.PropertySlice{
 				"_C": sps("PF:0:foo", "PF:2:bar"),
 			})
 		})
@@ -398,7 +398,7 @@ func TestLogStreamPathFilter(t *testing.T) {
 
 			fq, err := q.Finalize()
 			So(err, ShouldBeNil)
-			So(fq.EqFilters(), ShouldResembleV, map[string]ds.PropertySlice{
+			So(fq.EqFilters(), ShouldResemble, map[string]ds.PropertySlice{
 				"_C": sps("PR:0:bar", "PR:2:foo"),
 			})
 		})
@@ -409,7 +409,7 @@ func TestLogStreamPathFilter(t *testing.T) {
 
 			fq, err := q.Finalize()
 			So(err, ShouldBeNil)
-			So(fq.EqFilters(), ShouldResembleV, map[string]ds.PropertySlice{
+			So(fq.EqFilters(), ShouldResemble, map[string]ds.PropertySlice{
 				"_C": sps("PF:1:foo", "PR:1:baz", "PR:3:bar"),
 			})
 		})

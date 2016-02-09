@@ -117,7 +117,7 @@ func shouldHaveLogs(actual interface{}, expected ...interface{}) string {
 		expLogs[i] = exp.(int)
 	}
 
-	return ShouldResembleV(respLogs, expLogs)
+	return ShouldResemble(respLogs, expLogs)
 }
 
 // zeroRecords reads a recordio stream and clears all of the record data,
@@ -420,7 +420,7 @@ func TestGet(t *testing.T) {
 						Convey(`Will successfully retrieve stream state.`, func() {
 							resp, err := s.Get(c, &req)
 							So(err, ShouldBeRPCOK)
-							So(resp.State, ShouldResembleV, loadLogStreamState(ls))
+							So(resp.State, ShouldResemble, loadLogStreamState(ls))
 							So(len(resp.Logs), ShouldEqual, 0)
 						})
 
@@ -464,7 +464,7 @@ func TestGet(t *testing.T) {
 
 						resp, err := s.Get(c, &req)
 						So(err, ShouldBeRPCOK)
-						So(resp.State, ShouldResembleV, loadLogStreamState(ls))
+						So(resp.State, ShouldResemble, loadLogStreamState(ls))
 						So(resp, shouldHaveLogs, 0, 1, 2)
 					})
 
@@ -498,7 +498,7 @@ func TestGet(t *testing.T) {
 						So(resp.Logs[0], ShouldNotBeNil)
 
 						// Confirm that there is a descriptor protobuf.
-						So(resp.Desc, ShouldResembleV, desc)
+						So(resp.Desc, ShouldResemble, desc)
 
 						// Confirm that the state was returned.
 						So(resp.State, ShouldNotBeNil)
@@ -518,7 +518,7 @@ func TestGet(t *testing.T) {
 						So(err, ShouldBeRPCOK)
 						So(resp, shouldHaveLogs, 0)
 
-						So(resp.Logs[0].GetText(), ShouldResembleV, &logpb.Text{
+						So(resp.Logs[0].GetText(), ShouldResemble, &logpb.Text{
 							Lines: []*logpb.Text_Line{
 								{"log entry #0", "\n"},
 								{"another line of text", ""},
@@ -532,7 +532,7 @@ func TestGet(t *testing.T) {
 						resp, err := s.Get(c, &req)
 						So(err, ShouldBeRPCOK)
 						So(resp, shouldHaveLogs, 4)
-						So(resp.Logs[0].GetBinary(), ShouldResembleV, &logpb.Binary{
+						So(resp.Logs[0].GetBinary(), ShouldResemble, &logpb.Binary{
 							Data: []byte{0x00, 0x01, 0x02, 0x03},
 						})
 					})
@@ -543,7 +543,7 @@ func TestGet(t *testing.T) {
 						resp, err := s.Get(c, &req)
 						So(err, ShouldBeRPCOK)
 						So(resp, shouldHaveLogs, 5)
-						So(resp.Logs[0].GetDatagram(), ShouldResembleV, &logpb.Datagram{
+						So(resp.Logs[0].GetDatagram(), ShouldResemble, &logpb.Datagram{
 							Data: []byte{0x00, 0x01, 0x02, 0x03},
 							Partial: &logpb.Datagram_Partial{
 								Index: 2,
@@ -572,7 +572,7 @@ func TestGet(t *testing.T) {
 						resp, err := s.Tail(c, &req)
 						So(err, ShouldBeRPCOK)
 						So(resp, shouldHaveLogs, 7)
-						So(resp.State, ShouldResembleV, loadLogStreamState(ls))
+						So(resp.State, ShouldResemble, loadLogStreamState(ls))
 					})
 				})
 			})

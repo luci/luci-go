@@ -9,7 +9,6 @@ import (
 
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/common/clock/testclock"
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -34,9 +33,9 @@ func TestData(t *testing.T) {
 				false,
 				false,
 			}
-			So(d.Merge(d2), ShouldResembleV, d2)
+			So(d.Merge(d2), ShouldResemble, d2)
 			So(d.Merge(d2), ShouldBeNil)
-			So(d, ShouldResembleV, d2)
+			So(d, ShouldResemble, d2)
 		})
 
 	})

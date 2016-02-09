@@ -14,9 +14,9 @@ import (
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/memlogger"
-	. "github.com/luci/luci-go/common/testing/assertions"
-	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestShardCalculation(t *testing.T) {
@@ -86,7 +86,7 @@ func TestFireTasks(t *testing.T) {
 				taskShard{5, mkTimestamp(&cfg, testclock.TestTimeUTC.Add(time.Minute))}: {},
 			}), ShouldBeTrue)
 			q := tq.Testable().GetScheduledTasks()[cfg.Name]
-			So(q["-62132730888_2"], ShouldResembleV, &taskqueue.Task{
+			So(q["-62132730888_2"], ShouldResemble, &taskqueue.Task{
 				Name:   "-62132730888_2",
 				Method: "POST",
 				Path:   cfg.ProcessURL(-62132730888, 2),
@@ -114,7 +114,7 @@ func TestFireTasks(t *testing.T) {
 				taskShard{1, delayedTS}: {},
 			}), ShouldBeTrue)
 			q := tq.Testable().GetScheduledTasks()[cfg.Name]
-			So(q["-62132730288_1"], ShouldResembleV, &taskqueue.Task{
+			So(q["-62132730288_1"], ShouldResemble, &taskqueue.Task{
 				Name:   "-62132730288_1",
 				Method: "POST",
 				Path:   cfg.ProcessURL(-62132730288, 1),

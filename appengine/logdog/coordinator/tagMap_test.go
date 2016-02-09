@@ -38,7 +38,7 @@ func TestTagMap(t *testing.T) {
 
 		props, err := tm.toProperties()
 		So(err, ShouldBeNil)
-		So(props, ShouldResembleV, []ds.Property(sps(
+		So(props, ShouldResemble, []ds.Property(sps(
 			encodeKey("baz"),
 			encodeKey("baz=qux"),
 			encodeKey("foo"),
@@ -50,7 +50,7 @@ func TestTagMap(t *testing.T) {
 		Convey(`Can decode tags.`, func() {
 			dtm, err := tagMapFromProperties(props)
 			So(err, ShouldBeNil)
-			So(dtm, ShouldResembleV, tm)
+			So(dtm, ShouldResemble, tm)
 		})
 
 		Convey(`Will decode mixed invalid and valid tags, returning errors for the invalid.`, func() {
@@ -61,7 +61,7 @@ func TestTagMap(t *testing.T) {
 			}...)
 
 			dtm, err := tagMapFromProperties(props)
-			So(dtm, ShouldResembleV, tm)
+			So(dtm, ShouldResemble, tm)
 
 			So(err, ShouldHaveSameTypeAs, errors.MultiError{})
 			me := err.(errors.MultiError)

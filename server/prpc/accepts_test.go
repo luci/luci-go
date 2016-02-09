@@ -21,7 +21,7 @@ func TestAccept(t *testing.T) {
 			Convey("mediaType="+value, func() {
 				actual, err := parseAccept(value)
 				So(err, ShouldErrLike, expectedErr)
-				So(actual, ShouldResembleV, accept(expectedTypes))
+				So(actual, ShouldResemble, accept(expectedTypes))
 			})
 		}
 		test("", nil)

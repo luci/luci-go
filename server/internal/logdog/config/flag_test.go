@@ -133,7 +133,7 @@ func TestFlag(t *testing.T) {
 					Convey(`Can load configuration from the file.`, func() {
 						m, err := NewManager(c, *o)
 						So(err, ShouldBeNil)
-						So(m.Config(), ShouldResembleV, cfg)
+						So(m.Config(), ShouldResemble, cfg)
 					})
 				})
 			})

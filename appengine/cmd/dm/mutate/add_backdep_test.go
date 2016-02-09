@@ -50,7 +50,7 @@ func TestAddBackDep(t *testing.T) {
 					So(muts, ShouldBeNil)
 
 					So(ds.GetMulti([]interface{}{bdg, bd}), ShouldBeNil)
-					So(bd.Edge(), ShouldResembleV, abd.Dep)
+					So(bd.Edge(), ShouldResemble, abd.Dep)
 					So(bd.Propagated, ShouldBeTrue)
 				})
 
@@ -58,11 +58,11 @@ func TestAddBackDep(t *testing.T) {
 					abd.NeedsAck = true
 					muts, err := abd.RollForward(c)
 					So(err, ShouldBeNil)
-					So(muts, ShouldResembleV, []tumble.Mutation{
+					So(muts, ShouldResemble, []tumble.Mutation{
 						&AckFwdDep{abd.Dep, true}})
 
 					So(ds.GetMulti([]interface{}{bdg, bd}), ShouldBeNil)
-					So(bd.Edge(), ShouldResembleV, abd.Dep)
+					So(bd.Edge(), ShouldResemble, abd.Dep)
 					So(bd.Propagated, ShouldBeTrue)
 				})
 			})
@@ -75,12 +75,12 @@ func TestAddBackDep(t *testing.T) {
 				abd.NeedsAck = true
 				muts, err := abd.RollForward(c)
 				So(err, ShouldBeNil)
-				So(muts, ShouldResembleV, []tumble.Mutation{
+				So(muts, ShouldResemble, []tumble.Mutation{
 					&AckFwdDep{abd.Dep, false}})
 
 				// Note that bdg was created as a side effect.
 				So(ds.GetMulti([]interface{}{bdg, bd}), ShouldBeNil)
-				So(bd.Edge(), ShouldResembleV, abd.Dep)
+				So(bd.Edge(), ShouldResemble, abd.Dep)
 				So(bd.Propagated, ShouldBeFalse)
 				So(bdg.AttemptFinished, ShouldBeFalse)
 			})

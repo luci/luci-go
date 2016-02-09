@@ -16,7 +16,6 @@ import (
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -67,7 +66,7 @@ func TestConfig(t *testing.T) {
 		Convey(`Can create a Manager.`, func() {
 			m, err := NewManager(c, o)
 			So(err, ShouldBeNil)
-			So(m.Config(), ShouldResembleV, cfg)
+			So(m.Config(), ShouldResemble, cfg)
 		})
 
 		Convey(`With a kill function installed`, func() {
@@ -105,7 +104,7 @@ func TestConfig(t *testing.T) {
 				timeAdvanceC <- time.Second
 				timeAdvanceC <- time.Second
 
-				So(m.Config(), ShouldResembleV, cfg)
+				So(m.Config(), ShouldResemble, cfg)
 			})
 		})
 	})

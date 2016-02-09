@@ -10,9 +10,9 @@ import (
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
-	. "github.com/luci/luci-go/common/testing/assertions"
-	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestBackdepEdge(t *testing.T) {
@@ -24,7 +24,7 @@ func TestBackdepEdge(t *testing.T) {
 			datastore.MakeKey("aid", "ns", "BackDepGroup", "quest|fffffffe"),
 			true,
 		}
-		So(bd.Edge(), ShouldResembleV, &FwdEdge{
+		So(bd.Edge(), ShouldResemble, &FwdEdge{
 			&types.AttemptID{QuestID: "depender", AttemptNum: 5},
 			&types.AttemptID{QuestID: "quest", AttemptNum: 1},
 		})
@@ -39,7 +39,7 @@ func TestFwdDepEdge(t *testing.T) {
 			Dependee: *types.NewAttemptID("quest|fffffffe"),
 			Depender: datastore.MakeKey("aid", "ns", "Attempt", "depender|fffffffa"),
 		}
-		So(bd.Edge(), ShouldResembleV, &FwdEdge{
+		So(bd.Edge(), ShouldResemble, &FwdEdge{
 			&types.AttemptID{QuestID: "depender", AttemptNum: 5},
 			&types.AttemptID{QuestID: "quest", AttemptNum: 1},
 		})
@@ -94,7 +94,7 @@ func TestAttemptFanout(t *testing.T) {
 
 		root := datastore.Get(c).MakeKey("Attempt", "quest|fffffffe")
 
-		So(fanout.Fwds(c), ShouldResembleV, []*FwdDep{
+		So(fanout.Fwds(c), ShouldResemble, []*FwdDep{
 			{Depender: root, Dependee: *types.NewAttemptID("a|fffffffe")},
 			{Depender: root, Dependee: *types.NewAttemptID("b|fffffffe")},
 			{Depender: root, Dependee: *types.NewAttemptID("b|fffffffd")},

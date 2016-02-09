@@ -122,7 +122,7 @@ func (ic *indexChecker) shouldContainIndexFor(actual interface{}, expected ...in
 	}
 
 	// Descriptors must match.
-	if err := ShouldResembleV(index.Desc, desc); err != "" {
+	if err := ShouldResemble(index.Desc, desc); err != "" {
 		return err
 	}
 
@@ -176,7 +176,7 @@ func (ic *indexChecker) shouldContainIndexFor(actual interface{}, expected ...in
 	for i, e := range index.Entries {
 		iidx[i] = e.StreamIndex
 	}
-	if err := ShouldResembleV(iidx, eidx); err != "" {
+	if err := ShouldResemble(iidx, eidx); err != "" {
 		return err
 	}
 

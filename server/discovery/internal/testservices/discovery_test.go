@@ -20,7 +20,6 @@ import (
 	"github.com/luci/luci-go/common/proto/google/descriptor"
 	"github.com/luci/luci-go/server/discovery"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -41,7 +40,7 @@ func TestDiscovery(t *testing.T) {
 		res, err := server.Describe(c, nil)
 		So(err, ShouldBeNil)
 
-		So(res.Services, ShouldResembleV, []string{
+		So(res.Services, ShouldResemble, []string{
 			"discovery.Discovery",
 			"testservices.Greeter",
 			"testservices.Calc",

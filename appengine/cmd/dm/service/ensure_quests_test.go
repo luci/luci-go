@@ -60,7 +60,7 @@ func TestEnsureQuests(t *testing.T) {
 			Convey("0/2 exist", func() {
 				rsp, err := s.EnsureQuests(c, req)
 				So(err, ShouldBeNil)
-				So(rsp.QuestIDs, ShouldResembleV, []string{q.ID, q2.ID})
+				So(rsp.QuestIDs, ShouldResemble, []string{q.ID, q2.ID})
 			})
 
 			Convey("1/2 exist", func() {
@@ -70,15 +70,15 @@ func TestEnsureQuests(t *testing.T) {
 
 				rsp, err := s.EnsureQuests(c, req)
 				So(err, ShouldBeNil)
-				So(rsp.QuestIDs, ShouldResembleV, []string{q.ID, q2.ID})
+				So(rsp.QuestIDs, ShouldResemble, []string{q.ID, q2.ID})
 
 				qNew := &model.Quest{ID: q.ID}
 				So(ds.Get(qNew), ShouldBeNil)
-				So(qNew.Created, ShouldResembleV, q.Created)
+				So(qNew.Created, ShouldResemble, q.Created)
 
 				q2New := &model.Quest{ID: q2.ID}
 				So(ds.Get(q2New), ShouldBeNil)
-				So(q2New.Created, ShouldResembleV, clk.Now().Round(time.Microsecond))
+				So(q2New.Created, ShouldResemble, clk.Now().Round(time.Microsecond))
 
 			})
 
@@ -87,11 +87,11 @@ func TestEnsureQuests(t *testing.T) {
 
 				rsp, err := s.EnsureQuests(c, req)
 				So(err, ShouldBeNil)
-				So(rsp.QuestIDs, ShouldResembleV, []string{q.ID, q2.ID})
+				So(rsp.QuestIDs, ShouldResemble, []string{q.ID, q2.ID})
 
 				qNew := &model.Quest{ID: q.ID}
 				So(ds.Get(qNew), ShouldBeNil)
-				So(qNew.Created, ShouldResembleV, q.Created)
+				So(qNew.Created, ShouldResemble, q.Created)
 			})
 		})
 	})

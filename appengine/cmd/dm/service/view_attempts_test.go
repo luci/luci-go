@@ -43,7 +43,7 @@ func TestViewAttempts(t *testing.T) {
 			Convey("no attempts", func() {
 				rsp, err := s.ViewAttempts(c, &ViewAttemptsReq{q.ID})
 				So(err, ShouldBeNil)
-				So(rsp, ShouldResembleV, &display.Data{
+				So(rsp, ShouldResemble, &display.Data{
 					Attempts: display.AttemptSlice{},
 				})
 			})
@@ -59,7 +59,7 @@ func TestViewAttempts(t *testing.T) {
 
 				rsp, err := s.ViewAttempts(c, &ViewAttemptsReq{q.ID})
 				So(err, ShouldBeNil)
-				So(rsp, ShouldResembleV, &display.Data{
+				So(rsp, ShouldResemble, &display.Data{
 					Attempts: display.AttemptSlice{
 						&display.Attempt{ID: types.AttemptID{QuestID: q.ID, AttemptNum: 7}},
 						&display.Attempt{ID: types.AttemptID{QuestID: q.ID, AttemptNum: 8}},

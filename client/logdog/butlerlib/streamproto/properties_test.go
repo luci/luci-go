@@ -14,9 +14,9 @@ import (
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
-	ta "github.com/luci/luci-go/common/testing/assertions"
-	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 // Test the TeeType struct.
@@ -60,7 +60,7 @@ func TestFlags(t *testing.T) {
 
 		Convey(`Converts to Properties.`, func() {
 			p := f.Properties()
-			So(p, ta.ShouldResembleV, &Properties{
+			So(p, ShouldResemble, &Properties{
 				LogStreamDescriptor: logpb.LogStreamDescriptor{
 					Name:        "my/stream",
 					ContentType: "foo/bar",
@@ -79,7 +79,7 @@ func TestFlagsJSON(t *testing.T) {
 			t := `{"name": "my/stream", "contentType": "foo/bar", "type": "text"}`
 			So(json.Unmarshal([]byte(t), &f), ShouldBeNil)
 
-			So(f.Properties(), ta.ShouldResembleV, &Properties{
+			So(f.Properties(), ShouldResemble, &Properties{
 				LogStreamDescriptor: logpb.LogStreamDescriptor{
 					Name:        "my/stream",
 					ContentType: "foo/bar",
@@ -98,7 +98,7 @@ func TestFlagsJSON(t *testing.T) {
 			t := `{"name": "my/stream", "type": "binary"}`
 			So(json.Unmarshal([]byte(t), &f), ShouldBeNil)
 
-			So(f.Properties(), ta.ShouldResembleV, &Properties{
+			So(f.Properties(), ShouldResemble, &Properties{
 				LogStreamDescriptor: logpb.LogStreamDescriptor{
 					Name:        "my/stream",
 					StreamType:  logpb.StreamType_BINARY,
@@ -112,7 +112,7 @@ func TestFlagsJSON(t *testing.T) {
 			t := `{"name": "my/stream", "type": "datagram"}`
 			So(json.Unmarshal([]byte(t), &f), ShouldBeNil)
 
-			So(f.Properties(), ta.ShouldResembleV, &Properties{
+			So(f.Properties(), ShouldResemble, &Properties{
 				LogStreamDescriptor: logpb.LogStreamDescriptor{
 					Name:        "my/stream",
 					StreamType:  logpb.StreamType_DATAGRAM,

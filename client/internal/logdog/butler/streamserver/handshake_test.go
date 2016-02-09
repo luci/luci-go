@@ -17,7 +17,6 @@ import (
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
-	ta "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -110,7 +109,7 @@ func testHandshakeProtocol(t *testing.T, verbose bool) {
 			So(err, ShouldBeNil)
 
 			Convey(`Should produce a valid stream configuration.`, func() {
-				So(props, ta.ShouldResembleV, &streamproto.Properties{
+				So(props, ShouldResemble, &streamproto.Properties{
 					LogStreamDescriptor: logpb.LogStreamDescriptor{
 						Name:        "test",
 						Timestamp:   google.NewTimestamp(tc.Now()),
@@ -131,7 +130,7 @@ func testHandshakeProtocol(t *testing.T, verbose bool) {
 			So(err, ShouldBeNil)
 
 			Convey(`Should produce a specific configuration.`, func() {
-				So(props, ta.ShouldResembleV, &streamproto.Properties{
+				So(props, ShouldResemble, &streamproto.Properties{
 					LogStreamDescriptor: logpb.LogStreamDescriptor{
 						Name:        "test",
 						ContentType: "text/plain",

@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -54,7 +53,7 @@ func TestExecutionsForAttempt(t *testing.T) {
 			})
 
 			Convey("can Get Attempt it", func() {
-				So(s.Get(types.NewAttemptID("control|1")), ShouldResembleV, c)
+				So(s.Get(types.NewAttemptID("control|1")), ShouldResemble, c)
 				So(s.Get(types.NewAttemptID("nopwat|1")), ShouldBeNil)
 			})
 
@@ -66,7 +65,7 @@ func TestExecutionsForAttempt(t *testing.T) {
 						{17, ""},
 					},
 				}
-				So(s.Merge(in), ShouldResembleV, &ExecutionsForAttempt{
+				So(s.Merge(in), ShouldResemble, &ExecutionsForAttempt{
 					*types.NewAttemptID("control|1"),
 					ExecutionInfoSlice{
 						{13, "otherToken"},
@@ -80,7 +79,7 @@ func TestExecutionsForAttempt(t *testing.T) {
 						{13, "otherToken"},
 					},
 				}
-				So(s.Merge(in), ShouldResembleV, in)
+				So(s.Merge(in), ShouldResemble, in)
 				So(s.Merge(in), ShouldBeNil)
 			})
 

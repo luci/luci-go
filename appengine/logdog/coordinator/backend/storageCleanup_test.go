@@ -23,7 +23,6 @@ import (
 	"github.com/luci/luci-go/server/logdog/storage"
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -114,7 +113,7 @@ func TestHandleStorageCleanup(t *testing.T) {
 
 			So(ds.Get(c).Get(ls), ShouldBeNil)
 			So(ls.State, ShouldEqual, coordinator.LSDone)
-			So(ls.Updated, ShouldResembleV, ds.RoundTime(clock.Now(c).UTC()))
+			So(ls.Updated, ShouldResemble, ds.RoundTime(clock.Now(c).UTC()))
 		})
 
 		Convey(`Will return an error if the purge operaetion failed.`, func() {

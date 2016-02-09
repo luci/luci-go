@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
+
 	"github.com/luci/luci-go/common/testing/assertions"
 	"github.com/smartystreets/goconvey/convey"
 )
@@ -17,7 +18,7 @@ import (
 //
 // One additional "expected" string may be optionally included. If included, the
 // *endpoints.APIError's message is asserted to contain the expected string
-// using assertions.ShouldErrorLike.
+// using ShouldErrorLike.
 func ShouldHaveAPIError(actual interface{}, expected ...interface{}) string {
 	if len(expected) != 1 {
 		return "exactly one expected argument must be supplied, and it must be an *endpoints.APIError."
@@ -42,7 +43,7 @@ func ShouldHaveAPIError(actual interface{}, expected ...interface{}) string {
 	eerrCopy := *eerr
 	eerrCopy.Msg = ""
 
-	if err := assertions.ShouldResembleV(aerrCopy, eerrCopy); err != "" {
+	if err := convey.ShouldResemble(aerrCopy, eerrCopy); err != "" {
 		return err
 	}
 
@@ -58,7 +59,7 @@ func ShouldHaveAPIError(actual interface{}, expected ...interface{}) string {
 //
 // One additional "expected" string may be optionally included. If included, the
 // *endpoints.APIError's message is asserted to contain the expected string
-// using assertions.ShouldErrorLike.
+// using ShouldErrorLike.
 func ShouldBeInternalServerError(actual interface{}, expected ...interface{}) string {
 	msg, err := getErrLikeMsg(expected)
 	if err != "" {
@@ -72,7 +73,7 @@ func ShouldBeInternalServerError(actual interface{}, expected ...interface{}) st
 //
 // One additional "expected" string may be optionally included. If included, the
 // *endpoints.APIError's message is asserted to contain the expected string
-// using assertions.ShouldErrorLike.
+// using ShouldErrorLike.
 func ShouldBeBadRequestError(actual interface{}, expected ...interface{}) string {
 	msg, err := getErrLikeMsg(expected)
 	if err != "" {
@@ -86,7 +87,7 @@ func ShouldBeBadRequestError(actual interface{}, expected ...interface{}) string
 //
 // One additional "expected" string may be optionally included. If included, the
 // *endpoints.APIError's message is asserted to contain the expected string
-// using assertions.ShouldErrorLike.
+// using ShouldErrorLike.
 func ShouldBeUnauthorizedError(actual interface{}, expected ...interface{}) string {
 	msg, err := getErrLikeMsg(expected)
 	if err != "" {
@@ -100,7 +101,7 @@ func ShouldBeUnauthorizedError(actual interface{}, expected ...interface{}) stri
 //
 // One additional "expected" string may be optionally included. If included, the
 // *endpoints.APIError's message is asserted to contain the expected string
-// using assertions.ShouldErrorLike.
+// using ShouldErrorLike.
 func ShouldBeNotFoundError(actual interface{}, expected ...interface{}) string {
 	msg, err := getErrLikeMsg(expected)
 	if err != "" {
@@ -114,7 +115,7 @@ func ShouldBeNotFoundError(actual interface{}, expected ...interface{}) string {
 //
 // One additional "expected" string may be optionally included. If included, the
 // *endpoints.APIError's message is asserted to contain the expected string
-// using assertions.ShouldErrorLike.
+// using ShouldErrorLike.
 func ShouldBeForbiddenError(actual interface{}, expected ...interface{}) string {
 	msg, err := getErrLikeMsg(expected)
 	if err != "" {
@@ -128,7 +129,7 @@ func ShouldBeForbiddenError(actual interface{}, expected ...interface{}) string 
 //
 // One additional "expected" string may be optionally included. If included, the
 // *endpoints.APIError's message is asserted to contain the expected string
-// using assertions.ShouldErrorLike.
+// using ShouldErrorLike.
 func ShouldBeConflictError(actual interface{}, expected ...interface{}) string {
 	msg, err := getErrLikeMsg(expected)
 	if err != "" {

@@ -202,7 +202,7 @@ func TestStorage(t *testing.T) {
 
 			Convey(`Testing "Put"...`, func() {
 				Convey(`Loads the row data.`, func() {
-					So(bt.dataMap(), ShouldResembleV, map[string][]byte{
+					So(bt.dataMap(), ShouldResemble, map[string][]byte{
 						ekey("A", 0):  []byte("0"),
 						ekey("A", 1):  []byte("1"),
 						ekey("A", 2):  []byte("2"),
@@ -217,31 +217,31 @@ func TestStorage(t *testing.T) {
 				Convey(`Can fetch the full row, "A".`, func() {
 					got, err := get("A", 0, 0)
 					So(err, ShouldBeNil)
-					So(got, ShouldResembleV, []string{"0", "1", "2"})
+					So(got, ShouldResemble, []string{"0", "1", "2"})
 				})
 
 				Convey(`Will fetch A{1, 2} with when index=1 and limit=2.`, func() {
 					got, err := get("A", 1, 2)
 					So(err, ShouldBeNil)
-					So(got, ShouldResembleV, []string{"1", "2"})
+					So(got, ShouldResemble, []string{"1", "2"})
 				})
 
 				Convey(`Will fetch B{10, 12, 13} for B.`, func() {
 					got, err := get("B", 0, 0)
 					So(err, ShouldBeNil)
-					So(got, ShouldResembleV, []string{"10", "12", "13"})
+					So(got, ShouldResemble, []string{"10", "12", "13"})
 				})
 
 				Convey(`Will fetch B{12, 13} when index=11.`, func() {
 					got, err := get("B", 11, 0)
 					So(err, ShouldBeNil)
-					So(got, ShouldResembleV, []string{"12", "13"})
+					So(got, ShouldResemble, []string{"12", "13"})
 				})
 
 				Convey(`Will fetch {} for INVALID.`, func() {
 					got, err := get("INVALID", 0, 0)
 					So(err, ShouldBeNil)
-					So(got, ShouldResembleV, []string{})
+					So(got, ShouldResemble, []string{})
 				})
 			})
 
@@ -276,18 +276,18 @@ func TestStorage(t *testing.T) {
 
 					got, err := get("A", 0, 0)
 					So(err, ShouldBeNil)
-					So(got, ShouldResembleV, []string{})
+					So(got, ShouldResemble, []string{})
 
 					got, err = get("B", 0, 0)
 					So(err, ShouldBeNil)
-					So(got, ShouldResembleV, []string{"10", "12", "13"})
+					So(got, ShouldResemble, []string{"10", "12", "13"})
 
 					// Now purge "B".
 					So(s.Purge(types.StreamPath("B")), ShouldBeNil)
 
 					got, err = get("B", 0, 0)
 					So(err, ShouldBeNil)
-					So(got, ShouldResembleV, []string{})
+					So(got, ShouldResemble, []string{})
 				})
 
 				Convey(`Will return an error if Storage failed to purge a row.`, func() {

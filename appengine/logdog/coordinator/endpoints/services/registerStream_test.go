@@ -71,7 +71,7 @@ func TestRegisterStream(t *testing.T) {
 				Convey(`Can register the stream.`, func() {
 					resp, err := be.RegisterStream(c, &req)
 					So(err, ShouldBeRPCOK)
-					So(resp, ShouldResembleV, expResp)
+					So(resp, ShouldResemble, expResp)
 					ds.Get(c).Testable().CatchupIndexes()
 
 					// Should have name components.
@@ -89,15 +89,15 @@ func TestRegisterStream(t *testing.T) {
 						}
 						return names
 					}
-					So(getNameComponents(""), ShouldResembleV, []string{"testing"})
-					So(getNameComponents("testing"), ShouldResembleV, []string{"+"})
-					So(getNameComponents("testing/+"), ShouldResembleV, []string{"foo"})
-					So(getNameComponents("testing/+/foo"), ShouldResembleV, []string{"bar$"})
+					So(getNameComponents(""), ShouldResemble, []string{"testing"})
+					So(getNameComponents("testing"), ShouldResemble, []string{"+"})
+					So(getNameComponents("testing/+"), ShouldResemble, []string{"foo"})
+					So(getNameComponents("testing/+/foo"), ShouldResemble, []string{"bar$"})
 
 					Convey(`Can register the stream again (idempotent).`, func() {
 						resp, err := be.RegisterStream(c, &req)
 						So(err, ShouldBeRPCOK)
-						So(resp, ShouldResembleV, expResp)
+						So(resp, ShouldResemble, expResp)
 					})
 
 					Convey(`Will not re-register if scerets don't match.`, func() {

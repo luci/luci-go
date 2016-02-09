@@ -24,7 +24,6 @@ import (
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -122,7 +121,7 @@ func TestHandleStorageCleanupCron(t *testing.T) {
 					So(resp.StatusCode, ShouldEqual, http.StatusOK)
 
 					tasks2 := tq.Get(c).Testable().GetScheduledTasks()[qName]
-					So(tasks2, ShouldResembleV, tasks)
+					So(tasks2, ShouldResemble, tasks)
 				})
 
 				Convey(`Will return an error if task scheduling fails.`, func() {

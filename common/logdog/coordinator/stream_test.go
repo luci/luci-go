@@ -104,10 +104,10 @@ func TestStreamGet(t *testing.T) {
 
 					l, err := s.Get(c, nil)
 					So(err, ShouldBeNil)
-					So(l, ShouldResembleV, []*logpb.LogEntry{genLog(1337, "ohai"), genLog(1338, "kthxbye")})
+					So(l, ShouldResemble, []*logpb.LogEntry{genLog(1337, "ohai"), genLog(1338, "kthxbye")})
 
 					// Validate the correct parameters were sent.
-					So(svc.GR, ShouldResembleV, logs.GetRequest{
+					So(svc.GR, ShouldResemble, logs.GetRequest{
 						Path: "test/+/a",
 					})
 				})
@@ -124,7 +124,7 @@ func TestStreamGet(t *testing.T) {
 					So(l, ShouldBeNil)
 
 					// Validate the correct parameters were sent.
-					So(svc.GR, ShouldResembleV, logs.GetRequest{
+					So(svc.GR, ShouldResemble, logs.GetRequest{
 						Path:          "test/+/a",
 						NonContiguous: true,
 						Index:         1,
@@ -144,10 +144,10 @@ func TestStreamGet(t *testing.T) {
 
 					l, err := s.Get(c, p)
 					So(err, ShouldBeNil)
-					So(l, ShouldResembleV, []*logpb.LogEntry{genLog(1337, "ohai")})
+					So(l, ShouldResemble, []*logpb.LogEntry{genLog(1337, "ohai")})
 
 					// Validate the HTTP request that we made.
-					So(svc.GR, ShouldResembleV, logs.GetRequest{
+					So(svc.GR, ShouldResemble, logs.GetRequest{
 						Path:      "test/+/a",
 						LogCount:  64,
 						ByteCount: 32,
@@ -182,8 +182,8 @@ func TestStreamGet(t *testing.T) {
 
 					l, err := s.Get(c, p)
 					So(err, ShouldBeNil)
-					So(l, ShouldResembleV, []*logpb.LogEntry{genLog(1337, "kthxbye")})
-					So(ls, ShouldResembleV, LogStream{
+					So(l, ShouldResemble, []*logpb.LogEntry{genLog(1337, "kthxbye")})
+					So(ls, ShouldResemble, LogStream{
 						Path: "test/+/a",
 						Desc: &logpb.LogStreamDescriptor{
 							Prefix:     "test",
@@ -242,7 +242,7 @@ func TestStreamGet(t *testing.T) {
 
 					l, err := s.State(c)
 					So(err, ShouldBeNil)
-					So(l, ShouldResembleV, &LogStream{
+					So(l, ShouldResemble, &LogStream{
 						Path: "test/+/a",
 						State: &StreamState{
 							Created: now.UTC(),
@@ -251,7 +251,7 @@ func TestStreamGet(t *testing.T) {
 					})
 
 					// Validate the HTTP request that we made.
-					So(svc.GR, ShouldResembleV, logs.GetRequest{
+					So(svc.GR, ShouldResemble, logs.GetRequest{
 						Path:     "test/+/a",
 						LogCount: -1,
 						State:    true,
@@ -310,14 +310,14 @@ func TestStreamGet(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					// Validate the HTTP request that we made.
-					So(svc.TR, ShouldResembleV, logs.TailRequest{
+					So(svc.TR, ShouldResemble, logs.TailRequest{
 						Path:  "test/+/a",
 						State: true,
 					})
 
 					// Validate that the log and state were returned.
-					So(l, ShouldResembleV, genLog(1337, "kthxbye"))
-					So(ls, ShouldResembleV, LogStream{
+					So(l, ShouldResemble, genLog(1337, "kthxbye"))
+					So(ls, ShouldResemble, LogStream{
 						Path: "test/+/a",
 						Desc: &logpb.LogStreamDescriptor{
 							Prefix:     "test",
@@ -350,7 +350,7 @@ func TestStreamGet(t *testing.T) {
 					l, err := s.Tail(c, &ls)
 					So(err, ShouldBeNil)
 					So(l, ShouldBeNil)
-					So(ls, ShouldResembleV, LogStream{
+					So(ls, ShouldResemble, LogStream{
 						Path: "test/+/a",
 						Desc: &logpb.LogStreamDescriptor{
 							Prefix:     "test",

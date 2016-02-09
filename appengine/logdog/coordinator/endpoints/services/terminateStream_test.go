@@ -69,7 +69,7 @@ func TestTerminateStream(t *testing.T) {
 					So(ds.Get(c).Get(ls), ShouldBeNil)
 					So(ls.TerminalIndex, ShouldEqual, 1337)
 					So(ls.State, ShouldEqual, coordinator.LSTerminated)
-					So(ls.Updated, ShouldResembleV, ls.Created.Add(time.Second))
+					So(ls.Updated, ShouldResemble, ls.Created.Add(time.Second))
 
 					Convey(`Can be marked terminal again (idempotent).`, func() {
 						_, err := be.TerminateStream(c, &req)

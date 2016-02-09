@@ -54,15 +54,15 @@ func TestFinishAttempt(t *testing.T) {
 			Convey("Good", func() {
 				muts, err := fa.RollForward(c)
 				So(err, ShouldBeNil)
-				So(muts, ShouldResembleV, []tumble.Mutation{
+				So(muts, ShouldResemble, []tumble.Mutation{
 					&RecordCompletion{For: a.AttemptID}})
 
 				So(ds.GetMulti([]interface{}{a, e, ar}), ShouldBeNil)
 				So(e.Done(), ShouldBeTrue)
 				So(a.State, ShouldEqual, attempt.Finished)
-				So(a.ResultExpiration, ShouldResembleV,
+				So(a.ResultExpiration, ShouldResemble,
 					testclock.TestTimeUTC.Round(time.Microsecond))
-				So(ar.Data, ShouldResembleV, []byte(`{"result": true}`))
+				So(ar.Data, ShouldResemble, []byte(`{"result": true}`))
 			})
 
 			Convey("Bad ExecutionKey", func() {

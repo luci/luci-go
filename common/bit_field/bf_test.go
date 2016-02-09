@@ -93,12 +93,12 @@ func TestBitField(t *testing.T) {
 				// varint encoding of 2000
 				bval[0] = 208
 				bval[1] = 15
-				So(p.Value(), ShouldResembleV, bval)
+				So(p.Value(), ShouldResemble, bval)
 
 				Convey("decodes as well", func() {
 					nbf := BitField{}
 					So(nbf.FromProperty(p), ShouldBeNil)
-					So(nbf, ShouldResembleV, bf)
+					So(nbf, ShouldResemble, bf)
 				})
 			})
 
@@ -106,12 +106,12 @@ func TestBitField(t *testing.T) {
 				bf = Make(0)
 				p, err := bf.ToProperty()
 				So(err, ShouldBeNil)
-				So(p.Value(), ShouldResembleV, []byte{0})
+				So(p.Value(), ShouldResemble, []byte{0})
 
 				Convey("decodes as well", func() {
 					nbf := BitField{}
 					So(nbf.FromProperty(p), ShouldBeNil)
-					So(nbf, ShouldResembleV, bf)
+					So(nbf, ShouldResemble, bf)
 				})
 			})
 
@@ -135,11 +135,11 @@ func TestBitField(t *testing.T) {
 				bval[4] = 8     // 19
 				bval[26] = 32   // 197
 				bval[251] = 128 // 1999
-				So(p.Value(), ShouldResembleV, bval)
+				So(p.Value(), ShouldResemble, bval)
 
 				nbf := BitField{}
 				So(nbf.FromProperty(p), ShouldBeNil)
-				So(nbf, ShouldResembleV, bf)
+				So(nbf, ShouldResemble, bf)
 
 				So(nbf.IsSet(2), ShouldBeFalse)
 				So(nbf.IsSet(18), ShouldBeFalse)
@@ -156,11 +156,11 @@ func TestBitField(t *testing.T) {
 				bf = Make(0)
 				p, err := bf.ToProperty()
 				So(err, ShouldBeNil)
-				So(p.Value(), ShouldResembleV, []byte{0})
+				So(p.Value(), ShouldResemble, []byte{0})
 
 				nbf := BitField{}
 				So(nbf.FromProperty(p), ShouldBeNil)
-				So(nbf, ShouldResembleV, bf)
+				So(nbf, ShouldResemble, bf)
 			})
 
 			Convey("small sets correctly encode", func() {
@@ -168,11 +168,11 @@ func TestBitField(t *testing.T) {
 				bf.Set(0)
 				p, err := bf.ToProperty()
 				So(err, ShouldBeNil)
-				So(p.Value(), ShouldResembleV, []byte{2, 1})
+				So(p.Value(), ShouldResemble, []byte{2, 1})
 
 				nbf := BitField{}
 				So(nbf.FromProperty(p), ShouldBeNil)
-				So(nbf, ShouldResembleV, bf)
+				So(nbf, ShouldResemble, bf)
 			})
 		})
 	})

@@ -44,7 +44,7 @@ func TestExecutions(t *testing.T) {
 			e2 := *e1
 			So(e2.Revoke(c), ShouldBeNil)
 
-			So(e1.ExecutionKey, ShouldResembleV, []byte("hello"))
+			So(e1.ExecutionKey, ShouldResemble, []byte("hello"))
 			So(ds.Get(e1), ShouldBeNil)
 			So(e1.ExecutionKey, ShouldBeNil)
 		})
@@ -70,8 +70,8 @@ func TestExecutions(t *testing.T) {
 			atmpt, exe, err := VerifyExecution(c, types.NewAttemptID("q|fffffffe"), []byte("hello"))
 			So(err, ShouldBeNil)
 
-			So(atmpt, ShouldResembleV, a)
-			So(exe, ShouldResembleV, e1)
+			So(atmpt, ShouldResemble, a)
+			So(exe, ShouldResemble, e1)
 		})
 
 		Convey("Invalidate", func() {

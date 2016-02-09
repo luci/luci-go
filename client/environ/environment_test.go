@@ -7,7 +7,6 @@ package environ
 import (
 	"testing"
 
-	"github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -24,7 +23,7 @@ func TestEnvironment(t *testing.T) {
 				"BAR=",
 				"BAZ=QUX",
 				"=QUUX",
-			}), assertions.ShouldResembleV, Environment{
+			}), ShouldResemble, Environment{
 				"FOO": "",
 				"BAR": "",
 				"BAZ": "QUX",

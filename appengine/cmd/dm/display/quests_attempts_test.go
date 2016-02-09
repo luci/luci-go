@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/luci/luci-go/appengine/cmd/dm/types"
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -54,21 +53,21 @@ func TestQuestAttempts(t *testing.T) {
 
 			Convey("can Merge into it", func() {
 				in := &QuestAttempts{"control", types.U32s{200, 291}}
-				So(s.Merge(in), ShouldResembleV,
+				So(s.Merge(in), ShouldResemble,
 					&QuestAttempts{"control", types.U32s{291}})
 				So(s.Merge(in), ShouldBeNil)
-				So(s.Get("control").Attempts, ShouldResembleV, types.U32s{
+				So(s.Get("control").Attempts, ShouldResemble, types.U32s{
 					100, 200, 291, 300,
 				})
 
 				in = &QuestAttempts{"controlNew", types.U32s{20}}
-				So(s.Merge(in), ShouldResembleV, in)
+				So(s.Merge(in), ShouldResemble, in)
 				So(sort.IsSorted(s), ShouldBeTrue)
 			})
 
 			Convey("merging at the very end doesn't need a sort", func() {
 				in := &QuestAttempts{QuestID: s[len(s)-1].QuestID + "z"}
-				So(s.Merge(in), ShouldResembleV, in)
+				So(s.Merge(in), ShouldResemble, in)
 				So(sort.IsSorted(s), ShouldBeTrue)
 			})
 

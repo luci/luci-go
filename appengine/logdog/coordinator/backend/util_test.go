@@ -14,7 +14,7 @@ import (
 	"github.com/luci/luci-go/server/middleware"
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 // testBase is a middleware.Base which uses its current Context as the base
@@ -47,7 +47,7 @@ func shouldHaveTasks(actual interface{}, expected ...interface{}) string {
 
 	sort.Strings(al)
 	sort.Strings(tasks)
-	return ShouldResembleV(al, tasks)
+	return ShouldResemble(al, tasks)
 }
 
 func archiveTaskPath(path string) string {
