@@ -2023,7 +2023,7 @@ func TestMeta(t *testing.T) {
 			So(pls.SetMeta("id", "sup|1337"), ShouldBeTrue)
 			So(ide.EmbeddedID, ShouldResemble, EmbeddedID{"sup", 1337})
 
-			So(pls.GetAllMeta(), ShouldResembleV, PropertyMap{
+			So(pls.GetAllMeta(), ShouldResemble, PropertyMap{
 				"$id":   {mpNI("sup|1337")},
 				"$kind": {mpNI("IDEmbedder")},
 			})

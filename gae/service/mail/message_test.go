@@ -8,7 +8,6 @@ import (
 	net_mail "net/mail"
 	"testing"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -51,38 +50,38 @@ func TestDataTypes(t *testing.T) {
 
 		Convey("Message is copyable", func() {
 			m2 := m.Copy()
-			So(m2, ShouldResembleV, m)
+			So(m2, ShouldResemble, m)
 
 			// make sure it's really a copy
 			m2.To[0] = "fake@faker.example.com"
-			So(m2.To, ShouldNotResembleV, m.To)
+			So(m2.To, ShouldNotResemble, m.To)
 
 			m2.Headers["SomethingElse"] = []string{"noooo"}
-			So(m2.Headers, ShouldNotResembleV, m.Headers)
+			So(m2.Headers, ShouldNotResemble, m.Headers)
 		})
 
 		Convey("TestMessage is copyable", func() {
 			tm := &TestMessage{*m, []string{"application/msword"}}
 			tm2 := tm.Copy()
-			So(tm, ShouldResembleV, tm2)
+			So(tm, ShouldResemble, tm2)
 
 			tm2.MIMETypes[0] = "spam"
-			So(tm, ShouldNotResembleV, tm2)
+			So(tm, ShouldNotResemble, tm2)
 		})
 
 		Convey("Message can be cast to an SDK Message", func() {
 			m2 := m.ToSDKMessage()
-			So(m2.Sender, ShouldResembleV, m.Sender)
-			So(m2.ReplyTo, ShouldResembleV, m.ReplyTo)
-			So(m2.To, ShouldResembleV, m.To)
-			So(m2.Cc, ShouldResembleV, m.Cc)
-			So(m2.Bcc, ShouldResembleV, m.Bcc)
-			So(m2.Subject, ShouldResembleV, m.Subject)
-			So(m2.Body, ShouldResembleV, m.Body)
-			So(m2.HTMLBody, ShouldResembleV, m.HTMLBody)
-			So(m2.Headers, ShouldResembleV, m.Headers)
+			So(m2.Sender, ShouldResemble, m.Sender)
+			So(m2.ReplyTo, ShouldResemble, m.ReplyTo)
+			So(m2.To, ShouldResemble, m.To)
+			So(m2.Cc, ShouldResemble, m.Cc)
+			So(m2.Bcc, ShouldResemble, m.Bcc)
+			So(m2.Subject, ShouldResemble, m.Subject)
+			So(m2.Body, ShouldResemble, m.Body)
+			So(m2.HTMLBody, ShouldResemble, m.HTMLBody)
+			So(m2.Headers, ShouldResemble, m.Headers)
 
-			So((Attachment)(m2.Attachments[0]), ShouldResembleV, m.Attachments[0])
+			So((Attachment)(m2.Attachments[0]), ShouldResemble, m.Attachments[0])
 		})
 	})
 }

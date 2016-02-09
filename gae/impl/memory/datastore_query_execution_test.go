@@ -546,7 +546,7 @@ func TestQueryExecution(t *testing.T) {
 										So(data.GetAll(expect.q, &rslt), ShouldBeNil)
 										So(len(rslt), ShouldEqual, len(expect.get))
 										for i, r := range rslt {
-											So(r, ShouldResembleV, expect.get[i])
+											So(r, ShouldResemble, expect.get[i])
 										}
 										return nil
 									}, &ds.TransactionOptions{XG: true})

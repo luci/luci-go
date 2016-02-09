@@ -32,7 +32,7 @@ func TestUser(t *testing.T) {
 
 		Convey("can login (normal)", func() {
 			user.Testable().Login("hello@world.com", "", false)
-			So(user.Current(), ShouldResembleV, &userS.User{
+			So(user.Current(), ShouldResemble, &userS.User{
 				Email:      "hello@world.com",
 				AuthDomain: "world.com",
 				ID:         "14628837901535854097",
@@ -54,7 +54,7 @@ func TestUser(t *testing.T) {
 
 		Convey("can be admin", func() {
 			user.Testable().Login("hello@world.com", "", true)
-			So(user.Current(), ShouldResembleV, &userS.User{
+			So(user.Current(), ShouldResemble, &userS.User{
 				Email:      "hello@world.com",
 				AuthDomain: "world.com",
 				ID:         "14628837901535854097",
@@ -67,7 +67,7 @@ func TestUser(t *testing.T) {
 			user.Testable().Login("hello@world.com", "clientID", false)
 			usr, err := user.CurrentOAuth("scope")
 			So(err, ShouldBeNil)
-			So(usr, ShouldResembleV, &userS.User{
+			So(usr, ShouldResemble, &userS.User{
 				Email:      "hello@world.com",
 				AuthDomain: "world.com",
 				ID:         "14628837901535854097",

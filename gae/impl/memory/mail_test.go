@@ -37,7 +37,7 @@ func TestMail(t *testing.T) {
 				}), ShouldBeNil)
 
 				Convey("and it shows up in sent messages", func() {
-					So(mail.Testable().SentMessages(), ShouldResembleV, []*mailS.TestMessage{
+					So(mail.Testable().SentMessages(), ShouldResemble, []*mailS.TestMessage{
 						{Message: mailS.Message{
 							Sender:  "admin@example.com",
 							To:      []string{"Valued Customer <customer@example.com>"},
@@ -70,7 +70,7 @@ func TestMail(t *testing.T) {
 					Body:    "I forgot",
 				}), ShouldBeNil)
 
-				So(mail.Testable().SentMessages(), ShouldResembleV, []*mailS.TestMessage{
+				So(mail.Testable().SentMessages(), ShouldResemble, []*mailS.TestMessage{
 					{Message: mailS.Message{
 						Sender:  "admin@example.com",
 						To:      []string{"admin@example.com"},
@@ -92,7 +92,7 @@ func TestMail(t *testing.T) {
 					Body:    "I forgot",
 				}), ShouldBeNil)
 
-				So(mail.Testable().SentMessages(), ShouldResembleV, []*mailS.TestMessage{
+				So(mail.Testable().SentMessages(), ShouldResemble, []*mailS.TestMessage{
 					{Message: mailS.Message{
 						Sender: "hello@example.com",
 						To: []string{
@@ -116,7 +116,7 @@ func TestMail(t *testing.T) {
 					},
 				}), ShouldBeNil)
 
-				So(mail.Testable().SentMessages(), ShouldResembleV, []*mailS.TestMessage{
+				So(mail.Testable().SentMessages(), ShouldResemble, []*mailS.TestMessage{
 					{
 						Message: mailS.Message{
 							Sender:  "admin@example.com",
@@ -143,7 +143,7 @@ func TestMail(t *testing.T) {
 					},
 				}), ShouldBeNil)
 
-				So(mail.Testable().SentMessages(), ShouldResembleV, []*mailS.TestMessage{
+				So(mail.Testable().SentMessages(), ShouldResemble, []*mailS.TestMessage{
 					{Message: mailS.Message{
 						Sender:  "admin@example.com",
 						To:      []string{"admin@example.com"},

@@ -839,7 +839,7 @@ func TestQuerySupport(t *testing.T) {
 
 					vals = []*Foo{}
 					So(ds.GetAll(q, &vals), ShouldBeNil)
-					So(vals, ShouldResembleV, []*Foo{foo1, projectData[0], foo7})
+					So(vals, ShouldResemble, []*Foo{foo1, projectData[0], foo7})
 
 					return nil
 				}, nil), ShouldBeNil)

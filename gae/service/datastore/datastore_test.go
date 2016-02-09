@@ -1090,7 +1090,7 @@ func TestSchemaChange(t *testing.T) {
 				}
 				tv := &Val{ID: 10}
 				So(ds.Get(tv), ShouldBeNil)
-				So(tv, ShouldResembleV, &Val{
+				So(tv, ShouldResemble, &Val{
 					ID:  10,
 					Val: 100,
 					Extra: PropertyMap{
@@ -1115,7 +1115,7 @@ func TestSchemaChange(t *testing.T) {
 
 			ex = &Expando{ID: 10}
 			So(ds.Get(ex), ShouldBeNil)
-			So(ex, ShouldResembleV, &Expando{
+			So(ex, ShouldResemble, &Expando{
 				ID:        10,
 				Something: 17,
 				Extra: PropertyMap{
@@ -1141,7 +1141,7 @@ func TestSchemaChange(t *testing.T) {
 			}
 			c := &Convert{ID: 10}
 			So(ds.Get(c), ShouldBeNil)
-			So(c, ShouldResembleV, &Convert{
+			So(c, ShouldResemble, &Convert{
 				ID: 10, Val: 100, NewVal: 0, Extra: PropertyMap{"TwoVal": {mp(200)}},
 			})
 			c.NewVal = c.Extra["TwoVal"][0].Value().(int64)
@@ -1149,7 +1149,7 @@ func TestSchemaChange(t *testing.T) {
 
 			c = &Convert{ID: 10}
 			So(ds.Get(c), ShouldBeNil)
-			So(c, ShouldResembleV, &Convert{
+			So(c, ShouldResemble, &Convert{
 				ID: 10, Val: 100, NewVal: 200, Extra: nil,
 			})
 		})
@@ -1186,13 +1186,13 @@ func TestSchemaChange(t *testing.T) {
 			}
 			i := &IntChange{ID: 10}
 			So(ds.Get(i), ShouldBeNil)
-			So(i, ShouldResembleV, &IntChange{ID: 10, Extra: PropertyMap{"Val": {mp(100)}}})
+			So(i, ShouldResemble, &IntChange{ID: 10, Extra: PropertyMap{"Val": {mp(100)}}})
 			i.Val = fmt.Sprint(i.Extra["Val"][0].Value())
 			So(ds.Put(i), ShouldBeNil)
 
 			i = &IntChange{ID: 10}
 			So(ds.Get(i), ShouldBeNil)
-			So(i, ShouldResembleV, &IntChange{ID: 10, Val: "100"})
+			So(i, ShouldResemble, &IntChange{ID: 10, Val: "100"})
 		})
 
 		Convey("Native fields have priority over Extra fields", func() {
@@ -1209,7 +1209,7 @@ func TestSchemaChange(t *testing.T) {
 
 			d = &Dup{ID: 10}
 			So(ds.Get(d), ShouldBeNil)
-			So(d, ShouldResembleV, &Dup{
+			So(d, ShouldResemble, &Dup{
 				ID: 10, Val: 100, Extra: PropertyMap{"Other": {mp("other")}},
 			})
 		})
@@ -1228,7 +1228,7 @@ func TestSchemaChange(t *testing.T) {
 			}
 			n := &NonRepeating{ID: 10}
 			So(ds.Get(n), ShouldBeNil)
-			So(n, ShouldResembleV, &NonRepeating{
+			So(n, ShouldResemble, &NonRepeating{
 				ID: 10, Val: 0, Extra: PropertyMap{
 					"Val": {mp(100), mp(200), mp(400)},
 				},
@@ -1255,7 +1255,7 @@ func TestSchemaChange(t *testing.T) {
 			}
 			o := &Outer{ID: 10}
 			So(ds.Get(o), ShouldBeNil)
-			So(o, ShouldResembleV, &Outer{
+			So(o, ShouldResemble, &Outer{
 				ID: 10,
 				I: []Inner{
 					{1, 10},
@@ -1373,7 +1373,7 @@ indexes:
 				},
 			},
 		}
-		So(ids, ShouldResembleV, expected)
+		So(ids, ShouldResemble, expected)
 	})
 
 	Convey("returns non-nil error for incorrectly formatted YAML", t, func() {
