@@ -41,9 +41,9 @@ var stateToLabelClass = map[engine.StateKind]string{
 	engine.JobStateScheduled: "label-primary",
 	engine.JobStateSuspended: "label-default",
 	engine.JobStateQueued:    "label-primary",
-	engine.JobStateRunning:   "label-warning",
-	engine.JobStateOverrun:   "label-danger",
-	engine.JobStateSlowQueue: "label-danger",
+	engine.JobStateRunning:   "label-info",
+	engine.JobStateOverrun:   "label-warning",
+	engine.JobStateSlowQueue: "label-warning",
 }
 
 func makeCronJob(j *engine.CronJob, now time.Time) *cronJob {
@@ -127,16 +127,20 @@ type invocation struct {
 
 var statusToRowClass = map[task.Status]string{
 	task.StatusStarting:  "active",
-	task.StatusRunning:   "warning",
+	task.StatusRunning:   "info",
 	task.StatusSucceeded: "success",
 	task.StatusFailed:    "danger",
+	task.StatusOverrun:   "warning",
+	task.StatusAborted:   "danger",
 }
 
 var statusToLabelClass = map[task.Status]string{
 	task.StatusStarting:  "label-default",
-	task.StatusRunning:   "label-warning",
+	task.StatusRunning:   "label-info",
 	task.StatusSucceeded: "label-success",
 	task.StatusFailed:    "label-danger",
+	task.StatusOverrun:   "label-warning",
+	task.StatusAborted:   "label-danger",
 }
 
 func makeInvocation(projecID, jobID string, i *engine.Invocation, now time.Time) *invocation {

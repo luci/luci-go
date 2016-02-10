@@ -952,7 +952,7 @@ func (e *engineImpl) AbortInvocation(c context.Context, jobID string, invID int6
 		return err
 	}
 
-	ctl.State().Status = task.StatusFailed
+	ctl.State().Status = task.StatusAborted
 	if err = ctl.Save(); err != nil {
 		logging.Errorf(c, "Failed to save the invocation - %s", err)
 		return err
@@ -1067,7 +1067,7 @@ func (e *engineImpl) recordOverrun(c context.Context, jobID string, overruns int
 		JobKey:   jobKey,
 		Started:  now,
 		Finished: now,
-		Status:   task.StatusFailed,
+		Status:   task.StatusOverrun,
 	}
 	if runningInvID == 0 {
 		inv.debugLog(c, "New invocation should be starting now, but previous one is still starting")

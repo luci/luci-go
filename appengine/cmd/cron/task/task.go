@@ -29,12 +29,18 @@ const (
 	StatusSucceeded Status = "SUCCEEDED"
 	// StatusFailed means the task finished with error or failed to start.
 	StatusFailed Status = "FAILED"
+	// StatusOverrun means the task should have been started, but previous one is
+	// still running.
+	StatusOverrun Status = "OVERRUN"
+	// StatusAborted means the task was forcefully aborted (manually or due to
+	// hard deadline).
+	StatusAborted Status = "ABORTED"
 )
 
 // Final returns true if Status represents some final status.
 func (s Status) Final() bool {
 	switch s {
-	case StatusSucceeded, StatusFailed:
+	case StatusSucceeded, StatusFailed, StatusOverrun, StatusAborted:
 		return true
 	default:
 		return false

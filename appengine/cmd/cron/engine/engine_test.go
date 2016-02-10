@@ -794,7 +794,7 @@ func TestAbortInvocation(t *testing.T) {
 			// It is dead.
 			inv, err = e.GetInvocation(c, jobID, invID)
 			So(err, ShouldBeNil)
-			So(inv.Status, ShouldEqual, task.StatusFailed)
+			So(inv.Status, ShouldEqual, task.StatusAborted)
 
 			// The cron job moved on with its life.
 			job, err = e.GetCronJob(c, jobID)
