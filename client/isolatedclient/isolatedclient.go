@@ -79,17 +79,17 @@ func newIsolateServer(client *http.Client, host, namespace string, config *retry
 }
 
 // postJSON does authenticated POST request.
-func (i *isolateServer) postJSON(resource string, in, out interface{}) error {
+func (i *isolateServer) postJSON(resource string, headers map[string]string, in, out interface{}) error {
 	if len(resource) == 0 || resource[0] != '/' {
 		return errors.New("resource must start with '/'")
 	}
-	_, err := lhttp.PostJSON(i.config, i.authClient, i.url+resource, in, out)
+	_, err := lhttp.PostJSON(i.config, i.authClient, i.url+resource, headers, in, out)
 	return err
 }
 
 func (i *isolateServer) ServerCapabilities() (*isolated.ServerCapabilities, error) {
 	out := &isolated.ServerCapabilities{}
-	if err := i.postJSON("/_ah/api/isolateservice/v1/server_details", map[string]string{}, out); err != nil {
+	if err := i.postJSON("/_ah/api/isolateservice/v1/server_details", nil, map[string]string{}, out); err != nil {
 		return nil, err
 	}
 	return out, nil
@@ -101,7 +101,7 @@ func (i *isolateServer) Contains(items []*isolated.DigestItem) (out []*PushState
 	in := isolated.DigestCollection{Items: items}
 	in.Namespace.Namespace = i.namespace
 	data := &isolated.URLCollection{}
-	if err = i.postJSON("/_ah/api/isolateservice/v1/preupload", in, data); err != nil {
+	if err = i.postJSON("/_ah/api/isolateservice/v1/preupload", nil, in, data); err != nil {
 		return nil, err
 	}
 	out = make([]*PushState, len(items))
@@ -137,7 +137,8 @@ func (i *isolateServer) Push(state *PushState, src io.ReadSeeker) (err error) {
 		// the data safely reached Google Storage (GS provides MD5 and CRC32C of
 		// stored files).
 		in := isolated.FinalizeRequest{state.status.UploadTicket}
-		if err = i.postJSON("/_ah/api/isolateservice/v1/finalize_gs_upload", in, nil); err != nil {
+		headers := map[string]string{"Cache-Control": "public, max-age=31536000"}
+		if err = i.postJSON("/_ah/api/isolateservice/v1/finalize_gs_upload", headers, in, nil); err != nil {
 			log.Printf("Push(%s) (finalize) failed: %s\n%#v", state.digest, err, state)
 			return
 		}
@@ -171,7 +172,7 @@ func (i *isolateServer) doPushDB(state *PushState, reader io.Reader) error {
 		return err
 	}
 	in := &isolated.StorageRequest{state.status.UploadTicket, buf.Bytes()}
-	return i.postJSON("/_ah/api/isolateservice/v1/store_inline", in, nil)
+	return i.postJSON("/_ah/api/isolateservice/v1/store_inline", nil, in, nil)
 }
 
 func (i *isolateServer) doPushGCS(state *PushState, src io.ReadSeeker) (err error) {

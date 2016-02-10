@@ -145,7 +145,7 @@ func TestNewRequestGETFail(t *testing.T) {
 }
 
 func TestNewRequestJSONBadURL(t *testing.T) {
-	clientReq, err := NewRequestJSON(http.DefaultClient, "GET", "invalid url", nil, nil)
+	clientReq, err := NewRequestJSON(http.DefaultClient, "GET", "invalid url", nil, nil, nil)
 	ut.AssertEqual(t, errors.New("unsupported protocol scheme \"\""), err)
 	ut.AssertEqual(t, nil, clientReq)
 }
@@ -235,11 +235,29 @@ func TestPostJSON(t *testing.T) {
 
 	in := map[string]string{"in": "all"}
 	actual := map[string]string{}
-	status, err := PostJSON(fast, http.DefaultClient, ts.URL, in, &actual)
+	status, err := PostJSON(fast, http.DefaultClient, ts.URL, nil, in, &actual)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, 200, status)
 	ut.AssertEqual(t, map[string]string{"success": "yeah"}, actual)
 	ut.AssertEqual(t, 2, serverCalls)
+}
+
+func TestPostJSONwithHeaders(t *testing.T) {
+	serverCalls := 0
+	ts := httptest.NewServer(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+			w.Header().Set("Content-Type", jsonContentType)
+			ut.ExpectEqual(t, nil, json.NewEncoder(w).Encode(map[string]string{}))
+			ut.ExpectEqual(t, r.Header.Get("key"), "value")
+			serverCalls++
+		}))
+	defer ts.Close()
+
+	status, err := PostJSON(fast, http.DefaultClient, ts.URL, map[string]string{"key": "value"}, nil, nil)
+	ut.AssertEqual(t, nil, err)
+	ut.AssertEqual(t, 200, status)
+	ut.AssertEqual(t, 1, serverCalls)
 }
 
 // Private details.

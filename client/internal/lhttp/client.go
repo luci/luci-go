@@ -61,7 +61,7 @@ func NewRequest(c *http.Client, req *http.Request, handler Handler) (Retriable, 
 }
 
 // NewRequestJSON returns a retriable request calling a JSON endpoint.
-func NewRequestJSON(c *http.Client, url, method string, in, out interface{}) (Retriable, error) {
+func NewRequestJSON(c *http.Client, url, method string, headers map[string]string, in, out interface{}) (Retriable, error) {
 	var body io.Reader
 	if in != nil {
 		encoded, err := json.Marshal(in)
@@ -76,6 +76,11 @@ func NewRequestJSON(c *http.Client, url, method string, in, out interface{}) (Re
 	}
 	if in != nil {
 		req.Header.Set("Content-Type", jsonContentType)
+	}
+	if headers != nil {
+		for k, v := range headers {
+			req.Header.Add(k, v)
+		}
 	}
 	return NewRequest(c, req, func(resp *http.Response) error {
 		defer resp.Body.Close()
@@ -98,7 +103,7 @@ func NewRequestJSON(c *http.Client, url, method string, in, out interface{}) (Re
 
 // GetJSON is a shorthand. It returns the HTTP status code and error if any.
 func GetJSON(config *retry.Config, c *http.Client, url string, out interface{}) (int, error) {
-	req, err := NewRequestJSON(c, url, "GET", nil, out)
+	req, err := NewRequestJSON(c, url, "GET", nil, nil, out)
 	if err != nil {
 		return 0, err
 	}
@@ -107,8 +112,8 @@ func GetJSON(config *retry.Config, c *http.Client, url string, out interface{}) 
 }
 
 // PostJSON is a shorthand. It returns the HTTP status code and error if any.
-func PostJSON(config *retry.Config, c *http.Client, url string, in, out interface{}) (int, error) {
-	req, err := NewRequestJSON(c, url, "POST", in, out)
+func PostJSON(config *retry.Config, c *http.Client, url string, headers map[string]string, in, out interface{}) (int, error) {
+	req, err := NewRequestJSON(c, url, "POST", headers, in, out)
 	if err != nil {
 		return 0, err
 	}
