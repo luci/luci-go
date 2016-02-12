@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package discovery;
 
+import "google/protobuf/descriptor.proto";
+
 // Describes services.
 service Discovery {
     // Returns a list of services and a
@@ -18,10 +20,9 @@ message Void {}
 
 // DescribeResponse describes services.
 message DescribeResponse {
-    // FileDescriptionSet is a binary-encoded FileDescriptorSet message.
-    // Contains descriptions of all services, their types and all transitive
-    // dependencies.
-    bytes fileDescriptionSet = 1;
+    // Description contains descriptions of all services, their types and all
+    // transitive dependencies.
+    google.protobuf.FileDescriptorSet description = 1;
     // Services are service names provided by a server.
     repeated string services = 2;
 }

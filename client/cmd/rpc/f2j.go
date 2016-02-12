@@ -84,7 +84,7 @@ func flagsToJSON(c context.Context, client *prpc.Client, msgType string, args []
 	}
 
 	// Parse flags.
-	msg, err := flagpb.UnmarshalUntyped(args, desc, flagpb.NewResolver(serverDesc.descriptor))
+	msg, err := flagpb.UnmarshalUntyped(args, desc, flagpb.NewResolver(serverDesc.Description))
 	if err != nil {
 		return err
 	}

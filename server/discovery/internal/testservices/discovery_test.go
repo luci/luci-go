@@ -14,7 +14,6 @@ package testservices
 import (
 	"testing"
 
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/proto/google/descriptor"
@@ -46,12 +45,10 @@ func TestDiscovery(t *testing.T) {
 			"testservices.Calc",
 		})
 
-		desc := &descriptor.FileDescriptorSet{}
-		err = proto.Unmarshal(res.FileDescriptionSet, desc)
-		So(err, ShouldBeNil)
+		desc := res.Description
 
 		// this checks that file deduplication actually works.
-		So(len(desc.File), ShouldEqual, 2)
+		So(len(desc.File), ShouldEqual, 3)
 
 		_, discoveryIndex := desc.FindService("discovery.Discovery")
 		So(discoveryIndex, ShouldNotEqual, -1)

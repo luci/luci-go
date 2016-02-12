@@ -70,13 +70,13 @@ func show(c context.Context, client *prpc.Client, name string) error {
 	}
 
 	if name == "" {
-		for _, s := range desc.services {
+		for _, s := range desc.Services {
 			fmt.Println(s)
 		}
 		return nil
 	}
 
-	file, obj, path := desc.descriptor.Resolve(name)
+	file, obj, path := desc.Description.Resolve(name)
 	if obj == nil {
 		return fmt.Errorf("name %q could not resolved", name)
 	}
@@ -95,7 +95,7 @@ func show(c context.Context, client *prpc.Client, name string) error {
 
 		printMsg := func(name string) {
 			name = strings.TrimPrefix(name, ".")
-			file, msg, path := desc.descriptor.Resolve(name)
+			file, msg, path := desc.Description.Resolve(name)
 			if msg == nil {
 				print.Printf("// Message %q is not found\n", name)
 				return

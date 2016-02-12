@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/proto/google/descriptor"
@@ -17,8 +16,7 @@ import (
 )
 
 type serverDescription struct {
-	services   []string
-	descriptor *descriptor.FileDescriptorSet
+	*discovery.DescribeResponse
 }
 
 func loadDescription(c context.Context, client *prpc.Client) (*serverDescription, error) {
@@ -28,19 +26,12 @@ func loadDescription(c context.Context, client *prpc.Client) (*serverDescription
 		return nil, fmt.Errorf("could not load server description: %s", err)
 	}
 
-	result := &serverDescription{
-		services:   res.Services,
-		descriptor: &descriptor.FileDescriptorSet{},
-	}
-	if err := proto.Unmarshal(res.FileDescriptionSet, result.descriptor); err != nil {
-		return nil, fmt.Errorf("could not unmarshal FileDescriptionSet: %s", err)
-	}
-	return result, nil
+	return &serverDescription{res}, nil
 }
 
 // resolveInputMessage resolves input message type of a method.
 func (d *serverDescription) resolveInputMessage(service, method string) (*descriptor.DescriptorProto, error) {
-	_, obj, _ := d.descriptor.Resolve(service)
+	_, obj, _ := d.Description.Resolve(service)
 	serviceDesc, ok := obj.(*descriptor.ServiceDescriptorProto)
 	if !ok {
 		return nil, fmt.Errorf("service %q not found", service)
@@ -57,7 +48,7 @@ func (d *serverDescription) resolveInputMessage(service, method string) (*descri
 }
 
 func (d *serverDescription) resolveMessage(name string) (*descriptor.DescriptorProto, error) {
-	_, obj, _ := d.descriptor.Resolve(name)
+	_, obj, _ := d.Description.Resolve(name)
 	msg, ok := obj.(*descriptor.DescriptorProto)
 	if !ok {
 		return nil, fmt.Errorf("message %q not found", name)

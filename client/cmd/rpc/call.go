@@ -124,7 +124,7 @@ func call(c context.Context, client *prpc.Client, req *request, out io.Writer) e
 			return err
 		}
 
-		resolver := flagpb.NewResolver(serverDesc.descriptor)
+		resolver := flagpb.NewResolver(serverDesc.Description)
 		flagMsg, err := flagpb.UnmarshalUntyped(req.messageFlags, desc, resolver)
 		if err != nil {
 			return err

@@ -25,14 +25,11 @@ func New(serviceNames ...string) (DiscoveryServer, error) {
 	if err != nil {
 		return nil, err
 	}
-	descBytes, err := proto.Marshal(desc)
-	if err != nil {
-		return nil, err
-	}
+	desc = proto.Clone(desc).(*descriptor.FileDescriptorSet)
 
 	cpy := make([]string, len(serviceNames))
 	copy(cpy, serviceNames)
-	return &service{cpy, descBytes}, nil
+	return &service{cpy, desc}, nil
 }
 
 // Enable registers a discovery service on the server.
@@ -48,14 +45,14 @@ func Enable(server *prpc.Server) {
 }
 
 type service struct {
-	serviceNames       []string
-	fileDescriptionSet []byte
+	serviceNames []string
+	description  *descriptor.FileDescriptorSet
 }
 
 func (s *service) Describe(c context.Context, _ *Void) (*DescribeResponse, error) {
 	return &DescribeResponse{
-		FileDescriptionSet: s.fileDescriptionSet,
-		Services:           s.serviceNames,
+		Description: s.description,
+		Services:    s.serviceNames,
 	}, nil
 }
 
