@@ -15,6 +15,7 @@ import (
 
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/common/prpc"
 )
@@ -26,7 +27,7 @@ const (
 var logCfg = gologger.LoggerConfig{
 	Format: `%{message}`,
 	Out:    os.Stderr,
-	Level:  gol.WARNING,
+	Level:  gol.DEBUG,
 }
 
 // cmdRun is a base of all rpc subcommands.
@@ -48,14 +49,11 @@ func (r *cmdRun) registerBaseFlags() {
 
 // initContext creates a context. Must be called after flags are parsed.
 func (r *cmdRun) initContext() context.Context {
-	// Setup logger.
-	logCfg := logCfg
+	ctx := logCfg.Use(context.Background())
 	if r.verbose {
-		logCfg.Level = gol.DEBUG
+		ctx = logging.SetLevel(ctx, logging.Debug)
 	}
-
-	// Setup authenticated HTTP client.
-	return logCfg.Use(context.Background())
+	return ctx
 }
 
 func (r *cmdRun) authenticatedClient(host string) (*prpc.Client, error) {
