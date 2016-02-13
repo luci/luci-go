@@ -6,6 +6,8 @@ package clock
 
 import (
 	"time"
+
+	"golang.org/x/net/context"
 )
 
 // Clock is an interface to system time.
@@ -16,10 +18,21 @@ import (
 type Clock interface {
 	// Returns the current time (see time.Now).
 	Now() time.Time
-	// Sleeps the current goroutine (see time.Sleep)
-	Sleep(time.Duration)
+
+	// Sleeps the current goroutine (see time.Sleep).
+	//
+	// If the supplied Context is canceled prior to the specified duration,
+	// Sleep will return the Context's error. If the sleep completes naturally,
+	// it will return nil.
+	Sleep(context.Context, time.Duration) error
+
 	// Creates a new Timer instance, bound to this Clock.
-	NewTimer() Timer
+	//
+	// If the supplied Context is canceled, the timer will expire immediately.
+	NewTimer(c context.Context) Timer
+
 	// Waits a duration, then sends the current time over the returned channel.
-	After(time.Duration) <-chan time.Time
+	//
+	// If the supplied Context is canceled, the timer will expire immediately.
+	After(context.Context, time.Duration) <-chan TimerResult
 }

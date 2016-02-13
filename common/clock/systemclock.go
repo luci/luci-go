@@ -6,6 +6,8 @@ package clock
 
 import (
 	"time"
+
+	"golang.org/x/net/context"
 )
 
 // Implementation of Clock that uses Go's standard library.
@@ -26,14 +28,17 @@ func (systemClock) Now() time.Time {
 	return time.Now()
 }
 
-func (systemClock) Sleep(d time.Duration) {
-	time.Sleep(d)
+func (sc systemClock) Sleep(c context.Context, d time.Duration) error {
+	ar := <-sc.After(c, d)
+	return ar.Err
 }
 
-func (systemClock) NewTimer() Timer {
-	return new(systemTimer)
+func (systemClock) NewTimer(ctx context.Context) Timer {
+	return newSystemTimer(ctx)
 }
 
-func (systemClock) After(d time.Duration) <-chan time.Time {
-	return time.After(d)
+func (sc systemClock) After(ctx context.Context, d time.Duration) <-chan TimerResult {
+	t := sc.NewTimer(ctx)
+	t.Reset(d)
+	return t.GetC()
 }

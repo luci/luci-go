@@ -9,21 +9,27 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/clock"
+	"golang.org/x/net/context"
 )
 
 // TestClock is a Clock interface with additional methods to help instrument it.
 type TestClock interface {
 	clock.Clock
+
+	// Set sets the test clock's time.
 	Set(time.Time)
+
+	// Add advances the test clock's time.
 	Add(time.Duration)
+
+	// SetTimerCallback is a goroutine-safe method to set an instance-wide
+	// callback that is invoked when any timer begins.
 	SetTimerCallback(TimerCallback)
 }
 
 // TimerCallback that can be invoked when a timer has been set. This is useful
 // for sychronizing state when testing.
 type TimerCallback func(time.Duration, clock.Timer)
-
-type cancelFunc func()
 
 // testClock is a test-oriented implementation of the 'Clock' interface.
 //
@@ -57,18 +63,20 @@ func (c *testClock) Now() time.Time {
 	return c.now
 }
 
-func (c *testClock) Sleep(d time.Duration) {
-	<-c.After(d)
+func (c *testClock) Sleep(ctx context.Context, d time.Duration) error {
+	ar := <-c.After(ctx, d)
+	return ar.Err
 }
 
-func (c *testClock) NewTimer() clock.Timer {
-	return newTimer(c)
+func (c *testClock) NewTimer(ctx context.Context) clock.Timer {
+	t := newTimer(ctx, c)
+	return t
 }
 
-func (c *testClock) After(d time.Duration) <-chan time.Time {
-	t := c.NewTimer()
+func (c *testClock) After(ctx context.Context, d time.Duration) <-chan clock.TimerResult {
+	t := newTimer(ctx, c)
 	t.Reset(d)
-	return t.GetC()
+	return t.afterC
 }
 
 func (c *testClock) Set(t time.Time) {
@@ -120,25 +128,26 @@ func (c *testClock) signalTimerSet(d time.Duration, t clock.Timer) {
 //
 // The returned cancelFunc can be used to cancel the blocking. If the cancel
 // function is invoked before the callback, the callback will not be invoked.
-func (c *testClock) invokeAt(threshold time.Time, callback func(time.Time)) cancelFunc {
-	stopC := make(chan struct{})
+func (c *testClock) invokeAt(ctx context.Context, threshold time.Time, callback func(clock.TimerResult)) {
 	finishedC := make(chan struct{})
+	stopC := make(chan struct{})
 
 	// Our control goroutine will monitor both time and stop signals. It will
 	// terminate when either the current time has exceeded our time threshold or
-	// it has been signalled to terminate via stopC.
+	// it has been signalled to terminate via Context.
 	//
 	// The lock that we take our here is owned by the following goroutine.
 	c.Lock()
 	go func() {
 		defer close(finishedC)
+
 		defer func() {
 			now := c.now
 			c.Unlock()
 
-			if callback != nil {
-				callback(now)
-			}
+			// If we finished naturally, but our Context is Done, include the Context
+			// error.
+			callback(clock.TimerResult{Time: now, Err: ctx.Err()})
 		}()
 
 		for {
@@ -155,7 +164,6 @@ func (c *testClock) invokeAt(threshold time.Time, callback func(time.Time)) canc
 			// Have we been stopped?
 			select {
 			case <-stopC:
-				callback = nil
 				return
 
 			default:
@@ -164,19 +172,28 @@ func (c *testClock) invokeAt(threshold time.Time, callback func(time.Time)) canc
 		}
 	}()
 
-	return func() {
-		// Signal our goroutine to stop.
-		close(stopC)
+	// This goroutine will monitor our Context and unblock if it expires before
+	// the designated test time.
+	go func() {
+		select {
+		case <-finishedC:
+			// Our timer has expired, so no need to further monitor.
+			return
 
-		// Lock, then Broadcast. This ensures that if the goroutine is running, it
-		// will be at a Wait() and therefore this Broadcast will wake it.
-		func() {
-			c.Lock()
-			defer c.Unlock()
+		case <-ctx.Done():
+			// If we finish at the same time our Context is canceled, we don't need to
+			// wake our monitor (determinism).
+			select {
+			case <-finishedC:
+				return
+			default:
+				break
+			}
+
+			// Our Context has been canceled. Forward this to our monitor goroutine
+			// and wake our condition.
+			close(stopC)
 			c.timerCond.Broadcast()
-		}()
-
-		// Block until it has finished.
-		<-finishedC
-	}
+		}
+	}()
 }

@@ -10,18 +10,15 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Context key for clock.
-type clockKeyType int
-
 // Unique value for clock key.
-var clockKey clockKeyType
+var clockKey = "clock.Clock"
 
 // Factory is a generator function that produces a Clock instnace.
 type Factory func(context.Context) Clock
 
 // SetFactory creates a new Context using the supplied Clock factory.
 func SetFactory(ctx context.Context, f Factory) context.Context {
-	return context.WithValue(ctx, clockKey, f)
+	return context.WithValue(ctx, &clockKey, f)
 }
 
 // Set creates a new Context using the supplied Clock.
@@ -32,7 +29,7 @@ func Set(ctx context.Context, c Clock) context.Context {
 // Get returns the Clock set in the supplied Context, defaulting to
 // SystemClock() if none is set.
 func Get(ctx context.Context) (clock Clock) {
-	if v := ctx.Value(clockKey); v != nil {
+	if v := ctx.Value(&clockKey); v != nil {
 		if f, ok := v.(Factory); ok {
 			clock = f(ctx)
 		}
@@ -50,16 +47,16 @@ func Now(ctx context.Context) time.Time {
 
 // Sleep calls Clock.Sleep on the Clock instance stored in the supplied Context.
 func Sleep(ctx context.Context, d time.Duration) {
-	Get(ctx).Sleep(d)
+	Get(ctx).Sleep(ctx, d)
 }
 
 // NewTimer calls Clock.NewTimer on the Clock instance stored in the supplied
 // Context.
 func NewTimer(ctx context.Context) Timer {
-	return Get(ctx).NewTimer()
+	return Get(ctx).NewTimer(ctx)
 }
 
 // After calls Clock.After on the Clock instance stored in the supplied Context.
-func After(ctx context.Context, d time.Duration) <-chan time.Time {
-	return Get(ctx).After(d)
+func After(ctx context.Context, d time.Duration) <-chan TimerResult {
+	return Get(ctx).After(ctx, d)
 }

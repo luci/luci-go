@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/net/context"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -15,33 +17,70 @@ func TestSystemTimer(t *testing.T) {
 	t.Parallel()
 
 	Convey(`A systemTimer instance`, t, func() {
-		t := new(systemTimer)
+		ctx, cancelFunc := context.WithCancel(context.Background())
+		t := GetSystemClock().NewTimer(ctx)
+		defer t.Stop()
 
-		Convey(`Should start with a nil channel.`, func() {
-			So(t.GetC(), ShouldBeNil)
+		Convey(`Should start with a non-nil channel.`, func() {
+			So(t.GetC(), ShouldNotBeNil)
 		})
 
 		Convey(`When stopped, should return inactive.`, func() {
 			So(t.Stop(), ShouldBeFalse)
 		})
 
-		Convey(`When reset`, func() {
-			active := t.Reset(1 * time.Hour)
-			So(active, ShouldBeFalse)
+		Convey(`Will return immediately if the Context is canceled before Reset.`, func() {
+			cancelFunc()
 
-			Convey(`When reset to a short duration`, func() {
+			t.Reset(veryLongTime)
+			So((<-t.GetC()).Err, ShouldEqual, context.Canceled)
+		})
+
+		Convey(`Will return if the Context is canceled after Reset.`, func() {
+			t.Reset(veryLongTime)
+			cancelFunc()
+
+			So((<-t.GetC()).Err, ShouldEqual, context.Canceled)
+		})
+
+		Convey(`A timer will use the same channel when Reset.`, func() {
+			timerC := t.GetC()
+
+			// Reset our timer to something more reasonable. It should trigger the
+			// timer channel, which should trigger our
+			t.Reset(timeBase)
+			So((<-timerC).Err, ShouldBeNil)
+		})
+
+		Convey(`A timer will not signal if stopped.`, func() {
+			t.Reset(timeBase)
+			t.Stop()
+
+			// This isn't a perfect test, but it's a good boundary for flake.
+			time.Sleep(3 * timeBase)
+
+			triggered := false
+			select {
+			case <-t.GetC():
+				triggered = true
+			default:
+				break
+			}
+			So(triggered, ShouldBeFalse)
+		})
+
+		Convey(`When reset`, func() {
+			So(t.Reset(veryLongTime), ShouldBeFalse)
+
+			Convey(`When reset again to a short duration, should return that it was active and trigger.`, func() {
 				// Upper bound of supported platform resolution. Windows is 15ms, so
 				// make sure we exceed that.
-				active := t.Reset(100 * time.Millisecond)
+				So(t.Reset(timeBase), ShouldBeTrue)
+				So((<-t.GetC()).IsZero(), ShouldBeFalse)
 
-				Convey(`Should return active.`, func() {
-					So(active, ShouldBeTrue)
-				})
-
-				Convey(`Should trigger shortly.`, func() {
-					tm := <-t.GetC()
-					So(tm, ShouldNotResemble, time.Time{})
-				})
+				// Again (reschedule).
+				So(t.Reset(timeBase), ShouldBeFalse)
+				So((<-t.GetC()).IsZero(), ShouldBeFalse)
 			})
 
 			Convey(`When stopped, should return active and have a non-nil C.`, func() {
@@ -57,10 +96,6 @@ func TestSystemTimer(t *testing.T) {
 
 			Convey(`Should have a non-nil channel.`, func() {
 				So(t.GetC(), ShouldNotBeNil)
-			})
-
-			Reset(func() {
-				t.Stop()
 			})
 		})
 	})

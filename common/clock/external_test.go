@@ -15,24 +15,24 @@ import (
 // testClock is a Clock implementation used for testing.
 type testClock struct {
 	nowCallback      func() time.Time
-	sleepCallback    func()
+	sleepCallback    func() error
 	newTimerCallback func() Timer
-	afterCallback    func() <-chan time.Time
+	afterCallback    func() <-chan TimerResult
 }
 
 func (tc *testClock) Now() time.Time {
 	return tc.nowCallback()
 }
 
-func (tc *testClock) Sleep(time.Duration) {
-	tc.sleepCallback()
+func (tc *testClock) Sleep(context.Context, time.Duration) error {
+	return tc.sleepCallback()
 }
 
-func (tc *testClock) NewTimer() Timer {
+func (tc *testClock) NewTimer(context.Context) Timer {
 	return tc.newTimerCallback()
 }
 
-func (tc *testClock) After(time.Duration) <-chan time.Time {
+func (tc *testClock) After(context.Context, time.Duration) <-chan TimerResult {
 	return tc.afterCallback()
 }
 
@@ -57,8 +57,9 @@ func TestExternal(t *testing.T) {
 
 		Convey(`Sleep() will use testClock's Sleep().`, func() {
 			used := false
-			tc.sleepCallback = func() {
+			tc.sleepCallback = func() error {
 				used = true
+				return nil
 			}
 
 			Sleep(c, time.Second)
@@ -78,7 +79,7 @@ func TestExternal(t *testing.T) {
 
 		Convey(`After() will use testClock's After().`, func() {
 			used := false
-			tc.afterCallback = func() <-chan time.Time {
+			tc.afterCallback = func() <-chan TimerResult {
 				used = true
 				return nil
 			}

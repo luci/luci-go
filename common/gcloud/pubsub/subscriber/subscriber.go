@@ -164,18 +164,5 @@ func (s *Subscriber) noDataSleep(c context.Context) {
 	if d <= 0 {
 		d = DefaultNoDataDelay
 	}
-	cancellableSleep(c, d)
-}
-
-// cancellableSleep sleeps, returning either when the sleep duration has expired
-// or the supplied context has been canceled.
-func cancellableSleep(c context.Context, delay time.Duration) {
-	// Sleep for "delay", stopping early if our Context is canceled.
-	select {
-	case <-clock.After(c, delay):
-		break
-
-	case <-c.Done():
-		break
-	}
+	clock.Sleep(c, d)
 }

@@ -152,12 +152,9 @@ func TryWithLock(ctx context.Context, key, clientID string, f func(context.Conte
 			close(finished)
 		}()
 
-	checkLoop:
 		for {
-			select {
-			case <-subCtx.Done():
-				break checkLoop
-			case <-clock.Get(ctx).After(delay):
+			if (<-clock.After(subCtx, delay)).Err != nil {
+				break
 			}
 			if !checkAnd(refresh) {
 				log.Warningf("lost lock: %s", err)

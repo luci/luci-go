@@ -71,11 +71,8 @@ func WithDeadline(parent context.Context, deadline time.Time) (context.Context, 
 
 	// Invoke our cancelFunc after the specified time.
 	go func() {
-		select {
-		case <-c.Done():
-			break
-
-		case <-After(c, d):
+		if ar := <-After(c, d); ar.Err == nil {
+			// Timer expired naturally.
 			c.setError(context.DeadlineExceeded)
 			cancelFunc()
 		}
