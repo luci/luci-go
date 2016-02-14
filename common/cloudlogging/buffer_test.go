@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/retry"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
@@ -41,7 +40,7 @@ func TestBuffer(t *testing.T) {
 	t.Parallel()
 
 	Convey(`A Buffer instance`, t, func() {
-		ctx, _ := testclock.UseTime(context.Background(), time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
+		ctx := context.Background()
 
 		entriesC := make(chan []*Entry, 1)
 		client := &testClient{

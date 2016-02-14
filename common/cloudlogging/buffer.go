@@ -7,6 +7,7 @@ package cloudlogging
 import (
 	"time"
 
+	"github.com/luci/luci-go/common/parallel"
 	"github.com/luci/luci-go/common/retry"
 	"golang.org/x/net/context"
 )
@@ -123,10 +124,7 @@ func (b *bufferImpl) process() {
 	defer close(b.finishedC)
 
 	// Create a push semaphore channel; fill with push tokens.
-	pushSemC := make(chan bool, b.ParallelPushLimit)
-	for i := 0; i < b.ParallelPushLimit; i++ {
-		pushSemC <- true
-	}
+	pushSemC := make(parallel.Semaphore, b.ParallelPushLimit)
 
 	entries := make([]*Entry, b.BatchSize)
 	for e := range b.logC {
@@ -154,23 +152,21 @@ func (b *bufferImpl) process() {
 			count++
 		}
 
-		// Acquire a push channel semaphore token.
-		<-pushSemC
-		go func() {
-			defer func() {
-				// Release push channel semaphore token.
-				pushSemC <- true
-			}()
+		// Clone entries so we can dispatch to goroutine.
+		entryCopy := make([]*Entry, count)
+		copy(entryCopy, entries[:count])
 
-			b.publishLogs(entries[:count])
+		// Acquire a push channel semaphore token.
+		pushSemC.Lock()
+		go func() {
+			defer pushSemC.Unlock()
+			b.publishLogs(entryCopy)
 		}()
 	}
 
 	// Acquire all of our push channel semaphore tokens (block until goroutines
 	// are done).
-	for i := 0; i < b.ParallelPushLimit; i++ {
-		<-pushSemC
-	}
+	pushSemC.TakeAll()
 }
 
 // publishLogs writes a slice of log Entry to the wrapped Client. The underlying
