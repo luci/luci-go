@@ -13,14 +13,12 @@ handlers:
   secure: always
   login: admin
 
-- url: /static/(.+)\.(css|gif|ico|js|ttf|svg)
-  static_files: static/\1.\2
-  upload: static/(.+)\.(css|gif|ico|js|ttf|svg)
-  secure: always
-
 - url: /.*
   script: _go_app
   secure: always
+
+includes:
+  - includes/static
 
 inbound_services:
 - warmup

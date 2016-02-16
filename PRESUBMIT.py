@@ -74,6 +74,7 @@ def source_file_filter(input_api):
     r'.+\.pb_test\.go$',
     r'.+_string\.go$',
     r'.+gae\.py$', # symlinks from outside
+    r'server/static/bower_components/.*'  # third party
   ]
   wl = list(input_api.DEFAULT_WHITE_LIST) + [
     r'.+\.go$',

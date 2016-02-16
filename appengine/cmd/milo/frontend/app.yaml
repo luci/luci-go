@@ -4,11 +4,6 @@ runtime: go
 api_version: go1
 
 handlers:
-# For static resources such as css and js files.
-- url: /static
-  secure: always
-  static_dir: static
-
 # Everything goes here.
 - url: /.*
   script: _go_app
@@ -17,3 +12,6 @@ handlers:
 # For Cloud Endpoints support.
 - url: /_ah/spi/.*
   script: _go_app
+
+includes:
+  - includes/static

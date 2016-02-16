@@ -1,0 +1,5 @@
+handlers:
+
+- url: /static/common/
+  static_dir: includes/static/upload
+  secure: always
