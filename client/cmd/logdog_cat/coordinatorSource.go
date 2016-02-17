@@ -63,12 +63,8 @@ func (s *coordinatorSource) LogEntries(c context.Context, req *fetcher.LogReques
 			log.WithError(err).Warningf(c, "Stream does not exist. Sleeping pending registration.")
 
 			// Delay, interrupting if our Context is interrupted.
-			select {
-			case <-clock.After(c, noStreamDelay):
-				break
-
-			case <-c.Done():
-				return nil, 0, c.Err()
+			if tr := <-clock.After(c, noStreamDelay); tr.Incomplete() {
+				return nil, 0, tr.Err
 			}
 
 		default:

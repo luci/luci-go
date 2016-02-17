@@ -153,7 +153,8 @@ func TryWithLock(ctx context.Context, key, clientID string, f func(context.Conte
 		}()
 
 		for {
-			if (<-clock.After(subCtx, delay)).Err != nil {
+			if tr := <-clock.After(subCtx, delay); tr.Incomplete() {
+				log.Warningf("context done: %s", tr.Err)
 				break
 			}
 			if !checkAnd(refresh) {

@@ -46,8 +46,8 @@ func Now(ctx context.Context) time.Time {
 }
 
 // Sleep calls Clock.Sleep on the Clock instance stored in the supplied Context.
-func Sleep(ctx context.Context, d time.Duration) {
-	Get(ctx).Sleep(ctx, d)
+func Sleep(ctx context.Context, d time.Duration) TimerResult {
+	return Get(ctx).Sleep(ctx, d)
 }
 
 // NewTimer calls Clock.NewTimer on the Clock instance stored in the supplied

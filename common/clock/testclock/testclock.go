@@ -63,9 +63,8 @@ func (c *testClock) Now() time.Time {
 	return c.now
 }
 
-func (c *testClock) Sleep(ctx context.Context, d time.Duration) error {
-	ar := <-c.After(ctx, d)
-	return ar.Err
+func (c *testClock) Sleep(ctx context.Context, d time.Duration) clock.TimerResult {
+	return <-c.After(ctx, d)
 }
 
 func (c *testClock) NewTimer(ctx context.Context) clock.Timer {
@@ -192,6 +191,9 @@ func (c *testClock) invokeAt(ctx context.Context, threshold time.Time, callback 
 
 			// Our Context has been canceled. Forward this to our monitor goroutine
 			// and wake our condition.
+			c.Lock()
+			defer c.Unlock()
+
 			close(stopC)
 			c.timerCond.Broadcast()
 		}

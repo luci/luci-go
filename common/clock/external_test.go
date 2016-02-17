@@ -15,7 +15,7 @@ import (
 // testClock is a Clock implementation used for testing.
 type testClock struct {
 	nowCallback      func() time.Time
-	sleepCallback    func() error
+	sleepCallback    func() TimerResult
 	newTimerCallback func() Timer
 	afterCallback    func() <-chan TimerResult
 }
@@ -24,7 +24,7 @@ func (tc *testClock) Now() time.Time {
 	return tc.nowCallback()
 }
 
-func (tc *testClock) Sleep(context.Context, time.Duration) error {
+func (tc *testClock) Sleep(context.Context, time.Duration) TimerResult {
 	return tc.sleepCallback()
 }
 
@@ -57,9 +57,9 @@ func TestExternal(t *testing.T) {
 
 		Convey(`Sleep() will use testClock's Sleep().`, func() {
 			used := false
-			tc.sleepCallback = func() error {
+			tc.sleepCallback = func() TimerResult {
 				used = true
-				return nil
+				return TimerResult{}
 			}
 
 			Sleep(c, time.Second)

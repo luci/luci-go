@@ -142,6 +142,7 @@ func New(ctx context.Context, c Config) *AckBuffer {
 				}
 
 			case <-timer.GetC():
+				// (Ignores context cancellation)
 				send()
 			}
 		}

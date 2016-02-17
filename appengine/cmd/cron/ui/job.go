@@ -116,7 +116,11 @@ func runJobAction(c context.Context, w http.ResponseWriter, r *http.Request, p h
 	for invID == 0 && deadline.Sub(clock.Now(c)) > 0 {
 		// Asking for invocation immediately after triggering it never works,
 		// so sleep a bit first.
-		clock.Sleep(c, 600*time.Millisecond)
+		if tr := clock.Sleep(c, 600*time.Millisecond); tr.Incomplete() {
+			// The Context was canceled before the Sleep completed. Terminate the
+			// loop.
+			break
+		}
 		// Find most recent invocation with requested nonce. Ignore errors here,
 		// since GetInvocationsByNonce can return only transient ones.
 		invs, _ := e.GetInvocationsByNonce(c, invNonce)

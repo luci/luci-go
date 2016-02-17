@@ -68,13 +68,11 @@ func (f *autoFlusher) start(ctx context.Context, interval time.Duration) {
 		defer close(killed)
 
 		for {
-			select {
-			case <-ctx.Done():
+			if tr := <-clock.After(ctx, interval); tr.Incomplete() {
 				return
-			case <-clock.After(ctx, interval):
-				if err := flush(ctx); err != nil && err != context.Canceled {
-					logging.Warningf(ctx, "Failed to flush tsmon metrics: %v", err)
-				}
+			}
+			if err := flush(ctx); err != nil && err != context.Canceled {
+				logging.Warningf(ctx, "Failed to flush tsmon metrics: %v", err)
 			}
 		}
 	}()

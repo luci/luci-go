@@ -36,12 +36,13 @@ func TestSystemClock(t *testing.T) {
 		sc := GetSystemClock()
 
 		Convey(`Will perform a full sleep if the Context isn't canceled.`, func() {
-			So(sc.Sleep(c, timeBase), ShouldBeNil)
+			So(sc.Sleep(c, timeBase).Incomplete(), ShouldBeFalse)
 		})
 
 		Convey(`Will terminate the Sleep prematurely if the Context is canceled.`, func() {
 			cancelFunc()
-			So(sc.Sleep(c, veryLongTime), ShouldEqual, context.Canceled)
+			So(sc.Sleep(c, veryLongTime).Incomplete(), ShouldBeTrue)
+			So(sc.Sleep(c, veryLongTime).Err, ShouldEqual, context.Canceled)
 		})
 	})
 }

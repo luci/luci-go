@@ -66,7 +66,7 @@ func TestTestClock(t *testing.T) {
 				cancelFunc()
 			})
 
-			So(clk.Sleep(ctx, time.Second), ShouldEqual, context.Canceled)
+			So(clk.Sleep(ctx, time.Second).Incomplete(), ShouldBeTrue)
 		})
 	})
 }

@@ -5,7 +5,10 @@
 package clock
 
 import (
+	"fmt"
 	"time"
+
+	"golang.org/x/net/context"
 )
 
 // Timer is a wrapper around the time.Timer structure.
@@ -40,12 +43,26 @@ type Timer interface {
 // TimerResult is the result for a timer operation.
 //
 // Time will be set to the time when the result was generated. If the source of
-// the result was prematurely terminated (e.g., due to Context cancellation)
-// Err will be non-nil.
+// the result was prematurely terminated due to Context cancellation, Err will
+// be one of the valid Context Err() return values.
 type TimerResult struct {
 	time.Time
 
 	// Err, if not nil, indicates that After did not finish naturally and contains
 	// the reason why.
 	Err error
+}
+
+// Incomplete will return true if the timer result indicates that the timer
+// operation was canceled prematurely due to Context cancellation or deadline
+// expiration.
+func (tr TimerResult) Incomplete() bool {
+	switch tr.Err {
+	case nil:
+		return false
+	case context.Canceled, context.DeadlineExceeded:
+		return true
+	default:
+		panic(fmt.Errorf("unknown TimerResult error value: %v", tr.Err))
+	}
 }

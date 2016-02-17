@@ -28,9 +28,8 @@ func (systemClock) Now() time.Time {
 	return time.Now()
 }
 
-func (sc systemClock) Sleep(c context.Context, d time.Duration) error {
-	ar := <-sc.After(c, d)
-	return ar.Err
+func (sc systemClock) Sleep(c context.Context, d time.Duration) TimerResult {
+	return <-sc.After(c, d)
 }
 
 func (systemClock) NewTimer(ctx context.Context) Timer {

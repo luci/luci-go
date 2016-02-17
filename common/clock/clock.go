@@ -21,10 +21,10 @@ type Clock interface {
 
 	// Sleeps the current goroutine (see time.Sleep).
 	//
-	// If the supplied Context is canceled prior to the specified duration,
-	// Sleep will return the Context's error. If the sleep completes naturally,
-	// it will return nil.
-	Sleep(context.Context, time.Duration) error
+	// Sleep will return a TimerResult containing the time when it was awakened
+	// and detailing its execution. If the sleep terminated prematurely from
+	// cancellation, the TimerResult's Incomplete() method will return true.
+	Sleep(context.Context, time.Duration) TimerResult
 
 	// Creates a new Timer instance, bound to this Clock.
 	//

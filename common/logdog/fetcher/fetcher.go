@@ -362,7 +362,11 @@ func (f *Fetcher) fetchLogs(c context.Context, req *fetchRequest) {
 				"index": req.index,
 				"delay": f.o.Delay,
 			}.Infof(c, "No logs returned. Sleeping...")
-			clock.Sleep(c, f.o.Delay)
+			if tr := clock.Sleep(c, f.o.Delay); tr.Incomplete() {
+				log.WithError(tr.Err).Warningf(c, "Context was canceled.")
+				resp.err = tr.Err
+				return
+			}
 		}
 	}
 }

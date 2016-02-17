@@ -79,12 +79,9 @@ func Retry(ctx context.Context, f Factory, fn func() error, callback Callback) (
 		}
 
 		if delay > 0 {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-
-			case <-clock.After(ctx, delay):
-				break
+			if tr := <-clock.After(ctx, delay); tr.Incomplete() {
+				// Context was canceled.
+				return tr.Err
 			}
 		}
 	}

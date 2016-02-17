@@ -42,33 +42,31 @@ func (o *Options) startConfigChangedPoller(c context.Context, hash string) {
 			"timeout": o.KillCheckInterval,
 		}.Debugf(c, "Entering kill check poll loop...")
 
-		select {
-		case <-c.Done():
+		if tr := <-clock.After(c, o.KillCheckInterval); tr.Incomplete() {
 			log.WithError(c.Err()).Debugf(c, "Context cancelled, shutting down kill poller.")
 			return
+		}
 
-		case <-clock.After(c, o.KillCheckInterval):
-			log.Infof(c, "Kill check timeout triggered, reloading configuration...")
+		log.Infof(c, "Kill check timeout triggered, reloading configuration...")
 
-			cfg, err := o.getConfig(true)
-			if err != nil {
-				log.WithError(err).Warningf(c, "Failed to reload configuration.")
-				continue
-			}
+		cfg, err := o.getConfig(true)
+		if err != nil {
+			log.WithError(err).Warningf(c, "Failed to reload configuration.")
+			continue
+		}
 
-			if cfg.ContentHash != hash {
-				log.Fields{
-					"currentHash": hash,
-					"newHash":     cfg.ContentHash,
-				}.Errorf(c, "Configuration content hash has changed.")
-				o.runKillFunc()
-				return
-			}
-
+		if cfg.ContentHash != hash {
 			log.Fields{
 				"currentHash": hash,
-			}.Debugf(c, "Content hash matches.")
+				"newHash":     cfg.ContentHash,
+			}.Errorf(c, "Configuration content hash has changed.")
+			o.runKillFunc()
+			return
 		}
+
+		log.Fields{
+			"currentHash": hash,
+		}.Debugf(c, "Content hash matches.")
 	}
 }
 

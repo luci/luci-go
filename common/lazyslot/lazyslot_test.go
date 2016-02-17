@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -18,13 +17,13 @@ import (
 
 func TestLazySlot(t *testing.T) {
 	Convey("Blocking mode works", t, func() {
-		c := newContext()
+		c, clk := newContext()
 
 		counter := 0
 		s := Slot{
 			Fetcher: func(c context.Context, prev Value) (Value, error) {
 				counter++
-				return Value{counter, clock.Now(c).Add(time.Second)}, nil
+				return Value{counter, clk.Now().Add(time.Second)}, nil
 			},
 		}
 
@@ -41,19 +40,19 @@ func TestLazySlot(t *testing.T) {
 		So(v.Value.(int), ShouldEqual, 1)
 
 		// Expires and refreshed.
-		clock.Get(c).(testclock.TestClock).Add(5 * time.Second)
+		clk.Add(5 * time.Second)
 		v, err = s.Get(c)
 		So(err, ShouldBeNil)
 		So(v.Value.(int), ShouldEqual, 2)
 	})
 
 	Convey("Returns stale copy while fetching", t, func(conv C) {
-		c := newContext()
+		c, clk := newContext()
 
 		// Put initial value.
 		s := Slot{
 			Fetcher: func(c context.Context, prev Value) (Value, error) {
-				return Value{1, clock.Now(c).Add(time.Second)}, nil
+				return Value{1, clk.Now().Add(time.Second)}, nil
 			},
 		}
 		v, err := s.Get(c)
@@ -61,13 +60,13 @@ func TestLazySlot(t *testing.T) {
 		So(v.Value.(int), ShouldEqual, 1)
 
 		// Make it expire. Start blocking fetch of the new value.
-		clock.Get(c).(testclock.TestClock).Add(5 * time.Second)
+		clk.Add(5 * time.Second)
 		fetching := make(chan bool)
 		resume := make(chan bool)
 		s.Fetcher = func(c context.Context, prev Value) (Value, error) {
 			fetching <- true
 			<-resume
-			return Value{2, clock.Now(c).Add(time.Second)}, nil
+			return Value{2, clk.Now().Add(time.Second)}, nil
 		}
 		wg := sync.WaitGroup{}
 		wg.Add(1)
@@ -97,12 +96,12 @@ func TestLazySlot(t *testing.T) {
 	})
 
 	Convey("Recovers from panic", t, func(conv C) {
-		c := newContext()
+		c, clk := newContext()
 
 		// Initial value.
 		s := Slot{
 			Fetcher: func(c context.Context, prev Value) (Value, error) {
-				return Value{1, clock.Now(c).Add(time.Second)}, nil
+				return Value{1, clk.Now().Add(time.Second)}, nil
 			},
 		}
 		v, err := s.Get(c)
@@ -110,7 +109,7 @@ func TestLazySlot(t *testing.T) {
 		So(v.Value.(int), ShouldEqual, 1)
 
 		// Make it expire. Start panicing fetch.
-		clock.Get(c).(testclock.TestClock).Add(5 * time.Second)
+		clk.Add(5 * time.Second)
 		s.Fetcher = func(c context.Context, prev Value) (Value, error) {
 			panic("omg")
 		}
@@ -118,7 +117,7 @@ func TestLazySlot(t *testing.T) {
 
 		// Doesn't deadlock.
 		s.Fetcher = func(c context.Context, prev Value) (Value, error) {
-			return Value{2, clock.Now(c).Add(time.Second)}, nil
+			return Value{2, clk.Now().Add(time.Second)}, nil
 		}
 		v, err = s.Get(c)
 		So(err, ShouldBeNil)
@@ -126,6 +125,6 @@ func TestLazySlot(t *testing.T) {
 	})
 }
 
-func newContext() context.Context {
-	return clock.Set(context.Background(), testclock.New(time.Unix(1442270520, 0)))
+func newContext() (context.Context, testclock.TestClock) {
+	return testclock.UseTime(context.Background(), time.Unix(1442270520, 0))
 }

@@ -201,7 +201,10 @@ func ProcessShard(c context.Context, timestamp time.Time, shard uint64) error {
 					l.Warningf("could not update last process memcache key %s: %s", lastKey, err)
 				}
 
-				clock.Sleep(c, dustSettleTimeout)
+				if tr := clock.Sleep(c, dustSettleTimeout); tr.Incomplete() {
+					l.Warningf("sleep interrupted, context is done: %v", tr.Err)
+					return tr.Err
+				}
 			}
 			return nil
 		})
@@ -209,7 +212,10 @@ func ProcessShard(c context.Context, timestamp time.Time, shard uint64) error {
 			break
 		}
 		l.Infof("Couldn't obtain lock (try %d) (sleeping 2s)", try+1)
-		clock.Sleep(c, time.Second*2)
+		if tr := clock.Sleep(c, time.Second*2); tr.Incomplete() {
+			l.Warningf("sleep interrupted, context is done: %v", tr.Err)
+			return tr.Err
+		}
 	}
 	if err == memlock.ErrFailedToLock {
 		l.Infof("Couldn't obtain lock (giving up): %s", err)

@@ -96,7 +96,7 @@ func (s *Subscriber) Run(c context.Context, h Handler) {
 				taskC <- func() error {
 
 					switch msgs, err := s.S.Pull(c); err {
-					case context.Canceled:
+					case context.Canceled, context.DeadlineExceeded:
 						break
 
 					case nil:
