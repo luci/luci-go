@@ -184,7 +184,7 @@ func (c *Collector) processLogStream(ctx context.Context, lw *logWork) error {
 
 	// In parallel, load the log entries into Storage. Throttle this with our
 	// ingest semaphore.
-	return parallel.Run(c.Sem, func(taskC chan<- func() error) {
+	return errors.MultiErrorFromErrors(parallel.Run(c.Sem, func(taskC chan<- func() error) {
 		for i, le := range lw.be.Logs {
 			i, le := i, le
 
@@ -231,7 +231,7 @@ func (c *Collector) processLogStream(ctx context.Context, lw *logWork) error {
 				return nil
 			}
 		}
-	})
+	}))
 }
 
 func (c *Collector) processLogEntry(ctx context.Context, lw *logWork) error {
