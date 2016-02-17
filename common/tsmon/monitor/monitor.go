@@ -17,5 +17,5 @@ type Monitor interface {
 	// Send will be called multiple times.  A ChunkSize of 0 disables chunking.
 	ChunkSize() int
 
-	Send(cells []types.Cell, defaultTarget types.Target) error
+	Send(cells []types.Cell) error
 }

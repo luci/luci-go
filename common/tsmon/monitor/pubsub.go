@@ -36,8 +36,8 @@ func (m *pubSubMonitor) ChunkSize() int {
 	return 1000
 }
 
-func (m *pubSubMonitor) Send(cells []types.Cell, defaultTarget types.Target) error {
-	collection := serializeCells(cells, defaultTarget)
+func (m *pubSubMonitor) Send(cells []types.Cell) error {
+	collection := SerializeCells(cells)
 
 	data, err := proto.Marshal(collection)
 	if err != nil {

@@ -19,6 +19,6 @@ func (m *nilMonitor) ChunkSize() int {
 	return 0
 }
 
-func (m *nilMonitor) Send(cells []types.Cell, defaultTarget types.Target) error {
+func (m *nilMonitor) Send(cells []types.Cell) error {
 	return nil
 }

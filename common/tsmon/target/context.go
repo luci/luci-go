@@ -27,3 +27,12 @@ func Get(ctx context.Context) types.Target {
 	}
 	return nil
 }
+
+// GetWithDefault is like Get, except it returns the given default value if
+// there is no target set in the context.
+func GetWithDefault(ctx context.Context, def types.Target) types.Target {
+	if t := Get(ctx); t != nil {
+		return t
+	}
+	return def
+}

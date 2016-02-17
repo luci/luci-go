@@ -11,5 +11,6 @@ import (
 // A Target knows how to put information about itself in a MetricsData message.
 type Target interface {
 	PopulateProto(d *pb.MetricsData)
+	IsPopulatedIn(d *pb.MetricsData) bool
 	Hash() uint64
 }

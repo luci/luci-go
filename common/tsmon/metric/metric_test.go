@@ -7,9 +7,11 @@ package metric
 import (
 	"testing"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/store"
+	"github.com/luci/luci-go/common/tsmon/target"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -17,9 +19,10 @@ import (
 
 func TestMetrics(t *testing.T) {
 	ctx := context.Background()
+	defaultTarget := &target.Task{ServiceName: proto.String("default target")}
 
 	Convey("Int", t, func() {
-		tsmon.SetStore(store.NewInMemory())
+		tsmon.SetStore(store.NewInMemory(defaultTarget))
 
 		m := NewInt("foo")
 		defer tsmon.Unregister(m)
@@ -45,7 +48,7 @@ func TestMetrics(t *testing.T) {
 	})
 
 	Convey("Counter", t, func() {
-		tsmon.SetStore(store.NewInMemory())
+		tsmon.SetStore(store.NewInMemory(defaultTarget))
 
 		m := NewCounter("foo")
 		defer tsmon.Unregister(m)
@@ -72,7 +75,7 @@ func TestMetrics(t *testing.T) {
 	})
 
 	Convey("Float", t, func() {
-		tsmon.SetStore(store.NewInMemory())
+		tsmon.SetStore(store.NewInMemory(defaultTarget))
 
 		m := NewFloat("foo")
 		defer tsmon.Unregister(m)
@@ -98,7 +101,7 @@ func TestMetrics(t *testing.T) {
 	})
 
 	Convey("FloatCounter", t, func() {
-		tsmon.SetStore(store.NewInMemory())
+		tsmon.SetStore(store.NewInMemory(defaultTarget))
 
 		m := NewFloatCounter("foo")
 		defer tsmon.Unregister(m)
@@ -125,7 +128,7 @@ func TestMetrics(t *testing.T) {
 	})
 
 	Convey("String", t, func() {
-		tsmon.SetStore(store.NewInMemory())
+		tsmon.SetStore(store.NewInMemory(defaultTarget))
 
 		m := NewString("foo")
 		defer tsmon.Unregister(m)
@@ -151,7 +154,7 @@ func TestMetrics(t *testing.T) {
 	})
 
 	Convey("Bool", t, func() {
-		tsmon.SetStore(store.NewInMemory())
+		tsmon.SetStore(store.NewInMemory(defaultTarget))
 
 		m := NewBool("foo")
 		defer tsmon.Unregister(m)
@@ -177,7 +180,7 @@ func TestMetrics(t *testing.T) {
 	})
 
 	Convey("CumulativeDistribution", t, func() {
-		tsmon.SetStore(store.NewInMemory())
+		tsmon.SetStore(store.NewInMemory(defaultTarget))
 
 		m := NewCumulativeDistribution("foo", distribution.FixedWidthBucketer(10, 20))
 		defer tsmon.Unregister(m)
@@ -208,7 +211,7 @@ func TestMetrics(t *testing.T) {
 	})
 
 	Convey("NonCumulativeDistribution", t, func() {
-		tsmon.SetStore(store.NewInMemory())
+		tsmon.SetStore(store.NewInMemory(defaultTarget))
 
 		m := NewNonCumulativeDistribution("foo", distribution.FixedWidthBucketer(10, 20))
 		defer tsmon.Unregister(m)

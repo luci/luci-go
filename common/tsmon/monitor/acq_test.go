@@ -129,10 +129,8 @@ func TestSerializeDistribution(t *testing.T) {
 }
 
 func TestSerializeCell(t *testing.T) {
-	defaultTarget := &target.Task{}
-
 	Convey("Int", t, func() {
-		ret := serializeCell(types.Cell{
+		ret := SerializeCell(types.Cell{
 			types.MetricInfo{
 				Name:      "foo",
 				Fields:    []field.Field{},
@@ -140,11 +138,11 @@ func TestSerializeCell(t *testing.T) {
 			},
 			types.CellData{
 				FieldVals: []interface{}{},
-				Target:    nil,
+				Target:    &target.Task{},
 				ResetTime: time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
 				Value:     int64(42),
 			},
-		}, defaultTarget)
+		})
 		So(ret, ShouldResemble, &pb.MetricsData{
 			Name:             proto.String("foo"),
 			MetricNamePrefix: proto.String("/chrome/infra/"),
@@ -156,7 +154,7 @@ func TestSerializeCell(t *testing.T) {
 	})
 
 	Convey("Counter", t, func() {
-		ret := serializeCell(types.Cell{
+		ret := SerializeCell(types.Cell{
 			types.MetricInfo{
 				Name:      "foo",
 				Fields:    []field.Field{},
@@ -164,11 +162,11 @@ func TestSerializeCell(t *testing.T) {
 			},
 			types.CellData{
 				FieldVals: []interface{}{},
-				Target:    nil,
+				Target:    &target.Task{},
 				ResetTime: time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
 				Value:     int64(42),
 			},
-		}, defaultTarget)
+		})
 		So(ret, ShouldResemble, &pb.MetricsData{
 			Name:             proto.String("foo"),
 			MetricNamePrefix: proto.String("/chrome/infra/"),
@@ -180,7 +178,7 @@ func TestSerializeCell(t *testing.T) {
 	})
 
 	Convey("Float", t, func() {
-		ret := serializeCell(types.Cell{
+		ret := SerializeCell(types.Cell{
 			types.MetricInfo{
 				Name:      "foo",
 				Fields:    []field.Field{},
@@ -188,11 +186,11 @@ func TestSerializeCell(t *testing.T) {
 			},
 			types.CellData{
 				FieldVals: []interface{}{},
-				Target:    nil,
+				Target:    &target.Task{},
 				ResetTime: time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
 				Value:     float64(42),
 			},
-		}, defaultTarget)
+		})
 		So(ret, ShouldResemble, &pb.MetricsData{
 			Name:             proto.String("foo"),
 			MetricNamePrefix: proto.String("/chrome/infra/"),
@@ -204,7 +202,7 @@ func TestSerializeCell(t *testing.T) {
 	})
 
 	Convey("FloatCounter", t, func() {
-		ret := serializeCell(types.Cell{
+		ret := SerializeCell(types.Cell{
 			types.MetricInfo{
 				Name:      "foo",
 				Fields:    []field.Field{},
@@ -212,11 +210,11 @@ func TestSerializeCell(t *testing.T) {
 			},
 			types.CellData{
 				FieldVals: []interface{}{},
-				Target:    nil,
+				Target:    &target.Task{},
 				ResetTime: time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
 				Value:     float64(42),
 			},
-		}, defaultTarget)
+		})
 		So(ret, ShouldResemble, &pb.MetricsData{
 			Name:             proto.String("foo"),
 			MetricNamePrefix: proto.String("/chrome/infra/"),
@@ -228,7 +226,7 @@ func TestSerializeCell(t *testing.T) {
 	})
 
 	Convey("String", t, func() {
-		ret := serializeCell(types.Cell{
+		ret := SerializeCell(types.Cell{
 			types.MetricInfo{
 				Name:      "foo",
 				Fields:    []field.Field{},
@@ -236,11 +234,11 @@ func TestSerializeCell(t *testing.T) {
 			},
 			types.CellData{
 				FieldVals: []interface{}{},
-				Target:    nil,
+				Target:    &target.Task{},
 				ResetTime: time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
 				Value:     "hello",
 			},
-		}, defaultTarget)
+		})
 		So(ret, ShouldResemble, &pb.MetricsData{
 			Name:             proto.String("foo"),
 			MetricNamePrefix: proto.String("/chrome/infra/"),
@@ -252,7 +250,7 @@ func TestSerializeCell(t *testing.T) {
 	})
 
 	Convey("Boolean", t, func() {
-		ret := serializeCell(types.Cell{
+		ret := SerializeCell(types.Cell{
 			types.MetricInfo{
 				Name:      "foo",
 				Fields:    []field.Field{},
@@ -260,11 +258,11 @@ func TestSerializeCell(t *testing.T) {
 			},
 			types.CellData{
 				FieldVals: []interface{}{},
-				Target:    nil,
+				Target:    &target.Task{},
 				ResetTime: time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
 				Value:     true,
 			},
-		}, defaultTarget)
+		})
 		So(ret, ShouldResemble, &pb.MetricsData{
 			Name:             proto.String("foo"),
 			MetricNamePrefix: proto.String("/chrome/infra/"),
@@ -281,7 +279,7 @@ func TestSerializeCell(t *testing.T) {
 			JobName:     proto.String("world"),
 		}
 
-		ret := serializeCell(types.Cell{
+		ret := SerializeCell(types.Cell{
 			types.MetricInfo{
 				Name:      "foo",
 				Fields:    []field.Field{},
@@ -293,7 +291,7 @@ func TestSerializeCell(t *testing.T) {
 				ResetTime: time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
 				Value:     int64(42),
 			},
-		}, defaultTarget)
+		})
 		So(ret, ShouldResemble, &pb.MetricsData{
 			Name:             proto.String("foo"),
 			MetricNamePrefix: proto.String("/chrome/infra/"),

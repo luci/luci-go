@@ -19,8 +19,9 @@ import (
 )
 
 type inMemoryStore struct {
-	data map[string]*metricData
-	lock sync.RWMutex
+	defaultTarget types.Target
+	data          map[string]*metricData
+	lock          sync.RWMutex
 }
 
 type cellKey struct {
@@ -40,10 +41,7 @@ func (m *metricData) get(fieldVals []interface{}, t types.Target, resetTime time
 		return nil, err
 	}
 
-	var targetHash uint64
-	if t != nil {
-		targetHash = t.Hash()
-	}
+	targetHash := t.Hash()
 
 	key := cellKey{field.Hash(fieldVals), targetHash}
 	cells, ok := m.cells[key]
@@ -63,9 +61,10 @@ func (m *metricData) get(fieldVals []interface{}, t types.Target, resetTime time
 
 // NewInMemory creates a new metric store that holds metric data in this
 // process' memory.
-func NewInMemory() Store {
+func NewInMemory(defaultTarget types.Target) Store {
 	return &inMemoryStore{
-		data: map[string]*metricData{},
+		defaultTarget: defaultTarget,
+		data:          map[string]*metricData{},
 	}
 }
 
@@ -105,6 +104,10 @@ func (s *inMemoryStore) getOrCreateData(m types.Metric) *metricData {
 	return d
 }
 
+func (s *inMemoryStore) DefaultTarget() types.Target {
+	return s.defaultTarget
+}
+
 // Get returns the value for a given metric cell.
 func (s *inMemoryStore) Get(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []interface{}) (value interface{}, err error) {
 	if resetTime.IsZero() {
@@ -115,7 +118,7 @@ func (s *inMemoryStore) Get(ctx context.Context, h types.Metric, resetTime time.
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	c, err := m.get(fieldVals, target.Get(ctx), resetTime)
+	c, err := m.get(fieldVals, target.GetWithDefault(ctx, s.defaultTarget), resetTime)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +131,7 @@ func (s *inMemoryStore) Set(ctx context.Context, h types.Metric, resetTime time.
 	if resetTime.IsZero() {
 		resetTime = clock.Now(ctx)
 	}
-	return s.set(h, resetTime, fieldVals, target.Get(ctx), value)
+	return s.set(h, resetTime, fieldVals, target.GetWithDefault(ctx, s.defaultTarget), value)
 }
 
 func (s *inMemoryStore) set(h types.Metric, resetTime time.Time, fieldVals []interface{}, t types.Target, value interface{}) error {
@@ -150,7 +153,7 @@ func (s *inMemoryStore) Incr(ctx context.Context, h types.Metric, resetTime time
 	if resetTime.IsZero() {
 		resetTime = clock.Now(ctx)
 	}
-	return s.incr(h, resetTime, fieldVals, target.Get(ctx), delta)
+	return s.incr(h, resetTime, fieldVals, target.GetWithDefault(ctx, s.defaultTarget), delta)
 }
 
 func (s *inMemoryStore) incr(h types.Metric, resetTime time.Time, fieldVals []interface{}, t types.Target, delta interface{}) error {
@@ -199,7 +202,7 @@ func (s *inMemoryStore) incr(h types.Metric, resetTime time.Time, fieldVals []in
 }
 
 func (s *inMemoryStore) ModifyMulti(ctx context.Context, mods []Modification) error {
-	contextTarget := target.Get(ctx)
+	contextTarget := target.GetWithDefault(ctx, s.defaultTarget)
 
 	for _, m := range mods {
 		resetTime := m.ResetTime

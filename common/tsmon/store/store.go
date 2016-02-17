@@ -28,6 +28,8 @@ type Store interface {
 	Register(m types.Metric)
 	Unregister(m types.Metric)
 
+	DefaultTarget() types.Target
+
 	Get(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}) (value interface{}, err error)
 	Set(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, value interface{}) error
 	Incr(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, delta interface{}) error

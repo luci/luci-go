@@ -24,11 +24,13 @@ import (
 )
 
 type fakeStore struct {
-	cells []types.Cell
+	cells         []types.Cell
+	defaultTarget types.Target
 }
 
-func (s *fakeStore) Register(types.Metric)   {}
-func (s *fakeStore) Unregister(types.Metric) {}
+func (s *fakeStore) Register(types.Metric)       {}
+func (s *fakeStore) Unregister(types.Metric)     {}
+func (s *fakeStore) DefaultTarget() types.Target { return s.defaultTarget }
 func (s *fakeStore) Get(context.Context, types.Metric, time.Time, []interface{}) (interface{}, error) {
 	return nil, nil
 }
@@ -51,7 +53,7 @@ func (m *fakeMonitor) ChunkSize() int {
 	return m.chunkSize
 }
 
-func (m *fakeMonitor) Send(cells []types.Cell, t types.Target) error {
+func (m *fakeMonitor) Send(cells []types.Cell) error {
 	m.cells = append(m.cells, cells)
 	return nil
 }
@@ -59,7 +61,7 @@ func (m *fakeMonitor) Send(cells []types.Cell, t types.Target) error {
 func TestFlush(t *testing.T) {
 	ctx := context.Background()
 
-	globalTarget = (*target.Task)(&pb.Task{
+	defaultTarget := (*target.Task)(&pb.Task{
 		ServiceName: proto.String("test"),
 	})
 
@@ -79,6 +81,7 @@ func TestFlush(t *testing.T) {
 					},
 				},
 			},
+			defaultTarget: defaultTarget,
 		}
 		globalStore = &s
 
@@ -88,7 +91,7 @@ func TestFlush(t *testing.T) {
 		}
 		globalMonitor = &m
 
-		Flush(ctx)
+		So(Flush(ctx), ShouldBeNil)
 
 		So(len(m.cells), ShouldEqual, 1)
 		So(len(m.cells[0]), ShouldEqual, 1)
@@ -108,7 +111,8 @@ func TestFlush(t *testing.T) {
 
 	Convey("Splits up ChunkSize metrics", t, func() {
 		s := fakeStore{
-			cells: make([]types.Cell, 43),
+			cells:         make([]types.Cell, 43),
+			defaultTarget: defaultTarget,
 		}
 		globalStore = &s
 
@@ -133,7 +137,7 @@ func TestFlush(t *testing.T) {
 			}
 		}
 
-		Flush(ctx)
+		So(Flush(ctx), ShouldBeNil)
 
 		So(len(m.cells), ShouldEqual, 2)
 		So(len(m.cells[0]), ShouldEqual, 42)
@@ -142,7 +146,8 @@ func TestFlush(t *testing.T) {
 
 	Convey("Doesn't split metrics when ChunkSize is 0", t, func() {
 		s := fakeStore{
-			cells: make([]types.Cell, 43),
+			cells:         make([]types.Cell, 43),
+			defaultTarget: defaultTarget,
 		}
 		globalStore = &s
 
@@ -167,7 +172,7 @@ func TestFlush(t *testing.T) {
 			}
 		}
 
-		Flush(ctx)
+		So(Flush(ctx), ShouldBeNil)
 
 		So(len(m.cells), ShouldEqual, 1)
 		So(len(m.cells[0]), ShouldEqual, 43)
@@ -176,15 +181,7 @@ func TestFlush(t *testing.T) {
 	Convey("No Monitor configured", t, func() {
 		globalMonitor = nil
 
-		err := Flush(ctx)
-		So(err, ShouldNotBeNil)
-	})
-
-	Convey("No Target configured", t, func() {
-		globalTarget = nil
-
-		err := Flush(ctx)
-		So(err, ShouldNotBeNil)
+		So(Flush(ctx), ShouldNotBeNil)
 	})
 
 	Convey("Auto flush works", t, func() {

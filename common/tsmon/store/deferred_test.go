@@ -7,8 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
+	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
 
@@ -17,13 +19,13 @@ import (
 
 func TestDeferredBase(t *testing.T) {
 	testStoreImplementation(t, func() Store {
-		base := NewInMemory()
+		base := NewInMemory(&target.Task{ServiceName: proto.String("default target")})
 		return NewDeferred(base)
 	})
 }
 
 func TestDeferred(t *testing.T) {
-	s := NewDeferred(NewInMemory())
+	s := NewDeferred(NewInMemory(&target.Task{ServiceName: proto.String("default target")}))
 	m := &fakeMetric{"m", []field.Field{}, types.CumulativeIntType}
 	m2 := &fakeMetric{"m2", []field.Field{field.String("f")}, types.CumulativeIntType}
 	m3 := &fakeDistributionMetric{

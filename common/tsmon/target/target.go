@@ -29,6 +29,16 @@ func (t *Task) AsProto() *pb.Task { return (*pb.Task)(t) }
 // PopulateProto implements Target.
 func (t *Task) PopulateProto(d *pb.MetricsData) { d.Task = t.AsProto() }
 
+// IsPopulatedIn returns true if the MetricsData message is for this target.
+func (t *Task) IsPopulatedIn(d *pb.MetricsData) bool {
+	return d.Task != nil &&
+		d.Task.GetServiceName() == t.AsProto().GetServiceName() &&
+		d.Task.GetJobName() == t.AsProto().GetJobName() &&
+		d.Task.GetDataCenter() == t.AsProto().GetDataCenter() &&
+		d.Task.GetHostName() == t.AsProto().GetHostName() &&
+		d.Task.GetTaskNum() == t.AsProto().GetTaskNum()
+}
+
 // Hash returns a uint64 hash of this target.
 func (t *Task) Hash() uint64 {
 	h := fnv.New64a()
@@ -49,6 +59,17 @@ func (t *NetworkDevice) AsProto() *pb.NetworkDevice { return (*pb.NetworkDevice)
 
 // PopulateProto implements Target.
 func (t *NetworkDevice) PopulateProto(d *pb.MetricsData) { d.NetworkDevice = t.AsProto() }
+
+// IsPopulatedIn returns true if the MetricsData message is for this target.
+func (t *NetworkDevice) IsPopulatedIn(d *pb.MetricsData) bool {
+	return d.NetworkDevice != nil &&
+		d.NetworkDevice.GetAlertable() == t.AsProto().GetAlertable() &&
+		d.NetworkDevice.GetRealm() == t.AsProto().GetRealm() &&
+		d.NetworkDevice.GetMetro() == t.AsProto().GetMetro() &&
+		d.NetworkDevice.GetRole() == t.AsProto().GetRole() &&
+		d.NetworkDevice.GetHostname() == t.AsProto().GetHostname() &&
+		d.NetworkDevice.GetHostgroup() == t.AsProto().GetHostgroup()
+}
 
 // Hash returns a uint64 hash of this target.
 func (t *NetworkDevice) Hash() uint64 {

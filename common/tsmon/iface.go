@@ -23,7 +23,6 @@ import (
 )
 
 var (
-	globalTarget  types.Target
 	globalStore   = store.NewNilStore()
 	globalMonitor = monitor.NewNilMonitor()
 	globalFlusher *autoFlusher
@@ -31,12 +30,6 @@ var (
 	registeredMetrics     = map[string]types.Metric{}
 	registeredMetricsLock sync.RWMutex
 )
-
-// Target contains information about this process, and is included in all
-// metrics reported by this process.
-func Target() types.Target {
-	return globalTarget
-}
 
 // Store returns the global metric store that contains all the metric values for
 // this process.  Applications shouldn't need to access this directly - instead
@@ -128,8 +121,7 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 	}
 
 	globalMonitor = mon
-	globalTarget = t
-	SetStore(store.NewInMemory())
+	SetStore(store.NewInMemory(t))
 
 	if globalFlusher != nil {
 		logging.Infof(c, "Canceling previous tsmon auto flush")
@@ -148,7 +140,7 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 // Shutdown gracefully terminates the tsmon by doing the final flush and
 // disabling auto flush (if it was enabled).
 //
-// It resets Target, Monitor and Store.
+// It resets Monitor and Store.
 //
 // Logs error to standard logger. Does nothing if tsmon wasn't initialized.
 func Shutdown(c context.Context) {
@@ -171,7 +163,6 @@ func Shutdown(c context.Context) {
 
 	// Reset the state as if 'InitializeFromFlags' was never called.
 	globalMonitor = monitor.NewNilMonitor()
-	globalTarget = nil
 	SetStore(store.NewNilStore())
 }
 

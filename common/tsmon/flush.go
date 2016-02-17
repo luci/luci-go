@@ -24,8 +24,7 @@ func minInt(a, b int) int {
 // Flush sends all the metrics that are registered in the application.
 func Flush(ctx context.Context) error {
 	mon := Monitor()
-	tar := Target()
-	if mon == nil || tar == nil {
+	if mon == nil {
 		return errors.New("no tsmon Monitor is configured")
 	}
 
@@ -38,7 +37,7 @@ func Flush(ctx context.Context) error {
 	}
 	for len(cells) > 0 {
 		count := minInt(chunkSize, len(cells))
-		if err := mon.Send(cells[:count], tar); err != nil {
+		if err := mon.Send(cells[:count]); err != nil {
 			return err
 		}
 		cells = cells[count:]

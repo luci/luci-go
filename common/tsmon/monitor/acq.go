@@ -20,52 +20,54 @@ const (
 	metricNamePrefix = "/chrome/infra/"
 )
 
-func serializeCells(cells []types.Cell, defaultTarget types.Target) *pb.MetricsCollection {
+// SerializeCells creates a MetricsCollection message from a slice of cells.
+func SerializeCells(cells []types.Cell) *pb.MetricsCollection {
 	collection := pb.MetricsCollection{
 		Data: make([]*pb.MetricsData, len(cells)),
 	}
 
 	for i, cell := range cells {
-		collection.Data[i] = serializeCell(cell, defaultTarget)
+		collection.Data[i] = SerializeCell(cell)
 	}
 
 	return &collection
 }
 
-func serializeCell(c types.Cell, defaultTarget types.Target) *pb.MetricsData {
+// SerializeCell creates one MetricsData message from a cell.
+func SerializeCell(c types.Cell) *pb.MetricsData {
 	d := pb.MetricsData{}
 	d.Name = proto.String(c.Name)
 	d.MetricNamePrefix = proto.String(metricNamePrefix)
 	d.Fields = field.Serialize(c.Fields, c.FieldVals)
 	d.StartTimestampUs = proto.Uint64(uint64(c.ResetTime.UnixNano() / int64(time.Microsecond)))
+	c.Target.PopulateProto(&d)
 
-	if c.Target != nil {
-		c.Target.PopulateProto(&d)
-	} else {
-		defaultTarget.PopulateProto(&d)
-	}
+	SerializeValue(c.ValueType, c.Value, &d)
+	return &d
+}
 
-	switch c.ValueType {
+// SerializeValue writes one metric's value into the MetricsData message.
+func SerializeValue(typ types.ValueType, value interface{}, d *pb.MetricsData) {
+	switch typ {
 	case types.NonCumulativeIntType:
-		d.Gauge = proto.Int64(c.Value.(int64))
+		d.Gauge = proto.Int64(value.(int64))
 	case types.CumulativeIntType:
-		d.Counter = proto.Int64(c.Value.(int64))
+		d.Counter = proto.Int64(value.(int64))
 	case types.NonCumulativeFloatType:
-		d.NoncumulativeDoubleValue = proto.Float64(c.Value.(float64))
+		d.NoncumulativeDoubleValue = proto.Float64(value.(float64))
 	case types.CumulativeFloatType:
-		d.CumulativeDoubleValue = proto.Float64(c.Value.(float64))
+		d.CumulativeDoubleValue = proto.Float64(value.(float64))
 	case types.StringType:
-		d.StringValue = proto.String(c.Value.(string))
+		d.StringValue = proto.String(value.(string))
 	case types.BoolType:
-		d.BooleanValue = proto.Bool(c.Value.(bool))
+		d.BooleanValue = proto.Bool(value.(bool))
 	case types.CumulativeDistributionType:
-		d.Distribution = serializeDistribution(c.Value.(*distribution.Distribution))
+		d.Distribution = serializeDistribution(value.(*distribution.Distribution))
 		d.Distribution.IsCumulative = proto.Bool(true)
 	case types.NonCumulativeDistributionType:
-		d.Distribution = serializeDistribution(c.Value.(*distribution.Distribution))
+		d.Distribution = serializeDistribution(value.(*distribution.Distribution))
 		d.Distribution.IsCumulative = proto.Bool(false)
 	}
-	return &d
 }
 
 func runningZeroes(values []int64) []int64 {

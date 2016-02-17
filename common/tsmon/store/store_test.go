@@ -356,11 +356,11 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 
 			// The order is undefined.
 			if all[0].Value.(int64) == 42 {
-				So(all[0].Target, ShouldBeNil)
+				So(all[0].Target, ShouldEqual, s.DefaultTarget())
 				So(all[1].Target, ShouldEqual, &t)
 			} else {
 				So(all[0].Target, ShouldEqual, &t)
-				So(all[1].Target, ShouldBeNil)
+				So(all[1].Target, ShouldEqual, s.DefaultTarget())
 			}
 		})
 	})
