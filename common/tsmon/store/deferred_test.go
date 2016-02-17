@@ -31,20 +31,13 @@ func TestDeferredBase(t *testing.T) {
 }
 
 func TestDeferred(t *testing.T) {
-	s := NewDeferred(NewInMemory(&target.Task{ServiceName: proto.String("default target")}))
-	m := &fakeMetric{"m", []field.Field{}, types.CumulativeIntType}
-	m2 := &fakeMetric{"m2", []field.Field{field.String("f")}, types.CumulativeIntType}
-	m3 := &fakeDistributionMetric{
-		fakeMetric{"m3", []field.Field{}, types.CumulativeDistributionType},
-		distribution.DefaultBucketer,
-	}
-	s.Register(m)
-	s.Register(m2)
-	s.Register(m3)
-
 	ctx := context.Background()
 
 	Convey("Deferred set", t, func() {
+		s := NewDeferred(NewInMemory(&target.Task{ServiceName: proto.String("default target")}))
+		m := &fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType}
+		s.Register(m)
+
 		c := s.Start(ctx)
 
 		So(s.Set(c, m, time.Time{}, []interface{}{}, int64(123)), ShouldBeNil)
@@ -58,8 +51,11 @@ func TestDeferred(t *testing.T) {
 		So(err, ShouldBeNil)
 	})
 
-	s.ResetForUnittest()
 	Convey("Deferred incr", t, func() {
+		s := NewDeferred(NewInMemory(&target.Task{ServiceName: proto.String("default target")}))
+		m := &fakeMetric{"m", []field.Field{}, types.CumulativeIntType}
+		s.Register(m)
+
 		c := s.Start(ctx)
 
 		So(s.Incr(c, m, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
@@ -73,21 +69,13 @@ func TestDeferred(t *testing.T) {
 		So(err, ShouldBeNil)
 	})
 
-	s.ResetForUnittest()
-	Convey("Deferred set then incr", t, func() {
-		c := s.Start(ctx)
-		So(s.Set(c, m, time.Time{}, []interface{}{}, int64(42)), ShouldBeNil)
-		So(s.Incr(c, m, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
-		So(s.Finalize(c), ShouldBeNil)
-
-		v, err := s.Get(c, m, time.Time{}, []interface{}{})
-		So(v, ShouldEqual, 43)
-		So(err, ShouldBeNil)
-	})
-
-	s.ResetForUnittest()
 	Convey("Deferred set then set", t, func() {
+		s := NewDeferred(NewInMemory(&target.Task{ServiceName: proto.String("default target")}))
+		m := &fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType}
+		s.Register(m)
+
 		c := s.Start(ctx)
+
 		So(s.Set(c, m, time.Time{}, []interface{}{}, int64(42)), ShouldBeNil)
 		So(s.Set(c, m, time.Time{}, []interface{}{}, int64(45)), ShouldBeNil)
 		So(s.Finalize(c), ShouldBeNil)
@@ -97,21 +85,13 @@ func TestDeferred(t *testing.T) {
 		So(err, ShouldBeNil)
 	})
 
-	s.ResetForUnittest()
-	Convey("Deferred incr then set", t, func() {
-		c := s.Start(ctx)
-		So(s.Incr(c, m, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
-		So(s.Set(c, m, time.Time{}, []interface{}{}, int64(42)), ShouldBeNil)
-		So(s.Finalize(c), ShouldBeNil)
-
-		v, err := s.Get(c, m, time.Time{}, []interface{}{})
-		So(v, ShouldEqual, 42)
-		So(err, ShouldBeNil)
-	})
-
-	s.ResetForUnittest()
 	Convey("Deferred incr then incr", t, func() {
+		s := NewDeferred(NewInMemory(&target.Task{ServiceName: proto.String("default target")}))
+		m := &fakeMetric{"m", []field.Field{}, types.CumulativeIntType}
+		s.Register(m)
+
 		c := s.Start(ctx)
+
 		So(s.Incr(c, m, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
 		So(s.Incr(c, m, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
 		So(s.Finalize(c), ShouldBeNil)
@@ -121,29 +101,40 @@ func TestDeferred(t *testing.T) {
 		So(err, ShouldBeNil)
 	})
 
-	s.ResetForUnittest()
 	Convey("Deferred set with fields", t, func() {
+		s := NewDeferred(NewInMemory(&target.Task{ServiceName: proto.String("default target")}))
+		m := &fakeMetric{"m", []field.Field{field.String("f")}, types.NonCumulativeIntType}
+		s.Register(m)
+
 		c := s.Start(ctx)
-		So(s.Set(c, m2, time.Time{}, makeInterfaceSlice("foo"), int64(1)), ShouldBeNil)
-		So(s.Set(c, m2, time.Time{}, makeInterfaceSlice("bar"), int64(2)), ShouldBeNil)
+
+		So(s.Set(c, m, time.Time{}, makeInterfaceSlice("foo"), int64(1)), ShouldBeNil)
+		So(s.Set(c, m, time.Time{}, makeInterfaceSlice("bar"), int64(2)), ShouldBeNil)
 		So(s.Finalize(c), ShouldBeNil)
 
-		v, err := s.Get(c, m2, time.Time{}, makeInterfaceSlice("foo"))
+		v, err := s.Get(c, m, time.Time{}, makeInterfaceSlice("foo"))
 		So(v, ShouldEqual, 1)
 		So(err, ShouldBeNil)
 
-		v, err = s.Get(c, m2, time.Time{}, makeInterfaceSlice("bar"))
+		v, err = s.Get(c, m, time.Time{}, makeInterfaceSlice("bar"))
 		So(v, ShouldEqual, 2)
 		So(err, ShouldBeNil)
 	})
 
-	s.ResetForUnittest()
 	Convey("Deferred distribution incr", t, func() {
+		s := NewDeferred(NewInMemory(&target.Task{ServiceName: proto.String("default target")}))
+		m := &fakeDistributionMetric{
+			fakeMetric{"m", []field.Field{}, types.CumulativeDistributionType},
+			distribution.DefaultBucketer,
+		}
+		s.Register(m)
+
 		c := s.Start(ctx)
-		So(s.Incr(c, m3, time.Time{}, []interface{}{}, float64(6)), ShouldBeNil)
+
+		So(s.Incr(c, m, time.Time{}, []interface{}{}, float64(6)), ShouldBeNil)
 		So(s.Finalize(c), ShouldBeNil)
 
-		v, err := s.Get(c, m3, time.Time{}, []interface{}{})
+		v, err := s.Get(c, m, time.Time{}, []interface{}{})
 		So(err, ShouldBeNil)
 
 		dist := v.(*distribution.Distribution)
@@ -151,14 +142,21 @@ func TestDeferred(t *testing.T) {
 		So(dist.Sum(), ShouldEqual, 6)
 	})
 
-	s.ResetForUnittest()
 	Convey("Deferred distribution incr then incr", t, func() {
+		s := NewDeferred(NewInMemory(&target.Task{ServiceName: proto.String("default target")}))
+		m := &fakeDistributionMetric{
+			fakeMetric{"m", []field.Field{}, types.CumulativeDistributionType},
+			distribution.DefaultBucketer,
+		}
+		s.Register(m)
+
 		c := s.Start(ctx)
-		So(s.Incr(c, m3, time.Time{}, []interface{}{}, float64(4)), ShouldBeNil)
-		So(s.Incr(c, m3, time.Time{}, []interface{}{}, float64(1)), ShouldBeNil)
+
+		So(s.Incr(c, m, time.Time{}, []interface{}{}, float64(4)), ShouldBeNil)
+		So(s.Incr(c, m, time.Time{}, []interface{}{}, float64(1)), ShouldBeNil)
 		So(s.Finalize(c), ShouldBeNil)
 
-		v, err := s.Get(c, m3, time.Time{}, []interface{}{})
+		v, err := s.Get(c, m, time.Time{}, []interface{}{})
 		So(err, ShouldBeNil)
 
 		dist := v.(*distribution.Distribution)

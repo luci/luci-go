@@ -136,6 +136,12 @@ func (s *inMemoryStore) Set(ctx context.Context, h types.Metric, resetTime time.
 
 func (s *inMemoryStore) set(h types.Metric, resetTime time.Time, fieldVals []interface{}, t types.Target, value interface{}) error {
 	m := s.getOrCreateData(h)
+	if m.ValueType == types.CumulativeIntType ||
+		m.ValueType == types.CumulativeFloatType ||
+		m.ValueType == types.CumulativeDistributionType {
+		return fmt.Errorf("attempted to set cumulative metric %s to %v", h.Info().Name, value)
+	}
+
 	m.lock.Lock()
 	defer m.lock.Unlock()
 

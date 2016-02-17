@@ -5,6 +5,7 @@
 package store
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 	"sync"
@@ -15,10 +16,12 @@ import (
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
+	"github.com/luci/luci-go/common/tsmon/monitor"
 	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
 
+	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -41,139 +44,441 @@ type TestOptions struct {
 // implementations are expected to pass.  When you write a new Store
 // implementation you should ensure you run these tests against it.
 func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOptions) {
-	Convey("Register, set and get", t, func() {
-		Convey("Registered metric with no fields", func() {
-			s := opts.Factory()
+	distOne := distribution.New(distribution.DefaultBucketer)
+	distOne.Add(4.2)
 
-			m := &fakeMetric{"foo", []field.Field{}, types.NonCumulativeIntType}
-			s.Register(m)
+	distTwo := distribution.New(distribution.DefaultBucketer)
+	distTwo.Add(5.6)
+	distTwo.Add(1.0)
 
-			Convey("Initial Get should return nil", func() {
-				v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
-				So(v, ShouldBeNil)
-				So(err, ShouldBeNil)
-			})
+	tests := []struct {
+		typ      types.ValueType
+		bucketer *distribution.Bucketer
 
-			Convey("Set and Get", func() {
-				err := s.Set(ctx, m, time.Time{}, []interface{}{}, int64(42))
-				So(err, ShouldBeNil)
+		values           []interface{}
+		wantSetSuccess   bool
+		wantSetValidator func(interface{}, interface{})
 
-				v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
-				So(v, ShouldEqual, int64(42))
-				So(err, ShouldBeNil)
-			})
+		deltas            []interface{}
+		wantIncrSuccess   bool
+		wantIncrValue     interface{}
+		wantIncrValidator func(interface{})
+	}{
+		{
+			typ:             types.CumulativeIntType,
+			values:          makeInterfaceSlice(int64(3), int64(4)),
+			deltas:          makeInterfaceSlice(int64(3), int64(4)),
+			wantSetSuccess:  false,
+			wantIncrSuccess: true,
+			wantIncrValue:   int64(7),
+		},
+		{
+			typ:             types.CumulativeFloatType,
+			values:          makeInterfaceSlice(float64(3.2), float64(4.3)),
+			deltas:          makeInterfaceSlice(float64(3.2), float64(4.3)),
+			wantSetSuccess:  false,
+			wantIncrSuccess: true,
+			wantIncrValue:   float64(7.5),
+		},
+		{
+			typ:             types.CumulativeDistributionType,
+			bucketer:        distribution.DefaultBucketer,
+			values:          makeInterfaceSlice(distOne, distTwo),
+			deltas:          makeInterfaceSlice(float64(3.2), float64(5.3)),
+			wantSetSuccess:  false,
+			wantIncrSuccess: true,
+			wantIncrValidator: func(v interface{}) {
+				d := v.(*distribution.Distribution)
+				So(d.Buckets(), ShouldResemble, []int64{0, 0, 0, 0, 1, 1})
+			},
+		},
+		{
+			typ:              types.NonCumulativeIntType,
+			values:           makeInterfaceSlice(int64(3), int64(4)),
+			deltas:           makeInterfaceSlice(int64(3), int64(4)),
+			wantSetSuccess:   true,
+			wantIncrSuccess:  false,
+			wantSetValidator: func(got, want interface{}) { So(got, ShouldEqual, want) },
+		},
+		{
+			typ:              types.NonCumulativeFloatType,
+			values:           makeInterfaceSlice(float64(3.2), float64(4.3)),
+			deltas:           makeInterfaceSlice(float64(3.2), float64(4.3)),
+			wantSetSuccess:   true,
+			wantIncrSuccess:  false,
+			wantSetValidator: func(got, want interface{}) { So(got, ShouldEqual, want) },
+		},
+		{
+			typ:             types.NonCumulativeDistributionType,
+			bucketer:        distribution.DefaultBucketer,
+			values:          makeInterfaceSlice(distOne, distTwo),
+			deltas:          makeInterfaceSlice(float64(3.2), float64(5.3)),
+			wantSetSuccess:  true,
+			wantIncrSuccess: false,
+			wantSetValidator: func(got, want interface{}) {
+				// The distribution might be serialized/deserialized and lose sums and
+				// counts.
+				So(got.(*distribution.Distribution).Buckets(), ShouldResemble,
+					want.(*distribution.Distribution).Buckets())
+			},
+		},
+		{
+			typ:              types.StringType,
+			values:           makeInterfaceSlice("hello", "world"),
+			deltas:           makeInterfaceSlice("hello", "world"),
+			wantSetSuccess:   true,
+			wantIncrSuccess:  false,
+			wantSetValidator: func(got, want interface{}) { So(got, ShouldEqual, want) },
+		},
+		{
+			typ:              types.BoolType,
+			values:           makeInterfaceSlice(true, false),
+			deltas:           makeInterfaceSlice(true, false),
+			wantSetSuccess:   true,
+			wantIncrSuccess:  false,
+			wantSetValidator: func(got, want interface{}) { So(got, ShouldEqual, want) },
+		},
+	}
+
+	Convey("Set and get", t, func() {
+		Convey("With no fields", func() {
+			for i, test := range tests {
+				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+					var m types.Metric
+					if test.bucketer != nil {
+						m = &fakeDistributionMetric{fakeMetric{"m", []field.Field{}, test.typ}, test.bucketer}
+					} else {
+						m = &fakeMetric{"m", []field.Field{}, test.typ}
+					}
+
+					s := opts.Factory()
+					s.Register(m)
+
+					// Value should be nil initially.
+					v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
+					So(err, ShouldBeNil)
+					So(v, ShouldBeNil)
+
+					// Set and get the value.
+					err = s.Set(ctx, m, time.Time{}, []interface{}{}, test.values[0])
+					if !test.wantSetSuccess {
+						So(err, ShouldNotBeNil)
+					} else {
+						So(err, ShouldBeNil)
+						v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
+						So(err, ShouldBeNil)
+						test.wantSetValidator(v, test.values[0])
+					}
+				})
+			}
 		})
 
-		Convey("Registered metric with a field", func() {
-			s := opts.Factory()
+		Convey("With fields", func() {
+			for i, test := range tests {
+				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+					var m types.Metric
+					if test.bucketer != nil {
+						m = &fakeDistributionMetric{fakeMetric{"m", []field.Field{field.String("f")}, test.typ}, test.bucketer}
+					} else {
+						m = &fakeMetric{"m", []field.Field{field.String("f")}, test.typ}
+					}
 
-			m := &fakeMetric{"foo", []field.Field{field.String("f")}, types.NonCumulativeIntType}
-			s.Register(m)
+					s := opts.Factory()
+					s.Register(m)
 
-			Convey("Initial Get should return nil", func() {
-				v, err := s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
-				So(v, ShouldBeNil)
-				So(err, ShouldBeNil)
-			})
+					// Values should be nil initially.
+					v, err := s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
+					So(err, ShouldBeNil)
+					So(v, ShouldBeNil)
+					v, err = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
+					So(err, ShouldBeNil)
+					So(v, ShouldBeNil)
 
-			Convey("Set and Get", func() {
-				So(s.Set(ctx, m, time.Time{}, makeInterfaceSlice("one"), int64(111)), ShouldBeNil)
-				So(s.Set(ctx, m, time.Time{}, makeInterfaceSlice("two"), int64(222)), ShouldBeNil)
-				So(s.Set(ctx, m, time.Time{}, makeInterfaceSlice(""), int64(333)), ShouldBeNil)
+					// Set and get the values.
+					err = s.Set(ctx, m, time.Time{}, makeInterfaceSlice("one"), test.values[0])
+					if !test.wantSetSuccess {
+						So(err, ShouldNotBeNil)
+					} else {
+						So(err, ShouldBeNil)
+					}
 
-				v, err := s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
-				So(v, ShouldEqual, int64(111))
-				So(err, ShouldBeNil)
+					err = s.Set(ctx, m, time.Time{}, makeInterfaceSlice("two"), test.values[1])
+					if !test.wantSetSuccess {
+						So(err, ShouldNotBeNil)
+						return
+					}
+					So(err, ShouldBeNil)
 
-				v, err = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
-				So(v, ShouldEqual, int64(222))
-				So(err, ShouldBeNil)
+					v, err = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
+					So(err, ShouldBeNil)
+					test.wantSetValidator(v, test.values[0])
+					v, err = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
+					So(err, ShouldBeNil)
+					test.wantSetValidator(v, test.values[1])
+				})
+			}
+		})
 
-				v, err = s.Get(ctx, m, time.Time{}, makeInterfaceSlice(""))
-				So(v, ShouldEqual, int64(333))
-				So(err, ShouldBeNil)
-			})
+		Convey("With a fixed reset time", func() {
+			for i, test := range tests {
+				if !test.wantSetSuccess {
+					continue
+				}
+
+				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+					var m types.Metric
+					if test.bucketer != nil {
+						m = &fakeDistributionMetric{fakeMetric{"m", []field.Field{}, test.typ}, test.bucketer}
+					} else {
+						m = &fakeMetric{"m", []field.Field{}, test.typ}
+					}
+
+					s := opts.Factory()
+					s.Register(m)
+					opts.RegistrationFinished(s)
+
+					// Do the set with a fixed time.
+					t := time.Date(1972, 5, 6, 7, 8, 9, 0, time.UTC)
+					So(s.Set(ctx, m, t, []interface{}{}, test.values[0]), ShouldBeNil)
+
+					v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
+					So(err, ShouldBeNil)
+					test.wantSetValidator(v, test.values[0])
+
+					// Check the time in the Cell is the same.
+					all := s.GetAll(ctx)
+					So(len(all), ShouldEqual, 1)
+
+					msg := monitor.SerializeCell(all[0])
+					So(time.Unix(0, int64(msg.GetStartTimestampUs()*uint64(time.Microsecond))).UTC().String(),
+						ShouldEqual, t.String())
+				})
+			}
+		})
+
+		Convey("With a target set in the context", func() {
+			for i, test := range tests {
+				if !test.wantSetSuccess {
+					continue
+				}
+
+				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+					var m types.Metric
+					if test.bucketer != nil {
+						m = &fakeDistributionMetric{fakeMetric{"m", []field.Field{}, test.typ}, test.bucketer}
+					} else {
+						m = &fakeMetric{"m", []field.Field{}, test.typ}
+					}
+
+					s := opts.Factory()
+					s.Register(m)
+					opts.RegistrationFinished(s)
+
+					// Create a context with a different target.
+					t := target.Task{}
+					t.AsProto().ServiceName = proto.String("foo")
+					ctxWithTarget := target.Set(ctx, &t)
+
+					// Set the first value on the default target, second value on the
+					// different target.
+					So(s.Set(ctx, m, time.Time{}, []interface{}{}, test.values[0]), ShouldBeNil)
+					So(s.Set(ctxWithTarget, m, time.Time{}, []interface{}{}, test.values[1]), ShouldBeNil)
+
+					// Get should return different values for different contexts.
+					v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
+					So(err, ShouldBeNil)
+					test.wantSetValidator(v, test.values[0])
+
+					v, err = s.Get(ctxWithTarget, m, time.Time{}, []interface{}{})
+					So(err, ShouldBeNil)
+					test.wantSetValidator(v, test.values[1])
+
+					// The targets should be set in the Cells.
+					all := s.GetAll(ctx)
+					So(len(all), ShouldEqual, 2)
+
+					coll := monitor.SerializeCells(all)
+					sort.Sort(sortableDataSlice(coll.Data))
+					So(coll.Data[0].Task.GetServiceName(), ShouldEqual,
+						s.DefaultTarget().(*target.Task).AsProto().GetServiceName())
+					So(coll.Data[1].Task.GetServiceName(), ShouldEqual, t.AsProto().GetServiceName())
+				})
+			}
 		})
 	})
 
-	Convey("Increment", t, func() {
-		Convey("Increments from 0 to 1", func() {
-			Convey("Int64 type", func() {
-				s := opts.Factory()
-				m := &fakeMetric{"m", []field.Field{}, types.CumulativeIntType}
-				s.Register(m)
+	Convey("Increment and get", t, func() {
+		Convey("With no fields", func() {
+			for i, test := range tests {
+				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+					var m types.Metric
+					if test.bucketer != nil {
+						m = &fakeDistributionMetric{fakeMetric{"m", []field.Field{}, test.typ}, test.bucketer}
+					} else {
+						m = &fakeMetric{"m", []field.Field{}, test.typ}
+					}
 
-				So(s.Incr(ctx, m, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
+					s := opts.Factory()
+					s.Register(m)
 
-				v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
-				So(v, ShouldEqual, 1)
-				So(err, ShouldBeNil)
-			})
+					// Value should be nil initially.
+					v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
+					So(err, ShouldBeNil)
+					So(v, ShouldBeNil)
 
-			Convey("Float64 type", func() {
-				s := opts.Factory()
-				m := &fakeMetric{"m", []field.Field{}, types.CumulativeFloatType}
-				s.Register(m)
-				So(s.Incr(ctx, m, time.Time{}, []interface{}{}, float64(1)), ShouldBeNil)
+					// Increment the metric.
+					for _, delta := range test.deltas {
+						err = s.Incr(ctx, m, time.Time{}, []interface{}{}, delta)
 
-				v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
-				So(v, ShouldEqual, 1.0)
-				So(err, ShouldBeNil)
-			})
+						if !test.wantIncrSuccess {
+							So(err, ShouldNotBeNil)
+						} else {
+							So(err, ShouldBeNil)
+						}
+					}
 
-			Convey("String type", func() {
-				s := opts.Factory()
-				m := &fakeMetric{"m", []field.Field{}, types.StringType}
-				s.Register(m)
-				So(s.Incr(ctx, m, time.Time{}, []interface{}{}, "1"), ShouldNotBeNil)
-			})
+					// Get the final value.
+					v, err = s.Get(ctx, m, time.Time{}, []interface{}{})
+					So(err, ShouldBeNil)
 
-			Convey("Bool type", func() {
-				s := opts.Factory()
-				m := &fakeMetric{"m", []field.Field{}, types.BoolType}
-				s.Register(m)
-				So(s.Incr(ctx, m, time.Time{}, []interface{}{}, "1"), ShouldNotBeNil)
-			})
-
-			Convey("Non-cumulative int type", func() {
-				s := opts.Factory()
-				m := &fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType}
-				s.Register(m)
-				So(s.Incr(ctx, m, time.Time{}, []interface{}{}, int64(1)), ShouldNotBeNil)
-			})
-
-			Convey("Non-cumulative float type", func() {
-				s := opts.Factory()
-				m := &fakeMetric{"m", []field.Field{}, types.NonCumulativeFloatType}
-				s.Register(m)
-				So(s.Incr(ctx, m, time.Time{}, []interface{}{}, float64(1)), ShouldNotBeNil)
-			})
+					if test.wantIncrValue != nil {
+						So(v, ShouldEqual, test.wantIncrValue)
+					} else if test.wantIncrValidator != nil {
+						test.wantIncrValidator(v)
+					}
+				})
+			}
 		})
 
-		Convey("Increments from 42 to 43", func() {
-			Convey("Int64 type", func() {
-				s := opts.Factory()
-				m := &fakeMetric{"m", []field.Field{}, types.CumulativeIntType}
-				s.Register(m)
-				So(s.Set(ctx, m, time.Time{}, []interface{}{}, int64(42)), ShouldBeNil)
-				So(s.Incr(ctx, m, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
+		Convey("With fields", func() {
+			for i, test := range tests {
+				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+					var m types.Metric
+					if test.bucketer != nil {
+						m = &fakeDistributionMetric{fakeMetric{"m", []field.Field{field.String("f")}, test.typ}, test.bucketer}
+					} else {
+						m = &fakeMetric{"m", []field.Field{field.String("f")}, test.typ}
+					}
 
-				v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
-				So(v, ShouldEqual, int64(43))
-				So(err, ShouldBeNil)
-			})
+					s := opts.Factory()
+					s.Register(m)
 
-			Convey("Float64 type", func() {
-				s := opts.Factory()
-				m := &fakeMetric{"m", []field.Field{}, types.CumulativeFloatType}
-				s.Register(m)
-				So(s.Set(ctx, m, time.Time{}, []interface{}{}, float64(42)), ShouldBeNil)
-				So(s.Incr(ctx, m, time.Time{}, []interface{}{}, float64(1)), ShouldBeNil)
+					// Values should be nil initially.
+					v, err := s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
+					So(err, ShouldBeNil)
+					So(v, ShouldBeNil)
+					v, err = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
+					So(err, ShouldBeNil)
+					So(v, ShouldBeNil)
 
-				v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
-				So(v, ShouldEqual, float64(43))
-				So(err, ShouldBeNil)
-			})
+					// Increment one cell.
+					for _, delta := range test.deltas {
+						err = s.Incr(ctx, m, time.Time{}, makeInterfaceSlice("one"), delta)
+
+						if !test.wantIncrSuccess {
+							So(err, ShouldNotBeNil)
+						} else {
+							So(err, ShouldBeNil)
+						}
+					}
+
+					// Get the final value.
+					v, err = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
+					So(err, ShouldBeNil)
+
+					if test.wantIncrValue != nil {
+						So(v, ShouldEqual, test.wantIncrValue)
+					} else if test.wantIncrValidator != nil {
+						test.wantIncrValidator(v)
+					}
+
+					// Another cell should still be nil.
+					v, err = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
+					So(err, ShouldBeNil)
+					So(v, ShouldBeNil)
+				})
+			}
+		})
+
+		Convey("With a fixed reset time", func() {
+			for i, test := range tests {
+				if !test.wantIncrSuccess {
+					continue
+				}
+
+				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+					var m types.Metric
+					if test.bucketer != nil {
+						m = &fakeDistributionMetric{fakeMetric{"m", []field.Field{}, test.typ}, test.bucketer}
+					} else {
+						m = &fakeMetric{"m", []field.Field{}, test.typ}
+					}
+
+					s := opts.Factory()
+					s.Register(m)
+					opts.RegistrationFinished(s)
+
+					// Do the incr with a fixed time.
+					t := time.Date(1972, 5, 6, 7, 8, 9, 0, time.UTC)
+					So(s.Incr(ctx, m, t, []interface{}{}, test.deltas[0]), ShouldBeNil)
+
+					// Check the time in the Cell is the same.
+					all := s.GetAll(ctx)
+					So(len(all), ShouldEqual, 1)
+
+					msg := monitor.SerializeCell(all[0])
+					So(time.Unix(0, int64(msg.GetStartTimestampUs()*uint64(time.Microsecond))).UTC().String(),
+						ShouldEqual, t.String())
+				})
+			}
+		})
+
+		Convey("With a target set in the context", func() {
+			for i, test := range tests {
+				if !test.wantIncrSuccess {
+					continue
+				}
+
+				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+					var m types.Metric
+					if test.bucketer != nil {
+						m = &fakeDistributionMetric{fakeMetric{"m", []field.Field{}, test.typ}, test.bucketer}
+					} else {
+						m = &fakeMetric{"m", []field.Field{}, test.typ}
+					}
+
+					s := opts.Factory()
+					s.Register(m)
+					opts.RegistrationFinished(s)
+
+					// Create a context with a different target.
+					t := target.Task{}
+					t.AsProto().ServiceName = proto.String("foo")
+					ctxWithTarget := target.Set(ctx, &t)
+
+					// Incr the first delta on the default target, second delta on the
+					// different target.
+					So(s.Incr(ctx, m, time.Time{}, []interface{}{}, test.deltas[0]), ShouldBeNil)
+					So(s.Incr(ctxWithTarget, m, time.Time{}, []interface{}{}, test.deltas[1]), ShouldBeNil)
+
+					// Get should return different values for different contexts.
+					v1, err := s.Get(ctx, m, time.Time{}, []interface{}{})
+					So(err, ShouldBeNil)
+					v2, err := s.Get(ctxWithTarget, m, time.Time{}, []interface{}{})
+					So(err, ShouldBeNil)
+					So(v1, ShouldNotEqual, v2)
+
+					// The targets should be set in the Cells.
+					all := s.GetAll(ctx)
+					So(len(all), ShouldEqual, 2)
+
+					coll := monitor.SerializeCells(all)
+					sort.Sort(sortableDataSlice(coll.Data))
+					So(coll.Data[0].Task.GetServiceName(), ShouldEqual,
+						s.DefaultTarget().(*target.Task).AsProto().GetServiceName())
+					So(coll.Data[1].Task.GetServiceName(), ShouldEqual, t.AsProto().GetServiceName())
+				})
+			}
 		})
 	})
 
@@ -183,7 +488,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 		s := opts.Factory()
 		foo := &fakeMetric{"foo", []field.Field{}, types.NonCumulativeIntType}
 		bar := &fakeMetric{"bar", []field.Field{field.String("f")}, types.StringType}
-		baz := &fakeMetric{"baz", []field.Field{field.String("f")}, types.CumulativeFloatType}
+		baz := &fakeMetric{"baz", []field.Field{field.String("f")}, types.NonCumulativeFloatType}
 		s.Register(foo)
 		s.Register(bar)
 		s.Register(baz)
@@ -246,7 +551,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 				types.MetricInfo{
 					Name:      "baz",
 					Fields:    []field.Field{field.String("f")},
-					ValueType: types.CumulativeFloatType,
+					ValueType: types.NonCumulativeFloatType,
 				},
 				types.CellData{
 					FieldVals: makeInterfaceSlice("three"),
@@ -257,7 +562,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 				types.MetricInfo{
 					Name:      "baz",
 					Fields:    []field.Field{field.String("f")},
-					ValueType: types.CumulativeFloatType,
+					ValueType: types.NonCumulativeFloatType,
 				},
 				types.CellData{
 					FieldVals: makeInterfaceSlice("four"),
@@ -278,46 +583,6 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 				So(g.Value, ShouldEqual, w.Value)
 			})
 		}
-	})
-
-	Convey("Fixed reset time", t, func() {
-		Convey("Incr", func() {
-			s := opts.Factory()
-			m := &fakeMetric{"m", []field.Field{}, types.CumulativeIntType}
-			s.Register(m)
-			opts.RegistrationFinished(s)
-
-			t := time.Date(1234, 5, 6, 7, 8, 9, 10, time.UTC)
-			So(s.Incr(ctx, m, t, []interface{}{}, int64(1)), ShouldBeNil)
-			So(s.Incr(ctx, m, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
-
-			v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
-			So(v, ShouldEqual, 2)
-			So(err, ShouldBeNil)
-
-			all := s.GetAll(ctx)
-			So(len(all), ShouldEqual, 1)
-			So(all[0].ResetTime.String(), ShouldEqual, t.String())
-		})
-
-		Convey("Set", func() {
-			s := opts.Factory()
-			m := &fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType}
-			s.Register(m)
-			opts.RegistrationFinished(s)
-
-			t := time.Date(1234, 5, 6, 7, 8, 9, 10, time.UTC)
-			So(s.Set(ctx, m, t, []interface{}{}, int64(42)), ShouldBeNil)
-			So(s.Set(ctx, m, time.Time{}, []interface{}{}, int64(43)), ShouldBeNil)
-
-			v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
-			So(v, ShouldEqual, 43)
-			So(err, ShouldBeNil)
-
-			all := s.GetAll(ctx)
-			So(len(all), ShouldEqual, 1)
-			So(all[0].ResetTime.String(), ShouldEqual, t.String())
-		})
 	})
 
 	Convey("Concurrency", t, func() {
@@ -410,3 +675,13 @@ func (s sortableCellSlice) Less(i, j int) bool {
 	return s[i].ResetTime.UnixNano() < s[j].ResetTime.UnixNano()
 }
 func (s sortableCellSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+type sortableDataSlice []*pb.MetricsData
+
+func (s sortableDataSlice) Len() int { return len(s) }
+func (s sortableDataSlice) Less(i, j int) bool {
+	a, _ := proto.Marshal(s[i])
+	b, _ := proto.Marshal(s[j])
+	return bytes.Compare(a, b) > 0
+}
+func (s sortableDataSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }

@@ -4,6 +4,10 @@
 
 package types
 
+import (
+	"fmt"
+)
+
 // ValueType is an enum for the type of a metric.
 type ValueType int
 
@@ -18,3 +22,25 @@ const (
 	NonCumulativeDistributionType
 	CumulativeDistributionType
 )
+
+func (v ValueType) String() string {
+	switch v {
+	case NonCumulativeIntType:
+		return "NonCumulativeIntType"
+	case CumulativeIntType:
+		return "CumulativeIntType"
+	case NonCumulativeFloatType:
+		return "NonCumulativeFloatType"
+	case CumulativeFloatType:
+		return "CumulativeFloatType"
+	case StringType:
+		return "StringType"
+	case BoolType:
+		return "BoolType"
+	case NonCumulativeDistributionType:
+		return "NonCumulativeDistributionType"
+	case CumulativeDistributionType:
+		return "CumulativeDistributionType"
+	}
+	panic(fmt.Sprintf("unknown ValueType %d", v))
+}
