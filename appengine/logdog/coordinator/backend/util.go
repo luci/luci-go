@@ -81,72 +81,69 @@ func (b *Backend) multiTask(c context.Context, q string, f func(chan<- *tq.Task)
 	}
 
 	ti := tq.Get(c)
-	send := func(tasks []*tq.Task) errors.MultiError {
-		if len(tasks) == 0 {
-			return nil
+	send := func(tasks []*tq.Task) int {
+		sent := len(tasks)
+		if sent == 0 {
+			return 0
 		}
 
-		// Add the tasks. If an error occurs, log each specific error, then
-		var merr errors.MultiError
-		err := ti.AddMulti(tasks, q)
-		if err != nil {
+		// Add the tasks. If an error occurs, log each specific error.
+		if err := errors.Filter(ti.AddMulti(tasks, q), tq.ErrTaskAlreadyAdded); err != nil {
 			switch t := err.(type) {
 			case errors.MultiError:
-				for _, e := range t {
-					switch e {
-					case tq.ErrTaskAlreadyAdded:
-						break
-
-					default:
-						merr = append(merr, t...)
+				// Some tasks failed to be added.
+				for i, e := range t {
+					if e != nil {
+						log.Fields{
+							log.ErrorKey: e,
+							"index":      i,
+							"taskPath":   tasks[i].Path,
+							"taskParams": string(tasks[i].Payload),
+						}.Errorf(c, "Failed to add task queue task.")
+						sent--
 					}
 				}
 
 			default:
-				log.WithError(t).Errorf(c, "Failed to add tasks.")
-				merr = append(merr, t)
+				// General AddMulti error.
+				log.WithError(t).Errorf(c, "Failed to add task queue tasks.")
+				return 0
 			}
 		}
-		return merr
+
+		return sent
 	}
 
-	count := 0
-	taskC := make(chan *tq.Task)
-	errC := make(chan errors.MultiError)
+	// Run our generator function in a separate goroutine.
+	taskC := make(chan *tq.Task, batch)
 	go func() {
-		var merr errors.MultiError
-		defer func() {
-			errC <- merr
-			close(errC)
-		}()
-
-		tasks := make([]*tq.Task, 0, batch)
-		for t := range taskC {
-			count++
-
-			tasks = append(tasks, t)
-			if len(tasks) >= batch {
-				if err := send(tasks); err != nil {
-					merr = append(merr, err...)
-				}
-				tasks = tasks[:0]
-			}
-		}
-
-		// Final send, in case a not-full batch of tasks built up.
-		merr = append(merr, send(tasks)...)
-		return
-	}()
-
-	func() {
 		defer close(taskC)
 		f(taskC)
 	}()
 
-	merr := <-errC
-	for _, e := range merr {
-		log.WithError(e).Errorf(c, "Failed to add task.")
+	// Pull tasks from our task channel and dispatch them in batches via send.
+	tasks := make([]*tq.Task, 0, batch)
+	var total, numSent int
+	for t := range taskC {
+		total++
+
+		tasks = append(tasks, t)
+		if len(tasks) >= batch {
+			numSent += send(tasks)
+			tasks = tasks[:0]
+		}
+
 	}
-	count -= len(merr)
-	return count, errors.SingleError(merr)
+
+	// Final send, in case a not-full batch of tasks built up.
+	numSent += send(tasks)
+
+	if numSent != total {
+		log.Fields{
+			"total": total,
+			"added": numSent,
+		}.Errorf(c, "Not all tasks could be added.")
+		return numSent, errors.New("error adding tasks")
+	}
+	return numSent, nil
 }

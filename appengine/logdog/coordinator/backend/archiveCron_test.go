@@ -5,7 +5,6 @@
 package backend
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -21,6 +20,7 @@ import (
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 
@@ -199,12 +199,33 @@ func TestHandleArchiveCron(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(resp.StatusCode, ShouldEqual, http.StatusOK)
 						So(tq.Get(c).Testable().GetScheduledTasks()[qName], shouldHaveTasks, taskNames...)
+
+						Convey(`Will be successful when rescheduling the same tasks.`, func() {
+							resp, err := http.Get(fmt.Sprintf("%s/archive/cron/terminal", s.URL))
+							So(err, ShouldBeNil)
+							So(resp.StatusCode, ShouldEqual, http.StatusOK)
+							So(tq.Get(c).Testable().GetScheduledTasks()[qName], shouldHaveTasks, taskNames...)
+						})
 					})
 
 					Convey(`Will return an error if task scheduling fails.`, func() {
 						c, fb := featureBreaker.FilterTQ(c, nil)
 						tb.Context = c
 						fb.BreakFeatures(errors.New("test error"), "AddMulti")
+
+						// Ensure that all of these tasks get added to the task queue.
+						resp, err := http.Get(fmt.Sprintf("%s/archive/cron/terminal", s.URL))
+						So(err, ShouldBeNil)
+						So(resp.StatusCode, ShouldEqual, http.StatusInternalServerError)
+					})
+
+					Convey(`Will return an error if a single task scheduling fails.`, func() {
+						merr := make(errors.MultiError, len(names))
+						merr[0] = errors.New("test error")
+
+						c, fb := featureBreaker.FilterTQ(c, nil)
+						tb.Context = c
+						fb.BreakFeatures(merr, "AddMulti")
 
 						// Ensure that all of these tasks get added to the task queue.
 						resp, err := http.Get(fmt.Sprintf("%s/archive/cron/terminal", s.URL))
@@ -221,13 +242,5 @@ func TestHandleArchiveCron(t *testing.T) {
 				})
 			})
 		})
-	})
-}
-
-func TestPurgeArchiveCron(t *testing.T) {
-	t.Parallel()
-
-	Convey(`A testing environment`, t, func() {
-
 	})
 }
