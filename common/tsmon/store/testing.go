@@ -1,6 +1,7 @@
 // Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+
 package store
 
 import (
@@ -21,82 +22,75 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func makeInterfaceSlice(v ...interface{}) []interface{} {
-	return v
+// TestOptions contains options for RunStoreImplementationTests.
+type TestOptions struct {
+	// Factory creates and returns a new Store implementation.
+	Factory func() Store
+
+	// RegistrationFinished is called after all metrics have been registered.
+	// Store implementations that need to do expensive initialization (that would
+	// otherwise be done in iface.go) can do that here.
+	RegistrationFinished func(Store)
+
+	// GetNumRegisteredMetrics returns the number of metrics registered in the
+	// store.
+	GetNumRegisteredMetrics func(Store) int
 }
 
-type fakeMetric types.MetricInfo
-
-func (m *fakeMetric) Info() types.MetricInfo        { return types.MetricInfo(*m) }
-func (m *fakeMetric) SetFixedResetTime(t time.Time) {}
-
-type fakeDistributionMetric struct {
-	fakeMetric
-
-	bucketer *distribution.Bucketer
-}
-
-func (m *fakeDistributionMetric) Bucketer() *distribution.Bucketer { return m.bucketer }
-
-type sortableCellSlice []types.Cell
-
-func (s sortableCellSlice) Len() int { return len(s) }
-func (s sortableCellSlice) Less(i, j int) bool {
-	return s[i].ResetTime.UnixNano() < s[j].ResetTime.UnixNano()
-}
-func (s sortableCellSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-
-func testStoreImplementation(t *testing.T, factory func() Store) {
-	ctx := context.Background()
-
+// RunStoreImplementationTests runs all the standard tests that all store
+// implementations are expected to pass.  When you write a new Store
+// implementation you should ensure you run these tests against it.
+func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOptions) {
 	Convey("Register, set and get", t, func() {
 		Convey("Registered metric with no fields", func() {
-			s := factory()
-			foo := &fakeMetric{"foo", []field.Field{}, types.NonCumulativeIntType}
-			s.Register(foo)
+			s := opts.Factory()
+
+			m := &fakeMetric{"foo", []field.Field{}, types.NonCumulativeIntType}
+			s.Register(m)
 
 			Convey("Initial Get should return nil", func() {
-				v, err := s.Get(ctx, foo, time.Time{}, []interface{}{})
+				v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
 				So(v, ShouldBeNil)
 				So(err, ShouldBeNil)
 			})
 
 			Convey("Set and Get", func() {
-				err := s.Set(ctx, foo, time.Time{}, []interface{}{}, "value")
+				err := s.Set(ctx, m, time.Time{}, []interface{}{}, int64(42))
 				So(err, ShouldBeNil)
 
-				v, err := s.Get(ctx, foo, time.Time{}, []interface{}{})
-				So(v, ShouldEqual, "value")
+				v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
+				So(v, ShouldEqual, int64(42))
 				So(err, ShouldBeNil)
 			})
 		})
 
 		Convey("Registered metric with a field", func() {
-			s := factory()
-			foo := &fakeMetric{"foo", []field.Field{field.String("f")}, types.NonCumulativeIntType}
-			s.Register(foo)
+			s := opts.Factory()
+
+			m := &fakeMetric{"foo", []field.Field{field.String("f")}, types.NonCumulativeIntType}
+			s.Register(m)
 
 			Convey("Initial Get should return nil", func() {
-				v, err := s.Get(ctx, foo, time.Time{}, makeInterfaceSlice("one"))
+				v, err := s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
 				So(v, ShouldBeNil)
 				So(err, ShouldBeNil)
 			})
 
 			Convey("Set and Get", func() {
-				So(s.Set(ctx, foo, time.Time{}, makeInterfaceSlice("one"), 111), ShouldBeNil)
-				So(s.Set(ctx, foo, time.Time{}, makeInterfaceSlice("two"), 222), ShouldBeNil)
-				So(s.Set(ctx, foo, time.Time{}, makeInterfaceSlice(""), 333), ShouldBeNil)
+				So(s.Set(ctx, m, time.Time{}, makeInterfaceSlice("one"), int64(111)), ShouldBeNil)
+				So(s.Set(ctx, m, time.Time{}, makeInterfaceSlice("two"), int64(222)), ShouldBeNil)
+				So(s.Set(ctx, m, time.Time{}, makeInterfaceSlice(""), int64(333)), ShouldBeNil)
 
-				v, err := s.Get(ctx, foo, time.Time{}, makeInterfaceSlice("one"))
-				So(v, ShouldEqual, 111)
+				v, err := s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
+				So(v, ShouldEqual, int64(111))
 				So(err, ShouldBeNil)
 
-				v, err = s.Get(ctx, foo, time.Time{}, makeInterfaceSlice("two"))
-				So(v, ShouldEqual, 222)
+				v, err = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
+				So(v, ShouldEqual, int64(222))
 				So(err, ShouldBeNil)
 
-				v, err = s.Get(ctx, foo, time.Time{}, makeInterfaceSlice(""))
-				So(v, ShouldEqual, 333)
+				v, err = s.Get(ctx, m, time.Time{}, makeInterfaceSlice(""))
+				So(v, ShouldEqual, int64(333))
 				So(err, ShouldBeNil)
 			})
 		})
@@ -105,9 +99,10 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 	Convey("Increment", t, func() {
 		Convey("Increments from 0 to 1", func() {
 			Convey("Int64 type", func() {
-				s := factory()
+				s := opts.Factory()
 				m := &fakeMetric{"m", []field.Field{}, types.CumulativeIntType}
 				s.Register(m)
+
 				So(s.Incr(ctx, m, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
 
 				v, err := s.Get(ctx, m, time.Time{}, []interface{}{})
@@ -116,7 +111,7 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 			})
 
 			Convey("Float64 type", func() {
-				s := factory()
+				s := opts.Factory()
 				m := &fakeMetric{"m", []field.Field{}, types.CumulativeFloatType}
 				s.Register(m)
 				So(s.Incr(ctx, m, time.Time{}, []interface{}{}, float64(1)), ShouldBeNil)
@@ -127,16 +122,37 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 			})
 
 			Convey("String type", func() {
-				s := factory()
+				s := opts.Factory()
 				m := &fakeMetric{"m", []field.Field{}, types.StringType}
 				s.Register(m)
 				So(s.Incr(ctx, m, time.Time{}, []interface{}{}, "1"), ShouldNotBeNil)
+			})
+
+			Convey("Bool type", func() {
+				s := opts.Factory()
+				m := &fakeMetric{"m", []field.Field{}, types.BoolType}
+				s.Register(m)
+				So(s.Incr(ctx, m, time.Time{}, []interface{}{}, "1"), ShouldNotBeNil)
+			})
+
+			Convey("Non-cumulative int type", func() {
+				s := opts.Factory()
+				m := &fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType}
+				s.Register(m)
+				So(s.Incr(ctx, m, time.Time{}, []interface{}{}, int64(1)), ShouldNotBeNil)
+			})
+
+			Convey("Non-cumulative float type", func() {
+				s := opts.Factory()
+				m := &fakeMetric{"m", []field.Field{}, types.NonCumulativeFloatType}
+				s.Register(m)
+				So(s.Incr(ctx, m, time.Time{}, []interface{}{}, float64(1)), ShouldNotBeNil)
 			})
 		})
 
 		Convey("Increments from 42 to 43", func() {
 			Convey("Int64 type", func() {
-				s := factory()
+				s := opts.Factory()
 				m := &fakeMetric{"m", []field.Field{}, types.CumulativeIntType}
 				s.Register(m)
 				So(s.Set(ctx, m, time.Time{}, []interface{}{}, int64(42)), ShouldBeNil)
@@ -148,7 +164,7 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 			})
 
 			Convey("Float64 type", func() {
-				s := factory()
+				s := opts.Factory()
 				m := &fakeMetric{"m", []field.Field{}, types.CumulativeFloatType}
 				s.Register(m)
 				So(s.Set(ctx, m, time.Time{}, []interface{}{}, float64(42)), ShouldBeNil)
@@ -164,13 +180,14 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 	Convey("GetAll", t, func() {
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 
-		s := factory()
+		s := opts.Factory()
 		foo := &fakeMetric{"foo", []field.Field{}, types.NonCumulativeIntType}
 		bar := &fakeMetric{"bar", []field.Field{field.String("f")}, types.StringType}
 		baz := &fakeMetric{"baz", []field.Field{field.String("f")}, types.CumulativeFloatType}
 		s.Register(foo)
 		s.Register(bar)
 		s.Register(baz)
+		opts.RegistrationFinished(s)
 
 		// Add test records. We increment the test clock each time so that the added
 		// records sort deterministically using sortableCellSlice.
@@ -265,9 +282,10 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 
 	Convey("Fixed reset time", t, func() {
 		Convey("Incr", func() {
-			s := factory()
+			s := opts.Factory()
 			m := &fakeMetric{"m", []field.Field{}, types.CumulativeIntType}
 			s.Register(m)
+			opts.RegistrationFinished(s)
 
 			t := time.Date(1234, 5, 6, 7, 8, 9, 10, time.UTC)
 			So(s.Incr(ctx, m, t, []interface{}{}, int64(1)), ShouldBeNil)
@@ -283,9 +301,10 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 		})
 
 		Convey("Set", func() {
-			s := factory()
+			s := opts.Factory()
 			m := &fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType}
 			s.Register(m)
+			opts.RegistrationFinished(s)
 
 			t := time.Date(1234, 5, 6, 7, 8, 9, 10, time.UTC)
 			So(s.Set(ctx, m, t, []interface{}{}, int64(42)), ShouldBeNil)
@@ -306,7 +325,7 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 		const numGoroutines = 32
 
 		Convey("Incr", func(c C) {
-			s := factory()
+			s := opts.Factory()
 			m := &fakeMetric{"m", []field.Field{}, types.CumulativeIntType}
 			s.Register(m)
 
@@ -332,9 +351,10 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 
 	Convey("Different targets", t, func() {
 		Convey("Gets from context", func() {
-			s := factory()
+			s := opts.Factory()
 			m := &fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType}
 			s.Register(m)
+			opts.RegistrationFinished(s)
 
 			t := target.Task{}
 			t.AsProto().ServiceName = proto.String("foo")
@@ -365,3 +385,28 @@ func testStoreImplementation(t *testing.T, factory func() Store) {
 		})
 	})
 }
+
+func makeInterfaceSlice(v ...interface{}) []interface{} {
+	return v
+}
+
+type fakeMetric types.MetricInfo
+
+func (m *fakeMetric) Info() types.MetricInfo        { return types.MetricInfo(*m) }
+func (m *fakeMetric) SetFixedResetTime(t time.Time) {}
+
+type fakeDistributionMetric struct {
+	fakeMetric
+
+	bucketer *distribution.Bucketer
+}
+
+func (m *fakeDistributionMetric) Bucketer() *distribution.Bucketer { return m.bucketer }
+
+type sortableCellSlice []types.Cell
+
+func (s sortableCellSlice) Len() int { return len(s) }
+func (s sortableCellSlice) Less(i, j int) bool {
+	return s[i].ResetTime.UnixNano() < s[j].ResetTime.UnixNano()
+}
+func (s sortableCellSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }

@@ -18,9 +18,15 @@ import (
 )
 
 func TestDeferredBase(t *testing.T) {
-	testStoreImplementation(t, func() Store {
-		base := NewInMemory(&target.Task{ServiceName: proto.String("default target")})
-		return NewDeferred(base)
+	ctx := context.Background()
+	RunStoreImplementationTests(t, ctx, TestOptions{
+		Factory: func() Store {
+			return NewDeferred(NewInMemory(&target.Task{ServiceName: proto.String("default target")}))
+		},
+		RegistrationFinished: func(Store) {},
+		GetNumRegisteredMetrics: func(s Store) int {
+			return len(s.(*DeferredStore).Store.(*inMemoryStore).data)
+		},
 	})
 }
 
