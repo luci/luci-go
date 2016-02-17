@@ -9,6 +9,7 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/memcache"
+	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 )
 
@@ -60,8 +61,7 @@ func (s *dsTxnState) release(sc *supportContext) {
 		delKeys = append(delKeys, k)
 	}
 
-	err := sc.mc.DeleteMulti(delKeys)
-	if err != nil {
+	if err := errors.Filter(sc.mc.DeleteMulti(delKeys), memcache.ErrCacheMiss); err != nil {
 		(log.Fields{log.ErrorKey: err}).Warningf(
 			sc.c, "dscache: txn.release: memcache.DeleteMulti")
 	}

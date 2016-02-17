@@ -9,6 +9,7 @@ import (
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/memcache"
+	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
@@ -44,7 +45,7 @@ func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMu
 		// (so, not an issue), or because memcache is having sad times (in which
 		// case we'll see so in the GetMulti which immediately follows this).
 	}
-	if err := d.mc.GetMulti(lockItems); err != nil {
+	if err := errors.Filter(d.mc.GetMulti(lockItems), memcache.ErrCacheMiss); err != nil {
 		(log.Fields{log.ErrorKey: err}).Warningf(
 			d.c, "dscache: GetMulti: memcache.GetMulti")
 	}

@@ -11,6 +11,7 @@ import (
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/memcache"
+	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
@@ -117,7 +118,7 @@ func (s *supportContext) mutation(keys []*ds.Key, f func() error) error {
 	}
 	err := f()
 	if err == nil {
-		if err := s.mc.DeleteMulti(lockKeys); err != nil {
+		if err := errors.Filter(s.mc.DeleteMulti(lockKeys), memcache.ErrCacheMiss); err != nil {
 			(log.Fields{log.ErrorKey: err}).Warningf(
 				s.c, "dscache: mc.DeleteMulti")
 		}
