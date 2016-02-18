@@ -245,6 +245,21 @@ tr:nth-child(even){
 tr:nth-child(even) td{
   background-color: #ddd;
 }
+tr:nth-child(even) td.success{
+  color: #000;
+  background-color: #8d4;
+  border-color: #4F8530;
+}
+tr:nth-child(even) td.failure{
+  color: #000;
+  background-color: #e88;
+  border-color: #A77272;
+}
+tr:nth-child(even) td.warning{
+  color: #FFFFFF;
+  background-color: #fa3;
+  border-color: #C29D46;
+}
 
 .legend {
   border-radius: 5px !important;

@@ -1,0 +1,92 @@
+{{define "title"}}[[Insert title here]]{{end}}
+
+
+{{define "script"}}{{end}}
+
+{{define "body"}}
+
+<div class="row">
+
+  <div class="col-md-6">
+    {{ if .Builder.CurrentBuilds }}
+      <h4>Current Builds</h4>
+      <ul>
+      {{ range .Builder.CurrentBuilds }}
+        <li><a href="{{ .URL }}">{{ .Build.Summary.Label }}</a>
+          [Running for: {{ .Build.Summary.Duration }}]
+          {{ .Build.Summary.Text }}
+        </li>
+      {{ end }}
+      </ul>
+    {{ else }}
+      <h5>No current builds</h5>
+    {{ end }}
+  </div>
+
+  <div class="col-md-6">
+    {{ if .Builder.CurrentBuilds }}
+      <h4>Pending Build Requests</h4>
+      <ul>
+      {{ range .Builder.PendingBuilds }}
+        <li><small>({{ .Build.Summary.Started }}, waiting {{ .Build.Summary.Duration }})</small>
+        {{ $nb := len .Blame }}
+        {{ if lt $nb 4 }}
+          {{ range $i, $c := .Blame }}
+            {{ .Revision }}
+            (<a href="{{ .CommitURL }}">{{ .AuthorEmail }}</a>)
+            {{ if ne $i (sub $nb 1) }},{{ end }}
+          {{ end }}
+        {{ else }}
+          ({{ $nb }} changes)
+        {{ end }}
+        </li>
+      {{ end }}
+      </ul>
+    {{ else }}
+      <h5>No Pending Build Requests</h5>
+    {{ end }}
+  </div>
+
+  <div class="col-md-6">
+    <h2>Recent Builds:</h2>
+    <table class="table table-condensed table-hover table-striped">
+      <tr>
+        <th>Time</th>
+        <th>Revision</th>
+        <th>Result</th>
+        <th>Build #</th>
+        <th>Info</th>
+      </tr>
+
+      {{ range .Builder.FinishedBuilds }}
+          {{ if eq .Build.Summary.Status.String "Success" }}
+            <tr class="success">
+              <td>{{ .Build.Summary.Finished }}</td>
+              <td class="revision">{{ .Build.SourceStamp.Revision | shortHash}}</td>
+              <td>Success</td>
+              <td><a href="{{ .URL }}">{{ .URL }}</a></td>
+              <td class="left">{{ .Build.Summary.Text }}</td>
+            </tr>
+          {{ else if eq .Build.Summary.Status.String "Failure" }}
+            <tr class="danger">
+              <td>{{ .Build.Summary.Finished }}</td>
+              <td>{{ .Build.SourceStamp.Revision | shortHash }}</td>
+              <td class="danger">Failed</td>
+              <td><a href="{{ .URL }}">{{ .URL }}</a></td>
+              <td class="left">{{ .Build.Summary.Text }}</td>
+            </tr>
+          {{ else }}
+            <tr>
+              <td>{{ .Build.Summary.Finished }}</td>
+              <td>{{ .Build.SourceStamp.Revision | shortHash }}</td>
+              <td> {{ .Build.Summary.Status.String }} </td>
+              <td><a href="{{ .URL }}">{{ .URL }}</a></td>
+              <td class="left">{{ .Build.Summary.Text }}</td>
+            </tr>
+          {{ end }}
+      {{ end }}
+    </table>
+  </div>
+
+</div>
+{{ end }}

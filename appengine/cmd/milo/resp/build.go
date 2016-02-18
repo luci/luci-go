@@ -13,6 +13,9 @@ type MiloBuild struct {
 	// Summary is a top level summary of the page.
 	Summary BuildComponent
 
+	// SourceStamp gives information about how the build came about.
+	SourceStamp *SourceStamp
+
 	// Components is a detailed list of components and subcomponents of the page.
 	// This is most often used for steps (buildbot/luci) or deps (luci).
 	Components []*BuildComponent
@@ -26,6 +29,13 @@ type MiloBuild struct {
 	// Blame is a list of people and commits that is likely to be in relation to
 	// the thing displayed on this page.
 	Blame []*Commit
+}
+
+// SourceStamp is the combination of pointing to a single commit, with information
+// about where that commit came from (eg. the repository).
+type SourceStamp struct {
+	Commit
+	Source string
 }
 
 // Property specifies the source of the property. k/v pair representing some

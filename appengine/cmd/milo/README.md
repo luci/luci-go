@@ -24,3 +24,9 @@ preference.  Themes must follow these layouts:
   convention, so one theme is allowed to use resources in other themes (but it
   is not recommended)
 * Add the Theme Name into the map in /settings/theme.go:THEMES
+
+# Seeding data for local development
+* After starting the dev_appserver, run go run cmd/backfill/main.go buildbot
+  -master="chromium.win" -remote-url="localhost:8080" -dryrun=false
+  -buildbot-fallback=true (replace the port number with your dev_appserver port
+  number)

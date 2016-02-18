@@ -1,0 +1,78 @@
+{{define "title"}}Builder [[name here]]{{end}}
+
+{{define "script"}}{{end}}
+
+{{define "body"}}
+{{ if .Builder.CurrentBuilds }}
+  <h2>Current Builds:</h2>
+  <ul>
+  {{ range .Builder.CurrentBuilds }}
+    <li><a href="{{ .URL }}">{{ .Build.Summary.Label }}</a>
+      [Running for: {{ .Build.Summary.Duration }}]
+      {{ .Build.Summary.Text }}
+    </li>
+  {{ end }}
+  </ul>
+{{ else }}
+  <h2>No current builds</h2>
+{{ end }}
+
+{{ if .Builder.PendingBuilds }}
+  <h2>Pending Build Requests:</h2>
+  <ul>
+  {{ range .Builder.PendingBuilds }}
+    <li><small>({{ .Build.Summary.Started }}, waiting {{ .Build.Summary.Duration }})</small>
+
+    {{ $nb := len .Blame }}
+    {{ if lt $nb 4 }}
+      {{ range $i, $c := .Blame }}
+        {{ .Revision }}
+        (<a href="{{ .CommitURL }}">{{ .AuthorEmail }}</a>)
+        {{ if ne $i (sub $nb 1) }},{{ end }}
+      {{ end }}
+    {{ else }}
+      ({{ $nb }} changes)
+    {{ end }}
+
+    </li>
+  {{ end }}
+  </ul>
+{{ else }}
+  <h2>No Pending Build Requests</h2>
+{{ end }}
+
+{{ if .Builder.FinishedBuilds }}
+  <h2>Recent Builds:</h2>
+
+  <table class="info">
+    <tr>
+      <th>Time</th>
+      <th>Revision</th>
+      <th>Result</th>
+      <th>Build #</th>
+      <th>Info</th>
+    </tr>
+
+    {{ range .Builder.FinishedBuilds }}
+      <tr>
+        <td>{{ .Build.Summary.Finished }}</td>
+        <td class="revision">{{ .Build.SourceStamp.Revision }}</td>
+        {{ if eq .Build.Summary.Status.String "Success" }}
+          <td class="success">Success</td>
+        {{ else if eq .Build.Summary.Status.String "Failure" }}
+          <td class="failure">Failed</td>
+        {{ else }}
+          <td> {{ .Build.Summary.Status.String }} </td>
+        {{ end }}
+        <td><a href="{{ .URL }}">{{ .URL }}</a></td>
+        <td class="left">{{ .Build.Summary.Text }}</td>
+      </tr>
+    {{ end }}
+  </table>
+{{ else }}
+  <h2>No Recent Builds</h2>
+{{ end }}
+
+</div>
+
+{{end}}

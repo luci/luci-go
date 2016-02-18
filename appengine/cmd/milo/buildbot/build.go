@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -18,93 +19,55 @@ import (
 	"golang.org/x/net/context"
 )
 
-var (
-	buildbotBuildURLTemplate = "https://build.chromium.org/p/%s/json/builders/%s/builds/%s"
-)
-
-// Built using mostly https://mholt.github.io/json-to-go/, which is awesome.
-type bbBuild struct {
-	Blame       []string        `json:"blame"`
-	Buildername string          `json:"builderName"`
-	Currentstep *string         `json:"currentStep"`
-	Eta         *string         `json:"eta"`
-	Logs        [][]string      `json:"logs"`
-	Number      int             `json:"number"`
-	Properties  [][]interface{} `json:"properties"`
-	Reason      string          `json:"reason"`
-	Results     int             `json:"results"`
-	Slave       string          `json:"slave"`
-	Sourcestamp struct {
-		Branch  *string `json:"branch"`
-		Changes []struct {
-			At         string          `json:"at"`
-			Branch     *string         `json:"branch"`
-			Category   string          `json:"category"`
-			Comments   string          `json:"comments"`
-			Files      []string        `json:"files"`
-			Number     int             `json:"number"`
-			Project    string          `json:"project"`
-			Properties [][]interface{} `json:"properties"`
-			Repository string          `json:"repository"`
-			Rev        string          `json:"rev"`
-			Revision   string          `json:"revision"`
-			Revlink    string          `json:"revlink"`
-			When       int             `json:"when"`
-			Who        string          `json:"who"`
-		} `json:"changes"`
-		Haspatch   bool   `json:"hasPatch"`
-		Project    string `json:"project"`
-		Repository string `json:"repository"`
-		Revision   string `json:"revision"`
-	} `json:"sourceStamp"`
-	Steps []struct {
-		Eta          *string         `json:"eta"`
-		Expectations [][]interface{} `json:"expectations"`
-		Hidden       bool            `json:"hidden"`
-		Isfinished   bool            `json:"isFinished"`
-		Isstarted    bool            `json:"isStarted"`
-		Logs         [][]string      `json:"logs"`
-		Name         string          `json:"name"`
-		Results      []interface{}   `json:"results"`
-		Statistics   struct {
-		} `json:"statistics"`
-		StepNumber int        `json:"step_number"`
-		Text       []string   `json:"text"`
-		Times      []*float64 `json:"times"`
-		Urls       struct {
-		} `json:"urls"`
-	} `json:"steps"`
-	Text  []string   `json:"text"`
-	Times []*float64 `json:"times"`
-}
-
-// getBuild fetches a build from BuildBot.
-func getBuild(c context.Context, master, builder, buildNum string) (*bbBuild, error) {
-	result := &bbBuild{}
-	// TODO(hinoka): Check CBE first.
-	// TODO(hinoka): Cache finished builds.
-	url := fmt.Sprintf(buildbotBuildURLTemplate, master, builder, buildNum)
+func getURL(c context.Context, URL string) ([]byte, error) {
+	fmt.Fprintf(os.Stderr, "Fetching %s\n", URL)
 	client := transport.GetClient(c)
-	resp, err := client.Get(url)
+	resp, err := client.Get(URL)
 	if err != nil {
 		return nil, err
 	}
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("Failed to fetch %s, status code %d", url, resp.StatusCode)
+		return nil, fmt.Errorf("Failed to fetch %s, status code %d", URL, resp.StatusCode)
 	}
 	defer resp.Body.Close()
-	buf, err := ioutil.ReadAll(resp.Body)
+	return ioutil.ReadAll(resp.Body)
+}
+
+// getBuild fetches a build from BuildBot.
+func getBuild(c context.Context, master, builder, buildNum string) (*buildbotBuild, error) {
+	result := &buildbotBuild{
+		Master:      master,
+		Buildername: builder,
+	}
+	if num, err := strconv.Atoi(buildNum); err != nil {
+		panic(fmt.Errorf("%s does not look like a number", buildNum))
+	} else {
+		result.Number = num
+	}
+	// Check local cache first.
+	cbeURL := fmt.Sprintf(
+		"https://chrome-build-extract.appspot.com/p/%s/builders/%s/builds/%s?json=1",
+		master, builder, buildNum)
+	if buf, err := getURL(c, cbeURL); err == nil {
+		return result, json.Unmarshal(buf, result)
+	}
+	// TODO(hinoka): Cache finished builds.
+	url := fmt.Sprintf(
+		"https://build.chromium.org/p/%s/json/builders/%s/builds/%s", master, builder, buildNum)
+	buf, err := getURL(c, url)
 	if err != nil {
 		return nil, err
 	}
 
-	err = json.Unmarshal(buf, result)
-	return result, err
+	return result, json.Unmarshal(buf, result)
 }
 
 // result2Status translates a buildbot result integer into a resp.Status.
-func result2Status(s int) (status resp.Status) {
-	switch s {
+func result2Status(s *int) (status resp.Status) {
+	if s == nil {
+		return resp.Running
+	}
+	switch *s {
 	case 0:
 		status = resp.Success
 	case 1:
@@ -146,7 +109,7 @@ func parseTimes(times []*float64) (string, string, uint64) {
 
 // summary Extract the top level summary from a buildbot build as a
 // BuildComponent
-func summary(b *bbBuild) resp.BuildComponent {
+func summary(b *buildbotBuild) resp.BuildComponent {
 	// Status
 	var status resp.Status
 	if b.Currentstep != nil {
@@ -174,7 +137,7 @@ func summary(b *bbBuild) resp.BuildComponent {
 
 // components takes a full buildbot build struct and extract step info from all
 // of the steps and returns it as a list of milo Build Components.
-func components(b *bbBuild) (result []*resp.BuildComponent) {
+func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 	for _, step := range b.Steps {
 		if step.Hidden == true {
 			continue
@@ -191,7 +154,8 @@ func components(b *bbBuild) (result []*resp.BuildComponent) {
 			bc.Status = resp.Running
 		} else {
 			if len(step.Results) > 0 {
-				bc.Status = result2Status(int(step.Results[0].(float64)))
+				status := int(step.Results[0].(float64))
+				bc.Status = result2Status(&status)
 			} else {
 				bc.Status = resp.Success
 			}
@@ -199,7 +163,6 @@ func components(b *bbBuild) (result []*resp.BuildComponent) {
 
 		// Now, link to the logs.
 		for _, log := range step.Logs {
-			fmt.Fprintf(os.Stderr, "Log %s/%s", log[0], log[1])
 			link := &resp.Link{
 				Label: log[0],
 				URL:   log[1],
@@ -268,7 +231,7 @@ type Prop struct {
 
 // properties extracts all properties from buildbot builds and groups them into
 // property groups.
-func properties(b *bbBuild) (result []*resp.PropertyGroup) {
+func properties(b *buildbotBuild) (result []*resp.PropertyGroup) {
 	groups := map[string]*resp.PropertyGroup{}
 	allProps := map[string]Prop{}
 	for _, prop := range b.Properties {
@@ -311,15 +274,26 @@ func properties(b *bbBuild) (result []*resp.PropertyGroup) {
 
 // blame extracts the commit and blame information from a buildbot build and
 // returns it as a list of Commits.
-func blame(b *bbBuild) (result []*resp.Commit) {
+func blame(b *buildbotBuild) (result []*resp.Commit) {
 	for _, c := range b.Sourcestamp.Changes {
+		files := make([]string, len(c.Files))
+		for i, f := range c.Files {
+			// Buildbot stores files both as a string, or as a dict with a single entry
+			// named "name".  It doesn't matter to us what the type is, but we need
+			// to reflect on the type anyways.
+			if fn, ok := f.(string); ok {
+				files[i] = fn
+			} else if fn, ok := f.(struct{ Name string }); ok {
+				files[i] = fn.Name
+			}
+		}
 		result = append(result, &resp.Commit{
 			AuthorEmail: c.Who,
 			Repo:        c.Repository,
 			Revision:    c.Revision,
 			Description: c.Comments,
 			Title:       strings.Split(c.Comments, "\n")[0],
-			File:        c.Files,
+			File:        files,
 		})
 	}
 	return

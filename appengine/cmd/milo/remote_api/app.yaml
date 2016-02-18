@@ -1,8 +1,0 @@
-application: luci-milo-dev
-version: remote-api-1
-runtime: go
-api_version: go1
-
-handlers:
-- url: /_ah/remote_api
-  script: _go_app

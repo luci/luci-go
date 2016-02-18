@@ -17,6 +17,8 @@ var funcMap = template.FuncMap{
 	"humanDuration": humanDuration,
 	"humanTimeRFC":  humanTimeRFC,
 	"startswith":    strings.HasPrefix,
+	"sub":           sub,
+	"shortHash":     shortHash,
 }
 
 // humanDuration takes a time t in seconds as a duration and translates it
@@ -54,5 +56,19 @@ func humanDuration(t uint64) string {
 // something more human readable.
 func humanTimeRFC(s string) string {
 	// TODO(hinoka): Implement me.
+	return s
+}
+
+// sub subtracts one number from another, because apperently go templates aren't
+// smart enough to do that.
+func sub(a, b int) int {
+	return a - b
+}
+
+// shortHash abbriviates a git hash into 6 characters.
+func shortHash(s string) string {
+	if len(s) > 6 {
+		return s[0:6]
+	}
 	return s
 }

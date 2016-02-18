@@ -73,15 +73,15 @@
       <table class="info" width="100%">
         <tr class="alt"><td class="left">Start</td>
         <td>
-          {{ .Started | humanTimeRFC }}
+          {{ .Build.Summary.Started | humanTimeRFC }}
         </td></tr>
         <tr><td class="left">End</td>
         <td>
-          {{ .Finished | humanTimeRFC }}
+          {{ .Build.Summary.Finished | humanTimeRFC }}
         </td></tr>
         <tr class="alt"><td class="left">Elapsed</td>
         <td>
-          {{ .Duration | humanDuration }}
+          {{ .Build.Summary.Duration | humanDuration }}
         </td></tr>
       </table>
 

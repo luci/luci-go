@@ -1,0 +1,8 @@
+indexes:
+
+- kind: Build
+  ancestor: yes
+  properties:
+  - name: revisions.generation
+    direction: desc
+

@@ -28,6 +28,7 @@ func init() {
 
 	// Buildbot
 	r.GET("/buildbot/:master/:builder/:build", wrap(buildbot.Build{}))
+	r.GET("/buildbot/:master/:builder/", wrap(buildbot.Builder{}))
 
 	// User settings
 	r.GET("/settings", wrap(settings.Settings{}))
