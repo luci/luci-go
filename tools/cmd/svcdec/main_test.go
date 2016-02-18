@@ -12,7 +12,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -23,7 +22,7 @@ const (
 func TestMain(t *testing.T) {
 	t.Parallel()
 
-	Convey("svxmux", t, func() {
+	Convey("svxdec", t, func() {
 		tmpDir, err := ioutil.TempDir("", "")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tmpDir)
@@ -35,7 +34,7 @@ func TestMain(t *testing.T) {
 		}
 
 		Convey("Works", func() {
-			output := filepath.Join(tmpDir, "s1server_mux.go")
+			output := filepath.Join(tmpDir, "s1server_dec.go")
 			err := run(
 				"-output", output,
 				"-type", "S1Server,S2Server",
@@ -43,7 +42,7 @@ func TestMain(t *testing.T) {
 			)
 			So(err, ShouldBeNil)
 
-			wantFile := filepath.Join(testDir, "s1server_mux.golden")
+			wantFile := filepath.Join(testDir, "s1server_dec.golden")
 			want, err := ioutil.ReadFile(wantFile)
 			So(err, ShouldBeNil)
 
@@ -51,16 +50,6 @@ func TestMain(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			So(string(got), ShouldEqual, string(want))
-		})
-
-		Convey("Type not found", func() {
-			err := run("-type", "XServer", testDir)
-			So(err, ShouldErrLike, "type XServer not found")
-		})
-
-		Convey("Embedded interface", func() {
-			err := run("-type", "CompoundServer", testDir)
-			So(err, ShouldErrLike, "CompoundServer embeds S1Server")
 		})
 	})
 }
