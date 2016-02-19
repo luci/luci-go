@@ -4,6 +4,17 @@
 
 package buildbot
 
+import (
+	"bytes"
+	"compress/gzip"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"strconv"
+
+	"github.com/luci/gae/service/datastore"
+)
+
 // This file contains all of the structs that define buildbot json endpoints.
 // This is primarily used for unmarshalling buildbot master and build json.
 // json.UnmarshalJSON can directly unmarshal buildbot jsons into these structs.
@@ -46,22 +57,132 @@ type buildbotSourceStamp struct {
 // buildbotBuild is a single build json on buildbot.
 type buildbotBuild struct {
 	Master      string   `gae:"$master"`
-	Blame       []string `json:"blame"`
+	Blame       []string `json:"blame" gae:"-"`
 	Buildername string   `json:"builderName"`
 	// This needs to be reflected.  This can be either a String or a buildbotStep.
-	Currentstep interface{} `json:"currentStep"`
+	Currentstep interface{} `json:"currentStep" gae:"-"`
 	// We don't care about this one.
-	Eta         interface{}          `json:"eta"`
-	Logs        [][]string           `json:"logs"`
+	Eta         interface{}          `json:"eta" gae:"-"`
+	Logs        [][]string           `json:"logs" gae:"-"`
 	Number      int                  `json:"number"`
-	Properties  [][]interface{}      `json:"properties"`
+	Properties  [][]interface{}      `json:"properties" gae:"-"`
 	Reason      string               `json:"reason"`
-	Results     *int                 `json:"results"`
+	Results     *int                 `json:"results" gae:"-"`
 	Slave       string               `json:"slave"`
-	Sourcestamp *buildbotSourceStamp `json:"sourceStamp"`
-	Steps       []buildbotStep       `json:"steps"`
-	Text        []string             `json:"text"`
-	Times       []*float64           `json:"times"`
+	Sourcestamp *buildbotSourceStamp `json:"sourceStamp" gae:"-"`
+	Steps       []buildbotStep       `json:"steps" gae:"-"`
+	Text        []string             `json:"text" gae:"-"`
+	Times       []*float64           `json:"times" gae:"-"`
+	// This one is injected by the publisher module.  Does not exist in a
+	// normal json query.
+	TimeStamp *int `json:"timeStamp" gae:"-"`
+}
+
+var _ datastore.PropertyLoadSaver = (*buildbotBuild)(nil)
+var _ datastore.MetaGetterSetter = (*buildbotBuild)(nil)
+
+// getID is a helper function that returns the datastore key for a given
+// build.
+func (b *buildbotBuild) getID() string {
+	s := []string{b.Master, b.Buildername, strconv.Itoa(b.Number)}
+	id, err := json.Marshal(s)
+	if err != nil {
+		panic(err) // This really shouldn't fail.
+	}
+	return string(id)
+}
+
+// setKeys is the inverse of getID().
+func (b *buildbotBuild) setKeys(id string) error {
+	s := []string{}
+	err := json.Unmarshal([]byte(id), &s)
+	if err != nil {
+		return err
+	}
+	if len(s) != 3 {
+		return fmt.Errorf("%s does not have 3 items", id)
+	}
+	b.Master = s[0]
+	b.Buildername = s[1]
+	b.Number, err = strconv.Atoi(s[2])
+	return err // or nil.
+}
+
+// GetMeta is overridden so that a query for "id" calls getID() instead of
+// the superclass method.
+func (b *buildbotBuild) GetMeta(key string) (interface{}, bool) {
+	if key == "id" {
+		if b.Master == "" || b.Buildername == "" {
+			panic(fmt.Errorf("No Master or Builder found"))
+		}
+		return b.getID(), true
+	}
+	return datastore.GetPLS(b).GetMeta(key)
+}
+
+// GetAllMeta is overriden for the same reason GetMeta() is.
+func (b *buildbotBuild) GetAllMeta() datastore.PropertyMap {
+	p := datastore.GetPLS(b).GetAllMeta()
+	p.SetMeta("id", b.getID())
+	return p
+}
+
+// SetMeta is the inverse of GetMeta().
+func (b *buildbotBuild) SetMeta(key string, val interface{}) bool {
+	if key == "id" {
+		err := b.setKeys(val.(string))
+		if err != nil {
+			panic(err)
+		}
+	}
+	return datastore.GetPLS(b).SetMeta(key, val)
+}
+
+// Load translates a propertymap into the struct and loads the data into
+// the struct.
+func (b *buildbotBuild) Load(p datastore.PropertyMap) error {
+	gz, err := p["data"][0].Project(datastore.PTBytes)
+	if err != nil {
+		return err
+	}
+	reader, err := gzip.NewReader(bytes.NewReader(gz.([]byte)))
+	if err != nil {
+		return err
+	}
+	bs, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(bs, b)
+}
+
+// Save returns a property map of the struct to save in the datastore.  It
+// contains two fields, the ID which is the key, and a data field which is a
+// serialized and gzipped representation of the entire struct.
+func (b *buildbotBuild) Save(withMeta bool) (datastore.PropertyMap, error) {
+	bs, err := json.Marshal(b)
+	if err != nil {
+		return nil, err
+	}
+	gzbs := bytes.Buffer{}
+	gsw := gzip.NewWriter(&gzbs)
+	_, err = gsw.Write(bs)
+	if err != nil {
+		return nil, err
+	}
+	gsw.Close()
+	blob := gzbs.Bytes()
+	p := datastore.PropertyMap{
+		"data": []datastore.Property{
+			datastore.MkPropertyNI(blob),
+		},
+	}
+	if withMeta {
+		p["id"] = []datastore.Property{
+			datastore.MkPropertyNI(b.getID()),
+		}
+	}
+	return p, nil
 }
 
 // buildbotBuilder is a builder struct from the master json, _not_ the builder json.

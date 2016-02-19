@@ -34,6 +34,9 @@ func init() {
 	r.GET("/settings", wrap(settings.Settings{}))
 	r.POST("/settings", wrap(settings.Settings{}))
 
+	// PubSub subscription endpoints.
+	r.POST("/pubsub/buildbot", settings.Base(buildbot.PubSubHandler))
+
 	http.Handle("/", r)
 }
 

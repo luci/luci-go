@@ -14,7 +14,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/appengine/cmd/milo/resp"
+	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/transport"
 	"golang.org/x/net/context"
 )
@@ -44,7 +47,29 @@ func getBuild(c context.Context, master, builder, buildNum string) (*buildbotBui
 	} else {
 		result.Number = num
 	}
-	// Check local cache first.
+	// Check memcache first.
+	mc := memcache.Get(c)
+	if item, err := mc.Get(result.getID()); err == nil {
+		log.Debugf(c, "Found in Memcache!")
+		json.Unmarshal(item.Value(), result)
+		return result, nil
+	}
+	// Then check local datastore.
+	ds := datastore.Get(c)
+	err := ds.Get(result)
+	if err == nil {
+		log.Debugf(c, "Found build in local cache!")
+		if result.Times[1] != nil {
+			bs, ierr := json.Marshal(result)
+			if ierr == nil {
+				item := mc.NewItem(result.getID()).SetValue(bs)
+				mc.Set(item)
+			}
+		}
+		return result, nil
+	}
+	log.Debugf(c, "Could not find log in local cache: %s", err.Error())
+	// Now check CBE.
 	cbeURL := fmt.Sprintf(
 		"https://chrome-build-extract.appspot.com/p/%s/builders/%s/builds/%s?json=1",
 		master, builder, buildNum)
