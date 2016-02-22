@@ -16,10 +16,9 @@ package dm;
 // DM by calling EnsureQuests.
 message AddDepsReq {
   // required
-  dm.ExecutionAuth auth = 1;
+  dm.Execution.Auth auth = 1;
 
-  // To is the list of other attempts to depend on.
-  repeated dm.Attempt.ID to = 2;
+  dm.AttemptFanout deps = 2;
 }
 
 message AddDepsRsp {

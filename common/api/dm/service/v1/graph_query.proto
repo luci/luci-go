@@ -4,36 +4,28 @@
 
 syntax = "proto3";
 
-import "graph_data.proto";
 import "types.proto";
 
 package dm;
 
+// GraphQuery represents a single query into the state of DM's dependency graph.
+// It's a required parameter for WalkGraphReq.
 message GraphQuery {
-  // AttemptRange represents a (quest, attempt) -> (quest, attempt) pair. All
-  // attempts within the range will be returned as the result of the query.
-  message AttemptRange {
-    dm.Attempt.ID start = 1;
-    dm.Attempt.ID end = 2;
-  }
-
   // AttemptList allows you to list one or more specific attempts as the result
-  // of the query.
+  // of the query. If a quest contains the attempt number 0, or is empty, it
+  // means 'all attempts for this quest'.
   message AttemptList {
-    repeated dm.Attempt.ID attempt = 1;
+    dm.AttemptFanout attempt = 1;
   }
 
-  // QuestRange represents a quest->quest pair. All Attempts of all Quests
-  // within the range will be returned as the result of the query.
-  message QuestRange {
-    dm.Quest.ID start = 1;
-    dm.Quest.ID end = 2;
-  }
-
-  // QuestList allows you to list one or more specific quests as the result of
-  // the query.
-  message QuestList {
-    repeated dm.Quest.ID quest = 1;
+  // AttemptRange allows you to list a range of attempts in a single quest.
+  // low must be > 0, and high must be > low. The range is [low, high). High
+  // may be higher than the highest attempt, and low may be lower than the
+  // lowest attempt.
+  message AttemptRange {
+    string quest = 1;
+    uint32 low = 2;
+    uint32 high = 3;
   }
 
   // A Search allows you to query objects whose properties match all of the
@@ -95,9 +87,9 @@ message GraphQuery {
     reserved "sort_by";
     reserved 2;
 
-    // Start and End are optional AttemptRange restrictions on the first sort
-    // property.  For now, these are just restrictions on the 'created'
-    // timestamp for either the Quest or Attempt, depending on the SearchDomain.
+    // Start and End are optional restrictions on the first sort property. For
+    // now, these are just restrictions on the 'created' timestamp for either
+    // the Quest or Attempt, depending on the SearchDomain.
     dm.PropertyValue start = 3;
     dm.PropertyValue end = 4;
 
@@ -118,7 +110,7 @@ message GraphQuery {
     //   "some.of" = ["stuff", "and", "data"]
     //
     // This is useful for filtering documents where the order of parameters
-    // in a list or sublist isn't know, or doesn't matter.
+    // in a list or sublist isn't known, or doesn't matter.
     map<string, dm.MultiPropertyValue> approx_filters = 5;
 
     // ExactFilters allows you to filter on 'exact' fields. Exact fields are the
@@ -141,10 +133,8 @@ message GraphQuery {
   }
 
   oneof query {
-    AttemptRange attempt_range = 1;
-    AttemptList attempt_list = 2;
-    QuestRange quest_range = 3;
-    QuestList quest_list = 4;
-    Search search = 5;
+    AttemptList attempt_list = 1;
+    AttemptRange attempt_range = 2;
+    Search search = 3;
   }
 }

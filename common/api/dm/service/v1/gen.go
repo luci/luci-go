@@ -5,3 +5,4 @@
 package dm
 
 //go:generate cproto
+//go:generate proto-gae -type Quest_Desc

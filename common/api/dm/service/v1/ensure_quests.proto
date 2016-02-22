@@ -5,7 +5,6 @@
 syntax = "proto3";
 
 import "graph_data.proto";
-import "types.proto";
 
 package dm;
 
@@ -13,11 +12,11 @@ package dm;
 // Quests exist in DM.
 message EnsureQuestsReq {
   // optional: Only needed if this is being called from an execution.
-  dm.ExecutionAuth auth = 1;
+  dm.Execution.Auth auth = 1;
 
   // ToEnsure is a list of quest descriptors. DM will ensure that the
   // corresponding Quests exist. If they don't, they'll be created.
-  repeated dm.Quest.Descriptor to_ensure = 2;
+  repeated dm.Quest.Desc to_ensure = 2;
 }
 
 message EnsureQuestsRsp {

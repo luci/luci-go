@@ -1,0 +1,16 @@
+// Copyright 2016 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+import "graph_data.proto";
+
+package dm;
+
+message ClaimExecutionRsp {
+  dm.Quest quest = 1;
+  // Auth is the auth with an Activation Token to be used with the
+  // ActivateExecution rpc.
+  dm.Execution.Auth auth = 2;
+}

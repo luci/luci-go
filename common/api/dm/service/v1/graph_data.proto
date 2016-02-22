@@ -6,6 +6,8 @@ syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
 
+import "types.proto";
+
 package dm;
 
 message Quest {
@@ -14,104 +16,154 @@ message Quest {
   }
   ID id = 1;
 
-  message Descriptor {
+  // DNE is set to true if this Quest does not exist. None of the following
+  // fields are valid if this is set to true.
+  bool DNE = 2;
+
+  message Desc {
     string distributor_config_name = 1;
     string json_payload = 2;
   }
 
   message Data {
     google.protobuf.Timestamp created = 1;
-    Quest.Descriptor descriptor = 2;
+    Quest.Desc desc = 2;
   }
-  Data data = 2;
+  Data data = 3;
 
   // key is the `id` field of the Attempt.ID
-  map<uint64, Attempt> attempts = 3;
+  map<uint32, Attempt> attempts = 4;
+
+  // Partial is true iff the request asked for QuestData, but wasn't able to
+  // completely fill it.
+  bool partial = 16;
 }
 
 message Attempt {
   message ID {
     string quest = 1;
-    uint64 id = 2;
+    uint32 id = 2;
   }
   ID id = 1;
 
+  // DNE is set to true if this Attempt does not exist. None of the following
+  // fields are valid if this is set to true.
+  bool DNE = 2;
+
   enum State {
-    Unknown = 0;
-    NeedsExecution = 1;
-    Executing = 2;
-    AddingDeps = 3;
-    Blocked = 4;
-    Finished = 5;
+    NeedsExecution = 0;
+    Executing = 1;
+    AddingDeps = 2;
+    Blocked = 3;
+    Finished = 4;
   }
 
   message Data {
     google.protobuf.Timestamp created = 1;
+    google.protobuf.Timestamp modified = 2;
+    uint32 num_executions = 3;
 
     message NeedsExecution {
       google.protobuf.Timestamp pending = 1;
     }
 
     message Executing {
-      uint64 cur_execution_id = 1;
+      uint32 cur_execution_id = 1;
     }
 
     message AddingDeps {
-      uint64 num_adding = 1;
-      uint64 num_waiting = 2;
+      uint32 num_adding = 1;
+      uint32 num_waiting = 2;
     }
 
     message Blocked {
-      uint64 num_waiting = 1;
+      uint32 num_waiting = 1;
     }
 
     message Finished {
       google.protobuf.Timestamp expiration = 1;
-      bytes json_result = 2;
+      string json_result = 2;
     }
 
     oneof attempt_type {
-      NeedsExecution needs_execution = 2;
-      Executing executing = 3;
-      AddingDeps adding_deps = 4;
-      Blocked blocked = 5;
-      Finished finished = 6;
+      NeedsExecution needs_execution = 4;
+      Executing executing = 5;
+      AddingDeps adding_deps = 6;
+      Blocked blocked = 7;
+      Finished finished = 8;
     }
   }
-  Data data = 2;
+  Data data = 3;
 
   // key is the `id` field of the Execution.ID
-  map<uint64, Execution> executions = 3;
+  map<uint32, Execution> executions = 4;
 
-  repeated Attempt.ID fwd_deps = 4;
-  repeated Attempt.ID back_deps = 5;
+  dm.AttemptFanout fwd_deps = 5;
+  dm.AttemptFanout back_deps = 6;
+
+  message Partial {
+    // Data is true iff the AttemptData should have been filled, but wasn't
+    bool data = 1;
+
+    // Executions is true iff the Executions were requested, but not all of
+    // them could be loaded.
+    bool executions = 2;
+
+    // FwdDeps is true iff FwdDeps were requested, but not all of them could be
+    // loaded.
+    bool fwd_deps = 3;
+
+    // BackDeps is true iff BackDeps were requested, but not all of them could be
+    // loaded.
+    bool back_deps = 4;
+
+    // Result is true iff the AttemptResults were requested, and this Attempt is
+    // Finished, but the result wasn't able to be loaded. This will also be
+    // false in the case that the query is authenticated from an Execution whose
+    // Attempt doesn't depend on this Attempt.
+    bool result = 5;
+  }
+  // Partial values are true iff the request asked for AttemptData, Executions
+  // or Deps, but wasn't able to completely fill them. If Partial is omitted,
+  // it means that no partial data exists in this Attempt.
+  Partial partial = 16;
 }
 
 message Execution {
+  // Execution_Auth is a tuple of the requesting ExecutionID and the activated
+  // Execution Token (see the ActivateExecution rpc).
+  message Auth {
+    dm.Execution.ID id = 1;
+    bytes token = 2;
+  }
+
   message ID {
     string quest = 1;
-    uint64 attempt = 2;
-    uint64 id = 3;
+    uint32 attempt = 2;
+    uint32 id = 3;
   }
   ID id = 1;
 
   enum State {
-    Unknown = 0;
+    Scheduled = 0;
+    Running = 1;
 
-    Scheduled = 1;
-    Running = 2;
-
-    Rejected = 3;
-    Finished = 4;
-    Crashed = 5;
+    Rejected = 2;
+    Finished = 3;
+    Crashed = 4;
   }
+  State state = 2;
 
   message Data {
     google.protobuf.Timestamp created = 1;
     string distributor_token = 2;
     string distributor_info_url = 3;
   }
-  Data data = 2;
+  Data data = 3;
+
+  // Partial is true iff the request asked for Executions, but wasn't able to
+  // completely fill them.
+  bool partial = 16;
 }
 
 // GraphData defines all of the DM graph data that may be returned from DM.
@@ -136,12 +188,15 @@ message GraphData {
   // If HadErrors is set HadMore will also be set.
   bool had_errors = 2;
 
-  // HadMore is set to true if the request stopped short of the full result set
-  // due to things like:
+  // HadMore is set to true if the request stopped short of the full query
+  // result set due to things like:
   //   * max response size limit
   //   * max time limit (e.g. WalkGraphReq.MaxTime) being hit
   //   * non-terminal errors encountered during the request (HadErrors will also
   //     be true in this case).
+  //
+  // Note that this is different than the Partial booleans: This refers
+  // specifically to situations when Queries do not run to completion.
   bool had_more = 3;
 }
 

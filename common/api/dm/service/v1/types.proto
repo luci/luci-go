@@ -7,8 +7,6 @@ syntax = "proto3";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
-import "graph_data.proto";
-
 package dm;
 
 message MultiPropertyValue {
@@ -36,9 +34,16 @@ message PropertyValue {
   }
 }
 
-// ExecutionAuth is a tuple of the requesting ExecutionID and the activated
-// ExecutionToken (see the ActivateExecution rpc).
-message ExecutionAuth {
-  dm.Execution.ID id = 1;
-  bytes execution_token = 2;
+message AttemptFanout {
+  message AttemptNums {
+    repeated uint32 nums = 1 [packed=true];
+  }
+
+  // To is a map of quests-to-attempts to depend on. So if you want to depend
+  // on the attempt "foo|1", "foo|2" and "bar|1", this would look like:
+  //   {
+  //     "foo": [1, 2],
+  //     "bar": [1],
+  //   }
+  map<string, AttemptNums> to = 2;
 }

@@ -33,15 +33,15 @@ func (x GraphQuery_Search_SearchDomain) String() string {
 	return proto.EnumName(GraphQuery_Search_SearchDomain_name, int32(x))
 }
 func (GraphQuery_Search_SearchDomain) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor6, []int{0, 4, 0}
+	return fileDescriptor7, []int{0, 2, 0}
 }
 
+// GraphQuery represents a single query into the state of DM's dependency graph.
+// It's a required parameter for WalkGraphReq.
 type GraphQuery struct {
 	// Types that are valid to be assigned to Query:
-	//	*GraphQuery_AttemptRange_
 	//	*GraphQuery_AttemptList_
-	//	*GraphQuery_QuestRange_
-	//	*GraphQuery_QuestList_
+	//	*GraphQuery_AttemptRange_
 	//	*GraphQuery_Search_
 	Query isGraphQuery_Query `protobuf_oneof:"query"`
 }
@@ -49,44 +49,29 @@ type GraphQuery struct {
 func (m *GraphQuery) Reset()                    { *m = GraphQuery{} }
 func (m *GraphQuery) String() string            { return proto.CompactTextString(m) }
 func (*GraphQuery) ProtoMessage()               {}
-func (*GraphQuery) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{0} }
+func (*GraphQuery) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{0} }
 
 type isGraphQuery_Query interface {
 	isGraphQuery_Query()
 }
 
-type GraphQuery_AttemptRange_ struct {
-	AttemptRange *GraphQuery_AttemptRange `protobuf:"bytes,1,opt,name=attempt_range,oneof"`
-}
 type GraphQuery_AttemptList_ struct {
-	AttemptList *GraphQuery_AttemptList `protobuf:"bytes,2,opt,name=attempt_list,oneof"`
+	AttemptList *GraphQuery_AttemptList `protobuf:"bytes,1,opt,name=attempt_list,oneof"`
 }
-type GraphQuery_QuestRange_ struct {
-	QuestRange *GraphQuery_QuestRange `protobuf:"bytes,3,opt,name=quest_range,oneof"`
-}
-type GraphQuery_QuestList_ struct {
-	QuestList *GraphQuery_QuestList `protobuf:"bytes,4,opt,name=quest_list,oneof"`
+type GraphQuery_AttemptRange_ struct {
+	AttemptRange *GraphQuery_AttemptRange `protobuf:"bytes,2,opt,name=attempt_range,oneof"`
 }
 type GraphQuery_Search_ struct {
-	Search *GraphQuery_Search `protobuf:"bytes,5,opt,name=search,oneof"`
+	Search *GraphQuery_Search `protobuf:"bytes,3,opt,name=search,oneof"`
 }
 
-func (*GraphQuery_AttemptRange_) isGraphQuery_Query() {}
 func (*GraphQuery_AttemptList_) isGraphQuery_Query()  {}
-func (*GraphQuery_QuestRange_) isGraphQuery_Query()   {}
-func (*GraphQuery_QuestList_) isGraphQuery_Query()    {}
+func (*GraphQuery_AttemptRange_) isGraphQuery_Query() {}
 func (*GraphQuery_Search_) isGraphQuery_Query()       {}
 
 func (m *GraphQuery) GetQuery() isGraphQuery_Query {
 	if m != nil {
 		return m.Query
-	}
-	return nil
-}
-
-func (m *GraphQuery) GetAttemptRange() *GraphQuery_AttemptRange {
-	if x, ok := m.GetQuery().(*GraphQuery_AttemptRange_); ok {
-		return x.AttemptRange
 	}
 	return nil
 }
@@ -98,16 +83,9 @@ func (m *GraphQuery) GetAttemptList() *GraphQuery_AttemptList {
 	return nil
 }
 
-func (m *GraphQuery) GetQuestRange() *GraphQuery_QuestRange {
-	if x, ok := m.GetQuery().(*GraphQuery_QuestRange_); ok {
-		return x.QuestRange
-	}
-	return nil
-}
-
-func (m *GraphQuery) GetQuestList() *GraphQuery_QuestList {
-	if x, ok := m.GetQuery().(*GraphQuery_QuestList_); ok {
-		return x.QuestList
+func (m *GraphQuery) GetAttemptRange() *GraphQuery_AttemptRange {
+	if x, ok := m.GetQuery().(*GraphQuery_AttemptRange_); ok {
+		return x.AttemptRange
 	}
 	return nil
 }
@@ -122,10 +100,8 @@ func (m *GraphQuery) GetSearch() *GraphQuery_Search {
 // XXX_OneofFuncs is for the internal use of the proto package.
 func (*GraphQuery) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), []interface{}) {
 	return _GraphQuery_OneofMarshaler, _GraphQuery_OneofUnmarshaler, []interface{}{
-		(*GraphQuery_AttemptRange_)(nil),
 		(*GraphQuery_AttemptList_)(nil),
-		(*GraphQuery_QuestRange_)(nil),
-		(*GraphQuery_QuestList_)(nil),
+		(*GraphQuery_AttemptRange_)(nil),
 		(*GraphQuery_Search_)(nil),
 	}
 }
@@ -134,28 +110,18 @@ func _GraphQuery_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
 	m := msg.(*GraphQuery)
 	// query
 	switch x := m.Query.(type) {
-	case *GraphQuery_AttemptRange_:
-		b.EncodeVarint(1<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.AttemptRange); err != nil {
-			return err
-		}
 	case *GraphQuery_AttemptList_:
-		b.EncodeVarint(2<<3 | proto.WireBytes)
+		b.EncodeVarint(1<<3 | proto.WireBytes)
 		if err := b.EncodeMessage(x.AttemptList); err != nil {
 			return err
 		}
-	case *GraphQuery_QuestRange_:
-		b.EncodeVarint(3<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.QuestRange); err != nil {
-			return err
-		}
-	case *GraphQuery_QuestList_:
-		b.EncodeVarint(4<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.QuestList); err != nil {
+	case *GraphQuery_AttemptRange_:
+		b.EncodeVarint(2<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.AttemptRange); err != nil {
 			return err
 		}
 	case *GraphQuery_Search_:
-		b.EncodeVarint(5<<3 | proto.WireBytes)
+		b.EncodeVarint(3<<3 | proto.WireBytes)
 		if err := b.EncodeMessage(x.Search); err != nil {
 			return err
 		}
@@ -169,15 +135,7 @@ func _GraphQuery_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
 func _GraphQuery_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
 	m := msg.(*GraphQuery)
 	switch tag {
-	case 1: // query.attempt_range
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(GraphQuery_AttemptRange)
-		err := b.DecodeMessage(msg)
-		m.Query = &GraphQuery_AttemptRange_{msg}
-		return true, err
-	case 2: // query.attempt_list
+	case 1: // query.attempt_list
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
@@ -185,23 +143,15 @@ func _GraphQuery_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buf
 		err := b.DecodeMessage(msg)
 		m.Query = &GraphQuery_AttemptList_{msg}
 		return true, err
-	case 3: // query.quest_range
+	case 2: // query.attempt_range
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
-		msg := new(GraphQuery_QuestRange)
+		msg := new(GraphQuery_AttemptRange)
 		err := b.DecodeMessage(msg)
-		m.Query = &GraphQuery_QuestRange_{msg}
+		m.Query = &GraphQuery_AttemptRange_{msg}
 		return true, err
-	case 4: // query.quest_list
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(GraphQuery_QuestList)
-		err := b.DecodeMessage(msg)
-		m.Query = &GraphQuery_QuestList_{msg}
-		return true, err
-	case 5: // query.search
+	case 3: // query.search
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
@@ -214,93 +164,39 @@ func _GraphQuery_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buf
 	}
 }
 
-// AttemptRange represents a (quest, attempt) -> (quest, attempt) pair. All
-// attempts within the range will be returned as the result of the query.
-type GraphQuery_AttemptRange struct {
-	Start *Attempt_ID `protobuf:"bytes,1,opt,name=start" json:"start,omitempty"`
-	End   *Attempt_ID `protobuf:"bytes,2,opt,name=end" json:"end,omitempty"`
-}
-
-func (m *GraphQuery_AttemptRange) Reset()                    { *m = GraphQuery_AttemptRange{} }
-func (m *GraphQuery_AttemptRange) String() string            { return proto.CompactTextString(m) }
-func (*GraphQuery_AttemptRange) ProtoMessage()               {}
-func (*GraphQuery_AttemptRange) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{0, 0} }
-
-func (m *GraphQuery_AttemptRange) GetStart() *Attempt_ID {
-	if m != nil {
-		return m.Start
-	}
-	return nil
-}
-
-func (m *GraphQuery_AttemptRange) GetEnd() *Attempt_ID {
-	if m != nil {
-		return m.End
-	}
-	return nil
-}
-
 // AttemptList allows you to list one or more specific attempts as the result
-// of the query.
+// of the query. If a quest contains the attempt number 0, or is empty, it
+// means 'all attempts for this quest'.
 type GraphQuery_AttemptList struct {
-	Attempt []*Attempt_ID `protobuf:"bytes,1,rep,name=attempt" json:"attempt,omitempty"`
+	Attempt *AttemptFanout `protobuf:"bytes,1,opt,name=attempt" json:"attempt,omitempty"`
 }
 
 func (m *GraphQuery_AttemptList) Reset()                    { *m = GraphQuery_AttemptList{} }
 func (m *GraphQuery_AttemptList) String() string            { return proto.CompactTextString(m) }
 func (*GraphQuery_AttemptList) ProtoMessage()               {}
-func (*GraphQuery_AttemptList) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{0, 1} }
+func (*GraphQuery_AttemptList) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{0, 0} }
 
-func (m *GraphQuery_AttemptList) GetAttempt() []*Attempt_ID {
+func (m *GraphQuery_AttemptList) GetAttempt() *AttemptFanout {
 	if m != nil {
 		return m.Attempt
 	}
 	return nil
 }
 
-// QuestRange represents a quest->quest pair. All Attempts of all Quests
-// within the range will be returned as the result of the query.
-type GraphQuery_QuestRange struct {
-	Start *Quest_ID `protobuf:"bytes,1,opt,name=start" json:"start,omitempty"`
-	End   *Quest_ID `protobuf:"bytes,2,opt,name=end" json:"end,omitempty"`
+// AttemptRange allows you to list a range of attempts in a single quest.
+// low must be > 0, and high must be > low. The range is [low, high). High
+// may be higher than the highest attempt, and low may be lower than the
+// lowest attempt.
+type GraphQuery_AttemptRange struct {
+	Quest string `protobuf:"bytes,1,opt,name=quest" json:"quest,omitempty"`
+	Low   uint32 `protobuf:"varint,2,opt,name=low" json:"low,omitempty"`
+	High  uint32 `protobuf:"varint,3,opt,name=high" json:"high,omitempty"`
 }
 
-func (m *GraphQuery_QuestRange) Reset()                    { *m = GraphQuery_QuestRange{} }
-func (m *GraphQuery_QuestRange) String() string            { return proto.CompactTextString(m) }
-func (*GraphQuery_QuestRange) ProtoMessage()               {}
-func (*GraphQuery_QuestRange) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{0, 2} }
-
-func (m *GraphQuery_QuestRange) GetStart() *Quest_ID {
-	if m != nil {
-		return m.Start
-	}
-	return nil
-}
-
-func (m *GraphQuery_QuestRange) GetEnd() *Quest_ID {
-	if m != nil {
-		return m.End
-	}
-	return nil
-}
-
-// QuestList allows you to list one or more specific quests as the result of
-// the query.
-type GraphQuery_QuestList struct {
-	Quest []*Quest_ID `protobuf:"bytes,1,rep,name=quest" json:"quest,omitempty"`
-}
-
-func (m *GraphQuery_QuestList) Reset()                    { *m = GraphQuery_QuestList{} }
-func (m *GraphQuery_QuestList) String() string            { return proto.CompactTextString(m) }
-func (*GraphQuery_QuestList) ProtoMessage()               {}
-func (*GraphQuery_QuestList) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{0, 3} }
-
-func (m *GraphQuery_QuestList) GetQuest() []*Quest_ID {
-	if m != nil {
-		return m.Quest
-	}
-	return nil
-}
+func (m *GraphQuery_AttemptRange) Reset()                    { *m = GraphQuery_AttemptRange{} }
+func (m *GraphQuery_AttemptRange) String() string            { return proto.CompactTextString(m) }
+func (*GraphQuery_AttemptRange) ProtoMessage()               {}
+func (*GraphQuery_AttemptRange) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{0, 1} }
 
 // A Search allows you to query objects whose properties match all of the
 // provided filters. Filters take the form of a dot-delimited path. For
@@ -350,9 +246,9 @@ type GraphQuery_Search struct {
 	// Additionally `Attempt` has a special field $quest whose subfields are
 	// queriable in the exact same way that a search in a Quest domain works.
 	Domain GraphQuery_Search_SearchDomain `protobuf:"varint,1,opt,name=domain,enum=dm.GraphQuery_Search_SearchDomain" json:"domain,omitempty"`
-	// Start and End are optional AttemptRange restrictions on the first sort
-	// property.  For now, these are just restrictions on the 'created'
-	// timestamp for either the Quest or Attempt, depending on the SearchDomain.
+	// Start and End are optional restrictions on the first sort property. For
+	// now, these are just restrictions on the 'created' timestamp for either
+	// the Quest or Attempt, depending on the SearchDomain.
 	Start *PropertyValue `protobuf:"bytes,3,opt,name=start" json:"start,omitempty"`
 	End   *PropertyValue `protobuf:"bytes,4,opt,name=end" json:"end,omitempty"`
 	// ApproxFilters allows you to filter on 'approximate' fields. Approximate
@@ -372,7 +268,7 @@ type GraphQuery_Search struct {
 	//   "some.of" = ["stuff", "and", "data"]
 	//
 	// This is useful for filtering documents where the order of parameters
-	// in a list or sublist isn't know, or doesn't matter.
+	// in a list or sublist isn't known, or doesn't matter.
 	ApproxFilters map[string]*MultiPropertyValue `protobuf:"bytes,5,rep,name=approx_filters" json:"approx_filters,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// ExactFilters allows you to filter on 'exact' fields. Exact fields are the
 	// json path to the value, including array subscripts. For example if your
@@ -396,7 +292,7 @@ type GraphQuery_Search struct {
 func (m *GraphQuery_Search) Reset()                    { *m = GraphQuery_Search{} }
 func (m *GraphQuery_Search) String() string            { return proto.CompactTextString(m) }
 func (*GraphQuery_Search) ProtoMessage()               {}
-func (*GraphQuery_Search) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{0, 4} }
+func (*GraphQuery_Search) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{0, 2} }
 
 func (m *GraphQuery_Search) GetStart() *PropertyValue {
 	if m != nil {
@@ -428,44 +324,39 @@ func (m *GraphQuery_Search) GetExactFilters() map[string]*PropertyValue {
 
 func init() {
 	proto.RegisterType((*GraphQuery)(nil), "dm.GraphQuery")
-	proto.RegisterType((*GraphQuery_AttemptRange)(nil), "dm.GraphQuery.AttemptRange")
 	proto.RegisterType((*GraphQuery_AttemptList)(nil), "dm.GraphQuery.AttemptList")
-	proto.RegisterType((*GraphQuery_QuestRange)(nil), "dm.GraphQuery.QuestRange")
-	proto.RegisterType((*GraphQuery_QuestList)(nil), "dm.GraphQuery.QuestList")
+	proto.RegisterType((*GraphQuery_AttemptRange)(nil), "dm.GraphQuery.AttemptRange")
 	proto.RegisterType((*GraphQuery_Search)(nil), "dm.GraphQuery.Search")
 	proto.RegisterEnum("dm.GraphQuery_Search_SearchDomain", GraphQuery_Search_SearchDomain_name, GraphQuery_Search_SearchDomain_value)
 }
 
-var fileDescriptor6 = []byte{
-	// 478 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x74, 0x93, 0x5f, 0x6f, 0xd3, 0x30,
-	0x14, 0xc5, 0xdb, 0xa6, 0x4d, 0xe8, 0x4d, 0x57, 0xb5, 0x96, 0x40, 0x9d, 0x27, 0xa0, 0xaa, 0x04,
-	0xeb, 0x53, 0x84, 0x0a, 0x0f, 0x88, 0x07, 0xc4, 0x50, 0x37, 0xc6, 0x34, 0x24, 0x36, 0x24, 0x5e,
-	0x2b, 0x6f, 0x31, 0x5b, 0x45, 0xfe, 0xe1, 0xb8, 0x68, 0xf9, 0x82, 0xbc, 0xf1, 0x9d, 0xb0, 0xaf,
-	0x9d, 0x2d, 0x69, 0xc3, 0xd3, 0xb4, 0xdc, 0xdf, 0x39, 0xe7, 0xfe, 0x71, 0x61, 0x7c, 0x23, 0x58,
-	0x76, 0xbb, 0xfa, 0xb5, 0xe1, 0xa2, 0x08, 0x32, 0x91, 0xca, 0x94, 0x74, 0xc2, 0x98, 0x8e, 0xcc,
-	0xe7, 0x90, 0x49, 0x66, 0xbe, 0x52, 0x5f, 0x16, 0x19, 0xcf, 0xcd, 0x3f, 0xb3, 0x3f, 0x1e, 0xc0,
-	0x27, 0x4d, 0x5c, 0x68, 0x1d, 0x79, 0x03, 0x7b, 0x4c, 0x4a, 0x1e, 0x67, 0x72, 0x25, 0x58, 0x72,
-	0xc3, 0x27, 0xed, 0x69, 0x7b, 0xee, 0x2f, 0x0e, 0x82, 0x30, 0x0e, 0x1e, 0xb0, 0xe0, 0xc8, 0x30,
-	0x97, 0x1a, 0x39, 0x6d, 0x91, 0x05, 0x0c, 0x4a, 0x55, 0xb4, 0xce, 0xe5, 0xa4, 0x83, 0x22, 0xda,
-	0x2c, 0x3a, 0x57, 0x84, 0xd2, 0xbc, 0x02, 0x5f, 0xb5, 0x9a, 0x97, 0x39, 0x0e, 0x4a, 0xf6, 0xb7,
-	0x24, 0x17, 0x9a, 0x28, 0x53, 0x02, 0x00, 0xa3, 0xc0, 0x8c, 0x2e, 0x0a, 0x26, 0x4d, 0x02, 0x9b,
-	0x70, 0x08, 0x6e, 0xce, 0x99, 0xb8, 0xbe, 0x9d, 0xf4, 0x90, 0x7d, 0xbc, 0xc5, 0x7e, 0xc3, 0xe2,
-	0x69, 0x8b, 0x9e, 0xc1, 0xa0, 0x3a, 0x10, 0x79, 0x0a, 0xbd, 0x5c, 0x32, 0x21, 0xed, 0xf0, 0x43,
-	0xad, 0xb3, 0x40, 0xf0, 0x79, 0x49, 0x0e, 0xc0, 0xe1, 0x49, 0x68, 0x87, 0xdc, 0x2a, 0xd2, 0x00,
-	0xfc, 0xca, 0x9c, 0xe4, 0x39, 0x78, 0x76, 0x33, 0xca, 0xcc, 0x69, 0xe0, 0x97, 0x00, 0x0f, 0x43,
-	0x2a, 0xeb, 0x5a, 0xf2, 0x40, 0xc3, 0x58, 0xd6, 0xb9, 0xfb, 0xd5, 0xdc, 0x5a, 0x89, 0xce, 0xa1,
-	0x7f, 0x3f, 0xb9, 0x36, 0xc1, 0x3d, 0xd9, 0xc4, 0x3a, 0xf9, 0xd7, 0x01, 0xd7, 0x0c, 0xae, 0xae,
-	0xe6, 0x86, 0x69, 0xcc, 0xd6, 0x09, 0xa6, 0x0d, 0x17, 0xb3, 0xc6, 0xfd, 0xd8, 0x3f, 0x4b, 0x24,
-	0xc9, 0xb4, 0x6c, 0xd0, 0xdc, 0x6b, 0xac, 0x25, 0x5f, 0x45, 0x9a, 0x71, 0x21, 0x8b, 0xef, 0x2c,
-	0xda, 0x70, 0xf2, 0xcc, 0x74, 0xd9, 0xfd, 0x5f, 0xfd, 0x03, 0x0c, 0x59, 0xa6, 0xde, 0xde, 0xdd,
-	0xea, 0xc7, 0x3a, 0x92, 0x5c, 0xe4, 0xea, 0x3a, 0xba, 0xcd, 0x79, 0x73, 0xfa, 0x11, 0xb2, 0x27,
-	0x06, 0x3d, 0x4e, 0xa4, 0x7a, 0xa3, 0xef, 0x61, 0x8f, 0xdf, 0xb1, 0x6b, 0x79, 0x6f, 0xe0, 0xa2,
-	0xc1, 0x61, 0xb3, 0xc1, 0xb1, 0x46, 0xab, 0x7a, 0x7a, 0x0e, 0xa4, 0xc1, 0xd5, 0x07, 0xe7, 0x27,
-	0x2f, 0x70, 0x15, 0x7d, 0xf2, 0x02, 0x7a, 0xbf, 0x75, 0xb7, 0x76, 0xd9, 0x4f, 0xb4, 0xf5, 0x97,
-	0x4d, 0x24, 0xd7, 0xb5, 0x59, 0xde, 0x75, 0xde, 0xb6, 0xe9, 0x09, 0x8c, 0x77, 0x22, 0xea, 0x66,
-	0xd3, 0xba, 0xd9, 0xee, 0x4e, 0xb4, 0xcf, 0xec, 0x25, 0x0c, 0x6a, 0x9b, 0xee, 0x43, 0x0f, 0x8f,
-	0x36, 0x6a, 0x29, 0x37, 0xcf, 0xbe, 0x98, 0x51, 0xfb, 0xac, 0xfb, 0xa8, 0x33, 0x72, 0x2e, 0xbd,
-	0x3c, 0x15, 0x72, 0x75, 0x55, 0x7c, 0xf4, 0xf0, 0xd8, 0xa2, 0xb8, 0x72, 0xf1, 0xf7, 0xfc, 0xfa,
-	0x5f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x9b, 0xf1, 0xcb, 0xa2, 0x07, 0x04, 0x00, 0x00,
+var fileDescriptor7 = []byte{
+	// 418 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x74, 0x92, 0x5f, 0x8b, 0xd3, 0x40,
+	0x14, 0xc5, 0x9b, 0xa4, 0x49, 0xdc, 0x9b, 0x64, 0x69, 0x07, 0x94, 0x10, 0x41, 0x42, 0x40, 0x77,
+	0x9f, 0x02, 0x56, 0x1f, 0x16, 0x1f, 0xc4, 0x15, 0xb7, 0x2e, 0xb2, 0x82, 0xad, 0xe0, 0x6b, 0x98,
+	0x36, 0x63, 0x1b, 0xcc, 0x3f, 0x27, 0x13, 0x6d, 0x3e, 0xa4, 0x1f, 0xc3, 0xef, 0xe1, 0xcc, 0x64,
+	0xd4, 0xc6, 0xc6, 0xa7, 0x42, 0xe7, 0x77, 0xce, 0xbd, 0xf7, 0x9c, 0xc0, 0x7c, 0x47, 0x71, 0xbd,
+	0x4f, 0xbe, 0xb6, 0x84, 0x76, 0x71, 0x4d, 0x2b, 0x56, 0x21, 0x3d, 0x2d, 0x02, 0x87, 0x75, 0x35,
+	0x69, 0xfa, 0x3f, 0xa2, 0x9f, 0x26, 0xc0, 0x5b, 0x81, 0xad, 0x04, 0x85, 0x16, 0xe0, 0x62, 0xc6,
+	0x48, 0x51, 0xb3, 0x24, 0xcf, 0x1a, 0xe6, 0x6b, 0xa1, 0x76, 0xe9, 0x2c, 0x82, 0x38, 0x2d, 0xe2,
+	0xbf, 0x54, 0x7c, 0xdd, 0x23, 0x77, 0x9c, 0xb8, 0x9d, 0xa0, 0xe7, 0xe0, 0xfd, 0xd6, 0x50, 0x5c,
+	0xee, 0x88, 0xaf, 0x4b, 0xd1, 0xc3, 0x71, 0xd1, 0x5a, 0x20, 0x5c, 0x75, 0x01, 0x56, 0x43, 0x30,
+	0xdd, 0xee, 0x7d, 0x43, 0xe2, 0xf7, 0xff, 0xc1, 0x3f, 0xca, 0xc7, 0xdb, 0x49, 0xf0, 0x14, 0x9c,
+	0xa3, 0x79, 0x28, 0x02, 0x5b, 0x4d, 0x53, 0xcb, 0xcd, 0x85, 0x50, 0x11, 0x4b, 0x5c, 0x56, 0x2d,
+	0x0b, 0xae, 0xc0, 0x3d, 0x9e, 0x86, 0x3c, 0x30, 0x79, 0x08, 0xea, 0x9c, 0x33, 0xe4, 0x80, 0x91,
+	0x57, 0xdf, 0xe5, 0x9a, 0x1e, 0x72, 0x61, 0xba, 0xcf, 0x76, 0xfd, 0x16, 0x5e, 0xf0, 0xc3, 0x00,
+	0xab, 0x9f, 0xcc, 0xa3, 0xb0, 0xd2, 0xaa, 0xc0, 0x59, 0x29, 0x55, 0xe7, 0x8b, 0x68, 0x74, 0x41,
+	0xf5, 0xf3, 0x46, 0x92, 0x28, 0x04, 0xb3, 0x61, 0x98, 0x32, 0x75, 0x93, 0x5c, 0xed, 0x03, 0xad,
+	0x6a, 0x42, 0x59, 0xf7, 0x09, 0xe7, 0x2d, 0x41, 0x8f, 0xc0, 0x20, 0x65, 0xea, 0x4f, 0xff, 0xf7,
+	0xfe, 0x0a, 0xce, 0x71, 0xcd, 0xab, 0x39, 0x24, 0x9f, 0xb3, 0x9c, 0x11, 0xda, 0xf8, 0x66, 0x68,
+	0x70, 0xf4, 0x72, 0x7c, 0xfa, 0xb5, 0x64, 0x97, 0x3d, 0x7a, 0x53, 0x32, 0x5e, 0xe1, 0x4b, 0xf0,
+	0xc8, 0x01, 0x6f, 0xd9, 0x1f, 0x03, 0x4b, 0x1a, 0x5c, 0x8c, 0x1b, 0xdc, 0x08, 0xf4, 0x58, 0x1f,
+	0xdc, 0x01, 0x1a, 0x71, 0xe5, 0x99, 0x7d, 0x21, 0x9d, 0x0a, 0xf0, 0x31, 0x98, 0xdf, 0xc4, 0xb6,
+	0xaa, 0xe9, 0x07, 0xc2, 0xfa, 0x7d, 0x9b, 0xb3, 0x6c, 0x70, 0xcb, 0x0b, 0xfd, 0x4a, 0x0b, 0x96,
+	0x30, 0x3f, 0x19, 0x31, 0x34, 0x0b, 0x87, 0x66, 0xa7, 0x99, 0x08, 0x9f, 0xe8, 0x09, 0xb8, 0x83,
+	0xa4, 0xcf, 0xc0, 0x5c, 0x89, 0x4a, 0x67, 0x13, 0xee, 0x66, 0xab, 0xb6, 0x67, 0xda, 0xbb, 0xe9,
+	0x3d, 0x7d, 0x66, 0xac, 0xed, 0xa6, 0xa2, 0x2c, 0xd9, 0x74, 0xaf, 0x6d, 0xd9, 0x3c, 0xed, 0x36,
+	0x96, 0xfc, 0xdc, 0x9f, 0xfd, 0x0a, 0x00, 0x00, 0xff, 0xff, 0x44, 0x60, 0x8b, 0x02, 0x14, 0x03,
+	0x00, 0x00,
 }

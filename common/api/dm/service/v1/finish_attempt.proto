@@ -4,15 +4,16 @@
 
 syntax = "proto3";
 
-import "types.proto";
 import "google/protobuf/timestamp.proto";
+
+import "graph_data.proto";
 
 package dm;
 
 // FinishAttemptReq sets the final result of an Attempt.
 message FinishAttemptReq {
   // required
-  dm.ExecutionAuth auth = 1;
+  dm.Execution.Auth auth = 1;
 
   string json_result = 2;
   google.protobuf.Timestamp expiration = 3;

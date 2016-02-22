@@ -30,7 +30,7 @@ type EnsureAttemptReq struct {
 func (m *EnsureAttemptReq) Reset()                    { *m = EnsureAttemptReq{} }
 func (m *EnsureAttemptReq) String() string            { return proto.CompactTextString(m) }
 func (*EnsureAttemptReq) ProtoMessage()               {}
-func (*EnsureAttemptReq) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (*EnsureAttemptReq) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
 
 func (m *EnsureAttemptReq) GetToEnsure() *Attempt_ID {
 	if m != nil {
@@ -43,7 +43,7 @@ func init() {
 	proto.RegisterType((*EnsureAttemptReq)(nil), "dm.EnsureAttemptReq")
 }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor3 = []byte{
 	// 108 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0x12, 0x49, 0xcd, 0x2b, 0x2e,
 	0x2d, 0x4a, 0x8d, 0x4f, 0x2c, 0x29, 0x49, 0xcd, 0x2d, 0x28, 0xd1, 0x2b, 0x28, 0xca, 0x2f, 0xc9,

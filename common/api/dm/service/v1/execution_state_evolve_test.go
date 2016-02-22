@@ -28,9 +28,9 @@ func TestExecutionState(t *testing.T) {
 		})
 
 		Convey("Invalid starting transistion", func() {
-			s := Execution_Unknown
-			So(s.Evolve(Execution_Scheduled), ShouldErrLike, "no transitions defined")
-			So(s, ShouldEqual, Execution_Unknown)
+			s := Execution_Finished
+			So(s.Evolve(Execution_Scheduled), ShouldErrLike, "invalid state transition Finished -> Schedule")
+			So(s, ShouldEqual, Execution_Finished)
 		})
 
 		Convey("Invalid ending transistion", func() {
@@ -40,7 +40,7 @@ func TestExecutionState(t *testing.T) {
 		})
 
 		Convey("MustEvolve", func() {
-			s := Execution_Unknown
+			s := Execution_Finished
 			So(func() { s.MustEvolve(Execution_Scheduled) }, ShouldPanic)
 		})
 	})

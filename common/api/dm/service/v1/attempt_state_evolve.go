@@ -48,3 +48,9 @@ func (s *Attempt_State) MustEvolve(newState Attempt_State) {
 		panic(err)
 	}
 }
+
+// Terminal returns true iff there are no valid evolutions from the current
+// state.
+func (s Attempt_State) Terminal() bool {
+	return len(validAttemptStateEvolution[s]) == 0
+}

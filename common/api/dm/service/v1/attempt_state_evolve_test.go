@@ -28,9 +28,9 @@ func TestAttemptState(t *testing.T) {
 		})
 
 		Convey("Invalid starting transistion", func() {
-			s := Attempt_Unknown
-			So(s.Evolve(Attempt_NeedsExecution), ShouldErrLike, "no transitions defined")
-			So(s, ShouldEqual, Attempt_Unknown)
+			s := Attempt_NeedsExecution
+			So(s.Evolve(Attempt_Finished), ShouldErrLike, "invalid state transition NeedsExecution -> Finished")
+			So(s, ShouldEqual, Attempt_NeedsExecution)
 		})
 
 		Convey("Invalid ending transistion", func() {
@@ -40,7 +40,7 @@ func TestAttemptState(t *testing.T) {
 		})
 
 		Convey("MustEvolve", func() {
-			s := Attempt_Unknown
+			s := Attempt_Finished
 			So(func() { s.MustEvolve(Attempt_NeedsExecution) }, ShouldPanic)
 		})
 	})
