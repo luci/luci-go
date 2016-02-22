@@ -55,8 +55,8 @@ type Tool struct {
 
 func (t *Tool) usage() {
 	fmt.Fprintf(os.Stderr, "Usage of %s:\n", t.Name)
-	fmt.Fprintf(os.Stderr, "\t%s [flags] -type T [directory]", t.Name)
-	fmt.Fprintf(os.Stderr, "\t%s [flags[ -type T files... # Must be a single package", t.Name)
+	fmt.Fprintf(os.Stderr, "\t%s [flags] -type T [directory]\n", t.Name)
+	fmt.Fprintf(os.Stderr, "\t%s [flags] -type T files... # Must be a single package\n", t.Name)
 	flag.PrintDefaults()
 }
 
@@ -76,7 +76,7 @@ func (t *Tool) parseFlags(args []string) []string {
 		}
 	}
 	if len(t.Types) == 0 {
-		fmt.Fprintf(os.Stderr, "type is not specified")
+		fmt.Fprintln(os.Stderr, "type is not specified")
 		flags.Usage()
 		os.Exit(2)
 	}
@@ -90,6 +90,7 @@ func (t *Tool) ParseArgs(args []string) {
 	switch len(args) {
 	case 0:
 		args = []string{"."}
+		fallthrough
 
 	case 1:
 		info, err := os.Stat(args[0])
