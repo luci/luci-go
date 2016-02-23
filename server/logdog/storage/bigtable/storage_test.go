@@ -294,7 +294,7 @@ func TestStorage(t *testing.T) {
 					bt.deleteErr = errors.New("testing error")
 
 					err := s.Purge(types.StreamPath("A"))
-					So(err, ShouldErrLike, "testing error")
+					So(err, ShouldErrLike, "failed to purge stream")
 					So(errors.IsTransient(err), ShouldBeFalse)
 				})
 
@@ -302,7 +302,7 @@ func TestStorage(t *testing.T) {
 					bt.deleteErr = errors.WrapTransient(errors.New("testing error"))
 
 					err := s.Purge(types.StreamPath("A"))
-					So(err, ShouldErrLike, "testing error")
+					So(err, ShouldErrLike, "failed to purge stream")
 					So(errors.IsTransient(err), ShouldBeTrue)
 				})
 

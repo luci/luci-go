@@ -6,10 +6,12 @@ package bigtable
 
 import (
 	"fmt"
+	"sync/atomic"
 
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/parallel"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"golang.org/x/net/context"
 	"google.golang.org/cloud"
@@ -43,6 +45,9 @@ const (
 	// tailRowMaxSize is the maximum number of bytes of tail row data that will be
 	// buffered during Tail row reading.
 	tailRowMaxSize = 1024 * 1024 * 16
+
+	// defaultMaxPurgeWorkers is the default number of purge workers to use.
+	defaultMaxPurgeWorkers = 32
 )
 
 // Options is a set of configuration options for BigTable storage.
@@ -59,6 +64,10 @@ type Options struct {
 
 	// Table is the name of the BigTable table to use for logs.
 	LogTable string
+
+	// MaxPurgeWorkers is the maximum number of parallel purge workers to use for
+	// a purge operation. If <= 0, a default value will be used.
+	MaxPurgeWorkers int
 
 	// EnableGarbageCollection is used during initialization only. If true, it
 	// will enable pushing garbage collection settings to BigTable.
@@ -206,61 +215,71 @@ func (s *btStorage) Tail(p types.StreamPath) ([]byte, types.MessageIndex, error)
 func (s *btStorage) Purge(p types.StreamPath) error {
 	c := log.SetField(s.ctx, "path", p)
 
-	// Listen for rows to purge. If any errors are encountered, aggregate them
-	// in a MultiError for handling.
-	rowC := make(chan *rowKey)
-	errC := make(chan errors.MultiError)
-
-	go func() {
-		var deleteErr errors.MultiError
-		defer func() {
-			errC <- deleteErr
-			close(errC)
-		}()
-
-		count := 0
-		for rk := range rowC {
-			if err := s.table.deleteRow(c, rk); err != nil {
-				deleteErr = append(deleteErr, err)
-			} else {
-				count++
-			}
-		}
-
-		log.Fields{
-			"purgedRowCount": count,
-		}.Debugf(c, "Purged rows.")
-	}()
+	purgeWorkers := s.MaxPurgeWorkers
+	if purgeWorkers <= 0 {
+		purgeWorkers = defaultMaxPurgeWorkers
+	}
 
 	// Run a keys-only query through the table.
+	//
+	// NOTE: count is used only for logging, and so it is not imperative that it
+	// be protected from overflow.
+	count := int32(0)
 	rk := newRowKey(string(p), 0)
-	func() {
-		defer close(rowC)
-
+	errC := parallel.Run(purgeWorkers, func(taskC chan<- func() error) {
+		// List the rows in the table. For each row, dispatch a purge function to
+		// purge it.
 		s.table.getLogData(c, rk, 0, true, func(rk *rowKey, data []byte) error {
-			rowC <- rk
+			taskC <- func() error {
+				if err := s.table.deleteRow(c, rk); err != nil {
+					log.Fields{
+						log.ErrorKey: err,
+						"rowKey":     rk.String(),
+					}.Errorf(c, "Failed to delete row.")
+					return err
+				}
+
+				atomic.AddInt32(&count, 1)
+				return nil
+			}
+
 			return nil
 		})
-	}()
+	})
 
-	merr := <-errC
-	if len(merr) > 0 {
-		log.Fields{
-			log.ErrorKey: merr,
-			"errorCount": len(merr),
-		}.Errorf(c, "Failed to purge log stream.")
-
-		// If any of our sub-errors were transient, report the larger error as
-		// transient.
-		for _, e := range merr {
-			if errors.IsTransient(e) {
-				return errors.WrapTransient(merr)
+	// Consume task errors. If any of them were transient, make sure we return
+	// a transient error.
+	failCount := 0
+	failed := false
+	var transient bool
+	for err := range errC {
+		if err != nil {
+			failCount++
+			failed = true
+			if errors.IsTransient(err) {
+				transient = true
 			}
 		}
-		return merr
+	}
+
+	// Handle errors.
+	if failed {
+		log.Fields{
+			"purgeCount": count,
+			"failCount":  failCount,
+			"transient":  transient,
+		}.Debugf(c, "Encountered error(s) while purging stream.")
+		err := errors.New("failed to purge stream")
+		if transient {
+			err = errors.WrapTransient(err)
+		}
+		return err
 	}
 
 	// Assert that there is no more data.
+	log.Fields{
+		"purgeCount": count,
+	}.Debugf(c, "Successfully purged stream. Confirming...")
 	return s.table.getLogData(c, rk, 0, true, func(rk *rowKey, data []byte) error {
 		log.Fields{
 			"rowKey": rk,
