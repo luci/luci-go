@@ -37,6 +37,7 @@ func TestCollector(t *testing.T) {
 			Coordinator: tcc,
 			Storage:     st,
 		}
+		defer coll.Close()
 
 		bb := bundleBuilder{
 			Context: c,

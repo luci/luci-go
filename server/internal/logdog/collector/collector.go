@@ -6,6 +6,7 @@ package collector
 
 import (
 	"bytes"
+	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -23,6 +24,9 @@ import (
 // Collector is a stateful object responsible for ingesting LogDog logs,
 // registering them with a Coordinator, and stowing them in short-term storage
 // for streaming and processing.
+//
+// A Collector's Close should be called when finished to release any internal
+// resources.
 type Collector struct {
 	// Coordinator is used to interface with the Coordinator client.
 	//
@@ -32,13 +36,38 @@ type Collector struct {
 
 	// Storage is the backing store to use.
 	Storage storage.Storage
-	// Sem is a semaphore used to throttle the number of simultaneous ingest
-	// tasks that are executed.
-	Sem parallel.Semaphore
 
 	// StreamStateCacheExpire is the maximum amount of time that a cached stream
 	// state entry is valid. If zero, DefaultStreamStateCacheExpire will be used.
 	StreamStateCacheExpire time.Duration
+
+	// MaxParallelBundles is the maximum number of log entry bundles per message
+	// to handle in parallel. If <= 0, no maximum will be applied.
+	MaxParallelBundles int
+	// MaxIngestWorkers is the maximum number of ingest worker goroutines that
+	// will operate at a time. If <= 0, no maximum will be applied.
+	MaxIngestWorkers int
+
+	// initOnce is used to ensure that the Collector's internal state is
+	// initialized at most once.
+	initOnce sync.Once
+	// runner is the Runner that will be used for ingest. It will be configured
+	// based on the supplied MaxIngestWorkers parameter.
+	//
+	// Internally, runner must not be used by tasks that themselves use the
+	// runner, else deadlock could occur.
+	runner *parallel.Runner
+}
+
+// init initializes the operational state of the Collector. It must be called
+// internally at the beginning of any exported method that uses that state.
+func (c *Collector) init() {
+	c.initOnce.Do(func() {
+		c.runner = &parallel.Runner{
+			Sustained: c.MaxIngestWorkers,
+			Maximum:   c.MaxIngestWorkers,
+		}
+	})
 }
 
 // Process ingests an encoded ButlerLogBundle message, registering it with
@@ -49,6 +78,8 @@ type Collector struct {
 // If no error occurred, or if there was an error with the input data, no error
 // will be returned.
 func (c *Collector) Process(ctx context.Context, msg []byte) error {
+	c.init()
+
 	pr := butlerproto.Reader{}
 	if err := pr.Read(bytes.NewReader(msg)); err != nil {
 		log.Errorf(log.SetError(ctx, err), "Failed to unpack message.")
@@ -71,6 +102,8 @@ func (c *Collector) Process(ctx context.Context, msg []byte) error {
 		return nil
 	}
 
+	// Define our logWork template. This will be cloned for each ingested log
+	// stream.
 	lw := logWork{
 		md: pr.Metadata,
 		b:  pr.Bundle,
@@ -78,10 +111,7 @@ func (c *Collector) Process(ctx context.Context, msg []byte) error {
 
 	// Handle each bundle entry in parallel. We will use a separate work pool
 	// here so that top-level bundle dispatch can't deadlock the processing tasks.
-	//
-	// If we don't have a semaphore, this will also be unbounded, since cap(nil)
-	// is 0.
-	err := parallel.WorkPool(cap(c.Sem), func(taskC chan<- func() error) {
+	err := parallel.WorkPool(c.MaxParallelBundles, func(taskC chan<- func() error) {
 		for _, be := range pr.Bundle.Entries {
 			lw := lw
 			lw.be = be
@@ -98,6 +128,14 @@ func (c *Collector) Process(ctx context.Context, msg []byte) error {
 		return err
 	}
 	return nil
+}
+
+// Close releases any internal resources and blocks pending the completion of
+// any outstanding operations. After Close, no new Process calls may be made.
+func (c *Collector) Close() {
+	c.init()
+
+	c.runner.Close()
 }
 
 // logWork is a cumulative set of read-only state passed around by value for log
@@ -184,7 +222,7 @@ func (c *Collector) processLogStream(ctx context.Context, lw *logWork) error {
 
 	// In parallel, load the log entries into Storage. Throttle this with our
 	// ingest semaphore.
-	return errors.MultiErrorFromErrors(parallel.Run(c.Sem, func(taskC chan<- func() error) {
+	return errors.MultiErrorFromErrors(c.runner.Run(func(taskC chan<- func() error) {
 		for i, le := range lw.be.Logs {
 			i, le := i, le
 

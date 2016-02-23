@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/luci/luci-go/common/errors"
-	. "github.com/luci/luci-go/common/testing/assertions"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -61,14 +61,25 @@ func TestWorkPool(t *testing.T) {
 			})
 
 			Convey("more goroutines than jobs", func() {
-				WorkPool(1000, func(ch chan<- func() error) {
-					for i := 0; i < 100; i++ {
-						ch <- func() error { atomic.AddInt32(&val, 1); return nil }
-					}
-				})
+				const workers = 10
 
-				So(val, ShouldEqual, 100)
+				// Execute (100*workers) tasks and confirm that only (workers) workers
+				// were spawned to handle them.
+				var max int
+				err := WorkPool(workers, countMaxGoroutines(100*workers, workers, &max))
+				So(err, ShouldBeNil)
+				So(max, ShouldEqual, workers)
 			})
+		})
+
+		Convey(`<= 0 workers will behave like FanOutIn.`, func() {
+			const iters = 100
+
+			// Track the number of simultaneous goroutines.
+			var max int
+			err := WorkPool(0, countMaxGoroutines(iters, iters, &max))
+			So(err, ShouldBeNil)
+			So(max, ShouldEqual, iters)
 		})
 
 		Convey("and testing error handling with a workpool size of 1", func() {
@@ -143,45 +154,6 @@ func TestWorkPool(t *testing.T) {
 					e1, e2,
 				})
 			})
-		})
-	})
-}
-
-func TestRun(t *testing.T) {
-	t.Parallel()
-
-	Convey("When using Run directly", t, func() {
-		Convey("Ignore consumes the errors and blocks", func() {
-			count := new(int32)
-			Ignore(Run(make(Semaphore, 1), func(ch chan<- func() error) {
-				for i := 0; i < 100; i++ {
-					ch <- func() error {
-						atomic.AddInt32(count, 1)
-						return fmt.Errorf("whaaattt")
-					}
-				}
-			}))
-			So(*count, ShouldEqual, 100)
-		})
-
-		Convey("Must panics on the first error", func() {
-			count := new(int32)
-			So(func() {
-				Must(Run(make(Semaphore, 1), func(ch chan<- func() error) {
-					for i := 0; i < 100; i++ {
-						i := i
-						ch <- func() error {
-							atomic.AddInt32(count, 1)
-							return fmt.Errorf("whaaattt: %d", i)
-						}
-					}
-				}))
-			}, ShouldPanicLike, "whaaattt: 0")
-			// Either:
-			//   * the panic happened and we load count before ch is unblocked
-			//   * the panic happened then ch(1) pushes and runs, then we load count
-			// So count will either be 1 or 2, but never more or less.
-			So(atomic.LoadInt32(count), ShouldBeBetweenOrEqual, 1, 2)
 		})
 	})
 }

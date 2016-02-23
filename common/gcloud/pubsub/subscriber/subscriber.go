@@ -80,9 +80,9 @@ func (s *Subscriber) Run(c context.Context, h Handler) {
 		pullWorkers = 1
 	}
 
-	var handlerSem parallel.Semaphore
-	if s.HandlerWorkers > 0 {
-		handlerSem = make(parallel.Semaphore, s.HandlerWorkers)
+	runner := parallel.Runner{
+		Sustained: s.HandlerWorkers,
+		Maximum:   s.HandlerWorkers,
 	}
 
 	parallel.WorkPool(pullWorkers, func(taskC chan<- func() error) {
@@ -100,7 +100,7 @@ func (s *Subscriber) Run(c context.Context, h Handler) {
 						break
 
 					case nil:
-						s.handleMessages(c, h, handlerSem, msgs)
+						s.handleMessages(c, h, &runner, msgs)
 
 					default:
 						log.WithError(err).Errorf(c, "Failed to pull messages.")
@@ -117,14 +117,14 @@ func (s *Subscriber) Run(c context.Context, h Handler) {
 	s.handlerWG.Wait()
 }
 
-func (s *Subscriber) handleMessages(c context.Context, h Handler, hs parallel.Semaphore, msgs []*pubsub.Message) {
+func (s *Subscriber) handleMessages(c context.Context, h Handler, r *parallel.Runner, msgs []*pubsub.Message) {
 	if len(msgs) == 0 {
 		s.noDataSleep(c)
 		return
 	}
 
 	// Handle all messages in parallel.
-	parallel.Run(hs, func(taskC chan<- func() error) {
+	r.Run(func(taskC chan<- func() error) {
 		s.handlerWG.Add(len(msgs))
 		for _, msg := range msgs {
 			msg := msg

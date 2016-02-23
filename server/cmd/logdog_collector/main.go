@@ -16,7 +16,6 @@ import (
 	"github.com/luci/luci-go/common/gcloud/pubsub/ackbuffer"
 	"github.com/luci/luci-go/common/gcloud/pubsub/subscriber"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/parallel"
 	"github.com/luci/luci-go/server/internal/logdog/collector"
 	"github.com/luci/luci-go/server/internal/logdog/collector/coordinator"
 	"github.com/luci/luci-go/server/internal/logdog/service"
@@ -117,11 +116,14 @@ func (a *application) runCollector() error {
 	// interface.
 	coord := coordinator.NewCoordinator(a.Coordinator())
 	coord = coordinator.NewCache(coord, int(ccfg.StateCacheSize), ccfg.StateCacheExpiration.Duration())
+
 	coll := collector.Collector{
-		Coordinator: coord,
-		Storage:     s,
-		Sem:         make(parallel.Semaphore, int(ccfg.Workers)),
+		Coordinator:        coord,
+		Storage:            s,
+		MaxParallelBundles: int(ccfg.Workers),
+		MaxIngestWorkers:   int(ccfg.Workers),
 	}
+	defer coll.Close()
 
 	// Execute our main Subscriber loop. It will run until the supplied Context
 	// is cancelled.
