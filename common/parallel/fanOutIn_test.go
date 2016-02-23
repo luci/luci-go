@@ -22,7 +22,11 @@ func TestFanOutIn(t *testing.T) {
 
 		// Track the number of simultaneous goroutines.
 		var max int
-		err := FanOutIn(countMaxGoroutines(iters, iters, &max))
+		err := FanOutIn(func(taskC chan<- func() error) {
+			max = countMaxGoroutines(iters, iters, func(f func() error) {
+				taskC <- f
+			})
+		})
 		So(err, ShouldBeNil)
 		So(max, ShouldEqual, iters)
 	})
@@ -47,57 +51,54 @@ func TestFanOutIn(t *testing.T) {
 	})
 }
 
-func countMaxGoroutines(iters, reap int, result *int) func(chan<- func() error) {
-	return func(taskC chan<- func() error) {
-		maxGoroutines := int32(0)
-		var goroutinesLock sync.Mutex
-		numGoroutines := int32(0)
+func countMaxGoroutines(iters, reap int, enc func(func() error)) int {
+	maxGoroutines := 0
+	var goroutinesLock sync.Mutex
+	numGoroutines := int32(0)
 
-		runningC := make(chan struct{})
-		blockC := make(chan struct{})
+	runningC := make(chan struct{})
+	blockC := make(chan struct{})
 
-		// Dispatch and reap tasks in batches, since we're blocking dispatch.
-		for iters > 0 {
-			r := reap
-			if reap > iters {
-				r = iters
-			}
-			iters -= r
+	// Dispatch and reap tasks in batches, since we're blocking dispatch.
+	for iters > 0 {
+		r := reap
+		if r > iters {
+			r = iters
+		}
+		iters -= r
 
-			for i := 0; i < r; i++ {
-				taskC <- func() error {
-					cur := atomic.AddInt32(&numGoroutines, 1)
-					defer atomic.AddInt32(&numGoroutines, -1)
+		for i := 0; i < r; i++ {
+			enc(func() error {
+				cur := int(atomic.AddInt32(&numGoroutines, 1))
+				defer atomic.AddInt32(&numGoroutines, -1)
 
-					// Update our maximum goroutines.
-					func() {
-						goroutinesLock.Lock()
-						defer goroutinesLock.Unlock()
+				// Update our maximum goroutines.
+				func() {
+					goroutinesLock.Lock()
+					defer goroutinesLock.Unlock()
 
-						if maxGoroutines < cur {
-							maxGoroutines = cur
-						}
-					}()
+					if maxGoroutines < cur {
+						maxGoroutines = cur
+					}
+				}()
 
-					// Signal that we're running, and stay open until we're released.
-					runningC <- struct{}{}
-					<-blockC
-					return nil
-				}
-			}
-
-			// Make sure all goroutines are running.
-			for i := 0; i < r; i++ {
-				<-runningC
-			}
-
-			// Release goroutines.
-			for i := 0; i < r; i++ {
-				blockC <- struct{}{}
-			}
+				// Signal that we're running, and stay open until we're released.
+				runningC <- struct{}{}
+				<-blockC
+				return nil
+			})
 		}
 
-		// Write out the result.
-		*result = int(maxGoroutines)
+		// Make sure all goroutines are running.
+		for i := 0; i < r; i++ {
+			<-runningC
+		}
+
+		// Release goroutines.
+		for i := 0; i < r; i++ {
+			blockC <- struct{}{}
+		}
 	}
+
+	return maxGoroutines
 }

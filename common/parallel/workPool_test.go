@@ -66,7 +66,11 @@ func TestWorkPool(t *testing.T) {
 				// Execute (100*workers) tasks and confirm that only (workers) workers
 				// were spawned to handle them.
 				var max int
-				err := WorkPool(workers, countMaxGoroutines(100*workers, workers, &max))
+				err := WorkPool(workers, func(taskC chan<- func() error) {
+					max = countMaxGoroutines(100*workers, workers, func(f func() error) {
+						taskC <- f
+					})
+				})
 				So(err, ShouldBeNil)
 				So(max, ShouldEqual, workers)
 			})
@@ -77,7 +81,11 @@ func TestWorkPool(t *testing.T) {
 
 			// Track the number of simultaneous goroutines.
 			var max int
-			err := WorkPool(0, countMaxGoroutines(iters, iters, &max))
+			err := WorkPool(0, func(taskC chan<- func() error) {
+				max = countMaxGoroutines(iters, iters, func(f func() error) {
+					taskC <- f
+				})
+			})
 			So(err, ShouldBeNil)
 			So(max, ShouldEqual, iters)
 		})
