@@ -12,6 +12,8 @@ import (
 	"os"
 	"os/signal"
 	"runtime/pprof"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/luci/luci-go/client/authcli"
@@ -175,15 +177,35 @@ func (a *application) Main(runFunc func(b *butler.Butler) error) error {
 
 	// Log the Butler's emitted streams.
 	defer func() {
-		s := b.Streams()
-		paths := make([]types.StreamPath, len(s))
-		for i, sn := range s {
-			paths[i] = a.butler.Prefix.Join(sn)
+		if r := a.output.Record(); r != nil {
+			// Log detail stream record.
+			streams := make([]string, 0, len(r.Streams))
+			for k := range r.Streams {
+				streams = append(streams, string(k))
+			}
+			sort.Strings(streams)
+
+			for i, stream := range streams {
+				rec := r.Streams[types.StreamPath(stream)]
+
+				ranges := make([]string, len(rec.Ranges))
+				for i, rng := range rec.Ranges {
+					ranges[i] = rng.String()
+				}
+				log.Infof(a, "%d) Stream [%s]: %s", i, stream, strings.Join(ranges, " "))
+			}
+		} else {
+			// No record; display stream overview.
+			s := b.Streams()
+			paths := make([]types.StreamPath, len(s))
+			for i, sn := range s {
+				paths[i] = a.butler.Prefix.Join(sn)
+			}
+			log.Fields{
+				"count":   len(paths),
+				"streams": paths,
+			}.Infof(a, "Butler emitted %d stream(s).", len(paths))
 		}
-		log.Fields{
-			"count":   len(paths),
-			"streams": paths,
-		}.Infof(a, "Butler emitted %d stream(s).", len(paths))
 	}()
 
 	// Execute our Butler run function with the instantiated Butler.

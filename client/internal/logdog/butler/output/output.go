@@ -36,6 +36,10 @@ type Output interface {
 	// Collect current Output stats.
 	Stats() Stats
 
+	// Record returns the detailed stream record for an Output. This may return
+	// nil if the Output is not configured to keep a stream record.
+	Record() *EntryRecord
+
 	// Close closes the Output, blocking until any buffered actions are flushed.
 	Close()
 }

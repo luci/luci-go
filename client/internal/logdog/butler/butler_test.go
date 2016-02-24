@@ -58,6 +58,8 @@ func (to *testOutput) Stats() output.Stats {
 	return &output.StatsBase{}
 }
 
+func (to *testOutput) Record() *output.EntryRecord { return nil }
+
 func (to *testOutput) Close() {
 	if to.closed {
 		panic("double close")

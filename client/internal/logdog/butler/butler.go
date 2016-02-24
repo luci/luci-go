@@ -250,7 +250,7 @@ func (b *Butler) Wait() error {
 
 	log.Fields{
 		"stats": b.c.Output.Stats(),
-	}.Debugf(b.ctx, "Message output has closed")
+	}.Infof(b.ctx, "Message output has closed")
 	return b.getRunErr()
 }
 

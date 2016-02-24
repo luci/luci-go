@@ -23,6 +23,7 @@ func init() {
 type pubsubOutputFactory struct {
 	topic      ps.Topic
 	noCompress bool
+	track      bool
 }
 
 var _ outputFactory = (*pubsubOutputFactory)(nil)
@@ -35,6 +36,10 @@ func (f *pubsubOutputFactory) option() multiflag.Option {
 		"The Google Cloud PubSub topic name (projects/<project>/topics/<topic>).")
 	flags.BoolVar(&f.noCompress, "nocompress", false,
 		"Disable compression in published Pub/Sub messages.")
+
+	// TODO(dnj): Default to false when mandatory debugging is finished.
+	flags.BoolVar(&f.track, "track", true,
+		"Track each sent message. This adds CPU/memory overhead.")
 
 	return opt
 }
@@ -81,5 +86,6 @@ func (f *pubsubOutputFactory) configOutput(a *application) (output.Output, error
 		Publisher: psConn,
 		Topic:     f.topic,
 		Compress:  !f.noCompress,
+		Track:     f.track,
 	}), nil
 }

@@ -39,6 +39,10 @@ type Config struct {
 
 	// Compress, if true, enables zlib compression.
 	Compress bool
+
+	// Track, if true, tracks all log entries that have been successfully
+	// submitted.
+	Track bool
 }
 
 // Validate validates the Output configuration.
@@ -70,6 +74,8 @@ type pubSubOutput struct {
 
 	statsMu sync.Mutex
 	stats   output.StatsBase
+
+	et *output.EntryTracker
 }
 
 // New instantiates a new GCPS output.
@@ -78,6 +84,11 @@ func New(ctx context.Context, c Config) output.Output {
 		Config: &c,
 	}
 	o.bufferPool.New = func() interface{} { return &buffer{} }
+
+	if c.Track {
+		o.et = &output.EntryTracker{}
+	}
+
 	o.Context = log.SetField(ctx, "pubsub", &o)
 	return &o
 }
@@ -115,6 +126,10 @@ func (o *pubSubOutput) SendBundle(bundle *logpb.ButlerLogBundle) error {
 		return err
 	}
 
+	if o.et != nil {
+		o.et.Track(bundle)
+	}
+
 	st.F.SentBytes += len(message.Data)
 	st.F.SentMessages++
 	return nil
@@ -130,6 +145,13 @@ func (o *pubSubOutput) Stats() output.Stats {
 
 	statsCopy := o.stats
 	return &statsCopy
+}
+
+func (o *pubSubOutput) Record() *output.EntryRecord {
+	if o.et == nil {
+		return nil
+	}
+	return o.et.Record()
 }
 
 func (o *pubSubOutput) Close() {
