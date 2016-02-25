@@ -273,6 +273,7 @@ func TestHandleArchive(t *testing.T) {
 						So(ls.Updated, ShouldResemble, ds.RoundTime(tc.Now().UTC()))
 						So(ls.Archived(), ShouldBeTrue)
 						So(ls.TerminalIndex, ShouldEqual, -1)
+						So(ls.ArchiveWhole, ShouldBeTrue)
 					})
 				})
 
@@ -305,6 +306,7 @@ func TestHandleArchive(t *testing.T) {
 						So(ls.ArchiveIndexSize, ShouldBeGreaterThan, 0)
 						So(ls.ArchiveDataURL, ShouldEqual, "gs://archive-test/path/to/archive/testing/+/foo/data.bin")
 						So(ls.ArchiveDataSize, ShouldBeGreaterThan, 0)
+						So(ls.ArchiveWhole, ShouldBeTrue)
 					})
 				})
 
@@ -321,6 +323,7 @@ func TestHandleArchive(t *testing.T) {
 							So(ds.Get(c).Get(ls), ShouldBeNil)
 							So(ls.Updated, ShouldResemble, ds.RoundTime(tc.Now().UTC()))
 							So(ls.Archived(), ShouldBeTrue)
+							So(ls.ArchiveWhole, ShouldBeTrue)
 						})
 
 						Convey(`With {0, 1, 2, 4} (incomplete) will archive the stream and update its terminal index.`, func() {
@@ -338,6 +341,7 @@ func TestHandleArchive(t *testing.T) {
 							So(ls.ArchiveIndexSize, ShouldBeGreaterThan, 0)
 							So(ls.ArchiveDataURL, ShouldEqual, "gs://archive-test/path/to/archive/testing/+/foo/data.bin")
 							So(ls.ArchiveDataSize, ShouldBeGreaterThan, 0)
+							So(ls.ArchiveWhole, ShouldBeFalse)
 						})
 					})
 
@@ -352,6 +356,7 @@ func TestHandleArchive(t *testing.T) {
 							So(ds.Get(c).Get(ls), ShouldBeNil)
 							So(ls.Updated, ShouldResemble, ds.RoundTime(tc.Now().UTC()))
 							So(ls.Archived(), ShouldBeTrue)
+							So(ls.ArchiveWhole, ShouldBeTrue)
 						})
 
 						Convey(`With {0, 1, 2, 4} (incomplete) will archive the stream and update its terminal index.`, func() {
@@ -369,6 +374,7 @@ func TestHandleArchive(t *testing.T) {
 							So(ls.ArchiveIndexSize, ShouldBeGreaterThan, 0)
 							So(ls.ArchiveDataURL, ShouldEqual, "gs://archive-test/path/to/archive/testing/+/foo/data.bin")
 							So(ls.ArchiveDataSize, ShouldBeGreaterThan, 0)
+							So(ls.ArchiveWhole, ShouldBeFalse)
 						})
 					})
 				})

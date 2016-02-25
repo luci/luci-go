@@ -6,11 +6,11 @@ queue:
   # Push queue for backend archival tasking.
   - name: archive-queue
     mode: push
-    rate: 20/s
+    rate: 100/s
     target: backend
 
   # Push queue for backend storage cleanup tasking.
   - name: storage-cleanup-queue
     mode: push
-    rate: 20/s
+    rate: 100/s
     target: backend

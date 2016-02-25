@@ -91,20 +91,20 @@ func (b *Backend) handleArchiveTask(c context.Context, r *http.Request) error {
 	}
 
 	// If the log stream has a terminal index, and its Updated time is less than
-	// the maximum archive delay, require this archival to be "complete" (no
-	// missing LogEntry).
+	// the maximum archive delay, require this archival to be whole (no missing
+	// LogEntry).
 	//
 	// If we're past maximum archive delay, settle for any (even empty) archival.
 	// This is a failsafe to prevent logs from sitting in limbo forever.
 	now := clock.Now(c).UTC()
 	maxDelay := cfg.GetCoordinator().ArchiveDelayMax.Duration()
-	complete := !now.After(ls.Updated.Add(maxDelay))
-	if !complete {
+	requireWhole := !now.After(ls.Updated.Add(maxDelay))
+	if !requireWhole {
 		log.Fields{
 			"path":             ls.Path(),
 			"updatedTimestamp": ls.Updated,
 			"maxDelay":         maxDelay,
-		}.Warningf(c, "Log stream is past maximum archival delay. Dropping completeness requirement.")
+		}.Warningf(c, "Log stream is past maximum archival delay. Dropping wholeness requirement.")
 	}
 
 	st, err := b.s.Storage(c)
@@ -124,11 +124,11 @@ func (b *Backend) handleArchiveTask(c context.Context, r *http.Request) error {
 	}()
 
 	t := &archiveTask{
-		Coordinator: cfg.Coordinator,
-		st:          st,
-		ls:          ls,
-		gs:          gsClient,
-		complete:    complete,
+		Coordinator:  cfg.Coordinator,
+		st:           st,
+		ls:           ls,
+		gs:           gsClient,
+		requireWhole: requireWhole,
 	}
 	if err := t.archive(c); err != nil {
 		log.WithError(err).Errorf(c, "Failed to perform archival operation.")
@@ -157,13 +157,14 @@ func (b *Backend) handleArchiveTask(c context.Context, r *http.Request) error {
 		// archived.
 		ls.Updated = now
 		ls.State = coordinator.LSArchived
+		ls.TerminalIndex = t.terminalIndex
 		ls.ArchiveStreamURL = t.streamURL
 		ls.ArchiveStreamSize = t.streamSize
 		ls.ArchiveIndexURL = t.indexURL
 		ls.ArchiveIndexSize = t.indexSize
 		ls.ArchiveDataURL = t.dataURL
 		ls.ArchiveDataSize = t.dataSize
-		ls.TerminalIndex = t.terminalIndex
+		ls.ArchiveWhole = t.wasWhole
 
 		// Update the log stream.
 		if err := ls.Put(di); err != nil {
@@ -184,10 +185,10 @@ func (b *Backend) handleArchiveTask(c context.Context, r *http.Request) error {
 // archiveTask is the set of parameters for a single archival.
 type archiveTask struct {
 	*svcconfig.Coordinator
-	st       storage.Storage
-	ls       *coordinator.LogStream
-	gs       gs.Client
-	complete bool
+	st           storage.Storage
+	ls           *coordinator.LogStream
+	gs           gs.Client
+	requireWhole bool
 
 	streamURL  string
 	streamSize int64
@@ -197,6 +198,7 @@ type archiveTask struct {
 	dataSize   int64
 
 	terminalIndex int64
+	wasWhole      bool
 }
 
 // archiveState performs the archival operation on a stream described by a
@@ -282,7 +284,7 @@ func (t *archiveTask) archive(c context.Context) (err error) {
 		Context:       c,
 		st:            t.st,
 		path:          path,
-		contiguous:    t.complete,
+		contiguous:    t.requireWhole,
 		terminalIndex: types.MessageIndex(t.ls.TerminalIndex),
 		lastIndex:     -1,
 	}
@@ -307,7 +309,7 @@ func (t *archiveTask) archive(c context.Context) (err error) {
 
 	t.terminalIndex = int64(ss.lastIndex)
 	if t.ls.TerminalIndex != t.terminalIndex {
-		if t.complete {
+		if t.requireWhole {
 			log.Fields{
 				"terminalIndex": t.ls.TerminalIndex,
 				"lastIndex":     t.terminalIndex,
@@ -331,6 +333,7 @@ func (t *archiveTask) archive(c context.Context) (err error) {
 	t.streamSize = streamO.Count()
 	t.indexSize = indexO.Count()
 	t.dataSize = dataO.Count()
+	t.wasWhole = !ss.hasMissingEntries
 	return
 }
 
@@ -396,8 +399,9 @@ type storageSource struct {
 	contiguous    bool               // if true, enforce contiguous entries
 	terminalIndex types.MessageIndex // if >= 0, discard logs beyond this
 
-	buf       []*logpb.LogEntry
-	lastIndex types.MessageIndex
+	buf               []*logpb.LogEntry
+	lastIndex         types.MessageIndex
+	hasMissingEntries bool // true if some log entries were missing.
 }
 
 func (s *storageSource) bufferEntries(start types.MessageIndex) error {
@@ -451,9 +455,11 @@ func (s *storageSource) NextLogEntry() (*logpb.LogEntry, error) {
 	// If we're enforcing a contiguous log stream, error if this LogEntry is not
 	// contiguous.
 	sidx := types.MessageIndex(le.StreamIndex)
-	if s.contiguous {
-		nidx := (s.lastIndex + 1)
-		if sidx != nidx {
+	nidx := (s.lastIndex + 1)
+	if sidx != nidx {
+		s.hasMissingEntries = true
+
+		if s.contiguous {
 			log.Fields{
 				"index":     sidx,
 				"nextIndex": nidx,

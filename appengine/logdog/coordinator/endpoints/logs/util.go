@@ -23,6 +23,7 @@ func loadLogStreamState(ls *coordinator.LogStream) *logs.LogStreamState {
 			IndexUrl:  ls.ArchiveIndexURL,
 			StreamUrl: ls.ArchiveStreamURL,
 			DataUrl:   ls.ArchiveDataURL,
+			Whole:     ls.ArchiveWhole,
 		}
 	}
 

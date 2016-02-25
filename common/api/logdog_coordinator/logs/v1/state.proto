@@ -32,6 +32,11 @@ message LogStreamState {
     string stream_url = 2;
     // The Google Storage URL where the log stream's assembled data is archived.
     string data_url = 3;
+
+    // If true, all log entries between 0 and terminal_index were archived. If
+    // false, this indicates that the log stream was not completely loaded into
+    // intermediate storage when the archival interval expired.
+    bool whole = 4;
   }
   // If non-nil, the log stream is archived, and this field contains archival
   // details.
