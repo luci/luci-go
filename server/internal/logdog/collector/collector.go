@@ -97,6 +97,26 @@ func (c *Collector) Process(ctx context.Context, msg []byte) error {
 		return nil
 	}
 
+	// If we're logging INFO or higher, log the ranges that this bundle
+	// represents.
+	if log.IsLogging(ctx, log.Info) {
+		for i, entry := range pr.Bundle.Entries {
+			fields := log.Fields{
+				"index": i,
+				"path":  entry.GetDesc().Path(),
+			}
+			if entry.Terminal {
+				fields["terminalIndex"] = entry.TerminalIndex
+			}
+			if logs := entry.GetLogs(); len(logs) > 0 {
+				fields["logStart"] = logs[0].StreamIndex
+				fields["logEnd"] = logs[len(logs)-1].StreamIndex
+			}
+
+			fields.Infof(ctx, "Processing log bundle entry.")
+		}
+	}
+
 	// If there are no entries, there is nothing to do.
 	if len(pr.Bundle.Entries) == 0 {
 		return nil

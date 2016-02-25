@@ -68,8 +68,6 @@ type Subscriber struct {
 	// noDataMu is used to throttle retries if the subscription has no available
 	// data.
 	noDataMu sync.Mutex
-	// handlerWG is the WaitGroup used to track outstanding message handlers.
-	handlerWG sync.WaitGroup
 }
 
 // Run executes until the supplied Context is canceled. Each recieved message
@@ -84,37 +82,33 @@ func (s *Subscriber) Run(c context.Context, h Handler) {
 		Sustained: s.HandlerWorkers,
 		Maximum:   s.HandlerWorkers,
 	}
+	defer runner.Close()
 
 	parallel.WorkPool(pullWorkers, func(taskC chan<- func() error) {
 		for {
-			select {
-			case <-c.Done():
+			// Stop if our Context has been canceled.
+			if err := c.Err(); err != nil {
 				return
+			}
 
-			default:
-				// Fetch and process another batch of messages.
-				taskC <- func() error {
+			// Fetch and process another batch of messages.
+			taskC <- func() error {
+				switch msgs, err := s.S.Pull(c); err {
+				case context.Canceled, context.DeadlineExceeded:
+					break
 
-					switch msgs, err := s.S.Pull(c); err {
-					case context.Canceled, context.DeadlineExceeded:
-						break
+				case nil:
+					s.handleMessages(c, h, &runner, msgs)
 
-					case nil:
-						s.handleMessages(c, h, &runner, msgs)
-
-					default:
-						log.WithError(err).Errorf(c, "Failed to pull messages.")
-						s.noDataSleep(c)
-					}
-
-					return nil
+				default:
+					log.WithError(err).Errorf(c, "Failed to pull messages.")
+					s.noDataSleep(c)
 				}
+
+				return nil
 			}
 		}
 	})
-
-	// Wait for all of our Handlers to finish.
-	s.handlerWG.Wait()
 }
 
 func (s *Subscriber) handleMessages(c context.Context, h Handler, r *parallel.Runner, msgs []*pubsub.Message) {
@@ -124,23 +118,20 @@ func (s *Subscriber) handleMessages(c context.Context, h Handler, r *parallel.Ru
 	}
 
 	// Handle all messages in parallel.
-	r.Run(func(taskC chan<- func() error) {
-		s.handlerWG.Add(len(msgs))
+	parallel.Ignore(r.Run(func(taskC chan<- func() error) {
 		for _, msg := range msgs {
 			msg := msg
 
 			// Handle an individual message. If the Handler returns true, ACK
 			// it.
 			taskC <- func() error {
-				defer s.handlerWG.Done()
-
 				if h(msg) {
 					s.A.Ack(msg.AckID)
 				}
 				return nil
 			}
 		}
-	})
+	}))
 }
 
 // noDataSleep sleeps for the configured NoDataDelay. This sleep will terminate

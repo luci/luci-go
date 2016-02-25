@@ -86,10 +86,13 @@ func New(c context.Context) *Service {
 // AddFlags adds standard service flags to the supplied FlagSet.
 func (s *Service) AddFlags(fs *flag.FlagSet) {
 	s.loggingFlags.AddFlags(fs)
-	s.authFlags.Register(fs, auth.Options{
-		Context: s,
-		Logger:  log.Get(s),
-	})
+
+	var opts auth.Options
+	if s.Context != nil {
+		opts.Context = s.Context
+		opts.Logger = log.Get(s.Context)
+	}
+	s.authFlags.Register(fs, opts)
 	s.configFlags.AddToFlagSet(fs)
 
 	fs.StringVar(&s.coordinatorHost, "coordinator", "",

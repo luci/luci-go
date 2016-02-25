@@ -95,6 +95,10 @@ if [ $? != 0 ]; then
   exit 1
 fi
 
+# Get the number of CPUs.
+NCPU=$(cat /proc/cpuinfo | grep processor | wc -l)
+export GOMAXPROCS="${NCPU}"
+
 # Load metadata.
 _load_metadata_check COORDINATOR_HOST "logdog_coordinator_host"
 
