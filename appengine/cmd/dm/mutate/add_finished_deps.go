@@ -8,29 +8,30 @@ import (
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/tumble"
+	"github.com/luci/luci-go/common/api/dm/service/v1"
 	"golang.org/x/net/context"
 )
 
 // AddFinishedDeps adds a bunch of dependencies which are known in advance to
 // already be in the Finished state.
 type AddFinishedDeps struct {
-	ToAdd        *model.AttemptFanout
-	ExecutionKey []byte
+	Auth  *dm.Execution_Auth
+	ToAdd *dm.AttemptFanout
 }
 
 // Root implements tumble.Mutation
 func (f *AddFinishedDeps) Root(c context.Context) *datastore.Key {
-	return datastore.Get(c).KeyForObj(&model.Attempt{AttemptID: *f.ToAdd.Base})
+	return datastore.Get(c).KeyForObj(&model.Attempt{ID: *f.Auth.Id.AttemptID()})
 }
 
 // RollForward implements tumble.Mutation
 func (f *AddFinishedDeps) RollForward(c context.Context) (muts []tumble.Mutation, err error) {
-	atmpt, _, err := model.VerifyExecution(c, f.ToAdd.Base, f.ExecutionKey)
+	atmpt, _, err := model.AuthenticateExecution(c, f.Auth)
 	if err != nil {
 		return
 	}
 
-	fwdDeps, err := filterExisting(c, f.ToAdd.Fwds(c))
+	fwdDeps, err := filterExisting(c, model.FwdDepsFromFanout(c, f.Auth.Id.AttemptID(), f.ToAdd))
 	if err != nil || len(fwdDeps) == 0 {
 		return
 	}

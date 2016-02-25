@@ -11,8 +11,8 @@ import (
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/appengine/tumble"
+	"github.com/luci/luci-go/common/api/dm/service/v1"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
@@ -27,8 +27,8 @@ func TestAddBackDep(t *testing.T) {
 
 		abd := &AddBackDep{
 			Dep: &model.FwdEdge{
-				From: types.NewAttemptID("quest|fffffffe"),
-				To:   types.NewAttemptID("to|fffffffe"),
+				From: dm.NewAttemptID("quest", 1),
+				To:   dm.NewAttemptID("to", 1),
 			},
 		}
 

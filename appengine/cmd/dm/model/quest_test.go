@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2016 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,18 +7,28 @@ package model
 import (
 	"testing"
 
+	"golang.org/x/net/context"
+
+	. "github.com/smartystreets/goconvey/convey"
+
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/cmd/dm/display"
-	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/common/clock/testclock"
+	google_pb "github.com/luci/luci-go/common/proto/google"
 	. "github.com/luci/luci-go/common/testing/assertions"
-	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/api/dm/service/v1"
 )
 
 func TestQuest(t *testing.T) {
 	t.Parallel()
+
+	desc := func(cfg, jsonData string) *dm.Quest_Desc {
+		return &dm.Quest_Desc{
+			DistributorConfigName: cfg,
+			JsonPayload:           jsonData,
+		}
+	}
 
 	Convey("Quest", t, func() {
 		c := memory.Use(context.Background())
@@ -27,106 +37,107 @@ func TestQuest(t *testing.T) {
 		Convey("QuestDescriptor", func() {
 			Convey("good", func() {
 				Convey("normal (normalized)", func() {
-					qd := &QuestDescriptor{"swarming", []byte(`{  "key"  :  ["value"]}`)}
-					q, err := qd.NewQuest(c)
+					qd := desc("swarming", `{  "key"  :  ["value"]}`)
+					q, err := NewQuest(c, qd)
 					So(err, ShouldBeNil)
 					So(q, ShouldResemble, &Quest{
-						"h0Bgaj7I6oxp08NArY3RWaaPS76mgTHwj_ePu35nMbw",
-						QuestDescriptor{"swarming", []byte(`{"key":["value"]}`)},
+						"eMpqiyje5ItTX8IistN7IlAMVxyCsJcez4DAHKvhm7Y",
+						*desc("swarming", `{"key":["value"]}`),
 						testclock.TestTimeUTC,
 					})
 				})
 
 				Convey("extra data", func() {
-					qd := &QuestDescriptor{"swarming", []byte(`{"key":["value"]} foof`)}
-					q, err := qd.NewQuest(c)
+					qd := desc("swarming", `{"key":["value"]} foof`)
+					q, err := NewQuest(c, qd)
 					So(err, ShouldBeNil)
 					So(q, ShouldResemble, &Quest{
-						"h0Bgaj7I6oxp08NArY3RWaaPS76mgTHwj_ePu35nMbw",
-						QuestDescriptor{"swarming", []byte(`{"key":["value"]}`)},
+						"eMpqiyje5ItTX8IistN7IlAMVxyCsJcez4DAHKvhm7Y",
+						*desc("swarming", `{"key":["value"]}`),
 						testclock.TestTimeUTC,
 					})
 				})
+
+				Convey("data ordering", func() {
+					qd := desc("swarming", `{"key":["value"], "abc": true}`)
+					q, err := NewQuest(c, qd)
+					So(err, ShouldBeNil)
+					So(q, ShouldResemble, &Quest{
+						"KO5hRgXIFouei7Xg5Oai0K5hJeuuiO70jRaDyqQO0MM",
+						*desc("swarming", `{"abc":true,"key":["value"]}`),
+						testclock.TestTimeUTC,
+					})
+				})
+
 			})
 
 			Convey("bad", func() {
-				Convey("bad distributor string (bad format)", func() {
-					qd := &QuestDescriptor{".swarming", []byte("{}")}
-					_, err := qd.NewQuest(c)
-					So(err, ShouldErrLike, "name is invalid")
-				})
-
-				Convey("bad distributor string (too long)", func() {
-					qd := &QuestDescriptor{string(make([]byte, 100)), []byte("{}")}
-					_, err := qd.NewQuest(c)
-					So(err, ShouldErrLike, "too long: 100 > 64")
-				})
-
 				Convey("payload too large", func() {
 					payload := make([]byte, 512*1000)
-					qd := &QuestDescriptor{"swarming", payload}
-					_, err := qd.NewQuest(c)
+					qd := desc("swarming", string(payload))
+					_, err := NewQuest(c, qd)
 					So(err, ShouldErrLike, "too large: 512000 > 262144")
 				})
 
 				Convey("json with null byte", func() {
-					qd := &QuestDescriptor{"swarming", []byte("{\"key\": \"\x00\"}")}
-					_, err := qd.NewQuest(c)
+					qd := desc("swarming", "{\"key\": \"\x00\"}")
+					_, err := NewQuest(c, qd)
 					So(err, ShouldErrLike, "invalid character")
 				})
 
 				Convey("not a dictionary", func() {
-					qd := &QuestDescriptor{"swarming", []byte("[]")}
-					_, err := qd.NewQuest(c)
+					qd := desc("swarming", "[]")
+					_, err := NewQuest(c, qd)
 					So(err, ShouldErrLike, "cannot unmarshal array")
 				})
 			})
 		})
 
-		Convey("ToDisplay", func() {
-			q, err := (&QuestDescriptor{"swarming", []byte(`{"key": ["value"]}`)}).NewQuest(c)
+		Convey("ToProto", func() {
+			q, err := NewQuest(c, desc("swarming", `{"key": ["value"]}`))
 			So(err, ShouldBeNil)
-			So(q.ToDisplay(), ShouldResemble, &display.Quest{
-				ID:          "h0Bgaj7I6oxp08NArY3RWaaPS76mgTHwj_ePu35nMbw",
-				Payload:     `{"key":["value"]}`,
-				Distributor: "swarming",
-				Created:     testclock.TestTimeUTC,
+			p := q.ToProto()
+			So(p, ShouldResemble, &dm.Quest{
+				Id: dm.NewQuestID("eMpqiyje5ItTX8IistN7IlAMVxyCsJcez4DAHKvhm7Y"),
+				Data: &dm.Quest_Data{
+					Created: google_pb.NewTimestamp(testclock.TestTimeUTC),
+					Desc:    &q.Desc,
+				},
 			})
+			So(p.Data.Desc.JsonPayload, ShouldResemble, `{"key":["value"]}`)
 		})
 
-		Convey("GetAttempts", func() {
-			q, err := (&QuestDescriptor{"swarming", []byte(`{"key": ["value"]}`)}).NewQuest(c)
+		Convey("QueryAttemptsForQuest", func() {
+			q, err := NewQuest(c, desc("swarming", `{"key": ["value"]}`))
 			So(err, ShouldBeNil)
 			ds := datastore.Get(c)
 			So(ds.Put(q), ShouldBeNil)
 			ds.Testable().CatchupIndexes()
 
-			as, err := q.GetAttempts(c)
-			So(err, ShouldBeNil)
+			as := []*Attempt(nil)
+			So(ds.GetAll(QueryAttemptsForQuest(c, q.ID), &as), ShouldBeNil)
 			So(as, ShouldBeNil)
 
-			a := &Attempt{}
-			a.QuestID = q.ID
-			a.AttemptNum = 1
+			a := &Attempt{ID: *dm.NewAttemptID(q.ID, 1)}
 			So(ds.Put(a), ShouldBeNil)
-			a.AttemptNum = 2
+			a.ID.Id = 2
 			So(ds.Put(a), ShouldBeNil)
-			a.QuestID = "h0Bgaj7I6oxp08NArY3RWaaPS76mgTHwj_ePu35nMbv" // one less
-			a.AttemptNum = 1
+			a.ID.Quest = "eMpqiyje5ItTX8IistN7IlAMVxyCsJcez4DAHKvhm7X" // one less
+			a.ID.Id = 1
 			So(ds.Put(a), ShouldBeNil)
-			a.QuestID = "h0Bgaj7I6oxp08NArY3RWaaPS76mgTHwj_ePu35nMbx" // one more
+			a.ID.Quest = "eMpqiyje5ItTX8IistN7IlAMVxyCsJcez4DAHKvhm7Z" // one more
 			So(ds.Put(a), ShouldBeNil)
 
-			as, err = q.GetAttempts(c)
-			So(err, ShouldBeNil)
+			as = nil
+			So(ds.GetAll(QueryAttemptsForQuest(c, q.ID), &as), ShouldBeNil)
 			So(as, ShouldBeNil)
 
 			ds.Testable().CatchupIndexes()
-			as, err = q.GetAttempts(c)
-			So(err, ShouldBeNil)
+			as = nil
+			So(ds.GetAll(QueryAttemptsForQuest(c, q.ID), &as), ShouldBeNil)
 			So(as, ShouldResemble, []*Attempt{
-				{AttemptID: *types.NewAttemptID("h0Bgaj7I6oxp08NArY3RWaaPS76mgTHwj_ePu35nMbw|fffffffd")},
-				{AttemptID: *types.NewAttemptID("h0Bgaj7I6oxp08NArY3RWaaPS76mgTHwj_ePu35nMbw|fffffffe")},
+				{ID: *dm.NewAttemptID("eMpqiyje5ItTX8IistN7IlAMVxyCsJcez4DAHKvhm7Y", 2)},
+				{ID: *dm.NewAttemptID("eMpqiyje5ItTX8IistN7IlAMVxyCsJcez4DAHKvhm7Y", 1)},
 			})
 
 		})

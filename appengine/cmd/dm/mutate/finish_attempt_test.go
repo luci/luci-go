@@ -10,10 +10,9 @@ import (
 
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/appengine/tumble"
+	"github.com/luci/luci-go/common/api/dm/service/v1"
 	"github.com/luci/luci-go/common/clock/testclock"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -26,9 +25,11 @@ func TestFinishAttempt(t *testing.T) {
 	Convey("FinishAttempt", t, func() {
 		c := memory.Use(context.Background())
 		fa := &FinishAttempt{
-			*types.NewAttemptID("quest|fffffffe"),
-			[]byte("exekey"),
-			[]byte(`{"result": true}`),
+			&dm.Execution_Auth{
+				Id:    dm.NewExecutionID("quest", 1, 1),
+				Token: []byte("exekey"),
+			},
+			`{"result": true}`,
 			testclock.TestTimeUTC,
 		}
 
@@ -40,14 +41,14 @@ func TestFinishAttempt(t *testing.T) {
 
 		Convey("RollForward", func() {
 			a := &model.Attempt{
-				AttemptID:    fa.ID,
-				State:        attempt.Executing,
+				ID:           *fa.Auth.Id.AttemptID(),
+				State:        dm.Attempt_Executing,
 				CurExecution: 1,
 			}
 			ak := ds.KeyForObj(a)
 			ar := &model.AttemptResult{Attempt: ak}
 			e := &model.Execution{
-				ID: 1, Attempt: ak, ExecutionKey: []byte("exekey")}
+				ID: 1, Attempt: ak, State: dm.Execution_Running, Token: []byte("exekey")}
 
 			So(ds.PutMulti([]interface{}{a, e}), ShouldBeNil)
 
@@ -55,24 +56,24 @@ func TestFinishAttempt(t *testing.T) {
 				muts, err := fa.RollForward(c)
 				So(err, ShouldBeNil)
 				So(muts, ShouldResemble, []tumble.Mutation{
-					&RecordCompletion{For: a.AttemptID}})
+					&RecordCompletion{For: &a.ID}})
 
 				So(ds.GetMulti([]interface{}{a, e, ar}), ShouldBeNil)
-				So(e.Done(), ShouldBeTrue)
-				So(a.State, ShouldEqual, attempt.Finished)
+				So(e.Token, ShouldBeEmpty)
+				So(a.State, ShouldEqual, dm.Attempt_Finished)
 				So(a.ResultExpiration, ShouldResemble,
 					testclock.TestTimeUTC.Round(time.Microsecond))
-				So(ar.Data, ShouldResemble, []byte(`{"result": true}`))
+				So(ar.Data, ShouldResemble, `{"result": true}`)
 			})
 
 			Convey("Bad ExecutionKey", func() {
-				fa.ExecutionKey = []byte("wat")
+				fa.Auth.Token = []byte("wat")
 				_, err := fa.RollForward(c)
-				So(err, ShouldErrLike, "Incorrect ExecutionKey")
+				So(err, ShouldBeRPCUnauthenticated, "execution Auth")
 
 				So(ds.GetMulti([]interface{}{a, e}), ShouldBeNil)
-				So(e.Done(), ShouldBeFalse)
-				So(a.State, ShouldEqual, attempt.Executing)
+				So(e.Token, ShouldNotBeEmpty)
+				So(a.State, ShouldEqual, dm.Attempt_Executing)
 
 				So(ds.Get(ar), ShouldEqual, datastore.ErrNoSuchEntity)
 			})

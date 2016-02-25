@@ -5,8 +5,12 @@
 package model
 
 import (
+	"sort"
+
+	"golang.org/x/net/context"
+
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/cmd/dm/types"
+	"github.com/luci/luci-go/common/api/dm/service/v1"
 )
 
 // FwdDep describes a 'depends-on' relation between two Attempts. It has a
@@ -26,24 +30,51 @@ type FwdDep struct {
 	Depender *datastore.Key `gae:"$parent"`
 
 	// A FwdDep's ID is the Attempt ID that it points to.
-	Dependee types.AttemptID `gae:"$id"`
+	Dependee dm.Attempt_ID `gae:"$id"`
 
 	// This will be used to set a bit in the Attempt (WaitingDepBitmap) when the
 	// Dep completes.
-	BitIndex types.UInt32
+	BitIndex uint32
 
 	// ForExecution indicates which Execution added this dependency. This is used
 	// for validation of AckFwdDep mutations to ensure that they're operating
 	// on an Attempt in the correct state, but can also be used for historical
 	// analysis/display.
-	ForExecution types.UInt32
+	ForExecution uint32
 }
 
 // Edge produces a edge object which points 'forwards' from the depending
 // attempt to the depended-on attempt.
 func (f *FwdDep) Edge() *FwdEdge {
-	return &FwdEdge{
-		From: types.NewAttemptID(f.Depender.StringID()),
-		To:   &f.Dependee,
+	ret := &FwdEdge{To: &f.Dependee, From: &dm.Attempt_ID{}}
+	if err := ret.From.SetDMEncoded(f.Depender.StringID()); err != nil {
+		panic(err)
 	}
+	return ret
+}
+
+// FwdDepsFromFanout creates a slice of *FwdDep given an originating base
+// Attempt_ID, and a fanout of dependency Attempts.
+func FwdDepsFromFanout(c context.Context, base *dm.Attempt_ID, fout *dm.AttemptFanout) []*FwdDep {
+	from := datastore.Get(c).KeyForObj(&Attempt{ID: *base})
+	keys := make(sort.StringSlice, 0, len(fout.To))
+	amt := 0
+	for qst, nums := range fout.To {
+		keys = append(keys, qst)
+		amt += len(nums.Nums)
+	}
+	keys.Sort()
+	idx := uint32(0)
+	ret := make([]*FwdDep, 0, amt)
+	for _, key := range keys {
+		for _, num := range fout.To[key].Nums {
+			dep := &FwdDep{Depender: from}
+			dep.Dependee.Quest = key
+			dep.Dependee.Id = num
+			dep.BitIndex = idx
+			idx++
+			ret = append(ret, dep)
+		}
+	}
+	return ret
 }

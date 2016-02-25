@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package service
+package deps
 
 import (
 	"testing"
@@ -11,8 +11,8 @@ import (
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
+	"github.com/luci/luci-go/common/api/dm/service/v1"
 	"github.com/luci/luci-go/common/clock/testclock"
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -20,47 +20,48 @@ import (
 func TestEnsureQuests(t *testing.T) {
 	t.Parallel()
 
+	desc := func(payload string) *dm.Quest_Desc {
+		return &dm.Quest_Desc{
+			DistributorConfigName: "foof",
+			JsonPayload:           payload,
+		}
+	}
+
 	Convey("EnsureQuests", t, func() {
 		c := memory.Use(context.Background())
 		c, clk := testclock.UseTime(c, testclock.TestTimeUTC.Round(time.Millisecond))
 		ds := datastore.Get(c)
-		s := getService()
+		s := &deps{}
 
 		Convey("bad", func() {
-			Convey("missing distributor", func() {
-				_, err := s.EnsureQuests(c, &EnsureQuestsReq{
-					[]*model.QuestDescriptor{
-						{Distributor: "foof", Payload: []byte("{}")},
-					},
+			// TODO(riannucci): restore this once moving to the new distributor scheme
+			/*
+				Convey("missing distributor", func() {
+					_, err := s.EnsureQuests(c, &dm.EnsureQuestsReq{
+						ToEnsure: []*dm.Quest_Desc{desc("{}")},
+					})
+					So(err, ShouldErrLike, "unknown distributors")
 				})
-				So(err, ShouldErrLike, "unknown distributors")
-			})
+			*/
 		})
 
 		Convey("good", func() {
-			So(ds.Put(&model.Distributor{
-				Name: "foof", URL: "https://foof.example.com"}), ShouldBeNil)
+			// TODO(riannucci): add foof distributor configuration
 
-			qd := &model.QuestDescriptor{
-				Distributor: "foof",
-				Payload:     []byte(`{"data": "yes"}`),
-			}
-			q, err := qd.NewQuest(c)
+			qd := desc(`{"data": "yes"}`)
+			q, err := model.NewQuest(c, qd)
 			So(err, ShouldBeNil)
 
-			qd2 := &model.QuestDescriptor{
-				Distributor: "foof",
-				Payload:     []byte(`{"data": "way yes"}`),
-			}
-			q2, err := qd2.NewQuest(c)
+			qd2 := desc(`{"data": "way yes"}`)
+			q2, err := model.NewQuest(c, qd2)
 			So(err, ShouldBeNil)
 
-			req := &EnsureQuestsReq{[]*model.QuestDescriptor{qd, qd2}}
+			req := &dm.EnsureQuestsReq{ToEnsure: []*dm.Quest_Desc{qd, qd2}}
 
 			Convey("0/2 exist", func() {
 				rsp, err := s.EnsureQuests(c, req)
 				So(err, ShouldBeNil)
-				So(rsp.QuestIDs, ShouldResemble, []string{q.ID, q2.ID})
+				So(rsp.QuestIds, ShouldResemble, []*dm.Quest_ID{{Id: q.ID}, {Id: q2.ID}})
 			})
 
 			Convey("1/2 exist", func() {
@@ -70,7 +71,7 @@ func TestEnsureQuests(t *testing.T) {
 
 				rsp, err := s.EnsureQuests(c, req)
 				So(err, ShouldBeNil)
-				So(rsp.QuestIDs, ShouldResemble, []string{q.ID, q2.ID})
+				So(rsp.QuestIds, ShouldResemble, []*dm.Quest_ID{{Id: q.ID}, {Id: q2.ID}})
 
 				qNew := &model.Quest{ID: q.ID}
 				So(ds.Get(qNew), ShouldBeNil)
@@ -87,7 +88,7 @@ func TestEnsureQuests(t *testing.T) {
 
 				rsp, err := s.EnsureQuests(c, req)
 				So(err, ShouldBeNil)
-				So(rsp.QuestIDs, ShouldResemble, []string{q.ID, q2.ID})
+				So(rsp.QuestIds, ShouldResemble, []*dm.Quest_ID{{Id: q.ID}, {Id: q2.ID}})
 
 				qNew := &model.Quest{ID: q.ID}
 				So(ds.Get(qNew), ShouldBeNil)

@@ -7,12 +7,13 @@ package model
 import (
 	"testing"
 
-	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/cmd/dm/types"
+	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/luci/gae/impl/memory"
+	"github.com/luci/gae/service/datastore"
+
+	"github.com/luci/luci-go/common/api/dm/service/v1"
 )
 
 func TestBackdepEdge(t *testing.T) {
@@ -20,13 +21,13 @@ func TestBackdepEdge(t *testing.T) {
 
 	Convey("BackDep.Edge", t, func() {
 		bd := &BackDep{
-			*types.NewAttemptID("depender|fffffffa"),
+			*dm.NewAttemptID("depender", 5),
 			datastore.MakeKey("aid", "ns", "BackDepGroup", "quest|fffffffe"),
 			true,
 		}
 		So(bd.Edge(), ShouldResemble, &FwdEdge{
-			&types.AttemptID{QuestID: "depender", AttemptNum: 5},
-			&types.AttemptID{QuestID: "quest", AttemptNum: 1},
+			dm.NewAttemptID("depender", 5),
+			dm.NewAttemptID("quest", 1),
 		})
 	})
 }
@@ -36,12 +37,12 @@ func TestFwdDepEdge(t *testing.T) {
 
 	Convey("FwdDep.Edge", t, func() {
 		bd := &FwdDep{
-			Dependee: *types.NewAttemptID("quest|fffffffe"),
+			Dependee: *dm.NewAttemptID("quest", 1),
 			Depender: datastore.MakeKey("aid", "ns", "Attempt", "depender|fffffffa"),
 		}
 		So(bd.Edge(), ShouldResemble, &FwdEdge{
-			&types.AttemptID{QuestID: "depender", AttemptNum: 5},
-			&types.AttemptID{QuestID: "quest", AttemptNum: 1},
+			dm.NewAttemptID("depender", 5),
+			dm.NewAttemptID("quest", 1),
 		})
 	})
 }
@@ -52,53 +53,50 @@ func TestFwdEdge(t *testing.T) {
 	Convey("FwdEdge", t, func() {
 		c := memory.Use(context.Background())
 		e := &FwdEdge{
-			types.NewAttemptID("from|fffffffe"),
-			types.NewAttemptID("to|fffffffe"),
+			dm.NewAttemptID("from", 1),
+			dm.NewAttemptID("to", 1),
 		}
 
 		Convey("Fwd", func() {
 			atmpt, fwddep := e.Fwd(c)
-			So(atmpt.QuestID, ShouldEqual, "from")
-			So(atmpt.AttemptNum, ShouldEqual, 1)
-			So(fwddep.Dependee.QuestID, ShouldEqual, "to")
-			So(fwddep.Dependee.AttemptNum, ShouldEqual, 1)
+			So(atmpt.ID.Quest, ShouldEqual, "from")
+			So(atmpt.ID.Id, ShouldEqual, 1)
+			So(fwddep.Dependee.Quest, ShouldEqual, "to")
+			So(fwddep.Dependee.Id, ShouldEqual, 1)
 			So(fwddep.Depender.String(), ShouldEqual, `dev~app::/Attempt,"from|fffffffe"`)
 		})
 
 		Convey("Back", func() {
 			bdg, bdep := e.Back(c)
-			So(bdg.Dependee.QuestID, ShouldEqual, "to")
-			So(bdg.Dependee.AttemptNum, ShouldEqual, 1)
-			So(bdep.Depender.QuestID, ShouldEqual, "from")
-			So(bdep.Depender.AttemptNum, ShouldEqual, 1)
+			So(bdg.Dependee.Quest, ShouldEqual, "to")
+			So(bdg.Dependee.Id, ShouldEqual, 1)
+			So(bdep.Depender.Quest, ShouldEqual, "from")
+			So(bdep.Depender.Id, ShouldEqual, 1)
 			So(bdep.DependeeGroup.String(), ShouldEqual, `dev~app::/BackDepGroup,"to|fffffffe"`)
 		})
 
 	})
 }
 
-func TestAttemptFanout(t *testing.T) {
+func TestFwdDepsFromFanout(t *testing.T) {
 	t.Parallel()
 
-	Convey("AttemptFanout.Fwds", t, func() {
+	Convey("FwdDepsFromFanout", t, func() {
 		c := memory.Use(context.Background())
-		fanout := &AttemptFanout{
-			types.NewAttemptID("quest|fffffffe"),
-			types.AttemptIDSlice{
-				types.NewAttemptID("a|fffffffe"),
-				types.NewAttemptID("b|fffffffe"),
-				types.NewAttemptID("b|fffffffd"),
-				types.NewAttemptID("c|fffffffe"),
-			},
-		}
+		fanout := &dm.AttemptFanout{To: map[string]*dm.AttemptFanout_AttemptNums{
+			"a": {Nums: []uint32{1}},
+			"b": {Nums: []uint32{1, 2}},
+			"c": {Nums: []uint32{1}},
+		}}
+		base := dm.NewAttemptID("quest", 1)
 
 		root := datastore.Get(c).MakeKey("Attempt", "quest|fffffffe")
 
-		So(fanout.Fwds(c), ShouldResemble, []*FwdDep{
-			{Depender: root, Dependee: *types.NewAttemptID("a|fffffffe")},
-			{Depender: root, Dependee: *types.NewAttemptID("b|fffffffe")},
-			{Depender: root, Dependee: *types.NewAttemptID("b|fffffffd")},
-			{Depender: root, Dependee: *types.NewAttemptID("c|fffffffe")},
+		So(FwdDepsFromFanout(c, base, fanout), ShouldResemble, []*FwdDep{
+			{Depender: root, Dependee: *dm.NewAttemptID("a", 1), BitIndex: 0},
+			{Depender: root, Dependee: *dm.NewAttemptID("b", 1), BitIndex: 1},
+			{Depender: root, Dependee: *dm.NewAttemptID("b", 2), BitIndex: 2},
+			{Depender: root, Dependee: *dm.NewAttemptID("c", 1), BitIndex: 3},
 		})
 	})
 

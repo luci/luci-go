@@ -7,8 +7,8 @@ package mutate
 import (
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/appengine/tumble"
+	"github.com/luci/luci-go/common/api/dm/service/v1"
 	"golang.org/x/net/context"
 )
 
@@ -33,19 +33,19 @@ const completionLimit = 64
 // other Attempts to take dependencies on this Attempt while RecordCompletion
 // is in between tail-calls).
 type RecordCompletion struct {
-	For types.AttemptID `datastore:",noindex"`
+	For *dm.Attempt_ID `datastore:",noindex"`
 }
 
 // Root implements tumble.Mutation.
 func (r *RecordCompletion) Root(c context.Context) *datastore.Key {
-	return datastore.Get(c).KeyForObj(&model.BackDepGroup{Dependee: r.For})
+	return datastore.Get(c).KeyForObj(&model.BackDepGroup{Dependee: *r.For})
 }
 
 // RollForward implements tumble.Mutation.
 func (r *RecordCompletion) RollForward(c context.Context) (muts []tumble.Mutation, err error) {
 	ds := datastore.Get(c)
 
-	bdg := &model.BackDepGroup{Dependee: r.For}
+	bdg := &model.BackDepGroup{Dependee: *r.For}
 	if err = ds.Get(bdg); err != nil && err != datastore.ErrNoSuchEntity {
 		return
 	}

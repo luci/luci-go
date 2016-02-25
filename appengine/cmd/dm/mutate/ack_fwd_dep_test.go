@@ -9,10 +9,9 @@ import (
 
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/appengine/tumble"
+	"github.com/luci/luci-go/common/api/dm/service/v1"
 	"github.com/luci/luci-go/common/bit_field"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -28,8 +27,8 @@ func TestAckFwdDep(t *testing.T) {
 
 		afd := &AckFwdDep{
 			Dep: &model.FwdEdge{
-				From: types.NewAttemptID("quest|fffffffe"),
-				To:   types.NewAttemptID("to|fffffffe"),
+				From: dm.NewAttemptID("quest", 1),
+				To:   dm.NewAttemptID("to", 1),
 			},
 		}
 
@@ -42,7 +41,7 @@ func TestAckFwdDep(t *testing.T) {
 
 			Convey("AddingDeps", func() {
 				Convey("good", func() {
-					a.State = attempt.AddingDeps
+					a.State = dm.Attempt_AddingDeps
 					a.AddingDepsBitmap = bf.Make(2)
 					a.WaitingDepBitmap = bf.Make(2)
 					So(ds.PutMulti([]interface{}{a, fwd}), ShouldBeNil)
@@ -53,7 +52,7 @@ func TestAckFwdDep(t *testing.T) {
 						So(muts, ShouldBeNil)
 
 						So(ds.GetMulti([]interface{}{a, fwd}), ShouldBeNil)
-						So(a.State, ShouldEqual, attempt.AddingDeps)
+						So(a.State, ShouldEqual, dm.Attempt_AddingDeps)
 						So(a.AddingDepsBitmap.CountSet(), ShouldEqual, 1)
 						So(a.WaitingDepBitmap.CountSet(), ShouldEqual, 0)
 					})
@@ -67,7 +66,7 @@ func TestAckFwdDep(t *testing.T) {
 						So(muts, ShouldBeNil)
 
 						So(ds.GetMulti([]interface{}{a, fwd}), ShouldBeNil)
-						So(a.State, ShouldEqual, attempt.Blocked)
+						So(a.State, ShouldEqual, dm.Attempt_Blocked)
 						So(a.AddingDepsBitmap.CountSet(), ShouldEqual, 2)
 						So(a.WaitingDepBitmap.CountSet(), ShouldEqual, 0)
 
@@ -82,7 +81,7 @@ func TestAckFwdDep(t *testing.T) {
 							So(muts, ShouldBeNil)
 
 							So(ds.GetMulti([]interface{}{a, fwd}), ShouldBeNil)
-							So(a.State, ShouldEqual, attempt.Blocked)
+							So(a.State, ShouldEqual, dm.Attempt_Blocked)
 							So(a.AddingDepsBitmap.CountSet(), ShouldEqual, 2)
 							So(a.WaitingDepBitmap.CountSet(), ShouldEqual, 1)
 						})
@@ -99,7 +98,7 @@ func TestAckFwdDep(t *testing.T) {
 						So(muts, ShouldBeNil)
 
 						So(ds.GetMulti([]interface{}{a, fwd}), ShouldBeNil)
-						So(a.State, ShouldEqual, attempt.Blocked)
+						So(a.State, ShouldEqual, dm.Attempt_Blocked)
 						So(a.AddingDepsBitmap.CountSet(), ShouldEqual, 2)
 						So(a.WaitingDepBitmap.CountSet(), ShouldEqual, 1)
 					})
@@ -114,17 +113,17 @@ func TestAckFwdDep(t *testing.T) {
 						muts, err := afd.RollForward(c)
 						So(err, ShouldBeNil)
 						So(muts, ShouldResemble, []tumble.Mutation{
-							&ScheduleExecution{&a.AttemptID}})
+							&ScheduleExecution{&a.ID}})
 
 						So(ds.GetMulti([]interface{}{a, fwd}), ShouldBeNil)
-						So(a.State, ShouldEqual, attempt.NeedsExecution)
+						So(a.State, ShouldEqual, dm.Attempt_NeedsExecution)
 						So(a.AddingDepsBitmap.CountSet(), ShouldEqual, 2)
 						So(a.WaitingDepBitmap.CountSet(), ShouldEqual, 2)
 					})
 				})
 
 				Convey("bad", func() {
-					a.State = attempt.AddingDeps
+					a.State = dm.Attempt_AddingDeps
 					a.AddingDepsBitmap = bf.Make(2)
 					a.WaitingDepBitmap = bf.Make(2)
 					a.CurExecution = 1
@@ -136,7 +135,7 @@ func TestAckFwdDep(t *testing.T) {
 						So(muts, ShouldBeNil)
 
 						So(ds.GetMulti([]interface{}{a, fwd}), ShouldBeNil)
-						So(a.State, ShouldEqual, attempt.AddingDeps)
+						So(a.State, ShouldEqual, dm.Attempt_AddingDeps)
 						So(a.AddingDepsBitmap.CountSet(), ShouldEqual, 0)
 						So(a.WaitingDepBitmap.CountSet(), ShouldEqual, 0)
 					})

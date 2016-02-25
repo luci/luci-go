@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package service
+package deps
 
 import (
 	"testing"
@@ -10,7 +10,7 @@ import (
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/appengine/cmd/dm/types"
+	"github.com/luci/luci-go/common/api/dm/service/v1"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
@@ -22,11 +22,11 @@ func TestEnsureAttempt(t *testing.T) {
 	Convey("EnsureAttempt", t, func() {
 		c := memory.Use(context.Background())
 		ds := datastore.Get(c)
-		s := getService()
+		s := &deps{}
 
 		Convey("bad", func() {
 			Convey("no quest", func() {
-				err := s.EnsureAttempt(c, &EnsureAttemptReq{*types.NewAttemptID("quest|fffffffe")})
+				_, err := s.EnsureAttempt(c, &dm.EnsureAttemptReq{ToEnsure: dm.NewAttemptID("quest", 1)})
 				So(err, ShouldErrLike, "no such quest")
 			})
 		})
@@ -34,10 +34,10 @@ func TestEnsureAttempt(t *testing.T) {
 		Convey("good", func() {
 			So(ds.Put(&model.Quest{ID: "quest"}), ShouldBeNil)
 
-			err := s.EnsureAttempt(c, &EnsureAttemptReq{*types.NewAttemptID("quest|fffffffe")})
+			_, err := s.EnsureAttempt(c, &dm.EnsureAttemptReq{ToEnsure: dm.NewAttemptID("quest", 1)})
 			So(err, ShouldBeNil)
 
-			So(ds.Get(&model.Attempt{AttemptID: *types.NewAttemptID("quest|fffffffe")}), ShouldBeNil)
+			So(ds.Get(&model.Attempt{ID: *dm.NewAttemptID("quest", 1)}), ShouldBeNil)
 		})
 
 	})

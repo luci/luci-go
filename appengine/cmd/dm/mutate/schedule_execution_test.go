@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/luci-go/appengine/cmd/dm/types"
+	"github.com/luci/luci-go/common/api/dm/service/v1"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -18,7 +18,7 @@ func TestScheduleExecution(t *testing.T) {
 
 	Convey("ScheduleExecution", t, func() {
 		c := memory.Use(context.Background())
-		se := &ScheduleExecution{types.NewAttemptID("quest|fffffffe")}
+		se := &ScheduleExecution{dm.NewAttemptID("quest", 1)}
 
 		Convey("Root", func() {
 			So(se.Root(c).String(), ShouldEqual, `dev~app::/Attempt,"quest|fffffffe"`)

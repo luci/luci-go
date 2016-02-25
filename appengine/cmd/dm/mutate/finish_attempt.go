@@ -8,10 +8,11 @@ import (
 	"time"
 
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/appengine/tumble"
+	"github.com/luci/luci-go/common/api/dm/service/v1"
+	"github.com/luci/luci-go/common/grpcutil"
+	"github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
 
@@ -21,20 +22,19 @@ import (
 //   Creates a new AttemptResult
 //   Starts RecordCompletion state machine.
 type FinishAttempt struct {
-	ID               types.AttemptID
-	ExecutionKey     []byte
-	Result           []byte
+	Auth             *dm.Execution_Auth
+	Result           string
 	ResultExpiration time.Time
 }
 
 // Root implements tumble.Mutation
 func (f *FinishAttempt) Root(c context.Context) *datastore.Key {
-	return datastore.Get(c).KeyForObj(&model.Attempt{AttemptID: f.ID})
+	return datastore.Get(c).KeyForObj(&model.Attempt{ID: *f.Auth.Id.AttemptID()})
 }
 
 // RollForward implements tumble.Mutation
 func (f *FinishAttempt) RollForward(c context.Context) (muts []tumble.Mutation, err error) {
-	atmpt, _, err := model.InvalidateExecution(c, &f.ID, f.ExecutionKey)
+	atmpt, _, err := model.InvalidateExecution(c, f.Auth)
 	if err != nil {
 		return
 	}
@@ -43,7 +43,7 @@ func (f *FinishAttempt) RollForward(c context.Context) (muts []tumble.Mutation, 
 
 	// Executing -> Finished is valid, and we know we're already Executing because
 	// the InvalidateExecution call above asserts that or errors out.
-	atmpt.State.MustEvolve(attempt.Finished)
+	atmpt.MustModifyState(c, dm.Attempt_Finished)
 
 	rslt := &model.AttemptResult{
 		Attempt: ds.KeyForObj(atmpt),
@@ -52,10 +52,14 @@ func (f *FinishAttempt) RollForward(c context.Context) (muts []tumble.Mutation, 
 	atmpt.ResultExpiration = f.ResultExpiration
 
 	err = ds.PutMulti([]interface{}{atmpt, rslt})
+	if err != nil {
+		logging.WithError(err).Errorf(c, "while trying to PutMulti")
+		err = grpcutil.Internal
+	}
 
 	// TODO(iannucci): also include mutations to generate index entries for
 	// the attempt results.
-	muts = append(muts, &RecordCompletion{For: f.ID})
+	muts = append(muts, &RecordCompletion{For: f.Auth.Id.AttemptID()})
 
 	return
 }

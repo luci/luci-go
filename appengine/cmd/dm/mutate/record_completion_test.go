@@ -10,11 +10,10 @@ import (
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/appengine/tumble"
-	"golang.org/x/net/context"
-
+	"github.com/luci/luci-go/common/api/dm/service/v1"
 	. "github.com/smartystreets/goconvey/convey"
+	"golang.org/x/net/context"
 )
 
 func TestRecordCompletion(t *testing.T) {
@@ -22,9 +21,9 @@ func TestRecordCompletion(t *testing.T) {
 
 	Convey("RecordCompletion", t, func() {
 		c := memory.Use(context.Background())
-		rc := &RecordCompletion{*types.NewAttemptID("quest|fffffffe")}
+		rc := &RecordCompletion{dm.NewAttemptID("quest", 1)}
 
-		bdg := &model.BackDepGroup{Dependee: rc.For}
+		bdg := &model.BackDepGroup{Dependee: *rc.For}
 
 		ds := datastore.Get(c)
 
@@ -57,7 +56,7 @@ func TestRecordCompletion(t *testing.T) {
 
 				Convey("BDG exists, with unfinished deps", func() {
 					bd := &model.BackDep{
-						Depender:      *types.NewAttemptID("from|fffffffe"),
+						Depender:      *dm.NewAttemptID("from", 1),
 						DependeeGroup: rc.Root(c),
 					}
 					So(ds.PutMulti([]interface{}{bdg, bd}), ShouldBeNil)
@@ -75,7 +74,7 @@ func TestRecordCompletion(t *testing.T) {
 
 				Convey("BDG exists, with finished deps", func() {
 					bd := &model.BackDep{
-						Depender:      *types.NewAttemptID("from|fffffffe"),
+						Depender:      *dm.NewAttemptID("from", 1),
 						DependeeGroup: rc.Root(c),
 						Propagated:    true,
 					}
@@ -96,10 +95,10 @@ func TestRecordCompletion(t *testing.T) {
 
 					for i := 0; i < amtWork; i++ {
 						bd := &model.BackDep{
-							Depender:      *types.NewAttemptID("from|ffffffff"),
+							Depender:      *dm.NewAttemptID("from", 0),
 							DependeeGroup: rc.Root(c),
 						}
-						bd.Depender.AttemptNum = uint32(i + 1)
+						bd.Depender.Id = uint32(i + 1)
 						So(ds.Put(bd), ShouldBeNil)
 					}
 					So(ds.Put(bdg), ShouldBeNil)

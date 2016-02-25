@@ -5,6 +5,8 @@
 package bf
 
 import (
+	"encoding/binary"
+	"math/rand"
 	"testing"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -176,4 +178,24 @@ func TestBitField(t *testing.T) {
 			})
 		})
 	})
+}
+
+func BenchmarkCount(b *testing.B) {
+	b.StopTimer()
+	r := rand.New(rand.NewSource(193482))
+	bf := Make(1000000)
+	if len(bf.data) != 125000 {
+		b.Fatalf("unexpected length of bf.data: %d", len(bf.data))
+	}
+	for i := 0; i < len(bf.data); i += 4 {
+		binary.BigEndian.PutUint32(bf.data[i:i+4], r.Uint32())
+	}
+	b.StartTimer()
+
+	for i := 0; i < b.N; i++ {
+		num := bf.CountSet()
+		if num != 500188 {
+			b.Fatalf("expected to see %d set, got %d", 500188, num)
+		}
+	}
 }

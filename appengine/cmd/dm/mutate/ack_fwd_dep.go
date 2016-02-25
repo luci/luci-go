@@ -6,9 +6,9 @@ package mutate
 
 import (
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/tumble"
+	"github.com/luci/luci-go/common/api/dm/service/v1"
 	"golang.org/x/net/context"
 )
 
@@ -26,7 +26,7 @@ type AckFwdDep struct {
 
 // Root implements tumble.Mutation.
 func (f *AckFwdDep) Root(c context.Context) *datastore.Key {
-	return datastore.Get(c).MakeKey("Attempt", f.Dep.From.ID())
+	return datastore.Get(c).MakeKey("Attempt", f.Dep.From.DMEncoded())
 }
 
 // RollForward implements tumble.Mutation.
@@ -52,7 +52,7 @@ func (f *AckFwdDep) RollForward(c context.Context) (muts []tumble.Mutation, err 
 		atmpt.AddingDepsBitmap.Set(idx)
 
 		if atmpt.AddingDepsBitmap.All(true) {
-			atmpt.State.MustEvolve(attempt.Blocked)
+			atmpt.MustModifyState(c, dm.Attempt_Blocked)
 		}
 
 		needPut = true
@@ -63,7 +63,7 @@ func (f *AckFwdDep) RollForward(c context.Context) (muts []tumble.Mutation, err 
 			atmpt.WaitingDepBitmap.Set(idx)
 
 			if atmpt.WaitingDepBitmap.All(true) {
-				atmpt.State.MustEvolve(attempt.NeedsExecution)
+				atmpt.MustModifyState(c, dm.Attempt_NeedsExecution)
 				muts = append(muts, &ScheduleExecution{For: f.Dep.From})
 			}
 

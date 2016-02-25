@@ -2,48 +2,26 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package service
+package deps
 
 import (
 	crand "crypto/rand" // TODO(iannucci): mock this for testing
 	"encoding/hex"
 
-	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/cmd/dm/display"
-	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/appengine/cmd/dm/types"
+	"github.com/luci/luci-go/common/api/dm/service/v1"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/mathrand"
+	google_pb "github.com/luci/luci-go/common/proto/google"
 	"golang.org/x/net/context"
 )
-
-// ExecutionInfo is the structure returned from this temporary ClaimExecution
-// API that includes he execution id and it's secret key.
-type ExecutionInfo struct {
-	ID  uint32
-	Key []byte
-}
-
-// ClaimExecutionRsp is the response from ClaimExecution.
-type ClaimExecutionRsp struct {
-	Quest     *model.Quest
-	Attempt   *display.Attempt
-	Execution *ExecutionInfo
-
-	NoneAvailable bool
-}
 
 const claimRetries = 8
 
 // ClaimExecution is a temporary api which searches for and transactionally
 // claims an execution for an Attempt whose state is NeedsExecution.
-func (d *DungeonMaster) ClaimExecution(c context.Context) (rsp *ClaimExecutionRsp, err error) {
-	if c, err = d.Use(c, MethodInfo["ClaimExecution"]); err != nil {
-		return
-	}
-
+func (d *deps) ClaimExecution(c context.Context, _ *google_pb.Empty) (rsp *dm.ClaimExecutionRsp, err error) {
 	// TODO(iannucci): stuff below
 	// It's temporary!! Don't worry about it! :D
 	//   Use of GET to mutate state
@@ -56,11 +34,11 @@ func (d *DungeonMaster) ClaimExecution(c context.Context) (rsp *ClaimExecutionRs
 	if err != nil {
 		return
 	}
-	rsp = &ClaimExecutionRsp{
-		Execution: &ExecutionInfo{Key: exKeyBytes}}
+	rsp = &dm.ClaimExecutionRsp{
+		Auth: &dm.Execution_Auth{Token: exKeyBytes}}
 
 	for attempts := 0; attempts < claimRetries; attempts++ {
-		q := datastore.NewQuery("Attempt").Eq("State", attempt.NeedsExecution).Limit(32)
+		q := datastore.NewQuery("Attempt").Eq("State", dm.Attempt_NeedsExecution).Limit(32)
 
 		if attempts < claimRetries-1 {
 			prefixBytes := make([]byte, 2)
@@ -86,26 +64,18 @@ func (d *DungeonMaster) ClaimExecution(c context.Context) (rsp *ClaimExecutionRs
 		}
 
 		// Now find a random one which actually needs execution
-		var aid types.AttemptID
+		var aid dm.Attempt_ID
 		for _, i := range mathrand.Get(c).Perm(len(as)) {
-			if as[i].State != attempt.NeedsExecution {
+			if as[i].State != dm.Attempt_NeedsExecution {
 				continue
 			}
-			aid = as[i].AttemptID
+			aid = as[i].ID
 		}
-		if aid == (types.AttemptID{}) {
+		if aid == (dm.Attempt_ID{}) {
 			continue
 		}
 
 		tryAgain := false
-
-		// must Get outside of transaction.
-		rsp.Quest = &model.Quest{ID: aid.QuestID}
-		err = ds.Get(rsp.Quest)
-		if err != nil {
-			l.Errorf("error while trying to resolve quest: %s?", err)
-			continue
-		}
 
 		err = ds.RunInTransaction(func(c context.Context) error {
 			ds := datastore.Get(c)
@@ -113,18 +83,18 @@ func (d *DungeonMaster) ClaimExecution(c context.Context) (rsp *ClaimExecutionRs
 			l.Infof("In TXN for %q", aid)
 			// need to re-read this in the transaction to ensure it really does need
 			// execution still :)
-			a := &model.Attempt{AttemptID: aid}
+			a := &model.Attempt{ID: aid}
 			err := ds.Get(a)
 			if err != nil {
 				return err
 			}
-			if a.State != attempt.NeedsExecution {
+			if a.State != dm.Attempt_NeedsExecution {
 				// oops, we picked a bad one, try again in the outer loop.
 				tryAgain = true
 				return nil
 			}
 
-			err = a.State.Evolve(attempt.Executing)
+			err = a.State.Evolve(dm.Attempt_Executing)
 			if err != nil {
 				return err
 			}
@@ -132,14 +102,26 @@ func (d *DungeonMaster) ClaimExecution(c context.Context) (rsp *ClaimExecutionRs
 			a.CurExecution++
 
 			ex := &model.Execution{
-				ID:           a.CurExecution,
-				Attempt:      ds.KeyForObj(a),
-				ExecutionKey: rsp.Execution.Key,
+				ID:      a.CurExecution,
+				Attempt: ds.KeyForObj(a),
+				State:   dm.Execution_Running,
+				Token:   rsp.Auth.Token,
 			}
-			rsp.Execution.ID = uint32(a.CurExecution)
-			rsp.Attempt = a.ToDisplay()
+			rsp.Auth.Id.Id = a.CurExecution
+			rsp.Auth.Id.Attempt = a.ID.Id
 
-			return ds.PutMulti([]interface{}{a, ex})
+			err = ds.PutMulti([]interface{}{a, ex})
+			if err != nil {
+				return err
+			}
+
+			qst := &model.Quest{ID: aid.Quest}
+			err = datastore.GetNoTxn(c).Get(qst)
+			if err != nil {
+				return err
+			}
+			rsp.Quest = qst.ToProto()
+			return nil
 		}, nil)
 		if tryAgain || err != nil {
 			continue
@@ -147,15 +129,6 @@ func (d *DungeonMaster) ClaimExecution(c context.Context) (rsp *ClaimExecutionRs
 		return
 	}
 
-	rsp = &ClaimExecutionRsp{NoneAvailable: true}
+	rsp = nil
 	return
-}
-
-func init() {
-	MethodInfo["ClaimExecution"] = &endpoints.MethodInfo{
-		Name:       "executions.claim",
-		HTTPMethod: "GET",
-		Path:       "executions/claim",
-		Desc:       "TEMP: Claim an execution id/key",
-	}
 }

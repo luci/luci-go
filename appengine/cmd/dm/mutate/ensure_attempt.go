@@ -6,35 +6,40 @@ package mutate
 
 import (
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/appengine/tumble"
+	"github.com/luci/luci-go/common/api/dm/service/v1"
+	"github.com/luci/luci-go/common/grpcutil"
+	"github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
 
 // EnsureAttempt ensures that the given Attempt exists. If it doesn't, it's
 // created in a NeedsExecution state.
 type EnsureAttempt struct {
-	ID types.AttemptID
+	ID *dm.Attempt_ID
 }
 
 // Root implements tumble.Mutation.
 func (e *EnsureAttempt) Root(c context.Context) *datastore.Key {
-	return datastore.Get(c).KeyForObj(&model.Attempt{AttemptID: e.ID})
+	return datastore.Get(c).KeyForObj(&model.Attempt{ID: *e.ID})
 }
 
 // RollForward implements tumble.Mutation.
 func (e *EnsureAttempt) RollForward(c context.Context) (muts []tumble.Mutation, err error) {
 	ds := datastore.Get(c)
 
-	a := &model.Attempt{AttemptID: e.ID, State: attempt.NeedsExecution}
+	a := model.MakeAttempt(c, e.ID)
 	err = ds.Get(a)
 	if err != datastore.ErrNoSuchEntity {
 		return
 	}
 
 	err = ds.Put(a)
+	if err != nil {
+		logging.WithError(err).Errorf(c, "in Put")
+		err = grpcutil.Internal
+	}
 	return
 }
 

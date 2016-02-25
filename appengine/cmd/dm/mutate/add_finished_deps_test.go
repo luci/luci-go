@@ -9,10 +9,9 @@ import (
 
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/appengine/cmd/dm/types"
 	"github.com/luci/luci-go/appengine/tumble"
+	"github.com/luci/luci-go/common/api/dm/service/v1"
 	"github.com/luci/luci-go/common/errors"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -25,26 +24,26 @@ func TestAddFinishedDeps(t *testing.T) {
 	Convey("AddFinishedDeps", t, func() {
 		c := memory.Use(context.Background())
 		f := &AddFinishedDeps{
-			&model.AttemptFanout{
-				Base: types.NewAttemptID("quest|fffffffe"),
-				Edges: []*types.AttemptID{
-					types.NewAttemptID("to|fffffffe"),
-					types.NewAttemptID("to|fffffffd"),
-					types.NewAttemptID("to|fffffffc"),
-				},
+			&dm.Execution_Auth{
+				Id:    dm.NewExecutionID("quest", 1, 7),
+				Token: []byte("sup"),
 			},
-			[]byte("sup"),
+			dm.NewAttemptFanout(map[string][]uint32{
+				"to": {1, 2, 3},
+			}),
 		}
 
-		fs := f.ToAdd.Fwds(c)
+		base := f.Auth.Id.AttemptID()
+		fs := model.FwdDepsFromFanout(c, base, f.ToAdd)
 
 		ds := datastore.Get(c)
 		fs[1].ForExecution = 1
 		So(ds.Put(fs[1]), ShouldBeNil)
 
-		a := &model.Attempt{AttemptID: *f.ToAdd.Base, State: attempt.Executing, CurExecution: 7}
+		a := &model.Attempt{ID: *base, State: dm.Attempt_Executing, CurExecution: 7}
 		ak := ds.KeyForObj(a)
-		e := &model.Execution{ID: 7, Attempt: ak, ExecutionKey: []byte("sup")}
+		e := &model.Execution{
+			ID: 7, Attempt: ak, State: dm.Execution_Running, Token: []byte("sup")}
 		So(ds.PutMulti([]interface{}{a, e}), ShouldBeNil)
 
 		Convey("Root", func() {
@@ -79,7 +78,7 @@ func TestAddFinishedDeps(t *testing.T) {
 		Convey("RollForward (bad)", func() {
 			So(ds.Delete(ak), ShouldBeNil)
 			_, err := f.RollForward(c)
-			So(err, ShouldErrLike, datastore.ErrNoSuchEntity)
+			So(err, ShouldBeRPCUnauthenticated, "execution Auth")
 		})
 	})
 }

@@ -6,7 +6,8 @@ package model
 
 import (
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/cmd/dm/types"
+
+	"github.com/luci/luci-go/common/api/dm/service/v1"
 )
 
 // BackDepGroup describes a group of reverse dependencies ('depended-by')
@@ -26,7 +27,7 @@ import (
 type BackDepGroup struct {
 	// Dependee is the "<AttemptID>" that the deps in this group point
 	// back FROM.
-	Dependee types.AttemptID `gae:"$id"`
+	Dependee dm.Attempt_ID `gae:"$id"`
 
 	// This is a denormalized version of Attempt.State, used to allow
 	// transactional additions to the BackDepGroup to stay within this Entity
@@ -38,7 +39,7 @@ type BackDepGroup struct {
 // Attempt that's depending on this one. See BackDepGroup for more context.
 type BackDep struct {
 	// The attempt id of the attempt that's depending on this dependee.
-	Depender types.AttemptID `gae:"$id"`
+	Depender dm.Attempt_ID `gae:"$id"`
 
 	// The BackdepGroup for the attempt that is being depended on.
 	DependeeGroup *datastore.Key `gae:"$parent"`
@@ -54,8 +55,9 @@ type BackDep struct {
 // Edge produces a fwdedge object which points from the depending attempt to
 // the depended-on attempt.
 func (b *BackDep) Edge() *FwdEdge {
-	return &FwdEdge{
-		From: &b.Depender,
-		To:   types.NewAttemptID(b.DependeeGroup.StringID()),
+	ret := &FwdEdge{From: &b.Depender, To: &dm.Attempt_ID{}}
+	if err := ret.To.SetDMEncoded(b.DependeeGroup.StringID()); err != nil {
+		panic(err)
 	}
+	return ret
 }

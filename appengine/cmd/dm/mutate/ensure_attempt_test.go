@@ -10,9 +10,8 @@ import (
 	"github.com/luci/gae/filter/featureBreaker"
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/appengine/cmd/dm/types"
+	"github.com/luci/luci-go/common/api/dm/service/v1"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
@@ -23,14 +22,14 @@ func TestEnsureAttempt(t *testing.T) {
 
 	Convey("EnsureAttempt", t, func() {
 		c := memory.Use(context.Background())
-		ea := &EnsureAttempt{*types.NewAttemptID("quest|fffffffe")}
+		ea := &EnsureAttempt{dm.NewAttemptID("quest", 1)}
 
 		Convey("Root", func() {
 			So(ea.Root(c).String(), ShouldEqual, `dev~app::/Attempt,"quest|fffffffe"`)
 		})
 
 		Convey("RollForward", func() {
-			a := &model.Attempt{AttemptID: ea.ID}
+			a := &model.Attempt{ID: *ea.ID}
 
 			Convey("Good", func() {
 				So(datastore.Get(c).Get(a), ShouldEqual, datastore.ErrNoSuchEntity)
@@ -41,10 +40,10 @@ func TestEnsureAttempt(t *testing.T) {
 
 				ds := datastore.Get(c)
 				So(ds.Get(a), ShouldEqual, nil)
-				So(a.State, ShouldEqual, attempt.NeedsExecution)
+				So(a.State, ShouldEqual, dm.Attempt_NeedsExecution)
 
 				Convey("replaying the mutation after the state has evolved is a noop", func() {
-					a.State.MustEvolve(attempt.Executing)
+					a.State.MustEvolve(dm.Attempt_Executing)
 					So(ds.Put(a), ShouldBeNil)
 
 					muts, err = ea.RollForward(c)
@@ -52,7 +51,7 @@ func TestEnsureAttempt(t *testing.T) {
 					So(muts, ShouldBeEmpty)
 
 					So(ds.Get(a), ShouldEqual, nil)
-					So(a.State, ShouldEqual, attempt.Executing)
+					So(a.State, ShouldEqual, dm.Attempt_Executing)
 				})
 			})
 

@@ -2,17 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package service
+package deps
 
 import (
 	"testing"
 
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/cmd/dm/enums/attempt"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/appengine/cmd/dm/types"
+	"github.com/luci/luci-go/common/api/dm/service/v1"
 	"github.com/luci/luci-go/common/clock/testclock"
+	google_pb "github.com/luci/luci-go/common/proto/google"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
@@ -24,53 +24,48 @@ func TestFinishAttempt(t *testing.T) {
 	Convey("FinishAttempt", t, func() {
 		c := memory.Use(context.Background())
 		ds := datastore.Get(c)
-		s := getService()
+		s := &deps{}
 
 		So(ds.Put(&model.Quest{ID: "quest"}), ShouldBeNil)
 		a := &model.Attempt{
-			AttemptID:    *types.NewAttemptID("quest|fffffffe"),
-			State:        attempt.Executing,
+			ID:           *dm.NewAttemptID("quest", 1),
+			State:        dm.Attempt_Executing,
 			CurExecution: 1,
 		}
 		So(ds.Put(a), ShouldBeNil)
-		So(ds.Put(&model.Execution{ID: 1, Attempt: ds.KeyForObj(a), ExecutionKey: []byte("exKey")}), ShouldBeNil)
+		So(ds.Put(&model.Execution{
+			ID: 1, Attempt: ds.KeyForObj(a), Token: []byte("exKey"),
+			State: dm.Execution_Running}), ShouldBeNil)
+
+		req := &dm.FinishAttemptReq{
+			Auth: &dm.Execution_Auth{
+				Id:    dm.NewExecutionID(a.ID.Quest, a.ID.Id, 1),
+				Token: []byte("exKey"),
+			},
+			JsonResult: `{"something": "valid"}`,
+			Expiration: google_pb.NewTimestamp(testclock.TestTimeUTC),
+		}
 
 		Convey("bad", func() {
-			Convey("bad ExecutionKey", func() {
-				err := s.FinishAttempt(c, &FinishAttemptReq{
-					a.AttemptID,
-					[]byte("fake"),
-
-					[]byte(`{"something": "valid"}`),
-					testclock.TestTimeUTC,
-				})
-				So(err, ShouldErrLike, "Incorrect ExecutionKey")
+			Convey("bad Token", func() {
+				req.Auth.Token = []byte("fake")
+				_, err := s.FinishAttempt(c, req)
+				So(err, ShouldBeRPCUnauthenticated, "execution Auth")
 			})
 
 			Convey("not real json", func() {
-				err := s.FinishAttempt(c, &FinishAttemptReq{
-					a.AttemptID,
-					[]byte("exKey"),
-
-					[]byte(`i am not valid json`),
-					testclock.TestTimeUTC,
-				})
+				req.JsonResult = `i am not valid json`
+				_, err := s.FinishAttempt(c, req)
 				So(err, ShouldErrLike, "invalid character 'i'")
 			})
 		})
 
 		Convey("good", func() {
-			err := s.FinishAttempt(c, &FinishAttemptReq{
-				a.AttemptID,
-				[]byte("exKey"),
-
-				[]byte(`{"data": "yes"}`),
-				testclock.TestTimeUTC,
-			})
+			_, err := s.FinishAttempt(c, req)
 			So(err, ShouldBeNil)
 
 			So(ds.Get(a), ShouldBeNil)
-			So(a.State, ShouldEqual, attempt.Finished)
+			So(a.State, ShouldEqual, dm.Attempt_Finished)
 		})
 
 	})

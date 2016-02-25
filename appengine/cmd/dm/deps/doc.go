@@ -2,6 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-//go:generate apigen -api-subproject "dungeon_master" -base-url "https://luci-dm.appspot.com/_ah/api" -log-level=debug
-
-package frontend
+// Package deps implements DM's Deps RPC methods. It mostly coordinates code
+// between other DM subpackages, notably 'mutate', 'model' and 'display'.
+package deps

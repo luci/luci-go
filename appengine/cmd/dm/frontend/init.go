@@ -7,23 +7,21 @@ package frontend
 import (
 	"net/http"
 
-	"github.com/GoogleCloudPlatform/go-endpoints/endpoints"
 	"github.com/julienschmidt/httprouter"
-	dm "github.com/luci/luci-go/appengine/cmd/dm/service"
+	"github.com/luci/luci-go/appengine/cmd/dm/deps"
 	"github.com/luci/luci-go/appengine/tumble"
+	"github.com/luci/luci-go/server/discovery"
+	"github.com/luci/luci-go/server/prpc"
 )
 
 var myTumble = tumble.DefaultConfig()
 
 func init() {
-	srv := endpoints.NewServer("")
-	err := dm.RegisterEndpointsService(srv)
-	if err != nil {
-		panic(err)
-	}
-	http.Handle("/_ah/spi/", srv)
-
 	router := httprouter.New()
+	svr := prpc.Server{}
+	deps.RegisterDepsServer(&svr)
+	discovery.Enable(&svr)
+
 	myTumble.InstallHandlers(router)
 	http.Handle("/", router)
 }

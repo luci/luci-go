@@ -8,10 +8,14 @@ import (
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/grpcutil"
+	"github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
 
 // filterExisting removes the FwdDep objects which already exist.
+//
+// returns gRPC code error.
 func filterExisting(c context.Context, fwdDeps []*model.FwdDep) ([]*model.FwdDep, error) {
 	ret := make([]*model.FwdDep, 0, len(fwdDeps))
 
@@ -23,7 +27,8 @@ func filterExisting(c context.Context, fwdDeps []*model.FwdDep) ([]*model.FwdDep
 	merr, ok := err.(errors.MultiError)
 	if !ok {
 		// dunno what this is
-		return nil, err
+		logging.WithError(err).Errorf(c, "error filtering existing fwdDeps")
+		return nil, grpcutil.Internal
 	}
 
 	for i, err := range merr {
