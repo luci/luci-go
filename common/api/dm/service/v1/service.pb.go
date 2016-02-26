@@ -4,6 +4,7 @@
 
 package dm
 
+import prpccommon "github.com/luci/luci-go/common/prpc"
 import prpc "github.com/luci/luci-go/server/prpc"
 
 import proto "github.com/golang/protobuf/proto"
@@ -36,6 +37,76 @@ type DepsClient interface {
 	WalkGraph(ctx context.Context, in *WalkGraphReq, opts ...grpc.CallOption) (*GraphData, error)
 	// ClaimExecution is a totally temporary hack
 	ClaimExecution(ctx context.Context, in *google_protobuf1.Empty, opts ...grpc.CallOption) (*ClaimExecutionRsp, error)
+}
+type depsPRPCClient struct {
+	client *prpccommon.Client
+}
+
+func NewDepsPRPCClient(client *prpccommon.Client) DepsClient {
+	return &depsPRPCClient{client}
+}
+
+func (c *depsPRPCClient) ActivateExecution(ctx context.Context, in *ActivateExecutionReq, opts ...grpc.CallOption) (*google_protobuf1.Empty, error) {
+	out := new(google_protobuf1.Empty)
+	err := c.client.Call(ctx, "dm.Deps", "ActivateExecution", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *depsPRPCClient) AddDeps(ctx context.Context, in *AddDepsReq, opts ...grpc.CallOption) (*AddDepsRsp, error) {
+	out := new(AddDepsRsp)
+	err := c.client.Call(ctx, "dm.Deps", "AddDeps", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *depsPRPCClient) EnsureAttempt(ctx context.Context, in *EnsureAttemptReq, opts ...grpc.CallOption) (*google_protobuf1.Empty, error) {
+	out := new(google_protobuf1.Empty)
+	err := c.client.Call(ctx, "dm.Deps", "EnsureAttempt", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *depsPRPCClient) EnsureQuests(ctx context.Context, in *EnsureQuestsReq, opts ...grpc.CallOption) (*EnsureQuestsRsp, error) {
+	out := new(EnsureQuestsRsp)
+	err := c.client.Call(ctx, "dm.Deps", "EnsureQuests", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *depsPRPCClient) FinishAttempt(ctx context.Context, in *FinishAttemptReq, opts ...grpc.CallOption) (*google_protobuf1.Empty, error) {
+	out := new(google_protobuf1.Empty)
+	err := c.client.Call(ctx, "dm.Deps", "FinishAttempt", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *depsPRPCClient) WalkGraph(ctx context.Context, in *WalkGraphReq, opts ...grpc.CallOption) (*GraphData, error) {
+	out := new(GraphData)
+	err := c.client.Call(ctx, "dm.Deps", "WalkGraph", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *depsPRPCClient) ClaimExecution(ctx context.Context, in *google_protobuf1.Empty, opts ...grpc.CallOption) (*ClaimExecutionRsp, error) {
+	out := new(ClaimExecutionRsp)
+	err := c.client.Call(ctx, "dm.Deps", "ClaimExecution", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 type depsClient struct {
