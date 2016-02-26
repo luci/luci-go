@@ -41,9 +41,11 @@ func (m *metricData) get(fieldVals []interface{}, t types.Target, resetTime time
 		return nil, err
 	}
 
-	targetHash := t.Hash()
+	key := cellKey{fieldValuesHash: field.Hash(fieldVals)}
+	if t != nil {
+		key.targetHash = t.Hash()
+	}
 
-	key := cellKey{field.Hash(fieldVals), targetHash}
 	cells, ok := m.cells[key]
 	if ok {
 		for _, cell := range cells {
@@ -118,7 +120,7 @@ func (s *inMemoryStore) Get(ctx context.Context, h types.Metric, resetTime time.
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	c, err := m.get(fieldVals, target.GetWithDefault(ctx, s.defaultTarget), resetTime)
+	c, err := m.get(fieldVals, target.Get(ctx), resetTime)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +133,7 @@ func (s *inMemoryStore) Set(ctx context.Context, h types.Metric, resetTime time.
 	if resetTime.IsZero() {
 		resetTime = clock.Now(ctx)
 	}
-	return s.set(h, resetTime, fieldVals, target.GetWithDefault(ctx, s.defaultTarget), value)
+	return s.set(h, resetTime, fieldVals, target.Get(ctx), value)
 }
 
 func (s *inMemoryStore) set(h types.Metric, resetTime time.Time, fieldVals []interface{}, t types.Target, value interface{}) error {
@@ -159,7 +161,7 @@ func (s *inMemoryStore) Incr(ctx context.Context, h types.Metric, resetTime time
 	if resetTime.IsZero() {
 		resetTime = clock.Now(ctx)
 	}
-	return s.incr(h, resetTime, fieldVals, target.GetWithDefault(ctx, s.defaultTarget), delta)
+	return s.incr(h, resetTime, fieldVals, target.Get(ctx), delta)
 }
 
 func (s *inMemoryStore) incr(h types.Metric, resetTime time.Time, fieldVals []interface{}, t types.Target, delta interface{}) error {
@@ -208,7 +210,7 @@ func (s *inMemoryStore) incr(h types.Metric, resetTime time.Time, fieldVals []in
 }
 
 func (s *inMemoryStore) ModifyMulti(ctx context.Context, mods []Modification) error {
-	contextTarget := target.GetWithDefault(ctx, s.defaultTarget)
+	contextTarget := target.Get(ctx)
 
 	for _, m := range mods {
 		resetTime := m.ResetTime
@@ -257,7 +259,12 @@ func (s *inMemoryStore) GetAll(ctx context.Context) []types.Cell {
 		m.lock.Lock()
 		for _, cells := range m.cells {
 			for _, cell := range cells {
-				ret = append(ret, types.Cell{m.MetricInfo, *cell})
+				// Add the default target to the cell if it doesn't have one set.
+				cellCopy := *cell
+				if cellCopy.Target == nil {
+					cellCopy.Target = s.defaultTarget
+				}
+				ret = append(ret, types.Cell{m.MetricInfo, cellCopy})
 			}
 		}
 		m.lock.Unlock()
