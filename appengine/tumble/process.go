@@ -138,15 +138,13 @@ func ProcessShard(c context.Context, timestamp time.Time, shard uint64) error {
 
 	banSets := map[string]stringset.Set{}
 
-	limitSemaphore := make(chan struct{}, cfg.NumGoroutines)
-
 	for try := 0; try < 2; try++ {
 		err = memlock.TryWithLock(c, lockKey, clientID, func(c context.Context) error {
 			l.Infof("Got lock (try %d)", try)
 
 			for {
 				processCounters := []*int64{}
-				err := parallel.FanOutIn(func(ch chan<- func() error) {
+				err := parallel.WorkPool(int(cfg.NumGoroutines), func(ch chan<- func() error) {
 					err := datastore.Get(c).Run(q, func(pm datastore.PropertyMap) error {
 						root := pm["TargetRoot"][0].Value().(*datastore.Key)
 						encRoot := root.Encode()
@@ -164,10 +162,6 @@ func ProcessShard(c context.Context, timestamp time.Time, shard uint64) error {
 						processCounters = append(processCounters, counter)
 
 						ch <- func() error {
-							limitSemaphore <- struct{}{}
-							defer func() {
-								<-limitSemaphore
-							}()
 							return processRoot(c, root, bs, counter)
 						}
 
