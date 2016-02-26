@@ -27,8 +27,8 @@ func (t timestamp) Unix() time.Time {
 }
 
 func mkTimestamp(cfg *Config, t time.Time) timestamp {
-	trf := cfg.TemporalRoundFactor
-	eta := t.UTC().Add(cfg.TemporalMinDelay + trf).Round(trf)
+	trf := time.Duration(cfg.TemporalRoundFactor)
+	eta := t.UTC().Add(time.Duration(cfg.TemporalMinDelay) + trf).Round(trf)
 	return timestamp(eta.Unix())
 }
 

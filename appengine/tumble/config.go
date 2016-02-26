@@ -11,12 +11,15 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
+	"github.com/luci/luci-go/common/clock/clockflag"
 	"golang.org/x/net/context"
 )
 
 // Config is the set of tweakable things for tumble. If you use something other
 // than the defaults (e.g. unset values), you must ensure that all aspects of
 // your application use the same config.
+//
+// The JSON annotations are for settings module storage (see settings.go).
 type Config struct {
 	// Name is the name of this service. This is the expected name of the
 	// configured taskqueue, as well as the prefix used for things like memcache
@@ -24,7 +27,7 @@ type Config struct {
 	//
 	// It defaults to "tumble". It is illegal for the Name to contain '/', and
 	// Use will panic if it does.
-	Name string
+	Name string `json:"-"`
 
 	// URLPrefix is the prefix to append for all registered routes. It's
 	// normalized to begin and end with a '/'. So "wat" would register:
@@ -32,36 +35,36 @@ type Config struct {
 	//    "/wat/{Service.Name}/process_shard/:shard_id/at/:timestamp"
 	//
 	// This defaults to "internal"
-	URLPrefix string
+	URLPrefix string `json:"-"`
 
 	// NumShards is the number of tumble shards that will process concurrently.
 	// It defaults to 32.
-	NumShards uint64
+	NumShards uint64 `json:"numShards,omitempty"`
 
 	// TemporalMinDelay is the minimum number of seconds to wait before the
 	// task queue entry for a given shard will run. It defaults to 1 second.
-	TemporalMinDelay time.Duration
+	TemporalMinDelay clockflag.Duration `json:"temporalMinDelay,omitempty"`
 
 	// TemporalRoundFactor is the number of seconds to batch together in task
 	// queue tasks. It defaults to 4 seconds.
-	TemporalRoundFactor time.Duration
+	TemporalRoundFactor clockflag.Duration `json:"temporalRoundFactor,omitempty"`
 
 	// NumGoroutines is the number of gorountines that will process in parallel
 	// in a single shard. Each goroutine will process exactly one root entity.
 	// It defaults to 16.
-	NumGoroutines uint64
+	NumGoroutines int `json:"numGoroutines,omitempty"`
 
-	// ProcessMaxBatchSize is the number of mutations that each processor goroutine
-	// will attempt to include in each commit.
+	// ProcessMaxBatchSize is the number of mutations that each processor
+	// goroutine will attempt to include in each commit.
 	//
 	// It defaults to 128. A negative value means no limit.
-	ProcessMaxBatchSize int32
+	ProcessMaxBatchSize int32 `json:"processMaxBatchSize,omitempty"`
 
 	// DelayedMutations enables the 'DelayedMutation' mutation subtype.
 	//
 	// If you set this to true, you MUST also add the second index mentioned
 	// in the package docs.
-	DelayedMutations bool
+	DelayedMutations bool `json:"delayedMutations,omitempty"`
 }
 
 type key int
@@ -70,8 +73,8 @@ var defaultConfig = Config{
 	Name:                "tumble",
 	URLPrefix:           "/internal/",
 	NumShards:           32,
-	TemporalMinDelay:    time.Second,
-	TemporalRoundFactor: 4 * time.Second,
+	TemporalMinDelay:    clockflag.Duration(time.Second),
+	TemporalRoundFactor: clockflag.Duration(4 * time.Second),
 	NumGoroutines:       16,
 	ProcessMaxBatchSize: 128,
 }

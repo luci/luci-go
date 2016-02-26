@@ -122,7 +122,7 @@ func ProcessShard(c context.Context, timestamp time.Time, shard uint64) error {
 		if err != nil {
 			l.Warningf("could not decode timestamp %v: %s", val, err)
 		} else {
-			last = last.Add(cfg.TemporalRoundFactor)
+			last = last.Add(time.Duration(cfg.TemporalRoundFactor))
 			if last.After(timestamp) {
 				l.Infof("early exit, %s > %s", last, timestamp)
 				return nil

@@ -128,7 +128,7 @@ func (t Testing) FireAllTasks(c context.Context) {
 func (t Testing) AdvanceTime(c context.Context) {
 	clk := clock.Get(c).(testclock.TestClock)
 	cfg := GetConfig(c)
-	toAdd := cfg.TemporalMinDelay + cfg.TemporalRoundFactor + time.Second
+	toAdd := time.Duration(cfg.TemporalMinDelay) + time.Duration(cfg.TemporalRoundFactor) + time.Second
 	logging.Infof(c, "adding %s to %s", toAdd, clk.Now().UTC())
 	clk.Add(toAdd)
 }
