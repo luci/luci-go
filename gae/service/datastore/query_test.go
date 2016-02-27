@@ -145,6 +145,11 @@ var queryTests = []queryTest{
 		"SELECT DISTINCT `hello` FROM `Foo` ORDER BY `hello`, `__key__`",
 		nil, nil},
 
+	{"projecting in an inequality query",
+		nq().Gte("foo", 10).Project("bar").Distinct(true),
+		"SELECT DISTINCT `bar`, `foo` FROM `Foo` WHERE `foo` >= 10 ORDER BY `foo`, `bar`, `__key__`",
+		nil, nil},
+
 	{"bad ancestors",
 		nq().Ancestor(mkKey("goop", 0)),
 		"",

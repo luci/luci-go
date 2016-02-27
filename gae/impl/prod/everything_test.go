@@ -182,6 +182,36 @@ func TestBasicDatastore(t *testing.T) {
 				count, err := ds.Count(q)
 				So(err, ShouldBeNil)
 				So(count, ShouldEqual, 4)
+
+				q = datastore.NewQuery("TestStruct").Lte("ValueI", 7).Project("ValueS").Distinct(true)
+				rslts = []datastore.PropertyMap{}
+				So(ds.GetAll(q, &rslts), ShouldBeNil)
+				So(rslts, ShouldResemble, []datastore.PropertyMap{
+					{
+						"$key":   {mpNI(ds.KeyForObj(&orig))},
+						"ValueI": {mp(1)},
+						"ValueS": {mp("hello")},
+					},
+					{
+						"$key":   {mpNI(ds.KeyForObj(&orig))},
+						"ValueI": {mp(1)},
+						"ValueS": {mp("world")},
+					},
+					{
+						"$key":   {mpNI(ds.KeyForObj(&orig))},
+						"ValueI": {mp(7)},
+						"ValueS": {mp("hello")},
+					},
+					{
+						"$key":   {mpNI(ds.KeyForObj(&orig))},
+						"ValueI": {mp(7)},
+						"ValueS": {mp("world")},
+					},
+				})
+
+				count, err = ds.Count(q)
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 4)
 			})
 		})
 
@@ -211,7 +241,7 @@ func TestBasicDatastore(t *testing.T) {
 
 			tval, err := prop.Project(datastore.PTTime)
 			So(err, ShouldBeNil)
-			So(tval, ShouldResemble, time.Time{})
+			So(tval, ShouldResemble, time.Time{}.UTC())
 
 			tval, err = all[1]["Time"][0].Project(datastore.PTTime)
 			So(err, ShouldBeNil)

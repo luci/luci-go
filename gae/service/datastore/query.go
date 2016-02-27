@@ -573,6 +573,12 @@ func (q *Query) Finalize() (*FinalizedQuery, error) {
 	if q.project != nil {
 		ret.project = q.project.ToSlice()
 		ret.distinct = q.distinct && q.project.Len() > 0
+
+		// If we're DISTINCT && have an inequality filter, we must project that
+		// inequality property as well.
+		if ret.distinct && ret.ineqFiltProp != "" && !q.project.Has(ret.ineqFiltProp) {
+			ret.project = append([]string{ret.ineqFiltProp}, ret.project...)
+		}
 	}
 
 	seenOrders := stringset.New(len(q.order))
