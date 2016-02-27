@@ -100,7 +100,9 @@ func ProcessShard(c context.Context, timestamp time.Time, shard uint64) error {
 		return nil
 	}
 
-	l := logging.Get(logging.SetField(c, "shard", shard))
+	logging.Fields{
+		"shard": shard,
+	}.Infof(c, "Processing tumble shard.")
 
 	cfg := GetConfig(c)
 
@@ -114,17 +116,17 @@ func ProcessShard(c context.Context, timestamp time.Time, shard uint64) error {
 	lastItm, err := mc.Get(lastKey)
 	if err != nil {
 		if err != memcache.ErrCacheMiss {
-			l.Warningf("couldn't obtain last timestamp: %s", err)
+			logging.Warningf(c, "couldn't obtain last timestamp: %s", err)
 		}
 	} else {
 		val := lastItm.Value()
 		last, err := serialize.ReadTime(bytes.NewBuffer(val))
 		if err != nil {
-			l.Warningf("could not decode timestamp %v: %s", val, err)
+			logging.Warningf(c, "could not decode timestamp %v: %s", val, err)
 		} else {
 			last = last.Add(time.Duration(cfg.TemporalRoundFactor))
 			if last.After(timestamp) {
-				l.Infof("early exit, %s > %s", last, timestamp)
+				logging.Infof(c, "early exit, %s > %s", last, timestamp)
 				return nil
 			}
 		}
@@ -140,7 +142,7 @@ func ProcessShard(c context.Context, timestamp time.Time, shard uint64) error {
 
 	for try := 0; try < 2; try++ {
 		err = memlock.TryWithLock(c, lockKey, clientID, func(c context.Context) error {
-			l.Infof("Got lock (try %d)", try)
+			logging.Infof(c, "Got lock (try %d)", try)
 
 			for {
 				processCounters := []*int64{}
@@ -166,13 +168,23 @@ func ProcessShard(c context.Context, timestamp time.Time, shard uint64) error {
 						}
 
 						if c.Err() != nil {
-							l.Warningf("Lost lock! %s", c.Err())
+							logging.Warningf(c, "Lost lock! %s", c.Err())
 							return datastore.Stop
 						}
 						return nil
 					})
 					if err != nil {
-						l.Errorf("Failure to query: %s", err)
+						var qstr string
+						if fq, err := q.Finalize(); err == nil {
+							qstr = fq.String()
+						} else {
+							qstr = fmt.Sprintf("unable to finalize: %v", err)
+						}
+
+						logging.Fields{
+							logging.ErrorKey: err,
+							"query":          qstr,
+						}.Errorf(c, "Failure to query.")
 						ch <- func() error {
 							return err
 						}
@@ -185,18 +197,18 @@ func ProcessShard(c context.Context, timestamp time.Time, shard uint64) error {
 				for _, n := range processCounters {
 					numProcessed += *n
 				}
-				l.Infof("cumulatively processed %d items", numProcessed)
+				logging.Infof(c, "cumulatively processed %d items", numProcessed)
 				if numProcessed == 0 {
 					break
 				}
 
 				err = mc.Set(mc.NewItem(lastKey).SetValue(serialize.ToBytes(clock.Now(c).UTC())))
 				if err != nil {
-					l.Warningf("could not update last process memcache key %s: %s", lastKey, err)
+					logging.Warningf(c, "could not update last process memcache key %s: %s", lastKey, err)
 				}
 
 				if tr := clock.Sleep(c, dustSettleTimeout); tr.Incomplete() {
-					l.Warningf("sleep interrupted, context is done: %v", tr.Err)
+					logging.Warningf(c, "sleep interrupted, context is done: %v", tr.Err)
 					return tr.Err
 				}
 			}
@@ -205,14 +217,14 @@ func ProcessShard(c context.Context, timestamp time.Time, shard uint64) error {
 		if err != memlock.ErrFailedToLock {
 			break
 		}
-		l.Infof("Couldn't obtain lock (try %d) (sleeping 2s)", try+1)
+		logging.Infof(c, "Couldn't obtain lock (try %d) (sleeping 2s)", try+1)
 		if tr := clock.Sleep(c, time.Second*2); tr.Incomplete() {
-			l.Warningf("sleep interrupted, context is done: %v", tr.Err)
+			logging.Warningf(c, "sleep interrupted, context is done: %v", tr.Err)
 			return tr.Err
 		}
 	}
 	if err == memlock.ErrFailedToLock {
-		l.Infof("Couldn't obtain lock (giving up): %s", err)
+		logging.Infof(c, "Couldn't obtain lock (giving up): %s", err)
 		err = nil
 	}
 	return err
