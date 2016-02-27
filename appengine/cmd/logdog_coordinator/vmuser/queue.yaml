@@ -14,3 +14,14 @@ queue:
     mode: push
     rate: 100/s
     target: backend
+
+  # Push queue for tumble (from doc.go).
+  - name: tumble
+    rate: 32/s
+    bucket_size: 32
+    retry_parameters:
+      task_age_limit: 2m
+      min_backoff_seconds: 2
+      max_backoff_seconds: 6
+      max_doublings: 7
+    target: backend

@@ -23,6 +23,10 @@ import (
 	"github.com/luci/luci-go/server/prpc"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
+
+	// Include mutations package so its Mutations will register with tumble via
+	// init().
+	_ "github.com/luci/luci-go/appengine/logdog/coordinator/mutations"
 )
 
 // base is the root of the middleware chain.
@@ -47,6 +51,7 @@ func main() {
 	logsPb.RegisterLogsServer(&svr, &logs.Server{})
 	discovery.Enable(&svr)
 
+	// Standard HTTP endpoints.
 	gaeauthServer.InstallHandlers(router, base)
 	svr.InstallHandlers(router, base)
 

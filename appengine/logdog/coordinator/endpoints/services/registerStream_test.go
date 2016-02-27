@@ -10,18 +10,16 @@ import (
 	"testing"
 
 	"github.com/luci/gae/filter/featureBreaker"
-	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/hierarchy"
+	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
-	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
-	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -31,8 +29,8 @@ func TestRegisterStream(t *testing.T) {
 	t.Parallel()
 
 	Convey(`With a testing configuration`, t, func() {
-		c, _ := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
-		c = memory.Use(c)
+		tt := tumble.NewTesting()
+		c := tt.Context()
 		ds.Get(c).Testable().Consistent(true)
 		be := Server{}
 
@@ -73,6 +71,7 @@ func TestRegisterStream(t *testing.T) {
 					So(err, ShouldBeRPCOK)
 					So(resp, ShouldResemble, expResp)
 					ds.Get(c).Testable().CatchupIndexes()
+					tt.Drain(c)
 
 					// Should have name components.
 					getNameComponents := func(b string) []string {
@@ -123,7 +122,7 @@ func TestRegisterStream(t *testing.T) {
 					So(err, ShouldBeRPCInternal)
 				})
 
-				Convey(`Returns internal server error if the datastore Put() fails.`, func() {
+				Convey(`Returns internal server error if the datastore Put() fails (in tumble).`, func() {
 					c, fb := featureBreaker.FilterRDS(c, nil)
 					fb.BreakFeatures(errors.New("test error"), "PutMulti")
 

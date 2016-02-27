@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/common/logdog/types"
 )
 
@@ -223,20 +222,19 @@ func components(p string) []string {
 
 // Put creates component entries for path.
 //
-// This method does not retry on datastore failure. If that behavior is desired,
-// this should be run in a transaction or retry loop.
-func Put(di ds.Interface, ls *coordinator.LogStream) error {
-	p := ls.Path()
+// Put will panic if any input data is invalid. It will only fail if datastore
+// operations fail.
+func Put(di ds.Interface, p types.StreamPath) error {
 	if err := p.Validate(); err != nil {
-		return err
+		panic(err)
 	}
 
 	// Build all path componentEntity objects for our parts.
-	c := components(string(p))
-	components := make([]*componentEntity, 0, len(c))
+	comps := components(string(p))
+	components := make([]*componentEntity, 0, len(comps))
 	prev, _ := componentTokenKey(di, nil)
 
-	for i, comp := range c {
+	for i, comp := range comps {
 		cur := componentEntity{
 			Parent: prev,
 			ID: componentID{
@@ -244,7 +242,7 @@ func Put(di ds.Interface, ls *coordinator.LogStream) error {
 			},
 			Depth: i + 1,
 		}
-		if i == len(c)-1 {
+		if i == len(comps)-1 {
 			// This is the stream component.
 			cur.ID.stream = true
 		} else {
@@ -256,17 +254,13 @@ func Put(di ds.Interface, ls *coordinator.LogStream) error {
 	return di.PutMulti(components)
 }
 
-// Purge sets the named path component's purged status to v.
+// MarkPurged sets the named path component's purged status to v.
 //
-// Note that a subsequent Put to the same stream will remove the purged status.
-// This should not happen in practice, though, since Put should only happen on
-// stream registration, which will only occur once per stream.
-//
-// This method does not retry on datastore failure. If that behavior is desired,
-// this should be run in a transaction or retry loop.
-func Purge(di ds.Interface, p types.StreamPath, v bool) error {
+// MarkPurged will panic if any input data is invalid. It will only fail if
+// datastore operations fail.
+func MarkPurged(di ds.Interface, p types.StreamPath, v bool) error {
 	if err := p.Validate(); err != nil {
-		return err
+		panic(p)
 	}
 
 	comp := components(string(p))
@@ -427,4 +421,10 @@ func Get(di ds.Interface, r Request) (*List, error) {
 		return nil, err
 	}
 	return &l, nil
+}
+
+// Root returns the datastore key for the hierarchy entity root.
+func Root(di ds.Interface) *ds.Key {
+	k, _ := componentTokenKey(di, nil)
+	return k
 }

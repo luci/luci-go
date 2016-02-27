@@ -75,12 +75,12 @@ func TestList(t *testing.T) {
 				panic(fmt.Errorf("failed to generate log stream %d: %v", i, err))
 			}
 
-			if err := hierarchy.Put(ds.Get(c), ls); err != nil {
+			if err := hierarchy.Put(ds.Get(c), ls.Path()); err != nil {
 				panic(fmt.Errorf("failed to put log stream %d: %v", i, err))
 			}
 
 			if prefix.Segments()[0] == "purged" {
-				if err := hierarchy.Purge(ds.Get(c), ls.Path(), true); err != nil {
+				if err := hierarchy.MarkPurged(ds.Get(c), ls.Path(), true); err != nil {
 					panic(fmt.Errorf("failed to purge log stream %d: %v", i, err))
 				}
 			}

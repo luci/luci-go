@@ -56,8 +56,8 @@ func ShouldHaveRPCCode(actual interface{}, expected ...interface{}) string {
 	}
 
 	if acode := grpc.Code(aerr); acode != ecode {
-		return fmt.Sprintf("expected gRPC code %q (%d), not %q (%d), type %T",
-			ecode, ecode, acode, acode, acode)
+		return fmt.Sprintf("expected gRPC code %q (%d), not %q (%d), type %T: %v",
+			ecode, ecode, acode, acode, actual, actual)
 	}
 
 	if errLike != "" {
@@ -93,6 +93,15 @@ func ShouldBeRPCInvalidArgument(actual interface{}, expected ...interface{}) str
 // gRPC error's message is asserted to contain the expected string.
 func ShouldBeRPCInternal(actual interface{}, expected ...interface{}) string {
 	return ShouldHaveRPCCode(actual, prepend(codes.Internal, expected)...)
+}
+
+// ShouldBeRPCUnknown asserts that "actual" is an error that has a gRPC code
+// value of codes.Unknown.
+//
+// One additional "expected" string may be optionally included. If included, the
+// gRPC error's message is asserted to contain the expected string.
+func ShouldBeRPCUnknown(actual interface{}, expected ...interface{}) string {
+	return ShouldHaveRPCCode(actual, prepend(codes.Unknown, expected)...)
 }
 
 // ShouldBeRPCNotFound asserts that "actual" is an error that has a gRPC code

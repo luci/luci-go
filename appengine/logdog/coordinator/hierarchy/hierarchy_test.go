@@ -9,12 +9,11 @@ import (
 
 	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/logdog/types"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"golang.org/x/net/context"
 )
 
 func TestHierarchy(t *testing.T) {
@@ -23,6 +22,7 @@ func TestHierarchy(t *testing.T) {
 	Convey(`With a testing configuration`, t, func() {
 		c, _ := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 		c = memory.Use(c)
+
 		di := ds.Get(c)
 		tds := ds.Get(c).Testable()
 
@@ -74,7 +74,7 @@ func TestHierarchy(t *testing.T) {
 				"bar/+/baz",
 				"bar/+/baz/qux",
 			} {
-				So(Put(ds.Get(c), coordinator.LogStreamFromPath(p)), ShouldBeNil)
+				So(Put(ds.Get(c), p), ShouldBeNil)
 			}
 			tds.CatchupIndexes()
 

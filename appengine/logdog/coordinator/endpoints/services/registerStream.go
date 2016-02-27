@@ -10,7 +10,8 @@ import (
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
-	"github.com/luci/luci-go/appengine/logdog/coordinator/hierarchy"
+	"github.com/luci/luci-go/appengine/logdog/coordinator/mutations"
+	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/grpcutil"
@@ -18,6 +19,7 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
 
@@ -114,68 +116,88 @@ func (b *Server) RegisterStream(c context.Context, req *services.RegisterStreamR
 		return loadLogStreamState(ls), nil
 	}
 
-	// Write the hierarchy path components. This is idempotent, so it doesn't
-	// need to be run within a transaction.
-	if err := hierarchy.Put(ds.Get(c), ls); err != nil {
-		log.WithError(err).Errorf(c, "Failed to write log stream path.")
-		return nil, grpcutil.Internal
-	}
-
 	// The registration is valid, so retain it.
-	now := ds.RoundTime(clock.Now(c).UTC())
-
-	err := ds.Get(c).RunInTransaction(func(c context.Context) error {
-		di := ds.Get(c)
-
-		// Already registered? (Transactional).
-		switch err := di.Get(ls); err {
-		case nil:
-			// The stream is already registered.
-			//
-			// We want this to be idempotent, so validate that it matches the current
-			// configuration and return accordingly.
-			if err := matchesLogStream(req, ls); err != nil {
-				return grpcutil.Errf(codes.AlreadyExists, "Log stream is already incompatibly registered (T): %v", err)
-			}
-			return nil
-
-		case ds.ErrNoSuchEntity:
-			log.Infof(c, "Registering new log stream'")
-
-			// The stream is not yet registered.
-			if err := ls.LoadDescriptor(req.Desc); err != nil {
-				log.Fields{
-					log.ErrorKey: err,
-				}.Errorf(c, "Failed to load descriptor into LogStream.")
-				return grpcutil.Errf(codes.InvalidArgument, "Failed to load descriptor.")
-			}
-
-			ls.Secret = req.Secret
-			ls.ProtoVersion = req.ProtoVersion
-			ls.State = coordinator.LSPending
-			ls.Created = now
-			ls.Updated = now
-			ls.TerminalIndex = -1
-
-			if err := ls.Put(di); err != nil {
-				log.Fields{
-					log.ErrorKey: err,
-				}.Errorf(c, "Failed to Put() LogStream.")
-				return grpcutil.Internal
-			}
-
-		default:
-			return grpcutil.Internal
-		}
-
-		return nil
-	}, nil)
-	if err != nil {
+	if err := tumble.RunMutation(c, &registerStreamMutation{ls, req}); err != nil {
 		log.Fields{
 			log.ErrorKey: err,
-		}.Errorf(c, "Failed to update LogStream.")
-		return nil, err
+		}.Errorf(c, "Failed to register LogStream.")
+		return nil, filterError(err)
 	}
 
 	return loadLogStreamState(ls), nil
+}
+
+func filterError(err error) error {
+	switch {
+	case err == nil:
+		return nil
+	case grpc.Code(err) == codes.Unknown:
+		return grpcutil.Internal
+	default:
+		return err
+	}
+}
+
+type registerStreamMutation struct {
+	*coordinator.LogStream
+
+	req *services.RegisterStreamRequest
+}
+
+func (m registerStreamMutation) RollForward(c context.Context) ([]tumble.Mutation, error) {
+	di := ds.Get(c)
+
+	// Already registered? (Transactional).
+	switch err := di.Get(m.LogStream); err {
+	case ds.ErrNoSuchEntity:
+		break
+
+	case nil:
+		// The stream is already registered.
+		//
+		// We want this to be idempotent, so validate that it matches the current
+		// configuration and return accordingly.
+		if err := matchesLogStream(m.req, m.LogStream); err != nil {
+			return nil, grpcutil.Errf(codes.AlreadyExists, "Log stream is already incompatibly registered (T): %v", err)
+		}
+		return nil, nil
+
+	default:
+		return nil, grpcutil.Internal
+	}
+
+	log.Infof(c, "Registering new log stream'")
+
+	// The stream is not yet registered.
+	if err := m.LoadDescriptor(m.req.Desc); err != nil {
+		log.Fields{
+			log.ErrorKey: err,
+		}.Errorf(c, "Failed to load descriptor into LogStream.")
+		return nil, grpcutil.Errf(codes.InvalidArgument, "Failed to load descriptor.")
+	}
+
+	now := ds.RoundTime(clock.Now(c).UTC())
+	m.Secret = m.req.Secret
+	m.ProtoVersion = m.req.ProtoVersion
+	m.State = coordinator.LSPending
+	m.Created = now
+	m.Updated = now
+	m.TerminalIndex = -1
+
+	if err := m.Put(di); err != nil {
+		log.Fields{
+			log.ErrorKey: err,
+		}.Errorf(c, "Failed to Put() LogStream.")
+		return nil, grpcutil.Internal
+	}
+
+	return []tumble.Mutation{
+		&mutations.PutHierarchyMutation{
+			Path: m.Path(),
+		},
+	}, nil
+}
+
+func (m registerStreamMutation) Root(c context.Context) *ds.Key {
+	return ds.Get(c).KeyForObj(m.LogStream)
 }

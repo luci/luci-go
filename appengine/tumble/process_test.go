@@ -24,7 +24,6 @@ func TestTumbleFiddlyBits(t *testing.T) {
 		tt := NewTesting()
 		ctx := tt.Context()
 		l := logging.Get(ctx).(*memlogger.MemLogger)
-		_ = l
 
 		Convey("early exit logic works", func() {
 			mc := memcache.Get(ctx)

@@ -12,9 +12,14 @@ import (
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/backend"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
+	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/middleware"
 	"google.golang.org/appengine"
+
+	// Include mutations package so its Mutations will register with tumble via
+	// init().
+	_ "github.com/luci/luci-go/appengine/logdog/coordinator/mutations"
 )
 
 func authenticator(scopes ...string) auth.Authenticator {
@@ -41,6 +46,7 @@ func main() {
 
 	router := httprouter.New()
 	b.InstallHandlers(router, base)
+	tumble.InstallHandlers(router)
 	http.Handle("/", router)
 
 	appengine.Main()
