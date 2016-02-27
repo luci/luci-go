@@ -25,8 +25,6 @@ import (
 	adminSettings "github.com/luci/luci-go/server/settings/admin"
 )
 
-var myTumble = tumble.DefaultConfig()
-
 func base(h middleware.Handler) httprouter.Handle {
 	newH := func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		cfg, err := gaeconfig.New(c)
@@ -54,7 +52,7 @@ func init() {
 	discovery.Enable(&svr)
 
 	svr.InstallHandlers(router, base)
-	myTumble.InstallHandlers(router)
+	tumble.InstallHandlers(router)
 	gaeauthServer.InstallHandlers(router, base)
 	adminSettings.InstallHandlers(router, base, &gaeauthServer.UsersAPIAuthMethod{})
 

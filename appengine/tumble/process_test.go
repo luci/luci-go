@@ -21,23 +21,21 @@ func TestTumbleFiddlyBits(t *testing.T) {
 	t.Parallel()
 
 	Convey("Fiddly bits", t, func() {
-		testing := Testing{}
-
-		ctx := testing.Context()
-		cfg := GetConfig(ctx)
+		tt := NewTesting()
+		ctx := tt.Context()
 		l := logging.Get(ctx).(*memlogger.MemLogger)
 		_ = l
 
 		Convey("early exit logic works", func() {
 			mc := memcache.Get(ctx)
 			future := clock.Now(ctx).UTC().Add(time.Hour)
-			itm := mc.NewItem(fmt.Sprintf("%s.%d.last", cfg.Name, 10)).SetValue(serialize.ToBytes(future))
+			itm := mc.NewItem(fmt.Sprintf("%s.%d.last", baseName, 10)).SetValue(serialize.ToBytes(future))
 			So(mc.Set(itm), ShouldBeNil)
 
-			So(fireTasks(ctx, map[taskShard]struct{}{
+			So(fireTasks(ctx, &tt.Config, map[taskShard]struct{}{
 				taskShard{10, minTS}: {},
 			}), ShouldBeTrue)
-			testing.Drain(ctx)
+			tt.Drain(ctx)
 
 			So(l.Has(logging.Info,
 				"Processing tumble shard.", map[string]interface{}{"shard": uint64(10)}),

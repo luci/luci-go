@@ -37,15 +37,14 @@ type taskShard struct {
 	time  timestamp
 }
 
-func fireTasks(c context.Context, shards map[taskShard]struct{}) bool {
+func fireTasks(c context.Context, cfg *Config, shards map[taskShard]struct{}) bool {
 	if len(shards) == 0 {
 		return true
 	}
 
 	tq := taskqueue.Get(c)
 
-	cfg := GetConfig(c)
-	nextSlot := mkTimestamp(&cfg, clock.Now(c).UTC())
+	nextSlot := mkTimestamp(cfg, clock.Now(c).UTC())
 	logging.Fields{
 		"slot": nextSlot,
 	}.Debugf(c, "got next slot")
@@ -60,7 +59,7 @@ func fireTasks(c context.Context, shards map[taskShard]struct{}) bool {
 		tsk := &taskqueue.Task{
 			Name: fmt.Sprintf("%d_%d", eta, shard.shard),
 
-			Path: cfg.ProcessURL(eta, shard.shard),
+			Path: processURL(eta, shard.shard),
 
 			ETA: eta.Unix(),
 
@@ -70,7 +69,7 @@ func fireTasks(c context.Context, shards map[taskShard]struct{}) bool {
 		logging.Infof(c, "added task %q %s %s", tsk.Name, tsk.Path, tsk.ETA)
 	}
 
-	err := tq.AddMulti(tasks, cfg.Name)
+	err := tq.AddMulti(tasks, baseName)
 	if err != nil {
 		if merr, ok := err.(errors.MultiError); ok {
 			me := errors.MultiError(nil)
@@ -95,14 +94,14 @@ func fireTasks(c context.Context, shards map[taskShard]struct{}) bool {
 // languishes forever. This may not be needed in a constantly-loaded system with
 // good tumble key distribution.
 func FireAllTasks(c context.Context) error {
-	num := GetConfig(c).NumShards
-	shards := make(map[taskShard]struct{}, num)
-	for i := uint64(0); i < num; i++ {
+	cfg := getConfig(c)
+	shards := make(map[taskShard]struct{}, cfg.NumShards)
+	for i := uint64(0); i < cfg.NumShards; i++ {
 		shards[taskShard{i, minTS}] = struct{}{}
 	}
 
 	err := error(nil)
-	if !fireTasks(c, shards) {
+	if !fireTasks(c, cfg, shards) {
 		err = errors.New("unable to fire all tasks")
 	}
 

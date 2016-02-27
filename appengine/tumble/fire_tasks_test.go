@@ -9,12 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/taskqueue"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/memlogger"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -25,10 +23,9 @@ func TestShardCalculation(t *testing.T) {
 	Convey("shard calculation", t, func() {
 		numShards := uint64(11)
 
-		ctx := memlogger.Use(context.Background())
-		ctx = Use(ctx, Config{NumShards: numShards})
-
-		cfg := GetConfig(ctx)
+		tt := NewTesting()
+		tt.NumShards = numShards
+		ctx := tt.Context()
 
 		l := logging.Get(ctx).(*memlogger.MemLogger)
 
@@ -43,7 +40,7 @@ func TestShardCalculation(t *testing.T) {
 			}
 
 			for _, tc := range tcs {
-				So((&realMutation{ExpandedShard: tc.es}).shard(&cfg).shard, ShouldEqual, tc.s)
+				So((&realMutation{ExpandedShard: tc.es}).shard(&tt.Config).shard, ShouldEqual, tc.s)
 				low, high := expandedShardBounds(ctx, tc.s)
 				So(tc.es, ShouldBeGreaterThanOrEqualTo, low)
 				So(tc.es, ShouldBeLessThanOrEqualTo, high)
@@ -63,61 +60,55 @@ func TestFireTasks(t *testing.T) {
 	t.Parallel()
 
 	Convey("fireTasks works as expected", t, func() {
-		ctx := memory.Use(context.Background())
-		ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC)
-		cfg := GetConfig(ctx)
+		tt := NewTesting()
+		ctx := tt.Context()
 		tq := taskqueue.Get(ctx)
-		l := logging.Get(ctx).(*memlogger.MemLogger)
-		_ = l
-
-		tq.Testable().CreateQueue(cfg.Name)
 
 		Convey("empty", func() {
-			So(fireTasks(ctx, nil), ShouldBeTrue)
-			So(len(tq.Testable().GetScheduledTasks()[cfg.Name]), ShouldEqual, 0)
+			So(fireTasks(ctx, &tt.Config, nil), ShouldBeTrue)
+			So(len(tq.Testable().GetScheduledTasks()[baseName]), ShouldEqual, 0)
 		})
 
 		Convey("basic", func() {
-			So(fireTasks(ctx, map[taskShard]struct{}{
+			So(fireTasks(ctx, &tt.Config, map[taskShard]struct{}{
 				taskShard{2, minTS}: {},
 				taskShard{7, minTS}: {},
 
 				// since DelayedMutations is false, this timew will be reset
-				taskShard{5, mkTimestamp(&cfg, testclock.TestTimeUTC.Add(time.Minute))}: {},
+				taskShard{5, mkTimestamp(&tt.Config, testclock.TestTimeUTC.Add(time.Minute))}: {},
 			}), ShouldBeTrue)
-			q := tq.Testable().GetScheduledTasks()[cfg.Name]
+			q := tq.Testable().GetScheduledTasks()[baseName]
 			So(q["-62132730888_2"], ShouldResemble, &taskqueue.Task{
 				Name:   "-62132730888_2",
 				Method: "POST",
-				Path:   cfg.ProcessURL(-62132730888, 2),
+				Path:   processURL(-62132730888, 2),
 				ETA:    testclock.TestTimeUTC.Add(6 * time.Second).Round(time.Second),
 			})
 			So(q["-62132730888_7"], ShouldResemble, &taskqueue.Task{
 				Name:   "-62132730888_7",
 				Method: "POST",
-				Path:   cfg.ProcessURL(-62132730888, 7),
+				Path:   processURL(-62132730888, 7),
 				ETA:    testclock.TestTimeUTC.Add(6 * time.Second).Round(time.Second),
 			})
 			So(q["-62132730888_5"], ShouldResemble, &taskqueue.Task{
 				Name:   "-62132730888_5",
 				Method: "POST",
-				Path:   cfg.ProcessURL(-62132730888, 5),
+				Path:   processURL(-62132730888, 5),
 				ETA:    testclock.TestTimeUTC.Add(6 * time.Second).Round(time.Second),
 			})
 		})
 
 		Convey("delayed", func() {
-			cfg.DelayedMutations = true
-			ctx = Use(ctx, cfg)
-			delayedTS := mkTimestamp(&cfg, testclock.TestTimeUTC.Add(time.Minute*10))
-			So(fireTasks(ctx, map[taskShard]struct{}{
+			tt.DelayedMutations = true
+			delayedTS := mkTimestamp(&tt.Config, testclock.TestTimeUTC.Add(time.Minute*10))
+			So(fireTasks(ctx, &tt.Config, map[taskShard]struct{}{
 				taskShard{1, delayedTS}: {},
 			}), ShouldBeTrue)
-			q := tq.Testable().GetScheduledTasks()[cfg.Name]
+			q := tq.Testable().GetScheduledTasks()[baseName]
 			So(q["-62132730288_1"], ShouldResemble, &taskqueue.Task{
 				Name:   "-62132730288_1",
 				Method: "POST",
-				Path:   cfg.ProcessURL(-62132730288, 1),
+				Path:   processURL(-62132730288, 1),
 				ETA:    testclock.TestTimeUTC.Add(time.Minute * 10).Add(6 * time.Second).Round(time.Second),
 			})
 		})

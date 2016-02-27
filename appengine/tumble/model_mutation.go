@@ -130,9 +130,8 @@ func (r *realMutation) shard(cfg *Config) taskShard {
 	return taskShard{ret, mkTimestamp(cfg, r.ProcessAfter)}
 }
 
-func putMutations(c context.Context, fromRoot *datastore.Key, muts []Mutation, round uint64) (shardSet map[taskShard]struct{}, mutKeys []*datastore.Key, err error) {
-	cfg := GetConfig(c)
-
+func putMutations(c context.Context, cfg *Config, fromRoot *datastore.Key, muts []Mutation, round uint64) (
+	shardSet map[taskShard]struct{}, mutKeys []*datastore.Key, err error) {
 	if len(muts) == 0 {
 		return
 	}
@@ -168,7 +167,7 @@ func putMutations(c context.Context, fromRoot *datastore.Key, muts []Mutation, r
 		}
 		mutKeys[i] = ds.KeyForObj(toPut[i])
 
-		shardSet[toPut[i].shard(&cfg)] = struct{}{}
+		shardSet[toPut[i].shard(cfg)] = struct{}{}
 	}
 
 	if err = ds.PutMulti(toPut); err != nil {

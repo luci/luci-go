@@ -32,7 +32,7 @@ import (
 // (the currently configured number of shards), this will return a low > high.
 // Otherwise low < high.
 func expandedShardBounds(c context.Context, shard uint64) (low, high int64) {
-	cfg := GetConfig(c)
+	cfg := getConfig(c)
 
 	if shard < 0 || uint64(shard) >= cfg.NumShards {
 		logging.Warningf(c, "Invalid shard: %d", shard)
@@ -82,7 +82,8 @@ func ProcessShardHandler(c context.Context, rw http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err = ProcessShard(c, time.Unix(tstamp, 0).UTC(), sid)
+	cfg := getConfig(c)
+	err = processShard(c, cfg, time.Unix(tstamp, 0).UTC(), sid)
 	if err != nil {
 		logging.Errorf(c, "failure! %s", err)
 		rw.WriteHeader(http.StatusInternalServerError)
@@ -92,9 +93,9 @@ func ProcessShardHandler(c context.Context, rw http.ResponseWriter, r *http.Requ
 	}
 }
 
-// ProcessShard is the tumble backend endpoint. This accepts a shard number which
+// processShard is the tumble backend endpoint. This accepts a shard number which
 // is expected to be < GlobalConfig.NumShards.
-func ProcessShard(c context.Context, timestamp time.Time, shard uint64) error {
+func processShard(c context.Context, cfg *Config, timestamp time.Time, shard uint64) error {
 	low, high := expandedShardBounds(c, shard)
 	if low > high {
 		return nil
@@ -104,14 +105,12 @@ func ProcessShard(c context.Context, timestamp time.Time, shard uint64) error {
 		"shard": shard,
 	}.Infof(c, "Processing tumble shard.")
 
-	cfg := GetConfig(c)
-
-	lockKey := fmt.Sprintf("%s.%d.lock", cfg.Name, shard)
+	lockKey := fmt.Sprintf("%s.%d.lock", baseName, shard)
 	clientID := fmt.Sprintf("%d_%d", timestamp.Unix(), shard)
 
 	// this last key allows buffered tasks to early exit if some other shard
 	// processor has already processed past this task's target timestamp.
-	lastKey := fmt.Sprintf("%s.%d.last", cfg.Name, shard)
+	lastKey := fmt.Sprintf("%s.%d.last", baseName, shard)
 	mc := memcache.Get(c)
 	lastItm, err := mc.Get(lastKey)
 	if err != nil {
@@ -164,7 +163,7 @@ func ProcessShard(c context.Context, timestamp time.Time, shard uint64) error {
 						processCounters = append(processCounters, counter)
 
 						ch <- func() error {
-							return processRoot(c, root, bs, counter)
+							return processRoot(c, cfg, root, bs, counter)
 						}
 
 						if c.Err() != nil {
@@ -230,8 +229,7 @@ func ProcessShard(c context.Context, timestamp time.Time, shard uint64) error {
 	return err
 }
 
-func getBatchByRoot(c context.Context, root *datastore.Key, banSet stringset.Set) ([]*realMutation, error) {
-	cfg := GetConfig(c)
+func getBatchByRoot(c context.Context, cfg *Config, root *datastore.Key, banSet stringset.Set) ([]*realMutation, error) {
 	ds := datastore.Get(c)
 	q := datastore.NewQuery("tumble.Mutation").Eq("TargetRoot", root)
 	if cfg.DelayedMutations {
@@ -302,11 +300,10 @@ func (o overrideRoot) Root(context.Context) *datastore.Key {
 	return o.root
 }
 
-func processRoot(c context.Context, root *datastore.Key, banSet stringset.Set, counter *int64) error {
-	cfg := GetConfig(c)
+func processRoot(c context.Context, cfg *Config, root *datastore.Key, banSet stringset.Set, counter *int64) error {
 	l := logging.Get(c)
 
-	toFetch, err := getBatchByRoot(c, root, banSet)
+	toFetch, err := getBatchByRoot(c, cfg, root, banSet)
 	if err != nil || len(toFetch) == 0 {
 		return err
 	}
@@ -339,7 +336,7 @@ func processRoot(c context.Context, root *datastore.Key, banSet stringset.Set, c
 		for i := 0; i < len(iterMuts); i++ {
 			m := iterMuts[i]
 
-			shards, newMuts, newMutKeys, err := enterTransactionInternal(c, overrideRoot{m, root}, uint64(i))
+			shards, newMuts, newMutKeys, err := enterTransactionInternal(c, cfg, overrideRoot{m, root}, uint64(i))
 			if err != nil {
 				l.Errorf("Executing decoded gob(%T) failed: %q: %+v", m, err, m)
 				continue
@@ -385,7 +382,7 @@ func processRoot(c context.Context, root *datastore.Key, banSet stringset.Set, c
 	}
 	numMuts -= deletedMuts
 
-	fireTasks(c, allShards)
+	fireTasks(c, cfg, allShards)
 	l.Infof("successfully processed %d mutations (%d tail-call), adding %d more", processedMuts, deletedMuts, numMuts)
 
 	if len(toDel) > 0 {

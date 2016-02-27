@@ -7,46 +7,18 @@ package tumble
 import (
 	"fmt"
 	"html/template"
-	"net/http"
 	"strconv"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/common/clock/clockflag"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/settings"
 	"golang.org/x/net/context"
 )
 
 const (
-	settingsKey = "Tumble"
-
 	delayedMutationsDisabled = "disabled"
 	delayedMutationsEnabled  = "enabled"
 )
-
-// With is a middleware handler that installs stored Tumble settings into the
-// Handler context.
-func With(h middleware.Handler, base Config) middleware.Handler {
-	return func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		c = LoadSettings(c, base)
-		h(c, rw, r, p)
-	}
-}
-
-// LoadSettings installs stored Tumble settings into the Handler context.
-func LoadSettings(c context.Context, base Config) context.Context {
-	s := Config{}
-	switch err := settings.Get(c, settingsKey, &s); err {
-	case nil:
-		return Use(c, base)
-	case settings.ErrNoSettings:
-		// Defaults.
-		return c
-	default:
-		panic(fmt.Errorf("could not fetch Tumble settings - %s", err))
-	}
-}
 
 // settingsUIPage is a UI page to configure a static Tumble configuration.
 type settingsUIPage struct {
@@ -113,12 +85,12 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 
 func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error) {
 	var cfg Config
-	switch err := settings.GetUncached(c, settingsKey, &cfg); err {
+	switch err := settings.GetUncached(c, baseName, &cfg); err {
 	case nil:
 		break
 	case settings.ErrNoSettings:
 		logging.WithError(err).Infof(c, "No settings available, using defaults.")
-		cfg = GetConfig(c)
+		cfg = defaultConfig
 	default:
 		return nil, err
 	}
@@ -187,7 +159,7 @@ func (settingsUIPage) WriteSettings(c context.Context, values map[string]string,
 	}
 	cfg.DelayedMutations = values["DelayedMutations"] == delayedMutationsEnabled
 
-	return settings.Set(c, settingsKey, &cfg, who, why)
+	return settings.Set(c, baseName, &cfg, who, why)
 }
 
 func intValidator(positive bool) func(string) error {

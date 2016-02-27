@@ -5,6 +5,7 @@
 package tumble
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -19,19 +20,35 @@ import (
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/memlogger"
+	"github.com/luci/luci-go/server/settings"
 	"golang.org/x/net/context"
 )
 
 // Testing is a high-level testing object for testing applications that use
 // tumble.
 type Testing struct {
-	Config Config
+	Config
+}
+
+// NewTesting returns a new Testing instance that is configured to use the
+// default tumble configuration.
+func NewTesting() *Testing {
+	return &Testing{defaultConfig}
+}
+
+func (t *Testing) installSettings(c context.Context) {
+	if t.NumShards == 0 || t.NumGoroutines == 0 || t.ProcessMaxBatchSize == 0 {
+		panic(errors.New("testing configuration is not valid... maybe call tumble.NewTesting()"))
+	}
+
+	settings.Set(c, baseName, &t.Config, "tumble.Testing", "for testing")
 }
 
 // Context generates a correctly configured context with:
 //   * luci/gae/impl/memory
 //   * luci/luci-go/common/clock/testclock
 //   * luci/luci-go/common/logging/memlogger
+//   * luci/luci-go/server/settings (MemoryStorage)
 //
 // It also correctly configures the "tumble.Mutation" indexes and taskqueue
 // named in this Testing config.
@@ -39,16 +56,15 @@ type Testing struct {
 // Calling this method will render the tumble package unsuitable for production
 // usage, since it disables some internal timeouts. DO NOT CALL THIS METHOD
 // IN PRODUCTION.
-func (t Testing) Context() context.Context {
+func (t *Testing) Context() context.Context {
 	dustSettleTimeout = 0
 
 	ctx := memory.Use(memlogger.Use(context.Background()))
 	ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC)
-	ctx = Use(ctx, t.Config)
+	ctx = settings.Use(ctx, settings.New(&settings.MemoryStorage{}))
+	t.installSettings(ctx)
 
-	cfg := GetConfig(ctx)
-
-	taskqueue.Get(ctx).Testable().CreateQueue(cfg.Name)
+	taskqueue.Get(ctx).Testable().CreateQueue(baseName)
 
 	ds := datastore.Get(ctx)
 	ds.Testable().AddIndexes(&datastore.IndexDefinition{
@@ -59,7 +75,7 @@ func (t Testing) Context() context.Context {
 		},
 	})
 
-	if cfg.DelayedMutations {
+	if t.Config.DelayedMutations {
 		ds.Testable().AddIndexes(&datastore.IndexDefinition{
 			Kind: "tumble.Mutation",
 			SortBy: []datastore.IndexColumn{
@@ -78,13 +94,14 @@ func (t Testing) Context() context.Context {
 //
 // It will skip all work items if the test clock hasn't advanced in time
 // enough.
-func (t Testing) Iterate(c context.Context) int {
+func (t *Testing) Iterate(c context.Context) int {
+	t.installSettings(c)
+
 	tq := taskqueue.Get(c)
-	cfg := GetConfig(c)
 	clk := clock.Get(c).(testclock.TestClock)
 
 	ret := 0
-	tsks := tq.Testable().GetScheduledTasks()[cfg.Name]
+	tsks := tq.Testable().GetScheduledTasks()[baseName]
 	logging.Debugf(c, "got tasks: %v", tsks)
 	for _, tsk := range tsks {
 		logging.Debugf(c, "found task: %v", tsk)
@@ -95,7 +112,7 @@ func (t Testing) Iterate(c context.Context) int {
 		toks := strings.Split(tsk.Path, "/")
 		rec := httptest.NewRecorder()
 		ProcessShardHandler(c, rec, &http.Request{
-			Header: http.Header{"X-AppEngine-QueueName": []string{cfg.Name}},
+			Header: http.Header{"X-AppEngine-QueueName": []string{baseName}},
 		}, httprouter.Params{
 			{Key: "shard_id", Value: toks[4]},
 			{Key: "timestamp", Value: toks[6]},
@@ -104,7 +121,7 @@ func (t Testing) Iterate(c context.Context) int {
 			lmsg := logging.Get(c).(*memlogger.MemLogger).Messages()
 			panic(fmt.Errorf("ProcessShardHandler returned !200: %d: %#v", rec.Code, lmsg))
 		}
-		if err := tq.Delete(tsk, cfg.Name); err != nil {
+		if err := tq.Delete(tsk, baseName); err != nil {
 			panic(fmt.Errorf("Deleting task failed: %s", err))
 		}
 		ret++
@@ -113,7 +130,9 @@ func (t Testing) Iterate(c context.Context) int {
 }
 
 // FireAllTasks will force all tumble shards to run in the future.
-func (t Testing) FireAllTasks(c context.Context) {
+func (t *Testing) FireAllTasks(c context.Context) {
+	t.installSettings(c)
+
 	rec := httptest.NewRecorder()
 	FireAllTasksHandler(c, rec, &http.Request{
 		Header: http.Header{"X-Appengine-Cron": []string{"true"}},
@@ -125,10 +144,11 @@ func (t Testing) FireAllTasks(c context.Context) {
 
 // AdvanceTime advances the test clock enough so that Iterate will be able to
 // pick up tasks in the task queue.
-func (t Testing) AdvanceTime(c context.Context) {
+func (t *Testing) AdvanceTime(c context.Context) {
+	t.installSettings(c)
+
 	clk := clock.Get(c).(testclock.TestClock)
-	cfg := GetConfig(c)
-	toAdd := time.Duration(cfg.TemporalMinDelay) + time.Duration(cfg.TemporalRoundFactor) + time.Second
+	toAdd := time.Duration(t.TemporalMinDelay) + time.Duration(t.TemporalRoundFactor) + time.Second
 	logging.Infof(c, "adding %s to %s", toAdd, clk.Now().UTC())
 	clk.Add(toAdd)
 }
@@ -136,7 +156,9 @@ func (t Testing) AdvanceTime(c context.Context) {
 // Drain will run a loop, advancing time and iterating through tumble mutations
 // until tumble's queue is empty. It returns the total number of processed
 // shards.
-func (t Testing) Drain(c context.Context) int {
+func (t *Testing) Drain(c context.Context) int {
+	t.installSettings(c)
+
 	ret := 0
 	for {
 		t.AdvanceTime(c)

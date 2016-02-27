@@ -20,15 +20,16 @@ import (
 // Usually this is called from your application's handlers to begin a tumble
 // state machine as a result of some API interaction.
 func RunMutation(c context.Context, m Mutation) error {
-	shardSet, _, _, err := enterTransactionInternal(txnBuf.FilterRDS(c), m, 0)
+	cfg := getConfig(c)
+	shardSet, _, _, err := enterTransactionInternal(txnBuf.FilterRDS(c), cfg, m, 0)
 	if err != nil {
 		return err
 	}
-	fireTasks(c, shardSet)
+	fireTasks(c, cfg, shardSet)
 	return nil
 }
 
-func enterTransactionInternal(c context.Context, m Mutation, round uint64) (map[taskShard]struct{}, []Mutation, []*datastore.Key, error) {
+func enterTransactionInternal(c context.Context, cfg *Config, m Mutation, round uint64) (map[taskShard]struct{}, []Mutation, []*datastore.Key, error) {
 	fromRoot := m.Root(c)
 
 	if fromRoot == nil {
@@ -50,7 +51,7 @@ func enterTransactionInternal(c context.Context, m Mutation, round uint64) (map[
 		}
 
 		retMuts = muts
-		shardSet, retMutKeys, err = putMutations(c, fromRoot, muts, round)
+		shardSet, retMutKeys, err = putMutations(c, cfg, fromRoot, muts, round)
 
 		return err
 	}, nil)

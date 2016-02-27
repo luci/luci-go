@@ -12,7 +12,18 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/common/clock/clockflag"
+	"github.com/luci/luci-go/server/settings"
 	"golang.org/x/net/context"
+)
+
+const (
+	// baseName is the base tumble name. It is also the name of the tumble task
+	// queue.
+	baseName = "tumble"
+
+	baseURL             = "/internal/" + baseName
+	fireAllTasksURL     = baseURL + "/fire_all_tasks"
+	processShardPattern = baseURL + "/process_shard/:shard_id/at/:timestamp"
 )
 
 // Config is the set of tweakable things for tumble. If you use something other
@@ -21,22 +32,6 @@ import (
 //
 // The JSON annotations are for settings module storage (see settings.go).
 type Config struct {
-	// Name is the name of this service. This is the expected name of the
-	// configured taskqueue, as well as the prefix used for things like memcache
-	// keys.
-	//
-	// It defaults to "tumble". It is illegal for the Name to contain '/', and
-	// Use will panic if it does.
-	Name string `json:"-"`
-
-	// URLPrefix is the prefix to append for all registered routes. It's
-	// normalized to begin and end with a '/'. So "wat" would register:
-	//    "/wat/{Service.Name}/fire_all_tasks"
-	//    "/wat/{Service.Name}/process_shard/:shard_id/at/:timestamp"
-	//
-	// This defaults to "internal"
-	URLPrefix string `json:"-"`
-
 	// NumShards is the number of tumble shards that will process concurrently.
 	// It defaults to 32.
 	NumShards uint64 `json:"numShards,omitempty"`
@@ -67,11 +62,8 @@ type Config struct {
 	DelayedMutations bool `json:"delayedMutations,omitempty"`
 }
 
-type key int
-
+// defaultConfig returns the default configuration settings.
 var defaultConfig = Config{
-	Name:                "tumble",
-	URLPrefix:           "/internal/",
 	NumShards:           32,
 	TemporalMinDelay:    clockflag.Duration(time.Second),
 	TemporalRoundFactor: clockflag.Duration(4 * time.Second),
@@ -79,87 +71,38 @@ var defaultConfig = Config{
 	ProcessMaxBatchSize: 128,
 }
 
-// DefaultConfig returns a Config with all the default values populated.
-func DefaultConfig() Config {
-	return defaultConfig
-}
-
-// Use allows you to set a specific configuration in the context. This
-// configuration can be obtained by calling GetConfig. Any zero-value fields
-// in the Config will be replaced with its default value.
+// getConfig returns the current configuration.
 //
-// This Config may be retrieved with GetConfig.
-func Use(c context.Context, cfg Config) context.Context {
-	if cfg.Name == "" {
-		cfg.Name = defaultConfig.Name
+// It first tries to load it from settings. If no settings is installed, or if
+// there is no configuration in settings, defaultConfig is returned.
+func getConfig(c context.Context) *Config {
+	cfg := Config{}
+	switch err := settings.Get(c, baseName, &cfg); err {
+	case nil:
+		break
+	case settings.ErrNoSettings:
+		// Defaults.
+		cfg = defaultConfig
+	default:
+		panic(fmt.Errorf("could not fetch Tumble settings - %s", err))
 	}
-	if strings.Contains(cfg.Name, "/") {
-		panic(fmt.Errorf("tumble: name may not contain '/': %q", cfg.Name))
-	}
-	if cfg.URLPrefix == "" {
-		cfg.URLPrefix = defaultConfig.URLPrefix
-	}
-	if !strings.HasPrefix(cfg.URLPrefix, "/") {
-		cfg.URLPrefix = "/" + cfg.URLPrefix
-	}
-	if !strings.HasSuffix(cfg.URLPrefix, "/") {
-		cfg.URLPrefix = cfg.URLPrefix + "/"
-	}
-	if cfg.NumShards == 0 {
-		cfg.NumShards = defaultConfig.NumShards
-	}
-	if cfg.TemporalMinDelay == 0 {
-		cfg.TemporalMinDelay = defaultConfig.TemporalMinDelay
-	}
-	if cfg.TemporalRoundFactor == 0 {
-		cfg.TemporalRoundFactor = defaultConfig.TemporalRoundFactor
-	}
-	if cfg.NumGoroutines == 0 {
-		cfg.NumGoroutines = defaultConfig.NumGoroutines
-	}
-	if cfg.ProcessMaxBatchSize == 0 {
-		cfg.ProcessMaxBatchSize = defaultConfig.ProcessMaxBatchSize
-	}
-	return context.WithValue(c, key(0), &cfg)
+	return &cfg
 }
 
-// GetConfig retrieves the Config from the current context. If none has been set,
-// this returns a Config which has all the defaults filled out.
-func GetConfig(c context.Context) Config {
-	if cfg, ok := c.Value(key(0)).(*Config); ok {
-		return *cfg
-	}
-	return defaultConfig
-}
-
-const processShardURLFormat = "/process_shard/:shard_id/at/:timestamp"
-
-// ProcessURLPattern returns the httprouter-style URL pattern for the taskqueue
-// process handler.
-func (c *Config) ProcessURLPattern() string {
-	return c.URLPrefix + c.Name + processShardURLFormat
-}
-
-// ProcessURL creates a new url for a process shard taskqueue task, including
+// processURL creates a new url for a process shard taskqueue task, including
 // the given timestamp and shard number.
-func (c *Config) ProcessURL(ts timestamp, shard uint64) string {
+func processURL(ts timestamp, shard uint64) string {
 	return strings.NewReplacer(
 		":shard_id", fmt.Sprint(shard),
-		":timestamp", fmt.Sprint(ts)).Replace(c.ProcessURLPattern())
+		":timestamp", fmt.Sprint(ts)).Replace(processShardPattern)
 }
 
-// FireAllTasksURL returns the url intended to be hit by appengine cron to fire
-// an instance of all the processing tasks.
-func (c *Config) FireAllTasksURL() string {
-	return c.URLPrefix + c.Name + "/fire_all_tasks"
-}
-
-// InstallHandlers installs http handlers
-func (c *Config) InstallHandlers(r *httprouter.Router) {
+// InstallHandlers installs http handlers.
+func InstallHandlers(r *httprouter.Router) {
 	// GET so that this can be invoked from cron
-	r.GET(c.FireAllTasksURL(),
+	r.GET(fireAllTasksURL,
 		gaemiddleware.BaseProd(gaemiddleware.RequireCron(FireAllTasksHandler)))
 
-	r.POST(c.ProcessURLPattern(),
-		gaemiddleware.BaseProd(gaemiddleware.RequireTaskQueue(c.Name, ProcessShardHandler)))
+	r.POST(processShardPattern,
+		gaemiddleware.BaseProd(gaemiddleware.RequireTaskQueue(baseName, ProcessShardHandler)))
 }

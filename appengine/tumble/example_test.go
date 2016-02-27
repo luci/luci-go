@@ -232,11 +232,9 @@ func TestHighLevel(t *testing.T) {
 		})
 
 		Convey("Good", func() {
-			testing := Testing{}
-
+			testing := NewTesting()
 			ctx := testing.Context()
 
-			cfg := GetConfig(ctx)
 			ds := datastore.Get(ctx)
 			l := logging.Get(ctx).(*memlogger.MemLogger)
 			_ = l
@@ -261,7 +259,7 @@ func TestHighLevel(t *testing.T) {
 				ds.Testable().CatchupIndexes()
 				testing.AdvanceTime(ctx)
 
-				So(testing.Iterate(ctx), ShouldEqual, cfg.NumShards)
+				So(testing.Iterate(ctx), ShouldEqual, testing.NumShards)
 				ds.Testable().CatchupIndexes()
 				testing.AdvanceTime(ctx)
 
@@ -327,7 +325,7 @@ func TestHighLevel(t *testing.T) {
 				// do all the SendMessages
 				ds.Testable().CatchupIndexes()
 				testing.AdvanceTime(ctx)
-				So(testing.Iterate(ctx), ShouldEqual, cfg.NumShards)
+				So(testing.Iterate(ctx), ShouldEqual, testing.NumShards)
 
 				// do all the WriteReceipts
 				l.Reset()
@@ -357,8 +355,7 @@ func TestHighLevel(t *testing.T) {
 
 			Convey("delaying messages works", func() {
 				ds.Testable().Consistent(false)
-				cfg.DelayedMutations = true
-				ctx = Use(ctx, cfg)
+				testing.DelayedMutations = true
 
 				So(ds.PutMulti([]User{
 					{"sender"},
@@ -402,7 +399,7 @@ func TestHighLevel(t *testing.T) {
 				testing.AdvanceTime(ctx)
 				So(testing.Iterate(ctx), ShouldEqual, 0)
 				So(l.Has(
-					logging.Info, "skipping task: "+cfg.ProcessURL(-62132730576, 23), nil,
+					logging.Info, "skipping task: "+processURL(-62132730576, 23), nil,
 				), ShouldBeTrue)
 
 				// Now it'll find something

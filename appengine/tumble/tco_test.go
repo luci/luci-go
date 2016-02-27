@@ -77,8 +77,7 @@ func TestTailCallOptimization(t *testing.T) {
 	t.Parallel()
 
 	Convey("TCO test", t, func() {
-		testing := Testing{}
-
+		testing := NewTesting()
 		c := testing.Context()
 
 		// This will start a chain. We should only be able to handle about 8
