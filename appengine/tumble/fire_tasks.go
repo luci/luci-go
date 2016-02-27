@@ -69,25 +69,11 @@ func fireTasks(c context.Context, cfg *Config, shards map[taskShard]struct{}) bo
 		logging.Infof(c, "added task %q %s %s", tsk.Name, tsk.Path, tsk.ETA)
 	}
 
-	err := tq.AddMulti(tasks, baseName)
-	if err != nil {
-		if merr, ok := err.(errors.MultiError); ok {
-			me := errors.MultiError(nil)
-			for _, err := range merr {
-				if err == taskqueue.ErrTaskAlreadyAdded {
-					continue
-				}
-				me = append(me, err)
-			}
-			if me != nil {
-				err = me
-			}
-		}
-		if err != nil {
-			logging.Warningf(c, "attempted to fire tasks %v, but failed: %s", shards, err)
-		}
+	if err := errors.Filter(tq.AddMulti(tasks, baseName), taskqueue.ErrTaskAlreadyAdded); err != nil {
+		logging.Warningf(c, "attempted to fire tasks %v, but failed: %s", shards, err)
+		return false
 	}
-	return err == nil
+	return true
 }
 
 // FireAllTasks fires off 1 task per shard to ensure that no tumble work

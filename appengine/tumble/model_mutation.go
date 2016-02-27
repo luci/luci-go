@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"strings"
 	"sync"
 	"time"
 
@@ -184,6 +185,15 @@ var appVersion = struct {
 func getAppVersion(c context.Context) string {
 	appVersion.Do(func() {
 		appVersion.version = info.Get(c).VersionID()
+
+		// AppEngine version is <app-yaml-version>.<unique-upload-id>
+		//
+		// The upload ID prevents version consistency between different AppEngine
+		// modules, which will necessarily have different IDs, so we vase our
+		// comparable version off of the app.yaml-supplied value.
+		if idx := strings.LastIndex(appVersion.version, "."); idx > 0 {
+			appVersion.version = appVersion.version[:idx]
+		}
 	})
 	return appVersion.version
 }

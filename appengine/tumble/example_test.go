@@ -290,8 +290,8 @@ func TestHighLevel(t *testing.T) {
 					Parent: ds.KeyForObj(charlie),
 				}
 				So(ds.Get(rm), ShouldBeNil)
-				So(rm.Version, ShouldEqual, "testVersionID.1")
-				rm.Version = "otherCodeVersion.1"
+				So(rm.Version, ShouldEqual, "testVersionID")
+				rm.Version = "otherCodeVersion"
 				So(ds.Put(rm), ShouldBeNil)
 
 				l.Reset()
@@ -299,8 +299,8 @@ func TestHighLevel(t *testing.T) {
 				So(l.Has(logging.Warning, "loading mutation with different code version", map[string]interface{}{
 					"key":         "tumble.23.lock",
 					"clientID":    "-62132730888_23",
-					"mut_version": "otherCodeVersion.1",
-					"cur_version": "testVersionID.1",
+					"mut_version": "otherCodeVersion",
+					"cur_version": "testVersionID",
 				}), ShouldBeTrue)
 
 				So(ds.Get(outMsg), ShouldBeNil)
