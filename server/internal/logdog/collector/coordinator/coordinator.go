@@ -9,7 +9,6 @@ import (
 
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"golang.org/x/net/context"
@@ -108,11 +107,4 @@ func (c *coordinatorImpl) TerminateStream(ctx context.Context, s *LogStreamState
 		return err
 	}
 	return nil
-}
-
-func wrapIfTransient(err error) error {
-	if grpcutil.IsTransient(err) {
-		err = errors.WrapTransient(err)
-	}
-	return err
 }

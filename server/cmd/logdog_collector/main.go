@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/gcloud/pubsub"
 	"github.com/luci/luci-go/common/gcloud/pubsub/ackbuffer"
@@ -127,6 +128,7 @@ func (a *application) runCollector() error {
 
 	// Execute our main Subscriber loop. It will run until the supplied Context
 	// is cancelled.
+	clk := clock.Get(a)
 	engine := subscriber.Subscriber{
 		S: subscriber.NewSource(ps, sub, 0),
 		A: ab,
@@ -135,30 +137,42 @@ func (a *application) runCollector() error {
 		HandlerWorkers: int(ccfg.Workers),
 	}
 	engine.Run(shutdownCtx, func(msg *pubsub.Message) bool {
-		ctx := log.SetFields(a, log.Fields{
-			"messageID": msg.ID,
-			"size":      len(msg.Data),
-			"ackID":     msg.AckID,
-		})
+		startTime := clk.Now()
 
-		if err := coll.Process(ctx, msg.Data); err != nil {
-			if errors.IsTransient(err) {
-				// Do not consume
-				log.Fields{
-					log.ErrorKey: err,
-					"msgID":      msg.ID,
-					"size":       len(msg.Data),
-				}.Warningf(ctx, "TRANSIENT error ingesting Pub/Sub message.")
-				return false
-			}
+		ctx := log.SetField(a, "messageID", msg.ID)
+		log.Fields{
+			"ackID": msg.AckID,
+			"size":  len(msg.Data),
+		}.Infof(ctx, "Received Pub/Sub Message.")
 
+		err := coll.Process(ctx, msg.Data)
+
+		duration := clk.Now().Sub(startTime)
+		switch {
+		case errors.IsTransient(err):
+			// Do not consume
 			log.Fields{
 				log.ErrorKey: err,
-				"msgID":      msg.ID,
-				"size":       len(msg.Data),
-			}.Errorf(ctx, "Error ingesting Pub/Sub message.")
+				"duration":   duration,
+			}.Warningf(ctx, "TRANSIENT error ingesting Pub/Sub message.")
+			return false
+
+		case err == nil:
+			log.Fields{
+				"ackID":    msg.AckID,
+				"size":     len(msg.Data),
+				"duration": duration,
+			}.Infof(ctx, "Message successfully processed; ACKing.")
+			return true
+
+		default:
+			log.Fields{
+				"ackID":    msg.AckID,
+				"size":     len(msg.Data),
+				"duration": duration,
+			}.Errorf(ctx, "Non-transient error ingesting Pub/Sub message; ACKing.")
+			return true
 		}
-		return true
 	})
 
 	log.Debugf(a, "Collector finished.")

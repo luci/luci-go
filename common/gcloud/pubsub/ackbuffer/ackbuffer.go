@@ -193,6 +193,10 @@ func (b *AckBuffer) CloseAndFlush() {
 //
 // This method will discard the ACKs if they fail.
 func (b *AckBuffer) acknowledge(ackIDs []string) {
+	log.Fields{
+		"count": len(ackIDs),
+	}.Infof(b.ctx, "Sending ACKs.")
+
 	if err := b.cfg.Ack.Ack(b.ctx, ackIDs...); err != nil {
 		log.Fields{
 			log.ErrorKey: err,

@@ -67,6 +67,9 @@ var (
 )
 
 // IsTransient returns true if a given gRPC error is transient.
+//
+// Note that this will return true for non-gRPC error types, since they resolve
+// to codes.Unavailable, which is considered transient by IsTransientCode.
 func IsTransient(err error) bool {
 	return err != nil && IsTransientCode(grpc.Code(err))
 }

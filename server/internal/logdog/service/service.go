@@ -47,10 +47,6 @@ type Service struct {
 	// communication.
 	UserAgent string
 
-	// ShutdownFunc, if not nil, is a function that will be called when a shutdown
-	// signal is received.
-	ShutdownFunc func()
-
 	// topCancelFunc is the Context cancel function for the top-level application
 	// Context.
 	topCancelFunc func()
