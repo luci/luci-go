@@ -30,6 +30,20 @@ var logCfg = gologger.LoggerConfig{
 	Level:  gol.DEBUG,
 }
 
+// exit codes:
+const (
+	ecInvalidCommandLine = -iota
+	ecAuthenticatedClientError
+	ecOtherError
+)
+
+type exitCode struct {
+	err  error
+	code int
+}
+
+func (e *exitCode) Error() string { return e.err.Error() }
+
 // cmdRun is a base of all rpc subcommands.
 // It defines some common flags, such as logging and auth, and useful methods.
 type cmdRun struct {
@@ -85,14 +99,17 @@ func (r *cmdRun) argErr(format string, a ...interface{}) int {
 	fmt.Fprintln(os.Stderr, r.cmd.UsageLine)
 	fmt.Fprintln(os.Stderr, "\nFlags:")
 	r.Flags.PrintDefaults()
-	return 1
+	return ecInvalidCommandLine
 }
 
 // done prints err to stderr if it is not nil and returns an exit code.
 func (r *cmdRun) done(err error) int {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		return 2
+		if err, ok := err.(*exitCode); ok {
+			return err.code
+		}
+		return ecOtherError
 	}
 	return 0
 }

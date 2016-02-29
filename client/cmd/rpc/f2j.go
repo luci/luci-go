@@ -59,7 +59,7 @@ func (r *f2jRun) Run(a subcommands.Application, args []string) int {
 
 	client, err := r.authenticatedClient(host)
 	if err != nil {
-		return 2
+		return ecAuthenticatedClientError
 	}
 
 	return r.run(func(c context.Context) error {

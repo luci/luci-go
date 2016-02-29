@@ -14,6 +14,7 @@ import (
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
 	"github.com/luci/luci-go/client/flagpb"
@@ -79,7 +80,7 @@ func (r *callRun) Run(a subcommands.Application, args []string) int {
 
 	client, err := r.authenticatedClient(host)
 	if err != nil {
-		return 2
+		return ecAuthenticatedClientError
 	}
 
 	return r.run(func(c context.Context) error {
@@ -151,7 +152,7 @@ func call(c context.Context, client *prpc.Client, req *request, out io.Writer) e
 	var hmd, tmd metadata.MD
 	res, err := client.CallRaw(c, req.service, req.method, message, inf, outf, prpc.Header(&hmd), prpc.Trailer(&tmd))
 	if err != nil {
-		return err
+		return &exitCode{err, int(grpc.Code(err))}
 	}
 
 	// Read response.
