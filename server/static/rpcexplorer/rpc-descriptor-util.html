@@ -1,0 +1,205 @@
+<!--
+  Copyright 2016 The Chromium Authors. All rights reserved.
+  Use of this source code is governed by a BSD-style license that can be
+  found in the LICENSE file.
+  -->
+
+<!--
+  rpcExplorer.descUtil exposes helper methods to work with protobuf
+  descriptor messages.
+  Primarily it implements name and comments resolution in a FileDescriptorSet.
+-->
+<script>
+  'use strict';
+
+  var rpcExplorer = (function(rpcExplorer) {
+
+    rpcExplorer.descUtil = {
+
+      /**
+       * for all descriptors in the file annotate resolves
+       * SourceLocationInfo.Location message and assigns it to the
+       * source_code_info property of the descriptor.
+       * Prerequisite reading:
+       * https://github.com/luci/luci-go/blob/ea240d0/common/proto/google/descriptor/descriptor.proto#L713
+       * @param {FileDescriptorProto} file
+       */
+      annotate: function(file) {
+        if (!file.source_code_info) {
+          return;
+        }
+
+        // First, build a map { path -> location message }.
+        function key(path) {
+          var key = '';
+          for (var i = 0; i < path.length; i++) {
+            key += path[i] + '.';
+          }
+          return key;
+        }
+        var locationMap = {};
+        for (var i = 0; i < file.source_code_info.location.length; i++) {
+          var loc = file.source_code_info.location[i];
+          if (loc.path) {
+            locationMap[key(loc.path)] = loc;
+          }
+        }
+
+        // Now join all descriptors in file with the map.
+        var path = [];
+
+        function annotateList(list, field, fn) {
+          if (!list) {
+            return;
+          }
+          path.push(field, 0);
+          for (var i = 0; i < list.length; i++) {
+            path[path.length - 1] = i;
+            list[i].source_code_info = locationMap[key(path)];
+            if (fn) {
+              fn(list[i]);
+            }
+          }
+          path.pop();
+          path.pop();
+        }
+
+        // The magic numbers below are message field numbers defined in
+        // descriptor.proto.
+
+        function annotateMessage(msg) {
+          annotateList(msg.field, 2);
+          annotateList(msg.nested_type, 3, annotateMessage);
+          annotateList(msg.enum_type, 4, annotateEnum);
+        }
+
+        function annotateEnum(e) {
+          annotateList(e.value, 2);
+        }
+
+        function annotateService(svc) {
+          annotateList(svc.method, 2);
+        }
+
+        annotateList(file.message_type, 4, annotateMessage);
+        annotateList(file.enum_type, 5, annotateEnum);
+        annotateList(file.service, 6, annotateService);
+      },
+
+      /**
+       * Annotates a FileDescriptorSet.
+       */
+      annotateSet: function(fileSet) {
+        for (var i = 0; i < fileSet.file.length; i++) {
+          this.annotate(fileSet.file[i]);
+        }
+      },
+
+      splitFullName: function(fullName) {
+        var lastDot = fullName.lastIndexOf('.');
+        if (lastDot === -1) {
+          return {
+            pkg: '',
+            name: fullName
+          };
+        }
+
+        return {
+          pkg: fullName.substr(0, lastDot),
+          name: fullName.substr(lastDot + 1)
+        };
+      },
+
+      /**
+       * Resolves services, methods, messages, fields, enums and enum values.
+       */
+      resolve: function(desc, name) {
+        if (!desc || !name) {
+          return null;
+        }
+        name = this.splitFullName(name);
+
+        var self = this;
+
+        // searches in each list.
+        function checkLists(lists) {
+          if (!lists) {
+            return null;
+          }
+          for (var type in lists) {
+            var desc = self.findByName(lists[type], name.name);
+            if (desc) {
+              return {type: type, desc: desc };
+            }
+          }
+          return null;
+        }
+
+        // Check top-level descriptors.
+        for (var i = 0; i < desc.file.length; i++) {
+          var file = desc.file[i];
+          if (file['package'] != name.pkg) {
+            continue
+          }
+
+          var result = checkLists({
+            service: file.service,
+            messageType: file.message_type,
+            enumType: file.enum_type
+          });
+          if (result) {
+            return result;
+          }
+        }
+
+        // Possibly the entity we are resolving is not top-level and
+        // name.name references an object inside an object referenced by
+        // name.pkg. Try to resolve name.pkg.
+        var parent = this.resolve(desc, name.pkg);
+        if (!parent) {
+          return null;
+        }
+        switch (parent.type) {
+          case 'service':
+            return checkLists({ method: parent.desc.method });
+
+          case 'messageType':
+            return checkLists({
+              field: parent.desc.field,
+              messageType: parent.desc.nested_type,
+              enumType: parent.desc.enum_type
+            });
+
+          case 'enumType':
+            return checkLists({
+              enumValue: parent.desc.value,
+            });
+
+          default:
+            return null;
+        }
+      },
+
+      findByName: function(array, name) {
+        if (!array) {
+          return null;
+        }
+        for (var i = 0; i < array.length; i++) {
+          if (array[i].name === name) {
+            return array[i];
+          }
+        }
+        return null;
+      },
+
+      trimPrefixDot: function(name) {
+        if (typeof name === 'string' && name.charAt(0) === '.') {
+          name = name.substr(1);
+        }
+        return name;
+      }
+    };
+
+    return rpcExplorer;
+  }(rpcExplorer || {}));
+</script>

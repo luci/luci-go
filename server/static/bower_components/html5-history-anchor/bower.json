@@ -1,0 +1,25 @@
+{
+  "name": "html5-history-anchor",
+  "version": "0.4.0",
+  "authors": [
+    "Erik Ringsmuth <erik.ringsmuth@gmail.com>"
+  ],
+  "description": "Extend the <a> tag with the window.history API",
+  "keywords": [
+    "web-components"
+  ],
+  "main": "html5-history-anchor.html",
+  "license": "MIT",
+  "homepage": "https://github.com/erikringsmuth/html5-history-anchor",
+  "ignore": [
+    "**/.*",
+    "bower_components",
+    "node_modules",
+    "tests",
+    "gulpfile.js",
+    "package.json"
+  ],
+  "devDependencies": {
+    "platform-dev": "Polymer/platform-dev#~0.4.1"
+  }
+}

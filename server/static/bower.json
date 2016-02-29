@@ -9,7 +9,8 @@
     "bootstrap": "~3.3.6",
     "iron-ajax": "PolymerElements/iron-ajax#~1.1.1",
     "jquery": "~2.2.0",
-    "polymer": "Polymer/polymer#^1.2.0"
+    "polymer": "Polymer/polymer#^1.2.0",
+    "html5-history-anchor": "~0.4.0"
   },
   "devDependencies": {
     "web-component-tester": "~4.2.0"

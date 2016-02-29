@@ -1,0 +1,161 @@
+<!--
+  Copyright 2016 The Chromium Authors. All rights reserved.
+  Use of this source code is governed by a BSD-style license that can be
+  found in the LICENSE file.
+  -->
+
+<!doctype html>
+<title>rpc-completer</title>
+
+<script src="../../bower_components/web-component-tester/browser.js"></script>
+<link rel="import" href="../rpc-completer.html">
+<link rel="import" href="descriptor.html">
+
+<test-fixture id="completer">
+  <template>
+    <rpc-completer></rpc-completer>
+  </template>
+</test-fixture>
+<script>
+  'use strict';
+
+  suite('<rpc-completer>', function() {
+    var completer;
+
+    setup(function() {
+      completer = fixture('completer');
+      completer.description = JSON.parse(JSON.stringify(discoveryDescriptor));
+      rpcExplorer.descUtil.annotateSet(completer.description);
+    });
+
+    suite('findMatching', function() {
+      function testFindMatching(text, i, expected) {
+        test(text + ' @ ' + i + ' = ' + expected, function() {
+          var result = completer.findMatching(text, i);
+          expect(result).to.equal(expected);
+        });
+      }
+      testFindMatching('{}', 0, 1);
+      testFindMatching('{{}}', 0, 3);
+      testFindMatching('{{}}', 1, 2);
+      testFindMatching('{[]}', 0, 3);
+      testFindMatching('{[]}', 1, 2);
+      testFindMatching('{aa[bb]ccc}', 0, 10);
+      testFindMatching('{aa[bb]ccc}', 3, 6);
+    });
+
+    suite('getCurrentPath', function() {
+      function testCurrentPath(text, expected) {
+        test('`' + text + '`', function() {
+          var path = completer.getCurrentPath(text);
+          expect(path.join('')).to.deep.equal(expected);
+        });
+      }
+
+      testCurrentPath('', '');
+
+      testCurrentPath(
+          '{ "a": ',
+          'a');
+      testCurrentPath(
+          '{ "a": "',
+          'a');
+      testCurrentPath(
+          '{ "a": {',
+          'a');
+
+      testCurrentPath(
+          '{ "a": { "b": [',
+          'ab');
+      testCurrentPath(
+          '{ "a": {}, "b": {',
+          'b');
+      testCurrentPath(
+          '{ "a": [], "b": {',
+          'b');
+      testCurrentPath(
+          '{ "a": { "b": ',
+          'ab');
+      testCurrentPath(
+          '{ "a": { "b": "',
+          'ab');
+    });
+
+    suite('getCompletionsForText', function() {
+      var fileSet = rpcExplorer.descUtil.resolve(
+          discoveryDescriptor, 'google.protobuf.FileDescriptorSet');
+
+      test('FileDescriptorSet', function() {
+        var completions = completer.getCompletionsForText(fileSet, '')
+        expect(completions).to.deep.equal([{
+          caption: 'file',
+          snippet: '"file": [{${0}}]',
+          meta: 'repeated google.protobuf.FileDescriptorProto',
+          docTooltip: ''
+        }]);
+      });
+
+      test('FileDescriptorSet with quote', function() {
+        var completions = completer.getCompletionsForText(fileSet, '"')
+        expect(completions).to.deep.equal([{
+          caption: 'file',
+          snippet: 'file',
+          meta: 'repeated google.protobuf.FileDescriptorProto',
+          docTooltip: ''
+        }]);
+      });
+
+      test('submessage', function() {
+        var completions = completer.getCompletionsForText(fileSet, '"file":[{');
+        expect(completions).to.have.length(12);
+        expect(completions).to.contain({
+          caption: 'name',
+          snippet: '"name": "${0}"',
+          meta: 'string',
+          docTooltip: ''
+        });
+        expect(completions).to.contain({
+          caption: 'dependency',
+          snippet: '"dependency": ["${0}"]',
+          meta: 'repeated string',
+          docTooltip: ' Names of files imported by this file.\n'
+        });
+        expect(completions).to.contain({
+          caption: 'weak_dependency',
+          snippet: '"weak_dependency": [${0}]',
+          meta: 'repeated int32',
+          docTooltip: (
+              ' Indexes of the weak imported files in the dependency list.\n' +
+              ' For Google-internal migration only. Do not use.\n')
+        });
+      });
+
+      test('enum values', function() {
+        // Completions for FieldOptions.CType.
+        var completions = completer.getCompletionsForText(
+          fileSet,
+          '"file":[{"message_type":{"field":{"options": {"ctype": ');
+        expect(completions).to.deep.equal([
+          {
+            caption: 'STRING',
+            snippet: '"STRING"',
+            meta: '0',
+            docTooltip: ' Default mode.\n'
+          },
+          {
+            caption: 'CORD',
+            snippet: '"CORD"',
+            meta: '1',
+            docTooltip: ''
+          },
+          {
+            caption: 'STRING_PIECE',
+            snippet: '"STRING_PIECE"',
+            meta: '2',
+            docTooltip: ''
+          },
+        ]);
+      });
+    });
+  });
+</script>

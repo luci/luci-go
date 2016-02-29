@@ -2,7 +2,7 @@
 # You can symlink it to yours like helloworld app does.
 
 dispatch:
-  # Send any domain/sub-domain with a path that starts with "static/"
-  # to the web module.
+  - url: "*/rpcexplorer/*"
+    module: static
   - url: "*/static/*"
     module: static

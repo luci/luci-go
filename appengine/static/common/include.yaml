@@ -1,5 +1,11 @@
 handlers:
 
+# RPC Explorer
+- url: /rpcexplorer/.*
+  static_files: common/upload/rpcexplorer/index.html
+  upload: common/upload/rpcexplorer/index.html
+  secure: always
+
 # Common files.
 # URL includes /static because dispatcher.yaml cannot rewrite URLs.
 - url: /static/common
