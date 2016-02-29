@@ -5,9 +5,13 @@
 package internal
 
 import (
+	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/cloud/compute/metadata"
+
+	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/stringset"
 )
 
 type gceTokenProvider struct {
@@ -15,21 +19,16 @@ type gceTokenProvider struct {
 }
 
 // NewGCETokenProvider returns TokenProvider that knows how to use GCE metadata server.
-func NewGCETokenProvider(account string, scopes []string) (TokenProvider, error) {
+func NewGCETokenProvider(c context.Context, account string, scopes []string) (TokenProvider, error) {
 	// Ensure account has requested scopes.
 	availableScopes, err := metadata.Scopes(account)
 	if err != nil {
 		return nil, err
 	}
-	for requested := range scopes {
-		ok := false
-		for available := range availableScopes {
-			if requested == available {
-				ok = true
-				break
-			}
-		}
-		if !ok {
+	availableSet := stringset.NewFromSlice(availableScopes...)
+	for _, requested := range scopes {
+		if !availableSet.Has(requested) {
+			logging.Warningf(c, "GCE service account %q doesn't have required scope %q", account, requested)
 			return nil, ErrInsufficientAccess
 		}
 	}

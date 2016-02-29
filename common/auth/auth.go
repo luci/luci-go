@@ -313,6 +313,8 @@ func (a *Authenticator) Transport() (http.RoundTripper, error) {
 	switch {
 	case err == nil:
 		return transport, nil
+	case err == ErrInsufficientAccess && a.loginMode == OptionalLogin:
+		return http.DefaultTransport, nil
 	case err != ErrLoginRequired || a.loginMode == SilentLogin:
 		return nil, err
 	case a.loginMode == OptionalLogin:
@@ -941,7 +943,7 @@ func makeTokenProvider(ctx context.Context, opts *Options) (internal.TokenProvid
 			serviceAccountPath,
 			opts.Scopes)
 	case GCEMetadataMethod:
-		return internal.NewGCETokenProvider(opts.GCEAccountName, opts.Scopes)
+		return internal.NewGCETokenProvider(ctx, opts.GCEAccountName, opts.Scopes)
 	case CustomMethod:
 		if opts.CustomTokenMinter == nil {
 			return nil, fmt.Errorf("auth: bad Options - CustomTokenMinter must be set")
