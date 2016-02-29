@@ -1,0 +1,32 @@
+{
+  "name": "app-router",
+  "version": "2.6.1",
+  "authors": [
+    "Erik Ringsmuth <erik.ringsmuth@gmail.com>"
+  ],
+  "description": "Router for Web Components.",
+  "keywords": [
+    "web-components",
+    "router",
+    "polymer",
+    "x-tag"
+  ],
+  "main": "app-router.html",
+  "license": "MIT",
+  "homepage": "https://github.com/erikringsmuth/app-router",
+  "ignore": [
+    "**/.*",
+    "bower_components",
+    "node_modules",
+    "tests",
+    "tmp",
+    "gulpfile.js",
+    "package.json"
+  ],
+  "devDependencies": {
+    "polymer": "~0.5.4",
+    "webcomponentsjs": "~0.5.4",
+    "core-elements": "Polymer/core-elements#~0.5.4",
+    "pushstate-anchor": "~0.3.0"
+  }
+}

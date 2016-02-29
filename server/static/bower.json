@@ -5,7 +5,13 @@
   "license": "BSD",
   "private": true,
   "dependencies": {
+    "app-router": "~2.6.1",
     "bootstrap": "~3.3.6",
-    "jquery": "~2.2.0"
+    "iron-ajax": "PolymerElements/iron-ajax#~1.1.1",
+    "jquery": "~2.2.0",
+    "polymer": "Polymer/polymer#^1.2.0"
+  },
+  "devDependencies": {
+    "web-component-tester": "~4.2.0"
   }
 }

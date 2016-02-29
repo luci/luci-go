@@ -1,0 +1,1 @@
+../../../bower_components/app-router/app-router.js
