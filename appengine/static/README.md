@@ -2,11 +2,11 @@
 
 Exposes common static files under `/static/common/`.
 
-All frontend GAE modules should symlink this dir as 
-`<module_dir>/includes/static`, where `<module_dir>` is where *.yaml is.
-Then include it in the yaml file: 
+## Bootstrap
 
-```yaml
-includes:
-  - includes/static
-```
+In your app root run:
+
+    ln -s ../../static/dispatch.yaml
+    mkdir static
+    ln -s ../../../static/common static/
+    ln -s ../../../static/module-static.yaml static/

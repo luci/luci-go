@@ -1,0 +1,17 @@
+# This is a boilerplate "static" GAE module that will work for most of apps.
+# You can symlink it to yours like helloworld app does.
+
+version: 1
+module: static
+runtime: go
+api_version: go1
+
+handlers:
+- url: /static
+  # "upload" dir does not exist in this dir, but it may exist in an app that
+  # symlinks this file.
+  static_dir: upload
+  secure: always
+
+includes:
+  - common

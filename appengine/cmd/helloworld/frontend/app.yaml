@@ -1,4 +1,4 @@
-application: helloworld
+application: luci-helloworld
 version: 1
 module: default
 runtime: go

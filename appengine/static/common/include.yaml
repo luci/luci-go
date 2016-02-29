@@ -1,0 +1,7 @@
+handlers:
+
+# Common files.
+# URL includes /static because dispatcher.yaml cannot rewrite URLs.
+- url: /static/common
+  static_dir: common/upload
+  secure: always

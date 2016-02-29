@@ -17,8 +17,5 @@ handlers:
   script: _go_app
   secure: always
 
-includes:
-  - includes/static
-
 inbound_services:
 - warmup
