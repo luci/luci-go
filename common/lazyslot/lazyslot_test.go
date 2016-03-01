@@ -9,30 +9,34 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
 
 func TestLazySlot(t *testing.T) {
 	Convey("Blocking mode works", t, func() {
 		c, clk := newContext()
 
+		lock := sync.Mutex{}
 		counter := 0
+
 		s := Slot{
 			Fetcher: func(c context.Context, prev Value) (Value, error) {
+				lock.Lock()
+				defer lock.Unlock()
 				counter++
 				return Value{counter, clk.Now().Add(time.Second)}, nil
 			},
 		}
 
 		// Initial fetch.
-		So(s.Peek(), ShouldResemble, Value{})
+		So(s.current, ShouldBeNil)
 		v, err := s.Get(c)
 		So(err, ShouldBeNil)
 		So(v.Value.(int), ShouldEqual, 1)
-		So(s.Peek().Value.(int), ShouldEqual, 1)
 
 		// Still fresh.
 		v, err = s.Get(c)
@@ -122,6 +126,16 @@ func TestLazySlot(t *testing.T) {
 		v, err = s.Get(c)
 		So(err, ShouldBeNil)
 		So(v.Value.(int), ShouldEqual, 2)
+	})
+
+	Convey("Checks for nil", t, func(conv C) {
+		c, clk := newContext()
+		s := Slot{
+			Fetcher: func(c context.Context, prev Value) (Value, error) {
+				return Value{nil, clk.Now().Add(time.Second)}, nil
+			},
+		}
+		So(func() { s.Get(c) }, ShouldPanicWith, "lazyslot.Slot Fetcher returned nil value")
 	})
 }
 
