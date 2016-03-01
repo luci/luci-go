@@ -7,7 +7,10 @@ step_component: <
   ended: <
     seconds: 1420070404
   >
-
+  text: "final summary"
+  text: "message0"
+  text: "message1"
+  text: "message2"
   other_links: <
     logdog_stream: <
       name: "base/steps/bar/0/logs/logging.json/0"
@@ -18,17 +21,10 @@ step_component: <
       name: "base/steps/bar/0/logs/lorem.txt/0"
     >
   >
-
   other_links: <
     label: "example"
     url: "http://example.com"
   >
-
-  text: "final summary"
-  text: "message0"
-  text: "message1"
-  text: "message2"
-
   property: <
     name: "foo"
     value: "bar"
@@ -41,4 +37,3 @@ step_component: <
     name: "quux"
   >
 >
-

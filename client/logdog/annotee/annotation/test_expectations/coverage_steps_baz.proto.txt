@@ -1,7 +1,5 @@
 step_component: <
   name: "baz"
-  # Success, even though BUILD_WARNING was emitted, as warnings are not
-  # supported.
   status: SUCCESS
   started: <
     seconds: 1420070402
@@ -9,6 +7,7 @@ step_component: <
   ended: <
     seconds: 1420070405
   >
+  text: "seeded text"
   other_links: <
     label: "cats"
     url: "http://example.com/cats"
@@ -17,6 +16,4 @@ step_component: <
     label: "dogs"
     url: "http://example.com/dogs"
   >
-
-  text: "seeded text"
 >

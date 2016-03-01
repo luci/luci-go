@@ -6,6 +6,7 @@ package annotation
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -18,10 +19,72 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/milo"
+	"github.com/luci/luci-go/common/stringset"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+const testDataDir = "test_data"
+const testExpDir = "test_expectations"
+
+var generate = flag.Bool("annotee.generate", false, "If true, regenerate expectations from source.")
+
+type testCase struct {
+	name string
+	exe  *Execution
+}
+
+func (tc *testCase) state(startTime time.Time) *State {
+	cb := testCallbacks{
+		closed:   map[string]struct{}{},
+		protos:   map[string][][]byte{},
+		logs:     map[types.StreamName][]string{},
+		logsOpen: map[types.StreamName]struct{}{},
+	}
+	return &State{
+		LogNameBase: types.StreamName("base"),
+		Callbacks:   &cb,
+		Clock:       testclock.New(startTime),
+	}
+}
+
+func (tc *testCase) generate(t *testing.T, startTime time.Time, touched stringset.Set) error {
+	st := tc.state(startTime)
+	p, err := playAnnotationScript(t, tc.name, st)
+	if err != nil {
+		return err
+	}
+	touched.Add(p)
+	st.Finish()
+
+	// Write out generated protos.
+	merr := errors.MultiError(nil)
+	st.ForEachStep(func(s *Step) {
+		p, err := writeStepProto(tc.name, s.CanonicalName(), s.Proto())
+		if err != nil {
+			merr = append(merr, fmt.Errorf("Failed to write step proto for %q::%q: %v", tc.name, s.CanonicalName(), err))
+		}
+		touched.Add(p)
+	})
+
+	// Write out generated logs.
+	cb := st.Callbacks.(*testCallbacks)
+	for logName, lines := range cb.logs {
+		p, err := writeLogText(tc.name, string(logName), lines)
+		if err != nil {
+			merr = append(merr, fmt.Errorf("Failed to write log text for %q::%q: %v", tc.name, logName, err))
+		}
+		touched.Add(p)
+	}
+
+	if merr != nil {
+		return merr
+	}
+	return nil
+}
 
 func normalize(s string) string {
 	return strings.Map(func(r rune) rune {
@@ -32,10 +95,28 @@ func normalize(s string) string {
 	}, s)
 }
 
-type annotationReplayEngine struct {
-	*testing.T
-	tc  testclock.TestClock
-	err string
+func superfluous(touched stringset.Set) error {
+	merr := errors.MultiError(nil)
+
+	files, err := ioutil.ReadDir(testExpDir)
+	if err != nil {
+		return fmt.Errorf("failed to read directory %q: %v", testExpDir, err)
+	}
+
+	for _, f := range files {
+		if f.IsDir() {
+			continue
+		}
+
+		path := filepath.Join(testExpDir, f.Name())
+		if !touched.Has(path) {
+			merr = append(merr, fmt.Errorf("superfluous test data [%s]", path))
+		}
+	}
+	if merr != nil {
+		return merr
+	}
+	return nil
 }
 
 // playAnnotationScript loads an annotation script from "path" and plays it
@@ -43,16 +124,19 @@ type annotationReplayEngine struct {
 //
 // Empty lines and lines beginning with "#" are ignored. Preceding whitespace
 // is discarded.
-func (e *annotationReplayEngine) playAnnotationScript(s *State, name string) error {
-	path := filepath.Join("testdata", fmt.Sprintf("%s.annotations.txt", normalize(name)))
+func playAnnotationScript(t *testing.T, name string, st *State) (string, error) {
+	tc := st.Clock.(testclock.TestClock)
+
+	path := filepath.Join(testDataDir, fmt.Sprintf("%s.annotations.txt", normalize(name)))
 	f, err := os.Open(path)
 	if err != nil {
-		e.Errorf("Failed to open annotations source [%s]: %v", path, err)
-		return err
+		t.Errorf("Failed to open annotations source [%s]: %v", path, err)
+		return "", err
 	}
 	defer f.Close()
 
 	scanner := bufio.NewScanner(f)
+	var nextErr string
 	for scanner.Scan() {
 		// Trim, discard empty lines and comment lines.
 		line := strings.TrimLeftFunc(scanner.Text(), unicode.IsSpace)
@@ -62,33 +146,35 @@ func (e *annotationReplayEngine) playAnnotationScript(s *State, name string) err
 
 		switch {
 		case line == "+time":
-			e.tc.Add(1 * time.Second)
+			tc.Add(1 * time.Second)
 
 		case strings.HasPrefix(line, "+error"):
-			e.err = strings.SplitN(line, " ", 2)[1]
+			nextErr = strings.SplitN(line, " ", 2)[1]
 
 		default:
 			// Annotation.
-			err := s.Append(line)
-			if exp := e.err; exp != "" {
-				e.err = ""
+			err := st.Append(line)
+			if nextErr != "" {
+				expectedErr := nextErr
+				nextErr = ""
+
 				if err == nil {
-					return fmt.Errorf("expected error, but didn't encounter it: %q", e.err)
+					return "", fmt.Errorf("expected error, but didn't encounter it: %q", expectedErr)
 				}
-				if !strings.Contains(err.Error(), e.err) {
-					return fmt.Errorf("expected error %q, but got: %v", e.err, err)
+				if !strings.Contains(err.Error(), expectedErr) {
+					return "", fmt.Errorf("expected error %q, but got: %v", expectedErr, err)
 				}
 			} else if err != nil {
-				return err
+				return "", err
 			}
 		}
 	}
 
-	return nil
+	return path, nil
 }
 
 func loadStepProto(t *testing.T, test, name string) *milo.Step {
-	path := filepath.Join("testdata", fmt.Sprintf("%s_%s.proto.txt", normalize(test), normalize(name)))
+	path := filepath.Join(testExpDir, fmt.Sprintf("%s_%s.proto.txt", normalize(test), normalize(name)))
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		t.Errorf("Failed to read milo.Step proto [%s]: %v", path, err)
@@ -103,8 +189,13 @@ func loadStepProto(t *testing.T, test, name string) *milo.Step {
 	return &st
 }
 
+func writeStepProto(test, name string, step *milo.Step) (string, error) {
+	path := filepath.Join(testExpDir, fmt.Sprintf("%s_%s.proto.txt", normalize(test), normalize(name)))
+	return path, ioutil.WriteFile(path, []byte(proto.MarshalTextString(step)), 0644)
+}
+
 func loadLogText(t *testing.T, test, name string) []string {
-	path := filepath.Join("testdata", fmt.Sprintf("%s_%s.txt", normalize(test), normalize(name)))
+	path := filepath.Join(testExpDir, fmt.Sprintf("%s_%s.txt", normalize(test), normalize(name)))
 	f, err := os.Open(path)
 	if err != nil {
 		t.Errorf("Failed to open log lines [%s]: %v", path, err)
@@ -118,6 +209,11 @@ func loadLogText(t *testing.T, test, name string) []string {
 		lines = append(lines, scanner.Text())
 	}
 	return lines
+}
+
+func writeLogText(test, name string, text []string) (string, error) {
+	path := filepath.Join(testExpDir, fmt.Sprintf("%s_%s.txt", normalize(test), normalize(name)))
+	return path, ioutil.WriteFile(path, []byte(strings.Join(text, "\n")), 0644)
 }
 
 // testCallbacks implements the Callbacks interface, retaining all callback
@@ -184,15 +280,9 @@ func (tc *testCallbacks) lastProto(name string) *milo.Step {
 func TestState(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A testing annotation State`, t, func() {
-		tc := testclock.New(time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
-		cb := testCallbacks{
-			closed:   map[string]struct{}{},
-			protos:   map[string][][]byte{},
-			logs:     map[types.StreamName][]string{},
-			logsOpen: map[types.StreamName]struct{}{},
-		}
-		exe := Execution{
+	startTime := time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)
+	testCases := []testCase{
+		{"default", &Execution{
 			Name:    "testcommand",
 			Command: []string{"testcommand", "foo", "bar"},
 			Dir:     "/path/to/dir",
@@ -200,39 +290,44 @@ func TestState(t *testing.T) {
 				"FOO": "BAR",
 				"BAZ": "QUX",
 			},
+		}},
+		{"coverage", nil},
+	}
+
+	if *generate {
+		touched := stringset.New(0)
+		for _, tc := range testCases {
+			if err := tc.generate(t, startTime, touched); err != nil {
+				t.Fatalf("Failed to generate %q: %v\n", tc.name, err)
+			}
 		}
 
-		s := State{
-			LogNameBase: types.StreamName("base"),
-			Callbacks:   &cb,
-			Clock:       tc,
+		if err := superfluous(touched); err != nil {
+			t.Fatalf("Superflous test data: %v", err)
 		}
+		return
+	}
 
-		for _, testCase := range []struct {
-			name string
-			exe  *Execution
-		}{
-			{"default", &exe},
-			{"coverage", nil},
-		} {
+	Convey(`A testing annotation State`, t, func() {
+		for _, testCase := range testCases {
+			st := testCase.state(startTime)
+
 			Convey(fmt.Sprintf(`Correctly loads/generates for %q test case.`, testCase.name), func() {
-				r := annotationReplayEngine{
-					T:  t,
-					tc: tc,
-				}
-				s.Execution = testCase.exe
-				So(r.playAnnotationScript(&s, testCase.name), ShouldBeNil)
+
+				_, err := playAnnotationScript(t, testCase.name, st)
+				So(err, ShouldBeNil)
 
 				// Iterate through generated streams and validate.
-				s.Finish()
+				st.Finish()
 
 				// All log streams should be closed.
+				cb := st.Callbacks.(*testCallbacks)
 				So(cb.logsOpen, ShouldResemble, map[types.StreamName]struct{}{})
 
 				// Iterate over each generated stream and assert that it matches its
 				// expectation. Do it deterministically so failures aren't frustrating
 				// to reproduce.
-				s.ForEachStep(func(s *Step) {
+				st.ForEachStep(func(s *Step) {
 					Convey(fmt.Sprintf(`Has correct step: %s`, s.CanonicalName()), func() {
 						exp := loadStepProto(t, testCase.name, s.CanonicalName())
 						So(s.Proto(), ShouldResemble, exp)
@@ -255,10 +350,11 @@ func TestState(t *testing.T) {
 		}
 
 		Convey(`Append to a closed State is a no-op.`, func() {
-			s.Finish()
-			sclone := s
-			So(s.Append("asdf"), ShouldBeNil)
-			So(s, ShouldResemble, sclone)
+			st := testCases[0].state(startTime)
+			st.Finish()
+			sclone := st
+			So(st.Append("asdf"), ShouldBeNil)
+			So(st, ShouldResemble, sclone)
 		})
 	})
 }
