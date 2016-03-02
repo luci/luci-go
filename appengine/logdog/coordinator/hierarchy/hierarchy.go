@@ -333,6 +333,8 @@ type Request struct {
 	Limit int
 	// Next, if not empty, is the start cursor for this stream.
 	Next string
+	// Skip, if >0, skips past the first Skip query results.
+	Skip int
 }
 
 // Component is a single component element in the stream path hierarchy.
@@ -383,6 +385,9 @@ func Get(di ds.Interface, r Request) (*List, error) {
 			return nil, err
 		}
 		q = q.Start(c)
+	}
+	if r.Skip > 0 {
+		q = q.Offset(int32(r.Skip))
 	}
 
 	limit := r.Limit

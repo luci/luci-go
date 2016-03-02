@@ -94,6 +94,23 @@ func TestHierarchy(t *testing.T) {
 				So(list("baz"), ShouldResemble, []string{})
 			})
 
+			Convey(`When listing "foo/+"`, func() {
+				r := Request{
+					Base: "foo/+",
+				}
+
+				Convey(`Can list the first 2 elements.`, func() {
+					r.Limit = 2
+					So(req(r), ShouldResemble, []string{"bar$", "baz$"})
+				})
+
+				Convey(`Can list 3 elements, skipping the first.`, func() {
+					r.Limit = 3
+					r.Skip = 1
+					So(req(r), ShouldResemble, []string{"baz$", "qux$", "bar"})
+				})
+			})
+
 			Convey(`Can list the hierarchy streams recursively.`, func() {
 				list := func(p string) []string {
 					return req(Request{Base: p, Recursive: true, StreamOnly: true})

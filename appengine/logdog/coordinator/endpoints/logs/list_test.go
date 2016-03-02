@@ -96,6 +96,13 @@ func TestList(t *testing.T) {
 			So(listPaths(l), ShouldResemble, []string{"other", "purged", "testing"})
 		})
 
+		Convey(`Will skip elements if requested.`, func() {
+			req.Offset = int32(2)
+			l, err := s.List(c, &req)
+			So(err, ShouldBeRPCOK)
+			So(listPaths(l), ShouldResemble, []string{"testing"})
+		})
+
 		Convey(`A recursive list will return all elements iteratively.`, func() {
 			req.Recursive = true
 			req.MaxResults = 4

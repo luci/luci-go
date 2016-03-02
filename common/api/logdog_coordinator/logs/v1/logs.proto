@@ -264,6 +264,10 @@ message ListRequest {
   // State, if true, returns that the streams' full state instead of just its
   // Path.
   bool state = 7;
+
+  // Offset, if >= 0, instructs the list operation to skip the supplied number
+  // of results. This can be used for pagination.
+  int32 offset = 8;
 }
 
 // ListResponse is the response structure for the user List endpoint.

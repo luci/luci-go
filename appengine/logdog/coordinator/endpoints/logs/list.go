@@ -25,15 +25,16 @@ const (
 
 // List returns log stream paths rooted under the hierarchy.
 func (s *Server) List(c context.Context, req *logdog.ListRequest) (*logdog.ListResponse, error) {
-	// Non-admin users may not request purged results.
 	hr := hierarchy.Request{
 		Base:       req.Path,
 		Recursive:  req.Recursive,
 		StreamOnly: req.StreamOnly,
 		Limit:      s.limit(int(req.MaxResults), listResultLimit),
 		Next:       req.Next,
+		Skip:       int(req.Offset),
 	}
 
+	// Non-admin users may not request purged results.
 	if req.IncludePurged {
 		if err := config.IsAdminUser(c); err != nil {
 			log.Fields{
