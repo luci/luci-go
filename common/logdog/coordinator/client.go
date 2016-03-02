@@ -24,13 +24,13 @@ var (
 // goroutines must not cause any problems.
 type Client struct {
 	// C is the underlying LogsClient interface.
-	C logs.LogsClient
+	C logdog.LogsClient
 }
 
 // NewClient returns a new Client instance bound to a pRPC Client.
 func NewClient(c *prpc.Client) *Client {
 	return &Client{
-		C: logs.NewLogsPRPCClient(c),
+		C: logdog.NewLogsPRPCClient(c),
 	}
 }
 

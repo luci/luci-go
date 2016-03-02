@@ -37,7 +37,7 @@ func TestTerminateStream(t *testing.T) {
 		ls, err := ct.TestLogStream(c, desc)
 		So(err, ShouldBeNil)
 
-		req := services.TerminateStreamRequest{
+		req := logdog.TerminateStreamRequest{
 			Path:          "testing/+/foo/bar",
 			Secret:        ls.Secret,
 			TerminalIndex: 1337,

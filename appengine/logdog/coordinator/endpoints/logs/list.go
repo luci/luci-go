@@ -24,7 +24,7 @@ const (
 )
 
 // List returns log stream paths rooted under the hierarchy.
-func (s *Server) List(c context.Context, req *logs.ListRequest) (*logs.ListResponse, error) {
+func (s *Server) List(c context.Context, req *logdog.ListRequest) (*logdog.ListResponse, error) {
 	// Non-admin users may not request purged results.
 	hr := hierarchy.Request{
 		Base:       req.Path,
@@ -51,15 +51,15 @@ func (s *Server) List(c context.Context, req *logs.ListRequest) (*logs.ListRespo
 		return nil, grpcutil.InvalidArgument
 	}
 
-	resp := logs.ListResponse{
+	resp := logdog.ListResponse{
 		Base: l.Base,
 		Next: l.Next,
 	}
 	if len(l.Comp) > 0 {
-		resp.Components = make([]*logs.ListResponse_Component, len(l.Comp))
+		resp.Components = make([]*logdog.ListResponse_Component, len(l.Comp))
 
 		for i, c := range l.Comp {
-			resp.Components[i] = &logs.ListResponse_Component{
+			resp.Components[i] = &logdog.ListResponse_Component{
 				Path:   c.Name,
 				Stream: (c.Stream != ""),
 			}
@@ -73,7 +73,7 @@ func (s *Server) List(c context.Context, req *logs.ListRequest) (*logs.ListRespo
 	// GetMulti calls in a separate goroutine while the hierarchy elements are
 	// being loaded.
 	if req.State {
-		idxMap := make(map[int]*logs.ListResponse_Component)
+		idxMap := make(map[int]*logdog.ListResponse_Component)
 		var streams []*coordinator.LogStream
 
 		for i, c := range l.Comp {

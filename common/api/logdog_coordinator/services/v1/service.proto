@@ -4,7 +4,7 @@
 
 syntax = "proto3";
 
-package services;
+package logdog;
 
 import "state.proto";
 import "github.com/luci/luci-go/common/proto/logdog/logpb/log.proto";
@@ -57,7 +57,7 @@ service Services {
   rpc GetConfig(google.protobuf.Empty) returns (GetConfigResponse);
 
   // RegisterStream is an idempotent stream state register operation.
-  rpc RegisterStream(RegisterStreamRequest) returns (services.LogStreamState);
+  rpc RegisterStream(RegisterStreamRequest) returns (LogStreamState);
 
   // TerminateStream is an idempotent operation to update the stream's terminal
   // index.

@@ -26,14 +26,14 @@ const (
 	No
 )
 
-func (t QueryTrinary) queryValue() logs.QueryRequest_Trinary {
+func (t QueryTrinary) queryValue() logdog.QueryRequest_Trinary {
 	switch t {
 	case Yes:
-		return logs.QueryRequest_YES
+		return logdog.QueryRequest_YES
 	case No:
-		return logs.QueryRequest_NO
+		return logdog.QueryRequest_NO
 	default:
-		return logs.QueryRequest_BOTH
+		return logdog.QueryRequest_BOTH
 	}
 }
 
@@ -131,7 +131,7 @@ type QueryCallback func(r *LogStream) bool
 // Query executes a query, invoking the supplied callback once for each query
 // result.
 func (c *Client) Query(ctx context.Context, q *Query, cb QueryCallback) error {
-	req := logs.QueryRequest{
+	req := logdog.QueryRequest{
 		Path:        q.Path,
 		ContentType: q.ContentType,
 		Older:       google.NewTimestamp(q.Before),
@@ -142,7 +142,7 @@ func (c *Client) Query(ctx context.Context, q *Query, cb QueryCallback) error {
 		State:       q.State,
 	}
 	if st := q.StreamType.queryValue(); st >= 0 {
-		req.StreamType = &logs.QueryRequest_StreamTypeFilter{Value: st}
+		req.StreamType = &logdog.QueryRequest_StreamTypeFilter{Value: st}
 	}
 
 	// Clone tags.

@@ -4,7 +4,7 @@
 
 syntax = "proto3";
 
-package logs;
+package logdog;
 
 import "state.proto";
 import "github.com/luci/luci-go/common/proto/logdog/logpb/log.proto";
@@ -210,7 +210,7 @@ message QueryResponse {
     //
     // It can be requested by setting the request's State field to true. If the
     // Proto field is true, the State's Descriptor field will not be included.
-    logs.LogStreamState state = 2;
+    LogStreamState state = 2;
 
     // The JSON-packed log stream descriptor protobuf.
     //

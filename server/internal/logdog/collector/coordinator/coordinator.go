@@ -39,12 +39,12 @@ type LogStreamState struct {
 }
 
 type coordinatorImpl struct {
-	c services.ServicesClient
+	c logdog.ServicesClient
 }
 
 // NewCoordinator returns a Coordinator implementation that uses a
-// services.ServicesClient.
-func NewCoordinator(s services.ServicesClient) Coordinator {
+// logdog.ServicesClient.
+func NewCoordinator(s logdog.ServicesClient) Coordinator {
 	return &coordinatorImpl{s}
 }
 
@@ -67,7 +67,7 @@ func (c *coordinatorImpl) RegisterStream(ctx context.Context, s *LogStreamState,
 		return nil, fmt.Errorf("invalid descriptor: %s", err)
 	}
 
-	req := services.RegisterStreamRequest{
+	req := logdog.RegisterStreamRequest{
 		Path:         string(s.Path),
 		Secret:       s.Secret,
 		ProtoVersion: s.ProtoVersion,
@@ -97,7 +97,7 @@ func (c *coordinatorImpl) TerminateStream(ctx context.Context, s *LogStreamState
 		return errors.New("refusing to terminate with non-terminal state")
 	}
 
-	req := services.TerminateStreamRequest{
+	req := logdog.TerminateStreamRequest{
 		Path:          string(s.Path),
 		Secret:        s.Secret,
 		TerminalIndex: int64(s.TerminalIndex),

@@ -10,8 +10,8 @@ import (
 	"github.com/luci/luci-go/common/proto/google"
 )
 
-func loadLogStreamState(ls *coordinator.LogStream) *logs.LogStreamState {
-	lss := logs.LogStreamState{
+func loadLogStreamState(ls *coordinator.LogStream) *logdog.LogStreamState {
+	lss := logdog.LogStreamState{
 		ProtoVersion:  ls.ProtoVersion,
 		Created:       google.NewTimestamp(ls.Created),
 		Updated:       google.NewTimestamp(ls.Updated),
@@ -19,7 +19,7 @@ func loadLogStreamState(ls *coordinator.LogStream) *logs.LogStreamState {
 		Purged:        ls.Purged,
 	}
 	if ls.Archived() {
-		lss.Archive = &logs.LogStreamState_ArchiveInfo{
+		lss.Archive = &logdog.LogStreamState_ArchiveInfo{
 			IndexUrl:  ls.ArchiveIndexURL,
 			StreamUrl: ls.ArchiveStreamURL,
 			DataUrl:   ls.ArchiveDataURL,

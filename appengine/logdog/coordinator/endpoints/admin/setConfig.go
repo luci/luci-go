@@ -18,7 +18,7 @@ import (
 
 // SetConfig loads the supplied configuration into a config.GlobalConfig
 // instance.
-func (s *Server) SetConfig(c context.Context, req *admin.SetConfigRequest) (*google.Empty, error) {
+func (s *Server) SetConfig(c context.Context, req *logdog.SetConfigRequest) (*google.Empty, error) {
 	// The user must be an administrator.
 	if err := config.IsAdminUser(c); err != nil {
 		log.Fields{

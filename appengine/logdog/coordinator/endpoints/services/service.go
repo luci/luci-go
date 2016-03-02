@@ -33,4 +33,4 @@ func Auth(c context.Context) error {
 // This endpoint is restricted to LogDog support service accounts.
 type Server struct{}
 
-var _ services.ServicesServer = (*Server)(nil)
+var _ logdog.ServicesServer = (*Server)(nil)

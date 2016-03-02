@@ -24,7 +24,7 @@ import (
 var errAlreadyUpdated = errors.New("already updated")
 
 // TerminateStream is an idempotent stream state terminate operation.
-func (b *Server) TerminateStream(c context.Context, req *services.TerminateStreamRequest) (*google.Empty, error) {
+func (b *Server) TerminateStream(c context.Context, req *logdog.TerminateStreamRequest) (*google.Empty, error) {
 	if err := Auth(c); err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (b *Server) TerminateStream(c context.Context, req *services.TerminateStrea
 	return &google.Empty{}, nil
 }
 
-func updateTerminalIndex(c context.Context, ls *coordinator.LogStream, req *services.TerminateStreamRequest) error {
+func updateTerminalIndex(c context.Context, ls *coordinator.LogStream, req *logdog.TerminateStreamRequest) error {
 	if err := ds.Get(c).Get(ls); err != nil {
 		if err == ds.ErrNoSuchEntity {
 			log.Debugf(c, "LogEntry not found.")

@@ -55,7 +55,7 @@ func TestGetConfig(t *testing.T) {
 
 			cr, err := be.GetConfig(c, nil)
 			So(err, ShouldBeRPCOK)
-			So(cr, ShouldResemble, &services.GetConfigResponse{
+			So(cr, ShouldResemble, &logdog.GetConfigResponse{
 				ConfigServiceUrl: gcfg.ConfigServiceURL,
 				ConfigSet:        gcfg.ConfigSet,
 				ConfigPath:       gcfg.ConfigPath,

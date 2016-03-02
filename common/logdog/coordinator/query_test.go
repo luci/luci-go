@@ -23,11 +23,11 @@ import (
 type testQueryLogsService struct {
 	testLogsServiceBase
 
-	LR logs.QueryRequest
-	H  func(*logs.QueryRequest) (*logs.QueryResponse, error)
+	LR logdog.QueryRequest
+	H  func(*logdog.QueryRequest) (*logdog.QueryResponse, error)
 }
 
-func (s *testQueryLogsService) Query(c context.Context, req *logs.QueryRequest) (*logs.QueryResponse, error) {
+func (s *testQueryLogsService) Query(c context.Context, req *logdog.QueryRequest) (*logdog.QueryResponse, error) {
 	s.LR = *req
 	if h := s.H; h != nil {
 		return s.H(req)
@@ -35,8 +35,8 @@ func (s *testQueryLogsService) Query(c context.Context, req *logs.QueryRequest) 
 	return nil, errors.New("not implemented")
 }
 
-func gen(name string, state *logs.LogStreamState) *logs.QueryResponse_Stream {
-	return &logs.QueryResponse_Stream{
+func gen(name string, state *logdog.LogStreamState) *logdog.QueryResponse_Stream {
+	return &logdog.QueryResponse_Stream{
 		Path:  fmt.Sprintf("test/+/%s", name),
 		State: state,
 		Desc: &logpb.LogStreamDescriptor{
@@ -71,7 +71,7 @@ func TestClientQuery(t *testing.T) {
 
 		ts := prpctest.Server{}
 		svc := testQueryLogsService{}
-		logs.RegisterLogsServer(&ts, &svc)
+		logdog.RegisterLogsServer(&ts, &svc)
 
 		// Create a testing server and client.
 		ts.Start(c)
@@ -82,7 +82,7 @@ func TestClientQuery(t *testing.T) {
 			panic(err)
 		}
 		client := Client{
-			C: logs.NewLogsPRPCClient(prpcClient),
+			C: logdog.NewLogsPRPCClient(prpcClient),
 		}
 
 		Convey(`When making a query request`, func() {
@@ -111,8 +111,8 @@ func TestClientQuery(t *testing.T) {
 				// This handler will return a single query per request, as well as a
 				// non-empty Next pointer for the next query element. It progresses
 				// "a" => "b" => "final" => "".
-				svc.H = func(req *logs.QueryRequest) (*logs.QueryResponse, error) {
-					r := logs.QueryResponse{}
+				svc.H = func(req *logdog.QueryRequest) (*logdog.QueryResponse, error) {
+					r := logdog.QueryResponse{}
 					switch req.Next {
 					case "":
 						r.Streams = append(r.Streams, gen("a", nil))
@@ -134,9 +134,9 @@ func TestClientQuery(t *testing.T) {
 
 			Convey(`Will stop invoking the callback if it returns false.`, func() {
 				// This handler will return three query results, "a", "b", and "c".
-				svc.H = func(*logs.QueryRequest) (*logs.QueryResponse, error) {
-					return &logs.QueryResponse{
-						Streams: []*logs.QueryResponse_Stream{
+				svc.H = func(*logdog.QueryRequest) (*logdog.QueryResponse, error) {
+					return &logdog.QueryResponse{
+						Streams: []*logdog.QueryResponse_Stream{
 							gen("a", nil),
 							gen("b", nil),
 							gen("c", nil),
@@ -154,10 +154,10 @@ func TestClientQuery(t *testing.T) {
 			})
 
 			Convey(`Will properly handle state and protobuf deserialization.`, func() {
-				svc.H = func(*logs.QueryRequest) (*logs.QueryResponse, error) {
-					return &logs.QueryResponse{
-						Streams: []*logs.QueryResponse_Stream{
-							gen("a", &logs.LogStreamState{
+				svc.H = func(*logdog.QueryRequest) (*logdog.QueryResponse, error) {
+					return &logdog.QueryResponse{
+						Streams: []*logdog.QueryResponse_Stream{
+							gen("a", &logdog.LogStreamState{
 								Created: google.NewTimestamp(now),
 								Updated: google.NewTimestamp(now),
 							}),
@@ -178,31 +178,31 @@ func TestClientQuery(t *testing.T) {
 			})
 
 			Convey(`Can query for stream types`, func() {
-				svc.H = func(*logs.QueryRequest) (*logs.QueryResponse, error) {
-					return &logs.QueryResponse{}, nil
+				svc.H = func(*logdog.QueryRequest) (*logdog.QueryResponse, error) {
+					return &logdog.QueryResponse{}, nil
 				}
 
 				Convey(`Text`, func() {
 					q.StreamType = Text
 					So(client.Query(c, &q, accumulate), ShouldBeNil)
-					So(svc.LR.StreamType, ShouldResemble, &logs.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_TEXT})
+					So(svc.LR.StreamType, ShouldResemble, &logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_TEXT})
 				})
 
 				Convey(`Binary`, func() {
 					q.StreamType = Binary
 					So(client.Query(c, &q, accumulate), ShouldBeNil)
-					So(svc.LR.StreamType, ShouldResemble, &logs.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_BINARY})
+					So(svc.LR.StreamType, ShouldResemble, &logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_BINARY})
 				})
 
 				Convey(`Datagram`, func() {
 					q.StreamType = Datagram
 					So(client.Query(c, &q, accumulate), ShouldBeNil)
-					So(svc.LR.StreamType, ShouldResemble, &logs.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_DATAGRAM})
+					So(svc.LR.StreamType, ShouldResemble, &logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_DATAGRAM})
 				})
 			})
 
 			Convey(`Will return ErrNoAccess if unauthenticated.`, func() {
-				svc.H = func(*logs.QueryRequest) (*logs.QueryResponse, error) {
+				svc.H = func(*logdog.QueryRequest) (*logdog.QueryResponse, error) {
 					return nil, grpcutil.Unauthenticated
 				}
 
@@ -210,7 +210,7 @@ func TestClientQuery(t *testing.T) {
 			})
 
 			Convey(`Will return ErrNoAccess if permission denied.`, func() {
-				svc.H = func(*logs.QueryRequest) (*logs.QueryResponse, error) {
+				svc.H = func(*logdog.QueryRequest) (*logdog.QueryResponse, error) {
 					return nil, grpcutil.Unauthenticated
 				}
 

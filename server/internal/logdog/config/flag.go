@@ -47,7 +47,7 @@ func (f *Flags) AddToFlagSet(fs *flag.FlagSet) {
 
 // CoordinatorOptions returns an Options instance loaded from the supplied flags
 // and Coordinator instance.
-func (f *Flags) CoordinatorOptions(c context.Context, client services.ServicesClient) (*Options, error) {
+func (f *Flags) CoordinatorOptions(c context.Context, client logdog.ServicesClient) (*Options, error) {
 	ccfg, err := client.GetConfig(c, &google.Empty{})
 	if err != nil {
 		return nil, err

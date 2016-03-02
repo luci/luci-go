@@ -37,13 +37,13 @@ const (
 )
 
 // Get returns state and log data for a single log stream.
-func (s *Server) Get(c context.Context, req *logs.GetRequest) (*logs.GetResponse, error) {
+func (s *Server) Get(c context.Context, req *logdog.GetRequest) (*logdog.GetResponse, error) {
 	return s.getImpl(c, req, false)
 }
 
 // Tail returns the last log entry for a given log stream.
-func (s *Server) Tail(c context.Context, req *logs.TailRequest) (*logs.GetResponse, error) {
-	r := logs.GetRequest{
+func (s *Server) Tail(c context.Context, req *logdog.TailRequest) (*logdog.GetResponse, error) {
+	r := logdog.GetRequest{
 		Path:  req.Path,
 		State: req.State,
 	}
@@ -51,7 +51,7 @@ func (s *Server) Tail(c context.Context, req *logs.TailRequest) (*logs.GetRespon
 }
 
 // getImpl is common code shared between Get and Tail endpoints.
-func (s *Server) getImpl(c context.Context, req *logs.GetRequest, tail bool) (*logs.GetResponse, error) {
+func (s *Server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (*logdog.GetResponse, error) {
 	// Fetch the log stream state for this log stream.
 	u, err := url.Parse(req.Path)
 	if err != nil {
@@ -99,7 +99,7 @@ func (s *Server) getImpl(c context.Context, req *logs.GetRequest, tail bool) (*l
 	path := ls.Path()
 
 	// If nothing was requested, return nothing.
-	resp := logs.GetResponse{}
+	resp := logdog.GetResponse{}
 	if !(req.State || tail) && req.LogCount < 0 {
 		return &resp, nil
 	}
@@ -133,7 +133,7 @@ func (s *Server) getImpl(c context.Context, req *logs.GetRequest, tail bool) (*l
 	return &resp, nil
 }
 
-func (s *Server) getLogs(c context.Context, req *logs.GetRequest, tail bool, ls *coordinator.LogStream) (
+func (s *Server) getLogs(c context.Context, req *logdog.GetRequest, tail bool, ls *coordinator.LogStream) (
 	[]*logpb.LogEntry, error) {
 	var st storage.Storage
 	if !ls.Archived() {
@@ -201,7 +201,7 @@ func (s *Server) getLogs(c context.Context, req *logs.GetRequest, tail bool, ls 
 	return logEntries, nil
 }
 
-func getHead(c context.Context, req *logs.GetRequest, st storage.Storage, p types.StreamPath) ([][]byte, error) {
+func getHead(c context.Context, req *logdog.GetRequest, st storage.Storage, p types.StreamPath) ([][]byte, error) {
 	c = log.SetFields(c, log.Fields{
 		"path":          p,
 		"index":         req.Index,

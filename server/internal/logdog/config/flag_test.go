@@ -26,13 +26,13 @@ import (
 )
 
 type testServicesClient struct {
-	services.ServicesClient
-	cfg services.GetConfigResponse
+	logdog.ServicesClient
+	cfg logdog.GetConfigResponse
 	err error
 }
 
 func (tsc *testServicesClient) GetConfig(context.Context, *google.Empty, ...grpc.CallOption) (
-	*services.GetConfigResponse, error) {
+	*logdog.GetConfigResponse, error) {
 	if tsc.err != nil {
 		return nil, tsc.err
 	}

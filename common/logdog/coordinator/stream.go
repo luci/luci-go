@@ -17,7 +17,7 @@ import (
 
 // StreamState represents the client-side state of the log stream.
 //
-// It is a type-promoted version of logs.LogStreamState.
+// It is a type-promoted version of logdog.LogStreamState.
 type StreamState struct {
 	// Created is the time, represented as a UTC RFC3339 string, when the log
 	// stream was created.
@@ -62,7 +62,7 @@ type LogStream struct {
 	State *StreamState
 }
 
-func loadLogStream(p types.StreamPath, s *logs.LogStreamState, d *logpb.LogStreamDescriptor) *LogStream {
+func loadLogStream(p types.StreamPath, s *logdog.LogStreamState, d *logpb.LogStreamDescriptor) *LogStream {
 	ls := LogStream{
 		Path: p,
 		Desc: d,
@@ -98,7 +98,7 @@ type Stream struct {
 
 // State fetches the LogStreamDescriptor for a given log stream.
 func (s *Stream) State(ctx context.Context) (*LogStream, error) {
-	req := logs.GetRequest{
+	req := logdog.GetRequest{
 		Path:     string(s.path),
 		State:    true,
 		LogCount: -1, // Don't fetch any logs.
@@ -139,7 +139,7 @@ func (s *Stream) Get(ctx context.Context, p *StreamGetParams) ([]*logpb.LogEntry
 // stateP is not nil, the stream's state will be requested and loaded into the
 // variable.
 func (s *Stream) Tail(ctx context.Context, stateP *LogStream) (*logpb.LogEntry, error) {
-	req := logs.TailRequest{
+	req := logdog.TailRequest{
 		Path: string(s.path),
 	}
 	if stateP != nil {
@@ -166,7 +166,7 @@ func (s *Stream) Tail(ctx context.Context, stateP *LogStream) (*logpb.LogEntry, 
 	}
 }
 
-func loadStatePointer(stateP *LogStream, resp *logs.GetResponse) error {
+func loadStatePointer(stateP *LogStream, resp *logdog.GetResponse) error {
 	if stateP == nil {
 		return nil
 	}

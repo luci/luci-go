@@ -39,15 +39,15 @@ type testStreamLogsService struct {
 	testLogsServiceBase
 
 	// Get
-	GR logs.GetRequest
-	GH func(*logs.GetRequest) (*logs.GetResponse, error)
+	GR logdog.GetRequest
+	GH func(*logdog.GetRequest) (*logdog.GetResponse, error)
 
 	// Tail
-	TR logs.TailRequest
-	TH func(*logs.TailRequest) (*logs.GetResponse, error)
+	TR logdog.TailRequest
+	TH func(*logdog.TailRequest) (*logdog.GetResponse, error)
 }
 
-func (s *testStreamLogsService) Get(c context.Context, req *logs.GetRequest) (*logs.GetResponse, error) {
+func (s *testStreamLogsService) Get(c context.Context, req *logdog.GetRequest) (*logdog.GetResponse, error) {
 	s.GR = *req
 	if h := s.GH; h != nil {
 		return s.GH(req)
@@ -55,7 +55,7 @@ func (s *testStreamLogsService) Get(c context.Context, req *logs.GetRequest) (*l
 	return nil, errors.New("not implemented")
 }
 
-func (s *testStreamLogsService) Tail(c context.Context, req *logs.TailRequest) (*logs.GetResponse, error) {
+func (s *testStreamLogsService) Tail(c context.Context, req *logdog.TailRequest) (*logdog.GetResponse, error) {
 	s.TR = *req
 	if h := s.TH; h != nil {
 		return s.TH(req)
@@ -72,7 +72,7 @@ func TestStreamGet(t *testing.T) {
 
 		ts := prpctest.Server{}
 		svc := testStreamLogsService{}
-		logs.RegisterLogsServer(&ts, &svc)
+		logdog.RegisterLogsServer(&ts, &svc)
 
 		// Create a testing server and client.
 		ts.Start(c)
@@ -83,7 +83,7 @@ func TestStreamGet(t *testing.T) {
 			panic(err)
 		}
 		client := Client{
-			C: logs.NewLogsPRPCClient(prpcClient),
+			C: logdog.NewLogsPRPCClient(prpcClient),
 		}
 
 		Convey(`Can bind a Stream`, func() {
@@ -93,8 +93,8 @@ func TestStreamGet(t *testing.T) {
 				p := NewGetParams()
 
 				Convey(`A default Get query will return logs and no state.`, func() {
-					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
-						return &logs.GetResponse{
+					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
+						return &logdog.GetResponse{
 							Logs: []*logpb.LogEntry{
 								genLog(1337, "ohai"),
 								genLog(1338, "kthxbye"),
@@ -107,7 +107,7 @@ func TestStreamGet(t *testing.T) {
 					So(l, ShouldResemble, []*logpb.LogEntry{genLog(1337, "ohai"), genLog(1338, "kthxbye")})
 
 					// Validate the correct parameters were sent.
-					So(svc.GR, ShouldResemble, logs.GetRequest{
+					So(svc.GR, ShouldResemble, logdog.GetRequest{
 						Path: "test/+/a",
 					})
 				})
@@ -115,8 +115,8 @@ func TestStreamGet(t *testing.T) {
 				Convey(`Will form a proper Get logs query.`, func() {
 					p = p.NonContiguous().Index(1)
 
-					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
-						return &logs.GetResponse{}, nil
+					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
+						return &logdog.GetResponse{}, nil
 					}
 
 					l, err := s.Get(c, p)
@@ -124,7 +124,7 @@ func TestStreamGet(t *testing.T) {
 					So(l, ShouldBeNil)
 
 					// Validate the correct parameters were sent.
-					So(svc.GR, ShouldResemble, logs.GetRequest{
+					So(svc.GR, ShouldResemble, logdog.GetRequest{
 						Path:          "test/+/a",
 						NonContiguous: true,
 						Index:         1,
@@ -134,8 +134,8 @@ func TestStreamGet(t *testing.T) {
 				Convey(`Will request a specific number of logs if a constraint is supplied.`, func() {
 					p = p.Limit(32, 64)
 
-					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
-						return &logs.GetResponse{
+					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
+						return &logdog.GetResponse{
 							Logs: []*logpb.LogEntry{
 								genLog(1337, "ohai"),
 							},
@@ -147,7 +147,7 @@ func TestStreamGet(t *testing.T) {
 					So(l, ShouldResemble, []*logpb.LogEntry{genLog(1337, "ohai")})
 
 					// Validate the HTTP request that we made.
-					So(svc.GR, ShouldResemble, logs.GetRequest{
+					So(svc.GR, ShouldResemble, logdog.GetRequest{
 						Path:      "test/+/a",
 						LogCount:  64,
 						ByteCount: 32,
@@ -158,15 +158,15 @@ func TestStreamGet(t *testing.T) {
 					var ls LogStream
 					p = p.State(&ls)
 
-					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
-						return &logs.GetResponse{
+					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
+						return &logdog.GetResponse{
 							Logs: []*logpb.LogEntry{
 								genLog(1337, "kthxbye"),
 							},
-							State: &logs.LogStreamState{
+							State: &logdog.LogStreamState{
 								Created: google.NewTimestamp(now),
 								Updated: google.NewTimestamp(now),
-								Archive: &logs.LogStreamState_ArchiveInfo{
+								Archive: &logdog.LogStreamState_ArchiveInfo{
 									IndexUrl:  "index",
 									StreamUrl: "stream",
 									DataUrl:   "data",
@@ -202,7 +202,7 @@ func TestStreamGet(t *testing.T) {
 				})
 
 				Convey(`Will return ErrNoSuchStream if the stream is not found.`, func() {
-					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
+					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
 						return nil, grpcutil.NotFound
 					}
 
@@ -211,7 +211,7 @@ func TestStreamGet(t *testing.T) {
 				})
 
 				Convey(`Will return ErrNoAccess if unauthenticated.`, func() {
-					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
+					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
 						return nil, grpcutil.Unauthenticated
 					}
 
@@ -220,7 +220,7 @@ func TestStreamGet(t *testing.T) {
 				})
 
 				Convey(`Will return ErrNoAccess if permission is denied.`, func() {
-					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
+					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
 						return nil, grpcutil.PermissionDenied
 					}
 
@@ -231,9 +231,9 @@ func TestStreamGet(t *testing.T) {
 
 			Convey(`Test State`, func() {
 				Convey(`Will request just the state if asked.`, func() {
-					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
-						return &logs.GetResponse{
-							State: &logs.LogStreamState{
+					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
+						return &logdog.GetResponse{
+							State: &logdog.LogStreamState{
 								Created: google.NewTimestamp(now),
 								Updated: google.NewTimestamp(now),
 							},
@@ -251,7 +251,7 @@ func TestStreamGet(t *testing.T) {
 					})
 
 					// Validate the HTTP request that we made.
-					So(svc.GR, ShouldResemble, logs.GetRequest{
+					So(svc.GR, ShouldResemble, logdog.GetRequest{
 						Path:     "test/+/a",
 						LogCount: -1,
 						State:    true,
@@ -259,7 +259,7 @@ func TestStreamGet(t *testing.T) {
 				})
 
 				Convey(`Will return ErrNoSuchStream if the stream is not found.`, func() {
-					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
+					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
 						return nil, grpcutil.NotFound
 					}
 
@@ -268,7 +268,7 @@ func TestStreamGet(t *testing.T) {
 				})
 
 				Convey(`Will return ErrNoAccess if unauthenticated.`, func() {
-					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
+					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
 						return nil, grpcutil.Unauthenticated
 					}
 
@@ -277,7 +277,7 @@ func TestStreamGet(t *testing.T) {
 				})
 
 				Convey(`Will return ErrNoAccess if permission is denied.`, func() {
-					svc.GH = func(*logs.GetRequest) (*logs.GetResponse, error) {
+					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
 						return nil, grpcutil.PermissionDenied
 					}
 
@@ -288,9 +288,9 @@ func TestStreamGet(t *testing.T) {
 
 			Convey(`Test Tail`, func() {
 				Convey(`Will form a proper Tail query.`, func() {
-					svc.TH = func(*logs.TailRequest) (*logs.GetResponse, error) {
-						return &logs.GetResponse{
-							State: &logs.LogStreamState{
+					svc.TH = func(*logdog.TailRequest) (*logdog.GetResponse, error) {
+						return &logdog.GetResponse{
+							State: &logdog.LogStreamState{
 								Created: google.NewTimestamp(now),
 								Updated: google.NewTimestamp(now),
 							},
@@ -310,7 +310,7 @@ func TestStreamGet(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					// Validate the HTTP request that we made.
-					So(svc.TR, ShouldResemble, logs.TailRequest{
+					So(svc.TR, ShouldResemble, logdog.TailRequest{
 						Path:  "test/+/a",
 						State: true,
 					})
@@ -332,9 +332,9 @@ func TestStreamGet(t *testing.T) {
 				})
 
 				Convey(`Will return nil with state if no logs are returned from the endpoint.`, func() {
-					svc.TH = func(*logs.TailRequest) (*logs.GetResponse, error) {
-						return &logs.GetResponse{
-							State: &logs.LogStreamState{
+					svc.TH = func(*logdog.TailRequest) (*logdog.GetResponse, error) {
+						return &logdog.GetResponse{
+							State: &logdog.LogStreamState{
 								Created: google.NewTimestamp(now),
 								Updated: google.NewTimestamp(now),
 							},
@@ -365,9 +365,9 @@ func TestStreamGet(t *testing.T) {
 				})
 
 				Convey(`Will error if multiple logs are returned from the endpoint.`, func() {
-					svc.TH = func(*logs.TailRequest) (*logs.GetResponse, error) {
-						return &logs.GetResponse{
-							State: &logs.LogStreamState{
+					svc.TH = func(*logdog.TailRequest) (*logdog.GetResponse, error) {
+						return &logdog.GetResponse{
+							State: &logdog.LogStreamState{
 								Created: google.NewTimestamp(now),
 								Updated: google.NewTimestamp(now),
 							},
@@ -383,7 +383,7 @@ func TestStreamGet(t *testing.T) {
 				})
 
 				Convey(`Will return ErrNoSuchStream if the stream is not found.`, func() {
-					svc.TH = func(*logs.TailRequest) (*logs.GetResponse, error) {
+					svc.TH = func(*logdog.TailRequest) (*logdog.GetResponse, error) {
 						return nil, grpcutil.NotFound
 					}
 
@@ -392,7 +392,7 @@ func TestStreamGet(t *testing.T) {
 				})
 
 				Convey(`Will return ErrNoAccess if unauthenticated.`, func() {
-					svc.TH = func(*logs.TailRequest) (*logs.GetResponse, error) {
+					svc.TH = func(*logdog.TailRequest) (*logdog.GetResponse, error) {
 						return nil, grpcutil.Unauthenticated
 					}
 
@@ -401,7 +401,7 @@ func TestStreamGet(t *testing.T) {
 				})
 
 				Convey(`Will return ErrNoAccess if permission is denied.`, func() {
-					svc.TH = func(*logs.TailRequest) (*logs.GetResponse, error) {
+					svc.TH = func(*logdog.TailRequest) (*logdog.GetResponse, error) {
 						return nil, grpcutil.PermissionDenied
 					}
 

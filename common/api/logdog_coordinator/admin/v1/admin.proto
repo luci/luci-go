@@ -6,7 +6,7 @@ syntax = "proto3";
 
 import "google/protobuf/empty.proto";
 
-package admin;
+package logdog;
 
 // GlobalConfig is the LogDog Coordinator global configuration.
 //

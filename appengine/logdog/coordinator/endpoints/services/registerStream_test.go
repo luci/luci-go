@@ -41,7 +41,7 @@ func TestRegisterStream(t *testing.T) {
 		c = auth.WithState(c, &fs)
 
 		Convey(`Returns Forbidden error if not a service.`, func() {
-			_, err := be.RegisterStream(c, &services.RegisterStreamRequest{})
+			_, err := be.RegisterStream(c, &logdog.RegisterStreamRequest{})
 			So(err, ShouldBeRPCPermissionDenied)
 		})
 
@@ -52,14 +52,14 @@ func TestRegisterStream(t *testing.T) {
 			secret := bytes.Repeat([]byte{0xAA}, types.StreamSecretLength)
 
 			Convey(`A stream registration request for "testing/+/foo/bar"`, func() {
-				req := services.RegisterStreamRequest{
+				req := logdog.RegisterStreamRequest{
 					Path:         "testing/+/foo/bar",
 					Secret:       secret,
 					ProtoVersion: logpb.Version,
 					Desc:         desc,
 				}
 
-				expResp := &services.LogStreamState{
+				expResp := &logdog.LogStreamState{
 					Path:          "testing/+/foo/bar",
 					Secret:        secret,
 					ProtoVersion:  logpb.Version,

@@ -105,7 +105,7 @@ func (r *testGSReader) Read(d []byte) (int, error) {
 func (r *testGSReader) Close() error { return nil }
 
 func shouldHaveLogs(actual interface{}, expected ...interface{}) string {
-	resp := actual.(*logs.GetResponse)
+	resp := actual.(*logdog.GetResponse)
 
 	respLogs := make([]int, len(resp.Logs))
 	for i, le := range resp.Logs {
@@ -220,7 +220,7 @@ func TestGet(t *testing.T) {
 		}
 
 		Convey(`Testing Get requests (no logs)`, func() {
-			req := logs.GetRequest{
+			req := logdog.GetRequest{
 				Path: string(ls.Path()),
 			}
 
@@ -294,7 +294,7 @@ func TestGet(t *testing.T) {
 				}
 
 				Convey(`Testing Get requests`, func() {
-					req := logs.GetRequest{
+					req := logdog.GetRequest{
 						Path: string(ls.Path()),
 					}
 
@@ -555,7 +555,7 @@ func TestGet(t *testing.T) {
 				})
 
 				Convey(`Testing tail requests`, func() {
-					req := logs.TailRequest{
+					req := logdog.TailRequest{
 						Path: string(ls.Path()),
 					}
 

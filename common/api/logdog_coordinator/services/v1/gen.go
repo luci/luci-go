@@ -4,12 +4,12 @@
 
 //go:generate cproto
 
-// Package services contains Version 1 of the LogDog Coordinator backend service
+// Package logdog contains Version 1 of the LogDog Coordinator backend service
 // interface.
 //
 // The package name here must match the protobuf package name, as the generated
 // files will reside in the same directory.
-package services
+package logdog
 
 import (
 	"github.com/golang/protobuf/proto"

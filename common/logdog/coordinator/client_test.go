@@ -21,24 +21,24 @@ func httpError(s int) error {
 	return testHTTPError(s)
 }
 
-// testLogsServiceBase is an implementation of logs.LogsServer that panics
+// testLogsServiceBase is an implementation of logdog.LogsServer that panics
 // for each method. It is designed to be embedded in other testing instances.
 type testLogsServiceBase struct{}
 
-var _ logs.LogsServer = (*testLogsServiceBase)(nil)
+var _ logdog.LogsServer = (*testLogsServiceBase)(nil)
 
-func (s *testLogsServiceBase) Get(c context.Context, req *logs.GetRequest) (*logs.GetResponse, error) {
+func (s *testLogsServiceBase) Get(c context.Context, req *logdog.GetRequest) (*logdog.GetResponse, error) {
 	panic("not implemented")
 }
 
-func (s *testLogsServiceBase) Tail(c context.Context, req *logs.TailRequest) (*logs.GetResponse, error) {
+func (s *testLogsServiceBase) Tail(c context.Context, req *logdog.TailRequest) (*logdog.GetResponse, error) {
 	panic("not implemented")
 }
 
-func (s *testLogsServiceBase) Query(c context.Context, req *logs.QueryRequest) (*logs.QueryResponse, error) {
+func (s *testLogsServiceBase) Query(c context.Context, req *logdog.QueryRequest) (*logdog.QueryResponse, error) {
 	panic("not implemented")
 }
 
-func (s *testLogsServiceBase) List(c context.Context, req *logs.ListRequest) (*logs.ListResponse, error) {
+func (s *testLogsServiceBase) List(c context.Context, req *logdog.ListRequest) (*logdog.ListResponse, error) {
 	panic("not implemented")
 }

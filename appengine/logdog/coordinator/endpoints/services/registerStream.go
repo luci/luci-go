@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func matchesLogStream(r *services.RegisterStreamRequest, ls *coordinator.LogStream) error {
+func matchesLogStream(r *logdog.RegisterStreamRequest, ls *coordinator.LogStream) error {
 	if r.Path != string(ls.Path()) {
 		return errors.New("paths do not match")
 	}
@@ -47,8 +47,8 @@ func matchesLogStream(r *services.RegisterStreamRequest, ls *coordinator.LogStre
 	return nil
 }
 
-func loadLogStreamState(ls *coordinator.LogStream) *services.LogStreamState {
-	st := services.LogStreamState{
+func loadLogStreamState(ls *coordinator.LogStream) *logdog.LogStreamState {
+	st := logdog.LogStreamState{
 		Path:          string(ls.Path()),
 		Secret:        ls.Secret,
 		ProtoVersion:  ls.ProtoVersion,
@@ -63,7 +63,7 @@ func loadLogStreamState(ls *coordinator.LogStream) *services.LogStreamState {
 }
 
 // RegisterStream is an idempotent stream state register operation.
-func (b *Server) RegisterStream(c context.Context, req *services.RegisterStreamRequest) (*services.LogStreamState, error) {
+func (b *Server) RegisterStream(c context.Context, req *logdog.RegisterStreamRequest) (*logdog.LogStreamState, error) {
 	if err := Auth(c); err != nil {
 		return nil, err
 	}
@@ -141,7 +141,7 @@ func filterError(err error) error {
 type registerStreamMutation struct {
 	*coordinator.LogStream
 
-	req *services.RegisterStreamRequest
+	req *logdog.RegisterStreamRequest
 }
 
 func (m registerStreamMutation) RollForward(c context.Context) ([]tumble.Mutation, error) {

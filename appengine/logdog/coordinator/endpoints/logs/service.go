@@ -30,4 +30,4 @@ func (s *Server) limit(v int, d int) int {
 	return v
 }
 
-var _ logs.LogsServer = (*Server)(nil)
+var _ logdog.LogsServer = (*Server)(nil)

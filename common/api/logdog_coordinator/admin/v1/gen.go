@@ -4,11 +4,12 @@
 
 //go:generate cproto
 
-// Package admin contains Version 1 of the LogDog Coordinator service interface.
+// Package logdog contains Version 1 of the LogDog Coordinator service
+// interface.
 //
 // The package name here must match the protobuf package name, as the generated
 // files will reside in the same directory.
-package admin
+package logdog
 
 import (
 	"github.com/golang/protobuf/proto"

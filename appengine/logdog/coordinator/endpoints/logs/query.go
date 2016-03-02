@@ -29,12 +29,12 @@ const (
 //
 // If the value is "YES", it will be executed with "true". If "NO", "false". If
 // "BOTH", it will not be executed.
-func applyTrinary(q *ds.Query, v logs.QueryRequest_Trinary, f func(*ds.Query, bool) *ds.Query) *ds.Query {
+func applyTrinary(q *ds.Query, v logdog.QueryRequest_Trinary, f func(*ds.Query, bool) *ds.Query) *ds.Query {
 	switch v {
-	case logs.QueryRequest_YES:
+	case logdog.QueryRequest_YES:
 		return f(q, true)
 
-	case logs.QueryRequest_NO:
+	case logdog.QueryRequest_NO:
 		return f(q, false)
 
 	default:
@@ -44,14 +44,14 @@ func applyTrinary(q *ds.Query, v logs.QueryRequest_Trinary, f func(*ds.Query, bo
 }
 
 // Query returns log stream paths that match the requested query.
-func (s *Server) Query(c context.Context, req *logs.QueryRequest) (*logs.QueryResponse, error) {
+func (s *Server) Query(c context.Context, req *logdog.QueryRequest) (*logdog.QueryResponse, error) {
 	// Non-admin users may not request purged results.
 	canSeePurged := true
 	if err := config.IsAdminUser(c); err != nil {
 		canSeePurged = false
 
 		// Non-admin user.
-		if req.Purged == logs.QueryRequest_YES {
+		if req.Purged == logdog.QueryRequest_YES {
 			log.Fields{
 				log.ErrorKey: err,
 			}.Errorf(c, "Non-superuser requested to see purged logs. Denying.")
@@ -71,7 +71,7 @@ func (s *Server) Query(c context.Context, req *logs.QueryRequest) (*logs.QueryRe
 	}
 
 	// Execute our queries in parallel.
-	resp := logs.QueryResponse{}
+	resp := logdog.QueryResponse{}
 	e := &queryRunner{
 		Context:      log.SetField(c, "path", req.Path),
 		QueryRequest: req,
@@ -90,13 +90,13 @@ func (s *Server) Query(c context.Context, req *logs.QueryRequest) (*logs.QueryRe
 
 type queryRunner struct {
 	context.Context
-	*logs.QueryRequest
+	*logdog.QueryRequest
 
 	canSeePurged bool
 	limit        int
 }
 
-func (r *queryRunner) runQuery(resp *logs.QueryResponse) error {
+func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 	if r.limit == 0 {
 		return grpcutil.Errf(codes.InvalidArgument, "query limit is zero")
 	}
@@ -192,9 +192,9 @@ func (r *queryRunner) runQuery(resp *logs.QueryResponse) error {
 	}
 
 	cursor := ds.Cursor(nil)
-	streams := make([]*logs.QueryResponse_Stream, 0, r.limit)
+	streams := make([]*logdog.QueryResponse_Stream, 0, r.limit)
 	err := ds.Get(r).Run(q, func(ls *coordinator.LogStream, cb ds.CursorCB) error {
-		stream := logs.QueryResponse_Stream{
+		stream := logdog.QueryResponse_Stream{
 			Path: string(ls.Path()),
 		}
 		if r.State {

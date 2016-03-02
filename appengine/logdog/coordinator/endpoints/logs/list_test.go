@@ -27,7 +27,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func listPaths(l *logs.ListResponse) []string {
+func listPaths(l *logdog.ListResponse) []string {
 	s := make([]string, len(l.Components))
 	for i, c := range l.Components {
 		s[i] = c.Path
@@ -54,7 +54,7 @@ func TestList(t *testing.T) {
 		})
 
 		s := Server{}
-		req := logs.ListRequest{}
+		req := logdog.ListRequest{}
 
 		// Install a set of stock log streams to query against.
 		streams := map[string]*coordinator.LogStream{}

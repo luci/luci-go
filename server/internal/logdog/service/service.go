@@ -64,7 +64,7 @@ type Service struct {
 	coordinatorInsecure       bool
 	storageCredentialJSONPath string
 
-	coord  services.ServicesClient
+	coord  logdog.ServicesClient
 	config *config.Manager
 }
 
@@ -135,7 +135,7 @@ func (s *Service) Run(f func() error) error {
 	return f()
 }
 
-func (s *Service) initCoordinatorClient() (services.ServicesClient, error) {
+func (s *Service) initCoordinatorClient() (logdog.ServicesClient, error) {
 	if s.coordinatorHost == "" {
 		log.Errorf(s, "Missing Coordinator URL (-coordinator).")
 		return nil, ErrInvalidConfig
@@ -157,7 +157,7 @@ func (s *Service) initCoordinatorClient() (services.ServicesClient, error) {
 	if s.coordinatorInsecure {
 		prpcClient.Options.Insecure = true
 	}
-	sc := services.NewServicesPRPCClient(&prpcClient)
+	sc := logdog.NewServicesPRPCClient(&prpcClient)
 
 	// Wrap the resulting client in a retry harness.
 	return retryServicesClient.New(sc, nil), nil
@@ -211,7 +211,7 @@ func (s *Service) Config() *svcconfig.Config {
 }
 
 // Coordinator returns the cached Coordinator client.
-func (s *Service) Coordinator() services.ServicesClient {
+func (s *Service) Coordinator() logdog.ServicesClient {
 	return s.coord
 }
 

@@ -31,7 +31,7 @@ import (
 )
 
 func shouldHaveLogPaths(actual interface{}, expected ...interface{}) string {
-	resp := actual.(*logs.QueryResponse)
+	resp := actual.(*logdog.QueryResponse)
 	var paths []string
 	if len(resp.Streams) > 0 {
 		paths = make([]string, len(resp.Streams))
@@ -112,7 +112,7 @@ func TestQuery(t *testing.T) {
 
 		s := Server{}
 
-		req := logs.QueryRequest{
+		req := logdog.QueryRequest{
 			Tags: map[string]string{},
 		}
 
@@ -373,7 +373,7 @@ func TestQuery(t *testing.T) {
 			req.Path = "meta/**/+/**"
 
 			Convey(`When terminated=yes, returns [archived, terminated].`, func() {
-				req.Terminated = logs.QueryRequest_YES
+				req.Terminated = logdog.QueryRequest_YES
 
 				resp, err := s.Query(c, &req)
 				So(err, ShouldBeRPCOK)
@@ -381,7 +381,7 @@ func TestQuery(t *testing.T) {
 			})
 
 			Convey(`When terminated=no, returns [binary, datagram]`, func() {
-				req.Terminated = logs.QueryRequest_NO
+				req.Terminated = logdog.QueryRequest_NO
 
 				resp, err := s.Query(c, &req)
 				So(err, ShouldBeRPCOK)
@@ -389,7 +389,7 @@ func TestQuery(t *testing.T) {
 			})
 
 			Convey(`When archived=yes, returns [archived]`, func() {
-				req.Archived = logs.QueryRequest_YES
+				req.Archived = logdog.QueryRequest_YES
 
 				resp, err := s.Query(c, &req)
 				So(err, ShouldBeRPCOK)
@@ -397,7 +397,7 @@ func TestQuery(t *testing.T) {
 			})
 
 			Convey(`When archived=no, returns [binary, datagram, terminated]`, func() {
-				req.Archived = logs.QueryRequest_NO
+				req.Archived = logdog.QueryRequest_NO
 
 				resp, err := s.Query(c, &req)
 				So(err, ShouldBeRPCOK)
@@ -405,7 +405,7 @@ func TestQuery(t *testing.T) {
 			})
 
 			Convey(`When purged=yes, returns BadRequest error.`, func() {
-				req.Purged = logs.QueryRequest_YES
+				req.Purged = logdog.QueryRequest_YES
 
 				_, err := s.Query(c, &req)
 				So(err, ShouldBeRPCInvalidArgument, "non-admin user cannot request purged log streams")
@@ -415,7 +415,7 @@ func TestQuery(t *testing.T) {
 				fs.IdentityGroups = []string{"test-administrators"}
 
 				Convey(`When purged=yes, returns [terminated/archived/purged, purged]`, func() {
-					req.Purged = logs.QueryRequest_YES
+					req.Purged = logdog.QueryRequest_YES
 
 					resp, err := s.Query(c, &req)
 					So(err, ShouldBeRPCOK)
@@ -423,7 +423,7 @@ func TestQuery(t *testing.T) {
 				})
 
 				Convey(`When purged=no, returns [binary, datagram, archived, terminated]`, func() {
-					req.Purged = logs.QueryRequest_NO
+					req.Purged = logdog.QueryRequest_NO
 
 					resp, err := s.Query(c, &req)
 					So(err, ShouldBeRPCOK)
@@ -432,7 +432,7 @@ func TestQuery(t *testing.T) {
 			})
 
 			Convey(`When querying for text streams, returns [archived, terminated]`, func() {
-				req.StreamType = &logs.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_TEXT}
+				req.StreamType = &logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_TEXT}
 
 				resp, err := s.Query(c, &req)
 				So(err, ShouldBeRPCOK)
@@ -440,7 +440,7 @@ func TestQuery(t *testing.T) {
 			})
 
 			Convey(`When querying for binary streams, returns [binary]`, func() {
-				req.StreamType = &logs.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_BINARY}
+				req.StreamType = &logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_BINARY}
 
 				resp, err := s.Query(c, &req)
 				So(err, ShouldBeRPCOK)
@@ -448,7 +448,7 @@ func TestQuery(t *testing.T) {
 			})
 
 			Convey(`When querying for datagram streams, returns [datagram]`, func() {
-				req.StreamType = &logs.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_DATAGRAM}
+				req.StreamType = &logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_DATAGRAM}
 
 				resp, err := s.Query(c, &req)
 				So(err, ShouldBeRPCOK)
@@ -456,7 +456,7 @@ func TestQuery(t *testing.T) {
 			})
 
 			Convey(`When querying for an invalid stream type, returns a BadRequest error.`, func() {
-				req.StreamType = &logs.QueryRequest_StreamTypeFilter{Value: -1}
+				req.StreamType = &logdog.QueryRequest_StreamTypeFilter{Value: -1}
 
 				_, err := s.Query(c, &req)
 				So(err, ShouldBeRPCInvalidArgument)

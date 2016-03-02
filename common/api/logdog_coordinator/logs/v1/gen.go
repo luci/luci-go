@@ -4,11 +4,11 @@
 
 //go:generate cproto
 
-// Package logs contains Verison 1 of the LogDog Coordinator user interface.
+// Package logdog contains Verison 1 of the LogDog Coordinator user interface.
 //
 // The package name here must match the protobuf package name, as the generated
 // files will reside in the same directory.
-package logs
+package logdog
 
 import (
 	"github.com/golang/protobuf/proto"

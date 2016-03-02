@@ -12,7 +12,7 @@ import (
 // StreamGetParams is an accumulating set of Stream Get request parameters.
 type StreamGetParams struct {
 	// r is the Get request to populate.
-	r logs.GetRequest
+	r logdog.GetRequest
 
 	// stateP is the stream state pointer. It is set by State, and, if supplied,
 	// will cause the log request to return stream state.

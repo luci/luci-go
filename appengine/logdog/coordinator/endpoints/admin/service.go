@@ -11,4 +11,4 @@ import (
 // Server is the Cloud Endpoint service structure for the administrator endpoint.
 type Server struct{}
 
-var _ admin.AdminServer = (*Server)(nil)
+var _ logdog.AdminServer = (*Server)(nil)
