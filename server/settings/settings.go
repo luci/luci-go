@@ -19,7 +19,9 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/lazyslot"
+	"github.com/luci/luci-go/common/retry"
 )
 
 var (
@@ -116,18 +118,32 @@ func New(storage Storage) *Settings {
 	return &Settings{
 		storage: storage,
 		values: lazyslot.Slot{
-			Fetcher: func(c context.Context, _ lazyslot.Value) (lazyslot.Value, error) {
-				bundle, err := storage.FetchAllSettings(c)
+			Timeout: 15 * time.Second, // retry for 15 sec at most
+			Fetcher: func(c context.Context, _ lazyslot.Value) (result lazyslot.Value, err error) {
+				err = retry.Retry(c, retry.TransientOnly(retry.Default), func() error {
+					ctx, _ := clock.WithTimeout(c, 2*time.Second) // trigger a retry after 2 sec RPC timeout
+					result, err = attemptToFetchSettings(ctx, storage)
+					return err
+				}, nil)
 				if err != nil {
-					return lazyslot.Value{}, err
+					result = lazyslot.Value{}
 				}
-				return lazyslot.Value{
-					Value:      bundle,
-					Expiration: bundle.Exp,
-				}, nil
+				return
 			},
 		},
 	}
+}
+
+// attemptToFetchSettings is called in a retry loop when loading settings.
+func attemptToFetchSettings(c context.Context, storage Storage) (lazyslot.Value, error) {
+	bundle, err := storage.FetchAllSettings(c)
+	if err != nil {
+		return lazyslot.Value{}, err
+	}
+	return lazyslot.Value{
+		Value:      bundle,
+		Expiration: bundle.Exp,
+	}, nil
 }
 
 // GetStorage returns underlying Storage instance.

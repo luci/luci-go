@@ -39,7 +39,7 @@ type Fetcher func(c context.Context, prev Value) (Value, error)
 // stale copy of the value during the refresh.
 type Slot struct {
 	Fetcher Fetcher       // used to actually load the value on demand
-	Timeout time.Duration // how long to allow to fetch, 5 sec by default.
+	Timeout time.Duration // how long to allow to fetch, 15 sec by default.
 
 	lock              sync.Mutex      // protects the guts below
 	current           *Value          // currently known value or nil if not fetched
@@ -80,7 +80,7 @@ func (s *Slot) Get(c context.Context) (result Value, err error) {
 		// there's nothing to return yet. All goroutines would have to wait for this
 		// initial fetch to complete. They'll all block on s.lock.Lock() above.
 		if s.current == nil {
-			result, err = doFetch(c, s.Fetcher, Value{})
+			result, err = doFetch(s.makeFetcherCtx(c), s.Fetcher, Value{})
 			if err == nil {
 				s.current = &result
 			}
@@ -98,11 +98,7 @@ func (s *Slot) Get(c context.Context) (result Value, err error) {
 
 		// No one is fetching the value now, we should do it. Prepare a new context
 		// that will be used to do the fetch once lock is released.
-		timeout := 5 * time.Second
-		if s.Timeout != 0 {
-			timeout = s.Timeout
-		}
-		s.currentFetcherCtx, _ = context.WithTimeout(c, timeout)
+		s.currentFetcherCtx = s.makeFetcherCtx(c)
 
 		// Copy lock-protected guts into local variables before releasing the lock.
 		state.C = s.currentFetcherCtx
@@ -127,6 +123,18 @@ func (s *Slot) Get(c context.Context) (result Value, err error) {
 		}()
 		return doFetch(state.C, state.Fetcher, state.PrevValue)
 	}()
+}
+
+// makeFetcherCtx prepares a context to use for fetch operation.
+//
+// Must be called under the lock.
+func (s *Slot) makeFetcherCtx(c context.Context) context.Context {
+	timeout := 15 * time.Second
+	if s.Timeout != 0 {
+		timeout = s.Timeout
+	}
+	fetcherCtx, _ := clock.WithTimeout(c, timeout)
+	return fetcherCtx
 }
 
 // doFetch calls fetcher callback and validates return value.
