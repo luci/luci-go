@@ -162,8 +162,8 @@ func run(c context.Context, dir string) error {
 			return fmt.Errorf("could not transform %s: %s", goFile, err)
 		}
 
-		if packageName == "" {
-			packageName = t.PackageName
+		if packageName == "" && len(t.services) > 0 {
+			packageName = t.services[0].protoPackageName
 		}
 
 		if *renameToTestGo {
@@ -173,16 +173,18 @@ func run(c context.Context, dir string) error {
 			}
 		}
 	}
+	if *withDiscovery && packageName != "" {
+		// Generate pb.prpc.go
+		discoveryFile := "pb.discovery.go"
+		if *renameToTestGo {
+			discoveryFile = "pb.discovery_test.go"
+		}
+		if err := genDiscoveryFile(c, filepath.Join(dir, discoveryFile), descPath, packageName); err != nil {
+			return err
+		}
+	}
 
-	if !*withDiscovery {
-		return nil
-	}
-	// Generate pb.prpc.go
-	discoveryFile := "pb.discovery.go"
-	if *renameToTestGo {
-		discoveryFile = "pb.discovery_test.go"
-	}
-	return genDiscoveryFile(c, filepath.Join(dir, discoveryFile), descPath, packageName)
+	return nil
 }
 
 func setupLogging(c context.Context) context.Context {

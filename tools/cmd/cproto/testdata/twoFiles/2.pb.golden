@@ -25,46 +25,82 @@ var _ = math.Inf
 var _ context.Context
 var _ grpc.ClientConn
 
-// Client API for S2 service
+// Client API for S2_0 service
 
-type S2Client interface {
+type S2_0Client interface {
 }
-type s2PRPCClient struct {
+type s2_0PRPCClient struct {
 	client *prpccommon.Client
 }
 
-func NewS2PRPCClient(client *prpccommon.Client) S2Client {
-	return &s2PRPCClient{client}
+func NewS2_0PRPCClient(client *prpccommon.Client) S2_0Client {
+	return &s2_0PRPCClient{client}
 }
 
-type s2Client struct {
+type s2_0Client struct {
 	cc *grpc.ClientConn
 }
 
-func NewS2Client(cc *grpc.ClientConn) S2Client {
-	return &s2Client{cc}
+func NewS2_0Client(cc *grpc.ClientConn) S2_0Client {
+	return &s2_0Client{cc}
 }
 
-// Server API for S2 service
+// Server API for S2_0 service
 
-type S2Server interface {
+type S2_0Server interface {
 }
 
-func RegisterS2Server(s prpc.Registrar, srv S2Server) {
-	s.RegisterService(&_S2_serviceDesc, srv)
+func RegisterS2_0Server(s prpc.Registrar, srv S2_0Server) {
+	s.RegisterService(&_S2_0_serviceDesc, srv)
 }
 
-var _S2_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "test.S2",
-	HandlerType: (*S2Server)(nil),
+var _S2_0_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "test.S2_0",
+	HandlerType: (*S2_0Server)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams:     []grpc.StreamDesc{},
+}
+
+// Client API for S2_1 service
+
+type S2_1Client interface {
+}
+type s2_1PRPCClient struct {
+	client *prpccommon.Client
+}
+
+func NewS2_1PRPCClient(client *prpccommon.Client) S2_1Client {
+	return &s2_1PRPCClient{client}
+}
+
+type s2_1Client struct {
+	cc *grpc.ClientConn
+}
+
+func NewS2_1Client(cc *grpc.ClientConn) S2_1Client {
+	return &s2_1Client{cc}
+}
+
+// Server API for S2_1 service
+
+type S2_1Server interface {
+}
+
+func RegisterS2_1Server(s prpc.Registrar, srv S2_1Server) {
+	s.RegisterService(&_S2_1_serviceDesc, srv)
+}
+
+var _S2_1_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "test.S2_1",
+	HandlerType: (*S2_1Server)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams:     []grpc.StreamDesc{},
 }
 
 var fileDescriptor1 = []byte{
-	// 50 bytes of a gzipped FileDescriptorProto
+	// 55 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0x62, 0x37, 0xd2, 0x2b, 0x28,
-	0xca, 0x2f, 0xc9, 0x17, 0x62, 0x29, 0x49, 0x2d, 0x2e, 0x31, 0x62, 0xe1, 0x62, 0x0a, 0x36, 0x4a,
-	0x62, 0x03, 0x0b, 0x19, 0x03, 0x02, 0x00, 0x00, 0xff, 0xff, 0x2c, 0x2d, 0x0e, 0xfb, 0x1d, 0x00,
-	0x00, 0x00,
+	0xca, 0x2f, 0xc9, 0x17, 0x62, 0x29, 0x49, 0x2d, 0x2e, 0x31, 0x62, 0xe3, 0x62, 0x09, 0x36, 0x8a,
+	0x37, 0x80, 0xd2, 0x86, 0x49, 0x6c, 0x60, 0x49, 0x63, 0x40, 0x00, 0x00, 0x00, 0xff, 0xff, 0x1c,
+	0x32, 0x2f, 0x91, 0x27, 0x00, 0x00, 0x00,
 }

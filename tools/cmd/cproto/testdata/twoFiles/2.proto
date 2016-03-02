@@ -6,6 +6,10 @@ syntax = "proto3";
 
 package test;
 
-service S2 {
+service S2_0 {
+
+}
+
+service S2_1 {
 
 }

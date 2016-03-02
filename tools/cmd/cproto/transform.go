@@ -34,6 +34,7 @@ var (
 type transformer struct {
 	fset          *token.FileSet
 	inPRPCPackage bool
+	services      []*service
 	PackageName   string
 }
 
@@ -45,7 +46,14 @@ func (t *transformer) transformGoFile(filename string) error {
 		return err
 	}
 
-	t.PackageName = file.Name.Name
+	t.services, err = getServices(file)
+	if err != nil {
+		return err
+	}
+	if len(t.services) == 0 {
+		return nil
+	}
+
 	t.inPRPCPackage, err = isInPackage(filename, serverPrpcPackagePath)
 	if err != nil {
 		return err
@@ -68,14 +76,29 @@ func (t *transformer) transformGoFile(filename string) error {
 }
 
 func (t *transformer) transformFile(file *ast.File) error {
-	if t.transformRegisterServerFuncs(file) && !t.inPRPCPackage {
+	var includeServerPkg, includeCommonPkg bool
+	for _, s := range t.services {
+		if err := s.complete(); err != nil {
+			return fmt.Errorf("incomplete service %q: %s", s.name, err)
+		}
+
+		t.transformRegisterServerFuncs(s)
+		if !t.inPRPCPackage {
+			includeServerPkg = true
+		}
+
+		needsCommonPkg, err := t.generateClients(file, s)
+		if err != nil {
+			return err
+		}
+		if needsCommonPkg {
+			includeCommonPkg = true
+		}
+	}
+	if includeServerPkg {
 		t.insertImport(file, serverPrpcPkg, serverPrpcPackagePath)
 	}
-	changed, err := t.generateClients(file)
-	if err != nil {
-		return err
-	}
-	if changed {
+	if includeCommonPkg {
 		t.insertImport(file, commonPrpcPkg, commonPrpcPackagePath)
 	}
 	return nil
@@ -84,65 +107,37 @@ func (t *transformer) transformFile(file *ast.File) error {
 // transformRegisterServerFuncs finds RegisterXXXServer functions and
 // checks its first parameter type to prpc.Registrar.
 // Returns true if modified ast.
-func (t *transformer) transformRegisterServerFuncs(file *ast.File) bool {
+func (t *transformer) transformRegisterServerFuncs(s *service) {
 	registrarName := ast.NewIdent("Registrar")
 	var registrarType ast.Expr = registrarName
 	if !t.inPRPCPackage {
 		registrarType = &ast.SelectorExpr{serverPrpcPkg, registrarName}
 	}
-
-	changed := false
-	for _, decl := range file.Decls {
-		funcDecl, ok := decl.(*ast.FuncDecl)
-		if !ok {
-			continue
-		}
-		name := funcDecl.Name.Name
-		if !strings.HasPrefix(name, "Register") || !strings.HasSuffix(name, "Server") {
-			continue
-		}
-		params := funcDecl.Type.Params
-		if params == nil || len(params.List) != 2 {
-			continue
-		}
-
-		params.List[0].Type = registrarType
-		changed = true
-	}
-	return changed
+	s.registerServerFunc.Params.List[0].Type = registrarType
 }
 
 // generateClients finds client interface declarations
 // and inserts pRPC implementations after them.
-func (t *transformer) generateClients(file *ast.File) (bool, error) {
-	changed := false
-	for i := len(file.Decls) - 1; i >= 0; i-- {
-		genDecl, ok := file.Decls[i].(*ast.GenDecl)
-		if !ok || genDecl.Tok != token.TYPE {
-			continue
-		}
-		for _, spec := range genDecl.Specs {
-			spec := spec.(*ast.TypeSpec)
-			const suffix = "Client"
-			if !strings.HasSuffix(spec.Name.Name, suffix) {
-				continue
-			}
-			serviceName := strings.TrimSuffix(spec.Name.Name, suffix)
+func (t *transformer) generateClients(file *ast.File, s *service) (bool, error) {
+	switch newDecls, err := t.generateClient(s.protoPackageName, s.name, s.clientIface); {
+	case err != nil:
+		return false, err
+	case len(newDecls) > 0:
+		insertAST(file, s.clientIfaceDecl, newDecls)
+		return true, nil
+	default:
+		return false, nil
+	}
+}
 
-			iface, ok := spec.Type.(*ast.InterfaceType)
-			if !ok {
-				continue
-			}
-
-			newDecls, err := t.generateClient(file.Name.Name, serviceName, iface)
-			if err != nil {
-				return false, err
-			}
+func insertAST(file *ast.File, after ast.Decl, newDecls []ast.Decl) {
+	for i, d := range file.Decls {
+		if d == after {
 			file.Decls = append(file.Decls[:i+1], append(newDecls, file.Decls[i+1:]...)...)
-			changed = true
+			return
 		}
 	}
-	return changed, nil
+	panic("unable to find after node")
 }
 
 var clientCodeTemplate = template.Must(template.New("").Parse(`
@@ -159,7 +154,7 @@ func New{{.Service}}PRPCClient(client *prpccommon.Client) {{.Service}}Client {
 {{range .Methods}}
 func (c *{{$.StructName}}) {{.Name}}(ctx context.Context, in *{{.InputMessage}}, opts ...grpc.CallOption) (*{{.OutputMessage}}, error) {
 	out := new({{.OutputMessage}})
-	err := c.client.Call(ctx, "{{$.Pkg}}.{{$.Service}}", "{{.Name}}", in, out, opts...)
+	err := c.client.Call(ctx, "{{$.ProtoPkg}}.{{$.Service}}", "{{.Name}}", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +164,7 @@ func (c *{{$.StructName}}) {{.Name}}(ctx context.Context, in *{{.InputMessage}},
 `))
 
 // generateClient generates pRPC implementation of a client interface.
-func (t *transformer) generateClient(packageName, serviceName string, iface *ast.InterfaceType) ([]ast.Decl, error) {
+func (t *transformer) generateClient(protoPackage, serviceName string, iface *ast.InterfaceType) ([]ast.Decl, error) {
 	// This function used to construct an AST. It was a lot of code.
 	// Now it generates code via a template and parses back to AST.
 	// Slower, but saner and easier to make changes.
@@ -217,8 +212,8 @@ func (t *transformer) generateClient(packageName, serviceName string, iface *ast
 	}
 
 	err := clientCodeTemplate.Execute(&buf, map[string]interface{}{
-		"Pkg":        packageName,
 		"Service":    serviceName,
+		"ProtoPkg":   protoPackage,
 		"StructName": firstLower(serviceName) + "PRPCClient",
 		"Methods":    methods,
 	})
