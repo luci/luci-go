@@ -24,19 +24,7 @@ func (s Settings) GetTemplateName(t Theme) string {
 
 // Render renders both the build page and the log.
 func (s Settings) Render(c context.Context, r *http.Request, p httprouter.Params) (*templates.Args, error) {
-	var u *updateReq
-	if r.Method == "POST" {
-		// Check XSRF token.
-		err := xsrf.Check(c, r.FormValue("xsrf_token"))
-		if err != nil {
-			return nil, err
-		}
-		u = &updateReq{
-			Theme: r.FormValue("theme"),
-		}
-	}
-
-	result, err := settingsImpl(c, r.URL.String(), u)
+	result, err := getSettings(c, r)
 	if err != nil {
 		return nil, err
 	}

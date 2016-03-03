@@ -162,7 +162,7 @@ func Base(h middleware.Handler) httprouter.Handle {
 func Wrap(h ThemedHandler) func(http.ResponseWriter, *http.Request, httprouter.Params) {
 	hx := func(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		// Figure out if we need to do the things.
-		theme := GetTheme(c)
+		theme := GetTheme(c, r)
 		template := h.GetTemplateName(theme)
 
 		// Do the things.
@@ -178,10 +178,6 @@ func Wrap(h ThemedHandler) func(http.ResponseWriter, *http.Request, httprouter.P
 			}
 			return
 		}
-
-		// The theme might change, poll for it again.
-		theme = GetTheme(c)
-		template = h.GetTemplateName(theme)
 
 		// Render the stuff.
 		name := fmt.Sprintf("pages/%s", template)

@@ -32,7 +32,7 @@ func init() {
 
 	// User settings
 	r.GET("/settings", wrap(settings.Settings{}))
-	r.POST("/settings", wrap(settings.Settings{}))
+	r.POST("/settings", settings.Base(settings.ChangeSettings))
 
 	// PubSub subscription endpoints.
 	r.POST("/pubsub/buildbot", settings.Base(buildbot.PubSubHandler))
