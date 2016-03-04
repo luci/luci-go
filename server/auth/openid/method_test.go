@@ -129,7 +129,7 @@ func TestFullFlow(t *testing.T) {
 			So(rec.Code, ShouldEqual, http.StatusFound)
 			So(rec.Header().Get("Location"), ShouldEqual, "/destination")
 			So(rec.Header().Get("Set-Cookie"), ShouldEqual,
-				expectedCookie+"; Path=/; Expires=Sun, 18 Oct 2015 01:18:20 UTC; Max-Age=2591100; HttpOnly")
+				expectedCookie+"; Path=/; Expires=Sun, 18 Oct 2015 01:18:20 GMT; Max-Age=2591100; HttpOnly")
 
 			// Use the cookie to authenticate some call.
 			req, err = http.NewRequest("GET", "http://fake/something", nil)
@@ -158,7 +158,7 @@ func TestFullFlow(t *testing.T) {
 			So(rec.Code, ShouldEqual, http.StatusFound)
 			So(rec.Header().Get("Location"), ShouldEqual, "/another_destination")
 			So(rec.Header().Get("Set-Cookie"), ShouldEqual,
-				"oid_session=deleted; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 UTC; Max-Age=0")
+				"oid_session=deleted; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0")
 		})
 	})
 }

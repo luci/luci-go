@@ -171,9 +171,12 @@ foo   Test option 'foo'.
 
 			Convey(`And should print help for that option.`, func() {
 				correctOptionHelpString := `Help for 'foo': Test option 'foo'.
-  -bool-var=false: A boolean variable.
-  -int-var=123: An integer variable.
-  -string-var="": A string variable.
+  -bool-var
+    	A boolean variable.
+  -int-var int
+    	An integer variable. (default 123)
+  -string-var string
+    	A string variable.
 `
 				So(buf.String(), ShouldEqual, correctOptionHelpString)
 			})
