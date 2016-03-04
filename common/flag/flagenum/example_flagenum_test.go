@@ -60,8 +60,7 @@ func Example() {
 	fmt.Printf("JSON is: %s\n", string(j))
 
 	// Output:
-	// -value value
-	//     	Set the value. Options are: bar, foo
+	// -value=: Set the value. Options are: bar, foo
 	// Value is: 20
 	// JSON is: {"value":"bar"}
 }

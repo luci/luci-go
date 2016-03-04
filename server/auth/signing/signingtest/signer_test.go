@@ -25,14 +25,14 @@ func TestSigner(t *testing.T) {
 		So(certs, ShouldResemble, &signing.PublicCertificates{
 			Certificates: []signing.Certificate{
 				{
-					KeyName: "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
+					KeyName: "fd77904f8cb78191676471b15d05a6508b606ed7",
 					X509CertificatePEM: "-----BEGIN CERTIFICATE-----\n" +
-						"MIIBEjCBvaADAgECAgEBMA0GCSqGSIb3DQEBCwUAMAAwIBcNMDEwOTA5MDE0NjQw\n" +
-						"WhgPMjI4NjExMjAxNzQ2NDBaMAAwXDANBgkqhkiG9w0BAQEFAANLADBIAkEAwZi1\n" +
-						"z+S+nVKvbNkVY+7nfi2pf1yErGEAOUts9HgD6iMqX8RyFgJXoMTsiSiDHTY8Wlhl\n" +
-						"7cDdriFxxK5/CvfC0wIDAQABoyAwHjAOBgNVHQ8BAf8EBAMCB4AwDAYDVR0TAQH/\n" +
-						"BAIwADANBgkqhkiG9w0BAQsFAANBAFK+mmzyRe3PrY84J3413m+Y1/aGYraIkfSj\n" +
-						"KXyGSzRfFvRl+EixsxXRVl0jKBrGKBpg81lbumGE6oZWi85nWug=\n" +
+						"MIIBDjCBu6ADAgECAgEBMAsGCSqGSIb3DQEBCzAAMCAXDTAxMDkwOTAxNDY0MFoY\n" +
+						"DzIyODYxMTIwMTc0NjQwWjAAMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAMGYtc/k\n" +
+						"vp1Sr2zZFWPu534tqX9chKxhADlLbPR4A+ojKl/EchYCV6DE7Ikogx02PFpYZe3A\n" +
+						"3a4hccSufwr3wtMCAwEAAaMgMB4wDgYDVR0PAQH/BAQDAgCAMAwGA1UdEwEB/wQC\n" +
+						"MAAwCwYJKoZIhvcNAQELA0EAI/3v5eWNzA2oudenR8Vo5EY0j3zCUVhlHRErlcUR\n" +
+						"I69yAHZUpJ9lzcwmHcaCJ76m/jDINZrYoL/4aSlDEGgHmw==\n" +
 						"-----END CERTIFICATE-----\n",
 				},
 			},
@@ -42,7 +42,7 @@ func TestSigner(t *testing.T) {
 		// Signatures are also deterministic.
 		key, sig, err := s.SignBytes(ctx, []byte("some blob"))
 		So(err, ShouldBeNil)
-		So(key, ShouldEqual, "f9da5a0d0903bda58c6d664e3852a89c283d7fe9")
+		So(key, ShouldEqual, "fd77904f8cb78191676471b15d05a6508b606ed7")
 		So(sig, ShouldResemble, []byte{
 			0x66, 0x2d, 0xa6, 0xa0, 0x65, 0x63, 0x8b, 0x83, 0xc5, 0x45, 0xeb, 0xfd,
 			0x88, 0xec, 0x9, 0x41, 0x59, 0x92, 0xd0, 0x48, 0x78, 0x37, 0xc2, 0x45,
