@@ -119,6 +119,17 @@ func TestGoLogger(t *testing.T) {
 				So(matches[0][3], ShouldEqual,
 					`Here is another log                         {"error":"An error!", "foo":"bar", "reason":"override"}`)
 			})
+
+			Convey(`Will not treat format args as format.`, func() {
+				logging.Infof(c, "%s", "Here is an %s")
+				matches := lre.FindAllStringSubmatch(normalizeLog(buf.String()), -1)
+				So(len(matches), ShouldEqual, 1)
+				So(len(matches[0]), ShouldEqual, 4)
+				So(matches[0][1], ShouldEqual, "I")
+				So(matches[0][2], ShouldEqual, "gologger_test.go")
+				So(matches[0][3], ShouldEqual,
+					`Here is an %s                               {"error":"An error!", "reason":"test"}`)
+			})
 		})
 
 		Convey(`Will not log to Debug, as it's below level.`, func() {

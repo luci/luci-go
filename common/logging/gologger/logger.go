@@ -55,7 +55,8 @@ func (li *loggerImpl) LogCall(l logging.Level, calldepth int, format string, arg
 		}
 
 		if fields := logging.GetFields(li.c); len(fields) > 0 {
-			format = formatWithFields(format, fields, args)
+			text := formatWithFields(format, fields, args)
+			format = strings.Replace(text, "%", "%%", -1)
 			args = nil
 		}
 	}
@@ -77,11 +78,8 @@ func (li *loggerImpl) LogCall(l logging.Level, calldepth int, format string, arg
 }
 
 // formatWithFields renders the supplied format string, adding fields.
-//
-// '%' characters in the fields string are escaped so they can't be interpreted
-// as format characters when appended to the initial format string.
 func formatWithFields(format string, fields logging.Fields, args []interface{}) string {
-	fieldString := strings.Replace(fields.String(), "%", "%%", -1)
+	fieldString := fields.String()
 
 	buf := bytes.Buffer{}
 	buf.Grow(len(format) + logMessageFieldPadding + len(fieldString))
