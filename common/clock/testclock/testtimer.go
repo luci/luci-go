@@ -5,6 +5,7 @@
 package testclock
 
 import (
+	"sync"
 	"time"
 
 	"github.com/luci/luci-go/common/clock"
@@ -27,6 +28,8 @@ type timer struct {
 	// when this timer triggers or is canceled.
 	afterC chan clock.TimerResult
 
+	// cancelMu protects cancelFunc.
+	cancelMu sync.Mutex
 	// Cancels callback from clock.invokeAt. Being non-nil implies that the timer
 	// is active.
 	cancelFunc context.CancelFunc
@@ -49,41 +52,43 @@ func (t *timer) GetC() <-chan clock.TimerResult {
 }
 
 func (t *timer) Reset(d time.Duration) (active bool) {
+	if d < 0 {
+		d = 0
+	}
+
+	// Stop our current polling goroutine, if it's running.
+	active = t.Stop()
+
 	now := t.clock.Now()
 	triggerTime := now.Add(d)
 
 	// Signal our timerSet callback.
 	t.clock.signalTimerSet(d, t)
 
-	// Stop our current polling goroutine, if it's running.
-	active = t.Stop()
-
 	// Set timer properties.
-	var ctx context.Context
-	ctx, t.cancelFunc = context.WithCancel(t.ctx)
-	t.clock.invokeAt(ctx, triggerTime, func(tr clock.TimerResult) {
-		// If our cancelFunc is nil, then we were stopped and should NOT signal our
-		// timer channel.
-		if t.cancelFunc != nil {
+	t.cancelMu.Lock()
+	defer t.cancelMu.Unlock()
+
+	t.cancelFunc = t.clock.invokeAt(t.ctx, triggerTime, func(tr clock.TimerResult) {
+		// If our timer is still running, stop it and signal our timer channel.
+		if t.Stop() {
 			t.afterC <- tr
-			t.cancelFunc = nil
 		}
 	})
 	return
 }
 
-func (t *timer) Stop() bool {
-	// If the timer is not running, we're done.
-	cf := t.cancelFunc
-	if cf == nil {
-		return false
-	}
+func (t *timer) Stop() (stopped bool) {
+	t.cancelMu.Lock()
+	defer t.cancelMu.Unlock()
 
-	// Clear our state. Set our cancelFunc to nil so our callback knows that we
-	// were stopped.
-	t.cancelFunc = nil
-	cf()
-	return true
+	// If the timer is not running, we're done.
+	if t.cancelFunc != nil {
+		t.cancelFunc()
+		t.cancelFunc = nil
+		return true
+	}
+	return false
 }
 
 // GetTags returns the tags associated with the specified timer. If the timer

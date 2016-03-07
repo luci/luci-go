@@ -10,6 +10,9 @@ package parallel
 // is available.
 //
 // Unlock releases an owned token, returning it to the semaphore.
+//
+// For semaphore s, len(s) is the current number of acquired resources, and
+// cap(s) is the total resource size of the semaphore.
 type Semaphore chan struct{}
 
 // Lock acquires a semaphore resource, blocking until one is available.

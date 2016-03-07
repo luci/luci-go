@@ -136,6 +136,14 @@ func TestTestTimer(t *testing.T) {
 				So(triggered, ShouldBeFalse)
 			})
 
+			Convey(`Will not trigger on previous time thresholds if reset.`, func() {
+				t.Reset(time.Second)
+				t.Reset(2 * time.Second)
+				clk.Add(time.Second)
+				clk.Add(time.Second)
+				So((<-t.GetC()).Time, ShouldResemble, clk.Now())
+			})
+
 			Convey(`Can set and retrieve timer tags.`, func() {
 				var tagMu sync.Mutex
 				tagMap := map[string]struct{}{}

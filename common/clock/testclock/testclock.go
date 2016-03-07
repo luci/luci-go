@@ -125,10 +125,12 @@ func (c *testClock) signalTimerSet(d time.Duration, t clock.Timer) {
 // invokeAt invokes the specified callback when the Clock has advanced at
 // or after the specified threshold.
 //
-// The returned cancelFunc can be used to cancel the blocking. If the cancel
-// function is invoked before the callback, the callback will not be invoked.
-func (c *testClock) invokeAt(ctx context.Context, threshold time.Time, callback func(clock.TimerResult)) {
+// The returned CancelFunc can be used to cancel the blocking without
+// signalling. If the cancel function is invoked before the callback, the
+// callback will not be invoked. It will NOT cancel the Context.
+func (c *testClock) invokeAt(ctx context.Context, threshold time.Time, callback func(clock.TimerResult)) context.CancelFunc {
 	finishedC := make(chan struct{})
+	cancelC := make(chan struct{})
 	stopC := make(chan struct{})
 
 	// Our control goroutine will monitor both time and stop signals. It will
@@ -140,13 +142,16 @@ func (c *testClock) invokeAt(ctx context.Context, threshold time.Time, callback 
 	go func() {
 		defer close(finishedC)
 
+		canceled := false
 		defer func() {
 			now := c.now
 			c.Unlock()
 
 			// If we finished naturally, but our Context is Done, include the Context
 			// error.
-			callback(clock.TimerResult{Time: now, Err: ctx.Err()})
+			if !canceled {
+				callback(clock.TimerResult{Time: now, Err: ctx.Err()})
+			}
 		}()
 
 		for {
@@ -160,9 +165,12 @@ func (c *testClock) invokeAt(ctx context.Context, threshold time.Time, callback 
 			// Wait for a signal from our clock's condition.
 			c.timerCond.Wait()
 
-			// Have we been stopped?
+			// Have we been stopped or canceled?
 			select {
 			case <-stopC:
+				return
+			case <-cancelC:
+				canceled = true
 				return
 
 			default:
@@ -198,4 +206,8 @@ func (c *testClock) invokeAt(ctx context.Context, threshold time.Time, callback 
 			c.timerCond.Broadcast()
 		}
 	}()
+
+	return func() {
+		close(cancelC)
+	}
 }
