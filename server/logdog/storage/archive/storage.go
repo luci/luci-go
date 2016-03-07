@@ -87,17 +87,6 @@ func New(c context.Context, o Options) (storage.Storage, error) {
 	if s.streamBucket == "" || s.streamPath == "" {
 		return nil, errors.New("invalid stream URL")
 	}
-
-	if s.Client == nil {
-		var err error
-		s.Client, err = gs.NewProdClient(c)
-		if err != nil {
-			return nil, err
-		}
-
-		s.closeClient = true
-	}
-
 	return &s, nil
 }
 

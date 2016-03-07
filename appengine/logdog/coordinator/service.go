@@ -5,6 +5,9 @@
 package coordinator
 
 import (
+	"errors"
+
+	gaeauthClient "github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	"github.com/luci/luci-go/common/gcloud/gs"
 	log "github.com/luci/luci-go/common/logging"
@@ -49,7 +52,7 @@ func (s *Service) Storage(c context.Context) (storage.Storage, error) {
 func (s *Service) GSClient(c context.Context) (gs.Client, error) {
 	f := s.GSClientFunc
 	if f == nil {
-		f = gs.NewProdClient
+		f = s.newProdGSClient
 	}
 
 	gsc, err := f(c)
@@ -58,4 +61,15 @@ func (s *Service) GSClient(c context.Context) (gs.Client, error) {
 		return nil, err
 	}
 	return gsc, nil
+}
+
+func (s *Service) newProdGSClient(c context.Context) (gs.Client, error) {
+	// Get an Authenticator bound to the token scopes that we need for
+	// authenticated Cloud Storage access.
+	rt, err := gaeauthClient.Transport(c, gs.ReadOnlyScopes, nil)
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to create Cloud Storage transport.")
+		return nil, errors.New("failed to create Cloud Storage transport")
+	}
+	return gs.NewProdClient(c, rt)
 }

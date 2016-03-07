@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"time"
 
-	gaeauthClient "github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
@@ -17,6 +16,16 @@ import (
 	"google.golang.org/api/googleapi"
 	"google.golang.org/cloud"
 	gs "google.golang.org/cloud/storage"
+)
+
+var (
+	// ReadWriteScopes is the set of scopes needed for read/write Google Storage
+	// access.
+	ReadWriteScopes = []string{gs.ScopeReadWrite}
+
+	// ReadOnlyScopes is the set of scopes needed for read/write Google Storage
+	// read-only access.
+	ReadOnlyScopes = []string{gs.ScopeReadOnly}
 )
 
 // Client abstracts funcitonality to connect with and use Google Storage from
@@ -40,6 +49,8 @@ type Client interface {
 type prodClient struct {
 	context.Context
 
+	// rt is the http.RoundTripper to use for communication.
+	rt http.RoundTripper
 	// baseClient is a basic Google Storage client instance. It is used for
 	// operations that don't need custom header injections.
 	baseClient *gs.Client
@@ -47,11 +58,14 @@ type prodClient struct {
 
 // NewProdClient creates a new Client instance that uses production Cloud
 // Storage.
-func NewProdClient(ctx context.Context) (Client, error) {
+//
+// The supplied RoundTripper will be used to make connections. If nil,
+// the default http.Client RoundTripper will be used.
+func NewProdClient(ctx context.Context, rt http.RoundTripper) (Client, error) {
 	c := prodClient{
 		Context: ctx,
+		rt:      rt,
 	}
-
 	var err error
 	c.baseClient, err = c.newClient(nil)
 	if err != nil {
@@ -110,11 +124,9 @@ func (c *prodClient) Delete(bucket, relpath string) error {
 }
 
 func (c *prodClient) newClient(o *Options) (*gs.Client, error) {
-	// Get an Authenticator bound to the token scopes that we need for BigTable.
-	a, err := gaeauthClient.Authenticator(c, []string{gs.ScopeReadWrite}, nil)
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create Cloud Storage authenticator.")
-		return nil, errors.New("failed to create Cloud Storage authenticator")
+	rt := c.rt
+	if rt == nil {
+		rt = http.DefaultTransport
 	}
 
 	// This is a hack. Unfortunately, it is necessary since the Cloud Storage API
@@ -128,19 +140,17 @@ func (c *prodClient) newClient(o *Options) (*gs.Client, error) {
 	// We have to replicate the token source confguration b/c our only entry point
 	// into header editing is the "cloud.WithClient", which preempts all of the
 	// token source generation logic.
-	client, err := a.Client()
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to generate Cloud Storage client.")
-		return nil, err
-	}
 	if o != nil {
-		rt := gsRoundTripper{
-			RoundTripper: client.Transport,
+		rt = &gsRoundTripper{
+			RoundTripper: rt,
 			Options:      o,
 		}
-		client.Transport = &rt
 	}
-	gsc, err := gs.NewClient(c, cloud.WithBaseHTTP(client))
+	client := http.Client{
+		Transport: rt,
+	}
+
+	gsc, err := gs.NewClient(c, cloud.WithBaseHTTP(&client))
 	if err != nil {
 		return nil, err
 	}
