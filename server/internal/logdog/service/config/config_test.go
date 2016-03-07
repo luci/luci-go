@@ -66,6 +66,8 @@ func TestConfig(t *testing.T) {
 		Convey(`Can create a Manager.`, func() {
 			m, err := NewManager(c, o)
 			So(err, ShouldBeNil)
+			defer m.Close()
+
 			So(m.Config(), ShouldResemble, cfg)
 		})
 
@@ -86,6 +88,7 @@ func TestConfig(t *testing.T) {
 
 			m, err := NewManager(c, o)
 			So(err, ShouldBeNil)
+			defer m.Close()
 
 			Convey(`When the configuration changes`, func() {
 				cfg.Transport.GetPubsub().Project = "qux"

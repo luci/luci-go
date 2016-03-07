@@ -96,14 +96,17 @@ if [ $? != 0 ]; then
 fi
 
 # Get the number of CPUs.
+#
+# TODO(dnj): Remove this when we switch to Go 1.5+.
 NCPU=$(cat /proc/cpuinfo | grep processor | wc -l)
 export GOMAXPROCS="${NCPU}"
 
-# Load metadata.
+# Load metadata (common).
 _load_metadata_check COORDINATOR_HOST "logdog_coordinator_host"
+_load_metadata STORAGE_CREDENTIALS "logdog_storage_auth_json"
 
+# Load metadata (app-specific).
 _load_metadata LOG_LEVEL "logdog_collector_log_level"
-_load_metadata STORAGE_CREDENTIALS "logdog_collector_storage_auth_json"
 
 # Runtime temporary directory.
 TEMPDIR=$(mktemp -d)
@@ -112,6 +115,7 @@ trap "rm -rf ${TEMPDIR}" EXIT
 # Compose command line.
 ARGS=(
   "-coordinator" "${COORDINATOR_HOST}"
+  "-config-kill-interval" "5m"
   )
 
 if [ ! -z "${LOG_LEVEL}" ]; then
@@ -119,7 +123,7 @@ if [ ! -z "${LOG_LEVEL}" ]; then
 fi
 if [ ! -z "${STORAGE_CREDENTIALS}" ]; then
   STORAGE_CREDENTIALS_JSON_PATH="${TEMPDIR}/storage_service_account_json.json"
-	_write_credentials "${STORAGE_CREDENTIALS_JSON_PATH}" "${STORAGE_CREDENTIALS}"
+  _write_credentials "${STORAGE_CREDENTIALS_JSON_PATH}" "${STORAGE_CREDENTIALS}"
   ARGS+=("-storage-credential-json-path" "${STORAGE_CREDENTIALS_JSON_PATH}")
 fi
 

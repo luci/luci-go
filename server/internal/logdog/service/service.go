@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sync"
+	"sync/atomic"
 
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
@@ -19,8 +19,8 @@ import (
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/common/prpc"
-	"github.com/luci/luci-go/server/internal/logdog/config"
 	"github.com/luci/luci-go/server/internal/logdog/retryServicesClient"
+	"github.com/luci/luci-go/server/internal/logdog/service/config"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"github.com/luci/luci-go/server/logdog/storage/bigtable"
 	"golang.org/x/net/context"
@@ -41,20 +41,10 @@ var (
 
 // Service is a base class full of common LogDog service application parameters.
 type Service struct {
-	context.Context
+	// Flags is the set of flags that will be used by the Service.
+	Flags flag.FlagSet
 
-	// UserAgent is the user agent string that will be used for service
-	// communication.
-	UserAgent string
-
-	// topCancelFunc is the Context cancel function for the top-level application
-	// Context.
-	topCancelFunc func()
-
-	// shutdownMu protects the shutdown variables.
-	shutdownMu    sync.Mutex
-	shutdownFunc  func()
-	shutdownCount int32
+	shutdownFunc atomic.Value
 
 	loggingFlags log.Config
 	authFlags    authcli.Flags
@@ -68,48 +58,45 @@ type Service struct {
 	config *config.Manager
 }
 
-// New instantiates a new Service.
-func New(c context.Context) *Service {
-	c, cancelFunc := context.WithCancel(c)
+// Run performs service-wide initialization and invokes the specified run
+// function.
+func (s *Service) Run(c context.Context, f func(context.Context) error) {
 	c = gologger.Use(c)
 
-	return &Service{
-		Context:       c,
-		topCancelFunc: cancelFunc,
+	rc := 0
+	if err := s.runImpl(c, f); err != nil {
+		log.WithError(err).Errorf(c, "Application exiting with error.")
+		rc = 1
 	}
+	os.Exit(rc)
 }
 
-// AddFlags adds standard service flags to the supplied FlagSet.
-func (s *Service) AddFlags(fs *flag.FlagSet) {
-	s.loggingFlags.AddFlags(fs)
+func (s *Service) runImpl(c context.Context, f func(context.Context) error) error {
+	s.addFlags(c, &s.Flags)
+	c = s.loggingFlags.Set(c)
 
-	var opts auth.Options
-	if s.Context != nil {
-		opts.Context = s.Context
-		opts.Logger = log.Get(s.Context)
+	if err := s.Flags.Parse(os.Args[1:]); err != nil {
+		log.WithError(err).Errorf(c, "Failed to parse command-line.")
+		return err
 	}
-	s.authFlags.Register(fs, opts)
-	s.configFlags.AddToFlagSet(fs)
-
-	fs.StringVar(&s.coordinatorHost, "coordinator", "",
-		"The Coordinator service's [host][:port].")
-	fs.BoolVar(&s.coordinatorInsecure, "coordinator-insecure", false,
-		"Connect to Coordinator over HTTP (instead of HTTPS).")
-	fs.StringVar(&s.storageCredentialJSONPath, "storage-credential-json-path", "",
-		"If supplied, the path of a JSON credential file to load and use for storage operations.")
-}
-
-// Run loads the Service's base runtime and invokes the specified run function.
-func (s *Service) Run(f func() error) error {
-	s.Context = s.loggingFlags.Set(s.Context)
 
 	// Configure our signal handler. It will listen for terminating signals and
 	// issue a shutdown signal if one is received.
 	signalC := make(chan os.Signal)
 	go func() {
+		hasShutdownAlready := false
 		for sig := range signalC {
-			s.Shutdown()
-			log.Warningf(log.SetField(s, "signal", sig), "Received close signal. Send again to terminate immediately.")
+			if !hasShutdownAlready {
+				hasShutdownAlready = true
+
+				log.Warningf(log.SetField(c, "signal", sig), "Received close signal. Send again to terminate immediately.")
+				s.shutdown()
+				continue
+			}
+
+			// No shutdown function registered; just exit immediately.
+			s.shutdownImmediately()
+			panic("never reached")
 		}
 	}()
 	signal.Notify(signalC, os.Interrupt)
@@ -120,24 +107,43 @@ func (s *Service) Run(f func() error) error {
 
 	// Initialize our Client instantiations.
 	var err error
-	s.coord, err = s.initCoordinatorClient()
+	s.coord, err = s.initCoordinatorClient(c)
 	if err != nil {
-		log.Errorf(log.SetError(s, err), "Failed to setup Coordinator client.")
+		log.WithError(err).Errorf(c, "Failed to setup Coordinator client.")
 		return err
 	}
 
-	s.config, err = s.initConfig()
+	s.config, err = s.initConfig(c)
 	if err != nil {
-		log.Errorf(log.SetError(s, err), "Failed to setup configuration.")
+		log.WithError(err).Errorf(c, "Failed to setup configuration.")
 		return err
 	}
+	defer s.config.Close()
 
-	return f()
+	defer s.SetShutdownFunc(nil)
+	return f(c)
 }
 
-func (s *Service) initCoordinatorClient() (logdog.ServicesClient, error) {
+func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
+	s.loggingFlags.AddFlags(fs)
+
+	s.authFlags.Register(fs, auth.Options{
+		Context: c,
+		Logger:  log.Get(c),
+	})
+	s.configFlags.AddToFlagSet(fs)
+
+	fs.StringVar(&s.coordinatorHost, "coordinator", "",
+		"The Coordinator service's [host][:port].")
+	fs.BoolVar(&s.coordinatorInsecure, "coordinator-insecure", false,
+		"Connect to Coordinator over HTTP (instead of HTTPS).")
+	fs.StringVar(&s.storageCredentialJSONPath, "storage-credential-json-path", "",
+		"If supplied, the path of a JSON credential file to load and use for storage operations.")
+}
+
+func (s *Service) initCoordinatorClient(c context.Context) (logdog.ServicesClient, error) {
 	if s.coordinatorHost == "" {
-		log.Errorf(s, "Missing Coordinator URL (-coordinator).")
+		log.Errorf(c, "Missing Coordinator URL (-coordinator).")
 		return nil, ErrInvalidConfig
 	}
 
@@ -145,7 +151,7 @@ func (s *Service) initCoordinatorClient() (logdog.ServicesClient, error) {
 		o.Scopes = CoordinatorScopes
 	})
 	if err != nil {
-		log.Errorf(log.SetError(s, err), "Failed to create authenticated client.")
+		log.WithError(err).Errorf(c, "Failed to create authenticated client.")
 		return nil, err
 	}
 
@@ -163,46 +169,40 @@ func (s *Service) initCoordinatorClient() (logdog.ServicesClient, error) {
 	return retryServicesClient.New(sc, nil), nil
 }
 
-func (s *Service) initConfig() (*config.Manager, error) {
+func (s *Service) initConfig(c context.Context) (*config.Manager, error) {
 	rt, err := s.AuthenticatedTransport(nil)
 	if err != nil {
-		log.Errorf(log.SetError(s, err), "Failed to create config client.")
+		log.WithError(err).Errorf(c, "Failed to create config client.")
 		return nil, err
 	}
 
 	s.configFlags.RoundTripper = rt
-	o, err := s.configFlags.CoordinatorOptions(s, s.coord)
+	o, err := s.configFlags.CoordinatorOptions(c, s.coord)
 	if err != nil {
-		log.Errorf(log.SetError(s, err), "Failed to load configuration parameters.")
+		log.WithError(err).Errorf(c, "Failed to load configuration parameters.")
 		return nil, err
 	}
-	o.KillFunc = s.Shutdown
+	o.KillFunc = s.shutdown
 
-	return config.NewManager(s, *o)
-}
-
-// Shutdown issues a shutdown signal to the service.
-func (s *Service) Shutdown() {
-	s.shutdownMu.Lock()
-	defer s.shutdownMu.Unlock()
-
-	if s.shutdownCount > 0 {
-		os.Exit(1)
-	}
-	s.shutdownCount++
-
-	if f := s.shutdownFunc; f != nil {
-		f()
-	} else {
-		s.topCancelFunc()
-	}
+	return config.NewManager(c, *o)
 }
 
 // SetShutdownFunc sets the service shutdown function.
 func (s *Service) SetShutdownFunc(f func()) {
-	s.shutdownMu.Lock()
-	defer s.shutdownMu.Unlock()
-	s.shutdownFunc = f
+	s.shutdownFunc.Store(f)
+}
+
+func (s *Service) shutdown() {
+	v := s.shutdownFunc.Load()
+	if f, ok := v.(func()); ok {
+		f()
+	} else {
+		s.shutdownImmediately()
+	}
+}
+
+func (s *Service) shutdownImmediately() {
+	os.Exit(1)
 }
 
 // Config returns the cached service configuration.
@@ -215,17 +215,18 @@ func (s *Service) Coordinator() logdog.ServicesClient {
 	return s.coord
 }
 
-// Storage instantiates the configured Storage instance.
-func (s *Service) Storage() (storage.Storage, error) {
+// IntermediateStorage instantiates the configured intermediate Storage
+// instance.
+func (s *Service) IntermediateStorage(c context.Context) (storage.Storage, error) {
 	cfg := s.config.Config()
 	if cfg.GetStorage() == nil {
-		log.Errorf(s, "Missing storage configuration.")
+		log.Errorf(c, "Missing storage configuration.")
 		return nil, ErrInvalidConfig
 	}
 
 	btcfg := cfg.GetStorage().GetBigtable()
 	if btcfg == nil {
-		log.Errorf(s, "Missing BigTable storage configuration")
+		log.Errorf(c, "Missing BigTable storage configuration")
 		return nil, ErrInvalidConfig
 	}
 
@@ -237,11 +238,11 @@ func (s *Service) Storage() (storage.Storage, error) {
 		}
 	})
 	if err != nil {
-		log.Errorf(log.SetError(s, err), "Failed to create BigTable Authenticator.")
+		log.WithError(err).Errorf(c, "Failed to create BigTable Authenticator.")
 		return nil, err
 	}
 
-	bt, err := bigtable.New(s, bigtable.Options{
+	bt, err := bigtable.New(c, bigtable.Options{
 		Project:  btcfg.Project,
 		Zone:     btcfg.Zone,
 		Cluster:  btcfg.Cluster,
@@ -251,7 +252,7 @@ func (s *Service) Storage() (storage.Storage, error) {
 		},
 	})
 	if err != nil {
-		log.Errorf(log.SetError(s, err), "Failed to create BigTable instance.")
+		log.WithError(err).Errorf(c, "Failed to create BigTable instance.")
 		return nil, err
 	}
 	return bt, nil
@@ -265,7 +266,6 @@ func (s *Service) Storage() (storage.Storage, error) {
 func (s *Service) Authenticator(f func(o *auth.Options)) (*auth.Authenticator, error) {
 	authOpts, err := s.authFlags.Options()
 	if err != nil {
-		log.Errorf(log.SetError(s, err), "Failed to create authenticator options.")
 		return nil, ErrInvalidConfig
 	}
 	if f != nil {

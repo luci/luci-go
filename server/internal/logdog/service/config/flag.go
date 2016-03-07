@@ -19,8 +19,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Flags is a set of command-line flags used to set up the process'
-// configuration.
+// Flags is the set of command-line flags used to configure a service.
 type Flags struct {
 	// ConfigPath is the path within the ConfigSet of the configuration.
 	//

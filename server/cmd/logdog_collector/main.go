@@ -5,9 +5,7 @@
 package main
 
 import (
-	"flag"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/luci/luci-go/common/auth"
@@ -29,15 +27,11 @@ var (
 
 // application is the Collector application state.
 type application struct {
-	*service.Service
-
-	// shutdownCtx is a Context that will be cancelled if our application
-	// receives a shutdown signal.
-	shutdownCtx context.Context
+	service.Service
 }
 
 // run is the main execution function.
-func (a *application) runCollector() error {
+func (a *application) runCollector(c context.Context) error {
 	cfg := a.Config()
 	ccfg := cfg.GetCollector()
 	if ccfg == nil {
@@ -60,7 +54,7 @@ func (a *application) runCollector() error {
 		o.Scopes = pubsub.SubscriberScopes
 	})
 	if err != nil {
-		log.WithError(err).Errorf(a, "Failed to create Pub/Sub client.")
+		log.WithError(err).Errorf(c, "Failed to create Pub/Sub client.")
 		return err
 	}
 
@@ -71,44 +65,45 @@ func (a *application) runCollector() error {
 			log.Fields{
 				log.ErrorKey: err,
 				"delay":      d,
-			}.Warningf(a, "Transient error encountered; retrying...")
+			}.Warningf(c, "Transient error encountered; retrying...")
 		},
 	}
 
-	exists, err := ps.SubExists(a, sub)
+	exists, err := ps.SubExists(c, sub)
 	if err != nil {
 		log.Fields{
 			log.ErrorKey:   err,
 			"subscription": sub,
-		}.Errorf(a, "Could not confirm Pub/Sub subscription.")
+		}.Errorf(c, "Could not confirm Pub/Sub subscription.")
 		return errInvalidConfig
 	}
 	if !exists {
 		log.Fields{
 			"subscription": sub,
-		}.Errorf(a, "Subscription does not exist.")
+		}.Errorf(c, "Subscription does not exist.")
 		return errInvalidConfig
 	}
 	log.Fields{
 		"subscription": sub,
-	}.Infof(a, "Successfully validated Pub/Sub subscription.")
+	}.Infof(c, "Successfully validated Pub/Sub subscription.")
 
 	// Initialize our Storage.
-	s, err := a.Storage()
+	s, err := a.IntermediateStorage(c)
 	if err != nil {
-		log.WithError(err).Errorf(a, "Failed to get storage instance.")
+		log.WithError(err).Errorf(c, "Failed to get storage instance.")
 		return err
 	}
 	defer s.Close()
 
 	// Application shutdown will now operate by cancelling the Collector's
 	// shutdown Context.
-	shutdownCtx, shutdownFunc := context.WithCancel(a)
+	shutdownCtx, shutdownFunc := context.WithCancel(c)
 	a.SetShutdownFunc(shutdownFunc)
-	defer a.SetShutdownFunc(nil)
 
-	// Start an ACK buffer so that we can batch ACKs.
-	ab := ackbuffer.New(a, ackbuffer.Config{
+	// Start an ACK buffer so that we can batch ACKs. Note that we do NOT use the
+	// shutdown context here, as we want clean shutdowns to continue to ack any
+	// buffered messages.
+	ab := ackbuffer.New(c, ackbuffer.Config{
 		Ack: ackbuffer.NewACK(ps, sub, 0),
 	})
 	defer ab.CloseAndFlush()
@@ -128,7 +123,7 @@ func (a *application) runCollector() error {
 
 	// Execute our main Subscriber loop. It will run until the supplied Context
 	// is cancelled.
-	clk := clock.Get(a)
+	clk := clock.Get(c)
 	engine := subscriber.Subscriber{
 		S: subscriber.NewSource(ps, sub, 0),
 		A: ab,
@@ -137,24 +132,23 @@ func (a *application) runCollector() error {
 		HandlerWorkers: int(ccfg.Workers),
 	}
 	engine.Run(shutdownCtx, func(msg *pubsub.Message) bool {
-		startTime := clk.Now()
-
-		ctx := log.SetField(a, "messageID", msg.ID)
+		c := log.SetField(c, "messageID", msg.ID)
 		log.Fields{
 			"ackID": msg.AckID,
 			"size":  len(msg.Data),
-		}.Infof(ctx, "Received Pub/Sub Message.")
+		}.Infof(c, "Received Pub/Sub Message.")
 
-		err := coll.Process(ctx, msg.Data)
-
+		startTime := clk.Now()
+		err := coll.Process(c, msg.Data)
 		duration := clk.Now().Sub(startTime)
+
 		switch {
 		case errors.IsTransient(err):
 			// Do not consume
 			log.Fields{
 				log.ErrorKey: err,
 				"duration":   duration,
-			}.Warningf(ctx, "TRANSIENT error ingesting Pub/Sub message.")
+			}.Warningf(c, "TRANSIENT error ingesting Pub/Sub message.")
 			return false
 
 		case err == nil:
@@ -162,49 +156,26 @@ func (a *application) runCollector() error {
 				"ackID":    msg.AckID,
 				"size":     len(msg.Data),
 				"duration": duration,
-			}.Infof(ctx, "Message successfully processed; ACKing.")
+			}.Infof(c, "Message successfully processed; ACKing.")
 			return true
 
 		default:
 			log.Fields{
-				"ackID":    msg.AckID,
-				"size":     len(msg.Data),
-				"duration": duration,
-			}.Errorf(ctx, "Non-transient error ingesting Pub/Sub message; ACKing.")
+				log.ErrorKey: err,
+				"ackID":      msg.AckID,
+				"size":       len(msg.Data),
+				"duration":   duration,
+			}.Errorf(c, "Non-transient error ingesting Pub/Sub message; ACKing.")
 			return true
 		}
 	})
 
-	log.Debugf(a, "Collector finished.")
+	log.Debugf(c, "Collector finished.")
 	return nil
-}
-
-// mainImpl is the Main implementaion, and returns the application return code
-// as an integer.
-func mainImpl() int {
-	a := application{
-		Service: service.New(context.Background()),
-	}
-
-	fs := flag.FlagSet{}
-	a.AddFlags(&fs)
-
-	if err := fs.Parse(os.Args[1:]); err != nil {
-		log.Errorf(log.SetError(a, err), "Failed to parse command-line.")
-		return 1
-	}
-
-	// Run our configured application instance.
-	var rc int
-	if err := a.Run(a.runCollector); err != nil {
-		log.Errorf(log.SetError(a, err), "Application execution failed.")
-		return 1
-	}
-	log.Infof(log.SetField(a, "returnCode", rc), "Terminating.")
-	return 0
 }
 
 // Entry point.
 func main() {
-	os.Exit(mainImpl())
+	a := application{}
+	a.Run(context.Background(), a.runCollector)
 }
