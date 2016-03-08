@@ -38,7 +38,7 @@ func (t *tqState) Testable() tq.Testable {
 	return t.tq.Testable()
 }
 
-// FilterTQ installs a counter TaskQueue filter in the context.
+// FilterTQ installs a featureBreaker TaskQueue filter in the context.
 func FilterTQ(c context.Context, defaultError error) (context.Context, FeatureBreaker) {
 	state := newState(defaultError)
 	return tq.AddRawFilters(c, func(ic context.Context, tq tq.RawInterface) tq.RawInterface {

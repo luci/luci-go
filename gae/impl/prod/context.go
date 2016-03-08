@@ -70,7 +70,7 @@ func AEContextNoTxn(c context.Context) context.Context {
 func setupAECtx(c, aeCtx context.Context) context.Context {
 	c = context.WithValue(c, prodContextKey, aeCtx)
 	c = context.WithValue(c, prodContextNoTxnKey, aeCtx)
-	return useMail(useUser(useURLFetch(useRDS(useMC(useTQ(useGI(useLogging(c))))))))
+	return useModule(useMail(useUser(useURLFetch(useRDS(useMC(useTQ(useGI(useLogging(c)))))))))
 }
 
 // Use adds production implementations for all the gae services to the
@@ -82,6 +82,7 @@ func setupAECtx(c, aeCtx context.Context) context.Context {
 //   - github.com/luci/gae/service/info
 //   - github.com/luci/gae/service/mail
 //   - github.com/luci/gae/service/memcache
+//   - github.com/luci/gae/service/module
 //   - github.com/luci/gae/service/taskqueue
 //   - github.com/luci/gae/service/urlfetch
 //   - github.com/luci/gae/service/user

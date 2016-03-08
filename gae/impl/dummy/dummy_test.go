@@ -11,6 +11,7 @@ import (
 	infoS "github.com/luci/gae/service/info"
 	mailS "github.com/luci/gae/service/mail"
 	mcS "github.com/luci/gae/service/memcache"
+	modS "github.com/luci/gae/service/module"
 	tqS "github.com/luci/gae/service/taskqueue"
 	userS "github.com/luci/gae/service/user"
 	. "github.com/smartystreets/goconvey/convey"
@@ -92,5 +93,13 @@ func TestContextAccess(t *testing.T) {
 			}, ShouldPanicWith, "dummy: method Mail.Send is not implemented")
 		})
 
+		Convey("Module", func() {
+			c = modS.Set(c, Module())
+			So(modS.Get(c), ShouldNotBeNil)
+			So(func() {
+				defer p()
+				modS.Get(c).List()
+			}, ShouldPanicWith, "dummy: method Module.List is not implemented")
+		})
 	})
 }

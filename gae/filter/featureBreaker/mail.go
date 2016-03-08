@@ -25,7 +25,7 @@ func (m *mailState) SendToAdmins(msg *mail.Message) error {
 	return m.run(func() error { return m.Interface.SendToAdmins(msg) })
 }
 
-// FilterMail installs a counter mail filter in the context.
+// FilterMail installs a featureBreaker mail filter in the context.
 func FilterMail(c context.Context, defaultError error) (context.Context, FeatureBreaker) {
 	state := newState(defaultError)
 	return mail.AddFilters(c, func(ic context.Context, i mail.Interface) mail.Interface {

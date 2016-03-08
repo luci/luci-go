@@ -57,7 +57,7 @@ func (u *userState) OAuthConsumerKey() (ret string, err error) {
 	return
 }
 
-// FilterUser installs a counter user filter in the context.
+// FilterUser installs a featureBreaker user filter in the context.
 func FilterUser(c context.Context, defaultError error) (context.Context, FeatureBreaker) {
 	state := newState(defaultError)
 	return user.AddFilters(c, func(ic context.Context, i user.Interface) user.Interface {

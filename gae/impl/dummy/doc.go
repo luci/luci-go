@@ -10,6 +10,7 @@
 //   * memcache.Interface
 //   * taskqueue.Interface
 //   * info.Interface
+//   * module.Interface
 //
 // These dummy implementations panic with an appropriate error message when
 // any of their methods are called. The message looks something like:

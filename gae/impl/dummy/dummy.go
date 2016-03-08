@@ -14,6 +14,7 @@ import (
 	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/mail"
 	"github.com/luci/gae/service/memcache"
+	"github.com/luci/gae/service/module"
 	"github.com/luci/gae/service/taskqueue"
 	"github.com/luci/gae/service/user"
 	"golang.org/x/net/context"
@@ -53,6 +54,8 @@ func ni() error {
 					iface = "Mail"
 				case "mc":
 					iface = "Memcache"
+				case "mod":
+					iface = "Module"
 				case "tq":
 					iface = "TaskQueue"
 				case "u":
@@ -201,3 +204,22 @@ var dummyMailInst = m{}
 // Every method panics with a message containing the name of the method which
 // was unimplemented.
 func Mail() mail.Interface { return dummyMailInst }
+
+/////////////////////////////////// mod ////////////////////////////////////
+
+type mod struct{}
+
+func (mod) List() ([]string, error)                                     { panic(ni()) }
+func (mod) NumInstances(module, version string) (int, error)            { panic(ni()) }
+func (mod) SetNumInstances(module, version string, instances int) error { panic(ni()) }
+func (mod) Versions(module string) ([]string, error)                    { panic(ni()) }
+func (mod) DefaultVersion(module string) (string, error)                { panic(ni()) }
+func (mod) Start(module, version string) error                          { panic(ni()) }
+func (mod) Stop(module, version string) error                           { panic(ni()) }
+
+var dummyModuleInst = mod{}
+
+// Module returns a dummy module.Interface implementation suitable for
+// embedding. Every method panics with a message containing the name of the
+// method which was unimplemented.
+func Module() module.Interface { return dummyModuleInst }

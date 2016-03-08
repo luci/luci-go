@@ -55,7 +55,7 @@ func (r *dsState) RunInTransaction(f func(c context.Context) error, opts *ds.Tra
 	})
 }
 
-// TODO(riannucci): Allow the user to specify a multierror which will propagate
+// TODO(iannucci): Allow the user to specify a multierror which will propagate
 // to the callback correctly.
 
 func (r *dsState) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
@@ -80,7 +80,7 @@ func (r *dsState) Testable() ds.Testable {
 	return r.rds.Testable()
 }
 
-// FilterRDS installs a counter datastore filter in the context.
+// FilterRDS installs a featureBreaker datastore filter in the context.
 func FilterRDS(c context.Context, defaultError error) (context.Context, FeatureBreaker) {
 	state := newState(defaultError)
 	return ds.AddRawFilters(c, func(ic context.Context, RawDatastore ds.RawInterface) ds.RawInterface {

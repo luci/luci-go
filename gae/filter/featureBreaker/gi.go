@@ -74,7 +74,7 @@ func (g *infoState) SignBytes(bytes []byte) (keyName string, signature []byte, e
 	return
 }
 
-// FilterGI installs a counter info filter in the context.
+// FilterGI installs a featureBreaker info filter in the context.
 func FilterGI(c context.Context, defaultError error) (context.Context, FeatureBreaker) {
 	state := newState(defaultError)
 	return info.AddFilters(c, func(ic context.Context, i info.Interface) info.Interface {

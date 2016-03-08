@@ -48,7 +48,7 @@ func (m *mcState) Stats() (ret *mc.Statistics, err error) {
 	return
 }
 
-// FilterMC installs a counter mc filter in the context.
+// FilterMC installs a featureBreaker mc filter in the context.
 func FilterMC(c context.Context, defaultError error) (context.Context, FeatureBreaker) {
 	state := newState(defaultError)
 	return mc.AddRawFilters(c, func(ic context.Context, rds mc.RawInterface) mc.RawInterface {
