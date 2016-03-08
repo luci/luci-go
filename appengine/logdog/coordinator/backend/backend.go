@@ -27,6 +27,5 @@ func (b *Backend) InstallHandlers(r *httprouter.Router, h middleware.Base) {
 	r.GET("/archive/cron/nonterminal", h(gaemiddleware.RequireCron(b.HandleArchiveCronNT)))
 	r.GET("/archive/cron/storageCleanup", h(gaemiddleware.RequireCron(b.HandleStorageCleanupCron)))
 	r.GET("/archive/cron/purge", h(b.HandleArchiveCronPurge))
-	r.POST("/archive/handle", h(gaemiddleware.RequireTaskQueue("", b.HandleArchive)))
 	r.POST("/archive/cleanup", h(gaemiddleware.RequireTaskQueue("", b.HandleStorageCleanup)))
 }

@@ -6,6 +6,7 @@ package backend
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	tq "github.com/luci/gae/service/taskqueue"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
+	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/clock"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
@@ -28,6 +30,21 @@ func archiveTaskQueueName(cfg *svcconfig.Config) (string, error) {
 		return "", errors.New("missing archive task queue name")
 	}
 	return q, nil
+}
+
+// createArchiveTask creates a new archive Task.
+func createArchiveTask(cfg *svcconfig.Coordinator, ls *coordinator.LogStream, complete bool) (*tq.Task, error) {
+	desc := logdog.ArchiveTask{
+		Path:     string(ls.Path()),
+		Complete: complete,
+	}
+	t, err := createPullTask(&desc)
+	if err != nil {
+		return nil, err
+	}
+
+	t.Name = fmt.Sprintf("archive-%s", ls.HashID())
+	return t, nil
 }
 
 // HandleArchiveCron is the handler for the archive cron endpoint. This scans
@@ -113,7 +130,32 @@ func (b *Backend) archiveCron(c context.Context, complete bool) error {
 				"updated": ls.Updated.String(),
 			}.Infof(c, "Identified log stream ready for archival.")
 
-			taskC <- createArchiveTask(ls)
+			// If the log stream has a terminal index, and its Updated time is less than
+			// the maximum archive delay, require this archival to be complete (no
+			// missing LogEntry).
+			//
+			// If we're past maximum archive delay, settle for any (even empty) archival.
+			// This is a failsafe to prevent logs from sitting in limbo forever.
+			maxDelay := cfg.GetCoordinator().ArchiveDelayMax.Duration()
+			requireComplete := !now.After(ls.Updated.Add(maxDelay))
+			if !requireComplete {
+				log.Fields{
+					"path":             ls.Path(),
+					"updatedTimestamp": ls.Updated,
+					"maxDelay":         maxDelay,
+				}.Warningf(c, "Log stream is past maximum archival delay. Dropping completeness requirement.")
+			}
+
+			task, err := createArchiveTask(cfg.GetCoordinator(), ls, requireComplete)
+			if err != nil {
+				log.Fields{
+					log.ErrorKey: err,
+					"path":       ls.Path(),
+				}.Errorf(c, "Failed to create archive task.")
+				return err
+			}
+
+			taskC <- task
 			return nil
 		})
 	})

@@ -21,6 +21,8 @@ message Config {
   Coordinator coordinator = 20;
   // Collector is the collector fleet configuration.
   Collector collector = 21;
+  // Archivist microservice configuration.
+  Archivist archivist = 22;
 }
 
 // Coordinator is the Coordinator service configuration.
@@ -64,17 +66,6 @@ message Coordinator {
   // added to intermediate storage.
   google.protobuf.Duration archive_delay_max = 32;
 
-  // The name of the Google Storage bucket to archive into.
-  string archive_gs_bucket = 33;
-  // If not empty, a base path to prepend to archival Google Storage paths.
-  string archive_gs_base_path = 34;
-  // If not zero, the maximum number of stream indices between index entries.
-  int32 archive_stream_index_range = 35;
-  // If not zero, the maximum number of prefix indices between index entries.
-  int32 archive_prefix_index_range = 36;
-  // If not zero, the maximum number of log data bytes between index entries.
-  int32 archive_byte_range = 37;
-
   // The name of the storage cleanup task queue.
   string storage_cleanup_task_queue = 40;
   // The amount of time to wait before initiating a storage cleanup task.
@@ -96,4 +87,24 @@ message Collector {
   // The maximum amount of time that cached stream state is valid. If <= 0, a
   // default will be used.
   google.protobuf.Duration state_cache_expiration = 4;
+}
+
+// Configuration for the Archivist microservice.
+message Archivist {
+  // The number of tasks to run at a time. If blank, the archivist will choose a
+  // default value.
+  int32 tasks = 1;
+
+  // The name of the Google Storage bucket and optional base path to archive
+  // into. For example: gs://foo/bar
+  //
+  // The bucket name must be included (e.g., "gs://foo"). The remainder of the
+  // base path is optional based on desired archive location.
+  string gs_base = 10;
+  // If not zero, the maximum number of stream indices between index entries.
+  int32 stream_index_range = 11;
+  // If not zero, the maximum number of prefix indices between index entries.
+  int32 prefix_index_range = 12;
+  // If not zero, the maximum number of log data bytes between index entries.
+  int32 byte_range = 13;
 }

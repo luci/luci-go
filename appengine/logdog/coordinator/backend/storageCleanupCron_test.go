@@ -110,7 +110,7 @@ func TestHandleStorageCleanupCron(t *testing.T) {
 
 					// Candidate tasks should be scheduled.
 					tasks := tq.Get(c).Testable().GetScheduledTasks()[qName]
-					So(tasks, shouldHaveTasks, cleanupTaskPath("testing/+/baz"))
+					So(tasks, shouldHaveTasks, cleanupTaskName("testing/+/baz"))
 
 					// Hit the endpoint again, the same tasks should be scheduled.
 					resp, err = http.Get(fmt.Sprintf("%s/archive/cron/storageCleanup", s.URL))

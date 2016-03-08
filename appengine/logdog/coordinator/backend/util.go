@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/golang/protobuf/proto"
 	tq "github.com/luci/gae/service/taskqueue"
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
@@ -72,6 +73,23 @@ func createTask(path string, params map[string]string) *tq.Task {
 		Payload: []byte(mkValues(params).Encode()),
 		Method:  "POST",
 	}
+}
+
+// createPullTask is a generic pull queue task creation method. It is used to
+// instantiate pull queue tasks.
+func createPullTask(msg proto.Message) (*tq.Task, error) {
+	t := tq.Task{
+		Method: "PULL",
+	}
+
+	if msg != nil {
+		var err error
+		t.Payload, err = proto.Marshal(msg)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &t, nil
 }
 
 func (b *Backend) multiTask(c context.Context, q string, f func(chan<- *tq.Task)) (int, error) {

@@ -1,223 +1,163 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2016 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package backend
+package archivist
 
 import (
 	"fmt"
-	"net/http"
-	"strings"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/julienschmidt/httprouter"
-	ds "github.com/luci/gae/service/datastore"
-	tq "github.com/luci/gae/service/taskqueue"
-	"github.com/luci/luci-go/appengine/logdog/coordinator"
-	"github.com/luci/luci-go/appengine/logdog/coordinator/archive"
-	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
-	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/gcloud/gs"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
-	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
+	"github.com/luci/luci-go/server/internal/logdog/archivist/archive"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"golang.org/x/net/context"
 )
 
-var (
-	errArchiveFailed = errors.New("archive failed")
-)
+// Archivist is a stateless configuration capable of archiving individual log
+// streams.
+type Archivist struct {
+	// Service is the client to use to communicate with Coordinator's Services
+	// endpoint.
+	Service logdog.ServicesClient
+
+	// Storage is the intermediate storage instance to use to pull log entries for
+	// archival.
+	Storage storage.Storage
+
+	// GSClient is the Google Storage client to for archive generation.
+	GSClient gs.Client
+
+	// GSBase is the base Google Storage path. This includes the bucket name
+	// and any associated path.
+	GSBase gs.Path
+	// PrefixIndexRange is the maximum number of stream indexes in between index
+	// entries. See archive.Manifest for more information.
+	StreamIndexRange int
+	// PrefixIndexRange is the maximum number of prefix indexes in between index
+	// entries. See archive.Manifest for more information.
+	PrefixIndexRange int
+	// ByteRange is the maximum number of stream data bytes in between index
+	// entries. See archive.Manifest for more information.
+	ByteRange int
+}
 
 // storageBufferSize is the size, in bytes, of the LogEntry buffer that is used
 // to during archival. This should be greater than the maximum LogEntry size.
 const storageBufferSize = types.MaxLogEntryDataSize * 64
 
-func createArchiveTask(ls *coordinator.LogStream) *tq.Task {
-	params := map[string]string{
-		"path": string(ls.Path()),
+// ArchiveTask processes and executes a single log stream archive task.
+func (a *Archivist) ArchiveTask(c context.Context, desc []byte) error {
+	var task logdog.ArchiveTask
+	if err := proto.Unmarshal(desc, &task); err != nil {
+		log.WithError(err).Errorf(c, "Failed to decode archive task.")
+		return err
 	}
-
-	t := createTask("/archive/handle", params)
-	t.Name = fmt.Sprintf("archive-%s", ls.HashID())
-
-	return t
+	return a.Archive(c, &task)
 }
 
-// HandleArchive is the endpoint for handling a specific log stream's archival
-// request.
-func (b *Backend) HandleArchive(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	errorWrapper(c, w, func() error {
-		return b.handleArchiveTask(c, r)
-	})
-}
-
-// handleArchiveTask implements the single-task archival workflow.
+// Archive archives a single log stream. If unsuccessful, an error is returned.
 //
-//   1) Load the task description.
-//   2) Load the current stream state.
-//   3) Perform the archival.
-//   4) Post the archival information back to the Coordinator.
-func (b *Backend) handleArchiveTask(c context.Context, r *http.Request) error {
-	// Get the stream path from our task form. If the path is invalid, log the
-	// error, but return nil since the task is junk.
-	path := types.StreamPath(r.FormValue("path"))
-	if err := path.Validate(); err != nil {
+// This error may be wrapped in errors.Transient if it is believed to have been
+// caused by a transient failure.
+//
+// If the supplied Context is Done, operation may terminate before completion,
+// returning the Context's error.
+func (a *Archivist) Archive(c context.Context, t *logdog.ArchiveTask) error {
+	// Load the log stream's current state. If it is already archived, we will
+	// return an immediate success.
+	ls, err := a.Service.LoadStream(c, &logdog.LoadStreamRequest{
+		Path: t.Path,
+		Desc: true,
+	})
+	switch {
+	case err != nil:
+		log.WithError(err).Errorf(c, "Failed to load log stream.")
+		return err
+	case ls.State == nil:
+		return errors.New("missing state")
+	case ls.State.ProtoVersion != logpb.Version:
 		log.Fields{
-			log.ErrorKey: err,
-			"path":       path,
-		}.Errorf(c, "Invalid stream path.")
+			"protoVersion":    ls.State.ProtoVersion,
+			"expectedVersion": logpb.Version,
+		}.Errorf(c, "Unsupported log stream protobuf version.")
+		return errors.New("unsupported protobuf version")
+	case ls.Desc == nil:
+		return errors.New("missing descriptor")
+
+	case ls.State.Purged:
+		log.Warningf(c, "Log stream is purged.")
 		return nil
-	}
-
-	cfg, err := config.Load(c)
-	if err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-		}.Errorf(c, "Failed to load configuration.")
-		return err
-	}
-
-	ls := coordinator.LogStreamFromPath(path)
-	if err := ds.Get(c).Get(ls); err != nil {
-		log.WithError(err).Errorf(c, "Failed to load stream from datastore.")
-		return err
-	}
-	if ls.Archived() {
+	case ls.State.Archived:
 		log.Infof(c, "Log stream is already archived.")
 		return nil
 	}
 
-	// If the log stream has a terminal index, and its Updated time is less than
-	// the maximum archive delay, require this archival to be whole (no missing
-	// LogEntry).
-	//
-	// If we're past maximum archive delay, settle for any (even empty) archival.
-	// This is a failsafe to prevent logs from sitting in limbo forever.
-	now := clock.Now(c).UTC()
-	maxDelay := cfg.GetCoordinator().ArchiveDelayMax.Duration()
-	requireWhole := !now.After(ls.Updated.Add(maxDelay))
-	if !requireWhole {
+	// Deserialize and validate the descriptor protobuf.
+	var desc logpb.LogStreamDescriptor
+	if err := proto.Unmarshal(ls.Desc, &desc); err != nil {
 		log.Fields{
-			"path":             ls.Path(),
-			"updatedTimestamp": ls.Updated,
-			"maxDelay":         maxDelay,
-		}.Warningf(c, "Log stream is past maximum archival delay. Dropping wholeness requirement.")
-	}
-
-	st, err := b.s.Storage(c)
-	if err != nil {
+			log.ErrorKey:   err,
+			"protoVersion": ls.State.ProtoVersion,
+		}.Errorf(c, "Failed to unmarshal descriptor protobuf.")
 		return err
 	}
-	defer st.Close()
 
-	gsClient, err := b.s.GSClient(c)
-	if err != nil {
-		return err
+	task := &archiveTask{
+		Archivist:   a,
+		ArchiveTask: t,
+		ls:          ls,
+		desc:        &desc,
 	}
-	defer func() {
-		if err := gsClient.Close(); err != nil {
-			log.WithError(err).Warningf(c, "Failed to close Cloud Storage client.")
-		}
-	}()
-
-	t := &archiveTask{
-		Coordinator:  cfg.Coordinator,
-		st:           st,
-		ls:           ls,
-		gs:           gsClient,
-		requireWhole: requireWhole,
-	}
-	if err := t.archive(c); err != nil {
+	if err := task.archive(c); err != nil {
 		log.WithError(err).Errorf(c, "Failed to perform archival operation.")
 		return err
 	}
 	log.Fields{
-		"streamURL":     t.streamURL,
-		"indexURL":      t.indexURL,
-		"dataURL":       t.dataURL,
-		"terminalIndex": t.terminalIndex,
+		"streamURL":     task.ar.StreamUrl,
+		"indexURL":      task.ar.IndexUrl,
+		"dataURL":       task.ar.DataUrl,
+		"terminalIndex": task.ar.TerminalIndex,
+		"complete":      task.ar.Complete,
 	}.Debugf(c, "Finished archive construction.")
 
-	// Store the updated archival information.
-	now = clock.Now(c)
-	err = ds.Get(c).RunInTransaction(func(c context.Context) error {
-		di := ds.Get(c)
-		if err := di.Get(ls); err != nil {
-			return err
-		}
-		if ls.Archived() {
-			log.Warningf(c, "Log stream marked as archived during archival.")
-			return nil
-		}
-
-		// Update archival information. Make sure this actually marks the stream as
-		// archived.
-		ls.Updated = now
-		ls.State = coordinator.LSArchived
-		ls.TerminalIndex = t.terminalIndex
-		ls.ArchiveStreamURL = t.streamURL
-		ls.ArchiveStreamSize = t.streamSize
-		ls.ArchiveIndexURL = t.indexURL
-		ls.ArchiveIndexSize = t.indexSize
-		ls.ArchiveDataURL = t.dataURL
-		ls.ArchiveDataSize = t.dataSize
-		ls.ArchiveWhole = t.wasWhole
-
-		// Update the log stream.
-		if err := ls.Put(di); err != nil {
-			log.WithError(err).Errorf(c, "Failed to update log stream.")
-			return err
-		}
-
-		return nil
-	}, nil)
-	if err != nil {
+	if _, err := a.Service.ArchiveStream(c, &task.ar); err != nil {
 		log.WithError(err).Errorf(c, "Failed to mark log stream as archived.")
 		return err
 	}
-
 	return nil
 }
 
 // archiveTask is the set of parameters for a single archival.
 type archiveTask struct {
-	*svcconfig.Coordinator
-	st           storage.Storage
-	ls           *coordinator.LogStream
-	gs           gs.Client
-	requireWhole bool
+	*Archivist
+	*logdog.ArchiveTask
 
-	streamURL  string
-	streamSize int64
-	indexURL   string
-	indexSize  int64
-	dataURL    string
-	dataSize   int64
+	// ls is the log stream state.
+	ls *logdog.LoadStreamResponse
+	// desc is the unmarshaled log stream descriptor.
+	desc *logpb.LogStreamDescriptor
 
-	terminalIndex int64
-	wasWhole      bool
+	// ar will be populated during archive construction.
+	ar logdog.ArchiveStreamRequest
 }
 
 // archiveState performs the archival operation on a stream described by a
 // Coordinator State. Upon success, the State will be updated with the result
 // of the archival operation.
 func (t *archiveTask) archive(c context.Context) (err error) {
-	var desc *logpb.LogStreamDescriptor
-	desc, err = t.ls.DescriptorProto()
-	if err != nil {
-		return
-	}
-
 	// Generate our archival object managers.
-	bext := desc.BinaryFileExt
+	bext := t.desc.BinaryFileExt
 	if bext == "" {
 		bext = "bin"
 	}
 
-	path := t.ls.Path()
+	path := t.Path
 	var streamO, indexO, dataO *gsObject
 	streamO, err = t.newGSObject(c, path, "logstream.entries")
 	if err != nil {
@@ -238,14 +178,14 @@ func (t *archiveTask) archive(c context.Context) (err error) {
 	}
 
 	// Load the URLs into our state.
-	t.streamURL = streamO.url
-	t.indexURL = indexO.url
-	t.dataURL = dataO.url
+	t.ar.StreamUrl = streamO.url
+	t.ar.IndexUrl = indexO.url
+	t.ar.DataUrl = dataO.url
 
 	log.Fields{
-		"streamURL": t.streamURL,
-		"indexURL":  t.indexURL,
-		"dataURL":   t.dataURL,
+		"streamURL": t.ar.StreamUrl,
+		"indexURL":  t.ar.IndexUrl,
+		"dataURL":   t.ar.DataUrl,
 	}.Infof(c, "Archiving log stream...")
 
 	// We want to try and delete any GS objects that were created during a failed
@@ -282,22 +222,22 @@ func (t *archiveTask) archive(c context.Context) (err error) {
 	// Read our log entries from intermediate storage.
 	ss := storageSource{
 		Context:       c,
-		st:            t.st,
-		path:          path,
-		contiguous:    t.requireWhole,
-		terminalIndex: types.MessageIndex(t.ls.TerminalIndex),
+		st:            t.Storage,
+		path:          types.StreamPath(t.Path),
+		contiguous:    t.Complete,
+		terminalIndex: types.MessageIndex(t.ls.State.TerminalIndex),
 		lastIndex:     -1,
 	}
 
 	m := archive.Manifest{
-		Desc:             desc,
+		Desc:             t.desc,
 		Source:           &ss,
 		LogWriter:        streamO,
 		IndexWriter:      indexO,
 		DataWriter:       dataO,
-		StreamIndexRange: int(t.ArchiveStreamIndexRange),
-		PrefixIndexRange: int(t.ArchivePrefixIndexRange),
-		ByteRange:        int(t.ArchiveByteRange),
+		StreamIndexRange: t.StreamIndexRange,
+		PrefixIndexRange: t.PrefixIndexRange,
+		ByteRange:        t.ByteRange,
 
 		Logger: log.Get(c),
 	}
@@ -307,49 +247,52 @@ func (t *archiveTask) archive(c context.Context) (err error) {
 		return
 	}
 
-	t.terminalIndex = int64(ss.lastIndex)
-	if t.ls.TerminalIndex != t.terminalIndex {
-		if t.requireWhole {
+	t.ar.TerminalIndex = int64(ss.lastIndex)
+	if tidx := t.ls.State.TerminalIndex; tidx != t.ar.TerminalIndex {
+		// Fail, if we were requested to archive only the complete log.
+		if t.Complete {
 			log.Fields{
-				"terminalIndex": t.ls.TerminalIndex,
-				"lastIndex":     t.terminalIndex,
+				"terminalIndex": tidx,
+				"lastIndex":     t.ar.TerminalIndex,
 			}.Errorf(c, "Log stream archival stopped prior to terminal index.")
-			return errArchiveFailed
+			return errors.New("stream finished short of terminal index")
 		}
 
-		if t.terminalIndex < 0 {
+		if t.ar.TerminalIndex < 0 {
 			// If our last log index was <0, then no logs were archived.
 			log.Warningf(c, "No log entries were archived.")
 		} else {
 			// Update our terminal index.
 			log.Fields{
-				"from": t.ls.TerminalIndex,
-				"to":   t.terminalIndex,
+				"from": tidx,
+				"to":   t.ar.TerminalIndex,
 			}.Infof(c, "Updated log stream terminal index.")
 		}
 	}
 
 	// Update our state with archival results.
-	t.streamSize = streamO.Count()
-	t.indexSize = indexO.Count()
-	t.dataSize = dataO.Count()
-	t.wasWhole = !ss.hasMissingEntries
+	t.ar.Path = t.Path
+	t.ar.StreamSize = streamO.Count()
+	t.ar.IndexSize = indexO.Count()
+	t.ar.DataSize = dataO.Count()
+	t.ar.Complete = !ss.hasMissingEntries
 	return
 }
 
-func (t *archiveTask) newGSObject(c context.Context, path types.StreamPath, name string) (*gsObject, error) {
+func (t *archiveTask) newGSObject(c context.Context, path string, name string) (*gsObject, error) {
+	p := t.GSBase.Concat(path, name)
 	o := gsObject{
-		gs:     t.gs,
-		bucket: cleanGSPath(t.ArchiveGsBucket),
-		path:   buildGSPath(cleanGSPath(t.ArchiveGsBasePath), cleanGSPath(string(path)), name),
+		gs:     t.GSClient,
+		bucket: p.Bucket(),
+		path:   p.Filename(),
 	}
 
 	// Build our GS URL. Note that since buildGSPath joins with "/", the initial
 	// token, "gs:/", will become "gs://".
-	o.url = buildGSPath("gs:/", cleanGSPath(o.bucket), o.path)
+	o.url = string(p)
 
 	var err error
-	o.Writer, err = t.gs.NewWriter(o.bucket, o.path)
+	o.Writer, err = t.GSClient.NewWriter(o.bucket, o.path)
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,
@@ -394,6 +337,7 @@ func (o *gsObject) delete() error {
 // intermediate storage via its storage.Storage instance.
 type storageSource struct {
 	context.Context
+
 	st            storage.Storage    // the storage instance to read from
 	path          types.StreamPath   // the path of the log stream
 	contiguous    bool               // if true, enforce contiguous entries
@@ -480,21 +424,4 @@ func (s *storageSource) NextLogEntry() (*logpb.LogEntry, error) {
 
 	s.lastIndex = sidx
 	return le, nil
-}
-
-func cleanGSPath(p string) string {
-	return strings.Trim(p, "/")
-}
-
-// buildGSPath constructs a Google Storage path from a set of components.
-//
-// If one of the components is empty, it will be ignored.
-func buildGSPath(parts ...string) string {
-	path := make([]string, 0, len(parts))
-	for _, p := range parts {
-		if len(p) > 0 {
-			path = append(path, p)
-		}
-	}
-	return strings.Join(path, "/")
 }

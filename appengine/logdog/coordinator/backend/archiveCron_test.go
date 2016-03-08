@@ -121,7 +121,7 @@ func TestHandleArchiveCron(t *testing.T) {
 
 					// Candidate tasks should be scheduled.
 					tasks := tq.Get(c).Testable().GetScheduledTasks()[qName]
-					So(tasks, shouldHaveTasks, archiveTaskPath("testing/+/bar"))
+					So(tasks, shouldHaveTasks, archiveTaskName("testing/+/bar"))
 
 					// Hit the endpoint again, the same tasks should be scheduled.
 					resp, err = http.Get(fmt.Sprintf("%s/archive/cron/terminal", s.URL))
@@ -139,7 +139,7 @@ func TestHandleArchiveCron(t *testing.T) {
 
 					// Candidate tasks should be scheduled.
 					tasks := tq.Get(c).Testable().GetScheduledTasks()[qName]
-					So(tasks, shouldHaveTasks, archiveTaskPath("testing/+/qux"))
+					So(tasks, shouldHaveTasks, archiveTaskName("testing/+/qux"))
 
 					// Hit the endpoint again, the same tasks should be scheduled.
 					resp, err = http.Get(fmt.Sprintf("%s/archive/cron/nonterminal", s.URL))
@@ -154,13 +154,13 @@ func TestHandleArchiveCron(t *testing.T) {
 					resp, err := http.Get(fmt.Sprintf("%s/archive/cron/terminal", s.URL))
 					So(err, ShouldBeNil)
 					So(resp.StatusCode, ShouldEqual, http.StatusOK)
-					So(tq.Get(c).Testable().GetScheduledTasks()[qName], shouldHaveTasks, archiveTaskPath("testing/+/bar"))
+					So(tq.Get(c).Testable().GetScheduledTasks()[qName], shouldHaveTasks, archiveTaskName("testing/+/bar"))
 
 					resp, err = http.Get(fmt.Sprintf("%s/archive/cron/nonterminal", s.URL))
 					So(err, ShouldBeNil)
 					So(resp.StatusCode, ShouldEqual, http.StatusOK)
 					So(tq.Get(c).Testable().GetScheduledTasks()[qName], shouldHaveTasks,
-						archiveTaskPath("testing/+/bar"), archiveTaskPath("testing/+/qux"))
+						archiveTaskName("testing/+/bar"), archiveTaskName("testing/+/qux"))
 				})
 
 				Convey(`When scheduling multiple tasks`, func() {
@@ -185,7 +185,7 @@ func TestHandleArchiveCron(t *testing.T) {
 					Convey(`Will schedule all pages properly.`, func() {
 						taskNames := make([]interface{}, len(names))
 						for i, n := range names {
-							taskNames[i] = archiveTaskPath(fmt.Sprintf("testing/+/%s", n))
+							taskNames[i] = archiveTaskName(fmt.Sprintf("testing/+/%s", n))
 						}
 
 						// Ensure that all of these tasks get added to the task queue.

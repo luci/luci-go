@@ -1,0 +1,17 @@
+// Copyright 2016 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package logdog;
+
+// ArchiveTask is a task queue task description for the archival of a single
+// log stream.
+message ArchiveTask {
+  // The path of the log stream to archive.
+  string path = 1;
+
+  // If true, require that the log stream be complete.
+  bool complete = 2;
+}

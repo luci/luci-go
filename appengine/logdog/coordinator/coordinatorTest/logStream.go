@@ -17,11 +17,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-// TestSecret returns the test secret used by TestLogStream.
-func TestSecret() []byte {
-	return bytes.Repeat([]byte{0x6F}, types.StreamSecretLength)
-}
-
 // TestLogStreamDescriptor generates a stock testing LogStreamDescriptor
 // protobuf.
 func TestLogStreamDescriptor(c context.Context, name string) *logpb.LogStreamDescriptor {
@@ -47,7 +42,7 @@ func TestLogStream(c context.Context, desc *logpb.LogStreamDescriptor) *coordina
 	ls.ProtoVersion = logpb.Version
 	ls.Created = ds.RoundTime(clock.Now(c).UTC())
 	ls.Updated = ds.RoundTime(clock.Now(c).UTC())
-	ls.Secret = TestSecret()
+	ls.Secret = bytes.Repeat([]byte{0x6F}, types.StreamSecretLength)
 	ls.TerminalIndex = -1
 	return ls
 }

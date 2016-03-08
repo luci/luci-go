@@ -3,11 +3,17 @@
 # found in the LICENSE file.
 
 queue:
-  # Push queue for backend archival tasking.
+  # Pull queue for backend archival tasking. Tasks will be processed by an
+  # archivist cluster.
   - name: archive-queue
-    mode: push
-    rate: 100/s
-    target: backend
+    mode: pull
+    acl:
+      # luci-logdog (prod) GCE service account.
+      - user_email: 43182045235-compute@developer.gserviceaccount.com
+      # luci-logdog-dev GCE service account.
+      - user_email: 38892607523-compute@developer.gserviceaccount.com
+      # luci-logdog-dev developer service account.
+      - user_email: service-account@luci-logdog-dev.iam.gserviceaccount.com
 
   # Push queue for backend storage cleanup tasking.
   - name: storage-cleanup-queue

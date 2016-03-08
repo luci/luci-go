@@ -77,6 +77,16 @@ func (c *client) TerminateStream(ctx context.Context, in *s.TerminateStreamReque
 	return
 }
 
+func (c *client) ArchiveStream(ctx context.Context, in *s.ArchiveStreamRequest, opts ...grpc.CallOption) (
+	r *google.Empty, err error) {
+	err = retry.Retry(ctx, c.f, func() (err error) {
+		r, err = c.c.ArchiveStream(ctx, in, opts...)
+		err = wrapTransient(err)
+		return
+	}, callback(ctx, "archiving stream"))
+	return
+}
+
 func callback(ctx context.Context, op string) retry.Callback {
 	return func(err error, d time.Duration) {
 		log.Fields{

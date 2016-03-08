@@ -5,12 +5,14 @@
 package backend
 
 import (
+	"fmt"
 	"net/http"
-	"net/url"
 	"sort"
 
 	"github.com/julienschmidt/httprouter"
 	tq "github.com/luci/gae/service/taskqueue"
+	"github.com/luci/luci-go/appengine/logdog/coordinator"
+	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/server/middleware"
 	"golang.org/x/net/context"
 
@@ -33,11 +35,7 @@ func shouldHaveTasks(actual interface{}, expected ...interface{}) string {
 	a := actual.(map[string]*tq.Task)
 	al := make([]string, 0, len(a))
 	for _, t := range a {
-		u := url.URL{
-			Path:     t.Path,
-			RawQuery: string(t.Payload),
-		}
-		al = append(al, u.String())
+		al = append(al, t.Name)
 	}
 
 	tasks := make([]string, len(expected))
@@ -50,18 +48,10 @@ func shouldHaveTasks(actual interface{}, expected ...interface{}) string {
 	return ShouldResemble(al, tasks)
 }
 
-func archiveTaskPath(path string) string {
-	u := url.URL{
-		Path:     "/archive/handle",
-		RawQuery: url.Values{"path": []string{path}}.Encode(),
-	}
-	return u.String()
+func archiveTaskName(path string) string {
+	return fmt.Sprintf("archive-%s", coordinator.LogStreamFromPath(types.StreamPath(path)).HashID())
 }
 
-func cleanupTaskPath(path string) string {
-	u := url.URL{
-		Path:     "/archive/cleanup",
-		RawQuery: url.Values{"path": []string{path}}.Encode(),
-	}
-	return u.String()
+func cleanupTaskName(path string) string {
+	return fmt.Sprintf("cleanup-%s", coordinator.LogStreamFromPath(types.StreamPath(path)).HashID())
 }

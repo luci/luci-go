@@ -15,6 +15,7 @@ import (
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/common/gcloud/gs"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
@@ -256,6 +257,24 @@ func (s *Service) IntermediateStorage(c context.Context) (storage.Storage, error
 		return nil, err
 	}
 	return bt, nil
+}
+
+// GSClient returns an authenticated Google Storage client instance.
+func (s *Service) GSClient(c context.Context) (gs.Client, error) {
+	rt, err := s.AuthenticatedTransport(func(o *auth.Options) {
+		o.Scopes = gs.ReadWriteScopes
+	})
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to create authenticated GS transport.")
+		return nil, err
+	}
+
+	client, err := gs.NewProdClient(c, rt)
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to create Google Storage client.")
+		return nil, err
+	}
+	return client, nil
 }
 
 // Authenticator returns an Authenticator instance. The Authenticator is

@@ -82,6 +82,33 @@ message TerminateStreamRequest {
   int64 terminal_index = 3;
 }
 
+// ArchiveStreamRequest is the set of caller-supplied data for the ArchiveStream
+// service endpoint.
+message ArchiveStreamRequest {
+  // The path of the log stream that was archived.
+  string path = 1;
+  // If true, the archive includes the full set of log stream entries between
+  // [0..terminal_index].
+  bool complete = 2;
+  // The highest log stream index that was archived.
+  int64 terminal_index = 3;
+
+  // The archive URL of the log stream's stream data.
+  string stream_url = 10;
+  // The size of the log stream's stream data.
+  int64 stream_size = 11;
+
+  // The archive URL of the log stream's index data.
+  string index_url = 20;
+  // The size of the log stream's index data.
+  int64 index_size = 21;
+
+  // The archive URL of the log stream's binary data.
+  string data_url = 30;
+  // The size of the log stream's binary data.
+  int64 data_size = 31;
+}
+
 // Services service is a LogDog Coordinator endpoint that interfaces with
 // LogDog processing services.
 service Services {
@@ -98,4 +125,9 @@ service Services {
   // TerminateStream is an idempotent operation to update the stream's terminal
   // index.
   rpc TerminateStream(TerminateStreamRequest) returns (google.protobuf.Empty);
+
+  // ArchiveStream is an idempotent operation to record a log stream's archival
+  // parameters. It is used by the Archivist service upon successful stream
+  // archival.
+  rpc ArchiveStream(ArchiveStreamRequest) returns (google.protobuf.Empty);
 }
