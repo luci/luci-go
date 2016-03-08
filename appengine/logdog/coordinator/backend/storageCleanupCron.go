@@ -6,6 +6,7 @@ package backend
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -13,10 +14,40 @@ import (
 	tq "github.com/luci/gae/service/taskqueue"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
+	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/clock"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"golang.org/x/net/context"
 )
+
+// storageCleanupTaskQueueName returns the task queue name for archival, or an error
+// if it's not configured.
+func storageCleanupTaskQueueName(cfg *svcconfig.Config) (string, error) {
+	q := cfg.GetCoordinator().StorageCleanupTaskQueue
+	if q == "" {
+		return "", errors.New("missing storage cleanup task queue name")
+	}
+	return q, nil
+}
+
+// createStorageCleanupTask creates a new storage cleanup Task.
+//
+// If payload is true, the task's payload will be generated and included in the
+// returned Task. This generation may fail and result in an error being
+// returned. If false, the payload will be empty and no error can be returned.
+func createStorageCleanupTask(ls *coordinator.LogStream) (*tq.Task, error) {
+	desc := logdog.ArchiveTask{
+		Path: string(ls.Path()),
+	}
+	t, err := createPullTask(&desc)
+	if err != nil {
+		return nil, err
+	}
+
+	t.Name = fmt.Sprintf("cleanup-%s", ls.HashID())
+	return t, nil
+}
 
 // HandleStorageCleanupCron is the handler for the storageCleanup cron endpoint.
 // This scans for log streams that have been archived but not cleaned up
@@ -68,7 +99,16 @@ func (b *Backend) storageCleanupCron(c context.Context) error {
 				"updated": ls.Updated.String(),
 			}.Infof(c, "Identified log stream ready for storage cleanup.")
 
-			taskC <- createStorageCleanupTask(ls)
+			task, err := createStorageCleanupTask(ls)
+			if err != nil {
+				log.Fields{
+					log.ErrorKey: err,
+					"path":       ls.Path(),
+				}.Errorf(c, "Failed to create storage cleanup task.")
+				return err
+			}
+
+			taskC <- task
 			return nil
 		})
 	})

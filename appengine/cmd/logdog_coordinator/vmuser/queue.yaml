@@ -17,9 +17,14 @@ queue:
 
   # Push queue for backend storage cleanup tasking.
   - name: storage-cleanup-queue
-    mode: push
-    rate: 100/s
-    target: backend
+    mode: pull
+    acl:
+      # luci-logdog (prod) GCE service account.
+      - user_email: 43182045235-compute@developer.gserviceaccount.com
+      # luci-logdog-dev GCE service account.
+      - user_email: 38892607523-compute@developer.gserviceaccount.com
+      # luci-logdog-dev developer service account.
+      - user_email: service-account@luci-logdog-dev.iam.gserviceaccount.com
 
   # Push queue for tumble (from doc.go).
   - name: tumble

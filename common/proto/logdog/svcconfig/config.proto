@@ -23,6 +23,8 @@ message Config {
   Collector collector = 21;
   // Archivist microservice configuration.
   Archivist archivist = 22;
+  // Janitor microservice configuration.
+  Janitor janitor = 23;
 }
 
 // Coordinator is the Coordinator service configuration.
@@ -107,4 +109,11 @@ message Archivist {
   int32 prefix_index_range = 12;
   // If not zero, the maximum number of log data bytes between index entries.
   int32 byte_range = 13;
+}
+
+// Configuration for the Janitor microservice.
+message Janitor {
+  // The number of tasks to run at a time. If blank, the janitor will choose a
+  // default value.
+  int32 tasks = 1;
 }
