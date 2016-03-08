@@ -151,6 +151,7 @@ func (i) ServiceAccount() (string, error)                                       
 func (i) SignBytes(bytes []byte) (keyName string, signature []byte, err error)     { panic(ni()) }
 func (i) VersionID() string                                                        { panic(ni()) }
 func (i) Namespace(namespace string) (context.Context, error)                      { panic(ni()) }
+func (i) MustNamespace(namespace string) context.Context                           { panic(ni()) }
 func (i) Datacenter() string                                                       { panic(ni()) }
 func (i) InstanceID() string                                                       { panic(ni()) }
 func (i) IsDevAppServer() bool                                                     { panic(ni()) }

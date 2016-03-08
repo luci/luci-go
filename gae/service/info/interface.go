@@ -31,6 +31,7 @@ type Interface interface {
 	VersionID() string
 
 	Namespace(namespace string) (context.Context, error)
+	MustNamespace(namespace string) context.Context
 
 	AccessToken(scopes ...string) (token string, expiry time.Time, err error)
 	PublicCertificates() ([]Certificate, error)

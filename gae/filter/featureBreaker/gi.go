@@ -42,6 +42,14 @@ func (g *infoState) Namespace(namespace string) (ret context.Context, err error)
 	return
 }
 
+func (g *infoState) MustNamespace(namespace string) context.Context {
+	ret, err := g.Namespace(namespace)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
 func (g *infoState) AccessToken(scopes ...string) (token string, expiry time.Time, err error) {
 	err = g.run(func() (err error) {
 		token, expiry, err = g.Interface.AccessToken(scopes...)

@@ -56,6 +56,14 @@ func (gi *giImpl) Namespace(ns string) (ret context.Context, err error) {
 	return context.WithValue(gi.c, giContextKey, &globalInfoData{gi.appid, ns}), nil
 }
 
+func (gi *giImpl) MustNamespace(ns string) context.Context {
+	ret, err := gi.Namespace(ns)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
 func (gi *giImpl) AppID() string {
 	return gi.appid
 }

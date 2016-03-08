@@ -30,6 +30,7 @@ type InfoCounter struct {
 	ServiceAccount         Entry
 	VersionID              Entry
 	Namespace              Entry
+	MustNamespace          Entry
 	AccessToken            Entry
 	PublicCertificates     Entry
 	SignBytes              Entry
@@ -121,6 +122,11 @@ func (g *infoCounter) VersionID() string {
 func (g *infoCounter) Namespace(namespace string) (context.Context, error) {
 	ret, err := g.gi.Namespace(namespace)
 	return ret, g.c.Namespace.up(err)
+}
+
+func (g *infoCounter) MustNamespace(namespace string) context.Context {
+	g.c.MustNamespace.up()
+	return g.gi.MustNamespace(namespace)
 }
 
 func (g *infoCounter) AccessToken(scopes ...string) (string, time.Time, error) {
