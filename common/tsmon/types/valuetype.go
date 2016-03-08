@@ -44,3 +44,10 @@ func (v ValueType) String() string {
 	}
 	panic(fmt.Sprintf("unknown ValueType %d", v))
 }
+
+// IsCumulative returns true if this is a cumulative metric value type.
+func (v ValueType) IsCumulative() bool {
+	return v == CumulativeIntType ||
+		v == CumulativeFloatType ||
+		v == CumulativeDistributionType
+}

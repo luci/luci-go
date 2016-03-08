@@ -30,7 +30,8 @@ type nilStore struct{}
 func (nilStore) Register(m types.Metric)   {}
 func (nilStore) Unregister(m types.Metric) {}
 
-func (nilStore) DefaultTarget() types.Target { return nil }
+func (nilStore) DefaultTarget() types.Target     { return nil }
+func (nilStore) SetDefaultTarget(t types.Target) {}
 
 func (nilStore) Get(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}) (value interface{}, err error) {
 	return nil, errors.New("not implemented")
@@ -53,4 +54,7 @@ func (nilStore) GetAll(ctx context.Context) []types.Cell {
 }
 
 func (nilStore) ResetForUnittest() {
+}
+
+func (nilStore) Reset(ctx context.Context, m types.Metric) {
 }

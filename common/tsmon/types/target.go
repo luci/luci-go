@@ -13,4 +13,5 @@ type Target interface {
 	PopulateProto(d *pb.MetricsData)
 	IsPopulatedIn(d *pb.MetricsData) bool
 	Hash() uint64
+	Clone() Target
 }

@@ -19,9 +19,11 @@ import (
 )
 
 type inMemoryStore struct {
-	defaultTarget types.Target
-	data          map[string]*metricData
-	lock          sync.RWMutex
+	defaultTarget     types.Target
+	defaultTargetLock sync.RWMutex
+
+	data     map[string]*metricData
+	dataLock sync.RWMutex
 }
 
 type cellKey struct {
@@ -75,22 +77,22 @@ func (s *inMemoryStore) Register(m types.Metric) {}
 
 // Unregister removes the metric (along with all its values) from the store.
 func (s *inMemoryStore) Unregister(h types.Metric) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.dataLock.Lock()
+	defer s.dataLock.Unlock()
 
 	delete(s.data, h.Info().Name)
 }
 
 func (s *inMemoryStore) getOrCreateData(m types.Metric) *metricData {
-	s.lock.RLock()
+	s.dataLock.RLock()
 	d, ok := s.data[m.Info().Name]
-	s.lock.RUnlock()
+	s.dataLock.RUnlock()
 	if ok {
 		return d
 	}
 
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.dataLock.Lock()
+	defer s.dataLock.Unlock()
 
 	// Check again in case another goroutine got the lock before us.
 	if d, ok := s.data[m.Info().Name]; ok {
@@ -107,7 +109,17 @@ func (s *inMemoryStore) getOrCreateData(m types.Metric) *metricData {
 }
 
 func (s *inMemoryStore) DefaultTarget() types.Target {
-	return s.defaultTarget
+	s.defaultTargetLock.RLock()
+	defer s.defaultTargetLock.RUnlock()
+
+	return s.defaultTarget.Clone()
+}
+
+func (s *inMemoryStore) SetDefaultTarget(t types.Target) {
+	s.defaultTargetLock.Lock()
+	defer s.defaultTargetLock.Unlock()
+
+	s.defaultTarget = t
 }
 
 // Get returns the value for a given metric cell.
@@ -138,9 +150,7 @@ func (s *inMemoryStore) Set(ctx context.Context, h types.Metric, resetTime time.
 
 func (s *inMemoryStore) set(h types.Metric, resetTime time.Time, fieldVals []interface{}, t types.Target, value interface{}) error {
 	m := s.getOrCreateData(h)
-	if m.ValueType == types.CumulativeIntType ||
-		m.ValueType == types.CumulativeFloatType ||
-		m.ValueType == types.CumulativeDistributionType {
+	if m.ValueType.IsCumulative() {
 		return fmt.Errorf("attempted to set cumulative metric %s to %v", h.Info().Name, value)
 	}
 
@@ -239,8 +249,8 @@ func (s *inMemoryStore) ModifyMulti(ctx context.Context, mods []Modification) er
 // ResetForUnittest resets all metric values without unregistering any metrics.
 // Useful for unit tests.
 func (s *inMemoryStore) ResetForUnittest() {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.dataLock.Lock()
+	defer s.dataLock.Unlock()
 
 	for _, m := range s.data {
 		m.lock.Lock()
@@ -251,8 +261,10 @@ func (s *inMemoryStore) ResetForUnittest() {
 
 // GetAll efficiently returns all cells in the store.
 func (s *inMemoryStore) GetAll(ctx context.Context) []types.Cell {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.dataLock.Lock()
+	defer s.dataLock.Unlock()
+
+	defaultTarget := s.DefaultTarget()
 
 	ret := []types.Cell{}
 	for _, m := range s.data {
@@ -262,7 +274,7 @@ func (s *inMemoryStore) GetAll(ctx context.Context) []types.Cell {
 				// Add the default target to the cell if it doesn't have one set.
 				cellCopy := *cell
 				if cellCopy.Target == nil {
-					cellCopy.Target = s.defaultTarget
+					cellCopy.Target = defaultTarget
 				}
 				ret = append(ret, types.Cell{m.MetricInfo, cellCopy})
 			}
@@ -270,4 +282,12 @@ func (s *inMemoryStore) GetAll(ctx context.Context) []types.Cell {
 		m.lock.Unlock()
 	}
 	return ret
+}
+
+func (s *inMemoryStore) Reset(ctx context.Context, h types.Metric) {
+	m := s.getOrCreateData(h)
+
+	m.lock.Lock()
+	m.cells = make(map[cellKey][]*types.CellData)
+	m.lock.Unlock()
 }

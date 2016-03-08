@@ -146,9 +146,9 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
 					var m types.Metric
 					if test.bucketer != nil {
-						m = &fakeDistributionMetric{fakeMetric{"m", []field.Field{}, test.typ}, test.bucketer}
+						m = &fakeDistributionMetric{FakeMetric{"m", []field.Field{}, test.typ}, test.bucketer}
 					} else {
-						m = &fakeMetric{"m", []field.Field{}, test.typ}
+						m = &FakeMetric{"m", []field.Field{}, test.typ}
 					}
 
 					s := opts.Factory()
@@ -178,9 +178,9 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
 					var m types.Metric
 					if test.bucketer != nil {
-						m = &fakeDistributionMetric{fakeMetric{"m", []field.Field{field.String("f")}, test.typ}, test.bucketer}
+						m = &fakeDistributionMetric{FakeMetric{"m", []field.Field{field.String("f")}, test.typ}, test.bucketer}
 					} else {
-						m = &fakeMetric{"m", []field.Field{field.String("f")}, test.typ}
+						m = &FakeMetric{"m", []field.Field{field.String("f")}, test.typ}
 					}
 
 					s := opts.Factory()
@@ -228,9 +228,9 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
 					var m types.Metric
 					if test.bucketer != nil {
-						m = &fakeDistributionMetric{fakeMetric{"m", []field.Field{}, test.typ}, test.bucketer}
+						m = &fakeDistributionMetric{FakeMetric{"m", []field.Field{}, test.typ}, test.bucketer}
 					} else {
-						m = &fakeMetric{"m", []field.Field{}, test.typ}
+						m = &FakeMetric{"m", []field.Field{}, test.typ}
 					}
 
 					s := opts.Factory()
@@ -265,9 +265,9 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
 					var m types.Metric
 					if test.bucketer != nil {
-						m = &fakeDistributionMetric{fakeMetric{"m", []field.Field{}, test.typ}, test.bucketer}
+						m = &fakeDistributionMetric{FakeMetric{"m", []field.Field{}, test.typ}, test.bucketer}
 					} else {
-						m = &fakeMetric{"m", []field.Field{}, test.typ}
+						m = &FakeMetric{"m", []field.Field{}, test.typ}
 					}
 
 					s := opts.Factory()
@@ -313,9 +313,9 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
 					var m types.Metric
 					if test.bucketer != nil {
-						m = &fakeDistributionMetric{fakeMetric{"m", []field.Field{}, test.typ}, test.bucketer}
+						m = &fakeDistributionMetric{FakeMetric{"m", []field.Field{}, test.typ}, test.bucketer}
 					} else {
-						m = &fakeMetric{"m", []field.Field{}, test.typ}
+						m = &FakeMetric{"m", []field.Field{}, test.typ}
 					}
 
 					s := opts.Factory()
@@ -355,9 +355,9 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
 					var m types.Metric
 					if test.bucketer != nil {
-						m = &fakeDistributionMetric{fakeMetric{"m", []field.Field{field.String("f")}, test.typ}, test.bucketer}
+						m = &fakeDistributionMetric{FakeMetric{"m", []field.Field{field.String("f")}, test.typ}, test.bucketer}
 					} else {
-						m = &fakeMetric{"m", []field.Field{field.String("f")}, test.typ}
+						m = &FakeMetric{"m", []field.Field{field.String("f")}, test.typ}
 					}
 
 					s := opts.Factory()
@@ -409,9 +409,9 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
 					var m types.Metric
 					if test.bucketer != nil {
-						m = &fakeDistributionMetric{fakeMetric{"m", []field.Field{}, test.typ}, test.bucketer}
+						m = &fakeDistributionMetric{FakeMetric{"m", []field.Field{}, test.typ}, test.bucketer}
 					} else {
-						m = &fakeMetric{"m", []field.Field{}, test.typ}
+						m = &FakeMetric{"m", []field.Field{}, test.typ}
 					}
 
 					s := opts.Factory()
@@ -442,9 +442,9 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
 					var m types.Metric
 					if test.bucketer != nil {
-						m = &fakeDistributionMetric{fakeMetric{"m", []field.Field{}, test.typ}, test.bucketer}
+						m = &fakeDistributionMetric{FakeMetric{"m", []field.Field{}, test.typ}, test.bucketer}
 					} else {
-						m = &fakeMetric{"m", []field.Field{}, test.typ}
+						m = &FakeMetric{"m", []field.Field{}, test.typ}
 					}
 
 					s := opts.Factory()
@@ -486,9 +486,9 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 
 		s := opts.Factory()
-		foo := &fakeMetric{"foo", []field.Field{}, types.NonCumulativeIntType}
-		bar := &fakeMetric{"bar", []field.Field{field.String("f")}, types.StringType}
-		baz := &fakeMetric{"baz", []field.Field{field.String("f")}, types.NonCumulativeFloatType}
+		foo := &FakeMetric{"foo", []field.Field{}, types.NonCumulativeIntType}
+		bar := &FakeMetric{"bar", []field.Field{field.String("f")}, types.StringType}
+		baz := &FakeMetric{"baz", []field.Field{field.String("f")}, types.NonCumulativeFloatType}
 		s.Register(foo)
 		s.Register(bar)
 		s.Register(baz)
@@ -591,7 +591,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 		Convey("Incr", func(c C) {
 			s := opts.Factory()
-			m := &fakeMetric{"m", []field.Field{}, types.CumulativeIntType}
+			m := &FakeMetric{"m", []field.Field{}, types.CumulativeIntType}
 			s.Register(m)
 
 			wg := sync.WaitGroup{}
@@ -617,7 +617,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 	Convey("Different targets", t, func() {
 		Convey("Gets from context", func() {
 			s := opts.Factory()
-			m := &fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType}
+			m := &FakeMetric{"m", []field.Field{}, types.NonCumulativeIntType}
 			s.Register(m)
 			opts.RegistrationFinished(s)
 
@@ -641,11 +641,11 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 			// The order is undefined.
 			if all[0].Value.(int64) == 42 {
-				So(all[0].Target, ShouldEqual, s.DefaultTarget())
-				So(all[1].Target, ShouldEqual, &t)
+				So(all[0].Target, ShouldResemble, s.DefaultTarget())
+				So(all[1].Target, ShouldResemble, &t)
 			} else {
-				So(all[0].Target, ShouldEqual, &t)
-				So(all[1].Target, ShouldEqual, s.DefaultTarget())
+				So(all[0].Target, ShouldResemble, &t)
+				So(all[1].Target, ShouldResemble, s.DefaultTarget())
 			}
 		})
 	})
@@ -655,13 +655,17 @@ func makeInterfaceSlice(v ...interface{}) []interface{} {
 	return v
 }
 
-type fakeMetric types.MetricInfo
+// FakeMetric is a fake Metric implementation.
+type FakeMetric types.MetricInfo
 
-func (m *fakeMetric) Info() types.MetricInfo        { return types.MetricInfo(*m) }
-func (m *fakeMetric) SetFixedResetTime(t time.Time) {}
+// Info implements Metric.Info.
+func (m *FakeMetric) Info() types.MetricInfo { return types.MetricInfo(*m) }
+
+// SetFixedResetTime implements Metric.SetFixedResetTime.
+func (m *FakeMetric) SetFixedResetTime(t time.Time) {}
 
 type fakeDistributionMetric struct {
-	fakeMetric
+	FakeMetric
 
 	bucketer *distribution.Bucketer
 }

@@ -120,8 +120,7 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 		return err
 	}
 
-	globalMonitor = mon
-	SetStore(store.NewInMemory(t))
+	Initialize(mon, store.NewInMemory(t))
 
 	if globalFlusher != nil {
 		logging.Infof(c, "Canceling previous tsmon auto flush")
@@ -135,6 +134,12 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 	}
 
 	return nil
+}
+
+// Initialize configures the tsmon library with the given monitor and store.
+func Initialize(m monitor.Monitor, s store.Store) {
+	globalMonitor = m
+	SetStore(s)
 }
 
 // Shutdown gracefully terminates the tsmon by doing the final flush and
@@ -166,6 +171,15 @@ func Shutdown(c context.Context) {
 	SetStore(store.NewNilStore())
 }
 
+// ResetCumulativeMetrics resets only cumulative metrics.
+func ResetCumulativeMetrics(c context.Context) {
+	for _, m := range registeredMetrics {
+		if m.Info().ValueType.IsCumulative() {
+			Store().Reset(c, m)
+		}
+	}
+}
+
 // initMonitor examines flags and config and initializes a monitor.
 //
 // It returns (nil, nil) if tsmon should be disabled.
@@ -190,7 +204,7 @@ func initMonitor(c context.Context, fl *Flags) (monitor.Monitor, error) {
 		return nil, nil
 	}
 	if strings.ToLower(config.Endpoint) == "none" {
-		logging.Infof(c, "tsmon is explicitly disabled ")
+		logging.Infof(c, "tsmon is explicitly disabled")
 		return nil, nil
 	}
 
@@ -201,13 +215,10 @@ func initMonitor(c context.Context, fl *Flags) (monitor.Monitor, error) {
 
 	switch endpointURL.Scheme {
 	case "file":
-		return monitor.NewDebugMonitor(logging.Get(c), endpointURL.Path), nil
+		return monitor.NewDebugMonitor(endpointURL.Path), nil
 	case "pubsub":
-		cl, err := makeClient(c, config.Credentials)
-		if err != nil {
-			return nil, err
-		}
-		return monitor.NewPubsubMonitor(c, cl, endpointURL.Host, strings.TrimPrefix(endpointURL.Path, "/"))
+		client := clientFactory(config.Credentials)
+		return monitor.NewPubsubMonitor(client, endpointURL.Host, strings.TrimPrefix(endpointURL.Path, "/"))
 	default:
 		return nil, fmt.Errorf("unknown tsmon endpoint url: %s", config.Endpoint)
 	}
@@ -215,16 +226,18 @@ func initMonitor(c context.Context, fl *Flags) (monitor.Monitor, error) {
 
 // makeClient returns http.Client that knows how to send authenticated requests
 // to PubSub API.
-func makeClient(c context.Context, credentials string) (*http.Client, error) {
-	authOpts := auth.Options{
-		Context: c,
-		Scopes:  pubsub.PublisherScopes,
+func clientFactory(credentials string) monitor.ClientFactory {
+	return func(ctx context.Context) (*http.Client, error) {
+		authOpts := auth.Options{
+			Context: ctx,
+			Scopes:  pubsub.PublisherScopes,
+		}
+		if credentials == GCECredentials {
+			authOpts.Method = auth.GCEMetadataMethod
+		} else {
+			authOpts.Method = auth.ServiceAccountMethod
+			authOpts.ServiceAccountJSONPath = credentials
+		}
+		return auth.NewAuthenticator(auth.SilentLogin, authOpts).Client()
 	}
-	if credentials == GCECredentials {
-		authOpts.Method = auth.GCEMetadataMethod
-	} else {
-		authOpts.Method = auth.ServiceAccountMethod
-		authOpts.ServiceAccountJSONPath = credentials
-	}
-	return auth.NewAuthenticator(auth.SilentLogin, authOpts).Client()
 }

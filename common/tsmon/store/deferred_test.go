@@ -35,7 +35,7 @@ func TestDeferred(t *testing.T) {
 
 	Convey("Deferred set", t, func() {
 		s := NewDeferred(NewInMemory(&target.Task{ServiceName: proto.String("default target")}))
-		m := &fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType}
+		m := &FakeMetric{"m", []field.Field{}, types.NonCumulativeIntType}
 		s.Register(m)
 
 		c := s.Start(ctx)
@@ -53,7 +53,7 @@ func TestDeferred(t *testing.T) {
 
 	Convey("Deferred incr", t, func() {
 		s := NewDeferred(NewInMemory(&target.Task{ServiceName: proto.String("default target")}))
-		m := &fakeMetric{"m", []field.Field{}, types.CumulativeIntType}
+		m := &FakeMetric{"m", []field.Field{}, types.CumulativeIntType}
 		s.Register(m)
 
 		c := s.Start(ctx)
@@ -71,7 +71,7 @@ func TestDeferred(t *testing.T) {
 
 	Convey("Deferred set then set", t, func() {
 		s := NewDeferred(NewInMemory(&target.Task{ServiceName: proto.String("default target")}))
-		m := &fakeMetric{"m", []field.Field{}, types.NonCumulativeIntType}
+		m := &FakeMetric{"m", []field.Field{}, types.NonCumulativeIntType}
 		s.Register(m)
 
 		c := s.Start(ctx)
@@ -87,7 +87,7 @@ func TestDeferred(t *testing.T) {
 
 	Convey("Deferred incr then incr", t, func() {
 		s := NewDeferred(NewInMemory(&target.Task{ServiceName: proto.String("default target")}))
-		m := &fakeMetric{"m", []field.Field{}, types.CumulativeIntType}
+		m := &FakeMetric{"m", []field.Field{}, types.CumulativeIntType}
 		s.Register(m)
 
 		c := s.Start(ctx)
@@ -103,7 +103,7 @@ func TestDeferred(t *testing.T) {
 
 	Convey("Deferred set with fields", t, func() {
 		s := NewDeferred(NewInMemory(&target.Task{ServiceName: proto.String("default target")}))
-		m := &fakeMetric{"m", []field.Field{field.String("f")}, types.NonCumulativeIntType}
+		m := &FakeMetric{"m", []field.Field{field.String("f")}, types.NonCumulativeIntType}
 		s.Register(m)
 
 		c := s.Start(ctx)
@@ -124,7 +124,7 @@ func TestDeferred(t *testing.T) {
 	Convey("Deferred distribution incr", t, func() {
 		s := NewDeferred(NewInMemory(&target.Task{ServiceName: proto.String("default target")}))
 		m := &fakeDistributionMetric{
-			fakeMetric{"m", []field.Field{}, types.CumulativeDistributionType},
+			FakeMetric{"m", []field.Field{}, types.CumulativeDistributionType},
 			distribution.DefaultBucketer,
 		}
 		s.Register(m)
@@ -145,7 +145,7 @@ func TestDeferred(t *testing.T) {
 	Convey("Deferred distribution incr then incr", t, func() {
 		s := NewDeferred(NewInMemory(&target.Task{ServiceName: proto.String("default target")}))
 		m := &fakeDistributionMetric{
-			fakeMetric{"m", []field.Field{}, types.CumulativeDistributionType},
+			FakeMetric{"m", []field.Field{}, types.CumulativeDistributionType},
 			distribution.DefaultBucketer,
 		}
 		s.Register(m)

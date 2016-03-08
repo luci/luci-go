@@ -28,9 +28,10 @@ type fakeStore struct {
 	defaultTarget types.Target
 }
 
-func (s *fakeStore) Register(types.Metric)       {}
-func (s *fakeStore) Unregister(types.Metric)     {}
-func (s *fakeStore) DefaultTarget() types.Target { return s.defaultTarget }
+func (s *fakeStore) Register(types.Metric)         {}
+func (s *fakeStore) Unregister(types.Metric)       {}
+func (s *fakeStore) DefaultTarget() types.Target   { return s.defaultTarget }
+func (s *fakeStore) SetDefaultTarget(types.Target) {}
 func (s *fakeStore) Get(context.Context, types.Metric, time.Time, []interface{}) (interface{}, error) {
 	return nil, nil
 }
@@ -43,6 +44,7 @@ func (s *fakeStore) Incr(context.Context, types.Metric, time.Time, []interface{}
 func (s *fakeStore) ModifyMulti(ctx context.Context, mods []store.Modification) error { return nil }
 func (s *fakeStore) GetAll(context.Context) []types.Cell                              { return s.cells }
 func (s *fakeStore) ResetForUnittest()                                                {}
+func (s *fakeStore) Reset(context.Context, types.Metric)                              {}
 
 type fakeMonitor struct {
 	chunkSize int
@@ -53,7 +55,7 @@ func (m *fakeMonitor) ChunkSize() int {
 	return m.chunkSize
 }
 
-func (m *fakeMonitor) Send(cells []types.Cell) error {
+func (m *fakeMonitor) Send(ctx context.Context, cells []types.Cell) error {
 	m.cells = append(m.cells, cells)
 	return nil
 }

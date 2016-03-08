@@ -29,6 +29,7 @@ type Store interface {
 	Unregister(m types.Metric)
 
 	DefaultTarget() types.Target
+	SetDefaultTarget(t types.Target)
 
 	Get(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}) (value interface{}, err error)
 	Set(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, value interface{}) error
@@ -38,4 +39,5 @@ type Store interface {
 	GetAll(ctx context.Context) []types.Cell
 
 	ResetForUnittest()
+	Reset(ctx context.Context, m types.Metric)
 }

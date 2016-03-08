@@ -37,7 +37,7 @@ func Flush(ctx context.Context) error {
 	}
 	for len(cells) > 0 {
 		count := minInt(chunkSize, len(cells))
-		if err := mon.Send(cells[:count]); err != nil {
+		if err := mon.Send(ctx, cells[:count]); err != nil {
 			return err
 		}
 		cells = cells[count:]

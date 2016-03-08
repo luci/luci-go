@@ -10,19 +10,18 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/tsmon/types"
+	"golang.org/x/net/context"
 )
 
 type debugMonitor struct {
-	logger logging.Logger
-	path   string
+	path string
 }
 
 // NewDebugMonitor returns a Monitor that outputs metrics to a log, and
 // optionally a file on disk.
-func NewDebugMonitor(logger logging.Logger, path string) Monitor {
+func NewDebugMonitor(path string) Monitor {
 	return &debugMonitor{
-		logger: logger,
-		path:   path,
+		path: path,
 	}
 }
 
@@ -30,10 +29,11 @@ func (m *debugMonitor) ChunkSize() int {
 	return 0
 }
 
-func (m *debugMonitor) Send(cells []types.Cell) error {
+func (m *debugMonitor) Send(ctx context.Context, cells []types.Cell) error {
+	logger := logging.Get(ctx)
 	collection := SerializeCells(cells)
 	str := proto.MarshalTextString(collection)
-	m.logger.Infof("Sending ts_mon metrics:\n%s", str)
+	logger.Infof("Sending ts_mon metrics:\n%s", str)
 
 	if m.path != "" {
 		file, err := os.OpenFile(m.path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0664)
@@ -43,7 +43,7 @@ func (m *debugMonitor) Send(cells []types.Cell) error {
 
 		defer func() {
 			if err := file.Close(); err != nil {
-				m.logger.Errorf("Failed to close file %s: %v", m.path, err)
+				logger.Errorf("Failed to close file %s: %v", m.path, err)
 			}
 		}()
 

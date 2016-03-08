@@ -13,10 +13,12 @@ import (
 	"golang.org/x/net/context"
 )
 
+// ClientFactory is a function that creates an HTTP client.
+type ClientFactory func(ctx context.Context) (*http.Client, error)
+
 type pubSubMonitor struct {
-	context.Context
-	ps    pubsub.Connection
-	topic pubsub.Topic
+	clientFactory ClientFactory
+	topic         pubsub.Topic
 }
 
 // NewPubsubMonitor returns a Monitor that sends metrics to the Cloud Pub/Sub
@@ -24,11 +26,10 @@ type pubSubMonitor struct {
 //
 // The provided client should do implement sufficient authentication to send
 // Cloud Pub/Sub requests.
-func NewPubsubMonitor(ctx context.Context, c *http.Client, project string, topic string) (Monitor, error) {
+func NewPubsubMonitor(c ClientFactory, project string, topic string) (Monitor, error) {
 	return &pubSubMonitor{
-		Context: ctx,
-		ps:      pubsub.NewConnection(c),
-		topic:   pubsub.NewTopic(project, topic),
+		clientFactory: c,
+		topic:         pubsub.NewTopic(project, topic),
 	}, nil
 }
 
@@ -36,7 +37,7 @@ func (m *pubSubMonitor) ChunkSize() int {
 	return 1000
 }
 
-func (m *pubSubMonitor) Send(cells []types.Cell) error {
+func (m *pubSubMonitor) Send(ctx context.Context, cells []types.Cell) error {
 	collection := SerializeCells(cells)
 
 	data, err := proto.Marshal(collection)
@@ -44,6 +45,12 @@ func (m *pubSubMonitor) Send(cells []types.Cell) error {
 		return err
 	}
 
-	_, err = m.ps.Publish(m, m.topic, &pubsub.Message{Data: data})
+	client, err := m.clientFactory(ctx)
+	if err != nil {
+		return err
+	}
+
+	ps := pubsub.NewConnection(client)
+	_, err = ps.Publish(ctx, m.topic, &pubsub.Message{Data: data})
 	return err
 }

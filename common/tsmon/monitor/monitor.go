@@ -8,6 +8,7 @@ package monitor
 
 import (
 	"github.com/luci/luci-go/common/tsmon/types"
+	"golang.org/x/net/context"
 )
 
 // A Monitor can send a collection of metrics somewhere.
@@ -17,5 +18,5 @@ type Monitor interface {
 	// Send will be called multiple times.  A ChunkSize of 0 disables chunking.
 	ChunkSize() int
 
-	Send(cells []types.Cell) error
+	Send(ctx context.Context, cells []types.Cell) error
 }

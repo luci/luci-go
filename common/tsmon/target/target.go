@@ -51,6 +51,11 @@ func (t *Task) Hash() uint64 {
 	return h.Sum64()
 }
 
+// Clone returns a copy of this object.
+func (t *Task) Clone() types.Target {
+	return (*Task)(proto.Clone(t.AsProto()).(*pb.Task))
+}
+
 // A NetworkDevice is a machine that has a hostname.
 type NetworkDevice pb.NetworkDevice
 
@@ -82,6 +87,11 @@ func (t *NetworkDevice) Hash() uint64 {
 		t.AsProto().GetHostname(),
 		t.AsProto().GetHostgroup())
 	return h.Sum64()
+}
+
+// Clone returns a copy of this object.
+func (t *NetworkDevice) Clone() types.Target {
+	return (*NetworkDevice)(proto.Clone(t.AsProto()).(*pb.NetworkDevice))
 }
 
 // NewFromFlags returns a Target configured from commandline flags.

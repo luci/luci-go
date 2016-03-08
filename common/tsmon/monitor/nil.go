@@ -6,6 +6,7 @@ package monitor
 
 import (
 	"github.com/luci/luci-go/common/tsmon/types"
+	"golang.org/x/net/context"
 )
 
 type nilMonitor struct{}
@@ -19,6 +20,6 @@ func (m *nilMonitor) ChunkSize() int {
 	return 0
 }
 
-func (m *nilMonitor) Send(cells []types.Cell) error {
+func (m *nilMonitor) Send(ctx context.Context, cells []types.Cell) error {
 	return nil
 }
