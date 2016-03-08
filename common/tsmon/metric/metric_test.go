@@ -24,7 +24,7 @@ func TestMetrics(t *testing.T) {
 	Convey("Int", t, func() {
 		tsmon.SetStore(store.NewInMemory(defaultTarget))
 
-		m := NewInt("foo")
+		m := NewInt("foo", "description")
 		defer tsmon.Unregister(m)
 
 		v, err := m.Get(ctx)
@@ -44,13 +44,13 @@ func TestMetrics(t *testing.T) {
 		err = m.Set(ctx, 42, "field")
 		So(err, ShouldNotBeNil)
 
-		So(func() { NewInt("foo") }, ShouldPanic)
+		So(func() { NewInt("foo", "description") }, ShouldPanic)
 	})
 
 	Convey("Counter", t, func() {
 		tsmon.SetStore(store.NewInMemory(defaultTarget))
 
-		m := NewCounter("foo")
+		m := NewCounter("foo", "description")
 		defer tsmon.Unregister(m)
 
 		v, err := m.Get(ctx)
@@ -71,13 +71,13 @@ func TestMetrics(t *testing.T) {
 		So(v, ShouldEqual, 5)
 		So(err, ShouldBeNil)
 
-		So(func() { NewCounter("foo") }, ShouldPanic)
+		So(func() { NewCounter("foo", "description") }, ShouldPanic)
 	})
 
 	Convey("Float", t, func() {
 		tsmon.SetStore(store.NewInMemory(defaultTarget))
 
-		m := NewFloat("foo")
+		m := NewFloat("foo", "description")
 		defer tsmon.Unregister(m)
 
 		v, err := m.Get(ctx)
@@ -97,13 +97,13 @@ func TestMetrics(t *testing.T) {
 		err = m.Set(ctx, 42.3, "field")
 		So(err, ShouldNotBeNil)
 
-		So(func() { NewFloat("foo") }, ShouldPanic)
+		So(func() { NewFloat("foo", "description") }, ShouldPanic)
 	})
 
 	Convey("FloatCounter", t, func() {
 		tsmon.SetStore(store.NewInMemory(defaultTarget))
 
-		m := NewFloatCounter("foo")
+		m := NewFloatCounter("foo", "description")
 		defer tsmon.Unregister(m)
 
 		v, err := m.Get(ctx)
@@ -124,13 +124,13 @@ func TestMetrics(t *testing.T) {
 		So(v, ShouldAlmostEqual, 5.3)
 		So(err, ShouldBeNil)
 
-		So(func() { NewFloatCounter("foo") }, ShouldPanic)
+		So(func() { NewFloatCounter("foo", "description") }, ShouldPanic)
 	})
 
 	Convey("String", t, func() {
 		tsmon.SetStore(store.NewInMemory(defaultTarget))
 
-		m := NewString("foo")
+		m := NewString("foo", "description")
 		defer tsmon.Unregister(m)
 
 		v, err := m.Get(ctx)
@@ -150,13 +150,13 @@ func TestMetrics(t *testing.T) {
 		err = m.Set(ctx, "hello", "field")
 		So(err, ShouldNotBeNil)
 
-		So(func() { NewString("foo") }, ShouldPanic)
+		So(func() { NewString("foo", "description") }, ShouldPanic)
 	})
 
 	Convey("Bool", t, func() {
 		tsmon.SetStore(store.NewInMemory(defaultTarget))
 
-		m := NewBool("foo")
+		m := NewBool("foo", "description")
 		defer tsmon.Unregister(m)
 
 		v, err := m.Get(ctx)
@@ -176,13 +176,13 @@ func TestMetrics(t *testing.T) {
 		err = m.Set(ctx, true, "field")
 		So(err, ShouldNotBeNil)
 
-		So(func() { NewBool("foo") }, ShouldPanic)
+		So(func() { NewBool("foo", "description") }, ShouldPanic)
 	})
 
 	Convey("CumulativeDistribution", t, func() {
 		tsmon.SetStore(store.NewInMemory(defaultTarget))
 
-		m := NewCumulativeDistribution("foo", distribution.FixedWidthBucketer(10, 20))
+		m := NewCumulativeDistribution("foo", "description", distribution.FixedWidthBucketer(10, 20))
 		defer tsmon.Unregister(m)
 
 		v, err := m.Get(ctx)
@@ -207,13 +207,13 @@ func TestMetrics(t *testing.T) {
 		So(v.Count(), ShouldEqual, 1)
 		So(err, ShouldBeNil)
 
-		So(func() { NewCumulativeDistribution("foo", m.Bucketer()) }, ShouldPanic)
+		So(func() { NewCumulativeDistribution("foo", "description", m.Bucketer()) }, ShouldPanic)
 	})
 
 	Convey("NonCumulativeDistribution", t, func() {
 		tsmon.SetStore(store.NewInMemory(defaultTarget))
 
-		m := NewNonCumulativeDistribution("foo", distribution.FixedWidthBucketer(10, 20))
+		m := NewNonCumulativeDistribution("foo", "description", distribution.FixedWidthBucketer(10, 20))
 		defer tsmon.Unregister(m)
 
 		v, err := m.Get(ctx)
@@ -240,6 +240,6 @@ func TestMetrics(t *testing.T) {
 		So(v.Count(), ShouldEqual, 1)
 		So(err, ShouldBeNil)
 
-		So(func() { NewNonCumulativeDistribution("foo", m.Bucketer()) }, ShouldPanic)
+		So(func() { NewNonCumulativeDistribution("foo", "description", m.Bucketer()) }, ShouldPanic)
 	})
 }

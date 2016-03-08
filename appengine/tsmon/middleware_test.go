@@ -39,7 +39,7 @@ func (m *fakeMonitor) Send(ctx context.Context, cells []types.Cell) error {
 
 func TestMiddleware(t *testing.T) {
 	monitor := &fakeMonitor{}
-	metric := &store.FakeMetric{"m", []field.Field{}, types.CumulativeIntType}
+	metric := &store.FakeMetric{"m", "", []field.Field{}, types.CumulativeIntType}
 
 	f := func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		So(store.IsNilStore(tsmon.Store()), ShouldBeFalse)

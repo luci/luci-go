@@ -98,11 +98,12 @@ type NonCumulativeDistribution interface {
 
 // NewInt returns a new non-cumulative integer gauge metric.  This will panic if
 // another metric already exists with this name.
-func NewInt(name string, fields ...field.Field) Int {
+func NewInt(name string, description string, fields ...field.Field) Int {
 	m := &intMetric{metric{MetricInfo: types.MetricInfo{
-		Name:      name,
-		Fields:    fields,
-		ValueType: types.NonCumulativeIntType,
+		Name:        name,
+		Description: description,
+		Fields:      fields,
+		ValueType:   types.NonCumulativeIntType,
 	}}}
 	tsmon.Register(m)
 	return m
@@ -110,11 +111,12 @@ func NewInt(name string, fields ...field.Field) Int {
 
 // NewCounter returns a new cumulative integer metric.  This will panic if
 // another metric already exists with this name.
-func NewCounter(name string, fields ...field.Field) Counter {
+func NewCounter(name string, description string, fields ...field.Field) Counter {
 	m := &counter{metric{MetricInfo: types.MetricInfo{
-		Name:      name,
-		Fields:    fields,
-		ValueType: types.CumulativeIntType,
+		Name:        name,
+		Description: description,
+		Fields:      fields,
+		ValueType:   types.CumulativeIntType,
 	}}}
 	tsmon.Register(m)
 	return m
@@ -122,11 +124,12 @@ func NewCounter(name string, fields ...field.Field) Counter {
 
 // NewFloat returns a new non-cumulative floating-point gauge metric.  This will
 // panic if another metric already exists with this name.
-func NewFloat(name string, fields ...field.Field) Float {
+func NewFloat(name string, description string, fields ...field.Field) Float {
 	m := &floatMetric{metric{MetricInfo: types.MetricInfo{
-		Name:      name,
-		Fields:    fields,
-		ValueType: types.NonCumulativeFloatType,
+		Name:        name,
+		Description: description,
+		Fields:      fields,
+		ValueType:   types.NonCumulativeFloatType,
 	}}}
 	tsmon.Register(m)
 	return m
@@ -134,11 +137,12 @@ func NewFloat(name string, fields ...field.Field) Float {
 
 // NewFloatCounter returns a new cumulative floating-point metric.  This will
 // panic if another metric already exists with this name.
-func NewFloatCounter(name string, fields ...field.Field) FloatCounter {
+func NewFloatCounter(name string, description string, fields ...field.Field) FloatCounter {
 	m := &floatCounter{metric{MetricInfo: types.MetricInfo{
-		Name:      name,
-		Fields:    fields,
-		ValueType: types.CumulativeFloatType,
+		Name:        name,
+		Description: description,
+		Fields:      fields,
+		ValueType:   types.CumulativeFloatType,
 	}}}
 	tsmon.Register(m)
 	return m
@@ -146,11 +150,12 @@ func NewFloatCounter(name string, fields ...field.Field) FloatCounter {
 
 // NewString returns a new string-valued metric.  This will panic if another
 // metric already exists with this name.
-func NewString(name string, fields ...field.Field) String {
+func NewString(name string, description string, fields ...field.Field) String {
 	m := &stringMetric{metric{MetricInfo: types.MetricInfo{
-		Name:      name,
-		Fields:    fields,
-		ValueType: types.StringType,
+		Name:        name,
+		Description: description,
+		Fields:      fields,
+		ValueType:   types.StringType,
 	}}}
 	tsmon.Register(m)
 	return m
@@ -158,11 +163,12 @@ func NewString(name string, fields ...field.Field) String {
 
 // NewBool returns a new bool-valued metric.  This will panic if another
 // metric already exists with this name.
-func NewBool(name string, fields ...field.Field) Bool {
+func NewBool(name string, description string, fields ...field.Field) Bool {
 	m := &boolMetric{metric{MetricInfo: types.MetricInfo{
-		Name:      name,
-		Fields:    fields,
-		ValueType: types.BoolType,
+		Name:        name,
+		Description: description,
+		Fields:      fields,
+		ValueType:   types.BoolType,
 	}}}
 	tsmon.Register(m)
 	return m
@@ -170,12 +176,13 @@ func NewBool(name string, fields ...field.Field) Bool {
 
 // NewCumulativeDistribution returns a new cumulative-distribution-valued
 // metric.  This will panic if another metric already exists with this name.
-func NewCumulativeDistribution(name string, bucketer *distribution.Bucketer, fields ...field.Field) CumulativeDistribution {
+func NewCumulativeDistribution(name string, description string, bucketer *distribution.Bucketer, fields ...field.Field) CumulativeDistribution {
 	m := &cumulativeDistributionMetric{
 		metric: metric{MetricInfo: types.MetricInfo{
-			Name:      name,
-			Fields:    fields,
-			ValueType: types.CumulativeDistributionType,
+			Name:        name,
+			Description: description,
+			Fields:      fields,
+			ValueType:   types.CumulativeDistributionType,
 		}},
 		bucketer: bucketer,
 	}
@@ -185,12 +192,13 @@ func NewCumulativeDistribution(name string, bucketer *distribution.Bucketer, fie
 
 // NewNonCumulativeDistribution returns a new non-cumulative-distribution-valued
 // metric.  This will panic if another metric already exists with this name.
-func NewNonCumulativeDistribution(name string, bucketer *distribution.Bucketer, fields ...field.Field) NonCumulativeDistribution {
+func NewNonCumulativeDistribution(name string, description string, bucketer *distribution.Bucketer, fields ...field.Field) NonCumulativeDistribution {
 	m := &nonCumulativeDistributionMetric{
 		metric: metric{MetricInfo: types.MetricInfo{
-			Name:      name,
-			Fields:    fields,
-			ValueType: types.NonCumulativeDistributionType,
+			Name:        name,
+			Description: description,
+			Fields:      fields,
+			ValueType:   types.NonCumulativeDistributionType,
 		}},
 		bucketer: bucketer,
 	}
