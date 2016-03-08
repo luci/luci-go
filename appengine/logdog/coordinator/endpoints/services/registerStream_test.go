@@ -59,11 +59,13 @@ func TestRegisterStream(t *testing.T) {
 					Desc:         desc,
 				}
 
-				expResp := &logdog.LogStreamState{
-					Path:          "testing/+/foo/bar",
-					Secret:        secret,
-					ProtoVersion:  logpb.Version,
-					TerminalIndex: -1,
+				expResp := &logdog.RegisterStreamResponse{
+					State: &logdog.LogStreamState{
+						Path:          "testing/+/foo/bar",
+						ProtoVersion:  logpb.Version,
+						TerminalIndex: -1,
+					},
+					Secret: secret,
 				}
 
 				Convey(`Can register the stream.`, func() {

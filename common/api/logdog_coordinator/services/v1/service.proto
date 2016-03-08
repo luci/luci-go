@@ -37,8 +37,41 @@ message RegisterStreamRequest {
   logpb.LogStreamDescriptor desc = 4;
 }
 
+// The response message for the RegisterStream RPC.
+message RegisterStreamResponse {
+  // The state of the requested log stream.
+  LogStreamState state = 1;
+
+  // The log stream's secret.
+  //
+  // Note that the secret is returned! This is okay, since this endpoint is only
+  // accessible to trusted services. The secret can be cached by services to
+  // validate stream information without needing to ping the Coordinator in
+  // between each update.
+  bytes secret = 2;
+}
+
+// LoadStreamRequest loads the current state of a log stream.
+message LoadStreamRequest {
+  // The log stream's path.
+  string path = 1;
+
+  // If true, include the log stream descriptor.
+  bool desc = 2;
+}
+
+// The response message for the LoadStream RPC.
+message LoadStreamResponse {
+  // The state of the requested log stream.
+  LogStreamState state = 1;
+
+  // If requested, the serialized log stream descriptor. The protobuf version
+  // of this descriptor will match the "proto_version" field in "state".
+  bytes desc = 2;
+}
+
 // TerminateStreamRequest is the set of caller-supplied data for the
-// TerminateStream Coordinator service endpoint.
+// TerminateStream service endpoint.
 message TerminateStreamRequest {
   // The log stream's path.
   string path = 1;
@@ -57,7 +90,10 @@ service Services {
   rpc GetConfig(google.protobuf.Empty) returns (GetConfigResponse);
 
   // RegisterStream is an idempotent stream state register operation.
-  rpc RegisterStream(RegisterStreamRequest) returns (LogStreamState);
+  rpc RegisterStream(RegisterStreamRequest) returns (RegisterStreamResponse);
+
+  // LoadStream loads the current state of a log stream.
+  rpc LoadStream(LoadStreamRequest) returns (LoadStreamResponse);
 
   // TerminateStream is an idempotent operation to update the stream's terminal
   // index.

@@ -215,8 +215,7 @@ func TestHandleArchive(t *testing.T) {
 
 		Convey(`When archiving a log stream`, func() {
 			lsDesc := ct.TestLogStreamDescriptor(c, "foo")
-			ls, err := ct.TestLogStream(c, lsDesc)
-			So(err, ShouldBeNil)
+			ls := ct.TestLogStream(c, lsDesc)
 
 			// Utility function to add a log entry for "ls".
 			addTestEntry := func(idxs ...int) {

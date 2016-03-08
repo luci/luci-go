@@ -50,7 +50,6 @@ func matchesLogStream(r *logdog.RegisterStreamRequest, ls *coordinator.LogStream
 func loadLogStreamState(ls *coordinator.LogStream) *logdog.LogStreamState {
 	st := logdog.LogStreamState{
 		Path:          string(ls.Path()),
-		Secret:        ls.Secret,
 		ProtoVersion:  ls.ProtoVersion,
 		TerminalIndex: ls.TerminalIndex,
 		Archived:      ls.Archived(),
@@ -63,68 +62,74 @@ func loadLogStreamState(ls *coordinator.LogStream) *logdog.LogStreamState {
 }
 
 // RegisterStream is an idempotent stream state register operation.
-func (b *Server) RegisterStream(c context.Context, req *logdog.RegisterStreamRequest) (*logdog.LogStreamState, error) {
+func (b *Server) RegisterStream(c context.Context, req *logdog.RegisterStreamRequest) (
+	*logdog.RegisterStreamResponse, error) {
 	if err := Auth(c); err != nil {
 		return nil, err
 	}
+
+	log.Fields{
+		"path": req.Path,
+	}.Infof(c, "Registration request for log stream.")
 
 	path := types.StreamPath(req.Path)
 	if err := path.Validate(); err != nil {
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid path (%s): %s", path, err)
 	}
-	c = log.SetField(c, "path", path)
 
-	if req.ProtoVersion == "" {
+	switch {
+	case req.ProtoVersion == "":
 		return nil, grpcutil.Errf(codes.InvalidArgument, "No protobuf version supplied.")
-	}
-	if req.ProtoVersion != logpb.Version {
+	case req.ProtoVersion != logpb.Version:
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Unrecognized protobuf version.")
-	}
-
-	if len(req.Secret) != types.StreamSecretLength {
+	case len(req.Secret) != types.StreamSecretLength:
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid secret length (%d != %d)",
 			len(req.Secret), types.StreamSecretLength)
-	}
-
-	// Validate our descriptor.
-	if req.Desc == nil {
+	case req.Desc == nil:
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Missing log stream descriptor.")
 	}
+
 	prefix, name := path.Split()
 	if err := req.Desc.Validate(true); err != nil {
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid log stream descriptor: %s", err)
 	}
-	if req.Desc.Prefix != string(prefix) {
+	switch {
+	case req.Desc.Prefix != string(prefix):
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Descriptor prefix does not match path (%s != %s)",
 			req.Desc.Prefix, prefix)
-	}
-	if req.Desc.Name != string(name) {
+	case req.Desc.Name != string(name):
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Descriptor name does not match path (%s != %s)",
 			req.Desc.Name, name)
 	}
 
 	// Already registered? (Non-transactional).
 	ls := coordinator.LogStreamFromPath(path)
-	if err := ds.Get(c).Get(ls); err == nil {
+	switch err := ds.Get(c).Get(ls); err {
+	case nil:
 		// We want this to be idempotent, so validate that it matches the current
 		// configuration and return accordingly.
 		if err := matchesLogStream(req, ls); err != nil {
 			return nil, grpcutil.Errf(codes.AlreadyExists, "Log stream is already incompatibly registered: %v", err)
 		}
 
-		// Return the current stream state.
-		return loadLogStreamState(ls), nil
+	case ds.ErrNoSuchEntity:
+		// The registration is valid, so retain it.
+		if err := tumble.RunMutation(c, &registerStreamMutation{ls, req}); err != nil {
+			log.Fields{
+				log.ErrorKey: err,
+			}.Errorf(c, "Failed to register LogStream.")
+			return nil, filterError(err)
+		}
+
+	default:
+		log.WithError(err).Errorf(c, "Failed to check for log stream.")
+		return nil, grpcutil.Internal
 	}
 
-	// The registration is valid, so retain it.
-	if err := tumble.RunMutation(c, &registerStreamMutation{ls, req}); err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-		}.Errorf(c, "Failed to register LogStream.")
-		return nil, filterError(err)
-	}
-
-	return loadLogStreamState(ls), nil
+	return &logdog.RegisterStreamResponse{
+		State:  loadLogStreamState(ls),
+		Secret: ls.Secret,
+	}, nil
 }
 
 func filterError(err error) error {

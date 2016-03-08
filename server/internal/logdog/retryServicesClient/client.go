@@ -48,12 +48,22 @@ func (c *client) GetConfig(ctx context.Context, in *google.Empty, opts ...grpc.C
 }
 
 func (c *client) RegisterStream(ctx context.Context, in *s.RegisterStreamRequest, opts ...grpc.CallOption) (
-	r *s.LogStreamState, err error) {
+	r *s.RegisterStreamResponse, err error) {
 	err = retry.Retry(ctx, c.f, func() (err error) {
 		r, err = c.c.RegisterStream(ctx, in, opts...)
 		err = wrapTransient(err)
 		return
 	}, callback(ctx, "registering stream"))
+	return
+}
+
+func (c *client) LoadStream(ctx context.Context, in *s.LoadStreamRequest, opts ...grpc.CallOption) (
+	r *s.LoadStreamResponse, err error) {
+	err = retry.Retry(ctx, c.f, func() (err error) {
+		r, err = c.c.LoadStream(ctx, in, opts...)
+		err = wrapTransient(err)
+		return
+	}, callback(ctx, "loading stream"))
 	return
 }
 

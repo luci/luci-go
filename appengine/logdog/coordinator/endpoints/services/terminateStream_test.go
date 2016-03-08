@@ -34,8 +34,7 @@ func TestTerminateStream(t *testing.T) {
 		be := Server{}
 
 		desc := ct.TestLogStreamDescriptor(c, "foo/bar")
-		ls, err := ct.TestLogStream(c, desc)
-		So(err, ShouldBeNil)
+		ls := ct.TestLogStream(c, desc)
 
 		req := logdog.TerminateStreamRequest{
 			Path:          "testing/+/foo/bar",

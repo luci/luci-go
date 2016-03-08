@@ -75,17 +75,20 @@ func (c *coordinatorImpl) RegisterStream(ctx context.Context, s *LogStreamState,
 	}
 
 	resp, err := c.c.RegisterStream(ctx, &req)
-	if err != nil {
+	switch {
+	case err != nil:
 		return nil, err
+	case resp.State == nil:
+		return nil, errors.New("missing stream state")
 	}
 
 	return &LogStreamState{
-		Path:          types.StreamPath(resp.Path),
-		ProtoVersion:  resp.ProtoVersion,
+		Path:          types.StreamPath(resp.State.Path),
+		ProtoVersion:  resp.State.ProtoVersion,
 		Secret:        resp.Secret,
-		TerminalIndex: types.MessageIndex(resp.TerminalIndex),
-		Archived:      resp.Archived,
-		Purged:        resp.Purged,
+		TerminalIndex: types.MessageIndex(resp.State.TerminalIndex),
+		Archived:      resp.State.Archived,
+		Purged:        resp.State.Purged,
 	}, nil
 }
 

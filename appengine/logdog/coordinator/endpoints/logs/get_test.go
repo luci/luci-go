@@ -161,10 +161,7 @@ func TestGet(t *testing.T) {
 
 		// Generate our test stream.
 		desc := ct.TestLogStreamDescriptor(c, "foo/bar")
-		ls, err := ct.TestLogStream(c, desc)
-		if err != nil {
-			panic(err)
-		}
+		ls := ct.TestLogStream(c, desc)
 		if err := ls.Put(ds.Get(c)); err != nil {
 			panic(err)
 		}
@@ -258,7 +255,7 @@ func TestGet(t *testing.T) {
 				if !v {
 					// Add the logs to the in-memory temporary storage.
 					for _, le := range entries {
-						err = ms.Put(&storage.PutRequest{
+						err := ms.Put(&storage.PutRequest{
 							Path:  ls.Path(),
 							Index: types.MessageIndex(le.StreamIndex),
 							Value: protobufs[le.StreamIndex],

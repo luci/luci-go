@@ -56,10 +56,7 @@ func TestHandleArchiveCron(t *testing.T) {
 			{"baz", 10 * time.Minute, false}, // Not candidate for archival (not terminal).
 			{"qux", 24 * time.Hour, false},   // Candidate for non-terminal archival.
 		} {
-			ls, err := ct.TestLogStream(c, ct.TestLogStreamDescriptor(c, v.name))
-			if err != nil {
-				panic(err)
-			}
+			ls := ct.TestLogStream(c, ct.TestLogStreamDescriptor(c, v.name))
 
 			// The entry was created a week ago.
 			ls.Created = clock.Now(c).Add(-(7 * 24 * time.Hour))
@@ -170,10 +167,7 @@ func TestHandleArchiveCron(t *testing.T) {
 					// Create a lot of archival candidate tasks to schedule.
 					var names []string
 					for i := 0; i < 11; i++ {
-						ls, err := ct.TestLogStream(c, ct.TestLogStreamDescriptor(c, fmt.Sprintf("stream-%d", i)))
-						if err != nil {
-							panic(err)
-						}
+						ls := ct.TestLogStream(c, ct.TestLogStreamDescriptor(c, fmt.Sprintf("stream-%d", i)))
 
 						ls.Created = clock.Now(c).Add(-(10 * time.Minute))
 						ls.Updated = ls.Created

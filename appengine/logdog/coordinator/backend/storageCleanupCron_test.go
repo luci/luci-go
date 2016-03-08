@@ -56,10 +56,7 @@ func TestHandleStorageCleanupCron(t *testing.T) {
 			{"baz", 10 * time.Minute, coordinator.LSArchived},
 			{"qux", 24 * time.Hour, coordinator.LSDone},
 		} {
-			ls, err := ct.TestLogStream(c, ct.TestLogStreamDescriptor(c, v.name))
-			if err != nil {
-				panic(err)
-			}
+			ls := ct.TestLogStream(c, ct.TestLogStreamDescriptor(c, v.name))
 
 			// The entry was created a week ago.
 			ls.State = v.ls

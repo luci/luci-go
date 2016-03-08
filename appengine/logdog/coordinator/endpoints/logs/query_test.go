@@ -151,10 +151,7 @@ func TestQuery(t *testing.T) {
 				desc.Tags[p] = ""
 			}
 
-			ls, err := ct.TestLogStream(c, desc)
-			if err != nil {
-				panic(fmt.Errorf("failed to generate log stream %d: %v", i, err))
-			}
+			ls := ct.TestLogStream(c, desc)
 
 			psegs := prefix.Segments()
 			if psegs[0] == "meta" {

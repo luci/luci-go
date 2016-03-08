@@ -66,9 +66,7 @@ func TestHandleStorageCleanup(t *testing.T) {
 		s := httptest.NewServer(r)
 		defer s.Close()
 
-		ls, err := ct.TestLogStream(c, ct.TestLogStreamDescriptor(c, "foo"))
-		So(err, ShouldBeNil)
-
+		ls := ct.TestLogStream(c, ct.TestLogStreamDescriptor(c, "foo"))
 		ls.State = coordinator.LSArchived
 		So(ls.Put(ds.Get(c)), ShouldBeNil)
 		tc.Add(time.Second)
