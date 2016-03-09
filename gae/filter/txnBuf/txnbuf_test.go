@@ -321,42 +321,74 @@ func TestTransactionBuffers(t *testing.T) {
 func TestHuge(t *testing.T) {
 	t.Parallel()
 
-	Convey("inner txn too big allows outer txn", t, func() {
+	Convey("testing datastore enforces thresholds", t, func() {
 		_, _, ds := mkds(dataMultiRoot)
 
-		So(ds.RunInTransaction(func(c context.Context) error {
-			ds := datastore.Get(c)
-
-			So(18, fooSetTo(ds), hugeField)
-
+		Convey("exceeding inner txn size threshold still allows outer", func() {
 			So(ds.RunInTransaction(func(c context.Context) error {
 				ds := datastore.Get(c)
-				So(ds.PutMulti(hugeData), ShouldBeNil)
+
+				So(18, fooSetTo(ds), hugeField)
+
+				So(ds.RunInTransaction(func(c context.Context) error {
+					ds := datastore.Get(c)
+					So(ds.PutMulti(hugeData), ShouldBeNil)
+					return nil
+				}, nil), ShouldErrLike, ErrTransactionTooLarge)
+
 				return nil
-			}, nil), ShouldErrLike, ErrTransactionTooLarge)
+			}, &datastore.TransactionOptions{XG: true}), ShouldBeNil)
 
-			return nil
-		}, &datastore.TransactionOptions{XG: true}), ShouldBeNil)
+			So(18, fooShouldHave(ds), hugeField)
+		})
 
-		So(18, fooShouldHave(ds), hugeField)
-	})
-
-	Convey("outer txn too big prevents inner txn", t, func() {
-		_, _, ds := mkds(dataMultiRoot)
-
-		So(ds.RunInTransaction(func(c context.Context) error {
-			ds := datastore.Get(c)
-
-			So(ds.PutMulti(hugeData), ShouldBeNil)
-
+		Convey("exceeding inner txn count threshold still allows outer", func() {
 			So(ds.RunInTransaction(func(c context.Context) error {
-				panic("never!")
-			}, nil), ShouldErrLike, ErrTransactionTooLarge)
+				ds := datastore.Get(c)
 
-			return nil
-		}, &datastore.TransactionOptions{XG: true}), ShouldBeNil)
+				So(18, fooSetTo(ds), hugeField)
 
-		So(1, fooShouldHave(ds), hugeField)
+				So(ds.RunInTransaction(func(c context.Context) error {
+					ds := datastore.Get(c)
+					p := ds.MakeKey("mom", 1)
+
+					// This will exceed the budget, since we've already done one write in
+					// the parent.
+					for i := 1; i <= DefaultWriteCountBudget; i++ {
+						So(ds.Put(&Foo{ID: int64(i), Parent: p}), ShouldBeNil)
+					}
+					return nil
+				}, nil), ShouldErrLike, ErrTransactionTooLarge)
+
+				return nil
+			}, &datastore.TransactionOptions{XG: true}), ShouldBeNil)
+
+			So(18, fooShouldHave(ds), hugeField)
+		})
+
+		Convey("exceeding threshold in the parent, then retreating in the child is okay", func() {
+			So(ds.RunInTransaction(func(c context.Context) error {
+				ds := datastore.Get(c)
+
+				So(ds.PutMulti(hugeData), ShouldBeNil)
+				So(18, fooSetTo(ds), hugeField)
+
+				// We're over threshold! But the child will delete most of this and
+				// bring us back to normal.
+				So(ds.RunInTransaction(func(c context.Context) error {
+					ds := datastore.Get(c)
+					keys := make([]*datastore.Key, len(hugeData))
+					for i, d := range hugeData {
+						keys[i] = ds.KeyForObj(d)
+					}
+					return ds.DeleteMulti(keys)
+				}, nil), ShouldBeNil)
+
+				return nil
+			}, &datastore.TransactionOptions{XG: true}), ShouldBeNil)
+
+			So(18, fooShouldHave(ds), hugeField)
+		})
 	})
 }
 
