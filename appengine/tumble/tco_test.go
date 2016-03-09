@@ -76,17 +76,16 @@ func TestTailCallOptimization(t *testing.T) {
 
 	t.Parallel()
 
-	Convey("TCO test", t, func() {
+	Convey("Tail Call optimization test", t, func() {
 		testing := NewTesting()
 		c := testing.Context()
 
-		// This will start a chain. We should only be able to handle about 8
-		// of these in a single datastore transaction.
+		// This will start a chain. We should only be able to handle 10 of these in
+		// a single datastore transaction.
 		So(RunMutation(c, &SlowMutation{40}), ShouldBeNil)
 
-		// 6 processed shards shows that we did 5 transactions (of 8 each). The last
-		// shard is empty.
-		So(testing.Drain(c), ShouldEqual, 6)
+		// 4 processed shards shows that we did 4 transactions (of 10 each).
+		So(testing.Drain(c), ShouldEqual, 4)
 
 		ds := datastore.Get(c)
 
