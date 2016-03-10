@@ -27,15 +27,21 @@ import (
 
 type themeContextKey string
 
-type namedBundle struct {
-	name   string
-	bundle *templates.Bundle
+// NamedBundle is a tuple of a name (That matches it's corresponding theme)
+// and a template bundle.
+type NamedBundle struct {
+	Name   string
+	Bundle *templates.Bundle
+	Theme  *Theme
 }
 
 // Theme is the base type for specifying where to find a Theme.
 type Theme struct {
+	// IsTemplate is true if this theme is a Go template type template, and false
+	// if it is a client side (eg. Polymer) type template.
 	IsTemplate bool
-	Name       string
+	// Name is the name of the Theme.
+	Name string
 }
 
 // ThemedHandler is the base type for any milo html handlers.
@@ -65,10 +71,10 @@ func GetAllThemes() []string {
 	return results
 }
 
-// templateBundle is used to render HTML templates. It provides a base args
+// GetTemplateBundles is used to render HTML templates. It provides a base args
 // passed to all templates.
-func getTemplateBundles() []namedBundle {
-	result := []namedBundle{}
+func GetTemplateBundles() []NamedBundle {
+	result := []NamedBundle{}
 	for name, t := range Themes {
 		if t.IsTemplate {
 			templateBundle := &templates.Bundle{
@@ -98,22 +104,22 @@ func getTemplateBundles() []namedBundle {
 				},
 				FuncMap: funcMap,
 			}
-			result = append(result, namedBundle{name, templateBundle})
+			result = append(result, NamedBundle{name, templateBundle, &t})
 		}
 	}
 	return result
 }
 
-// useNamedBundle is like templates.Use, but with the choice of one of many bundles (themes)
-func useNamedBundle(c context.Context, nb namedBundle) (context.Context, error) {
-	err := nb.bundle.EnsureLoaded(c)
-	return context.WithValue(c, themeContextKey(nb.name), nb.bundle), err
+// UseNamedBundle is like templates.Use, but with the choice of one of many bundles (themes)
+func UseNamedBundle(c context.Context, nb NamedBundle) (context.Context, error) {
+	err := nb.Bundle.EnsureLoaded(c)
+	return context.WithValue(c, themeContextKey(nb.Name), nb.Bundle), err
 }
 
 // withNamedBundle is like templates.WithTemplates, but with the choice of one of many bundles (themes)
-func withNamedBundle(h middleware.Handler, nb namedBundle) middleware.Handler {
+func withNamedBundle(h middleware.Handler, nb NamedBundle) middleware.Handler {
 	return func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		c, err := useNamedBundle(c, nb) // calls EnsureLoaded and initializes b.err inside
+		c, err := UseNamedBundle(c, nb) // calls EnsureLoaded and initializes b.err inside
 		if err != nil {
 			http.Error(rw, fmt.Sprintf("Can't load HTML templates.\n%s", err), http.StatusInternalServerError)
 			return
@@ -146,7 +152,7 @@ func Base(h middleware.Handler) httprouter.Handle {
 		server.CookieAuth,
 		&server.InboundAppIDAuthMethod{},
 	}
-	for _, nb := range getTemplateBundles() {
+	for _, nb := range GetTemplateBundles() {
 		h = withNamedBundle(h, nb)
 	}
 	if !appengine.IsDevAppServer() {
