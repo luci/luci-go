@@ -30,9 +30,10 @@ const (
 // it is JSON serializable.
 type Args map[string]interface{}
 
-// Start starts the trace. There can be only one trace at a time. If a trace
-// was already started, the current trace will not be affected and an error
-// will be returned.
+// Start starts the trace.
+//
+// There can be only one trace at a time. If a trace was already started, the
+// current trace will not be affected and an error will be returned.
 //
 // Initial context has pid 1 and tid 1. Stop() must be called on exit to
 // generate a valid JSON trace file.
@@ -40,24 +41,26 @@ type Args map[string]interface{}
 // If stackDepth is non-zero, up to 'stackDepth' PC entries are kept for each
 // log entry.
 //
+// Tracing events before this call are ignored.
+//
 // TODO(maruel): Implement stackDepth.
 func Start(w io.Writer, stackDepth int) error {
-	lockWriter.Lock()
-	defer lockWriter.Unlock()
-	if out != nil {
+	globals.lockWriter.Lock()
+	defer globals.lockWriter.Unlock()
+	if globals.out != nil {
 		return errors.New("tracer was already started")
 	}
 
-	lockContexts.Lock()
-	defer lockContexts.Unlock()
-	contexts = map[interface{}]*context{}
-	nextPID = 2
-	lockID.Lock()
-	defer lockID.Unlock()
+	globals.lockContexts.Lock()
+	defer globals.lockContexts.Unlock()
+	globals.contexts = map[interface{}]*context{}
+	globals.nextPID = 2 // Initial context (the current one) has PID 1.
+	globals.lockID.Lock()
+	defer globals.lockID.Unlock()
 
-	out = w
-	encoder = json.NewEncoder(out)
-	first = true
+	globals.out = w
+	globals.encoder = json.NewEncoder(globals.out)
+	globals.first = true
 	wd, _ := os.Getwd()
 	args := Args{
 		"args":   os.Args,
@@ -78,59 +81,63 @@ func Start(w io.Writer, stackDepth int) error {
 	//   }
 	// }
 	var err error
-	if _, err = out.Write([]byte("{")); err == nil {
-		if _, err = out.Write([]byte("\"context\":")); err == nil {
-			if err = encoder.Encode(args); err == nil {
-				if _, err = out.Write([]byte(",")); err == nil {
-					_, err = out.Write([]byte("\"traceEvents\":["))
-				}
-			}
+	if _, err = globals.out.Write(headerContext); err == nil {
+		if err = globals.encoder.Encode(args); err == nil {
+			_, err = globals.out.Write(headerEvents)
 		}
 	}
 	if err != nil {
 		// Unroll initialization.
-		out = nil
-		contexts = nil
-		nextPID = 0
-		nextID = 0
+		globals.out = nil
+		globals.contexts = nil
+		globals.nextPID = 0
+		globals.nextID = 0
+	} else {
+		// Improve measurements when tracing is enabled.
+		increaseClockFrequency()
 	}
 	return err
 }
 
-// Stop stops the trace. It is important to call it so the trace file is
-// properly formatted.
+// Stop stops the trace.
+//
+// It is important to call it so the trace file is properly formatted. Tracing
+// events after this call are ignored.
 func Stop() {
 	// Wait for on-going traces.
-	wg.Wait()
-	lockWriter.Lock()
-	defer lockWriter.Unlock()
-	lockContexts.Lock()
-	defer lockContexts.Unlock()
-	if out != nil {
+	globals.wg.Wait()
+	globals.lockWriter.Lock()
+	defer globals.lockWriter.Unlock()
+	globals.lockContexts.Lock()
+	defer globals.lockContexts.Unlock()
+	if globals.out != nil {
 		// TODO(maruel): Dump all the stack frames.
-		_, _ = out.Write([]byte("]}"))
+		_, _ = globals.out.Write(footerEvents)
 	}
-	lockID.Lock()
-	defer lockID.Unlock()
-	out = nil
-	contexts = nil
-	nextPID = 0
-	nextID = 0
+	globals.lockID.Lock()
+	defer globals.lockID.Unlock()
+	globals.out = nil
+	globals.contexts = nil
+	globals.nextPID = 0
+	globals.nextID = 0
+
+	// Lower back clock frequency once we're done.
+	lowerClockFrequency()
 }
 
-// Span defines an event with a duration. The caller MUST call the returned
-// callback to 'close' the event.
+// Span defines an event with a duration.
 //
-// The callback doesn't need to be called from the same goroutine as the
-// initial caller.
+// The caller MUST call the returned callback to 'close' the event. The
+// callback doesn't need to be called from the same goroutine as the initial
+// caller.
 func Span(marker interface{}, name string, args Args) func(args Args) {
 	c := getContext(marker)
 	if c == nil {
 		return dummy
 	}
-	tsStart := time.Since(start)
+	tsStart := time.Since(consts.start)
 	return func(argsEnd Args) {
-		tsEnd := time.Since(start)
+		tsEnd := time.Since(consts.start)
 		if tsEnd == tsStart {
 			// Make sure a duration event lasts at least one nanosecond.
 			// It is a problem on systems with very low resolution clock
@@ -139,14 +146,15 @@ func Span(marker interface{}, name string, args Args) func(args Args) {
 			tsEnd++
 		}
 		// Use a pair of eventBegin/eventEnd.
+		// getID() is a locking call.
 		id := getID()
 		// Remove once https://github.com/google/trace-viewer/issues/963 is rolled
 		// into Chrome stable.
 		if args == nil {
-			args = fakeArgs
+			args = consts.fakeArgs
 		}
 		if argsEnd == nil {
-			argsEnd = fakeArgs
+			argsEnd = consts.fakeArgs
 		}
 		c.emit(&event{
 			Type:      eventNestableBegin,
@@ -167,12 +175,13 @@ func Span(marker interface{}, name string, args Args) func(args Args) {
 	}
 }
 
-// Instant registers an intantaneous event.
+// Instant registers an intantaneous event that has no duration.
 func Instant(marker interface{}, name string, s Scope, args Args) {
 	if c := getContext(marker); c != nil {
 		if args == nil {
-			args = fakeArgs
+			args = consts.fakeArgs
 		}
+		// getID() is a locking call.
 		c.emit(&event{
 			Type:     eventNestableInstant,
 			Category: "ignored",
@@ -184,10 +193,13 @@ func Instant(marker interface{}, name string, s Scope, args Args) {
 	}
 }
 
-// CounterSet registers a new value for a counter. The values will be grouped
-// inside the PID and each name displayed as a separate line.
+// CounterSet registers a new value for a counter.
+//
+// The values will be grouped inside the PID and each name displayed as a
+// separate line.
 func CounterSet(marker interface{}, name string, value float64) {
 	if c := getContext(marker); c != nil {
+		// Sets ID so operations can be ordered.
 		c.lock.Lock()
 		c.counters[name] = value
 		c.lock.Unlock()
@@ -195,14 +207,18 @@ func CounterSet(marker interface{}, name string, value float64) {
 			Type: eventCounter,
 			Name: name,
 			Args: Args{"value": value},
+			ID:   getID(),
 		})
 	}
 }
 
-// CounterAdd increments a value for a counter. The values will be grouped
-// inside the PID and each name displayed as a separate line.
+// CounterAdd increments a value for a counter.
+//
+// The values will be grouped inside the PID and each name displayed as a
+// separate line.
 func CounterAdd(marker interface{}, name string, value float64) {
 	if c := getContext(marker); c != nil {
+		// Sets ID so operations can be ordered.
 		c.lock.Lock()
 		value += c.counters[name]
 		c.counters[name] = value
@@ -211,47 +227,62 @@ func CounterAdd(marker interface{}, name string, value float64) {
 			Type: eventCounter,
 			Name: name,
 			Args: Args{"value": value},
+			ID:   getID(),
 		})
 	}
 }
 
-// NewPID assigns a pseudo-process ID for this marker and TID 1. Optionally
-// assigns name to the 'process'.
+// NewPID assigns a pseudo-process ID for this marker and TID 1.
 //
-// The main use is to create a logical group for events.
+// Optionally assigns name to the 'process'. The main use is to create a
+// logical group for events.
 func NewPID(marker interface{}, pname string) {
-	lockContexts.Lock()
-	defer lockContexts.Unlock()
-	if contexts == nil {
+	globals.lockContexts.Lock()
+	defer globals.lockContexts.Unlock()
+	if globals.contexts == nil {
 		return
 	}
-	newPID := nextPID
-	nextPID++
+	newPID := globals.nextPID
+	globals.nextPID++
 	c := &context{pid: newPID, counters: map[string]float64{}}
-	contexts[marker] = c
+	globals.contexts[marker] = c
 	if pname != "" {
 		c.metadata(processName, Args{"name": pname})
 	}
 }
 
 // Discard forgets a context association created with NewPID.
+//
+// If not called, contexts accumulates and form a memory leak.
 func Discard(marker interface{}) {
-	lockContexts.Lock()
-	defer lockContexts.Unlock()
-	delete(contexts, marker)
+	globals.lockContexts.Lock()
+	defer globals.lockContexts.Unlock()
+	delete(globals.contexts, marker)
 }
 
 // Private stuff.
 
-var (
-	// Immutable.
-	start          = time.Now().UTC()
-	defaultContext = context{pid: 1, counters: map[string]float64{}}
+var headerContext = []byte("{\"context\":")
+var headerEvents = []byte(",\"traceEvents\":[")
+var footerEvents = []byte("]}")
+
+// consts is all the constants relating to this package. Having the constants
+// not in a struct makes the code unreadable.
+var consts = struct {
+	start          time.Time
+	defaultContext context
 	// Remove once https://github.com/google/trace-viewer/issues/963 is rolled
 	// into Chrome stable.
-	fakeArgs = map[string]interface{}{"ignored": 0.}
+	fakeArgs map[string]interface{}
+}{
+	start:          time.Now().UTC(),
+	defaultContext: context{pid: 1, counters: map[string]float64{}},
+	fakeArgs:       map[string]interface{}{"ignored": 0.},
+}
 
-	// Mutable.
+// globals is all the globals relating to this package. Having the globals not
+// in a struct makes the code unreadable.
+var globals struct {
 	lockContexts sync.Mutex
 	contexts     map[interface{}]*context
 	nextPID      int
@@ -264,7 +295,7 @@ var (
 
 	lockID sync.Mutex
 	nextID int
-)
+}
 
 // eventType is one of the supported event type by
 // https://github.com/google/trace-viewer.
@@ -359,7 +390,7 @@ type event struct {
 	Args      Args         `json:"args,omitempty"` // Optional. Cannot be used with Object. Any arguments provided for the event. Some of the event types have required argument fields, otherwise, you can put any information you wish in here. The arguments are displayed in Trace Viewer when you view an event in the analysis section.
 	Duration  microseconds `json:"dur,omitempty"`  // Optional. Only for Complete.
 	Scope     Scope        `json:"s,omitempty"`    // Optional. Only for Instant. Defaults to ScopeThread.
-	ID        int          `json:"id,omitempty"`   // Optional. Only for Async or Object.
+	ID        int          `json:"id,omitempty"`   // Optional. Only for Async or Object. The ID is not unique, it is meant to group multiple events together.
 	/* TODO(maruel): Add these if ever used, commented out for performance.
 	StackID         int          `json:"sf,omitempty"`     // Optional. Stack ID found in stackFrames section.
 	Stack           []string     `json:"stack,omitempty"`  // Optional. Raw stack.
@@ -394,17 +425,19 @@ type context struct {
 	counters map[string]float64
 }
 
-// getContext returns a context if tracing is enabled. If the marker is
-// unknown, the default {1, 1} context is returned.
+// getContext returns a context if tracing is enabled.
+//
+// If the marker is unknown, the default {1, 1} context is returned.
+// It is implicitly locking.
 func getContext(marker interface{}) *context {
-	lockContexts.Lock()
-	defer lockContexts.Unlock()
-	if contexts == nil {
+	globals.lockContexts.Lock()
+	defer globals.lockContexts.Unlock()
+	if globals.contexts == nil {
 		return nil
 	}
-	c, ok := contexts[marker]
+	c, ok := globals.contexts[marker]
 	if !ok {
-		return &defaultContext
+		return &consts.defaultContext
 	}
 	return c
 }
@@ -412,26 +445,30 @@ func getContext(marker interface{}) *context {
 // emit asynchronously emits a trace event.
 func (c *context) emit(e *event) {
 	if e.Timestamp == 0 {
-		e.Timestamp = fromDuration(time.Since(start))
+		e.Timestamp = fromDuration(time.Since(consts.start))
 	}
-	wg.Add(1)
+	// sync.WaitGroup.Add() use atomic.AddUint64().
+	globals.wg.Add(1)
 	go func() {
-		defer wg.Done()
+		defer globals.wg.Done()
 		e.Pid = c.pid
 		e.Tid = 1
-		lockWriter.Lock()
-		defer lockWriter.Unlock()
-		if out != nil {
-			if first {
-				first = false
+		// Locking is done in a goroutine to not create implicit synchronization
+		// when tracing.
+		globals.lockWriter.Lock()
+		defer globals.lockWriter.Unlock()
+		if globals.out != nil {
+			if globals.first {
+				globals.first = false
 			} else {
-				if _, err := out.Write([]byte(",")); err != nil {
+				// Writing is done in a goroutine to reduce cost.
+				if _, err := globals.out.Write([]byte(",")); err != nil {
 					log.Printf("failed writing to trace: %s", err)
 					go Stop()
 					return
 				}
 			}
-			if err := encoder.Encode(e); err != nil {
+			if err := globals.encoder.Encode(e); err != nil {
 				log.Printf("failed writing to trace: %s", err)
 				go Stop()
 			}
@@ -446,10 +483,10 @@ func (c *context) metadata(m metadataType, args Args) {
 }
 
 func getID() int {
-	lockID.Lock()
-	defer lockID.Unlock()
-	nextID++
-	return nextID
+	globals.lockID.Lock()
+	defer globals.lockID.Unlock()
+	globals.nextID++
+	return globals.nextID
 }
 
 func dummy(Args) {

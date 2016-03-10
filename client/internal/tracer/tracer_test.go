@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
+	"sort"
 	"testing"
 
 	"github.com/maruel/ut"
@@ -65,11 +66,13 @@ func TestCounterAdd(t *testing.T) {
 			Type: eventCounter,
 			Name: "explosion",
 			Args: Args{"value": 42.},
+			ID:   1,
 		},
 		{
 			Type: eventCounter,
 			Name: "explosion",
 			Args: Args{"value": 45.},
+			ID:   2,
 		},
 	})
 }
@@ -86,11 +89,13 @@ func TestCounterSet(t *testing.T) {
 			Type: eventCounter,
 			Name: "explosion",
 			Args: Args{"value": 42.},
+			ID:   1,
 		},
 		{
 			Type: eventCounter,
 			Name: "explosion",
 			Args: Args{"value": 3.},
+			ID:   2,
 		},
 	})
 }
@@ -131,7 +136,7 @@ func TestSpanSimpleBegin(t *testing.T) {
 			Type:     eventNestableEnd,
 			Category: "ignored",
 			Name:     "action1",
-			Args:     fakeArgs,
+			Args:     consts.fakeArgs,
 			ID:       1,
 		},
 	})
@@ -148,7 +153,7 @@ func TestSpanSimpleEnd(t *testing.T) {
 			Type:     eventNestableBegin,
 			Category: "ignored",
 			Name:     "action1",
-			Args:     fakeArgs,
+			Args:     consts.fakeArgs,
 			ID:       1,
 		},
 		{
@@ -168,17 +173,34 @@ type traceContext struct {
 	Wd   string   `json:"cwd"`
 }
 
+type events []event
+
+func (e events) Len() int { return len(e) }
+func (e events) Less(i, j int) bool {
+	if e[i].Timestamp != e[j].Timestamp {
+		return e[i].Timestamp < e[j].Timestamp
+	}
+	// For Counter operations.
+	return e[i].ID < e[j].ID
+}
+func (e events) Swap(i, j int) { e[i], e[j] = e[j], e[i] }
+
 type traceFile struct {
 	Context traceContext `json:"context"`
-	Events  []event      `json:"traceEvents"`
+	Events  events       `json:"traceEvents"`
 }
 
 func check(t *testing.T, b *bytes.Buffer, expected []event) {
 	actual := &traceFile{}
 	ut.AssertEqual(t, nil, json.Unmarshal(b.Bytes(), actual))
-	// Zap out .Timestamp since it is not deterministic. Convert Duration to
-	// binary value, either 0 or 1 since it's value is either set or not set.
+	// First sort by .Timestamp. Then Zap out .Timestamp since it is not
+	// deterministic. Convert Duration to binary value, either 0 or 1 since it's
+	// value is either set or not set.
+	sort.Sort(actual.Events)
 	for i := range actual.Events {
+		// Timestamp can be zero on low resolution clock (e.g. Windows) when an
+		// event is filed right after tracer.Start(). Using high resolution (1ms)
+		// clock resolution on Windows is optional.
 		ut.AssertEqual(t, true, actual.Events[i].Timestamp >= 0)
 		actual.Events[i].Timestamp = 0
 		if actual.Events[i].Duration != 0 {
