@@ -1,0 +1,20 @@
+syntax = "proto2";
+
+package recipe_engine;
+
+message DepSpec {
+  optional string project_id = 1;
+  optional string url = 2;
+  optional string branch = 3;
+  optional string revision = 4;
+
+  // Treat a subtree of a repo as a whole repo unto itself.
+  optional string path_override = 5;
+}
+
+message Package {
+  optional int32 api_version = 1;  // Version 1
+  optional string project_id = 2;
+  optional string recipes_path = 3;
+  repeated DepSpec deps = 4;
+}
