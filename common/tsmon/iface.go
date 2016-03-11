@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"sync"
 
 	"golang.org/x/net/context"
 
@@ -22,79 +21,73 @@ import (
 	"github.com/luci/luci-go/common/tsmon/types"
 )
 
-var (
-	globalStore   = store.NewNilStore()
-	globalMonitor = monitor.NewNilMonitor()
-	globalFlusher *autoFlusher
-
-	registeredMetrics     = map[string]types.Metric{}
-	registeredMetricsLock sync.RWMutex
-)
-
 // Store returns the global metric store that contains all the metric values for
 // this process.  Applications shouldn't need to access this directly - instead
 // use the metric objects which provide type-safe accessors.
-func Store() store.Store {
-	return globalStore
+func Store(c context.Context) store.Store {
+	return GetState(c).S
 }
 
 // Monitor returns the global monitor that sends metrics to monitoring
 // endpoints.  Defaults to a nil monitor, but changed by InitializeFromFlags.
-func Monitor() monitor.Monitor {
-	return globalMonitor
+func Monitor(c context.Context) monitor.Monitor {
+	return GetState(c).M
 }
 
 // Register is called by metric objects to register themselves.  This will panic
 // if another metric with the same name is already registered.
-func Register(m types.Metric) {
-	registeredMetricsLock.Lock()
-	defer registeredMetricsLock.Unlock()
+func Register(c context.Context, m types.Metric) {
+	state := GetState(c)
+	state.RegisteredMetricsLock.Lock()
+	defer state.RegisteredMetricsLock.Unlock()
 
-	if _, ok := registeredMetrics[m.Info().Name]; ok {
+	if _, ok := state.RegisteredMetrics[m.Info().Name]; ok {
 		panic(fmt.Sprintf("A metric with the name '%s' was already registered", m.Info().Name))
 	}
 
-	registeredMetrics[m.Info().Name] = m
+	state.RegisteredMetrics[m.Info().Name] = m
 
-	if globalStore != nil {
-		globalStore.Register(m)
+	if Store(c) != nil {
+		Store(c).Register(m)
 	}
 }
 
 // Unregister is called by metric objects to unregister themselves.
-func Unregister(m types.Metric) {
-	registeredMetricsLock.Lock()
-	defer registeredMetricsLock.Unlock()
+func Unregister(c context.Context, m types.Metric) {
+	state := GetState(c)
+	state.RegisteredMetricsLock.Lock()
+	defer state.RegisteredMetricsLock.Unlock()
 
-	delete(registeredMetrics, m.Info().Name)
+	delete(state.RegisteredMetrics, m.Info().Name)
 
-	if globalStore != nil {
-		globalStore.Unregister(m)
+	if Store(c) != nil {
+		Store(c).Unregister(m)
 	}
 }
 
 // SetStore changes the global metric store.  All metrics that were registered
 // with the old store will be re-registered on the new store.
-func SetStore(s store.Store) {
-	if s == globalStore {
+func SetStore(c context.Context, s store.Store) {
+	state := GetState(c)
+	oldStore := state.S
+	if s == oldStore {
 		return
 	}
 
-	registeredMetricsLock.RLock()
-	defer registeredMetricsLock.RUnlock()
+	state.RegisteredMetricsLock.RLock()
+	defer state.RegisteredMetricsLock.RUnlock()
 
 	// Register metrics on the new store.
-	for _, m := range registeredMetrics {
+	for _, m := range state.RegisteredMetrics {
 		s.Register(m)
 	}
 
-	oldStore := globalStore
-	globalStore = s
+	state.S = s
 
 	// Unregister metrics from the old store.
 	if oldStore != nil {
-		for _, m := range registeredMetrics {
-			globalStore.Unregister(m)
+		for _, m := range state.RegisteredMetrics {
+			oldStore.Unregister(m)
 		}
 	}
 }
@@ -120,26 +113,28 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 		return err
 	}
 
-	Initialize(mon, store.NewInMemory(t))
+	Initialize(c, mon, store.NewInMemory(t))
 
-	if globalFlusher != nil {
+	state := GetState(c)
+	if state.Flusher != nil {
 		logging.Infof(c, "Canceling previous tsmon auto flush")
-		globalFlusher.stop()
-		globalFlusher = nil
+		state.Flusher.stop()
+		state.Flusher = nil
 	}
 
 	if fl.Flush == "auto" {
-		globalFlusher = &autoFlusher{}
-		globalFlusher.start(c, fl.FlushInterval)
+		state.Flusher = &autoFlusher{}
+		state.Flusher.start(c, fl.FlushInterval)
 	}
 
 	return nil
 }
 
 // Initialize configures the tsmon library with the given monitor and store.
-func Initialize(m monitor.Monitor, s store.Store) {
-	globalMonitor = m
-	SetStore(s)
+func Initialize(c context.Context, m monitor.Monitor, s store.Store) {
+	state := GetState(c)
+	state.M = m
+	SetStore(c, s)
 }
 
 // Shutdown gracefully terminates the tsmon by doing the final flush and
@@ -149,14 +144,15 @@ func Initialize(m monitor.Monitor, s store.Store) {
 //
 // Logs error to standard logger. Does nothing if tsmon wasn't initialized.
 func Shutdown(c context.Context) {
-	if store.IsNilStore(globalStore) {
+	state := GetState(c)
+	if store.IsNilStore(state.S) {
 		return
 	}
 
-	if globalFlusher != nil {
+	if state.Flusher != nil {
 		logging.Debugf(c, "Stopping tsmon auto flush")
-		globalFlusher.stop()
-		globalFlusher = nil
+		state.Flusher.stop()
+		state.Flusher = nil
 	}
 
 	logging.Debugf(c, "Doing the final tsmon flush")
@@ -167,15 +163,15 @@ func Shutdown(c context.Context) {
 	}
 
 	// Reset the state as if 'InitializeFromFlags' was never called.
-	globalMonitor = monitor.NewNilMonitor()
-	SetStore(store.NewNilStore())
+	Initialize(c, monitor.NewNilMonitor(), store.NewNilStore())
 }
 
 // ResetCumulativeMetrics resets only cumulative metrics.
 func ResetCumulativeMetrics(c context.Context) {
-	for _, m := range registeredMetrics {
+	state := GetState(c)
+	for _, m := range state.RegisteredMetrics {
 		if m.Info().ValueType.IsCumulative() {
-			Store().Reset(c, m)
+			state.S.Reset(c, m)
 		}
 	}
 }

@@ -53,8 +53,5 @@ func (nilStore) GetAll(ctx context.Context) []types.Cell {
 	return nil
 }
 
-func (nilStore) ResetForUnittest() {
-}
-
 func (nilStore) Reset(ctx context.Context, m types.Metric) {
 }

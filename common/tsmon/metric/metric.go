@@ -36,147 +36,175 @@ import (
 type Int interface {
 	types.Metric
 
-	Get(ctx context.Context, fieldVals ...interface{}) (int64, error)
-	Set(ctx context.Context, v int64, fieldVals ...interface{}) error
+	Get(c context.Context, fieldVals ...interface{}) (int64, error)
+	Set(c context.Context, v int64, fieldVals ...interface{}) error
 }
 
 // Counter is a cumulative integer metric.
 type Counter interface {
 	types.Metric
 
-	Get(ctx context.Context, fieldVals ...interface{}) (int64, error)
-	Add(ctx context.Context, n int64, fieldVals ...interface{}) error
+	Get(c context.Context, fieldVals ...interface{}) (int64, error)
+	Add(c context.Context, n int64, fieldVals ...interface{}) error
 }
 
 // Float is a non-cumulative floating-point gauge metric.
 type Float interface {
 	types.Metric
 
-	Get(ctx context.Context, fieldVals ...interface{}) (float64, error)
-	Set(ctx context.Context, v float64, fieldVals ...interface{}) error
+	Get(c context.Context, fieldVals ...interface{}) (float64, error)
+	Set(c context.Context, v float64, fieldVals ...interface{}) error
 }
 
 // FloatCounter is a cumulative floating-point metric.
 type FloatCounter interface {
 	types.Metric
 
-	Get(ctx context.Context, fieldVals ...interface{}) (float64, error)
-	Add(ctx context.Context, n float64, fieldVals ...interface{}) error
+	Get(c context.Context, fieldVals ...interface{}) (float64, error)
+	Add(c context.Context, n float64, fieldVals ...interface{}) error
 }
 
 // String is a string-valued metric.
 type String interface {
 	types.Metric
 
-	Get(ctx context.Context, fieldVals ...interface{}) (string, error)
-	Set(ctx context.Context, v string, fieldVals ...interface{}) error
+	Get(c context.Context, fieldVals ...interface{}) (string, error)
+	Set(c context.Context, v string, fieldVals ...interface{}) error
 }
 
 // Bool is a boolean-valued metric.
 type Bool interface {
 	types.Metric
 
-	Get(ctx context.Context, fieldVals ...interface{}) (bool, error)
-	Set(ctx context.Context, v bool, fieldVals ...interface{}) error
+	Get(c context.Context, fieldVals ...interface{}) (bool, error)
+	Set(c context.Context, v bool, fieldVals ...interface{}) error
 }
 
 // CumulativeDistribution is a cumulative-distribution-valued metric.
 type CumulativeDistribution interface {
 	types.DistributionMetric
 
-	Get(ctx context.Context, fieldVals ...interface{}) (*distribution.Distribution, error)
-	Add(ctx context.Context, v float64, fieldVals ...interface{}) error
+	Get(c context.Context, fieldVals ...interface{}) (*distribution.Distribution, error)
+	Add(c context.Context, v float64, fieldVals ...interface{}) error
 }
 
 // NonCumulativeDistribution is a non-cumulative-distribution-valued metric.
 type NonCumulativeDistribution interface {
 	types.DistributionMetric
 
-	Get(ctx context.Context, fieldVals ...interface{}) (*distribution.Distribution, error)
-	Set(ctx context.Context, d *distribution.Distribution, fieldVals ...interface{}) error
+	Get(c context.Context, fieldVals ...interface{}) (*distribution.Distribution, error)
+	Set(c context.Context, d *distribution.Distribution, fieldVals ...interface{}) error
 }
 
 // NewInt returns a new non-cumulative integer gauge metric.  This will panic if
 // another metric already exists with this name.
 func NewInt(name string, description string, fields ...field.Field) Int {
+	return newIntIn(context.Background(), name, description, fields...)
+}
+
+func newIntIn(c context.Context, name string, description string, fields ...field.Field) Int {
 	m := &intMetric{metric{MetricInfo: types.MetricInfo{
 		Name:        name,
 		Description: description,
 		Fields:      fields,
 		ValueType:   types.NonCumulativeIntType,
 	}}}
-	tsmon.Register(m)
+	tsmon.Register(c, m)
 	return m
 }
 
 // NewCounter returns a new cumulative integer metric.  This will panic if
 // another metric already exists with this name.
 func NewCounter(name string, description string, fields ...field.Field) Counter {
+	return newCounterIn(context.Background(), name, description, fields...)
+}
+
+func newCounterIn(c context.Context, name string, description string, fields ...field.Field) Counter {
 	m := &counter{metric{MetricInfo: types.MetricInfo{
 		Name:        name,
 		Description: description,
 		Fields:      fields,
 		ValueType:   types.CumulativeIntType,
 	}}}
-	tsmon.Register(m)
+	tsmon.Register(c, m)
 	return m
 }
 
 // NewFloat returns a new non-cumulative floating-point gauge metric.  This will
 // panic if another metric already exists with this name.
 func NewFloat(name string, description string, fields ...field.Field) Float {
+	return newFloatIn(context.Background(), name, description, fields...)
+}
+
+func newFloatIn(c context.Context, name string, description string, fields ...field.Field) Float {
 	m := &floatMetric{metric{MetricInfo: types.MetricInfo{
 		Name:        name,
 		Description: description,
 		Fields:      fields,
 		ValueType:   types.NonCumulativeFloatType,
 	}}}
-	tsmon.Register(m)
+	tsmon.Register(c, m)
 	return m
 }
 
 // NewFloatCounter returns a new cumulative floating-point metric.  This will
 // panic if another metric already exists with this name.
 func NewFloatCounter(name string, description string, fields ...field.Field) FloatCounter {
+	return newFloatCounterIn(context.Background(), name, description, fields...)
+}
+
+func newFloatCounterIn(c context.Context, name string, description string, fields ...field.Field) FloatCounter {
 	m := &floatCounter{metric{MetricInfo: types.MetricInfo{
 		Name:        name,
 		Description: description,
 		Fields:      fields,
 		ValueType:   types.CumulativeFloatType,
 	}}}
-	tsmon.Register(m)
+	tsmon.Register(c, m)
 	return m
 }
 
 // NewString returns a new string-valued metric.  This will panic if another
 // metric already exists with this name.
 func NewString(name string, description string, fields ...field.Field) String {
+	return newStringIn(context.Background(), name, description, fields...)
+}
+
+func newStringIn(c context.Context, name string, description string, fields ...field.Field) String {
 	m := &stringMetric{metric{MetricInfo: types.MetricInfo{
 		Name:        name,
 		Description: description,
 		Fields:      fields,
 		ValueType:   types.StringType,
 	}}}
-	tsmon.Register(m)
+	tsmon.Register(c, m)
 	return m
 }
 
 // NewBool returns a new bool-valued metric.  This will panic if another
 // metric already exists with this name.
 func NewBool(name string, description string, fields ...field.Field) Bool {
+	return newBoolIn(context.Background(), name, description, fields...)
+}
+
+func newBoolIn(c context.Context, name string, description string, fields ...field.Field) Bool {
 	m := &boolMetric{metric{MetricInfo: types.MetricInfo{
 		Name:        name,
 		Description: description,
 		Fields:      fields,
 		ValueType:   types.BoolType,
 	}}}
-	tsmon.Register(m)
+	tsmon.Register(c, m)
 	return m
 }
 
 // NewCumulativeDistribution returns a new cumulative-distribution-valued
 // metric.  This will panic if another metric already exists with this name.
 func NewCumulativeDistribution(name string, description string, bucketer *distribution.Bucketer, fields ...field.Field) CumulativeDistribution {
+	return newCumulativeDistributionIn(context.Background(), name, description, bucketer, fields...)
+}
+
+func newCumulativeDistributionIn(c context.Context, name string, description string, bucketer *distribution.Bucketer, fields ...field.Field) CumulativeDistribution {
 	m := &cumulativeDistributionMetric{
 		metric: metric{MetricInfo: types.MetricInfo{
 			Name:        name,
@@ -186,13 +214,17 @@ func NewCumulativeDistribution(name string, description string, bucketer *distri
 		}},
 		bucketer: bucketer,
 	}
-	tsmon.Register(m)
+	tsmon.Register(c, m)
 	return m
 }
 
 // NewNonCumulativeDistribution returns a new non-cumulative-distribution-valued
 // metric.  This will panic if another metric already exists with this name.
 func NewNonCumulativeDistribution(name string, description string, bucketer *distribution.Bucketer, fields ...field.Field) NonCumulativeDistribution {
+	return newNonCumulativeDistributionIn(context.Background(), name, description, bucketer, fields...)
+}
+
+func newNonCumulativeDistributionIn(c context.Context, name string, description string, bucketer *distribution.Bucketer, fields ...field.Field) NonCumulativeDistribution {
 	m := &nonCumulativeDistributionMetric{
 		metric: metric{MetricInfo: types.MetricInfo{
 			Name:        name,
@@ -202,14 +234,14 @@ func NewNonCumulativeDistribution(name string, description string, bucketer *dis
 		}},
 		bucketer: bucketer,
 	}
-	tsmon.Register(m)
+	tsmon.Register(c, m)
 	return m
 }
 
 // genericGet is a convenience function that tries to get a metric value from
 // the store and returns the zero value if it didn't exist.
-func (m *metric) genericGet(zero interface{}, ctx context.Context, fieldVals []interface{}) (interface{}, error) {
-	switch ret, err := tsmon.Store().Get(ctx, m, m.fixedResetTime, fieldVals); {
+func (m *metric) genericGet(zero interface{}, c context.Context, fieldVals []interface{}) (interface{}, error) {
+	switch ret, err := tsmon.Store(c).Get(c, m, m.fixedResetTime, fieldVals); {
 	case err != nil:
 		return zero, err
 	case ret == nil:
@@ -229,68 +261,68 @@ func (m *metric) SetFixedResetTime(t time.Time) { m.fixedResetTime = t }
 
 type intMetric struct{ metric }
 
-func (m *intMetric) Get(ctx context.Context, fieldVals ...interface{}) (int64, error) {
-	ret, err := m.genericGet(int64(0), ctx, fieldVals)
+func (m *intMetric) Get(c context.Context, fieldVals ...interface{}) (int64, error) {
+	ret, err := m.genericGet(int64(0), c, fieldVals)
 	return ret.(int64), err
 }
 
-func (m *intMetric) Set(ctx context.Context, v int64, fieldVals ...interface{}) error {
-	return tsmon.Store().Set(ctx, m, m.fixedResetTime, fieldVals, v)
+func (m *intMetric) Set(c context.Context, v int64, fieldVals ...interface{}) error {
+	return tsmon.Store(c).Set(c, m, m.fixedResetTime, fieldVals, v)
 }
 
 type counter struct{ metric }
 
-func (m *counter) Get(ctx context.Context, fieldVals ...interface{}) (int64, error) {
-	ret, err := m.genericGet(int64(0), ctx, fieldVals)
+func (m *counter) Get(c context.Context, fieldVals ...interface{}) (int64, error) {
+	ret, err := m.genericGet(int64(0), c, fieldVals)
 	return ret.(int64), err
 }
 
-func (m *counter) Add(ctx context.Context, n int64, fieldVals ...interface{}) error {
-	return tsmon.Store().Incr(ctx, m, m.fixedResetTime, fieldVals, n)
+func (m *counter) Add(c context.Context, n int64, fieldVals ...interface{}) error {
+	return tsmon.Store(c).Incr(c, m, m.fixedResetTime, fieldVals, n)
 }
 
 type floatMetric struct{ metric }
 
-func (m *floatMetric) Get(ctx context.Context, fieldVals ...interface{}) (float64, error) {
-	ret, err := m.genericGet(float64(0.0), ctx, fieldVals)
+func (m *floatMetric) Get(c context.Context, fieldVals ...interface{}) (float64, error) {
+	ret, err := m.genericGet(float64(0.0), c, fieldVals)
 	return ret.(float64), err
 }
 
-func (m *floatMetric) Set(ctx context.Context, v float64, fieldVals ...interface{}) error {
-	return tsmon.Store().Set(ctx, m, m.fixedResetTime, fieldVals, v)
+func (m *floatMetric) Set(c context.Context, v float64, fieldVals ...interface{}) error {
+	return tsmon.Store(c).Set(c, m, m.fixedResetTime, fieldVals, v)
 }
 
 type floatCounter struct{ metric }
 
-func (m *floatCounter) Get(ctx context.Context, fieldVals ...interface{}) (float64, error) {
-	ret, err := m.genericGet(float64(0.0), ctx, fieldVals)
+func (m *floatCounter) Get(c context.Context, fieldVals ...interface{}) (float64, error) {
+	ret, err := m.genericGet(float64(0.0), c, fieldVals)
 	return ret.(float64), err
 }
 
-func (m *floatCounter) Add(ctx context.Context, n float64, fieldVals ...interface{}) error {
-	return tsmon.Store().Incr(ctx, m, m.fixedResetTime, fieldVals, n)
+func (m *floatCounter) Add(c context.Context, n float64, fieldVals ...interface{}) error {
+	return tsmon.Store(c).Incr(c, m, m.fixedResetTime, fieldVals, n)
 }
 
 type stringMetric struct{ metric }
 
-func (m *stringMetric) Get(ctx context.Context, fieldVals ...interface{}) (string, error) {
-	ret, err := m.genericGet("", ctx, fieldVals)
+func (m *stringMetric) Get(c context.Context, fieldVals ...interface{}) (string, error) {
+	ret, err := m.genericGet("", c, fieldVals)
 	return ret.(string), err
 }
 
-func (m *stringMetric) Set(ctx context.Context, v string, fieldVals ...interface{}) error {
-	return tsmon.Store().Set(ctx, m, m.fixedResetTime, fieldVals, v)
+func (m *stringMetric) Set(c context.Context, v string, fieldVals ...interface{}) error {
+	return tsmon.Store(c).Set(c, m, m.fixedResetTime, fieldVals, v)
 }
 
 type boolMetric struct{ metric }
 
-func (m *boolMetric) Get(ctx context.Context, fieldVals ...interface{}) (bool, error) {
-	ret, err := m.genericGet(false, ctx, fieldVals)
+func (m *boolMetric) Get(c context.Context, fieldVals ...interface{}) (bool, error) {
+	ret, err := m.genericGet(false, c, fieldVals)
 	return ret.(bool), err
 }
 
-func (m *boolMetric) Set(ctx context.Context, v bool, fieldVals ...interface{}) error {
-	return tsmon.Store().Set(ctx, m, m.fixedResetTime, fieldVals, v)
+func (m *boolMetric) Set(c context.Context, v bool, fieldVals ...interface{}) error {
+	return tsmon.Store(c).Set(c, m, m.fixedResetTime, fieldVals, v)
 }
 
 type cumulativeDistributionMetric struct {
@@ -300,13 +332,13 @@ type cumulativeDistributionMetric struct {
 
 func (m *cumulativeDistributionMetric) Bucketer() *distribution.Bucketer { return m.bucketer }
 
-func (m *cumulativeDistributionMetric) Get(ctx context.Context, fieldVals ...interface{}) (*distribution.Distribution, error) {
-	ret, err := m.genericGet((*distribution.Distribution)(nil), ctx, fieldVals)
+func (m *cumulativeDistributionMetric) Get(c context.Context, fieldVals ...interface{}) (*distribution.Distribution, error) {
+	ret, err := m.genericGet((*distribution.Distribution)(nil), c, fieldVals)
 	return ret.(*distribution.Distribution), err
 }
 
-func (m *cumulativeDistributionMetric) Add(ctx context.Context, v float64, fieldVals ...interface{}) error {
-	return tsmon.Store().Incr(ctx, m, m.fixedResetTime, fieldVals, v)
+func (m *cumulativeDistributionMetric) Add(c context.Context, v float64, fieldVals ...interface{}) error {
+	return tsmon.Store(c).Incr(c, m, m.fixedResetTime, fieldVals, v)
 }
 
 type nonCumulativeDistributionMetric struct {
@@ -316,11 +348,11 @@ type nonCumulativeDistributionMetric struct {
 
 func (m *nonCumulativeDistributionMetric) Bucketer() *distribution.Bucketer { return m.bucketer }
 
-func (m *nonCumulativeDistributionMetric) Get(ctx context.Context, fieldVals ...interface{}) (*distribution.Distribution, error) {
-	ret, err := m.genericGet((*distribution.Distribution)(nil), ctx, fieldVals)
+func (m *nonCumulativeDistributionMetric) Get(c context.Context, fieldVals ...interface{}) (*distribution.Distribution, error) {
+	ret, err := m.genericGet((*distribution.Distribution)(nil), c, fieldVals)
 	return ret.(*distribution.Distribution), err
 }
 
-func (m *nonCumulativeDistributionMetric) Set(ctx context.Context, v *distribution.Distribution, fieldVals ...interface{}) error {
-	return tsmon.Store().Set(ctx, m, m.fixedResetTime, fieldVals, v)
+func (m *nonCumulativeDistributionMetric) Set(c context.Context, v *distribution.Distribution, fieldVals ...interface{}) error {
+	return tsmon.Store(c).Set(c, m, m.fixedResetTime, fieldVals, v)
 }

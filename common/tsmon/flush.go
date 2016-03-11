@@ -22,14 +22,14 @@ func minInt(a, b int) int {
 }
 
 // Flush sends all the metrics that are registered in the application.
-func Flush(ctx context.Context) error {
-	mon := Monitor()
+func Flush(c context.Context) error {
+	mon := Monitor(c)
 	if mon == nil {
 		return errors.New("no tsmon Monitor is configured")
 	}
 
 	// Split up the payload into chunks if there are too many cells.
-	cells := Store().GetAll(ctx)
+	cells := Store(c).GetAll(c)
 
 	chunkSize := mon.ChunkSize()
 	if chunkSize == 0 {
@@ -37,7 +37,7 @@ func Flush(ctx context.Context) error {
 	}
 	for len(cells) > 0 {
 		count := minInt(chunkSize, len(cells))
-		if err := mon.Send(ctx, cells[:count]); err != nil {
+		if err := mon.Send(c, cells[:count]); err != nil {
 			return err
 		}
 		cells = cells[count:]
@@ -53,7 +53,7 @@ type autoFlusher struct {
 	flush func(context.Context) error // mocked in unit tests
 }
 
-func (f *autoFlusher) start(ctx context.Context, interval time.Duration) {
+func (f *autoFlusher) start(c context.Context, interval time.Duration) {
 	flush := f.flush
 	if flush == nil {
 		flush = Flush
@@ -63,16 +63,16 @@ func (f *autoFlusher) start(ctx context.Context, interval time.Duration) {
 	killed := make(chan struct{})
 	f.killed = killed
 
-	ctx, f.cancel = context.WithCancel(ctx)
+	c, f.cancel = context.WithCancel(c)
 	go func() {
 		defer close(killed)
 
 		for {
-			if tr := <-clock.After(ctx, interval); tr.Incomplete() {
+			if tr := <-clock.After(c, interval); tr.Incomplete() {
 				return
 			}
-			if err := flush(ctx); err != nil && err != context.Canceled {
-				logging.Warningf(ctx, "Failed to flush tsmon metrics: %v", err)
+			if err := flush(c); err != nil && err != context.Canceled {
+				logging.Warningf(c, "Failed to flush tsmon metrics: %v", err)
 			}
 		}
 	}()

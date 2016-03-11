@@ -246,19 +246,6 @@ func (s *inMemoryStore) ModifyMulti(ctx context.Context, mods []Modification) er
 	return nil
 }
 
-// ResetForUnittest resets all metric values without unregistering any metrics.
-// Useful for unit tests.
-func (s *inMemoryStore) ResetForUnittest() {
-	s.dataLock.Lock()
-	defer s.dataLock.Unlock()
-
-	for _, m := range s.data {
-		m.lock.Lock()
-		m.cells = make(map[cellKey][]*types.CellData)
-		m.lock.Unlock()
-	}
-}
-
 // GetAll efficiently returns all cells in the store.
 func (s *inMemoryStore) GetAll(ctx context.Context) []types.Cell {
 	s.dataLock.Lock()

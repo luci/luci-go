@@ -14,7 +14,6 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/tsmon/field"
-	"github.com/luci/luci-go/common/tsmon/store"
 	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/common/tsmon/types"
 
@@ -23,81 +22,37 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-type fakeStore struct {
-	cells         []types.Cell
-	defaultTarget types.Target
-}
-
-func (s *fakeStore) Register(types.Metric)         {}
-func (s *fakeStore) Unregister(types.Metric)       {}
-func (s *fakeStore) DefaultTarget() types.Target   { return s.defaultTarget }
-func (s *fakeStore) SetDefaultTarget(types.Target) {}
-func (s *fakeStore) Get(context.Context, types.Metric, time.Time, []interface{}) (interface{}, error) {
-	return nil, nil
-}
-func (s *fakeStore) Set(context.Context, types.Metric, time.Time, []interface{}, interface{}) error {
-	return nil
-}
-func (s *fakeStore) Incr(context.Context, types.Metric, time.Time, []interface{}, interface{}) error {
-	return nil
-}
-func (s *fakeStore) ModifyMulti(ctx context.Context, mods []store.Modification) error { return nil }
-func (s *fakeStore) GetAll(context.Context) []types.Cell                              { return s.cells }
-func (s *fakeStore) ResetForUnittest()                                                {}
-func (s *fakeStore) Reset(context.Context, types.Metric)                              {}
-
-type fakeMonitor struct {
-	chunkSize int
-	cells     [][]types.Cell
-}
-
-func (m *fakeMonitor) ChunkSize() int {
-	return m.chunkSize
-}
-
-func (m *fakeMonitor) Send(ctx context.Context, cells []types.Cell) error {
-	m.cells = append(m.cells, cells)
-	return nil
-}
-
 func TestFlush(t *testing.T) {
-	ctx := context.Background()
+	c := context.Background()
 
 	defaultTarget := (*target.Task)(&pb.Task{
 		ServiceName: proto.String("test"),
 	})
 
 	Convey("Sends a metric", t, func() {
-		s := fakeStore{
-			cells: []types.Cell{
-				{
-					types.MetricInfo{
-						Name:      "foo",
-						Fields:    []field.Field{},
-						ValueType: types.StringType,
-					},
-					types.CellData{
-						FieldVals: []interface{}{},
-						ResetTime: time.Unix(1234, 1000),
-						Value:     "bar",
-					},
+		c, s, m := WithFakes(c)
+		s.Cells = []types.Cell{
+			{
+				types.MetricInfo{
+					Name:      "foo",
+					Fields:    []field.Field{},
+					ValueType: types.StringType,
+				},
+				types.CellData{
+					FieldVals: []interface{}{},
+					ResetTime: time.Unix(1234, 1000),
+					Value:     "bar",
 				},
 			},
-			defaultTarget: defaultTarget,
 		}
-		globalStore = &s
+		s.DT = defaultTarget
+		m.CS = 42
 
-		m := fakeMonitor{
-			chunkSize: 42,
-			cells:     [][]types.Cell{},
-		}
-		globalMonitor = &m
+		So(Flush(c), ShouldBeNil)
 
-		So(Flush(ctx), ShouldBeNil)
-
-		So(len(m.cells), ShouldEqual, 1)
-		So(len(m.cells[0]), ShouldEqual, 1)
-		So(m.cells[0][0], ShouldResemble, types.Cell{
+		So(len(m.Cells), ShouldEqual, 1)
+		So(len(m.Cells[0]), ShouldEqual, 1)
+		So(m.Cells[0][0], ShouldResemble, types.Cell{
 			types.MetricInfo{
 				Name:      "foo",
 				Fields:    []field.Field{},
@@ -112,20 +67,13 @@ func TestFlush(t *testing.T) {
 	})
 
 	Convey("Splits up ChunkSize metrics", t, func() {
-		s := fakeStore{
-			cells:         make([]types.Cell, 43),
-			defaultTarget: defaultTarget,
-		}
-		globalStore = &s
-
-		m := fakeMonitor{
-			chunkSize: 42,
-			cells:     [][]types.Cell{},
-		}
-		globalMonitor = &m
+		c, s, m := WithFakes(c)
+		s.Cells = make([]types.Cell, 43)
+		s.DT = defaultTarget
+		m.CS = 42
 
 		for i := 0; i < 43; i++ {
-			s.cells[i] = types.Cell{
+			s.Cells[i] = types.Cell{
 				types.MetricInfo{
 					Name:      "foo",
 					Fields:    []field.Field{},
@@ -139,28 +87,21 @@ func TestFlush(t *testing.T) {
 			}
 		}
 
-		So(Flush(ctx), ShouldBeNil)
+		So(Flush(c), ShouldBeNil)
 
-		So(len(m.cells), ShouldEqual, 2)
-		So(len(m.cells[0]), ShouldEqual, 42)
-		So(len(m.cells[1]), ShouldEqual, 1)
+		So(len(m.Cells), ShouldEqual, 2)
+		So(len(m.Cells[0]), ShouldEqual, 42)
+		So(len(m.Cells[1]), ShouldEqual, 1)
 	})
 
 	Convey("Doesn't split metrics when ChunkSize is 0", t, func() {
-		s := fakeStore{
-			cells:         make([]types.Cell, 43),
-			defaultTarget: defaultTarget,
-		}
-		globalStore = &s
-
-		m := fakeMonitor{
-			chunkSize: 0,
-			cells:     [][]types.Cell{},
-		}
-		globalMonitor = &m
+		c, s, m := WithFakes(c)
+		s.Cells = make([]types.Cell, 43)
+		s.DT = defaultTarget
+		m.CS = 0
 
 		for i := 0; i < 43; i++ {
-			s.cells[i] = types.Cell{
+			s.Cells[i] = types.Cell{
 				types.MetricInfo{
 					Name:      "foo",
 					Fields:    []field.Field{},
@@ -174,21 +115,23 @@ func TestFlush(t *testing.T) {
 			}
 		}
 
-		So(Flush(ctx), ShouldBeNil)
+		So(Flush(c), ShouldBeNil)
 
-		So(len(m.cells), ShouldEqual, 1)
-		So(len(m.cells[0]), ShouldEqual, 43)
+		So(len(m.Cells), ShouldEqual, 1)
+		So(len(m.Cells[0]), ShouldEqual, 43)
 	})
 
 	Convey("No Monitor configured", t, func() {
-		globalMonitor = nil
+		c, _, _ := WithFakes(c)
+		state := GetState(c)
+		state.M = nil
 
-		So(Flush(ctx), ShouldNotBeNil)
+		So(Flush(c), ShouldNotBeNil)
 	})
 
 	Convey("Auto flush works", t, func() {
 		start := time.Unix(1454561232, 0)
-		ctx, tc := testclock.UseTime(ctx, start)
+		c, tc := testclock.UseTime(c, start)
 		tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
 			tc.Add(d)
 		})
@@ -198,13 +141,13 @@ func TestFlush(t *testing.T) {
 			flush: func(c context.Context) error {
 				select {
 				case <-c.Done():
-				case moments <- int(clock.Now(ctx).Sub(start).Seconds()):
+				case moments <- int(clock.Now(c).Sub(start).Seconds()):
 				}
 				return nil
 			},
 		}
 
-		flusher.start(ctx, time.Second)
+		flusher.start(c, time.Second)
 
 		// Each 'flush' gets blocked on sending into 'moments'. Once unblocked, it
 		// advances timer by 'interval' sec (1 sec in the test).

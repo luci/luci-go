@@ -17,6 +17,7 @@ import (
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/common/tsmon"
+	"github.com/luci/luci-go/common/tsmon/store"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -63,59 +64,60 @@ func TestFindGaps(t *testing.T) {
 }
 
 func buildGAETestContext() (context.Context, testclock.TestClock) {
-	tsmon.Store().ResetForUnittest()
+	c := gaetesting.TestingContext()
+	c, clock := testclock.UseTime(c, testclock.TestTimeUTC)
+	datastore.Get(c).Testable().Consistent(true)
+	c = info.Get(c).MustNamespace(instanceNamespace)
+	c = gologger.Use(c)
 
-	ctx := gaetesting.TestingContext()
-	ctx, clock := testclock.UseTime(ctx, testclock.TestTimeUTC)
-	datastore.Get(ctx).Testable().Consistent(true)
-	ctx = info.Get(ctx).MustNamespace(instanceNamespace)
-	ctx = gologger.Use(ctx)
-
-	ctx = info.AddFilters(ctx, func(ctx context.Context, base info.Interface) info.Interface {
+	c = info.AddFilters(c, func(c context.Context, base info.Interface) info.Interface {
 		return &fakeInfo{base}
 	})
 
-	return ctx, clock
+	c, _, _ = tsmon.WithFakes(c)
+	tsmon.GetState(c).S = store.NewNilStore() // So it's recreated by initialize
+
+	return c, clock
 }
 
 func TestAssignTaskNumbers(t *testing.T) {
 	Convey("Assigns task numbers to unassigned instances", t, func() {
-		ctx, _ := buildGAETestContext()
+		c, _ := buildGAETestContext()
 
-		i := getOrCreateInstanceEntity(ctx)
+		i := getOrCreateInstanceEntity(c)
 		So(i.TaskNum, ShouldEqual, -1)
 
 		rec := httptest.NewRecorder()
-		AssignTaskNumbers(ctx, rec, &http.Request{}, nil)
+		AssignTaskNumbers(c, rec, &http.Request{}, nil)
 		So(rec.Code, ShouldEqual, http.StatusOK)
 
-		i = getOrCreateInstanceEntity(ctx)
+		i = getOrCreateInstanceEntity(c)
 		So(i.TaskNum, ShouldEqual, 0)
 	})
 
 	Convey("Doesn't reassign the same task number", t, func() {
-		ctx, clock := buildGAETestContext()
+		c, clock := buildGAETestContext()
 
 		otherInstance := instance{
 			ID:          "foobar",
 			TaskNum:     0,
 			LastUpdated: clock.Now(),
 		}
-		So(datastore.Get(ctx).Put(&otherInstance), ShouldBeNil)
+		So(datastore.Get(c).Put(&otherInstance), ShouldBeNil)
 
-		getOrCreateInstanceEntity(ctx)
+		getOrCreateInstanceEntity(c)
 
 		rec := httptest.NewRecorder()
-		AssignTaskNumbers(ctx, rec, &http.Request{}, nil)
+		AssignTaskNumbers(c, rec, &http.Request{}, nil)
 		So(rec.Code, ShouldEqual, http.StatusOK)
 
-		i := getOrCreateInstanceEntity(ctx)
+		i := getOrCreateInstanceEntity(c)
 		So(i.TaskNum, ShouldEqual, 1)
 	})
 
 	Convey("Expires old instances", t, func() {
-		ctx, clock := buildGAETestContext()
-		ds := datastore.Get(ctx)
+		c, clock := buildGAETestContext()
+		ds := datastore.Get(c)
 
 		oldInstance := instance{
 			ID:          "foobar",
@@ -130,7 +132,7 @@ func TestAssignTaskNumbers(t *testing.T) {
 		clock.Add(instanceExpirationTimeout + time.Second)
 
 		rec := httptest.NewRecorder()
-		AssignTaskNumbers(ctx, rec, &http.Request{}, nil)
+		AssignTaskNumbers(c, rec, &http.Request{}, nil)
 		So(rec.Code, ShouldEqual, http.StatusOK)
 
 		exists, err = ds.Exists(ds.NewKey("Instance", "foobar", 0, nil))

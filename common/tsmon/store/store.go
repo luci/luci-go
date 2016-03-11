@@ -31,13 +31,12 @@ type Store interface {
 	DefaultTarget() types.Target
 	SetDefaultTarget(t types.Target)
 
-	Get(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}) (value interface{}, err error)
-	Set(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, value interface{}) error
-	Incr(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, delta interface{}) error
-	ModifyMulti(ctx context.Context, mods []Modification) error
+	Get(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}) (value interface{}, err error)
+	Set(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, value interface{}) error
+	Incr(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, delta interface{}) error
+	ModifyMulti(c context.Context, mods []Modification) error
 
-	GetAll(ctx context.Context) []types.Cell
+	GetAll(c context.Context) []types.Cell
 
-	ResetForUnittest()
-	Reset(ctx context.Context, m types.Metric)
+	Reset(c context.Context, m types.Metric)
 }

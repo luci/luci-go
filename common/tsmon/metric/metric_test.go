@@ -10,182 +10,175 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/distribution"
+	"github.com/luci/luci-go/common/tsmon/monitor"
 	"github.com/luci/luci-go/common/tsmon/store"
 	"github.com/luci/luci-go/common/tsmon/target"
+	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func makeContext() context.Context {
+	return tsmon.WithState(context.Background(), &tsmon.State{
+		S:                 store.NewInMemory(&target.Task{ServiceName: proto.String("default target")}),
+		M:                 monitor.NewNilMonitor(),
+		RegisteredMetrics: map[string]types.Metric{},
+	})
+}
+
 func TestMetrics(t *testing.T) {
-	ctx := context.Background()
-	defaultTarget := &target.Task{ServiceName: proto.String("default target")}
-
 	Convey("Int", t, func() {
-		tsmon.SetStore(store.NewInMemory(defaultTarget))
+		c := makeContext()
+		m := newIntIn(c, "foo", "description")
 
-		m := NewInt("foo", "description")
-		defer tsmon.Unregister(m)
-
-		v, err := m.Get(ctx)
+		v, err := m.Get(c)
 		So(v, ShouldEqual, 0)
 		So(err, ShouldBeNil)
 
-		v, err = m.Get(ctx, "field")
+		v, err = m.Get(c, "field")
 		So(err, ShouldNotBeNil)
 
-		err = m.Set(ctx, 42)
+		err = m.Set(c, 42)
 		So(err, ShouldBeNil)
 
-		v, err = m.Get(ctx)
+		v, err = m.Get(c)
 		So(v, ShouldEqual, 42)
 		So(err, ShouldBeNil)
 
-		err = m.Set(ctx, 42, "field")
+		err = m.Set(c, 42, "field")
 		So(err, ShouldNotBeNil)
 
-		So(func() { NewInt("foo", "description") }, ShouldPanic)
+		So(func() { newIntIn(c, "foo", "description") }, ShouldPanic)
 	})
 
 	Convey("Counter", t, func() {
-		tsmon.SetStore(store.NewInMemory(defaultTarget))
+		c := makeContext()
+		m := newCounterIn(c, "foo", "description")
 
-		m := NewCounter("foo", "description")
-		defer tsmon.Unregister(m)
-
-		v, err := m.Get(ctx)
+		v, err := m.Get(c)
 		So(v, ShouldEqual, 0)
 		So(err, ShouldBeNil)
 
-		err = m.Add(ctx, 3)
+		err = m.Add(c, 3)
 		So(err, ShouldBeNil)
 
-		v, err = m.Get(ctx)
+		v, err = m.Get(c)
 		So(v, ShouldEqual, 3)
 		So(err, ShouldBeNil)
 
-		err = m.Add(ctx, 2)
+		err = m.Add(c, 2)
 		So(err, ShouldBeNil)
 
-		v, err = m.Get(ctx)
+		v, err = m.Get(c)
 		So(v, ShouldEqual, 5)
 		So(err, ShouldBeNil)
 
-		So(func() { NewCounter("foo", "description") }, ShouldPanic)
+		So(func() { newCounterIn(c, "foo", "description") }, ShouldPanic)
 	})
 
 	Convey("Float", t, func() {
-		tsmon.SetStore(store.NewInMemory(defaultTarget))
+		c := makeContext()
+		m := newFloatIn(c, "foo", "description")
 
-		m := NewFloat("foo", "description")
-		defer tsmon.Unregister(m)
-
-		v, err := m.Get(ctx)
+		v, err := m.Get(c)
 		So(v, ShouldAlmostEqual, 0.0)
 		So(err, ShouldBeNil)
 
-		v, err = m.Get(ctx, "field")
+		v, err = m.Get(c, "field")
 		So(err, ShouldNotBeNil)
 
-		err = m.Set(ctx, 42.3)
+		err = m.Set(c, 42.3)
 		So(err, ShouldBeNil)
 
-		v, err = m.Get(ctx)
+		v, err = m.Get(c)
 		So(v, ShouldAlmostEqual, 42.3)
 		So(err, ShouldBeNil)
 
-		err = m.Set(ctx, 42.3, "field")
+		err = m.Set(c, 42.3, "field")
 		So(err, ShouldNotBeNil)
 
-		So(func() { NewFloat("foo", "description") }, ShouldPanic)
+		So(func() { newFloatIn(c, "foo", "description") }, ShouldPanic)
 	})
 
 	Convey("FloatCounter", t, func() {
-		tsmon.SetStore(store.NewInMemory(defaultTarget))
+		c := makeContext()
+		m := newFloatCounterIn(c, "foo", "description")
 
-		m := NewFloatCounter("foo", "description")
-		defer tsmon.Unregister(m)
-
-		v, err := m.Get(ctx)
+		v, err := m.Get(c)
 		So(v, ShouldAlmostEqual, 0.0)
 		So(err, ShouldBeNil)
 
-		err = m.Add(ctx, 3.1)
+		err = m.Add(c, 3.1)
 		So(err, ShouldBeNil)
 
-		v, err = m.Get(ctx)
+		v, err = m.Get(c)
 		So(v, ShouldAlmostEqual, 3.1)
 		So(err, ShouldBeNil)
 
-		err = m.Add(ctx, 2.2)
+		err = m.Add(c, 2.2)
 		So(err, ShouldBeNil)
 
-		v, err = m.Get(ctx)
+		v, err = m.Get(c)
 		So(v, ShouldAlmostEqual, 5.3)
 		So(err, ShouldBeNil)
 
-		So(func() { NewFloatCounter("foo", "description") }, ShouldPanic)
+		So(func() { newFloatCounterIn(c, "foo", "description") }, ShouldPanic)
 	})
 
 	Convey("String", t, func() {
-		tsmon.SetStore(store.NewInMemory(defaultTarget))
+		c := makeContext()
+		m := newStringIn(c, "foo", "description")
 
-		m := NewString("foo", "description")
-		defer tsmon.Unregister(m)
-
-		v, err := m.Get(ctx)
+		v, err := m.Get(c)
 		So(v, ShouldEqual, "")
 		So(err, ShouldBeNil)
 
-		v, err = m.Get(ctx, "field")
+		v, err = m.Get(c, "field")
 		So(err, ShouldNotBeNil)
 
-		err = m.Set(ctx, "hello")
+		err = m.Set(c, "hello")
 		So(err, ShouldBeNil)
 
-		v, err = m.Get(ctx)
+		v, err = m.Get(c)
 		So(v, ShouldEqual, "hello")
 		So(err, ShouldBeNil)
 
-		err = m.Set(ctx, "hello", "field")
+		err = m.Set(c, "hello", "field")
 		So(err, ShouldNotBeNil)
 
-		So(func() { NewString("foo", "description") }, ShouldPanic)
+		So(func() { newStringIn(c, "foo", "description") }, ShouldPanic)
 	})
 
 	Convey("Bool", t, func() {
-		tsmon.SetStore(store.NewInMemory(defaultTarget))
+		c := makeContext()
+		m := newBoolIn(c, "foo", "description")
 
-		m := NewBool("foo", "description")
-		defer tsmon.Unregister(m)
-
-		v, err := m.Get(ctx)
+		v, err := m.Get(c)
 		So(v, ShouldEqual, false)
 		So(err, ShouldBeNil)
 
-		v, err = m.Get(ctx, "field")
+		v, err = m.Get(c, "field")
 		So(err, ShouldNotBeNil)
 
-		err = m.Set(ctx, true)
+		err = m.Set(c, true)
 		So(err, ShouldBeNil)
 
-		v, err = m.Get(ctx)
+		v, err = m.Get(c)
 		So(v, ShouldEqual, true)
 		So(err, ShouldBeNil)
 
-		err = m.Set(ctx, true, "field")
+		err = m.Set(c, true, "field")
 		So(err, ShouldNotBeNil)
 
-		So(func() { NewBool("foo", "description") }, ShouldPanic)
+		So(func() { newBoolIn(c, "foo", "description") }, ShouldPanic)
 	})
 
 	Convey("CumulativeDistribution", t, func() {
-		tsmon.SetStore(store.NewInMemory(defaultTarget))
+		c := makeContext()
+		m := newCumulativeDistributionIn(c, "foo", "description", distribution.FixedWidthBucketer(10, 20))
 
-		m := NewCumulativeDistribution("foo", "description", distribution.FixedWidthBucketer(10, 20))
-		defer tsmon.Unregister(m)
-
-		v, err := m.Get(ctx)
+		v, err := m.Get(c)
 		So(v, ShouldBeNil)
 		So(err, ShouldBeNil)
 
@@ -193,13 +186,13 @@ func TestMetrics(t *testing.T) {
 		So(m.Bucketer().Width(), ShouldEqual, 10)
 		So(m.Bucketer().NumFiniteBuckets(), ShouldEqual, 20)
 
-		v, err = m.Get(ctx, "field")
+		v, err = m.Get(c, "field")
 		So(err, ShouldNotBeNil)
 
-		err = m.Add(ctx, 5)
+		err = m.Add(c, 5)
 		So(err, ShouldBeNil)
 
-		v, err = m.Get(ctx)
+		v, err = m.Get(c)
 		So(v.Bucketer().GrowthFactor(), ShouldEqual, 0)
 		So(v.Bucketer().Width(), ShouldEqual, 10)
 		So(v.Bucketer().NumFiniteBuckets(), ShouldEqual, 20)
@@ -207,16 +200,14 @@ func TestMetrics(t *testing.T) {
 		So(v.Count(), ShouldEqual, 1)
 		So(err, ShouldBeNil)
 
-		So(func() { NewCumulativeDistribution("foo", "description", m.Bucketer()) }, ShouldPanic)
+		So(func() { newCumulativeDistributionIn(c, "foo", "description", m.Bucketer()) }, ShouldPanic)
 	})
 
 	Convey("NonCumulativeDistribution", t, func() {
-		tsmon.SetStore(store.NewInMemory(defaultTarget))
+		c := makeContext()
+		m := newNonCumulativeDistributionIn(c, "foo", "description", distribution.FixedWidthBucketer(10, 20))
 
-		m := NewNonCumulativeDistribution("foo", "description", distribution.FixedWidthBucketer(10, 20))
-		defer tsmon.Unregister(m)
-
-		v, err := m.Get(ctx)
+		v, err := m.Get(c)
 		So(v, ShouldBeNil)
 		So(err, ShouldBeNil)
 
@@ -224,15 +215,15 @@ func TestMetrics(t *testing.T) {
 		So(m.Bucketer().Width(), ShouldEqual, 10)
 		So(m.Bucketer().NumFiniteBuckets(), ShouldEqual, 20)
 
-		v, err = m.Get(ctx, "field")
+		v, err = m.Get(c, "field")
 		So(err, ShouldNotBeNil)
 
 		d := distribution.New(m.Bucketer())
 		d.Add(15)
-		err = m.Set(ctx, d)
+		err = m.Set(c, d)
 		So(err, ShouldBeNil)
 
-		v, err = m.Get(ctx)
+		v, err = m.Get(c)
 		So(v.Bucketer().GrowthFactor(), ShouldEqual, 0)
 		So(v.Bucketer().Width(), ShouldEqual, 10)
 		So(v.Bucketer().NumFiniteBuckets(), ShouldEqual, 20)
@@ -240,6 +231,6 @@ func TestMetrics(t *testing.T) {
 		So(v.Count(), ShouldEqual, 1)
 		So(err, ShouldBeNil)
 
-		So(func() { NewNonCumulativeDistribution("foo", "description", m.Bucketer()) }, ShouldPanic)
+		So(func() { newNonCumulativeDistributionIn(c, "foo", "description", m.Bucketer()) }, ShouldPanic)
 	})
 }

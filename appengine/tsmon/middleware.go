@@ -27,8 +27,7 @@ import (
 )
 
 var (
-	initializeOnce sync.Once
-	lastFlushed    = struct {
+	lastFlushed = struct {
 		time.Time
 		sync.Mutex
 	}{}
@@ -38,26 +37,26 @@ var (
 // enable tsmon metrics to be sent on App Engine.
 func Middleware(h middleware.Handler) middleware.Handler {
 	return func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		initializeOnce.Do(func() {
+		if store.IsNilStore(tsmon.GetState(c).S) {
 			if err := initialize(c); err != nil {
 				logging.Errorf(c, "Failed to initialize tsmon: %s", err)
 				// Don't fail the request.
 			}
-		})
+		}
 		h(c, rw, r, p)
 		flushIfNeeded(c)
 	}
 }
 
-func initialize(ctx context.Context) error {
+func initialize(c context.Context) error {
 	var mon monitor.Monitor
-	i := info.Get(ctx)
+	i := info.Get(c)
 	if i.IsDevAppServer() {
 		mon = monitor.NewDebugMonitor("")
 	} else {
-		client := func(ctx context.Context) (*http.Client, error) {
+		client := func(c context.Context) (*http.Client, error) {
 			// Create an HTTP client with the default appengine service account.
-			auth, err := gaeauth.Authenticator(ctx, pubsub.PublisherScopes, nil)
+			auth, err := gaeauth.Authenticator(c, pubsub.PublisherScopes, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -80,7 +79,7 @@ func initialize(ctx context.Context) error {
 		TaskNum:     proto.Int32(-1),
 	}
 
-	tsmon.Initialize(mon, store.NewInMemory(tar))
+	tsmon.Initialize(c, mon, store.NewInMemory(tar))
 	return nil
 }
 
@@ -111,10 +110,10 @@ func updateLastFlushed(c context.Context) bool {
 func updateInstanceEntityAndFlush(c context.Context) error {
 	c = info.Get(c).MustNamespace(instanceNamespace)
 
-	task, ok := tsmon.Store().DefaultTarget().(*target.Task)
+	task, ok := tsmon.Store(c).DefaultTarget().(*target.Task)
 	if !ok {
 		// tsmon probably failed to initialize - just do nothing.
-		return fmt.Errorf("default tsmon target is not a Task: %v", tsmon.Store().DefaultTarget())
+		return fmt.Errorf("default tsmon target is not a Task: %v", tsmon.Store(c).DefaultTarget())
 	}
 
 	logger := logging.Get(c)
@@ -142,7 +141,7 @@ func updateInstanceEntityAndFlush(c context.Context) error {
 	}
 
 	task.TaskNum = proto.Int32(int32(entity.TaskNum))
-	tsmon.Store().SetDefaultTarget(task)
+	tsmon.Store(c).SetDefaultTarget(task)
 
 	// Update the instance entity and put it back in the datastore asynchronously.
 	entity.LastUpdated = now
