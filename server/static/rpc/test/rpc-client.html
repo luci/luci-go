@@ -152,6 +152,14 @@
       });
     });
 
+    test('authenticated', function() {
+      client.accessToken = 'deadbeef';
+      var call = client.call();
+      expect(call.xhr.requestHeaders['authorization']).to.equal(
+          'Bearer deadbeef'
+      );
+    });
+
     test('with timeout', function() {
       client.timeout = 1000;
       var call = client.call();

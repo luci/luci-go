@@ -10,6 +10,8 @@
     href="../bower_components/html5-history-anchor/html5-history-anchor.html">
 <link rel="stylesheet"
     href="https://fonts.googleapis.com/css?family=Roboto:400,300,300italic,400italic,500,500italic,700,700italic">
+<link rel="import"
+    href="../bower_components/google-signin/google-signin-aware.html">
 
 <link rel="import" href="/static/common/rpc/rpc-client.html">
 
@@ -17,6 +19,7 @@
 <link rel="import" href="rpc-method.html">
 <link rel="import" href="rpc-service-list.html">
 <link rel="import" href="rpc-service.html">
+<link rel="import" href="../auth/auth-signin.html">
 
 <!-- The `rpc-explorer` is the top-level element of RPC Explorer -->
 <dom-module id="rpc-explorer">
@@ -27,6 +30,10 @@
       }
       :host {
         font-family: 'RobotoDraft','Roboto',arial,sans-serif;
+      }
+      #signinContainer {
+        margin-right: 10px;
+        margin-top: 10px;
       }
     </style>
 
@@ -56,6 +63,15 @@
           </span>
         </span>
       </div>
+
+      <div class="navbar-collapse collapse">
+        <div class="nav navbar-nav navbar-right">
+          <div id="signinContainer">
+            <auth-signin client-id="[[clientId]]"></auth-signin>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <ol class="breadcrumb">
@@ -104,6 +120,8 @@
           value: '',
           observer: '_onRootPathChanged'
         },
+
+        clientId: String,
 
         service: String,
 

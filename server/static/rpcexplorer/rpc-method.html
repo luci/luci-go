@@ -5,6 +5,7 @@
   -->
 
 <link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/google-signin/google-signin-aware.html">
 
 <link rel="import" href="/static/common/rpc/rpc-client.html">
 
@@ -22,6 +23,11 @@
         margin: 5px;
       }
     </style>
+
+    <google-signin-aware id="signin" scopes="email"
+      on-google-signin-aware-success="_onSignin"
+      on-google-signin-aware-signed-out="_onSignOut"
+      ></google-signin-aware>
 
     <div on-keypress="_onKeypress">
       <rpc-client
@@ -122,6 +128,14 @@
           type: Object,
           value: null
         }
+      },
+
+      _onSignin: function(e) {
+        this.$.client.accessToken = e.detail.access_token;
+      },
+
+      _onSignOut: function() {
+        this.$.client.accessToken = null;
       },
 
       _resolveMethod: function(desc, service, method) {

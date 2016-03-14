@@ -70,6 +70,14 @@
         },
 
         /**
+          * OAuth 2.0 access token.
+          */
+        accessToken: {
+          type: String,
+          readOnly: true
+        },
+
+        /**
          * A promise that resolves when the response comes back, or rejects
          * if there is an error.
          *
@@ -156,6 +164,9 @@
         if (this.timeout) {
           headers['x-prpc-timeout'] = this.timeout + 'm';
         }
+        if (this.accessToken) {
+          headers['authorization'] = 'Bearer ' + this.accessToken;
+        }
 
         return {
           url: this._generateUrl(),
@@ -179,6 +190,7 @@
         this._setMethod(options.method);
         this._setRequest(options.request);
         this._setTimeout(options.timeout);
+        this._setAccessToken(options.accessToken);
 
         this._ironRequest = document.createElement('iron-request');
         this._ironRequest.send(this.toRequestOptions());

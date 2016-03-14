@@ -72,8 +72,16 @@
         },
 
         /**
-         * If true, automatically sends a request when host, service, method
-         * or request changes.
+          * OAuth 2.0 access token to use in RPC.
+          */
+        accessToken: {
+          type: String,
+          value: null
+        },
+
+        /**
+         * If true, automatically sends a request when host, service, method,
+         * request or accessToken changes.
          */
         auto: {
           type: Boolean,
@@ -152,7 +160,8 @@
       },
 
       observers: [
-        '_callOptionsChanged(host, service, method, request.*, auto)'
+        ('_callOptionsChanged(' +
+          'host, service, method, request.*, accessToken, auto)')
       ],
 
       _canCall: function () {
@@ -179,7 +188,8 @@
           service: this.service,
           method: this.method,
           request: this.request,
-          timeout: this.timeout
+          timeout: this.timeout,
+          accessToken: this.accessToken
         });
         this._setLastCall(call);
 
