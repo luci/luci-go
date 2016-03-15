@@ -606,6 +606,7 @@ li {
 .log * {
   vlink: #800080;
   font-family: "Courier New", courier, monotype, monospace;
+  font-size: 1.5em;
 }
 
 span.stdout {

@@ -1,13 +1,13 @@
 {
   "Summary": {
     "Label": "",
-    "Status": "Failure",
+    "Status": "InfraFailure",
     "MainLink": null,
     "SubLink": null,
     "Progress": null,
-    "Started": "",
-    "Finished": "",
-    "Duration": 0,
+    "Started": "2016-03-14T10:00:01.850710",
+    "Finished": "2016-03-14T11:00:18.486020",
+    "Duration": 3615,
     "Type": "Recipe",
     "LevelsDeep": 0,
     "Text": null
@@ -61,60 +61,6 @@
       "Text": [
         "\u003cbr/\u003erunning recipe: \"v8\""
       ]
-    },
-    {
-      "Label": "bot_update",
-      "Status": "InfraFailure",
-      "MainLink": {
-        "Label": "stdio",
-        "Img": "",
-        "Subtitle": "",
-        "URL": "foo/steps/bot_update/0/stdio",
-        "Alt": ""
-      },
-      "SubLink": [
-        {
-          "Label": "/bot_update/0/logs/json.output__invalid_",
-          "Img": "",
-          "Subtitle": "",
-          "URL": "foo/steps/bot_update/0/logs/json.output__invalid_/0",
-          "Alt": ""
-        }
-      ],
-      "Progress": null,
-      "Started": "0001-02-03T04:05:06Z",
-      "Finished": "",
-      "Duration": 0,
-      "Type": "Step",
-      "LevelsDeep": 0,
-      "Text": null
-    },
-    {
-      "Label": "Uncaught Exception",
-      "Status": "InfraFailure",
-      "MainLink": {
-        "Label": "stdio",
-        "Img": "",
-        "Subtitle": "",
-        "URL": "foo/steps/Uncaught_Exception/0/stdio",
-        "Alt": ""
-      },
-      "SubLink": [
-        {
-          "Label": "/Uncaught_Exception/0/logs/exception",
-          "Img": "",
-          "Subtitle": "",
-          "URL": "foo/steps/Uncaught_Exception/0/logs/exception/0",
-          "Alt": ""
-        }
-      ],
-      "Progress": null,
-      "Started": "0001-02-03T04:05:06Z",
-      "Finished": "",
-      "Duration": 0,
-      "Type": "Step",
-      "LevelsDeep": 0,
-      "Text": null
     }
   ],
   "PropertyGroup": [

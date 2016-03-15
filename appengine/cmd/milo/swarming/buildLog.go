@@ -19,7 +19,11 @@ type BuildLog struct {
 
 func swarmingBuildLogImpl(c context.Context, server string, id string, logname string) (*BuildLog, error) {
 	// Fetch the data from Swarming
-	body, err := getSwarmingLog(server, id, c)
+	sc, err := getSwarmingClient(c, server)
+	if err != nil {
+		return nil, err
+	}
+	body, err := getSwarmingLog(sc, id)
 	if err != nil {
 		return nil, err
 	}

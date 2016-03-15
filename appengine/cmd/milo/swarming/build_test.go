@@ -42,6 +42,7 @@ func TestBuild(t *testing.T) {
 	}{
 		{"debug:build-patch-failure", "build-patch-failure.json"},
 		{"debug:build-exception", "build-exception.json"},
+		{"debug:build-timeout", "build-timeout.json"},
 	}
 
 	if *generate {

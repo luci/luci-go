@@ -4,9 +4,9 @@ package resp
 
 import "fmt"
 
-const _Status_name = "NotRunRunningSuccessFailureInfraFailureDependencyFailureWaitingDependency"
+const _Status_name = "NotRunRunningSuccessFailureWarningInfraFailureDependencyFailureWaitingDependency"
 
-var _Status_index = [...]uint8{0, 6, 13, 20, 27, 39, 56, 73}
+var _Status_index = [...]uint8{0, 6, 13, 20, 27, 34, 46, 63, 80}
 
 func (i Status) String() string {
 	if i < 0 || i >= Status(len(_Status_index)-1) {
@@ -15,9 +15,9 @@ func (i Status) String() string {
 	return _Status_name[_Status_index[i]:_Status_index[i+1]]
 }
 
-const _ComponentType_name = "RecipeStep"
+const _ComponentType_name = "RecipeStepSummary"
 
-var _ComponentType_index = [...]uint8{0, 6, 10}
+var _ComponentType_index = [...]uint8{0, 6, 10, 17}
 
 func (i ComponentType) String() string {
 	if i < 0 || i >= ComponentType(len(_ComponentType_index)-1) {

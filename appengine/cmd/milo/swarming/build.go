@@ -9,11 +9,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/client/logdog/annotee"
+	swarming "github.com/luci/luci-go/common/api/swarming/swarming/v1"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/logging"
 	miloProto "github.com/luci/luci-go/common/proto/milo"
@@ -35,57 +38,89 @@ func resolveServer(server string) string {
 	}
 }
 
-// swarmingIDs that beging with "debug:" wil redirect to json found in
-// /testdata/
-func getSwarmingLog(server string, swarmingID string, c context.Context) ([]byte, error) {
+func getSwarmingClient(c context.Context, server string) (*swarming.Service, error) {
+	client := transport.GetClient(client.UseServiceAccountTransport(
+		c, []string{"https://www.googleapis.com/auth/userinfo.email"}, nil))
+	sc, err := swarming.New(client)
+	if err != nil {
+		return nil, err
+	}
+	sc.BasePath = fmt.Sprintf("https://%s/_ah/api/swarming/v1/", resolveServer(server))
+	return sc, nil
+}
+
+func getSwarmingLog(sc *swarming.Service, taskID string) ([]byte, error) {
+	tsc := sc.Task.Stdout(taskID)
+	tsco, err := tsc.Do()
+	if err != nil {
+		return nil, err
+	}
+	// tsc.Do() should return an error if the http status code is not okay.
+	return []byte(tsco.Output), nil
+}
+
+func getSwarmingResult(
+	sc *swarming.Service, taskID string) (*swarming.SwarmingRpcsTaskResult, error) {
+	trc := sc.Task.Result(taskID)
+	srtr, err := trc.Do()
+	if err != nil {
+		return nil, err
+	}
+	return srtr, nil
+}
+
+func getSwarming(c context.Context, server string, taskID string) (
+	*swarming.SwarmingRpcsTaskResult, []byte, error) {
 	// Fetch the debug file instead.
-	if strings.HasPrefix(swarmingID, "debug:") {
-		filename := strings.Join(
-			[]string{"testdata", swarmingID[6:]}, "/")
-		b, err := ioutil.ReadFile(filename)
+	if strings.HasPrefix(taskID, "debug:") {
+		logFilename := filepath.Join("testdata", taskID[6:])
+		swarmFilename := fmt.Sprintf("%s.swarm", logFilename)
+		b, err := ioutil.ReadFile(logFilename)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		return b, nil
+		s, err := ioutil.ReadFile(swarmFilename)
+		if err != nil {
+			return nil, nil, err
+		}
+		sr := &swarming.SwarmingRpcsTaskResult{}
+		err = json.Unmarshal(s, sr)
+		if err != nil {
+			return nil, nil, err
+		}
+		return sr, b, nil
 	}
 
-	swarmingURL := fmt.Sprintf(
-		"https://%s/_ah/api/swarming/v1/task/%s/stdout",
-		resolveServer(server), swarmingID)
-	client := transport.GetClient(client.UseServiceAccountTransport(c,
-		[]string{"https://www.googleapis.com/auth/userinfo.email"}, nil))
-	resp, err := client.Get(swarmingURL)
+	var log []byte
+	var sr *swarming.SwarmingRpcsTaskResult
+	var errLog, errRes error
+	var wg sync.WaitGroup
+	sc, err := getSwarmingClient(c, server)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("Failed to fetch %s, status code %d", swarmingURL, resp.StatusCode)
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		log, errLog = getSwarmingLog(sc, taskID)
+	}()
+	go func() {
+		defer wg.Done()
+		sr, errRes = getSwarmingResult(sc, taskID)
+	}()
+	wg.Wait()
+	if errRes == nil {
+		return sr, log, errRes
 	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	// Decode the JSON and extract the actual log.
-	sm := map[string]*string{}
-	if err := json.Unmarshal(body, &sm); err != nil {
-		return nil, err
-	}
-
-	// Decode the data using annotee.
-	if output, ok := sm["output"]; ok {
-		return []byte(*output), nil
-	}
-	return nil, fmt.Errorf("Swarming response did not contain output\n%s", body)
+	return sr, log, errLog
 }
 
 // TODO(hinoka): This should go in a more generic file, when milo has more
 // than one page.
-func getNavi(swarmingID string, URL string) *resp.Navigation {
+func getNavi(taskID string, URL string) *resp.Navigation {
 	navi := &resp.Navigation{}
 	navi.PageTitle = &resp.Link{
-		Label: swarmingID,
+		Label: taskID,
 		URL:   URL,
 	}
 	navi.SiteTitle = &resp.Link{
@@ -172,13 +207,38 @@ func miloBuildStep(
 }
 
 // Takes a butler client and return a fully populated milo build.
-func buildFromClient(c context.Context, swarmingID string, url string, s *memoryClient) (*resp.MiloBuild, error) {
+func buildFromClient(
+	c context.Context, taskID string, url string, s *memoryClient, sr *swarming.SwarmingRpcsTaskResult) (
+	*resp.MiloBuild, error) {
 	// Build the basic page response.
 	build := &resp.MiloBuild{}
 
+	// Specify the result.
+	if sr.State == "RUNNING" {
+		build.Summary.Status = resp.Running
+	} else if sr.State == "PENDING" {
+		build.Summary.Status = resp.NotRun
+	} else if sr.InternalFailure == true || sr.State == "BOT_DIED" || sr.State == "EXPIRED" || sr.State == "TIMED_OUT" {
+		build.Summary.Status = resp.InfraFailure
+	} else if sr.Failure == true || sr.State == "CANCELLED" {
+		// Cancelled build is user action, so it is not an infra failure.
+		build.Summary.Status = resp.Failure
+	} else {
+		build.Summary.Status = resp.Success
+	}
+
+	// Build times
+	build.Summary.Started = sr.StartedTs
+	build.Summary.Finished = sr.CompletedTs
+	build.Summary.Duration = uint64(sr.Duration)
+
 	// Now Fetch the main annotation of the build.
 	mainAnno := &miloProto.Step{}
-	proto.Unmarshal(s.stream["annotations"].dg, mainAnno)
+	sa, ok := s.stream["annotations"]
+	if !ok {
+		return nil, fmt.Errorf("Missing annotations stream in %s", s)
+	}
+	proto.Unmarshal(sa.dg, mainAnno)
 
 	// Now fill in each of the step components.
 	// TODO(hinoka): This is totes cachable.
@@ -227,9 +287,9 @@ func clientFromAnnotatedLog(ctx context.Context, log []byte) (*memoryClient, err
 	return c, nil
 }
 
-func swarmingBuildImpl(c context.Context, URL string, server string, id string) (*resp.MiloBuild, error) {
+func swarmingBuildImpl(c context.Context, URL string, server string, taskID string) (*resp.MiloBuild, error) {
 	// Fetch the data from Swarming
-	body, err := getSwarmingLog(server, id, c)
+	sr, body, err := getSwarming(c, server, taskID)
 	if err != nil {
 		return nil, err
 	}
@@ -240,5 +300,5 @@ func swarmingBuildImpl(c context.Context, URL string, server string, id string) 
 		return nil, err
 	}
 
-	return buildFromClient(c, id, URL, client)
+	return buildFromClient(c, taskID, URL, client, sr)
 }

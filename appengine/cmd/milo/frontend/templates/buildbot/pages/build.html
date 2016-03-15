@@ -6,16 +6,24 @@
   <div class="header">
     {{.Build.Summary.Label}}
   </div>
-  <hr/>
   <div class="content">
     <h1>{{.Build.Summary.Label}}</h1>
 
     <div class="column">
 
       <h2>Results:</h2>
-
-      <p class="success result"> Build successful </p>
-
+      {{ if eq .Build.Summary.Status.String "Running" }}
+        <p class="running result">Build running</p>
+      {{ else if eq .Build.Summary.Status.String "Success" }}
+        <p class="success result">Build successful</p>
+      {{ else if eq .Build.Summary.Status.String "InfraFailure" }}
+        <p class="exception result">Internal Failure</p>
+      {{ else if eq .Build.Summary.Status.String "Failure" }}
+        <p class="failure result">Failed</p> <!--- TODO(hinoka): step text -->
+      {{ else }}
+        <p class="failure result">Unknown status {{.Build.Summary.Status.String }}</p>
+        <!--- TODO(hinoka): step text -->
+      {{ end }}
       <h2>Steps and Logfiles:</h2>
       <ol>
         {{ range .Build.Components  }}

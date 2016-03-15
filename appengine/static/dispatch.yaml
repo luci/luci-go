@@ -4,5 +4,3 @@
 dispatch:
   - url: "*/rpcexplorer/*"
     module: static
-  - url: "*/static/*"
-    module: static
