@@ -17,18 +17,19 @@ import (
 	"github.com/luci/luci-go/client/internal/lhttp"
 	"github.com/luci/luci-go/client/internal/retry"
 	"github.com/luci/luci-go/client/internal/tracer"
+	"github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
 	"github.com/luci/luci-go/common/isolated"
 )
 
 // IsolateServer is the low-level client interface to interact with an Isolate
 // server.
 type IsolateServer interface {
-	ServerCapabilities() (*isolated.ServerCapabilities, error)
+	ServerCapabilities() (*isolateservice.HandlersEndpointsV1ServerDetails, error)
 	// Contains looks up cache presence on the server of multiple items.
 	//
 	// The returned list is in the same order as 'items', with entries nil for
 	// items that were present.
-	Contains(items []*isolated.DigestItem) ([]*PushState, error)
+	Contains(items []*isolateservice.HandlersEndpointsV1Digest) ([]*PushState, error)
 	Push(state *PushState, src io.ReadSeeker) error
 }
 
@@ -37,7 +38,7 @@ type IsolateServer interface {
 //
 // Its content is implementation specific.
 type PushState struct {
-	status    isolated.PreuploadStatus
+	status    isolateservice.HandlersEndpointsV1PreuploadStatus
 	digest    isolated.HexDigest
 	size      int64
 	uploaded  bool
@@ -87,20 +88,20 @@ func (i *isolateServer) postJSON(resource string, headers map[string]string, in,
 	return err
 }
 
-func (i *isolateServer) ServerCapabilities() (*isolated.ServerCapabilities, error) {
-	out := &isolated.ServerCapabilities{}
+func (i *isolateServer) ServerCapabilities() (*isolateservice.HandlersEndpointsV1ServerDetails, error) {
+	out := &isolateservice.HandlersEndpointsV1ServerDetails{}
 	if err := i.postJSON("/_ah/api/isolateservice/v1/server_details", nil, map[string]string{}, out); err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (i *isolateServer) Contains(items []*isolated.DigestItem) (out []*PushState, err error) {
+func (i *isolateServer) Contains(items []*isolateservice.HandlersEndpointsV1Digest) (out []*PushState, err error) {
 	end := tracer.Span(i, "contains", tracer.Args{"number": len(items)})
 	defer func() { end(tracer.Args{"err": err}) }()
-	in := isolated.DigestCollection{Items: items}
+	in := isolateservice.HandlersEndpointsV1DigestCollection{Items: items, Namespace: &isolateservice.HandlersEndpointsV1Namespace{}}
 	in.Namespace.Namespace = i.namespace
-	data := &isolated.URLCollection{}
+	data := &isolateservice.HandlersEndpointsV1UrlCollection{}
 	if err = i.postJSON("/_ah/api/isolateservice/v1/preupload", nil, in, data); err != nil {
 		return nil, err
 	}
@@ -108,8 +109,8 @@ func (i *isolateServer) Contains(items []*isolated.DigestItem) (out []*PushState
 	for _, e := range data.Items {
 		index := int(e.Index)
 		out[index] = &PushState{
-			status: e,
-			digest: items[index].Digest,
+			status: *e,
+			digest: isolated.HexDigest(items[index].Digest),
 			size:   items[index].Size,
 		}
 	}
@@ -129,14 +130,14 @@ func (i *isolateServer) Push(state *PushState, src io.ReadSeeker) (err error) {
 	}
 
 	// Optionally notify the server that it's done.
-	if state.status.GSUploadURL != "" {
+	if state.status.GsUploadUrl != "" {
 		end := tracer.Span(i, "finalize", nil)
 		defer func() { end(tracer.Args{"err": err}) }()
 		// TODO(vadimsh): Calculate MD5 or CRC32C sum while uploading a file and
 		// send it to isolated server. That way isolate server can verify that
 		// the data safely reached Google Storage (GS provides MD5 and CRC32C of
 		// stored files).
-		in := isolated.FinalizeRequest{state.status.UploadTicket}
+		in := isolateservice.HandlersEndpointsV1FinalizeRequest{UploadTicket: state.status.UploadTicket}
 		headers := map[string]string{"Cache-Control": "public, max-age=31536000"}
 		if err = i.postJSON("/_ah/api/isolateservice/v1/finalize_gs_upload", headers, in, nil); err != nil {
 			log.Printf("Push(%s) (finalize) failed: %s\n%#v", state.digest, err, state)
@@ -148,7 +149,7 @@ func (i *isolateServer) Push(state *PushState, src io.ReadSeeker) (err error) {
 }
 
 func (i *isolateServer) doPush(state *PushState, src io.ReadSeeker) (err error) {
-	useDB := state.status.GSUploadURL == ""
+	useDB := state.status.GsUploadUrl == ""
 	end := tracer.Span(i, "push", tracer.Args{"useDB": useDB, "size": state.size})
 	defer func() { end(tracer.Args{"err": err}) }()
 	if useDB {
@@ -171,7 +172,7 @@ func (i *isolateServer) doPushDB(state *PushState, reader io.Reader) error {
 	if err := compressor.Close(); err != nil {
 		return err
 	}
-	in := &isolated.StorageRequest{state.status.UploadTicket, buf.Bytes()}
+	in := &isolateservice.HandlersEndpointsV1StorageRequest{UploadTicket: state.status.UploadTicket, Content: buf.Bytes()}
 	return i.postJSON("/_ah/api/isolateservice/v1/store_inline", nil, in, nil)
 }
 
@@ -182,11 +183,11 @@ func (i *isolateServer) doPushGCS(state *PushState, src io.ReadSeeker) (err erro
 			err = err1
 		}
 	}()
-	// GSUploadURL is signed Google Storage URL that doesn't require additional
+	// GsUploadUrl is signed Google Storage URL that doesn't require additional
 	// authentication. In fact, using authClient causes HTTP 403 because
 	// authClient's tokens don't have Cloud Storage OAuth scope. Use anonymous
 	// client instead.
-	request, err2 := http.NewRequest("PUT", state.status.GSUploadURL, c)
+	request, err2 := http.NewRequest("PUT", state.status.GsUploadUrl, c)
 	if err2 != nil {
 		return err2
 	}

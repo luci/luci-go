@@ -11,6 +11,7 @@ import (
 	"crypto/sha1"
 	"hash"
 	"io"
+	"log"
 	// https://crbug.com/552697
 	//"github.com/klauspost/compress/zlib"
 )
@@ -31,7 +32,11 @@ func GetHash() hash.Hash {
 //
 // It is currently hardcoded to RFC 1950 (zlib).
 func GetDecompressor(in io.Reader) io.ReadCloser {
-	d, _ := zlib.NewReader(in)
+	d, err := zlib.NewReader(in)
+	if err != nil {
+		// The data is corrupted.
+		log.Printf("%s", err)
+	}
 	return d
 }
 

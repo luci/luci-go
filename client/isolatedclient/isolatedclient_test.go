@@ -17,6 +17,7 @@ import (
 
 	"github.com/luci/luci-go/client/internal/retry"
 	"github.com/luci/luci-go/client/isolatedclient/isolatedfake"
+	"github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
 	"github.com/luci/luci-go/common/isolated"
 	"github.com/maruel/ut"
 )
@@ -29,7 +30,7 @@ func TestIsolateServerCaps(t *testing.T) {
 	client := New(nil, ts.URL, "default-gzip")
 	caps, err := client.ServerCapabilities()
 	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, &isolated.ServerCapabilities{"v1"}, caps)
+	ut.AssertEqual(t, &isolateservice.HandlersEndpointsV1ServerDetails{ServerVersion: "v1"}, caps)
 	ut.AssertEqual(t, nil, server.Error())
 }
 
@@ -98,9 +99,9 @@ func TestIsolateServerBadURL(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
 	}
-	client := newIsolateServer(nil, "http://asdfad.nonexistent.local", "default-gzip", fastRetry)
+	client := newIsolateServer(nil, "http://127.0.0.1:1", "default-gzip", fastRetry)
 	caps, err := client.ServerCapabilities()
-	ut.AssertEqual(t, (*isolated.ServerCapabilities)(nil), caps)
+	ut.AssertEqual(t, (*isolateservice.HandlersEndpointsV1ServerDetails)(nil), caps)
 	ut.AssertEqual(t, true, err != nil)
 }
 
@@ -135,12 +136,12 @@ func init() {
 	}
 }
 
-func makeItems(contents ...[]byte) ([]*isolated.DigestItem, [][]byte, map[isolated.HexDigest][]byte) {
-	digests := make([]*isolated.DigestItem, 0, len(contents))
+func makeItems(contents ...[]byte) ([]*isolateservice.HandlersEndpointsV1Digest, [][]byte, map[isolated.HexDigest][]byte) {
+	digests := make([]*isolateservice.HandlersEndpointsV1Digest, 0, len(contents))
 	expected := make(map[isolated.HexDigest][]byte, len(contents))
 	for _, content := range contents {
 		hex := isolated.HashBytes(content)
-		digests = append(digests, &isolated.DigestItem{hex, false, int64(len(content))})
+		digests = append(digests, &isolateservice.HandlersEndpointsV1Digest{Digest: string(hex), IsIsolated: false, Size: int64(len(content))})
 		expected[hex] = content
 	}
 	return digests, contents, expected
@@ -156,9 +157,11 @@ func testNormal(t *testing.T, contents ...[]byte) {
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, len(digests), len(states))
 	for _, state := range states {
+		// The data is automatically compressed.
 		err = client.Push(state, bytes.NewReader(contents[state.status.Index]))
 		ut.AssertEqual(t, nil, err)
 	}
+	ut.AssertEqual(t, nil, server.Error())
 	ut.AssertEqual(t, expected, server.Contents())
 	states, err = client.Contains(digests)
 	ut.AssertEqual(t, nil, err)

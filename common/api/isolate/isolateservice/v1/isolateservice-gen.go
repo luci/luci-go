@@ -16,15 +16,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	context "golang.org/x/net/context"
-	ctxhttp "golang.org/x/net/context/ctxhttp"
-	gensupport "google.golang.org/api/gensupport"
-	googleapi "google.golang.org/api/googleapi"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+
+	context "golang.org/x/net/context"
+	ctxhttp "golang.org/x/net/context/ctxhttp"
+	gensupport "google.golang.org/api/gensupport"
+	googleapi "google.golang.org/api/googleapi"
 )
 
 // Always reference these packages, just in case the auto-generated code
@@ -242,7 +243,7 @@ func (s *HandlersEndpointsV1RetrieveRequest) MarshalJSON() ([]byte, error) {
 // HandlersEndpointsV1RetrievedContent: Content retrieved from DB, or GS
 // URL.
 type HandlersEndpointsV1RetrievedContent struct {
-	Content string `json:"content,omitempty"`
+	Content []byte `json:"content,omitempty"`
 
 	Url string `json:"url,omitempty"`
 
@@ -291,7 +292,7 @@ func (s *HandlersEndpointsV1ServerDetails) MarshalJSON() ([]byte, error) {
 // HandlersEndpointsV1StorageRequest: ProtoRPC message representing an
 // entity to be added to the data store.
 type HandlersEndpointsV1StorageRequest struct {
-	Content string `json:"content,omitempty"`
+	Content []byte `json:"content,omitempty"`
 
 	UploadTicket string `json:"upload_ticket,omitempty"`
 

@@ -17,6 +17,7 @@ import (
 	"github.com/luci/luci-go/client/internal/progress"
 	"github.com/luci/luci-go/client/internal/tracer"
 	"github.com/luci/luci-go/client/isolatedclient"
+	"github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
 	"github.com/luci/luci-go/common/isolated"
 	"github.com/luci/luci-go/common/units"
 )
@@ -196,9 +197,9 @@ type archiverItem struct {
 
 	// Mutable.
 	lock       sync.Mutex
-	err        error               // Item specific error
-	digestItem isolated.DigestItem // Mutated by hashLoop(), used by doContains()
-	linked     []*archiverItem     // Deduplicated item.
+	err        error                                    // Item specific error
+	digestItem isolateservice.HandlersEndpointsV1Digest // Mutated by hashLoop(), used by doContains()
+	linked     []*archiverItem                          // Deduplicated item.
 
 	// Mutable but not accessible externally.
 	src   io.ReadSeeker             // Source of data
@@ -235,7 +236,7 @@ func (i *archiverItem) Error() error {
 func (i *archiverItem) Digest() isolated.HexDigest {
 	i.lock.Lock()
 	defer i.lock.Unlock()
-	return i.digestItem.Digest
+	return isolated.HexDigest(i.digestItem.Digest)
 }
 
 func (i *archiverItem) setErr(err error) {
@@ -258,7 +259,7 @@ func (i *archiverItem) setErr(err error) {
 
 func (i *archiverItem) calcDigest() error {
 	defer i.wgHashed.Done()
-	var d isolated.DigestItem
+	var d isolateservice.HandlersEndpointsV1Digest
 	if i.path != "" {
 		// Open and hash the file.
 		var err error
@@ -279,7 +280,7 @@ func (i *archiverItem) calcDigest() error {
 			i.setErr(err)
 			return err
 		}
-		d = isolated.DigestItem{isolated.Sum(h), true, size}
+		d = isolateservice.HandlersEndpointsV1Digest{Digest: string(isolated.Sum(h)), IsIsolated: true, Size: size}
 	}
 	i.lock.Lock()
 	defer i.lock.Unlock()
@@ -588,7 +589,7 @@ func (a *archiver) stage4UploadLoop() {
 
 // doContains is called by stage 3.
 func (a *archiver) doContains(items []*archiverItem) {
-	tmp := make([]*isolated.DigestItem, len(items))
+	tmp := make([]*isolateservice.HandlersEndpointsV1Digest, len(items))
 	// No need to lock each item at that point, no mutation occurs on
 	// archiverItem.digestItem after stage 2.
 	for i, item := range items {

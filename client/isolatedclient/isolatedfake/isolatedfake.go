@@ -11,12 +11,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 
+	"github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
 	"github.com/luci/luci-go/common/isolated"
 )
 
@@ -31,6 +31,7 @@ type failure interface {
 // handlerJSON converts a jsonAPI http handler to a proper http.Handler.
 func handlerJSON(f failure, handler jsonAPI) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//log.Printf("%s", r.URL)
 		if r.Header.Get("Content-Type") != contentType {
 			f.Fail(fmt.Errorf("invalid content type: %s", r.Header.Get("Content-Type")))
 			return
@@ -141,28 +142,31 @@ func (server *isolatedFake) serverDetails(r *http.Request) interface{} {
 }
 
 func (server *isolatedFake) preupload(r *http.Request) interface{} {
-	data := &isolated.DigestCollection{}
+	data := &isolateservice.HandlersEndpointsV1DigestCollection{}
 	if err := json.NewDecoder(r.Body).Decode(data); err != nil {
 		server.Fail(err)
 	}
-	if data.Namespace.Namespace != "default-gzip" {
+	if data.Namespace == nil || data.Namespace.Namespace != "default-gzip" {
 		server.Fail(fmt.Errorf("unexpected namespace %#v", data.Namespace.Namespace))
 	}
-	out := &isolated.URLCollection{}
+	out := &isolateservice.HandlersEndpointsV1UrlCollection{}
 
 	server.lock.Lock()
 	defer server.lock.Unlock()
 	for i, d := range data.Items {
-		if _, ok := server.contents[d.Digest]; !ok {
+		if _, ok := server.contents[isolated.HexDigest(d.Digest)]; !ok {
 			// Simulate a write to Cloud Storage for larger writes.
 			ticket := "ticket:" + string(d.Digest)
-			s := isolated.PreuploadStatus{"", ticket, isolated.Int(i)}
+			s := &isolateservice.HandlersEndpointsV1PreuploadStatus{
+				Index:        int64(i),
+				UploadTicket: ticket,
+			}
 			if d.Size > 1024 {
 				v := url.Values{}
 				v.Add("digest", string(d.Digest))
 				u := &url.URL{Scheme: "http", Host: r.Host, Path: "/fake/cloudstorage", RawQuery: v.Encode()}
-				s.GSUploadURL = u.String()
-				log.Printf("%s", s.GSUploadURL)
+				s.GsUploadUrl = u.String()
+				//log.Printf("%s", s.GsUploadUrl)
 			}
 			out.Items = append(out.Items, s)
 		}
@@ -202,7 +206,7 @@ func (server *isolatedFake) fakeCloudStorage(w http.ResponseWriter, r *http.Requ
 }
 
 func (server *isolatedFake) finalizeGSUpload(r *http.Request) interface{} {
-	data := &isolated.FinalizeRequest{}
+	data := &isolateservice.HandlersEndpointsV1FinalizeRequest{}
 	if err := json.NewDecoder(r.Body).Decode(data); err != nil {
 		server.Fail(err)
 		return map[string]string{"err": err.Error()}
@@ -233,7 +237,7 @@ func (server *isolatedFake) finalizeGSUpload(r *http.Request) interface{} {
 }
 
 func (server *isolatedFake) storeInline(r *http.Request) interface{} {
-	data := &isolated.StorageRequest{}
+	data := &isolateservice.HandlersEndpointsV1StorageRequest{}
 	if err := json.NewDecoder(r.Body).Decode(data); err != nil {
 		server.Fail(err)
 		return map[string]string{"err": err.Error()}
@@ -252,7 +256,7 @@ func (server *isolatedFake) storeInline(r *http.Request) interface{} {
 		server.Fail(err)
 		return map[string]string{"err": err.Error()}
 	}
-	raw, err := ioutil.ReadAll(isolated.GetDecompressor(bytes.NewBuffer(data.Content)))
+	raw, err := ioutil.ReadAll(isolated.GetDecompressor(bytes.NewReader([]byte(data.Content))))
 	if err != nil {
 		server.Fail(err)
 		return map[string]string{"err": err.Error()}
@@ -266,5 +270,6 @@ func (server *isolatedFake) storeInline(r *http.Request) interface{} {
 	server.lock.Lock()
 	defer server.lock.Unlock()
 	server.contents[digest] = raw
+	//log.Printf("  storing %s = %d bytes", digest, len(raw))
 	return map[string]string{"ok": "true"}
 }

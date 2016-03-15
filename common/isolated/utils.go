@@ -9,6 +9,8 @@ import (
 	"hash"
 	"io"
 	"os"
+
+	"github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
 )
 
 // Sum is a shortcut to get a HexDigest from a hash.Hash.
@@ -33,17 +35,17 @@ func HashBytes(content []byte) HexDigest {
 	return Sum(h)
 }
 
-// HashFile hashes a file and returns a DigestItem out of it.
-func HashFile(path string) (DigestItem, error) {
+// HashFile hashes a file and returns a HandlersEndpointsV1Digest out of it.
+func HashFile(path string) (isolateservice.HandlersEndpointsV1Digest, error) {
 	h := GetHash()
 	f, err := os.Open(path)
 	if err != nil {
-		return DigestItem{}, err
+		return isolateservice.HandlersEndpointsV1Digest{}, err
 	}
 	defer f.Close()
 	size, err := io.Copy(h, f)
 	if err != nil {
-		return DigestItem{}, err
+		return isolateservice.HandlersEndpointsV1Digest{}, err
 	}
-	return DigestItem{Digest: Sum(h), IsIsolated: false, Size: size}, nil
+	return isolateservice.HandlersEndpointsV1Digest{Digest: string(Sum(h)), IsIsolated: false, Size: size}, nil
 }

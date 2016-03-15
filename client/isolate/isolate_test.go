@@ -18,6 +18,7 @@ import (
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/client/isolatedclient"
 	"github.com/luci/luci-go/client/isolatedclient/isolatedfake"
+	"github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
 	"github.com/luci/luci-go/common/isolated"
 	"github.com/luci/luci-go/common/units"
 	"github.com/maruel/ut"
@@ -204,7 +205,7 @@ func TestArchive(t *testing.T) {
 
 	ut.AssertEqual(t, nil, server.Error())
 	digest, err := isolated.HashFile(filepath.Join(tmpDir, "baz.isolated"))
-	ut.AssertEqual(t, isolated.DigestItem{isolatedHash, false, int64(len(isolatedEncoded))}, digest)
+	ut.AssertEqual(t, isolateservice.HandlersEndpointsV1Digest{Digest: string(isolatedHash), IsIsolated: false, Size: int64(len(isolatedEncoded))}, digest)
 	ut.AssertEqual(t, nil, err)
 }
 
