@@ -13,11 +13,6 @@ cron:
     target: backend
     schedule: every 10 minutes
 
-  - description: storage cleanup task creation
-    url: /archive/cron/storageCleanup
-    target: backend
-    schedule: every 10 minutes
-
   - description: tumble fire_all_tasks invocation
     url: /internal/tumble/fire_all_tasks
     target: backend

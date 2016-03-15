@@ -12,12 +12,13 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
 	"github.com/luci/luci-go/common/stringset"
+	"github.com/luci/luci-go/server/logdog/storage"
 	"golang.org/x/net/context"
 	"google.golang.org/cloud/bigtable"
 )
 
-// MaxLogAge is the maximum age of a log (7 days).
-const MaxLogAge = time.Duration(7 * 24 * time.Hour)
+// DefaultMaxLogAge is the maximum age of a log (7 days).
+const DefaultMaxLogAge = time.Duration(7 * 24 * time.Hour)
 
 // InitializeScopes is the set of OAuth scopes needed to use the Initialize
 // functionality.
@@ -65,11 +66,13 @@ func waitForTable(ctx context.Context, c *bigtable.AdminClient, name string) err
 //
 // If nil is returned, the table is ready for use as a Storage via New.
 func Initialize(ctx context.Context, o Options) error {
-	c, err := bigtable.NewAdminClient(ctx, o.Project, o.Zone, o.Cluster, o.ClientOptions...)
+	st := New(ctx, o)
+	defer st.Close()
+
+	c, err := st.(*btStorage).getAdminClient()
 	if err != nil {
 		return fmt.Errorf("failed to create admin client: %s", err)
 	}
-	defer c.Close()
 
 	exists, err := tableExists(ctx, c, o.LogTable)
 	if err != nil {
@@ -103,28 +106,29 @@ func Initialize(ctx context.Context, o Options) error {
 
 	// The table must have the "log" column family.
 	families := stringset.NewFromSlice(ti.Families...)
-	if !families.Has("log") {
+	if !families.Has(logColumnFamily) {
 		log.Fields{
 			"table":  o.LogTable,
-			"family": "log",
+			"family": logColumnFamily,
 		}.Infof(ctx, "Column family 'log' does not exist. Creating...")
 
-		// Create the "log" column family.
-		if err := c.CreateColumnFamily(ctx, o.LogTable, "log"); err != nil {
+		// Create the logColumnFamily column family.
+		if err := c.CreateColumnFamily(ctx, o.LogTable, logColumnFamily); err != nil {
 			return fmt.Errorf("Failed to create 'log' column family: %s", err)
-		}
-
-		// Set the garbage collection policy.
-		if o.EnableGarbageCollection {
-			if err := c.SetGCPolicy(ctx, o.LogTable, "log", bigtable.MaxAgePolicy(MaxLogAge)); err != nil {
-				return fmt.Errorf("Failed to set 'log' GC policy: %s", err)
-			}
 		}
 
 		log.Fields{
 			"table":  o.LogTable,
 			"family": "log",
 		}.Infof(ctx, "Successfully created 'log' column family.")
+	}
+
+	cfg := storage.Config{
+		MaxLogAge: DefaultMaxLogAge,
+	}
+	if err := st.Config(cfg); err != nil {
+		log.WithError(err).Errorf(ctx, "Failed to push default configuration.")
+		return err
 	}
 
 	return nil

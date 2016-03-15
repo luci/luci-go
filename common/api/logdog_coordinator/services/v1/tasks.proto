@@ -15,12 +15,3 @@ message ArchiveTask {
   // If true, require that the log stream be complete.
   bool complete = 2;
 }
-
-// ArchiveTask is a task queue task description for the intermediate storage
-// cleanup of a single log stream.
-//
-// It is managed by the Janitor microservice.
-message CleanupTask {
-  // The path of the log stream to clean up.
-  string path = 1;
-}

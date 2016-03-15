@@ -6,23 +6,18 @@ package bigtable
 
 import (
 	"bytes"
+	"errors"
 	"testing"
+	"time"
 
 	"github.com/luci/gkvlite"
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"golang.org/x/net/context"
 	"google.golang.org/cloud/bigtable"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-// errDontReallyDelete is a sentinel error. If btTableTest's deleteErr is
-// configured with this error, the deleteRow operation will not actually delete
-// the row, but will still return success.
-var errDontReallyDelete = errors.New("don't really delete")
 
 // btTableTest is an in-memory implementation of btTable interface for testing.
 //
@@ -33,8 +28,9 @@ type btTableTest struct {
 
 	// err, if true, is the error immediately returned by functions.
 	err error
-	// deleteErr, if not nil, is the error returned by the deleteRow method.
-	deleteErr error
+
+	// maxLogAge is the currently-configured maximum log age.
+	maxLogAge time.Duration
 }
 
 func (t *btTableTest) close() {
@@ -113,24 +109,11 @@ func (t *btTableTest) getLogData(c context.Context, rk *rowKey, limit int, keysO
 	return ierr
 }
 
-func (t *btTableTest) deleteRow(c context.Context, rk *rowKey) error {
-	real := true
-	switch err := t.deleteErr; err {
-	case errDontReallyDelete:
-		real = false
-	case nil:
-		break
-	default:
-		return err
+func (t *btTableTest) setMaxLogAge(c context.Context, d time.Duration) error {
+	if t.err != nil {
+		return t.err
 	}
-
-	if real {
-		if ok, err := t.c.Delete([]byte(rk.encode())); err != nil {
-			return err
-		} else if !ok {
-			return errors.New("row does not exist")
-		}
-	}
+	t.maxLogAge = d
 	return nil
 }
 
@@ -268,49 +251,6 @@ func TestStorage(t *testing.T) {
 					So(err, ShouldEqual, storage.ErrDoesNotExist)
 				})
 			})
-
-			Convey(`Testing "Purge"...`, func() {
-				Convey(`Can purge log stream "A", then "B".`, func() {
-					// Purge "A".
-					So(s.Purge(types.StreamPath("A")), ShouldBeNil)
-
-					got, err := get("A", 0, 0)
-					So(err, ShouldBeNil)
-					So(got, ShouldResemble, []string{})
-
-					got, err = get("B", 0, 0)
-					So(err, ShouldBeNil)
-					So(got, ShouldResemble, []string{"10", "12", "13"})
-
-					// Now purge "B".
-					So(s.Purge(types.StreamPath("B")), ShouldBeNil)
-
-					got, err = get("B", 0, 0)
-					So(err, ShouldBeNil)
-					So(got, ShouldResemble, []string{})
-				})
-
-				Convey(`Will return an error if Storage failed to purge a row.`, func() {
-					bt.deleteErr = errors.New("testing error")
-
-					err := s.Purge(types.StreamPath("A"))
-					So(err, ShouldErrLike, "failed to purge stream")
-					So(errors.IsTransient(err), ShouldBeFalse)
-				})
-
-				Convey(`Will return a transient error if Storage transiently failed to purge a row.`, func() {
-					bt.deleteErr = errors.WrapTransient(errors.New("testing error"))
-
-					err := s.Purge(types.StreamPath("A"))
-					So(err, ShouldErrLike, "failed to purge stream")
-					So(errors.IsTransient(err), ShouldBeTrue)
-				})
-
-				Convey(`Will return an error if there are still rows left after delete.`, func() {
-					bt.deleteErr = errDontReallyDelete
-					So(s.Purge(types.StreamPath("A")), ShouldErrLike, "encountered row data post-purge")
-				})
-			})
 		})
 
 		Convey(`Given a fake BigTable row`, func() {
@@ -342,6 +282,23 @@ func TestStorage(t *testing.T) {
 
 			Convey(`Will fail to extract if the column does not exist.`, func() {
 				So(getReadItem(fakeRow, "log", "invalid"), ShouldBeNil)
+			})
+		})
+
+		Convey(`When pushing a configuration`, func() {
+			cfg := storage.Config{
+				MaxLogAge: 1 * time.Hour,
+			}
+
+			Convey(`Can successfully apply configuration.`, func() {
+				So(s.Config(cfg), ShouldBeNil)
+				So(bt.maxLogAge, ShouldEqual, cfg.MaxLogAge)
+			})
+
+			Convey(`With return an error if the configuration fails to apply.`, func() {
+				bt.err = errors.New("test error")
+
+				So(s.Config(cfg), ShouldEqual, bt.err)
 			})
 		})
 	})

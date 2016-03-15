@@ -243,7 +243,7 @@ func (s *Service) IntermediateStorage(c context.Context) (storage.Storage, error
 		return nil, err
 	}
 
-	bt, err := bigtable.New(c, bigtable.Options{
+	return bigtable.New(c, bigtable.Options{
 		Project:  btcfg.Project,
 		Zone:     btcfg.Zone,
 		Cluster:  btcfg.Cluster,
@@ -251,12 +251,7 @@ func (s *Service) IntermediateStorage(c context.Context) (storage.Storage, error
 		ClientOptions: []cloud.ClientOption{
 			cloud.WithTokenSource(a.TokenSource()),
 		},
-	})
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create BigTable instance.")
-		return nil, err
-	}
-	return bt, nil
+	}), nil
 }
 
 // GSClient returns an authenticated Google Storage client instance.

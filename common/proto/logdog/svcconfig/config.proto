@@ -67,11 +67,6 @@ message Coordinator {
   // for the log stream to complete and for all available log entries to be
   // added to intermediate storage.
   google.protobuf.Duration archive_delay_max = 32;
-
-  // The name of the storage cleanup task queue.
-  string storage_cleanup_task_queue = 40;
-  // The amount of time to wait before initiating a storage cleanup task.
-  google.protobuf.Duration storage_cleanup_delay = 41;
 }
 
 // Collector is the set of configuration parameters for Collector instances.

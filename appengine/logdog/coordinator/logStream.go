@@ -30,8 +30,6 @@ const (
 	// LSArchived indicates that the log stream has been successfully archived but
 	// has not yet been cleaned up.
 	LSArchived
-	// LSDone indicates that log stream processing is complete.
-	LSDone
 )
 
 // LogStream is the primary datastore model containing information and state of

@@ -6,12 +6,9 @@ package bigtable
 
 import (
 	"fmt"
-	"sync/atomic"
 
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/parallel"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"golang.org/x/net/context"
 	"google.golang.org/cloud"
@@ -45,9 +42,6 @@ const (
 	// tailRowMaxSize is the maximum number of bytes of tail row data that will be
 	// buffered during Tail row reading.
 	tailRowMaxSize = 1024 * 1024 * 16
-
-	// defaultMaxPurgeWorkers is the default number of purge workers to use.
-	defaultMaxPurgeWorkers = 32
 )
 
 // Options is a set of configuration options for BigTable storage.
@@ -64,21 +58,6 @@ type Options struct {
 
 	// Table is the name of the BigTable table to use for logs.
 	LogTable string
-
-	// MaxPurgeWorkers is the maximum number of parallel purge workers to use for
-	// a purge operation. If <= 0, a default value will be used.
-	MaxPurgeWorkers int
-
-	// EnableGarbageCollection is used during initialization only. If true, it
-	// will enable pushing garbage collection settings to BigTable.
-	//
-	// At the time of writing, attempts to use garbage collection configuration
-	// methods result in an error from the server stating that the methods are not
-	// yet available.
-	//
-	// TODO(dnj): Remove this and default to true as soon as garbage collection
-	// is enabled.
-	EnableGarbageCollection bool
 }
 
 // btStorage is a storage.Storage implementation that uses Google Cloud BigTable
@@ -86,8 +65,11 @@ type Options struct {
 type btStorage struct {
 	*Options
 
-	ctx    context.Context
-	client *bigtable.Client
+	ctx context.Context
+
+	client      *bigtable.Client
+	logTable    *bigtable.Table
+	adminClient *bigtable.AdminClient
 
 	table btTable
 }
@@ -96,22 +78,36 @@ type btStorage struct {
 //
 // The returned Storage instance will close the Client when its Close() method
 // is called.
-func New(ctx context.Context, o Options) (storage.Storage, error) {
-	c, err := bigtable.NewClient(ctx, o.Project, o.Zone, o.Cluster, o.ClientOptions...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create client: %s", err)
-	}
-
-	return &btStorage{
+func New(ctx context.Context, o Options) storage.Storage {
+	st := &btStorage{
 		Options: &o,
 		ctx:     ctx,
-		client:  c,
-		table:   &btTableProd{c.Open(o.LogTable)},
-	}, nil
+	}
+	st.table = &btTableProd{st}
+	return st
 }
 
 func (s *btStorage) Close() {
-	s.client.Close()
+	if s.client != nil {
+		s.client.Close()
+		s.client = nil
+	}
+
+	if s.adminClient != nil {
+		s.adminClient.Close()
+		s.adminClient = nil
+	}
+}
+
+func (s *btStorage) Config(cfg storage.Config) error {
+	if err := s.table.setMaxLogAge(s.ctx, cfg.MaxLogAge); err != nil {
+		log.WithError(err).Errorf(s.ctx, "Failed to set 'log' GC policy.")
+		return err
+	}
+	log.Fields{
+		"maxLogAge": cfg.MaxLogAge,
+	}.Infof(s.ctx, "Set maximum log age.")
+	return nil
 }
 
 func (s *btStorage) Put(r *storage.PutRequest) error {
@@ -207,83 +203,35 @@ func (s *btStorage) Tail(p types.StreamPath) ([]byte, types.MessageIndex, error)
 	return d, types.MessageIndex(latest.index), nil
 }
 
-// Purge iterates over each key sharing a stream prefix and deletes it.
-//
-// We do this by iterating over all rows that share the key, then deleting them.
-// Finally, we will re-iterate over all rows that share the key and return an
-// error if any still exist.
-func (s *btStorage) Purge(p types.StreamPath) error {
-	c := log.SetField(s.ctx, "path", p)
-
-	purgeWorkers := s.MaxPurgeWorkers
-	if purgeWorkers <= 0 {
-		purgeWorkers = defaultMaxPurgeWorkers
+func (s *btStorage) getClient() (*bigtable.Client, error) {
+	if s.client == nil {
+		var err error
+		if s.client, err = bigtable.NewClient(s.ctx, s.Project, s.Zone, s.Cluster, s.ClientOptions...); err != nil {
+			return nil, fmt.Errorf("failed to create client: %s", err)
+		}
 	}
+	return s.client, nil
+}
 
-	// Run a keys-only query through the table.
-	//
-	// NOTE: count is used only for logging, and so it is not imperative that it
-	// be protected from overflow.
-	count := int32(0)
-	rk := newRowKey(string(p), 0)
-	errC := parallel.Run(purgeWorkers, func(taskC chan<- func() error) {
-		// List the rows in the table. For each row, dispatch a purge function to
-		// purge it.
-		s.table.getLogData(c, rk, 0, true, func(rk *rowKey, data []byte) error {
-			taskC <- func() error {
-				if err := s.table.deleteRow(c, rk); err != nil {
-					log.Fields{
-						log.ErrorKey: err,
-						"rowKey":     rk.String(),
-					}.Errorf(c, "Failed to delete row.")
-					return err
-				}
+func (s *btStorage) getAdminClient() (*bigtable.AdminClient, error) {
+	if s.adminClient == nil {
+		var err error
+		if s.adminClient, err = bigtable.NewAdminClient(s.ctx, s.Project, s.Zone, s.Cluster, s.ClientOptions...); err != nil {
+			return nil, fmt.Errorf("failed to create client: %s", err)
+		}
+	}
+	return s.adminClient, nil
+}
 
-				atomic.AddInt32(&count, 1)
-				return nil
-			}
-
-			return nil
-		})
-	})
-
-	// Consume task errors. If any of them were transient, make sure we return
-	// a transient error.
-	failCount := 0
-	failed := false
-	var transient bool
-	for err := range errC {
+// getLogTable returns a btTable instance. If one is not already configured, a
+// production instance will be generated and cached.
+func (s *btStorage) getLogTable() (*bigtable.Table, error) {
+	if s.logTable == nil {
+		client, err := s.getClient()
 		if err != nil {
-			failCount++
-			failed = true
-			if errors.IsTransient(err) {
-				transient = true
-			}
+			return nil, err
 		}
+		s.logTable = client.Open(s.LogTable)
 	}
-
-	// Handle errors.
-	if failed {
-		log.Fields{
-			"purgeCount": count,
-			"failCount":  failCount,
-			"transient":  transient,
-		}.Debugf(c, "Encountered error(s) while purging stream.")
-		err := errors.New("failed to purge stream")
-		if transient {
-			err = errors.WrapTransient(err)
-		}
-		return err
-	}
-
-	// Assert that there is no more data.
-	log.Fields{
-		"purgeCount": count,
-	}.Debugf(c, "Successfully purged stream. Confirming...")
-	return s.table.getLogData(c, rk, 0, true, func(rk *rowKey, data []byte) error {
-		log.Fields{
-			"rowKey": rk,
-		}.Errorf(c, "Encountered row data post-purge.")
-		return errors.New("encountered row data post-purge")
-	})
+	return s.logTable, nil
 }

@@ -51,7 +51,3 @@ func shouldHaveTasks(actual interface{}, expected ...interface{}) string {
 func archiveTaskName(path string) string {
 	return fmt.Sprintf("archive-%s", coordinator.LogStreamFromPath(types.StreamPath(path)).HashID())
 }
-
-func cleanupTaskName(path string) string {
-	return fmt.Sprintf("cleanup-%s", coordinator.LogStreamFromPath(types.StreamPath(path)).HashID())
-}

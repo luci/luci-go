@@ -6,6 +6,7 @@ package bigtable
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/grpcutil"
@@ -18,6 +19,11 @@ import (
 // errStop is an internal sentinel error used to communicate "stop iteration"
 // to btTable.getLogData.
 var errStop = errors.New("stop")
+
+const (
+	logColumnFamily = "log"
+	logColumn       = "data"
+)
 
 // btGetCallback is a callback that is invoked for each log data row returned
 // by getLogData.
@@ -48,24 +54,28 @@ type btTable interface {
 	// If keysOnly is true, then the callback will return nil row data.
 	getLogData(c context.Context, rk *rowKey, limit int, keysOnly bool, cb btGetCallback) error
 
-	// deleteRow deletes the log data associated with a given row.
-	deleteRow(context.Context, *rowKey) error
+	// setMaxLogAge updates the maximum log age policy for the log family.
+	setMaxLogAge(context.Context, time.Duration) error
 }
 
 // btTableProd is an implementation of the btTable interface that uses a real
 // production BigTable connection.
 type btTableProd struct {
-	*bigtable.Table
+	*btStorage
 }
 
 func (t *btTableProd) putLogData(c context.Context, rk *rowKey, data []byte) error {
+	table, err := t.getLogTable()
+	if err != nil {
+		return err
+	}
+
 	m := bigtable.NewMutation()
-	m.Set("log", "data", bigtable.ServerTime, data)
+	m.Set(logColumnFamily, logColumn, bigtable.ServerTime, data)
 	cm := bigtable.NewCondMutation(bigtable.RowKeyFilter(rk.encode()), nil, m)
 
 	rowExists := false
-	err := t.Apply(c, rk.encode(), cm, bigtable.GetCondMutationResult(&rowExists))
-	if err != nil {
+	if err = table.Apply(c, rk.encode(), cm, bigtable.GetCondMutationResult(&rowExists)); err != nil {
 		return wrapTransient(err)
 	}
 	if rowExists {
@@ -75,10 +85,14 @@ func (t *btTableProd) putLogData(c context.Context, rk *rowKey, data []byte) err
 }
 
 func (t *btTableProd) getLogData(c context.Context, rk *rowKey, limit int, keysOnly bool, cb btGetCallback) error {
+	table, err := t.getLogTable()
+	if err != nil {
+		return err
+	}
 	// Construct read options based on Get request.
 	ropts := []bigtable.ReadOption{
-		bigtable.RowFilter(bigtable.FamilyFilter("log")),
-		bigtable.RowFilter(bigtable.ColumnFilter("data")),
+		bigtable.RowFilter(bigtable.FamilyFilter(logColumnFamily)),
+		bigtable.RowFilter(bigtable.ColumnFilter(logColumn)),
 		nil,
 		nil,
 	}[:2]
@@ -94,7 +108,7 @@ func (t *btTableProd) getLogData(c context.Context, rk *rowKey, limit int, keysO
 	rng := bigtable.NewRange(rk.encode(), rk.pathPrefixUpperBound())
 
 	innerErr := error(nil)
-	err := t.ReadRows(c, rng, func(row bigtable.Row) bool {
+	err = table.ReadRows(c, rng, func(row bigtable.Row) bool {
 		data := []byte(nil)
 		if !keysOnly {
 			err := error(nil)
@@ -129,10 +143,20 @@ func (t *btTableProd) getLogData(c context.Context, rk *rowKey, limit int, keysO
 	return wrapTransient(err)
 }
 
-func (t *btTableProd) deleteRow(c context.Context, rk *rowKey) error {
-	m := bigtable.NewMutation()
-	m.DeleteRow()
-	return wrapTransient(t.Apply(c, rk.encode(), m))
+func (t *btTableProd) setMaxLogAge(c context.Context, d time.Duration) error {
+	ac, err := t.getAdminClient()
+	if err != nil {
+		return err
+	}
+
+	var logGCPolicy bigtable.GCPolicy
+	if d > 0 {
+		logGCPolicy = bigtable.MaxAgePolicy(d)
+	}
+	if err := ac.SetGCPolicy(c, t.LogTable, logColumnFamily, logGCPolicy); err != nil {
+		return wrapTransient(err)
+	}
+	return nil
 }
 
 // wrapTransient wraps the supplied error in an errors.TransientError if it is
@@ -152,12 +176,12 @@ func isTransient(err error) bool {
 	return grpcutil.IsTransient(err)
 }
 
-// getLogData loads the "data" column from the "log" column family and returns
-// its []byte contents.
+// getLogData loads the logColumn column from the logColumnFamily column family
+// and returns its []byte contents.
 //
 // If the row doesn't exist, storage.ErrDoesNotExist will be returned.
 func getLogData(row bigtable.Row) ([]byte, error) {
-	ri := getReadItem(row, "log", "data")
+	ri := getReadItem(row, logColumnFamily, logColumn)
 	if ri == nil {
 		return nil, storage.ErrDoesNotExist
 	}

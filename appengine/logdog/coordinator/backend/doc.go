@@ -37,27 +37,9 @@
 // The archive cron job will dispatch an archive request to the archive backend
 // handler for each log stream that matches one of these situations.
 //
-// The archive handler is responsible for archiving a single log stream. It does
-// this by loading the log stream's data from intermediate storage (BigTable),
-// constructing an archive index, stream, and optionally data file, and
-// writing them into permanent storage (Google Cloud Storage).
-//
 // Each archival task will look at the last time the LogStream has been updated.
 // If this does not exceed our `archive_max_delay` (standard case), we will only
 // complete archival if every LogEntry between [0..terminalIndex] is
 // successfully archived. If we are past `archive_max_delay` (failsafe), we will
 // do a best-effort sparse archival with whatever data is available.
-//
-// Storage Cleanup
-//
-// After a log stream has been archived for at least `storage_cleanup_delay`,
-// storage cleanup is responsible for removing its data from intermediate
-// storage. The storage cleanup cron task will periodically poll for LogStream
-// entities that are candidate for cleanup. Each such entity will have a storage
-// cleanup task queue entry defined and will be serviced by the storage cleanup
-// handler.
-//
-// The storage cleanup handler cleans up intermediate storage entries for a
-// single log stream. It does this by asking the intermediate storage to purge
-// that stream's data. Upon success, it will mark the log stream as clean.
 package backend

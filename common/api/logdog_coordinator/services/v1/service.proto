@@ -109,13 +109,6 @@ message ArchiveStreamRequest {
   int64 data_size = 31;
 }
 
-// CleanupStreamRequest is the set of caller-supplied data for the CleanupStream
-// service endpoint.
-message CleanupStreamRequest {
-  // The path of the log stream to clean up.
-  string path = 1;
-}
-
 // Services service is a LogDog Coordinator endpoint that interfaces with
 // LogDog processing services.
 service Services {
@@ -137,9 +130,4 @@ service Services {
   // parameters. It is used by the Archivist service upon successful stream
   // archival.
   rpc ArchiveStream(ArchiveStreamRequest) returns (google.protobuf.Empty);
-
-  // CleanupStream is an idempotent operation to record that a log stream's
-  // intermediate records have been cleaned up. It is used by the Janitor
-  // service upon successful stream cleanup.
-  rpc CleanupStream(CleanupStreamRequest) returns (google.protobuf.Empty);
 }

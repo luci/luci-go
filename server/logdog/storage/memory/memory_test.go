@@ -7,11 +7,14 @@ package memory
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"testing"
+	"time"
 
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/server/logdog/storage"
 
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -79,6 +82,16 @@ func TestBigTable(t *testing.T) {
 
 					So(st.Put(&req), ShouldEqual, storage.ErrExists)
 				})
+
+				Convey(`Will return an error if one is set.`, func() {
+					st.SetErr(errors.New("test error"))
+
+					req := storage.PutRequest{
+						Path:  path,
+						Index: 1337,
+					}
+					So(st.Put(&req), ShouldErrLike, "test error")
+				})
 			})
 
 			Convey(`Get()`, func() {
@@ -138,6 +151,15 @@ func TestBigTable(t *testing.T) {
 
 					So(st.Get(&req, getAllCB), ShouldEqual, storage.ErrDoesNotExist)
 				})
+
+				Convey(`Will return an error if one is set.`, func() {
+					st.SetErr(errors.New("test error"))
+
+					req := storage.GetRequest{
+						Path: path,
+					}
+					So(st.Get(&req, nil), ShouldErrLike, "test error")
+				})
 			})
 
 			Convey(`Tail()`, func() {
@@ -152,21 +174,41 @@ func TestBigTable(t *testing.T) {
 					_, _, err := st.Tail("testing/+/does/not/exist")
 					So(err, ShouldEqual, storage.ErrDoesNotExist)
 				})
+
+				Convey(`Will return an error if one is set.`, func() {
+					st.SetErr(errors.New("test error"))
+					_, _, err := st.Tail("")
+					So(err, ShouldErrLike, "test error")
+				})
 			})
 
-			Convey(`Purge()`, func() {
-				Convey(`Can purge the test stream.`, func() {
-					So(st.Purge(path), ShouldBeNil)
+			Convey(`Config()`, func() {
+				cfg := storage.Config{
+					MaxLogAge: time.Hour,
+				}
 
-					req := storage.GetRequest{
-						Path: path,
-					}
-					So(st.Get(&req, getAllCB), ShouldEqual, storage.ErrDoesNotExist)
+				Convey(`Can update the configuration.`, func() {
+					So(st.Config(cfg), ShouldBeNil)
+					So(st.MaxLogAge, ShouldEqual, cfg.MaxLogAge)
 				})
 
-				Convey(`Will error if purging a non-existent stream.`, func() {
-					So(st.Purge("testing/+/does/not/exist"), ShouldEqual, storage.ErrDoesNotExist)
+				Convey(`Will return an error if one is set.`, func() {
+					st.SetErr(errors.New("test error"))
+					So(st.Config(storage.Config{}), ShouldErrLike, "test error")
 				})
+			})
+
+			Convey(`Errors can be set, cleared, and set again.`, func() {
+				So(st.Config(storage.Config{}), ShouldBeNil)
+
+				st.SetErr(errors.New("test error"))
+				So(st.Config(storage.Config{}), ShouldErrLike, "test error")
+
+				st.SetErr(nil)
+				So(st.Config(storage.Config{}), ShouldBeNil)
+
+				st.SetErr(errors.New("test error"))
+				So(st.Config(storage.Config{}), ShouldErrLike, "test error")
 			})
 		})
 	})

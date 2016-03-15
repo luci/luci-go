@@ -87,16 +87,6 @@ func (c *client) ArchiveStream(ctx context.Context, in *s.ArchiveStreamRequest, 
 	return
 }
 
-func (c *client) CleanupStream(ctx context.Context, in *s.CleanupStreamRequest, opts ...grpc.CallOption) (
-	r *google.Empty, err error) {
-	err = retry.Retry(ctx, c.f, func() (err error) {
-		r, err = c.c.CleanupStream(ctx, in, opts...)
-		err = wrapTransient(err)
-		return
-	}, callback(ctx, "cleaning stream"))
-	return
-}
-
 func callback(ctx context.Context, op string) retry.Callback {
 	return func(err error, d time.Duration) {
 		log.Fields{

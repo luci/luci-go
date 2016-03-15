@@ -7,6 +7,7 @@ package memory
 import (
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/server/logdog/storage"
@@ -31,9 +32,13 @@ type Storage struct {
 	// a single Get request.
 	MaxGetCount int
 
+	// MaxLogAge is the configured maximum log age.
+	MaxLogAge time.Duration
+
 	stateMu sync.Mutex
 	streams map[types.StreamPath]*logStream
 	closed  bool
+	err     error
 }
 
 var _ storage.Storage = (*Storage)(nil)
@@ -42,6 +47,14 @@ var _ storage.Storage = (*Storage)(nil)
 func (s *Storage) Close() {
 	s.run(func() error {
 		s.closed = true
+		return nil
+	})
+}
+
+// Config implements storage.Storage.
+func (s *Storage) Config(cfg storage.Config) error {
+	return s.run(func() error {
+		s.MaxLogAge = cfg.MaxLogAge
 		return nil
 	})
 }
@@ -136,17 +149,6 @@ func (s *Storage) Tail(p types.StreamPath) ([]byte, types.MessageIndex, error) {
 	return r.data, r.index, nil
 }
 
-// Purge implements storage.Storage.
-func (s *Storage) Purge(p types.StreamPath) error {
-	return s.run(func() error {
-		if _, ok := s.streams[p]; !ok {
-			return storage.ErrDoesNotExist
-		}
-		delete(s.streams, p)
-		return nil
-	})
-}
-
 // Count returns the number of log records for the given stream.
 func (s *Storage) Count(p types.StreamPath) (c int) {
 	s.run(func() error {
@@ -159,10 +161,21 @@ func (s *Storage) Count(p types.StreamPath) (c int) {
 	return
 }
 
+// SetErr sets the storage's error value. If not nil, all operations will fail
+// with this error.
+func (s *Storage) SetErr(err error) {
+	s.stateMu.Lock()
+	defer s.stateMu.Unlock()
+	s.err = err
+}
+
 func (s *Storage) run(f func() error) error {
 	s.stateMu.Lock()
 	defer s.stateMu.Unlock()
 
+	if s.err != nil {
+		return s.err
+	}
 	if s.closed {
 		return errors.New("storage is closed")
 	}

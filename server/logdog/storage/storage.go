@@ -6,6 +6,7 @@ package storage
 
 import (
 	"errors"
+	"time"
 
 	"github.com/luci/luci-go/common/logdog/types"
 )
@@ -25,6 +26,15 @@ var (
 	// is read-only.
 	ErrReadOnly = errors.New("storage: read only")
 )
+
+// Config is the set of runtime configuration parameters for this storage
+// instance.
+type Config struct {
+	// MaxLogAge is the maximium amount of time that a log entry must be kept for.
+	// The Storage instance is welcome to delete any log entries that exceed this
+	// age.
+	MaxLogAge time.Duration
+}
 
 // PutRequest describes adding a single storage record to BigTable.
 type PutRequest struct {
@@ -92,8 +102,7 @@ type Storage interface {
 	// will return ErrDoesNotExist.
 	Tail(types.StreamPath) ([]byte, types.MessageIndex, error)
 
-	// Purges a stream and all of its data from the store.
-	//
-	// If the requested stream doesn't exist, ErrDoesNotExist will be returned.
-	Purge(types.StreamPath) error
+	// Config installs the supplied configuration parameters into the storage
+	// instance.
+	Config(Config) error
 }

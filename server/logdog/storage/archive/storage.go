@@ -98,8 +98,8 @@ func (s *storageImpl) Close() {
 	}
 }
 
+func (s *storageImpl) Config(storage.Config) error   { return storage.ErrReadOnly }
 func (s *storageImpl) Put(*storage.PutRequest) error { return storage.ErrReadOnly }
-func (s *storageImpl) Purge(types.StreamPath) error  { return storage.ErrReadOnly }
 
 func (s *storageImpl) Get(req *storage.GetRequest, cb storage.GetCallback) error {
 	idx, err := s.getIndex()

@@ -87,5 +87,5 @@ func GetStorage(c context.Context) (storage.Storage, error) {
 		ClientOptions: []cloud.ClientOption{
 			cloud.WithTokenSource(a.TokenSource()),
 		},
-	})
+	}), nil
 }

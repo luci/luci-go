@@ -15,23 +15,16 @@ queue:
       # luci-logdog-dev developer service account.
       - user_email: service-account@luci-logdog-dev.iam.gserviceaccount.com
 
-  # Push queue for backend storage cleanup tasking.
-  - name: storage-cleanup-queue
-    mode: pull
-    acl:
-      # luci-logdog (prod) GCE service account.
-      - user_email: 43182045235-compute@developer.gserviceaccount.com
-      # luci-logdog-dev GCE service account.
-      - user_email: 38892607523-compute@developer.gserviceaccount.com
-      # luci-logdog-dev developer service account.
-      - user_email: service-account@luci-logdog-dev.iam.gserviceaccount.com
-
   # Push queue for tumble (from doc.go).
+  #
+  # These must scale with shards. The max_concurrent_requests and bucket_size
+  # should equal the number of shards.
   - name: tumble
-    rate: 32/s
-    bucket_size: 32
+    rate: 1/s
+    bucket_size: 1
+    max_concurrent_requests: 1
     retry_parameters:
-      task_age_limit: 2m
+      task_age_limit: 1m
       min_backoff_seconds: 2
       max_backoff_seconds: 6
       max_doublings: 7

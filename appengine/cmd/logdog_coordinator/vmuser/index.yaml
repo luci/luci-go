@@ -78,12 +78,6 @@ indexes:
   - name: Created
     direction: desc
 
-  # This index supports archive and storage cleanup queries against log streams.
-- kind: LogStream
-  properties:
-  - name: State
-  - name: Updated
-
   # This index supports the tumble installation.
 - kind: tumble.Mutation
   properties:
