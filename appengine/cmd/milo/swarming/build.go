@@ -227,9 +227,10 @@ func buildFromClient(
 		build.Summary.Status = resp.Success
 	}
 
-	// Build times
-	build.Summary.Started = sr.StartedTs
-	build.Summary.Finished = sr.CompletedTs
+	// Build times.  Swarming timestamps are RFC3339Nano without the timezone
+	// information, which is assumed to be UTC, so we fix it here.
+	build.Summary.Started = fmt.Sprintf("%sZ", sr.StartedTs)
+	build.Summary.Finished = fmt.Sprintf("%sZ", sr.CompletedTs)
 	build.Summary.Duration = uint64(sr.Duration)
 
 	// Now Fetch the main annotation of the build.
@@ -246,13 +247,20 @@ func buildFromClient(
 		anno := &miloProto.Step{}
 		fullname := strings.Join([]string{name, "annotations"}, "/")
 		proto.Unmarshal(s.stream[fullname].dg, anno)
-		build.Components = append(build.Components, miloBuildStep(c, url, anno, name))
+		bs := miloBuildStep(c, url, anno, name)
+		build.Components = append(build.Components, bs)
+		propGroup := &resp.PropertyGroup{GroupName: bs.Label}
+		for _, prop := range anno.GetStepComponent().Property {
+			propGroup.Property = append(propGroup.Property, &resp.Property{
+				Key:   prop.Name,
+				Value: prop.Value,
+			})
+		}
+		build.PropertyGroup = append(build.PropertyGroup, propGroup)
 	}
 
 	// Take care of properties
-	propGroup := &resp.PropertyGroup{
-		GroupName: "Main",
-	}
+	propGroup := &resp.PropertyGroup{GroupName: "Main"}
 	for _, prop := range mainAnno.GetStepComponent().Property {
 		propGroup.Property = append(propGroup.Property, &resp.Property{
 			Key:   prop.Name,

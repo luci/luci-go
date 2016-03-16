@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"html/template"
 	"strings"
+	"time"
 )
 
 // A collection of useful templating functions
@@ -53,10 +54,16 @@ func humanDuration(t uint64) string {
 }
 
 // humanTimeRFC takes in the time represented as a RFC3339 string and returns
-// something more human readable.
+// something more human readable (like RFC850: Monday, 02-Jan-06 15:04:05 MST).
 func humanTimeRFC(s string) string {
-	// TODO(hinoka): Implement me.
-	return s
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		t, err = time.Parse(time.RFC3339Nano, s)
+		if err != nil {
+			return s
+		}
+	}
+	return t.Format(time.RFC850)
 }
 
 // sub subtracts one number from another, because apperently go templates aren't

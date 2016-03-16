@@ -1,1 +1,6 @@
-{"failure": true, "state": "COMPLETED"}
+{
+  "failure": true,
+  "state": "COMPLETED",
+  "completed_ts": "2016-03-14T11:00:18.486020",
+  "started_ts": "2016-03-14T10:00:01.850710"
+}

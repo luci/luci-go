@@ -4,6 +4,14 @@
 
 @@@STEP_STARTED@@@
 
+@@@SET_BUILD_PROPERTY@path_config@kitchen@@@
+
+@@@SET_BUILD_PROPERTY@slavename@fakeslave@@@
+
+@@@SET_BUILD_PROPERTY@buildername@infra-continuous-precise-32@@@
+
+@@@SET_BUILD_PROPERTY@mastername@chromium.infra@@@
+
 $ git clone https://chromium.googlesource.com/chromium/tools/build build
 Cloning into 'build'...
 build$ git checkout 3b6bb3ed9f5d05bce52f864623b3a1a7da32f68b

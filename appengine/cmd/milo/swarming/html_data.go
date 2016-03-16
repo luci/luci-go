@@ -27,8 +27,11 @@ func (l TestableLog) TestData() []settings.TestBundle {
 func (b TestableBuild) TestData() []settings.TestBundle {
 	basic := resp.MiloBuild{
 		Summary: resp.BuildComponent{
-			Label:  "Test swarming build",
-			Status: resp.Success,
+			Label:    "Test swarming build",
+			Status:   resp.Success,
+			Started:  "2006-01-02T15:04:05.999999999Z",
+			Finished: "2006-01-02T15:04:06.999999999Z",
+			Duration: 1,
 		},
 	}
 	return []settings.TestBundle{

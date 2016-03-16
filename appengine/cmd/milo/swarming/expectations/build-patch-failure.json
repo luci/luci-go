@@ -5,8 +5,8 @@
     "MainLink": null,
     "SubLink": null,
     "Progress": null,
-    "Started": "",
-    "Finished": "",
+    "Started": "Z",
+    "Finished": "Z",
     "Duration": 0,
     "Type": "Recipe",
     "LevelsDeep": 0,
@@ -158,6 +158,35 @@
     }
   ],
   "PropertyGroup": [
+    {
+      "GroupName": "update_scripts",
+      "Property": [
+        {
+          "Key": "build_scm",
+          "Value": "\"git\""
+        },
+        {
+          "Key": "build_revision",
+          "Value": "\"1fb19c56e954ada4c990ed04cf8a004e16def555\""
+        }
+      ]
+    },
+    {
+      "GroupName": "setup_build",
+      "Property": null
+    },
+    {
+      "GroupName": "bot_update",
+      "Property": null
+    },
+    {
+      "GroupName": "Patch failure",
+      "Property": null
+    },
+    {
+      "GroupName": "recipe failure reason",
+      "Property": null
+    },
     {
       "GroupName": "Main",
       "Property": [
