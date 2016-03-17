@@ -24,11 +24,6 @@
       }
     </style>
 
-    <google-signin-aware id="signin" scopes="email"
-      on-google-signin-aware-success="_onSignin"
-      on-google-signin-aware-signed-out="_onSignOut"
-      ></google-signin-aware>
-
     <div on-keypress="_onKeypress">
       <rpc-client
           id="client"
@@ -130,14 +125,6 @@
         }
       },
 
-      _onSignin: function(e) {
-        this.$.client.accessToken = e.detail.access_token;
-      },
-
-      _onSignOut: function() {
-        this.$.client.accessToken = null;
-      },
-
       _resolveMethod: function(desc, service, method) {
         if (!desc || !service || !method) {
           return null;
@@ -173,6 +160,14 @@
         }
       },
 
+      getAccessToken: function() {
+        var user = gapi.auth2.getAuthInstance().currentUser.get();
+        if (!user) {
+          return null;
+        }
+        return user.getAuthResponse().access_token;
+      },
+
       send: function() {
         this.error = null;
         try {
@@ -184,6 +179,8 @@
           // Update URL without a refresh.
           history.replaceState(
               history.state, document.title, "?request=" + this.requestText);
+
+          this.$.client.accessToken = this.getAccessToken();
 
           // Actually send the request.
           this.$.client.call();
