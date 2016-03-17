@@ -4,9 +4,4 @@
 
 package test
 
-import "github.com/luci/luci-go/tools/internal/svctool/testdata"
-
-// CompoundServer embeds an interface.
-type CompoundServer interface {
-	test.S1Server
-}
+//go:generate cproto -discovery=false

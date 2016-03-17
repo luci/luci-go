@@ -25,6 +25,7 @@ func generate(c context.Context, a *svctool.GeneratorArgs) error {
 	args := templateArgs{
 		PackageName:        a.PackageName,
 		VersionMetadataKey: svcmux.VersionMetadataKey,
+		ExtraImports:       a.ExtraImports,
 	}
 	for _, svc := range a.Services {
 		args.Services = append(args.Services, &service{

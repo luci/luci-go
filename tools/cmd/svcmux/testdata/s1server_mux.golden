@@ -5,6 +5,9 @@ package test
 import (
 	svcmux "github.com/luci/luci-go/server/svcmux"
 	context "golang.org/x/net/context"
+
+	google_protobuf "github.com/luci/luci-go/common/proto/google"
+	sub "github.com/luci/luci-go/tools/internal/svctool/testdata/sub"
 )
 
 type VersionedS1 struct {
@@ -48,4 +51,13 @@ func (s *VersionedS2) Set(c context.Context, req *M1) (*Void, error) {
 		return nil, svcmux.NoImplementation(ver)
 	}
 	return impl.Set(c, req)
+}
+
+func (s *VersionedS2) Imp(c context.Context, req *sub.Sub) (*google_protobuf.Empty, error) {
+	ver := svcmux.GetServiceVersion(c, s.Default)
+	impl := s.Impls[ver]
+	if impl == nil {
+		return nil, svcmux.NoImplementation(ver)
+	}
+	return impl.Imp(c, req)
 }

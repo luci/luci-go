@@ -6,6 +6,9 @@ syntax = "proto3";
 
 package test;
 
+import "github.com/luci/luci-go/tools/internal/svctool/testdata/sub/sub.proto";
+import "google/protobuf/empty.proto";
+
 service S1 {
   rpc M (M1) returns (M2) {}
 }
@@ -13,6 +16,7 @@ service S1 {
 service S2 {
   rpc Get (Void) returns (M1) {}
   rpc Set (M1) returns (Void) {}
+  rpc Imp(sub.Sub) returns (google.protobuf.Empty) {}
 }
 
 

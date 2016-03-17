@@ -17,6 +17,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -35,6 +36,11 @@ type Method struct {
 	Node       *ast.Field
 	InputType  string
 	OutputType string
+}
+
+type Import struct {
+	Name string
+	Path string
 }
 
 // Tool is a helper class for svcmux and svcdec.
@@ -116,11 +122,26 @@ func (t *Tool) ParseArgs(args []string) {
 }
 
 type GeneratorArgs struct {
-	PackageName string
-	Services    []*Service
-	Out         io.Writer
+	PackageName  string
+	Services     []*Service
+	ExtraImports []Import
+	Out          io.Writer
 }
 type Generator func(c context.Context, a *GeneratorArgs) error
+
+// importList converts a map name -> path to []Import sorted by name.
+func importList(imports map[string]string) []Import {
+	names := make([]string, 0, len(imports))
+	for n := range imports {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	result := make([]Import, len(names))
+	for i, n := range names {
+		result[i] = Import{n, imports[n]}
+	}
+	return result
+}
 
 // Run parses Go files and generates a new file using f.
 func (t *Tool) Run(c context.Context, f Generator) error {
@@ -157,9 +178,10 @@ func (t *Tool) Run(c context.Context, f Generator) error {
 	// Run the generator.
 	var buf bytes.Buffer
 	genArgs := &GeneratorArgs{
-		PackageName: p.files[0].Name.Name,
-		Services:    p.services,
-		Out:         &buf,
+		PackageName:  p.files[0].Name.Name,
+		Services:     p.services,
+		ExtraImports: importList(p.extraImports),
+		Out:          &buf,
 	}
 	if err := f(c, genArgs); err != nil {
 		return err

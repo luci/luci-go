@@ -15,8 +15,9 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-const (
-	testDir = "testdata"
+var (
+	inputDir   = filepath.Join("..", "..", "internal", "svctool", "testdata")
+	goldenFile = "testdata/s1server_dec.golden"
 )
 
 func TestMain(t *testing.T) {
@@ -38,12 +39,11 @@ func TestMain(t *testing.T) {
 			err := run(
 				"-output", output,
 				"-type", "S1Server,S2Server",
-				testDir,
+				inputDir,
 			)
 			So(err, ShouldBeNil)
 
-			wantFile := filepath.Join(testDir, "s1server_dec.golden")
-			want, err := ioutil.ReadFile(wantFile)
+			want, err := ioutil.ReadFile(goldenFile)
 			So(err, ShouldBeNil)
 
 			got, err := ioutil.ReadFile(output)

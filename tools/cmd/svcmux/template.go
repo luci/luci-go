@@ -19,6 +19,8 @@ package {{.PackageName}}
 import (
 	svcmux "github.com/luci/luci-go/server/svcmux"
 	context "golang.org/x/net/context"
+	{{range .ExtraImports}}
+	{{.Name}} "{{.Path}}"{{end}}
 )
 
 {{range .Services}}
@@ -50,6 +52,7 @@ type (
 		PackageName        string
 		Services           []*service
 		VersionMetadataKey string
+		ExtraImports       []svctool.Import
 	}
 
 	service struct {

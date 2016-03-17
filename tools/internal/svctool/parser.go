@@ -19,14 +19,20 @@ import (
 	"github.com/luci/luci-go/common/logging"
 )
 
+type fileAndType struct {
+	f *ast.File
+	t *ast.TypeSpec
+}
+
 type parser struct {
-	services []*Service
+	services     []*Service
+	extraImports map[string]string
 
 	fileSet *token.FileSet
 	files   []*ast.File
 	types   []string
 
-	typeCache  map[string]*ast.TypeSpec
+	typeCache  map[string]fileAndType
 	exprStrBuf bytes.Buffer
 }
 
@@ -69,8 +75,45 @@ func (p *parser) resolveServices(c context.Context) error {
 	return nil
 }
 
+// recordImport extracts the package referenced by type expression typ,
+// resolves its path and saves to p.extraImports.
+func (p *parser) recordImport(f *ast.File, typ ast.Expr) error {
+	if star, ok := typ.(*ast.StarExpr); ok {
+		typ = star.X
+	}
+
+	sel, ok := typ.(*ast.SelectorExpr)
+	if !ok {
+		return nil
+	}
+	pkgID, ok := sel.X.(*ast.Ident)
+	if !ok {
+		return nil
+	}
+
+	if _, ok := p.extraImports[pkgID.Name]; ok {
+		return nil
+	}
+
+	path := ""
+	for _, i := range f.Imports {
+		if i.Name.Name == pkgID.Name {
+			path = strings.Trim(i.Path.Value, `"`)
+			break
+		}
+	}
+	if path == "" {
+		return fmt.Errorf("could not resolve package %s", pkgID.Name)
+	}
+	if p.extraImports == nil {
+		p.extraImports = make(map[string]string)
+	}
+	p.extraImports[pkgID.Name] = path
+	return nil
+}
+
 func (p *parser) resolveService(c context.Context, typeName string) (*Service, error) {
-	typeSpec := p.findType(typeName)
+	file, typeSpec := p.findType(typeName)
 	if typeSpec == nil {
 		return nil, fmt.Errorf("type %s not found", typeName)
 	}
@@ -133,9 +176,16 @@ func (p *parser) resolveService(c context.Context, typeName string) (*Service, e
 			Name: m.Names[0].Name,
 		}
 
+		if err := p.recordImport(file, params[1].Type); err != nil {
+			return nil, err
+		}
 		var err error
 		method.InputType, err = p.exprString(params[1].Type)
 		if err != nil {
+			return nil, err
+		}
+
+		if err := p.recordImport(file, results[0].Type); err != nil {
 			return nil, err
 		}
 		method.OutputType, err = p.exprString(results[0].Type)
@@ -147,12 +197,12 @@ func (p *parser) resolveService(c context.Context, typeName string) (*Service, e
 	return svc, nil
 }
 
-func (p *parser) findType(name string) *ast.TypeSpec {
+func (p *parser) findType(name string) (*ast.File, *ast.TypeSpec) {
 	if p.typeCache == nil {
-		p.typeCache = map[string]*ast.TypeSpec{}
+		p.typeCache = map[string]fileAndType{}
 	}
-	if typeSpec, ok := p.typeCache[name]; ok {
-		return typeSpec
+	if pair, ok := p.typeCache[name]; ok {
+		return pair.f, pair.t
 	}
 
 	for _, f := range p.files {
@@ -163,15 +213,15 @@ func (p *parser) findType(name string) *ast.TypeSpec {
 			}
 			for _, spec := range gen.Specs {
 				typeSpec := spec.(*ast.TypeSpec)
-				p.typeCache[typeSpec.Name.Name] = typeSpec
+				p.typeCache[typeSpec.Name.Name] = fileAndType{f, typeSpec}
 				if typeSpec.Name.Name == name {
-					return typeSpec
+					return f, typeSpec
 				}
 			}
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
 // exprString renders expr to string.

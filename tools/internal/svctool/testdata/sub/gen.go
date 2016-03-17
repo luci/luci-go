@@ -2,11 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package test
+package sub
 
-import "github.com/luci/luci-go/tools/internal/svctool/testdata"
-
-// CompoundServer embeds an interface.
-type CompoundServer interface {
-	test.S1Server
-}
+//go:generate cproto -discovery=false

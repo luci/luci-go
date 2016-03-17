@@ -16,8 +16,9 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-const (
-	testDir = "testdata"
+var (
+	inputDir   = filepath.Join("..", "..", "internal", "svctool", "testdata")
+	goldenFile = "testdata/s1server_mux.golden"
 )
 
 func TestMain(t *testing.T) {
@@ -39,12 +40,11 @@ func TestMain(t *testing.T) {
 			err := run(
 				"-output", output,
 				"-type", "S1Server,S2Server",
-				testDir,
+				inputDir,
 			)
 			So(err, ShouldBeNil)
 
-			wantFile := filepath.Join(testDir, "s1server_mux.golden")
-			want, err := ioutil.ReadFile(wantFile)
+			want, err := ioutil.ReadFile(goldenFile)
 			So(err, ShouldBeNil)
 
 			got, err := ioutil.ReadFile(output)
@@ -54,13 +54,13 @@ func TestMain(t *testing.T) {
 		})
 
 		Convey("Type not found", func() {
-			err := run("-type", "XServer", testDir)
+			err := run("-type", "XServer", inputDir)
 			So(err, ShouldErrLike, "type XServer not found")
 		})
 
 		Convey("Embedded interface", func() {
-			err := run("-type", "CompoundServer", testDir)
-			So(err, ShouldErrLike, "CompoundServer embeds S1Server")
+			err := run("-type", "CompoundServer", "testdata")
+			So(err, ShouldErrLike, "CompoundServer embeds test.S1Server")
 		})
 	})
 }

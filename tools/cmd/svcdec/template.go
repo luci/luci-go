@@ -19,6 +19,8 @@ package {{.PackageName}}
 import (
 	proto "github.com/golang/protobuf/proto"
 	context "golang.org/x/net/context"
+	{{range .ExtraImports}}
+	{{.Name}} "{{.Path}}"{{end}}
 )
 
 {{range .Services}}
@@ -27,7 +29,7 @@ type {{$StructName}} struct {
 	// Service is the service to decorate.
 	Service {{.Service.TypeName}}
 	// Prelude is called in each method before forwarding the call to Service.
-	// If Prelude returns an error, it is returned without forwrading the call.
+	// If Prelude returns an error, it is returned without forwarding the call.
 	Prelude func(c context.Context, methodName string, req proto.Message) (context.Context, error)
 }
 
@@ -46,8 +48,9 @@ func (s *{{$StructName}}) {{.Name}}(c context.Context, req {{.InputType}}) ({{.O
 
 type (
 	templateArgs struct {
-		PackageName string
-		Services    []*service
+		PackageName  string
+		Services     []*service
+		ExtraImports []svctool.Import
 	}
 
 	service struct {
