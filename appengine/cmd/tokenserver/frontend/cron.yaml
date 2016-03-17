@@ -1,0 +1,4 @@
+cron:
+- description: Reads configs from luci-config
+  url: /internal/cron/read-config
+  schedule: every 5 minutes

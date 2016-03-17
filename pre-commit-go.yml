@@ -74,6 +74,7 @@ ignore_patterns:
 - '*-gen.go'
 - '*.pb.go'
 - '*.pb_test.go'
+- '*_dec.go'
 - '*_string.go'
 - 'pb.discovery.go'
 - .*
