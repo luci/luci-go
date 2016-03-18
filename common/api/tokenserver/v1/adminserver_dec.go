@@ -17,10 +17,18 @@ type DecoratedAdmin struct {
 	Prelude func(c context.Context, methodName string, req proto.Message) (context.Context, error)
 }
 
-func (s *DecoratedAdmin) ReadConfig(c context.Context, req *google_protobuf.Empty) (*ReadConfigResponse, error) {
-	c, err := s.Prelude(c, "ReadConfig", req)
+func (s *DecoratedAdmin) ImportConfig(c context.Context, req *google_protobuf.Empty) (*ImportConfigResponse, error) {
+	c, err := s.Prelude(c, "ImportConfig", req)
 	if err != nil {
 		return nil, err
 	}
-	return s.Service.ReadConfig(c, req)
+	return s.Service.ImportConfig(c, req)
+}
+
+func (s *DecoratedAdmin) GetCAStatus(c context.Context, req *GetCAStatusRequest) (*GetCAStatusResponse, error) {
+	c, err := s.Prelude(c, "GetCAStatus", req)
+	if err != nil {
+		return nil, err
+	}
+	return s.Service.GetCAStatus(c, req)
 }

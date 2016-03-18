@@ -1,0 +1,21 @@
+// Copyright 2016 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package tokenserver;
+
+// TokenServerConfig is read from tokenserver.cfg in luci-config.
+message TokenServerConfig {
+  // List of CAs we trust.
+  repeated CertificateAuthorityConfig certificate_authority = 1;
+}
+
+// CertificateAuthorityConfig defines a single CA we trust.
+message CertificateAuthorityConfig {
+  string cn = 1;        // CA Common Name, must match Subject CN in the cert
+  string cert_path = 2; // path to the root certificate file in luci-config
+  string crl_url = 3;   // where to fetch CRL from
+  bool   use_oauth = 4; // true to send Authorization header when fetching CRL
+}

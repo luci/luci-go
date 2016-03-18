@@ -7,9 +7,14 @@ Package tokenserver is a generated protocol buffer package.
 
 It is generated from these files:
 	admin.proto
+	config.proto
 
 It has these top-level messages:
-	ReadConfigResponse
+	ImportConfigResponse
+	GetCAStatusRequest
+	GetCAStatusResponse
+	TokenServerConfig
+	CertificateAuthorityConfig
 */
 package tokenserver
 
@@ -31,17 +36,54 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-// ReadConfigResponse is returned by ReadConfig on success.
-type ReadConfigResponse struct {
+// ImportConfigResponse is returned by ImportConfig on success.
+type ImportConfigResponse struct {
+	Revision string `protobuf:"bytes,1,opt,name=revision" json:"revision,omitempty"`
 }
 
-func (m *ReadConfigResponse) Reset()                    { *m = ReadConfigResponse{} }
-func (m *ReadConfigResponse) String() string            { return proto.CompactTextString(m) }
-func (*ReadConfigResponse) ProtoMessage()               {}
-func (*ReadConfigResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+func (m *ImportConfigResponse) Reset()                    { *m = ImportConfigResponse{} }
+func (m *ImportConfigResponse) String() string            { return proto.CompactTextString(m) }
+func (*ImportConfigResponse) ProtoMessage()               {}
+func (*ImportConfigResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+
+// GetCAStatusRequest identifies a name of CA to fetch.
+type GetCAStatusRequest struct {
+	Cn string `protobuf:"bytes,1,opt,name=cn" json:"cn,omitempty"`
+}
+
+func (m *GetCAStatusRequest) Reset()                    { *m = GetCAStatusRequest{} }
+func (m *GetCAStatusRequest) String() string            { return proto.CompactTextString(m) }
+func (*GetCAStatusRequest) ProtoMessage()               {}
+func (*GetCAStatusRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+
+// GetCAStatusResponse is returned by GetCAStatus method.
+//
+// If requested CA doesn't exist, all fields are empty.
+type GetCAStatusResponse struct {
+	Config     *CertificateAuthorityConfig `protobuf:"bytes,1,opt,name=config" json:"config,omitempty"`
+	Cert       string                      `protobuf:"bytes,2,opt,name=cert" json:"cert,omitempty"`
+	Removed    bool                        `protobuf:"varint,3,opt,name=removed" json:"removed,omitempty"`
+	AddedRev   string                      `protobuf:"bytes,4,opt,name=added_rev" json:"added_rev,omitempty"`
+	UpdatedRev string                      `protobuf:"bytes,5,opt,name=updated_rev" json:"updated_rev,omitempty"`
+	RemovedRev string                      `protobuf:"bytes,6,opt,name=removed_rev" json:"removed_rev,omitempty"`
+}
+
+func (m *GetCAStatusResponse) Reset()                    { *m = GetCAStatusResponse{} }
+func (m *GetCAStatusResponse) String() string            { return proto.CompactTextString(m) }
+func (*GetCAStatusResponse) ProtoMessage()               {}
+func (*GetCAStatusResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+
+func (m *GetCAStatusResponse) GetConfig() *CertificateAuthorityConfig {
+	if m != nil {
+		return m.Config
+	}
+	return nil
+}
 
 func init() {
-	proto.RegisterType((*ReadConfigResponse)(nil), "tokenserver.ReadConfigResponse")
+	proto.RegisterType((*ImportConfigResponse)(nil), "tokenserver.ImportConfigResponse")
+	proto.RegisterType((*GetCAStatusRequest)(nil), "tokenserver.GetCAStatusRequest")
+	proto.RegisterType((*GetCAStatusResponse)(nil), "tokenserver.GetCAStatusResponse")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -51,12 +93,14 @@ var _ grpc.ClientConn
 // Client API for Admin service
 
 type AdminClient interface {
-	// ReadConfig makes the server read its config from luci-config right now.
+	// ImportConfig makes the server read its config from luci-config right now.
 	//
-	// Note that regularly configs are read in background each 5 min. ReadConfig
-	// can be used to force config reread right now. It will block until configs
+	// Note that regularly configs are read in background each 5 min. ImportConfig
+	// can be used to force config reread immediately. It will block until configs
 	// are read.
-	ReadConfig(ctx context.Context, in *google_protobuf.Empty, opts ...grpc.CallOption) (*ReadConfigResponse, error)
+	ImportConfig(ctx context.Context, in *google_protobuf.Empty, opts ...grpc.CallOption) (*ImportConfigResponse, error)
+	// GetCAStatus returns configuration of some CA defined in the config.
+	GetCAStatus(ctx context.Context, in *GetCAStatusRequest, opts ...grpc.CallOption) (*GetCAStatusResponse, error)
 }
 type adminPRPCClient struct {
 	client *prpccommon.Client
@@ -66,9 +110,18 @@ func NewAdminPRPCClient(client *prpccommon.Client) AdminClient {
 	return &adminPRPCClient{client}
 }
 
-func (c *adminPRPCClient) ReadConfig(ctx context.Context, in *google_protobuf.Empty, opts ...grpc.CallOption) (*ReadConfigResponse, error) {
-	out := new(ReadConfigResponse)
-	err := c.client.Call(ctx, "tokenserver.Admin", "ReadConfig", in, out, opts...)
+func (c *adminPRPCClient) ImportConfig(ctx context.Context, in *google_protobuf.Empty, opts ...grpc.CallOption) (*ImportConfigResponse, error) {
+	out := new(ImportConfigResponse)
+	err := c.client.Call(ctx, "tokenserver.Admin", "ImportConfig", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminPRPCClient) GetCAStatus(ctx context.Context, in *GetCAStatusRequest, opts ...grpc.CallOption) (*GetCAStatusResponse, error) {
+	out := new(GetCAStatusResponse)
+	err := c.client.Call(ctx, "tokenserver.Admin", "GetCAStatus", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -83,9 +136,18 @@ func NewAdminClient(cc *grpc.ClientConn) AdminClient {
 	return &adminClient{cc}
 }
 
-func (c *adminClient) ReadConfig(ctx context.Context, in *google_protobuf.Empty, opts ...grpc.CallOption) (*ReadConfigResponse, error) {
-	out := new(ReadConfigResponse)
-	err := grpc.Invoke(ctx, "/tokenserver.Admin/ReadConfig", in, out, c.cc, opts...)
+func (c *adminClient) ImportConfig(ctx context.Context, in *google_protobuf.Empty, opts ...grpc.CallOption) (*ImportConfigResponse, error) {
+	out := new(ImportConfigResponse)
+	err := grpc.Invoke(ctx, "/tokenserver.Admin/ImportConfig", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminClient) GetCAStatus(ctx context.Context, in *GetCAStatusRequest, opts ...grpc.CallOption) (*GetCAStatusResponse, error) {
+	out := new(GetCAStatusResponse)
+	err := grpc.Invoke(ctx, "/tokenserver.Admin/GetCAStatus", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -95,24 +157,38 @@ func (c *adminClient) ReadConfig(ctx context.Context, in *google_protobuf.Empty,
 // Server API for Admin service
 
 type AdminServer interface {
-	// ReadConfig makes the server read its config from luci-config right now.
+	// ImportConfig makes the server read its config from luci-config right now.
 	//
-	// Note that regularly configs are read in background each 5 min. ReadConfig
-	// can be used to force config reread right now. It will block until configs
+	// Note that regularly configs are read in background each 5 min. ImportConfig
+	// can be used to force config reread immediately. It will block until configs
 	// are read.
-	ReadConfig(context.Context, *google_protobuf.Empty) (*ReadConfigResponse, error)
+	ImportConfig(context.Context, *google_protobuf.Empty) (*ImportConfigResponse, error)
+	// GetCAStatus returns configuration of some CA defined in the config.
+	GetCAStatus(context.Context, *GetCAStatusRequest) (*GetCAStatusResponse, error)
 }
 
 func RegisterAdminServer(s prpc.Registrar, srv AdminServer) {
 	s.RegisterService(&_Admin_serviceDesc, srv)
 }
 
-func _Admin_ReadConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Admin_ImportConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(google_protobuf.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(AdminServer).ReadConfig(ctx, in)
+	out, err := srv.(AdminServer).ImportConfig(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _Admin_GetCAStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(GetCAStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(AdminServer).GetCAStatus(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -124,22 +200,36 @@ var _Admin_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*AdminServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "ReadConfig",
-			Handler:    _Admin_ReadConfig_Handler,
+			MethodName: "ImportConfig",
+			Handler:    _Admin_ImportConfig_Handler,
+		},
+		{
+			MethodName: "GetCAStatus",
+			Handler:    _Admin_GetCAStatus_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
 }
 
 var fileDescriptor0 = []byte{
-	// 132 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0xe2, 0x4e, 0x4c, 0xc9, 0xcd,
-	0xcc, 0xd3, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0xe2, 0x2e, 0xc9, 0xcf, 0x4e, 0xcd, 0x2b, 0x4e,
-	0x2d, 0x2a, 0x4b, 0x2d, 0x92, 0x92, 0x4e, 0xcf, 0xcf, 0x4f, 0xcf, 0x49, 0xd5, 0x07, 0x4b, 0x25,
-	0x95, 0xa6, 0xe9, 0xa7, 0xe6, 0x16, 0x94, 0x54, 0x42, 0x54, 0x2a, 0x89, 0x70, 0x09, 0x05, 0xa5,
-	0x26, 0xa6, 0x38, 0xe7, 0xe7, 0xa5, 0x65, 0xa6, 0x07, 0xa5, 0x16, 0x17, 0xe4, 0x03, 0xb5, 0x19,
-	0xf9, 0x71, 0xb1, 0x3a, 0x82, 0x8c, 0x13, 0x72, 0xe5, 0xe2, 0x42, 0x48, 0x0b, 0x89, 0xe9, 0x41,
-	0x8c, 0xd2, 0x83, 0x19, 0xa5, 0xe7, 0x0a, 0x32, 0x4a, 0x4a, 0x5e, 0x0f, 0xc9, 0x3e, 0x3d, 0x4c,
-	0xf3, 0x92, 0xd8, 0xc0, 0x1a, 0x8c, 0x01, 0x01, 0x00, 0x00, 0xff, 0xff, 0x0b, 0x35, 0x42, 0x8e,
-	0xa5, 0x00, 0x00, 0x00,
+	// 299 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x74, 0x90, 0x41, 0x4b, 0xc3, 0x40,
+	0x10, 0x85, 0x49, 0x6d, 0x6b, 0x3b, 0x29, 0xa8, 0x5b, 0x91, 0x10, 0x0f, 0xd6, 0x5e, 0xec, 0x69,
+	0x0b, 0xf5, 0xe0, 0xb9, 0x14, 0x91, 0xde, 0xa4, 0xfe, 0x00, 0x49, 0xb3, 0x93, 0xb8, 0x68, 0xb2,
+	0x71, 0x33, 0x09, 0xf4, 0xff, 0x78, 0xf2, 0x57, 0x9a, 0xec, 0x36, 0x90, 0xa0, 0x1e, 0xe7, 0xcd,
+	0x7b, 0x8f, 0xc7, 0x07, 0x6e, 0x20, 0x12, 0x99, 0xf2, 0x4c, 0x2b, 0x52, 0xcc, 0x25, 0xf5, 0x8e,
+	0x69, 0x8e, 0xba, 0x44, 0xed, 0x4f, 0x42, 0x95, 0x46, 0x32, 0xb6, 0x2f, 0xff, 0x3a, 0x56, 0x2a,
+	0xfe, 0xc0, 0xa5, 0xb9, 0xf6, 0x45, 0xb4, 0xc4, 0x24, 0xa3, 0x83, 0x7d, 0xce, 0x17, 0x70, 0xb9,
+	0x4d, 0x32, 0xa5, 0x69, 0x63, 0x22, 0x3b, 0xcc, 0x33, 0x55, 0xd5, 0xb0, 0x73, 0x18, 0x69, 0x2c,
+	0x65, 0x2e, 0x55, 0xea, 0x39, 0x33, 0x67, 0x31, 0x9e, 0xcf, 0x80, 0x3d, 0x21, 0x6d, 0xd6, 0x2f,
+	0x14, 0x50, 0x91, 0xef, 0xf0, 0xb3, 0xc0, 0x9c, 0x18, 0x40, 0x2f, 0x6c, 0x1c, 0xdf, 0x0e, 0x4c,
+	0x3b, 0x96, 0x63, 0xd7, 0x03, 0x0c, 0xed, 0x20, 0xe3, 0x73, 0x57, 0x77, 0xbc, 0x35, 0x96, 0x6f,
+	0x50, 0x93, 0x8c, 0x64, 0x18, 0x10, 0xae, 0x0b, 0x7a, 0x53, 0x5a, 0xd2, 0xc1, 0x8e, 0x61, 0x13,
+	0xe8, 0x87, 0xd5, 0xd7, 0xeb, 0xd5, 0xf5, 0xec, 0x0c, 0x4e, 0x35, 0x26, 0xaa, 0x44, 0xe1, 0x9d,
+	0x54, 0xc2, 0x88, 0x5d, 0xc0, 0x38, 0x10, 0x02, 0xc5, 0x6b, 0xb5, 0xd4, 0xeb, 0x1b, 0xcf, 0x14,
+	0xdc, 0x22, 0x13, 0x55, 0x95, 0x15, 0x07, 0x8d, 0x78, 0x0c, 0x1a, 0x71, 0x58, 0x8b, 0xab, 0x2f,
+	0x07, 0x06, 0xeb, 0x1a, 0x20, 0xdb, 0xc2, 0xa4, 0x8d, 0x80, 0x5d, 0x71, 0x0b, 0x8c, 0x37, 0xc0,
+	0xf8, 0x63, 0x0d, 0xcc, 0xbf, 0xed, 0xcc, 0xfe, 0x93, 0xda, 0x33, 0xb8, 0x2d, 0x00, 0xec, 0xa6,
+	0x93, 0xf8, 0x4d, 0xcf, 0x9f, 0xfd, 0x6f, 0xb0, 0x8d, 0xfb, 0xa1, 0x19, 0x71, 0xff, 0x13, 0x00,
+	0x00, 0xff, 0xff, 0x4f, 0x83, 0x1a, 0xec, 0xed, 0x01, 0x00, 0x00,
 }

@@ -4,21 +4,42 @@
 
 syntax = "proto3";
 
-import "google/protobuf/empty.proto";
-
 package tokenserver;
+
+import "config.proto";
+import "google/protobuf/empty.proto";
 
 // Admin service can be used by service administrators to manage token server.
 service Admin {
-  // ReadConfig makes the server read its config from luci-config right now.
+  // ImportConfig makes the server read its config from luci-config right now.
   //
-  // Note that regularly configs are read in background each 5 min. ReadConfig
-  // can be used to force config reread right now. It will block until configs
+  // Note that regularly configs are read in background each 5 min. ImportConfig
+  // can be used to force config reread immediately. It will block until configs
   // are read.
-  rpc ReadConfig(google.protobuf.Empty) returns (ReadConfigResponse);
+  rpc ImportConfig(google.protobuf.Empty) returns (ImportConfigResponse);
+
+  // GetCAStatus returns configuration of some CA defined in the config.
+  rpc GetCAStatus(GetCAStatusRequest) returns (GetCAStatusResponse);
 }
 
-// ReadConfigResponse is returned by ReadConfig on success.
-message ReadConfigResponse {
-  // TODO(vadimsh): Add stuff.
+// ImportConfigResponse is returned by ImportConfig on success.
+message ImportConfigResponse {
+  string revision = 1; // revision of the imported config
+}
+
+// GetCAStatusRequest identifies a name of CA to fetch.
+message GetCAStatusRequest {
+  string cn = 1; // Common Name of the CA
+}
+
+// GetCAStatusResponse is returned by GetCAStatus method.
+//
+// If requested CA doesn't exist, all fields are empty.
+message GetCAStatusResponse {
+  CertificateAuthorityConfig config = 1; // current config
+  string cert = 2;          // pem-encoded CA certificate
+  bool removed = 3;         // true if this CA was removed from the config
+  string added_rev = 4;     // config rev when this CA appeared
+  string updated_rev = 5;   // config rev when this CA was updated
+  string removed_rev = 6;   // config rev when this CA was removed
 }

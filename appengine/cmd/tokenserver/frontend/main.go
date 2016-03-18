@@ -26,6 +26,7 @@ import (
 	"github.com/luci/luci-go/common/api/tokenserver/v1"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/config/impl/memory"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/discovery"
 	"github.com/luci/luci-go/server/middleware"
@@ -48,7 +49,8 @@ var (
 	// adminServerWithAuth wraps adminServer adding admin check.
 	adminServerWithAuth = &tokenserver.DecoratedAdmin{
 		Service: adminServer,
-		Prelude: func(c context.Context, _ string, _ proto.Message) (context.Context, error) {
+		Prelude: func(c context.Context, method string, _ proto.Message) (context.Context, error) {
+			logging.Infof(c, "tokenserver.Admin: %q is calling %q", auth.CurrentIdentity(c), method)
 			switch admin, err := auth.IsMember(c, "administrators"); {
 			case err != nil:
 				return nil, grpc.Errorf(codes.Internal, "can't check ACL - %s", err)
@@ -106,7 +108,7 @@ func warmupHandler(c context.Context, w http.ResponseWriter, r *http.Request, _ 
 
 // readConfigCron is handler for /internal/cron/read-config GAE cron task.
 func readConfigCron(c context.Context, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	if _, err := adminServer.ReadConfig(c, nil); err != nil {
+	if _, err := adminServer.ImportConfig(c, nil); err != nil {
 		panic(err) // let panic catcher deal with it
 	}
 	w.WriteHeader(http.StatusOK)
