@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -54,6 +55,8 @@ type Stream struct {
 	// Tee, if not nil, is a writer where all consumed stream data should be
 	// forwarded.
 	Tee io.Writer
+	// Alias is the base stream name that this stream should alias to.
+	Alias string
 
 	// Annotate, if true, causes annotations in this Stream to be captured and
 	// an annotation LogDog stream to be emitted.
@@ -67,18 +70,28 @@ type Stream struct {
 	BufferSize int
 }
 
-// Processor consumes data from a list of Stream entries and
-type Processor struct {
+// Options are the configuration options for a Processor.
+type Options struct {
 	// Base is the base log stream name. This is prepended to every log name, as
 	// well as any generate log names.
 	Base types.StreamName
-	// Context is the Context instance to use.
-	Context context.Context
+
+	// Prefix is the log stream prefix. If this is empty, no log stream links will
+	// be generated.
+	Prefix types.StreamName
+
+	// LogDogHost is the host name of the LogDog Coordinator instance that this
+	// stream will be published to. If not empty, additional links will be
+	// injected into the annotation stream to link to the generated LogDog logs.
+	LogDogHost string
+
 	// Client is the LogDog Butler Client to use for stream creation.
 	Client streamclient.Client
+
 	// Execution describes the current applicaton's execution parameters. This
 	// will be used to construct annotation state.
 	Execution *annotation.Execution
+
 	// MetadataUpdateInterval is the amount of time to wait after stream metadata
 	// updates to push the updated metadata protobuf to the metadata stream.
 	//
@@ -87,9 +100,35 @@ type Processor struct {
 	//	- If this equals 0, metadata will be pushed every time it's updated.
 	//	- If this is 0, DefaultMetadataUpdateInterval will be used.
 	MetadataUpdateInterval time.Duration
+}
+
+// Processor consumes data from a list of Stream entries and interacts with the
+// supplied Client instance.
+//
+// A Processor must be instantiated with New.
+type Processor struct {
+	ctx context.Context
+	o   *Options
 
 	astate       *annotation.State
 	stepHandlers map[string]*stepHandler
+}
+
+// New instantiates a new Processor.
+func New(c context.Context, o Options) *Processor {
+	p := Processor{
+		ctx: c,
+		o:   &o,
+
+		stepHandlers: make(map[string]*stepHandler),
+	}
+	p.astate = &annotation.State{
+		LogNameBase: o.Base,
+		Callbacks:   &annotationCallbacks{&p},
+		Execution:   o.Execution,
+		Clock:       clock.Get(c),
+	}
+	return &p
 }
 
 // RunStreams executes the Processor, consuming data from its configured streams
@@ -100,10 +139,6 @@ type Processor struct {
 // stream data, Run will return an error. If multiple Streams fail with errors,
 // an errors.MultiError will be returned.
 func (p *Processor) RunStreams(streams []*Stream) error {
-	// Close and cleanup resources after streams are complete.
-	p.Reset()
-	defer p.Finish()
-
 	ingestMu := sync.Mutex{}
 	ingest := func(s *Stream, l string) error {
 		ingestMu.Lock()
@@ -135,7 +170,7 @@ func (p *Processor) RunStreams(streams []*Stream) error {
 							log.ErrorKey: err,
 							"stream":     s.Name,
 							"line":       line,
-						}.Errorf(p.Context, "Failed to ingest line.")
+						}.Errorf(p.ctx, "Failed to ingest line.")
 					}
 				}
 			}
@@ -143,27 +178,14 @@ func (p *Processor) RunStreams(streams []*Stream) error {
 	})
 }
 
-// Reset clears the current state of the Processor.
-func (p *Processor) Reset() {
-	p.stepHandlers = make(map[string]*stepHandler)
-	p.astate = &annotation.State{
-		LogNameBase: p.Base,
-		Callbacks:   &annotationCallbacks{p},
-		Execution:   p.Execution,
-		Clock:       clock.Get(p.Context),
-	}
-}
-
 // IngestLine ingests a single line of text from an input stream, responding to
 // any annotations encountered.
+//
+// This method is not goroutine-safe.
 func (p *Processor) IngestLine(s *Stream, line string) error {
-	if p.astate == nil {
-		p.Reset()
-	}
-
 	a := extractAnnotation(line)
 	if a != "" {
-		log.Debugf(p.Context, "Annotation: %q", a)
+		log.Debugf(p.ctx, "Annotation: %q", a)
 	}
 
 	var step *annotation.Step
@@ -177,7 +199,7 @@ func (p *Processor) IngestLine(s *Stream, line string) error {
 					log.ErrorKey: err,
 					"stream":     s.Name,
 					"annotation": a,
-				}.Errorf(p.Context, "Failed to process annotation.")
+				}.Errorf(p.ctx, "Failed to process annotation.")
 			}
 		}
 
@@ -193,26 +215,41 @@ func (p *Processor) IngestLine(s *Stream, line string) error {
 		return err
 	}
 
-	// If configured, tee to our tee stream.
-	if s.Tee != nil && (a == "" || !s.StripAnnotations) {
-		// Tee this to the Stream's configured Tee output.
-		if err := writeTextLine(s.Tee, line); err != nil {
-			log.WithError(err).Errorf(p.Context, "Failed to tee line.")
+	// Build our output, which will consist of the initial line and any extra
+	// lines that have been registered.
+	inject := h.flushInjectedLines()
+	output := make([]string, 1, 1+len(inject))
+	output[0] = line
+	output = append(output, inject...)
+
+	for _, l := range output {
+		// If configured, tee to our tee stream.
+		if s.Tee != nil && (a == "" || !s.StripAnnotations) {
+			// Tee this to the Stream's configured Tee output.
+			if err := writeTextLine(s.Tee, l); err != nil {
+				log.WithError(err).Errorf(p.ctx, "Failed to tee line.")
+				return err
+			}
+		}
+
+		// Write to our LogDog stream.
+		if err := h.writeBaseStream(s, l); err != nil {
+			log.WithError(err).Errorf(p.ctx, "Failed to send line to LogDog.")
 			return err
 		}
-	}
-
-	// Write to our LogDog stream.
-	if err := h.writeBaseStream(s, line); err != nil {
-		log.WithError(err).Errorf(p.Context, "Failed to send line to LogDog.")
-		return err
 	}
 
 	return err
 }
 
-// State returns the current annotation state.
-func (p *Processor) State() *annotation.State {
+// Finish instructs the Processor to close any outstanding state. This should be
+// called when all automatic state updates have completed in case any steps
+// didn't properly close their state.
+func (p *Processor) Finish() *annotation.State {
+	// Close our step handlers.
+	for _, h := range p.stepHandlers {
+		p.closeStepHandler(h)
+	}
 	return p.astate
 }
 
@@ -230,7 +267,7 @@ func (p *Processor) getStepHandler(step *annotation.Step, create bool) (*stepHan
 		log.Fields{
 			log.ErrorKey: err,
 			"step":       name,
-		}.Errorf(p.Context, "Failed to create step handler.")
+		}.Errorf(p.ctx, "Failed to create step handler.")
 		return nil, err
 	}
 	p.stepHandlers[name] = h
@@ -253,14 +290,18 @@ func (p *Processor) closeStepHandler(h *stepHandler) {
 	h.finish()
 }
 
-// Finish instructs the Processor to close any outstanding state. This should be
-// called when all automatic state updates have completed in case any steps
-// didn't properly close their state.
-func (p *Processor) Finish() {
-	// Close our step handlers.
-	for _, h := range p.stepHandlers {
-		p.closeStepHandler(h)
+// coordinatorLink returns a link to the rendered log stream in the Coordinator.
+// If no Coordinator host is configured, this will return an empty string.
+func (p *Processor) coordinatorLink(name ...types.StreamName) string {
+	if p.o.LogDogHost == "" || p.o.Prefix == "" {
+		return ""
 	}
+
+	links := make([]string, len(name))
+	for i, n := range name {
+		links[i] = fmt.Sprintf("s=%s", url.QueryEscape(string(p.o.Prefix.Join(n))))
+	}
+	return fmt.Sprintf("https://%s.appspot.com/v/?%s", p.o.LogDogHost, strings.Join(links, "&"))
 }
 
 type annotationCallbacks struct {
@@ -277,27 +318,30 @@ func (c *annotationCallbacks) Updated(step *annotation.Step) {
 	}
 }
 
-func (c *annotationCallbacks) StepLogLine(step *annotation.Step, name types.StreamName, line string) {
+func (c *annotationCallbacks) StepLogLine(step *annotation.Step, name types.StreamName, label, line string) {
 	h, err := c.getStepHandler(step, true)
 	if err != nil {
 		return
 	}
 
-	s, err := h.getStream(name, &textStreamArchetype)
+	s, created, err := h.getStream(name, &textStreamArchetype)
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,
 			"step":       h,
 			"stream":     name,
-		}.Errorf(c.Context, "Failed to get log substream.")
+		}.Errorf(c.ctx, "Failed to get log substream.")
 		return
+	}
+	if created {
+		h.maybeInjectCoordinatorLink(label, "logdog", name)
 	}
 
 	if err := writeTextLine(s, line); err != nil {
 		log.Fields{
 			log.ErrorKey: err,
 			"stream":     name,
-		}.Errorf(c.Context, "Failed to export log line.")
+		}.Errorf(c.ctx, "Failed to export log line.")
 	}
 }
 
@@ -311,9 +355,11 @@ func (c *annotationCallbacks) StepLogEnd(step *annotation.Step, name types.Strea
 type stepHandler struct {
 	context.Context
 
-	step *annotation.Step
+	processor *Processor
+	step      *annotation.Step
 
 	client              streamclient.Client
+	injectedLines       []string
 	streams             map[types.StreamName]streamclient.Stream
 	annotationC         chan []byte
 	annotationFinishedC chan struct{}
@@ -322,10 +368,11 @@ type stepHandler struct {
 
 func newStepHandler(p *Processor, step *annotation.Step) (*stepHandler, error) {
 	h := stepHandler{
-		Context: log.SetField(p.Context, "step", step.CanonicalName()),
-		step:    step,
+		Context:   log.SetField(p.ctx, "step", step.CanonicalName()),
+		processor: p,
+		step:      step,
 
-		client:              p.Client,
+		client:              p.o.Client,
 		streams:             make(map[types.StreamName]streamclient.Stream),
 		annotationC:         make(chan []byte),
 		annotationFinishedC: make(chan struct{}),
@@ -335,14 +382,14 @@ func newStepHandler(p *Processor, step *annotation.Step) (*stepHandler, error) {
 	// to fail immediately if we can't create this stream.
 	//
 	// This stream will be used exclusively by our meter goroutine.
-	astr, err := h.getStream(step.AnnotationStream(), &metadataStreamArchetype)
+	astr, _, err := h.getStream(step.AnnotationStream(), &metadataStreamArchetype)
 	if err != nil {
 		log.WithError(err).Errorf(h, "Failed to create annotation stream.")
 		return nil, err
 	}
 
 	// Run our annotation meter in a separate goroutine.
-	go h.runAnnotationMeter(astr, p.MetadataUpdateInterval)
+	go h.runAnnotationMeter(astr, p.o.MetadataUpdateInterval)
 
 	// Send our initial annotation state.
 	h.updated()
@@ -437,9 +484,14 @@ func (h *stepHandler) finish() {
 }
 
 func (h *stepHandler) writeBaseStream(s *Stream, line string) error {
-	stream, err := h.getStream(h.step.BaseStream(s.Name), &textStreamArchetype)
+	name := h.step.BaseStream(s.Name)
+	stream, created, err := h.getStream(name, &textStreamArchetype)
 	if err != nil {
 		return err
+	}
+	if created {
+		segs := s.Name.Segments()
+		h.maybeInjectCoordinatorLink("stdio", segs[len(segs)-1], name)
 	}
 	return writeTextLine(stream, line)
 }
@@ -462,27 +514,30 @@ func (h *stepHandler) updated() {
 	h.annotationC <- data
 }
 
-func (h *stepHandler) getStream(name types.StreamName, flags *streamproto.Flags) (streamclient.Stream, error) {
+func (h *stepHandler) getStream(name types.StreamName, flags *streamproto.Flags) (s streamclient.Stream, created bool, err error) {
 	if h.closed {
-		return nil, fmt.Errorf("refusing to get stream %q for closed handler", name)
+		err = fmt.Errorf("refusing to get stream %q for closed handler", name)
+		return
 	}
-	if s := h.streams[name]; s != nil {
-		return s, nil
+	if s = h.streams[name]; s != nil {
+		return
 	}
+
+	// New stream, will be creating.
 	if flags == nil {
-		return nil, nil
+		return
 	}
 
 	// Create a new stream. Clone the properties archetype and customize.
 	f := *flags
 	f.Timestamp = clockflag.Time(clock.Now(h))
 	f.Name = streamproto.StreamNameFlag(name)
-	s, err := h.client.NewStream(f)
-	if err != nil {
-		return nil, err
+	if s, err = h.client.NewStream(f); err != nil {
+		return
 	}
+	created = true
 	h.streams[name] = s
-	return s, nil
+	return
 }
 
 func (h *stepHandler) closeStream(name types.StreamName) {
@@ -507,6 +562,34 @@ func (h *stepHandler) closeStreamImpl(name types.StreamName, s streamclient.Stre
 			"stream":     name,
 		}.Errorf(h, "Failed to close step stream.")
 	}
+}
+
+func (h *stepHandler) injectLines(s ...string) {
+	h.injectedLines = append(h.injectedLines, s...)
+}
+
+func (h *stepHandler) flushInjectedLines() []string {
+	if len(h.injectedLines) == 0 {
+		return nil
+	}
+
+	lines := make([]string, len(h.injectedLines))
+	copy(lines, h.injectedLines)
+	h.injectedLines = h.injectedLines[:0]
+
+	return lines
+}
+
+func (h *stepHandler) injectAliasAnnotation(base, text, url string) {
+	h.injectLines(buildAnnotation("STEP_LINK", fmt.Sprintf("%s-->%s", text, base), url))
+}
+
+func (h *stepHandler) maybeInjectCoordinatorLink(base, text string, names ...types.StreamName) {
+	url := h.processor.coordinatorLink(names...)
+	if url == "" {
+		return
+	}
+	h.injectAliasAnnotation(base, text, url)
 }
 
 // lineReader reads from an input stream and returns the data line-by-line.
@@ -551,4 +634,10 @@ func extractAnnotation(line string) string {
 		return ""
 	}
 	return strings.TrimSpace(line[3 : len(line)-3])
+}
+
+func buildAnnotation(name string, params ...string) string {
+	v := make([]string, 1, 1+len(params))
+	v[0] = name
+	return "@@@" + strings.Join(append(v, params...), "@") + "@@@"
 }

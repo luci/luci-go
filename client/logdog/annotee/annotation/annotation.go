@@ -25,7 +25,7 @@ type Callbacks interface {
 	// Updated is called when a Step's state has been updated.
 	Updated(*Step)
 	// StepLogLine is called when a Step emits a log line.
-	StepLogLine(*Step, types.StreamName, string)
+	StepLogLine(s *Step, stream types.StreamName, label, line string)
 	// StepLogEnd is called when a Step finishes emitting logs.
 	StepLogEnd(*Step, types.StreamName)
 }
@@ -613,7 +613,7 @@ func (as *Step) LogLine(label, line string) bool {
 		updated = true
 	}
 
-	as.s.Callbacks.StepLogLine(as, name, line)
+	as.s.Callbacks.StepLogLine(as, name, label, line)
 	return updated
 }
 

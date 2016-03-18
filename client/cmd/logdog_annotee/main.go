@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/luci/luci-go/client/logdog/annotee"
 	"github.com/luci/luci-go/client/logdog/annotee/executor"
 	"github.com/luci/luci-go/client/logdog/butlerlib/bootstrap"
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamclient"
@@ -57,6 +58,10 @@ type application struct {
 	testingDir         string
 	annotationInterval clockflag.Duration
 	nameBase           streamproto.StreamNameFlag
+	prefix             streamproto.StreamNameFlag
+	logdogHost         string
+
+	bootstrap *bootstrap.Bootstrap
 }
 
 func (a *application) addToFlagSet(fs *flag.FlagSet) {
@@ -78,6 +83,9 @@ func (a *application) addToFlagSet(fs *flag.FlagSet) {
 	fs.Var(&a.annotationInterval, "annotation-interval",
 		"Buffer annotation updates for this amount of time. <=0 sends every update.")
 	fs.Var(&a.nameBase, "name-base", "Base stream name to prepend to generated names.")
+	fs.Var(&a.prefix, "prefix", "The log stream prefix. If missing, one will be inferred from bootstrap.")
+	fs.StringVar(&a.logdogHost, "logdog-host", "",
+		"LogDog Coordinator host name. If supplied, log viewing links will be generated.")
 }
 
 func (a *application) loadJSONArgs() ([]string, error) {
@@ -104,18 +112,12 @@ func (a *application) getStreamClient() (streamclient.Client, error) {
 		return streamclient.New(a.butlerStreamServer)
 	}
 
-	// Assume we're a bootstrapped application.
-	bs, err := bootstrap.Get()
-	if err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-		}.Errorf(a, "Could not get LogDog Butler bootstrap information.")
-		return nil, err
+	// Check our bootstrap.
+	if a.bootstrap != nil && a.bootstrap.Client != nil {
+		return a.bootstrap.Client, nil
 	}
-	if bs.Client == nil {
-		return nil, errors.New("bootstrapped Butler did not export a stream server")
-	}
-	return bs.Client, nil
+
+	return nil, errors.New("unable to identify stream client")
 }
 
 func mainImpl(args []string) int {
@@ -124,9 +126,18 @@ func mainImpl(args []string) int {
 	logFlags := log.Config{
 		Level: log.Warning,
 	}
-	a := &application{
+	a := application{
 		Context:            ctx,
 		annotationInterval: clockflag.Duration(defaultAnnotationInterval),
+	}
+
+	// Determine bootstrapped process arguments.
+	var err error
+	a.bootstrap, err = bootstrap.Get()
+	if err != nil {
+		log.Fields{
+			log.ErrorKey: err,
+		}.Warningf(a, "Could not get LogDog Butler bootstrap information.")
 	}
 
 	fs := &flag.FlagSet{}
@@ -148,7 +159,11 @@ func mainImpl(args []string) int {
 		return configErrorReturnCode
 	}
 
-	// Determine bootstrapped process arguments.
+	prefix := types.StreamName(a.prefix)
+	if prefix == "" && a.bootstrap != nil {
+		prefix = a.bootstrap.Prefix
+	}
+
 	args = fs.Args()
 	if a.jsonArgsPath != "" {
 		if len(args) > 0 {
@@ -180,18 +195,22 @@ func mainImpl(args []string) int {
 	}
 
 	e := executor.Executor{
-		Annotate:               executor.AnnotationMode(a.annotate),
-		NameBase:               types.StreamName(a.nameBase),
-		Stdin:                  os.Stdin,
-		Command:                args,
-		Client:                 client,
-		MetadataUpdateInterval: time.Duration(a.annotationInterval),
+		Options: annotee.Options{
+			Base:                   types.StreamName(a.nameBase),
+			Prefix:                 prefix,
+			Client:                 client,
+			MetadataUpdateInterval: time.Duration(a.annotationInterval),
+			LogDogHost:             a.logdogHost,
+		},
+
+		Annotate: executor.AnnotationMode(a.annotate),
+		Stdin:    os.Stdin,
 	}
 	if a.tee {
 		e.TeeStdout = os.Stdout
 		e.TeeStderr = os.Stderr
 	}
-	if err := e.Run(a); err != nil {
+	if err := e.Run(a, args); err != nil {
 		log.Fields{
 			log.ErrorKey: err,
 		}.Errorf(a, "Failed during execution.")

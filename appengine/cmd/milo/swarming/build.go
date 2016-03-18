@@ -276,11 +276,12 @@ func buildFromClient(
 // Takes in an annotated log and returns a fully populated memory client.
 func clientFromAnnotatedLog(ctx context.Context, log []byte) (*memoryClient, error) {
 	c := &memoryClient{}
-	p := annotee.Processor{
-		Context:                ctx,
+	p := annotee.New(ctx, annotee.Options{
 		Client:                 c,
 		MetadataUpdateInterval: -1, // Neverrrrrr send incr updates.
-	}
+	})
+	defer p.Finish()
+
 	is := annotee.Stream{
 		Reader:           bytes.NewBuffer(log),
 		Name:             types.StreamName("stdio"),

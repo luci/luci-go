@@ -10,11 +10,9 @@ import (
 	"io"
 	"os/exec"
 	"syscall"
-	"time"
 
 	"github.com/luci/luci-go/client/logdog/annotee"
 	"github.com/luci/luci-go/client/logdog/annotee/annotation"
-	"github.com/luci/luci-go/client/logdog/butlerlib/streamclient"
 	"github.com/luci/luci-go/common/ctxcmd"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/milo"
@@ -40,15 +38,11 @@ const (
 
 // Executor bootstraps an application, running its output through a Processor.
 type Executor struct {
-	// Command is the set of command-line arguments to run.
-	Command []string
+	// Options are the set of Annotee options to use.
+	Options annotee.Options
 
 	// Annoate describes how annotations in the STDOUT stream should be handled.
 	Annotate AnnotationMode
-
-	// NameBase, if not empty, is the name value to prepend to annotee-generated
-	// stream names.
-	NameBase types.StreamName
 
 	// Stdin, if not nil, will be used as standard input for the bootstrapped
 	// process.
@@ -61,33 +55,23 @@ type Executor struct {
 	// error will be tee'd.
 	TeeStderr io.Writer
 
-	// Client is the LogDog Butler straem Client to use.
-	Client streamclient.Client
-
-	// MetadataUpdateInterval is the Processor's MetadataUpdateInterval value to
-	// use. See annotee.Processor for more information.
-	MetadataUpdateInterval time.Duration
-
 	returnCode int
 	steps      []*milo.Step
 }
 
 // Run executes the bootstrapped process, blocking until it completes.
-func (e *Executor) Run(ctx context.Context) error {
+func (e *Executor) Run(ctx context.Context, command []string) error {
 	// Clear any previous state.
 	e.returnCode = 0
 	e.steps = nil
 
-	if len(e.Command) == 0 {
+	if len(command) == 0 {
 		return errors.New("no command")
-	}
-	if e.Client == nil {
-		return errors.New("no stream client supplied")
 	}
 
 	ctx, cancelFunc := context.WithCancel(ctx)
 	cmd := ctxcmd.CtxCmd{
-		Cmd: exec.Command(e.Command[0], e.Command[1:]...),
+		Cmd: exec.Command(command[0], command[1:]...),
 	}
 
 	// STDOUT
@@ -118,20 +102,20 @@ func (e *Executor) Run(ctx context.Context) error {
 	}()
 
 	// Infer our execution.
-	execution := annotation.ProbeExecution(e.Command)
+	options := e.Options
+	if options.Execution == nil {
+		options.Execution = annotation.ProbeExecution(command)
+	}
 
 	// Configure our Processor.
-	proc := annotee.Processor{
-		Context:                ctx,
-		Base:                   e.NameBase,
-		Client:                 e.Client,
-		Execution:              execution,
-		MetadataUpdateInterval: e.MetadataUpdateInterval,
-	}
 	streams := []*annotee.Stream{
 		stdout,
 		stderr,
 	}
+
+	proc := annotee.New(ctx, options)
+	defer proc.Finish()
+
 	if err := proc.RunStreams(streams); err != nil {
 		return fmt.Errorf("failed to run processor: %s", err)
 	}
@@ -152,7 +136,7 @@ func (e *Executor) Run(ctx context.Context) error {
 	processRunning = false
 
 	// Record our annotation steps.
-	proc.State().ForEachStep(func(s *annotation.Step) {
+	proc.Finish().ForEachStep(func(s *annotation.Step) {
 		e.steps = append(e.steps, s.Proto())
 	})
 
@@ -175,6 +159,7 @@ func (e *Executor) configStream(r io.Reader, name types.StreamName, tee io.Write
 		Reader:           r,
 		Name:             name,
 		Tee:              tee,
+		Alias:            "stdio",
 		StripAnnotations: (e.Annotate == StripAnnotations),
 	}
 	if e.Annotate != NoAnnotations {

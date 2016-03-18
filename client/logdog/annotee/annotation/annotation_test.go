@@ -245,7 +245,7 @@ func (tc *testCallbacks) Updated(s *Step) {
 	tc.protos[s.CanonicalName()] = append(tc.protos[s.CanonicalName()], data)
 }
 
-func (tc *testCallbacks) StepLogLine(s *Step, n types.StreamName, line string) {
+func (tc *testCallbacks) StepLogLine(s *Step, n types.StreamName, label, line string) {
 	if _, ok := tc.logs[n]; ok {
 		// The log exists. Assert that it is open.
 		if _, ok := tc.logsOpen[n]; !ok {
