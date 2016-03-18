@@ -135,27 +135,21 @@ func mainImpl(args []string) int {
 	var err error
 	a.bootstrap, err = bootstrap.Get()
 	if err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-		}.Warningf(a, "Could not get LogDog Butler bootstrap information.")
+		log.WithError(err).Warningf(a, "Could not get LogDog Butler bootstrap information.")
 	}
 
 	fs := &flag.FlagSet{}
 	logFlags.AddFlags(fs)
 	a.addToFlagSet(fs)
 	if err := fs.Parse(args); err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-		}.Errorf(a, "Failed to parse flags.")
+		log.WithError(err).Errorf(a, "Failed to parse flags.")
 		return configErrorReturnCode
 	}
 	a.Context = logFlags.Set(a.Context)
 
 	client, err := a.getStreamClient()
 	if err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-		}.Errorf(a, "Failed to get stream client instance.")
+		log.WithError(err).Errorf(a, "Failed to get stream client instance.")
 		return configErrorReturnCode
 	}
 
@@ -211,9 +205,7 @@ func mainImpl(args []string) int {
 		e.TeeStderr = os.Stderr
 	}
 	if err := e.Run(a, args); err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-		}.Errorf(a, "Failed during execution.")
+		log.WithError(err).Errorf(a, "Failed during execution.")
 		return runtimeErrorReturnCode
 	}
 
