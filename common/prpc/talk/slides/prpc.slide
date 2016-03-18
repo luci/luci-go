@@ -53,18 +53,18 @@ nodir@
 
 * Go interfaces
 
-.code interfaces.go
+.code interfaces.go.snippet
 
 # After you compile the proto files to Go using the protobuf compiler, for each
 # service you have server and client interfaces.
 
 * Service code
 
-.code service.go
+.code service.go.snippet
 
 * Client code
 
-.code client.go
+.code client.go.snippet
 
 * gRPC issues
 
