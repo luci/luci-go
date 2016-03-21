@@ -25,6 +25,14 @@ func (s *DecoratedAdmin) ImportConfig(c context.Context, req *google_protobuf.Em
 	return s.Service.ImportConfig(c, req)
 }
 
+func (s *DecoratedAdmin) FetchCRL(c context.Context, req *FetchCRLRequest) (*FetchCRLResponse, error) {
+	c, err := s.Prelude(c, "FetchCRL", req)
+	if err != nil {
+		return nil, err
+	}
+	return s.Service.FetchCRL(c, req)
+}
+
 func (s *DecoratedAdmin) GetCAStatus(c context.Context, req *GetCAStatusRequest) (*GetCAStatusResponse, error) {
 	c, err := s.Prelude(c, "GetCAStatus", req)
 	if err != nil {

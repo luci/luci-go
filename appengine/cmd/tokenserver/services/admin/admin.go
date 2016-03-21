@@ -22,6 +22,7 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
@@ -121,10 +122,87 @@ func (s *Server) ImportConfig(c context.Context, _ *google_protobuf.Empty) (*tok
 	}, nil
 }
 
+// FetchCRL makes the server fetch a CRL for some CA.
+func (s *Server) FetchCRL(c context.Context, r *tokenserver.FetchCRLRequest) (*tokenserver.FetchCRLResponse, error) {
+	ds := datastore.Get(c)
+
+	// Grab a corresponding CA entity. It contains URL of CRL to fetch.
+	ca := &model.CA{CN: r.Cn}
+	switch err := ds.Get(ca); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, grpc.Errorf(codes.NotFound, "no such CA %q", ca.CN)
+	case err != nil:
+		return nil, grpc.Errorf(codes.Internal, "datastore error - %s", err)
+	}
+
+	// Grab CRL URL from the CA config.
+	cfg, err := ca.ParseConfig()
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "broken CA config in the datastore - %s", err)
+	}
+	if cfg.CrlUrl == "" {
+		return nil, grpc.Errorf(codes.NotFound, "CA %q doesn't have CRL defined", ca.CN)
+	}
+
+	// Grab info about last processed CRL, if any.
+	crl := &model.CRL{Parent: ds.KeyForObj(ca)}
+	if err = ds.Get(crl); err != nil && err != datastore.ErrNoSuchEntity {
+		return nil, grpc.Errorf(codes.Internal, "datastore error - %s", err)
+	}
+
+	// Fetch latest CRL blob.
+	logging.Infof(c, "Fetching CRL for %q from %s", ca.CN, cfg.CrlUrl)
+	knownETag := crl.LastFetchETag
+	if r.Force {
+		knownETag = ""
+	}
+	fetchCtx, _ := clock.WithTimeout(c, time.Minute)
+	crlDer, newEtag, err := fetchCRL(fetchCtx, cfg, knownETag)
+	switch {
+	case errors.IsTransient(err):
+		return nil, grpc.Errorf(codes.Internal, "transient error when fetching CRL - %s", err)
+	case err != nil:
+		return nil, grpc.Errorf(codes.Unknown, "can't fetch CRL - %s", err)
+	}
+
+	// No changes?
+	if knownETag != "" && knownETag == newEtag {
+		logging.Infof(c, "No changes to CRL (etag is %s), skipping", knownETag)
+	} else {
+		logging.Infof(c, "Fetched CRL size is %d bytes, etag is %s", len(crlDer), newEtag)
+		crl, err = validateAndStoreCRL(c, crlDer, newEtag, ca, crl)
+		switch {
+		case errors.IsTransient(err):
+			return nil, grpc.Errorf(codes.Internal, "transient error when storing CRL - %s", err)
+		case err != nil:
+			return nil, grpc.Errorf(codes.Unknown, "bad CRL - %s", err)
+		}
+	}
+
+	return &tokenserver.FetchCRLResponse{CrlStatus: crl.GetStatusProto()}, nil
+}
+
 // GetCAStatus returns configuration of some CA defined in the config.
 func (s *Server) GetCAStatus(c context.Context, r *tokenserver.GetCAStatusRequest) (*tokenserver.GetCAStatusResponse, error) {
+	ds := datastore.Get(c)
+
+	// Entities to fetch.
 	ca := model.CA{CN: r.Cn}
-	switch err := datastore.Get(c).Get(&ca); {
+	crl := model.CRL{Parent: ds.KeyForObj(&ca)}
+
+	// Fetch them at the same revision. It is fine if CRL is not there yet. Don't
+	// bother doing it in parallel: GetCAStatus is used only by admins, manually.
+	err := ds.RunInTransaction(func(c context.Context) error {
+		ds := datastore.Get(c)
+		if err := ds.Get(&ca); err != nil {
+			return err // can be ErrNoSuchEntity
+		}
+		if err := ds.Get(&crl); err != nil && err != datastore.ErrNoSuchEntity {
+			return err // only transient errors
+		}
+		return nil
+	}, nil)
+	switch {
 	case err == datastore.ErrNoSuchEntity:
 		return &tokenserver.GetCAStatusResponse{}, nil
 	case err != nil:
@@ -140,9 +218,11 @@ func (s *Server) GetCAStatus(c context.Context, r *tokenserver.GetCAStatusReques
 		Config:     cfgMsg,
 		Cert:       dumpPEM(ca.Cert, "CERTIFICATE"),
 		Removed:    ca.Removed,
+		Ready:      ca.Ready,
 		AddedRev:   ca.AddedRev,
 		UpdatedRev: ca.UpdatedRev,
 		RemovedRev: ca.RemovedRev,
+		CrlStatus:  crl.GetStatusProto(),
 	}, nil
 }
 

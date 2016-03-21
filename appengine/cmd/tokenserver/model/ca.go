@@ -33,6 +33,9 @@ type CA struct {
 	// Removed is true if this CA has been removed from the config.
 	Removed bool
 
+	// Ready is false before this CA's CRL is fetched for the first time.
+	Ready bool
+
 	AddedRev   string `gae:",noindex"` // config rev when this CA appeared
 	UpdatedRev string `gae:",noindex"` // config rev when this CA was updated
 	RemovedRev string `gae:",noindex"` // config rev when it was removed

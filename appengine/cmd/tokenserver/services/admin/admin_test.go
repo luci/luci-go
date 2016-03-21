@@ -5,12 +5,18 @@
 package admin
 
 import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"sync"
 	"testing"
 
 	"golang.org/x/net/context"
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
+	"github.com/luci/gae/service/urlfetch"
+	"github.com/luci/luci-go/appengine/cmd/tokenserver/model"
 	"github.com/luci/luci-go/appengine/gaetesting"
 	"github.com/luci/luci-go/common/api/tokenserver/v1"
 	"github.com/luci/luci-go/common/config"
@@ -176,6 +182,134 @@ func TestImportConfig(t *testing.T) {
 	})
 }
 
+func TestFetchCRL(t *testing.T) {
+	Convey("FetchCRL not configured", t, func() {
+		ctx := gaetesting.TestingContext()
+		srv := &Server{
+			ConfigFactory: prepareCfg(ctx, `
+				certificate_authority {
+					cn: "Puppet CA: fake.ca"
+					cert_path: "certs/fake.ca.crt"
+				}
+			`),
+		}
+
+		// Prepare config (with empty crl_url).
+		_, err := srv.ImportConfig(ctx, nil)
+		So(err, ShouldBeNil)
+
+		// Use it, must fail.
+		_, err = srv.FetchCRL(ctx, &tokenserver.FetchCRLRequest{
+			Cn: "Puppet CA: fake.ca",
+		})
+		So(err, ShouldErrLike, "doesn't have CRL defined")
+	})
+
+	Convey("FetchCRL works (no etags)", t, func() {
+		ts := serveCRL()
+		defer ts.Close()
+
+		ctx := gaetesting.TestingContext()
+		ctx = urlfetch.Set(ctx, http.DefaultTransport) // mock URLFetch service
+
+		srv := &Server{
+			ConfigFactory: prepareCfg(ctx, fmt.Sprintf(`
+				certificate_authority {
+					cn: "Puppet CA: fake.ca"
+					cert_path: "certs/fake.ca.crt"
+					crl_url: %q
+				}
+			`, ts.URL)),
+		}
+
+		// Prepare config.
+		_, err := srv.ImportConfig(ctx, nil)
+		So(err, ShouldBeNil)
+
+		// Import works.
+		ts.CRL = fakeCACrl
+		_, err = srv.FetchCRL(ctx, &tokenserver.FetchCRLRequest{
+			Cn:    "Puppet CA: fake.ca",
+			Force: true,
+		})
+		So(err, ShouldBeNil)
+
+		// CRL is there.
+		ds := datastore.Get(ctx)
+		crl := model.CRL{
+			Parent: ds.NewKey("CA", "Puppet CA: fake.ca", 0, nil),
+		}
+		err = ds.Get(&crl)
+		So(err, ShouldBeNil)
+		So(crl.RevokedCertsCount, ShouldEqual, 1) // fakeCACrl has only 1 SN
+	})
+
+	Convey("FetchCRL works (with etags)", t, func() {
+		ts := serveCRL()
+		defer ts.Close()
+
+		ctx := gaetesting.TestingContext()
+		ctx = urlfetch.Set(ctx, http.DefaultTransport) // mock URLFetch service
+
+		srv := &Server{
+			ConfigFactory: prepareCfg(ctx, fmt.Sprintf(`
+				certificate_authority {
+					cn: "Puppet CA: fake.ca"
+					cert_path: "certs/fake.ca.crt"
+					crl_url: %q
+				}
+			`, ts.URL)),
+		}
+
+		// Prepare config.
+		_, err := srv.ImportConfig(ctx, nil)
+		So(err, ShouldBeNil)
+
+		// Initial import works.
+		ts.CRL = fakeCACrl
+		ts.Etag = `"etag1"`
+		_, err = srv.FetchCRL(ctx, &tokenserver.FetchCRLRequest{
+			Cn: "Puppet CA: fake.ca",
+		})
+		So(err, ShouldBeNil)
+
+		// CRL is there.
+		ds := datastore.Get(ctx)
+		crl := model.CRL{
+			Parent: ds.NewKey("CA", "Puppet CA: fake.ca", 0, nil),
+		}
+		err = ds.Get(&crl)
+		So(err, ShouldBeNil)
+		So(crl.LastFetchETag, ShouldEqual, `"etag1"`)
+		So(crl.EntityVersion, ShouldEqual, 1)
+
+		// Refetch. No etag change.
+		_, err = srv.FetchCRL(ctx, &tokenserver.FetchCRLRequest{
+			Cn: "Puppet CA: fake.ca",
+		})
+		So(err, ShouldBeNil)
+
+		// Entity isn't touched.
+		err = ds.Get(&crl)
+		So(err, ShouldBeNil)
+		So(crl.LastFetchETag, ShouldEqual, `"etag1"`)
+		So(crl.EntityVersion, ShouldEqual, 1)
+
+		// Refetch. Etag changes.
+		ts.Etag = `"etag2"`
+		_, err = srv.FetchCRL(ctx, &tokenserver.FetchCRLRequest{
+			Cn: "Puppet CA: fake.ca",
+		})
+		So(err, ShouldBeNil)
+
+		// Entity is updated.
+		err = ds.Get(&crl)
+		So(err, ShouldBeNil)
+		So(crl.LastFetchETag, ShouldEqual, `"etag2"`)
+		So(crl.EntityVersion, ShouldEqual, 2)
+	})
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 // Valid CA cert with CN "Puppet CA: fake.ca".
@@ -210,6 +344,26 @@ WtwPYghRtj166nPfnpxPexxN+aR6055c8Ot+0wdx2tPrTStVv9yL9oXTVBcHXy3l
 a9S+6vGE2c+cpXhnDXXB6mg/co2UmhCoY39doUbJyPlzf0sv+k/8lPGbo84qlJMt
 thi7LhTd2md+7zzukdrl6xdqYwZXTili5bEveVERajRTVhWKMg==
 -----END CERTIFICATE-----
+`
+
+// Valid CRL signed by key that corresponds to fakeCACrt.
+const fakeCACrl = `-----BEGIN X509 CRL-----
+MIICuzCBpAIBATANBgkqhkiG9w0BAQUFADAdMRswGQYDVQQDDBJQdXBwZXQgQ0E6
+IGZha2UuY2EXDTE2MDMxNTAzNDk0NloXDTIxMDMxNDAzNDk0N1owIjAgAgECFw0x
+NjAzMTUwMzQ5NDdaMAwwCgYDVR0VBAMKAQGgLzAtMB8GA1UdIwQYMBaAFOeGP1Os
+e9spvhIIrGMEZEpoeiDqMAoGA1UdFAQDAgEBMA0GCSqGSIb3DQEBBQUAA4ICAQA8
+LeRLqrgl1ed5UbFQyWnmpOW58PzIDEdCtRutVc12VlMKu+FyJ6DELXDpmZjkam32
+gMrH9zHbLywO3O6qGl8WaKMVPhKyhdemQa9/TrqFr/lqEsfM9g6ZY4b3dO9VFy42
+9SMTQF6iu7ZRfhjui50DZlbD+VtfgTAJpeVTKR3E6ntuYQ+noJ568xcwcswAR6hT
+iAvv49kExuflo2ntg9uSHZYvo/PMmUZZ/ThMK+EfalWsz//N1JOSahLl1qakEBKz
+OD6QsZB0K3160hsPO5O8iC2FdYa1xiamTiYOKAIqIRgX8+WH2cfc4Wg8mGz4DtJE
+BlPZCIhxjbzymi55B2N1Mo/KuYD73j24NN6IG7s6JSohjn/In7h7T9gkOGwkxM5P
+jZrNiLYELrfMMVl9z3uiA31qVPoVa2MPsfwY3pWtTVZ3lJ/mWAFesrgCl2FSgBcr
+t2WZsEUA7W8l45nbNg8m8l+nOEBCM7Pjycy8ZV7XFdT9iATn44huQi1CGw2xUpEX
+8FOcDDS2tb78R3ZoyqFS5l/P5Kd0DitivPhRNQXQboFqT5XL9EBKcyExnR+y72+B
+7fIzS92HZavZYpO/YKHweFWonSuNcGOwqLyI/ZZealwOQROD4AC6ZMUeY9oQkbEE
+3QbCiGRlaGEOA9SCEoSTNPN9LQ1nHKoaFDy1B5ralA==
+-----END X509 CRL-----
 `
 
 // Valid CA cert with CN "Puppet CA: another-fake.ca".
@@ -259,4 +413,32 @@ func prepareCfg(ctx context.Context, configFile string) func(context.Context) (c
 	return func(context.Context) (config.Interface, error) {
 		return memory.New(configSets), nil
 	}
+}
+
+type crlServer struct {
+	*httptest.Server
+
+	Lock sync.Mutex
+	CRL  string
+	Etag string
+}
+
+// serveCRL starts a test server that serves CRL file.
+func serveCRL() *crlServer {
+	s := &crlServer{}
+	s.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s.Lock.Lock()
+		defer s.Lock.Unlock()
+		der, err := parsePEM(s.CRL, "X509 CRL")
+		if err != nil {
+			w.WriteHeader(500)
+		} else {
+			if s.Etag != "" {
+				w.Header().Set("ETag", s.Etag)
+			}
+			w.WriteHeader(200)
+			w.Write(der)
+		}
+	}))
+	return s
 }
