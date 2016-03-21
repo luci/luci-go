@@ -7,6 +7,7 @@ package tsmon
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -75,7 +76,7 @@ func initialize(c context.Context) error {
 		DataCenter:  proto.String(targetDataCenter),
 		ServiceName: proto.String(i.AppID()),
 		JobName:     proto.String(i.ModuleName()),
-		HostName:    proto.String(i.VersionID()),
+		HostName:    proto.String(strings.SplitN(i.VersionID(), ".", 2)[0]),
 		TaskNum:     proto.Int32(-1),
 	}
 

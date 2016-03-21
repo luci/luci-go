@@ -23,6 +23,9 @@ type State struct {
 
 	RegisteredMetrics     map[string]types.Metric
 	RegisteredMetricsLock sync.RWMutex
+
+	CallbacksMutex sync.RWMutex
+	Callbacks      []Callback
 }
 
 // GetState returns the State instance held in the context (if set) or else

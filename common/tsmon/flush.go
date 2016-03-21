@@ -28,6 +28,10 @@ func Flush(c context.Context) error {
 		return errors.New("no tsmon Monitor is configured")
 	}
 
+	// Run any callbacks that have been registered to populate values in callback
+	// metrics.
+	runCallbacks(c)
+
 	// Split up the payload into chunks if there are too many cells.
 	cells := Store(c).GetAll(c)
 

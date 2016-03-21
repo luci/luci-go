@@ -96,6 +96,51 @@ type NonCumulativeDistribution interface {
 	Set(c context.Context, d *distribution.Distribution, fieldVals ...interface{}) error
 }
 
+// CallbackInt is a non-cumulative integer gauge metric whose values can only be
+// set from a callback.  Use tsmon.RegisterCallback to add a callback to set the
+// metric's values.
+type CallbackInt interface {
+	types.Metric
+
+	Set(ctx context.Context, v int64, fieldVals ...interface{}) error
+}
+
+// CallbackFloat is a non-cumulative floating-point gauge metric whose values
+// can only be set from a callback.  Use tsmon.RegisterCallback to add a
+// callback to set the metric's values.
+type CallbackFloat interface {
+	types.Metric
+
+	Set(ctx context.Context, v float64, fieldVals ...interface{}) error
+}
+
+// CallbackString is a string-valued metric whose values can only be set from a
+// callback.  Use tsmon.RegisterCallback to add a callback to set the metric's
+// values.
+type CallbackString interface {
+	types.Metric
+
+	Set(ctx context.Context, v string, fieldVals ...interface{}) error
+}
+
+// CallbackBool is a boolean-valued metric whose values can only be set from a
+// callback.  Use tsmon.RegisterCallback to add a callback to set the metric's
+// values.
+type CallbackBool interface {
+	types.Metric
+
+	Set(ctx context.Context, v bool, fieldVals ...interface{}) error
+}
+
+// CallbackDistribution is a non-cumulative-distribution-valued  metric whose
+// values can only be set from a callback.  Use tsmon.RegisterCallback to add a
+// callback to set the metric's values.
+type CallbackDistribution interface {
+	types.DistributionMetric
+
+	Set(ctx context.Context, d *distribution.Distribution, fieldVals ...interface{}) error
+}
+
 // NewInt returns a new non-cumulative integer gauge metric.  This will panic if
 // another metric already exists with this name.
 func NewInt(name string, description string, fields ...field.Field) Int {
@@ -236,6 +281,36 @@ func newNonCumulativeDistributionIn(c context.Context, name string, description 
 	}
 	tsmon.Register(c, m)
 	return m
+}
+
+// NewCallbackInt returns a new integer metric whose value is populated by a
+// callback at collection time.
+func NewCallbackInt(name string, description string, fields ...field.Field) CallbackInt {
+	return NewInt(name, description, fields...)
+}
+
+// NewCallbackFloat returns a new float metric whose value is populated by a
+// callback at collection time.
+func NewCallbackFloat(name string, description string, fields ...field.Field) CallbackFloat {
+	return NewFloat(name, description, fields...)
+}
+
+// NewCallbackString returns a new string metric whose value is populated by a
+// callback at collection time.
+func NewCallbackString(name string, description string, fields ...field.Field) CallbackString {
+	return NewString(name, description, fields...)
+}
+
+// NewCallbackBool returns a new bool metric whose value is populated by a
+// callback at collection time.
+func NewCallbackBool(name string, description string, fields ...field.Field) CallbackBool {
+	return NewBool(name, description, fields...)
+}
+
+// NewCallbackDistribution returns a new distribution metric whose value is
+// populated by a callback at collection time.
+func NewCallbackDistribution(name string, description string, bucketer *distribution.Bucketer, fields ...field.Field) CallbackDistribution {
+	return NewNonCumulativeDistribution(name, description, bucketer, fields...)
 }
 
 // genericGet is a convenience function that tries to get a metric value from
