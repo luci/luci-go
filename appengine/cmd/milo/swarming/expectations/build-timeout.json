@@ -65,6 +65,84 @@
   ],
   "PropertyGroup": [
     {
+      "GroupName": "Swarming",
+      "Property": [
+        {
+          "Key": "Cost of job (USD)",
+          "Value": "$0.52"
+        },
+        {
+          "Key": "Exit Code",
+          "Value": "-15"
+        }
+      ]
+    },
+    {
+      "GroupName": "Swarming Tags",
+      "Property": [
+        {
+          "Key": "buildbucket_bucket",
+          "Value": "estaab-infra-waterfall-test"
+        },
+        {
+          "Key": "buildbucket_hostname",
+          "Value": "cr-buildbucket-dev.appspot.com"
+        },
+        {
+          "Key": "builder",
+          "Value": "infra-continuous-precise-32"
+        },
+        {
+          "Key": "cores",
+          "Value": "8"
+        },
+        {
+          "Key": "cron_invocation_id",
+          "Value": "9183652815541395264"
+        },
+        {
+          "Key": "cron_job_id",
+          "Value": "infra-experimental/buildbucket-job-estaab-infra-waterfall-test"
+        },
+        {
+          "Key": "master",
+          "Value": "master.estaab-infra-waterfall-test"
+        },
+        {
+          "Key": "os",
+          "Value": "Ubuntu-12.04"
+        },
+        {
+          "Key": "pool",
+          "Value": "default"
+        },
+        {
+          "Key": "priority",
+          "Value": "100"
+        },
+        {
+          "Key": "recipe_name",
+          "Value": "infra/infra_continuous"
+        },
+        {
+          "Key": "recipe_repository",
+          "Value": "https://chromium.googlesource.com/chromium/tools/build"
+        },
+        {
+          "Key": "recipe_revision",
+          "Value": ""
+        },
+        {
+          "Key": "user",
+          "Value": ""
+        },
+        {
+          "Key": "user_agent",
+          "Value": "luci-cron"
+        }
+      ]
+    },
+    {
       "GroupName": "recipe bootstrap",
       "Property": [
         {

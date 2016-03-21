@@ -206,6 +206,38 @@ func miloBuildStep(
 	return comp
 }
 
+func swarmingProperties(sr *swarming.SwarmingRpcsTaskResult) *resp.PropertyGroup {
+	props := &resp.PropertyGroup{GroupName: "Swarming"}
+	if len(sr.CostsUsd) == 1 {
+		props.Property = append(props.Property, &resp.Property{
+			Key:   "Cost of job (USD)",
+			Value: fmt.Sprintf("$%.2f", sr.CostsUsd[0]),
+		})
+	}
+	props.Property = append(props.Property, &resp.Property{
+		Key:   "Exit Code",
+		Value: fmt.Sprintf("%d", sr.ExitCode),
+	})
+	return props
+}
+
+func swarmingTags(sr *swarming.SwarmingRpcsTaskResult) *resp.PropertyGroup {
+	props := &resp.PropertyGroup{GroupName: "Swarming Tags"}
+	for _, s := range sr.Tags {
+		sp := strings.SplitN(s, ":", 2)
+		var k, v string
+		k = sp[0]
+		if len(sp) == 2 {
+			v = sp[1]
+		}
+		props.Property = append(props.Property, &resp.Property{
+			Key:   k,
+			Value: v,
+		})
+	}
+	return props
+}
+
 // Takes a butler client and return a fully populated milo build.
 func buildFromClient(
 	c context.Context, taskID string, url string, s *memoryClient, sr *swarming.SwarmingRpcsTaskResult) (
@@ -226,6 +258,10 @@ func buildFromClient(
 	} else {
 		build.Summary.Status = resp.Success
 	}
+
+	// Extract more swarming specific information into the properties.
+	build.PropertyGroup = append(build.PropertyGroup, swarmingProperties(sr))
+	build.PropertyGroup = append(build.PropertyGroup, swarmingTags(sr))
 
 	// Build times.  Swarming timestamps are RFC3339Nano without the timezone
 	// information, which is assumed to be UTC, so we fix it here.
