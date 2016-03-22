@@ -181,12 +181,7 @@ func ResetCumulativeMetrics(c context.Context) {
 // It returns (nil, nil) if tsmon should be disabled.
 func initMonitor(c context.Context, fl *Flags) (monitor.Monitor, error) {
 	// Load the config file, and override its values with flags.
-	config, err := loadConfig(fl.ConfigFile)
-	if err != nil {
-		logging.Infof(c, "tsmon is disabled because the config file (%s) could not be loaded: %s",
-			fl.ConfigFile, err)
-		return nil, nil
-	}
+	config, _ := loadConfig(fl.ConfigFile)
 
 	if fl.Endpoint != "" {
 		config.Endpoint = fl.Endpoint
