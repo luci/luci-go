@@ -44,7 +44,8 @@ func WithError(err error) Fields {
 	}
 }
 
-// Copy implements the Fields interface.
+// Copy returns a copy of this Fields with the keys from other overlaid on top
+// of this one's.
 func (f Fields) Copy(other Fields) Fields {
 	if len(f) == 0 && len(other) == 0 {
 		return nil
