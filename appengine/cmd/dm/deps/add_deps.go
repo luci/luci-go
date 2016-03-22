@@ -32,7 +32,7 @@ func (d *deps) AddDeps(c context.Context, req *dm.AddDepsReq) (rsp *dm.AddDepsRs
 	rsp = &dm.AddDepsRsp{}
 	ds := datastore.Get(c)
 
-	fwdDeps := model.FwdDepsFromFanout(c, req.Auth.Id.AttemptID(), req.Deps)
+	fwdDeps := model.FwdDepsFromList(c, req.Auth.Id.AttemptID(), req.Deps)
 
 	// 1. Maybe all the dependencies already exist? If they do, then they must
 	// all be completed, or we wouldn't be running the job right now.

@@ -41,7 +41,7 @@ func TestAddDeps(t *testing.T) {
 				Id:    dm.NewExecutionID(a.ID.Quest, a.ID.Id, 1),
 				Token: []byte("key"),
 			},
-			Deps: dm.NewAttemptFanout(map[string][]uint32{
+			Deps: dm.NewAttemptList(map[string][]uint32{
 				to.ID.Quest: {to.ID.Id},
 			}),
 		}

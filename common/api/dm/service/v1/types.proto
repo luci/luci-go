@@ -34,8 +34,11 @@ message PropertyValue {
   }
 }
 
-message AttemptFanout {
-  message AttemptNums {
+// AttemptList is logically a listing of unique attempts, which has a compact
+// representation in the common scenario of listing multiple attempts of the
+// same quest(s).
+message AttemptList {
+  message Nums {
     repeated uint32 nums = 1 [packed=true];
   }
 
@@ -45,5 +48,5 @@ message AttemptFanout {
   //     "foo": [1, 2],
   //     "bar": [1],
   //   }
-  map<string, AttemptNums> to = 2;
+  map<string, Nums> to = 2;
 }

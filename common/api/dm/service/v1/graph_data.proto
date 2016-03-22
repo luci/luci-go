@@ -98,8 +98,8 @@ message Attempt {
   // key is the `id` field of the Execution.ID
   map<uint32, Execution> executions = 4;
 
-  dm.AttemptFanout fwd_deps = 5;
-  dm.AttemptFanout back_deps = 6;
+  dm.AttemptList fwd_deps = 5;
+  dm.AttemptList back_deps = 6;
 
   message Partial {
     // Data is true iff the AttemptData should have been filled, but wasn't

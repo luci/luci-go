@@ -64,7 +64,7 @@ func depOn(c context.Context, from *dm.Attempt_ID, to ...*dm.Attempt_ID) {
 		Auth: &dm.Execution_Auth{
 			Id:    dm.NewExecutionID(from.Quest, from.Id, 1),
 			Token: []byte("sekret")},
-		Deps: dm.NewAttemptFanout(nil),
+		Deps: dm.NewAttemptList(nil),
 	}
 	req.Deps.AddAIDs(to...)
 
@@ -156,7 +156,7 @@ func TestWalkGraph(t *testing.T) {
 			_, err := s.EnsureAttempt(c, &dm.EnsureAttemptReq{ToEnsure: aid})
 			So(err, ShouldBeNil)
 
-			req.Queries[0].GetAttemptList().Attempt = dm.NewAttemptFanout(
+			req.Queries[0].GetAttemptList().Attempt = dm.NewAttemptList(
 				map[string][]uint32{w: {1}})
 
 			Convey("include nothing", func() {
@@ -172,7 +172,7 @@ func TestWalkGraph(t *testing.T) {
 			Convey("quest dne", func() {
 				req.Include.QuestData = true
 				req.Limit.MaxDepth = 1
-				req.Queries[0].GetAttemptList().Attempt = dm.NewAttemptFanout(
+				req.Queries[0].GetAttemptList().Attempt = dm.NewAttemptList(
 					map[string][]uint32{"noex": {1}})
 				So(req, WalkShouldReturn(c), &dm.GraphData{
 					Quests: map[string]*dm.Quest{
@@ -351,7 +351,7 @@ func TestWalkGraph(t *testing.T) {
 						So(req, WalkShouldReturn(c), &dm.GraphData{
 							Quests: map[string]*dm.Quest{
 								w: {Attempts: map[uint32]*dm.Attempt{1: {
-									FwdDeps: dm.NewAttemptFanout(map[string][]uint32{
+									FwdDeps: dm.NewAttemptList(map[string][]uint32{
 										x: {2, 1},
 									}),
 								}}},
@@ -369,15 +369,15 @@ func TestWalkGraph(t *testing.T) {
 						So(req, WalkShouldReturn(c), &dm.GraphData{
 							Quests: map[string]*dm.Quest{
 								w: {Attempts: map[uint32]*dm.Attempt{1: {
-									FwdDeps:  dm.NewAttemptFanout(map[string][]uint32{x: {2, 1}}),
-									BackDeps: &dm.AttemptFanout{},
+									FwdDeps:  dm.NewAttemptList(map[string][]uint32{x: {2, 1}}),
+									BackDeps: &dm.AttemptList{},
 								}}},
 								x: {Attempts: map[uint32]*dm.Attempt{1: {
-									FwdDeps:  &dm.AttemptFanout{},
-									BackDeps: dm.NewAttemptFanout(map[string][]uint32{w: {1}}),
+									FwdDeps:  &dm.AttemptList{},
+									BackDeps: dm.NewAttemptList(map[string][]uint32{w: {1}}),
 								}, 2: {
-									FwdDeps:  &dm.AttemptFanout{},
-									BackDeps: dm.NewAttemptFanout(map[string][]uint32{w: {1}}),
+									FwdDeps:  &dm.AttemptList{},
+									BackDeps: dm.NewAttemptList(map[string][]uint32{w: {1}}),
 								}}},
 							},
 						})

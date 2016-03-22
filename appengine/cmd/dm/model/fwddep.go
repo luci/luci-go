@@ -53,9 +53,9 @@ func (f *FwdDep) Edge() *FwdEdge {
 	return ret
 }
 
-// FwdDepsFromFanout creates a slice of *FwdDep given an originating base
+// FwdDepsFromList creates a slice of *FwdDep given an originating base
 // Attempt_ID, and a fanout of dependency Attempts.
-func FwdDepsFromFanout(c context.Context, base *dm.Attempt_ID, fout *dm.AttemptFanout) []*FwdDep {
+func FwdDepsFromList(c context.Context, base *dm.Attempt_ID, fout *dm.AttemptList) []*FwdDep {
 	from := datastore.Get(c).KeyForObj(&Attempt{ID: *base})
 	keys := make(sort.StringSlice, 0, len(fout.To))
 	amt := 0

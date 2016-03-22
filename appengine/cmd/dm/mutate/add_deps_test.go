@@ -37,14 +37,14 @@ func TestAddDeps(t *testing.T) {
 				Id:    dm.NewExecutionID("quest", 1, 1),
 				Token: []byte("sup"),
 			},
-			ToAdd: dm.NewAttemptFanout(map[string][]uint32{
+			ToAdd: dm.NewAttemptList(map[string][]uint32{
 				"to":    {1, 2, 3},
 				"top":   {1},
 				"tp":    {1},
 				"zebra": {17},
 			}),
 		}
-		fds := model.FwdDepsFromFanout(c, aid, ad.ToAdd)
+		fds := model.FwdDepsFromList(c, aid, ad.ToAdd)
 
 		Convey("Root", func() {
 			So(ad.Root(c).String(), ShouldEqual, `dev~app::/Attempt,"quest|fffffffe"`)

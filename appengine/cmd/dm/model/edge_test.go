@@ -78,12 +78,12 @@ func TestFwdEdge(t *testing.T) {
 	})
 }
 
-func TestFwdDepsFromFanout(t *testing.T) {
+func TestFwdDepsFromList(t *testing.T) {
 	t.Parallel()
 
-	Convey("FwdDepsFromFanout", t, func() {
+	Convey("FwdDepsFromList", t, func() {
 		c := memory.Use(context.Background())
-		fanout := &dm.AttemptFanout{To: map[string]*dm.AttemptFanout_AttemptNums{
+		fanout := &dm.AttemptList{To: map[string]*dm.AttemptList_Nums{
 			"a": {Nums: []uint32{1}},
 			"b": {Nums: []uint32{1, 2}},
 			"c": {Nums: []uint32{1}},
@@ -92,7 +92,7 @@ func TestFwdDepsFromFanout(t *testing.T) {
 
 		root := datastore.Get(c).MakeKey("Attempt", "quest|fffffffe")
 
-		So(FwdDepsFromFanout(c, base, fanout), ShouldResemble, []*FwdDep{
+		So(FwdDepsFromList(c, base, fanout), ShouldResemble, []*FwdDep{
 			{Depender: root, Dependee: *dm.NewAttemptID("a", 1), BitIndex: 0},
 			{Depender: root, Dependee: *dm.NewAttemptID("b", 1), BitIndex: 1},
 			{Depender: root, Dependee: *dm.NewAttemptID("b", 2), BitIndex: 2},

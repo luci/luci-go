@@ -12,11 +12,10 @@ import (
 )
 
 // Normalize sorts and uniq's attempt nums
-func (a *AttemptFanout) Normalize() error {
-	for q, vals := range a.To {
+func (a *AttemptList) Normalize() error {
+	for q, vals := range a.GetTo() {
 		if vals == nil {
-			vals = &AttemptFanout_AttemptNums{}
-			a.To[q] = vals
+			a.To[q] = &AttemptList_Nums{}
 		} else {
 			if err := vals.Normalize(); err != nil {
 				return err
@@ -38,7 +37,7 @@ func (u revUint32Slice) Less(i, j int) bool { return u[j] < u[i] }
 // it implies all attempts for the quest and will be normalized to nil.
 //
 // It is an error for Nums to contain 0 as well as other numbers.
-func (a *AttemptFanout_AttemptNums) Normalize() error {
+func (a *AttemptList_Nums) Normalize() error {
 	if len(a.Nums) == 0 || (len(a.Nums) == 1 && a.Nums[0] == 0) {
 		a.Nums = nil
 		return nil
@@ -46,20 +45,20 @@ func (a *AttemptFanout_AttemptNums) Normalize() error {
 	slc := revUint32Slice(a.Nums)
 	sort.Sort(slc)
 	if a.Nums[len(a.Nums)-1] == 0 {
-		return errors.New("AttemptFanout.Nums contains 0 as well as other values.")
+		return errors.New("AttemptList.Nums contains 0 as well as other values.")
 	}
 	a.Nums = a.Nums[:set.Uniq(slc)]
 	return nil
 }
 
-// NewAttemptFanout is a convenience method for making a normalized
-// *AttemptFanout with a pre-normalized literal map of quest -> attempt nums.
+// NewAttemptList is a convenience method for making a normalized
+// *AttemptList with a pre-normalized literal map of quest -> attempt nums.
 //
 // If the provided data is invalid, this method will panic.
-func NewAttemptFanout(data map[string][]uint32) *AttemptFanout {
-	ret := &AttemptFanout{To: make(map[string]*AttemptFanout_AttemptNums, len(data))}
+func NewAttemptList(data map[string][]uint32) *AttemptList {
+	ret := &AttemptList{To: make(map[string]*AttemptList_Nums, len(data))}
 	for qst, atmpts := range data {
-		nums := &AttemptFanout_AttemptNums{Nums: atmpts}
+		nums := &AttemptList_Nums{Nums: atmpts}
 		if err := nums.Normalize(); err != nil {
 			panic(err)
 		}
@@ -68,17 +67,31 @@ func NewAttemptFanout(data map[string][]uint32) *AttemptFanout {
 	return ret
 }
 
-// AddAIDs adds the given Attempt_ID to the AttemptFanout
-func (a *AttemptFanout) AddAIDs(aids ...*Attempt_ID) {
+// AddAIDs adds the given Attempt_ID to the AttemptList
+func (a *AttemptList) AddAIDs(aids ...*Attempt_ID) {
 	for _, aid := range aids {
 		if a.To == nil {
-			a.To = map[string]*AttemptFanout_AttemptNums{}
+			a.To = map[string]*AttemptList_Nums{}
 		}
 		atmptNums := a.To[aid.Quest]
 		if atmptNums == nil {
-			atmptNums = &AttemptFanout_AttemptNums{}
+			atmptNums = &AttemptList_Nums{}
 			a.To[aid.Quest] = atmptNums
 		}
 		atmptNums.Nums = append(atmptNums.Nums, aid.Id)
 	}
+}
+
+// Dup does a deep copy of this AttemptList.
+func (a *AttemptList) Dup() *AttemptList {
+	ret := &AttemptList{}
+	for k, v := range a.To {
+		if ret.To == nil {
+			ret.To = make(map[string]*AttemptList_Nums, len(a.To))
+		}
+		vals := &AttemptList_Nums{Nums: make([]uint32, len(v.Nums))}
+		copy(vals.Nums, v.Nums)
+		ret.To[k] = vals
+	}
+	return ret
 }

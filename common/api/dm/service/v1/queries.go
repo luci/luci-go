@@ -4,8 +4,8 @@
 
 package dm
 
-// AttemptListQuery returns a new GraphQuery for the given AttemptFanout.
-func AttemptListQuery(fanout *AttemptFanout) *GraphQuery {
+// AttemptListQuery returns a new GraphQuery for the given AttemptList.
+func AttemptListQuery(fanout *AttemptList) *GraphQuery {
 	return &GraphQuery{
 		Query: &GraphQuery_AttemptList_{
 			AttemptList: &GraphQuery_AttemptList{
@@ -15,13 +15,13 @@ func AttemptListQuery(fanout *AttemptFanout) *GraphQuery {
 	}
 }
 
-// AttemptListQueryL returns a new GraphQuery for the given AttemptFanout
+// AttemptListQueryL returns a new GraphQuery for the given AttemptList
 // literal.
 func AttemptListQueryL(fanout map[string][]uint32) *GraphQuery {
 	return &GraphQuery{
 		Query: &GraphQuery_AttemptList_{
 			AttemptList: &GraphQuery_AttemptList{
-				Attempt: NewAttemptFanout(fanout),
+				Attempt: NewAttemptList(fanout),
 			},
 		},
 	}

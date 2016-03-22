@@ -20,7 +20,7 @@ import (
 // have already been recorded globally.
 type AddDeps struct {
 	Auth  *dm.Execution_Auth
-	ToAdd *dm.AttemptFanout
+	ToAdd *dm.AttemptList
 }
 
 // Root implements tumble.Mutation
@@ -36,7 +36,7 @@ func (a *AddDeps) RollForward(c context.Context) (muts []tumble.Mutation, err er
 		return
 	}
 
-	fwdDeps, err := filterExisting(c, model.FwdDepsFromFanout(c, a.Auth.Id.AttemptID(), a.ToAdd))
+	fwdDeps, err := filterExisting(c, model.FwdDepsFromList(c, a.Auth.Id.AttemptID(), a.ToAdd))
 	if err != nil || len(fwdDeps) == 0 {
 		return
 	}

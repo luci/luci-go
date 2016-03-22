@@ -15,7 +15,7 @@ message GraphQuery {
   // of the query. If a quest contains the attempt number 0, or is empty, it
   // means 'all attempts for this quest'.
   message AttemptList {
-    dm.AttemptFanout attempt = 1;
+    dm.AttemptList attempt = 1;
   }
 
   // AttemptRange allows you to list a range of attempts in a single quest.

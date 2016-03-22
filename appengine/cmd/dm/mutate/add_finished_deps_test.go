@@ -28,13 +28,13 @@ func TestAddFinishedDeps(t *testing.T) {
 				Id:    dm.NewExecutionID("quest", 1, 7),
 				Token: []byte("sup"),
 			},
-			dm.NewAttemptFanout(map[string][]uint32{
+			dm.NewAttemptList(map[string][]uint32{
 				"to": {1, 2, 3},
 			}),
 		}
 
 		base := f.Auth.Id.AttemptID()
-		fs := model.FwdDepsFromFanout(c, base, f.ToAdd)
+		fs := model.FwdDepsFromList(c, base, f.ToAdd)
 
 		ds := datastore.Get(c)
 		fs[1].ForExecution = 1

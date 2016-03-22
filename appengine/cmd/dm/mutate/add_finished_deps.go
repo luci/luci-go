@@ -16,7 +16,7 @@ import (
 // already be in the Finished state.
 type AddFinishedDeps struct {
 	Auth  *dm.Execution_Auth
-	ToAdd *dm.AttemptFanout
+	ToAdd *dm.AttemptList
 }
 
 // Root implements tumble.Mutation
@@ -31,7 +31,7 @@ func (f *AddFinishedDeps) RollForward(c context.Context) (muts []tumble.Mutation
 		return
 	}
 
-	fwdDeps, err := filterExisting(c, model.FwdDepsFromFanout(c, f.Auth.Id.AttemptID(), f.ToAdd))
+	fwdDeps, err := filterExisting(c, model.FwdDepsFromList(c, f.Auth.Id.AttemptID(), f.ToAdd))
 	if err != nil || len(fwdDeps) == 0 {
 		return
 	}

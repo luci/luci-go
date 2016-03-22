@@ -34,7 +34,7 @@ It has these top-level messages:
 	GraphQuery
 	MultiPropertyValue
 	PropertyValue
-	AttemptFanout
+	AttemptList
 	WalkGraphReq
 */
 package dm

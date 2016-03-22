@@ -18,7 +18,7 @@ message AddDepsReq {
   // required
   dm.Execution.Auth auth = 1;
 
-  dm.AttemptFanout deps = 2;
+  dm.AttemptList deps = 2;
 }
 
 message AddDepsRsp {

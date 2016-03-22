@@ -119,7 +119,7 @@ func questDataLoader(c context.Context, qid string, dst *dm.Quest) func() error 
 	}
 }
 
-func loadEdges(c context.Context, send func(*dm.Attempt_ID) error, typ string, base *datastore.Key, fan *dm.AttemptFanout, doSend bool) error {
+func loadEdges(c context.Context, send func(*dm.Attempt_ID) error, typ string, base *datastore.Key, fan *dm.AttemptList, doSend bool) error {
 	return datastore.Get(c).Run(datastore.NewQuery(typ).Ancestor(base), func(k *datastore.Key) error {
 		if c.Err() != nil {
 			return datastore.Stop
@@ -242,7 +242,7 @@ func attemptLoader(c context.Context, req *dm.WalkGraphReq, aid *dm.Attempt_ID, 
 
 			if loadFwd {
 				if writeFwd {
-					dst.FwdDeps = dm.NewAttemptFanout(nil)
+					dst.FwdDeps = dm.NewAttemptList(nil)
 				}
 				ch <- func() error {
 					err := loadEdges(c, send, "FwdDep", akey, dst.FwdDeps, walkFwd)
@@ -262,7 +262,7 @@ func attemptLoader(c context.Context, req *dm.WalkGraphReq, aid *dm.Attempt_ID, 
 
 			if loadBack {
 				if writeBack {
-					dst.BackDeps = dm.NewAttemptFanout(nil)
+					dst.BackDeps = dm.NewAttemptList(nil)
 				}
 				bdg := &model.BackDepGroup{Dependee: atmpt.ID}
 				bdgKey := ds.KeyForObj(bdg)
