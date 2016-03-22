@@ -49,16 +49,20 @@ func (w *WriteMessage) RollForward(c context.Context) ([]Mutation, error) {
 	return muts, nil
 }
 
-func (u *User) SendMessage(c context.Context, msg string, toUsers ...string) (*OutgoingMessage, error) {
+func (u *User) MakeOutgoingMessage(c context.Context, msg string, toUsers ...string) *OutgoingMessage {
 	sort.Strings(toUsers)
 
-	outMsg := &OutgoingMessage{
+	return &OutgoingMessage{
 		FromUser:   datastore.Get(c).KeyForObj(u),
 		Message:    msg,
 		Recipients: toUsers,
 		Success:    bf.Make(uint32(len(toUsers))),
 		Failure:    bf.Make(uint32(len(toUsers))),
 	}
+}
+
+func (u *User) SendMessage(c context.Context, msg string, toUsers ...string) (*OutgoingMessage, error) {
+	outMsg := u.MakeOutgoingMessage(c, msg, toUsers...)
 
 	err := RunMutation(c, &WriteMessage{outMsg})
 	if err != nil {
