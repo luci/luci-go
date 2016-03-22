@@ -8,6 +8,30 @@ import (
 	"golang.org/x/net/context"
 )
 
+// BoolList is a convenience wrapper for []bool that provides summary methods
+// for working with the list in aggregate.
+type BoolList []bool
+
+// All returns true iff all of the booleans in this list are true.
+func (bl BoolList) All() bool {
+	for _, b := range bl {
+		if !b {
+			return false
+		}
+	}
+	return true
+}
+
+// Any returns true iff any of the booleans in this list are true.
+func (bl BoolList) Any() bool {
+	for _, b := range bl {
+		if b {
+			return true
+		}
+	}
+	return false
+}
+
 // Interface is the 'user-friendly' interface to access the current filtered
 // datastore service implementation.
 //
@@ -144,7 +168,7 @@ type Interface interface {
 	// return an error if it's not ErrNoSuchEntity. This is slightly more efficient
 	// than using Get directly, because it uses the underlying RawInterface to
 	// avoid some reflection and copies.
-	ExistsMulti(k []*Key) ([]bool, error)
+	ExistsMulti(k []*Key) (BoolList, error)
 
 	// Get retrieves a single object from the datastore
 	//

@@ -245,9 +245,9 @@ func isOkType(t reflect.Type) error {
 	return nil
 }
 
-func (d *datastoreImpl) ExistsMulti(keys []*Key) ([]bool, error) {
+func (d *datastoreImpl) ExistsMulti(keys []*Key) (BoolList, error) {
 	lme := errors.NewLazyMultiError(len(keys))
-	ret := make([]bool, len(keys))
+	ret := make(BoolList, len(keys))
 	i := 0
 	err := d.RawInterface.GetMulti(keys, nil, func(_ PropertyMap, err error) error {
 		if err == nil {

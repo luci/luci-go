@@ -328,9 +328,27 @@ func TestKeyForObj(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(e, ShouldBeTrue)
 
+				bl, err := ds.ExistsMulti([]*Key{k, ds.MakeKey("hello", "other")})
+				So(err, ShouldBeNil)
+				So(bl, ShouldResemble, BoolList{true, true})
+				So(bl.All(), ShouldBeTrue)
+				So(bl.Any(), ShouldBeTrue)
+
+				bl, err = ds.ExistsMulti([]*Key{k, ds.MakeKey("DNE", "other")})
+				So(err, ShouldBeNil)
+				So(bl, ShouldResemble, BoolList{true, false})
+				So(bl.All(), ShouldBeFalse)
+				So(bl.Any(), ShouldBeTrue)
+
 				e, err = ds.Exists(ds.MakeKey("DNE", "nope"))
 				So(err, ShouldBeNil)
 				So(e, ShouldBeFalse)
+
+				bl, err = ds.ExistsMulti([]*Key{ds.MakeKey("DNE", "nope"), ds.MakeKey("DNE", "other")})
+				So(err, ShouldBeNil)
+				So(bl, ShouldResemble, BoolList{false, false})
+				So(bl.All(), ShouldBeFalse)
+				So(bl.Any(), ShouldBeFalse)
 
 				_, err = ds.Exists(ds.MakeKey("Fail", "boom"))
 				So(err, ShouldErrLike, "GetMulti fail")
