@@ -5,8 +5,12 @@
 package grpcutil
 
 import (
+	"github.com/luci/luci-go/common/logging"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+
+	"golang.org/x/net/context"
 )
 
 var (
@@ -84,4 +88,31 @@ func IsTransientCode(code codes.Code) bool {
 	default:
 		return false
 	}
+}
+
+// LogErr logs the non-nil error and transforms it into a grpc error with the
+// given code. If the err is nil, this returns nil without logging anything.
+//
+// If the code is InvalidArgument error message will be passed through.
+// Otherwise the actual content of `err` will be omitted.
+//
+// InvalidArgument, Unauthenticated and DeadlineExceeded are logged as 'Info'
+// level. All other error codes are logged as 'Error' level.
+func LogErr(c context.Context, code codes.Code, err error, msg string) error {
+	if err == nil {
+		return nil
+	}
+	log := logging.Fields.Errorf
+	switch code {
+	case codes.InvalidArgument, codes.Unauthenticated, codes.DeadlineExceeded:
+		log = logging.Fields.Infof
+	}
+	log(logging.Fields{
+		logging.ErrorKey: err,
+		"grpc_code":      code,
+	}, c, "%s", msg)
+	if code == codes.InvalidArgument {
+		return Errf(code, "%s", err)
+	}
+	return Errf(code, "")
 }
