@@ -148,18 +148,32 @@ func (s *inMemoryStore) Set(ctx context.Context, h types.Metric, resetTime time.
 	return s.set(h, resetTime, fieldVals, target.Get(ctx), value)
 }
 
+func isLessThan(a, b interface{}) bool {
+	if a == nil || b == nil {
+		return false
+	}
+	switch a.(type) {
+	case int64:
+		return a.(int64) < b.(int64)
+	case float64:
+		return a.(float64) < b.(float64)
+	}
+	return false
+}
+
 func (s *inMemoryStore) set(h types.Metric, resetTime time.Time, fieldVals []interface{}, t types.Target, value interface{}) error {
 	m := s.getOrCreateData(h)
-	if m.ValueType.IsCumulative() {
-		return fmt.Errorf("attempted to set cumulative metric %s to %v", h.Info().Name, value)
-	}
-
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	c, err := m.get(fieldVals, t, resetTime)
 	if err != nil {
 		return err
+	}
+
+	if m.ValueType.IsCumulative() && isLessThan(value, c.Value) {
+		return fmt.Errorf("attempted to set cumulative metric %s to %v, which is lower than the previous value %v",
+			h.Info().Name, value, c.Value)
 	}
 
 	c.Value = value
