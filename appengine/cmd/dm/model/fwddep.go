@@ -54,12 +54,12 @@ func (f *FwdDep) Edge() *FwdEdge {
 }
 
 // FwdDepsFromList creates a slice of *FwdDep given an originating base
-// Attempt_ID, and a fanout of dependency Attempts.
-func FwdDepsFromList(c context.Context, base *dm.Attempt_ID, fout *dm.AttemptList) []*FwdDep {
+// Attempt_ID, and a list of dependency Attempts.
+func FwdDepsFromList(c context.Context, base *dm.Attempt_ID, list *dm.AttemptList) []*FwdDep {
 	from := datastore.Get(c).KeyForObj(&Attempt{ID: *base})
-	keys := make(sort.StringSlice, 0, len(fout.To))
+	keys := make(sort.StringSlice, 0, len(list.To))
 	amt := 0
-	for qst, nums := range fout.To {
+	for qst, nums := range list.To {
 		keys = append(keys, qst)
 		amt += len(nums.Nums)
 	}
@@ -67,7 +67,7 @@ func FwdDepsFromList(c context.Context, base *dm.Attempt_ID, fout *dm.AttemptLis
 	idx := uint32(0)
 	ret := make([]*FwdDep, 0, amt)
 	for _, key := range keys {
-		for _, num := range fout.To[key].Nums {
+		for _, num := range list.To[key].Nums {
 			dep := &FwdDep{Depender: from}
 			dep.Dependee.Quest = key
 			dep.Dependee.Id = num

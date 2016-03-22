@@ -83,7 +83,7 @@ func TestFwdDepsFromList(t *testing.T) {
 
 	Convey("FwdDepsFromList", t, func() {
 		c := memory.Use(context.Background())
-		fanout := &dm.AttemptList{To: map[string]*dm.AttemptList_Nums{
+		list := &dm.AttemptList{To: map[string]*dm.AttemptList_Nums{
 			"a": {Nums: []uint32{1}},
 			"b": {Nums: []uint32{1, 2}},
 			"c": {Nums: []uint32{1}},
@@ -92,7 +92,7 @@ func TestFwdDepsFromList(t *testing.T) {
 
 		root := datastore.Get(c).MakeKey("Attempt", "quest|fffffffe")
 
-		So(FwdDepsFromList(c, base, fanout), ShouldResemble, []*FwdDep{
+		So(FwdDepsFromList(c, base, list), ShouldResemble, []*FwdDep{
 			{Depender: root, Dependee: *dm.NewAttemptID("a", 1), BitIndex: 0},
 			{Depender: root, Dependee: *dm.NewAttemptID("b", 1), BitIndex: 1},
 			{Depender: root, Dependee: *dm.NewAttemptID("b", 2), BitIndex: 2},
