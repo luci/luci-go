@@ -12,10 +12,9 @@ import (
 	"golang.org/x/net/context"
 )
 
-// RunMutation is the method to use when doing transactional operations
-// in the tumble ecosystem. It allows work to be done in the entity group
-// specified by `fromRoot`, and any returned Mutation objects will be
-// transactionally queued for the tumble backend.
+// RunMutation immediately runs the Mutation `m` in a transaction. This method
+// should be used to start a tumble chain when you have transactional checks
+// to do (e.g. `m` implements the first transactional link in the chain).
 //
 // Usually this is called from your application's handlers to begin a tumble
 // state machine as a result of some API interaction.

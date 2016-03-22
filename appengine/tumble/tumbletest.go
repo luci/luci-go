@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"time"
 
@@ -60,7 +61,7 @@ func (t *Testing) Context() context.Context {
 	dustSettleTimeout = 0
 
 	ctx := memory.Use(memlogger.Use(context.Background()))
-	ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC)
+	ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC.Round(time.Millisecond))
 	ctx = settings.Use(ctx, settings.New(&settings.MemoryStorage{}))
 	t.installSettings(ctx)
 
@@ -169,4 +170,14 @@ func (t *Testing) Drain(c context.Context) int {
 		ret += processed
 	}
 	return ret
+}
+
+// ResetLog resets the current memory logger to the empty state.
+func (t *Testing) ResetLog(c context.Context) {
+	logging.Get(c).(*memlogger.MemLogger).Reset()
+}
+
+// DumpLog dumps the current memory logger to stdout to help with debugging.
+func (t *Testing) DumpLog(c context.Context) {
+	logging.Get(c).(*memlogger.MemLogger).Dump(os.Stdout)
 }

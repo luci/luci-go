@@ -5,6 +5,7 @@
 package memlogger
 
 import (
+	"bytes"
 	"sync"
 	"testing"
 
@@ -82,6 +83,22 @@ func TestLogger(t *testing.T) {
 
 		l.Infof("shweeet")
 		So(len(l.Messages()), ShouldEqual, 1)
+	})
+
+	Convey("dump", t, func() {
+		var l MemLogger
+		l.fields = map[string]interface{}{"key": 100}
+		l.Debugf("test %s", logging.Debug)
+		l.Infof("test %s", logging.Info)
+
+		buf := bytes.Buffer{}
+		l.Dump(&buf)
+
+		So(buf.String(), ShouldEqual, `
+DUMP LOG:
+  debug: test debug: {"key":100}
+  info: test info: {"key":100}
+`)
 	})
 }
 

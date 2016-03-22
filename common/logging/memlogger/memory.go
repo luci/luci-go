@@ -6,6 +6,7 @@ package memlogger
 
 import (
 	"fmt"
+	"io"
 	"reflect"
 	"sync"
 
@@ -126,6 +127,35 @@ func (m *MemLogger) HasFunc(f func(*LogEntry) bool) bool {
 // Note that lvl, msg and data have to match the entry precisely.
 func (m *MemLogger) Has(lvl logging.Level, msg string, data map[string]interface{}) bool {
 	return m.Get(lvl, msg, data) != nil
+}
+
+// Dump dumps the current memory logger contents to the given writer in a
+// human-readable format.
+func (m *MemLogger) Dump(w io.Writer) (n int, err error) {
+	amt := 0
+	for i, msg := range m.Messages() {
+		if i == 0 {
+			amt, err = fmt.Fprintf(w, "\nDUMP LOG:\n")
+			n += amt
+			if err != nil {
+				return
+			}
+		}
+		if msg.Data == nil {
+			amt, err = fmt.Fprintf(w, "  %s: %s\n", msg.Level, msg.Msg)
+			n += amt
+			if err != nil {
+				return
+			}
+		} else {
+			amt, err = fmt.Fprintf(w, "  %s: %s: %s\n", msg.Level, msg.Msg, logging.Fields(msg.Data))
+			n += amt
+			if err != nil {
+				return
+			}
+		}
+	}
+	return
 }
 
 // Use adds a memory backed Logger to Context, with concrete type

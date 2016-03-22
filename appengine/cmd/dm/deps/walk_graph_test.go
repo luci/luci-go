@@ -231,7 +231,7 @@ func TestWalkGraph(t *testing.T) {
 					datastore.RoundTime(clock.Now(c).Add(time.Hour*24*4)),
 					`{"data":["very","yes"]}`)
 				aExpect.Data.Created = google_pb.NewTimestamp(datastore.RoundTime(clock.Now(c)))
-				aExpect.Data.Modified = google_pb.NewTimestamp(datastore.RoundTime(clock.Now(c)))
+				aExpect.Data.Modified = google_pb.NewTimestamp(datastore.RoundTime(clock.Now(c).Add(time.Microsecond * 2)))
 				aExpect.Data.NumExecutions = 1
 				aExpect.Executions = map[uint32]*dm.Execution{1: {
 					State: dm.Execution_Finished,
@@ -321,12 +321,12 @@ func TestWalkGraph(t *testing.T) {
 
 				x1Expect := dm.NewAttemptFinished(exp.Time(), `{"data":["I can see this"]}`)
 				x1Expect.Data.Created = google_pb.NewTimestamp(origNow.Add(-time.Second * 12))
-				x1Expect.Data.Modified = google_pb.NewTimestamp(origNow)
+				x1Expect.Data.Modified = google_pb.NewTimestamp(origNow.Add(time.Microsecond))
 				x1Expect.Data.NumExecutions = 1
 
 				x2Expect := dm.NewAttemptFinished(exp.Time(), "")
 				x2Expect.Data.Created = google_pb.NewTimestamp(origNow.Add(-time.Second * 18))
-				x2Expect.Data.Modified = google_pb.NewTimestamp(origNow)
+				x2Expect.Data.Modified = google_pb.NewTimestamp(origNow.Add(time.Microsecond))
 				x2Expect.Data.NumExecutions = 1
 
 				So(req, WalkShouldReturn(c), &dm.GraphData{
