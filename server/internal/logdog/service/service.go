@@ -74,12 +74,13 @@ func (s *Service) Run(c context.Context, f func(context.Context) error) {
 
 func (s *Service) runImpl(c context.Context, f func(context.Context) error) error {
 	s.addFlags(c, &s.Flags)
-	c = s.loggingFlags.Set(c)
-
 	if err := s.Flags.Parse(os.Args[1:]); err != nil {
 		log.WithError(err).Errorf(c, "Failed to parse command-line.")
 		return err
 	}
+
+	// Install logging configuration.
+	c = s.loggingFlags.Set(c)
 
 	// Configure our signal handler. It will listen for terminating signals and
 	// issue a shutdown signal if one is received.
@@ -126,6 +127,7 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 }
 
 func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
+	s.loggingFlags.Level = log.Warning
 	s.loggingFlags.AddFlags(fs)
 
 	s.authFlags.Register(fs, auth.Options{
