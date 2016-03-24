@@ -7,10 +7,12 @@ package tsmon
 import (
 	"sync"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/tsmon/monitor"
 	"github.com/luci/luci-go/common/tsmon/store"
+	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/common/tsmon/types"
 )
 
@@ -52,6 +54,18 @@ func WithFakes(c context.Context) (context.Context, *store.Fake, *monitor.Fake) 
 		M:                 m,
 		RegisteredMetrics: map[string]types.Metric{},
 	}), s, m
+}
+
+// WithDummyInMemory returns a new context holding a new State with a new in-
+// memory store and a fake monitor.
+func WithDummyInMemory(c context.Context) (context.Context, *monitor.Fake) {
+	s := store.NewInMemory(&target.Task{ServiceName: proto.String("")})
+	m := &monitor.Fake{}
+	return WithState(c, &State{
+		S:                 s,
+		M:                 m,
+		RegisteredMetrics: map[string]types.Metric{},
+	}), m
 }
 
 type key int
