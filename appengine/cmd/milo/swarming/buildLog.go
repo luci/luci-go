@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/luci/luci-go/common/api/swarming/swarming/v1"
+
 	"golang.org/x/net/context"
 )
 
@@ -17,26 +19,32 @@ type BuildLog struct {
 	log string
 }
 
-func swarmingBuildLogImpl(c context.Context, server string, id string, logname string) (*BuildLog, error) {
-	// Fetch the data from Swarming
-	sc, err := getSwarmingClient(c, server)
-	if err != nil {
-		return nil, err
-	}
-	body, err := getSwarmingLog(sc, id)
+func swarmingBuildLogImpl(c context.Context, server string, taskID string, logname string) (*BuildLog, error) {
+	sc, err := func(debug bool) (*swarming.Service, error) {
+		if debug {
+			return nil, nil
+		}
+		return getSwarmingClient(c, server)
+	}(strings.HasPrefix(taskID, "debug:"))
+
+	body, err := getSwarmingLog(sc, taskID)
 	if err != nil {
 		return nil, err
 	}
 
 	// Decode the data using annotee.
-	client, err := clientFromAnnotatedLog(c, body)
+	s, err := streamsFromAnnotatedLog(c, body)
 	if err != nil {
 		return nil, err
 	}
 
-	k := strings.Join([]string{"steps", logname}, "")
-	if s, ok := client.stream[k]; ok {
-		return &BuildLog{log: s.buf.String()}, nil
+	k := fmt.Sprintf("steps%s", logname)
+	if s, ok := s.Streams[k]; ok {
+		return &BuildLog{log: s.Text}, nil
 	}
-	return nil, fmt.Errorf("%s not found in client", k)
+	var keys []string
+	for sk := range s.Streams {
+		keys = append(keys, sk)
+	}
+	return nil, fmt.Errorf("%s not found in client\nAvailable keys:%s", k, keys)
 }

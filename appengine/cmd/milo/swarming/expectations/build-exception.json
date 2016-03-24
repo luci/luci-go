@@ -18,10 +18,10 @@
       "Label": "recipe bootstrap",
       "Status": "Success",
       "MainLink": {
-        "Label": "stdio",
+        "Label": "stdout",
         "Img": "",
         "Subtitle": "",
-        "URL": "foo/steps/recipe_bootstrap/0/stdio",
+        "URL": "foo/steps/recipe_bootstrap/0/stdout",
         "Alt": ""
       },
       "SubLink": null,
@@ -37,15 +37,15 @@
       "Label": "setup_build",
       "Status": "Success",
       "MainLink": {
-        "Label": "stdio",
+        "Label": "stdout",
         "Img": "",
         "Subtitle": "",
-        "URL": "foo/steps/setup_build/0/stdio",
+        "URL": "foo/steps/setup_build/0/stdout",
         "Alt": ""
       },
       "SubLink": [
         {
-          "Label": "/setup_build/0/logs/run_recipe",
+          "Label": "steps/setup_build/0/logs/run_recipe/0",
           "Img": "",
           "Subtitle": "",
           "URL": "foo/steps/setup_build/0/logs/run_recipe/0",
@@ -66,15 +66,15 @@
       "Label": "bot_update",
       "Status": "InfraFailure",
       "MainLink": {
-        "Label": "stdio",
+        "Label": "stdout",
         "Img": "",
         "Subtitle": "",
-        "URL": "foo/steps/bot_update/0/stdio",
+        "URL": "foo/steps/bot_update/0/stdout",
         "Alt": ""
       },
       "SubLink": [
         {
-          "Label": "/bot_update/0/logs/json.output__invalid_",
+          "Label": "steps/bot_update/0/logs/json.output__invalid_/0",
           "Img": "",
           "Subtitle": "",
           "URL": "foo/steps/bot_update/0/logs/json.output__invalid_/0",
@@ -93,15 +93,15 @@
       "Label": "Uncaught Exception",
       "Status": "InfraFailure",
       "MainLink": {
-        "Label": "stdio",
+        "Label": "stdout",
         "Img": "",
         "Subtitle": "",
-        "URL": "foo/steps/Uncaught_Exception/0/stdio",
+        "URL": "foo/steps/Uncaught_Exception/0/stdout",
         "Alt": ""
       },
       "SubLink": [
         {
-          "Label": "/Uncaught_Exception/0/logs/exception",
+          "Label": "steps/Uncaught_Exception/0/logs/exception/0",
           "Img": "",
           "Subtitle": "",
           "URL": "foo/steps/Uncaught_Exception/0/logs/exception/0",
@@ -118,19 +118,6 @@
     }
   ],
   "PropertyGroup": [
-    {
-      "GroupName": "Swarming",
-      "Property": [
-        {
-          "Key": "Exit Code",
-          "Value": "0"
-        }
-      ]
-    },
-    {
-      "GroupName": "Swarming Tags",
-      "Property": null
-    },
     {
       "GroupName": "recipe bootstrap",
       "Property": [
@@ -166,6 +153,19 @@
     },
     {
       "GroupName": "Main",
+      "Property": null
+    },
+    {
+      "GroupName": "Swarming",
+      "Property": [
+        {
+          "Key": "Exit Code",
+          "Value": "0"
+        }
+      ]
+    },
+    {
+      "GroupName": "Swarming Tags",
       "Property": null
     }
   ],

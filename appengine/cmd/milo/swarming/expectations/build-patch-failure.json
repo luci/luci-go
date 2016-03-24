@@ -18,15 +18,15 @@
       "Label": "update_scripts",
       "Status": "Success",
       "MainLink": {
-        "Label": "stdio",
+        "Label": "stdout",
         "Img": "",
         "Subtitle": "",
-        "URL": "foo/steps/update_scripts/0/stdio",
+        "URL": "foo/steps/update_scripts/0/stdout",
         "Alt": ""
       },
       "SubLink": [
         {
-          "Label": "/update_scripts/0/logs/gclient_json",
+          "Label": "steps/update_scripts/0/logs/gclient_json/0",
           "Img": "",
           "Subtitle": "",
           "URL": "foo/steps/update_scripts/0/logs/gclient_json/0",
@@ -47,15 +47,15 @@
       "Label": "setup_build",
       "Status": "Success",
       "MainLink": {
-        "Label": "stdio",
+        "Label": "stdout",
         "Img": "",
         "Subtitle": "",
-        "URL": "foo/steps/setup_build/0/stdio",
+        "URL": "foo/steps/setup_build/0/stdout",
         "Alt": ""
       },
       "SubLink": [
         {
-          "Label": "/setup_build/0/logs/run_recipe",
+          "Label": "steps/setup_build/0/logs/run_recipe/0",
           "Img": "",
           "Subtitle": "",
           "URL": "foo/steps/setup_build/0/logs/run_recipe/0",
@@ -76,22 +76,22 @@
       "Label": "bot_update",
       "Status": "Success",
       "MainLink": {
-        "Label": "stdio",
+        "Label": "stdout",
         "Img": "",
         "Subtitle": "",
-        "URL": "foo/steps/bot_update/0/stdio",
+        "URL": "foo/steps/bot_update/0/stdout",
         "Alt": ""
       },
       "SubLink": [
         {
-          "Label": "/bot_update/0/logs/json.output",
+          "Label": "steps/bot_update/0/logs/json.output/0",
           "Img": "",
           "Subtitle": "",
           "URL": "foo/steps/bot_update/0/logs/json.output/0",
           "Alt": ""
         },
         {
-          "Label": "/bot_update/0/logs/patch_error",
+          "Label": "steps/bot_update/0/logs/patch_error/0",
           "Img": "",
           "Subtitle": "",
           "URL": "foo/steps/bot_update/0/logs/patch_error/0",
@@ -112,10 +112,10 @@
       "Label": "Patch failure",
       "Status": "Failure",
       "MainLink": {
-        "Label": "stdio",
+        "Label": "stdout",
         "Img": "",
         "Subtitle": "",
-        "URL": "foo/steps/Patch_failure/0/stdio",
+        "URL": "foo/steps/Patch_failure/0/stdout",
         "Alt": ""
       },
       "SubLink": null,
@@ -133,15 +133,15 @@
       "Label": "recipe failure reason",
       "Status": "Success",
       "MainLink": {
-        "Label": "stdio",
+        "Label": "stdout",
         "Img": "",
         "Subtitle": "",
-        "URL": "foo/steps/recipe_failure_reason/0/stdio",
+        "URL": "foo/steps/recipe_failure_reason/0/stdout",
         "Alt": ""
       },
       "SubLink": [
         {
-          "Label": "/recipe_failure_reason/0/logs/failure_reason",
+          "Label": "steps/recipe_failure_reason/0/logs/failure_reason/0",
           "Img": "",
           "Subtitle": "",
           "URL": "foo/steps/recipe_failure_reason/0/logs/failure_reason/0",
@@ -158,19 +158,6 @@
     }
   ],
   "PropertyGroup": [
-    {
-      "GroupName": "Swarming",
-      "Property": [
-        {
-          "Key": "Exit Code",
-          "Value": "0"
-        }
-      ]
-    },
-    {
-      "GroupName": "Swarming Tags",
-      "Property": null
-    },
     {
       "GroupName": "update_scripts",
       "Property": [
@@ -240,6 +227,19 @@
           "Value": "HEAD"
         }
       ]
+    },
+    {
+      "GroupName": "Swarming",
+      "Property": [
+        {
+          "Key": "Exit Code",
+          "Value": "0"
+        }
+      ]
+    },
+    {
+      "GroupName": "Swarming Tags",
+      "Property": null
     }
   ],
   "Blame": null

@@ -18,10 +18,10 @@
       "Label": "recipe bootstrap",
       "Status": "Success",
       "MainLink": {
-        "Label": "stdio",
+        "Label": "stdout",
         "Img": "",
         "Subtitle": "",
-        "URL": "foo/steps/recipe_bootstrap/0/stdio",
+        "URL": "foo/steps/recipe_bootstrap/0/stdout",
         "Alt": ""
       },
       "SubLink": null,
@@ -37,15 +37,15 @@
       "Label": "setup_build",
       "Status": "Success",
       "MainLink": {
-        "Label": "stdio",
+        "Label": "stdout",
         "Img": "",
         "Subtitle": "",
-        "URL": "foo/steps/setup_build/0/stdio",
+        "URL": "foo/steps/setup_build/0/stdout",
         "Alt": ""
       },
       "SubLink": [
         {
-          "Label": "/setup_build/0/logs/run_recipe",
+          "Label": "steps/setup_build/0/logs/run_recipe/0",
           "Img": "",
           "Subtitle": "",
           "URL": "foo/steps/setup_build/0/logs/run_recipe/0",
@@ -64,6 +64,35 @@
     }
   ],
   "PropertyGroup": [
+    {
+      "GroupName": "recipe bootstrap",
+      "Property": [
+        {
+          "Key": "path_config",
+          "Value": "kitchen"
+        },
+        {
+          "Key": "slavename",
+          "Value": "fakeslave"
+        },
+        {
+          "Key": "buildername",
+          "Value": "infra-continuous-precise-32"
+        },
+        {
+          "Key": "mastername",
+          "Value": "chromium.infra"
+        }
+      ]
+    },
+    {
+      "GroupName": "setup_build",
+      "Property": null
+    },
+    {
+      "GroupName": "Main",
+      "Property": null
+    },
     {
       "GroupName": "Swarming",
       "Property": [
@@ -141,35 +170,6 @@
           "Value": "luci-cron"
         }
       ]
-    },
-    {
-      "GroupName": "recipe bootstrap",
-      "Property": [
-        {
-          "Key": "path_config",
-          "Value": "kitchen"
-        },
-        {
-          "Key": "slavename",
-          "Value": "fakeslave"
-        },
-        {
-          "Key": "buildername",
-          "Value": "infra-continuous-precise-32"
-        },
-        {
-          "Key": "mastername",
-          "Value": "chromium.infra"
-        }
-      ]
-    },
-    {
-      "GroupName": "setup_build",
-      "Property": null
-    },
-    {
-      "GroupName": "Main",
-      "Property": null
     }
   ],
   "Blame": null

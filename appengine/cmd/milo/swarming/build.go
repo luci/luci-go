@@ -14,7 +14,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	"github.com/luci/luci-go/appengine/cmd/milo/logdog"
+	"github.com/luci/luci-go/appengine/cmd/milo/resp"
+	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/client/logdog/annotee"
 	swarming "github.com/luci/luci-go/common/api/swarming/swarming/v1"
 	"github.com/luci/luci-go/common/logdog/types"
@@ -22,9 +24,6 @@ import (
 	miloProto "github.com/luci/luci-go/common/proto/milo"
 	"github.com/luci/luci-go/common/transport"
 	"golang.org/x/net/context"
-
-	"github.com/luci/luci-go/appengine/cmd/milo/resp"
-	"github.com/luci/luci-go/appengine/gaeauth/client"
 )
 
 func resolveServer(server string) string {
@@ -50,6 +49,15 @@ func getSwarmingClient(c context.Context, server string) (*swarming.Service, err
 }
 
 func getSwarmingLog(sc *swarming.Service, taskID string) ([]byte, error) {
+	// Fetch the debug file instead.
+	if strings.HasPrefix(taskID, "debug:") {
+		logFilename := filepath.Join("testdata", taskID[6:])
+		b, err := ioutil.ReadFile(logFilename)
+		if err != nil {
+			return nil, err
+		}
+		return b, nil
+	}
 	tsc := sc.Task.Stdout(taskID)
 	tsco, err := tsc.Do()
 	if err != nil {
@@ -61,6 +69,20 @@ func getSwarmingLog(sc *swarming.Service, taskID string) ([]byte, error) {
 
 func getSwarmingResult(
 	sc *swarming.Service, taskID string) (*swarming.SwarmingRpcsTaskResult, error) {
+	if strings.HasPrefix(taskID, "debug:") {
+		// Fetch the debug file instead.
+		logFilename := filepath.Join("testdata", taskID[6:])
+		swarmFilename := fmt.Sprintf("%s.swarm", logFilename)
+		s, err := ioutil.ReadFile(swarmFilename)
+		if err != nil {
+			return nil, err
+		}
+		sr := &swarming.SwarmingRpcsTaskResult{}
+		if err := json.Unmarshal(s, sr); err != nil {
+			return nil, err
+		}
+		return sr, nil
+	}
 	trc := sc.Task.Result(taskID)
 	srtr, err := trc.Do()
 	if err != nil {
@@ -71,31 +93,17 @@ func getSwarmingResult(
 
 func getSwarming(c context.Context, server string, taskID string) (
 	*swarming.SwarmingRpcsTaskResult, []byte, error) {
-	// Fetch the debug file instead.
-	if strings.HasPrefix(taskID, "debug:") {
-		logFilename := filepath.Join("testdata", taskID[6:])
-		swarmFilename := fmt.Sprintf("%s.swarm", logFilename)
-		b, err := ioutil.ReadFile(logFilename)
-		if err != nil {
-			return nil, nil, err
-		}
-		s, err := ioutil.ReadFile(swarmFilename)
-		if err != nil {
-			return nil, nil, err
-		}
-		sr := &swarming.SwarmingRpcsTaskResult{}
-		err = json.Unmarshal(s, sr)
-		if err != nil {
-			return nil, nil, err
-		}
-		return sr, b, nil
-	}
 
 	var log []byte
 	var sr *swarming.SwarmingRpcsTaskResult
 	var errLog, errRes error
 	var wg sync.WaitGroup
-	sc, err := getSwarmingClient(c, server)
+	sc, err := func(debug bool) (*swarming.Service, error) {
+		if debug {
+			return nil, nil
+		}
+		return getSwarmingClient(c, server)
+	}(strings.HasPrefix(taskID, "debug:"))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -238,13 +246,8 @@ func swarmingTags(sr *swarming.SwarmingRpcsTaskResult) *resp.PropertyGroup {
 	return props
 }
 
-// Takes a butler client and return a fully populated milo build.
-func buildFromClient(
-	c context.Context, taskID string, url string, s *memoryClient, sr *swarming.SwarmingRpcsTaskResult) (
-	*resp.MiloBuild, error) {
-	// Build the basic page response.
-	build := &resp.MiloBuild{}
-
+func addSwarmingToBuild(
+	c context.Context, sr *swarming.SwarmingRpcsTaskResult, build *resp.MiloBuild) {
 	// Specify the result.
 	if sr.State == "RUNNING" {
 		build.Summary.Status = resp.Running
@@ -268,49 +271,10 @@ func buildFromClient(
 	build.Summary.Started = fmt.Sprintf("%sZ", sr.StartedTs)
 	build.Summary.Finished = fmt.Sprintf("%sZ", sr.CompletedTs)
 	build.Summary.Duration = uint64(sr.Duration)
-
-	// Now Fetch the main annotation of the build.
-	mainAnno := &miloProto.Step{}
-	sa, ok := s.stream["annotations"]
-	if !ok {
-		return nil, fmt.Errorf("Missing annotations stream in %s", s)
-	}
-	proto.Unmarshal(sa.dg, mainAnno)
-
-	// Now fill in each of the step components.
-	// TODO(hinoka): This is totes cachable.
-	for _, name := range mainAnno.SubstepLogdogNameBase {
-		anno := &miloProto.Step{}
-		fullname := strings.Join([]string{name, "annotations"}, "/")
-		proto.Unmarshal(s.stream[fullname].dg, anno)
-		bs := miloBuildStep(c, url, anno, name)
-		build.Components = append(build.Components, bs)
-		propGroup := &resp.PropertyGroup{GroupName: bs.Label}
-		for _, prop := range anno.GetStepComponent().Property {
-			propGroup.Property = append(propGroup.Property, &resp.Property{
-				Key:   prop.Name,
-				Value: prop.Value,
-			})
-		}
-		build.PropertyGroup = append(build.PropertyGroup, propGroup)
-	}
-
-	// Take care of properties
-	propGroup := &resp.PropertyGroup{GroupName: "Main"}
-	for _, prop := range mainAnno.GetStepComponent().Property {
-		propGroup.Property = append(propGroup.Property, &resp.Property{
-			Key:   prop.Name,
-			Value: prop.Value,
-		})
-	}
-	build.PropertyGroup = append(build.PropertyGroup, propGroup)
-
-	// And we're done!
-	return build, nil
 }
 
-// Takes in an annotated log and returns a fully populated memory client.
-func clientFromAnnotatedLog(ctx context.Context, log []byte) (*memoryClient, error) {
+// Takes in an annotated log and returns a fully populated set of logdog streams
+func streamsFromAnnotatedLog(ctx context.Context, log []byte) (*logdog.Streams, error) {
 	c := &memoryClient{}
 	p := annotee.New(ctx, annotee.Options{
 		Client:                 c,
@@ -320,7 +284,7 @@ func clientFromAnnotatedLog(ctx context.Context, log []byte) (*memoryClient, err
 
 	is := annotee.Stream{
 		Reader:           bytes.NewBuffer(log),
-		Name:             types.StreamName("stdio"),
+		Name:             types.StreamName("stdout"),
 		Annotate:         true,
 		StripAnnotations: true,
 	}
@@ -329,7 +293,8 @@ func clientFromAnnotatedLog(ctx context.Context, log []byte) (*memoryClient, err
 	if err := p.RunStreams([]*annotee.Stream{&is}); err != nil {
 		return nil, err
 	}
-	return c, nil
+	p.Finish()
+	return c.ToLogDogStreams()
 }
 
 func swarmingBuildImpl(c context.Context, URL string, server string, taskID string) (*resp.MiloBuild, error) {
@@ -339,11 +304,16 @@ func swarmingBuildImpl(c context.Context, URL string, server string, taskID stri
 		return nil, err
 	}
 
-	// Decode the data using annotee.
-	client, err := clientFromAnnotatedLog(c, body)
+	// Decode the data using annotee.  The logdog stream returned here is assumed
+	// to be consistent, which is why the following block of code are not
+	// expected to ever err out.
+	lds, err := streamsFromAnnotatedLog(c, body)
 	if err != nil {
 		return nil, err
 	}
 
-	return buildFromClient(c, taskID, URL, client, sr)
+	build := &resp.MiloBuild{}
+	logdog.AddLogDogToBuild(c, URL, lds, build)
+	addSwarmingToBuild(c, sr, build)
+	return build, nil
 }
