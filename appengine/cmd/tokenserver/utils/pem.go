@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package admin
+package utils
 
 import (
 	"encoding/pem"
 	"fmt"
 )
 
-// parsePEM takes pem-encoded block and decodes it, checking the header.
-func parsePEM(data, header string) ([]byte, error) {
+// ParsePEM takes pem-encoded block and decodes it, checking the header.
+func ParsePEM(data, header string) ([]byte, error) {
 	block, rest := pem.Decode([]byte(data))
 	if len(rest) != 0 || block == nil {
 		return nil, fmt.Errorf("not a valid %q PEM", header)
@@ -21,10 +21,10 @@ func parsePEM(data, header string) ([]byte, error) {
 	return block.Bytes, nil
 }
 
-// dumpPEM transforms block to pem-encoding.
+// DumpPEM transforms block to pem-encoding.
 //
-// Reverse of parsePEM.
-func dumpPEM(data []byte, header string) string {
+// Reverse of ParsePEM.
+func DumpPEM(data []byte, header string) string {
 	return string(pem.EncodeToMemory(&pem.Block{
 		Type:  header,
 		Bytes: data,

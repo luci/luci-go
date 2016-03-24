@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"crypto/x509"
 	"fmt"
+	"math/big"
 	"sync"
 	"time"
 
@@ -30,6 +31,7 @@ import (
 	"github.com/luci/luci-go/common/stringset"
 
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/model"
+	"github.com/luci/luci-go/appengine/cmd/tokenserver/utils"
 	"github.com/luci/luci-go/common/api/tokenserver/v1"
 )
 
@@ -216,7 +218,7 @@ func (s *Server) GetCAStatus(c context.Context, r *tokenserver.GetCAStatusReques
 
 	return &tokenserver.GetCAStatusResponse{
 		Config:     cfgMsg,
-		Cert:       dumpPEM(ca.Cert, "CERTIFICATE"),
+		Cert:       utils.DumpPEM(ca.Cert, "CERTIFICATE"),
 		Removed:    ca.Removed,
 		Ready:      ca.Ready,
 		AddedRev:   ca.AddedRev,
@@ -224,6 +226,21 @@ func (s *Server) GetCAStatus(c context.Context, r *tokenserver.GetCAStatusReques
 		RemovedRev: ca.RemovedRev,
 		CrlStatus:  crl.GetStatusProto(),
 	}, nil
+}
+
+// IsRevokedCert says whether a certificate serial number is in the CRL.
+func (s *Server) IsRevokedCert(c context.Context, r *tokenserver.IsRevokedCertRequest) (*tokenserver.IsRevokedCertResponse, error) {
+	sn := big.Int{}
+	if _, ok := sn.SetString(r.Sn, 0); !ok {
+		return nil, grpc.Errorf(codes.InvalidArgument, "can't parse 'sn'")
+	}
+	// TODO(vadimsh): Reuse CRLChecker between requests.
+	checker := model.NewCRLChecker(r.Ca, model.CRLShardCount, 15*time.Second)
+	revoked, err := checker.IsRevokedSN(c, &sn)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "failed to check %q CRL - %s", r.Ca, err)
+	}
+	return &tokenserver.IsRevokedCertResponse{Revoked: revoked}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -246,7 +263,7 @@ func (s *Server) importCA(c context.Context, ca *tokenserver.CertificateAuthorit
 	if err != nil {
 		return err
 	}
-	certDer, err := parsePEM(caCfg.Content, "CERTIFICATE")
+	certDer, err := utils.ParsePEM(caCfg.Content, "CERTIFICATE")
 	if err != nil {
 		return fmt.Errorf("bad PEM - %s", err)
 	}

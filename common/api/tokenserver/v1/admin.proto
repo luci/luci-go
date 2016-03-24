@@ -24,6 +24,9 @@ service Admin {
 
   // GetCAStatus returns configuration of some CA defined in the config.
   rpc GetCAStatus(GetCAStatusRequest) returns (GetCAStatusResponse);
+
+  // IsRevokedCert says whether a certificate serial number is in the CRL.
+  rpc IsRevokedCert(IsRevokedCertRequest) returns (IsRevokedCertResponse);
 }
 
 // ImportConfigResponse is returned by ImportConfig on success.
@@ -59,6 +62,17 @@ message GetCAStatusResponse {
   string updated_rev = 6;   // config rev when this CA was updated
   string removed_rev = 7;   // config rev when this CA was removed
   CRLStatus crl_status = 8; // last known status of the CRL for this CA
+}
+
+// IsRevokedCertRequest contains a name of the CA and a cert serial number.
+message IsRevokedCertRequest {
+  string ca = 1; // Common Name of the CA
+  string sn = 2; // cert's serial number (big.Int encoded as a decimal string)
+}
+
+// IsRevokedCertResponse is returned by IsRevokedCert
+message IsRevokedCertResponse {
+  bool revoked = 1; // true if the cert with given SN is in CRL
 }
 
 ///////////////////////////////////////////////////////////////////////////////

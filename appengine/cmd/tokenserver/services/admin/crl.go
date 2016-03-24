@@ -104,19 +104,13 @@ func validateAndStoreCRL(c context.Context, crlDer []byte, etag string, ca *mode
 		return nil, fmt.Errorf("CRL is not signed by the CA - %s", err)
 	}
 
-	// The CRL is peachy. Import it into the datastore.
+	// The CRL is peachy. Update a sharded set of all revoked certs.
 	logging.Infof(c, "CRL last updated %s", crl.TBSCertList.ThisUpdate)
 	logging.Infof(c, "Found %d entries in the CRL", len(crl.TBSCertList.RevokedCertificates))
-	for _, cert := range crl.TBSCertList.RevokedCertificates {
-		// SN can be of arbitrary length. Encode them to byte blobs.
-		sn, err := cert.SerialNumber.GobEncode()
-		if err != nil {
-			return nil, fmt.Errorf("cant encode SN - %s", err)
-		}
-		// TODO(vadimsh): Implement the rest.
-		_ = sn
+	if err = model.UpdateCRLSet(c, ca.CN, model.CRLShardCount, crl); err != nil {
+		return nil, err
 	}
-	logging.Infof(c, "All CRL entries parsed")
+	logging.Infof(c, "All CRL entries stored")
 
 	// Update the CRL entity. Use EntityVersion to make sure we are not
 	// overwriting someone else's changes.

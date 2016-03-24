@@ -40,3 +40,11 @@ func (s *DecoratedAdmin) GetCAStatus(c context.Context, req *GetCAStatusRequest)
 	}
 	return s.Service.GetCAStatus(c, req)
 }
+
+func (s *DecoratedAdmin) IsRevokedCert(c context.Context, req *IsRevokedCertRequest) (*IsRevokedCertResponse, error) {
+	c, err := s.Prelude(c, "IsRevokedCert", req)
+	if err != nil {
+		return nil, err
+	}
+	return s.Service.IsRevokedCert(c, req)
+}

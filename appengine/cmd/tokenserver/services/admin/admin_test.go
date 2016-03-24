@@ -16,11 +16,13 @@ import (
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/urlfetch"
-	"github.com/luci/luci-go/appengine/cmd/tokenserver/model"
 	"github.com/luci/luci-go/appengine/gaetesting"
-	"github.com/luci/luci-go/common/api/tokenserver/v1"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/config/impl/memory"
+
+	"github.com/luci/luci-go/appengine/cmd/tokenserver/model"
+	"github.com/luci/luci-go/appengine/cmd/tokenserver/utils"
+	"github.com/luci/luci-go/common/api/tokenserver/v1"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -242,6 +244,20 @@ func TestFetchCRL(t *testing.T) {
 		err = ds.Get(&crl)
 		So(err, ShouldBeNil)
 		So(crl.RevokedCertsCount, ShouldEqual, 1) // fakeCACrl has only 1 SN
+
+		// And it works.
+		resp, err := srv.IsRevokedCert(ctx, &tokenserver.IsRevokedCertRequest{
+			Ca: "Puppet CA: fake.ca",
+			Sn: "0",
+		})
+		So(err, ShouldBeNil)
+		So(resp.Revoked, ShouldBeFalse)
+		resp, err = srv.IsRevokedCert(ctx, &tokenserver.IsRevokedCertRequest{
+			Ca: "Puppet CA: fake.ca",
+			Sn: "2",
+		})
+		So(err, ShouldBeNil)
+		So(resp.Revoked, ShouldBeTrue)
 	})
 
 	Convey("FetchCRL works (with etags)", t, func() {
@@ -347,6 +363,8 @@ thi7LhTd2md+7zzukdrl6xdqYwZXTili5bEveVERajRTVhWKMg==
 `
 
 // Valid CRL signed by key that corresponds to fakeCACrt.
+//
+// Contains only one revoked SN: "2".
 const fakeCACrl = `-----BEGIN X509 CRL-----
 MIICuzCBpAIBATANBgkqhkiG9w0BAQUFADAdMRswGQYDVQQDDBJQdXBwZXQgQ0E6
 IGZha2UuY2EXDTE2MDMxNTAzNDk0NloXDTIxMDMxNDAzNDk0N1owIjAgAgECFw0x
@@ -429,7 +447,7 @@ func serveCRL() *crlServer {
 	s.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		s.Lock.Lock()
 		defer s.Lock.Unlock()
-		der, err := parsePEM(s.CRL, "X509 CRL")
+		der, err := utils.ParsePEM(s.CRL, "X509 CRL")
 		if err != nil {
 			w.WriteHeader(500)
 		} else {
