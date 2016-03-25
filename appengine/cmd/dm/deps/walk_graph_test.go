@@ -16,8 +16,6 @@ import (
 	"github.com/luci/luci-go/common/api/dm/service/v1"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/logging/memlogger"
 	google_pb "github.com/luci/luci-go/common/proto/google"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -73,7 +71,33 @@ func depOn(c context.Context, from *dm.Attempt_ID, to ...*dm.Attempt_ID) {
 	So(rsp.ShouldHalt, ShouldBeTrue)
 }
 
-func walkShouldReturn(c context.Context, log bool) func(request interface{}, expect ...interface{}) string {
+func purgeTimestamps(gd *dm.GraphData) {
+	for _, q := range gd.Quests {
+		if q.GetData().GetCreated() != nil {
+			q.Data.Created = nil
+		}
+		for _, a := range q.GetAttempts() {
+			if a.Data != nil {
+				a.Data.Created = nil
+				a.Data.Modified = nil
+				if ne := a.Data.GetNeedsExecution(); ne != nil {
+					ne.Pending = nil
+				} else if fi := a.Data.GetFinished(); fi != nil {
+					fi.Expiration = nil
+				}
+			}
+			for _, e := range a.Executions {
+				if e.Data != nil {
+					e.Data.Created = nil
+				}
+			}
+		}
+	}
+}
+
+func WalkShouldReturn(c context.Context, keepTimestamps ...bool) func(request interface{}, expect ...interface{}) string {
+	kt := len(keepTimestamps) > 0 && keepTimestamps[0]
+
 	normalize := func(gd *dm.GraphData) *dm.GraphData {
 		data, err := proto.Marshal(gd)
 		if err != nil {
@@ -84,34 +108,34 @@ func walkShouldReturn(c context.Context, log bool) func(request interface{}, exp
 		if err := proto.Unmarshal(data, ret); err != nil {
 			panic(err)
 		}
+		if !kt {
+			purgeTimestamps(ret)
+		}
 		return ret
 	}
 
 	return func(request interface{}, expect ...interface{}) string {
 		r := request.(*dm.WalkGraphReq)
 		e := expect[0].(*dm.GraphData)
-		if log {
-			logging.Get(c).(*memlogger.MemLogger).Reset()
-		}
 		ret, err := (&deps{}).WalkGraph(c, r)
 		if nilExpect := ShouldErrLike(err, nil); nilExpect != "" {
 			return nilExpect
-		}
-		if log {
-			for _, msg := range logging.Get(c).(*memlogger.MemLogger).Messages() {
-				Println(msg)
-			}
 		}
 		return ShouldResemble(normalize(ret), e)
 	}
 }
 
-func WalkShouldReturn(c context.Context) func(request interface{}, expect ...interface{}) string {
-	return walkShouldReturn(c, false)
+type breakFwdDepLoads struct {
+	datastore.RawInterface
 }
 
-func WalkShouldReturnDbg(c context.Context) func(request interface{}, expect ...interface{}) string {
-	return walkShouldReturn(c, true)
+func (b breakFwdDepLoads) GetMulti(keys []*datastore.Key, mg datastore.MultiMetaGetter, cb datastore.GetMultiCB) error {
+	for _, k := range keys {
+		if k.Kind() == "FwdDep" {
+			return fmt.Errorf("Loading FwdDeps is currently broken")
+		}
+	}
+	return b.RawInterface.GetMulti(keys, mg, cb)
 }
 
 func TestWalkGraph(t *testing.T) {
@@ -125,8 +149,7 @@ func TestWalkGraph(t *testing.T) {
 		s := &deps{}
 
 		req := &dm.WalkGraphReq{
-			Queries: []*dm.GraphQuery{
-				dm.AttemptListQueryL(map[string][]uint32{"quest": {1}})},
+			Query: dm.AttemptListQueryL(map[string][]uint32{"quest": {1}}),
 			Limit: &dm.WalkGraphReq_Limit{MaxDepth: 1},
 		}
 		So(req.Normalize(), ShouldBeNil)
@@ -156,7 +179,7 @@ func TestWalkGraph(t *testing.T) {
 			_, err := s.EnsureAttempt(c, &dm.EnsureAttemptReq{ToEnsure: aid})
 			So(err, ShouldBeNil)
 
-			req.Queries[0].GetAttemptList().Attempt = dm.NewAttemptList(
+			req.Query.AttemptList = dm.NewAttemptList(
 				map[string][]uint32{w: {1}})
 
 			Convey("include nothing", func() {
@@ -172,7 +195,7 @@ func TestWalkGraph(t *testing.T) {
 			Convey("quest dne", func() {
 				req.Include.QuestData = true
 				req.Limit.MaxDepth = 1
-				req.Queries[0].GetAttemptList().Attempt = dm.NewAttemptList(
+				req.Query.AttemptList = dm.NewAttemptList(
 					map[string][]uint32{"noex": {1}})
 				So(req, WalkShouldReturn(c), &dm.GraphData{
 					Quests: map[string]*dm.Quest{
@@ -197,10 +220,11 @@ func TestWalkGraph(t *testing.T) {
 					Quests: map[string]*dm.Quest{
 						w: {
 							Data: &dm.Quest_Data{
-								Created: google_pb.NewTimestamp(now),
-								Desc:    wDesc,
+								Desc: wDesc,
 							},
-							Attempts: map[uint32]*dm.Attempt{1: aExpect},
+							Attempts: map[uint32]*dm.Attempt{
+								1: dm.NewAttemptNeedsExecution(time.Time{}),
+							},
 						},
 					},
 				})
@@ -227,16 +251,46 @@ func TestWalkGraph(t *testing.T) {
 				req.Include.AttemptData = true
 				req.Include.AttemptResult = true
 				req.Include.NumExecutions = 128
-				aExpect := dm.NewAttemptFinished(
-					datastore.RoundTime(clock.Now(c).Add(time.Hour*24*4)),
-					`{"data":["very","yes"]}`)
-				aExpect.Data.Created = google_pb.NewTimestamp(datastore.RoundTime(clock.Now(c)))
-				aExpect.Data.Modified = google_pb.NewTimestamp(datastore.RoundTime(clock.Now(c).Add(time.Microsecond * 2)))
+				data := `{"data":["very","yes"]}`
+				aExpect := dm.NewAttemptFinished(time.Time{}, uint32(len(data)), data)
 				aExpect.Data.NumExecutions = 1
 				aExpect.Executions = map[uint32]*dm.Execution{1: {
 					State: dm.Execution_Finished,
-					Data:  &dm.Execution_Data{Created: google_pb.NewTimestamp(datastore.RoundTime(clock.Now(c)))},
+					Data:  &dm.Execution_Data{},
 				}}
+				So(req, WalkShouldReturn(c), &dm.GraphData{
+					Quests: map[string]*dm.Quest{
+						w: {
+							Attempts: map[uint32]*dm.Attempt{1: aExpect},
+						},
+					},
+				})
+			})
+
+			Convey("limited attempt results", func() {
+				execute(c, aid)
+
+				_, err := s.FinishAttempt(c, &dm.FinishAttemptReq{
+					Auth: &dm.Execution_Auth{
+						Id:    eid,
+						Token: []byte("sekret"),
+					},
+					JsonResult: `{"data": ["very", "yes"]}`,
+					Expiration: google_pb.NewTimestamp(clock.Now(c).Add(time.Hour * 24 * 4)),
+				})
+				So(err, ShouldBeNil)
+
+				ex := &model.Execution{ID: 1, Attempt: ds.MakeKey("Attempt", aid.DMEncoded())}
+				So(ds.Get(ex), ShouldBeNil)
+				ex.State = dm.Execution_Finished
+				So(ds.Put(ex), ShouldBeNil)
+
+				req.Include.AttemptResult = true
+				req.Limit.MaxDataSize = 10
+				data := `{"data":["very","yes"]}`
+				aExpect := dm.NewAttemptFinished(time.Time{}, uint32(len(data)), "")
+				aExpect.Data.NumExecutions = 1
+				aExpect.Partial = &dm.Attempt_Partial{Result: dm.Attempt_Partial_DataSizeLimit}
 				So(req, WalkShouldReturn(c), &dm.GraphData{
 					Quests: map[string]*dm.Quest{
 						w: {
@@ -254,7 +308,7 @@ func TestWalkGraph(t *testing.T) {
 
 				req.Limit.MaxDepth = 1
 				Convey("normal", func() {
-					req.Queries[0] = dm.AttemptRangeQuery(x, 2, 4)
+					req.Query = dm.AttemptRangeQuery(x, 2, 4)
 					So(req, WalkShouldReturn(c), &dm.GraphData{
 						Quests: map[string]*dm.Quest{
 							x: {Attempts: map[uint32]*dm.Attempt{2: {}, 3: {}}},
@@ -263,7 +317,7 @@ func TestWalkGraph(t *testing.T) {
 				})
 
 				Convey("oob range", func() {
-					req.Queries[0] = dm.AttemptRangeQuery(x, 2, 6)
+					req.Query = dm.AttemptRangeQuery(x, 2, 6)
 					So(req, WalkShouldReturn(c), &dm.GraphData{
 						Quests: map[string]*dm.Quest{
 							x: {Attempts: map[uint32]*dm.Attempt{
@@ -281,29 +335,29 @@ func TestWalkGraph(t *testing.T) {
 				So(err, ShouldBeNil)
 				ttest.Drain(c)
 
-				origNow := datastore.RoundTime(clock.Now(c))
-
 				execute(c, dm.NewAttemptID(x, 1))
 				execute(c, dm.NewAttemptID(x, 2))
 
 				exp := google_pb.NewTimestamp(datastore.RoundTime(clock.Now(c).Add(time.Hour * 24 * 4)))
 
+				x1data := `{"data":["I can see this"]}`
 				_, err = s.FinishAttempt(c, &dm.FinishAttemptReq{
 					Auth: &dm.Execution_Auth{
 						Id:    dm.NewExecutionID(x, 1, 1),
 						Token: []byte("sekret"),
 					},
-					JsonResult: `{"data": ["I can see this"]}`,
+					JsonResult: x1data,
 					Expiration: exp,
 				})
 				So(err, ShouldBeNil)
 
+				x2data := `{"data":["nope"]}`
 				_, err = s.FinishAttempt(c, &dm.FinishAttemptReq{
 					Auth: &dm.Execution_Auth{
 						Id:    dm.NewExecutionID(x, 2, 1),
 						Token: []byte("sekret"),
 					},
-					JsonResult: `{"data": ["nope"]}`,
+					JsonResult: x2data,
 					Expiration: exp,
 				})
 				So(err, ShouldBeNil)
@@ -317,16 +371,13 @@ func TestWalkGraph(t *testing.T) {
 				}
 				req.Limit.MaxDepth = 2
 				req.Include.AttemptResult = true
-				req.Queries[0] = dm.AttemptListQueryL(map[string][]uint32{x: nil})
+				req.Query = dm.AttemptListQueryL(map[string][]uint32{x: nil})
 
-				x1Expect := dm.NewAttemptFinished(exp.Time(), `{"data":["I can see this"]}`)
-				x1Expect.Data.Created = google_pb.NewTimestamp(origNow.Add(-time.Second * 12))
-				x1Expect.Data.Modified = google_pb.NewTimestamp(origNow.Add(time.Microsecond))
+				x1Expect := dm.NewAttemptFinished(time.Time{}, uint32(len(x1data)), x1data)
 				x1Expect.Data.NumExecutions = 1
 
-				x2Expect := dm.NewAttemptFinished(exp.Time(), "")
-				x2Expect.Data.Created = google_pb.NewTimestamp(origNow.Add(-time.Second * 18))
-				x2Expect.Data.Modified = google_pb.NewTimestamp(origNow.Add(time.Microsecond))
+				x2Expect := dm.NewAttemptFinished(time.Time{}, uint32(len(x2data)), "")
+				x2Expect.Partial = &dm.Attempt_Partial{Result: dm.Attempt_Partial_NotAuthorized}
 				x2Expect.Data.NumExecutions = 1
 
 				So(req, WalkShouldReturn(c), &dm.GraphData{
@@ -338,8 +389,62 @@ func TestWalkGraph(t *testing.T) {
 					}})
 			})
 
-			Convey("deps (no dest attempts)", func() {
+			Convey("own attempt results", func() {
+				x := ensureQuest(c, "x")
+				execute(c, dm.NewAttemptID(w, 1))
+				depOn(c, dm.NewAttemptID(w, 1), dm.NewAttemptID(x, 1))
+				_, err := s.EnsureAttempt(c, &dm.EnsureAttemptReq{ToEnsure: dm.NewAttemptID(x, 2)})
+				So(err, ShouldBeNil)
+				ttest.Drain(c)
+
+				execute(c, dm.NewAttemptID(x, 1))
+				execute(c, dm.NewAttemptID(x, 2))
+
+				exp := google_pb.NewTimestamp(datastore.RoundTime(clock.Now(c).Add(time.Hour * 24 * 4)))
+
+				x1data := `{"data":["I can see this"]}`
+				_, err = s.FinishAttempt(c, &dm.FinishAttemptReq{
+					Auth: &dm.Execution_Auth{
+						Id:    dm.NewExecutionID(x, 1, 1),
+						Token: []byte("sekret"),
+					},
+					JsonResult: x1data,
+					Expiration: exp,
+				})
+				So(err, ShouldBeNil)
+				ttest.Drain(c)
+
+				execute(c, dm.NewAttemptID(w, 1))
+
+				req.Auth = &dm.Execution_Auth{
+					Id:    dm.NewExecutionID(w, 1, 2),
+					Token: []byte("sekret"),
+				}
 				req.Limit.MaxDepth = 2
+				req.Include.AttemptResult = true
+				req.Query = dm.AttemptListQueryL(map[string][]uint32{w: {1}})
+
+				x1Expect := dm.NewAttemptFinished(time.Time{}, uint32(len(x1data)), x1data)
+				x1Expect.Data.NumExecutions = 1
+
+				w1Exepct := dm.NewAttemptExecuting(2)
+				w1Exepct.Data.NumExecutions = 2
+
+				// This filter ensures that WalkShouldReturn is using the optimized
+				// path for deps traversal when starting from an authed attempt.
+				c = datastore.AddRawFilters(c, func(c context.Context, ri datastore.RawInterface) datastore.RawInterface {
+					return breakFwdDepLoads{ri}
+				})
+
+				So(req, WalkShouldReturn(c), &dm.GraphData{
+					Quests: map[string]*dm.Quest{
+						w: {Attempts: map[uint32]*dm.Attempt{1: w1Exepct}},
+						x: {Attempts: map[uint32]*dm.Attempt{1: x1Expect}},
+					}})
+			})
+
+			Convey("deps (no dest attempts)", func() {
+				req.Limit.MaxDepth = 3
 				execute(c, dm.NewAttemptID(w, 1))
 				x := ensureQuest(c, "x")
 				depOn(c, dm.NewAttemptID(w, 1), dm.NewAttemptID(x, 1), dm.NewAttemptID(x, 2))
@@ -421,7 +526,7 @@ func TestWalkGraph(t *testing.T) {
 					Convey("attemptlist", func() {
 						req.Limit.MaxDepth = 0
 						req.Include.ObjectIds = true
-						req.Queries[0] = dm.AttemptListQueryL(map[string][]uint32{x: nil})
+						req.Query = dm.AttemptListQueryL(map[string][]uint32{x: nil})
 						So(req, WalkShouldReturn(c), &dm.GraphData{
 							Quests: map[string]*dm.Quest{
 								x: {

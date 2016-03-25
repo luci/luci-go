@@ -47,12 +47,12 @@ func NewAttemptBlocked(numWaiting uint32) *Attempt {
 }
 
 // NewAttemptFinished creates an Attempt in the Finished state.
-func NewAttemptFinished(expiration time.Time, jsonResult string) *Attempt {
+func NewAttemptFinished(expiration time.Time, jsonResultSize uint32, jsonResult string) *Attempt {
 	return &Attempt{
 		Data: &Attempt_Data{
 			AttemptType: &Attempt_Data_Finished_{
 				Finished: &Attempt_Data_Finished{
-					google_pb.NewTimestamp(expiration), jsonResult}}}}
+					google_pb.NewTimestamp(expiration), jsonResultSize, jsonResult}}}}
 }
 
 // State computes the Attempt_State for the current Attempt_Data
@@ -78,7 +78,8 @@ func (d *Attempt) NormalizePartial() {
 	if p == nil {
 		return
 	}
-	if !(p.Data || p.Executions || p.FwdDeps || p.BackDeps || p.Result) {
+	if !(p.Data || p.Executions || p.FwdDeps || p.BackDeps ||
+		p.Result != Attempt_Partial_Loaded) {
 		d.Partial = nil
 	}
 }

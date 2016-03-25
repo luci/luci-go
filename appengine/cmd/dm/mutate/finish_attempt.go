@@ -45,11 +45,14 @@ func (f *FinishAttempt) RollForward(c context.Context) (muts []tumble.Mutation, 
 	// the InvalidateExecution call above asserts that or errors out.
 	atmpt.MustModifyState(c, dm.Attempt_Finished)
 
-	rslt := &model.AttemptResult{
-		Attempt: ds.KeyForObj(atmpt),
-		Data:    f.Result,
-	}
+	atmpt.ResultSize = uint32(len(f.Result))
 	atmpt.ResultExpiration = f.ResultExpiration
+	rslt := &model.AttemptResult{
+		Attempt:    ds.KeyForObj(atmpt),
+		Data:       f.Result,
+		Expiration: atmpt.ResultExpiration,
+		Size:       atmpt.ResultSize,
+	}
 
 	err = ds.PutMulti([]interface{}{atmpt, rslt})
 	if err != nil {

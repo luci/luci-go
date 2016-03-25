@@ -24,8 +24,9 @@ const numWorkers = 16
 const maxTimeout = 55 * time.Second // GAE limit is 60s
 
 type node struct {
-	aid   *dm.Attempt_ID
-	depth int64
+	aid                 *dm.Attempt_ID
+	depth               int64
+	canSeeAttemptResult bool
 }
 
 func runSearchQuery(c context.Context, send func(*dm.Attempt_ID) error, s *dm.GraphQuery_Search) func() error {
@@ -39,9 +40,9 @@ func isCtxErr(err error) bool {
 	return err == context.Canceled || err == context.DeadlineExceeded
 }
 
-func runAttemptListQuery(c context.Context, includeExpired bool, send func(*dm.Attempt_ID) error, al *dm.GraphQuery_AttemptList) func() error {
+func runAttemptListQuery(c context.Context, includeExpired bool, send func(*dm.Attempt_ID) error, al *dm.AttemptList) func() error {
 	return func() error {
-		for qst, anum := range al.Attempt.To {
+		for qst, anum := range al.To {
 			if len(anum.Nums) == 0 {
 				qry := model.QueryAttemptsForQuest(c, qst)
 				if !includeExpired {
@@ -81,23 +82,6 @@ func runAttemptRangeQuery(c context.Context, send func(*dm.Attempt_ID) error, ar
 			}
 		}
 		return nil
-	}
-}
-
-func runQuery(c context.Context, includeExpired bool, send func(*dm.Attempt_ID) error, q *dm.GraphQuery) func() error {
-	switch q := q.Query.(type) {
-	case nil:
-		return func() error {
-			return grpcutil.Errf(codes.InvalidArgument, "empty query")
-		}
-	case *dm.GraphQuery_Search_:
-		return runSearchQuery(c, send, q.Search)
-	case *dm.GraphQuery_AttemptList_:
-		return runAttemptListQuery(c, includeExpired, send, q.AttemptList)
-	case *dm.GraphQuery_AttemptRange_:
-		return runAttemptRangeQuery(c, send, q.AttemptRange)
-	default:
-		panic(fmt.Errorf("unknown query type: %T", q))
 	}
 }
 
@@ -163,36 +147,49 @@ func loadExecutions(c context.Context, includeID bool, atmpt *model.Attempt, ake
 	})
 }
 
-func attemptResultLoader(c context.Context, aid *dm.Attempt_ID, akey *datastore.Key, auth *dm.Execution_Auth, dst *dm.Attempt) func() error {
+func attemptResultLoader(c context.Context, aid *dm.Attempt_ID, authedForResult bool, rsltSize uint32, lim *sizeLimit, akey *datastore.Key, auth *dm.Execution_Auth, dst *dm.Attempt) func() error {
 	return func() error {
 		ds := datastore.Get(c)
-		if auth != nil {
+		if auth != nil && !authedForResult {
+			// we need to prove that the currently authed execution depends on this
+			// attempt.
 			from := auth.Id.AttemptID().DMEncoded()
 			to := aid.DMEncoded()
 			fdepKey := ds.MakeKey("Attempt", from, "FwdDep", to)
 			exist, err := ds.Exists(fdepKey)
 			if err != nil {
 				logging.Fields{ek: err, "key": fdepKey}.Errorf(c, "failed to determine if FwdDep exists")
+				dst.Partial.Result = dm.Attempt_Partial_NotAuthorized
 				return err
 			}
 			if !exist {
-				dst.Partial.Result = false
+				dst.Partial.Result = dm.Attempt_Partial_NotAuthorized
 				return nil
 			}
 		}
 
+		if !lim.PossiblyOK(rsltSize) {
+			dst.Partial.Result = dm.Attempt_Partial_DataSizeLimit
+			logging.Infof(c, "skipping load of AttemptResult %s (size limit)", aid)
+			return nil
+		}
 		r := &model.AttemptResult{Attempt: akey}
 		if err := ds.Get(r); err != nil {
 			logging.Fields{ek: err, "aid": aid}.Errorf(c, "failed to load AttemptResult")
 			return err
 		}
-		dst.Data.GetFinished().JsonResult = r.Data
-		dst.Partial.Result = false
+		if lim.Add(r.Size) {
+			dst.Data.GetFinished().JsonResult = r.Data
+			dst.Partial.Result = dm.Attempt_Partial_Loaded
+		} else {
+			dst.Partial.Result = dm.Attempt_Partial_DataSizeLimit
+			logging.Infof(c, "loaded AttemptResult %s, but hit size limit after", aid)
+		}
 		return nil
 	}
 }
 
-func attemptLoader(c context.Context, req *dm.WalkGraphReq, aid *dm.Attempt_ID, dst *dm.Attempt, send func(*dm.Attempt_ID) error) func() error {
+func attemptLoader(c context.Context, req *dm.WalkGraphReq, aid *dm.Attempt_ID, authedForResult bool, lim *sizeLimit, dst *dm.Attempt, send func(aid *dm.Attempt_ID, fwd bool) error) func() error {
 	return func() error {
 		ds := datastore.Get(c)
 
@@ -217,9 +214,9 @@ func attemptLoader(c context.Context, req *dm.WalkGraphReq, aid *dm.Attempt_ID, 
 		errChan := parallel.Run(0, func(ch chan<- func() error) {
 			if req.Include.AttemptResult {
 				if atmpt.State == dm.Attempt_Finished {
-					ch <- attemptResultLoader(c, aid, akey, req.Auth, dst)
+					ch <- attemptResultLoader(c, aid, authedForResult, atmpt.ResultSize, lim, akey, req.Auth, dst)
 				} else {
-					dst.Partial.Result = false
+					dst.Partial.Result = dm.Attempt_Partial_Loaded
 				}
 			}
 
@@ -241,11 +238,15 @@ func attemptLoader(c context.Context, req *dm.WalkGraphReq, aid *dm.Attempt_ID, 
 			loadFwd := writeFwd || walkFwd
 
 			if loadFwd {
+				isAuthed := req.Auth != nil && req.Auth.Id.AttemptID().Equals(aid)
+				subSend := func(aid *dm.Attempt_ID) error {
+					return send(aid, isAuthed)
+				}
 				if writeFwd {
 					dst.FwdDeps = dm.NewAttemptList(nil)
 				}
 				ch <- func() error {
-					err := loadEdges(c, send, "FwdDep", akey, dst.FwdDeps, walkFwd)
+					err := loadEdges(c, subSend, "FwdDep", akey, dst.FwdDeps, walkFwd)
 					if err == nil && dst.Partial != nil {
 						dst.Partial.FwdDeps = false
 					} else if err != nil {
@@ -264,10 +265,13 @@ func attemptLoader(c context.Context, req *dm.WalkGraphReq, aid *dm.Attempt_ID, 
 				if writeBack {
 					dst.BackDeps = dm.NewAttemptList(nil)
 				}
+				subSend := func(aid *dm.Attempt_ID) error {
+					return send(aid, false)
+				}
 				bdg := &model.BackDepGroup{Dependee: atmpt.ID}
 				bdgKey := ds.KeyForObj(bdg)
 				ch <- func() error {
-					err := loadEdges(c, send, "BackDep", bdgKey, dst.BackDeps, walkBack)
+					err := loadEdges(c, subSend, "BackDep", bdgKey, dst.BackDeps, walkBack)
 					if err == nil && dst.Partial != nil {
 						dst.Partial.BackDeps = false
 					} else if err != nil {
@@ -346,6 +350,17 @@ func (d *deps) WalkGraph(c context.Context, req *dm.WalkGraphReq) (rsp *dm.Graph
 	nodeChan := make(chan *node, numWorkers)
 	defer close(nodeChan)
 
+	sendNodeAuthed := func(depth int64) func(*dm.Attempt_ID, bool) error {
+		return func(aid *dm.Attempt_ID, isAuthed bool) error {
+			select {
+			case nodeChan <- &node{aid: aid, depth: depth, canSeeAttemptResult: isAuthed}:
+				return nil
+			case <-c.Done():
+				return c.Err()
+			}
+		}
+	}
+
 	sendNode := func(depth int64) func(*dm.Attempt_ID) error {
 		return func(aid *dm.Attempt_ID) error {
 			select {
@@ -376,16 +391,21 @@ func (d *deps) WalkGraph(c context.Context, req *dm.WalkGraphReq) (rsp *dm.Graph
 
 	addJob(func() error {
 		return parallel.FanOutIn(func(pool chan<- func() error) {
-			for _, q := range req.Queries {
-				select {
-				case pool <- runQuery(c, req.Include.ExpiredAttempts, sendNode(0), q):
-				case <-c.Done():
-					return
-				}
+			q := req.Query
+			snd := sendNode(0)
+			if q.AttemptList != nil {
+				pool <- runAttemptListQuery(c, req.Include.ExpiredAttempts, snd, q.AttemptList)
+			}
+			for _, rng := range q.AttemptRange {
+				pool <- runAttemptRangeQuery(c, snd, rng)
+			}
+			for _, srch := range q.Search {
+				pool <- runSearchQuery(c, snd, srch)
 			}
 		})
 	})
 
+	dataLimit := &sizeLimit{0, req.Limit.MaxDataSize}
 	rsp = &dm.GraphData{Quests: map[string]*dm.Quest{}}
 	// main graph walk processing loop
 	for outstandingJobs > 0 || len(nodeChan) > 0 {
@@ -401,16 +421,12 @@ func (d *deps) WalkGraph(c context.Context, req *dm.WalkGraphReq) (rsp *dm.Graph
 			// assume that contextualized logging already happened
 
 		case n := <-nodeChan:
-			qst, ok := rsp.Quests[n.aid.Quest]
+			logging.Fields{"aid": n.aid.DMEncoded(), "depth": n.depth}.Infof(c, "got node")
+			qst, ok := rsp.GetQuest(n.aid.Quest)
 			if !ok {
-				qst = &dm.Quest{
-					Attempts: map[uint32]*dm.Attempt{},
-					Partial:  req.Include.QuestData,
+				if !req.Include.ObjectIds {
+					qst.Id = nil
 				}
-				if req.Include.ObjectIds {
-					qst.Id = &dm.Quest_ID{Id: n.aid.Quest}
-				}
-				rsp.Quests[n.aid.Quest] = qst
 				if req.Include.QuestData {
 					addJob(questDataLoader(c, n.aid.Quest, qst))
 				}
@@ -421,15 +437,19 @@ func (d *deps) WalkGraph(c context.Context, req *dm.WalkGraphReq) (rsp *dm.Graph
 					Executions: req.Include.NumExecutions != 0,
 					FwdDeps:    req.Include.FwdDeps,
 					BackDeps:   req.Include.BackDeps,
-					Result:     req.Include.AttemptResult,
 				}}
+				if req.Include.AttemptResult {
+					atmpt.Partial.Result = dm.Attempt_Partial_NotLoaded
+				}
+
 				atmpt.NormalizePartial() // in case they're all false
 				if req.Include.ObjectIds {
 					atmpt.Id = n.aid
 				}
 				qst.Attempts[n.aid.Id] = atmpt
 				if req.Limit.MaxDepth == -1 || n.depth < req.Limit.MaxDepth {
-					addJob(attemptLoader(c, req, n.aid, atmpt, sendNode(n.depth+1)))
+					addJob(attemptLoader(c, req, n.aid, n.canSeeAttemptResult, dataLimit, atmpt,
+						sendNodeAuthed(n.depth+1)))
 				}
 			}
 			// otherwise, we've dealt with this attempt before, so ignore it.

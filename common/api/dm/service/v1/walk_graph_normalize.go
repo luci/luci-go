@@ -8,17 +8,20 @@ import (
 	"github.com/luci/luci-go/common/errors"
 )
 
+const (
+	// DefaultLimitMaxDataSize is the default MaxDataSize value (16MB).
+	DefaultLimitMaxDataSize = 16 * 1024 * 1024
+
+	// MaxLimitMaxDataSize is the maximum MaxDataSize value (30MB).
+	MaxLimitMaxDataSize = 30 * 1024 * 1024
+)
+
 // Normalize returns an error iff the WalkGraphReq is invalid.
 func (w *WalkGraphReq) Normalize() error {
-	if len(w.Queries) == 0 {
-		return errors.New("must specify at least one Query")
+	if w.Query == nil {
+		return errors.New("must specify a Query")
 	}
-
-	lme := errors.NewLazyMultiError(len(w.Queries))
-	for i, q := range w.Queries {
-		lme.Assign(i, q.Normalize())
-	}
-	if err := lme.Get(); err != nil {
+	if err := w.Query.Normalize(); err != nil {
 		return err
 	}
 
@@ -35,6 +38,12 @@ func (w *WalkGraphReq) Normalize() error {
 		}
 	} else {
 		w.Limit = &WalkGraphReq_Limit{}
+	}
+	if w.Limit.MaxDataSize == 0 {
+		w.Limit.MaxDataSize = DefaultLimitMaxDataSize
+	}
+	if w.Limit.MaxDataSize > MaxLimitMaxDataSize {
+		w.Limit.MaxDataSize = MaxLimitMaxDataSize
 	}
 
 	if w.Include == nil {

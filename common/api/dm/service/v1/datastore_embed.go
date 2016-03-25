@@ -122,3 +122,27 @@ func (e *Execution_ID) SetDMEncoded(val string) error {
 	e.Id = flipMask ^ uint32(en)
 	return nil
 }
+
+// GetQuest gets the specified quest from GraphData, if it's already there. If
+// it's not, then a new Quest will be created, added, and returned.
+//
+// If the Quests map is uninitialized, this will initialize it.
+func (g *GraphData) GetQuest(qid string) (*Quest, bool) {
+	cur, ok := g.Quests[qid]
+	if !ok {
+		cur = &Quest{
+			Id:       NewQuestID(qid),
+			Attempts: map[uint32]*Attempt{},
+		}
+		if g.Quests == nil {
+			g.Quests = map[string]*Quest{}
+		}
+		g.Quests[qid] = cur
+	}
+	return cur, ok
+}
+
+// NewQuestDesc is a shorthand method for building a new *Quest_Desc.
+func NewQuestDesc(cfg string, js string) *Quest_Desc {
+	return &Quest_Desc{cfg, js}
+}

@@ -56,6 +56,7 @@ type Attempt struct {
 
 	// Only valid while Attempt is Finished
 	ResultExpiration time.Time
+	ResultSize       uint32
 
 	// A lazily-updated boolean to reflect that this Attempt is expired for
 	// queries.
@@ -135,7 +136,7 @@ func (a *Attempt) DataProto() *dm.Attempt_Data {
 		ret = dm.NewAttemptBlocked(setlen - waitset.CountSet()).Data
 
 	case dm.Attempt_Finished:
-		ret = dm.NewAttemptFinished(a.ResultExpiration, "").Data
+		ret = dm.NewAttemptFinished(a.ResultExpiration, a.ResultSize, "").Data
 
 	default:
 		panic(fmt.Errorf("unknown Attempt_State: %s", a.State))

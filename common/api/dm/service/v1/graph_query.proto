@@ -14,19 +14,18 @@ message GraphQuery {
   // AttemptList allows you to list one or more specific attempts as the result
   // of the query. If a quest contains the attempt number 0, or is empty, it
   // means 'all attempts for this quest'.
-  message AttemptList {
-    dm.AttemptList attempt = 1;
-  }
+  dm.AttemptList attempt_list = 1;
 
-  // AttemptRange allows you to list a range of attempts in a single quest.
-  // low must be > 0, and high must be > low. The range is [low, high). High
-  // may be higher than the highest attempt, and low may be lower than the
-  // lowest attempt.
   message AttemptRange {
     string quest = 1;
     uint32 low = 2;
     uint32 high = 3;
   }
+  // attempt_range allows you to list a range of attempts in a single quest.
+  // low must be > 0, and high must be > low. The range is [low, high). High may
+  // be higher than the highest attempt, and low may be lower than the lowest
+  // attempt (but not 0).
+  repeated AttemptRange attempt_range = 2;
 
   // A Search allows you to query objects whose properties match all of the
   // provided filters. Filters take the form of a dot-delimited path. For
@@ -69,7 +68,7 @@ message GraphQuery {
   //
   // Literal '.' and '[' characters may be escaped with a backslash.
   message Search {
-    enum SearchDomain {
+    enum Domain {
       Quest = 0;
       Attempt = 1;
     }
@@ -79,7 +78,7 @@ message GraphQuery {
     //
     // Additionally `Attempt` has a special field $quest whose subfields are
     // queriable in the exact same way that a search in a Quest domain works.
-    SearchDomain domain = 1;
+    Domain domain = 1;
 
     // 2 is reserved for sort_by. For now everything will sort by "created", but
     // it may be possible to expand quest and/or result payloads in the future
@@ -131,10 +130,5 @@ message GraphQuery {
     // in a list or sublist matters.
     map<string, dm.PropertyValue> exact_filters = 6;
   }
-
-  oneof query {
-    AttemptList attempt_list = 1;
-    AttemptRange attempt_range = 2;
-    Search search = 3;
-  }
+  repeated Search search = 3;
 }

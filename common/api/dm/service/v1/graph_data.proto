@@ -82,7 +82,8 @@ message Attempt {
 
     message Finished {
       google.protobuf.Timestamp expiration = 1;
-      string json_result = 2;
+      uint32 json_result_size = 2;
+      string json_result = 3;
     }
 
     oneof attempt_type {
@@ -117,11 +118,24 @@ message Attempt {
     // loaded.
     bool back_deps = 4;
 
-    // Result is true iff the AttemptResults were requested, and this Attempt is
-    // Finished, but the result wasn't able to be loaded. This will also be
-    // false in the case that the query is authenticated from an Execution whose
-    // Attempt doesn't depend on this Attempt.
-    bool result = 5;
+    enum Result {
+      // Loaded implies that the result was, in fact, loaded.
+      Loaded = 0;
+
+      // NotLoaded is set if the result failed to load because there was
+      // a transient error or the request ran out of time.
+      NotLoaded = 1;
+
+      // NotAuthorized is set if the query was authenticated from an Execution
+      // whose Attempt doesn't depend on this one.
+      NotAuthorized = 2;
+
+      // DataSizeLimit is set if the max_data_size limit was reached.
+      DataSizeLimit = 3;
+    }
+    // result is set if AttemptResults were requested, and the attempt_type is
+    // Finished, but for some reason the result but wasn't loaded.
+    Result result = 5;
   }
   // Partial values are true iff the request asked for AttemptData, Executions
   // or Deps, but wasn't able to completely fill them. If Partial is omitted,

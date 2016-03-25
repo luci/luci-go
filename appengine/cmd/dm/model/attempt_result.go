@@ -5,6 +5,8 @@
 package model
 
 import (
+	"time"
+
 	"github.com/luci/gae/service/datastore"
 )
 
@@ -15,4 +17,8 @@ type AttemptResult struct {
 	Attempt *datastore.Key `gae:"$parent"`
 
 	Data string `gae:",noindex"`
+
+	// These are denormalized across Attempt and AttemptResult
+	Expiration time.Time
+	Size       uint32
 }

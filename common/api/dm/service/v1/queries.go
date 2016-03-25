@@ -6,33 +6,18 @@ package dm
 
 // AttemptListQuery returns a new GraphQuery for the given AttemptList.
 func AttemptListQuery(fanout *AttemptList) *GraphQuery {
-	return &GraphQuery{
-		Query: &GraphQuery_AttemptList_{
-			AttemptList: &GraphQuery_AttemptList{
-				Attempt: fanout,
-			},
-		},
-	}
+	return &GraphQuery{AttemptList: fanout}
 }
 
 // AttemptListQueryL returns a new GraphQuery for the given AttemptList
 // literal.
 func AttemptListQueryL(fanout map[string][]uint32) *GraphQuery {
-	return &GraphQuery{
-		Query: &GraphQuery_AttemptList_{
-			AttemptList: &GraphQuery_AttemptList{
-				Attempt: NewAttemptList(fanout),
-			},
-		},
-	}
+	return &GraphQuery{AttemptList: NewAttemptList(fanout)}
 }
 
 // AttemptRangeQuery returns a new GraphQuery for the given AttemptRange
 // specification.
 func AttemptRangeQuery(quest string, low, high uint32) *GraphQuery {
 	return &GraphQuery{
-		Query: &GraphQuery_AttemptRange_{
-			AttemptRange: &GraphQuery_AttemptRange{quest, low, high},
-		},
-	}
+		AttemptRange: []*GraphQuery_AttemptRange{{quest, low, high}}}
 }

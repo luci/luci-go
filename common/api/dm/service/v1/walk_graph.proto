@@ -24,13 +24,13 @@ message WalkGraphReq {
   // optional. See Include.AttemptResult for restrictions.
   dm.Execution.Auth auth = 1;
 
-  // Queries specifies a list of queries to start the graph traversal on. The
+  // Query specifies a list of queries to start the graph traversal on. The
   // traversal will occur as a union of the query results. Redundant
   // specification will not cause additional heavy work; every graph node will
   // be processed exactly once, regardless of how many times it appears in the
   // query results. However, redundancy in the queries will cause the server to
   // retrieve and discard more information.
-  repeated GraphQuery queries = 2;
+  GraphQuery query = 2;
 
   message Mode {
     // DFS sets whether this is a Depth-first (ish) or a Breadth-first (ish) load.
@@ -55,7 +55,7 @@ message WalkGraphReq {
     // (no dependencies), -1 means 'no limit', and >0 is a limit.
     //
     // Any negative value besides -1 is an error.
-    int64 max_depth = 4;
+    int64 max_depth = 1;
 
     // MaxTime sets the maximum amount of time that the query processor should
     // take. Application of this deadline is 'best effort', which means the query
@@ -63,7 +63,17 @@ message WalkGraphReq {
     //
     // This is different than the grpc timeout header, which will set a hard
     // deadline for the request.
-    google.protobuf.Duration max_time = 5;
+    google.protobuf.Duration max_time = 2;
+
+    // MaxDataSize sets the maximum amount of 'Data' (in bytes) that can be
+    // returned, if include.quest_data, include.attempt_data, and/or
+    // include.attempt_result are set. If this limit is hit, then the
+    // appropriate 'partial' value will be set for that object, but the base
+    // object would still be included in the result.
+    //
+    // If this limit is 0, a default limit of 16MB will be used. If this limit
+    // exceeds 30MB, it will be reduced to 30MB.
+    uint32 max_data_size = 3;
   }
   Limit limit = 4;
 
@@ -72,12 +82,12 @@ message WalkGraphReq {
     // If this is false, then those fields will be omitted.
     bool object_ids = 1;
 
-    // QuestData instructs the request to omit the Data field
-    // for Quests in GraphData.
+    // QuestData instructs the request to include the Data field for Quests in
+    // GraphData.
     bool quest_data = 2;
 
-    // AttemptData instructs the request to omit the Data field
-    // for Attempts in GraphData.
+    // AttemptData instructs the request to include the Data field for Attempts
+    // in GraphData.
     bool attempt_data = 3;
 
     // AttemptResult will include the Attempt result payloads for any
@@ -87,6 +97,9 @@ message WalkGraphReq {
     // result for an Attempt if the execution's Attempt depends on it, otherwise
     // it will be blank. To view an AttemptResult, the querying Attempt must
     // first depend on it.
+    //
+    // If the request would return more than limit.max_data_size of data, the
+    // remaining attempt results will have their Partial.Data field set to true.
     bool attempt_result = 4;
 
     // ExpiredAttempts allows you to view attempts which have expired results,
@@ -97,16 +110,16 @@ message WalkGraphReq {
     // is 0, then the execution data will be omitted completely.
     uint32 num_executions = 6;
 
-    // FwdDeps instructs WalkGraph to omit forward dependency information
+    // FwdDeps instructs WalkGraph to include forward dependency information
     // from the result. This only changes the presence of information in the
     // result; if the query is walking forward attempt dependencies, that will
     // still occur even if this is false.
     bool fwd_deps = 7;
 
-    // BackDeps instructs WalkGraph to omit the backwards dependency
-    // information. This only changes the presence of information in the
-    // result; if the query is walking backward attempt dependencies, that will
-    // still occur even if this is false.
+    // BackDeps instructs WalkGraph to include the backwards dependency
+    // information. This only changes the presence of information in the result;
+    // if the query is walking backward attempt dependencies, that will still
+    // occur even if this is false.
     bool back_deps = 8;
   }
   // Include allows you to add additional information to the returned
