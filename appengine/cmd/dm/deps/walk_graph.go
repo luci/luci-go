@@ -159,17 +159,17 @@ func attemptResultLoader(c context.Context, aid *dm.Attempt_ID, authedForResult 
 			exist, err := ds.Exists(fdepKey)
 			if err != nil {
 				logging.Fields{ek: err, "key": fdepKey}.Errorf(c, "failed to determine if FwdDep exists")
-				dst.Partial.Result = dm.Attempt_Partial_NotAuthorized
+				dst.Partial.Result = dm.Attempt_Partial_NOT_AUTHORIZED
 				return err
 			}
 			if !exist {
-				dst.Partial.Result = dm.Attempt_Partial_NotAuthorized
+				dst.Partial.Result = dm.Attempt_Partial_NOT_AUTHORIZED
 				return nil
 			}
 		}
 
 		if !lim.PossiblyOK(rsltSize) {
-			dst.Partial.Result = dm.Attempt_Partial_DataSizeLimit
+			dst.Partial.Result = dm.Attempt_Partial_DATA_SIZE_LIMIT
 			logging.Infof(c, "skipping load of AttemptResult %s (size limit)", aid)
 			return nil
 		}
@@ -180,9 +180,9 @@ func attemptResultLoader(c context.Context, aid *dm.Attempt_ID, authedForResult 
 		}
 		if lim.Add(r.Size) {
 			dst.Data.GetFinished().JsonResult = r.Data
-			dst.Partial.Result = dm.Attempt_Partial_Loaded
+			dst.Partial.Result = dm.Attempt_Partial_LOADED
 		} else {
-			dst.Partial.Result = dm.Attempt_Partial_DataSizeLimit
+			dst.Partial.Result = dm.Attempt_Partial_DATA_SIZE_LIMIT
 			logging.Infof(c, "loaded AttemptResult %s, but hit size limit after", aid)
 		}
 		return nil
@@ -213,10 +213,10 @@ func attemptLoader(c context.Context, req *dm.WalkGraphReq, aid *dm.Attempt_ID, 
 
 		errChan := parallel.Run(0, func(ch chan<- func() error) {
 			if req.Include.AttemptResult {
-				if atmpt.State == dm.Attempt_Finished {
+				if atmpt.State == dm.Attempt_FINISHED {
 					ch <- attemptResultLoader(c, aid, authedForResult, atmpt.ResultSize, lim, akey, req.Auth, dst)
 				} else {
-					dst.Partial.Result = dm.Attempt_Partial_Loaded
+					dst.Partial.Result = dm.Attempt_Partial_LOADED
 				}
 			}
 
@@ -233,8 +233,8 @@ func attemptLoader(c context.Context, req *dm.WalkGraphReq, aid *dm.Attempt_ID, 
 			}
 
 			writeFwd := req.Include.FwdDeps
-			walkFwd := (req.Mode.Direction == dm.WalkGraphReq_Mode_Both ||
-				req.Mode.Direction == dm.WalkGraphReq_Mode_Forwards)
+			walkFwd := (req.Mode.Direction == dm.WalkGraphReq_Mode_BOTH ||
+				req.Mode.Direction == dm.WalkGraphReq_Mode_FORWARDS)
 			loadFwd := writeFwd || walkFwd
 
 			if loadFwd {
@@ -257,8 +257,8 @@ func attemptLoader(c context.Context, req *dm.WalkGraphReq, aid *dm.Attempt_ID, 
 			}
 
 			writeBack := req.Include.BackDeps
-			walkBack := (req.Mode.Direction == dm.WalkGraphReq_Mode_Both ||
-				req.Mode.Direction == dm.WalkGraphReq_Mode_Backwards)
+			walkBack := (req.Mode.Direction == dm.WalkGraphReq_Mode_BOTH ||
+				req.Mode.Direction == dm.WalkGraphReq_Mode_BACKWARDS)
 			loadBack := writeBack || walkBack
 
 			if loadBack {
@@ -439,7 +439,7 @@ func (d *deps) WalkGraph(c context.Context, req *dm.WalkGraphReq) (rsp *dm.Graph
 					BackDeps:   req.Include.BackDeps,
 				}}
 				if req.Include.AttemptResult {
-					atmpt.Partial.Result = dm.Attempt_Partial_NotLoaded
+					atmpt.Partial.Result = dm.Attempt_Partial_NOT_LOADED
 				}
 
 				atmpt.NormalizePartial() // in case they're all false

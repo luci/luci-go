@@ -59,16 +59,16 @@ func NewAttemptFinished(expiration time.Time, jsonResultSize uint32, jsonResult 
 func (d *Attempt_Data) State() Attempt_State {
 	switch d.AttemptType.(type) {
 	case *Attempt_Data_Executing_:
-		return Attempt_Executing
+		return Attempt_EXECUTING
 	case *Attempt_Data_AddingDeps_:
-		return Attempt_AddingDeps
+		return Attempt_ADDING_DEPS
 	case *Attempt_Data_Blocked_:
-		return Attempt_Blocked
+		return Attempt_BLOCKED
 	case *Attempt_Data_Finished_:
-		return Attempt_Finished
+		return Attempt_FINISHED
 	}
-	// NeedsExecution is the default
-	return Attempt_NeedsExecution
+	// NEEDS_EXECUTION is the default
+	return Attempt_NEEDS_EXECUTION
 }
 
 // NormalizePartial will nil out the Partial field for this Attempt if all
@@ -79,7 +79,7 @@ func (d *Attempt) NormalizePartial() {
 		return
 	}
 	if !(p.Data || p.Executions || p.FwdDeps || p.BackDeps ||
-		p.Result != Attempt_Partial_Loaded) {
+		p.Result != Attempt_Partial_LOADED) {
 		d.Partial = nil
 	}
 }

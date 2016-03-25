@@ -51,11 +51,11 @@ message Attempt {
   bool DNE = 2;
 
   enum State {
-    NeedsExecution = 0;
-    Executing = 1;
-    AddingDeps = 2;
-    Blocked = 3;
-    Finished = 4;
+    NEEDS_EXECUTION = 0;
+    EXECUTING = 1;
+    ADDING_DEPS = 2;
+    BLOCKED = 3;
+    FINISHED = 4;
   }
 
   message Data {
@@ -119,19 +119,19 @@ message Attempt {
     bool back_deps = 4;
 
     enum Result {
-      // Loaded implies that the result was, in fact, loaded.
-      Loaded = 0;
+      // LOADED implies that the result was, in fact, loaded.
+      LOADED = 0;
 
-      // NotLoaded is set if the result failed to load because there was
+      // NOT_LOADED is set if the result failed to load because there was
       // a transient error or the request ran out of time.
-      NotLoaded = 1;
+      NOT_LOADED = 1;
 
-      // NotAuthorized is set if the query was authenticated from an Execution
+      // NOT_AUTHORIZED is set if the query was authenticated from an Execution
       // whose Attempt doesn't depend on this one.
-      NotAuthorized = 2;
+      NOT_AUTHORIZED = 2;
 
-      // DataSizeLimit is set if the max_data_size limit was reached.
-      DataSizeLimit = 3;
+      // DATA_SIZE_LIMIT is set if the max_data_size limit was reached.
+      DATA_SIZE_LIMIT = 3;
     }
     // result is set if AttemptResults were requested, and the attempt_type is
     // Finished, but for some reason the result but wasn't loaded.
@@ -159,12 +159,12 @@ message Execution {
   ID id = 1;
 
   enum State {
-    Scheduled = 0;
-    Running = 1;
+    SCHEDULED = 0;
+    RUNNING = 1;
 
-    Rejected = 2;
-    Finished = 3;
-    Crashed = 4;
+    REJECTED = 2;
+    FINISHED = 3;
+    CRASHED = 4;
   }
   State state = 2;
 

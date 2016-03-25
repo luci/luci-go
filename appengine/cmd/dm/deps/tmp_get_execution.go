@@ -38,7 +38,7 @@ func (d *deps) ClaimExecution(c context.Context, _ *google_pb.Empty) (rsp *dm.Cl
 		Auth: &dm.Execution_Auth{Token: exKeyBytes}}
 
 	for attempts := 0; attempts < claimRetries; attempts++ {
-		q := datastore.NewQuery("Attempt").Eq("State", dm.Attempt_NeedsExecution).Limit(32)
+		q := datastore.NewQuery("Attempt").Eq("State", dm.Attempt_NEEDS_EXECUTION).Limit(32)
 
 		if attempts < claimRetries-1 {
 			prefixBytes := make([]byte, 2)
@@ -66,7 +66,7 @@ func (d *deps) ClaimExecution(c context.Context, _ *google_pb.Empty) (rsp *dm.Cl
 		// Now find a random one which actually needs execution
 		var aid dm.Attempt_ID
 		for _, i := range mathrand.Get(c).Perm(len(as)) {
-			if as[i].State != dm.Attempt_NeedsExecution {
+			if as[i].State != dm.Attempt_NEEDS_EXECUTION {
 				continue
 			}
 			aid = as[i].ID
@@ -88,13 +88,13 @@ func (d *deps) ClaimExecution(c context.Context, _ *google_pb.Empty) (rsp *dm.Cl
 			if err != nil {
 				return err
 			}
-			if a.State != dm.Attempt_NeedsExecution {
+			if a.State != dm.Attempt_NEEDS_EXECUTION {
 				// oops, we picked a bad one, try again in the outer loop.
 				tryAgain = true
 				return nil
 			}
 
-			err = a.State.Evolve(dm.Attempt_Executing)
+			err = a.State.Evolve(dm.Attempt_EXECUTING)
 			if err != nil {
 				return err
 			}
@@ -104,7 +104,7 @@ func (d *deps) ClaimExecution(c context.Context, _ *google_pb.Empty) (rsp *dm.Cl
 			ex := &model.Execution{
 				ID:      a.CurExecution,
 				Attempt: ds.KeyForObj(a),
-				State:   dm.Execution_Running,
+				State:   dm.Execution_RUNNING,
 				Token:   rsp.Auth.Token,
 			}
 			rsp.Auth.Id.Id = a.CurExecution

@@ -64,12 +64,12 @@ func TestExecutions(t *testing.T) {
 			_, _, err = AuthenticateExecution(c, auth)
 			So(err, ShouldBeRPCUnauthenticated, "execution Auth")
 
-			a.State = dm.Attempt_Executing
+			a.State = dm.Attempt_EXECUTING
 			So(ds.Put(a), ShouldBeNil)
 			_, _, err = AuthenticateExecution(c, auth)
 			So(err, ShouldBeRPCUnauthenticated, "execution Auth")
 
-			e1.State = dm.Execution_Running
+			e1.State = dm.Execution_RUNNING
 			So(ds.Put(e1), ShouldBeNil)
 			_, _, err = AuthenticateExecution(c, auth)
 			So(err, ShouldBeRPCUnauthenticated, "execution Auth")
@@ -103,7 +103,7 @@ func TestExecutions(t *testing.T) {
 			_, _, err = ActivateExecution(c, auth, []byte("wrong tok"))
 			So(err, ShouldBeRPCUnauthenticated, "execution Auth")
 
-			a.State = dm.Attempt_Executing
+			a.State = dm.Attempt_EXECUTING
 			So(ds.Put(a), ShouldBeNil)
 			_, _, err = ActivateExecution(c, auth, []byte("wrong tok"))
 			So(err, ShouldBeRPCUnauthenticated, "execution Auth")
@@ -111,7 +111,7 @@ func TestExecutions(t *testing.T) {
 			newA, e, err := ActivateExecution(c, auth, []byte("good tok"))
 			So(err, ShouldBeNil)
 			So(newA, ShouldResemble, a)
-			So(e.State, ShouldEqual, dm.Execution_Running)
+			So(e.State, ShouldEqual, dm.Execution_RUNNING)
 
 			// Retry with different token fails
 			auth.Token = []byte("otherToken")
@@ -129,12 +129,12 @@ func TestExecutions(t *testing.T) {
 				ID:      1,
 				Attempt: ak,
 				Token:   []byte("good tok"),
-				State:   dm.Execution_Running,
+				State:   dm.Execution_RUNNING,
 			}
 			So(ds.Put(e1), ShouldBeNil)
 
 			a.CurExecution = 1
-			a.State = dm.Attempt_Executing
+			a.State = dm.Attempt_EXECUTING
 			So(ds.Put(a), ShouldBeNil)
 
 			auth := &dm.Execution_Auth{

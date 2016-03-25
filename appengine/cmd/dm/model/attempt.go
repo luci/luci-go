@@ -115,13 +115,13 @@ func (a *Attempt) ToProto(withData bool) *dm.Attempt {
 func (a *Attempt) DataProto() *dm.Attempt_Data {
 	ret := (*dm.Attempt_Data)(nil)
 	switch a.State {
-	case dm.Attempt_NeedsExecution:
+	case dm.Attempt_NEEDS_EXECUTION:
 		ret = dm.NewAttemptNeedsExecution(a.Modified).Data
 
-	case dm.Attempt_Executing:
+	case dm.Attempt_EXECUTING:
 		ret = dm.NewAttemptExecuting(a.CurExecution).Data
 
-	case dm.Attempt_AddingDeps:
+	case dm.Attempt_ADDING_DEPS:
 		addset := a.AddingDepsBitmap
 		waitset := a.WaitingDepBitmap
 		setlen := addset.Size()
@@ -129,13 +129,13 @@ func (a *Attempt) DataProto() *dm.Attempt_Data {
 		ret = dm.NewAttemptAddingDeps(
 			setlen-addset.CountSet(), setlen-waitset.CountSet()).Data
 
-	case dm.Attempt_Blocked:
+	case dm.Attempt_BLOCKED:
 		waitset := a.WaitingDepBitmap
 		setlen := waitset.Size()
 
 		ret = dm.NewAttemptBlocked(setlen - waitset.CountSet()).Data
 
-	case dm.Attempt_Finished:
+	case dm.Attempt_FINISHED:
 		ret = dm.NewAttemptFinished(a.ResultExpiration, a.ResultSize, "").Data
 
 	default:

@@ -26,12 +26,12 @@ func TestAddDeps(t *testing.T) {
 
 		a := &model.Attempt{ID: *dm.NewAttemptID("quest", 1)}
 		a.CurExecution = 1
-		a.State = dm.Attempt_Executing
+		a.State = dm.Attempt_EXECUTING
 		ak := ds.KeyForObj(a)
 
 		e := &model.Execution{
 			ID: 1, Attempt: ak, Token: []byte("key"),
-			State: dm.Execution_Running}
+			State: dm.Execution_RUNNING}
 
 		to := &model.Attempt{ID: *dm.NewAttemptID("to", 1)}
 		fwd := &model.FwdDep{Depender: ak, Dependee: to.ID}
@@ -74,7 +74,7 @@ func TestAddDeps(t *testing.T) {
 			})
 
 			Convey("deps already done", func() {
-				to.State = dm.Attempt_Finished
+				to.State = dm.Attempt_FINISHED
 				So(ds.Put(to), ShouldBeNil)
 
 				rsp, err := s.AddDeps(c, req)
@@ -93,7 +93,7 @@ func TestAddDeps(t *testing.T) {
 
 				So(ds.Get(fwd), ShouldBeNil)
 				So(ds.Get(a), ShouldBeNil)
-				So(a.State, ShouldEqual, dm.Attempt_AddingDeps)
+				So(a.State, ShouldEqual, dm.Attempt_ADDING_DEPS)
 			})
 
 		})

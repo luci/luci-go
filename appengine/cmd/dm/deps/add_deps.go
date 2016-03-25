@@ -50,7 +50,7 @@ func (d *deps) AddDeps(c context.Context, req *dm.AddDepsReq) (rsp *dm.AddDepsRs
 	_ = ds.GetMulti(atmpts)
 	allFinished := true
 	for _, a := range atmpts {
-		if a == nil || a.State != dm.Attempt_Finished {
+		if a == nil || a.State != dm.Attempt_FINISHED {
 			allFinished = false
 			break
 		}

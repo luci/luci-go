@@ -30,25 +30,25 @@ func TestAttempt(t *testing.T) {
 
 		Convey("ModifyState", func() {
 			a := MakeAttempt(c, dm.NewAttemptID("quest", 5))
-			So(a.State, ShouldEqual, dm.Attempt_NeedsExecution)
-			So(a.ModifyState(c, dm.Attempt_AddingDeps), ShouldErrLike, "invalid state transition")
+			So(a.State, ShouldEqual, dm.Attempt_NEEDS_EXECUTION)
+			So(a.ModifyState(c, dm.Attempt_ADDING_DEPS), ShouldErrLike, "invalid state transition")
 			So(a.Modified, ShouldResemble, testclock.TestTimeUTC)
 
 			clk.Add(time.Second)
 
-			So(a.ModifyState(c, dm.Attempt_Executing), ShouldBeNil)
-			So(a.State, ShouldEqual, dm.Attempt_Executing)
+			So(a.ModifyState(c, dm.Attempt_EXECUTING), ShouldBeNil)
+			So(a.State, ShouldEqual, dm.Attempt_EXECUTING)
 			So(a.Modified, ShouldResemble, clk.Now())
 
-			So(a.ModifyState(c, dm.Attempt_AddingDeps), ShouldBeNil)
-			So(a.ModifyState(c, dm.Attempt_Blocked), ShouldBeNil)
-			So(a.ModifyState(c, dm.Attempt_Blocked), ShouldBeNil)
-			So(a.ModifyState(c, dm.Attempt_NeedsExecution), ShouldBeNil)
-			So(a.ModifyState(c, dm.Attempt_Executing), ShouldBeNil)
-			So(a.ModifyState(c, dm.Attempt_Finished), ShouldBeNil)
+			So(a.ModifyState(c, dm.Attempt_ADDING_DEPS), ShouldBeNil)
+			So(a.ModifyState(c, dm.Attempt_BLOCKED), ShouldBeNil)
+			So(a.ModifyState(c, dm.Attempt_BLOCKED), ShouldBeNil)
+			So(a.ModifyState(c, dm.Attempt_NEEDS_EXECUTION), ShouldBeNil)
+			So(a.ModifyState(c, dm.Attempt_EXECUTING), ShouldBeNil)
+			So(a.ModifyState(c, dm.Attempt_FINISHED), ShouldBeNil)
 
-			So(a.ModifyState(c, dm.Attempt_NeedsExecution), ShouldErrLike, "invalid")
-			So(a.State, ShouldEqual, dm.Attempt_Finished)
+			So(a.ModifyState(c, dm.Attempt_NEEDS_EXECUTION), ShouldErrLike, "invalid")
+			So(a.State, ShouldEqual, dm.Attempt_FINISHED)
 		})
 
 		Convey("ToProto", func() {
@@ -71,7 +71,7 @@ func TestAttempt(t *testing.T) {
 				a := MakeAttempt(c, dm.NewAttemptID("quest", 10))
 				clk.Add(10 * time.Second)
 				a.CurExecution = 1
-				So(a.ModifyState(c, dm.Attempt_Executing), ShouldBeNil)
+				So(a.ModifyState(c, dm.Attempt_EXECUTING), ShouldBeNil)
 
 				So(a.ToProto(true), ShouldResemble, &dm.Attempt{
 					Id: &dm.Attempt_ID{Quest: "quest", Id: 10},
@@ -88,9 +88,9 @@ func TestAttempt(t *testing.T) {
 				a := MakeAttempt(c, dm.NewAttemptID("quest", 10))
 				clk.Add(10 * time.Second)
 				a.CurExecution = 1
-				So(a.ModifyState(c, dm.Attempt_Executing), ShouldBeNil)
+				So(a.ModifyState(c, dm.Attempt_EXECUTING), ShouldBeNil)
 				clk.Add(10 * time.Second)
-				So(a.ModifyState(c, dm.Attempt_AddingDeps), ShouldBeNil)
+				So(a.ModifyState(c, dm.Attempt_ADDING_DEPS), ShouldBeNil)
 				a.AddingDepsBitmap = bf.Make(4)
 				a.AddingDepsBitmap.Set(1)
 				a.AddingDepsBitmap.Set(3)
@@ -112,14 +112,14 @@ func TestAttempt(t *testing.T) {
 				a := MakeAttempt(c, dm.NewAttemptID("quest", 10))
 				clk.Add(10 * time.Second)
 				a.CurExecution = 1
-				So(a.ModifyState(c, dm.Attempt_Executing), ShouldBeNil)
+				So(a.ModifyState(c, dm.Attempt_EXECUTING), ShouldBeNil)
 				clk.Add(10 * time.Second)
-				So(a.ModifyState(c, dm.Attempt_AddingDeps), ShouldBeNil)
+				So(a.ModifyState(c, dm.Attempt_ADDING_DEPS), ShouldBeNil)
 				a.WaitingDepBitmap = bf.Make(4)
 				a.WaitingDepBitmap.Set(2)
 				// don't increment the time: let the automatic microsecond advancement
 				// take effect.
-				So(a.ModifyState(c, dm.Attempt_Blocked), ShouldBeNil)
+				So(a.ModifyState(c, dm.Attempt_BLOCKED), ShouldBeNil)
 
 				So(a.ToProto(true), ShouldResemble, &dm.Attempt{
 					Id: &dm.Attempt_ID{Quest: "quest", Id: 10},
@@ -134,7 +134,7 @@ func TestAttempt(t *testing.T) {
 
 			Convey("Finished", func() {
 				a := MakeAttempt(c, dm.NewAttemptID("quest", 10))
-				a.State = dm.Attempt_Finished
+				a.State = dm.Attempt_FINISHED
 				a.CurExecution = math.MaxUint32
 				a.AddingDepsBitmap = bf.Make(20)
 				a.WaitingDepBitmap = bf.Make(20)

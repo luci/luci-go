@@ -42,9 +42,9 @@ message WalkGraphReq {
     // Direction indicates that direction of dependencies that the request should
     // walk.
     enum Direction {
-      Forwards = 0;
-      Backwards = 1;
-      Both = 2;
+      FORWARDS = 0;
+      BACKWARDS = 1;
+      BOTH = 2;
     }
     Direction direction = 2;
   }

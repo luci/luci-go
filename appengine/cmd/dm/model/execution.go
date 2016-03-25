@@ -85,12 +85,12 @@ func verifyExecutionAndCheckExTok(c context.Context, auth *dm.Execution_Auth) (a
 		return
 	}
 
-	if a.State != dm.Attempt_Executing {
+	if a.State != dm.Attempt_EXECUTING {
 		err = errors.New("Attempt is not executing")
 		return
 	}
 
-	if e.State != dm.Execution_Running {
+	if e.State != dm.Execution_RUNNING {
 		err = errors.New("Execution is not running")
 		return
 	}
@@ -139,23 +139,23 @@ func verifyExecutionAndActivate(c context.Context, auth *dm.Execution_Auth, actT
 		return
 	}
 
-	if a.State != dm.Attempt_Executing {
+	if a.State != dm.Attempt_EXECUTING {
 		err = errors.New("Attempt is in wrong state")
 		return
 	}
 
 	switch e.State {
-	case dm.Execution_Scheduled:
+	case dm.Execution_SCHEDULED:
 		if subtle.ConstantTimeCompare(e.Token, actTok) != 1 {
 			err = errors.New("incorrect ActivationToken")
 			return
 		}
 
-		e.State.MustEvolve(dm.Execution_Running)
+		e.State.MustEvolve(dm.Execution_RUNNING)
 		e.Token = auth.Token
 		err = datastore.Get(c).Put(e)
 
-	case dm.Execution_Running:
+	case dm.Execution_RUNNING:
 		if subtle.ConstantTimeCompare(e.Token, auth.Token) != 1 {
 			err = errors.New("incorrect Token")
 		}

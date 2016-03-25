@@ -69,8 +69,8 @@ message GraphQuery {
   // Literal '.' and '[' characters may be escaped with a backslash.
   message Search {
     enum Domain {
-      Quest = 0;
-      Attempt = 1;
+      QUEST = 0;
+      ATTEMPT = 1;
     }
     // Domain indicates which class of objects your query applies to. The fields
     // available to query are defined by the `data` field in the corresponding

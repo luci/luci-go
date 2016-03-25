@@ -43,12 +43,12 @@ func execute(c context.Context, aid *dm.Attempt_ID) {
 		}
 
 		atmpt.CurExecution++
-		atmpt.MustModifyState(c, dm.Attempt_Executing)
+		atmpt.MustModifyState(c, dm.Attempt_EXECUTING)
 
 		So(ds.PutMulti([]interface{}{atmpt, &model.Execution{
 			ID:      atmpt.CurExecution,
 			Created: clock.Now(c),
-			State:   dm.Execution_Running,
+			State:   dm.Execution_RUNNING,
 			Attempt: ds.KeyForObj(atmpt),
 			Token:   []byte("sekret"),
 		}}), ShouldBeNil)
@@ -245,7 +245,7 @@ func TestWalkGraph(t *testing.T) {
 
 				ex := &model.Execution{ID: 1, Attempt: ds.MakeKey("Attempt", aid.DMEncoded())}
 				So(ds.Get(ex), ShouldBeNil)
-				ex.State = dm.Execution_Finished
+				ex.State = dm.Execution_FINISHED
 				So(ds.Put(ex), ShouldBeNil)
 
 				req.Include.AttemptData = true
@@ -255,7 +255,7 @@ func TestWalkGraph(t *testing.T) {
 				aExpect := dm.NewAttemptFinished(time.Time{}, uint32(len(data)), data)
 				aExpect.Data.NumExecutions = 1
 				aExpect.Executions = map[uint32]*dm.Execution{1: {
-					State: dm.Execution_Finished,
+					State: dm.Execution_FINISHED,
 					Data:  &dm.Execution_Data{},
 				}}
 				So(req, WalkShouldReturn(c), &dm.GraphData{
@@ -282,7 +282,7 @@ func TestWalkGraph(t *testing.T) {
 
 				ex := &model.Execution{ID: 1, Attempt: ds.MakeKey("Attempt", aid.DMEncoded())}
 				So(ds.Get(ex), ShouldBeNil)
-				ex.State = dm.Execution_Finished
+				ex.State = dm.Execution_FINISHED
 				So(ds.Put(ex), ShouldBeNil)
 
 				req.Include.AttemptResult = true
@@ -290,7 +290,7 @@ func TestWalkGraph(t *testing.T) {
 				data := `{"data":["very","yes"]}`
 				aExpect := dm.NewAttemptFinished(time.Time{}, uint32(len(data)), "")
 				aExpect.Data.NumExecutions = 1
-				aExpect.Partial = &dm.Attempt_Partial{Result: dm.Attempt_Partial_DataSizeLimit}
+				aExpect.Partial = &dm.Attempt_Partial{Result: dm.Attempt_Partial_DATA_SIZE_LIMIT}
 				So(req, WalkShouldReturn(c), &dm.GraphData{
 					Quests: map[string]*dm.Quest{
 						w: {
@@ -377,7 +377,7 @@ func TestWalkGraph(t *testing.T) {
 				x1Expect.Data.NumExecutions = 1
 
 				x2Expect := dm.NewAttemptFinished(time.Time{}, uint32(len(x2data)), "")
-				x2Expect.Partial = &dm.Attempt_Partial{Result: dm.Attempt_Partial_NotAuthorized}
+				x2Expect.Partial = &dm.Attempt_Partial{Result: dm.Attempt_Partial_NOT_AUTHORIZED}
 				x2Expect.Data.NumExecutions = 1
 
 				So(req, WalkShouldReturn(c), &dm.GraphData{

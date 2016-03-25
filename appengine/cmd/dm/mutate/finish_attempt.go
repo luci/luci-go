@@ -43,7 +43,7 @@ func (f *FinishAttempt) RollForward(c context.Context) (muts []tumble.Mutation, 
 
 	// Executing -> Finished is valid, and we know we're already Executing because
 	// the InvalidateExecution call above asserts that or errors out.
-	atmpt.MustModifyState(c, dm.Attempt_Finished)
+	atmpt.MustModifyState(c, dm.Attempt_FINISHED)
 
 	atmpt.ResultSize = uint32(len(f.Result))
 	atmpt.ResultExpiration = f.ResultExpiration

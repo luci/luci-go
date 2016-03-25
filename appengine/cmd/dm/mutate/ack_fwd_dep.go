@@ -52,7 +52,7 @@ func (f *AckFwdDep) RollForward(c context.Context) (muts []tumble.Mutation, err 
 		atmpt.AddingDepsBitmap.Set(idx)
 
 		if atmpt.AddingDepsBitmap.All(true) {
-			atmpt.MustModifyState(c, dm.Attempt_Blocked)
+			atmpt.MustModifyState(c, dm.Attempt_BLOCKED)
 		}
 
 		needPut = true
@@ -63,7 +63,7 @@ func (f *AckFwdDep) RollForward(c context.Context) (muts []tumble.Mutation, err 
 			atmpt.WaitingDepBitmap.Set(idx)
 
 			if atmpt.WaitingDepBitmap.All(true) {
-				atmpt.MustModifyState(c, dm.Attempt_NeedsExecution)
+				atmpt.MustModifyState(c, dm.Attempt_NEEDS_EXECUTION)
 				muts = append(muts, &ScheduleExecution{For: f.Dep.From})
 			}
 

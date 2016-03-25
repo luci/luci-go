@@ -27,10 +27,10 @@ func TestAddDeps(t *testing.T) {
 		aid := dm.NewAttemptID("quest", 1)
 		a := model.MakeAttempt(c, aid)
 		a.CurExecution = 1
-		a.State = dm.Attempt_Executing
+		a.State = dm.Attempt_EXECUTING
 		ex := &model.Execution{
 			ID: 1, Attempt: ds.KeyForObj(a), Token: []byte("sup"),
-			State: dm.Execution_Running}
+			State: dm.Execution_RUNNING}
 
 		ad := &AddDeps{
 			Auth: &dm.Execution_Auth{
@@ -87,7 +87,7 @@ func TestAddDeps(t *testing.T) {
 					So(ds.GetMulti(fds), ShouldBeNil)
 					So(a.AddingDepsBitmap.Size(), ShouldEqual, len(fds))
 					So(a.WaitingDepBitmap.Size(), ShouldEqual, len(fds))
-					So(a.State, ShouldEqual, dm.Attempt_AddingDeps)
+					So(a.State, ShouldEqual, dm.Attempt_ADDING_DEPS)
 					So(fds[0].ForExecution, ShouldEqual, 1)
 				})
 			})

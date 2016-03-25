@@ -40,10 +40,10 @@ func TestAddFinishedDeps(t *testing.T) {
 		fs[1].ForExecution = 1
 		So(ds.Put(fs[1]), ShouldBeNil)
 
-		a := &model.Attempt{ID: *base, State: dm.Attempt_Executing, CurExecution: 7}
+		a := &model.Attempt{ID: *base, State: dm.Attempt_EXECUTING, CurExecution: 7}
 		ak := ds.KeyForObj(a)
 		e := &model.Execution{
-			ID: 7, Attempt: ak, State: dm.Execution_Running, Token: []byte("sup")}
+			ID: 7, Attempt: ak, State: dm.Execution_RUNNING, Token: []byte("sup")}
 		So(ds.PutMulti([]interface{}{a, e}), ShouldBeNil)
 
 		Convey("Root", func() {

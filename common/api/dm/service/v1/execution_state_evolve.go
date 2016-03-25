@@ -12,12 +12,12 @@ import (
 // transitions. The identity transition (X -> X) is implied, as long as X has an
 // entry in this mapping.
 var validExecutionStateEvolution = map[Execution_State][]Execution_State{
-	Execution_Scheduled: {Execution_Running, Execution_Rejected, Execution_Crashed, Execution_Finished},
-	Execution_Running:   {Execution_Crashed, Execution_Finished, Execution_Rejected},
+	Execution_SCHEDULED: {Execution_RUNNING, Execution_REJECTED, Execution_CRASHED, Execution_FINISHED},
+	Execution_RUNNING:   {Execution_CRASHED, Execution_FINISHED, Execution_REJECTED},
 
-	Execution_Crashed:  {},
-	Execution_Finished: {},
-	Execution_Rejected: {},
+	Execution_CRASHED:  {},
+	Execution_FINISHED: {},
+	Execution_REJECTED: {},
 }
 
 // Evolve attempts to evolve the state of this Attempt. If the state

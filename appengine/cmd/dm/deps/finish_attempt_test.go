@@ -29,13 +29,13 @@ func TestFinishAttempt(t *testing.T) {
 		So(ds.Put(&model.Quest{ID: "quest"}), ShouldBeNil)
 		a := &model.Attempt{
 			ID:           *dm.NewAttemptID("quest", 1),
-			State:        dm.Attempt_Executing,
+			State:        dm.Attempt_EXECUTING,
 			CurExecution: 1,
 		}
 		So(ds.Put(a), ShouldBeNil)
 		So(ds.Put(&model.Execution{
 			ID: 1, Attempt: ds.KeyForObj(a), Token: []byte("exKey"),
-			State: dm.Execution_Running}), ShouldBeNil)
+			State: dm.Execution_RUNNING}), ShouldBeNil)
 
 		req := &dm.FinishAttemptReq{
 			Auth: &dm.Execution_Auth{
@@ -65,7 +65,7 @@ func TestFinishAttempt(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			So(ds.Get(a), ShouldBeNil)
-			So(a.State, ShouldEqual, dm.Attempt_Finished)
+			So(a.State, ShouldEqual, dm.Attempt_FINISHED)
 		})
 
 	})

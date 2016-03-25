@@ -45,7 +45,7 @@ func (a *AddDeps) RollForward(c context.Context) (muts []tumble.Mutation, err er
 
 	atmpt.AddingDepsBitmap = bf.Make(uint32(len(fwdDeps)))
 	atmpt.WaitingDepBitmap = bf.Make(uint32(len(fwdDeps)))
-	atmpt.MustModifyState(c, dm.Attempt_AddingDeps)
+	atmpt.MustModifyState(c, dm.Attempt_ADDING_DEPS)
 
 	for i, fdp := range fwdDeps {
 		fdp.BitIndex = uint32(i)

@@ -42,13 +42,13 @@ func TestFinishAttempt(t *testing.T) {
 		Convey("RollForward", func() {
 			a := &model.Attempt{
 				ID:           *fa.Auth.Id.AttemptID(),
-				State:        dm.Attempt_Executing,
+				State:        dm.Attempt_EXECUTING,
 				CurExecution: 1,
 			}
 			ak := ds.KeyForObj(a)
 			ar := &model.AttemptResult{Attempt: ak}
 			e := &model.Execution{
-				ID: 1, Attempt: ak, State: dm.Execution_Running, Token: []byte("exekey")}
+				ID: 1, Attempt: ak, State: dm.Execution_RUNNING, Token: []byte("exekey")}
 
 			So(ds.PutMulti([]interface{}{a, e}), ShouldBeNil)
 
@@ -60,7 +60,7 @@ func TestFinishAttempt(t *testing.T) {
 
 				So(ds.GetMulti([]interface{}{a, e, ar}), ShouldBeNil)
 				So(e.Token, ShouldBeEmpty)
-				So(a.State, ShouldEqual, dm.Attempt_Finished)
+				So(a.State, ShouldEqual, dm.Attempt_FINISHED)
 				So(a.ResultExpiration, ShouldResemble,
 					testclock.TestTimeUTC.Round(time.Microsecond))
 				So(ar.Data, ShouldResemble, `{"result": true}`)
@@ -73,7 +73,7 @@ func TestFinishAttempt(t *testing.T) {
 
 				So(ds.GetMulti([]interface{}{a, e}), ShouldBeNil)
 				So(e.Token, ShouldNotBeEmpty)
-				So(a.State, ShouldEqual, dm.Attempt_Executing)
+				So(a.State, ShouldEqual, dm.Attempt_EXECUTING)
 
 				So(ds.Get(ar), ShouldEqual, datastore.ErrNoSuchEntity)
 			})
