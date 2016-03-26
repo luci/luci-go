@@ -69,7 +69,7 @@ func TestCountingReader(t *testing.T) {
 		})
 	})
 
-	Convey(`Given a CountingReader backed by a testByteReaer.`, t, func() {
+	Convey(`Given a CountingReader backed by a testByteReader.`, t, func() {
 		tr := testByteReader{ByteReader: bytes.NewBuffer([]byte{0x55})}
 		cr := CountingReader{Reader: &tr}
 
