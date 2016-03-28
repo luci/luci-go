@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2016 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -668,7 +668,8 @@ func (c *CancelCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *CancelCall) Do() (*ApiBuildResponseMessage, error) {
+func (c *CancelCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -781,7 +782,8 @@ func (c *CancelBatchCall) doRequest(alt string) (*http.Response, error) {
 // response was returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *CancelBatchCall) Do() (*ApiCancelBatchResponseMessage, error) {
+func (c *CancelBatchCall) Do(opts ...googleapi.CallOption) (*ApiCancelBatchResponseMessage, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -896,7 +898,8 @@ func (c *DeleteManyBuildsCall) doRequest(alt string) (*http.Response, error) {
 // was returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *DeleteManyBuildsCall) Do() (*ApiDeleteManyBuildsResponse, error) {
+func (c *DeleteManyBuildsCall) Do(opts ...googleapi.CallOption) (*ApiDeleteManyBuildsResponse, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -1037,7 +1040,8 @@ func (c *FailCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *FailCall) Do() (*ApiBuildResponseMessage, error) {
+func (c *FailCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -1164,7 +1168,8 @@ func (c *GetCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *GetCall) Do() (*ApiBuildResponseMessage, error) {
+func (c *GetCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -1281,7 +1286,8 @@ func (c *HeartbeatCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *HeartbeatCall) Do() (*ApiBuildResponseMessage, error) {
+func (c *HeartbeatCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -1398,7 +1404,8 @@ func (c *HeartbeatBatchCall) doRequest(alt string) (*http.Response, error) {
 // a response was returned at all) in error.(*googleapi.Error).Header.
 // Use googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *HeartbeatBatchCall) Do() (*ApiHeartbeatBatchResponseMessage, error) {
+func (c *HeartbeatBatchCall) Do(opts ...googleapi.CallOption) (*ApiHeartbeatBatchResponseMessage, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -1508,7 +1515,8 @@ func (c *LeaseCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *LeaseCall) Do() (*ApiBuildResponseMessage, error) {
+func (c *LeaseCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -1649,7 +1657,8 @@ func (c *PeekCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *PeekCall) Do() (*ApiSearchResponseMessage, error) {
+func (c *PeekCall) Do(opts ...googleapi.CallOption) (*ApiSearchResponseMessage, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -1767,7 +1776,8 @@ func (c *PutCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *PutCall) Do() (*ApiBuildResponseMessage, error) {
+func (c *PutCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -1873,7 +1883,8 @@ func (c *PutBatchCall) doRequest(alt string) (*http.Response, error) {
 // was returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *PutBatchCall) Do() (*ApiPutBatchResponseMessage, error) {
+func (c *PutBatchCall) Do(opts ...googleapi.CallOption) (*ApiPutBatchResponseMessage, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -1975,7 +1986,8 @@ func (c *ResetCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *ResetCall) Do() (*ApiBuildResponseMessage, error) {
+func (c *ResetCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -2168,7 +2180,8 @@ func (c *SearchCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *SearchCall) Do() (*ApiSearchResponseMessage, error) {
+func (c *SearchCall) Do(opts ...googleapi.CallOption) (*ApiSearchResponseMessage, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -2355,7 +2368,8 @@ func (c *StartCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *StartCall) Do() (*ApiBuildResponseMessage, error) {
+func (c *StartCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {
@@ -2476,7 +2490,8 @@ func (c *SucceedCall) doRequest(alt string) (*http.Response, error) {
 // returned at all) in error.(*googleapi.Error).Header. Use
 // googleapi.IsNotModified to check whether the returned error was
 // because http.StatusNotModified was returned.
-func (c *SucceedCall) Do() (*ApiBuildResponseMessage, error) {
+func (c *SucceedCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
 	res, err := c.doRequest("json")
 	if res != nil && res.StatusCode == http.StatusNotModified {
 		if res.Body != nil {

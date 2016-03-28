@@ -83,6 +83,7 @@ func (m *Timestamp) Reset()                    { *m = Timestamp{} }
 func (m *Timestamp) String() string            { return proto.CompactTextString(m) }
 func (*Timestamp) ProtoMessage()               {}
 func (*Timestamp) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (*Timestamp) XXX_WellKnownType() string   { return "Timestamp" }
 
 func init() {
 	proto.RegisterType((*Timestamp)(nil), "google.protobuf.Timestamp")

@@ -26,6 +26,10 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+const _ = proto.ProtoPackageIsVersion1
+
 // A Duration represents a signed, fixed-length span of time represented
 // as a count of seconds and fractions of seconds at nanosecond
 // resolution. It is independent of any calendar and concepts like "day"
@@ -84,6 +88,7 @@ func (m *Duration) Reset()                    { *m = Duration{} }
 func (m *Duration) String() string            { return proto.CompactTextString(m) }
 func (*Duration) ProtoMessage()               {}
 func (*Duration) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+func (*Duration) XXX_WellKnownType() string   { return "Duration" }
 
 func init() {
 	proto.RegisterType((*Duration)(nil), "google.protobuf.Duration")

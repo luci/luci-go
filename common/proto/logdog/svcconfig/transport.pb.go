@@ -52,8 +52,8 @@ func (m *Transport) GetPubsub() *Transport_PubSub {
 }
 
 // XXX_OneofFuncs is for the internal use of the proto package.
-func (*Transport) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), []interface{}) {
-	return _Transport_OneofMarshaler, _Transport_OneofUnmarshaler, []interface{}{
+func (*Transport) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _Transport_OneofMarshaler, _Transport_OneofUnmarshaler, _Transport_OneofSizer, []interface{}{
 		(*Transport_Pubsub)(nil),
 	}
 }
@@ -88,6 +88,22 @@ func _Transport_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buff
 	default:
 		return false, nil
 	}
+}
+
+func _Transport_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*Transport)
+	// Type
+	switch x := m.Type.(type) {
+	case *Transport_Pubsub:
+		s := proto.Size(x.Pubsub)
+		n += proto.SizeVarint(1<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
 }
 
 // PubSub is a transport configuration for Google Cloud Pub/Sub.

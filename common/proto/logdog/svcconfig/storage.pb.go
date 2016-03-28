@@ -74,8 +74,8 @@ func (m *Storage) GetMaxLogAge() *google_protobuf.Duration {
 }
 
 // XXX_OneofFuncs is for the internal use of the proto package.
-func (*Storage) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), []interface{}) {
-	return _Storage_OneofMarshaler, _Storage_OneofUnmarshaler, []interface{}{
+func (*Storage) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _Storage_OneofMarshaler, _Storage_OneofUnmarshaler, _Storage_OneofSizer, []interface{}{
 		(*Storage_Bigtable)(nil),
 	}
 }
@@ -110,6 +110,22 @@ func _Storage_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer
 	default:
 		return false, nil
 	}
+}
+
+func _Storage_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*Storage)
+	// Type
+	switch x := m.Type.(type) {
+	case *Storage_Bigtable:
+		s := proto.Size(x.Bigtable)
+		n += proto.SizeVarint(1<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
 }
 
 // BigTable is the set of BigTable configuration parameters.

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-//go:generate cproto -import-path "github.com/luci/luci-go/common/proto/google"
+//go:generate cproto -discovery=false -import-path "github.com/luci/luci-go/common/proto/google"
 
 // Package google contains local copies of the standard Google Proto3 protobufs.
 package google

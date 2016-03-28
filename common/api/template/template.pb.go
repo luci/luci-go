@@ -26,6 +26,10 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+const _ = proto.ProtoPackageIsVersion1
+
 // Value defines a specific value for a parameter, and is used at Template
 // expansion time.
 type Value struct {
@@ -160,8 +164,8 @@ func (m *Value) GetNull() *google_protobuf.Empty {
 }
 
 // XXX_OneofFuncs is for the internal use of the proto package.
-func (*Value) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), []interface{}) {
-	return _Value_OneofMarshaler, _Value_OneofUnmarshaler, []interface{}{
+func (*Value) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _Value_OneofMarshaler, _Value_OneofUnmarshaler, _Value_OneofSizer, []interface{}{
 		(*Value_Int)(nil),
 		(*Value_Uint)(nil),
 		(*Value_Float)(nil),
@@ -288,6 +292,50 @@ func _Value_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) 
 	default:
 		return false, nil
 	}
+}
+
+func _Value_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*Value)
+	// value
+	switch x := m.Value.(type) {
+	case *Value_Int:
+		n += proto.SizeVarint(1<<3 | proto.WireVarint)
+		n += proto.SizeVarint(uint64(x.Int))
+	case *Value_Uint:
+		n += proto.SizeVarint(2<<3 | proto.WireVarint)
+		n += proto.SizeVarint(uint64(x.Uint))
+	case *Value_Float:
+		n += proto.SizeVarint(3<<3 | proto.WireFixed64)
+		n += 8
+	case *Value_Bool:
+		n += proto.SizeVarint(4<<3 | proto.WireVarint)
+		n += 1
+	case *Value_Str:
+		n += proto.SizeVarint(5<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(len(x.Str)))
+		n += len(x.Str)
+	case *Value_Bytes:
+		n += proto.SizeVarint(6<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(len(x.Bytes)))
+		n += len(x.Bytes)
+	case *Value_Object:
+		n += proto.SizeVarint(7<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(len(x.Object)))
+		n += len(x.Object)
+	case *Value_Array:
+		n += proto.SizeVarint(8<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(len(x.Array)))
+		n += len(x.Array)
+	case *Value_Null:
+		s := proto.Size(x.Null)
+		n += proto.SizeVarint(9<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
 }
 
 type Schema struct {
@@ -422,8 +470,8 @@ func (m *Schema) GetArray() *Schema_JSON {
 }
 
 // XXX_OneofFuncs is for the internal use of the proto package.
-func (*Schema) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), []interface{}) {
-	return _Schema_OneofMarshaler, _Schema_OneofUnmarshaler, []interface{}{
+func (*Schema) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _Schema_OneofMarshaler, _Schema_OneofUnmarshaler, _Schema_OneofSizer, []interface{}{
 		(*Schema_Int)(nil),
 		(*Schema_Uint)(nil),
 		(*Schema_Float)(nil),
@@ -570,6 +618,62 @@ func _Schema_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer)
 	default:
 		return false, nil
 	}
+}
+
+func _Schema_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*Schema)
+	// schema
+	switch x := m.Schema.(type) {
+	case *Schema_Int:
+		s := proto.Size(x.Int)
+		n += proto.SizeVarint(1<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Schema_Uint:
+		s := proto.Size(x.Uint)
+		n += proto.SizeVarint(2<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Schema_Float:
+		s := proto.Size(x.Float)
+		n += proto.SizeVarint(3<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Schema_Bool:
+		s := proto.Size(x.Bool)
+		n += proto.SizeVarint(4<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Schema_Str:
+		s := proto.Size(x.Str)
+		n += proto.SizeVarint(5<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Schema_Bytes:
+		s := proto.Size(x.Bytes)
+		n += proto.SizeVarint(6<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Schema_Enum:
+		s := proto.Size(x.Enum)
+		n += proto.SizeVarint(7<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Schema_Object:
+		s := proto.Size(x.Object)
+		n += proto.SizeVarint(8<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Schema_Array:
+		s := proto.Size(x.Array)
+		n += proto.SizeVarint(9<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
 }
 
 type Schema_Set struct {

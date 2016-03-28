@@ -16,6 +16,7 @@ It has these top-level messages:
 */
 package main
 
+import prpccommon "github.com/luci/luci-go/common/prpc"
 import prpc "github.com/luci/luci-go/server/prpc"
 
 import proto "github.com/golang/protobuf/proto"
@@ -31,6 +32,10 @@ import (
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+const _ = proto.ProtoPackageIsVersion1
 
 // Enum comment.
 // next line.
@@ -210,8 +215,8 @@ func (m *M3) GetF4() int32 {
 }
 
 // XXX_OneofFuncs is for the internal use of the proto package.
-func (*M3) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), []interface{}) {
-	return _M3_OneofMarshaler, _M3_OneofUnmarshaler, []interface{}{
+func (*M3) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _M3_OneofMarshaler, _M3_OneofUnmarshaler, _M3_OneofSizer, []interface{}{
 		(*M3_F1)(nil),
 		(*M3_F2)(nil),
 		(*M3_F3)(nil),
@@ -284,6 +289,35 @@ func _M3_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bo
 	}
 }
 
+func _M3_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*M3)
+	// O1
+	switch x := m.O1.(type) {
+	case *M3_F1:
+		n += proto.SizeVarint(1<<3 | proto.WireVarint)
+		n += proto.SizeVarint(uint64(x.F1))
+	case *M3_F2:
+		n += proto.SizeVarint(2<<3 | proto.WireVarint)
+		n += proto.SizeVarint(uint64(x.F2))
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	// O2
+	switch x := m.O2.(type) {
+	case *M3_F3:
+		n += proto.SizeVarint(3<<3 | proto.WireVarint)
+		n += proto.SizeVarint(uint64(x.F3))
+	case *M3_F4:
+		n += proto.SizeVarint(4<<3 | proto.WireVarint)
+		n += proto.SizeVarint(uint64(x.F4))
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
+}
+
 type NestedMessageParent struct {
 }
 
@@ -318,11 +352,31 @@ func init() {
 var _ context.Context
 var _ grpc.ClientConn
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion1
+
 // Client API for S1 service
 
 type S1Client interface {
 	// R1
 	R1(ctx context.Context, in *M1, opts ...grpc.CallOption) (*M2, error)
+}
+type s1PRPCClient struct {
+	client *prpccommon.Client
+}
+
+func NewS1PRPCClient(client *prpccommon.Client) S1Client {
+	return &s1PRPCClient{client}
+}
+
+func (c *s1PRPCClient) R1(ctx context.Context, in *M1, opts ...grpc.CallOption) (*M2, error) {
+	out := new(M2)
+	err := c.client.Call(ctx, "main.S1", "R1", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 type s1Client struct {
@@ -384,6 +438,31 @@ type S2Client interface {
 	R1(ctx context.Context, in *M1, opts ...grpc.CallOption) (*M2, error)
 	// R2
 	R2(ctx context.Context, in *M1, opts ...grpc.CallOption) (*M2, error)
+}
+type s2PRPCClient struct {
+	client *prpccommon.Client
+}
+
+func NewS2PRPCClient(client *prpccommon.Client) S2Client {
+	return &s2PRPCClient{client}
+}
+
+func (c *s2PRPCClient) R1(ctx context.Context, in *M1, opts ...grpc.CallOption) (*M2, error) {
+	out := new(M2)
+	err := c.client.Call(ctx, "main.S2", "R1", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *s2PRPCClient) R2(ctx context.Context, in *M1, opts ...grpc.CallOption) (*M2, error) {
+	out := new(M2)
+	err := c.client.Call(ctx, "main.S2", "R2", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 type s2Client struct {

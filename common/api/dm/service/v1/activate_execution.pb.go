@@ -48,6 +48,10 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+const _ = proto.ProtoPackageIsVersion1
+
 // ActivateExecutionReq allows a currently-running Execution to activate itself.
 // Doing this allows DM to know that the Execution has started, and also enables
 // the Execution to access other APIs like WalkGraph, AddDeps, and

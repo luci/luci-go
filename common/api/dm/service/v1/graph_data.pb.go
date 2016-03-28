@@ -363,8 +363,8 @@ func (m *Attempt_Data) GetFinished() *Attempt_Data_Finished {
 }
 
 // XXX_OneofFuncs is for the internal use of the proto package.
-func (*Attempt_Data) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), []interface{}) {
-	return _Attempt_Data_OneofMarshaler, _Attempt_Data_OneofUnmarshaler, []interface{}{
+func (*Attempt_Data) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _Attempt_Data_OneofMarshaler, _Attempt_Data_OneofUnmarshaler, _Attempt_Data_OneofSizer, []interface{}{
 		(*Attempt_Data_NeedsExecution_)(nil),
 		(*Attempt_Data_Executing_)(nil),
 		(*Attempt_Data_AddingDeps_)(nil),
@@ -455,6 +455,42 @@ func _Attempt_Data_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.B
 	default:
 		return false, nil
 	}
+}
+
+func _Attempt_Data_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*Attempt_Data)
+	// attempt_type
+	switch x := m.AttemptType.(type) {
+	case *Attempt_Data_NeedsExecution_:
+		s := proto.Size(x.NeedsExecution)
+		n += proto.SizeVarint(4<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Attempt_Data_Executing_:
+		s := proto.Size(x.Executing)
+		n += proto.SizeVarint(5<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Attempt_Data_AddingDeps_:
+		s := proto.Size(x.AddingDeps)
+		n += proto.SizeVarint(6<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Attempt_Data_Blocked_:
+		s := proto.Size(x.Blocked)
+		n += proto.SizeVarint(7<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Attempt_Data_Finished_:
+		s := proto.Size(x.Finished)
+		n += proto.SizeVarint(8<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
 }
 
 type Attempt_Data_NeedsExecution struct {

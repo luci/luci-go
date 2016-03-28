@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/-jUqp6A_VWbO5zY0KgFcTB_Wwlw\"",
+ "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/1XZ4ZLm7MB94qLHR_AkU0QpIhEk\"",
  "discoveryVersion": "v1",
  "id": "config:v1",
  "name": "config",
@@ -72,6 +72,76 @@
   }
  },
  "schemas": {
+  "ComponentsConfigEndpointValidationMessage": {
+   "id": "ComponentsConfigEndpointValidationMessage",
+   "type": "object",
+   "properties": {
+    "severity": {
+     "type": "string",
+     "enum": [
+      "CRITICAL",
+      "DEBUG",
+      "ERROR",
+      "INFO",
+      "WARNING"
+     ],
+     "enumDescriptions": [
+      "",
+      "",
+      "",
+      "",
+      ""
+     ]
+    },
+    "text": {
+     "type": "string"
+    }
+   }
+  },
+  "LuciConfigConfigSet": {
+   "id": "LuciConfigConfigSet",
+   "type": "object",
+   "description": "Describes a config set.",
+   "properties": {
+    "config_set": {
+     "type": "string"
+    },
+    "last_import_attempt": {
+     "$ref": "LuciConfigConfigSetImportAttempt"
+    },
+    "location": {
+     "type": "string"
+    },
+    "revision": {
+     "$ref": "LuciConfigRevision"
+    }
+   }
+  },
+  "LuciConfigConfigSetImportAttempt": {
+   "id": "LuciConfigConfigSetImportAttempt",
+   "type": "object",
+   "properties": {
+    "message": {
+     "type": "string"
+    },
+    "revision": {
+     "$ref": "LuciConfigRevision"
+    },
+    "success": {
+     "type": "boolean"
+    },
+    "timestamp": {
+     "type": "string",
+     "format": "int64"
+    },
+    "validation_messages": {
+     "type": "array",
+     "items": {
+      "$ref": "ComponentsConfigEndpointValidationMessage"
+     }
+    }
+   }
+  },
   "LuciConfigGetConfigByHashResponseMessage": {
    "id": "LuciConfigGetConfigByHashResponseMessage",
    "type": "object",
@@ -126,6 +196,19 @@
     },
     "revision": {
      "type": "string"
+    }
+   }
+  },
+  "LuciConfigGetConfigSetsResponseMessage": {
+   "id": "LuciConfigGetConfigSetsResponseMessage",
+   "type": "object",
+   "properties": {
+    "config_sets": {
+     "type": "array",
+     "description": "Describes a config set.",
+     "items": {
+      "$ref": "LuciConfigConfigSet"
+     }
     }
    }
   },
@@ -209,6 +292,25 @@
      "type": "string"
     }
    }
+  },
+  "LuciConfigRevision": {
+   "id": "LuciConfigRevision",
+   "type": "object",
+   "properties": {
+    "committer_email": {
+     "type": "string"
+    },
+    "id": {
+     "type": "string"
+    },
+    "timestamp": {
+     "type": "string",
+     "format": "int64"
+    },
+    "url": {
+     "type": "string"
+    }
+   }
   }
  },
  "methods": {
@@ -270,11 +372,33 @@
     "https://www.googleapis.com/auth/userinfo.email"
    ]
   },
+  "get_config_sets": {
+   "id": "config.get_config_sets",
+   "path": "config-sets",
+   "httpMethod": "GET",
+   "description": "Returns config sets.",
+   "parameters": {
+    "config_set": {
+     "type": "string",
+     "location": "query"
+    },
+    "include_last_import_attempt": {
+     "type": "boolean",
+     "location": "query"
+    }
+   },
+   "response": {
+    "$ref": "LuciConfigGetConfigSetsResponseMessage"
+   },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
   "get_mapping": {
    "id": "config.get_mapping",
    "path": "mapping",
    "httpMethod": "GET",
-   "description": "Returns config-set mapping, one or all.",
+   "description": "DEPRECATED. Use get_config_sets.",
    "parameters": {
     "config_set": {
      "type": "string",
@@ -370,6 +494,25 @@
    "response": {
     "$ref": "LuciConfigGetRefsResponseMessage"
    },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
+  "reimport": {
+   "id": "config.reimport",
+   "path": "reimport",
+   "httpMethod": "POST",
+   "description": "Reimports a config set.",
+   "parameters": {
+    "config_set": {
+     "type": "string",
+     "required": true,
+     "location": "query"
+    }
+   },
+   "parameterOrder": [
+    "config_set"
+   ],
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"
    ]

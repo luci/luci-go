@@ -1350,7 +1350,11 @@ type BotTerminateCall struct {
 // Terminate: Asks a bot to terminate itself gracefully. The bot will
 // stay in the DB, use 'delete' to remove it from the DB afterward. This
 // request returns a pseudo-taskid that can be waited for to wait for
-// the bot to turn down.
+// the bot to turn down. This command is particularly useful when a
+// privileged user needs to safely debug a machine specific issue. The
+// user can trigger a terminate for one of the bot exhibiting the issue,
+// wait for the pseudo-task to run then access the machine with the
+// guarantee that the bot is not running anymore.
 func (r *BotService) Terminate(botId string) *BotTerminateCall {
 	c := &BotTerminateCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.botId = botId
@@ -1426,7 +1430,7 @@ func (c *BotTerminateCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTermin
 	}
 	return ret, nil
 	// {
-	//   "description": "Asks a bot to terminate itself gracefully. The bot will stay in the DB, use 'delete' to remove it from the DB afterward. This request returns a pseudo-taskid that can be waited for to wait for the bot to turn down.",
+	//   "description": "Asks a bot to terminate itself gracefully. The bot will stay in the DB, use 'delete' to remove it from the DB afterward. This request returns a pseudo-taskid that can be waited for to wait for the bot to turn down. This command is particularly useful when a privileged user needs to safely debug a machine specific issue. The user can trigger a terminate for one of the bot exhibiting the issue, wait for the pseudo-task to run then access the machine with the guarantee that the bot is not running anymore.",
 	//   "httpMethod": "POST",
 	//   "id": "swarming.bot.terminate",
 	//   "parameterOrder": [

@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/k8GD4Sa4aKoBwjNiFXWhPwFeEfo\"",
+ "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/wdGyFAoWKZO7wwd7G0R-dWItRf4\"",
  "discoveryVersion": "v1",
  "id": "swarming:v1",
  "name": "swarming",
@@ -11,9 +11,9 @@
   "x32": "http://www.google.com/images/icons/product/search-32.gif"
  },
  "protocol": "rest",
- "baseUrl": "http://localhost:8080/_ah/api/swarming/v1/",
+ "baseUrl": "https://chromium-swarm.appspot.com/_ah/api/swarming/v1/",
  "basePath": "/_ah/api/swarming/v1/",
- "rootUrl": "http://localhost:8080/_ah/api/",
+ "rootUrl": "https://chromium-swarm.appspot.com/_ah/api/",
  "servicePath": "swarming/v1/",
  "batchPath": "batch",
  "parameters": {
@@ -788,7 +788,7 @@
      "id": "swarming.bot.terminate",
      "path": "bot/{bot_id}/terminate",
      "httpMethod": "POST",
-     "description": "Asks a bot to terminate itself gracefully. The bot will stay in the DB, use 'delete' to remove it from the DB afterward. This request returns a pseudo-taskid that can be waited for to wait for the bot to turn down.",
+     "description": "Asks a bot to terminate itself gracefully. The bot will stay in the DB, use 'delete' to remove it from the DB afterward. This request returns a pseudo-taskid that can be waited for to wait for the bot to turn down. This command is particularly useful when a privileged user needs to safely debug a machine specific issue. The user can trigger a terminate for one of the bot exhibiting the issue, wait for the pseudo-task to run then access the machine with the guarantee that the bot is not running anymore.",
      "parameters": {
       "bot_id": {
        "type": "string",

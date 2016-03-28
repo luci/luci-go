@@ -127,8 +127,8 @@ func (m *PropertyValue) GetNull() *google_protobuf1.Empty {
 }
 
 // XXX_OneofFuncs is for the internal use of the proto package.
-func (*PropertyValue) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), []interface{}) {
-	return _PropertyValue_OneofMarshaler, _PropertyValue_OneofUnmarshaler, []interface{}{
+func (*PropertyValue) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _PropertyValue_OneofMarshaler, _PropertyValue_OneofUnmarshaler, _PropertyValue_OneofSizer, []interface{}{
 		(*PropertyValue_Str)(nil),
 		(*PropertyValue_Dat)(nil),
 		(*PropertyValue_Num)(nil),
@@ -225,6 +225,41 @@ func _PropertyValue_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.
 	default:
 		return false, nil
 	}
+}
+
+func _PropertyValue_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*PropertyValue)
+	// value
+	switch x := m.Value.(type) {
+	case *PropertyValue_Str:
+		n += proto.SizeVarint(1<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(len(x.Str)))
+		n += len(x.Str)
+	case *PropertyValue_Dat:
+		n += proto.SizeVarint(2<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(len(x.Dat)))
+		n += len(x.Dat)
+	case *PropertyValue_Num:
+		n += proto.SizeVarint(3<<3 | proto.WireVarint)
+		n += proto.SizeVarint(uint64(x.Num))
+	case *PropertyValue_Bin:
+		n += proto.SizeVarint(5<<3 | proto.WireVarint)
+		n += 1
+	case *PropertyValue_Time:
+		s := proto.Size(x.Time)
+		n += proto.SizeVarint(6<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *PropertyValue_Null:
+		s := proto.Size(x.Null)
+		n += proto.SizeVarint(7<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
 }
 
 // AttemptList is logically a listing of unique attempts, which has a compact
