@@ -16,6 +16,8 @@ It has these top-level messages:
 */
 package prpc
 
+import prpccommon "github.com/luci/luci-go/common/prpc"
+
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
@@ -29,6 +31,10 @@ import (
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+const _ = proto.ProtoPackageIsVersion1
 
 // The request message containing the user's name.
 type HelloRequest struct {
@@ -80,11 +86,31 @@ func init() {
 var _ context.Context
 var _ grpc.ClientConn
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion1
+
 // Client API for Greeter service
 
 type GreeterClient interface {
 	// Sends a greeting
 	SayHello(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (*HelloReply, error)
+}
+type greeterPRPCClient struct {
+	client *prpccommon.Client
+}
+
+func NewGreeterPRPCClient(client *prpccommon.Client) GreeterClient {
+	return &greeterPRPCClient{client}
+}
+
+func (c *greeterPRPCClient) SayHello(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (*HelloReply, error) {
+	out := new(HelloReply)
+	err := c.client.Call(ctx, "prpc.Greeter", "SayHello", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 type greeterClient struct {
@@ -143,6 +169,22 @@ var _Greeter_serviceDesc = grpc.ServiceDesc{
 
 type CalcClient interface {
 	Multiply(ctx context.Context, in *MultiplyRequest, opts ...grpc.CallOption) (*MultiplyResponse, error)
+}
+type calcPRPCClient struct {
+	client *prpccommon.Client
+}
+
+func NewCalcPRPCClient(client *prpccommon.Client) CalcClient {
+	return &calcPRPCClient{client}
+}
+
+func (c *calcPRPCClient) Multiply(ctx context.Context, in *MultiplyRequest, opts ...grpc.CallOption) (*MultiplyResponse, error) {
+	out := new(MultiplyResponse)
+	err := c.client.Call(ctx, "prpc.Calc", "Multiply", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 type calcClient struct {

@@ -37,9 +37,6 @@ var (
 	withGoogleProtobuf = flag.Bool(
 		"with-google-protobuf", true,
 		"map .proto files in gitub.com/luci/luci-go/common/proto/google to google/protobuf/*.proto")
-	renameToTestGo = flag.Bool(
-		"test", false,
-		"rename generated files from *.go to *_test.go")
 	descFile = flag.String(
 		"desc",
 		"",
@@ -166,7 +163,7 @@ func run(c context.Context, dir string) error {
 			packageName = t.services[0].protoPackageName
 		}
 
-		if *renameToTestGo {
+		if strings.HasSuffix(p, "_test.proto") {
 			newName := strings.TrimSuffix(goFile, ".go") + "_test.go"
 			if err := os.Rename(goFile, newName); err != nil {
 				return err
@@ -176,9 +173,6 @@ func run(c context.Context, dir string) error {
 	if *withDiscovery && packageName != "" {
 		// Generate pb.prpc.go
 		discoveryFile := "pb.discovery.go"
-		if *renameToTestGo {
-			discoveryFile = "pb.discovery_test.go"
-		}
 		if err := genDiscoveryFile(c, filepath.Join(dir, discoveryFile), descPath, packageName); err != nil {
 			return err
 		}

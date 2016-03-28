@@ -5,4 +5,4 @@
 package prpc
 
 //go:generate go install github.com/luci/luci-go/tools/cmd/cproto
-//go:generate cproto -test -discovery=false
+//go:generate cproto -discovery=false

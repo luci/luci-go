@@ -4,4 +4,4 @@
 
 package flagpb
 
-//go:generate cproto -desc=unmarshal_test.desc -test=true
+//go:generate cproto -desc=unmarshal_test.desc

@@ -4,4 +4,4 @@
 
 package e2etest
 
-//go:generate cproto -test -discovery=false
+//go:generate cproto -discovery=false

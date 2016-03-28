@@ -4,4 +4,4 @@
 
 package prpc
 
-//go:generate cproto -test -discovery=false
+//go:generate cproto -discovery=false

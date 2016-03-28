@@ -4,4 +4,4 @@
 
 package main
 
-//go:generate cproto -desc=printer_test.desc -test -discovery=false
+//go:generate cproto -desc=printer_test.desc -discovery=false
