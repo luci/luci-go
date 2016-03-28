@@ -28,7 +28,7 @@ import (
 	"github.com/luci/luci-go/common/recordio"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
-	"github.com/luci/luci-go/server/internal/logdog/archivist/archive"
+	"github.com/luci/luci-go/server/logdog/archive"
 	"github.com/luci/luci-go/server/logdog/storage"
 	memoryStorage "github.com/luci/luci-go/server/logdog/storage/memory"
 	"golang.org/x/net/context"

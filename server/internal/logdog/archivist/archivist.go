@@ -14,7 +14,7 @@ import (
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
-	"github.com/luci/luci-go/server/internal/logdog/archivist/archive"
+	"github.com/luci/luci-go/server/logdog/archive"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"golang.org/x/net/context"
 )
