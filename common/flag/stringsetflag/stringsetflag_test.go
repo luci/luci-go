@@ -29,7 +29,8 @@ func Example() {
 	fmt.Println("Likes Red:", sset.Data.Has("Red"))
 
 	// Output:
-	// -color=: favorite color, may be repeated.
+	// -color value
+	//     	favorite color, may be repeated.
 	// Value is: Red,Violet
 	// Likes Blue: false
 	// Likes Red: true
