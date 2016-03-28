@@ -146,7 +146,9 @@ func TestNewRequestGETFail(t *testing.T) {
 
 func TestNewRequestJSONBadURL(t *testing.T) {
 	clientReq, err := NewRequestJSON(http.DefaultClient, "GET", "invalid url", nil, nil, nil)
-	ut.AssertEqual(t, errors.New("unsupported protocol scheme \"\""), err)
+	if err == nil {
+		t.Fatalf("NewRequestJSON should have failed, but it didn't")
+	}
 	ut.AssertEqual(t, nil, clientReq)
 }
 
