@@ -1,0 +1,65 @@
+<!--
+  Copyright 2016 The Chromium Authors. All rights reserved.
+  Use of this source code is governed by a BSD-style license that can be
+  found in the LICENSE file.
+-->
+
+<html>
+<head>
+  <!-- Chrome for Android theme color -->
+  <meta name="theme-color" content="#2E3AA1">
+
+  <!-- Setup Polymer -->
+  <script src="inc/bower_components/webcomponentsjs/webcomponents-lite.min.js">
+  <script>
+    window.Polymer = window.Polymer || {};
+    window.Polymer.dom = 'shadow';
+  </script>
+
+  <!-- Because this project uses vulcanize this should be your only html import
+       in this file. All other imports should go in elements.html -->
+  <link rel="import" href="elements/elements.html">
+
+  <link rel="stylesheet" href="styles/main.css">
+
+  <!-- For shared styles, shared-styles.html import in elements.html -->
+  <style is="custom-style" include="shared-styles"></style>
+
+  <style>
+    #dev-banner {
+      width: 100%;
+      background-color: #FFE0B2;
+      text-align: center;
+      vertical-align: middle;
+      border-style: groove;
+      border-width: 1px;
+      font-family: 'Roboto', 'Noto', sans-serif;
+      font-size: 16px;
+    }
+  </style>
+</head>
+
+<body unresolved>
+
+<span id="browser-sync-binding"></span>
+
+<div id="dev-banner">
+  The LogDog log streaming system and this stream viewer are in early developer
+  preview. For more information, <a href="/app/">visit the home page</a>.
+</div>
+
+<!-- Main application script -->
+<logdog-view id="app"></logdog-view>
+
+<script>
+  // Grab a reference to our auto-binding template
+  // and give it some initial binding values
+  // Learn more about auto-binding templates at http://goo.gl/Dx1u2g
+  var app = document.querySelector('#app');
+
+  // Set up our default LogDog pRPC host.
+  app.host = logdog.host;
+</script>
+
+</body>
+</html>

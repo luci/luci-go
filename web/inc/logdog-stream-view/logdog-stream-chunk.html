@@ -1,0 +1,122 @@
+<!--
+  Copyright 2016 The Chromium Authors. All rights reserved.
+  Use of this source code is governed by a BSD-style license that can be
+  found in the LICENSE file.
+  -->
+
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../luci-prpc-request/luci-prpc-request.html">
+
+<!--
+An element for fetching a block of LogDog LogEntry protobufs from a single log
+stream.
+-->
+<dom-module id="logdog-stream-chunk">
+
+  <template>
+    <luci-prpc-request
+      id="req"
+      auto="[[auto]]"
+      host="[[host]]"
+      service="logdog.Logs"
+      method="Get"
+      body='{"path": "[[path]]", "state": [[getMeta]], "index": [[_indexStr]]}'
+      last-response="{{lastResponse}}"
+      last-error="{{lastError}}"></luci-prpc-request>
+  </template>
+
+</dom-module>
+
+<script>
+  "use strict";
+
+  Polymer({
+    is: "logdog-stream-chunk",
+    properties: {
+      hostAttributes: {
+        hidden: true,
+      },
+
+      /* If true, automatically send the request when parameters are changed. */
+      auto: {
+        type: Boolean,
+        value: false,
+        notify: true,
+      },
+      /** The name ([host][:port]) of the pRPC host. */
+      host: {
+        type: String,
+        notify: true,
+      },
+      /** The log stream path to fetch. */
+      path: {
+        type: String,
+        notify: true,
+        observer: "_streamChanged",
+      },
+      /** True if log stream metadata should be fetched. */
+      getMeta: {
+        type: Boolean,
+        value: true,
+        notify: true,
+      },
+      /** Initial log entry index to fetch. */
+      index: {
+        type: Number,
+        value: 0,
+        notify: true,
+      },
+
+      /** The last fetched LogEntry array */
+      logs: {
+        type: Array,
+        readOnly: true,
+        notify: true,
+      },
+      /** If metadata is requested, the last fetched log stream descriptor. */
+      desc: {
+        type: Object,
+        value: null,
+        readOnly: true,
+        notify: true,
+      },
+      /** If metadata is requested, the last fetched log stream state. */
+      state: {
+        type: Object,
+        value: null,
+        readOnly: true,
+        notify: true,
+      },
+
+      _indexStr: {
+        computed: "_computeIndexStr(index)"
+      },
+    },
+
+    observers: [
+      "_responseChanged(lastResponse, lastError)",
+    ],
+
+    _streamChanged: function() {
+      this._setDesc(null);
+    },
+
+    _computeIndexStr: function(index) {
+      return "" + index;
+    },
+
+    _responseChanged: function(resp, err) {
+      if (err !== null) {
+        resp = {};
+      }
+
+      this._setState(resp.state);
+      this._setDesc(resp.desc);
+      this._setLogs(resp.logs);
+    },
+
+    get: function() {
+      return this.$.req.requestPromise();
+    },
+  });
+</script>

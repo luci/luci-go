@@ -55,6 +55,11 @@ func main() {
 	gaeauthServer.InstallHandlers(router, base)
 	svr.InstallHandlers(router, base)
 
+	// Redirect "/" to "/app/".
+	router.GET("/", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		http.Redirect(w, r, "/app/", http.StatusFound)
+	})
+
 	http.Handle("/", router)
 	appengine.Main()
 }

@@ -10,8 +10,8 @@ beta_settings:
   service_account_scopes: "https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/devstorage.full_control,https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/bigtable.data"
 
 handlers:
-- url: /static
-  static_dir: static
+- url: /s
+  static_dir: static/dist
   secure: always
   #login: required
 

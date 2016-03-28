@@ -1,0 +1,41 @@
+<!--
+  Copyright 2016 The Chromium Authors. All rights reserved.
+  Use of this source code is governed by a BSD-style license that can be
+  found in the LICENSE file.
+  -->
+
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<!--
+  Generates a Promise object that resolves after a specified delay.
+-->
+<dom-module id="luci-sleep-promise">
+
+<script>
+  "use strict";
+
+  Polymer({
+    is: "luci-sleep-promise",
+
+    /**
+     * Generates a Promise object that resolves after a specified delay.
+     *
+     * If a delay of 0 is provided, it will resolve as soon as it can (but not
+     * synchronously).
+     *
+     * @param {number} delay The delay in seconds.
+     * @return {Promise} A Promise object.
+     */
+    promise: function(delay) {
+      return new Promise(function(resolve, reject) {
+        if (delay === 0) {
+          setTimeout(resolve, 0);
+        } else {
+          this.async(resolve, delay);
+        }
+      }.bind(this));
+    },
+  });
+</script>
+
+</dom-module>

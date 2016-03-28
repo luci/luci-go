@@ -205,6 +205,7 @@ func getSetupDevConfig(c context.Context) (*config.Config, error) {
 		if err := ds.Get(c).Put(&dcfg); err != nil {
 			log.WithError(err).Warningf(c, "Failed to install empty development configuration.")
 		}
+		return nil, errors.New("no development configuration")
 
 	default:
 		return nil, err

@@ -1,0 +1,53 @@
+<!--
+  Copyright 2016 The Chromium Authors. All rights reserved.
+  Use of this source code is governed by a BSD-style license that can be
+  found in the LICENSE file.
+-->
+
+<link rel="import" href="../../inc/bower_components/polymer/polymer.html">
+<link rel="import" href="../../inc/logdog-app-base/logdog-app-base.html">
+<link rel="import" href="../../inc/logdog-stream-view/logdog-stream-view.html">
+
+<link rel="stylesheet" href="../../styles/main.css">
+
+
+<!--
+An element for the LogDog lightweight view app of a single set of streams.
+
+The streams are specified by full path using the "s=" query parameter.
+-->
+<dom-module id="logdog-view">
+
+<template>
+  <logdog-stream-view
+    id="view"
+    host="[[host]]"
+    streams="[[streams]]"></logdog-stream-view>
+</template>
+
+</dom-module>
+
+<script>
+  Polymer({
+    is: "logdog-view",
+    properties: {
+      host: {
+        type: String,
+        notify: true,
+      },
+      streams: {
+        type: Array,
+        notify: true,
+        readOnly: true,
+      },
+    },
+
+    attached: function() {
+      // Parse the stream names from the "s" query parameter.
+      var queryString = window.location.search.replace(/^\?/, "");
+      var streams = logdog.getQueryValues(queryString, "s").
+          map(logdog.correctStreamPath);
+      this._setStreams(streams);
+    },
+  });
+</script>

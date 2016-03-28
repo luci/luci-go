@@ -1,0 +1,15 @@
+# This is a boilerplate dispatch.yaml that will work for most of apps.
+# You can symlink it to yours like helloworld app does.
+
+dispatch:
+  # LogDog Web app (/rpcexplorer/...)
+  - url: "*/rpcexplorer/*"
+    module: static
+
+  # LogDog Web app (/app/...)
+  - url: "*/app/*"
+    module: static
+
+  # LogDog view app (/v/...)
+  - url: "*/v/*"
+    module: static

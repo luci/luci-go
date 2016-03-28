@@ -1,0 +1,213 @@
+<!--
+  Copyright 2016 The Chromium Authors. All rights reserved.
+  Use of this source code is governed by a BSD-style license that can be
+  found in the LICENSE file.
+  -->
+
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/promise-polyfill/promise-polyfill-lite.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+
+<!--
+An element for making a pRPC request, or generating a pRPC Promise.
+Example:
+    <luci-prpc-request></luci-prpc-request>
+-->
+<dom-module id="luci-prpc-request">
+
+  <template>
+    <iron-ajax
+      id="ajax"
+      auto="[[auto]]"
+      url="[[_url]]"
+      content-type="application/json"
+      method="POST"
+      headers='{"Accept": "application/json"}'
+      body="[[body]]"
+      json-prefix="[[_jsonPrefix]]"
+      verbose="[[verbose]]"
+      on-request="_onRequest"
+      on-response="_onResponse"
+      on-error="_onError">
+    </iron-ajax>
+  </template>
+
+</dom-module>
+
+<script>
+  var _grpcCodeHeader = "x-prpc-grpc-code"
+
+  Polymer({
+    is: "luci-prpc-request",
+    properties: {
+      /**
+       * Fired when a response is received.
+       *
+       * @event response
+       */
+
+      /**
+       * Fired when an error is received.
+       *
+       * @event error
+       */
+
+      hostAttributes: {
+        hidden: true,
+      },
+
+      /** True if the request should be sent when a parameter is changed. */
+      auto: {
+        type: Boolean,
+        value: false,
+        notify: true,
+      },
+      /** The request body to send. */
+      body: {
+        type: Object,
+        notify: true,
+      },
+
+      /** The name ([host][:port]) of the pRPC host. */
+      host: {
+        type: String,
+        value: window.location.hostname,
+        notify: true,
+      },
+
+      /** The name of the pRPC service. */
+      service: {
+        type: String,
+      },
+      /** The name of the pRPC method to invoke. */
+      method: {
+        type: String,
+      },
+      /** If true, write errors to the console. */
+      verbose: {
+        type: Boolean,
+        value: true, // XXX: Turn to false for prod.
+      },
+
+      /** The last response that was received. */
+      lastResponse: {
+        type: Object,
+        notify: true,
+        readOnly: true,
+      },
+      /** The last error that was received. */
+      lastError: {
+        type: Object,
+        notify: true,
+        readOnly: true,
+      },
+
+      /** The pRPC URL to fetch. */
+      _url: {
+        computed: "_computeUrl(host, service, method)"
+      },
+      /** The JSON prefix to strip from JSON responses. */
+      _jsonPrefix: {
+        type: String,
+        value: ")]}'\n",
+        readOnly: true,
+      },
+    },
+
+    _computeUrl: function(host, service, method) {
+      // Prepend HTTP[S]:// to the beginning of "host", if needed.
+      var slashIdx = host.indexOf("://");
+      var scheme = null;
+      if (slashIdx > 0) {
+        scheme = host.substring(0, slashIdx).toLowerCase();
+        host = host.substring(slashIdx+3);
+      }
+      if (scheme !== "http" && scheme !== "https") {
+        if (host === "localhost" || host.indexOf("localhost:") === 0) {
+          scheme = "http";
+        } else {
+          scheme = "https";
+        }
+      }
+      host = scheme + "://" + host;
+
+      return [host, "prpc", service, method].join("/");
+    },
+
+    _onRequest: function(e, request) {
+      this._lastRequest = request.request;
+    },
+    _onResponse: function(e, request) {
+      try {
+        var resp = this._analyzeResult(request);
+      } catch(err) {
+        return this._onError(e, err);
+      }
+
+      if (request === this._lastRequest) {
+        this._setLastResponse(resp);
+        this._setLastError(null)
+      }
+      this.fire("response", resp, {bubbles: false});
+    },
+    _onError: function(e, error) {
+      if (this.verbose) {
+        console.error(error);
+      }
+
+      var request = e.srcElement.lastRequest;
+      if (request === this._lastRequest) {
+        this._setLastResponse(null);
+        this._setLastError(error)
+      }
+      this.fire("error", {
+        request: request,
+        error: error,
+      }, {bubbles: false});
+    },
+
+    _analyzeResult: function(req) {
+      var grpcCodeHdr = req.xhr.getResponseHeader(_grpcCodeHeader);
+      var grpcCode = parseInt(grpcCodeHdr);
+
+      if (isNaN(grpcCode)) {
+        // Error: The returned gRPC code is invalid or not present.
+        throw {
+          code: NaN,
+          message: ("Invalid gRPC Code: " + grpcCodeHdr),
+        };
+      } else if (grpcCode !== 0) {
+        throw {
+          code: grpcCode,
+          message: ("gRPC Code was not OK: " + grpcCode),
+        };
+      }
+      return req.response;
+    },
+
+    /**
+     * Manually dispatches a new AJAX pRPC request.
+     */
+    generateRequest: function() {
+      return this.$.ajax.generateRequest();
+    },
+
+    /**
+     * Generates a Promise that resolves or errors to the result of the request
+     * described by the current parameters.
+     *
+     * @return {Promise} a Promise that resolves into the pRPC result.
+     */
+    requestPromise: function() {
+      return new Promise(function (resolve, reject) {
+        this.generateRequest().completes.then(function(req) {
+          try {
+            resolve(this._analyzeResult(req));
+          } catch(err) {
+            reject(err);
+          }
+        }.bind(this))
+      }.bind(this));
+    },
+  });
+</script>
