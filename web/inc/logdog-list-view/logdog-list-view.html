@@ -428,12 +428,12 @@ An element for fetching complete LogDog log streams.
         return;
       }
 
-      this.base = resp.base;
+      this.base = (resp.base || "");
       this._setNextPage(resp.next);
       this._setCurrentOffset(this.offset);
 
       // Calculate partial components.
-      var components = resp.base.split("/");
+      var components = this.base.split("/");
       if (components.length && components[0] === "") {
         // Remove the initial "/" element. It will be forcefully inserted at the
         // end.
@@ -456,14 +456,14 @@ An element for fetching complete LogDog log streams.
         return (e.stream !== true);
       }).map(function(e) {
         var full = e.path;
-        if (resp.base !== "") {
+        if (this.base !== "") {
           full = resp.base + "/" + full;
         }
         return {
           value: e.path,
           full: full,
         };
-      }));
+      }.bind(this)));
 
       // Calculate stream components.
       this._setStreams((resp.components || []).filter(function(e) {
