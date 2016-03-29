@@ -8,9 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"syscall"
-	"time"
 
-	"github.com/luci/luci-go/common/clock"
 	"golang.org/x/net/context"
 )
 
@@ -23,6 +21,9 @@ type cmdResult struct {
 	// procErr is the process' returned error. Depending on whether the process
 	// was cancelled, this may equal err.
 	procErr error
+	// cancelErr is the error (if any) encountered when canceling the process.
+	// This should be nil during standard operations.
+	cancelErr error
 }
 
 // CtxCmd is a wrapper around an exec.Cmd that responds to a Context's
@@ -43,14 +44,28 @@ type CtxCmd struct {
 	// was cancelled.
 	ProcessError error
 
+	// CancelError is the error that was encountered when canceling the process.
+	// This should be nil during standard operation, and does not need to be
+	// checked.
+	CancelError error
+
 	// CancelSignal, if not nil, is the signal that is sent to the process to
 	// terminate it when it is cancelled. If nil, the os.Kill signal will be sent.
 	CancelSignal os.Signal
 
 	waitC chan *cmdResult
 
-	// (Testing) if not nil, write a value here when the process has finished.
-	testProcFinishedC chan struct{}
+	// test is configured during testing to instrument CtxCmd internals. It is
+	// nil during non-testing operation.
+	test *testCallbacks
+}
+
+type testCallbacks struct {
+	// finishedCB, if not nil, called when the process has finished.
+	finishedCB func()
+
+	// canceledCB, if not nil, called when the process is canceled.
+	canceledCB func()
 }
 
 // Run starts the process, blocking until it has exited. It is the analogue to
@@ -109,9 +124,9 @@ func (cc *CtxCmd) Start(c context.Context) error {
 		defer func() {
 			defer close(waitC)
 
-			// (Testing)
-			if cc.testProcFinishedC != nil {
-				cc.testProcFinishedC <- struct{}{}
+			// (Testing) invoke our finished callback, if one is configured.
+			if cc.test != nil && cc.test.finishedCB != nil {
+				cc.test.finishedCB()
 			}
 
 			waitC <- r
@@ -133,25 +148,12 @@ func (cc *CtxCmd) Start(c context.Context) error {
 				break
 			}
 
-			// Repeatedly cancel and reap the process. This is something introduced in
-			// Go 1.6, where the process successfully gets killed (returns nil error),
-			// but is still running in the background. Hitting "kill" again seems to
-			// be sufficient to ensure the process' termination.
-			//
-			// Possibly: https://github.com/golang/go/issues/14571
-			for {
-				_ = cc.cancel()
+			// Cancel the process (signal/kill).
+			cancelErr := cc.cancel()
+			r = <-finishedC
 
-				select {
-				case r = <-finishedC:
-					r.err = c.Err()
-					return
-				default:
-					// Process is not finished; wait and try again. Use a new Context,
-					// since ours is actually canceled.
-					clock.Get(c).Sleep(context.Background(), 10*time.Millisecond)
-				}
-			}
+			r.err = c.Err()
+			r.cancelErr = cancelErr
 		}
 	}()
 
@@ -168,7 +170,7 @@ func (cc *CtxCmd) Wait() error {
 	cc.waitC = nil
 
 	// Record our process' immediate results.
-	cc.ProcessState, cc.ProcessError = r.state, r.procErr
+	cc.ProcessState, cc.ProcessError, cc.CancelError = r.state, r.procErr, r.cancelErr
 
 	// If our process ran, but exited with a non-zero error code, return an error
 	// (follows contract of exec.Cmd's Wait)
@@ -178,11 +180,23 @@ func (cc *CtxCmd) Wait() error {
 	return r.procErr
 }
 
-func (cc *CtxCmd) cancel() error {
-	if cc.CancelSignal != nil {
-		return cc.Signal(cc.CancelSignal)
+func (cc *CtxCmd) cancel() (err error) {
+	err = cc.sendCancelSignal()
+
+	// (Testing) invoke our canceled callback, if one is configured.
+	if cc.test != nil && cc.test.canceledCB != nil {
+		cc.test.canceledCB()
 	}
-	return cc.Kill()
+	return
+}
+
+func (cc *CtxCmd) sendCancelSignal() error {
+	switch {
+	case cc.CancelSignal != nil:
+		return cc.Signal(cc.CancelSignal)
+	default:
+		return cc.Kill()
+	}
 }
 
 // Kill sends a kill signal to the underlying process. This only works if the

@@ -10,7 +10,9 @@ import (
 	"os/exec"
 	"runtime"
 	"testing"
+	"time"
 
+	"github.com/luci/luci-go/common/clock"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -58,7 +60,8 @@ func TestCtxCmd(t *testing.T) {
 
 		Convey(`When running a process that exits immediately`, func() {
 			cc := CtxCmd{
-				Cmd: helperCommand(t, "TestExitImmediately"),
+				Cmd:  helperCommand(t, "TestExitImmediately"),
+				test: &testCallbacks{},
 			}
 
 			Convey(`The process runs and exits successfully.`, func() {
@@ -66,9 +69,13 @@ func TestCtxCmd(t *testing.T) {
 			})
 
 			Convey(`Cancelling after process exit returns process' exit value.`, func() {
-				cc.testProcFinishedC = make(chan struct{})
+				waitForFinishC := make(chan struct{})
+				cc.test.finishedCB = func() {
+					close(waitForFinishC)
+				}
+
 				So(cc.Start(c), ShouldBeNil)
-				<-cc.testProcFinishedC
+				<-waitForFinishC
 
 				// Cancel our Context.
 				cancelFunc()
@@ -82,7 +89,8 @@ func TestCtxCmd(t *testing.T) {
 
 		Convey(`When running a process that runs forever`, func() {
 			cc := CtxCmd{
-				Cmd: helperCommand(t, "TestWaitForever"),
+				Cmd:  helperCommand(t, "TestWaitForever"),
+				test: &testCallbacks{},
 			}
 
 			Convey(`Cancelling the process causes it to exit with non-zero return code.`, func() {
@@ -103,6 +111,34 @@ func TestCtxCmd(t *testing.T) {
 					// This test does not work on Windows, as processes cannot send
 					// signals (e.g., os.Interrupt) to other processes.
 					return
+				}
+
+				// Repeatedly send SIGINT to the process. This is something introduced
+				// in Go 1.6, where SIGINT is successfully sent to the process (Signal
+				// returns nil), but the process doesn't receive it. We will, therefore,
+				// cancel the process repeatedly once the initial signal has been sent.
+				//
+				// This is handled by test code instead of main CtxCmd monitor because
+				// it is actually an issue with the test child process' runtime, not
+				// CtxCmd itself.
+				//
+				// Possibly: https://github.com/golang/go/issues/14571
+				finishedC := make(chan struct{})
+				cc.test.finishedCB = func() {
+					close(finishedC)
+				}
+				cc.test.canceledCB = func() {
+					go func() {
+						for {
+							select {
+							case <-finishedC:
+								return
+							default:
+								cc.sendCancelSignal()
+								clock.Sleep(context.Background(), 10*time.Millisecond)
+							}
+						}
+					}()
 				}
 
 				// Create a pipe to ensure that the process has started.
