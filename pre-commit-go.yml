@@ -29,11 +29,7 @@ modes:
       test:
       - extra_args:
         - -v
-        ## Temporarily disabling "-race" pending goconvey parallel/race
-        ## reporting fix.
-        ##
-        ## https://github.com/smartystreets/goconvey/issues/234
-        #- -race
+        - -race
     max_duration: 600
   lint:
     checks:
