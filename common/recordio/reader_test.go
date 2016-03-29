@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"testing"
@@ -56,6 +57,14 @@ func (r *testByteReader) ReadByte() (b byte, err error) {
 		r.readBytes++
 	}
 	return
+}
+
+func btos(b ...[]byte) []string {
+	s := make([]string, len(b))
+	for i, v := range b {
+		s[i] = string(v)
+	}
+	return s
 }
 
 // TestReader tests the default Reader implementation, "reader".
@@ -202,6 +211,46 @@ func TestReader(t *testing.T) {
 			tr.err = errors.New("test: test-induced error")
 			data, err := r.ReadFrameAll()
 			So(err, ShouldEqual, tr.err)
+		})
+	})
+}
+
+func TestSplit(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Testing Split`, t, func() {
+		for _, v := range [][]string{
+			{},
+			{""},
+			{"", "foo", ""},
+			{"foo", "bar", "baz"},
+		} {
+			Convey(fmt.Sprintf(`Can Split stream: %#v`, v), func() {
+				// Write frames to "buf".
+				var buf bytes.Buffer
+				for _, s := range v {
+					_, err := WriteFrame(&buf, []byte(s))
+					if err != nil {
+						panic(err)
+					}
+				}
+
+				// Confirm that Split works.
+				sp, err := Split(buf.Bytes())
+				So(err, ShouldBeNil)
+				So(btos(sp...), ShouldResemble, v)
+			})
+		}
+
+		Convey(`Will refuse to split a frame that is too large.`, func() {
+			_, err := Split([]byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00})
+			So(err, ShouldEqual, ErrFrameTooLarge)
+		})
+
+		Convey(`Will fail to split if there aren't enough bytes.`, func() {
+			sp, err := Split([]byte{0x01, 0xAA, 0x02}) // 1-byte {0xAA}, 2-bytes ... EOF!
+			So(sp, ShouldResemble, [][]byte{{0xAA}})
+			So(err, ShouldEqual, ErrFrameTooLarge)
 		})
 	})
 }
