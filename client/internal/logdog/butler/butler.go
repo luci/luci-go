@@ -162,7 +162,7 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 	// Load bundles from our Bundler into the queue.
 	go func() {
 		defer close(b.bundlerDrainedC)
-		parallel.WorkPool(config.OutputWorkers, func(workC chan<- func() error) {
+		parallel.Ignore(parallel.Run(config.OutputWorkers, func(workC chan<- func() error) {
 			// Read bundles until the bundler is drained.
 			for {
 				bundle := b.bundler.Next()
@@ -175,7 +175,7 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 					return nil
 				}
 			}
-		})
+		}))
 	}()
 
 	// Run our primary stream monitor until the Butler instance is activated.

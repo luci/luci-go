@@ -177,7 +177,7 @@ func (b *Bundler) makeBundles() {
 	b.streamsLock.Lock()
 	defer b.streamsLock.Unlock()
 
-	bb := (*builder)(nil)
+	var bb *builder
 	defer func() {
 		if bb != nil && bb.hasContent() {
 			b.bundleC <- bb.bundle()
@@ -192,7 +192,7 @@ func (b *Bundler) makeBundles() {
 				Timestamp: google.NewTimestamp(b.getClock().Now()),
 			},
 		}
-		oldestContentTime := time.Time{}
+		var oldestContentTime time.Time
 
 		for {
 			state := b.getStreamStateLocked()
@@ -200,7 +200,7 @@ func (b *Bundler) makeBundles() {
 			// Attempt to create more bundles.
 			sendNow := b.bundleRoundLocked(bb, state)
 
-			// Prune any drained streams.
+			// Prune and unregister any drained streams.
 			state.forEachStream(func(s bundlerStream) bool {
 				if s.isDrained() {
 					state.removeStream(s.name())
@@ -219,10 +219,8 @@ func (b *Bundler) makeBundles() {
 			}
 
 			// If we have content, consider emitting this bundle.
-			if bb.hasContent() {
-				if b.c.MaxBufferDelay == 0 || sendNow || bb.ready() {
-					break
-				}
+			if bb.hasContent() && (b.c.MaxBufferDelay == 0 || sendNow || bb.ready()) {
+				break
 			}
 
 			// Mark the first time this round where we actually saw data.
@@ -254,18 +252,31 @@ func (b *Bundler) makeBundles() {
 
 			// If we had no data or expire constraints, wait indefinitely for
 			// something to change.
-			c := context.Background()
-			if has {
-				// If there is still data, unblock after it expires.
-				c, _ = context.WithTimeout(c, nextExpire.Sub(state.now))
+			//
+			// This will release our state lock during switch execution. The lock will
+			// be held after the switch statement has finished.
+			condC := context.Background()
+			switch {
+			case has && nextExpire.After(state.now):
+				// No immediate data, so block until the next known data expiration
+				// time.
+				condC, _ = context.WithDeadline(condC, nextExpire)
+				b.streamsCond.Wait(condC)
+
+			case has:
+				// There is more data, and it has already expired, so go immediately.
+				break
+
+			default:
+				// No data, and no enqueued stream data, so block indefinitely until we
+				// get a signal.
+				b.streamsCond.Wait(condC)
 			}
-			b.streamsCond.Wait(c)
 		}
 
 		// If our bundler has contents, send them.
 		if bb.hasContent() {
 			b.bundleC <- bb.bundle()
-			bb = nil
 		}
 	}
 }
@@ -300,7 +311,7 @@ func (b *Bundler) bundleRoundLocked(bb *builder, state *streamState) bool {
 	// First pass: non-blocking data that has exceeded its storage threshold.
 	for bb.remaining() > 0 {
 		s := state.next()
-		if s == nil {
+		if s == nil || s.isDrained() {
 			break
 		}
 
@@ -316,6 +327,10 @@ func (b *Bundler) bundleRoundLocked(bb *builder, state *streamState) bool {
 
 			// We have at least one time-sensitive bundle, so send this round.
 			sendNow = true
+		}
+
+		if s.isDrained() {
+			state.removeStream(s.name())
 		}
 	}
 

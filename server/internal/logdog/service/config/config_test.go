@@ -83,12 +83,18 @@ func TestConfig(t *testing.T) {
 
 			timeAdvanceC := make(chan time.Duration)
 			tc.SetTimerCallback(func(time.Duration, clock.Timer) {
-				tc.Add(<-timeAdvanceC)
+				t, ok := <-timeAdvanceC
+				if ok {
+					tc.Add(t)
+				}
 			})
 
 			m, err := NewManager(c, o)
 			So(err, ShouldBeNil)
 			defer m.Close()
+
+			// Unblock any timer callbacks.
+			defer close(timeAdvanceC)
 
 			Convey(`When the configuration changes`, func() {
 				cfg.Transport.GetPubsub().Project = "qux"

@@ -8,7 +8,9 @@ import (
 	"os"
 	"os/exec"
 	"syscall"
+	"time"
 
+	"github.com/luci/luci-go/common/clock"
 	"golang.org/x/net/context"
 )
 
@@ -33,6 +35,9 @@ type CtxCmd struct {
 
 	// ProcessError is the error returned by the process. It is populated when
 	// Run() or Wait() exits.
+	//
+	// If the process executes successfully and returns a zero exit code, this
+	// will be nil.
 	//
 	// This may differ from the return value of Run() or Wait() if the process
 	// was cancelled.
@@ -83,20 +88,22 @@ func (cc *CtxCmd) Start(c context.Context) error {
 
 	// Begin Waiting on the process. This is asynchronous and will ultimately
 	// feed back into Wait().
-	finishedC := make(chan *cmdResult)
+	finishedC := make(chan *cmdResult, 1)
 	go func() {
 		var r cmdResult
 		defer func() {
 			finishedC <- &r
-			close(finishedC)
 		}()
 
-		r.state, r.procErr = cc.Process.Wait()
+		r.procErr = cc.Cmd.Wait()
+		r.state = cc.ProcessState
 	}()
 
 	// Start a monitor to wait on Context cancel or process exit.
 	waitC := make(chan *cmdResult)
 	go func() {
+		defer close(finishedC)
+
 		// Write the process result to "waitC".
 		var r *cmdResult
 		defer func() {
@@ -126,9 +133,25 @@ func (cc *CtxCmd) Start(c context.Context) error {
 				break
 			}
 
-			cc.cancel()
-			r = <-finishedC
-			r.err = c.Err()
+			// Repeatedly cancel and reap the process. This is something introduced in
+			// Go 1.6, where the process successfully gets killed (returns nil error),
+			// but is still running in the background. Hitting "kill" again seems to
+			// be sufficient to ensure the process' termination.
+			//
+			// Possibly: https://github.com/golang/go/issues/14571
+			for {
+				_ = cc.cancel()
+
+				select {
+				case r = <-finishedC:
+					r.err = c.Err()
+					return
+				default:
+					// Process is not finished; wait and try again. Use a new Context,
+					// since ours is actually canceled.
+					clock.Get(c).Sleep(context.Background(), 10*time.Millisecond)
+				}
+			}
 		}
 	}()
 
@@ -149,15 +172,10 @@ func (cc *CtxCmd) Wait() error {
 
 	// If our process ran, but exited with a non-zero error code, return an error
 	// (follows contract of exec.Cmd's Wait)
-	if r.procErr == nil {
-		// Forge an ExitError.
-		cc.ProcessError = &exec.ExitError{ProcessState: cc.ProcessState}
-		if r.err == nil && !r.state.Success() {
-			// If there wasn't a higher-level error, exit with the process error.
-			return cc.ProcessError
-		}
+	if r.err != nil {
+		return r.err
 	}
-	return r.err
+	return r.procErr
 }
 
 func (cc *CtxCmd) cancel() error {

@@ -11,7 +11,6 @@ import (
 	"io"
 	"sync"
 	"testing"
-	//"time"
 
 	"github.com/luci/luci-go/client/internal/logdog/butler/output"
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
@@ -26,10 +25,11 @@ import (
 type testOutput struct {
 	sync.Mutex
 
-	err     error
-	maxSize int
-	streams map[string][]*logpb.LogEntry
-	closed  bool
+	err      error
+	maxSize  int
+	streams  map[string][]*logpb.LogEntry
+	terminal map[string]struct{}
+	closed   bool
 }
 
 func (to *testOutput) SendBundle(b *logpb.ButlerLogBundle) error {
@@ -42,10 +42,15 @@ func (to *testOutput) SendBundle(b *logpb.ButlerLogBundle) error {
 
 	if to.streams == nil {
 		to.streams = map[string][]*logpb.LogEntry{}
+		to.terminal = map[string]struct{}{}
 	}
 	for _, be := range b.Entries {
-		path := string(be.Desc.Path())
-		to.streams[path] = append(to.streams[path], be.Logs...)
+		name := string(be.Desc.Name)
+
+		to.streams[name] = append(to.streams[name], be.Logs...)
+		if be.TerminalIndex >= 0 {
+			to.terminal[name] = struct{}{}
+		}
 	}
 	return nil
 }
@@ -67,37 +72,49 @@ func (to *testOutput) Close() {
 	to.closed = true
 }
 
-func (to *testOutput) logs(stream string) []*logpb.LogEntry {
+func (to *testOutput) logs(name string) []*logpb.LogEntry {
 	to.Lock()
 	defer to.Unlock()
 
-	return to.streams[stream]
+	return to.streams[name]
+}
+
+func (to *testOutput) isTerminal(name string) bool {
+	to.Lock()
+	defer to.Unlock()
+
+	_, isTerminal := to.terminal[name]
+	return isTerminal
 }
 
 func shouldHaveTextLogs(actual interface{}, expected ...interface{}) string {
-	unexpected := []string(nil)
-	count := 0
+	exp := make([]string, len(expected))
+	for i, e := range expected {
+		exp[i] = e.(string)
+	}
+
+	var lines []string
+	var prev string
 	for _, le := range actual.([]*logpb.LogEntry) {
 		if le.GetText() == nil {
 			return fmt.Sprintf("non-text entry: %T %#v", le, le)
 		}
 
 		for _, l := range le.GetText().Lines {
-			count++
-			if len(expected) == 0 {
-				unexpected = append(unexpected, l.Value)
-				continue
-			}
-
-			exp := expected[0]
-			expected = expected[1:]
-
-			if exp != l.Value {
-				return fmt.Sprintf("line #%d:\nExpected:%s\nActual:%s\n", count, exp, l.Value)
+			prev += l.Value
+			if l.Delimiter != "" {
+				lines = append(lines, prev)
+				prev = ""
 			}
 		}
 	}
-	return ""
+
+	// Add any trailing (non-delimited) data.
+	if prev != "" {
+		lines = append(lines, prev)
+	}
+
+	return ShouldResemble(lines, exp)
 }
 
 type testStreamData struct {
@@ -124,6 +141,10 @@ func (ts *testStream) data(d []byte, err error) {
 	ts.inC <- &testStreamData{
 		data: d,
 		err:  err,
+	}
+	if err == io.EOF {
+		// If EOF is hit, continue reporting EOF.
+		close(ts.inC)
 	}
 }
 
@@ -154,9 +175,9 @@ func (ts *testStream) Read(b []byte) (int, error) {
 	case <-ts.closedC:
 		return 0, io.EOF
 
-	case d := <-ts.inC:
+	case d, ok := <-ts.inC:
 		// We have data on "inC", but we want closed status to trump this.
-		if ts.isClosed() {
+		if !ok || ts.isClosed() {
 			return 0, io.EOF
 		}
 		return copy(b, d.data), d.err
@@ -358,13 +379,15 @@ func TestButler(t *testing.T) {
 				So(b.Wait(), ShouldBeNil)
 
 				So(teeStdout.String(), ShouldEqual, "Hello, STDOUT")
-				So(to.logs("unit/test/+/stdout"), shouldHaveTextLogs, "Hello, STDOUT")
+				So(to.logs("stdout"), shouldHaveTextLogs, "Hello, STDOUT")
+				So(to.isTerminal("stdout"), ShouldBeTrue)
 
 				So(teeStderr.String(), ShouldEqual, "Hello, STDERR")
-				So(to.logs("unit/test/+/stderr"), shouldHaveTextLogs, "Hello, STDERR")
+				So(to.logs("stderr"), shouldHaveTextLogs, "Hello, STDERR")
+				So(to.isTerminal("stderr"), ShouldBeTrue)
 			})
 
-			Convey(`Shuts down with 256 streams, stream{0..256} will deplete and finish.`, func() {
+			Convey(`Run with 256 streams, stream{0..256} will deplete and finish.`, func() {
 				b := mkb(c, conf)
 				streams := make([]*testStream, 256)
 				for i := range streams {
@@ -378,16 +401,44 @@ func TestButler(t *testing.T) {
 					s.data([]byte("stream data 1!\n"), nil)
 				}
 
-				b.shutdown(errors.New("test shutdown"))
-
 				// Add data to the streams after shutdown.
 				for _, s := range streams {
-					s.data([]byte("stream data 2!\n"), nil)
+					s.data([]byte("stream data 2!\n"), io.EOF)
 				}
+
+				b.Activate()
+				So(b.Wait(), ShouldBeNil)
+
+				for _, s := range streams {
+					name := string(s.properties.Name)
+
+					So(to.logs(name), shouldHaveTextLogs, "stream data 0!", "stream data 1!", "stream data 2!")
+					So(to.isTerminal(name), ShouldBeTrue)
+				}
+			})
+
+			Convey(`Shutdown with 256 in-progress streams, stream{0..256} will terminate if they emitted logs.`, func() {
+				b := mkb(c, conf)
+				streams := make([]*testStream, 256)
+				for i := range streams {
+					props.Name = fmt.Sprintf("stream%d", i)
+					streams[i] = newTestStream(props)
+				}
+
+				for _, s := range streams {
+					So(b.AddStream(s, *s.properties), ShouldBeNil)
+					s.data([]byte("stream data!\n"), nil)
+				}
+
+				b.shutdown(errors.New("test shutdown"))
 				So(b.Wait(), ShouldErrLike, "test shutdown")
 
 				for _, s := range streams {
-					So(to.logs(s.properties.Name), shouldHaveTextLogs, "stream data 0!", "stream data 1!", "stream data 2!")
+					if len(to.logs(s.properties.Name)) > 0 {
+						So(to.isTerminal(string(s.properties.Name)), ShouldBeTrue)
+					} else {
+						So(to.isTerminal(string(s.properties.Name)), ShouldBeFalse)
+					}
 				}
 			})
 
@@ -415,6 +466,7 @@ func TestButler(t *testing.T) {
 
 					for _, s := range streams {
 						So(to.logs(s.properties.Name), shouldHaveTextLogs, "test data")
+						So(to.isTerminal(s.properties.Name), ShouldBeTrue)
 					}
 				})
 
@@ -435,6 +487,7 @@ func TestButler(t *testing.T) {
 
 					for _, s := range streams {
 						So(to.logs(s.properties.Name), shouldHaveTextLogs, "test data")
+						So(to.isTerminal(s.properties.Name), ShouldBeTrue)
 					}
 				})
 			})
@@ -460,6 +513,7 @@ func TestButler(t *testing.T) {
 				So(sBad.isClosed(), ShouldBeTrue)
 				So(sGood.isClosed(), ShouldBeTrue)
 				So(to.logs(props.Name), shouldHaveTextLogs, "good test data")
+				So(to.isTerminal(props.Name), ShouldBeTrue)
 			})
 		})
 

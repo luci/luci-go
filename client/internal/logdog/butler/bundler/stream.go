@@ -70,7 +70,8 @@ type streamConfig struct {
 type streamImpl struct {
 	c *streamConfig
 
-	// drained is true if the stream is finished emitting data.
+	// drained is true if the stream is finished emitting data, including its
+	// terminal state.
 	//
 	// It is an atomic value, with zero indicating not drained and non-zero
 	// indicating drained. It should be accessed via isDrained, and set with
@@ -85,9 +86,6 @@ type streamImpl struct {
 	// dataConsumedSignalC is a channel that can be used to signal when data has
 	// been consumed. It is set via signalDataConsumed.
 	dataConsumedSignalC chan struct{}
-	// appendErrValue is an atomically-set error. It will be returned by Append if
-	// an error occurs during stream processing.
-	appendErrValue atomic.Value
 
 	// stateLock protects stream state against concurrent access.
 	stateLock sync.Mutex
@@ -100,6 +98,9 @@ type streamImpl struct {
 	//
 	// stateLock must be held when accessing this field.
 	lastLogEntry *logpb.LogEntry
+	// appendErr is the error that should be returned by Append. It is set when
+	// stream content processing hits a fatal state.
+	appendErr error
 
 	// testAppendWaitCallback, if not nil, is called before Append blocks.
 	// This callback is used for testing coordination.
@@ -169,16 +170,19 @@ func (s *streamImpl) signalDataConsumed() {
 func (s *streamImpl) Close() {
 	s.stateLock.Lock()
 	defer s.stateLock.Unlock()
+	s.closeLocked()
+}
 
+func (s *streamImpl) closeLocked() {
 	s.closed = true
-	s.maybeSetDrainedLocked()
 }
 
 func (s *streamImpl) name() string {
 	return s.c.name
 }
 
-// isDrained returns true if this stream is finished emitting data.
+// isDrained returns true if this stream is finished emitting data, including
+// its terminal state.
 //
 // This can happen if either:
 // - The stream is closed and has no more buffered data, or
@@ -192,30 +196,25 @@ func (s *streamImpl) setDrained() {
 	atomic.StoreInt32(&s.drained, 1)
 }
 
-// maybeSetDrainedLocked evaluates our buffer stream status. If the stream is
-// closed and our buffer is empty, it will set the drained state to true.
+// noMoreDataLocked returns true if our stream has been closed and its buffer
+// is empty.
 //
 // The stream's stateLock must be held when calling this method.
-//
-// The resulting drained state will be returned.
-func (s *streamImpl) maybeSetDrainedLocked() bool {
-	if s.isDrained() {
+func (s *streamImpl) noMoreDataLocked() bool {
+	if !s.closed {
+		return false
+	}
+
+	// If we have an append error, we will no longer accept or consume data.
+	if s.appendErr != nil {
 		return true
 	}
 
-	// Not drained ... should we be?
-	if s.closed {
-		bufSize := int64(0)
-		s.withParserLock(func() {
-			bufSize = s.c.parser.bufferedBytes()
-		})
-		if bufSize == 0 {
-			s.setDrained()
-			return true
-		}
-	}
-
-	return false
+	var bufSize int64
+	s.withParserLock(func() {
+		bufSize = s.c.parser.bufferedBytes()
+	})
+	return bufSize == 0
 }
 
 // expireTime returns the Time when the oldest chunk in the stream will expire.
@@ -247,12 +246,11 @@ func (s *streamImpl) nextBundleEntry(bb *builder, aggressive bool) bool {
 
 	// If we're not drained, try and get the next bundle.
 	modified := false
-	if !s.maybeSetDrainedLocked() {
+	if !s.noMoreDataLocked() {
 		err := error(nil)
 		modified, err = s.nextBundleEntryLocked(bb, aggressive)
 		if err != nil {
-			s.setAppendError(err)
-			s.setDrained()
+			s.setAppendErrorLocked(err)
 		}
 
 		if modified {
@@ -261,8 +259,11 @@ func (s *streamImpl) nextBundleEntry(bb *builder, aggressive bool) bool {
 	}
 
 	// If we're drained, populate our terminal state.
-	if s.maybeSetDrainedLocked() && s.lastLogEntry != nil {
-		bb.setStreamTerminal(&s.c.template, s.lastLogEntry.StreamIndex)
+	if s.noMoreDataLocked() {
+		if s.lastLogEntry != nil {
+			bb.setStreamTerminal(&s.c.template, s.lastLogEntry.StreamIndex)
+		}
+		s.setDrained()
 	}
 
 	return modified
@@ -301,11 +302,10 @@ func (s *streamImpl) nextBundleEntryLocked(bb *builder, aggressive bool) (bool, 
 			bb.add(&s.c.template, le)
 		})
 
-		if !emittedLog {
+		if ierr != nil || !emittedLog {
 			break
 		}
 	}
-
 	return modified, ierr
 }
 
@@ -317,13 +317,15 @@ func (s *streamImpl) withParserLock(f func()) {
 }
 
 func (s *streamImpl) appendError() error {
-	if err := s.appendErrValue.Load(); err != nil {
-		return err.(error)
-	}
-	return nil
+	s.stateLock.Lock()
+	defer s.stateLock.Unlock()
+
+	return s.appendErr
 }
 
-func (s *streamImpl) setAppendError(err error) {
-	s.appendErrValue.Store(err)
+func (s *streamImpl) setAppendErrorLocked(err error) {
+	s.appendErr = err
+
+	s.closeLocked()
 	s.signalDataConsumed()
 }

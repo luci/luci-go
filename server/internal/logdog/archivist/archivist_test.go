@@ -131,6 +131,9 @@ func (w *testGSWriter) Write(d []byte) (int, error) {
 		return 0, err
 	}
 
+	w.client.Lock()
+	defer w.client.Unlock()
+
 	if w.client.objs == nil {
 		w.client.objs = make(map[string]int64)
 	}

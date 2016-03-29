@@ -198,16 +198,6 @@ func TestStream(t *testing.T) {
 
 			Convey(`Is not drained by default`, func() {
 				So(s.isDrained(), ShouldBeFalse)
-
-				Convey(`When closed, is drained.`, func() {
-					s.Close()
-					So(s.isDrained(), ShouldBeTrue)
-
-					Convey(`When closed again, is still drained.`, func() {
-						s.Close()
-						So(s.isDrained(), ShouldBeTrue)
-					})
-				})
 			})
 
 			Convey(`With no data, has no expiration time.`, func() {
@@ -272,7 +262,7 @@ func TestStream(t *testing.T) {
 				terr := errors.New("test error")
 
 				Convey(`Will return the error state.`, func() {
-					s.setAppendError(terr)
+					s.appendErr = terr
 
 					d := data(tc.Now(), bytes.Repeat([]byte{0xAA}, 32)...)
 					So(s.Append(d), ShouldEqual, terr)
@@ -295,7 +285,10 @@ func TestStream(t *testing.T) {
 					// some data and unblock Append().
 					go func() {
 						<-signalC
-						s.setAppendError(terr)
+
+						s.stateLock.Lock()
+						defer s.stateLock.Unlock()
+						s.setAppendErrorLocked(terr)
 					}()
 
 					// Add one chunk so we don't hit the "only byte" condition.

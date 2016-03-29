@@ -11,8 +11,9 @@ import (
 	"runtime"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 const (
@@ -75,11 +76,7 @@ func TestCtxCmd(t *testing.T) {
 				// Make sure that we got a process return value.
 				err := cc.Wait()
 				So(err, ShouldBeNil)
-				So(cc.ProcessError, ShouldNotBeNil)
-
-				ec, ok := ExitCode(cc.ProcessError)
-				So(ok, ShouldBeTrue)
-				So(ec, ShouldEqual, 0)
+				So(cc.ProcessError, ShouldBeNil)
 			})
 		})
 
@@ -124,6 +121,7 @@ func TestCtxCmd(t *testing.T) {
 
 				// Process is ready, go ahead and cancel.
 				cancelFunc()
+
 				So(cc.Wait(), ShouldEqual, context.Canceled)
 
 				So(cc.ProcessError, ShouldHaveSameTypeAs, (*exec.ExitError)(nil))
