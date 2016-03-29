@@ -1,6 +1,6 @@
 # Dockerfile extending the generic Go image with application files for a
 # single application.
-FROM golang:1.4
+FROM golang:1.6
 
 # Copy the local package files to the container's workspace.
 ADD _gopath/src/ /go/src

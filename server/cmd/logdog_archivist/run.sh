@@ -95,12 +95,6 @@ if [ $? != 0 ]; then
   exit 1
 fi
 
-# Get the number of CPUs.
-#
-# TODO(dnj): Remove this when we switch to Go 1.5+.
-NCPU=$(cat /proc/cpuinfo | grep processor | wc -l)
-export GOMAXPROCS="${NCPU}"
-
 # Load metadata (common).
 _load_metadata_check COORDINATOR_HOST "logdog_coordinator_host"
 _load_metadata STORAGE_CREDENTIALS "logdog_storage_auth_json"
