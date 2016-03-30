@@ -69,20 +69,12 @@ func TestCtxCmd(t *testing.T) {
 			})
 
 			Convey(`Cancelling after process exit returns process' exit value.`, func() {
-				waitForFinishC := make(chan struct{})
 				cc.test.finishedCB = func() {
-					close(waitForFinishC)
+					cancelFunc()
 				}
 
-				So(cc.Start(c), ShouldBeNil)
-				<-waitForFinishC
-
-				// Cancel our Context.
-				cancelFunc()
-
 				// Make sure that we got a process return value.
-				err := cc.Wait()
-				So(err, ShouldBeNil)
+				So(cc.Run(c), ShouldBeNil)
 				So(cc.ProcessError, ShouldBeNil)
 			})
 		})

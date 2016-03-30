@@ -5,6 +5,7 @@
 package ctxcmd
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"syscall"
@@ -53,7 +54,11 @@ type CtxCmd struct {
 	// terminate it when it is cancelled. If nil, the os.Kill signal will be sent.
 	CancelSignal os.Signal
 
-	waitC chan *cmdResult
+	// beginWaitC is closed at the beginning of Wait() to indicate that the
+	// process' Wait() should be called. We do this to time our Wait() with our
+	// caller's Wait() invocation so we don't interrupt their process pipes.
+	beginWaitC chan struct{}
+	waitC      chan *cmdResult
 
 	// test is configured during testing to instrument CtxCmd internals. It is
 	// nil during non-testing operation.
@@ -103,6 +108,7 @@ func (cc *CtxCmd) Start(c context.Context) error {
 
 	// Begin Waiting on the process. This is asynchronous and will ultimately
 	// feed back into Wait().
+	beginWaitC := make(chan struct{})
 	finishedC := make(chan *cmdResult, 1)
 	go func() {
 		var r cmdResult
@@ -110,6 +116,7 @@ func (cc *CtxCmd) Start(c context.Context) error {
 			finishedC <- &r
 		}()
 
+		<-beginWaitC
 		r.procErr = cc.Cmd.Wait()
 		r.state = cc.ProcessState
 	}()
@@ -157,6 +164,7 @@ func (cc *CtxCmd) Start(c context.Context) error {
 		}
 	}()
 
+	cc.beginWaitC = beginWaitC
 	cc.waitC = waitC
 	return nil
 }
@@ -166,10 +174,19 @@ func (cc *CtxCmd) Start(c context.Context) error {
 //
 // If the Context was cancelled, this will still block until the process exits.
 func (cc *CtxCmd) Wait() error {
-	r := <-cc.waitC
-	cc.waitC = nil
+	// Detect if we've already performed a Wait.
+	select {
+	case <-cc.beginWaitC:
+		return errors.New("wait has already been called for this process")
+	default:
+		break
+	}
 
-	// Record our process' immediate results.
+	// Signal our internal Wait monitor goroutine to Wait and cleanup.
+	close(cc.beginWaitC)
+
+	// Record our process' Wait result.
+	r := <-cc.waitC
 	cc.ProcessState, cc.ProcessError, cc.CancelError = r.state, r.procErr, r.cancelErr
 
 	// If our process ran, but exited with a non-zero error code, return an error
