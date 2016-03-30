@@ -15,6 +15,7 @@ import (
 	"github.com/luci/luci-go/client/logdog/annotee/annotation"
 	"github.com/luci/luci-go/common/ctxcmd"
 	"github.com/luci/luci-go/common/logdog/types"
+	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/milo"
 	"golang.org/x/net/context"
 )
@@ -62,7 +63,7 @@ type Executor struct {
 // Run executes the bootstrapped process, blocking until it completes.
 func (e *Executor) Run(ctx context.Context, command []string) error {
 	// Clear any previous state.
-	e.returnCode = 0
+	e.returnCode = -1
 	e.steps = nil
 
 	if len(command) == 0 {
@@ -93,15 +94,27 @@ func (e *Executor) Run(ctx context.Context, command []string) error {
 	if err := cmd.Start(ctx); err != nil {
 		return fmt.Errorf("failed to start bootstrapped process: %s", err)
 	}
-	processRunning := true
+
+	// Cleanup the process on exit, and record its status and return code.
 	defer func() {
-		cancelFunc()
-		if processRunning {
-			_ = cmd.Wait()
+		if err := cmd.Wait(); err != nil {
+			switch err.(type) {
+			case *exec.ExitError:
+				status := err.(*exec.ExitError).Sys().(syscall.WaitStatus)
+				e.returnCode = status.ExitStatus()
+				if e.returnCode < 0 {
+					panic(fmt.Errorf("process returned negative return code (%d)", e.returnCode))
+				}
+
+			default:
+				log.WithError(err).Errorf(ctx, "Failed to Wait() for bootstrapped process.")
+			}
+		} else {
+			e.returnCode = 0
 		}
 	}()
 
-	// Infer our execution.
+	// Probe our execution information.
 	options := e.Options
 	if options.Execution == nil {
 		options.Execution = annotation.ProbeExecution(command)
@@ -113,33 +126,23 @@ func (e *Executor) Run(ctx context.Context, command []string) error {
 		stderr,
 	}
 
+	// Process the bootstrapped I/O. We explicitly defer a Finish here to ensure
+	// that we clean up any internal streams if our Processor fails/panics.
+	//
+	// If we fail to process the I/O, terminate the bootstrapped process
+	// immediately, since it may otherwise block forever on I/O.
 	proc := annotee.New(ctx, options)
 	defer proc.Finish()
 
 	if err := proc.RunStreams(streams); err != nil {
-		return fmt.Errorf("failed to run processor: %s", err)
+		cancelFunc()
+		return fmt.Errorf("failed to process bootstrapped I/O: %v", err)
 	}
 
-	// Wait for our command to finish.
-	if err := cmd.Wait(); err != nil {
-		switch err.(type) {
-		case *exec.ExitError:
-			status := err.(*exec.ExitError).Sys().(syscall.WaitStatus)
-			e.returnCode = status.ExitStatus()
-
-		default:
-			return fmt.Errorf("failed to wait for bootstrapped process: %s", err)
-		}
-	} else {
-		e.returnCode = 0
-	}
-	processRunning = false
-
-	// Record our annotation steps.
+	// Finish and record our annotation steps on completion.
 	proc.Finish().ForEachStep(func(s *annotation.Step) {
 		e.steps = append(e.steps, s.Proto())
 	})
-
 	return nil
 }
 
@@ -148,8 +151,10 @@ func (e *Executor) Steps() []*milo.Step {
 	return e.steps
 }
 
-// ReturnCode returns the Executor's return code, or 0 if no execution has
-// occurred.
+// ReturnCode returns the executed process' return code.
+//
+// If the process hasn't completed its execution (Start, Wait), then this will
+// return -1.
 func (e *Executor) ReturnCode() int {
 	return e.returnCode
 }

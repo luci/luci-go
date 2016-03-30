@@ -205,8 +205,10 @@ func mainImpl(args []string) int {
 		e.TeeStderr = os.Stderr
 	}
 	if err := e.Run(a, args); err != nil {
-		log.WithError(err).Errorf(a, "Failed during execution.")
-		return runtimeErrorReturnCode
+		log.Fields{
+			log.ErrorKey: err,
+			"returnCode": e.ReturnCode(),
+		}.Errorf(a, "Failed during execution.")
 	}
 
 	// Display a summary!
@@ -217,7 +219,10 @@ func mainImpl(args []string) int {
 		}
 	}
 
-	return e.ReturnCode()
+	if rc := e.ReturnCode(); rc >= 0 {
+		return rc
+	}
+	return runtimeErrorReturnCode
 }
 
 func main() {
