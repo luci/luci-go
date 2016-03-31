@@ -30,7 +30,7 @@ func makeContext() context.Context {
 func TestMetrics(t *testing.T) {
 	Convey("Int", t, func() {
 		c := makeContext()
-		m := newIntIn(c, "foo", "description")
+		m := NewIntIn(c, "foo", "description")
 
 		v, err := m.Get(c)
 		So(v, ShouldEqual, 0)
@@ -49,12 +49,12 @@ func TestMetrics(t *testing.T) {
 		err = m.Set(c, 42, "field")
 		So(err, ShouldNotBeNil)
 
-		So(func() { newIntIn(c, "foo", "description") }, ShouldPanic)
+		So(func() { NewIntIn(c, "foo", "description") }, ShouldPanic)
 	})
 
 	Convey("Counter", t, func() {
 		c := makeContext()
-		m := newCounterIn(c, "foo", "description")
+		m := NewCounterIn(c, "foo", "description")
 
 		v, err := m.Get(c)
 		So(v, ShouldEqual, 0)
@@ -74,12 +74,12 @@ func TestMetrics(t *testing.T) {
 		So(v, ShouldEqual, 5)
 		So(err, ShouldBeNil)
 
-		So(func() { newCounterIn(c, "foo", "description") }, ShouldPanic)
+		So(func() { NewCounterIn(c, "foo", "description") }, ShouldPanic)
 	})
 
 	Convey("Float", t, func() {
 		c := makeContext()
-		m := newFloatIn(c, "foo", "description")
+		m := NewFloatIn(c, "foo", "description")
 
 		v, err := m.Get(c)
 		So(v, ShouldAlmostEqual, 0.0)
@@ -98,12 +98,12 @@ func TestMetrics(t *testing.T) {
 		err = m.Set(c, 42.3, "field")
 		So(err, ShouldNotBeNil)
 
-		So(func() { newFloatIn(c, "foo", "description") }, ShouldPanic)
+		So(func() { NewFloatIn(c, "foo", "description") }, ShouldPanic)
 	})
 
 	Convey("FloatCounter", t, func() {
 		c := makeContext()
-		m := newFloatCounterIn(c, "foo", "description")
+		m := NewFloatCounterIn(c, "foo", "description")
 
 		v, err := m.Get(c)
 		So(v, ShouldAlmostEqual, 0.0)
@@ -123,12 +123,12 @@ func TestMetrics(t *testing.T) {
 		So(v, ShouldAlmostEqual, 5.3)
 		So(err, ShouldBeNil)
 
-		So(func() { newFloatCounterIn(c, "foo", "description") }, ShouldPanic)
+		So(func() { NewFloatCounterIn(c, "foo", "description") }, ShouldPanic)
 	})
 
 	Convey("String", t, func() {
 		c := makeContext()
-		m := newStringIn(c, "foo", "description")
+		m := NewStringIn(c, "foo", "description")
 
 		v, err := m.Get(c)
 		So(v, ShouldEqual, "")
@@ -147,12 +147,12 @@ func TestMetrics(t *testing.T) {
 		err = m.Set(c, "hello", "field")
 		So(err, ShouldNotBeNil)
 
-		So(func() { newStringIn(c, "foo", "description") }, ShouldPanic)
+		So(func() { NewStringIn(c, "foo", "description") }, ShouldPanic)
 	})
 
 	Convey("Bool", t, func() {
 		c := makeContext()
-		m := newBoolIn(c, "foo", "description")
+		m := NewBoolIn(c, "foo", "description")
 
 		v, err := m.Get(c)
 		So(v, ShouldEqual, false)
@@ -171,12 +171,12 @@ func TestMetrics(t *testing.T) {
 		err = m.Set(c, true, "field")
 		So(err, ShouldNotBeNil)
 
-		So(func() { newBoolIn(c, "foo", "description") }, ShouldPanic)
+		So(func() { NewBoolIn(c, "foo", "description") }, ShouldPanic)
 	})
 
 	Convey("CumulativeDistribution", t, func() {
 		c := makeContext()
-		m := newCumulativeDistributionIn(c, "foo", "description", distribution.FixedWidthBucketer(10, 20))
+		m := NewCumulativeDistributionIn(c, "foo", "description", distribution.FixedWidthBucketer(10, 20))
 
 		v, err := m.Get(c)
 		So(v, ShouldBeNil)
@@ -200,12 +200,12 @@ func TestMetrics(t *testing.T) {
 		So(v.Count(), ShouldEqual, 1)
 		So(err, ShouldBeNil)
 
-		So(func() { newCumulativeDistributionIn(c, "foo", "description", m.Bucketer()) }, ShouldPanic)
+		So(func() { NewCumulativeDistributionIn(c, "foo", "description", m.Bucketer()) }, ShouldPanic)
 	})
 
 	Convey("NonCumulativeDistribution", t, func() {
 		c := makeContext()
-		m := newNonCumulativeDistributionIn(c, "foo", "description", distribution.FixedWidthBucketer(10, 20))
+		m := NewNonCumulativeDistributionIn(c, "foo", "description", distribution.FixedWidthBucketer(10, 20))
 
 		v, err := m.Get(c)
 		So(v, ShouldBeNil)
@@ -231,6 +231,6 @@ func TestMetrics(t *testing.T) {
 		So(v.Count(), ShouldEqual, 1)
 		So(err, ShouldBeNil)
 
-		So(func() { newNonCumulativeDistributionIn(c, "foo", "description", m.Bucketer()) }, ShouldPanic)
+		So(func() { NewNonCumulativeDistributionIn(c, "foo", "description", m.Bucketer()) }, ShouldPanic)
 	})
 }

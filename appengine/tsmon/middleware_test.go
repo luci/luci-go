@@ -37,6 +37,8 @@ func TestMiddleware(t *testing.T) {
 		So(tsmon.Store(c).Incr(c, metric, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
 	}
 
+	lastFlushed.Time = time.Time{}
+
 	Convey("Creates instance entity", t, func() {
 		c, _ := buildGAETestContext()
 		ds := datastore.Get(c)

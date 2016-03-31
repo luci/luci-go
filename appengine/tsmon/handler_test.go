@@ -80,7 +80,7 @@ func buildGAETestContext() (context.Context, testclock.TestClock) {
 	return c, clock
 }
 
-func TestAssignTaskNumbers(t *testing.T) {
+func TestHousekeepingHandler(t *testing.T) {
 	Convey("Assigns task numbers to unassigned instances", t, func() {
 		c, _ := buildGAETestContext()
 
@@ -88,7 +88,7 @@ func TestAssignTaskNumbers(t *testing.T) {
 		So(i.TaskNum, ShouldEqual, -1)
 
 		rec := httptest.NewRecorder()
-		AssignTaskNumbers(c, rec, &http.Request{}, nil)
+		HousekeepingHandler(c, rec, &http.Request{}, nil)
 		So(rec.Code, ShouldEqual, http.StatusOK)
 
 		i = getOrCreateInstanceEntity(c)
@@ -108,7 +108,7 @@ func TestAssignTaskNumbers(t *testing.T) {
 		getOrCreateInstanceEntity(c)
 
 		rec := httptest.NewRecorder()
-		AssignTaskNumbers(c, rec, &http.Request{}, nil)
+		HousekeepingHandler(c, rec, &http.Request{}, nil)
 		So(rec.Code, ShouldEqual, http.StatusOK)
 
 		i := getOrCreateInstanceEntity(c)
@@ -132,7 +132,7 @@ func TestAssignTaskNumbers(t *testing.T) {
 		clock.Add(instanceExpirationTimeout + time.Second)
 
 		rec := httptest.NewRecorder()
-		AssignTaskNumbers(c, rec, &http.Request{}, nil)
+		HousekeepingHandler(c, rec, &http.Request{}, nil)
 		So(rec.Code, ShouldEqual, http.StatusOK)
 
 		exists, err = ds.Exists(ds.NewKey("Instance", "foobar", 0, nil))

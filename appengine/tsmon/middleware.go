@@ -155,6 +155,7 @@ func updateInstanceEntityAndFlush(c context.Context) error {
 	}()
 
 	ret := tsmon.Flush(c)
+	resetGlobalCallbackMetrics(c)
 
 	<-putDone
 	return ret

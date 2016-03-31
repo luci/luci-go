@@ -16,11 +16,21 @@ import (
 	"golang.org/x/net/context"
 )
 
-// AssignTaskNumbers is an HTTP handler that should be run every minute by cron
-// on App Engine.  It does some housekeeping on the datastore entries for App
+// HousekeepingHandler is an HTTP handler that should be run every minute by
+// cron on App Engine.  It assigns task numbers to datastore entries, and runs
+// any global metric callbacks.
+func HousekeepingHandler(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	if err := assignTaskNumbers(c); err != nil {
+		rw.WriteHeader(http.StatusInternalServerError)
+	}
+
+	runGlobalCallbacks(c)
+}
+
+// assignTaskNumbers does some housekeeping on the datastore entries for App
 // Engine instances - assigning unique task numbers to those without ones set,
 // and expiring old entities.
-func AssignTaskNumbers(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func assignTaskNumbers(c context.Context) error {
 	c = info.Get(c).MustNamespace(instanceNamespace)
 	ds := datastore.Get(c)
 
@@ -46,8 +56,7 @@ func AssignTaskNumbers(c context.Context, rw http.ResponseWriter, r *http.Reques
 		}
 	}); err != nil {
 		logging.WithError(err).Errorf(c, "Failed to get Instance entities from datastore")
-		rw.WriteHeader(http.StatusInternalServerError)
-		return
+		return err
 	}
 
 	logger.Debugf("Found %d expired and %d unassigned instances",
@@ -70,7 +79,9 @@ func AssignTaskNumbers(c context.Context, rw http.ResponseWriter, r *http.Reques
 		}
 	}); err != nil {
 		logging.WithError(err).Errorf(c, "Failed to update task numbers")
+		return err
 	}
+	return nil
 }
 
 func gapFinder(used map[int]struct{}) func() int {

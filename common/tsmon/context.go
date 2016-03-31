@@ -26,8 +26,16 @@ type State struct {
 	RegisteredMetrics     map[string]types.Metric
 	RegisteredMetricsLock sync.RWMutex
 
-	CallbacksMutex sync.RWMutex
-	Callbacks      []Callback
+	CallbacksMutex  sync.RWMutex
+	Callbacks       []Callback
+	GlobalCallbacks []GlobalCallback
+}
+
+// A GlobalCallback is a Callback with the list of metrics it affects, so those
+// metrics can be reset after they are flushed.
+type GlobalCallback struct {
+	Callback
+	Metrics []types.Metric
 }
 
 // GetState returns the State instance held in the context (if set) or else
