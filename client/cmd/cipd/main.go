@@ -23,13 +23,15 @@ import (
 	"github.com/maruel/subcommands"
 	gol "github.com/op/go-logging"
 
+	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/logging/gologger"
+
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/client/cipd"
 	"github.com/luci/luci-go/client/cipd/common"
 	"github.com/luci/luci-go/client/cipd/local"
 	"github.com/luci/luci-go/client/cipd/version"
-	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/logging/gologger"
 )
 
 // log is also overwritten in Subcommand's init.
@@ -701,9 +703,10 @@ var cmdPuppetCheckUpdates = &subcommands.Command{
 	LongDesc: "Returns 0 exit code iff 'ensure' will do some actions.\n\n" +
 		"Exists to be used from Puppet's Exec 'onlyif' option to trigger " +
 		"'ensure' only if something is out of date. If puppet-check-updates " +
-		"fails, it returns non-zero exit code (as usual), so that Puppet doesn't " +
-		"trigger notification chain (that can result in service restarts) on " +
-		"transient errors.",
+		"fails with a transient error, it returns non-zero exit code (as usual), " +
+		"so that Puppet doesn't trigger notification chain (that can result in " +
+		"service restarts). On fatal errors it returns 0 to let Puppet run " +
+		"'ensure' for real and catch an error.",
 	CommandRun: func() subcommands.CommandRun {
 		c := &checkUpdatesRun{}
 		c.registerBaseFlags()
@@ -728,7 +731,11 @@ func (c *checkUpdatesRun) Run(a subcommands.Application, args []string) int {
 	}
 	_, actions, err := ensurePackages(c.rootDir, c.listFile, true, c.ServiceOptions)
 	if err != nil {
-		return c.done(actions, err)
+		ret := c.done(actions, err)
+		if errors.IsTransient(err) {
+			return ret // fail as usual
+		}
+		return 0 // on fatal errors ask puppet to run 'ensure' for real
 	}
 	c.done(actions, nil)
 	if actions.Empty() {

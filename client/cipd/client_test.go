@@ -66,7 +66,7 @@ func TestUploadToCAS(t *testing.T) {
 		client := mockClient(c, "", calls)
 		client.storage = &mockedStorage{c, nil}
 		err := client.UploadToCAS("abc", nil, nil, time.Minute)
-		So(err, ShouldEqual, ErrFinalizationTimeout)
+		So(err, ShouldResemble, ErrFinalizationTimeout)
 	})
 }
 
@@ -252,7 +252,7 @@ func TestSetRefWhenReady(t *testing.T) {
 			InstanceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		}
 		err := client.SetRefWhenReady("some-ref", pin)
-		So(err, ShouldEqual, ErrSetRefTimeout)
+		So(err, ShouldResemble, ErrSetRefTimeout)
 	})
 }
 
@@ -308,7 +308,7 @@ func TestAttachTagsWhenReady(t *testing.T) {
 			InstanceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		}
 		err := client.AttachTagsWhenReady(pin, []string{"tag1:value1"})
-		So(err, ShouldEqual, ErrAttachTagsTimeout)
+		So(err, ShouldResemble, ErrAttachTagsTimeout)
 	})
 }
 
