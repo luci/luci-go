@@ -283,9 +283,6 @@ func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.Pu
 		}()
 		if cb != nil {
 			if err := cb(k, err); err != nil {
-				if err == ds.Stop {
-					return nil
-				}
 				return err
 			}
 		}
@@ -358,9 +355,6 @@ func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 			}()
 			if cb != nil {
 				if err := cb(err); err != nil {
-					if err == ds.Stop {
-						return nil
-					}
 					return err
 				}
 			}
@@ -368,9 +362,6 @@ func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 	} else if cb != nil {
 		for range keys {
 			if err := cb(nil); err != nil {
-				if err == ds.Stop {
-					return nil
-				}
 				return err
 			}
 		}

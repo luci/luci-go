@@ -214,7 +214,7 @@ func TestMultiIteratorSimple(t *testing.T) {
 				So(readNum(suffix), ShouldEqual, vals[i][1])
 				i++
 				return nil
-			}), ShouldBeNil)
+			}), shouldBeSuccessful)
 
 			So(i, ShouldEqual, 3)
 		})
@@ -229,7 +229,7 @@ func TestMultiIteratorSimple(t *testing.T) {
 			i := 0
 			So(multiIterate(defs, func(suffix []byte) error {
 				panic("never")
-			}), ShouldBeNil)
+			}), shouldBeSuccessful)
 
 			So(i, ShouldEqual, 0)
 		})
@@ -249,7 +249,7 @@ func TestMultiIteratorSimple(t *testing.T) {
 				So(readNum(suffix), ShouldEqual, expect[i])
 				i++
 				return nil
-			}), ShouldBeNil)
+			}), shouldBeSuccessful)
 		})
 
 		Convey("Can stop early", func() {
@@ -263,7 +263,7 @@ func TestMultiIteratorSimple(t *testing.T) {
 				So(readNum(suffix), ShouldEqual, vals[i][1])
 				i++
 				return nil
-			}), ShouldBeNil)
+			}), shouldBeSuccessful)
 			So(i, ShouldEqual, 5)
 
 			i = 0
@@ -271,7 +271,7 @@ func TestMultiIteratorSimple(t *testing.T) {
 				So(readNum(suffix), ShouldEqual, vals[i][1])
 				i++
 				return datastore.Stop
-			}), ShouldBeNil)
+			}), shouldBeSuccessful)
 			So(i, ShouldEqual, 1)
 		})
 

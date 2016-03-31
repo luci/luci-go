@@ -5,6 +5,7 @@
 package count
 
 import (
+	"github.com/luci/luci-go/common/errors"
 	"golang.org/x/net/context"
 
 	ds "github.com/luci/gae/service/datastore"
@@ -41,7 +42,7 @@ func (r *dsCounter) DecodeCursor(s string) (ds.Cursor, error) {
 }
 
 func (r *dsCounter) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
-	return r.c.Run.up(r.ds.Run(q, cb))
+	return r.c.Run.up(errors.Filter(r.ds.Run(q, cb), ds.Stop))
 }
 
 func (r *dsCounter) Count(q *ds.FinalizedQuery) (int64, error) {
@@ -54,15 +55,15 @@ func (r *dsCounter) RunInTransaction(f func(context.Context) error, opts *ds.Tra
 }
 
 func (r *dsCounter) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
-	return r.c.DeleteMulti.up(r.ds.DeleteMulti(keys, cb))
+	return r.c.DeleteMulti.up(errors.Filter(r.ds.DeleteMulti(keys, cb), ds.Stop))
 }
 
 func (r *dsCounter) GetMulti(keys []*ds.Key, meta ds.MultiMetaGetter, cb ds.GetMultiCB) error {
-	return r.c.GetMulti.up(r.ds.GetMulti(keys, meta, cb))
+	return r.c.GetMulti.up(errors.Filter(r.ds.GetMulti(keys, meta, cb), ds.Stop))
 }
 
 func (r *dsCounter) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
-	return r.c.PutMulti.up(r.ds.PutMulti(keys, vals, cb))
+	return r.c.PutMulti.up(errors.Filter(r.ds.PutMulti(keys, vals, cb), ds.Stop))
 }
 
 func (r *dsCounter) Testable() ds.Testable {

@@ -362,13 +362,13 @@ var queryExecutionTests = []qExTest{
 						So(err, ShouldBeNil)
 						return ds.Stop
 					})
-					So(err, ShouldBeNil)
+					So(err, shouldBeSuccessful)
 
 					err = data.Run(q.Start(curs), func(pm ds.PropertyMap) error {
 						So(pm, ShouldResemble, stage1Data[2])
 						return ds.Stop
 					})
-					So(err, ShouldBeNil)
+					So(err, shouldBeSuccessful)
 				},
 
 				func(c context.Context) {
@@ -519,18 +519,18 @@ func TestQueryExecution(t *testing.T) {
 									err := runner(func(c context.Context) error {
 										data := ds.Get(c)
 										count, err := data.Count(expect.q)
-										So(err, ShouldBeNil)
+										So(err, shouldBeSuccessful)
 										So(count, ShouldEqual, expect.count)
 
 										rslt := []*ds.Key(nil)
-										So(data.GetAll(expect.q, &rslt), ShouldBeNil)
+										So(data.GetAll(expect.q, &rslt), shouldBeSuccessful)
 										So(len(rslt), ShouldEqual, len(expect.keys))
 										for i, r := range rslt {
 											So(r, ShouldResemble, expect.keys[i])
 										}
 										return nil
 									}, &ds.TransactionOptions{XG: true})
-									So(err, ShouldBeNil)
+									So(err, shouldBeSuccessful)
 								})
 							}
 
@@ -539,18 +539,18 @@ func TestQueryExecution(t *testing.T) {
 									err := runner(func(c context.Context) error {
 										data := ds.Get(c)
 										count, err := data.Count(expect.q)
-										So(err, ShouldBeNil)
+										So(err, shouldBeSuccessful)
 										So(count, ShouldEqual, expect.count)
 
 										rslt := []ds.PropertyMap(nil)
-										So(data.GetAll(expect.q, &rslt), ShouldBeNil)
+										So(data.GetAll(expect.q, &rslt), shouldBeSuccessful)
 										So(len(rslt), ShouldEqual, len(expect.get))
 										for i, r := range rslt {
 											So(r, ShouldResemble, expect.get[i])
 										}
 										return nil
 									}, &ds.TransactionOptions{XG: true})
-									So(err, ShouldBeNil)
+									So(err, shouldBeSuccessful)
 								})
 							}
 						}
@@ -579,12 +579,12 @@ func TestQueryExecution(t *testing.T) {
 		So(data.Put(pmap("$key", key("Kind", 1), Next,
 			"Val", 1, 2, 3, Next,
 			"Extra", "hello",
-		)), ShouldBeNil)
+		)), shouldBeSuccessful)
 
 		So(data.Put(pmap("$key", key("Kind", 2), Next,
 			"Val", 2, 3, 9, Next,
 			"Extra", "ace", "hello", "there",
-		)), ShouldBeNil)
+		)), shouldBeSuccessful)
 
 		q := nq("Kind").Gt("Val", 2).Order("Val", "Extra")
 
@@ -594,7 +594,25 @@ func TestQueryExecution(t *testing.T) {
 		testing.AutoIndex(true)
 
 		count, err = data.Count(q)
-		So(err, ShouldBeNil)
+		So(err, shouldBeSuccessful)
 		So(count, ShouldEqual, 2)
 	})
+}
+
+func shouldBeSuccessful(actual interface{}, expected ...interface{}) string {
+	if len(expected) != 0 {
+		return "no expected values permitted"
+	}
+	if actual == nil {
+		return ""
+	}
+
+	v, ok := actual.(error)
+	if !ok {
+		return fmt.Sprintf("type of 'actual' must be error, not %T", actual)
+	}
+	if v == nil || v == ds.Stop {
+		return ""
+	}
+	return fmt.Sprintf("expected success value, not %v", v)
 }

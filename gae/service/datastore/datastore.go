@@ -147,19 +147,20 @@ func (d *datastoreImpl) Run(q *Query, cbIface interface{}) error {
 	}
 
 	if isKey {
-		return d.RawInterface.Run(fq, func(k *Key, _ PropertyMap, gc CursorCB) error {
+		err = d.RawInterface.Run(fq, func(k *Key, _ PropertyMap, gc CursorCB) error {
 			return cb(reflect.ValueOf(k), gc)
 		})
+	} else {
+		err = d.RawInterface.Run(fq, func(k *Key, pm PropertyMap, gc CursorCB) error {
+			itm := mat.newElem()
+			if err := mat.setPM(itm, pm); err != nil {
+				return err
+			}
+			mat.setKey(itm, k)
+			return cb(itm, gc)
+		})
 	}
-
-	return d.RawInterface.Run(fq, func(k *Key, pm PropertyMap, gc CursorCB) error {
-		itm := mat.newElem()
-		if err := mat.setPM(itm, pm); err != nil {
-			return err
-		}
-		mat.setKey(itm, k)
-		return cb(itm, gc)
-	})
+	return filterStop(err)
 }
 
 func (d *datastoreImpl) Count(q *Query) (int64, error) {
@@ -249,7 +250,7 @@ func (d *datastoreImpl) ExistsMulti(keys []*Key) (BoolList, error) {
 	lme := errors.NewLazyMultiError(len(keys))
 	ret := make(BoolList, len(keys))
 	i := 0
-	err := d.RawInterface.GetMulti(keys, nil, func(_ PropertyMap, err error) error {
+	err := filterStop(d.RawInterface.GetMulti(keys, nil, func(_ PropertyMap, err error) error {
 		if err == nil {
 			ret[i] = true
 		} else if err != ErrNoSuchEntity {
@@ -257,7 +258,7 @@ func (d *datastoreImpl) ExistsMulti(keys []*Key) (BoolList, error) {
 		}
 		i++
 		return nil
-	})
+	}))
 	if err != nil {
 		return ret, err
 	}
@@ -299,13 +300,13 @@ func (d *datastoreImpl) GetMulti(dst interface{}) error {
 	lme := errors.NewLazyMultiError(len(keys))
 	i := 0
 	meta := NewMultiMetaGetter(pms)
-	err = d.RawInterface.GetMulti(keys, meta, func(pm PropertyMap, err error) error {
+	err = filterStop(d.RawInterface.GetMulti(keys, meta, func(pm PropertyMap, err error) error {
 		if !lme.Assign(i, err) {
 			lme.Assign(i, mat.setPM(slice.Index(i), pm))
 		}
 		i++
 		return nil
-	})
+	}))
 
 	if err == nil {
 		err = lme.Get()
@@ -324,13 +325,13 @@ func (d *datastoreImpl) PutMulti(src interface{}) error {
 
 	lme := errors.NewLazyMultiError(len(keys))
 	i := 0
-	err = d.RawInterface.PutMulti(keys, vals, func(key *Key, err error) error {
+	err = filterStop(d.RawInterface.PutMulti(keys, vals, func(key *Key, err error) error {
 		if !lme.Assign(i, err) && key != keys[i] {
 			mat.setKey(slice.Index(i), key)
 		}
 		i++
 		return nil
-	})
+	}))
 
 	if err == nil {
 		err = lme.Get()
@@ -341,11 +342,11 @@ func (d *datastoreImpl) PutMulti(src interface{}) error {
 func (d *datastoreImpl) DeleteMulti(keys []*Key) (err error) {
 	lme := errors.NewLazyMultiError(len(keys))
 	i := 0
-	extErr := d.RawInterface.DeleteMulti(keys, func(internalErr error) error {
+	extErr := filterStop(d.RawInterface.DeleteMulti(keys, func(internalErr error) error {
 		lme.Assign(i, internalErr)
 		i++
 		return nil
-	})
+	}))
 	err = lme.Get()
 	if err == nil {
 		err = extErr
@@ -438,4 +439,11 @@ func FindAndParseIndexYAML(path string) ([]*IndexDefinition, error) {
 
 		currentDir = filepath.Dir(currentDir)
 	}
+}
+
+func filterStop(err error) error {
+	if err == Stop {
+		err = nil
+	}
+	return err
 }

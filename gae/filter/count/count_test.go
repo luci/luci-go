@@ -92,6 +92,15 @@ func TestCount(t *testing.T) {
 			So(ctr.GetMulti.Successes(), ShouldEqual, 1)
 			So(ctr.GetMulti.Total(), ShouldEqual, 2)
 		})
+
+		Convey(`datastore.Stop does not count as an error`, func() {
+			fb.BreakFeatures(datastore.Stop, "GetMulti")
+
+			So(ds.GetMulti(vals), ShouldBeNil)
+			So(ctr.GetMulti.Successes(), ShouldEqual, 1)
+			So(ctr.GetMulti.Errors(), ShouldEqual, 0)
+			So(ctr.GetMulti.Total(), ShouldEqual, 1)
+		})
 	})
 
 	Convey("works for memcache", t, func() {
