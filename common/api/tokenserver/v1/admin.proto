@@ -27,6 +27,9 @@ service Admin {
 
   // IsRevokedCert says whether a certificate serial number is in the CRL.
   rpc IsRevokedCert(IsRevokedCertRequest) returns (IsRevokedCertResponse);
+
+  // CheckCertificate says whether a certificate is valid or not.
+  rpc CheckCertificate(CheckCertificateRequest) returns (CheckCertificateResponse);
 }
 
 // ImportConfigResponse is returned by ImportConfig on success.
@@ -73,6 +76,17 @@ message IsRevokedCertRequest {
 // IsRevokedCertResponse is returned by IsRevokedCert
 message IsRevokedCertResponse {
   bool revoked = 1; // true if the cert with given SN is in CRL
+}
+
+// CheckCertificateRequest contains a pem encoded certificate to check.
+message CheckCertificateRequest {
+  string cert_pem = 1; // pem encoded certificate to check for validity
+}
+
+// CheckCertificateResponse is returned by CheckCertificate.
+message CheckCertificateResponse {
+  bool is_valid = 1;         // true when certificate is valid
+  string invalid_reason = 2; // a reason for certificate invalidity if it is invalid
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -6,6 +6,8 @@
 package model
 
 import (
+	"crypto/x509"
+
 	"github.com/golang/protobuf/proto"
 
 	"github.com/luci/luci-go/common/api/tokenserver/v1"
@@ -39,6 +41,16 @@ type CA struct {
 	AddedRev   string `gae:",noindex"` // config rev when this CA appeared
 	UpdatedRev string `gae:",noindex"` // config rev when this CA was updated
 	RemovedRev string `gae:",noindex"` // config rev when it was removed
+
+	// ParsedConfig is parsed Config.
+	//
+	// Populated if CA is fetched through CertChecker.
+	ParsedConfig *tokenserver.CertificateAuthorityConfig `gae:"-"`
+
+	// ParsedCert is parsed Cert.
+	//
+	// Populated if CA is fetched through CertChecker.
+	ParsedCert *x509.Certificate `gae:"-"`
 }
 
 // ParseConfig parses proto message stored in Config.

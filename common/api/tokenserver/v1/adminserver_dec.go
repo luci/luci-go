@@ -48,3 +48,11 @@ func (s *DecoratedAdmin) IsRevokedCert(c context.Context, req *IsRevokedCertRequ
 	}
 	return s.Service.IsRevokedCert(c, req)
 }
+
+func (s *DecoratedAdmin) CheckCertificate(c context.Context, req *CheckCertificateRequest) (*CheckCertificateResponse, error) {
+	c, err := s.Prelude(c, "CheckCertificate", req)
+	if err != nil {
+		return nil, err
+	}
+	return s.Service.CheckCertificate(c, req)
+}

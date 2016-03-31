@@ -8,10 +8,12 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	"golang.org/x/net/context"
+
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/proccache"
 	"github.com/luci/luci-go/server/secrets/testsecrets"
-	"golang.org/x/net/context"
 )
 
 // BaseTest adapts a middleware-style handler to a httprouter.Handle. It passes
@@ -29,5 +31,6 @@ func TestingContext() context.Context {
 	c := context.Background()
 	c = memory.Use(c)
 	c = testsecrets.Use(c)
+	c = proccache.Use(c, &proccache.Cache{})
 	return c
 }

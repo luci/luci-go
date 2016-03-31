@@ -30,6 +30,7 @@ import (
 	google_protobuf "github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/stringset"
 
+	"github.com/luci/luci-go/appengine/cmd/tokenserver/certchecker"
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/model"
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/utils"
 	"github.com/luci/luci-go/common/api/tokenserver/v1"
@@ -234,13 +235,55 @@ func (s *Server) IsRevokedCert(c context.Context, r *tokenserver.IsRevokedCertRe
 	if _, ok := sn.SetString(r.Sn, 0); !ok {
 		return nil, grpc.Errorf(codes.InvalidArgument, "can't parse 'sn'")
 	}
-	// TODO(vadimsh): Reuse CRLChecker between requests.
-	checker := model.NewCRLChecker(r.Ca, model.CRLShardCount, 15*time.Second)
-	revoked, err := checker.IsRevokedSN(c, &sn)
+
+	checker, err := certchecker.GetCertChecker(c, r.Ca)
+	if err != nil {
+		if details, ok := err.(certchecker.Error); ok && details.Reason == certchecker.NoSuchCA {
+			return nil, grpc.Errorf(codes.NotFound, "no such CA: %q", r.Ca)
+		}
+		return nil, grpc.Errorf(codes.Internal, "failed to check %q CRL - %s", r.Ca, err)
+	}
+
+	revoked, err := checker.CRL.IsRevokedSN(c, &sn)
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "failed to check %q CRL - %s", r.Ca, err)
 	}
+
 	return &tokenserver.IsRevokedCertResponse{Revoked: revoked}, nil
+}
+
+// CheckCertificate says whether a certificate is valid or not.
+func (s *Server) CheckCertificate(c context.Context, r *tokenserver.CheckCertificateRequest) (*tokenserver.CheckCertificateResponse, error) {
+	// Deserialize the cert.
+	der, err := utils.ParsePEM(r.CertPem, "CERTIFICATE")
+	if err != nil {
+		return nil, grpc.Errorf(codes.InvalidArgument, "can't parse 'cert_pem' - %s", err)
+	}
+	cert, err := x509.ParseCertificate(der)
+	if err != nil {
+		return nil, grpc.Errorf(codes.InvalidArgument, "can't parse 'cert-pem' - %s", err)
+	}
+
+	// Find a checker for the CA that signed the cert, check the certificate.
+	checker, err := certchecker.GetCertChecker(c, cert.Issuer.CommonName)
+	if err == nil {
+		err = checker.CheckCertificate(c, cert)
+		if err == nil {
+			return &tokenserver.CheckCertificateResponse{
+				IsValid: true,
+			}, nil
+		}
+	}
+
+	// Recognize error codes related to CA cert checking. Everything else is
+	// transient errors.
+	if details, ok := err.(certchecker.Error); ok {
+		return &tokenserver.CheckCertificateResponse{
+			IsValid:       false,
+			InvalidReason: details.Error(),
+		}, nil
+	}
+	return nil, grpc.Errorf(codes.Internal, "failed to check the certificate - %s", err)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
