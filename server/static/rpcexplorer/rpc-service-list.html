@@ -19,7 +19,7 @@
         <li>
           <a is="html5-history-anchor" pushstate popstate
               href="[[service.name]]/">[[service.name]]</a>
-          <span class="text-muted comment">[[service.comments]]</span>
+          <span class="text-muted comment">[[_comment(service)]]</span>
         </li>
       </template>
     </ul>
@@ -57,6 +57,16 @@
           }
         }
         return result;
+      },
+
+      _comment: function(service) {
+        // A.B.C.D => D.
+        var name = service.name;
+        var idx = name.lastIndexOf('.');
+        if (idx != -1) {
+          name = name.substr(idx+1);
+        }
+        return rpcExplorer.descUtil.normalizeComment(service.comments, name);
       }
     });
   </script>

@@ -197,6 +197,35 @@
           name = name.substr(1);
         }
         return name;
+      },
+
+      normalizeComment: function(comment, titleToStrip) {
+        // Skip any leading whitespace.
+        var i = 0;
+        while (i < comment.length && comment[i] == ' ') {
+          i++;
+        }
+        comment = comment.substr(i);
+
+        // Keep first paragraph only. A paragraph is delimited by '\n\n' or
+        // '.  '.
+        var idx = comment.indexOf('\n\n');
+        if (idx == -1) {
+          idx = comment.indexOf('.  ')
+        }
+        if (idx != -1) {
+          comment = comment.substr(0, idx);
+        }
+
+        // Strip leading title.
+        if (titleToStrip) {
+          var prefix = titleToStrip + ' ';
+          if (comment.substr(0, prefix.length) == prefix) {
+            comment = comment.substr(prefix.length);
+          }
+        }
+
+        return comment;
       }
     };
 

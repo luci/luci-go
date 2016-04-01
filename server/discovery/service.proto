@@ -8,11 +8,11 @@ package discovery;
 
 import "google/protobuf/descriptor.proto";
 
-// Describes services.
+// Discovery describes services.
 service Discovery {
-    // Returns a list of services and a
-    // descriptor.FileDescriptorSet that covers them all.
-    rpc Describe (Void) returns (DescribeResponse) {}
+  // Describe returns a list of services and a descriptor.FileDescriptorSet
+  // that covers them all.
+  rpc Describe (Void) returns (DescribeResponse) {}
 }
 
 // Void is an empty message.
@@ -20,9 +20,9 @@ message Void {}
 
 // DescribeResponse describes services.
 message DescribeResponse {
-    // Description contains descriptions of all services, their types and all
-    // transitive dependencies.
-    google.protobuf.FileDescriptorSet description = 1;
-    // Services are service names provided by a server.
-    repeated string services = 2;
+  // Description contains descriptions of all services, their types and all
+  // transitive dependencies.
+  google.protobuf.FileDescriptorSet description = 1;
+  // Services are service names provided by a server.
+  repeated string services = 2;
 }

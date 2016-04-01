@@ -32,6 +32,10 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+const _ = proto.ProtoPackageIsVersion1
+
 // Void is an empty message.
 type Void struct {
 }
@@ -71,11 +75,15 @@ func init() {
 var _ context.Context
 var _ grpc.ClientConn
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion1
+
 // Client API for Discovery service
 
 type DiscoveryClient interface {
-	// Returns a list of services and a
-	// descriptor.FileDescriptorSet that covers them all.
+	// Describe returns a list of services and a descriptor.FileDescriptorSet
+	// that covers them all.
 	Describe(ctx context.Context, in *Void, opts ...grpc.CallOption) (*DescribeResponse, error)
 }
 type discoveryPRPCClient struct {
@@ -115,8 +123,8 @@ func (c *discoveryClient) Describe(ctx context.Context, in *Void, opts ...grpc.C
 // Server API for Discovery service
 
 type DiscoveryServer interface {
-	// Returns a list of services and a
-	// descriptor.FileDescriptorSet that covers them all.
+	// Describe returns a list of services and a descriptor.FileDescriptorSet
+	// that covers them all.
 	Describe(context.Context, *Void) (*DescribeResponse, error)
 }
 

@@ -20,7 +20,7 @@
           <a is="html5-history-anchor" pushstate popstate
               href="[[method.name]]">[[method.name]]</a>
           <span class="text-muted comment">
-            [[method.source_code_info.leading_comments]]
+            [[_comment(method)]]
           </span>
         </li>
       </template>
@@ -48,6 +48,12 @@
           return null;
         }
         return searchResult.desc;
+      },
+
+      _comment: function(method) {
+        return rpcExplorer.descUtil.normalizeComment(
+            method.source_code_info.leading_comments,
+            method.name);
       }
     });
   </script>
