@@ -119,7 +119,9 @@ func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMu
 	// finally, run the callback for all of the decoded items and the errors,
 	// if any.
 	for i, dec := range p.decoded {
-		cb(dec, p.lme.GetOne(i))
+		if err := cb(dec, p.lme.GetOne(i)); err != nil {
+			return err
+		}
 	}
 
 	return nil

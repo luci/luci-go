@@ -168,7 +168,8 @@ func (d *datastoreImpl) Count(q *Query) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return d.RawInterface.Count(fq)
+	v, err := d.RawInterface.Count(fq)
+	return v, filterStop(err)
 }
 
 func (d *datastoreImpl) GetAll(q *Query, dst interface{}) error {
@@ -204,7 +205,7 @@ func (d *datastoreImpl) GetAll(q *Query, dst interface{}) error {
 
 	errs := map[int]error{}
 	i := 0
-	err = d.RawInterface.Run(fq, func(k *Key, pm PropertyMap, _ CursorCB) error {
+	err = filterStop(d.RawInterface.Run(fq, func(k *Key, pm PropertyMap, _ CursorCB) error {
 		slice.Set(reflect.Append(slice, mat.newElem()))
 		itm := slice.Index(i)
 		mat.setKey(itm, k)
@@ -214,7 +215,7 @@ func (d *datastoreImpl) GetAll(q *Query, dst interface{}) error {
 		}
 		i++
 		return nil
-	})
+	}))
 	if err == nil {
 		if len(errs) > 0 {
 			me := make(errors.MultiError, slice.Len())

@@ -57,6 +57,7 @@ func (f *iterQueryFilter) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
 				if cursor, err = getCursor(); err != nil {
 					return fmt.Errorf("failed to get cursor: %v", err)
 				}
+				return ds.Stop
 			}
 			return nil
 		})

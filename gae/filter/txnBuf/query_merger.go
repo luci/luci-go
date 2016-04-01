@@ -235,9 +235,6 @@ func runMergedQueries(fq *ds.FinalizedQuery, sizes *sizeTracker,
 			}
 		}
 		if err := cb(toUse.key, toUse.data); err != nil {
-			if err == ds.Stop {
-				return nil
-			}
 			return err
 		}
 	}

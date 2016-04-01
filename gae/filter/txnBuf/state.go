@@ -316,12 +316,16 @@ func (t *txnBufState) getMulti(keys []*datastore.Key, metas datastore.MultiMetaG
 
 	for i, itm := range data {
 		err := lme.GetOne(i)
+		var cbErr error
 		if err != nil {
-			cb(nil, err)
+			cbErr = cb(nil, err)
 		} else if itm.data == nil {
-			cb(nil, datastore.ErrNoSuchEntity)
+			cbErr = cb(nil, datastore.ErrNoSuchEntity)
 		} else {
-			cb(itm.data, nil)
+			cbErr = cb(itm.data, nil)
+		}
+		if cbErr != nil {
+			return cbErr
 		}
 	}
 	return nil
@@ -355,7 +359,9 @@ func (t *txnBufState) deleteMulti(keys []*datastore.Key, cb datastore.DeleteMult
 	}
 
 	for range keys {
-		cb(nil)
+		if err := cb(nil); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -392,7 +398,9 @@ func (t *txnBufState) putMulti(keys []*datastore.Key, vals []datastore.PropertyM
 	keys, err := t.fixKeys(keys)
 	if err != nil {
 		for _, e := range err.(errors.MultiError) {
-			cb(nil, e)
+			if err := cb(nil, e); err != nil {
+				return err
+			}
 		}
 		return nil
 	}
@@ -424,7 +432,9 @@ func (t *txnBufState) putMulti(keys []*datastore.Key, vals []datastore.PropertyM
 	}
 
 	for _, k := range keys {
-		cb(k, nil)
+		if err := cb(k, nil); err != nil {
+			return err
+		}
 	}
 	return nil
 }
