@@ -9,15 +9,15 @@ import (
 	google_protobuf "github.com/luci/luci-go/common/proto/google"
 )
 
-type DecoratedAdmin struct {
+type DecoratedCertificateAuthorities struct {
 	// Service is the service to decorate.
-	Service AdminServer
+	Service CertificateAuthoritiesServer
 	// Prelude is called in each method before forwarding the call to Service.
 	// If Prelude returns an error, it is returned without forwarding the call.
 	Prelude func(c context.Context, methodName string, req proto.Message) (context.Context, error)
 }
 
-func (s *DecoratedAdmin) ImportConfig(c context.Context, req *google_protobuf.Empty) (*ImportConfigResponse, error) {
+func (s *DecoratedCertificateAuthorities) ImportConfig(c context.Context, req *google_protobuf.Empty) (*ImportConfigResponse, error) {
 	c, err := s.Prelude(c, "ImportConfig", req)
 	if err != nil {
 		return nil, err
@@ -25,7 +25,7 @@ func (s *DecoratedAdmin) ImportConfig(c context.Context, req *google_protobuf.Em
 	return s.Service.ImportConfig(c, req)
 }
 
-func (s *DecoratedAdmin) FetchCRL(c context.Context, req *FetchCRLRequest) (*FetchCRLResponse, error) {
+func (s *DecoratedCertificateAuthorities) FetchCRL(c context.Context, req *FetchCRLRequest) (*FetchCRLResponse, error) {
 	c, err := s.Prelude(c, "FetchCRL", req)
 	if err != nil {
 		return nil, err
@@ -33,7 +33,7 @@ func (s *DecoratedAdmin) FetchCRL(c context.Context, req *FetchCRLRequest) (*Fet
 	return s.Service.FetchCRL(c, req)
 }
 
-func (s *DecoratedAdmin) ListCAs(c context.Context, req *google_protobuf.Empty) (*ListCAsResponse, error) {
+func (s *DecoratedCertificateAuthorities) ListCAs(c context.Context, req *google_protobuf.Empty) (*ListCAsResponse, error) {
 	c, err := s.Prelude(c, "ListCAs", req)
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func (s *DecoratedAdmin) ListCAs(c context.Context, req *google_protobuf.Empty) 
 	return s.Service.ListCAs(c, req)
 }
 
-func (s *DecoratedAdmin) GetCAStatus(c context.Context, req *GetCAStatusRequest) (*GetCAStatusResponse, error) {
+func (s *DecoratedCertificateAuthorities) GetCAStatus(c context.Context, req *GetCAStatusRequest) (*GetCAStatusResponse, error) {
 	c, err := s.Prelude(c, "GetCAStatus", req)
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func (s *DecoratedAdmin) GetCAStatus(c context.Context, req *GetCAStatusRequest)
 	return s.Service.GetCAStatus(c, req)
 }
 
-func (s *DecoratedAdmin) IsRevokedCert(c context.Context, req *IsRevokedCertRequest) (*IsRevokedCertResponse, error) {
+func (s *DecoratedCertificateAuthorities) IsRevokedCert(c context.Context, req *IsRevokedCertRequest) (*IsRevokedCertResponse, error) {
 	c, err := s.Prelude(c, "IsRevokedCert", req)
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func (s *DecoratedAdmin) IsRevokedCert(c context.Context, req *IsRevokedCertRequ
 	return s.Service.IsRevokedCert(c, req)
 }
 
-func (s *DecoratedAdmin) CheckCertificate(c context.Context, req *CheckCertificateRequest) (*CheckCertificateResponse, error) {
+func (s *DecoratedCertificateAuthorities) CheckCertificate(c context.Context, req *CheckCertificateRequest) (*CheckCertificateResponse, error) {
 	c, err := s.Prelude(c, "CheckCertificate", req)
 	if err != nil {
 		return nil, err

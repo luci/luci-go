@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 //go:generate cproto
-//go:generate svcdec -type AdminServer
+//go:generate svcdec -type CertificateAuthoritiesServer
 
 // Package tokenserver contains The Token Server API definitions.
 package tokenserver

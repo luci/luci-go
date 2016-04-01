@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Package admin contains implementation of various administrative procedures.
+// Package certauthorities implements CertificateAuthorities API.
 //
 // Code defined here is either invoked by an administrator or by the service
 // itself (via cron jobs or task queues).
-package admin
+package certauthorities
 
 import (
 	"bytes"
@@ -36,10 +36,9 @@ import (
 	"github.com/luci/luci-go/common/api/tokenserver/v1"
 )
 
-// Server implements tokenserver.AdminServer RPC interface.
+// Server implements tokenserver.CertificateAuthoritiesServer RPC interface.
 //
-// It assumes authorization has happened already. Use DecoratedAdmin to plug it
-// in.
+// It assumes authorization has happened already.
 type Server struct {
 	// ConfigFactory returns instances of config.Interface on demand.
 	ConfigFactory func(context.Context) (config.Interface, error)

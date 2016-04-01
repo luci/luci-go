@@ -10,8 +10,9 @@ import "config.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
-// Admin service can be used by service administrators to manage token server.
-service Admin {
+// CertificateAuthorities can be used by service administrators to manage and
+// inspect CAs used by The Token Server.
+service CertificateAuthorities {
   // ImportConfig makes the server read its config from luci-config right now.
   //
   // Note that regularly configs are read in background each 5 min. ImportConfig

@@ -31,13 +31,13 @@ import (
 	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/prpc"
 
-	"github.com/luci/luci-go/appengine/cmd/tokenserver/services/admin"
+	"github.com/luci/luci-go/appengine/cmd/tokenserver/services/certauthorities"
 	"github.com/luci/luci-go/common/api/tokenserver/v1"
 )
 
 var (
-	// adminServer is implementer of tokenserver.Admin RPC interface.
-	adminServer = &admin.Server{
+	// caServer is implementer of tokenserver.CertificateAuthorities RPC interface.
+	caServer = &certauthorities.Server{
 		ConfigFactory: func(c context.Context) (config.Interface, error) {
 			// Use fake config data on dev server for simplicity.
 			inf := info.Get(c)
@@ -48,11 +48,11 @@ var (
 		},
 	}
 
-	// adminServerWithAuth wraps adminServer adding admin check.
-	adminServerWithAuth = &tokenserver.DecoratedAdmin{
-		Service: adminServer,
+	// caServerWithAuth wraps caServer adding admin check.
+	caServerWithAuth = &tokenserver.DecoratedCertificateAuthorities{
+		Service: caServer,
 		Prelude: func(c context.Context, method string, _ proto.Message) (context.Context, error) {
-			logging.Infof(c, "tokenserver.Admin: %q is calling %q", auth.CurrentIdentity(c), method)
+			logging.Infof(c, "tokenserver.CertificateAuthorities: %q is calling %q", auth.CurrentIdentity(c), method)
 			switch admin, err := auth.IsMember(c, "administrators"); {
 			case err != nil:
 				return nil, grpc.Errorf(codes.Internal, "can't check ACL - %s", err)
@@ -91,7 +91,7 @@ func init() {
 
 	// Install all RPC servers.
 	var api prpc.Server
-	tokenserver.RegisterAdminServer(&api, adminServerWithAuth)
+	tokenserver.RegisterCertificateAuthoritiesServer(&api, caServerWithAuth)
 	discovery.Enable(&api)
 	api.InstallHandlers(router, base)
 
@@ -111,7 +111,7 @@ func warmupHandler(c context.Context, w http.ResponseWriter, r *http.Request, _ 
 
 // readConfigCron is handler for /internal/cron/read-config GAE cron task.
 func readConfigCron(c context.Context, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	if _, err := adminServer.ImportConfig(c, nil); err != nil {
+	if _, err := caServer.ImportConfig(c, nil); err != nil {
 		panic(err) // let panic catcher deal with it
 	}
 	w.WriteHeader(http.StatusOK)
@@ -119,7 +119,7 @@ func readConfigCron(c context.Context, w http.ResponseWriter, r *http.Request, _
 
 // fetchCRLCron is handler for /internal/cron/fetch-crl GAE cron task.
 func fetchCRLCron(c context.Context, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	list, err := adminServer.ListCAs(c, nil)
+	list, err := caServer.ListCAs(c, nil)
 	if err != nil {
 		panic(err) // let panic catcher deal with it
 	}
@@ -132,7 +132,7 @@ func fetchCRLCron(c context.Context, w http.ResponseWriter, r *http.Request, _ h
 		wg.Add(1)
 		go func(i int, cn string) {
 			defer wg.Done()
-			_, err := adminServer.FetchCRL(c, &tokenserver.FetchCRLRequest{Cn: cn})
+			_, err := caServer.FetchCRL(c, &tokenserver.FetchCRLRequest{Cn: cn})
 			if err != nil {
 				logging.Errorf(c, "FetchCRL(%q) failed - %s", cn, err)
 				errs[i] = err
