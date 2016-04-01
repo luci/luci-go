@@ -155,7 +155,7 @@ func wrapTransient(err error) error {
 // Since the BigTable API doesn't give us this information, we will identify
 // transient errors by parsing their error string :(
 func isTransient(err error) bool {
-	return grpcutil.IsTransient(err)
+	return (err != errStop) && grpcutil.IsTransient(err)
 }
 
 // getLogData loads the logColumn column from the logColumnFamily column family

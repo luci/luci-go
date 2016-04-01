@@ -49,7 +49,7 @@ const (
 
 // errStop is an internal sentinel error used to indicate "stop iteration"
 // to btTable.getLogData iterator. It will
-var errStop = errors.New("stop")
+var errStop = errors.New("bigtable: stop iteration")
 
 // Options is a set of configuration options for BigTable storage.
 type Options struct {
