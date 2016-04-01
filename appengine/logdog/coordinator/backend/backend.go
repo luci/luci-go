@@ -11,6 +11,12 @@ import (
 	"github.com/luci/luci-go/server/middleware"
 )
 
+const (
+	// defaultMultiTaskBatchSize is the default value for Backend's
+	// multiTaskBatchSize parameter.
+	defaultMultiTaskBatchSize = 100
+)
+
 // Backend is the base struct for all Backend handlers. It is mostly used to
 // configure testing parameters.
 type Backend struct {
@@ -19,6 +25,13 @@ type Backend struct {
 
 	// s is the backing Coordinator service base.
 	s coordinator.Service
+}
+
+func (b *Backend) getMultiTaskBatchSize() int {
+	if v := b.multiTaskBatchSize; v > 0 {
+		return v
+	}
+	return defaultMultiTaskBatchSize
 }
 
 // InstallHandlers installs handlers for the Backend.

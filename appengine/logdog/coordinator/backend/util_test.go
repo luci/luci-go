@@ -5,7 +5,6 @@
 package backend
 
 import (
-	"fmt"
 	"net/http"
 	"sort"
 
@@ -49,5 +48,5 @@ func shouldHaveTasks(actual interface{}, expected ...interface{}) string {
 }
 
 func archiveTaskName(path string) string {
-	return fmt.Sprintf("archive-%s", coordinator.LogStreamFromPath(types.StreamPath(path)).HashID())
+	return archiveTaskNameForHash(coordinator.LogStreamFromPath(types.StreamPath(path)).HashID())
 }
