@@ -22,6 +22,9 @@ service Admin {
   // FetchCRL makes the server fetch a CRL for some CA.
   rpc FetchCRL(FetchCRLRequest) returns (FetchCRLResponse);
 
+  // ListCAs returns a list of Common Names of registered CAs.
+  rpc ListCAs(google.protobuf.Empty) returns (ListCAsResponse);
+
   // GetCAStatus returns configuration of some CA defined in the config.
   rpc GetCAStatus(GetCAStatusRequest) returns (GetCAStatusResponse);
 
@@ -46,6 +49,11 @@ message FetchCRLRequest {
 // FetchCRLResponse is returned by FetchCRL.
 message FetchCRLResponse {
   CRLStatus crl_status = 1; // status of the CRL after the fetch
+}
+
+// ListCAsResponse is returned by ListCAs.
+message ListCAsResponse {
+  repeated string cn = 1; // Common Name of the CA
 }
 
 // GetCAStatusRequest identifies a name of CA to fetch.

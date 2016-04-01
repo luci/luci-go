@@ -185,6 +185,25 @@ func (s *Server) FetchCRL(c context.Context, r *tokenserver.FetchCRLRequest) (*t
 	return &tokenserver.FetchCRLResponse{CrlStatus: crl.GetStatusProto()}, nil
 }
 
+// ListCAs returns a list of Common Names of registered CAs.
+func (s *Server) ListCAs(c context.Context, _ *google_protobuf.Empty) (*tokenserver.ListCAsResponse, error) {
+	ds := datastore.Get(c)
+	keys := []*datastore.Key{}
+
+	q := datastore.NewQuery("CA").Eq("Removed", false).KeysOnly(true)
+	if err := ds.GetAll(q, &keys); err != nil {
+		return nil, grpc.Errorf(codes.Internal, "transient datastore error - %s", err)
+	}
+
+	resp := &tokenserver.ListCAsResponse{
+		Cn: make([]string, len(keys)),
+	}
+	for i, key := range keys {
+		resp.Cn[i] = key.StringID()
+	}
+	return resp, nil
+}
+
 // GetCAStatus returns configuration of some CA defined in the config.
 func (s *Server) GetCAStatus(c context.Context, r *tokenserver.GetCAStatusRequest) (*tokenserver.GetCAStatusResponse, error) {
 	ds := datastore.Get(c)

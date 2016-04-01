@@ -112,6 +112,11 @@ func TestImportConfig(t *testing.T) {
 		ctx := gaetesting.TestingContext()
 		srv := &Server{}
 
+		// Nothing there.
+		listResp, err := srv.ListCAs(ctx, nil)
+		So(err, ShouldBeNil)
+		So(listResp.Cn, ShouldResemble, []string{})
+
 		// Import fake.ca first.
 		srv.ConfigFactory = prepareCfg(ctx, `
 			certificate_authority {
@@ -119,10 +124,15 @@ func TestImportConfig(t *testing.T) {
 				cert_path: "certs/fake.ca.crt"
 			}
 		`)
-		_, err := srv.ImportConfig(ctx, nil)
+		_, err = srv.ImportConfig(ctx, nil)
 		So(err, ShouldBeNil)
 
 		datastore.Get(ctx).Testable().CatchupIndexes()
+
+		// Appears.
+		listResp, err = srv.ListCAs(ctx, nil)
+		So(err, ShouldBeNil)
+		So(listResp.Cn, ShouldResemble, []string{"Puppet CA: fake.ca"})
 
 		// Replace it with another-fake.ca.
 		srv.ConfigFactory = prepareCfg(ctx, `
@@ -133,6 +143,8 @@ func TestImportConfig(t *testing.T) {
 		`)
 		rev, err := srv.ImportConfig(ctx, nil)
 		So(err, ShouldBeNil)
+
+		datastore.Get(ctx).Testable().CatchupIndexes()
 
 		// fake.ca is removed.
 		resp, err := srv.GetCAStatus(ctx, &tokenserver.GetCAStatusRequest{
@@ -148,6 +160,11 @@ func TestImportConfig(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 		So(resp.AddedRev, ShouldEqual, rev.Revision)
+
+		// Listing shows only active CAs.
+		listResp, err = srv.ListCAs(ctx, nil)
+		So(err, ShouldBeNil)
+		So(listResp.Cn, ShouldResemble, []string{"Puppet CA: another-fake.ca"})
 	})
 
 	Convey("rejects duplicates", t, func() {

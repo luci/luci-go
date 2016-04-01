@@ -33,6 +33,14 @@ func (s *DecoratedAdmin) FetchCRL(c context.Context, req *FetchCRLRequest) (*Fet
 	return s.Service.FetchCRL(c, req)
 }
 
+func (s *DecoratedAdmin) ListCAs(c context.Context, req *google_protobuf.Empty) (*ListCAsResponse, error) {
+	c, err := s.Prelude(c, "ListCAs", req)
+	if err != nil {
+		return nil, err
+	}
+	return s.Service.ListCAs(c, req)
+}
+
 func (s *DecoratedAdmin) GetCAStatus(c context.Context, req *GetCAStatusRequest) (*GetCAStatusResponse, error) {
 	c, err := s.Prelude(c, "GetCAStatus", req)
 	if err != nil {
