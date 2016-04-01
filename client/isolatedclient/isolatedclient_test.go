@@ -5,7 +5,6 @@
 package isolatedclient
 
 import (
-	"bytes"
 	"io"
 	"log"
 	"math/rand"
@@ -78,7 +77,7 @@ func TestIsolateServerRetryGCSPartial(t *testing.T) {
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, len(digests), len(states))
 	for _, state := range states {
-		err = client.Push(state, bytes.NewReader(contents[state.status.Index]))
+		err = client.Push(state, NewBytesSource(contents[state.status.Index]))
 		ut.AssertEqual(t, nil, err)
 	}
 	ut.AssertEqual(t, expected, server.Contents())
@@ -158,7 +157,7 @@ func testNormal(t *testing.T, contents ...[]byte) {
 	ut.AssertEqual(t, len(digests), len(states))
 	for _, state := range states {
 		// The data is automatically compressed.
-		err = client.Push(state, bytes.NewReader(contents[state.status.Index]))
+		err = client.Push(state, NewBytesSource(contents[state.status.Index]))
 		ut.AssertEqual(t, nil, err)
 	}
 	ut.AssertEqual(t, nil, server.Error())
@@ -184,7 +183,7 @@ func testFlaky(t *testing.T, flake string) {
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, len(digests), len(states))
 	for _, state := range states {
-		err = client.Push(state, bytes.NewReader(contents[state.status.Index]))
+		err = client.Push(state, NewBytesSource(contents[state.status.Index]))
 		ut.AssertEqual(t, nil, err)
 	}
 	ut.AssertEqual(t, expected, server.Contents())

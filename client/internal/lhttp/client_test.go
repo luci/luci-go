@@ -20,6 +20,16 @@ import (
 	"github.com/maruel/ut"
 )
 
+func httpReqGen(method, url string, body []byte) RequestGen {
+	return func() (*http.Request, error) {
+		var bodyReader io.Reader
+		if body != nil {
+			bodyReader = bytes.NewReader(body)
+		}
+		return http.NewRequest("GET", url, bodyReader)
+	}
+}
+
 func TestNewRequestGET(t *testing.T) {
 	// First call returns HTTP 500, second succeeds.
 	serverCalls := 0
@@ -36,11 +46,10 @@ func TestNewRequestGET(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	httpReq, err := http.NewRequest("GET", ts.URL, nil)
-	ut.AssertEqual(t, nil, err)
+	httpReq := httpReqGen("GET", ts.URL, nil)
 
 	clientCalls := 0
-	clientReq, err := NewRequest(http.DefaultClient, httpReq, func(resp *http.Response) error {
+	clientReq := NewRequest(http.DefaultClient, httpReq, func(resp *http.Response) error {
 		clientCalls++
 		content, err := ioutil.ReadAll(resp.Body)
 		ut.AssertEqual(t, nil, err)
@@ -48,7 +57,6 @@ func TestNewRequestGET(t *testing.T) {
 		ut.AssertEqual(t, nil, resp.Body.Close())
 		return nil
 	})
-	ut.AssertEqual(t, nil, err)
 
 	ut.AssertEqual(t, nil, fast.Do(clientReq))
 	ut.AssertEqual(t, 200, clientReq.Status())
@@ -73,11 +81,10 @@ func TestNewRequestPOST(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	httpReq, err := http.NewRequest("POST", ts.URL, newReader([]byte("foo bar")))
-	ut.AssertEqual(t, nil, err)
+	httpReq := httpReqGen("POST", ts.URL, []byte("foo bar"))
 
 	clientCalls := 0
-	clientReq, err := NewRequest(http.DefaultClient, httpReq, func(resp *http.Response) error {
+	clientReq := NewRequest(http.DefaultClient, httpReq, func(resp *http.Response) error {
 		clientCalls++
 		content, err := ioutil.ReadAll(resp.Body)
 		ut.AssertEqual(t, nil, err)
@@ -85,42 +92,11 @@ func TestNewRequestPOST(t *testing.T) {
 		ut.AssertEqual(t, nil, resp.Body.Close())
 		return nil
 	})
-	ut.AssertEqual(t, nil, err)
 
 	ut.AssertEqual(t, nil, fast.Do(clientReq))
 	ut.AssertEqual(t, 200, clientReq.Status())
 	ut.AssertEqual(t, 2, serverCalls)
 	ut.AssertEqual(t, 1, clientCalls)
-}
-
-func TestNewRequestNotSeeker(t *testing.T) {
-	// bytes.NewReader() doesn't implement io.Seeker.
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Fail()
-	}))
-	defer ts.Close()
-	httpReq, err := http.NewRequest("POST", ts.URL, bytes.NewReader([]byte("foo bar")))
-	ut.AssertEqual(t, nil, err)
-
-	clientReq, err := NewRequest(http.DefaultClient, httpReq, func(resp *http.Response) error {
-		t.Fail()
-		return nil
-	})
-
-	ut.AssertEqual(t, nil, clientReq)
-	ut.AssertEqual(t, errors.New("req.Body must implement io.Seeker"), err)
-}
-
-func TestNewRequestBadURL(t *testing.T) {
-	httpReq, err := http.NewRequest("GET", "invalid url", nil)
-	ut.AssertEqual(t, nil, err)
-
-	clientReq, err := NewRequest(http.DefaultClient, httpReq, func(resp *http.Response) error {
-		t.Fail()
-		return nil
-	})
-	ut.AssertEqual(t, errors.New("unsupported protocol scheme \"\""), err)
-	ut.AssertEqual(t, nil, clientReq)
 }
 
 func TestNewRequestGETFail(t *testing.T) {
@@ -131,10 +107,9 @@ func TestNewRequestGETFail(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	httpReq, err := http.NewRequest("GET", ts.URL, nil)
-	ut.AssertEqual(t, nil, err)
+	httpReq := httpReqGen("GET", ts.URL, nil)
 
-	clientReq, err := NewRequest(http.DefaultClient, httpReq, func(resp *http.Response) error {
+	clientReq := NewRequest(http.DefaultClient, httpReq, func(resp *http.Response) error {
 		t.Fail()
 		return nil
 	})
@@ -142,14 +117,6 @@ func TestNewRequestGETFail(t *testing.T) {
 	ut.AssertEqual(t, retry.Error{errors.New("http request failed: Internal Server Error (HTTP 500)")}, fast.Do(clientReq))
 	ut.AssertEqual(t, 500, clientReq.Status())
 	ut.AssertEqual(t, fast.MaxTries, serverCalls)
-}
-
-func TestNewRequestJSONBadURL(t *testing.T) {
-	clientReq, err := NewRequestJSON(http.DefaultClient, "GET", "invalid url", nil, nil, nil)
-	if err == nil {
-		t.Fatalf("NewRequestJSON should have failed, but it didn't")
-	}
-	ut.AssertEqual(t, nil, clientReq)
 }
 
 func TestGetJSON(t *testing.T) {

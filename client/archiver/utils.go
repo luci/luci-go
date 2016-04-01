@@ -15,6 +15,7 @@ import (
 	"sync"
 
 	"github.com/luci/luci-go/client/internal/tracer"
+	"github.com/luci/luci-go/client/isolatedclient"
 	"github.com/luci/luci-go/common/isolated"
 )
 
@@ -252,7 +253,7 @@ func PushDirectory(a Archiver, root string, relDir string, blacklist []string) F
 		if err == nil {
 			raw := &bytes.Buffer{}
 			if err = json.NewEncoder(raw).Encode(i); err == nil {
-				if f := a.Push(displayName, bytes.NewReader(raw.Bytes()), 0); f != nil {
+				if f := a.Push(displayName, isolatedclient.NewBytesSource(raw.Bytes()), 0); f != nil {
 					f.WaitForHashed()
 					err = f.Error()
 					d = f.Digest()

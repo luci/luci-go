@@ -5,7 +5,6 @@
 package archiver
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -86,7 +85,7 @@ func TestArchiverFileHit(t *testing.T) {
 	defer ts.Close()
 	a := New(isolatedclient.New(nil, ts.URL, "default-gzip"), nil)
 	server.Inject([]byte("foo"))
-	future := a.Push("foo", bytes.NewReader([]byte("foo")), 0)
+	future := a.Push("foo", isolatedclient.NewBytesSource([]byte("foo")), 0)
 	future.WaitForHashed()
 	ut.AssertEqual(t, isolated.HexDigest("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"), future.Digest())
 	ut.AssertEqual(t, nil, a.Close())
@@ -127,7 +126,7 @@ func TestArchiverCancel(t *testing.T) {
 	if common.IsWindows() {
 		osErr = "The system cannot find the file specified."
 	}
-	expected := fmt.Errorf("hash(foo) failed: open %s: %s\n", nonexistent, osErr)
+	expected := fmt.Errorf("source(foo) failed: open %s: %s\n", nonexistent, osErr)
 	ut.AssertEqual(t, expected, <-a.Channel())
 	ut.AssertEqual(t, expected, a.Close())
 	ut.AssertEqual(t, nil, server.Error())
@@ -138,18 +137,4 @@ func TestArchiverPushClosed(t *testing.T) {
 	a := New(nil, nil)
 	ut.AssertEqual(t, nil, a.Close())
 	ut.AssertEqual(t, nil, a.PushFile("ignored", "ignored", 0))
-}
-
-func TestArchiverPushSeeked(t *testing.T) {
-	t.Parallel()
-	server := isolatedfake.New()
-	ts := httptest.NewServer(server)
-	defer ts.Close()
-	a := New(isolatedclient.New(nil, ts.URL, "default-gzip"), nil)
-	misplaced := bytes.NewReader([]byte("foo"))
-	_, _ = misplaced.Seek(1, os.SEEK_SET)
-	future := a.Push("works", misplaced, 0)
-	future.WaitForHashed()
-	ut.AssertEqual(t, isolated.HexDigest("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"), future.Digest())
-	ut.AssertEqual(t, nil, a.Close())
 }

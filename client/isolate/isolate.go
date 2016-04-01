@@ -19,6 +19,7 @@ import (
 	"github.com/luci/luci-go/client/archiver"
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/client/internal/tracer"
+	"github.com/luci/luci-go/client/isolatedclient"
 	"github.com/luci/luci-go/common/flag/stringmapflag"
 	"github.com/luci/luci-go/common/isolated"
 )
@@ -300,5 +301,5 @@ func archive(arch archiver.Archiver, opts *ArchiveOptions, displayName string) (
 	if err := ioutil.WriteFile(opts.Isolated, raw.Bytes(), 0644); err != nil {
 		return nil, err
 	}
-	return arch.Push(displayName, bytes.NewReader(raw.Bytes()), 0), nil
+	return arch.Push(displayName, isolatedclient.NewBytesSource(raw.Bytes()), 0), nil
 }

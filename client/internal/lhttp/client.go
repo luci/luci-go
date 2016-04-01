@@ -7,13 +7,10 @@ package lhttp
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/luci/luci-go/client/internal/retry"
@@ -30,6 +27,12 @@ type Retriable interface {
 	Status() int
 }
 
+// RequestGen is a generator function to create a new request. It may be called
+// multiple times if an operation needs to be retried. The HTTP server is
+// responsible for closing the Request body, as per http.Request Body method
+// documentation.
+type RequestGen func() (*http.Request, error)
+
 // NewRequest returns a retriable request.
 //
 // To enable automatic retry support, the Request.Body, if present, must
@@ -37,52 +40,44 @@ type Retriable interface {
 //
 // handler should return retry.Error in case of retriable error, for example if
 // a TCP connection is teared off while receiving the content.
-func NewRequest(c *http.Client, req *http.Request, handler Handler) (Retriable, error) {
-	// Handle req.Body if specified. It has to implement io.Seeker.
-	if req.URL.Scheme != "http" && req.URL.Scheme != "https" {
-		return nil, fmt.Errorf("unsupported protocol scheme \"%s\"", req.URL.Scheme)
+func NewRequest(c *http.Client, rgen RequestGen, handler Handler) Retriable {
+	return &retriable{
+		handler: handler,
+		c:       c,
+		rgen:    rgen,
 	}
-	newReq := *req
-	out := &retriable{
-		handler:   handler,
-		c:         c,
-		req:       &newReq,
-		closeBody: req.Body,
-	}
-	if req.Body != nil {
-		ok := false
-		if out.seekBody, ok = req.Body.(io.Seeker); !ok {
-			return nil, errors.New("req.Body must implement io.Seeker")
-		}
-		// Make sure the body is not closed when calling http.Client.Do().
-		out.req.Body = ioutil.NopCloser(req.Body)
-	}
-	return out, nil
 }
 
 // NewRequestJSON returns a retriable request calling a JSON endpoint.
 func NewRequestJSON(c *http.Client, url, method string, headers map[string]string, in, out interface{}) (Retriable, error) {
-	var body io.Reader
+	var encoded []byte
 	if in != nil {
-		encoded, err := json.Marshal(in)
+		var err error
+		if encoded, err = json.Marshal(in); err != nil {
+			return nil, err
+		}
+	}
+
+	return NewRequest(c, func() (*http.Request, error) {
+		var body io.Reader
+		if encoded != nil {
+			body = bytes.NewReader(encoded)
+		}
+
+		req, err := http.NewRequest(method, url, body)
 		if err != nil {
 			return nil, err
 		}
-		body = newReader(encoded)
-	}
-	req, err := http.NewRequest(method, url, body)
-	if err != nil {
-		return nil, err
-	}
-	if in != nil {
-		req.Header.Set("Content-Type", jsonContentType)
-	}
-	if headers != nil {
-		for k, v := range headers {
-			req.Header.Add(k, v)
+		if encoded != nil {
+			req.Header.Set("Content-Type", jsonContentType)
 		}
-	}
-	return NewRequest(c, req, func(resp *http.Response) error {
+		if headers != nil {
+			for k, v := range headers {
+				req.Header.Add(k, v)
+			}
+		}
+		return req, nil
+	}, func(resp *http.Response) error {
 		defer resp.Body.Close()
 		if ct := strings.ToLower(resp.Header.Get("Content-Type")); ct != jsonContentType {
 			// Non-retriable.
@@ -98,7 +93,7 @@ func NewRequestJSON(c *http.Client, url, method string, headers map[string]strin
 			return retry.Error{fmt.Errorf("bad response %s: %s", url, err)}
 		}
 		return nil
-	})
+	}), nil
 }
 
 // GetJSON is a shorthand. It returns the HTTP status code and error if any.
@@ -125,53 +120,26 @@ func PostJSON(config *retry.Config, c *http.Client, url string, headers map[stri
 
 const jsonContentType = "application/json; charset=utf-8"
 
-// newReader returns a io.ReadCloser compatible read-only buffer that also
-// exposes io.Seeker. This should be used instead of bytes.NewReader(), which
-// doesn't implement Close().
-func newReader(p []byte) io.ReadCloser {
-	return &reader{bytes.NewReader(p)}
-}
-
-type reader struct {
-	*bytes.Reader
-}
-
-func (r *reader) Close() error {
-	return nil
-}
-
 type retriable struct {
-	handler   Handler
-	c         *http.Client
-	req       *http.Request
-	closeBody io.Closer
-	seekBody  io.Seeker
-	try       int
-	status    int
+	handler Handler
+	c       *http.Client
+	rgen    RequestGen
+	try     int
+	status  int
 }
 
-func (r *retriable) Close() error {
-	if r.closeBody != nil {
-		return r.closeBody.Close()
-	}
-	return nil
-}
+func (r *retriable) Close() error { return nil }
 
 // Warning: it returns an error on HTTP >=400. This is different than
 // http.Client.Do() but hell it makes coding simpler.
 func (r *retriable) Do() error {
-	//log.Printf("Do %s", r.req.URL)
-	if r.seekBody != nil {
-		// Only do this on retry.
-		if r.try != 0 {
-			if _, err := r.seekBody.Seek(0, os.SEEK_SET); err != nil {
-				// Can't be retried.
-				return err
-			}
-		}
+	req, err := r.rgen()
+	if err != nil {
+		return err
 	}
+
 	r.try++
-	resp, err := r.c.Do(r.req)
+	resp, err := r.c.Do(req)
 	if resp != nil {
 		r.status = resp.StatusCode
 	} else {
@@ -187,7 +155,7 @@ func (r *retriable) Do() error {
 		return retry.Error{fmt.Errorf("http request failed: %s (HTTP %d)", http.StatusText(resp.StatusCode), resp.StatusCode)}
 	}
 	// Endpoints occasionally return 404 on valid requests (!)
-	if resp.StatusCode == 404 && strings.HasPrefix(r.req.URL.Path, "/_ah/api/") {
+	if resp.StatusCode == 404 && strings.HasPrefix(req.URL.Path, "/_ah/api/") {
 		log.Printf("lhttp.Do() got a Cloud Endpoints 404: %#v", resp.Header)
 		return retry.Error{fmt.Errorf("http request failed (endpoints): %s (HTTP %d)", http.StatusText(resp.StatusCode), resp.StatusCode)}
 	}
