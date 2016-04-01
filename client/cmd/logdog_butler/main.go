@@ -29,6 +29,7 @@ import (
 	"github.com/luci/luci-go/common/paniccatcher"
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -117,21 +118,37 @@ func (a *application) addFlags(fs *flag.FlagSet) {
 			"of wire-format efficiency.")
 }
 
+func (a *application) authenticator(ctx context.Context) (*auth.Authenticator, error) {
+	opts, err := a.authFlags.Options()
+	if err != nil {
+		return nil, err
+	}
+	opts.Context = ctx
+	return auth.NewAuthenticator(auth.SilentLogin, opts), nil
+}
+
 func (a *application) authenticatedClient(ctx context.Context) (*http.Client, error) {
 	if a.client == nil {
-		opts, err := a.authFlags.Options()
+		authenticator, err := a.authenticator(ctx)
 		if err != nil {
 			return nil, err
 		}
-		opts.Context = ctx
 
-		client, err := auth.NewAuthenticator(auth.SilentLogin, opts).Client()
+		client, err := authenticator.Client()
 		if err != nil {
 			return nil, err
 		}
 		a.client = client
 	}
 	return a.client, nil
+}
+
+func (a *application) tokenSource(ctx context.Context) (oauth2.TokenSource, error) {
+	authenticator, err := a.authenticator(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return authenticator.TokenSource(), nil
 }
 
 func (a *application) configOutput() (output.Output, error) {

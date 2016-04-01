@@ -5,7 +5,7 @@
 package pubsub
 
 import (
-	"time"
+	"google.golang.org/cloud/pubsub"
 )
 
 // Cloud PubSub quota is documented here:
@@ -18,7 +18,7 @@ const (
 	MaxPublishSize = 10 * 1024 * 1024
 
 	// MaxPublishBatchSize is the maximum PubSub batch size.
-	MaxPublishBatchSize = 1000
+	MaxPublishBatchSize = pubsub.MaxPublishBatchSize
 
 	// MaxProjectMessagesPerSecond is the maximum number of requests per second,
 	// across the entire project.
@@ -26,14 +26,5 @@ const (
 
 	// MaxSubscriptionPullSize is the maximum number of subscription records that
 	// can be pulled at a time.
-	MaxSubscriptionPullSize = 100
-
-	// MaxMessageAckPerRequest is the maximum number of messages one can
-	// acknowledge in a single "acknowledge" call.
-	//
-	// NOTE: This is not verified, and is inspired by "MaxSubscriptionPullSize".
-	MaxMessageAckPerRequest = 100
-
-	// DefaultMaxAckDelay is the default maximum ACK delay.
-	DefaultMaxAckDelay = (60 * time.Second)
+	MaxSubscriptionPullSize = pubsub.DefaultMaxPrefetch
 )

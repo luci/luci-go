@@ -13,7 +13,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/gcloud/pubsub"
+	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/tsmon/monitor"
 	"github.com/luci/luci-go/common/tsmon/store"
@@ -208,8 +208,12 @@ func initMonitor(c context.Context, fl *Flags) (monitor.Monitor, error) {
 	case "file":
 		return monitor.NewDebugMonitor(endpointURL.Path), nil
 	case "pubsub":
-		client := clientFactory(config.Credentials)
-		return monitor.NewPubsubMonitor(client, endpointURL.Host, strings.TrimPrefix(endpointURL.Path, "/"))
+		client, err := clientFactory(c, config.Credentials)
+		if err != nil {
+			return nil, err
+		}
+
+		return monitor.NewPubsubMonitor(c, client, gcps.NewTopic(endpointURL.Host, strings.TrimPrefix(endpointURL.Path, "/")))
 	default:
 		return nil, fmt.Errorf("unknown tsmon endpoint url: %s", config.Endpoint)
 	}
@@ -217,18 +221,16 @@ func initMonitor(c context.Context, fl *Flags) (monitor.Monitor, error) {
 
 // makeClient returns http.Client that knows how to send authenticated requests
 // to PubSub API.
-func clientFactory(credentials string) monitor.ClientFactory {
-	return func(ctx context.Context) (*http.Client, error) {
-		authOpts := auth.Options{
-			Context: ctx,
-			Scopes:  pubsub.PublisherScopes,
-		}
-		if credentials == GCECredentials {
-			authOpts.Method = auth.GCEMetadataMethod
-		} else {
-			authOpts.Method = auth.ServiceAccountMethod
-			authOpts.ServiceAccountJSONPath = credentials
-		}
-		return auth.NewAuthenticator(auth.SilentLogin, authOpts).Client()
+func clientFactory(ctx context.Context, credentials string) (*http.Client, error) {
+	authOpts := auth.Options{
+		Context: ctx,
+		Scopes:  gcps.PublisherScopes,
 	}
+	if credentials == GCECredentials {
+		authOpts.Method = auth.GCEMetadataMethod
+	} else {
+		authOpts.Method = auth.ServiceAccountMethod
+		authOpts.ServiceAccountJSONPath = credentials
+	}
+	return auth.NewAuthenticator(auth.SilentLogin, authOpts).Client()
 }

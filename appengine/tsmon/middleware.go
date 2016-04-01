@@ -17,7 +17,7 @@ import (
 	"github.com/luci/gae/service/info"
 	gaeauth "github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/gcloud/pubsub"
+	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/monitor"
@@ -55,17 +55,17 @@ func initialize(c context.Context) error {
 	if i.IsDevAppServer() {
 		mon = monitor.NewDebugMonitor("")
 	} else {
-		client := func(c context.Context) (*http.Client, error) {
-			// Create an HTTP client with the default appengine service account.
-			auth, err := gaeauth.Authenticator(c, pubsub.PublisherScopes, nil)
-			if err != nil {
-				return nil, err
-			}
-			return auth.Client()
+		// Create an HTTP client with the default appengine service account.
+		auth, err := gaeauth.Authenticator(c, gcps.PublisherScopes, nil)
+		if err != nil {
+			return err
+		}
+		client, err := auth.Client()
+		if err != nil {
+			return err
 		}
 
-		var err error
-		mon, err = monitor.NewPubsubMonitor(client, pubsubProject, pubsubTopic)
+		mon, err = monitor.NewPubsubMonitor(c, client, gcps.NewTopic(pubsubProject, pubsubTopic))
 		if err != nil {
 			return err
 		}
