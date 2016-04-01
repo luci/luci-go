@@ -198,10 +198,10 @@ func TestHandleArchive(t *testing.T) {
 					panic(err)
 				}
 
-				err = st.Put(&storage.PutRequest{
-					Path:  desc.Path(),
-					Index: types.MessageIndex(v),
-					Value: d,
+				err = st.Put(storage.PutRequest{
+					Path:   desc.Path(),
+					Index:  types.MessageIndex(v),
+					Values: [][]byte{d},
 				})
 				if err != nil {
 					panic(err)

@@ -43,8 +43,9 @@ type PutRequest struct {
 	// Index is the entry's stream index.
 	Index types.MessageIndex
 
-	// Value is the contents of the cell to add.
-	Value []byte
+	// Values are contiguous sequential records to add to the storage. The first
+	// index in values corresponds to Index.
+	Values [][]byte
 }
 
 // GetRequest is a request to retrieve a series of LogEntry records.
@@ -81,7 +82,7 @@ type Storage interface {
 	// Writes log record data to storage.
 	//
 	// If the data already exists, ErrExists will be returned.
-	Put(*PutRequest) error
+	Put(PutRequest) error
 
 	// Get invokes a callback over a range of sequential LogEntry records.
 	//
@@ -96,7 +97,7 @@ type Storage interface {
 	// Returns nil if retrieval executed successfully, ErrDoesNotExist if
 	// the requested stream does not exist, and an error if an error occurred
 	// during retrieval.
-	Get(*GetRequest, GetCallback) error
+	Get(GetRequest, GetCallback) error
 
 	// Tail retrieves the latest log in the stream. If the stream has no logs, it
 	// will return ErrDoesNotExist.

@@ -355,7 +355,7 @@ func (s *storageSource) bufferEntries(start types.MessageIndex) error {
 		Path:  s.path,
 		Index: start,
 	}
-	return s.st.Get(&req, func(idx types.MessageIndex, d []byte) bool {
+	return s.st.Get(req, func(idx types.MessageIndex, d []byte) bool {
 		le := logpb.LogEntry{}
 		if err := proto.Unmarshal(d, &le); err != nil {
 			log.Fields{

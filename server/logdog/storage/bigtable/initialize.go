@@ -66,15 +66,15 @@ func waitForTable(ctx context.Context, c *bigtable.AdminClient, name string) err
 //
 // If nil is returned, the table is ready for use as a Storage via New.
 func Initialize(ctx context.Context, o Options) error {
-	st := New(ctx, o)
-	defer st.Close()
-
-	c, err := st.(*btStorage).getAdminClient()
+	adminClient, err := o.adminClient(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to create admin client: %s", err)
+		return err
 	}
 
-	exists, err := tableExists(ctx, c, o.LogTable)
+	st := newBTStorage(ctx, o, nil, adminClient)
+	defer st.Close()
+
+	exists, err := tableExists(ctx, st.adminClient, o.LogTable)
 	if err != nil {
 		return fmt.Errorf("failed to test for table: %s", err)
 	}
@@ -83,13 +83,13 @@ func Initialize(ctx context.Context, o Options) error {
 			"table": o.LogTable,
 		}.Infof(ctx, "Storage table does not exist. Creating...")
 
-		if err := c.CreateTable(ctx, o.LogTable); err != nil {
+		if err := st.adminClient.CreateTable(ctx, o.LogTable); err != nil {
 			return fmt.Errorf("failed to create table: %s", err)
 		}
 
 		// Wait for the table to exist. BigTable API says this can be delayed from
 		// creation.
-		if err := waitForTable(ctx, c, o.LogTable); err != nil {
+		if err := waitForTable(ctx, st.adminClient, o.LogTable); err != nil {
 			return fmt.Errorf("failed to wait for table to exist: %s", err)
 		}
 
@@ -99,7 +99,7 @@ func Initialize(ctx context.Context, o Options) error {
 	}
 
 	// Get table info.
-	ti, err := c.TableInfo(ctx, o.LogTable)
+	ti, err := st.adminClient.TableInfo(ctx, o.LogTable)
 	if err != nil {
 		return fmt.Errorf("failed to get table info: %s", err)
 	}
@@ -113,7 +113,7 @@ func Initialize(ctx context.Context, o Options) error {
 		}.Infof(ctx, "Column family 'log' does not exist. Creating...")
 
 		// Create the logColumnFamily column family.
-		if err := c.CreateColumnFamily(ctx, o.LogTable, logColumnFamily); err != nil {
+		if err := st.adminClient.CreateColumnFamily(ctx, o.LogTable, logColumnFamily); err != nil {
 			return fmt.Errorf("Failed to create 'log' column family: %s", err)
 		}
 

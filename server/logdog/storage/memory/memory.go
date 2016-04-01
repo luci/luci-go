@@ -60,24 +60,29 @@ func (s *Storage) Config(cfg storage.Config) error {
 }
 
 // Put implements storage.Storage.
-func (s *Storage) Put(req *storage.PutRequest) error {
+func (s *Storage) Put(req storage.PutRequest) error {
 	return s.run(func() error {
 		ls := s.getLogStreamLocked(req.Path, true)
 
-		if _, ok := ls.logs[req.Index]; ok {
-			return storage.ErrExists
-		}
+		for i, v := range req.Values {
+			index := req.Index + types.MessageIndex(i)
+			if _, ok := ls.logs[index]; ok {
+				return storage.ErrExists
+			}
 
-		ls.logs[req.Index] = []byte(req.Value)
-		if req.Index > ls.latestIndex {
-			ls.latestIndex = req.Index
+			clone := make([]byte, len(v))
+			copy(clone, v)
+			ls.logs[index] = clone
+			if index > ls.latestIndex {
+				ls.latestIndex = index
+			}
 		}
 		return nil
 	})
 }
 
 // Get implements storage.Storage.
-func (s *Storage) Get(req *storage.GetRequest, cb storage.GetCallback) error {
+func (s *Storage) Get(req storage.GetRequest, cb storage.GetCallback) error {
 	recs := []*rec(nil)
 	err := s.run(func() error {
 		ls := s.getLogStreamLocked(req.Path, false)

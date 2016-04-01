@@ -79,7 +79,7 @@ func GetStorage(c context.Context) (storage.Storage, error) {
 	// calls.
 	c = metadata.NewContext(c, nil)
 
-	return bigtable.New(c, bigtable.Options{
+	st, err := bigtable.New(c, bigtable.Options{
 		Project:  bt.Project,
 		Zone:     bt.Zone,
 		Cluster:  bt.Cluster,
@@ -87,5 +87,10 @@ func GetStorage(c context.Context) (storage.Storage, error) {
 		ClientOptions: []cloud.ClientOption{
 			cloud.WithTokenSource(a.TokenSource()),
 		},
-	}), nil
+	})
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to create BigTable instance.")
+		return nil, err
+	}
+	return st, nil
 }

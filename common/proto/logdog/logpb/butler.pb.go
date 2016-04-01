@@ -189,8 +189,7 @@ type ButlerLogBundle_Entry struct {
 	// message index in the stream.
 	TerminalIndex uint64 `protobuf:"varint,4,opt,name=terminal_index" json:"terminal_index,omitempty"`
 	//
-	// Log entries attached to this record. These must be sequential and in
-	// order.
+	// Log entries attached to this record. These MUST be sequential.
 	//
 	// This is the main log entry content.
 	Logs []*LogEntry `protobuf:"bytes,5,rep,name=logs" json:"logs,omitempty"`

@@ -12,10 +12,12 @@ import (
 
 	"github.com/luci/gkvlite"
 	"github.com/luci/luci-go/common/logdog/types"
+	"github.com/luci/luci-go/common/recordio"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"golang.org/x/net/context"
 	"google.golang.org/cloud/bigtable"
 
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -63,7 +65,9 @@ func (t *btTableTest) putLogData(c context.Context, rk *rowKey, d []byte) error 
 		return storage.ErrExists
 	}
 
-	if err := coll.Set(enc, d); err != nil {
+	clone := make([]byte, len(d))
+	copy(clone, d)
+	if err := coll.Set(enc, clone); err != nil {
 		panic(err)
 	}
 	return nil
@@ -137,17 +141,15 @@ func TestStorage(t *testing.T) {
 		bt := btTableTest{}
 		defer bt.close()
 
-		s := btStorage{
-			Options: &Options{
-				Project:  "test-project",
-				Zone:     "test-zone",
-				Cluster:  "test-cluster",
-				LogTable: "test-log-table",
-			},
-			ctx:    context.Background(),
-			client: nil,
-			table:  &bt,
-		}
+		s := newBTStorage(context.Background(), Options{
+			Project:  "test-project",
+			Zone:     "test-zone",
+			Cluster:  "test-cluster",
+			LogTable: "test-log-table",
+		}, nil, nil)
+
+		s.raw = &bt
+		defer s.Close()
 
 		get := func(path string, index int, limit int) ([]string, error) {
 			req := storage.GetRequest{
@@ -156,42 +158,77 @@ func TestStorage(t *testing.T) {
 				Limit: limit,
 			}
 			got := []string{}
-			err := s.Get(&req, func(idx types.MessageIndex, d []byte) bool {
+			err := s.Get(req, func(idx types.MessageIndex, d []byte) bool {
 				got = append(got, string(d))
 				return true
 			})
 			return got, err
 		}
 
-		put := func(path string, index int, d string) error {
-			return s.Put(&storage.PutRequest{
-				Path:  types.StreamPath(path),
-				Index: types.MessageIndex(index),
-				Value: []byte(d),
+		put := func(path string, index int, d ...string) error {
+			data := make([][]byte, len(d))
+			for i, v := range d {
+				data[i] = []byte(v)
+			}
+
+			return s.Put(storage.PutRequest{
+				Path:   types.StreamPath(path),
+				Index:  types.MessageIndex(index),
+				Values: data,
 			})
 		}
 
-		Convey(`With row data: A{0, 1, 2}, B{10, 12, 13}`, func() {
-			So(put("A", 0, "0"), ShouldBeNil)
-			So(put("A", 1, "1"), ShouldBeNil)
-			So(put("A", 2, "2"), ShouldBeNil)
-			So(put("B", 10, "10"), ShouldBeNil)
-			So(put("B", 12, "12"), ShouldBeNil)
-			So(put("B", 13, "13"), ShouldBeNil)
+		ekey := func(p string, v int64) string {
+			return newRowKey(p, v).encode()
+		}
+		records := func(s ...string) []byte {
+			buf := bytes.Buffer{}
+			w := recordio.NewWriter(&buf)
 
-			ekey := func(p string, v int64) string {
-				return newRowKey(p, v).encode()
+			for _, v := range s {
+				if _, err := w.Write([]byte(v)); err != nil {
+					panic(err)
+				}
+				if err := w.Flush(); err != nil {
+					panic(err)
+				}
 			}
+
+			return buf.Bytes()
+		}
+
+		Convey(`With an artificial maximum BigTable row size of two records`, func() {
+			// Artificially constrain row size. 4 = 2*{size/1, data/1} RecordIO
+			// entries.
+			s.maxRowSize = 4
+
+			Convey(`Will split row data that overflows the table into multiple rows.`, func() {
+				So(put("A", 0, "0", "1", "2", "3"), ShouldBeNil)
+
+				So(bt.dataMap(), ShouldResemble, map[string][]byte{
+					ekey("A", 1): records("0", "1"),
+					ekey("A", 3): records("2", "3"),
+				})
+			})
+
+			Convey(`Loading a single row data beyond the maximum row size will fail.`, func() {
+				So(put("A", 0, "0123"), ShouldErrLike, "single row entry exceeds maximum size")
+			})
+		})
+
+		Convey(`With row data: A{0, 1, 2, 3, 4}, B{10, 12, 13}`, func() {
+			So(put("A", 0, "0", "1", "2"), ShouldBeNil)
+			So(put("A", 3, "3", "4"), ShouldBeNil)
+			So(put("B", 10, "10"), ShouldBeNil)
+			So(put("B", 12, "12", "13"), ShouldBeNil)
 
 			Convey(`Testing "Put"...`, func() {
 				Convey(`Loads the row data.`, func() {
 					So(bt.dataMap(), ShouldResemble, map[string][]byte{
-						ekey("A", 0):  []byte("0"),
-						ekey("A", 1):  []byte("1"),
-						ekey("A", 2):  []byte("2"),
-						ekey("B", 10): []byte("10"),
-						ekey("B", 12): []byte("12"),
-						ekey("B", 13): []byte("13"),
+						ekey("A", 2):  records("0", "1", "2"),
+						ekey("A", 4):  records("3", "4"),
+						ekey("B", 10): records("10"),
+						ekey("B", 13): records("12", "13"),
 					})
 				})
 			})
@@ -200,7 +237,13 @@ func TestStorage(t *testing.T) {
 				Convey(`Can fetch the full row, "A".`, func() {
 					got, err := get("A", 0, 0)
 					So(err, ShouldBeNil)
-					So(got, ShouldResemble, []string{"0", "1", "2"})
+					So(got, ShouldResemble, []string{"0", "1", "2", "3", "4"})
+				})
+
+				Convey(`Will fetch A{1, 2, 3, 4} with when index=1.`, func() {
+					got, err := get("A", 1, 0)
+					So(err, ShouldBeNil)
+					So(got, ShouldResemble, []string{"1", "2", "3", "4"})
 				})
 
 				Convey(`Will fetch A{1, 2} with when index=1 and limit=2.`, func() {
@@ -234,10 +277,10 @@ func TestStorage(t *testing.T) {
 					return string(got), err
 				}
 
-				Convey(`A tail request for "A" returns A{2, 1, 0}.`, func() {
+				Convey(`A tail request for "A" returns A{4}.`, func() {
 					got, err := tail("A")
 					So(err, ShouldBeNil)
-					So(got, ShouldEqual, "2")
+					So(got, ShouldEqual, "4")
 				})
 
 				Convey(`A tail request for "B" returns B{13}.`, func() {

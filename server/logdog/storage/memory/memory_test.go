@@ -18,11 +18,11 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func numRec(i types.MessageIndex) *rec {
+func numRec(v types.MessageIndex) *rec {
 	buf := bytes.Buffer{}
-	binary.Write(&buf, binary.BigEndian, i)
+	binary.Write(&buf, binary.BigEndian, v)
 	return &rec{
-		index: i,
+		index: v,
 		data:  buf.Bytes(),
 	}
 }
@@ -46,20 +46,28 @@ func TestBigTable(t *testing.T) {
 		path := types.StreamPath("testing/+/foo/bar")
 
 		Convey(`Can Put() log stream records {0..5, 7, 8, 10}.`, func() {
-			ridx := []types.MessageIndex{0, 1, 2, 3, 4, 5, 7, 8, 10}
-			for _, idx := range ridx {
+			var indices []types.MessageIndex
+
+			putRange := func(start types.MessageIndex, count int) error {
 				req := storage.PutRequest{
 					Path:  path,
-					Index: idx,
-					Value: numRec(idx).data,
+					Index: start,
 				}
-
-				So(st.Put(&req), ShouldBeNil)
+				for i := 0; i < count; i++ {
+					index := start + types.MessageIndex(i)
+					req.Values = append(req.Values, numRec(index).data)
+					indices = append(indices, index)
+				}
+				return st.Put(req)
 			}
 
+			So(putRange(0, 6), ShouldBeNil)
+			So(putRange(7, 2), ShouldBeNil)
+			So(putRange(10, 1), ShouldBeNil)
+
 			// Forward-indexed records.
-			recs := make([]*rec, len(ridx))
-			for i, idx := range ridx {
+			recs := make([]*rec, len(indices))
+			for i, idx := range indices {
 				recs[i] = numRec(idx)
 			}
 
@@ -75,12 +83,12 @@ func TestBigTable(t *testing.T) {
 			Convey(`Put()`, func() {
 				Convey(`Will return ErrExists when putting an existing entry.`, func() {
 					req := storage.PutRequest{
-						Path:  path,
-						Index: 5,
-						Value: []byte("ohai"),
+						Path:   path,
+						Index:  5,
+						Values: [][]byte{[]byte("ohai")},
 					}
 
-					So(st.Put(&req), ShouldEqual, storage.ErrExists)
+					So(st.Put(req), ShouldEqual, storage.ErrExists)
 				})
 
 				Convey(`Will return an error if one is set.`, func() {
@@ -90,22 +98,17 @@ func TestBigTable(t *testing.T) {
 						Path:  path,
 						Index: 1337,
 					}
-					So(st.Put(&req), ShouldErrLike, "test error")
+					So(st.Put(req), ShouldErrLike, "test error")
 				})
 			})
 
 			Convey(`Get()`, func() {
 				Convey(`Can retrieve all of the records correctly.`, func() {
-					recs := make([]*rec, len(ridx))
-					for i, idx := range ridx {
-						recs[i] = numRec(idx)
-					}
-
 					req := storage.GetRequest{
 						Path: path,
 					}
 
-					So(st.Get(&req, getAllCB), ShouldBeNil)
+					So(st.Get(req, getAllCB), ShouldBeNil)
 					So(getRecs, ShouldResemble, recs)
 				})
 
@@ -115,7 +118,7 @@ func TestBigTable(t *testing.T) {
 						Limit: 4,
 					}
 
-					So(st.Get(&req, getAllCB), ShouldBeNil)
+					So(st.Get(req, getAllCB), ShouldBeNil)
 					So(getRecs, ShouldResemble, recs[:4])
 				})
 
@@ -126,7 +129,7 @@ func TestBigTable(t *testing.T) {
 						Limit: 4,
 					}
 
-					So(st.Get(&req, getAllCB), ShouldBeNil)
+					So(st.Get(req, getAllCB), ShouldBeNil)
 					So(getRecs, ShouldResemble, recs[:3])
 				})
 
@@ -136,7 +139,7 @@ func TestBigTable(t *testing.T) {
 					}
 
 					count := 0
-					err := st.Get(&req, func(types.MessageIndex, []byte) bool {
+					err := st.Get(req, func(types.MessageIndex, []byte) bool {
 						count++
 						return false
 					})
@@ -149,7 +152,7 @@ func TestBigTable(t *testing.T) {
 						Path: "testing/+/does/not/exist",
 					}
 
-					So(st.Get(&req, getAllCB), ShouldEqual, storage.ErrDoesNotExist)
+					So(st.Get(req, getAllCB), ShouldEqual, storage.ErrDoesNotExist)
 				})
 
 				Convey(`Will return an error if one is set.`, func() {
@@ -158,7 +161,7 @@ func TestBigTable(t *testing.T) {
 					req := storage.GetRequest{
 						Path: path,
 					}
-					So(st.Get(&req, nil), ShouldErrLike, "test error")
+					So(st.Get(req, nil), ShouldErrLike, "test error")
 				})
 			})
 

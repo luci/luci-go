@@ -233,7 +233,7 @@ func getHead(c context.Context, req *logdog.GetRequest, st storage.Storage, p ty
 	err := retry.Retry(c, retry.TransientOnly(retry.Default), func() error {
 		// Issue the Get request. This may return a transient error, in which case
 		// we will retry.
-		return st.Get(&sreq, func(idx types.MessageIndex, ld []byte) bool {
+		return st.Get(sreq, func(idx types.MessageIndex, ld []byte) bool {
 			if count > 0 && byteLimit-len(ld) < 0 {
 				// Not the first log, and we've exceeded our byte limit.
 				return false

@@ -114,8 +114,7 @@ message ButlerLogBundle {
     uint64 terminal_index = 4;
 
     /*
-     * Log entries attached to this record. These must be sequential and in
-     * order.
+     * Log entries attached to this record. These MUST be sequential.
      *
      * This is the main log entry content.
      */

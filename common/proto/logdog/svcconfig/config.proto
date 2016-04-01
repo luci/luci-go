@@ -71,11 +71,13 @@ message Coordinator {
 
 // Collector is the set of configuration parameters for Collector instances.
 message Collector {
-  // Workers is the number of ingest workers to run.
-  int32 workers = 1;
+  // The maximum number of concurrent transport messages to process. If <= 0,
+  // a default will be chosen based on the transport.
+  int32 max_concurrent_messages = 1;
 
-  // The number of transport worker goroutines to run.
-  int32 transport_workers = 2;
+  // The maximum number of concurrent workers to process each ingested message.
+  // If <= 0, collector.DefaultMaxMessageWorkers will be used.
+  int32 max_message_workers = 2;
 
   // The maximum number of log stream states to cache locally. If <= 0, a
   // default will be used.

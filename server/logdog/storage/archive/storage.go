@@ -58,8 +58,8 @@ type Options struct {
 }
 
 type storageImpl struct {
-	context.Context
 	*Options
+	context.Context
 
 	streamBucket string
 	streamPath   string
@@ -72,10 +72,10 @@ type storageImpl struct {
 }
 
 // New instantiates a new Storage instance, bound to the supplied Options.
-func New(c context.Context, o Options) (storage.Storage, error) {
+func New(ctx context.Context, o Options) (storage.Storage, error) {
 	s := storageImpl{
-		Context: c,
 		Options: &o,
+		Context: ctx,
 	}
 
 	s.indexBucket, s.indexPath = splitGSURL(o.IndexURL)
@@ -92,23 +92,21 @@ func New(c context.Context, o Options) (storage.Storage, error) {
 
 func (s *storageImpl) Close() {
 	if s.closeClient {
-		if err := s.Client.Close(); err != nil {
-			log.WithError(err).Errorf(s, "Failed to close client.")
-		}
+		_ = s.Client.Close()
 	}
 }
 
-func (s *storageImpl) Config(storage.Config) error   { return storage.ErrReadOnly }
-func (s *storageImpl) Put(*storage.PutRequest) error { return storage.ErrReadOnly }
+func (s *storageImpl) Config(storage.Config) error  { return storage.ErrReadOnly }
+func (s *storageImpl) Put(storage.PutRequest) error { return storage.ErrReadOnly }
 
-func (s *storageImpl) Get(req *storage.GetRequest, cb storage.GetCallback) error {
+func (s *storageImpl) Get(req storage.GetRequest, cb storage.GetCallback) error {
 	idx, err := s.getIndex()
 	if err != nil {
 		return err
 	}
 
 	// Identify the byte offsets that we want to fetch from the entries stream.
-	st := s.buildGetStrategy(req, idx)
+	st := s.buildGetStrategy(&req, idx)
 	if st.lastIndex == -1 || req.Index > st.lastIndex {
 		// No records to read.
 		return nil
@@ -195,7 +193,7 @@ func (s *storageImpl) Get(req *storage.GetRequest, cb storage.GetCallback) error
 	return nil
 }
 
-func (s *storageImpl) Tail(types.StreamPath) ([]byte, types.MessageIndex, error) {
+func (s *storageImpl) Tail(path types.StreamPath) ([]byte, types.MessageIndex, error) {
 	idx, err := s.getIndex()
 	if err != nil {
 		return nil, 0, err

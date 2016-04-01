@@ -255,10 +255,10 @@ func TestGet(t *testing.T) {
 				if !v {
 					// Add the logs to the in-memory temporary storage.
 					for _, le := range entries {
-						err := ms.Put(&storage.PutRequest{
-							Path:  ls.Path(),
-							Index: types.MessageIndex(le.StreamIndex),
-							Value: protobufs[le.StreamIndex],
+						err := ms.Put(storage.PutRequest{
+							Path:   ls.Path(),
+							Index:  types.MessageIndex(le.StreamIndex),
+							Values: [][]byte{protobufs[le.StreamIndex]},
 						})
 						if err != nil {
 							panic(fmt.Errorf("failed to Put() LogEntry: %v", err))
@@ -441,10 +441,10 @@ func TestGet(t *testing.T) {
 						} else {
 							// Add corrupted entry to Storage. Create a new entry here, since
 							// the storage will reject a duplicate/overwrite.
-							err := ms.Put(&storage.PutRequest{
-								Path:  types.StreamPath(req.Path),
-								Index: 666,
-								Value: []byte{0x00}, // Invalid protobuf, zero tag.
+							err := ms.Put(storage.PutRequest{
+								Path:   types.StreamPath(req.Path),
+								Index:  666,
+								Values: [][]byte{{0x00}}, // Invalid protobuf, zero tag.
 							})
 							if err != nil {
 								panic(err)

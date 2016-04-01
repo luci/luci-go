@@ -124,7 +124,7 @@ type testStorage struct {
 	err func() error
 }
 
-func (s *testStorage) Put(r *storage.PutRequest) error {
+func (s *testStorage) Put(r storage.PutRequest) error {
 	if s.err != nil {
 		if err := s.err(); err != nil {
 			return err
@@ -209,6 +209,7 @@ func (b *bundleBuilder) logEntry(idx int) *logpb.LogEntry {
 func (b *bundleBuilder) bundle() []byte {
 	bytes := b.bundleWithEntries(b.entries...)
 	b.entries = nil
+
 	return bytes
 }
 
@@ -283,7 +284,7 @@ func shouldHaveStoredStream(actual interface{}, expected ...interface{}) string 
 
 	entries := make(map[int]*logpb.LogEntry)
 	var ierr error
-	err := st.Get(&req, func(idx types.MessageIndex, d []byte) bool {
+	err := st.Get(req, func(idx types.MessageIndex, d []byte) bool {
 		le := logpb.LogEntry{}
 		if ierr = proto.Unmarshal(d, &le); ierr != nil {
 			return false
@@ -316,7 +317,7 @@ func shouldHaveStoredStream(actual interface{}, expected ...interface{}) string 
 		switch e := exp.(type) {
 		case int:
 			if err := assertLogEntry(e); err != "" {
-				failed = append(failed, err)
+				failed = append(failed, fmt.Sprintf("missing{%s}", err))
 			}
 
 		case indexRange:

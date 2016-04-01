@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime/pprof"
 	"sync/atomic"
 
 	"github.com/luci/luci-go/client/authcli"
@@ -54,6 +55,7 @@ type Service struct {
 	coordinatorHost           string
 	coordinatorInsecure       bool
 	storageCredentialJSONPath string
+	cpuProfilePath            string
 
 	coord  logdog.ServicesClient
 	config *config.Manager
@@ -81,6 +83,21 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 
 	// Install logging configuration.
 	c = s.loggingFlags.Set(c)
+
+	if p := s.cpuProfilePath; p != "" {
+		fd, err := os.Create(p)
+		if err != nil {
+			log.Fields{
+				log.ErrorKey: err,
+				"path":       p,
+			}.Errorf(c, "Failed to create CPU profile output file.")
+			return err
+		}
+		defer fd.Close()
+
+		pprof.StartCPUProfile(fd)
+		defer pprof.StopCPUProfile()
+	}
 
 	// Configure our signal handler. It will listen for terminating signals and
 	// issue a shutdown signal if one is received.
@@ -142,6 +159,8 @@ func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
 		"Connect to Coordinator over HTTP (instead of HTTPS).")
 	fs.StringVar(&s.storageCredentialJSONPath, "storage-credential-json-path", "",
 		"If supplied, the path of a JSON credential file to load and use for storage operations.")
+	fs.StringVar(&s.cpuProfilePath, "cpu-profile-path", "",
+		"If supplied, enable CPU profiling and write the profile here.")
 }
 
 func (s *Service) initCoordinatorClient(c context.Context) (logdog.ServicesClient, error) {
@@ -245,7 +264,7 @@ func (s *Service) IntermediateStorage(c context.Context) (storage.Storage, error
 		return nil, err
 	}
 
-	return bigtable.New(c, bigtable.Options{
+	bt, err := bigtable.New(c, bigtable.Options{
 		Project:  btcfg.Project,
 		Zone:     btcfg.Zone,
 		Cluster:  btcfg.Cluster,
@@ -253,7 +272,11 @@ func (s *Service) IntermediateStorage(c context.Context) (storage.Storage, error
 		ClientOptions: []cloud.ClientOption{
 			cloud.WithTokenSource(a.TokenSource()),
 		},
-	}), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return bt, nil
 }
 
 // GSClient returns an authenticated Google Storage client instance.
