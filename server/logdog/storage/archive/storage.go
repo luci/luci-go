@@ -14,7 +14,9 @@ package archive
 
 import (
 	"bytes"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"sort"
@@ -105,6 +107,8 @@ func (s *storageImpl) Get(req storage.GetRequest, cb storage.GetCallback) error 
 		return err
 	}
 
+	fmt.Println("GOT INDEX:", proto.MarshalTextString(idx))
+
 	// Identify the byte offsets that we want to fetch from the entries stream.
 	st := s.buildGetStrategy(&req, idx)
 	if st.lastIndex == -1 || req.Index > st.lastIndex {
@@ -161,6 +165,7 @@ func (s *storageImpl) Get(req storage.GetRequest, cb storage.GetCallback) error 
 			}.Errorf(s, "Failed to read frame data.")
 			return err
 		}
+		fmt.Println(hex.EncodeToString(buf.Bytes()))
 		if err := proto.Unmarshal(buf.Bytes(), &le); err != nil {
 			log.Fields{
 				log.ErrorKey: err,

@@ -44,12 +44,25 @@ type Client interface {
 	Delete(bucket, relpath string) error
 }
 
+// Options are the set of extra options to apply to the Google Storage request.
+type Options struct {
+	// From is the range request starting index. If >0, the beginning of the
+	// range request will be set.
+	From int64
+	// To is the range request ending index. If >0, the end of the
+	// range request will be set.
+	//
+	// If no From index is set, this will result in a request indexed from the end
+	// of the object.
+	To int64
+}
+
 // prodGSObject is an implementation of Client interface using the production
 // Google Storage client.
 type prodClient struct {
 	context.Context
 
-	// rt is the http.RoundTripper to use for communication.
+	// rt is the RoundTripper to use, or nil for the cloud service default.
 	rt http.RoundTripper
 	// baseClient is a basic Google Storage client instance. It is used for
 	// operations that don't need custom header injections.
@@ -59,15 +72,15 @@ type prodClient struct {
 // NewProdClient creates a new Client instance that uses production Cloud
 // Storage.
 //
-// The supplied RoundTripper will be used to make connections. If nil,
-// the default http.Client RoundTripper will be used.
+// The supplied RoundTripper will be used to make connections. If nil, the
+// default HTTP client will be used.
 func NewProdClient(ctx context.Context, rt http.RoundTripper) (Client, error) {
 	c := prodClient{
 		Context: ctx,
 		rt:      rt,
 	}
 	var err error
-	c.baseClient, err = c.newClient(nil)
+	c.baseClient, err = c.newClient()
 	if err != nil {
 		return nil, err
 	}
@@ -88,11 +101,13 @@ func (c *prodClient) NewWriter(bucket, relpath string) (Writer, error) {
 }
 
 func (c *prodClient) NewReader(bucket, relpath string, o Options) (io.ReadCloser, error) {
-	client, err := c.newClient(&o)
-	if err != nil {
-		return nil, err
+	if o.From < 0 {
+		o.From = 0
 	}
-	return client.Bucket(bucket).Object(relpath).NewReader(c)
+	if o.To <= 0 {
+		o.To = -1
+	}
+	return c.baseClient.Bucket(bucket).Object(relpath).NewRangeReader(c, o.From, o.To)
 }
 
 func (c *prodClient) Delete(bucket, relpath string) error {
@@ -123,37 +138,13 @@ func (c *prodClient) Delete(bucket, relpath string) error {
 	})
 }
 
-func (c *prodClient) newClient(o *Options) (*gs.Client, error) {
-	rt := c.rt
-	if rt == nil {
-		rt = http.DefaultTransport
+func (c *prodClient) newClient() (*gs.Client, error) {
+	var optsArray [1]cloud.ClientOption
+	opts := optsArray[:0]
+	if c.rt != nil {
+		opts = append(opts, cloud.WithBaseHTTP(&http.Client{
+			Transport: c.rt,
+		}))
 	}
-
-	// This is a hack. Unfortunately, it is necessary since the Cloud Storage API
-	// doesn't support setting range request headers. This installation enables
-	// us to request ranges from Cloud Storage objects, which is super useful for
-	// range requests since we have an index.
-	//
-	// The Client construction logic is taken from here:
-	// https://godoc.org/google.golang.org/cloud/internal/transport#NewHTTPClient
-	//
-	// We have to replicate the token source confguration b/c our only entry point
-	// into header editing is the "cloud.WithClient", which preempts all of the
-	// token source generation logic.
-	if o != nil {
-		rt = &gsRoundTripper{
-			RoundTripper: rt,
-			Options:      o,
-		}
-	}
-	client := http.Client{
-		Transport: rt,
-	}
-
-	gsc, err := gs.NewClient(c, cloud.WithBaseHTTP(&client))
-	if err != nil {
-		return nil, err
-	}
-
-	return gsc, nil
+	return gs.NewClient(c, opts...)
 }
