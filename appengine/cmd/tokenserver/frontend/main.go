@@ -32,11 +32,12 @@ import (
 	"github.com/luci/luci-go/server/prpc"
 
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/services/certauthorities"
+	"github.com/luci/luci-go/appengine/cmd/tokenserver/services/serviceaccounts"
 	"github.com/luci/luci-go/common/api/tokenserver/v1"
 )
 
 var (
-	// caServer is implementer of tokenserver.CertificateAuthorities RPC interface.
+	// caServer implements tokenserver.CertificateAuthorities RPC interface.
 	caServer = &certauthorities.Server{
 		ConfigFactory: func(c context.Context) (config.Interface, error) {
 			// Use fake config data on dev server for simplicity.
@@ -48,21 +49,35 @@ var (
 		},
 	}
 
-	// caServerWithAuth wraps caServer adding admin check.
+	// caServerWithAuth adds admin check to caServer.
 	caServerWithAuth = &tokenserver.DecoratedCertificateAuthorities{
 		Service: caServer,
-		Prelude: func(c context.Context, method string, _ proto.Message) (context.Context, error) {
-			logging.Infof(c, "tokenserver.CertificateAuthorities: %q is calling %q", auth.CurrentIdentity(c), method)
-			switch admin, err := auth.IsMember(c, "administrators"); {
-			case err != nil:
-				return nil, grpc.Errorf(codes.Internal, "can't check ACL - %s", err)
-			case !admin:
-				return nil, grpc.Errorf(codes.PermissionDenied, "not an admin")
-			}
-			return c, nil
-		},
+		Prelude: adminPrelude("tokenserver.CertificateAuthorities"),
+	}
+
+	// serviceAccountsServer implements tokenserver.ServiceAccounts RPC interface.
+	serviceAccountsServer = &serviceaccounts.Server{}
+
+	// serviceAccountsServerWithAuth adds admin check to serviceAccountsServer.
+	serviceAccountsServerWithAuth = &tokenserver.DecoratedServiceAccounts{
+		Service: serviceAccountsServer,
+		Prelude: adminPrelude("tokenserver.ServiceAccounts"),
 	}
 )
+
+// adminPrelude returns a prelude that authorizes only administrators.
+func adminPrelude(serviceName string) func(context.Context, string, proto.Message) (context.Context, error) {
+	return func(c context.Context, method string, _ proto.Message) (context.Context, error) {
+		logging.Infof(c, "%s: %q is calling %q", serviceName, auth.CurrentIdentity(c), method)
+		switch admin, err := auth.IsMember(c, "administrators"); {
+		case err != nil:
+			return nil, grpc.Errorf(codes.Internal, "can't check ACL - %s", err)
+		case !admin:
+			return nil, grpc.Errorf(codes.PermissionDenied, "not an admin")
+		}
+		return c, nil
+	}
+}
 
 func init() {
 	router := httprouter.New()
@@ -92,6 +107,7 @@ func init() {
 	// Install all RPC servers.
 	var api prpc.Server
 	tokenserver.RegisterCertificateAuthoritiesServer(&api, caServerWithAuth)
+	tokenserver.RegisterServiceAccountsServer(&api, serviceAccountsServerWithAuth)
 	discovery.Enable(&api)
 	api.InstallHandlers(router, base)
 

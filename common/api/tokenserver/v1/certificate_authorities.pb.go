@@ -8,6 +8,7 @@ Package tokenserver is a generated protocol buffer package.
 It is generated from these files:
 	certificate_authorities.proto
 	config.proto
+	service_accounts.proto
 
 It has these top-level messages:
 	ImportConfigResponse
@@ -23,6 +24,10 @@ It has these top-level messages:
 	CRLStatus
 	TokenServerConfig
 	CertificateAuthorityConfig
+	DomainConfig
+	CreateServiceAccountRequest
+	CreateServiceAccountResponse
+	ServiceAccount
 */
 package tokenserver
 

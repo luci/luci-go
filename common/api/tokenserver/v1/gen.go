@@ -4,6 +4,7 @@
 
 //go:generate cproto
 //go:generate svcdec -type CertificateAuthoritiesServer
+//go:generate svcdec -type ServiceAccountsServer
 
 // Package tokenserver contains The Token Server API definitions.
 package tokenserver

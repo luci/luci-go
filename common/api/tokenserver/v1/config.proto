@@ -13,9 +13,36 @@ message TokenServerConfig {
 }
 
 // CertificateAuthorityConfig defines a single CA we trust.
+//
+// Such CA issues certificates for nodes that use The Token Service. Each node
+// has a private key and certificate with Common Name set to the FQDN of this
+// node, e.g. "CN=slave43-c1.c.chromecompute.google.com.internal".
+//
+// The Token Server uses this CN to derive a name of a service account to
+// associate with a node. It splits FQDN into a hostname ("slave43-c1") and
+// a domain name ("c.chromecompute.google.com.internal"), searches for a domain
+// name in "known_domains" map, and creates a service account in a Cloud Project
+// specified there: <hostname>@<project-id>.iam.gserviceaccount.com.
+//
+// Note that we can't put FQDN in the service account email, since it is limited
+// in length and doesn't allow '.' in it.
 message CertificateAuthorityConfig {
   string cn = 1;        // CA Common Name, must match Subject CN in the cert
   string cert_path = 2; // path to the root certificate file in luci-config
   string crl_url = 3;   // where to fetch CRL from
   bool   use_oauth = 4; // true to send Authorization header when fetching CRL
+
+  // KnownDomains describes what cloud project to use for nodes in particular
+  // domains.
+  map<string, DomainConfig> known_domains = 5;
+}
+
+// DomainConfig is used inside CertificateAuthorityConfig.
+message DomainConfig {
+  // CloudProjectName is a name of Google Cloud Project to create service
+  // accounts in.
+  //
+  // The Token Server's own service account must have Editor permission in this
+  // project.
+  string cloud_project_name = 1;
 }
