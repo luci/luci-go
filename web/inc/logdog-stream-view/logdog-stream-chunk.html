@@ -110,6 +110,31 @@ stream.
         resp = {};
       }
 
+      // Normalize the JSON values in "desc".
+      //
+      // JSONPB timestamps are in the form of RFC3339 strings.
+      if (resp.desc) {
+        resp.desc.timestamp = new Date(resp.desc.timestamp);
+      }
+      if (resp.state) {
+        resp.state.created = new Date(resp.state.created);
+        resp.state.updated = new Date(resp.state.updated);
+        resp.state.terminal_index = int64(resp.state.terminal_index);
+      }
+      if (resp.logs) {
+        resp.logs.forEach(function(le) {
+          le.time_offset = durationProtoToMillis(le.time_offset);
+          le.prefix_index = int64(le.prefix_index);
+          le.stream_index = int64(le.stream_index);
+
+          if (resp.desc) {
+            le.desc = resp.desc;
+            le.timestamp = addMillisecondsToDate(resp.desc.timestamp,
+                le.time_offset);
+          }
+        });
+      }
+
       this._setState(resp.state);
       this._setDesc(resp.desc);
       this._setLogs(resp.logs);
@@ -119,4 +144,50 @@ stream.
       return this.$.req.requestPromise();
     },
   });
+
+  /**
+   * Converts a string int64 into a Javascript number.
+   *
+   * Note that Javascript cannot hold a value larger than 2^53-1. If log streams
+   * ever approach this length, we will need to rework this value as an integer-
+   * string with helper functions.
+   */
+  function int64(s) {
+    if (!s) {
+      return 0;
+    }
+    var value = parseInt(s, 10);
+    if (isNaN(value)) {
+      throw ("Value is not a number: " + s);
+    }
+    return value;
+  }
+
+  /**
+   * Adds a specified duration protobuf to the supplied Date.
+   *
+   * Duration protos are expressed as a string referencing a floating point
+   * number of seconds followed by the letter "s":
+   * - "1337s"
+   * - "3.141592s"
+   */
+  function durationProtoToMillis(value) {
+    if (value.substr(value.length - 1) !== "s") {
+      throw ("Seconds string does not end in 's': " + value);
+    }
+    return (parseFloat(value) * 1000.0);
+  }
+
+  /**
+   * Returns a new Date object whose value is the initial date object with the
+   * specified number of milliseconds added to it.
+   *
+   * @param d {Date} The base Date object.
+   * @param ms {Number} The number of milliseconds to add.
+   */
+  function addMillisecondsToDate(d, ms) {
+    d = new Date(d);
+    d.setMilliseconds(d.getMilliseconds() + ms);
+    return d;
+  }
 </script>

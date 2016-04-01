@@ -68,6 +68,7 @@ An element for iteratively fetching complete LogDog log streams.
         notify: true,
         readOnly: true,
       },
+
       /** The latest fetched log stream state. */
       state: {
         type: Object,
@@ -75,14 +76,11 @@ An element for iteratively fetching complete LogDog log streams.
         readOnly: true,
       },
 
-      /** The log stream"s timestamp, translated from its descriptor. */
-      timestamp: {
-        computed: "_getTimestamp(desc)",
-      },
       /** The log stream"s terminal index (-1 for streaming). */
       terminalIndex: {
         computed: "_getTerminalIndex(state)",
       },
+
       /** True if the log stream has finished being fetched. */
       finished: {
         type: Boolean,
@@ -171,7 +169,7 @@ An element for iteratively fetching complete LogDog log streams.
           this._setDesc(resp.desc);
         }
 
-        var logs = this._processLogs(resp.logs);
+        var logs = resp.logs;
         if (!logs.length) {
           // No logs were loaded this round. Sleep for a bit then try again.
           // (Streaming case).
@@ -185,21 +183,6 @@ An element for iteratively fetching complete LogDog log streams.
 
         return this._resolvedLogs(logs);
       }.bind(this));
-    },
-
-    /** Performs postprocessing on the logs to make them more JS-friendly. */
-    _processLogs: function(logs) {
-      logs.forEach(function(e) {
-        e.desc = this.desc;
-
-        // Augment the logs with a timestamp.
-        e.timestamp = addDuration(this.timestamp, e.time_offset);
-
-        // Resolve int64 strings to actual values.
-        e.prefix_index = int64(e.prefix_index);
-        e.stream_index = int64(e.stream_index);
-      }.bind(this));
-      return logs;
     },
 
     /** Generates a structured Promise for a given block of log entries. */
@@ -218,17 +201,6 @@ An element for iteratively fetching complete LogDog log streams.
     },
 
     /**
-     * Calculates the timestamp of the log stream, or null if the log stream
-     * descriptor is not loaded.
-     */
-    _getTimestamp: function(desc) {
-      if (!desc) {
-        return null;
-      }
-      return timestamp(desc.timestamp);
-    },
-
-    /**
      * Calculates the terminal index of the log stream, or null if the log
      * stream state is not loaded.
      */
@@ -236,50 +208,7 @@ An element for iteratively fetching complete LogDog log streams.
       if (!state) {
         return -1;
       }
-      return int64(state.terminal_index);
+      return state.terminal_index;
     },
   });
-
-  /**
-   * Converts a string int64 into a Javascript number.
-   *
-   * Note that Javascript cannot hold a value larger than 2^53-1. If log streams
-   * ever approach this length, we will need to rework this value as an integer-
-   * string with helper functions.
-   */
-  function int64(s) {
-    if (!s) {
-      return 0;
-    }
-    var value = parseInt(s, 10);
-    if (isNaN(value)) {
-      throw ("Value is not a number: " + s);
-    }
-    return value;
-  }
-
-  /**
-   * Converts a time protobuf into a Javascript Date.
-   */
-  function timestamp(tsproto) {
-    return new Date(timestampOrDurationToMillis(tsproto));
-  }
-
-  /**
-   * Adds a specified duration protobuf to the supplied Date.
-   */
-  function addDuration(base, dproto) {
-    return new Date(base.getTime() + timestampOrDurationToMillis(dproto));
-  }
-
-  /**
-   * Converts a timestamp or duration protobuf (they're the same, structurally)
-   * into a milliseconds-from-epoch number.
-   */
-  function timestampOrDurationToMillis(proto) {
-    if (!proto) {
-      return 0;
-    }
-    return (((proto.seconds || 0) * 1000) + ((proto.nanos || 0) / 1000000));
-  }
 </script>
