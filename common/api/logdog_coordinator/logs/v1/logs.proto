@@ -136,7 +136,7 @@ message QueryRequest {
   //     first value is "foo" and whose name is "baz".
   //   - foo/bar will return all streams whose name is "foo/bar".
   //   - */* will return all streams with two-component names.
-  string Path = 1;
+  string path = 1;
 
   // ContentType, if not empty, restricts results to streams with the supplied
   // content type.
