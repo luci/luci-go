@@ -4,16 +4,14 @@
 
 // Copied from https://chromium.googlesource.com/infra/infra/+/master/infra_libs/ts_mon/protos/
 
-syntax = "proto2";
+syntax = "proto3";
 
 package ts_mon.proto;
 
 message Task {
-
-  enum TypeId { MESSAGE_TYPE_ID = 34049749; };
-  optional string service_name = 20;
-  optional string job_name = 30;
-  optional string data_center = 40;
-  optional string host_name = 50;
-  optional int32 task_num = 60;
+  string service_name = 20;
+  string job_name = 30;
+  string data_center = 40;
+  string host_name = 50;
+  int32 task_num = 60;
 }

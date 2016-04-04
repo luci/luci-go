@@ -32,22 +32,22 @@ func (t *Task) PopulateProto(d *pb.MetricsData) { d.Task = t.AsProto() }
 // IsPopulatedIn returns true if the MetricsData message is for this target.
 func (t *Task) IsPopulatedIn(d *pb.MetricsData) bool {
 	return d.Task != nil &&
-		d.Task.GetServiceName() == t.AsProto().GetServiceName() &&
-		d.Task.GetJobName() == t.AsProto().GetJobName() &&
-		d.Task.GetDataCenter() == t.AsProto().GetDataCenter() &&
-		d.Task.GetHostName() == t.AsProto().GetHostName() &&
-		d.Task.GetTaskNum() == t.AsProto().GetTaskNum()
+		d.Task.ServiceName == t.AsProto().ServiceName &&
+		d.Task.JobName == t.AsProto().JobName &&
+		d.Task.DataCenter == t.AsProto().DataCenter &&
+		d.Task.HostName == t.AsProto().HostName &&
+		d.Task.TaskNum == t.AsProto().TaskNum
 }
 
 // Hash returns a uint64 hash of this target.
 func (t *Task) Hash() uint64 {
 	h := fnv.New64a()
 	fmt.Fprintf(h, "%s\n%s\n%s\n%s\n%d",
-		t.AsProto().GetServiceName(),
-		t.AsProto().GetJobName(),
-		t.AsProto().GetDataCenter(),
-		t.AsProto().GetHostName(),
-		t.AsProto().GetTaskNum())
+		t.AsProto().ServiceName,
+		t.AsProto().JobName,
+		t.AsProto().DataCenter,
+		t.AsProto().HostName,
+		t.AsProto().TaskNum)
 	return h.Sum64()
 }
 
@@ -68,24 +68,24 @@ func (t *NetworkDevice) PopulateProto(d *pb.MetricsData) { d.NetworkDevice = t.A
 // IsPopulatedIn returns true if the MetricsData message is for this target.
 func (t *NetworkDevice) IsPopulatedIn(d *pb.MetricsData) bool {
 	return d.NetworkDevice != nil &&
-		d.NetworkDevice.GetAlertable() == t.AsProto().GetAlertable() &&
-		d.NetworkDevice.GetRealm() == t.AsProto().GetRealm() &&
-		d.NetworkDevice.GetMetro() == t.AsProto().GetMetro() &&
-		d.NetworkDevice.GetRole() == t.AsProto().GetRole() &&
-		d.NetworkDevice.GetHostname() == t.AsProto().GetHostname() &&
-		d.NetworkDevice.GetHostgroup() == t.AsProto().GetHostgroup()
+		d.NetworkDevice.Alertable == t.AsProto().Alertable &&
+		d.NetworkDevice.Realm == t.AsProto().Realm &&
+		d.NetworkDevice.Metro == t.AsProto().Metro &&
+		d.NetworkDevice.Role == t.AsProto().Role &&
+		d.NetworkDevice.Hostname == t.AsProto().Hostname &&
+		d.NetworkDevice.Hostgroup == t.AsProto().Hostgroup
 }
 
 // Hash returns a uint64 hash of this target.
 func (t *NetworkDevice) Hash() uint64 {
 	h := fnv.New64a()
 	fmt.Fprintf(h, "%t%s\n%s\n%s\n%s\n%s",
-		t.AsProto().GetAlertable(),
-		t.AsProto().GetRealm(),
-		t.AsProto().GetMetro(),
-		t.AsProto().GetRole(),
-		t.AsProto().GetHostname(),
-		t.AsProto().GetHostgroup())
+		t.AsProto().Alertable,
+		t.AsProto().Realm,
+		t.AsProto().Metro,
+		t.AsProto().Role,
+		t.AsProto().Hostname,
+		t.AsProto().Hostgroup)
 	return h.Sum64()
 }
 
@@ -107,20 +107,20 @@ func NewFromFlags(fl *Flags) (types.Target, error) {
 		}
 
 		return (*Task)(&pb.Task{
-			ServiceName: proto.String(fl.TaskServiceName),
-			JobName:     proto.String(fl.TaskJobName),
-			DataCenter:  proto.String(fl.TaskRegion),
-			HostName:    proto.String(fl.TaskHostname),
-			TaskNum:     proto.Int32(int32(fl.TaskNumber)),
+			ServiceName: fl.TaskServiceName,
+			JobName:     fl.TaskJobName,
+			DataCenter:  fl.TaskRegion,
+			HostName:    fl.TaskHostname,
+			TaskNum:     int32(fl.TaskNumber),
 		}), nil
 	} else if fl.TargetType == "device" {
 		return (*NetworkDevice)(&pb.NetworkDevice{
-			Alertable: proto.Bool(true),
-			Realm:     proto.String("ACQ_CHROME"),
-			Metro:     proto.String(fl.DeviceRegion),
-			Role:      proto.String(fl.DeviceRole),
-			Hostname:  proto.String(fl.DeviceHostname),
-			Hostgroup: proto.String(fl.DeviceNetwork),
+			Alertable: true,
+			Realm:     "ACQ_CHROME",
+			Metro:     fl.DeviceRegion,
+			Role:      fl.DeviceRole,
+			Hostname:  fl.DeviceHostname,
+			Hostgroup: fl.DeviceNetwork,
 		}), nil
 	} else {
 		return nil, fmt.Errorf("unknown --ts-mon-target-type '%s'", fl.TargetType)

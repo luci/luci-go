@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/tsmon"
@@ -105,7 +104,7 @@ func TestMiddleware(t *testing.T) {
 			// Override the TaskNum here - it's created just before this handler runs
 			// and used just after.
 			tar := tsmon.Store(c).DefaultTarget().(*target.Task)
-			tar.TaskNum = proto.Int32(int32(0))
+			tar.TaskNum = 0
 			tsmon.Store(c).SetDefaultTarget(tar)
 		})(c, rec, &http.Request{}, nil)
 		So(rec.Code, ShouldEqual, http.StatusOK)

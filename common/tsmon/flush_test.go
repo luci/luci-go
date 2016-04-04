@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
@@ -25,9 +24,7 @@ import (
 func TestFlush(t *testing.T) {
 	c := context.Background()
 
-	defaultTarget := (*target.Task)(&pb.Task{
-		ServiceName: proto.String("test"),
-	})
+	defaultTarget := (*target.Task)(&pb.Task{ServiceName: "test"})
 
 	Convey("Sends a metric", t, func() {
 		c, s, m := WithFakes(c)

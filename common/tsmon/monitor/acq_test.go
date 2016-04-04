@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/target"
@@ -60,10 +59,10 @@ func TestSerializeDistribution(t *testing.T) {
 		dpb := serializeDistribution(d)
 
 		So(*dpb, ShouldResemble, pb.PrecomputedDistribution{
-			SpecType:     pb.PrecomputedDistribution_CUSTOM_PARAMETERIZED.Enum(),
-			Width:        proto.Float64(10),
-			GrowthFactor: proto.Float64(0),
-			NumBuckets:   proto.Int32(20),
+			SpecType:     pb.PrecomputedDistribution_CUSTOM_PARAMETERIZED,
+			Width:        10,
+			GrowthFactor: 0,
+			NumBuckets:   20,
 		})
 	})
 
@@ -72,7 +71,7 @@ func TestSerializeDistribution(t *testing.T) {
 		dpb := serializeDistribution(d)
 
 		So(*dpb, ShouldResemble, pb.PrecomputedDistribution{
-			SpecType: pb.PrecomputedDistribution_CANONICAL_POWERS_OF_2.Enum(),
+			SpecType: pb.PrecomputedDistribution_CANONICAL_POWERS_OF_2,
 		})
 	})
 
@@ -81,7 +80,7 @@ func TestSerializeDistribution(t *testing.T) {
 		dpb := serializeDistribution(d)
 
 		So(*dpb, ShouldResemble, pb.PrecomputedDistribution{
-			SpecType: pb.PrecomputedDistribution_CANONICAL_POWERS_OF_10_P_0_2.Enum(),
+			SpecType: pb.PrecomputedDistribution_CANONICAL_POWERS_OF_10_P_0_2,
 		})
 	})
 
@@ -90,7 +89,7 @@ func TestSerializeDistribution(t *testing.T) {
 		dpb := serializeDistribution(d)
 
 		So(*dpb, ShouldResemble, pb.PrecomputedDistribution{
-			SpecType: pb.PrecomputedDistribution_CANONICAL_POWERS_OF_10.Enum(),
+			SpecType: pb.PrecomputedDistribution_CANONICAL_POWERS_OF_10,
 		})
 	})
 
@@ -99,10 +98,10 @@ func TestSerializeDistribution(t *testing.T) {
 		dpb := serializeDistribution(d)
 
 		So(*dpb, ShouldResemble, pb.PrecomputedDistribution{
-			SpecType:     pb.PrecomputedDistribution_CUSTOM_PARAMETERIZED.Enum(),
-			Width:        proto.Float64(0),
-			GrowthFactor: proto.Float64(4),
-			NumBuckets:   proto.Int32(20),
+			SpecType:     pb.PrecomputedDistribution_CUSTOM_PARAMETERIZED,
+			Width:        0,
+			GrowthFactor: 4,
+			NumBuckets:   20,
 		})
 	})
 
@@ -115,15 +114,15 @@ func TestSerializeDistribution(t *testing.T) {
 
 		dpb := serializeDistribution(d)
 		So(*dpb, ShouldResemble, pb.PrecomputedDistribution{
-			SpecType:     pb.PrecomputedDistribution_CUSTOM_PARAMETERIZED.Enum(),
-			Width:        proto.Float64(10),
-			GrowthFactor: proto.Float64(0),
-			NumBuckets:   proto.Int32(2),
+			SpecType:     pb.PrecomputedDistribution_CUSTOM_PARAMETERIZED,
+			Width:        10,
+			GrowthFactor: 0,
+			NumBuckets:   2,
 
 			Bucket:    []int64{3},
-			Underflow: proto.Int64(0),
-			Overflow:  proto.Int64(1),
-			Mean:      proto.Float64(5.75),
+			Underflow: 0,
+			Overflow:  1,
+			Mean:      5.75,
 		})
 	})
 }
@@ -145,13 +144,13 @@ func TestSerializeCell(t *testing.T) {
 			},
 		})
 		So(ret, ShouldResemble, &pb.MetricsData{
-			Name:             proto.String("foo"),
-			Description:      proto.String("bar"),
-			MetricNamePrefix: proto.String("/chrome/infra/"),
+			Name:             "foo",
+			Description:      "bar",
+			MetricNamePrefix: "/chrome/infra/",
 			Fields:           []*pb.MetricsField{},
-			StartTimestampUs: proto.Uint64(946782245000000),
+			StartTimestampUs: 946782245000000,
 			Task:             &pb.Task{},
-			Gauge:            proto.Int64(42),
+			Gauge:            42,
 		})
 	})
 
@@ -171,13 +170,13 @@ func TestSerializeCell(t *testing.T) {
 			},
 		})
 		So(ret, ShouldResemble, &pb.MetricsData{
-			Name:             proto.String("foo"),
-			Description:      proto.String("bar"),
-			MetricNamePrefix: proto.String("/chrome/infra/"),
+			Name:             "foo",
+			Description:      "bar",
+			MetricNamePrefix: "/chrome/infra/",
 			Fields:           []*pb.MetricsField{},
-			StartTimestampUs: proto.Uint64(946782245000000),
+			StartTimestampUs: 946782245000000,
 			Task:             &pb.Task{},
-			Counter:          proto.Int64(42),
+			Counter:          42,
 		})
 	})
 
@@ -197,13 +196,13 @@ func TestSerializeCell(t *testing.T) {
 			},
 		})
 		So(ret, ShouldResemble, &pb.MetricsData{
-			Name:             proto.String("foo"),
-			Description:      proto.String("bar"),
-			MetricNamePrefix: proto.String("/chrome/infra/"),
+			Name:             "foo",
+			Description:      "bar",
+			MetricNamePrefix: "/chrome/infra/",
 			Fields:           []*pb.MetricsField{},
-			StartTimestampUs: proto.Uint64(946782245000000),
+			StartTimestampUs: 946782245000000,
 			Task:             &pb.Task{},
-			NoncumulativeDoubleValue: proto.Float64(42),
+			NoncumulativeDoubleValue: 42,
 		})
 	})
 
@@ -223,13 +222,13 @@ func TestSerializeCell(t *testing.T) {
 			},
 		})
 		So(ret, ShouldResemble, &pb.MetricsData{
-			Name:             proto.String("foo"),
-			Description:      proto.String("bar"),
-			MetricNamePrefix: proto.String("/chrome/infra/"),
+			Name:             "foo",
+			Description:      "bar",
+			MetricNamePrefix: "/chrome/infra/",
 			Fields:           []*pb.MetricsField{},
-			StartTimestampUs: proto.Uint64(946782245000000),
+			StartTimestampUs: 946782245000000,
 			Task:             &pb.Task{},
-			CumulativeDoubleValue: proto.Float64(42),
+			CumulativeDoubleValue: 42,
 		})
 	})
 
@@ -249,13 +248,13 @@ func TestSerializeCell(t *testing.T) {
 			},
 		})
 		So(ret, ShouldResemble, &pb.MetricsData{
-			Name:             proto.String("foo"),
-			Description:      proto.String("bar"),
-			MetricNamePrefix: proto.String("/chrome/infra/"),
+			Name:             "foo",
+			Description:      "bar",
+			MetricNamePrefix: "/chrome/infra/",
 			Fields:           []*pb.MetricsField{},
-			StartTimestampUs: proto.Uint64(946782245000000),
+			StartTimestampUs: 946782245000000,
 			Task:             &pb.Task{},
-			StringValue:      proto.String("hello"),
+			StringValue:      "hello",
 		})
 	})
 
@@ -275,20 +274,20 @@ func TestSerializeCell(t *testing.T) {
 			},
 		})
 		So(ret, ShouldResemble, &pb.MetricsData{
-			Name:             proto.String("foo"),
-			Description:      proto.String("bar"),
-			MetricNamePrefix: proto.String("/chrome/infra/"),
+			Name:             "foo",
+			Description:      "bar",
+			MetricNamePrefix: "/chrome/infra/",
 			Fields:           []*pb.MetricsField{},
-			StartTimestampUs: proto.Uint64(946782245000000),
+			StartTimestampUs: 946782245000000,
 			Task:             &pb.Task{},
-			BooleanValue:     proto.Bool(true),
+			BooleanValue:     true,
 		})
 	})
 
 	Convey("NonDefaultTarget", t, func() {
 		target := target.Task{
-			ServiceName: proto.String("hello"),
-			JobName:     proto.String("world"),
+			ServiceName: "hello",
+			JobName:     "world",
 		}
 
 		ret := SerializeCell(types.Cell{
@@ -306,16 +305,16 @@ func TestSerializeCell(t *testing.T) {
 			},
 		})
 		So(ret, ShouldResemble, &pb.MetricsData{
-			Name:             proto.String("foo"),
-			Description:      proto.String("bar"),
-			MetricNamePrefix: proto.String("/chrome/infra/"),
+			Name:             "foo",
+			Description:      "bar",
+			MetricNamePrefix: "/chrome/infra/",
 			Fields:           []*pb.MetricsField{},
-			StartTimestampUs: proto.Uint64(946782245000000),
+			StartTimestampUs: 946782245000000,
 			Task: &pb.Task{
-				ServiceName: proto.String("hello"),
-				JobName:     proto.String("world"),
+				ServiceName: "hello",
+				JobName:     "world",
 			},
-			Gauge: proto.Int64(42),
+			Gauge: 42,
 		})
 	})
 }

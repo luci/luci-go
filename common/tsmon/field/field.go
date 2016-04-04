@@ -7,8 +7,6 @@ package field
 import (
 	"fmt"
 
-	"github.com/golang/protobuf/proto"
-
 	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
 )
 
@@ -40,17 +38,17 @@ func Serialize(fields []Field, values []interface{}) []*pb.MetricsField {
 
 	for i, f := range fields {
 		d := &pb.MetricsField{
-			Name: proto.String(f.Name),
-			Type: f.Type.Enum(),
+			Name: f.Name,
+			Type: f.Type,
 		}
 
 		switch f.Type {
 		case pb.MetricsField_STRING:
-			d.StringValue = proto.String(values[i].(string))
+			d.StringValue = values[i].(string)
 		case pb.MetricsField_BOOL:
-			d.BoolValue = proto.Bool(values[i].(bool))
+			d.BoolValue = values[i].(bool)
 		case pb.MetricsField_INT:
-			d.IntValue = proto.Int64(values[i].(int64))
+			d.IntValue = values[i].(int64)
 		}
 
 		ret[i] = d

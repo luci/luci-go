@@ -4,7 +4,7 @@
 
 // Copied from https://chromium.googlesource.com/infra/infra/+/master/infra_libs/ts_mon/protos/
 
-syntax = "proto2";
+syntax = "proto3";
 
 package ts_mon.proto;
 
@@ -14,28 +14,29 @@ import "acquisition_task.proto";
 message MetricsCollection {
   repeated MetricsData data = 1;
 
-  optional uint64 start_timestamp_us = 2;
-  optional string collection_point_id = 3;
+  uint64 start_timestamp_us = 2;
+  string collection_point_id = 3;
 }
 
 message MetricsField {
-  optional string name = 1;
+  string name = 1;
 
-  optional FieldType type = 3 [default = STRING];
+  FieldType type = 3;
   enum FieldType {
+    UNKNOWN = 0;
     STRING = 1;
     INT = 2;
     BOOL = 3;
   };
 
-  optional string string_value = 4;
-  optional int64 int_value = 5;
-  optional bool bool_value = 6;
+  string string_value = 4;
+  int64 int_value = 5;
+  bool bool_value = 6;
 }
 
 message PrecomputedDistribution {
   enum SpecType {
-
+    UNKNOWN = 0;
     CANONICAL_POWERS_OF_2 = 1;
     CANONICAL_POWERS_OF_10_P_0_2 = 2;
     CANONICAL_POWERS_OF_10 = 3;
@@ -43,37 +44,37 @@ message PrecomputedDistribution {
     CUSTOM_BOUNDED = 21;
   }
 
-  optional SpecType spec_type = 1;
-  optional double width = 2 [default = 10.0];
-  optional double growth_factor = 3 [default = 0.0];
-  optional int32 num_buckets = 4 [default = 10];
+  SpecType spec_type = 1;
+  double width = 2;
+  double growth_factor = 3;
+  int32 num_buckets = 4;
   repeated double lower_bounds = 5;
-  optional bool is_cumulative = 6 [default = false];
+  bool is_cumulative = 6;
   repeated sint64 bucket = 7;
-  optional sint64 underflow = 8;
-  optional sint64 overflow = 9;
-  optional double mean = 10;
-  optional double sum_of_squared_deviation = 11;
+  sint64 underflow = 8;
+  sint64 overflow = 9;
+  double mean = 10;
+  double sum_of_squared_deviation = 11;
 }
 
 message MetricsData {
-  required string name = 1;
-  optional string metric_name_prefix = 2;
+  string name = 1;  // Required.
+  string metric_name_prefix = 2;
 
-  optional ts_mon.proto.NetworkDevice network_device = 11;
-  optional ts_mon.proto.Task task = 12;
+  ts_mon.proto.NetworkDevice network_device = 11;
+  ts_mon.proto.Task task = 12;
 
   repeated MetricsField fields = 20;
 
-  optional int64 counter = 30;
-  optional int64 gauge = 32;
-  optional double noncumulative_double_value = 34;
-  optional PrecomputedDistribution distribution = 35;
-  optional string string_value = 36;
-  optional bool boolean_value = 37;
-  optional double cumulative_double_value = 38;
+  int64 counter = 30;
+  int64 gauge = 32;
+  double noncumulative_double_value = 34;
+  PrecomputedDistribution distribution = 35;
+  string string_value = 36;
+  bool boolean_value = 37;
+  double cumulative_double_value = 38;
 
-  optional uint64 start_timestamp_us = 40;
+  uint64 start_timestamp_us = 40;
 
   enum Units {
     UNKNOWN_UNITS = 0;
@@ -104,7 +105,7 @@ message MetricsData {
     MILLIAMPS = 61;
     DEGREES_CELSIUS = 62;
   }
-  optional Units units = 41;
+  Units units = 41;
 
-  optional string description = 43;
+  string description = 43;
 }

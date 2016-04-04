@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
-
 	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -25,9 +23,9 @@ func TestSerialize(t *testing.T) {
 			values: makeInterfaceSlice("v"),
 			want: []*pb.MetricsField{
 				{
-					Name:        proto.String("foo"),
-					Type:        pb.MetricsField_STRING.Enum(),
-					StringValue: proto.String("v"),
+					Name:        "foo",
+					Type:        pb.MetricsField_STRING,
+					StringValue: "v",
 				},
 			},
 		},
@@ -36,9 +34,9 @@ func TestSerialize(t *testing.T) {
 			values: makeInterfaceSlice(int64(123)),
 			want: []*pb.MetricsField{
 				{
-					Name:     proto.String("foo"),
-					Type:     pb.MetricsField_INT.Enum(),
-					IntValue: proto.Int64(123),
+					Name:     "foo",
+					Type:     pb.MetricsField_INT,
+					IntValue: 123,
 				},
 			},
 		},
@@ -47,9 +45,9 @@ func TestSerialize(t *testing.T) {
 			values: makeInterfaceSlice(true),
 			want: []*pb.MetricsField{
 				{
-					Name:      proto.String("foo"),
-					Type:      pb.MetricsField_BOOL.Enum(),
-					BoolValue: proto.Bool(true),
+					Name:      "foo",
+					Type:      pb.MetricsField_BOOL,
+					BoolValue: true,
 				},
 			},
 		},

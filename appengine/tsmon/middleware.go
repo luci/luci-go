@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
@@ -73,11 +72,11 @@ func initialize(c context.Context) error {
 
 	// Create the target.
 	tar := &target.Task{
-		DataCenter:  proto.String(targetDataCenter),
-		ServiceName: proto.String(i.AppID()),
-		JobName:     proto.String(i.ModuleName()),
-		HostName:    proto.String(strings.SplitN(i.VersionID(), ".", 2)[0]),
-		TaskNum:     proto.Int32(-1),
+		DataCenter:  targetDataCenter,
+		ServiceName: i.AppID(),
+		JobName:     i.ModuleName(),
+		HostName:    strings.SplitN(i.VersionID(), ".", 2)[0],
+		TaskNum:     -1,
 	}
 
 	tsmon.Initialize(c, mon, store.NewInMemory(tar))
@@ -122,14 +121,14 @@ func updateInstanceEntityAndFlush(c context.Context) error {
 	now := clock.Now(c)
 
 	if entity.TaskNum < 0 {
-		if *task.TaskNum >= 0 {
+		if task.TaskNum >= 0 {
 			// We used to have a task number but we don't any more (we were inactive
 			// for too long), so clear our state.
 			logging.Warningf(c, "Instance %s got purged from Datastore, but is still alive. "+
 				"Clearing cumulative metrics", info.Get(c).InstanceID())
 			tsmon.ResetCumulativeMetrics(c)
 		}
-		task.TaskNum = proto.Int32(-1)
+		task.TaskNum = -1
 		lastFlushed.Time = entity.LastUpdated
 
 		// Start complaining if we haven't been given a task number after some time.
@@ -141,7 +140,7 @@ func updateInstanceEntityAndFlush(c context.Context) error {
 		return nil
 	}
 
-	task.TaskNum = proto.Int32(int32(entity.TaskNum))
+	task.TaskNum = int32(entity.TaskNum)
 	tsmon.Store(c).SetDefaultTarget(task)
 
 	// Update the instance entity and put it back in the datastore asynchronously.

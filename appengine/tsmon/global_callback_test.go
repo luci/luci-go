@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -52,7 +51,7 @@ func TestGlobalCallbacks(t *testing.T) {
 
 	Convey("Global callbacks", t, func() {
 		c, clock := buildGAETestContext()
-		s := store.NewInMemory(&target.Task{ServiceName: proto.String("default target")})
+		s := store.NewInMemory(&target.Task{ServiceName: "default target"})
 		mon := &monitor.Fake{}
 		state := tsmon.GetState(c)
 		state.S = s
