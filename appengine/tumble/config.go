@@ -44,6 +44,13 @@ type Config struct {
 	// queue tasks. It defaults to 4 seconds.
 	TemporalRoundFactor clockflag.Duration `json:"temporalRoundFactor,omitempty"`
 
+	// DustSettleTimeout is the amount of time to wait in between mutation
+	// processing iterations.
+	//
+	// This should be chosen as a compromise between higher expectations of the
+	// eventually-consistent datastore and task processing latency.
+	DustSettleTimeout clockflag.Duration `json:"dustSettleTimeout,omitempty"`
+
 	// NumGoroutines is the number of gorountines that will process in parallel
 	// in a single shard. Each goroutine will process exactly one root entity.
 	// It defaults to 16.
@@ -69,6 +76,7 @@ var defaultConfig = Config{
 	TemporalRoundFactor: clockflag.Duration(4 * time.Second),
 	NumGoroutines:       16,
 	ProcessMaxBatchSize: 128,
+	DustSettleTimeout:   clockflag.Duration(2 * time.Second),
 }
 
 // getConfig returns the current configuration.

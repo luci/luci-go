@@ -34,7 +34,9 @@ type Testing struct {
 // NewTesting returns a new Testing instance that is configured to use the
 // default tumble configuration.
 func NewTesting() *Testing {
-	return &Testing{defaultConfig}
+	t := Testing{defaultConfig}
+	t.DustSettleTimeout = 0
+	return &t
 }
 
 func (t *Testing) installSettings(c context.Context) {
@@ -58,8 +60,6 @@ func (t *Testing) installSettings(c context.Context) {
 // usage, since it disables some internal timeouts. DO NOT CALL THIS METHOD
 // IN PRODUCTION.
 func (t *Testing) Context() context.Context {
-	dustSettleTimeout = 0
-
 	ctx := memory.Use(memlogger.Use(context.Background()))
 	ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC.Round(time.Millisecond))
 	ctx = settings.Use(ctx, settings.New(&settings.MemoryStorage{}))

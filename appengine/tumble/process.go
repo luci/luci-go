@@ -50,8 +50,6 @@ func expandedShardBounds(c context.Context, shard uint64) (low, high int64) {
 	return
 }
 
-var dustSettleTimeout = 2 * time.Second
-
 // ProcessShardHandler is a http handler suitable for installation into
 // a httprouter. It expects `logging` and `luci/gae` services to be installed
 // into the context.
@@ -206,7 +204,7 @@ func processShard(c context.Context, cfg *Config, timestamp time.Time, shard uin
 					logging.Warningf(c, "could not update last process memcache key %s: %s", lastKey, err)
 				}
 
-				if tr := clock.Sleep(c, dustSettleTimeout); tr.Incomplete() {
+				if tr := clock.Sleep(c, time.Duration(cfg.DustSettleTimeout)); tr.Incomplete() {
 					logging.Warningf(c, "sleep interrupted, context is done: %v", tr.Err)
 					return tr.Err
 				}

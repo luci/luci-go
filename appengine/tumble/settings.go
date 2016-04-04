@@ -61,6 +61,13 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 			Validator:   validateDuration,
 		},
 		{
+			ID:          "DustSettleTimeout",
+			Title:       "Amount of time to wait for datastore to settle in between mutation rounds",
+			Type:        settings.UIFieldText,
+			Placeholder: defaultConfig.DustSettleTimeout.String(),
+			Validator:   validateDuration,
+		},
+		{
 			ID:          "NumGoroutines",
 			Title:       "Number of goroutines per shard",
 			Type:        settings.UIFieldText,
@@ -106,6 +113,9 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 	if cfg.TemporalRoundFactor != 0 {
 		values["TemporalRoundFactor"] = cfg.TemporalRoundFactor.String()
 	}
+	if cfg.DustSettleTimeout != 0 {
+		values["DustSettleTimeout"] = cfg.DustSettleTimeout.String()
+	}
 	if cfg.NumGoroutines != 0 {
 		values["NumGoroutines"] = strconv.Itoa(cfg.NumGoroutines)
 	}
@@ -142,6 +152,12 @@ func (settingsUIPage) WriteSettings(c context.Context, values map[string]string,
 		cfg.TemporalRoundFactor, err = clockflag.ParseDuration(v)
 		if err != nil {
 			return fmt.Errorf("could not parse TemporalRoundFactor: %v", err)
+		}
+	}
+	if v := values["DustSettleTimeout"]; v != "" {
+		cfg.DustSettleTimeout, err = clockflag.ParseDuration(v)
+		if err != nil {
+			return fmt.Errorf("could not parse DustSettleTimeout: %v", err)
 		}
 	}
 	if v := values["NumGoroutines"]; v != "" {
