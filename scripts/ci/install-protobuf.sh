@@ -9,8 +9,8 @@
 
 set -ex
 
-V="2.6.1"
+V="3.0.0-beta-2"
 
-wget https://github.com/google/protobuf/releases/download/v${V}/protobuf-${V}.tar.gz
-tar -xzvf protobuf-${V}.tar.gz
-cd protobuf-${V} && ./configure --prefix=/usr && make && sudo make install
+wget https://github.com/google/protobuf/archive/v${V}.tar.gz
+tar -xzvf v${V}.tar.gz
+cd protobuf-${V} && ./autogen.sh && ./configure --prefix=/usr && make -j2 && sudo make install
