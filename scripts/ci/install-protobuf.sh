@@ -10,7 +10,14 @@
 set -ex
 
 V="3.0.0-beta-2"
+ARCH="x86_64"
+DIST="protoc-${V}-linux-${ARCH}"
 
-wget https://github.com/google/protobuf/archive/v${V}.tar.gz
-tar -xzvf v${V}.tar.gz
-cd protobuf-${V} && ./autogen.sh && ./configure --prefix=/usr && make -j2 && sudo make install
+# Download and unpack the protoc binary distribution package.
+wget "https://github.com/google/protobuf/releases/download/v${V}/${DIST}.zip"
+unzip "${DIST}.zip"
+
+# Copy protoc into "/usr/bin" and the includes into "/usr/include".
+sudo mkdir -p /usr/bin /usr/include
+sudo mv "./protoc" /usr/bin/
+sudo mv "./google" /usr/include/
