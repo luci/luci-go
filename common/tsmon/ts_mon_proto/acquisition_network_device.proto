@@ -4,16 +4,18 @@
 
 // Copied from https://chromium.googlesource.com/infra/infra/+/master/infra_libs/ts_mon/protos/
 
-syntax = "proto3";
+syntax = "proto2";
 
 package ts_mon.proto;
 
 message NetworkDevice {
-  bool alertable = 101;
-  string realm = 102;
-  string metro = 104;
-  string role = 105;
-  string hostname = 106;
-  string hostgroup = 108;
+  enum TypeId { MESSAGE_TYPE_ID = 34049749; };
+
+  optional bool alertable = 101;
+  optional string realm = 102;
+  optional string metro = 104;
+  optional string role = 105;
+  optional string hostname = 106;
+  optional string hostgroup = 108;
 }
 

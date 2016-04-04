@@ -13,14 +13,102 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-type Task struct {
-	ServiceName string `protobuf:"bytes,20,opt,name=service_name" json:"service_name,omitempty"`
-	JobName     string `protobuf:"bytes,30,opt,name=job_name" json:"job_name,omitempty"`
-	DataCenter  string `protobuf:"bytes,40,opt,name=data_center" json:"data_center,omitempty"`
-	HostName    string `protobuf:"bytes,50,opt,name=host_name" json:"host_name,omitempty"`
-	TaskNum     int32  `protobuf:"varint,60,opt,name=task_num" json:"task_num,omitempty"`
+type Task_TypeId int32
+
+const (
+	Task_MESSAGE_TYPE_ID Task_TypeId = 34049749
+)
+
+var Task_TypeId_name = map[int32]string{
+	34049749: "MESSAGE_TYPE_ID",
+}
+var Task_TypeId_value = map[string]int32{
+	"MESSAGE_TYPE_ID": 34049749,
 }
 
-func (m *Task) Reset()         { *m = Task{} }
-func (m *Task) String() string { return proto.CompactTextString(m) }
-func (*Task) ProtoMessage()    {}
+func (x Task_TypeId) Enum() *Task_TypeId {
+	p := new(Task_TypeId)
+	*p = x
+	return p
+}
+func (x Task_TypeId) String() string {
+	return proto.EnumName(Task_TypeId_name, int32(x))
+}
+func (x *Task_TypeId) UnmarshalJSON(data []byte) error {
+	value, err := proto.UnmarshalJSONEnum(Task_TypeId_value, data, "Task_TypeId")
+	if err != nil {
+		return err
+	}
+	*x = Task_TypeId(value)
+	return nil
+}
+func (Task_TypeId) EnumDescriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 0} }
+
+type Task struct {
+	ServiceName      *string `protobuf:"bytes,20,opt,name=service_name" json:"service_name,omitempty"`
+	JobName          *string `protobuf:"bytes,30,opt,name=job_name" json:"job_name,omitempty"`
+	DataCenter       *string `protobuf:"bytes,40,opt,name=data_center" json:"data_center,omitempty"`
+	HostName         *string `protobuf:"bytes,50,opt,name=host_name" json:"host_name,omitempty"`
+	TaskNum          *int32  `protobuf:"varint,60,opt,name=task_num" json:"task_num,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
+}
+
+func (m *Task) Reset()                    { *m = Task{} }
+func (m *Task) String() string            { return proto.CompactTextString(m) }
+func (*Task) ProtoMessage()               {}
+func (*Task) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+
+func (m *Task) GetServiceName() string {
+	if m != nil && m.ServiceName != nil {
+		return *m.ServiceName
+	}
+	return ""
+}
+
+func (m *Task) GetJobName() string {
+	if m != nil && m.JobName != nil {
+		return *m.JobName
+	}
+	return ""
+}
+
+func (m *Task) GetDataCenter() string {
+	if m != nil && m.DataCenter != nil {
+		return *m.DataCenter
+	}
+	return ""
+}
+
+func (m *Task) GetHostName() string {
+	if m != nil && m.HostName != nil {
+		return *m.HostName
+	}
+	return ""
+}
+
+func (m *Task) GetTaskNum() int32 {
+	if m != nil && m.TaskNum != nil {
+		return *m.TaskNum
+	}
+	return 0
+}
+
+func init() {
+	proto.RegisterType((*Task)(nil), "ts_mon.proto.Task")
+	proto.RegisterEnum("ts_mon.proto.Task_TypeId", Task_TypeId_name, Task_TypeId_value)
+}
+
+var fileDescriptor1 = []byte{
+	// 175 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0x12, 0x4b, 0x4c, 0x2e, 0x2c,
+	0xcd, 0x2c, 0xce, 0x2c, 0xc9, 0xcc, 0xcf, 0x8b, 0x2f, 0x49, 0x2c, 0xce, 0xd6, 0x2b, 0x28, 0xca,
+	0x2f, 0xc9, 0x17, 0xe2, 0x29, 0x29, 0x8e, 0xcf, 0xcd, 0xcf, 0x83, 0xf0, 0x94, 0xba, 0x18, 0xb9,
+	0x58, 0x42, 0x80, 0x92, 0x42, 0x22, 0x5c, 0x3c, 0xc5, 0xa9, 0x45, 0x65, 0x99, 0xc9, 0xa9, 0xf1,
+	0x79, 0x89, 0xb9, 0xa9, 0x12, 0x22, 0x0a, 0x8c, 0x1a, 0x9c, 0x42, 0x02, 0x5c, 0x1c, 0x59, 0xf9,
+	0x49, 0x10, 0x11, 0x39, 0xb0, 0x88, 0x30, 0x17, 0x77, 0x4a, 0x62, 0x49, 0x62, 0x7c, 0x72, 0x6a,
+	0x5e, 0x49, 0x6a, 0x91, 0x84, 0x06, 0x58, 0x50, 0x90, 0x8b, 0x33, 0x23, 0xbf, 0xb8, 0x04, 0xa2,
+	0xce, 0x08, 0xa6, 0x13, 0x64, 0x69, 0x7c, 0x5e, 0x69, 0xae, 0x84, 0x0d, 0x50, 0x84, 0x55, 0x49,
+	0x81, 0x8b, 0x2d, 0xa4, 0xb2, 0x20, 0xd5, 0x33, 0x45, 0x48, 0x8c, 0x8b, 0xdf, 0xd7, 0x35, 0x38,
+	0xd8, 0xd1, 0xdd, 0x35, 0x3e, 0x24, 0x32, 0xc0, 0x35, 0xde, 0xd3, 0x45, 0xe0, 0xea, 0xdc, 0x79,
+	0x02, 0x80, 0x00, 0x00, 0x00, 0xff, 0xff, 0x38, 0x9f, 0x4c, 0xf2, 0xb3, 0x00, 0x00, 0x00,
+}

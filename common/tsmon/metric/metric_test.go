@@ -7,6 +7,7 @@ package metric
 import (
 	"testing"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/monitor"
@@ -20,7 +21,7 @@ import (
 
 func makeContext() context.Context {
 	return tsmon.WithState(context.Background(), &tsmon.State{
-		S:                 store.NewInMemory(&target.Task{ServiceName: "default target"}),
+		S:                 store.NewInMemory(&target.Task{ServiceName: proto.String("default target")}),
 		M:                 monitor.NewNilMonitor(),
 		RegisteredMetrics: map[string]types.Metric{},
 	})

@@ -262,7 +262,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					So(len(all), ShouldEqual, 1)
 
 					msg := monitor.SerializeCell(all[0])
-					So(time.Unix(0, int64(msg.StartTimestampUs*uint64(time.Microsecond))).UTC().String(),
+					So(time.Unix(0, int64(msg.GetStartTimestampUs()*uint64(time.Microsecond))).UTC().String(),
 						ShouldEqual, t.String())
 				})
 			}
@@ -288,7 +288,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 					// Create a context with a different target.
 					t := target.Task{}
-					t.AsProto().ServiceName = "foo"
+					t.AsProto().ServiceName = proto.String("foo")
 					ctxWithTarget := target.Set(ctx, &t)
 
 					// Set the first value on the default target, second value on the
@@ -319,9 +319,9 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 					coll := monitor.SerializeCells(all)
 					sort.Sort(sortableDataSlice(coll.Data))
-					So(coll.Data[0].Task.ServiceName, ShouldEqual,
-						s.DefaultTarget().(*target.Task).AsProto().ServiceName)
-					So(coll.Data[1].Task.ServiceName, ShouldEqual, t.AsProto().ServiceName)
+					So(coll.Data[0].Task.GetServiceName(), ShouldEqual,
+						s.DefaultTarget().(*target.Task).AsProto().GetServiceName())
+					So(coll.Data[1].Task.GetServiceName(), ShouldEqual, t.AsProto().GetServiceName())
 				})
 			}
 		})
@@ -466,7 +466,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					So(len(all), ShouldEqual, 1)
 
 					msg := monitor.SerializeCell(all[0])
-					So(time.Unix(0, int64(msg.StartTimestampUs*uint64(time.Microsecond))).UTC().String(),
+					So(time.Unix(0, int64(msg.GetStartTimestampUs()*uint64(time.Microsecond))).UTC().String(),
 						ShouldEqual, t.String())
 				})
 			}
@@ -492,7 +492,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 					// Create a context with a different target.
 					t := target.Task{}
-					t.AsProto().ServiceName = "foo"
+					t.AsProto().ServiceName = proto.String("foo")
 					ctxWithTarget := target.Set(ctx, &t)
 
 					// Incr the first delta on the default target, second delta on the
@@ -513,9 +513,9 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 					coll := monitor.SerializeCells(all)
 					sort.Sort(sortableDataSlice(coll.Data))
-					So(coll.Data[0].Task.ServiceName, ShouldEqual,
-						s.DefaultTarget().(*target.Task).AsProto().ServiceName)
-					So(coll.Data[1].Task.ServiceName, ShouldEqual, t.AsProto().ServiceName)
+					So(coll.Data[0].Task.GetServiceName(), ShouldEqual,
+						s.DefaultTarget().(*target.Task).AsProto().GetServiceName())
+					So(coll.Data[1].Task.GetServiceName(), ShouldEqual, t.AsProto().GetServiceName())
 				})
 			}
 		})
@@ -661,7 +661,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			opts.RegistrationFinished(s)
 
 			t := target.Task{}
-			t.AsProto().ServiceName = "foo"
+			t.AsProto().ServiceName = proto.String("foo")
 			ctxWithTarget := target.Set(ctx, &t)
 
 			So(s.Set(ctx, m, time.Time{}, []interface{}{}, int64(42)), ShouldBeNil)

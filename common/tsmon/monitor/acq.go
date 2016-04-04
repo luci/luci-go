@@ -8,6 +8,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/types"
@@ -35,11 +36,11 @@ func SerializeCells(cells []types.Cell) *pb.MetricsCollection {
 // SerializeCell creates one MetricsData message from a cell.
 func SerializeCell(c types.Cell) *pb.MetricsData {
 	d := pb.MetricsData{}
-	d.Name = c.Name
-	d.Description = c.Description
-	d.MetricNamePrefix = metricNamePrefix
+	d.Name = proto.String(c.Name)
+	d.Description = proto.String(c.Description)
+	d.MetricNamePrefix = proto.String(metricNamePrefix)
 	d.Fields = field.Serialize(c.Fields, c.FieldVals)
-	d.StartTimestampUs = uint64(c.ResetTime.UnixNano() / int64(time.Microsecond))
+	d.StartTimestampUs = proto.Uint64(uint64(c.ResetTime.UnixNano() / int64(time.Microsecond)))
 	c.Target.PopulateProto(&d)
 
 	SerializeValue(c.ValueType, c.Value, &d)
@@ -50,23 +51,23 @@ func SerializeCell(c types.Cell) *pb.MetricsData {
 func SerializeValue(typ types.ValueType, value interface{}, d *pb.MetricsData) {
 	switch typ {
 	case types.NonCumulativeIntType:
-		d.Gauge = value.(int64)
+		d.Gauge = proto.Int64(value.(int64))
 	case types.CumulativeIntType:
-		d.Counter = value.(int64)
+		d.Counter = proto.Int64(value.(int64))
 	case types.NonCumulativeFloatType:
-		d.NoncumulativeDoubleValue = value.(float64)
+		d.NoncumulativeDoubleValue = proto.Float64(value.(float64))
 	case types.CumulativeFloatType:
-		d.CumulativeDoubleValue = value.(float64)
+		d.CumulativeDoubleValue = proto.Float64(value.(float64))
 	case types.StringType:
-		d.StringValue = value.(string)
+		d.StringValue = proto.String(value.(string))
 	case types.BoolType:
-		d.BooleanValue = value.(bool)
+		d.BooleanValue = proto.Bool(value.(bool))
 	case types.CumulativeDistributionType:
 		d.Distribution = serializeDistribution(value.(*distribution.Distribution))
-		d.Distribution.IsCumulative = true
+		d.Distribution.IsCumulative = proto.Bool(true)
 	case types.NonCumulativeDistributionType:
 		d.Distribution = serializeDistribution(value.(*distribution.Distribution))
-		d.Distribution.IsCumulative = false
+		d.Distribution.IsCumulative = proto.Bool(false)
 	}
 }
 
@@ -95,19 +96,19 @@ func serializeDistribution(d *distribution.Distribution) *pb.PrecomputedDistribu
 	if d.Bucketer().Width() == 0 {
 		switch d.Bucketer().GrowthFactor() {
 		case 2:
-			ret.SpecType = pb.PrecomputedDistribution_CANONICAL_POWERS_OF_2
+			ret.SpecType = pb.PrecomputedDistribution_CANONICAL_POWERS_OF_2.Enum()
 		case math.Pow(10, 0.2):
-			ret.SpecType = pb.PrecomputedDistribution_CANONICAL_POWERS_OF_10_P_0_2
+			ret.SpecType = pb.PrecomputedDistribution_CANONICAL_POWERS_OF_10_P_0_2.Enum()
 		case 10:
-			ret.SpecType = pb.PrecomputedDistribution_CANONICAL_POWERS_OF_10
+			ret.SpecType = pb.PrecomputedDistribution_CANONICAL_POWERS_OF_10.Enum()
 		}
 	}
 
-	if ret.SpecType == pb.PrecomputedDistribution_UNKNOWN {
-		ret.SpecType = pb.PrecomputedDistribution_CUSTOM_PARAMETERIZED
-		ret.Width = d.Bucketer().Width()
-		ret.GrowthFactor = d.Bucketer().GrowthFactor()
-		ret.NumBuckets = int32(d.Bucketer().NumFiniteBuckets())
+	if ret.SpecType == nil {
+		ret.SpecType = pb.PrecomputedDistribution_CUSTOM_PARAMETERIZED.Enum()
+		ret.Width = proto.Float64(d.Bucketer().Width())
+		ret.GrowthFactor = proto.Float64(d.Bucketer().GrowthFactor())
+		ret.NumBuckets = proto.Int32(int32(d.Bucketer().NumFiniteBuckets()))
 	}
 
 	// Copy the distribution bucket values.  Exclude the overflow buckets on each
@@ -122,14 +123,14 @@ func serializeDistribution(d *distribution.Distribution) *pb.PrecomputedDistribu
 
 	// Add overflow buckets if present.
 	if len(d.Buckets()) >= 1 {
-		ret.Underflow = d.Buckets()[0]
+		ret.Underflow = proto.Int64(d.Buckets()[0])
 	}
 	if len(d.Buckets()) == d.Bucketer().NumBuckets() {
-		ret.Overflow = d.Buckets()[d.Bucketer().NumBuckets()-1]
+		ret.Overflow = proto.Int64(d.Buckets()[d.Bucketer().NumBuckets()-1])
 	}
 
 	if d.Count() > 0 {
-		ret.Mean = d.Sum() / float64(d.Count())
+		ret.Mean = proto.Float64(d.Sum() / float64(d.Count()))
 	}
 
 	return &ret
