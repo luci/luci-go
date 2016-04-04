@@ -56,6 +56,7 @@ type Executor struct {
 	// error will be tee'd.
 	TeeStderr io.Writer
 
+	executed   bool
 	returnCode int
 	steps      []*milo.Step
 }
@@ -63,7 +64,8 @@ type Executor struct {
 // Run executes the bootstrapped process, blocking until it completes.
 func (e *Executor) Run(ctx context.Context, command []string) error {
 	// Clear any previous state.
-	e.returnCode = -1
+	e.executed = false
+	e.returnCode = 0
 	e.steps = nil
 
 	if len(command) == 0 {
@@ -102,15 +104,14 @@ func (e *Executor) Run(ctx context.Context, command []string) error {
 			case *exec.ExitError:
 				status := err.(*exec.ExitError).Sys().(syscall.WaitStatus)
 				e.returnCode = status.ExitStatus()
-				if e.returnCode < 0 {
-					panic(fmt.Errorf("process returned negative return code (%d)", e.returnCode))
-				}
+				e.executed = true
 
 			default:
 				log.WithError(err).Errorf(ctx, "Failed to Wait() for bootstrapped process.")
 			}
 		} else {
 			e.returnCode = 0
+			e.executed = true
 		}
 	}()
 
@@ -153,10 +154,17 @@ func (e *Executor) Steps() []*milo.Step {
 
 // ReturnCode returns the executed process' return code.
 //
-// If the process hasn't completed its execution (Start, Wait), then this will
-// return -1.
+// If the process hasn't completed its execution (see Executed), then this will
+// return 0.
 func (e *Executor) ReturnCode() int {
 	return e.returnCode
+}
+
+// Executed returns true if the bootstrapped process' execution completed
+// successfully. This is independent of the return value, and can be used to
+// differentiate execution errors from process errors.
+func (e *Executor) Executed() bool {
+	return e.executed
 }
 
 func (e *Executor) configStream(r io.Reader, name types.StreamName, tee io.Writer) *annotee.Stream {

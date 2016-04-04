@@ -219,10 +219,10 @@ func mainImpl(args []string) int {
 		}
 	}
 
-	if rc := e.ReturnCode(); rc >= 0 {
-		return rc
+	if !e.Executed() {
+		return runtimeErrorReturnCode
 	}
-	return runtimeErrorReturnCode
+	return e.ReturnCode()
 }
 
 func main() {
