@@ -63,17 +63,24 @@ func TestBuffer(t *testing.T) {
 
 		// Allow synchronization when a log entry is ingested. Set "ackC" to nil to
 		// disable synchronization.
-		ackC := make(chan *Entry)
-		b.testLogCallback = func(e *Entry) {
-			if ackC != nil {
-				ackC <- e
-			}
+		var bufferC chan []*Entry
+		var ackC chan *Entry
+		b.testCB = &testCallbacks{
+			bufferRound: func(e []*Entry) {
+				if bufferC != nil {
+					bufferC <- e
+				}
+			},
+			receivedLogEntry: func(e *Entry) {
+				if ackC != nil {
+					ackC <- e
+				}
+			},
 		}
 
 		So(b.BatchSize, ShouldEqual, DefaultBatchSize)
 
 		Convey(`Will push a single entry.`, func() {
-			ackC = nil
 			err := b.PushEntries([]*Entry{
 				{
 					InsertID: "a",
@@ -90,6 +97,9 @@ func TestBuffer(t *testing.T) {
 		})
 
 		Convey(`Will batch logging data.`, func() {
+			bufferC = make(chan []*Entry)
+			ackC = make(chan *Entry)
+
 			// The first message will be read immediately.
 			err := b.PushEntries([]*Entry{
 				{
@@ -98,6 +108,7 @@ func TestBuffer(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			<-ackC
+			<-bufferC
 
 			// The next set of messages will be batched, since we haven't allowed our
 			// client stub to finish its PushEntries.
@@ -119,6 +130,7 @@ func TestBuffer(t *testing.T) {
 			for range entries {
 				<-ackC
 			}
+			<-bufferC
 			bundle = <-entriesC
 
 			So(len(bundle), ShouldEqual, b.BatchSize)
@@ -129,7 +141,6 @@ func TestBuffer(t *testing.T) {
 		})
 
 		Convey(`Will retry on failure.`, func() {
-			ackC = nil
 			failures := 3
 			client.callback = func(entries []*Entry) error {
 				if failures > 0 {

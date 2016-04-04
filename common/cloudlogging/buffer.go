@@ -70,7 +70,18 @@ type bufferImpl struct {
 	logC      chan *Entry
 	finishedC chan struct{}
 
-	testLogCallback func(*Entry) // (Testing) If not nil, callback when a log Entry is received.
+	testCB *testCallbacks
+}
+
+// (Testing) a set of callbacks that can be installed by testing for
+// fine-grained control.
+type testCallbacks struct {
+	// bufferRound is called when the buffer's inner loop has completed a buffer
+	// round.
+	bufferRound func([]*Entry)
+	// receivedLogEntry, if not nil, is called for each LogEntry that is received
+	// by the buffer's inner loop the moment that it is received.
+	receivedLogEntry func(*Entry) // (Testing) If not nil, callback when a log Entry is received.
 }
 
 // NewBuffer instantiates and starts a new cloud logging Buffer.
@@ -128,17 +139,17 @@ func (b *bufferImpl) process() {
 
 	entries := make([]*Entry, b.BatchSize)
 	for e := range b.logC {
-		b.ackLogEntry(e)
-
 		// Pull up to our entry capacity.
 		entries[0] = e
 		count := 1
+		b.receivedLogEntry(e)
 
 		// Buffer other logs that are also available in the channel.
 		for count < len(entries) {
 			moreE := (*Entry)(nil)
 			select {
 			case moreE = <-b.logC:
+				b.receivedLogEntry(moreE)
 				break
 			default:
 				break
@@ -146,8 +157,6 @@ func (b *bufferImpl) process() {
 			if moreE == nil {
 				break
 			}
-			b.ackLogEntry(moreE)
-
 			entries[count] = moreE
 			count++
 		}
@@ -155,6 +164,9 @@ func (b *bufferImpl) process() {
 		// Clone entries so we can dispatch to goroutine.
 		entryCopy := make([]*Entry, count)
 		copy(entryCopy, entries[:count])
+
+		// (Testing) ACK any log entries that were received, for synchronization.
+		b.bufferRound(entryCopy)
 
 		// Acquire a push channel semaphore token.
 		pushSemC.Lock()
@@ -183,11 +195,15 @@ func (b *bufferImpl) publishLogs(entries []*Entry) {
 	}
 }
 
-// ackLogEntry writes the log entry to our acknowledgement channel. This is used
-// for synchronization during testing.
-func (b *bufferImpl) ackLogEntry(e *Entry) {
-	if b.testLogCallback != nil {
-		b.testLogCallback(e)
+func (b *bufferImpl) bufferRound(entries []*Entry) {
+	if b.testCB != nil && b.testCB.bufferRound != nil {
+		b.testCB.bufferRound(entries)
+	}
+}
+
+func (b *bufferImpl) receivedLogEntry(e *Entry) {
+	if b.testCB != nil && b.testCB.receivedLogEntry != nil {
+		b.testCB.receivedLogEntry(e)
 	}
 }
 
