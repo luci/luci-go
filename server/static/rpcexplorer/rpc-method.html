@@ -33,7 +33,7 @@
           on-response="_onCallComplete"
           on-error="_onCallComplete">
       </rpc-client>
-      <div>[[methodDesc.source_code_info.leading_comments]]</div>
+      <div>[[methodDesc.sourceCodeInfo.leadingComments]]</div>
       <hr>
 
       <p>Request:</p>
@@ -136,7 +136,7 @@
 
       _getRequestTypeName: function(methodDesc) {
         return (methodDesc &&
-            rpcExplorer.descUtil.trimPrefixDot(methodDesc.input_type));
+            rpcExplorer.descUtil.trimPrefixDot(methodDesc.inputType));
       },
 
       _onRequestChanged: function() {

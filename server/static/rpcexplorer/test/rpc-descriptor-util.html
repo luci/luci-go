@@ -54,8 +54,8 @@
         test(name, function() {
           var desc = util.resolve(descriptor, name).desc;
           expect(desc).to.be.ok;
-          expect(desc.source_code_info).to.be.ok;
-          expect(desc.source_code_info.leading_comments).to.equal(comment);
+          expect(desc.sourceCodeInfo).to.be.ok;
+          expect(desc.sourceCodeInfo.leadingComments).to.equal(comment);
         });
       }
 

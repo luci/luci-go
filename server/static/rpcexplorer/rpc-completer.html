@@ -78,7 +78,7 @@
           console.log('Field ' + path[i] + ' not found')
           return [];
         }
-        var typeName = field.type_name;
+        var typeName = field.typeName;
         if (typeof typeName != 'string') {
           console.log('Field ' + path[i] + ' is not a message or enum')
           return [];
@@ -96,8 +96,8 @@
       var shouldQuote = quoteCount % 2 === 0;
 
       function docTooltip(desc) {
-        var info = desc.source_code_info;
-        return info && info.leading_comments || '';
+        var info = desc.sourceCodeInfo;
+        return info && info.leadingComments || '';
       }
 
       var completions = [];
@@ -284,7 +284,7 @@
     fieldTypeName: function(field) {
       var name = this._scalarTypeNames[field.type];
       if (!name) {
-        name = rpcExplorer.descUtil.trimPrefixDot(field.type_name);
+        name = rpcExplorer.descUtil.trimPrefixDot(field.typeName);
       }
       return name;
     },

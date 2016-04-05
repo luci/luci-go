@@ -49,10 +49,10 @@
         for (var i = 0; i < names.length; i++) {
           var svc = rpcExplorer.descUtil.resolve(desc, names[i]);
           if (svc && svc.type === 'service') {
-            var info = svc.desc.source_code_info;
+            var info = svc.desc.sourceCodeInfo;
             result.push({
               name: names[i],
-              comments: info && info.leading_comments
+              comments: info && info.leadingComments
             });
           }
         }
