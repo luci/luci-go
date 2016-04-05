@@ -21,7 +21,7 @@ message TokenServerConfig {
 // The Token Server uses this CN to derive a name of a service account to
 // associate with a node. It splits FQDN into a hostname ("slave43-c1") and
 // a domain name ("c.chromecompute.google.com.internal"), searches for a domain
-// name in "known_domains" map, and creates a service account in a Cloud Project
+// name in "known_domains" set, and creates a service account in a Cloud Project
 // specified there: <hostname>@<project-id>.iam.gserviceaccount.com.
 //
 // Note that we can't put FQDN in the service account email, since it is limited
@@ -34,15 +34,18 @@ message CertificateAuthorityConfig {
 
   // KnownDomains describes what cloud project to use for nodes in particular
   // domains.
-  map<string, DomainConfig> known_domains = 5;
+  repeated DomainConfig known_domains = 5;
 }
 
 // DomainConfig is used inside CertificateAuthorityConfig.
 message DomainConfig {
+  // Domain is a domain name of hosts this config applies to.
+  string domain = 1;
+
   // CloudProjectName is a name of Google Cloud Project to create service
   // accounts in.
   //
   // The Token Server's own service account must have Editor permission in this
   // project.
-  string cloud_project_name = 1;
+  string cloud_project_name = 2;
 }
