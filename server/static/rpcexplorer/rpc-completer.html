@@ -73,7 +73,7 @@
         if (type.type != 'messageType') {
           return [];
         }
-        var field = util.findByName(type.desc.field, path[i]);
+        var field = util.findByJsonName(type.desc.field, path[i]);
         if (!field) {
           console.log('Field ' + path[i] + ' not found')
           return [];
@@ -113,7 +113,7 @@
               meta = 'repeated ' + meta;
             }
             completions.push({
-              caption: field.name,
+              caption: field.jsonName,
               snippet: this.snippetForField(field, shouldQuote),
               meta: meta,
               docTooltip: docTooltip(field)
@@ -143,7 +143,7 @@
     snippetForField: function(field, shouldQuote) {
       // snippet docs:
       // https://cloud9-sdk.readme.io/docs/snippets
-      var snippet = field.name;
+      var snippet = field.jsonName;
       if (shouldQuote) {
         snippet = '"' + snippet + '"';
       }

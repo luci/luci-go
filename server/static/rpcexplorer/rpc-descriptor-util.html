@@ -192,6 +192,18 @@
         return null;
       },
 
+      findByJsonName: function(array, jsonName) {
+        if (!array) {
+          return null;
+        }
+        for (var i = 0; i < array.length; i++) {
+          if (array[i].jsonName === jsonName) {
+            return array[i];
+          }
+        }
+        return null;
+      },
+
       trimPrefixDot: function(name) {
         if (typeof name === 'string' && name.charAt(0) === '.') {
           name = name.substr(1);

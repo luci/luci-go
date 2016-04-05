@@ -121,8 +121,8 @@
           docTooltip: ' Names of files imported by this file.\n'
         });
         expect(completions).to.contain({
-          caption: 'weak_dependency',
-          snippet: '"weak_dependency": [${0}]',
+          caption: 'weakDependency',
+          snippet: '"weakDependency": [${0}]',
           meta: 'repeated int32',
           docTooltip: (
               ' Indexes of the weak imported files in the dependency list.\n' +
@@ -134,7 +134,7 @@
         // Completions for FieldOptions.CType.
         var completions = completer.getCompletionsForText(
           fileSet,
-          '"file":[{"message_type":{"field":{"options": {"ctype": ');
+          '"file":[{"messageType":{"field":{"options": {"ctype": ');
         expect(completions).to.deep.equal([
           {
             caption: 'STRING',
