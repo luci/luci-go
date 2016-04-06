@@ -38,6 +38,7 @@ func resolveServer(server string) string {
 }
 
 func getSwarmingClient(c context.Context, server string) (*swarming.Service, error) {
+	c, _ = context.WithTimeout(c, 60*time.Second)
 	client := transport.GetClient(client.UseServiceAccountTransport(
 		c, []string{"https://www.googleapis.com/auth/userinfo.email"}, nil))
 	sc, err := swarming.New(client)
