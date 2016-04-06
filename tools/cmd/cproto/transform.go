@@ -46,6 +46,7 @@ func (t *transformer) transformGoFile(filename string) error {
 		return err
 	}
 
+	t.PackageName = file.Name.Name
 	t.services, err = getServices(file)
 	if err != nil {
 		return err

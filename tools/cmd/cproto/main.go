@@ -151,7 +151,7 @@ func run(c context.Context, dir string) error {
 	}
 
 	// Transform .go files
-	var packageName string
+	var goPkg, protoPkg string
 	for _, p := range protoFiles {
 		goFile := strings.TrimSuffix(p, ".proto") + ".pb.go"
 		var t transformer
@@ -159,8 +159,11 @@ func run(c context.Context, dir string) error {
 			return fmt.Errorf("could not transform %s: %s", goFile, err)
 		}
 
-		if packageName == "" && len(t.services) > 0 {
-			packageName = t.services[0].protoPackageName
+		if protoPkg == "" && len(t.services) > 0 {
+			protoPkg = t.services[0].protoPackageName
+		}
+		if goPkg == "" {
+			goPkg = t.PackageName
 		}
 
 		if strings.HasSuffix(p, "_test.proto") {
@@ -170,10 +173,10 @@ func run(c context.Context, dir string) error {
 			}
 		}
 	}
-	if *withDiscovery && packageName != "" {
+	if *withDiscovery && goPkg != "" && protoPkg != "" {
 		// Generate pb.prpc.go
 		discoveryFile := "pb.discovery.go"
-		if err := genDiscoveryFile(c, filepath.Join(dir, discoveryFile), descPath, packageName); err != nil {
+		if err := genDiscoveryFile(c, filepath.Join(dir, discoveryFile), descPath, protoPkg, goPkg); err != nil {
 			return err
 		}
 	}
