@@ -8,6 +8,7 @@
 <link rel="import" href="../bower_components/paper-checkbox/paper-checkbox.html">
 
 <link rel="import" href="logdog-stream-fetcher.html">
+<link rel="import" href="logdog-stream-query.html">
 
 <!--
 An element for rendering muxed LogDog log streams.
@@ -93,6 +94,11 @@ An element for rendering muxed LogDog log streams.
       }
     </style>
 
+    <logdog-stream-query
+        id="query"
+        host="[[host]]"
+        get-meta="false"></logdog-stream-query>
+
     <!-- Stream view options. -->
     <div class="buttons">
       <paper-checkbox checked="{{showMetadata}}">
@@ -134,7 +140,7 @@ An element for rendering muxed LogDog log streams.
                   {{log.desc.name}}
                 </div>
                 <div class="log-entry-meta-line">
-                  {{log.stream_index}}
+                  {{log.streamIndex}}
                 </div>
               </td>
 
@@ -259,12 +265,49 @@ An element for rendering muxed LogDog log streams.
 
     /** Clears state and begins fetching log data. */
     reset: function() {
+      var parts = {
+        queries: [],
+        streams: [],
+      };
+      var query = this.$.query;
+      this.streams.forEach(function(v) {
+        if (query.isQuery(v)) {
+          parts.queries.push(v);
+        } else {
+          parts.streams.push(v);
+        }
+      });
+
+      Promise.all(parts.queries.map(function(v) {
+        query.path = v;
+        query.cursor = null;
+        query.streamType = "text";
+        return query.get();
+      })).then(function(results) {
+        // Add query results (if any) to streams.
+        results.forEach(function(streams) {
+          (streams || []).forEach(function(stream) {
+            if (stream.path) {
+              parts.streams.push(stream.path);
+            }
+          });
+        });
+
+        // Start loading the streams.
+        this._resetToStreams(parts.streams);
+      }.bind(this));
+    },
+
+    _resetToStreams: function(streams) {
       this._cancelFetch();
       this._clearLogs();
 
       // Unique streams.
-      var streams = this.streams.slice();
+      if (!streams.length) {
+        return;
+      }
       streams.sort();
+      console.log("Loading streams:", streams);
 
       // Construct our fetch context.
       var fetch = {};
@@ -370,7 +413,7 @@ An element for rendering muxed LogDog log streams.
           rendered += this._appendLogEntry(log);
 
           // Record our last appended log entry for this stream.
-          updated[log.fetchIndex] = log.stream_index;
+          updated[log.fetchIndex] = log.streamIndex;
         }
 
         Object.keys(updated).forEach(function(idx) {

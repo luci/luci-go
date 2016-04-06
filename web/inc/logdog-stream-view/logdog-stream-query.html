@@ -1,0 +1,257 @@
+<!--
+  Copyright 2016 The Chromium Authors. All rights reserved.
+  Use of this source code is governed by a BSD-style license that can be
+  found in the LICENSE file.
+  -->
+
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../luci-prpc-request/luci-prpc-request.html">
+<link rel="import" href="../logdog-stream/logdog-stream.html">
+
+<!--
+An element for issuing a LogDog stream query.
+-->
+<dom-module id="logdog-stream-query">
+
+  <template>
+    <luci-prpc-request
+      id="req"
+      auto="[[auto]]"
+      host="[[host]]"
+      service="logdog.Logs"
+      method="Query"
+      body="{{body}}"
+      last-response="{{lastResponse}}"
+      last-error="{{lastError}}"></luci-prpc-request>
+  </template>
+
+</dom-module>
+
+<script>
+  "use strict";
+
+  Polymer({
+    is: "logdog-stream-query",
+    properties: {
+      hostAttributes: {
+        hidden: true,
+      },
+
+      /* If true, automatically send the request when parameters are changed. */
+      auto: {
+        type: Boolean,
+        value: false,
+        notify: true,
+      },
+      /** The name ([host][:port]) of the pRPC host. */
+      host: {
+        type: String,
+        notify: true,
+      },
+
+      /** True if log stream metadata should be fetched. */
+      getMeta: {
+        type: Boolean,
+        value: true,
+        notify: true,
+      },
+
+      /** Maximum results to fetch. Leave blank for default. */
+      count: {
+        type: Number,
+        value: null,
+        notify: true,
+      },
+
+      /** The log stream path glob to fetch. */
+      path: {
+        type: String,
+        value: null,
+        notify: true,
+      },
+
+      /** The content type to filter on. */
+      contentType: {
+        type: String,
+        value: null,
+        notify: true,
+      },
+
+      /**
+       * The stream type. Can be "text", "binary", "datagram", or null for any.
+       */
+      streamType: {
+        type: String,
+        value: null,
+        notify: true,
+      },
+
+      /** Filter terminated streams? true, false, or null for no filter. */
+      terminated: {
+        type: Boolean,
+        value: null,
+        notify: true,
+      },
+
+      /** Filter archived streams? true, false, or null for no filter. */
+      archived: {
+        type: Boolean,
+        value: null,
+        notify: true,
+      },
+
+      /** Filter purged streams? true, false, or null for no filter. */
+      purged: {
+        type: Boolean,
+        value: null,
+        notify: true,
+      },
+
+      /** Filter streams newer than this value? Null for no lower bound. */
+      newer: {
+        type: Date,
+        value: null,
+        notify: true,
+      },
+
+      /** Filter streams older than this value? null for no upper bound. */
+      older: {
+        type: Date,
+        value: null,
+        notify: true,
+      },
+
+      /** Filter on protocol version (null for no filter). */
+      protoVersion: {
+        type: String,
+        value: null,
+        notify: true,
+      },
+
+      /** Tags to filter on {key: value}. */
+      tags: {
+        type: Object,
+        value: null,
+        notify: true,
+      },
+
+      /** Query iterative cursor, or null for no cursor. */
+      cursor: {
+        type: Object,
+        value: null,
+        notify: true,
+      },
+
+      /** The last fetched streams. */
+      lastStreams: {
+        type: Array,
+        value: null,
+        readOnly: true,
+        notify: true,
+      },
+
+      /** The cursor value from the last query result. */
+      lastCursor: {
+        type: String,
+        value: null,
+        readOnly: true,
+        notify: true,
+      },
+
+      body: {
+        type: Object,
+        computed: "_computeBody(path, contentType, streamType, terminated," +
+                      "archived, purged, newer, older, protoVersion, tags.*, " +
+                      "cursor)",
+      },
+    },
+
+    observers: [
+      "_responseChanged(lastResponse, lastError)",
+    ],
+
+    /** Returns true if v has glob characters in it. */
+    isQuery: function(v) {
+      return (v.indexOf("*") >= 0);
+    },
+
+    _computeBody: function(path, contentType, streamType, terminated, archived,
+        purged, newer, older, protoVersion, tags, cursor) {
+      var body = {
+        path: path,
+        content_type: contentType,
+        proto_version: protoVersion,
+        tags: tags,
+        next: cursor,
+      };
+
+      var trinary = function(field, v) {
+        if (v != null) {
+          body[field] = ((v) ? "YES" : "NO");
+        }
+      }
+      trinary("terminated", terminated);
+      trinary("archived", archived);
+      trinary("purged", purged);
+
+      if (streamType) {
+        var filter = {};
+        switch (streamType) {
+        case "text":
+          filter.value = "TEXT";
+          break;
+        case "binary":
+          filter.value = "BINARY";
+          break;
+        case "datagram":
+          filter.value = "DATAGRAM";
+          break;
+        default:
+          throw ("Invalid stream type: " + streamType);
+        }
+        body.stream_type = filter;
+      }
+      if (newer) {
+        body.newer = newer.toISOString();
+      }
+      if (older) {
+        body.older = older.toISOString();
+      }
+      return body;
+    },
+
+    _responseChanged: function(resp, err) {
+      if (!err) {
+        resp = {};
+      }
+
+      this._setLastStreams(this._patchResponse(resp));
+      this._setLastCursor(resp.next);
+    },
+
+    get: function() {
+      return this.$.req.requestPromise().then(this._patchResponse);
+    },
+
+    /**
+     * Normalize the values in a query response for JavaScript consumption.
+     *
+     * @param resp {Object} QueryResponse object.
+     * @return {Array} an array of patched streams in the response.
+     */
+    _patchResponse: function(resp) {
+      // Normalize the JSON values in "desc".
+      //
+      // JSONPB timestamps are in the form of RFC3339 strings.
+      (resp.streams || []).forEach(function(s) {
+        if (s.state) {
+          patchState(s.state);
+        }
+        if (s.desc) {
+          patchDescriptor(s.desc);
+        }
+      });
+      return resp.streams;
+    },
+  });
+</script>

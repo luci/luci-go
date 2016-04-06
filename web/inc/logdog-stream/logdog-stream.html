@@ -1,0 +1,94 @@
+<!--
+  Copyright 2016 The Chromium Authors. All rights reserved.
+  Use of this source code is governed by a BSD-style license that can be
+  found in the LICENSE file.
+  -->
+
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../luci-prpc-request/luci-prpc-request.html">
+
+<script>
+  /**
+   * Patches a JSONPB LogStreamDescriptor object.
+   *
+   * @param state {Object} The LogStreamDescriptor object to patch.
+   */
+  function patchDescriptor(desc) {
+    desc.timestamp = new Date(desc.timestamp);
+  };
+
+  /**
+   * Patches a JSONPB LogStreamState object.
+   *
+   * @param state {Object} The LogStreamState object to patch.
+   */
+  function patchState(state) {
+    state.created = new Date(state.created);
+    state.updated = new Date(state.updated);
+    state.terminalIndex = int64(state.terminalIndex);
+  };
+
+  /**
+   * Patches a JSONPB LogEntry object.
+   *
+   * @param ls {Object} The LogEntry object to patch.
+   * @param desc {Object, null} If supplied, link it to this LogStreamDescriptor
+   *     object.
+   */
+  function patchLogEntry(le, desc) {
+    le.timeOffset = durationProtoToMillis(le.timeOffset);
+    le.prefixIndex = int64(le.prefixIndex);
+    le.streamIndex = int64(le.streamIndex);
+
+    if (desc) {
+      le.desc = desc;
+      le.timestamp = addMillisecondsToDate(desc.timestamp, le.timeOffset);
+    }
+  };
+
+  /**
+   * Converts a string int64 into a Javascript number.
+   *
+   * Note that Javascript cannot hold a value larger than 2^53-1. If log streams
+   * ever approach this length, we will need to rework this value as an integer-
+   * string with helper functions.
+   */
+  function int64(s) {
+    if (!s) {
+      return 0;
+    }
+    var value = parseInt(s, 10);
+    if (isNaN(value)) {
+      throw ("Value is not a number: " + s);
+    }
+    return value;
+  }
+
+  /**
+   * Adds a specified duration protobuf to the supplied Date.
+   *
+   * Duration protos are expressed as a string referencing a floating point
+   * number of seconds followed by the letter "s":
+   * - "1337s"
+   * - "3.141592s"
+   */
+  function durationProtoToMillis(value) {
+    if ((!value) || value.charAt(value.length - 1) !== "s") {
+      throw ("Seconds string does not end in 's': " + value);
+    }
+    return (parseFloat(value) * 1000.0);
+  }
+
+  /**
+   * Returns a new Date object whose value is the initial date object with the
+   * specified number of milliseconds added to it.
+   *
+   * @param d {Date} The base Date object.
+   * @param ms {Number} The number of milliseconds to add.
+   */
+  function addMillisecondsToDate(d, ms) {
+    d = new Date(d);
+    d.setMilliseconds(d.getMilliseconds() + ms);
+    return d;
+  }
+</script>
