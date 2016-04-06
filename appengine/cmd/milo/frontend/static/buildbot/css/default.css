@@ -15,6 +15,15 @@ body.interface {
   color: #333;
 }
 
+header {
+  display: flex;
+  justify-content: space-between;
+}
+
+footer {
+  clear: both;
+}
+
 .auth {
   position:absolute;
   top:5px;

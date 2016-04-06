@@ -1,24 +1,19 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <title>Test swarming build</title>
-  <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css" />
-  <script>
-  
-  </script>
-</head>
+<meta charset="utf-8">
+<title>Test swarming build</title>
+<link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
+<script src="/static/common/js/time.js"></script>
+
+
+
 <body class="interface">
-  <div class="header">
+  <header>
     Luci
-    <span class="right-header">
-      <a href="/settings">settings</a>
-    </span>
-  </div>
-  <hr />
+    <a href="/settings">settings</a>
+  </header>
+  <hr>
   
   <div class="header">
     Test swarming build
@@ -53,14 +48,14 @@
       <table class="info" width="100%">
         <tr class="alt"><td class="left">Start</td>
         <td>
-          Monday, 02-Jan-06 15:04:05 UTC
+          <span id="started-time">Monday, 02-Jan-06 15:04:05 UTC</span>
         </td></tr>
         <tr><td class="left">End</td>
         <td>
-          Monday, 02-Jan-06 15:04:06 UTC
+          <span id="finished-time">Monday, 02-Jan-06 15:04:06 UTC</span>
         </td></tr>
         <tr class="alt"><td class="left">Elapsed</td>
-        <td>
+        <td id="duration">
           1 secs
         </td></tr>
       </table>
@@ -69,11 +64,27 @@
   </div>
 </div>
 
-  <div class="footer" style="clear:both">
-    <hr/>
+  <footer>
+    <hr>
     <a href="https://github.com/luci">luci</a>,
-    working for the&nbsp;<a href="https://chromium.org/">Chromium</a>&nbsp;project.<br/>
-    Page built: <b>0001-02-03 04:05:06.000000007 &#43;0000 UTC</b>
-  </div>
-</body>
-</html>
+    working for the <a href="https://chromium.org/">Chromium</a> project.<br>
+    Page built: <b><span id="current-time">0001-02-03 04:05:06.000000007 &#43;0000 UTC</span></b>
+  </footer>
+
+<script>
+(function() {
+  'use strict';
+  var startedSpan = document.getElementById('started-time');
+  var finishedSpan = document.getElementById('finished-time');
+  startedSpan.textContent = milo.formatDate('2006-01-02T15:04:05.999999999Z');
+  finishedSpan.textContent = milo.formatDate('2006-01-02T15:04:06.999999999Z');
+})();
+</script>
+
+<script>
+(function () {
+  'use strict';
+  document.getElementById('current-time').textContent = milo.formatDate(
+      '0001-02-03 04:05:06.000000007 \x2b0000 UTC');
+})();
+</script>

@@ -1,33 +1,33 @@
 {{define "buildbot"}}
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 <!-- Copyright 2015 The Chromium Authors. All rights reserved.
 Use of this source code is governed by a BSD-style license that can be.
 found in the LICENSE file. -->
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <title>{{template "title" .}}</title>
-  <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css" />
-  <script>
-  {{template "script" .}}
-  </script>
-</head>
+<meta charset="utf-8">
+<title>{{template "title" .}}</title>
+<link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
+<script src="/static/common/js/time.js"></script>
+{{template "head" . }}
+
 <body class="interface">
-  <div class="header">
+  <header>
     Luci
-    <span class="right-header">
-      <a href="/settings">settings</a>
-    </span>
-  </div>
-  <hr />
+    <a href="/settings">settings</a>
+  </header>
+  <hr>
   {{template "body" .}}
-  <div class="footer" style="clear:both">
-    <hr/>
+  <footer>
+    <hr>
     <a href="https://github.com/luci">luci</a>,
-    working for the&nbsp;<a href="https://chromium.org/">Chromium</a>&nbsp;project.<br/>
-    Page built: <b>{{.CurrentTime}}</b>
-  </div>
-</body>
-</html>
+    working for the <a href="https://chromium.org/">Chromium</a> project.<br>
+    Page built: <b><span id="current-time">{{.CurrentTime}}</span></b>
+  </footer>
+{{ template "after_body" . }}
+<script>
+(function () {
+  'use strict';
+  document.getElementById('current-time').textContent = milo.formatDate(
+      '{{ .CurrentTime }}');
+})();
+</script>
 {{end}}

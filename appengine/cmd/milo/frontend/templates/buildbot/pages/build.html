@@ -1,6 +1,7 @@
 {{define "title"}}{{.Build.Summary.Label}}{{end}}
 
-{{define "script"}}{{end}}
+{{define "head"}}
+{{end}}
 
 {{define "body"}}
   <div class="header">
@@ -81,14 +82,14 @@
       <table class="info" width="100%">
         <tr class="alt"><td class="left">Start</td>
         <td>
-          {{ .Build.Summary.Started | humanTimeRFC }}
+          <span id="started-time">{{ .Build.Summary.Started | humanTimeRFC }}</span>
         </td></tr>
         <tr><td class="left">End</td>
         <td>
-          {{ .Build.Summary.Finished | humanTimeRFC }}
+          <span id="finished-time">{{ .Build.Summary.Finished | humanTimeRFC }}</span>
         </td></tr>
         <tr class="alt"><td class="left">Elapsed</td>
-        <td>
+        <td id="duration">
           {{ .Build.Summary.Duration | humanDuration }}
         </td></tr>
       </table>
@@ -96,4 +97,16 @@
     </div>
   </div>
 </div>
+{{end}}
+
+{{define "after_body"}}
+<script>
+(function() {
+  'use strict';
+  var startedSpan = document.getElementById('started-time');
+  var finishedSpan = document.getElementById('finished-time');
+  startedSpan.textContent = milo.formatDate('{{ .Build.Summary.Started  }}');
+  finishedSpan.textContent = milo.formatDate('{{ .Build.Summary.Finished }}');
+})();
+</script>
 {{end}}
