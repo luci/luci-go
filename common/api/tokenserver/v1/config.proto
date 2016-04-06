@@ -39,8 +39,8 @@ message CertificateAuthorityConfig {
 
 // DomainConfig is used inside CertificateAuthorityConfig.
 message DomainConfig {
-  // Domain is a domain name of hosts this config applies to.
-  string domain = 1;
+  // Domain is domain names of hosts this config applies to.
+  repeated string domain = 1;
 
   // CloudProjectName is a name of Google Cloud Project to create service
   // accounts in.

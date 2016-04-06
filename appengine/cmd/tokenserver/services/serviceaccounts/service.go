@@ -50,50 +50,41 @@ type Server struct {
 // CreateServiceAccount creates Google Cloud IAM service account associated
 // with given CN.
 func (s *Server) CreateServiceAccount(c context.Context, r *tokenserver.CreateServiceAccountRequest) (*tokenserver.CreateServiceAccountResponse, error) {
-	grpcErr := func(op string, err error) error {
-		if err != nil {
-			logging.Errorf(c, "Error when %s - %s", op, err)
-		}
-		switch {
-		case errors.IsTransient(err):
-			return grpc.Errorf(codes.Internal, "transient error when %s - %s", op, err)
-		case grpc.Code(err) != codes.Unknown: // already grpc Error
-			return err
-		case err != nil:
-			return grpc.Errorf(codes.Unknown, "error when %s - %s", op, err)
-		}
-		return nil
-	}
-
-	// Grab a CA config cached inside CertChecker.
-	checker, err := certchecker.GetCertChecker(c, r.Ca)
+	// Validate FQDN and load proper config.
+	accountID, domain, err := validateFQDN(r.Fqdn)
 	if err != nil {
-		return nil, grpcErr("fetching CA config", err)
+		return nil, err
 	}
-	ca, err := checker.GetCA(c)
+	cfg, err := s.getCAConfig(c, r.Ca)
 	if err != nil {
-		return nil, grpcErr("fetching CA config", err)
+		return nil, err
+	}
+	domainCfg, err := domainConfig(cfg, domain)
+	if err != nil {
+		return nil, err
 	}
 
 	// Create the service account.
 	account, err := s.DoCreateServiceAccount(c, CreateServiceAccountParams{
-		Config: ca.ParsedConfig,
-		FQDN:   r.Fqdn,
-		Force:  r.Force,
+		Project:   domainCfg.CloudProjectName,
+		AccountID: accountID,
+		FQDN:      r.Fqdn,
+		Force:     r.Force,
 	})
 	if err != nil {
-		return nil, grpcErr("creating service account", err)
+		return nil, err
 	}
 	return &tokenserver.CreateServiceAccountResponse{
 		ServiceAccount: account,
 	}, nil
 }
 
-// CreateServiceAccountParams is passed to CreateServiceAccountInternal.
+// CreateServiceAccountParams is passed to DoCreateServiceAccount.
 type CreateServiceAccountParams struct {
-	Config *tokenserver.CertificateAuthorityConfig // CA config with known domains
-	FQDN   string                                  // FQDN of a host to create an account for
-	Force  bool                                    // true to skip datastore check and call IAM API no matter what
+	Project   string // cloud project name to create account in
+	AccountID string // account ID, the email will be <accountID>@...
+	FQDN      string // FQDN of a host to create an account for
+	Force     bool   // true to skip datastore check and call IAM API no matter what
 }
 
 // DoCreateServiceAccount does the actual job of CreateServiceAccount.
@@ -101,38 +92,15 @@ type CreateServiceAccountParams struct {
 // It exists as a separate method so that other parts of the token server
 // implementation may call it directly, bypassing some steps done by
 // CreateServiceAccount.
+//
+// Assumes 'params' is validated already. Returns grpc.Errorf on errors.
 func (s *Server) DoCreateServiceAccount(c context.Context, params CreateServiceAccountParams) (*tokenserver.ServiceAccount, error) {
+	// Normalize fqdn for comparison.
 	fqdn := strings.ToLower(params.FQDN)
-	chunks := strings.SplitN(fqdn, ".", 2)
-	if len(chunks) != 2 {
-		return nil, grpc.Errorf(codes.InvalidArgument, "not a valid FQDN %q", fqdn)
-	}
-	accountID, domain := chunks[0], chunks[1] // accountID is a hostname
-
-	// The domain must be whitelisted in the config.
-	var cfg *tokenserver.DomainConfig
-	for _, d := range params.Config.KnownDomains {
-		if d.Domain == domain {
-			cfg = d
-			break
-		}
-	}
-	if cfg == nil {
-		return nil, grpc.Errorf(codes.InvalidArgument, "the domain %q is not whitelisted in the config", domain)
-	}
-
-	// See https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts/create.
-	// The account ID is also limited in length to 6-30 chars (this is not
-	// documented though).
-	if len(accountID) < 6 || len(accountID) >= 30 || !accountIDRegexp.MatchString(accountID) {
-		return nil, grpc.Errorf(
-			codes.InvalidArgument, "the hostname (%q) must match %q and be 6-30 characters long, it doesn't",
-			accountID, accountIDRegexp.String())
-	}
 
 	// Checks the datastore, perhaps we already registered it.
 	if !params.Force {
-		account, err := fetchAccountInfo(c, cfg.CloudProjectName, accountID)
+		account, err := fetchAccountInfo(c, params.Project, params.AccountID)
 		if err != nil {
 			return nil, grpc.Errorf(codes.Internal, "transient error when fetching account info from datastore - %s", err)
 		}
@@ -154,9 +122,9 @@ func (s *Server) DoCreateServiceAccount(c context.Context, params CreateServiceA
 	}
 
 	// Attempt to create. May fail with http.StatusConflict if already exists.
-	expectedEmail := serviceAccountEmail(cfg.CloudProjectName, accountID)
+	expectedEmail := serviceAccountEmail(params.Project, params.AccountID)
 	logging.Infof(c, "Creating account %q", expectedEmail)
-	account, err := s.iamCreateAccount(c, cfg.CloudProjectName, accountID, displayName)
+	account, err := s.iamCreateAccount(c, params.Project, params.AccountID, displayName)
 
 	switch apiErr, _ := err.(*googleapi.Error); {
 	case err == nil:
@@ -173,7 +141,7 @@ func (s *Server) DoCreateServiceAccount(c context.Context, params CreateServiceA
 
 	case apiErr != nil && apiErr.Code == http.StatusConflict:
 		logging.Warningf(c, "Account %q already exists, fetching its details", expectedEmail)
-		account, err = s.iamGetAccount(c, cfg.CloudProjectName, expectedEmail)
+		account, err = s.iamGetAccount(c, params.Project, expectedEmail)
 		if err != nil {
 			return nil, grpc.Errorf(
 				codes.Internal, "unexpected error when fetching account details for %q - %s",
@@ -197,18 +165,41 @@ func (s *Server) DoCreateServiceAccount(c context.Context, params CreateServiceA
 	// use its 'signBlob' API by granting it 'serviceAccountActor' role on the
 	// service account resource.
 	logging.Infof(c, "Setting IAM policy of %q...", account.Email)
-	err = s.iamGrantActorRole(c, cfg.CloudProjectName, account.Email)
+	err = s.iamGrantActorRole(c, params.Project, account.Email)
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "failed to modify IAM policy of %q - %s", account.Email, err)
 	}
 	logging.Infof(c, "IAM policy of %q adjusted", account.Email)
 
 	// Store the account state in the datastore to avoid redoing all this again.
-	result, err := storeAccountInfo(c, cfg.CloudProjectName, accountID, fqdn, account)
+	result, err := storeAccountInfo(c, params.Project, params.AccountID, fqdn, account)
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "failed to save account info - %s", err)
 	}
 	return result, nil
+}
+
+// getCAConfig returns CertificateAuthorityConfig for a CA.
+//
+// Returns grpc.Error on errors.
+func (s *Server) getCAConfig(c context.Context, ca string) (*tokenserver.CertificateAuthorityConfig, error) {
+	var entity *model.CA
+
+	checker, err := certchecker.GetCertChecker(c, ca)
+	if err != nil {
+		goto fail
+	}
+	entity, err = checker.GetCA(c)
+	if err != nil {
+		goto fail
+	}
+	return entity.ParsedConfig, nil
+
+fail:
+	if errors.IsTransient(err) {
+		return nil, grpc.Errorf(codes.Internal, "transient error when fetching CA config - %s", err)
+	}
+	return nil, grpc.Errorf(codes.Unknown, "error when fetching CA config - %s", err)
 }
 
 // httpClient returns an authenticating client with deadline set to 20 sec.
@@ -348,6 +339,40 @@ func (s *Server) getServiceOwnEmail(c context.Context) (string, error) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+// validateFQDN splits FQDN into hostname and domain name, validating them.
+func validateFQDN(fqdn string) (host, domain string, err error) {
+	fqdn = strings.ToLower(fqdn)
+	chunks := strings.SplitN(fqdn, ".", 2)
+	if len(chunks) != 2 {
+		return "", "", grpc.Errorf(codes.InvalidArgument, "not a valid FQDN %q", fqdn)
+	}
+	// Host name is used as service account ID. Validate it.
+	// See https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts/create.
+	// The account ID is also limited in length to 6-30 chars (this is not
+	// documented though).
+	host, domain = chunks[0], chunks[1]
+	if len(host) < 6 || len(host) >= 30 || !accountIDRegexp.MatchString(host) {
+		return "", "", grpc.Errorf(
+			codes.InvalidArgument, "the hostname (%q) must match %q and be 6-30 characters long, it doesn't",
+			host, accountIDRegexp.String())
+	}
+	return host, domain, nil
+}
+
+// domainConfig returns DomainConfig for a domain.
+//
+// Returns grpc.Error when there's no such config.
+func domainConfig(cfg *tokenserver.CertificateAuthorityConfig, domain string) (*tokenserver.DomainConfig, error) {
+	for _, domainCfg := range cfg.KnownDomains {
+		for _, domainInCfg := range domainCfg.Domain {
+			if domainInCfg == domain {
+				return domainCfg, nil
+			}
+		}
+	}
+	return nil, grpc.Errorf(codes.InvalidArgument, "the domain %q is not whitelisted in the config", domain)
+}
 
 // serviceAccountEmail returns expected email address of a service account.
 //

@@ -245,7 +245,7 @@ func setupTest(fakes http.Handler) (context.Context, *Server, func()) {
 	cfg := tokenserver.CertificateAuthorityConfig{
 		KnownDomains: []*tokenserver.DomainConfig{
 			{
-				Domain:           "fake.domain",
+				Domain:           []string{"fake.domain"},
 				CloudProjectName: "cloud-project",
 			},
 		},
