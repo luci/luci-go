@@ -48,4 +48,8 @@ message DomainConfig {
   // The Token Server's own service account must have Editor permission in this
   // project.
   string cloud_project_name = 2;
+
+  // AllowedOauth2Scope is a whitelist of OAuth2 scopes the token server is
+  // willing to mint an access token with.
+  repeated string allowed_oauth2_scope = 3;
 }

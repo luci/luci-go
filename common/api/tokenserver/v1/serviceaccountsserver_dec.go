@@ -22,3 +22,11 @@ func (s *DecoratedServiceAccounts) CreateServiceAccount(c context.Context, req *
 	}
 	return s.Service.CreateServiceAccount(c, req)
 }
+
+func (s *DecoratedServiceAccounts) MintAccessToken(c context.Context, req *MintAccessTokenRequest) (*MintAccessTokenResponse, error) {
+	c, err := s.Prelude(c, "MintAccessToken", req)
+	if err != nil {
+		return nil, err
+	}
+	return s.Service.MintAccessToken(c, req)
+}

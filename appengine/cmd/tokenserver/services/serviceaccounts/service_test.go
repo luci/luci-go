@@ -5,10 +5,14 @@
 package serviceaccounts
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -16,10 +20,13 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/gaetesting"
+	"google.golang.org/api/iam/v1"
 
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/model"
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/utils"
 	"github.com/luci/luci-go/common/api/tokenserver/v1"
+	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/proto/google"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -50,33 +57,6 @@ func TestCreateServiceAccount(t *testing.T) {
 					"etag": "blah",
 					"oauth2ClientId": "12345"
 				}`))
-			})
-
-		router.POST("/v1/projects/cloud-project/serviceAccounts/*rest",
-			func(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-				action := p.ByName("rest") // httprouter doesn't like ':' in paths
-				switch action {
-				case "/some-host@cloud-project.iam2.gserviceaccount.com:getIamPolicy":
-					rw.Header().Set("Content-Type", "application/json")
-					rw.WriteHeader(200)
-					rw.Write([]byte(`{"etag":"blah"}`))
-
-				case "/some-host@cloud-project.iam2.gserviceaccount.com:setIamPolicy":
-					body := readJSON(r)
-					c.So(jsonValue(body, "policy", "bindings"), ShouldResemble, []interface{}{
-						map[string]interface{}{
-							"members": []interface{}{"serviceAccount:token-server@fake.gserviceaccount.com"},
-							"role":    "roles/iam.serviceAccountActor",
-						},
-					})
-
-					rw.Header().Set("Content-Type", "application/json")
-					rw.WriteHeader(200)
-					rw.Write([]byte(`{"etag":"blah"}`))
-
-				default:
-					rw.WriteHeader(404)
-				}
 			})
 
 		ctx, srv, closer := setupTest(router)
@@ -131,13 +111,6 @@ func TestCreateServiceAccount(t *testing.T) {
 				}`))
 			})
 
-		router.POST("/v1/projects/cloud-project/serviceAccounts/*rest",
-			func(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-				rw.Header().Set("Content-Type", "application/json")
-				rw.WriteHeader(200)
-				rw.Write([]byte(`{"etag":"blah"}`))
-			})
-
 		ctx, srv, closer := setupTest(router)
 		defer closer()
 
@@ -182,6 +155,98 @@ func TestCreateServiceAccount(t *testing.T) {
 			Fqdn: "123.fake.domain",
 		})
 		So(err, ShouldErrLike, "and be 6-30 characters long")
+	})
+}
+
+func TestMintAccessToken(t *testing.T) {
+	Convey("works", t, func(c C) {
+		router := httprouter.New()
+
+		router.POST("/v1/projects/cloud-project/serviceAccounts/:rest",
+			func(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+				rest := p.ByName("rest")
+				if rest != "account@cloud-project.iam.gserviceaccount.com:signBlob" {
+					rw.WriteHeader(http.StatusNotFound)
+					return
+				}
+				body := readJSON(r)
+
+				jwtToSign, _ := base64.StdEncoding.DecodeString(jsonValue(body, "bytesToSign").(string))
+				chunks := strings.Split(string(jwtToSign), ".")
+				c.So(len(chunks), ShouldEqual, 2)
+				c.So(chunks[0], ShouldEqual, "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9") // JWT header
+
+				payload, _ := base64.RawStdEncoding.DecodeString(chunks[1])
+				c.So(string(payload), ShouldEqual,
+					`{"iss":"account@cloud-project.iam.gserviceaccount.com",`+
+						`"scope":"scope1 scope2",`+
+						`"aud":"https://www.googleapis.com/oauth2/v4/token",`+
+						`"exp":1422939896,"iat":1422936296}`)
+
+				rw.Header().Set("Content-Type", "application/json")
+				rw.WriteHeader(http.StatusOK)
+				rw.Write(
+					[]byte(fmt.Sprintf(`{"signature":"%s"}`,
+						base64.StdEncoding.EncodeToString([]byte("signature")))))
+			})
+
+		router.POST("/fake-token-endpoint",
+			func(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+				r.ParseForm()
+				c.So(r.FormValue("grant_type"), ShouldEqual, jwtGrantType)
+				c.So(r.FormValue("assertion"), ShouldEqual, "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9."+
+					"eyJpc3MiOiJhY2NvdW50QGNsb3VkLXByb2plY3QuaWFtLmdzZXJ2aWNlYWNjb3VudC"+
+					"5jb20iLCJzY29wZSI6InNjb3BlMSBzY29wZTIiLCJhdWQiOiJodHRwczovL3d3dy5n"+
+					"b29nbGVhcGlzLmNvbS9vYXV0aDIvdjQvdG9rZW4iLCJleHAiOjE0MjI5Mzk4OTYsIm"+
+					"lhdCI6MTQyMjkzNjI5Nn0.c2lnbmF0dXJl")
+				var tokenRes struct {
+					AccessToken string `json:"access_token"`
+					TokenType   string `json:"token_type"`
+					IDToken     string `json:"id_token"`
+					ExpiresIn   int64  `json:"expires_in"` // relative seconds from now
+				}
+				tokenRes.AccessToken = "access_token"
+				tokenRes.TokenType = "Bearer"
+				tokenRes.ExpiresIn = 3600
+				blob, _ := json.Marshal(&tokenRes)
+				rw.Header().Set("Content-Type", "application/json")
+				rw.WriteHeader(http.StatusOK)
+				rw.Write(blob)
+			})
+
+		ctx, srv, closer := setupTest(router)
+		defer closer()
+
+		// Pretend service account already exists.
+		_, err := storeAccountInfo(ctx, "cloud-project", "account", "account.fake.domain", &iam.ServiceAccount{
+			Email: "account@cloud-project.iam.gserviceaccount.com",
+		})
+		So(err, ShouldBeNil)
+
+		// Use it to mint a token.
+		resp, err := srv.MintAccessToken(ctx, &tokenserver.MintAccessTokenRequest{
+			Ca:     "Puppet CA: fake.ca",
+			Fqdn:   "account.fake.domain",
+			Scopes: []string{"scope2", "scope1"},
+		})
+		So(err, ShouldBeNil)
+		So(resp.ServiceAccount, ShouldResemble, &tokenserver.ServiceAccount{
+			ProjectId: "cloud-project",
+			Email:     "account@cloud-project.iam.gserviceaccount.com",
+			Fqdn:      "account.fake.domain",
+			Registered: &google.Timestamp{
+				Seconds: 1422936306,
+				Nanos:   0,
+			},
+		})
+		So(resp.Oauth2AccessToken, ShouldResemble, &tokenserver.OAuth2AccessToken{
+			AccessToken: "access_token",
+			TokenType:   "Bearer",
+			Expiry: &google.Timestamp{
+				Seconds: 1422939906,
+				Nanos:   7, // huh?
+			},
+		})
 	})
 }
 
@@ -234,19 +299,22 @@ func setupTest(fakes http.Handler) (context.Context, *Server, func()) {
 	}
 
 	srv := &Server{
-		transport:     http.DefaultTransport,
-		iamBackendURL: tsURL,
-		ownEmail:      "token-server@fake.gserviceaccount.com",
+		transport:       http.DefaultTransport,
+		iamBackendURL:   tsURL,
+		tokenBackendURL: tsURL + "/fake-token-endpoint",
+		ownEmail:        "token-server@fake.gserviceaccount.com",
 	}
 
 	ctx := gaetesting.TestingContext()
+	ctx, _ = testclock.UseTime(ctx, time.Date(2015, time.February, 3, 4, 5, 6, 7, time.UTC))
 
 	// Put fake config.
 	cfg := tokenserver.CertificateAuthorityConfig{
 		KnownDomains: []*tokenserver.DomainConfig{
 			{
-				Domain:           []string{"fake.domain"},
-				CloudProjectName: "cloud-project",
+				Domain:             []string{"fake.domain"},
+				CloudProjectName:   "cloud-project",
+				AllowedOauth2Scope: []string{"scope1", "scope2"},
 			},
 		},
 	}

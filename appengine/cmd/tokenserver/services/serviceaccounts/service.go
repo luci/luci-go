@@ -9,26 +9,32 @@
 package serviceaccounts
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"net/url"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2/jws"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iam/v1"
-	"google.golang.org/api/oauth2/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
+	"github.com/luci/gae/service/urlfetch"
 	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
-	luciiam "github.com/luci/luci-go/common/gcloud/iam"
 	"github.com/luci/luci-go/common/logging"
+	google_protobuf "github.com/luci/luci-go/common/proto/google"
 
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/certchecker"
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/model"
@@ -38,13 +44,20 @@ import (
 // accountIDRegexp is regular expression for allowed service account emails.
 var accountIDRegexp = regexp.MustCompile(`^[a-z]([-a-z0-9]*[a-z0-9])$`)
 
+var (
+	googleTokenURL = "https://www.googleapis.com/oauth2/v4/token"
+	jwtGrantType   = "urn:ietf:params:oauth:grant-type:jwt-bearer"
+	jwtHeader      = &jws.Header{Algorithm: "RS256", Typ: "JWT"}
+)
+
 // Server implements tokenserver.ServiceAccountsServer RPC interface.
 //
 // It assumes authorization has happened already.
 type Server struct {
-	transport     http.RoundTripper // used in unit tests to mock OAuth
-	iamBackendURL string            // used in unit tests to mock IAM API
-	ownEmail      string            // used in unit tests to mock GAE Info API
+	transport       http.RoundTripper // used in unit tests to mock OAuth
+	iamBackendURL   string            // used in unit tests to mock IAM API
+	tokenBackendURL string            // used in unit tests to mock OAuth token endpoint
+	ownEmail        string            // used in unit tests to mock GAE Info API
 }
 
 // CreateServiceAccount creates Google Cloud IAM service account associated
@@ -76,6 +89,52 @@ func (s *Server) CreateServiceAccount(c context.Context, r *tokenserver.CreateSe
 	}
 	return &tokenserver.CreateServiceAccountResponse{
 		ServiceAccount: account,
+	}, nil
+}
+
+// MintAccessToken generates a new access token for a service account
+// associated with the given host.
+//
+// It will register the service account first, if necessary.
+func (s *Server) MintAccessToken(c context.Context, r *tokenserver.MintAccessTokenRequest) (*tokenserver.MintAccessTokenResponse, error) {
+	// Validate FQDN and load proper config.
+	accountID, domain, err := validateFQDN(r.Fqdn)
+	if err != nil {
+		return nil, err
+	}
+	cfg, err := s.getCAConfig(c, r.Ca)
+	if err != nil {
+		return nil, err
+	}
+	domainCfg, err := domainConfig(cfg, domain)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validate requested scopes.
+	sort.Strings(r.Scopes)
+	if err := validateOAuthScopes(domainCfg, r.Scopes); err != nil {
+		return nil, err
+	}
+
+	// Create the corresponding service account if necessary.
+	account, err := s.DoCreateServiceAccount(c, CreateServiceAccountParams{
+		Project:   domainCfg.CloudProjectName,
+		AccountID: accountID,
+		FQDN:      r.Fqdn,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Grab a token.
+	token, err := s.DoMintAccessToken(c, account, r.Scopes)
+	if err != nil {
+		return nil, err
+	}
+	return &tokenserver.MintAccessTokenResponse{
+		ServiceAccount:    account,
+		Oauth2AccessToken: token,
 	}, nil
 }
 
@@ -161,22 +220,105 @@ func (s *Server) DoCreateServiceAccount(c context.Context, params CreateServiceA
 		return nil, grpc.Errorf(codes.Internal, "cloud IAM call to create a service account failed - %s", err)
 	}
 
-	// Account has been created (or existed before). Allow the token server to
-	// use its 'signBlob' API by granting it 'serviceAccountActor' role on the
-	// service account resource.
-	logging.Infof(c, "Setting IAM policy of %q...", account.Email)
-	err = s.iamGrantActorRole(c, params.Project, account.Email)
-	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "failed to modify IAM policy of %q - %s", account.Email, err)
-	}
-	logging.Infof(c, "IAM policy of %q adjusted", account.Email)
-
 	// Store the account state in the datastore to avoid redoing all this again.
 	result, err := storeAccountInfo(c, params.Project, params.AccountID, fqdn, account)
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "failed to save account info - %s", err)
 	}
 	return result, nil
+}
+
+// DoMintAccessToken makes an OAuth access token for the given service account.
+//
+// Assumes the scopes list has passed the validation already.
+//
+// Return grpc.Error on errors.
+func (s *Server) DoMintAccessToken(c context.Context, account *tokenserver.ServiceAccount, scopes []string) (*tokenserver.OAuth2AccessToken, error) {
+	// See https://developers.google.com/identity/protocols/OAuth2ServiceAccount#authorizingrequests
+	// Also https://github.com/golang/oauth2/blob/master/jwt/jwt.go.
+
+	// Prepare a claim set to be signed by the service account key. Note that
+	// Google backend seems to ignore Exp field and always gives one-hour long
+	// tokens.
+	//
+	// Also revert time back for machines whose time is not perfectly in sync.
+	// If client machine's time is in the future according to Google servers, an
+	// access token will not be issued.
+	now := clock.Now(c).Add(-10 * time.Second)
+	claimSet := &jws.ClaimSet{
+		Iat:   now.Unix(),
+		Exp:   now.Add(time.Hour).Unix(),
+		Iss:   account.Email,
+		Scope: strings.Join(scopes, " "),
+		Aud:   googleTokenURL,
+	}
+
+	// Sign it, thus obtaining so called 'assertion'. Note that with Google gRPC
+	// endpoints, an assertion by itself can be used as an access token (with few
+	// small changes). It doesn't work for GAE though.
+	assertion, err := jws.EncodeWithSigner(
+		jwtHeader, claimSet, s.iamSigner(c, account.ProjectId, account.Email))
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "error when signing JWT - %s", err)
+	}
+
+	// Exchange the assertion for the access token.
+	token, err := s.fetchAccessToken(c, assertion)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "error when calling token endpoint - %s", err)
+	}
+	return token, nil
+}
+
+// fetchAccessToken does the final part of OAuth 2-legged flow.
+func (s *Server) fetchAccessToken(c context.Context, assertion string) (*tokenserver.OAuth2AccessToken, error) {
+	// The client without auth, the token endpoint doesn't need auth.
+	client, err := s.httpClient(c, false)
+	if err != nil {
+		return nil, err
+	}
+	tokenURL := s.tokenBackendURL
+	if tokenURL == "" {
+		tokenURL = googleTokenURL
+	}
+
+	// This is mostly copy-pasta from https://github.com/golang/oauth2/blob/master/jwt/jwt.go.
+	v := url.Values{}
+	v.Set("grant_type", jwtGrantType)
+	v.Set("assertion", assertion)
+	resp, err := client.PostForm(tokenURL, v)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return nil, fmt.Errorf("oauth2: cannot fetch token: %s", err)
+	}
+	if c := resp.StatusCode; c < 200 || c > 299 {
+		return nil, fmt.Errorf("oauth2: cannot fetch token: %s\nResponse: %s", resp.Status, body)
+	}
+	var tokenRes struct {
+		AccessToken string `json:"access_token"`
+		TokenType   string `json:"token_type"`
+		IDToken     string `json:"id_token"`
+		ExpiresIn   int64  `json:"expires_in"` // relative seconds from now
+	}
+	if err := json.Unmarshal(body, &tokenRes); err != nil {
+		return nil, fmt.Errorf("oauth2: cannot fetch token: %s", err)
+	}
+	// end of copy-pasta.
+
+	// The Google endpoint always returns 'expires_in'.
+	if tokenRes.ExpiresIn == 0 {
+		return nil, fmt.Errorf("invalid token endpoint response, 'expires_in' is not set")
+	}
+	expiry := clock.Now(c).Add(time.Duration(tokenRes.ExpiresIn) * time.Second)
+	return &tokenserver.OAuth2AccessToken{
+		AccessToken: tokenRes.AccessToken,
+		TokenType:   tokenRes.TokenType,
+		Expiry:      google_protobuf.NewTimestamp(expiry),
+	}, nil
 }
 
 // getCAConfig returns CertificateAuthorityConfig for a CA.
@@ -202,29 +344,34 @@ fail:
 	return nil, grpc.Errorf(codes.Unknown, "error when fetching CA config - %s", err)
 }
 
-// httpClient returns an authenticating client with deadline set to 20 sec.
+// httpClient returns a HTTP client with deadline set to 20 sec.
 //
 // Note that on GAE the only way to set a deadline for HTTP request is to grab
 // a new transport based on a context with deadline.
 //
 // context/ctxhttp does not work, since it attempts to cancel in-flight requests
 // on timeout and GAE ignores that.
-func (s *Server) httpClient(c context.Context) (*http.Client, error) {
+func (s *Server) httpClient(c context.Context, withAuth bool) (*http.Client, error) {
 	transport := s.transport
 	if transport != nil {
 		return &http.Client{Transport: transport}, nil
 	}
 	c, _ = clock.WithTimeout(c, 20*time.Second)
-	transport, err := client.Transport(c, []string{iam.CloudPlatformScope}, nil)
-	if err != nil {
-		return nil, err
+	if withAuth {
+		var err error
+		transport, err = client.Transport(c, []string{iam.CloudPlatformScope}, nil)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		transport = urlfetch.Get(c)
 	}
 	return &http.Client{Transport: transport}, nil
 }
 
 // iamService returns configured *iam.Service to talk to Service Accounts API.
 func (s *Server) iamService(c context.Context) (*iam.Service, error) {
-	client, err := s.httpClient(c)
+	client, err := s.httpClient(c, true)
 	if err != nil {
 		return nil, err
 	}
@@ -239,6 +386,8 @@ func (s *Server) iamService(c context.Context) (*iam.Service, error) {
 }
 
 // iamCreateAccount wraps ServiceAccounts.Create IAM API call.
+//
+// Requires at least 'Editor' role in the cloud project.
 func (s *Server) iamCreateAccount(c context.Context, project, accountID, displayName string) (*iam.ServiceAccount, error) {
 	service, err := s.iamService(c)
 	if err != nil {
@@ -265,77 +414,29 @@ func (s *Server) iamGetAccount(c context.Context, project, email string) (*iam.S
 	return call.Context(c).Do()
 }
 
-// iamGrantActorRole modifies service account IAM policy to allow the token
-// server to use 'signBlob' API call needed to produce access tokens.
-func (s *Server) iamGrantActorRole(c context.Context, project, email string) error {
-	httpClient, err := s.httpClient(c)
-	if err != nil {
-		return err
-	}
-	iam := &luciiam.Client{
-		Client:   httpClient,
-		BasePath: s.iamBackendURL,
-	}
-
-	// Need to know who we are to add ourselves to the policy binding.
-	ownEmail, err := s.getServiceOwnEmail(c)
-	if err != nil {
-		return fmt.Errorf("failed to grab service's own email - %s", err)
-	}
-
-	// Convert to an IAM principal name.
-	principal := ""
-	if strings.HasSuffix(ownEmail, ".gserviceaccount.com") {
-		principal = "serviceAccount:" + ownEmail
-	} else {
-		if !info.Get(c).IsDevAppServer() {
-			panic("this branch must not be reachable in prod")
+// iamSigner returns a function that can RSA sign blobs using service account
+// key of given service account.
+//
+// The token server's own service account should have 'serviceAccountActor' role
+// in the service account resource or in the project that owns the service
+// account.
+func (s *Server) iamSigner(c context.Context, project, email string) func([]byte) ([]byte, error) {
+	return func(data []byte) ([]byte, error) {
+		service, err := s.iamService(c)
+		if err != nil {
+			return nil, err
 		}
-		principal = "user:" + ownEmail
+		call := service.Projects.ServiceAccounts.SignBlob(
+			serviceAccountResource(project, email),
+			&iam.SignBlobRequest{
+				BytesToSign: base64.StdEncoding.EncodeToString(data),
+			})
+		resp, err := call.Context(c).Do()
+		if err != nil {
+			return nil, err
+		}
+		return base64.StdEncoding.DecodeString(resp.Signature)
 	}
-
-	resource := serviceAccountResource(project, email)
-	return iam.ModifyIAMPolicy(c, resource, func(p *luciiam.Policy) error {
-		p.GrantRole("roles/iam.serviceAccountActor", principal)
-		return nil
-	})
-}
-
-// getServiceOwnEmail returns an email address associated with the token server.
-//
-// On real GAE it just asks GAE Info API. On dev server we have to ask the
-// outside world (Google Userinfo API) for this information, since GAE API
-// returns incorrect mocked stuff.
-//
-// Finally, in unit tests just returns s.ownEmail.
-func (s *Server) getServiceOwnEmail(c context.Context) (string, error) {
-	if s.ownEmail != "" {
-		return s.ownEmail, nil
-	}
-
-	// On prod use whatever GAE tells us.
-	if !info.Get(c).IsDevAppServer() {
-		return info.Get(c).ServiceAccount()
-	}
-
-	// On dev server just boldly ask Google about the token we use in the
-	// authenticated calls, since GAE API returns whatever is in app.yaml, not
-	// what is actually used by dev_appserver (which is the token of a user logged
-	// in via 'gcloud auth' mechanism).
-	httpClient, err := s.httpClient(c)
-	if err != nil {
-		return "", err
-	}
-	service, err := oauth2.New(httpClient)
-	if err != nil {
-		return "", err
-	}
-	resp, err := service.Userinfo.V2.Me.Get().Do()
-	if err != nil {
-		return "", err
-	}
-	logging.Infof(c, "Devserver is running as %q", resp.Email)
-	return resp.Email, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -358,6 +459,26 @@ func validateFQDN(fqdn string) (host, domain string, err error) {
 			host, accountIDRegexp.String())
 	}
 	return host, domain, nil
+}
+
+// validateOAuthScopes checks the scopes are in the whitelist.
+func validateOAuthScopes(cfg *tokenserver.DomainConfig, scopes []string) error {
+	if len(scopes) == 0 {
+		return grpc.Errorf(codes.InvalidArgument, "at least one OAuth2 scope must be specified")
+	}
+	for _, scope := range scopes {
+		ok := false
+		for _, wl := range cfg.AllowedOauth2Scope {
+			if scope == wl {
+				ok = true
+				break
+			}
+		}
+		if !ok {
+			return grpc.Errorf(codes.InvalidArgument, "OAuth2 scope %q is not whitelisted in the config", scope)
+		}
+	}
+	return nil
 }
 
 // domainConfig returns DomainConfig for a domain.

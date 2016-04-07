@@ -9,6 +9,7 @@ It is generated from these files:
 	certificate_authorities.proto
 	config.proto
 	service_accounts.proto
+	tokens.proto
 
 It has these top-level messages:
 	ImportConfigResponse
@@ -27,7 +28,10 @@ It has these top-level messages:
 	DomainConfig
 	CreateServiceAccountRequest
 	CreateServiceAccountResponse
+	MintAccessTokenRequest
+	MintAccessTokenResponse
 	ServiceAccount
+	OAuth2AccessToken
 */
 package tokenserver
 
