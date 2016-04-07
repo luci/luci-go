@@ -20,7 +20,12 @@ type TestableBuild struct{ Build }
 
 // TestData returns sample test data.
 func (l TestableLog) TestData() []settings.TestBundle {
-	return []settings.TestBundle{}
+	return []settings.TestBundle{
+		{
+			Description: "Basic log",
+			Data:        templates.Args{"Log": "This is the log"},
+		},
+	}
 }
 
 // TestData returns sample test data.
