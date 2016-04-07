@@ -52,6 +52,26 @@ func (d *datastoreImpl) NewKeyToks(toks []KeyTok) *Key {
 	return NewKeyToks(d.aid, d.ns, toks)
 }
 
+// PopulateKey loads key into obj.
+//
+// obj is any object that Interface.Get is able to accept.
+//
+// This method will panic if obj is an invalid datastore model. If the key could
+// not be applied to the object, nothing will happen.
+func PopulateKey(obj interface{}, key *Key) {
+	pls := getMGS(obj)
+	if !pls.SetMeta("key", key) {
+		lst := key.LastTok()
+		if lst.StringID != "" {
+			pls.SetMeta("id", lst.StringID)
+		} else {
+			pls.SetMeta("id", lst.IntID)
+		}
+		pls.SetMeta("kind", lst.Kind)
+		pls.SetMeta("parent", key.Parent())
+	}
+}
+
 func runParseCallback(cbIface interface{}) (isKey, hasErr, hasCursorCB bool, mat multiArgType) {
 	badSig := func() {
 		panic(fmt.Errorf(

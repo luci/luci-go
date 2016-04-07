@@ -54,7 +54,7 @@ modes:
       test:
       - extra_args:
         - -short
-    max_duration: 10
+    max_duration: 30
   pre-push:
     checks:
       coverage:

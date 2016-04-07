@@ -142,6 +142,10 @@ func (f *permaBad) Load(pm PropertyMap) error {
 	return errors.New("permaBad")
 }
 
+type SingletonStruct struct {
+	id int64 `gae:"$id,1"`
+}
+
 type FakePLS struct {
 	IntID    int64
 	StringID string
@@ -373,6 +377,40 @@ func TestKeyForObj(t *testing.T) {
 				So(func() { ds.KeyForObjErr(&BadObj{ID: 1}) }, ShouldPanicLike,
 					`field "NonSerializableField" has invalid type: complex64`)
 			})
+		})
+	})
+}
+
+func TestPopulateKey(t *testing.T) {
+	t.Parallel()
+
+	Convey("Test PopulateKey", t, func() {
+		k := NewKey("app", "namespace", "kind", "", 1337, nil)
+
+		Convey("Can set the key of a common struct.", func() {
+			var cs CommonStruct
+
+			PopulateKey(&cs, k)
+			So(cs.ID, ShouldEqual, 1337)
+		})
+
+		Convey("Will not set the value of a singleton struct.", func() {
+			var ss SingletonStruct
+
+			PopulateKey(&ss, k)
+			So(ss.id, ShouldEqual, 0)
+		})
+
+		Convey("Will panic when setting the key of a bad struct.", func() {
+			var bs badStruct
+
+			So(func() { PopulateKey(&bs, k) }, ShouldPanic)
+		})
+
+		Convey("Will panic when setting the key of a broken PLS struct.", func() {
+			var broken permaBad
+
+			So(func() { PopulateKey(&broken, k) }, ShouldPanic)
 		})
 	})
 }
