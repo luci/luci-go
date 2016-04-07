@@ -3,6 +3,8 @@ version: go
 runtime: go
 api_version: go1
 
+instance_class: F4_1G
+
 handlers:
 # For static resources such as css and js files.
 - url: /static
