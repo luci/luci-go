@@ -319,7 +319,7 @@ type ClientOptions struct {
 	// installed to). It also hosts .cipd/* directory that tracks internal state
 	// of installed packages and keeps various cache files. 'Root' can be an empty
 	// string if the client is not going to be used to deploy or remove local
-	// packages. In that case caches are also disabled.
+	// packages. If both Root and CacheDir are empty, tag cache is disabled.
 	Root string
 
 	// Logger is a logger to use for logs (null-logger by default).
@@ -335,6 +335,11 @@ type ClientOptions struct {
 
 	// UserAgent is put into User-Agent HTTP header with each request.
 	UserAgent string
+
+	// CacheDir is a directory for shared cache. If empty, tags are cached
+	// inside the site root. If both Root and CacheDir are empty, tag cache
+	// is disabled.
+	CacheDir string
 }
 
 // NewClient initializes CIPD client object.
@@ -385,7 +390,8 @@ type clientImpl struct {
 
 	// tagCache is used to cache (pkgname, tag) -> instanceID mapping.
 	// Thread safe, but lazily initialized under lock.
-	tagCache *internal.TagCache
+	tagCache     *internal.TagCache
+	tagCacheInit sync.Once
 
 	// authClient is a lazily created http.Client to use for authenticated
 	// requests. Thread safe, but lazily initialized under lock.
@@ -424,19 +430,26 @@ func (client *clientImpl) doRequest(req *http.Request, c **http.Client, fac HTTP
 	return httpClient.Do(req)
 }
 
-// tagCachePath returns path to a tag cache file or "" if no root dir.
+// tagCachePath returns path to a tag cache file or "" if tag cache is disabled.
 func (client *clientImpl) tagCachePath() string {
-	if client.Root == "" {
+	var dir string
+	switch {
+	case client.CacheDir != "":
+		dir = client.CacheDir
+
+	case client.Root != "":
+		dir = filepath.Join(client.Root, local.SiteServiceDir)
+
+	default:
 		return ""
 	}
-	return filepath.Join(client.Root, local.SiteServiceDir, "tagcache.db")
+
+	return filepath.Join(dir, "tagcache.db")
 }
 
 // getTagCache lazy-initializes tagCache instance and returns it.
 func (client *clientImpl) getTagCache() *internal.TagCache {
-	client.lock.Lock()
-	defer client.lock.Unlock()
-	if client.tagCache == nil {
+	client.tagCacheInit.Do(func() {
 		if path := client.tagCachePath(); path != "" {
 			var err error
 			client.tagCache, err = internal.LoadTagCacheFromFile(path)
@@ -447,7 +460,7 @@ func (client *clientImpl) getTagCache() *internal.TagCache {
 		if client.tagCache == nil {
 			client.tagCache = &internal.TagCache{}
 		}
-	}
+	})
 	return client.tagCache
 }
 

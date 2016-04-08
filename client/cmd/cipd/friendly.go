@@ -89,6 +89,8 @@ type installationSiteConfig struct {
 	DefaultVersion string
 	// TrackedVersions is mapping package name -> version to use in 'update'.
 	TrackedVersions map[string]string
+	// CacheDir contains shared cache.
+	CacheDir string
 }
 
 // read loads JSON from given path.
@@ -199,11 +201,12 @@ func (site *installationSite) initClient(authFlags authcli.Flags) (err error) {
 	if site.client != nil {
 		return errors.New("client is already initialized")
 	}
-	serviceOpts := ServiceOptions{
+	clientOpts := ClientOptions{
 		authFlags:  authFlags,
 		serviceURL: site.cfg.ServiceURL,
+		cacheDir:   site.cfg.CacheDir,
 	}
-	site.client, err = serviceOpts.makeCipdClient(site.siteRoot)
+	site.client, err = clientOpts.makeCipdClient(site.siteRoot)
 	return
 }
 
@@ -382,6 +385,7 @@ var cmdInit = &subcommands.Command{
 		c.registerBaseFlags()
 		c.Flags.BoolVar(&c.force, "force", false, "Create the site root even if the directory is not empty or already under another site root directory.")
 		c.Flags.StringVar(&c.serviceURL, "service-url", "", "URL of a backend to use instead of the default one.")
+		c.Flags.StringVar(&c.cacheDir, "cache-dir", "", "Directory for shared cache")
 		return c
 	},
 }
@@ -391,6 +395,7 @@ type initRun struct {
 
 	force      bool
 	serviceURL string
+	cacheDir   string
 }
 
 func (c *initRun) Run(a subcommands.Application, args []string) int {
@@ -407,6 +412,7 @@ func (c *initRun) Run(a subcommands.Application, args []string) int {
 	}
 	err = site.modifyConfig(func(cfg *installationSiteConfig) error {
 		cfg.ServiceURL = c.serviceURL
+		cfg.CacheDir = c.cacheDir
 		return nil
 	})
 	return c.done(site.siteRoot, err)

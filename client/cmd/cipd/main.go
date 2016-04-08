@@ -221,21 +221,23 @@ func makeCLIError(msg string, args ...interface{}) error {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// ServiceOptions mixin.
+// ClientOptions mixin.
 
-// ServiceOptions defines command line arguments related to communication
-// with the remote service. Subcommands that interact with the network embed it.
-type ServiceOptions struct {
+// ClientOptions defines command line arguments related to CIPD client creation.
+// Subcommands that need a CIPD client embed it.
+type ClientOptions struct {
 	authFlags  authcli.Flags
 	serviceURL string
+	cacheDir   string
 }
 
-func (opts *ServiceOptions) registerFlags(f *flag.FlagSet) {
+func (opts *ClientOptions) registerFlags(f *flag.FlagSet) {
 	f.StringVar(&opts.serviceURL, "service-url", "", "URL of a backend to use instead of the default one.")
+	f.StringVar(&opts.cacheDir, "cache-dir", "", "Directory for shared cache")
 	opts.authFlags.Register(f, auth.Options{})
 }
 
-func (opts *ServiceOptions) makeCipdClient(root string) (cipd.Client, error) {
+func (opts *ClientOptions) makeCipdClient(root string) (cipd.Client, error) {
 	authOpts, err := opts.authFlags.Options()
 	if err != nil {
 		return nil, err
@@ -245,6 +247,7 @@ func (opts *ServiceOptions) makeCipdClient(root string) (cipd.Client, error) {
 		ServiceURL: opts.serviceURL,
 		Root:       root,
 		Logger:     log,
+		CacheDir:   opts.cacheDir,
 		AuthenticatedClientFactory: func() (*http.Client, error) {
 			return auth.NewAuthenticator(auth.OptionalLogin, authOpts).Client()
 		},
@@ -597,7 +600,7 @@ var cmdCreate = &subcommands.Command{
 		c.InputOptions.registerFlags(&c.Flags)
 		c.RefsOptions.registerFlags(&c.Flags)
 		c.TagsOptions.registerFlags(&c.Flags)
-		c.ServiceOptions.registerFlags(&c.Flags)
+		c.ClientOptions.registerFlags(&c.Flags)
 		c.UploadOptions.registerFlags(&c.Flags)
 		return c
 	},
@@ -608,7 +611,7 @@ type createRun struct {
 	InputOptions
 	RefsOptions
 	TagsOptions
-	ServiceOptions
+	ClientOptions
 	UploadOptions
 }
 
@@ -616,11 +619,11 @@ func (c *createRun) Run(a subcommands.Application, args []string) int {
 	if !c.init(args, 0, 0) {
 		return 1
 	}
-	return c.done(buildAndUploadInstance(c.InputOptions, c.RefsOptions, c.TagsOptions, c.ServiceOptions, c.UploadOptions))
+	return c.done(buildAndUploadInstance(c.InputOptions, c.RefsOptions, c.TagsOptions, c.ClientOptions, c.UploadOptions))
 }
 
 func buildAndUploadInstance(inputOpts InputOptions, refsOpts RefsOptions,
-	tagsOpts TagsOptions, serviceOpts ServiceOptions, uploadOpts UploadOptions) (common.Pin, error) {
+	tagsOpts TagsOptions, clientOpts ClientOptions, uploadOpts UploadOptions) (common.Pin, error) {
 	f, err := ioutil.TempFile("", "cipd_pkg")
 	if err != nil {
 		return common.Pin{}, err
@@ -633,7 +636,7 @@ func buildAndUploadInstance(inputOpts InputOptions, refsOpts RefsOptions,
 	if err != nil {
 		return common.Pin{}, err
 	}
-	return registerInstanceFile(f.Name(), refsOpts, tagsOpts, serviceOpts, uploadOpts)
+	return registerInstanceFile(f.Name(), refsOpts, tagsOpts, clientOpts, uploadOpts)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -649,7 +652,7 @@ var cmdEnsure = &subcommands.Command{
 	CommandRun: func() subcommands.CommandRun {
 		c := &ensureRun{}
 		c.registerBaseFlags()
-		c.ServiceOptions.registerFlags(&c.Flags)
+		c.ClientOptions.registerFlags(&c.Flags)
 		c.Flags.StringVar(&c.rootDir, "root", "<path>", "Path to an installation site root directory.")
 		c.Flags.StringVar(&c.listFile, "list", "<path>", "A file with a list of '<package name> <version>' pairs.")
 		return c
@@ -658,7 +661,7 @@ var cmdEnsure = &subcommands.Command{
 
 type ensureRun struct {
 	Subcommand
-	ServiceOptions
+	ClientOptions
 
 	rootDir  string
 	listFile string
@@ -668,17 +671,17 @@ func (c *ensureRun) Run(a subcommands.Application, args []string) int {
 	if !c.init(args, 0, 0) {
 		return 1
 	}
-	currentPins, _, err := ensurePackages(c.rootDir, c.listFile, false, c.ServiceOptions)
+	currentPins, _, err := ensurePackages(c.rootDir, c.listFile, false, c.ClientOptions)
 	return c.done(currentPins, err)
 }
 
-func ensurePackages(root string, desiredStateFile string, dryRun bool, serviceOpts ServiceOptions) ([]common.Pin, cipd.Actions, error) {
+func ensurePackages(root string, desiredStateFile string, dryRun bool, clientOpts ClientOptions) ([]common.Pin, cipd.Actions, error) {
 	f, err := os.Open(desiredStateFile)
 	if err != nil {
 		return nil, cipd.Actions{}, err
 	}
 	defer f.Close()
-	client, err := serviceOpts.makeCipdClient(root)
+	client, err := clientOpts.makeCipdClient(root)
 	if err != nil {
 		return nil, cipd.Actions{}, err
 	}
@@ -710,7 +713,7 @@ var cmdPuppetCheckUpdates = &subcommands.Command{
 	CommandRun: func() subcommands.CommandRun {
 		c := &checkUpdatesRun{}
 		c.registerBaseFlags()
-		c.ServiceOptions.registerFlags(&c.Flags)
+		c.ClientOptions.registerFlags(&c.Flags)
 		c.Flags.StringVar(&c.rootDir, "root", "<path>", "Path to an installation site root directory.")
 		c.Flags.StringVar(&c.listFile, "list", "<path>", "A file with a list of '<package name> <version>' pairs.")
 		return c
@@ -719,7 +722,7 @@ var cmdPuppetCheckUpdates = &subcommands.Command{
 
 type checkUpdatesRun struct {
 	Subcommand
-	ServiceOptions
+	ClientOptions
 
 	rootDir  string
 	listFile string
@@ -729,7 +732,7 @@ func (c *checkUpdatesRun) Run(a subcommands.Application, args []string) int {
 	if !c.init(args, 0, 0) {
 		return 1
 	}
-	_, actions, err := ensurePackages(c.rootDir, c.listFile, true, c.ServiceOptions)
+	_, actions, err := ensurePackages(c.rootDir, c.listFile, true, c.ClientOptions)
 	if err != nil {
 		ret := c.done(actions, err)
 		if errors.IsTransient(err) {
@@ -754,7 +757,7 @@ var cmdResolve = &subcommands.Command{
 	CommandRun: func() subcommands.CommandRun {
 		c := &resolveRun{}
 		c.registerBaseFlags()
-		c.ServiceOptions.registerFlags(&c.Flags)
+		c.ClientOptions.registerFlags(&c.Flags)
 		c.Flags.StringVar(&c.version, "version", "<version>", "Package version to resolve.")
 		return c
 	},
@@ -762,7 +765,7 @@ var cmdResolve = &subcommands.Command{
 
 type resolveRun struct {
 	Subcommand
-	ServiceOptions
+	ClientOptions
 
 	version string
 }
@@ -771,11 +774,11 @@ func (c *resolveRun) Run(a subcommands.Application, args []string) int {
 	if !c.init(args, 1, 1) {
 		return 1
 	}
-	return c.doneWithPins(resolveVersion(args[0], c.version, c.ServiceOptions))
+	return c.doneWithPins(resolveVersion(args[0], c.version, c.ClientOptions))
 }
 
-func resolveVersion(packagePrefix, version string, serviceOpts ServiceOptions) ([]pinInfo, error) {
-	client, err := serviceOpts.makeCipdClient("")
+func resolveVersion(packagePrefix, version string, clientOpts ClientOptions) ([]pinInfo, error) {
+	client, err := clientOpts.makeCipdClient("")
 	if err != nil {
 		return nil, err
 	}
@@ -800,7 +803,7 @@ var cmdDescribe = &subcommands.Command{
 	CommandRun: func() subcommands.CommandRun {
 		c := &describeRun{}
 		c.registerBaseFlags()
-		c.ServiceOptions.registerFlags(&c.Flags)
+		c.ClientOptions.registerFlags(&c.Flags)
 		c.Flags.StringVar(&c.version, "version", "<version>", "Package version to describe.")
 		return c
 	},
@@ -808,7 +811,7 @@ var cmdDescribe = &subcommands.Command{
 
 type describeRun struct {
 	Subcommand
-	ServiceOptions
+	ClientOptions
 
 	version string
 }
@@ -817,11 +820,11 @@ func (c *describeRun) Run(a subcommands.Application, args []string) int {
 	if !c.init(args, 1, 1) {
 		return 1
 	}
-	return c.done(describeInstance(args[0], c.version, c.ServiceOptions))
+	return c.done(describeInstance(args[0], c.version, c.ClientOptions))
 }
 
-func describeInstance(pkg, version string, serviceOpts ServiceOptions) (*describeOutput, error) {
-	client, err := serviceOpts.makeCipdClient("")
+func describeInstance(pkg, version string, clientOpts ClientOptions) (*describeOutput, error) {
+	client, err := clientOpts.makeCipdClient("")
 	if err != nil {
 		return nil, err
 	}
@@ -909,7 +912,7 @@ var cmdSetRef = &subcommands.Command{
 		c := &setRefRun{}
 		c.registerBaseFlags()
 		c.RefsOptions.registerFlags(&c.Flags)
-		c.ServiceOptions.registerFlags(&c.Flags)
+		c.ClientOptions.registerFlags(&c.Flags)
 		c.Flags.StringVar(&c.version, "version", "<version>", "Package version to point the ref to.")
 		return c
 	},
@@ -918,7 +921,7 @@ var cmdSetRef = &subcommands.Command{
 type setRefRun struct {
 	Subcommand
 	RefsOptions
-	ServiceOptions
+	ClientOptions
 
 	version string
 }
@@ -930,7 +933,7 @@ func (c *setRefRun) Run(a subcommands.Application, args []string) int {
 	if len(c.refs) == 0 {
 		return c.done(nil, makeCLIError("at least one -ref must be provided"))
 	}
-	return c.doneWithPins(setRefOrTag(args[0], c.version, c.ServiceOptions,
+	return c.doneWithPins(setRefOrTag(args[0], c.version, c.ClientOptions,
 		func(client cipd.Client, pin common.Pin) error {
 			for _, ref := range c.refs {
 				if err := client.SetRefWhenReady(ref, pin); err != nil {
@@ -941,9 +944,9 @@ func (c *setRefRun) Run(a subcommands.Application, args []string) int {
 		}))
 }
 
-func setRefOrTag(packagePrefix, version string, serviceOpts ServiceOptions,
+func setRefOrTag(packagePrefix, version string, clientOpts ClientOptions,
 	updatePin func(client cipd.Client, pin common.Pin) error) ([]pinInfo, error) {
-	client, err := serviceOpts.makeCipdClient("")
+	client, err := clientOpts.makeCipdClient("")
 	if err != nil {
 		return nil, err
 	}
@@ -999,7 +1002,7 @@ var cmdSetTag = &subcommands.Command{
 		c := &setTagRun{}
 		c.registerBaseFlags()
 		c.TagsOptions.registerFlags(&c.Flags)
-		c.ServiceOptions.registerFlags(&c.Flags)
+		c.ClientOptions.registerFlags(&c.Flags)
 		c.Flags.StringVar(&c.version, "version", "<version>",
 			"Package version to resolve. Could also be itself a tag or ref")
 		return c
@@ -1009,7 +1012,7 @@ var cmdSetTag = &subcommands.Command{
 type setTagRun struct {
 	Subcommand
 	TagsOptions
-	ServiceOptions
+	ClientOptions
 
 	version string
 }
@@ -1021,7 +1024,7 @@ func (c *setTagRun) Run(a subcommands.Application, args []string) int {
 	if len(c.tags) == 0 {
 		return c.done(nil, makeCLIError("at least one -tag must be provided"))
 	}
-	return c.done(setRefOrTag(args[0], c.version, c.ServiceOptions,
+	return c.done(setRefOrTag(args[0], c.version, c.ClientOptions,
 		func(client cipd.Client, pin common.Pin) error {
 			return client.AttachTagsWhenReady(pin, c.tags)
 		}))
@@ -1038,7 +1041,7 @@ var cmdListPackages = &subcommands.Command{
 	CommandRun: func() subcommands.CommandRun {
 		c := &listPackagesRun{}
 		c.registerBaseFlags()
-		c.ServiceOptions.registerFlags(&c.Flags)
+		c.ClientOptions.registerFlags(&c.Flags)
 		c.Flags.BoolVar(&c.recursive, "r", false, "Whether to list packages in subdirectories.")
 		return c
 	},
@@ -1046,7 +1049,7 @@ var cmdListPackages = &subcommands.Command{
 
 type listPackagesRun struct {
 	Subcommand
-	ServiceOptions
+	ClientOptions
 
 	recursive bool
 }
@@ -1059,11 +1062,11 @@ func (c *listPackagesRun) Run(a subcommands.Application, args []string) int {
 	if len(args) == 1 {
 		path = args[0]
 	}
-	return c.done(listPackages(path, c.recursive, c.ServiceOptions))
+	return c.done(listPackages(path, c.recursive, c.ClientOptions))
 }
 
-func listPackages(path string, recursive bool, serviceOpts ServiceOptions) ([]string, error) {
-	client, err := serviceOpts.makeCipdClient("")
+func listPackages(path string, recursive bool, clientOpts ClientOptions) ([]string, error) {
+	client, err := clientOpts.makeCipdClient("")
 	if err != nil {
 		return nil, err
 	}
@@ -1092,7 +1095,7 @@ var cmdSearch = &subcommands.Command{
 	CommandRun: func() subcommands.CommandRun {
 		c := &searchRun{}
 		c.registerBaseFlags()
-		c.ServiceOptions.registerFlags(&c.Flags)
+		c.ClientOptions.registerFlags(&c.Flags)
 		c.TagsOptions.registerFlags(&c.Flags)
 		return c
 	},
@@ -1100,7 +1103,7 @@ var cmdSearch = &subcommands.Command{
 
 type searchRun struct {
 	Subcommand
-	ServiceOptions
+	ClientOptions
 	TagsOptions
 }
 
@@ -1115,11 +1118,11 @@ func (c *searchRun) Run(a subcommands.Application, args []string) int {
 	if len(args) == 1 {
 		packageName = args[0]
 	}
-	return c.done(searchInstances(packageName, c.tags[0], c.ServiceOptions))
+	return c.done(searchInstances(packageName, c.tags[0], c.ClientOptions))
 }
 
-func searchInstances(packageName, tag string, serviceOpts ServiceOptions) ([]common.Pin, error) {
-	client, err := serviceOpts.makeCipdClient("")
+func searchInstances(packageName, tag string, clientOpts ClientOptions) ([]common.Pin, error) {
+	client, err := clientOpts.makeCipdClient("")
 	if err != nil {
 		return nil, err
 	}
@@ -1149,25 +1152,25 @@ var cmdListACL = &subcommands.Command{
 	CommandRun: func() subcommands.CommandRun {
 		c := &listACLRun{}
 		c.registerBaseFlags()
-		c.ServiceOptions.registerFlags(&c.Flags)
+		c.ClientOptions.registerFlags(&c.Flags)
 		return c
 	},
 }
 
 type listACLRun struct {
 	Subcommand
-	ServiceOptions
+	ClientOptions
 }
 
 func (c *listACLRun) Run(a subcommands.Application, args []string) int {
 	if !c.init(args, 1, 1) {
 		return 1
 	}
-	return c.done(listACL(args[0], c.ServiceOptions))
+	return c.done(listACL(args[0], c.ClientOptions))
 }
 
-func listACL(packagePath string, serviceOpts ServiceOptions) (map[string][]cipd.PackageACL, error) {
-	client, err := serviceOpts.makeCipdClient("")
+func listACL(packagePath string, clientOpts ClientOptions) (map[string][]cipd.PackageACL, error) {
+	client, err := clientOpts.makeCipdClient("")
 	if err != nil {
 		return nil, err
 	}
@@ -1233,7 +1236,7 @@ var cmdEditACL = &subcommands.Command{
 	CommandRun: func() subcommands.CommandRun {
 		c := &editACLRun{}
 		c.registerBaseFlags()
-		c.ServiceOptions.registerFlags(&c.Flags)
+		c.ClientOptions.registerFlags(&c.Flags)
 		c.Flags.Var(&c.owner, "owner", "Users or groups to grant OWNER role.")
 		c.Flags.Var(&c.writer, "writer", "Users or groups to grant WRITER role.")
 		c.Flags.Var(&c.reader, "reader", "Users or groups to grant READER role.")
@@ -1244,7 +1247,7 @@ var cmdEditACL = &subcommands.Command{
 
 type editACLRun struct {
 	Subcommand
-	ServiceOptions
+	ClientOptions
 
 	owner  principalsList
 	writer principalsList
@@ -1256,10 +1259,10 @@ func (c *editACLRun) Run(a subcommands.Application, args []string) int {
 	if !c.init(args, 1, 1) {
 		return 1
 	}
-	return c.done(nil, editACL(args[0], c.owner, c.writer, c.reader, c.revoke, c.ServiceOptions))
+	return c.done(nil, editACL(args[0], c.owner, c.writer, c.reader, c.revoke, c.ClientOptions))
 }
 
-func editACL(packagePath string, owners, writers, readers, revoke principalsList, serviceOpts ServiceOptions) error {
+func editACL(packagePath string, owners, writers, readers, revoke principalsList, clientOpts ClientOptions) error {
 	changes := []cipd.PackageACLChange{}
 
 	makeChanges := func(action cipd.PackageACLChangeAction, role string, list principalsList) {
@@ -1284,7 +1287,7 @@ func editACL(packagePath string, owners, writers, readers, revoke principalsList
 		return nil
 	}
 
-	client, err := serviceOpts.makeCipdClient("")
+	client, err := clientOpts.makeCipdClient("")
 	if err != nil {
 		return err
 	}
@@ -1403,7 +1406,7 @@ var cmdFetch = &subcommands.Command{
 	CommandRun: func() subcommands.CommandRun {
 		c := &fetchRun{}
 		c.registerBaseFlags()
-		c.ServiceOptions.registerFlags(&c.Flags)
+		c.ClientOptions.registerFlags(&c.Flags)
 		c.Flags.StringVar(&c.version, "version", "<version>", "Package version to fetch.")
 		c.Flags.StringVar(&c.outputPath, "out", "<path>", "Path to a file to write fetch to.")
 		return c
@@ -1412,7 +1415,7 @@ var cmdFetch = &subcommands.Command{
 
 type fetchRun struct {
 	Subcommand
-	ServiceOptions
+	ClientOptions
 
 	version    string
 	outputPath string
@@ -1422,11 +1425,11 @@ func (c *fetchRun) Run(a subcommands.Application, args []string) int {
 	if !c.init(args, 1, 1) {
 		return 1
 	}
-	return c.done(fetchInstanceFile(args[0], c.version, c.outputPath, c.ServiceOptions))
+	return c.done(fetchInstanceFile(args[0], c.version, c.outputPath, c.ClientOptions))
 }
 
-func fetchInstanceFile(packageName, version, instanceFile string, serviceOpts ServiceOptions) (common.Pin, error) {
-	client, err := serviceOpts.makeCipdClient("")
+func fetchInstanceFile(packageName, version, instanceFile string, clientOpts ClientOptions) (common.Pin, error) {
+	client, err := clientOpts.makeCipdClient("")
 	if err != nil {
 		return common.Pin{}, err
 	}
@@ -1532,7 +1535,7 @@ var cmdRegister = &subcommands.Command{
 		c.registerBaseFlags()
 		c.RefsOptions.registerFlags(&c.Flags)
 		c.TagsOptions.registerFlags(&c.Flags)
-		c.ServiceOptions.registerFlags(&c.Flags)
+		c.ClientOptions.registerFlags(&c.Flags)
 		c.UploadOptions.registerFlags(&c.Flags)
 		return c
 	},
@@ -1542,7 +1545,7 @@ type registerRun struct {
 	Subcommand
 	RefsOptions
 	TagsOptions
-	ServiceOptions
+	ClientOptions
 	UploadOptions
 }
 
@@ -1550,17 +1553,17 @@ func (c *registerRun) Run(a subcommands.Application, args []string) int {
 	if !c.init(args, 1, 1) {
 		return 1
 	}
-	return c.done(registerInstanceFile(args[0], c.RefsOptions, c.TagsOptions, c.ServiceOptions, c.UploadOptions))
+	return c.done(registerInstanceFile(args[0], c.RefsOptions, c.TagsOptions, c.ClientOptions, c.UploadOptions))
 }
 
 func registerInstanceFile(instanceFile string, refsOpts RefsOptions,
-	tagsOpts TagsOptions, serviceOpts ServiceOptions, uploadOpts UploadOptions) (common.Pin, error) {
+	tagsOpts TagsOptions, clientOpts ClientOptions, uploadOpts UploadOptions) (common.Pin, error) {
 	inst, err := local.OpenInstanceFile(instanceFile, "")
 	if err != nil {
 		return common.Pin{}, err
 	}
 	defer inst.Close()
-	client, err := serviceOpts.makeCipdClient("")
+	client, err := clientOpts.makeCipdClient("")
 	if err != nil {
 		return common.Pin{}, err
 	}
