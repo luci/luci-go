@@ -30,6 +30,7 @@ import (
 
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/services/certauthorities"
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/services/serviceaccounts"
+	"github.com/luci/luci-go/appengine/cmd/tokenserver/services/tokenminter"
 	"github.com/luci/luci-go/common/api/tokenserver/v1"
 )
 
@@ -51,6 +52,12 @@ var (
 		Service: serviceAccountsServer,
 		Prelude: adminPrelude("tokenserver.ServiceAccounts"),
 	}
+
+	// tokenMinterServer implements tokenserver.TokenMinter RPC interface.
+	//
+	// It is main public API of the token server. It doesn't require any external
+	// authentication (it happens inside), and so it's installed as is.
+	tokenMinterServer = &tokenminter.Server{}
 )
 
 // adminPrelude returns a prelude that authorizes only administrators.
@@ -96,6 +103,7 @@ func init() {
 	var api prpc.Server
 	tokenserver.RegisterCertificateAuthoritiesServer(&api, caServerWithAuth)
 	tokenserver.RegisterServiceAccountsServer(&api, serviceAccountsServerWithAuth)
+	tokenserver.RegisterTokenMinterServer(&api, tokenMinterServer)
 	discovery.Enable(&api)
 	api.InstallHandlers(router, base)
 

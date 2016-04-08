@@ -25,7 +25,7 @@ type OAuth2AccessToken struct {
 func (m *OAuth2AccessToken) Reset()                    { *m = OAuth2AccessToken{} }
 func (m *OAuth2AccessToken) String() string            { return proto.CompactTextString(m) }
 func (*OAuth2AccessToken) ProtoMessage()               {}
-func (*OAuth2AccessToken) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
+func (*OAuth2AccessToken) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0} }
 
 func (m *OAuth2AccessToken) GetExpiry() *google_protobuf1.Timestamp {
 	if m != nil {
@@ -38,7 +38,7 @@ func init() {
 	proto.RegisterType((*OAuth2AccessToken)(nil), "tokenserver.OAuth2AccessToken")
 }
 
-var fileDescriptor3 = []byte{
+var fileDescriptor5 = []byte{
 	// 169 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0xe2, 0x29, 0xc9, 0xcf, 0x4e,
 	0xcd, 0x2b, 0xd6, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0xe2, 0x86, 0xf0, 0x52, 0x8b, 0xca, 0x52,

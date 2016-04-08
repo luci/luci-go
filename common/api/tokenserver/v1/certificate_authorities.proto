@@ -6,12 +6,15 @@ syntax = "proto3";
 
 package tokenserver;
 
-import "config.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
+import "config.proto";
+
 // CertificateAuthorities can be used by service administrators to manage and
 // inspect CAs used by The Token Server.
+//
+// It is callable by the token service itself and by the admins.
 service CertificateAuthorities {
   // ImportConfig makes the server read its config from luci-config right now.
   //

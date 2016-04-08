@@ -1,0 +1,113 @@
+// Copyright 2016 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package tokenserver;
+
+import "google/protobuf/timestamp.proto";
+
+import "service_account.proto";
+import "tokens.proto";
+
+// TokenMinter implements main API of the token server.
+service TokenMinter {
+  // MintToken generates a new token for an authenticated caller.
+  //
+  // It checks that provided certificate was signed by some trusted CA, and it
+  // is still valid (non-expired and hasn't been revoked). It then checks that
+  // the request was signed by the corresponding private key. Finally it checks
+  // that the caller is authorized to generate requested kind of token.
+  //
+  // If everything checks out, it generates and returns a new token.
+  //
+  // On fatal error it returns detailed error response via same
+  // MintTokenResponse. On transient errors it returns generic grpc.Internal
+  // error.
+  rpc MintToken(MintTokenRequest) returns (MintTokenResponse);
+}
+
+// MintTokenRequest wraps a serialized and signed TokenRequest message.
+message MintTokenRequest {
+  // The protobuf-serialized TokenRequest message, signed by the private
+  // key that matches TokenRequest.certificate.
+  //
+  // We have to send it as a byte blob to avoid dealing with possible protobuf
+  // serialization inconsistencies when checking the signature.
+  bytes serialized_token_request = 1;
+
+  // The signature of 'serialized_token_parameters' blob.
+  //
+  // See TokenRequest.signature_algorithm for exact meaning.
+  bytes signature = 2;
+}
+
+// TokenRequest contains the actual request parameters.
+message TokenRequest {
+  // The kinds of tokens the token server can mint.
+  enum TokenType {
+    UNKNOWN_TYPE = 0;               // used if the field is not initialized
+    GOOGLE_OAUTH2_ACCESS_TOKEN = 1; // OAuth2 service account access token
+  }
+
+  // Supported ways of singing the request.
+  enum SignatureAlgorithm {
+    UNKNOWN_ALGO    = 0; // used if the field is not initialized
+    SHA256_RSA_ALGO = 1; // matches x509's sha256WithRSAEncryption
+  }
+
+  // The certificate that identifies a caller (as ASN1-serialized blob).
+  //
+  // It will be used to extract machine FQDN (it's CN of the cert) and CA name
+  // to use to check the cert.
+  bytes certificate = 1;
+
+  // The signature algorithm used to sign this request.
+  //
+  // Defines what's in MintTokenRequest.signature field.
+  SignatureAlgorithm signature_algorithm = 2;
+
+  // Timestamp when this request was created, by the issuer clock.
+  google.protobuf.Timestamp issued_at = 3;
+
+  // The token type being requested.
+  //
+  // Defines what fields of the response are set.
+  TokenType token_type = 4;
+
+  // The list of API scopes to grant to the token.
+  //
+  // Must not be empty. It is also validated against a whitelist specified in
+  // config.DomainConfig.
+  repeated string oauth2_scopes = 5;
+}
+
+// MintTokenResponse is returned by 'MintToken' if server processed the request.
+//
+// It's returned even if server refuses to mint a token. It contains the error
+// details in that case.
+message MintTokenResponse {
+  // Possible kinds of fatal errors.
+  //
+  // Non fatal errors are returned as grpc.Internal errors instead.
+  enum ErrorCode {
+    NO_ERROR = 0;
+    // ... write more
+  }
+  ErrorCode error_code = 1;
+
+  // Optional detailed error message.
+  string error_message = 2;
+
+  // The service account associated with the returned token (if any).
+  ServiceAccount service_account = 3;
+
+  // The generated token.
+  //
+  // The exact field set here depends on a requested type of the token, see
+  // TokenRequest.token_type.
+  oneof token_type {
+    OAuth2AccessToken google_oauth2_access_token = 20;
+  }
+}
