@@ -20,7 +20,7 @@
   'use strict';
 
   suite('<rpc-completer>', function() {
-    var annotatedSet = JSON.parse(JSON.stringify(discoveryDescriptor));
+    var annotatedSet = JSON.parse(JSON.stringify(testDescriptor));
     rpcExplorer.descUtil.annotateSet(annotatedSet);
 
     var completer;
@@ -83,80 +83,198 @@
           'ab');
     });
 
-    suite('getCompletionsForText', function() {
-      var fileSet = rpcExplorer.descUtil.resolve(
-          annotatedSet, 'google.protobuf.FileDescriptorSet');
-
-      test('FileDescriptorSet', function() {
-        var completions = completer.getCompletionsForText(fileSet, '')
-        expect(completions).to.deep.equal([{
-          caption: 'file',
-          snippet: '"file": [{${0}}]',
-          meta: 'repeated google.protobuf.FileDescriptorProto',
+    test('underscores in field name', function() {
+      var multiWord = rpcExplorer.descUtil.resolve(
+          annotatedSet, 'rpcexplorer.MultiWord');
+      var completions = completer.getCompletionsForText(multiWord, '');
+      expect(completions).to.deep.equal([
+        {
+          caption: 'fooBar',
+          snippet: '"fooBar": "${0}"',
+          meta: 'string',
           docTooltip: ''
-        }]);
+        }
+      ])
+    });
+
+    suite('getCompletionsForText', function() {
+      var m = rpcExplorer.descUtil.resolve(annotatedSet, 'rpcexplorer.M');
+
+      test('M', function() {
+        var completions = completer.getCompletionsForText(m, '');
+        expect(completions).to.deep.equal([
+          {
+            caption: 'i',
+            snippet: '"i": ${0}',
+            meta: 'int32',
+            docTooltip: ' i is integer\n'
+          },
+          {
+            caption: 'ri',
+            snippet: '"ri": [${0}]',
+            meta: 'repeated int32',
+            docTooltip: ''
+          },
+          {
+            caption: 's',
+            snippet: '"s": "${0}"',
+            meta: 'string',
+            docTooltip: ''
+          },
+          {
+            caption: 'e',
+            snippet: '"e": "${0}"',
+            meta: 'rpcexplorer.E',
+            docTooltip: ''
+          },
+          {
+            caption: 'm',
+            snippet: '"m": {${0}}',
+            meta: 'rpcexplorer.M2',
+            docTooltip: ''
+          },
+          {
+            caption: 'mr',
+            snippet: '"mr": [{${0}}]',
+            meta: 'repeated rpcexplorer.M2',
+            docTooltip: ' mr is repeated message\n second line.\n'
+          }
+        ]);
       });
 
-      test('FileDescriptorSet with quote', function() {
-        var completions = completer.getCompletionsForText(fileSet, '"')
-        expect(completions).to.deep.equal([{
-          caption: 'file',
-          snippet: 'file',
-          meta: 'repeated google.protobuf.FileDescriptorProto',
-          docTooltip: ''
-        }]);
+      test('M with quote', function() {
+        var completions = completer.getCompletionsForText(m, '"')
+        expect(completions).to.deep.equal([
+          {
+            caption: 'i',
+            snippet: 'i',
+            meta: 'int32',
+            docTooltip: ' i is integer\n'
+          },
+          {
+            caption: 'ri',
+            snippet: 'ri',
+            meta: 'repeated int32',
+            docTooltip: ''
+          },
+          {
+            caption: 's',
+            snippet: 's',
+            meta: 'string',
+            docTooltip: ''
+          },
+          {
+            caption: 'e',
+            snippet: 'e',
+            meta: 'rpcexplorer.E',
+            docTooltip: ''
+          },
+          {
+            caption: 'm',
+            snippet: 'm',
+            meta: 'rpcexplorer.M2',
+            docTooltip: ''
+          },
+          {
+            caption: 'mr',
+            snippet: 'mr',
+            meta: 'repeated rpcexplorer.M2',
+            docTooltip: ' mr is repeated message\n second line.\n'
+          }
+        ]);
       });
 
       test('submessage', function() {
-        var completions = completer.getCompletionsForText(fileSet, '"file":[{');
-        expect(completions).to.have.length(12);
-        expect(completions).to.contain({
-          caption: 'name',
-          snippet: '"name": "${0}"',
-          meta: 'string',
-          docTooltip: ''
-        });
-        expect(completions).to.contain({
-          caption: 'dependency',
-          snippet: '"dependency": ["${0}"]',
-          meta: 'repeated string',
-          docTooltip: ' Names of files imported by this file.\n'
-        });
-        expect(completions).to.contain({
-          caption: 'weakDependency',
-          snippet: '"weakDependency": [${0}]',
-          meta: 'repeated int32',
-          docTooltip: (
-              ' Indexes of the weak imported files in the dependency list.\n' +
-              ' For Google-internal migration only. Do not use.\n')
-        });
+        var completions = completer.getCompletionsForText(m, '"m":[{');
+        expect(completions).to.deep.equal([
+          {
+            caption: 'i',
+            snippet: '"i": ${0}',
+            meta: 'int32',
+            docTooltip: ''
+          },
+          {
+            caption: 's',
+            snippet: '"s": "${0}"',
+            meta: 'string',
+            docTooltip: ''
+          }
+        ]);
       });
 
       test('enum values', function() {
-        // Completions for FieldOptions.CType.
-        var completions = completer.getCompletionsForText(
-          fileSet,
-          '"file":[{"messageType":{"field":{"options": {"ctype": ');
+        var completions = completer.getCompletionsForText(m, '"e":');
         expect(completions).to.deep.equal([
           {
-            caption: 'STRING',
-            snippet: '"STRING"',
+            caption: 'V0',
+            snippet: '"V0"',
             meta: '0',
-            docTooltip: ' Default mode.\n'
+            docTooltip: ' V0 comment.\n'
           },
           {
-            caption: 'CORD',
-            snippet: '"CORD"',
+            caption: 'V1',
+            snippet: '"V1"',
             meta: '1',
-            docTooltip: ''
+            docTooltip: ' V1 comment.\n'
+          }
+        ]);
+      });
+
+      test('enum values with quote', function() {
+        var completions = completer.getCompletionsForText(m, '"e": "');
+        expect(completions).to.deep.equal([
+          {
+            caption: 'V0',
+            snippet: 'V0',
+            meta: '0',
+            docTooltip: ' V0 comment.\n'
           },
           {
-            caption: 'STRING_PIECE',
-            snippet: '"STRING_PIECE"',
-            meta: '2',
-            docTooltip: ''
-          },
+            caption: 'V1',
+            snippet: 'V1',
+            meta: '1',
+            docTooltip: ' V1 comment.\n'
+          }
         ]);
+      });
+
+      suite('map', function() {
+        var mapContainer = rpcExplorer.descUtil.resolve(
+            annotatedSet, 'rpcexplorer.MapContainer');
+
+        test('field', function() {
+          var completions = completer.getCompletionsForText(mapContainer, '');
+          expect(completions).to.deep.equal([
+            {
+              caption: 'im',
+              snippet: '"im": {${0}}',
+              meta: 'map<int32, rpcexplorer.M>',
+              docTooltip: ''
+            },
+            {
+              caption: 'ii',
+              snippet: '"ii": {${0}}',
+              meta: 'map<int32, int32>',
+              docTooltip: ''
+            }
+          ])
+        });
+
+        test('keys', function() {
+          var completions = completer.getCompletionsForText(mapContainer, '"im": {');
+          expect(completions).to.deep.equal([])
+        });
+
+        test('message values', function() {
+          var mapValueCompletions = completer.getCompletionsForText(mapContainer, '"im": {"key": {');
+          var mCompletions = completer.getCompletionsForText(m, '');
+          expect(mapValueCompletions).to.deep.equal(mCompletions)
+        });
+
+        test('int32 values', function() {
+          var completions = completer.getCompletionsForText(mapContainer, '"ii": {"value": {');
+          expect(completions).to.deep.equal([])
+        });
       });
     });
   });
