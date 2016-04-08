@@ -12,6 +12,7 @@
     href="https://fonts.googleapis.com/css?family=Roboto:400,300,300italic,400italic,500,500italic,700,700italic">
 <link rel="import"
     href="../bower_components/google-signin/google-signin-aware.html">
+<link rel="import" href="../bower_components/paper-spinner/paper-spinner.html">
 
 <link rel="import" href="/static/common/rpc/rpc-client.html">
 
@@ -35,6 +36,9 @@
         margin-right: 10px;
         margin-top: 10px;
       }
+      #loadingContainer {
+        text-align: center;
+      }
     </style>
 
     <!-- Load server description -->
@@ -42,7 +46,8 @@
         auto
         service="discovery.Discovery"
         method="Describe"
-        last-response="{{serverDescription}}">
+        last-response="{{serverDescription}}"
+        loading="{{loadingDescription}}">
     </rpc-client>
 
     <div class="navbar navbar-default" role="navigation">
@@ -91,11 +96,18 @@
       </li>
     </ol>
 
+    <template is="dom-if" if="[[loadingDescription]]">
+      <div id="loadingContainer">
+        <paper-spinner alt="Loading description" active></paper-spinner>
+      </div>
+    </template>
+
     <app-router
         id="router"
         mode="pushstate"
         on-activate-route-end="_onRouted"
-        on-before-data-binding="_onRouteBinding">
+        on-before-data-binding="_onRouteBinding"
+        hidden="[[loadingDescription]]">
       <!--
         "path" attributes in <app-route> elements are set dynamically, but
         unless we set them to a string, app-router prints errors to the console.
