@@ -75,17 +75,10 @@
         }
         var field = util.findByJsonName(type.desc.field, path[i]);
         if (!field) {
-          console.log('Field ' + path[i] + ' not found')
+          console.log('Field ' + path[i] + ' not found');
           return [];
         }
-        var typeName = field.typeName;
-        if (typeof typeName != 'string') {
-          console.log('Field ' + path[i] + ' is not a message or enum')
-          return [];
-        }
-        // Referenced types are often prefixed with '.'.
-        typeName = util.trimPrefixDot(typeName);
-        type = util.resolve(this.description, typeName);
+        type = field.rpcExpTypeInfo;
         if (!type) {
           return [];
         }

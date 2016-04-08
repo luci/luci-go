@@ -20,11 +20,16 @@
        * for all descriptors in the file annotate resolves
        * SourceLocationInfo.Location message and assigns it to the
        * sourceCodeInfo property of the descriptor.
+       * If fileSet is provided, for all field descriptors with non-empty type
+       * name, resolves the referenced type and assigns to "rpcExpTypeInfo"
+       * of the field descriptor.
        * Prerequisite reading:
        * https://github.com/luci/luci-go/blob/ea240d0/common/proto/google/descriptor/descriptor.proto#L713
        * @param {FileDescriptorProto} file
+       * @param {FileDescriptorSet} fileSet
        */
-      annotate: function(file) {
+      annotate: function(file, fileSet) {
+        var self = this;
         if (!file.sourceCodeInfo) {
           return;
         }
@@ -71,6 +76,18 @@
           annotateList(msg.field, 2);
           annotateList(msg.nestedType, 3, annotateMessage);
           annotateList(msg.enumType, 4, annotateEnum);
+
+          // Resolve referenced types.
+          if (!fileSet || !msg.field) {
+            return;
+          }
+          for (var i = 0; i < msg.field.length; i++) {
+            var field = msg.field[i];
+            if (field.typeName) {
+              field.rpcExpTypeInfo = self.resolve(
+                  fileSet, self.trimPrefixDot(field.typeName));
+            }
+          }
         }
 
         function annotateEnum(e) {
@@ -91,7 +108,7 @@
        */
       annotateSet: function(fileSet) {
         for (var i = 0; i < fileSet.file.length; i++) {
-          this.annotate(fileSet.file[i]);
+          this.annotate(fileSet.file[i], fileSet);
         }
       },
 

@@ -20,12 +20,14 @@
   'use strict';
 
   suite('<rpc-completer>', function() {
+    var annotatedSet = JSON.parse(JSON.stringify(discoveryDescriptor));
+    rpcExplorer.descUtil.annotateSet(annotatedSet);
+
     var completer;
 
     setup(function() {
       completer = fixture('completer');
-      completer.description = JSON.parse(JSON.stringify(discoveryDescriptor));
-      rpcExplorer.descUtil.annotateSet(completer.description);
+      completer.description = annotatedSet;
     });
 
     suite('findMatching', function() {
@@ -83,7 +85,7 @@
 
     suite('getCompletionsForText', function() {
       var fileSet = rpcExplorer.descUtil.resolve(
-          discoveryDescriptor, 'google.protobuf.FileDescriptorSet');
+          annotatedSet, 'google.protobuf.FileDescriptorSet');
 
       test('FileDescriptorSet', function() {
         var completions = completer.getCompletionsForText(fileSet, '')
