@@ -16,9 +16,9 @@ func TestChecksumCheckingWorks(t *testing.T) {
 	msg := messages.TagCache{
 		Entries: []*messages.TagCache_Entry{
 			{
-				Package:    strPtr("package"),
-				Tag:        strPtr("tag"),
-				InstanceId: strPtr("instance_id"),
+				Package:    "package",
+				Tag:        "tag",
+				InstanceId: "instance_id",
 			},
 		},
 	}
@@ -38,8 +38,4 @@ func TestChecksumCheckingWorks(t *testing.T) {
 		out := messages.TagCache{}
 		So(UnmarshalWithSHA1(buf, &out), ShouldNotBeNil)
 	})
-}
-
-func strPtr(s string) *string {
-	return &s
 }

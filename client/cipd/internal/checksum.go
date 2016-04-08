@@ -34,9 +34,9 @@ func UnmarshalWithSHA1(buf []byte, pm proto.Message) error {
 	if err := proto.Unmarshal(buf, &envelope); err != nil {
 		return err
 	}
-	sum := sha1.Sum(envelope.GetBlob())
-	if !bytes.Equal(sum[:], envelope.GetSha1()) {
+	sum := sha1.Sum(envelope.Blob)
+	if !bytes.Equal(sum[:], envelope.Sha1) {
 		return errors.New("check sum of tag cache file is invalid")
 	}
-	return proto.Unmarshal(envelope.GetBlob(), pm)
+	return proto.Unmarshal(envelope.Blob, pm)
 }

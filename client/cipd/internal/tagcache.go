@@ -60,9 +60,9 @@ func (c *TagCache) Load(buf []byte) error {
 	for i := 0; i < len(cache.Entries) && len(goodOnes) < MaxTagCacheSize; i++ {
 		e := cache.Entries[i]
 		valid := e != nil &&
-			common.ValidatePackageName(e.GetPackage()) == nil &&
-			common.ValidateInstanceTag(e.GetTag()) == nil &&
-			common.ValidateInstanceID(e.GetInstanceId()) == nil
+			common.ValidatePackageName(e.Package) == nil &&
+			common.ValidateInstanceTag(e.Tag) == nil &&
+			common.ValidateInstanceID(e.InstanceId) == nil
 		if valid {
 			goodOnes = append(goodOnes, e)
 		}
@@ -116,10 +116,10 @@ func (c *TagCache) ResolveTag(pkg, tag string) common.Pin {
 	defer c.lock.Unlock()
 	for i := len(c.cache.Entries) - 1; i >= 0; i-- {
 		e := c.cache.Entries[i]
-		if e != nil && e.GetPackage() == pkg && e.GetTag() == tag {
+		if e != nil && e.Package == pkg && e.Tag == tag {
 			return common.Pin{
 				PackageName: pkg,
-				InstanceID:  e.GetInstanceId(),
+				InstanceID:  e.InstanceId,
 			}
 		}
 	}
@@ -145,7 +145,7 @@ func (c *TagCache) AddTag(pin common.Pin, tag string) {
 	// compacted in Save().
 	var existing *messages.TagCache_Entry
 	for i, e := range c.cache.Entries {
-		if e != nil && e.GetPackage() == pin.PackageName && e.GetTag() == tag {
+		if e != nil && e.Package == pin.PackageName && e.Tag == tag {
 			existing = e
 			c.cache.Entries[i] = nil
 			break
@@ -153,11 +153,11 @@ func (c *TagCache) AddTag(pin common.Pin, tag string) {
 	}
 	if existing == nil {
 		existing = &messages.TagCache_Entry{
-			Package: &pin.PackageName,
-			Tag:     &tag,
+			Package: pin.PackageName,
+			Tag:     tag,
 		}
 	}
-	existing.InstanceId = &pin.InstanceID
+	existing.InstanceId = pin.InstanceID
 
 	c.dirty = true
 	c.cache.Entries = append(c.cache.Entries, existing)
