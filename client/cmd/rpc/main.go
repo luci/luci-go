@@ -143,6 +143,7 @@ var application = &subcommands.DefaultApplication{
 		cmdFmt,
 		authcli.SubcommandLogin(auth.Options{Logger: logCfg.Get()}, "login"),
 		authcli.SubcommandLogout(auth.Options{Logger: logCfg.Get()}, "logout"),
+		subcommands.CmdHelp,
 	},
 }
 
