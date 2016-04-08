@@ -21,10 +21,7 @@ import (
 
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaeauth/server"
-	"github.com/luci/luci-go/appengine/gaeconfig"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/config/impl/memory"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/discovery"
@@ -38,16 +35,7 @@ import (
 
 var (
 	// caServer implements tokenserver.CertificateAuthorities RPC interface.
-	caServer = &certauthorities.Server{
-		ConfigFactory: func(c context.Context) (config.Interface, error) {
-			// Use fake config data on dev server for simplicity.
-			inf := info.Get(c)
-			if inf.IsDevAppServer() {
-				return memory.New(devServerConfigs(inf.AppID())), nil
-			}
-			return gaeconfig.New(c)
-		},
-	}
+	caServer = &certauthorities.Server{}
 
 	// caServerWithAuth adds admin check to caServer.
 	caServerWithAuth = &tokenserver.DecoratedCertificateAuthorities{
@@ -127,6 +115,11 @@ func warmupHandler(c context.Context, w http.ResponseWriter, r *http.Request, _ 
 
 // readConfigCron is handler for /internal/cron/read-config GAE cron task.
 func readConfigCron(c context.Context, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	// Don't override manually imported configs with 'nil' on devserver.
+	if info.Get(c).IsDevAppServer() {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 	if _, err := caServer.ImportConfig(c, nil); err != nil {
 		panic(err) // let panic catcher deal with it
 	}

@@ -25,6 +25,7 @@ import (
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/config"
+	cfgmem "github.com/luci/luci-go/common/config/impl/memory"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	google_protobuf "github.com/luci/luci-go/common/proto/google"
@@ -33,6 +34,7 @@ import (
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/certchecker"
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/model"
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/utils"
+	"github.com/luci/luci-go/appengine/gaeconfig"
 	"github.com/luci/luci-go/common/api/tokenserver/v1"
 )
 
@@ -40,8 +42,6 @@ import (
 //
 // It assumes authorization has happened already.
 type Server struct {
-	// ConfigFactory returns instances of config.Interface on demand.
-	ConfigFactory func(context.Context) (config.Interface, error)
 }
 
 // ImportConfig makes the server read its config from luci-config right now.
@@ -49,8 +49,8 @@ type Server struct {
 // Note that regularly configs are read in background each 5 min. ImportConfig
 // can be used to force config reread immediately. It will block until configs
 // are read.
-func (s *Server) ImportConfig(c context.Context, _ *google_protobuf.Empty) (*tokenserver.ImportConfigResponse, error) {
-	cfg, err := s.fetchConfigFile(c, "tokenserver.cfg")
+func (s *Server) ImportConfig(c context.Context, req *tokenserver.ImportConfigRequest) (*tokenserver.ImportConfigResponse, error) {
+	cfg, err := fetchConfigFile(c, req, "tokenserver.cfg")
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "can't read config file - %s", err)
 	}
@@ -78,7 +78,11 @@ func (s *Server) ImportConfig(c context.Context, _ *google_protobuf.Empty) (*tok
 		wg.Add(1)
 		go func(i int, ca *tokenserver.CertificateAuthorityConfig) {
 			defer wg.Done()
-			if err := s.importCA(c, ca, cfg.Revision); err != nil {
+			certFileCfg, err := fetchConfigFile(c, req, ca.CertPath)
+			if err != nil {
+				logging.Errorf(c, "Failed to fetch %q: %s", ca.CertPath, err)
+				me.Assign(i, err)
+			} else if err := s.importCA(c, ca, certFileCfg.Content, cfg.Revision); err != nil {
 				logging.Errorf(c, "Failed to import %q: %s", ca.Cn, err)
 				me.Assign(i, err)
 			}
@@ -307,24 +311,37 @@ func (s *Server) CheckCertificate(c context.Context, r *tokenserver.CheckCertifi
 ////////////////////////////////////////////////////////////////////////////////
 
 // fetchConfigFile fetches a file from this services' config set.
-func (s *Server) fetchConfigFile(c context.Context, path string) (*config.Config, error) {
+func fetchConfigFile(c context.Context, req *tokenserver.ImportConfigRequest, path string) (*config.Config, error) {
 	logging.Infof(c, "Reading %q", path)
 	c, _ = context.WithTimeout(c, 30*time.Second) // URL fetch deadline
-	cfg, err := s.ConfigFactory(c)
-	if err != nil {
-		return nil, err
+
+	var cfg config.Interface
+
+	inf := info.Get(c)
+	if inf.IsDevAppServer() {
+		// On devserver use whatever was passed to ImportConfig.
+		cfgSet := make(cfgmem.ConfigSet, len(req.DevConfig))
+		for k, v := range req.DevConfig {
+			cfgSet[k] = v
+		}
+		cfg = cfgmem.New(map[string]cfgmem.ConfigSet{
+			"services/" + inf.AppID(): cfgSet,
+		})
+	} else {
+		// In prod use real luci-config service.
+		var err error
+		if cfg, err = gaeconfig.New(c); err != nil {
+			return nil, err
+		}
 	}
-	return cfg.GetConfig("services/"+info.Get(c).AppID(), path, false)
+
+	return cfg.GetConfig("services/"+inf.AppID(), path, false)
 }
 
 // importCA imports CA definition from the config (or updates an existing one).
-func (s *Server) importCA(c context.Context, ca *tokenserver.CertificateAuthorityConfig, rev string) error {
+func (s *Server) importCA(c context.Context, ca *tokenserver.CertificateAuthorityConfig, certPem string, rev string) error {
 	// Read CA certificate file, convert it to der.
-	caCfg, err := s.fetchConfigFile(c, ca.CertPath)
-	if err != nil {
-		return err
-	}
-	certDer, err := utils.ParsePEM(caCfg.Content, "CERTIFICATE")
+	certDer, err := utils.ParsePEM(certPem, "CERTIFICATE")
 	if err != nil {
 		return fmt.Errorf("bad PEM - %s", err)
 	}

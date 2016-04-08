@@ -11,14 +11,9 @@ import (
 	"sync"
 	"testing"
 
-	"golang.org/x/net/context"
-
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/urlfetch"
 	"github.com/luci/luci-go/appengine/gaetesting"
-	"github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/config/impl/memory"
 
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/model"
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/utils"
@@ -31,8 +26,8 @@ import (
 func TestImportConfig(t *testing.T) {
 	Convey("dry run", t, func() {
 		ctx := gaetesting.TestingContext()
-		srv := &Server{ConfigFactory: prepareCfg(ctx, "")}
-		_, err := srv.ImportConfig(ctx, nil)
+		srv := &Server{}
+		_, err := srv.ImportConfig(ctx, prepareCfg(""))
 		So(err, ShouldBeNil)
 	})
 
@@ -48,13 +43,12 @@ func TestImportConfig(t *testing.T) {
 		So(resp.Config, ShouldBeNil)
 
 		// Import.
-		srv.ConfigFactory = prepareCfg(ctx, `
+		rev, err := srv.ImportConfig(ctx, prepareCfg(`
 			certificate_authority {
 				cn: "Puppet CA: fake.ca"
 				cert_path: "certs/fake.ca.crt"
 			}
-		`)
-		rev, err := srv.ImportConfig(ctx, nil)
+		`))
 		So(err, ShouldBeNil)
 		firstRev := rev.Revision
 
@@ -69,14 +63,13 @@ func TestImportConfig(t *testing.T) {
 		So(resp.UpdatedRev, ShouldEqual, firstRev)
 
 		// Noop import.
-		srv.ConfigFactory = prepareCfg(ctx, `
+		rev, err = srv.ImportConfig(ctx, prepareCfg(`
 			certificate_authority {
 				cn: "Puppet CA: fake.ca"
 				# some comment
 				cert_path: "certs/fake.ca.crt"
 			}
-		`)
-		rev, err = srv.ImportConfig(ctx, nil)
+		`))
 		So(err, ShouldBeNil)
 		So(rev.Revision, ShouldNotEqual, firstRev)
 
@@ -88,14 +81,13 @@ func TestImportConfig(t *testing.T) {
 		So(resp.UpdatedRev, ShouldEqual, firstRev)
 
 		// Change config for real now.
-		srv.ConfigFactory = prepareCfg(ctx, `
+		rev, err = srv.ImportConfig(ctx, prepareCfg(`
 			certificate_authority {
 				cn: "Puppet CA: fake.ca"
 				cert_path: "certs/fake.ca.crt"
 				crl_url: "https://blah"
 			}
-		`)
-		rev, err = srv.ImportConfig(ctx, nil)
+		`))
 		So(err, ShouldBeNil)
 		secondRev := rev.Revision
 
@@ -118,13 +110,12 @@ func TestImportConfig(t *testing.T) {
 		So(listResp.Cn, ShouldResemble, []string{})
 
 		// Import fake.ca first.
-		srv.ConfigFactory = prepareCfg(ctx, `
+		_, err = srv.ImportConfig(ctx, prepareCfg(`
 			certificate_authority {
 				cn: "Puppet CA: fake.ca"
 				cert_path: "certs/fake.ca.crt"
 			}
-		`)
-		_, err = srv.ImportConfig(ctx, nil)
+		`))
 		So(err, ShouldBeNil)
 
 		datastore.Get(ctx).Testable().CatchupIndexes()
@@ -135,13 +126,12 @@ func TestImportConfig(t *testing.T) {
 		So(listResp.Cn, ShouldResemble, []string{"Puppet CA: fake.ca"})
 
 		// Replace it with another-fake.ca.
-		srv.ConfigFactory = prepareCfg(ctx, `
+		rev, err := srv.ImportConfig(ctx, prepareCfg(`
 			certificate_authority {
 				cn: "Puppet CA: another-fake.ca"
 				cert_path: "certs/another-fake.ca.crt"
 			}
-		`)
-		rev, err := srv.ImportConfig(ctx, nil)
+		`))
 		So(err, ShouldBeNil)
 
 		datastore.Get(ctx).Testable().CatchupIndexes()
@@ -169,34 +159,30 @@ func TestImportConfig(t *testing.T) {
 
 	Convey("rejects duplicates", t, func() {
 		ctx := gaetesting.TestingContext()
-		srv := &Server{
-			ConfigFactory: prepareCfg(ctx, `
-				certificate_authority {
-					cn: "Puppet CA: fake.ca"
-					cert_path: "certs/fake.ca.crt"
-				}
-				certificate_authority {
-					cn: "Puppet CA: fake.ca"
-					cert_path: "certs/fake.ca.crt"
-					crl_url: "http://blah"
-				}
-			`),
-		}
-		_, err := srv.ImportConfig(ctx, nil)
+		srv := &Server{}
+		_, err := srv.ImportConfig(ctx, prepareCfg(`
+			certificate_authority {
+				cn: "Puppet CA: fake.ca"
+				cert_path: "certs/fake.ca.crt"
+			}
+			certificate_authority {
+				cn: "Puppet CA: fake.ca"
+				cert_path: "certs/fake.ca.crt"
+				crl_url: "http://blah"
+			}
+		`))
 		So(err, ShouldErrLike, "duplicate entries in the config")
 	})
 
 	Convey("rejects wrong CN", t, func() {
 		ctx := gaetesting.TestingContext()
-		srv := &Server{
-			ConfigFactory: prepareCfg(ctx, `
-				certificate_authority {
-					cn: "Puppet CA: fake.ca"
-					cert_path: "certs/another-fake.ca.crt"
-				}
-			`),
-		}
-		_, err := srv.ImportConfig(ctx, nil)
+		srv := &Server{}
+		_, err := srv.ImportConfig(ctx, prepareCfg(`
+			certificate_authority {
+				cn: "Puppet CA: fake.ca"
+				cert_path: "certs/another-fake.ca.crt"
+			}
+		`))
 		So(err, ShouldErrLike, "bad CN in the certificat")
 	})
 }
@@ -204,17 +190,15 @@ func TestImportConfig(t *testing.T) {
 func TestFetchCRL(t *testing.T) {
 	Convey("FetchCRL not configured", t, func() {
 		ctx := gaetesting.TestingContext()
-		srv := &Server{
-			ConfigFactory: prepareCfg(ctx, `
-				certificate_authority {
-					cn: "Puppet CA: fake.ca"
-					cert_path: "certs/fake.ca.crt"
-				}
-			`),
-		}
+		srv := &Server{}
 
 		// Prepare config (with empty crl_url).
-		_, err := srv.ImportConfig(ctx, nil)
+		_, err := srv.ImportConfig(ctx, prepareCfg(`
+			certificate_authority {
+				cn: "Puppet CA: fake.ca"
+				cert_path: "certs/fake.ca.crt"
+			}
+		`))
 		So(err, ShouldBeNil)
 
 		// Use it, must fail.
@@ -231,18 +215,16 @@ func TestFetchCRL(t *testing.T) {
 		ctx := gaetesting.TestingContext()
 		ctx = urlfetch.Set(ctx, http.DefaultTransport) // mock URLFetch service
 
-		srv := &Server{
-			ConfigFactory: prepareCfg(ctx, fmt.Sprintf(`
-				certificate_authority {
-					cn: "Puppet CA: fake.ca"
-					cert_path: "certs/fake.ca.crt"
-					crl_url: %q
-				}
-			`, ts.URL)),
-		}
+		srv := &Server{}
 
 		// Prepare config.
-		_, err := srv.ImportConfig(ctx, nil)
+		_, err := srv.ImportConfig(ctx, prepareCfg(fmt.Sprintf(`
+			certificate_authority {
+				cn: "Puppet CA: fake.ca"
+				cert_path: "certs/fake.ca.crt"
+				crl_url: %q
+			}
+		`, ts.URL)))
 		So(err, ShouldBeNil)
 
 		// Import works.
@@ -284,18 +266,16 @@ func TestFetchCRL(t *testing.T) {
 		ctx := gaetesting.TestingContext()
 		ctx = urlfetch.Set(ctx, http.DefaultTransport) // mock URLFetch service
 
-		srv := &Server{
-			ConfigFactory: prepareCfg(ctx, fmt.Sprintf(`
-				certificate_authority {
-					cn: "Puppet CA: fake.ca"
-					cert_path: "certs/fake.ca.crt"
-					crl_url: %q
-				}
-			`, ts.URL)),
-		}
+		srv := &Server{}
 
 		// Prepare config.
-		_, err := srv.ImportConfig(ctx, nil)
+		_, err := srv.ImportConfig(ctx, prepareCfg(fmt.Sprintf(`
+			certificate_authority {
+				cn: "Puppet CA: fake.ca"
+				cert_path: "certs/fake.ca.crt"
+				crl_url: %q
+			}
+		`, ts.URL)))
 		So(err, ShouldBeNil)
 
 		// Initial import works.
@@ -436,17 +416,14 @@ PkoYH9WC8tSbqNof3g==
 -----END CERTIFICATE-----
 `
 
-// prepareCfg makes a ConfigFactory that returns given config.
-func prepareCfg(ctx context.Context, configFile string) func(context.Context) (config.Interface, error) {
-	configSets := map[string]memory.ConfigSet{
-		"services/" + info.Get(ctx).AppID(): {
+// prepareCfg makes ImportConfigRequest with a bunch of config files.
+func prepareCfg(configFile string) *tokenserver.ImportConfigRequest {
+	return &tokenserver.ImportConfigRequest{
+		DevConfig: map[string]string{
 			"tokenserver.cfg":           configFile,
 			"certs/fake.ca.crt":         fakeCACrt,
 			"certs/another-fake.ca.crt": anotherFakeCACrt,
 		},
-	}
-	return func(context.Context) (config.Interface, error) {
-		return memory.New(configSets), nil
 	}
 }
 
