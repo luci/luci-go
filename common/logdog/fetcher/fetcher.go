@@ -43,8 +43,10 @@ type LogRequest struct {
 // An error from the Source will shut down the Fetcher.
 type Source interface {
 	// LogEntries populates the supplied LogRequest with available sequential
-	// log entries as available. This will block until at least one entry is
-	// available.
+	// log entries as available.
+	//
+	// This may optionally block pending new log entries, but may also return zero
+	// log entries if none are available yet.
 	//
 	// Upon success, the requested logs and terminal message index is returned. If
 	// no terminal index is known, a value <0 will be returned.
@@ -82,6 +84,12 @@ type Options struct {
 
 	// Delay is the amount of time to wait in between unsuccessful log requests.
 	Delay time.Duration
+
+	// sizeFunc is a function that calculates the byte size of a LogEntry
+	// protobuf.
+	//
+	// If nil, proto.Size will be used. This is used for testing.
+	sizeFunc func(proto.Message) int
 }
 
 // A Fetcher buffers LogEntry records by querying the Source for log data.
@@ -100,12 +108,6 @@ type Fetcher struct {
 	// fetchErr is the retained error state. If not nil, fetching has stopped and
 	// all Fetcher methods will return this error.
 	fetchErr error
-
-	// sizeFunc is a function that calculates the byte size of a LogEntry
-	// protobuf.
-	//
-	// If nil, proto.Size will be used. This is used for testing.
-	sizeFunc func(proto.Message) int
 }
 
 // New instantiates a new Fetcher instance.
@@ -372,7 +374,7 @@ func (f *Fetcher) fetchLogs(c context.Context, req *fetchRequest) {
 }
 
 func (f *Fetcher) sizeOf(le *logpb.LogEntry) int64 {
-	sf := f.sizeFunc
+	sf := f.o.sizeFunc
 	if sf == nil {
 		sf = proto.Size
 	}

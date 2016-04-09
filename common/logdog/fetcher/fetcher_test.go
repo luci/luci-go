@@ -21,16 +21,44 @@ import (
 	"golang.org/x/net/context"
 )
 
-type testSource struct {
-	sync.Mutex
+type testSourceCommand struct {
+	logEntries []*logpb.LogEntry
 
-	logs  map[types.MessageIndex]*logpb.LogEntry
 	err   error
 	panic bool
 
+	tidx    types.MessageIndex
+	tidxSet bool
+}
+
+// addLogs adds a text log entry for each named indices. The text entry contains
+// a single line, "#x", where "x" is the log index.
+func (cmd *testSourceCommand) logs(indices ...int64) *testSourceCommand {
+	for _, idx := range indices {
+		cmd.logEntries = append(cmd.logEntries, &logpb.LogEntry{
+			StreamIndex: uint64(idx),
+		})
+	}
+	return cmd
+}
+
+func (cmd *testSourceCommand) terminalIndex(v types.MessageIndex) *testSourceCommand {
+	cmd.tidx, cmd.tidxSet = v, true
+	return cmd
+}
+
+func (cmd *testSourceCommand) error(err error, panic bool) *testSourceCommand {
+	cmd.err, cmd.panic = err, panic
+	return cmd
+}
+
+type testSource struct {
+	sync.Mutex
+
+	logs     map[types.MessageIndex]*logpb.LogEntry
+	err      error
+	panic    bool
 	terminal types.MessageIndex
-	maxCount int
-	maxBytes int64
 
 	history []int
 }
@@ -38,7 +66,7 @@ type testSource struct {
 func newTestSource() *testSource {
 	return &testSource{
 		terminal: -1,
-		logs:     map[types.MessageIndex]*logpb.LogEntry{},
+		logs:     make(map[types.MessageIndex]*logpb.LogEntry),
 	}
 }
 
@@ -53,18 +81,12 @@ func (ts *testSource) LogEntries(c context.Context, req *LogRequest) ([]*logpb.L
 		return nil, 0, ts.err
 	}
 
+	// We have at least our next log. Build our return value.
 	maxCount := req.Count
-	if ts.maxCount > 0 && maxCount > ts.maxCount {
-		maxCount = ts.maxCount
-	}
 	if maxCount <= 0 {
 		maxCount = len(ts.logs)
 	}
-
 	maxBytes := req.Bytes
-	if ts.maxBytes > 0 && maxBytes > ts.maxBytes {
-		maxBytes = ts.maxBytes
-	}
 
 	var logs []*logpb.LogEntry
 	bytes := int64(0)
@@ -91,37 +113,19 @@ func (ts *testSource) LogEntries(c context.Context, req *LogRequest) ([]*logpb.L
 	return logs, ts.terminal, nil
 }
 
-func (ts *testSource) addLogEntry(entries ...*logpb.LogEntry) {
+func (ts *testSource) send(cmd *testSourceCommand) {
 	ts.Lock()
 	defer ts.Unlock()
 
-	for _, le := range entries {
+	if cmd.err != nil {
+		ts.err, ts.panic = cmd.err, cmd.panic
+	}
+	if cmd.tidxSet {
+		ts.terminal = cmd.tidx
+	}
+	for _, le := range cmd.logEntries {
 		ts.logs[types.MessageIndex(le.StreamIndex)] = le
 	}
-}
-
-// addLogs adds a text log entry for each named indices. The text entry contains
-// a single line, "#x", where "x" is the log index.
-func (ts *testSource) addLogs(indices ...int64) {
-	entries := make([]*logpb.LogEntry, len(indices))
-	for i, idx := range indices {
-		entries[i] = &logpb.LogEntry{
-			StreamIndex: uint64(idx),
-		}
-	}
-	ts.addLogEntry(entries...)
-}
-
-func (ts *testSource) setError(err error, panic bool) {
-	ts.Lock()
-	defer ts.Unlock()
-	ts.err, ts.panic = err, panic
-}
-
-func (ts *testSource) setTerminal(idx types.MessageIndex) {
-	ts.Lock()
-	defer ts.Unlock()
-	ts.terminal = idx
 }
 
 func (ts *testSource) getHistory() []int {
@@ -151,16 +155,6 @@ func loadLogs(f *Fetcher, count int) (result []types.MessageIndex, err error) {
 	}
 }
 
-func newFetcher(c context.Context, o Options) *Fetcher {
-	f := New(c, o)
-	//
-	// All message byte sizes will be 5.
-	f.sizeFunc = func(proto.Message) int {
-		return 5
-	}
-	return f
-}
-
 func TestFetcher(t *testing.T) {
 	t.Parallel()
 
@@ -168,23 +162,24 @@ func TestFetcher(t *testing.T) {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 		c, cancelFunc := context.WithCancel(c)
 
-		fs := newTestSource()
+		ts := newTestSource()
 		o := Options{
-			Source: fs,
+			Source: ts,
+
+			// All message byte sizes will be 5.
+			sizeFunc: func(proto.Message) int {
+				return 5
+			},
 		}
 
+		newFetcher := func() *Fetcher { return New(c, o) }
 		reap := func(f *Fetcher) {
 			cancelFunc()
 			loadLogs(f, 0)
 		}
 
-		// By default, when delaying advance time by that delay.
-		tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
-			tc.Add(d)
-		})
-
 		Convey(`Uses defaults values when not overridden, and stops when cancelled.`, func() {
-			f := newFetcher(c, o)
+			f := newFetcher()
 			defer reap(f)
 
 			So(f.o.BufferCount, ShouldEqual, 0)
@@ -194,12 +189,13 @@ func TestFetcher(t *testing.T) {
 
 		Convey(`With a Count limit of 3.`, func() {
 			o.BufferCount = 3
-			f := newFetcher(c, o)
-			defer reap(f)
 
 			Convey(`Will pull 6 sequential log records.`, func() {
-				fs.setTerminal(5)
-				fs.addLogs(0, 1, 2, 3, 4, 5)
+				var cmd testSourceCommand
+				ts.send(cmd.logs(0, 1, 2, 3, 4, 5).terminalIndex(5))
+
+				f := newFetcher()
+				defer reap(f)
 
 				logs, err := loadLogs(f, 0)
 				So(err, ShouldEqual, io.EOF)
@@ -207,7 +203,11 @@ func TestFetcher(t *testing.T) {
 			})
 
 			Convey(`Can read two log records and be cancelled.`, func() {
-				fs.addLogs(0, 1)
+				var cmd testSourceCommand
+				ts.send(cmd.logs(0, 1, 2, 3, 4, 5))
+
+				f := newFetcher()
+				defer reap(f)
 
 				logs, err := loadLogs(f, 2)
 				So(err, ShouldBeNil)
@@ -223,13 +223,18 @@ func TestFetcher(t *testing.T) {
 				tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
 					// Add the remaining logs.
 					delayed = true
-					fs.setTerminal(2)
-					fs.addLogs(1, 2)
+
+					var cmd testSourceCommand
+					ts.send(cmd.logs(1, 2).terminalIndex(2))
 
 					tc.Add(d)
 				})
 
-				fs.addLogs(0)
+				var cmd testSourceCommand
+				ts.send(cmd.logs(0))
+
+				f := newFetcher()
+				defer reap(f)
 
 				logs, err := loadLogs(f, 1)
 				So(err, ShouldBeNil)
@@ -242,22 +247,33 @@ func TestFetcher(t *testing.T) {
 			})
 
 			Convey(`When an error is countered getting the terminal index, returns the error.`, func() {
-				fs.setError(errors.New("test error"), false)
+				var cmd testSourceCommand
+				ts.send(cmd.error(errors.New("test error"), false))
+
+				f := newFetcher()
+				defer reap(f)
 
 				_, err := loadLogs(f, 0)
 				So(err, assertions.ShouldErrLike, "test error")
 			})
 
 			Convey(`When an error is countered fetching logs, returns the error.`, func() {
-				fs.addLogs(0, 1, 2)
-				fs.setError(errors.New("test error"), false)
+				var cmd testSourceCommand
+				ts.send(cmd.logs(0, 1, 2).error(errors.New("test error"), false))
+
+				f := newFetcher()
+				defer reap(f)
 
 				_, err := loadLogs(f, 0)
 				So(err, assertions.ShouldErrLike, "test error")
 			})
 
 			Convey(`If the source panics, it is caught and returned as an error.`, func() {
-				fs.setError(errors.New("test error"), true)
+				var cmd testSourceCommand
+				ts.send(cmd.error(errors.New("test error"), true))
+
+				f := newFetcher()
+				defer reap(f)
 
 				_, err := loadLogs(f, 0)
 				So(err, assertions.ShouldErrLike, "panic during fetch")
@@ -267,11 +283,12 @@ func TestFetcher(t *testing.T) {
 		Convey(`With a byte limit of 15`, func() {
 			o.BufferBytes = 15
 			o.PrefetchFactor = 2
-			f := newFetcher(c, o)
-			defer reap(f)
 
-			fs.setTerminal(6)
-			fs.addLogs(0, 1, 2, 3, 4, 5, 6)
+			var cmd testSourceCommand
+			ts.send(cmd.logs(0, 1, 2, 3, 4, 5, 6).terminalIndex(6))
+
+			f := newFetcher()
+			defer reap(f)
 
 			// First fetch should have asked for 30 bytes (2*15), so 6 logs. After
 			// first log was kicked, there is a deficit of one log.
@@ -279,24 +296,25 @@ func TestFetcher(t *testing.T) {
 			So(err, ShouldEqual, io.EOF)
 			So(logs, ShouldResemble, []types.MessageIndex{0, 1, 2, 3, 4, 5, 6})
 
-			So(fs.getHistory(), ShouldResemble, []int{6, 1})
+			So(ts.getHistory(), ShouldResemble, []int{6, 1})
 		})
 
 		Convey(`With an index of 1 and a maximum count of 1, fetches exactly 1 log.`, func() {
 			o.Index = 1
 			o.Count = 1
-			f := newFetcher(c, o)
-			defer reap(f)
 
-			fs.setTerminal(6)
-			fs.addLogs(0, 1, 2, 3, 4, 5, 6)
+			var cmd testSourceCommand
+			ts.send(cmd.logs(0, 1, 2, 3, 4, 5, 6).terminalIndex(6))
+
+			f := newFetcher()
+			defer reap(f)
 
 			// First fetch will ask for exactly one log.
 			logs, err := loadLogs(f, 0)
 			So(err, ShouldEqual, io.EOF)
 			So(logs, ShouldResemble, []types.MessageIndex{1})
 
-			So(fs.getHistory(), ShouldResemble, []int{1})
+			So(ts.getHistory(), ShouldResemble, []int{1})
 		})
 	})
 }
