@@ -160,13 +160,17 @@ func (ch *CertChecker) GetCA(c context.Context) (*model.CA, error) {
 // CheckCertificate checks certificate's signature, validity period and
 // revocation status.
 //
-// It returns nil iff cert was directly signed by the CA, not expired yet, and
-// its serial number is not in the CA's CRL.
-func (ch *CertChecker) CheckCertificate(c context.Context, cert *x509.Certificate) error {
+// It returns nil error iff cert was directly signed by the CA, not expired yet,
+// and its serial number is not in the CA's CRL.
+//
+// On success also returns *model.CA instance used to check the certificate,
+// since 'GetCA' may return another instance (in case model.CA cache happened
+// to expire between the calls).
+func (ch *CertChecker) CheckCertificate(c context.Context, cert *x509.Certificate) (*model.CA, error) {
 	// Has the cert expired already?
 	now := clock.Now(c)
 	if now.Before(cert.NotBefore) || now.After(cert.NotAfter) {
-		return Error{
+		return nil, Error{
 			error:  fmt.Errorf("certificate has expired"),
 			Reason: CertificateExpired,
 		}
@@ -175,12 +179,12 @@ func (ch *CertChecker) CheckCertificate(c context.Context, cert *x509.Certificat
 	// Grab CA cert from the datastore.
 	ca, err := ch.GetCA(c)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Did we fetch its CRL at least once?
 	if !ca.Ready {
-		return Error{
+		return nil, Error{
 			error:  fmt.Errorf("CRL of CA %q is not ready yet", ch.CN),
 			Reason: NotReadyCA,
 		}
@@ -188,13 +192,13 @@ func (ch *CertChecker) CheckCertificate(c context.Context, cert *x509.Certificat
 
 	// Verify the signature.
 	if cert.Issuer.CommonName != ca.ParsedCert.Subject.CommonName {
-		return Error{
+		return nil, Error{
 			error:  fmt.Errorf("can't check a signature made by %q", cert.Issuer.CommonName),
 			Reason: UnknownCA,
 		}
 	}
 	if err = cert.CheckSignatureFrom(ca.ParsedCert); err != nil {
-		return Error{
+		return nil, Error{
 			error:  err,
 			Reason: SignatureCheckError,
 		}
@@ -203,15 +207,15 @@ func (ch *CertChecker) CheckCertificate(c context.Context, cert *x509.Certificat
 	// Check the revocation list.
 	switch revoked, err := ch.CRL.IsRevokedSN(c, cert.SerialNumber); {
 	case err != nil:
-		return err
+		return nil, err
 	case revoked:
-		return Error{
+		return nil, Error{
 			error:  fmt.Errorf("certificate with SN %s has been revoked", cert.SerialNumber),
 			Reason: CertificateRevoked,
 		}
 	}
 
-	return nil
+	return ca, nil
 }
 
 // refetchCA is called lazily whenever we need to fetch the CA entity.

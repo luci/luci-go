@@ -66,7 +66,10 @@ func TestCertChecker(t *testing.T) {
 		So(parsedCert.Issuer.CommonName, ShouldEqual, "Some CA: ca-name.fake")
 
 		// Valid!
-		So(checker.CheckCertificate(ctx, parsedCert), ShouldBeNil)
+		ca, err := checker.CheckCertificate(ctx, parsedCert)
+		So(err, ShouldBeNil)
+		So(ca.CN, ShouldEqual, "Some CA: ca-name.fake")
+		So(ca.ParsedConfig, ShouldNotBeNil)
 
 		// Revoke the certificate by generating new CRL and putting it into the
 		// datastore.
@@ -83,14 +86,14 @@ func TestCertChecker(t *testing.T) {
 		clk.Add(10 * time.Minute)
 
 		// Check same cert again. Should be rejected now as revoked.
-		err = checker.CheckCertificate(ctx, parsedCert)
+		_, err = checker.CheckCertificate(ctx, parsedCert)
 		So(err, ShouldErrLike, "certificate with SN 2 has been revoked")
 
 		// Fast forward past cert expiration time.
 		clk.Add(6 * time.Hour)
 
 		// Should be rejected as expired now.
-		err = checker.CheckCertificate(ctx, parsedCert)
+		_, err = checker.CheckCertificate(ctx, parsedCert)
 		So(err, ShouldErrLike, "certificate has expired")
 
 		// Generate some cert with wrong signature (use different private key).
@@ -101,7 +104,7 @@ func TestCertChecker(t *testing.T) {
 
 		// CertChecker rejects it.
 		parsedCert, _ = x509.ParseCertificate(certDer)
-		err = checker.CheckCertificate(ctx, parsedCert)
+		_, err = checker.CheckCertificate(ctx, parsedCert)
 		So(err, ShouldErrLike, "crypto/rsa: verification error")
 	})
 }

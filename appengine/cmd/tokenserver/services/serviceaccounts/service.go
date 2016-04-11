@@ -17,7 +17,6 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 
@@ -78,7 +77,7 @@ func (s *Server) CreateServiceAccount(c context.Context, r *tokenserver.CreateSe
 	}
 
 	// Create the service account.
-	account, err := s.DoCreateServiceAccount(c, CreateServiceAccountParams{
+	account, err := s.ensureServiceAccount(c, serviceAccountParams{
 		Project:   domainCfg.CloudProjectName,
 		AccountID: accountID,
 		FQDN:      r.Fqdn,
@@ -97,38 +96,15 @@ func (s *Server) CreateServiceAccount(c context.Context, r *tokenserver.CreateSe
 //
 // It will register the service account first, if necessary.
 func (s *Server) MintAccessToken(c context.Context, r *tokenserver.MintAccessTokenRequest) (*tokenserver.MintAccessTokenResponse, error) {
-	// Validate FQDN and load proper config.
-	accountID, domain, err := validateFQDN(r.Fqdn)
-	if err != nil {
-		return nil, err
-	}
 	cfg, err := s.getCAConfig(c, r.Ca)
 	if err != nil {
 		return nil, err
 	}
-	domainCfg, err := domainConfig(cfg, domain)
-	if err != nil {
-		return nil, err
-	}
-
-	// Validate requested scopes.
-	sort.Strings(r.Scopes)
-	if err := validateOAuthScopes(domainCfg, r.Scopes); err != nil {
-		return nil, err
-	}
-
-	// Create the corresponding service account if necessary.
-	account, err := s.DoCreateServiceAccount(c, CreateServiceAccountParams{
-		Project:   domainCfg.CloudProjectName,
-		AccountID: accountID,
-		FQDN:      r.Fqdn,
+	account, token, err := s.DoMintAccessToken(c, MintAccessTokenParams{
+		Config: cfg,
+		FQDN:   r.Fqdn,
+		Scopes: r.Scopes,
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	// Grab a token.
-	token, err := s.DoMintAccessToken(c, account, r.Scopes)
 	if err != nil {
 		return nil, err
 	}
@@ -138,22 +114,18 @@ func (s *Server) MintAccessToken(c context.Context, r *tokenserver.MintAccessTok
 	}, nil
 }
 
-// CreateServiceAccountParams is passed to DoCreateServiceAccount.
-type CreateServiceAccountParams struct {
+// serviceAccountParams is passed to ensureServiceAccount.
+type serviceAccountParams struct {
 	Project   string // cloud project name to create account in
 	AccountID string // account ID, the email will be <accountID>@...
 	FQDN      string // FQDN of a host to create an account for
 	Force     bool   // true to skip datastore check and call IAM API no matter what
 }
 
-// DoCreateServiceAccount does the actual job of CreateServiceAccount.
-//
-// It exists as a separate method so that other parts of the token server
-// implementation may call it directly, bypassing some steps done by
-// CreateServiceAccount.
+// ensureServiceAccount does the actual job of CreateServiceAccount.
 //
 // Assumes 'params' is validated already. Returns grpc.Errorf on errors.
-func (s *Server) DoCreateServiceAccount(c context.Context, params CreateServiceAccountParams) (*tokenserver.ServiceAccount, error) {
+func (s *Server) ensureServiceAccount(c context.Context, params serviceAccountParams) (*tokenserver.ServiceAccount, error) {
 	// Normalize fqdn for comparison.
 	fqdn := strings.ToLower(params.FQDN)
 
@@ -228,12 +200,59 @@ func (s *Server) DoCreateServiceAccount(c context.Context, params CreateServiceA
 	return result, nil
 }
 
+// MintAccessTokenParams is passed to DoMintAccessToken.
+type MintAccessTokenParams struct {
+	Config *tokenserver.CertificateAuthorityConfig // domain configs, scopes whitelist
+	FQDN   string                                  // FQDN of a host to mint a token for
+	Scopes []string                                // OAuth2 scopes to grant the token
+}
+
+// Validate returns nil if the parameters are valid.
+//
+// It checks FQDN matches some known domain, account ID matches the regexp, and
+// requests scopes are all whitelisted.
+func (p *MintAccessTokenParams) Validate() error {
+	_, domain, err := validateFQDN(p.FQDN)
+	if err != nil {
+		return err
+	}
+	domainCfg, err := domainConfig(p.Config, domain)
+	if err != nil {
+		return err
+	}
+	return validateOAuthScopes(domainCfg, p.Scopes)
+}
+
 // DoMintAccessToken makes an OAuth access token for the given service account.
 //
-// Assumes the scopes list has passed the validation already.
-//
 // Return grpc.Error on errors.
-func (s *Server) DoMintAccessToken(c context.Context, account *tokenserver.ServiceAccount, scopes []string) (*tokenserver.OAuth2AccessToken, error) {
+func (s *Server) DoMintAccessToken(c context.Context, params MintAccessTokenParams) (*tokenserver.ServiceAccount, *tokenserver.OAuth2AccessToken, error) {
+	if err := params.Validate(); err != nil {
+		return nil, nil, grpc.Errorf(codes.InvalidArgument, "%s", err)
+	}
+
+	// Load proper domain config.
+	accountID, domain, err := validateFQDN(params.FQDN)
+	if err != nil {
+		panic("impossible") // params where validated already
+	}
+	domainCfg, err := domainConfig(params.Config, domain)
+	if err != nil {
+		panic("impossible") // params where validated already
+	}
+
+	// Create the corresponding service account if necessary.
+	account, err := s.ensureServiceAccount(c, serviceAccountParams{
+		Project:   domainCfg.CloudProjectName,
+		AccountID: accountID,
+		FQDN:      params.FQDN,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Mint the access token.
+	//
 	// See https://developers.google.com/identity/protocols/OAuth2ServiceAccount#authorizingrequests
 	// Also https://github.com/golang/oauth2/blob/master/jwt/jwt.go.
 
@@ -249,7 +268,7 @@ func (s *Server) DoMintAccessToken(c context.Context, account *tokenserver.Servi
 		Iat:   now.Unix(),
 		Exp:   now.Add(time.Hour).Unix(),
 		Iss:   account.Email,
-		Scope: strings.Join(scopes, " "),
+		Scope: strings.Join(params.Scopes, " "),
 		Aud:   googleTokenURL,
 	}
 
@@ -259,15 +278,15 @@ func (s *Server) DoMintAccessToken(c context.Context, account *tokenserver.Servi
 	assertion, err := jws.EncodeWithSigner(
 		jwtHeader, claimSet, s.iamSigner(c, account.ProjectId, account.Email))
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "error when signing JWT - %s", err)
+		return nil, nil, grpc.Errorf(codes.Internal, "error when signing JWT - %s", err)
 	}
 
 	// Exchange the assertion for the access token.
 	token, err := s.fetchAccessToken(c, assertion)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "error when calling token endpoint - %s", err)
+		return nil, nil, grpc.Errorf(codes.Internal, "error when calling token endpoint - %s", err)
 	}
-	return token, nil
+	return account, token, nil
 }
 
 // fetchAccessToken does the final part of OAuth 2-legged flow.

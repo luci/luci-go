@@ -289,7 +289,7 @@ func (s *Server) CheckCertificate(c context.Context, r *tokenserver.CheckCertifi
 	// Find a checker for the CA that signed the cert, check the certificate.
 	checker, err := certchecker.GetCertChecker(c, cert.Issuer.CommonName)
 	if err == nil {
-		err = checker.CheckCertificate(c, cert)
+		_, err = checker.CheckCertificate(c, cert)
 		if err == nil {
 			return &tokenserver.CheckCertificateResponse{
 				IsValid: true,

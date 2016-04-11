@@ -179,7 +179,7 @@ func TestMintAccessToken(t *testing.T) {
 				payload, _ := base64.RawStdEncoding.DecodeString(chunks[1])
 				c.So(string(payload), ShouldEqual,
 					`{"iss":"account@cloud-project.iam.gserviceaccount.com",`+
-						`"scope":"scope1 scope2",`+
+						`"scope":"scope2 scope1",`+
 						`"aud":"https://www.googleapis.com/oauth2/v4/token",`+
 						`"exp":1422939896,"iat":1422936296}`)
 
@@ -195,10 +195,10 @@ func TestMintAccessToken(t *testing.T) {
 				r.ParseForm()
 				c.So(r.FormValue("grant_type"), ShouldEqual, jwtGrantType)
 				c.So(r.FormValue("assertion"), ShouldEqual, "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9."+
-					"eyJpc3MiOiJhY2NvdW50QGNsb3VkLXByb2plY3QuaWFtLmdzZXJ2aWNlYWNjb3VudC"+
-					"5jb20iLCJzY29wZSI6InNjb3BlMSBzY29wZTIiLCJhdWQiOiJodHRwczovL3d3dy5n"+
-					"b29nbGVhcGlzLmNvbS9vYXV0aDIvdjQvdG9rZW4iLCJleHAiOjE0MjI5Mzk4OTYsIm"+
-					"lhdCI6MTQyMjkzNjI5Nn0.c2lnbmF0dXJl")
+					"eyJpc3MiOiJhY2NvdW50QGNsb3VkLXByb2plY3QuaWFtLmdzZXJ2aWNlYWNjb3Vud"+
+					"C5jb20iLCJzY29wZSI6InNjb3BlMiBzY29wZTEiLCJhdWQiOiJodHRwczovL3d3dy"+
+					"5nb29nbGVhcGlzLmNvbS9vYXV0aDIvdjQvdG9rZW4iLCJleHAiOjE0MjI5Mzk4OTY"+
+					"sImlhdCI6MTQyMjkzNjI5Nn0.c2lnbmF0dXJl")
 				var tokenRes struct {
 					AccessToken string `json:"access_token"`
 					TokenType   string `json:"token_type"`
