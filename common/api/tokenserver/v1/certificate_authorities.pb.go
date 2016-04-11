@@ -37,6 +37,7 @@ It has these top-level messages:
 	MintTokenRequest
 	TokenRequest
 	MintTokenResponse
+	TokenResponse
 	OAuth2AccessToken
 */
 package tokenserver

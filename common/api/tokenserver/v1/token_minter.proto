@@ -92,7 +92,7 @@ message MintTokenResponse {
   //
   // Non fatal errors are returned as grpc.Internal errors instead.
   enum ErrorCode {
-    NO_ERROR = 0;
+    SUCCESS = 0;
     // ... write more
   }
   ErrorCode error_code = 1;
@@ -100,8 +100,14 @@ message MintTokenResponse {
   // Optional detailed error message.
   string error_message = 2;
 
+  // On success (NO_ERROR error code) contains the produced token.
+  TokenResponse token_response = 3;
+}
+
+// TokenResponse contains a token requested by TokenRequest.
+message TokenResponse {
   // The service account associated with the returned token (if any).
-  ServiceAccount service_account = 3;
+  ServiceAccount service_account = 1;
 
   // The generated token.
   //
