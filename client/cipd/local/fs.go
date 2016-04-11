@@ -6,7 +6,7 @@ package local
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -46,7 +46,7 @@ type FileSystem interface {
 
 	// EnsureFile creates a file with given content. If will create full directory
 	// path to the file if necessary.
-	EnsureFile(path string, body []byte, perm os.FileMode) error
+	EnsureFile(path string, body io.Reader) error
 
 	// EnsureFileGone removes a file, logging the errors (if any). Missing file is
 	// not an error.
@@ -81,15 +81,15 @@ type fsImplErr struct {
 	err error
 }
 
-func (f *fsImplErr) Root() string                                                { return "" }
-func (f *fsImplErr) CwdRelToAbs(path string) (string, error)                     { return "", f.err }
-func (f *fsImplErr) RootRelToAbs(path string) (string, error)                    { return "", f.err }
-func (f *fsImplErr) EnsureDirectory(path string) (string, error)                 { return "", f.err }
-func (f *fsImplErr) EnsureSymlink(path string, target string) error              { return f.err }
-func (f *fsImplErr) EnsureFile(path string, body []byte, perm os.FileMode) error { return f.err }
-func (f *fsImplErr) EnsureFileGone(path string) error                            { return f.err }
-func (f *fsImplErr) EnsureDirectoryGone(path string) error                       { return f.err }
-func (f *fsImplErr) Replace(oldpath, newpath string) error                       { return f.err }
+func (f *fsImplErr) Root() string                                   { return "" }
+func (f *fsImplErr) CwdRelToAbs(path string) (string, error)        { return "", f.err }
+func (f *fsImplErr) RootRelToAbs(path string) (string, error)       { return "", f.err }
+func (f *fsImplErr) EnsureDirectory(path string) (string, error)    { return "", f.err }
+func (f *fsImplErr) EnsureSymlink(path string, target string) error { return f.err }
+func (f *fsImplErr) EnsureFile(path string, body io.Reader) error   { return f.err }
+func (f *fsImplErr) EnsureFileGone(path string) error               { return f.err }
+func (f *fsImplErr) EnsureDirectoryGone(path string) error          { return f.err }
+func (f *fsImplErr) Replace(oldpath, newpath string) error          { return f.err }
 
 /// Implementation.
 
@@ -138,7 +138,7 @@ func (f *fsImpl) EnsureDirectory(path string) (string, error) {
 	return path, nil
 }
 
-func (f *fsImpl) EnsureFile(path string, body []byte, perm os.FileMode) error {
+func (f *fsImpl) EnsureFile(path string, body io.Reader) error {
 	path, err := f.CwdRelToAbs(path)
 	if err != nil {
 		return err
@@ -149,7 +149,7 @@ func (f *fsImpl) EnsureFile(path string, body []byte, perm os.FileMode) error {
 
 	// Create a temp file with new content.
 	temp := tempFileName(path)
-	if err := ioutil.WriteFile(temp, body, perm); err != nil {
+	if err := createFile(temp, body); err != nil {
 		return err
 	}
 
@@ -314,4 +314,20 @@ func pseudoRand() string {
 	lastUsedTime = ts
 	lastUsedTimeLock.Unlock()
 	return fmt.Sprintf("%v_%v", os.Getpid(), ts)
+}
+
+// createFile creates a file with the given content.
+func createFile(path string, content io.Reader) (err error) {
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		closeErr := file.Close()
+		if err == nil {
+			err = closeErr
+		}
+	}()
+	_, err = io.Copy(file, content)
+	return err
 }

@@ -32,6 +32,7 @@ package cipd
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
@@ -478,7 +479,7 @@ func (client *clientImpl) closeTagCache() {
 	fs := local.NewFileSystem(filepath.Dir(path), client.Logger)
 	out, err := client.tagCache.Save()
 	if err == nil {
-		err = fs.EnsureFile(path, out, 0666)
+		err = fs.EnsureFile(path, bytes.NewReader(out))
 	}
 	if err != nil {
 		client.Logger.Warningf("cipd: failed to update tag cache - %s", err)

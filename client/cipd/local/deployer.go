@@ -362,7 +362,7 @@ func (d *deployerImpl) setCurrentInstanceID(packageDir string, instanceID string
 		return err
 	}
 	if runtime.GOOS == "windows" {
-		return d.fs.EnsureFile(filepath.Join(packageDir, currentTxt), []byte(instanceID), 0666)
+		return d.fs.EnsureFile(filepath.Join(packageDir, currentTxt), strings.NewReader(instanceID))
 	}
 	return d.fs.EnsureSymlink(filepath.Join(packageDir, currentSymlink), instanceID)
 }

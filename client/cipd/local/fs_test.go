@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -121,18 +122,18 @@ func TestEnsureSymlink(t *testing.T) {
 func TestEnsureFile(t *testing.T) {
 	Convey("EnsureFile checks root", t, func() {
 		fs := tempFileSystem()
-		So(fs.EnsureFile(fs.join(".."), []byte("blah"), 0666), ShouldNotBeNil)
+		So(fs.EnsureFile(fs.join(".."), strings.NewReader("blah")), ShouldNotBeNil)
 	})
 
 	Convey("EnsureFile creates new file", t, func() {
 		fs := tempFileSystem()
-		So(fs.EnsureFile(fs.join("name"), []byte("blah"), 0666), ShouldBeNil)
+		So(fs.EnsureFile(fs.join("name"), strings.NewReader("blah")), ShouldBeNil)
 		So(fs.read("name"), ShouldEqual, "blah")
 	})
 
 	Convey("EnsureFile builds full path", t, func() {
 		fs := tempFileSystem()
-		So(fs.EnsureFile(fs.join("a/b/c"), []byte("blah"), 0666), ShouldBeNil)
+		So(fs.EnsureFile(fs.join("a/b/c"), strings.NewReader("blah")), ShouldBeNil)
 		So(fs.read("a/b/c"), ShouldEqual, "blah")
 	})
 
@@ -140,22 +141,22 @@ func TestEnsureFile(t *testing.T) {
 		Convey("EnsureFile replaces existing symlink", t, func() {
 			fs := tempFileSystem()
 			So(fs.EnsureSymlink(fs.join("path"), "target"), ShouldBeNil)
-			So(fs.EnsureFile(fs.join("path"), []byte("blah"), 0666), ShouldBeNil)
+			So(fs.EnsureFile(fs.join("path"), strings.NewReader("blah")), ShouldBeNil)
 			So(fs.read("path"), ShouldEqual, "blah")
 		})
 	}
 
 	Convey("EnsureFile replaces existing file", t, func() {
 		fs := tempFileSystem()
-		So(fs.EnsureFile(fs.join("path"), []byte("huh"), 0666), ShouldBeNil)
-		So(fs.EnsureFile(fs.join("path"), []byte("blah"), 0666), ShouldBeNil)
+		So(fs.EnsureFile(fs.join("path"), strings.NewReader("huh")), ShouldBeNil)
+		So(fs.EnsureFile(fs.join("path"), strings.NewReader("blah")), ShouldBeNil)
 		So(fs.read("path"), ShouldEqual, "blah")
 	})
 
 	Convey("EnsureFile replaces existing directory", t, func() {
 		fs := tempFileSystem()
 		fs.write("a/b/c", "something")
-		So(fs.EnsureFile(fs.join("a"), []byte("blah"), 0666), ShouldBeNil)
+		So(fs.EnsureFile(fs.join("a"), strings.NewReader("blah")), ShouldBeNil)
 		So(fs.read("a"), ShouldEqual, "blah")
 	})
 }
