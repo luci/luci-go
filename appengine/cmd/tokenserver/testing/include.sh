@@ -195,6 +195,12 @@ function import_config {
     cert_path: "certs/ca.pem"
     crl_url: "http://localhost:$CRLSERVER_PORT/ca/crl/crl.der"
     use_oauth: false
+
+    known_domains: {
+      domain: "fake.domain"
+      cloud_project_name: "$CLOUD_PROJECT_ID"
+      allowed_oauth2_scope: "https://www.googleapis.com/auth/userinfo.email"
+    }
   }
 EOL`
 

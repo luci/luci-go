@@ -5,8 +5,10 @@ that clients are able to use it.
 
 Prerequisites:
 
-* Some Cloud Project that will host service account. You must be its Editor,
-  and Cloud IAM API must be enabled.
+* Some Cloud Project that will host service account. You must have "Editor" and
+  "Service account actor" roles in this project, and Cloud IAM API must be
+  enabled. The test will create `luci-token-server-test-1` service account
+  belonging to this project.
 * [gcloud](https://cloud.google.com/sdk/gcloud/) tool, with you authenticated
   (via `gcloud init`). It magically enables GAE dev server to use real OAuth
   tokens (belonging to your account) when making URL fetch calls (in particular

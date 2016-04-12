@@ -1,0 +1,276 @@
+// Copyright 2016 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+// Command luci_machine_tokend runs on all machines via cron.
+//
+// It wakes up each ~10 min, checks whether it needs to refresh existing machine
+// token, and refreshes it if necessary.
+//
+// It also dumps information about its run into a status file (as JSON), that
+// can be picked up sysmon and transformed into ts_mon metrics (most important
+// one being "time since last successful token refresh").
+package main
+
+import (
+	"crypto/sha1"
+	"encoding/hex"
+	"flag"
+	"fmt"
+	"os"
+	"sort"
+	"strings"
+	"time"
+
+	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/logging/gologger"
+	"github.com/luci/luci-go/common/logging/memlogger"
+	"github.com/luci/luci-go/common/logging/teelogger"
+	"github.com/luci/luci-go/common/retry"
+
+	"github.com/luci/luci-go/client/tokenclient"
+	"github.com/luci/luci-go/common/api/tokenserver/v1"
+)
+
+// Version identifies the major revision of the tokend code.
+//
+// It is put in the status file (and subsequently reported to monitoring).
+const Version = "1.0"
+
+// commandLine contains all command line flags.
+//
+// See registerFlags() for description of each individual flag.
+type commandLine struct {
+	PrivateKeyPath  string
+	CertificatePath string
+	Backend         string
+	TokenFile       string
+	StatusFile      string
+	Timeout         time.Duration
+	ForceRefresh    bool
+}
+
+func defaults() commandLine {
+	return commandLine{
+		Timeout: 60 * time.Second,
+	}
+}
+
+func (c *commandLine) registerFlags(f *flag.FlagSet) {
+	f.StringVar(&c.PrivateKeyPath, "pkey-pem", c.PrivateKeyPath, "path to a private key file")
+	f.StringVar(&c.CertificatePath, "cert-pem", c.CertificatePath, "path to a certificate file")
+	f.StringVar(&c.Backend, "backend", c.Backend, "hostname of the backend to use")
+	f.StringVar(&c.TokenFile, "token-file", c.TokenFile, "where to put the token file")
+	f.StringVar(&c.StatusFile, "status-file", c.StatusFile, "where to put details about this run (optional)")
+	f.DurationVar(&c.Timeout, "timeout", c.Timeout, "how long to retry on errors before giving up")
+	f.BoolVar(&c.ForceRefresh, "force-refresh", c.ForceRefresh, "forcefully refresh the token even if it is still valid")
+}
+
+func (c *commandLine) check() error {
+	if c.PrivateKeyPath == "" {
+		return fmt.Errorf("-pkey-pem is required")
+	}
+	if c.CertificatePath == "" {
+		return fmt.Errorf("-cert-pem is required")
+	}
+	if c.Backend == "" {
+		return fmt.Errorf("-backend is required")
+	}
+	if c.TokenFile == "" {
+		return fmt.Errorf("-token-file is required")
+	}
+	return nil
+}
+
+func main() {
+	os.Exit(realMain())
+}
+
+func realMain() int {
+	opts := defaults()
+	opts.registerFlags(flag.CommandLine)
+	flag.Parse()
+	if err := opts.check(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		flag.Usage()
+		return 2
+	}
+
+	clientParams := tokenclient.ClientParameters{
+		PrivateKeyPath:  opts.PrivateKeyPath,
+		CertificatePath: opts.CertificatePath,
+		Backend:         opts.Backend,
+		Retry: func() retry.Iterator {
+			return &retry.ExponentialBackoff{
+				Limited: retry.Limited{
+					Delay:   200 * time.Millisecond,
+					Retries: 100000, // limit only by time, not number of retries
+				},
+				MaxDelay:   opts.Timeout,
+				Multiplier: 1.5,
+			}
+		},
+	}
+	if strings.HasPrefix(clientParams.Backend, "localhost:") {
+		clientParams.Insecure = true
+	}
+
+	log := &memlogger.MemLogger{}
+
+	// Write log to both memlogger and gologger.
+	ctx := teelogger.Use(context.Background(), log, gologger.Get())
+
+	ctx, cancel := context.WithTimeout(ctx, opts.Timeout)
+	catchInterrupt(cancel)
+
+	statusFile := StatusFile{
+		Path:    opts.StatusFile,
+		Version: Version,
+		Started: clock.Now(ctx),
+	}
+	defer func() {
+		// Dump the status of this run. It's picked up by monitoring. Ignore errors
+		// here, they are not important compared to 'run' errors.
+		statusFile.Finished = clock.Now(ctx)
+		if err := statusFile.Close(log); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to save the status - %s\n", err)
+		}
+	}()
+	if err := run(ctx, clientParams, opts, &statusFile); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	return 0
+}
+
+func run(ctx context.Context, clientParams tokenclient.ClientParameters, opts commandLine, status *StatusFile) error {
+	// Read existing token file on disk to check whether we really need to update
+	// it. We update the token if it is missing, close to expiration, or when
+	// parameters change.
+	existingToken, existingState := readTokenFile(ctx, opts.TokenFile)
+
+	// Record the info about existing token in status report, it is useful even if
+	// we fail to refresh the token.
+	status.LastToken = existingToken
+
+	// Initialize the client. It will read private key and certificate file into
+	// memory and validate them.
+	client, err := tokenclient.NewClient(clientParams)
+	if err != nil {
+		logging.Errorf(ctx, "Failed to initialize the client - %s", err)
+		status.FailureError = err
+		status.FailureReason = FailureCantReadKey
+		return err
+	}
+
+	// Generate a hash of all input parameters. It is used to detect that we
+	// need to refresh the token file even if the token is still valid. It
+	// happens if we change a key or backend URL.
+	signer := client.Signer.(*tokenclient.X509Signer)
+	inputsDigest := calcDigest(map[string][]byte{
+		"forceBump": {0}, // bump this to forcefully regenerate all tokens
+		"pkey":      signer.PrivateKeyPEM,
+		"cert":      signer.CertificatePEM,
+		"backend":   []byte(clientParams.Backend),
+	})
+
+	// Record a reason for token update (if we need to update the token).
+	now := clock.Now(ctx)
+	switch {
+	case existingToken.NextUpdate == 0:
+		status.UpdateReason = UpdateReasonNewToken
+	case now.After(time.Unix(existingToken.NextUpdate, 0)):
+		status.UpdateReason = UpdateReasonExpiration
+	case existingState.InputsDigest != inputsDigest:
+		status.UpdateReason = UpdateReasonParametersChange
+	case opts.ForceRefresh:
+		status.UpdateReason = UpdateReasonForceRefresh
+	default:
+		logging.Infof(ctx, "The token is valid, skipping the update")
+		return nil
+	}
+
+	// Grab a new token. MintToken does retries internally, until success or
+	// context deadline.
+	resp, err := client.MintToken(ctx, &tokenserver.TokenRequest{
+		TokenType:    tokenserver.TokenRequest_GOOGLE_OAUTH2_ACCESS_TOKEN,
+		Oauth2Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+	})
+	status.MintTokenDuration = clock.Now(ctx).Sub(now)
+	if err != nil {
+		logging.Errorf(ctx, "Failed to generate a new token - %s", err)
+		status.FailureError = err
+		status.FailureReason = FailureReasonFromRPCError(err)
+		return err
+	}
+
+	// Grab OAuth2 access token field.
+	var tok *tokenserver.OAuth2AccessToken
+	if tt, _ := resp.TokenType.(*tokenserver.TokenResponse_GoogleOauth2AccessToken); tt != nil {
+		tok = tt.GoogleOauth2AccessToken
+	}
+	if tok == nil {
+		err = fmt.Errorf("bad response, empty google_oauth2_access_token field")
+		logging.Errorf(ctx, "%s", err)
+		status.FailureError = err
+		status.FailureReason = FailureMalformedReponse
+		return err
+	}
+
+	now = clock.Now(ctx)
+	expiry := tok.Expiry.Time()
+	lifetime := expiry.Sub(now)
+
+	// lifetime should usually be 1h, add a safeguard to avoid hammering
+	// the backend in case the lifetime is unexpectedly wrong.
+	if lifetime < 5*time.Minute {
+		logging.Warningf(ctx, "Returned token lifetime is unexpectedly too short (%s)", lifetime)
+		lifetime = 5 * time.Minute
+	}
+
+	// We start to attempt to refresh the token after half of its lifetime has
+	// passed, to be able survive short (~30 min) backend outages in exchange for
+	// 2x RPC rate.
+	newTokenFile := tokenserver.TokenFile{
+		AccessToken:            tok.AccessToken,
+		TokenType:              tok.TokenType,
+		Expiry:                 expiry.Unix(),
+		LastUpdate:             now.Unix(),
+		NextUpdate:             now.Add(lifetime / 2).Unix(),
+		ServiceAccountEmail:    resp.ServiceAccount.Email,
+		ServiceAccountUniqueId: resp.ServiceAccount.UniqueId,
+	}
+	newState := stateInToken{
+		InputsDigest: inputsDigest,
+		Version:      Version,
+	}
+	if err = writeTokenFile(ctx, &newTokenFile, &newState, opts.TokenFile); err != nil {
+		logging.Errorf(ctx, "Failed to save token file - %s", err)
+		status.FailureError = err
+		status.FailureReason = FailureCantSaveToken
+		return err
+	}
+
+	status.LastToken = &newTokenFile
+	return nil
+}
+
+// calcDigest produces a digest of a given map using some stable serialization.
+func calcDigest(inputs map[string][]byte) string {
+	keys := make([]string, 0, len(inputs))
+	for k := range inputs {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	h := sha1.New()
+	for _, k := range keys {
+		v := inputs[k]
+		fmt.Fprintf(h, "%s\n%d\n", k, len(v))
+		h.Write(v)
+	}
+	blob := h.Sum(nil)
+	return hex.EncodeToString(blob[:])
+}

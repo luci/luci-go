@@ -10,6 +10,7 @@ It is generated from these files:
 	config.proto
 	service_account.proto
 	service_accounts.proto
+	token_file.proto
 	token_minter.proto
 	tokens.proto
 
@@ -34,6 +35,7 @@ It has these top-level messages:
 	CreateServiceAccountResponse
 	MintAccessTokenRequest
 	MintAccessTokenResponse
+	TokenFile
 	MintTokenRequest
 	TokenRequest
 	MintTokenResponse

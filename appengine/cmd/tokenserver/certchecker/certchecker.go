@@ -15,6 +15,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/lazyslot"
@@ -147,7 +148,7 @@ func GetCertChecker(c context.Context, cn string) (*CertChecker, error) {
 		}
 		checker := &CertChecker{
 			CN:  cn,
-			CRL: model.NewCRLChecker(cn, model.CRLShardCount, RefetchCRLPeriod),
+			CRL: model.NewCRLChecker(cn, model.CRLShardCount, refetchCRLPeriod(c)),
 		}
 		checker.ca.Fetcher = func(c context.Context, _ lazyslot.Value) (lazyslot.Value, error) {
 			ca, err := checker.refetchCA(c)
@@ -246,6 +247,16 @@ func (ch *CertChecker) CheckCertificate(c context.Context, cert *x509.Certificat
 	}
 
 	return ca, nil
+}
+
+// refetchCRLPeriod returns for how long to cache the CRL in memory by default.
+//
+// On dev server we cache for a very short duration to simplify local testing.
+func refetchCRLPeriod(c context.Context) time.Duration {
+	if info.Get(c).IsDevAppServer() {
+		return 100 * time.Millisecond
+	}
+	return RefetchCRLPeriod
 }
 
 // refetchCA is called lazily whenever we need to fetch the CA entity.

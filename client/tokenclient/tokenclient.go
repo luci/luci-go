@@ -11,6 +11,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
@@ -44,6 +45,23 @@ type Signer interface {
 	Sign(ctx context.Context, blob []byte) ([]byte, error)
 }
 
+// RPCError is optionally returned by MintToken for recognized RPC errors.
+//
+// Use typecast to distinguish recognized and unrecognized errors.
+type RPCError struct {
+	error
+
+	GrpcCode  codes.Code                              // grpc-level status code
+	ErrorCode tokenserver.MintTokenResponse_ErrorCode // protocol-level status code
+}
+
+// IsTransient is needed to implement errors.Transient.
+func (e RPCError) IsTransient() bool {
+	return e.error != nil && grpcutil.IsTransientCode(e.GrpcCode)
+}
+
+var _ errors.Transient = RPCError{}
+
 // MintToken signs the request using the signer and sends it.
 //
 // It will update in-place the following fields of the request:
@@ -58,6 +76,8 @@ type Signer interface {
 //   * TokenResponse on success.
 //   * Non-transient error on fatal errors.
 //   * Transient error on transient errors.
+//
+// You can sniff error for RPCError type to grab more error details.
 func (c *Client) MintToken(ctx context.Context, req *tokenserver.TokenRequest, opts ...grpc.CallOption) (*tokenserver.TokenResponse, error) {
 	// Fill in SignatureAlgorithm.
 	algo, err := c.Signer.Algo(ctx)
@@ -95,10 +115,10 @@ func (c *Client) MintToken(ctx context.Context, req *tokenserver.TokenRequest, o
 
 	// Fatal pRPC-level error or transient error in case retries didn't help.
 	if err != nil {
-		if grpcutil.IsTransient(err) {
-			err = errors.WrapTransient(err)
+		return nil, RPCError{
+			error:    err,
+			GrpcCode: grpc.Code(err),
 		}
-		return nil, err
 	}
 
 	// The response still may indicate a fatal error.
@@ -107,7 +127,11 @@ func (c *Client) MintToken(ctx context.Context, req *tokenserver.TokenRequest, o
 		if details == "" {
 			details = "no detailed error message"
 		}
-		return nil, fmt.Errorf("token server error %s - %s", resp.ErrorCode, details)
+		return nil, RPCError{
+			error:     fmt.Errorf("token server error %s - %s", resp.ErrorCode, details),
+			GrpcCode:  codes.OK,
+			ErrorCode: resp.ErrorCode,
+		}
 	}
 
 	// Must not happen. But better return an error than nil-panic if it does.

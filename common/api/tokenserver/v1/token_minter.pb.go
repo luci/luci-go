@@ -42,7 +42,7 @@ var TokenRequest_TokenType_value = map[string]int32{
 func (x TokenRequest_TokenType) String() string {
 	return proto.EnumName(TokenRequest_TokenType_name, int32(x))
 }
-func (TokenRequest_TokenType) EnumDescriptor() ([]byte, []int) { return fileDescriptor4, []int{1, 0} }
+func (TokenRequest_TokenType) EnumDescriptor() ([]byte, []int) { return fileDescriptor5, []int{1, 0} }
 
 // Supported ways of singing the request.
 type TokenRequest_SignatureAlgorithm int32
@@ -65,7 +65,7 @@ func (x TokenRequest_SignatureAlgorithm) String() string {
 	return proto.EnumName(TokenRequest_SignatureAlgorithm_name, int32(x))
 }
 func (TokenRequest_SignatureAlgorithm) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor4, []int{1, 1}
+	return fileDescriptor5, []int{1, 1}
 }
 
 // Possible kinds of fatal errors.
@@ -112,7 +112,7 @@ func (x MintTokenResponse_ErrorCode) String() string {
 	return proto.EnumName(MintTokenResponse_ErrorCode_name, int32(x))
 }
 func (MintTokenResponse_ErrorCode) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor4, []int{2, 0}
+	return fileDescriptor5, []int{2, 0}
 }
 
 // MintTokenRequest wraps a serialized and signed TokenRequest message.
@@ -132,7 +132,7 @@ type MintTokenRequest struct {
 func (m *MintTokenRequest) Reset()                    { *m = MintTokenRequest{} }
 func (m *MintTokenRequest) String() string            { return proto.CompactTextString(m) }
 func (*MintTokenRequest) ProtoMessage()               {}
-func (*MintTokenRequest) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
+func (*MintTokenRequest) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0} }
 
 // TokenRequest contains the actual request parameters.
 type TokenRequest struct {
@@ -161,7 +161,7 @@ type TokenRequest struct {
 func (m *TokenRequest) Reset()                    { *m = TokenRequest{} }
 func (m *TokenRequest) String() string            { return proto.CompactTextString(m) }
 func (*TokenRequest) ProtoMessage()               {}
-func (*TokenRequest) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{1} }
+func (*TokenRequest) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{1} }
 
 func (m *TokenRequest) GetIssuedAt() *google_protobuf1.Timestamp {
 	if m != nil {
@@ -185,7 +185,7 @@ type MintTokenResponse struct {
 func (m *MintTokenResponse) Reset()                    { *m = MintTokenResponse{} }
 func (m *MintTokenResponse) String() string            { return proto.CompactTextString(m) }
 func (*MintTokenResponse) ProtoMessage()               {}
-func (*MintTokenResponse) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{2} }
+func (*MintTokenResponse) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{2} }
 
 func (m *MintTokenResponse) GetTokenResponse() *TokenResponse {
 	if m != nil {
@@ -211,7 +211,7 @@ type TokenResponse struct {
 func (m *TokenResponse) Reset()                    { *m = TokenResponse{} }
 func (m *TokenResponse) String() string            { return proto.CompactTextString(m) }
 func (*TokenResponse) ProtoMessage()               {}
-func (*TokenResponse) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{3} }
+func (*TokenResponse) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{3} }
 
 type isTokenResponse_TokenType interface {
 	isTokenResponse_TokenType()
@@ -414,7 +414,7 @@ var _TokenMinter_serviceDesc = grpc.ServiceDesc{
 	Streams: []grpc.StreamDesc{},
 }
 
-var fileDescriptor4 = []byte{
+var fileDescriptor5 = []byte{
 	// 698 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x7c, 0x54, 0xdb, 0x4e, 0xdb, 0x40,
 	0x10, 0x25, 0x84, 0x9b, 0x27, 0x17, 0xcc, 0x52, 0x20, 0x4d, 0x5b, 0x8a, 0xc2, 0x0b, 0x0f, 0x95,
