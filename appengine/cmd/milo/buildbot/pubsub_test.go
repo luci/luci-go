@@ -13,14 +13,20 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/logging/gologger"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
+)
+
+var (
+	fakeTime = time.Date(2001, time.February, 3, 4, 5, 6, 7, time.UTC)
 )
 
 func buildbotTimesFinished(start, end float64) []*float64 {
@@ -31,8 +37,12 @@ func buildbotTimesPending(start float64) []*float64 {
 	return []*float64{&start, nil}
 }
 
-func newPsBody(bs []buildbotBuild) io.ReadCloser {
-	bm, _ := json.Marshal(bs)
+func newCombinedPsBody(bs []buildbotBuild, m *buildbotMaster) io.ReadCloser {
+	bmsg := buildMasterMsg{
+		Master: m,
+		Builds: bs,
+	}
+	bm, _ := json.Marshal(bmsg)
 	msg := pubSubSubscription{
 		Subscription: "projects/luci-milo/subscriptions/buildbot-public",
 		Message: pubSubMessage{
@@ -46,7 +56,8 @@ func newPsBody(bs []buildbotBuild) io.ReadCloser {
 func TestPubSub(t *testing.T) {
 	Convey(`A test Environment`, t, func() {
 		c := memory.Use(context.Background())
-		c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
+		c = gologger.Use(c)
+		c, _ = testclock.UseTime(c, fakeTime)
 		ds := datastore.Get(c)
 
 		Convey("Save build entry", func() {
@@ -90,16 +101,18 @@ func TestPubSub(t *testing.T) {
 			So(func() { ds.Put(build) }, ShouldPanicLike, "No Master or Builder found")
 		})
 
-		Convey("Basic pusbsub subscription", func() {
-			b := buildbotBuild{
-				Master:      "Fake Master",
-				Buildername: "Fake buildername",
-				Number:      1234,
-				Currentstep: "this is a string",
-				Times:       buildbotTimesPending(123.0),
-			}
+		b := buildbotBuild{
+			Master:      "Fake Master",
+			Buildername: "Fake buildername",
+			Number:      1234,
+			Currentstep: "this is a string",
+			Times:       buildbotTimesPending(123.0),
+		}
+		Convey("Basic build pusbsub subscription", func() {
 			h := httptest.NewRecorder()
-			r := &http.Request{Body: newPsBody([]buildbotBuild{b})}
+			r := &http.Request{
+				Body: newCombinedPsBody([]buildbotBuild{b}, nil),
+			}
 			p := httprouter.Params{}
 			PubSubHandler(c, h, r, p)
 			So(h.Code, ShouldEqual, 200)
@@ -117,7 +130,9 @@ func TestPubSub(t *testing.T) {
 			Convey("And a new build overwrites", func() {
 				b.Times = buildbotTimesFinished(123.0, 124.0)
 				h = httptest.NewRecorder()
-				r = &http.Request{Body: newPsBody([]buildbotBuild{b})}
+				r = &http.Request{
+					Body: newCombinedPsBody([]buildbotBuild{b}, nil),
+				}
 				p = httprouter.Params{}
 				PubSubHandler(c, h, r, p)
 				So(h.Code, ShouldEqual, 200)
@@ -133,7 +148,9 @@ func TestPubSub(t *testing.T) {
 				Convey("And another pending build is rejected", func() {
 					b.Times = buildbotTimesPending(123.0)
 					h = httptest.NewRecorder()
-					r = &http.Request{Body: newPsBody([]buildbotBuild{b})}
+					r = &http.Request{
+						Body: newCombinedPsBody([]buildbotBuild{b}, nil),
+					}
 					p = httprouter.Params{}
 					PubSubHandler(c, h, r, p)
 					So(h.Code, ShouldEqual, 200)
@@ -148,6 +165,62 @@ func TestPubSub(t *testing.T) {
 					So(*loadB.Times[1], ShouldEqual, 124.0)
 				})
 			})
+		})
+
+		Convey("Basic master + build pusbsub subscription", func() {
+			h := httptest.NewRecorder()
+			ms := buildbotMaster{
+				Name:    "fakename",
+				Project: buildbotProject{Title: "some title"},
+			}
+			r := &http.Request{
+				Body: newCombinedPsBody([]buildbotBuild{b}, &ms),
+			}
+			p := httprouter.Params{}
+			PubSubHandler(c, h, r, p)
+			So(h.Code, ShouldEqual, 200)
+			Convey("And stores correctly", func() {
+				loadB := &buildbotBuild{
+					Master:      "Fake Master",
+					Buildername: "Fake buildername",
+					Number:      1234,
+				}
+				err := ds.Get(loadB)
+				So(err, ShouldBeNil)
+				So(loadB.Master, ShouldEqual, "Fake Master")
+				So(loadB.Currentstep.(string), ShouldEqual, "this is a string")
+				m, internal, t, err := getDSMasterJSON(c, "fakename")
+				So(err, ShouldBeNil)
+				So(internal, ShouldEqual, false)
+				So(t.Unix(), ShouldEqual, 981173106)
+				So(m.Name, ShouldEqual, "fakename")
+				So(m.Project.Title, ShouldEqual, "some title")
+			})
+
+			Convey("And a new master overwrites", func() {
+				c, _ = testclock.UseTime(c, fakeTime.Add(time.Duration(1*time.Second)))
+				ms.Project.Title = "some other title"
+				h = httptest.NewRecorder()
+				r := &http.Request{
+					Body: newCombinedPsBody([]buildbotBuild{b}, &ms)}
+				p = httprouter.Params{}
+				PubSubHandler(c, h, r, p)
+				So(h.Code, ShouldEqual, 200)
+				m, internal, t, err := getDSMasterJSON(c, "fakename")
+				So(err, ShouldBeNil)
+				So(internal, ShouldEqual, false)
+				So(m.Project.Title, ShouldEqual, "some other title")
+				So(t.Unix(), ShouldEqual, 981173107)
+				So(m.Name, ShouldEqual, "fakename")
+			})
+		})
+
+		Convey("Empty pubsub message", func() {
+			h := httptest.NewRecorder()
+			r := &http.Request{Body: ioutil.NopCloser(bytes.NewReader([]byte{}))}
+			p := httprouter.Params{}
+			PubSubHandler(c, h, r, p)
+			So(h.Code, ShouldEqual, 200)
 		})
 	})
 }

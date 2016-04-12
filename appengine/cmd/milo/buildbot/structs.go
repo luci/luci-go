@@ -76,6 +76,8 @@ type buildbotBuild struct {
 	// This one is injected by the publisher module.  Does not exist in a
 	// normal json query.
 	TimeStamp *int `json:"timeStamp" gae:"-"`
+	// This one is marked by Milo, denotes whether or not the build is internal.
+	Internal bool `json:"internal" gae:"-"`
 }
 
 var _ datastore.PropertyLoadSaver = (*buildbotBuild)(nil)
@@ -232,6 +234,12 @@ type buildbotSlave struct {
 	Version       string           `json:"version"`
 }
 
+type buildbotProject struct {
+	BuildbotURL string `json:"buildbotURL"`
+	Title       string `json:"title"`
+	Titleurl    string `json:"titleURL"`
+}
+
 // buildbotMaster This is json definition for https://build.chromium.org/p/<master>/json
 // endpoints.
 type buildbotMaster struct {
@@ -253,7 +261,7 @@ type buildbotMaster struct {
 			State         string   `json:"state"`
 		} `json:"builders"`
 		Project struct {
-			Buildboturl string `json:"buildbotURL"`
+			BuildbotURL string `json:"buildbotURL"`
 			Title       string `json:"title"`
 			Titleurl    string `json:"titleURL"`
 		} `json:"project"`
@@ -278,11 +286,7 @@ type buildbotMaster struct {
 		ServerUptime float64 `json:"server_uptime"`
 	} `json:"clock"`
 
-	Project struct {
-		Buildboturl string `json:"buildbotURL"`
-		Title       string `json:"title"`
-		Titleurl    string `json:"titleURL"`
-	} `json:"project"`
+	Project buildbotProject `json:"project"`
 
 	Slaves map[string]buildbotSlave `json:"slaves"`
 
@@ -297,4 +301,7 @@ type buildbotMaster struct {
 		} `json:"builders"`
 		ServerUptime float64 `json:"server_uptime"`
 	} `json:"varz"`
+
+	// This is injected by the pubsub publisher on the buildbot side.
+	Name string `json:"name"`
 }

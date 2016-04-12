@@ -5,11 +5,15 @@
 package buildbot
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/common/clock"
 	log "github.com/luci/luci-go/common/logging"
 
 	"github.com/julienschmidt/httprouter"
@@ -33,40 +37,121 @@ type pubSubSubscription struct {
 	Subscription string        `json:"subscription"`
 }
 
+type buildMasterMsg struct {
+	Master *buildbotMaster `json:"master"`
+	Builds []buildbotBuild `json:"builds"`
+}
+
+// buildbotMasterEntry is a container for a marshaled and packed buildbot
+// master json.
+type buildbotMasterEntry struct {
+	// Name of the buildbot master.
+	Name string `gae:"$id"`
+	// Internal
+	Internal bool
+	// Data is the json serialzed and gzipped blob of the master data.
+	Data []byte `gae:",noindex"`
+	// Modified is when this entry was last modified.
+	Modified time.Time
+}
+
+// getDSMasterJSON fetches the latest known buildbot and returns
+// the buildbotMaster struct (if found), whether or not it is internal,
+// the last modified time, and an error if not found.
+func getDSMasterJSON(c context.Context, name string) (
+	master *buildbotMaster, internal bool, t time.Time, err error) {
+	master = &buildbotMaster{}
+	entry := buildbotMasterEntry{Name: name}
+	ds := datastore.Get(c)
+	err = ds.Get(&entry)
+	internal = entry.Internal
+	t = entry.Modified
+	if err != nil {
+		return
+	}
+	reader, err := gzip.NewReader(bytes.NewReader(entry.Data))
+	if err != nil {
+		log.WithError(err).Errorf(
+			c, "Encountered error while fetching entry for %s:\n%s", name, err)
+		return
+	}
+	defer reader.Close()
+	d := json.NewDecoder(reader)
+	if err = d.Decode(master); err != nil {
+		log.WithError(err).Errorf(
+			c, "Encountered error while fetching entry for %s:\n%s", name, err)
+	}
+	return
+}
+
+func putDSMasterJSON(
+	c context.Context, master *buildbotMaster, internal bool) error {
+	entry := buildbotMasterEntry{
+		Name:     master.Name,
+		Internal: internal,
+		Modified: clock.Now(c).UTC(),
+	}
+	gzbs := bytes.Buffer{}
+	gsw := gzip.NewWriter(&gzbs)
+	e := json.NewEncoder(gsw)
+	if err := e.Encode(master); err != nil {
+		return err
+	}
+	gsw.Close()
+	entry.Data = gzbs.Bytes()
+	return datastore.Get(c).Put(&entry)
+}
+
 // GetData returns the expanded form of Data (decoded from base64).
 func (m *pubSubSubscription) GetData() ([]byte, error) {
 	return base64.StdEncoding.DecodeString(m.Message.Data)
 }
 
+// unmarshal a byte stream into a list of buildbot builds and masters.
+func unmarshal(
+	c context.Context, msg []byte) ([]buildbotBuild, *buildbotMaster, error) {
+	bm := buildMasterMsg{}
+	if len(msg) == 0 {
+		return bm.Builds, bm.Master, nil
+	}
+	if err := json.Unmarshal(msg, &bm); err != nil {
+		log.WithError(err).Errorf(c, "could not unmarshal message: %s", err)
+		return nil, nil, err
+	}
+	return bm.Builds, bm.Master, nil
+}
+
 // PubSubHandler is a webhook that stores the builds coming in from pubsub.
-func PubSubHandler(c context.Context, h http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func PubSubHandler(
+	c context.Context, h http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	msg := pubSubSubscription{}
 	defer r.Body.Close()
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&msg); err != nil {
-		log.Errorf(c, "Could not decode message.  %s", err.Error())
+		log.WithError(err).Errorf(
+			c, "Could not decode message.  %s", err)
 		h.WriteHeader(200) // This is a hard failure, we don't want PubSub to retry.
 		return
 	}
 	if msg.Subscription != subName {
-		log.Errorf(c, "Subscription name %s does not match %s", msg.Subscription, subName)
+		log.Errorf(
+			c, "Subscription name %s does not match %s", msg.Subscription, subName)
 		h.WriteHeader(200)
 		return
 	}
 	bbMsg, err := msg.GetData()
 	if err != nil {
-		log.Errorf(c, "Could not decode message %s", err.Error())
+		log.WithError(err).Errorf(c, "Could not decode message %s", err)
 		h.WriteHeader(200)
 		return
 	}
-	builds := []buildbotBuild{}
-	err = json.Unmarshal(bbMsg, &builds)
+	builds, master, err := unmarshal(c, bbMsg)
 	if err != nil {
-		log.Errorf(c, "Could not unmarshal message %s", err.Error())
+		log.WithError(err).Errorf(c, "Could not unmarshal message %s", err)
 		h.WriteHeader(200)
 		return
 	}
-	log.Debugf(c, "There are %d builds", len(builds))
+	log.Infof(c, "There are %d builds and %#v masters", len(builds), master)
 	ds := datastore.Get(c)
 	// Do not use PutMulti because we might hit the 1MB limit.
 	for _, build := range builds {
@@ -81,12 +166,20 @@ func PubSubHandler(c context.Context, h http.ResponseWriter, r *http.Request, p 
 				continue
 			}
 		}
-		if build.Times[1] == nil {
-			log.Debugf(c, "Found a pending build")
-		}
 		err = ds.Put(&build)
 		if err != nil {
-			log.Errorf(c, "Could not save in datastore %s", err.Error())
+			log.WithError(err).Errorf(c, "Could not save build in datastore %s", err)
+			// This is transient, we do want PubSub to retry.
+			h.WriteHeader(500)
+			return
+		}
+	}
+	if master != nil {
+		// TODO(hinoka): Internal builds.
+		err = putDSMasterJSON(c, master, false)
+		if err != nil {
+			log.WithError(err).Errorf(
+				c, "Could not save master in datastore %s", err)
 			// This is transient, we do want PubSub to retry.
 			h.WriteHeader(500)
 			return
