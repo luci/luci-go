@@ -7,7 +7,6 @@ package internal
 import (
 	"io/ioutil"
 	"os"
-	"sync"
 
 	"github.com/luci/luci-go/client/cipd/common"
 	"github.com/luci/luci-go/client/cipd/internal/messages"
@@ -16,7 +15,7 @@ import (
 // MaxTagCacheSize is how many entries to keep in TagCache database.
 const MaxTagCacheSize = 300
 
-// TagCache provides a thread safe mapping (package name, tag) -> instance ID.
+// TagCache provides a mapping (package name, tag) -> instance ID.
 // This mapping is safe to cache because tags are not detachable: once a tag is
 // successfully resolved to an instance ID it is guaranteed to resolve to same
 // instance ID later or not resolve at all (e.g. if one tag is attached to
@@ -26,7 +25,6 @@ const MaxTagCacheSize = 300
 // 'cipd ensure' calls that use only tags to specify versions. It happens to be
 // the most common case of 'cipd ensure' usage by far.
 type TagCache struct {
-	lock  sync.Mutex
 	cache messages.TagCache
 	dirty bool
 }
@@ -68,8 +66,6 @@ func (c *TagCache) Load(buf []byte) error {
 		}
 	}
 
-	c.lock.Lock()
-	defer c.lock.Unlock()
 	c.cache.Entries = goodOnes
 	c.dirty = false
 	return nil
@@ -77,9 +73,6 @@ func (c *TagCache) Load(buf []byte) error {
 
 // Save dumps state to the byte buffer. Also resets 'Dirty' flag.
 func (c *TagCache) Save() ([]byte, error) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
 	// Remove all "holes" left from moving entries in AddTag.
 	compacted := make([]*messages.TagCache_Entry, 0, len(c.cache.Entries))
 	for _, e := range c.cache.Entries {
@@ -105,15 +98,11 @@ func (c *TagCache) Save() ([]byte, error) {
 
 // Dirty returns true if Save() needs to be called to persist changes.
 func (c *TagCache) Dirty() bool {
-	c.lock.Lock()
-	defer c.lock.Unlock()
 	return c.dirty
 }
 
 // ResolveTag returns cached tag or empty Pin{} if such tag is not in cache.
 func (c *TagCache) ResolveTag(pkg, tag string) common.Pin {
-	c.lock.Lock()
-	defer c.lock.Unlock()
 	for i := len(c.cache.Entries) - 1; i >= 0; i-- {
 		e := c.cache.Entries[i]
 		if e != nil && e.Package == pkg && e.Tag == tag {
@@ -135,9 +124,6 @@ func (c *TagCache) AddTag(pin common.Pin, tag string) {
 	if bad {
 		return
 	}
-
-	c.lock.Lock()
-	defer c.lock.Unlock()
 
 	// Try to find an existing entry in the cache. It will be moved to bottom
 	// (thus promoted as "most recent one"). We put a "hole" (nil) in previous
@@ -161,4 +147,9 @@ func (c *TagCache) AddTag(pin common.Pin, tag string) {
 
 	c.dirty = true
 	c.cache.Entries = append(c.cache.Entries, existing)
+}
+
+// Len returns the number of entires in the cache.
+func (c *TagCache) Len() int {
+	return len(c.cache.Entries)
 }

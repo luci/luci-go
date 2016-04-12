@@ -389,10 +389,8 @@ type clientImpl struct {
 	// deployer knows how to install packages to local file system. Thread safe.
 	deployer local.Deployer
 
-	// tagCache is used to cache (pkgname, tag) -> instanceID mapping.
-	// Thread safe, but lazily initialized under lock.
-	tagCache     *internal.TagCache
-	tagCacheInit sync.Once
+	// tagCacheLock is used to synchronize access to the tag cache file.
+	tagCacheLock sync.Mutex
 
 	// authClient is a lazily created http.Client to use for authenticated
 	// requests. Thread safe, but lazily initialized under lock.
@@ -448,43 +446,47 @@ func (client *clientImpl) tagCachePath() string {
 	return filepath.Join(dir, "tagcache.db")
 }
 
-// getTagCache lazy-initializes tagCache instance and returns it.
-func (client *clientImpl) getTagCache() *internal.TagCache {
-	client.tagCacheInit.Do(func() {
-		if path := client.tagCachePath(); path != "" {
-			var err error
-			client.tagCache, err = internal.LoadTagCacheFromFile(path)
-			if err != nil {
-				client.Logger.Warningf("cipd: failed to load tag cache - %s", err)
-			}
-		}
-		if client.tagCache == nil {
-			client.tagCache = &internal.TagCache{}
-		}
-	})
-	return client.tagCache
-}
-
-// closeTagCache dumps any changes made to tag cache to disk, if necessary.
-// Must be called under lock.
-func (client *clientImpl) closeTagCache() {
+// withTagCache checks if tag cache is enabled; if yes, loads it, calls f and
+// saves back if it was modified.
+// Calls are serialized.
+func (client *clientImpl) withTagCache(f func(*internal.TagCache)) {
 	path := client.tagCachePath()
-	if client.tagCache == nil || path == "" || !client.tagCache.Dirty() {
-		client.tagCache = nil
+	if path == "" {
 		return
 	}
-	// It's tiny in size (and protobuf can't serialize to io.Reader anyway). Dump
-	// it to disk via FileSystem object to deal with possible concurrent updates,
-	// missing directories, etc.
-	fs := local.NewFileSystem(filepath.Dir(path), client.Logger)
-	out, err := client.tagCache.Save()
-	if err == nil {
-		err = fs.EnsureFile(path, bytes.NewReader(out))
-	}
+
+	client.tagCacheLock.Lock()
+	defer client.tagCacheLock.Unlock()
+
+	start := time.Now()
+	cache, err := internal.LoadTagCacheFromFile(path)
 	if err != nil {
-		client.Logger.Warningf("cipd: failed to update tag cache - %s", err)
+		client.Logger.Warningf("cipd: failed to load tag cache - %s", err)
+		cache = &internal.TagCache{}
 	}
-	client.tagCache = nil
+	loadSaveTime := time.Since(start)
+
+	f(cache)
+
+	if cache.Dirty() {
+		// It's tiny in size (and protobuf can't serialize to io.Reader anyway). Dump
+		// it to disk via FileSystem object to deal with possible concurrent updates,
+		// missing directories, etc.
+		fs := local.NewFileSystem(filepath.Dir(path), client.Logger)
+		start = time.Now()
+		out, err := cache.Save()
+		if err == nil {
+			err = fs.EnsureFile(path, bytes.NewReader(out))
+		}
+		loadSaveTime += time.Since(start)
+		if err != nil {
+			client.Logger.Warningf("cipd: failed to update tag cache - %s", err)
+		}
+	}
+
+	if loadSaveTime > time.Second {
+		client.Logger.Warningf("cipd: loading and saving tag cache with %d entries took %s", cache.Len(), loadSaveTime)
+	}
 }
 
 func (client *clientImpl) FetchACL(packagePath string) ([]PackageACL, error) {
@@ -580,8 +582,12 @@ func (client *clientImpl) ResolveVersion(packageName, version string) (common.Pi
 	// calling same 'cipd ensure' command again and again.
 	isTag := common.ValidateInstanceTag(version) == nil
 	if isTag {
-		cached := client.getTagCache().ResolveTag(packageName, version)
+		var cached common.Pin
+		client.withTagCache(func(tc *internal.TagCache) {
+			cached = tc.ResolveTag(packageName, version)
+		})
 		if cached.InstanceID != "" {
+			client.Logger.Debugf("cipd: tag cache hit for %s:%s - %s", packageName, version, cached.InstanceID)
 			return cached, nil
 		}
 	}
@@ -590,7 +596,9 @@ func (client *clientImpl) ResolveVersion(packageName, version string) (common.Pi
 		return pin, err
 	}
 	if isTag {
-		client.getTagCache().AddTag(pin, version)
+		client.withTagCache(func(tc *internal.TagCache) {
+			tc.AddTag(pin, version)
+		})
 	}
 	return pin, nil
 }
@@ -948,7 +956,6 @@ func (client *clientImpl) EnsurePackages(pins []common.Pin, dryRun bool) (action
 func (client *clientImpl) Close() {
 	client.lock.Lock()
 	defer client.lock.Unlock()
-	client.closeTagCache()
 	client.authClient = nil
 	client.anonClient = nil
 }
