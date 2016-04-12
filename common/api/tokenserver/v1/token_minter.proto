@@ -47,7 +47,7 @@ message MintTokenRequest {
 message TokenRequest {
   // The kinds of tokens the token server can mint.
   enum TokenType {
-    UNKNOWN_TYPE = 0;               // used if the field is not initialized
+    UNKNOWN_TYPE               = 0; // used if the field is not initialized
     GOOGLE_OAUTH2_ACCESS_TOKEN = 1; // OAuth2 service account access token
   }
 
@@ -92,8 +92,15 @@ message MintTokenResponse {
   //
   // Non fatal errors are returned as grpc.Internal errors instead.
   enum ErrorCode {
-    SUCCESS = 0;
-    // ... write more
+    SUCCESS                = 0;
+    UNSUPPORTED_SIGNATURE  = 1; // used signature_algorithm is not supported
+    UNSUPPORTED_TOKEN_TYPE = 2; // requested token_type is not supported
+    BAD_TIMESTAMP          = 3; // issued_at field is wrong
+    BAD_CERTIFICATE_FORMAT = 4; // malformed or unsupported certificate
+    BAD_SIGNATURE          = 5; // signature doesn't match or can't be verified
+    UNTRUSTED_CERTIFICATE  = 6; // invalid certificate or can't verify it yet
+    BAD_TOKEN_ARGUMENTS    = 7; // FQDN or Scopes are invalid or not whitelisted
+    TOKEN_MINTING_ERROR    = 8; // unspecified fatal error when minting a token
   }
   ErrorCode error_code = 1;
 

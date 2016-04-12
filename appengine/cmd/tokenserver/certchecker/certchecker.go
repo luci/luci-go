@@ -78,6 +78,23 @@ type Error struct {
 	Reason ErrorReason // enumeration that can be used in switches
 }
 
+// NewError instantiates Error.
+//
+// It is needed because initializing 'error' field on Error is not allowed
+// outside of this package (it is lowercase - "unexported").
+func NewError(e error, reason ErrorReason) error {
+	return Error{e, reason}
+}
+
+// IsCertInvalidError returns true for errors from CheckCertificate that
+// indicate revoked or expired or otherwise invalid certificates.
+//
+// Such errors can be safely cast to Error.
+func IsCertInvalidError(err error) bool {
+	_, ok := err.(Error)
+	return ok
+}
+
 // CertChecker knows how to check certificate signatures and revocation status.
 //
 // It is associated with single CA and assumes all certs needing a check are
@@ -95,6 +112,19 @@ type CertChecker struct {
 }
 
 type proccacheKey string
+
+// CheckCertificate checks validity of a given certificate.
+//
+// It looks at the cert issuer, loads corresponding CertChecker and calls its
+// CheckCertificate method. See CertChecker.CheckCertificate documentation for
+// explanation of return values.
+func CheckCertificate(c context.Context, cert *x509.Certificate) (*model.CA, error) {
+	checker, err := GetCertChecker(c, cert.Issuer.CommonName)
+	if err != nil {
+		return nil, err
+	}
+	return checker.CheckCertificate(c, cert)
+}
 
 // GetCertChecker returns an instance of CertChecker for given CA.
 //

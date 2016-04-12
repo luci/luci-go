@@ -36,20 +36,20 @@ import (
 
 var (
 	// caServer implements tokenserver.CertificateAuthorities RPC interface.
-	caServer = &certauthorities.Server{}
+	caServerWithoutAuth = &certauthorities.Server{}
 
 	// caServerWithAuth adds admin check to caServer.
 	caServerWithAuth = &tokenserver.DecoratedCertificateAuthorities{
-		Service: caServer,
+		Service: caServerWithoutAuth,
 		Prelude: adminPrelude("tokenserver.CertificateAuthorities"),
 	}
 
 	// serviceAccountsServer implements tokenserver.ServiceAccounts RPC interface.
-	serviceAccountsServer = &serviceaccounts.Server{}
+	serviceAccountsServerWithoutAuth = &serviceaccounts.Server{}
 
 	// serviceAccountsServerWithAuth adds admin check to serviceAccountsServer.
 	serviceAccountsServerWithAuth = &tokenserver.DecoratedServiceAccounts{
-		Service: serviceAccountsServer,
+		Service: serviceAccountsServerWithoutAuth,
 		Prelude: adminPrelude("tokenserver.ServiceAccounts"),
 	}
 
@@ -57,7 +57,7 @@ var (
 	//
 	// It is main public API of the token server. It doesn't require any external
 	// authentication (it happens inside), and so it's installed as is.
-	tokenMinterServer = &tokenminter.Server{}
+	tokenMinterServerWithoutAuth = tokenminter.NewServer(serviceAccountsServerWithoutAuth)
 )
 
 // adminPrelude returns a prelude that authorizes only administrators.
@@ -103,7 +103,7 @@ func init() {
 	var api prpc.Server
 	tokenserver.RegisterCertificateAuthoritiesServer(&api, caServerWithAuth)
 	tokenserver.RegisterServiceAccountsServer(&api, serviceAccountsServerWithAuth)
-	tokenserver.RegisterTokenMinterServer(&api, tokenMinterServer)
+	tokenserver.RegisterTokenMinterServer(&api, tokenMinterServerWithoutAuth) // auth inside
 	discovery.Enable(&api)
 	api.InstallHandlers(router, base)
 
@@ -128,7 +128,7 @@ func readConfigCron(c context.Context, w http.ResponseWriter, r *http.Request, _
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-	if _, err := caServer.ImportConfig(c, nil); err != nil {
+	if _, err := caServerWithoutAuth.ImportConfig(c, nil); err != nil {
 		panic(err) // let panic catcher deal with it
 	}
 	w.WriteHeader(http.StatusOK)
@@ -136,7 +136,7 @@ func readConfigCron(c context.Context, w http.ResponseWriter, r *http.Request, _
 
 // fetchCRLCron is handler for /internal/cron/fetch-crl GAE cron task.
 func fetchCRLCron(c context.Context, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	list, err := caServer.ListCAs(c, nil)
+	list, err := caServerWithoutAuth.ListCAs(c, nil)
 	if err != nil {
 		panic(err) // let panic catcher deal with it
 	}
@@ -149,7 +149,7 @@ func fetchCRLCron(c context.Context, w http.ResponseWriter, r *http.Request, _ h
 		wg.Add(1)
 		go func(i int, cn string) {
 			defer wg.Done()
-			_, err := caServer.FetchCRL(c, &tokenserver.FetchCRLRequest{Cn: cn})
+			_, err := caServerWithoutAuth.FetchCRL(c, &tokenserver.FetchCRLRequest{Cn: cn})
 			if err != nil {
 				logging.Errorf(c, "FetchCRL(%q) failed - %s", cn, err)
 				errs[i] = err

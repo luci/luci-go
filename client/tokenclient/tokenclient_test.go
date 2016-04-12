@@ -68,7 +68,7 @@ func TestTokenClient(t *testing.T) {
 		c := Client{
 			Client: &fakeRPCClient{
 				Out: tokenserver.MintTokenResponse{
-					ErrorCode:    1,
+					ErrorCode:    1234,
 					ErrorMessage: "blah",
 				},
 			},
@@ -79,7 +79,7 @@ func TestTokenClient(t *testing.T) {
 			TokenType:    tokenserver.TokenRequest_GOOGLE_OAUTH2_ACCESS_TOKEN,
 			Oauth2Scopes: []string{"scope1", "scope2"},
 		})
-		So(err.Error(), ShouldEqual, "token server error 1 - blah")
+		So(err.Error(), ShouldEqual, "token server error 1234 - blah")
 	})
 }
 

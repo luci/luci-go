@@ -65,7 +65,7 @@ func (s *Server) CreateServiceAccount(c context.Context, r *tokenserver.CreateSe
 	// Validate FQDN and load proper config.
 	accountID, domain, err := validateFQDN(r.Fqdn)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, "%s", err)
 	}
 	cfg, err := s.getCAConfig(c, r.Ca)
 	if err != nil {
@@ -73,7 +73,7 @@ func (s *Server) CreateServiceAccount(c context.Context, r *tokenserver.CreateSe
 	}
 	domainCfg, err := domainConfig(cfg, domain)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	// Create the service account.
@@ -465,7 +465,7 @@ func validateFQDN(fqdn string) (host, domain string, err error) {
 	fqdn = strings.ToLower(fqdn)
 	chunks := strings.SplitN(fqdn, ".", 2)
 	if len(chunks) != 2 {
-		return "", "", grpc.Errorf(codes.InvalidArgument, "not a valid FQDN %q", fqdn)
+		return "", "", fmt.Errorf("not a valid FQDN %q", fqdn)
 	}
 	// Host name is used as service account ID. Validate it.
 	// See https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts/create.
@@ -473,8 +473,8 @@ func validateFQDN(fqdn string) (host, domain string, err error) {
 	// documented though).
 	host, domain = chunks[0], chunks[1]
 	if len(host) < 6 || len(host) >= 30 || !accountIDRegexp.MatchString(host) {
-		return "", "", grpc.Errorf(
-			codes.InvalidArgument, "the hostname (%q) must match %q and be 6-30 characters long, it doesn't",
+		return "", "", fmt.Errorf(
+			"the hostname (%q) must match %q and be 6-30 characters long, it doesn't",
 			host, accountIDRegexp.String())
 	}
 	return host, domain, nil
@@ -483,7 +483,7 @@ func validateFQDN(fqdn string) (host, domain string, err error) {
 // validateOAuthScopes checks the scopes are in the whitelist.
 func validateOAuthScopes(cfg *tokenserver.DomainConfig, scopes []string) error {
 	if len(scopes) == 0 {
-		return grpc.Errorf(codes.InvalidArgument, "at least one OAuth2 scope must be specified")
+		return fmt.Errorf("at least one OAuth2 scope must be specified")
 	}
 	for _, scope := range scopes {
 		ok := false
@@ -494,7 +494,7 @@ func validateOAuthScopes(cfg *tokenserver.DomainConfig, scopes []string) error {
 			}
 		}
 		if !ok {
-			return grpc.Errorf(codes.InvalidArgument, "OAuth2 scope %q is not whitelisted in the config", scope)
+			return fmt.Errorf("OAuth2 scope %q is not whitelisted in the config", scope)
 		}
 	}
 	return nil
@@ -511,7 +511,7 @@ func domainConfig(cfg *tokenserver.CertificateAuthorityConfig, domain string) (*
 			}
 		}
 	}
-	return nil, grpc.Errorf(codes.InvalidArgument, "the domain %q is not whitelisted in the config", domain)
+	return nil, fmt.Errorf("the domain %q is not whitelisted in the config", domain)
 }
 
 // serviceAccountEmail returns expected email address of a service account.
