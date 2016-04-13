@@ -135,7 +135,7 @@ func realMain() int {
 		// Dump the status of this run. It's picked up by monitoring. Ignore errors
 		// here, they are not important compared to 'run' errors.
 		statusFile.Finished = clock.Now(ctx)
-		if err := statusFile.Close(log); err != nil {
+		if err := statusFile.Close(ctx, log); err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to save the status - %s\n", err)
 		}
 	}()
@@ -250,7 +250,11 @@ func run(ctx context.Context, clientParams tokenclient.ClientParameters, opts co
 	if err = writeTokenFile(ctx, &newTokenFile, &newState, opts.TokenFile); err != nil {
 		logging.Errorf(ctx, "Failed to save token file - %s", err)
 		status.FailureError = err
-		status.FailureReason = FailureCantSaveToken
+		if os.IsPermission(err) {
+			status.FailureReason = FailurePermissionError
+		} else {
+			status.FailureReason = FailureUnknownSaveTokenError
+		}
 		return err
 	}
 

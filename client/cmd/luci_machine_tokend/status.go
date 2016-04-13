@@ -8,9 +8,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"time"
 
+	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 
 	"github.com/luci/luci-go/client/tokenclient"
@@ -26,10 +26,11 @@ type FailureReason string
 // See also FailureReasonFromRPCError for error reasons generated from status
 // codes.
 const (
-	FailureCantReadKey      FailureReason = "CANT_READ_KEY"
-	FailureMalformedReponse FailureReason = "MALFORMED_RESPONSE"
-	FailureUnknownRPCError  FailureReason = "UNKNOWN_RPC_ERROR"
-	FailureCantSaveToken    FailureReason = "CANT_SAVE_TOKEN"
+	FailureCantReadKey           FailureReason = "CANT_READ_KEY"
+	FailureMalformedReponse      FailureReason = "MALFORMED_RESPONSE"
+	FailureUnknownRPCError       FailureReason = "UNKNOWN_RPC_ERROR"
+	FailurePermissionError       FailureReason = "SAVE_TOKEN_PERM_ERROR"
+	FailureUnknownSaveTokenError FailureReason = "UNKNOWN_SAVE_TOKEN_ERROR"
 )
 
 // FailureReasonFromRPCError transform MintToken error into a failure reason.
@@ -93,7 +94,7 @@ type statusFileJSON struct {
 // Close flushes the status to disk.
 //
 // Does nothing is Path is empty string.
-func (s *StatusFile) Close(l *memlogger.MemLogger) error {
+func (s *StatusFile) Close(ctx context.Context, l *memlogger.MemLogger) error {
 	if s.Path == "" {
 		return nil
 	}
@@ -125,5 +126,5 @@ func (s *StatusFile) Close(l *memlogger.MemLogger) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(s.Path, blob, 0644)
+	return AtomicWriteFile(ctx, s.Path, blob, 0644)
 }

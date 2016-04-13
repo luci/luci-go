@@ -17,3 +17,7 @@ func interruptSignals() []os.Signal {
 		syscall.SIGTERM,
 	}
 }
+
+func atomicRename(source, target string) error {
+	return os.Rename(source, target)
+}

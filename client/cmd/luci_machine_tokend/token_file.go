@@ -77,6 +77,5 @@ func writeTokenFile(ctx context.Context, tokenFile *tokenserver.TokenFile, state
 	}
 	blob := out.Bytes()
 
-	// TODO(vadimsh): Make it atomic, retry on errors.
-	return ioutil.WriteFile(path, blob, 0644)
+	return AtomicWriteFile(ctx, path, blob, 0644)
 }
