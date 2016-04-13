@@ -45,6 +45,9 @@ type testParser struct {
 	truncateOn   bool
 	closedOn     bool
 	err          error
+
+	// nextIndex is the next stream index to assign.
+	nextIndex uint64
 }
 
 func (p *testParser) addCommand(r *testParserCommand) {
@@ -151,13 +154,16 @@ func (p *testParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 
 	// Consume this record.
 	rec := p.nextCommand(true)
-	return &logpb.LogEntry{
+	le := logpb.LogEntry{
+		StreamIndex: p.nextIndex,
 		Content: &logpb.LogEntry_Text{Text: &logpb.Text{
 			Lines: []*logpb.Text_Line{
 				{Value: string(rec.data)},
 			},
 		}},
-	}, nil
+	}
+	p.nextIndex++
+	return &le, nil
 }
 
 func (p *testParser) bufferedBytes() (r int64) {
@@ -246,8 +252,9 @@ func TestStream(t *testing.T) {
 				go func() {
 					<-signalC
 
-					s.withParserLock(func() {
+					s.withParserLock(func() error {
 						tp.popData()
+						return nil
 					})
 					blocked = true
 					s.signalDataConsumed()

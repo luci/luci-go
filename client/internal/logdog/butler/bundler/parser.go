@@ -89,14 +89,14 @@ type baseParser struct {
 	counter *counter
 
 	timeBase  time.Time
-	nextIndex int64
+	nextIndex uint64
 }
 
 func (p *baseParser) baseLogEntry(ts time.Time) *logpb.LogEntry {
 	e := logpb.LogEntry{
 		TimeOffset:  google.NewDuration(ts.Sub(p.timeBase)),
 		PrefixIndex: uint64(p.counter.next()),
-		StreamIndex: uint64(p.nextIndex),
+		StreamIndex: p.nextIndex,
 	}
 	p.nextIndex++
 	return &e

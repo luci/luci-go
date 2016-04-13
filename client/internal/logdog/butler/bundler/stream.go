@@ -5,6 +5,7 @@
 package bundler
 
 import (
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -89,15 +90,18 @@ type streamImpl struct {
 
 	// stateLock protects stream state against concurrent access.
 	stateLock sync.Mutex
+
 	// closed, if non-zero, indicates that we have been closed and our stream has
 	// finished reading.
 	//
 	// stateLock must be held when accessing this field.
 	closed bool
+
 	// lastLogEntry is a pointer to the last LogEntry that was exported.
 	//
 	// stateLock must be held when accessing this field.
 	lastLogEntry *logpb.LogEntry
+
 	// appendErr is the error that should be returned by Append. It is set when
 	// stream content processing hits a fatal state.
 	appendErr error
@@ -133,12 +137,13 @@ func (s *streamImpl) Append(d Data) error {
 			return err
 		}
 
-		s.withParserLock(func() {
+		s.withParserLock(func() error {
 			if s.c.parser.bufferedBytes() == 0 ||
 				s.c.parser.bufferedBytes()+dLen <= s.c.maximumBufferedBytes {
 				s.c.parser.appendData(d)
 				d = nil
 			}
+			return nil
 		})
 
 		// The data was appended; we're done.
@@ -211,8 +216,9 @@ func (s *streamImpl) noMoreDataLocked() bool {
 	}
 
 	var bufSize int64
-	s.withParserLock(func() {
+	s.withParserLock(func() error {
 		bufSize = s.c.parser.bufferedBytes()
+		return nil
 	})
 	return bufSize == 0
 }
@@ -223,8 +229,9 @@ func (s *streamImpl) noMoreDataLocked() bool {
 // oldest.Timestamp + stream.maximumBufferDuration
 // If there is no buffered data, oldest will return nil.
 func (s *streamImpl) expireTime() (t time.Time, has bool) {
-	s.withParserLock(func() {
+	s.withParserLock(func() error {
 		t, has = s.c.parser.firstChunkTime()
+		return nil
 	})
 
 	if has {
@@ -281,39 +288,68 @@ func (s *streamImpl) nextBundleEntryLocked(bb *builder, aggressive bool) (bool, 
 	// If we're closed, this will continue to consume until finished. If an error
 	// occurs, shut down data collection.
 	modified := false
-	ierr := error(nil)
 
 	for c.limit = bb.remaining(); c.limit > 0; c.limit = bb.remaining() {
 		emittedLog := false
-		s.withParserLock(func() {
+		err := s.withParserLock(func() error {
 			le, err := s.c.parser.nextEntry(&c)
 			if err != nil {
-				ierr = err
-				return
+				return err
 			}
 
 			if le == nil {
-				return
+				return nil
+			}
+
+			// Enforce basic log entry consistency.
+			if err := s.fixupLogEntry(s.lastLogEntry, le); err != nil {
+				return err
 			}
 
 			emittedLog = true
 			modified = true
-			s.lastLogEntry = le
+
 			bb.add(&s.c.template, le)
+			s.lastLogEntry = le
+			return nil
 		})
 
-		if ierr != nil || !emittedLog {
-			break
+		if err != nil || !emittedLog {
+			return modified, err
 		}
 	}
-	return modified, ierr
+	return modified, nil
 }
 
-func (s *streamImpl) withParserLock(f func()) {
+// fixupLogEntry asserts and corrects a log entry's stream offset and ordering
+// given the previous entry in the stream.
+//
+// If prev is nil, that means that cur is expected to be the first log entry
+// in the stream.
+func (s *streamImpl) fixupLogEntry(prev, cur *logpb.LogEntry) error {
+	if prev == nil {
+		if cur.StreamIndex != 0 {
+			return fmt.Errorf("first log entry is not zero index (%d)", cur.StreamIndex)
+		}
+	} else {
+		if cur.StreamIndex != prev.StreamIndex+1 {
+			return fmt.Errorf("non-contiguous stream indices (%d != %d)", cur.StreamIndex, prev.StreamIndex+1)
+		}
+
+		if cur.TimeOffset.Duration() < prev.TimeOffset.Duration() {
+			to := *prev.TimeOffset
+			cur.TimeOffset = &to
+		}
+	}
+
+	return nil
+}
+
+func (s *streamImpl) withParserLock(f func() error) error {
 	s.parserLock.Lock()
 	defer s.parserLock.Unlock()
 
-	f()
+	return f()
 }
 
 func (s *streamImpl) appendError() error {
