@@ -269,17 +269,17 @@ func TestArchive(t *testing.T) {
 
 				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 1, 3, 4)
 			})
+		})
 
-			Convey(`When TimeOffset is out of order.`, func() {
-				ts.add(0, 1)
-				le := gen(2)
-				le.TimeOffset = nil // 0
-				ts.addEntries(le)
-				ts.add(3, 4)
-				So(Archive(m), ShouldBeNil)
+		Convey(`When TimeOffset is out of order, it is bumped to max.`, func() {
+			ts.add(0, 1)
+			le := gen(2)
+			le.TimeOffset = nil // 0
+			ts.addEntries(le)
+			ts.add(3, 4)
+			So(Archive(m), ShouldBeNil)
 
-				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 1, 3, 4)
-			})
+			So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 1, 2, 3, 4)
 		})
 
 		Convey(`Source errors will be returned`, func() {

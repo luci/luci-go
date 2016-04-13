@@ -13,15 +13,26 @@ const (
 )
 
 // NewTimestamp creates a new Timestamp protobuf from a time.Time type.
-func NewTimestamp(t time.Time) *Timestamp {
-	if t.IsZero() {
-		return nil
+func NewTimestamp(v time.Time) *Timestamp {
+	return ((*Timestamp)(nil)).Load(v)
+}
+
+// Load replaces the value in the supplied Timestamp with the specified time.
+//
+// If the supplied Timestamp is nil and the time is non-zero, a new Timestamp
+// will be generated. The populated Timestamp will be returned.
+func (t *Timestamp) Load(v time.Time) *Timestamp {
+	if t == nil {
+		if v.IsZero() {
+			return nil
+		}
+
+		t = &Timestamp{}
 	}
 
-	return &Timestamp{
-		Seconds: t.Unix(),
-		Nanos:   int32(t.Nanosecond()),
-	}
+	t.Seconds = v.Unix()
+	t.Nanos = int32(v.Nanosecond())
+	return t
 }
 
 // Time returns the time.Time associated with a Timestamp protobuf.
@@ -33,16 +44,28 @@ func (t *Timestamp) Time() time.Time {
 }
 
 // NewDuration creates a new Duration protobuf from a time.Duration.
-func NewDuration(d time.Duration) *Duration {
-	if d == 0 {
-		return nil
+func NewDuration(v time.Duration) *Duration {
+	return ((*Duration)(nil)).Load(v)
+}
+
+// Load replaces the value in the supplied Duration with the specified value.
+//
+// If the supplied Duration is nil and the value is non-zero, a new Duration
+// will be generated. The populated Duration will be returned.
+func (d *Duration) Load(v time.Duration) *Duration {
+	if d == nil {
+		if v == 0 {
+			return nil
+		}
+
+		d = &Duration{}
 	}
 
-	nanos := d.Nanoseconds()
-	return &Duration{
-		Seconds: nanos / nanosecondsInASecond,
-		Nanos:   int32(nanos % nanosecondsInASecond),
-	}
+	nanos := v.Nanoseconds()
+
+	d.Seconds = nanos / nanosecondsInASecond
+	d.Nanos = int32(nanos % nanosecondsInASecond)
+	return d
 }
 
 // Duration returns the time.Duration associated with a Duration protobuf.

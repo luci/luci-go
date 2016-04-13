@@ -61,8 +61,6 @@ func (s *safeLogEntrySource) NextLogEntry() (*logpb.LogEntry, error) {
 			err = fmt.Errorf("stream index is out of order (%d < %d)", le.StreamIndex, s.lastStreamIndex)
 		case le.Sequence < s.lastSequence:
 			err = fmt.Errorf("sequence is out of order (%d < %d)", le.Sequence, s.lastSequence)
-		case timeOffset < s.lastTimeOffset:
-			err = fmt.Errorf("time offset is out of order (%s < %s)", timeOffset, s.lastTimeOffset)
 		}
 		if err != nil {
 			s.logger().Warningf("Discarding out-of-order log stream entry %d: %v", le.StreamIndex, err)
@@ -72,7 +70,15 @@ func (s *safeLogEntrySource) NextLogEntry() (*logpb.LogEntry, error) {
 		s.lastPrefixIndex = le.PrefixIndex
 		s.lastStreamIndex = le.StreamIndex
 		s.lastSequence = le.Sequence
-		s.lastTimeOffset = timeOffset
+
+		if timeOffset < s.lastTimeOffset {
+			s.logger().Warningf("Adjusting out-of-order timestamp (%s < %s) for log stream entry %d.",
+				timeOffset, s.lastTimeOffset, le.StreamIndex)
+
+			le.TimeOffset = le.TimeOffset.Load(s.lastTimeOffset)
+		} else {
+			s.lastTimeOffset = timeOffset
+		}
 
 		return le, nil
 	}
