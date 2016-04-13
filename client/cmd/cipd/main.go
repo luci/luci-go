@@ -9,10 +9,13 @@
 package main
 
 import (
+	cryptorand "crypto/rand"
+	"encoding/binary"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -1671,5 +1674,11 @@ func fixFlagsPosition(args []string) []string {
 }
 
 func main() {
+	var seed int64
+	if err := binary.Read(cryptorand.Reader, binary.LittleEndian, &seed); err != nil {
+		panic(err)
+	}
+	rand.Seed(seed)
+
 	os.Exit(subcommands.Run(application, fixFlagsPosition(os.Args[1:])))
 }

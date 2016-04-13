@@ -337,9 +337,9 @@ type ClientOptions struct {
 	// UserAgent is put into User-Agent HTTP header with each request.
 	UserAgent string
 
-	// CacheDir is a directory for shared cache. If empty, tags are cached
-	// inside the site root. If both Root and CacheDir are empty, tag cache
-	// is disabled.
+	// CacheDir is a directory for shared cache. If empty, instances are not
+	// cached and tags are cached inside the site root. If both Root and
+	// CacheDir are empty, tag cache is disabled.
 	CacheDir string
 }
 
@@ -391,6 +391,10 @@ type clientImpl struct {
 
 	// tagCacheLock is used to synchronize access to the tag cache file.
 	tagCacheLock sync.Mutex
+
+	// instanceCache is a file-system based cache of instances.
+	instanceCache     *internal.InstanceCache
+	instanceCacheInit sync.Once
 
 	// authClient is a lazily created http.Client to use for authenticated
 	// requests. Thread safe, but lazily initialized under lock.
@@ -487,6 +491,20 @@ func (client *clientImpl) withTagCache(f func(*internal.TagCache)) {
 	if loadSaveTime > time.Second {
 		client.Logger.Warningf("cipd: loading and saving tag cache with %d entries took %s", cache.Len(), loadSaveTime)
 	}
+}
+
+// getInstanceCache lazy-initializes instanceCache and returns it.
+// May return nil if instance cache is disabled.
+func (client *clientImpl) getInstanceCache() *internal.InstanceCache {
+	client.instanceCacheInit.Do(func() {
+		if client.CacheDir == "" {
+			return
+		}
+		path := filepath.Join(client.CacheDir, "instances")
+		fs := local.NewFileSystem(path, client.Logger)
+		client.instanceCache = internal.NewInstanceCache(fs, client.Logger)
+	})
+	return client.instanceCache
 }
 
 func (client *clientImpl) FetchACL(packagePath string) ([]PackageACL, error) {
@@ -758,10 +776,65 @@ func (client *clientImpl) FetchInstanceRefs(pin common.Pin, refs []string) ([]Re
 }
 
 func (client *clientImpl) FetchInstance(pin common.Pin, output io.WriteSeeker) error {
-	err := common.ValidatePin(pin)
-	if err != nil {
+	if err := common.ValidatePin(pin); err != nil {
 		return err
 	}
+	cache := client.getInstanceCache()
+	if cache == nil {
+		return client.fetchInstanceNoCache(pin, output)
+	}
+	return client.fetchInstanceWithCache(pin, cache, output)
+}
+
+func (client *clientImpl) fetchInstanceNoCache(pin common.Pin, output io.WriteSeeker) error {
+	if err := client.remoteFetchInstance(pin, output); err != nil {
+		return err
+	}
+	client.Logger.Infof("cipd: successfully fetched %s", pin)
+	return nil
+}
+
+func (client *clientImpl) fetchInstanceWithCache(pin common.Pin, cache *internal.InstanceCache, output io.WriteSeeker) error {
+	// Try to get the instance from cache.
+	now := client.clock.now()
+	switch err := cache.Get(pin, output, now); {
+	case os.IsNotExist(err):
+		// output is not corrupted.
+
+	case err != nil:
+		client.Logger.Warningf("cipd: could not get %s from cache - %s", pin, err)
+		// Output may be corrupted. Rewind back and let client.remote
+		// overwrite it. Given instance ID is a hash of instance contents,
+		// cache could not write more than client.remote will,
+		// so output does not have to be truncated.
+		if _, err := output.Seek(0, os.SEEK_SET); err != nil {
+			return err
+		}
+
+	default:
+		client.Logger.Debugf("cipd: instance cache hit for %s", pin)
+		return nil
+	}
+
+	return cache.Put(pin, now, func(f *os.File) error {
+		// Fetch to the file.
+		if err := client.remoteFetchInstance(pin, f); err != nil {
+			return err
+		}
+
+		// Copy fetched content to output.
+		if _, err := f.Seek(0, 0); err != nil {
+			return err
+		}
+		if _, err := io.Copy(output, f); err != nil {
+			return err
+		}
+		client.Logger.Infof("cipd: successfully fetched %s", pin)
+		return nil
+	})
+}
+
+func (client *clientImpl) remoteFetchInstance(pin common.Pin, output io.WriteSeeker) error {
 	client.Logger.Infof("cipd: resolving fetch URL for %s", pin)
 	fetchInfo, err := client.remote.fetchInstance(pin)
 	if err == nil {
@@ -769,10 +842,8 @@ func (client *clientImpl) FetchInstance(pin common.Pin, output io.WriteSeeker) e
 	}
 	if err != nil {
 		client.Logger.Errorf("cipd: failed to fetch %s - %s", pin, err)
-		return err
 	}
-	client.Logger.Infof("cipd: successfully fetched %s", pin)
-	return nil
+	return err
 }
 
 func (client *clientImpl) FetchAndDeployInstance(pin common.Pin) error {
