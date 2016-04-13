@@ -476,7 +476,7 @@ func (client *clientImpl) withTagCache(f func(*internal.TagCache)) {
 		start = time.Now()
 		out, err := cache.Save()
 		if err == nil {
-			err = fs.EnsureFile(path, bytes.NewReader(out))
+			err = local.EnsureFile(fs, path, bytes.NewReader(out))
 		}
 		loadSaveTime += time.Since(start)
 		if err != nil {
