@@ -140,6 +140,24 @@ func ShouldBeRPCUnauthenticated(actual interface{}, expected ...interface{}) str
 	return ShouldHaveRPCCode(actual, prepend(codes.Unauthenticated, expected)...)
 }
 
+// ShouldBeRPCFailedPrecondition asserts that "actual" is an error that has a gRPC
+// code value of codes.FailedPrecondition.
+//
+// One additional "expected" string may be optionally included. If included, the
+// gRPC error's message is asserted to contain the expected string.
+func ShouldBeRPCFailedPrecondition(actual interface{}, expected ...interface{}) string {
+	return ShouldHaveRPCCode(actual, prepend(codes.FailedPrecondition, expected)...)
+}
+
+// ShouldBeRPCAborted asserts that "actual" is an error that has a gRPC
+// code value of codes.Aborted.
+//
+// One additional "expected" string may be optionally included. If included, the
+// gRPC error's message is asserted to contain the expected string.
+func ShouldBeRPCAborted(actual interface{}, expected ...interface{}) string {
+	return ShouldHaveRPCCode(actual, prepend(codes.Aborted, expected)...)
+}
+
 func prepend(c codes.Code, exp []interface{}) []interface{} {
 	args := make([]interface{}, len(exp)+1)
 	args[0] = c

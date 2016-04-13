@@ -5,6 +5,7 @@
 package grpcutil
 
 import (
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 
 	"google.golang.org/grpc"
@@ -70,10 +71,39 @@ var (
 	DataLoss = Errf(codes.DataLoss, "")
 )
 
+// WrapIfTransient wraps the resulting error if its gRPC code is a transient
+// error code, as determined by IsTransientCode.
+//
+// If err is already a transient error, it will be returned unmodified.
+func WrapIfTransient(err error) error {
+	switch {
+	case errors.IsTransient(err):
+		return err
+	case IsTransientCode(Code(err)):
+		return errors.WrapTransient(err)
+	default:
+		return err
+	}
+}
+
+// Code returns the gRPC code for a given error.
+//
+// In addition to the functionality of grpc.Code, this will unwrap any wrapped
+// errors to get to the inner error before asking for its code. This means that
+// a gRPC error wrapped with a transient error will still return the correct
+// code.
+func Code(err error) codes.Code {
+	return grpc.Code(errors.UnwrapAll(err))
+}
+
 // IsTransient returns true if a given gRPC error is transient.
 //
 // Note that this will return true for non-gRPC error types, since they resolve
 // to codes.Unavailable, which is considered transient by IsTransientCode.
+//
+// Note also that this function tests for gRPC error code transience, not
+// general transience, so if the error is already transient according to
+// errors.IsTransient, but is not gRPC transient, this will return false.
 func IsTransient(err error) bool {
 	return err != nil && IsTransientCode(grpc.Code(err))
 }
@@ -82,7 +112,7 @@ func IsTransient(err error) bool {
 // transient gRPC error type.
 func IsTransientCode(code codes.Code) bool {
 	switch code {
-	case codes.Internal, codes.Unknown, codes.Unavailable:
+	case codes.Internal, codes.Unknown, codes.Unavailable, codes.DeadlineExceeded:
 		return true
 
 	default:
