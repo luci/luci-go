@@ -144,6 +144,10 @@ func (g *infoCounter) SignBytes(bytes []byte) (string, []byte, error) {
 	return keyName, signature, g.c.SignBytes.up(err)
 }
 
+func (g *infoCounter) Testable() info.Testable {
+	return g.gi.Testable()
+}
+
 // FilterGI installs a counter GlobalInfo filter in the context.
 func FilterGI(c context.Context) (context.Context, *InfoCounter) {
 	state := &InfoCounter{}

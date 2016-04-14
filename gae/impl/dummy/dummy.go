@@ -162,6 +162,7 @@ func (i) ServerSoftware() string                                                
 func (i) IsCapabilityDisabled(err error) bool                                      { panic(ni()) }
 func (i) IsOverQuota(err error) bool                                               { panic(ni()) }
 func (i) IsTimeoutError(err error) bool                                            { panic(ni()) }
+func (i) Testable() info.Testable                                                  { panic(ni()) }
 
 var dummyInfoInst = i{}
 

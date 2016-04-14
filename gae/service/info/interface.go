@@ -36,4 +36,14 @@ type Interface interface {
 	AccessToken(scopes ...string) (token string, expiry time.Time, err error)
 	PublicCertificates() ([]Certificate, error)
 	SignBytes(bytes []byte) (keyName string, signature []byte, err error)
+
+	// Testable returns this Interface's Testable interface. Testing will return
+	// nil if testing is not supported in this implementation.
+	Testable() Testable
+}
+
+// Testable is an additional set of functions for testing instrumentation.
+type Testable interface {
+	SetVersionID(string) context.Context
+	SetRequestID(string) context.Context
 }

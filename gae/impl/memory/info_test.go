@@ -25,4 +25,23 @@ func TestMustNamespace(t *testing.T) {
 			i.MustNamespace("invalid namespace name")
 		}, ShouldPanic)
 	})
+
+	Convey("Testable interface works", t, func() {
+		c := Use(context.Background())
+		c = useGID(c, func(mod *globalInfoData) {
+			mod.appid = "app-id"
+		})
+
+		// Default value.
+		So(info.Get(c).AppID(), ShouldEqual, "app-id")
+		So(info.Get(c).RequestID(), ShouldEqual, "test-request-id")
+
+		// Setting to "override" applies to initial context.
+		c = info.Get(c).Testable().SetRequestID("override")
+		So(info.Get(c).RequestID(), ShouldEqual, "override")
+
+		// Derive inner context, "override" applies.
+		c = info.Get(c).MustNamespace("valid_namespace_name")
+		So(info.Get(c).RequestID(), ShouldEqual, "override")
+	})
 }

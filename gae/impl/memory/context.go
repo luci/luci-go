@@ -122,8 +122,10 @@ func UseWithAppID(c context.Context, aid string) context.Context {
 	memctx := newMemContext(aid)
 	c = context.WithValue(c, memContextKey, memctx)
 	c = context.WithValue(c, memContextNoTxnKey, memctx)
-	c = context.WithValue(c, giContextKey, &globalInfoData{appid: aid})
-	return useMod(useMail(useUser(useTQ(useRDS(useMC(useGI(c, aid)))))))
+	c = useGID(c, func(mod *globalInfoData) {
+		mod.appid = aid
+	})
+	return useMod(useMail(useUser(useTQ(useRDS(useMC(useGI(c)))))))
 }
 
 func cur(c context.Context) (p *memContext) {

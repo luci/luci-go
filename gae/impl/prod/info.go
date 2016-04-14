@@ -111,6 +111,10 @@ func (g giImpl) VersionID() string {
 	return appengine.VersionID(g.aeCtx)
 }
 
+func (g giImpl) Testable() info.Testable {
+	return nil
+}
+
 type infoProbeCache struct {
 	namespace string
 	fqaid     string
