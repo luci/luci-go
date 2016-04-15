@@ -30,6 +30,7 @@ import (
 	"github.com/luci/luci-go/common/logging/memlogger"
 	"github.com/luci/luci-go/common/logging/teelogger"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/tsmon"
 
 	"github.com/luci/luci-go/client/tokenclient"
 	"github.com/luci/luci-go/common/api/tokenserver/v1"
@@ -92,7 +93,16 @@ func main() {
 func realMain() int {
 	opts := defaults()
 	opts.registerFlags(flag.CommandLine)
+
+	tsmonFlags := tsmon.NewFlags()
+	tsmonFlags.Target.TargetType = "task"
+	tsmonFlags.Target.TaskServiceName = "luci_machine_tokend"
+	tsmonFlags.Target.TaskJobName = "default"
+	tsmonFlags.Flush = "manual"
+	tsmonFlags.Register(flag.CommandLine)
+
 	flag.Parse()
+
 	if err := opts.check(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		flag.Usage()
@@ -121,32 +131,43 @@ func realMain() int {
 	log := &memlogger.MemLogger{}
 
 	// Write log to both memlogger and gologger.
-	ctx := teelogger.Use(context.Background(), log, gologger.Get())
+	root := teelogger.Use(context.Background(), log, gologger.Get())
 
-	ctx, cancel := context.WithTimeout(ctx, opts.Timeout)
+	// Apply tsmon config.
+	if err := tsmon.InitializeFromFlags(root, &tsmonFlags); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to initialize tsmon - %s\n", err)
+		return 1
+	}
+
+	ctx, cancel := context.WithTimeout(root, opts.Timeout)
 	catchInterrupt(cancel)
 
-	statusFile := StatusFile{
-		Path:    opts.StatusFile,
+	statusReport := StatusReport{
 		Version: Version,
 		Started: clock.Now(ctx),
 	}
 	defer func() {
 		// Dump the status of this run. It's picked up by monitoring. Ignore errors
-		// here, they are not important compared to 'run' errors.
-		statusFile.Finished = clock.Now(ctx)
-		if err := statusFile.Close(ctx, log); err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to save the status - %s\n", err)
+		// here, they are not important compared to 'run' errors. Use root context
+		// to be to flush errors to monitoring even if 'ctx' has expired.
+		statusReport.Finished = clock.Now(ctx)
+		if err := statusReport.SendMetrics(root); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to send tsmon metrics - %s\n", err)
+		}
+		if opts.StatusFile != "" {
+			if err := statusReport.SaveToFile(root, log, opts.StatusFile); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to save the status - %s\n", err)
+			}
 		}
 	}()
-	if err := run(ctx, clientParams, opts, &statusFile); err != nil {
+	if err := run(ctx, clientParams, opts, &statusReport); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
 	return 0
 }
 
-func run(ctx context.Context, clientParams tokenclient.ClientParameters, opts commandLine, status *StatusFile) error {
+func run(ctx context.Context, clientParams tokenclient.ClientParameters, opts commandLine, status *StatusReport) error {
 	// Read existing token file on disk to check whether we really need to update
 	// it. We update the token if it is missing, close to expiration, or when
 	// parameters change.
@@ -162,7 +183,15 @@ func run(ctx context.Context, clientParams tokenclient.ClientParameters, opts co
 	if err != nil {
 		logging.Errorf(ctx, "Failed to initialize the client - %s", err)
 		status.FailureError = err
-		status.FailureReason = FailureCantReadKey
+		status.UpdateOutcome = OutcomeCantReadKey
+		// Fill in some update reason to avoid "" as metric value.
+		if existingToken.NextUpdate == 0 {
+			status.UpdateReason = UpdateReasonNewToken
+		} else {
+			// We successfully updated the token in the past, but now the keys are
+			// suddenly unreadable, they probably changed.
+			status.UpdateReason = UpdateReasonParametersChange
+		}
 		return err
 	}
 
@@ -190,6 +219,8 @@ func run(ctx context.Context, clientParams tokenclient.ClientParameters, opts co
 		status.UpdateReason = UpdateReasonForceRefresh
 	default:
 		logging.Infof(ctx, "The token is valid, skipping the update")
+		status.UpdateReason = UpdateReasonTokenIsGood
+		status.UpdateOutcome = OutcomeTokenIsGood
 		return nil
 	}
 
@@ -203,7 +234,7 @@ func run(ctx context.Context, clientParams tokenclient.ClientParameters, opts co
 	if err != nil {
 		logging.Errorf(ctx, "Failed to generate a new token - %s", err)
 		status.FailureError = err
-		status.FailureReason = FailureReasonFromRPCError(err)
+		status.UpdateOutcome = OutcomeFromRPCError(err)
 		return err
 	}
 
@@ -216,7 +247,7 @@ func run(ctx context.Context, clientParams tokenclient.ClientParameters, opts co
 		err = fmt.Errorf("bad response, empty google_oauth2_access_token field")
 		logging.Errorf(ctx, "%s", err)
 		status.FailureError = err
-		status.FailureReason = FailureMalformedReponse
+		status.UpdateOutcome = OutcomeMalformedReponse
 		return err
 	}
 
@@ -251,14 +282,15 @@ func run(ctx context.Context, clientParams tokenclient.ClientParameters, opts co
 		logging.Errorf(ctx, "Failed to save token file - %s", err)
 		status.FailureError = err
 		if os.IsPermission(err) {
-			status.FailureReason = FailurePermissionError
+			status.UpdateOutcome = OutcomePermissionError
 		} else {
-			status.FailureReason = FailureUnknownSaveTokenError
+			status.UpdateOutcome = OutcomeUnknownSaveTokenError
 		}
 		return err
 	}
 
 	status.LastToken = &newTokenFile
+	status.UpdateOutcome = OutcomeUpdateSuccess
 	return nil
 }
 

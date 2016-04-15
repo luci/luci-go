@@ -21,5 +21,5 @@ srv.serve_forever()
 
 # Need to serve a parent of $CA_DIR, since $CA_DIR itself is recreated in
 # tests (and server continues to server delete directory).
-cd "$CA_DIR/.."
+cd "$WORKING_DIR"
 python -c "$SCRIPT"

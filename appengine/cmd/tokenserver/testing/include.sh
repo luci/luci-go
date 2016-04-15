@@ -16,6 +16,7 @@ WORKING_DIR=/tmp/token_server_test
 CA_DIR=$WORKING_DIR/ca
 CA_NAME="Fake CA: fake.ca"
 
+mkdir -p "$WORKING_DIR"
 
 DEVSERVER_PORT=8080
 DEVSERVER_ADMIN_PORT=8100

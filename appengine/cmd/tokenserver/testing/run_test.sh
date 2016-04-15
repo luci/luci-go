@@ -27,7 +27,8 @@ function call_tokend {
     -cert-pem "$CA_DIR/certs/$cert_name.pem" \
     -pkey-pem "$CA_DIR/private/$cert_name.pem" \
     -token-file "$WORKING_DIR/$cert_name.tok" \
-    -status-file "$WORKING_DIR/$cert_name.status"
+    -status-file "$WORKING_DIR/$cert_name.status" \
+    -ts-mon-endpoint "file://$WORKING_DIR/tsmon.txt"
 }
 
 function dump_status {
