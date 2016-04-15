@@ -14,19 +14,21 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/julienschmidt/httprouter"
+	"golang.org/x/net/context"
+	"google.golang.org/api/iam/v1"
+
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/gaetesting"
-	"google.golang.org/api/iam/v1"
+	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/proto/google"
+
+	"github.com/luci/luci-go/common/api/tokenserver"
+	"github.com/luci/luci-go/common/api/tokenserver/admin/v1"
 
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/model"
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/utils"
-	"github.com/luci/luci-go/common/api/tokenserver/v1"
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/proto/google"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -62,7 +64,7 @@ func TestCreateServiceAccount(t *testing.T) {
 		ctx, srv, closer := setupTest(router)
 		defer closer()
 
-		resp, err := srv.CreateServiceAccount(ctx, &tokenserver.CreateServiceAccountRequest{
+		resp, err := srv.CreateServiceAccount(ctx, &admin.CreateServiceAccountRequest{
 			Ca:   "Puppet CA: fake.ca",
 			Fqdn: "SOME-HOST.FAKE.DOMAIN",
 		})
@@ -79,7 +81,7 @@ func TestCreateServiceAccount(t *testing.T) {
 		So(createCalls, ShouldEqual, 1)
 
 		// Idempotent. Doesn't call IAM API again.
-		resp, err = srv.CreateServiceAccount(ctx, &tokenserver.CreateServiceAccountRequest{
+		resp, err = srv.CreateServiceAccount(ctx, &admin.CreateServiceAccountRequest{
 			Ca:   "Puppet CA: fake.ca",
 			Fqdn: "SOME-HOST.FAKE.DOMAIN",
 		})
@@ -114,7 +116,7 @@ func TestCreateServiceAccount(t *testing.T) {
 		ctx, srv, closer := setupTest(router)
 		defer closer()
 
-		_, err := srv.CreateServiceAccount(ctx, &tokenserver.CreateServiceAccountRequest{
+		_, err := srv.CreateServiceAccount(ctx, &admin.CreateServiceAccountRequest{
 			Ca:   "Puppet CA: fake.ca",
 			Fqdn: "SOME-HOST.FAKE.DOMAIN",
 		})
@@ -123,7 +125,7 @@ func TestCreateServiceAccount(t *testing.T) {
 
 	Convey("unknown CA", t, func(c C) {
 		ctx, srv, _ := setupTest(nil)
-		_, err := srv.CreateServiceAccount(ctx, &tokenserver.CreateServiceAccountRequest{
+		_, err := srv.CreateServiceAccount(ctx, &admin.CreateServiceAccountRequest{
 			Ca:   "Puppet CA: unknown",
 			Fqdn: "SOME-HOST.FAKE.DOMAIN",
 		})
@@ -132,7 +134,7 @@ func TestCreateServiceAccount(t *testing.T) {
 
 	Convey("bad FQDN", t, func(c C) {
 		ctx, srv, _ := setupTest(nil)
-		_, err := srv.CreateServiceAccount(ctx, &tokenserver.CreateServiceAccountRequest{
+		_, err := srv.CreateServiceAccount(ctx, &admin.CreateServiceAccountRequest{
 			Ca:   "Puppet CA: fake.ca",
 			Fqdn: "SOME-HOST",
 		})
@@ -141,7 +143,7 @@ func TestCreateServiceAccount(t *testing.T) {
 
 	Convey("not whitelisted domain", t, func(c C) {
 		ctx, srv, _ := setupTest(nil)
-		_, err := srv.CreateServiceAccount(ctx, &tokenserver.CreateServiceAccountRequest{
+		_, err := srv.CreateServiceAccount(ctx, &admin.CreateServiceAccountRequest{
 			Ca:   "Puppet CA: fake.ca",
 			Fqdn: "SOME-HOST.unknown.domain",
 		})
@@ -150,7 +152,7 @@ func TestCreateServiceAccount(t *testing.T) {
 
 	Convey("too short", t, func(c C) {
 		ctx, srv, _ := setupTest(nil)
-		_, err := srv.CreateServiceAccount(ctx, &tokenserver.CreateServiceAccountRequest{
+		_, err := srv.CreateServiceAccount(ctx, &admin.CreateServiceAccountRequest{
 			Ca:   "Puppet CA: fake.ca",
 			Fqdn: "123.fake.domain",
 		})
@@ -224,7 +226,7 @@ func TestMintAccessToken(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Use it to mint a token.
-		resp, err := srv.MintAccessToken(ctx, &tokenserver.MintAccessTokenRequest{
+		resp, err := srv.MintAccessToken(ctx, &admin.MintAccessTokenRequest{
 			Ca:     "Puppet CA: fake.ca",
 			Fqdn:   "account.fake.domain",
 			Scopes: []string{"scope2", "scope1"},
@@ -309,8 +311,8 @@ func setupTest(fakes http.Handler) (context.Context, *Server, func()) {
 	ctx, _ = testclock.UseTime(ctx, time.Date(2015, time.February, 3, 4, 5, 6, 7, time.UTC))
 
 	// Put fake config.
-	cfg := tokenserver.CertificateAuthorityConfig{
-		KnownDomains: []*tokenserver.DomainConfig{
+	cfg := admin.CertificateAuthorityConfig{
+		KnownDomains: []*admin.DomainConfig{
 			{
 				Domain:             []string{"fake.domain"},
 				CloudProjectName:   "cloud-project",

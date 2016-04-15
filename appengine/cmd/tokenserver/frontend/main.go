@@ -28,32 +28,34 @@ import (
 	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/prpc"
 
-	"github.com/luci/luci-go/appengine/cmd/tokenserver/services/certauthorities"
-	"github.com/luci/luci-go/appengine/cmd/tokenserver/services/serviceaccounts"
-	"github.com/luci/luci-go/appengine/cmd/tokenserver/services/tokenminter"
-	"github.com/luci/luci-go/common/api/tokenserver/v1"
+	"github.com/luci/luci-go/common/api/tokenserver/admin/v1"
+	"github.com/luci/luci-go/common/api/tokenserver/minter/v1"
+
+	"github.com/luci/luci-go/appengine/cmd/tokenserver/services/admin/certauthorities"
+	"github.com/luci/luci-go/appengine/cmd/tokenserver/services/admin/serviceaccounts"
+	"github.com/luci/luci-go/appengine/cmd/tokenserver/services/minter/tokenminter"
 )
 
 var (
-	// caServer implements tokenserver.CertificateAuthorities RPC interface.
+	// caServer implements admin.CertificateAuthorities RPC interface.
 	caServerWithoutAuth = &certauthorities.Server{}
 
 	// caServerWithAuth adds admin check to caServer.
-	caServerWithAuth = &tokenserver.DecoratedCertificateAuthorities{
+	caServerWithAuth = &admin.DecoratedCertificateAuthorities{
 		Service: caServerWithoutAuth,
-		Prelude: adminPrelude("tokenserver.CertificateAuthorities"),
+		Prelude: adminPrelude("admin.CertificateAuthorities"),
 	}
 
-	// serviceAccountsServer implements tokenserver.ServiceAccounts RPC interface.
+	// serviceAccountsServer implements admin.ServiceAccounts RPC interface.
 	serviceAccountsServerWithoutAuth = &serviceaccounts.Server{}
 
 	// serviceAccountsServerWithAuth adds admin check to serviceAccountsServer.
-	serviceAccountsServerWithAuth = &tokenserver.DecoratedServiceAccounts{
+	serviceAccountsServerWithAuth = &admin.DecoratedServiceAccounts{
 		Service: serviceAccountsServerWithoutAuth,
-		Prelude: adminPrelude("tokenserver.ServiceAccounts"),
+		Prelude: adminPrelude("admin.ServiceAccounts"),
 	}
 
-	// tokenMinterServer implements tokenserver.TokenMinter RPC interface.
+	// tokenMinterServer implements minter.TokenMinter RPC interface.
 	//
 	// It is main public API of the token server. It doesn't require any external
 	// authentication (it happens inside), and so it's installed as is.
@@ -101,9 +103,9 @@ func init() {
 
 	// Install all RPC servers.
 	var api prpc.Server
-	tokenserver.RegisterCertificateAuthoritiesServer(&api, caServerWithAuth)
-	tokenserver.RegisterServiceAccountsServer(&api, serviceAccountsServerWithAuth)
-	tokenserver.RegisterTokenMinterServer(&api, tokenMinterServerWithoutAuth) // auth inside
+	admin.RegisterCertificateAuthoritiesServer(&api, caServerWithAuth)
+	admin.RegisterServiceAccountsServer(&api, serviceAccountsServerWithAuth)
+	minter.RegisterTokenMinterServer(&api, tokenMinterServerWithoutAuth) // auth inside
 	discovery.Enable(&api)
 	api.InstallHandlers(router, base)
 
@@ -149,7 +151,7 @@ func fetchCRLCron(c context.Context, w http.ResponseWriter, r *http.Request, _ h
 		wg.Add(1)
 		go func(i int, cn string) {
 			defer wg.Done()
-			_, err := caServerWithoutAuth.FetchCRL(c, &tokenserver.FetchCRLRequest{Cn: cn})
+			_, err := caServerWithoutAuth.FetchCRL(c, &admin.FetchCRLRequest{Cn: cn})
 			if err != nil {
 				logging.Errorf(c, "FetchCRL(%q) failed - %s", cn, err)
 				errs[i] = err

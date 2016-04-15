@@ -10,7 +10,7 @@ import (
 	"github.com/luci/luci-go/common/prpc"
 	"github.com/luci/luci-go/common/retry"
 
-	"github.com/luci/luci-go/common/api/tokenserver/v1"
+	"github.com/luci/luci-go/common/api/tokenserver/minter/v1"
 )
 
 // ClientParameters is passed to NewClient.
@@ -54,7 +54,7 @@ func NewClient(params ClientParameters) (*Client, error) {
 		return nil, err
 	}
 	return &Client{
-		Client: tokenserver.NewTokenMinterPRPCClient(&prpc.Client{
+		Client: minter.NewTokenMinterPRPCClient(&prpc.Client{
 			C:    params.Client,
 			Host: params.Backend,
 			Options: &prpc.Options{

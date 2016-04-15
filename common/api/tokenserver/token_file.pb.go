@@ -46,13 +46,13 @@ type TokenFile struct {
 func (m *TokenFile) Reset()                    { *m = TokenFile{} }
 func (m *TokenFile) String() string            { return proto.CompactTextString(m) }
 func (*TokenFile) ProtoMessage()               {}
-func (*TokenFile) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
+func (*TokenFile) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
 
 func init() {
 	proto.RegisterType((*TokenFile)(nil), "tokenserver.TokenFile")
 }
 
-var fileDescriptor4 = []byte{
+var fileDescriptor1 = []byte{
 	// 221 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x74, 0x90, 0xcd, 0x4a, 0xc5, 0x30,
 	0x10, 0x85, 0xb9, 0xf7, 0x6a, 0xa5, 0xd3, 0x2e, 0x24, 0xa0, 0xc4, 0x8d, 0x94, 0xae, 0x5c, 0xb9,

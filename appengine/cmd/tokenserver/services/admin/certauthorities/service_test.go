@@ -15,9 +15,10 @@ import (
 	"github.com/luci/gae/service/urlfetch"
 	"github.com/luci/luci-go/appengine/gaetesting"
 
+	"github.com/luci/luci-go/common/api/tokenserver/admin/v1"
+
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/model"
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/utils"
-	"github.com/luci/luci-go/common/api/tokenserver/v1"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -36,7 +37,7 @@ func TestImportConfig(t *testing.T) {
 		srv := &Server{}
 
 		// Nothing there.
-		resp, err := srv.GetCAStatus(ctx, &tokenserver.GetCAStatusRequest{
+		resp, err := srv.GetCAStatus(ctx, &admin.GetCAStatusRequest{
 			Cn: "Puppet CA: fake.ca",
 		})
 		So(err, ShouldBeNil)
@@ -53,7 +54,7 @@ func TestImportConfig(t *testing.T) {
 		firstRev := rev.Revision
 
 		// Appears.
-		resp, err = srv.GetCAStatus(ctx, &tokenserver.GetCAStatusRequest{
+		resp, err = srv.GetCAStatus(ctx, &admin.GetCAStatusRequest{
 			Cn: "Puppet CA: fake.ca",
 		})
 		So(err, ShouldBeNil)
@@ -74,7 +75,7 @@ func TestImportConfig(t *testing.T) {
 		So(rev.Revision, ShouldNotEqual, firstRev)
 
 		// UpdateRev stays as it was, no significant changes made.
-		resp, err = srv.GetCAStatus(ctx, &tokenserver.GetCAStatusRequest{
+		resp, err = srv.GetCAStatus(ctx, &admin.GetCAStatusRequest{
 			Cn: "Puppet CA: fake.ca",
 		})
 		So(err, ShouldBeNil)
@@ -92,7 +93,7 @@ func TestImportConfig(t *testing.T) {
 		secondRev := rev.Revision
 
 		// Assert it is updated.
-		resp, err = srv.GetCAStatus(ctx, &tokenserver.GetCAStatusRequest{
+		resp, err = srv.GetCAStatus(ctx, &admin.GetCAStatusRequest{
 			Cn: "Puppet CA: fake.ca",
 		})
 		So(err, ShouldBeNil)
@@ -137,7 +138,7 @@ func TestImportConfig(t *testing.T) {
 		datastore.Get(ctx).Testable().CatchupIndexes()
 
 		// fake.ca is removed.
-		resp, err := srv.GetCAStatus(ctx, &tokenserver.GetCAStatusRequest{
+		resp, err := srv.GetCAStatus(ctx, &admin.GetCAStatusRequest{
 			Cn: "Puppet CA: fake.ca",
 		})
 		So(err, ShouldBeNil)
@@ -145,7 +146,7 @@ func TestImportConfig(t *testing.T) {
 		So(resp.RemovedRev, ShouldEqual, rev.Revision)
 
 		// another-fake.ca is added.
-		resp, err = srv.GetCAStatus(ctx, &tokenserver.GetCAStatusRequest{
+		resp, err = srv.GetCAStatus(ctx, &admin.GetCAStatusRequest{
 			Cn: "Puppet CA: another-fake.ca",
 		})
 		So(err, ShouldBeNil)
@@ -202,7 +203,7 @@ func TestFetchCRL(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Use it, must fail.
-		_, err = srv.FetchCRL(ctx, &tokenserver.FetchCRLRequest{
+		_, err = srv.FetchCRL(ctx, &admin.FetchCRLRequest{
 			Cn: "Puppet CA: fake.ca",
 		})
 		So(err, ShouldErrLike, "doesn't have CRL defined")
@@ -229,7 +230,7 @@ func TestFetchCRL(t *testing.T) {
 
 		// Import works.
 		ts.CRL = fakeCACrl
-		_, err = srv.FetchCRL(ctx, &tokenserver.FetchCRLRequest{
+		_, err = srv.FetchCRL(ctx, &admin.FetchCRLRequest{
 			Cn:    "Puppet CA: fake.ca",
 			Force: true,
 		})
@@ -245,13 +246,13 @@ func TestFetchCRL(t *testing.T) {
 		So(crl.RevokedCertsCount, ShouldEqual, 1) // fakeCACrl has only 1 SN
 
 		// And it works.
-		resp, err := srv.IsRevokedCert(ctx, &tokenserver.IsRevokedCertRequest{
+		resp, err := srv.IsRevokedCert(ctx, &admin.IsRevokedCertRequest{
 			Ca: "Puppet CA: fake.ca",
 			Sn: "0",
 		})
 		So(err, ShouldBeNil)
 		So(resp.Revoked, ShouldBeFalse)
-		resp, err = srv.IsRevokedCert(ctx, &tokenserver.IsRevokedCertRequest{
+		resp, err = srv.IsRevokedCert(ctx, &admin.IsRevokedCertRequest{
 			Ca: "Puppet CA: fake.ca",
 			Sn: "2",
 		})
@@ -281,7 +282,7 @@ func TestFetchCRL(t *testing.T) {
 		// Initial import works.
 		ts.CRL = fakeCACrl
 		ts.Etag = `"etag1"`
-		_, err = srv.FetchCRL(ctx, &tokenserver.FetchCRLRequest{
+		_, err = srv.FetchCRL(ctx, &admin.FetchCRLRequest{
 			Cn: "Puppet CA: fake.ca",
 		})
 		So(err, ShouldBeNil)
@@ -297,7 +298,7 @@ func TestFetchCRL(t *testing.T) {
 		So(crl.EntityVersion, ShouldEqual, 1)
 
 		// Refetch. No etag change.
-		_, err = srv.FetchCRL(ctx, &tokenserver.FetchCRLRequest{
+		_, err = srv.FetchCRL(ctx, &admin.FetchCRLRequest{
 			Cn: "Puppet CA: fake.ca",
 		})
 		So(err, ShouldBeNil)
@@ -310,7 +311,7 @@ func TestFetchCRL(t *testing.T) {
 
 		// Refetch. Etag changes.
 		ts.Etag = `"etag2"`
-		_, err = srv.FetchCRL(ctx, &tokenserver.FetchCRLRequest{
+		_, err = srv.FetchCRL(ctx, &admin.FetchCRLRequest{
 			Cn: "Puppet CA: fake.ca",
 		})
 		So(err, ShouldBeNil)
@@ -417,8 +418,8 @@ PkoYH9WC8tSbqNof3g==
 `
 
 // prepareCfg makes ImportConfigRequest with a bunch of config files.
-func prepareCfg(configFile string) *tokenserver.ImportConfigRequest {
-	return &tokenserver.ImportConfigRequest{
+func prepareCfg(configFile string) *admin.ImportConfigRequest {
+	return &admin.ImportConfigRequest{
 		DevConfig: map[string]string{
 			"tokenserver.cfg":           configFile,
 			"certs/fake.ca.crt":         fakeCACrt,

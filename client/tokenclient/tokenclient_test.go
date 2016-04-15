@@ -13,10 +13,12 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"github.com/luci/luci-go/common/api/tokenserver/v1"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/proto/google"
+
+	"github.com/luci/luci-go/common/api/tokenserver"
+	"github.com/luci/luci-go/common/api/tokenserver/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -26,8 +28,8 @@ func TestTokenClient(t *testing.T) {
 		ctx := context.Background()
 		ctx, _ = testclock.UseTime(ctx, time.Date(2015, time.February, 3, 4, 5, 6, 7, time.UTC))
 
-		expectedResp := &tokenserver.TokenResponse{
-			TokenType: &tokenserver.TokenResponse_GoogleOauth2AccessToken{
+		expectedResp := &minter.TokenResponse{
+			TokenType: &minter.TokenResponse_GoogleOauth2AccessToken{
 				GoogleOauth2AccessToken: &tokenserver.OAuth2AccessToken{
 					AccessToken: "blah",
 				},
@@ -36,13 +38,13 @@ func TestTokenClient(t *testing.T) {
 
 		c := Client{
 			Client: &fakeRPCClient{
-				Out: tokenserver.MintTokenResponse{TokenResponse: expectedResp},
+				Out: minter.MintTokenResponse{TokenResponse: expectedResp},
 			},
 			Signer: &fakeSigner{},
 		}
 
-		resp, err := c.MintToken(ctx, &tokenserver.TokenRequest{
-			TokenType:    tokenserver.TokenRequest_GOOGLE_OAUTH2_ACCESS_TOKEN,
+		resp, err := c.MintToken(ctx, &minter.TokenRequest{
+			TokenType:    minter.TokenRequest_GOOGLE_OAUTH2_ACCESS_TOKEN,
 			Oauth2Scopes: []string{"scope1", "scope2"},
 		})
 		So(err, ShouldBeNil)
@@ -51,13 +53,13 @@ func TestTokenClient(t *testing.T) {
 		rpc := c.Client.(*fakeRPCClient).In
 		So(rpc.Signature, ShouldResemble, []byte("fake signature"))
 
-		tokReq := tokenserver.TokenRequest{}
+		tokReq := minter.TokenRequest{}
 		So(proto.Unmarshal(rpc.SerializedTokenRequest, &tokReq), ShouldBeNil)
-		So(tokReq, ShouldResemble, tokenserver.TokenRequest{
+		So(tokReq, ShouldResemble, minter.TokenRequest{
 			Certificate:        []byte("fake certificate"),
-			SignatureAlgorithm: tokenserver.TokenRequest_SHA256_RSA_ALGO,
+			SignatureAlgorithm: minter.TokenRequest_SHA256_RSA_ALGO,
 			IssuedAt:           google.NewTimestamp(clock.Now(ctx)),
-			TokenType:          tokenserver.TokenRequest_GOOGLE_OAUTH2_ACCESS_TOKEN,
+			TokenType:          minter.TokenRequest_GOOGLE_OAUTH2_ACCESS_TOKEN,
 			Oauth2Scopes:       []string{"scope1", "scope2"},
 		})
 	})
@@ -67,7 +69,7 @@ func TestTokenClient(t *testing.T) {
 
 		c := Client{
 			Client: &fakeRPCClient{
-				Out: tokenserver.MintTokenResponse{
+				Out: minter.MintTokenResponse{
 					ErrorCode:    1234,
 					ErrorMessage: "blah",
 				},
@@ -75,21 +77,21 @@ func TestTokenClient(t *testing.T) {
 			Signer: &fakeSigner{},
 		}
 
-		_, err := c.MintToken(ctx, &tokenserver.TokenRequest{
-			TokenType:    tokenserver.TokenRequest_GOOGLE_OAUTH2_ACCESS_TOKEN,
+		_, err := c.MintToken(ctx, &minter.TokenRequest{
+			TokenType:    minter.TokenRequest_GOOGLE_OAUTH2_ACCESS_TOKEN,
 			Oauth2Scopes: []string{"scope1", "scope2"},
 		})
 		So(err.Error(), ShouldEqual, "token server error 1234 - blah")
 	})
 }
 
-// fakeRPCClient implements tokenserver.TokenMinterClient.
+// fakeRPCClient implements minter.TokenMinterClient.
 type fakeRPCClient struct {
-	In  tokenserver.MintTokenRequest
-	Out tokenserver.MintTokenResponse
+	In  minter.MintTokenRequest
+	Out minter.MintTokenResponse
 }
 
-func (f *fakeRPCClient) MintToken(ctx context.Context, in *tokenserver.MintTokenRequest, opts ...grpc.CallOption) (*tokenserver.MintTokenResponse, error) {
+func (f *fakeRPCClient) MintToken(ctx context.Context, in *minter.MintTokenRequest, opts ...grpc.CallOption) (*minter.MintTokenResponse, error) {
 	f.In = *in
 	return &f.Out, nil
 }

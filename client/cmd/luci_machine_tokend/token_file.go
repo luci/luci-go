@@ -13,7 +13,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/api/tokenserver/v1"
+	"github.com/luci/luci-go/common/api/tokenserver"
 	"github.com/luci/luci-go/common/logging"
 )
 

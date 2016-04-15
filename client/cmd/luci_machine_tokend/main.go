@@ -33,7 +33,8 @@ import (
 	"github.com/luci/luci-go/common/tsmon"
 
 	"github.com/luci/luci-go/client/tokenclient"
-	"github.com/luci/luci-go/common/api/tokenserver/v1"
+	"github.com/luci/luci-go/common/api/tokenserver"
+	"github.com/luci/luci-go/common/api/tokenserver/minter/v1"
 )
 
 // Version identifies the major revision of the tokend code.
@@ -226,8 +227,8 @@ func run(ctx context.Context, clientParams tokenclient.ClientParameters, opts co
 
 	// Grab a new token. MintToken does retries internally, until success or
 	// context deadline.
-	resp, err := client.MintToken(ctx, &tokenserver.TokenRequest{
-		TokenType:    tokenserver.TokenRequest_GOOGLE_OAUTH2_ACCESS_TOKEN,
+	resp, err := client.MintToken(ctx, &minter.TokenRequest{
+		TokenType:    minter.TokenRequest_GOOGLE_OAUTH2_ACCESS_TOKEN,
 		Oauth2Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
 	})
 	status.MintTokenDuration = clock.Now(ctx).Sub(now)
@@ -240,7 +241,7 @@ func run(ctx context.Context, clientParams tokenclient.ClientParameters, opts co
 
 	// Grab OAuth2 access token field.
 	var tok *tokenserver.OAuth2AccessToken
-	if tt, _ := resp.TokenType.(*tokenserver.TokenResponse_GoogleOauth2AccessToken); tt != nil {
+	if tt, _ := resp.TokenType.(*minter.TokenResponse_GoogleOauth2AccessToken); tt != nil {
 		tok = tt.GoogleOauth2AccessToken
 	}
 	if tok == nil {

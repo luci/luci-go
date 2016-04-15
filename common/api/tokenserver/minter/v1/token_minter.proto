@@ -4,12 +4,12 @@
 
 syntax = "proto3";
 
-package tokenserver;
+package minter;
 
 import "google/protobuf/timestamp.proto";
 
-import "service_account.proto";
-import "tokens.proto";
+import "github.com/luci/luci-go/common/api/tokenserver/service_account.proto";
+import "github.com/luci/luci-go/common/api/tokenserver/tokens.proto";
 
 // TokenMinter implements main API of the token server.
 service TokenMinter {
@@ -114,13 +114,13 @@ message MintTokenResponse {
 // TokenResponse contains a token requested by TokenRequest.
 message TokenResponse {
   // The service account associated with the returned token (if any).
-  ServiceAccount service_account = 1;
+  tokenserver.ServiceAccount service_account = 1;
 
   // The generated token.
   //
   // The exact field set here depends on a requested type of the token, see
   // TokenRequest.token_type.
   oneof token_type {
-    OAuth2AccessToken google_oauth2_access_token = 20;
+    tokenserver.OAuth2AccessToken google_oauth2_access_token = 20;
   }
 }

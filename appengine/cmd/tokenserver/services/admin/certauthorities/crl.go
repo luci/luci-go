@@ -19,8 +19,9 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 
+	"github.com/luci/luci-go/common/api/tokenserver/admin/v1"
+
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/model"
-	"github.com/luci/luci-go/common/api/tokenserver/v1"
 )
 
 // List of OAuth scopes to use for token sent to CRL endpoint.
@@ -32,7 +33,7 @@ var crlFetchScopes = []string{
 //
 // It knows how to use ETag headers to avoid fetching already known data.
 // May return transient and fatal errors.
-func fetchCRL(c context.Context, cfg *tokenserver.CertificateAuthorityConfig, knownETag string) (blob []byte, etag string, err error) {
+func fetchCRL(c context.Context, cfg *admin.CertificateAuthorityConfig, knownETag string) (blob []byte, etag string, err error) {
 	// Pick auth or non-auth transport.
 	var transport http.RoundTripper
 	if cfg.UseOauth {

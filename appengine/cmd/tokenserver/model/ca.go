@@ -10,7 +10,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"github.com/luci/luci-go/common/api/tokenserver/v1"
+	"github.com/luci/luci-go/common/api/tokenserver/admin/v1"
 )
 
 // CA defines one trusted Certificate Authority (imported from config).
@@ -45,7 +45,7 @@ type CA struct {
 	// ParsedConfig is parsed Config.
 	//
 	// Populated if CA is fetched through CertChecker.
-	ParsedConfig *tokenserver.CertificateAuthorityConfig `gae:"-"`
+	ParsedConfig *admin.CertificateAuthorityConfig `gae:"-"`
 
 	// ParsedCert is parsed Cert.
 	//
@@ -54,8 +54,8 @@ type CA struct {
 }
 
 // ParseConfig parses proto message stored in Config.
-func (c *CA) ParseConfig() (*tokenserver.CertificateAuthorityConfig, error) {
-	msg := &tokenserver.CertificateAuthorityConfig{}
+func (c *CA) ParseConfig() (*admin.CertificateAuthorityConfig, error) {
+	msg := &admin.CertificateAuthorityConfig{}
 	if err := proto.Unmarshal(c.Config, msg); err != nil {
 		return nil, err
 	}

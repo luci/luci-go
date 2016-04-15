@@ -7,8 +7,8 @@ package model
 import (
 	"time"
 
-	"github.com/luci/luci-go/common/api/tokenserver/v1"
-	google_protobuf "github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/api/tokenserver"
+	"github.com/luci/luci-go/common/proto/google"
 )
 
 // ServiceAccount is a single registered Cloud IAM service account.
@@ -40,6 +40,6 @@ func (s *ServiceAccount) GetProto() *tokenserver.ServiceAccount {
 		DisplayName:    s.DisplayName,
 		Oauth2ClientId: s.OAuth2ClientID,
 		Fqdn:           s.FQDN,
-		Registered:     google_protobuf.NewTimestamp(s.Registered.UTC()),
+		Registered:     google.NewTimestamp(s.Registered.UTC()),
 	}
 }

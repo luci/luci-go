@@ -18,7 +18,7 @@ import (
 	"github.com/luci/luci-go/common/tsmon/metric"
 
 	"github.com/luci/luci-go/client/tokenclient"
-	"github.com/luci/luci-go/common/api/tokenserver/v1"
+	"github.com/luci/luci-go/common/api/tokenserver"
 )
 
 // UpdateOutcome describes overall status of tokend token update process.

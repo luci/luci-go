@@ -33,11 +33,13 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
-	google_protobuf "github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/proto/google"
+
+	"github.com/luci/luci-go/common/api/tokenserver"
+	"github.com/luci/luci-go/common/api/tokenserver/admin/v1"
 
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/certchecker"
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/model"
-	"github.com/luci/luci-go/common/api/tokenserver/v1"
 )
 
 // accountIDRegexp is regular expression for allowed service account emails.
@@ -49,7 +51,7 @@ var (
 	jwtHeader      = &jws.Header{Algorithm: "RS256", Typ: "JWT"}
 )
 
-// Server implements tokenserver.ServiceAccountsServer RPC interface.
+// Server implements admin.ServiceAccountsServer RPC interface.
 //
 // It assumes authorization has happened already.
 type Server struct {
@@ -61,7 +63,7 @@ type Server struct {
 
 // CreateServiceAccount creates Google Cloud IAM service account associated
 // with given CN.
-func (s *Server) CreateServiceAccount(c context.Context, r *tokenserver.CreateServiceAccountRequest) (*tokenserver.CreateServiceAccountResponse, error) {
+func (s *Server) CreateServiceAccount(c context.Context, r *admin.CreateServiceAccountRequest) (*admin.CreateServiceAccountResponse, error) {
 	// Validate FQDN and load proper config.
 	accountID, domain, err := validateFQDN(r.Fqdn)
 	if err != nil {
@@ -86,7 +88,7 @@ func (s *Server) CreateServiceAccount(c context.Context, r *tokenserver.CreateSe
 	if err != nil {
 		return nil, err
 	}
-	return &tokenserver.CreateServiceAccountResponse{
+	return &admin.CreateServiceAccountResponse{
 		ServiceAccount: account,
 	}, nil
 }
@@ -95,7 +97,7 @@ func (s *Server) CreateServiceAccount(c context.Context, r *tokenserver.CreateSe
 // associated with the given host.
 //
 // It will register the service account first, if necessary.
-func (s *Server) MintAccessToken(c context.Context, r *tokenserver.MintAccessTokenRequest) (*tokenserver.MintAccessTokenResponse, error) {
+func (s *Server) MintAccessToken(c context.Context, r *admin.MintAccessTokenRequest) (*admin.MintAccessTokenResponse, error) {
 	cfg, err := s.getCAConfig(c, r.Ca)
 	if err != nil {
 		return nil, err
@@ -108,7 +110,7 @@ func (s *Server) MintAccessToken(c context.Context, r *tokenserver.MintAccessTok
 	if err != nil {
 		return nil, err
 	}
-	return &tokenserver.MintAccessTokenResponse{
+	return &admin.MintAccessTokenResponse{
 		ServiceAccount:    account,
 		Oauth2AccessToken: token,
 	}, nil
@@ -202,9 +204,9 @@ func (s *Server) ensureServiceAccount(c context.Context, params serviceAccountPa
 
 // MintAccessTokenParams is passed to DoMintAccessToken.
 type MintAccessTokenParams struct {
-	Config *tokenserver.CertificateAuthorityConfig // domain configs, scopes whitelist
-	FQDN   string                                  // FQDN of a host to mint a token for
-	Scopes []string                                // OAuth2 scopes to grant the token
+	Config *admin.CertificateAuthorityConfig // domain configs, scopes whitelist
+	FQDN   string                            // FQDN of a host to mint a token for
+	Scopes []string                          // OAuth2 scopes to grant the token
 }
 
 // Validate returns nil if the parameters are valid.
@@ -336,14 +338,14 @@ func (s *Server) fetchAccessToken(c context.Context, assertion string) (*tokense
 	return &tokenserver.OAuth2AccessToken{
 		AccessToken: tokenRes.AccessToken,
 		TokenType:   tokenRes.TokenType,
-		Expiry:      google_protobuf.NewTimestamp(expiry),
+		Expiry:      google.NewTimestamp(expiry),
 	}, nil
 }
 
 // getCAConfig returns CertificateAuthorityConfig for a CA.
 //
 // Returns grpc.Error on errors.
-func (s *Server) getCAConfig(c context.Context, ca string) (*tokenserver.CertificateAuthorityConfig, error) {
+func (s *Server) getCAConfig(c context.Context, ca string) (*admin.CertificateAuthorityConfig, error) {
 	var entity *model.CA
 
 	checker, err := certchecker.GetCertChecker(c, ca)
@@ -481,7 +483,7 @@ func validateFQDN(fqdn string) (host, domain string, err error) {
 }
 
 // validateOAuthScopes checks the scopes are in the whitelist.
-func validateOAuthScopes(cfg *tokenserver.DomainConfig, scopes []string) error {
+func validateOAuthScopes(cfg *admin.DomainConfig, scopes []string) error {
 	if len(scopes) == 0 {
 		return fmt.Errorf("at least one OAuth2 scope must be specified")
 	}
@@ -503,7 +505,7 @@ func validateOAuthScopes(cfg *tokenserver.DomainConfig, scopes []string) error {
 // domainConfig returns DomainConfig for a domain.
 //
 // Returns grpc.Error when there's no such config.
-func domainConfig(cfg *tokenserver.CertificateAuthorityConfig, domain string) (*tokenserver.DomainConfig, error) {
+func domainConfig(cfg *admin.CertificateAuthorityConfig, domain string) (*admin.DomainConfig, error) {
 	for _, domainCfg := range cfg.KnownDomains {
 		for _, domainInCfg := range domainCfg.Domain {
 			if domainInCfg == domain {

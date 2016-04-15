@@ -23,22 +23,23 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
+	"github.com/luci/luci-go/appengine/gaeconfig"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/config"
 	cfgmem "github.com/luci/luci-go/common/config/impl/memory"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
-	google_protobuf "github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/stringset"
+
+	"github.com/luci/luci-go/common/api/tokenserver/admin/v1"
 
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/certchecker"
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/model"
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/utils"
-	"github.com/luci/luci-go/appengine/gaeconfig"
-	"github.com/luci/luci-go/common/api/tokenserver/v1"
 )
 
-// Server implements tokenserver.CertificateAuthoritiesServer RPC interface.
+// Server implements admin.CertificateAuthoritiesServer RPC interface.
 //
 // It assumes authorization has happened already.
 type Server struct {
@@ -49,7 +50,7 @@ type Server struct {
 // Note that regularly configs are read in background each 5 min. ImportConfig
 // can be used to force config reread immediately. It will block until configs
 // are read.
-func (s *Server) ImportConfig(c context.Context, req *tokenserver.ImportConfigRequest) (*tokenserver.ImportConfigResponse, error) {
+func (s *Server) ImportConfig(c context.Context, req *admin.ImportConfigRequest) (*admin.ImportConfigResponse, error) {
 	cfg, err := fetchConfigFile(c, req, "tokenserver.cfg")
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "can't read config file - %s", err)
@@ -57,7 +58,7 @@ func (s *Server) ImportConfig(c context.Context, req *tokenserver.ImportConfigRe
 	logging.Infof(c, "Importing config at rev %s", cfg.Revision)
 
 	// Read list of CAs.
-	msg := tokenserver.TokenServerConfig{}
+	msg := admin.TokenServerConfig{}
 	if err = proto.UnmarshalText(cfg.Content, &msg); err != nil {
 		return nil, grpc.Errorf(codes.Internal, "can't parse config file - %s", err)
 	}
@@ -76,7 +77,7 @@ func (s *Server) ImportConfig(c context.Context, req *tokenserver.ImportConfigRe
 	me := errors.NewLazyMultiError(len(msg.GetCertificateAuthority()))
 	for i, ca := range msg.GetCertificateAuthority() {
 		wg.Add(1)
-		go func(i int, ca *tokenserver.CertificateAuthorityConfig) {
+		go func(i int, ca *admin.CertificateAuthorityConfig) {
 			defer wg.Done()
 			certFileCfg, err := fetchConfigFile(c, req, ca.CertPath)
 			if err != nil {
@@ -123,13 +124,13 @@ func (s *Server) ImportConfig(c context.Context, req *tokenserver.ImportConfigRe
 		return nil, grpc.Errorf(codes.Internal, "datastore error - %s", err)
 	}
 
-	return &tokenserver.ImportConfigResponse{
+	return &admin.ImportConfigResponse{
 		Revision: cfg.Revision,
 	}, nil
 }
 
 // FetchCRL makes the server fetch a CRL for some CA.
-func (s *Server) FetchCRL(c context.Context, r *tokenserver.FetchCRLRequest) (*tokenserver.FetchCRLResponse, error) {
+func (s *Server) FetchCRL(c context.Context, r *admin.FetchCRLRequest) (*admin.FetchCRLResponse, error) {
 	ds := datastore.Get(c)
 
 	// Grab a corresponding CA entity. It contains URL of CRL to fetch.
@@ -185,11 +186,11 @@ func (s *Server) FetchCRL(c context.Context, r *tokenserver.FetchCRLRequest) (*t
 		}
 	}
 
-	return &tokenserver.FetchCRLResponse{CrlStatus: crl.GetStatusProto()}, nil
+	return &admin.FetchCRLResponse{CrlStatus: crl.GetStatusProto()}, nil
 }
 
 // ListCAs returns a list of Common Names of registered CAs.
-func (s *Server) ListCAs(c context.Context, _ *google_protobuf.Empty) (*tokenserver.ListCAsResponse, error) {
+func (s *Server) ListCAs(c context.Context, _ *google.Empty) (*admin.ListCAsResponse, error) {
 	ds := datastore.Get(c)
 	keys := []*datastore.Key{}
 
@@ -198,7 +199,7 @@ func (s *Server) ListCAs(c context.Context, _ *google_protobuf.Empty) (*tokenser
 		return nil, grpc.Errorf(codes.Internal, "transient datastore error - %s", err)
 	}
 
-	resp := &tokenserver.ListCAsResponse{
+	resp := &admin.ListCAsResponse{
 		Cn: make([]string, len(keys)),
 	}
 	for i, key := range keys {
@@ -208,7 +209,7 @@ func (s *Server) ListCAs(c context.Context, _ *google_protobuf.Empty) (*tokenser
 }
 
 // GetCAStatus returns configuration of some CA defined in the config.
-func (s *Server) GetCAStatus(c context.Context, r *tokenserver.GetCAStatusRequest) (*tokenserver.GetCAStatusResponse, error) {
+func (s *Server) GetCAStatus(c context.Context, r *admin.GetCAStatusRequest) (*admin.GetCAStatusResponse, error) {
 	ds := datastore.Get(c)
 
 	// Entities to fetch.
@@ -229,7 +230,7 @@ func (s *Server) GetCAStatus(c context.Context, r *tokenserver.GetCAStatusReques
 	}, nil)
 	switch {
 	case err == datastore.ErrNoSuchEntity:
-		return &tokenserver.GetCAStatusResponse{}, nil
+		return &admin.GetCAStatusResponse{}, nil
 	case err != nil:
 		return nil, grpc.Errorf(codes.Internal, "datastore error - %s", err)
 	}
@@ -239,7 +240,7 @@ func (s *Server) GetCAStatus(c context.Context, r *tokenserver.GetCAStatusReques
 		return nil, grpc.Errorf(codes.Internal, "broken config in the datastore - %s", err)
 	}
 
-	return &tokenserver.GetCAStatusResponse{
+	return &admin.GetCAStatusResponse{
 		Config:     cfgMsg,
 		Cert:       utils.DumpPEM(ca.Cert, "CERTIFICATE"),
 		Removed:    ca.Removed,
@@ -252,7 +253,7 @@ func (s *Server) GetCAStatus(c context.Context, r *tokenserver.GetCAStatusReques
 }
 
 // IsRevokedCert says whether a certificate serial number is in the CRL.
-func (s *Server) IsRevokedCert(c context.Context, r *tokenserver.IsRevokedCertRequest) (*tokenserver.IsRevokedCertResponse, error) {
+func (s *Server) IsRevokedCert(c context.Context, r *admin.IsRevokedCertRequest) (*admin.IsRevokedCertResponse, error) {
 	sn := big.Int{}
 	if _, ok := sn.SetString(r.Sn, 0); !ok {
 		return nil, grpc.Errorf(codes.InvalidArgument, "can't parse 'sn'")
@@ -271,11 +272,11 @@ func (s *Server) IsRevokedCert(c context.Context, r *tokenserver.IsRevokedCertRe
 		return nil, grpc.Errorf(codes.Internal, "failed to check %q CRL - %s", r.Ca, err)
 	}
 
-	return &tokenserver.IsRevokedCertResponse{Revoked: revoked}, nil
+	return &admin.IsRevokedCertResponse{Revoked: revoked}, nil
 }
 
 // CheckCertificate says whether a certificate is valid or not.
-func (s *Server) CheckCertificate(c context.Context, r *tokenserver.CheckCertificateRequest) (*tokenserver.CheckCertificateResponse, error) {
+func (s *Server) CheckCertificate(c context.Context, r *admin.CheckCertificateRequest) (*admin.CheckCertificateResponse, error) {
 	// Deserialize the cert.
 	der, err := utils.ParsePEM(r.CertPem, "CERTIFICATE")
 	if err != nil {
@@ -291,7 +292,7 @@ func (s *Server) CheckCertificate(c context.Context, r *tokenserver.CheckCertifi
 	if err == nil {
 		_, err = checker.CheckCertificate(c, cert)
 		if err == nil {
-			return &tokenserver.CheckCertificateResponse{
+			return &admin.CheckCertificateResponse{
 				IsValid: true,
 			}, nil
 		}
@@ -300,7 +301,7 @@ func (s *Server) CheckCertificate(c context.Context, r *tokenserver.CheckCertifi
 	// Recognize error codes related to CA cert checking. Everything else is
 	// transient errors.
 	if details, ok := err.(certchecker.Error); ok {
-		return &tokenserver.CheckCertificateResponse{
+		return &admin.CheckCertificateResponse{
 			IsValid:       false,
 			InvalidReason: details.Error(),
 		}, nil
@@ -311,7 +312,7 @@ func (s *Server) CheckCertificate(c context.Context, r *tokenserver.CheckCertifi
 ////////////////////////////////////////////////////////////////////////////////
 
 // fetchConfigFile fetches a file from this services' config set.
-func fetchConfigFile(c context.Context, req *tokenserver.ImportConfigRequest, path string) (*config.Config, error) {
+func fetchConfigFile(c context.Context, req *admin.ImportConfigRequest, path string) (*config.Config, error) {
 	logging.Infof(c, "Reading %q", path)
 	c, _ = context.WithTimeout(c, 30*time.Second) // URL fetch deadline
 
@@ -339,7 +340,7 @@ func fetchConfigFile(c context.Context, req *tokenserver.ImportConfigRequest, pa
 }
 
 // importCA imports CA definition from the config (or updates an existing one).
-func (s *Server) importCA(c context.Context, ca *tokenserver.CertificateAuthorityConfig, certPem string, rev string) error {
+func (s *Server) importCA(c context.Context, ca *admin.CertificateAuthorityConfig, certPem string, rev string) error {
 	// Read CA certificate file, convert it to der.
 	certDer, err := utils.ParsePEM(certPem, "CERTIFICATE")
 	if err != nil {

@@ -18,16 +18,16 @@ import (
 	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/common/proto/google"
 
-	"github.com/luci/luci-go/common/api/tokenserver/v1"
+	"github.com/luci/luci-go/common/api/tokenserver/minter/v1"
 )
 
 // Client can make signed requests to the token server.
 type Client struct {
 	// Client is interface to use for raw RPC calls to the token server.
 	//
-	// Use tokenserver.NewTokenMinterClient (or NewTokenMinterPRPCClient) to
+	// Use minter.NewTokenMinterClient (or NewTokenMinterPRPCClient) to
 	// create it. Note that transport-level authentication is not needed.
-	Client tokenserver.TokenMinterClient
+	Client minter.TokenMinterClient
 
 	// Signer knows how to sign requests using some private key.
 	Signer Signer
@@ -51,8 +51,8 @@ type Signer interface {
 type RPCError struct {
 	error
 
-	GrpcCode  codes.Code                              // grpc-level status code
-	ErrorCode tokenserver.MintTokenResponse_ErrorCode // protocol-level status code
+	GrpcCode  codes.Code                         // grpc-level status code
+	ErrorCode minter.MintTokenResponse_ErrorCode // protocol-level status code
 }
 
 // IsTransient is needed to implement errors.Transient.
@@ -78,7 +78,7 @@ var _ errors.Transient = RPCError{}
 //   * Transient error on transient errors.
 //
 // You can sniff error for RPCError type to grab more error details.
-func (c *Client) MintToken(ctx context.Context, req *tokenserver.TokenRequest, opts ...grpc.CallOption) (*tokenserver.TokenResponse, error) {
+func (c *Client) MintToken(ctx context.Context, req *minter.TokenRequest, opts ...grpc.CallOption) (*minter.TokenResponse, error) {
 	// Fill in SignatureAlgorithm.
 	algo, err := c.Signer.Algo(ctx)
 	if err != nil {
@@ -86,7 +86,7 @@ func (c *Client) MintToken(ctx context.Context, req *tokenserver.TokenRequest, o
 	}
 	switch algo {
 	case x509.SHA256WithRSA:
-		req.SignatureAlgorithm = tokenserver.TokenRequest_SHA256_RSA_ALGO
+		req.SignatureAlgorithm = minter.TokenRequest_SHA256_RSA_ALGO
 	default:
 		return nil, fmt.Errorf("unsupported signing algorithm - %s", algo)
 	}
@@ -108,7 +108,7 @@ func (c *Client) MintToken(ctx context.Context, req *tokenserver.TokenRequest, o
 	}
 
 	// Make an RPC call (with retries done by pRPC client).
-	resp, err := c.Client.MintToken(ctx, &tokenserver.MintTokenRequest{
+	resp, err := c.Client.MintToken(ctx, &minter.MintTokenRequest{
 		SerializedTokenRequest: tokenRequest,
 		Signature:              signature,
 	}, opts...)
@@ -122,7 +122,7 @@ func (c *Client) MintToken(ctx context.Context, req *tokenserver.TokenRequest, o
 	}
 
 	// The response still may indicate a fatal error.
-	if resp.ErrorCode != tokenserver.MintTokenResponse_SUCCESS {
+	if resp.ErrorCode != minter.MintTokenResponse_SUCCESS {
 		details := resp.ErrorMessage
 		if details == "" {
 			details = "no detailed error message"

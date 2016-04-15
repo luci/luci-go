@@ -20,11 +20,12 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/lazyslot"
 	"github.com/luci/luci-go/common/logging"
-	google_protobuf "github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/proto/google"
+
+	"github.com/luci/luci-go/common/api/tokenserver/admin/v1"
 
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/model/shards"
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/utils"
-	"github.com/luci/luci-go/common/api/tokenserver/v1"
 )
 
 // CRLShardCount is a number of shards to use for storing CRL in the datastore.
@@ -70,10 +71,10 @@ type CRL struct {
 }
 
 // GetStatusProto returns populated CRLStatus proto message.
-func (crl *CRL) GetStatusProto() *tokenserver.CRLStatus {
-	return &tokenserver.CRLStatus{
-		LastUpdateTime:    google_protobuf.NewTimestamp(crl.LastUpdateTime),
-		LastFetchTime:     google_protobuf.NewTimestamp(crl.LastFetchTime),
+func (crl *CRL) GetStatusProto() *admin.CRLStatus {
+	return &admin.CRLStatus{
+		LastUpdateTime:    google.NewTimestamp(crl.LastUpdateTime),
+		LastFetchTime:     google.NewTimestamp(crl.LastFetchTime),
 		LastFetchEtag:     crl.LastFetchETag,
 		RevokedCertsCount: int64(crl.RevokedCertsCount),
 	}

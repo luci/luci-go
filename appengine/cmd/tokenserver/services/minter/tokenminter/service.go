@@ -20,13 +20,16 @@ import (
 
 	"github.com/luci/luci-go/common/clock"
 
+	"github.com/luci/luci-go/common/api/tokenserver"
+	"github.com/luci/luci-go/common/api/tokenserver/admin/v1"
+	"github.com/luci/luci-go/common/api/tokenserver/minter/v1"
+
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/certchecker"
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/model"
-	"github.com/luci/luci-go/appengine/cmd/tokenserver/services/serviceaccounts"
-	"github.com/luci/luci-go/common/api/tokenserver/v1"
+	"github.com/luci/luci-go/appengine/cmd/tokenserver/services/admin/serviceaccounts"
 )
 
-// Server implements tokenserver.TokenMinterServer RPC interface.
+// Server implements minter.TokenMinterServer RPC interface.
 //
 // Use NewServer to make one.
 type Server struct {
@@ -50,13 +53,13 @@ func NewServer(sa *serviceaccounts.Server) *Server {
 }
 
 // MintToken generates a new token for an authenticated caller.
-func (s *Server) MintToken(c context.Context, req *tokenserver.MintTokenRequest) (*tokenserver.MintTokenResponse, error) {
+func (s *Server) MintToken(c context.Context, req *minter.MintTokenRequest) (*minter.MintTokenResponse, error) {
 	// Parse serialized portion of the request and do minimal validation before
 	// checking the signature to reject obviously bad requests.
 	if len(req.SerializedTokenRequest) == 0 {
 		return nil, grpc.Errorf(codes.InvalidArgument, "empty request")
 	}
-	tokenReq := tokenserver.TokenRequest{}
+	tokenReq := minter.TokenRequest{}
 	if err := proto.Unmarshal(req.SerializedTokenRequest, &tokenReq); err != nil {
 		return nil, grpc.Errorf(codes.InvalidArgument, "failed to unmarshal TokenRequest - %s", err)
 	}
@@ -65,18 +68,18 @@ func (s *Server) MintToken(c context.Context, req *tokenserver.MintTokenRequest)
 	// remind us to add more branches if there are more supported token types in
 	// the future.
 	switch tokenReq.TokenType {
-	case tokenserver.TokenRequest_GOOGLE_OAUTH2_ACCESS_TOKEN:
+	case minter.TokenRequest_GOOGLE_OAUTH2_ACCESS_TOKEN:
 		// supported
 	default:
 		return errorResponse(
-			tokenserver.MintTokenResponse_UNSUPPORTED_TOKEN_TYPE,
+			minter.MintTokenResponse_UNSUPPORTED_TOKEN_TYPE,
 			"token_type %s is not supported", tokenReq.TokenType)
 	}
 
 	// Timestamp is required.
 	issuedAt := tokenReq.IssuedAt.Time()
 	if issuedAt.IsZero() {
-		return errorResponse(tokenserver.MintTokenResponse_BAD_TIMESTAMP, "issued_at is required")
+		return errorResponse(minter.MintTokenResponse_BAD_TIMESTAMP, "issued_at is required")
 	}
 
 	// It should be within acceptable range.
@@ -85,7 +88,7 @@ func (s *Server) MintToken(c context.Context, req *tokenserver.MintTokenRequest)
 	notAfter := now.Add(10 * time.Minute)
 	if issuedAt.Before(notBefore) || issuedAt.After(notAfter) {
 		return errorResponse(
-			tokenserver.MintTokenResponse_BAD_TIMESTAMP,
+			minter.MintTokenResponse_BAD_TIMESTAMP,
 			"issued_at timestamp is not within acceptable range, check your clock")
 	}
 
@@ -93,7 +96,7 @@ func (s *Server) MintToken(c context.Context, req *tokenserver.MintTokenRequest)
 	cert, err := x509.ParseCertificate(tokenReq.Certificate)
 	if err != nil {
 		return errorResponse(
-			tokenserver.MintTokenResponse_BAD_CERTIFICATE_FORMAT,
+			minter.MintTokenResponse_BAD_CERTIFICATE_FORMAT,
 			"failed to parse the certificate (expecting x509 cert DER)")
 	}
 
@@ -101,17 +104,17 @@ func (s *Server) MintToken(c context.Context, req *tokenserver.MintTokenRequest)
 	// as a reminder to add a new branch if new signature scheme is added.
 	var algo x509.SignatureAlgorithm
 	switch tokenReq.SignatureAlgorithm {
-	case tokenserver.TokenRequest_SHA256_RSA_ALGO:
+	case minter.TokenRequest_SHA256_RSA_ALGO:
 		algo = x509.SHA256WithRSA
 	default:
 		return errorResponse(
-			tokenserver.MintTokenResponse_UNSUPPORTED_SIGNATURE,
+			minter.MintTokenResponse_UNSUPPORTED_SIGNATURE,
 			"signature_algorithm %s is not supported", tokenReq.SignatureAlgorithm)
 	}
 	err = cert.CheckSignature(algo, req.SerializedTokenRequest, req.Signature)
 	if err != nil {
 		return errorResponse(
-			tokenserver.MintTokenResponse_BAD_SIGNATURE,
+			minter.MintTokenResponse_BAD_SIGNATURE,
 			"signature verification failed - %s", err)
 	}
 
@@ -127,7 +130,7 @@ func (s *Server) MintToken(c context.Context, req *tokenserver.MintTokenRequest)
 	// transient errors.
 	if err != nil {
 		if certchecker.IsCertInvalidError(err) {
-			return errorResponse(tokenserver.MintTokenResponse_UNTRUSTED_CERTIFICATE, "%s", err)
+			return errorResponse(minter.MintTokenResponse_UNTRUSTED_CERTIFICATE, "%s", err)
 		}
 		return nil, grpc.Errorf(codes.Internal, "failed to check the certificate - %s", err)
 	}
@@ -140,7 +143,7 @@ func (s *Server) MintToken(c context.Context, req *tokenserver.MintTokenRequest)
 		Request: &tokenReq,
 	}
 	switch tokenReq.TokenType {
-	case tokenserver.TokenRequest_GOOGLE_OAUTH2_ACCESS_TOKEN:
+	case minter.TokenRequest_GOOGLE_OAUTH2_ACCESS_TOKEN:
 		return s.mintGoogleOAuth2AccessToken(c, args)
 	default:
 		panic("impossible") // there's a check above
@@ -148,12 +151,12 @@ func (s *Server) MintToken(c context.Context, req *tokenserver.MintTokenRequest)
 }
 
 type mintTokenArgs struct {
-	Config  *tokenserver.CertificateAuthorityConfig
+	Config  *admin.CertificateAuthorityConfig
 	Cert    *x509.Certificate
-	Request *tokenserver.TokenRequest
+	Request *minter.TokenRequest
 }
 
-func (s *Server) mintGoogleOAuth2AccessToken(c context.Context, args mintTokenArgs) (*tokenserver.MintTokenResponse, error) {
+func (s *Server) mintGoogleOAuth2AccessToken(c context.Context, args mintTokenArgs) (*minter.MintTokenResponse, error) {
 	// Validate FQDN, scopes, check they are whitelisted (the whitelist is part of
 	// the config).
 	params := serviceaccounts.MintAccessTokenParams{
@@ -162,7 +165,7 @@ func (s *Server) mintGoogleOAuth2AccessToken(c context.Context, args mintTokenAr
 		Scopes: args.Request.Oauth2Scopes,
 	}
 	if err := params.Validate(); err != nil {
-		return errorResponse(tokenserver.MintTokenResponse_BAD_TOKEN_ARGUMENTS, "%s", err)
+		return errorResponse(minter.MintTokenResponse_BAD_TOKEN_ARGUMENTS, "%s", err)
 	}
 
 	// Grab the token. It returns grpc error already, but we need to convert it
@@ -171,10 +174,10 @@ func (s *Server) mintGoogleOAuth2AccessToken(c context.Context, args mintTokenAr
 	account, token, err := s.mintAccessToken(c, params)
 	switch {
 	case err == nil:
-		return &tokenserver.MintTokenResponse{
-			TokenResponse: &tokenserver.TokenResponse{
+		return &minter.MintTokenResponse{
+			TokenResponse: &minter.TokenResponse{
 				ServiceAccount: account,
-				TokenType: &tokenserver.TokenResponse_GoogleOauth2AccessToken{
+				TokenType: &minter.TokenResponse_GoogleOauth2AccessToken{
 					GoogleOauth2AccessToken: token,
 				},
 			},
@@ -182,12 +185,12 @@ func (s *Server) mintGoogleOAuth2AccessToken(c context.Context, args mintTokenAr
 	case grpc.Code(err) == codes.Internal:
 		return nil, err
 	default:
-		return errorResponse(tokenserver.MintTokenResponse_TOKEN_MINTING_ERROR, "%s", err)
+		return errorResponse(minter.MintTokenResponse_TOKEN_MINTING_ERROR, "%s", err)
 	}
 }
 
-func errorResponse(code tokenserver.MintTokenResponse_ErrorCode, msg string, args ...interface{}) (*tokenserver.MintTokenResponse, error) {
-	return &tokenserver.MintTokenResponse{
+func errorResponse(code minter.MintTokenResponse_ErrorCode, msg string, args ...interface{}) (*minter.MintTokenResponse, error) {
+	return &minter.MintTokenResponse{
 		ErrorCode:    code,
 		ErrorMessage: fmt.Sprintf(msg, args...),
 	}, nil

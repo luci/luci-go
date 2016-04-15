@@ -7,7 +7,7 @@ package tokenserver
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf1 "github.com/luci/luci-go/common/proto/google"
+import google_protobuf "github.com/luci/luci-go/common/proto/google"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -17,17 +17,17 @@ var _ = math.Inf
 // OAuth2AccessToken represent short lived OAuth2 access token that can be put
 // into Authorization header.
 type OAuth2AccessToken struct {
-	AccessToken string                      `protobuf:"bytes,1,opt,name=access_token,json=accessToken" json:"access_token,omitempty"`
-	TokenType   string                      `protobuf:"bytes,2,opt,name=token_type,json=tokenType" json:"token_type,omitempty"`
-	Expiry      *google_protobuf1.Timestamp `protobuf:"bytes,3,opt,name=expiry" json:"expiry,omitempty"`
+	AccessToken string                     `protobuf:"bytes,1,opt,name=access_token,json=accessToken" json:"access_token,omitempty"`
+	TokenType   string                     `protobuf:"bytes,2,opt,name=token_type,json=tokenType" json:"token_type,omitempty"`
+	Expiry      *google_protobuf.Timestamp `protobuf:"bytes,3,opt,name=expiry" json:"expiry,omitempty"`
 }
 
 func (m *OAuth2AccessToken) Reset()                    { *m = OAuth2AccessToken{} }
 func (m *OAuth2AccessToken) String() string            { return proto.CompactTextString(m) }
 func (*OAuth2AccessToken) ProtoMessage()               {}
-func (*OAuth2AccessToken) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{0} }
+func (*OAuth2AccessToken) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
-func (m *OAuth2AccessToken) GetExpiry() *google_protobuf1.Timestamp {
+func (m *OAuth2AccessToken) GetExpiry() *google_protobuf.Timestamp {
 	if m != nil {
 		return m.Expiry
 	}
@@ -38,7 +38,7 @@ func init() {
 	proto.RegisterType((*OAuth2AccessToken)(nil), "tokenserver.OAuth2AccessToken")
 }
 
-var fileDescriptor6 = []byte{
+var fileDescriptor2 = []byte{
 	// 169 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0xe2, 0x29, 0xc9, 0xcf, 0x4e,
 	0xcd, 0x2b, 0xd6, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0xe2, 0x86, 0xf0, 0x52, 0x8b, 0xca, 0x52,

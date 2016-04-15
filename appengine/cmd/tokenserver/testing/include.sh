@@ -185,6 +185,11 @@ function to_json_string {
 function call_rpc {
   echo "Calling $1..."
   rpc call -format json "localhost:$DEVSERVER_PORT" $1
+  if [ $? -ne 0 ]
+  then
+    echo "RPC call $1 failed!"
+    exit 1
+  fi
 }
 
 
@@ -207,7 +212,7 @@ EOL`
 
   local CA_CERT_JSON=`cat $CA_DIR/certs/ca.pem | to_json_string`
 
-  call_rpc "tokenserver.CertificateAuthorities.ImportConfig" <<EOL
+  call_rpc "admin.CertificateAuthorities.ImportConfig" <<EOL
   {
     "devConfig": {
       "tokenserver.cfg": $TOKEN_CONFIG_CFG_JSON,
@@ -220,7 +225,7 @@ EOL
 
 # fetch_crl imports current CRL into the token server.
 function fetch_crl {
-  call_rpc "tokenserver.CertificateAuthorities.FetchCRL" <<EOL
+  call_rpc "admin.CertificateAuthorities.FetchCRL" <<EOL
   {
     "cn": "$CA_NAME",
     "force": true

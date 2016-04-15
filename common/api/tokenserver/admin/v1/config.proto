@@ -4,7 +4,7 @@
 
 syntax = "proto3";
 
-package tokenserver;
+package admin;
 
 // TokenServerConfig is read from tokenserver.cfg in luci-config.
 message TokenServerConfig {
