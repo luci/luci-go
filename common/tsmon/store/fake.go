@@ -44,9 +44,6 @@ func (s *Fake) Incr(context.Context, types.Metric, time.Time, []interface{}, int
 	return nil
 }
 
-// ModifyMulti does nothing.
-func (s *Fake) ModifyMulti(c context.Context, mods []Modification) error { return nil }
-
 // GetAll returns the pre-set list of cells.
 func (s *Fake) GetAll(context.Context) []types.Cell { return s.Cells }
 

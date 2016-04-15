@@ -45,10 +45,6 @@ func (nilStore) Incr(ctx context.Context, m types.Metric, resetTime time.Time, f
 	return nil
 }
 
-func (nilStore) ModifyMulti(ctx context.Context, mods []Modification) error {
-	return nil
-}
-
 func (nilStore) GetAll(ctx context.Context) []types.Cell {
 	return nil
 }

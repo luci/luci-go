@@ -17,6 +17,7 @@ import (
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/monitor"
 	"github.com/luci/luci-go/common/tsmon/store"
+	"github.com/luci/luci-go/common/tsmon/store/storetest"
 	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
@@ -25,7 +26,7 @@ import (
 )
 
 func TestMiddleware(t *testing.T) {
-	metric := &store.FakeMetric{"m", "", []field.Field{}, types.CumulativeIntType}
+	metric := &storetest.FakeMetric{"m", "", []field.Field{}, types.CumulativeIntType}
 
 	f := func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		So(store.IsNilStore(tsmon.Store(c)), ShouldBeFalse)

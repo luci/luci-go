@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package store
+// Package storetest is imported exclusively by tests for Store implementations.
+package storetest
 
 import (
 	"bytes"
@@ -24,6 +25,25 @@ import (
 	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+// Store is a store under test.
+//
+// It is a copy of store.Store interface to break module dependency cycle.
+type Store interface {
+	Register(m types.Metric)
+	Unregister(m types.Metric)
+
+	DefaultTarget() types.Target
+	SetDefaultTarget(t types.Target)
+
+	Get(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}) (value interface{}, err error)
+	Set(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, value interface{}) error
+	Incr(c context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, delta interface{}) error
+
+	GetAll(c context.Context) []types.Cell
+
+	Reset(c context.Context, m types.Metric)
+}
 
 // TestOptions contains options for RunStoreImplementationTests.
 type TestOptions struct {

@@ -233,33 +233,6 @@ func (s *inMemoryStore) incr(h types.Metric, resetTime time.Time, fieldVals []in
 	return nil
 }
 
-func (s *inMemoryStore) ModifyMulti(ctx context.Context, mods []Modification) error {
-	contextTarget := target.Get(ctx)
-
-	for _, m := range mods {
-		resetTime := m.ResetTime
-		if resetTime.IsZero() {
-			resetTime = clock.Now(ctx)
-		}
-
-		t := m.Target
-		if t == nil {
-			t = contextTarget
-		}
-
-		if m.SetValue != nil {
-			if err := s.set(m.Metric, resetTime, m.FieldVals, t, m.SetValue); err != nil {
-				return err
-			}
-		} else if m.IncrDelta != nil {
-			if err := s.incr(m.Metric, resetTime, m.FieldVals, t, m.IncrDelta); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
 // GetAll efficiently returns all cells in the store.
 func (s *inMemoryStore) GetAll(ctx context.Context) []types.Cell {
 	s.dataLock.Lock()
