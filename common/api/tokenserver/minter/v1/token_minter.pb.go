@@ -9,10 +9,10 @@ It is generated from these files:
 	token_minter.proto
 
 It has these top-level messages:
-	MintTokenRequest
-	TokenRequest
-	MintTokenResponse
-	TokenResponse
+	MintMachineTokenRequest
+	MachineTokenRequest
+	MintMachineTokenResponse
+	MachineTokenResponse
 */
 package minter
 
@@ -41,69 +41,67 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion1
 
 // The kinds of tokens the token server can mint.
-type TokenRequest_TokenType int32
+type TokenType int32
 
 const (
-	TokenRequest_UNKNOWN_TYPE               TokenRequest_TokenType = 0
-	TokenRequest_GOOGLE_OAUTH2_ACCESS_TOKEN TokenRequest_TokenType = 1
+	TokenType_UNKNOWN_TYPE               TokenType = 0
+	TokenType_GOOGLE_OAUTH2_ACCESS_TOKEN TokenType = 1
 )
 
-var TokenRequest_TokenType_name = map[int32]string{
+var TokenType_name = map[int32]string{
 	0: "UNKNOWN_TYPE",
 	1: "GOOGLE_OAUTH2_ACCESS_TOKEN",
 }
-var TokenRequest_TokenType_value = map[string]int32{
+var TokenType_value = map[string]int32{
 	"UNKNOWN_TYPE":               0,
 	"GOOGLE_OAUTH2_ACCESS_TOKEN": 1,
 }
 
-func (x TokenRequest_TokenType) String() string {
-	return proto.EnumName(TokenRequest_TokenType_name, int32(x))
+func (x TokenType) String() string {
+	return proto.EnumName(TokenType_name, int32(x))
 }
-func (TokenRequest_TokenType) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{1, 0} }
+func (TokenType) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
 // Supported ways of singing the request.
-type TokenRequest_SignatureAlgorithm int32
+type SignatureAlgorithm int32
 
 const (
-	TokenRequest_UNKNOWN_ALGO    TokenRequest_SignatureAlgorithm = 0
-	TokenRequest_SHA256_RSA_ALGO TokenRequest_SignatureAlgorithm = 1
+	SignatureAlgorithm_UNKNOWN_ALGO    SignatureAlgorithm = 0
+	SignatureAlgorithm_SHA256_RSA_ALGO SignatureAlgorithm = 1
 )
 
-var TokenRequest_SignatureAlgorithm_name = map[int32]string{
+var SignatureAlgorithm_name = map[int32]string{
 	0: "UNKNOWN_ALGO",
 	1: "SHA256_RSA_ALGO",
 }
-var TokenRequest_SignatureAlgorithm_value = map[string]int32{
+var SignatureAlgorithm_value = map[string]int32{
 	"UNKNOWN_ALGO":    0,
 	"SHA256_RSA_ALGO": 1,
 }
 
-func (x TokenRequest_SignatureAlgorithm) String() string {
-	return proto.EnumName(TokenRequest_SignatureAlgorithm_name, int32(x))
+func (x SignatureAlgorithm) String() string {
+	return proto.EnumName(SignatureAlgorithm_name, int32(x))
 }
-func (TokenRequest_SignatureAlgorithm) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor0, []int{1, 1}
-}
+func (SignatureAlgorithm) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
 // Possible kinds of fatal errors.
 //
 // Non fatal errors are returned as grpc.Internal errors instead.
-type MintTokenResponse_ErrorCode int32
+type ErrorCode int32
 
 const (
-	MintTokenResponse_SUCCESS                MintTokenResponse_ErrorCode = 0
-	MintTokenResponse_UNSUPPORTED_SIGNATURE  MintTokenResponse_ErrorCode = 1
-	MintTokenResponse_UNSUPPORTED_TOKEN_TYPE MintTokenResponse_ErrorCode = 2
-	MintTokenResponse_BAD_TIMESTAMP          MintTokenResponse_ErrorCode = 3
-	MintTokenResponse_BAD_CERTIFICATE_FORMAT MintTokenResponse_ErrorCode = 4
-	MintTokenResponse_BAD_SIGNATURE          MintTokenResponse_ErrorCode = 5
-	MintTokenResponse_UNTRUSTED_CERTIFICATE  MintTokenResponse_ErrorCode = 6
-	MintTokenResponse_BAD_TOKEN_ARGUMENTS    MintTokenResponse_ErrorCode = 7
-	MintTokenResponse_TOKEN_MINTING_ERROR    MintTokenResponse_ErrorCode = 8
+	ErrorCode_SUCCESS                ErrorCode = 0
+	ErrorCode_UNSUPPORTED_SIGNATURE  ErrorCode = 1
+	ErrorCode_UNSUPPORTED_TOKEN_TYPE ErrorCode = 2
+	ErrorCode_BAD_TIMESTAMP          ErrorCode = 3
+	ErrorCode_BAD_CERTIFICATE_FORMAT ErrorCode = 4
+	ErrorCode_BAD_SIGNATURE          ErrorCode = 5
+	ErrorCode_UNTRUSTED_CERTIFICATE  ErrorCode = 6
+	ErrorCode_BAD_TOKEN_ARGUMENTS    ErrorCode = 7
+	ErrorCode_TOKEN_MINTING_ERROR    ErrorCode = 8
 )
 
-var MintTokenResponse_ErrorCode_name = map[int32]string{
+var ErrorCode_name = map[int32]string{
 	0: "SUCCESS",
 	1: "UNSUPPORTED_SIGNATURE",
 	2: "UNSUPPORTED_TOKEN_TYPE",
@@ -114,7 +112,7 @@ var MintTokenResponse_ErrorCode_name = map[int32]string{
 	7: "BAD_TOKEN_ARGUMENTS",
 	8: "TOKEN_MINTING_ERROR",
 }
-var MintTokenResponse_ErrorCode_value = map[string]int32{
+var ErrorCode_value = map[string]int32{
 	"SUCCESS":                0,
 	"UNSUPPORTED_SIGNATURE":  1,
 	"UNSUPPORTED_TOKEN_TYPE": 2,
@@ -126,34 +124,33 @@ var MintTokenResponse_ErrorCode_value = map[string]int32{
 	"TOKEN_MINTING_ERROR":    8,
 }
 
-func (x MintTokenResponse_ErrorCode) String() string {
-	return proto.EnumName(MintTokenResponse_ErrorCode_name, int32(x))
+func (x ErrorCode) String() string {
+	return proto.EnumName(ErrorCode_name, int32(x))
 }
-func (MintTokenResponse_ErrorCode) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor0, []int{2, 0}
-}
+func (ErrorCode) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
-// MintTokenRequest wraps a serialized and signed TokenRequest message.
-type MintTokenRequest struct {
-	// The protobuf-serialized TokenRequest message, signed by the private
-	// key that matches TokenRequest.certificate.
+// MintMachineTokenRequest wraps a serialized and signed MachineTokenRequest
+// message.
+type MintMachineTokenRequest struct {
+	// The protobuf-serialized MachineTokenRequest message, signed by the private
+	// key that matches MachineTokenRequest.certificate.
 	//
 	// We have to send it as a byte blob to avoid dealing with possible protobuf
 	// serialization inconsistencies when checking the signature.
 	SerializedTokenRequest []byte `protobuf:"bytes,1,opt,name=serialized_token_request,json=serializedTokenRequest,proto3" json:"serialized_token_request,omitempty"`
 	// The signature of 'serialized_token_parameters' blob.
 	//
-	// See TokenRequest.signature_algorithm for exact meaning.
+	// See MachineTokenRequest.signature_algorithm for exact meaning.
 	Signature []byte `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
 }
 
-func (m *MintTokenRequest) Reset()                    { *m = MintTokenRequest{} }
-func (m *MintTokenRequest) String() string            { return proto.CompactTextString(m) }
-func (*MintTokenRequest) ProtoMessage()               {}
-func (*MintTokenRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+func (m *MintMachineTokenRequest) Reset()                    { *m = MintMachineTokenRequest{} }
+func (m *MintMachineTokenRequest) String() string            { return proto.CompactTextString(m) }
+func (*MintMachineTokenRequest) ProtoMessage()               {}
+func (*MintMachineTokenRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
-// TokenRequest contains the actual request parameters.
-type TokenRequest struct {
+// MachineTokenRequest contains the actual request parameters.
+type MachineTokenRequest struct {
 	// The certificate that identifies a caller (as ASN1-serialized blob).
 	//
 	// It will be used to extract machine FQDN (it's CN of the cert) and CA name
@@ -161,14 +158,14 @@ type TokenRequest struct {
 	Certificate []byte `protobuf:"bytes,1,opt,name=certificate,proto3" json:"certificate,omitempty"`
 	// The signature algorithm used to sign this request.
 	//
-	// Defines what's in MintTokenRequest.signature field.
-	SignatureAlgorithm TokenRequest_SignatureAlgorithm `protobuf:"varint,2,opt,name=signature_algorithm,json=signatureAlgorithm,enum=minter.TokenRequest_SignatureAlgorithm" json:"signature_algorithm,omitempty"`
+	// Defines what's in MintMachineTokenRequest.signature field.
+	SignatureAlgorithm SignatureAlgorithm `protobuf:"varint,2,opt,name=signature_algorithm,json=signatureAlgorithm,enum=minter.SignatureAlgorithm" json:"signature_algorithm,omitempty"`
 	// Timestamp when this request was created, by the issuer clock.
 	IssuedAt *google_protobuf.Timestamp `protobuf:"bytes,3,opt,name=issued_at,json=issuedAt" json:"issued_at,omitempty"`
 	// The token type being requested.
 	//
 	// Defines what fields of the response are set.
-	TokenType TokenRequest_TokenType `protobuf:"varint,4,opt,name=token_type,json=tokenType,enum=minter.TokenRequest_TokenType" json:"token_type,omitempty"`
+	TokenType TokenType `protobuf:"varint,4,opt,name=token_type,json=tokenType,enum=minter.TokenType" json:"token_type,omitempty"`
 	// The list of API scopes to grant to the token.
 	//
 	// Must not be empty. It is also validated against a whitelist specified in
@@ -176,117 +173,121 @@ type TokenRequest struct {
 	Oauth2Scopes []string `protobuf:"bytes,5,rep,name=oauth2_scopes,json=oauth2Scopes" json:"oauth2_scopes,omitempty"`
 }
 
-func (m *TokenRequest) Reset()                    { *m = TokenRequest{} }
-func (m *TokenRequest) String() string            { return proto.CompactTextString(m) }
-func (*TokenRequest) ProtoMessage()               {}
-func (*TokenRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+func (m *MachineTokenRequest) Reset()                    { *m = MachineTokenRequest{} }
+func (m *MachineTokenRequest) String() string            { return proto.CompactTextString(m) }
+func (*MachineTokenRequest) ProtoMessage()               {}
+func (*MachineTokenRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
-func (m *TokenRequest) GetIssuedAt() *google_protobuf.Timestamp {
+func (m *MachineTokenRequest) GetIssuedAt() *google_protobuf.Timestamp {
 	if m != nil {
 		return m.IssuedAt
 	}
 	return nil
 }
 
-// MintTokenResponse is returned by 'MintToken' if server processed the request.
+// MintMachineTokenResponse is returned by 'MintMachineToken' if the server
+// processed the request.
 //
 // It's returned even if server refuses to mint a token. It contains the error
 // details in that case.
-type MintTokenResponse struct {
-	ErrorCode MintTokenResponse_ErrorCode `protobuf:"varint,1,opt,name=error_code,json=errorCode,enum=minter.MintTokenResponse_ErrorCode" json:"error_code,omitempty"`
+type MintMachineTokenResponse struct {
+	// Possible kinds of fatal errors.
+	//
+	// Non fatal errors are returned as grpc.Internal errors instead.
+	ErrorCode ErrorCode `protobuf:"varint,1,opt,name=error_code,json=errorCode,enum=minter.ErrorCode" json:"error_code,omitempty"`
 	// Optional detailed error message.
 	ErrorMessage string `protobuf:"bytes,2,opt,name=error_message,json=errorMessage" json:"error_message,omitempty"`
-	// On success (NO_ERROR error code) contains the produced token.
-	TokenResponse *TokenResponse `protobuf:"bytes,3,opt,name=token_response,json=tokenResponse" json:"token_response,omitempty"`
+	// On success (SUCCESS error code) contains the produced token.
+	TokenResponse *MachineTokenResponse `protobuf:"bytes,3,opt,name=token_response,json=tokenResponse" json:"token_response,omitempty"`
 }
 
-func (m *MintTokenResponse) Reset()                    { *m = MintTokenResponse{} }
-func (m *MintTokenResponse) String() string            { return proto.CompactTextString(m) }
-func (*MintTokenResponse) ProtoMessage()               {}
-func (*MintTokenResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+func (m *MintMachineTokenResponse) Reset()                    { *m = MintMachineTokenResponse{} }
+func (m *MintMachineTokenResponse) String() string            { return proto.CompactTextString(m) }
+func (*MintMachineTokenResponse) ProtoMessage()               {}
+func (*MintMachineTokenResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
-func (m *MintTokenResponse) GetTokenResponse() *TokenResponse {
+func (m *MintMachineTokenResponse) GetTokenResponse() *MachineTokenResponse {
 	if m != nil {
 		return m.TokenResponse
 	}
 	return nil
 }
 
-// TokenResponse contains a token requested by TokenRequest.
-type TokenResponse struct {
+// MachineTokenResponse contains a token requested by MachineTokenRequest.
+type MachineTokenResponse struct {
 	// The service account associated with the returned token (if any).
 	ServiceAccount *tokenserver.ServiceAccount `protobuf:"bytes,1,opt,name=service_account,json=serviceAccount" json:"service_account,omitempty"`
 	// The generated token.
 	//
 	// The exact field set here depends on a requested type of the token, see
-	// TokenRequest.token_type.
+	// MachineTokenRequest.token_type.
 	//
 	// Types that are valid to be assigned to TokenType:
-	//	*TokenResponse_GoogleOauth2AccessToken
-	TokenType isTokenResponse_TokenType `protobuf_oneof:"token_type"`
+	//	*MachineTokenResponse_GoogleOauth2AccessToken
+	TokenType isMachineTokenResponse_TokenType `protobuf_oneof:"token_type"`
 }
 
-func (m *TokenResponse) Reset()                    { *m = TokenResponse{} }
-func (m *TokenResponse) String() string            { return proto.CompactTextString(m) }
-func (*TokenResponse) ProtoMessage()               {}
-func (*TokenResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+func (m *MachineTokenResponse) Reset()                    { *m = MachineTokenResponse{} }
+func (m *MachineTokenResponse) String() string            { return proto.CompactTextString(m) }
+func (*MachineTokenResponse) ProtoMessage()               {}
+func (*MachineTokenResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
 
-type isTokenResponse_TokenType interface {
-	isTokenResponse_TokenType()
+type isMachineTokenResponse_TokenType interface {
+	isMachineTokenResponse_TokenType()
 }
 
-type TokenResponse_GoogleOauth2AccessToken struct {
+type MachineTokenResponse_GoogleOauth2AccessToken struct {
 	GoogleOauth2AccessToken *tokenserver1.OAuth2AccessToken `protobuf:"bytes,20,opt,name=google_oauth2_access_token,json=googleOauth2AccessToken,oneof"`
 }
 
-func (*TokenResponse_GoogleOauth2AccessToken) isTokenResponse_TokenType() {}
+func (*MachineTokenResponse_GoogleOauth2AccessToken) isMachineTokenResponse_TokenType() {}
 
-func (m *TokenResponse) GetTokenType() isTokenResponse_TokenType {
+func (m *MachineTokenResponse) GetTokenType() isMachineTokenResponse_TokenType {
 	if m != nil {
 		return m.TokenType
 	}
 	return nil
 }
 
-func (m *TokenResponse) GetServiceAccount() *tokenserver.ServiceAccount {
+func (m *MachineTokenResponse) GetServiceAccount() *tokenserver.ServiceAccount {
 	if m != nil {
 		return m.ServiceAccount
 	}
 	return nil
 }
 
-func (m *TokenResponse) GetGoogleOauth2AccessToken() *tokenserver1.OAuth2AccessToken {
-	if x, ok := m.GetTokenType().(*TokenResponse_GoogleOauth2AccessToken); ok {
+func (m *MachineTokenResponse) GetGoogleOauth2AccessToken() *tokenserver1.OAuth2AccessToken {
+	if x, ok := m.GetTokenType().(*MachineTokenResponse_GoogleOauth2AccessToken); ok {
 		return x.GoogleOauth2AccessToken
 	}
 	return nil
 }
 
 // XXX_OneofFuncs is for the internal use of the proto package.
-func (*TokenResponse) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _TokenResponse_OneofMarshaler, _TokenResponse_OneofUnmarshaler, _TokenResponse_OneofSizer, []interface{}{
-		(*TokenResponse_GoogleOauth2AccessToken)(nil),
+func (*MachineTokenResponse) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _MachineTokenResponse_OneofMarshaler, _MachineTokenResponse_OneofUnmarshaler, _MachineTokenResponse_OneofSizer, []interface{}{
+		(*MachineTokenResponse_GoogleOauth2AccessToken)(nil),
 	}
 }
 
-func _TokenResponse_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*TokenResponse)
+func _MachineTokenResponse_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*MachineTokenResponse)
 	// token_type
 	switch x := m.TokenType.(type) {
-	case *TokenResponse_GoogleOauth2AccessToken:
+	case *MachineTokenResponse_GoogleOauth2AccessToken:
 		b.EncodeVarint(20<<3 | proto.WireBytes)
 		if err := b.EncodeMessage(x.GoogleOauth2AccessToken); err != nil {
 			return err
 		}
 	case nil:
 	default:
-		return fmt.Errorf("TokenResponse.TokenType has unexpected type %T", x)
+		return fmt.Errorf("MachineTokenResponse.TokenType has unexpected type %T", x)
 	}
 	return nil
 }
 
-func _TokenResponse_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*TokenResponse)
+func _MachineTokenResponse_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*MachineTokenResponse)
 	switch tag {
 	case 20: // token_type.google_oauth2_access_token
 		if wire != proto.WireBytes {
@@ -294,18 +295,18 @@ func _TokenResponse_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.
 		}
 		msg := new(tokenserver1.OAuth2AccessToken)
 		err := b.DecodeMessage(msg)
-		m.TokenType = &TokenResponse_GoogleOauth2AccessToken{msg}
+		m.TokenType = &MachineTokenResponse_GoogleOauth2AccessToken{msg}
 		return true, err
 	default:
 		return false, nil
 	}
 }
 
-func _TokenResponse_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*TokenResponse)
+func _MachineTokenResponse_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*MachineTokenResponse)
 	// token_type
 	switch x := m.TokenType.(type) {
-	case *TokenResponse_GoogleOauth2AccessToken:
+	case *MachineTokenResponse_GoogleOauth2AccessToken:
 		s := proto.Size(x.GoogleOauth2AccessToken)
 		n += proto.SizeVarint(20<<3 | proto.WireBytes)
 		n += proto.SizeVarint(uint64(s))
@@ -318,13 +319,13 @@ func _TokenResponse_OneofSizer(msg proto.Message) (n int) {
 }
 
 func init() {
-	proto.RegisterType((*MintTokenRequest)(nil), "minter.MintTokenRequest")
-	proto.RegisterType((*TokenRequest)(nil), "minter.TokenRequest")
-	proto.RegisterType((*MintTokenResponse)(nil), "minter.MintTokenResponse")
-	proto.RegisterType((*TokenResponse)(nil), "minter.TokenResponse")
-	proto.RegisterEnum("minter.TokenRequest_TokenType", TokenRequest_TokenType_name, TokenRequest_TokenType_value)
-	proto.RegisterEnum("minter.TokenRequest_SignatureAlgorithm", TokenRequest_SignatureAlgorithm_name, TokenRequest_SignatureAlgorithm_value)
-	proto.RegisterEnum("minter.MintTokenResponse_ErrorCode", MintTokenResponse_ErrorCode_name, MintTokenResponse_ErrorCode_value)
+	proto.RegisterType((*MintMachineTokenRequest)(nil), "minter.MintMachineTokenRequest")
+	proto.RegisterType((*MachineTokenRequest)(nil), "minter.MachineTokenRequest")
+	proto.RegisterType((*MintMachineTokenResponse)(nil), "minter.MintMachineTokenResponse")
+	proto.RegisterType((*MachineTokenResponse)(nil), "minter.MachineTokenResponse")
+	proto.RegisterEnum("minter.TokenType", TokenType_name, TokenType_value)
+	proto.RegisterEnum("minter.SignatureAlgorithm", SignatureAlgorithm_name, SignatureAlgorithm_value)
+	proto.RegisterEnum("minter.ErrorCode", ErrorCode_name, ErrorCode_value)
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -338,19 +339,19 @@ const _ = grpc.SupportPackageIsVersion1
 // Client API for TokenMinter service
 
 type TokenMinterClient interface {
-	// MintToken generates a new token for an authenticated caller.
+	// MintMachineToken generates a new token for an authenticated machine.
 	//
 	// It checks that provided certificate was signed by some trusted CA, and it
 	// is still valid (non-expired and hasn't been revoked). It then checks that
 	// the request was signed by the corresponding private key. Finally it checks
 	// that the caller is authorized to generate requested kind of token.
 	//
-	// If everything checks out, it generates and returns a new token.
+	// If everything checks out, it generates and returns a new machine token.
 	//
 	// On fatal error it returns detailed error response via same
-	// MintTokenResponse. On transient errors it returns generic grpc.Internal
-	// error.
-	MintToken(ctx context.Context, in *MintTokenRequest, opts ...grpc.CallOption) (*MintTokenResponse, error)
+	// MintMachineTokenResponse. On transient errors it returns generic
+	// grpc.Internal error.
+	MintMachineToken(ctx context.Context, in *MintMachineTokenRequest, opts ...grpc.CallOption) (*MintMachineTokenResponse, error)
 }
 type tokenMinterPRPCClient struct {
 	client *prpccommon.Client
@@ -360,9 +361,9 @@ func NewTokenMinterPRPCClient(client *prpccommon.Client) TokenMinterClient {
 	return &tokenMinterPRPCClient{client}
 }
 
-func (c *tokenMinterPRPCClient) MintToken(ctx context.Context, in *MintTokenRequest, opts ...grpc.CallOption) (*MintTokenResponse, error) {
-	out := new(MintTokenResponse)
-	err := c.client.Call(ctx, "minter.TokenMinter", "MintToken", in, out, opts...)
+func (c *tokenMinterPRPCClient) MintMachineToken(ctx context.Context, in *MintMachineTokenRequest, opts ...grpc.CallOption) (*MintMachineTokenResponse, error) {
+	out := new(MintMachineTokenResponse)
+	err := c.client.Call(ctx, "minter.TokenMinter", "MintMachineToken", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -377,9 +378,9 @@ func NewTokenMinterClient(cc *grpc.ClientConn) TokenMinterClient {
 	return &tokenMinterClient{cc}
 }
 
-func (c *tokenMinterClient) MintToken(ctx context.Context, in *MintTokenRequest, opts ...grpc.CallOption) (*MintTokenResponse, error) {
-	out := new(MintTokenResponse)
-	err := grpc.Invoke(ctx, "/minter.TokenMinter/MintToken", in, out, c.cc, opts...)
+func (c *tokenMinterClient) MintMachineToken(ctx context.Context, in *MintMachineTokenRequest, opts ...grpc.CallOption) (*MintMachineTokenResponse, error) {
+	out := new(MintMachineTokenResponse)
+	err := grpc.Invoke(ctx, "/minter.TokenMinter/MintMachineToken", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -389,31 +390,31 @@ func (c *tokenMinterClient) MintToken(ctx context.Context, in *MintTokenRequest,
 // Server API for TokenMinter service
 
 type TokenMinterServer interface {
-	// MintToken generates a new token for an authenticated caller.
+	// MintMachineToken generates a new token for an authenticated machine.
 	//
 	// It checks that provided certificate was signed by some trusted CA, and it
 	// is still valid (non-expired and hasn't been revoked). It then checks that
 	// the request was signed by the corresponding private key. Finally it checks
 	// that the caller is authorized to generate requested kind of token.
 	//
-	// If everything checks out, it generates and returns a new token.
+	// If everything checks out, it generates and returns a new machine token.
 	//
 	// On fatal error it returns detailed error response via same
-	// MintTokenResponse. On transient errors it returns generic grpc.Internal
-	// error.
-	MintToken(context.Context, *MintTokenRequest) (*MintTokenResponse, error)
+	// MintMachineTokenResponse. On transient errors it returns generic
+	// grpc.Internal error.
+	MintMachineToken(context.Context, *MintMachineTokenRequest) (*MintMachineTokenResponse, error)
 }
 
 func RegisterTokenMinterServer(s prpc.Registrar, srv TokenMinterServer) {
 	s.RegisterService(&_TokenMinter_serviceDesc, srv)
 }
 
-func _TokenMinter_MintToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(MintTokenRequest)
+func _TokenMinter_MintMachineToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(MintMachineTokenRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(TokenMinterServer).MintToken(ctx, in)
+	out, err := srv.(TokenMinterServer).MintMachineToken(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -425,59 +426,59 @@ var _TokenMinter_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*TokenMinterServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "MintToken",
-			Handler:    _TokenMinter_MintToken_Handler,
+			MethodName: "MintMachineToken",
+			Handler:    _TokenMinter_MintMachineToken_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
 }
 
 var fileDescriptor0 = []byte{
-	// 733 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x94, 0x54, 0xcb, 0x4e, 0xf3, 0x46,
-	0x14, 0x26, 0x84, 0x9b, 0x4f, 0x2e, 0x98, 0xa1, 0x80, 0x49, 0x2b, 0x8a, 0xc2, 0xa2, 0x6c, 0xea,
-	0x48, 0xae, 0x7a, 0x91, 0x28, 0x52, 0x87, 0x60, 0x42, 0x04, 0xb6, 0xa3, 0xb1, 0xad, 0xb6, 0x8b,
-	0xca, 0x32, 0x66, 0x08, 0x6e, 0x93, 0x38, 0xb5, 0xc7, 0x95, 0xda, 0x57, 0xe9, 0xb2, 0x6f, 0xd2,
-	0x07, 0xe9, 0xb3, 0x74, 0x3c, 0x13, 0x07, 0x07, 0xf8, 0x17, 0xff, 0x26, 0x99, 0xf9, 0xce, 0x77,
-	0xbe, 0x39, 0x57, 0x03, 0x62, 0xc9, 0x6f, 0x74, 0x16, 0x4c, 0xe3, 0x19, 0xa3, 0xa9, 0x3e, 0x4f,
-	0x13, 0x96, 0xa0, 0x2d, 0x79, 0xeb, 0x7c, 0x3e, 0x4e, 0x92, 0xf1, 0x84, 0xf6, 0x04, 0xfa, 0x90,
-	0x3f, 0xf5, 0x58, 0x3c, 0xa5, 0x19, 0x0b, 0xa7, 0x73, 0x49, 0xec, 0x5c, 0x8f, 0x63, 0xf6, 0x9c,
-	0x3f, 0xe8, 0x51, 0x32, 0xed, 0x4d, 0xf2, 0x28, 0x16, 0x3f, 0x5f, 0x8e, 0x93, 0x1e, 0x07, 0xa6,
-	0xc9, 0xac, 0x17, 0xce, 0xe3, 0x9e, 0xd0, 0xcf, 0x68, 0xfa, 0x07, 0x4d, 0x7b, 0xc5, 0x5f, 0x1c,
-	0xd1, 0x20, 0x8c, 0xa2, 0x24, 0x9f, 0xb1, 0x85, 0xca, 0xc5, 0x47, 0xaa, 0xc8, 0xb3, 0x74, 0xee,
-	0xfe, 0x0a, 0xaa, 0xc5, 0xa3, 0xf5, 0x0a, 0x8c, 0xd0, 0xdf, 0x73, 0x1e, 0x1f, 0xfa, 0x0e, 0x34,
-	0x4e, 0x8d, 0xc3, 0x49, 0xfc, 0x17, 0x7d, 0x0c, 0x64, 0x82, 0xa9, 0xb4, 0x69, 0xb5, 0xd3, 0xda,
-	0x79, 0x93, 0x1c, 0xbe, 0xd8, 0x57, 0x3c, 0x3f, 0x03, 0x25, 0x8b, 0xc7, 0xb3, 0x90, 0xe5, 0x29,
-	0xd5, 0xd6, 0x05, 0xf5, 0x05, 0xe8, 0xfe, 0x53, 0x87, 0xe6, 0x0a, 0xfd, 0x14, 0x1a, 0x11, 0x4d,
-	0x59, 0xfc, 0x14, 0x47, 0x21, 0xa3, 0x0b, 0xed, 0x2a, 0x84, 0x7e, 0x82, 0xfd, 0xa5, 0x7f, 0x10,
-	0x4e, 0xc6, 0x49, 0xca, 0x73, 0x9d, 0x0a, 0xe9, 0xb6, 0xf1, 0x85, 0xbe, 0x28, 0x7b, 0x55, 0x54,
-	0x77, 0x4b, 0x3e, 0x2e, 0xe9, 0x04, 0x65, 0x6f, 0x30, 0xf4, 0x2d, 0x28, 0x71, 0x96, 0xe5, 0x3c,
-	0xc1, 0x90, 0x69, 0x75, 0xae, 0xd7, 0x30, 0x3a, 0xba, 0x6c, 0x98, 0x5e, 0x36, 0x4c, 0xf7, 0xca,
-	0x86, 0x91, 0x1d, 0x49, 0xc6, 0x0c, 0x5d, 0x02, 0xc8, 0x92, 0xb0, 0x3f, 0xe7, 0x54, 0xdb, 0x10,
-	0x91, 0x9c, 0xbc, 0x1b, 0x89, 0xb8, 0x78, 0x9c, 0x45, 0x14, 0x56, 0x1e, 0xd1, 0x19, 0xb4, 0x92,
-	0x30, 0x67, 0xcf, 0x46, 0x90, 0x45, 0xc9, 0x9c, 0x66, 0xda, 0xe6, 0x69, 0xfd, 0x5c, 0x21, 0x4d,
-	0x09, 0xba, 0x02, 0xeb, 0x5e, 0x82, 0xb2, 0x74, 0x46, 0x2a, 0x34, 0x7d, 0xfb, 0xce, 0x76, 0x7e,
-	0xb4, 0x03, 0xef, 0xe7, 0x91, 0xa9, 0xae, 0xa1, 0x13, 0xe8, 0x0c, 0x1c, 0x67, 0x70, 0x6f, 0x06,
-	0x0e, 0xf6, 0xbd, 0x5b, 0x23, 0xc0, 0xfd, 0xbe, 0xe9, 0xba, 0x81, 0xe7, 0xdc, 0x99, 0xb6, 0x5a,
-	0xeb, 0x5e, 0x00, 0x7a, 0x5b, 0x85, 0xaa, 0x0e, 0xbe, 0x1f, 0x38, 0x5c, 0x67, 0x1f, 0x76, 0xdd,
-	0x5b, 0x6c, 0x7c, 0xfd, 0x4d, 0x40, 0x5c, 0x2c, 0xc1, 0x5a, 0xf7, 0xef, 0x3a, 0xec, 0x55, 0x46,
-	0x22, 0x9b, 0x27, 0x7c, 0x70, 0xd0, 0x15, 0x00, 0x4d, 0xd3, 0x24, 0x0d, 0xa2, 0xe4, 0x51, 0x76,
-	0xaa, 0x6d, 0x9c, 0x95, 0x59, 0xbf, 0xa1, 0xeb, 0x66, 0xc1, 0xed, 0x73, 0x2a, 0x51, 0x68, 0x79,
-	0x2c, 0x52, 0x97, 0x1a, 0xbc, 0xa8, 0x59, 0x38, 0x96, 0x13, 0xc2, 0x53, 0x17, 0xa0, 0x25, 0x31,
-	0xf4, 0x3d, 0xb4, 0xcb, 0x89, 0x93, 0x5a, 0x8b, 0xe6, 0x1c, 0xbc, 0x2a, 0xb1, 0x34, 0x92, 0x16,
-	0xab, 0x5e, 0xbb, 0xff, 0xd5, 0x40, 0x59, 0xbe, 0x8d, 0x1a, 0xb0, 0xed, 0xfa, 0xa2, 0x34, 0x3c,
-	0xd9, 0x63, 0x38, 0xf0, 0x6d, 0xd7, 0x1f, 0x8d, 0x1c, 0xe2, 0x99, 0xd7, 0x81, 0x3b, 0x1c, 0xd8,
-	0xd8, 0xf3, 0x89, 0xa9, 0xd6, 0x50, 0x07, 0x0e, 0xab, 0x26, 0x51, 0x46, 0x59, 0xeb, 0x75, 0xb4,
-	0x07, 0xad, 0x2b, 0xcc, 0xb1, 0xa1, 0x65, 0xba, 0x1e, 0xb6, 0x46, 0x6a, 0xbd, 0xa0, 0x17, 0x50,
-	0xdf, 0x24, 0xde, 0xf0, 0x66, 0xd8, 0xc7, 0x9e, 0x19, 0xdc, 0x38, 0xc4, 0xc2, 0x9e, 0xba, 0x51,
-	0xd2, 0x5f, 0xd4, 0x37, 0xe5, 0xc3, 0x1e, 0xf1, 0xdd, 0x42, 0xbb, 0xe2, 0xa4, 0x6e, 0xa1, 0x23,
-	0xd8, 0x17, 0xe2, 0xe2, 0x41, 0x4c, 0x06, 0xbe, 0x65, 0xda, 0x9e, 0xab, 0x6e, 0x17, 0x06, 0x09,
-	0x5a, 0x43, 0xdb, 0x1b, 0xda, 0x83, 0xc0, 0x24, 0xc4, 0x21, 0xea, 0x4e, 0xf7, 0xdf, 0x1a, 0xb4,
-	0x56, 0x3b, 0x73, 0x0d, 0xbb, 0xaf, 0xbe, 0x0b, 0xa2, 0x3d, 0x0d, 0xe3, 0x53, 0xbd, 0xb2, 0xf5,
-	0xba, 0x2b, 0x39, 0x58, 0x52, 0x48, 0x3b, 0x5b, 0xb9, 0xa3, 0x5f, 0xa0, 0x23, 0x87, 0x3f, 0x58,
-	0x4c, 0x27, 0xd7, 0xe2, 0x1d, 0x91, 0xdb, 0xaf, 0x7d, 0x22, 0x04, 0x4f, 0x56, 0x04, 0x1d, 0x5c,
-	0xf0, 0xb0, 0xa0, 0x89, 0x88, 0x6e, 0xd7, 0xc8, 0x91, 0xd4, 0x70, 0xc2, 0x57, 0xa6, 0xab, 0x66,
-	0x75, 0x69, 0x0c, 0x07, 0x1a, 0x02, 0xb6, 0x44, 0x47, 0xd1, 0x0f, 0xa0, 0x2c, 0x27, 0x08, 0x69,
-	0xef, 0x0c, 0x95, 0x58, 0xa7, 0xce, 0xf1, 0x07, 0xc7, 0xed, 0x61, 0x4b, 0x6c, 0xec, 0x57, 0xff,
-	0x07, 0x00, 0x00, 0xff, 0xff, 0xf1, 0x7b, 0xf1, 0x99, 0x8e, 0x05, 0x00, 0x00,
+	// 731 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x94, 0x54, 0xdf, 0x4e, 0xdb, 0x3c,
+	0x1c, 0x25, 0xfc, 0xaf, 0x5b, 0x20, 0xb8, 0x7c, 0x90, 0xaf, 0x1f, 0x82, 0xaa, 0xdf, 0x0d, 0x42,
+	0x5a, 0x3b, 0x75, 0xda, 0x1f, 0x09, 0xed, 0xc2, 0x94, 0x50, 0x2a, 0x48, 0x52, 0x39, 0x89, 0xa6,
+	0x5d, 0x4c, 0x56, 0x08, 0xa6, 0x44, 0x6b, 0xeb, 0x92, 0x38, 0x93, 0xb6, 0xe7, 0xd8, 0xb3, 0xec,
+	0x1d, 0xf6, 0x12, 0x7b, 0x96, 0x39, 0x76, 0x53, 0x02, 0x74, 0x17, 0xbb, 0x69, 0xed, 0xf3, 0x3b,
+	0x3e, 0xe7, 0x67, 0x9f, 0x5f, 0x0b, 0x20, 0x67, 0x9f, 0xe9, 0x98, 0x8c, 0xa2, 0x31, 0xa7, 0x71,
+	0x73, 0x12, 0x33, 0xce, 0xe0, 0xaa, 0xda, 0xd5, 0x0e, 0x07, 0x8c, 0x0d, 0x86, 0xb4, 0x25, 0xd1,
+	0xeb, 0xf4, 0xb6, 0xc5, 0xa3, 0x11, 0x4d, 0x78, 0x30, 0x9a, 0x28, 0x62, 0xed, 0x6c, 0x10, 0xf1,
+	0xbb, 0xf4, 0xba, 0x19, 0xb2, 0x51, 0x6b, 0x98, 0x86, 0x91, 0xfc, 0x78, 0x31, 0x60, 0x2d, 0x01,
+	0x8c, 0xd8, 0xb8, 0x15, 0x4c, 0xa2, 0x96, 0xd4, 0x4f, 0x68, 0xfc, 0x85, 0xc6, 0xad, 0xec, 0x2b,
+	0x0a, 0x29, 0x09, 0xc2, 0x90, 0xa5, 0x63, 0x3e, 0x55, 0x39, 0xf9, 0x4b, 0x15, 0xb5, 0x56, 0x87,
+	0x1b, 0xf7, 0x60, 0xcf, 0x12, 0xdd, 0x5a, 0x41, 0x78, 0x17, 0x8d, 0xa9, 0x97, 0x95, 0x30, 0xbd,
+	0x4f, 0x45, 0x9b, 0xf0, 0x1d, 0x30, 0xc4, 0x89, 0x28, 0x18, 0x46, 0xdf, 0xe8, 0x0d, 0x51, 0xf7,
+	0x8c, 0x55, 0xcd, 0xd0, 0xea, 0xda, 0x51, 0x05, 0xef, 0x3e, 0xd4, 0x1f, 0x9d, 0xdc, 0x07, 0xa5,
+	0x24, 0x1a, 0x8c, 0x03, 0x9e, 0xc6, 0xd4, 0x58, 0x94, 0xd4, 0x07, 0xa0, 0xf1, 0x7d, 0x11, 0x54,
+	0xe7, 0xf9, 0xd5, 0x41, 0x39, 0xa4, 0x31, 0x8f, 0x6e, 0xa3, 0x30, 0xe0, 0x74, 0x6a, 0x51, 0x84,
+	0xe0, 0x25, 0xa8, 0xce, 0x64, 0x48, 0x30, 0x1c, 0xb0, 0x58, 0xdc, 0x7c, 0x24, 0x1d, 0x36, 0xdb,
+	0xb5, 0xe6, 0x34, 0x04, 0x37, 0xa7, 0xa0, 0x9c, 0x81, 0x61, 0xf2, 0x0c, 0x83, 0x6f, 0x41, 0x29,
+	0x4a, 0x92, 0x54, 0x5c, 0x2d, 0xe0, 0xc6, 0x92, 0x90, 0x28, 0x0b, 0x09, 0x95, 0x58, 0x33, 0x4f,
+	0xac, 0xe9, 0xe5, 0x89, 0xe1, 0x75, 0x45, 0x46, 0x1c, 0xbe, 0x04, 0x40, 0x3d, 0x06, 0xff, 0x3a,
+	0xa1, 0xc6, 0xb2, 0x34, 0xdf, 0xce, 0xcd, 0xe5, 0x8d, 0x3c, 0x51, 0xc0, 0x25, 0x9e, 0x2f, 0xe1,
+	0xff, 0x60, 0x83, 0x05, 0x29, 0xbf, 0x6b, 0x93, 0x24, 0x64, 0x13, 0x9a, 0x18, 0x2b, 0xf5, 0xa5,
+	0xa3, 0x12, 0xae, 0x28, 0xd0, 0x95, 0x58, 0xe3, 0x87, 0x06, 0x8c, 0xe7, 0x51, 0x24, 0x13, 0x26,
+	0x72, 0xcb, 0x3c, 0x69, 0x1c, 0xb3, 0x98, 0x84, 0xec, 0x46, 0x3d, 0x4d, 0xc1, 0xd3, 0xcc, 0x2a,
+	0x1d, 0x51, 0xc0, 0x25, 0x9a, 0x2f, 0x33, 0x4f, 0x75, 0x42, 0x5c, 0x20, 0x09, 0x06, 0x2a, 0x07,
+	0xe1, 0x29, 0x41, 0x4b, 0x61, 0xb0, 0x03, 0x36, 0xf3, 0x5c, 0x95, 0xd1, 0xf4, 0x21, 0xf6, 0x73,
+	0xe9, 0x79, 0xcd, 0xe0, 0x0d, 0x5e, 0xdc, 0x36, 0x7e, 0x6a, 0x60, 0x67, 0x6e, 0xd3, 0x67, 0x60,
+	0xeb, 0xc9, 0xc4, 0xca, 0xce, 0xcb, 0xed, 0xff, 0x9a, 0x85, 0x79, 0x6c, 0xba, 0x8a, 0x83, 0x14,
+	0x05, 0x6f, 0x26, 0x8f, 0xf6, 0xf0, 0x13, 0xa8, 0xa9, 0x54, 0xc8, 0xf4, 0x0d, 0x85, 0x96, 0x68,
+	0x5f, 0x0d, 0xa4, 0xb1, 0x23, 0x05, 0x0f, 0x1e, 0x09, 0x3a, 0x28, 0xe3, 0x21, 0x49, 0x93, 0x1d,
+	0x5d, 0x2c, 0xe0, 0x3d, 0xa5, 0xe1, 0x04, 0x4f, 0x4a, 0xa7, 0x95, 0x62, 0x9a, 0xc7, 0xef, 0x41,
+	0x69, 0x96, 0x20, 0xd4, 0x41, 0xc5, 0xb7, 0x2f, 0x6d, 0xe7, 0x83, 0x4d, 0xbc, 0x8f, 0x7d, 0x53,
+	0x5f, 0x80, 0x07, 0xa0, 0xd6, 0x75, 0x9c, 0xee, 0x95, 0x49, 0x1c, 0xe4, 0x7b, 0x17, 0x6d, 0x82,
+	0x3a, 0x1d, 0xd3, 0x75, 0x89, 0xe7, 0x5c, 0x9a, 0xb6, 0xae, 0x1d, 0x9f, 0x00, 0xf8, 0x7c, 0xfa,
+	0x8a, 0x3a, 0xe8, 0xaa, 0xeb, 0x08, 0x9d, 0x2a, 0xd8, 0x72, 0x2f, 0x50, 0xfb, 0xf5, 0x1b, 0x82,
+	0x5d, 0xa4, 0x40, 0xed, 0xf8, 0x97, 0x06, 0x4a, 0xb3, 0x28, 0x61, 0x19, 0xac, 0xb9, 0xbe, 0x54,
+	0x17, 0xfc, 0x7f, 0xc1, 0x3f, 0xbe, 0xed, 0xfa, 0xfd, 0xbe, 0x83, 0x3d, 0xf3, 0x8c, 0xb8, 0xbd,
+	0xae, 0x8d, 0x3c, 0x1f, 0x9b, 0xba, 0x06, 0x6b, 0x60, 0xb7, 0x58, 0x92, 0x9d, 0xa8, 0x76, 0x17,
+	0xe1, 0x36, 0xd8, 0x38, 0x45, 0x02, 0xeb, 0x59, 0xa6, 0xeb, 0x21, 0xab, 0xaf, 0x2f, 0x65, 0xf4,
+	0x0c, 0xea, 0x98, 0xd8, 0xeb, 0x9d, 0xf7, 0x3a, 0xc8, 0x33, 0xc9, 0xb9, 0x83, 0x2d, 0xe4, 0xe9,
+	0xcb, 0x39, 0xfd, 0x41, 0x7d, 0x45, 0x19, 0x7b, 0xd8, 0x77, 0x33, 0xed, 0xc2, 0x21, 0x7d, 0x15,
+	0xee, 0x81, 0xaa, 0x14, 0x97, 0x86, 0x08, 0x77, 0x7d, 0xcb, 0xb4, 0x3d, 0x57, 0x5f, 0xcb, 0x0a,
+	0x0a, 0xb4, 0x7a, 0xb6, 0xd7, 0xb3, 0xbb, 0xc4, 0xc4, 0xd8, 0xc1, 0xfa, 0x7a, 0xfb, 0x06, 0x94,
+	0xe5, 0xe3, 0x5a, 0x72, 0xb6, 0xa0, 0x0f, 0xf4, 0xa7, 0xf3, 0x0e, 0x0f, 0x67, 0x83, 0x37, 0xff,
+	0x4f, 0xa9, 0x56, 0xff, 0x33, 0x41, 0x4d, 0xdd, 0xf5, 0xaa, 0xfc, 0xf1, 0xbe, 0xfa, 0x1d, 0x00,
+	0x00, 0xff, 0xff, 0xd5, 0x27, 0x84, 0x24, 0x9a, 0x05, 0x00, 0x00,
 }

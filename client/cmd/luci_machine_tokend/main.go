@@ -225,10 +225,10 @@ func run(ctx context.Context, clientParams tokenclient.ClientParameters, opts co
 		return nil
 	}
 
-	// Grab a new token. MintToken does retries internally, until success or
-	// context deadline.
-	resp, err := client.MintToken(ctx, &minter.TokenRequest{
-		TokenType:    minter.TokenRequest_GOOGLE_OAUTH2_ACCESS_TOKEN,
+	// Grab a new token. MintMachineToken does retries internally, until success
+	// or context deadline.
+	resp, err := client.MintMachineToken(ctx, &minter.MachineTokenRequest{
+		TokenType:    minter.TokenType_GOOGLE_OAUTH2_ACCESS_TOKEN,
 		Oauth2Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
 	})
 	status.MintTokenDuration = clock.Now(ctx).Sub(now)
@@ -241,7 +241,7 @@ func run(ctx context.Context, clientParams tokenclient.ClientParameters, opts co
 
 	// Grab OAuth2 access token field.
 	var tok *tokenserver.OAuth2AccessToken
-	if tt, _ := resp.TokenType.(*minter.TokenResponse_GoogleOauth2AccessToken); tt != nil {
+	if tt, _ := resp.TokenType.(*minter.MachineTokenResponse_GoogleOauth2AccessToken); tt != nil {
 		tok = tt.GoogleOauth2AccessToken
 	}
 	if tok == nil {

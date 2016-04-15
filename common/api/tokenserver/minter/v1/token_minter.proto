@@ -11,27 +11,55 @@ import "google/protobuf/timestamp.proto";
 import "github.com/luci/luci-go/common/api/tokenserver/service_account.proto";
 import "github.com/luci/luci-go/common/api/tokenserver/tokens.proto";
 
+// The kinds of tokens the token server can mint.
+enum TokenType {
+  UNKNOWN_TYPE               = 0; // used if the field is not initialized
+  GOOGLE_OAUTH2_ACCESS_TOKEN = 1; // OAuth2 service account access token
+}
+
+// Supported ways of singing the request.
+enum SignatureAlgorithm {
+  UNKNOWN_ALGO    = 0; // used if the field is not initialized
+  SHA256_RSA_ALGO = 1; // matches x509's sha256WithRSAEncryption
+}
+
+// Possible kinds of fatal errors.
+//
+// Non fatal errors are returned as grpc.Internal errors instead.
+enum ErrorCode {
+  SUCCESS                = 0;
+  UNSUPPORTED_SIGNATURE  = 1; // used signature_algorithm is not supported
+  UNSUPPORTED_TOKEN_TYPE = 2; // requested token_type is not supported
+  BAD_TIMESTAMP          = 3; // issued_at field is wrong
+  BAD_CERTIFICATE_FORMAT = 4; // malformed or unsupported certificate
+  BAD_SIGNATURE          = 5; // signature doesn't match or can't be verified
+  UNTRUSTED_CERTIFICATE  = 6; // invalid certificate or can't verify it yet
+  BAD_TOKEN_ARGUMENTS    = 7; // FQDN or Scopes are invalid or not whitelisted
+  TOKEN_MINTING_ERROR    = 8; // unspecified fatal error when minting a token
+}
+
 // TokenMinter implements main API of the token server.
 service TokenMinter {
-  // MintToken generates a new token for an authenticated caller.
+  // MintMachineToken generates a new token for an authenticated machine.
   //
   // It checks that provided certificate was signed by some trusted CA, and it
   // is still valid (non-expired and hasn't been revoked). It then checks that
   // the request was signed by the corresponding private key. Finally it checks
   // that the caller is authorized to generate requested kind of token.
   //
-  // If everything checks out, it generates and returns a new token.
+  // If everything checks out, it generates and returns a new machine token.
   //
   // On fatal error it returns detailed error response via same
-  // MintTokenResponse. On transient errors it returns generic grpc.Internal
-  // error.
-  rpc MintToken(MintTokenRequest) returns (MintTokenResponse);
+  // MintMachineTokenResponse. On transient errors it returns generic
+  // grpc.Internal error.
+  rpc MintMachineToken(MintMachineTokenRequest) returns (MintMachineTokenResponse);
 }
 
-// MintTokenRequest wraps a serialized and signed TokenRequest message.
-message MintTokenRequest {
-  // The protobuf-serialized TokenRequest message, signed by the private
-  // key that matches TokenRequest.certificate.
+// MintMachineTokenRequest wraps a serialized and signed MachineTokenRequest
+// message.
+message MintMachineTokenRequest {
+  // The protobuf-serialized MachineTokenRequest message, signed by the private
+  // key that matches MachineTokenRequest.certificate.
   //
   // We have to send it as a byte blob to avoid dealing with possible protobuf
   // serialization inconsistencies when checking the signature.
@@ -39,24 +67,12 @@ message MintTokenRequest {
 
   // The signature of 'serialized_token_parameters' blob.
   //
-  // See TokenRequest.signature_algorithm for exact meaning.
+  // See MachineTokenRequest.signature_algorithm for exact meaning.
   bytes signature = 2;
 }
 
-// TokenRequest contains the actual request parameters.
-message TokenRequest {
-  // The kinds of tokens the token server can mint.
-  enum TokenType {
-    UNKNOWN_TYPE               = 0; // used if the field is not initialized
-    GOOGLE_OAUTH2_ACCESS_TOKEN = 1; // OAuth2 service account access token
-  }
-
-  // Supported ways of singing the request.
-  enum SignatureAlgorithm {
-    UNKNOWN_ALGO    = 0; // used if the field is not initialized
-    SHA256_RSA_ALGO = 1; // matches x509's sha256WithRSAEncryption
-  }
-
+// MachineTokenRequest contains the actual request parameters.
+message MachineTokenRequest {
   // The certificate that identifies a caller (as ASN1-serialized blob).
   //
   // It will be used to extract machine FQDN (it's CN of the cert) and CA name
@@ -65,7 +81,7 @@ message TokenRequest {
 
   // The signature algorithm used to sign this request.
   //
-  // Defines what's in MintTokenRequest.signature field.
+  // Defines what's in MintMachineTokenRequest.signature field.
   SignatureAlgorithm signature_algorithm = 2;
 
   // Timestamp when this request was created, by the issuer clock.
@@ -83,43 +99,33 @@ message TokenRequest {
   repeated string oauth2_scopes = 5;
 }
 
-// MintTokenResponse is returned by 'MintToken' if server processed the request.
+// MintMachineTokenResponse is returned by 'MintMachineToken' if the server
+// processed the request.
 //
 // It's returned even if server refuses to mint a token. It contains the error
 // details in that case.
-message MintTokenResponse {
+message MintMachineTokenResponse {
   // Possible kinds of fatal errors.
   //
   // Non fatal errors are returned as grpc.Internal errors instead.
-  enum ErrorCode {
-    SUCCESS                = 0;
-    UNSUPPORTED_SIGNATURE  = 1; // used signature_algorithm is not supported
-    UNSUPPORTED_TOKEN_TYPE = 2; // requested token_type is not supported
-    BAD_TIMESTAMP          = 3; // issued_at field is wrong
-    BAD_CERTIFICATE_FORMAT = 4; // malformed or unsupported certificate
-    BAD_SIGNATURE          = 5; // signature doesn't match or can't be verified
-    UNTRUSTED_CERTIFICATE  = 6; // invalid certificate or can't verify it yet
-    BAD_TOKEN_ARGUMENTS    = 7; // FQDN or Scopes are invalid or not whitelisted
-    TOKEN_MINTING_ERROR    = 8; // unspecified fatal error when minting a token
-  }
   ErrorCode error_code = 1;
 
   // Optional detailed error message.
   string error_message = 2;
 
-  // On success (NO_ERROR error code) contains the produced token.
-  TokenResponse token_response = 3;
+  // On success (SUCCESS error code) contains the produced token.
+  MachineTokenResponse token_response = 3;
 }
 
-// TokenResponse contains a token requested by TokenRequest.
-message TokenResponse {
+// MachineTokenResponse contains a token requested by MachineTokenRequest.
+message MachineTokenResponse {
   // The service account associated with the returned token (if any).
   tokenserver.ServiceAccount service_account = 1;
 
   // The generated token.
   //
   // The exact field set here depends on a requested type of the token, see
-  // TokenRequest.token_type.
+  // MachineTokenRequest.token_type.
   oneof token_type {
     tokenserver.OAuth2AccessToken google_oauth2_access_token = 20;
   }
