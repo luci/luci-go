@@ -569,6 +569,11 @@ func (q *Query) Finalize() (*FinalizedQuery, error) {
 		ineqFiltHighIncl: q.ineqFiltHighIncl,
 		ineqFiltHighSet:  q.ineqFiltHighSet,
 	}
+	// If a starting cursor is provided, ignore the offset, as it would have been
+	// accounted for in the query that produced the cursor.
+	if ret.start != nil {
+		ret.offset = nil
+	}
 
 	if q.project != nil {
 		ret.project = q.project.ToSlice()

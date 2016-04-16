@@ -85,6 +85,8 @@ var stage2Data = []ds.PropertyMap{
 		"Val", 3, 4, 2, 1, Next,
 		"Extra", "nuts",
 	),
+	pmap("$key", ds.MakeKey("dev~app", "", "Kind", "id")),
+	pmap("$key", ds.MakeKey("dev~app", "bob", "Kind", "id")),
 }
 
 var collapsedData = []ds.PropertyMap{
@@ -146,6 +148,11 @@ var queryExecutionTests = []qExTest{
 				{q: nq("Child").Ancestor(key("Kind", 3)), keys: []*ds.Key{
 					key("Kind", 3, "Child", "seven"),
 				}, inTxn: true},
+				{q: nq("__namespace__"), get: []ds.PropertyMap{
+					pmap("$key", ds.MakeKey("dev~app", "", "__namespace__", "ns")),
+				}},
+				{q: nq("__namespace__").Offset(1), get: []ds.PropertyMap{}},
+				{q: nq("__namespace__").Offset(1).Limit(1), get: []ds.PropertyMap{}},
 			},
 		},
 
@@ -343,6 +350,18 @@ var queryExecutionTests = []qExTest{
 					stage1Data[3],
 					stage1Data[2],
 				}},
+				{q: nq("__namespace__"), get: []ds.PropertyMap{
+					pmap("$key", ds.MakeKey("dev~app", "", "__namespace__", 1)),
+					pmap("$key", ds.MakeKey("dev~app", "", "__namespace__", "bob")),
+					pmap("$key", ds.MakeKey("dev~app", "", "__namespace__", "ns")),
+				}},
+				{q: nq("__namespace__").Offset(1), get: []ds.PropertyMap{
+					pmap("$key", ds.MakeKey("dev~app", "", "__namespace__", "bob")),
+					pmap("$key", ds.MakeKey("dev~app", "", "__namespace__", "ns")),
+				}},
+				{q: nq("__namespace__").Offset(1).Limit(1), get: []ds.PropertyMap{
+					pmap("$key", ds.MakeKey("dev~app", "", "__namespace__", "bob")),
+				}},
 			},
 
 			extraFns: []func(context.Context){
@@ -487,10 +506,19 @@ func TestQueryExecution(t *testing.T) {
 					testing.CatchupIndexes()
 
 					testing.AddIndexes(stage.addIdxs...)
-					if err := data.PutMulti(stage.putEnts); err != nil {
-						// prevent Convey from thinking this assertion should show up in
-						// every test loop.
-						panic(err)
+					byNs := map[string][]ds.PropertyMap{}
+					for _, ent := range stage.putEnts {
+						k := ds.GetMetaDefault(ent, "key", nil).(*ds.Key)
+						byNs[k.Namespace()] = append(byNs[k.Namespace()], ent)
+					}
+					for ns, ents := range byNs {
+						c := info.Get(c).MustNamespace(ns)
+						data := ds.Get(c)
+						if err := data.PutMulti(ents); err != nil {
+							// prevent Convey from thinking this assertion should show up in
+							// every test loop.
+							panic(err)
+						}
 					}
 
 					if err := data.DeleteMulti(stage.delEnts); err != nil {

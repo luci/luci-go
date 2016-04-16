@@ -6,7 +6,9 @@ package memory
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"strings"
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
@@ -178,6 +180,60 @@ func countQuery(fq *ds.FinalizedQuery, aid, ns string, isTxn bool, idx, head *me
 	return
 }
 
+func executeNamespaceQuery(fq *ds.FinalizedQuery, aid string, head *memStore, cb ds.RawRunCB) error {
+	// these objects have no properties, so any filters on properties cause an
+	// empty result.
+	if len(fq.EqFilters()) > 0 || len(fq.Project()) > 0 || len(fq.Orders()) > 1 {
+		return nil
+	}
+	if !(fq.IneqFilterProp() == "" || fq.IneqFilterProp() == "__key__") {
+		return nil
+	}
+	colls := head.GetCollectionNames()
+	foundEnts := false
+	limit, hasLimit := fq.Limit()
+	offset, hasOffset := fq.Offset()
+	start, end := fq.Bounds()
+
+	cursErr := errors.New("cursors not supported for __namespace__ query")
+	cursFn := func() (ds.Cursor, error) { return nil, cursErr }
+	if !(start == nil && end == nil) {
+		return cursErr
+	}
+	for _, c := range colls {
+		if !strings.HasPrefix(c, "ents:") {
+			if foundEnts {
+				break
+			}
+			continue
+		}
+		foundEnts = true
+		if hasOffset && offset > 0 {
+			offset--
+			continue
+		}
+		if hasLimit {
+			if limit <= 0 {
+				return ds.Stop
+			}
+			limit--
+		}
+		k := (*ds.Key)(nil)
+		ns := c[len("ents:"):]
+		if ns == "" {
+			// Datastore uses an id of 1 to indicate the default namespace in its
+			// metadata API.
+			k = ds.MakeKey(aid, "", "__namespace__", 1)
+		} else {
+			k = ds.MakeKey(aid, "", "__namespace__", ns)
+		}
+		if err := cb(k, nil, cursFn); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func executeQuery(fq *ds.FinalizedQuery, aid, ns string, isTxn bool, idx, head *memStore, cb ds.RawRunCB) error {
 	rq, err := reduce(fq, aid, ns, isTxn)
 	if err == ds.ErrNullQuery {
@@ -185,6 +241,10 @@ func executeQuery(fq *ds.FinalizedQuery, aid, ns string, isTxn bool, idx, head *
 	}
 	if err != nil {
 		return err
+	}
+
+	if rq.kind == "__namespace__" {
+		return executeNamespaceQuery(fq, aid, head, cb)
 	}
 
 	idxs, err := getIndexes(rq, idx)
