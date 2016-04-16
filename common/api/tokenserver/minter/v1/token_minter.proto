@@ -4,7 +4,7 @@
 
 syntax = "proto3";
 
-package minter;
+package tokenserver.minter;
 
 import "google/protobuf/timestamp.proto";
 

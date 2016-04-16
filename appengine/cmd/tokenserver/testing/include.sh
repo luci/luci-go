@@ -212,7 +212,7 @@ EOL`
 
   local CA_CERT_JSON=`cat $CA_DIR/certs/ca.pem | to_json_string`
 
-  call_rpc "admin.CertificateAuthorities.ImportConfig" <<EOL
+  call_rpc "tokenserver.admin.CertificateAuthorities.ImportConfig" <<EOL
   {
     "devConfig": {
       "tokenserver.cfg": $TOKEN_CONFIG_CFG_JSON,
@@ -225,7 +225,7 @@ EOL
 
 # fetch_crl imports current CRL into the token server.
 function fetch_crl {
-  call_rpc "admin.CertificateAuthorities.FetchCRL" <<EOL
+  call_rpc "tokenserver.admin.CertificateAuthorities.FetchCRL" <<EOL
   {
     "cn": "$CA_NAME",
     "force": true

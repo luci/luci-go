@@ -4,7 +4,7 @@
 
 syntax = "proto3";
 
-package admin;
+package tokenserver.admin;
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
