@@ -10,10 +10,6 @@ import (
 
 type taskqueueImpl struct{ RawInterface }
 
-func (t *taskqueueImpl) NewTask(path string) *Task {
-	return &Task{Path: path}
-}
-
 func (t *taskqueueImpl) Add(task *Task, queueName string) error {
 	return errors.SingleError(t.AddMulti([]*Task{task}, queueName))
 }

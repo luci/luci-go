@@ -39,7 +39,7 @@ func TestTaskQueue(t *testing.T) {
 
 		Convey("implements TQMultiReadWriter", func() {
 			Convey("Add", func() {
-				t := tq.NewTask("/hello/world")
+				t := &tqS.Task{Path: "/hello/world"}
 
 				Convey("works", func() {
 					t.Delay = 4 * time.Second
@@ -66,7 +66,7 @@ func TestTaskQueue(t *testing.T) {
 					So(err, ShouldBeNil)
 					tq = tqS.Get(c)
 
-					t := tq.NewTask("")
+					t := &tqS.Task{}
 					So(tq.Add(t, ""), ShouldBeNil)
 					So(t.Header, ShouldResemble, http.Header{
 						"X-Appengine-Current-Namespace": {"coolNamespace"},
@@ -158,7 +158,7 @@ func TestTaskQueue(t *testing.T) {
 					Convey("stats work too", func() {
 						delay := -time.Second * 400
 
-						t := tq.NewTask("/somewhere")
+						t := &tqS.Task{Path: "/somewhere"}
 						t.Delay = delay
 						So(tq.Add(t, ""), ShouldBeNil)
 
@@ -382,7 +382,7 @@ func TestTaskQueue(t *testing.T) {
 
 			Convey("adding a new task only happens if we don't errout", func() {
 				So(dsS.Get(c).RunInTransaction(func(c context.Context) error {
-					t3 := tq.NewTask("/sandwitch/victory")
+					t3 := &tqS.Task{Path: "/sandwitch/victory"}
 					So(tqS.Get(c).Add(t3, ""), ShouldBeNil)
 					return fmt.Errorf("nooooo")
 				}, nil), ShouldErrLike, "nooooo")
@@ -398,7 +398,7 @@ func TestTaskQueue(t *testing.T) {
 					So(dsS.Get(c).RunInTransaction(func(c context.Context) error {
 						tq := tqS.Get(c)
 
-						So(tq.Add(tq.NewTask("/sandwitch/victory"), ""), ShouldBeNil)
+						So(tq.Add(&tqS.Task{Path: "/sandwitch/victory"}, ""), ShouldBeNil)
 
 						panic(fmt.Errorf("nooooo"))
 					}, nil), ShouldBeNil)

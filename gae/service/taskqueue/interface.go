@@ -6,11 +6,6 @@ package taskqueue
 
 // Interface is the full interface to the Task Queue service.
 type Interface interface {
-	// NewTask simply creates a new Task object with the Path field populated.
-	// The path parameter may be blank, if you want to use the default task path
-	// ("/_ah/queue/<queuename>").
-	NewTask(path string) *Task
-
 	Add(task *Task, queueName string) error
 	Delete(task *Task, queueName string) error
 
