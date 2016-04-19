@@ -349,45 +349,77 @@ func (db *SnapshotDB) IsAllowedOAuthClientID(c context.Context, email, clientID 
 // Unknown groups are considered empty. May return errors if underlying
 // datastore has issues.
 func (db *SnapshotDB) IsMember(c context.Context, id identity.Identity, groupName string) (bool, error) {
+	// Cycle detection check uses a stack of groups currently being explored. Use
+	// stack allocated array as a backing store to avoid unnecessary dynamic
+	// allocation. If stack depth grows beyond 8, 'append' will reallocate it on
+	// the heap.
+	var backingStore [8]*group
+	current := backingStore[:0]
+
+	// Keep a set of all visited groups to avoid revisiting them in case of a
+	// diamond-like graph, e.g A -> B, A -> C, B -> D, C -> D (we don't need to
+	// visit D twice in this case).
+	visited := make(map[*group]struct{}, 10)
+
 	// isMember is used to recurse over nested groups.
-	var isMember func(*group, []*group) bool
-	isMember = func(gr *group, visited []*group) bool {
+	var isMember func(*group) bool
+
+	isMember = func(gr *group) bool {
+		// 'id' is a direct member?
 		if _, ok := gr.members[id]; ok {
 			return true
 		}
+
+		// 'id' matches some glob?
 		for _, glob := range gr.globs {
 			if glob.Match(id) {
 				return true
 			}
 		}
-		if len(gr.nested) != 0 {
-			visited = append(visited, gr)
-			defer func() {
-				visited = visited[:len(visited)-1]
-			}()
-			for _, nested := range gr.nested {
-				// There should be no cycles, but do the check just in case there are,
-				// seg faulting with stack overflow is very bad.
-				for _, seenGroup := range visited {
-					if seenGroup == nested {
-						logging.Errorf(c, "auth: unexpected group nesting cycle in group %q", groupName)
-						return false
-					}
-				}
-				if isMember(nested, visited) {
-					return true
+
+		if len(gr.nested) == 0 {
+			return false
+		}
+
+		current = append(current, gr) // popped before return
+
+		found := false
+
+	outer_loop:
+		for _, nested := range gr.nested {
+			// There should be no cycles, but do the check just in case there are,
+			// seg faulting with stack overflow is very bad. In case of a cycle, skip
+			// the offending group, but keep searching other groups.
+			for _, ancestor := range current {
+				if ancestor == nested {
+					logging.Errorf(c, "auth: unexpected group nesting cycle in group %q", groupName)
+					continue outer_loop
 				}
 			}
+
+			// Explored 'nested' already (and didn't find anything) while visiting
+			// some sibling branch? Skip.
+			if _, seen := visited[nested]; seen {
+				continue
+			}
+
+			if isMember(nested) {
+				found = true
+				break
+			}
 		}
-		return false
+
+		// Note that we don't use defers here since they have non-negligible runtime
+		// cost. Using 'defer' here makes IsMember ~1.7x slower (1200 ns vs 700 ns),
+		// See BenchmarkIsMember.
+		current = current[:len(current)-1]
+		visited[gr] = struct{}{}
+
+		return found
 	}
 
-	// Cycle detection check uses a stack of visited groups. Use stack allocated
-	// array as a backing store to avoid unnecessary dynamic allocation. If stack
-	// depth grows beyond 8, 'append' will reallocate it on heap.
-	var visited [8]*group
 	if gr := db.groups[groupName]; gr != nil {
-		return isMember(gr, visited[:0]), nil
+		return isMember(gr), nil
 	}
 	return false, nil
 }

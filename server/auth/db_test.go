@@ -230,3 +230,49 @@ func TestSnapshotDB(t *testing.T) {
 }
 
 func strPtr(s string) *string { return &s }
+
+func BenchmarkIsMember(b *testing.B) {
+	c := context.Background()
+	db, _ := NewSnapshotDB(&protocol.AuthDB{
+		Groups: []*protocol.AuthGroup{
+			{
+				Name:   strPtr("outer"),
+				Nested: []string{"A", "B"},
+			},
+			{
+				Name:   strPtr("A"),
+				Nested: []string{"A_A", "A_B"},
+			},
+			{
+				Name:   strPtr("B"),
+				Nested: []string{"B_A", "B_B"},
+			},
+			{
+				Name:   strPtr("A_A"),
+				Nested: []string{"A_A_A"},
+			},
+			{
+				Name:   strPtr("A_A_A"),
+				Nested: []string{"A_A_A_A"},
+			},
+			{
+				Name: strPtr("A_A_A_A"),
+			},
+			{
+				Name: strPtr("A_B"),
+			},
+			{
+				Name: strPtr("B_A"),
+			},
+			{
+				Name: strPtr("B_B"),
+			},
+		},
+	}, "http://auth-service", 1234)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		db.IsMember(c, "user:somedude@example.com", "outer")
+	}
+}
