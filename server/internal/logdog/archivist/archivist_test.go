@@ -393,7 +393,7 @@ func TestHandleArchive(t *testing.T) {
 
 			Convey(`Will fail not ACK a log stream with no entries.`, func() {
 				ack, err := ar.archiveTaskImpl(c, task)
-				So(err, ShouldErrLike, "stream has missing entries")
+				So(err, ShouldEqual, storage.ErrDoesNotExist)
 				So(ack, ShouldBeFalse)
 			})
 
@@ -401,7 +401,7 @@ func TestHandleArchive(t *testing.T) {
 				addTestEntry(0, 1, 2, 4)
 
 				ack, err := ar.archiveTaskImpl(c, task)
-				So(err, ShouldErrLike, "stream has missing entries")
+				So(err, ShouldErrLike, "missing log entry")
 				So(ack, ShouldBeFalse)
 			})
 
@@ -424,7 +424,8 @@ func TestHandleArchive(t *testing.T) {
 				})
 			})
 
-			Convey(`When atransient archival error occurs, will not ACK it.`, func() {
+			Convey(`When a transient archival error occurs, will not ACK it.`, func() {
+				addTestEntry(0, 1, 2, 3, 4)
 				gsc.newWriterErr = func(*testGSWriter) error { return errors.WrapTransient(errors.New("test error")) }
 
 				ack, err := ar.archiveTaskImpl(c, task)
@@ -433,6 +434,7 @@ func TestHandleArchive(t *testing.T) {
 			})
 
 			Convey(`When a non-transient archival error occurs`, func() {
+				addTestEntry(0, 1, 2, 3, 4)
 				archiveErr := errors.New("archive failure error")
 				gsc.newWriterErr = func(*testGSWriter) error { return archiveErr }
 

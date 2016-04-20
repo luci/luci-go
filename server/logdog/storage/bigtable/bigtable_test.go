@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"golang.org/x/net/context"
 	"google.golang.org/cloud/bigtable"
@@ -83,23 +82,5 @@ func TestBigTable(t *testing.T) {
 				So(s.Config(cfg), ShouldEqual, bt.err)
 			})
 		})
-	})
-}
-
-func TestBigTableErrors(t *testing.T) {
-	t.Parallel()
-
-	Convey(`A nil error is not marked transient.`, t, func() {
-		So(wrapTransient(nil), ShouldBeNil)
-	})
-
-	Convey(`A regular error is not marked transient.`, t, func() {
-		So(grpcutil.IsTransient(grpcutil.Canceled), ShouldBeFalse)
-		So(errors.IsTransient(wrapTransient(grpcutil.Canceled)), ShouldBeFalse)
-	})
-
-	Convey(`An gRPC transient error is marked transient.`, t, func() {
-		So(grpcutil.IsTransient(grpcutil.Internal), ShouldBeTrue)
-		So(errors.IsTransient(wrapTransient(grpcutil.Internal)), ShouldBeTrue)
 	})
 }

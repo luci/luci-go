@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"golang.org/x/net/context"
@@ -76,7 +75,7 @@ func (t *btTableProd) putLogData(c context.Context, rk *rowKey, data []byte) err
 
 	rowExists := false
 	if err := t.logTable.Apply(c, rk.encode(), cm, bigtable.GetCondMutationResult(&rowExists)); err != nil {
-		return wrapTransient(err)
+		return grpcutil.WrapIfTransient(err)
 	}
 	if rowExists {
 		return storage.ErrExists
@@ -122,10 +121,13 @@ func (t *btTableProd) getLogData(c context.Context, rk *rowKey, limit int, keysO
 		}
 		return true
 	}, ropts...)
-	if err == nil {
-		err = innerErr
+	if err != nil {
+		return grpcutil.WrapIfTransient(err)
 	}
-	return wrapTransient(err)
+	if innerErr != nil {
+		return innerErr
+	}
+	return nil
 }
 
 func (t *btTableProd) setMaxLogAge(c context.Context, d time.Duration) error {
@@ -134,26 +136,9 @@ func (t *btTableProd) setMaxLogAge(c context.Context, d time.Duration) error {
 		logGCPolicy = bigtable.MaxAgePolicy(d)
 	}
 	if err := t.adminClient.SetGCPolicy(c, t.LogTable, logColumnFamily, logGCPolicy); err != nil {
-		return wrapTransient(err)
+		return grpcutil.WrapIfTransient(err)
 	}
 	return nil
-}
-
-// wrapTransient wraps the supplied error in an errors.TransientError if it is
-// transient.
-func wrapTransient(err error) error {
-	if isTransient(err) {
-		err = errors.WrapTransient(err)
-	}
-	return err
-}
-
-// isTransient tests if a BigTable SDK error is transient.
-//
-// Since the BigTable API doesn't give us this information, we will identify
-// transient errors by parsing their error string :(
-func isTransient(err error) bool {
-	return (err != errStop) && grpcutil.IsTransient(err)
 }
 
 // getLogRowData loads the []byte contents of the supplied log row.
