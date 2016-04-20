@@ -40,7 +40,8 @@ type Foo struct {
 	ID     int64    `gae:"$id"`
 	Parent *dsS.Key `gae:"$parent"`
 
-	Val int
+	Val  int
+	Name string
 }
 
 func TestDatastoreSingleReadWriter(t *testing.T) {
@@ -152,6 +153,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					for i, val := range vals {
 						So(val, ShouldResemble, dsS.PropertyMap{
 							"Val":  {dsS.MkProperty(10)},
+							"Name": {dsS.MkProperty("")},
 							"$key": {dsS.MkPropertyNI(keys[i])},
 						})
 					}
@@ -629,5 +631,56 @@ func TestNewDatastore(t *testing.T) {
 
 		So(vals[0]["Value"][0].Value(), ShouldEqual, 20)
 		So(vals[1]["Value"][0].Value(), ShouldEqual, 30)
+	})
+}
+
+func TestAddIndexes(t *testing.T) {
+	t.Parallel()
+
+	Convey("Test Testable.AddIndexes", t, func() {
+		ctx := UseWithAppID(context.Background(), "aid")
+		namespaces := []string{"", "good", "news", "everyone"}
+
+		Convey("After adding datastore entries, can query against indexes in various namespaces", func() {
+			foos := []*Foo{
+				{ID: 1, Val: 1, Name: "foo"},
+				{ID: 2, Val: 2, Name: "bar"},
+				{ID: 3, Val: 2, Name: "baz"},
+			}
+			for _, ns := range namespaces {
+				So(dsS.Get(infoS.Get(ctx).MustNamespace(ns)).PutMulti(foos), ShouldBeNil)
+			}
+
+			// Initial query, no indexes, will fail.
+			dsS.Get(ctx).Testable().CatchupIndexes()
+
+			var results []*Foo
+			q := dsS.NewQuery("Foo").Eq("Val", 2).Gte("Name", "bar")
+			So(dsS.Get(ctx).GetAll(q, &results), ShouldErrLike, "Insufficient indexes")
+
+			// Add index for default namespace.
+			dsS.Get(ctx).Testable().AddIndexes(&dsS.IndexDefinition{
+				Kind: "Foo",
+				SortBy: []dsS.IndexColumn{
+					{Property: "Val"},
+					{Property: "Name"},
+				},
+			})
+			dsS.Get(ctx).Testable().CatchupIndexes()
+
+			for _, ns := range namespaces {
+				results = nil
+				So(dsS.Get(infoS.Get(ctx).MustNamespace(ns)).GetAll(q, &results), ShouldBeNil)
+				So(len(results), ShouldEqual, 2)
+			}
+
+			// Add "foos" to a new namesapce, then confirm that it gets indexed.
+			So(dsS.Get(infoS.Get(ctx).MustNamespace("qux")).PutMulti(foos), ShouldBeNil)
+			dsS.Get(ctx).Testable().CatchupIndexes()
+
+			results = nil
+			So(dsS.Get(infoS.Get(ctx).MustNamespace("qux")).GetAll(q, &results), ShouldBeNil)
+			So(len(results), ShouldEqual, 2)
+		})
 	})
 }

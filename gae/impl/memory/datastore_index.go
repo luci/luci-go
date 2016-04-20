@@ -224,7 +224,7 @@ func mergeIndexes(ns string, store, oldIdx, newIdx *memStore) {
 	})
 }
 
-func addIndexes(store *memStore, aid, ns string, compIdx []*ds.IndexDefinition) {
+func addIndexes(store *memStore, aid string, compIdx []*ds.IndexDefinition) {
 	normalized := make([]*ds.IndexDefinition, len(compIdx))
 	idxColl := store.SetCollection("idx", nil)
 	for i, idx := range compIdx {
@@ -232,23 +232,25 @@ func addIndexes(store *memStore, aid, ns string, compIdx []*ds.IndexDefinition) 
 		idxColl.Set(serialize.ToBytes(*normalized[i].PrepForIdxTable()), []byte{})
 	}
 
-	if allEnts := store.GetCollection("ents:" + ns); allEnts != nil {
-		allEnts.VisitItemsAscend(nil, true, func(i *gkvlite.Item) bool {
-			pm, err := rpm(i.Val)
-			memoryCorruption(err)
+	for _, ns := range namespaces(store) {
+		if allEnts := store.GetCollection("ents:" + ns); allEnts != nil {
+			allEnts.VisitItemsAscend(nil, true, func(i *gkvlite.Item) bool {
+				pm, err := rpm(i.Val)
+				memoryCorruption(err)
 
-			prop, err := serialize.ReadProperty(bytes.NewBuffer(i.Key), serialize.WithoutContext, aid, ns)
-			memoryCorruption(err)
+				prop, err := serialize.ReadProperty(bytes.NewBuffer(i.Key), serialize.WithoutContext, aid, ns)
+				memoryCorruption(err)
 
-			k := prop.Value().(*ds.Key)
+				k := prop.Value().(*ds.Key)
 
-			sip := serialize.PropertyMapPartially(k, pm)
+				sip := serialize.PropertyMapPartially(k, pm)
 
-			mergeIndexes(ns, store,
-				newMemStore(),
-				indexEntries(sip, ns, normalized))
-			return true
-		})
+				mergeIndexes(ns, store,
+					newMemStore(),
+					indexEntries(sip, ns, normalized))
+				return true
+			})
+		}
 	}
 }
 

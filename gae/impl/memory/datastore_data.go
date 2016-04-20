@@ -7,6 +7,7 @@ package memory
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -79,10 +80,10 @@ func (d *dataStoreData) setConsistent(always bool) {
 	}
 }
 
-func (d *dataStoreData) addIndexes(ns string, idxs []*ds.IndexDefinition) {
+func (d *dataStoreData) addIndexes(idxs []*ds.IndexDefinition) {
 	d.Lock()
 	defer d.Unlock()
-	addIndexes(d.head, d.aid, ns, idxs)
+	addIndexes(d.head, d.aid, idxs)
 }
 
 func (d *dataStoreData) setAutoIndex(enable bool) {
@@ -105,7 +106,7 @@ func (d *dataStoreData) maybeAutoIndex(err error) bool {
 		return false
 	}
 
-	d.addIndexes(mi.ns, []*ds.IndexDefinition{mi.Missing})
+	d.addIndexes([]*ds.IndexDefinition{mi.Missing})
 	return true
 }
 
@@ -163,6 +164,13 @@ func (d *dataStoreData) catchupIndexes() {
 		return
 	}
 	d.snap = d.head.Snapshot()
+}
+
+func (d *dataStoreData) namespaces() []string {
+	d.rwlock.Lock()
+	defer d.rwlock.Unlock()
+
+	return namespaces(d.head)
 }
 
 /////////////////////////// indexes(dataStoreData) ////////////////////////////
@@ -569,4 +577,26 @@ func keyBytes(key *ds.Key) []byte {
 func rpm(data []byte) (ds.PropertyMap, error) {
 	return serialize.ReadPropertyMap(bytes.NewBuffer(data),
 		serialize.WithContext, "", "")
+}
+
+func namespaces(store *memStore) []string {
+	var namespaces []string
+	for _, c := range store.GetCollectionNames() {
+		ns, has := trimPrefix(c, "ents:")
+		if !has {
+			if len(namespaces) > 0 {
+				break
+			}
+			continue
+		}
+		namespaces = append(namespaces, ns)
+	}
+	return namespaces
+}
+
+func trimPrefix(v, p string) (string, bool) {
+	if strings.HasPrefix(v, p) {
+		return v[len(p):], true
+	}
+	return v, false
 }

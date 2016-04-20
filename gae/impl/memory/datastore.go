@@ -130,7 +130,7 @@ func (d *dsImpl) AddIndexes(idxs ...*ds.IndexDefinition) {
 		}
 	}
 
-	d.data.addIndexes(d.ns, idxs)
+	d.data.addIndexes(idxs)
 }
 
 func (d *dsImpl) TakeIndexSnapshot() ds.TestingSnapshot {

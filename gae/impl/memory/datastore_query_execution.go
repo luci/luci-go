@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"strings"
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
@@ -189,8 +188,6 @@ func executeNamespaceQuery(fq *ds.FinalizedQuery, aid string, head *memStore, cb
 	if !(fq.IneqFilterProp() == "" || fq.IneqFilterProp() == "__key__") {
 		return nil
 	}
-	colls := head.GetCollectionNames()
-	foundEnts := false
 	limit, hasLimit := fq.Limit()
 	offset, hasOffset := fq.Offset()
 	start, end := fq.Bounds()
@@ -200,14 +197,7 @@ func executeNamespaceQuery(fq *ds.FinalizedQuery, aid string, head *memStore, cb
 	if !(start == nil && end == nil) {
 		return cursErr
 	}
-	for _, c := range colls {
-		if !strings.HasPrefix(c, "ents:") {
-			if foundEnts {
-				break
-			}
-			continue
-		}
-		foundEnts = true
+	for _, ns := range namespaces(head) {
 		if hasOffset && offset > 0 {
 			offset--
 			continue
@@ -219,7 +209,6 @@ func executeNamespaceQuery(fq *ds.FinalizedQuery, aid string, head *memStore, cb
 			limit--
 		}
 		k := (*ds.Key)(nil)
-		ns := c[len("ents:"):]
 		if ns == "" {
 			// Datastore uses an id of 1 to indicate the default namespace in its
 			// metadata API.
