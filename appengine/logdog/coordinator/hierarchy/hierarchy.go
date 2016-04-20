@@ -251,7 +251,31 @@ func Put(di ds.Interface, p types.StreamPath) error {
 
 		components = append(components, &cur)
 	}
-	return di.PutMulti(components)
+
+	// See if any components are already registered.
+	exists := make([]*ds.Key, len(components))
+	for i, c := range components {
+		exists[i] = di.KeyForObj(c)
+	}
+	bl, err := di.ExistsMulti(exists)
+	if err != nil {
+		return err
+	}
+
+	// Only create entities that don't already exist.
+	create := make([]*componentEntity, 0, len(components))
+	for i, b := range bl {
+		if !b {
+			create = append(create, components[i])
+		}
+	}
+
+	if len(create) > 0 {
+		if err := di.PutMulti(create); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // MarkPurged sets the named path component's purged status to v.
