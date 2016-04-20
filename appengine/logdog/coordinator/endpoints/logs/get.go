@@ -29,9 +29,12 @@ const (
 	getInitialArraySize = 256
 
 	// getBytesLimit is the maximum amount of data that we are willing to query.
-	// AppEngine limits our response size to 32MB. However, this limit applies
-	// to the raw recovered LogEntry data, so we'll artificially constrain this
-	// to 16MB so the additional JSON overhead doesn't kill it.
+	//
+	// We will limit byte responses to 16MB, based on the following constraints:
+	//	- AppEngine cannot respond with more than 32MB of data. This includes JSON
+	//	  overhead, including notation and base64 data expansion.
+	//	- `urlfetch`, which is used for Google Cloud Storage (archival) responses,
+	//	  cannot handle responses larger than 32MB.
 	getBytesLimit = 16 * 1024 * 1024
 )
 
@@ -52,6 +55,11 @@ func (s *Server) Tail(c context.Context, req *logdog.TailRequest) (*logdog.GetRe
 // getImpl is common code shared between Get and Tail endpoints.
 func (s *Server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (*logdog.GetResponse, error) {
 	svc := s.GetServices()
+	log.Fields{
+		"path":  req.Path,
+		"index": req.Index,
+		"tail":  tail,
+	}.Debugf(c, "Received get request.")
 
 	// Fetch the log stream state for this log stream.
 	u, err := url.Parse(req.Path)
@@ -137,6 +145,11 @@ func (s *Server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 func (s *Server) getLogs(c context.Context, svc coordinator.Services, req *logdog.GetRequest, tail bool,
 	ls *coordinator.LogStream) (
 	[]*logpb.LogEntry, error) {
+	byteLimit := int(req.ByteCount)
+	if byteLimit <= 0 || byteLimit > getBytesLimit {
+		byteLimit = getBytesLimit
+	}
+
 	var st storage.Storage
 	if !ls.Archived() {
 		log.Debugf(c, "Log is not archived. Fetching from intermediate storage.")
@@ -148,7 +161,12 @@ func (s *Server) getLogs(c context.Context, svc coordinator.Services, req *logdo
 			return nil, err
 		}
 	} else {
-		log.Debugf(c, "Log is archived. Fetching from archive storage.")
+		log.Fields{
+			"indexURL":    ls.ArchiveIndexURL,
+			"streamURL":   ls.ArchiveStreamURL,
+			"archiveTime": ls.ArchivedTime,
+		}.Debugf(c, "Log is archived. Fetching from archive storage.")
+
 		var err error
 		gs, err := svc.GSClient(c)
 		if err != nil {
@@ -165,6 +183,7 @@ func (s *Server) getLogs(c context.Context, svc coordinator.Services, req *logdo
 			IndexURL:  ls.ArchiveIndexURL,
 			StreamURL: ls.ArchiveStreamURL,
 			Client:    gs,
+			MaxBytes:  byteLimit,
 		})
 		if err != nil {
 			log.WithError(err).Errorf(c, "Failed to create Google Storage storage instance.")
@@ -180,7 +199,7 @@ func (s *Server) getLogs(c context.Context, svc coordinator.Services, req *logdo
 	if tail {
 		fetchedLogs, err = getTail(c, st, path)
 	} else {
-		fetchedLogs, err = getHead(c, req, st, path)
+		fetchedLogs, err = getHead(c, req, st, path, byteLimit)
 	}
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to fetch log records.")
@@ -203,7 +222,8 @@ func (s *Server) getLogs(c context.Context, svc coordinator.Services, req *logdo
 	return logEntries, nil
 }
 
-func getHead(c context.Context, req *logdog.GetRequest, st storage.Storage, p types.StreamPath) ([][]byte, error) {
+func getHead(c context.Context, req *logdog.GetRequest, st storage.Storage, p types.StreamPath, byteLimit int) (
+	[][]byte, error) {
 	c = log.SetFields(c, log.Fields{
 		"path":          p,
 		"index":         req.Index,
@@ -211,11 +231,6 @@ func getHead(c context.Context, req *logdog.GetRequest, st storage.Storage, p ty
 		"bytes":         req.ByteCount,
 		"noncontiguous": req.NonContiguous,
 	})
-
-	byteLimit := int(req.ByteCount)
-	if byteLimit <= 0 || byteLimit > getBytesLimit {
-		byteLimit = getBytesLimit
-	}
 
 	// Allocate result logs array.
 	logCount := int(req.LogCount)

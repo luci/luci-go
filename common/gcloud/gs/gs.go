@@ -37,7 +37,11 @@ type Client interface {
 	io.Closer
 
 	// NewReader instantiates a new Reader instance for the named bucket/path.
-	NewReader(p Path, o Options) (io.ReadCloser, error)
+	//
+	// The supplied offset must be >= 0, or else this function will panic.
+	//
+	// If the supplied length is <0, no upper byte bound will be set.
+	NewReader(p Path, offset, length int64) (io.ReadCloser, error)
 
 	// NewWriter instantiates a new Writer instance for the named bucket/path.
 	NewWriter(p Path) (Writer, error)
@@ -53,19 +57,6 @@ type Client interface {
 	// implementation uses two operations (Copy + Delete), so it may
 	// occasionally fail.
 	Rename(src, dst Path) error
-}
-
-// Options are the set of extra options to apply to the Google Storage request.
-type Options struct {
-	// From is the range request starting index. If >0, the beginning of the
-	// range request will be set.
-	From int64
-	// To is the range request ending index. If >0, the end of the
-	// range request will be set.
-	//
-	// If no From index is set, this will result in a request indexed from the end
-	// of the object.
-	To int64
 }
 
 // prodGSObject is an implementation of Client interface using the production
@@ -116,19 +107,16 @@ func (c *prodClient) NewWriter(p Path) (Writer, error) {
 	}, nil
 }
 
-func (c *prodClient) NewReader(p Path, o Options) (io.ReadCloser, error) {
-	if o.From < 0 {
-		o.From = 0
-	}
-	if o.To <= 0 {
-		o.To = -1
+func (c *prodClient) NewReader(p Path, offset, length int64) (io.ReadCloser, error) {
+	if offset < 0 {
+		panic(fmt.Errorf("offset (%d) must be >= 0", offset))
 	}
 
 	obj, err := c.handleForPath(p)
 	if err != nil {
 		return nil, err
 	}
-	return obj.NewRangeReader(c, o.From, o.To)
+	return obj.NewRangeReader(c, offset, length)
 }
 
 func (c *prodClient) Rename(src, dst Path) error {
