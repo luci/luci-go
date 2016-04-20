@@ -50,7 +50,7 @@ func (m *method) handle(c context.Context, w http.ResponseWriter, r *http.Reques
 			return perr
 		}
 		return nil
-	})
+	}, nil)
 	if err != nil {
 		if perr, ok := err.(*protocolError); ok {
 			return respondProtocolError(perr)

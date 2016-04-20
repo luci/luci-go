@@ -493,7 +493,7 @@ var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion1
+const _ = grpc.SupportPackageIsVersion2
 
 // Client API for Logs service
 
@@ -612,52 +612,76 @@ func RegisterLogsServer(s prpc.Registrar, srv LogsServer) {
 	s.RegisterService(&_Logs_serviceDesc, srv)
 }
 
-func _Logs_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Logs_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(LogsServer).Get(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(LogsServer).Get(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/logdog.Logs/Get",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LogsServer).Get(ctx, req.(*GetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _Logs_Tail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Logs_Tail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TailRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(LogsServer).Tail(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(LogsServer).Tail(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/logdog.Logs/Tail",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LogsServer).Tail(ctx, req.(*TailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _Logs_Query_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Logs_Query_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(LogsServer).Query(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(LogsServer).Query(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/logdog.Logs/Query",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LogsServer).Query(ctx, req.(*QueryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _Logs_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Logs_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(LogsServer).List(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(LogsServer).List(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/logdog.Logs/List",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LogsServer).List(ctx, req.(*ListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _Logs_serviceDesc = grpc.ServiceDesc{

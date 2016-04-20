@@ -112,6 +112,8 @@ type ApiBuildMessage struct {
 
 	ResultDetailsJson string `json:"result_details_json,omitempty"`
 
+	RetryOf int64 `json:"retry_of,omitempty,string"`
+
 	// Possible values:
 	//   "COMPLETED"
 	//   "SCHEDULED"
@@ -540,6 +542,28 @@ type ApiPutRequestMessage struct {
 
 func (s *ApiPutRequestMessage) MarshalJSON() ([]byte, error) {
 	type noMethod ApiPutRequestMessage
+	raw := noMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields)
+}
+
+type ApiRetryRequestMessage struct {
+	ClientOperationId string `json:"client_operation_id,omitempty"`
+
+	LeaseExpirationTs int64 `json:"lease_expiration_ts,omitempty,string"`
+
+	PubsubCallback *ApiPubSubCallbackMessage `json:"pubsub_callback,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "ClientOperationId")
+	// to unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+}
+
+func (s *ApiRetryRequestMessage) MarshalJSON() ([]byte, error) {
+	type noMethod ApiRetryRequestMessage
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields)
 }
@@ -2041,6 +2065,128 @@ func (c *ResetCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, 
 
 }
 
+// method id "buildbucket.retry":
+
+type RetryCall struct {
+	s                      *Service
+	id                     int64
+	apiretryrequestmessage *ApiRetryRequestMessage
+	urlParams_             gensupport.URLParams
+	ctx_                   context.Context
+}
+
+// Retry: Retries an existing build.
+func (s *Service) Retry(id int64, apiretryrequestmessage *ApiRetryRequestMessage) *RetryCall {
+	c := &RetryCall{s: s, urlParams_: make(gensupport.URLParams)}
+	c.id = id
+	c.apiretryrequestmessage = apiretryrequestmessage
+	return c
+}
+
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *RetryCall) Fields(s ...googleapi.Field) *RetryCall {
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
+	return c
+}
+
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
+func (c *RetryCall) Context(ctx context.Context) *RetryCall {
+	c.ctx_ = ctx
+	return c
+}
+
+func (c *RetryCall) doRequest(alt string) (*http.Response, error) {
+	var body io.Reader = nil
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.apiretryrequestmessage)
+	if err != nil {
+		return nil, err
+	}
+	ctype := "application/json"
+	c.urlParams_.Set("alt", alt)
+	urls := googleapi.ResolveRelative(c.s.BasePath, "builds/{id}/retry")
+	urls += "?" + c.urlParams_.Encode()
+	req, _ := http.NewRequest("PUT", urls, body)
+	googleapi.Expand(req.URL, map[string]string{
+		"id": strconv.FormatInt(c.id, 10),
+	})
+	req.Header.Set("Content-Type", ctype)
+	req.Header.Set("User-Agent", c.s.userAgent())
+	if c.ctx_ != nil {
+		return ctxhttp.Do(c.ctx_, c.s.client, req)
+	}
+	return c.s.client.Do(req)
+}
+
+// Do executes the "buildbucket.retry" call.
+// Exactly one of *ApiBuildResponseMessage or error will be non-nil. Any
+// non-2xx status code is an error. Response headers are in either
+// *ApiBuildResponseMessage.ServerResponse.Header or (if a response was
+// returned at all) in error.(*googleapi.Error).Header. Use
+// googleapi.IsNotModified to check whether the returned error was
+// because http.StatusNotModified was returned.
+func (c *RetryCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
+	res, err := c.doRequest("json")
+	if res != nil && res.StatusCode == http.StatusNotModified {
+		if res.Body != nil {
+			res.Body.Close()
+		}
+		return nil, &googleapi.Error{
+			Code:   res.StatusCode,
+			Header: res.Header,
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	ret := &ApiBuildResponseMessage{
+		ServerResponse: googleapi.ServerResponse{
+			Header:         res.Header,
+			HTTPStatusCode: res.StatusCode,
+		},
+	}
+	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Retries an existing build.",
+	//   "httpMethod": "PUT",
+	//   "id": "buildbucket.retry",
+	//   "parameterOrder": [
+	//     "id"
+	//   ],
+	//   "parameters": {
+	//     "id": {
+	//       "format": "int64",
+	//       "location": "path",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "builds/{id}/retry",
+	//   "request": {
+	//     "$ref": "ApiRetryRequestMessage",
+	//     "parameterName": "resource"
+	//   },
+	//   "response": {
+	//     "$ref": "ApiBuildResponseMessage"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/userinfo.email"
+	//   ]
+	// }
+
+}
+
 // method id "buildbucket.search":
 
 type SearchCall struct {
@@ -2104,6 +2250,12 @@ func (c *SearchCall) MaxBuilds(maxBuilds int64) *SearchCall {
 //   "SUCCESS"
 func (c *SearchCall) Result(result string) *SearchCall {
 	c.urlParams_.Set("result", result)
+	return c
+}
+
+// RetryOf sets the optional parameter "retry_of":
+func (c *SearchCall) RetryOf(retryOf int64) *SearchCall {
+	c.urlParams_.Set("retry_of", fmt.Sprint(retryOf))
 	return c
 }
 
@@ -2267,6 +2419,11 @@ func (c *SearchCall) Do(opts ...googleapi.CallOption) (*ApiSearchResponseMessage
 	//         "",
 	//         ""
 	//       ],
+	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "retry_of": {
+	//       "format": "int64",
 	//       "location": "query",
 	//       "type": "string"
 	//     },

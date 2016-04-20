@@ -258,7 +258,7 @@ var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion1
+const _ = grpc.SupportPackageIsVersion2
 
 // Client API for CertificateAuthorities service
 
@@ -429,76 +429,112 @@ func RegisterCertificateAuthoritiesServer(s prpc.Registrar, srv CertificateAutho
 	s.RegisterService(&_CertificateAuthorities_serviceDesc, srv)
 }
 
-func _CertificateAuthorities_ImportConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _CertificateAuthorities_ImportConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ImportConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(CertificateAuthoritiesServer).ImportConfig(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(CertificateAuthoritiesServer).ImportConfig(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tokenserver.admin.CertificateAuthorities/ImportConfig",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CertificateAuthoritiesServer).ImportConfig(ctx, req.(*ImportConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _CertificateAuthorities_FetchCRL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _CertificateAuthorities_FetchCRL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(FetchCRLRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(CertificateAuthoritiesServer).FetchCRL(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(CertificateAuthoritiesServer).FetchCRL(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tokenserver.admin.CertificateAuthorities/FetchCRL",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CertificateAuthoritiesServer).FetchCRL(ctx, req.(*FetchCRLRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _CertificateAuthorities_ListCAs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _CertificateAuthorities_ListCAs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(google_protobuf.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(CertificateAuthoritiesServer).ListCAs(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(CertificateAuthoritiesServer).ListCAs(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tokenserver.admin.CertificateAuthorities/ListCAs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CertificateAuthoritiesServer).ListCAs(ctx, req.(*google_protobuf.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _CertificateAuthorities_GetCAStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _CertificateAuthorities_GetCAStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetCAStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(CertificateAuthoritiesServer).GetCAStatus(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(CertificateAuthoritiesServer).GetCAStatus(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tokenserver.admin.CertificateAuthorities/GetCAStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CertificateAuthoritiesServer).GetCAStatus(ctx, req.(*GetCAStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _CertificateAuthorities_IsRevokedCert_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _CertificateAuthorities_IsRevokedCert_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(IsRevokedCertRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(CertificateAuthoritiesServer).IsRevokedCert(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(CertificateAuthoritiesServer).IsRevokedCert(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tokenserver.admin.CertificateAuthorities/IsRevokedCert",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CertificateAuthoritiesServer).IsRevokedCert(ctx, req.(*IsRevokedCertRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _CertificateAuthorities_CheckCertificate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _CertificateAuthorities_CheckCertificate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CheckCertificateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(CertificateAuthoritiesServer).CheckCertificate(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(CertificateAuthoritiesServer).CheckCertificate(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tokenserver.admin.CertificateAuthorities/CheckCertificate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CertificateAuthoritiesServer).CheckCertificate(ctx, req.(*CheckCertificateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _CertificateAuthorities_serviceDesc = grpc.ServiceDesc{

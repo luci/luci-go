@@ -417,6 +417,32 @@ func (s *SwarmingRpcsFilesRef) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields)
 }
 
+type SwarmingRpcsIsolatedOperation struct {
+	Duration float64 `json:"duration,omitempty"`
+
+	InitialNumberItems int64 `json:"initial_number_items,omitempty,string"`
+
+	InitialSize int64 `json:"initial_size,omitempty,string"`
+
+	ItemsCold string `json:"items_cold,omitempty"`
+
+	ItemsHot string `json:"items_hot,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "Duration") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+}
+
+func (s *SwarmingRpcsIsolatedOperation) MarshalJSON() ([]byte, error) {
+	type noMethod SwarmingRpcsIsolatedOperation
+	raw := noMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields)
+}
+
 // SwarmingRpcsNewTaskRequest: Description of a new task request as
 // described by the client.
 type SwarmingRpcsNewTaskRequest struct {
@@ -452,6 +478,28 @@ type SwarmingRpcsNewTaskRequest struct {
 
 func (s *SwarmingRpcsNewTaskRequest) MarshalJSON() ([]byte, error) {
 	type noMethod SwarmingRpcsNewTaskRequest
+	raw := noMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields)
+}
+
+type SwarmingRpcsPerformanceStats struct {
+	BotOverhead float64 `json:"bot_overhead,omitempty"`
+
+	IsolatedDownload *SwarmingRpcsIsolatedOperation `json:"isolated_download,omitempty"`
+
+	IsolatedUpload *SwarmingRpcsIsolatedOperation `json:"isolated_upload,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "BotOverhead") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+}
+
+func (s *SwarmingRpcsPerformanceStats) MarshalJSON() ([]byte, error) {
+	type noMethod SwarmingRpcsPerformanceStats
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields)
 }
@@ -757,6 +805,8 @@ type SwarmingRpcsTaskResult struct {
 	// OutputsRef: Defines a data tree reference, normally a reference to a
 	// .isolated file.
 	OutputsRef *SwarmingRpcsFilesRef `json:"outputs_ref,omitempty"`
+
+	PerformanceStats *SwarmingRpcsPerformanceStats `json:"performance_stats,omitempty"`
 
 	PropertiesHash string `json:"properties_hash,omitempty"`
 
@@ -1475,6 +1525,12 @@ func (c *BotsListCall) Cursor(cursor string) *BotsListCall {
 	return c
 }
 
+// Dimensions sets the optional parameter "dimensions":
+func (c *BotsListCall) Dimensions(dimensions ...string) *BotsListCall {
+	c.urlParams_.SetMulti("dimensions", append([]string{}, dimensions...))
+	return c
+}
+
 // Limit sets the optional parameter "limit":
 func (c *BotsListCall) Limit(limit int64) *BotsListCall {
 	c.urlParams_.Set("limit", fmt.Sprint(limit))
@@ -1567,6 +1623,11 @@ func (c *BotsListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotList, e
 	//   "parameters": {
 	//     "cursor": {
 	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "dimensions": {
+	//       "location": "query",
+	//       "repeated": true,
 	//       "type": "string"
 	//     },
 	//     "limit": {
@@ -2864,6 +2925,13 @@ func (c *TasksListCall) End(end float64) *TasksListCall {
 	return c
 }
 
+// IncludePerformanceStats sets the optional parameter
+// "include_performance_stats":
+func (c *TasksListCall) IncludePerformanceStats(includePerformanceStats bool) *TasksListCall {
+	c.urlParams_.Set("include_performance_stats", fmt.Sprint(includePerformanceStats))
+	return c
+}
+
 // Limit sets the optional parameter "limit":
 func (c *TasksListCall) Limit(limit int64) *TasksListCall {
 	c.urlParams_.Set("limit", fmt.Sprint(limit))
@@ -3006,6 +3074,10 @@ func (c *TasksListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskList,
 	//       "format": "double",
 	//       "location": "query",
 	//       "type": "number"
+	//     },
+	//     "include_performance_stats": {
+	//       "location": "query",
+	//       "type": "boolean"
 	//     },
 	//     "limit": {
 	//       "default": "200",
@@ -3222,6 +3294,13 @@ func (c *TasksRequestsCall) End(end float64) *TasksRequestsCall {
 	return c
 }
 
+// IncludePerformanceStats sets the optional parameter
+// "include_performance_stats":
+func (c *TasksRequestsCall) IncludePerformanceStats(includePerformanceStats bool) *TasksRequestsCall {
+	c.urlParams_.Set("include_performance_stats", fmt.Sprint(includePerformanceStats))
+	return c
+}
+
 // Limit sets the optional parameter "limit":
 func (c *TasksRequestsCall) Limit(limit int64) *TasksRequestsCall {
 	c.urlParams_.Set("limit", fmt.Sprint(limit))
@@ -3364,6 +3443,10 @@ func (c *TasksRequestsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskR
 	//       "format": "double",
 	//       "location": "query",
 	//       "type": "number"
+	//     },
+	//     "include_performance_stats": {
+	//       "location": "query",
+	//       "type": "boolean"
 	//     },
 	//     "limit": {
 	//       "default": "200",

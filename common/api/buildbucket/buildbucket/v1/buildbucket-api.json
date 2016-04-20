@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/_0lAPJGiMFsxZykfOERvQkuHJJ0\"",
+ "etag": "\"H01Z-1ikbwOw463Un2bFZHenx1g/VuWw02E1pI1hFqAPGR6mnJMlKXs\"",
  "discoveryVersion": "v1",
  "id": "buildbucket:v1",
  "name": "buildbucket",
@@ -147,6 +147,10 @@
     },
     "result_details_json": {
      "type": "string"
+    },
+    "retry_of": {
+     "type": "string",
+     "format": "int64"
     },
     "status": {
      "type": "string",
@@ -470,6 +474,22 @@
      "items": {
       "type": "string"
      }
+    }
+   }
+  },
+  "ApiRetryRequestMessage": {
+   "id": "ApiRetryRequestMessage",
+   "type": "object",
+   "properties": {
+    "client_operation_id": {
+     "type": "string"
+    },
+    "lease_expiration_ts": {
+     "type": "string",
+     "format": "int64"
+    },
+    "pubsub_callback": {
+     "$ref": "ApiPubSubCallbackMessage"
     }
    }
   },
@@ -812,6 +832,33 @@
     "https://www.googleapis.com/auth/userinfo.email"
    ]
   },
+  "retry": {
+   "id": "buildbucket.retry",
+   "path": "builds/{id}/retry",
+   "httpMethod": "PUT",
+   "description": "Retries an existing build.",
+   "parameters": {
+    "id": {
+     "type": "string",
+     "required": true,
+     "format": "int64",
+     "location": "path"
+    }
+   },
+   "parameterOrder": [
+    "id"
+   ],
+   "request": {
+    "$ref": "ApiRetryRequestMessage",
+    "parameterName": "resource"
+   },
+   "response": {
+    "$ref": "ApiBuildResponseMessage"
+   },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
   "search": {
    "id": "buildbucket.search",
    "path": "search",
@@ -872,6 +919,11 @@
       "",
       ""
      ],
+     "location": "query"
+    },
+    "retry_of": {
+     "type": "string",
+     "format": "int64",
      "location": "query"
     },
     "start_cursor": {

@@ -28,7 +28,7 @@ var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion1
+const _ = grpc.SupportPackageIsVersion2
 
 // Client API for Deps service
 
@@ -201,88 +201,130 @@ func RegisterDepsServer(s prpc.Registrar, srv DepsServer) {
 	s.RegisterService(&_Deps_serviceDesc, srv)
 }
 
-func _Deps_ActivateExecution_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Deps_ActivateExecution_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ActivateExecutionReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(DepsServer).ActivateExecution(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(DepsServer).ActivateExecution(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/dm.Deps/ActivateExecution",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DepsServer).ActivateExecution(ctx, req.(*ActivateExecutionReq))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _Deps_AddDeps_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Deps_AddDeps_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AddDepsReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(DepsServer).AddDeps(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(DepsServer).AddDeps(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/dm.Deps/AddDeps",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DepsServer).AddDeps(ctx, req.(*AddDepsReq))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _Deps_EnsureAttempt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Deps_EnsureAttempt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(EnsureAttemptReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(DepsServer).EnsureAttempt(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(DepsServer).EnsureAttempt(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/dm.Deps/EnsureAttempt",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DepsServer).EnsureAttempt(ctx, req.(*EnsureAttemptReq))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _Deps_EnsureQuests_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Deps_EnsureQuests_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(EnsureQuestsReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(DepsServer).EnsureQuests(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(DepsServer).EnsureQuests(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/dm.Deps/EnsureQuests",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DepsServer).EnsureQuests(ctx, req.(*EnsureQuestsReq))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _Deps_FinishAttempt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Deps_FinishAttempt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(FinishAttemptReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(DepsServer).FinishAttempt(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(DepsServer).FinishAttempt(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/dm.Deps/FinishAttempt",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DepsServer).FinishAttempt(ctx, req.(*FinishAttemptReq))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _Deps_WalkGraph_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Deps_WalkGraph_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(WalkGraphReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(DepsServer).WalkGraph(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(DepsServer).WalkGraph(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/dm.Deps/WalkGraph",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DepsServer).WalkGraph(ctx, req.(*WalkGraphReq))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _Deps_ClaimExecution_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Deps_ClaimExecution_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(google_protobuf1.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(DepsServer).ClaimExecution(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(DepsServer).ClaimExecution(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/dm.Deps/ClaimExecution",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DepsServer).ClaimExecution(ctx, req.(*google_protobuf1.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _Deps_serviceDesc = grpc.ServiceDesc{

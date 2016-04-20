@@ -76,7 +76,7 @@ func (*TagCache_Entry) Descriptor() ([]byte, []int) { return fileDescriptor0, []
 type InstanceCache struct {
 	// Entries is a map of {instance id -> information about instance}.
 	Entries map[string]*InstanceCache_Entry `protobuf:"bytes,1,rep,name=entries" json:"entries,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// LastSynced is timestamp when we synchronized Entires with actual
+	// LastSynced is timestamp when we synchronized Entries with actual
 	// instance files.
 	LastSynced *google_protobuf.Timestamp `protobuf:"bytes,2,opt,name=last_synced,json=lastSynced" json:"last_synced,omitempty"`
 }

@@ -226,7 +226,7 @@ var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion1
+const _ = grpc.SupportPackageIsVersion2
 
 // Client API for Services service
 
@@ -375,64 +375,94 @@ func RegisterServicesServer(s prpc.Registrar, srv ServicesServer) {
 	s.RegisterService(&_Services_serviceDesc, srv)
 }
 
-func _Services_GetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Services_GetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(google_protobuf2.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(ServicesServer).GetConfig(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(ServicesServer).GetConfig(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/logdog.Services/GetConfig",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ServicesServer).GetConfig(ctx, req.(*google_protobuf2.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _Services_RegisterStream_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Services_RegisterStream_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RegisterStreamRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(ServicesServer).RegisterStream(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(ServicesServer).RegisterStream(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/logdog.Services/RegisterStream",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ServicesServer).RegisterStream(ctx, req.(*RegisterStreamRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _Services_LoadStream_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Services_LoadStream_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LoadStreamRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(ServicesServer).LoadStream(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(ServicesServer).LoadStream(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/logdog.Services/LoadStream",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ServicesServer).LoadStream(ctx, req.(*LoadStreamRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _Services_TerminateStream_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Services_TerminateStream_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TerminateStreamRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(ServicesServer).TerminateStream(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(ServicesServer).TerminateStream(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/logdog.Services/TerminateStream",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ServicesServer).TerminateStream(ctx, req.(*TerminateStreamRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _Services_ArchiveStream_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Services_ArchiveStream_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ArchiveStreamRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(ServicesServer).ArchiveStream(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(ServicesServer).ArchiveStream(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/logdog.Services/ArchiveStream",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ServicesServer).ArchiveStream(ctx, req.(*ArchiveStreamRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _Services_serviceDesc = grpc.ServiceDesc{

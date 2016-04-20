@@ -88,7 +88,7 @@ var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion1
+const _ = grpc.SupportPackageIsVersion2
 
 // Client API for Greeter service
 
@@ -141,16 +141,22 @@ func RegisterGreeterServer(s Registrar, srv GreeterServer) {
 	s.RegisterService(&_Greeter_serviceDesc, srv)
 }
 
-func _Greeter_SayHello_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Greeter_SayHello_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(HelloRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(GreeterServer).SayHello(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(GreeterServer).SayHello(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/prpc.Greeter/SayHello",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GreeterServer).SayHello(ctx, req.(*HelloRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _Greeter_serviceDesc = grpc.ServiceDesc{
@@ -214,16 +220,22 @@ func RegisterCalcServer(s Registrar, srv CalcServer) {
 	s.RegisterService(&_Calc_serviceDesc, srv)
 }
 
-func _Calc_Multiply_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Calc_Multiply_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(MultiplyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(CalcServer).Multiply(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(CalcServer).Multiply(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/prpc.Calc/Multiply",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CalcServer).Multiply(ctx, req.(*MultiplyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _Calc_serviceDesc = grpc.ServiceDesc{

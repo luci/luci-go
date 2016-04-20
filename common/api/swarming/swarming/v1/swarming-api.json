@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/QGeWLFfkJevlv1RBfH1jGhSGMu0\"",
+ "etag": "\"H01Z-1ikbwOw463Un2bFZHenx1g/Fybck7CAXoWvcvfH6qQzlWP_Z_U\"",
  "discoveryVersion": "v1",
  "id": "swarming:v1",
  "name": "swarming",
@@ -289,6 +289,32 @@
     }
    }
   },
+  "SwarmingRpcsIsolatedOperation": {
+   "id": "SwarmingRpcsIsolatedOperation",
+   "type": "object",
+   "properties": {
+    "duration": {
+     "type": "number",
+     "format": "double"
+    },
+    "initial_number_items": {
+     "type": "string",
+     "format": "int64"
+    },
+    "initial_size": {
+     "type": "string",
+     "format": "int64"
+    },
+    "items_cold": {
+     "type": "string",
+     "format": "byte"
+    },
+    "items_hot": {
+     "type": "string",
+     "format": "byte"
+    }
+   }
+  },
   "SwarmingRpcsNewTaskRequest": {
    "id": "SwarmingRpcsNewTaskRequest",
    "type": "object",
@@ -329,6 +355,22 @@
     },
     "user": {
      "type": "string"
+    }
+   }
+  },
+  "SwarmingRpcsPerformanceStats": {
+   "id": "SwarmingRpcsPerformanceStats",
+   "type": "object",
+   "properties": {
+    "bot_overhead": {
+     "type": "number",
+     "format": "double"
+    },
+    "isolated_download": {
+     "$ref": "SwarmingRpcsIsolatedOperation"
+    },
+    "isolated_upload": {
+     "$ref": "SwarmingRpcsIsolatedOperation"
     }
    }
   },
@@ -615,6 +657,9 @@
      "$ref": "SwarmingRpcsFilesRef",
      "description": "Defines a data tree reference, normally a reference to a .isolated file."
     },
+    "performance_stats": {
+     "$ref": "SwarmingRpcsPerformanceStats"
+    },
     "properties_hash": {
      "type": "string"
     },
@@ -818,6 +863,11 @@
      "parameters": {
       "cursor": {
        "type": "string",
+       "location": "query"
+      },
+      "dimensions": {
+       "type": "string",
+       "repeated": true,
        "location": "query"
       },
       "limit": {
@@ -1093,6 +1143,10 @@
        "format": "double",
        "location": "query"
       },
+      "include_performance_stats": {
+       "type": "boolean",
+       "location": "query"
+      },
       "limit": {
        "type": "string",
        "default": "200",
@@ -1196,6 +1250,10 @@
       "end": {
        "type": "number",
        "format": "double",
+       "location": "query"
+      },
+      "include_performance_stats": {
+       "type": "boolean",
        "location": "query"
       },
       "limit": {

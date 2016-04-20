@@ -338,7 +338,7 @@ var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion1
+const _ = grpc.SupportPackageIsVersion2
 
 // Client API for S1 service
 
@@ -391,16 +391,22 @@ func RegisterS1Server(s prpc.Registrar, srv S1Server) {
 	s.RegisterService(&_S1_serviceDesc, srv)
 }
 
-func _S1_R1_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _S1_R1_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(M1)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(S1Server).R1(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(S1Server).R1(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pkg.S1/R1",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(S1Server).R1(ctx, req.(*M1))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _S1_serviceDesc = grpc.ServiceDesc{
@@ -488,28 +494,40 @@ func RegisterS2Server(s prpc.Registrar, srv S2Server) {
 	s.RegisterService(&_S2_serviceDesc, srv)
 }
 
-func _S2_R1_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _S2_R1_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(M1)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(S2Server).R1(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(S2Server).R1(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pkg.S2/R1",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(S2Server).R1(ctx, req.(*M1))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _S2_R2_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _S2_R2_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(M1)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(S2Server).R2(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(S2Server).R2(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pkg.S2/R2",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(S2Server).R2(ctx, req.(*M1))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _S2_serviceDesc = grpc.ServiceDesc{
