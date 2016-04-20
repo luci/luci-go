@@ -41,7 +41,6 @@ func TestLogStream(c context.Context, desc *logpb.LogStreamDescriptor) *coordina
 
 	ls.ProtoVersion = logpb.Version
 	ls.Created = ds.RoundTime(clock.Now(c).UTC())
-	ls.Updated = ds.RoundTime(clock.Now(c).UTC())
 	ls.Secret = bytes.Repeat([]byte{0x6F}, types.StreamSecretLength)
 	ls.TerminalIndex = -1
 	return ls

@@ -62,9 +62,9 @@ func loadLogStreamState(ls *coordinator.LogStream) *logdog.LogStreamState {
 }
 
 // RegisterStream is an idempotent stream state register operation.
-func (b *Server) RegisterStream(c context.Context, req *logdog.RegisterStreamRequest) (
-	*logdog.RegisterStreamResponse, error) {
-	if err := Auth(c); err != nil {
+func (s *Server) RegisterStream(c context.Context, req *logdog.RegisterStreamRequest) (*logdog.RegisterStreamResponse, error) {
+	svc := s.GetServices()
+	if err := Auth(c, svc); err != nil {
 		return nil, err
 	}
 
@@ -181,15 +181,13 @@ func (m registerStreamMutation) RollForward(c context.Context) ([]tumble.Mutatio
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Failed to load descriptor.")
 	}
 
-	now := ds.RoundTime(clock.Now(c).UTC())
 	m.Secret = m.req.Secret
 	m.ProtoVersion = m.req.ProtoVersion
-	m.State = coordinator.LSPending
-	m.Created = now
-	m.Updated = now
+	m.State = coordinator.LSStreaming
+	m.Created = ds.RoundTime(clock.Now(c).UTC())
 	m.TerminalIndex = -1
 
-	if err := m.Put(di); err != nil {
+	if err := di.Put(m.LogStream); err != nil {
 		log.Fields{
 			log.ErrorKey: err,
 		}.Errorf(c, "Failed to Put() LogStream.")

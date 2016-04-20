@@ -3,15 +3,10 @@
 # found in the LICENSE file.
 
 cron:
-  - description: log stream archivist task creation
-    url: /archive/cron/terminal
+  - description: log stream archivist task creation for old logs
+    url: /archive/cron
     target: backend
-    schedule: every 1 minutes
-
-  - description: log stream archivist task creation for non-terminal logs
-    url: /archive/cron/nonterminal
-    target: backend
-    schedule: every 10 minutes
+    schedule: every 30 minutes
 
   - description: tumble fire_all_tasks invocation
     url: /internal/tumble/fire_all_tasks

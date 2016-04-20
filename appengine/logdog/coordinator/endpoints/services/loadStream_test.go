@@ -7,15 +7,17 @@ package services
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/gae/filter/featureBreaker"
 	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"golang.org/x/net/context"
@@ -28,20 +30,23 @@ func TestLoadStream(t *testing.T) {
 	t.Parallel()
 
 	Convey(`With a testing configuration`, t, func() {
-		c, _ := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
-		c = memory.Use(context.Background())
-		be := Server{}
+		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
+		c = memory.Use(c)
 
-		c = ct.UseConfig(c, &svcconfig.Coordinator{
-			ServiceAuthGroup: "test-services",
-		})
+		svcStub := ct.Services{}
+		svcStub.InitConfig()
+		svcStub.ServiceConfig.Coordinator.ServiceAuthGroup = "test-services"
+		be := Server{
+			ServiceBase: coordinator.ServiceBase{&svcStub},
+		}
+
 		fs := authtest.FakeState{}
 		c = auth.WithState(c, &fs)
 
 		// Register a test stream.
 		desc := ct.TestLogStreamDescriptor(c, "foo/bar")
 		ls := ct.TestLogStream(c, desc)
-		if err := ls.Put(ds.Get(c)); err != nil {
+		if err := ds.Get(c).Put(ls); err != nil {
 			panic(err)
 		}
 
@@ -67,6 +72,26 @@ func TestLoadStream(t *testing.T) {
 						ProtoVersion:  "1",
 						TerminalIndex: -1,
 					},
+				})
+			})
+
+			Convey(`Will return archival properties.`, func() {
+				tc.Add(1 * time.Hour)
+				ls.ArchivalKey = []byte("archival key")
+				if err := ds.Get(c).Put(ls); err != nil {
+					panic(err)
+				}
+
+				resp, err := be.LoadStream(c, &req)
+				So(err, ShouldBeNil)
+				So(resp, ShouldResemble, &logdog.LoadStreamResponse{
+					State: &logdog.LogStreamState{
+						Path:          "testing/+/foo/bar",
+						ProtoVersion:  "1",
+						TerminalIndex: -1,
+					},
+					ArchivalKey: []byte("archival key"),
+					Age:         google.NewDuration(1 * time.Hour),
 				})
 			})
 

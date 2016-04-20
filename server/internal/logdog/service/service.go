@@ -56,6 +56,7 @@ type Service struct {
 	coordinatorInsecure       bool
 	storageCredentialJSONPath string
 	cpuProfilePath            string
+	heapProfilePath           string
 
 	coord  logdog.ServicesClient
 	config *config.Manager
@@ -97,6 +98,27 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 
 		pprof.StartCPUProfile(fd)
 		defer pprof.StopCPUProfile()
+	}
+
+	if p := s.heapProfilePath; p != "" {
+		defer func() {
+			fd, err := os.Create(p)
+			if err != nil {
+				log.Fields{
+					log.ErrorKey: err,
+					"path":       p,
+				}.Warningf(c, "Failed to create heap profile output file.")
+				return
+			}
+			defer fd.Close()
+
+			if err := pprof.WriteHeapProfile(fd); err != nil {
+				log.Fields{
+					log.ErrorKey: err,
+					"path":       p,
+				}.Warningf(c, "Failed to write heap profile.")
+			}
+		}()
 	}
 
 	// Configure our signal handler. It will listen for terminating signals and
@@ -160,6 +182,8 @@ func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
 	fs.StringVar(&s.storageCredentialJSONPath, "storage-credential-json-path", "",
 		"If supplied, the path of a JSON credential file to load and use for storage operations.")
 	fs.StringVar(&s.cpuProfilePath, "cpu-profile-path", "",
+		"If supplied, enable CPU profiling and write the profile here.")
+	fs.StringVar(&s.heapProfilePath, "heap-profile-path", "",
 		"If supplied, enable CPU profiling and write the profile here.")
 }
 

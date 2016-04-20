@@ -70,7 +70,6 @@ func loadLogStream(p types.StreamPath, s *logdog.LogStreamState, d *logpb.LogStr
 	if s != nil {
 		st := StreamState{
 			Created:       s.Created.Time(),
-			Updated:       s.Updated.Time(),
 			TerminalIndex: types.MessageIndex(s.TerminalIndex),
 			Purged:        s.Purged,
 		}

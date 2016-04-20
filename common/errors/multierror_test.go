@@ -6,6 +6,7 @@ package errors
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -57,5 +58,25 @@ func TestUpstreamErrors(t *testing.T) {
 	Convey("Fix passes through", t, func() {
 		e := errors.New("unique")
 		So(Fix(e), ShouldEqual, e)
+	})
+}
+
+func TestAny(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Testing the Any function`, t, func() {
+		for _, tc := range []struct {
+			err error
+			has bool
+		}{
+			{nil, false},
+			{New("test error"), true},
+			{New("other error"), false},
+			{MultiError{MultiError{New("test error"), nil}, New("other error")}, true},
+		} {
+			Convey(fmt.Sprintf(`Registers %v for error [%v]`, tc.has, tc.err), func() {
+				So(Any(tc.err, func(err error) bool { return err.Error() == "test error" }), ShouldEqual, tc.has)
+			})
+		}
 	})
 }

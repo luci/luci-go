@@ -59,11 +59,24 @@ type DevConfig struct {
 // If no global configuration is present, settings.ErrNoSettings will be
 // returned.
 func LoadGlobalConfig(c context.Context) (*GlobalConfig, error) {
-	gc := GlobalConfig{}
-	if err := settings.Get(c, globalConfigSettingsKey, &gc); err != nil {
+	gcfg := GlobalConfig{}
+	if err := settings.Get(c, globalConfigSettingsKey, &gcfg); err != nil {
+		// If we're running the dev appserver, install some configuration stubs so
+		// they can be tweaked locally.
+		if err == settings.ErrNoSettings && info.Get(c).IsDevAppServer() {
+			log.Infof(c, "Setting up development configuration...")
+
+			if err := gcfg.storeNoValidate(c, "development setup"); err != nil {
+				log.WithError(err).Warningf(c, "Failed to install development global config stub.")
+			}
+			if _, err := getSetupDevConfig(c); err != nil {
+				log.WithError(err).Warningf(c, "Failed to install development configuration entry stub.")
+			}
+		}
+
 		return nil, err
 	}
-	return &gc, nil
+	return &gcfg, nil
 }
 
 // Store stores the new global configuration.
@@ -154,30 +167,6 @@ func (gcfg *GlobalConfig) LoadConfig(c context.Context) (*svcconfig.Config, erro
 	}
 
 	return &cc, nil
-}
-
-// Load loads the current configuration from "luci-config".
-func Load(c context.Context) (*svcconfig.Config, error) {
-	gcfg, err := LoadGlobalConfig(c)
-	if err != nil {
-		// If we're running the dev appserver, install some configuration stubs so
-		// they can be tweaked locally.
-		if err == settings.ErrNoSettings {
-			if info.Get(c).IsDevAppServer() {
-				log.Infof(c, "Setting up development configuration...")
-				gcfg = &GlobalConfig{}
-				if err := gcfg.storeNoValidate(c, "development setup"); err != nil {
-					log.WithError(err).Warningf(c, "Failed to install development global config stub.")
-				}
-				if _, err := getSetupDevConfig(c); err != nil {
-					log.WithError(err).Warningf(c, "Failed to install development configuration entry stub.")
-				}
-			}
-		}
-
-		return nil, err
-	}
-	return gcfg.LoadConfig(c)
 }
 
 // validateConfig checks the supplied Coordinator config object to ensure that

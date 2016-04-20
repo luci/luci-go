@@ -8,6 +8,7 @@ package logdog;
 
 import "state.proto";
 import "github.com/luci/luci-go/common/proto/logdog/logpb/log.proto";
+import "google/protobuf/duration.proto";
 import "google/protobuf/empty.proto";
 
 // GetConfigResponse is the response structure for the user
@@ -68,6 +69,13 @@ message LoadStreamResponse {
   // If requested, the serialized log stream descriptor. The protobuf version
   // of this descriptor will match the "proto_version" field in "state".
   bytes desc = 2;
+
+  // The age of the log stream.
+  google.protobuf.Duration age = 3;
+
+  // The archival key of the log stream. If this key doesn't match the key in
+  // the archival request, the request is superfluous and should be deleted.
+  bytes archival_key = 4;
 }
 
 // TerminateStreamRequest is the set of caller-supplied data for the
@@ -87,11 +95,16 @@ message TerminateStreamRequest {
 message ArchiveStreamRequest {
   // The path of the log stream that was archived.
   string path = 1;
-  // If true, the archive includes the full set of log stream entries between
-  // [0..terminal_index].
-  bool complete = 2;
+  // The number of log entries that were archived.
+  int64 log_entry_count = 2;
   // The highest log stream index that was archived.
   int64 terminal_index = 3;
+  // If not empty, there was an archival error.
+  //
+  // This field serves to indicate that an error occured (being non-empty) and
+  // to supply an value that will show up in the Coordinator ArchiveStream
+  // endpoint logs.
+  string error = 4;
 
   // The archive URL of the log stream's stream data.
   string stream_url = 10;

@@ -71,6 +71,12 @@ func (p Path) Split() (bucket string, filename string) {
 	return
 }
 
+// IsFullPath returns true if the Path contains both a bucket and file name.
+func (p Path) IsFullPath() bool {
+	bucket, filename := p.Split()
+	return (bucket != "" && filename != "")
+}
+
 // Concat concatenates a filename component to the end of Path.
 //
 // Multiple components may be specified. In this case, each will be added as a

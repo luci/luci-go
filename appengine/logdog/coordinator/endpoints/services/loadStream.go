@@ -8,16 +8,19 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/google"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )
 
 // LoadStream loads the log stream state.
-func (b *Server) LoadStream(c context.Context, req *logdog.LoadStreamRequest) (*logdog.LoadStreamResponse, error) {
-	if err := Auth(c); err != nil {
+func (s *Server) LoadStream(c context.Context, req *logdog.LoadStreamRequest) (*logdog.LoadStreamResponse, error) {
+	svc := s.GetServices()
+	if err := Auth(c, svc); err != nil {
 		return nil, err
 	}
 
@@ -39,6 +42,18 @@ func (b *Server) LoadStream(c context.Context, req *logdog.LoadStreamRequest) (*
 		if req.Desc {
 			resp.Desc = ls.Descriptor
 		}
+		resp.ArchivalKey = ls.ArchivalKey
+		resp.Age = google.NewDuration(ds.RoundTime(clock.Now(c)).Sub(ls.Created))
+
+		log.Fields{
+			"path":            path,
+			"hash":            ls.HashID,
+			"terminalIndex":   resp.State.TerminalIndex,
+			"archived":        resp.State.Archived,
+			"purged":          resp.State.Purged,
+			"age":             resp.Age.Duration(),
+			"archivalKeySize": len(resp.ArchivalKey),
+		}.Infof(c, "Successfully loaded log stream state.")
 		return &resp, nil
 
 	case ds.ErrNoSuchEntity:

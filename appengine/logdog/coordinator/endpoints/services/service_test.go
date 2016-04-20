@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/luci/gae/impl/memory"
+	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"golang.org/x/net/context"
@@ -26,18 +26,24 @@ func TestServiceAuth(t *testing.T) {
 		c, _ := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 		c = memory.Use(c)
 
+		svcStub := ct.Services{}
+
+		be := Server{
+			ServiceBase: coordinator.ServiceBase{&svcStub},
+		}
+		svc := be.GetServices()
+
 		c = auth.SetAuthenticator(c, auth.Authenticator{&authtest.FakeAuth{}})
 		Convey(`Will reject all traffic if no configuration is present.`, func() {
-			So(Auth(c), ShouldBeRPCInternal)
+			So(Auth(c, svc), ShouldBeRPCInternal)
 		})
 
 		Convey(`With an application config installed`, func() {
-			c := ct.UseConfig(c, &svcconfig.Coordinator{
-				ServiceAuthGroup: "test-services",
-			})
+			svcStub.InitConfig()
+			svcStub.ServiceConfig.Coordinator.ServiceAuthGroup = "test-services"
 
 			Convey(`Will reject users if there is an authentication error (no state).`, func() {
-				So(Auth(c), ShouldBeRPCInternal)
+				So(Auth(c, svc), ShouldBeRPCInternal)
 			})
 
 			Convey(`With an authentication state`, func() {
@@ -45,19 +51,19 @@ func TestServiceAuth(t *testing.T) {
 				c = auth.WithState(c, &fs)
 
 				Convey(`Will reject users who are not logged in.`, func() {
-					So(Auth(c), ShouldBeRPCPermissionDenied)
+					So(Auth(c, svc), ShouldBeRPCPermissionDenied)
 				})
 
 				Convey(`When a user is logged in`, func() {
 					fs.Identity = "user:user@example.com"
 
 					Convey(`Will reject users who are not members of the service group.`, func() {
-						So(Auth(c), ShouldBeRPCPermissionDenied)
+						So(Auth(c, svc), ShouldBeRPCPermissionDenied)
 					})
 
 					Convey(`Will allow users who are members of the service group.`, func() {
 						fs.IdentityGroups = []string{"test-services"}
-						So(Auth(c), ShouldBeNil)
+						So(Auth(c, svc), ShouldBeNil)
 					})
 				})
 			})

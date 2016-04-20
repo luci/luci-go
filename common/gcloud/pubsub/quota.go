@@ -5,6 +5,8 @@
 package pubsub
 
 import (
+	"time"
+
 	"google.golang.org/cloud/pubsub"
 )
 
@@ -27,4 +29,8 @@ const (
 	// MaxSubscriptionPullSize is the maximum number of subscription records that
 	// can be pulled at a time.
 	MaxSubscriptionPullSize = pubsub.DefaultMaxPrefetch
+
+	// MaxACKDeadline is the maximum acknowledgement deadline that can be applied
+	// to a leased subscription Message.
+	MaxACKDeadline = 600 * time.Second
 )

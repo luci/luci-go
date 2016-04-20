@@ -7,7 +7,6 @@ package logs
 import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
-	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
 	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/common/logdog/types"
@@ -45,9 +44,11 @@ func applyTrinary(q *ds.Query, v logdog.QueryRequest_Trinary, f func(*ds.Query, 
 
 // Query returns log stream paths that match the requested query.
 func (s *Server) Query(c context.Context, req *logdog.QueryRequest) (*logdog.QueryResponse, error) {
+	svc := s.GetServices()
+
 	// Non-admin users may not request purged results.
 	canSeePurged := true
-	if err := config.IsAdminUser(c); err != nil {
+	if err := coordinator.IsAdminUser(c, svc); err != nil {
 		canSeePurged = false
 
 		// Non-admin user.

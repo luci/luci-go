@@ -6,12 +6,30 @@ syntax = "proto3";
 
 package logdog;
 
+import "google/protobuf/duration.proto";
+
 // ArchiveTask is a task queue task description for the archival of a single
 // log stream.
 message ArchiveTask {
   // The path of the log stream to archive.
   string path = 1;
 
-  // If true, require that the log stream be complete.
-  bool complete = 2;
+  // The archival key of the log stream. If this key doesn't match the key in
+  // the log stream state, the request is superfluous and should be deleted.
+  bytes key = 2;
+
+  // Don't waste time archiving the log stream until it is at least this old.
+  //
+  // This is in place to prevent overly-aggressive archivals from wasting time
+  // trying, then failing, becuase the log stream data is still being collected
+  // into intermediate storage.
+  google.protobuf.Duration settle_delay = 3;
+
+  // The amount of time after the task was created that log stream completeness
+  // will be used as a success criteria. If the task's age is older than this
+  // value, completeness will not be enforced.
+  //
+  // The task's age can be calculated by subtracting its lease expiration time
+  // (leaseTimestamp) from its enqueued timestamp (enqueueTimestamp).
+  google.protobuf.Duration complete_period = 4;
 }

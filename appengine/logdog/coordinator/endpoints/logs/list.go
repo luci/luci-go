@@ -7,7 +7,6 @@ package logs
 import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
-	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/hierarchy"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
 	"github.com/luci/luci-go/common/grpcutil"
@@ -25,6 +24,7 @@ const (
 
 // List returns log stream paths rooted under the hierarchy.
 func (s *Server) List(c context.Context, req *logdog.ListRequest) (*logdog.ListResponse, error) {
+	svc := s.GetServices()
 	hr := hierarchy.Request{
 		Base:       req.Path,
 		Recursive:  req.Recursive,
@@ -36,7 +36,7 @@ func (s *Server) List(c context.Context, req *logdog.ListRequest) (*logdog.ListR
 
 	// Non-admin users may not request purged results.
 	if req.IncludePurged {
-		if err := config.IsAdminUser(c); err != nil {
+		if err := coordinator.IsAdminUser(c, svc); err != nil {
 			log.Fields{
 				log.ErrorKey: err,
 			}.Errorf(c, "Non-superuser requested to see purged paths. Denying.")

@@ -6,8 +6,6 @@ syntax = "proto3";
 
 package logdog;
 
-import "google/protobuf/timestamp.proto";
-
 // LogStreamState is the log stream state value communicated to services.
 message LogStreamState {
   // Path is the log stream's path.

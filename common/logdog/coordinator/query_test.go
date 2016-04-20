@@ -159,7 +159,6 @@ func TestClientQuery(t *testing.T) {
 						Streams: []*logdog.QueryResponse_Stream{
 							gen("a", &logdog.LogStreamState{
 								Created: google.NewTimestamp(now),
-								Updated: google.NewTimestamp(now),
 							}),
 						},
 					}, nil
@@ -172,7 +171,6 @@ func TestClientQuery(t *testing.T) {
 					Desc: &logpb.LogStreamDescriptor{Prefix: "test", Name: "a"},
 					State: &StreamState{
 						Created: now.UTC(),
-						Updated: now.UTC(),
 					},
 				})
 			})

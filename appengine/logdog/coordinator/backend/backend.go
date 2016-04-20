@@ -20,11 +20,11 @@ const (
 // Backend is the base struct for all Backend handlers. It is mostly used to
 // configure testing parameters.
 type Backend struct {
+	// The backing Coordinator service base.
+	coordinator.ServiceBase
+
 	// multiTaskBatchSize is the number of batch tasks to create at a time.
 	multiTaskBatchSize int
-
-	// s is the backing Coordinator service base.
-	s coordinator.Service
 }
 
 func (b *Backend) getMultiTaskBatchSize() int {
@@ -36,7 +36,5 @@ func (b *Backend) getMultiTaskBatchSize() int {
 
 // InstallHandlers installs handlers for the Backend.
 func (b *Backend) InstallHandlers(r *httprouter.Router, h middleware.Base) {
-	r.GET("/archive/cron/terminal", h(gaemiddleware.RequireCron(b.HandleArchiveCron)))
-	r.GET("/archive/cron/nonterminal", h(gaemiddleware.RequireCron(b.HandleArchiveCronNT)))
-	r.GET("/archive/cron/purge", h(b.HandleArchiveCronPurge))
+	r.GET("/archive/cron", h(gaemiddleware.RequireCron(b.HandleArchiveCron)))
 }

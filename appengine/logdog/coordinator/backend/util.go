@@ -7,10 +7,7 @@ package backend
 import (
 	"fmt"
 	"net/http"
-	"net/url"
 
-	"github.com/golang/protobuf/proto"
-	tq "github.com/luci/gae/service/taskqueue"
 	log "github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
@@ -47,40 +44,4 @@ func errorWrapper(c context.Context, w http.ResponseWriter, f func() error) {
 		}.Errorf(c, "Backend handler returned error.")
 		w.WriteHeader(statusCode)
 	}
-}
-
-func mkValues(params map[string]string) url.Values {
-	values := make(url.Values, len(params))
-	for k, v := range params {
-		values[k] = []string{v}
-	}
-	return values
-}
-
-func createTask(path string, params map[string]string) *tq.Task {
-	h := make(http.Header)
-	h.Set("Content-Type", "application/x-www-form-urlencoded")
-	return &tq.Task{
-		Path:    path,
-		Header:  h,
-		Payload: []byte(mkValues(params).Encode()),
-		Method:  "POST",
-	}
-}
-
-// createPullTask is a generic pull queue task creation method. It is used to
-// instantiate pull queue tasks.
-func createPullTask(msg proto.Message) (*tq.Task, error) {
-	t := tq.Task{
-		Method: "PULL",
-	}
-
-	if msg != nil {
-		var err error
-		t.Payload, err = proto.Marshal(msg)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &t, nil
 }

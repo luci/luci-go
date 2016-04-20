@@ -18,7 +18,6 @@ import (
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
-	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"golang.org/x/net/context"
@@ -49,11 +48,14 @@ func TestList(t *testing.T) {
 		fs := authtest.FakeState{}
 		c = auth.WithState(c, &fs)
 
-		c = ct.UseConfig(c, &svcconfig.Coordinator{
-			AdminAuthGroup: "test-administrators",
-		})
+		svcStub := ct.Services{}
+		svcStub.InitConfig()
+		svcStub.ServiceConfig.Coordinator.AdminAuthGroup = "test-administrators"
 
-		s := Server{}
+		s := Server{
+			ServiceBase: coordinator.ServiceBase{&svcStub},
+		}
+
 		req := logdog.ListRequest{}
 
 		// Install a set of stock log streams to query against.

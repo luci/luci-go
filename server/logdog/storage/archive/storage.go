@@ -14,11 +14,10 @@ package archive
 
 import (
 	"bytes"
-	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"sort"
-	"strings"
 	"sync"
 
 	"golang.org/x/net/context"
@@ -61,10 +60,8 @@ type storageImpl struct {
 	*Options
 	context.Context
 
-	streamBucket string
-	streamPath   string
-	indexBucket  string
-	indexPath    string
+	streamPath gs.Path
+	indexPath  gs.Path
 
 	indexMu     sync.Mutex
 	index       *logpb.LogIndex
@@ -76,17 +73,18 @@ func New(ctx context.Context, o Options) (storage.Storage, error) {
 	s := storageImpl{
 		Options: &o,
 		Context: ctx,
+
+		streamPath: gs.Path(o.StreamURL),
+		indexPath:  gs.Path(o.IndexURL),
 	}
 
-	s.indexBucket, s.indexPath = splitGSURL(o.IndexURL)
-	if s.indexBucket == "" || s.indexPath == "" {
-		return nil, errors.New("invalid index URL")
+	if !s.streamPath.IsFullPath() {
+		return nil, fmt.Errorf("invalid stream URL: %q", s.streamPath)
+	}
+	if !s.indexPath.IsFullPath() {
+		return nil, fmt.Errorf("invalid index URL: %v", s.indexPath)
 	}
 
-	s.streamBucket, s.streamPath = splitGSURL(o.StreamURL)
-	if s.streamBucket == "" || s.streamPath == "" {
-		return nil, errors.New("invalid stream URL")
-	}
 	return &s, nil
 }
 
@@ -112,7 +110,7 @@ func (s *storageImpl) Get(req storage.GetRequest, cb storage.GetCallback) error 
 		return nil
 	}
 
-	r, err := s.Client.NewReader(s.streamBucket, s.streamPath, gs.Options{
+	r, err := s.Client.NewReader(s.streamPath, gs.Options{
 		From: st.from,
 		To:   st.to,
 	})
@@ -207,7 +205,7 @@ func (s *storageImpl) Tail(path types.StreamPath) ([]byte, types.MessageIndex, e
 	lle := idx.Entries[len(idx.Entries)-1]
 
 	// Get a Reader for the Tail entry.
-	r, err := s.Client.NewReader(s.streamBucket, s.streamPath, gs.Options{
+	r, err := s.Client.NewReader(s.streamPath, gs.Options{
 		From: int64(lle.Offset),
 	})
 	if err != nil {
@@ -239,7 +237,7 @@ func (s *storageImpl) getIndex() (*logpb.LogIndex, error) {
 	defer s.indexMu.Unlock()
 
 	if s.index == nil {
-		r, err := s.Client.NewReader(s.indexBucket, s.indexPath, gs.Options{})
+		r, err := s.Client.NewReader(s.indexPath, gs.Options{})
 		if err != nil {
 			log.WithError(err).Errorf(s, "Failed to create index Reader.")
 			return nil, err
@@ -264,14 +262,6 @@ func (s *storageImpl) getIndex() (*logpb.LogIndex, error) {
 		s.index = &index
 	}
 	return s.index, nil
-}
-
-func splitGSURL(u string) (string, string) {
-	parts := strings.SplitN(strings.TrimPrefix(u, "gs://"), "/", 2)
-	if len(parts) == 1 {
-		return parts[0], ""
-	}
-	return parts[0], parts[1]
 }
 
 type getStrategy struct {

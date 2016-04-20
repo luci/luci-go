@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package config
+package coordinator
 
 import (
 	"errors"
@@ -18,22 +18,22 @@ import (
 
 // IsAdminUser tests whether the current user belongs to the administrative
 // users group. It will return an error if the user does not.
-func IsAdminUser(c context.Context) error {
-	return isMember(c, func(cfg *svcconfig.Coordinator) string {
+func IsAdminUser(c context.Context, svc Services) error {
+	return isMember(c, svc, func(cfg *svcconfig.Coordinator) string {
 		return cfg.AdminAuthGroup
 	})
 }
 
 // IsServiceUser tests whether the current user belongs to the backend services
 // users group. It will return an error if the user does not.
-func IsServiceUser(c context.Context) error {
-	return isMember(c, func(cfg *svcconfig.Coordinator) string {
+func IsServiceUser(c context.Context, svc Services) error {
+	return isMember(c, svc, func(cfg *svcconfig.Coordinator) string {
 		return cfg.ServiceAuthGroup
 	})
 }
 
-func isMember(c context.Context, groupNameFunc func(*svcconfig.Coordinator) string) error {
-	cfg, err := Load(c)
+func isMember(c context.Context, svc Services, groupNameFunc func(*svcconfig.Coordinator) string) error {
+	_, cfg, err := svc.Config(c)
 	if err != nil {
 		return err
 	}

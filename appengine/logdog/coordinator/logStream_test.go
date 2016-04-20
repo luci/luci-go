@@ -12,7 +12,6 @@ import (
 
 	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/google"
@@ -61,43 +60,56 @@ func sps(values ...interface{}) ds.PropertySlice {
 func TestLogStream(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A LogStream with invalid tags will fail to encode.`, t, func() {
-		ls := &LogStream{
-			Prefix: "foo",
-			Name:   "bar",
-			Tags: TagMap{
-				"!!!invalid key!!!": "value",
-			},
-		}
-		_, err := ls.Save(true)
-		So(err, ShouldErrLike, "failed to encode tags")
+	Convey(`When creating a LogStream`, t, func() {
+		Convey(`Can create keyed on hash.`, func() {
+			ls, err := NewLogStream("0123456789abcdef0123456789ABCDEF0123456789abcdef0123456789ABCDEF")
+			So(err, ShouldBeNil)
+			So(ls, ShouldNotBeNil)
+		})
+
+		Convey(`Will fail to create keyed on an invalid hash-length string.`, func() {
+			_, err := NewLogStream("0123456789abcdef!@#$%^&*()ABCDEF0123456789abcdef0123456789ABCDEF")
+			So(err, ShouldErrLike, "invalid path")
+		})
+
+		Convey(`Can create keyed on path.`, func() {
+			ls, err := NewLogStream("a/b/+/c/d")
+			So(err, ShouldBeNil)
+			So(ls, ShouldNotBeNil)
+		})
+
+		Convey(`Will fail to create keyed on neither a path nor hash.`, func() {
+			_, err := NewLogStream("")
+			So(err, ShouldNotBeNil)
+		})
 	})
 
-	Convey(`A LogStream will skip invalid tags when loading.`, t, func() {
-		ls := &LogStream{
-			Prefix: "foo",
-			Name:   "bar",
-		}
-		pmap := ds.PropertyMap{
-			"_Tags": sps(encodeKey("!!!invalid key!!!")),
-		}
-		So(ls.Load(pmap), ShouldBeNil)
-		So(ls.Tags, ShouldResemble, TagMap(nil))
-	})
-
-	Convey(`With a testing configuration`, t, func() {
+	Convey(`A testing log stream`, t, func() {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 		c = memory.Use(c)
 		di := ds.Get(c)
 		di.Testable().AutoIndex(true)
 		di.Testable().Consistent(true)
 
+		now := ds.RoundTime(tc.Now().UTC())
+
+		ls := LogStream{
+			Prefix:        "testing",
+			Name:          "log/stream",
+			State:         LSStreaming,
+			TerminalIndex: -1,
+			Secret:        bytes.Repeat([]byte{0x6F}, types.StreamSecretLength),
+			Created:       now.UTC(),
+			ContentType:   string(types.ContentTypeText),
+		}
+		ls.recalculateHashID()
+
 		desc := logpb.LogStreamDescriptor{
 			Prefix:      "testing",
 			Name:        "log/stream",
 			StreamType:  logpb.StreamType_TEXT,
 			ContentType: "application/text",
-			Timestamp:   google.NewTimestamp(clock.Now(c)),
+			Timestamp:   google.NewTimestamp(now),
 			Tags: map[string]string{
 				"foo":  "bar",
 				"baz":  "qux",
@@ -105,101 +117,117 @@ func TestLogStream(t *testing.T) {
 			},
 		}
 
-		Convey(`Can create a LogStream keyed on hash.`, func() {
-			ls, err := NewLogStream("0123456789abcdef0123456789ABCDEF0123456789abcdef0123456789ABCDEF")
+		Convey(`Will skip invalid tags when loading.`, func() {
+			pmap, err := ls.Save(false)
 			So(err, ShouldBeNil)
-			So(ls, ShouldNotBeNil)
+			pmap["_Tags"] = sps(encodeKey("!!!invalid key!!!"))
+
+			So(ls.Load(pmap), ShouldBeNil)
+			So(ls.Tags, ShouldResemble, TagMap(nil))
 		})
 
-		Convey(`Will fail to create a LogStream keyed on an invalid hash-length string.`, func() {
-			_, err := NewLogStream("0123456789abcdef!@#$%^&*()ABCDEF0123456789abcdef0123456789ABCDEF")
-			So(err, ShouldErrLike, "invalid path")
+		Convey(`With invalid tags will fail to encode.`, func() {
+			ls.Tags = TagMap{
+				"!!!invalid key!!!": "value",
+			}
+
+			ls.SetDSValidate(false)
+			_, err := ls.Save(true)
+			So(err, ShouldErrLike, "failed to encode tags")
 		})
 
-		Convey(`Can create a LogStream keyed on path.`, func() {
-			ls, err := NewLogStream("a/b/+/c/d")
-			So(err, ShouldBeNil)
-			So(ls, ShouldNotBeNil)
-		})
+		Convey(`Can populate the LogStream with descriptor state.`, func() {
+			So(ls.LoadDescriptor(&desc), ShouldBeNil)
+			So(ls.Validate(), ShouldBeNil)
 
-		Convey(`Will fail to create a LogStream keyed on neither a path nor hash.`, func() {
-			_, err := NewLogStream("")
-			So(err, ShouldNotBeNil)
-		})
+			Convey(`Will not validate`, func() {
+				Convey(`Without a valid Prefix`, func() {
+					ls.Prefix = ""
+					ls.recalculateHashID()
 
-		Convey(`Can create a new LogStream`, func() {
-			ls, err := NewLogStream(string(desc.Path()))
-			So(err, ShouldBeNil)
-
-			Convey(`Can populate the LogStream with descriptor state.`, func() {
-				ls.Created = ds.RoundTime(clock.Now(c).UTC())
-				ls.Updated = ds.RoundTime(clock.Now(c).UTC())
-				ls.Secret = bytes.Repeat([]byte{0x6F}, types.StreamSecretLength)
-				So(ls.LoadDescriptor(&desc), ShouldBeNil)
-				So(ls.Validate(), ShouldBeNil)
-
-				Convey(`Will not validate`, func() {
-					Convey(`Without a valid Prefix`, func() {
-						ls.Prefix = ""
-						So(ls.Validate(), ShouldErrLike, "invalid prefix")
-					})
-					Convey(`Without a valid prefix`, func() {
-						ls.Name = ""
-						So(ls.Validate(), ShouldErrLike, "invalid name")
-					})
-					Convey(`Without a valid stream secret`, func() {
-						ls.Secret = nil
-						So(ls.Validate(), ShouldErrLike, "invalid secret length")
-					})
-					Convey(`Without a valid content type`, func() {
-						ls.ContentType = ""
-						So(ls.Validate(), ShouldErrLike, "empty content type")
-					})
-					Convey(`Without a valid created time`, func() {
-						ls.Created = time.Time{}
-						So(ls.Validate(), ShouldErrLike, "created time is not set")
-					})
-					Convey(`Without a valid updated time`, func() {
-						ls.Updated = time.Time{}
-						So(ls.Validate(), ShouldErrLike, "updated time is not set")
-					})
-					Convey(`With an updated time before the created time`, func() {
-						ls.Updated = ls.Created.Add(-time.Second)
-						So(ls.Validate(), ShouldErrLike, "updated time must be >= created time")
-					})
-					Convey(`Without a valid stream type`, func() {
-						ls.StreamType = -1
-						So(ls.Validate(), ShouldErrLike, "unsupported stream type")
-					})
-					Convey(`Without an invalid tag: empty key`, func() {
-						ls.Tags[""] = "empty"
-						So(ls.Validate(), ShouldErrLike, "invalid tag")
-					})
-					Convey(`Without an invalid tag: bad key`, func() {
-						ls.Tags["!"] = "bad-value"
-						So(ls.Validate(), ShouldErrLike, "invalid tag")
-					})
-					Convey(`With an invalid descriptor protobuf`, func() {
-						ls.Descriptor = []byte{0x00} // Invalid tag, "0".
-						So(ls.Validate(), ShouldErrLike, "could not unmarshal descriptor")
-					})
+					So(ls.Validate(), ShouldErrLike, "invalid prefix")
 				})
+				Convey(`Without a valid Name`, func() {
+					ls.Name = ""
+					ls.recalculateHashID()
 
-				Convey(`Can write the LogStream to the Datastore.`, func() {
-					So(di.Put(ls), ShouldBeNil)
+					So(ls.Validate(), ShouldErrLike, "invalid name")
+				})
+				Convey(`Without a valid stream secret`, func() {
+					ls.Secret = nil
+					So(ls.Validate(), ShouldErrLike, "invalid secret length")
+				})
+				Convey(`Without a valid content type`, func() {
+					ls.ContentType = ""
+					So(ls.Validate(), ShouldErrLike, "empty content type")
+				})
+				Convey(`Without a valid created time`, func() {
+					ls.Created = time.Time{}
+					So(ls.Validate(), ShouldErrLike, "created time is not set")
+				})
+				Convey(`With a terminal index, will not validate without a TerminatedTime.`, func() {
+					ls.State = LSArchiveTasked
+					ls.TerminalIndex = 1337
+					So(ls.Validate(), ShouldErrLike, "missing terminated time")
 
-					Convey(`Can read the LogStream back from the Datastore.`, func() {
-						ls2 := LogStreamFromID(ls.HashID())
-						So(di.Get(ls2), ShouldBeNil)
-						So(ls2, ShouldResemble, ls)
-					})
+					ls.TerminatedTime = now
+					So(ls.Validate(), ShouldBeNil)
+				})
+				Convey(`When archived, will not validate without an ArchivedTime.`, func() {
+					ls.State = LSArchived
+					So(ls.Validate(), ShouldErrLike, "missing terminated time")
+
+					ls.TerminatedTime = now
+					So(ls.Validate(), ShouldErrLike, "missing archived time")
+
+					ls.ArchivedTime = now
+					So(ls.Validate(), ShouldBeNil)
+				})
+				Convey(`Without a valid stream type`, func() {
+					ls.StreamType = -1
+					So(ls.Validate(), ShouldErrLike, "unsupported stream type")
+				})
+				Convey(`Without an invalid tag: empty key`, func() {
+					ls.Tags[""] = "empty"
+					So(ls.Validate(), ShouldErrLike, "invalid tag")
+				})
+				Convey(`Without an invalid tag: bad key`, func() {
+					ls.Tags["!"] = "bad-value"
+					So(ls.Validate(), ShouldErrLike, "invalid tag")
+				})
+				Convey(`With an invalid descriptor protobuf`, func() {
+					ls.Descriptor = []byte{0x00} // Invalid tag, "0".
+					So(ls.Validate(), ShouldErrLike, "could not unmarshal descriptor")
 				})
 			})
 
-			Convey(`Will refuse to populate from an invalid descriptor.`, func() {
-				desc.Name = ""
-				So(ls.LoadDescriptor(&desc), ShouldErrLike, "invalid descriptor")
+			Convey(`Can write the LogStream to the Datastore.`, func() {
+				So(di.Put(&ls), ShouldBeNil)
+
+				Convey(`Can read the LogStream back from the Datastore via prefix/name.`, func() {
+					ls2 := LogStreamFromPath(ls.Path())
+					So(di.Get(ls2), ShouldBeNil)
+					So(ls2, ShouldResemble, &ls)
+				})
+
+				Convey(`Can read the LogStream back from the Datastore via hash.`, func() {
+					ls2 := LogStreamFromID(ls.HashID)
+					So(di.Get(ls2), ShouldBeNil)
+					So(ls2, ShouldResemble, &ls)
+				})
+
+				Convey(`Can read the LogStream back from the Datastore.`, func() {
+					var ls2 LogStream
+					ds.PopulateKey(&ls2, ds.Get(c).KeyForObj(&ls))
+					So(di.Get(&ls2), ShouldBeNil)
+					So(ls2, ShouldResemble, ls)
+				})
 			})
+		})
+
+		Convey(`Will refuse to populate from an invalid descriptor.`, func() {
+			desc.StreamType = -1
+			So(ls.LoadDescriptor(&desc), ShouldErrLike, "invalid descriptor")
 		})
 
 		Convey(`Writing multiple LogStream entries`, func() {
@@ -212,21 +240,21 @@ func TestLogStream(t *testing.T) {
 				"cat/bird/dog",
 				"bird/plane",
 			}
-			for _, name := range streamNames {
-				desc := desc
-				desc.Name = name
+			for i, name := range streamNames {
+				lsCopy := ls
+				lsCopy.Name = name
+				lsCopy.Created = ds.RoundTime(now.Add(time.Duration(i) * time.Second))
+				lsCopy.recalculateHashID()
 
-				ls, err := NewLogStream(string(desc.Path()))
-				So(err, ShouldBeNil)
+				descCopy := desc
+				descCopy.Name = name
 
-				ls.Secret = bytes.Repeat([]byte{0x55}, types.StreamSecretLength)
-				So(ls.LoadDescriptor(&desc), ShouldBeNil)
-				ls.Created = clock.Now(c).UTC()
-				ls.Updated = ls.Created
-				So(di.Put(ls), ShouldBeNil)
+				if err := lsCopy.LoadDescriptor(&descCopy); err != nil {
+					panic(err)
+				}
+				So(di.Put(&lsCopy), ShouldBeNil)
 
-				times[name] = clock.Now(c)
-				tc.Add(time.Second)
+				times[name] = lsCopy.Created
 			}
 
 			Convey(`When querying LogStream by -Created`, func() {

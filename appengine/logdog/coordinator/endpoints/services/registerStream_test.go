@@ -11,13 +11,13 @@ import (
 
 	"github.com/luci/gae/filter/featureBreaker"
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/hierarchy"
 	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
-	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 
@@ -32,11 +32,15 @@ func TestRegisterStream(t *testing.T) {
 		tt := tumble.NewTesting()
 		c := tt.Context()
 		ds.Get(c).Testable().Consistent(true)
-		be := Server{}
 
-		c = ct.UseConfig(c, &svcconfig.Coordinator{
-			ServiceAuthGroup: "test-services",
-		})
+		svcStub := ct.Services{}
+		svcStub.InitConfig()
+		svcStub.ServiceConfig.Coordinator.ServiceAuthGroup = "test-services"
+
+		be := Server{
+			ServiceBase: coordinator.ServiceBase{&svcStub},
+		}
+
 		fs := authtest.FakeState{}
 		c = auth.WithState(c, &fs)
 

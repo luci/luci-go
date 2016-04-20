@@ -21,10 +21,11 @@ import (
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
-	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/logging/gologger"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -66,6 +67,7 @@ func TestQuery(t *testing.T) {
 	Convey(`With a testing configuration, a Query request`, t, func() {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 		c = memory.Use(c)
+		c = gologger.Use(c)
 		c, fb := featureBreaker.FilterRDS(c, nil)
 
 		di := ds.Get(c)
@@ -106,11 +108,13 @@ func TestQuery(t *testing.T) {
 		fs := authtest.FakeState{}
 		c = auth.WithState(c, &fs)
 
-		c = ct.UseConfig(c, &svcconfig.Coordinator{
-			AdminAuthGroup: "test-administrators",
-		})
+		svcStub := ct.Services{}
+		svcStub.InitConfig()
+		svcStub.ServiceConfig.Coordinator.AdminAuthGroup = "test-administrators"
 
-		s := Server{}
+		s := Server{
+			ServiceBase: coordinator.ServiceBase{&svcStub},
+		}
 
 		req := logdog.QueryRequest{
 			Tags: map[string]string{},
@@ -153,6 +157,7 @@ func TestQuery(t *testing.T) {
 
 			ls := ct.TestLogStream(c, desc)
 
+			now := tc.Now().UTC()
 			psegs := prefix.Segments()
 			if psegs[0] == "meta" {
 				for _, p := range psegs[1:] {
@@ -161,12 +166,17 @@ func TestQuery(t *testing.T) {
 						ls.Purged = true
 
 					case "terminated":
-						ls.State = coordinator.LSTerminated
 						ls.TerminalIndex = 1337
+						ls.TerminatedTime = now
 
 					case "archived":
-						ls.ArchiveStreamURL = "http://example.com"
 						ls.State = coordinator.LSArchived
+
+						ls.TerminalIndex = 1337
+						ls.TerminatedTime = now
+
+						ls.ArchiveStreamURL = "http://example.com"
+						ls.ArchivedTime = now
 
 					case "datagram":
 						ls.StreamType = logpb.StreamType_DATAGRAM
@@ -177,7 +187,7 @@ func TestQuery(t *testing.T) {
 				}
 			}
 
-			if err := ls.Put(ds.Get(c)); err != nil {
+			if err := ds.Get(c).Put(ls); err != nil {
 				panic(fmt.Errorf("failed to put log stream %d: %v", i, err))
 			}
 
@@ -270,7 +280,7 @@ func TestQuery(t *testing.T) {
 				})
 
 				Convey(`When not requesting protobufs, and with a corrupt descriptor, returns InternalServer error.`, func() {
-					// We can't use "stream.Put" here because it validates the protobuf!
+					stream.SetDSValidate(false)
 					stream.Descriptor = []byte{0x00} // Invalid protobuf, zero tag.
 					So(di.Put(stream), ShouldBeNil)
 					di.Testable().CatchupIndexes()

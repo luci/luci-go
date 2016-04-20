@@ -39,31 +39,32 @@ message Coordinator {
   // A list of origin URLs that are allowed to perform CORS RPC calls.
   repeated string rpc_allow_origins = 20;
 
-  // The name of the archive task queue.
-  string archive_task_queue = 30;
-  // The amount of time after a log has been terminated before it is candidate
-  // for archival.
+  // The full path of the archival Pub/Sub topic.
   //
-  // Archival triggered by this delay will NOT succeed if any log entries are
-  // missing from intermediate storage.
+  // The Coordinator must have permission to publish to this topic.
+  string archive_topic = 30;
+
+  // The amount of time after an archive request has been dispatched before it
+  // should be executed.
   //
-  // This should be based on a period of time where it's reasonable to expect
-  // that all log messages in the transport have arrived for a given log stream.
-  // Since the transport doesn't have to guarantee in-order delivery, this
-  // should allow for the case where the terminal log entry arrives before some
-  // of the intermediate log entries. This will help avoid triggering
-  // archive attempts that are doomed to fail because of standard transport lag.
-  google.protobuf.Duration archive_delay = 31;
+  // Since terminal messages can arrive out of order, the archival request may
+  // be kicked off before all of the log stream data has been loaded into
+  // intermediate storage. If this happens, the Archivist will retry archival
+  // later autometically.
+  //
+  // This parameter is an optimization to stop the archivist from wasting its
+  // time until the log stream has a reasonable expectation of being available.
+  google.protobuf.Duration archive_settle_delay = 31;
+
   // The amount of time before a log stream is candidate for archival regardless
   // of whether or not it's been terminated or complete.
   //
-  // This endpoint is a failsafe designed to ensure that log streams with
-  // missing records or no terminal record (e.g., Butler crashed) are eventually
-  // moved out of intermediate storage.
+  // This is a failsafe designed to ensure that log streams with missing records
+  // or no terminal record (e.g., Butler crashed) are eventually archived.
   //
-  // This must be >= `archive_delay`, and should be fairly large (days) to allow
-  // for the log stream to complete and for all available log entries to be
-  // added to intermediate storage.
+  // This should be fairly large (days) to avoid prematurely archiving
+  // long-running streams, but should be considerably smaller than the
+  // intermediate storage data retention period.
   google.protobuf.Duration archive_delay_max = 32;
 }
 
@@ -88,20 +89,29 @@ message Collector {
 
 // Configuration for the Archivist microservice.
 message Archivist {
+  // The name of the archival Pub/Sub subscription.
+  //
+  // This should be connected to "archive_topic", and the Archivist must have
+  // permission to consume from this subscription.
+  string subscription = 1;
+
   // The number of tasks to run at a time. If blank, the archivist will choose a
   // default value.
-  int32 tasks = 1;
+  int32 tasks = 2;
 
   // The name of the Google Storage bucket and optional base path to archive
   // into. For example: gs://foo/bar
   //
   // The bucket name must be included (e.g., "gs://foo"). The remainder of the
   // base path is optional based on desired archive location.
-  string gs_base = 10;
+  string gs_base = 3;
+  // The name of the staging storage bucket. Uses same notation as "gs_base".
+  string gs_staging_base = 4;
+
   // If not zero, the maximum number of stream indices between index entries.
-  int32 stream_index_range = 11;
+  int32 stream_index_range = 10;
   // If not zero, the maximum number of prefix indices between index entries.
-  int32 prefix_index_range = 12;
+  int32 prefix_index_range = 11;
   // If not zero, the maximum number of log data bytes between index entries.
-  int32 byte_range = 13;
+  int32 byte_range = 12;
 }

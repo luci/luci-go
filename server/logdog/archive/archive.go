@@ -10,6 +10,7 @@ import (
 	"io"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/parallel"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
@@ -85,7 +86,7 @@ func Archive(m Manifest) error {
 		}
 	}
 
-	return parallel.FanOutIn(func(taskC chan<- func() error) {
+	err := parallel.FanOutIn(func(taskC chan<- func() error) {
 		var logC chan *logpb.LogEntry
 		if m.LogWriter != nil {
 			logC = make(chan *logpb.LogEntry)
@@ -145,6 +146,12 @@ func Archive(m Manifest) error {
 			}
 		}
 	})
+
+	// If any of the returned errors was transient, return a transient error.
+	if errors.Any(err, errors.IsTransient) {
+		err = errors.WrapTransient(err)
+	}
+	return err
 }
 
 func archiveLogs(w io.Writer, d *logpb.LogStreamDescriptor, logC <-chan *logpb.LogEntry, idx *indexBuilder) error {

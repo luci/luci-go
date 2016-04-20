@@ -9,10 +9,9 @@ import (
 
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/luci-go/appengine/gaesettings"
-	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
+	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
-	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/settings"
@@ -28,11 +27,15 @@ func TestGetConfig(t *testing.T) {
 	Convey(`With a testing configuration`, t, func() {
 		c := memory.Use(context.Background())
 		c = settings.Use(c, settings.New(&gaesettings.Storage{}))
-		be := Server{}
 
-		c = ct.UseConfig(c, &svcconfig.Coordinator{
-			ServiceAuthGroup: "test-services",
-		})
+		svcStub := ct.Services{}
+		svcStub.InitConfig()
+		svcStub.ServiceConfig.Coordinator.ServiceAuthGroup = "test-services"
+
+		be := Server{
+			ServiceBase: coordinator.ServiceBase{&svcStub},
+		}
+
 		fs := authtest.FakeState{}
 		c = auth.WithState(c, &fs)
 
@@ -42,23 +45,14 @@ func TestGetConfig(t *testing.T) {
 		})
 
 		Convey(`When logged in as a service, can retrieve the configuration.`, func() {
-
-			c = ct.UseConfig(c, &svcconfig.Coordinator{
-				ServiceAuthGroup: "test-services",
-			})
-			fs := authtest.FakeState{}
-			c = auth.WithState(c, &fs)
 			fs.IdentityGroups = []string{"test-services"}
-
-			gcfg, err := config.LoadGlobalConfig(c)
-			So(err, ShouldBeRPCOK)
 
 			cr, err := be.GetConfig(c, nil)
 			So(err, ShouldBeRPCOK)
 			So(cr, ShouldResemble, &logdog.GetConfigResponse{
-				ConfigServiceUrl: gcfg.ConfigServiceURL,
-				ConfigSet:        gcfg.ConfigSet,
-				ConfigPath:       gcfg.ConfigPath,
+				ConfigServiceUrl: svcStub.GlobalConfig.ConfigServiceURL,
+				ConfigSet:        svcStub.GlobalConfig.ConfigSet,
+				ConfigPath:       svcStub.GlobalConfig.ConfigPath,
 			})
 		})
 	})

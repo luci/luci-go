@@ -165,7 +165,6 @@ func TestStreamGet(t *testing.T) {
 							},
 							State: &logdog.LogStreamState{
 								Created: google.NewTimestamp(now),
-								Updated: google.NewTimestamp(now),
 								Archive: &logdog.LogStreamState_ArchiveInfo{
 									IndexUrl:  "index",
 									StreamUrl: "stream",
@@ -192,7 +191,6 @@ func TestStreamGet(t *testing.T) {
 						},
 						State: &StreamState{
 							Created:          now,
-							Updated:          now,
 							Archived:         true,
 							ArchiveIndexURL:  "index",
 							ArchiveStreamURL: "stream",
@@ -235,7 +233,6 @@ func TestStreamGet(t *testing.T) {
 						return &logdog.GetResponse{
 							State: &logdog.LogStreamState{
 								Created: google.NewTimestamp(now),
-								Updated: google.NewTimestamp(now),
 							},
 						}, nil
 					}
@@ -246,7 +243,6 @@ func TestStreamGet(t *testing.T) {
 						Path: "test/+/a",
 						State: &StreamState{
 							Created: now.UTC(),
-							Updated: now.UTC(),
 						},
 					})
 
@@ -292,7 +288,6 @@ func TestStreamGet(t *testing.T) {
 						return &logdog.GetResponse{
 							State: &logdog.LogStreamState{
 								Created: google.NewTimestamp(now),
-								Updated: google.NewTimestamp(now),
 							},
 							Desc: &logpb.LogStreamDescriptor{
 								Prefix:     "test",
@@ -326,7 +321,6 @@ func TestStreamGet(t *testing.T) {
 						},
 						State: &StreamState{
 							Created: now,
-							Updated: now,
 						},
 					})
 				})
@@ -336,7 +330,6 @@ func TestStreamGet(t *testing.T) {
 						return &logdog.GetResponse{
 							State: &logdog.LogStreamState{
 								Created: google.NewTimestamp(now),
-								Updated: google.NewTimestamp(now),
 							},
 							Desc: &logpb.LogStreamDescriptor{
 								Prefix:     "test",
@@ -359,7 +352,6 @@ func TestStreamGet(t *testing.T) {
 						},
 						State: &StreamState{
 							Created: now,
-							Updated: now,
 						},
 					})
 				})
@@ -369,7 +361,6 @@ func TestStreamGet(t *testing.T) {
 						return &logdog.GetResponse{
 							State: &logdog.LogStreamState{
 								Created: google.NewTimestamp(now),
-								Updated: google.NewTimestamp(now),
 							},
 							Logs: []*logpb.LogEntry{
 								genLog(1337, "ohai"),

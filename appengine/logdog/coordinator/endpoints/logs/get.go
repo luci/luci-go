@@ -11,7 +11,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
-	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
 	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/common/logdog/types"
@@ -52,6 +51,8 @@ func (s *Server) Tail(c context.Context, req *logdog.TailRequest) (*logdog.GetRe
 
 // getImpl is common code shared between Get and Tail endpoints.
 func (s *Server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (*logdog.GetResponse, error) {
+	svc := s.GetServices()
+
 	// Fetch the log stream state for this log stream.
 	u, err := url.Parse(req.Path)
 	if err != nil {
@@ -75,7 +76,7 @@ func (s *Server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 	switch err {
 	case nil:
 		if ls.Purged {
-			if authErr := config.IsAdminUser(c); authErr != nil {
+			if authErr := coordinator.IsAdminUser(c, svc); authErr != nil {
 				log.Fields{
 					log.ErrorKey: authErr,
 				}.Warningf(c, "Non-superuser requested purged log.")
@@ -117,7 +118,7 @@ func (s *Server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 
 	// Retrieve requested logs from storage, if requested.
 	if tail || req.LogCount >= 0 {
-		resp.Logs, err = s.getLogs(c, req, tail, ls)
+		resp.Logs, err = s.getLogs(c, svc, req, tail, ls)
 		if err != nil {
 			log.Fields{
 				log.ErrorKey: err,
@@ -133,7 +134,8 @@ func (s *Server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 	return &resp, nil
 }
 
-func (s *Server) getLogs(c context.Context, req *logdog.GetRequest, tail bool, ls *coordinator.LogStream) (
+func (s *Server) getLogs(c context.Context, svc coordinator.Services, req *logdog.GetRequest, tail bool,
+	ls *coordinator.LogStream) (
 	[]*logpb.LogEntry, error) {
 	var st storage.Storage
 	if !ls.Archived() {
@@ -141,14 +143,14 @@ func (s *Server) getLogs(c context.Context, req *logdog.GetRequest, tail bool, l
 
 		// Logs are not archived. Fetch from intermediate storage.
 		var err error
-		st, err = s.Storage(c)
+		st, err = svc.IntermediateStorage(c)
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		log.Debugf(c, "Log is archived. Fetching from archive storage.")
 		var err error
-		gs, err := s.GSClient(c)
+		gs, err := svc.GSClient(c)
 		if err != nil {
 			log.WithError(err).Errorf(c, "Failed to create Google Storage client.")
 			return nil, err

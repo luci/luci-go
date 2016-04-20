@@ -5,13 +5,11 @@
 package admin
 
 import (
-	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/admin/v1"
 	"github.com/luci/luci-go/common/grpcutil"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/server/auth"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )
@@ -19,25 +17,9 @@ import (
 // SetConfig loads the supplied configuration into a config.GlobalConfig
 // instance.
 func (s *Server) SetConfig(c context.Context, req *logdog.SetConfigRequest) (*google.Empty, error) {
-	// The user must be an administrator.
-	if err := config.IsAdminUser(c); err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-		}.Warningf(c, "User is not an administrator.")
-
-		// If we're on development server, any user can set the initial config.
-		if !info.Get(c).IsDevAppServer() {
-			u := auth.CurrentUser(c)
-			if !(u != nil && u.Superuser) {
-				return nil, grpcutil.PermissionDenied
-			}
-
-			log.Fields{
-				"email":    u.Email,
-				"clientID": u.ClientID,
-				"name":     u.Name,
-			}.Infof(c, "User is an AppEngine superuser. Granting access.")
-		}
+	svc := s.GetServices()
+	if err := s.Auth(c, svc); err != nil {
+		return nil, err
 	}
 
 	gcfg := config.GlobalConfig{

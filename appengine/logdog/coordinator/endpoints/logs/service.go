@@ -11,7 +11,7 @@ import (
 
 // Server is the user-facing log access and query endpoint service.
 type Server struct {
-	coordinator.Service
+	coordinator.ServiceBase
 
 	// resultLimit is the maximum number of query results to return in a
 	// single query. If zero, the default will be used.
@@ -19,6 +19,8 @@ type Server struct {
 	// This is provided for testing purposes.
 	resultLimit int
 }
+
+var _ logdog.LogsServer = (*Server)(nil)
 
 func (s *Server) limit(v int, d int) int {
 	if s.resultLimit > 0 {
@@ -29,5 +31,3 @@ func (s *Server) limit(v int, d int) int {
 	}
 	return v
 }
-
-var _ logdog.LogsServer = (*Server)(nil)

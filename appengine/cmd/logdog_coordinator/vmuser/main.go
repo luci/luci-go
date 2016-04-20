@@ -65,9 +65,15 @@ func main() {
 }
 
 func accessControl(c context.Context, origin string) bool {
-	cfg, err := config.Load(c)
+	gcfg, err := config.LoadGlobalConfig(c)
 	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to get config for access control check.")
+		log.WithError(err).Errorf(c, "Failed to get global config for access control check.")
+		return false
+	}
+
+	cfg, err := gcfg.LoadConfig(c)
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to get application config for access control check.")
 		return false
 	}
 

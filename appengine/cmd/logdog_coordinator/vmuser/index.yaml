@@ -18,6 +18,7 @@ indexes:
   - name: Created
     direction: desc
 
+  # (This index also supports the expired log stream archival backend cron.)
 - kind: LogStream
   properties:
   - name: State
@@ -78,7 +79,7 @@ indexes:
   - name: Created
     direction: desc
 
-  # This index supports the tumble installation.
+# This index supports the tumble installation.
 - kind: tumble.Mutation
   properties:
   - name: ExpandedShard
