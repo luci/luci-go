@@ -6,7 +6,7 @@ package bigtable
 
 import (
 	"bytes"
-	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -15,7 +15,6 @@ import (
 	"github.com/luci/luci-go/common/recordio"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"golang.org/x/net/context"
-	"google.golang.org/cloud/bigtable"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -33,6 +32,10 @@ type btTableTest struct {
 
 	// maxLogAge is the currently-configured maximum log age.
 	maxLogAge time.Duration
+
+	// countLegacy, if true, simulates legacy BigTable rows by not writing or
+	// reading the "count" field.
+	countLegacy bool
 }
 
 func (t *btTableTest) close() {
@@ -57,6 +60,15 @@ func (t *btTableTest) collection() *gkvlite.Collection {
 func (t *btTableTest) putLogData(c context.Context, rk *rowKey, d []byte) error {
 	if t.err != nil {
 		return t.err
+	}
+
+	// Record/count sanity check.
+	records, err := recordio.Split(d)
+	if err != nil {
+		return err
+	}
+	if int64(len(records)) != rk.count {
+		return fmt.Errorf("count mismatch (%d != %d)", len(records), rk.count)
 	}
 
 	enc := []byte(rk.encode())
@@ -91,7 +103,17 @@ func (t *btTableTest) getLogData(c context.Context, rk *rowKey, limit int, keysO
 			return false
 		}
 
-		if ierr = cb(drk, i.Val); ierr != nil {
+		// If we're simulating legacy (no count), clear our row key's count.
+		if t.countLegacy {
+			drk.count = 0
+		}
+
+		rowData := i.Val
+		if keysOnly {
+			rowData = nil
+		}
+
+		if ierr = cb(drk, rowData); ierr != nil {
 			if ierr == errStop {
 				ierr = nil
 			}
@@ -134,11 +156,13 @@ func (t *btTableTest) dataMap() map[string][]byte {
 	return result
 }
 
-func TestStorage(t *testing.T) {
+func testStorageImpl(t *testing.T, legacy bool) {
 	t.Parallel()
 
 	Convey(`A BigTable storage instance bound to a testing BigTable instance`, t, func() {
-		bt := btTableTest{}
+		bt := btTableTest{
+			countLegacy: legacy,
+		}
 		defer bt.close()
 
 		s := newBTStorage(context.Background(), Options{
@@ -178,8 +202,8 @@ func TestStorage(t *testing.T) {
 			})
 		}
 
-		ekey := func(p string, v int64) string {
-			return newRowKey(p, v).encode()
+		ekey := func(p string, v, c int64) string {
+			return newRowKey(p, v, c).encode()
 		}
 		records := func(s ...string) []byte {
 			buf := bytes.Buffer{}
@@ -206,8 +230,8 @@ func TestStorage(t *testing.T) {
 				So(put("A", 0, "0", "1", "2", "3"), ShouldBeNil)
 
 				So(bt.dataMap(), ShouldResemble, map[string][]byte{
-					ekey("A", 1): records("0", "1"),
-					ekey("A", 3): records("2", "3"),
+					ekey("A", 1, 2): records("0", "1"),
+					ekey("A", 3, 2): records("2", "3"),
 				})
 			})
 
@@ -225,10 +249,10 @@ func TestStorage(t *testing.T) {
 			Convey(`Testing "Put"...`, func() {
 				Convey(`Loads the row data.`, func() {
 					So(bt.dataMap(), ShouldResemble, map[string][]byte{
-						ekey("A", 2):  records("0", "1", "2"),
-						ekey("A", 4):  records("3", "4"),
-						ekey("B", 10): records("10"),
-						ekey("B", 13): records("12", "13"),
+						ekey("A", 2, 3):  records("0", "1", "2"),
+						ekey("A", 4, 2):  records("3", "4"),
+						ekey("B", 10, 1): records("10"),
+						ekey("B", 13, 2): records("12", "13"),
 					})
 				})
 			})
@@ -240,13 +264,13 @@ func TestStorage(t *testing.T) {
 					So(got, ShouldResemble, []string{"0", "1", "2", "3", "4"})
 				})
 
-				Convey(`Will fetch A{1, 2, 3, 4} with when index=1.`, func() {
+				Convey(`Will fetch A{1, 2, 3, 4} with index=1.`, func() {
 					got, err := get("A", 1, 0)
 					So(err, ShouldBeNil)
 					So(got, ShouldResemble, []string{"1", "2", "3", "4"})
 				})
 
-				Convey(`Will fetch A{1, 2} with when index=1 and limit=2.`, func() {
+				Convey(`Will fetch A{1, 2} with index=1 and limit=2.`, func() {
 					got, err := get("A", 1, 2)
 					So(err, ShouldBeNil)
 					So(got, ShouldResemble, []string{"1", "2"})
@@ -295,54 +319,13 @@ func TestStorage(t *testing.T) {
 				})
 			})
 		})
-
-		Convey(`Given a fake BigTable row`, func() {
-			fakeRow := bigtable.Row{
-				"log": []bigtable.ReadItem{
-					{
-						Row:    "testrow",
-						Column: "log:data",
-						Value:  []byte("here is my data"),
-					},
-				},
-			}
-
-			Convey(`Can extract log data.`, func() {
-				d, err := getLogData(fakeRow)
-				So(err, ShouldBeNil)
-				So(d, ShouldResemble, []byte("here is my data"))
-			})
-
-			Convey(`Will fail to extract if the column is missing.`, func() {
-				fakeRow["log"][0].Column = "not-data"
-				_, err := getLogData(fakeRow)
-				So(err, ShouldEqual, storage.ErrDoesNotExist)
-			})
-
-			Convey(`Will fail to extract if the family does not exist.`, func() {
-				So(getReadItem(fakeRow, "invalid", "invalid"), ShouldBeNil)
-			})
-
-			Convey(`Will fail to extract if the column does not exist.`, func() {
-				So(getReadItem(fakeRow, "log", "invalid"), ShouldBeNil)
-			})
-		})
-
-		Convey(`When pushing a configuration`, func() {
-			cfg := storage.Config{
-				MaxLogAge: 1 * time.Hour,
-			}
-
-			Convey(`Can successfully apply configuration.`, func() {
-				So(s.Config(cfg), ShouldBeNil)
-				So(bt.maxLogAge, ShouldEqual, cfg.MaxLogAge)
-			})
-
-			Convey(`With return an error if the configuration fails to apply.`, func() {
-				bt.err = errors.New("test error")
-
-				So(s.Config(cfg), ShouldEqual, bt.err)
-			})
-		})
 	})
+}
+
+func TestStorage(t *testing.T) {
+	testStorageImpl(t, false)
+}
+
+func TestStorageLegacy(t *testing.T) {
+	testStorageImpl(t, true)
 }

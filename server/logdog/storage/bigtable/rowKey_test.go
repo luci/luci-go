@@ -6,6 +6,7 @@ package bigtable
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -16,10 +17,10 @@ func TestRowKey(t *testing.T) {
 
 	Convey(`A row key, constructed from "a/b/+/c/d"`, t, func() {
 		path := "a/b/+/c/d"
-		rk := newRowKey(path, 1337)
+		rk := newRowKey(path, 1337, 42)
 
 		Convey(`Shares a path with a row key from the same Path.`, func() {
-			So(rk.sharesPathWith(newRowKey(path, 2468)), ShouldBeTrue)
+			So(rk.sharesPathWith(newRowKey(path, 2468, 0)), ShouldBeTrue)
 		})
 
 		for _, v := range []string{
@@ -28,11 +29,11 @@ func TestRowKey(t *testing.T) {
 			"",
 		} {
 			Convey(fmt.Sprintf(`Does not share a path with: %q`, v), func() {
-				So(rk.sharesPathWith(newRowKey(v, 0)), ShouldBeFalse)
+				So(rk.sharesPathWith(newRowKey(v, 0, 0)), ShouldBeFalse)
 			})
 		}
 
-		Convey(`Can be encoded, then decoded into its hash and index.`, func() {
+		Convey(`Can be encoded, then decoded into its fields.`, func() {
 			enc := rk.encode()
 			So(len(enc), ShouldBeLessThanOrEqualTo, maxEncodedKeySize)
 
@@ -41,10 +42,11 @@ func TestRowKey(t *testing.T) {
 
 			So(drk.pathHash, ShouldResemble, rk.pathHash)
 			So(drk.index, ShouldEqual, rk.index)
+			So(drk.count, ShouldEqual, rk.count)
 		})
 	})
 
-	Convey(`A series of row keys should be ascendingly sorted and parsable.`, t, func() {
+	Convey(`A series of ordered row keys`, t, func() {
 		prev := ""
 		for _, i := range []int64{
 			-1, /* Why not? */
@@ -55,23 +57,47 @@ func TestRowKey(t *testing.T) {
 			1029,
 			1337,
 		} {
-			rk := newRowKey("test", i)
+			Convey(fmt.Sprintf(`Row key %d should be ascendingly sorted and parsable.`, i), func() {
+				rk := newRowKey("test", i, i)
 
-			// Test that it encodes/decodes back to identity.
-			enc := rk.encode()
-			drk, err := decodeRowKey(enc)
-			So(err, ShouldBeNil)
-			So(drk.index, ShouldEqual, i)
-
-			// Assert that it is ordered.
-			if prev != "" {
-				So(prev, ShouldBeLessThan, enc)
-
-				prevp, err := decodeRowKey(prev)
+				// Test that it encodes/decodes back to identity.
+				enc := rk.encode()
+				drk, err := decodeRowKey(enc)
 				So(err, ShouldBeNil)
-				So(prevp.sharesPathWith(rk), ShouldBeTrue)
-				So(prevp.index, ShouldBeLessThan, drk.index)
-			}
+				So(drk.index, ShouldEqual, i)
+
+				// Assert that it is ordered.
+				if prev != "" {
+					So(prev, ShouldBeLessThan, enc)
+
+					prevp, err := decodeRowKey(prev)
+					So(err, ShouldBeNil)
+					So(prevp.sharesPathWith(rk), ShouldBeTrue)
+					So(prevp.index, ShouldBeLessThan, drk.index)
+					So(prevp.count, ShouldBeLessThan, drk.count)
+				}
+
+				Convey(`Legacy row key value will parse with count 0.`, func() {
+					if rk.count > 0 {
+						enc = enc[:strings.LastIndex(enc, "~")]
+					}
+
+					drk, err = decodeRowKey(enc)
+					So(err, ShouldBeNil)
+					So(drk.index, ShouldEqual, i)
+					So(drk.count, ShouldEqual, 0)
+
+					// Assert that it is ordered.
+					if prev != "" {
+						So(prev, ShouldBeLessThan, enc)
+
+						prevp, err := decodeRowKey(prev)
+						So(err, ShouldBeNil)
+						So(prevp.sharesPathWith(rk), ShouldBeTrue)
+						So(prevp.index, ShouldBeLessThan, drk.index)
+					}
+				})
+			})
 		}
 	})
 

@@ -12,7 +12,6 @@ import (
 	"errors"
 	"strings"
 	"sync"
-	"unicode/utf8"
 
 	"github.com/luci/luci-go/common/cmpbin"
 )
@@ -26,9 +25,9 @@ var (
 
 	// encodedPrefixSize is the size in bytes of the encoded row key prefix. All
 	// rows from the same stream path share this prefix.
-	encodedPrefixSize = base64.URLEncoding.EncodedLen(sha256.Size) + len("~")
+	encodedPrefixSize = base64.URLEncoding.EncodedLen(sha256.Size)
 	// maxEncodedKeySize is the maximum size in bytes of a full row key.
-	maxEncodedKeySize = encodedPrefixSize + hex.EncodedLen(cmpbin.MaxIntLen64)
+	maxEncodedKeySize = encodedPrefixSize + (2 * (len("~") + hex.EncodedLen(cmpbin.MaxIntLen64)))
 
 	rowKeyBufferPool = sync.Pool{
 		New: func() interface{} {
@@ -64,10 +63,9 @@ func (rkb *rowKeyBuffers) reset() {
 func (rkb *rowKeyBuffers) appendPathPrefix(pathHash []byte) {
 	base64.URLEncoding.Encode(rkb.remaining(), pathHash)
 	rkb.size += base64.URLEncoding.EncodedLen(len(pathHash))
-	rkb.appendRune('~')
 }
 
-func (rkb *rowKeyBuffers) appendIndex(i int64) {
+func (rkb *rowKeyBuffers) appendInt64(i int64) {
 	// Encode index to "cmpbin".
 	rkb.binBuf.Reset()
 	cmpbin.WriteInt(&rkb.binBuf, i)
@@ -75,8 +73,8 @@ func (rkb *rowKeyBuffers) appendIndex(i int64) {
 	rkb.size += hex.Encode(rkb.remaining(), rkb.binBuf.Bytes())
 }
 
-func (rkb *rowKeyBuffers) appendRune(r rune) {
-	rkb.size += utf8.EncodeRune(rkb.remaining(), r)
+func (rkb *rowKeyBuffers) appendBytes(d []byte) {
+	rkb.size += copy(rkb.remaining(), d)
 }
 
 func (rkb *rowKeyBuffers) remaining() []byte {
@@ -95,25 +93,34 @@ func (rkb *rowKeyBuffers) value() string {
 //
 // Since BigTable rows must be valid UTF8, and since paths are effectively
 // unbounded, the row key will be formed by composing:
-// [ base64(sha256(path)) ] + '~' + [ hex(cmpbin(index)) ]
+//
+// [ base64(sha256(path)) ] + '~' + [ hex(cmpbin(index)) ] + '~' +
+// [hex(cmpbin(count)]
+//
+// NOTE: There is a "legacy" period of time when row keys will NOT include a
+// count. Since these sort before row keys with a count, row key order will be
+// maintained. These row keys will have a count value of "0".
 type rowKey struct {
 	pathHash []byte
 	index    int64
+	count    int64
 }
 
 // newRowKey generates the row key matching a given entry path and index.
-func newRowKey(path string, index int64) *rowKey {
+func newRowKey(path string, index, count int64) *rowKey {
 	pathHash := sha256.Sum256([]byte(path))
 	return &rowKey{
 		pathHash: pathHash[:],
 		index:    index,
+		count:    count,
 	}
 }
 
 // decodeRowKey decodes an encoded row key into its structural components.
 func decodeRowKey(v string) (*rowKey, error) {
-	keyParts := strings.SplitN(v, "~", 2)
-	if len(keyParts) != 2 {
+	keyParts := strings.SplitN(v, "~", 3)
+	if len(keyParts) < 2 {
+		// TODO: Make this force 3 once "legacy mode" is disabled.
 		return nil, errMalformedRowKey
 	}
 
@@ -131,22 +138,19 @@ func decodeRowKey(v string) (*rowKey, error) {
 	}
 
 	// Decode index.
-	idxBytes, err := hex.DecodeString(idxEnc)
+	rk.index, err = readHexInt64(idxEnc)
 	if err != nil {
-		return nil, errMalformedRowKey
+		return nil, err
 	}
 
-	dr := bytes.NewReader(idxBytes)
-	index, _, err := cmpbin.ReadInt(dr)
-	if err != nil {
-		return nil, errMalformedRowKey
+	// If a count is available, decode that as well.
+	if len(keyParts) == 3 {
+		rk.count, err = readHexInt64(keyParts[2])
+		if err != nil {
+			return nil, err
+		}
 	}
-	rk.index = index
 
-	// There should be no more data.
-	if dr.Len() > 0 {
-		return nil, errMalformedRowKey
-	}
 	return &rk, nil
 }
 
@@ -159,7 +163,12 @@ func (rk *rowKey) encode() (v string) {
 	// Write the final key to "key": (base64(HASH)~hex(INDEX))
 	withRowKeyBuffers(func(rkb *rowKeyBuffers) {
 		rkb.appendPathPrefix(rk.pathHash)
-		rkb.appendIndex(rk.index)
+		rkb.appendBytes([]byte("~"))
+		rkb.appendInt64(rk.index)
+		if rk.count > 0 {
+			rkb.appendBytes([]byte("~"))
+			rkb.appendInt64(rk.count)
+		}
 		v = rkb.value()
 	})
 	return
@@ -169,6 +178,7 @@ func (rk *rowKey) encode() (v string) {
 func (rk *rowKey) pathPrefix() (v string) {
 	withRowKeyBuffers(func(rkb *rowKeyBuffers) {
 		rkb.appendPathPrefix(rk.pathHash)
+		rkb.appendBytes([]byte("~"))
 		v = rkb.value()
 	})
 	return
@@ -187,7 +197,7 @@ func (rk *rowKey) pathPrefix() (v string) {
 func (rk *rowKey) pathPrefixUpperBound() (v string) {
 	withRowKeyBuffers(func(rkb *rowKeyBuffers) {
 		rkb.appendPathPrefix(rk.pathHash)
-		rkb.appendRune('~')
+		rkb.appendBytes([]byte("~~"))
 		v = rkb.value()
 	})
 	return
@@ -197,4 +207,24 @@ func (rk *rowKey) pathPrefixUpperBound() (v string) {
 // the "path" component of "o".
 func (rk *rowKey) sharesPathWith(o *rowKey) bool {
 	return bytes.Equal(rk.pathHash, o.pathHash)
+}
+
+func readHexInt64(v string) (int64, error) {
+	d, err := hex.DecodeString(v)
+	if err != nil {
+		return 0, errMalformedRowKey
+	}
+
+	dr := bytes.NewReader(d)
+	value, _, err := cmpbin.ReadInt(dr)
+	if err != nil {
+		return 0, errMalformedRowKey
+	}
+
+	// There should be no more data.
+	if dr.Len() > 0 {
+		return 0, errMalformedRowKey
+	}
+
+	return value, nil
 }

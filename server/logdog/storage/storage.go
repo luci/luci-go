@@ -61,6 +61,10 @@ type GetRequest struct {
 	// The Storage instance may return fewer records than the supplied Limit as an
 	// implementation detail.
 	Limit int
+	// KeysOnly, if true, allows (but doesn't require) the Storage instance to
+	// omit entry data in its get callback. For scanning operations, this can be
+	// much cheaper/faster than full data queries.
+	KeysOnly bool
 }
 
 // GetCallback is invoked for each record in the Get request. If it returns

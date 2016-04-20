@@ -121,8 +121,11 @@ func (s *Storage) Get(req storage.GetRequest, cb storage.GetCallback) error {
 	// callback from accidentally mutating it. We reuse the data buffer to try
 	// and catch errors when the callback retains the data.
 	for _, r := range recs {
-		dataCopy := make([]byte, len(r.data))
-		copy(dataCopy, r.data)
+		var dataCopy []byte
+		if !req.KeysOnly {
+			dataCopy = make([]byte, len(r.data))
+			copy(dataCopy, r.data)
+		}
 		if !cb(r.index, dataCopy) {
 			break
 		}

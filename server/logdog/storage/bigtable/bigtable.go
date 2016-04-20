@@ -17,7 +17,10 @@ import (
 
 const (
 	logColumnFamily = "log"
-	logColumn       = "data"
+
+	// The data column stores raw low row data (RecordIO blob).
+	logColumn  = "data"
+	logColName = logColumnFamily + ":" + logColumn
 )
 
 // Limits taken from here:
@@ -87,7 +90,6 @@ func (t *btTableProd) getLogData(c context.Context, rk *rowKey, limit int, keysO
 		bigtable.RowFilter(bigtable.FamilyFilter(logColumnFamily)),
 		bigtable.RowFilter(bigtable.ColumnFilter(logColumn)),
 		nil,
-		nil,
 	}[:2]
 	if keysOnly {
 		ropts = append(ropts, bigtable.RowFilter(bigtable.StripValueFilter()))
@@ -100,16 +102,12 @@ func (t *btTableProd) getLogData(c context.Context, rk *rowKey, limit int, keysO
 	// immediately after the row key ("ASDF~~"). See rowKey for more information.
 	rng := bigtable.NewRange(rk.encode(), rk.pathPrefixUpperBound())
 
-	innerErr := error(nil)
+	var innerErr error
 	err := t.logTable.ReadRows(c, rng, func(row bigtable.Row) bool {
-		data := []byte(nil)
-		if !keysOnly {
-			err := error(nil)
-			data, err = getLogData(row)
-			if err != nil {
-				innerErr = storage.ErrBadData
-				return false
-			}
+		data, err := getLogRowData(row)
+		if err != nil {
+			innerErr = storage.ErrBadData
+			return false
 		}
 
 		drk, err := decodeRowKey(row.Key())
@@ -158,22 +156,33 @@ func isTransient(err error) bool {
 	return (err != errStop) && grpcutil.IsTransient(err)
 }
 
-// getLogData loads the logColumn column from the logColumnFamily column family
-// and returns its []byte contents.
+// getLogRowData loads the []byte contents of the supplied log row.
 //
 // If the row doesn't exist, storage.ErrDoesNotExist will be returned.
-func getLogData(row bigtable.Row) ([]byte, error) {
-	ri := getReadItem(row, logColumnFamily, logColumn)
-	if ri == nil {
-		return nil, storage.ErrDoesNotExist
+func getLogRowData(row bigtable.Row) (data []byte, err error) {
+	items, ok := row[logColumnFamily]
+	if !ok {
+		err = storage.ErrDoesNotExist
+		return
 	}
-	return ri.Value, nil
+
+	for _, item := range items {
+		switch item.Column {
+		case logColName:
+			data = item.Value
+			return
+		}
+	}
+
+	// If no fields could be extracted, the rows does not exist.
+	err = storage.ErrDoesNotExist
+	return
 }
 
 // getReadItem retrieves a specific RowItem from the supplied Row.
 func getReadItem(row bigtable.Row, family, column string) *bigtable.ReadItem {
 	// Get the row for our family.
-	items, ok := row[family]
+	items, ok := row[logColumnFamily]
 	if !ok {
 		return nil
 	}
