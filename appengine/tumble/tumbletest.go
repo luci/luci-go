@@ -29,12 +29,13 @@ import (
 // tumble.
 type Testing struct {
 	Config
+	Service
 }
 
 // NewTesting returns a new Testing instance that is configured to use the
 // default tumble configuration.
 func NewTesting() *Testing {
-	t := Testing{defaultConfig}
+	t := Testing{Config: defaultConfig}
 	t.DustSettleTimeout = 0
 	return &t
 }
@@ -112,7 +113,7 @@ func (t *Testing) Iterate(c context.Context) int {
 		}
 		toks := strings.Split(tsk.Path, "/")
 		rec := httptest.NewRecorder()
-		ProcessShardHandler(c, rec, &http.Request{
+		t.ProcessShardHandler(c, rec, &http.Request{
 			Header: http.Header{"X-AppEngine-QueueName": []string{baseName}},
 		}, httprouter.Params{
 			{Key: "shard_id", Value: toks[4]},
@@ -135,7 +136,7 @@ func (t *Testing) FireAllTasks(c context.Context) {
 	t.installSettings(c)
 
 	rec := httptest.NewRecorder()
-	FireAllTasksHandler(c, rec, &http.Request{
+	t.FireAllTasksHandler(c, rec, &http.Request{
 		Header: http.Header{"X-Appengine-Cron": []string{"true"}},
 	}, nil)
 	if rec.Code != 200 {

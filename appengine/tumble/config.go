@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/common/clock/clockflag"
 	"github.com/luci/luci-go/server/settings"
 	"golang.org/x/net/context"
@@ -107,10 +106,6 @@ func processURL(ts timestamp, shard uint64) string {
 
 // InstallHandlers installs http handlers.
 func InstallHandlers(r *httprouter.Router) {
-	// GET so that this can be invoked from cron
-	r.GET(fireAllTasksURL,
-		gaemiddleware.BaseProd(gaemiddleware.RequireCron(FireAllTasksHandler)))
-
-	r.POST(processShardPattern,
-		gaemiddleware.BaseProd(gaemiddleware.RequireTaskQueue(baseName, ProcessShardHandler)))
+	var s Service
+	s.InstallHandlers(r)
 }

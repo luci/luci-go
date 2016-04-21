@@ -7,10 +7,8 @@ package tumble
 import (
 	"fmt"
 	"math"
-	"net/http"
 	"time"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/service/taskqueue"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
@@ -74,37 +72,4 @@ func fireTasks(c context.Context, cfg *Config, shards map[taskShard]struct{}) bo
 		return false
 	}
 	return true
-}
-
-// FireAllTasks fires off 1 task per shard to ensure that no tumble work
-// languishes forever. This may not be needed in a constantly-loaded system with
-// good tumble key distribution.
-func FireAllTasks(c context.Context) error {
-	cfg := getConfig(c)
-	shards := make(map[taskShard]struct{}, cfg.NumShards)
-	for i := uint64(0); i < cfg.NumShards; i++ {
-		shards[taskShard{i, minTS}] = struct{}{}
-	}
-
-	err := error(nil)
-	if !fireTasks(c, cfg, shards) {
-		err = errors.New("unable to fire all tasks")
-	}
-
-	return err
-}
-
-// FireAllTasksHandler is a http handler suitable for installation into
-// a httprouter. It expects `logging` and `luci/gae` services to be installed
-// into the context.
-//
-// FireAllTasksHandler verifies that it was called within an Appengine Cron
-// request, and then invokes the FireAllTasks function.
-func FireAllTasksHandler(c context.Context, rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	if err := FireAllTasks(c); err != nil {
-		rw.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(rw, "fire_all_tasks failed: %s", err)
-	} else {
-		rw.Write([]byte("ok"))
-	}
 }

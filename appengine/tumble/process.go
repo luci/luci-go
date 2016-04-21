@@ -8,12 +8,9 @@ import (
 	"bytes"
 	"fmt"
 	"math"
-	"net/http"
-	"strconv"
 	"sync/atomic"
 	"time"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/filter/txnBuf"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
@@ -50,47 +47,6 @@ func expandedShardBounds(c context.Context, shard uint64) (low, high int64) {
 	return
 }
 
-// ProcessShardHandler is a http handler suitable for installation into
-// a httprouter. It expects `logging` and `luci/gae` services to be installed
-// into the context.
-//
-// ProcessShardHandler verifies that its being run as a taskqueue task and that
-// the following parameters exist and are well-formed:
-//   * timestamp: decimal-encoded UNIX/UTC timestamp in seconds.
-//   * shard_id: decimal-encoded shard identifier.
-//
-// ProcessShardHandler then invokes ProcessShard with the parsed parameters.
-func ProcessShardHandler(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	tstampStr := p.ByName("timestamp")
-	sidStr := p.ByName("shard_id")
-
-	tstamp, err := strconv.ParseInt(tstampStr, 10, 64)
-	if err != nil {
-		logging.Errorf(c, "bad timestamp %q", tstampStr)
-		rw.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(rw, "bad timestamp")
-		return
-	}
-
-	sid, err := strconv.ParseUint(sidStr, 10, 64)
-	if err != nil {
-		logging.Errorf(c, "bad shardID %q", tstampStr)
-		rw.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(rw, "bad shardID")
-		return
-	}
-
-	cfg := getConfig(c)
-	err = processShard(c, cfg, time.Unix(tstamp, 0).UTC(), sid)
-	if err != nil {
-		logging.Errorf(c, "failure! %s", err)
-		rw.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(rw, "error: %s", err)
-	} else {
-		rw.Write([]byte("ok"))
-	}
-}
-
 // processShard is the tumble backend endpoint. This accepts a shard number which
 // is expected to be < GlobalConfig.NumShards.
 func processShard(c context.Context, cfg *Config, timestamp time.Time, shard uint64) error {
@@ -103,113 +59,20 @@ func processShard(c context.Context, cfg *Config, timestamp time.Time, shard uin
 		"shard": shard,
 	}.Infof(c, "Processing tumble shard.")
 
+	task := makeProcessTask(timestamp, shard)
 	lockKey := fmt.Sprintf("%s.%d.lock", baseName, shard)
 	clientID := fmt.Sprintf("%d_%d", timestamp.Unix(), shard)
-
-	// this last key allows buffered tasks to early exit if some other shard
-	// processor has already processed past this task's target timestamp.
-	lastKey := fmt.Sprintf("%s.%d.last", baseName, shard)
-	mc := memcache.Get(c)
-	lastItm, err := mc.Get(lastKey)
-	if err != nil {
-		if err != memcache.ErrCacheMiss {
-			logging.Warningf(c, "couldn't obtain last timestamp: %s", err)
-		}
-	} else {
-		val := lastItm.Value()
-		last, err := serialize.ReadTime(bytes.NewBuffer(val))
-		if err != nil {
-			logging.Warningf(c, "could not decode timestamp %v: %s", val, err)
-		} else {
-			last = last.Add(time.Duration(cfg.TemporalRoundFactor))
-			if last.After(timestamp) {
-				logging.Infof(c, "early exit, %s > %s", last, timestamp)
-				return nil
-			}
-		}
-	}
-	err = nil
 
 	q := datastore.NewQuery("tumble.Mutation").
 		Gte("ExpandedShard", low).Lte("ExpandedShard", high).
 		Project("TargetRoot").Distinct(true).
 		Limit(cfg.ProcessMaxBatchSize)
 
-	banSets := map[string]stringset.Set{}
-
+	var err error
 	for try := 0; try < 2; try++ {
 		err = memlock.TryWithLock(c, lockKey, clientID, func(c context.Context) error {
 			logging.Infof(c, "Got lock (try %d)", try)
-
-			for {
-				processCounters := []*int64{}
-				err := parallel.WorkPool(int(cfg.NumGoroutines), func(ch chan<- func() error) {
-					err := datastore.Get(c).Run(q, func(pm datastore.PropertyMap) error {
-						root := pm["TargetRoot"][0].Value().(*datastore.Key)
-						encRoot := root.Encode()
-
-						// TODO(riannucci): make banSets remove keys from the banSet which
-						// weren't hit. Once they stop showing up, they'll never show up
-						// again.
-
-						bs := banSets[encRoot]
-						if bs == nil {
-							bs = stringset.New(0)
-							banSets[encRoot] = bs
-						}
-						counter := new(int64)
-						processCounters = append(processCounters, counter)
-
-						ch <- func() error {
-							return processRoot(c, cfg, root, bs, counter)
-						}
-
-						if c.Err() != nil {
-							logging.Warningf(c, "Lost lock! %s", c.Err())
-							return datastore.Stop
-						}
-						return nil
-					})
-					if err != nil {
-						var qstr string
-						if fq, err := q.Finalize(); err == nil {
-							qstr = fq.String()
-						} else {
-							qstr = fmt.Sprintf("unable to finalize: %v", err)
-						}
-
-						logging.Fields{
-							logging.ErrorKey: err,
-							"query":          qstr,
-						}.Errorf(c, "Failure to query.")
-						ch <- func() error {
-							return err
-						}
-					}
-				})
-				if err != nil {
-					return err
-				}
-				numProcessed := int64(0)
-				for _, n := range processCounters {
-					numProcessed += *n
-				}
-				logging.Infof(c, "cumulatively processed %d items", numProcessed)
-				if numProcessed == 0 {
-					break
-				}
-
-				err = mc.Set(mc.NewItem(lastKey).SetValue(serialize.ToBytes(clock.Now(c).UTC())))
-				if err != nil {
-					logging.Warningf(c, "could not update last process memcache key %s: %s", lastKey, err)
-				}
-
-				if tr := clock.Sleep(c, time.Duration(cfg.DustSettleTimeout)); tr.Incomplete() {
-					logging.Warningf(c, "sleep interrupted, context is done: %v", tr.Err)
-					return tr.Err
-				}
-			}
-			return nil
+			return task.process(c, cfg, q)
 		})
 		if err != memlock.ErrFailedToLock {
 			break
@@ -225,6 +88,118 @@ func processShard(c context.Context, cfg *Config, timestamp time.Time, shard uin
 		err = nil
 	}
 	return err
+}
+
+// processTask is a stateful processing task.
+type processTask struct {
+	timestamp time.Time
+	clientID  string
+	lastKey   string
+	banSets   map[string]stringset.Set
+}
+
+func makeProcessTask(timestamp time.Time, shard uint64) *processTask {
+	return &processTask{
+		timestamp: timestamp,
+		clientID:  fmt.Sprintf("%d_%d", timestamp.Unix(), shard),
+		lastKey:   fmt.Sprintf("%s.%d.last", baseName, shard),
+		banSets:   make(map[string]stringset.Set),
+	}
+}
+
+func (t *processTask) process(c context.Context, cfg *Config, q *datastore.Query) error {
+	// this last key allows buffered tasks to early exit if some other shard
+	// processor has already processed past this task's target timestamp.
+	mc := memcache.Get(c)
+	lastItm, err := mc.Get(t.lastKey)
+	if err != nil {
+		if err != memcache.ErrCacheMiss {
+			logging.Warningf(c, "couldn't obtain last timestamp: %s", err)
+		}
+	} else {
+		val := lastItm.Value()
+		last, err := serialize.ReadTime(bytes.NewBuffer(val))
+		if err != nil {
+			logging.Warningf(c, "could not decode timestamp %v: %s", val, err)
+		} else {
+			last = last.Add(time.Duration(cfg.TemporalRoundFactor))
+			if last.After(t.timestamp) {
+				logging.Infof(c, "early exit, %s > %s", last, t.timestamp)
+				return nil
+			}
+		}
+	}
+	err = nil
+
+	for {
+		processCounters := []*int64{}
+		err := parallel.WorkPool(int(cfg.NumGoroutines), func(ch chan<- func() error) {
+			err := datastore.Get(c).Run(q, func(pm datastore.PropertyMap) error {
+				root := pm["TargetRoot"][0].Value().(*datastore.Key)
+				encRoot := root.Encode()
+
+				// TODO(riannucci): make banSets remove keys from the banSet which
+				// weren't hit. Once they stop showing up, they'll never show up
+				// again.
+
+				bs := t.banSets[encRoot]
+				if bs == nil {
+					bs = stringset.New(0)
+					t.banSets[encRoot] = bs
+				}
+				counter := new(int64)
+				processCounters = append(processCounters, counter)
+
+				ch <- func() error {
+					return processRoot(c, cfg, root, bs, counter)
+				}
+
+				if c.Err() != nil {
+					logging.Warningf(c, "Lost lock! %s", c.Err())
+					return datastore.Stop
+				}
+				return nil
+			})
+			if err != nil {
+				var qstr string
+				if fq, err := q.Finalize(); err == nil {
+					qstr = fq.String()
+				} else {
+					qstr = fmt.Sprintf("unable to finalize: %v", err)
+				}
+
+				logging.Fields{
+					logging.ErrorKey: err,
+					"query":          qstr,
+				}.Errorf(c, "Failure to query.")
+				ch <- func() error {
+					return err
+				}
+			}
+		})
+		if err != nil {
+			return err
+		}
+		numProcessed := int64(0)
+		for _, n := range processCounters {
+			numProcessed += *n
+		}
+		logging.Infof(c, "cumulatively processed %d items", numProcessed)
+		if numProcessed == 0 {
+			break
+		}
+
+		err = mc.Set(mc.NewItem(t.lastKey).SetValue(serialize.ToBytes(clock.Now(c).UTC())))
+		if err != nil {
+			logging.Warningf(c, "could not update last process memcache key %s: %s", t.lastKey, err)
+		}
+
+		if tr := clock.Sleep(c, time.Duration(cfg.DustSettleTimeout)); tr.Incomplete() {
+			logging.Warningf(c, "sleep interrupted, context is done: %v", tr.Err)
+			return tr.Err
+		}
+	}
+	return nil
 }
 
 func getBatchByRoot(c context.Context, cfg *Config, root *datastore.Key, banSet stringset.Set) ([]*realMutation, error) {

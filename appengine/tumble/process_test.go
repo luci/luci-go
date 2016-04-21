@@ -40,7 +40,8 @@ func TestTumbleFiddlyBits(t *testing.T) {
 				"Processing tumble shard.", map[string]interface{}{"shard": uint64(10)}),
 				ShouldBeTrue)
 			So(l.Has(logging.Info,
-				"early exit, 0001-02-03 05:05:10 +0000 UTC > 0001-02-03 04:05:12 +0000 UTC", nil),
+				"early exit, 0001-02-03 05:05:10 +0000 UTC > 0001-02-03 04:05:12 +0000 UTC",
+				map[string]interface{}{"clientID": "-62132730888_10", "key": "tumble.10.lock"}),
 				ShouldBeTrue)
 		})
 	})
