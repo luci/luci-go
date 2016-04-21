@@ -19,7 +19,13 @@ import (
 
 // Service is an instance of a Tumble service. It installs its handlers into an
 // HTTP router and services Tumble request tasks.
-type Service struct{}
+type Service struct {
+	// Middleware is an optional function which allows your application to add
+	// application-specific resources to the context used by ProcessShardHandler.
+	//
+	// Context will already be setup with BaseProd.
+	Middleware func(context.Context) context.Context
+}
 
 // InstallHandlers installs http handlers.
 func (s *Service) InstallHandlers(r *httprouter.Router) {
@@ -75,6 +81,10 @@ func (s *Service) FireAllTasks(c context.Context) error {
 //
 // ProcessShardHandler then invokes ProcessShard with the parsed parameters.
 func (s *Service) ProcessShardHandler(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	if s.Middleware != nil {
+		c = s.Middleware(c)
+	}
+
 	tstampStr := p.ByName("timestamp")
 	sidStr := p.ByName("shard_id")
 
