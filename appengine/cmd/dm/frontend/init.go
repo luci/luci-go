@@ -46,13 +46,14 @@ func base(h middleware.Handler) httprouter.Handle {
 
 func init() {
 	router := httprouter.New()
+	tmb := tumble.Service{}
 
 	svr := prpc.Server{}
 	deps.RegisterDepsServer(&svr)
 	discovery.Enable(&svr)
 
 	svr.InstallHandlers(router, base)
-	tumble.InstallHandlers(router)
+	tmb.InstallHandlers(router)
 	gaeauthServer.InstallHandlers(router, base)
 	adminSettings.InstallHandlers(router, base, &gaeauthServer.UsersAPIAuthMethod{})
 

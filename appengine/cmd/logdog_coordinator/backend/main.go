@@ -43,10 +43,11 @@ func base(h middleware.Handler) httprouter.Handle {
 
 func init() {
 	b := backend.Backend{}
+	tmb := tumble.Service{}
 
 	router := httprouter.New()
 	b.InstallHandlers(router, base)
-	tumble.InstallHandlers(router)
+	tmb.InstallHandlers(router)
 
 	http.Handle("/", router)
 }

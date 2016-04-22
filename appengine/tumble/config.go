@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/common/clock/clockflag"
 	"github.com/luci/luci-go/server/settings"
 	"golang.org/x/net/context"
@@ -102,10 +101,4 @@ func processURL(ts timestamp, shard uint64) string {
 	return strings.NewReplacer(
 		":shard_id", fmt.Sprint(shard),
 		":timestamp", fmt.Sprint(ts)).Replace(processShardPattern)
-}
-
-// InstallHandlers installs http handlers.
-func InstallHandlers(r *httprouter.Router) {
-	var s Service
-	s.InstallHandlers(r)
 }

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
@@ -25,6 +26,13 @@ type Service struct {
 	//
 	// Context will already be setup with BaseProd.
 	Middleware func(context.Context) context.Context
+
+	// Namespaces is a function that returns the datastore namespaces that Tumble
+	// will poll.
+	//
+	// If nil, Tumble will be executed against all namespaces registered in the
+	// datastore.
+	Namespaces func(context.Context) ([]string, error)
 }
 
 // InstallHandlers installs http handlers.
@@ -104,8 +112,20 @@ func (s *Service) ProcessShardHandler(c context.Context, rw http.ResponseWriter,
 		return
 	}
 
+	// Get the set of namespaces to handle.
+	nsFn := s.Namespaces
+	if nsFn == nil {
+		nsFn = getDatastoreNamespaces
+	}
+	namespaces, err := nsFn(c)
+	if err != nil {
+		logging.WithError(err).Errorf(c, "Failed to enumerate namespaces.")
+		rw.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	cfg := getConfig(c)
-	err = processShard(c, cfg, time.Unix(tstamp, 0).UTC(), sid)
+	err = processShard(c, cfg, namespaces, time.Unix(tstamp, 0).UTC(), sid)
 	if err != nil {
 		logging.Errorf(c, "failure! %s", err)
 		rw.WriteHeader(http.StatusInternalServerError)
@@ -113,4 +133,32 @@ func (s *Service) ProcessShardHandler(c context.Context, rw http.ResponseWriter,
 	} else {
 		rw.Write([]byte("ok"))
 	}
+}
+
+// getDatastoreNamespaces returns a list of all of the namespaces in the
+// datastore.
+//
+// This is done by issuing a datastore query for kind "__namespace__". The
+// resulting keys will have IDs for the namespaces, namely:
+//	- The empty namespace will have integer ID 1.
+//	- Other namespaces will have string IDs.
+func getDatastoreNamespaces(c context.Context) ([]string, error) {
+	q := datastore.NewQuery("__namespace__").KeysOnly(true)
+
+	// Query our datastore for the full set of namespaces.
+	var namespaceKeys []*datastore.Key
+	if err := datastore.Get(c).GetAll(q, &namespaceKeys); err != nil {
+		logging.WithError(err).Errorf(c, "Failed to execute namespace query.")
+		return nil, err
+	}
+
+	namespaces := make([]string, len(namespaceKeys))
+	for i, nk := range namespaceKeys {
+		ns := nk.StringID()
+		if ns == "" && nk.IntID() != 1 {
+			return nil, fmt.Errorf("unknown namespace integer ID: %v", nk.IntID())
+		}
+		namespaces[i] = ns
+	}
+	return namespaces, nil
 }

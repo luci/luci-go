@@ -41,7 +41,7 @@ func TestTumbleFiddlyBits(t *testing.T) {
 				ShouldBeTrue)
 			So(l.Has(logging.Info,
 				"early exit, 0001-02-03 05:05:10 +0000 UTC > 0001-02-03 04:05:12 +0000 UTC",
-				map[string]interface{}{"clientID": "-62132730888_10", "key": "tumble.10.lock"}),
+				map[string]interface{}{"clientID": "-62132730888_10", "key": "tumble.10.lock", "namespace": ""}),
 				ShouldBeTrue)
 		})
 	})

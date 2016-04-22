@@ -14,6 +14,7 @@ import (
 	"github.com/luci/gae/filter/txnBuf"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
+	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/appengine/memlock"
 	"github.com/luci/luci-go/common/clock"
@@ -49,7 +50,7 @@ func expandedShardBounds(c context.Context, shard uint64) (low, high int64) {
 
 // processShard is the tumble backend endpoint. This accepts a shard number which
 // is expected to be < GlobalConfig.NumShards.
-func processShard(c context.Context, cfg *Config, timestamp time.Time, shard uint64) error {
+func processShard(c context.Context, cfg *Config, namespaces []string, timestamp time.Time, shard uint64) error {
 	low, high := expandedShardBounds(c, shard)
 	if low > high {
 		return nil
@@ -59,7 +60,16 @@ func processShard(c context.Context, cfg *Config, timestamp time.Time, shard uin
 		"shard": shard,
 	}.Infof(c, "Processing tumble shard.")
 
-	task := makeProcessTask(timestamp, shard)
+	// If no namespaces are provided, use the default namespace.
+	if len(namespaces) == 0 {
+		namespaces = []string{""}
+	}
+
+	tasks := make([]*processTask, len(namespaces))
+	for i, ns := range namespaces {
+		tasks[i] = makeProcessTask(ns, timestamp, shard)
+	}
+
 	lockKey := fmt.Sprintf("%s.%d.lock", baseName, shard)
 	clientID := fmt.Sprintf("%d_%d", timestamp.Unix(), shard)
 
@@ -72,7 +82,16 @@ func processShard(c context.Context, cfg *Config, timestamp time.Time, shard uin
 	for try := 0; try < 2; try++ {
 		err = memlock.TryWithLock(c, lockKey, clientID, func(c context.Context) error {
 			logging.Infof(c, "Got lock (try %d)", try)
-			return task.process(c, cfg, q)
+
+			return parallel.FanOutIn(func(taskC chan<- func() error) {
+				for _, task := range tasks {
+					task := task
+
+					taskC <- func() error {
+						return task.process(c, cfg, q)
+					}
+				}
+			})
 		})
 		if err != memlock.ErrFailedToLock {
 			break
@@ -90,16 +109,19 @@ func processShard(c context.Context, cfg *Config, timestamp time.Time, shard uin
 	return err
 }
 
-// processTask is a stateful processing task.
+// processTask is a stateful processing task. It is bound to a specific
+// namespace.
 type processTask struct {
+	namespace string
 	timestamp time.Time
 	clientID  string
 	lastKey   string
 	banSets   map[string]stringset.Set
 }
 
-func makeProcessTask(timestamp time.Time, shard uint64) *processTask {
+func makeProcessTask(namespace string, timestamp time.Time, shard uint64) *processTask {
 	return &processTask{
+		namespace: namespace,
 		timestamp: timestamp,
 		clientID:  fmt.Sprintf("%d_%d", timestamp.Unix(), shard),
 		lastKey:   fmt.Sprintf("%s.%d.last", baseName, shard),
@@ -108,6 +130,9 @@ func makeProcessTask(timestamp time.Time, shard uint64) *processTask {
 }
 
 func (t *processTask) process(c context.Context, cfg *Config, q *datastore.Query) error {
+	c = logging.SetField(c, "namespace", t.namespace)
+	c = info.Get(c).MustNamespace(t.namespace)
+
 	// this last key allows buffered tasks to early exit if some other shard
 	// processor has already processed past this task's target timestamp.
 	mc := memcache.Get(c)

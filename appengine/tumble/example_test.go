@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/bit_field"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -219,10 +220,17 @@ func init() {
 	Register((*Embedder)(nil))
 }
 
-func TestHighLevel(t *testing.T) {
-	t.Parallel()
+func testHighLevelImpl(t *testing.T, namespaces []string) {
+	forEachNS := func(c context.Context, f func(context.Context, int)) {
+		for i, ns := range namespaces {
+			f(info.Get(c).MustNamespace(ns), i)
+		}
+	}
 
 	Convey("Tumble", t, func() {
+
+		outMsgs := make([]*OutgoingMessage, len(namespaces))
+
 		Convey("Check registration", func() {
 			So(registry, ShouldContainKey, "*tumble.SendMessage")
 
@@ -239,80 +247,105 @@ func TestHighLevel(t *testing.T) {
 			testing := NewTesting()
 			ctx := testing.Context()
 
-			ds := datastore.Get(ctx)
+			testing.Service.Namespaces = func(context.Context) ([]string, error) {
+				return namespaces, nil
+			}
+
 			l := logging.Get(ctx).(*memlogger.MemLogger)
 			_ = l
 
 			charlie := &User{Name: "charlie"}
-			So(ds.Put(charlie), ShouldBeNil)
+			forEachNS(ctx, func(ctx context.Context, i int) {
+				So(datastore.Get(ctx).Put(charlie), ShouldBeNil)
+			})
+
+			// gds is a default-namespace datastore instance for global operations.
+			gds := datastore.Get(ctx)
 
 			Convey("can't send to someone who doesn't exist", func() {
-				ds.Testable().Consistent(false)
+				gds.Testable().Consistent(false)
 
-				outMsg, err := charlie.SendMessage(ctx, "Hey there", "lennon")
-				So(err, ShouldBeNil)
+				forEachNS(ctx, func(ctx context.Context, i int) {
+					var err error
+					outMsgs[i], err = charlie.SendMessage(ctx, "Hey there", "lennon")
+					So(err, ShouldBeNil)
+				})
 
 				// need to advance clock and catch up indexes
 				So(testing.Iterate(ctx), ShouldEqual, 0)
 				testing.AdvanceTime(ctx)
 
 				// need to catch up indexes
-				So(testing.Iterate(ctx), ShouldEqual, 1)
+				So(testing.Iterate(ctx), ShouldBeGreaterThan, 0)
 
 				testing.FireAllTasks(ctx)
-				ds.Testable().CatchupIndexes()
+				gds.Testable().CatchupIndexes()
 				testing.AdvanceTime(ctx)
 
 				So(testing.Iterate(ctx), ShouldEqual, testing.NumShards)
-				ds.Testable().CatchupIndexes()
+				gds.Testable().CatchupIndexes()
 				testing.AdvanceTime(ctx)
 
-				So(testing.Iterate(ctx), ShouldEqual, 1)
+				So(testing.Iterate(ctx), ShouldBeGreaterThan, 0)
 
-				So(ds.Get(outMsg), ShouldBeNil)
-				So(outMsg.Failure.All(true), ShouldBeTrue)
+				forEachNS(ctx, func(ctx context.Context, i int) {
+					So(datastore.Get(ctx).Get(outMsgs[i]), ShouldBeNil)
+					So(outMsgs[i].Failure.All(true), ShouldBeTrue)
+				})
 			})
 
 			Convey("sending to yourself could be done in one iteration", func() {
-				outMsg, err := charlie.SendMessage(ctx, "Hey there", "charlie")
-				So(err, ShouldBeNil)
+				forEachNS(ctx, func(ctx context.Context, i int) {
+					var err error
+					outMsgs[i], err = charlie.SendMessage(ctx, "Hey there", "charlie")
+					So(err, ShouldBeNil)
+				})
 
 				testing.AdvanceTime(ctx)
 
-				So(testing.Iterate(ctx), ShouldEqual, 1)
+				So(testing.Iterate(ctx), ShouldBeGreaterThan, 0)
 
-				So(ds.Get(outMsg), ShouldBeNil)
-				So(outMsg.Success.All(true), ShouldBeTrue)
+				forEachNS(ctx, func(ctx context.Context, i int) {
+					So(datastore.Get(ctx).Get(outMsgs[i]), ShouldBeNil)
+					So(outMsgs[i].Success.All(true), ShouldBeTrue)
+				})
 			})
 
 			Convey("different version IDs log a warning", func() {
-				outMsg, err := charlie.SendMessage(ctx, "Hey there", "charlie")
-				So(err, ShouldBeNil)
+				forEachNS(ctx, func(ctx context.Context, i int) {
+					var err error
+					outMsgs[i], err = charlie.SendMessage(ctx, "Hey there", "charlie")
+					So(err, ShouldBeNil)
 
-				rm := &realMutation{
-					ID:     "0000000000000001_00000000_00000000",
-					Parent: ds.KeyForObj(charlie),
-				}
-				So(ds.Get(rm), ShouldBeNil)
-				So(rm.Version, ShouldEqual, "testVersionID")
-				rm.Version = "otherCodeVersion"
-				So(ds.Put(rm), ShouldBeNil)
+					ds := datastore.Get(ctx)
+					rm := &realMutation{
+						ID:     "0000000000000001_00000000_00000000",
+						Parent: ds.KeyForObj(charlie),
+					}
+					So(ds.Get(rm), ShouldBeNil)
+					So(rm.Version, ShouldEqual, "testVersionID")
+					rm.Version = "otherCodeVersion"
+					So(ds.Put(rm), ShouldBeNil)
+				})
 
 				l.Reset()
 				testing.Drain(ctx)
 				So(l.Has(logging.Warning, "loading mutation with different code version", map[string]interface{}{
+					"namespace":   "",
 					"key":         "tumble.23.lock",
 					"clientID":    "-62132730888_23",
 					"mut_version": "otherCodeVersion",
 					"cur_version": "testVersionID",
 				}), ShouldBeTrue)
 
-				So(ds.Get(outMsg), ShouldBeNil)
-				So(outMsg.Success.All(true), ShouldBeTrue)
+				forEachNS(ctx, func(ctx context.Context, i int) {
+					So(datastore.Get(ctx).Get(outMsgs[i]), ShouldBeNil)
+					So(outMsgs[i].Success.All(true), ShouldBeTrue)
+				})
 			})
 
 			Convey("sending to 200 people is no big deal", func() {
-				ds.Testable().Consistent(false)
+				gds.Testable().Consistent(false)
 
 				users := make([]User, 200)
 				recipients := make([]string, 200)
@@ -321,21 +354,25 @@ func TestHighLevel(t *testing.T) {
 					recipients[i] = name
 					users[i].Name = name
 				}
-				So(ds.PutMulti(users), ShouldBeNil)
 
-				outMsg, err := charlie.SendMessage(ctx, "Hey there", recipients...)
-				So(err, ShouldBeNil)
+				forEachNS(ctx, func(ctx context.Context, i int) {
+					So(datastore.Get(ctx).PutMulti(users), ShouldBeNil)
+
+					var err error
+					outMsgs[i], err = charlie.SendMessage(ctx, "Hey there", recipients...)
+					So(err, ShouldBeNil)
+				})
 
 				// do all the SendMessages
-				ds.Testable().CatchupIndexes()
+				gds.Testable().CatchupIndexes()
 				testing.AdvanceTime(ctx)
 				So(testing.Iterate(ctx), ShouldEqual, testing.NumShards)
 
 				// do all the WriteReceipts
 				l.Reset()
-				ds.Testable().CatchupIndexes()
+				gds.Testable().CatchupIndexes()
 				testing.AdvanceTime(ctx)
-				So(testing.Iterate(ctx), ShouldEqual, 1)
+				So(testing.Iterate(ctx), ShouldBeGreaterThan, 0)
 
 				// hacky proof that all 200 incoming message reciepts were buffered
 				// appropriately.
@@ -343,63 +380,73 @@ func TestHighLevel(t *testing.T) {
 				// The extra mutation at the end is supposed to be delayed, but we
 				// didn't enable Delayed messages in this config.
 				So(l.Has(logging.Info, "successfully processed 128 mutations (0 tail-call), adding 0 more", map[string]interface{}{
-					"key":      "tumble.23.lock",
-					"clientID": "-62132730884_23",
+					"namespace": "",
+					"key":       "tumble.23.lock",
+					"clientID":  "-62132730884_23",
 				}), ShouldBeTrue)
 				So(l.Has(logging.Info, "successfully processed 73 mutations (1 tail-call), adding 0 more", map[string]interface{}{
-					"key":      "tumble.23.lock",
-					"clientID": "-62132730884_23",
+					"namespace": "",
+					"key":       "tumble.23.lock",
+					"clientID":  "-62132730884_23",
 				}), ShouldBeTrue)
 
-				So(ds.Get(outMsg), ShouldBeNil)
-				So(outMsg.Success.All(true), ShouldBeTrue)
-				So(outMsg.Success.Size(), ShouldEqual, 200)
-
+				forEachNS(ctx, func(ctx context.Context, i int) {
+					So(datastore.Get(ctx).Get(outMsgs[i]), ShouldBeNil)
+					So(outMsgs[i].Success.All(true), ShouldBeTrue)
+					So(outMsgs[i].Success.Size(), ShouldEqual, 200)
+				})
 			})
 
 			Convey("delaying messages works", func() {
-				ds.Testable().Consistent(false)
+				gds.Testable().Consistent(false)
 				testing.DelayedMutations = true
 
-				So(ds.PutMulti([]User{
-					{"sender"},
-					{"recipient"},
-				}), ShouldBeNil)
+				forEachNS(ctx, func(ctx context.Context, i int) {
+					So(datastore.Get(ctx).PutMulti([]User{
+						{"sender"},
+						{"recipient"},
+					}), ShouldBeNil)
+				})
 
-				outMsg, err := charlie.SendMessage(ctx, "Hey there", "recipient")
-				So(err, ShouldBeNil)
+				forEachNS(ctx, func(ctx context.Context, i int) {
+					var err error
+					outMsgs[i], err = charlie.SendMessage(ctx, "Hey there", "recipient")
+					So(err, ShouldBeNil)
+				})
 
 				// do all the SendMessages
 				l.Reset()
-				ds.Testable().CatchupIndexes()
+				gds.Testable().CatchupIndexes()
 				testing.AdvanceTime(ctx)
 
 				// forgot to add the extra index!
 				So(func() { testing.Iterate(ctx) }, ShouldPanicLike, "Insufficient indexes")
-				ds.Testable().AddIndexes(&datastore.IndexDefinition{
+				gds.Testable().AddIndexes(&datastore.IndexDefinition{
 					Kind: "tumble.Mutation",
 					SortBy: []datastore.IndexColumn{
 						{Property: "TargetRoot"},
 						{Property: "ProcessAfter"},
 					},
 				})
-				ds.Testable().CatchupIndexes()
+				gds.Testable().CatchupIndexes()
 
-				So(testing.Iterate(ctx), ShouldEqual, 1)
+				So(testing.Iterate(ctx), ShouldBeGreaterThan, 0)
 
 				// do all the WriteReceipts
-				ds.Testable().CatchupIndexes()
+				gds.Testable().CatchupIndexes()
 				testing.AdvanceTime(ctx)
-				So(testing.Iterate(ctx), ShouldEqual, 1)
+				So(testing.Iterate(ctx), ShouldBeGreaterThan, 0)
 
-				So(ds.Get(outMsg), ShouldBeNil)
-				So(outMsg.Success.All(true), ShouldBeTrue)
-				So(outMsg.Success.Size(), ShouldEqual, 1)
-				So(outMsg.Notified, ShouldBeFalse)
+				forEachNS(ctx, func(ctx context.Context, i int) {
+					So(datastore.Get(ctx).Get(outMsgs[i]), ShouldBeNil)
+					So(outMsgs[i].Success.All(true), ShouldBeTrue)
+					So(outMsgs[i].Success.Size(), ShouldEqual, 1)
+					So(outMsgs[i].Notified, ShouldBeFalse)
+				})
 
 				// Running another iteration should find nothing
 				l.Reset()
-				ds.Testable().CatchupIndexes()
+				gds.Testable().CatchupIndexes()
 				testing.AdvanceTime(ctx)
 				So(testing.Iterate(ctx), ShouldEqual, 0)
 				So(l.Has(
@@ -407,15 +454,29 @@ func TestHighLevel(t *testing.T) {
 				), ShouldBeTrue)
 
 				// Now it'll find something
-				ds.Testable().CatchupIndexes()
+				gds.Testable().CatchupIndexes()
 				clock.Get(ctx).(testclock.TestClock).Add(time.Minute * 5)
-				So(testing.Iterate(ctx), ShouldEqual, 1)
+				So(testing.Iterate(ctx), ShouldBeGreaterThan, 0)
 
-				So(ds.Get(outMsg), ShouldBeNil)
-				So(outMsg.Notified, ShouldBeTrue)
+				forEachNS(ctx, func(ctx context.Context, i int) {
+					So(datastore.Get(ctx).Get(outMsgs[i]), ShouldBeNil)
+					So(outMsgs[i].Notified, ShouldBeTrue)
+				})
 			})
 
 		})
 
 	})
+}
+
+func TestHighLevel(t *testing.T) {
+	t.Parallel()
+
+	testHighLevelImpl(t, []string{""})
+}
+
+func TestHighLevelMultiNamespace(t *testing.T) {
+	t.Parallel()
+
+	testHighLevelImpl(t, []string{"", "foo", "bar"})
 }

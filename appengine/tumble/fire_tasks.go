@@ -9,6 +9,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/taskqueue"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
@@ -40,6 +41,8 @@ func fireTasks(c context.Context, cfg *Config, shards map[taskShard]struct{}) bo
 		return true
 	}
 
+	// Tumble uses the empty namespace for all task queue tasks.
+	c = info.Get(c).MustNamespace("")
 	tq := taskqueue.Get(c)
 
 	nextSlot := mkTimestamp(cfg, clock.Now(c).UTC())
