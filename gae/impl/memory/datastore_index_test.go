@@ -243,7 +243,7 @@ func TestIndexEntries(t *testing.T) {
 			}
 
 			Convey(tc.name, func() {
-				store := (*memStore)(nil)
+				store := (memStore)(nil)
 				if tc.withBuiltin {
 					store = indexEntriesWithBuiltins(fakeKey, tc.pmap, tc.idxs)
 				} else {
@@ -252,7 +252,7 @@ func TestIndexEntries(t *testing.T) {
 				}
 				for colName, vals := range tc.collections {
 					i := 0
-					coll := store.GetCollection(colName)
+					coll := store.Snapshot().GetCollection(colName)
 					numItems, _ := coll.GetTotals()
 					So(numItems, ShouldEqual, len(tc.collections[colName]))
 					coll.VisitItemsAscend(nil, true, func(itm *gkvlite.Item) bool {
@@ -354,7 +354,7 @@ func TestUpdateIndexes(t *testing.T) {
 		for _, tc := range updateIndexesTests {
 			Convey(tc.name, func() {
 				store := newMemStore()
-				idxColl := store.SetCollection("idx", nil)
+				idxColl := store.GetOrCreateCollection("idx")
 				for _, i := range tc.idxs {
 					idxColl.Set(cat(i.PrepForIdxTable()), []byte{})
 				}
@@ -369,7 +369,7 @@ func TestUpdateIndexes(t *testing.T) {
 				tmpLoader = nil
 
 				for colName, data := range tc.expected {
-					coll := store.GetCollection(colName)
+					coll := store.Snapshot().GetCollection(colName)
 					So(coll, ShouldNotBeNil)
 					i := 0
 					coll.VisitItemsAscend(nil, false, func(itm *gkvlite.Item) bool {

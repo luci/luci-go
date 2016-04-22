@@ -43,7 +43,7 @@ func defaultIndexes(kind string, pmap ds.PropertyMap) []*ds.IndexDefinition {
 	return ret
 }
 
-func indexEntriesWithBuiltins(k *ds.Key, pm ds.PropertyMap, complexIdxs []*ds.IndexDefinition) *memStore {
+func indexEntriesWithBuiltins(k *ds.Key, pm ds.PropertyMap, complexIdxs []*ds.IndexDefinition) memStore {
 	sip := serialize.PropertyMapPartially(k, pm)
 	return indexEntries(sip, k.Namespace(), append(defaultIndexes(k.Kind(), pm), complexIdxs...))
 }
@@ -132,9 +132,9 @@ func (m *matcher) match(sortBy []ds.IndexColumn, sip serialize.SerializedPmap) (
 	return m.buf, true
 }
 
-func indexEntries(sip serialize.SerializedPmap, ns string, idxs []*ds.IndexDefinition) *memStore {
+func indexEntries(sip serialize.SerializedPmap, ns string, idxs []*ds.IndexDefinition) memStore {
 	ret := newMemStore()
-	idxColl := ret.SetCollection("idx", nil)
+	idxColl := ret.GetOrCreateCollection("idx")
 
 	mtch := matcher{}
 	for _, idx := range idxs {
@@ -142,7 +142,7 @@ func indexEntries(sip serialize.SerializedPmap, ns string, idxs []*ds.IndexDefin
 		if irg, ok := mtch.match(idx.GetFullSortOrder(), sip); ok {
 			idxBin := serialize.ToBytes(*idx.PrepForIdxTable())
 			idxColl.Set(idxBin, []byte{})
-			coll := ret.SetCollection(fmt.Sprintf("idx:%s:%s", ns, idxBin), nil)
+			coll := ret.GetOrCreateCollection(fmt.Sprintf("idx:%s:%s", ns, idxBin))
 			irg.permute(coll.Set)
 		}
 	}
@@ -153,7 +153,7 @@ func indexEntries(sip serialize.SerializedPmap, ns string, idxs []*ds.IndexDefin
 // walkCompIdxs walks the table of compound indexes in the store. If `endsWith`
 // is provided, this will only walk over compound indexes which match
 // Kind, Ancestor, and whose SortBy has `endsWith.SortBy` as a suffix.
-func walkCompIdxs(store *memStore, endsWith *ds.IndexDefinition, cb func(*ds.IndexDefinition) bool) {
+func walkCompIdxs(store memStore, endsWith *ds.IndexDefinition, cb func(*ds.IndexDefinition) bool) {
 	idxColl := store.GetCollection("idx")
 	if idxColl == nil {
 		return
@@ -182,17 +182,18 @@ func walkCompIdxs(store *memStore, endsWith *ds.IndexDefinition, cb func(*ds.Ind
 	}
 }
 
-func mergeIndexes(ns string, store, oldIdx, newIdx *memStore) {
+func mergeIndexes(ns string, store, oldIdx, newIdx memStore) {
 	prefixBuf := []byte("idx:" + ns + ":")
 	origPrefixBufLen := len(prefixBuf)
+
+	oldIdx = oldIdx.Snapshot()
+	newIdx = newIdx.Snapshot()
+
 	gkvCollide(oldIdx.GetCollection("idx"), newIdx.GetCollection("idx"), func(k, ov, nv []byte) {
 		prefixBuf = append(prefixBuf[:origPrefixBufLen], k...)
 		ks := string(prefixBuf)
 
-		coll := store.GetCollection(ks)
-		if coll == nil {
-			coll = store.SetCollection(ks, nil)
-		}
+		coll := store.GetOrCreateCollection(ks)
 
 		oldColl := oldIdx.GetCollection(ks)
 		newColl := newIdx.GetCollection(ks)
@@ -224,16 +225,16 @@ func mergeIndexes(ns string, store, oldIdx, newIdx *memStore) {
 	})
 }
 
-func addIndexes(store *memStore, aid string, compIdx []*ds.IndexDefinition) {
+func addIndexes(store memStore, aid string, compIdx []*ds.IndexDefinition) {
 	normalized := make([]*ds.IndexDefinition, len(compIdx))
-	idxColl := store.SetCollection("idx", nil)
+	idxColl := store.GetOrCreateCollection("idx")
 	for i, idx := range compIdx {
 		normalized[i] = idx.Normalize()
 		idxColl.Set(serialize.ToBytes(*normalized[i].PrepForIdxTable()), []byte{})
 	}
 
 	for _, ns := range namespaces(store) {
-		if allEnts := store.GetCollection("ents:" + ns); allEnts != nil {
+		if allEnts := store.Snapshot().GetCollection("ents:" + ns); allEnts != nil {
 			allEnts.VisitItemsAscend(nil, true, func(i *gkvlite.Item) bool {
 				pm, err := rpm(i.Val)
 				memoryCorruption(err)
@@ -254,10 +255,10 @@ func addIndexes(store *memStore, aid string, compIdx []*ds.IndexDefinition) {
 	}
 }
 
-func updateIndexes(store *memStore, key *ds.Key, oldEnt, newEnt ds.PropertyMap) {
+func updateIndexes(store memStore, key *ds.Key, oldEnt, newEnt ds.PropertyMap) {
 	// load all current complex query index definitions.
 	compIdx := []*ds.IndexDefinition{}
-	walkCompIdxs(store, nil, func(i *ds.IndexDefinition) bool {
+	walkCompIdxs(store.Snapshot(), nil, func(i *ds.IndexDefinition) bool {
 		compIdx = append(compIdx, i)
 		return true
 	})

@@ -14,7 +14,7 @@ import (
 
 type iterDefinition struct {
 	// The collection to iterate over
-	c *memCollection
+	c memCollection
 
 	// The prefix to always assert for every row. A nil prefix matches every row.
 	prefix []byte
@@ -119,6 +119,10 @@ type iterator struct {
 }
 
 func (def *iterDefinition) mkIter() *iterator {
+	if !def.c.IsReadOnly() {
+		panic("attempting to make an iterator with r/w collection")
+	}
+
 	cmdChan := make(chan *cmd)
 	ret := &iterator{
 		ch: cmdChan,

@@ -541,7 +541,7 @@ func TestCompoundIndexes(t *testing.T) {
 		return "idx::" + string(serialize.ToBytes(*def.PrepForIdxTable()))
 	}
 
-	numItms := func(c *memCollection) uint64 {
+	numItms := func(c memCollection) uint64 {
 		ret, _ := c.GetTotals()
 		return ret
 	}

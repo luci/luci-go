@@ -34,13 +34,14 @@ func TestIterator(t *testing.T) {
 	t.Parallel()
 
 	s := newMemStore()
-	c := s.SetCollection("zup", nil)
+	c := s.GetOrCreateCollection("zup")
 	prev := []byte{}
 	for i := 5; i < 100; i++ {
 		data := mkNum(int64(i))
 		c.Set(data, prev)
 		prev = data
 	}
+	c = s.Snapshot().GetCollection("zup")
 
 	get := func(c C, t *iterator) interface{} {
 		ret := interface{}(nil)
@@ -191,14 +192,16 @@ func TestMultiIteratorSimple(t *testing.T) {
 
 	Convey("Test MultiIterator", t, func() {
 		s := newMemStore()
-		c := s.SetCollection("zup1", nil)
+		c := s.GetOrCreateCollection("zup1")
 		for _, row := range valBytes {
 			c.Set(row, []byte{})
 		}
-		c2 := s.SetCollection("zup2", nil)
+		c2 := s.GetOrCreateCollection("zup2")
 		for _, row := range otherValBytes {
 			c2.Set(row, []byte{})
 		}
+		c = s.Snapshot().GetCollection("zup1")
+		c2 = s.Snapshot().GetCollection("zup2")
 
 		Convey("can join the same collection twice", func() {
 			// get just the (1, *)

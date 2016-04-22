@@ -26,10 +26,10 @@ type dataStoreData struct {
 	aid string
 
 	// See README.md for head schema.
-	head *memStore
+	head memStore
 	// if snap is nil, that means that this is always-consistent, and
 	// getQuerySnaps will return (head, head)
-	snap *memStore
+	snap memStore
 	// For testing, see SetTransactionRetryCount.
 	txnFakeRetry int
 	// true means that queries with insufficent indexes will pause to add them
@@ -122,7 +122,7 @@ func (d *dataStoreData) getDisableSpecialEntities() bool {
 	return d.disableSpecialEntities
 }
 
-func (d *dataStoreData) getQuerySnaps(consistent bool) (idx, head *memStore) {
+func (d *dataStoreData) getQuerySnaps(consistent bool) (idx, head memStore) {
 	d.rwlock.RLock()
 	defer d.rwlock.RUnlock()
 	if d.snap == nil {
@@ -140,13 +140,13 @@ func (d *dataStoreData) getQuerySnaps(consistent bool) (idx, head *memStore) {
 	return
 }
 
-func (d *dataStoreData) takeSnapshot() *memStore {
+func (d *dataStoreData) takeSnapshot() memStore {
 	d.rwlock.RLock()
 	defer d.rwlock.RUnlock()
 	return d.head.Snapshot()
 }
 
-func (d *dataStoreData) setSnapshot(snap *memStore) {
+func (d *dataStoreData) setSnapshot(snap memStore) {
 	d.rwlock.Lock()
 	defer d.rwlock.Unlock()
 	if d.snap == nil {
@@ -187,7 +187,7 @@ func rootIDsKey(kind string) []byte {
 	return keyBytes(ds.NewKey("", "", "__entity_root_ids__", kind, 0, nil))
 }
 
-func curVersion(ents *memCollection, key []byte) int64 {
+func curVersion(ents memCollection, key []byte) int64 {
 	if ents != nil {
 		if v := ents.Get(key); v != nil {
 			pm, err := rpm(v)
@@ -204,7 +204,7 @@ func curVersion(ents *memCollection, key []byte) int64 {
 	return 0
 }
 
-func incrementLocked(ents *memCollection, key []byte, amt int) int64 {
+func incrementLocked(ents memCollection, key []byte, amt int) int64 {
 	if amt <= 0 {
 		panic(fmt.Errorf("incrementLocked called with bad `amt`: %d", amt))
 	}
@@ -215,24 +215,15 @@ func incrementLocked(ents *memCollection, key []byte, amt int) int64 {
 	return ret
 }
 
-func (d *dataStoreData) mutableEntsLocked(ns string) *memCollection {
-	coll := "ents:" + ns
-	ents := d.head.GetCollection(coll)
-	if ents == nil {
-		ents = d.head.SetCollection(coll, nil)
-	}
-	return ents
-}
-
 func (d *dataStoreData) allocateIDs(incomplete *ds.Key, n int) (int64, error) {
 	d.Lock()
 	defer d.Unlock()
 
-	ents := d.mutableEntsLocked(incomplete.Namespace())
+	ents := d.head.GetOrCreateCollection("ents:" + incomplete.Namespace())
 	return d.allocateIDsLocked(ents, incomplete, n)
 }
 
-func (d *dataStoreData) allocateIDsLocked(ents *memCollection, incomplete *ds.Key, n int) (int64, error) {
+func (d *dataStoreData) allocateIDsLocked(ents memCollection, incomplete *ds.Key, n int) (int64, error) {
 	if d.disableSpecialEntities {
 		return 0, errors.New("disableSpecialEntities is true so allocateIDs is disabled")
 	}
@@ -246,7 +237,7 @@ func (d *dataStoreData) allocateIDsLocked(ents *memCollection, incomplete *ds.Ke
 	return incrementLocked(ents, idKey, n), nil
 }
 
-func (d *dataStoreData) fixKeyLocked(ents *memCollection, key *ds.Key) (*ds.Key, error) {
+func (d *dataStoreData) fixKeyLocked(ents memCollection, key *ds.Key) (*ds.Key, error) {
 	if key.Incomplete() {
 		id, err := d.allocateIDsLocked(ents, key, 1)
 		if err != nil {
@@ -268,7 +259,7 @@ func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.Pu
 			d.Lock()
 			defer d.Unlock()
 
-			ents := d.mutableEntsLocked(ns)
+			ents := d.head.GetOrCreateCollection("ents:" + ns)
 
 			ret, err = d.fixKeyLocked(ents, k)
 			if err != nil {
@@ -298,7 +289,7 @@ func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.Pu
 	return nil
 }
 
-func getMultiInner(keys []*ds.Key, cb ds.GetMultiCB, getColl func() (*memCollection, error)) error {
+func getMultiInner(keys []*ds.Key, cb ds.GetMultiCB, getColl func() (memCollection, error)) error {
 	ents, err := getColl()
 	if err != nil {
 		return err
@@ -322,7 +313,7 @@ func getMultiInner(keys []*ds.Key, cb ds.GetMultiCB, getColl func() (*memCollect
 }
 
 func (d *dataStoreData) getMulti(keys []*ds.Key, cb ds.GetMultiCB) error {
-	return getMultiInner(keys, cb, func() (*memCollection, error) {
+	return getMultiInner(keys, cb, func() (memCollection, error) {
 		s := d.takeSnapshot()
 
 		return s.GetCollection("ents:" + keys[0].Namespace()), nil
@@ -335,7 +326,7 @@ func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 	hasEntsInNS := func() bool {
 		d.Lock()
 		defer d.Unlock()
-		return d.mutableEntsLocked(ns) != nil
+		return d.head.GetOrCreateCollection("ents:"+ns) != nil
 	}()
 
 	if hasEntsInNS {
@@ -346,7 +337,7 @@ func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 				d.Lock()
 				defer d.Unlock()
 
-				ents := d.mutableEntsLocked(ns)
+				ents := d.head.GetOrCreateCollection("ents:" + ns)
 
 				if !d.disableSpecialEntities {
 					incrementLocked(ents, groupMetaKey(k), 1)
@@ -452,7 +443,7 @@ type txnDataStoreData struct {
 	closed int32
 	isXG   bool
 
-	snap *memStore
+	snap memStore
 
 	// string is the raw-bytes encoding of the entity root incl. namespace
 	muts map[string][]txnMutation
@@ -533,7 +524,7 @@ func (td *txnDataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb d
 		err := func() (err error) {
 			td.parent.Lock()
 			defer td.parent.Unlock()
-			ents := td.parent.mutableEntsLocked(ns)
+			ents := td.parent.head.GetOrCreateCollection("ents:" + ns)
 
 			k, err = td.parent.fixKeyLocked(ents, k)
 			return
@@ -548,7 +539,7 @@ func (td *txnDataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb d
 }
 
 func (td *txnDataStoreData) getMulti(keys []*ds.Key, cb ds.GetMultiCB) error {
-	return getMultiInner(keys, cb, func() (*memCollection, error) {
+	return getMultiInner(keys, cb, func() (memCollection, error) {
 		err := error(nil)
 		for _, key := range keys {
 			err = td.writeMutation(true, key, nil)
@@ -579,7 +570,7 @@ func rpm(data []byte) (ds.PropertyMap, error) {
 		serialize.WithContext, "", "")
 }
 
-func namespaces(store *memStore) []string {
+func namespaces(store memStore) []string {
 	var namespaces []string
 	for _, c := range store.GetCollectionNames() {
 		ns, has := trimPrefix(c, "ents:")

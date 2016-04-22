@@ -138,7 +138,7 @@ func (d *dsImpl) TakeIndexSnapshot() ds.TestingSnapshot {
 }
 
 func (d *dsImpl) SetIndexSnapshot(snap ds.TestingSnapshot) {
-	d.data.setSnapshot(snap.(*memStore))
+	d.data.setSnapshot(snap.(memStore))
 }
 
 func (d *dsImpl) CatchupIndexes() {

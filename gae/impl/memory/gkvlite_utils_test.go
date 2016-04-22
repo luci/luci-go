@@ -95,26 +95,26 @@ var testCollisionCases = []struct {
 	},
 }
 
-func getFilledColl(s *memStore, fill []kv) *memCollection {
+func getFilledColl(fill []kv) memCollection {
 	if fill == nil {
 		return nil
 	}
-	ret := s.MakePrivateCollection(nil)
+	store := newMemStore()
+	ret := store.GetOrCreateCollection("")
 	for _, i := range fill {
 		ret.Set(i.k, i.v)
 	}
-	return ret
+	return store.Snapshot().GetCollection("")
 }
 
 func TestCollision(t *testing.T) {
 	t.Parallel()
 
 	Convey("Test gkvCollide", t, func() {
-		s := newMemStore()
 		for _, tc := range testCollisionCases {
 			Convey(tc.name, func() {
-				left := getFilledColl(s, tc.left)
-				right := getFilledColl(s, tc.right)
+				left := getFilledColl(tc.left)
+				right := getFilledColl(tc.right)
 				i := 0
 				gkvCollide(left, right, func(key, left, right []byte) {
 					e := tc.expect[i]

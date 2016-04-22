@@ -9,13 +9,21 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gkvlite"
 )
 
-func gkvCollide(o, n *memCollection, f func(k, ov, nv []byte)) {
+func gkvCollide(o, n memCollection, f func(k, ov, nv []byte)) {
+	if o != nil && !o.IsReadOnly() {
+		panic("old collection is r/w")
+	}
+	if n != nil && !n.IsReadOnly() {
+		panic("new collection is r/w")
+	}
+
 	// TODO(riannucci): reimplement in terms of *iterator.
 	oldItems, newItems := make(chan *gkvlite.Item), make(chan *gkvlite.Item)
-	walker := func(c *memCollection, ch chan<- *gkvlite.Item, wg *sync.WaitGroup) {
+	walker := func(c memCollection, ch chan<- *gkvlite.Item, wg *sync.WaitGroup) {
 		defer close(ch)
 		defer wg.Done()
 		if c != nil {
@@ -66,38 +74,15 @@ func gkvCollide(o, n *memCollection, f func(k, ov, nv []byte)) {
 // This is reasonable for in-memory Store objects, since the only errors that
 // should occur happen with file IO on the underlying file (which of course
 // doesn't exist).
-type memStore gkvlite.Store
+type memStore interface {
+	datastore.TestingSnapshot
 
-func (*memStore) ImATestingSnapshot() {}
+	GetCollection(name string) memCollection
+	GetCollectionNames() []string
+	GetOrCreateCollection(name string) memCollection
+	Snapshot() memStore
 
-func newMemStore() *memStore {
-	ret, err := gkvlite.NewStore(nil)
-	memoryCorruption(err)
-	return (*memStore)(ret)
-}
-
-func (ms *memStore) Snapshot() *memStore {
-	ret := (*memStore)((*gkvlite.Store)(ms).Snapshot())
-	runtime.SetFinalizer((*gkvlite.Store)(ret), func(s *gkvlite.Store) {
-		go s.Close()
-	})
-	return ret
-}
-
-func (ms *memStore) MakePrivateCollection(cmp gkvlite.KeyCompare) *memCollection {
-	return (*memCollection)((*gkvlite.Store)(ms).MakePrivateCollection(cmp))
-}
-
-func (ms *memStore) GetCollection(name string) *memCollection {
-	return (*memCollection)((*gkvlite.Store)(ms).GetCollection(name))
-}
-
-func (ms *memStore) SetCollection(name string, cmp gkvlite.KeyCompare) *memCollection {
-	return (*memCollection)((*gkvlite.Store)(ms).SetCollection(name, cmp))
-}
-
-func (ms *memStore) GetCollectionNames() []string {
-	return (*gkvlite.Store)(ms).GetCollectionNames()
+	IsReadOnly() bool
 }
 
 // memCollection is a gkvlite.Collection which will panic for anything which
@@ -106,38 +91,111 @@ func (ms *memStore) GetCollectionNames() []string {
 // This is reasonable for in-memory Store objects, since the only errors that
 // should occur happen with file IO on the underlying file (which of course
 // doesn't exist.
-type memCollection gkvlite.Collection
+type memCollection interface {
+	Name() string
+	Delete(k []byte) bool
+	Get(k []byte) []byte
+	GetTotals() (numItems, numBytes uint64)
+	MinItem(withValue bool) *gkvlite.Item
+	Set(k, v []byte)
+	VisitItemsAscend(target []byte, withValue bool, visitor gkvlite.ItemVisitor)
 
-func (mc *memCollection) Get(k []byte) []byte {
-	ret, err := (*gkvlite.Collection)(mc).Get(k)
+	IsReadOnly() bool
+}
+
+type memStoreImpl struct {
+	s  *gkvlite.Store
+	ro bool
+}
+
+var _ memStore = (*memStoreImpl)(nil)
+
+func (*memStoreImpl) ImATestingSnapshot() {}
+
+func (ms *memStoreImpl) IsReadOnly() bool { return ms.ro }
+
+func newMemStore() memStore {
+	store, err := gkvlite.NewStore(nil)
+	memoryCorruption(err)
+	ret := memStore(&memStoreImpl{store, false})
+	if *logMemCollectionFolder != "" {
+		ret = wrapTracingMemStore(ret)
+	}
+	return ret
+}
+
+func (ms *memStoreImpl) Snapshot() memStore {
+	if ms.ro {
+		return ms
+	}
+	ret := ms.s.Snapshot()
+	runtime.SetFinalizer(ret, func(s *gkvlite.Store) { go s.Close() })
+	return &memStoreImpl{ret, true}
+}
+
+func (ms *memStoreImpl) GetCollection(name string) memCollection {
+	coll := ms.s.GetCollection(name)
+	if coll == nil {
+		return nil
+	}
+	return &memCollectionImpl{coll, ms.ro}
+}
+
+func (ms *memStoreImpl) GetOrCreateCollection(name string) memCollection {
+	coll := ms.GetCollection(name)
+	if coll == nil {
+		coll = &memCollectionImpl{(ms.s.SetCollection(name, nil)), ms.ro}
+	}
+	return coll
+}
+
+func (ms *memStoreImpl) GetCollectionNames() []string {
+	return ms.s.GetCollectionNames()
+}
+
+type memCollectionImpl struct {
+	c  *gkvlite.Collection
+	ro bool
+}
+
+var _ memCollection = (*memCollectionImpl)(nil)
+
+func (mc *memCollectionImpl) Name() string     { return mc.c.Name() }
+func (mc *memCollectionImpl) IsReadOnly() bool { return mc.ro }
+
+func (mc *memCollectionImpl) Get(k []byte) []byte {
+	ret, err := mc.c.Get(k)
 	memoryCorruption(err)
 	return ret
 }
 
-func (mc *memCollection) MinItem(withValue bool) *gkvlite.Item {
-	ret, err := (*gkvlite.Collection)(mc).MinItem(withValue)
+func (mc *memCollectionImpl) MinItem(withValue bool) *gkvlite.Item {
+	ret, err := mc.c.MinItem(withValue)
 	memoryCorruption(err)
 	return ret
 }
 
-func (mc *memCollection) Set(k, v []byte) {
-	err := (*gkvlite.Collection)(mc).Set(k, v)
+func (mc *memCollectionImpl) Set(k, v []byte) {
+	err := mc.c.Set(k, v)
 	memoryCorruption(err)
 }
 
-func (mc *memCollection) Delete(k []byte) bool {
-	ret, err := (*gkvlite.Collection)(mc).Delete(k)
+func (mc *memCollectionImpl) Delete(k []byte) bool {
+	ret, err := mc.c.Delete(k)
 	memoryCorruption(err)
 	return ret
 }
 
-func (mc *memCollection) VisitItemsAscend(target []byte, withValue bool, visitor gkvlite.ItemVisitor) {
-	err := (*gkvlite.Collection)(mc).VisitItemsAscend(target, withValue, visitor)
+func (mc *memCollectionImpl) VisitItemsAscend(target []byte, withValue bool, visitor gkvlite.ItemVisitor) {
+	if !mc.ro {
+		panic("attempting to VisitItemsAscend from r/w memCollection")
+	}
+	err := mc.c.VisitItemsAscend(target, withValue, visitor)
 	memoryCorruption(err)
 }
 
-func (mc *memCollection) GetTotals() (numItems, numBytes uint64) {
-	numItems, numBytes, err := (*gkvlite.Collection)(mc).GetTotals()
+func (mc *memCollectionImpl) GetTotals() (numItems, numBytes uint64) {
+	numItems, numBytes, err := mc.c.GetTotals()
 	memoryCorruption(err)
 	return
 }

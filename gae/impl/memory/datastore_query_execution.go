@@ -99,11 +99,11 @@ type normalStrategy struct {
 
 	aid   string
 	ns    string
-	head  *memCollection
+	head  memCollection
 	dedup stringset.Set
 }
 
-func newNormalStrategy(aid, ns string, cb ds.RawRunCB, head *memStore) queryStrategy {
+func newNormalStrategy(aid, ns string, cb ds.RawRunCB, head memStore) queryStrategy {
 	coll := head.GetCollection("ents:" + ns)
 	if coll == nil {
 		return nil
@@ -128,7 +128,7 @@ func (s *normalStrategy) handle(rawData [][]byte, _ []ds.Property, key *ds.Key, 
 	return s.cb(key, pm, gc)
 }
 
-func pickQueryStrategy(fq *ds.FinalizedQuery, rq *reducedQuery, cb ds.RawRunCB, head *memStore) queryStrategy {
+func pickQueryStrategy(fq *ds.FinalizedQuery, rq *reducedQuery, cb ds.RawRunCB, head memStore) queryStrategy {
 	if fq.KeysOnly() {
 		return &keysOnlyStrategy{cb, stringset.New(0)}
 	}
@@ -165,7 +165,7 @@ func parseSuffix(aid, ns string, suffixFormat []ds.IndexColumn, suffix []byte, c
 	return
 }
 
-func countQuery(fq *ds.FinalizedQuery, aid, ns string, isTxn bool, idx, head *memStore) (ret int64, err error) {
+func countQuery(fq *ds.FinalizedQuery, aid, ns string, isTxn bool, idx, head memStore) (ret int64, err error) {
 	if len(fq.Project()) == 0 && !fq.KeysOnly() {
 		fq, err = fq.Original().KeysOnly(true).Finalize()
 		if err != nil {
@@ -179,7 +179,7 @@ func countQuery(fq *ds.FinalizedQuery, aid, ns string, isTxn bool, idx, head *me
 	return
 }
 
-func executeNamespaceQuery(fq *ds.FinalizedQuery, aid string, head *memStore, cb ds.RawRunCB) error {
+func executeNamespaceQuery(fq *ds.FinalizedQuery, aid string, head memStore, cb ds.RawRunCB) error {
 	// these objects have no properties, so any filters on properties cause an
 	// empty result.
 	if len(fq.EqFilters()) > 0 || len(fq.Project()) > 0 || len(fq.Orders()) > 1 {
@@ -223,7 +223,7 @@ func executeNamespaceQuery(fq *ds.FinalizedQuery, aid string, head *memStore, cb
 	return nil
 }
 
-func executeQuery(fq *ds.FinalizedQuery, aid, ns string, isTxn bool, idx, head *memStore, cb ds.RawRunCB) error {
+func executeQuery(fq *ds.FinalizedQuery, aid, ns string, isTxn bool, idx, head memStore, cb ds.RawRunCB) error {
 	rq, err := reduce(fq, aid, ns, isTxn)
 	if err == ds.ErrNullQuery {
 		return nil

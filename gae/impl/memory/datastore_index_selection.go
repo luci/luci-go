@@ -70,7 +70,7 @@ type indexDefinitionSortable struct {
 	// redundant columns! (e.g. (tag, tag) is a perfectly valid prefix, becuase
 	// (tag=1, tag=2) is a perfectly valid query).
 	eqFilts []ds.IndexColumn
-	coll    *memCollection
+	coll    memCollection
 }
 
 func (i *indexDefinitionSortable) hasAncestor() bool {
@@ -131,7 +131,7 @@ func (idxs indexDefinitionSortableSlice) Less(i, j int) bool {
 // If the proposed index is PERFECT (e.g. contains enough columns to cover all
 // equality filters, and also has the correct suffix), idxs will be replaced
 // with JUST that index, and this will return true.
-func (idxs *indexDefinitionSortableSlice) maybeAddDefinition(q *reducedQuery, s *memStore, missingTerms stringset.Set, id *ds.IndexDefinition) bool {
+func (idxs *indexDefinitionSortableSlice) maybeAddDefinition(q *reducedQuery, s memStore, missingTerms stringset.Set, id *ds.IndexDefinition) bool {
 	// Kindless queries are handled elsewhere.
 	if id.Kind != q.kind {
 		impossible(
@@ -230,7 +230,7 @@ func (idxs *indexDefinitionSortableSlice) maybeAddDefinition(q *reducedQuery, s 
 // getRelevantIndexes retrieves the relevant indexes which could be used to
 // service q. It returns nil if it's not possible to service q with the current
 // indexes.
-func getRelevantIndexes(q *reducedQuery, s *memStore) (indexDefinitionSortableSlice, error) {
+func getRelevantIndexes(q *reducedQuery, s memStore) (indexDefinitionSortableSlice, error) {
 	missingTerms := stringset.New(len(q.eqFilters))
 	for k := range q.eqFilters {
 		if k == "__ancestor__" {
@@ -468,7 +468,7 @@ func calculateConstraints(q *reducedQuery) *constraints {
 
 // getIndexes returns a set of iterator definitions. Iterating over these
 // will result in matching suffixes.
-func getIndexes(q *reducedQuery, s *memStore) ([]*iterDefinition, error) {
+func getIndexes(q *reducedQuery, s memStore) ([]*iterDefinition, error) {
 	relevantIdxs := indexDefinitionSortableSlice(nil)
 	if q.kind == "" {
 		if coll := s.GetCollection("ents:" + q.ns); coll != nil {
