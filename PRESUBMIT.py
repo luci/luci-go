@@ -77,6 +77,7 @@ def source_file_filter(input_api):
     r'.+_string\.go$',
     r'.+gae\.py$',  # symlinks from outside
     r'common/prpc/talk/.*',
+    r'common/terminal/.*', # third party
     r'server/static/bower_components/.*',  # third party
     r'server/static/upload/bower_components/.*',  # third party
   ]

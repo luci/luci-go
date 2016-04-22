@@ -67,7 +67,7 @@ type FileSystem interface {
 // directory.
 func NewFileSystem(root string, logger logging.Logger) FileSystem {
 	if logger == nil {
-		logger = logging.Null()
+		logger = logging.Null
 	}
 	abs, err := filepath.Abs(root)
 	if err != nil {

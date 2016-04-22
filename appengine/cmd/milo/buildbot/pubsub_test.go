@@ -56,7 +56,7 @@ func newCombinedPsBody(bs []buildbotBuild, m *buildbotMaster) io.ReadCloser {
 func TestPubSub(t *testing.T) {
 	Convey(`A test Environment`, t, func() {
 		c := memory.Use(context.Background())
-		c = gologger.Use(c)
+		c = gologger.StdConfig.Use(c)
 		c, _ = testclock.UseTime(c, fakeTime)
 		ds := datastore.Get(c)
 

@@ -84,7 +84,7 @@ func NewDeployer(root string, logger logging.Logger) Deployer {
 		return errDeployer{err}
 	}
 	if logger == nil {
-		logger = logging.Null()
+		logger = logging.Null
 	}
 	return &deployerImpl{NewFileSystem(root, logger), logger}
 }

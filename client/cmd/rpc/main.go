@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/maruel/subcommands"
-	gol "github.com/op/go-logging"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/client/authcli"
@@ -27,8 +26,10 @@ const (
 var logCfg = gologger.LoggerConfig{
 	Format: `%{message}`,
 	Out:    os.Stderr,
-	Level:  gol.DEBUG,
 }
+
+// infoLog is used before the command line is parsed. It logs at >= Info level.
+var infoLog = logCfg.NewLogger(context.Background())
 
 // exit codes:
 const (
@@ -56,9 +57,7 @@ type cmdRun struct {
 // registerBaseFlags registers common flags used by all subcommands.
 func (r *cmdRun) registerBaseFlags() {
 	r.Flags.BoolVar(&r.verbose, "verbose", false, "Enable more logging.")
-	r.auth.Register(&r.Flags, auth.Options{
-		Logger: logCfg.Get(),
-	})
+	r.auth.Register(&r.Flags, auth.Options{Logger: infoLog})
 }
 
 // initContext creates a context. Must be called after flags are parsed.
@@ -141,8 +140,8 @@ var application = &subcommands.DefaultApplication{
 		cmdCall,
 		cmdShow,
 		cmdFmt,
-		authcli.SubcommandLogin(auth.Options{Logger: logCfg.Get()}, "login"),
-		authcli.SubcommandLogout(auth.Options{Logger: logCfg.Get()}, "logout"),
+		authcli.SubcommandLogin(auth.Options{Logger: infoLog}, "login"),
+		authcli.SubcommandLogout(auth.Options{Logger: infoLog}, "logout"),
 		subcommands.CmdHelp,
 	},
 }

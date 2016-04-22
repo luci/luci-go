@@ -8,7 +8,7 @@
 
 // +build windows
 
-package imported
+package terminal
 
 import (
 	"syscall"

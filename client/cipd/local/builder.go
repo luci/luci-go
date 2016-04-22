@@ -40,7 +40,7 @@ type BuildInstanceOptions struct {
 // returns an error.
 func BuildInstance(opts BuildInstanceOptions) error {
 	if opts.Logger == nil {
-		opts.Logger = logging.Null()
+		opts.Logger = logging.Null
 	}
 	err := common.ValidatePackageName(opts.PackageName)
 	if err != nil {

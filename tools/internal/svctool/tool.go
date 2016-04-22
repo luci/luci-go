@@ -200,7 +200,7 @@ func (t *Tool) Run(c context.Context, f Generator) error {
 
 // Main sets up logging, calls Run, prints error if any and exits.
 func (t *Tool) Main(args []string, f Generator) {
-	c := t.SetupLogging(context.Background())
+	c := gologger.StdConfig.Use(context.Background())
 	t.ParseArgs(args)
 
 	if err := t.Run(c, f); err != nil {
@@ -208,15 +208,6 @@ func (t *Tool) Main(args []string, f Generator) {
 		os.Exit(1)
 	}
 	os.Exit(0)
-}
-
-// SetupLogging sets up a logger in the context.
-func (t *Tool) SetupLogging(c context.Context) context.Context {
-	logCfg := gologger.LoggerConfig{
-		Format: gologger.StandardFormat,
-		Out:    os.Stderr,
-	}
-	return logCfg.Use(c)
 }
 
 // goFilesIn lists .go files in dir.

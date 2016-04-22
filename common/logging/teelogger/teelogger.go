@@ -5,50 +5,56 @@
 package teelogger
 
 import (
-	"github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/logging"
 )
 
-// New creates a new tee logger which
-func New(loggers ...logging.Logger) logging.Logger {
-	return teeImpl(loggers)
+type teeImpl struct {
+	c context.Context // for logging level check
+	l []logging.Logger
 }
 
-type teeImpl []logging.Logger
-
-func (t teeImpl) Debugf(fmt string, args ...interface{}) {
-	for _, logger := range t {
-		logger.LogCall(logging.Debug, 1, fmt, args)
-	}
-}
-func (t teeImpl) Infof(fmt string, args ...interface{}) {
-	for _, logger := range t {
-		logger.LogCall(logging.Info, 1, fmt, args)
-	}
-}
-func (t teeImpl) Warningf(fmt string, args ...interface{}) {
-	for _, logger := range t {
-		logger.LogCall(logging.Warning, 1, fmt, args)
-	}
-}
-func (t teeImpl) Errorf(fmt string, args ...interface{}) {
-	for _, logger := range t {
-		logger.LogCall(logging.Error, 1, fmt, args)
-	}
+func (t *teeImpl) Debugf(fmt string, args ...interface{}) {
+	t.LogCall(logging.Debug, 1, fmt, args)
 }
 
-func (t teeImpl) LogCall(level logging.Level, calldepth int,
-	f string, args []interface{}) {
-	for _, logger := range t {
+func (t *teeImpl) Infof(fmt string, args ...interface{}) {
+	t.LogCall(logging.Info, 1, fmt, args)
+}
+
+func (t *teeImpl) Warningf(fmt string, args ...interface{}) {
+	t.LogCall(logging.Warning, 1, fmt, args)
+}
+
+func (t *teeImpl) Errorf(fmt string, args ...interface{}) {
+	t.LogCall(logging.Error, 1, fmt, args)
+}
+
+func (t *teeImpl) LogCall(level logging.Level, calldepth int, f string, args []interface{}) {
+	if t.c != nil && !logging.IsLogging(t.c, level) {
+		return
+	}
+	for _, logger := range t.l {
 		logger.LogCall(level, calldepth+1, f, args)
 	}
 }
 
-// Use adds a tee logger to the context, using the logger in the context,
-// as well as the other given loggers.
-func Use(ctx context.Context, loggers ...logging.Logger) context.Context {
-	if cur := logging.Get(ctx); cur != nil {
-		loggers = append([]logging.Logger{cur}, loggers...)
+// Use adds a tee logger to the context, using the logger factory in
+// the context, as well as the other loggers produced by given factories.
+//
+// We use factories (instead of logging.Logger instances), since we must be able
+// to produce logging.Logger instances bound to contexts to be able to use
+// logging levels are fields (they are part of the context state).
+func Use(ctx context.Context, factories ...logging.Factory) context.Context {
+	if cur := logging.GetFactory(ctx); cur != nil {
+		factories = append([]logging.Factory{cur}, factories...)
 	}
-	return logging.Set(ctx, New(loggers...))
+	return logging.SetFactory(ctx, func(ic context.Context) logging.Logger {
+		loggers := make([]logging.Logger, len(factories))
+		for i, f := range factories {
+			loggers[i] = f(ic)
+		}
+		return &teeImpl{ic, loggers}
+	})
 }

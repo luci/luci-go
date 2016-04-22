@@ -51,7 +51,7 @@ func (a *application) validate() error {
 
 func mainImpl() int {
 	ctx := context.Background()
-	ctx = gologger.Use(ctx)
+	ctx = gologger.StdConfig.Use(ctx)
 
 	authOptions := auth.Options{
 		Context: ctx,

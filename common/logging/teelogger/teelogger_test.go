@@ -36,7 +36,7 @@ func TestTeeLogger(t *testing.T) {
 		l3 := logging.Get(
 			memlogger.Use(context.Background())).(*memlogger.MemLogger)
 
-		teeLog := New(l1, l2, l3)
+		teeLog := teeImpl{nil, []logging.Logger{l1, l2, l3}}
 
 		for _, entry := range []struct {
 			L logging.Level
@@ -54,7 +54,7 @@ func TestTeeLogger(t *testing.T) {
 					So(len(logger.Messages()), ShouldEqual, 1)
 					msg := logger.Get(entry.L, entry.T, map[string]interface{}(nil))
 					So(msg, ShouldNotBeNil)
-					So(msg.CallDepth, ShouldEqual, 2)
+					So(msg.CallDepth, ShouldEqual, 3)
 				}
 			})
 		}
@@ -70,7 +70,7 @@ func TestTeeLogger(t *testing.T) {
 			// Make sure context logger doesn't get called
 			So(len(messages), ShouldEqual, 1)
 			msg := messages[0]
-			So(msg.CallDepth, ShouldEqual, 2)
+			So(msg.CallDepth, ShouldEqual, 3)
 			So(msg.Msg, ShouldEqual, "Testing 1 2")
 		})
 	})

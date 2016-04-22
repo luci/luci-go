@@ -55,10 +55,10 @@ type Manifest struct {
 }
 
 func (m *Manifest) logger() logging.Logger {
-	if l := m.Logger; l != nil {
-		return l
+	if m.Logger != nil {
+		return m.Logger
 	}
-	return logging.Null()
+	return logging.Null
 }
 
 // Archive performs the log archival described in the supplied Manifest.

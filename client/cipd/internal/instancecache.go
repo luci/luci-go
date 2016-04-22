@@ -45,7 +45,7 @@ type InstanceCache struct {
 // fs will be the root of the cache.
 func NewInstanceCache(fs local.FileSystem, logger logging.Logger) *InstanceCache {
 	if logger == nil {
-		logger = logging.Null()
+		logger = logging.Null
 	}
 	return &InstanceCache{
 		fs:     fs,

@@ -344,7 +344,7 @@ func mainImpl(ctx context.Context, argv []string) int {
 // result as an exit code.
 func main() {
 	ctx := context.Background()
-	ctx = gologger.Use(ctx)
+	ctx = gologger.StdConfig.Use(ctx)
 
 	// Exit with the specified return code.
 	rc := 0

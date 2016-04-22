@@ -23,11 +23,13 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/maruel/subcommands"
-	gol "github.com/op/go-logging"
 
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 
 	"github.com/luci/luci-go/client/authcli"
@@ -38,7 +40,7 @@ import (
 )
 
 // log is also overwritten in Subcommand's init.
-var log = gologger.Get()
+var log = gologger.StdConfig.NewLogger(nil)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Common subcommand functions.
@@ -127,12 +129,14 @@ func (c *Subcommand) init(args []string, minPosCount, maxPosCount int) bool {
 	loggerConfig := gologger.LoggerConfig{
 		Format: `[P%{pid} %{time:15:04:05.000} %{shortfile} %{level:.1s}] %{message}`,
 		Out:    os.Stderr,
-		Level:  gol.INFO,
 	}
+
+	ctx := context.Background()
 	if c.verbose {
-		loggerConfig.Level = gol.DEBUG
+		ctx = logging.SetLevel(ctx, logging.Debug)
 	}
-	log = loggerConfig.Get()
+	ctx = loggerConfig.Use(ctx)
+	log = logging.Get(ctx)
 	return true
 }
 

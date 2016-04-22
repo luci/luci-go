@@ -26,7 +26,7 @@ func main() {
 	fs.Parse(os.Args[1:])
 
 	ctx := context.Background()
-	ctx = lc.Set(gologger.Use(ctx))
+	ctx = lc.Set(gologger.StdConfig.Use(ctx))
 
 	if err := a.Run(ctx); err != nil {
 		log.Fields{

@@ -131,8 +131,12 @@ func realMain() int {
 
 	log := &memlogger.MemLogger{}
 
-	// Write log to both memlogger and gologger.
-	root := teelogger.Use(context.Background(), log, gologger.Get())
+	// Write Debug log to both memlogger and gologger.
+	memLogFactory := func(context.Context) logging.Logger {
+		return log
+	}
+	root := teelogger.Use(context.Background(), memLogFactory, gologger.StdConfig.NewLogger)
+	root = logging.SetLevel(root, logging.Debug)
 
 	// Apply tsmon config.
 	if err := tsmon.InitializeFromFlags(root, &tsmonFlags); err != nil {

@@ -9,7 +9,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/luci/luci-go/client/internal/imported"
+	"github.com/luci/luci-go/common/terminal"
 )
 
 // IsDirectory returns true if path is a directory and is accessible.
@@ -29,5 +29,5 @@ func IsTerminal(out io.Writer) bool {
 	if !ok {
 		return false
 	}
-	return imported.IsTerminal(int(f.Fd()))
+	return terminal.IsTerminal(int(f.Fd()))
 }

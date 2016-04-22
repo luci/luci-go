@@ -349,7 +349,7 @@ func NewClient(opts ClientOptions) Client {
 		opts.ServiceURL = ServiceURL
 	}
 	if opts.Logger == nil {
-		opts.Logger = logging.Null()
+		opts.Logger = logging.Null
 	}
 	if opts.AnonymousClientFactory == nil {
 		opts.AnonymousClientFactory = func() (*http.Client, error) { return http.DefaultClient, nil }

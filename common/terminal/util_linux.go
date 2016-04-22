@@ -6,7 +6,7 @@
 // Revision: 30ad74476e5c37a080ab5999ce9ab4465a2ecfac
 // License: BSD
 
-package imported
+package terminal
 
 // These constants are declared here, rather than importing
 // them from the syscall package as some syscall packages, even

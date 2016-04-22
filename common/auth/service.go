@@ -105,7 +105,7 @@ func NewGroupsService(url string, client *http.Client, logger logging.Logger) *G
 		client = http.DefaultClient
 	}
 	if logger == nil {
-		logger = logging.Null()
+		logger = logging.Null
 	}
 	return &GroupsService{
 		client:     client,

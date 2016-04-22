@@ -2,22 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-/*
-Package logging defines Logger interface and context.Context helpers to put\get
-logger from context.Context.
-
-Unfortunately standard library doesn't define any Logger interface (only
-struct). And even worse: GAE logger is exposing different set of methods. Some
-additional layer is needed to unify the logging. Package logging is intended to
-be used from packages that support both local and GAE environments. Such
-packages should not use global logger but must accept instances of Logger
-interface (or even more generally context.Context) as parameters. Then callers
-can pass appropriate Logger implementation  (or inject appropriate logger into
-context.Context) depending on where the code is running.
-
-Libraries under luci-go/common/ MUST use luci-go/common/logging instead of
-directly instantiating concrete implementations.
-*/
+// Package logging defines Logger interface and context.Context helpers to
+// put\get logger from context.Context.
+//
+// Unfortunately standard library doesn't define any Logger interface (only
+// struct). And even worse: GAE logger is exposing different set of methods.
+// Some additional layer is needed to unify the logging. Package logging is
+// intended to be used from packages that support both local and GAE
+// environments. Such packages should not use global logger but must accept
+// instances of Logger interface (or even more generally context.Context) as
+// parameters. Then callers can pass appropriate Logger implementation (or
+// inject appropriate logger into context.Context) depending on where the code
+// is running.
 package logging
 
 import (
@@ -27,6 +23,14 @@ import (
 // Logger interface is ultimately implemented by underlying logging libraries
 // (like go-logging or GAE logging). It is the least common denominator among
 // logger implementations.
+//
+// Logger instance is bound to some particular context that defines logging
+// level and extra message fields.
+//
+// Implementations register factories that produce Loggers (using 'SetFactory'
+// function), and top level functions (like 'Infof') use them to grab instances
+// of Logger bound to passed contexts. That's how they know what logging level
+// to use and what extra fields to add.
 type Logger interface {
 	// Debugf formats its arguments according to the format, analogous to
 	// fmt.Printf and records the text as a log message at Debug level.
@@ -46,7 +50,10 @@ type Logger interface {
 	LogCall(l Level, calldepth int, format string, args []interface{})
 }
 
-// Factory is a method that returns a Logger instance for the specified context.
+// Factory is a function that returns a Logger instance bound to the specified
+// context.
+//
+// The given context will be used to detect logging level and fields.
 type Factory func(context.Context) Logger
 
 type key int
@@ -64,23 +71,19 @@ func SetFactory(c context.Context, f Factory) context.Context {
 	return context.WithValue(c, loggerKey, f)
 }
 
-// Set sets the logger for this context.
-//
-// It can be retrieved with Get(context).
-func Set(c context.Context, l Logger) context.Context {
-	return SetFactory(c, func(context.Context) Logger { return l })
-}
-
-// GetFactory returns the currently-configured logging factory.
+// GetFactory returns the currently-configured logging factory (or nil).
 func GetFactory(c context.Context) Factory {
 	if f, ok := c.Value(loggerKey).(Factory); ok {
 		return f
 	}
-	return NullFactory
+	return nil
 }
 
 // Get the current Logger, or a logger that ignores all messages if none
 // is defined.
-func Get(c context.Context) (ret Logger) {
-	return GetFactory(c)(c)
+func Get(c context.Context) Logger {
+	if f := GetFactory(c); f != nil {
+		return f(c)
+	}
+	return Null
 }

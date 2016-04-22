@@ -16,7 +16,6 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/maruel/subcommands"
-	gol "github.com/op/go-logging"
 	"golang.org/x/net/context"
 	// Imported so you can upload this as a "module" to app engine, and access
 	// the remote API.
@@ -75,7 +74,6 @@ type cmdBuildBotRun struct {
 func (c *cmdBuildBotRun) Run(a subcommands.Application, args []string) int {
 	cfg := gologger.LoggerConfig{
 		Format: "%{message}",
-		Level:  gol.INFO,
 		Out:    os.Stdout,
 	}
 	ctx := cfg.Use(context.Background())
@@ -123,7 +121,6 @@ type cmdGitRun struct {
 func (c *cmdGitRun) Run(a subcommands.Application, args []string) int {
 	cfg := gologger.LoggerConfig{
 		Format: "%{message}",
-		Level:  gol.INFO,
 		Out:    os.Stdout,
 	}
 	ctx := cfg.Use(context.Background())

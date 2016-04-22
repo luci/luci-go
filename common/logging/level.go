@@ -63,23 +63,18 @@ func (l Level) String() string {
 	}
 }
 
-// SetLevelFactory sets the Level factory for this context.
-func SetLevelFactory(c context.Context, f func(context.Context) Level) context.Context {
-	return context.WithValue(c, levelKey, f)
-}
-
 // SetLevel sets the Level for this context.
 //
 // It can be retrieved with GetLevel(context).
 func SetLevel(c context.Context, l Level) context.Context {
-	return SetLevelFactory(c, func(context.Context) Level { return l })
+	return context.WithValue(c, levelKey, l)
 }
 
 // GetLevel returns the Level for this context. It will return DefaultLevel if
 // none is defined.
 func GetLevel(c context.Context) Level {
-	if f, ok := c.Value(levelKey).(func(context.Context) Level); ok {
-		return f(c)
+	if l, ok := c.Value(levelKey).(Level); ok {
+		return l
 	}
 	return DefaultLevel
 }

@@ -21,8 +21,8 @@ func (c *Config) AddFlags(fs *flag.FlagSet) {
 		"The logging level. Valid options are: debug, info, warning, error.")
 }
 
-// Set installs a logger that wraps the currently-installed Logger and sets
-// the level via the command-line level flag.
+// Set returns a new context configured to use logging level passed via the
+// command-line level flag.
 func (c *Config) Set(ctx context.Context) context.Context {
 	return SetLevel(ctx, c.Level)
 }

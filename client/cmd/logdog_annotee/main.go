@@ -121,7 +121,7 @@ func (a *application) getStreamClient() (streamclient.Client, error) {
 }
 
 func mainImpl(args []string) int {
-	ctx := gologger.Use(context.Background())
+	ctx := gologger.StdConfig.Use(context.Background())
 
 	logFlags := log.Config{
 		Level: log.Warning,

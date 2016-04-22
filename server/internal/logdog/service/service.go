@@ -65,7 +65,7 @@ type Service struct {
 // Run performs service-wide initialization and invokes the specified run
 // function.
 func (s *Service) Run(c context.Context, f func(context.Context) error) {
-	c = gologger.Use(c)
+	c = gologger.StdConfig.Use(c)
 
 	rc := 0
 	if err := s.runImpl(c, f); err != nil {

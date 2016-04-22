@@ -8,7 +8,7 @@
 
 // +build darwin dragonfly freebsd linux,!appengine netbsd openbsd
 
-package imported
+package terminal
 
 import (
 	"syscall"

@@ -18,7 +18,6 @@ import (
 
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
-	gol "github.com/op/go-logging"
 	"golang.org/x/net/context"
 )
 
@@ -185,15 +184,11 @@ func run(c context.Context, dir string) error {
 }
 
 func setupLogging(c context.Context) context.Context {
-	logCfg := gologger.LoggerConfig{
-		Format: gologger.StandardFormat,
-		Out:    os.Stderr,
-		Level:  gol.WARNING,
-	}
+	lvl := logging.Warning
 	if *verbose {
-		logCfg.Level = gol.DEBUG
+		lvl = logging.Debug
 	}
-	return logCfg.Use(c)
+	return logging.SetLevel(gologger.StdConfig.Use(context.Background()), lvl)
 }
 
 func usage() {

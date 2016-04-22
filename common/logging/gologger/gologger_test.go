@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/luci/luci-go/common/logging"
-	gol "github.com/op/go-logging"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -20,7 +19,7 @@ var (
 	ansiRegexp = regexp.MustCompile(`\033\[.+?m`)
 
 	lre = regexp.MustCompile(
-		`\[([A-Z]) \d+\-\d+\-\d+T\d+:\d+:\d+\.\d+.* \d+ (.+?):\d+\]\s+(.*)`)
+		`\[([A-Z])\d+\-\d+\-\d+T\d+:\d+:\d+\.\d+.* \d+ 0 (.+?):\d+\]\s+(.*)`)
 )
 
 func normalizeLog(s string) string {
@@ -33,7 +32,8 @@ func TestGoLogger(t *testing.T) {
 		// Regex to pull log information from "formatString".
 
 		buf := bytes.Buffer{}
-		l := New(&buf, gol.DEBUG)
+		cfg := LoggerConfig{Out: &buf}
+		l := cfg.NewLogger(nil)
 
 		for _, entry := range []struct {
 			L logging.Level
@@ -60,9 +60,8 @@ func TestGoLogger(t *testing.T) {
 	Convey(`A Go Logger instance installed in a Context at Info.`, t, func() {
 		buf := bytes.Buffer{}
 		lc := &LoggerConfig{
-			Format: standardConfig.Format,
+			Format: StdConfig.Format,
 			Out:    &buf,
-			Level:  gol.DEBUG,
 		}
 		c := logging.SetLevel(lc.Use(context.Background()), logging.Info)
 

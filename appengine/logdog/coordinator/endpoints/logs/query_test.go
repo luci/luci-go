@@ -67,7 +67,7 @@ func TestQuery(t *testing.T) {
 	Convey(`With a testing configuration, a Query request`, t, func() {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 		c = memory.Use(c)
-		c = gologger.Use(c)
+		c = gologger.StdConfig.Use(c)
 		c, fb := featureBreaker.FilterRDS(c, nil)
 
 		di := ds.Get(c)

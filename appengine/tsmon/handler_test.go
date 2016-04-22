@@ -68,7 +68,7 @@ func buildGAETestContext() (context.Context, testclock.TestClock) {
 	c, clock := testclock.UseTime(c, testclock.TestTimeUTC)
 	datastore.Get(c).Testable().Consistent(true)
 	c = info.Get(c).MustNamespace(instanceNamespace)
-	c = gologger.Use(c)
+	c = gologger.StdConfig.Use(c)
 
 	c = info.AddFilters(c, func(c context.Context, base info.Interface) info.Interface {
 		return &fakeInfo{base}

@@ -13,8 +13,11 @@ func SetError(c context.Context, err error) context.Context {
 	return SetField(c, ErrorKey, err)
 }
 
-// IsLogging tests whether the currently-configured logger is logging at the
-// specified level.
+// IsLogging tests whether the context is configured to log at the specified
+// level.
+//
+// Individual Logger implementations are supposed to call this function when
+// deciding whether to log the message.
 func IsLogging(c context.Context, l Level) bool {
 	return l >= GetLevel(c)
 }

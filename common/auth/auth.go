@@ -280,7 +280,9 @@ func NewAuthenticator(loginMode LoginMode, opts Options) *Authenticator {
 		ctx = context.Background()
 	}
 	if opts.Logger != nil {
-		ctx = logging.Set(ctx, opts.Logger)
+		ctx = logging.SetFactory(ctx, func(context.Context) logging.Logger {
+			return opts.Logger
+		})
 	}
 	ctx = logging.SetField(ctx, "pkg", "auth")
 
