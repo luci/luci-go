@@ -8,6 +8,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/luci/luci-go/common/parallel"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -338,5 +339,41 @@ func TestQueries(t *testing.T) {
 				}
 			})
 		}
+	})
+}
+
+func TestQueryConcurrencySafety(t *testing.T) {
+	t.Parallel()
+
+	Convey("query and derivative query finalization is goroutine-safe", t, func() {
+		const rounds = 10
+
+		q := NewQuery("Foo")
+
+		err := parallel.FanOutIn(func(outerC chan<- func() error) {
+
+			for i := 0; i < rounds; i++ {
+				outerQ := q.Gt("Field", i)
+
+				// Finalize the original query.
+				outerC <- func() error {
+					_, err := q.Finalize()
+					return err
+				}
+
+				// Finalize the derivative query a lot.
+				outerC <- func() error {
+					return parallel.FanOutIn(func(innerC chan<- func() error) {
+						for i := 0; i < rounds; i++ {
+							innerC <- func() error {
+								_, err := outerQ.Finalize()
+								return err
+							}
+						}
+					})
+				}
+			}
+		})
+		So(err, ShouldBeNil)
 	})
 }

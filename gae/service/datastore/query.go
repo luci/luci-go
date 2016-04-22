@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/stringset"
@@ -29,7 +30,25 @@ var (
 // Query is a builder-object for building a datastore query. It may represent
 // an invalid query, but the error will only be observable when you call
 // Finalize.
+//
+// A Query is, for the most part, not goroutine-safe. However, it is
 type Query struct {
+	queryFields
+
+	// These are set by Finalize as a way to cache the 1-1 correspondence of
+	// a Query to its FinalizedQuery form. err may also be set by intermediate
+	// Query functions if there's a problem before finalization.
+	//
+	// Query implements lazy finalization, meaning that it will happen at most
+	// once. This means that the finalization state and cached finalization must
+	// be locked around.
+	finalizeOnce sync.Once
+	finalized    *FinalizedQuery
+	finalizeErr  error
+}
+
+// queryFields are the Query's read-only fields.
+type queryFields struct {
 	kind string
 
 	eventualConsistency bool
@@ -55,17 +74,17 @@ type Query struct {
 	start Cursor
 	end   Cursor
 
-	// These are set by Finalize as a way to cache the 1-1 correspondence of
-	// a Query to its FinalizedQuery form. err may also be set by intermediate
-	// Query functions if there's a problem before finalization.
-	finalized *FinalizedQuery
-	err       error
+	err error
 }
 
 // NewQuery returns a new Query for the given kind. If kind may be empty to
 // begin a kindless query.
 func NewQuery(kind string) *Query {
-	return &Query{kind: kind}
+	return &Query{
+		queryFields: queryFields{
+			kind: kind,
+		},
+	}
 }
 
 func (q *Query) mod(cb func(*Query)) *Query {
@@ -73,8 +92,9 @@ func (q *Query) mod(cb func(*Query)) *Query {
 		return q
 	}
 
-	ret := *q
-	ret.finalized = nil
+	ret := Query{
+		queryFields: q.queryFields,
+	}
 	if len(q.order) > 0 {
 		ret.order = make([]IndexColumn, len(q.order))
 		copy(ret.order, q.order)
@@ -468,10 +488,17 @@ func (q *Query) ClearFilters() *Query {
 // inconsistencies or violates any of the query rules, that will be returned
 // here.
 func (q *Query) Finalize() (*FinalizedQuery, error) {
-	if q.err != nil || q.finalized != nil {
-		return q.finalized, q.err
+	if q.err != nil {
+		return nil, q.err
 	}
 
+	q.finalizeOnce.Do(func() {
+		q.finalized, q.finalizeErr = q.finalizeImpl()
+	})
+	return q.finalized, q.finalizeErr
+}
+
+func (q *Query) finalizeImpl() (*FinalizedQuery, error) {
 	ancestor := (*Key)(nil)
 	if slice, ok := q.eqFilts["__ancestor__"]; ok {
 		ancestor = slice[0].Value().(*Key)
@@ -544,7 +571,6 @@ func (q *Query) Finalize() (*FinalizedQuery, error) {
 		return err
 	}()
 	if err != nil {
-		q.err = err
 		return nil, err
 	}
 
@@ -644,7 +670,6 @@ func (q *Query) Finalize() (*FinalizedQuery, error) {
 		ret.orders = append(ret.orders, IndexColumn{Property: "__key__"})
 	}
 
-	q.finalized = ret
 	return ret, nil
 }
 
