@@ -6,7 +6,6 @@ package testclock
 
 import (
 	"fmt"
-	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -59,9 +58,9 @@ func TestTestTimer(t *testing.T) {
 					})
 				})
 
-				Convey(`When stopped after expiring, should not have a signal.`, func() {
+				Convey(`When stopped after expiring, will return false.`, func() {
 					clk.Add(1 * time.Second)
-					So(t.Stop(), ShouldBeTrue)
+					So(t.Stop(), ShouldBeFalse)
 
 					var signalled bool
 					select {
@@ -70,7 +69,7 @@ func TestTestTimer(t *testing.T) {
 					default:
 						break
 					}
-					So(signalled, ShouldBeFalse)
+					So(signalled, ShouldBeTrue)
 				})
 			})
 
@@ -121,10 +120,8 @@ func TestTestTimer(t *testing.T) {
 
 			Convey(`Will not signal the timer channel if stopped.`, func() {
 				t.Reset(time.Second)
-				t.Stop()
+				So(t.Stop(), ShouldBeTrue)
 				clk.Add(time.Second)
-
-				runtime.Gosched()
 
 				triggered := false
 				select {

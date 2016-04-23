@@ -5,6 +5,7 @@
 package testclock
 
 import (
+	"container/heap"
 	"sync"
 	"time"
 
@@ -39,21 +40,19 @@ type TimerCallback func(time.Duration, clock.Timer)
 type testClock struct {
 	sync.Mutex
 
-	now       time.Time  // The current clock time.
-	timerCond *sync.Cond // Condition used to manage timer blocking.
+	now time.Time // The current clock time.
 
 	timerCallback TimerCallback // Optional callback when a timer has been set.
+	pendingTimers pendingTimerHeap
 }
 
 var _ TestClock = (*testClock)(nil)
 
 // New returns a TestClock instance set at the specified time.
 func New(now time.Time) TestClock {
-	c := testClock{
+	return &testClock{
 		now: now,
 	}
-	c.timerCond = sync.NewCond(&c)
-	return &c
 }
 
 func (c *testClock) Now() time.Time {
@@ -99,7 +98,51 @@ func (c *testClock) setTimeLocked(t time.Time) {
 	c.now = t
 
 	// Unblock any blocking timers that are waiting on our lock.
-	c.timerCond.Broadcast()
+	c.triggerTimersLocked()
+}
+
+func (c *testClock) triggerTimersLocked() {
+	for len(c.pendingTimers) > 0 {
+		e := c.pendingTimers[0]
+		if c.now.Before(e.deadline) {
+			break
+		}
+
+		heap.Pop(&c.pendingTimers)
+		e.triggerC <- c.now
+		close(e.triggerC)
+	}
+}
+
+func (c *testClock) addPendingTimer(t *timer, d time.Duration, triggerC chan<- time.Time) {
+	deadline := c.Now().Add(d)
+	if callback := c.timerCallback; callback != nil {
+		callback(d, t)
+	}
+
+	c.Lock()
+	defer c.Unlock()
+
+	heap.Push(&c.pendingTimers, &pendingTimer{
+		timer:    t,
+		deadline: deadline,
+		triggerC: triggerC,
+	})
+	c.triggerTimersLocked()
+}
+
+func (c *testClock) clearPendingTimer(t *timer) {
+	c.Lock()
+	defer c.Unlock()
+
+	for i := 0; i < len(c.pendingTimers); {
+		if e := c.pendingTimers[0]; e.timer == t {
+			heap.Remove(&c.pendingTimers, i)
+			close(e.triggerC)
+		} else {
+			i++
+		}
+	}
 }
 
 func (c *testClock) SetTimerCallback(callback TimerCallback) {
@@ -109,105 +152,26 @@ func (c *testClock) SetTimerCallback(callback TimerCallback) {
 	c.timerCallback = callback
 }
 
-func (c *testClock) getTimerCallback() TimerCallback {
-	c.Lock()
-	defer c.Unlock()
+// pendingTimer is a single registered timer instance along with its trigger
+// deadline.
+type pendingTimer struct {
+	*timer
 
-	return c.timerCallback
+	deadline time.Time
+	triggerC chan<- time.Time
 }
 
-func (c *testClock) signalTimerSet(d time.Duration, t clock.Timer) {
-	if callback := c.getTimerCallback(); callback != nil {
-		callback(d, t)
-	}
-}
+// pendingTimerHeap is a heap.Interface implementation for a slice of
+// pendingTimer.
+type pendingTimerHeap []*pendingTimer
 
-// invokeAt invokes the specified callback when the Clock has advanced at
-// or after the specified threshold.
-//
-// The returned CancelFunc can be used to cancel the blocking without
-// signalling. If the cancel function is invoked before the callback, the
-// callback will not be invoked. It will NOT cancel the Context.
-func (c *testClock) invokeAt(ctx context.Context, threshold time.Time, callback func(clock.TimerResult)) context.CancelFunc {
-	finishedC := make(chan struct{})
-	cancelC := make(chan struct{})
-	stopC := make(chan struct{})
+func (h pendingTimerHeap) Less(i, j int) bool { return h[i].deadline.Before(h[j].deadline) }
+func (h pendingTimerHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h pendingTimerHeap) Len() int           { return len(h) }
 
-	// Our control goroutine will monitor both time and stop signals. It will
-	// terminate when either the current time has exceeded our time threshold or
-	// it has been signalled to terminate via Context.
-	//
-	// The lock that we take our here is owned by the following goroutine.
-	c.Lock()
-	go func() {
-		defer close(finishedC)
-
-		canceled := false
-		defer func() {
-			now := c.now
-			c.Unlock()
-
-			// If we finished naturally, but our Context is Done, include the Context
-			// error.
-			if !canceled {
-				callback(clock.TimerResult{Time: now, Err: ctx.Err()})
-			}
-		}()
-
-		for {
-			// Determine if we are past our signalling threshold. We can safely access
-			// our clock's time member directly, since we hold its lock from the
-			// condition firing.
-			if !c.now.Before(threshold) {
-				return
-			}
-
-			// Wait for a signal from our clock's condition.
-			c.timerCond.Wait()
-
-			// Have we been stopped or canceled?
-			select {
-			case <-stopC:
-				return
-			case <-cancelC:
-				canceled = true
-				return
-
-			default:
-				// Nope.
-			}
-		}
-	}()
-
-	// This goroutine will monitor our Context and unblock if it expires before
-	// the designated test time.
-	go func() {
-		select {
-		case <-finishedC:
-			// Our timer has expired, so no need to further monitor.
-			return
-
-		case <-ctx.Done():
-			// If we finish at the same time our Context is canceled, we don't need to
-			// wake our monitor (determinism).
-			select {
-			case <-finishedC:
-				return
-			default:
-				break
-			}
-
-			// Our Context has been canceled. Forward this to our monitor goroutine
-			// and wake our condition.
-			c.Lock()
-			defer c.Unlock()
-
-			close(stopC)
-			c.timerCond.Broadcast()
-		}
-	}()
-
-	return func() {
-		close(cancelC)
-	}
+func (h *pendingTimerHeap) Push(x interface{}) { *h = append(*h, x.(*pendingTimer)) }
+func (h *pendingTimerHeap) Pop() (v interface{}) {
+	idx := len(*h) - 1
+	v, *h = (*h)[idx], (*h)[:idx]
+	return
 }

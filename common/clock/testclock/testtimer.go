@@ -5,7 +5,6 @@
 package testclock
 
 import (
-	"sync"
 	"time"
 
 	"github.com/luci/luci-go/common/clock"
@@ -28,11 +27,9 @@ type timer struct {
 	// when this timer triggers or is canceled.
 	afterC chan clock.TimerResult
 
-	// cancelMu protects cancelFunc.
-	cancelMu sync.Mutex
-	// Cancels callback from clock.invokeAt. Being non-nil implies that the timer
-	// is active.
-	cancelFunc context.CancelFunc
+	// monitorFinishedC is used by our timer monitor to signal that the timer has
+	// stopped.
+	monitorFinishedC chan bool
 }
 
 var _ clock.Timer = (*timer)(nil)
@@ -59,36 +56,29 @@ func (t *timer) Reset(d time.Duration) (active bool) {
 	// Stop our current polling goroutine, if it's running.
 	active = t.Stop()
 
-	now := t.clock.Now()
-	triggerTime := now.Add(d)
+	// Add ourself to our Clock's scheduler.
+	triggerC := make(chan time.Time, 1)
+	t.clock.addPendingTimer(t, d, triggerC)
 
-	// Signal our timerSet callback.
-	t.clock.signalTimerSet(d, t)
-
-	// Set timer properties.
-	t.cancelMu.Lock()
-	defer t.cancelMu.Unlock()
-
-	t.cancelFunc = t.clock.invokeAt(t.ctx, triggerTime, func(tr clock.TimerResult) {
-		// If our timer is still running, stop it and signal our timer channel.
-		if t.Stop() {
-			t.afterC <- tr
-		}
-	})
+	// Start a timer monitor goroutine.
+	t.monitorFinishedC = make(chan bool, 1)
+	go t.monitor(triggerC, t.monitorFinishedC)
 	return
 }
 
 func (t *timer) Stop() (stopped bool) {
-	t.cancelMu.Lock()
-	defer t.cancelMu.Unlock()
-
 	// If the timer is not running, we're done.
-	if t.cancelFunc != nil {
-		t.cancelFunc()
-		t.cancelFunc = nil
-		return true
+	if t.monitorFinishedC == nil {
+		return false
 	}
-	return false
+
+	// Shutdown and wait for our monitoring goroutine.
+	t.clock.clearPendingTimer(t)
+	stopped = <-t.monitorFinishedC
+
+	// Clear state.
+	t.monitorFinishedC = nil
+	return
 }
 
 // GetTags returns the tags associated with the specified timer. If the timer
@@ -125,4 +115,39 @@ func HasTags(t clock.Timer, first string, tags ...string) bool {
 		}
 	}
 	return true
+}
+
+// monitor is run in a goroutine, monitoring the timer Context for
+// cancellation and forcing a premature timer completion if the monitor
+// was canceled.
+func (t *timer) monitor(triggerC chan time.Time, finishedC chan bool) {
+	monitorRunning := false
+	defer func() {
+		finishedC <- monitorRunning
+		close(finishedC)
+	}()
+
+	select {
+	case now, ok := <-triggerC:
+		if !ok {
+			// Our monitor goroutine has been reaped, probably because we were
+			// stopped.
+			monitorRunning = true
+			break
+		}
+
+		// The Clock has signalled that this timer has expired.
+		t.afterC <- clock.TimerResult{
+			Time: now,
+			Err:  nil,
+		}
+
+	case <-t.ctx.Done():
+		// Our Context has been canceled.
+		t.clock.clearPendingTimer(t)
+		t.afterC <- clock.TimerResult{
+			Time: t.clock.Now(),
+			Err:  t.ctx.Err(),
+		}
+	}
 }
