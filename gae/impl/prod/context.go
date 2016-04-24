@@ -57,9 +57,13 @@ func AEContextNoTxn(c context.Context) context.Context {
 	if aeCtx == nil {
 		return nil
 	}
-	aeCtx, err := appengine.Namespace(aeCtx, info.Get(c).GetNamespace())
-	if err != nil {
-		panic(err)
+
+	if ns, has := info.Get(c).GetNamespace(); has {
+		var err error
+		aeCtx, err = appengine.Namespace(aeCtx, ns)
+		if err != nil {
+			panic(err)
+		}
 	}
 	if deadline, ok := c.Deadline(); ok {
 		aeCtx, _ = context.WithDeadline(aeCtx, deadline)

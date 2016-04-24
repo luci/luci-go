@@ -46,10 +46,11 @@ func FilterRDS(c context.Context, shardsForKey func(*ds.Key) int) context.Contex
 func AlwaysFilterRDS(c context.Context, shardsForKey func(*ds.Key) int) context.Context {
 	return ds.AddRawFilters(c, func(c context.Context, ds ds.RawInterface) ds.RawInterface {
 		i := info.Get(c)
+		ns, _ := i.GetNamespace()
 
 		sc := &supportContext{
 			i.AppID(),
-			i.GetNamespace(),
+			ns,
 			c,
 			mc.Get(c),
 			mathrand.Get(c),

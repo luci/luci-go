@@ -123,5 +123,6 @@ func (tcf *checkFilter) DeleteMulti(keys []*Key, cb DeleteMultiCB) error {
 
 func applyCheckFilter(c context.Context, i RawInterface) RawInterface {
 	inf := info.Get(c)
-	return &checkFilter{i, inf.FullyQualifiedAppID(), inf.GetNamespace()}
+	ns, _ := inf.GetNamespace()
+	return &checkFilter{i, inf.FullyQualifiedAppID(), ns}
 }

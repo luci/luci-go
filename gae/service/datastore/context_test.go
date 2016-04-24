@@ -14,9 +14,9 @@ import (
 
 type fakeInfo struct{ info.Interface }
 
-func (fakeInfo) GetNamespace() string        { return "ns" }
-func (fakeInfo) AppID() string               { return "aid" }
-func (fakeInfo) FullyQualifiedAppID() string { return "s~aid" }
+func (fakeInfo) GetNamespace() (string, bool) { return "ns", true }
+func (fakeInfo) AppID() string                { return "aid" }
+func (fakeInfo) FullyQualifiedAppID() string  { return "s~aid" }
 
 type fakeService struct{ RawInterface }
 

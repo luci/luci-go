@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	infoS "github.com/luci/gae/service/info"
 	mcS "github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/common/clock/testclock"
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -213,5 +214,27 @@ func TestMemcache(t *testing.T) {
 			So(getItm, ShouldResemble, testItem)
 		})
 
+		Convey("When adding an item to an unset namespace", func() {
+			_, has := infoS.Get(c).GetNamespace()
+			So(has, ShouldBeFalse)
+
+			item := mc.NewItem("foo").SetValue([]byte("heya"))
+			So(mc.Set(item), ShouldBeNil)
+
+			Convey("The item can be retrieved from the unset namespace.", func() {
+				got, err := mc.Get("foo")
+				So(err, ShouldBeNil)
+				So(got.Value(), ShouldResemble, []byte("heya"))
+			})
+
+			Convey("The item can be retrieved from a set, empty namespace.", func() {
+				// Now test with empty namespace.
+				c = infoS.Get(c).MustNamespace("")
+
+				got, err := mc.Get("foo")
+				So(err, ShouldBeNil)
+				So(got.Value(), ShouldResemble, []byte("heya"))
+			})
+		})
 	})
 }

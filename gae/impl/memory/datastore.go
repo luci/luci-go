@@ -20,7 +20,7 @@ import (
 // by gae.GetDS(c)
 func useRDS(c context.Context) context.Context {
 	return ds.SetRawFactory(c, func(ic context.Context, wantTxn bool) ds.RawInterface {
-		ns := curGID(ic).namespace
+		ns, hasNS := curGID(ic).getNamespace()
 		maybeTxnCtx := cur(ic)
 
 		needResetCtx := false
@@ -37,9 +37,9 @@ func useRDS(c context.Context) context.Context {
 			if needResetCtx {
 				ic = context.WithValue(ic, memContextKey, maybeTxnCtx)
 			}
-			return &dsImpl{x, ns, ic}
+			return &dsImpl{x, ns, hasNS, ic}
 		}
-		return &txnDsImpl{dsd.(*txnDataStoreData), ns}
+		return &txnDsImpl{dsd.(*txnDataStoreData), ns, hasNS}
 	})
 }
 
@@ -54,10 +54,15 @@ func useRDS(c context.Context) context.Context {
 // These settings can of course be changed by using the Testable() interface.
 func NewDatastore(aid, ns string) (ds.Interface, error) {
 	ctx := UseWithAppID(context.Background(), aid)
-	ctx, err := info.Get(ctx).Namespace(ns)
-	if err != nil {
-		return nil, err
+
+	if ns != "" {
+		var err error
+		ctx, err = info.Get(ctx).Namespace(ns)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	ret := ds.Get(ctx)
 	t := ret.Testable()
 	t.AutoIndex(true)
@@ -70,9 +75,10 @@ func NewDatastore(aid, ns string) (ds.Interface, error) {
 
 // dsImpl exists solely to bind the current c to the datastore data.
 type dsImpl struct {
-	data *dataStoreData
-	ns   string
-	c    context.Context
+	data  *dataStoreData
+	ns    string
+	hasNS bool
+	c     context.Context
 }
 
 var _ ds.RawInterface = (*dsImpl)(nil)
@@ -100,6 +106,10 @@ func (d *dsImpl) DecodeCursor(s string) (ds.Cursor, error) {
 }
 
 func (d *dsImpl) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
+	if err := assertQueryNamespace(d.ns, d.hasNS); err != nil {
+		return err
+	}
+
 	idx, head := d.data.getQuerySnaps(!fq.EventuallyConsistent())
 	err := executeQuery(fq, d.data.aid, d.ns, false, idx, head, cb)
 	if d.data.maybeAutoIndex(err) {
@@ -110,6 +120,10 @@ func (d *dsImpl) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
 }
 
 func (d *dsImpl) Count(fq *ds.FinalizedQuery) (ret int64, err error) {
+	if err := assertQueryNamespace(d.ns, d.hasNS); err != nil {
+		return 0, err
+	}
+
 	idx, head := d.data.getQuerySnaps(!fq.EventuallyConsistent())
 	ret, err = countQuery(fq, d.data.aid, d.ns, false, idx, head)
 	if d.data.maybeAutoIndex(err) {
@@ -168,8 +182,9 @@ func (d *dsImpl) Testable() ds.Testable {
 ////////////////////////////////// txnDsImpl ///////////////////////////////////
 
 type txnDsImpl struct {
-	data *txnDataStoreData
-	ns   string
+	data  *txnDataStoreData
+	ns    string
+	hasNS bool
 }
 
 var _ ds.RawInterface = (*txnDsImpl)(nil)
@@ -202,6 +217,10 @@ func (d *txnDsImpl) DecodeCursor(s string) (ds.Cursor, error) {
 }
 
 func (d *txnDsImpl) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
+	if err := assertQueryNamespace(d.ns, d.hasNS); err != nil {
+		return err
+	}
+
 	// note that autoIndex has no effect inside transactions. This is because
 	// the transaction guarantees a consistent view of head at the time that the
 	// transaction opens. At best, we could add the index on head, but then return
@@ -215,6 +234,10 @@ func (d *txnDsImpl) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
 }
 
 func (d *txnDsImpl) Count(fq *ds.FinalizedQuery) (ret int64, err error) {
+	if err := assertQueryNamespace(d.ns, d.hasNS); err != nil {
+		return 0, err
+	}
+
 	return countQuery(fq, d.data.parent.aid, d.ns, true, d.data.snap, d.data.snap)
 }
 
@@ -223,5 +246,17 @@ func (*txnDsImpl) RunInTransaction(func(c context.Context) error, *ds.Transactio
 }
 
 func (*txnDsImpl) Testable() ds.Testable {
+	return nil
+}
+
+func assertQueryNamespace(ns string, hasNS bool) error {
+	if ns == "" && hasNS {
+		// The user has set an empty namespace. Datastore does not support this
+		// for queries.
+		//
+		// Bug on file is:
+		// https://code.google.com/p/googleappengine/issues/detail?id=12914
+		return errors.New("namespace may not be present and empty")
+	}
 	return nil
 }

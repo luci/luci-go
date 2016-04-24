@@ -494,7 +494,9 @@ func TestQueryExecution(t *testing.T) {
 		}
 
 		So(info.Get(c).FullyQualifiedAppID(), ShouldEqual, "dev~app")
-		So(info.Get(c).GetNamespace(), ShouldEqual, "ns")
+		ns, has := info.Get(c).GetNamespace()
+		So(ns, ShouldEqual, "ns")
+		So(has, ShouldBeTrue)
 
 		data := ds.Get(c)
 		testing := data.Testable()

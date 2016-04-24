@@ -64,10 +64,11 @@ func GetRawNoTxn(c context.Context) RawInterface {
 // Get gets the Interface implementation from context.
 func Get(c context.Context) Interface {
 	inf := info.Get(c)
+	ns, _ := inf.GetNamespace()
 	return &datastoreImpl{
 		GetRaw(c),
 		inf.FullyQualifiedAppID(),
-		inf.GetNamespace(),
+		ns,
 	}
 }
 
@@ -77,10 +78,11 @@ func Get(c context.Context) Interface {
 // Get gets the Interface implementation from context.
 func GetNoTxn(c context.Context) Interface {
 	inf := info.Get(c)
+	ns, _ := inf.GetNamespace()
 	return &datastoreImpl{
 		GetRawNoTxn(c),
 		inf.FullyQualifiedAppID(),
-		inf.GetNamespace(),
+		ns,
 	}
 }
 

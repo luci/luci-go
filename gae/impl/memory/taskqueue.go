@@ -19,7 +19,7 @@ import (
 
 func useTQ(c context.Context) context.Context {
 	return tq.SetRawFactory(c, func(ic context.Context, wantTxn bool) tq.RawInterface {
-		ns := curGID(ic).namespace
+		ns, _ := curGID(ic).getNamespace()
 		var tqd memContextObj
 
 		if !wantTxn {

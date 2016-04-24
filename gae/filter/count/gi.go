@@ -54,7 +54,7 @@ func (g *infoCounter) FullyQualifiedAppID() string {
 	return g.gi.FullyQualifiedAppID()
 }
 
-func (g *infoCounter) GetNamespace() string {
+func (g *infoCounter) GetNamespace() (string, bool) {
 	_ = g.c.GetNamespace.up()
 	return g.gi.GetNamespace()
 }

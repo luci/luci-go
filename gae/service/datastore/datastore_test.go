@@ -24,10 +24,11 @@ import (
 
 func fakeDatastoreFactory(c context.Context, wantTxn bool) RawInterface {
 	i := info.Get(c)
-	return &fakeDatastore{
+	fds := fakeDatastore{
 		aid: i.FullyQualifiedAppID(),
-		ns:  i.GetNamespace(),
 	}
+	fds.ns, _ = i.GetNamespace()
+	return &fds
 }
 
 type fakeDatastore struct {

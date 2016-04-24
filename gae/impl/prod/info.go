@@ -40,8 +40,12 @@ func (g giImpl) AppID() string {
 func (g giImpl) FullyQualifiedAppID() string {
 	return getProbeCache(g.usrCtx).fqaid
 }
-func (g giImpl) GetNamespace() string {
-	return getProbeCache(g.usrCtx).namespace
+func (g giImpl) GetNamespace() (string, bool) {
+	pc := getProbeCache(g.usrCtx)
+	if ns := pc.namespace; ns != nil {
+		return *ns, true
+	}
+	return "", false
 }
 func (g giImpl) Datacenter() string {
 	return appengine.Datacenter(g.aeCtx)
@@ -74,7 +78,7 @@ func (g giImpl) Namespace(namespace string) (context.Context, error) {
 	}
 	usrCtx := context.WithValue(g.usrCtx, prodContextKey, aeCtx)
 	pc := *getProbeCache(usrCtx)
-	pc.namespace = namespace
+	pc.namespace = &namespace
 	return withProbeCache(usrCtx, &pc), nil
 }
 func (g giImpl) MustNamespace(ns string) context.Context {
@@ -116,16 +120,20 @@ func (g giImpl) Testable() info.Testable {
 }
 
 type infoProbeCache struct {
-	namespace string
+	namespace *string
 	fqaid     string
 }
 
 func probe(aeCtx context.Context) *infoProbeCache {
 	probeKey := datastore.NewKey(aeCtx, "Kind", "id", 0, nil)
-	return &infoProbeCache{
-		namespace: probeKey.Namespace(),
-		fqaid:     probeKey.AppID(),
+	namespace := probeKey.Namespace()
+	ipb := infoProbeCache{
+		fqaid: probeKey.AppID(),
 	}
+	if namespace != "" {
+		ipb.namespace = &namespace
+	}
+	return &ipb
 }
 
 func getProbeCache(c context.Context) *infoProbeCache {

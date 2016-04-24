@@ -165,7 +165,7 @@ func useMC(c context.Context) context.Context {
 		lck.Lock()
 		defer lck.Unlock()
 
-		ns := curGID(ic).namespace
+		ns, _ := curGID(ic).getNamespace()
 		mcd, ok := mcdMap[ns]
 		if !ok {
 			mcd = &memcacheData{items: map[string]*mcDataItem{}}

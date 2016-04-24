@@ -29,9 +29,16 @@ var defaultGlobalInfoData = globalInfoData{
 
 type globalInfoData struct {
 	appid     string
-	namespace string
+	namespace *string
 	versionID string
 	requestID string
+}
+
+func (gid *globalInfoData) getNamespace() (string, bool) {
+	if ns := gid.namespace; ns != nil {
+		return *ns, true
+	}
+	return "", false
 }
 
 func curGID(c context.Context) *globalInfoData {
@@ -68,8 +75,8 @@ type giImpl struct {
 
 var _ = info.Interface((*giImpl)(nil))
 
-func (gi *giImpl) GetNamespace() string {
-	return gi.namespace
+func (gi *giImpl) GetNamespace() (string, bool) {
+	return gi.getNamespace()
 }
 
 func (gi *giImpl) Namespace(ns string) (ret context.Context, err error) {
@@ -78,7 +85,7 @@ func (gi *giImpl) Namespace(ns string) (ret context.Context, err error) {
 	}
 
 	return useGID(gi.c, func(mod *globalInfoData) {
-		mod.namespace = ns
+		mod.namespace = &ns
 	}), nil
 }
 

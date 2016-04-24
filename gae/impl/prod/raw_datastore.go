@@ -6,7 +6,6 @@ package prod
 
 import (
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/errors"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/datastore"
@@ -16,17 +15,16 @@ import (
 // by gae.GetDS(c)
 func useRDS(c context.Context) context.Context {
 	return ds.SetRawFactory(c, func(ci context.Context, wantTxn bool) ds.RawInterface {
-		ns := info.Get(ci).GetNamespace()
 		maybeTxnCtx := AEContext(ci)
 
 		if wantTxn {
-			return rdsImpl{ci, maybeTxnCtx, ns}
+			return rdsImpl{ci, maybeTxnCtx}
 		}
 		aeCtx := AEContextNoTxn(ci)
 		if maybeTxnCtx != aeCtx {
 			ci = context.WithValue(ci, prodContextKey, aeCtx)
 		}
-		return rdsImpl{ci, aeCtx, ns}
+		return rdsImpl{ci, aeCtx}
 	})
 }
 
@@ -39,8 +37,6 @@ type rdsImpl struct {
 
 	// aeCtx is the context with the appengine connection information in it.
 	aeCtx context.Context
-
-	ns string
 }
 
 func idxCallbacker(err error, amt int, cb func(idx int, err error)) error {

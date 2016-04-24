@@ -530,6 +530,79 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(count, ShouldEqual, 1) // normally this would include __entity_group__
 		})
+
+		Convey("Datastore namespace interaction", func() {
+			run := func(rc context.Context, txn bool) (putErr, getErr, queryErr, countErr error) {
+				var foo Foo
+
+				putFunc := func(doC context.Context) error {
+					return dsS.Get(doC).Put(&foo)
+				}
+
+				doFunc := func(doC context.Context) {
+					ds := dsS.Get(doC)
+					getErr = ds.Get(&foo)
+
+					q := dsS.NewQuery("Foo").Ancestor(ds.KeyForObj(&foo))
+					queryErr = ds.Run(q, func(f *Foo) error { return nil })
+					_, countErr = ds.Count(q)
+				}
+
+				if txn {
+					putErr = dsS.Get(rc).RunInTransaction(func(ic context.Context) error {
+						return putFunc(ic)
+					}, nil)
+					if putErr != nil {
+						return
+					}
+
+					dsS.Get(rc).Testable().CatchupIndexes()
+					dsS.Get(rc).RunInTransaction(func(ic context.Context) error {
+						doFunc(ic)
+						return nil
+					}, nil)
+				} else {
+					putErr = putFunc(rc)
+					if putErr != nil {
+						return
+					}
+					dsS.Get(rc).Testable().CatchupIndexes()
+					doFunc(rc)
+				}
+				return
+			}
+
+			for _, txn := range []bool{false, true} {
+				Convey(fmt.Sprintf("In transaction? %v", txn), func() {
+					Convey("With no namespace installed, can Put, Get, Query, and Count.", func() {
+						_, has := infoS.Get(c).GetNamespace()
+						So(has, ShouldBeFalse)
+
+						putErr, getErr, queryErr, countErr := run(c, txn)
+						So(putErr, ShouldBeNil)
+						So(getErr, ShouldBeNil)
+						So(queryErr, ShouldBeNil)
+						So(countErr, ShouldBeNil)
+					})
+
+					Convey("With an non-empty namespace installed, can Put, Get, Query, and Count.", func() {
+						putErr, getErr, queryErr, countErr := run(infoS.Get(c).MustNamespace("foo"), txn)
+						So(putErr, ShouldBeNil)
+						So(getErr, ShouldBeNil)
+						So(queryErr, ShouldBeNil)
+						So(countErr, ShouldBeNil)
+					})
+
+					Convey("With an empty namespace installed, can Put and Get, but not Query or Count.", func() {
+						putErr, getErr, queryErr, countErr := run(infoS.Get(c).MustNamespace(""), txn)
+						So(putErr, ShouldBeNil)
+						So(getErr, ShouldBeNil)
+						So(queryErr, ShouldErrLike, "namespace may not be present and empty")
+						So(countErr, ShouldErrLike, "namespace may not be present and empty")
+					})
+				})
+			}
+		})
 	})
 }
 
@@ -669,12 +742,17 @@ func TestAddIndexes(t *testing.T) {
 			dsS.Get(ctx).Testable().CatchupIndexes()
 
 			for _, ns := range namespaces {
+				if ns == "" {
+					// Skip query test for empty namespace, as this is invalid.
+					continue
+				}
+
 				results = nil
 				So(dsS.Get(infoS.Get(ctx).MustNamespace(ns)).GetAll(q, &results), ShouldBeNil)
 				So(len(results), ShouldEqual, 2)
 			}
 
-			// Add "foos" to a new namesapce, then confirm that it gets indexed.
+			// Add "foos" to a new namespace, then confirm that it gets indexed.
 			So(dsS.Get(infoS.Get(ctx).MustNamespace("qux")).PutMulti(foos), ShouldBeNil)
 			dsS.Get(ctx).Testable().CatchupIndexes()
 

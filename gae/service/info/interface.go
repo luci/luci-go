@@ -15,7 +15,7 @@ import (
 type Interface interface {
 	AppID() string
 	FullyQualifiedAppID() string
-	GetNamespace() string
+	GetNamespace() (string, bool)
 
 	Datacenter() string
 	DefaultVersionHostname() string

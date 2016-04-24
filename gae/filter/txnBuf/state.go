@@ -123,7 +123,7 @@ type txnBufState struct {
 
 func withTxnBuf(ctx context.Context, cb func(context.Context) error, opts *datastore.TransactionOptions) error {
 	inf := info.Get(ctx)
-	ns := inf.GetNamespace()
+	ns, _ := inf.GetNamespace()
 
 	parentState, _ := ctx.Value(dsTxnBufParent).(*txnBufState)
 	roots := stringset.New(0)
