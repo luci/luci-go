@@ -221,15 +221,7 @@ func init() {
 }
 
 func testHighLevelImpl(t *testing.T, namespaces []string) {
-	forEachNS := func(c context.Context, f func(context.Context, int)) {
-		for i, ns := range namespaces {
-			f(info.Get(c).MustNamespace(ns), i)
-		}
-	}
-
 	Convey("Tumble", t, func() {
-
-		outMsgs := make([]*OutgoingMessage, len(namespaces))
 
 		Convey("Check registration", func() {
 			So(registry, ShouldContainKey, "*tumble.SendMessage")
@@ -247,9 +239,28 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 			testing := NewTesting()
 			ctx := testing.Context()
 
+			if namespaces == nil {
+				// Non-namespaced test.
+				namespaces = []string{""}
+			} else {
+				testing.Config.Namespaced = true
+			}
+
 			testing.Service.Namespaces = func(context.Context) ([]string, error) {
 				return namespaces, nil
 			}
+
+			forEachNS := func(c context.Context, f func(context.Context, int)) {
+				for i, ns := range namespaces {
+					nc := c
+					if ns != "" {
+						nc = info.Get(c).MustNamespace(ns)
+					}
+					f(nc, i)
+				}
+			}
+
+			outMsgs := make([]*OutgoingMessage, len(namespaces))
 
 			l := logging.Get(ctx).(*memlogger.MemLogger)
 			_ = l
@@ -330,13 +341,17 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 
 				l.Reset()
 				testing.Drain(ctx)
-				So(l.Has(logging.Warning, "loading mutation with different code version", map[string]interface{}{
-					"namespace":   "",
-					"key":         "tumble.23.lock",
-					"clientID":    "-62132730888_23",
-					"mut_version": "otherCodeVersion",
-					"cur_version": "testVersionID",
-				}), ShouldBeTrue)
+
+				if !testing.Config.Namespaced {
+					So(l.Has(logging.Warning, "loading mutation with different code version", map[string]interface{}{
+						"key":         "tumble.23.lock",
+						"clientID":    "-62132730888_23",
+						"mut_version": "otherCodeVersion",
+						"cur_version": "testVersionID",
+					}), ShouldBeTrue)
+				} else {
+					// TODO: Assert log messages for namespaced test?
+				}
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
 					So(datastore.Get(ctx).Get(outMsgs[i]), ShouldBeNil)
@@ -379,16 +394,18 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				//
 				// The extra mutation at the end is supposed to be delayed, but we
 				// didn't enable Delayed messages in this config.
-				So(l.Has(logging.Info, "successfully processed 128 mutations (0 tail-call), adding 0 more", map[string]interface{}{
-					"namespace": "",
-					"key":       "tumble.23.lock",
-					"clientID":  "-62132730884_23",
-				}), ShouldBeTrue)
-				So(l.Has(logging.Info, "successfully processed 73 mutations (1 tail-call), adding 0 more", map[string]interface{}{
-					"namespace": "",
-					"key":       "tumble.23.lock",
-					"clientID":  "-62132730884_23",
-				}), ShouldBeTrue)
+				if !testing.Config.Namespaced {
+					So(l.Has(logging.Info, "successfully processed 128 mutations (0 tail-call), adding 0 more", map[string]interface{}{
+						"key":      "tumble.23.lock",
+						"clientID": "-62132730884_23",
+					}), ShouldBeTrue)
+					So(l.Has(logging.Info, "successfully processed 73 mutations (1 tail-call), adding 0 more", map[string]interface{}{
+						"key":      "tumble.23.lock",
+						"clientID": "-62132730884_23",
+					}), ShouldBeTrue)
+				} else {
+					// TODO: Assert log messages for namespaced test?
+				}
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
 					So(datastore.Get(ctx).Get(outMsgs[i]), ShouldBeNil)
@@ -449,9 +466,14 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				gds.Testable().CatchupIndexes()
 				testing.AdvanceTime(ctx)
 				So(testing.Iterate(ctx), ShouldEqual, 0)
-				So(l.Has(
-					logging.Info, "skipping task: "+processURL(-62132730576, 23), nil,
-				), ShouldBeTrue)
+
+				if !testing.Config.Namespaced {
+					So(l.Has(
+						logging.Info, "skipping task: "+processURL(-62132730576, 23), nil,
+					), ShouldBeTrue)
+				} else {
+					// TODO: Assert log messages for namespaced test?
+				}
 
 				// Now it'll find something
 				gds.Testable().CatchupIndexes()
@@ -472,11 +494,11 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 func TestHighLevel(t *testing.T) {
 	t.Parallel()
 
-	testHighLevelImpl(t, []string{""})
+	testHighLevelImpl(t, nil)
 }
 
 func TestHighLevelMultiNamespace(t *testing.T) {
 	t.Parallel()
 
-	testHighLevelImpl(t, []string{"", "foo", "bar"})
+	testHighLevelImpl(t, []string{"foo", "bar"})
 }

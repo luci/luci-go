@@ -60,9 +60,9 @@ func processShard(c context.Context, cfg *Config, namespaces []string, timestamp
 		"shard": shard,
 	}.Infof(c, "Processing tumble shard.")
 
-	// If no namespaces are provided, use the default namespace.
+	// If there are no namesapces, there is nothing to process.
 	if len(namespaces) == 0 {
-		namespaces = []string{""}
+		return nil
 	}
 
 	tasks := make([]*processTask, len(namespaces))
@@ -130,8 +130,10 @@ func makeProcessTask(namespace string, timestamp time.Time, shard uint64) *proce
 }
 
 func (t *processTask) process(c context.Context, cfg *Config, q *datastore.Query) error {
-	c = logging.SetField(c, "namespace", t.namespace)
-	c = info.Get(c).MustNamespace(t.namespace)
+	if t.namespace != "" {
+		c = logging.SetField(c, "namespace", t.namespace)
+		c = info.Get(c).MustNamespace(t.namespace)
+	}
 
 	// this last key allows buffered tasks to early exit if some other shard
 	// processor has already processed past this task's target timestamp.

@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	delayedMutationsDisabled = "disabled"
-	delayedMutationsEnabled  = "enabled"
+	settingDisabled = "disabled"
+	settingEnabled  = "enabled"
 )
 
 // settingsUIPage is a UI page to configure a static Tumble configuration.
@@ -85,7 +85,13 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 			ID:             "DelayedMutations",
 			Title:          "Delayed mutations (index MUST be present)",
 			Type:           settings.UIFieldChoice,
-			ChoiceVariants: []string{delayedMutationsDisabled, delayedMutationsEnabled},
+			ChoiceVariants: []string{settingDisabled, settingEnabled},
+		},
+		{
+			ID:             "Namespaced",
+			Title:          "Operate in namespaced mode",
+			Type:           settings.UIFieldChoice,
+			ChoiceVariants: []string{settingDisabled, settingEnabled},
 		},
 	}, nil
 }
@@ -123,11 +129,8 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 		values["ProcessMaxBatchSize"] = strconv.FormatInt(int64(cfg.ProcessMaxBatchSize), 10)
 	}
 
-	delayedMutations := delayedMutationsDisabled
-	if cfg.DelayedMutations {
-		delayedMutations = delayedMutationsEnabled
-	}
-	values["DelayedMutations"] = delayedMutations
+	values["DelayedMutations"] = getToggleSetting(cfg.DelayedMutations)
+	values["Namespaced"] = getToggleSetting(cfg.Namespaced)
 
 	return values, nil
 }
@@ -173,7 +176,8 @@ func (settingsUIPage) WriteSettings(c context.Context, values map[string]string,
 		}
 		cfg.ProcessMaxBatchSize = int32(val)
 	}
-	cfg.DelayedMutations = values["DelayedMutations"] == delayedMutationsEnabled
+	cfg.DelayedMutations = values["DelayedMutations"] == settingEnabled
+	cfg.Namespaced = values["Namespaced"] == settingEnabled
 
 	return settings.Set(c, baseName, &cfg, who, why)
 }
@@ -207,6 +211,13 @@ func validateDuration(v string) error {
 		return fmt.Errorf("duration %q must be positive", v)
 	}
 	return nil
+}
+
+func getToggleSetting(v bool) string {
+	if v {
+		return settingEnabled
+	}
+	return settingDisabled
 }
 
 func init() {

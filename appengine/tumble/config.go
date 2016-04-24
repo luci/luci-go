@@ -65,6 +65,11 @@ type Config struct {
 	// If you set this to true, you MUST also add the second index mentioned
 	// in the package docs.
 	DelayedMutations bool `json:"delayedMutations,omitempty"`
+
+	// Namespaced, if true, indicates that Tumble is operating with multitenancy.
+	// In this mode, all Tumble operations are namespaced, and Tumble will use
+	// a reserved namespace (TaskNamespace) for its own tasks.
+	Namespaced bool
 }
 
 // defaultConfig returns the default configuration settings.

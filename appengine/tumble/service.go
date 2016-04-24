@@ -112,19 +112,28 @@ func (s *Service) ProcessShardHandler(c context.Context, rw http.ResponseWriter,
 		return
 	}
 
+	cfg := getConfig(c)
+
 	// Get the set of namespaces to handle.
-	nsFn := s.Namespaces
-	if nsFn == nil {
-		nsFn = getDatastoreNamespaces
-	}
-	namespaces, err := nsFn(c)
-	if err != nil {
-		logging.WithError(err).Errorf(c, "Failed to enumerate namespaces.")
-		rw.WriteHeader(http.StatusInternalServerError)
-		return
+	//
+	var namespaces []string
+	if cfg.Namespaced {
+		nsFn := s.Namespaces
+		if nsFn == nil {
+			nsFn = getDatastoreNamespaces
+		}
+		namespaces, err = nsFn(c)
+		if err != nil {
+			logging.WithError(err).Errorf(c, "Failed to enumerate namespaces.")
+			rw.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	} else {
+		// Namespacing is disabled, use a single empty string. Process will
+		// interpret this as a signal to not use namesapces.
+		namespaces = []string{""}
 	}
 
-	cfg := getConfig(c)
 	err = processShard(c, cfg, namespaces, time.Unix(tstamp, 0).UTC(), sid)
 	if err != nil {
 		logging.Errorf(c, "failure! %s", err)
@@ -140,7 +149,10 @@ func (s *Service) ProcessShardHandler(c context.Context, rw http.ResponseWriter,
 //
 // This is done by issuing a datastore query for kind "__namespace__". The
 // resulting keys will have IDs for the namespaces, namely:
-//	- The empty namespace will have integer ID 1.
+//	- The default namespace will have integer ID 1. We ignore this because if
+//	  we're using tumble with namespaces, we don't process the default
+//	  namespace.
+//
 //	- Other namespaces will have string IDs.
 func getDatastoreNamespaces(c context.Context) ([]string, error) {
 	q := datastore.NewQuery("__namespace__").KeysOnly(true)
@@ -152,13 +164,11 @@ func getDatastoreNamespaces(c context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	namespaces := make([]string, len(namespaceKeys))
-	for i, nk := range namespaceKeys {
-		ns := nk.StringID()
-		if ns == "" && nk.IntID() != 1 {
-			return nil, fmt.Errorf("unknown namespace integer ID: %v", nk.IntID())
+	namespaces := make([]string, 0, len(namespaceKeys))
+	for _, nk := range namespaceKeys {
+		if ns := nk.StringID(); ns != "" {
+			namespaces = append(namespaces, ns)
 		}
-		namespaces[i] = ns
 	}
 	return namespaces, nil
 }

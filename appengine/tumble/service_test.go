@@ -38,22 +38,19 @@ func TestGetDatastoreNamespaces(t *testing.T) {
 			datastore.Get(ctx).Testable().CatchupIndexes()
 		}
 
-		Convey(`A datastore with default namespace returns {""}.`, func() {
-			addNamespace("")
-
+		Convey(`A datastore with no namespaces returns {}.`, func() {
 			namespaces, err := getDatastoreNamespaces(ctx)
 			So(err, ShouldBeNil)
-			So(namespaces, ShouldResemble, []string{""})
+			So(namespaces, ShouldResemble, []string{})
 		})
 
-		Convey(`A datastore with namespaces {"", "foo", "bar"} will return {"", "bar", "foo"}.`, func() {
-			addNamespace("")
+		Convey(`A datastore with namespaces {"foo", "bar"} will return {"bar", "foo"}.`, func() {
 			addNamespace("foo")
 			addNamespace("bar")
 
 			namespaces, err := getDatastoreNamespaces(ctx)
 			So(err, ShouldBeNil)
-			So(namespaces, ShouldResemble, []string{"", "bar", "foo"})
+			So(namespaces, ShouldResemble, []string{"bar", "foo"})
 		})
 	})
 }

@@ -21,6 +21,10 @@ type timestamp int64
 
 const minTS timestamp = math.MinInt64
 
+// TaskNamespace is the namespace used to store and dispatch Tumble task queue
+// tasks.
+const TaskNamespace = "__tumble"
+
 func (t timestamp) Unix() time.Time {
 	return time.Unix((int64)(t), 0).UTC()
 }
@@ -41,8 +45,11 @@ func fireTasks(c context.Context, cfg *Config, shards map[taskShard]struct{}) bo
 		return true
 	}
 
-	// Tumble uses the empty namespace for all task queue tasks.
-	c = info.Get(c).MustNamespace("")
+	// If namespacing is enabled, Tumble will fire tasks into the Tumble task
+	// namespace.
+	if cfg.Namespaced {
+		c = info.Get(c).MustNamespace(TaskNamespace)
+	}
 	tq := taskqueue.Get(c)
 
 	nextSlot := mkTimestamp(cfg, clock.Now(c).UTC())
