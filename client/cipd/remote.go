@@ -16,6 +16,12 @@ import (
 	"strconv"
 	"time"
 
+	"golang.org/x/net/context"
+	"golang.org/x/net/context/ctxhttp"
+
+	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/logging"
+
 	"github.com/luci/luci-go/client/cipd/common"
 )
 
@@ -48,12 +54,21 @@ func (e *pendingProcessingError) Error() string {
 
 // remoteImpl implements remote on top of real HTTP calls.
 type remoteImpl struct {
-	client *clientImpl
+	serviceURL string
+	userAgent  string
+	client     *http.Client
 }
 
 func isTemporaryNetError(err error) bool {
 	// TODO(vadimsh): Figure out how to recognize dial timeouts, read timeouts,
-	// etc. For now all errors that end up here are considered temporary.
+	// etc. For now all network related errors that end up here are considered
+	// temporary.
+	switch err {
+	case context.Canceled:
+		return false
+	case context.DeadlineExceeded:
+		return false
+	}
 	return true
 }
 
@@ -64,7 +79,7 @@ func isTemporaryHTTPError(statusCode int) bool {
 }
 
 // makeRequest sends POST or GET REST JSON requests with retries.
-func (r *remoteImpl) makeRequest(path, method string, request, response interface{}) error {
+func (r *remoteImpl) makeRequest(ctx context.Context, path, method string, request, response interface{}) error {
 	var body []byte
 	if request != nil {
 		b, err := json.Marshal(request)
@@ -74,12 +89,24 @@ func (r *remoteImpl) makeRequest(path, method string, request, response interfac
 		body = b
 	}
 
-	url := fmt.Sprintf("%s/_ah/api/%s", r.client.ServiceURL, path)
-	r.client.Logger.Debugf("cipd: %s %s", method, url)
+	// Logs warning is context is not canceled yet.
+	logWarning := func(msg string, args ...interface{}) {
+		if err := ctx.Err(); err == nil {
+			logging.Warningf(ctx, msg, args...)
+		}
+	}
+
+	url := fmt.Sprintf("%s/_ah/api/%s", r.serviceURL, path)
+	logging.Debugf(ctx, "cipd: %s %s", method, url)
 	for attempt := 0; attempt < remoteMaxRetries; attempt++ {
 		if attempt != 0 {
-			r.client.Logger.Warningf("cipd: retrying request to %s", url)
-			r.client.clock.sleep(2 * time.Second)
+			logWarning("cipd: retrying request to %s", url)
+			clock.Sleep(ctx, 2*time.Second)
+		}
+
+		// Context canceled?
+		if err := ctx.Err(); err != nil {
+			return err
 		}
 
 		// Prepare request.
@@ -94,13 +121,13 @@ func (r *remoteImpl) makeRequest(path, method string, request, response interfac
 		if body != nil {
 			req.Header.Set("Content-Type", "application/json")
 		}
-		req.Header.Set("User-Agent", r.client.UserAgent)
+		req.Header.Set("User-Agent", r.userAgent)
 
 		// Connect, read response.
-		resp, err := r.client.doAuthenticatedHTTPRequest(req)
+		resp, err := ctxhttp.Do(ctx, r.client, req)
 		if err != nil {
 			if isTemporaryNetError(err) {
-				r.client.Logger.Warningf("cipd: connectivity error (%s)", err)
+				logWarning("cipd: connectivity error (%s)", err)
 				continue
 			}
 			return err
@@ -109,7 +136,7 @@ func (r *remoteImpl) makeRequest(path, method string, request, response interfac
 		resp.Body.Close()
 		if err != nil {
 			if isTemporaryNetError(err) {
-				r.client.Logger.Warningf("cipd: temporary error when reading response (%s)", err)
+				logWarning("cipd: temporary error when reading response (%s)", err)
 				continue
 			}
 			return err
@@ -133,14 +160,14 @@ func (r *remoteImpl) makeRequest(path, method string, request, response interfac
 	return ErrBackendInaccessible
 }
 
-func (r *remoteImpl) initiateUpload(sha1 string) (s *UploadSession, err error) {
+func (r *remoteImpl) initiateUpload(ctx context.Context, sha1 string) (s *UploadSession, err error) {
 	var reply struct {
 		Status          string `json:"status"`
 		UploadSessionID string `json:"upload_session_id"`
 		UploadURL       string `json:"upload_url"`
 		ErrorMessage    string `json:"error_message"`
 	}
-	err = r.makeRequest("cas/v1/upload/SHA1/"+sha1, "POST", nil, &reply)
+	err = r.makeRequest(ctx, "cas/v1/upload/SHA1/"+sha1, "POST", nil, &reply)
 	if err != nil {
 		return
 	}
@@ -157,12 +184,12 @@ func (r *remoteImpl) initiateUpload(sha1 string) (s *UploadSession, err error) {
 	return
 }
 
-func (r *remoteImpl) finalizeUpload(sessionID string) (finished bool, err error) {
+func (r *remoteImpl) finalizeUpload(ctx context.Context, sessionID string) (finished bool, err error) {
 	var reply struct {
 		Status       string `json:"status"`
 		ErrorMessage string `json:"error_message"`
 	}
-	err = r.makeRequest("cas/v1/finalize/"+sessionID, "POST", nil, &reply)
+	err = r.makeRequest(ctx, "cas/v1/finalize/"+sessionID, "POST", nil, &reply)
 	if err != nil {
 		return
 	}
@@ -181,7 +208,7 @@ func (r *remoteImpl) finalizeUpload(sessionID string) (finished bool, err error)
 	return
 }
 
-func (r *remoteImpl) resolveVersion(packageName, version string) (pin common.Pin, err error) {
+func (r *remoteImpl) resolveVersion(ctx context.Context, packageName, version string) (pin common.Pin, err error) {
 	if err = common.ValidatePackageName(packageName); err != nil {
 		return
 	}
@@ -196,7 +223,7 @@ func (r *remoteImpl) resolveVersion(packageName, version string) (pin common.Pin
 	params := url.Values{}
 	params.Add("package_name", packageName)
 	params.Add("version", version)
-	err = r.makeRequest("repo/v1/instance/resolve?"+params.Encode(), "GET", nil, &reply)
+	err = r.makeRequest(ctx, "repo/v1/instance/resolve?"+params.Encode(), "GET", nil, &reply)
 	if err != nil {
 		return
 	}
@@ -221,7 +248,7 @@ func (r *remoteImpl) resolveVersion(packageName, version string) (pin common.Pin
 	return
 }
 
-func (r *remoteImpl) registerInstance(pin common.Pin) (*registerInstanceResponse, error) {
+func (r *remoteImpl) registerInstance(ctx context.Context, pin common.Pin) (*registerInstanceResponse, error) {
 	endpoint, err := instanceEndpoint(pin)
 	if err != nil {
 		return nil, err
@@ -233,7 +260,7 @@ func (r *remoteImpl) registerInstance(pin common.Pin) (*registerInstanceResponse
 		UploadURL       string             `json:"upload_url"`
 		ErrorMessage    string             `json:"error_message"`
 	}
-	err = r.makeRequest(endpoint, "POST", nil, &reply)
+	err = r.makeRequest(ctx, endpoint, "POST", nil, &reply)
 	if err != nil {
 		return nil, err
 	}
@@ -261,7 +288,7 @@ func (r *remoteImpl) registerInstance(pin common.Pin) (*registerInstanceResponse
 	return nil, fmt.Errorf("unexpected register package status: %s", reply.Status)
 }
 
-func (r *remoteImpl) fetchInstance(pin common.Pin) (*fetchInstanceResponse, error) {
+func (r *remoteImpl) fetchInstance(ctx context.Context, pin common.Pin) (*fetchInstanceResponse, error) {
 	endpoint, err := instanceEndpoint(pin)
 	if err != nil {
 		return nil, err
@@ -272,7 +299,7 @@ func (r *remoteImpl) fetchInstance(pin common.Pin) (*fetchInstanceResponse, erro
 		FetchURL     string             `json:"fetch_url"`
 		ErrorMessage string             `json:"error_message"`
 	}
-	err = r.makeRequest(endpoint, "GET", nil, &reply)
+	err = r.makeRequest(ctx, endpoint, "GET", nil, &reply)
 	if err != nil {
 		return nil, err
 	}
@@ -297,7 +324,7 @@ func (r *remoteImpl) fetchInstance(pin common.Pin) (*fetchInstanceResponse, erro
 	return nil, fmt.Errorf("unexpected reply status: %s", reply.Status)
 }
 
-func (r *remoteImpl) fetchTags(pin common.Pin, tags []string) ([]TagInfo, error) {
+func (r *remoteImpl) fetchTags(ctx context.Context, pin common.Pin, tags []string) ([]TagInfo, error) {
 	endpoint, err := tagsEndpoint(pin, tags)
 	if err != nil {
 		return nil, err
@@ -311,7 +338,7 @@ func (r *remoteImpl) fetchTags(pin common.Pin, tags []string) ([]TagInfo, error)
 			RegisteredTs string `json:"registered_ts"`
 		} `json:"tags"`
 	}
-	err = r.makeRequest(endpoint, "GET", nil, &reply)
+	err = r.makeRequest(ctx, endpoint, "GET", nil, &reply)
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +348,7 @@ func (r *remoteImpl) fetchTags(pin common.Pin, tags []string) ([]TagInfo, error)
 		for i, tag := range reply.Tags {
 			ts, err := convertTimestamp(tag.RegisteredTs)
 			if err != nil {
-				r.client.Logger.Warningf("cipd: failed to parse timestamp %q: %s", tag.RegisteredTs, err)
+				logging.Warningf(ctx, "cipd: failed to parse timestamp %q: %s", tag.RegisteredTs, err)
 			}
 			out[i] = TagInfo{
 				Tag:          tag.Tag,
@@ -340,7 +367,7 @@ func (r *remoteImpl) fetchTags(pin common.Pin, tags []string) ([]TagInfo, error)
 	return nil, fmt.Errorf("unexpected reply status: %s", reply.Status)
 }
 
-func (r *remoteImpl) fetchRefs(pin common.Pin, refs []string) ([]RefInfo, error) {
+func (r *remoteImpl) fetchRefs(ctx context.Context, pin common.Pin, refs []string) ([]RefInfo, error) {
 	endpoint, err := refEndpoint(pin.PackageName, pin.InstanceID, refs)
 	if err != nil {
 		return nil, err
@@ -354,7 +381,7 @@ func (r *remoteImpl) fetchRefs(pin common.Pin, refs []string) ([]RefInfo, error)
 			ModifiedTs string `json:"modified_ts"`
 		} `json:"refs"`
 	}
-	err = r.makeRequest(endpoint, "GET", nil, &reply)
+	err = r.makeRequest(ctx, endpoint, "GET", nil, &reply)
 	if err != nil {
 		return nil, err
 	}
@@ -364,7 +391,7 @@ func (r *remoteImpl) fetchRefs(pin common.Pin, refs []string) ([]RefInfo, error)
 		for i, ref := range reply.Refs {
 			ts, err := convertTimestamp(ref.ModifiedTs)
 			if err != nil {
-				r.client.Logger.Warningf("cipd: failed to parse timestamp %q: %s", ref.ModifiedTs, err)
+				logging.Warningf(ctx, "cipd: failed to parse timestamp %q: %s", ref.ModifiedTs, err)
 			}
 			out[i] = RefInfo{
 				Ref:        ref.Ref,
@@ -383,7 +410,7 @@ func (r *remoteImpl) fetchRefs(pin common.Pin, refs []string) ([]RefInfo, error)
 	return nil, fmt.Errorf("unexpected reply status: %s", reply.Status)
 }
 
-func (r *remoteImpl) fetchACL(packagePath string) ([]PackageACL, error) {
+func (r *remoteImpl) fetchACL(ctx context.Context, packagePath string) ([]PackageACL, error) {
 	endpoint, err := aclEndpoint(packagePath)
 	if err != nil {
 		return nil, err
@@ -401,7 +428,7 @@ func (r *remoteImpl) fetchACL(packagePath string) ([]PackageACL, error) {
 			} `json:"acls"`
 		} `json:"acls"`
 	}
-	err = r.makeRequest(endpoint, "GET", nil, &reply)
+	err = r.makeRequest(ctx, endpoint, "GET", nil, &reply)
 	if err != nil {
 		return nil, err
 	}
@@ -428,7 +455,7 @@ func (r *remoteImpl) fetchACL(packagePath string) ([]PackageACL, error) {
 	return nil, fmt.Errorf("unexpected reply status: %s", reply.Status)
 }
 
-func (r *remoteImpl) modifyACL(packagePath string, changes []PackageACLChange) error {
+func (r *remoteImpl) modifyACL(ctx context.Context, packagePath string, changes []PackageACLChange) error {
 	endpoint, err := aclEndpoint(packagePath)
 	if err != nil {
 		return err
@@ -455,7 +482,7 @@ func (r *remoteImpl) modifyACL(packagePath string, changes []PackageACLChange) e
 		Status       string `json:"status"`
 		ErrorMessage string `json:"error_message"`
 	}
-	err = r.makeRequest(endpoint, "POST", &request, &reply)
+	err = r.makeRequest(ctx, endpoint, "POST", &request, &reply)
 	if err != nil {
 		return err
 	}
@@ -468,7 +495,7 @@ func (r *remoteImpl) modifyACL(packagePath string, changes []PackageACLChange) e
 	return fmt.Errorf("unexpected reply status: %s", reply.Status)
 }
 
-func (r *remoteImpl) setRef(ref string, pin common.Pin) error {
+func (r *remoteImpl) setRef(ctx context.Context, ref string, pin common.Pin) error {
 	if err := common.ValidatePin(pin); err != nil {
 		return err
 	}
@@ -486,7 +513,7 @@ func (r *remoteImpl) setRef(ref string, pin common.Pin) error {
 		Status       string `json:"status"`
 		ErrorMessage string `json:"error_message"`
 	}
-	if err = r.makeRequest(endpoint, "POST", &request, &reply); err != nil {
+	if err = r.makeRequest(ctx, endpoint, "POST", &request, &reply); err != nil {
 		return err
 	}
 	switch reply.Status {
@@ -500,7 +527,7 @@ func (r *remoteImpl) setRef(ref string, pin common.Pin) error {
 	return fmt.Errorf("unexpected status when moving ref: %s", reply.Status)
 }
 
-func (r *remoteImpl) attachTags(pin common.Pin, tags []string) error {
+func (r *remoteImpl) attachTags(ctx context.Context, pin common.Pin, tags []string) error {
 	// Tags will be passed in the request body, not via URL.
 	endpoint, err := tagsEndpoint(pin, nil)
 	if err != nil {
@@ -522,7 +549,7 @@ func (r *remoteImpl) attachTags(pin common.Pin, tags []string) error {
 		Status       string `json:"status"`
 		ErrorMessage string `json:"error_message"`
 	}
-	err = r.makeRequest(endpoint, "POST", &request, &reply)
+	err = r.makeRequest(ctx, endpoint, "POST", &request, &reply)
 	if err != nil {
 		return err
 	}
@@ -537,7 +564,7 @@ func (r *remoteImpl) attachTags(pin common.Pin, tags []string) error {
 	return fmt.Errorf("unexpected status when attaching tags: %s", reply.Status)
 }
 
-func (r *remoteImpl) listPackages(path string, recursive bool) ([]string, []string, error) {
+func (r *remoteImpl) listPackages(ctx context.Context, path string, recursive bool) ([]string, []string, error) {
 	endpoint, err := packageSearchEndpoint(path, recursive)
 	if err != nil {
 		return nil, nil, err
@@ -548,7 +575,7 @@ func (r *remoteImpl) listPackages(path string, recursive bool) ([]string, []stri
 		Packages     []string `json:"packages"`
 		Directories  []string `json:"directories"`
 	}
-	err = r.makeRequest(endpoint, "GET", nil, &reply)
+	err = r.makeRequest(ctx, endpoint, "GET", nil, &reply)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -563,7 +590,7 @@ func (r *remoteImpl) listPackages(path string, recursive bool) ([]string, []stri
 	return nil, nil, fmt.Errorf("unexpected list packages status: %s", reply.Status)
 }
 
-func (r *remoteImpl) searchInstances(tag, packageName string) ([]common.Pin, error) {
+func (r *remoteImpl) searchInstances(ctx context.Context, tag, packageName string) ([]common.Pin, error) {
 	endpoint, err := packageSearchInstancesEndpoint(tag, packageName)
 	if err != nil {
 		return nil, err
@@ -573,7 +600,7 @@ func (r *remoteImpl) searchInstances(tag, packageName string) ([]common.Pin, err
 		ErrorMessage string               `json:"error_message"`
 		Instances    []packageInstanceMsg `json:"instances"`
 	}
-	err = r.makeRequest(endpoint, "GET", nil, &reply)
+	err = r.makeRequest(ctx, endpoint, "GET", nil, &reply)
 	if err != nil {
 		return nil, err
 	}

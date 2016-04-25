@@ -43,6 +43,9 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 
@@ -194,8 +197,10 @@ type RefInfo struct {
 	ModifiedTs UnixTime `json:"modified_ts"`
 }
 
-// Actions is returned by EnsurePackages. It lists pins that were attempted to
-// be installed, updated or removed, as well as all errors.
+// Actions is returned by EnsurePackages.
+//
+// It lists pins that were attempted to be installed, updated or removed, as
+// well as all errors.
 type Actions struct {
 	ToInstall []common.Pin  `json:"to_install,omitempty"` // pins to be installed
 	ToUpdate  []UpdatedPin  `json:"to_update,omitempty"`  // pins to be replaced
@@ -223,124 +228,135 @@ type ActionError struct {
 
 // Client provides high-level CIPD client interface. Thread safe.
 type Client interface {
-	// FetchACL returns a list of PackageACL objects (parent paths first) that
-	// together define the access control list for the given package subpath.
-	FetchACL(packagePath string) ([]PackageACL, error)
+	// FetchACL returns a list of PackageACL objects (parent paths first).
+	//
+	// Together they define the access control list for the given package subpath.
+	FetchACL(ctx context.Context, packagePath string) ([]PackageACL, error)
 
 	// ModifyACL applies a set of PackageACLChanges to a package path.
-	ModifyACL(packagePath string, changes []PackageACLChange) error
+	ModifyACL(ctx context.Context, packagePath string, changes []PackageACLChange) error
 
-	// UploadToCAS uploads package data blob to Content Addressed Store if it is
-	// not there already. The data is addressed by SHA1 hash (also known as
-	// package's InstanceID). It can be used as a standalone function (if
-	// 'session' is nil) or as a part of more high level upload process (in that
-	// case upload session can be opened elsewhere and its properties passed here
-	// via 'session' argument). Returns nil on successful upload.
-	UploadToCAS(sha1 string, data io.ReadSeeker, session *UploadSession, timeout time.Duration) error
-
-	// ResolveVersion converts an instance ID, a tag or a ref into a concrete Pin
-	// by contacting the backend.
-	ResolveVersion(packageName, version string) (common.Pin, error)
-
-	// RegisterInstance makes the package instance available for clients by
-	// uploading it to the storage and registering it in the package repository.
+	// UploadToCAS uploads package data blob to Content Addressed Store.
 	//
-	// 'instance' is a package instance to register.
-	// 'timeout' is how long to wait for backend-side package hash
-	//     verification to succeed (pass zero for some sensible default).
-	RegisterInstance(instance local.PackageInstance, timeout time.Duration) error
+	// Does nothing if it is already there. The data is addressed by SHA1 hash
+	// (also known as package's InstanceID). It can be used as a standalone
+	// function (if 'session' is nil) or as a part of more high level upload
+	// process (in that case upload session can be opened elsewhere and its
+	// properties passed here via 'session' argument).
+	//
+	// Returns nil on successful upload.
+	UploadToCAS(ctx context.Context, sha1 string, data io.ReadSeeker, session *UploadSession, timeout time.Duration) error
 
-	// SetRefWhenReady moves a ref to point to a package instance, retrying on
-	// "not yet processed" responses.
-	SetRefWhenReady(ref string, pin common.Pin) error
+	// ResolveVersion converts an instance ID, a tag or a ref into a concrete Pin.
+	ResolveVersion(ctx context.Context, packageName, version string) (common.Pin, error)
 
-	// AttachTagsWhenReady attaches tags to an instance, retrying on "not yet
-	// processed" responses.
-	AttachTagsWhenReady(pin common.Pin, tags []string) error
+	// RegisterInstance makes the package instance available for clients.
+	//
+	// It uploads the instance to the storage and registers it in the package
+	// repository.
+	RegisterInstance(ctx context.Context, instance local.PackageInstance, timeout time.Duration) error
 
-	// FetchInstanceInfo returns general information about the instance, such as
-	// who registered it and when.
-	FetchInstanceInfo(pin common.Pin) (InstanceInfo, error)
+	// SetRefWhenReady moves a ref to point to a package instance.
+	SetRefWhenReady(ctx context.Context, ref string, pin common.Pin) error
 
-	// FetchInstanceTags returns information about tags attached to the package
-	// instance sorted by tag key and creation timestamp (newest first). If 'tags'
-	// is empty, fetches all attached tags, otherwise only ones specified.
-	FetchInstanceTags(pin common.Pin, tags []string) ([]TagInfo, error)
+	// AttachTagsWhenReady attaches tags to an instance.
+	AttachTagsWhenReady(ctx context.Context, pin common.Pin, tags []string) error
 
-	// FetchInstanceRefs returns information about refs pointing to the package
-	// instance sorted by modification timestamp (newest first). If 'ref' is
-	// empty, fetches all refs, otherwise only ones specified.
-	FetchInstanceRefs(pin common.Pin, refs []string) ([]RefInfo, error)
+	// FetchInstanceInfo returns general information about the instance.
+	FetchInstanceInfo(ctx context.Context, pin common.Pin) (InstanceInfo, error)
+
+	// FetchInstanceTags returns information about tags attached to the instance.
+	//
+	// The returned list is sorted by tag key and creation timestamp (newest
+	// first). If 'tags' is empty, fetches all attached tags, otherwise only
+	// ones specified.
+	FetchInstanceTags(ctx context.Context, pin common.Pin, tags []string) ([]TagInfo, error)
+
+	// FetchInstanceRefs returns information about refs pointing to the instance.
+	//
+	// The returned list is sorted by modification timestamp (newest first). If
+	// 'refs' is empty, fetches all refs, otherwise only ones specified.
+	FetchInstanceRefs(ctx context.Context, pin common.Pin, refs []string) ([]RefInfo, error)
 
 	// FetchInstance downloads package instance file from the repository.
-	FetchInstance(pin common.Pin, output io.WriteSeeker) error
+	FetchInstance(ctx context.Context, pin common.Pin, output io.WriteSeeker) error
 
-	// FetchAndDeployInstance fetches the package instance and deploys it into
-	// the site root. It doesn't check whether the instance is already deployed.
-	FetchAndDeployInstance(pin common.Pin) error
+	// FetchAndDeployInstance fetches the package instance and deploys it.
+	//
+	// Deploys to the site root (see ClientOptions.Root). It doesn't check whether
+	// the instance is already deployed.
+	FetchAndDeployInstance(ctx context.Context, pin common.Pin) error
 
 	// ListPackages returns a list of strings of package names.
-	ListPackages(path string, recursive bool) ([]string, error)
+	ListPackages(ctx context.Context, path string, recursive bool) ([]string, error)
 
-	// SearchInstances finds all instances with given tag and optionally name and
-	// returns their concrete Pins.
-	SearchInstances(tag, packageName string) ([]common.Pin, error)
+	// SearchInstances finds all instances with given tag and optionally name.
+	//
+	// Returns their concrete Pins.
+	SearchInstances(ctx context.Context, tag, packageName string) ([]common.Pin, error)
 
-	// ProcessEnsureFile parses text file that describes what should be installed
-	// by EnsurePackages function. It is a text file where each line has a form:
-	// <package name> <desired version>. Whitespaces are ignored. Lines that start
-	// with '#' are ignored. Version can be specified as instance ID, tag or ref.
-	// Will resolve tags and refs to concrete instance IDs by calling the backend.
-	ProcessEnsureFile(r io.Reader) ([]common.Pin, error)
+	// ProcessEnsureFile parses text file that describes what should be installed.
+	//
+	// It is a text file where each line has a form "<package name> <version>".
+	// Whitespaces are ignored. Lines that start with '#' are ignored. A version
+	// can be specified as instance ID, tag or ref. Will resolve tags and refs to
+	// concrete instance IDs by calling the backend.
+	ProcessEnsureFile(ctx context.Context, r io.Reader) ([]common.Pin, error)
 
-	// EnsurePackages is high-level interface for installation, removal and update
-	// of packages inside the installation site root. Given a description of
-	// what packages (and versions) should be installed it will do all necessary
-	// actions to bring the state of the site root to the desired one.
+	// EnsurePackages installs, removes and updates packages in the site root.
+	//
+	// Given a description of what packages (and versions) should be installed it
+	// will do all necessary actions to bring the state of the site root to the
+	// desired one.
 	//
 	// If dryRun is true, will just check for changes and return them in Actions
 	// struct, but won't actually perform them.
 	//
 	// If the update was only partially applied, returns both Actions and error.
-	EnsurePackages(pins []common.Pin, dryRun bool) (Actions, error)
-
-	// Close should be called to dump any cached state to disk.
-	Close()
+	EnsurePackages(ctx context.Context, pins []common.Pin, dryRun bool) (Actions, error)
 }
-
-// HTTPClientFactory lazily creates http.Client to use for making requests.
-type HTTPClientFactory func() (*http.Client, error)
 
 // ClientOptions is passed to NewClient factory function.
 type ClientOptions struct {
 	// ServiceURL is root URL of the backend service.
+	//
+	// Default is ServiceURL const.
 	ServiceURL string
 
-	// Root is a site root directory (a directory where packages will be
-	// installed to). It also hosts .cipd/* directory that tracks internal state
-	// of installed packages and keeps various cache files. 'Root' can be an empty
-	// string if the client is not going to be used to deploy or remove local
-	// packages. If both Root and CacheDir are empty, tag cache is disabled.
+	// Root is a site root directory.
+	//
+	// It is a directory where packages will be installed to. It also hosts
+	// .cipd/* directory that tracks internal state of installed packages and
+	// keeps various cache files. 'Root' can be an empty string if the client is
+	// not going to be used to deploy or remove local packages.
 	Root string
 
-	// Logger is a logger to use for logs (null-logger by default).
-	Logger logging.Logger
+	// CacheDir is a directory for shared cache.
+	//
+	// If empty, instances are not cached and tags are cached inside the site
+	// root. If both Root and CacheDir are empty, tag cache is disabled.
+	CacheDir string
 
-	// AuthenticatedClientFactory lazily creates http.Client to use for making
-	// RPC requests.
-	AuthenticatedClientFactory HTTPClientFactory
+	// AnonymousClient is http.Client that doesn't attach authentication headers.
+	//
+	// Will be used when talking to the Google Storage. We use signed URLs that do
+	// not require additional authentication.
+	//
+	// Default is http.DefaultClient.
+	AnonymousClient *http.Client
 
-	// AnonymousClientFactory lazily creates http.Client to use for making
-	// requests to storage.
-	AnonymousClientFactory HTTPClientFactory
+	// AuthenticatedClient is http.Client that attaches authentication headers.
+	//
+	// Will be used when talking to the backend.
+	//
+	// Default is same as AnonymousClient (it will probably not work for most
+	// packages, since the backend won't authorize an anonymous access).
+	AuthenticatedClient *http.Client
 
 	// UserAgent is put into User-Agent HTTP header with each request.
+	//
+	// Default is UserAgent const.
 	UserAgent string
-
-	// CacheDir is a directory for shared cache. If empty, instances are not
-	// cached and tags are cached inside the site root. If both Root and
-	// CacheDir are empty, tag cache is disabled.
-	CacheDir string
 }
 
 // NewClient initializes CIPD client object.
@@ -348,42 +364,38 @@ func NewClient(opts ClientOptions) Client {
 	if opts.ServiceURL == "" {
 		opts.ServiceURL = ServiceURL
 	}
-	if opts.Logger == nil {
-		opts.Logger = logging.Null
+	if opts.AnonymousClient == nil {
+		opts.AnonymousClient = http.DefaultClient
 	}
-	if opts.AnonymousClientFactory == nil {
-		opts.AnonymousClientFactory = func() (*http.Client, error) { return http.DefaultClient, nil }
-	}
-	if opts.AuthenticatedClientFactory == nil {
-		opts.AuthenticatedClientFactory = opts.AnonymousClientFactory
+	if opts.AuthenticatedClient == nil {
+		opts.AuthenticatedClient = opts.AnonymousClient
 	}
 	if opts.UserAgent == "" {
 		opts.UserAgent = UserAgent
 	}
-	c := &clientImpl{
+	return &clientImpl{
 		ClientOptions: opts,
-		clock:         &clockImpl{},
+		remote: &remoteImpl{
+			serviceURL: opts.ServiceURL,
+			userAgent:  opts.UserAgent,
+			client:     opts.AuthenticatedClient,
+		},
+		storage: &storageImpl{
+			chunkSize: uploadChunkSize,
+			userAgent: opts.UserAgent,
+			client:    opts.AnonymousClient,
+		},
+		deployer: local.NewDeployer(opts.Root),
 	}
-	c.remote = &remoteImpl{c}
-	c.storage = &storageImpl{c, uploadChunkSize}
-	c.deployer = local.NewDeployer(opts.Root, opts.Logger)
-	return c
 }
 
 type clientImpl struct {
 	ClientOptions
 
-	// lock protects lazily initialized portions of the client.
-	lock sync.Mutex
-
-	// clock provides current time and ability to sleep. Thread safe.
-	clock clock
-
-	// remote knows how to call backend REST API. Thread safe.
+	// remote knows how to call backend REST API.
 	remote remote
 
 	// storage knows how to upload and download raw binaries using signed URLs.
-	// Thread safe.
 	storage storage
 
 	// deployer knows how to install packages to local file system. Thread safe.
@@ -395,42 +407,6 @@ type clientImpl struct {
 	// instanceCache is a file-system based cache of instances.
 	instanceCache     *internal.InstanceCache
 	instanceCacheInit sync.Once
-
-	// authClient is a lazily created http.Client to use for authenticated
-	// requests. Thread safe, but lazily initialized under lock.
-	authClient *http.Client
-
-	// anonClient is a lazily created http.Client to use for anonymous requests.
-	// Thread safe, but lazily initialized under lock.
-	anonClient *http.Client
-}
-
-// doAuthenticatedHTTPRequest is used by remote implementation to make HTTP calls.
-func (client *clientImpl) doAuthenticatedHTTPRequest(req *http.Request) (*http.Response, error) {
-	return client.doRequest(req, &client.authClient, client.AuthenticatedClientFactory)
-}
-
-// doAnonymousHTTPRequest is used by storage implementation to make HTTP calls.
-func (client *clientImpl) doAnonymousHTTPRequest(req *http.Request) (*http.Response, error) {
-	return client.doRequest(req, &client.anonClient, client.AnonymousClientFactory)
-}
-
-// doRequest lazy-initializes http.Client using provided factory and then
-// executes the request.
-func (client *clientImpl) doRequest(req *http.Request, c **http.Client, fac HTTPClientFactory) (*http.Response, error) {
-	httpClient, err := func() (*http.Client, error) {
-		client.lock.Lock()
-		defer client.lock.Unlock()
-		var err error
-		if *c == nil {
-			*c, err = fac()
-		}
-		return *c, err
-	}()
-	if err != nil {
-		return nil, err
-	}
-	return httpClient.Do(req)
 }
 
 // tagCachePath returns path to a tag cache file or "" if tag cache is disabled.
@@ -453,7 +429,7 @@ func (client *clientImpl) tagCachePath() string {
 // withTagCache checks if tag cache is enabled; if yes, loads it, calls f and
 // saves back if it was modified.
 // Calls are serialized.
-func (client *clientImpl) withTagCache(f func(*internal.TagCache)) {
+func (client *clientImpl) withTagCache(ctx context.Context, f func(*internal.TagCache)) {
 	path := client.tagCachePath()
 	if path == "" {
 		return
@@ -462,13 +438,13 @@ func (client *clientImpl) withTagCache(f func(*internal.TagCache)) {
 	client.tagCacheLock.Lock()
 	defer client.tagCacheLock.Unlock()
 
-	start := time.Now()
-	cache, err := internal.LoadTagCacheFromFile(path)
+	start := clock.Now(ctx)
+	cache, err := internal.LoadTagCacheFromFile(ctx, path)
 	if err != nil {
-		client.Logger.Warningf("cipd: failed to load tag cache - %s", err)
+		logging.Warningf(ctx, "cipd: failed to load tag cache - %s", err)
 		cache = &internal.TagCache{}
 	}
-	loadSaveTime := time.Since(start)
+	loadSaveTime := clock.Now(ctx).Sub(start)
 
 	f(cache)
 
@@ -476,20 +452,20 @@ func (client *clientImpl) withTagCache(f func(*internal.TagCache)) {
 		// It's tiny in size (and protobuf can't serialize to io.Reader anyway). Dump
 		// it to disk via FileSystem object to deal with possible concurrent updates,
 		// missing directories, etc.
-		fs := local.NewFileSystem(filepath.Dir(path), client.Logger)
-		start = time.Now()
-		out, err := cache.Save()
+		fs := local.NewFileSystem(filepath.Dir(path))
+		start = clock.Now(ctx)
+		out, err := cache.Save(ctx)
 		if err == nil {
-			err = local.EnsureFile(fs, path, bytes.NewReader(out))
+			err = local.EnsureFile(ctx, fs, path, bytes.NewReader(out))
 		}
-		loadSaveTime += time.Since(start)
+		loadSaveTime += clock.Now(ctx).Sub(start)
 		if err != nil {
-			client.Logger.Warningf("cipd: failed to update tag cache - %s", err)
+			logging.Warningf(ctx, "cipd: failed to update tag cache - %s", err)
 		}
 	}
 
 	if loadSaveTime > time.Second {
-		client.Logger.Warningf("cipd: loading and saving tag cache with %d entries took %s", cache.Len(), loadSaveTime)
+		logging.Warningf(ctx, "cipd: loading and saving tag cache with %d entries took %s", cache.Len(), loadSaveTime)
 	}
 }
 
@@ -501,22 +477,21 @@ func (client *clientImpl) getInstanceCache() *internal.InstanceCache {
 			return
 		}
 		path := filepath.Join(client.CacheDir, "instances")
-		fs := local.NewFileSystem(path, client.Logger)
-		client.instanceCache = internal.NewInstanceCache(fs, client.Logger)
+		client.instanceCache = internal.NewInstanceCache(local.NewFileSystem(path))
 	})
 	return client.instanceCache
 }
 
-func (client *clientImpl) FetchACL(packagePath string) ([]PackageACL, error) {
-	return client.remote.fetchACL(packagePath)
+func (client *clientImpl) FetchACL(ctx context.Context, packagePath string) ([]PackageACL, error) {
+	return client.remote.fetchACL(ctx, packagePath)
 }
 
-func (client *clientImpl) ModifyACL(packagePath string, changes []PackageACLChange) error {
-	return client.remote.modifyACL(packagePath, changes)
+func (client *clientImpl) ModifyACL(ctx context.Context, packagePath string, changes []PackageACLChange) error {
+	return client.remote.modifyACL(ctx, packagePath, changes)
 }
 
-func (client *clientImpl) ListPackages(path string, recursive bool) ([]string, error) {
-	pkgs, dirs, err := client.remote.listPackages(path, recursive)
+func (client *clientImpl) ListPackages(ctx context.Context, path string, recursive bool) ([]string, error) {
+	pkgs, dirs, err := client.remote.listPackages(ctx, path, recursive)
 	if err != nil {
 		return nil, err
 	}
@@ -531,18 +506,18 @@ func (client *clientImpl) ListPackages(path string, recursive bool) ([]string, e
 	return allPkgs, nil
 }
 
-func (client *clientImpl) UploadToCAS(sha1 string, data io.ReadSeeker, session *UploadSession, timeout time.Duration) error {
+func (client *clientImpl) UploadToCAS(ctx context.Context, sha1 string, data io.ReadSeeker, session *UploadSession, timeout time.Duration) error {
 	// Open new upload session if an existing is not provided.
 	var err error
 	if session == nil {
-		client.Logger.Infof("cipd: uploading %s: initiating", sha1)
-		session, err = client.remote.initiateUpload(sha1)
+		logging.Infof(ctx, "cipd: uploading %s: initiating", sha1)
+		session, err = client.remote.initiateUpload(ctx, sha1)
 		if err != nil {
-			client.Logger.Warningf("cipd: can't upload %s - %s", sha1, err)
+			logging.Warningf(ctx, "cipd: can't upload %s - %s", sha1, err)
 			return err
 		}
 		if session == nil {
-			client.Logger.Infof("cipd: %s is already uploaded", sha1)
+			logging.Infof(ctx, "cipd: %s is already uploaded", sha1)
 			return nil
 		}
 	} else {
@@ -552,7 +527,7 @@ func (client *clientImpl) UploadToCAS(sha1 string, data io.ReadSeeker, session *
 	}
 
 	// Upload the file to CAS storage.
-	err = client.storage.upload(session.URL, data)
+	err = client.storage.upload(ctx, session.URL, data)
 	if err != nil {
 		return err
 	}
@@ -561,31 +536,34 @@ func (client *clientImpl) UploadToCAS(sha1 string, data io.ReadSeeker, session *
 	if timeout == 0 {
 		timeout = CASFinalizationTimeout
 	}
-	started := client.clock.now()
+	started := clock.Now(ctx)
 	delay := time.Second
 	for {
-		published, err := client.remote.finalizeUpload(session.ID)
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		published, err := client.remote.finalizeUpload(ctx, session.ID)
 		if err != nil {
-			client.Logger.Warningf("cipd: upload of %s failed: %s", sha1, err)
+			logging.Warningf(ctx, "cipd: upload of %s failed: %s", sha1, err)
 			return err
 		}
 		if published {
-			client.Logger.Infof("cipd: successfully uploaded %s", sha1)
+			logging.Infof(ctx, "cipd: successfully uploaded %s", sha1)
 			return nil
 		}
-		if client.clock.now().Sub(started) > timeout {
-			client.Logger.Warningf("cipd: upload of %s failed: timeout", sha1)
+		if clock.Now(ctx).Sub(started) > timeout {
+			logging.Warningf(ctx, "cipd: upload of %s failed: timeout", sha1)
 			return ErrFinalizationTimeout
 		}
-		client.Logger.Infof("cipd: uploading - verifying")
-		client.clock.sleep(delay)
+		logging.Infof(ctx, "cipd: uploading - verifying")
+		clock.Sleep(ctx, delay)
 		if delay < 4*time.Second {
 			delay += 500 * time.Millisecond
 		}
 	}
 }
 
-func (client *clientImpl) ResolveVersion(packageName, version string) (common.Pin, error) {
+func (client *clientImpl) ResolveVersion(ctx context.Context, packageName, version string) (common.Pin, error) {
 	if err := common.ValidatePackageName(packageName); err != nil {
 		return common.Pin{}, err
 	}
@@ -601,43 +579,45 @@ func (client *clientImpl) ResolveVersion(packageName, version string) (common.Pi
 	isTag := common.ValidateInstanceTag(version) == nil
 	if isTag {
 		var cached common.Pin
-		client.withTagCache(func(tc *internal.TagCache) {
-			cached = tc.ResolveTag(packageName, version)
+		client.withTagCache(ctx, func(tc *internal.TagCache) {
+			cached = tc.ResolveTag(ctx, packageName, version)
 		})
 		if cached.InstanceID != "" {
-			client.Logger.Debugf("cipd: tag cache hit for %s:%s - %s", packageName, version, cached.InstanceID)
+			logging.Debugf(ctx, "cipd: tag cache hit for %s:%s - %s", packageName, version, cached.InstanceID)
 			return cached, nil
 		}
 	}
-	pin, err := client.remote.resolveVersion(packageName, version)
+	pin, err := client.remote.resolveVersion(ctx, packageName, version)
 	if err != nil {
 		return pin, err
 	}
 	if isTag {
-		client.withTagCache(func(tc *internal.TagCache) {
-			tc.AddTag(pin, version)
+		client.withTagCache(ctx, func(tc *internal.TagCache) {
+			tc.AddTag(ctx, pin, version)
 		})
 	}
 	return pin, nil
 }
 
-func (client *clientImpl) RegisterInstance(instance local.PackageInstance, timeout time.Duration) error {
+func (client *clientImpl) RegisterInstance(ctx context.Context, instance local.PackageInstance, timeout time.Duration) error {
 	// Attempt to register.
-	client.Logger.Infof("cipd: registering %s", instance.Pin())
-	result, err := client.remote.registerInstance(instance.Pin())
+	logging.Infof(ctx, "cipd: registering %s", instance.Pin())
+	result, err := client.remote.registerInstance(ctx, instance.Pin())
 	if err != nil {
 		return err
 	}
 
 	// Asked to upload the package file to CAS first?
 	if result.uploadSession != nil {
-		err = client.UploadToCAS(instance.Pin().InstanceID, instance.DataReader(), result.uploadSession, timeout)
+		err = client.UploadToCAS(
+			ctx, instance.Pin().InstanceID, instance.DataReader(),
+			result.uploadSession, timeout)
 		if err != nil {
 			return err
 		}
 		// Try again, now that file is uploaded.
-		client.Logger.Infof("cipd: registering %s", instance.Pin())
-		result, err = client.remote.registerInstance(instance.Pin())
+		logging.Infof(ctx, "cipd: registering %s", instance.Pin())
+		result, err = client.remote.registerInstance(ctx, instance.Pin())
 		if err != nil {
 			return err
 		}
@@ -647,43 +627,46 @@ func (client *clientImpl) RegisterInstance(instance local.PackageInstance, timeo
 	}
 
 	if result.alreadyRegistered {
-		client.Logger.Infof(
-			"cipd: instance %s is already registered by %s on %s",
+		logging.Infof(
+			ctx, "cipd: instance %s is already registered by %s on %s",
 			instance.Pin(), result.registeredBy, result.registeredTs)
 	} else {
-		client.Logger.Infof("cipd: instance %s was successfully registered", instance.Pin())
+		logging.Infof(ctx, "cipd: instance %s was successfully registered", instance.Pin())
 	}
 
 	return nil
 }
 
-func (client *clientImpl) SetRefWhenReady(ref string, pin common.Pin) error {
+func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin common.Pin) error {
 	if err := common.ValidatePackageRef(ref); err != nil {
 		return err
 	}
 	if err := common.ValidatePin(pin); err != nil {
 		return err
 	}
-	client.Logger.Infof("cipd: setting ref of %q: %q => %q", pin.PackageName, ref, pin.InstanceID)
-	deadline := client.clock.now().Add(SetRefTimeout)
-	for client.clock.now().Before(deadline) {
-		err := client.remote.setRef(ref, pin)
+	logging.Infof(ctx, "cipd: setting ref of %q: %q => %q", pin.PackageName, ref, pin.InstanceID)
+	deadline := clock.Now(ctx).Add(SetRefTimeout)
+	for clock.Now(ctx).Before(deadline) {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		err := client.remote.setRef(ctx, ref, pin)
 		if err == nil {
 			return nil
 		}
 		if _, ok := err.(*pendingProcessingError); ok {
-			client.Logger.Warningf("cipd: package instance is not ready yet - %s", err)
-			client.clock.sleep(5 * time.Second)
+			logging.Warningf(ctx, "cipd: package instance is not ready yet - %s", err)
+			clock.Sleep(ctx, 5*time.Second)
 		} else {
-			client.Logger.Errorf("cipd: failed to set ref - %s", err)
+			logging.Errorf(ctx, "cipd: failed to set ref - %s", err)
 			return err
 		}
 	}
-	client.Logger.Errorf("cipd: failed set ref - deadline exceeded")
+	logging.Errorf(ctx, "cipd: failed set ref - deadline exceeded")
 	return ErrSetRefTimeout
 }
 
-func (client *clientImpl) AttachTagsWhenReady(pin common.Pin, tags []string) error {
+func (client *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pin, tags []string) error {
 	err := common.ValidatePin(pin)
 	if err != nil {
 		return err
@@ -692,43 +675,46 @@ func (client *clientImpl) AttachTagsWhenReady(pin common.Pin, tags []string) err
 		return nil
 	}
 	for _, tag := range tags {
-		client.Logger.Infof("cipd: attaching tag %s", tag)
+		logging.Infof(ctx, "cipd: attaching tag %s", tag)
 	}
-	deadline := client.clock.now().Add(TagAttachTimeout)
-	for client.clock.now().Before(deadline) {
-		err = client.remote.attachTags(pin, tags)
+	deadline := clock.Now(ctx).Add(TagAttachTimeout)
+	for clock.Now(ctx).Before(deadline) {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		err = client.remote.attachTags(ctx, pin, tags)
 		if err == nil {
-			client.Logger.Infof("cipd: all tags attached")
+			logging.Infof(ctx, "cipd: all tags attached")
 			return nil
 		}
 		if _, ok := err.(*pendingProcessingError); ok {
-			client.Logger.Warningf("cipd: package instance is not ready yet - %s", err)
-			client.clock.sleep(5 * time.Second)
+			logging.Warningf(ctx, "cipd: package instance is not ready yet - %s", err)
+			clock.Sleep(ctx, 5*time.Second)
 		} else {
-			client.Logger.Errorf("cipd: failed to attach tags - %s", err)
+			logging.Errorf(ctx, "cipd: failed to attach tags - %s", err)
 			return err
 		}
 	}
-	client.Logger.Errorf("cipd: failed to attach tags - deadline exceeded")
+	logging.Errorf(ctx, "cipd: failed to attach tags - deadline exceeded")
 	return ErrAttachTagsTimeout
 }
 
-func (client *clientImpl) SearchInstances(tag, packageName string) ([]common.Pin, error) {
+func (client *clientImpl) SearchInstances(ctx context.Context, tag, packageName string) ([]common.Pin, error) {
 	if packageName != "" {
 		// Don't bother searching if packageName is invalid.
 		if err := common.ValidatePackageName(packageName); err != nil {
 			return []common.Pin{}, err
 		}
 	}
-	return client.remote.searchInstances(tag, packageName)
+	return client.remote.searchInstances(ctx, tag, packageName)
 }
 
-func (client *clientImpl) FetchInstanceInfo(pin common.Pin) (InstanceInfo, error) {
+func (client *clientImpl) FetchInstanceInfo(ctx context.Context, pin common.Pin) (InstanceInfo, error) {
 	err := common.ValidatePin(pin)
 	if err != nil {
 		return InstanceInfo{}, err
 	}
-	info, err := client.remote.fetchInstance(pin)
+	info, err := client.remote.fetchInstance(ctx, pin)
 	if err != nil {
 		return InstanceInfo{}, err
 	}
@@ -754,12 +740,12 @@ func (s sortByTagKey) Less(i, j int) bool {
 	return k1 < k2
 }
 
-func (client *clientImpl) FetchInstanceTags(pin common.Pin, tags []string) ([]TagInfo, error) {
+func (client *clientImpl) FetchInstanceTags(ctx context.Context, pin common.Pin, tags []string) ([]TagInfo, error) {
 	err := common.ValidatePin(pin)
 	if err != nil {
 		return nil, err
 	}
-	fetched, err := client.remote.fetchTags(pin, tags)
+	fetched, err := client.remote.fetchTags(ctx, pin, tags)
 	if err != nil {
 		return nil, err
 	}
@@ -767,42 +753,42 @@ func (client *clientImpl) FetchInstanceTags(pin common.Pin, tags []string) ([]Ta
 	return fetched, nil
 }
 
-func (client *clientImpl) FetchInstanceRefs(pin common.Pin, refs []string) ([]RefInfo, error) {
+func (client *clientImpl) FetchInstanceRefs(ctx context.Context, pin common.Pin, refs []string) ([]RefInfo, error) {
 	err := common.ValidatePin(pin)
 	if err != nil {
 		return nil, err
 	}
-	return client.remote.fetchRefs(pin, refs)
+	return client.remote.fetchRefs(ctx, pin, refs)
 }
 
-func (client *clientImpl) FetchInstance(pin common.Pin, output io.WriteSeeker) error {
+func (client *clientImpl) FetchInstance(ctx context.Context, pin common.Pin, output io.WriteSeeker) error {
 	if err := common.ValidatePin(pin); err != nil {
 		return err
 	}
 	cache := client.getInstanceCache()
 	if cache == nil {
-		return client.fetchInstanceNoCache(pin, output)
+		return client.fetchInstanceNoCache(ctx, pin, output)
 	}
-	return client.fetchInstanceWithCache(pin, cache, output)
+	return client.fetchInstanceWithCache(ctx, pin, cache, output)
 }
 
-func (client *clientImpl) fetchInstanceNoCache(pin common.Pin, output io.WriteSeeker) error {
-	if err := client.remoteFetchInstance(pin, output); err != nil {
+func (client *clientImpl) fetchInstanceNoCache(ctx context.Context, pin common.Pin, output io.WriteSeeker) error {
+	if err := client.remoteFetchInstance(ctx, pin, output); err != nil {
 		return err
 	}
-	client.Logger.Infof("cipd: successfully fetched %s", pin)
+	logging.Infof(ctx, "cipd: successfully fetched %s", pin)
 	return nil
 }
 
-func (client *clientImpl) fetchInstanceWithCache(pin common.Pin, cache *internal.InstanceCache, output io.WriteSeeker) error {
+func (client *clientImpl) fetchInstanceWithCache(ctx context.Context, pin common.Pin, cache *internal.InstanceCache, output io.WriteSeeker) error {
 	// Try to get the instance from cache.
-	now := client.clock.now()
-	switch err := cache.Get(pin, output, now); {
+	now := clock.Now(ctx)
+	switch err := cache.Get(ctx, pin, output, now); {
 	case os.IsNotExist(err):
 		// output is not corrupted.
 
 	case err != nil:
-		client.Logger.Warningf("cipd: could not get %s from cache - %s", pin, err)
+		logging.Warningf(ctx, "cipd: could not get %s from cache - %s", pin, err)
 		// Output may be corrupted. Rewind back and let client.remote
 		// overwrite it. Given instance ID is a hash of instance contents,
 		// cache could not write more than client.remote will,
@@ -812,13 +798,13 @@ func (client *clientImpl) fetchInstanceWithCache(pin common.Pin, cache *internal
 		}
 
 	default:
-		client.Logger.Debugf("cipd: instance cache hit for %s", pin)
+		logging.Debugf(ctx, "cipd: instance cache hit for %s", pin)
 		return nil
 	}
 
-	return cache.Put(pin, now, func(f *os.File) error {
+	return cache.Put(ctx, pin, now, func(f *os.File) error {
 		// Fetch to the file.
-		if err := client.remoteFetchInstance(pin, f); err != nil {
+		if err := client.remoteFetchInstance(ctx, pin, f); err != nil {
 			return err
 		}
 
@@ -829,24 +815,24 @@ func (client *clientImpl) fetchInstanceWithCache(pin common.Pin, cache *internal
 		if _, err := io.Copy(output, f); err != nil {
 			return err
 		}
-		client.Logger.Infof("cipd: successfully fetched %s", pin)
+		logging.Infof(ctx, "cipd: successfully fetched %s", pin)
 		return nil
 	})
 }
 
-func (client *clientImpl) remoteFetchInstance(pin common.Pin, output io.WriteSeeker) error {
-	client.Logger.Infof("cipd: resolving fetch URL for %s", pin)
-	fetchInfo, err := client.remote.fetchInstance(pin)
+func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pin, output io.WriteSeeker) error {
+	logging.Infof(ctx, "cipd: resolving fetch URL for %s", pin)
+	fetchInfo, err := client.remote.fetchInstance(ctx, pin)
 	if err == nil {
-		err = client.storage.download(fetchInfo.fetchURL, output)
+		err = client.storage.download(ctx, fetchInfo.fetchURL, output)
 	}
 	if err != nil {
-		client.Logger.Errorf("cipd: failed to fetch %s - %s", pin, err)
+		logging.Errorf(ctx, "cipd: failed to fetch %s - %s", pin, err)
 	}
 	return err
 }
 
-func (client *clientImpl) FetchAndDeployInstance(pin common.Pin) error {
+func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, pin common.Pin) error {
 	err := common.ValidatePin(pin)
 	if err != nil {
 		return err
@@ -854,7 +840,7 @@ func (client *clientImpl) FetchAndDeployInstance(pin common.Pin) error {
 
 	// Use temp file for storing package file. Delete it when done.
 	var instance local.PackageInstance
-	f, err := client.deployer.TempFile(pin.InstanceID)
+	f, err := client.deployer.TempFile(ctx, pin.InstanceID)
 	if err != nil {
 		return err
 	}
@@ -867,24 +853,24 @@ func (client *clientImpl) FetchAndDeployInstance(pin common.Pin) error {
 	}()
 
 	// Fetch the package data to the provided storage.
-	err = client.FetchInstance(pin, f)
+	err = client.FetchInstance(ctx, pin, f)
 	if err != nil {
 		return err
 	}
 
 	// Open the instance, verify the instance ID.
-	instance, err = local.OpenInstance(f, pin.InstanceID)
+	instance, err = local.OpenInstance(ctx, f, pin.InstanceID)
 	if err != nil {
 		return err
 	}
 	defer instance.Close()
 
 	// Deploy it. 'defer' will take care of removing the temp file if needed.
-	_, err = client.deployer.DeployInstance(instance)
+	_, err = client.deployer.DeployInstance(ctx, instance)
 	return err
 }
 
-func (client *clientImpl) ProcessEnsureFile(r io.Reader) ([]common.Pin, error) {
+func (client *clientImpl) ProcessEnsureFile(ctx context.Context, r io.Reader) ([]common.Pin, error) {
 	lineNo := 0
 	makeError := func(msg string) error {
 		return fmt.Errorf("failed to parse desired state (line %d): %s", lineNo, msg)
@@ -923,7 +909,7 @@ func (client *clientImpl) ProcessEnsureFile(r io.Reader) ([]common.Pin, error) {
 		}
 
 		// Good enough.
-		pin, err := client.ResolveVersion(tokens[0], tokens[1])
+		pin, err := client.ResolveVersion(ctx, tokens[0], tokens[1])
 		if err != nil {
 			return nil, err
 		}
@@ -933,7 +919,7 @@ func (client *clientImpl) ProcessEnsureFile(r io.Reader) ([]common.Pin, error) {
 	return out, nil
 }
 
-func (client *clientImpl) EnsurePackages(pins []common.Pin, dryRun bool) (actions Actions, err error) {
+func (client *clientImpl) EnsurePackages(ctx context.Context, pins []common.Pin, dryRun bool) (actions Actions, err error) {
 	// Make sure a package is specified only once.
 	seen := make(map[string]bool, len(pins))
 	for _, p := range pins {
@@ -944,7 +930,7 @@ func (client *clientImpl) EnsurePackages(pins []common.Pin, dryRun bool) (action
 	}
 
 	// Enumerate existing packages.
-	existing, err := client.deployer.FindDeployed()
+	existing, err := client.deployer.FindDeployed(ctx)
 	if err != nil {
 		return actions, err
 	}
@@ -952,39 +938,39 @@ func (client *clientImpl) EnsurePackages(pins []common.Pin, dryRun bool) (action
 	// Figure out what needs to be updated and deleted, log it.
 	actions = buildActionPlan(pins, existing)
 	if actions.Empty() {
-		client.Logger.Debugf("Everything is up-to-date.")
+		logging.Debugf(ctx, "Everything is up-to-date.")
 		return actions, nil
 	}
 	if len(actions.ToInstall) != 0 {
-		client.Logger.Infof("Packages to be installed:")
+		logging.Infof(ctx, "Packages to be installed:")
 		for _, pin := range actions.ToInstall {
-			client.Logger.Infof("  %s", pin)
+			logging.Infof(ctx, "  %s", pin)
 		}
 	}
 	if len(actions.ToUpdate) != 0 {
-		client.Logger.Infof("Packages to be updated:")
+		logging.Infof(ctx, "Packages to be updated:")
 		for _, pair := range actions.ToUpdate {
-			client.Logger.Infof("  %s (%s -> %s)",
+			logging.Infof(ctx, "  %s (%s -> %s)",
 				pair.From.PackageName, pair.From.InstanceID, pair.To.InstanceID)
 		}
 	}
 	if len(actions.ToRemove) != 0 {
-		client.Logger.Infof("Packages to be removed:")
+		logging.Infof(ctx, "Packages to be removed:")
 		for _, pin := range actions.ToRemove {
-			client.Logger.Infof("  %s", pin)
+			logging.Infof(ctx, "  %s", pin)
 		}
 	}
 
 	if dryRun {
-		client.Logger.Infof("Dry run, not actually doing anything.")
+		logging.Infof(ctx, "Dry run, not actually doing anything.")
 		return actions, nil
 	}
 
 	// Remove all unneeded stuff.
 	for _, pin := range actions.ToRemove {
-		err = client.deployer.RemoveDeployed(pin.PackageName)
+		err = client.deployer.RemoveDeployed(ctx, pin.PackageName)
 		if err != nil {
-			client.Logger.Errorf("Failed to remove %s - %s", pin.PackageName, err)
+			logging.Errorf(ctx, "Failed to remove %s - %s", pin.PackageName, err)
 			actions.Errors = append(actions.Errors, ActionError{
 				Action: "remove",
 				Pin:    pin,
@@ -1006,9 +992,9 @@ func (client *clientImpl) EnsurePackages(pins []common.Pin, dryRun bool) (action
 		if !toDeploy[pin.PackageName] {
 			continue
 		}
-		err = client.FetchAndDeployInstance(pin)
+		err = client.FetchAndDeployInstance(ctx, pin)
 		if err != nil {
-			client.Logger.Errorf("Failed to install %s - %s", pin, err)
+			logging.Errorf(ctx, "Failed to install %s - %s", pin, err)
 			actions.Errors = append(actions.Errors, ActionError{
 				Action: "install",
 				Pin:    pin,
@@ -1018,50 +1004,38 @@ func (client *clientImpl) EnsurePackages(pins []common.Pin, dryRun bool) (action
 	}
 
 	if len(actions.Errors) == 0 {
-		client.Logger.Infof("All changes applied.")
+		logging.Infof(ctx, "All changes applied.")
 		return actions, nil
 	}
 	return actions, ErrEnsurePackagesFailed
 }
 
-func (client *clientImpl) Close() {
-	client.lock.Lock()
-	defer client.lock.Unlock()
-	client.authClient = nil
-	client.anonClient = nil
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Private structs and interfaces.
 
-type clock interface {
-	now() time.Time
-	sleep(time.Duration)
-}
-
 type remote interface {
-	fetchACL(packagePath string) ([]PackageACL, error)
-	modifyACL(packagePath string, changes []PackageACLChange) error
+	fetchACL(ctx context.Context, packagePath string) ([]PackageACL, error)
+	modifyACL(ctx context.Context, packagePath string, changes []PackageACLChange) error
 
-	resolveVersion(packageName, version string) (common.Pin, error)
+	resolveVersion(ctx context.Context, packageName, version string) (common.Pin, error)
 
-	initiateUpload(sha1 string) (*UploadSession, error)
-	finalizeUpload(sessionID string) (bool, error)
-	registerInstance(pin common.Pin) (*registerInstanceResponse, error)
+	initiateUpload(ctx context.Context, sha1 string) (*UploadSession, error)
+	finalizeUpload(ctx context.Context, sessionID string) (bool, error)
+	registerInstance(ctx context.Context, pin common.Pin) (*registerInstanceResponse, error)
 
-	setRef(ref string, pin common.Pin) error
-	attachTags(pin common.Pin, tags []string) error
-	fetchTags(pin common.Pin, tags []string) ([]TagInfo, error)
-	fetchRefs(pin common.Pin, refs []string) ([]RefInfo, error)
-	fetchInstance(pin common.Pin) (*fetchInstanceResponse, error)
+	setRef(ctx context.Context, ref string, pin common.Pin) error
+	attachTags(ctx context.Context, pin common.Pin, tags []string) error
+	fetchTags(ctx context.Context, pin common.Pin, tags []string) ([]TagInfo, error)
+	fetchRefs(ctx context.Context, pin common.Pin, refs []string) ([]RefInfo, error)
+	fetchInstance(ctx context.Context, pin common.Pin) (*fetchInstanceResponse, error)
 
-	listPackages(path string, recursive bool) ([]string, []string, error)
-	searchInstances(tag, packageName string) ([]common.Pin, error)
+	listPackages(ctx context.Context, path string, recursive bool) ([]string, []string, error)
+	searchInstances(ctx context.Context, tag, packageName string) ([]common.Pin, error)
 }
 
 type storage interface {
-	upload(url string, data io.ReadSeeker) error
-	download(url string, output io.WriteSeeker) error
+	upload(ctx context.Context, url string, data io.ReadSeeker) error
+	download(ctx context.Context, url string, output io.WriteSeeker) error
 }
 
 type registerInstanceResponse struct {
@@ -1078,11 +1052,6 @@ type fetchInstanceResponse struct {
 }
 
 // Private stuff.
-
-type clockImpl struct{}
-
-func (c *clockImpl) now() time.Time        { return time.Now() }
-func (c *clockImpl) sleep(d time.Duration) { time.Sleep(d) }
 
 // buildActionPlan is used by EnsurePackages to figure out what to install or remove.
 func buildActionPlan(desired, existing []common.Pin) (a Actions) {

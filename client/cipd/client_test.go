@@ -17,6 +17,12 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/logging/gologger"
+
 	"github.com/luci/luci-go/client/cipd/common"
 	"github.com/luci/luci-go/client/cipd/local"
 
@@ -24,6 +30,8 @@ import (
 )
 
 func TestUploadToCAS(t *testing.T) {
+	ctx := makeTestContext()
+
 	Convey("UploadToCAS full flow", t, func(c C) {
 		client := mockClient(c, "", []expectedHTTPCall{
 			{
@@ -43,7 +51,7 @@ func TestUploadToCAS(t *testing.T) {
 			},
 		})
 		client.storage = &mockedStorage{c, nil}
-		err := client.UploadToCAS("abc", nil, nil, time.Minute)
+		err := client.UploadToCAS(ctx, "abc", nil, nil, time.Minute)
 		So(err, ShouldBeNil)
 	})
 
@@ -65,12 +73,14 @@ func TestUploadToCAS(t *testing.T) {
 		}
 		client := mockClient(c, "", calls)
 		client.storage = &mockedStorage{c, nil}
-		err := client.UploadToCAS("abc", nil, nil, time.Minute)
+		err := client.UploadToCAS(ctx, "abc", nil, nil, time.Minute)
 		So(err, ShouldResemble, ErrFinalizationTimeout)
 	})
 }
 
 func TestResolveVersion(t *testing.T) {
+	ctx := makeTestContext()
+
 	Convey("ResolveVersion works", t, func(c C) {
 		client := mockClient(c, "", []expectedHTTPCall{
 			{
@@ -86,7 +96,7 @@ func TestResolveVersion(t *testing.T) {
 				}`,
 			},
 		})
-		pin, err := client.ResolveVersion("pkgname", "tag_key:value")
+		pin, err := client.ResolveVersion(ctx, "pkgname", "tag_key:value")
 		So(err, ShouldBeNil)
 		So(pin, ShouldResemble, common.Pin{
 			PackageName: "pkgname",
@@ -97,7 +107,7 @@ func TestResolveVersion(t *testing.T) {
 	Convey("ResolveVersion with instance ID", t, func(c C) {
 		// No calls to the backend expected.
 		client := mockClient(c, "", nil)
-		pin, err := client.ResolveVersion("pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+		pin, err := client.ResolveVersion(ctx, "pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 		So(err, ShouldBeNil)
 		So(pin, ShouldResemble, common.Pin{
 			PackageName: "pkgname",
@@ -107,22 +117,24 @@ func TestResolveVersion(t *testing.T) {
 
 	Convey("ResolveVersion bad package name", t, func(c C) {
 		client := mockClient(c, "", nil)
-		_, err := client.ResolveVersion("bad package", "tag_key:value")
+		_, err := client.ResolveVersion(ctx, "bad package", "tag_key:value")
 		So(err, ShouldNotBeNil)
 	})
 
 	Convey("ResolveVersion bad version", t, func(c C) {
 		client := mockClient(c, "", nil)
-		_, err := client.ResolveVersion("pkgname", "BAD_TAG:")
+		_, err := client.ResolveVersion(ctx, "pkgname", "BAD_TAG:")
 		So(err, ShouldNotBeNil)
 	})
 }
 
 func TestRegisterInstance(t *testing.T) {
+	ctx := makeTestContext()
+
 	Convey("Mocking a package instance", t, func() {
 		// Build an empty package to be uploaded.
 		out := bytes.Buffer{}
-		err := local.BuildInstance(local.BuildInstanceOptions{
+		err := local.BuildInstance(ctx, local.BuildInstanceOptions{
 			Input:       []local.File{},
 			Output:      &out,
 			PackageName: "testing",
@@ -130,7 +142,7 @@ func TestRegisterInstance(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Open it for reading.
-		inst, err := local.OpenInstance(bytes.NewReader(out.Bytes()), "")
+		inst, err := local.OpenInstance(ctx, bytes.NewReader(out.Bytes()), "")
 		So(err, ShouldBeNil)
 		Reset(func() { inst.Close() })
 
@@ -171,7 +183,7 @@ func TestRegisterInstance(t *testing.T) {
 				},
 			})
 			client.storage = &mockedStorage{c, nil}
-			err = client.RegisterInstance(inst, time.Minute)
+			err = client.RegisterInstance(ctx, inst, time.Minute)
 			So(err, ShouldBeNil)
 		})
 
@@ -194,13 +206,15 @@ func TestRegisterInstance(t *testing.T) {
 				},
 			})
 			client.storage = &mockedStorage{c, nil}
-			err = client.RegisterInstance(inst, time.Minute)
+			err = client.RegisterInstance(ctx, inst, time.Minute)
 			So(err, ShouldBeNil)
 		})
 	})
 }
 
 func TestSetRefWhenReady(t *testing.T) {
+	ctx := makeTestContext()
+
 	Convey("SetRefWhenReady works", t, func(c C) {
 		client := mockClient(c, "", []expectedHTTPCall{
 			{
@@ -228,7 +242,7 @@ func TestSetRefWhenReady(t *testing.T) {
 			PackageName: "pkgname",
 			InstanceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		}
-		err := client.SetRefWhenReady("some-ref", pin)
+		err := client.SetRefWhenReady(ctx, "some-ref", pin)
 		So(err, ShouldBeNil)
 	})
 
@@ -251,12 +265,14 @@ func TestSetRefWhenReady(t *testing.T) {
 			PackageName: "pkgname",
 			InstanceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		}
-		err := client.SetRefWhenReady("some-ref", pin)
+		err := client.SetRefWhenReady(ctx, "some-ref", pin)
 		So(err, ShouldResemble, ErrSetRefTimeout)
 	})
 }
 
 func TestAttachTagsWhenReady(t *testing.T) {
+	ctx := makeTestContext()
+
 	Convey("AttachTagsWhenReady works", t, func(c C) {
 		client := mockClient(c, "", []expectedHTTPCall{
 			{
@@ -284,7 +300,7 @@ func TestAttachTagsWhenReady(t *testing.T) {
 			PackageName: "pkgname",
 			InstanceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		}
-		err := client.AttachTagsWhenReady(pin, []string{"tag1:value1"})
+		err := client.AttachTagsWhenReady(ctx, pin, []string{"tag1:value1"})
 		So(err, ShouldBeNil)
 	})
 
@@ -307,12 +323,14 @@ func TestAttachTagsWhenReady(t *testing.T) {
 			PackageName: "pkgname",
 			InstanceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		}
-		err := client.AttachTagsWhenReady(pin, []string{"tag1:value1"})
+		err := client.AttachTagsWhenReady(ctx, pin, []string{"tag1:value1"})
 		So(err, ShouldResemble, ErrAttachTagsTimeout)
 	})
 }
 
 func TestFetchInstanceInfo(t *testing.T) {
+	ctx := makeTestContext()
+
 	Convey("FetchInstanceInfo works", t, func(c C) {
 		client := mockClient(c, "", []expectedHTTPCall{
 			{
@@ -335,7 +353,7 @@ func TestFetchInstanceInfo(t *testing.T) {
 			PackageName: "pkgname",
 			InstanceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		}
-		info, err := client.FetchInstanceInfo(pin)
+		info, err := client.FetchInstanceInfo(ctx, pin)
 		So(err, ShouldBeNil)
 		So(info, ShouldResemble, InstanceInfo{
 			Pin:          pin,
@@ -346,6 +364,8 @@ func TestFetchInstanceInfo(t *testing.T) {
 }
 
 func TestFetchInstanceTags(t *testing.T) {
+	ctx := makeTestContext()
+
 	Convey("FetchInstanceTags works", t, func(c C) {
 		client := mockClient(c, "", []expectedHTTPCall{
 			{
@@ -381,7 +401,7 @@ func TestFetchInstanceTags(t *testing.T) {
 			PackageName: "pkgname",
 			InstanceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		}
-		tags, err := client.FetchInstanceTags(pin, nil)
+		tags, err := client.FetchInstanceTags(ctx, pin, nil)
 		So(err, ShouldBeNil)
 		So(tags, ShouldResemble, []TagInfo{
 			{
@@ -404,6 +424,8 @@ func TestFetchInstanceTags(t *testing.T) {
 }
 
 func TestFetchInstanceRefs(t *testing.T) {
+	ctx := makeTestContext()
+
 	Convey("FetchInstanceRefs works", t, func(c C) {
 		client := mockClient(c, "", []expectedHTTPCall{
 			{
@@ -434,7 +456,7 @@ func TestFetchInstanceRefs(t *testing.T) {
 			PackageName: "pkgname",
 			InstanceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		}
-		refs, err := client.FetchInstanceRefs(pin, nil)
+		refs, err := client.FetchInstanceRefs(ctx, pin, nil)
 		So(err, ShouldBeNil)
 		So(refs, ShouldResemble, []RefInfo{
 			{
@@ -452,6 +474,8 @@ func TestFetchInstanceRefs(t *testing.T) {
 }
 
 func TestFetch(t *testing.T) {
+	ctx := makeTestContext()
+
 	Convey("Mocking remote services", t, func() {
 		tempDir, err := ioutil.TempDir("", "cipd_test")
 		So(err, ShouldBeNil)
@@ -459,7 +483,7 @@ func TestFetch(t *testing.T) {
 		tempFile := filepath.Join(tempDir, "pkg")
 
 		Convey("FetchInstance works", func(c C) {
-			inst := buildInstanceInMemory("pkgname", nil)
+			inst := buildInstanceInMemory(ctx, "pkgname", nil)
 			defer inst.Close()
 
 			out, err := os.OpenFile(tempFile, os.O_WRONLY|os.O_CREATE, 0666)
@@ -472,26 +496,26 @@ func TestFetch(t *testing.T) {
 			}()
 
 			client := mockClientForFetch(c, "", []local.PackageInstance{inst})
-			err = client.FetchInstance(inst.Pin(), out)
+			err = client.FetchInstance(ctx, inst.Pin(), out)
 			So(err, ShouldBeNil)
 			out.Close()
 			closed = true
 
-			fetched, err := local.OpenInstanceFile(tempFile, "")
+			fetched, err := local.OpenInstanceFile(ctx, tempFile, "")
 			So(err, ShouldBeNil)
 			So(fetched.Pin(), ShouldResemble, inst.Pin())
 		})
 
 		Convey("FetchAndDeployInstance works", func(c C) {
 			// Build a package instance with some file.
-			inst := buildInstanceInMemory("testing/package", []local.File{
+			inst := buildInstanceInMemory(ctx, "testing/package", []local.File{
 				local.NewTestFile("file", "test data", false),
 			})
 			defer inst.Close()
 
 			// Install the package, fetching it from the fake server.
 			client := mockClientForFetch(c, tempDir, []local.PackageInstance{inst})
-			err = client.FetchAndDeployInstance(inst.Pin())
+			err = client.FetchAndDeployInstance(ctx, inst.Pin())
 			So(err, ShouldBeNil)
 
 			// The file from the package should be installed.
@@ -503,9 +527,11 @@ func TestFetch(t *testing.T) {
 }
 
 func TestProcessEnsureFile(t *testing.T) {
+	ctx := makeTestContext()
+
 	call := func(c C, data string, calls []expectedHTTPCall) ([]common.Pin, error) {
 		client := mockClient(c, "", calls)
-		return client.ProcessEnsureFile(bytes.NewBufferString(data))
+		return client.ProcessEnsureFile(ctx, bytes.NewBufferString(data))
 	}
 
 	Convey("ProcessEnsureFile works", t, func(c C) {
@@ -563,9 +589,11 @@ func TestProcessEnsureFile(t *testing.T) {
 }
 
 func TestListPackages(t *testing.T) {
+	ctx := makeTestContext()
+
 	call := func(c C, dirPath string, recursive bool, calls []expectedHTTPCall) ([]string, error) {
 		client := mockClient(c, "", calls)
-		return client.ListPackages(dirPath, recursive)
+		return client.ListPackages(ctx, dirPath, recursive)
 	}
 
 	Convey("ListPackages merges directories", t, func(c C) {
@@ -586,6 +614,8 @@ func TestListPackages(t *testing.T) {
 }
 
 func TestEnsurePackages(t *testing.T) {
+	ctx := makeTestContext()
+
 	Convey("Mocking temp dir", t, func() {
 		tempDir, err := ioutil.TempDir("", "cipd_test")
 		So(err, ShouldBeNil)
@@ -599,11 +629,11 @@ func TestEnsurePackages(t *testing.T) {
 
 		Convey("EnsurePackages full flow", func(c C) {
 			// Prepare a bunch of packages.
-			a1 := buildInstanceInMemory("pkg/a", []local.File{local.NewTestFile("file a 1", "test data", false)})
+			a1 := buildInstanceInMemory(ctx, "pkg/a", []local.File{local.NewTestFile("file a 1", "test data", false)})
 			defer a1.Close()
-			a2 := buildInstanceInMemory("pkg/a", []local.File{local.NewTestFile("file a 2", "test data", false)})
+			a2 := buildInstanceInMemory(ctx, "pkg/a", []local.File{local.NewTestFile("file a 2", "test data", false)})
 			defer a2.Close()
-			b := buildInstanceInMemory("pkg/b", []local.File{local.NewTestFile("file b", "test data", false)})
+			b := buildInstanceInMemory(ctx, "pkg/b", []local.File{local.NewTestFile("file b", "test data", false)})
 			defer b.Close()
 
 			// Calls EnsurePackages, mocking fetch backend first. Backend will be mocked
@@ -614,12 +644,12 @@ func TestEnsurePackages(t *testing.T) {
 				for _, i := range instances {
 					pins = append(pins, i.Pin())
 				}
-				return client.EnsurePackages(pins, false)
+				return client.EnsurePackages(ctx, pins, false)
 			}
 
 			findDeployed := func(root string) []common.Pin {
-				deployer := local.NewDeployer(root, nil)
-				pins, err := deployer.FindDeployed()
+				deployer := local.NewDeployer(root)
+				pins, err := deployer.FindDeployed(ctx)
 				So(err, ShouldBeNil)
 				return pins
 			}
@@ -699,15 +729,15 @@ func TestEnsurePackages(t *testing.T) {
 
 // buildInstanceInMemory makes fully functional PackageInstance object that uses
 // memory buffer as a backing store.
-func buildInstanceInMemory(pkgName string, files []local.File) local.PackageInstance {
+func buildInstanceInMemory(ctx context.Context, pkgName string, files []local.File) local.PackageInstance {
 	out := bytes.Buffer{}
-	err := local.BuildInstance(local.BuildInstanceOptions{
+	err := local.BuildInstance(ctx, local.BuildInstanceOptions{
 		Input:       files,
 		Output:      &out,
 		PackageName: pkgName,
 	})
 	So(err, ShouldBeNil)
-	inst, err := local.OpenInstance(bytes.NewReader(out.Bytes()), "")
+	inst, err := local.OpenInstance(ctx, bytes.NewReader(out.Bytes()), "")
 	So(err, ShouldBeNil)
 	return inst
 }
@@ -761,7 +791,7 @@ type mockedStorage struct {
 	data map[string][]byte
 }
 
-func (s *mockedStorage) download(url string, output io.WriteSeeker) error {
+func (s *mockedStorage) download(ctx context.Context, url string, output io.WriteSeeker) error {
 	blob, ok := s.data[url]
 	if !ok {
 		return ErrDownloadError
@@ -773,18 +803,9 @@ func (s *mockedStorage) download(url string, output io.WriteSeeker) error {
 	return nil
 }
 
-func (s *mockedStorage) upload(url string, data io.ReadSeeker) error {
+func (s *mockedStorage) upload(ctx context.Context, url string, data io.ReadSeeker) error {
 	return nil
 }
-
-////////////////////////////////////////////////////////////////////////////////
-
-type mockedClocked struct {
-	ts time.Time
-}
-
-func (c *mockedClocked) now() time.Time        { return c.ts }
-func (c *mockedClocked) sleep(d time.Duration) { c.ts = c.ts.Add(d) }
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -799,15 +820,16 @@ type expectedHTTPCall struct {
 	ResponseHeaders http.Header
 }
 
+func makeTestContext() context.Context {
+	ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
+	tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+		tc.Add(d)
+	})
+	return gologger.StdConfig.Use(ctx)
+}
+
 // mockClient returns Client with clock and HTTP calls mocked.
 func mockClient(c C, root string, expectations []expectedHTTPCall) *clientImpl {
-	client := NewClient(ClientOptions{Root: root}).(*clientImpl)
-	client.clock = &mockedClocked{}
-
-	// Kill factories. They should not be called for mocked client.
-	client.AuthenticatedClientFactory = nil
-	client.AnonymousClientFactory = nil
-
 	// Provide fake client instead.
 	handler := &expectedHTTPCallHandler{c, expectations, 0}
 	server := httptest.NewServer(handler)
@@ -824,11 +846,14 @@ func mockClient(c C, root string, expectations []expectedHTTPCall) *clientImpl {
 			return url.Parse(server.URL)
 		},
 	}
-	client.ServiceURL = server.URL
-	client.anonClient = &http.Client{Transport: transport}
-	client.authClient = &http.Client{Transport: transport}
 
-	return client
+	client := NewClient(ClientOptions{
+		ServiceURL:          server.URL,
+		Root:                root,
+		AnonymousClient:     &http.Client{Transport: transport},
+		AuthenticatedClient: &http.Client{Transport: transport},
+	})
+	return client.(*clientImpl)
 }
 
 // expectedHTTPCallHandler is http.Handler that serves mocked HTTP calls.

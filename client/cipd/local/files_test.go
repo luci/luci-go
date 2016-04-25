@@ -11,6 +11,8 @@ import (
 	"runtime"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -264,6 +266,8 @@ func ensureSymlinkTarget(file File, target string) {
 }
 
 func TestFileSystemDestination(t *testing.T) {
+	ctx := context.Background()
+
 	Convey("Given a temp directory", t, func() {
 		tempDir, err := ioutil.TempDir("", "cipd_test")
 		destDir := filepath.Join(tempDir, "dest")
@@ -272,7 +276,7 @@ func TestFileSystemDestination(t *testing.T) {
 		Reset(func() { os.RemoveAll(tempDir) })
 
 		writeFileToDest := func(name string, executable bool, data string) {
-			writer, err := dest.CreateFile(name, executable)
+			writer, err := dest.CreateFile(ctx, name, executable)
 			if writer != nil {
 				defer writer.Close()
 			}
@@ -282,13 +286,13 @@ func TestFileSystemDestination(t *testing.T) {
 		}
 
 		writeSymlinkToDest := func(name string, target string) {
-			err := dest.CreateSymlink(name, target)
+			err := dest.CreateSymlink(ctx, name, target)
 			So(err, ShouldBeNil)
 		}
 
 		Convey("Empty success write works", func() {
-			So(dest.Begin(), ShouldBeNil)
-			So(dest.End(true), ShouldBeNil)
+			So(dest.Begin(ctx), ShouldBeNil)
+			So(dest.End(ctx, true), ShouldBeNil)
 
 			// Should create a new directory.
 			stat, err := os.Stat(destDir)
@@ -302,8 +306,8 @@ func TestFileSystemDestination(t *testing.T) {
 		})
 
 		Convey("Empty failed write works", func() {
-			So(dest.Begin(), ShouldBeNil)
-			So(dest.End(false), ShouldBeNil)
+			So(dest.Begin(ctx), ShouldBeNil)
+			So(dest.End(ctx, false), ShouldBeNil)
 
 			// Doesn't create a directory.
 			_, err := os.Stat(destDir)
@@ -311,46 +315,46 @@ func TestFileSystemDestination(t *testing.T) {
 		})
 
 		Convey("Double begin or double end fails", func() {
-			So(dest.Begin(), ShouldBeNil)
-			So(dest.Begin(), ShouldNotBeNil)
-			So(dest.End(true), ShouldBeNil)
-			So(dest.End(true), ShouldNotBeNil)
+			So(dest.Begin(ctx), ShouldBeNil)
+			So(dest.Begin(ctx), ShouldNotBeNil)
+			So(dest.End(ctx, true), ShouldBeNil)
+			So(dest.End(ctx, true), ShouldNotBeNil)
 		})
 
 		Convey("CreateFile works only when destination is open", func() {
-			wr, err := dest.CreateFile("testing", true)
+			wr, err := dest.CreateFile(ctx, "testing", true)
 			So(wr, ShouldBeNil)
 			So(err, ShouldNotBeNil)
 		})
 
 		Convey("CreateFile rejects invalid relative paths", func() {
-			So(dest.Begin(), ShouldBeNil)
-			defer dest.End(true)
+			So(dest.Begin(ctx), ShouldBeNil)
+			defer dest.End(ctx, true)
 
 			// Rel path that is still inside the package is ok.
-			wr, err := dest.CreateFile("a/b/c/../../../d", false)
+			wr, err := dest.CreateFile(ctx, "a/b/c/../../../d", false)
 			So(err, ShouldBeNil)
 			wr.Close()
 
 			// Rel path pointing outside is forbidden.
-			_, err = dest.CreateFile("a/b/c/../../../../d", false)
+			_, err = dest.CreateFile(ctx, "a/b/c/../../../../d", false)
 			So(err, ShouldNotBeNil)
 		})
 
 		if runtime.GOOS != "windows" {
 			Convey("CreateSymlink rejects invalid relative paths", func() {
-				So(dest.Begin(), ShouldBeNil)
-				defer dest.End(true)
+				So(dest.Begin(ctx), ShouldBeNil)
+				defer dest.End(ctx, true)
 
 				// Rel symlink to a file inside the destination is OK.
-				So(dest.CreateSymlink("a/b/c", "../.."), ShouldBeNil)
+				So(dest.CreateSymlink(ctx, "a/b/c", "../.."), ShouldBeNil)
 				// Rel symlink to a file outside -> error.
-				So(dest.CreateSymlink("a/b/c", "../../.."), ShouldNotBeNil)
+				So(dest.CreateSymlink(ctx, "a/b/c", "../../.."), ShouldNotBeNil)
 			})
 		}
 
 		Convey("Committing bunch of files works", func() {
-			So(dest.Begin(), ShouldBeNil)
+			So(dest.Begin(ctx), ShouldBeNil)
 			writeFileToDest("a", false, "a data")
 			writeFileToDest("exe", true, "exe data")
 			writeFileToDest("dir/c", false, "dir/c data")
@@ -359,7 +363,7 @@ func TestFileSystemDestination(t *testing.T) {
 				writeSymlinkToDest("abs_symlink", filepath.FromSlash(tempDir))
 				writeSymlinkToDest("dir/dir/rel_symlink", "../../a")
 			}
-			So(dest.End(true), ShouldBeNil)
+			So(dest.End(ctx, true), ShouldBeNil)
 
 			// Ensure everything is there.
 			files, err := ScanFileSystem(destDir, destDir, nil)
@@ -412,13 +416,13 @@ func TestFileSystemDestination(t *testing.T) {
 		})
 
 		Convey("Rolling back bunch of files works", func() {
-			So(dest.Begin(), ShouldBeNil)
+			So(dest.Begin(ctx), ShouldBeNil)
 			writeFileToDest("a", false, "a data")
 			writeFileToDest("dir/c", false, "dir/c data")
 			if runtime.GOOS != "windows" {
 				writeSymlinkToDest("dir/d", "c")
 			}
-			So(dest.End(false), ShouldBeNil)
+			So(dest.End(ctx, false), ShouldBeNil)
 
 			// No dest directory.
 			_, err := os.Stat(destDir)
@@ -437,12 +441,12 @@ func TestFileSystemDestination(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// Now deploy something to it.
-			So(dest.Begin(), ShouldBeNil)
+			So(dest.Begin(ctx), ShouldBeNil)
 			writeFileToDest("a", false, "a data")
 			if runtime.GOOS != "windows" {
 				writeSymlinkToDest("b", "a")
 			}
-			So(dest.End(true), ShouldBeNil)
+			So(dest.End(ctx, true), ShouldBeNil)
 
 			// Overwritten.
 			files, err := ScanFileSystem(destDir, destDir, nil)
@@ -465,12 +469,12 @@ func TestFileSystemDestination(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// Now attempt deploy something to it, but roll back.
-			So(dest.Begin(), ShouldBeNil)
+			So(dest.Begin(ctx), ShouldBeNil)
 			writeFileToDest("a", false, "a data")
 			if runtime.GOOS != "windows" {
 				writeSymlinkToDest("b", "a")
 			}
-			So(dest.End(false), ShouldBeNil)
+			So(dest.End(ctx, false), ShouldBeNil)
 
 			// Kept as is.
 			files, err := ScanFileSystem(destDir, destDir, nil)
@@ -480,22 +484,22 @@ func TestFileSystemDestination(t *testing.T) {
 		})
 
 		Convey("Opening file twice fails", func() {
-			So(dest.Begin(), ShouldBeNil)
+			So(dest.Begin(ctx), ShouldBeNil)
 			writeFileToDest("a", false, "a data")
-			w, err := dest.CreateFile("a", false)
+			w, err := dest.CreateFile(ctx, "a", false)
 			So(w, ShouldBeNil)
 			So(err, ShouldNotBeNil)
-			So(dest.End(true), ShouldBeNil)
+			So(dest.End(ctx, true), ShouldBeNil)
 		})
 
 		Convey("End with opened files fail", func() {
-			So(dest.Begin(), ShouldBeNil)
-			w, err := dest.CreateFile("a", false)
+			So(dest.Begin(ctx), ShouldBeNil)
+			w, err := dest.CreateFile(ctx, "a", false)
 			So(w, ShouldNotBeNil)
 			So(err, ShouldBeNil)
-			So(dest.End(true), ShouldNotBeNil)
+			So(dest.End(ctx, true), ShouldNotBeNil)
 			w.Close()
-			So(dest.End(true), ShouldBeNil)
+			So(dest.End(ctx, true), ShouldBeNil)
 		})
 	})
 }

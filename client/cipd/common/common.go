@@ -32,7 +32,7 @@ func (pin Pin) String() string {
 	return fmt.Sprintf("%s:%s", pin.PackageName, pin.InstanceID)
 }
 
-// ValidatePackageName returns error if a string doesn't look like a valid package name.
+// ValidatePackageName returns error if a string isn't a valid package name.
 func ValidatePackageName(name string) error {
 	if !packageNameRe.MatchString(name) {
 		return fmt.Errorf("invalid package name: %s", name)
@@ -40,7 +40,7 @@ func ValidatePackageName(name string) error {
 	return nil
 }
 
-// ValidateInstanceID returns error if a string doesn't look like a valid package instance id.
+// ValidateInstanceID returns error if a string isn't a valid instance id.
 func ValidateInstanceID(s string) error {
 	// Instance id is SHA1 hex digest currently.
 	if len(s) != 40 {
@@ -54,7 +54,7 @@ func ValidateInstanceID(s string) error {
 	return nil
 }
 
-// ValidatePin returns error if package name of instance id of a pin are not valid.
+// ValidatePin returns error if package name or instance id are invalid.
 func ValidatePin(pin Pin) error {
 	if err := ValidatePackageName(pin.PackageName); err != nil {
 		return err
@@ -91,8 +91,12 @@ func ValidateInstanceTag(t string) error {
 	return nil
 }
 
-// ValidateInstanceVersion return error if a string doesn't look like
-// an instance ID or a package ref or an instance tag.
+// ValidateInstanceVersion return error if a string can't be used as version.
+//
+// A version can be specified as:
+// 	1) Instance ID (hash, e.g "1234deadbeef2234...").
+//  2) Package ref (e.g. "latest").
+//  3) Instance tag (e.g. "git_revision:abcdef...").
 func ValidateInstanceVersion(v string) error {
 	if ValidateInstanceID(v) == nil || ValidatePackageRef(v) == nil || ValidateInstanceTag(v) == nil {
 		return nil

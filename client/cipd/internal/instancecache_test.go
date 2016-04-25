@@ -9,19 +9,22 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/client/cipd/common"
 	"github.com/luci/luci-go/client/cipd/local"
-
-	"path/filepath"
-	"strings"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestInstanceCache(t *testing.T) {
+	ctx := context.Background()
+
 	Convey("InstanceCache", t, func(c C) {
 		tempDir, err := ioutil.TempDir("", "instanceche_test")
 		So(err, ShouldBeNil)
@@ -29,11 +32,11 @@ func TestInstanceCache(t *testing.T) {
 
 		now := time.Date(2016, 1, 2, 3, 4, 5, 6, time.UTC)
 
-		fs := local.NewFileSystem(tempDir, nil)
-		cache := NewInstanceCache(fs, nil)
+		fs := local.NewFileSystem(tempDir)
+		cache := NewInstanceCache(fs)
 
 		put := func(cache *InstanceCache, pin common.Pin, data string) {
-			err = cache.Put(pin, now, func(f *os.File) error {
+			err = cache.Put(ctx, pin, now, func(f *os.File) error {
 				_, err := f.WriteString(data)
 				So(err, ShouldBeNil)
 				return nil
@@ -43,16 +46,16 @@ func TestInstanceCache(t *testing.T) {
 
 		testHas := func(cache *InstanceCache, pin common.Pin, data string) {
 			buf := &bytes.Buffer{}
-			err = cache.Get(pin, buf, now)
+			err = cache.Get(ctx, pin, buf, now)
 			So(err, ShouldBeNil)
 			So(buf.String(), ShouldEqual, data)
 		}
 
 		Convey("Works", func() {
-			cache2 := NewInstanceCache(fs, nil)
+			cache2 := NewInstanceCache(fs)
 
 			pin := common.Pin{"pkg", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}
-			err := cache.Get(pin, ioutil.Discard, now)
+			err := cache.Get(ctx, pin, ioutil.Discard, now)
 			So(os.IsNotExist(err), ShouldBeTrue)
 
 			// Add new.
@@ -89,10 +92,9 @@ func TestInstanceCache(t *testing.T) {
 
 			// Try to get.
 			for i := 0; i < instanceCacheMaxSize*2; i++ {
-				err := cache.Get(pini(i), ioutil.Discard, now)
+				err := cache.Get(ctx, pini(i), ioutil.Discard, now)
 				So(os.IsNotExist(err), ShouldEqual, i < instanceCacheMaxSize)
 			}
-
 		})
 
 		Convey("Sync", func() {
@@ -109,12 +111,13 @@ func TestInstanceCache(t *testing.T) {
 
 				// state.db must be restored.
 				for i := 0; i < count; i++ {
-					lastAccess, ok := cache.getAccessTime(now, pini(i))
+					lastAccess, ok := cache.getAccessTime(ctx, now, pini(i))
 					So(ok, ShouldBeTrue)
 					So(lastAccess.IsZero(), ShouldBeTrue)
 				}
 
-				_, ok := cache.getAccessTime(now, common.Pin{"nonexistent", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"})
+				_, ok := cache.getAccessTime(
+					ctx, now, common.Pin{"nonexistent", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"})
 				So(ok, ShouldBeFalse)
 			}
 

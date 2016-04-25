@@ -16,6 +16,8 @@ import (
 	"strings"
 	"sync"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/client/cipd/common"
 	"github.com/luci/luci-go/common/logging"
 )
@@ -52,28 +54,30 @@ import (
 
 // Deployer knows how to unzip and place packages into site root directory.
 type Deployer interface {
-	// DeployInstance installs a specific instance of a package into a site root
-	// directory. It unpacks the package into <root>/.cipd/pkgs/*, and rearranges
+	// DeployInstance installs an instance of a package into a site root.
+	//
+	// It unpacks the package into <root>/.cipd/pkgs/*, and rearranges
 	// symlinks to point to unpacked files. It tries to make it as "atomic" as
 	// possible. Returns information about the deployed instance.
-	DeployInstance(PackageInstance) (common.Pin, error)
+	DeployInstance(ctx context.Context, inst PackageInstance) (common.Pin, error)
 
-	// CheckDeployed checks whether a given package is deployed and returns
-	// information about installed version if it is or error if not.
-	CheckDeployed(packageName string) (common.Pin, error)
+	// CheckDeployed checks whether a given package is deployed.
+	//
+	// It returns information about installed version (or error if not installed).
+	CheckDeployed(ctx context.Context, packageName string) (common.Pin, error)
 
 	// FindDeployed returns a list of packages deployed to a site root.
-	FindDeployed() (out []common.Pin, err error)
+	FindDeployed(ctx context.Context) (out []common.Pin, err error)
 
 	// RemoveDeployed deletes a package given its name.
-	RemoveDeployed(packageName string) error
+	RemoveDeployed(ctx context.Context, packageName string) error
 
 	// TempFile returns os.File located in <root>/tmp/*.
-	TempFile(prefix string) (*os.File, error)
+	TempFile(ctx context.Context, prefix string) (*os.File, error)
 }
 
 // NewDeployer return default Deployer implementation.
-func NewDeployer(root string, logger logging.Logger) Deployer {
+func NewDeployer(root string) Deployer {
 	var err error
 	if root == "" {
 		err = fmt.Errorf("site root path is not provided")
@@ -83,10 +87,7 @@ func NewDeployer(root string, logger logging.Logger) Deployer {
 	if err != nil {
 		return errDeployer{err}
 	}
-	if logger == nil {
-		logger = logging.Null
-	}
-	return &deployerImpl{NewFileSystem(root, logger), logger}
+	return &deployerImpl{NewFileSystem(root)}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -94,11 +95,17 @@ func NewDeployer(root string, logger logging.Logger) Deployer {
 
 type errDeployer struct{ err error }
 
-func (d errDeployer) DeployInstance(PackageInstance) (common.Pin, error)   { return common.Pin{}, d.err }
-func (d errDeployer) CheckDeployed(packageName string) (common.Pin, error) { return common.Pin{}, d.err }
-func (d errDeployer) FindDeployed() (out []common.Pin, err error)          { return nil, d.err }
-func (d errDeployer) RemoveDeployed(packageName string) error              { return d.err }
-func (d errDeployer) TempFile(prefix string) (*os.File, error)             { return nil, d.err }
+func (d errDeployer) DeployInstance(context.Context, PackageInstance) (common.Pin, error) {
+	return common.Pin{}, d.err
+}
+
+func (d errDeployer) CheckDeployed(context.Context, string) (common.Pin, error) {
+	return common.Pin{}, d.err
+}
+
+func (d errDeployer) FindDeployed(context.Context) (out []common.Pin, err error) { return nil, d.err }
+func (d errDeployer) RemoveDeployed(context.Context, string) error               { return d.err }
+func (d errDeployer) TempFile(context.Context, string) (*os.File, error)         { return nil, d.err }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Real deployer implementation.
@@ -116,19 +123,18 @@ const currentTxt = "_current.txt"
 
 // deployerImpl implements Deployer interface.
 type deployerImpl struct {
-	fs     FileSystem
-	logger logging.Logger
+	fs FileSystem
 }
 
-func (d *deployerImpl) DeployInstance(inst PackageInstance) (common.Pin, error) {
+func (d *deployerImpl) DeployInstance(ctx context.Context, inst PackageInstance) (common.Pin, error) {
 	pin := inst.Pin()
-	d.logger.Infof("Deploying %s into %s", pin, d.fs.Root())
+	logging.Infof(ctx, "Deploying %s into %s", pin, d.fs.Root())
 
 	// Be paranoid.
 	if err := common.ValidatePin(pin); err != nil {
 		return common.Pin{}, err
 	}
-	if _, err := d.fs.EnsureDirectory(d.fs.Root()); err != nil {
+	if _, err := d.fs.EnsureDirectory(ctx, d.fs.Root()); err != nil {
 		return common.Pin{}, err
 	}
 
@@ -137,12 +143,12 @@ func (d *deployerImpl) DeployInstance(inst PackageInstance) (common.Pin, error) 
 	// and files will be moved to the site root later (in addToSiteRoot call).
 	// ExtractPackageInstance knows how to build full paths and how to atomically
 	// extract a package. No need to delete garbage if it fails.
-	pkgPath := d.packagePath(pin.PackageName)
+	pkgPath := d.packagePath(ctx, pin.PackageName)
 	destPath := filepath.Join(pkgPath, pin.InstanceID)
-	if err := ExtractInstance(inst, NewFileSystemDestination(destPath, d.fs)); err != nil {
+	if err := ExtractInstance(ctx, inst, NewFileSystemDestination(destPath, d.fs)); err != nil {
 		return common.Pin{}, err
 	}
-	newManifest, err := d.readManifest(destPath)
+	newManifest, err := d.readManifest(ctx, destPath)
 	if err != nil {
 		return common.Pin{}, err
 	}
@@ -152,25 +158,25 @@ func (d *deployerImpl) DeployInstance(inst PackageInstance) (common.Pin, error) 
 	prevInstanceID, err := d.getCurrentInstanceID(pkgPath)
 	prevManifest := Manifest{}
 	if err == nil && prevInstanceID != "" {
-		prevManifest, err = d.readManifest(filepath.Join(pkgPath, prevInstanceID))
+		prevManifest, err = d.readManifest(ctx, filepath.Join(pkgPath, prevInstanceID))
 	}
 	if err != nil {
-		d.logger.Warningf("Previous version of the package is broken: %s", err)
+		logging.Warningf(ctx, "Previous version of the package is broken: %s", err)
 		prevManifest = Manifest{} // to make sure prevManifest.Files == nil.
 	}
 
 	// Install all new files to the site root.
-	err = d.addToSiteRoot(newManifest.Files, newManifest.InstallMode, pkgPath, destPath)
+	err = d.addToSiteRoot(ctx, newManifest.Files, newManifest.InstallMode, pkgPath, destPath)
 	if err != nil {
-		d.fs.EnsureDirectoryGone(destPath)
+		d.fs.EnsureDirectoryGone(ctx, destPath)
 		return common.Pin{}, err
 	}
 
 	// Mark installed instance as a current one. After this call the package is
 	// considered installed and the function must not fail. All cleanup below is
 	// best effort.
-	if err = d.setCurrentInstanceID(pkgPath, pin.InstanceID); err != nil {
-		d.fs.EnsureDirectoryGone(destPath)
+	if err = d.setCurrentInstanceID(ctx, pkgPath, pin.InstanceID); err != nil {
+		d.fs.EnsureDirectoryGone(ctx, destPath)
 		return common.Pin{}, err
 	}
 
@@ -183,7 +189,7 @@ func (d *deployerImpl) DeployInstance(inst PackageInstance) (common.Pin, error) 
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			d.fs.EnsureDirectoryGone(filepath.Join(pkgPath, prevInstanceID))
+			d.fs.EnsureDirectoryGone(ctx, filepath.Join(pkgPath, prevInstanceID))
 		}()
 	}
 
@@ -202,25 +208,25 @@ func (d *deployerImpl) DeployInstance(inst PackageInstance) (common.Pin, error) 
 					toKill = append(toKill, f)
 				}
 			}
-			d.removeFromSiteRoot(toKill)
+			d.removeFromSiteRoot(ctx, toKill)
 		}()
 	}
 
 	// Verify it's all right.
-	newPin, err := d.CheckDeployed(pin.PackageName)
+	newPin, err := d.CheckDeployed(ctx, pin.PackageName)
 	if err == nil && newPin.InstanceID != pin.InstanceID {
 		err = fmt.Errorf("other instance (%s) was deployed concurrently", newPin.InstanceID)
 	}
 	if err == nil {
-		d.logger.Infof("Successfully deployed %s", pin)
+		logging.Infof(ctx, "Successfully deployed %s", pin)
 	} else {
-		d.logger.Errorf("Failed to deploy %s: %s", pin, err)
+		logging.Errorf(ctx, "Failed to deploy %s: %s", pin, err)
 	}
 	return newPin, err
 }
 
-func (d *deployerImpl) CheckDeployed(pkg string) (common.Pin, error) {
-	current, err := d.getCurrentInstanceID(d.packagePath(pkg))
+func (d *deployerImpl) CheckDeployed(ctx context.Context, pkg string) (common.Pin, error) {
+	current, err := d.getCurrentInstanceID(d.packagePath(ctx, pkg))
 	if err != nil {
 		return common.Pin{}, err
 	}
@@ -233,7 +239,7 @@ func (d *deployerImpl) CheckDeployed(pkg string) (common.Pin, error) {
 	}, nil
 }
 
-func (d *deployerImpl) FindDeployed() ([]common.Pin, error) {
+func (d *deployerImpl) FindDeployed(ctx context.Context) ([]common.Pin, error) {
 	// Directories with packages are direct children of .cipd/pkgs/.
 	pkgs := filepath.Join(d.fs.Root(), filepath.FromSlash(packagesDir))
 	infos, err := ioutil.ReadDir(pkgs)
@@ -256,7 +262,7 @@ func (d *deployerImpl) FindDeployed() ([]common.Pin, error) {
 		if err != nil || currentID == "" {
 			continue
 		}
-		manifest, err := d.readManifest(filepath.Join(pkgPath, currentID))
+		manifest, err := d.readManifest(ctx, filepath.Join(pkgPath, currentID))
 		if err != nil {
 			continue
 		}
@@ -280,32 +286,32 @@ func (d *deployerImpl) FindDeployed() ([]common.Pin, error) {
 	return out, nil
 }
 
-func (d *deployerImpl) RemoveDeployed(packageName string) error {
-	d.logger.Infof("Removing %s from %s", packageName, d.fs.Root())
+func (d *deployerImpl) RemoveDeployed(ctx context.Context, packageName string) error {
+	logging.Infof(ctx, "Removing %s from %s", packageName, d.fs.Root())
 	if err := common.ValidatePackageName(packageName); err != nil {
 		return err
 	}
-	pkgPath := d.packagePath(packageName)
+	pkgPath := d.packagePath(ctx, packageName)
 
 	// Read the manifest of the currently installed version.
 	manifest := Manifest{}
 	currentID, err := d.getCurrentInstanceID(pkgPath)
 	if err == nil && currentID != "" {
-		manifest, err = d.readManifest(filepath.Join(pkgPath, currentID))
+		manifest, err = d.readManifest(ctx, filepath.Join(pkgPath, currentID))
 	}
 
 	// Warn, but continue with removal anyway. EnsureDirectoryGone call below
 	// will nuke everything (even if it's half broken).
 	if err != nil {
-		d.logger.Warningf("Package %s is in a broken state: %s", packageName, err)
+		logging.Warningf(ctx, "Package %s is in a broken state: %s", packageName, err)
 	} else {
-		d.removeFromSiteRoot(manifest.Files)
+		d.removeFromSiteRoot(ctx, manifest.Files)
 	}
-	return d.fs.EnsureDirectoryGone(pkgPath)
+	return d.fs.EnsureDirectoryGone(ctx, pkgPath)
 }
 
-func (d *deployerImpl) TempFile(prefix string) (*os.File, error) {
-	dir, err := d.fs.EnsureDirectory(filepath.Join(d.fs.Root(), SiteServiceDir, "tmp"))
+func (d *deployerImpl) TempFile(ctx context.Context, prefix string) (*os.File, error) {
+	dir, err := d.fs.EnsureDirectory(ctx, filepath.Join(d.fs.Root(), SiteServiceDir, "tmp"))
 	if err != nil {
 		return nil, err
 	}
@@ -316,20 +322,21 @@ func (d *deployerImpl) TempFile(prefix string) (*os.File, error) {
 // Utility methods.
 
 // packagePath returns a path to a package directory in .cipd/pkgs/.
-func (d *deployerImpl) packagePath(pkg string) string {
+func (d *deployerImpl) packagePath(ctx context.Context, pkg string) string {
 	rel := filepath.Join(filepath.FromSlash(packagesDir), packageNameDigest(pkg))
 	abs, err := d.fs.RootRelToAbs(rel)
 	if err != nil {
 		msg := fmt.Sprintf("can't get absolute path of %q", rel)
-		d.logger.Errorf("%s", msg)
+		logging.Errorf(ctx, "%s", msg)
 		panic(msg)
 	}
 	return abs
 }
 
 // getCurrentInstanceID returns instance ID of currently installed instance
-// given a path to a package directory (.cipd/pkgs/<name>). It returns ("", nil)
-// if no package is installed there.
+// given a path to a package directory (.cipd/pkgs/<name>).
+//
+// It returns ("", nil) if no package is installed there.
 func (d *deployerImpl) getCurrentInstanceID(packageDir string) (string, error) {
 	var current string
 	var err error
@@ -355,21 +362,24 @@ func (d *deployerImpl) getCurrentInstanceID(packageDir string) (string, error) {
 	return current, nil
 }
 
-// setCurrentInstanceID changes a pointer to currently installed instance ID. It
-// takes a path to a package directory (.cipd/pkgs/<name>) as input.
-func (d *deployerImpl) setCurrentInstanceID(packageDir string, instanceID string) error {
+// setCurrentInstanceID changes a pointer to currently installed instance ID.
+//
+// It takes a path to a package directory (.cipd/pkgs/<name>) as input.
+func (d *deployerImpl) setCurrentInstanceID(ctx context.Context, packageDir, instanceID string) error {
 	if err := common.ValidateInstanceID(instanceID); err != nil {
 		return err
 	}
 	if runtime.GOOS == "windows" {
-		return EnsureFile(d.fs, filepath.Join(packageDir, currentTxt), strings.NewReader(instanceID))
+		return EnsureFile(
+			ctx, d.fs, filepath.Join(packageDir, currentTxt),
+			strings.NewReader(instanceID))
 	}
-	return d.fs.EnsureSymlink(filepath.Join(packageDir, currentSymlink), instanceID)
+	return d.fs.EnsureSymlink(ctx, filepath.Join(packageDir, currentSymlink), instanceID)
 }
 
 // readManifest reads package manifest given a path to a package instance
 // (.cipd/pkgs/<name>/<instance id>).
-func (d *deployerImpl) readManifest(instanceDir string) (Manifest, error) {
+func (d *deployerImpl) readManifest(ctx context.Context, instanceDir string) (Manifest, error) {
 	manifestPath := filepath.Join(instanceDir, filepath.FromSlash(manifestName))
 	r, err := os.Open(manifestPath)
 	if err != nil {
@@ -383,7 +393,7 @@ func (d *deployerImpl) readManifest(instanceDir string) (Manifest, error) {
 	// Older packages do not have Files section in the manifest, so reconstruct it
 	// from actual files on disk.
 	if len(manifest.Files) == 0 {
-		if manifest.Files, err = scanPackageDir(instanceDir, d.logger); err != nil {
+		if manifest.Files, err = scanPackageDir(ctx, instanceDir); err != nil {
 			return Manifest{}, err
 		}
 	}
@@ -392,7 +402,7 @@ func (d *deployerImpl) readManifest(instanceDir string) (Manifest, error) {
 
 // addToSiteRoot moves or symlinks files into the site root directory (depending
 // on passed installMode).
-func (d *deployerImpl) addToSiteRoot(files []FileInfo, installMode InstallMode, pkgDir, srcDir string) error {
+func (d *deployerImpl) addToSiteRoot(ctx context.Context, files []FileInfo, installMode InstallMode, pkgDir, srcDir string) error {
 	// On Windows only InstallModeCopy is supported.
 	if runtime.GOOS == "windows" {
 		installMode = InstallModeCopy
@@ -408,7 +418,7 @@ func (d *deployerImpl) addToSiteRoot(files []FileInfo, installMode InstallMode, 
 		relPath := filepath.FromSlash(f.Name)
 		destAbs, err := d.fs.RootRelToAbs(relPath)
 		if err != nil {
-			d.logger.Warningf("Invalid relative path %q: %s", relPath, err)
+			logging.Warningf(ctx, "Invalid relative path %q: %s", relPath, err)
 			return err
 		}
 		if installMode == InstallModeSymlink {
@@ -417,18 +427,20 @@ func (d *deployerImpl) addToSiteRoot(files []FileInfo, installMode InstallMode, 
 			// E.g. ../.cipd/pkgs/name/_current/bin/tool.
 			targetRel, err := filepath.Rel(filepath.Dir(destAbs), targetAbs)
 			if err != nil {
-				d.logger.Warningf("Can't get relative path from %s to %s", filepath.Dir(destAbs), targetAbs)
+				logging.Warningf(
+					ctx, "Can't get relative path from %s to %s",
+					filepath.Dir(destAbs), targetAbs)
 				return err
 			}
-			if err = d.fs.EnsureSymlink(destAbs, targetRel); err != nil {
-				d.logger.Warningf("Failed to create symlink for %s", relPath)
+			if err = d.fs.EnsureSymlink(ctx, destAbs, targetRel); err != nil {
+				logging.Warningf(ctx, "Failed to create symlink for %s", relPath)
 				return err
 			}
 		} else if installMode == InstallModeCopy {
 			// E.g. <root>/.cipd/pkgs/name/<id>/bin/tool.
 			srcAbs := filepath.Join(srcDir, relPath)
-			if err := d.fs.Replace(srcAbs, destAbs); err != nil {
-				d.logger.Warningf("Failed to move %s to %s: %s", srcAbs, destAbs, err)
+			if err := d.fs.Replace(ctx, srcAbs, destAbs); err != nil {
+				logging.Warningf(ctx, "Failed to move %s to %s: %s", srcAbs, destAbs, err)
 				return err
 			}
 		} else {
@@ -438,31 +450,33 @@ func (d *deployerImpl) addToSiteRoot(files []FileInfo, installMode InstallMode, 
 	}
 	// Best effort cleanup of empty directories after all files has been moved.
 	if installMode == InstallModeCopy {
-		d.removeEmptyDirs(srcDir)
+		d.removeEmptyDirs(ctx, srcDir)
 	}
 	return nil
 }
 
-// removeFromSiteRoot deletes files from the site root directory. Best effort.
-// Logs errors and carries on.
-func (d *deployerImpl) removeFromSiteRoot(files []FileInfo) {
+// removeFromSiteRoot deletes files from the site root directory.
+//
+// Best effort. Logs errors and carries on.
+func (d *deployerImpl) removeFromSiteRoot(ctx context.Context, files []FileInfo) {
 	for _, f := range files {
 		absPath, err := d.fs.RootRelToAbs(filepath.FromSlash(f.Name))
 		if err != nil {
-			d.logger.Warningf("Refusing to remove %q: %s", f.Name, err)
+			logging.Warningf(ctx, "Refusing to remove %q: %s", f.Name, err)
 			continue
 		}
-		if err := d.fs.EnsureFileGone(absPath); err != nil {
-			d.logger.Warningf("Failed to remove a file from the site root: %s", err)
+		if err := d.fs.EnsureFileGone(ctx, absPath); err != nil {
+			logging.Warningf(ctx, "Failed to remove a file from the site root: %s", err)
 		}
 	}
-	d.removeEmptyDirs(d.fs.Root())
+	d.removeEmptyDirs(ctx, d.fs.Root())
 }
 
-// removeEmptyDirs recursive removes empty directory subtrees (e.g. subtrees
-// that do not have any files). The root directory itself will not be removed
-// (even if it's empty). Best effort, logs errors.
-func (d *deployerImpl) removeEmptyDirs(root string) {
+// removeEmptyDirs recursive removes empty directory subtrees.
+//
+// The root directory itself will not be removed (even if it's empty). Best
+// effort, logs errors.
+func (d *deployerImpl) removeEmptyDirs(ctx context.Context, root string) {
 	// TODO(vadimsh): Implement.
 }
 
@@ -507,7 +521,7 @@ func packageNameDigest(pkg string) string {
 // paths relative to dir directory). Skips package service directories (.cipdpkg
 // and .cipd) since they contain package deployer gut files, not something that
 // needs to be deployed.
-func scanPackageDir(dir string, l logging.Logger) ([]FileInfo, error) {
+func scanPackageDir(ctx context.Context, dir string) ([]FileInfo, error) {
 	out := []FileInfo{}
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -526,7 +540,7 @@ func scanPackageDir(dir string, l logging.Logger) ([]FileInfo, error) {
 			if info.Mode()&os.ModeSymlink != 0 {
 				symlink, err = os.Readlink(path)
 				if err != nil {
-					l.Warningf("Can't readlink %q, skipping: %s", path, err)
+					logging.Warningf(ctx, "Can't readlink %q, skipping: %s", path, err)
 					ok = false
 				}
 			}

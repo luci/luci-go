@@ -15,8 +15,10 @@ import (
 )
 
 // MarshalWithSHA1 serializes proto message to bytes, calculates SHA1 checksum
-// of it, and returns serialized envelope that contains both. UnmarshalWithSHA1
-// can then be used to verify SHA1 and deserialized the original object.
+// of it, and returns serialized envelope that contains both.
+//
+// UnmarshalWithSHA1 can then be used to verify SHA1 and deserialized the
+// original object.
 func MarshalWithSHA1(pm proto.Message) ([]byte, error) {
 	blob, err := proto.Marshal(pm)
 	if err != nil {
@@ -27,8 +29,9 @@ func MarshalWithSHA1(pm proto.Message) ([]byte, error) {
 	return proto.Marshal(&envelope)
 }
 
-// UnmarshalWithSHA1 is reverse of MarshalWithSHA1. It checks SHA1 checksum
-// and deserializes the object if it matches the blob.
+// UnmarshalWithSHA1 is reverse of MarshalWithSHA1.
+//
+// It checks SHA1 checksum and deserializes the object if it matches the blob.
 func UnmarshalWithSHA1(buf []byte, pm proto.Message) error {
 	envelope := messages.BlobWithSHA1{}
 	if err := proto.Unmarshal(buf, &envelope); err != nil {

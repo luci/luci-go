@@ -13,13 +13,14 @@ import (
 	"os"
 	"path/filepath"
 
+	"golang.org/x/net/context"
+
 	"github.com/maruel/subcommands"
 
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/client/cipd"
 	"github.com/luci/luci-go/client/cipd/local"
 	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/logging"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -132,13 +133,14 @@ type installationSite struct {
 	siteRoot string                  // path to a site root directory
 	cfg      *installationSiteConfig // parsed .cipd/config.json file
 	client   cipd.Client             // initialized by initClient()
-	log      logging.Logger
 }
 
 // getInstallationSite finds site root directory, reads config and constructs
-// installationSite object. If siteRoot is "", will find a site root based on
-// the current directory, otherwise will use siteRoot. Doesn't create any new
-// files or directories, just reads what's on disk.
+// installationSite object.
+//
+// If siteRoot is "", will find a site root based on the current directory,
+// otherwise will use siteRoot. Doesn't create any new files or directories,
+// just reads what's on disk.
 func getInstallationSite(siteRoot string) (*installationSite, error) {
 	siteRoot, err := optionalSiteRoot(siteRoot)
 	if err != nil {
@@ -148,12 +150,13 @@ func getInstallationSite(siteRoot string) (*installationSite, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &installationSite{siteRoot, &cfg, nil, log}, nil
+	return &installationSite{siteRoot, &cfg, nil}, nil
 }
 
-// initInstallationSite creates new site root directory on disk and returns
-// corresponding *installationSite object. It does a bunch of sanity checks
-// (like whether rootDir is empty) that are skipped if 'force' is set to true.
+// initInstallationSite creates new site root directory on disk.
+//
+// It does a bunch of sanity checks (like whether rootDir is empty) that are
+// skipped if 'force' is set to true.
 func initInstallationSite(rootDir string, force bool) (*installationSite, error) {
 	rootDir, err := filepath.Abs(rootDir)
 	if err != nil {
@@ -195,9 +198,10 @@ func initInstallationSite(rootDir string, force bool) (*installationSite, error)
 	return site, nil
 }
 
-// initClient initializes cipd.Client to use to talk to backend. Can be called
-// only once. Use it directly via site.client.
-func (site *installationSite) initClient(authFlags authcli.Flags) (err error) {
+// initClient initializes cipd.Client to use to talk to backend.
+//
+// Can be called only once. Use it directly via site.client.
+func (site *installationSite) initClient(ctx context.Context, authFlags authcli.Flags) (err error) {
 	if site.client != nil {
 		return errors.New("client is already initialized")
 	}
@@ -206,16 +210,8 @@ func (site *installationSite) initClient(authFlags authcli.Flags) (err error) {
 		serviceURL: site.cfg.ServiceURL,
 		cacheDir:   site.cfg.CacheDir,
 	}
-	site.client, err = clientOpts.makeCipdClient(site.siteRoot)
-	return
-}
-
-// closeClient closes the underlying cipd.Client if necessary.
-func (site *installationSite) closeClient() {
-	if site.client != nil {
-		site.client.Close()
-		site.client = nil
-	}
+	site.client, err = clientOpts.makeCipdClient(ctx, site.siteRoot)
+	return err
 }
 
 // modifyConfig reads config file, calls callback to mutate it, then writes
@@ -232,14 +228,15 @@ func (site *installationSite) modifyConfig(cb func(cfg *installationSiteConfig) 
 	return c.write(path)
 }
 
-// installedPackages discovers versions of packages installed in the site. If
-// pkgs is empty array, it returns list of all installed packages.
-func (site *installationSite) installedPackages(pkgs []string) ([]pinInfo, error) {
-	d := local.NewDeployer(site.siteRoot, site.log)
+// installedPackages discovers versions of packages installed in the site.
+//
+// If pkgs is empty array, it returns list of all installed packages.
+func (site *installationSite) installedPackages(ctx context.Context, pkgs []string) ([]pinInfo, error) {
+	d := local.NewDeployer(site.siteRoot)
 
 	// List all?
 	if len(pkgs) == 0 {
-		pins, err := d.FindDeployed()
+		pins, err := d.FindDeployed(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -258,7 +255,7 @@ func (site *installationSite) installedPackages(pkgs []string) ([]pinInfo, error
 	// List specific packages only.
 	output := make([]pinInfo, len(pkgs))
 	for i, pkgName := range pkgs {
-		pin, err := d.CheckDeployed(pkgName)
+		pin, err := d.CheckDeployed(ctx, pkgName)
 		if err == nil {
 			output[i] = pinInfo{
 				Pkg:      pkgName,
@@ -276,10 +273,11 @@ func (site *installationSite) installedPackages(pkgs []string) ([]pinInfo, error
 	return output, nil
 }
 
-// installPackage installs (or updates) a package. If 'force' is true, it will
-// reinstall the package even if it is already marked as installed at requested
-// version. On errors returns (nil, error).
-func (site *installationSite) installPackage(pkgName, version string, force bool) (*pinInfo, error) {
+// installPackage installs (or updates) a package.
+//
+// If 'force' is true, it will reinstall the package even if it is already
+// marked as installed at requested version. On errors returns (nil, error).
+func (site *installationSite) installPackage(ctx context.Context, pkgName, version string, force bool) (*pinInfo, error) {
 	if site.client == nil {
 		return nil, errors.New("client is not initialized")
 	}
@@ -291,7 +289,7 @@ func (site *installationSite) installPackage(pkgName, version string, force bool
 	if version == "" {
 		version = "latest"
 	}
-	resolved, err := site.client.ResolveVersion(pkgName, version)
+	resolved, err := site.client.ResolveVersion(ctx, pkgName, version)
 	if err != nil {
 		return nil, err
 	}
@@ -299,8 +297,8 @@ func (site *installationSite) installPackage(pkgName, version string, force bool
 	// Already installed?
 	doInstall := true
 	if !force {
-		d := local.NewDeployer(site.siteRoot, site.log)
-		existing, err := d.CheckDeployed(pkgName)
+		d := local.NewDeployer(site.siteRoot)
+		existing, err := d.CheckDeployed(ctx, pkgName)
 		if err == nil && existing == resolved {
 			fmt.Printf("Package %s is up-to-date.\n", pkgName)
 			doInstall = false
@@ -310,7 +308,7 @@ func (site *installationSite) installPackage(pkgName, version string, force bool
 	// Go for it.
 	if doInstall {
 		fmt.Printf("Installing %s (version %q)...\n", pkgName, version)
-		if err := site.client.FetchAndDeployInstance(resolved); err != nil {
+		if err := site.client.FetchAndDeployInstance(ctx, resolved); err != nil {
 			return nil, err
 		}
 	}
@@ -399,7 +397,7 @@ type initRun struct {
 }
 
 func (c *initRun) Run(a subcommands.Application, args []string) int {
-	if !c.init(args, 0, 1) {
+	if !c.checkArgs(args, 0, 1) {
 		return 1
 	}
 	rootDir := "."
@@ -444,7 +442,7 @@ type installRun struct {
 }
 
 func (c *installRun) Run(a subcommands.Application, args []string) int {
-	if !c.init(args, 1, 2) {
+	if !c.checkArgs(args, 1, 2) {
 		return 1
 	}
 
@@ -471,12 +469,12 @@ func (c *installRun) Run(a subcommands.Application, args []string) int {
 	if err != nil {
 		return c.done(nil, err)
 	}
-	if err = site.initClient(c.authFlags); err != nil {
+
+	ctx := makeContext(&c.Subcommand)
+	if err = site.initClient(ctx, c.authFlags); err != nil {
 		return c.done(nil, err)
 	}
-	defer site.closeClient()
-
-	return c.done(site.installPackage(pkgName, version, c.force))
+	return c.done(site.installPackage(ctx, pkgName, version, c.force))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -500,12 +498,13 @@ type installedRun struct {
 }
 
 func (c *installedRun) Run(a subcommands.Application, args []string) int {
-	if !c.init(args, 0, -1) {
+	if !c.checkArgs(args, 0, -1) {
 		return 1
 	}
 	site, err := getInstallationSite(c.rootDir)
 	if err != nil {
 		return c.done(nil, err)
 	}
-	return c.doneWithPins(site.installedPackages(args))
+	ctx := makeContext(&c.Subcommand)
+	return c.doneWithPins(site.installedPackages(ctx, args))
 }

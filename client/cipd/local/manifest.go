@@ -31,13 +31,16 @@ const (
 type InstallMode string
 
 const (
-	// InstallModeSymlink is default (for backward compatibility). In this mode
-	// all files are extracted to .cipd/*/... and then symlinked to the site root
-	// directory. Version switch happens atomically.
+	// InstallModeSymlink is default (for backward compatibility).
+	//
+	// In this mode all files are extracted to .cipd/*/... and then symlinked to
+	// the site root directory. Version switch happens atomically.
 	InstallModeSymlink InstallMode = "symlink"
-	// InstallModeCopy is always used on Windows (and can be optionally) used on
-	// other OSes. In this mode package files are copied directly into the site
-	// root directory. If installation is aborted midway, the package may end up
+
+	// InstallModeCopy is used when files should be directly copied.
+	//
+	// This mode is always used on Windows (and can be optionally) used on
+	// other OSes. If installation is aborted midway, the package may end up
 	// in inconsistent state.
 	InstallModeCopy InstallMode = "copy"
 )
@@ -53,13 +56,18 @@ type Manifest struct {
 
 // FileInfo is JSON-ish struct with info extracted from File interface.
 type FileInfo struct {
-	// Name is slash separated file path relative to a package root, e.g. "dir/dir/file".
+	// Name is slash separated file path relative to a package root.
 	Name string `json:"name"`
+
 	// Size is a size of the file. 0 for symlinks.
 	Size uint64 `json:"size"`
-	// Executable is true if the file is executable. Only used for Linux\Mac archives. False for symlinks.
+
+	// Executable is true if the file is executable.
+	//
+	// Only used for Linux\Mac archives. False for symlinks.
 	Executable bool `json:"executable,omitempty"`
-	// Symlink is a path the symlink points to or "" if this file is not a symlink.
+
+	// Symlink is a path the symlink points to or "" if the file is not a symlink.
 	Symlink string `json:"symlink,omitempty"`
 }
 
@@ -70,9 +78,10 @@ type VersionFile struct {
 	InstanceID  string `json:"instance_id"`
 }
 
-// ValidateInstallMode returns non nil if install mode is invalid. Valid modes
-// are: "" (client will pick platform default), "copy" (aka InstallModeCopy),
-// "symlink" (aka InstallModeSymlink).
+// ValidateInstallMode returns non nil if install mode is invalid.
+//
+// Valid modes are: "" (client will pick platform default), "copy"
+// (aka InstallModeCopy), "symlink" (aka InstallModeSymlink).
 func ValidateInstallMode(mode InstallMode) error {
 	if mode == "" || mode == InstallModeCopy || mode == InstallModeSymlink {
 		return nil

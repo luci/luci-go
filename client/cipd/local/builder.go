@@ -14,34 +14,38 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/client/cipd/common"
 	"github.com/luci/luci-go/common/logging"
 )
 
 // BuildInstanceOptions defines options for BuildInstance function.
 type BuildInstanceOptions struct {
-	// List of files to add to the package.
+	// Input is a list of files to add to the package.
 	Input []File
-	// Where to write the package file to.
+
+	// Output is where to write the package file to.
 	Output io.Writer
-	// Package name, e.g. 'infra/tools/cipd'.
+
+	// PackageName is name of the package being built, e.g. 'infra/tools/cipd'.
 	PackageName string
+
 	// VersionFile is slash separated path where to drop JSON with version info.
 	VersionFile string
+
 	// InstallMode defines how to install the package: "copy" or "symlink".
 	InstallMode InstallMode
-	// Log defines logger to use.
-	Logger logging.Logger
 }
 
-// BuildInstance builds a new package instance for package named opts.PackageName
-// by archiving input files (passed via opts.Input). The final binary is written
-// to opts.Output. Some output may be written even if BuildInstance eventually
-// returns an error.
-func BuildInstance(opts BuildInstanceOptions) error {
-	if opts.Logger == nil {
-		opts.Logger = logging.Null
-	}
+// BuildInstance builds a new package instance.
+//
+// If build an instance of package named opts.PackageName by archiving input
+// files (passed via opts.Input).
+//
+// The final binary is written to opts.Output. Some output may be written even
+// if BuildInstance eventually returns an error.
+func BuildInstance(ctx context.Context, opts BuildInstanceOptions) error {
 	err := common.ValidatePackageName(opts.PackageName)
 	if err != nil {
 		return err
@@ -72,12 +76,12 @@ func BuildInstance(opts BuildInstanceOptions) error {
 	}
 
 	// Write the final zip file.
-	return zipInputFiles(files, opts.Output, opts.Logger)
+	return zipInputFiles(ctx, files, opts.Output)
 }
 
 // zipInputFiles deterministically builds a zip archive out of input files and
 // writes it to the writer. Files are written in the order given.
-func zipInputFiles(files []File, w io.Writer, log logging.Logger) error {
+func zipInputFiles(ctx context.Context, files []File, w io.Writer) error {
 	writer := zip.NewWriter(w)
 	defer writer.Close()
 
@@ -86,12 +90,17 @@ func zipInputFiles(files []File, w io.Writer, log logging.Logger) error {
 	progress := func(count int) {
 		if time.Since(lastReport) > time.Second {
 			lastReport = time.Now()
-			log.Infof("Zipping files: %d files left", len(files)-count)
+			logging.Infof(ctx, "Zipping files: %d files left", len(files)-count)
 		}
 	}
 
 	for i, in := range files {
 		progress(i)
+
+		// Bail out early if context is canceled.
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 
 		// Intentionally do not add timestamp or file mode to make zip archive
 		// deterministic. See also zip.FileInfoHeader() implementation.

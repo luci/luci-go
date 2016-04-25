@@ -15,6 +15,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/stringset"
@@ -38,25 +40,20 @@ const (
 type InstanceCache struct {
 	fs        local.FileSystem
 	stateLock sync.Mutex // synchronizes access to the state file.
-	logger    logging.Logger
 }
 
 // NewInstanceCache initializes InstanceCache.
+//
 // fs will be the root of the cache.
-func NewInstanceCache(fs local.FileSystem, logger logging.Logger) *InstanceCache {
-	if logger == nil {
-		logger = logging.Null
-	}
-	return &InstanceCache{
-		fs:     fs,
-		logger: logger,
-	}
+func NewInstanceCache(fs local.FileSystem) *InstanceCache {
+	return &InstanceCache{fs: fs}
 }
 
 // Get searches for the instance in the cache and writes its contents to output.
+//
 // If the instance is not found, returns an os.IsNotExists error without writing
 // to output.
-func (c *InstanceCache) Get(pin common.Pin, output io.Writer, now time.Time) error {
+func (c *InstanceCache) Get(ctx context.Context, pin common.Pin, output io.Writer, now time.Time) error {
 	if err := common.ValidatePin(pin); err != nil {
 		return err
 	}
@@ -72,7 +69,7 @@ func (c *InstanceCache) Get(pin common.Pin, output io.Writer, now time.Time) err
 	}
 	defer f.Close()
 
-	c.withState(now, func(s *messages.InstanceCache) {
+	c.withState(ctx, now, func(s *messages.InstanceCache) {
 		touch(s, pin.InstanceID, now)
 	})
 
@@ -81,9 +78,10 @@ func (c *InstanceCache) Get(pin common.Pin, output io.Writer, now time.Time) err
 }
 
 // Put caches an instance.
-// write must write the instance contents.
-// May remove some instances from the cache that were not accessed for a long time.
-func (c *InstanceCache) Put(pin common.Pin, now time.Time, write func(*os.File) error) error {
+//
+// write must write the instance contents. May remove some instances from the
+// cache that were not accessed for a long time.
+func (c *InstanceCache) Put(ctx context.Context, pin common.Pin, now time.Time, write func(*os.File) error) error {
 	if err := common.ValidatePin(pin); err != nil {
 		return err
 	}
@@ -92,13 +90,13 @@ func (c *InstanceCache) Put(pin common.Pin, now time.Time, write func(*os.File) 
 		return fmt.Errorf("invalid instance ID %q", pin.InstanceID)
 	}
 
-	if err := c.fs.EnsureFile(path, write); err != nil {
+	if err := c.fs.EnsureFile(ctx, path, write); err != nil {
 		return err
 	}
 
-	c.withState(now, func(s *messages.InstanceCache) {
+	c.withState(ctx, now, func(s *messages.InstanceCache) {
 		touch(s, pin.InstanceID, now)
-		c.gc(s)
+		c.gc(ctx, s)
 	})
 	return nil
 }
@@ -121,7 +119,7 @@ func (h *timeHeap) Pop() interface{} {
 
 // gc checks if the number of instances in the state is greater than maximum.
 // If yes, purges excessive oldest instances.
-func (c *InstanceCache) gc(state *messages.InstanceCache) {
+func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache) {
 	garbageSize := len(state.Entries) - instanceCacheMaxSize
 	if garbageSize <= 0 {
 		return
@@ -157,14 +155,14 @@ func (c *InstanceCache) gc(state *messages.InstanceCache) {
 		if err != nil {
 			panic("impossible")
 		}
-		if c.fs.EnsureFileGone(path) != nil {
+		if c.fs.EnsureFileGone(ctx, path) != nil {
 			// EnsureFileGone logs errors.
 			continue
 		}
 		delete(state.Entries, id)
 		collected++
 	}
-	c.logger.Infof("cipd: instance cache collected %d instances", collected)
+	logging.Infof(ctx, "cipd: instance cache collected %d instances", collected)
 }
 
 // readState loads cache state from the state file.
@@ -172,7 +170,7 @@ func (c *InstanceCache) gc(state *messages.InstanceCache) {
 // with the instance files for a long time, synchronizes it.
 // Newly discovered files are considered last accessed at zero time.
 // If synchronization fails, then the state is considered empty.
-func (c *InstanceCache) readState(state *messages.InstanceCache, now time.Time) {
+func (c *InstanceCache) readState(ctx context.Context, state *messages.InstanceCache, now time.Time) {
 	statePath, err := c.fs.RootRelToAbs(instanceCacheStateFilename)
 	if err != nil {
 		panic("impossible")
@@ -185,12 +183,12 @@ func (c *InstanceCache) readState(state *messages.InstanceCache, now time.Time) 
 		sync = true
 
 	case err != nil:
-		c.logger.Warningf("cipd: could not read instance cache - %s", err)
+		logging.Warningf(ctx, "cipd: could not read instance cache - %s", err)
 		sync = true
 
 	default:
 		if err := UnmarshalWithSHA1(stateBytes, state); err != nil {
-			c.logger.Warningf("cipd: instance cache file is corrupted - %s", err)
+			logging.Warningf(ctx, "cipd: instance cache file is corrupted - %s", err)
 			*state = messages.InstanceCache{}
 			sync = true
 		} else {
@@ -202,17 +200,17 @@ func (c *InstanceCache) readState(state *messages.InstanceCache, now time.Time) 
 	}
 
 	if sync {
-		if err := c.syncState(state, now); err != nil {
-			c.logger.Warningf("cipd: failed to sync instance cache - %s", err)
+		if err := c.syncState(ctx, state, now); err != nil {
+			logging.Warningf(ctx, "cipd: failed to sync instance cache - %s", err)
 		}
-		c.gc(state)
+		c.gc(ctx, state)
 	}
 }
 
 // syncState synchronizes the list of instances in the state file with instance files.
 // Preserves lastAccess of existing instances. Newly discovered files are
 // considered last accessed at zero time.
-func (c *InstanceCache) syncState(state *messages.InstanceCache, now time.Time) error {
+func (c *InstanceCache) syncState(ctx context.Context, state *messages.InstanceCache, now time.Time) error {
 	root, err := os.Open(c.fs.Root())
 	switch {
 
@@ -250,12 +248,12 @@ func (c *InstanceCache) syncState(state *messages.InstanceCache, now time.Time) 
 	}
 
 	state.LastSynced = google.NewTimestamp(now)
-	c.logger.Infof("cipd: synchronized instance cache with instance files")
+	logging.Infof(ctx, "cipd: synchronized instance cache with instance files")
 	return nil
 }
 
 // saveState persists the cache state.
-func (c *InstanceCache) saveState(state *messages.InstanceCache) error {
+func (c *InstanceCache) saveState(ctx context.Context, state *messages.InstanceCache) error {
 	stateBytes, err := MarshalWithSHA1(state)
 	if err != nil {
 		return err
@@ -266,38 +264,40 @@ func (c *InstanceCache) saveState(state *messages.InstanceCache) error {
 		panic("impossible")
 	}
 
-	return local.EnsureFile(c.fs, statePath, bytes.NewReader(stateBytes))
+	return local.EnsureFile(ctx, c.fs, statePath, bytes.NewReader(stateBytes))
 }
 
 // withState loads cache state from the state file, calls f and saves it back.
 // See also readState.
-func (c *InstanceCache) withState(now time.Time, f func(*messages.InstanceCache)) {
+func (c *InstanceCache) withState(ctx context.Context, now time.Time, f func(*messages.InstanceCache)) {
 	c.stateLock.Lock()
 	defer c.stateLock.Unlock()
 
 	state := &messages.InstanceCache{}
 
 	start := time.Now()
-	c.readState(state, now)
+	c.readState(ctx, state, now)
 	loadSaveTime := time.Since(start)
 
 	f(state)
 
 	start = time.Now()
-	if err := c.saveState(state); err != nil {
-		c.logger.Warningf("cipd: could not save instance cache - %s", err)
+	if err := c.saveState(ctx, state); err != nil {
+		logging.Warningf(ctx, "cipd: could not save instance cache - %s", err)
 	}
 	loadSaveTime += time.Since(start)
 
 	if loadSaveTime > time.Second {
-		c.logger.Warningf("cipd: loading and saving instance cache with %d entries took %s", len(state.Entries), loadSaveTime)
+		logging.Warningf(
+			ctx, "cipd: loading and saving instance cache with %d entries took %s",
+			len(state.Entries), loadSaveTime)
 	}
 }
 
 // getAccessTime returns last access time of an instance.
 // Used for testing.
-func (c *InstanceCache) getAccessTime(now time.Time, pin common.Pin) (lastAccess time.Time, ok bool) {
-	c.withState(now, func(s *messages.InstanceCache) {
+func (c *InstanceCache) getAccessTime(ctx context.Context, now time.Time, pin common.Pin) (lastAccess time.Time, ok bool) {
+	c.withState(ctx, now, func(s *messages.InstanceCache) {
 		var entry *messages.InstanceCache_Entry
 		if entry, ok = s.Entries[pin.InstanceID]; ok {
 			lastAccess = entry.LastAccess.Time()

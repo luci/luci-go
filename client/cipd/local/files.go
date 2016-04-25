@@ -12,40 +12,60 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/net/context"
 )
 
-// File defines a single file to be added or extracted from a package. All paths
-// are slash separated (including symlink targets).
+// File defines a single file to be added or extracted from a package.
+//
+// All paths are slash separated (including symlink targets).
 type File interface {
-	// Name returns slash separated file path relative to a package root, e.g. "dir/dir/file".
+	// Name returns slash separated file path relative to a package root
+	//
+	// For example "dir/dir/file".
 	Name() string
+
 	// Size returns size of the file. 0 for symlinks.
 	Size() uint64
-	// Executable returns true if the file is executable. Only used for Linux\Mac archives. false for symlinks.
+
+	// Executable returns true if the file is executable.
+	//
+	// Only used for Linux\Mac archives. false for symlinks.
 	Executable() bool
+
 	// Symlink returns true if the file is a symlink.
 	Symlink() bool
+
 	// SymlinkTarget return a path the symlink is pointing to.
 	SymlinkTarget() (string, error)
-	// Open opens the regular file for reading. Returns error for symlink files.
+
+	// Open opens the regular file for reading.
+	//
+	// Returns error for symlink files.
 	Open() (io.ReadCloser, error)
 }
 
-// Destination knows how to create files when extracting a package. It supports
-// transactional semantic by providing 'Begin' and 'End' methods. No changes
-// should be applied until End(true) is called. A call to End(false) should
-// discard any pending changes. All paths are slash separated.
+// Destination knows how to create files when extracting a package.
+//
+// It supports transactional semantic by providing 'Begin' and 'End' methods.
+// No changes should be applied until End(true) is called. A call to End(false)
+// should discard any pending changes. All paths are slash separated.
 type Destination interface {
 	// Begin initiates a new write transaction. Called before first CreateFile.
-	Begin() error
-	// CreateFile opens a writer to extract some package file to. 'name' must
-	// be a slash separated path relative to the destination root.
-	CreateFile(name string, executable bool) (io.WriteCloser, error)
-	// CreateSymlink creates a symlink (with absolute or relative target). 'name'
-	// must be a slash separated path relative to the destination root.
-	CreateSymlink(name string, target string) error
+	Begin(ctx context.Context) error
+
+	// CreateFile opens a writer to extract some package file to.
+	//
+	// 'name' must be a slash separated path relative to the destination root.
+	CreateFile(ctx context.Context, name string, executable bool) (io.WriteCloser, error)
+
+	// CreateSymlink creates a symlink (with absolute or relative target).
+	//
+	// 'name' must be a slash separated path relative to the destination root.
+	CreateSymlink(ctx context.Context, name string, target string) error
+
 	// End finalizes package extraction (commit or rollback, based on success).
-	End(success bool) error
+	End(ctx context.Context, success bool) error
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -264,12 +284,14 @@ type fileSystemDestination struct {
 }
 
 // NewFileSystemDestination returns a destination in the file system (directory)
-// to extract a package to. Will use a provided FileSystem object to operate on
-// files if given, otherwise use a default one. If FileSystem is provided, dir
-// must be in a subdirectory of the given FileSystem root.
+// to extract a package to.
+//
+// Will use a provided FileSystem object to operate on files if given, otherwise
+// use a default one. If FileSystem is provided, dir must be in a subdirectory
+// of the given FileSystem root.
 func NewFileSystemDestination(dir string, fs FileSystem) Destination {
 	if fs == nil {
-		fs = NewFileSystem(filepath.Dir(dir), nil)
+		fs = NewFileSystem(filepath.Dir(dir))
 	}
 	return &fileSystemDestination{
 		dir:       dir,
@@ -278,7 +300,7 @@ func NewFileSystemDestination(dir string, fs FileSystem) Destination {
 	}
 }
 
-func (d *fileSystemDestination) Begin() error {
+func (d *fileSystemDestination) Begin(ctx context.Context) error {
 	if d.tempDir != "" {
 		return fmt.Errorf("destination is already open")
 	}
@@ -288,14 +310,14 @@ func (d *fileSystemDestination) Begin() error {
 	if d.dir, err = d.fs.CwdRelToAbs(d.dir); err != nil {
 		return err
 	}
-	if _, err := d.fs.EnsureDirectory(filepath.Dir(d.dir)); err != nil {
+	if _, err := d.fs.EnsureDirectory(ctx, filepath.Dir(d.dir)); err != nil {
 		return err
 	}
 
 	// Called in case something below fails.
 	cleanup := func() {
 		if d.tempDir != "" {
-			d.fs.EnsureDirectoryGone(d.tempDir)
+			d.fs.EnsureDirectoryGone(ctx, d.tempDir)
 		}
 		d.tempDir = ""
 		d.outDir = ""
@@ -309,7 +331,7 @@ func (d *fileSystemDestination) Begin() error {
 	}
 
 	// Create a staging output directory where everything will be extracted.
-	d.outDir, err = d.fs.EnsureDirectory(filepath.Join(d.tempDir, "x"))
+	d.outDir, err = d.fs.EnsureDirectory(ctx, filepath.Join(d.tempDir, "x"))
 	if err != nil {
 		cleanup()
 		return err
@@ -318,12 +340,12 @@ func (d *fileSystemDestination) Begin() error {
 	return nil
 }
 
-func (d *fileSystemDestination) CreateFile(name string, executable bool) (io.WriteCloser, error) {
+func (d *fileSystemDestination) CreateFile(ctx context.Context, name string, executable bool) (io.WriteCloser, error) {
 	if _, ok := d.openFiles[name]; ok {
 		return nil, fmt.Errorf("file %s is already open", name)
 	}
 
-	path, err := d.prepareFilePath(name)
+	path, err := d.prepareFilePath(ctx, name)
 	if err != nil {
 		return nil, err
 	}
@@ -350,8 +372,8 @@ func (d *fileSystemDestination) CreateFile(name string, executable bool) (io.Wri
 	}, nil
 }
 
-func (d *fileSystemDestination) CreateSymlink(name string, target string) error {
-	path, err := d.prepareFilePath(name)
+func (d *fileSystemDestination) CreateSymlink(ctx context.Context, name string, target string) error {
+	path, err := d.prepareFilePath(ctx, name)
 	if err != nil {
 		return err
 	}
@@ -365,10 +387,10 @@ func (d *fileSystemDestination) CreateSymlink(name string, target string) error 
 		}
 	}
 
-	return d.fs.EnsureSymlink(path, target)
+	return d.fs.EnsureSymlink(ctx, path, target)
 }
 
-func (d *fileSystemDestination) End(success bool) error {
+func (d *fileSystemDestination) End(ctx context.Context, success bool) error {
 	if d.tempDir == "" {
 		return fmt.Errorf("destination is not open")
 	}
@@ -378,23 +400,24 @@ func (d *fileSystemDestination) End(success bool) error {
 
 	// Clean up temp dir and the state no matter what.
 	defer func() {
-		d.fs.EnsureDirectoryGone(d.tempDir)
+		d.fs.EnsureDirectoryGone(ctx, d.tempDir)
 		d.tempDir = ""
 		d.outDir = ""
 	}()
 
 	if success {
-		return d.fs.Replace(d.outDir, d.dir)
+		return d.fs.Replace(ctx, d.outDir, d.dir)
 	}
 	// Let the defer to clean the garbage in tempDir.
 	return nil
 }
 
-// prepareFilePath performs steps common to CreateFile and CreateSymlink: it
-// does some validation, expands "name" to an absolute path and creates parent
-// directories for a future file. Returns absolute path where the file should
-// be put.
-func (d *fileSystemDestination) prepareFilePath(name string) (string, error) {
+// prepareFilePath performs steps common to CreateFile and CreateSymlink.
+//
+// It does some validation, expands "name" to an absolute path and creates
+// parent directories for a future file. Returns absolute path where the file
+// should be put.
+func (d *fileSystemDestination) prepareFilePath(ctx context.Context, name string) (string, error) {
 	if d.tempDir == "" {
 		return "", fmt.Errorf("destination is not open")
 	}
@@ -402,7 +425,7 @@ func (d *fileSystemDestination) prepareFilePath(name string) (string, error) {
 	if !isSubpath(path, d.outDir) {
 		return "", fmt.Errorf("invalid relative file name: %s", name)
 	}
-	if _, err := d.fs.EnsureDirectory(filepath.Dir(path)); err != nil {
+	if _, err := d.fs.EnsureDirectory(ctx, filepath.Dir(path)); err != nil {
 		return "", err
 	}
 	return path, nil

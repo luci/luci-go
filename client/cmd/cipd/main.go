@@ -23,9 +23,8 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/net/context"
-
 	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/errors"
@@ -38,9 +37,6 @@ import (
 	"github.com/luci/luci-go/client/cipd/local"
 	"github.com/luci/luci-go/client/cipd/version"
 )
-
-// log is also overwritten in Subcommand's init.
-var log = gologger.StdConfig.NewLogger(nil)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Common subcommand functions.
@@ -81,10 +77,11 @@ func (c *Subcommand) registerBaseFlags() {
 	c.Flags.BoolVar(&c.verbose, "verbose", false, "Enable more logging.")
 }
 
-// init initializes subcommand state (including global logger). It ensures all
-// required positional and flag-like parameters are set. Returns true if they
-// are, or false (and prints to stderr) if not.
-func (c *Subcommand) init(args []string, minPosCount, maxPosCount int) bool {
+// checkArgs checks command line args.
+//
+// It ensures all required positional and flag-like parameters are set.
+// Returns true if they are, or false (and prints to stderr) if not.
+func (c *Subcommand) checkArgs(args []string, minPosCount, maxPosCount int) bool {
 	// Check number of expected positional arguments.
 	if maxPosCount == 0 && len(args) != 0 {
 		c.printError(makeCLIError("unexpected arguments %v", args))
@@ -125,18 +122,6 @@ func (c *Subcommand) init(args []string, minPosCount, maxPosCount int) bool {
 		return false
 	}
 
-	// Setup logger.
-	loggerConfig := gologger.LoggerConfig{
-		Format: `[P%{pid} %{time:15:04:05.000} %{shortfile} %{level:.1s}] %{message}`,
-		Out:    os.Stderr,
-	}
-
-	ctx := context.Background()
-	if c.verbose {
-		ctx = logging.SetLevel(ctx, logging.Debug)
-	}
-	ctx = loggerConfig.Use(ctx)
-	log = logging.Get(ctx)
 	return true
 }
 
@@ -244,20 +229,22 @@ func (opts *ClientOptions) registerFlags(f *flag.FlagSet) {
 	opts.authFlags.Register(f, auth.Options{})
 }
 
-func (opts *ClientOptions) makeCipdClient(root string) (cipd.Client, error) {
+func (opts *ClientOptions) makeCipdClient(ctx context.Context, root string) (cipd.Client, error) {
 	authOpts, err := opts.authFlags.Options()
 	if err != nil {
 		return nil, err
 	}
-	authOpts.Logger = log
+	authOpts.Context = ctx
+	client, err := auth.NewAuthenticator(auth.OptionalLogin, authOpts).Client()
+	if err != nil {
+		return nil, err
+	}
 	return cipd.NewClient(cipd.ClientOptions{
-		ServiceURL: opts.serviceURL,
-		Root:       root,
-		Logger:     log,
-		CacheDir:   opts.cacheDir,
-		AuthenticatedClientFactory: func() (*http.Client, error) {
-			return auth.NewAuthenticator(auth.OptionalLogin, authOpts).Client()
-		},
+		ServiceURL:          opts.serviceURL,
+		Root:                root,
+		CacheDir:            opts.cacheDir,
+		AuthenticatedClient: client,
+		AnonymousClient:     http.DefaultClient,
 	}), nil
 }
 
@@ -321,53 +308,51 @@ func (opts *InputOptions) registerFlags(f *flag.FlagSet) {
 // a package and populating BuildInstanceOptions. Caller is still responsible to
 // fill out Output field of BuildInstanceOptions.
 func (opts *InputOptions) prepareInput() (local.BuildInstanceOptions, error) {
-	out := local.BuildInstanceOptions{Logger: log}
+	empty := local.BuildInstanceOptions{}
 
 	// Handle -name and -in if defined. Do not allow -pkg-def and -pkg-var in that case.
 	if opts.inputDir != "" {
 		if opts.packageName == "" {
-			return out, makeCLIError("missing required flag: -name")
+			return empty, makeCLIError("missing required flag: -name")
 		}
 		if opts.packageDef != "" {
-			return out, makeCLIError("-pkg-def and -in can not be used together")
+			return empty, makeCLIError("-pkg-def and -in can not be used together")
 		}
 		if len(opts.vars) != 0 {
-			return out, makeCLIError("-pkg-var and -in can not be used together")
+			return empty, makeCLIError("-pkg-var and -in can not be used together")
 		}
 
 		// Simply enumerate files in the directory.
 		var files []local.File
 		files, err := local.ScanFileSystem(opts.inputDir, opts.inputDir, nil)
 		if err != nil {
-			return out, err
+			return empty, err
 		}
-		out = local.BuildInstanceOptions{
+		return local.BuildInstanceOptions{
 			Input:       files,
 			PackageName: opts.packageName,
 			InstallMode: opts.installMode,
-			Logger:      log,
-		}
-		return out, nil
+		}, nil
 	}
 
 	// Handle -pkg-def case. -in is "" (already checked), reject -name.
 	if opts.packageDef != "" {
 		if opts.packageName != "" {
-			return out, makeCLIError("-pkg-def and -name can not be used together")
+			return empty, makeCLIError("-pkg-def and -name can not be used together")
 		}
 		if opts.installMode != "" {
-			return out, makeCLIError("-install-mode is ignored if -pkd-def is used")
+			return empty, makeCLIError("-install-mode is ignored if -pkd-def is used")
 		}
 
 		// Parse the file, perform variable substitution.
 		f, err := os.Open(opts.packageDef)
 		if err != nil {
-			return out, err
+			return empty, err
 		}
 		defer f.Close()
 		pkgDef, err := local.LoadPackageDef(f, opts.vars)
 		if err != nil {
-			return out, err
+			return empty, err
 		}
 
 		// Scan the file system. Package definition may use path relative to the
@@ -375,20 +360,18 @@ func (opts *InputOptions) prepareInput() (local.BuildInstanceOptions, error) {
 		fmt.Println("Enumerating files to zip...")
 		files, err := pkgDef.FindFiles(filepath.Dir(opts.packageDef))
 		if err != nil {
-			return out, err
+			return empty, err
 		}
-		out = local.BuildInstanceOptions{
+		return local.BuildInstanceOptions{
 			Input:       files,
 			PackageName: pkgDef.Package,
 			VersionFile: pkgDef.VersionFile(),
 			InstallMode: pkgDef.InstallMode,
-			Logger:      log,
-		}
-		return out, nil
+		}, nil
 	}
 
 	// All command line options are missing.
-	return out, makeCLIError("-pkg-def or -name/-in are required")
+	return empty, makeCLIError("-pkg-def or -name/-in are required")
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -489,11 +472,11 @@ type batchOperation struct {
 // expandPkgDir takes a package name or '<prefix>/' and returns a list
 // of matching packages (asking backend if necessary). Doesn't recurse, returns
 // only direct children.
-func expandPkgDir(c cipd.Client, packagePrefix string) ([]string, error) {
+func expandPkgDir(ctx context.Context, c cipd.Client, packagePrefix string) ([]string, error) {
 	if !strings.HasSuffix(packagePrefix, "/") {
 		return []string{packagePrefix}, nil
 	}
-	pkgs, err := c.ListPackages(packagePrefix, false)
+	pkgs, err := c.ListPackages(ctx, packagePrefix, false)
 	if err != nil {
 		return nil, err
 	}
@@ -512,11 +495,11 @@ func expandPkgDir(c cipd.Client, packagePrefix string) ([]string, error) {
 
 // performBatchOperation expands a package prefix into a list of packages and
 // calls callback for each of them (concurrently) gathering the results.
-func performBatchOperation(op batchOperation) ([]pinInfo, error) {
+func performBatchOperation(ctx context.Context, op batchOperation) ([]pinInfo, error) {
 	pkgs := op.packages
 	if len(pkgs) == 0 {
 		var err error
-		pkgs, err = expandPkgDir(op.client, op.packagePrefix)
+		pkgs, err = expandPkgDir(ctx, op.client, op.packagePrefix)
 		if err != nil {
 			return nil, err
 		}
@@ -604,17 +587,16 @@ var cmdCreate = &subcommands.Command{
 	CommandRun: func() subcommands.CommandRun {
 		c := &createRun{}
 		c.registerBaseFlags()
-		c.InputOptions.registerFlags(&c.Flags)
-		c.RefsOptions.registerFlags(&c.Flags)
-		c.TagsOptions.registerFlags(&c.Flags)
-		c.ClientOptions.registerFlags(&c.Flags)
-		c.UploadOptions.registerFlags(&c.Flags)
+		c.Opts.InputOptions.registerFlags(&c.Flags)
+		c.Opts.RefsOptions.registerFlags(&c.Flags)
+		c.Opts.TagsOptions.registerFlags(&c.Flags)
+		c.Opts.ClientOptions.registerFlags(&c.Flags)
+		c.Opts.UploadOptions.registerFlags(&c.Flags)
 		return c
 	},
 }
 
-type createRun struct {
-	Subcommand
+type createOpts struct {
 	InputOptions
 	RefsOptions
 	TagsOptions
@@ -622,15 +604,21 @@ type createRun struct {
 	UploadOptions
 }
 
-func (c *createRun) Run(a subcommands.Application, args []string) int {
-	if !c.init(args, 0, 0) {
-		return 1
-	}
-	return c.done(buildAndUploadInstance(c.InputOptions, c.RefsOptions, c.TagsOptions, c.ClientOptions, c.UploadOptions))
+type createRun struct {
+	Subcommand
+
+	Opts createOpts
 }
 
-func buildAndUploadInstance(inputOpts InputOptions, refsOpts RefsOptions,
-	tagsOpts TagsOptions, clientOpts ClientOptions, uploadOpts UploadOptions) (common.Pin, error) {
+func (c *createRun) Run(a subcommands.Application, args []string) int {
+	if !c.checkArgs(args, 0, 0) {
+		return 1
+	}
+	ctx := makeContext(&c.Subcommand)
+	return c.done(buildAndUploadInstance(ctx, &c.Opts))
+}
+
+func buildAndUploadInstance(ctx context.Context, opts *createOpts) (common.Pin, error) {
 	f, err := ioutil.TempFile("", "cipd_pkg")
 	if err != nil {
 		return common.Pin{}, err
@@ -639,11 +627,16 @@ func buildAndUploadInstance(inputOpts InputOptions, refsOpts RefsOptions,
 		f.Close()
 		os.Remove(f.Name())
 	}()
-	err = buildInstanceFile(f.Name(), inputOpts)
+	err = buildInstanceFile(ctx, f.Name(), opts.InputOptions)
 	if err != nil {
 		return common.Pin{}, err
 	}
-	return registerInstanceFile(f.Name(), refsOpts, tagsOpts, clientOpts, uploadOpts)
+	return registerInstanceFile(ctx, f.Name(), &registerOpts{
+		RefsOptions:   opts.RefsOptions,
+		TagsOptions:   opts.TagsOptions,
+		ClientOptions: opts.ClientOptions,
+		UploadOptions: opts.UploadOptions,
+	})
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -675,29 +668,29 @@ type ensureRun struct {
 }
 
 func (c *ensureRun) Run(a subcommands.Application, args []string) int {
-	if !c.init(args, 0, 0) {
+	if !c.checkArgs(args, 0, 0) {
 		return 1
 	}
-	currentPins, _, err := ensurePackages(c.rootDir, c.listFile, false, c.ClientOptions)
+	ctx := makeContext(&c.Subcommand)
+	currentPins, _, err := ensurePackages(ctx, c.rootDir, c.listFile, false, c.ClientOptions)
 	return c.done(currentPins, err)
 }
 
-func ensurePackages(root string, desiredStateFile string, dryRun bool, clientOpts ClientOptions) ([]common.Pin, cipd.Actions, error) {
+func ensurePackages(ctx context.Context, root string, desiredStateFile string, dryRun bool, clientOpts ClientOptions) ([]common.Pin, cipd.Actions, error) {
 	f, err := os.Open(desiredStateFile)
 	if err != nil {
 		return nil, cipd.Actions{}, err
 	}
 	defer f.Close()
-	client, err := clientOpts.makeCipdClient(root)
+	client, err := clientOpts.makeCipdClient(ctx, root)
 	if err != nil {
 		return nil, cipd.Actions{}, err
 	}
-	defer client.Close()
-	desiredState, err := client.ProcessEnsureFile(f)
+	desiredState, err := client.ProcessEnsureFile(ctx, f)
 	if err != nil {
 		return nil, cipd.Actions{}, err
 	}
-	actions, err := client.EnsurePackages(desiredState, dryRun)
+	actions, err := client.EnsurePackages(ctx, desiredState, dryRun)
 	if err != nil {
 		return nil, actions, err
 	}
@@ -736,10 +729,11 @@ type checkUpdatesRun struct {
 }
 
 func (c *checkUpdatesRun) Run(a subcommands.Application, args []string) int {
-	if !c.init(args, 0, 0) {
+	if !c.checkArgs(args, 0, 0) {
 		return 1
 	}
-	_, actions, err := ensurePackages(c.rootDir, c.listFile, true, c.ClientOptions)
+	ctx := makeContext(&c.Subcommand)
+	_, actions, err := ensurePackages(ctx, c.rootDir, c.listFile, true, c.ClientOptions)
 	if err != nil {
 		ret := c.done(actions, err)
 		if errors.IsTransient(err) {
@@ -778,23 +772,23 @@ type resolveRun struct {
 }
 
 func (c *resolveRun) Run(a subcommands.Application, args []string) int {
-	if !c.init(args, 1, 1) {
+	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	return c.doneWithPins(resolveVersion(args[0], c.version, c.ClientOptions))
+	ctx := makeContext(&c.Subcommand)
+	return c.doneWithPins(resolveVersion(ctx, args[0], c.version, c.ClientOptions))
 }
 
-func resolveVersion(packagePrefix, version string, clientOpts ClientOptions) ([]pinInfo, error) {
-	client, err := clientOpts.makeCipdClient("")
+func resolveVersion(ctx context.Context, packagePrefix, version string, clientOpts ClientOptions) ([]pinInfo, error) {
+	client, err := clientOpts.makeCipdClient(ctx, "")
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close()
-	return performBatchOperation(batchOperation{
+	return performBatchOperation(ctx, batchOperation{
 		client:        client,
 		packagePrefix: packagePrefix,
 		callback: func(pkg string) (common.Pin, error) {
-			return client.ResolveVersion(pkg, version)
+			return client.ResolveVersion(ctx, pkg, version)
 		},
 	})
 }
@@ -824,21 +818,21 @@ type describeRun struct {
 }
 
 func (c *describeRun) Run(a subcommands.Application, args []string) int {
-	if !c.init(args, 1, 1) {
+	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	return c.done(describeInstance(args[0], c.version, c.ClientOptions))
+	ctx := makeContext(&c.Subcommand)
+	return c.done(describeInstance(ctx, args[0], c.version, c.ClientOptions))
 }
 
-func describeInstance(pkg, version string, clientOpts ClientOptions) (*describeOutput, error) {
-	client, err := clientOpts.makeCipdClient("")
+func describeInstance(ctx context.Context, pkg, version string, clientOpts ClientOptions) (*describeOutput, error) {
+	client, err := clientOpts.makeCipdClient(ctx, "")
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close()
 
 	// Grab instance ID.
-	pin, err := client.ResolveVersion(pkg, version)
+	pin, err := client.ResolveVersion(ctx, pkg, version)
 	if err != nil {
 		return nil, err
 	}
@@ -850,7 +844,7 @@ func describeInstance(pkg, version string, clientOpts ClientOptions) (*describeO
 	var infoErr error
 	wg.Add(1)
 	go func() {
-		info, infoErr = client.FetchInstanceInfo(pin)
+		info, infoErr = client.FetchInstanceInfo(ctx, pin)
 		wg.Done()
 	}()
 
@@ -859,7 +853,7 @@ func describeInstance(pkg, version string, clientOpts ClientOptions) (*describeO
 	var refsErr error
 	wg.Add(1)
 	go func() {
-		refs, refsErr = client.FetchInstanceRefs(pin, nil)
+		refs, refsErr = client.FetchInstanceRefs(ctx, pin, nil)
 		wg.Done()
 	}()
 
@@ -868,7 +862,7 @@ func describeInstance(pkg, version string, clientOpts ClientOptions) (*describeO
 	var tagsErr error
 	wg.Add(1)
 	go func() {
-		tags, tagsErr = client.FetchInstanceTags(pin, nil)
+		tags, tagsErr = client.FetchInstanceTags(ctx, pin, nil)
 		wg.Done()
 	}()
 
@@ -934,38 +928,50 @@ type setRefRun struct {
 }
 
 func (c *setRefRun) Run(a subcommands.Application, args []string) int {
-	if !c.init(args, 1, 1) {
+	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
 	if len(c.refs) == 0 {
 		return c.done(nil, makeCLIError("at least one -ref must be provided"))
 	}
-	return c.doneWithPins(setRefOrTag(args[0], c.version, c.ClientOptions,
-		func(client cipd.Client, pin common.Pin) error {
+	ctx := makeContext(&c.Subcommand)
+	return c.doneWithPins(setRefOrTag(ctx, &setRefOrTagArgs{
+		ClientOptions: c.ClientOptions,
+		packagePrefix: args[0],
+		version:       c.version,
+		updatePin: func(client cipd.Client, pin common.Pin) error {
 			for _, ref := range c.refs {
-				if err := client.SetRefWhenReady(ref, pin); err != nil {
+				if err := client.SetRefWhenReady(ctx, ref, pin); err != nil {
 					return err
 				}
 			}
 			return nil
-		}))
+		},
+	}))
 }
 
-func setRefOrTag(packagePrefix, version string, clientOpts ClientOptions,
-	updatePin func(client cipd.Client, pin common.Pin) error) ([]pinInfo, error) {
-	client, err := clientOpts.makeCipdClient("")
+type setRefOrTagArgs struct {
+	ClientOptions
+
+	packagePrefix string
+	version       string
+
+	updatePin func(client cipd.Client, pin common.Pin) error
+}
+
+func setRefOrTag(ctx context.Context, args *setRefOrTagArgs) ([]pinInfo, error) {
+	client, err := args.ClientOptions.makeCipdClient(ctx, "")
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close()
 
 	// Do not touch anything if some packages do not have requested version. So
 	// resolve versions first and only then move refs.
-	pins, err := performBatchOperation(batchOperation{
+	pins, err := performBatchOperation(ctx, batchOperation{
 		client:        client,
-		packagePrefix: packagePrefix,
+		packagePrefix: args.packagePrefix,
 		callback: func(pkg string) (common.Pin, error) {
-			return client.ResolveVersion(pkg, version)
+			return client.ResolveVersion(ctx, pkg, args.version)
 		},
 	})
 	if err != nil {
@@ -973,7 +979,7 @@ func setRefOrTag(packagePrefix, version string, clientOpts ClientOptions,
 	}
 	if hasErrors(pins) {
 		printPinsAndError(pins)
-		return nil, fmt.Errorf("can't find %q version in all packages, aborting", version)
+		return nil, fmt.Errorf("can't find %q version in all packages, aborting", args.version)
 	}
 
 	// Prepare for the next batch call.
@@ -985,12 +991,12 @@ func setRefOrTag(packagePrefix, version string, clientOpts ClientOptions,
 	}
 
 	// Update all refs or tags.
-	return performBatchOperation(batchOperation{
+	return performBatchOperation(ctx, batchOperation{
 		client:   client,
 		packages: packages,
 		callback: func(pkg string) (common.Pin, error) {
 			pin := pinsToUse[pkg]
-			if err := updatePin(client, pin); err != nil {
+			if err := args.updatePin(client, pin); err != nil {
 				return common.Pin{}, err
 			}
 			return pin, nil
@@ -1025,16 +1031,21 @@ type setTagRun struct {
 }
 
 func (c *setTagRun) Run(a subcommands.Application, args []string) int {
-	if !c.init(args, 1, 1) {
+	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
 	if len(c.tags) == 0 {
 		return c.done(nil, makeCLIError("at least one -tag must be provided"))
 	}
-	return c.done(setRefOrTag(args[0], c.version, c.ClientOptions,
-		func(client cipd.Client, pin common.Pin) error {
-			return client.AttachTagsWhenReady(pin, c.tags)
-		}))
+	ctx := makeContext(&c.Subcommand)
+	return c.done(setRefOrTag(ctx, &setRefOrTagArgs{
+		ClientOptions: c.ClientOptions,
+		packagePrefix: args[0],
+		version:       c.version,
+		updatePin: func(client cipd.Client, pin common.Pin) error {
+			return client.AttachTagsWhenReady(ctx, pin, c.tags)
+		},
+	}))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1062,23 +1073,23 @@ type listPackagesRun struct {
 }
 
 func (c *listPackagesRun) Run(a subcommands.Application, args []string) int {
-	if !c.init(args, 0, 1) {
+	if !c.checkArgs(args, 0, 1) {
 		return 1
 	}
 	path := ""
 	if len(args) == 1 {
 		path = args[0]
 	}
-	return c.done(listPackages(path, c.recursive, c.ClientOptions))
+	ctx := makeContext(&c.Subcommand)
+	return c.done(listPackages(ctx, path, c.recursive, c.ClientOptions))
 }
 
-func listPackages(path string, recursive bool, clientOpts ClientOptions) ([]string, error) {
-	client, err := clientOpts.makeCipdClient("")
+func listPackages(ctx context.Context, path string, recursive bool, clientOpts ClientOptions) ([]string, error) {
+	client, err := clientOpts.makeCipdClient(ctx, "")
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close()
-	packages, err := client.ListPackages(path, recursive)
+	packages, err := client.ListPackages(ctx, path, recursive)
 	if err != nil {
 		return nil, err
 	}
@@ -1115,7 +1126,7 @@ type searchRun struct {
 }
 
 func (c *searchRun) Run(a subcommands.Application, args []string) int {
-	if !c.init(args, 0, 1) {
+	if !c.checkArgs(args, 0, 1) {
 		return 1
 	}
 	if len(c.tags) != 1 {
@@ -1125,16 +1136,16 @@ func (c *searchRun) Run(a subcommands.Application, args []string) int {
 	if len(args) == 1 {
 		packageName = args[0]
 	}
-	return c.done(searchInstances(packageName, c.tags[0], c.ClientOptions))
+	ctx := makeContext(&c.Subcommand)
+	return c.done(searchInstances(ctx, packageName, c.tags[0], c.ClientOptions))
 }
 
-func searchInstances(packageName, tag string, clientOpts ClientOptions) ([]common.Pin, error) {
-	client, err := clientOpts.makeCipdClient("")
+func searchInstances(ctx context.Context, packageName, tag string, clientOpts ClientOptions) ([]common.Pin, error) {
+	client, err := clientOpts.makeCipdClient(ctx, "")
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close()
-	pins, err := client.SearchInstances(tag, packageName)
+	pins, err := client.SearchInstances(ctx, tag, packageName)
 	if err != nil {
 		return nil, err
 	}
@@ -1170,19 +1181,19 @@ type listACLRun struct {
 }
 
 func (c *listACLRun) Run(a subcommands.Application, args []string) int {
-	if !c.init(args, 1, 1) {
+	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	return c.done(listACL(args[0], c.ClientOptions))
+	ctx := makeContext(&c.Subcommand)
+	return c.done(listACL(ctx, args[0], c.ClientOptions))
 }
 
-func listACL(packagePath string, clientOpts ClientOptions) (map[string][]cipd.PackageACL, error) {
-	client, err := clientOpts.makeCipdClient("")
+func listACL(ctx context.Context, packagePath string, clientOpts ClientOptions) (map[string][]cipd.PackageACL, error) {
+	client, err := clientOpts.makeCipdClient(ctx, "")
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close()
-	acls, err := client.FetchACL(packagePath)
+	acls, err := client.FetchACL(ctx, packagePath)
 	if err != nil {
 		return nil, err
 	}
@@ -1263,13 +1274,14 @@ type editACLRun struct {
 }
 
 func (c *editACLRun) Run(a subcommands.Application, args []string) int {
-	if !c.init(args, 1, 1) {
+	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	return c.done(nil, editACL(args[0], c.owner, c.writer, c.reader, c.revoke, c.ClientOptions))
+	ctx := makeContext(&c.Subcommand)
+	return c.done(nil, editACL(ctx, args[0], c.owner, c.writer, c.reader, c.revoke, c.ClientOptions))
 }
 
-func editACL(packagePath string, owners, writers, readers, revoke principalsList, clientOpts ClientOptions) error {
+func editACL(ctx context.Context, packagePath string, owners, writers, readers, revoke principalsList, clientOpts ClientOptions) error {
 	changes := []cipd.PackageACLChange{}
 
 	makeChanges := func(action cipd.PackageACLChangeAction, role string, list principalsList) {
@@ -1294,12 +1306,11 @@ func editACL(packagePath string, owners, writers, readers, revoke principalsList
 		return nil
 	}
 
-	client, err := clientOpts.makeCipdClient("")
+	client, err := clientOpts.makeCipdClient(ctx, "")
 	if err != nil {
 		return err
 	}
-	defer client.Close()
-	err = client.ModifyACL(packagePath, changes)
+	err = client.ModifyACL(ctx, packagePath, changes)
 	if err != nil {
 		return err
 	}
@@ -1331,17 +1342,18 @@ type buildRun struct {
 }
 
 func (c *buildRun) Run(a subcommands.Application, args []string) int {
-	if !c.init(args, 0, 0) {
+	if !c.checkArgs(args, 0, 0) {
 		return 1
 	}
-	err := buildInstanceFile(c.outputFile, c.InputOptions)
+	ctx := makeContext(&c.Subcommand)
+	err := buildInstanceFile(ctx, c.outputFile, c.InputOptions)
 	if err != nil {
 		return c.done(nil, err)
 	}
-	return c.done(inspectInstanceFile(c.outputFile, false))
+	return c.done(inspectInstanceFile(ctx, c.outputFile, false))
 }
 
-func buildInstanceFile(instanceFile string, inputOpts InputOptions) error {
+func buildInstanceFile(ctx context.Context, instanceFile string, inputOpts InputOptions) error {
 	// Read the list of files to add to the package.
 	buildOpts, err := inputOpts.prepareInput()
 	if err != nil {
@@ -1356,7 +1368,7 @@ func buildInstanceFile(instanceFile string, inputOpts InputOptions) error {
 	buildOpts.Output = out
 
 	// Build the package.
-	err = local.BuildInstance(buildOpts)
+	err = local.BuildInstance(ctx, buildOpts)
 	out.Close()
 	if err != nil {
 		os.Remove(instanceFile)
@@ -1387,20 +1399,21 @@ type deployRun struct {
 }
 
 func (c *deployRun) Run(a subcommands.Application, args []string) int {
-	if !c.init(args, 1, 1) {
+	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	return c.done(deployInstanceFile(c.rootDir, args[0]))
+	ctx := makeContext(&c.Subcommand)
+	return c.done(deployInstanceFile(ctx, c.rootDir, args[0]))
 }
 
-func deployInstanceFile(root string, instanceFile string) (common.Pin, error) {
-	inst, err := local.OpenInstanceFile(instanceFile, "")
+func deployInstanceFile(ctx context.Context, root string, instanceFile string) (common.Pin, error) {
+	inst, err := local.OpenInstanceFile(ctx, instanceFile, "")
 	if err != nil {
 		return common.Pin{}, err
 	}
 	defer inst.Close()
-	inspectInstance(inst, false)
-	return local.NewDeployer(root, log).DeployInstance(inst)
+	inspectInstance(ctx, inst, false)
+	return local.NewDeployer(root).DeployInstance(ctx, inst)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1429,19 +1442,19 @@ type fetchRun struct {
 }
 
 func (c *fetchRun) Run(a subcommands.Application, args []string) int {
-	if !c.init(args, 1, 1) {
+	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	return c.done(fetchInstanceFile(args[0], c.version, c.outputPath, c.ClientOptions))
+	ctx := makeContext(&c.Subcommand)
+	return c.done(fetchInstanceFile(ctx, args[0], c.version, c.outputPath, c.ClientOptions))
 }
 
-func fetchInstanceFile(packageName, version, instanceFile string, clientOpts ClientOptions) (common.Pin, error) {
-	client, err := clientOpts.makeCipdClient("")
+func fetchInstanceFile(ctx context.Context, packageName, version, instanceFile string, clientOpts ClientOptions) (common.Pin, error) {
+	client, err := clientOpts.makeCipdClient(ctx, "")
 	if err != nil {
 		return common.Pin{}, err
 	}
-	defer client.Close()
-	pin, err := client.ResolveVersion(packageName, version)
+	pin, err := client.ResolveVersion(ctx, packageName, version)
 	if err != nil {
 		return common.Pin{}, err
 	}
@@ -1458,7 +1471,7 @@ func fetchInstanceFile(packageName, version, instanceFile string, clientOpts Cli
 		}
 	}()
 
-	err = client.FetchInstance(pin, out)
+	err = client.FetchInstance(ctx, pin, out)
 	if err != nil {
 		return common.Pin{}, err
 	}
@@ -1466,13 +1479,13 @@ func fetchInstanceFile(packageName, version, instanceFile string, clientOpts Cli
 	// Verify it (by checking that instanceID matches the file content).
 	out.Close()
 	ok = true
-	inst, err := local.OpenInstanceFile(instanceFile, pin.InstanceID)
+	inst, err := local.OpenInstanceFile(ctx, instanceFile, pin.InstanceID)
 	if err != nil {
 		os.Remove(instanceFile)
 		return common.Pin{}, err
 	}
 	defer inst.Close()
-	inspectInstance(inst, false)
+	inspectInstance(ctx, inst, false)
 	return inst.Pin(), nil
 }
 
@@ -1495,23 +1508,24 @@ type inspectRun struct {
 }
 
 func (c *inspectRun) Run(a subcommands.Application, args []string) int {
-	if !c.init(args, 1, 1) {
+	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	return c.done(inspectInstanceFile(args[0], true))
+	ctx := makeContext(&c.Subcommand)
+	return c.done(inspectInstanceFile(ctx, args[0], true))
 }
 
-func inspectInstanceFile(instanceFile string, listFiles bool) (common.Pin, error) {
-	inst, err := local.OpenInstanceFile(instanceFile, "")
+func inspectInstanceFile(ctx context.Context, instanceFile string, listFiles bool) (common.Pin, error) {
+	inst, err := local.OpenInstanceFile(ctx, instanceFile, "")
 	if err != nil {
 		return common.Pin{}, err
 	}
 	defer inst.Close()
-	inspectInstance(inst, listFiles)
+	inspectInstance(ctx, inst, listFiles)
 	return inst.Pin(), nil
 }
 
-func inspectInstance(inst local.PackageInstance, listFiles bool) {
+func inspectInstance(ctx context.Context, inst local.PackageInstance, listFiles bool) {
 	fmt.Printf("Instance: %s\n", inst.Pin())
 	if listFiles {
 		fmt.Println("Package files:")
@@ -1540,52 +1554,56 @@ var cmdRegister = &subcommands.Command{
 	CommandRun: func() subcommands.CommandRun {
 		c := &registerRun{}
 		c.registerBaseFlags()
-		c.RefsOptions.registerFlags(&c.Flags)
-		c.TagsOptions.registerFlags(&c.Flags)
-		c.ClientOptions.registerFlags(&c.Flags)
-		c.UploadOptions.registerFlags(&c.Flags)
+		c.Opts.RefsOptions.registerFlags(&c.Flags)
+		c.Opts.TagsOptions.registerFlags(&c.Flags)
+		c.Opts.ClientOptions.registerFlags(&c.Flags)
+		c.Opts.UploadOptions.registerFlags(&c.Flags)
 		return c
 	},
 }
 
-type registerRun struct {
-	Subcommand
+type registerOpts struct {
 	RefsOptions
 	TagsOptions
 	ClientOptions
 	UploadOptions
 }
 
-func (c *registerRun) Run(a subcommands.Application, args []string) int {
-	if !c.init(args, 1, 1) {
-		return 1
-	}
-	return c.done(registerInstanceFile(args[0], c.RefsOptions, c.TagsOptions, c.ClientOptions, c.UploadOptions))
+type registerRun struct {
+	Subcommand
+
+	Opts registerOpts
 }
 
-func registerInstanceFile(instanceFile string, refsOpts RefsOptions,
-	tagsOpts TagsOptions, clientOpts ClientOptions, uploadOpts UploadOptions) (common.Pin, error) {
-	inst, err := local.OpenInstanceFile(instanceFile, "")
+func (c *registerRun) Run(a subcommands.Application, args []string) int {
+	if !c.checkArgs(args, 1, 1) {
+		return 1
+	}
+	ctx := makeContext(&c.Subcommand)
+	return c.done(registerInstanceFile(ctx, args[0], &c.Opts))
+}
+
+func registerInstanceFile(ctx context.Context, instanceFile string, opts *registerOpts) (common.Pin, error) {
+	inst, err := local.OpenInstanceFile(ctx, instanceFile, "")
 	if err != nil {
 		return common.Pin{}, err
 	}
 	defer inst.Close()
-	client, err := clientOpts.makeCipdClient("")
+	client, err := opts.ClientOptions.makeCipdClient(ctx, "")
 	if err != nil {
 		return common.Pin{}, err
 	}
-	defer client.Close()
-	inspectInstance(inst, false)
-	err = client.RegisterInstance(inst, uploadOpts.verificationTimeout)
+	inspectInstance(ctx, inst, false)
+	err = client.RegisterInstance(ctx, inst, opts.UploadOptions.verificationTimeout)
 	if err != nil {
 		return common.Pin{}, err
 	}
-	err = client.AttachTagsWhenReady(inst.Pin(), tagsOpts.tags)
+	err = client.AttachTagsWhenReady(ctx, inst.Pin(), opts.TagsOptions.tags)
 	if err != nil {
 		return common.Pin{}, err
 	}
-	for _, ref := range refsOpts.refs {
-		err = client.SetRefWhenReady(ref, inst.Pin())
+	for _, ref := range opts.RefsOptions.refs {
+		err = client.SetRefWhenReady(ctx, ref, inst.Pin())
 		if err != nil {
 			return common.Pin{}, err
 		}
@@ -1595,6 +1613,23 @@ func registerInstanceFile(instanceFile string, refsOpts RefsOptions,
 
 ////////////////////////////////////////////////////////////////////////////////
 // Main.
+
+var loggerConfig = gologger.LoggerConfig{
+	Format: `[P%{pid} %{time:15:04:05.000} %{shortfile} %{level:.1s}] %{message}`,
+	Out:    os.Stderr,
+}
+
+// authOpts is used by "auth-*" subcommands.
+var authOpts = auth.Options{Context: makeContext(nil)}
+
+// makeContext is used by each subcommand to grab an initial context.
+func makeContext(cmd *Subcommand) context.Context {
+	ctx := loggerConfig.Use(context.Background())
+	if cmd != nil && cmd.verbose {
+		ctx = logging.SetLevel(ctx, logging.Debug)
+	}
+	return ctx
+}
 
 var application = &subcommands.DefaultApplication{
 	Name:  "cipd",
@@ -1610,9 +1645,9 @@ var application = &subcommands.DefaultApplication{
 		cmdInstalled,
 
 		// Authentication related commands.
-		authcli.SubcommandInfo(auth.Options{Logger: log}, "auth-info"),
-		authcli.SubcommandLogin(auth.Options{Logger: log}, "auth-login"),
-		authcli.SubcommandLogout(auth.Options{Logger: log}, "auth-logout"),
+		authcli.SubcommandInfo(authOpts, "auth-info"),
+		authcli.SubcommandLogin(authOpts, "auth-login"),
+		authcli.SubcommandLogout(authOpts, "auth-logout"),
 
 		// High level commands.
 		cmdListPackages,

@@ -15,6 +15,8 @@ import (
 )
 
 func TestRemoteImpl(t *testing.T) {
+	ctx := makeTestContext()
+
 	mockInitiateUpload := func(c C, reply string) (*UploadSession, error) {
 		remote := mockRemoteImpl(c, []expectedHTTPCall{
 			{
@@ -23,7 +25,7 @@ func TestRemoteImpl(t *testing.T) {
 				Reply:  reply,
 			},
 		})
-		return remote.initiateUpload("abc")
+		return remote.initiateUpload(ctx, "abc")
 	}
 
 	mockFinalizeUpload := func(c C, reply string) (bool, error) {
@@ -34,7 +36,7 @@ func TestRemoteImpl(t *testing.T) {
 				Reply:  reply,
 			},
 		})
-		return remote.finalizeUpload("abc")
+		return remote.finalizeUpload(ctx, "abc")
 	}
 
 	mockRegisterInstance := func(c C, reply string) (*registerInstanceResponse, error) {
@@ -49,7 +51,7 @@ func TestRemoteImpl(t *testing.T) {
 				Reply: reply,
 			},
 		})
-		return remote.registerInstance(Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
+		return remote.registerInstance(ctx, Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
 	}
 
 	mockFetchInstance := func(c C, reply string) (*fetchInstanceResponse, error) {
@@ -64,7 +66,7 @@ func TestRemoteImpl(t *testing.T) {
 				Reply: reply,
 			},
 		})
-		return remote.fetchInstance(Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
+		return remote.fetchInstance(ctx, Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
 	}
 
 	mockFetchTags := func(c C, reply string, tags []string) ([]TagInfo, error) {
@@ -83,7 +85,7 @@ func TestRemoteImpl(t *testing.T) {
 				Reply:  reply,
 			},
 		})
-		return remote.fetchTags(Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}, tags)
+		return remote.fetchTags(ctx, Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}, tags)
 	}
 
 	mockFetchRefs := func(c C, reply string, refs []string) ([]RefInfo, error) {
@@ -102,7 +104,7 @@ func TestRemoteImpl(t *testing.T) {
 				Reply:  reply,
 			},
 		})
-		return remote.fetchRefs(Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}, refs)
+		return remote.fetchRefs(ctx, Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}, refs)
 	}
 
 	mockFetchACL := func(c C, reply string) ([]PackageACL, error) {
@@ -114,7 +116,7 @@ func TestRemoteImpl(t *testing.T) {
 				Reply:  reply,
 			},
 		})
-		return remote.fetchACL("pkgname")
+		return remote.fetchACL(ctx, "pkgname")
 	}
 
 	mockModifyACL := func(c C, changes []PackageACLChange, body, reply string) error {
@@ -127,7 +129,7 @@ func TestRemoteImpl(t *testing.T) {
 				Reply:  reply,
 			},
 		})
-		return remote.modifyACL("pkgname", changes)
+		return remote.modifyACL(ctx, "pkgname", changes)
 	}
 
 	mockSetRef := func(c C, reply string) error {
@@ -143,7 +145,7 @@ func TestRemoteImpl(t *testing.T) {
 				Reply: reply,
 			},
 		})
-		return remote.setRef("some-ref", Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
+		return remote.setRef(ctx, "some-ref", Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
 	}
 
 	mockListPackages := func(c C, reply string) ([]string, []string, error) {
@@ -158,7 +160,7 @@ func TestRemoteImpl(t *testing.T) {
 				Reply: reply,
 			},
 		})
-		return remote.listPackages("pkgpath", false)
+		return remote.listPackages(ctx, "pkgpath", false)
 	}
 
 	mockAttachTags := func(c C, tags []string, body, reply string) error {
@@ -174,7 +176,7 @@ func TestRemoteImpl(t *testing.T) {
 				Reply: reply,
 			},
 		})
-		return remote.attachTags(Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}, tags)
+		return remote.attachTags(ctx, Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}, tags)
 	}
 
 	mockResolveVersion := func(c C, reply string) (Pin, error) {
@@ -189,7 +191,7 @@ func TestRemoteImpl(t *testing.T) {
 				Reply: reply,
 			},
 		})
-		return remote.resolveVersion("pkgname", "tag_key:value")
+		return remote.resolveVersion(ctx, "pkgname", "tag_key:value")
 	}
 
 	Convey("makeRequest POST works", t, func(c C) {
@@ -203,7 +205,7 @@ func TestRemoteImpl(t *testing.T) {
 		var reply struct {
 			Value string `json:"value"`
 		}
-		err := remote.makeRequest("cas/v1/method", "POST", nil, &reply)
+		err := remote.makeRequest(ctx, "cas/v1/method", "POST", nil, &reply)
 		So(err, ShouldBeNil)
 		So(reply.Value, ShouldEqual, "123")
 	})
@@ -219,7 +221,7 @@ func TestRemoteImpl(t *testing.T) {
 		var reply struct {
 			Value string `json:"value"`
 		}
-		err := remote.makeRequest("cas/v1/method", "GET", nil, &reply)
+		err := remote.makeRequest(ctx, "cas/v1/method", "GET", nil, &reply)
 		So(err, ShouldBeNil)
 		So(reply.Value, ShouldEqual, "123")
 	})
@@ -233,7 +235,7 @@ func TestRemoteImpl(t *testing.T) {
 			},
 		})
 		var reply struct{}
-		err := remote.makeRequest("cas/v1/method", "POST", nil, &reply)
+		err := remote.makeRequest(ctx, "cas/v1/method", "POST", nil, &reply)
 		So(err, ShouldNotBeNil)
 	})
 
@@ -251,7 +253,7 @@ func TestRemoteImpl(t *testing.T) {
 			},
 		})
 		var reply struct{}
-		err := remote.makeRequest("cas/v1/method", "POST", nil, &reply)
+		err := remote.makeRequest(ctx, "cas/v1/method", "POST", nil, &reply)
 		So(err, ShouldBeNil)
 	})
 
@@ -266,7 +268,7 @@ func TestRemoteImpl(t *testing.T) {
 		}
 		remote := mockRemoteImpl(c, calls)
 		var reply struct{}
-		err := remote.makeRequest("cas/v1/method", "POST", nil, &reply)
+		err := remote.makeRequest(ctx, "cas/v1/method", "POST", nil, &reply)
 		So(err, ShouldNotBeNil)
 	})
 
@@ -302,7 +304,7 @@ func TestRemoteImpl(t *testing.T) {
 				Status: 403,
 			},
 		})
-		s, err := remote.initiateUpload("abc")
+		s, err := remote.initiateUpload(ctx, "abc")
 		So(err, ShouldNotBeNil)
 		So(s, ShouldBeNil)
 	})
@@ -351,7 +353,7 @@ func TestRemoteImpl(t *testing.T) {
 				Status: 403,
 			},
 		})
-		finished, err := remote.finalizeUpload("abc")
+		finished, err := remote.finalizeUpload(ctx, "abc")
 		So(err, ShouldNotBeNil)
 		So(finished, ShouldBeFalse)
 	})
@@ -655,7 +657,7 @@ func TestRemoteImpl(t *testing.T) {
 
 	Convey("setRef bad ref", t, func(c C) {
 		err := mockRemoteImpl(c, nil).setRef(
-			"BAD REF",
+			ctx, "BAD REF",
 			Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
 		So(err, ShouldNotBeNil)
 	})
@@ -706,7 +708,7 @@ func TestRemoteImpl(t *testing.T) {
 
 	Convey("attachTags bad tag", t, func(c C) {
 		err := mockRemoteImpl(c, nil).attachTags(
-			Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+			ctx, Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
 			[]string{"BADTAG"})
 		So(err, ShouldNotBeNil)
 	})
@@ -773,5 +775,10 @@ func TestRemoteImpl(t *testing.T) {
 ////////////////////////////////////////////////////////////////////////////////
 
 func mockRemoteImpl(c C, expectations []expectedHTTPCall) *remoteImpl {
-	return &remoteImpl{mockClient(c, "", expectations)}
+	client := mockClient(c, "", expectations)
+	return &remoteImpl{
+		serviceURL: client.ServiceURL,
+		userAgent:  client.UserAgent,
+		client:     client.AnonymousClient,
+	}
 }

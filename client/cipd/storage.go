@@ -11,6 +11,12 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"golang.org/x/net/context"
+	"golang.org/x/net/context/ctxhttp"
+
+	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/logging"
 )
 
 const (
@@ -29,14 +35,15 @@ var errTransientError = errors.New("Transient error in getUploadedOffset")
 
 // storageImpl implements storage via Google Storage signed URLs.
 type storageImpl struct {
-	client    *clientImpl
 	chunkSize int64
+	userAgent string
+	client    *http.Client
 }
 
 // Google Storage resumable upload protocol.
 // See https://cloud.google.com/storage/docs/concepts-techniques#resumable
 
-func (s *storageImpl) upload(url string, data io.ReadSeeker) error {
+func (s *storageImpl) upload(ctx context.Context, url string, data io.ReadSeeker) error {
 	// Grab the total length of the file.
 	length, err := data.Seek(0, os.SEEK_END)
 	if err != nil {
@@ -56,7 +63,7 @@ func (s *storageImpl) upload(url string, data io.ReadSeeker) error {
 	// Called when some new data is uploaded.
 	reportProgress := func(offset int64) {
 		if length != 0 {
-			s.client.Logger.Infof("cipd: uploading - %d%%", offset*100/length)
+			logging.Infof(ctx, "cipd: uploading - %d%%", offset*100/length)
 		}
 	}
 
@@ -65,17 +72,24 @@ func (s *storageImpl) upload(url string, data io.ReadSeeker) error {
 		// Need to query for latest uploaded offset to resume.
 		errors++
 		offset = -1
-		if errors < uploadMaxErrors {
-			s.client.Logger.Warningf("cipd: transient upload error, retrying...")
-			s.client.clock.sleep(2 * time.Second)
+		if err := ctx.Err(); err == nil {
+			if errors < uploadMaxErrors {
+				logging.Warningf(ctx, "cipd: transient upload error, retrying...")
+				clock.Sleep(ctx, 2*time.Second)
+			}
 		}
 	}
 
 	reportProgress(0)
 	for errors < uploadMaxErrors {
+		// Context canceled?
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
 		// Grab latest uploaded offset if not known.
 		if offset == -1 {
-			offset, err = s.getNextOffset(url, length)
+			offset, err = s.getNextOffset(ctx, url, length)
 			if err == errTransientError {
 				reportTransientError()
 				continue
@@ -87,7 +101,7 @@ func (s *storageImpl) upload(url string, data io.ReadSeeker) error {
 			if offset == length {
 				return nil
 			}
-			s.client.Logger.Warningf("cipd: resuming upload from offset %d", offset)
+			logging.Warningf(ctx, "cipd: resuming upload from offset %d", offset)
 		}
 
 		// Length of a chunk to upload.
@@ -105,8 +119,8 @@ func (s *storageImpl) upload(url string, data io.ReadSeeker) error {
 		rangeHeader := fmt.Sprintf("bytes %d-%d/%d", offset, offset+chunk-1, length)
 		r.Header.Set("Content-Range", rangeHeader)
 		r.Header.Set("Content-Length", fmt.Sprintf("%d", chunk))
-		r.Header.Set("User-Agent", s.client.UserAgent)
-		resp, err := s.client.doAnonymousHTTPRequest(r)
+		r.Header.Set("User-Agent", s.userAgent)
+		resp, err := ctxhttp.Do(ctx, s.client, r)
 		if err != nil {
 			if isTemporaryNetError(err) {
 				reportTransientError()
@@ -140,15 +154,15 @@ func (s *storageImpl) upload(url string, data io.ReadSeeker) error {
 }
 
 // getNextOffset queries the storage for size of persisted data.
-func (s *storageImpl) getNextOffset(url string, length int64) (offset int64, err error) {
+func (s *storageImpl) getNextOffset(ctx context.Context, url string, length int64) (offset int64, err error) {
 	r, err := http.NewRequest("PUT", url, nil)
 	if err != nil {
 		return
 	}
 	r.Header.Set("Content-Range", fmt.Sprintf("bytes */%d", length))
 	r.Header.Set("Content-Length", "0")
-	r.Header.Set("User-Agent", s.client.UserAgent)
-	resp, err := s.client.doAnonymousHTTPRequest(r)
+	r.Header.Set("User-Agent", s.userAgent)
+	resp, err := ctxhttp.Do(ctx, s.client, r)
 	if err != nil {
 		if isTemporaryNetError(err) {
 			err = errTransientError
@@ -180,15 +194,15 @@ func (s *storageImpl) getNextOffset(url string, length int64) (offset int64, err
 
 // TODO(vadimsh): Use resumable download protocol.
 
-func (s *storageImpl) download(url string, output io.WriteSeeker) error {
+func (s *storageImpl) download(ctx context.Context, url string, output io.WriteSeeker) error {
 	// reportProgress print fetch progress, throttling the reports rate.
 	var prevProgress int64 = 1000 // >100%
 	var prevReportTs time.Time
 	reportProgress := func(read int64, total int64) {
-		now := s.client.clock.now()
+		now := clock.Now(ctx)
 		progress := read * 100 / total
 		if progress < prevProgress || read == total || now.Sub(prevReportTs) > downloadReportInterval {
-			s.client.Logger.Infof("cipd: fetching - %d%%", progress)
+			logging.Infof(ctx, "cipd: fetching - %d%%", progress)
 			prevReportTs = now
 			prevProgress = progress
 		}
@@ -197,20 +211,34 @@ func (s *storageImpl) download(url string, output io.WriteSeeker) error {
 	// download is a separate function to be able to use deferred close.
 	download := func(out io.WriteSeeker, src io.ReadCloser, totalLen int64) error {
 		defer src.Close()
-		s.client.Logger.Infof("cipd: about to fetch %.1f Mb", float32(totalLen)/1024.0/1024.0)
+		logging.Infof(ctx, "cipd: about to fetch %.1f Mb", float32(totalLen)/1024.0/1024.0)
 		reportProgress(0, totalLen)
 		_, err := io.Copy(out, &readerWithProgress{
 			reader:   src,
 			callback: func(read int64) { reportProgress(read, totalLen) },
 		})
 		if err == nil {
-			s.client.Logger.Infof("cipd: fetch finished successfully")
+			logging.Infof(ctx, "cipd: fetch finished successfully")
 		}
 		return err
 	}
 
+	// reportTransientError logs the error and sleep few seconds.
+	reportTransientError := func(msg string, args ...interface{}) {
+		if err := ctx.Err(); err != nil {
+			return
+		}
+		logging.Warningf(ctx, msg, args...)
+		clock.Sleep(ctx, 2*time.Second)
+	}
+
 	// Download the actual data (several attempts).
 	for attempt := 0; attempt < downloadMaxAttempts; attempt++ {
+		// Context canceled?
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
 		// Rewind output to zero offset.
 		_, err := output.Seek(0, os.SEEK_SET)
 		if err != nil {
@@ -218,18 +246,18 @@ func (s *storageImpl) download(url string, output io.WriteSeeker) error {
 		}
 
 		// Send the request.
-		s.client.Logger.Infof("cipd: initiating the fetch")
+		logging.Infof(ctx, "cipd: initiating the fetch")
 		var req *http.Request
 		var resp *http.Response
 		req, err = http.NewRequest("GET", url, nil)
 		if err != nil {
 			return err
 		}
-		req.Header.Set("User-Agent", s.client.UserAgent)
-		resp, err = s.client.doAnonymousHTTPRequest(req)
+		req.Header.Set("User-Agent", s.userAgent)
+		resp, err = ctxhttp.Do(ctx, s.client, req)
 		if err != nil {
 			if isTemporaryNetError(err) {
-				s.client.Logger.Warningf("cipd: transient network error: %s", err)
+				reportTransientError("cipd: transient network error: %s", err)
 				continue
 			}
 			return err
@@ -238,7 +266,7 @@ func (s *storageImpl) download(url string, output io.WriteSeeker) error {
 		// Transient error, retry.
 		if isTemporaryHTTPError(resp.StatusCode) {
 			resp.Body.Close()
-			s.client.Logger.Warningf("cipd: transient HTTP error %d while fetching the file", resp.StatusCode)
+			reportTransientError("cipd: transient HTTP error %d while fetching the file", resp.StatusCode)
 			continue
 		}
 
@@ -251,7 +279,7 @@ func (s *storageImpl) download(url string, output io.WriteSeeker) error {
 		// Try to fetch (will close resp.Body when done).
 		err = download(output, resp.Body, resp.ContentLength)
 		if err != nil {
-			s.client.Logger.Warningf("cipd: transient error fetching the file: %s", err)
+			reportTransientError("cipd: transient error fetching the file: %s", err)
 			continue
 		}
 

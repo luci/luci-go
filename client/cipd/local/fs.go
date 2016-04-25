@@ -14,72 +14,81 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/logging"
+
+	"golang.org/x/net/context"
 )
 
-// FileSystem is a high-level interface for operations that touch single file
-// system subpath. All functions operate in terms of native file paths. It
-// exists mostly to hide differences between file system semantic on Windows and
-// Linux\Mac.
+// FileSystem abstracts operations that touch single file system subpath.
+//
+// All functions operate in terms of native file paths. It exists mostly to hide
+// differences between file system semantic on Windows and Linux\Mac.
 type FileSystem interface {
-	// Root returns absolute path to a directory FileSystem operates in. All FS
-	// actions are restricted to this directory.
+	// Root returns absolute path to a directory FileSystem operates in.
+	//
+	// All FS actions are restricted to this directory.
 	Root() string
 
-	// CwdRelToAbs converts a path relative to cwd to an absolute one and verifies
-	// it is under the root path of the FileSystem object. If passed path is
-	// already absolute, just checks that it's under the root.
+	// CwdRelToAbs converts a path relative to cwd to an absolute one.
+	//
+	// If also verifies the path is under the root path of the FileSystem object.
+	// If passed path is already absolute, just checks that it's under the root.
 	CwdRelToAbs(path string) (string, error)
 
-	// RootRelToAbs converts a path relative to Root() to an absolute one and
-	// verifies it is under the root path of the FileSystem object. If passed path
-	// is already absolute, just checks that it's under the root.
+	// RootRelToAbs converts a path relative to Root() to an absolute one.
+	//
+	// It verifies the path is under the root path of the FileSystem object.
+	// If passed path is already absolute, just checks that it's under the root.
 	RootRelToAbs(path string) (string, error)
 
-	// EnsureDirectory creates a directory at given native path if it doesn't
-	// exist yet. It takes an absolute path or a path relative to the current
-	// working directory and always returns absolute path.
-	EnsureDirectory(path string) (string, error)
+	// EnsureDirectory creates a directory at given native path.
+	//
+	// Does nothing it the path already exists. It takes an absolute path or
+	// a path relative to the current working directory and always returns
+	// absolute path.
+	EnsureDirectory(ctx context.Context, path string) (string, error)
 
-	// EnsureSymlink creates a symlink pointing to a target. It will create full
-	// directory path to the symlink if necessary.
-	EnsureSymlink(path string, target string) error
+	// EnsureSymlink creates a symlink pointing to a target.
+	//
+	// It will create full directory path to the symlink if necessary.
+	EnsureSymlink(ctx context.Context, path string, target string) error
 
 	// EnsureFile creates a file and calls the function to write file content.
+	//
 	// It will create full directory path to the file if necessary.
-	EnsureFile(path string, write func(*os.File) error) error
+	EnsureFile(ctx context.Context, path string, write func(*os.File) error) error
 
-	// EnsureFileGone removes a file, logging the errors (if any). Missing file is
-	// not an error.
-	EnsureFileGone(path string) error
+	// EnsureFileGone removes a file, logging the errors (if any).
+	//
+	// Missing file is not an error.
+	EnsureFileGone(ctx context.Context, path string) error
 
 	// EnsureDirectoryGone recursively removes a directory.
-	EnsureDirectoryGone(path string) error
+	EnsureDirectoryGone(ctx context.Context, path string) error
 
-	// Renames oldpath to newpath. If newpath already exists (be it a file or a
-	// directory), removes it first. If oldpath is a symlink, it's moved as is
-	// (e.g. as a symlink).
-	Replace(oldpath, newpath string) error
+	// Renames oldpath to newpath.
+	//
+	// If newpath already exists (be it a file or a directory), removes it first.
+	// If oldpath is a symlink, it's moved as is (e.g. as a symlink).
+	Replace(ctx context.Context, oldpath, newpath string) error
 }
 
-// NewFileSystem returns default FileSystem implementation that operates with
-// files under a given path. All methods accept absolute paths or paths relative
-// to current working directory. FileSystem will ensure they are under 'root'
-// directory.
-func NewFileSystem(root string, logger logging.Logger) FileSystem {
-	if logger == nil {
-		logger = logging.Null
-	}
+// NewFileSystem returns default FileSystem implementation.
+//
+// It operates with files under a given path. All methods accept absolute paths
+// or paths relative to current working directory. FileSystem will ensure they
+// are under 'root' directory.
+func NewFileSystem(root string) FileSystem {
 	abs, err := filepath.Abs(root)
 	if err != nil {
 		return &fsImplErr{err}
 	}
-	return &fsImpl{abs, logger}
+	return &fsImpl{abs}
 }
 
 // EnsureFile creates a file with the given content.
 // It will create full directory path to the file if necessary.
-func EnsureFile(fs FileSystem, path string, content io.Reader) error {
-	return fs.EnsureFile(path, func(f *os.File) error {
+func EnsureFile(ctx context.Context, fs FileSystem, path string, content io.Reader) error {
+	return fs.EnsureFile(ctx, path, func(f *os.File) error {
 		_, err := io.Copy(f, content)
 		return err
 	})
@@ -90,21 +99,20 @@ type fsImplErr struct {
 	err error
 }
 
-func (f *fsImplErr) Root() string                                             { return "" }
-func (f *fsImplErr) CwdRelToAbs(path string) (string, error)                  { return "", f.err }
-func (f *fsImplErr) RootRelToAbs(path string) (string, error)                 { return "", f.err }
-func (f *fsImplErr) EnsureDirectory(path string) (string, error)              { return "", f.err }
-func (f *fsImplErr) EnsureSymlink(path string, target string) error           { return f.err }
-func (f *fsImplErr) EnsureFile(path string, write func(*os.File) error) error { return f.err }
-func (f *fsImplErr) EnsureFileGone(path string) error                         { return f.err }
-func (f *fsImplErr) EnsureDirectoryGone(path string) error                    { return f.err }
-func (f *fsImplErr) Replace(oldpath, newpath string) error                    { return f.err }
+func (f *fsImplErr) Root() string                                                   { return "" }
+func (f *fsImplErr) CwdRelToAbs(string) (string, error)                             { return "", f.err }
+func (f *fsImplErr) RootRelToAbs(string) (string, error)                            { return "", f.err }
+func (f *fsImplErr) EnsureDirectory(context.Context, string) (string, error)        { return "", f.err }
+func (f *fsImplErr) EnsureSymlink(context.Context, string, string) error            { return f.err }
+func (f *fsImplErr) EnsureFile(context.Context, string, func(*os.File) error) error { return f.err }
+func (f *fsImplErr) EnsureFileGone(context.Context, string) error                   { return f.err }
+func (f *fsImplErr) EnsureDirectoryGone(context.Context, string) error              { return f.err }
+func (f *fsImplErr) Replace(context.Context, string, string) error                  { return f.err }
 
 /// Implementation.
 
 type fsImpl struct {
-	root   string
-	logger logging.Logger
+	root string
 }
 
 func (f *fsImpl) Root() string {
@@ -134,7 +142,7 @@ func (f *fsImpl) RootRelToAbs(p string) (string, error) {
 	return f.CwdRelToAbs(filepath.Join(f.root, p))
 }
 
-func (f *fsImpl) EnsureDirectory(path string) (string, error) {
+func (f *fsImpl) EnsureDirectory(ctx context.Context, path string) (string, error) {
 	path, err := f.CwdRelToAbs(path)
 	if err != nil {
 		return "", err
@@ -147,12 +155,12 @@ func (f *fsImpl) EnsureDirectory(path string) (string, error) {
 	return path, nil
 }
 
-func (f *fsImpl) EnsureFile(path string, write func(*os.File) error) error {
+func (f *fsImpl) EnsureFile(ctx context.Context, path string, write func(*os.File) error) error {
 	path, err := f.CwdRelToAbs(path)
 	if err != nil {
 		return err
 	}
-	if _, err := f.EnsureDirectory(filepath.Dir(path)); err != nil {
+	if _, err := f.EnsureDirectory(ctx, filepath.Dir(path)); err != nil {
 		return err
 	}
 
@@ -165,9 +173,9 @@ func (f *fsImpl) EnsureFile(path string, write func(*os.File) error) error {
 	// Replace the current file (if there's one) with a new one. Use nuclear
 	// version (f.Replace) instead of simple atomicReplace to handle various edge
 	// cases handled by the nuclear version (e.g replacing a non-empty directory).
-	if err := f.Replace(temp, path); err != nil {
+	if err := f.Replace(ctx, temp, path); err != nil {
 		if err2 := os.Remove(temp); err2 != nil && !os.IsNotExist(err2) {
-			f.logger.Warningf("fs: failed to remove %s - %s", temp, err2)
+			logging.Warningf(ctx, "fs: failed to remove %s - %s", temp, err2)
 		}
 		return err
 	}
@@ -175,7 +183,7 @@ func (f *fsImpl) EnsureFile(path string, write func(*os.File) error) error {
 	return nil
 }
 
-func (f *fsImpl) EnsureSymlink(path string, target string) error {
+func (f *fsImpl) EnsureSymlink(ctx context.Context, path string, target string) error {
 	path, err := f.CwdRelToAbs(path)
 	if err != nil {
 		return err
@@ -183,7 +191,7 @@ func (f *fsImpl) EnsureSymlink(path string, target string) error {
 	if existing, _ := os.Readlink(path); existing == target {
 		return nil
 	}
-	if _, err := f.EnsureDirectory(filepath.Dir(path)); err != nil {
+	if _, err := f.EnsureDirectory(ctx, filepath.Dir(path)); err != nil {
 		return err
 	}
 
@@ -196,9 +204,9 @@ func (f *fsImpl) EnsureSymlink(path string, target string) error {
 	// Replace the current symlink with a new one. Use nuclear version (f.Replace)
 	// instead of simple atomicReplace to handle various edge cases handled by
 	// the nuclear version (e.g replacing a non-empty directory).
-	if err := f.Replace(temp, path); err != nil {
+	if err := f.Replace(ctx, temp, path); err != nil {
 		if err2 := os.Remove(temp); err2 != nil && !os.IsNotExist(err2) {
-			f.logger.Warningf("fs: failed to remove %s - %s", temp, err2)
+			logging.Warningf(ctx, "fs: failed to remove %s - %s", temp, err2)
 		}
 		return err
 	}
@@ -206,19 +214,19 @@ func (f *fsImpl) EnsureSymlink(path string, target string) error {
 	return nil
 }
 
-func (f *fsImpl) EnsureFileGone(path string) error {
+func (f *fsImpl) EnsureFileGone(ctx context.Context, path string) error {
 	path, err := f.CwdRelToAbs(path)
 	if err != nil {
 		return err
 	}
 	if err = os.Remove(path); err != nil && !os.IsNotExist(err) {
-		f.logger.Warningf("fs: failed to remove %s - %s", path, err)
+		logging.Warningf(ctx, "fs: failed to remove %s - %s", path, err)
 		return err
 	}
 	return nil
 }
 
-func (f *fsImpl) EnsureDirectoryGone(path string) error {
+func (f *fsImpl) EnsureDirectoryGone(ctx context.Context, path string) error {
 	path, err := f.CwdRelToAbs(path)
 	if err != nil {
 		return err
@@ -229,17 +237,17 @@ func (f *fsImpl) EnsureDirectoryGone(path string) error {
 		if os.IsNotExist(err) {
 			return nil
 		}
-		f.logger.Warningf("fs: failed to rename directory %s - %s", path, err)
+		logging.Warningf(ctx, "fs: failed to rename directory %s - %s", path, err)
 		return err
 	}
 	if err = os.RemoveAll(temp); err != nil {
-		f.logger.Warningf("fs: failed to remove directory %s - %s", temp, err)
+		logging.Warningf(ctx, "fs: failed to remove directory %s - %s", temp, err)
 		return err
 	}
 	return nil
 }
 
-func (f *fsImpl) Replace(oldpath, newpath string) error {
+func (f *fsImpl) Replace(ctx context.Context, oldpath, newpath string) error {
 	oldpath, err := f.CwdRelToAbs(oldpath)
 	if err != nil {
 		return err
@@ -258,7 +266,7 @@ func (f *fsImpl) Replace(oldpath, newpath string) error {
 	}
 
 	// Make parent directory of newpath.
-	if _, err = f.EnsureDirectory(filepath.Dir(newpath)); err != nil {
+	if _, err = f.EnsureDirectory(ctx, filepath.Dir(newpath)); err != nil {
 		return err
 	}
 
@@ -271,7 +279,7 @@ func (f *fsImpl) Replace(oldpath, newpath string) error {
 	temp := tempFileName(newpath)
 	if err = atomicRename(newpath, temp); err != nil {
 		if !os.IsNotExist(err) {
-			f.logger.Warningf("fs: failed to rename(%v, %v) - %s", newpath, temp, err)
+			logging.Warningf(ctx, "fs: failed to rename(%v, %v) - %s", newpath, temp, err)
 			return err
 		}
 		temp = ""
@@ -279,11 +287,11 @@ func (f *fsImpl) Replace(oldpath, newpath string) error {
 
 	// 'newpath' now should be available.
 	if err := atomicRename(oldpath, newpath); err != nil {
-		f.logger.Warningf("fs: failed to rename(%v, %v) - %s", oldpath, newpath, err)
+		logging.Warningf(ctx, "fs: failed to rename(%v, %v) - %s", oldpath, newpath, err)
 		// Try to return the path back... May be too late already.
 		if temp != "" {
 			if err := atomicRename(temp, newpath); err != nil {
-				f.logger.Errorf("fs: failed to rename(%v, %v) after unsuccessful move - %s", temp, newpath, err)
+				logging.Warningf(ctx, "fs: failed to rename(%v, %v) after unsuccessful move - %s", temp, newpath, err)
 			}
 		}
 		return err
@@ -291,8 +299,8 @@ func (f *fsImpl) Replace(oldpath, newpath string) error {
 
 	// Cleanup the garbage left. Not a error if fails.
 	if temp != "" {
-		if err := f.EnsureDirectoryGone(temp); err != nil {
-			f.logger.Warningf("fs: failed to cleanup garbage after file replace - %s", err)
+		if err := f.EnsureDirectoryGone(ctx, temp); err != nil {
+			logging.Warningf(ctx, "fs: failed to cleanup garbage after file replace - %s", err)
 		}
 	}
 	return nil

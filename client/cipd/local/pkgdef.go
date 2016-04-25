@@ -17,36 +17,45 @@ import (
 	"github.com/luci/luci-go/client/cipd/common"
 )
 
-// PackageDef defines how exactly to build a package: what files to put into it,
-// how to name them, how to name the package itself, etc. It is loaded from
-// *.yaml file.
+// PackageDef defines how exactly to build a package.
+//
+// It specified  what files to put into it, how to name them, how to name
+// the package itself, etc. It is loaded from *.yaml file.
 type PackageDef struct {
 	// Package defines a name of the package.
 	Package string
+
 	// Root defines where to search for files, relative to package file itself.
 	Root string
+
 	// InstallMode defines how to deploy the package file: "copy" or "symlink".
 	InstallMode InstallMode `yaml:"install_mode"`
+
 	// Data describes what is deployed with the package.
 	Data []PackageChunkDef
 }
 
-// PackageChunkDef represents one entry in 'data' section of package definition
-// file. It is either a single file, or a recursively scanned directory (with
-// optional list of regexps for files to skip).
+// PackageChunkDef represents one entry in 'data' section of package definition.
+//
+// It is either a single file, or a recursively scanned directory (with optional
+// list of regexps for files to skip).
 type PackageChunkDef struct {
 	// Dir is a directory to add to the package (recursively).
 	Dir string
+
 	// File is a single file to add to the package.
 	File string
+
 	// VersionFile defines where to drop JSON file with package version.
 	VersionFile string `yaml:"version_file"`
+
 	// Exclude is a list of glob patterns to exclude when scanning a directory.
 	Exclude []string
 }
 
-// LoadPackageDef loads package definition from a YAML source code. In
-// substitutes %{...} strings in the definition with corresponding values
+// LoadPackageDef loads package definition from a YAML source code.
+//
+// It substitutes %{...} strings in the definition with corresponding values
 // from 'vars' map.
 func LoadPackageDef(r io.Reader, vars map[string]string) (PackageDef, error) {
 	data, err := ioutil.ReadAll(r)
@@ -113,9 +122,10 @@ func LoadPackageDef(r io.Reader, vars map[string]string) (PackageDef, error) {
 	return out, nil
 }
 
-// FindFiles scans files system and returns all files to be added to the
-// package. It uses a path to package definition file directory ('cwd' argument)
-// to find a root of the package.
+// FindFiles scans files system and returns files to be added to the package.
+//
+// It uses a path to package definition file directory ('cwd' argument) to find
+// a root of the package.
 func (def *PackageDef) FindFiles(cwd string) ([]File, error) {
 	// Root of the package is defined relative to package def YAML file.
 	absCwd, err := filepath.Abs(cwd)
@@ -204,10 +214,12 @@ func (def *PackageDef) VersionFile() string {
 }
 
 // makeExclusionFilter produces a predicate that checks an absolute file path
-// against a list of regexps (defined against slash separated paths relative to
-// 'startDir'). The predicate takes absolute native path, converts it to slash
-// separated path relative to 'startDir' and checks against list of regexps in
-// 'patterns'. Returns true to exclude a path.
+// against a list of regexps.
+//
+// Regexps are defined against slash separated paths relative to 'startDir'.
+// The predicate takes absolute native path, converts it to slash separated path
+// relative to 'startDir' and checks against list of regexps in 'patterns'.
+// Returns true to exclude a path.
 func makeExclusionFilter(startDir string, patterns []string) (ScanFilter, error) {
 	if len(patterns) == 0 {
 		return nil, nil

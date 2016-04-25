@@ -12,6 +12,8 @@ import (
 	"strings"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -55,20 +57,22 @@ func TestRootRelToAbs(t *testing.T) {
 }
 
 func TestEnsureDirectory(t *testing.T) {
+	ctx := context.Background()
+
 	Convey("EnsureDirectory checks root", t, func() {
 		fs := tempFileSystem()
-		_, err := fs.EnsureDirectory(fs.join(".."))
+		_, err := fs.EnsureDirectory(ctx, fs.join(".."))
 		So(err, ShouldNotBeNil)
 	})
 
 	Convey("EnsureDirectory works", t, func() {
 		fs := tempFileSystem()
-		p, err := fs.EnsureDirectory(fs.join("x/../y/z"))
+		p, err := fs.EnsureDirectory(ctx, fs.join("x/../y/z"))
 		So(err, ShouldBeNil)
 		So(p, ShouldEqual, fs.join("y/z"))
 		So(fs.isDir("y/z"), ShouldBeTrue)
 		// Same one.
-		_, err = fs.EnsureDirectory(fs.join("x/../y/z"))
+		_, err = fs.EnsureDirectory(ctx, fs.join("x/../y/z"))
 		So(err, ShouldBeNil)
 	})
 }
@@ -78,121 +82,129 @@ func TestEnsureSymlink(t *testing.T) {
 		t.Skip("Skipping on Windows: no symlinks")
 	}
 
+	ctx := context.Background()
+
 	Convey("EnsureSymlink checks root", t, func() {
 		fs := tempFileSystem()
-		So(fs.EnsureSymlink(fs.join(".."), fs.Root()), ShouldNotBeNil)
+		So(fs.EnsureSymlink(ctx, fs.join(".."), fs.Root()), ShouldNotBeNil)
 	})
 
 	Convey("EnsureSymlink creates new symlink", t, func() {
 		fs := tempFileSystem()
-		So(fs.EnsureSymlink(fs.join("symlink"), "target"), ShouldBeNil)
+		So(fs.EnsureSymlink(ctx, fs.join("symlink"), "target"), ShouldBeNil)
 		So(fs.readLink("symlink"), ShouldEqual, "target")
 	})
 
 	Convey("EnsureSymlink builds full path", t, func() {
 		fs := tempFileSystem()
-		So(fs.EnsureSymlink(fs.join("a/b/c"), "target"), ShouldBeNil)
+		So(fs.EnsureSymlink(ctx, fs.join("a/b/c"), "target"), ShouldBeNil)
 		So(fs.readLink("a/b/c"), ShouldEqual, "target")
 	})
 
 	Convey("EnsureSymlink replaces existing symlink", t, func() {
 		fs := tempFileSystem()
 		// Replace with same one, then with another one.
-		So(fs.EnsureSymlink(fs.join("symlink"), "target"), ShouldBeNil)
-		So(fs.EnsureSymlink(fs.join("symlink"), "target"), ShouldBeNil)
-		So(fs.EnsureSymlink(fs.join("symlink"), "another"), ShouldBeNil)
+		So(fs.EnsureSymlink(ctx, fs.join("symlink"), "target"), ShouldBeNil)
+		So(fs.EnsureSymlink(ctx, fs.join("symlink"), "target"), ShouldBeNil)
+		So(fs.EnsureSymlink(ctx, fs.join("symlink"), "another"), ShouldBeNil)
 		So(fs.readLink("symlink"), ShouldEqual, "another")
 	})
 
 	Convey("EnsureSymlink replaces existing file", t, func() {
 		fs := tempFileSystem()
 		fs.write("path", "blah")
-		So(fs.EnsureSymlink(fs.join("path"), "target"), ShouldBeNil)
+		So(fs.EnsureSymlink(ctx, fs.join("path"), "target"), ShouldBeNil)
 		So(fs.readLink("path"), ShouldEqual, "target")
 	})
 
 	Convey("EnsureSymlink replaces existing directory", t, func() {
 		fs := tempFileSystem()
 		fs.write("a/b/c", "something")
-		So(fs.EnsureSymlink(fs.join("a"), "target"), ShouldBeNil)
+		So(fs.EnsureSymlink(ctx, fs.join("a"), "target"), ShouldBeNil)
 		So(fs.readLink("a"), ShouldEqual, "target")
 	})
 }
 
 func TestEnsureFile(t *testing.T) {
+	ctx := context.Background()
+
 	Convey("EnsureFile checks root", t, func() {
 		fs := tempFileSystem()
-		So(EnsureFile(fs, fs.join(".."), strings.NewReader("blah")), ShouldNotBeNil)
+		So(EnsureFile(ctx, fs, fs.join(".."), strings.NewReader("blah")), ShouldNotBeNil)
 	})
 
 	Convey("EnsureFile creates new file", t, func() {
 		fs := tempFileSystem()
-		So(EnsureFile(fs, fs.join("name"), strings.NewReader("blah")), ShouldBeNil)
+		So(EnsureFile(ctx, fs, fs.join("name"), strings.NewReader("blah")), ShouldBeNil)
 		So(fs.read("name"), ShouldEqual, "blah")
 	})
 
 	Convey("EnsureFile builds full path", t, func() {
 		fs := tempFileSystem()
-		So(EnsureFile(fs, fs.join("a/b/c"), strings.NewReader("blah")), ShouldBeNil)
+		So(EnsureFile(ctx, fs, fs.join("a/b/c"), strings.NewReader("blah")), ShouldBeNil)
 		So(fs.read("a/b/c"), ShouldEqual, "blah")
 	})
 
 	if runtime.GOOS != "windows" {
 		Convey("EnsureFile replaces existing symlink", t, func() {
 			fs := tempFileSystem()
-			So(fs.EnsureSymlink(fs.join("path"), "target"), ShouldBeNil)
-			So(EnsureFile(fs, fs.join("path"), strings.NewReader("blah")), ShouldBeNil)
+			So(fs.EnsureSymlink(ctx, fs.join("path"), "target"), ShouldBeNil)
+			So(EnsureFile(ctx, fs, fs.join("path"), strings.NewReader("blah")), ShouldBeNil)
 			So(fs.read("path"), ShouldEqual, "blah")
 		})
 	}
 
 	Convey("EnsureFile replaces existing file", t, func() {
 		fs := tempFileSystem()
-		So(EnsureFile(fs, fs.join("path"), strings.NewReader("huh")), ShouldBeNil)
-		So(EnsureFile(fs, fs.join("path"), strings.NewReader("blah")), ShouldBeNil)
+		So(EnsureFile(ctx, fs, fs.join("path"), strings.NewReader("huh")), ShouldBeNil)
+		So(EnsureFile(ctx, fs, fs.join("path"), strings.NewReader("blah")), ShouldBeNil)
 		So(fs.read("path"), ShouldEqual, "blah")
 	})
 
 	Convey("EnsureFile replaces existing directory", t, func() {
 		fs := tempFileSystem()
 		fs.write("a/b/c", "something")
-		So(EnsureFile(fs, fs.join("a"), strings.NewReader("blah")), ShouldBeNil)
+		So(EnsureFile(ctx, fs, fs.join("a"), strings.NewReader("blah")), ShouldBeNil)
 		So(fs.read("a"), ShouldEqual, "blah")
 	})
 }
 
 func TestEnsureFileGone(t *testing.T) {
+	ctx := context.Background()
+
 	Convey("EnsureFileGone checks root", t, func() {
 		fs := tempFileSystem()
-		So(fs.EnsureFileGone(fs.join("../abc")), ShouldNotBeNil)
+		So(fs.EnsureFileGone(ctx, fs.join("../abc")), ShouldNotBeNil)
 	})
 
 	Convey("EnsureFileGone works", t, func() {
 		fs := tempFileSystem()
 		fs.write("abc", "")
-		So(fs.EnsureFileGone(fs.join("abc")), ShouldBeNil)
+		So(fs.EnsureFileGone(ctx, fs.join("abc")), ShouldBeNil)
 		So(fs.isMissing("abc"), ShouldBeTrue)
 	})
 
 	Convey("EnsureFileGone works with missing file", t, func() {
 		fs := tempFileSystem()
-		So(fs.EnsureFileGone(fs.join("abc")), ShouldBeNil)
+		So(fs.EnsureFileGone(ctx, fs.join("abc")), ShouldBeNil)
 	})
 
 	if runtime.GOOS != "windows" {
 		Convey("EnsureFileGone works with symlink", t, func() {
 			fs := tempFileSystem()
-			So(fs.EnsureSymlink(fs.join("abc"), "target"), ShouldBeNil)
-			So(fs.EnsureFileGone(fs.join("abc")), ShouldBeNil)
+			So(fs.EnsureSymlink(ctx, fs.join("abc"), "target"), ShouldBeNil)
+			So(fs.EnsureFileGone(ctx, fs.join("abc")), ShouldBeNil)
 			So(fs.isMissing("abc"), ShouldBeTrue)
 		})
 	}
 }
 
 func TestEnsureDirectoryGone(t *testing.T) {
+	ctx := context.Background()
+
 	Convey("EnsureDirectoryGone checks root", t, func() {
 		fs := tempFileSystem()
-		So(fs.EnsureDirectoryGone(fs.join("../abc")), ShouldNotBeNil)
+		So(fs.EnsureDirectoryGone(ctx, fs.join("../abc")), ShouldNotBeNil)
 	})
 
 	Convey("EnsureDirectoryGone works", t, func() {
@@ -200,39 +212,41 @@ func TestEnsureDirectoryGone(t *testing.T) {
 		fs.write("dir/a/1", "")
 		fs.write("dir/a/2", "")
 		fs.write("dir/b/1", "")
-		So(fs.EnsureDirectoryGone(fs.join("dir")), ShouldBeNil)
+		So(fs.EnsureDirectoryGone(ctx, fs.join("dir")), ShouldBeNil)
 		So(fs.isMissing("dir"), ShouldBeTrue)
 	})
 
 	Convey("EnsureDirectoryGone works with missing dir", t, func() {
 		fs := tempFileSystem()
-		So(fs.EnsureDirectoryGone(fs.join("missing")), ShouldBeNil)
+		So(fs.EnsureDirectoryGone(ctx, fs.join("missing")), ShouldBeNil)
 	})
 
 }
 
 func TestReplace(t *testing.T) {
+	ctx := context.Background()
+
 	Convey("Replace checks root", t, func() {
 		fs := tempFileSystem()
-		So(fs.Replace(fs.join("../abc"), fs.join("def")), ShouldNotBeNil)
+		So(fs.Replace(ctx, fs.join("../abc"), fs.join("def")), ShouldNotBeNil)
 		fs.write("def", "")
-		So(fs.Replace(fs.join("def"), fs.join("../abc")), ShouldNotBeNil)
+		So(fs.Replace(ctx, fs.join("def"), fs.join("../abc")), ShouldNotBeNil)
 	})
 
 	Convey("Replace does nothing if oldpath == newpath", t, func() {
 		fs := tempFileSystem()
-		So(fs.Replace(fs.join("abc"), fs.join("abc/d/..")), ShouldBeNil)
+		So(fs.Replace(ctx, fs.join("abc"), fs.join("abc/d/..")), ShouldBeNil)
 	})
 
 	Convey("Replace recognizes missing oldpath", t, func() {
 		fs := tempFileSystem()
-		So(fs.Replace(fs.join("missing"), fs.join("abc")), ShouldNotBeNil)
+		So(fs.Replace(ctx, fs.join("missing"), fs.join("abc")), ShouldNotBeNil)
 	})
 
 	Convey("Replace creates file and dir if missing", t, func() {
 		fs := tempFileSystem()
 		fs.write("a/123", "")
-		So(fs.Replace(fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
+		So(fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
 		So(fs.isMissing("a/123"), ShouldBeTrue)
 		So(fs.isFile("b/c/d/"), ShouldBeTrue)
 	})
@@ -241,7 +255,7 @@ func TestReplace(t *testing.T) {
 		fs := tempFileSystem()
 		fs.write("a/123", "xxx")
 		fs.write("b/c/d", "yyy")
-		So(fs.Replace(fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
+		So(fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
 		So(fs.isMissing("a/123"), ShouldBeTrue)
 		So(fs.read("b/c/d"), ShouldEqual, "xxx")
 	})
@@ -250,7 +264,7 @@ func TestReplace(t *testing.T) {
 		fs := tempFileSystem()
 		fs.write("a/123/456", "xxx")
 		fs.write("b/c/d", "yyy")
-		So(fs.Replace(fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
+		So(fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
 		So(fs.isMissing("a/123"), ShouldBeTrue)
 		So(fs.read("b/c/d/456"), ShouldEqual, "xxx")
 	})
@@ -258,9 +272,9 @@ func TestReplace(t *testing.T) {
 	Convey("Replace replaces empty dir with a file", t, func() {
 		fs := tempFileSystem()
 		fs.write("a/123", "xxx")
-		_, err := fs.EnsureDirectory(fs.join("b/c/d"))
+		_, err := fs.EnsureDirectory(ctx, fs.join("b/c/d"))
 		So(err, ShouldBeNil)
-		So(fs.Replace(fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
+		So(fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
 		So(fs.isMissing("a/123"), ShouldBeTrue)
 		So(fs.read("b/c/d"), ShouldEqual, "xxx")
 	})
@@ -268,9 +282,9 @@ func TestReplace(t *testing.T) {
 	Convey("Replace replaces empty dir with a dir", t, func() {
 		fs := tempFileSystem()
 		fs.write("a/123/456", "xxx")
-		_, err := fs.EnsureDirectory(fs.join("b/c/d"))
+		_, err := fs.EnsureDirectory(ctx, fs.join("b/c/d"))
 		So(err, ShouldBeNil)
-		So(fs.Replace(fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
+		So(fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
 		So(fs.isMissing("a/123"), ShouldBeTrue)
 		So(fs.read("b/c/d/456"), ShouldEqual, "xxx")
 	})
@@ -279,7 +293,7 @@ func TestReplace(t *testing.T) {
 		fs := tempFileSystem()
 		fs.write("a/123", "xxx")
 		fs.write("b/c/d/456", "yyy")
-		So(fs.Replace(fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
+		So(fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
 		So(fs.isMissing("a/123"), ShouldBeTrue)
 		So(fs.read("b/c/d"), ShouldEqual, "xxx")
 	})
@@ -288,7 +302,7 @@ func TestReplace(t *testing.T) {
 		fs := tempFileSystem()
 		fs.write("a/123/456", "xxx")
 		fs.write("b/c/d/456", "yyy")
-		So(fs.Replace(fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
+		So(fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
 		So(fs.isMissing("a/123"), ShouldBeTrue)
 		So(fs.read("b/c/d/456"), ShouldEqual, "xxx")
 	})
@@ -301,7 +315,7 @@ func tempFileSystem() *tempFileSystemImpl {
 	tempDir, err := ioutil.TempDir("", "cipd_test")
 	So(err, ShouldBeNil)
 	Reset(func() { os.RemoveAll(tempDir) })
-	return &tempFileSystemImpl{NewFileSystem(tempDir, nil)}
+	return &tempFileSystemImpl{NewFileSystem(tempDir)}
 }
 
 type tempFileSystemImpl struct {

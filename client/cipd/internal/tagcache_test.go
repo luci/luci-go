@@ -8,46 +8,50 @@ import (
 	"strings"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/client/cipd/common"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestTagCacheWorks(t *testing.T) {
+	ctx := context.Background()
+
 	Convey("Works", t, func(c C) {
 		tc := TagCache{}
-		So(tc.ResolveTag("pkg", "tag:1"), ShouldResemble, common.Pin{})
+		So(tc.ResolveTag(ctx, "pkg", "tag:1"), ShouldResemble, common.Pin{})
 		So(tc.Dirty(), ShouldBeFalse)
 
 		// Add new.
-		tc.AddTag(common.Pin{
+		tc.AddTag(ctx, common.Pin{
 			PackageName: "pkg",
 			InstanceID:  strings.Repeat("a", 40),
 		}, "tag:1")
 		So(tc.Dirty(), ShouldBeTrue)
-		So(tc.ResolveTag("pkg", "tag:1"), ShouldResemble, common.Pin{
+		So(tc.ResolveTag(ctx, "pkg", "tag:1"), ShouldResemble, common.Pin{
 			PackageName: "pkg",
 			InstanceID:  strings.Repeat("a", 40),
 		})
 
 		// Replace existing.
-		tc.AddTag(common.Pin{
+		tc.AddTag(ctx, common.Pin{
 			PackageName: "pkg",
 			InstanceID:  strings.Repeat("b", 40),
 		}, "tag:1")
 		So(tc.Dirty(), ShouldBeTrue)
-		So(tc.ResolveTag("pkg", "tag:1"), ShouldResemble, common.Pin{
+		So(tc.ResolveTag(ctx, "pkg", "tag:1"), ShouldResemble, common.Pin{
 			PackageName: "pkg",
 			InstanceID:  strings.Repeat("b", 40),
 		})
 
 		// Save\load.
-		blob, err := tc.Save()
+		blob, err := tc.Save(ctx)
 		So(err, ShouldBeNil)
 		So(tc.Dirty(), ShouldBeFalse)
 		another := TagCache{}
-		So(another.Load(blob), ShouldBeNil)
-		So(another.ResolveTag("pkg", "tag:1"), ShouldResemble, common.Pin{
+		So(another.Load(ctx, blob), ShouldBeNil)
+		So(another.ResolveTag(ctx, "pkg", "tag:1"), ShouldResemble, common.Pin{
 			PackageName: "pkg",
 			InstanceID:  strings.Repeat("b", 40),
 		})

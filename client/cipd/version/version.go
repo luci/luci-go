@@ -35,9 +35,11 @@ type Info struct {
 	InstanceID  string `json:"instance_id"`
 }
 
-// GetCurrentVersion reads version file from disk. Note that it may have been
-// updated since the process started. This function always reads the latest
-// values. Version file is expected to be found at <exe-path>.cipd_version.
+// GetCurrentVersion reads version file from disk.
+//
+// Note that it may have been updated since the process started. This function
+// always reads the latest values. Version file is expected to be found at
+// <exe-path>.cipd_version.
 //
 // Add following lines to package definition yaml to to set this up:
 //

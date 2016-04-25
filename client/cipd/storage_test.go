@@ -16,6 +16,8 @@ import (
 )
 
 func TestUpload(t *testing.T) {
+	ctx := makeTestContext()
+
 	Convey("Upload full flow", t, func(c C) {
 		storage := mockStorageImpl(c, []expectedHTTPCall{
 			{
@@ -63,12 +65,14 @@ func TestUpload(t *testing.T) {
 				Headers: http.Header{"Content-Range": []string{"bytes 8-12/13"}},
 			},
 		})
-		err := storage.upload("http://localhost/upl", bytes.NewReader([]byte("0123456789abc")))
+		err := storage.upload(ctx, "http://localhost/upl", bytes.NewReader([]byte("0123456789abc")))
 		So(err, ShouldBeNil)
 	})
 }
 
 func TestDownload(t *testing.T) {
+	ctx := makeTestContext()
+
 	Convey("With temp directory", t, func() {
 		tempDir, err := ioutil.TempDir("", "cipd_test")
 		So(err, ShouldBeNil)
@@ -95,7 +99,7 @@ func TestDownload(t *testing.T) {
 					Reply:  "file data",
 				},
 			})
-			err = storage.download("http://localhost/dwn", out)
+			err = storage.download(ctx, "http://localhost/dwn", out)
 			So(err, ShouldBeNil)
 
 			out.Seek(0, os.SEEK_SET)
@@ -109,5 +113,10 @@ func TestDownload(t *testing.T) {
 ////////////////////////////////////////////////////////////////////////////////
 
 func mockStorageImpl(c C, expectations []expectedHTTPCall) *storageImpl {
-	return &storageImpl{client: mockClient(c, "", expectations), chunkSize: 5}
+	client := mockClient(c, "", expectations)
+	return &storageImpl{
+		chunkSize: 5,
+		userAgent: client.UserAgent,
+		client:    client.AnonymousClient,
+	}
 }

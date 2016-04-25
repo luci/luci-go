@@ -13,13 +13,17 @@ import (
 	"os"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestBuildInstance(t *testing.T) {
+	ctx := context.Background()
+
 	Convey("Building empty package", t, func() {
 		out := bytes.Buffer{}
-		err := BuildInstance(BuildInstanceOptions{
+		err := BuildInstance(ctx, BuildInstanceOptions{
 			Input:       []File{},
 			Output:      &out,
 			PackageName: "testing",
@@ -49,7 +53,7 @@ func TestBuildInstance(t *testing.T) {
 
 	Convey("Building package with a bunch of files", t, func() {
 		out := bytes.Buffer{}
-		err := BuildInstance(BuildInstanceOptions{
+		err := BuildInstance(ctx, BuildInstanceOptions{
 			Input: []File{
 				NewTestFile("testing/qwerty", "12345", false),
 				NewTestFile("abc", "duh", true),
@@ -108,7 +112,7 @@ func TestBuildInstance(t *testing.T) {
 	})
 
 	Convey("Duplicate files fail", t, func() {
-		err := BuildInstance(BuildInstanceOptions{
+		err := BuildInstance(ctx, BuildInstanceOptions{
 			Input: []File{
 				NewTestFile("a", "12345", false),
 				NewTestFile("a", "12345", false),
@@ -120,7 +124,7 @@ func TestBuildInstance(t *testing.T) {
 	})
 
 	Convey("Writing to service dir fails", t, func() {
-		err := BuildInstance(BuildInstanceOptions{
+		err := BuildInstance(ctx, BuildInstanceOptions{
 			Input: []File{
 				NewTestFile(".cipdpkg/stuff", "12345", false),
 			},
@@ -131,7 +135,7 @@ func TestBuildInstance(t *testing.T) {
 	})
 
 	Convey("Bad name fails", t, func() {
-		err := BuildInstance(BuildInstanceOptions{
+		err := BuildInstance(ctx, BuildInstanceOptions{
 			Output:      &bytes.Buffer{},
 			PackageName: "../../asdad",
 		})
@@ -139,7 +143,7 @@ func TestBuildInstance(t *testing.T) {
 	})
 
 	Convey("Bad version file fails", t, func() {
-		err := BuildInstance(BuildInstanceOptions{
+		err := BuildInstance(ctx, BuildInstanceOptions{
 			Output:      &bytes.Buffer{},
 			PackageName: "abc",
 			VersionFile: "../bad/path",

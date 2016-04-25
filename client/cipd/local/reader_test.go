@@ -12,6 +12,8 @@ import (
 	"os"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	. "github.com/luci/luci-go/client/cipd/common"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -45,17 +47,19 @@ func shouldBeSameJSONDict(actual interface{}, expected ...interface{}) string {
 }
 
 func TestPackageReading(t *testing.T) {
+	ctx := context.Background()
+
 	Convey("Open empty package works", t, func() {
 		// Build an empty package.
 		out := bytes.Buffer{}
-		err := BuildInstance(BuildInstanceOptions{
+		err := BuildInstance(ctx, BuildInstanceOptions{
 			Output:      &out,
 			PackageName: "testing",
 		})
 		So(err, ShouldBeNil)
 
 		// Open it.
-		inst, err := OpenInstance(bytes.NewReader(out.Bytes()), "")
+		inst, err := OpenInstance(ctx, bytes.NewReader(out.Bytes()), "")
 		if inst != nil {
 			defer inst.Close()
 		}
@@ -86,7 +90,7 @@ func TestPackageReading(t *testing.T) {
 	Convey("Open empty package with unexpected instance ID", t, func() {
 		// Build an empty package.
 		out := bytes.Buffer{}
-		err := BuildInstance(BuildInstanceOptions{
+		err := BuildInstance(ctx, BuildInstanceOptions{
 			Output:      &out,
 			PackageName: "testing",
 		})
@@ -94,13 +98,13 @@ func TestPackageReading(t *testing.T) {
 
 		// Attempt to open it, providing correct instance ID, should work.
 		source := bytes.NewReader(out.Bytes())
-		inst, err := OpenInstance(source, "23f2c4900785ac8faa2f38e473925b840e574ccc")
+		inst, err := OpenInstance(ctx, source, "23f2c4900785ac8faa2f38e473925b840e574ccc")
 		So(err, ShouldBeNil)
 		So(inst, ShouldNotBeNil)
 		inst.Close()
 
 		// Attempt to open it, providing incorrect instance ID.
-		inst, err = OpenInstance(source, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+		inst, err = OpenInstance(ctx, source, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 		So(err, ShouldNotBeNil)
 		So(inst, ShouldBeNil)
 	})
@@ -113,7 +117,7 @@ func TestPackageReading(t *testing.T) {
 		defer os.Remove(tempFilePath)
 
 		// Write empty package to it.
-		err = BuildInstance(BuildInstanceOptions{
+		err = BuildInstance(ctx, BuildInstanceOptions{
 			Output:      tempFile,
 			PackageName: "testing",
 		})
@@ -121,7 +125,7 @@ func TestPackageReading(t *testing.T) {
 		tempFile.Close()
 
 		// Read the package.
-		inst, err := OpenInstanceFile(tempFilePath, "")
+		inst, err := OpenInstanceFile(ctx, tempFilePath, "")
 		if inst != nil {
 			defer inst.Close()
 		}
@@ -132,7 +136,7 @@ func TestPackageReading(t *testing.T) {
 	Convey("ExtractInstance works", t, func() {
 		// Add a bunch of files to a package.
 		out := bytes.Buffer{}
-		err := BuildInstance(BuildInstanceOptions{
+		err := BuildInstance(ctx, BuildInstanceOptions{
 			Input: []File{
 				NewTestFile("testing/qwerty", "12345", false),
 				NewTestFile("abc", "duh", true),
@@ -146,13 +150,13 @@ func TestPackageReading(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Extract files.
-		inst, err := OpenInstance(bytes.NewReader(out.Bytes()), "")
+		inst, err := OpenInstance(ctx, bytes.NewReader(out.Bytes()), "")
 		if inst != nil {
 			defer inst.Close()
 		}
 		So(err, ShouldBeNil)
 		dest := &testDestination{}
-		err = ExtractInstance(inst, dest)
+		err = ExtractInstance(ctx, inst, dest)
 		So(err, ShouldBeNil)
 		So(dest.beginCalls, ShouldEqual, 1)
 		So(dest.endCalls, ShouldEqual, 1)
@@ -236,12 +240,12 @@ type testDestinationFile struct {
 
 func (d *testDestinationFile) Close() error { return nil }
 
-func (d *testDestination) Begin() error {
+func (d *testDestination) Begin(context.Context) error {
 	d.beginCalls++
 	return nil
 }
 
-func (d *testDestination) CreateFile(name string, executable bool) (io.WriteCloser, error) {
+func (d *testDestination) CreateFile(ctx context.Context, name string, executable bool) (io.WriteCloser, error) {
 	f := &testDestinationFile{
 		name:       name,
 		executable: executable,
@@ -250,7 +254,7 @@ func (d *testDestination) CreateFile(name string, executable bool) (io.WriteClos
 	return f, nil
 }
 
-func (d *testDestination) CreateSymlink(name string, target string) error {
+func (d *testDestination) CreateSymlink(ctx context.Context, name string, target string) error {
 	f := &testDestinationFile{
 		name:          name,
 		symlinkTarget: target,
@@ -259,7 +263,7 @@ func (d *testDestination) CreateSymlink(name string, target string) error {
 	return nil
 }
 
-func (d *testDestination) End(success bool) error {
+func (d *testDestination) End(ctx context.Context, success bool) error {
 	d.endCalls++
 	return nil
 }

@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/client/cipd/common"
 	"github.com/luci/luci-go/client/cipd/internal/messages"
 )
@@ -16,6 +18,7 @@ import (
 const MaxTagCacheSize = 300
 
 // TagCache provides a mapping (package name, tag) -> instance ID.
+//
 // This mapping is safe to cache because tags are not detachable: once a tag is
 // successfully resolved to an instance ID it is guaranteed to resolve to same
 // instance ID later or not resolve at all (e.g. if one tag is attached to
@@ -30,8 +33,9 @@ type TagCache struct {
 }
 
 // LoadTagCacheFromFile reads tag cache state from given file path if it exists.
+//
 // Returns empty cache if file doesn't exist.
-func LoadTagCacheFromFile(path string) (*TagCache, error) {
+func LoadTagCacheFromFile(ctx context.Context, path string) (*TagCache, error) {
 	buf, err := ioutil.ReadFile(path)
 	if os.IsNotExist(err) {
 		return &TagCache{}, nil
@@ -40,14 +44,14 @@ func LoadTagCacheFromFile(path string) (*TagCache, error) {
 		return nil, err
 	}
 	cache := &TagCache{}
-	if err := cache.Load(buf); err != nil {
+	if err := cache.Load(ctx, buf); err != nil {
 		return nil, err
 	}
 	return cache, nil
 }
 
 // Load loads the state from given buffer.
-func (c *TagCache) Load(buf []byte) error {
+func (c *TagCache) Load(ctx context.Context, buf []byte) error {
 	cache := messages.TagCache{}
 	if err := UnmarshalWithSHA1(buf, &cache); err != nil {
 		return err
@@ -72,7 +76,7 @@ func (c *TagCache) Load(buf []byte) error {
 }
 
 // Save dumps state to the byte buffer. Also resets 'Dirty' flag.
-func (c *TagCache) Save() ([]byte, error) {
+func (c *TagCache) Save(ctx context.Context) ([]byte, error) {
 	// Remove all "holes" left from moving entries in AddTag.
 	compacted := make([]*messages.TagCache_Entry, 0, len(c.cache.Entries))
 	for _, e := range c.cache.Entries {
@@ -102,7 +106,7 @@ func (c *TagCache) Dirty() bool {
 }
 
 // ResolveTag returns cached tag or empty Pin{} if such tag is not in cache.
-func (c *TagCache) ResolveTag(pkg, tag string) common.Pin {
+func (c *TagCache) ResolveTag(ctx context.Context, pkg, tag string) common.Pin {
 	for i := len(c.cache.Entries) - 1; i >= 0; i-- {
 		e := c.cache.Entries[i]
 		if e != nil && e.Package == pkg && e.Tag == tag {
@@ -116,7 +120,7 @@ func (c *TagCache) ResolveTag(pkg, tag string) common.Pin {
 }
 
 // AddTag records that (pin.PackageName, tag) maps to pin.InstanceID.
-func (c *TagCache) AddTag(pin common.Pin, tag string) {
+func (c *TagCache) AddTag(ctx context.Context, pin common.Pin, tag string) {
 	// Just skip invalid data. It should not be here anyway.
 	bad := common.ValidatePackageName(pin.PackageName) != nil ||
 		common.ValidateInstanceID(pin.InstanceID) != nil ||

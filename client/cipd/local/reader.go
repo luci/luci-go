@@ -16,6 +16,8 @@ import (
 	"os"
 	"strings"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/client/cipd/common"
 )
 
@@ -23,21 +25,26 @@ import (
 type PackageInstance interface {
 	// Close shuts down the package and its data provider.
 	Close() error
-	// Pin identifies package name and concreted package instance ID of this package file.
+
+	// Pin identifies package name and concreted instance ID of this package file.
 	Pin() common.Pin
+
 	// Files returns a list of files to deploy with the package.
 	Files() []File
+
 	// DataReader returns reader that reads raw package data.
 	DataReader() io.ReadSeeker
 }
 
-// OpenInstance verifies package SHA1 hash (instanceID if not empty string) and
+// OpenInstance verifies the package and prepares it for extraction.
+//
+// It checks package SHA1 hash (must match instanceID, if it's given) and
 // prepares a package instance for extraction. If the call succeeds,
 // PackageInstance takes ownership of io.ReadSeeker. If it also implements
 // io.Closer, it will be closed when package.Close() is called. If an error is
 // returned, io.ReadSeeker remains unowned and caller is responsible for closing
 // it (if required).
-func OpenInstance(r io.ReadSeeker, instanceID string) (PackageInstance, error) {
+func OpenInstance(ctx context.Context, r io.ReadSeeker, instanceID string) (PackageInstance, error) {
 	out := &packageInstance{data: r}
 	if err := out.open(instanceID); err != nil {
 		return nil, err
@@ -46,12 +53,12 @@ func OpenInstance(r io.ReadSeeker, instanceID string) (PackageInstance, error) {
 }
 
 // OpenInstanceFile opens a package instance file on disk.
-func OpenInstanceFile(path string, instanceID string) (inst PackageInstance, err error) {
+func OpenInstanceFile(ctx context.Context, path string, instanceID string) (inst PackageInstance, err error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return
 	}
-	inst, err = OpenInstance(file, instanceID)
+	inst, err = OpenInstance(ctx, file, instanceID)
 	if err != nil {
 		file.Close()
 	}
@@ -59,8 +66,8 @@ func OpenInstanceFile(path string, instanceID string) (inst PackageInstance, err
 }
 
 // ExtractInstance extracts all files from a package instance into a destination.
-func ExtractInstance(inst PackageInstance, dest Destination) error {
-	if err := dest.Begin(); err != nil {
+func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination) error {
+	if err := dest.Begin(ctx); err != nil {
 		return err
 	}
 
@@ -68,13 +75,13 @@ func ExtractInstance(inst PackageInstance, dest Destination) error {
 	needToEnd := true
 	defer func() {
 		if needToEnd {
-			dest.End(false)
+			dest.End(ctx, false)
 		}
 	}()
 
 	files := inst.Files()
 
-	extractManifestFile := func(f File) error {
+	extractManifestFile := func(f File) (err error) {
 		manifest, err := readManifestFile(f)
 		if err != nil {
 			return err
@@ -101,11 +108,15 @@ func ExtractInstance(inst PackageInstance, dest Destination) error {
 			}
 			manifest.Files = append(manifest.Files, fi)
 		}
-		out, err := dest.CreateFile(f.Name(), false)
+		out, err := dest.CreateFile(ctx, f.Name(), false)
 		if err != nil {
 			return err
 		}
-		defer out.Close()
+		defer func() {
+			if closeErr := out.Close(); err == nil {
+				err = closeErr
+			}
+		}()
 		return writeManifest(&manifest, out)
 	}
 
@@ -114,15 +125,19 @@ func ExtractInstance(inst PackageInstance, dest Destination) error {
 		if err != nil {
 			return err
 		}
-		return dest.CreateSymlink(f.Name(), target)
+		return dest.CreateSymlink(ctx, f.Name(), target)
 	}
 
-	extractRegularFile := func(f File) error {
-		out, err := dest.CreateFile(f.Name(), f.Executable())
+	extractRegularFile := func(f File) (err error) {
+		out, err := dest.CreateFile(ctx, f.Name(), f.Executable())
 		if err != nil {
 			return err
 		}
-		defer out.Close()
+		defer func() {
+			if closeErr := out.Close(); err == nil {
+				err = closeErr
+			}
+		}()
 		in, err := f.Open()
 		if err != nil {
 			return err
@@ -135,6 +150,9 @@ func ExtractInstance(inst PackageInstance, dest Destination) error {
 	// Use nested functions in a loop to be able to utilize defers.
 	var err error
 	for _, f := range files {
+		if err = ctx.Err(); err != nil {
+			break
+		}
 		if f.Name() == manifestName {
 			err = extractManifestFile(f)
 		} else if f.Symlink() {
@@ -149,10 +167,10 @@ func ExtractInstance(inst PackageInstance, dest Destination) error {
 
 	needToEnd = false
 	if err == nil {
-		err = dest.End(true)
+		err = dest.End(ctx, true)
 	} else {
 		// Ignore error in 'End' and return the original error.
-		dest.End(false)
+		dest.End(ctx, false)
 	}
 
 	return err
@@ -170,7 +188,7 @@ type packageInstance struct {
 	manifest   Manifest
 }
 
-// open reads the package data , verifies SHA1 hash and reads manifest.
+// open reads the package data, verifies SHA1 hash and reads manifest.
 func (inst *packageInstance) open(instanceID string) error {
 	// Calculate SHA1 of the data to verify it matches expected instanceID.
 	if _, err := inst.data.Seek(0, os.SEEK_SET); err != nil {
