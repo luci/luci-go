@@ -36,9 +36,6 @@ func InstallHandlers(r *httprouter.Router, base middleware.Base, cfg Config) {
 		h = auth.Authenticate(h)
 		h = templates.WithTemplates(h, tmpl)
 		h = middleware.WithContextValue(h, configContextKey(0), &cfg)
-		if !appengine.IsDevAppServer() {
-			h = middleware.WithPanicCatcher(h)
-		}
 		return base(h)
 	}
 

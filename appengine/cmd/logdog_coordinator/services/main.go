@@ -15,7 +15,6 @@ import (
 	servicesPb "github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/prpc"
-	"google.golang.org/appengine"
 
 	// Include mutations package so its Mutations will register with tumble via
 	// init().
@@ -24,9 +23,6 @@ import (
 
 // base is the root of the middleware chain.
 func base(h middleware.Handler) httprouter.Handle {
-	if !appengine.IsDevAppServer() {
-		h = middleware.WithPanicCatcher(h)
-	}
 	h = config.WithConfig(h)
 	h = coordinator.WithProdServices(h)
 	return gaemiddleware.BaseProd(h)

@@ -9,8 +9,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"google.golang.org/appengine"
-
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/appengine/cmd/dm/deps"
 	gaeauthServer "github.com/luci/luci-go/appengine/gaeauth/server"
@@ -37,9 +35,6 @@ func base(h middleware.Handler) httprouter.Handle {
 			panic(err)
 		}
 		h(c, rw, r, p)
-	}
-	if !appengine.IsDevAppServer() {
-		newH = middleware.WithPanicCatcher(newH)
 	}
 	return gaemiddleware.BaseProd(newH)
 }

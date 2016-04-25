@@ -15,7 +15,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
-	"google.golang.org/appengine"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
@@ -25,7 +24,6 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/discovery"
-	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/prpc"
 
 	"github.com/luci/luci-go/common/api/tokenserver/admin/v1"
@@ -78,12 +76,7 @@ func adminPrelude(serviceName string) func(context.Context, string, proto.Messag
 
 func init() {
 	router := httprouter.New()
-	base := func(h middleware.Handler) httprouter.Handle {
-		if !appengine.IsDevAppServer() {
-			h = middleware.WithPanicCatcher(h)
-		}
-		return gaemiddleware.BaseProd(h)
-	}
+	base := gaemiddleware.BaseProd
 
 	// Install auth and config handlers.
 	server.InstallHandlers(router, base)

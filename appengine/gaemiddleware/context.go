@@ -12,6 +12,7 @@ import (
 
 	"github.com/luci/gae/filter/dscache"
 	"github.com/luci/gae/impl/prod"
+	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaeauth/server/gaesigner"
@@ -68,10 +69,16 @@ func WithProd(c context.Context, req *http.Request) context.Context {
 }
 
 // BaseProd adapts a middleware-style handler to a httprouter.Handle. It
-// installs services using InstallProd, then passes the context.
+// installs services using InstallProd, installs a panic catcher if this
+// is not a devserver, then passes the context.
 func BaseProd(h middleware.Handler) httprouter.Handle {
 	return func(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		c := WithProd(context.Background(), r)
+
+		if !info.Get(c).IsDevAppServer() {
+			h = middleware.WithPanicCatcher(h)
+		}
+
 		h(c, rw, r, p)
 	}
 }

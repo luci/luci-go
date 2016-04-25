@@ -59,9 +59,6 @@ var templateBundle = &templates.Bundle{
 func pageBase(h middleware.Handler) httprouter.Handle {
 	h = auth.Use(h, auth.Authenticator{server.CookieAuth})
 	h = templates.WithTemplates(h, templateBundle)
-	if !appengine.IsDevAppServer() {
-		h = middleware.WithPanicCatcher(h)
-	}
 	return gaemiddleware.BaseProd(h)
 }
 
@@ -73,10 +70,6 @@ func prpcBase(h middleware.Handler) httprouter.Handle {
 	//
 	// For authorization checks, we use per-service decorators; see
 	// service registration code.
-
-	if !appengine.IsDevAppServer() {
-		h = middleware.WithPanicCatcher(h)
-	}
 	return gaemiddleware.BaseProd(h)
 }
 

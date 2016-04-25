@@ -60,9 +60,6 @@ func base(h middleware.Handler) httprouter.Handle {
 	}
 	h = auth.Use(h, methods)
 	h = templates.WithTemplates(h, templateBundle)
-	if !appengine.IsDevAppServer() {
-		h = middleware.WithPanicCatcher(h)
-	}
 	return gaemiddleware.BaseProd(h)
 }
 

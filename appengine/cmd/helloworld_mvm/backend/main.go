@@ -20,9 +20,6 @@ import (
 
 // base is the root of the middleware chain.
 func base(h middleware.Handler) httprouter.Handle {
-	if !appengine.IsDevAppServer() {
-		h = middleware.WithPanicCatcher(h)
-	}
 	return gaemiddleware.BaseProd(h)
 }
 

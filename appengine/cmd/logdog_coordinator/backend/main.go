@@ -16,7 +16,6 @@ import (
 	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/middleware"
-	"google.golang.org/appengine"
 
 	// Include mutations package so its Mutations will register with tumble via
 	// init().
@@ -35,9 +34,6 @@ func authenticator(scopes ...string) auth.Authenticator {
 func base(h middleware.Handler) httprouter.Handle {
 	a := authenticator(gaeauthServer.EmailScope)
 	h = auth.Use(h, a)
-	if !appengine.IsDevAppServer() {
-		h = middleware.WithPanicCatcher(h)
-	}
 	h = config.WithConfig(h)
 	h = coordinator.WithProdServices(h)
 	return gaemiddleware.BaseProd(h)

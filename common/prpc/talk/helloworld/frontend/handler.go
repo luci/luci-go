@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
-	"google.golang.org/appengine"
 
 	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
@@ -24,9 +23,6 @@ func base(h middleware.Handler) httprouter.Handle {
 		&server.InboundAppIDAuthMethod{},
 	}
 	h = auth.Use(h, methods)
-	if !appengine.IsDevAppServer() {
-		h = middleware.WithPanicCatcher(h)
-	}
 	return gaemiddleware.BaseProd(h)
 }
 
