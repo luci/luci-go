@@ -16,6 +16,42 @@ type otherMEType []error
 
 func (o otherMEType) Error() string { return "FAIL" }
 
+func TestMultiError(t *testing.T) {
+	t.Parallel()
+
+	Convey("MultiError works", t, func() {
+		var me error = MultiError{fmt.Errorf("hello"), fmt.Errorf("bob")}
+
+		So(me.Error(), ShouldEqual, `hello (and 1 other error)`)
+
+		Convey("MultiErrorFromErrors with errors works", func() {
+			mec := make(chan error, 4)
+			mec <- nil
+			mec <- fmt.Errorf("first error")
+			mec <- nil
+			mec <- fmt.Errorf("what")
+			close(mec)
+
+			err := MultiErrorFromErrors(mec)
+			So(err.Error(), ShouldEqual, `first error (and 1 other error)`)
+		})
+
+		Convey("MultiErrorFromErrors with nil works", func() {
+			So(MultiErrorFromErrors(nil), ShouldBeNil)
+
+			c := make(chan error)
+			close(c)
+			So(MultiErrorFromErrors(c), ShouldBeNil)
+
+			c = make(chan error, 2)
+			c <- nil
+			c <- nil
+			close(c)
+			So(MultiErrorFromErrors(c), ShouldBeNil)
+		})
+	})
+}
+
 func TestUpstreamErrors(t *testing.T) {
 	t.Parallel()
 
@@ -61,22 +97,23 @@ func TestUpstreamErrors(t *testing.T) {
 	})
 }
 
-func TestAny(t *testing.T) {
-	t.Parallel()
+func ExampleMultiError() {
+	errCh := make(chan error, 10)
+	errCh <- nil // nils are ignored
+	errCh <- fmt.Errorf("what")
+	close(errCh)
 
-	Convey(`Testing the Any function`, t, func() {
-		for _, tc := range []struct {
-			err error
-			has bool
-		}{
-			{nil, false},
-			{New("test error"), true},
-			{New("other error"), false},
-			{MultiError{MultiError{New("test error"), nil}, New("other error")}, true},
-		} {
-			Convey(fmt.Sprintf(`Registers %v for error [%v]`, tc.has, tc.err), func() {
-				So(Any(tc.err, func(err error) bool { return err.Error() == "test error" }), ShouldEqual, tc.has)
-			})
-		}
-	})
+	err := MultiErrorFromErrors(errCh)
+	fmt.Printf("got: %s len=%d\n", err, len(err.(MultiError)))
+
+	errCh = make(chan error, 10)
+	errCh <- nil // and if the channel only has nils
+	close(errCh)
+
+	err = MultiErrorFromErrors(errCh) // then it returns nil
+	fmt.Printf("got: %v\n", err)
+
+	// Output:
+	// got: what len=1
+	// got: <nil>
 }

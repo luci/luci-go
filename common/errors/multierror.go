@@ -94,25 +94,3 @@ func Fix(err error) error {
 	}
 	return err
 }
-
-// Any returns true if a the filter function is true for the supplied error.
-// If the supplied error is a MultiError, Any will recurse into it.
-//
-// If err is nil, Any will return false.
-func Any(err error, fn func(error) bool) bool {
-	if err == nil {
-		return false
-	}
-
-	if fn(err) {
-		return true
-	}
-	if merr, ok := err.(MultiError); ok {
-		for _, e := range merr {
-			if Any(e, fn) {
-				return true
-			}
-		}
-	}
-	return false
-}

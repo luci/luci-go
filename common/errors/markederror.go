@@ -9,40 +9,54 @@ import (
 	"fmt"
 	"path/filepath"
 	"runtime"
+	"sync"
 )
 
 // New is a pass-through version of the standard errors.New function.
 var New = errors.New
 
-// MarkedError is the specific error type retuned by MakeMarkFn. It's designed
-// so that you can access the underlying object if needed.
-type MarkedError struct {
-	// Orig contains the original data (error or otherwise) which was passed to
-	// the marker function.
-	Orig interface{}
+// markedError is the specific error type retuned by MakeMarkFn.
+type markedError struct {
+	// inner contains the original error which was passed to the marker function.
+	inner error
 
-	msgFmt string
+	formatOnce sync.Once
+	formatFn   func() string
+	msg        string // The formatted error message (protected by formatOnce).
 }
 
-func (te *MarkedError) Error() string {
-	return fmt.Sprintf(te.msgFmt, te.Orig)
+var _ Wrapped = (*markedError)(nil)
+
+func (merr *markedError) Error() string {
+	merr.formatOnce.Do(func() {
+		merr.msg = merr.formatFn()
+		merr.formatFn = nil
+	})
+	return merr.msg
+}
+
+func (merr *markedError) InnerError() error {
+	return merr.inner
 }
 
 // MakeMarkFn returns a new 'marker' function for your library. The name parameter
 // should probably match your package name, but it can by any string which
 // will help identify the error as originating from your package.
-func MakeMarkFn(name string) func(interface{}) error {
-	fmtstring1 := name + " - %s:%d - %%+v"
-	fmtstring2 := name + " - %+v"
-	return func(errish interface{}) error {
-		if errish == nil {
+func MakeMarkFn(name string) func(error) error {
+	return func(err error) error {
+		if err == nil {
 			return nil
 		}
+
 		_, filename, line, gotInfo := runtime.Caller(1)
-		pfx := fmtstring2
-		if gotInfo {
-			pfx = fmt.Sprintf(fmtstring1, filepath.Base(filename), line)
+		return &markedError{
+			inner: err,
+			formatFn: func() string {
+				if gotInfo {
+					return fmt.Sprintf("%s: %s:%d: %+v", name, filepath.Base(filename), line, err.Error())
+				}
+				return fmt.Sprintf("%s: %+v", name, err.Error())
+			},
 		}
-		return &MarkedError{errish, pfx}
 	}
 }

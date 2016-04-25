@@ -12,6 +12,8 @@ import (
 )
 
 func TestTransientError(t *testing.T) {
+	t.Parallel()
+
 	Convey(`A nil error`, t, func() {
 		err := error(nil)
 
@@ -38,6 +40,10 @@ func TestTransientError(t *testing.T) {
 			Convey(`Is transient.`, func() {
 				So(IsTransient(terr), ShouldBeTrue)
 			})
+		})
+
+		Convey(`A MultiError with a transient sub-error is transient.`, func() {
+			So(IsTransient(MultiError{nil, WrapTransient(err), err}), ShouldBeTrue)
 		})
 	})
 }

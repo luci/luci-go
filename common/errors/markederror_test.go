@@ -11,56 +11,29 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+type testMarkError struct{ name string }
+
+func (c *testMarkError) Error() string {
+	return c.name
+}
+
 func TestMark(t *testing.T) {
+	t.Parallel()
+
 	Convey("MakeMarkFn works", t, func() {
 		f := MakeMarkFn("errorsTest")
 
-		type Cat struct{ name string }
-
 		// unfortunately... the line numbers for these tests matter
-		c := &Cat{"dude"}
+		c := &testMarkError{"dude"}
 		var err error
 		err = f(c)
 
-		So(err.Error(), ShouldEqual, "errorsTest - markederror_test.go:23 - &{name:dude}")
-		So(f("hello").Error(), ShouldEqual, "errorsTest - markederror_test.go:26 - hello")
+		So(err.Error(), ShouldEqual, "errorsTest: markederror_test.go:29: dude")
+		So(f(New("hello")).Error(), ShouldEqual, "errorsTest: markederror_test.go:32: hello")
 
-		So(err.(*MarkedError).Orig, ShouldEqual, c)
+		So(Unwrap(err), ShouldEqual, c)
 
 		So(f(nil), ShouldBeNil)
-	})
-}
-
-func TestMultiError(t *testing.T) {
-	Convey("MultiError works", t, func() {
-		var me error = MultiError{fmt.Errorf("hello"), fmt.Errorf("bob")}
-
-		So(me.Error(), ShouldEqual, `hello (and 1 other error)`)
-
-		Convey("MultiErrorFromErrors with errors works", func() {
-			mec := make(chan error, 5)
-			mec <- MakeMarkFn("multiErr")("one-off")
-			mec <- nil
-			mec <- fmt.Errorf("what")
-			close(mec)
-
-			err := MultiErrorFromErrors(mec)
-			So(err.Error(), ShouldEqual, `multiErr - markederror_test.go:42 - one-off (and 1 other error)`)
-		})
-
-		Convey("MultiErrorFromErrors with nil works", func() {
-			So(MultiErrorFromErrors(nil), ShouldBeNil)
-
-			c := make(chan error)
-			close(c)
-			So(MultiErrorFromErrors(c), ShouldBeNil)
-
-			c = make(chan error, 4)
-			c <- nil
-			c <- nil
-			close(c)
-			So(MultiErrorFromErrors(c), ShouldBeNil)
-		})
 	})
 }
 
@@ -68,35 +41,11 @@ func ExampleMakeMarkFn() {
 	// usually this would be in some global area of your library
 	mark := MakeMarkFn("cool_package")
 
-	data := 100 // Data can be anything!
-	err := mark(data)
+	err := mark(New("my error"))
 	fmt.Printf("got: %q\n", err)
-
-	marked := err.(*MarkedError)
-	fmt.Printf("original: %d", marked.Orig)
+	fmt.Printf("original: %s", Unwrap(err))
 
 	// Output:
-	// got: "cool_package - markederror_test.go:72 - 100"
-	// original: 100
-}
-
-func ExampleMultiError() {
-	errCh := make(chan error, 10)
-	errCh <- nil // nils are ignored
-	errCh <- fmt.Errorf("what")
-	close(errCh)
-
-	err := MultiErrorFromErrors(errCh)
-	fmt.Printf("got: %s len=%d\n", err, len(err.(MultiError)))
-
-	errCh = make(chan error, 10)
-	errCh <- nil // and if the channel only has nils
-	close(errCh)
-
-	err = MultiErrorFromErrors(errCh) // then it returns nil
-	fmt.Printf("got: %v\n", err)
-
-	// Output:
-	// got: what len=1
-	// got: <nil>
+	// got: "cool_package: markederror_test.go:44: my error"
+	// original: my error
 }

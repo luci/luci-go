@@ -262,7 +262,7 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 	// https://github.com/grpc/grpc-go/issues/494
 	if err != nil {
 		logging.WithError(err).Warningf(ctx, "RPC failed permanently: %s", err)
-		return nil, errors.UnwrapAll(err)
+		return nil, errors.Unwrap(err)
 	}
 
 	// Parse the response content type.

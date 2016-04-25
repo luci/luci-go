@@ -10,20 +10,19 @@ type Wrapped interface {
 	InnerError() error
 }
 
-// Unwrap returns the inner error of err.
-// Returns nil if err does not wrap anything or err is nil.
+// Unwrap unwraps a wrapped error recursively, returning its inner error.
+//
+// If the supplied error is not nil, Unwrap will never return nil. If a
+// wrapped error reports that its InnerError is nil, that error will be
+// retunred.
 func Unwrap(err error) error {
-	if wrap, ok := err.(Wrapped); ok {
-		return wrap.InnerError()
-	}
-	return nil
-}
-
-// UnwrapAll unwraps a wrapped error recursively.
-// Returns nil iff err is nil.
-func UnwrapAll(err error) error {
 	for {
-		inner := Unwrap(err)
+		wrap, ok := err.(Wrapped)
+		if !ok {
+			return err
+		}
+
+		inner := wrap.InnerError()
 		if inner == nil {
 			break
 		}

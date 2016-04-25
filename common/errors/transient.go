@@ -30,12 +30,15 @@ func (t transientWrapper) InnerError() error {
 	return t.error
 }
 
-// IsTransient tests if a given error is Transient.
+// IsTransient tests if a given error or, if it is a container, any of its
+// contained errors is Transient.
 func IsTransient(err error) bool {
-	if t, ok := err.(Transient); ok {
-		return t.IsTransient()
-	}
-	return false
+	return Any(err, func(err error) bool {
+		if t, ok := err.(Transient); ok {
+			return t.IsTransient()
+		}
+		return false
+	})
 }
 
 // WrapTransient wraps an existing error with in a Transient error.

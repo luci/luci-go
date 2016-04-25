@@ -8,7 +8,6 @@ import (
 	"time"
 
 	s "github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/grpcutil"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
@@ -41,7 +40,7 @@ func New(c s.ServicesClient, f retry.Factory) s.ServicesClient {
 func (c *client) GetConfig(ctx context.Context, in *google.Empty, opts ...grpc.CallOption) (r *s.GetConfigResponse, err error) {
 	err = retry.Retry(ctx, c.f, func() (err error) {
 		r, err = c.c.GetConfig(ctx, in, opts...)
-		err = wrapTransient(err)
+		err = grpcutil.WrapIfTransient(err)
 		return
 	}, callback(ctx, "registering stream"))
 	return
@@ -51,7 +50,7 @@ func (c *client) RegisterStream(ctx context.Context, in *s.RegisterStreamRequest
 	r *s.RegisterStreamResponse, err error) {
 	err = retry.Retry(ctx, c.f, func() (err error) {
 		r, err = c.c.RegisterStream(ctx, in, opts...)
-		err = wrapTransient(err)
+		err = grpcutil.WrapIfTransient(err)
 		return
 	}, callback(ctx, "registering stream"))
 	return
@@ -61,7 +60,7 @@ func (c *client) LoadStream(ctx context.Context, in *s.LoadStreamRequest, opts .
 	r *s.LoadStreamResponse, err error) {
 	err = retry.Retry(ctx, c.f, func() (err error) {
 		r, err = c.c.LoadStream(ctx, in, opts...)
-		err = wrapTransient(err)
+		err = grpcutil.WrapIfTransient(err)
 		return
 	}, callback(ctx, "loading stream"))
 	return
@@ -71,7 +70,7 @@ func (c *client) TerminateStream(ctx context.Context, in *s.TerminateStreamReque
 	r *google.Empty, err error) {
 	err = retry.Retry(ctx, c.f, func() (err error) {
 		r, err = c.c.TerminateStream(ctx, in, opts...)
-		err = wrapTransient(err)
+		err = grpcutil.WrapIfTransient(err)
 		return
 	}, callback(ctx, "terminating stream"))
 	return
@@ -81,7 +80,7 @@ func (c *client) ArchiveStream(ctx context.Context, in *s.ArchiveStreamRequest, 
 	r *google.Empty, err error) {
 	err = retry.Retry(ctx, c.f, func() (err error) {
 		r, err = c.c.ArchiveStream(ctx, in, opts...)
-		err = wrapTransient(err)
+		err = grpcutil.WrapIfTransient(err)
 		return
 	}, callback(ctx, "archiving stream"))
 	return
@@ -93,23 +92,5 @@ func callback(ctx context.Context, op string) retry.Callback {
 			log.ErrorKey: err,
 			"delay":      d,
 		}.Errorf(ctx, "Transient error %s. Retrying...", op)
-	}
-}
-
-// wrapTransient wraps the supplied error with a transient wrapper if it is
-// something that should be considered transient.
-//
-// Note that pRPC client failures will NOT return transient errors, even if the
-// gRPC codes are associated with transient failures.
-func wrapTransient(err error) error {
-	switch {
-	case err == nil:
-		return nil
-	case grpcutil.IsTransient(err):
-		// This will cover all transient gRPC errors, as consider all non-gRPC
-		// errors transient (see grpcutil.IsTransient).
-		return errors.WrapTransient(err)
-	default:
-		return err
 	}
 }
