@@ -19,8 +19,7 @@ import (
 
 // LoadStream loads the log stream state.
 func (s *Server) LoadStream(c context.Context, req *logdog.LoadStreamRequest) (*logdog.LoadStreamResponse, error) {
-	svc := s.GetServices()
-	if err := Auth(c, svc); err != nil {
+	if err := Auth(c); err != nil {
 		return nil, err
 	}
 

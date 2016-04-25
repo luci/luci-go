@@ -19,8 +19,7 @@ import (
 
 // ArchiveStream implements the logdog.ServicesServer interface.
 func (b *Server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamRequest) (*google.Empty, error) {
-	svc := b.GetServices()
-	if err := Auth(c, svc); err != nil {
+	if err := Auth(c); err != nil {
 		return nil, err
 	}
 

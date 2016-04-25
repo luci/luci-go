@@ -27,23 +27,20 @@ func TestServiceAuth(t *testing.T) {
 		c = memory.Use(c)
 
 		svcStub := ct.Services{}
-
-		be := Server{
-			ServiceBase: coordinator.ServiceBase{&svcStub},
-		}
-		svc := be.GetServices()
+		c = coordinator.WithServices(c, &svcStub)
 
 		c = auth.SetAuthenticator(c, auth.Authenticator{&authtest.FakeAuth{}})
 		Convey(`Will reject all traffic if no configuration is present.`, func() {
-			So(Auth(c, svc), ShouldBeRPCInternal)
+			So(Auth(c), ShouldBeRPCInternal)
 		})
 
 		Convey(`With an application config installed`, func() {
 			svcStub.InitConfig()
 			svcStub.ServiceConfig.Coordinator.ServiceAuthGroup = "test-services"
+			c = coordinator.WithServices(c, &svcStub)
 
 			Convey(`Will reject users if there is an authentication error (no state).`, func() {
-				So(Auth(c, svc), ShouldBeRPCInternal)
+				So(Auth(c), ShouldBeRPCInternal)
 			})
 
 			Convey(`With an authentication state`, func() {
@@ -51,19 +48,19 @@ func TestServiceAuth(t *testing.T) {
 				c = auth.WithState(c, &fs)
 
 				Convey(`Will reject users who are not logged in.`, func() {
-					So(Auth(c, svc), ShouldBeRPCPermissionDenied)
+					So(Auth(c), ShouldBeRPCPermissionDenied)
 				})
 
 				Convey(`When a user is logged in`, func() {
 					fs.Identity = "user:user@example.com"
 
 					Convey(`Will reject users who are not members of the service group.`, func() {
-						So(Auth(c, svc), ShouldBeRPCPermissionDenied)
+						So(Auth(c), ShouldBeRPCPermissionDenied)
 					})
 
 					Convey(`Will allow users who are members of the service group.`, func() {
 						fs.IdentityGroups = []string{"test-services"}
-						So(Auth(c, svc), ShouldBeNil)
+						So(Auth(c), ShouldBeNil)
 					})
 				})
 			})

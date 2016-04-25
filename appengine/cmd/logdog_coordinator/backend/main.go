@@ -10,6 +10,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	gaeauthServer "github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
+	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/backend"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	"github.com/luci/luci-go/appengine/tumble"
@@ -38,6 +39,7 @@ func base(h middleware.Handler) httprouter.Handle {
 		h = middleware.WithPanicCatcher(h)
 	}
 	h = config.WithConfig(h)
+	h = coordinator.WithProdServices(h)
 	return gaemiddleware.BaseProd(h)
 }
 

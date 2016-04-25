@@ -5,6 +5,7 @@
 package services
 
 import (
+	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/grpcutil"
 	log "github.com/luci/luci-go/common/logging"
@@ -15,12 +16,11 @@ import (
 // GetConfig allows a service to retrieve the current service configuration
 // parameters.
 func (s *Server) GetConfig(c context.Context, req *google.Empty) (*logdog.GetConfigResponse, error) {
-	svc := s.GetServices()
-	if err := Auth(c, svc); err != nil {
+	if err := Auth(c); err != nil {
 		return nil, err
 	}
 
-	gcfg, _, err := svc.Config(c)
+	gcfg, _, err := coordinator.GetServices(c).Config(c)
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,

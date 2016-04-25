@@ -15,16 +15,14 @@ import (
 // Server is a Cloud Endpoint service supporting privileged support services.
 //
 // This endpoint is restricted to LogDog support service accounts.
-type Server struct {
-	coordinator.ServiceBase
-}
+type Server struct{}
 
 var _ logdog.ServicesServer = (*Server)(nil)
 
 // Auth is endpoint middleware that asserts that the current user is a member of
 // the configured group.
-func Auth(c context.Context, svc coordinator.Services) error {
-	if err := coordinator.IsServiceUser(c, svc); err != nil {
+func Auth(c context.Context) error {
+	if err := coordinator.IsServiceUser(c); err != nil {
 		log.Fields{
 			log.ErrorKey: err,
 		}.Errorf(c, "Failed to authenticate user as a service.")

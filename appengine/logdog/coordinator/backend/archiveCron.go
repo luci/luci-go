@@ -34,8 +34,8 @@ func (b *Backend) HandleArchiveCron(c context.Context, w http.ResponseWriter, r 
 }
 
 func (b *Backend) archiveCron(c context.Context) error {
-	services := b.GetServices()
-	_, cfg, err := services.Config(c)
+	svc := coordinator.GetServices(c)
+	_, cfg, err := svc.Config(c)
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %v", err)
 	}
@@ -45,7 +45,7 @@ func (b *Backend) archiveCron(c context.Context) error {
 		return fmt.Errorf("must have positive maximum archive delay, not %q", archiveDelayMax.String())
 	}
 
-	ap, err := services.ArchivalPublisher(c)
+	ap, err := svc.ArchivalPublisher(c)
 	if err != nil {
 		return fmt.Errorf("failed to get archival publisher: %v", err)
 	}

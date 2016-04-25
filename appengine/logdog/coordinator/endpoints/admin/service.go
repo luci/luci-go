@@ -15,16 +15,14 @@ import (
 )
 
 // Server is the Cloud Endpoint service structure for the administrator endpoint.
-type Server struct {
-	coordinator.ServiceBase
-}
+type Server struct{}
 
 var _ logdog.AdminServer = (*Server)(nil)
 
 // Auth returns an error if the current user does not have access to
 // adminstrative endpoints.
-func (*Server) Auth(c context.Context, svc coordinator.Services) error {
-	if err := coordinator.IsAdminUser(c, svc); err != nil {
+func (s *Server) Auth(c context.Context) error {
+	if err := coordinator.IsAdminUser(c); err != nil {
 		log.WithError(err).Warningf(c, "User is not an administrator.")
 
 		// If we're on development server, any user can access this endpoint.
@@ -43,7 +41,6 @@ func (*Server) Auth(c context.Context, svc coordinator.Services) error {
 			"clientID": u.ClientID,
 			"name":     u.Name,
 		}.Infof(c, "User is an AppEngine superuser. Granting access.")
-		return nil
 	}
 
 	return nil

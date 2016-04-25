@@ -63,8 +63,7 @@ func loadLogStreamState(ls *coordinator.LogStream) *logdog.LogStreamState {
 
 // RegisterStream is an idempotent stream state register operation.
 func (s *Server) RegisterStream(c context.Context, req *logdog.RegisterStreamRequest) (*logdog.RegisterStreamResponse, error) {
-	svc := s.GetServices()
-	if err := Auth(c, svc); err != nil {
+	if err := Auth(c); err != nil {
 		return nil, err
 	}
 

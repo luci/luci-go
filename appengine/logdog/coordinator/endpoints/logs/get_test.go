@@ -168,10 +168,9 @@ func testGetImpl(t *testing.T, archived bool) {
 		}
 		svcStub.InitConfig()
 		svcStub.ServiceConfig.Coordinator.AdminAuthGroup = "test-administrators"
+		c = coordinator.WithServices(c, &svcStub)
 
-		s := Server{
-			ServiceBase: coordinator.ServiceBase{&svcStub},
-		}
+		s := Server{}
 
 		// Generate our test stream.
 		desc := ct.TestLogStreamDescriptor(c, "foo/bar")

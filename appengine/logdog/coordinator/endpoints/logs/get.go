@@ -54,7 +54,6 @@ func (s *Server) Tail(c context.Context, req *logdog.TailRequest) (*logdog.GetRe
 
 // getImpl is common code shared between Get and Tail endpoints.
 func (s *Server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (*logdog.GetResponse, error) {
-	svc := s.GetServices()
 	log.Fields{
 		"path":  req.Path,
 		"index": req.Index,
@@ -84,7 +83,7 @@ func (s *Server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 	switch err {
 	case nil:
 		if ls.Purged {
-			if authErr := coordinator.IsAdminUser(c, svc); authErr != nil {
+			if authErr := coordinator.IsAdminUser(c); authErr != nil {
 				log.Fields{
 					log.ErrorKey: authErr,
 				}.Warningf(c, "Non-superuser requested purged log.")
@@ -126,7 +125,7 @@ func (s *Server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 
 	// Retrieve requested logs from storage, if requested.
 	if tail || req.LogCount >= 0 {
-		resp.Logs, err = s.getLogs(c, svc, req, tail, ls)
+		resp.Logs, err = s.getLogs(c, req, tail, ls)
 		if err != nil {
 			log.Fields{
 				log.ErrorKey: err,
@@ -142,14 +141,14 @@ func (s *Server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 	return &resp, nil
 }
 
-func (s *Server) getLogs(c context.Context, svc coordinator.Services, req *logdog.GetRequest, tail bool,
-	ls *coordinator.LogStream) (
+func (s *Server) getLogs(c context.Context, req *logdog.GetRequest, tail bool, ls *coordinator.LogStream) (
 	[]*logpb.LogEntry, error) {
 	byteLimit := int(req.ByteCount)
 	if byteLimit <= 0 || byteLimit > getBytesLimit {
 		byteLimit = getBytesLimit
 	}
 
+	svc := coordinator.GetServices(c)
 	var st storage.Storage
 	if !ls.Archived() {
 		log.Debugf(c, "Log is not archived. Fetching from intermediate storage.")

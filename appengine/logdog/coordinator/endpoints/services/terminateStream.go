@@ -22,8 +22,7 @@ import (
 
 // TerminateStream is an idempotent stream state terminate operation.
 func (s *Server) TerminateStream(c context.Context, req *logdog.TerminateStreamRequest) (*google.Empty, error) {
-	svc := s.GetServices()
-	if err := Auth(c, svc); err != nil {
+	if err := Auth(c); err != nil {
 		return nil, err
 	}
 
@@ -41,6 +40,7 @@ func (s *Server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid path (%s): %s", req.Path, err)
 	}
 
+	svc := coordinator.GetServices(c)
 	_, cfg, err := svc.Config(c)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load configuration.")

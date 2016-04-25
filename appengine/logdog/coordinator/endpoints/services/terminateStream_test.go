@@ -43,10 +43,9 @@ func TestTerminateStream(t *testing.T) {
 		svcStub.ServiceConfig.Coordinator.ArchiveTopic = "projects/test/topics/archive"
 		svcStub.ServiceConfig.Coordinator.ArchiveSettleDelay = google.NewDuration(10 * time.Second)
 		svcStub.ServiceConfig.Coordinator.ArchiveDelayMax = google.NewDuration(24 * time.Hour)
+		c = coordinator.WithServices(c, &svcStub)
 
-		be := Server{
-			ServiceBase: coordinator.ServiceBase{&svcStub},
-		}
+		svr := Server{}
 
 		desc := ct.TestLogStreamDescriptor(c, "foo/bar")
 		ls := ct.TestLogStream(c, desc)
@@ -61,7 +60,7 @@ func TestTerminateStream(t *testing.T) {
 		c = auth.WithState(c, &fs)
 
 		Convey(`Returns Forbidden error if not a service.`, func() {
-			_, err := be.TerminateStream(c, &req)
+			_, err := svr.TerminateStream(c, &req)
 			So(err, ShouldBeRPCPermissionDenied)
 		})
 
@@ -72,7 +71,7 @@ func TestTerminateStream(t *testing.T) {
 				So(ds.Get(c).Put(ls), ShouldBeNil)
 
 				Convey(`Can be marked terminal and schedules an archival task.`, func() {
-					_, err := be.TerminateStream(c, &req)
+					_, err := svr.TerminateStream(c, &req)
 					So(err, ShouldBeRPCOK)
 
 					// Reload "ls" and confirm.
@@ -90,7 +89,7 @@ func TestTerminateStream(t *testing.T) {
 					}
 
 					Convey(`Can be marked terminal again (idempotent).`, func() {
-						_, err := be.TerminateStream(c, &req)
+						_, err := svr.TerminateStream(c, &req)
 						So(err, ShouldBeRPCOK)
 
 						// Reload "ls" and confirm.
@@ -104,7 +103,7 @@ func TestTerminateStream(t *testing.T) {
 
 					Convey(`Will reject attempts to change the terminal index.`, func() {
 						req.TerminalIndex = 1338
-						_, err := be.TerminateStream(c, &req)
+						_, err := svr.TerminateStream(c, &req)
 						So(err, ShouldBeRPCFailedPrecondition, "Log stream is not in streaming state.")
 
 						// Reload "ls" and confirm.
@@ -118,7 +117,7 @@ func TestTerminateStream(t *testing.T) {
 
 					Convey(`Will reject attempts to clear the terminal index.`, func() {
 						req.TerminalIndex = -1
-						_, err := be.TerminateStream(c, &req)
+						_, err := svr.TerminateStream(c, &req)
 						So(err, ShouldBeRPCInvalidArgument, "Negative terminal index.")
 
 						// Reload "ls" and confirm.
@@ -134,32 +133,32 @@ func TestTerminateStream(t *testing.T) {
 				Convey(`Will return an internal server error if Put() fails.`, func() {
 					c, fb := featureBreaker.FilterRDS(c, nil)
 					fb.BreakFeatures(errors.New("test error"), "PutMulti")
-					_, err := be.TerminateStream(c, &req)
+					_, err := svr.TerminateStream(c, &req)
 					So(err, ShouldBeRPCInternal)
 				})
 
 				Convey(`Will return an internal server error if Get() fails.`, func() {
 					c, fb := featureBreaker.FilterRDS(c, nil)
 					fb.BreakFeatures(errors.New("test error"), "GetMulti")
-					_, err := be.TerminateStream(c, &req)
+					_, err := svr.TerminateStream(c, &req)
 					So(err, ShouldBeRPCInternal)
 				})
 
 				Convey(`Will return a bad request error if the secret doesn't match.`, func() {
 					req.Secret[0] ^= 0xFF
-					_, err := be.TerminateStream(c, &req)
+					_, err := svr.TerminateStream(c, &req)
 					So(err, ShouldBeRPCInvalidArgument, "Request secret doesn't match the stream secret.")
 				})
 			})
 
 			Convey(`Will not try and terminate a stream with an invalid path.`, func() {
 				req.Path = "!!!invalid path!!!"
-				_, err := be.TerminateStream(c, &req)
+				_, err := svr.TerminateStream(c, &req)
 				So(err, ShouldBeRPCInvalidArgument, "Invalid path")
 			})
 
 			Convey(`Will fail if the stream is not registered.`, func() {
-				_, err := be.TerminateStream(c, &req)
+				_, err := svr.TerminateStream(c, &req)
 				So(err, ShouldBeRPCNotFound, "is not registered")
 			})
 		})

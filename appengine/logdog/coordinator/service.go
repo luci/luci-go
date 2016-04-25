@@ -5,8 +5,10 @@
 package coordinator
 
 import (
+	"net/http"
 	"sync"
 
+	"github.com/julienschmidt/httprouter"
 	gaeauthClient "github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	"github.com/luci/luci-go/common/errors"
@@ -16,6 +18,7 @@ import (
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"github.com/luci/luci-go/server/logdog/storage/bigtable"
+	"github.com/luci/luci-go/server/middleware"
 	"golang.org/x/net/context"
 	"google.golang.org/cloud"
 	gcps "google.golang.org/cloud/pubsub"
@@ -52,21 +55,13 @@ type Services interface {
 	ArchivalPublisher(context.Context) (ArchivalPublisher, error)
 }
 
-// ServiceBase is an embeddable struct that offers a production Services
-// implementation.
-//
-// Its Services member can be overridden to provide alternative implementations
-// for testing.
-type ServiceBase struct {
-	Services
-}
-
-// GetServices returns a new Services instance.
-func (s *ServiceBase) GetServices() Services {
-	if s.Services != nil {
-		return s.Services
+// WithProdServices is a middleware Handler that installs a production Services
+// instance into its Context.
+func WithProdServices(h middleware.Handler) middleware.Handler {
+	return func(c context.Context, rw http.ResponseWriter, r *http.Request, params httprouter.Params) {
+		c = WithServices(c, &prodServices{})
+		h(c, rw, r, params)
 	}
-	return &prodServices{}
 }
 
 // Request is a Service context for a given request.

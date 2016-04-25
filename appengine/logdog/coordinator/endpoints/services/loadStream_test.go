@@ -36,9 +36,9 @@ func TestLoadStream(t *testing.T) {
 		svcStub := ct.Services{}
 		svcStub.InitConfig()
 		svcStub.ServiceConfig.Coordinator.ServiceAuthGroup = "test-services"
-		be := Server{
-			ServiceBase: coordinator.ServiceBase{&svcStub},
-		}
+		c = coordinator.WithServices(c, &svcStub)
+
+		svr := Server{}
 
 		fs := authtest.FakeState{}
 		c = auth.WithState(c, &fs)
@@ -56,7 +56,7 @@ func TestLoadStream(t *testing.T) {
 		}
 
 		Convey(`Returns Forbidden error if not a service.`, func() {
-			_, err := be.LoadStream(c, &logdog.LoadStreamRequest{})
+			_, err := svr.LoadStream(c, &logdog.LoadStreamRequest{})
 			So(err, ShouldBeRPCPermissionDenied)
 		})
 
@@ -64,7 +64,7 @@ func TestLoadStream(t *testing.T) {
 			fs.IdentityGroups = []string{"test-services"}
 
 			Convey(`Will succeed.`, func() {
-				resp, err := be.LoadStream(c, &req)
+				resp, err := svr.LoadStream(c, &req)
 				So(err, ShouldBeNil)
 				So(resp, ShouldResemble, &logdog.LoadStreamResponse{
 					State: &logdog.LogStreamState{
@@ -82,7 +82,7 @@ func TestLoadStream(t *testing.T) {
 					panic(err)
 				}
 
-				resp, err := be.LoadStream(c, &req)
+				resp, err := svr.LoadStream(c, &req)
 				So(err, ShouldBeNil)
 				So(resp, ShouldResemble, &logdog.LoadStreamResponse{
 					State: &logdog.LogStreamState{
@@ -103,7 +103,7 @@ func TestLoadStream(t *testing.T) {
 					panic(err)
 				}
 
-				resp, err := be.LoadStream(c, &req)
+				resp, err := svr.LoadStream(c, &req)
 				So(err, ShouldBeNil)
 				So(resp, ShouldResemble, &logdog.LoadStreamResponse{
 					State: &logdog.LogStreamState{
@@ -118,14 +118,14 @@ func TestLoadStream(t *testing.T) {
 			Convey(`Will return InvalidArgument if the stream path is not valid.`, func() {
 				req.Path = "no/stream/name"
 
-				_, err := be.LoadStream(c, &req)
+				_, err := svr.LoadStream(c, &req)
 				So(err, ShouldBeRPCInvalidArgument)
 			})
 
 			Convey(`Will return NotFound for non-existent streams.`, func() {
 				req.Path = "this/stream/+/does/not/exist"
 
-				_, err := be.LoadStream(c, &req)
+				_, err := svr.LoadStream(c, &req)
 				So(err, ShouldBeRPCNotFound)
 			})
 
@@ -133,7 +133,7 @@ func TestLoadStream(t *testing.T) {
 				c, fb := featureBreaker.FilterRDS(c, nil)
 				fb.BreakFeatures(errors.New("test error"), "GetMulti")
 
-				_, err := be.LoadStream(c, &req)
+				_, err := svr.LoadStream(c, &req)
 				So(err, ShouldBeRPCInternal)
 			})
 		})

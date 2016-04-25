@@ -78,9 +78,9 @@ func TestHandleArchiveCron(t *testing.T) {
 				return &tap, nil
 			},
 		}
-		b := Backend{
-			ServiceBase: coordinator.ServiceBase{&svcStub},
-		}
+		c = coordinator.WithServices(c, &svcStub)
+
+		b := Backend{}
 
 		tb := testBase{Context: c}
 		r := httprouter.New()

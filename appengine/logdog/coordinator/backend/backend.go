@@ -7,7 +7,6 @@ package backend
 import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/server/middleware"
 )
 
@@ -20,9 +19,6 @@ const (
 // Backend is the base struct for all Backend handlers. It is mostly used to
 // configure testing parameters.
 type Backend struct {
-	// The backing Coordinator service base.
-	coordinator.ServiceBase
-
 	// multiTaskBatchSize is the number of batch tasks to create at a time.
 	multiTaskBatchSize int
 }

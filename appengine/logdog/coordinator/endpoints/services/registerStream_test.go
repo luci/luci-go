@@ -36,16 +36,15 @@ func TestRegisterStream(t *testing.T) {
 		svcStub := ct.Services{}
 		svcStub.InitConfig()
 		svcStub.ServiceConfig.Coordinator.ServiceAuthGroup = "test-services"
+		c = coordinator.WithServices(c, &svcStub)
 
-		be := Server{
-			ServiceBase: coordinator.ServiceBase{&svcStub},
-		}
+		svr := Server{}
 
 		fs := authtest.FakeState{}
 		c = auth.WithState(c, &fs)
 
 		Convey(`Returns Forbidden error if not a service.`, func() {
-			_, err := be.RegisterStream(c, &logdog.RegisterStreamRequest{})
+			_, err := svr.RegisterStream(c, &logdog.RegisterStreamRequest{})
 			So(err, ShouldBeRPCPermissionDenied)
 		})
 
@@ -73,7 +72,7 @@ func TestRegisterStream(t *testing.T) {
 				}
 
 				Convey(`Can register the stream.`, func() {
-					resp, err := be.RegisterStream(c, &req)
+					resp, err := svr.RegisterStream(c, &req)
 					So(err, ShouldBeRPCOK)
 					So(resp, ShouldResemble, expResp)
 					ds.Get(c).Testable().CatchupIndexes()
@@ -100,14 +99,14 @@ func TestRegisterStream(t *testing.T) {
 					So(getNameComponents("testing/+/foo"), ShouldResemble, []string{"bar$"})
 
 					Convey(`Can register the stream again (idempotent).`, func() {
-						resp, err := be.RegisterStream(c, &req)
+						resp, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCOK)
 						So(resp, ShouldResemble, expResp)
 					})
 
 					Convey(`Will not re-register if scerets don't match.`, func() {
 						req.Secret[0] = 0xAB
-						_, err := be.RegisterStream(c, &req)
+						_, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCAlreadyExists, "Log stream is already incompatibly registered")
 					})
 
@@ -115,7 +114,7 @@ func TestRegisterStream(t *testing.T) {
 						req.Desc.Tags = map[string]string{
 							"testing": "value",
 						}
-						_, err := be.RegisterStream(c, &req)
+						_, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCAlreadyExists, "Log stream is already incompatibly registered")
 					})
 				})
@@ -124,7 +123,7 @@ func TestRegisterStream(t *testing.T) {
 					c, fb := featureBreaker.FilterRDS(c, nil)
 					fb.BreakFeatures(errors.New("test error"), "GetMulti")
 
-					_, err := be.RegisterStream(c, &req)
+					_, err := svr.RegisterStream(c, &req)
 					So(err, ShouldBeRPCInternal)
 				})
 
@@ -132,50 +131,50 @@ func TestRegisterStream(t *testing.T) {
 					c, fb := featureBreaker.FilterRDS(c, nil)
 					fb.BreakFeatures(errors.New("test error"), "PutMulti")
 
-					_, err := be.RegisterStream(c, &req)
+					_, err := svr.RegisterStream(c, &req)
 					So(err, ShouldBeRPCInternal)
 				})
 
 				Convey(`Registration failure cases`, func() {
 					Convey(`Will not register a stream with an invalid path.`, func() {
 						req.Path = "has/no/name"
-						_, err := be.RegisterStream(c, &req)
+						_, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCInvalidArgument, "Invalid path")
 					})
 
 					Convey(`Will not register a stream without a protobuf version.`, func() {
 						req.ProtoVersion = ""
-						_, err := be.RegisterStream(c, &req)
+						_, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCInvalidArgument, "No protobuf version supplied.")
 					})
 
 					Convey(`Will not register a stream with an unknown protobuf version.`, func() {
 						req.ProtoVersion = "unknown"
-						_, err := be.RegisterStream(c, &req)
+						_, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCInvalidArgument, "Unrecognized protobuf version.")
 					})
 
 					Convey(`Will not register a wrong-sized secret.`, func() {
 						req.Secret = nil
-						_, err := be.RegisterStream(c, &req)
+						_, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCInvalidArgument, "Invalid secret length")
 					})
 
 					Convey(`Will not register with an empty descriptor.`, func() {
 						req.Desc = nil
-						_, err := be.RegisterStream(c, &req)
+						_, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCInvalidArgument, "Missing log stream descriptor.")
 					})
 
 					Convey(`Will not register if the descriptor's Prefix doesn't match.`, func() {
 						req.Desc.Prefix = "different"
-						_, err := be.RegisterStream(c, &req)
+						_, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCInvalidArgument, "Descriptor prefix does not match path")
 					})
 
 					Convey(`Will not register if the descriptor's Name doesn't match.`, func() {
 						req.Desc.Name = "different"
-						_, err := be.RegisterStream(c, &req)
+						_, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCInvalidArgument, "Descriptor name does not match path")
 					})
 
@@ -183,7 +182,7 @@ func TestRegisterStream(t *testing.T) {
 						req.Desc.ContentType = ""
 						So(req.Desc.Validate(true), ShouldNotBeNil)
 
-						_, err := be.RegisterStream(c, &req)
+						_, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCInvalidArgument, "Invalid log stream descriptor")
 					})
 				})

@@ -33,10 +33,9 @@ func TestArchiveStream(t *testing.T) {
 		svcStub := ct.Services{}
 		svcStub.InitConfig()
 		svcStub.ServiceConfig.Coordinator.ServiceAuthGroup = "test-services"
+		c = coordinator.WithServices(c, &svcStub)
 
-		be := Server{
-			ServiceBase: coordinator.ServiceBase{&svcStub},
-		}
+		svr := Server{}
 
 		now := ds.RoundTime(tc.Now().UTC())
 
@@ -64,7 +63,7 @@ func TestArchiveStream(t *testing.T) {
 		}
 
 		Convey(`Returns Forbidden error if not a service.`, func() {
-			_, err := be.ArchiveStream(c, req)
+			_, err := svr.ArchiveStream(c, req)
 			So(err, ShouldBeRPCPermissionDenied)
 		})
 
@@ -72,7 +71,7 @@ func TestArchiveStream(t *testing.T) {
 			fs.IdentityGroups = []string{"test-services"}
 
 			Convey(`Will mark the stream as archived.`, func() {
-				_, err := be.ArchiveStream(c, req)
+				_, err := svr.ArchiveStream(c, req)
 				So(err, ShouldBeNil)
 
 				So(ds.Get(c).Get(ls), ShouldBeNil)
@@ -97,7 +96,7 @@ func TestArchiveStream(t *testing.T) {
 			Convey(`Will mark the stream as partially archived if not complete.`, func() {
 				req.LogEntryCount = 13
 
-				_, err := be.ArchiveStream(c, req)
+				_, err := svr.ArchiveStream(c, req)
 				So(err, ShouldBeNil)
 
 				So(ds.Get(c).Get(ls), ShouldBeNil)
@@ -121,21 +120,21 @@ func TestArchiveStream(t *testing.T) {
 
 			Convey(`Will refuse to process an invalid stream path.`, func() {
 				req.Path = "!!!invalid!!!"
-				_, err := be.ArchiveStream(c, req)
+				_, err := svr.ArchiveStream(c, req)
 				So(err, ShouldBeRPCInvalidArgument, "invalid log stream path")
 			})
 
 			Convey(`If index URL is missing, will refuse to mark the stream archived.`, func() {
 				req.IndexUrl = ""
 
-				_, err := be.ArchiveStream(c, req)
+				_, err := svr.ArchiveStream(c, req)
 				So(err, ShouldBeRPCInvalidArgument)
 			})
 
 			Convey(`If stream URL is missing, will refuse to mark the stream archived.`, func() {
 				req.StreamUrl = ""
 
-				_, err := be.ArchiveStream(c, req)
+				_, err := svr.ArchiveStream(c, req)
 				So(err, ShouldBeRPCInvalidArgument)
 			})
 
@@ -149,7 +148,7 @@ func TestArchiveStream(t *testing.T) {
 				So(ls.Terminated(), ShouldBeTrue)
 				So(ls.Archived(), ShouldBeTrue)
 
-				_, err := be.ArchiveStream(c, req)
+				_, err := svr.ArchiveStream(c, req)
 				So(err, ShouldBeNil)
 
 				ls.TerminalIndex = -1 // To make sure it reloaded.
@@ -165,7 +164,7 @@ func TestArchiveStream(t *testing.T) {
 			Convey(`If the archive has failed, it is archived as an empty stream.`, func() {
 				req.Error = "archive error"
 
-				_, err := be.ArchiveStream(c, req)
+				_, err := svr.ArchiveStream(c, req)
 				So(err, ShouldBeNil)
 				So(ds.Get(c).Get(ls), ShouldBeNil)
 				So(ls.Archived(), ShouldBeTrue)
@@ -180,7 +179,7 @@ func TestArchiveStream(t *testing.T) {
 				c, fb := featureBreaker.FilterRDS(c, nil)
 				fb.BreakFeatures(errors.New("test error"), "GetMulti")
 
-				_, err := be.ArchiveStream(c, req)
+				_, err := svr.ArchiveStream(c, req)
 				So(err, ShouldBeRPCInternal)
 			})
 
@@ -188,7 +187,7 @@ func TestArchiveStream(t *testing.T) {
 				c, fb := featureBreaker.FilterRDS(c, nil)
 				fb.BreakFeatures(errors.New("test error"), "PutMulti")
 
-				_, err := be.ArchiveStream(c, req)
+				_, err := svr.ArchiveStream(c, req)
 				So(err, ShouldBeRPCInternal)
 			})
 		})

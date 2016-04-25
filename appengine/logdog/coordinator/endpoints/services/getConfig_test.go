@@ -31,23 +31,22 @@ func TestGetConfig(t *testing.T) {
 		svcStub := ct.Services{}
 		svcStub.InitConfig()
 		svcStub.ServiceConfig.Coordinator.ServiceAuthGroup = "test-services"
+		c = coordinator.WithServices(c, &svcStub)
 
-		be := Server{
-			ServiceBase: coordinator.ServiceBase{&svcStub},
-		}
+		svr := Server{}
 
 		fs := authtest.FakeState{}
 		c = auth.WithState(c, &fs)
 
 		Convey(`Returns Forbidden error if not a service.`, func() {
-			_, err := be.GetConfig(c, nil)
+			_, err := svr.GetConfig(c, nil)
 			So(err, ShouldBeRPCPermissionDenied)
 		})
 
 		Convey(`When logged in as a service, can retrieve the configuration.`, func() {
 			fs.IdentityGroups = []string{"test-services"}
 
-			cr, err := be.GetConfig(c, nil)
+			cr, err := svr.GetConfig(c, nil)
 			So(err, ShouldBeRPCOK)
 			So(cr, ShouldResemble, &logdog.GetConfigResponse{
 				ConfigServiceUrl: svcStub.GlobalConfig.ConfigServiceURL,
