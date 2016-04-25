@@ -45,7 +45,7 @@ func TestTerminateStream(t *testing.T) {
 		svcStub.ServiceConfig.Coordinator.ArchiveDelayMax = google.NewDuration(24 * time.Hour)
 		c = coordinator.WithServices(c, &svcStub)
 
-		svr := Server{}
+		svr := New()
 
 		desc := ct.TestLogStreamDescriptor(c, "foo/bar")
 		ls := ct.TestLogStream(c, desc)

@@ -39,12 +39,12 @@ const (
 )
 
 // Get returns state and log data for a single log stream.
-func (s *Server) Get(c context.Context, req *logdog.GetRequest) (*logdog.GetResponse, error) {
+func (s *server) Get(c context.Context, req *logdog.GetRequest) (*logdog.GetResponse, error) {
 	return s.getImpl(c, req, false)
 }
 
 // Tail returns the last log entry for a given log stream.
-func (s *Server) Tail(c context.Context, req *logdog.TailRequest) (*logdog.GetResponse, error) {
+func (s *server) Tail(c context.Context, req *logdog.TailRequest) (*logdog.GetResponse, error) {
 	r := logdog.GetRequest{
 		Path:  req.Path,
 		State: req.State,
@@ -53,7 +53,7 @@ func (s *Server) Tail(c context.Context, req *logdog.TailRequest) (*logdog.GetRe
 }
 
 // getImpl is common code shared between Get and Tail endpoints.
-func (s *Server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (*logdog.GetResponse, error) {
+func (s *server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (*logdog.GetResponse, error) {
 	log.Fields{
 		"path":  req.Path,
 		"index": req.Index,
@@ -141,7 +141,7 @@ func (s *Server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 	return &resp, nil
 }
 
-func (s *Server) getLogs(c context.Context, req *logdog.GetRequest, tail bool, ls *coordinator.LogStream) (
+func (s *server) getLogs(c context.Context, req *logdog.GetRequest, tail bool, ls *coordinator.LogStream) (
 	[]*logpb.LogEntry, error) {
 	byteLimit := int(req.ByteCount)
 	if byteLimit <= 0 || byteLimit > getBytesLimit {

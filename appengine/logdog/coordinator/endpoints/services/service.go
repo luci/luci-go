@@ -5,6 +5,7 @@
 package services
 
 import (
+	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/grpcutil"
@@ -12,25 +13,28 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Server is a Cloud Endpoint service supporting privileged support services.
+// server is a Cloud Endpoint service supporting privileged support services.
 //
 // This endpoint is restricted to LogDog support service accounts.
-type Server struct{}
+type server struct{}
 
-var _ logdog.ServicesServer = (*Server)(nil)
-
-// Auth is endpoint middleware that asserts that the current user is a member of
-// the configured group.
-func Auth(c context.Context) error {
-	if err := coordinator.IsServiceUser(c); err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-		}.Errorf(c, "Failed to authenticate user as a service.")
-		if !coordinator.IsMembershipError(err) {
-			// Not a membership error. Something went wrong on the server's end.
-			return grpcutil.Internal
-		}
-		return grpcutil.PermissionDenied
+// New creates a new authenticating ServicesServer instance.
+func New() logdog.ServicesServer {
+	return &logdog.DecoratedServices{
+		Service: &server{},
+		Prelude: func(c context.Context, methodName string, req proto.Message) (context.Context, error) {
+			// Only service users may access this endpoint.
+			if err := coordinator.IsServiceUser(c); err != nil {
+				log.Fields{
+					log.ErrorKey: err,
+				}.Errorf(c, "Failed to authenticate user as a service.")
+				if !coordinator.IsMembershipError(err) {
+					// Not a membership error. Something went wrong on the server's end.
+					return nil, grpcutil.Internal
+				}
+				return nil, grpcutil.PermissionDenied
+			}
+			return c, nil
+		},
 	}
-	return nil
 }

@@ -23,7 +23,7 @@ const (
 )
 
 // List returns log stream paths rooted under the hierarchy.
-func (s *Server) List(c context.Context, req *logdog.ListRequest) (*logdog.ListResponse, error) {
+func (s *server) List(c context.Context, req *logdog.ListRequest) (*logdog.ListResponse, error) {
 	hr := hierarchy.Request{
 		Base:       req.Path,
 		Recursive:  req.Recursive,

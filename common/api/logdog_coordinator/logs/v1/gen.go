@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 //go:generate cproto
+//go:generate svcdec -type LogsServer
 
 // Package logdog contains Verison 1 of the LogDog Coordinator user interface.
 //

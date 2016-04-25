@@ -5,11 +5,13 @@
 package logs
 
 import (
+	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
+	"golang.org/x/net/context"
 )
 
 // Server is the user-facing log access and query endpoint service.
-type Server struct {
+type server struct {
 	// resultLimit is the maximum number of query results to return in a
 	// single query. If zero, the default will be used.
 	//
@@ -17,9 +19,21 @@ type Server struct {
 	resultLimit int
 }
 
-var _ logdog.LogsServer = (*Server)(nil)
+// New creates a new authenticating LogsServer instance.
+func New() logdog.LogsServer {
+	return newService(&server{})
+}
 
-func (s *Server) limit(v int, d int) int {
+func newService(svr *server) logdog.LogsServer {
+	return &logdog.DecoratedLogs{
+		Service: svr,
+		Prelude: func(c context.Context, methodName string, req proto.Message) (context.Context, error) {
+			return c, nil
+		},
+	}
+}
+
+func (s *server) limit(v int, d int) int {
 	if s.resultLimit > 0 {
 		d = s.resultLimit
 	}

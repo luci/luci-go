@@ -15,11 +15,7 @@ import (
 
 // GetConfig allows a service to retrieve the current service configuration
 // parameters.
-func (s *Server) GetConfig(c context.Context, req *google.Empty) (*logdog.GetConfigResponse, error) {
-	if err := Auth(c); err != nil {
-		return nil, err
-	}
-
+func (s *server) GetConfig(c context.Context, req *google.Empty) (*logdog.GetConfigResponse, error) {
 	gcfg, _, err := coordinator.GetServices(c).Config(c)
 	if err != nil {
 		log.Fields{

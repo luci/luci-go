@@ -33,7 +33,7 @@ func TestGetConfig(t *testing.T) {
 		svcStub.ServiceConfig.Coordinator.ServiceAuthGroup = "test-services"
 		c = coordinator.WithServices(c, &svcStub)
 
-		svr := Server{}
+		svr := New()
 
 		fs := authtest.FakeState{}
 		c = auth.WithState(c, &fs)

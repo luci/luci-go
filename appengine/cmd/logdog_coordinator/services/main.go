@@ -38,7 +38,7 @@ func init() {
 
 	// Setup Cloud Endpoints.
 	svr := prpc.Server{}
-	servicesPb.RegisterServicesServer(&svr, &services.Server{})
+	servicesPb.RegisterServicesServer(&svr, services.New())
 
 	// Standard HTTP endpoints.
 	svr.InstallHandlers(router, base)

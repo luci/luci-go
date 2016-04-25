@@ -17,12 +17,7 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-// ArchiveStream implements the logdog.ServicesServer interface.
-func (b *Server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamRequest) (*google.Empty, error) {
-	if err := Auth(c); err != nil {
-		return nil, err
-	}
-
+func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamRequest) (*google.Empty, error) {
 	log.Fields{
 		"path":          req.Path,
 		"complete":      req.Complete(),

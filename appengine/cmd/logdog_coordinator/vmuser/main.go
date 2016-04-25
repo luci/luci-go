@@ -48,9 +48,9 @@ func main() {
 	svr := prpc.Server{
 		AccessControl: accessControl,
 	}
-	adminPb.RegisterAdminServer(&svr, &admin.Server{})
-	servicesPb.RegisterServicesServer(&svr, &services.Server{})
-	logsPb.RegisterLogsServer(&svr, &logs.Server{})
+	adminPb.RegisterAdminServer(&svr, admin.New())
+	servicesPb.RegisterServicesServer(&svr, services.New())
+	logsPb.RegisterLogsServer(&svr, logs.New())
 	discovery.Enable(&svr)
 
 	// Standard HTTP endpoints.

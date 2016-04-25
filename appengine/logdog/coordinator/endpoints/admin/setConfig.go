@@ -16,11 +16,7 @@ import (
 
 // SetConfig loads the supplied configuration into a config.GlobalConfig
 // instance.
-func (s *Server) SetConfig(c context.Context, req *logdog.SetConfigRequest) (*google.Empty, error) {
-	if err := s.Auth(c); err != nil {
-		return nil, err
-	}
-
+func (s *server) SetConfig(c context.Context, req *logdog.SetConfigRequest) (*google.Empty, error) {
 	gcfg := config.GlobalConfig{
 		ConfigServiceURL:           req.ConfigServiceUrl,
 		ConfigSet:                  req.ConfigSet,

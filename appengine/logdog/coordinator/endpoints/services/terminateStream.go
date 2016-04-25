@@ -21,11 +21,7 @@ import (
 )
 
 // TerminateStream is an idempotent stream state terminate operation.
-func (s *Server) TerminateStream(c context.Context, req *logdog.TerminateStreamRequest) (*google.Empty, error) {
-	if err := Auth(c); err != nil {
-		return nil, err
-	}
-
+func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamRequest) (*google.Empty, error) {
 	log.Fields{
 		"path":          req.Path,
 		"terminalIndex": req.TerminalIndex,

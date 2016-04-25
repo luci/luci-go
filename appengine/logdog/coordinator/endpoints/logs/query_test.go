@@ -113,7 +113,8 @@ func TestQuery(t *testing.T) {
 		svcStub.ServiceConfig.Coordinator.AdminAuthGroup = "test-administrators"
 		c = coordinator.WithServices(c, &svcStub)
 
-		s := Server{}
+		var svrBase server
+		svr := newService(&svrBase)
 
 		req := logdog.QueryRequest{
 			Tags: map[string]string{},
@@ -212,7 +213,7 @@ func TestQuery(t *testing.T) {
 		invert(purgedStreamPaths)
 
 		Convey(`An empty query will return all log streams.`, func() {
-			resp, err := s.Query(c, &req)
+			resp, err := svr.Query(c, &req)
 			So(err, ShouldBeRPCOK)
 			So(resp, shouldHaveLogPaths, streamPaths)
 		})
@@ -220,7 +221,7 @@ func TestQuery(t *testing.T) {
 		Convey(`An empty query will include purged streams if admin.`, func() {
 			fs.IdentityGroups = []string{"test-administrators"}
 
-			resp, err := s.Query(c, &req)
+			resp, err := svr.Query(c, &req)
 			So(err, ShouldBeRPCOK)
 			So(resp, shouldHaveLogPaths, purgedStreamPaths)
 		})
@@ -228,7 +229,7 @@ func TestQuery(t *testing.T) {
 		Convey(`A query with an invalid path will return BadRequest error.`, func() {
 			req.Path = "***"
 
-			_, err := s.Query(c, &req)
+			_, err := svr.Query(c, &req)
 			So(err, ShouldBeRPCInvalidArgument, "invalid query `path`")
 		})
 
@@ -236,14 +237,14 @@ func TestQuery(t *testing.T) {
 			req.Next = "invalid"
 			fb.BreakFeatures(errors.New("testing error"), "DecodeCursor")
 
-			_, err := s.Query(c, &req)
+			_, err := svr.Query(c, &req)
 			So(err, ShouldBeRPCInvalidArgument, "invalid `next` value")
 		})
 
 		Convey(`A datastore query error will return InternalServer error.`, func() {
 			fb.BreakFeatures(errors.New("testing error"), "Run")
 
-			_, err := s.Query(c, &req)
+			_, err := svr.Query(c, &req)
 			So(err, ShouldBeRPCInternal)
 		})
 
@@ -254,7 +255,7 @@ func TestQuery(t *testing.T) {
 			desc := descs["testing/+/baz"]
 
 			Convey(`State is not returned.`, func() {
-				resp, err := s.Query(c, &req)
+				resp, err := svr.Query(c, &req)
 				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "testing/+/baz")
 
@@ -268,7 +269,7 @@ func TestQuery(t *testing.T) {
 				req.State = true
 
 				Convey(`When not requesting protobufs, returns a descriptor structure.`, func() {
-					resp, err := s.Query(c, &req)
+					resp, err := svr.Query(c, &req)
 					So(err, ShouldBeRPCOK)
 					So(resp, shouldHaveLogPaths, "testing/+/baz")
 
@@ -284,14 +285,14 @@ func TestQuery(t *testing.T) {
 					So(di.Put(stream), ShouldBeNil)
 					di.Testable().CatchupIndexes()
 
-					_, err := s.Query(c, &req)
+					_, err := svr.Query(c, &req)
 					So(err, ShouldBeRPCInternal)
 				})
 
 				Convey(`When requesting protobufs, returns the raw protobuf descriptor.`, func() {
 					req.Proto = true
 
-					resp, err := s.Query(c, &req)
+					resp, err := svr.Query(c, &req)
 					So(err, ShouldBeNil)
 					So(resp, shouldHaveLogPaths, "testing/+/baz")
 
@@ -303,7 +304,7 @@ func TestQuery(t *testing.T) {
 		})
 
 		Convey(`With a query limit of 3`, func() {
-			s.resultLimit = 3
+			svrBase.resultLimit = 3
 
 			Convey(`Can iteratively query to retrieve all stream paths.`, func() {
 				var seen []string
@@ -312,11 +313,11 @@ func TestQuery(t *testing.T) {
 				for {
 					req.Next = next
 
-					resp, err := s.Query(c, &req)
+					resp, err := svr.Query(c, &req)
 					So(err, ShouldBeRPCOK)
 
-					for _, s := range resp.Streams {
-						seen = append(seen, s.Path)
+					for _, svr := range resp.Streams {
+						seen = append(seen, svr.Path)
 					}
 
 					next = resp.Next
@@ -344,16 +345,16 @@ func TestQuery(t *testing.T) {
 			Convey(`Querying for entries created at or after 2 seconds ago (latest 2 entries).`, func() {
 				req.Newer = google.NewTimestamp(tc.Now().Add(-2*time.Second - time.Millisecond))
 
-				resp, err := s.Query(c, &req)
+				resp, err := svr.Query(c, &req)
 				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "testing/+/baz", "testing/+/foo/bar/baz")
 			})
 
 			Convey(`With a query limit of 3`, func() {
-				s.resultLimit = 3
+				svrBase.resultLimit = 3
 
 				Convey(`A query request will return the newest 3 entries and have a Next cursor for the next 3.`, func() {
-					resp, err := s.Query(c, &req)
+					resp, err := svr.Query(c, &req)
 					So(err, ShouldBeRPCOK)
 					So(resp, shouldHaveLogPaths, "testing/+/baz", "testing/+/foo/bar/baz", "meta/binary/+/foo")
 					So(resp.Next, ShouldNotEqual, "")
@@ -361,7 +362,7 @@ func TestQuery(t *testing.T) {
 					// Iterate.
 					req.Next = resp.Next
 
-					resp, err = s.Query(c, &req)
+					resp, err = svr.Query(c, &req)
 					So(err, ShouldBeRPCOK)
 					So(resp, shouldHaveLogPaths, "meta/datagram/+/foo", "meta/archived/+/foo", "meta/terminated/+/foo")
 				})
@@ -369,7 +370,7 @@ func TestQuery(t *testing.T) {
 				Convey(`A datastore query error will return InternalServer error.`, func() {
 					fb.BreakFeatures(errors.New("testing error"), "Run")
 
-					_, err := s.Query(c, &req)
+					_, err := svr.Query(c, &req)
 					So(err, ShouldBeRPCInternal)
 				})
 			})
@@ -381,7 +382,7 @@ func TestQuery(t *testing.T) {
 			Convey(`When terminated=yes, returns [archived, terminated].`, func() {
 				req.Terminated = logdog.QueryRequest_YES
 
-				resp, err := s.Query(c, &req)
+				resp, err := svr.Query(c, &req)
 				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "meta/archived/+/foo", "meta/terminated/+/foo")
 			})
@@ -389,7 +390,7 @@ func TestQuery(t *testing.T) {
 			Convey(`When terminated=no, returns [binary, datagram]`, func() {
 				req.Terminated = logdog.QueryRequest_NO
 
-				resp, err := s.Query(c, &req)
+				resp, err := svr.Query(c, &req)
 				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "meta/binary/+/foo", "meta/datagram/+/foo")
 			})
@@ -397,7 +398,7 @@ func TestQuery(t *testing.T) {
 			Convey(`When archived=yes, returns [archived]`, func() {
 				req.Archived = logdog.QueryRequest_YES
 
-				resp, err := s.Query(c, &req)
+				resp, err := svr.Query(c, &req)
 				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "meta/archived/+/foo")
 			})
@@ -405,7 +406,7 @@ func TestQuery(t *testing.T) {
 			Convey(`When archived=no, returns [binary, datagram, terminated]`, func() {
 				req.Archived = logdog.QueryRequest_NO
 
-				resp, err := s.Query(c, &req)
+				resp, err := svr.Query(c, &req)
 				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "meta/binary/+/foo", "meta/datagram/+/foo", "meta/terminated/+/foo")
 			})
@@ -413,7 +414,7 @@ func TestQuery(t *testing.T) {
 			Convey(`When purged=yes, returns BadRequest error.`, func() {
 				req.Purged = logdog.QueryRequest_YES
 
-				_, err := s.Query(c, &req)
+				_, err := svr.Query(c, &req)
 				So(err, ShouldBeRPCInvalidArgument, "non-admin user cannot request purged log streams")
 			})
 
@@ -423,7 +424,7 @@ func TestQuery(t *testing.T) {
 				Convey(`When purged=yes, returns [terminated/archived/purged, purged]`, func() {
 					req.Purged = logdog.QueryRequest_YES
 
-					resp, err := s.Query(c, &req)
+					resp, err := svr.Query(c, &req)
 					So(err, ShouldBeRPCOK)
 					So(resp, shouldHaveLogPaths, "meta/terminated/archived/purged/+/foo", "meta/purged/+/foo")
 				})
@@ -431,7 +432,7 @@ func TestQuery(t *testing.T) {
 				Convey(`When purged=no, returns [binary, datagram, archived, terminated]`, func() {
 					req.Purged = logdog.QueryRequest_NO
 
-					resp, err := s.Query(c, &req)
+					resp, err := svr.Query(c, &req)
 					So(err, ShouldBeRPCOK)
 					So(resp, shouldHaveLogPaths, "meta/binary/+/foo", "meta/datagram/+/foo", "meta/archived/+/foo", "meta/terminated/+/foo")
 				})
@@ -440,7 +441,7 @@ func TestQuery(t *testing.T) {
 			Convey(`When querying for text streams, returns [archived, terminated]`, func() {
 				req.StreamType = &logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_TEXT}
 
-				resp, err := s.Query(c, &req)
+				resp, err := svr.Query(c, &req)
 				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "meta/archived/+/foo", "meta/terminated/+/foo")
 			})
@@ -448,7 +449,7 @@ func TestQuery(t *testing.T) {
 			Convey(`When querying for binary streams, returns [binary]`, func() {
 				req.StreamType = &logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_BINARY}
 
-				resp, err := s.Query(c, &req)
+				resp, err := svr.Query(c, &req)
 				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "meta/binary/+/foo")
 			})
@@ -456,7 +457,7 @@ func TestQuery(t *testing.T) {
 			Convey(`When querying for datagram streams, returns [datagram]`, func() {
 				req.StreamType = &logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_DATAGRAM}
 
-				resp, err := s.Query(c, &req)
+				resp, err := svr.Query(c, &req)
 				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "meta/datagram/+/foo")
 			})
@@ -464,7 +465,7 @@ func TestQuery(t *testing.T) {
 			Convey(`When querying for an invalid stream type, returns a BadRequest error.`, func() {
 				req.StreamType = &logdog.QueryRequest_StreamTypeFilter{Value: -1}
 
-				_, err := s.Query(c, &req)
+				_, err := svr.Query(c, &req)
 				So(err, ShouldBeRPCInvalidArgument)
 			})
 		})
@@ -472,7 +473,7 @@ func TestQuery(t *testing.T) {
 		Convey(`When querying for content type "other", returns [other/+/baz, other/+/foo/bar].`, func() {
 			req.ContentType = "other"
 
-			resp, err := s.Query(c, &req)
+			resp, err := svr.Query(c, &req)
 			So(err, ShouldBeRPCOK)
 			So(resp, shouldHaveLogPaths, "other/+/baz", "other/+/foo/bar")
 		})
@@ -480,7 +481,7 @@ func TestQuery(t *testing.T) {
 		Convey(`When querying for proto version, the current version returns all non-purged streams.`, func() {
 			req.ProtoVersion = logpb.Version
 
-			resp, err := s.Query(c, &req)
+			resp, err := svr.Query(c, &req)
 			So(err, ShouldBeRPCOK)
 			So(resp, shouldHaveLogPaths, streamPaths)
 		})
@@ -488,7 +489,7 @@ func TestQuery(t *testing.T) {
 		Convey(`When querying for proto version, "invalid" returns nothing.`, func() {
 			req.ProtoVersion = "invalid"
 
-			resp, err := s.Query(c, &req)
+			resp, err := svr.Query(c, &req)
 			So(err, ShouldBeRPCOK)
 			So(resp, shouldHaveLogPaths)
 		})
@@ -497,7 +498,7 @@ func TestQuery(t *testing.T) {
 			Convey(`Tag "baz", returns [testing/+/baz, testing/+/foo/bar/baz, other/+/baz]`, func() {
 				req.Tags["baz"] = ""
 
-				resp, err := s.Query(c, &req)
+				resp, err := svr.Query(c, &req)
 				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "testing/+/baz", "testing/+/foo/bar/baz", "other/+/baz")
 			})
@@ -506,7 +507,7 @@ func TestQuery(t *testing.T) {
 				req.Tags["baz"] = ""
 				req.Tags["prefix"] = "testing"
 
-				resp, err := s.Query(c, &req)
+				resp, err := svr.Query(c, &req)
 				So(err, ShouldBeRPCOK)
 				So(resp, shouldHaveLogPaths, "testing/+/baz", "testing/+/foo/bar/baz")
 			})
@@ -514,7 +515,7 @@ func TestQuery(t *testing.T) {
 			Convey(`When an invalid tag is specified, returns BadRequest error`, func() {
 				req.Tags["+++not a valid tag+++"] = ""
 
-				_, err := s.Query(c, &req)
+				_, err := svr.Query(c, &req)
 				So(err, ShouldBeRPCInvalidArgument, "invalid tag constraint")
 			})
 		})

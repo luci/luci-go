@@ -10,6 +10,7 @@ import (
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
+	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
@@ -29,18 +30,21 @@ func TestServiceAuth(t *testing.T) {
 		svcStub := ct.Services{}
 		c = coordinator.WithServices(c, &svcStub)
 
+		svr := New().(*logdog.DecoratedServices)
+
 		c = auth.SetAuthenticator(c, auth.Authenticator{&authtest.FakeAuth{}})
 		Convey(`Will reject all traffic if no configuration is present.`, func() {
-			So(Auth(c), ShouldBeRPCInternal)
+			_, err := svr.Prelude(c, "test", nil)
+			So(err, ShouldBeRPCInternal)
 		})
 
 		Convey(`With an application config installed`, func() {
 			svcStub.InitConfig()
 			svcStub.ServiceConfig.Coordinator.ServiceAuthGroup = "test-services"
-			c = coordinator.WithServices(c, &svcStub)
 
 			Convey(`Will reject users if there is an authentication error (no state).`, func() {
-				So(Auth(c), ShouldBeRPCInternal)
+				_, err := svr.Prelude(c, "test", nil)
+				So(err, ShouldBeRPCInternal)
 			})
 
 			Convey(`With an authentication state`, func() {
@@ -48,19 +52,23 @@ func TestServiceAuth(t *testing.T) {
 				c = auth.WithState(c, &fs)
 
 				Convey(`Will reject users who are not logged in.`, func() {
-					So(Auth(c), ShouldBeRPCPermissionDenied)
+					_, err := svr.Prelude(c, "test", nil)
+					So(err, ShouldBeRPCPermissionDenied)
 				})
 
 				Convey(`When a user is logged in`, func() {
 					fs.Identity = "user:user@example.com"
 
 					Convey(`Will reject users who are not members of the service group.`, func() {
-						So(Auth(c), ShouldBeRPCPermissionDenied)
+						_, err := svr.Prelude(c, "test", nil)
+						So(err, ShouldBeRPCPermissionDenied)
 					})
 
 					Convey(`Will allow users who are members of the service group.`, func() {
 						fs.IdentityGroups = []string{"test-services"}
-						So(Auth(c), ShouldBeNil)
+
+						_, err := svr.Prelude(c, "test", nil)
+						So(err, ShouldBeNil)
 					})
 				})
 			})

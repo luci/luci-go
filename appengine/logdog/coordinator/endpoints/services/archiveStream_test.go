@@ -35,7 +35,7 @@ func TestArchiveStream(t *testing.T) {
 		svcStub.ServiceConfig.Coordinator.ServiceAuthGroup = "test-services"
 		c = coordinator.WithServices(c, &svcStub)
 
-		svr := Server{}
+		svr := New()
 
 		now := ds.RoundTime(tc.Now().UTC())
 

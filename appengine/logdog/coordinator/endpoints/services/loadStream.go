@@ -18,11 +18,7 @@ import (
 )
 
 // LoadStream loads the log stream state.
-func (s *Server) LoadStream(c context.Context, req *logdog.LoadStreamRequest) (*logdog.LoadStreamResponse, error) {
-	if err := Auth(c); err != nil {
-		return nil, err
-	}
-
+func (s *server) LoadStream(c context.Context, req *logdog.LoadStreamRequest) (*logdog.LoadStreamResponse, error) {
 	path := types.StreamPath(req.Path)
 	if err := path.Validate(); err != nil {
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid path (%s): %s", path, err)

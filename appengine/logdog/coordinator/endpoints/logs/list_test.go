@@ -53,7 +53,7 @@ func TestList(t *testing.T) {
 		svcStub.ServiceConfig.Coordinator.AdminAuthGroup = "test-administrators"
 		c = coordinator.WithServices(c, &svcStub)
 
-		s := Server{}
+		s := New()
 
 		req := logdog.ListRequest{}
 

@@ -43,7 +43,7 @@ func applyTrinary(q *ds.Query, v logdog.QueryRequest_Trinary, f func(*ds.Query, 
 }
 
 // Query returns log stream paths that match the requested query.
-func (s *Server) Query(c context.Context, req *logdog.QueryRequest) (*logdog.QueryResponse, error) {
+func (s *server) Query(c context.Context, req *logdog.QueryRequest) (*logdog.QueryResponse, error) {
 	// Non-admin users may not request purged results.
 	canSeePurged := true
 	if err := coordinator.IsAdminUser(c); err != nil {

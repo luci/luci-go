@@ -5,6 +5,7 @@
 package admin
 
 import (
+	"github.com/golang/protobuf/proto"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/admin/v1"
@@ -14,34 +15,36 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Server is the Cloud Endpoint service structure for the administrator endpoint.
-type Server struct{}
+// server is the service implementation for the administrator endpoint.
+type server struct{}
 
-var _ logdog.AdminServer = (*Server)(nil)
+// New instantiates a new AdminServer instance.
+func New() logdog.AdminServer {
+	return &logdog.DecoratedAdmin{
+		Service: &server{},
+		Prelude: func(c context.Context, methodName string, req proto.Message) (context.Context, error) {
+			if err := coordinator.IsAdminUser(c); err != nil {
+				log.WithError(err).Warningf(c, "User is not an administrator.")
 
-// Auth returns an error if the current user does not have access to
-// adminstrative endpoints.
-func (s *Server) Auth(c context.Context) error {
-	if err := coordinator.IsAdminUser(c); err != nil {
-		log.WithError(err).Warningf(c, "User is not an administrator.")
+				// If we're on development server, any user can access this endpoint.
+				if info.Get(c).IsDevAppServer() {
+					log.Infof(c, "On development server, allowing admin access.")
+					return c, nil
+				}
 
-		// If we're on development server, any user can access this endpoint.
-		if info.Get(c).IsDevAppServer() {
-			log.Infof(c, "On development server, allowing admin access.")
-			return nil
-		}
+				u := auth.CurrentUser(c)
+				if u == nil || !u.Superuser {
+					return nil, grpcutil.PermissionDenied
+				}
 
-		u := auth.CurrentUser(c)
-		if !(u != nil && u.Superuser) {
-			return grpcutil.PermissionDenied
-		}
+				log.Fields{
+					"email":    u.Email,
+					"clientID": u.ClientID,
+					"name":     u.Name,
+				}.Infof(c, "User is an AppEngine superuser. Granting access.")
+			}
 
-		log.Fields{
-			"email":    u.Email,
-			"clientID": u.ClientID,
-			"name":     u.Name,
-		}.Infof(c, "User is an AppEngine superuser. Granting access.")
+			return c, nil
+		},
 	}
-
-	return nil
 }
