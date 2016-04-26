@@ -22,7 +22,7 @@ import (
 var cmdArchive = &subcommands.Command{
 	UsageLine: "archive <options>",
 	ShortDesc: "creates a .isolated file and uploads the tree to an isolate server.",
-	LongDesc:  "All the files listed in the .isolated file are put in the isolate server cache via isolateserver.py.",
+	LongDesc:  "All the files listed in the .isolated file are put in the isolate server cache",
 	CommandRun: func() subcommands.CommandRun {
 		c := archiveRun{}
 		c.commonServerFlags.Init()

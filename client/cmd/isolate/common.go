@@ -83,18 +83,9 @@ func (c *isolateFlags) Init(f *flag.FlagSet) {
 	f.StringVar(&c.Isolated, "isolated", "", ".isolated file to generate or read")
 	f.StringVar(&c.Isolated, "s", "", "Alias for --isolated")
 	f.Var(&c.Blacklist, "blacklist", "List of regexp to use as blacklist filter when uploading directories")
-	f.Var(&c.ConfigVariables, "config-variable",
-		`Config variables are used to determine which
-		conditions should be matched when loading a .isolate
-		file, default: []. All 3 kinds of variables are
-		persistent accross calls, they are saved inside
-		<.isolated>.state`)
-	f.Var(&c.PathVariables, "path-variable",
-		"Path variables are used to replace file paths when loading a .isolate file, default: {}")
-	f.Var(&c.ExtraVariables, "extra-variable",
-		`Extraneous variables are replaced on the 'command
-		entry and on paths in the .isolate file but are not
-		considered relative paths.`)
+	f.Var(&c.ConfigVariables, "config-variable", "Config variables are used to determine which conditions should be matched when loading a .isolate file, default: [].")
+	f.Var(&c.PathVariables, "path-variable", "Path variables are used to replace file paths when loading a .isolate file, default: {}")
+	f.Var(&c.ExtraVariables, "extra-variable", "Extraneous variables are replaced on the command entry and on paths in the .isolate file but are not considered relative paths.")
 }
 
 // RequiredIsolateFlags specifies which flags are required on the command line

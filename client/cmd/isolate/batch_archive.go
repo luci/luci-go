@@ -43,7 +43,7 @@ isolate. Format of files is:
 		c := batchArchiveRun{}
 		c.commonServerFlags.Init()
 		c.Flags.StringVar(&c.dumpJSON, "dump-json", "",
-			"Write isolated Digestes of archived trees to this file as JSON")
+			"Write isolated digests of archived trees to this file as JSON")
 		return &c
 	},
 }
