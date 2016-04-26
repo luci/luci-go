@@ -86,7 +86,7 @@ func (a *application) runArchivist(c context.Context) error {
 	}
 	psProject, psSubscriptionName := taskSub.Split()
 
-	psAuth, err := a.Authenticator(func(o *auth.Options) {
+	psAuth, err := a.Authenticator(c, func(o *auth.Options) {
 		o.Scopes = pubsub.SubscriberScopes
 	})
 	if err != nil {

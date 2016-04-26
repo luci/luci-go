@@ -78,12 +78,11 @@ func (r *callRun) Run(a subcommands.Application, args []string) int {
 		return r.argErr("%s", err)
 	}
 
-	client, err := r.authenticatedClient(host)
-	if err != nil {
-		return ecAuthenticatedClientError
-	}
-
 	return r.run(func(c context.Context) error {
+		client, err := r.authenticatedClient(c, host)
+		if err != nil {
+			return &exitCode{err, ecAuthenticatedClientError}
+		}
 		return call(c, client, &req, os.Stdout)
 	})
 }

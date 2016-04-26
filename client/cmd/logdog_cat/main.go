@@ -54,9 +54,7 @@ func mainImpl() int {
 	ctx = gologger.StdConfig.Use(ctx)
 
 	authOptions := auth.Options{
-		Context: ctx,
-		Scopes:  coordinator.Scopes,
-		Logger:  log.Get(ctx),
+		Scopes: coordinator.Scopes,
 	}
 
 	a := application{
@@ -127,7 +125,7 @@ func mainImpl() int {
 		log.Errorf(log.SetError(ctx, err), "Failed to create auth options.")
 		return 1
 	}
-	httpClient, err := auth.NewAuthenticator(auth.SilentLogin, authOpts).Client()
+	httpClient, err := auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
 	if err != nil {
 		log.Errorf(log.SetError(ctx, err), "Failed to create authenticated client.")
 		return 1

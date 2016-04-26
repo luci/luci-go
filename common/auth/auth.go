@@ -119,23 +119,10 @@ const (
 	OptionalLogin LoginMode = "OptionalLogin"
 )
 
-// Options are used by NewAuthenticator call. All fields are optional and have
-// sane default values.
+// Options are used by NewAuthenticator call.
+//
+// All fields are optional and have sane default values.
 type Options struct {
-	// Context carries the local goroutine state such as transport and logger.
-	//
-	// Context must be set to GAE request context if this library is used on
-	// appengine. On non-appegine it is fine to pass nil to use default values.
-	// Note that Authenticator will be bound to the context and should not
-	// outlive it.
-	Context context.Context
-
-	// Logger is used to write log messages. If nil, extract it from the context.
-	//
-	// It exists mostly for backward compatibility with callers that do not use
-	// logger in the context (or do not use context at all).
-	Logger logging.Logger
-
 	// Transport is underlying round tripper to use for requests.
 	//
 	// If nil, will be extracted from the context. If not there,
@@ -149,10 +136,12 @@ type Options struct {
 	Scopes []string
 
 	// ClientID is OAuth client_id to use with UserCredentialsMethod.
+	//
 	// Default: provided by DefaultClient().
 	ClientID string
 
 	// ClientID is OAuth client_secret to use with UserCredentialsMethod.
+	//
 	// Default: provided by DefaultClient().
 	ClientSecret string
 
@@ -194,11 +183,9 @@ type Options struct {
 }
 
 // Authenticator is a factory for http.RoundTripper objects that know how to use
-// cached OAuth credentials. Authenticator also knows how to run interactive
-// login flow, if required.
+// cached OAuth credentials.
 //
-// http.RoundTripper produced by Authenticator supports CancelRequest method and
-// thus can be used when sending requests with timeouts.
+// Authenticator also knows how to run interactive login flow, if required.
 type Authenticator struct {
 	// Immutable members.
 	loginMode LoginMode
@@ -254,7 +241,13 @@ type TokenMinter interface {
 }
 
 // NewAuthenticator returns a new instance of Authenticator given its options.
-func NewAuthenticator(loginMode LoginMode, opts Options) *Authenticator {
+//
+// The authenticator is essentially a factory for http.RoundTripper that knows
+// how to use OAuth2 tokens. It is bound to the given context: uses its logger,
+// clock, transport and deadline.
+func NewAuthenticator(ctx context.Context, loginMode LoginMode, opts Options) *Authenticator {
+	ctx = logging.SetField(ctx, "pkg", "auth")
+
 	// Add default scope, sort scopes.
 	if len(opts.Scopes) == 0 {
 		opts.Scopes = []string{OAuthScopeEmail}
@@ -271,20 +264,10 @@ func NewAuthenticator(loginMode LoginMode, opts Options) *Authenticator {
 		opts.GCEAccountName = "default"
 	}
 	if opts.Transport == nil {
-		opts.Transport = internal.TransportFromContext(opts.Context)
+		// Note: TransportFromContext returns http.DefaultTransport if the context
+		// doesn't have a transport set.
+		opts.Transport = internal.TransportFromContext(ctx)
 	}
-
-	// Prepare a context with the logger.
-	ctx := opts.Context
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	if opts.Logger != nil {
-		ctx = logging.SetFactory(ctx, func(context.Context) logging.Logger {
-			return opts.Logger
-		})
-	}
-	ctx = logging.SetField(ctx, "pkg", "auth")
 
 	// See ensureInitialized for the rest of the initialization.
 	auth := &Authenticator{
@@ -316,11 +299,11 @@ func (a *Authenticator) Transport() (http.RoundTripper, error) {
 	case err == nil:
 		return transport, nil
 	case err == ErrInsufficientAccess && a.loginMode == OptionalLogin:
-		return http.DefaultTransport, nil
+		return a.opts.Transport, nil
 	case err != ErrLoginRequired || a.loginMode == SilentLogin:
 		return nil, err
 	case a.loginMode == OptionalLogin:
-		return http.DefaultTransport, nil
+		return a.opts.Transport, nil
 	case a.loginMode != InteractiveLogin:
 		return nil, fmt.Errorf("invalid mode argument: %s", a.loginMode)
 	}

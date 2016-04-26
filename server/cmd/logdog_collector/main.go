@@ -56,7 +56,7 @@ func (a *application) runCollector(c context.Context) error {
 	}
 
 	// New PubSub instance with the authenticated client.
-	psAuth, err := a.Authenticator(func(o *auth.Options) {
+	psAuth, err := a.Authenticator(c, func(o *auth.Options) {
 		o.Scopes = gcps.SubscriberScopes
 	})
 	if err != nil {

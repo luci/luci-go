@@ -51,7 +51,6 @@ const (
 // JSON key to use instead of app's own account.
 func Authenticator(c context.Context, scopes []string, serviceAccountJSON []byte) (*auth.Authenticator, error) {
 	opts := auth.Options{
-		Context:   c,
 		Transport: urlfetch.Get(c),
 		Scopes:    scopes,
 		TokenCacheFactory: func(entryName string) (auth.TokenCache, error) {
@@ -65,7 +64,7 @@ func Authenticator(c context.Context, scopes []string, serviceAccountJSON []byte
 		opts.Method = auth.CustomMethod
 		opts.CustomTokenMinter = tokenMinter{c}
 	}
-	return auth.NewAuthenticator(auth.SilentLogin, opts), nil
+	return auth.NewAuthenticator(c, auth.SilentLogin, opts), nil
 }
 
 // Transport returns http.RoundTripper that injects Authorization headers into

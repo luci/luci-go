@@ -15,9 +15,18 @@ import (
 	"os"
 	"time"
 
-	"github.com/luci/luci-go/common/auth"
 	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/common/logging/gologger"
 )
+
+// Context to use for logging in subcommands.
+//
+// TODO(vadimsh): Grab from subcommands.Application, to allow callers to
+// customize it.
+var stdCtx = gologger.StdConfig.Use(context.Background())
 
 // Flags defines command line flags related to authentication.
 type Flags struct {
@@ -68,12 +77,12 @@ func (c *loginRun) Run(subcommands.Application, []string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	client, err := auth.NewAuthenticator(auth.InteractiveLogin, opts).Client()
+	client, err := auth.NewAuthenticator(stdCtx, auth.InteractiveLogin, opts).Client()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Login failed: %s\n", err.Error())
 		return 2
 	}
-	err = reportIdentity(client)
+	err = reportIdentity(stdCtx, client)
 	if err != nil {
 		return 3
 	}
@@ -106,7 +115,7 @@ func (c *logoutRun) Run(a subcommands.Application, args []string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	err = auth.NewAuthenticator(auth.SilentLogin, opts).PurgeCredentialsCache()
+	err = auth.NewAuthenticator(stdCtx, auth.SilentLogin, opts).PurgeCredentialsCache()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 2
@@ -140,7 +149,7 @@ func (c *infoRun) Run(a subcommands.Application, args []string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	client, err := auth.NewAuthenticator(auth.SilentLogin, opts).Client()
+	client, err := auth.NewAuthenticator(stdCtx, auth.SilentLogin, opts).Client()
 	if err == auth.ErrLoginRequired {
 		fmt.Fprintln(os.Stderr, "Not logged in")
 		return 2
@@ -148,7 +157,7 @@ func (c *infoRun) Run(a subcommands.Application, args []string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 3
 	}
-	err = reportIdentity(client)
+	err = reportIdentity(stdCtx, client)
 	if err != nil {
 		return 4
 	}
@@ -203,7 +212,7 @@ func (c *tokenRun) Run(a subcommands.Application, args []string) int {
 		return TokenExitCodeInvalidInput
 	}
 
-	authenticator := auth.NewAuthenticator(auth.SilentLogin, opts)
+	authenticator := auth.NewAuthenticator(stdCtx, auth.SilentLogin, opts)
 	token, err := authenticator.GetAccessToken(c.lifetime)
 	if err != nil {
 		if err == auth.ErrLoginRequired {
@@ -243,9 +252,9 @@ func (c *tokenRun) Run(a subcommands.Application, args []string) int {
 
 // reportIdentity prints identity associated with credentials that the client
 // puts into each request (if any).
-func reportIdentity(c *http.Client) error {
-	service := auth.NewGroupsService("", c, nil)
-	ident, err := service.FetchCallerIdentity()
+func reportIdentity(ctx context.Context, c *http.Client) error {
+	service := auth.NewGroupsService("", c)
+	ident, err := service.FetchCallerIdentity(ctx)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to fetch current identity: %s\n", err)
 		return err

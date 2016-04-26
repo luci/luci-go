@@ -11,22 +11,32 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/clock/testclock"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGroupsService(t *testing.T) {
 	Convey("Mocking time and HTTP", t, func() {
-		mockSleep()
+		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
+		tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+			tc.Add(d)
+		})
 
-		requests := mockDoRequest()
-		service := NewGroupsService("https://example.com", &http.Client{}, nil)
+		service := NewGroupsService("https://example.com", &http.Client{})
+
+		requests, callback := mockDoRequest()
+		service.doRequest = callback
 
 		Convey("doGet works", func() {
 			requests.expect("https://example.com/some/path", 200, `{"key":"val"}`)
 			var response struct {
 				Key string `json:"key"`
 			}
-			err := service.doGet("/some/path", &response)
+			err := service.doGet(ctx, "/some/path", &response)
 			So(err, ShouldBeNil)
 			So(response.Key, ShouldEqual, "val")
 		})
@@ -38,7 +48,7 @@ func TestGroupsService(t *testing.T) {
 			var response struct {
 				Key string `json:"key"`
 			}
-			err := service.doGet("/some/path", &response)
+			err := service.doGet(ctx, "/some/path", &response)
 			So(err, ShouldBeNil)
 			So(response.Key, ShouldEqual, "val")
 		})
@@ -46,16 +56,16 @@ func TestGroupsService(t *testing.T) {
 		Convey("doGet fatal error", func() {
 			requests.expect("https://example.com/some/path", 403, "error")
 			var response struct{}
-			err := service.doGet("/some/path", &response)
+			err := service.doGet(ctx, "/some/path", &response)
 			So(err, ShouldNotBeNil)
 		})
 
 		Convey("doGet max retry", func() {
-			for i := 0; i < 5; i++ {
+			for i := 0; i < 17; i++ {
 				requests.expect("https://example.com/some/path", 500, "")
 			}
 			var response struct{}
-			err := service.doGet("/some/path", &response)
+			err := service.doGet(ctx, "/some/path", &response)
 			So(err, ShouldNotBeNil)
 		})
 
@@ -63,7 +73,7 @@ func TestGroupsService(t *testing.T) {
 			requests.expect("https://example.com/auth/api/v1/accounts/self", 200, `{
 				"identity": "user:abc@example.com"
 			}`)
-			ident, err := service.FetchCallerIdentity()
+			ident, err := service.FetchCallerIdentity(ctx)
 			So(err, ShouldBeNil)
 			So(ident, ShouldResemble, Identity{
 				Kind: IdentityKindUser,
@@ -88,7 +98,7 @@ func TestGroupsService(t *testing.T) {
 					"nested": ["another-group"]
 				}
 			}`)
-			group, err := service.FetchGroup("abc/name")
+			group, err := service.FetchGroup(ctx, "abc/name")
 			So(err, ShouldBeNil)
 			So(group, ShouldResemble, Group{
 				Name:        "abc/name",
@@ -106,14 +116,6 @@ func TestGroupsService(t *testing.T) {
 	})
 }
 
-func mockSleep() {
-	prev := sleep
-	sleep = func(d time.Duration) {}
-	Reset(func() {
-		sleep = prev
-	})
-}
-
 type mockedRequest struct {
 	URL        string
 	StatusCode int
@@ -124,10 +126,11 @@ type mockedRequests struct {
 	Expected []mockedRequest
 }
 
-func mockDoRequest() *mockedRequests {
+type reqCb func(context.Context, *http.Client, *http.Request) (*http.Response, error)
+
+func mockDoRequest() (*mockedRequests, reqCb) {
 	requests := &mockedRequests{}
-	prev := doRequest
-	doRequest = func(c *http.Client, req *http.Request) (*http.Response, error) {
+	doRequest := func(ctx context.Context, c *http.Client, req *http.Request) (*http.Response, error) {
 		So(len(requests.Expected), ShouldNotEqual, 0)
 		next := requests.Expected[0]
 		requests.Expected = requests.Expected[1:]
@@ -137,11 +140,7 @@ func mockDoRequest() *mockedRequests {
 			Body:       ioutil.NopCloser(strings.NewReader(next.Response)),
 		}, nil
 	}
-	Reset(func() {
-		requests.assertExecuted()
-		doRequest = prev
-	})
-	return requests
+	return requests, doRequest
 }
 
 func (r *mockedRequests) expect(url string, status int, response string) {

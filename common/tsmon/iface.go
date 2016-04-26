@@ -223,8 +223,7 @@ func initMonitor(c context.Context, fl *Flags) (monitor.Monitor, error) {
 // to PubSub API.
 func clientFactory(ctx context.Context, credentials string) (*http.Client, error) {
 	authOpts := auth.Options{
-		Context: ctx,
-		Scopes:  gcps.PublisherScopes,
+		Scopes: gcps.PublisherScopes,
 	}
 	if credentials == GCECredentials {
 		authOpts.Method = auth.GCEMetadataMethod
@@ -232,5 +231,5 @@ func clientFactory(ctx context.Context, credentials string) (*http.Client, error
 		authOpts.Method = auth.ServiceAccountMethod
 		authOpts.ServiceAccountJSONPath = credentials
 	}
-	return auth.NewAuthenticator(auth.SilentLogin, authOpts).Client()
+	return auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
 }

@@ -234,8 +234,7 @@ func (opts *ClientOptions) makeCipdClient(ctx context.Context, root string) (cip
 	if err != nil {
 		return nil, err
 	}
-	authOpts.Context = ctx
-	client, err := auth.NewAuthenticator(auth.OptionalLogin, authOpts).Client()
+	client, err := auth.NewAuthenticator(ctx, auth.OptionalLogin, authOpts).Client()
 	if err != nil {
 		return nil, err
 	}
@@ -1620,7 +1619,7 @@ var loggerConfig = gologger.LoggerConfig{
 }
 
 // authOpts is used by "auth-*" subcommands.
-var authOpts = auth.Options{Context: makeContext(nil)}
+var authOpts = auth.Options{}
 
 // makeContext is used by each subcommand to grab an initial context.
 func makeContext(cmd *Subcommand) context.Context {

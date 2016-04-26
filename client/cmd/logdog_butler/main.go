@@ -123,8 +123,7 @@ func (a *application) authenticator(ctx context.Context) (*auth.Authenticator, e
 	if err != nil {
 		return nil, err
 	}
-	opts.Context = ctx
-	return auth.NewAuthenticator(auth.SilentLogin, opts), nil
+	return auth.NewAuthenticator(ctx, auth.SilentLogin, opts), nil
 }
 
 func (a *application) authenticatedClient(ctx context.Context) (*http.Client, error) {
@@ -242,8 +241,6 @@ func mainImpl(ctx context.Context, argv []string) int {
 			[]string{auth.OAuthScopeEmail},
 			pubsub.PublisherScopes,
 		),
-		Context: ctx,
-		Logger:  log.Get(ctx),
 	}
 
 	a := &application{

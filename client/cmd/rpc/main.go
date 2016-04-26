@@ -28,9 +28,6 @@ var logCfg = gologger.LoggerConfig{
 	Out:    os.Stderr,
 }
 
-// infoLog is used before the command line is parsed. It logs at >= Info level.
-var infoLog = logCfg.NewLogger(context.Background())
-
 // exit codes:
 const (
 	ecInvalidCommandLine = -iota
@@ -57,7 +54,7 @@ type cmdRun struct {
 // registerBaseFlags registers common flags used by all subcommands.
 func (r *cmdRun) registerBaseFlags() {
 	r.Flags.BoolVar(&r.verbose, "verbose", false, "Enable more logging.")
-	r.auth.Register(&r.Flags, auth.Options{Logger: infoLog})
+	r.auth.Register(&r.Flags, auth.Options{})
 }
 
 // initContext creates a context. Must be called after flags are parsed.
@@ -69,12 +66,12 @@ func (r *cmdRun) initContext() context.Context {
 	return ctx
 }
 
-func (r *cmdRun) authenticatedClient(host string) (*prpc.Client, error) {
+func (r *cmdRun) authenticatedClient(ctx context.Context, host string) (*prpc.Client, error) {
 	authOpts, err := r.auth.Options()
 	if err != nil {
 		return nil, err
 	}
-	a := auth.NewAuthenticator(auth.OptionalLogin, authOpts)
+	a := auth.NewAuthenticator(ctx, auth.OptionalLogin, authOpts)
 	httpClient, err := a.Client()
 	if err != nil {
 		return nil, err
@@ -140,8 +137,8 @@ var application = &subcommands.DefaultApplication{
 		cmdCall,
 		cmdShow,
 		cmdFmt,
-		authcli.SubcommandLogin(auth.Options{Logger: infoLog}, "login"),
-		authcli.SubcommandLogout(auth.Options{Logger: infoLog}, "logout"),
+		authcli.SubcommandLogin(auth.Options{}, "login"),
+		authcli.SubcommandLogout(auth.Options{}, "logout"),
 		subcommands.CmdHelp,
 	},
 }

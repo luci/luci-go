@@ -6,14 +6,18 @@ package auth
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
 
+	"golang.org/x/net/context"
+	"golang.org/x/net/context/ctxhttp"
+
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry"
 )
 
 // ServiceURL is URL of a service to talk to by default.
@@ -86,31 +90,33 @@ func (i Identity) String() string {
 	}
 }
 
-// GroupsService knows how to talk to Groups API backend. Server side code
-// is in https://github.com/luci/luci-py repository.
+// GroupsService knows how to talk to Groups API backend.
+//
+// Server side code is in https://github.com/luci/luci-py repository.
 type GroupsService struct {
 	client     *http.Client
 	serviceURL string
-	logger     logging.Logger
+
+	// doRequest is mocked in tests. Default is ctxhttp.Do.
+	doRequest func(context.Context, *http.Client, *http.Request) (*http.Response, error)
 }
 
-// NewGroupsService constructs new instance of GroupsService that talks to given
-// service URL via given http.Client. If url is empty string, the default
-// backend will be used. If httpClient is nil, http.DefaultClient will be used.
-func NewGroupsService(url string, client *http.Client, logger logging.Logger) *GroupsService {
+// NewGroupsService constructs new instance of GroupsService.
+//
+// It that talks to given service URL via the given http.Client. If url is empty
+// string, the default backend will be used. If httpClient is nil,
+// http.DefaultClient will be used.
+func NewGroupsService(url string, client *http.Client) *GroupsService {
 	if url == "" {
 		url = ServiceURL
 	}
 	if client == nil {
 		client = http.DefaultClient
 	}
-	if logger == nil {
-		logger = logging.Null
-	}
 	return &GroupsService{
 		client:     client,
 		serviceURL: url,
-		logger:     logger,
+		doRequest:  ctxhttp.Do,
 	}
 }
 
@@ -120,20 +126,22 @@ func (s *GroupsService) ServiceURL() string {
 }
 
 // FetchCallerIdentity returns caller's own Identity as seen by the server.
-func (s *GroupsService) FetchCallerIdentity() (Identity, error) {
+func (s *GroupsService) FetchCallerIdentity(ctx context.Context) (Identity, error) {
 	var response struct {
 		Identity string `json:"identity"`
 	}
-	err := s.doGet("/auth/api/v1/accounts/self", &response)
+	err := s.doGet(ctx, "/auth/api/v1/accounts/self", &response)
 	if err != nil {
 		return Identity{}, err
 	}
 	return parseIdentity(response.Identity)
 }
 
-// FetchGroup returns a group definition. It does not fetch nested groups.
-// Returns ErrNoSuchItem error if no such group.
-func (s *GroupsService) FetchGroup(name string) (Group, error) {
+// FetchGroup returns a group definition.
+//
+// It does not fetch nested groups. Returns ErrNoSuchItem error if no such
+// group.
+func (s *GroupsService) FetchGroup(ctx context.Context, name string) (Group, error) {
 	var response struct {
 		Group struct {
 			Name        string   `json:"name"`
@@ -143,13 +151,13 @@ func (s *GroupsService) FetchGroup(name string) (Group, error) {
 			Nested      []string `json:"nested"`
 		} `json:"group"`
 	}
-	err := s.doGet("/auth/api/v1/groups/"+name, &response)
+	err := s.doGet(ctx, "/auth/api/v1/groups/"+name, &response)
 	if err != nil {
 		return Group{}, err
 	}
 	if response.Group.Name != name {
 		return Group{}, fmt.Errorf(
-			"Unexpected group name in server response: '%s', expecting '%s'",
+			"unexpected group name in server response: %q, expecting %q",
 			response.Group.Name, name)
 	}
 	g := Group{
@@ -162,7 +170,7 @@ func (s *GroupsService) FetchGroup(name string) (Group, error) {
 	for _, str := range response.Group.Members {
 		ident, err := parseIdentity(str)
 		if err != nil {
-			s.logger.Warningf("auth: failed to parse an identity in a group, ignoring it - %s", err)
+			logging.Warningf(ctx, "auth: failed to parse an identity in a group, ignoring it - %s", err)
 		} else {
 			g.Members = append(g.Members, ident)
 		}
@@ -170,48 +178,67 @@ func (s *GroupsService) FetchGroup(name string) (Group, error) {
 	return g, nil
 }
 
-// doGet sends GET HTTP requests and decodes JSON into response. It retries
-// multiple times on transient errors.
-func (s *GroupsService) doGet(path string, response interface{}) error {
+func (s *GroupsService) retryIterator() retry.Iterator {
+	return &retry.ExponentialBackoff{
+		Limited: retry.Limited{
+			Delay:    10 * time.Millisecond,
+			Retries:  50,
+			MaxTotal: 10 * time.Second,
+		},
+		Multiplier: 1.5,
+	}
+}
+
+func (s *GroupsService) doGet(ctx context.Context, path string, response interface{}) error {
 	if len(path) == 0 || path[0] != '/' {
 		return fmt.Errorf("path should start with '/': %s", path)
 	}
 	url := s.serviceURL + path
-	for attempt := 0; attempt < 5; attempt++ {
-		if attempt != 0 {
-			s.logger.Warningf("auth: retrying request to %s", url)
-			sleep(2 * time.Second)
-		}
+
+	var responseBody []byte
+
+	err := retry.Retry(ctx, retry.TransientOnly(s.retryIterator), func() error {
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
 			return err
 		}
-		resp, err := doRequest(s.client, req)
+		resp, err := s.doRequest(ctx, s.client, req)
 		if err != nil {
-			return err
+			return errors.WrapTransient(err) // connection error, transient
 		}
+		defer resp.Body.Close()
+
 		// Success?
 		if resp.StatusCode < 300 {
-			defer resp.Body.Close()
-			return json.NewDecoder(resp.Body).Decode(response)
+			responseBody, err = ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return errors.WrapTransient(err) // connection aborted midway
+			}
+			return nil
 		}
+
 		// Fatal error?
 		if resp.StatusCode >= 300 && resp.StatusCode < 500 {
-			defer resp.Body.Close()
 			switch resp.StatusCode {
-			case 403:
+			case http.StatusForbidden:
 				return ErrAccessDenied
-			case 404:
+			case http.StatusNotFound:
 				return ErrNoSuchItem
 			default:
 				body, _ := ioutil.ReadAll(resp.Body)
 				return fmt.Errorf("unexpected reply (HTTP %d):\n%s", resp.StatusCode, string(body))
 			}
 		}
-		// Retry.
-		resp.Body.Close()
+
+		// Transient error on the backend.
+		return errors.WrapTransient(
+			fmt.Errorf("transient error on the backend (HTTP %d)", resp.StatusCode))
+	}, nil)
+	if err != nil {
+		return err
 	}
-	return fmt.Errorf("request to %s failed after 5 attempts", url)
+
+	return json.Unmarshal(responseBody, response)
 }
 
 // parseIdentity takes a string of form "<kind>:<name>" and returns Identity
@@ -219,14 +246,14 @@ func (s *GroupsService) doGet(path string, response interface{}) error {
 func parseIdentity(str string) (Identity, error) {
 	chunks := strings.Split(str, ":")
 	if len(chunks) != 2 {
-		return Identity{}, fmt.Errorf("invalid identity string: '%s'", str)
+		return Identity{}, fmt.Errorf("invalid identity string: %q", str)
 	}
 	kind := IdentityKind(chunks[0])
 	name := chunks[1]
 	switch kind {
 	case IdentityKindAnonymous:
 		if name != "anonymous" {
-			return Identity{}, fmt.Errorf("invalid anonymous identity: '%s'", str)
+			return Identity{}, fmt.Errorf("invalid anonymous identity: %q", str)
 		}
 		return Identity{
 			Kind: IdentityKindAnonymous,
@@ -238,14 +265,6 @@ func parseIdentity(str string) (Identity, error) {
 			Name: name,
 		}, nil
 	default:
-		return Identity{}, fmt.Errorf("unrecognized identity kind: '%s'", str)
+		return Identity{}, fmt.Errorf("unrecognized identity kind: %q", str)
 	}
-}
-
-// sleep is mocked in tests.
-var sleep = time.Sleep
-
-// doRequest is mocked in tests.
-var doRequest = func(c *http.Client, req *http.Request) (*http.Response, error) {
-	return c.Do(req)
 }

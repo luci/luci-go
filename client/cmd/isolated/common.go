@@ -8,10 +8,13 @@ import (
 	"net/http"
 	"runtime"
 
+	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/client/isolatedclient"
 	"github.com/luci/luci-go/common/auth"
-	"github.com/maruel/subcommands"
+	"github.com/luci/luci-go/common/logging/gologger"
 )
 
 func init() {
@@ -37,6 +40,7 @@ func (c *commonFlags) Parse() error {
 }
 
 func (c *commonFlags) createClient() *http.Client {
-	client, _ := auth.NewAuthenticator(auth.SilentLogin, auth.Options{}).Client()
+	ctx := gologger.StdConfig.Use(context.Background())
+	client, _ := auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{}).Client()
 	return client
 }

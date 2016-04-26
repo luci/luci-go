@@ -398,8 +398,7 @@ func newTestAuthenticator(loginMode LoginMode, p internal.TokenProvider, cached 
 		}
 	}
 
-	return NewAuthenticator(loginMode, Options{
-		Context: ctx,
+	return NewAuthenticator(ctx, loginMode, Options{
 		TokenCacheFactory: func(string) (TokenCache, error) {
 			return &fakeTokenCache{initialCache}, nil
 		},

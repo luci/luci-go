@@ -12,12 +12,15 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/client/isolate"
 	"github.com/luci/luci-go/client/isolatedclient"
 	"github.com/luci/luci-go/common/auth"
-	"github.com/maruel/subcommands"
+	"github.com/luci/luci-go/common/logging/gologger"
 )
 
 func init() {
@@ -68,7 +71,8 @@ func (c *commonServerFlags) Parse() error {
 func (c *commonServerFlags) createAuthClient() (*http.Client, error) {
 	// OptionalLogin is used here instead of SilentLogin to make IP whitelisted
 	// bots to work without OAuth for now.
-	return auth.NewAuthenticator(auth.OptionalLogin, c.parsedAuthOpts).Client()
+	ctx := gologger.StdConfig.Use(context.Background())
+	return auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
 }
 
 type isolateFlags struct {

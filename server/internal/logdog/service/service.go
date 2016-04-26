@@ -169,10 +169,7 @@ func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
 	s.loggingFlags.Level = log.Warning
 	s.loggingFlags.AddFlags(fs)
 
-	s.authFlags.Register(fs, auth.Options{
-		Context: c,
-		Logger:  log.Get(c),
-	})
+	s.authFlags.Register(fs, auth.Options{})
 	s.configFlags.AddToFlagSet(fs)
 
 	fs.StringVar(&s.coordinatorHost, "coordinator", "",
@@ -193,7 +190,7 @@ func (s *Service) initCoordinatorClient(c context.Context) (logdog.ServicesClien
 		return nil, ErrInvalidConfig
 	}
 
-	httpClient, err := s.AuthenticatedClient(func(o *auth.Options) {
+	httpClient, err := s.AuthenticatedClient(c, func(o *auth.Options) {
 		o.Scopes = CoordinatorScopes
 	})
 	if err != nil {
@@ -216,7 +213,7 @@ func (s *Service) initCoordinatorClient(c context.Context) (logdog.ServicesClien
 }
 
 func (s *Service) initConfig(c context.Context) (*config.Manager, error) {
-	rt, err := s.AuthenticatedTransport(nil)
+	rt, err := s.AuthenticatedTransport(c, nil)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create config client.")
 		return nil, err
@@ -277,7 +274,7 @@ func (s *Service) IntermediateStorage(c context.Context) (storage.Storage, error
 	}
 
 	// Initialize Storage authentication.
-	a, err := s.Authenticator(func(o *auth.Options) {
+	a, err := s.Authenticator(c, func(o *auth.Options) {
 		o.Scopes = bigtable.StorageScopes
 		if s.storageCredentialJSONPath != "" {
 			o.ServiceAccountJSONPath = s.storageCredentialJSONPath
@@ -305,7 +302,7 @@ func (s *Service) IntermediateStorage(c context.Context) (storage.Storage, error
 
 // GSClient returns an authenticated Google Storage client instance.
 func (s *Service) GSClient(c context.Context) (gs.Client, error) {
-	rt, err := s.AuthenticatedTransport(func(o *auth.Options) {
+	rt, err := s.AuthenticatedTransport(c, func(o *auth.Options) {
 		o.Scopes = gs.ReadWriteScopes
 	})
 	if err != nil {
@@ -324,9 +321,9 @@ func (s *Service) GSClient(c context.Context) (gs.Client, error) {
 // Authenticator returns an Authenticator instance. The Authenticator is
 // configured from a base set of Authenticator Options.
 //
-// An optional permutation functon can be provided to modify those Options
+// An optional permutation function can be provided to modify those Options
 // before the Authenticator is created.
-func (s *Service) Authenticator(f func(o *auth.Options)) (*auth.Authenticator, error) {
+func (s *Service) Authenticator(c context.Context, f func(o *auth.Options)) (*auth.Authenticator, error) {
 	authOpts, err := s.authFlags.Options()
 	if err != nil {
 		return nil, ErrInvalidConfig
@@ -334,7 +331,7 @@ func (s *Service) Authenticator(f func(o *auth.Options)) (*auth.Authenticator, e
 	if f != nil {
 		f(&authOpts)
 	}
-	return auth.NewAuthenticator(auth.SilentLogin, authOpts), nil
+	return auth.NewAuthenticator(c, auth.SilentLogin, authOpts), nil
 }
 
 // AuthenticatedTransport returns an authenticated http.RoundTripper transport.
@@ -342,8 +339,8 @@ func (s *Service) Authenticator(f func(o *auth.Options)) (*auth.Authenticator, e
 //
 // An optional permutation functon can be provided to modify those Options
 // before the Authenticator is created.
-func (s *Service) AuthenticatedTransport(f func(o *auth.Options)) (http.RoundTripper, error) {
-	a, err := s.Authenticator(f)
+func (s *Service) AuthenticatedTransport(c context.Context, f func(o *auth.Options)) (http.RoundTripper, error) {
+	a, err := s.Authenticator(c, f)
 	if err != nil {
 		return nil, err
 	}
@@ -355,8 +352,8 @@ func (s *Service) AuthenticatedTransport(f func(o *auth.Options)) (http.RoundTri
 //
 // An optional permutation functon can be provided to modify those Options
 // before the Authenticator is created.
-func (s *Service) AuthenticatedClient(f func(o *auth.Options)) (*http.Client, error) {
-	a, err := s.Authenticator(f)
+func (s *Service) AuthenticatedClient(c context.Context, f func(o *auth.Options)) (*http.Client, error) {
+	a, err := s.Authenticator(c, f)
 	if err != nil {
 		return nil, err
 	}

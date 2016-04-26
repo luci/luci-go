@@ -57,12 +57,11 @@ func (r *f2jRun) Run(a subcommands.Application, args []string) int {
 	host, msgType := args[0], args[1]
 	args = args[2:]
 
-	client, err := r.authenticatedClient(host)
-	if err != nil {
-		return ecAuthenticatedClientError
-	}
-
 	return r.run(func(c context.Context) error {
+		client, err := r.authenticatedClient(c, host)
+		if err != nil {
+			return &exitCode{err, ecAuthenticatedClientError}
+		}
 		return flagsToJSON(c, client, msgType, args)
 	})
 }
