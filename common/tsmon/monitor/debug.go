@@ -30,24 +30,26 @@ func (m *debugMonitor) ChunkSize() int {
 }
 
 func (m *debugMonitor) Send(ctx context.Context, cells []types.Cell) error {
-	logger := logging.Get(ctx)
 	collection := SerializeCells(cells)
 	str := proto.MarshalTextString(collection)
-	logger.Infof("Sending ts_mon metrics:\n%s", str)
+
+	logging.Infof(ctx, "Sending ts_mon metrics:\n%s", str)
 
 	if m.path != "" {
 		file, err := os.OpenFile(m.path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0664)
 		if err != nil {
+			logging.Errorf(ctx, "Failed to open file %s: %s", m.path, err)
 			return err
 		}
 
 		defer func() {
 			if err := file.Close(); err != nil {
-				logger.Errorf("Failed to close file %s: %v", m.path, err)
+				logging.Errorf(ctx, "Failed to close file %s: %s", m.path, err)
 			}
 		}()
 
 		if _, err = file.WriteString(str); err != nil {
+			logging.Errorf(ctx, "Failed to write to the file %s: %s", m.path, err)
 			return err
 		}
 	}

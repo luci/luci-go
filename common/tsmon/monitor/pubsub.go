@@ -8,11 +8,13 @@ import (
 	"net/http"
 
 	"github.com/golang/protobuf/proto"
-	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
-	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
 	"google.golang.org/cloud"
 	"google.golang.org/cloud/pubsub"
+
+	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
+	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/tsmon/types"
 )
 
 type pubSubMonitor struct {
@@ -22,7 +24,7 @@ type pubSubMonitor struct {
 // NewPubsubMonitor returns a Monitor that sends metrics to the Cloud Pub/Sub
 // API.
 //
-// The provided client should do implement sufficient authentication to send
+// The provided client should implement sufficient authentication to send
 // Cloud Pub/Sub requests.
 func NewPubsubMonitor(ctx context.Context, client *http.Client, topic gcps.Topic) (Monitor, error) {
 	project, name := topic.Split()
@@ -38,7 +40,9 @@ func NewPubsubMonitor(ctx context.Context, client *http.Client, topic gcps.Topic
 }
 
 func (m *pubSubMonitor) ChunkSize() int {
-	return gcps.MaxPublishBatchSize
+	// PubSub publish request must be less than 10 MB in size. Using 1000 here
+	// assumes one cell serializes to <10Kb.
+	return 1000
 }
 
 func (m *pubSubMonitor) Send(ctx context.Context, cells []types.Cell) error {
@@ -49,6 +53,11 @@ func (m *pubSubMonitor) Send(ctx context.Context, cells []types.Cell) error {
 		return err
 	}
 
-	_, err = m.topic.Publish(ctx, &pubsub.Message{Data: data})
-	return err
+	ids, err := m.topic.Publish(ctx, &pubsub.Message{Data: data})
+	if err != nil {
+		logging.Errorf(ctx, "PubSub publish error - %s", err)
+		return err
+	}
+	logging.Debugf(ctx, "Sent %d tsmon cells to PubSub, message id: %v", len(cells), ids)
+	return nil
 }

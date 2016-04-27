@@ -155,12 +155,8 @@ func Shutdown(c context.Context) {
 		state.Flusher = nil
 	}
 
-	logging.Debugf(c, "Doing the final tsmon flush")
-	if err := Flush(c); err != nil {
-		logging.Errorf(c, "Final tsmon flush failed - %s", err)
-	} else {
-		logging.Debugf(c, "Final tsmon flush finished")
-	}
+	// Flush logs errors inside.
+	Flush(c)
 
 	// Reset the state as if 'InitializeFromFlags' was never called.
 	Initialize(c, monitor.NewNilMonitor(), store.NewNilStore())

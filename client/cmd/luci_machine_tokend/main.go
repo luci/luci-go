@@ -140,7 +140,7 @@ func realMain() int {
 
 	// Apply tsmon config.
 	if err := tsmon.InitializeFromFlags(root, &tsmonFlags); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to initialize tsmon - %s\n", err)
+		logging.Errorf(root, "Failed to initialize tsmon - %s", err)
 		return 1
 	}
 
@@ -157,16 +157,15 @@ func realMain() int {
 		// to be to flush errors to monitoring even if 'ctx' has expired.
 		statusReport.Finished = clock.Now(ctx)
 		if err := statusReport.SendMetrics(root); err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to send tsmon metrics - %s\n", err)
+			logging.Errorf(root, "Failed to send tsmon metrics - %s", err)
 		}
 		if opts.StatusFile != "" {
 			if err := statusReport.SaveToFile(root, log, opts.StatusFile); err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to save the status - %s\n", err)
+				logging.Errorf(root, "Failed to save the status - %s", err)
 			}
 		}
 	}()
 	if err := run(ctx, clientParams, opts, &statusReport); err != nil {
-		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
 	return 0

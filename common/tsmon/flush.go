@@ -32,19 +32,32 @@ func Flush(c context.Context) error {
 	// metrics.
 	runCallbacks(c)
 
-	// Split up the payload into chunks if there are too many cells.
 	cells := Store(c).GetAll(c)
+	if len(cells) == 0 {
+		return nil
+	}
 
+	logging.Debugf(c, "Starting tsmon flush: %d cells", len(cells))
+	defer logging.Debugf(c, "Tsmon flush finished")
+
+	// Split up the payload into chunks if there are too many cells.
 	chunkSize := mon.ChunkSize()
 	if chunkSize == 0 {
 		chunkSize = len(cells)
 	}
+
+	total := len(cells)
+	sent := 0
 	for len(cells) > 0 {
 		count := minInt(chunkSize, len(cells))
 		if err := mon.Send(c, cells[:count]); err != nil {
+			logging.Errorf(
+				c, "Sent %d cells out of %d, skipping the rest due to error - %s",
+				sent, total, err)
 			return err
 		}
 		cells = cells[count:]
+		sent += count
 	}
 	return nil
 }
