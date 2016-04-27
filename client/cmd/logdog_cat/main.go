@@ -10,14 +10,16 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/logdog/coordinator"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/common/prpc"
-	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
 )
 
 func init() {
@@ -25,7 +27,7 @@ func init() {
 }
 
 type application struct {
-	subcommands.DefaultApplication
+	cli.Application
 	context.Context
 
 	authFlags   authcli.Flags
@@ -58,11 +60,12 @@ func mainImpl() int {
 	}
 
 	a := application{
-		DefaultApplication: subcommands.DefaultApplication{
-			Name:  "LogDog cat",
-			Title: "LogDog log data access CLI",
-			Commands: []*subcommands.Command{
+		Application: cli.Application{
+			Name:    "LogDog cat",
+			Title:   "LogDog log data access CLI",
+			Context: func(context.Context) context.Context { return ctx },
 
+			Commands: []*subcommands.Command{
 				subcommands.CmdHelp,
 				newCatCommand(),
 				newQueryCommand(),

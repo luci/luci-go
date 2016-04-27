@@ -15,9 +15,11 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/luci/luci-go/common/ctxcmd"
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/cli"
+	"github.com/luci/luci-go/common/ctxcmd"
 )
 
 // BootstrapStepName is the name of kitchen's step where it makes preparations
@@ -159,7 +161,8 @@ func (c *cookRun) run(ctx context.Context) (recipeExitCode int, err error) {
 }
 
 func (c *cookRun) Run(a subcommands.Application, args []string) (exitCode int) {
-	app := a.(*app)
+	ctx := cli.GetContext(a, c)
+
 	var err error
 	if len(args) != 0 {
 		err = fmt.Errorf("unexpected arguments %v\n", args)
@@ -190,7 +193,7 @@ func (c *cookRun) Run(a subcommands.Application, args []string) (exitCode int) {
 		annotate("SET_BUILD_PROPERTY", k, string(jv))
 	}
 
-	recipeExitCode, err := c.run(app.Context)
+	recipeExitCode, err := c.run(ctx)
 	annotate("STEP_CURSOR", BootstrapStepName)
 	if err != nil {
 		if err != context.Canceled {

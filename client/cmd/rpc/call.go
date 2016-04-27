@@ -18,6 +18,7 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"github.com/luci/luci-go/client/flagpb"
+	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/prpc"
 )
@@ -78,13 +79,12 @@ func (r *callRun) Run(a subcommands.Application, args []string) int {
 		return r.argErr("%s", err)
 	}
 
-	return r.run(func(c context.Context) error {
-		client, err := r.authenticatedClient(c, host)
-		if err != nil {
-			return &exitCode{err, ecAuthenticatedClientError}
-		}
-		return call(c, client, &req, os.Stdout)
-	})
+	ctx := cli.GetContext(a, r)
+	client, err := r.authenticatedClient(ctx, host)
+	if err != nil {
+		return ecAuthenticatedClientError
+	}
+	return r.done(call(ctx, client, &req, os.Stdout))
 }
 
 func splitServiceAndMethod(fullName string) (service string, method string, err error) {

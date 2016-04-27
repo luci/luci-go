@@ -6,6 +6,9 @@ package main
 
 import (
 	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/cli"
 )
 
 var cmdFmt = &subcommands.Command{
@@ -23,8 +26,11 @@ type fmtRun struct {
 }
 
 func (r *fmtRun) Run(a subcommands.Application, args []string) int {
-	app := &subcommands.DefaultApplication{
-		Name:  "fmt",
+	app := &cli.Application{
+		Name: "fmt",
+		Context: func(context.Context) context.Context {
+			return cli.GetContext(a, r)
+		},
 		Title: "Converts a message formats.",
 		Commands: []*subcommands.Command{
 			cmdJ2F,

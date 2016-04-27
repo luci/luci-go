@@ -14,6 +14,7 @@ import (
 
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/common/prpc"
@@ -51,19 +52,18 @@ type cmdRun struct {
 	auth    authcli.Flags
 }
 
-// registerBaseFlags registers common flags used by all subcommands.
-func (r *cmdRun) registerBaseFlags() {
-	r.Flags.BoolVar(&r.verbose, "verbose", false, "Enable more logging.")
-	r.auth.Register(&r.Flags, auth.Options{})
-}
-
-// initContext creates a context. Must be called after flags are parsed.
-func (r *cmdRun) initContext() context.Context {
-	ctx := logCfg.Use(context.Background())
+// ModifyContext implements cli.ContextModificator.
+func (r *cmdRun) ModifyContext(ctx context.Context) context.Context {
 	if r.verbose {
 		ctx = logging.SetLevel(ctx, logging.Debug)
 	}
 	return ctx
+}
+
+// registerBaseFlags registers common flags used by all subcommands.
+func (r *cmdRun) registerBaseFlags() {
+	r.Flags.BoolVar(&r.verbose, "verbose", false, "Enable more logging.")
+	r.auth.Register(&r.Flags, auth.Options{})
 }
 
 func (r *cmdRun) authenticatedClient(ctx context.Context, host string) (*prpc.Client, error) {
@@ -110,13 +110,6 @@ func (r *cmdRun) done(err error) int {
 	return 0
 }
 
-// run initializes a context and runs f.
-// if f returns an error, prints the error and returns a non-zero exit code.
-func (r *cmdRun) run(f func(context.Context) error) int {
-	ctx := r.initContext()
-	return r.done(f(ctx))
-}
-
 func isLocalHost(host string) bool {
 	switch {
 	case host == "localhost", strings.HasPrefix(host, "localhost:"):
@@ -130,9 +123,12 @@ func isLocalHost(host string) bool {
 	return true
 }
 
-var application = &subcommands.DefaultApplication{
+var application = &cli.Application{
 	Name:  "rpc",
 	Title: "Remote Procedure Call CLI",
+	Context: func(ctx context.Context) context.Context {
+		return logCfg.Use(ctx)
+	},
 	Commands: []*subcommands.Command{
 		cmdCall,
 		cmdShow,

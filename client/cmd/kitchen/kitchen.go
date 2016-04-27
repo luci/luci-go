@@ -10,23 +10,22 @@ import (
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/cli"
+	"github.com/luci/luci-go/common/logging/gologger"
 )
 
-type app struct {
-	subcommands.DefaultApplication
-	Context context.Context
-}
-
-var application = &app{
-	subcommands.DefaultApplication{
-		Name:  "kitchen",
-		Title: "Kitchen. It can run a recipe.",
-		Commands: []*subcommands.Command{
-			subcommands.CmdHelp,
-			cmdCook,
-		},
+var application = &cli.Application{
+	Name:  "kitchen",
+	Title: "Kitchen. It can run a recipe.",
+	Context: func(ctx context.Context) context.Context {
+		ctx = gologger.StdConfig.Use(ctx)
+		return handleInterruption(ctx)
 	},
-	handleInterruption(context.Background()),
+	Commands: []*subcommands.Command{
+		subcommands.CmdHelp,
+		cmdCook,
+	},
 }
 
 func main() {

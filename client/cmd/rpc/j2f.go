@@ -13,7 +13,6 @@ import (
 	"sync"
 
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/client/flagpb"
 )
@@ -25,7 +24,7 @@ var cmdJ2F = &subcommands.Command{
 
 Example:
 
-	$ echo '{"name: "Lucy"}' | rpc fmt j2f
+	$ echo '{"name": "Lucy"}' | rpc fmt j2f
 	-name Lucy
 
 See also f2j subcommand.`,
@@ -49,9 +48,7 @@ func (r *j2fRun) Run(a subcommands.Application, args []string) int {
 		return r.argErr("")
 	}
 
-	return r.run(func(c context.Context) error {
-		return jsonToFlags()
-	})
+	return r.done(jsonToFlags())
 }
 
 // jsonToFlags reads JSON from stdin, parses it to a message and

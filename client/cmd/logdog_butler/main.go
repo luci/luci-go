@@ -16,10 +16,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
+
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/client/internal/logdog/butler"
 	"github.com/luci/luci-go/client/internal/logdog/butler/output"
 	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/clock/clockflag"
 	"github.com/luci/luci-go/common/flag/multiflag"
 	"github.com/luci/luci-go/common/gcloud/pubsub"
@@ -27,9 +32,6 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/common/paniccatcher"
-	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
 )
 
 const (
@@ -67,7 +69,7 @@ func buildScopes(parts ...[]string) []string {
 // application is the Butler application instance and its runtime configuration
 // and state.
 type application struct {
-	subcommands.DefaultApplication
+	cli.Application
 	context.Context
 
 	butler       butler.Config
@@ -245,9 +247,10 @@ func mainImpl(ctx context.Context, argv []string) int {
 
 	a := &application{
 		Context: ctx,
-		DefaultApplication: subcommands.DefaultApplication{
-			Name:  "butler",
-			Title: "Log collection and streaming bootstrap.",
+		Application: cli.Application{
+			Name:    "butler",
+			Title:   "Log collection and streaming bootstrap.",
+			Context: func(context.Context) context.Context { return ctx },
 			Commands: []*subcommands.Command{
 				subcommands.CmdHelp,
 				subcommandRun,

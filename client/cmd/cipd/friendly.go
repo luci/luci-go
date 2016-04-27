@@ -21,6 +21,7 @@ import (
 	"github.com/luci/luci-go/client/cipd"
 	"github.com/luci/luci-go/client/cipd/local"
 	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/common/cli"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -470,7 +471,7 @@ func (c *installRun) Run(a subcommands.Application, args []string) int {
 		return c.done(nil, err)
 	}
 
-	ctx := makeContext(&c.Subcommand)
+	ctx := cli.GetContext(a, c)
 	if err = site.initClient(ctx, c.authFlags); err != nil {
 		return c.done(nil, err)
 	}
@@ -505,6 +506,6 @@ func (c *installedRun) Run(a subcommands.Application, args []string) int {
 	if err != nil {
 		return c.done(nil, err)
 	}
-	ctx := makeContext(&c.Subcommand)
+	ctx := cli.GetContext(a, c)
 	return c.doneWithPins(site.installedPackages(ctx, args))
 }

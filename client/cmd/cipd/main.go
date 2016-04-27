@@ -27,6 +27,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
@@ -69,6 +70,14 @@ type Subcommand struct {
 
 	jsonOutput string
 	verbose    bool
+}
+
+// ModifyContext implements cli.ContextModificator.
+func (c *Subcommand) ModifyContext(ctx context.Context) context.Context {
+	if c.verbose {
+		ctx = logging.SetLevel(ctx, logging.Debug)
+	}
+	return ctx
 }
 
 // registerBaseFlags registers common flags used by all subcommands.
@@ -613,7 +622,7 @@ func (c *createRun) Run(a subcommands.Application, args []string) int {
 	if !c.checkArgs(args, 0, 0) {
 		return 1
 	}
-	ctx := makeContext(&c.Subcommand)
+	ctx := cli.GetContext(a, c)
 	return c.done(buildAndUploadInstance(ctx, &c.Opts))
 }
 
@@ -670,7 +679,7 @@ func (c *ensureRun) Run(a subcommands.Application, args []string) int {
 	if !c.checkArgs(args, 0, 0) {
 		return 1
 	}
-	ctx := makeContext(&c.Subcommand)
+	ctx := cli.GetContext(a, c)
 	currentPins, _, err := ensurePackages(ctx, c.rootDir, c.listFile, false, c.ClientOptions)
 	return c.done(currentPins, err)
 }
@@ -731,7 +740,7 @@ func (c *checkUpdatesRun) Run(a subcommands.Application, args []string) int {
 	if !c.checkArgs(args, 0, 0) {
 		return 1
 	}
-	ctx := makeContext(&c.Subcommand)
+	ctx := cli.GetContext(a, c)
 	_, actions, err := ensurePackages(ctx, c.rootDir, c.listFile, true, c.ClientOptions)
 	if err != nil {
 		ret := c.done(actions, err)
@@ -774,7 +783,7 @@ func (c *resolveRun) Run(a subcommands.Application, args []string) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	ctx := makeContext(&c.Subcommand)
+	ctx := cli.GetContext(a, c)
 	return c.doneWithPins(resolveVersion(ctx, args[0], c.version, c.ClientOptions))
 }
 
@@ -820,7 +829,7 @@ func (c *describeRun) Run(a subcommands.Application, args []string) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	ctx := makeContext(&c.Subcommand)
+	ctx := cli.GetContext(a, c)
 	return c.done(describeInstance(ctx, args[0], c.version, c.ClientOptions))
 }
 
@@ -933,7 +942,7 @@ func (c *setRefRun) Run(a subcommands.Application, args []string) int {
 	if len(c.refs) == 0 {
 		return c.done(nil, makeCLIError("at least one -ref must be provided"))
 	}
-	ctx := makeContext(&c.Subcommand)
+	ctx := cli.GetContext(a, c)
 	return c.doneWithPins(setRefOrTag(ctx, &setRefOrTagArgs{
 		ClientOptions: c.ClientOptions,
 		packagePrefix: args[0],
@@ -1036,7 +1045,7 @@ func (c *setTagRun) Run(a subcommands.Application, args []string) int {
 	if len(c.tags) == 0 {
 		return c.done(nil, makeCLIError("at least one -tag must be provided"))
 	}
-	ctx := makeContext(&c.Subcommand)
+	ctx := cli.GetContext(a, c)
 	return c.done(setRefOrTag(ctx, &setRefOrTagArgs{
 		ClientOptions: c.ClientOptions,
 		packagePrefix: args[0],
@@ -1079,7 +1088,7 @@ func (c *listPackagesRun) Run(a subcommands.Application, args []string) int {
 	if len(args) == 1 {
 		path = args[0]
 	}
-	ctx := makeContext(&c.Subcommand)
+	ctx := cli.GetContext(a, c)
 	return c.done(listPackages(ctx, path, c.recursive, c.ClientOptions))
 }
 
@@ -1135,7 +1144,7 @@ func (c *searchRun) Run(a subcommands.Application, args []string) int {
 	if len(args) == 1 {
 		packageName = args[0]
 	}
-	ctx := makeContext(&c.Subcommand)
+	ctx := cli.GetContext(a, c)
 	return c.done(searchInstances(ctx, packageName, c.tags[0], c.ClientOptions))
 }
 
@@ -1183,7 +1192,7 @@ func (c *listACLRun) Run(a subcommands.Application, args []string) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	ctx := makeContext(&c.Subcommand)
+	ctx := cli.GetContext(a, c)
 	return c.done(listACL(ctx, args[0], c.ClientOptions))
 }
 
@@ -1276,7 +1285,7 @@ func (c *editACLRun) Run(a subcommands.Application, args []string) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	ctx := makeContext(&c.Subcommand)
+	ctx := cli.GetContext(a, c)
 	return c.done(nil, editACL(ctx, args[0], c.owner, c.writer, c.reader, c.revoke, c.ClientOptions))
 }
 
@@ -1344,7 +1353,7 @@ func (c *buildRun) Run(a subcommands.Application, args []string) int {
 	if !c.checkArgs(args, 0, 0) {
 		return 1
 	}
-	ctx := makeContext(&c.Subcommand)
+	ctx := cli.GetContext(a, c)
 	err := buildInstanceFile(ctx, c.outputFile, c.InputOptions)
 	if err != nil {
 		return c.done(nil, err)
@@ -1401,7 +1410,7 @@ func (c *deployRun) Run(a subcommands.Application, args []string) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	ctx := makeContext(&c.Subcommand)
+	ctx := cli.GetContext(a, c)
 	return c.done(deployInstanceFile(ctx, c.rootDir, args[0]))
 }
 
@@ -1444,7 +1453,7 @@ func (c *fetchRun) Run(a subcommands.Application, args []string) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	ctx := makeContext(&c.Subcommand)
+	ctx := cli.GetContext(a, c)
 	return c.done(fetchInstanceFile(ctx, args[0], c.version, c.outputPath, c.ClientOptions))
 }
 
@@ -1510,7 +1519,7 @@ func (c *inspectRun) Run(a subcommands.Application, args []string) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	ctx := makeContext(&c.Subcommand)
+	ctx := cli.GetContext(a, c)
 	return c.done(inspectInstanceFile(ctx, args[0], true))
 }
 
@@ -1578,7 +1587,7 @@ func (c *registerRun) Run(a subcommands.Application, args []string) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	ctx := makeContext(&c.Subcommand)
+	ctx := cli.GetContext(a, c)
 	return c.done(registerInstanceFile(ctx, args[0], &c.Opts))
 }
 
@@ -1613,26 +1622,18 @@ func registerInstanceFile(ctx context.Context, instanceFile string, opts *regist
 ////////////////////////////////////////////////////////////////////////////////
 // Main.
 
-var loggerConfig = gologger.LoggerConfig{
-	Format: `[P%{pid} %{time:15:04:05.000} %{shortfile} %{level:.1s}] %{message}`,
-	Out:    os.Stderr,
-}
-
-// authOpts is used by "auth-*" subcommands.
-var authOpts = auth.Options{}
-
-// makeContext is used by each subcommand to grab an initial context.
-func makeContext(cmd *Subcommand) context.Context {
-	ctx := loggerConfig.Use(context.Background())
-	if cmd != nil && cmd.verbose {
-		ctx = logging.SetLevel(ctx, logging.Debug)
-	}
-	return ctx
-}
-
-var application = &subcommands.DefaultApplication{
+var application = &cli.Application{
 	Name:  "cipd",
 	Title: "Chrome Infra Package Deployer",
+
+	Context: func(ctx context.Context) context.Context {
+		loggerConfig := gologger.LoggerConfig{
+			Format: `[P%{pid} %{time:15:04:05.000} %{shortfile} %{level:.1s}] %{message}`,
+			Out:    os.Stderr,
+		}
+		return loggerConfig.Use(ctx)
+	},
+
 	Commands: []*subcommands.Command{
 		subcommands.CmdHelp,
 		version.SubcommandVersion,
@@ -1644,9 +1645,9 @@ var application = &subcommands.DefaultApplication{
 		cmdInstalled,
 
 		// Authentication related commands.
-		authcli.SubcommandInfo(authOpts, "auth-info"),
-		authcli.SubcommandLogin(authOpts, "auth-login"),
-		authcli.SubcommandLogout(authOpts, "auth-logout"),
+		authcli.SubcommandInfo(auth.Options{}, "auth-info"),
+		authcli.SubcommandLogin(auth.Options{}, "auth-login"),
+		authcli.SubcommandLogout(auth.Options{}, "auth-logout"),
 
 		// High level commands.
 		cmdListPackages,

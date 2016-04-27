@@ -12,6 +12,7 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/proto/google/descriptor"
 	"github.com/luci/luci-go/common/prpc"
 )
@@ -52,13 +53,12 @@ func (r *showRun) Run(a subcommands.Application, args []string) int {
 		return r.argErr("")
 	}
 
-	return r.run(func(c context.Context) error {
-		client, err := r.authenticatedClient(c, host)
-		if err != nil {
-			return &exitCode{err, ecAuthenticatedClientError}
-		}
-		return show(c, client, name)
-	})
+	ctx := cli.GetContext(a, r)
+	client, err := r.authenticatedClient(ctx, host)
+	if err != nil {
+		return ecAuthenticatedClientError
+	}
+	return r.done(show(ctx, client, name))
 }
 
 // show prints a definition of an object referenced by name in proto3 style.

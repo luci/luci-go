@@ -2,9 +2,40 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Package authcli implements authentication related CLI subcommands and option
-// parsing. Can be used from CLI tools that want customize authentication
+// Package authcli implements authentication related CLI subcommands.
+//
+// It can be used from CLI tools that want customize authentication
 // configuration from the command line.
+//
+// It use luci-go/common/cli.GetContext() to grab a context for logging, so
+// callers should prefer using cli.Application for hosting subcommands and
+// making the context:
+//
+//
+//	import (
+//	  "github.com/luci/luci-go/client/authcli"
+//	  "github.com/luci/luci-go/common/cli"
+//	)
+//
+//	var application = &cli.Application{
+//		Name:  "app_name",
+//
+//		Context: func(ctx context.Context) context.Context {
+//			... configure logging, etc. ...
+//			return ctx
+//		},
+//
+//		Commands: []*subcommands.Command{
+//			authcli.SubcommandInfo(auth.Options{}, "auth-info"),
+//			authcli.SubcommandLogin(auth.Options{}, "auth-login"),
+//			authcli.SubcommandLogout(auth.Options{}, "auth-logout"),
+//			...
+//		},
+//	}
+//
+//	func main() {
+//		os.Exit(subcommands.Run(application, nil))
+//	}
 package authcli
 
 import (
@@ -19,14 +50,8 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/logging/gologger"
+	"github.com/luci/luci-go/common/cli"
 )
-
-// Context to use for logging in subcommands.
-//
-// TODO(vadimsh): Grab from subcommands.Application, to allow callers to
-// customize it.
-var stdCtx = gologger.StdConfig.Use(context.Background())
 
 // Flags defines command line flags related to authentication.
 type Flags struct {
@@ -71,18 +96,19 @@ type loginRun struct {
 	flags Flags
 }
 
-func (c *loginRun) Run(subcommands.Application, []string) int {
+func (c *loginRun) Run(a subcommands.Application, _ []string) int {
 	opts, err := c.flags.Options()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	client, err := auth.NewAuthenticator(stdCtx, auth.InteractiveLogin, opts).Client()
+	ctx := cli.GetContext(a, c)
+	client, err := auth.NewAuthenticator(ctx, auth.InteractiveLogin, opts).Client()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Login failed: %s\n", err.Error())
 		return 2
 	}
-	err = reportIdentity(stdCtx, client)
+	err = reportIdentity(ctx, client)
 	if err != nil {
 		return 3
 	}
@@ -115,7 +141,8 @@ func (c *logoutRun) Run(a subcommands.Application, args []string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	err = auth.NewAuthenticator(stdCtx, auth.SilentLogin, opts).PurgeCredentialsCache()
+	ctx := cli.GetContext(a, c)
+	err = auth.NewAuthenticator(ctx, auth.SilentLogin, opts).PurgeCredentialsCache()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 2
@@ -149,7 +176,8 @@ func (c *infoRun) Run(a subcommands.Application, args []string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	client, err := auth.NewAuthenticator(stdCtx, auth.SilentLogin, opts).Client()
+	ctx := cli.GetContext(a, c)
+	client, err := auth.NewAuthenticator(ctx, auth.SilentLogin, opts).Client()
 	if err == auth.ErrLoginRequired {
 		fmt.Fprintln(os.Stderr, "Not logged in")
 		return 2
@@ -157,7 +185,7 @@ func (c *infoRun) Run(a subcommands.Application, args []string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 3
 	}
-	err = reportIdentity(stdCtx, client)
+	err = reportIdentity(ctx, client)
 	if err != nil {
 		return 4
 	}
@@ -212,7 +240,8 @@ func (c *tokenRun) Run(a subcommands.Application, args []string) int {
 		return TokenExitCodeInvalidInput
 	}
 
-	authenticator := auth.NewAuthenticator(stdCtx, auth.SilentLogin, opts)
+	ctx := cli.GetContext(a, c)
+	authenticator := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 	token, err := authenticator.GetAccessToken(c.lifetime)
 	if err != nil {
 		if err == auth.ErrLoginRequired {

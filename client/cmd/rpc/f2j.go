@@ -12,6 +12,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/client/flagpb"
+	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/prpc"
 )
 
@@ -57,13 +58,12 @@ func (r *f2jRun) Run(a subcommands.Application, args []string) int {
 	host, msgType := args[0], args[1]
 	args = args[2:]
 
-	return r.run(func(c context.Context) error {
-		client, err := r.authenticatedClient(c, host)
-		if err != nil {
-			return &exitCode{err, ecAuthenticatedClientError}
-		}
-		return flagsToJSON(c, client, msgType, args)
-	})
+	ctx := cli.GetContext(a, r)
+	client, err := r.authenticatedClient(ctx, host)
+	if err != nil {
+		return ecAuthenticatedClientError
+	}
+	return r.done(flagsToJSON(ctx, client, msgType, args))
 }
 
 // flagsToJSON loads server description, resolves msgType, parses
