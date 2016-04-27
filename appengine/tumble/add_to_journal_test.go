@@ -18,7 +18,7 @@ func TestAddToJournal(t *testing.T) {
 	t.Parallel()
 
 	Convey("Test AddToJournal", t, func() {
-		ttest := NewTesting()
+		ttest := &Testing{}
 		c := ttest.Context()
 		ds := datastore.Get(c)
 		ml := logging.Get(c).(*memlogger.MemLogger)

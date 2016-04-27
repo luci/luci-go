@@ -21,11 +21,11 @@ func TestShardCalculation(t *testing.T) {
 	t.Parallel()
 
 	Convey("shard calculation", t, func() {
-		numShards := uint64(11)
-
-		tt := NewTesting()
-		tt.NumShards = numShards
+		tt := &Testing{}
 		ctx := tt.Context()
+		cfg := tt.GetConfig(ctx)
+		cfg.NumShards = 11
+		tt.UpdateSettings(ctx, cfg)
 
 		l := logging.Get(ctx).(*memlogger.MemLogger)
 
@@ -35,12 +35,12 @@ func TestShardCalculation(t *testing.T) {
 				s  uint64
 			}{
 				{math.MinInt64, 0},
-				{0, numShards / 2},
-				{math.MaxInt64, numShards - 1},
+				{0, cfg.NumShards / 2},
+				{math.MaxInt64, cfg.NumShards - 1},
 			}
 
 			for _, tc := range tcs {
-				So((&realMutation{ExpandedShard: tc.es}).shard(&tt.Config).shard, ShouldEqual, tc.s)
+				So((&realMutation{ExpandedShard: tc.es}).shard(cfg).shard, ShouldEqual, tc.s)
 				low, high := expandedShardBounds(ctx, tc.s)
 				So(tc.es, ShouldBeGreaterThanOrEqualTo, low)
 				So(tc.es, ShouldBeLessThanOrEqualTo, high)
@@ -60,22 +60,22 @@ func TestFireTasks(t *testing.T) {
 	t.Parallel()
 
 	Convey("fireTasks works as expected", t, func() {
-		tt := NewTesting()
+		tt := &Testing{}
 		ctx := tt.Context()
 		tq := taskqueue.Get(ctx)
 
 		Convey("empty", func() {
-			So(fireTasks(ctx, &tt.Config, nil), ShouldBeTrue)
+			So(fireTasks(ctx, tt.GetConfig(ctx), nil), ShouldBeTrue)
 			So(len(tq.Testable().GetScheduledTasks()[baseName]), ShouldEqual, 0)
 		})
 
 		Convey("basic", func() {
-			So(fireTasks(ctx, &tt.Config, map[taskShard]struct{}{
+			So(fireTasks(ctx, tt.GetConfig(ctx), map[taskShard]struct{}{
 				taskShard{2, minTS}: {},
 				taskShard{7, minTS}: {},
 
 				// since DelayedMutations is false, this timew will be reset
-				taskShard{5, mkTimestamp(&tt.Config, testclock.TestTimeUTC.Add(time.Minute))}: {},
+				taskShard{5, mkTimestamp(tt.GetConfig(ctx), testclock.TestTimeUTC.Add(time.Minute))}: {},
 			}), ShouldBeTrue)
 			q := tq.Testable().GetScheduledTasks()[baseName]
 			So(q["-62132730888_2"], ShouldResemble, &taskqueue.Task{
@@ -99,9 +99,11 @@ func TestFireTasks(t *testing.T) {
 		})
 
 		Convey("delayed", func() {
-			tt.DelayedMutations = true
-			delayedTS := mkTimestamp(&tt.Config, testclock.TestTimeUTC.Add(time.Minute*10))
-			So(fireTasks(ctx, &tt.Config, map[taskShard]struct{}{
+			cfg := tt.GetConfig(ctx)
+			cfg.DelayedMutations = true
+			tt.UpdateSettings(ctx, cfg)
+			delayedTS := mkTimestamp(cfg, testclock.TestTimeUTC.Add(time.Minute*10))
+			So(fireTasks(ctx, cfg, map[taskShard]struct{}{
 				taskShard{1, delayedTS}: {},
 			}), ShouldBeTrue)
 			q := tq.Testable().GetScheduledTasks()[baseName]

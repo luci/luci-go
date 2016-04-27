@@ -50,7 +50,7 @@ func fireTasks(c context.Context, cfg *Config, shards map[taskShard]struct{}) bo
 	if cfg.Namespaced {
 		c = info.Get(c).MustNamespace(TaskNamespace)
 	}
-	tq := taskqueue.Get(c)
+	tq := taskqueue.GetNoTxn(c)
 
 	nextSlot := mkTimestamp(cfg, clock.Now(c).UTC())
 	logging.Fields{

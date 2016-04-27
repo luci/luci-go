@@ -16,7 +16,7 @@ func TestGetDatastoreNamespaces(t *testing.T) {
 	t.Parallel()
 
 	Convey(`A testing datastore`, t, func() {
-		tt := NewTesting()
+		tt := &Testing{}
 		ctx := tt.Context()
 
 		// Call to add a datastore entry under the supplied namespace.

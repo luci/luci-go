@@ -142,7 +142,7 @@ func TestWalkGraph(t *testing.T) {
 	t.Parallel()
 
 	Convey("WalkGraph", t, func() {
-		ttest := tumble.NewTesting()
+		ttest := &tumble.Testing{}
 		c := ttest.Context()
 
 		ds := datastore.Get(c)

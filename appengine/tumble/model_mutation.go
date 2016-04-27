@@ -150,18 +150,8 @@ func putMutations(c context.Context, cfg *Config, fromRoot *datastore.Key, muts 
 	toPut := make([]*realMutation, len(muts))
 	mutKeys = make([]*datastore.Key, len(muts))
 	for i, m := range muts {
-		when := now
-		if cfg.DelayedMutations {
-			if dm, ok := m.(DelayedMutation); ok {
-				targetTime := dm.ProcessAfter()
-				if dm.HighPriority() || targetTime.After(now) {
-					when = targetTime
-				}
-			}
-		}
-
 		id := fmt.Sprintf("%016x_%08x_%08x", version, round, i)
-		toPut[i], err = newRealMutation(c, id, fromRoot, m, when)
+		toPut[i], err = newRealMutation(c, cfg, id, fromRoot, m, now)
 		if err != nil {
 			logging.Errorf(c, "error creating real mutation for %v: %s", m, err)
 			return
@@ -189,7 +179,7 @@ func getAppVersion(c context.Context) string {
 		// AppEngine version is <app-yaml-version>.<unique-upload-id>
 		//
 		// The upload ID prevents version consistency between different AppEngine
-		// modules, which will necessarily have different IDs, so we vase our
+		// modules, which will necessarily have different IDs, so we base our
 		// comparable version off of the app.yaml-supplied value.
 		if idx := strings.LastIndex(appVersion.version, "."); idx > 0 {
 			appVersion.version = appVersion.version[:idx]
@@ -198,7 +188,17 @@ func getAppVersion(c context.Context) string {
 	return appVersion.version
 }
 
-func newRealMutation(c context.Context, id string, parent *datastore.Key, m Mutation, when time.Time) (*realMutation, error) {
+func newRealMutation(c context.Context, cfg *Config, id string, parent *datastore.Key, m Mutation, now time.Time) (*realMutation, error) {
+	when := now
+	if cfg.DelayedMutations {
+		if dm, ok := m.(DelayedMutation); ok {
+			targetTime := dm.ProcessAfter()
+			if dm.HighPriority() || targetTime.After(now) {
+				when = targetTime
+			}
+		}
+	}
+
 	t := reflect.TypeOf(m).String()
 	if _, ok := registry[t]; !ok {
 		return nil, fmt.Errorf("Attempting to add unregistered mutation %v: %v", t, m)

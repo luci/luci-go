@@ -29,7 +29,7 @@ func TestRegisterStream(t *testing.T) {
 	t.Parallel()
 
 	Convey(`With a testing configuration`, t, func() {
-		tt := tumble.NewTesting()
+		tt := &tumble.Testing{}
 		c := tt.Context()
 		ds.Get(c).Testable().Consistent(true)
 

@@ -10,6 +10,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -29,6 +30,33 @@ type User struct {
 	Name string `gae:"$id"`
 }
 
+type TimeoutMessageSend struct {
+	Out       *datastore.Key
+	WaitUntil time.Time
+}
+
+func (t *TimeoutMessageSend) ProcessAfter() time.Time { return t.WaitUntil }
+func (t *TimeoutMessageSend) HighPriority() bool      { return false }
+
+func (t *TimeoutMessageSend) Root(context.Context) *datastore.Key {
+	return t.Out.Root()
+}
+
+func (t *TimeoutMessageSend) RollForward(c context.Context) ([]Mutation, error) {
+	logging.Warningf(c, "TimeoutMessageSend.RollForward(%s)", t.Out)
+	ds := datastore.Get(c)
+	out := &OutgoingMessage{}
+	datastore.PopulateKey(out, t.Out)
+	if err := ds.Get(out); err != nil {
+		return nil, err
+	}
+	if out.Notified || out.TimedOut {
+		return nil, nil
+	}
+	out.TimedOut = true
+	return nil, ds.Put(out)
+}
+
 type WriteMessage struct {
 	Out *OutgoingMessage
 }
@@ -45,9 +73,14 @@ func (w *WriteMessage) RollForward(c context.Context) ([]Mutation, error) {
 	outKey := ds.KeyForObj(w.Out)
 	muts := make([]Mutation, len(w.Out.Recipients))
 	for i, p := range w.Out.Recipients {
-		muts[i] = &SendMessage{outKey, p}
+		muts[i] = &SendMessage{outKey, p, time.Time{}}
+		if p == "slowmojoe" {
+			muts[i].(*SendMessage).WaitUntil = clock.Now(c).Add(10 * time.Minute)
+		}
 	}
-	return muts, nil
+	return muts, PutNamedMutations(c, outKey, map[string]Mutation{
+		"timeout": &TimeoutMessageSend{outKey, clock.Now(c).Add(5 * time.Minute)},
+	})
 }
 
 func (u *User) MakeOutgoingMessage(c context.Context, msg string, toUsers ...string) *OutgoingMessage {
@@ -84,6 +117,7 @@ type OutgoingMessage struct {
 	Failure bf.BitField
 
 	Notified bool
+	TimedOut bool
 }
 
 type IncomingMessage struct {
@@ -93,13 +127,17 @@ type IncomingMessage struct {
 }
 
 type SendMessage struct {
-	Message *datastore.Key
-	ToUser  string
+	Message   *datastore.Key
+	ToUser    string
+	WaitUntil time.Time
 }
 
 func (m *SendMessage) Root(ctx context.Context) *datastore.Key {
 	return datastore.Get(ctx).KeyForObj(&User{Name: m.ToUser})
 }
+
+func (m *SendMessage) ProcessAfter() time.Time { return m.WaitUntil }
+func (m *SendMessage) HighPriority() bool      { return false }
 
 func (m *SendMessage) RollForward(c context.Context) ([]Mutation, error) {
 	ds := datastore.Get(c)
@@ -152,9 +190,11 @@ func (w *WriteReceipt) RollForward(c context.Context) ([]Mutation, error) {
 	}
 
 	if m.Success.CountSet()+m.Failure.CountSet() == uint32(len(m.Recipients)) {
-		return []Mutation{&ReminderMessage{
+		err := CancelNamedMutations(c, w.Message, "timeout")
+		muts := []Mutation{&ReminderMessage{
 			w.Message, m.FromUser.StringID(), clock.Now(c).UTC().Add(time.Minute * 5)},
-		}, nil
+		}
+		return muts, err
 	}
 
 	return nil, nil
@@ -167,6 +207,8 @@ type ReminderMessage struct {
 }
 
 var _ DelayedMutation = (*ReminderMessage)(nil)
+var _ DelayedMutation = (*TimeoutMessageSend)(nil)
+var _ DelayedMutation = (*SendMessage)(nil)
 
 func (r *ReminderMessage) Root(ctx context.Context) *datastore.Key {
 	return r.Message.Root()
@@ -174,7 +216,8 @@ func (r *ReminderMessage) Root(ctx context.Context) *datastore.Key {
 
 func (r *ReminderMessage) RollForward(c context.Context) ([]Mutation, error) {
 	ds := datastore.Get(c)
-	m := &OutgoingMessage{ID: r.Message.IntID(), FromUser: r.Message.Parent()}
+	m := &OutgoingMessage{}
+	datastore.PopulateKey(m, r.Message)
 	if err := ds.Get(m); err != nil {
 		return nil, err
 	}
@@ -213,11 +256,12 @@ func (*NotRegistered) Root(c context.Context) *datastore.Key           { return 
 func (*NotRegistered) RollForward(context.Context) ([]Mutation, error) { return nil, nil }
 
 func init() {
-	Register((*WriteMessage)(nil))
-	Register((*SendMessage)(nil))
-	Register((*ReminderMessage)(nil))
-	Register((*WriteReceipt)(nil))
 	Register((*Embedder)(nil))
+	Register((*ReminderMessage)(nil))
+	Register((*SendMessage)(nil))
+	Register((*TimeoutMessageSend)(nil))
+	Register((*WriteMessage)(nil))
+	Register((*WriteReceipt)(nil))
 }
 
 func testHighLevelImpl(t *testing.T, namespaces []string) {
@@ -236,14 +280,16 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 		})
 
 		Convey("Good", func() {
-			testing := NewTesting()
+			testing := &Testing{}
 			ctx := testing.Context()
 
 			if namespaces == nil {
 				// Non-namespaced test.
 				namespaces = []string{""}
 			} else {
-				testing.Config.Namespaced = true
+				cfg := testing.GetConfig(ctx)
+				cfg.Namespaced = true
+				testing.UpdateSettings(ctx, cfg)
 			}
 
 			testing.Service.Namespaces = func(context.Context) ([]string, error) {
@@ -293,7 +339,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				gds.Testable().CatchupIndexes()
 				testing.AdvanceTime(ctx)
 
-				So(testing.Iterate(ctx), ShouldEqual, testing.NumShards)
+				So(testing.Iterate(ctx), ShouldEqual, testing.GetConfig(ctx).NumShards)
 				gds.Testable().CatchupIndexes()
 				testing.AdvanceTime(ctx)
 
@@ -342,7 +388,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				l.Reset()
 				testing.Drain(ctx)
 
-				if !testing.Config.Namespaced {
+				if !testing.GetConfig(ctx).Namespaced {
 					So(l.Has(logging.Warning, "loading mutation with different code version", map[string]interface{}{
 						"key":         "tumble.23.lock",
 						"clientID":    "-62132730888_23",
@@ -381,7 +427,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				// do all the SendMessages
 				gds.Testable().CatchupIndexes()
 				testing.AdvanceTime(ctx)
-				So(testing.Iterate(ctx), ShouldEqual, testing.NumShards)
+				So(testing.Iterate(ctx), ShouldEqual, testing.GetConfig(ctx).NumShards)
 
 				// do all the WriteReceipts
 				l.Reset()
@@ -394,7 +440,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				//
 				// The extra mutation at the end is supposed to be delayed, but we
 				// didn't enable Delayed messages in this config.
-				if !testing.Config.Namespaced {
+				if !testing.GetConfig(ctx).Namespaced {
 					So(l.Has(logging.Info, "successfully processed 128 mutations (0 tail-call), adding 0 more", map[string]interface{}{
 						"key":      "tumble.23.lock",
 						"clientID": "-62132730884_23",
@@ -416,11 +462,12 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 
 			Convey("delaying messages works", func() {
 				gds.Testable().Consistent(false)
-				testing.DelayedMutations = true
+				cfg := testing.GetConfig(ctx)
+				cfg.DelayedMutations = true
+				testing.UpdateSettings(ctx, cfg)
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
 					So(datastore.Get(ctx).PutMulti([]User{
-						{"sender"},
 						{"recipient"},
 					}), ShouldBeNil)
 				})
@@ -467,9 +514,10 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				testing.AdvanceTime(ctx)
 				So(testing.Iterate(ctx), ShouldEqual, 0)
 
-				if !testing.Config.Namespaced {
+				if !testing.GetConfig(ctx).Namespaced {
 					So(l.Has(
-						logging.Info, "skipping task: "+processURL(-62132730576, 23), nil,
+						logging.Info, ("skipping task: ETA(0001-02-03 04:10:24 +0000 UTC): "+
+							processURL(-62132730576, 23)), nil,
 					), ShouldBeTrue)
 				} else {
 					// TODO: Assert log messages for namespaced test?
@@ -484,6 +532,93 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 					So(datastore.Get(ctx).Get(outMsgs[i]), ShouldBeNil)
 					So(outMsgs[i].Notified, ShouldBeTrue)
 				})
+			})
+
+			Convey("named mutations work", func() {
+				cfg := testing.GetConfig(ctx)
+				cfg.Namespaced = false
+				testing.UpdateSettings(ctx, cfg)
+				testing.EnableDelayedMutations(ctx)
+
+				So(gds.PutMulti([]User{
+					{"recipient"},
+					{"slowmojoe"},
+				}), ShouldBeNil)
+
+				outMsg, err := charlie.SendMessage(ctx, "Hey there", "recipient", "slowmojoe")
+				So(err, ShouldBeNil)
+
+				testing.AdvanceTime(ctx)
+				So(testing.Iterate(ctx), ShouldEqual, 1) // sent to "recipient"
+
+				testing.AdvanceTime(ctx)
+				testing.AdvanceTime(ctx)
+				So(testing.Iterate(ctx), ShouldEqual, 1) // reciept from "recipient"
+
+				clock.Get(ctx).(testclock.TestClock).Add(time.Minute * 5)
+				So(testing.Iterate(ctx), ShouldEqual, 1) // timeout!
+				So(l.HasFunc(func(ent *memlogger.LogEntry) bool {
+					return strings.Contains(ent.Msg, "TimeoutMessageSend")
+				}), ShouldBeTrue)
+
+				So(gds.Get(outMsg), ShouldBeNil)
+				So(outMsg.TimedOut, ShouldBeTrue)
+				So(outMsg.Notified, ShouldBeFalse)
+				So(outMsg.Success.CountSet(), ShouldEqual, 1)
+
+				clock.Get(ctx).(testclock.TestClock).Add(time.Minute * 5)
+				So(testing.Iterate(ctx), ShouldEqual, 1) // WriteReceipt slowmojoe
+
+				testing.AdvanceTime(ctx)
+				So(testing.Iterate(ctx), ShouldEqual, 1) // Notification submitted
+				So(gds.Get(outMsg), ShouldBeNil)
+				So(outMsg.Failure.CountSet(), ShouldEqual, 0)
+				So(outMsg.Success.CountSet(), ShouldEqual, 2)
+
+				testing.AdvanceTime(ctx)
+				clock.Get(ctx).(testclock.TestClock).Add(time.Minute * 5)
+				So(testing.Iterate(ctx), ShouldEqual, 1) // ReminderMessage set
+				So(gds.Get(outMsg), ShouldBeNil)
+				So(outMsg.Notified, ShouldBeTrue)
+
+			})
+
+			Convey("can cancel named mutations", func() {
+				cfg := testing.GetConfig(ctx)
+				cfg.Namespaced = false
+				testing.UpdateSettings(ctx, cfg)
+				testing.EnableDelayedMutations(ctx)
+
+				So(gds.PutMulti([]User{
+					{"recipient"},
+					{"other"},
+				}), ShouldBeNil)
+
+				outMsg, err := charlie.SendMessage(ctx, "Hey there", "recipient", "other")
+				So(err, ShouldBeNil)
+
+				testing.AdvanceTime(ctx)
+				So(testing.Iterate(ctx), ShouldEqual, 2) // sent to "recipient" and "other"
+
+				testing.AdvanceTime(ctx)
+				testing.AdvanceTime(ctx)
+				So(testing.Iterate(ctx), ShouldEqual, 1) // reciept from "recipient" and "other", Notification pending
+
+				testing.AdvanceTime(ctx)
+				clock.Get(ctx).(testclock.TestClock).Add(time.Minute * 5)
+				So(testing.Iterate(ctx), ShouldEqual, 2) // ReminderMessage set
+
+				clock.Get(ctx).(testclock.TestClock).Add(time.Minute * 5)
+				So(testing.Iterate(ctx), ShouldEqual, 0) // Nothing else
+
+				So(gds.Get(outMsg), ShouldBeNil)
+				So(outMsg.TimedOut, ShouldBeFalse)
+				So(outMsg.Notified, ShouldBeTrue)
+				So(outMsg.Success.CountSet(), ShouldEqual, 2)
+
+				So(l.HasFunc(func(ent *memlogger.LogEntry) bool {
+					return strings.Contains(ent.Msg, "TimeoutMessageSend")
+				}), ShouldBeFalse)
 			})
 
 		})

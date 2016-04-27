@@ -9,6 +9,10 @@ import (
 
 	"github.com/luci/gae/filter/txnBuf"
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/stringset"
 	"golang.org/x/net/context"
 )
 
@@ -59,4 +63,60 @@ func enterTransactionInternal(c context.Context, cfg *Config, m Mutation, round 
 	}
 
 	return shardSet, retMuts, retMutKeys, nil
+}
+
+// PutNamedMutations writes the provided named mutations to the datastore.
+//
+// Named mutations are singletons children of a given `parent`. So for any given
+// `parent`, there can be only one mutation with any given name.  Named
+// mutations, by design, cannot collide with unnamed (anonymous) mutations.
+// `parent` does NOT need to be a root Key; the mutations will be created as
+// direct decendents of the provided parent entity. The names of the various
+// mutations should be valid datastore key StringIDs, which generally means that
+// they should be UTF-8 strings.
+//
+// The current implementation reserves 2 characters of the StringID (as of
+// writing this means that a named mutation name may only be 498 bytes long).
+//
+// This can be used to leverage tumble for e.g. cancellable, delayed cleanup
+// tasks (like timeouts).
+//
+// This may be called from within an existing datastore transaction which
+// includes `parent` to make this Put atomic with the remainder of the
+// transaction.
+//
+// If called multiple times with the same name, the newly named mutation will
+// overwrite the existing mutation (assuming it hasn't run already).
+func PutNamedMutations(c context.Context, parent *datastore.Key, muts map[string]Mutation) error {
+	cfg := getConfig(c)
+
+	now := clock.Now(c).UTC()
+
+	shardSet := map[taskShard]struct{}{}
+	toPut := make([]*realMutation, 0, len(muts))
+	for name, m := range muts {
+		realMut, err := newRealMutation(c, cfg, "n:"+name, parent, m, now)
+		if err != nil {
+			logging.WithError(err).Errorf(c, "error creating real mutation for %v", m)
+			return err
+		}
+		toPut = append(toPut, realMut)
+		shardSet[realMut.shard(cfg)] = struct{}{}
+	}
+
+	err := datastore.Get(c).PutMulti(toPut)
+	fireTasks(c, getConfig(c), shardSet)
+	return err
+}
+
+// CancelNamedMutations does a best-effort cancellation of the named mutations.
+func CancelNamedMutations(c context.Context, parent *datastore.Key, names ...string) error {
+	ds := datastore.Get(c)
+	toDel := make([]*datastore.Key, 0, len(names))
+	nameSet := stringset.NewFromSlice(names...)
+	nameSet.Iter(func(name string) bool {
+		toDel = append(toDel, ds.NewKey("tumble.Mutation", "n:"+name, 0, parent))
+		return true
+	})
+	return errors.Filter(ds.DeleteMulti(toDel), datastore.ErrNoSuchEntity)
 }

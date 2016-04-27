@@ -21,7 +21,7 @@ func TestTumbleFiddlyBits(t *testing.T) {
 	t.Parallel()
 
 	Convey("Fiddly bits", t, func() {
-		tt := NewTesting()
+		tt := &Testing{}
 		ctx := tt.Context()
 		l := logging.Get(ctx).(*memlogger.MemLogger)
 
@@ -31,7 +31,7 @@ func TestTumbleFiddlyBits(t *testing.T) {
 			itm := mc.NewItem(fmt.Sprintf("%s.%d.last", baseName, 10)).SetValue(serialize.ToBytes(future))
 			So(mc.Set(itm), ShouldBeNil)
 
-			So(fireTasks(ctx, &tt.Config, map[taskShard]struct{}{
+			So(fireTasks(ctx, tt.GetConfig(ctx), map[taskShard]struct{}{
 				taskShard{10, minTS}: {},
 			}), ShouldBeTrue)
 			tt.Drain(ctx)
