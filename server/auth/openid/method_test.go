@@ -105,6 +105,7 @@ func TestFullFlow(t *testing.T) {
 				"redirect_uri":  {"http://fake/redirect"},
 				"response_type": {"code"},
 				"scope":         {"openid email profile"},
+				"prompt":        {"select_account"},
 				"state": {
 					"AXsiX2kiOiIxNDQyNTQwMDAwMDAwIiwiZGVzdF91cmwiOiIvZGVzdGluYXRpb24iLC" +
 						"Job3N0X3VybCI6ImZha2UifUFtzG6wPbuvHG2mY_Wf6eQ_Eiu7n3_Tf6GmRcse1g" +

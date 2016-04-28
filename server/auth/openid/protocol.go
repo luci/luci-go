@@ -99,6 +99,7 @@ func authenticationURI(c context.Context, cfg *Settings, state map[string]string
 	v.Set("redirect_uri", cfg.RedirectURI)
 	v.Set("response_type", "code")
 	v.Set("scope", "openid email profile")
+	v.Set("prompt", "select_account")
 	v.Set("state", stateTok)
 	return discovery.AuthorizationEndpoint + "?" + v.Encode(), nil
 }
