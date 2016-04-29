@@ -32,7 +32,7 @@ func TestEnsureQuests(t *testing.T) {
 		c := ttest.Context()
 		ds := datastore.Get(c)
 		clk := clock.Get(c).(testclock.TestClock)
-		s := &deps{}
+		s := newDecoratedDeps()
 		zt := time.Time{}
 
 		Convey("bad", func() {

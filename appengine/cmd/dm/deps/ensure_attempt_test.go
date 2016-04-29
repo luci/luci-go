@@ -22,7 +22,7 @@ func TestEnsureAttempt(t *testing.T) {
 		ttest := &tumble.Testing{}
 		c := ttest.Context()
 		ds := datastore.Get(c)
-		s := &deps{}
+		s := newDecoratedDeps()
 
 		Convey("bad", func() {
 			Convey("no quest", func() {

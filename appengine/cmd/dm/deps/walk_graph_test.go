@@ -9,131 +9,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/tumble"
-	"github.com/luci/luci-go/common/api/dm/service/v1"
+	dm "github.com/luci/luci-go/common/api/dm/service/v1"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	google_pb "github.com/luci/luci-go/common/proto/google"
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
-
-func ensureQuest(c context.Context, name string, aids ...uint32) string {
-	desc := &dm.Quest_Desc{
-		DistributorConfigName: "foof",
-		JsonPayload:           fmt.Sprintf(`{"name": "%s"}`, name),
-	}
-	q, err := model.NewQuest(c, desc)
-	So(err, ShouldBeNil)
-	qsts, err := (&deps{}).EnsureGraphData(c, &dm.EnsureGraphDataReq{
-		Quest:    []*dm.Quest_Desc{desc},
-		Attempts: dm.NewAttemptList(map[string][]uint32{q.ID: aids}),
-	})
-	So(err, ShouldBeNil)
-	for qid := range qsts.Result.Quests {
-		So(qid, ShouldEqual, q.ID)
-		return qid
-	}
-	panic("impossible")
-}
-
-func execute(c context.Context, aid *dm.Attempt_ID) {
-	// takes an NeedsExecution attempt, and moves it to Executing
-	err := datastore.Get(c).RunInTransaction(func(c context.Context) error {
-		ds := datastore.Get(c)
-		atmpt := &model.Attempt{ID: *aid}
-		if err := ds.Get(atmpt); err != nil {
-			panic(err)
-		}
-
-		atmpt.CurExecution++
-		atmpt.MustModifyState(c, dm.Attempt_EXECUTING)
-
-		So(ds.PutMulti([]interface{}{atmpt, &model.Execution{
-			ID:      atmpt.CurExecution,
-			Created: clock.Now(c),
-			State:   dm.Execution_RUNNING,
-			Attempt: ds.KeyForObj(atmpt),
-			Token:   []byte("sekret"),
-		}}), ShouldBeNil)
-		return nil
-	}, nil)
-	So(err, ShouldBeNil)
-}
-
-func depOn(c context.Context, from *dm.Attempt_ID, to ...*dm.Attempt_ID) {
-	req := &dm.EnsureGraphDataReq{
-		ForExecution: &dm.Execution_Auth{
-			Id:    dm.NewExecutionID(from.Quest, from.Id, 1),
-			Token: []byte("sekret")},
-		Attempts: dm.NewAttemptList(nil),
-	}
-	req.Attempts.AddAIDs(to...)
-
-	rsp, err := (&deps{}).EnsureGraphData(c, req)
-	if err != nil {
-		panic(err)
-	}
-	So(rsp.ShouldHalt, ShouldBeTrue)
-}
-
-func purgeTimestamps(gd *dm.GraphData) {
-	for _, q := range gd.Quests {
-		if q.GetData().GetCreated() != nil {
-			q.Data.Created = nil
-		}
-		for _, a := range q.GetAttempts() {
-			if a.Data != nil {
-				a.Data.Created = nil
-				a.Data.Modified = nil
-				if ne := a.Data.GetNeedsExecution(); ne != nil {
-					ne.Pending = nil
-				} else if fi := a.Data.GetFinished(); fi != nil {
-					fi.Expiration = nil
-				}
-			}
-			for _, e := range a.Executions {
-				if e.Data != nil {
-					e.Data.Created = nil
-				}
-			}
-		}
-	}
-}
-
-func WalkShouldReturn(c context.Context, keepTimestamps ...bool) func(request interface{}, expect ...interface{}) string {
-	kt := len(keepTimestamps) > 0 && keepTimestamps[0]
-
-	normalize := func(gd *dm.GraphData) *dm.GraphData {
-		data, err := proto.Marshal(gd)
-		if err != nil {
-			panic(err)
-		}
-		So(err, ShouldBeNil)
-		ret := &dm.GraphData{}
-		if err := proto.Unmarshal(data, ret); err != nil {
-			panic(err)
-		}
-		if !kt {
-			purgeTimestamps(ret)
-		}
-		return ret
-	}
-
-	return func(request interface{}, expect ...interface{}) string {
-		r := request.(*dm.WalkGraphReq)
-		e := expect[0].(*dm.GraphData)
-		ret, err := (&deps{}).WalkGraph(c, r)
-		if nilExpect := ShouldErrLike(err, nil); nilExpect != "" {
-			return nilExpect
-		}
-		return ShouldResemble(normalize(ret), e)
-	}
-}
 
 type breakFwdDepLoads struct {
 	datastore.RawInterface
@@ -156,7 +41,7 @@ func TestWalkGraph(t *testing.T) {
 		c := ttest.Context()
 
 		ds := datastore.Get(c)
-		s := &deps{}
+		s := newDecoratedDeps()
 
 		req := &dm.WalkGraphReq{
 			Query: dm.AttemptListQueryL(map[string][]uint32{"quest": {1}}),
@@ -183,9 +68,7 @@ func TestWalkGraph(t *testing.T) {
 			}
 			w := ensureQuest(c, "w", 1)
 			ttest.Drain(c)
-			//qid := dm.NewQuestID(w)
 			aid := dm.NewAttemptID(w, 1)
-			eid := dm.NewExecutionID(w, 1, 1)
 
 			req.Query.AttemptList = dm.NewAttemptList(
 				map[string][]uint32{w: {1}})
@@ -235,13 +118,8 @@ func TestWalkGraph(t *testing.T) {
 			})
 
 			Convey("finished", func() {
-				execute(c, aid)
-
 				_, err := s.FinishAttempt(c, &dm.FinishAttemptReq{
-					Auth: &dm.Execution_Auth{
-						Id:    eid,
-						Token: []byte("sekret"),
-					},
+					Auth:       activate(c, execute(c, aid)),
 					JsonResult: `{"data": ["very", "yes"]}`,
 					Expiration: google_pb.NewTimestamp(clock.Now(c).Add(time.Hour * 24 * 4)),
 				})
@@ -273,13 +151,8 @@ func TestWalkGraph(t *testing.T) {
 			})
 
 			Convey("limited attempt results", func() {
-				execute(c, aid)
-
 				_, err := s.FinishAttempt(c, &dm.FinishAttemptReq{
-					Auth: &dm.Execution_Auth{
-						Id:    eid,
-						Token: []byte("sekret"),
-					},
+					Auth:       activate(c, execute(c, aid)),
 					JsonResult: `{"data": ["very", "yes"]}`,
 					Expiration: google_pb.NewTimestamp(clock.Now(c).Add(time.Hour * 24 * 4)),
 				})
@@ -308,8 +181,9 @@ func TestWalkGraph(t *testing.T) {
 			Convey("attemptRange", func() {
 				x := ensureQuest(c, "x", 1)
 				ttest.Drain(c)
-				execute(c, dm.NewAttemptID(w, 1))
-				depOn(c, dm.NewAttemptID(w, 1), dm.NewAttemptID(x, 1), dm.NewAttemptID(x, 2), dm.NewAttemptID(x, 3), dm.NewAttemptID(x, 4))
+				depOn(c, activate(c, execute(c, dm.NewAttemptID(w, 1))),
+					dm.NewAttemptID(x, 1), dm.NewAttemptID(x, 2), dm.NewAttemptID(x, 3),
+					dm.NewAttemptID(x, 4))
 				ttest.Drain(c)
 
 				req.Limit.MaxDepth = 1
@@ -336,21 +210,14 @@ func TestWalkGraph(t *testing.T) {
 			Convey("filtered attempt results", func() {
 				x := ensureQuest(c, "x", 2)
 				ttest.Drain(c)
-				execute(c, dm.NewAttemptID(w, 1))
-				depOn(c, dm.NewAttemptID(w, 1), dm.NewAttemptID(x, 1))
+				depOn(c, activate(c, execute(c, dm.NewAttemptID(w, 1))), dm.NewAttemptID(x, 1))
 				ttest.Drain(c)
-
-				execute(c, dm.NewAttemptID(x, 1))
-				execute(c, dm.NewAttemptID(x, 2))
 
 				exp := google_pb.NewTimestamp(datastore.RoundTime(clock.Now(c).Add(time.Hour * 24 * 4)))
 
 				x1data := `{"data":["I can see this"]}`
 				_, err := s.FinishAttempt(c, &dm.FinishAttemptReq{
-					Auth: &dm.Execution_Auth{
-						Id:    dm.NewExecutionID(x, 1, 1),
-						Token: []byte("sekret"),
-					},
+					Auth:       activate(c, execute(c, dm.NewAttemptID(x, 1))),
 					JsonResult: x1data,
 					Expiration: exp,
 				})
@@ -358,22 +225,14 @@ func TestWalkGraph(t *testing.T) {
 
 				x2data := `{"data":["nope"]}`
 				_, err = s.FinishAttempt(c, &dm.FinishAttemptReq{
-					Auth: &dm.Execution_Auth{
-						Id:    dm.NewExecutionID(x, 2, 1),
-						Token: []byte("sekret"),
-					},
+					Auth:       activate(c, execute(c, dm.NewAttemptID(x, 2))),
 					JsonResult: x2data,
 					Expiration: exp,
 				})
 				So(err, ShouldBeNil)
 				ttest.Drain(c)
 
-				execute(c, dm.NewAttemptID(w, 1))
-
-				req.Auth = &dm.Execution_Auth{
-					Id:    dm.NewExecutionID(w, 1, 2),
-					Token: []byte("sekret"),
-				}
+				req.Auth = activate(c, execute(c, dm.NewAttemptID(w, 1)))
 				req.Limit.MaxDepth = 2
 				req.Include.AttemptResult = true
 				req.Query = dm.AttemptListQueryL(map[string][]uint32{x: nil})
@@ -397,32 +256,21 @@ func TestWalkGraph(t *testing.T) {
 			Convey("own attempt results", func() {
 				x := ensureQuest(c, "x", 2)
 				ttest.Drain(c)
-				execute(c, dm.NewAttemptID(w, 1))
-				depOn(c, dm.NewAttemptID(w, 1), dm.NewAttemptID(x, 1))
+				depOn(c, activate(c, execute(c, dm.NewAttemptID(w, 1))), dm.NewAttemptID(x, 1))
 				ttest.Drain(c)
-
-				execute(c, dm.NewAttemptID(x, 1))
 
 				exp := google_pb.NewTimestamp(datastore.RoundTime(clock.Now(c).Add(time.Hour * 24 * 4)))
 
 				x1data := `{"data":["I can see this"]}`
 				_, err := s.FinishAttempt(c, &dm.FinishAttemptReq{
-					Auth: &dm.Execution_Auth{
-						Id:    dm.NewExecutionID(x, 1, 1),
-						Token: []byte("sekret"),
-					},
+					Auth:       activate(c, execute(c, dm.NewAttemptID(x, 1))),
 					JsonResult: x1data,
 					Expiration: exp,
 				})
 				So(err, ShouldBeNil)
 				ttest.Drain(c)
 
-				execute(c, dm.NewAttemptID(w, 1))
-
-				req.Auth = &dm.Execution_Auth{
-					Id:    dm.NewExecutionID(w, 1, 2),
-					Token: []byte("sekret"),
-				}
+				req.Auth = activate(c, execute(c, dm.NewAttemptID(w, 1)))
 				req.Limit.MaxDepth = 2
 				req.Include.AttemptResult = true
 				req.Query = dm.AttemptListQueryL(map[string][]uint32{w: {1}})
@@ -448,10 +296,10 @@ func TestWalkGraph(t *testing.T) {
 
 			Convey("deps (no dest attempts)", func() {
 				req.Limit.MaxDepth = 3
-				execute(c, dm.NewAttemptID(w, 1))
+				w1auth := activate(c, execute(c, dm.NewAttemptID(w, 1)))
 				x := ensureQuest(c, "x", 1)
 				ttest.Drain(c)
-				depOn(c, dm.NewAttemptID(w, 1), dm.NewAttemptID(x, 1), dm.NewAttemptID(x, 2))
+				depOn(c, w1auth, dm.NewAttemptID(x, 1), dm.NewAttemptID(x, 2))
 
 				Convey("before tumble", func() {
 					Convey("deps", func() {
@@ -498,10 +346,8 @@ func TestWalkGraph(t *testing.T) {
 					Convey("diamond", func() {
 						z := ensureQuest(c, "z", 1)
 						ttest.Drain(c)
-						execute(c, dm.NewAttemptID(x, 1))
-						execute(c, dm.NewAttemptID(x, 2))
-						depOn(c, dm.NewAttemptID(x, 1), dm.NewAttemptID(z, 1))
-						depOn(c, dm.NewAttemptID(x, 2), dm.NewAttemptID(z, 1))
+						depOn(c, activate(c, execute(c, dm.NewAttemptID(x, 1))), dm.NewAttemptID(z, 1))
+						depOn(c, activate(c, execute(c, dm.NewAttemptID(x, 2))), dm.NewAttemptID(z, 1))
 						ttest.Drain(c)
 
 						So(req, WalkShouldReturn(c), &dm.GraphData{
@@ -516,10 +362,8 @@ func TestWalkGraph(t *testing.T) {
 					Convey("diamond (dfs)", func() {
 						z := ensureQuest(c, "z", 1)
 						ttest.Drain(c)
-						execute(c, dm.NewAttemptID(x, 1))
-						execute(c, dm.NewAttemptID(x, 2))
-						depOn(c, dm.NewAttemptID(x, 1), dm.NewAttemptID(z, 1))
-						depOn(c, dm.NewAttemptID(x, 2), dm.NewAttemptID(z, 1))
+						depOn(c, activate(c, execute(c, dm.NewAttemptID(x, 1))), dm.NewAttemptID(z, 1))
+						depOn(c, activate(c, execute(c, dm.NewAttemptID(x, 2))), dm.NewAttemptID(z, 1))
 						ttest.Drain(c)
 
 						req.Mode.Dfs = true
@@ -558,7 +402,7 @@ func TestWalkGraph(t *testing.T) {
 					tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
 						tc.Add(d + time.Second)
 					})
-					ret, err := (&deps{}).WalkGraph(c, req)
+					ret, err := newDecoratedDeps().WalkGraph(c, req)
 					So(err, ShouldBeNil)
 					So(ret.HadMore, ShouldBeTrue)
 				})

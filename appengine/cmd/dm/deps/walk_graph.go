@@ -10,7 +10,7 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/common/api/dm/service/v1"
+	dm "github.com/luci/luci-go/common/api/dm/service/v1"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/common/logging"
@@ -332,9 +332,6 @@ func attemptLoader(c context.Context, req *dm.WalkGraphReq, aid *dm.Attempt_ID, 
 //       )
 //     }
 func (d *deps) WalkGraph(c context.Context, req *dm.WalkGraphReq) (rsp *dm.GraphData, err error) {
-	if err = req.Normalize(); err != nil {
-		return nil, grpcutil.Errf(codes.InvalidArgument, err.Error())
-	}
 	cncl := (func())(nil)
 	timeoutProto := req.Limit.MaxTime
 	timeout := timeoutProto.Duration() // .Duration on nil is OK

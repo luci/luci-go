@@ -29,7 +29,7 @@ import (
 
 func (d *deps) runEnsureGraphDepsWalk(c context.Context, req *dm.EnsureGraphDataReq, newAttempts *dm.AttemptList) (*dm.GraphData, error) {
 	// first lets run a query to load all of the proposed attempts.
-	qryRsp, err := d.WalkGraph(c, &dm.WalkGraphReq{
+	wgreq := &dm.WalkGraphReq{
 		Query: dm.AttemptListQuery(newAttempts),
 		Limit: &dm.WalkGraphReq_Limit{
 			MaxDepth:    1,
@@ -40,7 +40,11 @@ func (d *deps) runEnsureGraphDepsWalk(c context.Context, req *dm.EnsureGraphData
 			AttemptData:   true,
 			AttemptResult: req.Include.AttemptResult,
 		},
-	})
+	}
+	if err := wgreq.Normalize(); err != nil {
+		panic(err)
+	}
+	qryRsp, err := d.WalkGraph(c, wgreq)
 	if err != nil {
 		return nil, err
 	}
@@ -341,10 +345,6 @@ func renderRequest(c context.Context, req *dm.EnsureGraphDataReq) (rsp *dm.Ensur
 }
 
 func (d *deps) EnsureGraphData(c context.Context, req *dm.EnsureGraphDataReq) (rsp *dm.EnsureGraphDataRsp, err error) {
-	if err := req.Normalize(); err != nil {
-		return nil, grpcutil.MaybeLogErr(c, err, codes.InvalidArgument, "invalid request")
-	}
-
 	// TODO(riannucci): real non-execution authentication
 	if req.ForExecution != nil {
 		_, _, err := model.AuthenticateExecution(c, req.ForExecution)

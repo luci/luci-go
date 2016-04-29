@@ -23,7 +23,7 @@ func TestAddDeps(t *testing.T) {
 		ttest := &tumble.Testing{}
 		c := ttest.Context()
 		ds := datastore.Get(c)
-		s := &deps{}
+		s := newDecoratedDeps()
 		zt := time.Time{}
 
 		a := &model.Attempt{ID: *dm.NewAttemptID("quest", 1)}

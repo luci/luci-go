@@ -24,7 +24,7 @@ func TestFinishAttempt(t *testing.T) {
 	Convey("FinishAttempt", t, func() {
 		c := memory.Use(context.Background())
 		ds := datastore.Get(c)
-		s := &deps{}
+		s := newDecoratedDeps()
 
 		So(ds.Put(&model.Quest{ID: "quest"}), ShouldBeNil)
 		a := &model.Attempt{

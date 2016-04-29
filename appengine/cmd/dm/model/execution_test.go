@@ -95,44 +95,59 @@ func TestExecutions(t *testing.T) {
 			So(ds.PutMulti([]interface{}{a, e1}), ShouldBeNil)
 
 			auth := &dm.Execution_Auth{
-				Id:    dm.NewExecutionID("q", a.ID.Id, uint32(e1.ID)+1),
-				Token: []byte("new token"),
+				Id:    dm.NewExecutionID("q", a.ID.Id, uint32(e1.ID)),
+				Token: []byte("wrong tok"),
 			}
 
-			_, _, err := ActivateExecution(c, auth, []byte("wrong tok"))
-			So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+			Convey("wrong execution id", func() {
+				auth.Id.Id++
+				_, _, err := ActivateExecution(c, auth, []byte("wrong tok"))
+				So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+			})
 
-			auth.Id.Id--
-			_, _, err = ActivateExecution(c, auth, []byte("wrong tok"))
-			So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+			Convey("attempt bad state", func() {
+				_, _, err := ActivateExecution(c, auth, []byte("wrong tok"))
+				So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+			})
 
-			a.State = dm.Attempt_EXECUTING
-			So(ds.Put(a), ShouldBeNil)
-			_, _, err = ActivateExecution(c, auth, []byte("wrong tok"))
-			So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+			Convey("attempt executing", func() {
+				a.State = dm.Attempt_EXECUTING
+				So(ds.Put(a), ShouldBeNil)
 
-			e1.State = dm.Execution_CANCELLED
-			So(ds.Put(e1), ShouldBeNil)
-			_, _, err = ActivateExecution(c, auth, []byte("good tok"))
-			So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+				Convey("wrong execution state", func() {
+					e1.State = dm.Execution_CANCELLED
+					So(ds.Put(e1), ShouldBeNil)
+					_, _, err := ActivateExecution(c, auth, []byte("wrong token"))
+					So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+				})
 
-			e1.State = dm.Execution_SCHEDULED
-			So(ds.Put(e1), ShouldBeNil)
+				Convey("wrong token", func() {
+					_, _, err := ActivateExecution(c, auth, []byte("wrong tok"))
+					So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+				})
 
-			newA, e, err := ActivateExecution(c, auth, []byte("good tok"))
-			So(err, ShouldBeNil)
-			So(newA, ShouldResemble, a)
-			So(e.State, ShouldEqual, dm.Execution_RUNNING)
+				Convey("correct token", func() {
+					auth.Token = []byte("good tok")
+					memlogger.Reset(c)
+					newA, e, err := ActivateExecution(c, auth, []byte("new token"))
+					memlogger.MustDumpStdout(c)
+					So(err, ShouldBeNil)
+					So(newA, ShouldResemble, a)
+					So(e.State, ShouldEqual, dm.Execution_RUNNING)
 
-			// Retry with different token fails
-			auth.Token = []byte("otherToken")
-			_, _, err = ActivateExecution(c, auth, []byte("good tok"))
-			So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+					Convey("retry with different token fails", func() {
+						_, _, err = ActivateExecution(c, auth, []byte("other token"))
+						So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+					})
 
-			// Retry with same token is ok
-			auth.Token = []byte("new token")
-			_, _, err = ActivateExecution(c, auth, []byte("good tok"))
-			So(err, ShouldBeNil)
+					Convey("retry with same token OK", func() {
+						auth.Token = []byte("new token")
+						_, _, err = ActivateExecution(c, auth, []byte("new token"))
+						So(err, ShouldBeNil)
+					})
+				})
+			})
+
 		})
 
 		Convey("Invalidate", func() {

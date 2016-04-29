@@ -7,6 +7,7 @@ package memlogger
 import (
 	"fmt"
 	"io"
+	"os"
 	"reflect"
 	"sync"
 
@@ -167,4 +168,30 @@ func Use(c context.Context) context.Context {
 	return logging.SetFactory(c, func(ic context.Context) logging.Logger {
 		return &MemLogger{&lock, &data, logging.GetFields(ic)}
 	})
+}
+
+// Reset is a convenience function to reset the current memory logger.
+//
+// This will panic if the current logger is not a memory logger.
+func Reset(c context.Context) {
+	logging.Get(c).(*MemLogger).Reset()
+}
+
+// Dump is a convenience function to dump the current contents of the memory
+// logger to the writer.
+//
+// This will panic if the current logger is not a memory logger.
+func Dump(c context.Context, w io.Writer) (n int, err error) {
+	return logging.Get(c).(*MemLogger).Dump(w)
+}
+
+// MustDumpStdout is a convenience function to dump the current contents of the
+// memory logger to stdout.
+//
+// This will panic if the current logger is not a memory logger.
+func MustDumpStdout(c context.Context) {
+	_, err := logging.Get(c).(*MemLogger).Dump(os.Stdout)
+	if err != nil {
+		panic(err)
+	}
 }

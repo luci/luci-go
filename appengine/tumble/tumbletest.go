@@ -18,6 +18,7 @@ import (
 	"github.com/luci/gae/service/taskqueue"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/cryptorand"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/memlogger"
 	"github.com/luci/luci-go/server/settings"
@@ -59,6 +60,7 @@ func (t *Testing) Context() context.Context {
 	ctx := memory.Use(memlogger.Use(context.Background()))
 	ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC.Round(time.Millisecond))
 	ctx = settings.Use(ctx, settings.New(&settings.MemoryStorage{}))
+	ctx = cryptorand.MockForTest(ctx, 765589025) // as chosen by fair dice roll
 	t.UpdateSettings(ctx, nil)
 
 	taskqueue.Get(ctx).Testable().CreateQueue(baseName)

@@ -147,17 +147,17 @@ func verifyExecutionAndActivate(c context.Context, auth *dm.Execution_Auth, actT
 
 	switch e.State {
 	case dm.Execution_SCHEDULED:
-		if subtle.ConstantTimeCompare(e.Token, actTok) != 1 {
+		if subtle.ConstantTimeCompare(e.Token, auth.Token) != 1 {
 			err = errors.New("incorrect ActivationToken")
 			return
 		}
 
 		e.State.MustEvolve(dm.Execution_RUNNING)
-		e.Token = auth.Token
+		e.Token = actTok
 		err = datastore.Get(c).Put(e)
 
 	case dm.Execution_RUNNING:
-		if subtle.ConstantTimeCompare(e.Token, auth.Token) != 1 {
+		if subtle.ConstantTimeCompare(e.Token, actTok) != 1 {
 			err = errors.New("incorrect Token")
 		}
 		// either the Token matched, in which case this is simply a retry

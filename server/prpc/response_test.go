@@ -16,7 +16,6 @@ import (
 	"github.com/luci/luci-go/common/logging/memlogger"
 	"github.com/luci/luci-go/common/prpc"
 
-	. "github.com/luci/luci-go/common/logging/memlogger"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -60,7 +59,7 @@ func TestResponse(t *testing.T) {
 			So(rec.Header().Get(prpc.HeaderGRPCCode), ShouldEqual, "13")
 			So(rec.Header().Get(headerContentType), ShouldEqual, "text/plain")
 			So(rec.Body.String(), ShouldEqual, "Internal Server Error\n")
-			So(log, ShouldHaveLog, logging.Error, "errmsg", map[string]interface{}{
+			So(log, memlogger.ShouldHaveLog, logging.Error, "errmsg", map[string]interface{}{
 				"code": codes.Internal,
 			})
 		})
@@ -72,7 +71,7 @@ func TestResponse(t *testing.T) {
 			So(rec.Header().Get(prpc.HeaderGRPCCode), ShouldEqual, "2")
 			So(rec.Header().Get(headerContentType), ShouldEqual, "text/plain")
 			So(rec.Body.String(), ShouldEqual, "Internal Server Error\n")
-			So(log, ShouldHaveLog, logging.Error, "errmsg", map[string]interface{}{
+			So(log, memlogger.ShouldHaveLog, logging.Error, "errmsg", map[string]interface{}{
 				"code": codes.Unknown,
 			})
 		})

@@ -5,12 +5,17 @@
 package deps
 
 import (
+	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/common/api/dm/service/v1"
-	"github.com/luci/luci-go/common/grpcutil"
 	google_pb "github.com/luci/luci-go/common/proto/google"
 	"golang.org/x/net/context"
 )
 
 func (d *deps) ActivateExecution(c context.Context, req *dm.ActivateExecutionReq) (*google_pb.Empty, error) {
-	return &google_pb.Empty{}, grpcutil.Unimplemented
+	err := datastore.Get(c).RunInTransaction(func(c context.Context) error {
+		_, _, err := model.ActivateExecution(c, req.Auth, req.ExecutionToken)
+		return err
+	}, nil)
+	return &google_pb.Empty{}, err
 }
