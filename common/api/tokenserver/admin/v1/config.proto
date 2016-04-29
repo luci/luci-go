@@ -27,6 +27,7 @@ message TokenServerConfig {
 // Note that we can't put FQDN in the service account email, since it is limited
 // in length and doesn't allow '.' in it.
 message CertificateAuthorityConfig {
+  int64  unique_id = 6; // ID of this CA, will be embedded into tokens.
   string cn = 1;        // CA Common Name, must match Subject CN in the cert
   string cert_path = 2; // path to the root certificate file in luci-config
   string crl_url = 3;   // where to fetch CRL from

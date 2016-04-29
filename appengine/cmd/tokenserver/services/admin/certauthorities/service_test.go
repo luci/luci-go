@@ -114,6 +114,7 @@ func TestImportConfig(t *testing.T) {
 		_, err = srv.ImportConfig(ctx, prepareCfg(`
 			certificate_authority {
 				cn: "Puppet CA: fake.ca"
+				unique_id: 1
 				cert_path: "certs/fake.ca.crt"
 			}
 		`))
@@ -130,6 +131,7 @@ func TestImportConfig(t *testing.T) {
 		rev, err := srv.ImportConfig(ctx, prepareCfg(`
 			certificate_authority {
 				cn: "Puppet CA: another-fake.ca"
+				unique_id: 2
 				cert_path: "certs/another-fake.ca.crt"
 			}
 		`))

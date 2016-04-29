@@ -6,9 +6,19 @@
 package model
 
 import (
+	"bytes"
 	"crypto/x509"
+	"encoding/gob"
+	"time"
 
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
+
+	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/lazyslot"
+	"github.com/luci/luci-go/server/proccache"
 
 	"github.com/luci/luci-go/common/api/tokenserver/admin/v1"
 )
@@ -60,4 +70,92 @@ func (c *CA) ParseConfig() (*admin.CertificateAuthorityConfig, error) {
 		return nil, err
 	}
 	return msg, nil
+}
+
+// CAUniqueIDToCNMap is a singleton entity that stores a mapping between CA's
+// unique_id (specified in config) and its Common Name.
+//
+// It's loaded in memory in full and kept cached there (for 1 min).
+// See GetCAByUniqueID below.
+type CAUniqueIDToCNMap struct {
+	_id int64 `gae:"$id,1"`
+
+	GobEncodedMap []byte `gae:",noindex"` // gob-encoded map[int64]string
+}
+
+// StoreCAUniqueIDToCNMap overwrites CAUniqueIDToCNMap with new content.
+func StoreCAUniqueIDToCNMap(c context.Context, mapping map[int64]string) error {
+	buf := bytes.Buffer{}
+	enc := gob.NewEncoder(&buf)
+	if err := enc.Encode(mapping); err != nil {
+		return err
+	}
+	// Note that in practice 'mapping' is usually very small, so we are not
+	// concerned about 1MB entity size limit.
+	return errors.WrapTransient(datastore.Get(c).Put(&CAUniqueIDToCNMap{
+		GobEncodedMap: buf.Bytes(),
+	}))
+}
+
+// LoadCAUniqueIDToCNMap loads CAUniqueIDToCNMap from the datastore.
+func LoadCAUniqueIDToCNMap(c context.Context) (map[int64]string, error) {
+	ent := CAUniqueIDToCNMap{}
+	switch err := datastore.Get(c).Get(&ent); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, nil
+	case err != nil:
+		return nil, errors.WrapTransient(err)
+	}
+	dec := gob.NewDecoder(bytes.NewReader(ent.GobEncodedMap))
+	out := map[int64]string{}
+	if err := dec.Decode(&out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// GetCAByUniqueID returns CN name that corresponds to given unique ID.
+//
+// It uses cached CAUniqueIDToCNMap for lookups. Returns empty string if there's
+// no such CA.
+func GetCAByUniqueID(c context.Context, id int64) (string, error) {
+	mapper, err := proccache.GetOrMake(c, mapperCacheKey(0), func() (interface{}, time.Duration, error) {
+		return makeIDToCNmapper(), 0, nil
+	})
+	if err != nil {
+		return "", err
+	}
+	return mapper.(*idToCNmapper).getCAByUniqueID(c, id)
+}
+
+type mapperCacheKey int
+
+// idToCNmapper is stored in proccache, it does "unique ID -> CN name" mapping.
+//
+// It holds cached copy of CAUniqueIDToCNMap, periodically refreshing it.
+type idToCNmapper struct {
+	mapping lazyslot.Slot
+}
+
+func makeIDToCNmapper() *idToCNmapper {
+	return &idToCNmapper{
+		mapping: lazyslot.Slot{
+			Fetcher: func(c context.Context, _ lazyslot.Value) (lazyslot.Value, error) {
+				val, err := LoadCAUniqueIDToCNMap(c)
+				return lazyslot.Value{
+					Value:      val,
+					Expiration: clock.Now(c).Add(time.Minute),
+				}, err
+			},
+		},
+	}
+}
+
+func (m *idToCNmapper) getCAByUniqueID(c context.Context, id int64) (string, error) {
+	val, err := m.mapping.Get(c)
+	if err != nil {
+		return "", err
+	}
+	mapping := val.Value.(map[int64]string)
+	return mapping[id], nil
 }

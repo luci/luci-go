@@ -63,6 +63,15 @@ func (s *Server) ImportConfig(c context.Context, req *admin.ImportConfigRequest)
 		return nil, grpc.Errorf(codes.Internal, "can't parse config file - %s", err)
 	}
 
+	seenIDs, err := model.LoadCAUniqueIDToCNMap(c)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "can't load unique_id map - %s", err)
+	}
+	if seenIDs == nil {
+		seenIDs = map[int64]string{}
+	}
+	seenIDsDirty := false
+
 	// There should be no duplicates.
 	seenCAs := stringset.New(len(msg.GetCertificateAuthority()))
 	for _, ca := range msg.GetCertificateAuthority() {
@@ -70,6 +79,26 @@ func (s *Server) ImportConfig(c context.Context, req *admin.ImportConfigRequest)
 			return nil, grpc.Errorf(codes.Internal, "duplicate entries in the config")
 		}
 		seenCAs.Add(ca.Cn)
+		// Check unique ID is not being reused.
+		if existing, seen := seenIDs[ca.UniqueId]; seen {
+			if existing != ca.Cn {
+				return nil, grpc.Errorf(
+					codes.Internal, "duplicate unique_id %d in the config: %q and %q",
+					ca.UniqueId, ca.Cn, existing)
+			}
+		} else {
+			seenIDs[ca.UniqueId] = ca.Cn
+			seenIDsDirty = true
+		}
+	}
+
+	// Update the mapping CA unique_id -> CA CN. Unique integer ids are used in
+	// various tokens in place of a full CN name to save space. This mapping is
+	// additive (all new CAs should have different IDs).
+	if seenIDsDirty {
+		if err := model.StoreCAUniqueIDToCNMap(c, seenIDs); err != nil {
+			return nil, grpc.Errorf(codes.Internal, "can't store unique_id map - %s", err)
+		}
 	}
 
 	// Add new CA datastore entries or update existing ones.
