@@ -7,10 +7,8 @@ Package dm is a generated protocol buffer package.
 
 It is generated from these files:
 	activate_execution.proto
-	add_deps.proto
 	claim_execution.proto
-	ensure_attempt.proto
-	ensure_quests.proto
+	ensure_graph_data.proto
 	finish_attempt.proto
 	graph_data.proto
 	graph_query.proto
@@ -20,12 +18,10 @@ It is generated from these files:
 
 It has these top-level messages:
 	ActivateExecutionReq
-	AddDepsReq
-	AddDepsRsp
 	ClaimExecutionRsp
-	EnsureAttemptReq
-	EnsureQuestsReq
-	EnsureQuestsRsp
+	TemplateInstantiation
+	EnsureGraphDataReq
+	EnsureGraphDataRsp
 	FinishAttemptReq
 	Quest
 	Attempt

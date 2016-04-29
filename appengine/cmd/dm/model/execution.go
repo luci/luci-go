@@ -30,7 +30,8 @@ type Execution struct {
 	ID      uint32         `gae:"$id"`
 	Attempt *datastore.Key `gae:"$parent"`
 
-	State dm.Execution_State
+	State       dm.Execution_State
+	StateReason string `gae:",noindex"`
 
 	Created          time.Time
 	DistributorToken string
@@ -187,8 +188,9 @@ func ActivateExecution(c context.Context, auth *dm.Execution_Auth, actToken []by
 // ToProto returns a dm proto version of this Execution.
 func (e *Execution) ToProto(includeID bool) *dm.Execution {
 	ret := &dm.Execution{
-		State: e.State,
 		Data: &dm.Execution_Data{
+			State:              e.State,
+			StateReason:        e.StateReason,
 			Created:            google_pb.NewTimestamp(e.Created),
 			DistributorToken:   e.DistributorToken,
 			DistributorInfoUrl: e.DistributorURL,

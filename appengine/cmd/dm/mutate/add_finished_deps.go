@@ -15,8 +15,15 @@ import (
 // AddFinishedDeps adds a bunch of dependencies which are known in advance to
 // already be in the Finished state.
 type AddFinishedDeps struct {
-	Auth  *dm.Execution_Auth
-	ToAdd *dm.AttemptList
+	Auth *dm.Execution_Auth
+
+	// MergeQuests lists quests which need their BuiltBy lists merged. The Quests
+	// here must be a subset of the quests mentioned in FinishedAttempts.
+	MergeQuests []*model.Quest
+
+	// FinishedAttempts are a list of attempts that we already know are in the
+	// Finished state.
+	FinishedAttempts *dm.AttemptList
 }
 
 // Root implements tumble.Mutation
@@ -31,15 +38,18 @@ func (f *AddFinishedDeps) RollForward(c context.Context) (muts []tumble.Mutation
 		return
 	}
 
-	fwdDeps, err := filterExisting(c, model.FwdDepsFromList(c, f.Auth.Id.AttemptID(), f.ToAdd))
+	fwdDeps, err := filterExisting(c, model.FwdDepsFromList(c, f.Auth.Id.AttemptID(), f.FinishedAttempts))
 	if err != nil || len(fwdDeps) == 0 {
 		return
 	}
 
-	muts = make([]tumble.Mutation, len(fwdDeps))
-	for i, d := range fwdDeps {
+	muts = make([]tumble.Mutation, 0, len(fwdDeps)+len(f.MergeQuests))
+	for _, d := range fwdDeps {
 		d.ForExecution = atmpt.CurExecution
-		muts[i] = &AddBackDep{Dep: d.Edge()}
+		muts = append(muts, &AddBackDep{Dep: d.Edge()})
+	}
+	for _, q := range f.MergeQuests {
+		muts = append(muts, &MergeQuest{q})
 	}
 
 	return muts, datastore.Get(c).PutMulti(fwdDeps)

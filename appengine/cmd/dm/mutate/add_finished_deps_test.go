@@ -28,13 +28,20 @@ func TestAddFinishedDeps(t *testing.T) {
 				Id:    dm.NewExecutionID("quest", 1, 7),
 				Token: []byte("sup"),
 			},
+			[]*model.Quest{
+				{
+					ID: "to",
+					BuiltBy: model.TemplateInfo{
+						*dm.NewTemplateSpec("a", "b", "c", "d"),
+					}},
+			},
 			dm.NewAttemptList(map[string][]uint32{
 				"to": {1, 2, 3},
 			}),
 		}
 
 		base := f.Auth.Id.AttemptID()
-		fs := model.FwdDepsFromList(c, base, f.ToAdd)
+		fs := model.FwdDepsFromList(c, base, f.FinishedAttempts)
 
 		ds := datastore.Get(c)
 		fs[1].ForExecution = 1
@@ -63,6 +70,7 @@ func TestAddFinishedDeps(t *testing.T) {
 			So(muts, ShouldResemble, []tumble.Mutation{
 				&AddBackDep{Dep: fs[0].Edge()},
 				&AddBackDep{Dep: fs[2].Edge()},
+				&MergeQuest{f.MergeQuests[0]},
 			})
 
 			So(ds.GetMulti(fs), ShouldBeNil)

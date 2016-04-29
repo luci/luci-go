@@ -8,22 +8,20 @@ import "google/protobuf/empty.proto";
 
 import "graph_data.proto";
 
+import "ensure_graph_data.proto";
 import "activate_execution.proto";
-import "add_deps.proto";
-import "claim_execution.proto";
-import "ensure_attempt.proto";
-import "ensure_quests.proto";
 import "finish_attempt.proto";
 import "walk_graph.proto";
+import "claim_execution.proto";
 
 package dm;
 
 service Deps {
+  rpc EnsureGraphData(dm.EnsureGraphDataReq) returns (dm.EnsureGraphDataRsp);
+
   rpc ActivateExecution(dm.ActivateExecutionReq) returns (google.protobuf.Empty);
-  rpc AddDeps(dm.AddDepsReq) returns (dm.AddDepsRsp);
-  rpc EnsureAttempt(dm.EnsureAttemptReq) returns (google.protobuf.Empty);
-  rpc EnsureQuests(dm.EnsureQuestsReq) returns (dm.EnsureQuestsRsp);
   rpc FinishAttempt(dm.FinishAttemptReq) returns (google.protobuf.Empty);
+
   rpc WalkGraph(dm.WalkGraphReq) returns (dm.GraphData);
 
   // ClaimExecution is a totally temporary hack

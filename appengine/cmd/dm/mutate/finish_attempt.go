@@ -7,12 +7,13 @@ package mutate
 import (
 	"time"
 
+	"google.golang.org/grpc/codes"
+
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/api/dm/service/v1"
 	"github.com/luci/luci-go/common/grpcutil"
-	"github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
 
@@ -33,6 +34,9 @@ func (f *FinishAttempt) Root(c context.Context) *datastore.Key {
 }
 
 // RollForward implements tumble.Mutation
+//
+// This mutation is called directly from FinishAttempt, so we use
+// grpcutil.MaybeLogErr
 func (f *FinishAttempt) RollForward(c context.Context) (muts []tumble.Mutation, err error) {
 	atmpt, _, err := model.InvalidateExecution(c, f.Auth)
 	if err != nil {
@@ -54,11 +58,8 @@ func (f *FinishAttempt) RollForward(c context.Context) (muts []tumble.Mutation, 
 		Size:       atmpt.ResultSize,
 	}
 
-	err = ds.PutMulti([]interface{}{atmpt, rslt})
-	if err != nil {
-		logging.WithError(err).Errorf(c, "while trying to PutMulti")
-		err = grpcutil.Internal
-	}
+	err = grpcutil.MaybeLogErr(c, ds.PutMulti([]interface{}{atmpt, rslt}),
+		codes.Internal, "while trying to PutMulti")
 
 	// TODO(iannucci): also include mutations to generate index entries for
 	// the attempt results.

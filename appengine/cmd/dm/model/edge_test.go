@@ -90,13 +90,21 @@ func TestFwdDepsFromList(t *testing.T) {
 		}}
 		base := dm.NewAttemptID("quest", 1)
 
-		root := datastore.Get(c).MakeKey("Attempt", "quest|fffffffe")
+		ds := datastore.Get(c)
+
+		root := ds.MakeKey("Attempt", "quest|fffffffe")
 
 		So(FwdDepsFromList(c, base, list), ShouldResemble, []*FwdDep{
 			{Depender: root, Dependee: *dm.NewAttemptID("a", 1), BitIndex: 0},
 			{Depender: root, Dependee: *dm.NewAttemptID("b", 1), BitIndex: 1},
 			{Depender: root, Dependee: *dm.NewAttemptID("b", 2), BitIndex: 2},
 			{Depender: root, Dependee: *dm.NewAttemptID("c", 1), BitIndex: 3},
+		})
+		So(FwdDepKeysFromList(c, base, list), ShouldResemble, []*datastore.Key{
+			ds.MakeKey("Attempt", "quest|fffffffe", "FwdDep", "a|fffffffe"),
+			ds.MakeKey("Attempt", "quest|fffffffe", "FwdDep", "b|fffffffe"),
+			ds.MakeKey("Attempt", "quest|fffffffe", "FwdDep", "b|fffffffd"),
+			ds.MakeKey("Attempt", "quest|fffffffe", "FwdDep", "c|fffffffe"),
 		})
 	})
 

@@ -9,7 +9,6 @@ import (
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/api/dm/service/v1"
-	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
@@ -35,10 +34,8 @@ func (e *EnsureAttempt) RollForward(c context.Context) (muts []tumble.Mutation, 
 		return
 	}
 
-	err = ds.Put(a)
-	if err != nil {
-		logging.WithError(err).Errorf(c, "in Put")
-		err = grpcutil.Internal
+	if err = ds.Put(a); err != nil {
+		logging.WithError(err).Errorf(logging.SetField(c, "id", e.ID), "in put")
 	}
 	return
 }

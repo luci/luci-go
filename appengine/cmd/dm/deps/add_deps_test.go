@@ -6,23 +6,25 @@ package deps
 
 import (
 	"testing"
+	"time"
 
-	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
+	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/api/dm/service/v1"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
 
 func TestAddDeps(t *testing.T) {
 	t.Parallel()
 
-	Convey("AddDeps", t, func() {
-		c := memory.Use(context.Background())
+	Convey("EnsureGraphData (Adding deps)", t, func() {
+		ttest := &tumble.Testing{}
+		c := ttest.Context()
 		ds := datastore.Get(c)
 		s := &deps{}
+		zt := time.Time{}
 
 		a := &model.Attempt{ID: *dm.NewAttemptID("quest", 1)}
 		a.CurExecution = 1
@@ -33,53 +35,82 @@ func TestAddDeps(t *testing.T) {
 			ID: 1, Attempt: ak, Token: []byte("key"),
 			State: dm.Execution_RUNNING}
 
-		to := &model.Attempt{ID: *dm.NewAttemptID("to", 1)}
+		toQuestDesc := &dm.Quest_Desc{
+			DistributorConfigName: "foof",
+			JsonPayload:           `{"data":"yes"}`,
+		}
+		toQuest, err := model.NewQuest(c, toQuestDesc)
+		So(err, ShouldBeNil)
+		to := &model.Attempt{ID: *dm.NewAttemptID(toQuest.ID, 1)}
 		fwd := &model.FwdDep{Depender: ak, Dependee: to.ID}
 
-		req := &dm.AddDepsReq{
-			Auth: &dm.Execution_Auth{
+		req := &dm.EnsureGraphDataReq{
+			ForExecution: &dm.Execution_Auth{
 				Id:    dm.NewExecutionID(a.ID.Quest, a.ID.Id, 1),
 				Token: []byte("key"),
 			},
-			Deps: dm.NewAttemptList(map[string][]uint32{
+			Attempts: dm.NewAttemptList(map[string][]uint32{
 				to.ID.Quest: {to.ID.Id},
 			}),
 		}
 
 		Convey("Bad", func() {
 			Convey("No such originating attempt", func() {
-				rsp, err := s.AddDeps(c, req)
-				So(err, ShouldBeRPCUnauthenticated, "execution Auth")
-				So(rsp, ShouldBeNil)
+				_, err := s.EnsureGraphData(c, req)
+				So(err, ShouldBeRPCUnauthenticated)
 			})
 
 			Convey("No such destination quest", func() {
 				So(ds.PutMulti([]interface{}{a, e}), ShouldBeNil)
 
-				rsp, err := s.AddDeps(c, req)
-				So(err, ShouldBeRPCInvalidArgument, "one or more quests")
-				So(rsp, ShouldBeNil)
+				_, err := s.EnsureGraphData(c, req)
+				So(err, ShouldBeRPCInvalidArgument, `cannot create attempts for absent quest "Q9SgH-f5kraxP_om80CdR9EmAvgmnUws_s5fvRmZiuc"`)
 			})
 		})
 
 		Convey("Good", func() {
-			So(ds.PutMulti([]interface{}{a, e}), ShouldBeNil)
+			So(ds.PutMulti([]interface{}{a, e, toQuest}), ShouldBeNil)
 
 			Convey("deps already exist", func() {
 				So(ds.Put(fwd), ShouldBeNil)
+				So(ds.Put(to), ShouldBeNil)
 
-				rsp, err := s.AddDeps(c, req)
+				rsp, err := s.EnsureGraphData(c, req)
 				So(err, ShouldBeNil)
-				So(rsp, ShouldResemble, &dm.AddDepsRsp{})
+				purgeTimestamps(rsp.Result)
+				So(rsp, ShouldResemble, &dm.EnsureGraphDataRsp{
+					Accepted: true,
+					Result: &dm.GraphData{Quests: map[string]*dm.Quest{
+						toQuest.ID: {
+							Data: &dm.Quest_Data{
+								Desc:    toQuestDesc,
+								BuiltBy: []*dm.Quest_TemplateSpec{},
+							},
+							Attempts: map[uint32]*dm.Attempt{1: dm.NewAttemptNeedsExecution(zt)},
+						},
+					}},
+				})
 			})
 
 			Convey("deps already done", func() {
 				to.State = dm.Attempt_FINISHED
 				So(ds.Put(to), ShouldBeNil)
 
-				rsp, err := s.AddDeps(c, req)
+				rsp, err := s.EnsureGraphData(c, req)
 				So(err, ShouldBeNil)
-				So(rsp, ShouldResemble, &dm.AddDepsRsp{})
+				purgeTimestamps(rsp.Result)
+				So(rsp, ShouldResemble, &dm.EnsureGraphDataRsp{
+					Accepted: true,
+					Result: &dm.GraphData{Quests: map[string]*dm.Quest{
+						toQuest.ID: {
+							Data: &dm.Quest_Data{
+								Desc:    toQuestDesc,
+								BuiltBy: []*dm.Quest_TemplateSpec{},
+							},
+							Attempts: map[uint32]*dm.Attempt{1: dm.NewAttemptFinished(zt, 0, "")},
+						},
+					}},
+				})
 
 				So(ds.Get(fwd), ShouldBeNil)
 			})
@@ -87,9 +118,9 @@ func TestAddDeps(t *testing.T) {
 			Convey("adding new deps", func() {
 				So(ds.Put(&model.Quest{ID: "to"}), ShouldBeNil)
 
-				rsp, err := s.AddDeps(c, req)
+				rsp, err := s.EnsureGraphData(c, req)
 				So(err, ShouldBeNil)
-				So(rsp, ShouldResemble, &dm.AddDepsRsp{ShouldHalt: true})
+				So(rsp, ShouldResemble, &dm.EnsureGraphDataRsp{ShouldHalt: true})
 
 				So(ds.Get(fwd), ShouldBeNil)
 				So(ds.Get(a), ShouldBeNil)

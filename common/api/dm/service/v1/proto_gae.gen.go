@@ -34,3 +34,26 @@ func (p *Quest_Desc) FromProperty(prop datastore.Property) error {
 	}
 	return proto.Unmarshal(data.([]byte), p)
 }
+
+var _ datastore.PropertyConverter = (*Quest_TemplateSpec)(nil)
+
+// ToProperty implements datastore.PropertyConverter. It causes an embedded
+// 'Quest_TemplateSpec' to serialize to an unindexed '[]byte' when used with the
+// "github.com/luci/gae" library.
+func (p *Quest_TemplateSpec) ToProperty() (prop datastore.Property, err error) {
+	data, err := proto.Marshal(p)
+	if err == nil {
+		prop.SetValue(data, datastore.NoIndex)
+	}
+	return
+}
+
+// FromProperty implements datastore.PropertyConverter. It parses a '[]byte'
+// into an embedded 'Quest_TemplateSpec' when used with the "github.com/luci/gae" library.
+func (p *Quest_TemplateSpec) FromProperty(prop datastore.Property) error {
+	data, err := prop.Project(datastore.PTBytes)
+	if err != nil {
+		return err
+	}
+	return proto.Unmarshal(data.([]byte), p)
+}

@@ -37,14 +37,14 @@ func TestAddDeps(t *testing.T) {
 				Id:    dm.NewExecutionID("quest", 1, 1),
 				Token: []byte("sup"),
 			},
-			ToAdd: dm.NewAttemptList(map[string][]uint32{
+			Deps: dm.NewAttemptList(map[string][]uint32{
 				"to":    {1, 2, 3},
 				"top":   {1},
 				"tp":    {1},
 				"zebra": {17},
 			}),
 		}
-		fds := model.FwdDepsFromList(c, aid, ad.ToAdd)
+		fds := model.FwdDepsFromList(c, aid, ad.Deps)
 
 		Convey("Root", func() {
 			So(ad.Root(c).String(), ShouldEqual, `dev~app::/Attempt,"quest|fffffffe"`)
@@ -77,9 +77,30 @@ func TestAddDeps(t *testing.T) {
 				Convey("None added already", func() {
 					muts, err := ad.RollForward(c)
 					So(err, ShouldBeNil)
-					So(len(muts), ShouldEqual, 2*len(fds))
+					So(len(muts), ShouldEqual, len(fds))
 
-					So(muts[0], ShouldResemble, &EnsureAttempt{&fds[0].Dependee})
+					So(muts[0], ShouldResemble, &AddBackDep{
+						Dep: fds[0].Edge(), NeedsAck: true})
+
+					So(ds.Get(a), ShouldBeNil)
+					So(ds.GetMulti(fds), ShouldBeNil)
+					So(a.AddingDepsBitmap.Size(), ShouldEqual, len(fds))
+					So(a.WaitingDepBitmap.Size(), ShouldEqual, len(fds))
+					So(a.State, ShouldEqual, dm.Attempt_ADDING_DEPS)
+					So(fds[0].ForExecution, ShouldEqual, 1)
+				})
+
+				Convey("adding new Attempts at the same time", func() {
+					ad.Atmpts = dm.NewAttemptList(map[string][]uint32{
+						"to": {2, 3},
+						"tp": {1},
+					})
+
+					muts, err := ad.RollForward(c)
+					So(err, ShouldBeNil)
+					So(len(muts), ShouldEqual, len(fds)+3)
+
+					So(muts[0], ShouldResemble, &EnsureAttempt{dm.NewAttemptID("to", 3)})
 					So(muts[1], ShouldResemble, &AddBackDep{
 						Dep: fds[0].Edge(), NeedsAck: true})
 

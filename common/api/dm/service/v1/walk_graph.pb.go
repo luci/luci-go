@@ -40,7 +40,7 @@ func (x WalkGraphReq_Mode_Direction) String() string {
 	return proto.EnumName(WalkGraphReq_Mode_Direction_name, int32(x))
 }
 func (WalkGraphReq_Mode_Direction) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor10, []int{0, 0, 0}
+	return fileDescriptor8, []int{0, 0, 0}
 }
 
 // WalkGraphReq allows you to walk from one or more Quests through their
@@ -70,7 +70,7 @@ type WalkGraphReq struct {
 func (m *WalkGraphReq) Reset()                    { *m = WalkGraphReq{} }
 func (m *WalkGraphReq) String() string            { return proto.CompactTextString(m) }
 func (*WalkGraphReq) ProtoMessage()               {}
-func (*WalkGraphReq) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{0} }
+func (*WalkGraphReq) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{0} }
 
 func (m *WalkGraphReq) GetAuth() *Execution_Auth {
 	if m != nil {
@@ -119,7 +119,7 @@ type WalkGraphReq_Mode struct {
 func (m *WalkGraphReq_Mode) Reset()                    { *m = WalkGraphReq_Mode{} }
 func (m *WalkGraphReq_Mode) String() string            { return proto.CompactTextString(m) }
 func (*WalkGraphReq_Mode) ProtoMessage()               {}
-func (*WalkGraphReq_Mode) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{0, 0} }
+func (*WalkGraphReq_Mode) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{0, 0} }
 
 type WalkGraphReq_Limit struct {
 	// MaxDepth sets the number of attempts to traverse; 0 means 'immediate'
@@ -148,7 +148,7 @@ type WalkGraphReq_Limit struct {
 func (m *WalkGraphReq_Limit) Reset()                    { *m = WalkGraphReq_Limit{} }
 func (m *WalkGraphReq_Limit) String() string            { return proto.CompactTextString(m) }
 func (*WalkGraphReq_Limit) ProtoMessage()               {}
-func (*WalkGraphReq_Limit) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{0, 1} }
+func (*WalkGraphReq_Limit) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{0, 1} }
 
 func (m *WalkGraphReq_Limit) GetMaxTime() *google_protobuf2.Duration {
 	if m != nil {
@@ -199,7 +199,7 @@ type WalkGraphReq_Include struct {
 func (m *WalkGraphReq_Include) Reset()                    { *m = WalkGraphReq_Include{} }
 func (m *WalkGraphReq_Include) String() string            { return proto.CompactTextString(m) }
 func (*WalkGraphReq_Include) ProtoMessage()               {}
-func (*WalkGraphReq_Include) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{0, 2} }
+func (*WalkGraphReq_Include) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{0, 2} }
 
 func init() {
 	proto.RegisterType((*WalkGraphReq)(nil), "dm.WalkGraphReq")
@@ -209,7 +209,7 @@ func init() {
 	proto.RegisterEnum("dm.WalkGraphReq_Mode_Direction", WalkGraphReq_Mode_Direction_name, WalkGraphReq_Mode_Direction_value)
 }
 
-var fileDescriptor10 = []byte{
+var fileDescriptor8 = []byte{
 	// 536 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x6c, 0x92, 0xdd, 0x6f, 0xd3, 0x30,
 	0x14, 0xc5, 0xe9, 0x77, 0x7a, 0xfb, 0x41, 0xb0, 0x04, 0xca, 0x82, 0x60, 0x50, 0x01, 0x02, 0x09,

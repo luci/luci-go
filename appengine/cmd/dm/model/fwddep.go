@@ -78,3 +78,25 @@ func FwdDepsFromList(c context.Context, base *dm.Attempt_ID, list *dm.AttemptLis
 	}
 	return ret
 }
+
+// FwdDepKeysFromList makes a list of datastore.Key's that correspond to all
+// of the FwdDeps expressed by the <base, list> pair.
+func FwdDepKeysFromList(c context.Context, base *dm.Attempt_ID, list *dm.AttemptList) []*datastore.Key {
+	ds := datastore.Get(c)
+	keys := make(sort.StringSlice, 0, len(list.To))
+	amt := 0
+	for qst, nums := range list.To {
+		keys = append(keys, qst)
+		amt += len(nums.Nums)
+	}
+	keys.Sort()
+	ret := make([]*datastore.Key, 0, amt)
+	for _, key := range keys {
+		for _, num := range list.To[key].Nums {
+			ret = append(ret, ds.MakeKey(
+				"Attempt", base.DMEncoded(),
+				"FwdDep", dm.NewAttemptID(key, num).DMEncoded()))
+		}
+	}
+	return ret
+}

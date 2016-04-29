@@ -11,16 +11,22 @@ import (
 	"github.com/luci/luci-go/common/api/dm/service/v1"
 	"github.com/luci/luci-go/common/bit_field"
 	"github.com/luci/luci-go/common/grpcutil"
-	"github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
 )
 
 // AddDeps transactionally stops the current execution and adds one or more
-// dependencies. It assumes that, prior to execution, all Quests named by ToAdd
+// dependencies. It assumes that, prior to execution, all Quests named by Deps
 // have already been recorded globally.
 type AddDeps struct {
-	Auth  *dm.Execution_Auth
-	ToAdd *dm.AttemptList
+	Auth   *dm.Execution_Auth
+	Quests []*model.Quest
+
+	// Atmpts is attempts we think are missing from the global graph.
+	Atmpts *dm.AttemptList
+
+	// Deps are fwddeps we think are missing from the auth'd attempt.
+	Deps *dm.AttemptList
 }
 
 // Root implements tumble.Mutation
@@ -29,6 +35,8 @@ func (a *AddDeps) Root(c context.Context) *datastore.Key {
 }
 
 // RollForward implements tumble.Mutation
+//
+// This mutation is called directly, so we use return grpc errors.
 func (a *AddDeps) RollForward(c context.Context) (muts []tumble.Mutation, err error) {
 	// Invalidate the execution key so that they can't make more API calls.
 	atmpt, _, err := model.InvalidateExecution(c, a.Auth)
@@ -36,7 +44,8 @@ func (a *AddDeps) RollForward(c context.Context) (muts []tumble.Mutation, err er
 		return
 	}
 
-	fwdDeps, err := filterExisting(c, model.FwdDepsFromList(c, a.Auth.Id.AttemptID(), a.ToAdd))
+	fwdDeps, err := filterExisting(c, model.FwdDepsFromList(c, a.Auth.Id.AttemptID(), a.Deps))
+	err = grpcutil.MaybeLogErr(c, err, codes.Internal, "while filtering deps")
 	if err != nil || len(fwdDeps) == 0 {
 		return
 	}
@@ -51,22 +60,26 @@ func (a *AddDeps) RollForward(c context.Context) (muts []tumble.Mutation, err er
 		fdp.BitIndex = uint32(i)
 		fdp.ForExecution = atmpt.CurExecution
 	}
+
 	if err = ds.PutMulti(fwdDeps); err != nil {
-		logging.WithError(err).Errorf(c, "error putting new fwdDeps")
-		err = grpcutil.Internal
+		err = grpcutil.MaybeLogErr(c, err, codes.Internal, "error putting new fwdDeps")
 		return
 	}
-
 	if err = ds.Put(atmpt); err != nil {
-		logging.WithError(err).Errorf(c, "error putting attempt")
-		err = grpcutil.Internal
+		err = grpcutil.MaybeLogErr(c, err, codes.Internal, "error putting attempt")
 		return
 	}
 
-	muts = make([]tumble.Mutation, 0, 2*len(fwdDeps))
-	for i, d := range fwdDeps {
-		d.BitIndex = uint32(i)
-		muts = append(muts, &EnsureAttempt{ID: &d.Dependee})
+	muts = make([]tumble.Mutation, 0, len(fwdDeps)+len(a.Atmpts.GetTo()))
+	for _, d := range fwdDeps {
+		if nums, ok := a.Atmpts.GetTo()[d.Dependee.Quest]; ok {
+			for _, n := range nums.Nums {
+				if n == d.Dependee.Id {
+					muts = append(muts, &EnsureAttempt{ID: &d.Dependee})
+					break
+				}
+			}
+		}
 		muts = append(muts, &AddBackDep{
 			Dep:      d.Edge(),
 			NeedsAck: true,

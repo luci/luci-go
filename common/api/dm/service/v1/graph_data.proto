@@ -6,6 +6,8 @@ syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
 
+import "github.com/luci/luci-go/common/api/template/template.proto";
+
 import "types.proto";
 
 package dm;
@@ -25,9 +27,17 @@ message Quest {
     string json_payload = 2;
   }
 
+  message TemplateSpec {
+    string project = 1;
+    string ref = 2;
+    string version = 3;
+    string name = 4;
+  }
+
   message Data {
     google.protobuf.Timestamp created = 1;
     Quest.Desc desc = 2;
+    repeated Quest.TemplateSpec built_by = 3;
   }
   Data data = 3;
 
@@ -55,7 +65,8 @@ message Attempt {
     EXECUTING = 1;
     ADDING_DEPS = 2;
     BLOCKED = 3;
-    FINISHED = 4;
+    AWAITING_EXECUTION_STATE = 4;
+    FINISHED = 5;
   }
 
   message Data {
@@ -159,21 +170,41 @@ message Execution {
   ID id = 1;
 
   enum State {
+    // The execution has been accepted by the distributor, but is not running yet
     SCHEDULED = 0;
+
+    // The execution is running
     RUNNING = 1;
 
+    // The execution was unable to be accepted by the distributor
     REJECTED = 2;
-    FINISHED = 3;
-    CRASHED = 4;
+
+    // The execution was accepted by the distributor, but couldn't run in time.
+    TIMED_OUT = 3;
+
+    // The execution ran and completed
+    FINISHED = 4;
+
+    // The execution ran, but the distributor claims it did not complete
+    FAILED = 5;
+
+    // The distributor claims to not know anything about this execution
+    MISSING = 6;
+
+    // Some entity (DM, Human, Distributor) requested that this execution not run.
+    CANCELLED = 7;
   }
-  State state = 2;
 
   message Data {
-    google.protobuf.Timestamp created = 1;
-    string distributor_token = 2;
-    string distributor_info_url = 3;
+    State state = 1;
+    string state_reason = 2;
+
+    google.protobuf.Timestamp created = 3;
+
+    string distributor_token = 4;
+    string distributor_info_url = 5;
   }
-  Data data = 3;
+  Data data = 2;
 
   // Partial is true iff the request asked for Executions, but wasn't able to
   // completely fill them.

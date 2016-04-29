@@ -109,7 +109,7 @@ func IsTransientCode(code codes.Code) bool {
 	}
 }
 
-// LogErr logs the non-nil error and transforms it into a grpc error with the
+// MaybeLogErr logs the non-nil error and transforms it into a grpc error with the
 // given code. If the err is nil, this returns nil without logging anything.
 //
 // If the code is InvalidArgument error message will be passed through.
@@ -117,7 +117,7 @@ func IsTransientCode(code codes.Code) bool {
 //
 // InvalidArgument, Unauthenticated and DeadlineExceeded are logged as 'Info'
 // level. All other error codes are logged as 'Error' level.
-func LogErr(c context.Context, code codes.Code, err error, msg string) error {
+func MaybeLogErr(c context.Context, err error, code codes.Code, msg string) error {
 	if err == nil {
 		return nil
 	}

@@ -146,3 +146,15 @@ func (g *GraphData) GetQuest(qid string) (*Quest, bool) {
 func NewQuestDesc(cfg string, js string) *Quest_Desc {
 	return &Quest_Desc{cfg, js}
 }
+
+// NewTemplateSpec is a shorthand method for building a new *Quest_TemplateSpec.
+func NewTemplateSpec(project, ref, version, name string) *Quest_TemplateSpec {
+	return &Quest_TemplateSpec{project, ref, version, name}
+}
+
+// Equals returns true iff this Quest_TemplateSpec matches all of the fields of
+// the `o` Quest_TemplateSpec.
+func (t *Quest_TemplateSpec) Equals(o *Quest_TemplateSpec) bool {
+	return (t.Project == o.Project && t.Ref == o.Ref && t.Version == o.Version &&
+		t.Name == o.Name)
+}

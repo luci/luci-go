@@ -11,10 +11,13 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
+	"github.com/luci/gae/filter/featureBreaker"
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
 
+	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/logging/memlogger"
+	"github.com/luci/luci-go/common/proto/google"
 	. "github.com/luci/luci-go/common/testing/assertions"
 
 	"github.com/luci/luci-go/common/api/dm/service/v1"
@@ -108,6 +111,14 @@ func TestExecutions(t *testing.T) {
 			_, _, err = ActivateExecution(c, auth, []byte("wrong tok"))
 			So(err, ShouldBeRPCUnauthenticated, "execution Auth")
 
+			e1.State = dm.Execution_CANCELLED
+			So(ds.Put(e1), ShouldBeNil)
+			_, _, err = ActivateExecution(c, auth, []byte("good tok"))
+			So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+
+			e1.State = dm.Execution_SCHEDULED
+			So(ds.Put(e1), ShouldBeNil)
+
 			newA, e, err := ActivateExecution(c, auth, []byte("good tok"))
 			So(err, ShouldBeNil)
 			So(newA, ShouldResemble, a)
@@ -151,7 +162,88 @@ func TestExecutions(t *testing.T) {
 
 			So(ds.Get(e1), ShouldBeNil)
 			So(e1.Token, ShouldBeNil)
+
+			_, _, err = InvalidateExecution(c, auth)
+			So(err, ShouldBeRPCUnauthenticated, "requires execution Auth")
+		})
+
+		Convey("failed invalidation", func() {
+			e1 := &Execution{
+				ID:      1,
+				Attempt: ak,
+				Token:   []byte("good tok"),
+				State:   dm.Execution_RUNNING,
+			}
+			So(ds.Put(e1), ShouldBeNil)
+			a.CurExecution = 1
+			a.State = dm.Attempt_EXECUTING
+			So(ds.Put(a), ShouldBeNil)
+
+			auth := &dm.Execution_Auth{
+				Id:    dm.NewExecutionID("q", a.ID.Id, uint32(e1.ID)),
+				Token: []byte("good tok"),
+			}
+
+			c, fb := featureBreaker.FilterRDS(c, nil)
+			fb.BreakFeatures(nil, "PutMulti")
+
+			_, _, err := InvalidateExecution(c, auth)
+			So(err, ShouldBeRPCInternal, "unable to invalidate Auth")
+
+			fb.UnbreakFeatures("PutMulti")
+
+			_, _, err = InvalidateExecution(c, auth)
+			So(err, ShouldBeNil)
+
+			So(ds.Get(e1), ShouldBeNil)
+			So(e1.Token, ShouldBeNil)
 		})
 	})
 
+}
+
+func TestExecutionToProto(t *testing.T) {
+	t.Parallel()
+
+	Convey("Test Execution.ToProto", t, func() {
+		c := memory.Use(context.Background())
+		c = memlogger.Use(c)
+		ds := datastore.Get(c)
+
+		e := &Execution{
+			ID:      1,
+			Attempt: ds.MakeKey("Attempt", "qst|fffffffe"),
+
+			StateReason: "scheduled by DM",
+
+			Created:          testclock.TestTimeUTC,
+			DistributorToken: "id",
+			DistributorURL:   "https://thing.place.example.com/task/id",
+
+			Token: []byte("secret"),
+		}
+
+		Convey("no id", func() {
+			So(e.ToProto(false), ShouldResemble, &dm.Execution{Data: &dm.Execution_Data{
+				State:              dm.Execution_SCHEDULED,
+				StateReason:        "scheduled by DM",
+				Created:            google.NewTimestamp(testclock.TestTimeUTC),
+				DistributorToken:   "id",
+				DistributorInfoUrl: "https://thing.place.example.com/task/id",
+			}})
+		})
+
+		Convey("with id", func() {
+			So(e.ToProto(true), ShouldResemble, &dm.Execution{
+				Id: dm.NewExecutionID("qst", 1, 1),
+				Data: &dm.Execution_Data{
+					State:              dm.Execution_SCHEDULED,
+					StateReason:        "scheduled by DM",
+					Created:            google.NewTimestamp(testclock.TestTimeUTC),
+					DistributorToken:   "id",
+					DistributorInfoUrl: "https://thing.place.example.com/task/id",
+				},
+			})
+		})
+	})
 }

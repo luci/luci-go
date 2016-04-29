@@ -23,7 +23,7 @@ type ClaimExecutionRsp struct {
 func (m *ClaimExecutionRsp) Reset()                    { *m = ClaimExecutionRsp{} }
 func (m *ClaimExecutionRsp) String() string            { return proto.CompactTextString(m) }
 func (*ClaimExecutionRsp) ProtoMessage()               {}
-func (*ClaimExecutionRsp) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (*ClaimExecutionRsp) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
 
 func (m *ClaimExecutionRsp) GetQuest() *Quest {
 	if m != nil {
@@ -43,7 +43,7 @@ func init() {
 	proto.RegisterType((*ClaimExecutionRsp)(nil), "dm.ClaimExecutionRsp")
 }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor1 = []byte{
 	// 133 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0x12, 0x4d, 0xce, 0x49, 0xcc,
 	0xcc, 0x8d, 0x4f, 0xad, 0x48, 0x4d, 0x2e, 0x2d, 0xc9, 0xcc, 0xcf, 0xd3, 0x2b, 0x28, 0xca, 0x2f,

@@ -8,8 +8,6 @@ import (
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/grpcutil"
-	"github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
 
@@ -26,9 +24,7 @@ func filterExisting(c context.Context, fwdDeps []*model.FwdDep) ([]*model.FwdDep
 
 	merr, ok := err.(errors.MultiError)
 	if !ok {
-		// dunno what this is
-		logging.WithError(err).Errorf(c, "error filtering existing fwdDeps")
-		return nil, grpcutil.Internal
+		return nil, err
 	}
 
 	for i, err := range merr {

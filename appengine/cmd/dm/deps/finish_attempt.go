@@ -5,9 +5,11 @@
 package deps
 
 import (
-	"github.com/luci/luci-go/appengine/cmd/dm/model"
+	"fmt"
+
 	"github.com/luci/luci-go/appengine/cmd/dm/mutate"
 	"github.com/luci/luci-go/common/api/dm/service/v1"
+	"github.com/luci/luci-go/common/api/template"
 	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/common/logging"
 	google_pb "github.com/luci/luci-go/common/proto/google"
@@ -18,7 +20,12 @@ import (
 const resultMaxLength = 256 * 1024
 
 func (d *deps) FinishAttempt(c context.Context, req *dm.FinishAttemptReq) (_ *google_pb.Empty, err error) {
-	req.JsonResult, err = model.NormalizeJSONObject(resultMaxLength, req.JsonResult)
+	if len(req.JsonResult) > resultMaxLength {
+		return nil, fmt.Errorf("result payload is too large: %d > %d",
+			len(req.JsonResult), resultMaxLength)
+	}
+
+	req.JsonResult, err = template.NormalizeJSON(req.JsonResult, true)
 	if err != nil {
 		logging.WithError(err).Infof(c, "failed to normalized json")
 		return nil, grpcutil.Errf(codes.InvalidArgument, "resuld json had normalization error: %s", err.Error())

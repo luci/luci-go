@@ -43,19 +43,15 @@ func TestQuest(t *testing.T) {
 					So(q, ShouldResemble, &Quest{
 						"eMpqiyje5ItTX8IistN7IlAMVxyCsJcez4DAHKvhm7Y",
 						*desc("swarming", `{"key":["value"]}`),
+						nil,
 						testclock.TestTimeUTC,
 					})
 				})
 
 				Convey("extra data", func() {
 					qd := desc("swarming", `{"key":["value"]} foof`)
-					q, err := NewQuest(c, qd)
-					So(err, ShouldBeNil)
-					So(q, ShouldResemble, &Quest{
-						"eMpqiyje5ItTX8IistN7IlAMVxyCsJcez4DAHKvhm7Y",
-						*desc("swarming", `{"key":["value"]}`),
-						testclock.TestTimeUTC,
-					})
+					_, err := NewQuest(c, qd)
+					So(err, ShouldErrLike, "extra junk")
 				})
 
 				Convey("data ordering", func() {
@@ -65,6 +61,7 @@ func TestQuest(t *testing.T) {
 					So(q, ShouldResemble, &Quest{
 						"KO5hRgXIFouei7Xg5Oai0K5hJeuuiO70jRaDyqQO0MM",
 						*desc("swarming", `{"abc":true,"key":["value"]}`),
+						nil,
 						testclock.TestTimeUTC,
 					})
 				})
@@ -102,6 +99,7 @@ func TestQuest(t *testing.T) {
 				Data: &dm.Quest_Data{
 					Created: google_pb.NewTimestamp(testclock.TestTimeUTC),
 					Desc:    &q.Desc,
+					BuiltBy: []*dm.Quest_TemplateSpec{},
 				},
 			})
 			So(p.Data.Desc.JsonPayload, ShouldResemble, `{"key":["value"]}`)
