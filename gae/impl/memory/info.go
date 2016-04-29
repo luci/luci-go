@@ -28,7 +28,8 @@ var defaultGlobalInfoData = globalInfoData{
 }
 
 type globalInfoData struct {
-	appid     string
+	appID     string
+	fqAppID   string
 	namespace *string
 	versionID string
 	requestID string
@@ -98,11 +99,11 @@ func (gi *giImpl) MustNamespace(ns string) context.Context {
 }
 
 func (gi *giImpl) AppID() string {
-	return gi.appid
+	return gi.appID
 }
 
 func (gi *giImpl) FullyQualifiedAppID() string {
-	return gi.appid
+	return gi.fqAppID
 }
 
 func (gi *giImpl) IsDevAppServer() bool {

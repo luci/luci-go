@@ -27,13 +27,11 @@ func TestMustNamespace(t *testing.T) {
 	})
 
 	Convey("Testable interface works", t, func() {
-		c := Use(context.Background())
-		c = useGID(c, func(mod *globalInfoData) {
-			mod.appid = "app-id"
-		})
+		c := UseWithAppID(context.Background(), "dev~app-id")
 
 		// Default value.
 		So(info.Get(c).AppID(), ShouldEqual, "app-id")
+		So(info.Get(c).FullyQualifiedAppID(), ShouldEqual, "dev~app-id")
 		So(info.Get(c).RequestID(), ShouldEqual, "test-request-id")
 
 		// Setting to "override" applies to initial context.

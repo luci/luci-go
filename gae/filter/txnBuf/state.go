@@ -145,23 +145,18 @@ func withTxnBuf(ctx context.Context, cb func(context.Context) error, opts *datas
 		writeCountBudget = parentState.writeCountBudget - parentState.entState.numWrites()
 	}
 
-	bufDS, err := memory.NewDatastore(inf.FullyQualifiedAppID(), ns)
-	if err != nil {
-		return err
-	}
-
 	state := &txnBufState{
 		entState:         &sizeTracker{},
-		bufDS:            bufDS.Raw(),
+		bufDS:            memory.NewDatastore(inf).Raw(),
 		roots:            roots,
 		rootLimit:        rootLimit,
 		ns:               ns,
-		aid:              inf.AppID(),
+		aid:              inf.FullyQualifiedAppID(),
 		parentDS:         datastore.Get(context.WithValue(ctx, dsTxnBufHaveLock, true)).Raw(),
 		sizeBudget:       sizeBudget,
 		writeCountBudget: writeCountBudget,
 	}
-	if err = cb(context.WithValue(ctx, dsTxnBufParent, state)); err != nil {
+	if err := cb(context.WithValue(ctx, dsTxnBufParent, state)); err != nil {
 		return err
 	}
 
@@ -172,7 +167,7 @@ func withTxnBuf(ctx context.Context, cb func(context.Context) error, opts *datas
 		return commitToReal(state)
 	}
 
-	if err = parentState.canApplyLocked(state); err != nil {
+	if err := parentState.canApplyLocked(state); err != nil {
 		return err
 	}
 

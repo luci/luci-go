@@ -6,6 +6,7 @@ package memory
 
 import (
 	"errors"
+	"strings"
 	"sync"
 
 	ds "github.com/luci/gae/service/datastore"
@@ -89,7 +90,7 @@ func (m *memContext) applyTxn(c context.Context, txnCtxObj memContextObj) {
 	}
 }
 
-// Use calls UseWithAppID with the appid of "dev~app"
+// Use calls UseWithAppID with the appid of "app"
 func Use(c context.Context) context.Context {
 	return UseWithAppID(c, "dev~app")
 }
@@ -105,7 +106,8 @@ func Use(c context.Context) context.Context {
 //   * github.com/luci/luci-go/common/logger (using memlogger)
 //
 // The application id wil be set to 'aid', and will not be modifiable in this
-// context.
+// context. If 'aid' contains a "~" character, it will be treated as the
+// fully-qualified App ID and the AppID will be the string following the "~".
 //
 // These can be retrieved with the gae.Get functions.
 //
@@ -119,11 +121,17 @@ func UseWithAppID(c context.Context, aid string) context.Context {
 	}
 	c = memlogger.Use(c)
 
-	memctx := newMemContext(aid)
+	fqAppID := aid
+	if parts := strings.SplitN(fqAppID, "~", 2); len(parts) == 2 {
+		aid = parts[1]
+	}
+
+	memctx := newMemContext(fqAppID)
 	c = context.WithValue(c, memContextKey, memctx)
 	c = context.WithValue(c, memContextNoTxnKey, memctx)
 	c = useGID(c, func(mod *globalInfoData) {
-		mod.appid = aid
+		mod.appID = aid
+		mod.fqAppID = fqAppID
 	})
 	return useMod(useMail(useUser(useTQ(useRDS(useMC(useGI(c)))))))
 }

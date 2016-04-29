@@ -685,11 +685,12 @@ func TestNewDatastore(t *testing.T) {
 	t.Parallel()
 
 	Convey("Can get and use a NewDatastore", t, func() {
-		ds, err := NewDatastore("aid", "ns")
-		So(err, ShouldBeNil)
+		c := UseWithAppID(context.Background(), "dev~aid")
+		c = infoS.Get(c).MustNamespace("ns")
+		ds := NewDatastore(infoS.Get(c))
 
 		k := ds.MakeKey("Something", 1)
-		So(k.AppID(), ShouldEqual, "aid")
+		So(k.AppID(), ShouldEqual, "dev~aid")
 		So(k.Namespace(), ShouldEqual, "ns")
 
 		type Model struct {

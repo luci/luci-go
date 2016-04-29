@@ -52,23 +52,22 @@ func useRDS(c context.Context) context.Context {
 //   * DisableSpecialEntities(true)
 //
 // These settings can of course be changed by using the Testable() interface.
-func NewDatastore(aid, ns string) (ds.Interface, error) {
-	ctx := UseWithAppID(context.Background(), aid)
+func NewDatastore(inf info.Interface) ds.Interface {
+	fqAppID := inf.FullyQualifiedAppID()
+	ns, hasNS := inf.GetNamespace()
 
-	if ns != "" {
-		var err error
-		ctx, err = info.Get(ctx).Namespace(ns)
-		if err != nil {
-			return nil, err
-		}
-	}
+	memctx := newMemContext(fqAppID)
 
-	ret := ds.Get(ctx)
+	dsCtx := info.Set(context.Background(), inf)
+	rds := &dsImpl{memctx.Get(memContextDSIdx).(*dataStoreData), ns, hasNS, dsCtx}
+
+	ret := ds.Get(ds.SetRaw(dsCtx, rds))
 	t := ret.Testable()
 	t.AutoIndex(true)
 	t.Consistent(true)
 	t.DisableSpecialEntities(true)
-	return ret, nil
+
+	return ret
 }
 
 //////////////////////////////////// dsImpl ////////////////////////////////////
