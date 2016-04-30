@@ -8,6 +8,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logdog/types"
 )
 
@@ -38,6 +39,8 @@ type Config struct {
 
 // PutRequest describes adding a single storage record to BigTable.
 type PutRequest struct {
+	// Project is the project name of the stream.
+	Project config.ProjectName
 	// Path is the stream path to retrieve.
 	Path types.StreamPath
 	// Index is the entry's stream index.
@@ -50,6 +53,8 @@ type PutRequest struct {
 
 // GetRequest is a request to retrieve a series of LogEntry records.
 type GetRequest struct {
+	// Project is the project name of the stream.
+	Project config.ProjectName
 	// Path is the stream path to retrieve.
 	Path types.StreamPath
 	// Index is the entry's stream index.
@@ -105,7 +110,7 @@ type Storage interface {
 
 	// Tail retrieves the latest log in the stream. If the stream has no logs, it
 	// will return ErrDoesNotExist.
-	Tail(types.StreamPath) ([]byte, types.MessageIndex, error)
+	Tail(config.ProjectName, types.StreamPath) ([]byte, types.MessageIndex, error)
 
 	// Config installs the supplied configuration parameters into the storage
 	// instance.

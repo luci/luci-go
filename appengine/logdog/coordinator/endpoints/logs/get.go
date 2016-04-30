@@ -289,7 +289,7 @@ func getHead(c context.Context, req *logdog.GetRequest, st storage.Storage, p ty
 func getTail(c context.Context, st storage.Storage, p types.StreamPath) ([][]byte, error) {
 	var data []byte
 	err := retry.Retry(c, retry.TransientOnly(retry.Default), func() (err error) {
-		data, _, err = st.Tail(p)
+		data, _, err = st.Tail("", p)
 		return
 	}, func(err error, delay time.Duration) {
 		log.Fields{

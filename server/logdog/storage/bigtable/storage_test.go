@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/luci/gkvlite"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/recordio"
 	"github.com/luci/luci-go/server/logdog/storage"
@@ -175,11 +176,13 @@ func testStorageImpl(t *testing.T, legacy bool) {
 		s.raw = &bt
 		defer s.Close()
 
+		project := config.ProjectName("test-project")
 		get := func(path string, index int, limit int) ([]string, error) {
 			req := storage.GetRequest{
-				Path:  types.StreamPath(path),
-				Index: types.MessageIndex(index),
-				Limit: limit,
+				Project: project,
+				Path:    types.StreamPath(path),
+				Index:   types.MessageIndex(index),
+				Limit:   limit,
 			}
 			got := []string{}
 			err := s.Get(req, func(idx types.MessageIndex, d []byte) bool {
@@ -196,14 +199,15 @@ func testStorageImpl(t *testing.T, legacy bool) {
 			}
 
 			return s.Put(storage.PutRequest{
-				Path:   types.StreamPath(path),
-				Index:  types.MessageIndex(index),
-				Values: data,
+				Project: project,
+				Path:    types.StreamPath(path),
+				Index:   types.MessageIndex(index),
+				Values:  data,
 			})
 		}
 
-		ekey := func(p string, v, c int64) string {
-			return newRowKey(p, v, c).encode()
+		ekey := func(path string, v, c int64) string {
+			return newRowKey(string(project), path, v, c).encode()
 		}
 		records := func(s ...string) []byte {
 			buf := bytes.Buffer{}
@@ -297,7 +301,7 @@ func testStorageImpl(t *testing.T, legacy bool) {
 
 			Convey(`Testing "Tail"...`, func() {
 				tail := func(path string) (string, error) {
-					got, _, err := s.Tail(types.StreamPath(path))
+					got, _, err := s.Tail(project, types.StreamPath(path))
 					return string(got), err
 				}
 

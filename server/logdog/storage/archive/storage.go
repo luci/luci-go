@@ -23,6 +23,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/gcloud/gs"
 	"github.com/luci/luci-go/common/iotools"
 	"github.com/luci/luci-go/common/logdog/types"
@@ -42,8 +43,8 @@ const (
 // Options is the set of configuration options for this Storage instance.
 //
 // Unlike other Storage instances, this is bound to a single archived stream.
-// Path parameters in requests will be ignored in favor of the Google Storage
-// URLs.
+// Project and Path parameters in requests will be ignored in favor of the
+// Google Storage URLs.
 type Options struct {
 	// IndexURL is the Google Storage URL for the stream's index.
 	IndexURL string
@@ -204,7 +205,7 @@ func (s *storageImpl) Get(req storage.GetRequest, cb storage.GetCallback) error 
 	return nil
 }
 
-func (s *storageImpl) Tail(path types.StreamPath) ([]byte, types.MessageIndex, error) {
+func (s *storageImpl) Tail(project config.ProjectName, path types.StreamPath) ([]byte, types.MessageIndex, error) {
 	idx, err := s.getIndex()
 	if err != nil {
 		return nil, 0, err

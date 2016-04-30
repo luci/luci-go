@@ -15,22 +15,29 @@ import (
 func TestRowKey(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A row key, constructed from "a/b/+/c/d"`, t, func() {
+	Convey(`A row key, constructed from "test-project" and "a/b/+/c/d"`, t, func() {
+		project := "test-project"
 		path := "a/b/+/c/d"
-		rk := newRowKey(path, 1337, 42)
+
+		rk := newRowKey(project, path, 1337, 42)
 
 		Convey(`Shares a path with a row key from the same Path.`, func() {
-			So(rk.sharesPathWith(newRowKey(path, 2468, 0)), ShouldBeTrue)
+			So(rk.sharesPathWith(newRowKey(project, path, 2468, 0)), ShouldBeTrue)
 		})
 
-		for _, v := range []string{
-			"a/b/+/c",
-			"asdf",
+		for _, project := range []string{
 			"",
+			"other-test-project",
 		} {
-			Convey(fmt.Sprintf(`Does not share a path with: %q`, v), func() {
-				So(rk.sharesPathWith(newRowKey(v, 0, 0)), ShouldBeFalse)
-			})
+			for _, path := range []string{
+				"a/b/+/c",
+				"asdf",
+				"",
+			} {
+				Convey(fmt.Sprintf(`Does not share a path with project %q, path %q`, project, path), func() {
+					So(rk.sharesPathWith(newRowKey(project, path, 0, 0)), ShouldBeFalse)
+				})
+			}
 		}
 
 		Convey(`Can be encoded, then decoded into its fields.`, func() {
@@ -58,7 +65,7 @@ func TestRowKey(t *testing.T) {
 			1337,
 		} {
 			Convey(fmt.Sprintf(`Row key %d should be ascendingly sorted and parsable.`, i), func() {
-				rk := newRowKey("test", i, i)
+				rk := newRowKey("test-project", "test", i, i)
 
 				// Test that it encodes/decodes back to identity.
 				enc := rk.encode()

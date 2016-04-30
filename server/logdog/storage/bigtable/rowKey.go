@@ -107,10 +107,18 @@ type rowKey struct {
 }
 
 // newRowKey generates the row key matching a given entry path and index.
-func newRowKey(path string, index, count int64) *rowKey {
-	pathHash := sha256.Sum256([]byte(path))
+func newRowKey(project, path string, index, count int64) *rowKey {
+	h := sha256.New()
+
+	// TODO(dnj): Remove this conditional when non-project data is aged off.
+	if project != "" {
+		_, _ = h.Write([]byte(project))
+		_, _ = h.Write([]byte("/"))
+	}
+
+	_, _ = h.Write([]byte(path))
 	return &rowKey{
-		pathHash: pathHash[:],
+		pathHash: h.Sum(nil),
 		index:    index,
 		count:    count,
 	}
@@ -129,7 +137,7 @@ func decodeRowKey(v string) (*rowKey, error) {
 		return nil, errMalformedRowKey
 	}
 
-	// Decode encoded path hash.
+	// Decode encoded project/path hash.
 	var err error
 	rk := rowKey{}
 	rk.pathHash, err = base64.URLEncoding.DecodeString(hashEnc)
@@ -174,7 +182,8 @@ func (rk *rowKey) encode() (v string) {
 	return
 }
 
-// prefix returns the encoded path prefix for the row key.
+// prefix returns the encoded path prefix for the row key, which is the hash of
+// that row's project/path.
 func (rk *rowKey) pathPrefix() (v string) {
 	withRowKeyBuffers(func(rkb *rowKeyBuffers) {
 		rkb.appendPathPrefix(rk.pathHash)
