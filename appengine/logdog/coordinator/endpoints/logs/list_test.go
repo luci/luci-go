@@ -16,6 +16,7 @@ import (
 	"github.com/luci/luci-go/appengine/logdog/coordinator/hierarchy"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/server/auth"
@@ -53,9 +54,18 @@ func TestList(t *testing.T) {
 		svcStub.ServiceConfig.Coordinator.AdminAuthGroup = "test-administrators"
 		c = coordinator.WithServices(c, &svcStub)
 
-		s := New()
+		svc := New()
 
-		req := logdog.ListRequest{}
+		// di is a datastore bound to the test project namespace.
+		const project = "test-project"
+		if err := coordinator.WithProjectNamespace(&c, config.ProjectName(project)); err != nil {
+			panic(err)
+		}
+		di := ds.Get(c)
+
+		req := logdog.ListRequest{
+			Project: project,
+		}
 
 		// Install a set of stock log streams to query against.
 		streams := map[string]*coordinator.LogStream{}
@@ -72,12 +82,12 @@ func TestList(t *testing.T) {
 			desc.Prefix = string(prefix)
 
 			ls := ct.TestLogStream(c, desc)
-			if err := hierarchy.Put(ds.Get(c), ls.Path()); err != nil {
+			if err := hierarchy.Put(di, ls.Path()); err != nil {
 				panic(fmt.Errorf("failed to put log stream %d: %v", i, err))
 			}
 
 			if prefix.Segments()[0] == "purged" {
-				if err := hierarchy.MarkPurged(ds.Get(c), ls.Path(), true); err != nil {
+				if err := hierarchy.MarkPurged(di, ls.Path(), true); err != nil {
 					panic(fmt.Errorf("failed to purge log stream %d: %v", i, err))
 				}
 			}
@@ -85,17 +95,25 @@ func TestList(t *testing.T) {
 			descs[string(v)] = desc
 			streams[string(v)] = ls
 		}
-		ds.Get(c).Testable().CatchupIndexes()
+		di.Testable().CatchupIndexes()
 
 		Convey(`A default list request will return top-level entries.`, func() {
-			l, err := s.List(c, &req)
+			l, err := svc.List(c, &req)
 			So(err, ShouldBeRPCOK)
 			So(listPaths(l), ShouldResemble, []string{"other", "purged", "testing"})
 		})
 
+		Convey(`If the project does not exist, will return nothing.`, func() {
+			req.Project = "does-not-exist"
+
+			l, err := svc.List(c, &req)
+			So(err, ShouldBeRPCOK)
+			So(listPaths(l), ShouldResemble, []string{})
+		})
+
 		Convey(`Will skip elements if requested.`, func() {
 			req.Offset = int32(2)
-			l, err := s.List(c, &req)
+			l, err := svc.List(c, &req)
 			So(err, ShouldBeRPCOK)
 			So(listPaths(l), ShouldResemble, []string{"testing"})
 		})
@@ -110,7 +128,7 @@ func TestList(t *testing.T) {
 				{"testing/+", "testing/+/foo$", "testing/+/foo", "testing/+/foo/bar$"},
 				{},
 			} {
-				l, err := s.List(c, &req)
+				l, err := svc.List(c, &req)
 				So(err, ShouldBeRPCOK)
 				So(listPaths(l), ShouldResemble, round)
 
@@ -127,7 +145,7 @@ func TestList(t *testing.T) {
 		Convey(`A list including purged will fail for an unanthenticated user.`, func() {
 			req.IncludePurged = true
 
-			_, err := s.List(c, &req)
+			_, err := svc.List(c, &req)
 			So(err, ShouldBeRPCPermissionDenied)
 		})
 
@@ -139,7 +157,7 @@ func TestList(t *testing.T) {
 				req.Recursive = true
 				req.IncludePurged = true
 
-				l, err := s.List(c, &req)
+				l, err := svc.List(c, &req)
 				So(err, ShouldBeRPCOK)
 				So(listPaths(l), ShouldResemble, []string{
 					"other/+/baz$",

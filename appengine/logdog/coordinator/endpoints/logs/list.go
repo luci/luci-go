@@ -24,6 +24,16 @@ const (
 
 // List returns log stream paths rooted under the hierarchy.
 func (s *server) List(c context.Context, req *logdog.ListRequest) (*logdog.ListResponse, error) {
+	log.Fields{
+		"project":       req.Project,
+		"path":          req.Path,
+		"recursive":     req.Recursive,
+		"offset":        req.Offset,
+		"maxResults":    req.MaxResults,
+		"streamOnly":    req.StreamOnly,
+		"includePurged": req.IncludePurged,
+	}.Debugf(c, "Received List request.")
+
 	hr := hierarchy.Request{
 		Base:       req.Path,
 		Recursive:  req.Recursive,

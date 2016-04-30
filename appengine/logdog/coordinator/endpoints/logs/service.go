@@ -6,7 +6,12 @@ package logs
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/luci/luci-go/appengine/logdog/coordinator"
+	"github.com/luci/luci-go/appengine/logdog/coordinator/endpoints"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
+	"github.com/luci/luci-go/common/config"
+	"github.com/luci/luci-go/common/grpcutil"
+	log "github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
 
@@ -28,6 +33,22 @@ func newService(svr *server) logdog.LogsServer {
 	return &logdog.DecoratedLogs{
 		Service: svr,
 		Prelude: func(c context.Context, methodName string, req proto.Message) (context.Context, error) {
+			// Enter a datastore namespace based on the message type.
+			//
+			// We use a type switch here because this is a shared decorator. All user
+			// mesages must implement ProjectBoundMessage.
+			pbm, ok := req.(endpoints.ProjectBoundMessage)
+			if !ok {
+				log.Fields{
+					"methodName": methodName,
+				}.Errorf(c, "Request (%T) does not expose a project namespace.", req)
+				return nil, grpcutil.Internal
+			}
+
+			if err := coordinator.WithProjectNamespace(&c, config.ProjectName(pbm.GetMessageProject())); err != nil {
+				return nil, grpcutil.Internal
+			}
+
 			return c, nil
 		},
 	}

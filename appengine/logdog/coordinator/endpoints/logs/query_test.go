@@ -17,6 +17,7 @@ import (
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/google"
@@ -24,8 +25,6 @@ import (
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"golang.org/x/net/context"
-
-	"github.com/luci/luci-go/common/logging/gologger"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -67,10 +66,7 @@ func TestQuery(t *testing.T) {
 	Convey(`With a testing configuration, a Query request`, t, func() {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 		c = memory.Use(c)
-		c = gologger.StdConfig.Use(c)
 		c, fb := featureBreaker.FilterRDS(c, nil)
-
-		di := ds.Get(c)
 
 		// Add LogStream indexes.
 		//
@@ -102,8 +98,8 @@ func TestQuery(t *testing.T) {
 			}
 			indexes[i] = &ds.IndexDefinition{Kind: "LogStream", SortBy: cols}
 		}
-		di.Testable().AddIndexes(indexes...)
-		di.Testable().Consistent(true)
+		ds.Get(c).Testable().AddIndexes(indexes...)
+		ds.Get(c).Testable().Consistent(true)
 
 		fs := authtest.FakeState{}
 		c = auth.WithState(c, &fs)
@@ -116,8 +112,17 @@ func TestQuery(t *testing.T) {
 		var svrBase server
 		svr := newService(&svrBase)
 
+		// di is a datastore bound to the test project namespace.
+		const project = "test-project"
+		if err := coordinator.WithProjectNamespace(&c, config.ProjectName(project)); err != nil {
+			panic(err)
+		}
+		di := ds.Get(c)
+
+		// Stock query request, will be modified by each test.
 		req := logdog.QueryRequest{
-			Tags: map[string]string{},
+			Project: project,
+			Tags:    map[string]string{},
 		}
 
 		// Install a set of stock log streams to query against.
@@ -187,7 +192,7 @@ func TestQuery(t *testing.T) {
 				}
 			}
 
-			if err := ds.Get(c).Put(ls); err != nil {
+			if err := di.Put(ls); err != nil {
 				panic(fmt.Errorf("failed to put log stream %d: %v", i, err))
 			}
 
@@ -216,6 +221,14 @@ func TestQuery(t *testing.T) {
 			resp, err := svr.Query(c, &req)
 			So(err, ShouldBeRPCOK)
 			So(resp, shouldHaveLogPaths, streamPaths)
+		})
+
+		Convey(`An empty query to a different project return no log streams.`, func() {
+			req.Project = "does-not-exist"
+
+			resp, err := svr.Query(c, &req)
+			So(err, ShouldBeRPCOK)
+			So(resp, shouldHaveLogPaths)
 		})
 
 		Convey(`An empty query will include purged streams if admin.`, func() {
