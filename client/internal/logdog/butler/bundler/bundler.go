@@ -13,6 +13,7 @@ import (
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
 	"github.com/luci/luci-go/common/cancelcond"
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
@@ -28,6 +29,13 @@ type Config struct {
 	// Source is the bundle source string to use. This can be empty if there is no
 	// source information to include.
 	Source string
+
+	// Project is the project to use.
+	Project config.ProjectName
+	// Prefix is the common prefix for this set of streams.
+	Prefix types.StreamName
+	// Secret is the prefix secret for this set of streams.
+	Secret []byte
 
 	// MaxBufferedBytes is the maximum number of bytes to buffer in memory per
 	// stream.
@@ -97,6 +105,9 @@ func (b *Bundler) Register(p streamproto.Properties) (Stream, error) {
 		return nil, err
 	}
 
+	// Enforce that the log stream descriptor's Prefix is empty.
+	p.Prefix = ""
+
 	// Construct a parser for this stream.
 	c := streamConfig{
 		name: p.Name,
@@ -116,12 +127,6 @@ func (b *Bundler) Register(p streamproto.Properties) (Stream, error) {
 	c.parser, err = newParser(&p, &b.prefixCounter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create stream parser: %s", err)
-	}
-
-	// Generate a secret for this Stream instance.
-	c.template.Secret, err = types.NewPrefixSecret()
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate stream secret: %s", err)
 	}
 
 	b.streamsLock.Lock()
@@ -190,6 +195,9 @@ func (b *Bundler) makeBundles() {
 			template: logpb.ButlerLogBundle{
 				Source:    b.c.Source,
 				Timestamp: google.NewTimestamp(b.getClock().Now()),
+				Project:   string(b.c.Project),
+				Prefix:    string(b.c.Prefix),
+				Secret:    b.c.Secret,
 			},
 		}
 		var oldestContentTime time.Time

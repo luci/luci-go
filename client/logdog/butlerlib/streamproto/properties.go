@@ -41,7 +41,7 @@ type Properties struct {
 // create a Butler stream.
 //
 // It skips stream Prefix validation and instead asserts that it is empty, as
-// it should not be populatated when Properties are defined.
+// it should not be populated when Properties are defined.
 func (p *Properties) Validate() error {
 	if err := p.LogStreamDescriptor.Validate(false); err != nil {
 		return err

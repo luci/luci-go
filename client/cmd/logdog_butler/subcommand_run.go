@@ -346,6 +346,7 @@ func (cmd *runCommandRun) loadJSONArgs() ([]string, error) {
 // to the environment.
 func (cmd *runCommandRun) updateEnvironment(e environ, a *application) {
 	e.set(bootstrap.EnvStreamPrefix, string(a.butler.Prefix))
+	e.set(bootstrap.EnvStreamProject, string(a.butler.Project))
 
 	// Set stream server path (if applicable)
 	if cmd.streamServerURI != "" {

@@ -14,11 +14,11 @@ const (
 	// processes.
 	EnvStreamServerPath = "LOGDOG_STREAM_SERVER_PATH"
 
+	// EnvStreamProject is the enviornment variable set to the configured stream
+	// project name.
+	EnvStreamProject = "LOGDOG_STREAM_PROJECT"
+
 	// EnvStreamPrefix is the environment variable set to the configured
-	// stream name prefix. command-line stream name prefix.
-	//
-	// Since this name is prepended to streams by the Butler, it is not possible
-	// for subprocesses to know the actual stream name that Butler will use for
-	// their streams without this information.
+	// stream name prefix.
 	EnvStreamPrefix = "LOGDOG_STREAM_PREFIX"
 )

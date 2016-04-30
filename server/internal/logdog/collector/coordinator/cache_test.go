@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
@@ -76,6 +77,7 @@ func TestStreamStateCache(t *testing.T) {
 		tcc := testCoordinator{}
 
 		st := LogStreamState{
+			Project:       "test-project",
 			Path:          "foo/+/bar",
 			TerminalIndex: -1,
 		}
@@ -166,6 +168,7 @@ func TestStreamStateCache(t *testing.T) {
 				terminalErrC := make(chan error)
 				go func() {
 					terminalErrC <- ssc.TerminateStream(c, &LogStreamState{
+						Project:       st.Project,
 						Path:          st.Path,
 						TerminalIndex: 1337,
 					})
@@ -244,6 +247,30 @@ func TestStreamStateCache(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(tcc.calls, ShouldEqual, 2)
 				})
+			})
+
+			Convey(`Different projects with the sme stream name will not conflict.`, func() {
+				var projects = []config.ProjectName{"", "foo", "bar"}
+
+				for i, p := range projects {
+					st.Project = p
+					s, err := ssc.RegisterStream(c, &st, nil)
+					So(err, ShouldBeNil)
+
+					s.TerminalIndex = types.MessageIndex(i)
+					So(ssc.TerminateStream(c, s), ShouldBeNil)
+				}
+				So(tcc.calls, ShouldEqual, len(projects)*2)
+
+				for i, p := range projects {
+					st.Project = p
+					st.TerminalIndex = -1
+
+					s, err := ssc.RegisterStream(c, &st, nil)
+					So(err, ShouldBeNil)
+					So(s.TerminalIndex, ShouldEqual, types.MessageIndex(i))
+				}
+				So(tcc.calls, ShouldEqual, len(projects)*2)
 			})
 		})
 

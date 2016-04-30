@@ -105,6 +105,8 @@ func (a *application) addFlags(fs *flag.FlagSet) {
 
 	a.maxBufferAge = clockflag.Duration(butler.DefaultMaxBufferAge)
 
+	fs.Var(&a.butler.Project, "project",
+		"The log prefix's project name (required).")
 	fs.Var(&a.butler.Prefix, "prefix",
 		"Prefix to apply to all stream names.")
 	fs.Var(&a.outputConfig, "output",
@@ -172,10 +174,16 @@ func (a *application) Main(runFunc func(b *butler.Butler) error) error {
 	if a.cpuProfile != "" {
 		f, err := os.Create(a.cpuProfile)
 		if err != nil {
-			return fmt.Errorf("Failed to create CPU profile output: %v", err)
+			return fmt.Errorf("failed to create CPU profile output: %v", err)
 		}
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
+	}
+
+	// Generate a prefix secret for this Butler session.
+	var err error
+	if a.butler.Secret, err = types.NewPrefixSecret(); err != nil {
+		return fmt.Errorf("failed to generate prefix secret: %s", err)
 	}
 
 	// Instantiate our Butler.
@@ -279,6 +287,14 @@ func mainImpl(ctx context.Context, argv []string) int {
 	}
 
 	a.Context = logConfig.Set(a.Context)
+
+	// TODO(dnj): Force all invocations to supply a Project.
+	if a.butler.Project != "" {
+		if err := a.butler.Project.Validate(); err != nil {
+			log.WithError(err).Errorf(a, "Invalid project (-project).")
+			return configErrorReturnCode
+		}
+	}
 
 	// Validate our Prefix; generate a user prefix if one was not supplied.
 	prefix := a.butler.Prefix

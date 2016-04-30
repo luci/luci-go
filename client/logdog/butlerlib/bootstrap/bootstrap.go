@@ -10,6 +10,7 @@ import (
 
 	"github.com/luci/luci-go/client/environ"
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamclient"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logdog/types"
 )
 
@@ -19,6 +20,8 @@ var ErrNotBootstrapped = errors.New("not bootstrapped")
 
 // Bootstrap contains information about the
 type Bootstrap struct {
+	// Project is the Butler instance project name.
+	Project config.ProjectName
 	// Prefix is the Butler instance prefix.
 	Prefix types.StreamName
 
@@ -35,10 +38,14 @@ func getFromEnv(env environ.Environment, reg *streamclient.Registry) (*Bootstrap
 	}
 
 	bs := &Bootstrap{
-		Prefix: types.StreamName(prefix),
+		Prefix:  types.StreamName(prefix),
+		Project: config.ProjectName(env[EnvStreamProject]),
 	}
 	if err := bs.Prefix.Validate(); err != nil {
-		return nil, fmt.Errorf("bootstrap: failed to validate prefix [%s]: %s", prefix, err)
+		return nil, fmt.Errorf("bootstrap: failed to validate prefix %q: %s", prefix, err)
+	}
+	if err := bs.Project.Validate(); err != nil {
+		return nil, fmt.Errorf("bootstrap: failed to validate project %q: %s", bs.Project, err)
 	}
 
 	// If we have a stream server attached; instantiate a stream Client.

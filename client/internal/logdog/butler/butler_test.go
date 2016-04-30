@@ -228,8 +228,10 @@ func TestConfig(t *testing.T) {
 			maxSize: 1024,
 		}
 		conf := Config{
-			Output: &to,
-			Prefix: "unit/test",
+			Output:  &to,
+			Prefix:  "unit/test",
+			Project: "test-project",
+			Secret:  types.PrefixSecret(bytes.Repeat([]byte{0x55}, types.PrefixSecretLength)),
 		}
 
 		Convey(`Will validate.`, func() {
@@ -243,7 +245,12 @@ func TestConfig(t *testing.T) {
 
 		Convey(`Will not validate with an invalid Prefix.`, func() {
 			conf.Prefix = "!!!!invalid!!!!"
-			So(conf.Validate(), ShouldErrLike, "invalid Prefix")
+			So(conf.Validate(), ShouldErrLike, "invalid prefix")
+		})
+
+		Convey(`Will not validate with an invalid Project.`, func() {
+			conf.Project = "!!!!invalid!!!!"
+			So(conf.Validate(), ShouldErrLike, "invalid project")
 		})
 	})
 }
@@ -274,6 +281,8 @@ func TestButler(t *testing.T) {
 			OutputWorkers: 1,
 			BufferLogs:    false,
 			Prefix:        "unit/test",
+			Project:       "test-project",
+			Secret:        types.PrefixSecret(bytes.Repeat([]byte{0x55}, types.PrefixSecretLength)),
 			TeeStdout:     &teeStdout,
 			TeeStderr:     &teeStderr,
 		}
