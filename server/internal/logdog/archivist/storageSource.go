@@ -6,6 +6,7 @@ package archivist
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
@@ -20,6 +21,7 @@ type storageSource struct {
 	context.Context
 
 	st            storage.Storage    // the storage instance to read from
+	project       config.ProjectName // the path of the log stream
 	path          types.StreamPath   // the path of the log stream
 	terminalIndex types.MessageIndex // if >= 0, discard logs beyond this
 
@@ -32,8 +34,9 @@ func (s *storageSource) bufferEntries(start types.MessageIndex) error {
 	bytes := 0
 
 	req := storage.GetRequest{
-		Path:  s.path,
-		Index: start,
+		Project: s.project,
+		Path:    s.path,
+		Index:   start,
 	}
 	return s.st.Get(req, func(idx types.MessageIndex, d []byte) bool {
 		le := logpb.LogEntry{}
