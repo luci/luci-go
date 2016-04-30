@@ -5,6 +5,11 @@
 package coordinator
 
 import (
+	"fmt"
+
+	"github.com/luci/gae/service/info"
+	"github.com/luci/luci-go/common/config"
+	log "github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
 
@@ -24,4 +29,64 @@ func GetServices(c context.Context) Services {
 		panic("no Services instance is installed")
 	}
 	return s
+}
+
+// WithProjectNamespace sets the current namespace to the project name.
+//
+// It will fail if either the project name or the project's namespace is
+// invalid. In the event of an error, the supplied Context will be not be
+// modified or invalidated.
+func WithProjectNamespace(c *context.Context, project config.ProjectName) error {
+	// TODO(dnj): REQUIRE this to be non-empty once namespacing is mandatory.
+	if project == "" {
+		log.Debugf(*c, "Using default namespace.")
+		return nil
+	}
+
+	if err := project.Validate(); err != nil {
+		log.Fields{
+			log.ErrorKey: err,
+			"project":    project,
+		}.Errorf(*c, "Project name is invalid.")
+		return err
+	}
+
+	pns := ProjectNamespace(project)
+	nc, err := info.Get(*c).Namespace(pns)
+	if err != nil {
+		log.Fields{
+			log.ErrorKey: err,
+			"project":    project,
+			"namespace":  pns,
+		}.Errorf(*c, "Failed to set namespace.")
+		return err
+	}
+
+	log.Fields{
+		"project": project,
+	}.Debugf(*c, "Using project namespace.")
+	*c = nc
+	return nil
+}
+
+// Project returns the current project installed in the supplied Context's
+// namespace.
+//
+// This function is called with the expectation that the Context is in a
+// namespace conforming to ProjectNamespace. If this is not the case, this
+// method will panic.
+func Project(c context.Context) config.ProjectName {
+	ns, _ := info.Get(c).GetNamespace()
+
+	// TODO(dnj): Remove the empty namespace/project exception once we no longer
+	// support that.
+	if ns == "" {
+		return ""
+	}
+
+	project := ProjectFromNamespace(ns)
+	if project != "" {
+		return project
+	}
+	panic(fmt.Errorf("current namespace %q does not begin with project namespace prefix (%q)", ns, projectNamespacePrefix))
 }

@@ -41,8 +41,9 @@ func (p *pubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTa
 
 	return retry.Retry(c, retry.Default, func() error {
 		log.Fields{
-			"path": t.Path,
-			"key":  t.Key,
+			"project": t.Project,
+			"path":    t.Path,
+			"key":     t.Key,
 		}.Infof(c, "Publishing archival message for stream.")
 
 		_, err := p.topic.Publish(c, &msg)

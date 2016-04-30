@@ -169,6 +169,26 @@ func (gcfg *GlobalConfig) LoadConfig(c context.Context) (*svcconfig.Config, erro
 	return &cc, nil
 }
 
+// Projects lists the registered LogDog projects.
+func (gcfg *GlobalConfig) Projects(c context.Context) ([]string, error) {
+	projects, err := config.Get(c).GetProjects()
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to list 'luci-config' projects.")
+		return nil, err
+	}
+
+	// TODO(dnj): Filter this list to projects with active LogDog configs, once we
+	// move to project-specific configurations.
+
+	ids := make([]string, len(projects))
+	for i, p := range projects {
+		ids[i] = p.ID
+	}
+
+	// TODO(dnj): Restrict this by actual namespaces in datastore.
+	return ids, nil
+}
+
 // validateConfig checks the supplied Coordinator config object to ensure that
 // it meets a minimum configuration standard expected by our endpoitns and
 // handlers.

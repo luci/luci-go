@@ -7,44 +7,28 @@ package module
 import (
 	"net/http"
 
+	"golang.org/x/net/context"
+
 	"github.com/julienschmidt/httprouter"
-	gaeauthServer "github.com/luci/luci-go/appengine/gaeauth/server"
-	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
-	"github.com/luci/luci-go/appengine/logdog/coordinator/backend"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	"github.com/luci/luci-go/appengine/tumble"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/middleware"
 
 	// Include mutations package so its Mutations will register with tumble via
 	// init().
 	_ "github.com/luci/luci-go/appengine/logdog/coordinator/mutations"
 )
 
-func authenticator(scopes ...string) auth.Authenticator {
-	return auth.Authenticator{
-		&gaeauthServer.OAuth2Method{Scopes: scopes},
-		gaeauthServer.CookieAuth,
-		&gaeauthServer.InboundAppIDAuthMethod{},
-	}
-}
-
-// base is the root of the middleware chain.
-func base(h middleware.Handler) httprouter.Handle {
-	a := authenticator(gaeauthServer.EmailScope)
-	h = auth.Use(h, a)
-	h = config.WithConfig(h)
-	h = coordinator.WithProdServices(h)
-	return gaemiddleware.BaseProd(h)
-}
-
 func init() {
-	b := backend.Backend{}
-	tmb := tumble.Service{}
+	tmb := tumble.Service{
+		Middleware: func(c context.Context) context.Context {
+			c = config.UseConfig(c)
+			c = coordinator.UseProdServices(c)
+			return c
+		},
+	}
 
 	router := httprouter.New()
-	b.InstallHandlers(router, base)
 	tmb.InstallHandlers(router)
 
 	http.Handle("/", router)

@@ -59,9 +59,15 @@ type Services interface {
 // instance into its Context.
 func WithProdServices(h middleware.Handler) middleware.Handler {
 	return func(c context.Context, rw http.ResponseWriter, r *http.Request, params httprouter.Params) {
-		c = WithServices(c, &prodServices{})
+		c = UseProdServices(c)
 		h(c, rw, r, params)
 	}
+}
+
+// UseProdServices installs production Services instance into the supplied
+// Context.
+func UseProdServices(c context.Context) context.Context {
+	return WithServices(c, &prodServices{})
 }
 
 // Request is a Service context for a given request.

@@ -619,8 +619,8 @@ func TestPrepareTopic(t *testing.T) {
 		pubSubCalls := 0
 		e.configureTopic = func(c context.Context, topic, sub, pushURL, publisher string) error {
 			pubSubCalls++
-			ctx.So(topic, ShouldEqual, "projects/dev~app/topics/dev-cron+noop+some~publisher.com")
-			ctx.So(sub, ShouldEqual, "projects/dev~app/subscriptions/dev-cron+noop+some~publisher.com")
+			ctx.So(topic, ShouldEqual, "projects/app/topics/dev-cron+noop+some~publisher.com")
+			ctx.So(sub, ShouldEqual, "projects/app/subscriptions/dev-cron+noop+some~publisher.com")
 			ctx.So(pushURL, ShouldEqual, "") // pull on dev server
 			ctx.So(publisher, ShouldEqual, "some@publisher.com")
 			return nil
@@ -640,7 +640,7 @@ func TestPrepareTopic(t *testing.T) {
 		// Once.
 		topic, token, err := ctl.PrepareTopic("some@publisher.com")
 		So(err, ShouldBeNil)
-		So(topic, ShouldEqual, "projects/dev~app/topics/dev-cron+noop+some~publisher.com")
+		So(topic, ShouldEqual, "projects/app/topics/dev-cron+noop+some~publisher.com")
 		So(token, ShouldNotEqual, "")
 		So(pubSubCalls, ShouldEqual, 1)
 

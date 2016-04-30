@@ -26,7 +26,7 @@ func TestConfigureAuthService(t *testing.T) {
 
 		So(ConfigureAuthService(c, "http://base_url", "http://auth-service"), ShouldBeNil)
 		So(srv.Calls, ShouldResemble, []string{
-			`EnsureSubscription "projects/dev~app/subscriptions/dev-app-server-v1+auth-service" ""`,
+			`EnsureSubscription "projects/app/subscriptions/dev-app-server-v1+auth-service" ""`,
 		})
 
 		info, err := GetLatestSnapshotInfo(c)
@@ -50,7 +50,7 @@ func TestConfigureAuthService(t *testing.T) {
 		srv.Calls = nil
 		So(ConfigureAuthService(c, "http://base_url", "http://auth-service"), ShouldBeNil)
 		So(srv.Calls, ShouldResemble, []string{
-			`EnsureSubscription "projects/dev~app/subscriptions/dev-app-server-v1+auth-service" ""`,
+			`EnsureSubscription "projects/app/subscriptions/dev-app-server-v1+auth-service" ""`,
 		})
 	})
 
@@ -71,9 +71,9 @@ func TestConfigureAuthService(t *testing.T) {
 		})
 
 		So(srv.Calls, ShouldResemble, []string{
-			`EnsureSubscription "projects/dev~app/subscriptions/dev-app-server-v1+auth-service-1" ""`,
-			`EnsureSubscription "projects/dev~app/subscriptions/dev-app-server-v1+auth-service-2" ""`,
-			`DeleteSubscription "projects/dev~app/subscriptions/dev-app-server-v1+auth-service-1"`,
+			`EnsureSubscription "projects/app/subscriptions/dev-app-server-v1+auth-service-1" ""`,
+			`EnsureSubscription "projects/app/subscriptions/dev-app-server-v1+auth-service-2" ""`,
+			`DeleteSubscription "projects/app/subscriptions/dev-app-server-v1+auth-service-1"`,
 		})
 	})
 
@@ -91,8 +91,8 @@ func TestConfigureAuthService(t *testing.T) {
 		So(info, ShouldBeNil)
 
 		So(srv.Calls, ShouldResemble, []string{
-			`EnsureSubscription "projects/dev~app/subscriptions/dev-app-server-v1+auth-service-1" ""`,
-			`DeleteSubscription "projects/dev~app/subscriptions/dev-app-server-v1+auth-service-1"`,
+			`EnsureSubscription "projects/app/subscriptions/dev-app-server-v1+auth-service-1" ""`,
+			`DeleteSubscription "projects/app/subscriptions/dev-app-server-v1+auth-service-1"`,
 		})
 	})
 }

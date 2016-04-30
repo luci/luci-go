@@ -58,8 +58,9 @@ func (p *ArchivalParams) PublishTask(c context.Context, ap ArchivalPublisher, ls
 
 	path := string(ls.Path())
 	msg := logdog.ArchiveTask{
-		Path: path,
-		Key:  p.createArchivalKey(path),
+		Project: string(Project(c)),
+		Path:    path,
+		Key:     p.createArchivalKey(path),
 	}
 	if p.SettleDelay > 0 {
 		msg.SettleDelay = google.NewDuration(p.SettleDelay)

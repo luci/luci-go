@@ -67,3 +67,10 @@ func (ap *ArchivalPublisher) StreamNames() []string {
 	sort.Strings(taskStreams)
 	return taskStreams
 }
+
+// Clear clears recorded tasks.
+func (ap *ArchivalPublisher) Clear() {
+	ap.Lock()
+	defer ap.Unlock()
+	ap.tasks = nil
+}

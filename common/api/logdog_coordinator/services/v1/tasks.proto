@@ -32,4 +32,7 @@ message ArchiveTask {
   // The task's age can be calculated by subtracting its lease expiration time
   // (leaseTimestamp) from its enqueued timestamp (enqueueTimestamp).
   google.protobuf.Duration complete_period = 4;
+
+  // The name of the project that this stream is bound to.
+  string project = 5;
 }
