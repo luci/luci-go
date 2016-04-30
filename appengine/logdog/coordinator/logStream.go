@@ -356,8 +356,8 @@ func (s *LogStream) validateImpl(enforceHashID bool) error {
 	if err := types.StreamName(s.Name).Validate(); err != nil {
 		return fmt.Errorf("invalid name: %s", err)
 	}
-	if len(s.Secret) != types.StreamSecretLength {
-		return fmt.Errorf("invalid secret length (%d != %d)", len(s.Secret), types.StreamSecretLength)
+	if err := types.PrefixSecret(s.Secret).Validate(); err != nil {
+		return fmt.Errorf("invalid prefix secret: %s", err)
 	}
 	if s.ContentType == "" {
 		return errors.New("empty content type")

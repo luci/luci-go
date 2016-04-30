@@ -98,7 +98,7 @@ func TestLogStream(t *testing.T) {
 			Name:          "log/stream",
 			State:         LSStreaming,
 			TerminalIndex: -1,
-			Secret:        bytes.Repeat([]byte{0x6F}, types.StreamSecretLength),
+			Secret:        bytes.Repeat([]byte{0x6F}, types.PrefixSecretLength),
 			Created:       now.UTC(),
 			ContentType:   string(types.ContentTypeText),
 		}
@@ -155,7 +155,7 @@ func TestLogStream(t *testing.T) {
 				})
 				Convey(`Without a valid stream secret`, func() {
 					ls.Secret = nil
-					So(ls.Validate(), ShouldErrLike, "invalid secret length")
+					So(ls.Validate(), ShouldErrLike, "invalid prefix secret length")
 				})
 				Convey(`Without a valid content type`, func() {
 					ls.ContentType = ""

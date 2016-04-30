@@ -4,6 +4,18 @@
 
 package logdog
 
+// GetMessageProject implements ProjectBoundMessage.
+func (ar *RegisterStreamRequest) GetMessageProject() string { return ar.Project }
+
+// GetMessageProject implements ProjectBoundMessage.
+func (ar *LoadStreamRequest) GetMessageProject() string { return ar.Project }
+
+// GetMessageProject implements ProjectBoundMessage.
+func (ar *TerminateStreamRequest) GetMessageProject() string { return ar.Project }
+
+// GetMessageProject implements ProjectBoundMessage.
+func (ar *ArchiveStreamRequest) GetMessageProject() string { return ar.Project }
+
 // Complete returns true if the archive request expresses that the archived
 // log stream was complete.
 //

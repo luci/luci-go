@@ -19,6 +19,7 @@ import (
 
 func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamRequest) (*google.Empty, error) {
 	log.Fields{
+		"project":       req.Project,
 		"path":          req.Path,
 		"complete":      req.Complete(),
 		"terminalIndex": req.TerminalIndex,

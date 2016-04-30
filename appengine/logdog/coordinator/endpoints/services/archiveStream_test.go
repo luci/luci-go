@@ -30,6 +30,9 @@ func TestArchiveStream(t *testing.T) {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
 		c = memory.Use(c)
 
+		fs := authtest.FakeState{}
+		c = auth.WithState(c, &fs)
+
 		svcStub := ct.Services{}
 		svcStub.InitConfig()
 		svcStub.ServiceConfig.Coordinator.ServiceAuthGroup = "test-services"
@@ -38,9 +41,6 @@ func TestArchiveStream(t *testing.T) {
 		svr := New()
 
 		now := ds.RoundTime(tc.Now().UTC())
-
-		fs := authtest.FakeState{}
-		c = auth.WithState(c, &fs)
 
 		// Register a testing log stream with an archive tasked.
 		ls := ct.TestLogStream(c, ct.TestLogStreamDescriptor(c, "foo"))

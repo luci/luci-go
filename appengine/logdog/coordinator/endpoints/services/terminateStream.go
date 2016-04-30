@@ -25,6 +25,7 @@ import (
 // TerminateStream is an idempotent stream state terminate operation.
 func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamRequest) (*google.Empty, error) {
 	log.Fields{
+		"project":       req.Project,
 		"path":          req.Path,
 		"terminalIndex": req.TerminalIndex,
 	}.Infof(c, "Request to terminate log stream.")

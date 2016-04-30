@@ -6,31 +6,43 @@ package types
 
 import (
 	"crypto/rand"
-	"errors"
+	"fmt"
 )
 
 const (
-	// StreamSecretLength is the size, in bytes, of the stream secret.
+	// PrefixSecretLength is the size, in bytes, of the stream secret.
 	//
 	// This value was chosen such that it is:
 	// - Sufficiently large to avoid collisions.
 	// - Can be expressed as a Base64 string without ugly padding.
-	StreamSecretLength = 36
+	PrefixSecretLength = 36
 )
 
-// StreamSecret is the stream secret value. This is a Base64-encoded secret
+// PrefixSecret is the stream secret value. This is a Base64-encoded secret
 // value.
-type StreamSecret []byte
+type PrefixSecret []byte
 
-// NewStreamSecret generates a new, default-length secret parameter.
-func NewStreamSecret() (StreamSecret, error) {
-	buf := make([]byte, StreamSecretLength)
-	count, err := rand.Read(buf)
-	if err != nil {
+// NewPrefixSecret generates a new, default-length secret parameter.
+func NewPrefixSecret() (PrefixSecret, error) {
+	buf := make([]byte, PrefixSecretLength)
+	if _, err := rand.Read(buf); err != nil {
 		return nil, err
 	}
-	if count != len(buf) {
-		return nil, errors.New("streamsecret: Generated secret with invalid size")
+
+	value := PrefixSecret(buf)
+	if err := value.Validate(); err != nil {
+		panic(err)
 	}
-	return StreamSecret(buf), nil
+	return value, nil
+}
+
+// Validate confirms that this prefix secret is conformant.
+//
+// Note that this does not scan the byte contents of the secret for any
+// security-related parameters.
+func (s PrefixSecret) Validate() error {
+	if len(s) != PrefixSecretLength {
+		return fmt.Errorf("invalid prefix secret length (%d != %d)", len(s), PrefixSecretLength)
+	}
+	return nil
 }

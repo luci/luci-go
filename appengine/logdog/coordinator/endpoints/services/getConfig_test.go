@@ -28,15 +28,15 @@ func TestGetConfig(t *testing.T) {
 		c := memory.Use(context.Background())
 		c = settings.Use(c, settings.New(&gaesettings.Storage{}))
 
+		fs := authtest.FakeState{}
+		c = auth.WithState(c, &fs)
+
 		svcStub := ct.Services{}
 		svcStub.InitConfig()
 		svcStub.ServiceConfig.Coordinator.ServiceAuthGroup = "test-services"
 		c = coordinator.WithServices(c, &svcStub)
 
 		svr := New()
-
-		fs := authtest.FakeState{}
-		c = auth.WithState(c, &fs)
 
 		Convey(`Returns Forbidden error if not a service.`, func() {
 			_, err := svr.GetConfig(c, nil)

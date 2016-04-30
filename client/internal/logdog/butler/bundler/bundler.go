@@ -119,7 +119,7 @@ func (b *Bundler) Register(p streamproto.Properties) (Stream, error) {
 	}
 
 	// Generate a secret for this Stream instance.
-	c.template.Secret, err = types.NewStreamSecret()
+	c.template.Secret, err = types.NewPrefixSecret()
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate stream secret: %s", err)
 	}

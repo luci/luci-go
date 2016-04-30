@@ -27,15 +27,17 @@ message GetConfigResponse {
 // RegisterStreamRequest is the set of caller-supplied data for the
 // RegisterStream Coordinator service endpoint.
 message RegisterStreamRequest {
+  // The log stream's project.
+  string project = 1;
   // The log stream's path.
-  string path = 1;
+  string path = 2;
   // The log stream's secret.
-  bytes secret = 2;
+  bytes secret = 3;
 
   // The protobuf version string for this stream.
-  string proto_version = 3;
+  string proto_version = 4;
   // The serialized LogStreamDescriptor protobuf for this stream.
-  logpb.LogStreamDescriptor desc = 4;
+  logpb.LogStreamDescriptor desc = 5;
 }
 
 // The response message for the RegisterStream RPC.
@@ -54,11 +56,13 @@ message RegisterStreamResponse {
 
 // LoadStreamRequest loads the current state of a log stream.
 message LoadStreamRequest {
+  // The log stream's project.
+  string project = 1;
   // The log stream's path.
-  string path = 1;
+  string path = 2;
 
   // If true, include the log stream descriptor.
-  bool desc = 2;
+  bool desc = 3;
 }
 
 // The response message for the LoadStream RPC.
@@ -81,30 +85,34 @@ message LoadStreamResponse {
 // TerminateStreamRequest is the set of caller-supplied data for the
 // TerminateStream service endpoint.
 message TerminateStreamRequest {
+  // The log stream's project.
+  string project = 1;
   // The log stream's path.
-  string path = 1;
+  string path = 2;
   // The log stream's secret.
-  bytes secret = 2;
+  bytes secret = 3;
 
   // The terminal index of the stream.
-  int64 terminal_index = 3;
+  int64 terminal_index = 4;
 }
 
 // ArchiveStreamRequest is the set of caller-supplied data for the ArchiveStream
 // service endpoint.
 message ArchiveStreamRequest {
+  // The log stream's project.
+  string project = 1;
   // The path of the log stream that was archived.
-  string path = 1;
+  string path = 2;
   // The number of log entries that were archived.
-  int64 log_entry_count = 2;
+  int64 log_entry_count = 3;
   // The highest log stream index that was archived.
-  int64 terminal_index = 3;
+  int64 terminal_index = 4;
   // If not empty, there was an archival error.
   //
   // This field serves to indicate that an error occured (being non-empty) and
   // to supply an value that will show up in the Coordinator ArchiveStream
   // endpoint logs.
-  string error = 4;
+  string error = 5;
 
   // The archive URL of the log stream's stream data.
   string stream_url = 10;

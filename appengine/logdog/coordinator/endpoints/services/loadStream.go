@@ -19,20 +19,22 @@ import (
 
 // LoadStream loads the log stream state.
 func (s *server) LoadStream(c context.Context, req *logdog.LoadStreamRequest) (*logdog.LoadStreamResponse, error) {
+	log.Fields{
+		"project": req.Project,
+		"path":    req.Path,
+	}.Infof(c, "Loading log stream state.")
+
 	path := types.StreamPath(req.Path)
 	if err := path.Validate(); err != nil {
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid path (%s): %s", path, err)
 	}
-	log.Fields{
-		"path": path,
-	}.Infof(c, "Loading log stream state.")
 
 	ls := coordinator.LogStreamFromPath(path)
 	switch err := ds.Get(c).Get(ls); err {
 	case nil:
 		// The log stream loaded successfully.
 		resp := logdog.LoadStreamResponse{
-			State: loadLogStreamState(ls),
+			State: loadLogStreamState(coordinator.Project(c), ls),
 		}
 		if req.Desc {
 			resp.Desc = ls.Descriptor

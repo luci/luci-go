@@ -158,7 +158,7 @@ func TestCollector(t *testing.T) {
 
 					// Push another bundle with a different secret.
 					be := bb.genBundleEntry("foo/+/bar", 4, 3, 4)
-					be.Secret = bytes.Repeat([]byte{0xAA}, types.StreamSecretLength)
+					be.Secret = bytes.Repeat([]byte{0xAA}, types.PrefixSecretLength)
 					be.TerminalIndex = 1337
 					bb.addBundleEntry(be)
 					bb.addFullStream("foo/+/baz", 3)

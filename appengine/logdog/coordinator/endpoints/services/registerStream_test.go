@@ -41,6 +41,9 @@ func TestRegisterStream(t *testing.T) {
 		tt.EnableDelayedMutations(c)
 		ds.Get(c).Testable().Consistent(true)
 
+		fs := authtest.FakeState{}
+		c = auth.WithState(c, &fs)
+
 		var tap ct.ArchivalPublisher
 		svcStub := ct.Services{
 			AP: func() (coordinator.ArchivalPublisher, error) {
@@ -54,9 +57,6 @@ func TestRegisterStream(t *testing.T) {
 
 		svr := New()
 
-		fs := authtest.FakeState{}
-		c = auth.WithState(c, &fs)
-
 		Convey(`Returns Forbidden error if not a service.`, func() {
 			_, err := svr.RegisterStream(c, &logdog.RegisterStreamRequest{})
 			So(err, ShouldBeRPCPermissionDenied)
@@ -66,7 +66,7 @@ func TestRegisterStream(t *testing.T) {
 			fs.IdentityGroups = []string{"test-services"}
 
 			desc := ct.TestLogStreamDescriptor(c, "foo/bar")
-			secret := bytes.Repeat([]byte{0xAA}, types.StreamSecretLength)
+			secret := bytes.Repeat([]byte{0xAA}, types.PrefixSecretLength)
 
 			Convey(`A stream registration request for "testing/+/foo/bar"`, func() {
 				req := logdog.RegisterStreamRequest{
@@ -196,7 +196,7 @@ func TestRegisterStream(t *testing.T) {
 					Convey(`Will not register a wrong-sized secret.`, func() {
 						req.Secret = nil
 						_, err := svr.RegisterStream(c, &req)
-						So(err, ShouldBeRPCInvalidArgument, "Invalid secret length")
+						So(err, ShouldBeRPCInvalidArgument, "Invalid prefix secret")
 					})
 
 					Convey(`Will not register with an empty descriptor.`, func() {

@@ -15,6 +15,7 @@ import (
 	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
@@ -48,8 +49,9 @@ func matchesLogStream(r *logdog.RegisterStreamRequest, ls *coordinator.LogStream
 	return nil
 }
 
-func loadLogStreamState(ls *coordinator.LogStream) *logdog.LogStreamState {
+func loadLogStreamState(project config.ProjectName, ls *coordinator.LogStream) *logdog.LogStreamState {
 	st := logdog.LogStreamState{
+		Project:       string(project),
 		Path:          string(ls.Path()),
 		ProtoVersion:  ls.ProtoVersion,
 		TerminalIndex: ls.TerminalIndex,
@@ -65,7 +67,8 @@ func loadLogStreamState(ls *coordinator.LogStream) *logdog.LogStreamState {
 // RegisterStream is an idempotent stream state register operation.
 func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamRequest) (*logdog.RegisterStreamResponse, error) {
 	log.Fields{
-		"path": req.Path,
+		"project": req.Project,
+		"path":    req.Path,
 	}.Infof(c, "Registration request for log stream.")
 
 	path := types.StreamPath(req.Path)
@@ -78,11 +81,13 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 		return nil, grpcutil.Errf(codes.InvalidArgument, "No protobuf version supplied.")
 	case req.ProtoVersion != logpb.Version:
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Unrecognized protobuf version.")
-	case len(req.Secret) != types.StreamSecretLength:
-		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid secret length (%d != %d)",
-			len(req.Secret), types.StreamSecretLength)
 	case req.Desc == nil:
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Missing log stream descriptor.")
+	}
+
+	secret := types.PrefixSecret(req.Secret)
+	if err := secret.Validate(); err != nil {
+		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid prefix secret: %s", err)
 	}
 
 	prefix, name := path.Split()
@@ -143,7 +148,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 	}
 
 	return &logdog.RegisterStreamResponse{
-		State:  loadLogStreamState(ls),
+		State:  loadLogStreamState(coordinator.Project(c), ls),
 		Secret: ls.Secret,
 	}, nil
 }

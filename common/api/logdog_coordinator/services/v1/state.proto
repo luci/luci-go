@@ -8,25 +8,28 @@ package logdog;
 
 // LogStreamState is the log stream state value communicated to services.
 message LogStreamState {
+  // The log stream's project.
+  string project = 1;
   // Path is the log stream's path.
-  string path = 1;
+  string path = 2;
+
   // The log stream's secret.
   //
   // Note that the secret is returned! This is okay, since this endpoint is only
   // accessible to trusted services. The secret can be cached by services to
   // validate stream information without needing to ping the Coordinator in
   // between each update.
-  bytes secret = 2;
+  bytes secret = 3;
 
 	// ProtoVersion is the protobuf version for this stream.
-	string proto_version = 3;
+	string proto_version = 4;
 
 	// The stream index of the log stream's terminal message. If the value is -1,
   // the log is still streaming.
-	int64 terminal_index = 4;
+	int64 terminal_index = 5;
 
 	// If the log stream has been archived.
-	bool archived = 5;
+	bool archived = 6;
 	// If the log stream has been purged.
-	bool purged = 6;
+	bool purged = 7;
 }

@@ -24,7 +24,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-var testSecret = bytes.Repeat([]byte{0x55}, types.StreamSecretLength)
+var testSecret = bytes.Repeat([]byte{0x55}, types.PrefixSecretLength)
 
 // testCoordinator is an implementation of Coordinator that can be used for
 // testing.

@@ -231,7 +231,7 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 	// TODO: Use timeout?
 	state, err := c.Coordinator.RegisterStream(ctx, &coordinator.LogStreamState{
 		Path:         h.path,
-		Secret:       types.StreamSecret(h.be.Secret),
+		Secret:       types.PrefixSecret(h.be.Secret),
 		ProtoVersion: h.md.ProtoVersion,
 	}, h.be.Desc)
 	if err != nil {

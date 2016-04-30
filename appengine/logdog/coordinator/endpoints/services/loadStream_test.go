@@ -33,15 +33,15 @@ func TestLoadStream(t *testing.T) {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
 		c = memory.Use(c)
 
+		fs := authtest.FakeState{}
+		c = auth.WithState(c, &fs)
+
 		svcStub := ct.Services{}
 		svcStub.InitConfig()
 		svcStub.ServiceConfig.Coordinator.ServiceAuthGroup = "test-services"
 		c = coordinator.WithServices(c, &svcStub)
 
 		svr := New()
-
-		fs := authtest.FakeState{}
-		c = auth.WithState(c, &fs)
 
 		// Register a test stream.
 		desc := ct.TestLogStreamDescriptor(c, "foo/bar")
