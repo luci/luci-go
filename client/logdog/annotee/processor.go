@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -70,20 +69,24 @@ type Stream struct {
 	BufferSize int
 }
 
+// LinkGenerator generates links for a given log stream.
+type LinkGenerator interface {
+	// GetLink returns a link for the specified aggregate streams.
+	//
+	// If no link could be generated, GetLink may return an empty string.
+	GetLink(name ...types.StreamName) string
+}
+
 // Options are the configuration options for a Processor.
 type Options struct {
 	// Base is the base log stream name. This is prepended to every log name, as
 	// well as any generate log names.
 	Base types.StreamName
 
-	// Prefix is the log stream prefix. If this is empty, no log stream links will
-	// be generated.
-	Prefix types.StreamName
-
-	// LogDogHost is the host name of the LogDog Coordinator instance that this
-	// stream will be published to. If not empty, additional links will be
-	// injected into the annotation stream to link to the generated LogDog logs.
-	LogDogHost string
+	// LinkGenerator generates links to alias for a given log stream.
+	//
+	// If nil, no link annotations will be injected.
+	LinkGenerator LinkGenerator
 
 	// Client is the LogDog Butler Client to use for stream creation.
 	Client streamclient.Client
@@ -290,20 +293,6 @@ func (p *Processor) closeStepHandler(h *stepHandler) {
 	h.finish()
 }
 
-// coordinatorLink returns a link to the rendered log stream in the Coordinator.
-// If no Coordinator host is configured, this will return an empty string.
-func (p *Processor) coordinatorLink(name ...types.StreamName) string {
-	if p.o.LogDogHost == "" || p.o.Prefix == "" {
-		return ""
-	}
-
-	links := make([]string, len(name))
-	for i, n := range name {
-		links[i] = fmt.Sprintf("s=%s", url.QueryEscape(string(p.o.Prefix.Join(n))))
-	}
-	return fmt.Sprintf("https://%s.appspot.com/v/?%s", p.o.LogDogHost, strings.Join(links, "&"))
-}
-
 type annotationCallbacks struct {
 	*Processor
 }
@@ -334,7 +323,7 @@ func (c *annotationCallbacks) StepLogLine(step *annotation.Step, name types.Stre
 		return
 	}
 	if created {
-		h.maybeInjectCoordinatorLink(label, "logdog", name)
+		h.maybeInjectLink(label, "logdog", name)
 	}
 
 	if err := writeTextLine(s, line); err != nil {
@@ -491,7 +480,7 @@ func (h *stepHandler) writeBaseStream(s *Stream, line string) error {
 	}
 	if created {
 		segs := s.Name.Segments()
-		h.maybeInjectCoordinatorLink("stdio", segs[len(segs)-1], name)
+		h.maybeInjectLink("stdio", segs[len(segs)-1], name)
 	}
 	return writeTextLine(stream, line)
 }
@@ -580,16 +569,12 @@ func (h *stepHandler) flushInjectedLines() []string {
 	return lines
 }
 
-func (h *stepHandler) injectAliasAnnotation(base, text, url string) {
-	h.injectLines(buildAnnotation("STEP_LINK", fmt.Sprintf("%s-->%s", text, base), url))
-}
-
-func (h *stepHandler) maybeInjectCoordinatorLink(base, text string, names ...types.StreamName) {
-	url := h.processor.coordinatorLink(names...)
-	if url == "" {
-		return
+func (h *stepHandler) maybeInjectLink(base, text string, names ...types.StreamName) {
+	if lg := h.processor.o.LinkGenerator; lg != nil {
+		if link := lg.GetLink(names...); link != "" {
+			h.injectLines(buildAnnotation("STEP_LINK", fmt.Sprintf("%s-->%s", text, base), link))
+		}
 	}
-	h.injectAliasAnnotation(base, text, url)
 }
 
 // lineReader reads from an input stream and returns the data line-by-line.

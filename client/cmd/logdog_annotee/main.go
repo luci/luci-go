@@ -19,6 +19,7 @@ import (
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamclient"
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
 	"github.com/luci/luci-go/common/clock/clockflag"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
@@ -57,6 +58,7 @@ type application struct {
 	printSummary       bool
 	testingDir         string
 	annotationInterval clockflag.Duration
+	project            config.ProjectName
 	nameBase           streamproto.StreamNameFlag
 	prefix             streamproto.StreamNameFlag
 	logdogHost         string
@@ -82,6 +84,7 @@ func (a *application) addToFlagSet(fs *flag.FlagSet) {
 			"and streams to this directory.")
 	fs.Var(&a.annotationInterval, "annotation-interval",
 		"Buffer annotation updates for this amount of time. <=0 sends every update.")
+	fs.Var(&a.project, "project", "The log prefix's project name (required).")
 	fs.Var(&a.nameBase, "name-base", "Base stream name to prepend to generated names.")
 	fs.Var(&a.prefix, "prefix", "The log stream prefix. If missing, one will be inferred from bootstrap.")
 	fs.StringVar(&a.logdogHost, "logdog-host", "",
@@ -158,6 +161,11 @@ func mainImpl(args []string) int {
 		prefix = a.bootstrap.Prefix
 	}
 
+	// TODO(dnj): Require project attribute.
+	if a.project == "" {
+		a.project = a.bootstrap.Project
+	}
+
 	args = fs.Args()
 	if a.jsonArgsPath != "" {
 		if len(args) > 0 {
@@ -188,13 +196,21 @@ func mainImpl(args []string) int {
 		a.annotationInterval = 0
 	}
 
+	// Initialize our link generator, if we can.
+	linkGen := &coordinatorLinkGenerator{
+		base:    types.StreamName(a.nameBase),
+		project: a.project,
+		prefix:  prefix,
+	}
+	if !linkGen.canGenerateLinks() {
+		linkGen = nil
+	}
+
 	e := executor.Executor{
 		Options: annotee.Options{
-			Base:                   types.StreamName(a.nameBase),
-			Prefix:                 prefix,
 			Client:                 client,
+			LinkGenerator:          linkGen,
 			MetadataUpdateInterval: time.Duration(a.annotationInterval),
-			LogDogHost:             a.logdogHost,
 		},
 
 		Annotate: executor.AnnotationMode(a.annotate),
