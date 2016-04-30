@@ -119,6 +119,7 @@ func (s *Stream) Get(ctx context.Context, p *StreamGetParams) ([]*logpb.LogEntry
 	}
 
 	req := p.r
+	req.Project = string(s.c.project)
 	req.Path = string(s.path)
 	if p.stateP != nil {
 		req.State = true
@@ -139,7 +140,8 @@ func (s *Stream) Get(ctx context.Context, p *StreamGetParams) ([]*logpb.LogEntry
 // variable.
 func (s *Stream) Tail(ctx context.Context, stateP *LogStream) (*logpb.LogEntry, error) {
 	req := logdog.TailRequest{
-		Path: string(s.path),
+		Project: string(s.c.project),
+		Path:    string(s.path),
 	}
 	if stateP != nil {
 		req.State = true

@@ -61,6 +61,7 @@ type ListOptions struct {
 // List executes a log stream hierarchy listing for the specified path.
 func (c *Client) List(ctx context.Context, base string, o ListOptions, cb ListCallback) error {
 	req := logdog.ListRequest{
+		Project:       string(c.project),
 		Path:          base,
 		Recursive:     o.Recursive,
 		StreamOnly:    o.StreamsOnly,

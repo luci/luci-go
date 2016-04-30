@@ -132,6 +132,7 @@ type QueryCallback func(r *LogStream) bool
 // result.
 func (c *Client) Query(ctx context.Context, q *Query, cb QueryCallback) error {
 	req := logdog.QueryRequest{
+		Project:     string(c.project),
 		Path:        q.Path,
 		ContentType: q.ContentType,
 		Older:       google.NewTimestamp(q.Before),

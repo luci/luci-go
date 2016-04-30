@@ -7,6 +7,7 @@ package coordinator
 import (
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
 	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/prpc"
 )
@@ -25,12 +26,15 @@ var (
 type Client struct {
 	// C is the underlying LogsClient interface.
 	C logdog.LogsClient
+
+	project config.ProjectName
 }
 
 // NewClient returns a new Client instance bound to a pRPC Client.
-func NewClient(c *prpc.Client) *Client {
+func NewClient(c *prpc.Client, project config.ProjectName) *Client {
 	return &Client{
-		C: logdog.NewLogsPRPCClient(c),
+		C:       logdog.NewLogsPRPCClient(c),
+		project: project,
 	}
 }
 

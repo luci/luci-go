@@ -7,6 +7,7 @@ package main
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logdog/coordinator"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
@@ -30,6 +32,7 @@ type application struct {
 	cli.Application
 	context.Context
 
+	project     config.ProjectName
 	authFlags   authcli.Flags
 	coordinator string
 	insecure    bool
@@ -42,11 +45,19 @@ func (a *application) addToFlagSet(ctx context.Context, fs *flag.FlagSet) {
 		"The LogDog Coordinator [host][:port].")
 	fs.BoolVar(&a.insecure, "insecure", false,
 		"Use insecure transport for RPC.")
+	fs.Var(&a.project, "project",
+		"The log stream's project.")
 }
 
 func (a *application) validate() error {
 	if a.coordinator == "" {
 		return errors.New("main: missing coordinator URL (-url)")
+	}
+	// TODO(dnj): Error on empty project once that's disallowed.
+	if a.project != "" {
+		if err := a.project.Validate(); err != nil {
+			return fmt.Errorf("main: invalid project name (-project): %s", err)
+		}
 	}
 	return nil
 }
@@ -128,7 +139,7 @@ func mainImpl() int {
 		log.Errorf(log.SetError(ctx, err), "Failed to create auth options.")
 		return 1
 	}
-	httpClient, err := auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
+	httpClient, err := auth.NewAuthenticator(ctx, auth.OptionalLogin, authOpts).Client()
 	if err != nil {
 		log.Errorf(log.SetError(ctx, err), "Failed to create authenticated client.")
 		return 1
@@ -142,7 +153,7 @@ func mainImpl() int {
 	}
 	prpcClient.Options.Insecure = a.insecure
 
-	a.coord = coordinator.NewClient(prpcClient)
+	a.coord = coordinator.NewClient(prpcClient, a.project)
 	a.Context = ctx
 	return subcommands.Run(&a, flags.Args())
 }
