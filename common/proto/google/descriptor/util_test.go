@@ -17,7 +17,6 @@ func TestUtil(t *testing.T) {
 	t.Parallel()
 
 	Convey("Util", t, func() {
-
 		descFileBytes, err := ioutil.ReadFile("util_test.desc")
 		So(err, ShouldBeNil)
 
@@ -25,8 +24,9 @@ func TestUtil(t *testing.T) {
 		err = proto.Unmarshal(descFileBytes, &desc)
 		So(err, ShouldBeNil)
 
-		So(desc.File, ShouldHaveLength, 1)
-		file := desc.File[0]
+		So(desc.File, ShouldHaveLength, 2)
+		file := desc.File[1]
+		So(file.GetName(), ShouldEqual, "util_test.proto")
 
 		Convey("Resolve works", func() {
 			names := []string{

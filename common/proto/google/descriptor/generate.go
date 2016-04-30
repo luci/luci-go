@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-//go:generate cproto -discovery=false
+//go:generate cproto -discovery=false -desc util_test.desc
 
 package descriptor
 
