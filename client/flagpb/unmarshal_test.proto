@@ -12,6 +12,7 @@ message M1 {
 	int32 i = 2;
 	repeated int32 ri = 3;
 	bool b = 4;
+	repeated bool rb = 6;
 	bytes bb = 5;
 }
 

@@ -75,7 +75,7 @@ func (p *parser) parseOneFlag(flags []string, root message) (flagsRest []string,
 	}
 
 	// Split key-value pair x=y.
-	flagName, value, hasValue := p.splitKeyValuePair(flagName)
+	flagName, valueStr, hasValueStr := p.splitKeyValuePair(flagName)
 	if flagName == "" {
 		return nil, fmt.Errorf("bad flag syntax")
 	}
@@ -87,7 +87,7 @@ func (p *parser) parseOneFlag(flags []string, root message) (flagsRest []string,
 		return nil, err
 	}
 
-	// Where to assign a value?
+	// Where to assign the value?
 	target := &root
 	if len(pathMsgs) > 0 {
 		lastMsg := pathMsgs[len(pathMsgs)-1]
@@ -102,23 +102,26 @@ func (p *parser) parseOneFlag(flags []string, root message) (flagsRest []string,
 	}
 	field := target.desc.Field[fi]
 
-	if !hasValue {
+	var value interface{}
+	hasValue := false
+
+	if !hasValueStr {
 		switch {
 		// Boolean and repeated message fields may have no value and ignore
 		// next argument.
 		case field.GetType() == descriptor.FieldDescriptorProto_TYPE_BOOL:
-			target.data[name] = true
-			return flags, nil
+			value = true
+			hasValue = true
 		case field.GetType() == descriptor.FieldDescriptorProto_TYPE_MESSAGE && field.Repeated():
-			target.data[name] = append(asSlice(target.data[name]), map[string]interface{}{})
-			return flags, nil
+			value = map[string]interface{}{}
+			hasValue = true
 
-		// Read next argument as a value.
 		default:
+			// Read next argument as a value.
 			if len(flags) == 0 {
 				return nil, fmt.Errorf("value was expected")
 			}
-			value, flags = flags[0], flags[1:]
+			valueStr, flags = flags[0], flags[1:]
 		}
 	}
 
@@ -138,17 +141,19 @@ func (p *parser) parseOneFlag(flags []string, root message) (flagsRest []string,
 			target.data[name], strings.Join(repeatedFields, " or "))
 	}
 
-	// Parse the value and set/append it.
-	parsedValue, err := p.parseFieldValue(value, target.desc.GetName(), field)
-	if err != nil {
-		return nil, err
+	if !hasValue {
+		value, err = p.parseFieldValue(valueStr, target.desc.GetName(), field)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if !field.Repeated() {
-		target.data[name] = parsedValue
+		target.data[name] = value
 	} else {
-		target.data[name] = append(asSlice(target.data[name]), parsedValue)
+		target.data[name] = append(asSlice(target.data[name]), value)
 	}
+
 	return flags, nil
 }
 

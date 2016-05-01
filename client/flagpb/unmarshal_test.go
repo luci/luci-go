@@ -94,6 +94,9 @@ func TestUnmarshal(t *testing.T) {
 					"s", "x",
 				))
 			})
+			Convey("without value, repeated", func() {
+				So(unmarshalOK("M1", "-rb=false", "-rb"), ShouldResemble, msg("rb", repeated(false, true)))
+			})
 			Convey("with value", func() {
 				So(unmarshalOK("M1", "-b=true"), ShouldResemble, msg("b", true))
 				So(unmarshalOK("M1", "-b=false"), ShouldResemble, msg("b", false))
