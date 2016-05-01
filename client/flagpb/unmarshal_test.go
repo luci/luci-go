@@ -172,16 +172,16 @@ func TestUnmarshal(t *testing.T) {
 		Convey("repeated", func() {
 			Convey("int32", func() {
 				So(unmarshalOK("M1", "-ri", "1", "-ri", "2"), ShouldResemble, msg(
-					"ri", []interface{}{int32(1), int32(2)},
+					"ri", repeated(int32(1), int32(2)),
 				))
 			})
 			Convey("submessage string", func() {
 				Convey("works", func() {
 					So(unmarshalOK("M3", "-m1.s", "x", "-m1", "-m1.s", "y"), ShouldResemble, msg(
-						"m1", []interface{}{
+						"m1", repeated(
 							msg("s", "x"),
 							msg("s", "y"),
-						},
+						),
 					))
 				})
 				Convey("reports meaningful error", func() {
@@ -189,6 +189,27 @@ func TestUnmarshal(t *testing.T) {
 					So(err, ShouldErrLike, `-m1.s: value is already set`)
 					So(err, ShouldErrLike, `insert -m1`)
 				})
+			})
+		})
+
+		Convey("map", func() {
+			Convey("map<string, string>", func() {
+				So(unmarshalOK("MapContainer", "-ss.x", "a", "-ss.y", "b"), ShouldResemble, msg(
+					"ss", msg("x", "a", "y", "b"),
+				))
+			})
+			Convey("map<int32, int32>", func() {
+				So(unmarshalOK("MapContainer", "-ii.1", "10", "-ii.2", "20"), ShouldResemble, msg(
+					"ii", msg("1", int32(10), "2", int32(20)),
+				))
+			})
+			Convey("map<string, M1>", func() {
+				So(unmarshalOK("MapContainer", "-sm1.x.s", "a", "-sm1.y.s", "b"), ShouldResemble, msg(
+					"sm1", msg(
+						"x", msg("s", "a"),
+						"y", msg("s", "b"),
+					),
+				))
 			})
 		})
 	})

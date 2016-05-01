@@ -93,14 +93,20 @@ func (p *parser) parseOneFlag(flags []string, root message) (flagsRest []string,
 		lastMsg := pathMsgs[len(pathMsgs)-1]
 		target = &lastMsg.message
 	}
-
-	// Resolve last field name.
 	name := fieldPath[len(fieldPath)-1]
-	fi := target.desc.FindField(name)
-	if fi == -1 {
-		return nil, fmt.Errorf("field %s not found in message %s", name, target.desc.GetName())
+
+	// Resolve target field.
+	var fieldIndex int
+	if target.desc.GetOptions().GetMapEntry() {
+		if fieldIndex = target.desc.FindField("value"); fieldIndex == -1 {
+			return nil, fmt.Errorf("map entry type %s does not have value field", target.desc.GetName())
+		}
+	} else {
+		if fieldIndex = target.desc.FindField(name); fieldIndex == -1 {
+			return nil, fmt.Errorf("field %s not found in message %s", name, target.desc.GetName())
+		}
 	}
-	field := target.desc.Field[fi]
+	field := target.desc.Field[fieldIndex]
 
 	var value interface{}
 	hasValue := false
@@ -176,12 +182,19 @@ func (p *parser) subMessages(root message, path []string) ([]subMsg, error) {
 	parent := &root
 	for i, name := range path {
 		curPath := path[:i+1]
-		fi := parent.desc.FindField(name)
-		if fi == -1 {
-			return nil, fmt.Errorf("field %q not found in message %s", name, parent.desc.GetName())
+
+		var fieldIndex int
+		if parent.desc.GetOptions().GetMapEntry() {
+			if fieldIndex = parent.desc.FindField("value"); fieldIndex == -1 {
+				return nil, fmt.Errorf("map entry type %s does not have value field", parent.desc.GetName())
+			}
+		} else {
+			if fieldIndex = parent.desc.FindField(name); fieldIndex == -1 {
+				return nil, fmt.Errorf("field %q not found in message %s", name, parent.desc.GetName())
+			}
 		}
 
-		f := parent.desc.Field[fi]
+		f := parent.desc.Field[fieldIndex]
 		if f.GetType() != descriptor.FieldDescriptorProto_TYPE_MESSAGE {
 			return nil, fmt.Errorf("field %s is not a message", strings.Join(curPath, "."))
 		}
@@ -197,7 +210,7 @@ func (p *parser) subMessages(root message, path []string) ([]subMsg, error) {
 
 		sub := subMsg{
 			message:  message{desc: subDesc},
-			repeated: f.Repeated(),
+			repeated: f.Repeated() && !subDesc.GetOptions().GetMapEntry(),
 			path:     curPath,
 		}
 		if value, ok := parent.data[name]; !ok {

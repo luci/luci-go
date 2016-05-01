@@ -28,3 +28,9 @@ message M3 {
 	string s = 4;
 	bytes bt = 5;
 }
+
+message MapContainer {
+	map<string, string> ss = 1;
+	map<int32, int32> ii = 2;
+	map<string, M1> sm1 = 3;
+}
