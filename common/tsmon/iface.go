@@ -97,7 +97,17 @@ func SetStore(c context.Context, s store.Store) {
 // This will set a Target (information about what's reporting metrics) and a
 // Monitor (where to send the metrics to).
 func InitializeFromFlags(c context.Context, fl *Flags) error {
-	mon, err := initMonitor(c, fl)
+	// Load the config file, and override its values with flags.
+	config, _ := loadConfig(fl.ConfigFile)
+
+	if fl.Endpoint != "" {
+		config.Endpoint = fl.Endpoint
+	}
+	if fl.Credentials != "" {
+		config.Credentials = fl.Credentials
+	}
+
+	mon, err := initMonitor(c, config)
 	switch {
 	case err != nil:
 		return err
@@ -107,6 +117,9 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 
 	// Monitoring is enabled, so get the expensive default values for hostname,
 	// etc.
+	if config.AutoGenHostname {
+		fl.Target.AutoGenHostname = true
+	}
 	fl.Target.SetDefaultsFromHostname()
 	t, err := target.NewFromFlags(&fl.Target)
 	if err != nil {
@@ -175,17 +188,7 @@ func ResetCumulativeMetrics(c context.Context) {
 // initMonitor examines flags and config and initializes a monitor.
 //
 // It returns (nil, nil) if tsmon should be disabled.
-func initMonitor(c context.Context, fl *Flags) (monitor.Monitor, error) {
-	// Load the config file, and override its values with flags.
-	config, _ := loadConfig(fl.ConfigFile)
-
-	if fl.Endpoint != "" {
-		config.Endpoint = fl.Endpoint
-	}
-	if fl.Credentials != "" {
-		config.Credentials = fl.Credentials
-	}
-
+func initMonitor(c context.Context, config config) (monitor.Monitor, error) {
 	if config.Endpoint == "" {
 		logging.Infof(c, "tsmon is disabled because no endpoint is configured")
 		return nil, nil

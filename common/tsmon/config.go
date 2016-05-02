@@ -12,8 +12,9 @@ import (
 
 // config is the representation of a tsmon JSON config file.
 type config struct {
-	Endpoint    string `json:"endpoint"`
-	Credentials string `json:"credentials"`
+	Endpoint        string `json:"endpoint"`
+	Credentials     string `json:"credentials"`
+	AutoGenHostname bool   `json:"autogen_hostname"`
 }
 
 // loadConfig loads a tsmon JSON config from a file.

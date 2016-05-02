@@ -12,6 +12,12 @@ import (
 	"strings"
 )
 
+// SysInfo overrides system's hostname and region for tests.
+type SysInfo struct {
+	Hostname string
+	Region   string
+}
+
 // Flags defines command line flags related to tsmon targets.  Use NewFlags()
 // to get a Flags struct with sensible default values.
 type Flags struct {
@@ -27,13 +33,9 @@ type Flags struct {
 	TaskNumber      int
 	AutoGenHostname bool
 
-	// sysInfoGetter can be set by tests to override system properties.
-	// If nil, a realSysInfoGetter will be used.
-	sysInfoGetter sysInfoGetter
-}
-
-type sysInfoGetter interface {
-	GetFQDN() (string, string)
+	// If nil, system info is computed from the actual host. Used
+	// in tests.
+	SysInfo *SysInfo
 }
 
 // NewFlags returns a Flags struct with sensible default values.  Hostname,
@@ -58,12 +60,12 @@ func NewFlags() Flags {
 // SetDefaultsFromHostname computes the expensive default values for hostname,
 // region and network fields.
 func (fl *Flags) SetDefaultsFromHostname() {
-	sysInfoGetter := fl.sysInfoGetter
-	if sysInfoGetter == nil {
-		sysInfoGetter = realSysInfoGetter{}
+	if fl.SysInfo == nil {
+		hostname, region := getFQDN()
+		fl.SysInfo = &SysInfo{Hostname: hostname, Region: region}
 	}
-	hostname, region := sysInfoGetter.GetFQDN()
-	network := getNetwork(hostname)
+	network := getNetwork(fl.SysInfo.Hostname)
+	hostname := fl.SysInfo.Hostname
 
 	if fl.AutoGenHostname {
 		hostname = "autogen:" + hostname
@@ -72,13 +74,13 @@ func (fl *Flags) SetDefaultsFromHostname() {
 		fl.DeviceHostname = hostname
 	}
 	if fl.DeviceRegion == "" {
-		fl.DeviceRegion = region
+		fl.DeviceRegion = fl.SysInfo.Region
 	}
 	if fl.DeviceNetwork == "" {
 		fl.DeviceNetwork = network
 	}
 	if fl.TaskRegion == "" {
-		fl.TaskRegion = region
+		fl.TaskRegion = fl.SysInfo.Region
 	}
 	if fl.TaskHostname == "" {
 		fl.TaskHostname = hostname
@@ -113,9 +115,7 @@ func (fl *Flags) Register(f *flag.FlagSet) {
 			"or any other hosts with dynamically generated names.")
 }
 
-type realSysInfoGetter struct{}
-
-func (realSysInfoGetter) GetFQDN() (string, string) {
+func getFQDN() (string, string) {
 	if addrs, err := net.InterfaceAddrs(); err == nil {
 		for _, addr := range addrs {
 			if ipNet, ok := addr.(*net.IPNet); ok {

@@ -31,6 +31,7 @@ func TestLoadConfig(t *testing.T) {
 		c, err := loadConfig(tf.Name())
 		So(c.Endpoint, ShouldEqual, "")
 		So(c.Credentials, ShouldEqual, "")
+		So(c.AutoGenHostname, ShouldEqual, false)
 		So(err, ShouldNotBeNil)
 	})
 
@@ -42,12 +43,13 @@ func TestLoadConfig(t *testing.T) {
 		defer tf.Close()
 		defer os.Remove(tf.Name())
 
-		tf.WriteString(`{"endpoint": "foo", "credentials": "bar"}`)
+		tf.WriteString(`{"endpoint": "foo", "credentials": "bar", "autogen_hostname": true}`)
 		tf.Sync()
 
 		c, err := loadConfig(tf.Name())
 		So(c.Endpoint, ShouldEqual, "foo")
 		So(c.Credentials, ShouldEqual, "bar")
+		So(c.AutoGenHostname, ShouldEqual, true)
 		So(err, ShouldBeNil)
 	})
 }
