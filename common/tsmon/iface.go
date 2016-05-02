@@ -135,7 +135,7 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 		state.Flusher = nil
 	}
 
-	if fl.Flush == "auto" {
+	if fl.Flush == FlushAuto {
 		state.Flusher = &autoFlusher{}
 		state.Flusher.start(c, fl.FlushInterval)
 	}
@@ -224,9 +224,15 @@ func clientFactory(ctx context.Context, credentials string) (*http.Client, error
 	authOpts := auth.Options{
 		Scopes: gcps.PublisherScopes,
 	}
-	if credentials == GCECredentials {
+	switch credentials {
+	case GCECredentials:
 		authOpts.Method = auth.GCEMetadataMethod
-	} else {
+
+	case "":
+		// Let the Authenticator choose.
+		break
+
+	default:
 		authOpts.Method = auth.ServiceAccountMethod
 		authOpts.ServiceAccountJSONPath = credentials
 	}
