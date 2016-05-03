@@ -36,6 +36,16 @@ function dump_status {
   echo "Status of luci_machine_tokend call:"
   echo "==================================="
   cat "$WORKING_DIR/$cert_name.status"
+  echo
+  echo "==================================="
+}
+
+function dump_token_file {
+  local cert_name=$1
+  echo "Token file:"
+  echo "==================================="
+  cat "$WORKING_DIR/$cert_name.tok"
+  echo
   echo "==================================="
 }
 
@@ -52,6 +62,7 @@ create_client_certificate luci-token-server-test-1.fake.domain
 clean_tokens luci-token-server-test-1.fake.domain
 call_tokend luci-token-server-test-1.fake.domain
 ret=$?
+dump_token_file luci-token-server-test-1.fake.domain
 dump_status luci-token-server-test-1.fake.domain
 if [ $ret -ne 0 ]
 then

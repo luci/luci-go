@@ -37,6 +37,7 @@ import (
 
 	"github.com/luci/luci-go/common/api/tokenserver"
 	"github.com/luci/luci-go/common/api/tokenserver/admin/v1"
+	"github.com/luci/luci-go/common/api/tokenserver/minter/v1"
 
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/certchecker"
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/model"
@@ -90,29 +91,6 @@ func (s *Server) CreateServiceAccount(c context.Context, r *admin.CreateServiceA
 	}
 	return &admin.CreateServiceAccountResponse{
 		ServiceAccount: account,
-	}, nil
-}
-
-// MintAccessToken generates a new access token for a service account
-// associated with the given host.
-//
-// It will register the service account first, if necessary.
-func (s *Server) MintAccessToken(c context.Context, r *admin.MintAccessTokenRequest) (*admin.MintAccessTokenResponse, error) {
-	cfg, err := s.getCAConfig(c, r.Ca)
-	if err != nil {
-		return nil, err
-	}
-	account, token, err := s.DoMintAccessToken(c, MintAccessTokenParams{
-		Config: cfg,
-		FQDN:   r.Fqdn,
-		Scopes: r.Scopes,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &admin.MintAccessTokenResponse{
-		ServiceAccount:    account,
-		Oauth2AccessToken: token,
 	}, nil
 }
 
@@ -228,7 +206,7 @@ func (p *MintAccessTokenParams) Validate() error {
 // DoMintAccessToken makes an OAuth access token for the given service account.
 //
 // Return grpc.Error on errors.
-func (s *Server) DoMintAccessToken(c context.Context, params MintAccessTokenParams) (*tokenserver.ServiceAccount, *tokenserver.OAuth2AccessToken, error) {
+func (s *Server) DoMintAccessToken(c context.Context, params MintAccessTokenParams) (*tokenserver.ServiceAccount, *minter.OAuth2AccessToken, error) {
 	if err := params.Validate(); err != nil {
 		return nil, nil, grpc.Errorf(codes.InvalidArgument, "%s", err)
 	}
@@ -292,7 +270,7 @@ func (s *Server) DoMintAccessToken(c context.Context, params MintAccessTokenPara
 }
 
 // fetchAccessToken does the final part of OAuth 2-legged flow.
-func (s *Server) fetchAccessToken(c context.Context, assertion string) (*tokenserver.OAuth2AccessToken, error) {
+func (s *Server) fetchAccessToken(c context.Context, assertion string) (*minter.OAuth2AccessToken, error) {
 	// The client without auth, the token endpoint doesn't need auth.
 	client, err := s.httpClient(c, false)
 	if err != nil {
@@ -335,7 +313,7 @@ func (s *Server) fetchAccessToken(c context.Context, assertion string) (*tokense
 		return nil, fmt.Errorf("invalid token endpoint response, 'expires_in' is not set")
 	}
 	expiry := clock.Now(c).Add(time.Duration(tokenRes.ExpiresIn) * time.Second)
-	return &tokenserver.OAuth2AccessToken{
+	return &minter.OAuth2AccessToken{
 		AccessToken: tokenRes.AccessToken,
 		TokenType:   tokenRes.TokenType,
 		Expiry:      google.NewTimestamp(expiry),

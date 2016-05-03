@@ -204,8 +204,8 @@ function import_config {
 
     known_domains: {
       domain: "fake.domain"
-      cloud_project_name: "$CLOUD_PROJECT_ID"
-      allowed_oauth2_scope: "https://www.googleapis.com/auth/userinfo.email"
+      allow_machine_tokens: true
+      machine_token_lifetime: 3600
     }
   }
 EOL`
@@ -220,6 +220,9 @@ EOL`
     }
   }
 EOL
+
+  # Wait a bit for cached config to expire.
+  sleep 0.5
 }
 
 

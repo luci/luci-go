@@ -18,23 +18,26 @@ message TokenFile {
   // OAuth2 access token type, usually "Bearer".
   string token_type = 2 [json_name="token_type"];
 
+  // Machine token understood by LUCI backends (alternative to access_token).
+  string luci_machine_token = 3 [json_name="luci_machine_token"];
+
   // Unix timestamp (in seconds) when this token expires.
   //
   // The token file is expected to be updated before the token expires, see
   // 'next_update' for next expected update time.
-  int64 expiry = 3 [json_name="expiry"];
+  int64 expiry = 4 [json_name="expiry"];
 
   // Unix timestamp of when this file was updated the last time.
-  int64 last_update = 4 [json_name="last_update"];
+  int64 last_update = 5 [json_name="last_update"];
 
   // Unix timestamp of when this file is expected to be updated next time.
-  int64 next_update = 5 [json_name="next_update"];
+  int64 next_update = 6 [json_name="next_update"];
 
   // Email of the associated service account.
-  string service_account_email = 6 [json_name="service_account_email"];
+  string service_account_email = 7 [json_name="service_account_email"];
 
   // Unique stable ID of the associated service account.
-  string service_account_unique_id = 7 [json_name="service_account_unique_id"];
+  string service_account_unique_id = 8 [json_name="service_account_unique_id"];
 
   // Any information tokend daemon wishes to associate with the token.
   //

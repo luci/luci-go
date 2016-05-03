@@ -204,7 +204,7 @@ func run(ctx context.Context, clientParams tokenclient.ClientParameters, opts co
 	// happens if we change a key or backend URL.
 	signer := client.Signer.(*tokenclient.X509Signer)
 	inputsDigest := calcDigest(map[string][]byte{
-		"forceBump": {0}, // bump this to forcefully regenerate all tokens
+		"forceBump": {1}, // bump this to forcefully regenerate all tokens
 		"pkey":      signer.PrivateKeyPEM,
 		"cert":      signer.CertificatePEM,
 		"backend":   []byte(clientParams.Backend),
@@ -231,8 +231,7 @@ func run(ctx context.Context, clientParams tokenclient.ClientParameters, opts co
 	// Grab a new token. MintMachineToken does retries internally, until success
 	// or context deadline.
 	resp, err := client.MintMachineToken(ctx, &minter.MachineTokenRequest{
-		TokenType:    minter.TokenType_GOOGLE_OAUTH2_ACCESS_TOKEN,
-		Oauth2Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+		TokenType: minter.TokenType_LUCI_MACHINE_TOKEN,
 	})
 	status.MintTokenDuration = clock.Now(ctx).Sub(now)
 	if err != nil {
@@ -242,13 +241,13 @@ func run(ctx context.Context, clientParams tokenclient.ClientParameters, opts co
 		return err
 	}
 
-	// Grab OAuth2 access token field.
-	var tok *tokenserver.OAuth2AccessToken
-	if tt, _ := resp.TokenType.(*minter.MachineTokenResponse_GoogleOauth2AccessToken); tt != nil {
-		tok = tt.GoogleOauth2AccessToken
+	// Grab machine_token field.
+	var tok *minter.LuciMachineToken
+	if tt, _ := resp.TokenType.(*minter.MachineTokenResponse_LuciMachineToken); tt != nil {
+		tok = tt.LuciMachineToken
 	}
 	if tok == nil {
-		err = fmt.Errorf("bad response, empty google_oauth2_access_token field")
+		err = fmt.Errorf("bad response, empty luci_machine_token field")
 		logging.Errorf(ctx, "%s", err)
 		status.FailureError = err
 		status.UpdateOutcome = OutcomeMalformedReponse
@@ -270,13 +269,10 @@ func run(ctx context.Context, clientParams tokenclient.ClientParameters, opts co
 	// passed, to be able survive short (~30 min) backend outages in exchange for
 	// 2x RPC rate.
 	newTokenFile := tokenserver.TokenFile{
-		AccessToken:            tok.AccessToken,
-		TokenType:              tok.TokenType,
-		Expiry:                 expiry.Unix(),
-		LastUpdate:             now.Unix(),
-		NextUpdate:             now.Add(lifetime / 2).Unix(),
-		ServiceAccountEmail:    resp.ServiceAccount.Email,
-		ServiceAccountUniqueId: resp.ServiceAccount.UniqueId,
+		LuciMachineToken: tok.MachineToken,
+		Expiry:           expiry.Unix(),
+		LastUpdate:       now.Unix(),
+		NextUpdate:       now.Add(lifetime / 2).Unix(),
 	}
 	newState := stateInToken{
 		InputsDigest: inputsDigest,

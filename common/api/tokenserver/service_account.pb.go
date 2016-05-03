@@ -2,19 +2,6 @@
 // source: service_account.proto
 // DO NOT EDIT!
 
-/*
-Package tokenserver is a generated protocol buffer package.
-
-It is generated from these files:
-	service_account.proto
-	token_file.proto
-	tokens.proto
-
-It has these top-level messages:
-	ServiceAccount
-	TokenFile
-	OAuth2AccessToken
-*/
 package tokenserver
 
 import proto "github.com/golang/protobuf/proto"
@@ -26,10 +13,6 @@ import google_protobuf "github.com/luci/luci-go/common/proto/google"
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the proto package it is being compiled against.
-const _ = proto.ProtoPackageIsVersion1
 
 // ServiceAccount describes a Cloud IAM Service Account.
 //
@@ -47,7 +30,7 @@ type ServiceAccount struct {
 func (m *ServiceAccount) Reset()                    { *m = ServiceAccount{} }
 func (m *ServiceAccount) String() string            { return proto.CompactTextString(m) }
 func (*ServiceAccount) ProtoMessage()               {}
-func (*ServiceAccount) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+func (*ServiceAccount) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
 
 func (m *ServiceAccount) GetRegistered() *google_protobuf.Timestamp {
 	if m != nil {
@@ -60,7 +43,7 @@ func init() {
 	proto.RegisterType((*ServiceAccount)(nil), "tokenserver.ServiceAccount")
 }
 
-var fileDescriptor0 = []byte{
+var fileDescriptor1 = []byte{
 	// 247 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x4c, 0xcf, 0xcb, 0x4b, 0x03, 0x31,
 	0x10, 0x06, 0x70, 0x56, 0xdb, 0xea, 0xce, 0x4a, 0x91, 0xa0, 0x10, 0x2a, 0xe2, 0xe3, 0xd4, 0xd3,

@@ -17,7 +17,6 @@ import (
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/proto/google"
 
-	"github.com/luci/luci-go/common/api/tokenserver"
 	"github.com/luci/luci-go/common/api/tokenserver/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -29,9 +28,9 @@ func TestTokenClient(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, time.Date(2015, time.February, 3, 4, 5, 6, 7, time.UTC))
 
 		expectedResp := &minter.MachineTokenResponse{
-			TokenType: &minter.MachineTokenResponse_GoogleOauth2AccessToken{
-				GoogleOauth2AccessToken: &tokenserver.OAuth2AccessToken{
-					AccessToken: "blah",
+			TokenType: &minter.MachineTokenResponse_LuciMachineToken{
+				LuciMachineToken: &minter.LuciMachineToken{
+					MachineToken: "blah",
 				},
 			},
 		}

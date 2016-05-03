@@ -18,14 +18,11 @@ message TokenServerConfig {
 // has a private key and certificate with Common Name set to the FQDN of this
 // node, e.g. "CN=slave43-c1.c.chromecompute.google.com.internal".
 //
-// The Token Server uses this CN to derive a name of a service account to
-// associate with a node. It splits FQDN into a hostname ("slave43-c1") and
-// a domain name ("c.chromecompute.google.com.internal"), searches for a domain
-// name in "known_domains" set, and creates a service account in a Cloud Project
-// specified there: <hostname>@<project-id>.iam.gserviceaccount.com.
-//
-// Note that we can't put FQDN in the service account email, since it is limited
-// in length and doesn't allow '.' in it.
+// The Token Server uses this CN to derive an identity string for a machine. It
+// splits FQDN into a hostname ("slave43-c1") and a domain name
+// ("c.chromecompute.google.com.internal"), searches for a domain name in
+// "known_domains" set, and, if it is present, uses parameters described there
+// for generating a token with machine_id <hostname>@<token-server-url>.
 message CertificateAuthorityConfig {
   int64  unique_id = 6; // ID of this CA, will be embedded into tokens.
   string cn = 1;        // CA Common Name, must match Subject CN in the cert
@@ -33,8 +30,7 @@ message CertificateAuthorityConfig {
   string crl_url = 3;   // where to fetch CRL from
   bool   use_oauth = 4; // true to send Authorization header when fetching CRL
 
-  // KnownDomains describes what cloud project to use for nodes in particular
-  // domains.
+  // KnownDomains describes parameters to use for each particular domain.
   repeated DomainConfig known_domains = 5;
 }
 
@@ -44,13 +40,22 @@ message DomainConfig {
   repeated string domain = 1;
 
   // CloudProjectName is a name of Google Cloud Project to create service
-  // accounts in.
+  // accounts in (used for OAuth2 tokens).
   //
   // The Token Server's own service account must have Editor permission in this
   // project.
   string cloud_project_name = 2;
 
   // AllowedOauth2Scope is a whitelist of OAuth2 scopes the token server is
-  // willing to mint an access token with.
+  // willing to mint an OAuth2 access token with.
   repeated string allowed_oauth2_scope = 3;
+
+  // AllowMachineTokens is true if token server is allowed to generate machine
+  // tokens for machines in this domain.
+  bool allow_machine_tokens = 4;
+
+  // MachineTokenLifetime is how long generated machine tokens live, in seconds.
+  //
+  // If 0, equivalent to 'allow_machine_tokens == false'.
+  int64 machine_token_lifetime = 5;
 }

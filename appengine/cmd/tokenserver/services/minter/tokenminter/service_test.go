@@ -35,18 +35,18 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestMintToken(t *testing.T) {
+func TestMintOAuthToken(t *testing.T) {
 	Convey("with mock context", t, func() {
 		ctx := gaetesting.TestingContext()
 		ctx, _ = testclock.UseTime(ctx, time.Date(2015, time.February, 3, 4, 5, 6, 7, time.UTC))
 
 		Convey("success", func(c C) {
 			server := Server{
-				mintAccessToken: func(_ context.Context, p serviceaccounts.MintAccessTokenParams) (*tokenserver.ServiceAccount, *tokenserver.OAuth2AccessToken, error) {
+				mintOAuthToken: func(_ context.Context, p serviceaccounts.MintAccessTokenParams) (*tokenserver.ServiceAccount, *minter.OAuth2AccessToken, error) {
 					c.So(p.FQDN, ShouldEqual, "luci-token-server-test-1.fake.domain")
 					c.So(p.Scopes, ShouldResemble, []string{"scope2", "scope1"})
 					sa := &tokenserver.ServiceAccount{Email: "blah@email.com"}
-					tok := &tokenserver.OAuth2AccessToken{AccessToken: "access-token"}
+					tok := &minter.OAuth2AccessToken{AccessToken: "access-token"}
 					return sa, tok, nil
 				},
 				certChecker: func(_ context.Context, cert *x509.Certificate) (*model.CA, error) {
@@ -78,7 +78,7 @@ func TestMintToken(t *testing.T) {
 				TokenResponse: &minter.MachineTokenResponse{
 					ServiceAccount: &tokenserver.ServiceAccount{Email: "blah@email.com"},
 					TokenType: &minter.MachineTokenResponse_GoogleOauth2AccessToken{
-						GoogleOauth2AccessToken: &tokenserver.OAuth2AccessToken{AccessToken: "access-token"},
+						GoogleOauth2AccessToken: &minter.OAuth2AccessToken{AccessToken: "access-token"},
 					},
 				},
 			})
@@ -203,7 +203,7 @@ func TestMintToken(t *testing.T) {
 
 		Convey("revoked cert", func(c C) {
 			server := Server{
-				mintAccessToken: func(_ context.Context, p serviceaccounts.MintAccessTokenParams) (*tokenserver.ServiceAccount, *tokenserver.OAuth2AccessToken, error) {
+				mintOAuthToken: func(_ context.Context, p serviceaccounts.MintAccessTokenParams) (*tokenserver.ServiceAccount, *minter.OAuth2AccessToken, error) {
 					panic("must not be called")
 				},
 				certChecker: func(_ context.Context, cert *x509.Certificate) (*model.CA, error) {
@@ -226,7 +226,7 @@ func TestMintToken(t *testing.T) {
 
 		Convey("unknown domain", func(c C) {
 			server := Server{
-				mintAccessToken: func(_ context.Context, p serviceaccounts.MintAccessTokenParams) (*tokenserver.ServiceAccount, *tokenserver.OAuth2AccessToken, error) {
+				mintOAuthToken: func(_ context.Context, p serviceaccounts.MintAccessTokenParams) (*tokenserver.ServiceAccount, *minter.OAuth2AccessToken, error) {
 					panic("must not be called")
 				},
 				certChecker: func(_ context.Context, cert *x509.Certificate) (*model.CA, error) {
@@ -266,7 +266,7 @@ func TestMintToken(t *testing.T) {
 
 func panicingServer() Server {
 	return Server{
-		mintAccessToken: func(_ context.Context, _ serviceaccounts.MintAccessTokenParams) (*tokenserver.ServiceAccount, *tokenserver.OAuth2AccessToken, error) {
+		mintOAuthToken: func(_ context.Context, _ serviceaccounts.MintAccessTokenParams) (*tokenserver.ServiceAccount, *minter.OAuth2AccessToken, error) {
 			panic("must not be called")
 		},
 		certChecker: func(_ context.Context, _ *x509.Certificate) (*model.CA, error) {

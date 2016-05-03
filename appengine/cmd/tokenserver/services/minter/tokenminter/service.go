@@ -18,13 +18,17 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/proto/google"
 
 	"github.com/luci/luci-go/common/api/tokenserver"
 	"github.com/luci/luci-go/common/api/tokenserver/admin/v1"
 	"github.com/luci/luci-go/common/api/tokenserver/minter/v1"
 
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/certchecker"
+	"github.com/luci/luci-go/appengine/cmd/tokenserver/machinetoken"
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/model"
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/services/admin/serviceaccounts"
 )
@@ -33,10 +37,10 @@ import (
 //
 // Use NewServer to make one.
 type Server struct {
-	// mintAccessToken is mocked in tests.
+	// mintOAuthToken is mocked in tests.
 	//
 	// In prod it is serviceaccounts.Server.DoMintAccessToken.
-	mintAccessToken func(context.Context, serviceaccounts.MintAccessTokenParams) (*tokenserver.ServiceAccount, *tokenserver.OAuth2AccessToken, error)
+	mintOAuthToken func(context.Context, serviceaccounts.MintAccessTokenParams) (*tokenserver.ServiceAccount, *minter.OAuth2AccessToken, error)
 
 	// certChecker is mocked in tests.
 	//
@@ -47,8 +51,8 @@ type Server struct {
 // NewServer returns Server configured for real production usage.
 func NewServer(sa *serviceaccounts.Server) *Server {
 	return &Server{
-		mintAccessToken: sa.DoMintAccessToken,
-		certChecker:     certchecker.CheckCertificate,
+		mintOAuthToken: sa.DoMintAccessToken,
+		certChecker:    certchecker.CheckCertificate,
 	}
 }
 
@@ -69,6 +73,7 @@ func (s *Server) MintMachineToken(c context.Context, req *minter.MintMachineToke
 	// the future.
 	switch tokenReq.TokenType {
 	case minter.TokenType_GOOGLE_OAUTH2_ACCESS_TOKEN:
+	case minter.TokenType_LUCI_MACHINE_TOKEN:
 		// supported
 	default:
 		return errorResponse(
@@ -143,6 +148,8 @@ func (s *Server) MintMachineToken(c context.Context, req *minter.MintMachineToke
 	switch tokenReq.TokenType {
 	case minter.TokenType_GOOGLE_OAUTH2_ACCESS_TOKEN:
 		return s.mintGoogleOAuth2AccessToken(c, args)
+	case minter.TokenType_LUCI_MACHINE_TOKEN:
+		return s.mintLuciMachineToken(c, args)
 	default:
 		panic("impossible") // there's a check above
 	}
@@ -169,7 +176,7 @@ func (s *Server) mintGoogleOAuth2AccessToken(c context.Context, args mintTokenAr
 	// Grab the token. It returns grpc error already, but we need to convert it
 	// to MintMachineTokenResponse, unless it is a transient error (then we pass
 	// it through as is, to retain its "transience").
-	account, token, err := s.mintAccessToken(c, params)
+	account, token, err := s.mintOAuthToken(c, params)
 	switch {
 	case err == nil:
 		return &minter.MintMachineTokenResponse{
@@ -182,6 +189,42 @@ func (s *Server) mintGoogleOAuth2AccessToken(c context.Context, args mintTokenAr
 		}, nil
 	case grpc.Code(err) == codes.Internal:
 		return nil, err
+	default:
+		return errorResponse(minter.ErrorCode_TOKEN_MINTING_ERROR, "%s", err)
+	}
+}
+
+func (s *Server) mintLuciMachineToken(c context.Context, args mintTokenArgs) (*minter.MintMachineTokenResponse, error) {
+	inf := info.Get(c)
+
+	// Validate FQDN and whether it is allowed by config.
+	params := machinetoken.MintParams{
+		FQDN:            strings.ToLower(args.Cert.Subject.CommonName),
+		Cert:            args.Cert,
+		Config:          args.Config,
+		ServiceHostname: inf.DefaultVersionHostname(),
+		Signer:          inf.SignBytes,
+	}
+	if err := params.Validate(); err != nil {
+		return errorResponse(minter.ErrorCode_BAD_TOKEN_ARGUMENTS, "%s", err)
+	}
+
+	// Make the token.
+	switch body, signedToken, err := machinetoken.Mint(c, params); {
+	case err == nil:
+		expiry := time.Unix(int64(body.IssuedAt), 0).Add(time.Duration(body.Lifetime) * time.Second)
+		return &minter.MintMachineTokenResponse{
+			TokenResponse: &minter.MachineTokenResponse{
+				TokenType: &minter.MachineTokenResponse_LuciMachineToken{
+					LuciMachineToken: &minter.LuciMachineToken{
+						MachineToken: signedToken,
+						Expiry:       google.NewTimestamp(expiry),
+					},
+				},
+			},
+		}, nil
+	case errors.IsTransient(err):
+		return nil, grpc.Errorf(codes.Internal, "failed to generate machine token - %s", err)
 	default:
 		return errorResponse(minter.ErrorCode_TOKEN_MINTING_ERROR, "%s", err)
 	}

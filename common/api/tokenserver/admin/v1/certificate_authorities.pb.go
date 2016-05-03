@@ -28,8 +28,6 @@ It has these top-level messages:
 	DomainConfig
 	CreateServiceAccountRequest
 	CreateServiceAccountResponse
-	MintAccessTokenRequest
-	MintAccessTokenResponse
 */
 package admin
 

@@ -157,7 +157,7 @@ func GetCertChecker(c context.Context, cn string) (*CertChecker, error) {
 			}
 			return lazyslot.Value{
 				Value:      ca,
-				Expiration: clock.Now(c).Add(RefetchCAPeriod),
+				Expiration: clock.Now(c).Add(refetchCAPeriod(c)),
 			}, nil
 		}
 		return checker, 0, nil
@@ -247,6 +247,16 @@ func (ch *CertChecker) CheckCertificate(c context.Context, cert *x509.Certificat
 	}
 
 	return ca, nil
+}
+
+// refetchCAPeriod returns for how long to cache the CA in memory by default.
+//
+// On dev server we cache for a very short duration to simplify local testing.
+func refetchCAPeriod(c context.Context) time.Duration {
+	if info.Get(c).IsDevAppServer() {
+		return 100 * time.Millisecond
+	}
+	return RefetchCAPeriod
 }
 
 // refetchCRLPeriod returns for how long to cache the CRL in memory by default.

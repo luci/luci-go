@@ -7,14 +7,13 @@ syntax = "proto3";
 package tokenserver.minter;
 
 import "google/protobuf/timestamp.proto";
-
 import "github.com/luci/luci-go/common/api/tokenserver/service_account.proto";
-import "github.com/luci/luci-go/common/api/tokenserver/tokens.proto";
 
 // The kinds of tokens the token server can mint.
 enum TokenType {
   UNKNOWN_TYPE               = 0; // used if the field is not initialized
   GOOGLE_OAUTH2_ACCESS_TOKEN = 1; // OAuth2 service account access token
+  LUCI_MACHINE_TOKEN         = 2; // luci-specific short lived machine token
 }
 
 // Supported ways of singing the request.
@@ -92,10 +91,9 @@ message MachineTokenRequest {
   // Defines what fields of the response are set.
   TokenType token_type = 4;
 
-  // The list of API scopes to grant to the token.
+  // The list of API scopes to grant to the OAuth2 token.
   //
-  // Must not be empty. It is also validated against a whitelist specified in
-  // config.DomainConfig.
+  // It is validated against a whitelist specified in config.DomainConfig.
   repeated string oauth2_scopes = 5;
 }
 
@@ -127,6 +125,35 @@ message MachineTokenResponse {
   // The exact field set here depends on a requested type of the token, see
   // MachineTokenRequest.token_type.
   oneof token_type {
-    tokenserver.OAuth2AccessToken google_oauth2_access_token = 20;
+    OAuth2AccessToken google_oauth2_access_token = 20;
+    LuciMachineToken luci_machine_token = 21;
   }
+}
+
+// OAuth2AccessToken represent short lived OAuth2 access token that can be put
+// into Authorization header.
+//
+// Usually it is standard OAuth2 tokens as understood by Google Cloud Platform.
+//
+// TODO(vadimsh): Remove.
+message OAuth2AccessToken {
+  string access_token = 1;              // the actual token
+  string token_type = 2;                // type of the token, usually "Bearer"
+  google.protobuf.Timestamp expiry = 3; // when the token expires
+}
+
+// LuciMachineToken is short lived machine token.
+//
+// It is understood only by LUCI backends. It is a bearer token, that embeds
+// machine hostname and details about the machine certificate it was issued for.
+// It has short lifetime (usually 1h).
+//
+// It is expected to be sent to backends in 'X-Luci-Machine-Token' HTTP header.
+//
+// The token here is supposed to be treated as an opaque base64-encoded blob,
+// but in reality it is serialized MachineTokenEnvelope, see machine_token.proto
+// and read the comment there for more info about the token format.
+message LuciMachineToken {
+  string machine_token = 1;             // the actual token
+  google.protobuf.Timestamp expiry = 2; // when the token expires
 }
