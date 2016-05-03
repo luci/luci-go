@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logdog/butlerproto"
@@ -16,6 +17,9 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/parallel"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
+	"github.com/luci/luci-go/common/tsmon/distribution"
+	"github.com/luci/luci-go/common/tsmon/field"
+	"github.com/luci/luci-go/common/tsmon/metric"
 	"github.com/luci/luci-go/server/internal/logdog/collector/coordinator"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"golang.org/x/net/context"
@@ -25,6 +29,46 @@ const (
 	// DefaultMaxMessageWorkers is the default number of concurrent worker
 	// goroutones to employ for a single message.
 	DefaultMaxMessageWorkers = 4
+)
+
+var (
+	// tsBundles tracks the total number of logpb.ButlerLogBundle entries that
+	// have been submitted for collection.
+	tsBundles = metric.NewCounter("logdog/collector/bundles",
+		"The number of individual log entry bundles that have been ingested.")
+	// tsLogs tracks the number of logpb.LogEntry entries that have been
+	// written to intermediate storage.
+	tsLogs = metric.NewCounter("logdog/collector/logs",
+		"The number of individual log entries that have been ingested.")
+
+	// tsBundleSize tracks the size, in bytes, of a given log bundle.
+	tsBundleSize = metric.NewCumulativeDistribution("logdog/collector/bundle/size",
+		"The size (in bytes) of the bundle.",
+		distribution.DefaultBucketer)
+	// tsBundleEntriesPerBundle tracks the number of ButlerLogBundle.Entry entries
+	// in each bundle that have been collected.
+	tsBundleEntriesPerBundle = metric.NewCumulativeDistribution("logdog/collector/bundle/entries_per_bundle",
+		"The number of log bundle entries per bundle.",
+		distribution.DefaultBucketer)
+
+	// tsBundleEntries tracks the total number of ButlerLogBundle.Entry entries
+	// that have been collected.
+	//
+	// The "stream" field is the type of log stream for each tracked bundle entry.
+	tsBundleEntries = metric.NewCounter("logdog/collector/bundle/entries",
+		"The number of Butler bundle entries pulled.",
+		field.String("stream"))
+	// tsBundleEntryLogs tracks the number of LogEntry ingested per bundle.
+	//
+	// The "stream" field is the type of log stream.
+	tsBundleEntryLogs = metric.NewCumulativeDistribution("logdog/collector/bundle/entry/logs",
+		"The number of log entries per bundle.",
+		distribution.DefaultBucketer,
+		field.String("stream"))
+	tsBundleEntryProcessingTime = metric.NewCumulativeDistribution("logdog/collector/bundle/entry/processing_time_ms",
+		"The amount of time in milliseconds that a bundle entry takes to process.",
+		distribution.DefaultBucketer,
+		field.String("stream"))
 )
 
 // Collector is a stateful object responsible for ingesting LogDog logs,
@@ -60,6 +104,9 @@ type Collector struct {
 // If no error occurred, or if there was an error with the input data, no error
 // will be returned.
 func (c *Collector) Process(ctx context.Context, msg []byte) error {
+	tsBundles.Add(ctx, 1)
+	tsBundleSize.Add(ctx, float64(len(msg)))
+
 	pr := butlerproto.Reader{}
 	if err := pr.Read(bytes.NewReader(msg)); err != nil {
 		log.Errorf(log.SetError(ctx, err), "Failed to unpack message.")
@@ -77,10 +124,13 @@ func (c *Collector) Process(ctx context.Context, msg []byte) error {
 		return nil
 	}
 
-	// If we're logging INFO or higher, log the ranges that this bundle
-	// represents.
-	if log.IsLogging(ctx, log.Info) {
-		for i, entry := range pr.Bundle.Entries {
+	tsBundleEntriesPerBundle.Add(ctx, float64(len(pr.Bundle.Entries)))
+	for i, entry := range pr.Bundle.Entries {
+		tsBundleEntries.Add(ctx, 1, streamType(entry.Desc))
+
+		// If we're logging INFO or higher, log the ranges that this bundle
+		// represents.
+		if log.IsLogging(ctx, log.Info) {
 			fields := log.Fields{
 				"index":   i,
 				"project": pr.Bundle.Project,
@@ -144,7 +194,7 @@ func (c *Collector) Process(ctx context.Context, msg []byte) error {
 	if workers <= 0 {
 		workers = DefaultMaxMessageWorkers
 	}
-	err := parallel.WorkPool(workers, func(taskC chan<- func() error) {
+	return parallel.WorkPool(workers, func(taskC chan<- func() error) {
 		for _, be := range pr.Bundle.Entries {
 			be := be
 
@@ -156,14 +206,6 @@ func (c *Collector) Process(ctx context.Context, msg []byte) error {
 			}
 		}
 	})
-	if err != nil {
-		if !errors.IsTransient(err) && hasTransientError(err) {
-			// err has a nested transient error; propagate that to top.
-			err = errors.WrapTransient(err)
-		}
-		return err
-	}
-	return nil
 }
 
 // Close releases any internal resources and blocks pending the completion of
@@ -197,6 +239,15 @@ type bundleEntryHandler struct {
 // processLogStream processes an individual set of log messages belonging to the
 // same log stream.
 func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler) error {
+	streamTypeField := streamType(h.be.Desc)
+	startTime := clock.Now(ctx)
+	defer func() {
+		duration := clock.Now(ctx).Sub(startTime)
+
+		// We track processing time in milliseconds.
+		tsBundleEntryProcessingTime.Add(ctx, duration.Seconds()*1000, streamTypeField)
+	}()
+
 	// If this bundle has neither log entries nor a terminal index, it is junk and
 	// must be discarded.
 	//
@@ -348,6 +399,8 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 					}.Errorf(ctx, "Failed to load log entry into Storage.")
 					return err
 				}
+
+				tsLogs.Add(ctx, int64(len(logData)), streamTypeField)
 				return nil
 			}
 		}
@@ -374,21 +427,9 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 	})
 }
 
-// wrapMultiErrorTransient wraps an error in a TransientError wrapper.
-//
-// If the error is nil, it will return nil. If the error is already transient,
-// it will be directly returned. If the error is a MultiError, its sub-errors
-// will be evaluated and wrapped in a TransientError if any of its sub-errors
-// are transient errors.
-func hasTransientError(err error) bool {
-	if merr, ok := err.(errors.MultiError); ok {
-		for _, e := range merr {
-			if hasTransientError(e) {
-				return true
-			}
-		}
-		return false
+func streamType(desc *logpb.LogStreamDescriptor) string {
+	if desc == nil {
+		return "UNKNOWN"
 	}
-
-	return errors.IsTransient(err)
+	return desc.StreamType.String()
 }

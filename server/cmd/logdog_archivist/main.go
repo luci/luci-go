@@ -15,6 +15,9 @@ import (
 	"github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/parallel"
+	"github.com/luci/luci-go/common/tsmon/distribution"
+	"github.com/luci/luci-go/common/tsmon/field"
+	"github.com/luci/luci-go/common/tsmon/metric"
 	"github.com/luci/luci-go/server/internal/logdog/archivist"
 	"github.com/luci/luci-go/server/internal/logdog/service"
 	"golang.org/x/net/context"
@@ -24,6 +27,16 @@ import (
 
 var (
 	errInvalidConfig = errors.New("invalid configuration")
+
+	// tsTaskProcessingTime measures the amount of time spent processing a single
+	// task.
+	//
+	// The "consumed" field is true if the underlying task was consumed and
+	// false if it was not.
+	tsTaskProcessingTime = metric.NewCumulativeDistribution("logdog/archivist/task_processing_time_ms",
+		"The amount of time (in milliseconds) that a single task takes to process.",
+		distribution.DefaultBucketer,
+		field.Bool("consumed"))
 )
 
 const (
@@ -172,9 +185,29 @@ func (a *application) runArchivist(c context.Context) error {
 
 				// Dispatch an archive handler for this message.
 				taskC <- func() error {
+					// ACK (or not) the message based on whether our task was consumed.
 					deleteTask := false
 					defer func() {
 						msg.Done(deleteTask)
+					}()
+
+					// Time how long task processing takes for metrics.
+					startTime := clock.Now(c)
+					defer func() {
+						duration := clock.Now(c).Sub(startTime)
+
+						if deleteTask {
+							log.Fields{
+								"duration": duration,
+							}.Infof(c, "Task successfully processed; deleting.")
+						} else {
+							log.Fields{
+								"duration": duration,
+							}.Infof(c, "Task processing incomplete. Not deleting.")
+						}
+
+						// Add to our processing time metric.
+						tsTaskProcessingTime.Add(c, duration.Seconds()*1000, deleteTask)
 					}()
 
 					task, err := makePubSubArchivistTask(psContext, psSubscriptionName, msg)
@@ -184,19 +217,9 @@ func (a *application) runArchivist(c context.Context) error {
 						return nil
 					}
 
-					startTime := clock.Now(c)
-					deleteTask = ar.ArchiveTask(c, task)
-					duration := clock.Now(c).Sub(startTime)
+					ar.ArchiveTask(c, task)
+					deleteTask = task.consumed
 
-					if deleteTask {
-						log.Fields{
-							"duration": duration,
-						}.Infof(c, "Task successfully processed; deleting.")
-					} else {
-						log.Fields{
-							"duration": duration,
-						}.Infof(c, "Task processing incomplete. Not deleting.")
-					}
 					return nil
 				}
 
@@ -218,6 +241,10 @@ func (a *application) runArchivist(c context.Context) error {
 
 // Entry point.
 func main() {
-	a := application{}
+	a := application{
+		Service: service.Service{
+			Name: "archivist",
+		},
+	}
 	a.Run(context.Background(), a.runArchivist)
 }

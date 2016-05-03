@@ -31,7 +31,7 @@ _load_metadata_domain() {
   OUTPUT=$(curl \
     -s \
     --fail \
-    "${METADATA_URL}/computeMetadata/v1/${domain}/attributes/${resource}" \
+    "${METADATA_URL}/computeMetadata/v1/${domain}/${resource}" \
     -H "Metadata-Flavor: Google")
   RV=$?
   if [ ${RV} != 0 ]; then
@@ -96,11 +96,15 @@ if [ $? != 0 ]; then
 fi
 
 # Load metadata (common).
-_load_metadata_check COORDINATOR_HOST "logdog_coordinator_host"
-_load_metadata STORAGE_CREDENTIALS "logdog_storage_auth_json"
+_load_metadata_check PROJECT_ID "project-id"
+_load_metadata_check COORDINATOR_HOST "attributes/logdog_coordinator_host"
+_load_metadata STORAGE_CREDENTIALS "attributes/logdog_storage_auth_json"
+
+# Load metadata (ts-mon).
+_load_metadata TSMON_ENDPOINT "attributes/tsmon_endpoint"
 
 # Load metadata (app-specific).
-_load_metadata LOG_LEVEL "logdog_archivist_log_level"
+_load_metadata LOG_LEVEL "attributes/logdog_archivist_log_level"
 
 # Runtime temporary directory.
 TEMPDIR=$(mktemp -d)
@@ -119,6 +123,11 @@ if [ ! -z "${STORAGE_CREDENTIALS}" ]; then
   STORAGE_CREDENTIALS_JSON_PATH="${TEMPDIR}/storage_service_account_json.json"
   _write_credentials "${STORAGE_CREDENTIALS_JSON_PATH}" "${STORAGE_CREDENTIALS}"
   ARGS+=("-storage-credential-json-path" "${STORAGE_CREDENTIALS_JSON_PATH}")
+fi
+if [ ! -z "${TSMON_ENDPOINT}" ]; then
+  ARGS+=("-ts-mon-endpoint" "${TSMON_ENDPOINT}")
+  ARGS+=("-ts-mon-task-service-name" "${PROJECT_ID}")
+  ARGS+=("-ts-mon-autogen-hostname")
 fi
 
 echo "INFO: Running command line args: ${APP} ${ARGS[*]}"

@@ -15,6 +15,9 @@ import (
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/parallel"
+	"github.com/luci/luci-go/common/tsmon/distribution"
+	"github.com/luci/luci-go/common/tsmon/field"
+	"github.com/luci/luci-go/common/tsmon/metric"
 	"github.com/luci/luci-go/server/internal/logdog/collector"
 	"github.com/luci/luci-go/server/internal/logdog/collector/coordinator"
 	"github.com/luci/luci-go/server/internal/logdog/service"
@@ -29,6 +32,24 @@ var (
 
 const (
 	pubsubPullErrorDelay = 10 * time.Second
+)
+
+// Metrics.
+var (
+	// tsPubsubCount counts the number of Pub/Sub messages processed by the
+	// Archivist.
+	//
+	// Result tracks the outcome of each message, either "success", "failure", or
+	// "transient_failure".
+	tsPubsubCount = metric.NewCounter("logdog/collector/subscription/count",
+		"The number of Pub/Sub messages pulled.",
+		field.String("result"))
+
+	// tsTaskProcessingTime tracks the amount of time a single subscription
+	// message takes to process, in milliseconds.
+	tsTaskProcessingTime = metric.NewCumulativeDistribution("logdog/collector/subscription/processing_time_ms",
+		"Amount of time in milliseconds that a single Pub/Sub message takes to process.",
+		distribution.DefaultBucketer)
 )
 
 // application is the Collector application state.
@@ -164,6 +185,9 @@ func (a *application) processMessage(c context.Context, coll *collector.Collecto
 	err := coll.Process(c, msg.Data)
 	duration := clock.Now(c).Sub(startTime)
 
+	// We track processing time in milliseconds.
+	tsTaskProcessingTime.Add(c, duration.Seconds()*1000)
+
 	switch {
 	case errors.IsTransient(err):
 		// Do not consume
@@ -171,6 +195,7 @@ func (a *application) processMessage(c context.Context, coll *collector.Collecto
 			log.ErrorKey: err,
 			"duration":   duration,
 		}.Warningf(c, "TRANSIENT error ingesting Pub/Sub message.")
+		tsPubsubCount.Add(c, 1, "transient_failure")
 		return false
 
 	case err == nil:
@@ -179,6 +204,7 @@ func (a *application) processMessage(c context.Context, coll *collector.Collecto
 			"size":     len(msg.Data),
 			"duration": duration,
 		}.Infof(c, "Message successfully processed; ACKing.")
+		tsPubsubCount.Add(c, 1, "success")
 		return true
 
 	default:
@@ -188,12 +214,17 @@ func (a *application) processMessage(c context.Context, coll *collector.Collecto
 			"size":       len(msg.Data),
 			"duration":   duration,
 		}.Errorf(c, "Non-transient error ingesting Pub/Sub message; ACKing.")
+		tsPubsubCount.Add(c, 1, "failure")
 		return true
 	}
 }
 
 // Entry point.
 func main() {
-	a := application{}
+	a := application{
+		Service: service.Service{
+			Name: "collector",
+		},
+	}
 	a.Run(context.Background(), a.runCollector)
 }

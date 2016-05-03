@@ -7,9 +7,11 @@ package service
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"runtime/pprof"
 	"sync/atomic"
 
@@ -21,6 +23,9 @@ import (
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/common/prpc"
+	"github.com/luci/luci-go/common/tsmon"
+	"github.com/luci/luci-go/common/tsmon/metric"
+	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/server/internal/logdog/retryServicesClient"
 	"github.com/luci/luci-go/server/internal/logdog/service/config"
 	"github.com/luci/luci-go/server/logdog/storage"
@@ -39,10 +44,18 @@ var (
 	CoordinatorScopes = []string{
 		auth.OAuthScopeEmail,
 	}
+
+	presenceUpMetric = metric.NewBool("presence/up",
+		"Set to one when service is present and ready. Alert on missing values.")
 )
 
 // Service is a base class full of common LogDog service application parameters.
 type Service struct {
+	// Name is the name of this service. It is used for logging, metrics, and
+	// user agent string generation.
+	//
+	// If empty, a service name will be inferred from the command-line arguments.
+	Name string
 	// Flags is the set of flags that will be used by the Service.
 	Flags flag.FlagSet
 
@@ -51,6 +64,7 @@ type Service struct {
 	loggingFlags log.Config
 	authFlags    authcli.Flags
 	configFlags  config.Flags
+	tsMonFlags   tsmon.Flags
 
 	coordinatorHost           string
 	coordinatorInsecure       bool
@@ -66,6 +80,12 @@ type Service struct {
 // function.
 func (s *Service) Run(c context.Context, f func(context.Context) error) {
 	c = gologger.StdConfig.Use(c)
+
+	// If a service name isn't specified, default to the base of the current
+	// executable.
+	if s.Name == "" {
+		s.Name = filepath.Base(os.Args[0])
+	}
 
 	rc := 0
 	if err := s.runImpl(c, f); err != nil {
@@ -146,6 +166,15 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 		close(signalC)
 	}()
 
+	// Initialize our tsmon library.
+	tsMonState := tsmon.State{}
+	c = tsmon.WithState(c, &tsMonState)
+
+	if err := tsmon.InitializeFromFlags(c, &s.tsMonFlags); err != nil {
+		log.WithError(err).Warningf(c, "Failed to initialize monitoring; will continue without metrics.")
+	}
+	defer tsmon.Shutdown(c)
+
 	// Initialize our Client instantiations.
 	var err error
 	s.coord, err = s.initCoordinatorClient(c)
@@ -162,12 +191,32 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 	defer s.config.Close()
 
 	defer s.SetShutdownFunc(nil)
+
+	// Monitoring: register presence up.
+	//
+	// TODO: This is disabled for now, since it is currently retained outside of
+	// the autogen window (crbug.com/608530).
+	/*
+		if err := presenceUpMetric.Set(c, true); err != nil {
+			log.WithError(err).Warningf(c, "Failed to set presence up metric.")
+		}
+	*/
+
+	// Run main service function.
 	return f(c)
 }
 
 func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
+	// Initialize logging flags.
 	s.loggingFlags.Level = log.Warning
 	s.loggingFlags.AddFlags(fs)
+
+	// Initialize tsmon flags.
+	s.tsMonFlags = tsmon.NewFlags()
+	s.tsMonFlags.Flush = tsmon.FlushAuto
+	s.tsMonFlags.Target.TargetType = target.TaskType
+	s.tsMonFlags.Target.TaskJobName = s.Name
+	s.tsMonFlags.Register(fs)
 
 	s.authFlags.Register(fs, auth.Options{})
 	s.configFlags.AddToFlagSet(fs)
@@ -203,6 +252,7 @@ func (s *Service) initCoordinatorClient(c context.Context) (logdog.ServicesClien
 		Host:    s.coordinatorHost,
 		Options: prpc.DefaultOptions(),
 	}
+	prpcClient.Options.UserAgent = fmt.Sprintf("%s/%s", s.Name, prpc.DefaultUserAgent)
 	if s.coordinatorInsecure {
 		prpcClient.Options.Insecure = true
 	}

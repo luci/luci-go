@@ -19,9 +19,68 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/parallel"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
+	"github.com/luci/luci-go/common/tsmon/distribution"
+	"github.com/luci/luci-go/common/tsmon/field"
+	"github.com/luci/luci-go/common/tsmon/metric"
 	"github.com/luci/luci-go/server/logdog/archive"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"golang.org/x/net/context"
+)
+
+const (
+	tsEntriesField = "entries"
+	tsIndexField   = "index"
+	tsDataField    = "data"
+)
+
+var (
+	// tsCount counts the raw number of archival tasks that this instance has
+	// processed, regardless of success/failure.
+	tsCount = metric.NewCounter("logdog/archivist/archive/count",
+		"The number of archival tasks processed.",
+		field.Bool("successful"))
+
+	// tsSize tracks the archive binary file size distribution of completed
+	// archives.
+	//
+	// The "archive" field is the specific type of archive (entries, index, data)
+	// that is being tracked.
+	//
+	// The "stream" field is the type of log stream that is being archived.
+	tsSize = metric.NewCumulativeDistribution("logdog/archivist/archive/size",
+		"The size (in bytes) of each archive file.",
+		distribution.DefaultBucketer,
+		field.String("archive"),
+		field.String("stream"))
+
+	// tsTotalBytes tracks the cumulative total number of bytes that have
+	// been archived by this instance.
+	//
+	// The "archive" field is the specific type of archive (entries, index, data)
+	// that is being tracked.
+	//
+	// The "stream" field is the type of log stream that is being archived.
+	tsTotalBytes = metric.NewCounter("logdog/archivist/archive/total_bytes",
+		"The total number of archived bytes.",
+		field.String("archive"),
+		field.String("stream"))
+
+	// tsLogEntries tracks the number of log entries per individual
+	// archival.
+	//
+	// The "stream" field is the type of log stream that is being archived.
+	tsLogEntries = metric.NewCumulativeDistribution("logdog/archivist/archive/log_entries",
+		"The total number of log entries per archive.",
+		distribution.DefaultBucketer,
+		field.String("stream"))
+
+	// tsTotalLogEntries tracks the total number of log entries that have
+	// been archived by this instance.
+	//
+	// The "stream" field is the type of log stream that is being archived.
+	tsTotalLogEntries = metric.NewCounter("logdog/archivist/archive/total_log_entries",
+		"The total number of log entries.",
+		field.String("stream"))
 )
 
 // Task is a single archive task.
@@ -32,6 +91,10 @@ type Task interface {
 
 	// Task is the archive task to execute.
 	Task() *logdog.ArchiveTask
+
+	// Consume marks that this task's processing is complete and that it should be
+	// consumed. This may be called multiple times with no additional effect.
+	Consume()
 
 	// AssertLease asserts that the lease for this Task is still held.
 	//
@@ -76,27 +139,32 @@ const storageBufferSize = types.MaxLogEntryDataSize * 64
 
 // ArchiveTask processes and executes a single log stream archive task.
 //
-// It returns true on success (delete the task) and false on failure (don't
-// delete the task). The return value of true should only be used if the task
-// is truly complete and acknowledged by the Coordinator.
+// During processing, the Task's Consume method may be called to indicate that
+// it should be consumed.
 //
 // If the supplied Context is Done, operation may terminate before completion,
 // returning the Context's error.
-func (a *Archivist) ArchiveTask(c context.Context, task Task) bool {
-	delete, err := a.archiveTaskImpl(c, task)
+func (a *Archivist) ArchiveTask(c context.Context, task Task) {
+	err := a.archiveTaskImpl(c, task)
+
+	failure := isFailure(err)
 	log.Fields{
 		log.ErrorKey: err,
-		"delete":     delete,
+		"failure":    failure,
 		"project":    task.Task().Project,
 		"path":       task.Task().Path,
 	}.Infof(c, "Finished archive task.")
-	return delete
+
+	// Add a result metric.
+	tsCount.Add(c, 1, !failure)
 }
 
-// archiveTaskImpl returns the same boolean value as ArchiveTask, but includes
-// an error. The error is useful for testing to assert that certain conditions
-// were hit.
-func (a *Archivist) archiveTaskImpl(c context.Context, task Task) (bool, error) {
+// archiveTaskImpl performs the actual task archival.
+//
+// Its error return value is used to indicate how the archive failed. isFailure
+// will be called to determine if the returned error value is a failure or a
+// status error.
+func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 	at := task.Task()
 	log.Fields{
 		"project": at.Project,
@@ -104,13 +172,15 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) (bool, error) 
 	}.Debugf(c, "Received archival task.")
 
 	if err := types.StreamPath(at.Path).Validate(); err != nil {
-		return true, fmt.Errorf("invalid path %q: %s", at.Path, err)
+		task.Consume()
+		return fmt.Errorf("invalid path %q: %s", at.Path, err)
 	}
 
 	// TODO(dnj): Remove empty project exemption, make empty project invalid.
 	if at.Project != "" {
 		if err := config.ProjectName(at.Project).Validate(); err != nil {
-			return true, fmt.Errorf("invalid project name %q: %s", at.Project, err)
+			task.Consume()
+			return fmt.Errorf("invalid project name %q: %s", at.Project, err)
 		}
 	}
 
@@ -124,19 +194,21 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) (bool, error) 
 	switch {
 	case err != nil:
 		log.WithError(err).Errorf(c, "Failed to load log stream.")
-		return false, err
+		return err
 
 	case ls.State == nil:
 		log.Errorf(c, "Log stream did not include state.")
-		return false, errors.New("log stream did not include state")
+		return errors.New("log stream did not include state")
 
 	case ls.State.Purged:
 		log.Warningf(c, "Log stream is purged. Discarding archival request.")
-		return true, errors.New("log stream is purged")
+		task.Consume()
+		return statusErr(errors.New("log stream is purged"))
 
 	case ls.State.Archived:
 		log.Infof(c, "Log stream is already archived. Discarding archival request.")
-		return true, errors.New("log stream is archived")
+		task.Consume()
+		return statusErr(errors.New("log stream is archived"))
 
 	case !bytes.Equal(ls.ArchivalKey, at.Key):
 		if len(ls.ArchivalKey) == 0 {
@@ -146,11 +218,8 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) (bool, error) 
 			// its log stream state by the time this Pub/Sub task is received. In
 			// this case, we will continue retrying the task until datastore registers
 			// that some key is associated with it.
-			log.Fields{
-				"logStreamArchivalKey": hex.EncodeToString(ls.ArchivalKey),
-				"requestArchivalKey":   hex.EncodeToString(at.Key),
-			}.Infof(c, "Archival request received before log stream has its key.")
-			return false, errors.New("premature archival request")
+			log.Infof(c, "Archival request received before log stream has its key.")
+			return statusErr(errors.New("premature archival request"))
 		}
 
 		// This can happen if a Pub/Sub message is dispatched during a transaction,
@@ -161,18 +230,19 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) (bool, error) 
 			"logStreamArchivalKey": hex.EncodeToString(ls.ArchivalKey),
 			"requestArchivalKey":   hex.EncodeToString(at.Key),
 		}.Infof(c, "Superfluous archival request (keys do not match). Discarding.")
-		return true, errors.New("superfluous archival request")
+		task.Consume()
+		return statusErr(errors.New("superfluous archival request"))
 
 	case ls.State.ProtoVersion != logpb.Version:
 		log.Fields{
 			"protoVersion":    ls.State.ProtoVersion,
 			"expectedVersion": logpb.Version,
 		}.Errorf(c, "Unsupported log stream protobuf version.")
-		return false, errors.New("unsupported log stream protobuf version")
+		return errors.New("unsupported log stream protobuf version")
 
 	case ls.Desc == nil:
 		log.Errorf(c, "Log stream did not include a descriptor.")
-		return false, errors.New("log stream did not include a descriptor")
+		return errors.New("log stream did not include a descriptor")
 	}
 
 	// If the archival request is younger than the settle delay, kick it back to
@@ -183,7 +253,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) (bool, error) 
 			"age":         age,
 			"settleDelay": at.SettleDelay.Duration(),
 		}.Infof(c, "Log stream is younger than the settle delay. Returning task to queue.")
-		return false, errors.New("log stream is within settle delay")
+		return statusErr(errors.New("log stream is within settle delay"))
 	}
 
 	// Are we required to archive a complete log stream?
@@ -192,14 +262,14 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) (bool, error) 
 
 		if tidx < 0 {
 			log.Warningf(c, "Cannot archive complete stream with no terminal index.")
-			return false, errors.New("completeness required, but stream has no terminal index")
+			return statusErr(errors.New("completeness required, but stream has no terminal index"))
 		}
 
 		// If we're requiring completeness, perform a keys-only scan of intermediate
 		// storage to ensure that we have all of the records before we bother
 		// streaming to storage only to find that we are missing data.
 		if err := a.checkComplete(config.ProjectName(at.Project), types.StreamPath(at.Path), types.MessageIndex(tidx)); err != nil {
-			return false, err
+			return err
 		}
 	}
 
@@ -227,7 +297,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) (bool, error) 
 		// If this is a transient error, exit immediately and do not delete the
 		// archival task.
 		log.WithError(err).Warningf(c, "TRANSIENT error during archival operation.")
-		return false, err
+		return err
 
 	case err != nil:
 		// This is a non-transient error, so we are confident that any future
@@ -249,14 +319,24 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) (bool, error) 
 		// hold it.
 		if err := task.AssertLease(c); err != nil {
 			log.WithError(err).Errorf(c, "Failed to extend task lease before finalizing.")
-			return false, err
+			return err
 		}
 
 		// Finalize the archival.
 		if err := staged.finalize(c, a.GSClient, &ar); err != nil {
 			log.WithError(err).Errorf(c, "Failed to finalize archival.")
-			return false, err
+			return err
 		}
+
+		// Add metrics for this successful archival.
+		streamType := staged.desc.StreamType.String()
+
+		staged.stream.addMetrics(c, tsEntriesField, streamType)
+		staged.index.addMetrics(c, tsIndexField, streamType)
+		staged.data.addMetrics(c, tsDataField, streamType)
+
+		tsLogEntries.Add(c, float64(staged.logEntryCount), streamType)
+		tsTotalLogEntries.Add(c, staged.logEntryCount, streamType)
 	}
 
 	log.Fields{
@@ -272,17 +352,18 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) (bool, error) 
 	// Extend the lease again to confirm that we still hold it.
 	if err := task.AssertLease(c); err != nil {
 		log.WithError(err).Errorf(c, "Failed to extend task lease before reporting.")
-		return false, err
+		return err
 	}
 
 	if _, err := a.Service.ArchiveStream(c, &ar); err != nil {
 		log.WithError(err).Errorf(c, "Failed to report archive state.")
-		return false, err
+		return err
 	}
 
 	// Archival is complete and acknowledged by Coordinator. Consume the archival
 	// task.
-	return true, nil
+	task.Consume()
+	return nil
 }
 
 // checkComplete performs a quick scan of intermediate storage to ensure that
@@ -299,7 +380,7 @@ func (a *Archivist) checkComplete(project config.ProjectName, path types.StreamP
 	err := a.Storage.Get(sreq, func(idx types.MessageIndex, d []byte) bool {
 		switch {
 		case idx != nextIndex:
-			ierr = fmt.Errorf("missing log entry index %d (next %d)", nextIndex, idx)
+			ierr = statusErr(fmt.Errorf("missing log entry index %d (next %d)", nextIndex, idx))
 			return false
 
 		case idx == tidx:
@@ -513,6 +594,11 @@ func (d *stagingPaths) clearStaged() {
 	d.staged = ""
 }
 
+func (d *stagingPaths) addMetrics(c context.Context, archiveField, streamField string) {
+	tsSize.Add(c, float64(d.count), archiveField, streamField)
+	tsTotalBytes.Add(c, d.count, archiveField, streamField)
+}
+
 func (sa *stagedArchival) finalize(c context.Context, client gs.Client, ar *logdog.ArchiveStreamRequest) error {
 	err := parallel.FanOutIn(func(taskC chan<- func() error) {
 		for _, d := range sa.getStagingPaths() {
@@ -577,4 +663,39 @@ func (sa *stagedArchival) getStagingPaths() []*stagingPaths {
 		&sa.index,
 		&sa.data,
 	}
+}
+
+// statusErrorWrapper is an error wrapper. It is detected by IsFailure and used to
+// determine whether the supplied error represents a failure or just a status
+// error.
+type statusErrorWrapper struct {
+	inner error
+}
+
+var _ interface {
+	error
+	errors.Wrapped
+} = (*statusErrorWrapper)(nil)
+
+func statusErr(inner error) error {
+	return &statusErrorWrapper{inner}
+}
+
+func (e *statusErrorWrapper) Error() string {
+	if e.inner != nil {
+		return e.inner.Error()
+	}
+	return ""
+}
+
+func (e *statusErrorWrapper) InnerError() error {
+	return e.inner
+}
+
+func isFailure(err error) bool {
+	if err == nil {
+		return false
+	}
+	_, ok := err.(*statusErrorWrapper)
+	return !ok
 }

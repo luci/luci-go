@@ -15,6 +15,8 @@ import (
 	"github.com/luci/luci-go/common/lru"
 	"github.com/luci/luci-go/common/promise"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
+	"github.com/luci/luci-go/common/tsmon/field"
+	"github.com/luci/luci-go/common/tsmon/metric"
 	"golang.org/x/net/context"
 )
 
@@ -24,6 +26,12 @@ const (
 
 	// DefaultExpiration is the default expiration value.
 	DefaultExpiration = 10 * time.Minute
+)
+
+var (
+	tsCache = metric.NewCounter("logdog/collector/coordinator/cache",
+		"Metrics for cache uses, tracking hits and misses.",
+		field.Bool("hit"))
 )
 
 // cache is a Coordinator interface implementation for the Collector service
@@ -76,11 +84,13 @@ func (c *cache) RegisterStream(ctx context.Context, st *LogStreamState, d *logpb
 	// Get the cacheEntry from our cache. If it is expired, doesn't exist, or
 	// we're forcing, ignore any existing entry and replace with a Promise pending
 	// Coordinator sync.
+	cacheHit := false
 	entry := c.lru.Mutate(key, func(current interface{}) interface{} {
 		// Don't replace an existing entry, unless it has an error or has expired.
 		if current != nil {
 			curEntry := current.(*cacheEntry)
 			if !curEntry.hasError() && now.Before(curEntry.expiresAt) {
+				cacheHit = true
 				return current
 			}
 		}
@@ -122,6 +132,8 @@ func (c *cache) RegisterStream(ctx context.Context, st *LogStreamState, d *logpb
 		}.Errorf(ctx, "Error retrieving stream state.")
 		return nil, err
 	}
+
+	tsCache.Add(ctx, 1, cacheHit)
 	return st, nil
 }
 

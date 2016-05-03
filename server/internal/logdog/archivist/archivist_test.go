@@ -34,6 +34,7 @@ type testTask struct {
 	task           *logdog.ArchiveTask
 	assertLeaseErr error
 	assertCount    int
+	consumed       bool
 }
 
 func (t *testTask) UniqueID() string {
@@ -42,6 +43,10 @@ func (t *testTask) UniqueID() string {
 
 func (t *testTask) Task() *logdog.ArchiveTask {
 	return t.task
+}
+
+func (t *testTask) Consume() {
+	t.consumed = true
 }
 
 func (t *testTask) AssertLease(context.Context) error {
@@ -329,35 +334,31 @@ func TestHandleArchive(t *testing.T) {
 				return nil, errors.New("does not exist")
 			}
 
-			ack, err := ar.archiveTaskImpl(c, task)
-			So(err, ShouldErrLike, "does not exist")
-			So(ack, ShouldBeFalse)
+			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "does not exist")
+			So(task.consumed, ShouldBeFalse)
 		})
 
-		Convey(`Will complete task and refrain from archiving if the stream is already archived.`, func() {
+		Convey(`Will consume task and refrain from archiving if the stream is already archived.`, func() {
 			stream.State.Archived = true
 
-			ack, err := ar.archiveTaskImpl(c, task)
-			So(err, ShouldErrLike, "log stream is archived")
-			So(ack, ShouldBeTrue)
+			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "log stream is archived")
+			So(task.consumed, ShouldBeTrue)
 			So(archiveRequest, ShouldBeNil)
 		})
 
-		Convey(`Will complete task and refrain from archiving if the stream is purged.`, func() {
+		Convey(`Will consume task and refrain from archiving if the stream is purged.`, func() {
 			stream.State.Purged = true
 
-			ack, err := ar.archiveTaskImpl(c, task)
-			So(err, ShouldErrLike, "log stream is purged")
-			So(ack, ShouldBeTrue)
+			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "log stream is purged")
+			So(task.consumed, ShouldBeTrue)
 			So(archiveRequest, ShouldBeNil)
 		})
 
 		Convey(`Will return task if the stream is younger than its settle delay.`, func() {
 			stream.Age = google.NewDuration(time.Second)
 
-			ack, err := ar.archiveTaskImpl(c, task)
-			So(err, ShouldErrLike, "log stream is within settle delay")
-			So(ack, ShouldBeFalse)
+			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "log stream is within settle delay")
+			So(task.consumed, ShouldBeFalse)
 			So(archiveRequest, ShouldBeNil)
 		})
 
@@ -365,19 +366,17 @@ func TestHandleArchive(t *testing.T) {
 			stream.Age = google.NewDuration(expired)
 			stream.ArchivalKey = nil
 
-			ack, err := ar.archiveTaskImpl(c, task)
-			So(err, ShouldErrLike, "premature archival request")
-			So(ack, ShouldBeFalse)
+			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "premature archival request")
+			So(task.consumed, ShouldBeFalse)
 			So(archiveRequest, ShouldBeNil)
 		})
 
-		Convey(`Will complete task and refrain from archiving if archival keys dont' match.`, func() {
+		Convey(`Will consume task and refrain from archiving if archival keys don't match.`, func() {
 			stream.Age = google.NewDuration(expired)
 			stream.ArchivalKey = []byte("non-matching archival key")
 
-			ack, err := ar.archiveTaskImpl(c, task)
-			So(err, ShouldErrLike, "superfluous archival request")
-			So(ack, ShouldBeTrue)
+			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "superfluous archival request")
+			So(task.consumed, ShouldBeTrue)
 			So(archiveRequest, ShouldBeNil)
 		})
 
@@ -387,34 +386,30 @@ func TestHandleArchive(t *testing.T) {
 		// have been dispatched by our expired archive cron, but let's assert that
 		// it behaves correctly regardless.
 		Convey(`Will refuse to archive a complete stream with no terminal index.`, func() {
-			ack, err := ar.archiveTaskImpl(c, task)
-			So(err, ShouldErrLike, "completeness required, but stream has no terminal index")
-			So(ack, ShouldBeFalse)
+			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "completeness required, but stream has no terminal index")
+			So(task.consumed, ShouldBeFalse)
 		})
 
 		Convey(`With terminal index "3"`, func() {
 			stream.State.TerminalIndex = 3
 
-			Convey(`Will fail not ACK a log stream with no entries.`, func() {
-				ack, err := ar.archiveTaskImpl(c, task)
-				So(err, ShouldEqual, storage.ErrDoesNotExist)
-				So(ack, ShouldBeFalse)
+			Convey(`Will not consume the task if the log stream has no entries.`, func() {
+				So(ar.archiveTaskImpl(c, task), ShouldEqual, storage.ErrDoesNotExist)
+				So(task.consumed, ShouldBeFalse)
 			})
 
 			Convey(`Will fail to archive {0, 1, 2, 4} (incomplete).`, func() {
 				addTestEntry(project, 0, 1, 2, 4)
 
-				ack, err := ar.archiveTaskImpl(c, task)
-				So(err, ShouldErrLike, "missing log entry")
-				So(ack, ShouldBeFalse)
+				So(ar.archiveTaskImpl(c, task), ShouldErrLike, "missing log entry")
+				So(task.consumed, ShouldBeFalse)
 			})
 
 			Convey(`Will successfully archive {0, 1, 2, 3, 4}, stopping at the terminal index.`, func() {
 				addTestEntry(project, 0, 1, 2, 3, 4)
 
-				ack, err := ar.archiveTaskImpl(c, task)
-				So(err, ShouldBeNil)
-				So(ack, ShouldBeTrue)
+				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+				So(task.consumed, ShouldBeTrue)
 
 				So(hasStreams(true, true, true), ShouldBeTrue)
 				So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
@@ -429,13 +424,12 @@ func TestHandleArchive(t *testing.T) {
 				})
 			})
 
-			Convey(`When a transient archival error occurs, will not ACK it.`, func() {
+			Convey(`When a transient archival error occurs, will not consume the task.`, func() {
 				addTestEntry(project, 0, 1, 2, 3, 4)
 				gsc.newWriterErr = func(*testGSWriter) error { return errors.WrapTransient(errors.New("test error")) }
 
-				ack, err := ar.archiveTaskImpl(c, task)
-				So(err, ShouldErrLike, "test error")
-				So(ack, ShouldBeFalse)
+				So(ar.archiveTaskImpl(c, task), ShouldErrLike, "test error")
+				So(task.consumed, ShouldBeFalse)
 			})
 
 			Convey(`When a non-transient archival error occurs`, func() {
@@ -443,12 +437,11 @@ func TestHandleArchive(t *testing.T) {
 				archiveErr := errors.New("archive failure error")
 				gsc.newWriterErr = func(*testGSWriter) error { return archiveErr }
 
-				Convey(`If remote report returns an error, do not ACK.`, func() {
+				Convey(`If remote report returns an error, do not consume the task.`, func() {
 					archiveStreamErr = errors.New("test error")
 
-					ack, err := ar.archiveTaskImpl(c, task)
-					So(err, ShouldErrLike, "test error")
-					So(ack, ShouldBeFalse)
+					So(ar.archiveTaskImpl(c, task), ShouldErrLike, "test error")
+					So(task.consumed, ShouldBeFalse)
 
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
 						Project: project,
@@ -457,10 +450,9 @@ func TestHandleArchive(t *testing.T) {
 					})
 				})
 
-				Convey(`If remote report returns success, ACK.`, func() {
-					ack, err := ar.archiveTaskImpl(c, task)
-					So(err, ShouldBeNil)
-					So(ack, ShouldBeTrue)
+				Convey(`If remote report returns success, the task is consumed.`, func() {
+					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+					So(task.consumed, ShouldBeTrue)
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
 						Project: project,
 						Path:    archiveTask.Path,
@@ -471,9 +463,8 @@ func TestHandleArchive(t *testing.T) {
 				Convey(`If an empty error string is supplied, the generic error will be filled in.`, func() {
 					archiveErr = errors.New("")
 
-					ack, err := ar.archiveTaskImpl(c, task)
-					So(err, ShouldBeNil)
-					So(ack, ShouldBeTrue)
+					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+					So(task.consumed, ShouldBeTrue)
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
 						Project: project,
 						Path:    archiveTask.Path,
@@ -488,9 +479,8 @@ func TestHandleArchive(t *testing.T) {
 
 			Convey(`With no terminal index`, func() {
 				Convey(`Will successfully archive if there are no entries.`, func() {
-					ack, err := ar.archiveTaskImpl(c, task)
-					So(err, ShouldBeNil)
-					So(ack, ShouldBeTrue)
+					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+					So(task.consumed, ShouldBeTrue)
 
 					So(hasStreams(true, true, false), ShouldBeTrue)
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
@@ -508,9 +498,8 @@ func TestHandleArchive(t *testing.T) {
 				Convey(`With {0, 1, 2, 4} (incomplete) will archive the stream and update its terminal index.`, func() {
 					addTestEntry(project, 0, 1, 2, 4)
 
-					ack, err := ar.archiveTaskImpl(c, task)
-					So(err, ShouldBeNil)
-					So(ack, ShouldBeTrue)
+					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+					So(task.consumed, ShouldBeTrue)
 
 					So(hasStreams(true, true, true), ShouldBeTrue)
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
@@ -530,9 +519,8 @@ func TestHandleArchive(t *testing.T) {
 				stream.State.TerminalIndex = 3
 
 				Convey(`Will successfully archive if there are no entries.`, func() {
-					ack, err := ar.archiveTaskImpl(c, task)
-					So(err, ShouldBeNil)
-					So(ack, ShouldBeTrue)
+					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+					So(task.consumed, ShouldBeTrue)
 
 					So(hasStreams(true, true, false), ShouldBeTrue)
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
@@ -550,9 +538,8 @@ func TestHandleArchive(t *testing.T) {
 				Convey(`With {0, 1, 2, 4} (incomplete) will archive the stream and update its terminal index to 2.`, func() {
 					addTestEntry(project, 0, 1, 2, 4)
 
-					ack, err := ar.archiveTaskImpl(c, task)
-					So(err, ShouldBeNil)
-					So(ack, ShouldBeTrue)
+					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+					So(task.consumed, ShouldBeTrue)
 
 					So(hasStreams(true, true, true), ShouldBeTrue)
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
@@ -576,9 +563,8 @@ func TestHandleArchive(t *testing.T) {
 				stream.State.TerminalIndex = 3
 				addTestEntry("", 0, 1, 2, 3)
 
-				ack, err := ar.archiveTaskImpl(c, task)
-				So(err, ShouldBeNil)
-				So(ack, ShouldBeTrue)
+				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+				So(task.consumed, ShouldBeTrue)
 
 				So(hasStreams(true, true, true), ShouldBeTrue)
 				So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
@@ -663,9 +649,8 @@ func TestHandleArchive(t *testing.T) {
 					Convey(fmt.Sprintf(`Can handle %s for %s, and will not archive.`, testCase.name, failName), func() {
 						testCase.setup()
 
-						ack, err := ar.archiveTaskImpl(c, task)
-						So(err, ShouldErrLike, "test error")
-						So(ack, ShouldBeFalse)
+						So(ar.archiveTaskImpl(c, task), ShouldErrLike, "test error")
+						So(task.consumed, ShouldBeFalse)
 						So(archiveRequest, ShouldBeNil)
 					})
 				}
