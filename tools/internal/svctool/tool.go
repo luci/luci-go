@@ -25,6 +25,7 @@ import (
 	"github.com/luci/luci-go/common/logging/gologger"
 )
 
+// Service contains the result of parsing the generated code for a pRPC service.
 type Service struct {
 	TypeName string
 	Node     *ast.InterfaceType
@@ -47,15 +48,19 @@ type Import struct {
 type Tool struct {
 	// Name of the tool, e.g. "svcmux" or "svcdec".
 	Name string
-	// OutputFilenameSuffix is used in generated file name,
+	// OutputFilenameSuffix is the suffix of generated file names,
 	// e.g. "mux" or "dec" for foo_mux.go or foo_dec.go.
 	OutputFilenameSuffix string
 
-	// Parsed from args, set by ParseArgs.
+	// Set by ParseArgs from command-line arguments.
 
-	Types     []string
-	Output    string
-	Dir       string
+	// Types are type names from the Go package defined by Dir or FileNames.
+	Types []string
+	// Output is the base name for the output file.
+	Output string
+	// Dir is a Go package's directory.
+	Dir string
+	// FileNames is a list of source files from a single Go package.
 	FileNames []string
 }
 
@@ -121,6 +126,7 @@ func (t *Tool) ParseArgs(args []string) {
 	}
 }
 
+// GeneratorArgs is passed to the function responsible for generating files.
 type GeneratorArgs struct {
 	PackageName  string
 	Services     []*Service
@@ -129,8 +135,8 @@ type GeneratorArgs struct {
 }
 type Generator func(c context.Context, a *GeneratorArgs) error
 
-// importList converts a map name -> path to []Import sorted by name.
-func importList(imports map[string]string) []Import {
+// importSorted converts a map name -> path to []Import sorted by name.
+func importSorted(imports map[string]string) []Import {
 	names := make([]string, 0, len(imports))
 	for n := range imports {
 		names = append(names, n)
@@ -180,7 +186,7 @@ func (t *Tool) Run(c context.Context, f Generator) error {
 	genArgs := &GeneratorArgs{
 		PackageName:  p.files[0].Name.Name,
 		Services:     p.services,
-		ExtraImports: importList(p.extraImports),
+		ExtraImports: importSorted(p.extraImports),
 		Out:          &buf,
 	}
 	if err := f(c, genArgs); err != nil {
@@ -198,7 +204,8 @@ func (t *Tool) Run(c context.Context, f Generator) error {
 	return ioutil.WriteFile(outputName, src, 0644)
 }
 
-// Main sets up logging, calls Run, prints error if any and exits.
+// Main does some setup (arg parsing, logging), calls t.Run, prints any errors
+// and exits.
 func (t *Tool) Main(args []string, f Generator) {
 	c := gologger.StdConfig.Use(context.Background())
 	t.ParseArgs(args)

@@ -36,8 +36,8 @@ type parser struct {
 	exprStrBuf bytes.Buffer
 }
 
-// parsePackage parses .go files.
-// They must be in the same directory and have same package name.
+// parsePackage parses .go files and fills in p.files with the ASTs.
+// Files must be in the same directory and have the same package name.
 func (p *parser) parsePackage(fileNames []string) error {
 	if len(fileNames) == 0 {
 		return fmt.Errorf("fileNames is empty")

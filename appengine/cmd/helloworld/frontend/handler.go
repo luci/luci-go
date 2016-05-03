@@ -77,12 +77,17 @@ func prpcBase(h middleware.Handler) httprouter.Handle {
 
 func checkAPIAccess(c context.Context, methodName string, req proto.Message) (context.Context, error) {
 	// Implement authorization check here, for example:
+	//
+	// import "github.com/golang/protobuf/proto"
+	// import "google.golang.org/grpc/codes"
+	// import "github.com/luci/luci-go/common/grpcutil"
+	//
 	// hasAccess, err := auth.IsMember(c, "my-users")
 	// if err != nil {
-	// 	return nil, grpcutil.Errf(codes.Internal, "%s", err)
+	//   return nil, grpcutil.Errf(codes.Internal, "%s", err)
 	// }
 	// if !hasAccess {
-	// 	return nil, grpcutil.Errf(codes.PermissionDenied, "%s is not allowed to call APIs", auth.CurrentIdentity(c))
+	//   return nil, grpcutil.Errf(codes.PermissionDenied, "%s is not allowed to call APIs", auth.CurrentIdentity(c))
 	// }
 
 	return c, nil
