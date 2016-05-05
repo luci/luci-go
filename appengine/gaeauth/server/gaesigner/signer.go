@@ -19,19 +19,23 @@ import (
 
 // Use installs signing.Signer into the context configured to use GAE API.
 func Use(c context.Context) context.Context {
-	return signing.SetSigner(c, signer{})
+	return signing.SetSigner(c, Signer{})
 }
 
 ////
 
-// signer implements signing.Signer using GAE App Identity API.
-type signer struct{}
+// Signer implements signing.Signer using GAE App Identity API.
+type Signer struct{}
 
-func (signer) SignBytes(c context.Context, blob []byte) (keyName string, signature []byte, err error) {
+// SignBytes signs the blob with some active private key.
+//
+// Returns the signature and name of the key used.
+func (Signer) SignBytes(c context.Context, blob []byte) (keyName string, signature []byte, err error) {
 	return info.Get(c).SignBytes(blob)
 }
 
-func (signer) Certificates(c context.Context) (*signing.PublicCertificates, error) {
+// Certificates returns a bundle with public certificates for all active keys.
+func (Signer) Certificates(c context.Context) (*signing.PublicCertificates, error) {
 	certs, err := cachedCerts(c)
 	if err != nil {
 		return nil, err

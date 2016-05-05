@@ -12,12 +12,14 @@ import (
 	"math"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/server/auth/signing"
 
 	"github.com/luci/luci-go/common/api/tokenserver"
 	"github.com/luci/luci-go/common/api/tokenserver/admin/v1"
@@ -50,8 +52,8 @@ type MintParams struct {
 
 	// Signer produces RSA-SHA256 signatures using a token server key.
 	//
-	// Usually it is SignBytes GAE API.
-	Signer func(blob []byte) (keyID string, sig []byte, err error)
+	// Usually it is using SignBytes GAE API.
+	Signer signing.Signer
 }
 
 // Validate checks that token minting parameters are allowed.
@@ -129,7 +131,7 @@ func Mint(c context.Context, params MintParams) (*tokenserver.MachineTokenBody, 
 		return nil, "", err
 	}
 
-	keyID, signature, err := params.Signer(serializedBody)
+	keyID, signature, err := params.Signer.SignBytes(c, serializedBody)
 	if err != nil {
 		return nil, "", errors.WrapTransient(err)
 	}
@@ -143,4 +145,41 @@ func Mint(c context.Context, params MintParams) (*tokenserver.MachineTokenBody, 
 		return nil, "", err
 	}
 	return &body, base64.RawStdEncoding.EncodeToString(tokenBinBlob), nil
+}
+
+// Parse takes serialized MachineTokenEnvelope and parses it.
+//
+// It returns both deserialized envelope and deserialized MachineTokenBody. It
+// does not check the signature or expiration.
+//
+// If the envelope can't be deserialized, returns (nil, nil, error).
+// If MachineTokenBody can't be deserialized returns (envelope, nil, error).
+func Parse(token string) (*tokenserver.MachineTokenEnvelope, *tokenserver.MachineTokenBody, error) {
+	tokenBinBlob, err := base64.RawStdEncoding.DecodeString(token)
+	if err != nil {
+		return nil, nil, err
+	}
+	envelope := &tokenserver.MachineTokenEnvelope{}
+	if err := proto.Unmarshal(tokenBinBlob, envelope); err != nil {
+		return nil, nil, err
+	}
+	body := &tokenserver.MachineTokenBody{}
+	if err := proto.Unmarshal(envelope.TokenBody, body); err != nil {
+		return envelope, nil, err
+	}
+	return envelope, body, nil
+}
+
+// CheckSignature verifies the token was signed by some of the given keys.
+func CheckSignature(envelope *tokenserver.MachineTokenEnvelope, certs *signing.PublicCertificates) error {
+	return certs.CheckSignature(envelope.KeyId, envelope.TokenBody, envelope.RsaSha256)
+}
+
+// IsExpired returns true if the token is expired.
+//
+// Allows 10 sec clock drift.
+func IsExpired(body *tokenserver.MachineTokenBody, now time.Time) bool {
+	notBefore := time.Unix(int64(body.IssuedAt), 0)
+	notAfter := notBefore.Add(time.Duration(body.Lifetime) * time.Second)
+	return now.Before(notBefore.Add(-10*time.Second)) || now.After(notAfter.Add(10*time.Second))
 }

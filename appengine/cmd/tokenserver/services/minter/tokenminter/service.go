@@ -10,6 +10,7 @@ package tokenminter
 import (
 	"crypto/x509"
 	"fmt"
+	"math/big"
 	"strings"
 	"time"
 
@@ -19,9 +20,13 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/luci/gae/service/info"
+	"github.com/luci/luci-go/appengine/gaeauth/server/gaesigner"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/signing"
 
 	"github.com/luci/luci-go/common/api/tokenserver"
 	"github.com/luci/luci-go/common/api/tokenserver/admin/v1"
@@ -46,6 +51,21 @@ type Server struct {
 	//
 	// In prod it is certchecker.CheckCertificate.
 	certChecker func(c context.Context, cert *x509.Certificate) (*model.CA, error)
+
+	// signer is mocked in tests.
+	//
+	// In prod it is gaesigner.Signer.
+	signer signing.Signer
+
+	// isAdmin returns true if current user is an administrator.
+	//
+	// Mocked in tests. In prod it is 'auth.IsMember'.
+	isAdmin func(context.Context) (bool, error)
+
+	// serviceHostname returns default hostname of the token server.
+	//
+	// Mocked in tests. In prod it is info.Get().DefaultVersionHostname().
+	serviceHostname func(context.Context) string
 }
 
 // NewServer returns Server configured for real production usage.
@@ -53,6 +73,13 @@ func NewServer(sa *serviceaccounts.Server) *Server {
 	return &Server{
 		mintOAuthToken: sa.DoMintAccessToken,
 		certChecker:    certchecker.CheckCertificate,
+		signer:         gaesigner.Signer{},
+		isAdmin: func(c context.Context) (bool, error) {
+			return auth.IsMember(c, "administrators")
+		},
+		serviceHostname: func(c context.Context) string {
+			return info.Get(c).DefaultVersionHostname()
+		},
 	}
 }
 
@@ -68,15 +95,12 @@ func (s *Server) MintMachineToken(c context.Context, req *minter.MintMachineToke
 		return nil, grpc.Errorf(codes.InvalidArgument, "failed to unmarshal TokenRequest - %s", err)
 	}
 
-	// Only Google OAuth2 access tokens are supported for now. Use switch to
-	// remind us to add more branches if there are more supported token types in
-	// the future.
 	switch tokenReq.TokenType {
 	case minter.TokenType_GOOGLE_OAUTH2_ACCESS_TOKEN:
 	case minter.TokenType_LUCI_MACHINE_TOKEN:
 		// supported
 	default:
-		return errorResponse(
+		return mintingErrorResponse(
 			minter.ErrorCode_UNSUPPORTED_TOKEN_TYPE,
 			"token_type %s is not supported", tokenReq.TokenType)
 	}
@@ -84,7 +108,7 @@ func (s *Server) MintMachineToken(c context.Context, req *minter.MintMachineToke
 	// Timestamp is required.
 	issuedAt := tokenReq.IssuedAt.Time()
 	if issuedAt.IsZero() {
-		return errorResponse(minter.ErrorCode_BAD_TIMESTAMP, "issued_at is required")
+		return mintingErrorResponse(minter.ErrorCode_BAD_TIMESTAMP, "issued_at is required")
 	}
 
 	// It should be within acceptable range.
@@ -92,7 +116,7 @@ func (s *Server) MintMachineToken(c context.Context, req *minter.MintMachineToke
 	notBefore := now.Add(-10 * time.Minute)
 	notAfter := now.Add(10 * time.Minute)
 	if issuedAt.Before(notBefore) || issuedAt.After(notAfter) {
-		return errorResponse(
+		return mintingErrorResponse(
 			minter.ErrorCode_BAD_TIMESTAMP,
 			"issued_at timestamp is not within acceptable range, check your clock")
 	}
@@ -100,7 +124,7 @@ func (s *Server) MintMachineToken(c context.Context, req *minter.MintMachineToke
 	// The certificate must be valid.
 	cert, err := x509.ParseCertificate(tokenReq.Certificate)
 	if err != nil {
-		return errorResponse(
+		return mintingErrorResponse(
 			minter.ErrorCode_BAD_CERTIFICATE_FORMAT,
 			"failed to parse the certificate (expecting x509 cert DER)")
 	}
@@ -112,13 +136,15 @@ func (s *Server) MintMachineToken(c context.Context, req *minter.MintMachineToke
 	case minter.SignatureAlgorithm_SHA256_RSA_ALGO:
 		algo = x509.SHA256WithRSA
 	default:
-		return errorResponse(
+		return mintingErrorResponse(
 			minter.ErrorCode_UNSUPPORTED_SIGNATURE,
 			"signature_algorithm %s is not supported", tokenReq.SignatureAlgorithm)
 	}
 	err = cert.CheckSignature(algo, req.SerializedTokenRequest, req.Signature)
 	if err != nil {
-		return errorResponse(minter.ErrorCode_BAD_SIGNATURE, "signature verification failed - %s", err)
+		return mintingErrorResponse(
+			minter.ErrorCode_BAD_SIGNATURE,
+			"signature verification failed - %s", err)
 	}
 
 	// At this point we know the request was signed by the holder of a private key
@@ -133,7 +159,7 @@ func (s *Server) MintMachineToken(c context.Context, req *minter.MintMachineToke
 	// transient errors.
 	if err != nil {
 		if certchecker.IsCertInvalidError(err) {
-			return errorResponse(minter.ErrorCode_UNTRUSTED_CERTIFICATE, "%s", err)
+			return mintingErrorResponse(minter.ErrorCode_UNTRUSTED_CERTIFICATE, "%s", err)
 		}
 		return nil, grpc.Errorf(codes.Internal, "failed to check the certificate - %s", err)
 	}
@@ -170,7 +196,7 @@ func (s *Server) mintGoogleOAuth2AccessToken(c context.Context, args mintTokenAr
 		Scopes: args.Request.Oauth2Scopes,
 	}
 	if err := params.Validate(); err != nil {
-		return errorResponse(minter.ErrorCode_BAD_TOKEN_ARGUMENTS, "%s", err)
+		return mintingErrorResponse(minter.ErrorCode_BAD_TOKEN_ARGUMENTS, "%s", err)
 	}
 
 	// Grab the token. It returns grpc error already, but we need to convert it
@@ -190,23 +216,21 @@ func (s *Server) mintGoogleOAuth2AccessToken(c context.Context, args mintTokenAr
 	case grpc.Code(err) == codes.Internal:
 		return nil, err
 	default:
-		return errorResponse(minter.ErrorCode_TOKEN_MINTING_ERROR, "%s", err)
+		return mintingErrorResponse(minter.ErrorCode_TOKEN_MINTING_ERROR, "%s", err)
 	}
 }
 
 func (s *Server) mintLuciMachineToken(c context.Context, args mintTokenArgs) (*minter.MintMachineTokenResponse, error) {
-	inf := info.Get(c)
-
 	// Validate FQDN and whether it is allowed by config.
 	params := machinetoken.MintParams{
 		FQDN:            strings.ToLower(args.Cert.Subject.CommonName),
 		Cert:            args.Cert,
 		Config:          args.Config,
-		ServiceHostname: inf.DefaultVersionHostname(),
-		Signer:          inf.SignBytes,
+		ServiceHostname: s.serviceHostname(c),
+		Signer:          s.signer,
 	}
 	if err := params.Validate(); err != nil {
-		return errorResponse(minter.ErrorCode_BAD_TOKEN_ARGUMENTS, "%s", err)
+		return mintingErrorResponse(minter.ErrorCode_BAD_TOKEN_ARGUMENTS, "%s", err)
 	}
 
 	// Make the token.
@@ -226,13 +250,117 @@ func (s *Server) mintLuciMachineToken(c context.Context, args mintTokenArgs) (*m
 	case errors.IsTransient(err):
 		return nil, grpc.Errorf(codes.Internal, "failed to generate machine token - %s", err)
 	default:
-		return errorResponse(minter.ErrorCode_TOKEN_MINTING_ERROR, "%s", err)
+		return mintingErrorResponse(minter.ErrorCode_TOKEN_MINTING_ERROR, "%s", err)
 	}
 }
 
-func errorResponse(code minter.ErrorCode, msg string, args ...interface{}) (*minter.MintMachineTokenResponse, error) {
+func mintingErrorResponse(code minter.ErrorCode, msg string, args ...interface{}) (*minter.MintMachineTokenResponse, error) {
 	return &minter.MintMachineTokenResponse{
 		ErrorCode:    code,
 		ErrorMessage: fmt.Sprintf(msg, args...),
 	}, nil
+}
+
+// InspectMachineToken decodes a machine token and verifies it is valid.
+func (s *Server) InspectMachineToken(c context.Context, req *minter.InspectMachineTokenRequest) (*minter.InspectMachineTokenResponse, error) {
+	isAdmin, err := s.isAdmin(c)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "can't check group membership - %s", err)
+	}
+	if !isAdmin {
+		logging.Errorf(c, "InspectMachineToken is used by non-admin: %s", auth.CurrentIdentity(c))
+		return nil, grpc.Errorf(codes.PermissionDenied, "not authorized")
+	}
+
+	// Only LUCI_MACHINE_TOKEN is supported currently.
+	switch req.TokenType {
+	case minter.TokenType_LUCI_MACHINE_TOKEN:
+		// supported
+	default:
+		return nil, grpc.Errorf(codes.InvalidArgument, "unsupported token type %s", req.TokenType)
+	}
+
+	// Deserialize the token, don't do any validity checks yet.
+	envelope, body, err := machinetoken.Parse(req.Token)
+	switch {
+	case envelope == nil:
+		return &minter.InspectMachineTokenResponse{
+			InvalidityReason: fmt.Sprintf("bad envelope format - %s", err),
+		}, nil
+	case body == nil:
+		return &minter.InspectMachineTokenResponse{
+			SigningKeyId:     envelope.KeyId,
+			InvalidityReason: fmt.Sprintf("bad body format - %s", err),
+		}, nil
+	case err != nil:
+		return &minter.InspectMachineTokenResponse{
+			InvalidityReason: fmt.Sprintf("parsing error - %s", err),
+		}, nil
+	}
+
+	resp := &minter.InspectMachineTokenResponse{
+		InvalidityReason: "unknown", // will be replaced below
+		SigningKeyId:     envelope.KeyId,
+		TokenType: &minter.InspectMachineTokenResponse_LuciMachineToken{
+			LuciMachineToken: body,
+		},
+	}
+
+	// Check that the token was signed by our private key.
+	certs, err := s.signer.Certificates(c)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "can't fetch service certificates - %s", err)
+	}
+	err = machinetoken.CheckSignature(envelope, certs)
+	if err != nil {
+		resp.InvalidityReason = fmt.Sprintf("can't validate signature - %s", err)
+		return resp, nil
+	}
+	resp.Signed = true
+
+	// Check the expiration time. Allow 10 sec clock drift.
+	resp.NonExpired = !machinetoken.IsExpired(body, clock.Now(c))
+
+	// Check revocation status. Find CA name that signed the certificate used when
+	// minting the token.
+	caName, err := model.GetCAByUniqueID(c, body.CaId)
+	switch {
+	case err != nil:
+		return nil, grpc.Errorf(codes.Internal, "can't resolve ca_id to CA name - %s", err)
+	case caName == "":
+		resp.InvalidityReason = "no CA with given ID"
+		return resp, nil
+	}
+	resp.CertCaName = caName
+
+	// Grab CertChecker for this CA. It has CRL cached.
+	certChecker, err := certchecker.GetCertChecker(c, caName)
+	switch {
+	case errors.IsTransient(err):
+		return nil, grpc.Errorf(codes.Internal, "can't fetch CRL - %s", err)
+	case err != nil:
+		resp.InvalidityReason = fmt.Sprintf("can't fetch CRL - %s", err)
+		return resp, nil
+	}
+
+	// Check that certificate SN is not in the revocation list.
+	sn := big.NewInt(0).SetUint64(body.CertSn)
+	revoked, err := certChecker.CRL.IsRevokedSN(c, sn)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "can't check CRL - %s", err)
+	}
+	resp.NonRevoked = !revoked
+
+	// Pick invalidity reason (if any).
+	switch {
+	case !resp.NonExpired:
+		resp.InvalidityReason = "expired"
+	case !resp.NonRevoked:
+		resp.InvalidityReason = "revoked"
+	default:
+		resp.Valid = true
+		resp.InvalidityReason = ""
+	}
+
+	return resp, nil
 }

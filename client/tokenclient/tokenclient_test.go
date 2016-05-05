@@ -95,6 +95,10 @@ func (f *fakeRPCClient) MintMachineToken(ctx context.Context, in *minter.MintMac
 	return &f.Out, nil
 }
 
+func (f *fakeRPCClient) InspectMachineToken(context.Context, *minter.InspectMachineTokenRequest, ...grpc.CallOption) (*minter.InspectMachineTokenResponse, error) {
+	panic("not implemented")
+}
+
 // fakeSigner implements Signer.
 type fakeSigner struct{}
 

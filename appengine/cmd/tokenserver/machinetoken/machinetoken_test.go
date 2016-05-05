@@ -13,6 +13,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/server/auth/signing"
 
 	"github.com/luci/luci-go/common/api/tokenserver"
 	"github.com/luci/luci-go/common/api/tokenserver/admin/v1"
@@ -102,9 +103,7 @@ func TestMint(t *testing.T) {
 					},
 				},
 				ServiceHostname: "token-server.example.com",
-				Signer: func(blob []byte) (keyID string, sig []byte, err error) {
-					return "key_id", []byte("signature"), nil
-				},
+				Signer:          fakeSigner{},
 			}
 			body, token, err := Mint(ctx, params)
 			So(err, ShouldBeNil)
@@ -119,4 +118,14 @@ func TestMint(t *testing.T) {
 				"GxlLmNvbRDykcGmBRiQHCi5YBIGa2V5X2lkGglzaWduYXR1cmU")
 		})
 	})
+}
+
+type fakeSigner struct{}
+
+func (fakeSigner) SignBytes(c context.Context, blob []byte) (keyID string, sig []byte, err error) {
+	return "key_id", []byte("signature"), nil
+}
+
+func (fakeSigner) Certificates(c context.Context) (*signing.PublicCertificates, error) {
+	panic("not implemented yet")
 }

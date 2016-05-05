@@ -9,8 +9,10 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
+	"math/big"
 	"testing"
 	"time"
 
@@ -19,10 +21,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/gaetesting"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/server/auth/signing/signingtest"
 
 	"github.com/luci/luci-go/common/api/tokenserver"
 	"github.com/luci/luci-go/common/api/tokenserver/admin/v1"
@@ -259,6 +263,170 @@ func TestMintOAuthToken(t *testing.T) {
 			})
 		})
 
+	})
+}
+
+func TestLuciMachineToken(t *testing.T) {
+	Convey("with mock context and server", t, func() {
+		ctx := gaetesting.TestingContext()
+		ctx, tc := testclock.UseTime(ctx, time.Date(2015, time.February, 3, 4, 5, 6, 7, time.UTC))
+
+		server := Server{
+			certChecker: func(_ context.Context, cert *x509.Certificate) (*model.CA, error) {
+				return &model.CA{
+					CN: "Fake CA: fake.ca",
+					ParsedConfig: &admin.CertificateAuthorityConfig{
+						UniqueId: 123,
+						KnownDomains: []*admin.DomainConfig{
+							{
+								Domain:               []string{"fake.domain"},
+								AllowMachineTokens:   true,
+								MachineTokenLifetime: 3600,
+							},
+						},
+					},
+				}, nil
+			},
+			signer:          signingtest.NewSigner(0),
+			isAdmin:         func(context.Context) (bool, error) { return true, nil },
+			serviceHostname: func(context.Context) string { return "testing.host" },
+		}
+
+		// Put CA and CRL config in the datastore.
+		ca := model.CA{
+			CN:    "Fake CA: fake.ca",
+			Ready: true,
+		}
+		datastore.Get(ctx).Put(&ca)
+		model.StoreCAUniqueIDToCNMap(ctx, map[int64]string{
+			123: "Fake CA: fake.ca",
+		})
+		model.UpdateCRLSet(ctx, "Fake CA: fake.ca", model.CRLShardCount, &pkix.CertificateList{})
+
+		Convey("success", func(c C) {
+			resp, err := server.MintMachineToken(ctx, makeTestRequest(&minter.MachineTokenRequest{
+				Certificate:        getTestCertDER(),
+				SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
+				IssuedAt:           google.NewTimestamp(clock.Now(ctx)),
+				TokenType:          minter.TokenType_LUCI_MACHINE_TOKEN,
+			}))
+			So(err, ShouldBeNil)
+
+			tok := resp.TokenResponse.GetLuciMachineToken().MachineToken
+			So(tok, ShouldEqual, `CkEKMWx1Y2ktdG9rZW4tc2VydmVyLXRlc3QtMS5mYWtlLmRv`+
+				`bWFpbkB0ZXN0aW5nLmhvc3QQ8pHBpgUYkBwgeyiAIBIoZjlkYTVhMGQwOTAzYmRhNT`+
+				`hjNmQ2NjRlMzg1MmE4OWMyODNkN2ZlORpAhXURCkRj7L06QMsyGzPqVRoumv9da43X`+
+				`aemWzOLQ/U+8E8oaF4HVao2JXy6Sx1USHUR38QeNnX4HZHfD3GiP0g`)
+
+			// Works!
+			reply, err := server.InspectMachineToken(ctx, &minter.InspectMachineTokenRequest{
+				TokenType: minter.TokenType_LUCI_MACHINE_TOKEN,
+				Token:     tok,
+			})
+			So(err, ShouldBeNil)
+			So(reply, ShouldResemble, &minter.InspectMachineTokenResponse{
+				Valid:        true,
+				Signed:       true,
+				NonExpired:   true,
+				NonRevoked:   true,
+				SigningKeyId: "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
+				CertCaName:   "Fake CA: fake.ca",
+				TokenType: &minter.InspectMachineTokenResponse_LuciMachineToken{
+					LuciMachineToken: &tokenserver.MachineTokenBody{
+						MachineId: "luci-token-server-test-1.fake.domain@testing.host",
+						IssuedAt:  1422936306,
+						Lifetime:  3600,
+						CaId:      123,
+						CertSn:    4096,
+					},
+				},
+			})
+
+			// "Break" signature.
+			reply, err = server.InspectMachineToken(ctx, &minter.InspectMachineTokenRequest{
+				TokenType: minter.TokenType_LUCI_MACHINE_TOKEN,
+				Token:     tok[:len(tok)-11] + "0" + tok[len(tok)-10:],
+			})
+			So(err, ShouldBeNil)
+			So(reply, ShouldResemble, &minter.InspectMachineTokenResponse{
+				Valid:            false,
+				InvalidityReason: "can't validate signature - crypto/rsa: verification error",
+				Signed:           false,
+				NonExpired:       false,
+				NonRevoked:       false,
+				SigningKeyId:     "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
+				TokenType: &minter.InspectMachineTokenResponse_LuciMachineToken{
+					LuciMachineToken: &tokenserver.MachineTokenBody{
+						MachineId: "luci-token-server-test-1.fake.domain@testing.host",
+						IssuedAt:  1422936306,
+						Lifetime:  3600,
+						CaId:      123,
+						CertSn:    4096,
+					},
+				},
+			})
+
+			// Expired.
+			tc.Add(time.Hour + 11*time.Minute)
+			reply, err = server.InspectMachineToken(ctx, &minter.InspectMachineTokenRequest{
+				TokenType: minter.TokenType_LUCI_MACHINE_TOKEN,
+				Token:     tok,
+			})
+			So(err, ShouldBeNil)
+			So(reply, ShouldResemble, &minter.InspectMachineTokenResponse{
+				Valid:            false,
+				InvalidityReason: "expired",
+				Signed:           true,
+				NonExpired:       false,
+				NonRevoked:       true,
+				SigningKeyId:     "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
+				CertCaName:       "Fake CA: fake.ca",
+				TokenType: &minter.InspectMachineTokenResponse_LuciMachineToken{
+					LuciMachineToken: &tokenserver.MachineTokenBody{
+						MachineId: "luci-token-server-test-1.fake.domain@testing.host",
+						IssuedAt:  1422936306,
+						Lifetime:  3600,
+						CaId:      123,
+						CertSn:    4096,
+					},
+				},
+			})
+
+			// "Revoke" the certificate. Bump time to expire caches. Note that the
+			// token is already expired too.
+			model.UpdateCRLSet(ctx, "Fake CA: fake.ca", model.CRLShardCount, &pkix.CertificateList{
+				TBSCertList: pkix.TBSCertificateList{
+					RevokedCertificates: []pkix.RevokedCertificate{
+						{SerialNumber: big.NewInt(4096)},
+					},
+				},
+			})
+			tc.Add(5 * time.Minute)
+			reply, err = server.InspectMachineToken(ctx, &minter.InspectMachineTokenRequest{
+				TokenType: minter.TokenType_LUCI_MACHINE_TOKEN,
+				Token:     tok,
+			})
+			So(err, ShouldBeNil)
+			So(reply, ShouldResemble, &minter.InspectMachineTokenResponse{
+				Valid:            false,
+				InvalidityReason: "expired", // "expired" 'beats' revocation
+				Signed:           true,
+				NonExpired:       false,
+				NonRevoked:       false, // revoked now!
+				SigningKeyId:     "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
+				CertCaName:       "Fake CA: fake.ca",
+				TokenType: &minter.InspectMachineTokenResponse_LuciMachineToken{
+					LuciMachineToken: &tokenserver.MachineTokenBody{
+						MachineId: "luci-token-server-test-1.fake.domain@testing.host",
+						IssuedAt:  1422936306,
+						Lifetime:  3600,
+						CaId:      123,
+						CertSn:    4096,
+					},
+				},
+			})
+
+		})
 	})
 }
 
