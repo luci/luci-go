@@ -40,7 +40,7 @@ import (
 // Version identifies the major revision of the tokend code.
 //
 // It is put in the status file (and subsequently reported to monitoring).
-const Version = "1.0"
+const Version = "1.1"
 
 // commandLine contains all command line flags.
 //
