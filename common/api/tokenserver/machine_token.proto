@@ -15,26 +15,31 @@ package tokenserver;
 message MachineTokenBody {
   // Machine identity this token conveys.
   //
-  // It has format <fqdn>@<tokenserver>, where <fqdn> is FQDN of the
-  // machine and <tokenserver> is URL of the server that generated the token.
+  // It has format <hostname>@<location>, where <hostname> is hostname of the
+  // machine (not full FQDN, only hostname) and <location> is an alias for a
+  // domain the machine belongs too (taken from the token server config).
   //
-  // <fqdn> is Common Name of a certificate used as a basis for the token.
+  // <hostname> is extracted from a Common Name of a certificate used as a basis
+  // for the token.
   //
-  // For example: vm123-m4.golo.chromium.org@luci-token-server.appspot.com.
+  // For example: vm123-m4@golo.
   string machine_id = 1;
 
+  // Hostname of a token server that generated this token.
+  string issued_by = 2;
+
   // Unix timestamp in seconds when this token was issued. Required.
-  uint64 issued_at = 2;
+  uint64 issued_at = 3;
 
   // Number of seconds the token is considered valid.
   //
   // Usually 3600. Set by the token server. Required.
-  uint64 lifetime  = 3;
+  uint64 lifetime  = 4;
 
   // Id of a CA that issued machine certificate used to make this token.
   //
   // These IDs are defined in token server config (via unique_id field).
-  int64 ca_id = 4;
+  int64 ca_id = 5;
 
   // Serial number of the machine certificate used to make this token.
   //
@@ -42,7 +47,7 @@ message MachineTokenBody {
   // used to check for certificate revocation (by asking token server whether
   // the given certificate is in CRL). Revocation checks are optional, most
   // callers can rely on expiration checks only.
-  uint64 cert_sn = 5;
+  uint64 cert_sn = 6;
 }
 
 // MachineTokenEnvelope is what is actually being serialized and represented

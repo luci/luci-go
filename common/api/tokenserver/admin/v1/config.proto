@@ -36,6 +36,8 @@ message CertificateAuthorityConfig {
 
 // DomainConfig is used inside CertificateAuthorityConfig.
 message DomainConfig {
+  reserved 4; // deleted fields, do not reuse.
+
   // Domain is domain names of hosts this config applies to.
   repeated string domain = 1;
 
@@ -50,12 +52,20 @@ message DomainConfig {
   // willing to mint an OAuth2 access token with.
   repeated string allowed_oauth2_scope = 3;
 
-  // AllowMachineTokens is true if token server is allowed to generate machine
-  // tokens for machines in this domain.
-  bool allow_machine_tokens = 4;
-
   // MachineTokenLifetime is how long generated machine tokens live, in seconds.
   //
-  // If 0, equivalent to 'allow_machine_tokens == false'.
+  // If 0, machine tokens are not allowed.
   int64 machine_token_lifetime = 5;
+
+  // Location is used as a part of machine_id in the machine token.
+  //
+  // It is the short alias for a domain machine belongs to. The machine identity
+  // will be <hostname>@<location>.
+  //
+  // For example, if vm123-m4.golo.chromium.org is requesting a token, and there
+  // is DomainConfig with domain == 'golo.chromium.org' and location == 'golo',
+  // the resulting machine_id will be 'vm123-m4@golo'.
+  //
+  // If empty, machine tokens are not allowed.
+  string location = 6;
 }

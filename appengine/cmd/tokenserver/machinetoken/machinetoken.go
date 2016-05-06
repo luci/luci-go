@@ -76,7 +76,7 @@ func (p *MintParams) Validate() error {
 	if domainCfg == nil {
 		return fmt.Errorf("the domain %q is not whitelisted in the config", domain)
 	}
-	if !domainCfg.AllowMachineTokens || domainCfg.MachineTokenLifetime <= 0 {
+	if domainCfg.Location == "" || domainCfg.MachineTokenLifetime <= 0 {
 		return fmt.Errorf("machine tokens for machines in domain %q are not allowed", domain)
 	}
 
@@ -114,13 +114,15 @@ func Mint(c context.Context, params MintParams) (*tokenserver.MachineTokenBody, 
 	if len(chunks) != 2 {
 		panic("impossible") // checked in Validate already
 	}
-	cfg := domainConfig(params.Config, chunks[1])
+	host, domain := chunks[0], chunks[1]
+	cfg := domainConfig(params.Config, domain)
 	if cfg == nil {
 		panic("impossible") // checked in Validate already
 	}
 
 	body := tokenserver.MachineTokenBody{
-		MachineId: params.FQDN + "@" + params.ServiceHostname,
+		MachineId: host + "@" + cfg.Location,
+		IssuedBy:  params.ServiceHostname,
 		IssuedAt:  uint64(clock.Now(c).Unix()),
 		Lifetime:  uint64(cfg.MachineTokenLifetime),
 		CaId:      params.Config.UniqueId,
