@@ -5,7 +5,6 @@
 package services
 
 import (
-	"crypto/subtle"
 	"errors"
 	"time"
 
@@ -22,33 +21,8 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
-
-func matchesLogStream(r *logdog.RegisterStreamRequest, ls *coordinator.LogStream) error {
-	if r.Path != string(ls.Path()) {
-		return errors.New("paths do not match")
-	}
-
-	if subtle.ConstantTimeCompare(r.Secret, ls.Secret) != 1 {
-		return errors.New("secrets do not match")
-	}
-
-	if r.ProtoVersion != ls.ProtoVersion {
-		return errors.New("protobuf version does not match")
-	}
-
-	dv, err := ls.DescriptorValue()
-	if err != nil {
-		return errors.New("log stream has invalid descriptor value")
-	}
-	if !dv.Equal(r.Desc) {
-		return errors.New("descriptor protobufs do not match")
-	}
-
-	return nil
-}
 
 func loadLogStreamState(project config.ProjectName, ls *coordinator.LogStream) *logdog.LogStreamState {
 	st := logdog.LogStreamState{
@@ -86,11 +60,6 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Missing log stream descriptor.")
 	}
 
-	secret := types.PrefixSecret(req.Secret)
-	if err := secret.Validate(); err != nil {
-		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid prefix secret: %s", err)
-	}
-
 	prefix, name := path.Split()
 	if err := req.Desc.Validate(true); err != nil {
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid log stream descriptor: %s", err)
@@ -119,18 +88,40 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 		return nil, grpcutil.Internal
 	}
 
-	// Already registered? (Non-transactional).
+	// Register our Prefix.
+	//
+	// This will also verify that our request secret matches the registered one,
+	// if one is registered.
+	//
+	// Note: This step will not be necessary once a "register prefix" RPC call is
+	// implemented.
+	lsp := logStreamPrefix{
+		prefix: string(prefix),
+		secret: req.Secret,
+	}
+	pfx, err := registerPrefix(c, &lsp)
+	if err != nil {
+		log.Errorf(c, "Failed to register/validate log stream prefix.")
+		return nil, err
+	}
+	log.Fields{
+		"prefix":        pfx.Prefix,
+		"prefixCreated": pfx.Created,
+	}.Debugf(c, "Loaded log stream prefix.")
+
 	ls := coordinator.LogStreamFromPath(path)
+
+	// Check for registration (non-transactional).
 	di := ds.Get(c)
-	switch err := di.Get(ls); err {
+	switch err := checkRegisterStream(di, req, ls); err {
 	case nil:
-		// We want this to be idempotent, so validate that it matches the current
-		// configuration and return accordingly.
-		if err := matchesLogStream(req, ls); err != nil {
-			return nil, grpcutil.Errf(codes.AlreadyExists, "Log stream is already incompatibly registered: %v", err)
-		}
+		// The stream is already compatibly registered.
+		break
 
 	case ds.ErrNoSuchEntity:
+		// The stream is not registered. Perform a transactional registration via
+		// mutation.
+		//
 		// Determine which hierarchy components we need to add.
 		comps := hierarchy.Components(path)
 		if comps, err = hierarchy.Missing(di, comps); err != nil {
@@ -145,68 +136,89 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 			return nil, grpcutil.Internal
 		}
 
-		// The registration is valid, so retain it.
+		// The stream does not exist. Proceed with transactional registration.
 		err = tumble.RunMutation(c, &registerStreamMutation{
 			LogStream:    ls,
 			req:          req,
+			pfx:          pfx,
 			archiveDelay: archiveDelayMax,
 		})
 		if err != nil {
 			log.Fields{
 				log.ErrorKey: err,
 			}.Errorf(c, "Failed to register LogStream.")
-			return nil, filterError(err)
+			return nil, err
 		}
 
 	default:
 		log.WithError(err).Errorf(c, "Failed to check for log stream.")
-		return nil, grpcutil.Internal
+		return nil, err
 	}
 
 	return &logdog.RegisterStreamResponse{
 		State:  loadLogStreamState(coordinator.Project(c), ls),
-		Secret: ls.Secret,
+		Secret: lsp.secret,
 	}, nil
 }
 
-func filterError(err error) error {
-	switch {
-	case err == nil:
-		return nil
-	case grpc.Code(err) == codes.Unknown:
-		return grpcutil.Internal
-	default:
+func checkRegisterStream(di ds.Interface, req *logdog.RegisterStreamRequest, ls *coordinator.LogStream) error {
+	// Load any existing entity.
+	if err := di.Get(ls); err != nil {
 		return err
 	}
+
+	// A log stream is already present. We will either error if it is incompatible
+	// with our request, or return nil if it compatible (idempotent).
+	if err := matchesLogStream(req, ls); err != nil {
+		return grpcutil.Errf(codes.AlreadyExists, "Log stream is already registered: %v", err)
+	}
+	return nil
+}
+
+func matchesLogStream(r *logdog.RegisterStreamRequest, ls *coordinator.LogStream) error {
+	if r.Path != string(ls.Path()) {
+		return errors.New("paths do not match")
+	}
+
+	if r.ProtoVersion != ls.ProtoVersion {
+		return errors.New("protobuf version does not match")
+	}
+
+	dv, err := ls.DescriptorValue()
+	if err != nil {
+		return errors.New("log stream has invalid descriptor value")
+	}
+	if !dv.Equal(r.Desc) {
+		return errors.New("descriptor protobufs do not match")
+	}
+
+	return nil
 }
 
 type registerStreamMutation struct {
 	*coordinator.LogStream
 
 	req          *logdog.RegisterStreamRequest
+	pfx          *coordinator.LogPrefix
 	archiveDelay time.Duration
 }
 
 func (m *registerStreamMutation) RollForward(c context.Context) ([]tumble.Mutation, error) {
 	di := ds.Get(c)
 
-	// Already registered? (Transactional).
-	switch err := di.Get(m.LogStream); err {
-	case ds.ErrNoSuchEntity:
-		break
-
+	// Check if our stream is registered (transactional).
+	switch err := checkRegisterStream(di, m.req, m.LogStream); err {
 	case nil:
-		// The stream is already registered.
-		//
-		// We want this to be idempotent, so validate that it matches the current
-		// configuration and return accordingly.
-		if err := matchesLogStream(m.req, m.LogStream); err != nil {
-			return nil, grpcutil.Errf(codes.AlreadyExists, "Log stream is already incompatibly registered (T): %v", err)
-		}
+		// The stream is compatibly registered, so this is idempotent.
 		return nil, nil
 
+	case ds.ErrNoSuchEntity:
+		// The stream is not registered. We will proceed to register.
+		break
+
 	default:
-		return nil, grpcutil.Internal
+		log.WithError(err).Errorf(c, "Failed to check for stream registration (transactional).")
+		return nil, err
 	}
 
 	log.Infof(c, "Registering new log stream'")
@@ -219,10 +231,12 @@ func (m *registerStreamMutation) RollForward(c context.Context) ([]tumble.Mutati
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Failed to load descriptor.")
 	}
 
-	m.Secret = m.req.Secret
+	now := clock.Now(c).UTC()
+
+	m.Secret = m.pfx.Secret // Copy Prefix Secret to reduce number of Get needed.
 	m.ProtoVersion = m.req.ProtoVersion
 	m.State = coordinator.LSStreaming
-	m.Created = ds.RoundTime(clock.Now(c).UTC())
+	m.Created = now
 	m.TerminalIndex = -1
 
 	if err := di.Put(m.LogStream); err != nil {
@@ -237,7 +251,7 @@ func (m *registerStreamMutation) RollForward(c context.Context) ([]tumble.Mutati
 	// archival task.
 	archiveExpiredMutation := mutations.CreateArchiveTask{
 		Path:       m.Path(),
-		Expiration: clock.Now(c).Add(m.archiveDelay),
+		Expiration: now.Add(m.archiveDelay),
 	}
 	log.Fields{
 		"archiveDelay": m.archiveDelay,

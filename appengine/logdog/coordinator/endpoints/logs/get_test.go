@@ -378,7 +378,7 @@ func testGetImpl(t *testing.T, archived bool) {
 				})
 
 				Convey(`Will successfully retrieve a stream path hash.`, func() {
-					req.Path = ls.HashID
+					req.Path = string(ls.ID)
 					resp, err := svr.Get(c, &req)
 					So(err, ShouldBeRPCOK)
 					So(resp, shouldHaveLogs, 0, 1, 2)
@@ -537,7 +537,7 @@ func testGetImpl(t *testing.T, archived bool) {
 				})
 
 				Convey(`Will successfully retrieve a stream path hash and state.`, func() {
-					req.Path = ls.HashID
+					req.Path = string(ls.ID)
 					req.State = true
 
 					resp, err := svr.Tail(c, &req)

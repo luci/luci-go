@@ -94,7 +94,7 @@ func (m *CreateArchiveTask) HighPriority() bool {
 // TaskName returns the task's name, which is derived from its path.
 func (m *CreateArchiveTask) TaskName(di ds.Interface) (*ds.Key, string) {
 	ls := m.logStream()
-	return di.KeyForObj(ls), fmt.Sprintf("archive-expired-%s", ls.HashID)
+	return di.KeyForObj(ls), fmt.Sprintf("archive-expired-%s", ls.ID)
 }
 
 func (m *CreateArchiveTask) logStream() *coordinator.LogStream {

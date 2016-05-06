@@ -43,7 +43,7 @@ func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamReque
 	ls := coordinator.LogStreamFromPath(path)
 
 	log.Fields{
-		"id": ls.HashID,
+		"id": ls.ID,
 	}.Infof(c, "Log stream ID.")
 
 	// Post the archival results to the Coordinator.

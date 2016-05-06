@@ -5,8 +5,6 @@
 package coordinator
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"strings"
@@ -87,9 +85,9 @@ func (s LogStreamState) Archived() bool {
 // Most of the values in QueryBase are static. Those that change can only be
 // changed through service endpoint methods.
 type LogStream struct {
-	// HashID is the LogStream ID. It is generated from the stream's Prefix/Name
+	// ID is the LogStream ID. It is generated from the stream's Prefix/Name
 	// fields.
-	HashID string `gae:"$id"`
+	ID HashID `gae:"$id"`
 
 	// Schema is the datastore schema version for this object. This can be used
 	// to facilitate schema migrations.
@@ -101,12 +99,12 @@ type LogStream struct {
 	// are logically grouped.
 	//
 	// This value should not be changed once populated, as it will invalidate the
-	// HashID.
+	// ID.
 	Prefix string
 	// Name is the unique name of this log stream within the Prefix scope.
 	//
 	// This value should not be changed once populated, as it will invalidate the
-	// HashID.
+	// ID.
 	Name string
 
 	// State is the log stream's current state.
@@ -213,8 +211,8 @@ func NewLogStream(value string) (*LogStream, error) {
 	path := types.StreamPath(value)
 	if err := path.Validate(); err != nil {
 		// If it's not a path, see if it's a SHA256 sum.
-		hash, hashErr := normalizeHash(value)
-		if hashErr != nil {
+		hash := HashID(value)
+		if hashErr := hash.normalize(); hashErr != nil {
 			return nil, fmt.Errorf("invalid path (%s) and hash (%s)", err, hashErr)
 		}
 
@@ -227,9 +225,9 @@ func NewLogStream(value string) (*LogStream, error) {
 }
 
 // LogStreamFromID returns an empty LogStream instance with a known hash ID.
-func LogStreamFromID(hashID string) *LogStream {
+func LogStreamFromID(id HashID) *LogStream {
 	return &LogStream{
-		HashID: hashID,
+		ID: id,
 	}
 }
 
@@ -244,8 +242,14 @@ func LogStreamFromPath(path types.StreamPath) *LogStream {
 		Prefix: string(prefix),
 		Name:   string(name),
 	}
-	ls.recalculateHashID()
+	ls.recalculateID()
 	return &ls
+}
+
+// LogPrefix returns a keyed (but not loaded) LogPrefix struct for this
+// LogStream's Prefix.
+func (s *LogStream) LogPrefix() *LogPrefix {
+	return LogPrefixFromPrefix(types.StreamName(s.Prefix))
 }
 
 // Path returns the LogDog path for this log stream.
@@ -280,7 +284,7 @@ func (s *LogStream) Load(pmap ds.PropertyMap) error {
 		return err
 	}
 
-	// Validate the log stream. Don't enforce HashID correctness, since
+	// Validate the log stream. Don't enforce ID correctness, since
 	// datastore hasn't populated that field yet.
 	if !s.noDSValidate {
 		if err := s.validateImpl(false); err != nil {
@@ -321,19 +325,21 @@ func (s *LogStream) Save(withMeta bool) (ds.PropertyMap, error) {
 	return pmap, nil
 }
 
-// recalculateHashID calculates the log stream's hash ID from its Prefix/Name
+// recalculateID calculates the log stream's hash ID from its Prefix/Name
 // fields, which must be populated else this function will panic.
 //
-// The value is loaded into its HashID field.
-func (s *LogStream) recalculateHashID() {
-	s.HashID = s.getHashID()
+// The value is loaded into its ID field.
+func (s *LogStream) recalculateID() {
+	s.ID = s.getIDFromPath()
 }
 
-// recalculateHashID calculates the log stream's hash ID from its Prefix/Name
+// getIDFromPath calculates the log stream's hash ID from its Prefix/Name
 // fields, which must be populated else this function will panic.
-func (s *LogStream) getHashID() string {
-	hash := sha256.Sum256([]byte(s.Path()))
-	return hex.EncodeToString(hash[:])
+func (s *LogStream) getIDFromPath() HashID {
+	if s.Prefix == "" || s.Name == "" {
+		panic("missing prefix and/or name")
+	}
+	return makeHashID(string(s.Path()))
 }
 
 // Validate evaluates the state and data contents of the LogStream and returns
@@ -345,8 +351,8 @@ func (s *LogStream) Validate() error {
 func (s *LogStream) validateImpl(enforceHashID bool) error {
 	if enforceHashID {
 		// Make sure our Prefix and Name match the Hash ID.
-		if hid := s.getHashID(); hid != s.HashID {
-			return fmt.Errorf("hash IDs don't match (%q != %q)", hid, s.HashID)
+		if hid := s.getIDFromPath(); hid != s.ID {
+			return fmt.Errorf("hash IDs don't match (%q != %q)", hid, s.ID)
 		}
 	}
 
@@ -481,20 +487,6 @@ func (s *LogStream) DescriptorProto() (*logpb.LogStreamDescriptor, error) {
 // This is a testing parameter, and should NOT be used in production code.
 func (s *LogStream) SetDSValidate(v bool) {
 	s.noDSValidate = !v
-}
-
-// normalizeHash takes a SHA256 hexadecimal string as input. It validates that
-// it is a valid SHA256 hash and, if so, returns a normalized version that can
-// be used as a log stream key.
-func normalizeHash(v string) (string, error) {
-	if decodeSize := hex.DecodedLen(len(v)); decodeSize != sha256.Size {
-		return "", fmt.Errorf("invalid SHA256 hash size (%d != %d)", decodeSize, sha256.Size)
-	}
-	b, err := hex.DecodeString(v)
-	if err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(b), nil
 }
 
 // generatePathComponents generates the "_C" property path components for path

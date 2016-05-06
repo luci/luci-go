@@ -44,7 +44,7 @@ func (s *server) LoadStream(c context.Context, req *logdog.LoadStreamRequest) (*
 
 		log.Fields{
 			"path":            path,
-			"hash":            ls.HashID,
+			"hash":            ls.ID,
 			"terminalIndex":   resp.State.TerminalIndex,
 			"archived":        resp.State.Archived,
 			"purged":          resp.State.Purged,

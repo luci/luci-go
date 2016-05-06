@@ -85,6 +85,15 @@ func TestRegisterStream(t *testing.T) {
 						So(ds.Get(c).Get(ls), ShouldBeNil)
 					})
 					So(ls.Created, ShouldResemble, created)
+					So(ls.Secret, ShouldResemble, req.Secret)
+
+					// Should also register the log stream Prefix.
+					pfx := ls.LogPrefix()
+					ct.WithProjectNamespace(c, project, func(c context.Context) {
+						So(ds.Get(c).Get(pfx), ShouldBeNil)
+					})
+					So(pfx.Created, ShouldResemble, created)
+					So(pfx.Secret, ShouldResemble, req.Secret)
 
 					// No archival request yet.
 					So(env.ArchivalPublisher.StreamNames(), ShouldResemble, []string{})
@@ -133,10 +142,10 @@ func TestRegisterStream(t *testing.T) {
 						})
 					})
 
-					Convey(`Will not re-register if scerets don't match.`, func() {
+					Convey(`Will not re-register if secrets don't match.`, func() {
 						req.Secret[0] = 0xAB
 						_, err := svr.RegisterStream(c, &req)
-						So(err, ShouldBeRPCAlreadyExists, "Log stream is already incompatibly registered")
+						So(err, ShouldBeRPCAlreadyExists, "Log prefix is already registered")
 					})
 
 					Convey(`Will not re-register if descriptor data differs.`, func() {
@@ -144,7 +153,7 @@ func TestRegisterStream(t *testing.T) {
 							"testing": "value",
 						}
 						_, err := svr.RegisterStream(c, &req)
-						So(err, ShouldBeRPCAlreadyExists, "Log stream is already incompatibly registered")
+						So(err, ShouldBeRPCAlreadyExists, "Log stream is already registered")
 					})
 				})
 
@@ -156,7 +165,7 @@ func TestRegisterStream(t *testing.T) {
 					So(err, ShouldBeRPCInternal)
 				})
 
-				Convey(`Returns internal server error if the datastore Put() fails (in tumble).`, func() {
+				Convey(`Returns internal server error if the Prefix Put() fails.`, func() {
 					c, fb := featureBreaker.FilterRDS(c, nil)
 					fb.BreakFeatures(errors.New("test error"), "PutMulti")
 
@@ -213,6 +222,30 @@ func TestRegisterStream(t *testing.T) {
 
 						_, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCInvalidArgument, "Invalid log stream descriptor")
+					})
+				})
+
+				Convey(`The registerStreamMutation`, func() {
+					ls := ct.TestLogStream(c, desc)
+					pfx := ct.TestLogPrefix(c, desc)
+
+					rsm := registerStreamMutation{
+						LogStream: ls,
+						req:       &req,
+						pfx:       pfx,
+					}
+
+					Convey(`Can RollForward.`, func() {
+						_, err := rsm.RollForward(c)
+						So(err, ShouldBeNil)
+					})
+
+					Convey(`Returns internal server error if the stream Put() fails (tumble).`, func() {
+						c, fb := featureBreaker.FilterRDS(c, nil)
+						fb.BreakFeatures(errors.New("test error"), "PutMulti")
+
+						_, err := rsm.RollForward(c)
+						So(err, ShouldBeRPCInternal)
 					})
 				})
 			})

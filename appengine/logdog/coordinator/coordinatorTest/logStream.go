@@ -17,6 +17,11 @@ import (
 	"golang.org/x/net/context"
 )
 
+// TestSecret returns a testing types.StreamPrefix.
+func TestSecret() types.PrefixSecret {
+	return types.PrefixSecret(bytes.Repeat([]byte{0x6F}, types.PrefixSecretLength))
+}
+
 // TestLogStreamDescriptor generates a stock testing LogStreamDescriptor
 // protobuf.
 func TestLogStreamDescriptor(c context.Context, name string) *logpb.LogStreamDescriptor {
@@ -27,6 +32,14 @@ func TestLogStreamDescriptor(c context.Context, name string) *logpb.LogStreamDes
 		ContentType: "application/text",
 		Timestamp:   google.NewTimestamp(clock.Now(c)),
 	}
+}
+
+// TestLogPrefix generates a stock testing LogPrefix from a LogStreamDescriptor.
+func TestLogPrefix(c context.Context, desc *logpb.LogStreamDescriptor) *coordinator.LogPrefix {
+	pfx := coordinator.LogPrefixFromPrefix(types.StreamName(desc.Prefix))
+	pfx.Created = ds.RoundTime(clock.Now(c).UTC())
+	pfx.Secret = TestSecret()
+	return pfx
 }
 
 // TestLogStream generates a stock testing LogStream from a LogStreamDescriptor.
@@ -41,7 +54,7 @@ func TestLogStream(c context.Context, desc *logpb.LogStreamDescriptor) *coordina
 
 	ls.ProtoVersion = logpb.Version
 	ls.Created = ds.RoundTime(clock.Now(c).UTC())
-	ls.Secret = bytes.Repeat([]byte{0x6F}, types.PrefixSecretLength)
+	ls.Secret = TestSecret()
 	ls.TerminalIndex = -1
 	return ls
 }

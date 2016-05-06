@@ -102,7 +102,7 @@ func TestLogStream(t *testing.T) {
 			Created:       now.UTC(),
 			ContentType:   string(types.ContentTypeText),
 		}
-		ls.recalculateHashID()
+		ls.recalculateID()
 
 		desc := logpb.LogStreamDescriptor{
 			Prefix:      "testing",
@@ -142,14 +142,14 @@ func TestLogStream(t *testing.T) {
 
 			Convey(`Will not validate`, func() {
 				Convey(`Without a valid Prefix`, func() {
-					ls.Prefix = ""
-					ls.recalculateHashID()
+					ls.Prefix = "!!!not a valid prefix!!!"
+					ls.recalculateID()
 
 					So(ls.Validate(), ShouldErrLike, "invalid prefix")
 				})
 				Convey(`Without a valid Name`, func() {
-					ls.Name = ""
-					ls.recalculateHashID()
+					ls.Name = "!!!not a valid name!!!"
+					ls.recalculateID()
 
 					So(ls.Validate(), ShouldErrLike, "invalid name")
 				})
@@ -211,7 +211,7 @@ func TestLogStream(t *testing.T) {
 				})
 
 				Convey(`Can read the LogStream back from the Datastore via hash.`, func() {
-					ls2 := LogStreamFromID(ls.HashID)
+					ls2 := LogStreamFromID(ls.ID)
 					So(di.Get(ls2), ShouldBeNil)
 					So(ls2, ShouldResemble, &ls)
 				})
@@ -244,7 +244,7 @@ func TestLogStream(t *testing.T) {
 				lsCopy := ls
 				lsCopy.Name = name
 				lsCopy.Created = ds.RoundTime(now.Add(time.Duration(i) * time.Second))
-				lsCopy.recalculateHashID()
+				lsCopy.recalculateID()
 
 				descCopy := desc
 				descCopy.Name = name
