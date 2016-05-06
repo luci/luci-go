@@ -9,15 +9,10 @@ import (
 	"testing"
 
 	"github.com/luci/gae/filter/featureBreaker"
-	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/authtest"
-	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -27,20 +22,11 @@ func TestArchiveStream(t *testing.T) {
 	t.Parallel()
 
 	Convey(`With a testing configuration`, t, func() {
-		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
-		c = memory.Use(c)
-
-		fs := authtest.FakeState{}
-		c = auth.WithState(c, &fs)
-
-		svcStub := ct.Services{}
-		svcStub.InitConfig()
-		svcStub.ServiceConfig.Coordinator.ServiceAuthGroup = "test-services"
-		c = coordinator.WithServices(c, &svcStub)
+		c, env := ct.Install()
 
 		svr := New()
 
-		now := ds.RoundTime(tc.Now().UTC())
+		now := ds.RoundTime(env.Clock.Now().UTC())
 
 		// Register a testing log stream with an archive tasked.
 		ls := ct.TestLogStream(c, ct.TestLogStreamDescriptor(c, "foo"))
@@ -68,7 +54,7 @@ func TestArchiveStream(t *testing.T) {
 		})
 
 		Convey(`When logged in as a service`, func() {
-			fs.IdentityGroups = []string{"test-services"}
+			env.JoinGroup("services")
 
 			Convey(`Will mark the stream as archived.`, func() {
 				_, err := svr.ArchiveStream(c, req)

@@ -47,7 +47,7 @@ type GlobalConfig struct {
 // running under the dev appserver.
 type DevConfig struct {
 	// ID is the key ID of this configuration.
-	ID int64 `gae:"$id"`
+	ID int64 `gae:"$id,1"`
 
 	// Config, is set, is the application's text-format configuration protobuf.
 	// This is only used when running under dev-appserver.

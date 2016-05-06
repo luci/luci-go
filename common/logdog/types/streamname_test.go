@@ -157,19 +157,28 @@ func TestStreamPath(t *testing.T) {
 		type e struct {
 			p      string // The stream path.
 			prefix string // The split prefix.
-			tail   string // The split tail.
+			name   string // The split name.
+			sep    bool
 			valid  bool
 		}
 		for _, entry := range []e{
-			{"a/+/b", "a", "b", true},
-			{"a/+/b/+/c", "a", "b/+/c", false},
-			{"/+/", "", "", false},
-			{"foo/bar/+/baz/qux", "foo/bar", "baz/qux", true},
+			{"", "", "", false, false},
+			{"foo/+", "foo", "", true, false},
+			{"+foo", "+foo", "", false, false},
+			{"+/foo", "", "foo", true, false},
+			{"a/+/b", "a", "b", true, true},
+			{"a/+/", "a", "", true, false},
+			{"a/+foo/+/b", "a/+foo", "b", true, false},
+			{"fo+o/bar+/+/baz", "fo+o/bar+", "baz", true, false},
+			{"a/+/b/+/c", "a", "b/+/c", true, false},
+			{"/+/", "", "", true, false},
+			{"foo/bar/+/baz/qux", "foo/bar", "baz/qux", true, true},
 		} {
-			Convey(fmt.Sprintf(`Stream Path "%s" splits into "%s" and "%s".`, entry.p, entry.prefix, entry.tail), func() {
-				prefix, tail := StreamPath(entry.p).Split()
+			Convey(fmt.Sprintf(`Stream Path "%s" splits into "%s" and "%s".`, entry.p, entry.prefix, entry.name), func() {
+				prefix, sep, name := StreamPath(entry.p).SplitParts()
 				So(prefix, ShouldEqual, entry.prefix)
-				So(tail, ShouldEqual, entry.tail)
+				So(sep, ShouldEqual, entry.sep)
+				So(name, ShouldEqual, entry.name)
 			})
 
 			if entry.valid {
@@ -181,6 +190,34 @@ func TestStreamPath(t *testing.T) {
 					So(StreamPath(entry.p).Validate(), ShouldNotBeNil)
 				})
 			}
+		}
+	})
+
+	Convey(`StreamPath.SplitLast`, t, func() {
+		for _, tc := range []struct {
+			p StreamPath
+			c []string
+		}{
+			{"", []string{""}},
+			{"/", []string{"/"}},
+			{"foo", []string{"foo"}},
+			{"foo/bar/+/baz", []string{"baz", "+", "bar", "foo"}},
+			{"/foo/+/bar/", []string{"", "bar", "+", "/foo"}},
+		} {
+			Convey(fmt.Sprintf(`Splitting %q repeatedly yields %v`, tc.p, tc.c), func() {
+				var parts []string
+				p := tc.p
+				for {
+					var end string
+					p, end = p.SplitLast()
+					parts = append(parts, end)
+
+					if p == "" {
+						break
+					}
+				}
+				So(parts, ShouldResemble, tc.c)
+			})
 		}
 	})
 }

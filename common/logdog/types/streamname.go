@@ -16,13 +16,14 @@ import (
 const (
 	// StreamNameSep is the separator rune for stream name tokens.
 	StreamNameSep = '/'
-	nameSepStr    = "/"
+	// StreamNameSepStr is a string containing a single rune, StreamNameSep.
+	StreamNameSepStr = "/"
 
 	// StreamPathSep is the separator rune between a stream prefix and its
 	// name.
-	StreamPathSep    = '+'
-	pathSepStr       = "+"
-	pathSepComponent = "/+/"
+	StreamPathSep = '+'
+	// StreamPathSepStr is a string containing a single rune, StreamPathSep.
+	StreamPathSepStr = "+"
 
 	// MaxStreamNameLength is the maximum size, in bytes, of a StreamName. Since
 	// stream names must be valid ASCII, this is also the maximum string length.
@@ -55,10 +56,15 @@ func isAlnum(r rune) bool {
 // valid StreamName strings. Likewise, it may be a valid StreamPath if
 // StreamPathSep is one of the parts.
 func Construct(parts ...string) string {
-	for i, v := range parts {
-		parts[i] = strings.Trim(v, nameSepStr)
+	pidx := 0
+	for _, v := range parts {
+		if v == "" {
+			continue
+		}
+		parts[pidx] = strings.Trim(v, StreamNameSepStr)
+		pidx++
 	}
-	return strings.Join(parts, nameSepStr)
+	return strings.Join(parts[:pidx], StreamNameSepStr)
 }
 
 // MakeStreamName constructs a new stream name from its segments.
@@ -137,23 +143,7 @@ func (s *StreamName) Set(value string) error {
 // While such a StreamName is not Valid, this method helps correct small user
 // input errors.
 func (s StreamName) Trim() StreamName {
-	for {
-		r, l := utf8.DecodeRuneInString(string(s))
-		if r != StreamNameSep {
-			break
-		}
-		s = s[l:]
-	}
-
-	for {
-		r, l := utf8.DecodeLastRuneInString(string(s))
-		if r != StreamNameSep {
-			break
-		}
-		s = s[:len(s)-l]
-	}
-
-	return s
+	return StreamName(trimString(string(s)))
 }
 
 // Join concatenates a stream name onto the end of the current name, separating
@@ -222,10 +212,7 @@ func (s StreamName) Segments() []string {
 
 // SegmentCount returns the total number of segments in the StreamName.
 func (s StreamName) SegmentCount() int {
-	if len(s) == 0 {
-		return 0
-	}
-	return strings.Count(string(s), string(StreamNameSep)) + 1
+	return segmentCount(string(s))
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -258,7 +245,7 @@ func MakeStreamPath(prefix, name []StreamName) StreamPath {
 	for i, v := range prefix {
 		sp[i] = string(v)
 	}
-	sp[o] = pathSepStr
+	sp[o] = StreamPathSepStr
 	for _, v := range name {
 		o++
 		sp[o] = string(v)
@@ -282,26 +269,121 @@ func (p StreamPath) Split() (prefix StreamName, name StreamName) {
 // present but no name component, separator will be returned as true with an
 // empty name.
 func (p StreamPath) SplitParts() (prefix StreamName, sep bool, name StreamName) {
-	if idx := strings.Index(string(p), pathSepComponent); idx >= 0 {
-		sep = true
-		prefix, name = StreamName(p[:idx]), StreamName(p[idx+len(pathSepComponent):])
-	} else {
+	inside := false
+	hasPrefix := false
+	segIdx := 0
+
+	for i, r := range p {
+		// We have found our separator, and just started iterating the name
+		// component.
+		if hasPrefix {
+			name = StreamName(p[i:])
+			return
+		}
+
+		switch r {
+		case StreamPathSep:
+			// If we're at the beginning of a component, this is a potentially-valid
+			// separator. We'll identify it as valid if the next character is "/" and
+			// break the loop on the character after that.
+			sep = !inside
+			inside = true
+
+		case StreamNameSep:
+			if sep {
+				// A component beginning with "+" has been marked, and we have hit
+				// another "/", so this is a valid separator. Carve our prefix.
+				//
+				// We use a separate "hasPrefix" boolean in case the path begin with
+				// the separator (e.g., "+/foo").
+				prefix = StreamName(p[:segIdx])
+				hasPrefix = true
+			}
+			inside = false
+			segIdx = i
+
+		default:
+			// Non-special character, mark that we're no longer at the beginning of
+			// a component and that this is no longer a valid separator.
+			sep = false
+			inside = true
+		}
+	}
+
+	// We finished iterating through our string and didn't find a separator.
+	// Either we ended on the separator (prefix is assigned), or we didn't
+	// encounter one. In the latter case, the entire path is used as the prefix.
+	if !hasPrefix {
 		prefix = StreamName(p)
+		if sep {
+			// If the string ends in a separator, discard and split (e.g., "foo/+").
+			prefix = prefix[:segIdx]
+		}
 	}
 	return
 }
 
 // Validate checks whether a StreamPath is valid. A valid stream path must have
-// a valid prefix and tail components.
+// a valid prefix and name components.
 func (p StreamPath) Validate() error {
-	prefix, tail := p.Split()
-	if err := prefix.Validate(); err != nil {
-		return err
+	return p.validateImpl(true)
+}
+
+// ValidatePartial checks whether a partial StreamPath is valid. A partial
+// stream path if appending additional components to it can form a fully-valid
+// StreamPath.
+func (p StreamPath) ValidatePartial() error {
+	return p.validateImpl(false)
+}
+
+func (p StreamPath) validateImpl(complete bool) error {
+	prefix, name := p.Split()
+	if complete || prefix != "" {
+		if err := prefix.Validate(); err != nil {
+			return err
+		}
 	}
-	if err := tail.Validate(); err != nil {
-		return err
+	if complete || name != "" {
+		if err := name.Validate(); err != nil {
+			return err
+		}
 	}
 	return nil
+}
+
+// Trim trims separator characters from the beginning and end of a StreamPath.
+//
+// While such a StreamPath is not Valid, this method helps correct small user
+// input errors.
+func (p StreamPath) Trim() StreamPath {
+	return StreamPath(trimString(string(p)))
+}
+
+// Append returns a StreamPath consisting of the current StreamPath with the
+// supplied StreamName appended to the end.
+//
+// Append will return a valid StreamPath if p and n are both valid.
+func (p StreamPath) Append(n string) StreamPath {
+	return StreamPath(Construct(string(p), n))
+}
+
+// SplitLast splits the rightmost component from a StreamPath, returning the
+// intermediate StreamPath.
+//
+// If the path begins with a leading separator, it will be included in the
+// leftmost token. Note that such a path is invalid.
+//
+// If there are no components in the path, ("", p) will be returned.
+func (p StreamPath) SplitLast() (StreamPath, string) {
+	if idx := strings.LastIndex(string(p), StreamNameSepStr); idx > 0 {
+		return p[:idx], string(p[idx+len(StreamNameSepStr):])
+	}
+	return "", string(p)
+}
+
+// SegmentCount returns the total number of segments in the StreamName.
+func (p StreamPath) SegmentCount() int {
+	return segmentCount(string(p))
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -332,3 +414,30 @@ var _ sort.Interface = StreamNameSlice(nil)
 func (s StreamNameSlice) Len() int           { return len(s) }
 func (s StreamNameSlice) Less(i, j int) bool { return s[i] < s[j] }
 func (s StreamNameSlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+
+func trimString(s string) string {
+	for {
+		r, l := utf8.DecodeRuneInString(s)
+		if r != StreamNameSep {
+			break
+		}
+		s = s[l:]
+	}
+
+	for {
+		r, l := utf8.DecodeLastRuneInString(s)
+		if r != StreamNameSep {
+			break
+		}
+		s = s[:len(s)-l]
+	}
+
+	return s
+}
+
+func segmentCount(s string) int {
+	if len(s) == 0 {
+		return 0
+	}
+	return strings.Count(s, string(StreamNameSep)) + 1
+}

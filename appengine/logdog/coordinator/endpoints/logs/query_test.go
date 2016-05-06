@@ -11,19 +11,15 @@ import (
 	"time"
 
 	"github.com/luci/gae/filter/featureBreaker"
-	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
-	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/authtest"
 	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -64,64 +60,19 @@ func TestQuery(t *testing.T) {
 	t.Parallel()
 
 	Convey(`With a testing configuration, a Query request`, t, func() {
-		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
-		c = memory.Use(c)
+		c, env := ct.Install()
 		c, fb := featureBreaker.FilterRDS(c, nil)
 
-		// Add LogStream indexes.
-		//
-		// These should be kept in sync with the "query endpoint" indexes in the
-		// vmuser module's "index.yaml" file.
-		indexDefs := [][]string{
-			{"Prefix", "-Created"},
-			{"Name", "-Created"},
-			{"State", "-Created"},
-			{"Purged", "-Created"},
-			{"ProtoVersion", "-Created"},
-			{"ContentType", "-Created"},
-			{"StreamType", "-Created"},
-			{"Timestamp", "-Created"},
-			{"_C", "-Created"},
-			{"_Tags", "-Created"},
-			{"_Terminated", "-Created"},
-			{"_Archived", "-Created"},
-		}
-		indexes := make([]*ds.IndexDefinition, len(indexDefs))
-		for i, id := range indexDefs {
-			cols := make([]ds.IndexColumn, len(id))
-			for j, ic := range id {
-				var err error
-				cols[j], err = ds.ParseIndexColumn(ic)
-				if err != nil {
-					panic(fmt.Errorf("failed to parse index %q: %s", ic, err))
-				}
-			}
-			indexes[i] = &ds.IndexDefinition{Kind: "LogStream", SortBy: cols}
-		}
-		ds.Get(c).Testable().AddIndexes(indexes...)
 		ds.Get(c).Testable().Consistent(true)
-
-		fs := authtest.FakeState{}
-		c = auth.WithState(c, &fs)
-
-		svcStub := ct.Services{}
-		svcStub.InitConfig()
-		svcStub.ServiceConfig.Coordinator.AdminAuthGroup = "test-administrators"
-		c = coordinator.WithServices(c, &svcStub)
 
 		var svrBase server
 		svr := newService(&svrBase)
 
-		// di is a datastore bound to the test project namespace.
-		const project = "test-project"
-		if err := coordinator.WithProjectNamespace(&c, config.ProjectName(project)); err != nil {
-			panic(err)
-		}
-		di := ds.Get(c)
+		const project = config.ProjectName("proj-foo")
 
 		// Stock query request, will be modified by each test.
 		req := logdog.QueryRequest{
-			Project: project,
+			Project: string(project),
 			Tags:    map[string]string{},
 		}
 
@@ -162,7 +113,7 @@ func TestQuery(t *testing.T) {
 
 			ls := ct.TestLogStream(c, desc)
 
-			now := tc.Now().UTC()
+			now := env.Clock.Now().UTC()
 			psegs := prefix.Segments()
 			if psegs[0] == "meta" {
 				for _, p := range psegs[1:] {
@@ -192,9 +143,11 @@ func TestQuery(t *testing.T) {
 				}
 			}
 
-			if err := di.Put(ls); err != nil {
-				panic(fmt.Errorf("failed to put log stream %d: %v", i, err))
-			}
+			ct.WithProjectNamespace(c, project, func(c context.Context) {
+				if err := ds.Get(c).Put(ls); err != nil {
+					panic(fmt.Errorf("failed to put log stream %d: %v", i, err))
+				}
+			})
 
 			descs[string(v)] = desc
 			streams[string(v)] = ls
@@ -202,9 +155,9 @@ func TestQuery(t *testing.T) {
 				streamPaths = append(streamPaths, string(v))
 			}
 			purgedStreamPaths = append(purgedStreamPaths, string(v))
-			tc.Add(time.Second)
+			env.Clock.Add(time.Second)
 		}
-		di.Testable().CatchupIndexes()
+		ds.Get(c).Testable().CatchupIndexes()
 
 		// Invert streamPaths since we will return results in descending Created
 		// order.
@@ -223,16 +176,22 @@ func TestQuery(t *testing.T) {
 			So(resp, shouldHaveLogPaths, streamPaths)
 		})
 
-		Convey(`An empty query to a different project return no log streams.`, func() {
+		Convey(`An empty query to a non-existent project fails with NotFound.`, func() {
 			req.Project = "does-not-exist"
 
-			resp, err := svr.Query(c, &req)
-			So(err, ShouldBeRPCOK)
-			So(resp, shouldHaveLogPaths)
+			_, err := svr.Query(c, &req)
+			So(err, ShouldBeRPCNotFound)
+		})
+
+		Convey(`An empty query to a project without access fails with NotFound.`, func() {
+			req.Project = "proj-exclusive"
+
+			_, err := svr.Query(c, &req)
+			So(err, ShouldBeRPCNotFound)
 		})
 
 		Convey(`An empty query will include purged streams if admin.`, func() {
-			fs.IdentityGroups = []string{"test-administrators"}
+			env.JoinGroup("admin")
 
 			resp, err := svr.Query(c, &req)
 			So(err, ShouldBeRPCOK)
@@ -295,8 +254,12 @@ func TestQuery(t *testing.T) {
 				Convey(`When not requesting protobufs, and with a corrupt descriptor, returns InternalServer error.`, func() {
 					stream.SetDSValidate(false)
 					stream.Descriptor = []byte{0x00} // Invalid protobuf, zero tag.
-					So(di.Put(stream), ShouldBeNil)
-					di.Testable().CatchupIndexes()
+					ct.WithProjectNamespace(c, project, func(c context.Context) {
+						if err := ds.Get(c).Put(stream); err != nil {
+							panic(err)
+						}
+					})
+					ds.Get(c).Testable().CatchupIndexes()
 
 					_, err := svr.Query(c, &req)
 					So(err, ShouldBeRPCInternal)
@@ -346,7 +309,7 @@ func TestQuery(t *testing.T) {
 		})
 
 		Convey(`When querying against timestamp constraints`, func() {
-			req.Older = google.NewTimestamp(tc.Now())
+			req.Older = google.NewTimestamp(env.Clock.Now())
 
 			// Invert our streamPaths, since we're going to receive results
 			// newest-to-oldest and this makes it much easier to check/express.
@@ -356,7 +319,7 @@ func TestQuery(t *testing.T) {
 			}
 
 			Convey(`Querying for entries created at or after 2 seconds ago (latest 2 entries).`, func() {
-				req.Newer = google.NewTimestamp(tc.Now().Add(-2*time.Second - time.Millisecond))
+				req.Newer = google.NewTimestamp(env.Clock.Now().Add(-2*time.Second - time.Millisecond))
 
 				resp, err := svr.Query(c, &req)
 				So(err, ShouldBeRPCOK)
@@ -432,7 +395,7 @@ func TestQuery(t *testing.T) {
 			})
 
 			Convey(`When the user is an administrator`, func() {
-				fs.IdentityGroups = []string{"test-administrators"}
+				env.JoinGroup("admin")
 
 				Convey(`When purged=yes, returns [terminated/archived/purged, purged]`, func() {
 					req.Purged = logdog.QueryRequest_YES

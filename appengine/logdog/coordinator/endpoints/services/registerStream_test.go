@@ -15,15 +15,13 @@ import (
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/hierarchy"
-	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/authtest"
+	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
+	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -33,27 +31,11 @@ func TestRegisterStream(t *testing.T) {
 	t.Parallel()
 
 	Convey(`With a testing configuration`, t, func() {
-		tt := &tumble.Testing{}
-		c := tt.Context()
-		tc := clock.Get(c).(testclock.TestClock)
-
-		// Add Tumble delayed mutation index.
-		tt.EnableDelayedMutations(c)
+		c, env := ct.Install()
+		env.ModConfig(func(cfg *svcconfig.Coordinator) {
+			cfg.ArchiveDelayMax = google.NewDuration(time.Hour)
+		})
 		ds.Get(c).Testable().Consistent(true)
-
-		fs := authtest.FakeState{}
-		c = auth.WithState(c, &fs)
-
-		var tap ct.ArchivalPublisher
-		svcStub := ct.Services{
-			AP: func() (coordinator.ArchivalPublisher, error) {
-				return &tap, nil
-			},
-		}
-		svcStub.InitConfig()
-		svcStub.ServiceConfig.Coordinator.ServiceAuthGroup = "test-services"
-		svcStub.ServiceConfig.Coordinator.ArchiveDelayMax = google.NewDuration(time.Hour)
-		c = coordinator.WithServices(c, &svcStub)
 
 		svr := New()
 
@@ -63,13 +45,16 @@ func TestRegisterStream(t *testing.T) {
 		})
 
 		Convey(`When logged in as a service`, func() {
-			fs.IdentityGroups = []string{"test-services"}
+			env.JoinGroup("services")
 
 			desc := ct.TestLogStreamDescriptor(c, "foo/bar")
 			secret := bytes.Repeat([]byte{0xAA}, types.PrefixSecretLength)
 
 			Convey(`A stream registration request for "testing/+/foo/bar"`, func() {
+				const project config.ProjectName = "proj-foo"
+
 				req := logdog.RegisterStreamRequest{
+					Project:      string(project),
 					Path:         "testing/+/foo/bar",
 					Secret:       secret,
 					ProtoVersion: logpb.Version,
@@ -78,6 +63,7 @@ func TestRegisterStream(t *testing.T) {
 
 				expResp := &logdog.RegisterStreamResponse{
 					State: &logdog.LogStreamState{
+						Project:       string(project),
 						Path:          "testing/+/foo/bar",
 						ProtoVersion:  logpb.Version,
 						TerminalIndex: -1,
@@ -86,31 +72,33 @@ func TestRegisterStream(t *testing.T) {
 				}
 
 				Convey(`Can register the stream.`, func() {
-					created := ds.RoundTime(tc.Now())
+					created := ds.RoundTime(env.Clock.Now())
 
 					resp, err := svr.RegisterStream(c, &req)
 					So(err, ShouldBeRPCOK)
 					So(resp, ShouldResemble, expResp)
 					ds.Get(c).Testable().CatchupIndexes()
-					tt.Drain(c)
+					env.DrainTumbleAll(c)
 
 					ls := coordinator.LogStreamFromPath(types.StreamPath(req.Path))
-					So(ds.Get(c).Get(ls), ShouldBeNil)
+					ct.WithProjectNamespace(c, project, func(c context.Context) {
+						So(ds.Get(c).Get(ls), ShouldBeNil)
+					})
 					So(ls.Created, ShouldResemble, created)
 
 					// No archival request yet.
-					So(tap.StreamNames(), ShouldResemble, []string{})
+					So(env.ArchivalPublisher.StreamNames(), ShouldResemble, []string{})
 
 					// Should have name components.
 					getNameComponents := func(b string) []string {
-						l, err := hierarchy.Get(ds.Get(c), hierarchy.Request{Base: b})
+						l, err := hierarchy.Get(c, hierarchy.Request{Project: "proj-foo", PathBase: b})
 						if err != nil {
 							panic(err)
 						}
 						names := make([]string, len(l.Comp))
 						for i, e := range l.Comp {
 							names[i] = e.Name
-							if e.Stream != "" {
+							if e.Stream {
 								names[i] += "$"
 							}
 						}
@@ -122,24 +110,26 @@ func TestRegisterStream(t *testing.T) {
 					So(getNameComponents("testing/+/foo"), ShouldResemble, []string{"bar$"})
 
 					Convey(`Can register the stream again (idempotent).`, func() {
-						tc.Set(created.Add(10 * time.Minute))
+						env.Clock.Set(created.Add(10 * time.Minute))
 
 						resp, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCOK)
 						So(resp, ShouldResemble, expResp)
 
 						ls := coordinator.LogStreamFromPath(types.StreamPath(req.Path))
-						So(ds.Get(c).Get(ls), ShouldBeNil)
+						ct.WithProjectNamespace(c, project, func(c context.Context) {
+							So(ds.Get(c).Get(ls), ShouldBeNil)
+						})
 						So(ls.Created, ShouldResemble, created)
 
 						// No archival request yet.
-						So(tap.StreamNames(), ShouldResemble, []string{})
+						So(env.ArchivalPublisher.StreamNames(), ShouldResemble, []string{})
 
 						Convey(`Forces an archival request after first archive expiration.`, func() {
-							tc.Set(created.Add(time.Hour)) // 1 hour after initial registration.
-							tt.Drain(c)
+							env.Clock.Set(created.Add(time.Hour)) // 1 hour after initial registration.
+							env.DrainTumbleAll(c)
 
-							So(tap.StreamNames(), ShouldResemble, []string{ls.Name})
+							So(env.ArchivalPublisher.StreamNames(), ShouldResemble, []string{ls.Name})
 						})
 					})
 

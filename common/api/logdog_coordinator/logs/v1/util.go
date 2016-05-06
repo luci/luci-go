@@ -12,6 +12,3 @@ func (r *TailRequest) GetMessageProject() string { return r.Project }
 
 // GetMessageProject implements ProjectBoundMessage.
 func (r *QueryRequest) GetMessageProject() string { return r.Project }
-
-// GetMessageProject implements ProjectBoundMessage.
-func (r *ListRequest) GetMessageProject() string { return r.Project }

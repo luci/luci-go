@@ -9,12 +9,16 @@ import (
 	"fmt"
 
 	"github.com/luci/gae/service/info"
+	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
 	"golang.org/x/net/context"
 )
+
+// ErrNoAccess is returned if the user has no access to the requested project.
+var ErrNoAccess = config.ErrNoAccess
 
 // IsAdminUser tests whether the current user belongs to the administrative
 // users group. It will return an error if the user does not.

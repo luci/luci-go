@@ -8,7 +8,8 @@ import (
 	"fmt"
 
 	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/config"
+	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
+	luciConfig "github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
@@ -36,7 +37,20 @@ func GetServices(c context.Context) Services {
 // It will fail if either the project name or the project's namespace is
 // invalid. In the event of an error, the supplied Context will be not be
 // modified or invalidated.
-func WithProjectNamespace(c *context.Context, project config.ProjectName) error {
+func WithProjectNamespace(c *context.Context, project luciConfig.ProjectName) error {
+	return withProjectNamespaceImpl(c, project, true)
+}
+
+// WithProjectNamespaceNoAuth sets the current namespace to the project name. It
+// does NOT assert that the current user has project access. This should only be
+// used for service functions that are not acting on behalf of a user.
+//
+// It will fail if the project name is invalid.
+func WithProjectNamespaceNoAuth(c *context.Context, project luciConfig.ProjectName) error {
+	return withProjectNamespaceImpl(c, project, false)
+}
+
+func withProjectNamespaceImpl(c *context.Context, project luciConfig.ProjectName, auth bool) error {
 	// TODO(dnj): REQUIRE this to be non-empty once namespacing is mandatory.
 	if project == "" {
 		log.Debugf(*c, "Using default namespace.")
@@ -49,6 +63,17 @@ func WithProjectNamespace(c *context.Context, project config.ProjectName) error 
 			"project":    project,
 		}.Errorf(*c, "Project name is invalid.")
 		return err
+	}
+
+	// Validate the user's access to the named project, if authenticating.
+	if auth {
+		if err := config.AssertProjectAccess(*c, project); err != nil {
+			log.Fields{
+				log.ErrorKey: err,
+				"project":    project,
+			}.Errorf(*c, "User cannot access requested project.")
+			return err
+		}
 	}
 
 	pns := ProjectNamespace(project)
@@ -75,7 +100,7 @@ func WithProjectNamespace(c *context.Context, project config.ProjectName) error 
 // This function is called with the expectation that the Context is in a
 // namespace conforming to ProjectNamespace. If this is not the case, this
 // method will panic.
-func Project(c context.Context) config.ProjectName {
+func Project(c context.Context) luciConfig.ProjectName {
 	ns, _ := info.Get(c).GetNamespace()
 
 	// TODO(dnj): Remove the empty namespace/project exception once we no longer

@@ -16,11 +16,10 @@ import (
 	"github.com/luci/luci-go/appengine/logdog/coordinator/mutations"
 	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/authtest"
+	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
+	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -30,37 +29,26 @@ func TestTerminateStream(t *testing.T) {
 	t.Parallel()
 
 	Convey(`With a testing configuration`, t, func() {
-		var tt tumble.Testing
-		c := tt.Context()
-		tc := clock.Get(c).(testclock.TestClock)
-		tt.EnableDelayedMutations(c)
+		c, env := ct.Install()
 
-		var tap ct.ArchivalPublisher
-		svcStub := ct.Services{
-			AP: func() (coordinator.ArchivalPublisher, error) {
-				return &tap, nil
-			},
-		}
-		svcStub.InitConfig()
-		svcStub.ServiceConfig.Coordinator.ServiceAuthGroup = "test-services"
-		svcStub.ServiceConfig.Coordinator.ArchiveTopic = "projects/test/topics/archive"
-		svcStub.ServiceConfig.Coordinator.ArchiveSettleDelay = google.NewDuration(10 * time.Second)
-		svcStub.ServiceConfig.Coordinator.ArchiveDelayMax = google.NewDuration(24 * time.Hour)
-		c = coordinator.WithServices(c, &svcStub)
+		env.ModConfig(func(cfg *svcconfig.Coordinator) {
+			cfg.ArchiveTopic = "projects/test/topics/archive"
+			cfg.ArchiveSettleDelay = google.NewDuration(10 * time.Second)
+			cfg.ArchiveDelayMax = google.NewDuration(24 * time.Hour)
+		})
 
 		svr := New()
 
 		desc := ct.TestLogStreamDescriptor(c, "foo/bar")
 		ls := ct.TestLogStream(c, desc)
 
+		const project config.ProjectName = "proj-foo"
 		req := logdog.TerminateStreamRequest{
+			Project:       string(project),
 			Path:          "testing/+/foo/bar",
 			Secret:        ls.Secret,
 			TerminalIndex: 1337,
 		}
-
-		fs := authtest.FakeState{}
-		c = auth.WithState(c, &fs)
 
 		Convey(`Returns Forbidden error if not a service.`, func() {
 			_, err := svr.TerminateStream(c, &req)
@@ -68,24 +56,26 @@ func TestTerminateStream(t *testing.T) {
 		})
 
 		Convey(`When logged in as a service`, func() {
-			fs.IdentityGroups = []string{"test-services"}
+			env.JoinGroup("services")
 
 			Convey(`A non-terminal registered stream, "testing/+/foo/bar"`, func() {
-				So(ds.Get(c).Put(ls), ShouldBeNil)
+				ct.WithProjectNamespace(c, project, func(c context.Context) {
+					So(ds.Get(c).Put(ls), ShouldBeNil)
 
-				// Create an archival request for Tumble so we can ensure that it is
-				// canceled on termination.
-				areq := mutations.CreateArchiveTask{
-					Path:       ls.Path(),
-					Expiration: tc.Now().Add(time.Hour),
-				}
-				arParent, arName := areq.TaskName(ds.Get(c))
-				err := tumble.PutNamedMutations(c, arParent, map[string]tumble.Mutation{
-					arName: &areq,
+					// Create an archival request for Tumble so we can ensure that it is
+					// canceled on termination.
+					areq := mutations.CreateArchiveTask{
+						Path:       ls.Path(),
+						Expiration: env.Clock.Now().Add(time.Hour),
+					}
+					arParent, arName := areq.TaskName(ds.Get(c))
+					err := tumble.PutNamedMutations(c, arParent, map[string]tumble.Mutation{
+						arName: &areq,
+					})
+					if err != nil {
+						panic(err)
+					}
 				})
-				if err != nil {
-					panic(err)
-				}
 				ds.Get(c).Testable().CatchupIndexes()
 
 				Convey(`Can be marked terminal and schedules an archival task.`, func() {
@@ -94,31 +84,35 @@ func TestTerminateStream(t *testing.T) {
 					ds.Get(c).Testable().CatchupIndexes()
 
 					// Reload "ls" and confirm.
-					So(ds.Get(c).Get(ls), ShouldBeNil)
+					ct.WithProjectNamespace(c, project, func(c context.Context) {
+						So(ds.Get(c).Get(ls), ShouldBeNil)
+					})
 					So(ls.TerminalIndex, ShouldEqual, 1337)
 					So(ls.State, ShouldEqual, coordinator.LSArchiveTasked)
 					So(ls.Terminated(), ShouldBeTrue)
-					So(tap.StreamNames(), ShouldResemble, []string{ls.Name})
+					So(env.ArchivalPublisher.StreamNames(), ShouldResemble, []string{ls.Name})
 
 					// Assert that all archive tasks are scheduled ArchiveSettleDelay in
 					// the future.
-					for _, t := range tap.Tasks() {
-						So(t.SettleDelay.Duration(), ShouldEqual, svcStub.ServiceConfig.Coordinator.ArchiveSettleDelay.Duration())
-						So(t.CompletePeriod.Duration(), ShouldEqual, svcStub.ServiceConfig.Coordinator.ArchiveDelayMax.Duration())
+					for _, t := range env.ArchivalPublisher.Tasks() {
+						So(t.SettleDelay.Duration(), ShouldEqual, 10*time.Second)
+						So(t.CompletePeriod.Duration(), ShouldEqual, 24*time.Hour)
 					}
 
 					Convey(`Will cancel the expiration archive Tumble task.`, func() {
 						// We will test this by reverting the stream to a LSStreaming state
 						// so that if the Tumble task gets fired, it will try and schedule
 						// another archival task.
-						tap.Clear()
+						env.ArchivalPublisher.Clear()
 
 						ls.State = coordinator.LSStreaming
-						So(ds.Get(c).Put(ls), ShouldBeNil)
+						ct.WithProjectNamespace(c, project, func(c context.Context) {
+							So(ds.Get(c).Put(ls), ShouldBeNil)
+						})
 
-						tc.Add(time.Hour)
-						tt.Drain(c)
-						So(tap.StreamNames(), ShouldResemble, []string{})
+						env.Clock.Add(time.Hour)
+						env.DrainTumbleAll(c)
+						So(env.ArchivalPublisher.StreamNames(), ShouldResemble, []string{})
 					})
 
 					Convey(`Can be marked terminal again (idempotent).`, func() {
@@ -126,7 +120,9 @@ func TestTerminateStream(t *testing.T) {
 						So(err, ShouldBeRPCOK)
 
 						// Reload "ls" and confirm.
-						So(ds.Get(c).Get(ls), ShouldBeNil)
+						ct.WithProjectNamespace(c, project, func(c context.Context) {
+							So(ds.Get(c).Get(ls), ShouldBeNil)
+						})
 
 						So(ls.Terminated(), ShouldBeTrue)
 						So(ls.TerminalIndex, ShouldEqual, 1337)
@@ -139,7 +135,9 @@ func TestTerminateStream(t *testing.T) {
 						So(err, ShouldBeRPCFailedPrecondition, "Log stream is not in streaming state.")
 
 						// Reload "ls" and confirm.
-						So(ds.Get(c).Get(ls), ShouldBeNil)
+						ct.WithProjectNamespace(c, project, func(c context.Context) {
+							So(ds.Get(c).Get(ls), ShouldBeNil)
+						})
 
 						So(ls.Terminated(), ShouldBeTrue)
 						So(ls.State, ShouldEqual, coordinator.LSArchiveTasked)
@@ -152,7 +150,9 @@ func TestTerminateStream(t *testing.T) {
 						So(err, ShouldBeRPCInvalidArgument, "Negative terminal index.")
 
 						// Reload "ls" and confirm.
-						So(ds.Get(c).Get(ls), ShouldBeNil)
+						ct.WithProjectNamespace(c, project, func(c context.Context) {
+							So(ds.Get(c).Get(ls), ShouldBeNil)
+						})
 
 						So(ls.Terminated(), ShouldBeTrue)
 						So(ls.State, ShouldEqual, coordinator.LSArchiveTasked)

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"golang.org/x/net/context"
@@ -52,6 +53,8 @@ type StreamState struct {
 
 // LogStream is returned metadata about a log stream.
 type LogStream struct {
+	// Project is the log stream's project.
+	Project config.ProjectName
 	// Path is the path of the log stream.
 	Path types.StreamPath
 
@@ -62,10 +65,11 @@ type LogStream struct {
 	State *StreamState
 }
 
-func loadLogStream(p types.StreamPath, s *logdog.LogStreamState, d *logpb.LogStreamDescriptor) *LogStream {
+func loadLogStream(proj string, path types.StreamPath, s *logdog.LogStreamState, d *logpb.LogStreamDescriptor) *LogStream {
 	ls := LogStream{
-		Path: p,
-		Desc: d,
+		Project: config.ProjectName(proj),
+		Path:    path,
+		Desc:    d,
 	}
 	if s != nil {
 		st := StreamState{
@@ -91,6 +95,8 @@ type Stream struct {
 	// c is the Coordinator instance that this Stream is bound to.
 	c *Client
 
+	// project is this stream's project.
+	project config.ProjectName
 	// path is the log stream's prefix.
 	path types.StreamPath
 }
@@ -98,6 +104,7 @@ type Stream struct {
 // State fetches the LogStreamDescriptor for a given log stream.
 func (s *Stream) State(ctx context.Context) (*LogStream, error) {
 	req := logdog.GetRequest{
+		Project:  string(s.project),
 		Path:     string(s.path),
 		State:    true,
 		LogCount: -1, // Don't fetch any logs.
@@ -107,7 +114,12 @@ func (s *Stream) State(ctx context.Context) (*LogStream, error) {
 	if err != nil {
 		return nil, normalizeError(err)
 	}
-	return loadLogStream(s.path, resp.State, resp.Desc), nil
+
+	path := types.StreamPath(req.Path)
+	if desc := resp.Desc; desc != nil {
+		path = desc.Path()
+	}
+	return loadLogStream(resp.Project, path, resp.State, resp.Desc), nil
 }
 
 // Get retrieves log stream entries from the Coordinator. The supplied
@@ -119,7 +131,7 @@ func (s *Stream) Get(ctx context.Context, p *StreamGetParams) ([]*logpb.LogEntry
 	}
 
 	req := p.r
-	req.Project = string(s.c.project)
+	req.Project = string(s.project)
 	req.Path = string(s.path)
 	if p.stateP != nil {
 		req.State = true
@@ -140,7 +152,7 @@ func (s *Stream) Get(ctx context.Context, p *StreamGetParams) ([]*logpb.LogEntry
 // variable.
 func (s *Stream) Tail(ctx context.Context, stateP *LogStream) (*logpb.LogEntry, error) {
 	req := logdog.TailRequest{
-		Project: string(s.c.project),
+		Project: string(s.project),
 		Path:    string(s.path),
 	}
 	if stateP != nil {
@@ -178,7 +190,7 @@ func loadStatePointer(stateP *LogStream, resp *logdog.GetResponse) error {
 	if resp.State == nil {
 		return errors.New("Requested state was not returned")
 	}
-	ls := loadLogStream(resp.Desc.Path(), resp.State, resp.Desc)
+	ls := loadLogStream(resp.Project, resp.Desc.Path(), resp.State, resp.Desc)
 	*stateP = *ls
 	return nil
 }

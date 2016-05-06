@@ -6,17 +6,20 @@ package coordinator
 
 import (
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logdog/types"
 	"golang.org/x/net/context"
 )
 
 // ListResult is a single returned list entry.
 type ListResult struct {
-	// Base is the base part of the list path. This will match the base that the
-	// list was pulled from.
-	Base string
-	// Path is this list component's remaining path, relative to Base.
-	Path string
+	// Project is the project that this result is bound to.
+	Project config.ProjectName
+	// PathBase is the base part of the list path. This will match the base that
+	// the list was pulled from.
+	PathBase types.StreamPath
+	// Name is the name of this component, relative to PathBase.
+	Name string
 	// Stream is true if this list component is a stream component. Otherwise,
 	// it's an intermediate path component.
 	Stream bool
@@ -29,10 +32,7 @@ type ListResult struct {
 // FullPath returns the full StreamPath of this result. If it is not a stream,
 // it will return an empty path.
 func (lr *ListResult) FullPath() types.StreamPath {
-	if !lr.Stream {
-		return ""
-	}
-	return types.StreamPath(types.Construct(lr.Base, lr.Path))
+	return types.StreamPath(lr.PathBase).Append(lr.Name)
 }
 
 // ListCallback is a callback method type that is used in list requests.
@@ -42,9 +42,6 @@ type ListCallback func(*ListResult) bool
 
 // ListOptions is a set of list request options.
 type ListOptions struct {
-	// Recursive, if true, requests that the list results include the descendents
-	// of the components that are immediately under the supplied base.
-	Recursive bool
 	// StreamsOnly requests that only stream components are returned. Intermediate
 	// path components will be omitted.
 	StreamsOnly bool
@@ -59,11 +56,12 @@ type ListOptions struct {
 }
 
 // List executes a log stream hierarchy listing for the specified path.
-func (c *Client) List(ctx context.Context, base string, o ListOptions, cb ListCallback) error {
+//
+// If project is the empty string, a top-level project listing will be returned.
+func (c *Client) List(ctx context.Context, project config.ProjectName, pathBase string, o ListOptions, cb ListCallback) error {
 	req := logdog.ListRequest{
-		Project:       string(c.project),
-		Path:          base,
-		Recursive:     o.Recursive,
+		Project:       string(project),
+		PathBase:      pathBase,
 		StreamOnly:    o.StreamsOnly,
 		State:         o.State,
 		IncludePurged: o.Purged,
@@ -77,14 +75,24 @@ func (c *Client) List(ctx context.Context, base string, o ListOptions, cb ListCa
 
 		for _, s := range resp.Components {
 			lr := ListResult{
-				Base:   resp.Base,
-				Path:   s.Path,
-				Stream: s.Stream,
+				Project:  config.ProjectName(resp.Project),
+				PathBase: types.StreamPath(resp.PathBase),
+				Name:     s.Name,
+			}
+			switch s.Type {
+			case logdog.ListResponse_Component_PATH:
+				break
+
+			case logdog.ListResponse_Component_STREAM:
+				lr.Stream = true
+				if s.State != nil {
+					lr.State = loadLogStream(resp.Project, lr.FullPath(), s.State, s.Desc)
+				}
+
+			case logdog.ListResponse_Component_PROJECT:
+				lr.Project = config.ProjectName(lr.Name)
 			}
 
-			if s.State != nil {
-				lr.State = loadLogStream(types.StreamPath(s.Path), s.State, s.Desc)
-			}
 			if !cb(&lr) {
 				return nil
 			}

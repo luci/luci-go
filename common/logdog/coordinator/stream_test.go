@@ -87,7 +87,7 @@ func TestStreamGet(t *testing.T) {
 		}
 
 		Convey(`Can bind a Stream`, func() {
-			s := client.Stream("test/+/a")
+			s := client.Stream("myproj", "test/+/a")
 
 			Convey(`Test Get`, func() {
 				p := NewGetParams()
@@ -108,7 +108,8 @@ func TestStreamGet(t *testing.T) {
 
 					// Validate the correct parameters were sent.
 					So(svc.GR, ShouldResemble, logdog.GetRequest{
-						Path: "test/+/a",
+						Project: "myproj",
+						Path:    "test/+/a",
 					})
 				})
 
@@ -125,6 +126,7 @@ func TestStreamGet(t *testing.T) {
 
 					// Validate the correct parameters were sent.
 					So(svc.GR, ShouldResemble, logdog.GetRequest{
+						Project:       "myproj",
 						Path:          "test/+/a",
 						NonContiguous: true,
 						Index:         1,
@@ -148,6 +150,7 @@ func TestStreamGet(t *testing.T) {
 
 					// Validate the HTTP request that we made.
 					So(svc.GR, ShouldResemble, logdog.GetRequest{
+						Project:   "myproj",
 						Path:      "test/+/a",
 						LogCount:  64,
 						ByteCount: 32,
@@ -231,6 +234,7 @@ func TestStreamGet(t *testing.T) {
 				Convey(`Will request just the state if asked.`, func() {
 					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
 						return &logdog.GetResponse{
+							Project: "myproj",
 							State: &logdog.LogStreamState{
 								Created: google.NewTimestamp(now),
 							},
@@ -240,7 +244,8 @@ func TestStreamGet(t *testing.T) {
 					l, err := s.State(c)
 					So(err, ShouldBeNil)
 					So(l, ShouldResemble, &LogStream{
-						Path: "test/+/a",
+						Project: "myproj",
+						Path:    "test/+/a",
 						State: &StreamState{
 							Created: now.UTC(),
 						},
@@ -248,6 +253,7 @@ func TestStreamGet(t *testing.T) {
 
 					// Validate the HTTP request that we made.
 					So(svc.GR, ShouldResemble, logdog.GetRequest{
+						Project:  "myproj",
 						Path:     "test/+/a",
 						LogCount: -1,
 						State:    true,
@@ -286,6 +292,7 @@ func TestStreamGet(t *testing.T) {
 				Convey(`Will form a proper Tail query.`, func() {
 					svc.TH = func(*logdog.TailRequest) (*logdog.GetResponse, error) {
 						return &logdog.GetResponse{
+							Project: "myproj",
 							State: &logdog.LogStreamState{
 								Created: google.NewTimestamp(now),
 							},
@@ -306,14 +313,16 @@ func TestStreamGet(t *testing.T) {
 
 					// Validate the HTTP request that we made.
 					So(svc.TR, ShouldResemble, logdog.TailRequest{
-						Path:  "test/+/a",
-						State: true,
+						Project: "myproj",
+						Path:    "test/+/a",
+						State:   true,
 					})
 
 					// Validate that the log and state were returned.
 					So(l, ShouldResemble, genLog(1337, "kthxbye"))
 					So(ls, ShouldResemble, LogStream{
-						Path: "test/+/a",
+						Project: "myproj",
+						Path:    "test/+/a",
 						Desc: &logpb.LogStreamDescriptor{
 							Prefix:     "test",
 							Name:       "a",
@@ -328,6 +337,7 @@ func TestStreamGet(t *testing.T) {
 				Convey(`Will return nil with state if no logs are returned from the endpoint.`, func() {
 					svc.TH = func(*logdog.TailRequest) (*logdog.GetResponse, error) {
 						return &logdog.GetResponse{
+							Project: "myproj",
 							State: &logdog.LogStreamState{
 								Created: google.NewTimestamp(now),
 							},
@@ -344,7 +354,8 @@ func TestStreamGet(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(l, ShouldBeNil)
 					So(ls, ShouldResemble, LogStream{
-						Path: "test/+/a",
+						Project: "myproj",
+						Path:    "test/+/a",
 						Desc: &logpb.LogStreamDescriptor{
 							Prefix:     "test",
 							Name:       "a",

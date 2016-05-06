@@ -41,7 +41,7 @@ func New() logdog.ServicesServer {
 			//
 			// We use a type switch here because this is a shared decorator.
 			if pbm, ok := req.(endpoints.ProjectBoundMessage); ok {
-				if err := coordinator.WithProjectNamespace(&c, config.ProjectName(pbm.GetMessageProject())); err != nil {
+				if err := coordinator.WithProjectNamespaceNoAuth(&c, config.ProjectName(pbm.GetMessageProject())); err != nil {
 					return nil, grpcutil.Internal
 				}
 			}

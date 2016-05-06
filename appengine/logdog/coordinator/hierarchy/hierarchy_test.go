@@ -5,177 +5,300 @@
 package hierarchy
 
 import (
+	"fmt"
 	"testing"
 
-	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/gae/service/info"
+	"github.com/luci/luci-go/appengine/logdog/coordinator"
+	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
+	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
+	luciConfig "github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logdog/types"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
 
 func TestHierarchy(t *testing.T) {
 	t.Parallel()
 
 	Convey(`With a testing configuration`, t, func() {
-		c, _ := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
-		c = memory.Use(c)
+		c, env := ct.Install()
 
-		di := ds.Get(c)
-		tds := ds.Get(c).Testable()
-
-		norm := func(l *List) []string {
-			result := make([]string, len(l.Comp))
-			for i, e := range l.Comp {
-				result[i] = e.Name
-				if e.Stream != "" {
-					result[i] += "$"
-				}
-			}
-			return result
-		}
-
-		req := func(r Request) []string {
-			l, err := Get(di, r)
+		var r Request
+		get := func() *List {
+			l, err := Get(c, r)
 			if err != nil {
 				panic(err)
 			}
-			return norm(l)
+			return l
 		}
 
-		Convey(`Get will return nothing when no components are registered.`, func() {
-			h, err := Get(di, Request{})
-			So(err, ShouldBeNil)
-			So(h, ShouldResemble, &List{})
+		var lv listValidator
 
-			h, err = Get(di, Request{Base: "foo/bar"})
-			So(err, ShouldBeNil)
-			So(h, ShouldResemble, &List{Base: "foo/bar"})
+		Convey(`When requesting Project-level list`, func() {
+			r.Project = ""
 
-			h, err = Get(di, Request{Recursive: true})
-			So(err, ShouldBeNil)
-			So(h, ShouldResemble, &List{})
+			// Only add project namespaces for some of our registered projects.
+			//
+			// We add a project namespace to our datastore by creating a single entity
+			// within that namespace.
+			addProjectNamespace := func(proj luciConfig.ProjectName) {
+				c := c
+				if err := coordinator.WithProjectNamespaceNoAuth(&c, proj); err != nil {
+					panic(err)
+				}
 
-			h, err = Get(di, Request{Base: "foo/bar", Recursive: true})
-			So(err, ShouldBeNil)
-			So(h, ShouldResemble, &List{Base: "foo/bar"})
+				entity := ds.PropertyMap{
+					"$id":   []ds.Property{ds.MkProperty("woof")},
+					"$kind": []ds.Property{ds.MkProperty("Dog")},
+				}
+				if err := ds.Get(c).Put(entity); err != nil {
+					panic(err)
+				}
+			}
+			addProjectNamespace("proj-foo")
+			addProjectNamespace("proj-bar")
+			addProjectNamespace("proj-exclusive")
+
+			// Add this just to make sure we ignore namespaces without config entries.
+			addProjectNamespace("proj-nonexistent")
+
+			Convey(`An anonymous user will see all public-access projects.`, func() {
+				So(get(), lv.shouldHaveComponents, "proj-bar", "proj-foo")
+			})
+
+			Convey(`An authenticated user will see all projects.`, func() {
+				env.JoinGroup("auth")
+
+				allProjects := []interface{}{"proj-bar", "proj-exclusive", "proj-foo"}
+
+				Convey(`Will see all projects.`, func() {
+					So(get(), lv.shouldHaveComponents, allProjects...)
+				})
+
+				Convey(`Cursor and limit work.`, func() {
+					r.Limit = 1
+
+					var l *List
+					for len(allProjects) > 0 {
+						l = get()
+						So(l, lv.shouldHaveComponents, allProjects[0])
+						So(l.Next, ShouldNotEqual, "")
+						allProjects = allProjects[1:]
+
+						r.Next = l.Next
+					}
+
+					So(len(allProjects), ShouldEqual, 0)
+
+					// End of iteration.
+					l = get()
+					So(l, lv.shouldHaveComponents)
+					So(l.Next, ShouldEqual, "")
+				})
+
+				Convey(`Offset and limit work.`, func() {
+					r.Limit = 1
+
+					for i, proj := range allProjects {
+						r.Skip = i
+
+						l := get()
+						So(l, lv.shouldHaveComponents, proj)
+						So(l.Next, ShouldNotEqual, "")
+					}
+
+					// End of iteration.
+					r.Skip = len(allProjects)
+					l := get()
+					So(l, lv.shouldHaveComponents)
+					So(l.Next, ShouldEqual, "")
+				})
+			})
 		})
 
-		Convey(`Can register a hierarchy of name components.`, func() {
-			for _, p := range []types.StreamPath{
-				"foo/+/baz",
-				"foo/+/qux",
-				"foo/+/qux",
-				"foo/+/bar",
-				"foo/+/bar/baz",
-				"foo/bar/+/baz",
-				"bar/+/baz",
-				"bar/+/baz/qux",
+		Convey(`Get within a project that the user cannot access will return ErrNoAccess.`, func() {
+			r.Project = "proj-exclusive"
+
+			_, err := Get(c, r)
+			So(err, ShouldEqual, config.ErrNoAccess)
+		})
+
+		Convey(`Get will return nothing when no components are registered.`, func() {
+			r.Project = "proj-foo"
+			lv.project = "proj-foo"
+
+			So(get(), lv.shouldHaveComponents)
+
+			r.PathBase = "foo"
+			lv.pathBase = "foo"
+			So(get(), lv.shouldHaveComponents)
+
+			r.PathBase = "foo/+/bar"
+			lv.pathBase = "foo/+/bar"
+			So(get(), lv.shouldHaveComponents)
+		})
+
+		Convey(`Can register a hierarchy of name components in multiple namespaces.`, func() {
+			for _, proj := range []luciConfig.ProjectName{
+				"proj-foo", "proj-bar", "proj-exclusive",
 			} {
-				So(Put(ds.Get(c), p), ShouldBeNil)
+				// Bypass access check.
+				ic := info.Get(c).MustNamespace(coordinator.ProjectNamespace(proj))
+
+				di := ds.Get(ic)
+				for _, p := range []types.StreamPath{
+					"foo/+/baz",
+					"foo/+/qux",
+					"foo/+/qux",
+					"foo/+/qux/2468",
+					"foo/+/qux/0002468",
+					"foo/+/14",
+					"foo/+/001337",
+					"foo/+/bar",
+					"foo/+/bar/baz",
+					"foo/bar/+/baz",
+					"bar/+/baz",
+					"bar/+/baz/qux",
+				} {
+					comps, err := Missing(di, Components(p))
+					if err != nil {
+						panic(err)
+					}
+
+					for _, c := range comps {
+						if err := c.Put(di); err != nil {
+							panic(err)
+						}
+					}
+				}
 			}
-			tds.CatchupIndexes()
+			ds.Get(c).Testable().CatchupIndexes()
 
-			Convey(`Can list the hierarchy immediate paths.`, func() {
-				list := func(p string) []string {
-					return req(Request{Base: p})
+			Convey(`Can list the hierarchy immediate paths (discrete).`, func() {
+				r.Project = "proj-foo"
+				lv.project = luciConfig.ProjectName(r.Project)
+
+				list := func(b string) *List {
+					r.Project = "proj-foo"
+					r.PathBase = b
+
+					// Set up our validator for these query results.
+					lv.pathBase = types.StreamPath(r.PathBase)
+					return get()
 				}
 
-				So(list(""), ShouldResemble, []string{"bar", "foo"})
-				So(list("foo"), ShouldResemble, []string{"+", "bar"})
-				So(list("foo/+"), ShouldResemble, []string{"bar$", "baz$", "qux$", "bar"})
-				So(list("foo/+/bar"), ShouldResemble, []string{"baz$"})
-				So(list("foo/bar"), ShouldResemble, []string{"+"})
-				So(list("foo/bar/+"), ShouldResemble, []string{"baz$"})
-				So(list("bar"), ShouldResemble, []string{"+"})
-				So(list("bar/+/"), ShouldResemble, []string{"baz$", "baz"})
-				So(list("baz"), ShouldResemble, []string{})
+				So(list(""), lv.shouldHaveComponents, "bar", "foo")
+				So(list("foo"), lv.shouldHaveComponents, "+", "bar")
+				So(list("foo/+"), lv.shouldHaveComponents, "14$", "001337$", "bar$", "baz$", "qux$", "bar", "qux")
+				So(list("foo/+/bar"), lv.shouldHaveComponents, "baz$")
+				So(list("foo/bar"), lv.shouldHaveComponents, "+")
+				So(list("foo/bar/+"), lv.shouldHaveComponents, "baz$")
+				So(list("bar"), lv.shouldHaveComponents, "+")
+				So(list("bar/+"), lv.shouldHaveComponents, "baz$", "baz")
+				So(list("baz"), lv.shouldHaveComponents)
 			})
 
-			Convey(`When listing "foo/+"`, func() {
-				r := Request{
-					Base: "foo/+",
-				}
+			Convey(`Performing discrete queries`, func() {
+				r.Project = "proj-foo"
+				lv.project = luciConfig.ProjectName(r.Project)
 
-				Convey(`Can list the first 2 elements.`, func() {
+				Convey(`When listing "proj-foo/foo/+"`, func() {
+					r.PathBase = "foo/+"
+					lv.pathBase = types.StreamPath(r.PathBase)
+
+					Convey(`Can list the first 2 elements.`, func() {
+						r.Limit = 2
+						So(get(), lv.shouldHaveComponents, "14$", "001337$")
+					})
+
+					Convey(`Can list 3 elements, skipping the first four.`, func() {
+						r.Limit = 2
+						r.Skip = 4
+						So(get(), lv.shouldHaveComponents, "qux$", "bar")
+					})
+				})
+
+				Convey(`Can list the immediate hierarchy iteratively.`, func() {
+					r.PathBase = "foo/+"
+					lv.pathBase = types.StreamPath(r.PathBase)
+
+					var all []interface{}
+					for _, s := range norm(get().Comp) {
+						all = append(all, s)
+					}
+
 					r.Limit = 2
-					So(req(r), ShouldResemble, []string{"bar$", "baz$"})
+					for len(all) > 0 {
+						l := get()
+
+						count := r.Limit
+						if count > len(all) {
+							count = len(all)
+						}
+
+						So(l, lv.shouldHaveComponents, all[:count]...)
+						all = all[count:]
+
+						if len(all) > 0 {
+							So(l.Next, ShouldNotEqual, "")
+						}
+						r.Next = l.Next
+					}
 				})
-
-				Convey(`Can list 3 elements, skipping the first.`, func() {
-					r.Limit = 3
-					r.Skip = 1
-					So(req(r), ShouldResemble, []string{"baz$", "qux$", "bar"})
-				})
-			})
-
-			Convey(`Can list the hierarchy streams recursively.`, func() {
-				list := func(p string) []string {
-					return req(Request{Base: p, Recursive: true, StreamOnly: true})
-				}
-
-				So(list(""), ShouldResemble, []string{
-					"bar/+/baz$",
-					"bar/+/baz/qux$",
-					"foo/+/bar$",
-					"foo/+/baz$",
-					"foo/+/qux$",
-					"foo/+/bar/baz$",
-					"foo/bar/+/baz$",
-				})
-
-				So(list("foo"), ShouldResemble, []string{
-					"+/bar$",
-					"+/baz$",
-					"+/qux$",
-					"+/bar/baz$",
-					"bar/+/baz$",
-				})
-
-				So(list("foo/+/"), ShouldResemble, []string{
-					"bar$",
-					"baz$",
-					"qux$",
-					"bar/baz$",
-				})
-			})
-
-			Convey(`Can list the immediate hierarchy iteratively.`, func() {
-				r := Request{
-					Base:  "foo/+",
-					Limit: 2,
-				}
-
-				l, err := Get(di, r)
-				So(err, ShouldBeNil)
-				So(l.Base, ShouldEqual, "foo/+")
-				So(norm(l), ShouldResemble, []string{"bar$", "baz$"})
-				So(l.Next, ShouldNotEqual, "")
-				So(l.Comp[0].Stream, ShouldEqual, "foo/+/bar")
-				So(l.Comp[1].Stream, ShouldEqual, "foo/+/baz")
-
-				r.Next = l.Next
-				l, err = Get(di, r)
-				So(err, ShouldBeNil)
-				So(l.Base, ShouldEqual, "foo/+")
-				So(norm(l), ShouldResemble, []string{"qux$", "bar"})
-				So(l.Next, ShouldNotEqual, "")
-				So(l.Comp[0].Stream, ShouldEqual, "foo/+/qux")
-				So(l.Comp[1].Stream, ShouldEqual, "")
-
-				r.Next = l.Next
-				l, err = Get(di, Request{Base: "foo/+", Limit: 2, Next: l.Next})
-				So(err, ShouldBeNil)
-				So(l.Base, ShouldEqual, "foo/+")
-				So(norm(l), ShouldResemble, []string{})
-				So(l.Next, ShouldEqual, "")
-			})
-
-			Convey(`Can purge some of the streams.`, func() {
-
 			})
 		})
 	})
+}
+
+type listValidator struct {
+	project  luciConfig.ProjectName
+	pathBase types.StreamPath
+}
+
+func (lv *listValidator) shouldHaveComponents(actual interface{}, expected ...interface{}) string {
+	a, ok := actual.(*List)
+	if !ok {
+		return fmt.Sprintf("Actual value must be a *List, not %T", actual)
+	}
+
+	// The project and path base components should match.
+	if a.Project != lv.project {
+		return fmt.Sprintf("Actual project %q doesn't match expected %q.", a.Project, lv.project)
+	}
+	if a.PathBase != lv.pathBase {
+		return fmt.Sprintf("Actual path base %q doesn't match expected %q.", a.PathBase, lv.pathBase)
+	}
+
+	for i, c := range a.Comp {
+		expPath := types.StreamPath(types.Construct(string(lv.pathBase), c.Name))
+		if p := a.Path(c); p != expPath {
+			return fmt.Sprintf("Component %d doesn't have expected path (%q != %q)", i, p, expPath)
+		}
+	}
+
+	// Check normalized component values.
+	comps := make([]string, len(expected))
+	for i, exp := range expected {
+		comps[i], ok = exp.(string)
+		if !ok {
+			return fmt.Sprintf("Expected values must be strings, %d is %T.", i, exp)
+		}
+	}
+	if err := ShouldResemble(norm(a.Comp), comps); err != "" {
+		return err
+	}
+	return ""
+}
+
+func norm(c []*ListComponent) []string {
+	result := make([]string, len(c))
+	for i, e := range c {
+		result[i] = e.Name
+		if e.Stream {
+			result[i] += "$"
+		}
+	}
+	return result
 }

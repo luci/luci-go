@@ -11,6 +11,7 @@ import (
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
+	"github.com/luci/luci-go/appengine/logdog/coordinator/hierarchy"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/mutations"
 	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
@@ -120,7 +121,8 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 
 	// Already registered? (Non-transactional).
 	ls := coordinator.LogStreamFromPath(path)
-	switch err := ds.Get(c).Get(ls); err {
+	di := ds.Get(c)
+	switch err := di.Get(ls); err {
 	case nil:
 		// We want this to be idempotent, so validate that it matches the current
 		// configuration and return accordingly.
@@ -129,6 +131,20 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 		}
 
 	case ds.ErrNoSuchEntity:
+		// Determine which hierarchy components we need to add.
+		comps := hierarchy.Components(path)
+		if comps, err = hierarchy.Missing(di, comps); err != nil {
+			log.WithError(err).Warningf(c, "Failed to probe for missing hierarchy components.")
+		}
+
+		// Before we go into transaction, try and put these entries. This can
+		// encounter datastore contention, so we'll schedule a Tumble mutation if
+		// this doesn't work.
+		if err := hierarchy.PutMulti(di, comps); err != nil {
+			log.WithError(err).Infof(c, "Failed to add missing hierarchy components.")
+			return nil, grpcutil.Internal
+		}
+
 		// The registration is valid, so retain it.
 		err = tumble.RunMutation(c, &registerStreamMutation{
 			LogStream:    ls,
@@ -171,7 +187,7 @@ type registerStreamMutation struct {
 	archiveDelay time.Duration
 }
 
-func (m registerStreamMutation) RollForward(c context.Context) ([]tumble.Mutation, error) {
+func (m *registerStreamMutation) RollForward(c context.Context) ([]tumble.Mutation, error) {
 	di := ds.Get(c)
 
 	// Already registered? (Transactional).
@@ -236,13 +252,9 @@ func (m registerStreamMutation) RollForward(c context.Context) ([]tumble.Mutatio
 		return nil, grpcutil.Internal
 	}
 
-	return []tumble.Mutation{
-		&mutations.PutHierarchyMutation{
-			Path: m.Path(),
-		},
-	}, nil
+	return nil, nil
 }
 
-func (m registerStreamMutation) Root(c context.Context) *ds.Key {
+func (m *registerStreamMutation) Root(c context.Context) *ds.Key {
 	return ds.Get(c).KeyForObj(m.LogStream)
 }

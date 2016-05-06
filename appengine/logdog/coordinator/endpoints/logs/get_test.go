@@ -8,30 +8,23 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"math"
 	"testing"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/gae/filter/featureBreaker"
-	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
-	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/gcloud/gs"
 	"github.com/luci/luci-go/common/iotools"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/recordio"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/logdog/archive"
 	"github.com/luci/luci-go/server/logdog/storage"
-	memoryStorage "github.com/luci/luci-go/server/logdog/storage/memory"
 	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -48,65 +41,6 @@ func (s *staticArchiveSource) NextLogEntry() (le *logpb.LogEntry, err error) {
 	}
 	return
 }
-
-type testGSClient map[gs.Path][]byte
-
-func (c testGSClient) put(path gs.Path, d []byte) {
-	c[path] = d
-}
-
-func (c testGSClient) get(path gs.Path) []byte {
-	return c[path]
-}
-
-func (c testGSClient) Close() error { return nil }
-func (c testGSClient) NewWriter(gs.Path) (gs.Writer, error) {
-	return nil, errors.New("not implemented")
-}
-func (c testGSClient) Rename(gs.Path, gs.Path) error { return errors.New("not implemented") }
-func (c testGSClient) Delete(gs.Path) error          { return errors.New("not implemented") }
-
-func (c testGSClient) NewReader(path gs.Path, offset int64, length int64) (io.ReadCloser, error) {
-	if d, ok := c["error"]; ok {
-		return nil, errors.New(string(d))
-	}
-
-	d, ok := c[path]
-	if !ok {
-		return nil, errors.New("does not exist")
-	}
-
-	// Determine the slice of data to return.
-	if offset < 0 {
-		offset = 0
-	}
-	end := int64(len(d))
-	if length >= 0 {
-		if v := offset + length; v < end {
-			end = v
-		}
-	}
-	d = d[offset:end]
-
-	r := make([]byte, len(d))
-	copy(r, d)
-	gsr := testGSReader(r)
-	return &gsr, nil
-}
-
-type testGSReader []byte
-
-func (r *testGSReader) Read(d []byte) (int, error) {
-	if len(*r) == 0 {
-		return 0, io.EOF
-	}
-
-	amt := copy(d, *r)
-	*r = (*r)[amt:]
-	return amt, nil
-}
-
-func (r *testGSReader) Close() error { return nil }
 
 func shouldHaveLogs(actual interface{}, expected ...interface{}) string {
 	resp := actual.(*logdog.GetResponse)
@@ -151,44 +85,27 @@ func zeroRecords(d []byte) {
 
 func testGetImpl(t *testing.T, archived bool) {
 	Convey(fmt.Sprintf(`With a testing configuration, a Get request (archived=%v)`, archived), t, func() {
-		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
-		c = memory.Use(c)
-
-		fs := authtest.FakeState{}
-		c = auth.WithState(c, &fs)
-
-		ms := memoryStorage.Storage{}
-
-		gsc := testGSClient{}
-		svcStub := ct.Services{
-			IS: func() (storage.Storage, error) {
-				return &ms, nil
-			},
-			GS: func() (gs.Client, error) {
-				return gsc, nil
-			},
-		}
-		svcStub.InitConfig()
-		svcStub.ServiceConfig.Coordinator.AdminAuthGroup = "test-administrators"
-		c = coordinator.WithServices(c, &svcStub)
+		c, env := ct.Install()
 
 		svr := New()
 
 		// di is a datastore bound to the test project namespace.
-		const project = "test-project"
-		if err := coordinator.WithProjectNamespace(&c, config.ProjectName(project)); err != nil {
-			panic(err)
-		}
-		di := ds.Get(c)
+		const project = config.ProjectName("proj-foo")
 
 		// Generate our test stream.
 		desc := ct.TestLogStreamDescriptor(c, "foo/bar")
 		ls := ct.TestLogStream(c, desc)
-		if err := di.Put(ls); err != nil {
-			panic(err)
-		}
 
-		tc.Add(time.Second)
+		putLogStream := func(c context.Context) {
+			ct.WithProjectNamespace(c, project, func(c context.Context) {
+				if err := ds.Get(c).Put(ls); err != nil {
+					panic(err)
+				}
+			})
+		}
+		putLogStream(c)
+
+		env.Clock.Add(time.Second)
 		var entries []*logpb.LogEntry
 		protobufs := map[uint64][]byte{}
 		for _, v := range []int{0, 1, 2, 4, 5, 7} {
@@ -242,7 +159,7 @@ func testGetImpl(t *testing.T, archived bool) {
 
 		Convey(`Testing Get requests (no logs)`, func() {
 			req := logdog.GetRequest{
-				Project: project,
+				Project: string(project),
 				Path:    string(ls.Path()),
 			}
 
@@ -282,7 +199,7 @@ func testGetImpl(t *testing.T, archived bool) {
 
 		Convey(`Testing Tail requests (no logs)`, func() {
 			req := logdog.TailRequest{
-				Project: project,
+				Project: string(project),
 				Path:    string(ls.Path()),
 			}
 
@@ -310,7 +227,7 @@ func testGetImpl(t *testing.T, archived bool) {
 			if !archived {
 				// Add the logs to the in-memory temporary storage.
 				for _, le := range entries {
-					err := ms.Put(storage.PutRequest{
+					err := env.IntermediateStorage.Put(storage.PutRequest{
 						Project: project,
 						Path:    ls.Path(),
 						Index:   types.MessageIndex(le.StreamIndex),
@@ -336,31 +253,27 @@ func testGetImpl(t *testing.T, archived bool) {
 					panic(err)
 				}
 
-				now := tc.Now().UTC()
+				now := env.Clock.Now().UTC()
 
-				gsc.put("gs://testbucket/stream", lbuf.Bytes())
-				gsc.put("gs://testbucket/index", ibuf.Bytes())
+				env.GSClient.Put("gs://testbucket/stream", lbuf.Bytes())
+				env.GSClient.Put("gs://testbucket/index", ibuf.Bytes())
 				ls.State = coordinator.LSArchived
 				ls.TerminatedTime = now
 				ls.ArchivedTime = now
 				ls.ArchiveStreamURL = "gs://testbucket/stream"
 				ls.ArchiveIndexURL = "gs://testbucket/index"
 			}
-			if err := di.Put(ls); err != nil {
-				panic(err)
-			}
+			putLogStream(c)
 
 			Convey(`Testing Get requests`, func() {
 				req := logdog.GetRequest{
-					Project: project,
+					Project: string(project),
 					Path:    string(ls.Path()),
 				}
 
 				Convey(`When the log stream is purged`, func() {
 					ls.Purged = true
-					if err := di.Put(ls); err != nil {
-						panic(err)
-					}
+					putLogStream(c)
 
 					Convey(`Will return NotFound if the user is not an administrator.`, func() {
 						_, err := svr.Get(c, &req)
@@ -368,7 +281,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					})
 
 					Convey(`Will process the request if the user is an administrator.`, func() {
-						fs.IdentityGroups = []string{"test-administrators"}
+						env.JoinGroup("admin")
 
 						resp, err := svr.Get(c, &req)
 						So(err, ShouldBeRPCOK)
@@ -485,9 +398,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					Convey(`Will return Internal if the protobuf descriptor data is corrupt.`, func() {
 						ls.SetDSValidate(false)
 						ls.Descriptor = []byte{0x00} // Invalid protobuf, zero tag.
-						if err := di.Put(ls); err != nil {
-							panic(err)
-						}
+						putLogStream(c)
 
 						_, err := svr.Get(c, &req)
 						So(err, ShouldBeRPCInternal)
@@ -497,12 +408,12 @@ func testGetImpl(t *testing.T, archived bool) {
 				Convey(`Will return Internal if the protobuf log entry data is corrupt.`, func() {
 					if archived {
 						// Corrupt the archive datastream.
-						stream := gsc.get("gs://testbucket/stream")
+						stream := env.GSClient.Get("gs://testbucket/stream")
 						zeroRecords(stream)
 					} else {
 						// Add corrupted entry to Storage. Create a new entry here, since
 						// the storage will reject a duplicate/overwrite.
-						err := ms.Put(storage.PutRequest{
+						err := env.IntermediateStorage.Put(storage.PutRequest{
 							Project: project,
 							Path:    types.StreamPath(req.Path),
 							Index:   666,
@@ -529,9 +440,9 @@ func testGetImpl(t *testing.T, archived bool) {
 
 				Convey(`Will return Internal if the Storage is not working.`, func() {
 					if archived {
-						gsc["error"] = []byte("test error")
+						env.GSClient["error"] = []byte("test error")
 					} else {
-						ms.Close()
+						env.IntermediateStorage.Close()
 					}
 
 					_, err := svr.Get(c, &req)
@@ -615,7 +526,7 @@ func testGetImpl(t *testing.T, archived bool) {
 
 			Convey(`Testing tail requests`, func() {
 				req := logdog.TailRequest{
-					Project: "test-project",
+					Project: string(project),
 					Path:    string(ls.Path()),
 				}
 

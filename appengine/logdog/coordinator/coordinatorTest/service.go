@@ -5,8 +5,6 @@
 package coordinatorTest
 
 import (
-	"errors"
-
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	"github.com/luci/luci-go/common/gcloud/gs"
@@ -18,11 +16,6 @@ import (
 // Services is a testing stub for a coordinator.Services instance that allows
 // the user to configure the various services that are returned.
 type Services struct {
-	// GlobalConfig is the global configuration to return from Config.
-	GlobalConfig *config.GlobalConfig
-	// ServiceConfig is the service configuration to return from Config.
-	ServiceConfig *svcconfig.Config
-
 	// C, if not nil, will be used to get the return values for Config, overriding
 	// local static members.
 	C func() (*config.GlobalConfig, *svcconfig.Config, error)
@@ -42,14 +35,22 @@ type Services struct {
 var _ coordinator.Services = (*Services)(nil)
 
 // Config implements coordinator.Services.
-func (s *Services) Config(context.Context) (*config.GlobalConfig, *svcconfig.Config, error) {
+func (s *Services) Config(c context.Context) (*config.GlobalConfig, *svcconfig.Config, error) {
 	if s.C != nil {
 		return s.C()
 	}
-	if s.GlobalConfig == nil || s.ServiceConfig == nil {
-		return nil, nil, errors.New("not configured")
+
+	gcfg, err := config.LoadGlobalConfig(c)
+	if err != nil {
+		return nil, nil, err
 	}
-	return s.GlobalConfig, s.ServiceConfig, nil
+
+	cfg, err := gcfg.LoadConfig(c)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return gcfg, cfg, nil
 }
 
 // IntermediateStorage implements coordinator.Services.
@@ -74,17 +75,4 @@ func (s *Services) ArchivalPublisher(context.Context) (coordinator.ArchivalPubli
 		return s.AP()
 	}
 	panic("not implemented")
-}
-
-// InitConfig loads default testing GlobalConfig and ServiceConfig values.
-func (s *Services) InitConfig() {
-	s.GlobalConfig = &config.GlobalConfig{
-		ConfigServiceURL: "https://example.com",
-		ConfigSet:        "services/logdog-test",
-		ConfigPath:       "coordinator-test.cfg",
-	}
-
-	s.ServiceConfig = &svcconfig.Config{
-		Coordinator: &svcconfig.Coordinator{},
-	}
 }

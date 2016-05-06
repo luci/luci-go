@@ -26,22 +26,20 @@ var (
 type Client struct {
 	// C is the underlying LogsClient interface.
 	C logdog.LogsClient
-
-	project config.ProjectName
 }
 
 // NewClient returns a new Client instance bound to a pRPC Client.
-func NewClient(c *prpc.Client, project config.ProjectName) *Client {
+func NewClient(c *prpc.Client) *Client {
 	return &Client{
-		C:       logdog.NewLogsPRPCClient(c),
-		project: project,
+		C: logdog.NewLogsPRPCClient(c),
 	}
 }
 
 // Stream returns a Stream instance for the named stream.
-func (c *Client) Stream(path types.StreamPath) *Stream {
+func (c *Client) Stream(project config.ProjectName, path types.StreamPath) *Stream {
 	return &Stream{
-		c:    c,
-		path: path,
+		c:       c,
+		project: project,
+		path:    path,
 	}
 }

@@ -7,6 +7,7 @@ package logs
 import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
+	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/hierarchy"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
 	"github.com/luci/luci-go/common/grpcutil"
@@ -26,17 +27,16 @@ const (
 func (s *server) List(c context.Context, req *logdog.ListRequest) (*logdog.ListResponse, error) {
 	log.Fields{
 		"project":       req.Project,
-		"path":          req.Path,
-		"recursive":     req.Recursive,
+		"path":          req.PathBase,
 		"offset":        req.Offset,
-		"maxResults":    req.MaxResults,
 		"streamOnly":    req.StreamOnly,
 		"includePurged": req.IncludePurged,
+		"maxResults":    req.MaxResults,
 	}.Debugf(c, "Received List request.")
 
 	hr := hierarchy.Request{
-		Base:       req.Path,
-		Recursive:  req.Recursive,
+		Project:    req.Project,
+		PathBase:   req.PathBase,
 		StreamOnly: req.StreamOnly,
 		Limit:      s.limit(int(req.MaxResults), listResultLimit),
 		Next:       req.Next,
@@ -52,47 +52,74 @@ func (s *server) List(c context.Context, req *logdog.ListRequest) (*logdog.ListR
 			return nil, grpcutil.Errf(codes.PermissionDenied, "non-admin user cannot request purged log paths")
 		}
 
-		hr.IncludePurged = true
+		// TODO(dnj): Apply this to the hierarchy request, when purging is
+		// enabled.
 	}
 
-	l, err := hierarchy.Get(ds.Get(c), hr)
+	l, err := hierarchy.Get(c, hr)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to get hierarchy listing.")
+		if err == config.ErrNoAccess {
+			// User requested a project that either doesn't exist or they don't have
+			// access to.
+			return nil, grpcutil.NotFound
+		}
 		return nil, grpcutil.InvalidArgument
 	}
 
 	resp := logdog.ListResponse{
-		Base: l.Base,
-		Next: l.Next,
+		Project:  string(l.Project),
+		Next:     l.Next,
+		PathBase: string(l.PathBase),
 	}
+
 	if len(l.Comp) > 0 {
 		resp.Components = make([]*logdog.ListResponse_Component, len(l.Comp))
 
 		for i, c := range l.Comp {
-			resp.Components[i] = &logdog.ListResponse_Component{
-				Path:   c.Name,
-				Stream: (c.Stream != ""),
+			comp := logdog.ListResponse_Component{
+				Name: c.Name,
 			}
+			switch {
+			case l.Project == "":
+				comp.Type = logdog.ListResponse_Component_PROJECT
+			case c.Stream:
+				comp.Type = logdog.ListResponse_Component_STREAM
+			default:
+				comp.Type = logdog.ListResponse_Component_PATH
+			}
+
+			resp.Components[i] = &comp
 		}
 	}
 
 	// Perform additional stream metadata fetch if state is requested. Collect
 	// a list of streams to load.
-	//
-	// TODO(dnj): A good optimization would be to use a common.meter to do the
-	// GetMulti calls in a separate goroutine while the hierarchy elements are
-	// being loaded.
-	if req.State {
+	if req.State && l.Project != "" {
+		c := c
+		if err := coordinator.WithProjectNamespace(&c, l.Project); err != nil {
+			// This should work, since the list would have rejected the namespace if
+			// the user was not a member, so a failure here is an internal error.
+			log.Fields{
+				log.ErrorKey: err,
+				"project":    l.Project,
+			}.Errorf(c, "Failed to enter namespace for metadata lookup.")
+			return nil, grpcutil.Internal
+		}
+
 		idxMap := make(map[int]*logdog.ListResponse_Component)
 		var streams []*coordinator.LogStream
 
-		for i, c := range l.Comp {
-			if c.Stream == "" {
+		for i, comp := range l.Comp {
+			if !comp.Stream {
 				continue
 			}
 
 			idxMap[len(streams)] = resp.Components[i]
-			streams = append(streams, coordinator.LogStreamFromPath(c.Stream))
+			log.Fields{
+				"value": l.Path(comp),
+			}.Infof(c, "Loading stream.")
+			streams = append(streams, coordinator.LogStreamFromPath(l.Path(comp)))
 		}
 
 		if len(streams) > 0 {
@@ -100,7 +127,7 @@ func (s *server) List(c context.Context, req *logdog.ListRequest) (*logdog.ListR
 				log.Fields{
 					log.ErrorKey: err,
 					"count":      len(streams),
-				}.Errorf(c, "Failed to load stream descriptor.")
+				}.Errorf(c, "Failed to load stream descriptors.")
 				return nil, grpcutil.Internal
 			}
 

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
@@ -66,32 +67,8 @@ func (t QueryStreamType) queryValue() logpb.StreamType {
 	}
 }
 
-// Query is a user-facing LogDog Query.
-type Query struct {
-	// Path is the query parameter.
-	//
-	// The path expression may substitute a glob ("*") for a specific path
-	// component. That is, any stream that matches the remaining structure qualifies
-	// regardless of its value in that specific positional field.
-	//
-	// An unbounded wildcard may appear as a component at the end of both the
-	// prefix and name query components. "**" matches all remaining components.
-	//
-	// If the supplied path query does not contain a path separator ("+"), it will
-	// be treated as if the prefix is "**".
-	//
-	// Examples:
-	//   - Empty ("") will return all streams.
-	//   - **/+/** will return all streams.
-	//   - foo/bar/** will return all streams with the "foo/bar" prefix.
-	//   - foo/bar/**/+/baz will return all streams beginning with the "foo/bar"
-	//     prefix and named "baz" (e.g., "foo/bar/qux/lol/+/baz")
-	//   - foo/bar/+/** will return all streams with a "foo/bar" prefix.
-	//   - foo/*/+/baz will return all streams with a two-component prefix whose
-	//     first value is "foo" and whose name is "baz".
-	//   - foo/bar will return all streams whose name is "foo/bar".
-	//   - */* will return all streams with two-component names.
-	Path string
+// QueryOptions is the set of query options that can accompany a query.
+type QueryOptions struct {
 	// Tags is the list of tags to require. The value may be empty if key presence
 	// is all that is being asserted.
 	Tags map[string]string
@@ -130,26 +107,50 @@ type QueryCallback func(r *LogStream) bool
 
 // Query executes a query, invoking the supplied callback once for each query
 // result.
-func (c *Client) Query(ctx context.Context, q *Query, cb QueryCallback) error {
+//
+// The path is the query parameter.
+//
+// The path expression may substitute a glob ("*") for a specific path
+// component. That is, any stream that matches the remaining structure qualifies
+// regardless of its value in that specific positional field.
+//
+// An unbounded wildcard may appear as a component at the end of both the
+// prefix and name query components. "**" matches all remaining components.
+//
+// If the supplied path query does not contain a path separator ("+"), it will
+// be treated as if the prefix is "**".
+//
+// Examples:
+//   - Empty ("") will return all streams.
+//   - **/+/** will return all streams.
+//   - foo/bar/** will return all streams with the "foo/bar" prefix.
+//   - foo/bar/**/+/baz will return all streams beginning with the "foo/bar"
+//     prefix and named "baz" (e.g., "foo/bar/qux/lol/+/baz")
+//   - foo/bar/+/** will return all streams with a "foo/bar" prefix.
+//   - foo/*/+/baz will return all streams with a two-component prefix whose
+//     first value is "foo" and whose name is "baz".
+//   - foo/bar will return all streams whose name is "foo/bar".
+//   - */* will return all streams with two-component names.
+func (c *Client) Query(ctx context.Context, project config.ProjectName, path string, o QueryOptions, cb QueryCallback) error {
 	req := logdog.QueryRequest{
-		Project:     string(c.project),
-		Path:        q.Path,
-		ContentType: q.ContentType,
-		Older:       google.NewTimestamp(q.Before),
-		Newer:       google.NewTimestamp(q.After),
-		Terminated:  q.Terminated.queryValue(),
-		Archived:    q.Archived.queryValue(),
-		Purged:      q.Purged.queryValue(),
-		State:       q.State,
+		Project:     string(project),
+		Path:        path,
+		ContentType: o.ContentType,
+		Older:       google.NewTimestamp(o.Before),
+		Newer:       google.NewTimestamp(o.After),
+		Terminated:  o.Terminated.queryValue(),
+		Archived:    o.Archived.queryValue(),
+		Purged:      o.Purged.queryValue(),
+		State:       o.State,
 	}
-	if st := q.StreamType.queryValue(); st >= 0 {
+	if st := o.StreamType.queryValue(); st >= 0 {
 		req.StreamType = &logdog.QueryRequest_StreamTypeFilter{Value: st}
 	}
 
 	// Clone tags.
-	if len(q.Tags) > 0 {
-		req.Tags = make(map[string]string, len(q.Tags))
-		for k, v := range q.Tags {
+	if len(o.Tags) > 0 {
+		req.Tags = make(map[string]string, len(o.Tags))
+		for k, v := range o.Tags {
 			req.Tags[k] = v
 		}
 	}
@@ -163,7 +164,7 @@ func (c *Client) Query(ctx context.Context, q *Query, cb QueryCallback) error {
 		}
 
 		for _, s := range resp.Streams {
-			if !cb(loadLogStream(types.StreamPath(s.Path), s.State, s.Desc)) {
+			if !cb(loadLogStream(resp.Project, types.StreamPath(s.Path), s.State, s.Desc)) {
 				return nil
 			}
 		}

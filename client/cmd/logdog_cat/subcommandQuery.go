@@ -69,6 +69,13 @@ func newQueryCommand() *subcommands.Command {
 func (cmd *queryCommandRun) Run(scApp subcommands.Application, args []string) int {
 	a := scApp.(*application)
 
+	// User-friendly: trim any leading or trailing slashes from the path.
+	project, path, unified, err := a.splitPath(cmd.path)
+	if err != nil {
+		log.WithError(err).Errorf(a, "Invalid path specifier.")
+		return 1
+	}
+
 	// Open our output file, if necessary.
 	w := io.Writer(nil)
 	switch cmd.out {
@@ -97,12 +104,12 @@ func (cmd *queryCommandRun) Run(scApp subcommands.Application, args []string) in
 		}
 	} else {
 		o = &pathQueryOutput{
-			Writer: bw,
+			Writer:  bw,
+			unified: unified,
 		}
 	}
 
-	q := coordinator.Query{
-		Path:        cmd.path,
+	qo := coordinator.QueryOptions{
 		ContentType: cmd.contentType,
 		State:       cmd.json,
 		Before:      cmd.before.Time(),
@@ -115,7 +122,7 @@ func (cmd *queryCommandRun) Run(scApp subcommands.Application, args []string) in
 	log.Debugf(a, "Issuing query...")
 
 	ierr := error(nil)
-	err := a.coord.Query(a, &q, func(s *coordinator.LogStream) bool {
+	err = a.coord.Query(a, project, path, qo, func(s *coordinator.LogStream) bool {
 		if err := o.emit(s); err != nil {
 			ierr = err
 			return false
@@ -157,10 +164,17 @@ type queryOutput interface {
 // pathQueryOutput outputs query results as a list of stream path names.
 type pathQueryOutput struct {
 	*bufio.Writer
+
+	unified bool
 }
 
 func (p *pathQueryOutput) emit(s *coordinator.LogStream) error {
-	if _, err := p.WriteString(string(s.Path)); err != nil {
+	path := string(s.Path)
+	if p.unified {
+		path = makeUnifiedPath(s.Project, s.Path)
+	}
+
+	if _, err := p.WriteString(path); err != nil {
 		return err
 	}
 	if _, err := p.WriteRune('\n'); err != nil {
@@ -199,6 +213,7 @@ func (p *jsonQueryOutput) emit(s *coordinator.LogStream) error {
 	p.count++
 
 	o := struct {
+		Project    string                     `json:"project"`
 		Path       string                     `json:"path"`
 		Descriptor *logpb.LogStreamDescriptor `json:"descriptor,omitempty"`
 
@@ -210,7 +225,8 @@ func (p *jsonQueryOutput) emit(s *coordinator.LogStream) error {
 		ArchiveDataURL   string         `json:"archiveDataUrl,omitempty"`
 		Purged           bool           `json:"purged,omitempty"`
 	}{
-		Path: string(s.Path),
+		Project: string(s.Project),
+		Path:    string(s.Path),
 	}
 	if s.State != nil {
 		o.Created = clockflag.Time(s.State.Created)

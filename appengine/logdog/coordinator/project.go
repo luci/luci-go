@@ -7,9 +7,13 @@ package coordinator
 import (
 	"strings"
 
+	"github.com/luci/gae/service/datastore/meta"
 	"github.com/luci/luci-go/common/config"
+	"golang.org/x/net/context"
 )
 
+// projectNamespacePrefix is the datastore namespace prefix for project
+// namespaces.
 const projectNamespacePrefix = "luci."
 
 // ProjectNamespace returns the AppEngine namespace for a given luci-config
@@ -28,4 +32,20 @@ func ProjectFromNamespace(ns string) config.ProjectName {
 		return ""
 	}
 	return config.ProjectName(ns[len(projectNamespacePrefix):])
+}
+
+// AllProjectsWithNamespaces scans current namespaces and returns those that
+// belong to LUCI projects.
+func AllProjectsWithNamespaces(c context.Context) ([]config.ProjectName, error) {
+	var projects []config.ProjectName
+	err := meta.NamespacesWithPrefix(c, projectNamespacePrefix, func(ns string) error {
+		if proj := ProjectFromNamespace(ns); proj != "" {
+			projects = append(projects, proj)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return projects, nil
 }

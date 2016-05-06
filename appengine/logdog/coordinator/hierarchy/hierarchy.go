@@ -5,124 +5,72 @@
 package hierarchy
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
 	"fmt"
-	"strings"
 
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/appengine/logdog/coordinator"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logdog/types"
+	"golang.org/x/net/context"
 )
 
-// componentID is the datastore ID for a component.
+// componentEntity is a hierarchial component that stores a specific log path
+// component. A given stream path is broken into components, each of which is
+// represented by a single componentEntity.
 //
-// A component represents a single component, and is keyed on the
-// component's value and whether the component is a stream or path component.
+// A componentEntity is keyed based on its path component name and the hash of
+// its parent component's path. This ensures that the set of child components
+// can be obtained for any parent component path.
 //
-// A log stream path is broken into several components. For example,
-// "foo/bar/+/baz/qux" is broken into ["foo", "bar", "+", "baz", "qux"]. The
-// intermediate pieces, "foo", "bar", and "baz" are "path components" (e.g.,
-// directory name). The terminating component, "qux", is the stream component
-// (e.g., file names), since adding it generates a valid stream name.
+// The child component's key is chosen to be sortable with the following
+// preferences:
+//	- Stream components sort before path components.
+//	- Stream components sort alphanumerically. Elements that are entirely
+//	  numeric will be constructed to sort numerically.
 //
-// Note that two streams, "foo/+/bar" and "foo/+/bar/baz", result in components
-// "bar". In the first, "bar" is a path component, and in the second "bar" is a
-// stream component.
+// Storing the component's name in its key ensures that a keys query will pull
+// the set of elements in the correct order, requiring no non-default indexes.
 //
-// Path component IDs have "~" prepended to them, since "~" is not a valid
-// initial stream name character and "~" comes bytewise after all valid
-// characters, this will cause paths to sort after streams for a given hierarchy
-// level.
-type componentID struct {
-	// name is the name of this component.
-	name string
-	// stream is true if this component is a stream path, false if it is a path
-	// component.
-	stream bool
-}
-
-var _ ds.PropertyConverter = (*componentID)(nil)
-
-// ToProperty implements ds.PropertyConverter
-func (id *componentID) ToProperty() (ds.Property, error) {
-	return ds.MkPropertyNI(id.id()), nil
-}
-
-// FromProperty implements ds.PropertyConverter
-func (id *componentID) FromProperty(p ds.Property) error {
-	if p.Type() != ds.PTString {
-		return fmt.Errorf("wrong type for property: %s", p.Type())
-	}
-	return id.setID(p.Value().(string))
-}
-
-func (id *componentID) id() (s string) {
-	s = id.name
-	if !id.stream {
-		s = "~" + s
-	}
-	return
-}
-
-func (id *componentID) setID(v string) error {
-	id.name = strings.TrimPrefix(v, "~")
-	id.stream = (id.name == v)
-	return nil
-}
-
-// componentEntity is a hierarchial component that stores a log path
-// component and is keyed on the full log stream path. See componentID
-// documentation for more detailed discussion on what a component is.
-//
-// It is keyed on its name component with a parent whose name component is keyed
-// similarly on previous components. This causes an implicit ordering by name
-// such that hierarchy listings are alphabetically-ordered.
-//
-// Loading path components is inherently idempotent, since each one is defined
+// Writing path components is inherently idempotent, since each one is defined
 // solely by its identity. Consequently, transactions are not necessary when
-// loading path components.
+// writing path components.
 //
-// All componentEntity share a common ancestor, "/".
+// All componentEntity share a common implicit ancestor, "/".
 //
 // This entity is created at stream registration, and is entirely centered
 // around being queried for log stream "directory" listings. For example:
 //
 //	foo/bar/+/baz/qux
 //
-// This stream would add three name components to the datastore, keyed
-// ((parent...), id) as:
-//	(("/"), "foo")
-//	(("/", "foo"), "bar")
-//	(("/", "foo", "bar"), "+", "baz")
-//	(("/", "foo", "bar", "+", "baz"), "qux")
+// This stream would add the following name components to the datastore, keyed
+// (parent-key, id) as:
+//	("/", "foo")
+//	("/foo", "bar")
+//	("/foo/bar", "+")
+//	("/foo/bar/+", "baz")
+//	("/foo/bar/+/baz", "qux")
 //
 // A generated property, "s", is stored to indicate whether this entry is a
-// stream or path component. This enables two types of queries:
-//	1) Immediate path queries, which return all path components immediately
-//	   under a hierarchy space. This can be done by ancestor query with a fixed
-//	   depth equality filter.
-//	2) Recursive path queries, which return all stream paths under a hierarchy
-//	   root, can be done by ancestor query on the root with a "s == true"
-//	   equality filter.
-//
-// Both of these queries can be configured via GetPathHierarchy.
+// stream or path component.
 type componentEntity struct {
 	// _kind is the entity's kind. This is intentionally short to mitigate index
 	// bloat since this will be repeated in a lot of keys.
-	_kind string `gae:"$kind,_lsnc"`
-	// Parent is the key of this entity's parent.
-	Parent *ds.Key `gae:"$parent"`
+	_kind string `gae:"$kind,_StreamNameComponent"`
 
-	// Name is the name component of this specific stream.
+	// ID is the name component of this specific stream.
 	ID componentID `gae:"$id"`
-	// D is the depth of this component in the path hierarchy.
-	Depth int `gae:"D"`
-	// P, if true, indicates that this log stream is purged.
-	Purged bool `gae:"P"`
 }
 
 var _ ds.PropertyLoadSaver = (*componentEntity)(nil)
 
 func (c *componentEntity) Load(pmap ds.PropertyMap) error {
+	// Delete custom elements (added in Save).
 	delete(pmap, "s")
+	delete(pmap, "p")
+
 	return ds.GetPLS(c).Load(pmap)
 }
 
@@ -132,207 +80,47 @@ func (c *componentEntity) Save(withMeta bool) (ds.PropertyMap, error) {
 		return nil, err
 	}
 	pmap["s"] = []ds.Property{ds.MkProperty(c.ID.stream)}
+	pmap["p"] = []ds.Property{ds.MkProperty(c.ID.parent)}
 	return pmap, nil
 }
 
-func (c *componentEntity) pathTo(depth int) string {
-	size := c.Depth - depth + 1
-	switch {
-	case size < 0:
-		return ""
-
-	case size == 0:
-		return c.ID.name
-	}
-
-	comps := make([]string, size)
-
-	k := c.Parent
-	comps[size-1] = c.ID.name
-	var cid componentID
-	for i := size - 2; i >= 0; i-- {
-		if k == nil {
-			return ""
-		}
-
-		cid.setID(k.StringID())
-		comps[i] = cid.name
-		k = k.Parent()
-	}
-	return types.Construct(comps...)
-}
-
-// streamPath returns the StreamPath of this component. It must only be called
-// on a stream component.
-func (c *componentEntity) streamPath() types.StreamPath {
-	_, _, toks := c.Parent.Split()
-
-	// toks starts with a common "/" ancestor, which we discard for path building.
-	sidx := -1
-	parts := make([]types.StreamName, len(toks))
-	parts[len(parts)-1] = types.StreamName(c.ID.name)
-	for i, t := range toks[1:] {
-		v := strings.TrimPrefix(t.StringID, "~")
-		if v == string(types.StreamPathSep) {
-			sidx = i
-		}
-		parts[i] = types.StreamName(v)
-	}
-	if sidx < 0 {
-		panic("no stream path separator in stream element")
-	}
-
-	return types.MakeStreamPath(parts[:sidx], parts[sidx+1:])
-}
-
-func componentTokenKey(di ds.Interface, components []string) (*ds.Key, int) {
-	if len(components) == 0 {
-		return di.NewKey("_lsnc", "/", 0, nil), 0
-	}
-
-	lidx := len(components) - 1
-	cid := componentID{
-		name: components[lidx],
-	}
-	parent, d := componentTokenKey(di, components[:lidx])
-	return di.NewKey("_lsnc", cid.id(), 0, parent), d + 1
-}
-
-func components(p string) []string {
-	if p == "" {
-		return nil
-	}
-
-	prefix, sep, name := types.StreamPath(p).SplitParts()
-	prefixS, nameS := prefix.Segments(), name.Segments()
-	parts := make([]string, 0, len(prefixS)+len(nameS)+1)
-	for _, c := range prefixS {
-		parts = append(parts, string(c))
-	}
-	if sep {
-		parts = append(parts, string(types.StreamPathSep))
-		if name != "" {
-			for _, c := range nameS {
-				parts = append(parts, string(c))
-			}
-		}
-	}
-	return parts
-}
-
-// Put creates component entries for path.
+// streamPath returns the StreamPath of this component, given its parent path.
 //
-// Put will panic if any input data is invalid. It will only fail if datastore
-// operations fail.
-func Put(di ds.Interface, p types.StreamPath) error {
-	if err := p.Validate(); err != nil {
-		panic(err)
-	}
-
-	// Build all path componentEntity objects for our parts.
-	comps := components(string(p))
-	components := make([]*componentEntity, 0, len(comps))
-	prev, _ := componentTokenKey(di, nil)
-
-	for i, comp := range comps {
-		cur := componentEntity{
-			Parent: prev,
-			ID: componentID{
-				name: comp,
-			},
-			Depth: i + 1,
-		}
-		if i == len(comps)-1 {
-			// This is the stream component.
-			cur.ID.stream = true
-		} else {
-			prev = di.NewKey("_lsnc", cur.ID.id(), 0, prev)
-		}
-
-		components = append(components, &cur)
-	}
-
-	// See if any components are already registered.
-	exists := make([]*ds.Key, len(components))
-	for i, c := range components {
-		exists[i] = di.KeyForObj(c)
-	}
-	bl, err := di.ExistsMulti(exists)
-	if err != nil {
-		return err
-	}
-
-	// Only create entities that don't already exist.
-	create := make([]*componentEntity, 0, len(components))
-	for i, b := range bl {
-		if !b {
-			create = append(create, components[i])
-		}
-	}
-
-	if len(create) > 0 {
-		if err := di.PutMulti(create); err != nil {
-			return err
-		}
-	}
-	return nil
+// This is only valid if the component is a stream component.
+func (c *componentEntity) streamPath(parent types.StreamPath) types.StreamPath {
+	return parent.Append(c.ID.name)
 }
 
-// MarkPurged sets the named path component's purged status to v.
-//
-// MarkPurged will panic if any input data is invalid. It will only fail if
-// datastore operations fail.
-func MarkPurged(di ds.Interface, p types.StreamPath, v bool) error {
-	if err := p.Validate(); err != nil {
-		panic(p)
-	}
+func componentEntityParent(parent types.StreamPath) string {
+	hash := sha256.Sum256([]byte(parent))
+	return hex.EncodeToString(hash[:])
+}
 
-	comp := components(string(p))
-	lidx := len(comp) - 1
-
-	k, _ := componentTokenKey(di, comp[:lidx])
-	c := componentEntity{
-		Parent: k,
+func mkComponentEntity(parent types.StreamPath, name string, stream bool) *componentEntity {
+	return &componentEntity{
 		ID: componentID{
-			name:   comp[lidx],
-			stream: true,
+			parent: componentEntityParent(parent),
+			name:   name,
+			stream: stream,
 		},
 	}
-
-	if err := di.Get(&c); err != nil {
-		return err
-	}
-
-	if c.Purged == v {
-		return nil
-	}
-
-	c.Purged = v
-	return di.Put(&c)
 }
 
 // Request is a listing request to execute.
 //
 // It describes a hierarchy listing request. For example, given the following
-// streams:
-//	foo/+/bar
-//	foo/+/bar/baz
-//	foo/bar/+/baz
+// streams in project "qux":
+//	qux/foo/+/bar
+//	qux/foo/+/bar/baz
+//	qux/foo/bar/+/baz
 //
 // The following queries would return values ("$" denotes streams vs. paths):
-//	Base="": ["foo"]
-//	Base="foo": ["+", "bar"]
-//	Base="foo/+": ["bar$", "bar"]
-//	Base="foo/bar": ["+"]
-//	Base="foo/bar/+": ["baz$"]
-//
-// When Recursive is true and StreamOnly is true, listing the same streams would
-// return:
-//	Base="": ["foo/+/bar", "foo/+/bar/baz", "foo/bar/+/baz"]
-//	Base="foo": ["+/bar", "+/bar/baz", "bar/+/baz"]
-//	Base="foo/+": ["bar", "bar/baz"]
-//	Base="foo/bar": ["+/baz"]
-//	Base="foo/bar/+": ["baz"]
+//	Project="", Path="": ["qux"]
+//	Project="qux", Path="": ["foo"]
+//	Project="qux", Path="foo": ["+", "bar"]
+//	Project="qux", Path="foo/+": ["bar$", "bar"]
+//	Project="qux", Path="foo/bar": ["+"]
+//	Project="qux", Path="foo/bar/+": ["baz$"]
 //
 // If Limit is >0, it will be used to constrain the results. Otherwise, all
 // results will be returned.
@@ -341,15 +129,13 @@ func MarkPurged(di ds.Interface, p types.StreamPath, v bool) error {
 // supplied, it must use the same parameters as the previous queries in the
 // sequence.
 type Request struct {
-	// Base is the base path to list.
-	Base string
-	// Recursive, if true, returns all path components underneath Base recursively
-	// instead of those immediately underneath Base.
-	Recursive bool
+	// Project is the project to list. If empty, Request will perform a
+	// project-level listing.
+	Project string
+	// PathBase is the base path within Project to list.
+	PathBase string
 	// StreamOnly, if true, only returns stream path components.
 	StreamOnly bool
-	// IncludePurged, if true, allows purged streams to be returned.
-	IncludePurged bool
 
 	// Limit, if >0, is the maximum number of results to return. If more results
 	// are available, the returned List will have its Next field set to a cursor
@@ -361,54 +147,86 @@ type Request struct {
 	Skip int
 }
 
-// Component is a single component element in the stream path hierarchy.
+// ListComponent is a single component element in the stream path hierarchy.
 //
 // This can represent a path component "path" in (path/component/+/stream)
 // or a stream component ("stream").
-type Component struct {
+type ListComponent struct {
 	// Name is the name of this hierarchy element.
 	Name string
-	// Stream, if not empty, indicates that this is a stream component and
-	// contains the full stream path that it represents.
-	Stream types.StreamPath
+	// Stream, if true, indicates that this is a stream component.
+	Stream bool
 }
 
 // List is a branch of the stream path tree.
+//
+// It may represent either the top-level project hierarchy, or the sub-project
+// stream space hierarchy, depending on the query base.
 type List struct {
-	// Base is the hierarchy base.
-	Base string
+	// Project is the listed project name. If empty, the list refers to the
+	// project namespace.
+	Project config.ProjectName
+	// PathBase is the stream path base.
+	PathBase types.StreamPath
 	// Comp is the set of elements in this hierarchy result.
-	Comp []*Component
+	Comp []*ListComponent
 
 	// Next, if not empty, is the iterative query cursor.
 	Next string
 }
 
+// Path returns the StreamPath of the supplied Component.
+func (l *List) Path(c *ListComponent) types.StreamPath {
+	return l.PathBase.Append(c.Name)
+}
+
 // Get performs a hierarchy query based on parameters in the supplied Request
 // and returns the resulting List.
-func Get(di ds.Interface, r Request) (*List, error) {
-	// Clean any leading/trailing separators.
-	r.Base = strings.Trim(r.Base, string(types.StreamNameSep))
-
-	k, d := componentTokenKey(di, components(r.Base))
-	d++
-
-	q := ds.NewQuery("_lsnc").Ancestor(k)
-	if !r.Recursive {
-		q = q.Eq("D", d)
+//
+// This method will set the namespace based on the request after asserting user
+// membership.
+//
+// The supplied Context should not be bound to a namespace (i.e., default
+// namespace).
+func Get(c context.Context, r Request) (*List, error) {
+	// If our project is empty, this is a project-level query.
+	if r.Project == "" {
+		return getProjects(c, &r)
 	}
-	if !r.IncludePurged {
-		q = q.Eq("P", false)
+
+	// Build our List result.
+	//
+	// We will validate our Project and PathBase types immediately afterwards.
+	l := List{
+		Project:  config.ProjectName(r.Project),
+		PathBase: types.StreamPath(r.PathBase),
 	}
+
+	// Validate our PathBase component.
+	if err := l.PathBase.ValidatePartial(); err != nil {
+		return nil, fmt.Errorf("invalid stream path base %q: %v", l.PathBase, err)
+	}
+
+	// Enter the supplied Project namespace. This will assert the the user has
+	// access to the project.
+	if err := coordinator.WithProjectNamespace(&c, l.Project); err != nil {
+		return nil, err
+	}
+
+	// Determine our ancestor component.
+	di := ds.Get(c)
+
+	q := ds.NewQuery("_StreamNameComponent")
+	q = q.Eq("p", componentEntityParent(l.PathBase))
 	if r.StreamOnly {
 		q = q.Eq("s", true)
 	}
 	if r.Next != "" {
-		c, err := di.DecodeCursor(r.Next)
+		k, err := keyForCursor(di, r.Next)
 		if err != nil {
 			return nil, err
 		}
-		q = q.Start(c)
+		q = q.Gt("__key__", k)
 	}
 	if r.Skip > 0 {
 		q = q.Offset(int32(r.Skip))
@@ -419,29 +237,14 @@ func Get(di ds.Interface, r Request) (*List, error) {
 		q = q.Limit(int32(limit))
 	}
 
-	l := List{
-		Base: r.Base,
-	}
-	err := di.Run(q, func(e *componentEntity, cb ds.CursorCB) error {
-		// Skip the root component. This can be returned for recursive queries.
-		if r.Recursive && e.Depth < d {
-			return nil
-		}
-
-		c := Component{
-			Name: e.pathTo(d),
-		}
-		if e.ID.stream {
-			c.Stream = e.streamPath()
-		}
-		l.Comp = append(l.Comp, &c)
+	err := di.Run(q, func(e *componentEntity) error {
+		l.Comp = append(l.Comp, &ListComponent{
+			Name:   e.ID.name,
+			Stream: e.ID.stream,
+		})
 
 		if limit > 0 && len(l.Comp) >= limit {
-			cursor, err := cb()
-			if err != nil {
-				return err
-			}
-			l.Next = cursor.String()
+			l.Next = cursorForKey(di, e)
 			return ds.Stop
 		}
 		return nil
@@ -452,8 +255,21 @@ func Get(di ds.Interface, r Request) (*List, error) {
 	return &l, nil
 }
 
-// Root returns the datastore key for the hierarchy entity root.
-func Root(di ds.Interface) *ds.Key {
-	k, _ := componentTokenKey(di, nil)
-	return k
+// keyForCursor returns the component key for the supplied cursor.
+//
+// If the cursor string is not valid, an error will be returned.
+func keyForCursor(di ds.Interface, c string) (*ds.Key, error) {
+	d, err := base64.URLEncoding.DecodeString(c)
+	if err != nil {
+		return nil, err
+	}
+
+	return di.NewKey("_StreamNameComponent", string(d), 0, nil), nil
+}
+
+// cursorForKey returns a cursor for the supplied componentID. This cursor will
+// start new queries at the component immediately following this ID.
+func cursorForKey(di ds.Interface, e *componentEntity) string {
+	key := di.KeyForObj(e)
+	return base64.URLEncoding.EncodeToString([]byte(key.StringID()))
 }

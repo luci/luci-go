@@ -11,7 +11,6 @@ import (
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/grpcutil"
-	log "github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
 
@@ -38,15 +37,14 @@ func newService(svr *server) logdog.LogsServer {
 			// We use a type switch here because this is a shared decorator. All user
 			// mesages must implement ProjectBoundMessage.
 			pbm, ok := req.(endpoints.ProjectBoundMessage)
-			if !ok {
-				log.Fields{
-					"methodName": methodName,
-				}.Errorf(c, "Request (%T) does not expose a project namespace.", req)
-				return nil, grpcutil.Internal
-			}
-
-			if err := coordinator.WithProjectNamespace(&c, config.ProjectName(pbm.GetMessageProject())); err != nil {
-				return nil, grpcutil.Internal
+			if ok {
+				if err := coordinator.WithProjectNamespace(&c, config.ProjectName(pbm.GetMessageProject())); err != nil {
+					// If access is explicitly denied, return the appropriate gRPC error.
+					if err == coordinator.ErrNoAccess {
+						return nil, grpcutil.NotFound
+					}
+					return nil, grpcutil.Internal
+				}
 			}
 
 			return c, nil

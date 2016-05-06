@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
@@ -19,6 +20,7 @@ import (
 	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logdog/coordinator"
+	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/common/prpc"
@@ -60,6 +62,30 @@ func (a *application) validate() error {
 		}
 	}
 	return nil
+}
+
+// splitPath converts between a possible user-facing "unified" stream path
+// (e.g., "project/path...") to separate project/path values.
+//
+// If a project is supplied via command-line, the path is returned directly
+// along with the project. If no project is supplied, the first slash-delimited
+// component of "p" is used as the project name.
+func (a *application) splitPath(p string) (config.ProjectName, string, bool, error) {
+	if a.project != "" {
+		return a.project, p, false, nil
+	}
+
+	parts := strings.SplitN(p, types.StreamNameSepStr, 2)
+
+	project := config.ProjectName(parts[0])
+	if err := project.Validate(); err != nil {
+		return "", "", false, fmt.Errorf("invalid project name %q: %v", project, err)
+	}
+
+	if len(parts) == 2 {
+		p = parts[1]
+	}
+	return project, p, true, nil
 }
 
 func mainImpl() int {
@@ -153,7 +179,7 @@ func mainImpl() int {
 	}
 	prpcClient.Options.Insecure = a.insecure
 
-	a.coord = coordinator.NewClient(prpcClient, a.project)
+	a.coord = coordinator.NewClient(prpcClient)
 	a.Context = ctx
 	return subcommands.Run(&a, flags.Args())
 }

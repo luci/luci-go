@@ -11,6 +11,7 @@ import (
 
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
@@ -86,8 +87,9 @@ func TestClientQuery(t *testing.T) {
 		}
 
 		Convey(`When making a query request`, func() {
-			q := Query{
-				Path: "**/+/**",
+			const project = config.ProjectName("myproj")
+			const path = "**/+/**"
+			q := QueryOptions{
 				Tags: map[string]string{
 					"foo": "bar",
 					"baz": "qux",
@@ -112,7 +114,9 @@ func TestClientQuery(t *testing.T) {
 				// non-empty Next pointer for the next query element. It progresses
 				// "a" => "b" => "final" => "".
 				svc.H = func(req *logdog.QueryRequest) (*logdog.QueryResponse, error) {
-					r := logdog.QueryResponse{}
+					r := logdog.QueryResponse{
+						Project: string(project),
+					}
 					switch req.Next {
 					case "":
 						r.Streams = append(r.Streams, gen("a", nil))
@@ -128,7 +132,7 @@ func TestClientQuery(t *testing.T) {
 					return &r, nil
 				}
 
-				So(client.Query(c, &q, accumulate), ShouldBeNil)
+				So(client.Query(c, project, path, q, accumulate), ShouldBeNil)
 				So(results, shouldHaveLogStreams, "test/+/a", "test/+/b", "test/+/final")
 			})
 
@@ -149,7 +153,7 @@ func TestClientQuery(t *testing.T) {
 					results = append(results, s)
 					return len(results) < 3
 				}
-				So(client.Query(c, &q, accumulate), ShouldBeNil)
+				So(client.Query(c, project, path, q, accumulate), ShouldBeNil)
 				So(results, shouldHaveLogStreams, "test/+/a", "test/+/b", "test/+/c")
 			})
 
@@ -164,7 +168,7 @@ func TestClientQuery(t *testing.T) {
 					}, nil
 				}
 
-				So(client.Query(c, &q, accumulate), ShouldBeNil)
+				So(client.Query(c, project, path, q, accumulate), ShouldBeNil)
 				So(results, shouldHaveLogStreams, "test/+/a")
 				So(results[0], ShouldResemble, &LogStream{
 					Path: "test/+/a",
@@ -182,19 +186,19 @@ func TestClientQuery(t *testing.T) {
 
 				Convey(`Text`, func() {
 					q.StreamType = Text
-					So(client.Query(c, &q, accumulate), ShouldBeNil)
+					So(client.Query(c, project, path, q, accumulate), ShouldBeNil)
 					So(svc.LR.StreamType, ShouldResemble, &logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_TEXT})
 				})
 
 				Convey(`Binary`, func() {
 					q.StreamType = Binary
-					So(client.Query(c, &q, accumulate), ShouldBeNil)
+					So(client.Query(c, project, path, q, accumulate), ShouldBeNil)
 					So(svc.LR.StreamType, ShouldResemble, &logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_BINARY})
 				})
 
 				Convey(`Datagram`, func() {
 					q.StreamType = Datagram
-					So(client.Query(c, &q, accumulate), ShouldBeNil)
+					So(client.Query(c, project, path, q, accumulate), ShouldBeNil)
 					So(svc.LR.StreamType, ShouldResemble, &logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_DATAGRAM})
 				})
 			})
@@ -204,7 +208,7 @@ func TestClientQuery(t *testing.T) {
 					return nil, grpcutil.Unauthenticated
 				}
 
-				So(client.Query(c, &q, accumulate), ShouldEqual, ErrNoAccess)
+				So(client.Query(c, project, path, q, accumulate), ShouldEqual, ErrNoAccess)
 			})
 
 			Convey(`Will return ErrNoAccess if permission denied.`, func() {
@@ -212,7 +216,7 @@ func TestClientQuery(t *testing.T) {
 					return nil, grpcutil.Unauthenticated
 				}
 
-				So(client.Query(c, &q, accumulate), ShouldEqual, ErrNoAccess)
+				So(client.Query(c, project, path, q, accumulate), ShouldEqual, ErrNoAccess)
 			})
 		})
 	})

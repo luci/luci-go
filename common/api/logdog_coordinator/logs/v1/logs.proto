@@ -87,11 +87,14 @@ message TailRequest {
 
 // GetResponse is the response structure for the user Get endpoint.
 message GetResponse {
+  // Project is the project name that these logs belong to.
+  string project = 1;
+
   // The log stream descriptor and state for this stream.
   //
   // It can be requested by setting the request's State field to true. If the
   // Proto field is true, the State's Descriptor field will not be included.
-  LogStreamState state = 1;
+  LogStreamState state = 2;
 
   // The expanded LogStreamDescriptor protobuf. It is intended for JSON
   // consumption.
@@ -99,7 +102,7 @@ message GetResponse {
   // If the GetRequest's Proto field is false, this will be populated;
   // otherwise, the serialized protobuf will be written to the DescriptorProto
   // field.
-  logpb.LogStreamDescriptor desc = 2;
+  logpb.LogStreamDescriptor desc = 3;
 
   // Log represents the set of retrieved log records.
   repeated logpb.LogEntry logs = 4;
@@ -206,6 +209,8 @@ message QueryRequest {
 
 // QueryResponse is the response structure for the user Query endpoint.
 message QueryResponse {
+  // Project is the project name that all responses belong to.
+  string project = 1;
 
   // Stream represents a single query response stream.
   message Stream {
@@ -232,58 +237,77 @@ message QueryResponse {
   }
 
   // The list of streams that were identified as the result of the query.
-  repeated Stream streams = 1;
+  repeated Stream streams = 2;
 
   // If not empty, indicates that there are more query results available.
   // These results can be requested by repeating the Query request with the
   // same Path field and supplying this value in the Next field.
-  string next = 2;
+  string next = 3;
 }
 
 // ListRequest is the request structure for the user List endpoint.
+//
+// The List endpoint enables a directory-tree style traversal of the project
+// and log stream space.
+//
+// For example, if project "myproj" had streams "a/+/baz", a listing would
+// return:
+// - Request: project="", path="", Response: {myproj} (Project names)
+// - Request: project="myproj", path="", Response: {a} (Path components)
+// - Request: project="myproj", path="a", Response: {+} (Path component)
+// - Request: project="myproj", path="a/+", Response: {baz} (Stream component)
 message ListRequest {
-  // The request project to request.
-  string project = 1;
-  // Path is the query parameter.
+  // The project to query.
   //
-  // Path should be a prefix fragment of a the valid stream path hierarchy
-  // root to query.
-  string path = 2;
+  // If this is empty, the list results will show all projects that the user can
+  // access.
+  string project = 1;
 
-  // If true, returns streams under the specified root recursively. Otherwise,
-  // only path components immediately under the specified root will be returned.
-  bool recursive = 3;
+  // The path base to query.
+  //
+  // For example, log streams:
+  // - foo/bar/+/baz
+  // - foo/+/qux
+  //
+  // A query to path_base "foo" will return "bar" and "+", both path
+  // components.
+  string path_base = 2;
+
+  // State, if true, returns that the streams' full state instead of just its
+  // Path.
+  bool state = 3;
+
+  // If not empty, indicates that this query should continue at the point where
+  // the previous query left off.
+  string next = 4;
+
   // If true, will return only streams. Otherwise, intermediate path components
   // will also be returned.
-  bool stream_only = 4;
+  bool stream_only = 5;
+
   // If true, indicates that purged streams should show up in the listing. It is
   // an error if a non-admin user requests this option.
-  bool include_purged = 5;
+  bool include_purged = 6;
 
+  // Offset, if >= 0, instructs the list operation to skip the supplied number
+  // of results. This can be used for pagination.
+  int32 offset = 7;
   // The maximum number of componts to return.
   //
   // If <= 0, no upper bound will be indicated. However, the returned result
   // count is still be subject to internal constraints.
-  int32 max_results = 6;
-  // If not empty, indicates that this query should continue at the point where
-  // the previous query left off.
-  string next = 7;
-
-  // State, if true, returns that the streams' full state instead of just its
-  // Path.
-  bool state = 8;
-
-  // Offset, if >= 0, instructs the list operation to skip the supplied number
-  // of results. This can be used for pagination.
-  int32 offset = 9;
+  int32 max_results = 8;
 }
 
 // ListResponse is the response structure for the user List endpoint.
 message ListResponse {
-  // The request project to request.
+  // The project that the streams belong to.
+  //
+  // If the request was for the project tier of the list hierarchy, this will
+  // be empty, and the components list will contain project elements.
   string project = 1;
-  // Base is the hierarchy base that was requested.
-  string base = 2;
+  // The hierarchy base that was requested.
+  string path_base = 2;
 
   // If not empty, indicates that there are more list results available.
   // These results can be requested by repeating the List request with the
@@ -292,22 +316,27 @@ message ListResponse {
 
   // The set of listed stream components.
   message Component {
-    // Path is the path component for this entry. When combined with the response
-    // Base, this will form the full stream path.
-    string path = 1;
-    // Stream is true if this is a stream component (as opposed to a path
-    // component).
-    bool stream = 2;
+    enum Type {
+      PATH = 0;
+      STREAM = 1;
+      PROJECT = 2;
+    }
 
-    // State is the log stream descriptor and state for this stream. It will only
-    // be filled if this is a stream component.
+    // Name is the name of this path component.  When combined with the
+    // response Base, this will form the full stream path.
+    string name = 1;
+    // The type of the component.
+    Type type = 2;
+
+    // State is the log stream descriptor and state for this stream. It will
+    // only be filled if this is a STREAM component.
     //
     // It can be requested by setting the request's State field to true. If the
     // Proto field is true, the State's Descriptor field will not be included.
     LogStreamState state = 3;
 
-    // Descriptor is the JSON-packed log stream descriptor protobuf. It will only
-    // be filled if this is a stream component.
+    // Descriptor is the JSON-packed log stream descriptor protobuf. It will
+    // only be filled if this is a STREAM component.
     //
     // A Descriptor entry corresponds to the Path with the same index.
     //

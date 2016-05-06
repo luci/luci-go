@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/luci/luci-go/common/logdog/coordinator"
+	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/maruel/subcommands"
 )
@@ -24,9 +25,7 @@ const (
 type listCommandRun struct {
 	subcommands.CommandRunBase
 
-	recursive bool
-	long      bool
-	purged    bool
+	o coordinator.ListOptions
 }
 
 func newListCommand() *subcommands.Command {
@@ -37,9 +36,9 @@ func newListCommand() *subcommands.Command {
 			cmd := &listCommandRun{}
 
 			fs := cmd.GetFlags()
-			fs.BoolVar(&cmd.recursive, "r", false, "List recursively.")
-			fs.BoolVar(&cmd.long, "l", false, "Perform long listing, showing stream details.")
-			fs.BoolVar(&cmd.purged, "purged", false, "Include purged streams in listing (admin-only).")
+			fs.BoolVar(&cmd.o.State, "l", false, "Perform long listing, showing stream details.")
+			fs.BoolVar(&cmd.o.StreamsOnly, "streams", false, "Only list streams, not intermediate components.")
+			fs.BoolVar(&cmd.o.Purged, "purged", false, "Include purged streams in listing (admin-only).")
 			return cmd
 		},
 	}
@@ -55,18 +54,24 @@ func (cmd *listCommandRun) Run(scApp subcommands.Application, args []string) int
 	bio := bufio.NewWriter(os.Stdout)
 	defer bio.Flush()
 
-	for _, path := range args {
-		o := coordinator.ListOptions{
-			Recursive:   cmd.recursive,
-			StreamsOnly: cmd.recursive,
-			State:       cmd.long,
-			Purged:      cmd.purged,
+	for _, arg := range args {
+		// User-friendly: trim any leading or trailing slashes from the path.
+		project, pathBase, unified, err := a.splitPath(string(types.StreamPath(arg).Trim()))
+		if err != nil {
+			log.WithError(err).Errorf(a, "Invalid path specifier.")
+			return 1
 		}
 
-		err := a.coord.List(a, path, o, func(lr *coordinator.ListResult) bool {
-			p := lr.Path
-			if cmd.recursive {
-				p = string(lr.FullPath())
+		err = a.coord.List(a, project, pathBase, cmd.o, func(lr *coordinator.ListResult) bool {
+			p := lr.Name
+			if cmd.o.State {
+				// Long listing, show full path.
+				fp := lr.FullPath()
+				if unified {
+					p = makeUnifiedPath(lr.Project, fp)
+				} else {
+					p = string(fp)
+				}
 			}
 
 			if lr.State == nil {
@@ -79,8 +84,9 @@ func (cmd *listCommandRun) Run(scApp subcommands.Application, args []string) int
 		if err != nil {
 			log.Fields{
 				log.ErrorKey: err,
-				"path":       path,
-			}.Errorf(a, "Failed to list path.")
+				"pathBase":   pathBase,
+				"project":    project,
+			}.Errorf(a, "Failed to list path base.")
 			return 1
 		}
 	}

@@ -8,19 +8,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/luci/gae/filter/featureBreaker"
-	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/hierarchy"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
-	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/authtest"
 	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -30,10 +25,18 @@ import (
 func listPaths(l *logdog.ListResponse) []string {
 	s := make([]string, len(l.Components))
 	for i, c := range l.Components {
-		s[i] = c.Path
-		if c.Stream {
+		s[i] = c.Name
+
+		var suffix string
+		switch c.Type {
+		case logdog.ListResponse_Component_STREAM:
 			s[i] += "$"
+		case logdog.ListResponse_Component_PATH:
+			suffix = "/"
+		case logdog.ListResponse_Component_PROJECT:
+			suffix = "#"
 		}
+		s[i] += suffix
 	}
 	return s
 }
@@ -42,131 +45,170 @@ func TestList(t *testing.T) {
 	t.Parallel()
 
 	Convey(`With a testing configuration, a List request`, t, func() {
-		c, _ := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
-		c = memory.Use(c)
-		c, _ = featureBreaker.FilterRDS(c, nil)
-
-		fs := authtest.FakeState{}
-		c = auth.WithState(c, &fs)
-
-		svcStub := ct.Services{}
-		svcStub.InitConfig()
-		svcStub.ServiceConfig.Coordinator.AdminAuthGroup = "test-administrators"
-		c = coordinator.WithServices(c, &svcStub)
+		c, env := ct.Install()
 
 		svc := New()
 
-		// di is a datastore bound to the test project namespace.
-		const project = "test-project"
-		if err := coordinator.WithProjectNamespace(&c, config.ProjectName(project)); err != nil {
-			panic(err)
-		}
-		di := ds.Get(c)
-
-		req := logdog.ListRequest{
-			Project: project,
-		}
+		const project = config.ProjectName("proj-foo")
 
 		// Install a set of stock log streams to query against.
 		streams := map[string]*coordinator.LogStream{}
 		descs := map[string]*logpb.LogStreamDescriptor{}
 		for i, v := range []types.StreamPath{
-			"testing/+/foo",
-			"testing/+/foo/bar",
+			"blargh/+/foo",
 			"other/+/foo/bar",
 			"other/+/baz",
-			"purged/+/foo",
+			"testing/+/foo",
+			"testing/+/foo/bar",
 		} {
+			// di is a datastore bound to the test project namespace.
 			prefix, name := v.Split()
 			desc := ct.TestLogStreamDescriptor(c, string(name))
 			desc.Prefix = string(prefix)
 
 			ls := ct.TestLogStream(c, desc)
-			if err := hierarchy.Put(di, ls.Path()); err != nil {
-				panic(fmt.Errorf("failed to put log stream %d: %v", i, err))
-			}
 
-			if prefix.Segments()[0] == "purged" {
-				if err := hierarchy.MarkPurged(di, ls.Path(), true); err != nil {
-					panic(fmt.Errorf("failed to purge log stream %d: %v", i, err))
+			ct.WithProjectNamespace(c, project, func(c context.Context) {
+				di := ds.Get(c)
+
+				if err := di.Put(ls); err != nil {
+					panic(fmt.Errorf("failed to put log stream %d: %v", i, err))
 				}
-			}
 
-			descs[string(v)] = desc
-			streams[string(v)] = ls
+				for _, c := range hierarchy.Components(ls.Path()) {
+					if err := c.Put(di); err != nil {
+						panic(fmt.Errorf("failed to put log component %d: %v", i, err))
+					}
+				}
+
+				descs[string(v)] = desc
+				streams[string(v)] = ls
+			})
 		}
-		di.Testable().CatchupIndexes()
+		ds.Get(c).Testable().CatchupIndexes()
 
-		Convey(`A default list request will return top-level entries.`, func() {
-			l, err := svc.List(c, &req)
-			So(err, ShouldBeRPCOK)
-			So(listPaths(l), ShouldResemble, []string{"other", "purged", "testing"})
-		})
+		var req logdog.ListRequest
 
-		Convey(`If the project does not exist, will return nothing.`, func() {
-			req.Project = "does-not-exist"
+		Convey(`A project-level list request`, func() {
+			req.Project = ""
 
-			l, err := svc.List(c, &req)
-			So(err, ShouldBeRPCOK)
-			So(listPaths(l), ShouldResemble, []string{})
-		})
-
-		Convey(`Will skip elements if requested.`, func() {
-			req.Offset = int32(2)
-			l, err := svc.List(c, &req)
-			So(err, ShouldBeRPCOK)
-			So(listPaths(l), ShouldResemble, []string{"testing"})
-		})
-
-		Convey(`A recursive list will return all elements iteratively.`, func() {
-			req.Recursive = true
-			req.MaxResults = 4
-
-			for _, round := range [][]string{
-				{"other", "other/+", "other/+/baz$", "other/+/foo"},
-				{"other/+/foo/bar$", "purged", "purged/+", "testing"},
-				{"testing/+", "testing/+/foo$", "testing/+/foo", "testing/+/foo/bar$"},
-				{},
-			} {
-				l, err := svc.List(c, &req)
-				So(err, ShouldBeRPCOK)
-				So(listPaths(l), ShouldResemble, round)
-
-				if len(round) < int(req.MaxResults) {
-					So(l.Next, ShouldEqual, "")
-					break
+			// Only add project namespaces for some of our registered projects.
+			//
+			// We add a project namespace to our datastore by creating a single entity
+			// within that namespace.
+			addProjectNamespace := func(proj config.ProjectName) {
+				c := c
+				if err := coordinator.WithProjectNamespaceNoAuth(&c, proj); err != nil {
+					panic(err)
 				}
 
-				So(l.Next, ShouldNotEqual, "")
-				req.Next = l.Next
+				entity := ds.PropertyMap{
+					"$id":   []ds.Property{ds.MkProperty("woof")},
+					"$kind": []ds.Property{ds.MkProperty("Dog")},
+				}
+				if err := ds.Get(c).Put(entity); err != nil {
+					panic(err)
+				}
 			}
-		})
+			addProjectNamespace("proj-foo")
+			addProjectNamespace("proj-bar")
+			addProjectNamespace("proj-exclusive")
 
-		Convey(`A list including purged will fail for an unanthenticated user.`, func() {
-			req.IncludePurged = true
+			// Add this just to make sure we ignore namespaces without config entries.
+			addProjectNamespace("proj-nonexistent")
 
-			_, err := svc.List(c, &req)
-			So(err, ShouldBeRPCPermissionDenied)
-		})
+			Convey(`Empty list request will return projects.`, func() {
+				l, err := svc.List(c, &req)
+				So(err, ShouldBeRPCOK)
+				So(listPaths(l), ShouldResemble, []string{"proj-bar#", "proj-foo#"})
+			})
 
-		Convey(`When logged in as an administrator`, func() {
-			fs.IdentityGroups = []string{"test-administrators"}
-
-			Convey(`A list including purged will include purged elements.`, func() {
-				req.StreamOnly = true
-				req.Recursive = true
-				req.IncludePurged = true
+			Convey(`Empty list request can skip projects.`, func() {
+				req.Offset = 1
 
 				l, err := svc.List(c, &req)
 				So(err, ShouldBeRPCOK)
-				So(listPaths(l), ShouldResemble, []string{
-					"other/+/baz$",
-					"other/+/foo/bar$",
-					"purged/+/foo$",
-					"testing/+/foo$",
-					"testing/+/foo/bar$",
-				})
+				So(listPaths(l), ShouldResemble, []string{"proj-foo#"})
+			})
+
+			Convey(`When authenticated, empty list includes authenticated project.`, func() {
+				env.JoinGroup("auth")
+
+				l, err := svc.List(c, &req)
+				So(err, ShouldBeRPCOK)
+				So(listPaths(l), ShouldResemble, []string{"proj-bar#", "proj-exclusive#", "proj-foo#"})
 			})
 		})
+
+		Convey(`A project-bound list request`, func() {
+			req.Project = string(project)
+
+			Convey(`Can list within a project, when the project is empty.`, func() {
+				req.PathBase = "proj-bar"
+
+				l, err := svc.List(c, &req)
+				So(err, ShouldBeRPCOK)
+				So(listPaths(l), ShouldResemble, []string{})
+			})
+
+			Convey(`Empty list request will return top-level stream paths.`, func() {
+				l, err := svc.List(c, &req)
+				So(err, ShouldBeRPCOK)
+				So(listPaths(l), ShouldResemble, []string{"blargh/", "other/", "testing/"})
+			})
+
+			Convey(`Will skip elements if requested.`, func() {
+				req.Offset = 2
+
+				l, err := svc.List(c, &req)
+				So(err, ShouldBeRPCOK)
+				So(listPaths(l), ShouldResemble, []string{"testing/"})
+			})
+
+			Convey(`Can list within a populated project.`, func() {
+				req.Project = "proj-foo"
+
+				list := func(b string) []string {
+					req.PathBase = b
+
+					l, err := svc.List(c, &req)
+					So(err, ShouldBeRPCOK)
+					return listPaths(l)
+				}
+
+				So(list(""), ShouldResemble, []string{"blargh/", "other/", "testing/"})
+				So(list("blargh"), ShouldResemble, []string{"+/"})
+				So(list("blargh/+"), ShouldResemble, []string{"foo$"})
+				So(list("other"), ShouldResemble, []string{"+/"})
+				So(list("other/+"), ShouldResemble, []string{"baz$", "foo/"})
+				So(list("other/+/baz"), ShouldResemble, []string{})
+				So(list("other/+/foo"), ShouldResemble, []string{"bar$"})
+				So(list("testing"), ShouldResemble, []string{"+/"})
+				So(list("testing/+"), ShouldResemble, []string{"foo$", "foo/"})
+				So(list("testing/+/foo"), ShouldResemble, []string{"bar$"})
+			})
+
+			Convey(`Can use a cursor to fully enumerate a space.`, func() {
+				req.MaxResults = 1
+
+				all := []string{"blargh/", "other/", "testing/"}
+				for len(all) > 0 {
+					l, err := svc.List(c, &req)
+					So(err, ShouldBeRPCOK)
+					So(listPaths(l), ShouldResemble, all[:1])
+
+					all = all[1:]
+					req.Next = l.Next
+				}
+			})
+		})
+
+		Convey(`If the project does not exist, will return NotFound.`, func() {
+			req.Project = "does-not-exist"
+
+			_, err := svc.List(c, &req)
+			So(err, ShouldBeRPCNotFound)
+		})
+
 	})
 }

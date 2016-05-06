@@ -10,6 +10,7 @@ import (
 	"os"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logdog/fetcher"
 	"github.com/luci/luci-go/common/logdog/renderer"
 	"github.com/luci/luci-go/common/logdog/types"
@@ -53,22 +54,36 @@ func newCatCommand() *subcommands.Command {
 	}
 }
 
-func (cmd *catCommandRun) Run(scApp subcommands.Application, paths []string) int {
+func (cmd *catCommandRun) Run(scApp subcommands.Application, args []string) int {
 	a := scApp.(*application)
 
-	if len(paths) == 0 {
+	if len(args) == 0 {
 		log.Errorf(a, "At least one log path must be supplied.")
 		return 1
 	}
-	for i, path := range paths {
-		if err := types.StreamPath(path).Validate(); err != nil {
+
+	// Validate and construct our cat paths.
+	catPaths := make([]*catPath, len(args))
+	for i, arg := range args {
+		// User-friendly: trim any leading or trailing slashes from the path.
+		project, path, _, err := a.splitPath(arg)
+		if err != nil {
+			log.WithError(err).Errorf(a, "Invalid path specifier.")
+			return 1
+		}
+
+		cp := catPath{project, types.StreamPath(path)}
+		if err := cp.path.Validate(); err != nil {
 			log.Fields{
 				log.ErrorKey: err,
 				"index":      i,
-				"path":       path,
+				"project":    cp.project,
+				"path":       cp.path,
 			}.Errorf(a, "Invalid command-line stream path.")
 			return 1
 		}
+
+		catPaths[i] = &cp
 	}
 	if cmd.buffer <= 0 {
 		log.Fields{
@@ -76,11 +91,12 @@ func (cmd *catCommandRun) Run(scApp subcommands.Application, paths []string) int
 		}.Errorf(a, "Buffer size must be >0.")
 	}
 
-	for i, path := range paths {
-		if err := cmd.catPath(a, types.StreamPath(path)); err != nil {
+	for i, cp := range catPaths {
+		if err := cmd.catPath(a, cp); err != nil {
 			log.Fields{
 				log.ErrorKey: err,
-				"path":       path,
+				"project":    cp.project,
+				"path":       cp.path,
 				"index":      i,
 			}.Errorf(a, "Failed to fetch log stream.")
 			return 1
@@ -90,10 +106,16 @@ func (cmd *catCommandRun) Run(scApp subcommands.Application, paths []string) int
 	return 0
 }
 
-func (cmd *catCommandRun) catPath(a *application, path types.StreamPath) error {
+// catPath is a single path to fetch.
+type catPath struct {
+	project config.ProjectName
+	path    types.StreamPath
+}
+
+func (cmd *catCommandRun) catPath(a *application, cp *catPath) error {
 	// Pull stream information.
 	src := coordinatorSource{
-		stream: a.coord.Stream(path),
+		stream: a.coord.Stream(cp.project, cp.path),
 	}
 	src.tidx = -1 // Must be set to probe for state.
 
