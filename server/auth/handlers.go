@@ -30,7 +30,6 @@ func InstallHandlers(r *httprouter.Router, base middleware.Base) {
 func accountsSelfHandler(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	var reply struct {
 		Error    string `json:"error,omitempty"`
-		Host     string `json:"host,omitempty"`
 		Identity string `json:"identity,omitempty"`
 		IP       string `json:"ip,omitempty"`
 	}
@@ -39,7 +38,6 @@ func accountsSelfHandler(c context.Context, rw http.ResponseWriter, r *http.Requ
 	if state == nil {
 		reply.Error = "Auth state is not available, application is probably using auth library wrong."
 	} else {
-		reply.Host = state.PeerHost()
 		reply.Identity = string(state.User().Identity)
 		reply.IP = state.PeerIP().String()
 	}

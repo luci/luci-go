@@ -137,18 +137,6 @@ func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context
 		}
 	}
 
-	// Extract peer host name from host token header, if present and valid.
-	if token := r.Header.Get("X-Host-Token-V1"); token != "" {
-		store, err := s.db.SharedSecrets(c)
-		if err != nil {
-			return nil, err
-		}
-		s.peerHost, err = validateHostToken(c, store, token)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	// Bots may use IP whitelist for authentication. In this case checkIPWhitelist
 	// returns new bot identity. Otherwise it just returns s.user.Identity
 	// unchanged.

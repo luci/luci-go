@@ -21,7 +21,6 @@ func TestFakeState(t *testing.T) {
 		So(state.User(), ShouldResemble, &auth.User{Identity: "anonymous:anonymous"})
 		So(state.PeerIdentity(), ShouldEqual, "anonymous:anonymous")
 		So(state.PeerIP().String(), ShouldEqual, "127.0.0.1")
-		So(state.PeerHost(), ShouldEqual, "")
 	})
 
 	Convey("Non-default FakeState works", t, func() {
@@ -31,7 +30,6 @@ func TestFakeState(t *testing.T) {
 			Error:                errors.New("boo"),
 			PeerIdentityOverride: "bot:blah",
 			PeerIPOverride:       net.ParseIP("192.192.192.192"),
-			PeerHostOverride:     "some-host",
 		}
 		So(state.DB(), ShouldResemble, &FakeErroringDB{
 			FakeDB: FakeDB{"user:abc@def.com": []string{"abc"}},
@@ -44,6 +42,5 @@ func TestFakeState(t *testing.T) {
 		})
 		So(state.PeerIdentity(), ShouldEqual, "bot:blah")
 		So(state.PeerIP().String(), ShouldEqual, "192.192.192.192")
-		So(state.PeerHost(), ShouldEqual, "some-host")
 	})
 }

@@ -30,6 +30,8 @@ var (
 func checkIPWhitelist(c context.Context, db DB, id identity.Identity, ip net.IP, h http.Header) (identity.Identity, error) {
 	// Anonymous requests coming from IPs in 'bots' whitelist are authenticated
 	// as bots.
+	//
+	// TODO(vadimsh): Get rid of this.
 	botIDHeader := h.Get("X-Whitelisted-Bot-Id")
 	if id.Kind() == identity.Anonymous {
 		whitelisted, err := db.IsInWhitelist(c, ip, "bots")

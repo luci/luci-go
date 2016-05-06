@@ -42,11 +42,6 @@ type FakeState struct {
 	//
 	// By default PeerIP() returns "127.0.0.1".
 	PeerIPOverride net.IP
-
-	// PeerHostOverride may be set for PeerHost() to return custom value.
-	//
-	// By default PeerHost() returns "", indicating X-Host-Token is not used.
-	PeerHostOverride string
 }
 
 var _ auth.State = (*FakeState)(nil)
@@ -92,9 +87,4 @@ func (s *FakeState) PeerIP() net.IP {
 		return net.ParseIP("127.0.0.1")
 	}
 	return s.PeerIPOverride
-}
-
-// PeerHost is part of State interface.
-func (s *FakeState) PeerHost() string {
-	return s.PeerHostOverride
 }
