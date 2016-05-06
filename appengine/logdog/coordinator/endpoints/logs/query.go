@@ -181,6 +181,7 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 	}
 
 	q = q.Limit(int32(r.limit))
+	q = q.KeysOnly(true)
 
 	// Issue the query.
 	if log.IsLogging(r, log.Debug) {
@@ -191,30 +192,22 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 	}
 
 	cursor := ds.Cursor(nil)
-	streams := make([]*logdog.QueryResponse_Stream, 0, r.limit)
-	err := ds.Get(r).Run(q, func(ls *coordinator.LogStream, cb ds.CursorCB) error {
-		stream := logdog.QueryResponse_Stream{
-			Path: string(ls.Path()),
-		}
-		if r.State {
-			stream.State = loadLogStreamState(ls)
+	logStreams := make([]*coordinator.LogStream, 0, r.limit)
 
-			var err error
-			stream.Desc, err = ls.DescriptorValue()
-			if err != nil {
-				return grpcutil.Internal
-			}
-		}
-		streams = append(streams, &stream)
+	di := ds.Get(r)
+	err := di.Run(q, func(sk *ds.Key, cb ds.CursorCB) error {
+		var ls coordinator.LogStream
+		ds.PopulateKey(&ls, sk)
+		logStreams = append(logStreams, &ls)
 
 		// If we hit our limit, add a cursor for the next iteration.
-		if len(streams) == r.limit {
+		if len(logStreams) == r.limit {
 			var err error
 			cursor, err = cb()
 			if err != nil {
 				log.Fields{
 					log.ErrorKey: err,
-					"count":      len(streams),
+					"count":      len(logStreams),
 				}.Errorf(r, "Failed to get cursor value.")
 				return err
 			}
@@ -229,7 +222,32 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 		return grpcutil.Internal
 	}
 
-	resp.Streams = streams
+	if len(logStreams) > 0 {
+		// Fetch the LogEntry values.
+		if err := di.GetMulti(logStreams); err != nil {
+			log.WithError(err).Errorf(r, "Failed to load entry content.")
+			return grpcutil.Internal
+		}
+
+		resp.Streams = make([]*logdog.QueryResponse_Stream, len(logStreams))
+		for i, ls := range logStreams {
+			stream := logdog.QueryResponse_Stream{
+				Path: string(ls.Path()),
+			}
+			if r.State {
+				stream.State = loadLogStreamState(ls)
+
+				var err error
+				stream.Desc, err = ls.DescriptorValue()
+				if err != nil {
+					return grpcutil.Internal
+				}
+			}
+
+			resp.Streams[i] = &stream
+		}
+	}
+
 	if cursor != nil {
 		resp.Next = cursor.String()
 	}
