@@ -154,14 +154,6 @@ func (c *Collector) Process(ctx context.Context, msg []byte) error {
 		b:   pr.Bundle,
 	}
 
-	if err := types.PrefixSecret(lw.b.Secret).Validate(); err != nil {
-		log.Fields{
-			log.ErrorKey:   err,
-			"secretLength": len(lw.b.Secret),
-		}.Errorf(ctx, "Failed to validate prefix secret.")
-		return errors.New("invalid prefix secret")
-	}
-
 	// TODO(dnj): Make this actually an fatal error, once project becomes
 	// required.
 	if lw.b.Project != "" {
@@ -259,6 +251,19 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 		return nil
 	}
 
+	// TODO(dnj): After migration, deprecate this and check secret up in Process.
+	secret := types.PrefixSecret(h.b.Secret)
+	if secret == nil {
+		secret = types.PrefixSecret(h.be.DeprecatedEntrySecret)
+	}
+	if err := types.PrefixSecret(secret).Validate(); err != nil {
+		log.Fields{
+			log.ErrorKey:   err,
+			"secretLength": len(secret),
+		}.Errorf(ctx, "Failed to validate prefix secret.")
+		return errors.New("invalid prefix secret")
+	}
+
 	// If the descriptor has a Prefix, it must match the bundle's Prefix.
 	if p := h.be.Desc.Prefix; p != "" {
 		if p != h.b.Prefix {
@@ -329,7 +334,7 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 	state, err := c.Coordinator.RegisterStream(ctx, &coordinator.LogStreamState{
 		Project:      h.project,
 		Path:         h.path,
-		Secret:       types.PrefixSecret(h.b.Secret),
+		Secret:       secret,
 		ProtoVersion: h.md.ProtoVersion,
 	}, h.be.Desc)
 	if err != nil {
@@ -338,9 +343,9 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 	}
 
 	// Does the log stream's secret match the expected secret?
-	if !bytes.Equal(h.b.Secret, []byte(state.Secret)) {
+	if !bytes.Equal([]byte(secret), []byte(state.Secret)) {
 		log.Errorf(log.SetFields(ctx, log.Fields{
-			"secret":         h.b.Secret,
+			"secret":         secret,
 			"expectedSecret": state.Secret,
 		}), "Log entry has incorrect secret.")
 		return nil

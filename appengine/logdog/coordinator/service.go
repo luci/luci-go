@@ -7,6 +7,7 @@ package coordinator
 import (
 	"net/http"
 	"sync"
+	"sync/atomic"
 
 	"github.com/julienschmidt/httprouter"
 	gaeauthClient "github.com/luci/luci-go/appengine/gaeauth/client"
@@ -67,23 +68,29 @@ func WithProdServices(h middleware.Handler) middleware.Handler {
 // UseProdServices installs production Services instance into the supplied
 // Context.
 func UseProdServices(c context.Context) context.Context {
-	return WithServices(c, &prodServices{})
+	return WithServices(c, &prodServicesInst{})
 }
 
-// Request is a Service context for a given request.
-type prodServices struct {
+// prodServicesInst is a Service exposing production faciliites. A unique
+// instance is bound to each each request.
+type prodServicesInst struct {
 	sync.Mutex
 
 	// gcfg is the cached global configuration.
 	gcfg *config.GlobalConfig
 	// cfg is the cached configuration.
 	cfg *svcconfig.Config
+
+	// archivalIndex is the atomically-manipulated archival index for the
+	// ArchivalPublisher. This is shared between all ArchivalPublisher instances
+	// from this service.
+	archivalIndex int32
 }
 
 // Config returns the current instance and application configuration instances.
 //
 // After a success, successive calls will return a cached result.
-func (s *prodServices) Config(c context.Context) (*config.GlobalConfig, *svcconfig.Config, error) {
+func (s *prodServicesInst) Config(c context.Context) (*config.GlobalConfig, *svcconfig.Config, error) {
 	s.Lock()
 	defer s.Unlock()
 
@@ -107,7 +114,7 @@ func (s *prodServices) Config(c context.Context) (*config.GlobalConfig, *svcconf
 	return s.gcfg, s.cfg, nil
 }
 
-func (s *prodServices) IntermediateStorage(c context.Context) (storage.Storage, error) {
+func (s *prodServicesInst) IntermediateStorage(c context.Context) (storage.Storage, error) {
 	gcfg, cfg, err := s.Config(c)
 	if err != nil {
 		return nil, err
@@ -175,7 +182,7 @@ func (s *prodServices) IntermediateStorage(c context.Context) (storage.Storage, 
 	return st, nil
 }
 
-func (s *prodServices) GSClient(c context.Context) (gs.Client, error) {
+func (s *prodServicesInst) GSClient(c context.Context) (gs.Client, error) {
 	// Get an Authenticator bound to the token scopes that we need for
 	// authenticated Cloud Storage access.
 	rt, err := gaeauthClient.Transport(c, gs.ReadOnlyScopes, nil)
@@ -186,7 +193,7 @@ func (s *prodServices) GSClient(c context.Context) (gs.Client, error) {
 	return gs.NewProdClient(c, rt)
 }
 
-func (s *prodServices) ArchivalPublisher(c context.Context) (ArchivalPublisher, error) {
+func (s *prodServicesInst) ArchivalPublisher(c context.Context) (ArchivalPublisher, error) {
 	_, cfg, err := s.Config(c)
 	if err != nil {
 		return nil, err
@@ -223,6 +230,21 @@ func (s *prodServices) ArchivalPublisher(c context.Context) (ArchivalPublisher, 
 	}
 
 	return &pubsubArchivalPublisher{
-		topic: psClient.Topic(topic),
+		topic:            psClient.Topic(topic),
+		publishIndexFunc: s.nextArchiveIndex,
 	}, nil
+}
+
+func (s *prodServicesInst) nextArchiveIndex() uint64 {
+	// We use a 32-bit value for this because it avoids atomic memory bounary
+	// issues. Furthermore, we constrain it to be positive, using a negative
+	// value as a sentinel that the archival index has wrapped.
+	//
+	// This is reasonable, as it is very unlikely that a single request will issue
+	// more than MaxInt32 archival tasks.
+	v := atomic.AddInt32(&s.archivalIndex, 1) - 1
+	if v < 0 {
+		panic("archival index has wrapped")
+	}
+	return uint64(v)
 }

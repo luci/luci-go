@@ -19,11 +19,19 @@ import (
 type ArchivalPublisher interface {
 	// Publish publishes the supplied ArchiveTask.
 	Publish(context.Context, *logdog.ArchiveTask) error
+
+	// NewPublishIndex returns a new publish index. Each publish index is unique
+	// within its request.
+	NewPublishIndex() uint64
 }
 
 type pubsubArchivalPublisher struct {
 	// topic is the authenticated Pub/Sub topic handle to publish to.
 	topic *gcps.TopicHandle
+
+	// publishIndexFunc is a function that will return a unique publish index
+	// for this request.
+	publishIndexFunc func() uint64
 }
 
 func (p *pubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTask) error {
@@ -54,4 +62,8 @@ func (p *pubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTa
 			"delay":      d,
 		}.Warningf(c, "Failed to publish task. Retrying...")
 	})
+}
+
+func (p *pubsubArchivalPublisher) NewPublishIndex() uint64 {
+	return p.publishIndexFunc()
 }

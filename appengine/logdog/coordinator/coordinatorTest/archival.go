@@ -23,7 +23,8 @@ type ArchivalPublisher struct {
 	// Err, if not nil, is the error returned by Publish.
 	Err error
 
-	tasks []*logdog.ArchiveTask
+	tasks         []*logdog.ArchiveTask
+	archivalIndex uint64
 }
 
 var _ coordinator.ArchivalPublisher = (*ArchivalPublisher)(nil)
@@ -39,6 +40,16 @@ func (ap *ArchivalPublisher) Publish(c context.Context, at *logdog.ArchiveTask) 
 
 	ap.tasks = append(ap.tasks, at)
 	return nil
+}
+
+// NewPublishIndex implements coordinator.ArchivalPublisher.
+func (ap *ArchivalPublisher) NewPublishIndex() uint64 {
+	ap.Lock()
+	defer ap.Unlock()
+
+	v := ap.archivalIndex
+	ap.archivalIndex++
+	return v
 }
 
 // Tasks returns the dispatched archival tasks in the order in which they were

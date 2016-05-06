@@ -139,10 +139,24 @@ func testCollectorImpl(t *testing.T, caching bool) {
 		Convey(`Will drop streams with missing (invalid) secrets.`, func() {
 			b := bb.genBase()
 			b.Secret = nil
+			bb.addFullStream("foo/+/bar", 4)
 
 			err := coll.Process(c, bb.bundle())
 			So(err, ShouldErrLike, "invalid prefix secret")
 			So(errors.IsTransient(err), ShouldBeFalse)
+		})
+
+		// TODO(dnj): Remove this test once this is no longer supported.
+		Convey(`Will use legacy bundle entry secret if bundle secret is missing.`, func() {
+			b := bb.genBase()
+
+			be := bb.genBundleEntry("foo/+/bar", 4, 0, 1, 2, 3)
+			be.DeprecatedEntrySecret = b.Secret
+			b.Secret = nil
+			bb.addBundleEntry(be)
+
+			err := coll.Process(c, bb.bundle())
+			So(err, ShouldBeNil)
 		})
 
 		Convey(`Will drop messages with mismatching secrets.`, func() {

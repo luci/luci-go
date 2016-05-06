@@ -8,7 +8,6 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"sync/atomic"
 	"time"
 
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
@@ -22,7 +21,7 @@ var ErrArchiveTasked = errors.New("archival already tasked for this stream")
 
 // ArchivalParams is the archival configuration.
 type ArchivalParams struct {
-	// RequestID is the unique request ID to use as a random base or the
+	// RequestID is the unique request ID to use as a random base for the
 	// archival key.
 	RequestID string
 
@@ -34,19 +33,15 @@ type ArchivalParams struct {
 	// period has expired, the archival may complete successfully even if the
 	// stream is missing log entries.
 	CompletePeriod time.Duration
-
-	// keyIndex is atomically incremented each time a request is published to
-	// differentiate it from previous superfluous requests to the same stream.
-	// This must be atomically-manipulated, since PublishTask may be called
-	// multiple times for the same stream if executed as part of a transaction.
-	keyIndex int32
 }
 
 // PublishTask creates and dispatches a task queue task for the supplied
 // LogStream. PublishTask is goroutine-safe.
 //
 // This should be run within a transaction on ls. On success, ls's state will
-// be updated to reflect the archival tasking.
+// be updated to reflect the archival tasking. This will NOT update ls's
+// datastore entity; the caller must make sure to call Put within the same
+// transaction for transactional safety.
 //
 // If the task is created successfully, this will return nil. If the LogStream
 // already had a task dispatched, it will return ErrArchiveTasked.
@@ -60,7 +55,7 @@ func (p *ArchivalParams) PublishTask(c context.Context, ap ArchivalPublisher, ls
 	msg := logdog.ArchiveTask{
 		Project: string(Project(c)),
 		Path:    path,
-		Key:     p.createArchivalKey(path),
+		Key:     p.createArchivalKey(path, ap.NewPublishIndex()),
 	}
 	if p.SettleDelay > 0 {
 		msg.SettleDelay = google.NewDuration(p.SettleDelay)
@@ -81,9 +76,21 @@ func (p *ArchivalParams) PublishTask(c context.Context, ap ArchivalPublisher, ls
 	return nil
 }
 
-// createArchivalKey returns a unique archival request key
-func (p *ArchivalParams) createArchivalKey(path string) []byte {
-	index := atomic.AddInt32(&p.keyIndex, 1)
-	hash := sha256.Sum256([]byte(fmt.Sprintf("%s-%s-%d", p.RequestID, path, index)))
-	return hash[:]
+// createArchivalKey returns a unique archival request key.
+//
+// The uniqueness is ensured by folding several components into a hash:
+//	- The request ID, which is unique per HTTP request.
+//	- The stream path.
+//	- An atomically-incrementing key index, which is unique per ArchivalParams
+//	  instance.
+//
+// The first two should be sufficient for a unique value, since a given request
+// will only be handed to a single instance, and the atomic value is unique
+// within the instance.
+func (p *ArchivalParams) createArchivalKey(path string, pidx uint64) []byte {
+	hash := sha256.New()
+	if _, err := fmt.Fprintf(hash, "%s\x00%s\x00%d", p.RequestID, path, pidx); err != nil {
+		panic(err)
+	}
+	return hash.Sum(nil)
 }

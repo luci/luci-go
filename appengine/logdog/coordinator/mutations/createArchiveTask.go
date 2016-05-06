@@ -42,8 +42,9 @@ func (m *CreateArchiveTask) RollForward(c context.Context) ([]tumble.Mutation, e
 	}
 
 	// Get the log stream.
+	di := ds.Get(c)
 	ls := m.logStream()
-	if err := ds.Get(c).Get(ls); err != nil {
+	if err := di.Get(ls); err != nil {
 		if err == ds.ErrNoSuchEntity {
 			log.Warningf(c, "Log stream no longer exists.")
 			return nil, nil
@@ -56,8 +57,18 @@ func (m *CreateArchiveTask) RollForward(c context.Context) ([]tumble.Mutation, e
 	params := coordinator.ArchivalParams{
 		RequestID: info.Get(c).RequestID(),
 	}
-	if err := params.PublishTask(c, ap, ls); err != nil {
+	if err = params.PublishTask(c, ap, ls); err != nil {
+		if err == coordinator.ErrArchiveTasked {
+			log.Warningf(c, "Archival already tasked, skipping.")
+			return nil, nil
+		}
+
 		log.WithError(err).Errorf(c, "Failed to publish archival task.")
+		return nil, err
+	}
+
+	if err := di.Put(ls); err != nil {
+		log.WithError(err).Errorf(c, "Failed to update datastore.")
 		return nil, err
 	}
 

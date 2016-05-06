@@ -223,6 +223,10 @@ func (m registerStreamMutation) RollForward(c context.Context) ([]tumble.Mutatio
 		Path:       m.Path(),
 		Expiration: clock.Now(c).Add(m.archiveDelay),
 	}
+	log.Fields{
+		"archiveDelay": m.archiveDelay,
+		"deadline":     archiveExpiredMutation.Expiration,
+	}.Infof(c, "Scheduling expiration deadline mutation.")
 	aeParent, aeName := archiveExpiredMutation.TaskName(di)
 	err := tumble.PutNamedMutations(c, aeParent, map[string]tumble.Mutation{
 		aeName: &archiveExpiredMutation,
