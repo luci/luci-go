@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/middleware"
@@ -42,9 +43,16 @@ var (
 // Server is a pRPC server to serve RPC requests.
 // Zero value is valid.
 type Server struct {
-	// CustomAuthenticator, if true, disables the forced authentication set by
-	// RegisterDefaultAuth.
-	CustomAuthenticator bool
+	// Authenticator, if not nil, specifies a list of authentication methods to
+	// try when authenticating the request.
+	//
+	// If nil, default authentication set by RegisterDefaultAuth will be used.
+	//
+	// If it is an empty list, the authentication layer is completely skipped.
+	// Useful for tests, but should be used with great caution in production code.
+	//
+	// Always overrides authenticator already present in the context.
+	Authenticator auth.Authenticator
 
 	// AccessControl, if not nil, is a callback that is invoked per request to
 	// determine if permissive access control headers should be added to the
@@ -95,36 +103,48 @@ func (s *Server) RegisterService(desc *grpc.ServiceDesc, impl interface{}) {
 
 // authenticate forces authentication set by RegisterDefaultAuth.
 func (s *Server) authenticate(base middleware.Base) middleware.Base {
-	a := GetDefaultAuth()
+	a := s.Authenticator
 	if a == nil {
-		panic("prpc: CustomAuthenticator is false, but default authenticator was not registered. " +
-			"Forgot to import appengine/gaeauth/server package?")
+		a = GetDefaultAuth()
+		if a == nil {
+			panic("prpc: no custom Authenticator was provided and default authenticator was not registered. " +
+				"Forgot to import appengine/gaeauth/server package?")
+		}
+	}
+
+	if len(a) == 0 {
+		return base
 	}
 
 	return func(h middleware.Handler) httprouter.Handle {
 		return base(func(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 			c = auth.SetAuthenticator(c, a)
-			c, err := a.Authenticate(c, r)
-			if err != nil {
+			switch c, err := a.Authenticate(c, r); {
+			case errors.IsTransient(err):
+				res := errResponse(codes.Internal, http.StatusInternalServerError, escapeFmt(err.Error()))
+				res.write(c, w)
+			case err != nil:
 				res := errResponse(codes.Unauthenticated, http.StatusUnauthorized, escapeFmt(err.Error()))
 				res.write(c, w)
-				return
+			default:
+				h(c, w, r, p)
 			}
-			h(c, w, r, p)
 		})
 	}
 }
 
 // InstallHandlers installs HTTP handlers at /prpc/:service/:method.
+//
 // See https://godoc.org/github.com/luci/luci-go/common/prpc#hdr-Protocol
 // for pRPC protocol.
+//
+// The authenticator in 'base' is always replaced by pRPC specific one. For more
+// details about the authentication see Server.Authenticator doc.
 func (s *Server) InstallHandlers(r *httprouter.Router, base middleware.Base) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if !s.CustomAuthenticator {
-		base = s.authenticate(base)
-	}
+	base = s.authenticate(base)
 
 	r.POST("/prpc/:service/:method", base(s.handlePOST))
 	r.OPTIONS("/prpc/:service/:method", base(s.handleOPTIONS))

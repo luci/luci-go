@@ -14,6 +14,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	prpcCommon "github.com/luci/luci-go/common/prpc"
+	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/prpc"
 	"golang.org/x/net/context"
@@ -38,7 +39,7 @@ func (s *Server) Start(c context.Context) {
 	// Clean up any active server.
 	s.Close()
 
-	s.CustomAuthenticator = true
+	s.Authenticator = auth.Authenticator{}
 	mwb := s.Base
 	if mwb == nil {
 		mwb = middleware.TestingBase

@@ -18,6 +18,7 @@ import (
 
 	"github.com/luci/luci-go/common/prpc"
 	prpccommon "github.com/luci/luci-go/common/prpc"
+	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/middleware"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -50,7 +51,7 @@ func TestServer(t *testing.T) {
 		var server Server
 
 		// auth.Authenticator.Authenticate is not designed to be called in tests.
-		server.CustomAuthenticator = true
+		server.Authenticator = auth.Authenticator{}
 
 		RegisterGreeterServer(&server, &greeterService{})
 

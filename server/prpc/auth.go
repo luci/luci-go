@@ -16,7 +16,7 @@ var defaultAuth = struct {
 }{}
 
 // RegisterDefaultAuth sets a default authenticator that is used unless
-// Server.CustomAuthenticator is true.
+// Server.Authenticator is provided.
 // Panics if a is nil or called twice.
 func RegisterDefaultAuth(a auth.Authenticator) {
 	if a == nil {

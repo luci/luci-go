@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/luci/luci-go/common/testing/prpctest"
+	"github.com/luci/luci-go/server/auth"
 	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -30,7 +31,7 @@ func TestEndToEnd(t *testing.T) {
 
 		// Create a client/server for Greet service.
 		ts := prpctest.Server{}
-		ts.CustomAuthenticator = true
+		ts.Authenticator = auth.Authenticator{}
 		RegisterHelloServer(&ts, &svc)
 		ts.Start(c)
 		defer ts.Close()
