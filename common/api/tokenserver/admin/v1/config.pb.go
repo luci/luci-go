@@ -89,6 +89,8 @@ type DomainConfig struct {
 	// For example, if vm123-m4.golo.chromium.org is requesting a token, and there
 	// is DomainConfig with domain == 'golo.chromium.org' and location == 'golo',
 	// the resulting machine_id will be 'vm123-m4@golo'.
+	//
+	// If empty, machine tokens are not allowed.
 	Location string `protobuf:"bytes,6,opt,name=location" json:"location,omitempty"`
 }
 

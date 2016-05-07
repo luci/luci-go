@@ -27,10 +27,12 @@ import (
 	"github.com/luci/luci-go/server/prpc"
 
 	"github.com/luci/luci-go/common/api/tokenserver/admin/v1"
+	"github.com/luci/luci-go/common/api/tokenserver/identity/v1"
 	"github.com/luci/luci-go/common/api/tokenserver/minter/v1"
 
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/services/admin/certauthorities"
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/services/admin/serviceaccounts"
+	"github.com/luci/luci-go/appengine/cmd/tokenserver/services/identity/identityfetcher"
 	"github.com/luci/luci-go/appengine/cmd/tokenserver/services/minter/tokenminter"
 )
 
@@ -52,6 +54,9 @@ var (
 		Service: serviceAccountsServerWithoutAuth,
 		Prelude: adminPrelude("admin.ServiceAccounts"),
 	}
+
+	// identityFetcher implements identity.IdentityFetcher RPC interface.
+	identityFetcher = &identityfetcher.Server{}
 
 	// tokenMinterServer implements minter.TokenMinter RPC interface.
 	//
@@ -98,6 +103,7 @@ func init() {
 	var api prpc.Server
 	admin.RegisterCertificateAuthoritiesServer(&api, caServerWithAuth)
 	admin.RegisterServiceAccountsServer(&api, serviceAccountsServerWithAuth)
+	identity.RegisterIdentityFetcherServer(&api, identityFetcher)
 	minter.RegisterTokenMinterServer(&api, tokenMinterServerWithoutAuth) // auth inside
 	discovery.Enable(&api)
 	api.InstallHandlers(router, base)
