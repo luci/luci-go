@@ -208,8 +208,9 @@ func mainImpl(args []string) int {
 
 	e := executor.Executor{
 		Options: annotee.Options{
-			Client:                 client,
+			Base:                   types.StreamName(a.nameBase),
 			LinkGenerator:          linkGen,
+			Client:                 client,
 			MetadataUpdateInterval: time.Duration(a.annotationInterval),
 		},
 
