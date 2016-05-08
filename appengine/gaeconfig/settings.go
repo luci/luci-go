@@ -13,7 +13,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/settings"
 )
 
@@ -137,18 +136,7 @@ func (settingsUIPage) WriteSettings(c context.Context, values map[string]string,
 		return err
 	}
 
-	// Skip update if not really changed.
-	existing := DefaultSettings()
-	err = settings.GetUncached(c, settingsKey, &existing)
-	if err != nil && err != settings.ErrNoSettings {
-		return err
-	}
-	if existing == modified {
-		return nil
-	}
-
-	logging.Warningf(c, "Config settings changed from %q to %q by %q", existing, modified, who)
-	return settings.Set(c, settingsKey, &modified, who, why)
+	return settings.SetIfChanged(c, settingsKey, &modified, who, why)
 }
 
 func init() {

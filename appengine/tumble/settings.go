@@ -179,7 +179,7 @@ func (settingsUIPage) WriteSettings(c context.Context, values map[string]string,
 	cfg.DelayedMutations = values["DelayedMutations"] == settingEnabled
 	cfg.Namespaced = values["Namespaced"] == settingEnabled
 
-	return settings.Set(c, baseName, &cfg, who, why)
+	return settings.SetIfChanged(c, baseName, &cfg, who, why)
 }
 
 func intValidator(positive bool) func(string) error {

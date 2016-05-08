@@ -58,3 +58,17 @@ func Set(c context.Context, key string, value interface{}, who, why string) erro
 	}
 	return ErrNoSettings
 }
+
+// SetIfChanged is like Set, but fetches an existing value and compares it to
+// a new one before changing it.
+//
+// Avoids generating new revisions of settings if no changes are actually
+// made. Also logs who is making the change.
+//
+// Returns ErrNoSettings if context doesn't have Settings implementation.
+func SetIfChanged(c context.Context, key string, value interface{}, who, why string) error {
+	if s := GetSettings(c); s != nil {
+		return s.SetIfChanged(c, key, value, who, why)
+	}
+	return ErrNoSettings
+}

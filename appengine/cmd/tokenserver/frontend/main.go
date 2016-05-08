@@ -21,6 +21,7 @@ import (
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
+	"github.com/luci/luci-go/appengine/tsmon"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/discovery"
@@ -80,6 +81,10 @@ func adminPrelude(serviceName string) func(context.Context, string, proto.Messag
 }
 
 func init() {
+	// TODO(vadimsh): Enable tsmon when it is ready. For now just force import of
+	// the tsmon module to execute its init().
+	tsmon.Middleware(nil)
+
 	router := httprouter.New()
 	base := gaemiddleware.BaseProd
 

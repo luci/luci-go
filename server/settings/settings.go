@@ -21,6 +21,7 @@ import (
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/lazyslot"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
 )
 
@@ -186,4 +187,35 @@ func (s *Settings) Set(c context.Context, key string, value interface{}, who, wh
 		return err
 	}
 	return s.storage.UpdateSetting(c, key, json.RawMessage(blob), who, why)
+}
+
+// SetIfChanged is like Set, but fetches an existing value and compares it to
+// a new one before changing it.
+//
+// Avoids generating new revisions of settings if no changes are actually
+// made. Also logs who is making the change.
+func (s *Settings) SetIfChanged(c context.Context, key string, value interface{}, who, why string) error {
+	// 'value' must be a pointer to a struct. Construct a zero value of this
+	// kind of struct.
+	typ := reflect.TypeOf(value)
+	if typ.Kind() != reflect.Ptr || typ.Elem().Kind() != reflect.Struct {
+		return ErrBadType
+	}
+	existing := reflect.New(typ.Elem()).Interface()
+
+	// Fetch existing settings and compare.
+	switch err := s.GetUncached(c, key, existing); {
+	case err != nil && err != ErrNoSettings:
+		return err
+	case reflect.DeepEqual(existing, value):
+		return nil
+	}
+
+	// Log the change. Ignore JSON marshaling errors, they are not essential
+	// (and must not happen anyway).
+	existingJSON, _ := json.Marshal(existing)
+	modifiedJSON, _ := json.Marshal(value)
+	logging.Warningf(c, "Settings %q changed from %s to %s by %q", key, existingJSON, modifiedJSON, who)
+
+	return s.Set(c, key, value, who, why)
 }

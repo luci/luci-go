@@ -5,7 +5,6 @@
 package gaemiddleware
 
 import (
-	"errors"
 	"fmt"
 
 	"golang.org/x/net/context"
@@ -18,30 +17,6 @@ import (
 // settingsKey is key for global GAE settings (described by gaeSettings struct)
 // in the settings store. See github.com/luci/luci-go/server/settings.
 const settingsKey = "gae"
-
-// yesOrNo is bool that serializes to 'yes' or 'no'.
-type yesOrNo bool
-
-// String returns "yes" or "no".
-func (yn yesOrNo) String() string {
-	if yn {
-		return "yes"
-	}
-	return "no"
-}
-
-// Set changes values or yesOrNo.
-func (yn *yesOrNo) Set(v string) error {
-	switch v {
-	case "yes":
-		*yn = true
-	case "no":
-		*yn = false
-	default:
-		return errors.New("expecting 'yes' or 'no'")
-	}
-	return nil
-}
 
 // gaeSettings contain global Appengine related tweaks. They are stored in app
 // settings store (based on the datastore, see appengine/gaesettings module)
@@ -56,7 +31,7 @@ type gaeSettings struct {
 
 	// DisableDSCache is true to disable dscache (the memcache layer on top of
 	// the datastore).
-	DisableDSCache yesOrNo `json:"disable_dscache"`
+	DisableDSCache settings.YesOrNo `json:"disable_dscache"`
 }
 
 // fetchCachedSettings fetches gaeSettings from the settings store or panics.
@@ -115,25 +90,16 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 			Help: `Log entries below this level will be <b>completely</b> ignored.
 They won't even reach GAE logging service.`,
 		},
-		{
+		settings.YesOrNoField(settings.UIField{
 			ID:    "DisableDSCache",
 			Title: "Disable datastore cache",
-			Type:  settings.UIFieldChoice,
-			ChoiceVariants: []string{
-				"yes",
-				"no",
-			},
-			Validator: func(v string) error {
-				var x yesOrNo
-				return x.Set(v)
-			},
 			Help: `Usually caching is a good thing and it can be left enabled. You may
 want to disable it if memcache is having issues that prevent entity writes to
 succeed. See <a href="https://godoc.org/github.com/luci/gae/filter/dscache">
 dscache documentation</a> for more information. Toggling this on and off has
 consequences: <b>memcache is completely flushed</b>. Do not toy with this
 setting.`,
-		},
+		}),
 	}, nil
 }
 
@@ -158,19 +124,12 @@ func (settingsUIPage) WriteSettings(c context.Context, values map[string]string,
 		return err
 	}
 
-	// Skip update if not really changed.
+	// When switching dscache back on, wipe memcache.
 	existing := gaeSettings{}
 	err := settings.GetUncached(c, settingsKey, &existing)
 	if err != nil && err != settings.ErrNoSettings {
 		return err
 	}
-	if existing == modified {
-		return nil
-	}
-
-	logging.Warningf(c, "GAE settings changed from %q to %q by %q", existing, modified, who)
-
-	// When switching dscache back on, wipe memcache.
 	if existing.DisableDSCache && !modified.DisableDSCache {
 		logging.Warningf(c, "DSCache was reenabled, wiping memcache")
 		if err := memcache.Get(c).Flush(); err != nil {
@@ -178,7 +137,7 @@ func (settingsUIPage) WriteSettings(c context.Context, values map[string]string,
 		}
 	}
 
-	return settings.Set(c, settingsKey, &modified, who, why)
+	return settings.SetIfChanged(c, settingsKey, &modified, who, why)
 }
 
 func init() {

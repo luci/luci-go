@@ -10,7 +10,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/settings"
 )
 
@@ -45,14 +44,12 @@ type Settings struct {
 	RedirectURI string `json:"redirect_uri"`
 }
 
-// fetchCachedSettings fetches OpenID configuration from the settings store
-// or puts a default one there.
+// fetchCachedSettings fetches OpenID configuration from the settings store.
 func fetchCachedSettings(c context.Context) (*Settings, error) {
 	cfg := &Settings{}
 	if err := settings.Get(c, SettingsKey, cfg); err != settings.ErrNoSettings {
 		return cfg, err
 	}
-	settings.Set(c, SettingsKey, cfg, "self", "default OpenID settings")
 	return cfg, nil
 }
 
@@ -128,25 +125,12 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 }
 
 func (settingsUIPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
-	modified := Settings{
+	return settings.SetIfChanged(c, SettingsKey, &Settings{
 		DiscoveryURL: values["DiscoveryURL"],
 		ClientID:     values["ClientID"],
 		ClientSecret: values["ClientSecret"],
 		RedirectURI:  values["RedirectURI"],
-	}
-
-	// Skip update if not really changed.
-	existing := Settings{}
-	err := settings.GetUncached(c, SettingsKey, &existing)
-	if err != nil && err != settings.ErrNoSettings {
-		return err
-	}
-	if existing == modified {
-		return nil
-	}
-
-	logging.Warningf(c, "OpenID settings changed from %q to %q by %q", existing, modified, who)
-	return settings.Set(c, SettingsKey, &modified, who, why)
+	}, who, why)
 }
 
 func init() {
