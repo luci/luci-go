@@ -287,9 +287,9 @@ func TestLuciMachineToken(t *testing.T) {
 					},
 				}, nil
 			},
-			signer:          signingtest.NewSigner(0),
-			isAdmin:         func(context.Context) (bool, error) { return true, nil },
-			serviceHostname: func(context.Context) string { return "testing.host" },
+			signer:               signingtest.NewSigner(0),
+			isAdmin:              func(context.Context) (bool, error) { return true, nil },
+			signerServiceAccount: func(context.Context) (string, error) { return "signer@testing.host", nil },
 		}
 
 		// Put CA and CRL config in the datastore.
@@ -313,10 +313,10 @@ func TestLuciMachineToken(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			tok := resp.TokenResponse.GetLuciMachineToken().MachineToken
-			So(tok, ShouldEqual, `CkcKKWx1Y2ktdG9rZW4tc2VydmVyLXRlc3QtMUB0ZXN0aW5nL`+
-				`WxvY2F0aW9uEgx0ZXN0aW5nLmhvc3QY8pHBpgUgkBwoezCAIBIoZjlkYTVhMGQwOTAzY`+
-				`mRhNThjNmQ2NjRlMzg1MmE4OWMyODNkN2ZlORpApdQesnaqr1rrulttm48nRys0qCPaT`+
-				`gGov9zrDVPnk19sQIx84ULKec4XWPp+QBbgussIyUhNiy+rCT6nMQvpBQ`)
+			So(tok, ShouldEqual, `Ck4KKWx1Y2ktdG9rZW4tc2VydmVyLXRlc3QtMUB0ZXN0aW5nL`+
+				`WxvY2F0aW9uEhNzaWduZXJAdGVzdGluZy5ob3N0GPKRwaYFIJAcKHswgCASKGY5ZGE1YT`+
+				`BkMDkwM2JkYTU4YzZkNjY0ZTM4NTJhODljMjgzZDdmZTkaQKLTWbvFloXRbXwJ8LXydsz`+
+				`05btYorL6T3Npoogw30AfIqNi/TXnaJ5h8XjamY2lVmP225RaFv/RvDjcF9JdxqQ`)
 
 			// Works!
 			reply, err := server.InspectMachineToken(ctx, &minter.InspectMachineTokenRequest{
@@ -334,7 +334,7 @@ func TestLuciMachineToken(t *testing.T) {
 				TokenType: &minter.InspectMachineTokenResponse_LuciMachineToken{
 					LuciMachineToken: &tokenserver.MachineTokenBody{
 						MachineId: "luci-token-server-test-1@testing-location",
-						IssuedBy:  "testing.host",
+						IssuedBy:  "signer@testing.host",
 						IssuedAt:  1422936306,
 						Lifetime:  3600,
 						CaId:      123,
@@ -359,7 +359,7 @@ func TestLuciMachineToken(t *testing.T) {
 				TokenType: &minter.InspectMachineTokenResponse_LuciMachineToken{
 					LuciMachineToken: &tokenserver.MachineTokenBody{
 						MachineId: "luci-token-server-test-1@testing-location",
-						IssuedBy:  "testing.host",
+						IssuedBy:  "signer@testing.host",
 						IssuedAt:  1422936306,
 						Lifetime:  3600,
 						CaId:      123,
@@ -386,7 +386,7 @@ func TestLuciMachineToken(t *testing.T) {
 				TokenType: &minter.InspectMachineTokenResponse_LuciMachineToken{
 					LuciMachineToken: &tokenserver.MachineTokenBody{
 						MachineId: "luci-token-server-test-1@testing-location",
-						IssuedBy:  "testing.host",
+						IssuedBy:  "signer@testing.host",
 						IssuedAt:  1422936306,
 						Lifetime:  3600,
 						CaId:      123,
@@ -421,7 +421,7 @@ func TestLuciMachineToken(t *testing.T) {
 				TokenType: &minter.InspectMachineTokenResponse_LuciMachineToken{
 					LuciMachineToken: &tokenserver.MachineTokenBody{
 						MachineId: "luci-token-server-test-1@testing-location",
-						IssuedBy:  "testing.host",
+						IssuedBy:  "signer@testing.host",
 						IssuedAt:  1422936306,
 						Lifetime:  3600,
 						CaId:      123,
@@ -436,8 +436,8 @@ func TestLuciMachineToken(t *testing.T) {
 
 ////
 
-func panicingServer() Server {
-	return Server{
+func panicingServer() *Server {
+	return &Server{
 		mintOAuthToken: func(_ context.Context, _ serviceaccounts.MintAccessTokenParams) (*tokenserver.ServiceAccount, *minter.OAuth2AccessToken, error) {
 			panic("must not be called")
 		},

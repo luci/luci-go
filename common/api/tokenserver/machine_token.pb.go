@@ -49,7 +49,10 @@ type MachineTokenBody struct {
 	//
 	// For example: vm123-m4@golo.
 	MachineId string `protobuf:"bytes,1,opt,name=machine_id,json=machineId" json:"machine_id,omitempty"`
-	// Hostname of a token server that generated this token.
+	// Service account email that signed this token.
+	//
+	// When verifying the token backends will check that the issuer is in
+	// "auth-token-servers" group.
 	IssuedBy string `protobuf:"bytes,2,opt,name=issued_by,json=issuedBy" json:"issued_by,omitempty"`
 	// Unix timestamp in seconds when this token was issued. Required.
 	IssuedAt uint64 `protobuf:"varint,3,opt,name=issued_at,json=issuedAt" json:"issued_at,omitempty"`

@@ -38,7 +38,7 @@ func TestMintParamsValidation(t *testing.T) {
 					},
 				},
 			},
-			ServiceHostname: "token-server.example.com",
+			SignerServiceAccount: "token-server@example.com",
 		}
 
 		Convey("good params", func() {
@@ -102,21 +102,21 @@ func TestMint(t *testing.T) {
 						},
 					},
 				},
-				ServiceHostname: "token-server.example.com",
-				Signer:          fakeSigner{},
+				SignerServiceAccount: "token-server@example.com",
+				Signer:               fakeSigner{},
 			}
 			body, token, err := Mint(ctx, params)
 			So(err, ShouldBeNil)
 			So(body, ShouldResemble, &tokenserver.MachineTokenBody{
 				MachineId: "host@test-location",
-				IssuedBy:  "token-server.example.com",
+				IssuedBy:  "token-server@example.com",
 				IssuedAt:  1422936306,
 				Lifetime:  3600,
 				CaId:      0,
 				CertSn:    12345,
 			})
 			So(token, ShouldEqual, "CjoKEmhvc3RAdGVzdC1sb2NhdGlvbhIYdG9rZW4tc2VydmV"+
-				"yLmV4YW1wbGUuY29tGPKRwaYFIJAcMLlgEgZrZXlfaWQaCXNpZ25hdHVyZQ")
+				"yQGV4YW1wbGUuY29tGPKRwaYFIJAcMLlgEgZrZXlfaWQaCXNpZ25hdHVyZQ")
 		})
 	})
 }

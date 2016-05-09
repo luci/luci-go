@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -62,10 +63,16 @@ type Server struct {
 	// Mocked in tests. In prod it is 'auth.IsMember'.
 	isAdmin func(context.Context) (bool, error)
 
-	// serviceHostname returns default hostname of the token server.
+	// signerServiceAccount returns service account email of the token server.
 	//
-	// Mocked in tests. In prod it is info.Get().DefaultVersionHostname().
-	serviceHostname func(context.Context) string
+	// Mocked in tests. In prod it is info.Get().ServiceAccount().
+	signerServiceAccount func(context.Context) (string, error)
+
+	// serviceAccountCache is cached return value of signerServiceAccount.
+	signerServiceAccountCache string
+
+	// signerServiceAccountCacheLock protects access to signerServiceAccountCache.
+	signerServiceAccountCacheLock sync.Mutex
 }
 
 // NewServer returns Server configured for real production usage.
@@ -77,8 +84,8 @@ func NewServer(sa *serviceaccounts.Server) *Server {
 		isAdmin: func(c context.Context) (bool, error) {
 			return auth.IsMember(c, "administrators")
 		},
-		serviceHostname: func(c context.Context) string {
-			return info.Get(c).DefaultVersionHostname()
+		signerServiceAccount: func(c context.Context) (string, error) {
+			return info.Get(c).ServiceAccount()
 		},
 	}
 }
@@ -220,14 +227,31 @@ func (s *Server) mintGoogleOAuth2AccessToken(c context.Context, args mintTokenAr
 	}
 }
 
+func (s *Server) cachedSignerServiceAccount(c context.Context) (string, error) {
+	// We don't use sync.Once here because if signerServiceAccount() returns an
+	// error there's no way to "undo" sync.Once.Do.
+	s.signerServiceAccountCacheLock.Lock()
+	defer s.signerServiceAccountCacheLock.Unlock()
+	var err error
+	if s.signerServiceAccountCache == "" {
+		s.signerServiceAccountCache, err = s.signerServiceAccount(c)
+	}
+	return s.signerServiceAccountCache, err
+}
+
 func (s *Server) mintLuciMachineToken(c context.Context, args mintTokenArgs) (*minter.MintMachineTokenResponse, error) {
+	serviceAccount, err := s.cachedSignerServiceAccount(c)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "can't grab own service account email - %s", err)
+	}
+
 	// Validate FQDN and whether it is allowed by config.
 	params := machinetoken.MintParams{
-		FQDN:            strings.ToLower(args.Cert.Subject.CommonName),
-		Cert:            args.Cert,
-		Config:          args.Config,
-		ServiceHostname: s.serviceHostname(c),
-		Signer:          s.signer,
+		FQDN:                 strings.ToLower(args.Cert.Subject.CommonName),
+		Cert:                 args.Cert,
+		Config:               args.Config,
+		SignerServiceAccount: serviceAccount,
+		Signer:               s.signer,
 	}
 	if err := params.Validate(); err != nil {
 		return mintingErrorResponse(minter.ErrorCode_BAD_TOKEN_ARGUMENTS, "%s", err)

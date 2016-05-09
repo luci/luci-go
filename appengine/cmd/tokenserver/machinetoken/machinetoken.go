@@ -45,10 +45,12 @@ type MintParams struct {
 	// CA configuration.
 	Config *admin.CertificateAuthorityConfig
 
-	// ServiceHostname is hostname of the token server itself.
+	// SignerServiceAccount is GAE service account email of the token server.
 	//
-	// It will become a part of machine_id field (embedded in the token).
-	ServiceHostname string
+	// It will be put into the token (as issued_by field). Token consumers will
+	// use it to fetch public keys from Google backends to verify the token
+	// signature.
+	SignerServiceAccount string
 
 	// Signer produces RSA-SHA256 signatures using a token server key.
 	//
@@ -122,7 +124,7 @@ func Mint(c context.Context, params MintParams) (*tokenserver.MachineTokenBody, 
 
 	body := tokenserver.MachineTokenBody{
 		MachineId: host + "@" + cfg.Location,
-		IssuedBy:  params.ServiceHostname,
+		IssuedBy:  params.SignerServiceAccount,
 		IssuedAt:  uint64(clock.Now(c).Unix()),
 		Lifetime:  uint64(cfg.MachineTokenLifetime),
 		CaId:      params.Config.UniqueId,
