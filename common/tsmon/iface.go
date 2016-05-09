@@ -68,28 +68,7 @@ func Unregister(c context.Context, m types.Metric) {
 // SetStore changes the global metric store.  All metrics that were registered
 // with the old store will be re-registered on the new store.
 func SetStore(c context.Context, s store.Store) {
-	state := GetState(c)
-	oldStore := state.S
-	if s == oldStore {
-		return
-	}
-
-	state.RegisteredMetricsLock.RLock()
-	defer state.RegisteredMetricsLock.RUnlock()
-
-	// Register metrics on the new store.
-	for _, m := range state.RegisteredMetrics {
-		s.Register(m)
-	}
-
-	state.S = s
-
-	// Unregister metrics from the old store.
-	if oldStore != nil {
-		for _, m := range state.RegisteredMetrics {
-			oldStore.Unregister(m)
-		}
-	}
+	GetState(c).SetStore(s)
 }
 
 // InitializeFromFlags configures the tsmon library from flag values.
@@ -147,7 +126,7 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 func Initialize(c context.Context, m monitor.Monitor, s store.Store) {
 	state := GetState(c)
 	state.M = m
-	SetStore(c, s)
+	state.SetStore(s)
 }
 
 // Shutdown gracefully terminates the tsmon by doing the final flush and
@@ -177,12 +156,7 @@ func Shutdown(c context.Context) {
 
 // ResetCumulativeMetrics resets only cumulative metrics.
 func ResetCumulativeMetrics(c context.Context) {
-	state := GetState(c)
-	for _, m := range state.RegisteredMetrics {
-		if m.Info().ValueType.IsCumulative() {
-			state.S.Reset(c, m)
-		}
-	}
+	GetState(c).ResetCumulativeMetrics(c)
 }
 
 // initMonitor examines flags and config and initializes a monitor.

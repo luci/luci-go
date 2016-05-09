@@ -5,10 +5,12 @@
 package tsmon
 
 import (
+	"golang.org/x/net/context"
+
 	"github.com/luci/gae/service/module"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/metric"
-	"golang.org/x/net/context"
 )
 
 var (
@@ -28,5 +30,5 @@ func standardMetricsCallback(c context.Context) {
 }
 
 func init() {
-	RegisterGlobalCallback(standardMetricsCallback, defaultVersion)
+	tsmon.RegisterGlobalCallback(standardMetricsCallback, defaultVersion)
 }

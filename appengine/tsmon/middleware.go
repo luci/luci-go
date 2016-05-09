@@ -2,6 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// Package tsmon adapts common/tsmon library to GAE environment.
+//
+// It configures tsmon state with a monitor and store suitable for GAE
+// environment and controls when metric flushes happen.
 package tsmon
 
 import (
@@ -13,7 +17,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/julienschmidt/httprouter"
-	"github.com/luci/gae/service/datastore"
+	"golang.org/x/net/context"
+
 	"github.com/luci/gae/service/info"
 	gaeauth "github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/common/clock"
@@ -24,38 +29,247 @@ import (
 	"github.com/luci/luci-go/common/tsmon/store"
 	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/server/middleware"
-	"golang.org/x/net/context"
 )
 
-var (
-	lastFlushed = struct {
-		time.Time
-		sync.Mutex
-	}{}
-)
+// State holds the configuration of the tsmon library for GAE.
+//
+// Define it as a global variable and inject it in the request contexts using
+// State.Middleware().
+//
+// It will initialize itself from the tsmon state in the passed context on
+// a first use, mutating it along the way. Assumes caller is consistently using
+// contexts configured with exact same tsmon state (in a vast majority of cases
+// it would be global tsmon state that corresponds to context.Background, but
+// unit tests may provide its own state).
+//
+// Will panic if it detects that caller has changed tsmon state in the context
+// between the requests.
+type State struct {
+	lock sync.RWMutex
+
+	state        *tsmon.State
+	lastSettings tsmonSettings
+
+	flushingNow bool
+	lastFlushed time.Time
+
+	// testingMonitor is mocked monitor used in unit tests.
+	testingMonitor monitor.Monitor
+	// testingSettings if not nil are used in unit tests.
+	testingSettings *tsmonSettings
+}
 
 // Middleware returns a middleware that must be inserted into the chain to
 // enable tsmon metrics to be sent on App Engine.
-func Middleware(h middleware.Handler) middleware.Handler {
+func (s *State) Middleware(h middleware.Handler) middleware.Handler {
 	return func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		if store.IsNilStore(tsmon.GetState(c).S) {
-			if err := initialize(c); err != nil {
-				logging.Errorf(c, "Failed to initialize tsmon: %s", err)
-				// Don't fail the request.
-			}
-		}
+		state, settings := s.checkSettings(c)
 		h(c, rw, r, p)
-		flushIfNeeded(c)
+		if settings.Enabled {
+			s.flushIfNeeded(c, state, settings)
+		}
 	}
 }
 
-func initialize(c context.Context) error {
-	var mon monitor.Monitor
+// checkSettings fetches tsmon settings and initializes, reinitializes or
+// deinitializes tsmon, as needed.
+//
+// Returns current tsmon state and settings. Panics if the context is using
+// unexpected tsmon state.
+func (s *State) checkSettings(c context.Context) (*tsmon.State, *tsmonSettings) {
+	state := tsmon.GetState(c)
+
+	var settings tsmonSettings
+	if s.testingSettings != nil {
+		settings = *s.testingSettings
+	} else {
+		settings = fetchCachedSettings(c)
+	}
+
+	// Read the values used when handling previous request. In most cases they
+	// are identical to current ones and we can skip grabbing a heavier write
+	// lock.
+	s.lock.RLock()
+	if s.state == state && s.lastSettings == settings {
+		s.lock.RUnlock()
+		return state, &settings
+	}
+	s.lock.RUnlock()
+
+	// 'settings' or 'state' has changed. Reinitialize tsmon as needed under
+	// the write lock.
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	// First call to 'checkSettings' ever?
+	if s.state == nil {
+		s.state = state
+		s.state.M = monitor.NewNilMonitor() // doFlush uses its own monitor
+	} else if state != s.state {
+		panic("tsmon state in the context was unexpectedly changed between requests")
+	}
+
+	switch {
+	case !bool(s.lastSettings.Enabled) && bool(settings.Enabled):
+		s.enableTsMon(c)
+	case bool(s.lastSettings.Enabled) && !bool(settings.Enabled):
+		s.disableTsMon(c)
+	}
+	s.lastSettings = settings
+
+	return state, &settings
+}
+
+// enableTsMon puts in-memory metrics store in the context's tsmon state.
+//
+// Called with 's.lock' locked.
+func (s *State) enableTsMon(c context.Context) {
 	i := info.Get(c)
-	if i.IsDevAppServer() {
+	s.state.SetStore(store.NewInMemory(&target.Task{
+		DataCenter:  proto.String(targetDataCenter),
+		ServiceName: proto.String(i.AppID()),
+		JobName:     proto.String(i.ModuleName()),
+		HostName:    proto.String(strings.SplitN(i.VersionID(), ".", 2)[0]),
+		TaskNum:     proto.Int32(-1),
+	}))
+
+	// Request the flush to be executed ASAP, so it registers (or updates)
+	// 'Instance' entity in the datastore.
+	s.lastFlushed = time.Time{}
+}
+
+// disableTsMon puts nil metrics store in the context's tsmon state.
+//
+// Called with 's.lock' locked.
+func (s *State) disableTsMon(c context.Context) {
+	s.state.SetStore(store.NewNilStore())
+}
+
+// flushIfNeeded periodically flushes the accumulated metrics.
+//
+// It skips the flush if some other goroutine is already flushing. Logs errors.
+func (s *State) flushIfNeeded(c context.Context, state *tsmon.State, settings *tsmonSettings) {
+	now := clock.Now(c)
+	flushTime := now.Add(-time.Duration(settings.FlushIntervalSec) * time.Second)
+
+	// Most of the time the flush is not needed and we can get away with
+	// lightweight RLock.
+	s.lock.RLock()
+	skip := s.flushingNow || s.lastFlushed.After(flushTime)
+	s.lock.RUnlock()
+	if skip {
+		return
+	}
+
+	// Need to flush. Update flushingNow. Redo the check under write lock.
+	s.lock.Lock()
+	skip = s.flushingNow || s.lastFlushed.After(flushTime)
+	if !skip {
+		s.flushingNow = true
+	}
+	s.lock.Unlock()
+	if skip {
+		return
+	}
+
+	// Unset 'flushingNow' no matter what (even on panics). Update 'lastFlushed'
+	// only on successful flush. Unsuccessful flush thus will be retried ASAP.
+	success := false
+	defer func() {
+		s.lock.Lock()
+		s.flushingNow = false
+		if success {
+			s.lastFlushed = now
+		}
+		s.lock.Unlock()
+	}()
+
+	// The flush must be fast. Limit it with by some timeout.
+	c, _ = clock.WithTimeout(c, flushTimeout)
+	if err := s.updateInstanceEntityAndFlush(c, state, settings); err != nil {
+		logging.Errorf(c, "Failed to flush tsmon metrics: %s", err)
+	} else {
+		success = true
+	}
+}
+
+// updateInstanceEntityAndFlush waits for instance to get assigned a task number and
+// flushes the metrics.
+func (s *State) updateInstanceEntityAndFlush(c context.Context, state *tsmon.State, settings *tsmonSettings) error {
+	c = info.Get(c).MustNamespace(instanceNamespace)
+
+	defTarget := state.S.DefaultTarget()
+	task, ok := defTarget.(*target.Task)
+	if !ok {
+		return fmt.Errorf("default tsmon target is not a Task (%T): %v", defTarget, defTarget)
+	}
+
+	now := clock.Now(c)
+
+	// Grab TaskNum assigned to the currently running instance. It is updated by
+	// a dedicated cron job, see housekeepingHandler in handler.go.
+	entity, err := getOrCreateInstanceEntity(c)
+	if err != nil {
+		return fmt.Errorf("failed to get instance entity - %s", err)
+	}
+
+	// Don't do the flush if we still haven't get a task number.
+	if entity.TaskNum < 0 {
+		if *task.TaskNum >= 0 {
+			// We used to have a task number but we don't any more (we were inactive
+			// for too long), so clear our state.
+			logging.Warningf(c, "Instance %s got purged from Datastore, but is still alive. "+
+				"Clearing cumulative metrics", info.Get(c).InstanceID())
+			state.ResetCumulativeMetrics(c)
+		}
+		task.TaskNum = proto.Int32(-1)
+		state.S.SetDefaultTarget(task)
+
+		// Start complaining if we haven't been given a task number after some time.
+		shouldHaveTaskNumBy := entity.LastUpdated.Add(instanceExpectedToHaveTaskNum)
+		if shouldHaveTaskNumBy.Before(now) {
+			logging.Warningf(c, "Instance %s is %s old with no task_num.",
+				info.Get(c).InstanceID(), now.Sub(shouldHaveTaskNumBy).String())
+		}
+
+		// Non-assigned TaskNum is expected situation, pretend the flush succeeded,
+		// so that next try happens after regular flush period, not right away.
+		return nil
+	}
+
+	task.TaskNum = proto.Int32(int32(entity.TaskNum))
+	state.S.SetDefaultTarget(task)
+
+	// Refresh 'entity.LastUpdated'. Ignore errors here since the flush is
+	// happening already even this operation fails.
+	putDone := make(chan struct{})
+	go func() {
+		defer close(putDone)
+		if err := refreshLastUpdatedTime(c, now); err != nil {
+			logging.Errorf(c, "Failed to update instance entity: %s", err)
+		}
+	}()
+
+	ret := s.doFlush(c, state, settings)
+
+	<-putDone
+	return ret
+}
+
+// doFlush actually sends the metrics to the monitor.
+func (s *State) doFlush(c context.Context, state *tsmon.State, settings *tsmonSettings) error {
+	var mon monitor.Monitor
+
+	if s.testingMonitor != nil {
+		mon = s.testingMonitor
+	} else if info.Get(c).IsDevAppServer() || settings.PubsubProject == "" || settings.PubsubTopic == "" {
 		mon = monitor.NewDebugMonitor("")
 	} else {
-		// Create an HTTP client with the default appengine service account.
+		topic := gcps.NewTopic(settings.PubsubProject, settings.PubsubTopic)
+		logging.Infof(c, "Sending metrics to %s", topic)
+
+		// Create an HTTP client with the default appengine service account. The
+		// client is bound to the context and inherits its deadline.
 		auth, err := gaeauth.Authenticator(c, gcps.PublisherScopes, nil)
 		if err != nil {
 			return err
@@ -65,98 +279,16 @@ func initialize(c context.Context) error {
 			return err
 		}
 
-		mon, err = monitor.NewPubsubMonitor(c, client, gcps.NewTopic(pubsubProject, pubsubTopic))
+		mon, err = monitor.NewPubsubMonitor(c, client, topic)
 		if err != nil {
 			return err
 		}
 	}
 
-	// Create the target.
-	tar := &target.Task{
-		DataCenter:  proto.String(targetDataCenter),
-		ServiceName: proto.String(i.AppID()),
-		JobName:     proto.String(i.ModuleName()),
-		HostName:    proto.String(strings.SplitN(i.VersionID(), ".", 2)[0]),
-		TaskNum:     proto.Int32(-1),
+	if err := state.Flush(c, mon); err != nil {
+		return err
 	}
 
-	tsmon.Initialize(c, mon, store.NewInMemory(tar))
+	state.ResetGlobalCallbackMetrics(c)
 	return nil
-}
-
-func flushIfNeeded(c context.Context) {
-	if !updateLastFlushed(c) {
-		return
-	}
-
-	if err := updateInstanceEntityAndFlush(c); err != nil {
-		logging.Errorf(c, "Failed to flush tsmon metrics: %s", err)
-	}
-}
-
-func updateLastFlushed(c context.Context) bool {
-	now := clock.Now(c)
-	minuteAgo := now.Add(-time.Minute)
-
-	lastFlushed.Lock()
-	defer lastFlushed.Unlock()
-
-	if lastFlushed.After(minuteAgo) {
-		return false
-	}
-	lastFlushed.Time = now // Don't hammer the datastore if task_num is not yet assigned.
-	return true
-}
-
-func updateInstanceEntityAndFlush(c context.Context) error {
-	c = info.Get(c).MustNamespace(instanceNamespace)
-
-	task, ok := tsmon.Store(c).DefaultTarget().(*target.Task)
-	if !ok {
-		// tsmon probably failed to initialize - just do nothing.
-		return fmt.Errorf("default tsmon target is not a Task: %v", tsmon.Store(c).DefaultTarget())
-	}
-
-	logger := logging.Get(c)
-	entity := getOrCreateInstanceEntity(c)
-	now := clock.Now(c)
-
-	if entity.TaskNum < 0 {
-		if *task.TaskNum >= 0 {
-			// We used to have a task number but we don't any more (we were inactive
-			// for too long), so clear our state.
-			logging.Warningf(c, "Instance %s got purged from Datastore, but is still alive. "+
-				"Clearing cumulative metrics", info.Get(c).InstanceID())
-			tsmon.ResetCumulativeMetrics(c)
-		}
-		task.TaskNum = proto.Int32(-1)
-		lastFlushed.Time = entity.LastUpdated
-
-		// Start complaining if we haven't been given a task number after some time.
-		shouldHaveTaskNumBy := entity.LastUpdated.Add(instanceExpectedToHaveTaskNum)
-		if shouldHaveTaskNumBy.Before(now) {
-			logger.Warningf("Instance %s is %s old with no task_num.",
-				info.Get(c).InstanceID(), now.Sub(shouldHaveTaskNumBy).String())
-		}
-		return nil
-	}
-
-	task.TaskNum = proto.Int32(int32(entity.TaskNum))
-	tsmon.Store(c).SetDefaultTarget(task)
-
-	// Update the instance entity and put it back in the datastore asynchronously.
-	entity.LastUpdated = now
-	putDone := make(chan struct{})
-	go func() {
-		defer close(putDone)
-		if err := datastore.Get(c).Put(entity); err != nil {
-			logger.Errorf("Failed to update instance entity: %s", err)
-		}
-	}()
-
-	ret := tsmon.Flush(c)
-	resetGlobalCallbackMetrics(c)
-
-	<-putDone
-	return ret
 }

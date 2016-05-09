@@ -8,23 +8,37 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	"golang.org/x/net/context"
+
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/parallel"
-	"golang.org/x/net/context"
+	"github.com/luci/luci-go/common/tsmon"
+	"github.com/luci/luci-go/server/middleware"
 )
 
-// HousekeepingHandler is an HTTP handler that should be run every minute by
+// InstallHandlers installs HTTP handlers for tsmon routes.
+func InstallHandlers(r *httprouter.Router, base middleware.Base) {
+	r.GET("/internal/cron/ts_mon/housekeeping", base(housekeepingHandler))
+}
+
+// housekeepingHandler is an HTTP handler that should be run every minute by
 // cron on App Engine.  It assigns task numbers to datastore entries, and runs
 // any global metric callbacks.
-func HousekeepingHandler(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func housekeepingHandler(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	if !info.Get(c).IsDevAppServer() && r.Header.Get("X-Appengine-Cron") != "true" {
+		rw.WriteHeader(http.StatusForbidden)
+		http.Error(rw, "request not made from cron", http.StatusForbidden)
+		return
+	}
+
 	if err := assignTaskNumbers(c); err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
 	}
 
-	runGlobalCallbacks(c)
+	tsmon.GetState(c).RunGlobalCallbacks(c)
 }
 
 // assignTaskNumbers does some housekeeping on the datastore entries for App

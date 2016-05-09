@@ -6,12 +6,21 @@ package tsmon
 
 import (
 	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/tsmon/types"
 )
 
 // Callback is a function that is run at metric collection time to set the
 // values of one or more metrics.  A callback can be registered with
 // RegisterCallback.
 type Callback func(ctx context.Context)
+
+// A GlobalCallback is a Callback with the list of metrics it affects, so those
+// metrics can be reset after they are flushed.
+type GlobalCallback struct {
+	Callback
+	Metrics []types.Metric
+}
 
 // RegisterCallback registers a callback function that will be run at metric
 // collection time to set the values of one or more metrics.  RegisterCallback
@@ -29,12 +38,30 @@ func RegisterCallbackIn(c context.Context, f Callback) {
 	state.Callbacks = append(state.Callbacks, f)
 }
 
-func runCallbacks(c context.Context) {
-	state := GetState(c)
-	state.CallbacksMutex.RLock()
-	defer state.CallbacksMutex.RUnlock()
+// RegisterGlobalCallback registers a callback function that will be run once
+// per minute on *one* instance of your application. It is supported primarily
+// on GAE.
+//
+// You must specify the list of metrics that your callback affects - these
+// metrics will be reset after flushing to ensure they are not sent by multiple
+// instances.
+//
+// RegisterGlobalCallback should be called from an init() function in your
+// module.
+func RegisterGlobalCallback(f Callback, metrics ...types.Metric) {
+	RegisterGlobalCallbackIn(context.Background(), f, metrics...)
+}
 
-	for _, f := range state.Callbacks {
-		f(c)
+// RegisterGlobalCallbackIn is like RegisterGlobalCallback but registers in a
+// given context.
+func RegisterGlobalCallbackIn(c context.Context, f Callback, metrics ...types.Metric) {
+	if len(metrics) == 0 {
+		panic("RegisterGlobalCallback called without any metrics")
 	}
+
+	state := GetState(c)
+	state.CallbacksMutex.Lock()
+	defer state.CallbacksMutex.Unlock()
+
+	state.GlobalCallbacks = append(state.GlobalCallbacks, GlobalCallback{f, metrics})
 }

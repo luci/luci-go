@@ -5,7 +5,6 @@
 package tsmon
 
 import (
-	"errors"
 	"time"
 
 	"golang.org/x/net/context"
@@ -14,52 +13,9 @@ import (
 	"github.com/luci/luci-go/common/logging"
 )
 
-func minInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 // Flush sends all the metrics that are registered in the application.
 func Flush(c context.Context) error {
-	mon := Monitor(c)
-	if mon == nil {
-		return errors.New("no tsmon Monitor is configured")
-	}
-
-	// Run any callbacks that have been registered to populate values in callback
-	// metrics.
-	runCallbacks(c)
-
-	cells := Store(c).GetAll(c)
-	if len(cells) == 0 {
-		return nil
-	}
-
-	logging.Debugf(c, "Starting tsmon flush: %d cells", len(cells))
-	defer logging.Debugf(c, "Tsmon flush finished")
-
-	// Split up the payload into chunks if there are too many cells.
-	chunkSize := mon.ChunkSize()
-	if chunkSize == 0 {
-		chunkSize = len(cells)
-	}
-
-	total := len(cells)
-	sent := 0
-	for len(cells) > 0 {
-		count := minInt(chunkSize, len(cells))
-		if err := mon.Send(c, cells[:count]); err != nil {
-			logging.Errorf(
-				c, "Sent %d cells out of %d, skipping the rest due to error - %s",
-				sent, total, err)
-			return err
-		}
-		cells = cells[count:]
-		sent += count
-	}
-	return nil
+	return GetState(c).Flush(c, nil)
 }
 
 // autoFlusher knows how to periodically call 'Flush'.

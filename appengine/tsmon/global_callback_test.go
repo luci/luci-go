@@ -10,69 +10,57 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/metric"
-	"github.com/luci/luci-go/common/tsmon/monitor"
-	"github.com/luci/luci-go/common/tsmon/store"
-	"github.com/luci/luci-go/common/tsmon/target"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func flushNowWithMiddleware(c context.Context, clock testclock.TestClock) {
+func flushNowWithMiddleware(c context.Context, state *State) {
 	ds := datastore.Get(c)
 
 	i := instance{
 		ID:          instanceEntityID(c),
 		TaskNum:     0,
-		LastUpdated: clock.Now().Add(-2 * time.Minute),
+		LastUpdated: clock.Now(c).Add(-2 * time.Minute).UTC(),
 	}
 	So(ds.Put(&i), ShouldBeNil)
 
-	lastFlushed.Time = clock.Now().Add(-2 * time.Minute)
+	state.lastFlushed = clock.Now(c).Add(-2 * time.Minute)
 
 	rec := httptest.NewRecorder()
-	Middleware(func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {})(c, rec, &http.Request{}, nil)
+	state.Middleware(func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {})(c, rec, &http.Request{}, nil)
 	So(rec.Code, ShouldEqual, http.StatusOK)
 }
 
 func TestGlobalCallbacks(t *testing.T) {
-	c := context.Background()
-
-	Convey("Register callback without metrics panics", t, func() {
-		So(func() {
-			RegisterGlobalCallbackIn(c, func(context.Context) {})
-		}, ShouldPanic)
-	})
-
 	Convey("Global callbacks", t, func() {
-		c, clock := buildGAETestContext()
-		s := store.NewInMemory(&target.Task{ServiceName: proto.String("default target")})
-		mon := &monitor.Fake{}
-		state := tsmon.GetState(c)
-		state.S = s
-		state.M = mon
+		c, _ := buildGAETestContext()
+		state, mon := buildTestState()
+
 		m := metric.NewCallbackStringIn(c, "foo", "")
 
-		RegisterGlobalCallbackIn(c, func(c context.Context) {
+		tsmon.RegisterGlobalCallbackIn(c, func(c context.Context) {
 			m.Set(c, "bar")
 		}, m)
 
 		Convey("are not run on flush", func() {
-			flushNowWithMiddleware(c, clock)
-			val, err := s.Get(c, m, time.Time{}, []interface{}{})
+			flushNowWithMiddleware(c, state)
+			val, err := tsmon.Store(c).Get(c, m, time.Time{}, []interface{}{})
 			So(err, ShouldBeNil)
 			So(val, ShouldBeNil)
 		})
 
 		Convey("but are run by housekeeping", func() {
+			state.checkSettings(c) // initialize the in-memory store
+			s := tsmon.Store(c)
+
 			rec := httptest.NewRecorder()
-			HousekeepingHandler(c, rec, &http.Request{}, nil)
+			housekeepingHandler(c, rec, &http.Request{}, nil)
 			So(rec.Code, ShouldEqual, http.StatusOK)
 
 			val, err := s.Get(c, m, time.Time{}, []interface{}{})
@@ -80,7 +68,7 @@ func TestGlobalCallbacks(t *testing.T) {
 			So(val, ShouldEqual, "bar")
 
 			Convey("and are reset on flush", func() {
-				flushNowWithMiddleware(c, clock)
+				flushNowWithMiddleware(c, state)
 
 				val, err = s.Get(c, m, time.Time{}, []interface{}{})
 				So(err, ShouldBeNil)

@@ -18,6 +18,7 @@ import (
 	"github.com/luci/luci-go/appengine/gaeauth/server/gaesigner"
 	"github.com/luci/luci-go/appengine/gaesecrets"
 	"github.com/luci/luci-go/appengine/gaesettings"
+	"github.com/luci/luci-go/appengine/tsmon"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/middleware"
@@ -35,6 +36,9 @@ var (
 	// globalAuthDBCache knows how to fetch auth.DB from datastore and keep it
 	// in local memory cache. Used in prod contexts only.
 	globalAuthDBCache = auth.NewDBCache(server.GetAuthDB)
+
+	// globalTsMonState holds state related to time series monitoring.
+	globalTsMonState = &tsmon.State{}
 )
 
 // WithProd installs the set of standard production AppEngine services:
@@ -68,17 +72,17 @@ func WithProd(c context.Context, req *http.Request) context.Context {
 	return c
 }
 
-// BaseProd adapts a middleware-style handler to a httprouter.Handle. It
-// installs services using InstallProd, installs a panic catcher if this
-// is not a devserver, then passes the context.
+// BaseProd adapts a middleware-style handler to a httprouter.Handle.
+//
+// It installs services using WithProd, installs a panic catcher if this
+// is not a devserver, and injects the monitoring middleware.
 func BaseProd(h middleware.Handler) httprouter.Handle {
 	return func(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		c := WithProd(context.Background(), r)
-
+		h = globalTsMonState.Middleware(h)
 		if !info.Get(c).IsDevAppServer() {
 			h = middleware.WithPanicCatcher(h)
 		}
-
 		h(c, rw, r, p)
 	}
 }

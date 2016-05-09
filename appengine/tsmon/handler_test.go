@@ -17,7 +17,7 @@ import (
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/common/tsmon"
-	"github.com/luci/luci-go/common/tsmon/store"
+	"github.com/luci/luci-go/common/tsmon/monitor"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -75,23 +75,34 @@ func buildGAETestContext() (context.Context, testclock.TestClock) {
 	})
 
 	c, _, _ = tsmon.WithFakes(c)
-	tsmon.GetState(c).S = store.NewNilStore() // So it's recreated by initialize
-
 	return c, clock
+}
+
+func buildTestState() (*State, *monitor.Fake) {
+	mon := &monitor.Fake{}
+	return &State{
+		testingMonitor: mon,
+		testingSettings: &tsmonSettings{
+			Enabled:          true,
+			FlushIntervalSec: 60,
+		},
+	}, mon
 }
 
 func TestHousekeepingHandler(t *testing.T) {
 	Convey("Assigns task numbers to unassigned instances", t, func() {
 		c, _ := buildGAETestContext()
 
-		i := getOrCreateInstanceEntity(c)
+		i, err := getOrCreateInstanceEntity(c)
+		So(err, ShouldBeNil)
 		So(i.TaskNum, ShouldEqual, -1)
 
 		rec := httptest.NewRecorder()
-		HousekeepingHandler(c, rec, &http.Request{}, nil)
+		housekeepingHandler(c, rec, &http.Request{}, nil)
 		So(rec.Code, ShouldEqual, http.StatusOK)
 
-		i = getOrCreateInstanceEntity(c)
+		i, err = getOrCreateInstanceEntity(c)
+		So(err, ShouldBeNil)
 		So(i.TaskNum, ShouldEqual, 0)
 	})
 
@@ -108,10 +119,11 @@ func TestHousekeepingHandler(t *testing.T) {
 		getOrCreateInstanceEntity(c)
 
 		rec := httptest.NewRecorder()
-		HousekeepingHandler(c, rec, &http.Request{}, nil)
+		housekeepingHandler(c, rec, &http.Request{}, nil)
 		So(rec.Code, ShouldEqual, http.StatusOK)
 
-		i := getOrCreateInstanceEntity(c)
+		i, err := getOrCreateInstanceEntity(c)
+		So(err, ShouldBeNil)
 		So(i.TaskNum, ShouldEqual, 1)
 	})
 
@@ -132,7 +144,7 @@ func TestHousekeepingHandler(t *testing.T) {
 		clock.Add(instanceExpirationTimeout + time.Second)
 
 		rec := httptest.NewRecorder()
-		HousekeepingHandler(c, rec, &http.Request{}, nil)
+		housekeepingHandler(c, rec, &http.Request{}, nil)
 		So(rec.Code, ShouldEqual, http.StatusOK)
 
 		exists, err = ds.Exists(ds.NewKey("Instance", "foobar", 0, nil))

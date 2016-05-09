@@ -6,3 +6,7 @@ cron:
 - description: Fetches certificate revocation lists
   url: /internal/cron/fetch-crl
   schedule: every 1 minutes
+
+- description: tsmon house keeping
+  url: /internal/cron/ts_mon/housekeeping
+  schedule: every 1 minutes

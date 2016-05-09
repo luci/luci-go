@@ -34,6 +34,8 @@ var CookieAuth auth.Method
 // to authentication system and app settings.
 //
 // Must be installed in server HTTP router for authentication to work.
+//
+// TODO(vadimsh): Move chunks of this into gaemiddleware.InstallHandlers.
 func InstallHandlers(r *httprouter.Router, base middleware.Base) {
 	m := CookieAuth.(cookieAuthMethod)
 	if oid, ok := m.Method.(*openid.AuthMethod); ok {

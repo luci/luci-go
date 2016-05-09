@@ -19,6 +19,12 @@ import (
 func TestCallbacks(t *testing.T) {
 	c := context.Background()
 
+	Convey("Register global callback without metrics panics", t, func() {
+		So(func() {
+			RegisterGlobalCallbackIn(c, func(context.Context) {})
+		}, ShouldPanic)
+	})
+
 	Convey("Callback is run on Flush", t, func() {
 		c, s, m := WithFakes(c)
 

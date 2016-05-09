@@ -5,11 +5,13 @@
 package tsmon
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/tsmon/monitor"
 	"github.com/luci/luci-go/common/tsmon/store"
 	"github.com/luci/luci-go/common/tsmon/target"
@@ -31,11 +33,132 @@ type State struct {
 	GlobalCallbacks []GlobalCallback
 }
 
-// A GlobalCallback is a Callback with the list of metrics it affects, so those
-// metrics can be reset after they are flushed.
-type GlobalCallback struct {
-	Callback
-	Metrics []types.Metric
+// SetStore changes the metric store.  All metrics that were registered with
+// the old store will be re-registered on the new store.
+func (state *State) SetStore(s store.Store) {
+	oldStore := state.S
+	if s == oldStore {
+		return
+	}
+
+	state.RegisteredMetricsLock.RLock()
+	defer state.RegisteredMetricsLock.RUnlock()
+
+	// Register metrics on the new store.
+	for _, m := range state.RegisteredMetrics {
+		s.Register(m)
+	}
+
+	state.S = s
+
+	// Unregister metrics from the old store.
+	if oldStore != nil {
+		for _, m := range state.RegisteredMetrics {
+			oldStore.Unregister(m)
+		}
+	}
+}
+
+// ResetCumulativeMetrics resets only cumulative metrics.
+func (state *State) ResetCumulativeMetrics(c context.Context) {
+	state.RegisteredMetricsLock.RLock()
+	defer state.RegisteredMetricsLock.RUnlock()
+
+	for _, m := range state.RegisteredMetrics {
+		if m.Info().ValueType.IsCumulative() {
+			state.S.Reset(c, m)
+		}
+	}
+}
+
+// RunGlobalCallbacks runs all registered global callbacks that produce global
+// metrics.
+//
+// See RegisterGlobalCallback for more info.
+func (state *State) RunGlobalCallbacks(c context.Context) {
+	state.CallbacksMutex.RLock()
+	defer state.CallbacksMutex.RUnlock()
+
+	for _, gcp := range state.GlobalCallbacks {
+		gcp.Callback(c)
+	}
+}
+
+// ResetGlobalCallbackMetrics resets metrics produced by global callbacks.
+//
+// See RegisterGlobalCallback for more info.
+func (state *State) ResetGlobalCallbackMetrics(c context.Context) {
+	state.CallbacksMutex.RLock()
+	defer state.CallbacksMutex.RUnlock()
+
+	for _, gcp := range state.GlobalCallbacks {
+		for _, m := range gcp.Metrics {
+			state.S.Reset(c, m)
+		}
+	}
+}
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// Flush sends all the metrics that are registered in the application.
+//
+// Uses given monitor if not nil, or the state.M otherwise.
+func (state *State) Flush(c context.Context, mon monitor.Monitor) error {
+	if mon == nil {
+		mon = state.M
+	}
+	if mon == nil {
+		return errors.New("no tsmon Monitor is configured")
+	}
+
+	// Run any callbacks that have been registered to populate values in callback
+	// metrics.
+	state.runCallbacks(c)
+
+	cells := state.S.GetAll(c)
+	if len(cells) == 0 {
+		return nil
+	}
+
+	logging.Debugf(c, "Starting tsmon flush: %d cells", len(cells))
+	defer logging.Debugf(c, "Tsmon flush finished")
+
+	// Split up the payload into chunks if there are too many cells.
+	chunkSize := mon.ChunkSize()
+	if chunkSize == 0 {
+		chunkSize = len(cells)
+	}
+
+	total := len(cells)
+	sent := 0
+	for len(cells) > 0 {
+		count := minInt(chunkSize, len(cells))
+		if err := mon.Send(c, cells[:count]); err != nil {
+			logging.Errorf(
+				c, "Sent %d cells out of %d, skipping the rest due to error - %s",
+				sent, total, err)
+			return err
+		}
+		cells = cells[count:]
+		sent += count
+	}
+	return nil
+}
+
+// runCallbacks runs any callbacks that have been registered to populate values
+// in callback metrics.
+func (state *State) runCallbacks(c context.Context) {
+	state.CallbacksMutex.RLock()
+	defer state.CallbacksMutex.RUnlock()
+
+	for _, f := range state.Callbacks {
+		f(c)
+	}
 }
 
 // GetState returns the State instance held in the context (if set) or else

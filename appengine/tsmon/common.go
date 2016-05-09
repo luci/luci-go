@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/logging"
-	"golang.org/x/net/context"
 )
 
 const (
@@ -20,17 +20,12 @@ const (
 	// ts_mon.proto.Task message.
 	targetDataCenter = "appengine"
 
-	// pubsubProject and pubsubTopic specify which cloud pubsub endpoint to send
-	// monitoring metrics to.  The appengine app using this library needs to have
-	// the "Google Cloud Pub/Sub API" enabled in the cloud console.
-	pubsubProject = "chrome-infra-mon-pubsub"
-	pubsubTopic   = "monacq"
-
 	// instanceNamespace is the namespace to use for datastore instances.
 	instanceNamespace = "ts_mon_instance_namespace"
 
-	instanceExpirationTimeout     = time.Duration(30 * time.Minute)
-	instanceExpectedToHaveTaskNum = time.Duration(5 * time.Minute)
+	instanceExpirationTimeout     = 30 * time.Minute
+	instanceExpectedToHaveTaskNum = 5 * time.Minute
+	flushTimeout                  = 5 * time.Second
 )
 
 type instance struct {
@@ -49,28 +44,45 @@ func instanceEntityID(c context.Context) string {
 
 // getOrCreateInstanceEntity returns the instance entity for this appengine
 // instance, adding a default one to the datastore if it doesn't exist.
-func getOrCreateInstanceEntity(c context.Context) *instance {
+//
+// We need to register an entity ASAP to allow housekeepingHandler to
+// discover the new instance.
+func getOrCreateInstanceEntity(c context.Context) (*instance, error) {
 	entity := instance{
 		ID:          instanceEntityID(c),
 		TaskNum:     -1,
 		LastUpdated: clock.Get(c).Now().UTC(),
 	}
 	ds := datastore.Get(c)
+	err := ds.Get(&entity)
+	if err == datastore.ErrNoSuchEntity {
+		err = ds.RunInTransaction(func(c context.Context) error {
+			ds := datastore.Get(c)
+			switch err := ds.Get(&entity); err {
+			case nil:
+				return nil
+			case datastore.ErrNoSuchEntity:
+				// Insert it into datastore if it didn't exist.
+				return ds.Put(&entity)
+			default:
+				return err
+			}
+		}, nil)
+	}
+	return &entity, err
+}
 
-	err := ds.RunInTransaction(func(c context.Context) error {
-		switch err := ds.Get(&entity); err {
-		case nil:
-			return nil
-		case datastore.ErrNoSuchEntity:
-			// Insert it into datastore if it didn't exist.
-			return ds.Put(&entity)
-		default:
+// refreshLastUpdatedTime updates LastUpdated field in the instance entity.
+//
+// It does it in a transaction to avoid overwriting TaskNum.
+func refreshLastUpdatedTime(c context.Context, t time.Time) error {
+	entity := instance{ID: instanceEntityID(c)}
+	return datastore.Get(c).RunInTransaction(func(c context.Context) error {
+		ds := datastore.Get(c)
+		if err := ds.Get(&entity); err != nil {
 			return err
 		}
-	}, &datastore.TransactionOptions{})
-
-	if err != nil {
-		logging.Errorf(c, "getOrCreateInstanceEntity failed: %s", err)
-	}
-	return &entity
+		entity.LastUpdated = t.UTC()
+		return ds.Put(&entity)
+	}, nil)
 }
