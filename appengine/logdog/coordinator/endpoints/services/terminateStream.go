@@ -15,7 +15,6 @@ import (
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/grpcutil"
-	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
 	"golang.org/x/net/context"
@@ -26,7 +25,7 @@ import (
 func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamRequest) (*google.Empty, error) {
 	log.Fields{
 		"project":       req.Project,
-		"path":          req.Path,
+		"id":            req.Id,
 		"terminalIndex": req.TerminalIndex,
 	}.Infof(c, "Request to terminate log stream.")
 
@@ -34,9 +33,9 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Negative terminal index.")
 	}
 
-	path := types.StreamPath(req.Path)
-	if err := path.Validate(); err != nil {
-		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid path (%s): %s", req.Path, err)
+	id := coordinator.HashID(req.Id)
+	if err := id.Normalize(); err != nil {
+		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid ID (%s): %s", id, err)
 	}
 
 	svc := coordinator.GetServices(c)
@@ -52,9 +51,9 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 		return nil, grpcutil.Internal
 	}
 
-	// Initialize our log stream. This cannot fail since we have already validated
-	// req.Path.
-	ls := coordinator.LogStreamFromPath(path)
+	// Initialize our log stream state.
+	di := ds.Get(c)
+	lst := coordinator.NewLogStreamState(di, id)
 
 	// Initialize our archival parameters.
 	params := coordinator.ArchivalParams{
@@ -64,13 +63,13 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 	}
 
 	// Transactionally validate and update the terminal index.
-	err = ds.Get(c).RunInTransaction(func(c context.Context) error {
+	err = di.RunInTransaction(func(c context.Context) error {
 		di := ds.Get(c)
 
-		if err := di.Get(ls); err != nil {
+		if err := di.Get(lst); err != nil {
 			if err == ds.ErrNoSuchEntity {
-				log.Debugf(c, "LogEntry not found.")
-				return grpcutil.Errf(codes.NotFound, "Log stream %q is not registered", req.Path)
+				log.Debugf(c, "Log stream state not found.")
+				return grpcutil.Errf(codes.NotFound, "Log stream %q is not registered", id)
 			}
 
 			log.WithError(err).Errorf(c, "Failed to load LogEntry.")
@@ -78,33 +77,33 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 		}
 
 		switch {
-		case subtle.ConstantTimeCompare(ls.Secret, req.Secret) != 1:
+		case subtle.ConstantTimeCompare(lst.Secret, req.Secret) != 1:
 			log.Errorf(c, "Secrets do not match.")
 			return grpcutil.Errf(codes.InvalidArgument, "Request secret doesn't match the stream secret.")
 
-		case ls.State > coordinator.LSStreaming:
+		case lst.Terminated():
 			// Succeed if this is non-conflicting (idempotent).
-			if ls.TerminalIndex == req.TerminalIndex {
+			if lst.TerminalIndex == req.TerminalIndex {
 				log.Fields{
-					"state":         ls.State.String(),
-					"terminalIndex": ls.TerminalIndex,
+					"terminalIndex": lst.TerminalIndex,
 				}.Infof(c, "Log stream is already terminated.")
 				return nil
 			}
 
 			log.Fields{
-				"state":         ls.State.String(),
-				"terminalIndex": ls.TerminalIndex,
-			}.Warningf(c, "Log stream is not in streaming state.")
-			return grpcutil.Errf(codes.FailedPrecondition, "Log stream is not in streaming state.")
+				"terminalIndex": lst.TerminalIndex,
+			}.Warningf(c, "Log stream is already incompatibly terminated.")
+			return grpcutil.Errf(codes.FailedPrecondition, "Log stream is incompatibly terminated.")
 
 		default:
 			// Everything looks good, let's proceed...
-			ls.TerminalIndex = req.TerminalIndex
-			ls.TerminatedTime = ds.RoundTime(clock.Now(c).UTC())
+			now := clock.Now(c).UTC()
+			lst.Updated = now
+			lst.TerminalIndex = req.TerminalIndex
+			lst.TerminatedTime = now
 
 			// Create an archival task.
-			if err := params.PublishTask(c, ap, ls); err != nil {
+			if err := params.PublishTask(c, ap, lst); err != nil {
 				if err == coordinator.ErrArchiveTasked {
 					log.Warningf(c, "Archival has already been tasked for this stream.")
 					return nil
@@ -114,7 +113,7 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 				return grpcutil.Internal
 			}
 
-			if err := di.Put(ls); err != nil {
+			if err := di.Put(lst); err != nil {
 				log.Fields{
 					log.ErrorKey: err,
 				}.Errorf(c, "Failed to Put() LogStream.")
@@ -123,14 +122,14 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 
 			// Delete the archive expiration mutation, since we have just dispatched
 			// an archive request.
-			aeParent, aeName := (&mutations.CreateArchiveTask{Path: path}).TaskName(di)
+			aeParent, aeName := (&mutations.CreateArchiveTask{ID: id}).TaskName(di)
 			if err := tumble.CancelNamedMutations(c, aeParent, aeName); err != nil {
 				log.WithError(err).Errorf(c, "Failed to cancel archive expiration mutation.")
 				return grpcutil.Internal
 			}
 
 			log.Fields{
-				"terminalIndex": ls.TerminalIndex,
+				"terminalIndex": lst.TerminalIndex,
 			}.Infof(c, "Terminal index was set and archival was dispatched.")
 			return nil
 		}

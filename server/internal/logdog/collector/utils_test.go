@@ -66,8 +66,7 @@ func (c *testCoordinator) register(s cc.LogStreamState) cc.LogStreamState {
 	return s
 }
 
-func (c *testCoordinator) RegisterStream(ctx context.Context, s *cc.LogStreamState, d *logpb.LogStreamDescriptor) (
-	*cc.LogStreamState, error) {
+func (c *testCoordinator) RegisterStream(ctx context.Context, s *cc.LogStreamState, desc []byte) (*cc.LogStreamState, error) {
 	if err := c.enter(); err != nil {
 		return nil, err
 	}

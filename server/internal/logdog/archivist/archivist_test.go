@@ -259,7 +259,7 @@ func TestHandleArchive(t *testing.T) {
 		expired := 10 * time.Minute
 		archiveTask := logdog.ArchiveTask{
 			Project:        project,
-			Path:           string(desc.Path()),
+			Id:             "coordinator-stream-id",
 			SettleDelay:    google.NewDuration(10 * time.Second),
 			CompletePeriod: google.NewDuration(expired),
 			Key:            []byte("random archival key"),
@@ -273,7 +273,6 @@ func TestHandleArchive(t *testing.T) {
 		// Set up our test Coordinator client stubs.
 		stream := logdog.LoadStreamResponse{
 			State: &logdog.LogStreamState{
-				Path:          archiveTask.Path,
 				ProtoVersion:  logpb.Version,
 				TerminalIndex: -1,
 				Archived:      false,
@@ -414,7 +413,7 @@ func TestHandleArchive(t *testing.T) {
 				So(hasStreams(true, true, true), ShouldBeTrue)
 				So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
 					Project:       project,
-					Path:          archiveTask.Path,
+					Id:            archiveTask.Id,
 					LogEntryCount: 4,
 					TerminalIndex: 3,
 
@@ -445,7 +444,7 @@ func TestHandleArchive(t *testing.T) {
 
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
 						Project: project,
-						Path:    archiveTask.Path,
+						Id:      archiveTask.Id,
 						Error:   "archive failure error",
 					})
 				})
@@ -455,7 +454,7 @@ func TestHandleArchive(t *testing.T) {
 					So(task.consumed, ShouldBeTrue)
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
 						Project: project,
-						Path:    archiveTask.Path,
+						Id:      archiveTask.Id,
 						Error:   "archive failure error",
 					})
 				})
@@ -467,7 +466,7 @@ func TestHandleArchive(t *testing.T) {
 					So(task.consumed, ShouldBeTrue)
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
 						Project: project,
-						Path:    archiveTask.Path,
+						Id:      archiveTask.Id,
 						Error:   "archival error",
 					})
 				})
@@ -485,7 +484,7 @@ func TestHandleArchive(t *testing.T) {
 					So(hasStreams(true, true, false), ShouldBeTrue)
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
 						Project:       project,
-						Path:          archiveTask.Path,
+						Id:            archiveTask.Id,
 						LogEntryCount: 0,
 						TerminalIndex: -1,
 
@@ -504,7 +503,7 @@ func TestHandleArchive(t *testing.T) {
 					So(hasStreams(true, true, true), ShouldBeTrue)
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
 						Project:       project,
-						Path:          archiveTask.Path,
+						Id:            archiveTask.Id,
 						LogEntryCount: 4,
 						TerminalIndex: 4,
 
@@ -525,7 +524,7 @@ func TestHandleArchive(t *testing.T) {
 					So(hasStreams(true, true, false), ShouldBeTrue)
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
 						Project:       project,
-						Path:          archiveTask.Path,
+						Id:            archiveTask.Id,
 						LogEntryCount: 0,
 						TerminalIndex: -1,
 
@@ -544,7 +543,7 @@ func TestHandleArchive(t *testing.T) {
 					So(hasStreams(true, true, true), ShouldBeTrue)
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
 						Project:       project,
-						Path:          archiveTask.Path,
+						Id:            archiveTask.Id,
 						LogEntryCount: 3,
 						TerminalIndex: 2,
 
@@ -569,7 +568,7 @@ func TestHandleArchive(t *testing.T) {
 				So(hasStreams(true, true, true), ShouldBeTrue)
 				So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
 					Project:       "",
-					Path:          archiveTask.Path,
+					Id:            archiveTask.Id,
 					LogEntryCount: 4,
 					TerminalIndex: 3,
 

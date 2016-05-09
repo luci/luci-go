@@ -46,7 +46,7 @@ func registerPrefix(c context.Context, lsp *logStreamPrefix) (*coordinator.LogPr
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid prefix secret: %s", err)
 	}
 
-	pfx := coordinator.LogPrefixFromPrefix(prefix)
+	pfx := &coordinator.LogPrefix{ID: coordinator.LogPrefixID(prefix)}
 
 	// Check for existing prefix registration (non-transactional).
 	di := ds.Get(c)
@@ -78,6 +78,7 @@ func registerPrefix(c context.Context, lsp *logStreamPrefix) (*coordinator.LogPr
 
 		case ds.ErrNoSuchEntity:
 			// The Prefix is not registered, so let's register it.
+			pfx.Prefix = string(prefix)
 			pfx.Secret = []byte(secret)
 			pfx.Created = now
 

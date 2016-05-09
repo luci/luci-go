@@ -5,7 +5,6 @@
 package services
 
 import (
-	"bytes"
 	"errors"
 	"testing"
 	"time"
@@ -16,8 +15,6 @@ import (
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/hierarchy"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
-	"github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
@@ -47,28 +44,23 @@ func TestRegisterStream(t *testing.T) {
 		Convey(`When logged in as a service`, func() {
 			env.JoinGroup("services")
 
-			desc := ct.TestLogStreamDescriptor(c, "foo/bar")
-			secret := bytes.Repeat([]byte{0xAA}, types.PrefixSecretLength)
+			tls := ct.MakeStream(c, "proj-foo", "testing/+/foo/bar")
 
 			Convey(`A stream registration request for "testing/+/foo/bar"`, func() {
-				const project config.ProjectName = "proj-foo"
-
 				req := logdog.RegisterStreamRequest{
-					Project:      string(project),
-					Path:         "testing/+/foo/bar",
-					Secret:       secret,
+					Project:      string(tls.Project),
+					Secret:       tls.Prefix.Secret,
 					ProtoVersion: logpb.Version,
-					Desc:         desc,
+					Desc:         tls.DescBytes(),
 				}
 
 				expResp := &logdog.RegisterStreamResponse{
+					Id: string(tls.Stream.ID),
 					State: &logdog.LogStreamState{
-						Project:       string(project),
-						Path:          "testing/+/foo/bar",
+						Secret:        tls.Prefix.Secret,
 						ProtoVersion:  logpb.Version,
 						TerminalIndex: -1,
 					},
-					Secret: secret,
 				}
 
 				Convey(`Can register the stream.`, func() {
@@ -80,27 +72,29 @@ func TestRegisterStream(t *testing.T) {
 					ds.Get(c).Testable().CatchupIndexes()
 					env.DrainTumbleAll(c)
 
-					ls := coordinator.LogStreamFromPath(types.StreamPath(req.Path))
-					ct.WithProjectNamespace(c, project, func(c context.Context) {
-						So(ds.Get(c).Get(ls), ShouldBeNil)
-					})
-					So(ls.Created, ShouldResemble, created)
-					So(ls.Secret, ShouldResemble, req.Secret)
+					So(tls.Get(c), ShouldBeNil)
+
+					// Registers the log stream.
+					So(tls.Stream.Created, ShouldResemble, created)
+
+					// Registers the log stream state.
+					So(tls.State.Created, ShouldResemble, created)
+					So(tls.State.Updated, ShouldResemble, created)
+					So(tls.State.Secret, ShouldResemble, req.Secret)
+					So(tls.State.TerminalIndex, ShouldEqual, -1)
+					So(tls.State.Terminated(), ShouldBeFalse)
+					So(tls.State.ArchivalState(), ShouldEqual, coordinator.NotArchived)
 
 					// Should also register the log stream Prefix.
-					pfx := ls.LogPrefix()
-					ct.WithProjectNamespace(c, project, func(c context.Context) {
-						So(ds.Get(c).Get(pfx), ShouldBeNil)
-					})
-					So(pfx.Created, ShouldResemble, created)
-					So(pfx.Secret, ShouldResemble, req.Secret)
+					So(tls.Prefix.Created, ShouldResemble, created)
+					So(tls.Prefix.Secret, ShouldResemble, req.Secret)
 
 					// No archival request yet.
-					So(env.ArchivalPublisher.StreamNames(), ShouldResemble, []string{})
+					So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{})
 
 					// Should have name components.
 					getNameComponents := func(b string) []string {
-						l, err := hierarchy.Get(c, hierarchy.Request{Project: "proj-foo", PathBase: b})
+						l, err := hierarchy.Get(c, hierarchy.Request{Project: string(tls.Project), PathBase: b})
 						if err != nil {
 							panic(err)
 						}
@@ -125,20 +119,20 @@ func TestRegisterStream(t *testing.T) {
 						So(err, ShouldBeRPCOK)
 						So(resp, ShouldResemble, expResp)
 
-						ls := coordinator.LogStreamFromPath(types.StreamPath(req.Path))
-						ct.WithProjectNamespace(c, project, func(c context.Context) {
-							So(ds.Get(c).Get(ls), ShouldBeNil)
+						tls.WithProjectNamespace(c, func(c context.Context) {
+							So(ds.Get(c).GetMulti([]interface{}{tls.Stream, tls.State}), ShouldBeNil)
 						})
-						So(ls.Created, ShouldResemble, created)
+						So(tls.State.Created, ShouldResemble, created)
+						So(tls.Stream.Created, ShouldResemble, created)
 
 						// No archival request yet.
-						So(env.ArchivalPublisher.StreamNames(), ShouldResemble, []string{})
+						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{})
 
 						Convey(`Forces an archival request after first archive expiration.`, func() {
 							env.Clock.Set(created.Add(time.Hour)) // 1 hour after initial registration.
 							env.DrainTumbleAll(c)
 
-							So(env.ArchivalPublisher.StreamNames(), ShouldResemble, []string{ls.Name})
+							So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
 						})
 					})
 
@@ -146,14 +140,6 @@ func TestRegisterStream(t *testing.T) {
 						req.Secret[0] = 0xAB
 						_, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCAlreadyExists, "Log prefix is already registered")
-					})
-
-					Convey(`Will not re-register if descriptor data differs.`, func() {
-						req.Desc.Tags = map[string]string{
-							"testing": "value",
-						}
-						_, err := svr.RegisterStream(c, &req)
-						So(err, ShouldBeRPCAlreadyExists, "Log stream is already registered")
 					})
 				})
 
@@ -174,22 +160,16 @@ func TestRegisterStream(t *testing.T) {
 				})
 
 				Convey(`Registration failure cases`, func() {
-					Convey(`Will not register a stream with an invalid path.`, func() {
-						req.Path = "has/no/name"
-						_, err := svr.RegisterStream(c, &req)
-						So(err, ShouldBeRPCInvalidArgument, "Invalid path")
-					})
-
 					Convey(`Will not register a stream without a protobuf version.`, func() {
 						req.ProtoVersion = ""
 						_, err := svr.RegisterStream(c, &req)
-						So(err, ShouldBeRPCInvalidArgument, "No protobuf version supplied.")
+						So(err, ShouldBeRPCInvalidArgument, "Unrecognized protobuf version")
 					})
 
 					Convey(`Will not register a stream with an unknown protobuf version.`, func() {
 						req.ProtoVersion = "unknown"
 						_, err := svr.RegisterStream(c, &req)
-						So(err, ShouldBeRPCInvalidArgument, "Unrecognized protobuf version.")
+						So(err, ShouldBeRPCInvalidArgument, "Unrecognized protobuf version")
 					})
 
 					Convey(`Will not register a wrong-sized secret.`, func() {
@@ -200,25 +180,15 @@ func TestRegisterStream(t *testing.T) {
 
 					Convey(`Will not register with an empty descriptor.`, func() {
 						req.Desc = nil
-						_, err := svr.RegisterStream(c, &req)
-						So(err, ShouldBeRPCInvalidArgument, "Missing log stream descriptor.")
-					})
 
-					Convey(`Will not register if the descriptor's Prefix doesn't match.`, func() {
-						req.Desc.Prefix = "different"
 						_, err := svr.RegisterStream(c, &req)
-						So(err, ShouldBeRPCInvalidArgument, "Descriptor prefix does not match path")
-					})
-
-					Convey(`Will not register if the descriptor's Name doesn't match.`, func() {
-						req.Desc.Name = "different"
-						_, err := svr.RegisterStream(c, &req)
-						So(err, ShouldBeRPCInvalidArgument, "Descriptor name does not match path")
+						So(err, ShouldBeRPCInvalidArgument, "Invalid log stream descriptor")
 					})
 
 					Convey(`Will not register if the descriptor doesn't validate.`, func() {
-						req.Desc.ContentType = ""
-						So(req.Desc.Validate(true), ShouldNotBeNil)
+						tls.Desc.ContentType = ""
+						So(tls.Desc.Validate(true), ShouldNotBeNil)
+						req.Desc = tls.DescBytes()
 
 						_, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCInvalidArgument, "Invalid log stream descriptor")
@@ -226,13 +196,12 @@ func TestRegisterStream(t *testing.T) {
 				})
 
 				Convey(`The registerStreamMutation`, func() {
-					ls := ct.TestLogStream(c, desc)
-					pfx := ct.TestLogPrefix(c, desc)
-
 					rsm := registerStreamMutation{
-						LogStream: ls,
-						req:       &req,
-						pfx:       pfx,
+						RegisterStreamRequest: &req,
+						desc: tls.Desc,
+						pfx:  tls.Prefix,
+						ls:   tls.Stream,
+						lst:  tls.State,
 					}
 
 					Convey(`Can RollForward.`, func() {

@@ -11,6 +11,8 @@ import (
 	"io"
 
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
@@ -24,7 +26,6 @@ import (
 	"github.com/luci/luci-go/common/tsmon/metric"
 	"github.com/luci/luci-go/server/logdog/archive"
 	"github.com/luci/luci-go/server/logdog/storage"
-	"golang.org/x/net/context"
 )
 
 const (
@@ -145,14 +146,18 @@ const storageBufferSize = types.MaxLogEntryDataSize * 64
 // If the supplied Context is Done, operation may terminate before completion,
 // returning the Context's error.
 func (a *Archivist) ArchiveTask(c context.Context, task Task) {
+	c = log.SetFields(c, log.Fields{
+		"project": task.Task().Project,
+		"id":      task.Task().Id,
+	})
+	log.Debugf(c, "Received archival task.")
+
 	err := a.archiveTaskImpl(c, task)
 
 	failure := isFailure(err)
 	log.Fields{
 		log.ErrorKey: err,
 		"failure":    failure,
-		"project":    task.Task().Project,
-		"path":       task.Task().Path,
 	}.Infof(c, "Finished archive task.")
 
 	// Add a result metric.
@@ -166,15 +171,6 @@ func (a *Archivist) ArchiveTask(c context.Context, task Task) {
 // status error.
 func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 	at := task.Task()
-	log.Fields{
-		"project": at.Project,
-		"path":    at.Path,
-	}.Debugf(c, "Received archival task.")
-
-	if err := types.StreamPath(at.Path).Validate(); err != nil {
-		task.Consume()
-		return fmt.Errorf("invalid path %q: %s", at.Path, err)
-	}
 
 	// TODO(dnj): Remove empty project exemption, make empty project invalid.
 	if at.Project != "" {
@@ -188,7 +184,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 	// return an immediate success.
 	ls, err := a.Service.LoadStream(c, &logdog.LoadStreamRequest{
 		Project: at.Project,
-		Path:    at.Path,
+		Id:      at.Id,
 		Desc:    true,
 	})
 	switch {
@@ -256,26 +252,26 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 		return statusErr(errors.New("log stream is within settle delay"))
 	}
 
+	ar := logdog.ArchiveStreamRequest{
+		Project: at.Project,
+		Id:      at.Id,
+	}
+
+	// Build our staged archival plan. This doesn't actually do any archiving.
+	staged, err := a.makeStagedArchival(c, config.ProjectName(at.Project), ls, task.UniqueID())
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to create staged archival plan.")
+		return err
+	}
+
 	// Are we required to archive a complete log stream?
 	if age <= at.CompletePeriod.Duration() {
-		tidx := ls.State.TerminalIndex
-
-		if tidx < 0 {
-			log.Warningf(c, "Cannot archive complete stream with no terminal index.")
-			return statusErr(errors.New("completeness required, but stream has no terminal index"))
-		}
-
 		// If we're requiring completeness, perform a keys-only scan of intermediate
 		// storage to ensure that we have all of the records before we bother
 		// streaming to storage only to find that we are missing data.
-		if err := a.checkComplete(config.ProjectName(at.Project), types.StreamPath(at.Path), types.MessageIndex(tidx)); err != nil {
+		if err := staged.checkComplete(c); err != nil {
 			return err
 		}
-	}
-
-	ar := logdog.ArchiveStreamRequest{
-		Project: at.Project,
-		Path:    at.Path,
 	}
 
 	// Archive to staging.
@@ -285,14 +281,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 	//
 	// We will handle error creating the plan and executing the plan in the same
 	// switch statement below.
-	staged, err := a.makeStagedArchival(c, config.ProjectName(at.Project), types.StreamPath(at.Path), ls, task.UniqueID())
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create staged archival plan.")
-	} else {
-		err = staged.stage(c)
-	}
-
-	switch {
+	switch err = staged.stage(c); {
 	case errors.IsTransient(err):
 		// If this is a transient error, exit immediately and do not delete the
 		// archival task.
@@ -366,24 +355,93 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 	return nil
 }
 
+func (a *Archivist) makeStagedArchival(c context.Context, project config.ProjectName,
+	ls *logdog.LoadStreamResponse, uid string) (*stagedArchival, error) {
+	sa := stagedArchival{
+		Archivist: a,
+		project:   project,
+
+		terminalIndex: types.MessageIndex(ls.State.TerminalIndex),
+	}
+
+	// Deserialize and validate the descriptor protobuf. If this fails, it is a
+	// non-transient error.
+	if err := proto.Unmarshal(ls.Desc, &sa.desc); err != nil {
+		log.Fields{
+			log.ErrorKey:   err,
+			"protoVersion": ls.State.ProtoVersion,
+		}.Errorf(c, "Failed to unmarshal descriptor protobuf.")
+		return nil, err
+	}
+	sa.path = sa.desc.Path()
+
+	bext := sa.desc.BinaryFileExt
+	if bext == "" {
+		bext = "bin"
+	}
+
+	// Construct our staged archival paths.
+	sa.stream = sa.makeStagingPaths("logstream.entries", uid)
+	sa.index = sa.makeStagingPaths("logstream.index", uid)
+	sa.data = sa.makeStagingPaths(fmt.Sprintf("data.%s", bext), uid)
+	return &sa, nil
+}
+
+type stagedArchival struct {
+	*Archivist
+
+	project config.ProjectName
+	path    types.StreamPath
+	desc    logpb.LogStreamDescriptor
+
+	stream stagingPaths
+	index  stagingPaths
+	data   stagingPaths
+
+	finalized     bool
+	terminalIndex types.MessageIndex
+	logEntryCount int64
+}
+
+// makeStagingPaths returns a stagingPaths instance for the given path and
+// file name. It incorporates a unique ID into the staging name to differentiate
+// it from other staging paths for the same path/name.
+func (sa *stagedArchival) makeStagingPaths(name, uid string) stagingPaths {
+	// TODO(dnj): This won't be necessary when empty project is invalid.
+	project := string(sa.project)
+	if project == "" {
+		project = "_"
+	}
+
+	return stagingPaths{
+		staged: sa.GSStagingBase.Concat(project, string(sa.path), uid, name),
+		final:  sa.GSBase.Concat(project, string(sa.path), name),
+	}
+}
+
 // checkComplete performs a quick scan of intermediate storage to ensure that
 // all of the log stream's records are available.
-func (a *Archivist) checkComplete(project config.ProjectName, path types.StreamPath, tidx types.MessageIndex) error {
+func (sa *stagedArchival) checkComplete(c context.Context) error {
+	if sa.terminalIndex < 0 {
+		log.Warningf(c, "Cannot archive complete stream with no terminal index.")
+		return statusErr(errors.New("completeness required, but stream has no terminal index"))
+	}
+
 	sreq := storage.GetRequest{
-		Project:  project,
-		Path:     path,
+		Project:  sa.project,
+		Path:     sa.path,
 		KeysOnly: true,
 	}
 
 	nextIndex := types.MessageIndex(0)
 	var ierr error
-	err := a.Storage.Get(sreq, func(idx types.MessageIndex, d []byte) bool {
+	err := sa.Storage.Get(sreq, func(idx types.MessageIndex, d []byte) bool {
 		switch {
 		case idx != nextIndex:
-			ierr = statusErr(fmt.Errorf("missing log entry index %d (next %d)", nextIndex, idx))
+			ierr = fmt.Errorf("missing log entry index %d (next %d)", nextIndex, idx)
 			return false
 
-		case idx == tidx:
+		case idx == sa.terminalIndex:
 			// We have hit our terminal index, so all of the log data is here!
 			return false
 
@@ -399,69 +457,6 @@ func (a *Archivist) checkComplete(project config.ProjectName, path types.StreamP
 		return err
 	}
 	return nil
-}
-
-func (a *Archivist) makeStagedArchival(c context.Context, project config.ProjectName, path types.StreamPath,
-	ls *logdog.LoadStreamResponse, uid string) (*stagedArchival, error) {
-	sa := stagedArchival{
-		Archivist: a,
-		project:   project,
-		path:      path,
-
-		terminalIndex: ls.State.TerminalIndex,
-	}
-
-	// Deserialize and validate the descriptor protobuf. If this fails, it is a
-	// non-transient error.
-	if err := proto.Unmarshal(ls.Desc, &sa.desc); err != nil {
-		log.Fields{
-			log.ErrorKey:   err,
-			"protoVersion": ls.State.ProtoVersion,
-		}.Errorf(c, "Failed to unmarshal descriptor protobuf.")
-		return nil, err
-	}
-
-	bext := sa.desc.BinaryFileExt
-	if bext == "" {
-		bext = "bin"
-	}
-
-	// Construct our staged archival paths.
-	sa.stream = a.makeStagingPaths(project, path, "logstream.entries", uid)
-	sa.index = a.makeStagingPaths(project, path, "logstream.index", uid)
-	sa.data = a.makeStagingPaths(project, path, fmt.Sprintf("data.%s", bext), uid)
-	return &sa, nil
-}
-
-// makeStagingPaths returns a stagingPaths instance for the given path and
-// file name. It incorporates a unique ID into the staging name to differentiate
-// it from other staging paths for the same path/name.
-func (a *Archivist) makeStagingPaths(project config.ProjectName, path types.StreamPath, name, uid string) stagingPaths {
-	// TODO(dnj): This won't be necessary when empty project is invalid.
-	if project == "" {
-		project = "_"
-	}
-
-	return stagingPaths{
-		staged: a.GSStagingBase.Concat(string(project), string(path), uid, name),
-		final:  a.GSBase.Concat(string(project), string(path), name),
-	}
-}
-
-type stagedArchival struct {
-	*Archivist
-
-	project config.ProjectName
-	path    types.StreamPath
-	desc    logpb.LogStreamDescriptor
-
-	stream stagingPaths
-	index  stagingPaths
-	data   stagingPaths
-
-	finalized     bool
-	terminalIndex int64
-	logEntryCount int64
 }
 
 // stage executes the archival process, archiving to the staged storage paths.
@@ -541,7 +536,7 @@ func (sa *stagedArchival) stage(c context.Context) (err error) {
 		st:            sa.Storage,
 		project:       sa.project,
 		path:          sa.path,
-		terminalIndex: types.MessageIndex(sa.terminalIndex),
+		terminalIndex: sa.terminalIndex,
 		lastIndex:     -1,
 	}
 
@@ -576,18 +571,18 @@ func (sa *stagedArchival) stage(c context.Context) (err error) {
 	}
 
 	// Update our state with archival results.
-	sa.terminalIndex = int64(ss.lastIndex)
+	sa.terminalIndex = ss.lastIndex
 	sa.logEntryCount = ss.logEntryCount
-	sa.stream.count = streamWriter.Count()
-	sa.index.count = indexWriter.Count()
-	sa.data.count = dataWriter.Count()
+	sa.stream.bytesWritten = streamWriter.Count()
+	sa.index.bytesWritten = indexWriter.Count()
+	sa.data.bytesWritten = dataWriter.Count()
 	return
 }
 
 type stagingPaths struct {
-	staged gs.Path
-	final  gs.Path
-	count  int64
+	staged       gs.Path
+	final        gs.Path
+	bytesWritten int64
 }
 
 func (d *stagingPaths) clearStaged() {
@@ -595,8 +590,8 @@ func (d *stagingPaths) clearStaged() {
 }
 
 func (d *stagingPaths) addMetrics(c context.Context, archiveField, streamField string) {
-	tsSize.Add(c, float64(d.count), archiveField, streamField)
-	tsTotalBytes.Add(c, d.count, archiveField, streamField)
+	tsSize.Add(c, float64(d.bytesWritten), archiveField, streamField)
+	tsTotalBytes.Add(c, d.bytesWritten, archiveField, streamField)
 }
 
 func (sa *stagedArchival) finalize(c context.Context, client gs.Client, ar *logdog.ArchiveStreamRequest) error {
@@ -605,7 +600,7 @@ func (sa *stagedArchival) finalize(c context.Context, client gs.Client, ar *logd
 			d := d
 
 			// Don't copy zero-sized streams.
-			if d.count == 0 {
+			if d.bytesWritten == 0 {
 				continue
 			}
 
@@ -629,14 +624,14 @@ func (sa *stagedArchival) finalize(c context.Context, client gs.Client, ar *logd
 		return err
 	}
 
-	ar.TerminalIndex = sa.terminalIndex
+	ar.TerminalIndex = int64(sa.terminalIndex)
 	ar.LogEntryCount = sa.logEntryCount
 	ar.StreamUrl = string(sa.stream.final)
-	ar.StreamSize = sa.stream.count
+	ar.StreamSize = sa.stream.bytesWritten
 	ar.IndexUrl = string(sa.index.final)
-	ar.IndexSize = sa.index.count
+	ar.IndexSize = sa.index.bytesWritten
 	ar.DataUrl = string(sa.data.final)
-	ar.DataSize = sa.data.count
+	ar.DataSize = sa.data.bytesWritten
 	return nil
 }
 

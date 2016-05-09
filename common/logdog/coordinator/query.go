@@ -86,12 +86,6 @@ type QueryOptions struct {
 	// the supplied time should be returned.
 	After time.Time
 
-	// Terminated, if not QBoth, selects logs streams that are/aren't terminated.
-	Terminated QueryTrinary
-
-	// Archived, if not QBoth, selects logs streams that are/aren't archived.
-	Archived QueryTrinary
-
 	// Purged, if not QBoth, selects logs streams that are/aren't purged.
 	Purged QueryTrinary
 
@@ -138,8 +132,6 @@ func (c *Client) Query(ctx context.Context, project config.ProjectName, path str
 		ContentType: o.ContentType,
 		Older:       google.NewTimestamp(o.Before),
 		Newer:       google.NewTimestamp(o.After),
-		Terminated:  o.Terminated.queryValue(),
-		Archived:    o.Archived.queryValue(),
 		Purged:      o.Purged.queryValue(),
 		State:       o.State,
 	}

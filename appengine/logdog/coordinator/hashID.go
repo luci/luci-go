@@ -21,7 +21,8 @@ func makeHashID(v string) HashID {
 	return HashID(hex.EncodeToString(hash[:]))
 }
 
-func (id *HashID) normalize() error {
+// Normalize normalizes the hash ID and verifies its integrity.
+func (id *HashID) Normalize() error {
 	// encoding/hex encodes using lower-case hexadecimal. Note that this is a
 	// no-op if the ID is already lowercase.
 	idv := strings.ToLower(string(*id))
@@ -30,7 +31,7 @@ func (id *HashID) normalize() error {
 		return fmt.Errorf("invalid SHA256 hash size (%d != %d)", decodeSize, sha256.Size)
 	}
 	for i, r := range idv {
-		if strings.IndexRune(validHashIDChars, r) < 0 {
+		if !strings.ContainsRune(validHashIDChars, r) {
 			return fmt.Errorf("invalid character '%c' at %d", r, i)
 		}
 	}

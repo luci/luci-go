@@ -14,8 +14,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/gae/filter/featureBreaker"
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
 	"github.com/luci/luci-go/common/config"
@@ -93,15 +91,12 @@ func testGetImpl(t *testing.T, archived bool) {
 		const project = config.ProjectName("proj-foo")
 
 		// Generate our test stream.
-		desc := ct.TestLogStreamDescriptor(c, "foo/bar")
-		ls := ct.TestLogStream(c, desc)
+		tls := ct.MakeStream(c, "proj-foo", "testing/+/foo/bar")
 
 		putLogStream := func(c context.Context) {
-			ct.WithProjectNamespace(c, project, func(c context.Context) {
-				if err := ds.Get(c).Put(ls); err != nil {
-					panic(err)
-				}
-			})
+			if err := tls.Put(c); err != nil {
+				panic(err)
+			}
 		}
 		putLogStream(c)
 
@@ -109,7 +104,7 @@ func testGetImpl(t *testing.T, archived bool) {
 		var entries []*logpb.LogEntry
 		protobufs := map[uint64][]byte{}
 		for _, v := range []int{0, 1, 2, 4, 5, 7} {
-			le := ct.TestLogEntry(c, ls, v)
+			le := tls.LogEntry(c, v)
 			le.GetText().Lines = append(le.GetText().Lines, &logpb.Text_Line{
 				Value: "another line of text",
 			})
@@ -160,7 +155,7 @@ func testGetImpl(t *testing.T, archived bool) {
 		Convey(`Testing Get requests (no logs)`, func() {
 			req := logdog.GetRequest{
 				Project: string(project),
-				Path:    string(ls.Path()),
+				Path:    string(tls.Path),
 			}
 
 			Convey(`Will succeed with no logs.`, func() {
@@ -200,7 +195,7 @@ func testGetImpl(t *testing.T, archived bool) {
 		Convey(`Testing Tail requests (no logs)`, func() {
 			req := logdog.TailRequest{
 				Project: string(project),
-				Path:    string(ls.Path()),
+				Path:    string(tls.Path),
 			}
 
 			Convey(`Will succeed with no logs.`, func() {
@@ -229,7 +224,7 @@ func testGetImpl(t *testing.T, archived bool) {
 				for _, le := range entries {
 					err := env.IntermediateStorage.Put(storage.PutRequest{
 						Project: project,
-						Path:    ls.Path(),
+						Path:    tls.Path,
 						Index:   types.MessageIndex(le.StreamIndex),
 						Values:  [][]byte{protobufs[le.StreamIndex]},
 					})
@@ -243,7 +238,7 @@ func testGetImpl(t *testing.T, archived bool) {
 				src := staticArchiveSource(entries)
 				var lbuf, ibuf bytes.Buffer
 				m := archive.Manifest{
-					Desc:             desc,
+					Desc:             tls.Desc,
 					Source:           &src,
 					LogWriter:        &lbuf,
 					IndexWriter:      &ibuf,
@@ -257,22 +252,23 @@ func testGetImpl(t *testing.T, archived bool) {
 
 				env.GSClient.Put("gs://testbucket/stream", lbuf.Bytes())
 				env.GSClient.Put("gs://testbucket/index", ibuf.Bytes())
-				ls.State = coordinator.LSArchived
-				ls.TerminatedTime = now
-				ls.ArchivedTime = now
-				ls.ArchiveStreamURL = "gs://testbucket/stream"
-				ls.ArchiveIndexURL = "gs://testbucket/index"
+				tls.State.TerminatedTime = now
+				tls.State.ArchivedTime = now
+				tls.State.ArchiveStreamURL = "gs://testbucket/stream"
+				tls.State.ArchiveIndexURL = "gs://testbucket/index"
+
+				So(tls.State.ArchivalState().Archived(), ShouldBeTrue)
 			}
 			putLogStream(c)
 
 			Convey(`Testing Get requests`, func() {
 				req := logdog.GetRequest{
 					Project: string(project),
-					Path:    string(ls.Path()),
+					Path:    string(tls.Path),
 				}
 
 				Convey(`When the log stream is purged`, func() {
-					ls.Purged = true
+					tls.Stream.Purged = true
 					putLogStream(c)
 
 					Convey(`Will return NotFound if the user is not an administrator.`, func() {
@@ -377,13 +373,6 @@ func testGetImpl(t *testing.T, archived bool) {
 					So(resp, shouldHaveLogs, 0, 1, 2)
 				})
 
-				Convey(`Will successfully retrieve a stream path hash.`, func() {
-					req.Path = string(ls.ID)
-					resp, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogs, 0, 1, 2)
-				})
-
 				Convey(`When requesting state`, func() {
 					req.State = true
 					req.LogCount = -1
@@ -391,13 +380,13 @@ func testGetImpl(t *testing.T, archived bool) {
 					Convey(`Will successfully retrieve stream state.`, func() {
 						resp, err := svr.Get(c, &req)
 						So(err, ShouldBeRPCOK)
-						So(resp.State, ShouldResemble, loadLogStreamState(ls))
+						So(resp.State, ShouldResemble, buildLogStreamState(tls.Stream, tls.State))
 						So(len(resp.Logs), ShouldEqual, 0)
 					})
 
 					Convey(`Will return Internal if the protobuf descriptor data is corrupt.`, func() {
-						ls.SetDSValidate(false)
-						ls.Descriptor = []byte{0x00} // Invalid protobuf, zero tag.
+						tls.Stream.SetDSValidate(false)
+						tls.Stream.Descriptor = []byte{0x00} // Invalid protobuf, zero tag.
 						putLogStream(c)
 
 						_, err := svr.Get(c, &req)
@@ -434,7 +423,7 @@ func testGetImpl(t *testing.T, archived bool) {
 
 					resp, err := svr.Get(c, &req)
 					So(err, ShouldBeRPCOK)
-					So(resp.State, ShouldResemble, loadLogStreamState(ls))
+					So(resp.State, ShouldResemble, buildLogStreamState(tls.Stream, tls.State))
 					So(resp, shouldHaveLogs, 0, 1, 2)
 				})
 
@@ -468,7 +457,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					So(resp.Logs[0], ShouldNotBeNil)
 
 					// Confirm that there is a descriptor protobuf.
-					So(resp.Desc, ShouldResemble, desc)
+					So(resp.Desc, ShouldResemble, tls.Desc)
 
 					// Confirm that the state was returned.
 					So(resp.State, ShouldNotBeNil)
@@ -527,23 +516,15 @@ func testGetImpl(t *testing.T, archived bool) {
 			Convey(`Testing tail requests`, func() {
 				req := logdog.TailRequest{
 					Project: string(project),
-					Path:    string(ls.Path()),
+					Path:    string(tls.Path),
+					State:   true,
 				}
 
 				Convey(`Will successfully retrieve a stream path.`, func() {
 					resp, err := svr.Tail(c, &req)
 					So(err, ShouldBeRPCOK)
 					So(resp, shouldHaveLogs, 7)
-				})
-
-				Convey(`Will successfully retrieve a stream path hash and state.`, func() {
-					req.Path = string(ls.ID)
-					req.State = true
-
-					resp, err := svr.Tail(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogs, 7)
-					So(resp.State, ShouldResemble, loadLogStreamState(ls))
+					So(resp.State, ShouldResemble, buildLogStreamState(tls.Stream, tls.State))
 				})
 			})
 		})

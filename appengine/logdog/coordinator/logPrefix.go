@@ -28,7 +28,7 @@ type LogPrefix struct {
 	// Schema is the datastore schema version for this object. This can be used
 	// to facilitate schema migrations.
 	//
-	// The current schema is currentLogStreamSchema.
+	// The current schema is currentSchemaVersion.
 	Schema string
 
 	// Created is the time when this stream was created.
@@ -56,20 +56,9 @@ var _ interface {
 	ds.PropertyLoadSaver
 } = (*LogPrefix)(nil)
 
-// LogPrefixFromID returns a LogPrefix keyed to the specified hash ID.
-func LogPrefixFromID(hashID HashID) *LogPrefix {
-	return &LogPrefix{
-		ID: hashID,
-	}
-}
-
-// LogPrefixFromPrefix returns a LogPrefix keyed to the specified prefix string.
-func LogPrefixFromPrefix(prefix types.StreamName) *LogPrefix {
-	p := LogPrefix{
-		Prefix: string(prefix),
-	}
-	p.recalculateID()
-	return &p
+// LogPrefixID returns the HashID for a specific prefix.
+func LogPrefixID(prefix types.StreamName) HashID {
+	return makeHashID(string(prefix))
 }
 
 // Load implements ds.PropertyLoadSaver.
@@ -91,7 +80,7 @@ func (p *LogPrefix) Save(withMeta bool) (ds.PropertyMap, error) {
 	if err := p.validateImpl(true); err != nil {
 		return nil, err
 	}
-	p.Schema = currentLogStreamSchema
+	p.Schema = CurrentSchemaVersion
 
 	return ds.GetPLS(p).Save(withMeta)
 }

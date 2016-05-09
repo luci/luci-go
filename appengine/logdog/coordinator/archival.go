@@ -38,24 +38,24 @@ type ArchivalParams struct {
 // PublishTask creates and dispatches a task queue task for the supplied
 // LogStream. PublishTask is goroutine-safe.
 //
-// This should be run within a transaction on ls. On success, ls's state will
-// be updated to reflect the archival tasking. This will NOT update ls's
+// This should be run within a transaction on lst. On success, lst's state will
+// be updated to reflect the archival tasking. This will NOT update lst's
 // datastore entity; the caller must make sure to call Put within the same
 // transaction for transactional safety.
 //
 // If the task is created successfully, this will return nil. If the LogStream
 // already had a task dispatched, it will return ErrArchiveTasked.
-func (p *ArchivalParams) PublishTask(c context.Context, ap ArchivalPublisher, ls *LogStream) error {
-	if ls.State >= LSArchiveTasked {
+func (p *ArchivalParams) PublishTask(c context.Context, ap ArchivalPublisher, lst *LogStreamState) error {
+	if as := lst.ArchivalState(); as.Archived() || as == ArchiveTasked {
 		// An archival task has already been dispatched for this log stream.
 		return ErrArchiveTasked
 	}
 
-	path := string(ls.Path())
+	id := lst.ID()
 	msg := logdog.ArchiveTask{
 		Project: string(Project(c)),
-		Path:    path,
-		Key:     p.createArchivalKey(path, ap.NewPublishIndex()),
+		Id:      string(id),
+		Key:     p.createArchivalKey(id, ap.NewPublishIndex()),
 	}
 	if p.SettleDelay > 0 {
 		msg.SettleDelay = google.NewDuration(p.SettleDelay)
@@ -71,8 +71,7 @@ func (p *ArchivalParams) PublishTask(c context.Context, ap ArchivalPublisher, ls
 
 	// Update our LogStream's ArchiveState to reflect that an archival task has
 	// been dispatched.
-	ls.State = LSArchiveTasked
-	ls.ArchivalKey = msg.Key
+	lst.ArchivalKey = msg.Key
 	return nil
 }
 
@@ -87,9 +86,9 @@ func (p *ArchivalParams) PublishTask(c context.Context, ap ArchivalPublisher, ls
 // The first two should be sufficient for a unique value, since a given request
 // will only be handed to a single instance, and the atomic value is unique
 // within the instance.
-func (p *ArchivalParams) createArchivalKey(path string, pidx uint64) []byte {
+func (p *ArchivalParams) createArchivalKey(id HashID, pidx uint64) []byte {
 	hash := sha256.New()
-	if _, err := fmt.Fprintf(hash, "%s\x00%s\x00%d", p.RequestID, path, pidx); err != nil {
+	if _, err := fmt.Fprintf(hash, "%s\x00%s\x00%d", p.RequestID, id, pidx); err != nil {
 		panic(err)
 	}
 	return hash.Sum(nil)

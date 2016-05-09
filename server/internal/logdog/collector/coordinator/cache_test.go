@@ -15,7 +15,6 @@ import (
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logdog/types"
-	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -32,7 +31,7 @@ type testCoordinator struct {
 	errC chan error
 }
 
-func (c *testCoordinator) RegisterStream(ctx context.Context, s *LogStreamState, d *logpb.LogStreamDescriptor) (
+func (c *testCoordinator) RegisterStream(ctx context.Context, s *LogStreamState, desc []byte) (
 	*LogStreamState, error) {
 	if err := c.incCalls(); err != nil {
 		return nil, err

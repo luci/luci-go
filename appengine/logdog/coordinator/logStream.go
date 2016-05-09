@@ -16,42 +16,10 @@ import (
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
 )
 
-// currentLogStreamSchema is the current schema version of the LogStream.
+// CurrentSchemaVersion is the current schema version of the LogStream.
 // Changes that are not backward-compatible should update this field so
 // migration logic and scripts can translate appropriately.
-const currentLogStreamSchema = "1"
-
-// LogStreamState is the archival state of the log stream.
-type LogStreamState int
-
-const (
-	// LSStreaming indicates that the log stream is still streaming. This implies
-	// that no terminal index has been identified yet.
-	LSStreaming LogStreamState = iota
-	// LSArchiveTasked indicates that the log stream has had an archival task
-	// generated for it and is awaiting archival.
-	LSArchiveTasked
-	// LSArchived indicates that the log stream has been successfully archived.
-	LSArchived
-)
-
-func (s LogStreamState) String() string {
-	switch s {
-	case LSStreaming:
-		return "STREAMING"
-	case LSArchiveTasked:
-		return "ARCHIVE_TASKED"
-	case LSArchived:
-		return "ARCHIVED"
-	default:
-		return fmt.Sprintf("UNKNOWN(%d)", s)
-	}
-}
-
-// Archived returns true if this LogStreamState represents a finished archival.
-func (s LogStreamState) Archived() bool {
-	return s >= LSArchived
-}
+const CurrentSchemaVersion = "1"
 
 // LogStream is the primary datastore model containing information and state of
 // an individual log stream.
@@ -78,12 +46,6 @@ func (s LogStreamState) Archived() bool {
 //	  - _Tags is a string slice containing:
 //	    - KEY=[VALUE] key/value tags.
 //	    - KEY key presence tags.
-//
-//	  - _Terminated is true if the LogStream has been terminated.
-//	  - _Archived is true if the LogStream has been archived.
-//
-// Most of the values in QueryBase are static. Those that change can only be
-// changed through service endpoint methods.
 type LogStream struct {
 	// ID is the LogStream ID. It is generated from the stream's Prefix/Name
 	// fields.
@@ -92,7 +54,7 @@ type LogStream struct {
 	// Schema is the datastore schema version for this object. This can be used
 	// to facilitate schema migrations.
 	//
-	// The current schema is currentLogStreamSchema.
+	// The current schema is currentSchemaVersion.
 	Schema string
 
 	// Prefix is this log stream's prefix value. Log streams with the same prefix
@@ -107,27 +69,15 @@ type LogStream struct {
 	// ID.
 	Name string
 
-	// State is the log stream's current state.
-	State LogStreamState
+	// Created is the time when this stream was created.
+	Created time.Time
 
 	// Purged, if true, indicates that this log stream has been marked as purged.
 	// Non-administrative queries and requests for this stream will operate as
 	// if this entry doesn't exist.
 	Purged bool
-
-	// Secret is the Butler secret value for this stream.
-	//
-	// This value may only be returned to LogDog services; it is not user-visible.
-	Secret []byte `gae:",noindex"`
-
-	// Created is the time when this stream was created.
-	Created time.Time
-	// TerminatedTime is the Coordinator's record of when this log stream was
-	// terminated.
-	TerminatedTime time.Time `gae:",noindex"`
-	// ArchivedTime is the Coordinator's record of when this log stream was
-	// archived.
-	ArchivedTime time.Time `gae:",noindex"`
+	// PurgedTime is the time when this stream was purged.
+	PurgedTime time.Time `gae:",noindex"`
 
 	// ProtoVersion is the version string of the protobuf, as reported by the
 	// Collector (and ultimately self-identified by the Butler).
@@ -151,43 +101,6 @@ type LogStream struct {
 	// Source is the set of source strings sent by the Butler.
 	Source []string
 
-	// TerminalIndex is the index of the last log entry in the stream.
-	//
-	// If this is <0, the log stream is either still streaming or has been
-	// archived with no log entries.
-	TerminalIndex int64 `gae:",noindex"`
-
-	// ArchiveLogEntryCount is the number of LogEntry records that were archived
-	// for this log stream.
-	//
-	// This is valid only if the log stream is Archived.
-	ArchiveLogEntryCount int64 `gae:",noindex"`
-	// ArchivalKey is the archival key for this log stream. This is used to
-	// differentiate the real archival request from those that were dispatched,
-	// but that ultimately failed to update state.
-	ArchivalKey []byte `gae:",noindex"`
-
-	// ArchiveIndexURL is the Google Storage URL where the log stream's index is
-	// archived.
-	ArchiveIndexURL string `gae:",noindex"`
-	// ArchiveIndexSize is the size, in bytes, of the archived Index. It will be
-	// zero if the file is not archived.
-	ArchiveIndexSize int64 `gae:",noindex"`
-	// ArchiveStreamURL is the Google Storage URL where the log stream's raw
-	// stream data is archived. If this is not empty, the log stream is considered
-	// archived.
-	ArchiveStreamURL string `gae:",noindex"`
-	// ArchiveStreamSize is the size, in bytes, of the archived stream. It will be
-	// zero if the file is not archived.
-	ArchiveStreamSize int64 `gae:",noindex"`
-	// ArchiveDataURL is the Google Storage URL where the log stream's assembled
-	// data is archived. If this is not empty, the log stream is considered
-	// archived.
-	ArchiveDataURL string `gae:",noindex"`
-	// ArchiveDataSize is the size, in bytes, of the archived data. It will be
-	// zero if the file is not archived.
-	ArchiveDataSize int64 `gae:",noindex"`
-
 	// extra causes datastore to ignore unrecognized fields and strip them in
 	// future writes.
 	extra ds.PropertyMap `gae:"-,extra"`
@@ -202,54 +115,28 @@ var _ interface {
 	ds.PropertyLoadSaver
 } = (*LogStream)(nil)
 
-// NewLogStream returns a LogStream instance with its ID field initialized based
-// on the supplied path.
-//
-// The supplied value is a LogDog stream path or a hash of the LogDog stream
-// path.
-func NewLogStream(value string) (*LogStream, error) {
-	path := types.StreamPath(value)
-	if err := path.Validate(); err != nil {
-		// If it's not a path, see if it's a SHA256 sum.
-		hash := HashID(value)
-		if hashErr := hash.normalize(); hashErr != nil {
-			return nil, fmt.Errorf("invalid path (%s) and hash (%s)", err, hashErr)
-		}
-
-		// Load this LogStream with its SHA256 hash directly. This stream will not
-		// have its Prefix/Name fields populated until it's loaded from datastore.
-		return LogStreamFromID(hash), nil
-	}
-
-	return LogStreamFromPath(path), nil
-}
-
-// LogStreamFromID returns an empty LogStream instance with a known hash ID.
-func LogStreamFromID(id HashID) *LogStream {
-	return &LogStream{
-		ID: id,
-	}
-}
-
-// LogStreamFromPath returns an empty LogStream instance initialized from a
-// known path value.
-//
-// The supplied path is assumed to be valid and is not checked.
-func LogStreamFromPath(path types.StreamPath) *LogStream {
-	// Load the prefix/name fields into the log stream.
-	prefix, name := path.Split()
-	ls := LogStream{
-		Prefix: string(prefix),
-		Name:   string(name),
-	}
-	ls.recalculateID()
-	return &ls
+// LogStreamID returns the HashID for a given log stream path.
+func LogStreamID(path types.StreamPath) HashID {
+	return makeHashID(string(path))
 }
 
 // LogPrefix returns a keyed (but not loaded) LogPrefix struct for this
 // LogStream's Prefix.
 func (s *LogStream) LogPrefix() *LogPrefix {
-	return LogPrefixFromPrefix(types.StreamName(s.Prefix))
+	return &LogPrefix{ID: s.ID}
+}
+
+// PopulateState populates the datastore key fields for the supplied
+// LogStreamState, binding them to the current LogStream.
+func (s *LogStream) PopulateState(di ds.Interface, lst *LogStreamState) {
+	lst.Parent = di.KeyForObj(s)
+}
+
+// State returns the LogStreamState keyed for this LogStream.
+func (s *LogStream) State(di ds.Interface) *LogStreamState {
+	var lst LogStreamState
+	s.PopulateState(di, &lst)
+	return &lst
 }
 
 // Path returns the LogDog path for this log stream.
@@ -272,15 +159,9 @@ func (s *LogStream) Load(pmap ds.PropertyMap) error {
 			tm, _ := tagMapFromProperties(v)
 			s.Tags = tm
 		}
-		delete(pmap, k)
 	}
 
 	if err := ds.GetPLS(s).Load(pmap); err != nil {
-		return err
-	}
-
-	// Migrate schema (if needed), then validate.
-	if err := s.migrateSchema(); err != nil {
 		return err
 	}
 
@@ -301,7 +182,7 @@ func (s *LogStream) Save(withMeta bool) (ds.PropertyMap, error) {
 			return nil, err
 		}
 	}
-	s.Schema = currentLogStreamSchema
+	s.Schema = CurrentSchemaVersion
 
 	// Save default struct fields.
 	pmap, err := ds.GetPLS(s).Save(withMeta)
@@ -318,28 +199,7 @@ func (s *LogStream) Save(withMeta bool) (ds.PropertyMap, error) {
 	// Generate our path components, "_C".
 	pmap["_C"] = generatePathComponents(s.Prefix, s.Name)
 
-	// Add our derived statuses.
-	pmap["_Terminated"] = []ds.Property{ds.MkProperty(s.Terminated())}
-	pmap["_Archived"] = []ds.Property{ds.MkProperty(s.Archived())}
-
 	return pmap, nil
-}
-
-// recalculateID calculates the log stream's hash ID from its Prefix/Name
-// fields, which must be populated else this function will panic.
-//
-// The value is loaded into its ID field.
-func (s *LogStream) recalculateID() {
-	s.ID = s.getIDFromPath()
-}
-
-// getIDFromPath calculates the log stream's hash ID from its Prefix/Name
-// fields, which must be populated else this function will panic.
-func (s *LogStream) getIDFromPath() HashID {
-	if s.Prefix == "" || s.Name == "" {
-		panic("missing prefix and/or name")
-	}
-	return makeHashID(string(s.Path()))
 }
 
 // Validate evaluates the state and data contents of the LogStream and returns
@@ -351,7 +211,7 @@ func (s *LogStream) Validate() error {
 func (s *LogStream) validateImpl(enforceHashID bool) error {
 	if enforceHashID {
 		// Make sure our Prefix and Name match the Hash ID.
-		if hid := s.getIDFromPath(); hid != s.ID {
+		if hid := LogStreamID(s.Path()); hid != s.ID {
 			return fmt.Errorf("hash IDs don't match (%q != %q)", hid, s.ID)
 		}
 	}
@@ -362,21 +222,11 @@ func (s *LogStream) validateImpl(enforceHashID bool) error {
 	if err := types.StreamName(s.Name).Validate(); err != nil {
 		return fmt.Errorf("invalid name: %s", err)
 	}
-	if err := types.PrefixSecret(s.Secret).Validate(); err != nil {
-		return fmt.Errorf("invalid prefix secret: %s", err)
-	}
 	if s.ContentType == "" {
 		return errors.New("empty content type")
 	}
 	if s.Created.IsZero() {
 		return errors.New("created time is not set")
-	}
-
-	if s.Terminated() && s.TerminatedTime.IsZero() {
-		return errors.New("log stream is terminated, but missing terminated time")
-	}
-	if s.Archived() && s.ArchivedTime.IsZero() {
-		return errors.New("log stream is archived, but missing archived time")
 	}
 
 	switch s.StreamType {
@@ -409,25 +259,6 @@ func (s *LogStream) DescriptorValue() (*logpb.LogStreamDescriptor, error) {
 	return &pb, nil
 }
 
-// Terminated returns true if this stream has been terminated.
-func (s *LogStream) Terminated() bool {
-	if s.Archived() {
-		return true
-	}
-	return s.TerminalIndex >= 0
-}
-
-// Archived returns true if this stream has been archived.
-func (s *LogStream) Archived() bool {
-	return s.State.Archived()
-}
-
-// ArchiveComplete returns true if this stream has been archived and all of its
-// log entries were present.
-func (s *LogStream) ArchiveComplete() bool {
-	return (s.Archived() && s.ArchiveLogEntryCount == (s.TerminalIndex+1))
-}
-
 // LoadDescriptor loads the fields in the log stream descriptor into this
 // LogStream entry. These fields are:
 //   - Prefix
@@ -438,14 +269,6 @@ func (s *LogStream) ArchiveComplete() bool {
 //   - Timestamp
 //   - Tags
 func (s *LogStream) LoadDescriptor(desc *logpb.LogStreamDescriptor) error {
-	// If the descriptor's Prefix/Name don't match ours, refuse to load it.
-	if desc.Prefix != s.Prefix {
-		return fmt.Errorf("prefixes don't match (%q != %q)", desc.Prefix, s.Prefix)
-	}
-	if desc.Name != s.Name {
-		return fmt.Errorf("names don't match (%q != %q)", desc.Name, s.Name)
-	}
-
 	if err := desc.Validate(true); err != nil {
 		return fmt.Errorf("invalid descriptor: %v", err)
 	}

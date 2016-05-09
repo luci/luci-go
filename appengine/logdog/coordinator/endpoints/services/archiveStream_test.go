@@ -7,6 +7,7 @@ package services
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/luci/gae/filter/featureBreaker"
 	ds "github.com/luci/gae/service/datastore"
@@ -26,18 +27,21 @@ func TestArchiveStream(t *testing.T) {
 
 		svr := New()
 
-		now := ds.RoundTime(env.Clock.Now().UTC())
-
 		// Register a testing log stream with an archive tasked.
-		ls := ct.TestLogStream(c, ct.TestLogStreamDescriptor(c, "foo"))
-		ls.State = coordinator.LSArchiveTasked
-		ls.ArchivalKey = []byte("archival key")
-		if err := ds.Get(c).Put(ls); err != nil {
+		tls := ct.MakeStream(c, "proj-foo", "testing/+/foo")
+		tls.State.ArchivalKey = []byte("archival key")
+		So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchiveTasked)
+		if err := tls.Put(c); err != nil {
 			panic(err)
 		}
 
+		// Advance the clock to differentiate updates from new stream.
+		env.Clock.Add(time.Hour)
+		now := ds.RoundTime(env.Clock.Now().UTC())
+
 		req := &logdog.ArchiveStreamRequest{
-			Path:          string(ls.Path()),
+			Project:       string(tls.Project),
+			Id:            string(tls.Stream.ID),
 			TerminalIndex: 13,
 			LogEntryCount: 14,
 			StreamUrl:     "gs://fake.stream",
@@ -60,23 +64,22 @@ func TestArchiveStream(t *testing.T) {
 				_, err := svr.ArchiveStream(c, req)
 				So(err, ShouldBeNil)
 
-				So(ds.Get(c).Get(ls), ShouldBeNil)
-				So(ls.Terminated(), ShouldBeTrue)
-				So(ls.Archived(), ShouldBeTrue)
-				So(ls.ArchiveComplete(), ShouldBeTrue)
+				So(tls.Get(c), ShouldBeNil)
+				So(tls.State.Terminated(), ShouldBeTrue)
+				So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchivedComplete)
 
-				So(ls.State, ShouldEqual, coordinator.LSArchived)
-				So(ls.ArchivalKey, ShouldBeNil)
-				So(ls.TerminatedTime, ShouldResemble, now)
-				So(ls.ArchivedTime, ShouldResemble, now)
-				So(ls.TerminalIndex, ShouldEqual, 13)
-				So(ls.ArchiveLogEntryCount, ShouldEqual, 14)
-				So(ls.ArchiveStreamURL, ShouldEqual, "gs://fake.stream")
-				So(ls.ArchiveStreamSize, ShouldEqual, 10)
-				So(ls.ArchiveIndexURL, ShouldEqual, "gs://fake.index")
-				So(ls.ArchiveIndexSize, ShouldEqual, 20)
-				So(ls.ArchiveDataURL, ShouldEqual, "gs://fake.data")
-				So(ls.ArchiveDataSize, ShouldEqual, 30)
+				So(tls.State.Updated, ShouldResemble, now)
+				So(tls.State.ArchivalKey, ShouldBeNil)
+				So(tls.State.TerminatedTime, ShouldResemble, now)
+				So(tls.State.ArchivedTime, ShouldResemble, now)
+				So(tls.State.TerminalIndex, ShouldEqual, 13)
+				So(tls.State.ArchiveLogEntryCount, ShouldEqual, 14)
+				So(tls.State.ArchiveStreamURL, ShouldEqual, "gs://fake.stream")
+				So(tls.State.ArchiveStreamSize, ShouldEqual, 10)
+				So(tls.State.ArchiveIndexURL, ShouldEqual, "gs://fake.index")
+				So(tls.State.ArchiveIndexSize, ShouldEqual, 20)
+				So(tls.State.ArchiveDataURL, ShouldEqual, "gs://fake.data")
+				So(tls.State.ArchiveDataSize, ShouldEqual, 30)
 			})
 
 			Convey(`Will mark the stream as partially archived if not complete.`, func() {
@@ -85,29 +88,28 @@ func TestArchiveStream(t *testing.T) {
 				_, err := svr.ArchiveStream(c, req)
 				So(err, ShouldBeNil)
 
-				So(ds.Get(c).Get(ls), ShouldBeNil)
-				So(ls.Terminated(), ShouldBeTrue)
-				So(ls.Archived(), ShouldBeTrue)
-				So(ls.ArchiveComplete(), ShouldBeFalse)
+				So(tls.Get(c), ShouldBeNil)
+				So(tls.State.Terminated(), ShouldBeTrue)
+				So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchivedPartial)
 
-				So(ls.State, ShouldEqual, coordinator.LSArchived)
-				So(ls.ArchivalKey, ShouldBeNil)
-				So(ls.TerminatedTime, ShouldResemble, now)
-				So(ls.ArchivedTime, ShouldResemble, now)
-				So(ls.TerminalIndex, ShouldEqual, 13)
-				So(ls.ArchiveLogEntryCount, ShouldEqual, 13)
-				So(ls.ArchiveStreamURL, ShouldEqual, "gs://fake.stream")
-				So(ls.ArchiveStreamSize, ShouldEqual, 10)
-				So(ls.ArchiveIndexURL, ShouldEqual, "gs://fake.index")
-				So(ls.ArchiveIndexSize, ShouldEqual, 20)
-				So(ls.ArchiveDataURL, ShouldEqual, "gs://fake.data")
-				So(ls.ArchiveDataSize, ShouldEqual, 30)
+				So(tls.State.Updated, ShouldResemble, now)
+				So(tls.State.ArchivalKey, ShouldBeNil)
+				So(tls.State.TerminatedTime, ShouldResemble, now)
+				So(tls.State.ArchivedTime, ShouldResemble, now)
+				So(tls.State.TerminalIndex, ShouldEqual, 13)
+				So(tls.State.ArchiveLogEntryCount, ShouldEqual, 13)
+				So(tls.State.ArchiveStreamURL, ShouldEqual, "gs://fake.stream")
+				So(tls.State.ArchiveStreamSize, ShouldEqual, 10)
+				So(tls.State.ArchiveIndexURL, ShouldEqual, "gs://fake.index")
+				So(tls.State.ArchiveIndexSize, ShouldEqual, 20)
+				So(tls.State.ArchiveDataURL, ShouldEqual, "gs://fake.data")
+				So(tls.State.ArchiveDataSize, ShouldEqual, 30)
 			})
 
-			Convey(`Will refuse to process an invalid stream path.`, func() {
-				req.Path = "!!!invalid!!!"
+			Convey(`Will refuse to process an invalid stream hash.`, func() {
+				req.Id = "!!!invalid!!!"
 				_, err := svr.ArchiveStream(c, req)
-				So(err, ShouldBeRPCInvalidArgument, "invalid log stream path")
+				So(err, ShouldBeRPCInvalidArgument, "Invalid ID")
 			})
 
 			Convey(`If index URL is missing, will refuse to mark the stream archived.`, func() {
@@ -125,26 +127,25 @@ func TestArchiveStream(t *testing.T) {
 			})
 
 			Convey(`If stream is already archived, will not update and return success.`, func() {
-				ls.State = coordinator.LSArchived
-				ls.TerminalIndex = 1337
-				ls.ArchiveLogEntryCount = 42
-				ls.ArchivedTime = now
-				ls.TerminatedTime = now
-				So(ds.Get(c).Put(ls), ShouldBeNil)
-				So(ls.Terminated(), ShouldBeTrue)
-				So(ls.Archived(), ShouldBeTrue)
+				tls.State.TerminalIndex = 1337
+				tls.State.ArchiveLogEntryCount = 42
+				tls.State.ArchivedTime = now
+				tls.State.TerminatedTime = now
+
+				So(tls.State.Terminated(), ShouldBeTrue)
+				So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchivedPartial)
+				So(tls.Put(c), ShouldBeNil)
 
 				_, err := svr.ArchiveStream(c, req)
 				So(err, ShouldBeNil)
 
-				ls.TerminalIndex = -1 // To make sure it reloaded.
-				So(ds.Get(c).Get(ls), ShouldBeNil)
-				So(ls.Terminated(), ShouldBeTrue)
-				So(ls.Archived(), ShouldBeTrue)
+				tls.State.TerminalIndex = -1 // To make sure it reloaded.
+				So(tls.Get(c), ShouldBeNil)
+				So(tls.State.Terminated(), ShouldBeTrue)
+				So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchivedPartial)
 
-				So(ls.State, ShouldEqual, coordinator.LSArchived)
-				So(ls.TerminalIndex, ShouldEqual, 1337)
-				So(ls.ArchiveLogEntryCount, ShouldEqual, 42)
+				So(tls.State.TerminalIndex, ShouldEqual, 1337)
+				So(tls.State.ArchiveLogEntryCount, ShouldEqual, 42)
 			})
 
 			Convey(`If the archive has failed, it is archived as an empty stream.`, func() {
@@ -152,13 +153,12 @@ func TestArchiveStream(t *testing.T) {
 
 				_, err := svr.ArchiveStream(c, req)
 				So(err, ShouldBeNil)
-				So(ds.Get(c).Get(ls), ShouldBeNil)
-				So(ls.Archived(), ShouldBeTrue)
+				So(tls.Get(c), ShouldBeNil)
+				So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchivedComplete)
 
-				So(ls.State, ShouldEqual, coordinator.LSArchived)
-				So(ls.ArchivalKey, ShouldBeNil)
-				So(ls.TerminalIndex, ShouldEqual, -1)
-				So(ls.ArchiveLogEntryCount, ShouldEqual, 0)
+				So(tls.State.ArchivalKey, ShouldBeNil)
+				So(tls.State.TerminalIndex, ShouldEqual, -1)
+				So(tls.State.ArchiveLogEntryCount, ShouldEqual, 0)
 			})
 
 			Convey(`When datastore Get fails, returns internal error.`, func() {

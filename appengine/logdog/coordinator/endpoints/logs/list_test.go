@@ -15,7 +15,6 @@ import (
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logdog/types"
-	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -52,8 +51,6 @@ func TestList(t *testing.T) {
 		const project = config.ProjectName("proj-foo")
 
 		// Install a set of stock log streams to query against.
-		streams := map[string]*coordinator.LogStream{}
-		descs := map[string]*logpb.LogStreamDescriptor{}
 		for i, v := range []types.StreamPath{
 			"blargh/+/foo",
 			"other/+/foo/bar",
@@ -62,27 +59,19 @@ func TestList(t *testing.T) {
 			"testing/+/foo/bar",
 		} {
 			// di is a datastore bound to the test project namespace.
-			prefix, name := v.Split()
-			desc := ct.TestLogStreamDescriptor(c, string(name))
-			desc.Prefix = string(prefix)
-
-			ls := ct.TestLogStream(c, desc)
+			tls := ct.MakeStream(c, project, v)
 
 			ct.WithProjectNamespace(c, project, func(c context.Context) {
-				di := ds.Get(c)
-
-				if err := di.Put(ls); err != nil {
+				if err := tls.Put(c); err != nil {
 					panic(fmt.Errorf("failed to put log stream %d: %v", i, err))
 				}
 
-				for _, c := range hierarchy.Components(ls.Path()) {
+				di := ds.Get(c)
+				for _, c := range hierarchy.Components(tls.Path) {
 					if err := c.Put(di); err != nil {
 						panic(fmt.Errorf("failed to put log component %d: %v", i, err))
 					}
 				}
-
-				descs[string(v)] = desc
-				streams[string(v)] = ls
 			})
 		}
 		ds.Get(c).Testable().CatchupIndexes()

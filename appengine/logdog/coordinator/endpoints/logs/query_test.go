@@ -12,7 +12,6 @@ import (
 
 	"github.com/luci/gae/filter/featureBreaker"
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
 	"github.com/luci/luci-go/common/config"
@@ -20,7 +19,6 @@ import (
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
-	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -79,8 +77,7 @@ func TestQuery(t *testing.T) {
 		// Install a set of stock log streams to query against.
 		var streamPaths []string
 		var purgedStreamPaths []string
-		streams := map[string]*coordinator.LogStream{}
-		descs := map[string]*logpb.LogStreamDescriptor{}
+		streams := map[string]*ct.TestStream{}
 		for i, v := range []types.StreamPath{
 			"testing/+/foo",
 			"testing/+/foo/bar",
@@ -97,61 +94,53 @@ func TestQuery(t *testing.T) {
 			"testing/+/foo/bar/baz",
 			"testing/+/baz",
 		} {
-			prefix, name := v.Split()
-			desc := ct.TestLogStreamDescriptor(c, string(name))
-			desc.Prefix = string(prefix)
-			desc.ContentType = string(prefix)
-			desc.Tags = map[string]string{
-				"prefix": string(prefix),
-				"name":   string(name),
+			tls := ct.MakeStream(c, project, v)
+			tls.Desc.ContentType = tls.Stream.Prefix
+			tls.Desc.Tags = map[string]string{
+				"prefix": tls.Stream.Prefix,
+				"name":   tls.Stream.Name,
 			}
 
 			// Set an empty tag for each name segment.
-			for _, p := range name.Segments() {
-				desc.Tags[p] = ""
+			for _, p := range types.StreamName(tls.Stream.Name).Segments() {
+				tls.Desc.Tags[p] = ""
 			}
 
-			ls := ct.TestLogStream(c, desc)
-
 			now := env.Clock.Now().UTC()
-			psegs := prefix.Segments()
+			psegs := types.StreamName(tls.Stream.Prefix).Segments()
 			if psegs[0] == "meta" {
 				for _, p := range psegs[1:] {
 					switch p {
 					case "purged":
-						ls.Purged = true
-
-					case "terminated":
-						ls.TerminalIndex = 1337
-						ls.TerminatedTime = now
+						tls.Stream.Purged = true
 
 					case "archived":
-						ls.State = coordinator.LSArchived
+						tls.State.ArchiveStreamURL = "http://example.com"
+						tls.State.ArchivedTime = now
+						So(tls.State.ArchivalState().Archived(), ShouldBeTrue)
+						fallthrough // Archived streams are also terminated.
 
-						ls.TerminalIndex = 1337
-						ls.TerminatedTime = now
-
-						ls.ArchiveStreamURL = "http://example.com"
-						ls.ArchivedTime = now
+					case "terminated":
+						tls.State.TerminalIndex = 1337
+						tls.State.TerminatedTime = now
+						So(tls.State.Terminated(), ShouldBeTrue)
 
 					case "datagram":
-						ls.StreamType = logpb.StreamType_DATAGRAM
+						tls.Desc.StreamType = logpb.StreamType_DATAGRAM
 
 					case "binary":
-						ls.StreamType = logpb.StreamType_BINARY
+						tls.Desc.StreamType = logpb.StreamType_BINARY
 					}
 				}
 			}
 
-			ct.WithProjectNamespace(c, project, func(c context.Context) {
-				if err := ds.Get(c).Put(ls); err != nil {
-					panic(fmt.Errorf("failed to put log stream %d: %v", i, err))
-				}
-			})
+			tls.Reload(c)
+			if err := tls.Put(c); err != nil {
+				panic(fmt.Errorf("failed to put log stream %d: %v", i, err))
+			}
 
-			descs[string(v)] = desc
-			streams[string(v)] = ls
-			if !ls.Purged {
+			streams[string(v)] = tls
+			if !tls.Stream.Purged {
 				streamPaths = append(streamPaths, string(v))
 			}
 			purgedStreamPaths = append(purgedStreamPaths, string(v))
@@ -223,9 +212,7 @@ func TestQuery(t *testing.T) {
 		Convey(`When querying for "testing/+/baz"`, func() {
 			req.Path = "testing/+/baz"
 
-			stream := streams["testing/+/baz"]
-			desc := descs["testing/+/baz"]
-
+			tls := streams["testing/+/baz"]
 			Convey(`State is not returned.`, func() {
 				resp, err := svr.Query(c, &req)
 				So(err, ShouldBeRPCOK)
@@ -246,19 +233,17 @@ func TestQuery(t *testing.T) {
 					So(resp, shouldHaveLogPaths, "testing/+/baz")
 
 					So(resp.Streams, ShouldHaveLength, 1)
-					So(resp.Streams[0].State, ShouldResemble, loadLogStreamState(stream))
-					So(resp.Streams[0].Desc, ShouldResemble, desc)
+					So(resp.Streams[0].State, ShouldResemble, buildLogStreamState(tls.Stream, tls.State))
+					So(resp.Streams[0].Desc, ShouldResemble, tls.Desc)
 					So(resp.Streams[0].DescProto, ShouldBeNil)
 				})
 
 				Convey(`When not requesting protobufs, and with a corrupt descriptor, returns InternalServer error.`, func() {
-					stream.SetDSValidate(false)
-					stream.Descriptor = []byte{0x00} // Invalid protobuf, zero tag.
-					ct.WithProjectNamespace(c, project, func(c context.Context) {
-						if err := ds.Get(c).Put(stream); err != nil {
-							panic(err)
-						}
-					})
+					tls.Stream.SetDSValidate(false)
+					tls.Stream.Descriptor = []byte{0x00} // Invalid protobuf, zero tag.
+					if err := tls.Put(c); err != nil {
+						panic(err)
+					}
 					ds.Get(c).Testable().CatchupIndexes()
 
 					_, err := svr.Query(c, &req)
@@ -273,8 +258,8 @@ func TestQuery(t *testing.T) {
 					So(resp, shouldHaveLogPaths, "testing/+/baz")
 
 					So(resp.Streams, ShouldHaveLength, 1)
-					So(resp.Streams[0].State, ShouldResemble, loadLogStreamState(stream))
-					So(resp.Streams[0].Desc, ShouldResemble, desc)
+					So(resp.Streams[0].State, ShouldResemble, buildLogStreamState(tls.Stream, tls.State))
+					So(resp.Streams[0].Desc, ShouldResemble, tls.Desc)
 				})
 			})
 		})
@@ -354,38 +339,6 @@ func TestQuery(t *testing.T) {
 
 		Convey(`When querying for meta streams`, func() {
 			req.Path = "meta/**/+/**"
-
-			Convey(`When terminated=yes, returns [archived, terminated].`, func() {
-				req.Terminated = logdog.QueryRequest_YES
-
-				resp, err := svr.Query(c, &req)
-				So(err, ShouldBeRPCOK)
-				So(resp, shouldHaveLogPaths, "meta/archived/+/foo", "meta/terminated/+/foo")
-			})
-
-			Convey(`When terminated=no, returns [binary, datagram]`, func() {
-				req.Terminated = logdog.QueryRequest_NO
-
-				resp, err := svr.Query(c, &req)
-				So(err, ShouldBeRPCOK)
-				So(resp, shouldHaveLogPaths, "meta/binary/+/foo", "meta/datagram/+/foo")
-			})
-
-			Convey(`When archived=yes, returns [archived]`, func() {
-				req.Archived = logdog.QueryRequest_YES
-
-				resp, err := svr.Query(c, &req)
-				So(err, ShouldBeRPCOK)
-				So(resp, shouldHaveLogPaths, "meta/archived/+/foo")
-			})
-
-			Convey(`When archived=no, returns [binary, datagram, terminated]`, func() {
-				req.Archived = logdog.QueryRequest_NO
-
-				resp, err := svr.Query(c, &req)
-				So(err, ShouldBeRPCOK)
-				So(resp, shouldHaveLogPaths, "meta/binary/+/foo", "meta/datagram/+/foo", "meta/terminated/+/foo")
-			})
 
 			Convey(`When purged=yes, returns BadRequest error.`, func() {
 				req.Purged = logdog.QueryRequest_YES

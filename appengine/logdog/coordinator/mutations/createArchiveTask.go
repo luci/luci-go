@@ -12,7 +12,6 @@ import (
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/appengine/tumble"
-	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
@@ -20,8 +19,11 @@ import (
 // CreateArchiveTask is a tumble Mutation that registers a single hierarchy
 // component.
 type CreateArchiveTask struct {
-	// Path is the path of the log stream to create an archive task for.
-	Path types.StreamPath
+	// ID is the hash ID of the LogStream whose archive task is being created.
+	//
+	// Note that the task will apply to the LogStreamState, not the stream
+	// entity itself.
+	ID coordinator.HashID
 
 	// Expiration is the time when an archive task should be forced regardless
 	// of stream termination state.
@@ -32,7 +34,7 @@ var _ tumble.DelayedMutation = (*CreateArchiveTask)(nil)
 
 // RollForward implements tumble.DelayedMutation.
 func (m *CreateArchiveTask) RollForward(c context.Context) ([]tumble.Mutation, error) {
-	c = log.SetField(c, "path", m.Path)
+	c = log.SetField(c, "id", m.ID)
 
 	svc := coordinator.GetServices(c)
 	ap, err := svc.ArchivalPublisher(c)
@@ -43,8 +45,9 @@ func (m *CreateArchiveTask) RollForward(c context.Context) ([]tumble.Mutation, e
 
 	// Get the log stream.
 	di := ds.Get(c)
-	ls := m.logStream()
-	if err := di.Get(ls); err != nil {
+	state := m.logStream().State(di)
+
+	if err := di.Get(state); err != nil {
 		if err == ds.ErrNoSuchEntity {
 			log.Warningf(c, "Log stream no longer exists.")
 			return nil, nil
@@ -57,7 +60,7 @@ func (m *CreateArchiveTask) RollForward(c context.Context) ([]tumble.Mutation, e
 	params := coordinator.ArchivalParams{
 		RequestID: info.Get(c).RequestID(),
 	}
-	if err = params.PublishTask(c, ap, ls); err != nil {
+	if err = params.PublishTask(c, ap, state); err != nil {
 		if err == coordinator.ErrArchiveTasked {
 			log.Warningf(c, "Archival already tasked, skipping.")
 			return nil, nil
@@ -67,7 +70,7 @@ func (m *CreateArchiveTask) RollForward(c context.Context) ([]tumble.Mutation, e
 		return nil, err
 	}
 
-	if err := di.Put(ls); err != nil {
+	if err := di.Put(state); err != nil {
 		log.WithError(err).Errorf(c, "Failed to update datastore.")
 		return nil, err
 	}
@@ -91,14 +94,16 @@ func (m *CreateArchiveTask) HighPriority() bool {
 	return false
 }
 
-// TaskName returns the task's name, which is derived from its path.
+// TaskName returns the task's name, which is derived from its log stream ID.
 func (m *CreateArchiveTask) TaskName(di ds.Interface) (*ds.Key, string) {
-	ls := m.logStream()
-	return di.KeyForObj(ls), fmt.Sprintf("archive-expired-%s", ls.ID)
+	return di.KeyForObj(m.logStream()), fmt.Sprintf("archive-expired-%s", m.ID)
 }
 
+// logStream returns the log stream associated with this task.
 func (m *CreateArchiveTask) logStream() *coordinator.LogStream {
-	return coordinator.LogStreamFromPath(m.Path)
+	return &coordinator.LogStream{
+		ID: m.ID,
+	}
 }
 
 func init() {

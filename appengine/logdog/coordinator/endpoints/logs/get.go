@@ -62,42 +62,37 @@ func (s *server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 		"tail":    tail,
 	}.Debugf(c, "Received get request.")
 
-	ls, err := coordinator.NewLogStream(req.Path)
-	if err != nil {
+	path := types.StreamPath(req.Path)
+	if err := path.Validate(); err != nil {
 		log.WithError(err).Errorf(c, "Invalid path supplied.")
 		return nil, grpcutil.Errf(codes.InvalidArgument, "invalid path value")
 	}
 
-	// The user may supply a hash instead of a full path. Once resolved, log
-	// the original log stream.
-	path := ls.Path()
-	if req.Path != string(path) {
-		log.Fields{
-			"hashPath":   req.Path,
-			"streamPath": path,
-		}.Debugf(c, "Resolved hash path.")
+	di := ds.Get(c)
+	ls := &coordinator.LogStream{ID: coordinator.LogStreamID(path)}
+	lst := ls.State(di)
+	log.Fields{
+		"id": ls.ID,
+	}.Debugf(c, "Loading stream.")
+
+	if err := di.GetMulti([]interface{}{ls, lst}); err != nil {
+		if isNoSuchEntity(err) {
+			log.Errorf(c, "Log stream does not exist.")
+			return nil, grpcutil.Errf(codes.NotFound, "path not found")
+		}
+
+		log.WithError(err).Errorf(c, "Failed to look up log stream.")
+		return nil, grpcutil.Internal
 	}
 
 	// If this log entry is Purged and we're not admin, pretend it doesn't exist.
-	err = ds.Get(c).Get(ls)
-	switch err {
-	case nil:
-		if ls.Purged {
-			if authErr := coordinator.IsAdminUser(c); authErr != nil {
-				log.Fields{
-					log.ErrorKey: authErr,
-				}.Warningf(c, "Non-superuser requested purged log.")
-				return nil, grpcutil.Errf(codes.NotFound, "path not found")
-			}
+	if ls.Purged {
+		if authErr := coordinator.IsAdminUser(c); authErr != nil {
+			log.Fields{
+				log.ErrorKey: authErr,
+			}.Warningf(c, "Non-superuser requested purged log.")
+			return nil, grpcutil.Errf(codes.NotFound, "path not found")
 		}
-
-	case ds.ErrNoSuchEntity:
-		log.Errorf(c, "Log stream does not exist.")
-		return nil, grpcutil.Errf(codes.NotFound, "path not found")
-
-	default:
-		log.WithError(err).Errorf(c, "Failed to look up log stream.")
-		return nil, grpcutil.Internal
 	}
 
 	// If nothing was requested, return nothing.
@@ -107,7 +102,7 @@ func (s *server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 	}
 
 	if req.State {
-		resp.State = loadLogStreamState(ls)
+		resp.State = buildLogStreamState(ls, lst)
 
 		var err error
 		resp.Desc, err = ls.DescriptorValue()
@@ -119,7 +114,8 @@ func (s *server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 
 	// Retrieve requested logs from storage, if requested.
 	if tail || req.LogCount >= 0 {
-		resp.Logs, err = s.getLogs(c, req, tail, ls)
+		var err error
+		resp.Logs, err = s.getLogs(c, req, tail, ls, lst)
 		if err != nil {
 			log.WithError(err).Errorf(c, "Failed to get logs.")
 			return nil, grpcutil.Internal
@@ -132,8 +128,8 @@ func (s *server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 	return &resp, nil
 }
 
-func (s *server) getLogs(c context.Context, req *logdog.GetRequest, tail bool, ls *coordinator.LogStream) (
-	[]*logpb.LogEntry, error) {
+func (s *server) getLogs(c context.Context, req *logdog.GetRequest, tail bool, ls *coordinator.LogStream,
+	lst *coordinator.LogStreamState) ([]*logpb.LogEntry, error) {
 	byteLimit := int(req.ByteCount)
 	if byteLimit <= 0 || byteLimit > getBytesLimit {
 		byteLimit = getBytesLimit
@@ -141,7 +137,7 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, tail bool, l
 
 	svc := coordinator.GetServices(c)
 	var st storage.Storage
-	if !ls.Archived() {
+	if lst.ArchivalState() == coordinator.NotArchived {
 		log.Debugf(c, "Log is not archived. Fetching from intermediate storage.")
 
 		// Logs are not archived. Fetch from intermediate storage.
@@ -152,9 +148,9 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, tail bool, l
 		}
 	} else {
 		log.Fields{
-			"indexURL":    ls.ArchiveIndexURL,
-			"streamURL":   ls.ArchiveStreamURL,
-			"archiveTime": ls.ArchivedTime,
+			"indexURL":    lst.ArchiveIndexURL,
+			"streamURL":   lst.ArchiveStreamURL,
+			"archiveTime": lst.ArchivedTime,
 		}.Debugf(c, "Log is archived. Fetching from archive storage.")
 
 		var err error
@@ -170,8 +166,8 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, tail bool, l
 		}()
 
 		st, err = archive.New(c, archive.Options{
-			IndexURL:  ls.ArchiveIndexURL,
-			StreamURL: ls.ArchiveStreamURL,
+			IndexURL:  lst.ArchiveIndexURL,
+			StreamURL: lst.ArchiveStreamURL,
 			Client:    gs,
 			MaxBytes:  byteLimit,
 		})

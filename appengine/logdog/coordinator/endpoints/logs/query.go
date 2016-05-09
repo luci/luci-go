@@ -146,9 +146,6 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 		}
 	}
 
-	q = applyTrinary(q, r.Terminated, coordinator.AddLogStreamTerminatedFilter)
-	q = applyTrinary(q, r.Archived, coordinator.AddLogStreamArchivedFilter)
-
 	if !r.canSeePurged {
 		// Force non-purged results for non-admin users.
 		q = q.Eq("Purged", false)
@@ -223,10 +220,26 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 	}
 
 	if len(logStreams) > 0 {
-		// Fetch the LogEntry values.
-		if err := di.GetMulti(logStreams); err != nil {
-			log.WithError(err).Errorf(r, "Failed to load entry content.")
-			return grpcutil.Internal
+		// Don't fetch our states unless requested.
+		var logStreamStates []coordinator.LogStreamState
+		if !r.State {
+			if err := di.GetMulti(logStreams); err != nil {
+				log.WithError(err).Errorf(r, "Failed to load entry content.")
+				return grpcutil.Internal
+			}
+		} else {
+			entities := make([]interface{}, 0, 2*len(logStreams))
+			logStreamStates = make([]coordinator.LogStreamState, len(logStreams))
+			for i, ls := range logStreams {
+				ls.PopulateState(di, &logStreamStates[i])
+				entities = append(entities, ls, &logStreamStates[i])
+
+			}
+
+			if err := di.GetMulti(entities); err != nil {
+				log.WithError(err).Errorf(r, "Failed to load entry and state content.")
+				return grpcutil.Internal
+			}
 		}
 
 		resp.Streams = make([]*logdog.QueryResponse_Stream, len(logStreams))
@@ -234,8 +247,8 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 			stream := logdog.QueryResponse_Stream{
 				Path: string(ls.Path()),
 			}
-			if r.State {
-				stream.State = loadLogStreamState(ls)
+			if logStreamStates != nil {
+				stream.State = buildLogStreamState(ls, &logStreamStates[i])
 
 				var err error
 				stream.Desc, err = ls.DescriptorValue()

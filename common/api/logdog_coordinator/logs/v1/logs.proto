@@ -122,6 +122,7 @@ message QueryRequest {
 
   // The request project to request.
   string project = 1;
+
   // The query parameter.
   //
   // The path expression may substitute a glob ("*") for a specific path
@@ -147,37 +148,43 @@ message QueryRequest {
   //   - */* will return all streams with two-component names.
   string path = 2;
 
+  // If true, returns that the streams' full state is returned instead of just
+  // its Path.
+  bool state = 3;
+
+  // If true, causes the requested state to be returned as serialized protobuf
+  // data instead of deserialized JSON structures.
+  bool proto = 4;
+
+  // Next, if not empty, indicates that this query should continue at the point
+  // where the previous query left off.
+  string next = 5;
+
+  // MaxResults is the maximum number of query results to return.
+  //
+  // If MaxResults is zero, no upper bound will be indicated. However, the
+  // returned result count is still be subject to internal constraints.
+  int32 max_results = 6;
+
   // ContentType, if not empty, restricts results to streams with the supplied
   // content type.
-  string content_type = 3;
+  string content_type = 10;
 
   // The stream type to filter on.
   message StreamTypeFilter {
     // The StreamType value to filter on.
     logpb.StreamType value = 1;
   }
-  StreamTypeFilter stream_type = 4;
-
-  // Terminated, if not nil, restricts the query to streams that have or haven't
-  // been terminated.
-  Trinary terminated = 5;
-
-  // Archived, if not nil, restricts the query to streams that have or haven't
-  // been archived.
-  Trinary archived = 6;
-
-  // Purged, if not nil, restricts the query to streams that have or haven't
-  // been purged.
-  Trinary purged = 7;
+  StreamTypeFilter stream_type = 11;
 
   // Newer restricts results to streams created after the specified date.
-  google.protobuf.Timestamp newer = 8;
+  google.protobuf.Timestamp newer = 12;
   // Older restricts results to streams created before the specified date.
-  google.protobuf.Timestamp older = 9;
+  google.protobuf.Timestamp older = 13;
 
   // If not empty, constrains the results to those whose protobuf version string
   // matches the supplied version.
-  string proto_version = 10;
+  string proto_version = 14;
 
   // Tags is the set of tags to constrain the query with.
   //
@@ -186,25 +193,10 @@ message QueryRequest {
   //   whose tag includes that key/value pair.
   // - A key with an missing (nil) value, in which case the results are
   //   constraints by logs that have that tag key, regardless of its value.
-  map<string, string> tags = 11;
+  map<string, string> tags = 15;
 
-  // Next, if not empty, indicates that this query should continue at the point
-  // where the previous query left off.
-  string next = 12;
-
-  // MaxResults is the maximum number of query results to return.
-  //
-  // If MaxResults is zero, no upper bound will be indicated. However, the
-  // returned result count is still be subject to internal constraints.
-  int32 max_results = 13;
-
-  // If true, returns that the streams' full state is returned instead of just
-  // its Path.
-  bool state = 14;
-
-  // If true, causes the requested state to be returned as serialized protobuf
-  // data instead of deserialized JSON structures.
-  bool proto = 15;
+  // Purged restricts the query to streams that have or haven't been purged.
+  Trinary purged = 16;
 }
 
 // QueryResponse is the response structure for the user Query endpoint.

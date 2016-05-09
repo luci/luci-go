@@ -10,7 +10,6 @@ import (
 
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
-	"github.com/luci/luci-go/common/logdog/types"
 	"golang.org/x/net/context"
 )
 
@@ -65,18 +64,17 @@ func (ap *ArchivalPublisher) Tasks() []*logdog.ArchiveTask {
 	return taskCopy
 }
 
-// StreamNames returns a sorted list of the "name" component of streams that
-// have had archival tasks submitted.
-func (ap *ArchivalPublisher) StreamNames() []string {
+// Hashes returns a sorted list of the stream hashes that have had archival
+// tasks submitted.
+func (ap *ArchivalPublisher) Hashes() []string {
 	tasks := ap.Tasks()
 
-	taskStreams := make([]string, len(tasks))
+	taskHashes := make([]string, len(tasks))
 	for i, at := range tasks {
-		_, name := types.StreamPath(at.Path).Split()
-		taskStreams[i] = string(name)
+		taskHashes[i] = at.Id
 	}
-	sort.Strings(taskStreams)
-	return taskStreams
+	sort.Strings(taskHashes)
+	return taskHashes
 }
 
 // Clear clears recorded tasks.

@@ -78,12 +78,19 @@ func (a *application) splitPath(p string) (config.ProjectName, string, bool, err
 	parts := strings.SplitN(p, types.StreamNameSepStr, 2)
 
 	project := config.ProjectName(parts[0])
-	if err := project.Validate(); err != nil {
-		return "", "", false, fmt.Errorf("invalid project name %q: %v", project, err)
+	// TODO(dnj): Remove empty project option.
+	if project == "_" {
+		project = ""
+	} else {
+		if err := project.Validate(); err != nil {
+			return "", "", false, fmt.Errorf("invalid project name %q: %v", project, err)
+		}
 	}
 
 	if len(parts) == 2 {
 		p = parts[1]
+	} else {
+		p = ""
 	}
 	return project, p, true, nil
 }

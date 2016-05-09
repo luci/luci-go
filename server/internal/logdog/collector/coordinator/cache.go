@@ -14,7 +14,6 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/lru"
 	"github.com/luci/luci-go/common/promise"
-	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/metric"
 	"golang.org/x/net/context"
@@ -72,8 +71,7 @@ func NewCache(c Coordinator, size int, expiration time.Duration) Coordinator {
 // RegisterStream invokes the wrapped Coordinator's RegisterStream method and
 // caches the result. It uses a Promise to cause all simultaneous identical
 // RegisterStream requests to block on a single RPC.
-func (c *cache) RegisterStream(ctx context.Context, st *LogStreamState, d *logpb.LogStreamDescriptor) (
-	*LogStreamState, error) {
+func (c *cache) RegisterStream(ctx context.Context, st *LogStreamState, desc []byte) (*LogStreamState, error) {
 	now := clock.Now(ctx)
 
 	key := cacheEntryKey{
@@ -96,20 +94,11 @@ func (c *cache) RegisterStream(ctx context.Context, st *LogStreamState, d *logpb
 		}
 
 		p := promise.New(func() (interface{}, error) {
-			st, err := c.Coordinator.RegisterStream(ctx, st, d)
+			st, err := c.Coordinator.RegisterStream(ctx, st, desc)
 			if err != nil {
 				return nil, err
 			}
-
-			return &LogStreamState{
-				Project:       st.Project,
-				Path:          st.Path,
-				ProtoVersion:  st.ProtoVersion,
-				Secret:        st.Secret,
-				TerminalIndex: types.MessageIndex(st.TerminalIndex),
-				Archived:      st.Archived,
-				Purged:        st.Purged,
-			}, nil
+			return st, nil
 		})
 
 		return &cacheEntry{

@@ -10,7 +10,6 @@ import (
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/grpcutil"
-	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
 	"golang.org/x/net/context"
@@ -20,19 +19,19 @@ import (
 func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamRequest) (*google.Empty, error) {
 	log.Fields{
 		"project":       req.Project,
-		"path":          req.Path,
+		"id":            req.Id,
 		"complete":      req.Complete(),
 		"terminalIndex": req.TerminalIndex,
 		"logEntryCount": req.LogEntryCount,
 		"error":         req.Error,
 	}.Infof(c, "Received archival request.")
 
-	// Verify that the request is minimially valid.
-	path := types.StreamPath(req.Path)
-	if err := path.Validate(); err != nil {
-		return nil, grpcutil.Errf(codes.InvalidArgument, "invalid log stream path: %v", err)
+	id := coordinator.HashID(req.Id)
+	if err := id.Normalize(); err != nil {
+		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid ID (%s): %s", id, err)
 	}
 
+	// Verify that the request is minimially valid.
 	switch {
 	case req.IndexUrl == "":
 		return nil, grpcutil.Errf(codes.InvalidArgument, "missing required index archive URL")
@@ -40,38 +39,35 @@ func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamReque
 		return nil, grpcutil.Errf(codes.InvalidArgument, "missing required stream archive URL")
 	}
 
-	ls := coordinator.LogStreamFromPath(path)
-
-	log.Fields{
-		"id": ls.ID,
-	}.Infof(c, "Log stream ID.")
+	di := ds.Get(c)
+	lst := coordinator.NewLogStreamState(di, id)
 
 	// Post the archival results to the Coordinator.
 	now := clock.Now(c).UTC()
 	var ierr error
-	err := ds.Get(c).RunInTransaction(func(c context.Context) error {
+	err := di.RunInTransaction(func(c context.Context) error {
 		ierr = nil
 
 		// Note that within this transaction, we have two return values:
 		// - Non-nil to abort the transaction.
 		// - Specific error via "ierr".
 		di := ds.Get(c)
-		if err := di.Get(ls); err != nil {
+		if err := di.Get(lst); err != nil {
 			return err
 		}
 
-		// If our log stream is not in LSArchiveTasked, we will reject this archive
-		// request with FailedPrecondition.
-		switch {
-		case ls.Archived():
+		switch as := lst.ArchivalState(); {
+		case as.Archived():
 			// Return nil if the log stream is already archived (idempotent).
 			log.Warningf(c, "Log stream is already archived.")
 			return nil
 
-		case ls.State != coordinator.LSArchiveTasked:
+			// If our log stream is not in in a tasked archival state, we will reject
+			// this archive request with FailedPrecondition.
+		case as != coordinator.ArchiveTasked:
 			log.Fields{
-				"state": ls.State,
-			}.Errorf(c, "Log stream is not in archival tasked state.")
+				"state": as,
+			}.Errorf(c, "Log stream archival is not tasked.")
 			ierr = grpcutil.Errf(codes.FailedPrecondition, "Log stream has not tasked an archival.")
 			return ierr
 		}
@@ -89,26 +85,26 @@ func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamReque
 
 		// Update archival information. Make sure this actually marks the stream as
 		// archived.
-		ls.State = coordinator.LSArchived
-		ls.ArchivedTime = now
-		ls.ArchivalKey = nil // No point in wasting datastore space on this.
+		lst.Updated = now
+		lst.ArchivedTime = now
+		lst.ArchivalKey = nil // No point in wasting datastore space on this.
 
-		if ls.TerminalIndex < 0 {
+		if lst.TerminalIndex < 0 {
 			// Also set the terminated time.
-			ls.TerminatedTime = now
+			lst.TerminatedTime = now
 		}
-		ls.TerminalIndex = req.TerminalIndex
+		lst.TerminalIndex = req.TerminalIndex
 
-		ls.ArchiveLogEntryCount = req.LogEntryCount
-		ls.ArchiveStreamURL = req.StreamUrl
-		ls.ArchiveStreamSize = req.StreamSize
-		ls.ArchiveIndexURL = req.IndexUrl
-		ls.ArchiveIndexSize = req.IndexSize
-		ls.ArchiveDataURL = req.DataUrl
-		ls.ArchiveDataSize = req.DataSize
+		lst.ArchiveLogEntryCount = req.LogEntryCount
+		lst.ArchiveStreamURL = req.StreamUrl
+		lst.ArchiveStreamSize = req.StreamSize
+		lst.ArchiveIndexURL = req.IndexUrl
+		lst.ArchiveIndexSize = req.IndexSize
+		lst.ArchiveDataURL = req.DataUrl
+		lst.ArchiveDataSize = req.DataSize
 
 		// Update the log stream.
-		if err := di.Put(ls); err != nil {
+		if err := di.Put(lst); err != nil {
 			log.WithError(err).Errorf(c, "Failed to update log stream.")
 			return err
 		}

@@ -7,7 +7,6 @@ syntax = "proto3";
 package logdog;
 
 import "state.proto";
-import "github.com/luci/luci-go/common/proto/logdog/logpb/log.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/empty.proto";
 
@@ -29,37 +28,29 @@ message GetConfigResponse {
 message RegisterStreamRequest {
   // The log stream's project.
   string project = 1;
-  // The log stream's path.
-  string path = 2;
   // The log stream's secret.
-  bytes secret = 3;
+  bytes secret = 2;
 
   // The protobuf version string for this stream.
-  string proto_version = 4;
+  string proto_version = 3;
   // The serialized LogStreamDescriptor protobuf for this stream.
-  logpb.LogStreamDescriptor desc = 5;
+  bytes desc = 4;
 }
 
 // The response message for the RegisterStream RPC.
 message RegisterStreamResponse {
+  // The Coordinator ID of the log stream.
+  string id = 1;
   // The state of the requested log stream.
-  LogStreamState state = 1;
-
-  // The log stream's secret.
-  //
-  // Note that the secret is returned! This is okay, since this endpoint is only
-  // accessible to trusted services. The secret can be cached by services to
-  // validate stream information without needing to ping the Coordinator in
-  // between each update.
-  bytes secret = 2;
+  LogStreamState state = 2;
 }
 
 // LoadStreamRequest loads the current state of a log stream.
 message LoadStreamRequest {
   // The log stream's project.
   string project = 1;
-  // The log stream's path.
-  string path = 2;
+  // The log stream's path Coordinator ID.
+  string id = 2;
 
   // If true, include the log stream descriptor.
   bool desc = 3;
@@ -87,8 +78,8 @@ message LoadStreamResponse {
 message TerminateStreamRequest {
   // The log stream's project.
   string project = 1;
-  // The log stream's path.
-  string path = 2;
+  // The log stream's path Coordinator ID.
+  string id = 2;
   // The log stream's secret.
   bytes secret = 3;
 
@@ -101,8 +92,8 @@ message TerminateStreamRequest {
 message ArchiveStreamRequest {
   // The log stream's project.
   string project = 1;
-  // The path of the log stream that was archived.
-  string path = 2;
+  // The Coordinator ID of the log stream that was archived.
+  string id = 2;
   // The number of log entries that were archived.
   int64 log_entry_count = 3;
   // The highest log stream index that was archived.

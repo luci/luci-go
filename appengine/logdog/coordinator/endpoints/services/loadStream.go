@@ -9,8 +9,8 @@ import (
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/grpcutil"
-	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
 	"golang.org/x/net/context"
@@ -21,43 +21,54 @@ import (
 func (s *server) LoadStream(c context.Context, req *logdog.LoadStreamRequest) (*logdog.LoadStreamResponse, error) {
 	log.Fields{
 		"project": req.Project,
-		"path":    req.Path,
+		"id":      req.Id,
 	}.Infof(c, "Loading log stream state.")
 
-	path := types.StreamPath(req.Path)
-	if err := path.Validate(); err != nil {
-		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid path (%s): %s", path, err)
+	id := coordinator.HashID(req.Id)
+	if err := id.Normalize(); err != nil {
+		log.WithError(err).Errorf(c, "Invalid stream ID.")
+		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid ID (%s): %s", id, err)
 	}
 
-	ls := coordinator.LogStreamFromPath(path)
-	switch err := ds.Get(c).Get(ls); err {
-	case nil:
-		// The log stream loaded successfully.
-		resp := logdog.LoadStreamResponse{
-			State: loadLogStreamState(coordinator.Project(c), ls),
+	di := ds.Get(c)
+	ls := &coordinator.LogStream{ID: coordinator.HashID(req.Id)}
+	lst := ls.State(di)
+
+	if err := di.GetMulti([]interface{}{lst, ls}); err != nil {
+		if anyNoSuchEntity(err) {
+			log.WithError(err).Errorf(c, "No such entity in datastore.")
+
+			// The state isn't registered, so this stream does not exist.
+			return nil, grpcutil.Errf(codes.NotFound, "Log stream was not found.")
 		}
-		if req.Desc {
-			resp.Desc = ls.Descriptor
-		}
-		resp.ArchivalKey = ls.ArchivalKey
-		resp.Age = google.NewDuration(ds.RoundTime(clock.Now(c)).Sub(ls.Created))
 
-		log.Fields{
-			"path":            path,
-			"hash":            ls.ID,
-			"terminalIndex":   resp.State.TerminalIndex,
-			"archived":        resp.State.Archived,
-			"purged":          resp.State.Purged,
-			"age":             resp.Age.Duration(),
-			"archivalKeySize": len(resp.ArchivalKey),
-		}.Infof(c, "Successfully loaded log stream state.")
-		return &resp, nil
-
-	case ds.ErrNoSuchEntity:
-		return nil, grpcutil.Errf(codes.NotFound, "Log stream was not found.")
-
-	default:
 		log.WithError(err).Errorf(c, "Failed to load log stream.")
 		return nil, grpcutil.Internal
 	}
+
+	// The log stream and state loaded successfully.
+	resp := logdog.LoadStreamResponse{
+		State: buildLogStreamState(ls, lst),
+	}
+	if req.Desc {
+		resp.Desc = ls.Descriptor
+	}
+	resp.ArchivalKey = lst.ArchivalKey
+	resp.Age = google.NewDuration(ds.RoundTime(clock.Now(c)).Sub(lst.Updated))
+
+	log.Fields{
+		"id":              lst.ID,
+		"terminalIndex":   resp.State.TerminalIndex,
+		"archived":        resp.State.Archived,
+		"purged":          resp.State.Purged,
+		"age":             resp.Age.Duration(),
+		"archivalKeySize": len(resp.ArchivalKey),
+	}.Infof(c, "Successfully loaded log stream state.")
+	return &resp, nil
+}
+
+func anyNoSuchEntity(err error) bool {
+	return errors.Any(err, func(err error) bool {
+		return err == ds.ErrNoSuchEntity
+	})
 }

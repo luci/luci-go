@@ -5,7 +5,7 @@
 indexes:
 # These "query endpoint" indexes support timestamp-based querying. These should
 # be kept in sync with the indexes in:
-# appengine/logdog/coordinator/endpoints/logs/query_test.go
+# appengine/logdog/coordinator/endpoints/coordinatorTest/context.go
 - kind: LogStream
   properties:
   - name: Prefix
@@ -18,7 +18,6 @@ indexes:
   - name: Created
     direction: desc
 
-  # (This index also supports the expired log stream archival backend cron.)
 - kind: LogStream
   properties:
   - name: State
@@ -64,18 +63,6 @@ indexes:
 - kind: LogStream
   properties:
   - name: _Tags
-  - name: Created
-    direction: desc
-
-- kind: LogStream
-  properties:
-  - name: _Terminated
-  - name: Created
-    direction: desc
-
-- kind: LogStream
-  properties:
-  - name: _Archived
   - name: Created
     direction: desc
 

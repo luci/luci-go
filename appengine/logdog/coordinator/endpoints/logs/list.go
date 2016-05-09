@@ -108,7 +108,7 @@ func (s *server) List(c context.Context, req *logdog.ListRequest) (*logdog.ListR
 		}
 
 		idxMap := make(map[int]*logdog.ListResponse_Component)
-		var streams []*coordinator.LogStream
+		var streams []coordinator.HashID
 
 		for i, comp := range l.Comp {
 			if !comp.Stream {
@@ -119,11 +119,22 @@ func (s *server) List(c context.Context, req *logdog.ListRequest) (*logdog.ListR
 			log.Fields{
 				"value": l.Path(comp),
 			}.Infof(c, "Loading stream.")
-			streams = append(streams, coordinator.LogStreamFromPath(l.Path(comp)))
+			streams = append(streams, coordinator.LogStreamID(l.Path(comp)))
 		}
 
 		if len(streams) > 0 {
-			if err := ds.Get(c).GetMulti(streams); err != nil {
+			entities := make([]interface{}, 0, 2*len(streams))
+			logStreams := make([]coordinator.LogStream, len(streams))
+			logStreamStates := make([]coordinator.LogStreamState, len(streams))
+
+			di := ds.Get(c)
+			for i, id := range streams {
+				logStreams[i].ID = id
+				logStreams[i].PopulateState(di, &logStreamStates[i])
+				entities = append(entities, &logStreams[i], &logStreamStates[i])
+			}
+
+			if err := di.GetMulti(entities); err != nil {
 				log.Fields{
 					log.ErrorKey: err,
 					"count":      len(streams),
@@ -132,8 +143,8 @@ func (s *server) List(c context.Context, req *logdog.ListRequest) (*logdog.ListR
 			}
 
 			for sidx, lrs := range idxMap {
-				ls := streams[sidx]
-				lrs.State = loadLogStreamState(ls)
+				ls := logStreams[sidx]
+				lrs.State = buildLogStreamState(&ls, &logStreamStates[sidx])
 
 				lrs.Desc, err = ls.DescriptorValue()
 				if err != nil {

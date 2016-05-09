@@ -5,7 +5,6 @@
 package coordinator
 
 import (
-	"bytes"
 	"fmt"
 	"testing"
 	"time"
@@ -57,32 +56,12 @@ func sps(values ...interface{}) ds.PropertySlice {
 	return ps
 }
 
+func updateLogStreamID(ls *LogStream) {
+	ls.ID = LogStreamID(ls.Path())
+}
+
 func TestLogStream(t *testing.T) {
 	t.Parallel()
-
-	Convey(`When creating a LogStream`, t, func() {
-		Convey(`Can create keyed on hash.`, func() {
-			ls, err := NewLogStream("0123456789abcdef0123456789ABCDEF0123456789abcdef0123456789ABCDEF")
-			So(err, ShouldBeNil)
-			So(ls, ShouldNotBeNil)
-		})
-
-		Convey(`Will fail to create keyed on an invalid hash-length string.`, func() {
-			_, err := NewLogStream("0123456789abcdef!@#$%^&*()ABCDEF0123456789abcdef0123456789ABCDEF")
-			So(err, ShouldErrLike, "invalid path")
-		})
-
-		Convey(`Can create keyed on path.`, func() {
-			ls, err := NewLogStream("a/b/+/c/d")
-			So(err, ShouldBeNil)
-			So(ls, ShouldNotBeNil)
-		})
-
-		Convey(`Will fail to create keyed on neither a path nor hash.`, func() {
-			_, err := NewLogStream("")
-			So(err, ShouldNotBeNil)
-		})
-	})
 
 	Convey(`A testing log stream`, t, func() {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
@@ -94,15 +73,12 @@ func TestLogStream(t *testing.T) {
 		now := ds.RoundTime(tc.Now().UTC())
 
 		ls := LogStream{
-			Prefix:        "testing",
-			Name:          "log/stream",
-			State:         LSStreaming,
-			TerminalIndex: -1,
-			Secret:        bytes.Repeat([]byte{0x6F}, types.PrefixSecretLength),
-			Created:       now.UTC(),
-			ContentType:   string(types.ContentTypeText),
+			ID:          LogStreamID("testing/+/log/stream"),
+			Prefix:      "testing",
+			Name:        "log/stream",
+			Created:     now.UTC(),
+			ContentType: string(types.ContentTypeText),
 		}
-		ls.recalculateID()
 
 		desc := logpb.LogStreamDescriptor{
 			Prefix:      "testing",
@@ -143,19 +119,15 @@ func TestLogStream(t *testing.T) {
 			Convey(`Will not validate`, func() {
 				Convey(`Without a valid Prefix`, func() {
 					ls.Prefix = "!!!not a valid prefix!!!"
-					ls.recalculateID()
+					updateLogStreamID(&ls)
 
 					So(ls.Validate(), ShouldErrLike, "invalid prefix")
 				})
 				Convey(`Without a valid Name`, func() {
 					ls.Name = "!!!not a valid name!!!"
-					ls.recalculateID()
+					updateLogStreamID(&ls)
 
 					So(ls.Validate(), ShouldErrLike, "invalid name")
-				})
-				Convey(`Without a valid stream secret`, func() {
-					ls.Secret = nil
-					So(ls.Validate(), ShouldErrLike, "invalid prefix secret length")
 				})
 				Convey(`Without a valid content type`, func() {
 					ls.ContentType = ""
@@ -164,24 +136,6 @@ func TestLogStream(t *testing.T) {
 				Convey(`Without a valid created time`, func() {
 					ls.Created = time.Time{}
 					So(ls.Validate(), ShouldErrLike, "created time is not set")
-				})
-				Convey(`With a terminal index, will not validate without a TerminatedTime.`, func() {
-					ls.State = LSArchiveTasked
-					ls.TerminalIndex = 1337
-					So(ls.Validate(), ShouldErrLike, "missing terminated time")
-
-					ls.TerminatedTime = now
-					So(ls.Validate(), ShouldBeNil)
-				})
-				Convey(`When archived, will not validate without an ArchivedTime.`, func() {
-					ls.State = LSArchived
-					So(ls.Validate(), ShouldErrLike, "missing terminated time")
-
-					ls.TerminatedTime = now
-					So(ls.Validate(), ShouldErrLike, "missing archived time")
-
-					ls.ArchivedTime = now
-					So(ls.Validate(), ShouldBeNil)
 				})
 				Convey(`Without a valid stream type`, func() {
 					ls.StreamType = -1
@@ -204,21 +158,8 @@ func TestLogStream(t *testing.T) {
 			Convey(`Can write the LogStream to the Datastore.`, func() {
 				So(di.Put(&ls), ShouldBeNil)
 
-				Convey(`Can read the LogStream back from the Datastore via prefix/name.`, func() {
-					ls2 := LogStreamFromPath(ls.Path())
-					So(di.Get(ls2), ShouldBeNil)
-					So(ls2, ShouldResemble, &ls)
-				})
-
-				Convey(`Can read the LogStream back from the Datastore via hash.`, func() {
-					ls2 := LogStreamFromID(ls.ID)
-					So(di.Get(ls2), ShouldBeNil)
-					So(ls2, ShouldResemble, &ls)
-				})
-
 				Convey(`Can read the LogStream back from the Datastore.`, func() {
-					var ls2 LogStream
-					ds.PopulateKey(&ls2, ds.Get(c).KeyForObj(&ls))
+					ls2 := LogStream{ID: ls.ID}
 					So(di.Get(&ls2), ShouldBeNil)
 					So(ls2, ShouldResemble, ls)
 				})
@@ -244,7 +185,7 @@ func TestLogStream(t *testing.T) {
 				lsCopy := ls
 				lsCopy.Name = name
 				lsCopy.Created = ds.RoundTime(now.Add(time.Duration(i) * time.Second))
-				lsCopy.recalculateID()
+				updateLogStreamID(&lsCopy)
 
 				descCopy := desc
 				descCopy.Name = name

@@ -16,7 +16,6 @@ import (
 	"github.com/luci/luci-go/appengine/logdog/coordinator/mutations"
 	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"golang.org/x/net/context"
@@ -39,14 +38,12 @@ func TestTerminateStream(t *testing.T) {
 
 		svr := New()
 
-		desc := ct.TestLogStreamDescriptor(c, "foo/bar")
-		ls := ct.TestLogStream(c, desc)
+		tls := ct.MakeStream(c, "proj-foo", "testing/+/foo/bar")
 
-		const project config.ProjectName = "proj-foo"
 		req := logdog.TerminateStreamRequest{
-			Project:       string(project),
-			Path:          "testing/+/foo/bar",
-			Secret:        ls.Secret,
+			Project:       string(tls.Project),
+			Id:            string(tls.Stream.ID),
+			Secret:        tls.Prefix.Secret,
 			TerminalIndex: 1337,
 		}
 
@@ -59,13 +56,13 @@ func TestTerminateStream(t *testing.T) {
 			env.JoinGroup("services")
 
 			Convey(`A non-terminal registered stream, "testing/+/foo/bar"`, func() {
-				ct.WithProjectNamespace(c, project, func(c context.Context) {
-					So(ds.Get(c).Put(ls), ShouldBeNil)
+				tls.WithProjectNamespace(c, func(c context.Context) {
+					So(tls.Put(c), ShouldBeNil)
 
 					// Create an archival request for Tumble so we can ensure that it is
 					// canceled on termination.
 					areq := mutations.CreateArchiveTask{
-						Path:       ls.Path(),
+						ID:         tls.Stream.ID,
 						Expiration: env.Clock.Now().Add(time.Hour),
 					}
 					arParent, arName := areq.TaskName(ds.Get(c))
@@ -83,14 +80,14 @@ func TestTerminateStream(t *testing.T) {
 					So(err, ShouldBeRPCOK)
 					ds.Get(c).Testable().CatchupIndexes()
 
-					// Reload "ls" and confirm.
-					ct.WithProjectNamespace(c, project, func(c context.Context) {
-						So(ds.Get(c).Get(ls), ShouldBeNil)
+					// Reload the state and confirm.
+					tls.WithProjectNamespace(c, func(c context.Context) {
+						So(ds.Get(c).Get(tls.State), ShouldBeNil)
 					})
-					So(ls.TerminalIndex, ShouldEqual, 1337)
-					So(ls.State, ShouldEqual, coordinator.LSArchiveTasked)
-					So(ls.Terminated(), ShouldBeTrue)
-					So(env.ArchivalPublisher.StreamNames(), ShouldResemble, []string{ls.Name})
+					So(tls.State.TerminalIndex, ShouldEqual, 1337)
+					So(tls.State.Terminated(), ShouldBeTrue)
+					So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchiveTasked)
+					So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
 
 					// Assert that all archive tasks are scheduled ArchiveSettleDelay in
 					// the future.
@@ -100,48 +97,42 @@ func TestTerminateStream(t *testing.T) {
 					}
 
 					Convey(`Will cancel the expiration archive Tumble task.`, func() {
-						// We will test this by reverting the stream to a LSStreaming state
+						// We will test this by reverting the stream to be not terminated
 						// so that if the Tumble task gets fired, it will try and schedule
 						// another archival task.
 						env.ArchivalPublisher.Clear()
 
-						ls.State = coordinator.LSStreaming
-						ct.WithProjectNamespace(c, project, func(c context.Context) {
-							So(ds.Get(c).Put(ls), ShouldBeNil)
-						})
+						tls.State.TerminalIndex = -1
+						So(tls.Put(c), ShouldBeNil)
 
 						env.Clock.Add(time.Hour)
 						env.DrainTumbleAll(c)
-						So(env.ArchivalPublisher.StreamNames(), ShouldResemble, []string{})
+						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{})
 					})
 
 					Convey(`Can be marked terminal again (idempotent).`, func() {
 						_, err := svr.TerminateStream(c, &req)
 						So(err, ShouldBeRPCOK)
 
-						// Reload "ls" and confirm.
-						ct.WithProjectNamespace(c, project, func(c context.Context) {
-							So(ds.Get(c).Get(ls), ShouldBeNil)
-						})
+						// Reload state and confirm.
+						So(tls.Get(c), ShouldBeNil)
 
-						So(ls.Terminated(), ShouldBeTrue)
-						So(ls.TerminalIndex, ShouldEqual, 1337)
-						So(ls.State, ShouldEqual, coordinator.LSArchiveTasked)
+						So(tls.State.Terminated(), ShouldBeTrue)
+						So(tls.State.TerminalIndex, ShouldEqual, 1337)
+						So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchiveTasked)
 					})
 
 					Convey(`Will reject attempts to change the terminal index.`, func() {
 						req.TerminalIndex = 1338
 						_, err := svr.TerminateStream(c, &req)
-						So(err, ShouldBeRPCFailedPrecondition, "Log stream is not in streaming state.")
+						So(err, ShouldBeRPCFailedPrecondition, "Log stream is incompatibly terminated.")
 
-						// Reload "ls" and confirm.
-						ct.WithProjectNamespace(c, project, func(c context.Context) {
-							So(ds.Get(c).Get(ls), ShouldBeNil)
-						})
+						// Reload state and confirm.
+						So(tls.Get(c), ShouldBeNil)
 
-						So(ls.Terminated(), ShouldBeTrue)
-						So(ls.State, ShouldEqual, coordinator.LSArchiveTasked)
-						So(ls.TerminalIndex, ShouldEqual, 1337)
+						So(tls.State.TerminalIndex, ShouldEqual, 1337)
+						So(tls.State.Terminated(), ShouldBeTrue)
+						So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchiveTasked)
 					})
 
 					Convey(`Will reject attempts to clear the terminal index.`, func() {
@@ -149,14 +140,12 @@ func TestTerminateStream(t *testing.T) {
 						_, err := svr.TerminateStream(c, &req)
 						So(err, ShouldBeRPCInvalidArgument, "Negative terminal index.")
 
-						// Reload "ls" and confirm.
-						ct.WithProjectNamespace(c, project, func(c context.Context) {
-							So(ds.Get(c).Get(ls), ShouldBeNil)
-						})
+						// Reload state and confirm.
+						So(tls.Get(c), ShouldBeNil)
 
-						So(ls.Terminated(), ShouldBeTrue)
-						So(ls.State, ShouldEqual, coordinator.LSArchiveTasked)
-						So(ls.TerminalIndex, ShouldEqual, 1337)
+						So(tls.State.TerminalIndex, ShouldEqual, 1337)
+						So(tls.State.Terminated(), ShouldBeTrue)
+						So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchiveTasked)
 					})
 				})
 
@@ -182,9 +171,9 @@ func TestTerminateStream(t *testing.T) {
 			})
 
 			Convey(`Will not try and terminate a stream with an invalid path.`, func() {
-				req.Path = "!!!invalid path!!!"
+				req.Id = "!!!invalid path!!!"
 				_, err := svr.TerminateStream(c, &req)
-				So(err, ShouldBeRPCInvalidArgument, "Invalid path")
+				So(err, ShouldBeRPCInvalidArgument, "Invalid ID")
 			})
 
 			Convey(`Will fail if the stream is not registered.`, func() {

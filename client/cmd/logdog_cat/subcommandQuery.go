@@ -32,8 +32,6 @@ type queryCommandRun struct {
 	results     int
 	before      clockflag.Time
 	after       clockflag.Time
-	terminated  trinaryValue
-	archived    trinaryValue
 	purged      trinaryValue
 
 	json bool
@@ -51,8 +49,6 @@ func newQueryCommand() *subcommands.Command {
 			fs.StringVar(&cmd.path, "path", "", "Filter logs matching this path (may include globbing).")
 			fs.StringVar(&cmd.contentType, "contentType", "", "Limit results to a content type.")
 			fs.Var(&cmd.tags, "tag", "Filter logs containing this tag (key[=value]).")
-			fs.Var(&cmd.terminated, "terminated", "Limit the query to terminal streams.")
-			fs.Var(&cmd.archived, "archived", "Limit the query to archived streams.")
 			fs.Var(&cmd.purged, "purged", "Include purged streams in the result. This requires administrative privileges.")
 			fs.Var(&cmd.before, "before", "Limit the query to streams registered at or before this RFC3339 time.")
 			fs.Var(&cmd.after, "after", "Limit the query to streams registered at or after this RFC3339 time.")
@@ -114,8 +110,6 @@ func (cmd *queryCommandRun) Run(scApp subcommands.Application, args []string) in
 		State:       cmd.json,
 		Before:      cmd.before.Time(),
 		After:       cmd.after.Time(),
-		Terminated:  cmd.terminated.Trinary(),
-		Archived:    cmd.archived.Trinary(),
 		Purged:      cmd.purged.Trinary(),
 	}
 	count := 0

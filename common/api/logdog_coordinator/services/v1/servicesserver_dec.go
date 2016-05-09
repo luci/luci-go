@@ -6,7 +6,7 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	context "golang.org/x/net/context"
 
-	google_protobuf2 "github.com/luci/luci-go/common/proto/google"
+	google_protobuf1 "github.com/luci/luci-go/common/proto/google"
 )
 
 type DecoratedServices struct {
@@ -17,7 +17,7 @@ type DecoratedServices struct {
 	Prelude func(c context.Context, methodName string, req proto.Message) (context.Context, error)
 }
 
-func (s *DecoratedServices) GetConfig(c context.Context, req *google_protobuf2.Empty) (*GetConfigResponse, error) {
+func (s *DecoratedServices) GetConfig(c context.Context, req *google_protobuf1.Empty) (*GetConfigResponse, error) {
 	c, err := s.Prelude(c, "GetConfig", req)
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func (s *DecoratedServices) LoadStream(c context.Context, req *LoadStreamRequest
 	return s.Service.LoadStream(c, req)
 }
 
-func (s *DecoratedServices) TerminateStream(c context.Context, req *TerminateStreamRequest) (*google_protobuf2.Empty, error) {
+func (s *DecoratedServices) TerminateStream(c context.Context, req *TerminateStreamRequest) (*google_protobuf1.Empty, error) {
 	c, err := s.Prelude(c, "TerminateStream", req)
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func (s *DecoratedServices) TerminateStream(c context.Context, req *TerminateStr
 	return s.Service.TerminateStream(c, req)
 }
 
-func (s *DecoratedServices) ArchiveStream(c context.Context, req *ArchiveStreamRequest) (*google_protobuf2.Empty, error) {
+func (s *DecoratedServices) ArchiveStream(c context.Context, req *ArchiveStreamRequest) (*google_protobuf1.Empty, error) {
 	c, err := s.Prelude(c, "ArchiveStream", req)
 	if err != nil {
 		return nil, err

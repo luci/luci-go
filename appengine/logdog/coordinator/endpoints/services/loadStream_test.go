@@ -11,12 +11,10 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/gae/filter/featureBreaker"
-	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/proto/google"
-	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -31,20 +29,15 @@ func TestLoadStream(t *testing.T) {
 		svr := New()
 
 		// Register a test stream.
-		const project config.ProjectName = "proj-foo"
-
-		desc := ct.TestLogStreamDescriptor(c, "foo/bar")
-		ls := ct.TestLogStream(c, desc)
-		ct.WithProjectNamespace(c, project, func(c context.Context) {
-			if err := ds.Get(c).Put(ls); err != nil {
-				panic(err)
-			}
-		})
+		tls := ct.MakeStream(c, "proj-foo", "testing/+/foo/bar")
+		if err := tls.Put(c); err != nil {
+			panic(err)
+		}
 
 		// Prepare a request to load the test stream.
-		req := logdog.LoadStreamRequest{
-			Project: string(project),
-			Path:    string(ls.Path()),
+		req := &logdog.LoadStreamRequest{
+			Project: string(tls.Project),
+			Id:      string(tls.Stream.ID),
 		}
 
 		Convey(`Returns Forbidden error if not a service.`, func() {
@@ -56,35 +49,35 @@ func TestLoadStream(t *testing.T) {
 			env.JoinGroup("services")
 
 			Convey(`Will succeed.`, func() {
-				resp, err := svr.LoadStream(c, &req)
+				resp, err := svr.LoadStream(c, req)
 				So(err, ShouldBeNil)
 				So(resp, ShouldResemble, &logdog.LoadStreamResponse{
 					State: &logdog.LogStreamState{
-						Project:       string(project),
-						Path:          "testing/+/foo/bar",
 						ProtoVersion:  "1",
 						TerminalIndex: -1,
+						Secret:        tls.State.Secret,
 					},
 				})
 			})
 
 			Convey(`Will return archival properties.`, func() {
+				// Add an hour to the clock. Created is +0, Updated is +1hr.
 				env.Clock.Add(1 * time.Hour)
-				ls.ArchivalKey = []byte("archival key")
-				ct.WithProjectNamespace(c, project, func(c context.Context) {
-					if err := ds.Get(c).Put(ls); err != nil {
-						panic(err)
-					}
-				})
+				tls.State.ArchivalKey = []byte("archival key")
+				tls.Reload(c)
+				if err := tls.Put(c); err != nil {
+					panic(err)
+				}
 
-				resp, err := svr.LoadStream(c, &req)
+				// Set time to +2hr, age should now be 1hr.
+				env.Clock.Add(1 * time.Hour)
+				resp, err := svr.LoadStream(c, req)
 				So(err, ShouldBeNil)
 				So(resp, ShouldResemble, &logdog.LoadStreamResponse{
 					State: &logdog.LogStreamState{
-						Project:       string(project),
-						Path:          "testing/+/foo/bar",
 						ProtoVersion:  "1",
 						TerminalIndex: -1,
+						Secret:        tls.State.Secret,
 					},
 					ArchivalKey: []byte("archival key"),
 					Age:         google.NewDuration(1 * time.Hour),
@@ -94,35 +87,34 @@ func TestLoadStream(t *testing.T) {
 			Convey(`Will succeed, and return the descriptor when requested.`, func() {
 				req.Desc = true
 
-				d, err := proto.Marshal(desc)
+				d, err := proto.Marshal(tls.Desc)
 				if err != nil {
 					panic(err)
 				}
 
-				resp, err := svr.LoadStream(c, &req)
+				resp, err := svr.LoadStream(c, req)
 				So(err, ShouldBeNil)
 				So(resp, ShouldResemble, &logdog.LoadStreamResponse{
 					State: &logdog.LogStreamState{
-						Project:       string(project),
-						Path:          "testing/+/foo/bar",
 						ProtoVersion:  "1",
 						TerminalIndex: -1,
+						Secret:        tls.State.Secret,
 					},
 					Desc: d,
 				})
 			})
 
-			Convey(`Will return InvalidArgument if the stream path is not valid.`, func() {
-				req.Path = "no/stream/name"
+			Convey(`Will return InvalidArgument if the stream hash is not valid.`, func() {
+				req.Id = string("!!! not a hash !!!")
 
-				_, err := svr.LoadStream(c, &req)
-				So(err, ShouldBeRPCInvalidArgument)
+				_, err := svr.LoadStream(c, req)
+				So(err, ShouldBeRPCInvalidArgument, "Invalid ID")
 			})
 
 			Convey(`Will return NotFound for non-existent streams.`, func() {
-				req.Path = "this/stream/+/does/not/exist"
+				req.Id = string(coordinator.LogStreamID("this/stream/+/does/not/exist"))
 
-				_, err := svr.LoadStream(c, &req)
+				_, err := svr.LoadStream(c, req)
 				So(err, ShouldBeRPCNotFound)
 			})
 
@@ -130,7 +122,7 @@ func TestLoadStream(t *testing.T) {
 				c, fb := featureBreaker.FilterRDS(c, nil)
 				fb.BreakFeatures(errors.New("test error"), "GetMulti")
 
-				_, err := svr.LoadStream(c, &req)
+				_, err := svr.LoadStream(c, req)
 				So(err, ShouldBeRPCInternal)
 			})
 		})

@@ -109,7 +109,7 @@ func (c *Collector) Process(ctx context.Context, msg []byte) error {
 
 	pr := butlerproto.Reader{}
 	if err := pr.Read(bytes.NewReader(msg)); err != nil {
-		log.Errorf(log.SetError(ctx, err), "Failed to unpack message.")
+		log.WithError(err).Errorf(ctx, "Failed to unpack message.")
 		return nil
 	}
 	if pr.Metadata.ProtoVersion != logpb.Version {
@@ -279,9 +279,15 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 	}
 
 	if err := h.be.Desc.Validate(true); err != nil {
-		log.Errorf(log.SetError(ctx, err), "Invalid log stream descriptor.")
+		log.WithError(err).Errorf(ctx, "Invalid log stream descriptor.")
 		return err
 	}
+	descBytes, err := proto.Marshal(h.be.Desc)
+	if err != nil {
+		log.WithError(err).Errorf(ctx, "Failed to marshal descriptor.")
+		return err
+	}
+
 	h.path = types.StreamName(h.be.Desc.Prefix).Join(types.StreamName(h.be.Desc.Name))
 	ctx = log.SetFields(ctx, log.Fields{
 		"project": h.project,
@@ -336,7 +342,7 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 		Path:         h.path,
 		Secret:       secret,
 		ProtoVersion: h.md.ProtoVersion,
-	}, h.be.Desc)
+	}, descBytes)
 	if err != nil {
 		log.WithError(err).Errorf(ctx, "Failed to get/register current stream state.")
 		return err

@@ -97,8 +97,6 @@ func TestClientQuery(t *testing.T) {
 				ContentType: "application/text",
 				Before:      now,
 				After:       now,
-				Terminated:  Yes,
-				Archived:    No,
 				Purged:      Both,
 				State:       true,
 			}

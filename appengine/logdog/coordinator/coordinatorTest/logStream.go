@@ -8,9 +8,11 @@ import (
 	"bytes"
 	"fmt"
 
+	"github.com/golang/protobuf/proto"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
@@ -22,58 +24,145 @@ func TestSecret() types.PrefixSecret {
 	return types.PrefixSecret(bytes.Repeat([]byte{0x6F}, types.PrefixSecretLength))
 }
 
-// TestLogStreamDescriptor generates a stock testing LogStreamDescriptor
-// protobuf.
-func TestLogStreamDescriptor(c context.Context, name string) *logpb.LogStreamDescriptor {
-	return &logpb.LogStreamDescriptor{
-		Prefix:      "testing",
-		Name:        name,
-		StreamType:  logpb.StreamType_TEXT,
-		ContentType: "application/text",
-		Timestamp:   google.NewTimestamp(clock.Now(c)),
+// TestStream returns a testing stream.
+type TestStream struct {
+	// Project is the project name for this stream.
+	Project config.ProjectName
+	// Path is the path of this stream.
+	Path types.StreamPath
+
+	// Desc is the log stream descriptor.
+	Desc *logpb.LogStreamDescriptor
+
+	// Prefix is the Coordinator LogPrefix entity.
+	Prefix *coordinator.LogPrefix
+	// Prefix is the Coordinator LogStreamState entity.
+	State *coordinator.LogStreamState
+	// Prefix is the Coordinator LogStream entity.
+	Stream *coordinator.LogStream
+}
+
+// MakeStream builds a new TestStream with the supplied parameters.
+func MakeStream(c context.Context, project config.ProjectName, path types.StreamPath) *TestStream {
+	prefix, name := path.Split()
+
+	now := ds.RoundTime(clock.Now(c)).UTC()
+	secret := TestSecret()
+
+	ts := TestStream{
+		Project: project,
+		Desc: &logpb.LogStreamDescriptor{
+			Prefix:      string(prefix),
+			Name:        string(name),
+			StreamType:  logpb.StreamType_TEXT,
+			ContentType: "application/text",
+			Timestamp:   google.NewTimestamp(now),
+		},
+		Prefix: &coordinator.LogPrefix{
+			Created: ds.RoundTime(now),
+			Secret:  secret,
+		},
+		State: &coordinator.LogStreamState{
+			Created:       now,
+			Secret:        secret,
+			TerminalIndex: -1,
+		},
+		Stream: &coordinator.LogStream{
+			ProtoVersion: logpb.Version,
+			Created:      now,
+		},
 	}
+	ts.Reload(c)
+	return &ts
 }
 
-// TestLogPrefix generates a stock testing LogPrefix from a LogStreamDescriptor.
-func TestLogPrefix(c context.Context, desc *logpb.LogStreamDescriptor) *coordinator.LogPrefix {
-	pfx := coordinator.LogPrefixFromPrefix(types.StreamName(desc.Prefix))
-	pfx.Created = ds.RoundTime(clock.Now(c).UTC())
-	pfx.Secret = TestSecret()
-	return pfx
+// Reload loads derived fields from their base fields.
+func (ts *TestStream) Reload(c context.Context) {
+	ts.Path = ts.Desc.Path()
+
+	// LogPrefix
+	ts.Prefix.Prefix = ts.Desc.Prefix
+	ts.Prefix.ID = coordinator.LogPrefixID(types.StreamName(ts.Prefix.Prefix))
+
+	// LogStream
+	ts.Stream.ID = coordinator.LogStreamID(ts.Path)
+	if err := ts.Stream.LoadDescriptor(ts.Desc); err != nil {
+		panic(err)
+	}
+
+	// LogStreamState
+	ts.State.Updated = ds.RoundTime(clock.Now(c)).UTC()
+	ts.WithProjectNamespace(c, func(c context.Context) {
+		ts.State.Parent = ds.Get(c).KeyForObj(ts.Stream)
+	})
 }
 
-// TestLogStream generates a stock testing LogStream from a LogStreamDescriptor.
-func TestLogStream(c context.Context, desc *logpb.LogStreamDescriptor) *coordinator.LogStream {
-	ls, err := coordinator.NewLogStream(string(desc.Path()))
+// DescBytes returns the marshalled descriptor bytes.
+func (ts *TestStream) DescBytes() []byte {
+	v, err := proto.Marshal(ts.Desc)
 	if err != nil {
 		panic(err)
 	}
-	if err := ls.LoadDescriptor(desc); err != nil {
-		panic(err)
-	}
-
-	ls.ProtoVersion = logpb.Version
-	ls.Created = ds.RoundTime(clock.Now(c).UTC())
-	ls.Secret = TestSecret()
-	ls.TerminalIndex = -1
-	return ls
+	return v
 }
 
-// TestLogEntry generates a standard testing text logpb.LogEntry.
-func TestLogEntry(c context.Context, ls *coordinator.LogStream, i int) *logpb.LogEntry {
-	return &logpb.LogEntry{
-		TimeOffset:  google.NewDuration(clock.Now(c).Sub(ls.Created)),
-		StreamIndex: uint64(i),
+// Put adds all of the entities for this TestStream to the datastore.
+func (ts *TestStream) Put(c context.Context) (err error) {
+	ts.WithProjectNamespace(c, func(c context.Context) {
+		err = ds.Get(c).PutMulti([]interface{}{ts.Prefix, ts.State, ts.Stream})
+	})
+	return
+}
 
-		Content: &logpb.LogEntry_Text{
+// Get reloads all of the entities for this TestStream.
+func (ts *TestStream) Get(c context.Context) (err error) {
+	ts.WithProjectNamespace(c, func(c context.Context) {
+		err = ds.Get(c).GetMulti([]interface{}{ts.Prefix, ts.State, ts.Stream})
+	})
+	return
+}
+
+// LogEntry generates a generic testing log entry for this stream with the
+// specific log stream index.
+func (ts *TestStream) LogEntry(c context.Context, i int) *logpb.LogEntry {
+	le := logpb.LogEntry{
+		TimeOffset:  google.NewDuration(clock.Now(c).Sub(ts.Stream.Created)),
+		StreamIndex: uint64(i),
+	}
+
+	message := fmt.Sprintf("log entry #%d", i)
+	switch ts.Desc.StreamType {
+	case logpb.StreamType_TEXT:
+		le.Content = &logpb.LogEntry_Text{
 			&logpb.Text{
 				Lines: []*logpb.Text_Line{
 					{
-						Value:     fmt.Sprintf("log entry #%d", i),
+						Value:     message,
 						Delimiter: "\n",
 					},
 				},
 			},
-		},
+		}
+
+	case logpb.StreamType_BINARY:
+		le.Content = &logpb.LogEntry_Binary{
+			&logpb.Binary{
+				Data: []byte(message),
+			},
+		}
+
+	case logpb.StreamType_DATAGRAM:
+		le.Content = &logpb.LogEntry_Datagram{
+			&logpb.Datagram{
+				Data: []byte(message),
+			},
+		}
 	}
+	return &le
+}
+
+// WithProjectNamespace runs f in proj's namespace, bypassing authentication
+// checks.
+func (ts *TestStream) WithProjectNamespace(c context.Context, f func(context.Context)) {
+	WithProjectNamespace(c, ts.Project, f)
 }
