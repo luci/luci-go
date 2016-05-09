@@ -11,7 +11,6 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/appengine/cmd/dm/deps"
-	gaeauthServer "github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaeconfig"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/appengine/tumble"
@@ -20,7 +19,6 @@ import (
 	"github.com/luci/luci-go/server/discovery"
 	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/prpc"
-	adminSettings "github.com/luci/luci-go/server/settings/admin"
 )
 
 func base(h middleware.Handler) httprouter.Handle {
@@ -49,8 +47,7 @@ func init() {
 
 	svr.InstallHandlers(router, base)
 	tmb.InstallHandlers(router)
-	gaeauthServer.InstallHandlers(router, base)
-	adminSettings.InstallHandlers(router, base, &gaeauthServer.UsersAPIAuthMethod{})
+	gaemiddleware.InstallHandlers(router, base)
 
 	http.Handle("/", router)
 }

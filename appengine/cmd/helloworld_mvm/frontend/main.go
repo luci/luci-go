@@ -67,7 +67,7 @@ func base(h middleware.Handler) httprouter.Handle {
 
 func main() {
 	router := httprouter.New()
-	server.InstallHandlers(router, base)
+	gaemiddleware.InstallHandlers(router, base)
 	router.GET("/", base(auth.Authenticate(indexPage)))
 	http.DefaultServeMux.Handle("/", router)
 

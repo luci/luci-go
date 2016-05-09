@@ -9,30 +9,14 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 
-	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/middleware"
 )
-
-// base is the root of the middleware chain.
-func base(h middleware.Handler) httprouter.Handle {
-	methods := auth.Authenticator{
-		&server.OAuth2Method{Scopes: []string{server.EmailScope}},
-		server.CookieAuth,
-		&server.InboundAppIDAuthMethod{},
-	}
-	h = auth.Use(h, methods)
-	return gaemiddleware.BaseProd(h)
-}
-
-//// Routes.
 
 func init() {
 	router := httprouter.New()
-	server.InstallHandlers(router, base)
+	gaemiddleware.InstallHandlers(router, gaemiddleware.BaseProd)
 
-	InstallAPIRoutes(router, base)
+	InstallAPIRoutes(router, gaemiddleware.BaseProd)
 
 	http.DefaultServeMux.Handle("/", router)
 }

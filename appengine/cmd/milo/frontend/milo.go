@@ -14,14 +14,14 @@ import (
 	"github.com/luci/luci-go/appengine/cmd/milo/buildbot"
 	"github.com/luci/luci-go/appengine/cmd/milo/settings"
 	"github.com/luci/luci-go/appengine/cmd/milo/swarming"
-	"github.com/luci/luci-go/appengine/gaeauth/server"
+	"github.com/luci/luci-go/appengine/gaemiddleware"
 )
 
 // Where it all begins!!!
 func init() {
 	// Register plain ol' http services.
 	r := httprouter.New()
-	server.InstallHandlers(r, settings.Base)
+	gaemiddleware.InstallHandlers(r, settings.Base)
 	r.GET("/", wrap(dummy{}))
 	r.GET("/swarming/:server/:id/steps/*logname", wrap(swarming.Log{}))
 	r.GET("/swarming/:server/:id", wrap(swarming.Build{}))

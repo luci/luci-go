@@ -197,7 +197,7 @@ func init() {
 	// Setup HTTP routes.
 	router := httprouter.New()
 
-	server.InstallHandlers(router, base)
+	gaemiddleware.InstallHandlers(router, base)
 	ui.InstallHandlers(router, base, ui.Config{
 		Engine:        globalEngine,
 		TemplatesPath: "templates",

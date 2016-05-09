@@ -18,7 +18,6 @@ import (
 	"github.com/luci/luci-go/server/auth/openid"
 	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/middleware"
-	"github.com/luci/luci-go/server/settings/admin"
 
 	"github.com/luci/luci-go/appengine/gaeauth/server/internal/authdb"
 )
@@ -30,18 +29,18 @@ import (
 // the router. See InstallHandlers.
 var CookieAuth auth.Method
 
-// InstallHandlers installs HTTP handlers for various default routes related
-// to authentication system and app settings.
+// InstallWebHandlers installs HTTP handlers for various default routes related
+// to authentication system.
 //
 // Must be installed in server HTTP router for authentication to work.
 //
-// TODO(vadimsh): Move chunks of this into gaemiddleware.InstallHandlers.
-func InstallHandlers(r *httprouter.Router, base middleware.Base) {
+// TODO(vadimsh): Rename to InstallHandlers after June 1 2016. It was renamed
+// to purposely break code that called it (since its semantics has changed).
+func InstallWebHandlers(r *httprouter.Router, base middleware.Base) {
 	m := CookieAuth.(cookieAuthMethod)
 	if oid, ok := m.Method.(*openid.AuthMethod); ok {
 		oid.InstallHandlers(r, base)
 	}
-	admin.InstallHandlers(r, base, &UsersAPIAuthMethod{})
 	auth.InstallHandlers(r, base)
 	authdb.InstallHandlers(r, base)
 	info.InstallHandlers(r, base, getServiceInfo)

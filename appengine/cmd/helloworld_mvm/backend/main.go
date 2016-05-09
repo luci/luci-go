@@ -13,7 +13,6 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
-	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/server/middleware"
 )
@@ -27,7 +26,7 @@ func base(h middleware.Handler) httprouter.Handle {
 
 func main() {
 	router := httprouter.New()
-	server.InstallHandlers(router, base)
+	gaemiddleware.InstallHandlers(router, base)
 	router.GET("/hi", base(sayHi))
 	http.DefaultServeMux.Handle("/", router)
 

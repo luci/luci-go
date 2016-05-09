@@ -7,6 +7,7 @@ package gaemiddleware
 import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/settings/admin"
 
 	gaeauth "github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/tsmon"
@@ -19,6 +20,7 @@ import (
 //
 // 'base' is expected to be BaseProd or its derivative.
 func InstallHandlers(r *httprouter.Router, base middleware.Base) {
-	gaeauth.InstallHandlers(r, base)
+	gaeauth.InstallWebHandlers(r, base)
 	tsmon.InstallHandlers(r, base)
+	admin.InstallHandlers(r, base, &gaeauth.UsersAPIAuthMethod{})
 }

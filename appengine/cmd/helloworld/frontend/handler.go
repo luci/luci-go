@@ -95,7 +95,7 @@ func checkAPIAccess(c context.Context, methodName string, req proto.Message) (co
 
 func init() {
 	router := httprouter.New()
-	server.InstallHandlers(router, pageBase)
+	gaemiddleware.InstallHandlers(router, pageBase)
 	router.GET("/", pageBase(auth.Authenticate(indexPage)))
 
 	var api prpc.Server

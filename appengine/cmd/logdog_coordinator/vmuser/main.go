@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
-	gaeauthServer "github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
@@ -51,7 +50,7 @@ func main() {
 	discovery.Enable(&svr)
 
 	// Standard HTTP endpoints.
-	gaeauthServer.InstallHandlers(router, base)
+	gaemiddleware.InstallHandlers(router, base)
 	svr.InstallHandlers(router, base)
 
 	// Redirect "/" to "/app/".
