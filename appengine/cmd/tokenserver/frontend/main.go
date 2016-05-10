@@ -23,6 +23,7 @@ import (
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/machine"
 	"github.com/luci/luci-go/server/discovery"
 	"github.com/luci/luci-go/server/prpc"
 
@@ -100,7 +101,12 @@ func init() {
 	router.GET("/internal/cron/fetch-crl", base(gaemiddleware.RequireCron(fetchCRLCron)))
 
 	// Install all RPC servers.
-	var api prpc.Server
+	api := prpc.Server{
+		Authenticator: auth.Authenticator{
+			&server.OAuth2Method{Scopes: []string{server.EmailScope}},
+			&machine.MachineTokenAuthMethod{},
+		},
+	}
 	admin.RegisterCertificateAuthoritiesServer(&api, caServerWithAuth)
 	admin.RegisterServiceAccountsServer(&api, serviceAccountsServerWithAuth)
 	identity.RegisterIdentityFetcherServer(&api, identityFetcher)

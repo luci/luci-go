@@ -24,6 +24,13 @@ type FakeDB map[identity.Identity][]string
 
 var _ auth.DB = (FakeDB)(nil)
 
+// Use installs the fake db into the context.
+func (db FakeDB) Use(c context.Context) context.Context {
+	return auth.UseDB(c, func(context.Context) (auth.DB, error) {
+		return db, nil
+	})
+}
+
 // IsMember is part of auth.DB interface.
 //
 // It returns true if 'group' is listed in db[id].
@@ -72,4 +79,11 @@ func (db *FakeErroringDB) IsMember(c context.Context, id identity.Identity, grou
 		return false, db.Error
 	}
 	return db.FakeDB.IsMember(c, id, group)
+}
+
+// Use installs the fake db into the context.
+func (db *FakeErroringDB) Use(c context.Context) context.Context {
+	return auth.UseDB(c, func(context.Context) (auth.DB, error) {
+		return db, nil
+	})
 }
