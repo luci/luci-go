@@ -69,7 +69,7 @@ func NewRequestJSON(c *http.Client, url, method string, headers map[string]strin
 			return nil, err
 		}
 		if encoded != nil {
-			req.Header.Set("Content-Type", jsonContentType)
+			req.Header.Set("Content-Type", jsonContentTypeForPOST)
 		}
 		if headers != nil {
 			for k, v := range headers {
@@ -79,7 +79,7 @@ func NewRequestJSON(c *http.Client, url, method string, headers map[string]strin
 		return req, nil
 	}, func(resp *http.Response) error {
 		defer resp.Body.Close()
-		if ct := strings.ToLower(resp.Header.Get("Content-Type")); ct != jsonContentType {
+		if ct := strings.ToLower(resp.Header.Get("Content-Type")); !strings.HasPrefix(ct, jsonContentType) {
 			// Non-retriable.
 			return fmt.Errorf("unexpected Content-Type, expected \"%s\", got \"%s\"", jsonContentType, ct)
 		}
@@ -118,7 +118,8 @@ func PostJSON(config *retry.Config, c *http.Client, url string, headers map[stri
 
 // Private details.
 
-const jsonContentType = "application/json; charset=utf-8"
+const jsonContentType = "application/json"
+const jsonContentTypeForPOST = "application/json; charset=utf-8"
 
 type retriable struct {
 	handler Handler

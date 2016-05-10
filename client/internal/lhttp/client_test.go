@@ -183,7 +183,7 @@ func TestGetJSONBadContentTypeIgnore(t *testing.T) {
 	defer ts.Close()
 
 	status, err := GetJSON(fast, http.DefaultClient, ts.URL, nil)
-	ut.AssertEqual(t, errors.New("unexpected Content-Type, expected \"application/json; charset=utf-8\", got \"text/plain; charset=utf-8\""), err)
+	ut.AssertEqual(t, errors.New("unexpected Content-Type, expected \"application/json\", got \"text/plain; charset=utf-8\""), err)
 	ut.AssertEqual(t, 200, status)
 }
 
