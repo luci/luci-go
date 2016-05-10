@@ -44,6 +44,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/maruel/subcommands"
@@ -53,16 +55,37 @@ import (
 	"github.com/luci/luci-go/common/cli"
 )
 
+// CommandParams specifies various parameters for a subcommand.
+type CommandParams struct {
+	Name string // name of the subcommand.
+
+	AuthOptions auth.Options // default auth options.
+
+	// ScopesFlag specifies if -scope flag must be registered.
+	// AuthOptions.Scopes is used as a default value.
+	// If it is empty, defaults to "https://www.googleapis.com/auth/userinfo.email".
+	ScopesFlag bool
+}
+
 // Flags defines command line flags related to authentication.
 type Flags struct {
 	defaults           auth.Options
 	serviceAccountJSON string
+	scopes             string
+	registerScopesFlag bool
 }
 
 // Register adds auth related flags to a FlagSet.
 func (fl *Flags) Register(f *flag.FlagSet, defaults auth.Options) {
 	fl.defaults = defaults
 	f.StringVar(&fl.serviceAccountJSON, "service-account-json", "", "Path to JSON file with service account credentials to use.")
+	if fl.registerScopesFlag {
+		defaultScopes := strings.Join(defaults.Scopes, " ")
+		if defaultScopes == "" {
+			defaultScopes = auth.OAuthScopeEmail
+		}
+		f.StringVar(&fl.scopes, "scopes", defaultScopes, "space-separated OAuth 2.0 scopes")
+	}
 }
 
 // Options return instance of auth.Options struct with values set accordingly to
@@ -73,27 +96,49 @@ func (fl *Flags) Options() (auth.Options, error) {
 		opts.Method = auth.ServiceAccountMethod
 		opts.ServiceAccountJSONPath = fl.serviceAccountJSON
 	}
+
+	if fl.registerScopesFlag {
+		opts.Scopes = strings.Split(fl.scopes, " ")
+		sort.Strings(opts.Scopes)
+	}
 	return opts, nil
+}
+
+type commandRunBase struct {
+	subcommands.CommandRunBase
+	flags  Flags
+	params *CommandParams
+}
+
+func (c *commandRunBase) registerBaseFlags() {
+	c.flags.registerScopesFlag = c.params.ScopesFlag
+	c.flags.Register(&c.Flags, c.params.AuthOptions)
 }
 
 // SubcommandLogin returns subcommands.Command that can be used to perform
 // interactive login.
 func SubcommandLogin(opts auth.Options, name string) *subcommands.Command {
+	return SubcommandLoginWithParams(CommandParams{Name: name, AuthOptions: opts})
+}
+
+// SubcommandLoginWithParams returns subcommands.Command that can be used to perform
+// interactive login.
+func SubcommandLoginWithParams(params CommandParams) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: name,
+		UsageLine: params.Name,
 		ShortDesc: "performs interactive login flow",
 		LongDesc:  "Performs interactive login flow and caches obtained credentials",
 		CommandRun: func() subcommands.CommandRun {
 			c := &loginRun{}
-			c.flags.Register(&c.Flags, opts)
+			c.params = &params
+			c.registerBaseFlags()
 			return c
 		},
 	}
 }
 
 type loginRun struct {
-	subcommands.CommandRunBase
-	flags Flags
+	commandRunBase
 }
 
 func (c *loginRun) Run(a subcommands.Application, _ []string) int {
@@ -118,21 +163,27 @@ func (c *loginRun) Run(a subcommands.Application, _ []string) int {
 // SubcommandLogout returns subcommands.Command that can be used to purge cached
 // credentials.
 func SubcommandLogout(opts auth.Options, name string) *subcommands.Command {
+	return SubcommandLogoutWithParams(CommandParams{Name: name, AuthOptions: opts})
+}
+
+// SubcommandLogoutWithParams returns subcommands.Command that can be used to purge cached
+// credentials.
+func SubcommandLogoutWithParams(params CommandParams) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: name,
+		UsageLine: params.Name,
 		ShortDesc: "removes cached credentials",
 		LongDesc:  "Removes cached credentials from the disk",
 		CommandRun: func() subcommands.CommandRun {
 			c := &logoutRun{}
-			c.flags.Register(&c.Flags, opts)
+			c.params = &params
+			c.registerBaseFlags()
 			return c
 		},
 	}
 }
 
 type logoutRun struct {
-	subcommands.CommandRunBase
-	flags Flags
+	commandRunBase
 }
 
 func (c *logoutRun) Run(a subcommands.Application, args []string) int {
@@ -153,21 +204,27 @@ func (c *logoutRun) Run(a subcommands.Application, args []string) int {
 // SubcommandInfo returns subcommand.Command that can be used to print current
 // cached credentials.
 func SubcommandInfo(opts auth.Options, name string) *subcommands.Command {
+	return SubcommandInfoWithParams(CommandParams{Name: name, AuthOptions: opts})
+}
+
+// SubcommandInfoWithParams returns subcommand.Command that can be used to print current
+// cached credentials.
+func SubcommandInfoWithParams(params CommandParams) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: name,
+		UsageLine: params.Name,
 		ShortDesc: "prints an email address associated with currently cached token",
 		LongDesc:  "Prints an email address associated with currently cached token",
 		CommandRun: func() subcommands.CommandRun {
 			c := &infoRun{}
-			c.flags.Register(&c.Flags, opts)
+			c.params = &params
+			c.registerBaseFlags()
 			return c
 		},
 	}
 }
 
 type infoRun struct {
-	subcommands.CommandRunBase
-	flags Flags
+	commandRunBase
 }
 
 func (c *infoRun) Run(a subcommands.Application, args []string) int {
@@ -195,13 +252,20 @@ func (c *infoRun) Run(a subcommands.Application, args []string) int {
 // SubcommandToken returns subcommand.Command that can be used to print current
 // access token.
 func SubcommandToken(opts auth.Options, name string) *subcommands.Command {
+	return SubcommandTokenWithParams(CommandParams{Name: name, AuthOptions: opts})
+}
+
+// SubcommandTokenWithParams returns subcommand.Command that can be used to print current
+// access token.
+func SubcommandTokenWithParams(params CommandParams) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: name,
+		UsageLine: params.Name,
 		ShortDesc: "prints an access token",
 		LongDesc:  "Generates an access token if requested and prints it.",
 		CommandRun: func() subcommands.CommandRun {
 			c := &tokenRun{}
-			c.flags.Register(&c.Flags, opts)
+			c.params = &params
+			c.registerBaseFlags()
 			c.Flags.DurationVar(
 				&c.lifetime, "lifetime", time.Minute,
 				"Minimum token lifetime. If existing token expired and refresh token or service account is not present, returns nothing.",
@@ -215,8 +279,7 @@ func SubcommandToken(opts auth.Options, name string) *subcommands.Command {
 }
 
 type tokenRun struct {
-	subcommands.CommandRunBase
-	flags      Flags
+	commandRunBase
 	lifetime   time.Duration
 	jsonOutput string
 }

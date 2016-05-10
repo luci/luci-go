@@ -12,7 +12,6 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/client/authcli"
-	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/logging/gologger"
 )
@@ -26,10 +25,22 @@ func main() {
 		},
 		Commands: []*subcommands.Command{
 			subcommands.CmdHelp,
-			authcli.SubcommandInfo(auth.Options{}, "info"),
-			authcli.SubcommandLogin(auth.Options{}, "login"),
-			authcli.SubcommandLogout(auth.Options{}, "logout"),
-			authcli.SubcommandToken(auth.Options{}, "token"),
+			authcli.SubcommandInfoWithParams(authcli.CommandParams{
+				Name:       "info",
+				ScopesFlag: true,
+			}),
+			authcli.SubcommandLoginWithParams(authcli.CommandParams{
+				Name:       "login",
+				ScopesFlag: true,
+			}),
+			authcli.SubcommandLogoutWithParams(authcli.CommandParams{
+				Name:       "logout",
+				ScopesFlag: true,
+			}),
+			authcli.SubcommandTokenWithParams(authcli.CommandParams{
+				Name:       "token",
+				ScopesFlag: true,
+			}),
 		},
 	}
 	os.Exit(subcommands.Run(application, nil))
