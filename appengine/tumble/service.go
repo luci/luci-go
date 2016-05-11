@@ -5,7 +5,6 @@
 package tumble
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -14,9 +13,12 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
+
+const transientHTTPHeader = "X-LUCI-Tumble-Transient"
 
 // Service is an instance of a Tumble service. It installs its handlers into an
 // HTTP router and services Tumble request tasks.
@@ -137,6 +139,10 @@ func (s *Service) ProcessShardHandler(c context.Context, rw http.ResponseWriter,
 	err = processShard(c, cfg, namespaces, time.Unix(tstamp, 0).UTC(), sid)
 	if err != nil {
 		logging.Errorf(c, "failure! %s", err)
+
+		if errors.IsTransient(err) {
+			rw.Header().Add(transientHTTPHeader, "true")
+		}
 		rw.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(rw, "error: %s", err)
 	} else {

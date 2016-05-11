@@ -114,17 +114,17 @@ func (t *Testing) Iterate(c context.Context) int {
 			continue
 		}
 		toks := strings.Split(tsk.Path, "/")
-		rec := httptest.NewRecorder()
-		t.ProcessShardHandler(c, rec, &http.Request{
-			Header: http.Header{"X-AppEngine-QueueName": []string{baseName}},
-		}, httprouter.Params{
-			{Key: "shard_id", Value: toks[4]},
-			{Key: "timestamp", Value: toks[6]},
+
+		// Process the shard until a success or hard failure.
+		retryHTTP(c, func(rec *httptest.ResponseRecorder) {
+			t.ProcessShardHandler(c, rec, &http.Request{
+				Header: http.Header{"X-AppEngine-QueueName": []string{baseName}},
+			}, httprouter.Params{
+				{Key: "shard_id", Value: toks[4]},
+				{Key: "timestamp", Value: toks[6]},
+			})
 		})
-		if rec.Code != 200 {
-			lmsg := logging.Get(c).(*memlogger.MemLogger).Messages()
-			panic(fmt.Errorf("ProcessShardHandler returned !200: %d: %#v", rec.Code, lmsg))
-		}
+
 		if err := tq.Delete(tsk, baseName); err != nil {
 			panic(fmt.Errorf("Deleting task failed: %s", err))
 		}
@@ -135,13 +135,12 @@ func (t *Testing) Iterate(c context.Context) int {
 
 // FireAllTasks will force all tumble shards to run in the future.
 func (t *Testing) FireAllTasks(c context.Context) {
-	rec := httptest.NewRecorder()
-	t.FireAllTasksHandler(c, rec, &http.Request{
-		Header: http.Header{"X-Appengine-Cron": []string{"true"}},
-	}, nil)
-	if rec.Code != 200 {
-		panic(fmt.Errorf("ProcessShardHandler returned !200: %d", rec.Code))
-	}
+	retryHTTP(c, func(rec *httptest.ResponseRecorder) {
+		// Fire all tasks until a success or hard failure.
+		t.FireAllTasksHandler(c, rec, &http.Request{
+			Header: http.Header{"X-Appengine-Cron": []string{"true"}},
+		}, nil)
+	})
 }
 
 // AdvanceTime advances the test clock enough so that Iterate will be able to
@@ -178,4 +177,33 @@ func (t *Testing) ResetLog(c context.Context) {
 // DumpLog dumps the current memory logger to stdout to help with debugging.
 func (t *Testing) DumpLog(c context.Context) {
 	logging.Get(c).(*memlogger.MemLogger).Dump(os.Stdout)
+}
+
+// retryHTTP will record an HTTP request and handle its response.
+//
+// It will return if the response indicated success, retry the request if the
+// response indicated a transient failure, or panic if the response indicated a
+// hard failure.
+func retryHTTP(c context.Context, reqFn func(rec *httptest.ResponseRecorder)) {
+	for {
+		rec := httptest.NewRecorder()
+		reqFn(rec)
+
+		switch rec.Code {
+		case http.StatusOK, http.StatusNoContent:
+			return
+
+		case http.StatusInternalServerError:
+			bodyStr := rec.Body.String()
+			err := fmt.Errorf("internal server error: %s", bodyStr)
+			if rec.Header().Get(transientHTTPHeader) == "" {
+				lmsg := logging.Get(c).(*memlogger.MemLogger).Messages()
+				panic(fmt.Errorf("HTTP non-transient error: %s: %#v", err, lmsg))
+			}
+			logging.WithError(err).Warningf(c, "Transient error encountered, retrying.")
+
+		default:
+			panic(fmt.Errorf("HTTP error %d (%s): %s", rec.Code, http.StatusText(rec.Code), rec.Body.String()))
+		}
+	}
 }

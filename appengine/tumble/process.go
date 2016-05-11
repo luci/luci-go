@@ -178,7 +178,24 @@ func (t *processTask) process(c context.Context, cfg *Config, q *datastore.Query
 				processCounters = append(processCounters, counter)
 
 				ch <- func() error {
-					return processRoot(c, cfg, root, bs, counter)
+					switch err := processRoot(c, cfg, root, bs, counter); err {
+					case nil:
+						return nil
+
+					case datastore.ErrConcurrentTransaction:
+						logging.Fields{
+							logging.ErrorKey: err,
+							"root":           root,
+						}.Warningf(c, "Transient error encountered processing root.")
+						return errors.WrapTransient(err)
+
+					default:
+						logging.Fields{
+							logging.ErrorKey: err,
+							"root":           root,
+						}.Errorf(c, "Failed to process root.")
+						return err
+					}
 				}
 
 				if c.Err() != nil {
