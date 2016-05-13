@@ -137,7 +137,7 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, tail bool, l
 
 	svc := coordinator.GetServices(c)
 	var st storage.Storage
-	if lst.ArchivalState() == coordinator.NotArchived {
+	if !lst.ArchivalState().Archived() {
 		log.Debugf(c, "Log is not archived. Fetching from intermediate storage.")
 
 		// Logs are not archived. Fetch from intermediate storage.
