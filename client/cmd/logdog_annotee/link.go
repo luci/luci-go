@@ -14,13 +14,13 @@ import (
 )
 
 type coordinatorLinkGenerator struct {
-	base    types.StreamName
+	host    string
 	project config.ProjectName
 	prefix  types.StreamName
 }
 
 func (g *coordinatorLinkGenerator) canGenerateLinks() bool {
-	return (g.base != "" && g.prefix != "")
+	return (g.host != "" && g.prefix != "")
 }
 
 func (g *coordinatorLinkGenerator) GetLink(names ...types.StreamName) string {
@@ -33,5 +33,5 @@ func (g *coordinatorLinkGenerator) GetLink(names ...types.StreamName) string {
 		}
 		links[i] = fmt.Sprintf("s=%s", url.QueryEscape(fmt.Sprintf("%s/%s", proj, streamName)))
 	}
-	return fmt.Sprintf("https://%s.appspot.com/v/?%s", g.base, strings.Join(links, "&"))
+	return fmt.Sprintf("https://%s/v/?%s", g.host, strings.Join(links, "&"))
 }

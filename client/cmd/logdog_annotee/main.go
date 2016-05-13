@@ -198,7 +198,7 @@ func mainImpl(args []string) int {
 
 	// Initialize our link generator, if we can.
 	linkGen := &coordinatorLinkGenerator{
-		base:    types.StreamName(a.nameBase),
+		host:    a.logdogHost,
 		project: a.project,
 		prefix:  prefix,
 	}
