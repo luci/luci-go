@@ -6,7 +6,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/luci/luci-go/common/auth"
@@ -156,7 +155,7 @@ func (a *application) runCollector(c context.Context) error {
 					return nil
 				}
 
-			case io.EOF, context.Canceled, context.DeadlineExceeded:
+			case pubsub.Done, context.Canceled, context.DeadlineExceeded:
 				return
 
 			default:

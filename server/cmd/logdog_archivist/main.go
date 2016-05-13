@@ -5,14 +5,13 @@
 package main
 
 import (
-	"io"
 	"time"
 
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/gcloud/gs"
-	"github.com/luci/luci-go/common/gcloud/pubsub"
+	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/parallel"
 	"github.com/luci/luci-go/common/tsmon/distribution"
@@ -22,7 +21,7 @@ import (
 	"github.com/luci/luci-go/server/internal/logdog/service"
 	"golang.org/x/net/context"
 	"google.golang.org/cloud"
-	gcps "google.golang.org/cloud/pubsub"
+	"google.golang.org/cloud/pubsub"
 )
 
 var (
@@ -89,7 +88,7 @@ func (a *application) runArchivist(c context.Context) error {
 	// We will initialize both an authenticated Client instance and an
 	// authenticated Context, since we need the latter for raw ACK deadline
 	// updates.
-	taskSub := pubsub.Subscription(acfg.Subscription)
+	taskSub := gcps.Subscription(acfg.Subscription)
 	if err := taskSub.Validate(); err != nil {
 		log.Fields{
 			log.ErrorKey: err,
@@ -100,7 +99,7 @@ func (a *application) runArchivist(c context.Context) error {
 	psProject, psSubscriptionName := taskSub.Split()
 
 	psAuth, err := a.Authenticator(c, func(o *auth.Options) {
-		o.Scopes = pubsub.SubscriberScopes
+		o.Scopes = gcps.SubscriberScopes
 	})
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to get Pub/Sub authenticator.")
@@ -116,7 +115,7 @@ func (a *application) runArchivist(c context.Context) error {
 	psContext := cloud.WithContext(c, psProject, psHTTPClient)
 
 	// Pub/Sub: TokenSource => Client
-	psClient, err := gcps.NewClient(c, psProject, cloud.WithTokenSource(psAuth.TokenSource()))
+	psClient, err := pubsub.NewClient(c, psProject, cloud.WithTokenSource(psAuth.TokenSource()))
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create Pub/Sub client.")
 		return err
@@ -160,7 +159,7 @@ func (a *application) runArchivist(c context.Context) error {
 		"subscription": taskSub,
 		"tasks":        tasks,
 	}.Infof(c, "Pulling tasks from Pub/Sub subscription.")
-	it, err := sub.Pull(c, gcps.MaxExtension(pubsub.MaxACKDeadline), gcps.MaxPrefetch(tasks))
+	it, err := sub.Pull(c, pubsub.MaxExtension(gcps.MaxACKDeadline), pubsub.MaxPrefetch(tasks))
 	if err != nil {
 		log.Fields{
 			log.ErrorKey:   err,
@@ -223,7 +222,7 @@ func (a *application) runArchivist(c context.Context) error {
 					return nil
 				}
 
-			case io.EOF, context.Canceled, context.DeadlineExceeded:
+			case pubsub.Done, context.Canceled, context.DeadlineExceeded:
 				log.Infof(c, "Subscription iterator is finished.")
 				return
 
