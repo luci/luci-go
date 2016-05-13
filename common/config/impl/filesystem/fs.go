@@ -289,6 +289,13 @@ func (fs *filesystemImpl) scanRevision(realPath nativePath, revision string) err
 	return nil
 }
 
+func (fs *filesystemImpl) ServiceURL() url.URL {
+	return url.URL{
+		Scheme: "file",
+		Path:   fs.basePath.s(),
+	}
+}
+
 func (fs *filesystemImpl) GetConfig(cfgSet, cfgPath string, hashOnly bool) (*config.Config, error) {
 	configSet := configSet{luciPath(cfgSet)}
 	path := luciPath(cfgPath)

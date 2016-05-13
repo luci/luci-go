@@ -66,6 +66,10 @@ type cacheConfig struct {
 	inner config.Interface
 }
 
+func (cc *cacheConfig) ServiceURL() url.URL {
+	return cc.inner.ServiceURL()
+}
+
 func (cc *cacheConfig) GetConfig(configSet, path string, hashOnly bool) (*config.Config, error) {
 	// If we're doing hash-only lookup, we're okay with either full or hash-only
 	// result. However, if we have to do the lookup, we will store the result in

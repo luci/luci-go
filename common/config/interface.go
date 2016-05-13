@@ -70,6 +70,9 @@ type Project struct {
 // Interface is the interface any client has to access the luci-config service.
 // Transient errors are wrapped in errors.Transient. See common/errors.
 type Interface interface {
+	// ServiceURL returns the URL of the config service.
+	ServiceURL() url.URL
+
 	// GetConfig returns a config at a path in a config set or ErrNoConfig
 	// if missing. If hashOnly is true, returned Config struct has Content set
 	// to "" (and the call is faster).

@@ -41,6 +41,12 @@ type memoryImpl struct {
 	sets map[string]ConfigSet
 }
 
+func (m *memoryImpl) ServiceURL() url.URL {
+	return url.URL{
+		Scheme: "memory",
+	}
+}
+
 func (m *memoryImpl) GetConfig(configSet, path string, hashOnly bool) (*config.Config, error) {
 	if set, ok := m.sets[configSet]; ok {
 		if cfg := set.configMaybe(configSet, path, hashOnly); cfg != nil {

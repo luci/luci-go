@@ -23,6 +23,11 @@ import (
 // luci-config service. Uses transport injected into the context for
 // authentication. See common/transport.
 func New(c context.Context, basePath string) config.Interface {
+	serviceURL, err := url.Parse(basePath)
+	if err != nil {
+		panic(fmt.Errorf("failed to parse service URL: %v", err))
+	}
+
 	service, err := configApi.New(transport.GetClient(c))
 	if err != nil {
 		// client is nil
@@ -31,7 +36,11 @@ func New(c context.Context, basePath string) config.Interface {
 	if basePath != "" {
 		service.BasePath = basePath
 	}
-	return &remoteImpl{service, c}
+	return &remoteImpl{
+		Context:    c,
+		service:    service,
+		serviceURL: serviceURL,
+	}
 }
 
 // Use adds an implementation of the config service which talks to the actual
@@ -44,8 +53,15 @@ func Use(c context.Context, basePath string) context.Context {
 }
 
 type remoteImpl struct {
-	service *configApi.Service
-	c       context.Context
+	context.Context
+
+	service    *configApi.Service
+	serviceURL *url.URL
+}
+
+func (r *remoteImpl) ServiceURL() url.URL {
+	return *r.serviceURL
+
 }
 
 func (r *remoteImpl) GetConfig(configSet, path string, hashOnly bool) (*config.Config, error) {
@@ -127,7 +143,7 @@ func (r *remoteImpl) GetProjects() ([]config.Project, error) {
 
 		url, err := url.Parse(p.RepoUrl)
 		if err != nil {
-			lc := logging.SetField(r.c, "projectID", p.Id)
+			lc := logging.SetField(r, "projectID", p.Id)
 			logging.Warningf(lc, "Failed to parse repo URL %q: %s", p.RepoUrl, err)
 		}
 
@@ -146,7 +162,7 @@ func (r *remoteImpl) GetProjectConfigs(path string, hashesOnly bool) ([]config.C
 	if err != nil {
 		return nil, apiErr(err)
 	}
-	c := logging.SetField(r.c, "path", path)
+	c := logging.SetField(r, "path", path)
 	return convertMultiWireConfigs(c, path, resp, hashesOnly)
 }
 
@@ -155,7 +171,7 @@ func (r *remoteImpl) GetRefConfigs(path string, hashesOnly bool) ([]config.Confi
 	if err != nil {
 		return nil, apiErr(err)
 	}
-	c := logging.SetField(r.c, "path", path)
+	c := logging.SetField(r, "path", path)
 	return convertMultiWireConfigs(c, path, resp, hashesOnly)
 }
 

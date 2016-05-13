@@ -13,6 +13,7 @@ import (
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/clock/clockflag"
 	"github.com/luci/luci-go/common/config"
+	"github.com/luci/luci-go/common/config/impl/filesystem"
 	"github.com/luci/luci-go/common/config/impl/remote"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/transport"
@@ -21,7 +22,7 @@ import (
 
 // Flags is the set of command-line flags used to configure a service.
 type Flags struct {
-	// ConfigPath is the path within the ConfigSet of the configuration.
+	// ConfigFilePath is the path within the ConfigSet of the configuration.
 	//
 	// If ConfigURL is empty, this will be interpreted as a local filesystem path
 	// from which the configuration should be loaded.
@@ -39,7 +40,7 @@ type Flags struct {
 // AddToFlagSet augments the supplied FlagSet with values for Flags.
 func (f *Flags) AddToFlagSet(fs *flag.FlagSet) {
 	fs.StringVar(&f.ConfigFilePath, "config-file-path", "",
-		"If set, load the configuration protobuf from this path instead of the configuration service.")
+		"If set, load configuration from a local filesystem rooted here.")
 	fs.Var(&f.KillCheckInterval, "config-kill-interval",
 		"If non-zero, poll for configuration changes and kill the application if one is detected.")
 }
@@ -56,10 +57,10 @@ func (f *Flags) CoordinatorOptions(c context.Context, client logdog.ServicesClie
 	// loads from a local file.
 	var ci config.Interface
 	if f.ConfigFilePath != "" {
-		ci = &fileConfig{
-			path:       f.ConfigFilePath,
-			configSet:  ccfg.ConfigSet,
-			configPath: ccfg.ConfigPath,
+		var err error
+		ci, err = filesystem.New(f.ConfigFilePath)
+		if err != nil {
+			return nil, err
 		}
 	} else {
 		if ccfg.ConfigServiceUrl == "" {

@@ -60,7 +60,7 @@ func TestFlag(t *testing.T) {
 		Convey(`Using a Coordinator client stub`, func() {
 			tsc := testServicesClient{}
 			tsc.cfg.ConfigServiceUrl = "http://example.com"
-			tsc.cfg.ConfigSet = "my/config/set"
+			tsc.cfg.ConfigSet = "services/testservice"
 			tsc.cfg.ConfigPath = "configpath.cfg"
 
 			Convey(`Will load configuration from luci-config by default.`, func() {
@@ -95,9 +95,12 @@ func TestFlag(t *testing.T) {
 				So(err, ShouldBeNil)
 				defer os.RemoveAll(tdir)
 
-				f.ConfigFilePath = filepath.Join(tdir, "test_config.proto.txt")
+				f.ConfigFilePath = filepath.Join(tdir, "config")
 				writeConfig := func(cfg *svcconfig.Config) error {
-					fd, err := os.Create(f.ConfigFilePath)
+					servicePath := filepath.Join(f.ConfigFilePath, "services", "testservice")
+					os.MkdirAll(servicePath, 0755)
+
+					fd, err := os.Create(filepath.Join(servicePath, "configpath.cfg"))
 					if err != nil {
 						return err
 					}
