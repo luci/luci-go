@@ -30,10 +30,14 @@ import (
 )
 
 // base is the root of the middleware chain.
-func base(h middleware.Handler) httprouter.Handle {
-	h = config.WithConfig(h)
-	h = coordinator.WithProdServices(h)
-	return gaemiddleware.BaseProd(h)
+func base(installConfig bool) middleware.Base {
+	return func(h middleware.Handler) httprouter.Handle {
+		if installConfig {
+			h = config.WithConfig(h)
+		}
+		h = coordinator.WithProdServices(h)
+		return gaemiddleware.BaseProd(h)
+	}
 }
 
 // Run installs and executes this site.
@@ -50,8 +54,8 @@ func main() {
 	discovery.Enable(&svr)
 
 	// Standard HTTP endpoints.
-	gaemiddleware.InstallHandlers(router, base)
-	svr.InstallHandlers(router, base)
+	gaemiddleware.InstallHandlers(router, base(false))
+	svr.InstallHandlers(router, base(true))
 
 	// Redirect "/" to "/app/".
 	router.GET("/", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -63,15 +67,9 @@ func main() {
 }
 
 func accessControl(c context.Context, origin string) bool {
-	gcfg, err := config.LoadGlobalConfig(c)
+	cfg, err := config.Load(c)
 	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to get global config for access control check.")
-		return false
-	}
-
-	cfg, err := gcfg.LoadConfig(c)
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to get application config for access control check.")
+		log.WithError(err).Errorf(c, "Failed to get config for access control check.")
 		return false
 	}
 

@@ -5,11 +5,12 @@
 package config
 
 import (
-	gaeauthClient "github.com/luci/luci-go/appengine/gaeauth/client"
+	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaeconfig"
-	"github.com/luci/luci-go/common/config/impl/remote"
+	"github.com/luci/luci-go/common/config"
+	"github.com/luci/luci-go/common/config/impl/memory"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/server/settings"
 	"golang.org/x/net/context"
 )
 
@@ -18,26 +19,63 @@ import (
 //
 // If the GlobalConfig doesn't fully specify a luci-config source, no
 // luci-config will be installed.
-func UseConfig(c context.Context) context.Context {
-	gcfg, err := LoadGlobalConfig(c)
-	switch err {
-	case nil:
-		// Install remote "luci-config" service.
-		//
-		// Use an e-mail OAuth2-authenticated transport to pull from "luci-config".
-		c = gaeauthClient.UseServiceAccountTransport(c, nil, nil)
-		c = remote.Use(c, gcfg.ConfigServiceURL)
+func UseConfig(c *context.Context) error {
+	if info.Get(*c).IsDevAppServer() {
+		log.Infof(*c, "Development server detected; installing development config.")
 
-		// Add a memcache-based caching filter.
-		c = gaeconfig.AddCacheFilter(c, gaeconfig.DefaultExpire)
-
-	case settings.ErrNoSettings:
-		// No settings, so no configuration will be installed.
-		log.Warningf(c, "No luci-config endpoint is set.")
-
-	default:
-		log.WithError(err).Errorf(c, "Failed to load application configuration.")
+		mcfg, err := devAppServerMemoryConfig(*c)
+		if err != nil {
+			return err
+		}
+		*c = config.Set(*c, memory.New(mcfg))
+		return nil
 	}
 
-	return c
+	// Install our GAE configuration.
+	ci, err := gaeconfig.New(*c)
+	if err != nil {
+		log.WithError(err).Errorf(*c, "Failed to install config service.")
+		return err
+	}
+
+	*c = config.Set(*c, ci)
+	return nil
+}
+
+// DevConfig is an auxiliary development configuration. It is only active when
+// running under the dev appserver.
+type devConfig struct {
+	_kind string `gae:"$kind,DevConfig"`
+	_id   int64  `gae:"$id,1"`
+
+	// Config, is set, is the application's text-format configuration protobuf.
+	// This is only used when running under dev-appserver.
+	Config string `gae:",noindex"`
+}
+
+func devAppServerMemoryConfig(c context.Context) (map[string]memory.ConfigSet, error) {
+	var dcfg devConfig
+	di := ds.Get(c)
+	switch err := di.Get(&dcfg); err {
+	case nil:
+		break
+
+	case ds.ErrNoSuchEntity:
+		log.Infof(c, "Installing empty development configuration datastore entry.")
+
+		if err := di.Put(&dcfg); err != nil {
+			log.WithError(err).Warningf(c, "Failed to install empty development configuration.")
+		}
+		return nil, config.ErrNoConfig
+
+	default:
+		return nil, err
+	}
+
+	configSet, configPath := ServiceConfigPath(c)
+	return map[string]memory.ConfigSet{
+		configSet: {
+			configPath: dcfg.Config,
+		},
+	}, nil
 }

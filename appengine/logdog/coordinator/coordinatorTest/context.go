@@ -25,19 +25,13 @@ import (
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/logdog/storage"
 	memoryStorage "github.com/luci/luci-go/server/logdog/storage/memory"
+	"github.com/luci/luci-go/server/settings"
 	"golang.org/x/net/context"
 )
 
 // Environment contains all of the testing facilities that are installed into
 // the Context.
 type Environment struct {
-	// GlobalConfig is the global configuration instance. This is also installed
-	// into settings.
-	//
-	// Note that modifications this config will NOT update the configuration that
-	// is stored in settings.
-	GlobalConfig config.GlobalConfig
-
 	// Tumble is the Tumble testing instance.
 	Tumble tumble.Testing
 
@@ -75,15 +69,18 @@ func (e *Environment) JoinGroup(g string) {
 
 // ClearCoordinatorConfig removes the Coordinator configuration entry,
 // simulating a missing config.
-func (e *Environment) ClearCoordinatorConfig() {
-	delete(e.Config, "projects/logdog-coordinator")
+func (e *Environment) ClearCoordinatorConfig(c context.Context) {
+	configSet, _ := config.ServiceConfigPath(c)
+	delete(e.Config, configSet)
 }
 
-// ModConfig loads the current Coordinator configuration, invokes the callback
-// with its contents, and writes the result back to config.
-func (e *Environment) ModConfig(fn func(*svcconfig.Coordinator)) {
+// ModServiceConfig loads the current service configuration, invokes the
+// callback with its contents, and writes the result back to config.
+func (e *Environment) ModServiceConfig(c context.Context, fn func(*svcconfig.Coordinator)) {
+	configSet, configPath := config.ServiceConfigPath(c)
+
 	var cfg svcconfig.Config
-	e.modTextProtobuf("projects/logdog-coordinator", "coordinator.cfg", &cfg, func() {
+	e.modTextProtobuf(configSet, configPath, &cfg, func() {
 		if cfg.Coordinator == nil {
 			cfg.Coordinator = &svcconfig.Coordinator{}
 		}
@@ -135,11 +132,6 @@ func (e *Environment) modTextProtobuf(configSet, path string, msg proto.Message,
 // it, returning the Environment to which they're bound.
 func Install() (context.Context, *Environment) {
 	e := Environment{
-		GlobalConfig: config.GlobalConfig{
-			ConfigServiceURL: "fake://localhost",
-			ConfigSet:        "projects/logdog-coordinator",
-			ConfigPath:       "coordinator.cfg",
-		},
 		Config: make(map[string]memory.ConfigSet),
 	}
 
@@ -149,13 +141,6 @@ func Install() (context.Context, *Environment) {
 	if *testGoLogger {
 		c = logging.SetLevel(gologger.StdConfig.Use(c), logging.Debug)
 	}
-
-	// Setup Tumble. This also adds the two Tumble indexes to datastore.
-	e.Tumble.EnableDelayedMutations(c)
-
-	tcfg := e.Tumble.GetConfig(c)
-	tcfg.Namespaced = true
-	e.Tumble.UpdateSettings(c, tcfg)
 
 	// Add indexes. These should match the indexes defined in the application's
 	// "index.yaml".
@@ -190,13 +175,8 @@ func Install() (context.Context, *Environment) {
 	// Setup clock.
 	e.Clock = clock.Get(c).(testclock.TestClock)
 
-	// Load our global configuration.
-	if err := e.GlobalConfig.Store(c, "test setup"); err != nil {
-		panic(err)
-	}
-
-	// Install authentication state.
-	c = auth.WithState(c, &e.AuthState)
+	// Install GAE config service settings.
+	c = settings.Use(c, settings.New(&settings.MemoryStorage{}))
 
 	// Setup luci-config configuration.
 	c = memory.Use(c, e.Config)
@@ -217,12 +197,22 @@ func Install() (context.Context, *Environment) {
 	addProjectConfig("proj-exclusive", "Exclusive Project", "group:auth")
 
 	// luci-config: Coordinator Defaults
-	e.ModConfig(func(cfg *svcconfig.Coordinator) {
+	e.ModServiceConfig(c, func(cfg *svcconfig.Coordinator) {
 		*cfg = svcconfig.Coordinator{
 			AdminAuthGroup:   "admin",
 			ServiceAuthGroup: "services",
 		}
 	})
+
+	// Setup Tumble. This also adds the two Tumble indexes to datastore.
+	e.Tumble.EnableDelayedMutations(c)
+
+	tcfg := e.Tumble.GetConfig(c)
+	tcfg.Namespaced = true
+	e.Tumble.UpdateSettings(c, tcfg)
+
+	// Install authentication state.
+	c = auth.WithState(c, &e.AuthState)
 
 	// Setup authentication state.
 	e.JoinGroup("all")

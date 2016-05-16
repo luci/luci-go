@@ -61,7 +61,7 @@ func TestFlag(t *testing.T) {
 			tsc := testServicesClient{}
 			tsc.cfg.ConfigServiceUrl = "http://example.com"
 			tsc.cfg.ConfigSet = "services/testservice"
-			tsc.cfg.ConfigPath = "configpath.cfg"
+			tsc.cfg.ServiceConfigPath = "configpath.cfg"
 
 			Convey(`Will load configuration from luci-config by default.`, func() {
 				o, err := f.CoordinatorOptions(c, &tsc)
@@ -84,7 +84,7 @@ func TestFlag(t *testing.T) {
 			})
 
 			Convey(`Will fail to create Options if no config path is specified.`, func() {
-				tsc.cfg.ConfigPath = ""
+				tsc.cfg.ServiceConfigPath = ""
 
 				_, err := f.CoordinatorOptions(c, &tsc)
 				So(err, ShouldErrLike, "coordinator does not specify a config path")

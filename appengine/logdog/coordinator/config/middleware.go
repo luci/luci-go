@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/middleware"
 	"golang.org/x/net/context"
 )
@@ -16,7 +17,12 @@ import (
 // configuration into the Context.
 func WithConfig(h middleware.Handler) middleware.Handler {
 	return func(c context.Context, rw http.ResponseWriter, r *http.Request, params httprouter.Params) {
-		c = UseConfig(c)
+		if err := UseConfig(&c); err != nil {
+			log.WithError(err).Errorf(c, "Failed to install service configuration.")
+
+			rw.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		h(c, rw, r, params)
 	}
 }

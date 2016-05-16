@@ -30,7 +30,7 @@ func TestTerminateStream(t *testing.T) {
 	Convey(`With a testing configuration`, t, func() {
 		c, env := ct.Install()
 
-		env.ModConfig(func(cfg *svcconfig.Coordinator) {
+		env.ModServiceConfig(c, func(cfg *svcconfig.Coordinator) {
 			cfg.ArchiveTopic = "projects/test/topics/archive"
 			cfg.ArchiveSettleDelay = google.NewDuration(10 * time.Second)
 			cfg.ArchiveDelayMax = google.NewDuration(24 * time.Hour)

@@ -22,7 +22,9 @@ import (
 func init() {
 	tmb := tumble.Service{
 		Middleware: func(c context.Context) context.Context {
-			c = config.UseConfig(c)
+			if err := config.UseConfig(&c); err != nil {
+				panic(err)
+			}
 			c = coordinator.UseProdServices(c)
 			return c
 		},

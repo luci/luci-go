@@ -24,6 +24,26 @@ const maxProjectWorkers = 32
 // ErrNoAccess is returned if the user has no access to the requested project.
 var ErrNoAccess = errors.New("no access")
 
+// Projects lists the registered LogDog projects.
+func Projects(c context.Context) ([]string, error) {
+	projects, err := config.Get(c).GetProjects()
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to list 'luci-config' projects.")
+		return nil, err
+	}
+
+	// TODO(dnj): Filter this list to projects with active LogDog configs, once we
+	// move to project-specific configurations.
+
+	ids := make([]string, len(projects))
+	for i, p := range projects {
+		ids[i] = p.ID
+	}
+
+	// TODO(dnj): Restrict this by actual namespaces in datastore.
+	return ids, nil
+}
+
 // AssertProjectAccess attempts to assert the current user's ability to access
 // a given project.
 //

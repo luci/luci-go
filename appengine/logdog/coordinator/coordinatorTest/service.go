@@ -8,7 +8,6 @@ import (
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	"github.com/luci/luci-go/common/gcloud/gs"
-	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"golang.org/x/net/context"
 )
@@ -18,7 +17,7 @@ import (
 type Services struct {
 	// C, if not nil, will be used to get the return values for Config, overriding
 	// local static members.
-	C func() (*config.GlobalConfig, *svcconfig.Config, error)
+	C func() (*config.Config, error)
 
 	// Storage returns an intermediate storage instance for use by this service.
 	//
@@ -35,22 +34,17 @@ type Services struct {
 var _ coordinator.Services = (*Services)(nil)
 
 // Config implements coordinator.Services.
-func (s *Services) Config(c context.Context) (*config.GlobalConfig, *svcconfig.Config, error) {
+func (s *Services) Config(c context.Context) (*config.Config, error) {
 	if s.C != nil {
 		return s.C()
 	}
 
-	gcfg, err := config.LoadGlobalConfig(c)
+	gcfg, err := config.Load(c)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	cfg, err := gcfg.LoadConfig(c)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return gcfg, cfg, nil
+	return gcfg, nil
 }
 
 // IntermediateStorage implements coordinator.Services.

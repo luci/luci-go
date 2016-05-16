@@ -29,7 +29,7 @@ func TestRegisterStream(t *testing.T) {
 
 	Convey(`With a testing configuration`, t, func() {
 		c, env := ct.Install()
-		env.ModConfig(func(cfg *svcconfig.Coordinator) {
+		env.ModServiceConfig(c, func(cfg *svcconfig.Coordinator) {
 			cfg.ArchiveDelayMax = google.NewDuration(time.Hour)
 		})
 		ds.Get(c).Testable().Consistent(true)

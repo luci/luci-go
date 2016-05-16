@@ -24,7 +24,7 @@ func TestServiceAuth(t *testing.T) {
 		svr := New().(*logdog.DecoratedServices)
 
 		Convey(`Will reject all traffic if no configuration is present.`, func() {
-			env.ClearCoordinatorConfig()
+			env.ClearCoordinatorConfig(c)
 
 			_, err := svr.Prelude(c, "test", nil)
 			So(err, ShouldBeRPCInternal)

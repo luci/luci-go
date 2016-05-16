@@ -16,7 +16,6 @@ import (
 	"github.com/luci/luci-go/common/gcloud/gs"
 	"github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"github.com/luci/luci-go/server/logdog/storage/bigtable"
 	"github.com/luci/luci-go/server/middleware"
@@ -42,7 +41,7 @@ type Services interface {
 	//
 	// The production instance will cache the results for the duration of the
 	// request.
-	Config(context.Context) (*config.GlobalConfig, *svcconfig.Config, error)
+	Config(context.Context) (*config.Config, error)
 
 	// Storage returns an intermediate storage instance for use by this service.
 	//
@@ -77,9 +76,7 @@ type prodServicesInst struct {
 	sync.Mutex
 
 	// gcfg is the cached global configuration.
-	gcfg *config.GlobalConfig
-	// cfg is the cached configuration.
-	cfg *svcconfig.Config
+	gcfg *config.Config
 
 	// archivalIndex is the atomically-manipulated archival index for the
 	// ArchivalPublisher. This is shared between all ArchivalPublisher instances
@@ -90,32 +87,24 @@ type prodServicesInst struct {
 // Config returns the current instance and application configuration instances.
 //
 // After a success, successive calls will return a cached result.
-func (s *prodServicesInst) Config(c context.Context) (*config.GlobalConfig, *svcconfig.Config, error) {
+func (s *prodServicesInst) Config(c context.Context) (*config.Config, error) {
 	s.Lock()
 	defer s.Unlock()
 
 	// Load/cache the global config.
 	if s.gcfg == nil {
 		var err error
-		s.gcfg, err = config.LoadGlobalConfig(c)
+		s.gcfg, err = config.Load(c)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 	}
 
-	if s.cfg == nil {
-		var err error
-		s.cfg, err = s.gcfg.LoadConfig(c)
-		if err != nil {
-			return nil, nil, err
-		}
-	}
-
-	return s.gcfg, s.cfg, nil
+	return s.gcfg, nil
 }
 
 func (s *prodServicesInst) IntermediateStorage(c context.Context) (storage.Storage, error) {
-	gcfg, cfg, err := s.Config(c)
+	cfg, err := s.Config(c)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +144,7 @@ func (s *prodServicesInst) IntermediateStorage(c context.Context) (storage.Stora
 	}
 
 	// Get an Authenticator bound to the token scopes that we need for BigTable.
-	a, err := gaeauthClient.Authenticator(c, bigtable.StorageScopes, gcfg.BigTableServiceAccountJSON)
+	a, err := gaeauthClient.Authenticator(c, bigtable.StorageScopes, cfg.Settings.BigTableServiceAccountJSON)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create BigTable authenticator.")
 		return nil, errors.New("failed to create BigTable authenticator")
@@ -194,7 +183,7 @@ func (s *prodServicesInst) GSClient(c context.Context) (gs.Client, error) {
 }
 
 func (s *prodServicesInst) ArchivalPublisher(c context.Context) (ArchivalPublisher, error) {
-	_, cfg, err := s.Config(c)
+	cfg, err := s.Config(c)
 	if err != nil {
 		return nil, err
 	}

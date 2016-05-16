@@ -69,7 +69,7 @@ func (f *Flags) CoordinatorOptions(c context.Context, client logdog.ServicesClie
 		if ccfg.ConfigSet == "" {
 			return nil, errors.New("coordinator does not specify a config set")
 		}
-		if ccfg.ConfigPath == "" {
+		if ccfg.ServiceConfigPath == "" {
 			return nil, errors.New("coordinator does not specify a config path")
 		}
 
@@ -82,7 +82,7 @@ func (f *Flags) CoordinatorOptions(c context.Context, client logdog.ServicesClie
 	return &Options{
 		Config:            ci,
 		ConfigSet:         ccfg.ConfigSet,
-		ConfigPath:        ccfg.ConfigPath,
+		ServiceConfigPath: ccfg.ServiceConfigPath,
 		KillCheckInterval: time.Duration(f.KillCheckInterval),
 	}, nil
 }

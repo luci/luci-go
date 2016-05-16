@@ -57,7 +57,7 @@ func (s *server) LoadStream(c context.Context, req *logdog.LoadStreamRequest) (*
 	resp.Age = google.NewDuration(ds.RoundTime(clock.Now(c)).Sub(lst.Updated))
 
 	log.Fields{
-		"id":              lst.ID,
+		"id":              lst.ID(),
 		"terminalIndex":   resp.State.TerminalIndex,
 		"archived":        resp.State.Archived,
 		"purged":          resp.State.Purged,

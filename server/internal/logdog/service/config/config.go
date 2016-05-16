@@ -24,8 +24,9 @@ type Options struct {
 
 	// ConfigSet is the name of the ConfigSet to load.
 	ConfigSet string
-	// ConfigPath is the name of the ConfigPath to load.
-	ConfigPath string
+	// ServiceConfigPath is the name of the LogDog service config within the
+	// ConfigSet.
+	ServiceConfigPath string
 
 	// KillCheckInterval, if >0, starts a goroutine that polls every interval to
 	// see if the configuration has changed. If it has, KillFunc will be invoked.
@@ -36,7 +37,7 @@ type Options struct {
 }
 
 func (o *Options) getConfig(hashOnly bool) (*config.Config, error) {
-	return o.Config.GetConfig(o.ConfigSet, o.ConfigPath, hashOnly)
+	return o.Config.GetConfig(o.ConfigSet, o.ServiceConfigPath, hashOnly)
 }
 
 func (o *Options) pollForConfigChanges(c context.Context, hash string) {

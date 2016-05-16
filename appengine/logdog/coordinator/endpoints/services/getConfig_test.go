@@ -9,6 +9,7 @@ import (
 
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
+	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -33,9 +34,9 @@ func TestGetConfig(t *testing.T) {
 			cr, err := svr.GetConfig(c, nil)
 			So(err, ShouldBeRPCOK)
 			So(cr, ShouldResemble, &logdog.GetConfigResponse{
-				ConfigServiceUrl: env.GlobalConfig.ConfigServiceURL,
-				ConfigSet:        env.GlobalConfig.ConfigSet,
-				ConfigPath:       env.GlobalConfig.ConfigPath,
+				ConfigServiceUrl:  "memory://",
+				ConfigSet:         "services/app",
+				ServiceConfigPath: svcconfig.ServiceConfigFilename,
 			})
 		})
 	})

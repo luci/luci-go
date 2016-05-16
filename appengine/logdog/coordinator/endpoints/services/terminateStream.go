@@ -39,7 +39,7 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 	}
 
 	svc := coordinator.GetServices(c)
-	_, cfg, err := svc.Config(c)
+	cfg, err := svc.Config(c)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load configuration.")
 		return nil, grpcutil.Internal

@@ -17,20 +17,17 @@ import (
 // SetConfig loads the supplied configuration into a config.GlobalConfig
 // instance.
 func (s *server) SetConfig(c context.Context, req *logdog.SetConfigRequest) (*google.Empty, error) {
-	gcfg := config.GlobalConfig{
-		ConfigServiceURL:           req.ConfigServiceUrl,
-		ConfigSet:                  req.ConfigSet,
-		ConfigPath:                 req.ConfigPath,
+	se := config.Settings{
 		BigTableServiceAccountJSON: req.StorageServiceAccountJson,
 	}
-	if err := gcfg.Validate(); err != nil {
+	if err := se.Validate(); err != nil {
 		log.Fields{
 			log.ErrorKey: err,
 		}.Errorf(c, "New configuration did not validate.")
 		return nil, grpcutil.Errf(codes.InvalidArgument, "config did not validate: %v", err)
 	}
 
-	if err := gcfg.Store(c, "setConfig endpoint"); err != nil {
+	if err := se.Store(c, "setConfig endpoint"); err != nil {
 		log.Fields{
 			log.ErrorKey: err,
 		}.Errorf(c, "Failed to store new configuration.")

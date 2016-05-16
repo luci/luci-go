@@ -45,19 +45,19 @@ func TestConfig(t *testing.T) {
 			Config: memory.New(map[string]memory.ConfigSet{
 				"svcconfig/logdog/test": cset,
 			}),
-			ConfigSet:  "svcconfig/logdog/test",
-			ConfigPath: "test-configuration.cfg",
+			ConfigSet:         "svcconfig/logdog/test",
+			ServiceConfigPath: "test-configuration.cfg",
 		}
 
 		Convey(`Will fail to create a Manager if the configuration does not exist.`, func() {
-			o.ConfigPath = "nonexistent.cfg"
+			o.ServiceConfigPath = "nonexistent.cfg"
 
 			_, err := NewManager(c, o)
 			So(err, ShouldEqual, config.ErrNoConfig)
 		})
 
 		Convey(`Will fail to create a Manager if the configuration is an invalid protobuf.`, func() {
-			cset[o.ConfigPath] = "not a valid text protobuf"
+			cset[o.ServiceConfigPath] = "not a valid text protobuf"
 
 			_, err := NewManager(c, o)
 			So(err, ShouldNotBeNil)
@@ -98,7 +98,7 @@ func TestConfig(t *testing.T) {
 
 			Convey(`When the configuration changes`, func() {
 				cfg.Transport.GetPubsub().Project = "qux"
-				cset[o.ConfigPath] = proto.MarshalTextString(cfg)
+				cset[o.ServiceConfigPath] = proto.MarshalTextString(cfg)
 
 				Convey(`Will execute the kill function if the configuration changes.`, func() {
 					timeAdvanceC <- time.Second

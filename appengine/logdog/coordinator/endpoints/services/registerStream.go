@@ -76,7 +76,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 	prefix, _ := path.Split()
 
 	// Load our config and archive expiration.
-	_, cfg, err := coordinator.GetServices(c).Config(c)
+	cfg, err := coordinator.GetServices(c).Config(c)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load configuration.")
 		return nil, grpcutil.Internal

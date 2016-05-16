@@ -37,11 +37,6 @@ func IsServiceUser(c context.Context) error {
 }
 
 func isMember(c context.Context, groupNameFunc func(*svcconfig.Coordinator) string) error {
-	_, cfg, err := GetServices(c).Config(c)
-	if err != nil {
-		return err
-	}
-
 	// On dev-appserver, the superuser has implicit group membership to
 	// everything.
 	if info.Get(c).IsDevAppServer() {
@@ -51,6 +46,11 @@ func isMember(c context.Context, groupNameFunc func(*svcconfig.Coordinator) stri
 			}.Infof(c, "Granting superuser implicit group membership on development server.")
 			return nil
 		}
+	}
+
+	cfg, err := GetServices(c).Config(c)
+	if err != nil {
+		return err
 	}
 
 	if cfg.Coordinator == nil {
