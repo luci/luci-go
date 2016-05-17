@@ -31,7 +31,7 @@ func (c *commonFlags) Init() {
 }
 
 // Parse parses the common flags.
-func (c *commonFlags) Parse(a subcommands.Application) error {
+func (c *commonFlags) Parse() error {
 	if err := c.defaultFlags.Parse(); err != nil {
 		return err
 	}

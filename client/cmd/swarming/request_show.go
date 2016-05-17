@@ -7,9 +7,15 @@ package main
 import (
 	"errors"
 	"fmt"
+	"net/http"
+
+	"golang.org/x/net/context"
 
 	"github.com/kr/pretty"
-	"github.com/luci/luci-go/client/swarming"
+	"github.com/luci/luci-go/client/authcli"
+	"github.com/luci/luci-go/common/api/swarming/swarming/v1"
+	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/maruel/subcommands"
 )
 
@@ -26,10 +32,26 @@ var cmdRequestShow = &subcommands.Command{
 
 type requestShowRun struct {
 	commonFlags
+
+	// Used to authenticate requests to server.
+	authFlags      authcli.Flags
+	parsedAuthOpts auth.Options
+}
+
+func (c *requestShowRun) Init() {
+	c.commonFlags.Init()
+	c.authFlags.Register(&c.Flags, auth.Options{
+		Method: auth.UserCredentialsMethod, // disable GCE service account for now
+	})
+}
+
+func (c *requestShowRun) createAuthClient() (*http.Client, error) {
+	ctx := gologger.StdConfig.Use(context.Background())
+	return auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
 }
 
 func (c *requestShowRun) Parse(a subcommands.Application, args []string) error {
-	if err := c.commonFlags.Parse(a); err != nil {
+	if err := c.commonFlags.Parse(); err != nil {
 		return err
 	}
 	if len(args) != 1 {
@@ -39,15 +61,22 @@ func (c *requestShowRun) Parse(a subcommands.Application, args []string) error {
 }
 
 func (c *requestShowRun) main(a subcommands.Application, taskid string) error {
-	s, err := swarming.New(c.serverURL)
+	client, err := c.createAuthClient()
 	if err != nil {
 		return err
 	}
-	r, err := s.FetchRequest(swarming.TaskID(taskid))
+
+	s, err := swarming.New(client)
 	if err != nil {
-		return fmt.Errorf("failed to load task %s: %s", taskid, err)
+		return err
 	}
-	_, _ = pretty.Println(r)
+	s.BasePath = c.commonFlags.serverURL + "/_ah/api/swarming/v1/"
+
+	call := s.Task.Request(taskid)
+	result, err := call.Do()
+
+	pretty.Println(result)
+
 	return err
 }
 
