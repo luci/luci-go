@@ -15,7 +15,7 @@ import (
 func TestCache(t *testing.T) {
 	t.Parallel()
 
-	Convey(`An empty LRU cache with size 3`, t, func() {
+	Convey(`An locking LRU cache with size heuristic 3`, t, func() {
 		cache := New(3)
 
 		Convey(`A Get() returns nil.`, func() {
@@ -42,10 +42,6 @@ func TestCache(t *testing.T) {
 			}
 			return ShouldResemble(actualSnapshot, expectedSnapshot)
 		}
-
-		Convey(`Has a size of 3.`, func() {
-			So(cache.Size(), ShouldEqual, 3)
-		})
 
 		Convey(`With three values, {a, b, c}`, func() {
 			addCacheValues("a", "b", "c")
