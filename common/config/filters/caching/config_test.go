@@ -5,6 +5,8 @@
 package caching
 
 import (
+	"errors"
+	"net/url"
 	"testing"
 	"time"
 
@@ -12,11 +14,13 @@ import (
 	"github.com/luci/luci-go/common/config/impl/memory"
 	"golang.org/x/net/context"
 
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 type testCache struct {
-	data map[string][]byte
+	data     map[string][]byte
+	callback func(hit bool)
 }
 
 func (tc *testCache) Store(c context.Context, key string, expire time.Duration, value []byte) {
@@ -27,7 +31,11 @@ func (tc *testCache) Store(c context.Context, key string, expire time.Duration, 
 }
 
 func (tc *testCache) Retrieve(c context.Context, key string) []byte {
-	return tc.data[key]
+	d, ok := tc.data[key]
+	if tc.callback != nil {
+		tc.callback(ok)
+	}
+	return d
 }
 
 func (tc *testCache) invalidate() {
@@ -36,6 +44,64 @@ func (tc *testCache) invalidate() {
 
 func (tc *testCache) nothingCached() bool {
 	return len(tc.data) == 0
+}
+
+type forceErrConfig struct {
+	inner config.Interface
+	err   error
+}
+
+func (tc *forceErrConfig) ServiceURL() url.URL {
+	return tc.inner.ServiceURL()
+}
+
+func (tc *forceErrConfig) GetConfig(configSet, path string, hashOnly bool) (*config.Config, error) {
+	if tc.err != nil {
+		return nil, tc.err
+	}
+	return tc.inner.GetConfig(configSet, path, hashOnly)
+}
+
+func (tc *forceErrConfig) GetConfigByHash(contentHash string) (string, error) {
+	if tc.err != nil {
+		return "", tc.err
+	}
+	return tc.inner.GetConfigByHash(contentHash)
+}
+
+func (tc *forceErrConfig) GetConfigSetLocation(configSet string) (*url.URL, error) {
+	if tc.err != nil {
+		return nil, tc.err
+	}
+	return tc.inner.GetConfigSetLocation(configSet)
+}
+
+func (tc *forceErrConfig) GetProjectConfigs(path string, hashesOnly bool) ([]config.Config, error) {
+	if tc.err != nil {
+		return nil, tc.err
+	}
+	return tc.inner.GetProjectConfigs(path, hashesOnly)
+}
+
+func (tc *forceErrConfig) GetProjects() ([]config.Project, error) {
+	if tc.err != nil {
+		return nil, tc.err
+	}
+	return tc.inner.GetProjects()
+}
+
+func (tc *forceErrConfig) GetRefConfigs(path string, hashesOnly bool) ([]config.Config, error) {
+	if tc.err != nil {
+		return nil, tc.err
+	}
+	return tc.inner.GetRefConfigs(path, hashesOnly)
+}
+
+func (tc *forceErrConfig) GetRefs(projectID string) ([]string, error) {
+	if tc.err != nil {
+		return nil, tc.err
+	}
+	return tc.inner.GetRefs(projectID)
 }
 
 func TestConfig(t *testing.T) {
@@ -61,9 +127,13 @@ func TestConfig(t *testing.T) {
 			},
 		}
 		mcfg := memory.New(mbase)
-		c = config.Set(c, mcfg)
+		errCfg := &forceErrConfig{inner: mcfg}
+		c = config.Set(c, errCfg)
 
-		tc := testCache{}
+		wasHit := false
+		tc := testCache{
+			callback: func(hit bool) { wasHit = hit },
+		}
 		opts := Options{
 			Cache: &tc,
 		}
@@ -129,12 +199,23 @@ func TestConfig(t *testing.T) {
 					So(err, ShouldNotBeNil)
 				})
 			})
-		})
 
-		Convey(`GetConfig missing`, func() {
-			_, err := cfg.GetConfig("services/invalid", "file", false)
-			So(err, ShouldEqual, config.ErrNoConfig)
-			So(tc.nothingCached(), ShouldBeTrue)
+			Convey(`GetConfig missing will be cached`, func() {
+				_, err := cfg.GetConfig("services/invalid", "file", false)
+				So(err, ShouldEqual, config.ErrNoConfig)
+				So(wasHit, ShouldBeFalse)
+
+				_, err = cfg.GetConfig("services/invalid", "file", false)
+				So(err, ShouldEqual, config.ErrNoConfig)
+				So(wasHit, ShouldBeTrue)
+			})
+
+			Convey(`Other errors will not be cached`, func() {
+				errCfg.err = errors.New("test error")
+				_, err := cfg.GetConfig("services/foo", "file", false)
+				So(err, ShouldErrLike, "test error")
+				So(tc.nothingCached(), ShouldBeTrue)
+			})
 		})
 
 		Convey(`GetConfigByHash`, func() {
@@ -149,9 +230,20 @@ func TestConfig(t *testing.T) {
 				So(body, ShouldResemble, "body")
 			})
 
-			Convey(`Missing returns error without caching.`, func() {
+			Convey(`Missing caches and returns error`, func() {
 				_, err := cfg.GetConfigByHash("v0:asdf")
 				So(err, ShouldEqual, config.ErrNoConfig)
+				So(wasHit, ShouldBeFalse)
+
+				_, err = cfg.GetConfigByHash("v0:asdf")
+				So(err, ShouldEqual, config.ErrNoConfig)
+				So(wasHit, ShouldBeTrue)
+			})
+
+			Convey(`Other errors will not be cached`, func() {
+				errCfg.err = errors.New("test error")
+				_, err := cfg.GetConfigByHash("v0:asdf")
+				So(err, ShouldErrLike, "test error")
 				So(tc.nothingCached(), ShouldBeTrue)
 			})
 		})
@@ -166,6 +258,24 @@ func TestConfig(t *testing.T) {
 				loc2, err := cfg.GetConfigSetLocation("projects/goesaway")
 				So(err, ShouldBeNil)
 				So(loc2, ShouldResemble, loc)
+			})
+
+			Convey(`Missing caches and returns error`, func() {
+				errCfg.err = config.ErrNoConfig
+				_, err := cfg.GetConfigSetLocation("projects/goesaway")
+				So(err, ShouldEqual, config.ErrNoConfig)
+				So(wasHit, ShouldBeFalse)
+
+				_, err = cfg.GetConfigSetLocation("projects/goesaway")
+				So(err, ShouldEqual, config.ErrNoConfig)
+				So(wasHit, ShouldBeTrue)
+			})
+
+			Convey(`Other errors will not be cached`, func() {
+				errCfg.err = errors.New("test error")
+				_, err := cfg.GetConfigSetLocation("projects/goesaway")
+				So(err, ShouldErrLike, "test error")
+				So(tc.nothingCached(), ShouldBeTrue)
 			})
 		})
 
