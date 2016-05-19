@@ -119,6 +119,19 @@
   ],
   "PropertyGroup": [
     {
+      "GroupName": "Swarming",
+      "Property": [
+        {
+          "Key": "Exit Code",
+          "Value": "0"
+        }
+      ]
+    },
+    {
+      "GroupName": "Swarming Tags",
+      "Property": null
+    },
+    {
       "GroupName": "recipe bootstrap",
       "Property": [
         {
@@ -153,19 +166,6 @@
     },
     {
       "GroupName": "Main",
-      "Property": null
-    },
-    {
-      "GroupName": "Swarming",
-      "Property": [
-        {
-          "Key": "Exit Code",
-          "Value": "0"
-        }
-      ]
-    },
-    {
-      "GroupName": "Swarming Tags",
       "Property": null
     }
   ],

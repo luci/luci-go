@@ -23,7 +23,11 @@ type MiloBuild struct {
 	// PropertyGroup is a list of input and output property of this page.
 	// This is used for build and emitted properties (buildbot) and quest
 	// information (luci).  This is also grouped by the "type" of property
-	// so different categories of properties can be separted and sorted.
+	// so different categories of properties can be separated and sorted.
+	//
+	// This is not a map so code that constructs MiloBuild can control the
+	// order of property groups, for example show important properties
+	// first.
 	PropertyGroup []*PropertyGroup
 
 	// Blame is a list of people and commits that is likely to be in relation to

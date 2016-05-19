@@ -65,35 +65,6 @@
   ],
   "PropertyGroup": [
     {
-      "GroupName": "recipe bootstrap",
-      "Property": [
-        {
-          "Key": "path_config",
-          "Value": "kitchen"
-        },
-        {
-          "Key": "slavename",
-          "Value": "fakeslave"
-        },
-        {
-          "Key": "buildername",
-          "Value": "infra-continuous-precise-32"
-        },
-        {
-          "Key": "mastername",
-          "Value": "chromium.infra"
-        }
-      ]
-    },
-    {
-      "GroupName": "setup_build",
-      "Property": null
-    },
-    {
-      "GroupName": "Main",
-      "Property": null
-    },
-    {
       "GroupName": "Swarming",
       "Property": [
         {
@@ -170,6 +141,35 @@
           "Value": "luci-cron"
         }
       ]
+    },
+    {
+      "GroupName": "recipe bootstrap",
+      "Property": [
+        {
+          "Key": "path_config",
+          "Value": "kitchen"
+        },
+        {
+          "Key": "slavename",
+          "Value": "fakeslave"
+        },
+        {
+          "Key": "buildername",
+          "Value": "infra-continuous-precise-32"
+        },
+        {
+          "Key": "mastername",
+          "Value": "chromium.infra"
+        }
+      ]
+    },
+    {
+      "GroupName": "setup_build",
+      "Property": null
+    },
+    {
+      "GroupName": "Main",
+      "Property": null
     }
   ],
   "Blame": null

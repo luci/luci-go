@@ -305,16 +305,32 @@ func swarmingBuildImpl(c context.Context, URL string, server string, taskID stri
 		return nil, err
 	}
 
-	// Decode the data using annotee.  The logdog stream returned here is assumed
+	build := &resp.MiloBuild{}
+	addSwarmingToBuild(c, sr, build)
+
+	// Decode the data using annotee. The logdog stream returned here is assumed
 	// to be consistent, which is why the following block of code are not
 	// expected to ever err out.
 	lds, err := streamsFromAnnotatedLog(c, body)
 	if err != nil {
-		return nil, err
+		build.Components = []*resp.BuildComponent{{
+			Type:   resp.Summary,
+			Label:  "milo annotation parser",
+			Text:   []string{err.Error()},
+			Status: resp.InfraFailure,
+			SubLink: []*resp.Link{{
+				Label: "swarming task",
+				URL:   taskPageURL(resolveServer(server), taskID),
+			}},
+		}}
+	} else {
+		logdog.AddLogDogToBuild(c, URL, lds, build)
 	}
 
-	build := &resp.MiloBuild{}
-	logdog.AddLogDogToBuild(c, URL, lds, build)
-	addSwarmingToBuild(c, sr, build)
 	return build, nil
+}
+
+// taskPageURL returns a URL to a human-consumable page of a swarming task.
+func taskPageURL(swarmingHostname, taskID string) string {
+	return fmt.Sprintf("https://%s/user/task/%s", swarmingHostname, taskID)
 }

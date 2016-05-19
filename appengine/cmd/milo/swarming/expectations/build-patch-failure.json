@@ -159,6 +159,19 @@
   ],
   "PropertyGroup": [
     {
+      "GroupName": "Swarming",
+      "Property": [
+        {
+          "Key": "Exit Code",
+          "Value": "0"
+        }
+      ]
+    },
+    {
+      "GroupName": "Swarming Tags",
+      "Property": null
+    },
+    {
       "GroupName": "update_scripts",
       "Property": [
         {
@@ -227,19 +240,6 @@
           "Value": "HEAD"
         }
       ]
-    },
-    {
-      "GroupName": "Swarming",
-      "Property": [
-        {
-          "Key": "Exit Code",
-          "Value": "0"
-        }
-      ]
-    },
-    {
-      "GroupName": "Swarming Tags",
-      "Property": null
     }
   ],
   "Blame": null
