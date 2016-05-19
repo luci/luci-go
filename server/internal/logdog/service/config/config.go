@@ -5,6 +5,8 @@
 package config
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -12,6 +14,7 @@ import (
 	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
+	"github.com/luci/luci-go/server/proccache"
 	"golang.org/x/net/context"
 )
 
@@ -22,11 +25,22 @@ type Options struct {
 	// Config is the configuration service to load from.
 	Config config.Interface
 
+	// ServiceID is used to load project configurations, which are named after a
+	// specific service.
+	//
+	// If empty, project configurations cannot be loaded.
+	ServiceID string
+
 	// ConfigSet is the name of the ConfigSet to load.
 	ConfigSet string
 	// ServiceConfigPath is the name of the LogDog service config within the
 	// ConfigSet.
 	ServiceConfigPath string
+
+	// ProjectConfigCacheDuration is the amount of time to cache a project's
+	// configuration. If this is <= 0, the project config will be fetched each
+	// time it's requested.
+	ProjectConfigCacheDuration time.Duration
 
 	// KillCheckInterval, if >0, starts a goroutine that polls every interval to
 	// see if the configuration has changed. If it has, KillFunc will be invoked.
@@ -91,6 +105,10 @@ type Manager struct {
 	// cfgHash is the hash string of the original config.
 	cfgHash string
 
+	// projectConfigCache is a cache of project-specific configs. They will
+	// eventually timeout and get refreshed according to options.
+	projectConfigCache proccache.Cache
+
 	// configChangedC will contain the result of the most recent configuration
 	// change poll operation. The configuration change poller will block until
 	// that result is consumed.
@@ -128,6 +146,51 @@ func NewManager(c context.Context, o Options) (*Manager, error) {
 // Config returns the service configuration instance.
 func (m *Manager) Config() *svcconfig.Config {
 	return &m.cfg
+}
+
+// ProjectConfig returns the project configuration.
+func (m *Manager) ProjectConfig(c context.Context, project config.ProjectName) (*svcconfig.ProjectConfig, error) {
+	serviceID := m.o.ServiceID
+	if serviceID == "" {
+		return nil, errors.New("no service ID specified")
+	}
+
+	v, err := proccache.GetOrMake(c, project, func() (interface{}, time.Duration, error) {
+		configSet := fmt.Sprintf("projects/%s", project)
+		configPath := fmt.Sprintf("%s.cfg", serviceID)
+		cfg, err := m.o.Config.GetConfig(configSet, configPath, false)
+		if err != nil {
+			log.Fields{
+				log.ErrorKey: err,
+				"project":    project,
+			}.Errorf(c, "Failed to load config.")
+			return nil, 0, err
+		}
+
+		var pcfg svcconfig.ProjectConfig
+		if err := proto.UnmarshalText(cfg.Content, &pcfg); err != nil {
+			log.Fields{
+				log.ErrorKey: err,
+				"project":    project,
+				"configSet":  configSet,
+				"path":       configPath,
+				"hash":       cfg.ContentHash,
+			}.Errorf(c, "Failed to unmarshal project config.")
+		}
+
+		log.Fields{
+			"cacheDuration": m.o.ProjectConfigCacheDuration,
+			"project":       project,
+			"configSet":     configSet,
+			"path":          configPath,
+			"hash":          cfg.ContentHash,
+		}.Infof(c, "Refreshed project configuration.")
+		return &pcfg, m.o.ProjectConfigCacheDuration, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return v.(*svcconfig.ProjectConfig), nil
 }
 
 // Close terminates the config change poller and blocks until it has finished.

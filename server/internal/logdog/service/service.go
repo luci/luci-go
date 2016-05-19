@@ -14,10 +14,12 @@ import (
 	"path/filepath"
 	"runtime/pprof"
 	"sync/atomic"
+	"time"
 
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/common/auth"
+	luciConfig "github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/gcloud/gs"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
@@ -32,6 +34,7 @@ import (
 	"github.com/luci/luci-go/server/logdog/storage/bigtable"
 	"golang.org/x/net/context"
 	"google.golang.org/cloud"
+	"google.golang.org/cloud/compute/metadata"
 )
 
 var (
@@ -48,6 +51,10 @@ var (
 	presenceUpMetric = metric.NewBool("presence/up",
 		"Set to one when service is present and ready. Alert on missing values.")
 )
+
+// projectConfigCacheDuration is the amount of time to cache a project's
+// configuration before reloading.
+const projectConfigCacheDuration = 30 * time.Minute
 
 // Service is a base class full of common LogDog service application parameters.
 type Service struct {
@@ -68,12 +75,15 @@ type Service struct {
 
 	coordinatorHost           string
 	coordinatorInsecure       bool
+	serviceID                 string
 	storageCredentialJSONPath string
 	cpuProfilePath            string
 	heapProfilePath           string
 
 	coord  logdog.ServicesClient
 	config *config.Manager
+
+	onGCE bool
 }
 
 // Run performs service-wide initialization and invokes the specified run
@@ -139,6 +149,17 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 				}.Warningf(c, "Failed to write heap profile.")
 			}
 		}()
+	}
+
+	// Are we running on a GCE intance?
+	if err := s.probeGCEEnvironment(c); err != nil {
+		log.WithError(err).Errorf(c, "Failed to probe GCE environment.")
+		return err
+	}
+
+	// Validate the runtime environment.
+	if s.serviceID == "" {
+		return errors.New("no service ID was configured")
 	}
 
 	// Configure our signal handler. It will listen for terminating signals and
@@ -221,6 +242,10 @@ func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
 	s.authFlags.Register(fs, auth.Options{})
 	s.configFlags.AddToFlagSet(fs)
 
+	fs.StringVar(&s.serviceID, "service-id", "",
+		"Specify the service ID that this instance is supporting. If empty, the service ID "+
+			"will attempt to be resolved by probing the local environment. This probably will match the "+
+			"App ID of the Coordinator.")
 	fs.StringVar(&s.coordinatorHost, "coordinator", "",
 		"The Coordinator service's [host][:port].")
 	fs.BoolVar(&s.coordinatorInsecure, "coordinator-insecure", false,
@@ -231,6 +256,29 @@ func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
 		"If supplied, enable CPU profiling and write the profile here.")
 	fs.StringVar(&s.heapProfilePath, "heap-profile-path", "",
 		"If supplied, enable CPU profiling and write the profile here.")
+}
+
+// probeGCEEnvironment fills in any parameters that can be probed from Google
+// Compute Engine metadata.
+//
+// If we're not running on GCE, this will return nil. An error will only be
+// returned if an operation that is expected to work fails.
+func (s *Service) probeGCEEnvironment(c context.Context) error {
+	s.onGCE = metadata.OnGCE()
+	if !s.onGCE {
+		return nil
+	}
+
+	// Determine our service ID from metadata. The service ID will equal the cloud
+	// project ID.
+	if s.serviceID == "" {
+		var err error
+		if s.serviceID, err = metadata.ProjectID(); err != nil {
+			log.WithError(err).Errorf(c, "Failed to probe GCE project ID.")
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *Service) initCoordinatorClient(c context.Context) (logdog.ServicesClient, error) {
@@ -275,6 +323,8 @@ func (s *Service) initConfig(c context.Context) (*config.Manager, error) {
 		log.WithError(err).Errorf(c, "Failed to load configuration parameters.")
 		return nil, err
 	}
+	o.ServiceID = s.serviceID
+	o.ProjectConfigCacheDuration = projectConfigCacheDuration
 	o.KillFunc = s.shutdown
 
 	return config.NewManager(c, *o)
@@ -303,9 +353,23 @@ func (s *Service) Config() *svcconfig.Config {
 	return s.config.Config()
 }
 
+// ProjectConfig returns the cached project configuration.
+//
+// If the project configuration is not available, nil will be returned.
+func (s *Service) ProjectConfig(c context.Context, proj luciConfig.ProjectName) (*svcconfig.ProjectConfig, error) {
+	return s.config.ProjectConfig(c, proj)
+}
+
 // Coordinator returns the cached Coordinator client.
 func (s *Service) Coordinator() logdog.ServicesClient {
 	return s.coord
+}
+
+// ServiceID returns the service ID.
+//
+// This is synonymous with the cloud "project ID" and the AppEngine "app ID".
+func (s *Service) ServiceID() string {
+	return s.serviceID
 }
 
 // IntermediateStorage instantiates the configured intermediate Storage
