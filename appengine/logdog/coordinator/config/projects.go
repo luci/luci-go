@@ -11,27 +11,19 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/parallel"
-	configProto "github.com/luci/luci-go/common/proto/config"
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/identity"
 	"golang.org/x/net/context"
 )
 
 const maxProjectWorkers = 32
 
-// ErrNoAccess is returned if the user has no access to the requested project.
-var ErrNoAccess = errors.New("no access")
-
-// ProjectConfigPath returns the config set and path for project-specific
-// configuration.
+// ProjectConfigPath returns the path of the project-specific configuration.
+// This path should be used with a project config set.
 //
 // A given project's configuration is named after the current App ID.
-func ProjectConfigPath(c context.Context, project config.ProjectName) (string, string) {
-	return fmt.Sprintf("projects/%s", project), fmt.Sprintf("%s.cfg", info.Get(c).AppID())
+func ProjectConfigPath(c context.Context) string {
+	return fmt.Sprintf("%s.cfg", info.Get(c).AppID())
 }
 
 // ProjectConfig loads the project config protobuf from the config service.
@@ -46,7 +38,7 @@ func ProjectConfig(c context.Context, project config.ProjectName) (*svcconfig.Pr
 		}, nil
 	}
 
-	configSet, configPath := ProjectConfigPath(c, project)
+	configSet, configPath := config.ProjectConfigSet(project), ProjectConfigPath(c)
 	cfg, err := config.Get(c).GetConfig(configSet, configPath, false)
 	if err != nil {
 		return nil, err
@@ -66,208 +58,54 @@ func ProjectConfig(c context.Context, project config.ProjectName) (*svcconfig.Pr
 	return &pcfg, nil
 }
 
-// Projects lists the registered LogDog projects.
-func Projects(c context.Context) ([]string, error) {
-	projects, err := config.Get(c).GetProjects()
+// AllProjectConfigs returns the project configurations for all projects that
+// have a configuration.
+//
+// If a project's configuration fails to load, an error will be logged and the
+// project will be omitted from the output map.
+func AllProjectConfigs(c context.Context) (map[config.ProjectName]*svcconfig.ProjectConfig, error) {
+	// TODO: This endpoint is generally slow. Even though there is memcache-based
+	// config cache, this really should be loaded from a more failsafe cache like
+	// datastore to protect against config service outages.
+	configs, err := config.Get(c).GetProjectConfigs(ProjectConfigPath(c), false)
 	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to list 'luci-config' projects.")
+		log.WithError(err).Errorf(c, "Failed to load project configs.")
 		return nil, err
 	}
 
-	// TODO(dnj): Filter this list to projects with active LogDog configs, once we
-	// move to project-specific configurations.
-
-	ids := make([]string, len(projects))
-	for i, p := range projects {
-		ids[i] = p.ID
-	}
-
-	// TODO(dnj): Restrict this by actual namespaces in datastore.
-	return ids, nil
-}
-
-// AssertProjectAccess attempts to assert the current user's ability to access
-// a given project.
-//
-// If the user cannot access the referenced project, ErrNoAccess will be
-// returned. If an error occurs during checking, that error will be returned.
-// The only time nil will be returned is if the check succeeded and the user was
-// verified to have access to the requested project.
-//
-// NOTE: In the future, this will involve loading LogDog ACLs from the project's
-// configuration. For now, though, since ACLs aren't implemented (yet), we will
-// be content with asserting that the user has access to the base project.
-func AssertProjectAccess(c context.Context, project config.ProjectName) error {
-	// Get our authenticator.
-	st := auth.GetState(c)
-	if st == nil {
-		log.Errorf(c, "No authentication state in Context.")
-		return errors.New("no authentication state in context")
-	}
-
-	hasAccess, err := checkProjectAccess(c, config.Get(c), project, st)
-	if err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-			"project":    project,
-		}.Errorf(c, "Failed to check for project access.")
-		return err
-	}
-
-	if !hasAccess {
-		log.Fields{
-			log.ErrorKey: err,
-			"project":    project,
-			"identity":   st.User().Identity,
-		}.Errorf(c, "User does not have access to this project.")
-		return ErrNoAccess
-	}
-
-	return nil
-}
-
-// UserProjects returns the list of luci-config projects that the current user
-// has access to.
-//
-// It does this by listing the full set of luci-config projects, then loading
-// the project configuration for each one. If the project configuration
-// specifies an access restriction that the user satisfies, that project will
-// be included in the list.
-//
-// In a production environment, most of the config accesses will be cached.
-//
-// If the current user is anonymous, this will still work, returning the set of
-// projects that the anonymous user can access.
-func UserProjects(c context.Context) ([]config.ProjectName, error) {
-	// NOTE: This client has a relatively short timeout, and using WithDeadline
-	// will apply to all serial calls. We may want to make getting a config client
-	// instance a coordinator.Service function if this proves to be a problem.
-	ci := config.Get(c)
-
-	// Get our authenticator.
-	st := auth.GetState(c)
-	if st == nil {
-		log.Errorf(c, "No authentication state in Context.")
-		return nil, errors.New("no authentication state in context")
-	}
-
-	allProjects, err := ci.GetProjects()
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to list all projects.")
-		return nil, err
-	}
-
-	// In parallel, pull each project's configuration and assert access.
-	access := make([]bool, len(allProjects))
-	err = parallel.WorkPool(maxProjectWorkers, func(taskC chan<- func() error) {
-		for i, proj := range allProjects {
-			i := i
-			proj := config.ProjectName(proj.ID)
-
-			taskC <- func() error {
-				hasAccess, err := checkProjectAccess(c, ci, proj, st)
-				switch err {
-				case nil:
-					access[i] = hasAccess
-					return nil
-
-				case config.ErrNoConfig:
-					// No configuration for this project, so nothing to check. Assume no
-					// access.
-					return nil
-
-				default:
-					log.Fields{
-						log.ErrorKey: err,
-						"project":    proj,
-					}.Errorf(c, "Failed to check project access.")
-					return err
-				}
-			}
+	result := make(map[config.ProjectName]*svcconfig.ProjectConfig, len(configs))
+	for _, cfg := range configs {
+		// Identify the project by removng the "projects/" prefix.
+		project := config.ProjectName(strings.TrimPrefix(cfg.ConfigSet, "projects/"))
+		if err := project.Validate(); err != nil {
+			log.Fields{
+				log.ErrorKey: err,
+				"configSet":  cfg.ConfigSet,
+			}.Errorf(c, "Invalid project name returned.")
+			continue
 		}
-	})
-	if err != nil {
-		log.WithError(err).Errorf(c, "Error during project access check.")
-		return nil, errors.SingleError(err)
-	}
 
-	result := make([]config.ProjectName, 0, len(allProjects))
-	for i, proj := range allProjects {
-		if access[i] {
-			result = append(result, config.ProjectName(proj.ID))
+		// Unmarshal the project's configuration.
+		pcfg, err := loadProjectConfig(&cfg)
+		if err != nil {
+			log.Fields{
+				log.ErrorKey:  err,
+				"configSet":   cfg.ConfigSet,
+				"path":        cfg.Path,
+				"contentHash": cfg.ContentHash,
+			}.Errorf(c, "Failed to unmarshal project configuration.")
+			continue
 		}
+
+		result[project] = pcfg
 	}
 	return result, nil
 }
 
-func checkProjectAccess(c context.Context, ci config.Interface, proj config.ProjectName, st auth.State) (bool, error) {
-	// Load the configuration for this project.
-	configSet, configPath := ProjectConfigPath(c, proj)
-	cfg, err := ci.GetConfig(configSet, configPath, false)
-	if err != nil {
-		if err == config.ErrNoConfig {
-			// If the configuration is missing, report no access.
-			return false, nil
-		}
-		return false, err
-	}
-
-	var pcfg configProto.ProjectCfg
+func loadProjectConfig(cfg *config.Config) (*svcconfig.ProjectConfig, error) {
+	var pcfg svcconfig.ProjectConfig
 	if err := proto.UnmarshalText(cfg.Content, &pcfg); err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-			"project":    proj,
-		}.Errorf(c, "Failed to unmarshal project configuration.")
-		return false, err
+		return nil, err
 	}
-
-	// Vet project access using the current Authenticator state.
-	id := st.User().Identity
-
-	for _, v := range pcfg.Access {
-		// Is this a group access?
-		access, isGroup := trimPrefix(v, "group:")
-		if isGroup {
-			// Check group membership.
-			isMember, err := st.DB().IsMember(c, id, access)
-			if err != nil {
-				return false, fmt.Errorf("failed to check access %q: %v", v, err)
-			}
-			if isMember {
-				log.Fields{
-					"project":  proj,
-					"identity": id,
-					"group":    access,
-				}.Debugf(c, "Identity has group membership.")
-				return true, nil
-			}
-			return false, nil
-		}
-
-		// "access" is either an e-mail or an identity. If it is an e-mail,
-		// transform it into an identity.
-		if idx := strings.IndexRune(access, ':'); idx < 0 {
-			// Presumably an e-mail, convert e-mail to user identity.
-			access = "user:" + access
-		}
-
-		if id == identity.Identity(access) {
-			// Check identity.
-			log.Fields{
-				"project":        proj,
-				"identity":       id,
-				"accessIdentity": v,
-			}.Debugf(c, "Identity is included.")
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-func trimPrefix(s, p string) (string, bool) {
-	if strings.HasPrefix(s, p) {
-		return s[len(p):], true
-	}
-	return s, false
+	return &pcfg, nil
 }

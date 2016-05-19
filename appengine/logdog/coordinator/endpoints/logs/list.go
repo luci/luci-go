@@ -7,7 +7,6 @@ package logs
 import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
-	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/hierarchy"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
 	"github.com/luci/luci-go/common/grpcutil"
@@ -59,12 +58,7 @@ func (s *server) List(c context.Context, req *logdog.ListRequest) (*logdog.ListR
 	l, err := hierarchy.Get(c, hr)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to get hierarchy listing.")
-		if err == config.ErrNoAccess {
-			// User requested a project that either doesn't exist or they don't have
-			// access to.
-			return nil, grpcutil.NotFound
-		}
-		return nil, grpcutil.InvalidArgument
+		return nil, getGRPCError(c, err)
 	}
 
 	resp := logdog.ListResponse{

@@ -179,10 +179,16 @@ func testGetImpl(t *testing.T, archived bool) {
 				So(err, ShouldBeRPCInternal)
 			})
 
-			Convey(`Will fail with NotFound if the log stream does not exist (different project).`, func() {
+			Convey(`Will fail with PermissionDenied if the project does not exist.`, func() {
 				req.Project = "does-not-exist"
 				_, err := svr.Get(c, &req)
-				So(err, ShouldBeRPCNotFound)
+				So(err, ShouldBeRPCPermissionDenied)
+			})
+
+			Convey(`Will fail with PermissionDenied if the user can't access the project.`, func() {
+				req.Project = "proj-exclusive"
+				_, err := svr.Get(c, &req)
+				So(err, ShouldBeRPCPermissionDenied)
 			})
 
 			Convey(`Will fail with NotFound if the log path does not exist (different path).`, func() {
@@ -205,10 +211,16 @@ func testGetImpl(t *testing.T, archived bool) {
 				So(resp, shouldHaveLogs)
 			})
 
-			Convey(`Will fail with NotFound if the log stream does not exist (different project).`, func() {
+			Convey(`Will fail with PermissionDenied if the project does not exist.`, func() {
 				req.Project = "does-not-exist"
 				_, err := svr.Tail(c, &req)
-				So(err, ShouldBeRPCNotFound)
+				So(err, ShouldBeRPCPermissionDenied)
+			})
+
+			Convey(`Will fail with PermissionDenied if the user can't access the project.`, func() {
+				req.Project = "proj-exclusive"
+				_, err := svr.Tail(c, &req)
+				So(err, ShouldBeRPCPermissionDenied)
 			})
 
 			Convey(`Will fail with NotFound if the log path does not exist (different path).`, func() {

@@ -29,10 +29,16 @@ func TestRegisterStream(t *testing.T) {
 
 	Convey(`With a testing configuration`, t, func() {
 		c, env := ct.Install()
-		env.ModServiceConfig(c, func(cfg *svcconfig.Coordinator) {
-			cfg.ArchiveDelayMax = google.NewDuration(time.Hour)
-		})
 		ds.Get(c).Testable().Consistent(true)
+
+		// Set our archival delays. The project delay is smaller than the service
+		// delay, so it should be used.
+		env.ModServiceConfig(c, func(cfg *svcconfig.Config) {
+			cfg.Coordinator.ArchiveDelayMax = google.NewDuration(24 * time.Hour)
+		})
+		env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
+			pcfg.MaxStreamAge = google.NewDuration(time.Hour)
+		})
 
 		svr := New()
 
@@ -140,6 +146,46 @@ func TestRegisterStream(t *testing.T) {
 						req.Secret[0] = 0xAB
 						_, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCAlreadyExists, "Log prefix is already registered")
+					})
+				})
+
+				Convey(`Will schedule the correct archival expiration delay`, func() {
+					Convey(`When there is no project config delay.`, func() {
+						env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
+							pcfg.MaxStreamAge = nil
+						})
+
+						_, err := svr.RegisterStream(c, &req)
+						So(err, ShouldBeRPCOK)
+						ds.Get(c).Testable().CatchupIndexes()
+
+						// The cleanup archival should be scheduled for 24 hours, so advance
+						// 12, confirm no archival, then advance another 12 and confirm that
+						// archival was tasked.
+						env.Clock.Add(12 * time.Hour)
+						env.DrainTumbleAll(c)
+						So(env.ArchivalPublisher.Hashes(), ShouldHaveLength, 0)
+
+						env.Clock.Add(12 * time.Hour)
+						env.DrainTumbleAll(c)
+						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
+					})
+
+					Convey(`When there is no service or project config delay.`, func() {
+						env.ModServiceConfig(c, func(cfg *svcconfig.Config) {
+							cfg.Coordinator.ArchiveDelayMax = nil
+						})
+						env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
+							pcfg.MaxStreamAge = nil
+						})
+
+						_, err := svr.RegisterStream(c, &req)
+						So(err, ShouldBeRPCOK)
+						ds.Get(c).Testable().CatchupIndexes()
+
+						// The cleanup archival should be scheduled immediately.
+						env.DrainTumbleAll(c)
+						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
 					})
 				})
 

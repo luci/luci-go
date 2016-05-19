@@ -10,6 +10,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
+	"github.com/luci/luci-go/appengine/logdog/coordinator/endpoints"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/hierarchy"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/mutations"
 	"github.com/luci/luci-go/appengine/tumble"
@@ -75,20 +76,21 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 	}
 	prefix, _ := path.Split()
 
-	// Load our config and archive expiration.
+	// Load our service and project configs.
 	cfg, err := coordinator.GetServices(c).Config(c)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load configuration.")
 		return nil, grpcutil.Internal
 	}
 
-	archiveDelayMax := cfg.Coordinator.ArchiveDelayMax.Duration()
-	if archiveDelayMax < 0 {
-		log.Fields{
-			"archiveDelayMax": archiveDelayMax,
-		}.Errorf(c, "Must have positive maximum archive delay.")
+	pcfg, err := coordinator.CurrentProjectConfig(c)
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to load current project configuration.")
 		return nil, grpcutil.Internal
 	}
+
+	// Determine the archival expiration.
+	archiveDelayMax := endpoints.MinDuration(cfg.Coordinator.ArchiveDelayMax, pcfg.MaxStreamAge)
 
 	// Register our Prefix.
 	//

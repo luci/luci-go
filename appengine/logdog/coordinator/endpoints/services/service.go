@@ -41,7 +41,11 @@ func New() logdog.ServicesServer {
 			//
 			// We use a type switch here because this is a shared decorator.
 			if pbm, ok := req.(endpoints.ProjectBoundMessage); ok {
-				if err := coordinator.WithProjectNamespaceNoAuth(&c, config.ProjectName(pbm.GetMessageProject())); err != nil {
+				project := config.ProjectName(pbm.GetMessageProject())
+				log.Fields{
+					"project": project,
+				}.Debugf(c, "Request is entering project namespace.")
+				if err := coordinator.WithProjectNamespaceNoAuth(&c, project); err != nil {
 					return nil, grpcutil.Internal
 				}
 			}

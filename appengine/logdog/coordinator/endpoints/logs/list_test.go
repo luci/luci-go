@@ -192,12 +192,18 @@ func TestList(t *testing.T) {
 			})
 		})
 
-		Convey(`If the project does not exist, will return NotFound.`, func() {
+		Convey(`If the project does not exist, will return PermissionDenied.`, func() {
 			req.Project = "does-not-exist"
 
 			_, err := svc.List(c, &req)
-			So(err, ShouldBeRPCNotFound)
+			So(err, ShouldBeRPCPermissionDenied)
 		})
 
+		Convey(`If the user can't access the project, will return PermissionDenied.`, func() {
+			req.Project = "proj-exclusive"
+
+			_, err := svc.List(c, &req)
+			So(err, ShouldBeRPCPermissionDenied)
+		})
 	})
 }

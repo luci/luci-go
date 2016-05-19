@@ -169,14 +169,14 @@ func TestQuery(t *testing.T) {
 			req.Project = "does-not-exist"
 
 			_, err := svr.Query(c, &req)
-			So(err, ShouldBeRPCNotFound)
+			So(err, ShouldBeRPCPermissionDenied)
 		})
 
-		Convey(`An empty query to a project without access fails with NotFound.`, func() {
+		Convey(`An empty query to a project without access fails with PermissionDenied.`, func() {
 			req.Project = "proj-exclusive"
 
 			_, err := svr.Query(c, &req)
-			So(err, ShouldBeRPCNotFound)
+			So(err, ShouldBeRPCPermissionDenied)
 		})
 
 		Convey(`An empty query will include purged streams if admin.`, func() {

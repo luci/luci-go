@@ -10,6 +10,7 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
+	"github.com/luci/luci-go/appengine/logdog/coordinator/endpoints"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/mutations"
 	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
@@ -38,11 +39,25 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid ID (%s): %s", id, err)
 	}
 
+	// Load our service and project configs.
 	svc := coordinator.GetServices(c)
 	cfg, err := svc.Config(c)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load configuration.")
 		return nil, grpcutil.Internal
+	}
+
+	pcfg, err := coordinator.CurrentProjectConfig(c)
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to load current project configuration.")
+		return nil, grpcutil.Internal
+	}
+
+	// Initialize our archival parameters.
+	params := coordinator.ArchivalParams{
+		RequestID:      info.Get(c).RequestID(),
+		SettleDelay:    cfg.Coordinator.ArchiveSettleDelay.Duration(),
+		CompletePeriod: endpoints.MinDuration(cfg.Coordinator.ArchiveDelayMax, pcfg.MaxStreamAge),
 	}
 
 	ap, err := svc.ArchivalPublisher(c)
@@ -54,13 +69,6 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 	// Initialize our log stream state.
 	di := ds.Get(c)
 	lst := coordinator.NewLogStreamState(di, id)
-
-	// Initialize our archival parameters.
-	params := coordinator.ArchivalParams{
-		RequestID:      info.Get(c).RequestID(),
-		SettleDelay:    cfg.Coordinator.ArchiveSettleDelay.Duration(),
-		CompletePeriod: cfg.Coordinator.ArchiveDelayMax.Duration(),
-	}
 
 	// Transactionally validate and update the terminal index.
 	err = di.RunInTransaction(func(c context.Context) error {

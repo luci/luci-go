@@ -11,7 +11,6 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
-	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	luciConfig "github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logdog/types"
@@ -122,7 +121,7 @@ func TestHierarchy(t *testing.T) {
 			r.Project = "proj-exclusive"
 
 			_, err := Get(c, r)
-			So(err, ShouldEqual, config.ErrNoAccess)
+			So(coordinator.IsMembershipError(err), ShouldBeTrue)
 		})
 
 		Convey(`Get will return nothing when no components are registered.`, func() {

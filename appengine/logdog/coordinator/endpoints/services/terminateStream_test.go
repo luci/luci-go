@@ -30,10 +30,16 @@ func TestTerminateStream(t *testing.T) {
 	Convey(`With a testing configuration`, t, func() {
 		c, env := ct.Install()
 
-		env.ModServiceConfig(c, func(cfg *svcconfig.Coordinator) {
-			cfg.ArchiveTopic = "projects/test/topics/archive"
-			cfg.ArchiveSettleDelay = google.NewDuration(10 * time.Second)
-			cfg.ArchiveDelayMax = google.NewDuration(24 * time.Hour)
+		// Set our archival delays. The project delay is smaller than the service
+		// delay, so it should be used.
+		env.ModServiceConfig(c, func(cfg *svcconfig.Config) {
+			coord := cfg.Coordinator
+			coord.ArchiveTopic = "projects/test/topics/archive"
+			coord.ArchiveSettleDelay = google.NewDuration(10 * time.Second)
+			coord.ArchiveDelayMax = google.NewDuration(24 * time.Hour)
+		})
+		env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
+			pcfg.MaxStreamAge = google.NewDuration(time.Hour)
 		})
 
 		svr := New()
@@ -93,7 +99,7 @@ func TestTerminateStream(t *testing.T) {
 					// the future.
 					for _, t := range env.ArchivalPublisher.Tasks() {
 						So(t.SettleDelay.Duration(), ShouldEqual, 10*time.Second)
-						So(t.CompletePeriod.Duration(), ShouldEqual, 24*time.Hour)
+						So(t.CompletePeriod.Duration(), ShouldEqual, time.Hour)
 					}
 
 					Convey(`Will cancel the expiration archive Tumble task.`, func() {
@@ -146,6 +152,38 @@ func TestTerminateStream(t *testing.T) {
 						So(tls.State.TerminalIndex, ShouldEqual, 1337)
 						So(tls.State.Terminated(), ShouldBeTrue)
 						So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchiveTasked)
+					})
+				})
+
+				Convey(`Will schedule the correct archival delay`, func() {
+
+					Convey(`When there is no project config delay.`, func() {
+						env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
+							pcfg.MaxStreamAge = nil
+						})
+
+						_, err := svr.TerminateStream(c, &req)
+						So(err, ShouldBeRPCOK)
+
+						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
+						So(len(env.ArchivalPublisher.Tasks()), ShouldEqual, 1)
+						So(env.ArchivalPublisher.Tasks()[0].CompletePeriod.Duration(), ShouldEqual, 24*time.Hour)
+					})
+
+					Convey(`When there is no service or project config delay.`, func() {
+						env.ModServiceConfig(c, func(cfg *svcconfig.Config) {
+							cfg.Coordinator.ArchiveDelayMax = nil
+						})
+						env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
+							pcfg.MaxStreamAge = nil
+						})
+
+						_, err := svr.TerminateStream(c, &req)
+						So(err, ShouldBeRPCOK)
+
+						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
+						So(len(env.ArchivalPublisher.Tasks()), ShouldEqual, 1)
+						So(env.ArchivalPublisher.Tasks()[0].CompletePeriod.Duration(), ShouldEqual, 0)
 					})
 				})
 

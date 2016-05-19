@@ -5,9 +5,10 @@
 package hierarchy
 
 import (
+	"sort"
+
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
-	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
-	luciConfig "github.com/luci/luci-go/common/config"
+	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
@@ -19,35 +20,21 @@ func getProjects(c context.Context, r *Request) (*List, error) {
 		return &l, nil
 	}
 
-	projects, err := config.UserProjects(c)
+	// Get all user-accessible active projects.
+	allPcfgs, err := coordinator.ActiveUserProjects(c)
 	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to get user projects.")
+		// If there is an error, we will refrain from filtering projects.
+		log.WithError(err).Warningf(c, "Failed to get user project list.")
 		return nil, err
 	}
 
-	// Get all current datastore namespaces.
-	nsProjects, err := coordinator.AllProjectsWithNamespaces(c)
-	if err != nil {
-		// If there is an error, we will refrain from filtering projects.
-		log.WithError(err).Warningf(c, "Failed to get namespace project list.")
-	} else {
-		// Only list projects that have datastore namespaces.
-		lookup := make(map[luciConfig.ProjectName]struct{}, len(nsProjects))
-		for _, proj := range nsProjects {
-			lookup[proj] = struct{}{}
-		}
-
-		pos := 0
-		for _, proj := range projects {
-			if _, ok := lookup[proj]; ok {
-				projects[pos] = proj
-				pos++
-			}
-		}
-		projects = projects[:pos]
+	projects := make(projectNameSlice, 0, len(allPcfgs))
+	for project := range allPcfgs {
+		projects = append(projects, project)
 	}
+	sort.Sort(projects)
 
-	next := luciConfig.ProjectName(r.Next)
+	next := config.ProjectName(r.Next)
 	skip := r.Skip
 	for _, proj := range projects {
 		// Implement "Next" cursor. If set, don't do anything until we've seen it.
@@ -77,3 +64,10 @@ func getProjects(c context.Context, r *Request) (*List, error) {
 
 	return &l, nil
 }
+
+// projectNameSlice is a sortable slice of config.ProjectName.
+type projectNameSlice []config.ProjectName
+
+func (s projectNameSlice) Len() int           { return len(s) }
+func (s projectNameSlice) Less(i, j int) bool { return s[i] < s[j] }
+func (s projectNameSlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }

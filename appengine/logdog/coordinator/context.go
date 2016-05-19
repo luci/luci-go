@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	luciConfig "github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
@@ -34,9 +33,11 @@ func GetServices(c context.Context) Services {
 
 // WithProjectNamespace sets the current namespace to the project name.
 //
-// It will fail if either the project name or the project's namespace is
-// invalid. In the event of an error, the supplied Context will be not be
-// modified or invalidated.
+// It will return an error if the project name or the project's namespace is
+// invalid.
+//
+// If the current user does not have READ permission for the project, a
+// MembershipError will be returned.
 func WithProjectNamespace(c *context.Context, project luciConfig.ProjectName) error {
 	return withProjectNamespaceImpl(c, project, true)
 }
@@ -51,45 +52,43 @@ func WithProjectNamespaceNoAuth(c *context.Context, project luciConfig.ProjectNa
 }
 
 func withProjectNamespaceImpl(c *context.Context, project luciConfig.ProjectName, auth bool) error {
+	ctx := *c
+
 	// TODO(dnj): REQUIRE this to be non-empty once namespacing is mandatory.
 	if project == "" {
-		log.Debugf(*c, "Using default namespace.")
 		return nil
 	}
 
 	if err := project.Validate(); err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-			"project":    project,
-		}.Errorf(*c, "Project name is invalid.")
+		log.WithError(err).Errorf(ctx, "Project name is invalid.")
 		return err
 	}
 
-	// Validate the user's access to the named project, if authenticating.
+	// Validate the user's READ access to the named project, if authenticating.
 	if auth {
-		if err := config.AssertProjectAccess(*c, project); err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-				"project":    project,
-			}.Errorf(*c, "User cannot access requested project.")
+		pcfg, err := GetServices(ctx).ProjectConfig(ctx, project)
+		if err != nil {
+			log.WithError(err).Errorf(ctx, "Failed to load project config.")
+			return err
+		}
+
+		if err := IsProjectReader(ctx, pcfg); err != nil {
+			log.WithError(err).Errorf(ctx, "User cannot access requested project.")
 			return err
 		}
 	}
 
 	pns := ProjectNamespace(project)
-	nc, err := info.Get(*c).Namespace(pns)
+	nc, err := info.Get(ctx).Namespace(pns)
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,
 			"project":    project,
 			"namespace":  pns,
-		}.Errorf(*c, "Failed to set namespace.")
+		}.Errorf(ctx, "Failed to set namespace.")
 		return err
 	}
 
-	log.Fields{
-		"project": project,
-	}.Debugf(*c, "Using project namespace.")
 	*c = nc
 	return nil
 }

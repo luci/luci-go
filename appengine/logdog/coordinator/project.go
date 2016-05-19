@@ -7,20 +7,27 @@ package coordinator
 import (
 	"strings"
 
-	"github.com/luci/gae/service/datastore/meta"
 	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/config"
+	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
+	luciConfig "github.com/luci/luci-go/common/config"
+	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"golang.org/x/net/context"
 )
 
-// projectNamespacePrefix is the datastore namespace prefix for project
-// namespaces.
-const projectNamespacePrefix = "luci."
+const (
+	// projectNamespacePrefix is the datastore namespace prefix for project
+	// namespaces.
+	projectNamespacePrefix = "luci."
+
+	// projectConfigWorkers is the number of workers that will pull project
+	// configs from the config service.
+	projectConfigWorkers = 16
+)
 
 // ProjectNamespace returns the AppEngine namespace for a given luci-config
 // project name.
-func ProjectNamespace(project config.ProjectName) string {
+func ProjectNamespace(project luciConfig.ProjectName) string {
 	return projectNamespacePrefix + string(project)
 }
 
@@ -29,11 +36,11 @@ func ProjectNamespace(project config.ProjectName) string {
 //
 // If the namespace does not have a project namespace prefix, this function
 // will return an empty string.
-func ProjectFromNamespace(ns string) config.ProjectName {
+func ProjectFromNamespace(ns string) luciConfig.ProjectName {
 	if !strings.HasPrefix(ns, projectNamespacePrefix) {
 		return ""
 	}
-	return config.ProjectName(ns[len(projectNamespacePrefix):])
+	return luciConfig.ProjectName(ns[len(projectNamespacePrefix):])
 }
 
 // CurrentProject returns the current project based on the currently-loaded
@@ -41,7 +48,7 @@ func ProjectFromNamespace(ns string) config.ProjectName {
 //
 // If there is no current namespace, or if the current namespace is not a valid
 // project namespace, an empty string will be returned.
-func CurrentProject(c context.Context) config.ProjectName {
+func CurrentProject(c context.Context) luciConfig.ProjectName {
 	if ns, ok := info.Get(c).GetNamespace(); ok {
 		return ProjectFromNamespace(ns)
 	}
@@ -57,18 +64,35 @@ func CurrentProjectConfig(c context.Context) (*svcconfig.ProjectConfig, error) {
 	return GetServices(c).ProjectConfig(c, CurrentProject(c))
 }
 
-// AllProjectsWithNamespaces scans current namespaces and returns those that
-// belong to LUCI projects.
-func AllProjectsWithNamespaces(c context.Context) ([]config.ProjectName, error) {
-	var projects []config.ProjectName
-	err := meta.NamespacesWithPrefix(c, projectNamespacePrefix, func(ns string) error {
-		if proj := ProjectFromNamespace(ns); proj != "" {
-			projects = append(projects, proj)
-		}
-		return nil
-	})
+// ActiveUserProjects returns a full list of all config service projects with
+// LogDog project configurations that the current user has READ access to.
+//
+// TODO: Load project configs and all project configs lists from datastore. Add
+// a background cron job to periodically update these lists from luci-config.
+// This should be a generic config service capability.
+func ActiveUserProjects(c context.Context) (map[luciConfig.ProjectName]*svcconfig.ProjectConfig, error) {
+	allPcfgs, err := config.AllProjectConfigs(c)
 	if err != nil {
 		return nil, err
 	}
-	return projects, nil
+
+	for project, pcfg := range allPcfgs {
+		// Verify user READ access.
+		if err := IsProjectReader(c, pcfg); err != nil {
+			delete(allPcfgs, project)
+
+			// If it is a membership error, prune this project and continue.
+			// Otherwise, forward the error.
+			if !IsMembershipError(err) {
+				// No configuration for this project, the configuration is invalid, or
+				// the user didn't have access. Remove it from the list.
+				log.Fields{
+					log.ErrorKey: err,
+					"project":    project,
+				}.Errorf(c, "Failed to check project.")
+				return nil, err
+			}
+		}
+	}
+	return allPcfgs, nil
 }

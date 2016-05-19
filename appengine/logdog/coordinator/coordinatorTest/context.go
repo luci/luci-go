@@ -6,9 +6,12 @@ package coordinatorTest
 
 import (
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	"github.com/luci/luci-go/appengine/tumble"
@@ -19,7 +22,7 @@ import (
 	"github.com/luci/luci-go/common/gcloud/gs"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
-	configProto "github.com/luci/luci-go/common/proto/config"
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
@@ -67,6 +70,12 @@ func (e *Environment) JoinGroup(g string) {
 	e.AuthState.IdentityGroups = append(e.AuthState.IdentityGroups, g)
 }
 
+// LeaveAllGroups clears all auth groups that the user is currently a member of.
+func (e *Environment) LeaveAllGroups() {
+	e.AuthState.IdentityGroups = nil
+	e.JoinGroup("all")
+}
+
 // ClearCoordinatorConfig removes the Coordinator configuration entry,
 // simulating a missing config.
 func (e *Environment) ClearCoordinatorConfig(c context.Context) {
@@ -76,15 +85,23 @@ func (e *Environment) ClearCoordinatorConfig(c context.Context) {
 
 // ModServiceConfig loads the current service configuration, invokes the
 // callback with its contents, and writes the result back to config.
-func (e *Environment) ModServiceConfig(c context.Context, fn func(*svcconfig.Coordinator)) {
+func (e *Environment) ModServiceConfig(c context.Context, fn func(*svcconfig.Config)) {
 	configSet, configPath := config.ServiceConfigPath(c)
 
 	var cfg svcconfig.Config
 	e.modTextProtobuf(configSet, configPath, &cfg, func() {
-		if cfg.Coordinator == nil {
-			cfg.Coordinator = &svcconfig.Coordinator{}
-		}
-		fn(cfg.Coordinator)
+		fn(&cfg)
+	})
+}
+
+// ModProjectConfig loads the current configuration for the named project,
+// invokes the callback with its contents, and writes the result back to config.
+func (e *Environment) ModProjectConfig(c context.Context, proj luciConfig.ProjectName, fn func(*svcconfig.ProjectConfig)) {
+	configSet, configPath := luciConfig.ProjectConfigSet(proj), config.ProjectConfigPath(c)
+
+	var pcfg svcconfig.ProjectConfig
+	e.modTextProtobuf(configSet, configPath, &pcfg, func() {
+		fn(&pcfg)
 	})
 }
 
@@ -119,13 +136,16 @@ func (e *Environment) modTextProtobuf(configSet, path string, msg proto.Message,
 	}
 
 	fn()
+	e.addConfigEntry(configSet, path, proto.MarshalTextString(msg))
+}
 
+func (e *Environment) addConfigEntry(configSet, path, content string) {
 	cset := e.Config[configSet]
 	if cset == nil {
 		cset = make(map[string]string)
 		e.Config[configSet] = cset
 	}
-	cset[path] = proto.MarshalTextString(msg)
+	cset[path] = content
 }
 
 // Install creates a testing Context and installs common test facilities into
@@ -183,26 +203,50 @@ func Install() (context.Context, *Environment) {
 	e.ConfigIface = luciConfig.Get(c)
 
 	// luci-config: Projects.
-	addProjectConfig := func(proj luciConfig.ProjectName, localName string, access ...string) {
-		configSet, configPath := config.ProjectConfigPath(c, proj)
-
-		var cfg configProto.ProjectCfg
-		e.modTextProtobuf(configSet, configPath, &cfg, func() {
-			cfg.Name = &localName
-			cfg.Access = access
+	projectName := info.Get(c).AppID()
+	addProjectConfig := func(proj luciConfig.ProjectName, access ...string) {
+		e.ModProjectConfig(c, proj, func(pcfg *svcconfig.ProjectConfig) {
+			for _, a := range access {
+				parts := strings.SplitN(a, ":", 2)
+				group, field := parts[0], &pcfg.ReaderAuthGroups
+				if len(parts) == 2 {
+					switch parts[1] {
+					case "R":
+						break
+					case "W":
+						field = &pcfg.WriterAuthGroups
+					default:
+						panic(a)
+					}
+				}
+				*field = append(*field, group)
+			}
 		})
 	}
-	addProjectConfig("proj-foo", "Foo Project", "group:all")
-	addProjectConfig("proj-bar", "Bar Project", "group:all")
-	addProjectConfig("proj-baz", "Baz Project", "group:all")
-	addProjectConfig("proj-qux", "Qux Project", "group:all")
-	addProjectConfig("proj-exclusive", "Exclusive Project", "group:auth")
+	addProjectConfig("proj-foo", "all:R", "all:W")
+	addProjectConfig("proj-bar", "all:R", "auth:W")
+	addProjectConfig("proj-exclusive", "auth:R", "auth:W")
+
+	// Add a project without a LogDog project config.
+	e.addConfigEntry("projects/proj-unconfigured", "not-logdog.cfg", "junk")
+
+	configSet, configPath := luciConfig.ProjectConfigSet("proj-malformed"), config.ProjectConfigPath(c)
+	e.addConfigEntry(configSet, configPath, "!!! not a text protobuf !!!")
 
 	// luci-config: Coordinator Defaults
-	e.ModServiceConfig(c, func(cfg *svcconfig.Coordinator) {
-		*cfg = svcconfig.Coordinator{
+	e.ModServiceConfig(c, func(cfg *svcconfig.Config) {
+		cfg.Transport = &svcconfig.Transport{
+			Type: &svcconfig.Transport_Pubsub{
+				Pubsub: &svcconfig.Transport_PubSub{
+					Project: projectName,
+					Topic:   "test-topic",
+				},
+			},
+		}
+		cfg.Coordinator = &svcconfig.Coordinator{
 			AdminAuthGroup:   "admin",
 			ServiceAuthGroup: "services",
+			PrefixExpiration: google.NewDuration(24 * time.Hour),
 		}
 	})
 
@@ -217,7 +261,7 @@ func Install() (context.Context, *Environment) {
 	c = auth.WithState(c, &e.AuthState)
 
 	// Setup authentication state.
-	e.JoinGroup("all")
+	e.LeaveAllGroups()
 
 	// Setup our default Coordinator services.
 	e.Services = Services{

@@ -11,6 +11,7 @@ import (
 	"github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/grpcutil"
+	log "github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
 
@@ -38,17 +39,37 @@ func newService(svr *server) logdog.LogsServer {
 			// mesages must implement ProjectBoundMessage.
 			pbm, ok := req.(endpoints.ProjectBoundMessage)
 			if ok {
-				if err := coordinator.WithProjectNamespace(&c, config.ProjectName(pbm.GetMessageProject())); err != nil {
-					// If access is explicitly denied, return the appropriate gRPC error.
-					if err == coordinator.ErrNoAccess {
-						return nil, grpcutil.NotFound
-					}
-					return nil, grpcutil.Internal
+				// Enter the requested project namespace. This validates that the
+				// current user has READ access.
+				project := config.ProjectName(pbm.GetMessageProject())
+				log.Fields{
+					"project": project,
+				}.Debugf(c, "User is accessing project.")
+				if err := coordinator.WithProjectNamespace(&c, project); err != nil {
+					return nil, getGRPCError(c, err)
 				}
 			}
 
 			return c, nil
 		},
+	}
+}
+
+func getGRPCError(c context.Context, err error) error {
+	switch {
+	case err == nil:
+		return nil
+
+	case err == config.ErrNoConfig:
+		log.WithError(err).Errorf(c, "No project configuration defined.")
+		return grpcutil.PermissionDenied
+
+	case coordinator.IsMembershipError(err):
+		log.WithError(err).Errorf(c, "User does not have READ access to project.")
+		return grpcutil.PermissionDenied
+
+	default:
+		return grpcutil.Internal
 	}
 }
 
