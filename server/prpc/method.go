@@ -28,7 +28,7 @@ type method struct {
 // errorStatus.
 // Prints only "Internal server error" if the code is Internal.
 // Logs the error if code is Internal or Unknown.
-func (m *method) handle(c context.Context, w http.ResponseWriter, r *http.Request) *response {
+func (m *method) handle(c context.Context, w http.ResponseWriter, r *http.Request, unaryInt grpc.UnaryServerInterceptor) *response {
 	defer r.Body.Close()
 
 	format, perr := responseFormat(r.Header.Get(headerAccept))
@@ -50,7 +50,7 @@ func (m *method) handle(c context.Context, w http.ResponseWriter, r *http.Reques
 			return perr
 		}
 		return nil
-	}, nil)
+	}, unaryInt)
 	if err != nil {
 		if perr, ok := err.(*protocolError); ok {
 			return respondProtocolError(perr)

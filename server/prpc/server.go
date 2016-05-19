@@ -64,6 +64,11 @@ type Server struct {
 	// included in the response.
 	AccessControl func(c context.Context, origin string) bool
 
+	// UnaryServerInterceptor provides a hook to intercept the execution of
+	// a unary RPC on the server. It is the responsibility of the interceptor to
+	// invoke handler to complete the RPC.
+	UnaryServerInterceptor grpc.UnaryServerInterceptor
+
 	mu       sync.Mutex
 	services map[string]*service
 }
@@ -191,7 +196,7 @@ func (s *Server) respond(c context.Context, w http.ResponseWriter, r *http.Reque
 			serviceName)
 	}
 
-	return method.handle(c, w, r)
+	return method.handle(c, w, r, s.UnaryServerInterceptor)
 }
 
 func (s *Server) setAccessControlHeaders(c context.Context, r *http.Request, w http.ResponseWriter, preflight bool) {
