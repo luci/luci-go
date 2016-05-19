@@ -9,11 +9,13 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/parallel"
 	configProto "github.com/luci/luci-go/common/proto/config"
+	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
 	"golang.org/x/net/context"
@@ -23,6 +25,46 @@ const maxProjectWorkers = 32
 
 // ErrNoAccess is returned if the user has no access to the requested project.
 var ErrNoAccess = errors.New("no access")
+
+// ProjectConfigPath returns the config set and path for project-specific
+// configuration.
+//
+// A given project's configuration is named after the current App ID.
+func ProjectConfigPath(c context.Context, project config.ProjectName) (string, string) {
+	return fmt.Sprintf("projects/%s", project), fmt.Sprintf("%s.cfg", info.Get(c).AppID())
+}
+
+// ProjectConfig loads the project config protobuf from the config service.
+//
+// If the configuration was not present, config.ErrNoConfig will be returned.
+func ProjectConfig(c context.Context, project config.ProjectName) (*svcconfig.ProjectConfig, error) {
+	// TODO(dnj): When empty project is disabled, make this return
+	// config.ErrNoConfig.
+	if project == "" {
+		return &svcconfig.ProjectConfig{
+			ReaderAuthGroups: []string{"all"},
+		}, nil
+	}
+
+	configSet, configPath := ProjectConfigPath(c, project)
+	cfg, err := config.Get(c).GetConfig(configSet, configPath, false)
+	if err != nil {
+		return nil, err
+	}
+
+	var pcfg svcconfig.ProjectConfig
+	if err := proto.UnmarshalText(cfg.Content, &pcfg); err != nil {
+		log.Fields{
+			log.ErrorKey:  err,
+			"configSet":   cfg.ConfigSet,
+			"path":        cfg.Path,
+			"contentHash": cfg.ContentHash,
+		}.Errorf(c, "Failed to unmarshal project configuration.")
+		return nil, ErrInvalidConfig
+	}
+
+	return &pcfg, nil
+}
 
 // Projects lists the registered LogDog projects.
 func Projects(c context.Context) ([]string, error) {
@@ -160,7 +202,8 @@ func UserProjects(c context.Context) ([]config.ProjectName, error) {
 
 func checkProjectAccess(c context.Context, ci config.Interface, proj config.ProjectName, st auth.State) (bool, error) {
 	// Load the configuration for this project.
-	cfg, err := ci.GetConfig(fmt.Sprintf("projects/%s", proj), "project.cfg", false)
+	configSet, configPath := ProjectConfigPath(c, proj)
+	cfg, err := ci.GetConfig(configSet, configPath, false)
 	if err != nil {
 		if err == config.ErrNoConfig {
 			// If the configuration is missing, report no access.

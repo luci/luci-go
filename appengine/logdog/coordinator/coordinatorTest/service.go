@@ -7,7 +7,9 @@ package coordinatorTest
 import (
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
+	luciConfig "github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/gcloud/gs"
+	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"golang.org/x/net/context"
 )
@@ -18,6 +20,10 @@ type Services struct {
 	// C, if not nil, will be used to get the return values for Config, overriding
 	// local static members.
 	C func() (*config.Config, error)
+
+	// PC, if not nil, will be used to get the return values for ProjectConfig,
+	// overriding local static members.
+	PC func() (*svcconfig.ProjectConfig, error)
 
 	// Storage returns an intermediate storage instance for use by this service.
 	//
@@ -38,13 +44,15 @@ func (s *Services) Config(c context.Context) (*config.Config, error) {
 	if s.C != nil {
 		return s.C()
 	}
+	return config.Load(c)
+}
 
-	gcfg, err := config.Load(c)
-	if err != nil {
-		return nil, err
+// ProjectConfig implements coordinator.Services.
+func (s *Services) ProjectConfig(c context.Context, project luciConfig.ProjectName) (*svcconfig.ProjectConfig, error) {
+	if s.PC != nil {
+		return s.PC()
 	}
-
-	return gcfg, nil
+	return config.ProjectConfig(c, project)
 }
 
 // IntermediateStorage implements coordinator.Services.

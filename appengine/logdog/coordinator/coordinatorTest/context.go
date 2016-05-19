@@ -183,9 +183,11 @@ func Install() (context.Context, *Environment) {
 	e.ConfigIface = luciConfig.Get(c)
 
 	// luci-config: Projects.
-	addProjectConfig := func(name luciConfig.ProjectName, localName string, access ...string) {
+	addProjectConfig := func(proj luciConfig.ProjectName, localName string, access ...string) {
+		configSet, configPath := config.ProjectConfigPath(c, proj)
+
 		var cfg configProto.ProjectCfg
-		e.modTextProtobuf(fmt.Sprintf("projects/%s", name), "project.cfg", &cfg, func() {
+		e.modTextProtobuf(configSet, configPath, &cfg, func() {
 			cfg.Name = &localName
 			cfg.Access = access
 		})

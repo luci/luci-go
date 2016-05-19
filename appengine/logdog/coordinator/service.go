@@ -12,10 +12,12 @@ import (
 	"github.com/julienschmidt/httprouter"
 	gaeauthClient "github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
+	luciConfig "github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/gcloud/gs"
 	"github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"github.com/luci/luci-go/server/logdog/storage/bigtable"
 	"github.com/luci/luci-go/server/middleware"
@@ -42,6 +44,12 @@ type Services interface {
 	// The production instance will cache the results for the duration of the
 	// request.
 	Config(context.Context) (*config.Config, error)
+
+	// ProjectConfig returns the project configuration for the named project.
+	//
+	// The production instance will cache the results for the duration of the
+	// request.
+	ProjectConfig(context.Context, luciConfig.ProjectName) (*svcconfig.ProjectConfig, error)
 
 	// Storage returns an intermediate storage instance for use by this service.
 	//
@@ -76,7 +84,8 @@ type prodServicesInst struct {
 	sync.Mutex
 
 	// gcfg is the cached global configuration.
-	gcfg *config.Config
+	gcfg           *config.Config
+	projectConfigs map[luciConfig.ProjectName]*cachedProjectConfig
 
 	// archivalIndex is the atomically-manipulated archival index for the
 	// ArchivalPublisher. This is shared between all ArchivalPublisher instances
@@ -84,9 +93,6 @@ type prodServicesInst struct {
 	archivalIndex int32
 }
 
-// Config returns the current instance and application configuration instances.
-//
-// After a success, successive calls will return a cached result.
 func (s *prodServicesInst) Config(c context.Context) (*config.Config, error) {
 	s.Lock()
 	defer s.Unlock()
@@ -101,6 +107,50 @@ func (s *prodServicesInst) Config(c context.Context) (*config.Config, error) {
 	}
 
 	return s.gcfg, nil
+}
+
+// cachedProjectConfig is a singleton instance that holds a project config
+// state. It is populated when resolve is called, and is goroutine-safe for
+// read-only operations.
+type cachedProjectConfig struct {
+	sync.Once
+
+	project luciConfig.ProjectName
+	pcfg    *svcconfig.ProjectConfig
+	err     error
+}
+
+func (cp *cachedProjectConfig) resolve(c context.Context) (*svcconfig.ProjectConfig, error) {
+	// Load the project config exactly once. This will be cached for the remainder
+	// of this request.
+	//
+	// If multiple goroutines attempt to load it, exactly one will, and the rest
+	// will block. All operations after this Once must be read-only.
+	cp.Do(func() {
+		cp.pcfg, cp.err = config.ProjectConfig(c, cp.project)
+	})
+	return cp.pcfg, cp.err
+}
+
+func (s *prodServicesInst) getOrCreateCachedProjectConfig(project luciConfig.ProjectName) *cachedProjectConfig {
+	s.Lock()
+	defer s.Unlock()
+
+	if s.projectConfigs == nil {
+		s.projectConfigs = make(map[luciConfig.ProjectName]*cachedProjectConfig)
+	}
+	cp := s.projectConfigs[project]
+	if cp == nil {
+		cp = &cachedProjectConfig{
+			project: project,
+		}
+		s.projectConfigs[project] = cp
+	}
+	return cp
+}
+
+func (s *prodServicesInst) ProjectConfig(c context.Context, project luciConfig.ProjectName) (*svcconfig.ProjectConfig, error) {
+	return s.getOrCreateCachedProjectConfig(project).resolve(c)
 }
 
 func (s *prodServicesInst) IntermediateStorage(c context.Context) (storage.Storage, error) {
