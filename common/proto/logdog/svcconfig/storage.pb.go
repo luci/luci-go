@@ -40,7 +40,7 @@ type Storage struct {
 func (m *Storage) Reset()                    { *m = Storage{} }
 func (m *Storage) String() string            { return proto.CompactTextString(m) }
 func (*Storage) ProtoMessage()               {}
-func (*Storage) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (*Storage) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
 
 type isStorage_Type interface {
 	isStorage_Type()
@@ -143,14 +143,14 @@ type Storage_BigTable struct {
 func (m *Storage_BigTable) Reset()                    { *m = Storage_BigTable{} }
 func (m *Storage_BigTable) String() string            { return proto.CompactTextString(m) }
 func (*Storage_BigTable) ProtoMessage()               {}
-func (*Storage_BigTable) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 0} }
+func (*Storage_BigTable) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0, 0} }
 
 func init() {
 	proto.RegisterType((*Storage)(nil), "svcconfig.Storage")
 	proto.RegisterType((*Storage_BigTable)(nil), "svcconfig.Storage.BigTable")
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor3 = []byte{
 	// 242 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x3c, 0x8e, 0x3f, 0x4f, 0xc3, 0x30,
 	0x10, 0xc5, 0x69, 0x89, 0xda, 0xe6, 0x0a, 0x0c, 0x9e, 0x4c, 0x91, 0x10, 0x42, 0x0c, 0x4c, 0xae,

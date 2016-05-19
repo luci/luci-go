@@ -6,15 +6,17 @@ syntax = "proto3";
 
 package svcconfig;
 
-import "transport.proto";
+import "archival.proto";
 import "storage.proto";
+import "transport.proto";
+
 import "google/protobuf/duration.proto";
 
 // Config is the overall instance configuration.
 message Config {
-  // Configuration for the Pub/Sub instances.
+  // Configuration for the Butler's log transport.
   Transport transport = 10;
-  // Configuration for Storage.
+  // Configuration for intermediate Storage.
   Storage storage = 11;
 
   // Coordinator is the coordinator service configuration.
@@ -27,10 +29,6 @@ message Config {
 
 // Coordinator is the Coordinator service configuration.
 message Coordinator {
-  // Project is the name of the AppEngine Project that the Coordinator belongs
-  // to.
-  string project = 1;
-
   // The name of the authentication group for administrators.
   string admin_auth_group = 10;
   // The name of the authentication group for backend services.
@@ -38,6 +36,16 @@ message Coordinator {
 
   // A list of origin URLs that are allowed to perform CORS RPC calls.
   repeated string rpc_allow_origins = 20;
+
+  // The maximum amount of time after a prefix has been registered when log
+  // streams may also be registered under that prefix.
+  //
+  // After the expiration period has passed, new log stream registration will
+  // fail.
+  //
+  // Project or stream configurations may override this by providing >= 0 values
+  // for prefix expiration. The smallest configured expiration will be applied.
+  google.protobuf.Duration prefix_expiration = 21;
 
   // The full path of the archival Pub/Sub topic.
   //
@@ -65,6 +73,9 @@ message Coordinator {
   // This should be fairly large (days) to avoid prematurely archiving
   // long-running streams, but should be considerably smaller than the
   // intermediate storage data retention period.
+  //
+  // If a project's "max_stream_age" is smaller than this value, it will be used
+  // on that project's streams.
   google.protobuf.Duration archive_delay_max = 32;
 }
 
@@ -99,19 +110,35 @@ message Archivist {
   // default value.
   int32 tasks = 2;
 
-  // The name of the Google Storage bucket and optional base path to archive
-  // into. For example: gs://foo/bar
+  // The name of the staging storage bucket. All projects will share the same
+  // staging bucket. Logs for a project will be staged under:
   //
-  // The bucket name must be included (e.g., "gs://foo"). The remainder of the
-  // base path is optional based on desired archive location.
-  string gs_base = 3;
-  // The name of the staging storage bucket. Uses same notation as "gs_base".
-  string gs_staging_base = 4;
+  // gs://<gs_staging_bucket>/<app-id>/<project-name>/...
+  string gs_staging_bucket = 3;
 
-  // If not zero, the maximum number of stream indices between index entries.
-  int32 stream_index_range = 10;
-  // If not zero, the maximum number of prefix indices between index entries.
-  int32 prefix_index_range = 11;
-  // If not zero, the maximum number of log data bytes between index entries.
-  int32 byte_range = 12;
+  // Service-wide index configuration. This is used if per-project configuration
+  // is not specified.
+  ArchiveIndexConfig archive_index_config = 10;
+
+  // If true, always render the log entries as a binary file during archival,
+  // regardless of whether a specific stream has a binary file extension.
+  //
+  // By default, a stream will only be rendered as a binary if its descriptor
+  // includes a non-empty binary file extension field.
+  //
+  // The binary stream consists of each log entry's data rendered back-to-back.
+  //   - For text streams, this produces a text document similar to the source
+  //     text.
+  //   - For binary streams and datagram streams, this reproduces the source
+  //     contiguous binary file.
+  //   - For datagram streams, the size-prefixed datagrams are written back-to-
+  //     back.
+  //
+  // Enabling this option will consume roughly twice the archival space, as each
+  // stream's data will be archived once as a series of log entries and once as
+  // a binary file.
+  //
+  // Streams without an explicit binary file extension will default to ".bin" if
+  // this is enabled.
+  bool render_all_streams = 13;
 }

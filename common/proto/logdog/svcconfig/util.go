@@ -4,5 +4,7 @@
 
 package svcconfig
 
-// ServiceConfigFilename is the config service path of the Config protobuf.
-const ServiceConfigFilename = "services.cfg"
+const (
+	// ServiceConfigFilename is the config service path of the Config protobuf.
+	ServiceConfigFilename = "services.cfg"
+)

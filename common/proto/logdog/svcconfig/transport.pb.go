@@ -25,7 +25,7 @@ type Transport struct {
 func (m *Transport) Reset()                    { *m = Transport{} }
 func (m *Transport) String() string            { return proto.CompactTextString(m) }
 func (*Transport) ProtoMessage()               {}
-func (*Transport) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (*Transport) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
 
 type isTransport_Type interface {
 	isTransport_Type()
@@ -119,14 +119,14 @@ type Transport_PubSub struct {
 func (m *Transport_PubSub) Reset()                    { *m = Transport_PubSub{} }
 func (m *Transport_PubSub) String() string            { return proto.CompactTextString(m) }
 func (*Transport_PubSub) ProtoMessage()               {}
-func (*Transport_PubSub) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0, 0} }
+func (*Transport_PubSub) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0, 0} }
 
 func init() {
 	proto.RegisterType((*Transport)(nil), "svcconfig.Transport")
 	proto.RegisterType((*Transport_PubSub)(nil), "svcconfig.Transport.PubSub")
 }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor4 = []byte{
 	// 167 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0xe2, 0x2f, 0x29, 0x4a, 0xcc,
 	0x2b, 0x2e, 0xc8, 0x2f, 0x2a, 0xd1, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0xe2, 0x2c, 0x2e, 0x4b,

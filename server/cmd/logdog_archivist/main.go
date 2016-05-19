@@ -60,14 +60,12 @@ func (a *application) runArchivist(c context.Context) error {
 
 	case acfg == nil:
 		return errors.New("missing Archivist configuration")
-	case acfg.GsBase == "":
-		return errors.New("missing archive GS bucket")
-	case acfg.GsStagingBase == "":
+	case acfg.GsStagingBucket == "":
 		return errors.New("missing archive staging GS bucket")
 	}
 
 	// Construct and validate our GS bases.
-	gsBase := gs.Path(acfg.GsBase)
+	gsBase := gs.Path(acfg.GsStagingBucket)
 	if gsBase.Bucket() == "" {
 		log.Fields{
 			"value": gsBase,
@@ -75,7 +73,7 @@ func (a *application) runArchivist(c context.Context) error {
 		return errors.New("invalid Google Storage base")
 	}
 
-	gsStagingBase := gs.Path(acfg.GsStagingBase)
+	gsStagingBase := gs.Path(acfg.GsStagingBucket).Concat("staging")
 	if gsStagingBase.Bucket() == "" {
 		log.Fields{
 			"value": gsStagingBase,
@@ -143,11 +141,13 @@ func (a *application) runArchivist(c context.Context) error {
 		Storage:  st,
 		GSClient: gsClient,
 
-		GSBase:           gsBase,
-		GSStagingBase:    gsStagingBase,
-		StreamIndexRange: int(acfg.StreamIndexRange),
-		PrefixIndexRange: int(acfg.PrefixIndexRange),
-		ByteRange:        int(acfg.ByteRange),
+		GSBase:        gsBase,
+		GSStagingBase: gsStagingBase,
+	}
+	if ic := acfg.ArchiveIndexConfig; ic != nil {
+		ar.StreamIndexRange = int(ic.StreamRange)
+		ar.PrefixIndexRange = int(ic.PrefixRange)
+		ar.ByteRange = int(ic.ByteRange)
 	}
 
 	tasks := int(acfg.Tasks)
