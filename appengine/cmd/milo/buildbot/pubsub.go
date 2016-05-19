@@ -14,6 +14,7 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/iotools"
 	log "github.com/luci/luci-go/common/logging"
 
 	"github.com/julienschmidt/httprouter"
@@ -93,12 +94,15 @@ func putDSMasterJSON(
 	}
 	gzbs := bytes.Buffer{}
 	gsw := gzip.NewWriter(&gzbs)
-	e := json.NewEncoder(gsw)
+	cw := iotools.CountingWriter{Writer: gsw}
+	e := json.NewEncoder(&cw)
 	if err := e.Encode(master); err != nil {
 		return err
 	}
 	gsw.Close()
 	entry.Data = gzbs.Bytes()
+	log.Debugf(c, "Length of json data: %d", cw.Count)
+	log.Debugf(c, "Length of gzipped data: %d", len(entry.Data))
 	return datastore.Get(c).Put(&entry)
 }
 
@@ -117,6 +121,19 @@ func unmarshal(
 	if err := json.Unmarshal(msg, &bm); err != nil {
 		log.WithError(err).Errorf(c, "could not unmarshal message: %s", err)
 		return nil, nil, err
+	}
+	// Extract the builds out of master and append it onto builds.
+	for _, slave := range bm.Master.Slaves {
+		if slave.RunningbuildsMap == nil {
+			slave.RunningbuildsMap = map[string][]int{}
+		}
+		for _, build := range slave.Runningbuilds {
+			build.Master = bm.Master.Name
+			bm.Builds = append(bm.Builds, build)
+			slave.RunningbuildsMap[build.Buildername] = append(
+				slave.RunningbuildsMap[build.Buildername], build.Number)
+		}
+		slave.Runningbuilds = nil
 	}
 	return bm.Builds, bm.Master, nil
 }
@@ -151,10 +168,17 @@ func PubSubHandler(
 		h.WriteHeader(200)
 		return
 	}
-	log.Infof(c, "There are %d builds and %#v masters", len(builds), master)
+	log.Infof(c, "There are %d builds and master %s", len(builds), master.Name)
 	ds := datastore.Get(c)
 	// Do not use PutMulti because we might hit the 1MB limit.
 	for _, build := range builds {
+		log.Debugf(
+			c, "Checking for build %s/%s/%d", build.Master, build.Buildername, build.Number)
+		if build.Master == "" {
+			log.Errorf(c, "Invalid message, missing master name")
+			h.WriteHeader(200)
+			return
+		}
 		existingBuild := &buildbotBuild{
 			Master:      build.Master,
 			Buildername: build.Buildername,

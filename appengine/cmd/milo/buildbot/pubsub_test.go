@@ -108,70 +108,27 @@ func TestPubSub(t *testing.T) {
 			Currentstep: "this is a string",
 			Times:       buildbotTimesPending(123.0),
 		}
-		Convey("Basic build pusbsub subscription", func() {
-			h := httptest.NewRecorder()
-			r := &http.Request{
-				Body: newCombinedPsBody([]buildbotBuild{b}, nil),
-			}
-			p := httprouter.Params{}
-			PubSubHandler(c, h, r, p)
-			So(h.Code, ShouldEqual, 200)
-			Convey("And stores correctly", func() {
-				loadB := &buildbotBuild{
-					Master:      "Fake Master",
-					Buildername: "Fake buildername",
-					Number:      1234,
-				}
-				err := ds.Get(loadB)
-				So(err, ShouldBeNil)
-				So(loadB.Master, ShouldEqual, "Fake Master")
-				So(loadB.Currentstep.(string), ShouldEqual, "this is a string")
-			})
-			Convey("And a new build overwrites", func() {
-				b.Times = buildbotTimesFinished(123.0, 124.0)
-				h = httptest.NewRecorder()
-				r = &http.Request{
-					Body: newCombinedPsBody([]buildbotBuild{b}, nil),
-				}
-				p = httprouter.Params{}
-				PubSubHandler(c, h, r, p)
-				So(h.Code, ShouldEqual, 200)
-				loadB := &buildbotBuild{
-					Master:      "Fake Master",
-					Buildername: "Fake buildername",
-					Number:      1234,
-				}
-				err := ds.Get(loadB)
-				So(err, ShouldBeNil)
-				So(*loadB.Times[0], ShouldEqual, 123.0)
-				So(*loadB.Times[1], ShouldEqual, 124.0)
-				Convey("And another pending build is rejected", func() {
-					b.Times = buildbotTimesPending(123.0)
-					h = httptest.NewRecorder()
-					r = &http.Request{
-						Body: newCombinedPsBody([]buildbotBuild{b}, nil),
-					}
-					p = httprouter.Params{}
-					PubSubHandler(c, h, r, p)
-					So(h.Code, ShouldEqual, 200)
-					loadB := &buildbotBuild{
-						Master:      "Fake Master",
-						Buildername: "Fake buildername",
-						Number:      1234,
-					}
-					err := ds.Get(loadB)
-					So(err, ShouldBeNil)
-					So(*loadB.Times[0], ShouldEqual, 123.0)
-					So(*loadB.Times[1], ShouldEqual, 124.0)
-				})
-			})
-		})
 
 		Convey("Basic master + build pusbsub subscription", func() {
 			h := httptest.NewRecorder()
+			slaves := map[string]*buildbotSlave{}
+			ft := 1234.0
+			slaves["testslave"] = &buildbotSlave{
+				Name:      "testslave",
+				Connected: true,
+				Runningbuilds: []buildbotBuild{
+					{
+						Master:      "Fake Master",
+						Buildername: "Fake buildername",
+						Number:      2222,
+						Times:       []*float64{&ft, nil},
+					},
+				},
+			}
 			ms := buildbotMaster{
 				Name:    "fakename",
 				Project: buildbotProject{Title: "some title"},
+				Slaves:  slaves,
 			}
 			r := &http.Request{
 				Body: newCombinedPsBody([]buildbotBuild{b}, &ms),
@@ -195,6 +152,11 @@ func TestPubSub(t *testing.T) {
 				So(t.Unix(), ShouldEqual, 981173106)
 				So(m.Name, ShouldEqual, "fakename")
 				So(m.Project.Title, ShouldEqual, "some title")
+				So(m.Slaves["testslave"].Name, ShouldEqual, "testslave")
+				So(len(m.Slaves["testslave"].Runningbuilds), ShouldEqual, 0)
+				So(len(m.Slaves["testslave"].RunningbuildsMap), ShouldEqual, 1)
+				So(m.Slaves["testslave"].RunningbuildsMap["Fake buildername"][0],
+					ShouldEqual, 2222)
 			})
 
 			Convey("And a new master overwrites", func() {
@@ -212,6 +174,44 @@ func TestPubSub(t *testing.T) {
 				So(m.Project.Title, ShouldEqual, "some other title")
 				So(t.Unix(), ShouldEqual, 981173107)
 				So(m.Name, ShouldEqual, "fakename")
+			})
+			Convey("And a new build overwrites", func() {
+				b.Times = buildbotTimesFinished(123.0, 124.0)
+				h = httptest.NewRecorder()
+				r = &http.Request{
+					Body: newCombinedPsBody([]buildbotBuild{b}, &ms),
+				}
+				p = httprouter.Params{}
+				PubSubHandler(c, h, r, p)
+				So(h.Code, ShouldEqual, 200)
+				loadB := &buildbotBuild{
+					Master:      "Fake Master",
+					Buildername: "Fake buildername",
+					Number:      1234,
+				}
+				err := ds.Get(loadB)
+				So(err, ShouldBeNil)
+				So(*loadB.Times[0], ShouldEqual, 123.0)
+				So(*loadB.Times[1], ShouldEqual, 124.0)
+				Convey("And another pending build is rejected", func() {
+					b.Times = buildbotTimesPending(123.0)
+					h = httptest.NewRecorder()
+					r = &http.Request{
+						Body: newCombinedPsBody([]buildbotBuild{b}, &ms),
+					}
+					p = httprouter.Params{}
+					PubSubHandler(c, h, r, p)
+					So(h.Code, ShouldEqual, 200)
+					loadB := &buildbotBuild{
+						Master:      "Fake Master",
+						Buildername: "Fake buildername",
+						Number:      1234,
+					}
+					err := ds.Get(loadB)
+					So(err, ShouldBeNil)
+					So(*loadB.Times[0], ShouldEqual, 123.0)
+					So(*loadB.Times[1], ShouldEqual, 124.0)
+				})
 			})
 		})
 

@@ -232,6 +232,9 @@ type buildbotSlave struct {
 	Name          string           `json:"name"`
 	Runningbuilds []buildbotBuild  `json:"runningBuilds"`
 	Version       string           `json:"version"`
+	// This is like runningbuilds, but instead of storing the full build,
+	// just reference the build by builder: build num.
+	RunningbuildsMap map[string][]int `json:"runningBuildsMap"`
 }
 
 type buildbotProject struct {
@@ -288,7 +291,7 @@ type buildbotMaster struct {
 
 	Project buildbotProject `json:"project"`
 
-	Slaves map[string]buildbotSlave `json:"slaves"`
+	Slaves map[string]*buildbotSlave `json:"slaves"`
 
 	Varz struct {
 		AcceptingBuilds bool `json:"accepting_builds"`
