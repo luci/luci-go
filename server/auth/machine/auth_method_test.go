@@ -72,13 +72,13 @@ func TestMachineTokenAuthMethod(t *testing.T) {
 
 		Convey("valid token works", func() {
 			user, err := call(mint(&tokenserver.MachineTokenBody{
-				MachineId: "some-machine@location",
-				IssuedBy:  "valid-signer@example.com",
-				IssuedAt:  uint64(clock.Now(ctx).Unix()),
-				Lifetime:  3600,
+				MachineFqdn: "some-machine.location",
+				IssuedBy:    "valid-signer@example.com",
+				IssuedAt:    uint64(clock.Now(ctx).Unix()),
+				Lifetime:    3600,
 			}, nil))
 			So(err, ShouldBeNil)
-			So(user, ShouldResemble, &auth.User{Identity: "bot:some-machine@location"})
+			So(user, ShouldResemble, &auth.User{Identity: "bot:some-machine.location"})
 		})
 
 		Convey("not header => not applicable", func() {
@@ -113,10 +113,10 @@ func TestMachineTokenAuthMethod(t *testing.T) {
 
 		Convey("bad signer ID", func() {
 			_, err := call(mint(&tokenserver.MachineTokenBody{
-				MachineId: "some-machine@location",
-				IssuedBy:  "not-a-email.com",
-				IssuedAt:  uint64(clock.Now(ctx).Unix()),
-				Lifetime:  3600,
+				MachineFqdn: "some-machine.location",
+				IssuedBy:    "not-a-email.com",
+				IssuedAt:    uint64(clock.Now(ctx).Unix()),
+				Lifetime:    3600,
 			}, nil))
 			So(err, ShouldEqual, ErrBadToken)
 			So(hasLog("Bad issued_by field"), ShouldBeTrue)
@@ -124,10 +124,10 @@ func TestMachineTokenAuthMethod(t *testing.T) {
 
 		Convey("unknown signer", func() {
 			_, err := call(mint(&tokenserver.MachineTokenBody{
-				MachineId: "some-machine@location",
-				IssuedBy:  "unknown-signer@example.com",
-				IssuedAt:  uint64(clock.Now(ctx).Unix()),
-				Lifetime:  3600,
+				MachineFqdn: "some-machine.location",
+				IssuedBy:    "unknown-signer@example.com",
+				IssuedAt:    uint64(clock.Now(ctx).Unix()),
+				Lifetime:    3600,
 			}, nil))
 			So(err, ShouldEqual, ErrBadToken)
 			So(hasLog("Unknown token issuer"), ShouldBeTrue)
@@ -135,10 +135,10 @@ func TestMachineTokenAuthMethod(t *testing.T) {
 
 		Convey("not yet valid", func() {
 			_, err := call(mint(&tokenserver.MachineTokenBody{
-				MachineId: "some-machine@location",
-				IssuedBy:  "valid-signer@example.com",
-				IssuedAt:  uint64(clock.Now(ctx).Unix()) + 60,
-				Lifetime:  3600,
+				MachineFqdn: "some-machine.location",
+				IssuedBy:    "valid-signer@example.com",
+				IssuedAt:    uint64(clock.Now(ctx).Unix()) + 60,
+				Lifetime:    3600,
 			}, nil))
 			So(err, ShouldEqual, ErrBadToken)
 			So(hasLog("Token has expired or not yet valid"), ShouldBeTrue)
@@ -146,10 +146,10 @@ func TestMachineTokenAuthMethod(t *testing.T) {
 
 		Convey("expired", func() {
 			_, err := call(mint(&tokenserver.MachineTokenBody{
-				MachineId: "some-machine@location",
-				IssuedBy:  "valid-signer@example.com",
-				IssuedAt:  uint64(clock.Now(ctx).Unix()) - 3620,
-				Lifetime:  3600,
+				MachineFqdn: "some-machine.location",
+				IssuedBy:    "valid-signer@example.com",
+				IssuedAt:    uint64(clock.Now(ctx).Unix()) - 3620,
+				Lifetime:    3600,
 			}, nil))
 			So(err, ShouldEqual, ErrBadToken)
 			So(hasLog("Token has expired or not yet valid"), ShouldBeTrue)
@@ -157,24 +157,24 @@ func TestMachineTokenAuthMethod(t *testing.T) {
 
 		Convey("bad signature", func() {
 			_, err := call(mint(&tokenserver.MachineTokenBody{
-				MachineId: "some-machine@location",
-				IssuedBy:  "valid-signer@example.com",
-				IssuedAt:  uint64(clock.Now(ctx).Unix()),
-				Lifetime:  3600,
+				MachineFqdn: "some-machine.location",
+				IssuedBy:    "valid-signer@example.com",
+				IssuedAt:    uint64(clock.Now(ctx).Unix()),
+				Lifetime:    3600,
 			}, []byte("bad signature")))
 			So(err, ShouldEqual, ErrBadToken)
 			So(hasLog("Bad signature"), ShouldBeTrue)
 		})
 
-		Convey("bad machine_id", func() {
+		Convey("bad machine_fqdn", func() {
 			_, err := call(mint(&tokenserver.MachineTokenBody{
-				MachineId: "not::valid::machine::id",
-				IssuedBy:  "valid-signer@example.com",
-				IssuedAt:  uint64(clock.Now(ctx).Unix()),
-				Lifetime:  3600,
+				MachineFqdn: "not::valid::machine::id",
+				IssuedBy:    "valid-signer@example.com",
+				IssuedAt:    uint64(clock.Now(ctx).Unix()),
+				Lifetime:    3600,
 			}, nil))
 			So(err, ShouldEqual, ErrBadToken)
-			So(hasLog("Bad machine_id"), ShouldBeTrue)
+			So(hasLog("Bad machine_fqdn"), ShouldBeTrue)
 		})
 	})
 }

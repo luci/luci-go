@@ -78,7 +78,7 @@ func (p *MintParams) Validate() error {
 	if domainCfg == nil {
 		return fmt.Errorf("the domain %q is not whitelisted in the config", domain)
 	}
-	if domainCfg.Location == "" || domainCfg.MachineTokenLifetime <= 0 {
+	if domainCfg.MachineTokenLifetime <= 0 {
 		return fmt.Errorf("machine tokens for machines in domain %q are not allowed", domain)
 	}
 
@@ -116,19 +116,18 @@ func Mint(c context.Context, params MintParams) (*tokenserver.MachineTokenBody, 
 	if len(chunks) != 2 {
 		panic("impossible") // checked in Validate already
 	}
-	host, domain := chunks[0], chunks[1]
-	cfg := domainConfig(params.Config, domain)
+	cfg := domainConfig(params.Config, chunks[1])
 	if cfg == nil {
 		panic("impossible") // checked in Validate already
 	}
 
 	body := tokenserver.MachineTokenBody{
-		MachineId: host + "@" + cfg.Location,
-		IssuedBy:  params.SignerServiceAccount,
-		IssuedAt:  uint64(clock.Now(c).Unix()),
-		Lifetime:  uint64(cfg.MachineTokenLifetime),
-		CaId:      params.Config.UniqueId,
-		CertSn:    params.Cert.SerialNumber.Uint64(), // already validated, fits uint64
+		MachineFqdn: params.FQDN,
+		IssuedBy:    params.SignerServiceAccount,
+		IssuedAt:    uint64(clock.Now(c).Unix()),
+		Lifetime:    uint64(cfg.MachineTokenLifetime),
+		CaId:        params.Config.UniqueId,
+		CertSn:      params.Cert.SerialNumber.Uint64(), // already validated, fits uint64
 	}
 	serializedBody, err := proto.Marshal(&body)
 	if err != nil {

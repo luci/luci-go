@@ -13,17 +13,11 @@ package tokenserver;
 // (no need for microsecond precision), and assume certificate serial numbers
 // are smallish uint64 integers (not random blobs).
 message MachineTokenBody {
-  // Machine identity this token conveys.
+  // Machine identity this token conveys (machine FQDN).
   //
-  // It has format <hostname>@<location>, where <hostname> is hostname of the
-  // machine (not full FQDN, only hostname) and <location> is an alias for a
-  // domain the machine belongs too (taken from the token server config).
-  //
-  // <hostname> is extracted from a Common Name of a certificate used as a basis
-  // for the token.
-  //
-  // For example: vm123-m4@golo.
-  string machine_id = 1;
+  // It is extracted from a Common Name of a certificate used as a basis for
+  // the token.
+  string machine_fqdn = 1;
 
   // Service account email that signed this token.
   //

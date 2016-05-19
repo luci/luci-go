@@ -33,7 +33,6 @@ func TestMintParamsValidation(t *testing.T) {
 				KnownDomains: []*admin.DomainConfig{
 					{
 						Domain:               []string{"domain"},
-						Location:             "test-location",
 						MachineTokenLifetime: 3600,
 					},
 				},
@@ -66,11 +65,6 @@ func TestMintParamsValidation(t *testing.T) {
 		})
 
 		Convey("tokens are not allowed", func() {
-			params.Config.KnownDomains[0].Location = ""
-			So(params.Validate(), ShouldErrLike, "are not allowed")
-		})
-
-		Convey("tokens are not allowed 2", func() {
 			params.Config.KnownDomains[0].MachineTokenLifetime = 0
 			So(params.Validate(), ShouldErrLike, "are not allowed")
 		})
@@ -97,7 +91,6 @@ func TestMint(t *testing.T) {
 					KnownDomains: []*admin.DomainConfig{
 						{
 							Domain:               []string{"domain"},
-							Location:             "test-location",
 							MachineTokenLifetime: 3600,
 						},
 					},
@@ -108,15 +101,15 @@ func TestMint(t *testing.T) {
 			body, token, err := Mint(ctx, params)
 			So(err, ShouldBeNil)
 			So(body, ShouldResemble, &tokenserver.MachineTokenBody{
-				MachineId: "host@test-location",
-				IssuedBy:  "token-server@example.com",
-				IssuedAt:  1422936306,
-				Lifetime:  3600,
-				CaId:      0,
-				CertSn:    12345,
+				MachineFqdn: "host.domain",
+				IssuedBy:    "token-server@example.com",
+				IssuedAt:    1422936306,
+				Lifetime:    3600,
+				CaId:        0,
+				CertSn:      12345,
 			})
-			So(token, ShouldEqual, "CjoKEmhvc3RAdGVzdC1sb2NhdGlvbhIYdG9rZW4tc2VydmV"+
-				"yQGV4YW1wbGUuY29tGPKRwaYFIJAcMLlgEgZrZXlfaWQaCXNpZ25hdHVyZQ")
+			So(token, ShouldEqual, "CjMKC2hvc3QuZG9tYWluEhh0b2tlbi1zZXJ2ZXJAZXhhbXB"+
+				"sZS5jb20Y8pHBpgUgkBwwuWASBmtleV9pZBoJc2lnbmF0dXJl")
 		})
 	})
 }

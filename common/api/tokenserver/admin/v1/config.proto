@@ -36,7 +36,7 @@ message CertificateAuthorityConfig {
 
 // DomainConfig is used inside CertificateAuthorityConfig.
 message DomainConfig {
-  reserved 4; // deleted fields, do not reuse.
+  reserved 4, 6; // deleted fields, do not reuse.
 
   // Domain is domain names of hosts this config applies to.
   repeated string domain = 1;
@@ -56,16 +56,4 @@ message DomainConfig {
   //
   // If 0, machine tokens are not allowed.
   int64 machine_token_lifetime = 5;
-
-  // Location is used as a part of machine_id in the machine token.
-  //
-  // It is the short alias for a domain machine belongs to. The machine identity
-  // will be <hostname>@<location>.
-  //
-  // For example, if vm123-m4.golo.chromium.org is requesting a token, and there
-  // is DomainConfig with domain == 'golo.chromium.org' and location == 'golo',
-  // the resulting machine_id will be 'vm123-m4@golo'.
-  //
-  // If empty, machine tokens are not allowed.
-  string location = 6;
 }

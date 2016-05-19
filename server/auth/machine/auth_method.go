@@ -53,8 +53,9 @@ var (
 // A list of trusted token servers is specified in 'auth-token-servers' group.
 //
 // If the token is valid, the request will be authenticated as coming from
-// 'bot:<machine_id>', where <machine_id> is extracted from the token. Usually
-// <machine_id> it is "<hostname>@<location>", e.g "vm123-m4@golo".
+// 'bot:<machine_fqdn>', where <machine_fqdn> is extracted from the token. It is
+// lowercase FQDN of a machine (as specified in the certificate used to mint the
+// token).
 type MachineTokenAuthMethod struct {
 	// certsFetcher is mocked in unit tests.
 	//
@@ -117,9 +118,9 @@ func (m *MachineTokenAuthMethod) Authenticate(c context.Context, r *http.Request
 	}
 
 	// The token is valid. Construct the bot identity.
-	botIdent, err := identity.MakeIdentity("bot:" + body.MachineId)
+	botIdent, err := identity.MakeIdentity("bot:" + body.MachineFqdn)
 	if err != nil {
-		logTokenError(c, r, body, err, "Bad machine_id - %q", body.MachineId)
+		logTokenError(c, r, body, err, "Bad machine_fqdn - %q", body.MachineFqdn)
 		return nil, ErrBadToken
 	}
 	return &auth.User{Identity: botIdent}, nil
@@ -131,7 +132,7 @@ func logTokenError(c context.Context, r *http.Request, tok *tokenserver.MachineT
 	if tok != nil {
 		// Note that if token wasn't properly signed, these fields may contain
 		// garbage.
-		fields["machineId"] = tok.MachineId
+		fields["machineFqdn"] = tok.MachineFqdn
 		fields["issuedBy"] = tok.IssuedBy
 		fields["issuedAt"] = tok.IssuedAt
 		fields["lifetime"] = tok.Lifetime

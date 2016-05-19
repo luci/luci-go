@@ -280,7 +280,6 @@ func TestLuciMachineToken(t *testing.T) {
 						KnownDomains: []*admin.DomainConfig{
 							{
 								Domain:               []string{"fake.domain"},
-								Location:             "testing-location",
 								MachineTokenLifetime: 3600,
 							},
 						},
@@ -313,10 +312,10 @@ func TestLuciMachineToken(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			tok := resp.TokenResponse.GetLuciMachineToken().MachineToken
-			So(tok, ShouldEqual, `Ck4KKWx1Y2ktdG9rZW4tc2VydmVyLXRlc3QtMUB0ZXN0aW5nL`+
-				`WxvY2F0aW9uEhNzaWduZXJAdGVzdGluZy5ob3N0GPKRwaYFIJAcKHswgCASKGY5ZGE1YT`+
-				`BkMDkwM2JkYTU4YzZkNjY0ZTM4NTJhODljMjgzZDdmZTkaQKLTWbvFloXRbXwJ8LXydsz`+
-				`05btYorL6T3Npoogw30AfIqNi/TXnaJ5h8XjamY2lVmP225RaFv/RvDjcF9JdxqQ`)
+			So(tok, ShouldEqual, `CkkKJGx1Y2ktdG9rZW4tc2VydmVyLXRlc3QtMS5mYWtlLmRvbW`+
+				`FpbhITc2lnbmVyQHRlc3RpbmcuaG9zdBjykcGmBSCQHCh7MIAgEihmOWRhNWEwZDA5MDN`+
+				`iZGE1OGM2ZDY2NGUzODUyYTg5YzI4M2Q3ZmU5GkCrjVagpGYIIVo/OsbQD4Jg8Jbp1l/6`+
+				`Q+9t+jHpBXcennnPVb0tKWojPYN3195lZ1ESofXz8rDnXoYF4/2X2pDn`)
 
 			// Works!
 			reply, err := server.InspectMachineToken(ctx, &minter.InspectMachineTokenRequest{
@@ -333,12 +332,12 @@ func TestLuciMachineToken(t *testing.T) {
 				CertCaName:   "Fake CA: fake.ca",
 				TokenType: &minter.InspectMachineTokenResponse_LuciMachineToken{
 					LuciMachineToken: &tokenserver.MachineTokenBody{
-						MachineId: "luci-token-server-test-1@testing-location",
-						IssuedBy:  "signer@testing.host",
-						IssuedAt:  1422936306,
-						Lifetime:  3600,
-						CaId:      123,
-						CertSn:    4096,
+						MachineFqdn: "luci-token-server-test-1.fake.domain",
+						IssuedBy:    "signer@testing.host",
+						IssuedAt:    1422936306,
+						Lifetime:    3600,
+						CaId:        123,
+						CertSn:      4096,
 					},
 				},
 			})
@@ -358,12 +357,12 @@ func TestLuciMachineToken(t *testing.T) {
 				SigningKeyId:     "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
 				TokenType: &minter.InspectMachineTokenResponse_LuciMachineToken{
 					LuciMachineToken: &tokenserver.MachineTokenBody{
-						MachineId: "luci-token-server-test-1@testing-location",
-						IssuedBy:  "signer@testing.host",
-						IssuedAt:  1422936306,
-						Lifetime:  3600,
-						CaId:      123,
-						CertSn:    4096,
+						MachineFqdn: "luci-token-server-test-1.fake.domain",
+						IssuedBy:    "signer@testing.host",
+						IssuedAt:    1422936306,
+						Lifetime:    3600,
+						CaId:        123,
+						CertSn:      4096,
 					},
 				},
 			})
@@ -385,12 +384,12 @@ func TestLuciMachineToken(t *testing.T) {
 				CertCaName:       "Fake CA: fake.ca",
 				TokenType: &minter.InspectMachineTokenResponse_LuciMachineToken{
 					LuciMachineToken: &tokenserver.MachineTokenBody{
-						MachineId: "luci-token-server-test-1@testing-location",
-						IssuedBy:  "signer@testing.host",
-						IssuedAt:  1422936306,
-						Lifetime:  3600,
-						CaId:      123,
-						CertSn:    4096,
+						MachineFqdn: "luci-token-server-test-1.fake.domain",
+						IssuedBy:    "signer@testing.host",
+						IssuedAt:    1422936306,
+						Lifetime:    3600,
+						CaId:        123,
+						CertSn:      4096,
 					},
 				},
 			})
@@ -420,12 +419,12 @@ func TestLuciMachineToken(t *testing.T) {
 				CertCaName:       "Fake CA: fake.ca",
 				TokenType: &minter.InspectMachineTokenResponse_LuciMachineToken{
 					LuciMachineToken: &tokenserver.MachineTokenBody{
-						MachineId: "luci-token-server-test-1@testing-location",
-						IssuedBy:  "signer@testing.host",
-						IssuedAt:  1422936306,
-						Lifetime:  3600,
-						CaId:      123,
-						CertSn:    4096,
+						MachineFqdn: "luci-token-server-test-1.fake.domain",
+						IssuedBy:    "signer@testing.host",
+						IssuedAt:    1422936306,
+						Lifetime:    3600,
+						CaId:        123,
+						CertSn:      4096,
 					},
 				},
 			})
