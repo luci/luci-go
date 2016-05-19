@@ -19,6 +19,7 @@ import (
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/settings"
 )
 
@@ -75,6 +76,8 @@ func (s Storage) expirationDuration(c context.Context) time.Duration {
 
 // FetchAllSettings fetches all latest settings at once.
 func (s Storage) FetchAllSettings(c context.Context) (*settings.Bundle, error) {
+	logging.Debugf(c, "Fetching app settings from the datastore")
+
 	latest := latestSettings()
 	switch err := defaultDS(c).Get(&latest); {
 	case err == datastore.ErrNoSuchEntity:

@@ -64,6 +64,7 @@ type Snapshot struct {
 //
 // If no such entity is stored, returns (nil, nil).
 func GetLatestSnapshotInfo(c context.Context) (*SnapshotInfo, error) {
+	logging.Debugf(c, "Fetching AuthDB snapshot info from the datastore")
 	c = defaultNS(c)
 	info := SnapshotInfo{}
 	switch err := datastore.Get(c).Get(&info); {
@@ -86,6 +87,9 @@ func deleteSnapshotInfo(c context.Context) error {
 
 // GetAuthDBSnapshot fetches, inflates and deserializes AuthDB snapshot.
 func GetAuthDBSnapshot(c context.Context, id string) (*protocol.AuthDB, error) {
+	logging.Debugf(c, "Fetching AuthDB snapshot from the datastore")
+	defer logging.Debugf(c, "AuthDB snapshot fetched")
+
 	c = defaultNS(c)
 	snap := Snapshot{ID: id}
 	switch err := datastore.Get(c).Get(&snap); {
