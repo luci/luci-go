@@ -45,7 +45,7 @@ func TestContextAndCache(t *testing.T) {
 		So(db.(*SnapshotDB).Rev, ShouldEqual, 1)
 
 		// Advance time to expire cache.
-		tc.Add(6 * time.Second)
+		tc.Add(11 * time.Second)
 
 		// Returns new copy now.
 		db, err = GetDB(c)

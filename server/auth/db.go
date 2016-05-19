@@ -18,6 +18,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/lazyslot"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/mathrand"
 
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/service/protocol"
@@ -108,7 +109,7 @@ func GetDB(c context.Context) (DB, error) {
 }
 
 // NewDBCache returns a factory of DB instances that uses local memory to
-// cache DB instances for 5 seconds. It uses supplied callback to refetch DB
+// cache DB instances for 5-10 seconds. It uses supplied callback to refetch DB
 // from some permanent storage when cache expires.
 //
 // Even though the return value is technically a function, treat it as a heavy
@@ -124,9 +125,10 @@ func NewDBCache(updater DBCacheUpdater) DBFactory {
 			if err != nil {
 				return lazyslot.Value{}, err
 			}
+			expTime := 5*time.Second + time.Duration(mathrand.Get(c).Intn(5000))*time.Millisecond
 			return lazyslot.Value{
 				Value:      newDB,
-				Expiration: clock.Now(c).Add(5 * time.Second),
+				Expiration: clock.Now(c).Add(expTime),
 			}, nil
 		},
 	}
