@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"H01Z-1ikbwOw463Un2bFZHenx1g/Fybck7CAXoWvcvfH6qQzlWP_Z_U\"",
+ "etag": "\"H01Z-1ikbwOw463Un2bFZHenx1g/2dEHnaN7qtkrGKmkRr63uqORVxc\"",
  "discoveryVersion": "v1",
  "id": "swarming:v1",
  "name": "swarming",
@@ -232,6 +232,40 @@
     }
    }
   },
+  "SwarmingRpcsCipdInput": {
+   "id": "SwarmingRpcsCipdInput",
+   "type": "object",
+   "description": "Defines CIPD packages to install in $CIPD_PATH. A command may use $CIPD_PATH in its arguments. It will be expanded to the path of the CIPD site root.",
+   "properties": {
+    "client_package": {
+     "$ref": "SwarmingRpcsCipdPackage",
+     "description": "A CIPD package to install in $CIPD_PATH and $PATH before task execution."
+    },
+    "packages": {
+     "type": "array",
+     "description": "A CIPD package to install in $CIPD_PATH and $PATH before task execution.",
+     "items": {
+      "$ref": "SwarmingRpcsCipdPackage"
+     }
+    },
+    "server": {
+     "type": "string"
+    }
+   }
+  },
+  "SwarmingRpcsCipdPackage": {
+   "id": "SwarmingRpcsCipdPackage",
+   "type": "object",
+   "description": "A CIPD package to install in $CIPD_PATH and $PATH before task execution.",
+   "properties": {
+    "package_name": {
+     "type": "string"
+    },
+    "version": {
+     "type": "string"
+    }
+   }
+  },
   "SwarmingRpcsDeletedResponse": {
    "id": "SwarmingRpcsDeletedResponse",
    "type": "object",
@@ -289,32 +323,6 @@
     }
    }
   },
-  "SwarmingRpcsIsolatedOperation": {
-   "id": "SwarmingRpcsIsolatedOperation",
-   "type": "object",
-   "properties": {
-    "duration": {
-     "type": "number",
-     "format": "double"
-    },
-    "initial_number_items": {
-     "type": "string",
-     "format": "int64"
-    },
-    "initial_size": {
-     "type": "string",
-     "format": "int64"
-    },
-    "items_cold": {
-     "type": "string",
-     "format": "byte"
-    },
-    "items_hot": {
-     "type": "string",
-     "format": "byte"
-    }
-   }
-  },
   "SwarmingRpcsNewTaskRequest": {
    "id": "SwarmingRpcsNewTaskRequest",
    "type": "object",
@@ -358,6 +366,32 @@
     }
    }
   },
+  "SwarmingRpcsOperationStats": {
+   "id": "SwarmingRpcsOperationStats",
+   "type": "object",
+   "properties": {
+    "duration": {
+     "type": "number",
+     "format": "double"
+    },
+    "initial_number_items": {
+     "type": "string",
+     "format": "int64"
+    },
+    "initial_size": {
+     "type": "string",
+     "format": "int64"
+    },
+    "items_cold": {
+     "type": "string",
+     "format": "byte"
+    },
+    "items_hot": {
+     "type": "string",
+     "format": "byte"
+    }
+   }
+  },
   "SwarmingRpcsPerformanceStats": {
    "id": "SwarmingRpcsPerformanceStats",
    "type": "object",
@@ -367,10 +401,10 @@
      "format": "double"
     },
     "isolated_download": {
-     "$ref": "SwarmingRpcsIsolatedOperation"
+     "$ref": "SwarmingRpcsOperationStats"
     },
     "isolated_upload": {
-     "$ref": "SwarmingRpcsIsolatedOperation"
+     "$ref": "SwarmingRpcsOperationStats"
     }
    }
   },
@@ -449,6 +483,10 @@
    "type": "object",
    "description": "Important metadata about a particular task.",
    "properties": {
+    "cipd_input": {
+     "$ref": "SwarmingRpcsCipdInput",
+     "description": "Defines CIPD packages to install in $CIPD_PATH. A command may use $CIPD_PATH in its arguments. It will be expanded to the path of the CIPD site root."
+    },
     "command": {
      "type": "array",
      "items": {
@@ -1024,6 +1062,10 @@
      "httpMethod": "GET",
      "description": "Reports the result of the task corresponding to a task ID. It can be a 'run' ID specifying a specific retry or a 'summary' ID hidding the fact that a task may have been retried transparently, when a bot reports BOT_DIED. A summary ID ends with '0', a run ID ends with '1' or '2'.",
      "parameters": {
+      "include_performance_stats": {
+       "type": "boolean",
+       "location": "query"
+      },
       "task_id": {
        "type": "string",
        "required": true,

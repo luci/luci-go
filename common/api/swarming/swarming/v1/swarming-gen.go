@@ -322,6 +322,57 @@ func (s *SwarmingRpcsCancelResponse) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields)
 }
 
+// SwarmingRpcsCipdInput: Defines CIPD packages to install in
+// $CIPD_PATH. A command may use $CIPD_PATH in its arguments. It will be
+// expanded to the path of the CIPD site root.
+type SwarmingRpcsCipdInput struct {
+	// ClientPackage: A CIPD package to install in $CIPD_PATH and $PATH
+	// before task execution.
+	ClientPackage *SwarmingRpcsCipdPackage `json:"client_package,omitempty"`
+
+	// Packages: A CIPD package to install in $CIPD_PATH and $PATH before
+	// task execution.
+	Packages []*SwarmingRpcsCipdPackage `json:"packages,omitempty"`
+
+	Server string `json:"server,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "ClientPackage") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+}
+
+func (s *SwarmingRpcsCipdInput) MarshalJSON() ([]byte, error) {
+	type noMethod SwarmingRpcsCipdInput
+	raw := noMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields)
+}
+
+// SwarmingRpcsCipdPackage: A CIPD package to install in $CIPD_PATH and
+// $PATH before task execution.
+type SwarmingRpcsCipdPackage struct {
+	PackageName string `json:"package_name,omitempty"`
+
+	Version string `json:"version,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "PackageName") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+}
+
+func (s *SwarmingRpcsCipdPackage) MarshalJSON() ([]byte, error) {
+	type noMethod SwarmingRpcsCipdPackage
+	raw := noMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields)
+}
+
 // SwarmingRpcsDeletedResponse: Indicates whether a bot was deleted.
 type SwarmingRpcsDeletedResponse struct {
 	Deleted bool `json:"deleted,omitempty"`
@@ -417,32 +468,6 @@ func (s *SwarmingRpcsFilesRef) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields)
 }
 
-type SwarmingRpcsIsolatedOperation struct {
-	Duration float64 `json:"duration,omitempty"`
-
-	InitialNumberItems int64 `json:"initial_number_items,omitempty,string"`
-
-	InitialSize int64 `json:"initial_size,omitempty,string"`
-
-	ItemsCold string `json:"items_cold,omitempty"`
-
-	ItemsHot string `json:"items_hot,omitempty"`
-
-	// ForceSendFields is a list of field names (e.g. "Duration") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-}
-
-func (s *SwarmingRpcsIsolatedOperation) MarshalJSON() ([]byte, error) {
-	type noMethod SwarmingRpcsIsolatedOperation
-	raw := noMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields)
-}
-
 // SwarmingRpcsNewTaskRequest: Description of a new task request as
 // described by the client.
 type SwarmingRpcsNewTaskRequest struct {
@@ -482,12 +507,38 @@ func (s *SwarmingRpcsNewTaskRequest) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields)
 }
 
+type SwarmingRpcsOperationStats struct {
+	Duration float64 `json:"duration,omitempty"`
+
+	InitialNumberItems int64 `json:"initial_number_items,omitempty,string"`
+
+	InitialSize int64 `json:"initial_size,omitempty,string"`
+
+	ItemsCold string `json:"items_cold,omitempty"`
+
+	ItemsHot string `json:"items_hot,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "Duration") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+}
+
+func (s *SwarmingRpcsOperationStats) MarshalJSON() ([]byte, error) {
+	type noMethod SwarmingRpcsOperationStats
+	raw := noMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields)
+}
+
 type SwarmingRpcsPerformanceStats struct {
 	BotOverhead float64 `json:"bot_overhead,omitempty"`
 
-	IsolatedDownload *SwarmingRpcsIsolatedOperation `json:"isolated_download,omitempty"`
+	IsolatedDownload *SwarmingRpcsOperationStats `json:"isolated_download,omitempty"`
 
-	IsolatedUpload *SwarmingRpcsIsolatedOperation `json:"isolated_upload,omitempty"`
+	IsolatedUpload *SwarmingRpcsOperationStats `json:"isolated_upload,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "BotOverhead") to
 	// unconditionally include in API requests. By default, fields with
@@ -625,6 +676,11 @@ func (s *SwarmingRpcsTaskOutput) MarshalJSON() ([]byte, error) {
 // SwarmingRpcsTaskProperties: Important metadata about a particular
 // task.
 type SwarmingRpcsTaskProperties struct {
+	// CipdInput: Defines CIPD packages to install in $CIPD_PATH. A command
+	// may use $CIPD_PATH in its arguments. It will be expanded to the path
+	// of the CIPD site root.
+	CipdInput *SwarmingRpcsCipdInput `json:"cipd_input,omitempty"`
+
 	Command []string `json:"command,omitempty"`
 
 	// Dimensions: Represents a mapping of string to string.
@@ -647,7 +703,7 @@ type SwarmingRpcsTaskProperties struct {
 
 	IoTimeoutSecs int64 `json:"io_timeout_secs,omitempty,string"`
 
-	// ForceSendFields is a list of field names (e.g. "Command") to
+	// ForceSendFields is a list of field names (e.g. "CipdInput") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
 	// non-interface field appearing in ForceSendFields will be sent to the
@@ -938,15 +994,17 @@ func (c *BotDeleteCall) Context(ctx context.Context) *BotDeleteCall {
 }
 
 func (c *BotDeleteCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "bot/{bot_id}/delete")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("POST", urls, body)
+	req.Header = reqHeaders
 	googleapi.Expand(req.URL, map[string]string{
 		"bot_id": c.botId,
 	})
-	req.Header.Set("User-Agent", c.s.userAgent())
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
 	}
@@ -1058,18 +1116,20 @@ func (c *BotEventsCall) Context(ctx context.Context) *BotEventsCall {
 }
 
 func (c *BotEventsCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	if c.ifNoneMatch_ != "" {
+		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
+	}
 	var body io.Reader = nil
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "bot/{bot_id}/events")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
+	req.Header = reqHeaders
 	googleapi.Expand(req.URL, map[string]string{
 		"bot_id": c.botId,
 	})
-	req.Header.Set("User-Agent", c.s.userAgent())
-	if c.ifNoneMatch_ != "" {
-		req.Header.Set("If-None-Match", c.ifNoneMatch_)
-	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
 	}
@@ -1182,18 +1242,20 @@ func (c *BotGetCall) Context(ctx context.Context) *BotGetCall {
 }
 
 func (c *BotGetCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	if c.ifNoneMatch_ != "" {
+		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
+	}
 	var body io.Reader = nil
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "bot/{bot_id}/get")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
+	req.Header = reqHeaders
 	googleapi.Expand(req.URL, map[string]string{
 		"bot_id": c.botId,
 	})
-	req.Header.Set("User-Agent", c.s.userAgent())
-	if c.ifNoneMatch_ != "" {
-		req.Header.Set("If-None-Match", c.ifNoneMatch_)
-	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
 	}
@@ -1309,18 +1371,20 @@ func (c *BotTasksCall) Context(ctx context.Context) *BotTasksCall {
 }
 
 func (c *BotTasksCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	if c.ifNoneMatch_ != "" {
+		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
+	}
 	var body io.Reader = nil
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "bot/{bot_id}/tasks")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
+	req.Header = reqHeaders
 	googleapi.Expand(req.URL, map[string]string{
 		"bot_id": c.botId,
 	})
-	req.Header.Set("User-Agent", c.s.userAgent())
-	if c.ifNoneMatch_ != "" {
-		req.Header.Set("If-None-Match", c.ifNoneMatch_)
-	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
 	}
@@ -1428,15 +1492,17 @@ func (c *BotTerminateCall) Context(ctx context.Context) *BotTerminateCall {
 }
 
 func (c *BotTerminateCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "bot/{bot_id}/terminate")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("POST", urls, body)
+	req.Header = reqHeaders
 	googleapi.Expand(req.URL, map[string]string{
 		"bot_id": c.botId,
 	})
-	req.Header.Set("User-Agent", c.s.userAgent())
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
 	}
@@ -1564,16 +1630,18 @@ func (c *BotsListCall) Context(ctx context.Context) *BotsListCall {
 }
 
 func (c *BotsListCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	if c.ifNoneMatch_ != "" {
+		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
+	}
 	var body io.Reader = nil
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "bots/list")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
+	req.Header = reqHeaders
 	googleapi.SetOpaque(req.URL)
-	req.Header.Set("User-Agent", c.s.userAgent())
-	if c.ifNoneMatch_ != "" {
-		req.Header.Set("If-None-Match", c.ifNoneMatch_)
-	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
 	}
@@ -1690,16 +1758,18 @@ func (c *ServerDetailsCall) Context(ctx context.Context) *ServerDetailsCall {
 }
 
 func (c *ServerDetailsCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	if c.ifNoneMatch_ != "" {
+		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
+	}
 	var body io.Reader = nil
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "server/details")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
+	req.Header = reqHeaders
 	googleapi.SetOpaque(req.URL)
-	req.Header.Set("User-Agent", c.s.userAgent())
-	if c.ifNoneMatch_ != "" {
-		req.Header.Set("If-None-Match", c.ifNoneMatch_)
-	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
 	}
@@ -1806,16 +1876,18 @@ func (c *ServerGetBootstrapCall) Context(ctx context.Context) *ServerGetBootstra
 }
 
 func (c *ServerGetBootstrapCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	if c.ifNoneMatch_ != "" {
+		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
+	}
 	var body io.Reader = nil
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "server/get_bootstrap")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
+	req.Header = reqHeaders
 	googleapi.SetOpaque(req.URL)
-	req.Header.Set("User-Agent", c.s.userAgent())
-	if c.ifNoneMatch_ != "" {
-		req.Header.Set("If-None-Match", c.ifNoneMatch_)
-	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
 	}
@@ -1929,16 +2001,18 @@ func (c *ServerGetBotConfigCall) Context(ctx context.Context) *ServerGetBotConfi
 }
 
 func (c *ServerGetBotConfigCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	if c.ifNoneMatch_ != "" {
+		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
+	}
 	var body io.Reader = nil
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "server/get_bot_config")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
+	req.Header = reqHeaders
 	googleapi.SetOpaque(req.URL)
-	req.Header.Set("User-Agent", c.s.userAgent())
-	if c.ifNoneMatch_ != "" {
-		req.Header.Set("If-None-Match", c.ifNoneMatch_)
-	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
 	}
@@ -2036,19 +2110,20 @@ func (c *ServerPutBootstrapCall) Context(ctx context.Context) *ServerPutBootstra
 }
 
 func (c *ServerPutBootstrapCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
 	body, err := googleapi.WithoutDataWrapper.JSONReader(c.swarmingrpcsfilecontentrequest)
 	if err != nil {
 		return nil, err
 	}
-	ctype := "application/json"
+	reqHeaders.Set("Content-Type", "application/json")
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "server/put_bootstrap")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("POST", urls, body)
+	req.Header = reqHeaders
 	googleapi.SetOpaque(req.URL)
-	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", c.s.userAgent())
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
 	}
@@ -2143,19 +2218,20 @@ func (c *ServerPutBotConfigCall) Context(ctx context.Context) *ServerPutBotConfi
 }
 
 func (c *ServerPutBotConfigCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
 	body, err := googleapi.WithoutDataWrapper.JSONReader(c.swarmingrpcsfilecontentrequest)
 	if err != nil {
 		return nil, err
 	}
-	ctype := "application/json"
+	reqHeaders.Set("Content-Type", "application/json")
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "server/put_bot_config")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("POST", urls, body)
+	req.Header = reqHeaders
 	googleapi.SetOpaque(req.URL)
-	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", c.s.userAgent())
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
 	}
@@ -2251,15 +2327,17 @@ func (c *TaskCancelCall) Context(ctx context.Context) *TaskCancelCall {
 }
 
 func (c *TaskCancelCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "task/{task_id}/cancel")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("POST", urls, body)
+	req.Header = reqHeaders
 	googleapi.Expand(req.URL, map[string]string{
 		"task_id": c.taskId,
 	})
-	req.Header.Set("User-Agent", c.s.userAgent())
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
 	}
@@ -2371,18 +2449,20 @@ func (c *TaskRequestCall) Context(ctx context.Context) *TaskRequestCall {
 }
 
 func (c *TaskRequestCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	if c.ifNoneMatch_ != "" {
+		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
+	}
 	var body io.Reader = nil
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "task/{task_id}/request")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
+	req.Header = reqHeaders
 	googleapi.Expand(req.URL, map[string]string{
 		"task_id": c.taskId,
 	})
-	req.Header.Set("User-Agent", c.s.userAgent())
-	if c.ifNoneMatch_ != "" {
-		req.Header.Set("If-None-Match", c.ifNoneMatch_)
-	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
 	}
@@ -2471,6 +2551,13 @@ func (r *TaskService) Result(taskId string) *TaskResultCall {
 	return c
 }
 
+// IncludePerformanceStats sets the optional parameter
+// "include_performance_stats":
+func (c *TaskResultCall) IncludePerformanceStats(includePerformanceStats bool) *TaskResultCall {
+	c.urlParams_.Set("include_performance_stats", fmt.Sprint(includePerformanceStats))
+	return c
+}
+
 // Fields allows partial responses to be retrieved. See
 // https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
 // for more information.
@@ -2498,18 +2585,20 @@ func (c *TaskResultCall) Context(ctx context.Context) *TaskResultCall {
 }
 
 func (c *TaskResultCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	if c.ifNoneMatch_ != "" {
+		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
+	}
 	var body io.Reader = nil
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "task/{task_id}/result")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
+	req.Header = reqHeaders
 	googleapi.Expand(req.URL, map[string]string{
 		"task_id": c.taskId,
 	})
-	req.Header.Set("User-Agent", c.s.userAgent())
-	if c.ifNoneMatch_ != "" {
-		req.Header.Set("If-None-Match", c.ifNoneMatch_)
-	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
 	}
@@ -2560,6 +2649,10 @@ func (c *TaskResultCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskResu
 	//     "task_id"
 	//   ],
 	//   "parameters": {
+	//     "include_performance_stats": {
+	//       "location": "query",
+	//       "type": "boolean"
+	//     },
 	//     "task_id": {
 	//       "location": "path",
 	//       "required": true,
@@ -2621,18 +2714,20 @@ func (c *TaskStdoutCall) Context(ctx context.Context) *TaskStdoutCall {
 }
 
 func (c *TaskStdoutCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	if c.ifNoneMatch_ != "" {
+		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
+	}
 	var body io.Reader = nil
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "task/{task_id}/stdout")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
+	req.Header = reqHeaders
 	googleapi.Expand(req.URL, map[string]string{
 		"task_id": c.taskId,
 	})
-	req.Header.Set("User-Agent", c.s.userAgent())
-	if c.ifNoneMatch_ != "" {
-		req.Header.Set("If-None-Match", c.ifNoneMatch_)
-	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
 	}
@@ -2780,16 +2875,18 @@ func (c *TasksCountCall) Context(ctx context.Context) *TasksCountCall {
 }
 
 func (c *TasksCountCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	if c.ifNoneMatch_ != "" {
+		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
+	}
 	var body io.Reader = nil
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "tasks/count")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
+	req.Header = reqHeaders
 	googleapi.SetOpaque(req.URL)
-	req.Header.Set("User-Agent", c.s.userAgent())
-	if c.ifNoneMatch_ != "" {
-		req.Header.Set("If-None-Match", c.ifNoneMatch_)
-	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
 	}
@@ -3009,16 +3106,18 @@ func (c *TasksListCall) Context(ctx context.Context) *TasksListCall {
 }
 
 func (c *TasksListCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	if c.ifNoneMatch_ != "" {
+		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
+	}
 	var body io.Reader = nil
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "tasks/list")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
+	req.Header = reqHeaders
 	googleapi.SetOpaque(req.URL)
-	req.Header.Set("User-Agent", c.s.userAgent())
-	if c.ifNoneMatch_ != "" {
-		req.Header.Set("If-None-Match", c.ifNoneMatch_)
-	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
 	}
@@ -3192,19 +3291,20 @@ func (c *TasksNewCall) Context(ctx context.Context) *TasksNewCall {
 }
 
 func (c *TasksNewCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
 	body, err := googleapi.WithoutDataWrapper.JSONReader(c.swarmingrpcsnewtaskrequest)
 	if err != nil {
 		return nil, err
 	}
-	ctype := "application/json"
+	reqHeaders.Set("Content-Type", "application/json")
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "tasks/new")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("POST", urls, body)
+	req.Header = reqHeaders
 	googleapi.SetOpaque(req.URL)
-	req.Header.Set("Content-Type", ctype)
-	req.Header.Set("User-Agent", c.s.userAgent())
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
 	}
@@ -3378,16 +3478,18 @@ func (c *TasksRequestsCall) Context(ctx context.Context) *TasksRequestsCall {
 }
 
 func (c *TasksRequestsCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	if c.ifNoneMatch_ != "" {
+		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
+	}
 	var body io.Reader = nil
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "tasks/requests")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("GET", urls, body)
+	req.Header = reqHeaders
 	googleapi.SetOpaque(req.URL)
-	req.Header.Set("User-Agent", c.s.userAgent())
-	if c.ifNoneMatch_ != "" {
-		req.Header.Set("If-None-Match", c.ifNoneMatch_)
-	}
 	if c.ctx_ != nil {
 		return ctxhttp.Do(c.ctx_, c.s.client, req)
 	}
