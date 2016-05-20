@@ -297,16 +297,31 @@ func TestHandleArchive(t *testing.T) {
 			},
 		}
 
+		stBase := Settings{}
+
 		ar := Archivist{
-			Service:       &sc,
-			Storage:       &st,
-			GSClient:      &gsc,
-			GSBase:        gs.Path("gs://archive-test/path/to/archive/"),         // Extra slashes to test concatenation.
-			GSStagingBase: gs.Path("gs://archive-test-staging/path/to/archive/"), // Extra slashes to test concatenation.
+			Service: &sc,
+			SettingsLoader: func(c context.Context, proj config.ProjectName) (*Settings, error) {
+				if proj == "" {
+					proj = "_"
+				}
+
+				// Extra slashes to test concatenation,.
+				st := stBase
+				st.GSBase = gs.Path(fmt.Sprintf("gs://archival/%s/path/to/archive/", proj))
+				st.GSStagingBase = gs.Path(fmt.Sprintf("gs://archival-staging/%s/path/to/archive/", proj))
+				return &st, nil
+			},
+			Storage:  &st,
+			GSClient: &gsc,
 		}
 
 		gsURL := func(project, name string) string {
-			return fmt.Sprintf("gs://archive-test/path/to/archive/%s/%s/%s", project, desc.Path(), name)
+			if project == "" {
+				project = "_"
+			}
+
+			return fmt.Sprintf("gs://archival/%s/path/to/archive/%s/%s/%s", project, project, desc.Path(), name)
 		}
 
 		// hasStreams can be called to check that the retained archiveRequest had
