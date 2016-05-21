@@ -139,6 +139,10 @@
         {
           "Key": "user_agent",
           "Value": "luci-cron"
+        },
+        {
+          "Key": "allow_milo",
+          "Value": "1"
         }
       ]
     },

@@ -1,1 +1,7 @@
-{"failure": true, "state": "COMPLETED"}
+{
+  "failure": true,
+  "state": "COMPLETED",
+  "tags": [
+    "allow_milo:1"
+  ]
+}

@@ -17,7 +17,8 @@
   "recipe_repository:https://chromium.googlesource.com/chromium/tools/build",
   "recipe_revision:",
   "user:",
-  "user_agent:luci-cron"
+  "user_agent:luci-cron",
+  "allow_milo:1"
  ],
  "internal_failure": false,
  "costs_usd": [

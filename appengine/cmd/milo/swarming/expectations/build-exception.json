@@ -129,7 +129,12 @@
     },
     {
       "GroupName": "Swarming Tags",
-      "Property": null
+      "Property": [
+        {
+          "Key": "allow_milo",
+          "Value": "1"
+        }
+      ]
     },
     {
       "GroupName": "recipe bootstrap",

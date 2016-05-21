@@ -304,6 +304,16 @@ func swarmingBuildImpl(c context.Context, URL string, server string, taskID stri
 	if err != nil {
 		return nil, err
 	}
+	allowMilo := false
+	for _, t := range sr.Tags {
+		if t == "allow_milo:1" {
+			allowMilo = true
+			break
+		}
+	}
+	if !allowMilo {
+		return nil, fmt.Errorf("Not A Milo Job")
+	}
 
 	build := &resp.MiloBuild{}
 	addSwarmingToBuild(c, sr, build)
