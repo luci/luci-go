@@ -21,6 +21,7 @@ import (
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
+	"github.com/luci/luci-go/appengine/tsmon"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/machine"
@@ -106,6 +107,7 @@ func init() {
 			&server.OAuth2Method{Scopes: []string{server.EmailScope}},
 			&machine.MachineTokenAuthMethod{},
 		},
+		UnaryServerInterceptor: tsmon.NewGrpcUnaryInterceptor(nil),
 	}
 	admin.RegisterCertificateAuthoritiesServer(&api, caServerWithAuth)
 	admin.RegisterServiceAccountsServer(&api, serviceAccountsServerWithAuth)
