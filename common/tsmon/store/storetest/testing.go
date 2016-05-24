@@ -83,22 +83,26 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 		wantIncrSuccess   bool
 		wantIncrValue     interface{}
 		wantIncrValidator func(interface{})
+
+		wantStartTimestamp bool
 	}{
 		{
-			typ:             types.CumulativeIntType,
-			values:          makeInterfaceSlice(int64(3), int64(4)),
-			deltas:          makeInterfaceSlice(int64(3), int64(4)),
-			wantSetSuccess:  true,
-			wantIncrSuccess: true,
-			wantIncrValue:   int64(7),
+			typ:                types.CumulativeIntType,
+			values:             makeInterfaceSlice(int64(3), int64(4)),
+			deltas:             makeInterfaceSlice(int64(3), int64(4)),
+			wantSetSuccess:     true,
+			wantIncrSuccess:    true,
+			wantIncrValue:      int64(7),
+			wantStartTimestamp: true,
 		},
 		{
-			typ:             types.CumulativeFloatType,
-			values:          makeInterfaceSlice(float64(3.2), float64(4.3)),
-			deltas:          makeInterfaceSlice(float64(3.2), float64(4.3)),
-			wantSetSuccess:  true,
-			wantIncrSuccess: true,
-			wantIncrValue:   float64(7.5),
+			typ:                types.CumulativeFloatType,
+			values:             makeInterfaceSlice(float64(3.2), float64(4.3)),
+			deltas:             makeInterfaceSlice(float64(3.2), float64(4.3)),
+			wantSetSuccess:     true,
+			wantIncrSuccess:    true,
+			wantIncrValue:      float64(7.5),
+			wantStartTimestamp: true,
 		},
 		{
 			typ:             types.CumulativeDistributionType,
@@ -111,6 +115,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 				d := v.(*distribution.Distribution)
 				So(d.Buckets(), ShouldResemble, []int64{0, 0, 0, 0, 1, 1})
 			},
+			wantStartTimestamp: true,
 		},
 		{
 			typ:             types.NonCumulativeIntType,
@@ -282,8 +287,12 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					So(len(all), ShouldEqual, 1)
 
 					msg := monitor.SerializeCell(all[0])
-					So(time.Unix(0, int64(msg.GetStartTimestampUs()*uint64(time.Microsecond))).UTC().String(),
-						ShouldEqual, t.String())
+					if test.wantStartTimestamp {
+						So(time.Unix(0, int64(msg.GetStartTimestampUs()*uint64(time.Microsecond))).UTC().String(),
+							ShouldEqual, t.String())
+					} else {
+						So(msg.GetStartTimestampUs(), ShouldEqual, 0)
+					}
 				})
 			}
 		})
@@ -486,8 +495,12 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					So(len(all), ShouldEqual, 1)
 
 					msg := monitor.SerializeCell(all[0])
-					So(time.Unix(0, int64(msg.GetStartTimestampUs()*uint64(time.Microsecond))).UTC().String(),
-						ShouldEqual, t.String())
+					if test.wantStartTimestamp {
+						So(time.Unix(0, int64(msg.GetStartTimestampUs()*uint64(time.Microsecond))).UTC().String(),
+							ShouldEqual, t.String())
+					} else {
+						So(msg.GetStartTimestampUs(), ShouldEqual, 0)
+					}
 				})
 			}
 		})

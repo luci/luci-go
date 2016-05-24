@@ -40,7 +40,9 @@ func SerializeCell(c types.Cell) *pb.MetricsData {
 	d.Description = proto.String(c.Description)
 	d.MetricNamePrefix = proto.String(metricNamePrefix)
 	d.Fields = field.Serialize(c.Fields, c.FieldVals)
-	d.StartTimestampUs = proto.Uint64(uint64(c.ResetTime.UnixNano() / int64(time.Microsecond)))
+	if c.ValueType.IsCumulative() {
+		d.StartTimestampUs = proto.Uint64(uint64(c.ResetTime.UnixNano() / int64(time.Microsecond)))
+	}
 	c.Target.PopulateProto(&d)
 
 	SerializeValue(c.ValueType, c.Value, &d)

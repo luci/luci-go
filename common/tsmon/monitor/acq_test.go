@@ -149,7 +149,6 @@ func TestSerializeCell(t *testing.T) {
 			Description:      proto.String("bar"),
 			MetricNamePrefix: proto.String("/chrome/infra/"),
 			Fields:           []*pb.MetricsField{},
-			StartTimestampUs: proto.Uint64(946782245000000),
 			Task:             &pb.Task{},
 			Gauge:            proto.Int64(42),
 		})
@@ -201,7 +200,6 @@ func TestSerializeCell(t *testing.T) {
 			Description:      proto.String("bar"),
 			MetricNamePrefix: proto.String("/chrome/infra/"),
 			Fields:           []*pb.MetricsField{},
-			StartTimestampUs: proto.Uint64(946782245000000),
 			Task:             &pb.Task{},
 			NoncumulativeDoubleValue: proto.Float64(42),
 		})
@@ -253,7 +251,6 @@ func TestSerializeCell(t *testing.T) {
 			Description:      proto.String("bar"),
 			MetricNamePrefix: proto.String("/chrome/infra/"),
 			Fields:           []*pb.MetricsField{},
-			StartTimestampUs: proto.Uint64(946782245000000),
 			Task:             &pb.Task{},
 			StringValue:      proto.String("hello"),
 		})
@@ -279,7 +276,6 @@ func TestSerializeCell(t *testing.T) {
 			Description:      proto.String("bar"),
 			MetricNamePrefix: proto.String("/chrome/infra/"),
 			Fields:           []*pb.MetricsField{},
-			StartTimestampUs: proto.Uint64(946782245000000),
 			Task:             &pb.Task{},
 			BooleanValue:     proto.Bool(true),
 		})
@@ -310,7 +306,6 @@ func TestSerializeCell(t *testing.T) {
 			Description:      proto.String("bar"),
 			MetricNamePrefix: proto.String("/chrome/infra/"),
 			Fields:           []*pb.MetricsField{},
-			StartTimestampUs: proto.Uint64(946782245000000),
 			Task: &pb.Task{
 				ServiceName: proto.String("hello"),
 				JobName:     proto.String("world"),
