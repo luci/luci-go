@@ -204,7 +204,6 @@ function import_config {
 
     known_domains: {
       domain: "fake.domain"
-      location: "local-fake-location"
       machine_token_lifetime: 3600
     }
   }
