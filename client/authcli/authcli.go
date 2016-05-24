@@ -153,9 +153,13 @@ func (c *loginRun) Run(a subcommands.Application, _ []string) int {
 		fmt.Fprintf(os.Stderr, "Login failed: %s\n", err.Error())
 		return 2
 	}
-	err = reportIdentity(ctx, client)
-	if err != nil {
-		return 3
+	if canReportIdentity(opts.Scopes) {
+		err = reportIdentity(ctx, client)
+		if err != nil {
+			return 3
+		}
+	} else {
+		fmt.Println("Success.")
 	}
 	return 0
 }
@@ -242,9 +246,15 @@ func (c *infoRun) Run(a subcommands.Application, args []string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 3
 	}
-	err = reportIdentity(ctx, client)
-	if err != nil {
-		return 4
+	if canReportIdentity(opts.Scopes) {
+		err = reportIdentity(ctx, client)
+		if err != nil {
+			return 4
+		}
+	} else {
+		fmt.Printf(
+			"Refresh token exists, but it doesn't have %q scope, so can't report "+
+				"who it belongs to.\n", auth.OAuthScopeEmail)
 	}
 	return 0
 }
@@ -342,6 +352,23 @@ func (c *tokenRun) Run(a subcommands.Application, args []string) int {
 	return TokenExitCodeValidToken
 }
 
+// canReportIdentity returns true if reportIdentity can be used with given list
+// of scopes.
+//
+// reportIdentity works only if userinfo.email scope was used (which is also
+// the default if no scopes are provided).
+func canReportIdentity(scopes []string) bool {
+	if len(scopes) == 0 {
+		return true
+	}
+	for _, scope := range scopes {
+		if scope == auth.OAuthScopeEmail {
+			return true
+		}
+	}
+	return false
+}
+
 // reportIdentity prints identity associated with credentials that the client
 // puts into each request (if any).
 func reportIdentity(ctx context.Context, c *http.Client) error {
@@ -351,6 +378,6 @@ func reportIdentity(ctx context.Context, c *http.Client) error {
 		fmt.Fprintf(os.Stderr, "Failed to fetch current identity: %s\n", err)
 		return err
 	}
-	fmt.Printf("Logged in to %s as %s\n", service.ServiceURL(), ident)
+	fmt.Printf("Logged in as %s\n", ident)
 	return nil
 }
