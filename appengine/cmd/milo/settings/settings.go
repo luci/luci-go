@@ -12,7 +12,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/cmd/milo/models"
+	"github.com/luci/luci-go/appengine/cmd/milo/model"
 	"github.com/luci/luci-go/appengine/cmd/milo/resp"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
@@ -36,14 +36,14 @@ func GetTheme(c context.Context, r *http.Request) Theme {
 	return Default
 }
 
-func getUserSettings(c context.Context) *models.UserConfig {
+func getUserSettings(c context.Context) *model.UserConfig {
 	// First get settings
 	cu := auth.CurrentUser(c)
 	if cu.Identity == identity.AnonymousIdentity {
 		return nil
 	}
 	ds := datastore.Get(c)
-	userSettings := &models.UserConfig{UserID: cu.Identity}
+	userSettings := &model.UserConfig{UserID: cu.Identity}
 	ds.Get(userSettings)
 	// Even if the get fails (No user found) we still want to return an empty
 	// UserConfig with defaults.
@@ -52,9 +52,9 @@ func getUserSettings(c context.Context) *models.UserConfig {
 
 // getCookieSettings returns user settings from a cookie, or a blank slate with
 // defaults if no settings were found.
-func getCookieSettings(c context.Context, r *http.Request) *models.UserConfig {
+func getCookieSettings(c context.Context, r *http.Request) *model.UserConfig {
 	cookie, err := r.Cookie("luci-milo")
-	config := models.UserConfig{
+	config := model.UserConfig{
 		UserID: identity.AnonymousIdentity,
 		Theme:  Default.Name,
 	}
@@ -103,7 +103,7 @@ func ChangeSettings(c context.Context, h http.ResponseWriter, r *http.Request, p
 }
 
 // setCookieSettings sets the cfg object as a base64 json serialized string.
-func setCookieSettings(h http.ResponseWriter, cfg *models.UserConfig) {
+func setCookieSettings(h http.ResponseWriter, cfg *model.UserConfig) {
 	s, err := json.Marshal(cfg)
 	if err != nil {
 		panic(err)
