@@ -109,6 +109,25 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 		return nil, grpcutil.Internal
 	}
 
+	// If we're past prefix's expiration, reject this stream.
+	//
+	// If the prefix doesn't have an expiration, use its creation time and apply
+	// the maximum expiration.
+	expirationTime := pfx.Expiration
+	if expirationTime.IsZero() {
+		expiration := endpoints.MinDuration(cfg.Coordinator.PrefixExpiration, pcfg.PrefixExpiration)
+		if expiration > 0 {
+			expirationTime = pfx.Created.Add(expiration)
+		}
+	}
+	if now := clock.Now(c); expirationTime.IsZero() || !now.Before(expirationTime) {
+		log.Fields{
+			"prefix":     pfx.Prefix,
+			"expiration": expirationTime,
+		}.Errorf(c, "The log stream Prefix has expired.")
+		return nil, grpcutil.Errf(codes.FailedPrecondition, "prefix has expired")
+	}
+
 	// The prefix secret must match the request secret. If it does, we know this
 	// is a legitimate registration attempt.
 	if subtle.ConstantTimeCompare(pfx.Secret, req.Secret) != 1 {

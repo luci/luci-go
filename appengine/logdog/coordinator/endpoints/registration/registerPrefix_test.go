@@ -7,13 +7,22 @@ package registration
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/luci/gae/filter/featureBreaker"
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	ct "github.com/luci/luci-go/appengine/logdog/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/hierarchy"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/registration/v1"
+	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/cryptorand"
+	"github.com/luci/luci-go/common/logdog/types"
+	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
+
+	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -23,7 +32,7 @@ func TestRegisterPrefix(t *testing.T) {
 	t.Parallel()
 
 	Convey(`With a testing configuration`, t, func() {
-		c, _ := ct.Install()
+		c, env := ct.Install()
 		c, fb := featureBreaker.FilterRDS(c, nil)
 		ds.Get(c).Testable().Consistent(true)
 
@@ -37,11 +46,13 @@ func TestRegisterPrefix(t *testing.T) {
 
 		svr := New()
 
+		const project = config.ProjectName("proj-foo")
 		req := logdog.RegisterPrefixRequest{
-			Project:    "proj-foo",
+			Project:    string(project),
 			Prefix:     "testing/prefix",
 			SourceInfo: []string{"unit test"},
 		}
+		pfx := &coordinator.LogPrefix{ID: coordinator.LogPrefixID(types.StreamName(req.Prefix))}
 
 		Convey(`Returns PermissionDenied error if not user does not have write access.`, func() {
 			// "proj-bar" does not have anonymous write.
@@ -57,6 +68,21 @@ func TestRegisterPrefix(t *testing.T) {
 			So(resp, ShouldResemble, &logdog.RegisterPrefixResponse{
 				LogBundleTopic: "projects/app/topics/test-topic",
 				Secret:         randSecret,
+			})
+
+			ct.WithProjectNamespace(c, project, func(c context.Context) {
+				So(ds.Get(c).Get(pfx), ShouldBeNil)
+			})
+			So(pfx, ShouldResemble, &coordinator.LogPrefix{
+				Schema:  coordinator.CurrentSchemaVersion,
+				ID:      pfx.ID,
+				Prefix:  "testing/prefix",
+				Created: ds.RoundTime(clock.Now(c)),
+				Source:  []string{"unit test"},
+				Secret:  randSecret,
+
+				// 24 hours is default service prefix expiration.
+				Expiration: ds.RoundTime(clock.Now(c).Add(24 * time.Hour)),
 			})
 
 			// Should have registered path components.
@@ -79,6 +105,47 @@ func TestRegisterPrefix(t *testing.T) {
 			Convey(`Will refuse to register it again.`, func() {
 				_, err := svr.RegisterPrefix(c, &req)
 				So(err, ShouldBeRPCAlreadyExists)
+			})
+		})
+
+		Convey(`Uses the correct prefix expiration`, func() {
+
+			Convey(`When service, project, and request have expiration, chooses smallest.`, func() {
+				env.ModProjectConfig(c, project, func(pcfg *svcconfig.ProjectConfig) {
+					pcfg.PrefixExpiration = google.NewDuration(time.Hour)
+				})
+				req.Expiration = google.NewDuration(time.Minute)
+
+				_, err := svr.RegisterPrefix(c, &req)
+				So(err, ShouldBeNil)
+
+				ct.WithProjectNamespace(c, project, func(c context.Context) {
+					So(ds.Get(c).Get(pfx), ShouldBeNil)
+				})
+				So(pfx.Expiration, ShouldResemble, clock.Now(c).Add(time.Minute))
+			})
+
+			Convey(`When service, and project have expiration, chooses smallest.`, func() {
+				env.ModProjectConfig(c, project, func(pcfg *svcconfig.ProjectConfig) {
+					pcfg.PrefixExpiration = google.NewDuration(time.Hour)
+				})
+
+				_, err := svr.RegisterPrefix(c, &req)
+				So(err, ShouldBeNil)
+
+				ct.WithProjectNamespace(c, project, func(c context.Context) {
+					So(ds.Get(c).Get(pfx), ShouldBeNil)
+				})
+				So(pfx.Expiration, ShouldResemble, clock.Now(c).Add(time.Hour))
+			})
+
+			Convey(`When no expiration is defined, failed with internal error.`, func() {
+				env.ModServiceConfig(c, func(cfg *svcconfig.Config) {
+					cfg.Coordinator.PrefixExpiration = nil
+				})
+
+				_, err := svr.RegisterPrefix(c, &req)
+				So(err, ShouldBeRPCInvalidArgument, "no prefix expiration defined")
 			})
 		})
 

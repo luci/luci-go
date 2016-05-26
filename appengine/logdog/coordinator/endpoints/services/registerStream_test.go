@@ -220,6 +220,13 @@ func TestRegisterStream(t *testing.T) {
 				})
 
 				Convey(`Registration failure cases`, func() {
+					Convey(`Will not register a stream if its prefix has expired.`, func() {
+						env.Clock.Set(tls.Prefix.Expiration)
+
+						_, err := svr.RegisterStream(c, &req)
+						So(err, ShouldBeRPCFailedPrecondition, "prefix has expired")
+					})
+
 					Convey(`Will not register a stream without a protobuf version.`, func() {
 						req.ProtoVersion = ""
 						_, err := svr.RegisterStream(c, &req)

@@ -44,6 +44,10 @@ type LogPrefix struct {
 	// Source is the (indexed) set of source strings sent by the prefix registrar.
 	Source []string
 
+	// Expiration is the time when this log prefix expires. Stream registrations
+	// for this prefix will fail after this point.
+	Expiration time.Time
+
 	// Secret is the Butler secret value for this prefix. All streams within
 	// the prefix share this secret value.
 	//

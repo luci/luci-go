@@ -53,11 +53,12 @@ func MakeStream(c context.Context, project config.ProjectName, path types.Stream
 	ts := TestStream{
 		Project: project,
 		Prefix: &coordinator.LogPrefix{
-			ID:      "", // Filled in by Reload.
-			Created: ds.RoundTime(now),
-			Prefix:  "", // Filled in by Reload.
-			Source:  []string{"test suite"},
-			Secret:  secret,
+			ID:         "", // Filled in by Reload.
+			Created:    ds.RoundTime(now),
+			Prefix:     "", // Filled in by Reload.
+			Source:     []string{"test suite"},
+			Expiration: ds.RoundTime(now.Add(24 * time.Hour)),
+			Secret:     secret,
 		},
 		Desc: &logpb.LogStreamDescriptor{
 			Prefix:      string(prefix),

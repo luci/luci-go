@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
+	"github.com/luci/luci-go/appengine/logdog/coordinator/endpoints"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/hierarchy"
 	"github.com/luci/luci-go/common/api/logdog_coordinator/registration/v1"
 	"github.com/luci/luci-go/common/clock"
@@ -56,6 +57,23 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load service configuration.")
 		return nil, grpcutil.Internal
+	}
+
+	pcfg, err := coordinator.CurrentProjectConfig(c)
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to load project configuration.")
+		return nil, grpcutil.Internal
+	}
+
+	// Determine our prefix expiration. This must be > 0, else there will be no
+	// window when log streams can be registered and this prefix is useless.
+	//
+	// We will choose the shortest expiration window defined by our request and
+	// our project and service configurations.
+	expiration := endpoints.MinDuration(req.Expiration, cfg.Coordinator.PrefixExpiration, pcfg.PrefixExpiration)
+	if expiration <= 0 {
+		log.Errorf(c, "Refusing to register prefix in expired state.")
+		return nil, grpcutil.Errf(codes.InvalidArgument, "no prefix expiration defined")
 	}
 
 	// Determine our Pub/Sub topic.
@@ -133,6 +151,7 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 		pfx.Prefix = string(prefix)
 		pfx.Source = req.SourceInfo
 		pfx.Secret = []byte(secret)
+		pfx.Expiration = now.Add(expiration)
 
 		if err := di.Put(pfx); err != nil {
 			log.WithError(err).Errorf(c, "Failed to register prefix.")
