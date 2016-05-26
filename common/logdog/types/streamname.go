@@ -164,6 +164,19 @@ func (s StreamName) Concat(o ...StreamName) StreamName {
 	return StreamName(Construct(parts...))
 }
 
+// AsPathPrefix uses s as the prefix component of a StreamPath and constructs
+// the remainder of the path with the supplied name.
+//
+// If name is empty, the resulting path will end in the path separator. For
+// example, if s is "foo/bar" and name is "", the path will be "foo/bar/+".
+//
+// If both s and name are valid StreamNames, this will construct a valid
+// StreamPath. If s is a valid StreamName and name is empty, this will construct
+// a valid partial StreamPath.
+func (s StreamName) AsPathPrefix(name StreamName) StreamPath {
+	return StreamPath(Construct(string(s), StreamPathSepStr, string(name)))
+}
+
 // Validate tests whether the stream name is valid.
 func (s StreamName) Validate() error {
 	if len(s) == 0 {
@@ -237,21 +250,6 @@ func (s StreamName) MarshalJSON() ([]byte, error) {
 // A StreamPath consists of two StreamName, joined via a StreamPathSep (+)
 // separator.
 type StreamPath string
-
-// MakeStreamPath creates a StreamPath by joining prefix and name components.
-func MakeStreamPath(prefix, name []StreamName) StreamPath {
-	o := len(prefix)
-	sp := make([]string, o+len(name)+1)
-	for i, v := range prefix {
-		sp[i] = string(v)
-	}
-	sp[o] = StreamPathSepStr
-	for _, v := range name {
-		o++
-		sp[o] = string(v)
-	}
-	return StreamPath(Construct(sp...))
-}
 
 // Split splits a StreamPath into its prefix and name components.
 //

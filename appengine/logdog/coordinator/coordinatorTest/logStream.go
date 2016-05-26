@@ -7,6 +7,7 @@ package coordinatorTest
 import (
 	"bytes"
 	"fmt"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	ds "github.com/luci/gae/service/datastore"
@@ -46,11 +47,18 @@ type TestStream struct {
 func MakeStream(c context.Context, project config.ProjectName, path types.StreamPath) *TestStream {
 	prefix, name := path.Split()
 
-	now := ds.RoundTime(clock.Now(c)).UTC()
+	now := clock.Now(c).UTC()
 	secret := TestSecret()
 
 	ts := TestStream{
 		Project: project,
+		Prefix: &coordinator.LogPrefix{
+			ID:      "", // Filled in by Reload.
+			Created: ds.RoundTime(now),
+			Prefix:  "", // Filled in by Reload.
+			Source:  []string{"test suite"},
+			Secret:  secret,
+		},
 		Desc: &logpb.LogStreamDescriptor{
 			Prefix:      string(prefix),
 			Name:        string(name),
@@ -58,18 +66,18 @@ func MakeStream(c context.Context, project config.ProjectName, path types.Stream
 			ContentType: "application/text",
 			Timestamp:   google.NewTimestamp(now),
 		},
-		Prefix: &coordinator.LogPrefix{
-			Created: ds.RoundTime(now),
-			Secret:  secret,
-		},
 		State: &coordinator.LogStreamState{
-			Created:       now,
+			Parent:        nil, // Filled in by Reload.
+			Created:       ds.RoundTime(now),
+			Updated:       time.Time{}, // Filled in by Reload.
 			Secret:        secret,
 			TerminalIndex: -1,
 		},
 		Stream: &coordinator.LogStream{
+			ID:           "", // Filled in by Reload.
 			ProtoVersion: logpb.Version,
-			Created:      now,
+			Created:      ds.RoundTime(now),
+			// Descriptor-derived fields filled in by Reload.
 		},
 	}
 	ts.Reload(c)

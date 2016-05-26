@@ -40,8 +40,9 @@ import (
 //
 // All componentEntity share a common implicit ancestor, "/".
 //
-// This entity is created at stream registration, and is entirely centered
-// around being queried for log stream "directory" listings. For example:
+// This entity is created at stream and prefix registration, and is entirely
+// centered around being queried for log stream "directory" listings. For
+// example:
 //
 //	foo/bar/+/baz/qux
 //

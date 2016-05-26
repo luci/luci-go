@@ -82,8 +82,9 @@ type Coordinator struct {
 	// After the expiration period has passed, new log stream registration will
 	// fail.
 	//
-	// Project or stream configurations may override this by providing >= 0 values
-	// for prefix expiration. The smallest configured expiration will be applied.
+	// Project configurations or stream prefix regitrations may override this by
+	// providing >= 0 values for prefix expiration. The smallest configured
+	// expiration will be applied.
 	PrefixExpiration *google_protobuf.Duration `protobuf:"bytes,21,opt,name=prefix_expiration,json=prefixExpiration" json:"prefix_expiration,omitempty"`
 	// The full path of the archival Pub/Sub topic.
 	//

@@ -43,8 +43,9 @@ message Coordinator {
   // After the expiration period has passed, new log stream registration will
   // fail.
   //
-  // Project or stream configurations may override this by providing >= 0 values
-  // for prefix expiration. The smallest configured expiration will be applied.
+  // Project configurations or stream prefix regitrations may override this by
+  // providing >= 0 values for prefix expiration. The smallest configured
+  // expiration will be applied.
   google.protobuf.Duration prefix_expiration = 21;
 
   // The full path of the archival Pub/Sub topic.

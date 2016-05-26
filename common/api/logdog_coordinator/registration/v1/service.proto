@@ -12,14 +12,12 @@ import "google/protobuf/duration.proto";
 message RegisterPrefixRequest {
   // The log stream's project.
   string project = 1;
-  // Optional information about the registering agent.
-  repeated string source_info = 2;
 
-  // The protobuf version string for this stream.
-  string proto_version = 3;
-  // The serialized LogStreamDescriptor protobuf for this stream. The stream's
-  // path is extracted from this field.
-  bytes desc = 4;
+  // The log stream prefix to register.
+  string prefix = 2;
+
+  // Optional information about the registering agent.
+  repeated string source_info = 3;
 
   // The prefix expiration time. If <= 0, the project's default prefix
   // expiration period will be applied.
@@ -29,7 +27,7 @@ message RegisterPrefixRequest {
   //
   // If supplied, this value should exceed the timeout of the local task, else
   // some of the task's streams may be dropped due to failing registration.
-  google.protobuf.Duration expiration = 5;
+  google.protobuf.Duration expiration = 10;
 }
 
 // The response message for the RegisterPrefix RPC.

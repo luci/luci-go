@@ -98,9 +98,6 @@ type LogStream struct {
 	// key/value queries.
 	Tags TagMap `gae:"-"`
 
-	// Source is the set of source strings sent by the Butler.
-	Source []string
-
 	// extra causes datastore to ignore unrecognized fields and strip them in
 	// future writes.
 	extra ds.PropertyMap `gae:"-,extra"`

@@ -40,25 +40,39 @@ func TestRegisterStream(t *testing.T) {
 			pcfg.MaxStreamAge = google.NewDuration(time.Hour)
 		})
 
+		// By default, the testing user is a service.
+		env.JoinGroup("services")
+
 		svr := New()
 
 		Convey(`Returns Forbidden error if not a service.`, func() {
+			env.LeaveAllGroups()
+
 			_, err := svr.RegisterStream(c, &logdog.RegisterStreamRequest{})
 			So(err, ShouldBeRPCPermissionDenied)
 		})
 
-		Convey(`When logged in as a service`, func() {
-			env.JoinGroup("services")
-
+		Convey(`When registering a testing log sream, "testing/+/foo/bar"`, func() {
 			tls := ct.MakeStream(c, "proj-foo", "testing/+/foo/bar")
 
-			Convey(`A stream registration request for "testing/+/foo/bar"`, func() {
-				req := logdog.RegisterStreamRequest{
-					Project:      string(tls.Project),
-					Secret:       tls.Prefix.Secret,
-					ProtoVersion: logpb.Version,
-					Desc:         tls.DescBytes(),
-				}
+			req := logdog.RegisterStreamRequest{
+				Project:      string(tls.Project),
+				Secret:       tls.Prefix.Secret,
+				ProtoVersion: logpb.Version,
+				Desc:         tls.DescBytes(),
+			}
+
+			Convey(`Returns FailedPrecondition when the Prefix is not registered.`, func() {
+				_, err := svr.RegisterStream(c, &req)
+				So(err, ShouldBeRPCFailedPrecondition)
+			})
+
+			Convey(`When the Prefix is registered`, func() {
+				tls.WithProjectNamespace(c, func(c context.Context) {
+					if err := ds.Get(c).Put(tls.Prefix); err != nil {
+						panic(err)
+					}
+				})
 
 				expResp := &logdog.RegisterStreamResponse{
 					Id: string(tls.Stream.ID),
@@ -145,7 +159,7 @@ func TestRegisterStream(t *testing.T) {
 					Convey(`Will not re-register if secrets don't match.`, func() {
 						req.Secret[0] = 0xAB
 						_, err := svr.RegisterStream(c, &req)
-						So(err, ShouldBeRPCAlreadyExists, "Log prefix is already registered")
+						So(err, ShouldBeRPCInvalidArgument, "invalid secret")
 					})
 				})
 
@@ -216,12 +230,6 @@ func TestRegisterStream(t *testing.T) {
 						req.ProtoVersion = "unknown"
 						_, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCInvalidArgument, "Unrecognized protobuf version")
-					})
-
-					Convey(`Will not register a wrong-sized secret.`, func() {
-						req.Secret = nil
-						_, err := svr.RegisterStream(c, &req)
-						So(err, ShouldBeRPCInvalidArgument, "Invalid prefix secret")
 					})
 
 					Convey(`Will not register with an empty descriptor.`, func() {

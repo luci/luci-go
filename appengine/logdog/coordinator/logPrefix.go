@@ -32,14 +32,17 @@ type LogPrefix struct {
 	Schema string
 
 	// Created is the time when this stream was created.
-	Created time.Time
+	Created time.Time `gae:",noindex"`
 
 	// Prefix is this log stream's prefix value. Log streams with the same prefix
 	// are logically grouped.
 	//
 	// This value should not be changed once populated, as it will invalidate the
 	// HashID.
-	Prefix string
+	Prefix string `gae:",noindex"`
+
+	// Source is the (indexed) set of source strings sent by the prefix registrar.
+	Source []string
 
 	// Secret is the Butler secret value for this prefix. All streams within
 	// the prefix share this secret value.
