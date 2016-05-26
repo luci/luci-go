@@ -68,11 +68,16 @@ type Server struct {
 	// Mocked in tests. In prod it is info.Get().ServiceAccount().
 	signerServiceAccount func(context.Context) (string, error)
 
-	// serviceAccountCache is cached return value of signerServiceAccount.
-	signerServiceAccountCache string
+	// initLock protects ensureInitialized and 'initialized'.
+	initLock sync.RWMutex
 
-	// signerServiceAccountCacheLock protects access to signerServiceAccountCache.
-	signerServiceAccountCacheLock sync.Mutex
+	// initialized contains a static state set up in 'ensureInitialized'.
+	initialized *initializedState
+}
+
+type initializedState struct {
+	signerServiceAccount string // cached result of 'signerServiceAccount'
+	serviceVersion       string // put into 'ServiceVersion' field of TokenResponse
 }
 
 // NewServer returns Server configured for real production usage.
@@ -88,6 +93,42 @@ func NewServer(sa *serviceaccounts.Server) *Server {
 			return info.Get(c).ServiceAccount()
 		},
 	}
+}
+
+// ensureInitialized is called to lazy-initialize the server on first use when
+// we have active context.Context.
+func (s *Server) ensureInitialized(c context.Context) (out initializedState, err error) {
+	// We don't use sync.Once here because if initialization fails with a
+	// transient error there's no way to "undo" sync.Once.Do. Instead we use next
+	// best thing possible: RWMutex that optimistically assumes mostly reads.
+	s.initLock.RLock()
+	if s.initialized != nil {
+		out = *s.initialized
+		s.initLock.RUnlock()
+		return out, nil
+	}
+	s.initLock.RUnlock()
+
+	s.initLock.Lock()
+	defer s.initLock.Unlock()
+	if s.initialized != nil {
+		out = *s.initialized
+		return out, nil
+	}
+
+	if out.signerServiceAccount, err = s.signerServiceAccount(c); err != nil {
+		return out, err
+	}
+
+	// serviceVersion is returned in MintTokenResponse, it identifies the app
+	// and its version to the client. Used for monitoring purposes.
+	i := info.Get(c)
+	appVersion := strings.Split(i.VersionID(), ".")[0]
+	out.serviceVersion = fmt.Sprintf("%s/%s", i.AppID(), appVersion)
+
+	// Success! Remember this.
+	s.initialized = &out
+	return out, nil
 }
 
 // MintMachineToken generates a new token for an authenticated machine.
@@ -107,15 +148,15 @@ func (s *Server) MintMachineToken(c context.Context, req *minter.MintMachineToke
 	case minter.TokenType_LUCI_MACHINE_TOKEN:
 		// supported
 	default:
-		return mintingErrorResponse(
-			minter.ErrorCode_UNSUPPORTED_TOKEN_TYPE,
+		return s.mintingErrorResponse(
+			c, minter.ErrorCode_UNSUPPORTED_TOKEN_TYPE,
 			"token_type %s is not supported", tokenReq.TokenType)
 	}
 
 	// Timestamp is required.
 	issuedAt := tokenReq.IssuedAt.Time()
 	if issuedAt.IsZero() {
-		return mintingErrorResponse(minter.ErrorCode_BAD_TIMESTAMP, "issued_at is required")
+		return s.mintingErrorResponse(c, minter.ErrorCode_BAD_TIMESTAMP, "issued_at is required")
 	}
 
 	// It should be within acceptable range.
@@ -123,16 +164,16 @@ func (s *Server) MintMachineToken(c context.Context, req *minter.MintMachineToke
 	notBefore := now.Add(-10 * time.Minute)
 	notAfter := now.Add(10 * time.Minute)
 	if issuedAt.Before(notBefore) || issuedAt.After(notAfter) {
-		return mintingErrorResponse(
-			minter.ErrorCode_BAD_TIMESTAMP,
+		return s.mintingErrorResponse(
+			c, minter.ErrorCode_BAD_TIMESTAMP,
 			"issued_at timestamp is not within acceptable range, check your clock")
 	}
 
 	// The certificate must be valid.
 	cert, err := x509.ParseCertificate(tokenReq.Certificate)
 	if err != nil {
-		return mintingErrorResponse(
-			minter.ErrorCode_BAD_CERTIFICATE_FORMAT,
+		return s.mintingErrorResponse(
+			c, minter.ErrorCode_BAD_CERTIFICATE_FORMAT,
 			"failed to parse the certificate (expecting x509 cert DER)")
 	}
 
@@ -143,14 +184,14 @@ func (s *Server) MintMachineToken(c context.Context, req *minter.MintMachineToke
 	case minter.SignatureAlgorithm_SHA256_RSA_ALGO:
 		algo = x509.SHA256WithRSA
 	default:
-		return mintingErrorResponse(
-			minter.ErrorCode_UNSUPPORTED_SIGNATURE,
+		return s.mintingErrorResponse(
+			c, minter.ErrorCode_UNSUPPORTED_SIGNATURE,
 			"signature_algorithm %s is not supported", tokenReq.SignatureAlgorithm)
 	}
 	err = cert.CheckSignature(algo, req.SerializedTokenRequest, req.Signature)
 	if err != nil {
-		return mintingErrorResponse(
-			minter.ErrorCode_BAD_SIGNATURE,
+		return s.mintingErrorResponse(
+			c, minter.ErrorCode_BAD_SIGNATURE,
 			"signature verification failed - %s", err)
 	}
 
@@ -166,7 +207,7 @@ func (s *Server) MintMachineToken(c context.Context, req *minter.MintMachineToke
 	// transient errors.
 	if err != nil {
 		if certchecker.IsCertInvalidError(err) {
-			return mintingErrorResponse(minter.ErrorCode_UNTRUSTED_CERTIFICATE, "%s", err)
+			return s.mintingErrorResponse(c, minter.ErrorCode_UNTRUSTED_CERTIFICATE, "%s", err)
 		}
 		return nil, grpc.Errorf(codes.Internal, "failed to check the certificate - %s", err)
 	}
@@ -203,7 +244,13 @@ func (s *Server) mintGoogleOAuth2AccessToken(c context.Context, args mintTokenAr
 		Scopes: args.Request.Oauth2Scopes,
 	}
 	if err := params.Validate(); err != nil {
-		return mintingErrorResponse(minter.ErrorCode_BAD_TOKEN_ARGUMENTS, "%s", err)
+		return s.mintingErrorResponse(c, minter.ErrorCode_BAD_TOKEN_ARGUMENTS, "%s", err)
+	}
+
+	// Grab 'serviceVersion' needed below.
+	state, err := s.ensureInitialized(c)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "can't initialize service guts - %s", err)
 	}
 
 	// Grab the token. It returns grpc error already, but we need to convert it
@@ -213,8 +260,10 @@ func (s *Server) mintGoogleOAuth2AccessToken(c context.Context, args mintTokenAr
 	switch {
 	case err == nil:
 		return &minter.MintMachineTokenResponse{
+			ServiceVersion: state.serviceVersion,
 			TokenResponse: &minter.MachineTokenResponse{
 				ServiceAccount: account,
+				ServiceVersion: state.serviceVersion,
 				TokenType: &minter.MachineTokenResponse_GoogleOauth2AccessToken{
 					GoogleOauth2AccessToken: token,
 				},
@@ -223,26 +272,14 @@ func (s *Server) mintGoogleOAuth2AccessToken(c context.Context, args mintTokenAr
 	case grpc.Code(err) == codes.Internal:
 		return nil, err
 	default:
-		return mintingErrorResponse(minter.ErrorCode_TOKEN_MINTING_ERROR, "%s", err)
+		return s.mintingErrorResponse(c, minter.ErrorCode_TOKEN_MINTING_ERROR, "%s", err)
 	}
-}
-
-func (s *Server) cachedSignerServiceAccount(c context.Context) (string, error) {
-	// We don't use sync.Once here because if signerServiceAccount() returns an
-	// error there's no way to "undo" sync.Once.Do.
-	s.signerServiceAccountCacheLock.Lock()
-	defer s.signerServiceAccountCacheLock.Unlock()
-	var err error
-	if s.signerServiceAccountCache == "" {
-		s.signerServiceAccountCache, err = s.signerServiceAccount(c)
-	}
-	return s.signerServiceAccountCache, err
 }
 
 func (s *Server) mintLuciMachineToken(c context.Context, args mintTokenArgs) (*minter.MintMachineTokenResponse, error) {
-	serviceAccount, err := s.cachedSignerServiceAccount(c)
+	state, err := s.ensureInitialized(c)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "can't grab own service account email - %s", err)
+		return nil, grpc.Errorf(codes.Internal, "can't initialize service guts - %s", err)
 	}
 
 	// Validate FQDN and whether it is allowed by config.
@@ -250,11 +287,11 @@ func (s *Server) mintLuciMachineToken(c context.Context, args mintTokenArgs) (*m
 		FQDN:                 strings.ToLower(args.Cert.Subject.CommonName),
 		Cert:                 args.Cert,
 		Config:               args.Config,
-		SignerServiceAccount: serviceAccount,
+		SignerServiceAccount: state.signerServiceAccount,
 		Signer:               s.signer,
 	}
 	if err := params.Validate(); err != nil {
-		return mintingErrorResponse(minter.ErrorCode_BAD_TOKEN_ARGUMENTS, "%s", err)
+		return s.mintingErrorResponse(c, minter.ErrorCode_BAD_TOKEN_ARGUMENTS, "%s", err)
 	}
 
 	// Make the token.
@@ -262,7 +299,9 @@ func (s *Server) mintLuciMachineToken(c context.Context, args mintTokenArgs) (*m
 	case err == nil:
 		expiry := time.Unix(int64(body.IssuedAt), 0).Add(time.Duration(body.Lifetime) * time.Second)
 		return &minter.MintMachineTokenResponse{
+			ServiceVersion: state.serviceVersion,
 			TokenResponse: &minter.MachineTokenResponse{
+				ServiceVersion: state.serviceVersion,
 				TokenType: &minter.MachineTokenResponse_LuciMachineToken{
 					LuciMachineToken: &minter.LuciMachineToken{
 						MachineToken: signedToken,
@@ -274,14 +313,19 @@ func (s *Server) mintLuciMachineToken(c context.Context, args mintTokenArgs) (*m
 	case errors.IsTransient(err):
 		return nil, grpc.Errorf(codes.Internal, "failed to generate machine token - %s", err)
 	default:
-		return mintingErrorResponse(minter.ErrorCode_TOKEN_MINTING_ERROR, "%s", err)
+		return s.mintingErrorResponse(c, minter.ErrorCode_TOKEN_MINTING_ERROR, "%s", err)
 	}
 }
 
-func mintingErrorResponse(code minter.ErrorCode, msg string, args ...interface{}) (*minter.MintMachineTokenResponse, error) {
+func (s *Server) mintingErrorResponse(c context.Context, code minter.ErrorCode, msg string, args ...interface{}) (*minter.MintMachineTokenResponse, error) {
+	state, err := s.ensureInitialized(c)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "can't initialize service guts - %s", err)
+	}
 	return &minter.MintMachineTokenResponse{
-		ErrorCode:    code,
-		ErrorMessage: fmt.Sprintf(msg, args...),
+		ErrorCode:      code,
+		ErrorMessage:   fmt.Sprintf(msg, args...),
+		ServiceVersion: state.serviceVersion,
 	}, nil
 }
 

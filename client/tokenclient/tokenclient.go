@@ -51,8 +51,9 @@ type Signer interface {
 type RPCError struct {
 	error
 
-	GrpcCode  codes.Code       // grpc-level status code
-	ErrorCode minter.ErrorCode // protocol-level status code
+	GrpcCode       codes.Code       // grpc-level status code
+	ErrorCode      minter.ErrorCode // protocol-level status code
+	ServiceVersion string           // version of the backend, if known
 }
 
 // IsTransient is needed to implement errors.Transient.
@@ -128,9 +129,10 @@ func (c *Client) MintMachineToken(ctx context.Context, req *minter.MachineTokenR
 			details = "no detailed error message"
 		}
 		return nil, RPCError{
-			error:     fmt.Errorf("token server error %s - %s", resp.ErrorCode, details),
-			GrpcCode:  codes.OK,
-			ErrorCode: resp.ErrorCode,
+			error:          fmt.Errorf("token server error %s - %s", resp.ErrorCode, details),
+			GrpcCode:       codes.OK,
+			ErrorCode:      resp.ErrorCode,
+			ServiceVersion: resp.ServiceVersion,
 		}
 	}
 

@@ -75,11 +75,13 @@ type StatusReport struct {
 	FailureError      error                  // immediate error that caused the failure
 	MintTokenDuration time.Duration          // how long RPC call lasted (with all retries)
 	LastToken         *tokenserver.TokenFile // last known token (possibly refreshed)
+	ServiceVersion    string                 // name and version of the server that generated the token
 }
 
 // Report is how status report looks on disk.
 type Report struct {
 	TokendVersion     string `json:"tokend_version"`
+	ServiceVersion    string `json:"service_version,omitempty"`
 	StartedTS         int64  `json:"started_ts"`
 	TotalDuration     int64  `json:"total_duration_us,omitempty"`
 	RPCDuration       int64  `json:"rpc_duration_us,omitempty"`
@@ -95,12 +97,13 @@ type Report struct {
 // Report gathers the report into single JSON-serializable struct.
 func (s *StatusReport) Report() *Report {
 	rep := &Report{
-		TokendVersion: s.Version,
-		StartedTS:     s.Started.Unix(),
-		TotalDuration: s.Finished.Sub(s.Started).Nanoseconds() / 1000,
-		RPCDuration:   s.MintTokenDuration.Nanoseconds() / 1000,
-		UpdateOutcome: string(s.UpdateOutcome),
-		UpdateReason:  string(s.UpdateReason),
+		TokendVersion:  s.Version,
+		ServiceVersion: s.ServiceVersion,
+		StartedTS:      s.Started.Unix(),
+		TotalDuration:  s.Finished.Sub(s.Started).Nanoseconds() / 1000,
+		RPCDuration:    s.MintTokenDuration.Nanoseconds() / 1000,
+		UpdateOutcome:  string(s.UpdateOutcome),
+		UpdateReason:   string(s.UpdateReason),
 	}
 	if s.FailureError != nil {
 		rep.FailureError = s.FailureError.Error()
@@ -136,6 +139,11 @@ var (
 	metricVersion = metric.NewString(
 		"luci/machine_tokend/version",
 		"Major version of luci_machine_tokend executable")
+
+	// E.g. "luci-token-server/2123-abcdef" (<appid>/<version>).
+	metricServiceVersion = metric.NewString(
+		"luci/machine_tokend/service_version",
+		"Identifier of the server version that generated the token")
 
 	// This should be >=30 min in the future if everything is ok. If update
 	// process fails repeatedly, it will be in the past (and the token is unusable
@@ -185,6 +193,9 @@ func (s *StatusReport) SendMetrics(c context.Context) error {
 	rep := s.Report()
 
 	metricVersion.Set(c, rep.TokendVersion)
+	if rep.ServiceVersion != "" {
+		metricServiceVersion.Set(c, rep.ServiceVersion)
+	}
 	if rep.TokenExpiryTS != 0 {
 		metricTokenExpiry.Set(c, rep.TokenExpiryTS*1000000)
 	}

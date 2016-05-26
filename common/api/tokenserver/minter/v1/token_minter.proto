@@ -132,12 +132,24 @@ message MintMachineTokenResponse {
 
   // On success (SUCCESS error code) contains the produced token.
   MachineTokenResponse token_response = 3;
+
+  // Identifier of the service and its version that produced the response.
+  //
+  // Set for both successful responses and errors. On success, it is identical
+  // to token_response.service_version.
+  string service_version = 4;
 }
 
 // MachineTokenResponse contains a token requested by MachineTokenRequest.
 message MachineTokenResponse {
   // The service account associated with the returned token (if any).
   tokenserver.ServiceAccount service_account = 1;
+
+  // Identifier of the service and its version that produced the token.
+  //
+  // Has the form "<app-id>/<module-version>". Reported to the monitoring by
+  // the client. This is _not_ a part of the token.
+  string service_version = 2;
 
   // The generated token.
   //

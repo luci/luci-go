@@ -40,7 +40,7 @@ import (
 // Version identifies the major revision of the tokend code.
 //
 // It is put in the status file (and subsequently reported to monitoring).
-const Version = "1.1"
+const Version = "1.2"
 
 // commandLine contains all command line flags.
 //
@@ -238,8 +238,12 @@ func run(ctx context.Context, clientParams tokenclient.ClientParameters, opts co
 		logging.Errorf(ctx, "Failed to generate a new token - %s", err)
 		status.FailureError = err
 		status.UpdateOutcome = OutcomeFromRPCError(err)
+		if details, ok := err.(tokenclient.RPCError); ok {
+			status.ServiceVersion = details.ServiceVersion
+		}
 		return err
 	}
+	status.ServiceVersion = resp.ServiceVersion
 
 	// Grab machine_token field.
 	var tok *minter.LuciMachineToken
