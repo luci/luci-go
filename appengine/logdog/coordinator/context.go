@@ -13,6 +13,25 @@ import (
 	"golang.org/x/net/context"
 )
 
+// NamespaceAccessType specifies the type of namespace access that is being
+// requested for WithProjectNamespace.
+type NamespaceAccessType int
+
+const (
+	// NamespaceAccessNoAuth grants unconditional access to a project's namespace.
+	// This bypasses all ACL checks, and must only be used by service endpoints
+	// that explicitly apply ACLs elsewhere.
+	NamespaceAccessNoAuth NamespaceAccessType = iota
+
+	// NamespaceAccessREAD enforces READ permission access to a project's
+	// namespace.
+	NamespaceAccessREAD
+
+	// NamespaceAccessWRITE enforces WRITE permission access to a project's
+	// namespace.
+	NamespaceAccessWRITE
+)
+
 type servicesKeyType int
 
 // WithServices installs the supplied Services instance into a Context.
@@ -36,22 +55,9 @@ func GetServices(c context.Context) Services {
 // It will return an error if the project name or the project's namespace is
 // invalid.
 //
-// If the current user does not have READ permission for the project, a
+// If the current user does not have the requested permission for the project, a
 // MembershipError will be returned.
-func WithProjectNamespace(c *context.Context, project luciConfig.ProjectName) error {
-	return withProjectNamespaceImpl(c, project, true)
-}
-
-// WithProjectNamespaceNoAuth sets the current namespace to the project name. It
-// does NOT assert that the current user has project access. This should only be
-// used for service functions that are not acting on behalf of a user.
-//
-// It will fail if the project name is invalid.
-func WithProjectNamespaceNoAuth(c *context.Context, project luciConfig.ProjectName) error {
-	return withProjectNamespaceImpl(c, project, false)
-}
-
-func withProjectNamespaceImpl(c *context.Context, project luciConfig.ProjectName, auth bool) error {
+func WithProjectNamespace(c *context.Context, project luciConfig.ProjectName, at NamespaceAccessType) error {
 	ctx := *c
 
 	// TODO(dnj): REQUIRE this to be non-empty once namespacing is mandatory.
@@ -64,18 +70,37 @@ func withProjectNamespaceImpl(c *context.Context, project luciConfig.ProjectName
 		return err
 	}
 
-	// Validate the user's READ access to the named project, if authenticating.
-	if auth {
+	// Validate the current user has the requested access.
+	switch at {
+	case NamespaceAccessNoAuth:
+		break
+
+	case NamespaceAccessREAD:
 		pcfg, err := GetServices(ctx).ProjectConfig(ctx, project)
 		if err != nil {
 			log.WithError(err).Errorf(ctx, "Failed to load project config.")
 			return err
 		}
 
-		if err := IsProjectReader(ctx, pcfg); err != nil {
-			log.WithError(err).Errorf(ctx, "User cannot access requested project.")
+		if err := IsProjectReader(*c, pcfg); err != nil {
+			log.WithError(err).Errorf(*c, "User denied READ access to requested project.")
 			return err
 		}
+
+	case NamespaceAccessWRITE:
+		pcfg, err := GetServices(ctx).ProjectConfig(ctx, project)
+		if err != nil {
+			log.WithError(err).Errorf(ctx, "Failed to load project config.")
+			return err
+		}
+
+		if err := IsProjectWriter(*c, pcfg); err != nil {
+			log.WithError(err).Errorf(*c, "User denied WRITE access to requested project.")
+			return err
+		}
+
+	default:
+		return fmt.Errorf("unknown access type: %v", at)
 	}
 
 	pns := ProjectNamespace(project)

@@ -15,7 +15,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-// server is a Cloud Endpoint service supporting privileged support services.
+// server is a service supporting privileged support services.
 //
 // This endpoint is restricted to LogDog support service accounts.
 type server struct{}
@@ -45,7 +45,7 @@ func New() logdog.ServicesServer {
 				log.Fields{
 					"project": project,
 				}.Debugf(c, "Request is entering project namespace.")
-				if err := coordinator.WithProjectNamespaceNoAuth(&c, project); err != nil {
+				if err := coordinator.WithProjectNamespace(&c, project, coordinator.NamespaceAccessNoAuth); err != nil {
 					return nil, grpcutil.Internal
 				}
 			}

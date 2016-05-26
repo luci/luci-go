@@ -87,7 +87,7 @@ func TestList(t *testing.T) {
 			// within that namespace.
 			addProjectNamespace := func(proj config.ProjectName) {
 				c := c
-				if err := coordinator.WithProjectNamespaceNoAuth(&c, proj); err != nil {
+				if err := coordinator.WithProjectNamespace(&c, proj, coordinator.NamespaceAccessNoAuth); err != nil {
 					panic(err)
 				}
 

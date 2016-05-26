@@ -11,7 +11,9 @@ import (
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
+	"github.com/luci/luci-go/appengine/logdog/coordinator/endpoints/registration"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/endpoints/services"
+	registrationPb "github.com/luci/luci-go/common/api/logdog_coordinator/registration/v1"
 	servicesPb "github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/prpc"
@@ -35,6 +37,7 @@ func init() {
 	// Setup Cloud Endpoints.
 	svr := prpc.Server{}
 	servicesPb.RegisterServicesServer(&svr, services.New())
+	registrationPb.RegisterRegistrationServer(&svr, registration.New())
 
 	// Standard HTTP endpoints.
 	svr.InstallHandlers(router, base)

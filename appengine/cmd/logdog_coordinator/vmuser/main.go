@@ -13,9 +13,11 @@ import (
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/endpoints/admin"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/endpoints/logs"
+	"github.com/luci/luci-go/appengine/logdog/coordinator/endpoints/registration"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/endpoints/services"
 	adminPb "github.com/luci/luci-go/common/api/logdog_coordinator/admin/v1"
 	logsPb "github.com/luci/luci-go/common/api/logdog_coordinator/logs/v1"
+	registrationPb "github.com/luci/luci-go/common/api/logdog_coordinator/registration/v1"
 	servicesPb "github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/discovery"
@@ -50,6 +52,7 @@ func main() {
 	}
 	adminPb.RegisterAdminServer(&svr, admin.New())
 	servicesPb.RegisterServicesServer(&svr, services.New())
+	registrationPb.RegisterRegistrationServer(&svr, registration.New())
 	logsPb.RegisterLogsServer(&svr, logs.New())
 	discovery.Enable(&svr)
 

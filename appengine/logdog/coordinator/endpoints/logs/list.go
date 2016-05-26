@@ -91,9 +91,10 @@ func (s *server) List(c context.Context, req *logdog.ListRequest) (*logdog.ListR
 	// a list of streams to load.
 	if req.State && l.Project != "" {
 		c := c
-		if err := coordinator.WithProjectNamespace(&c, l.Project); err != nil {
-			// This should work, since the list would have rejected the namespace if
-			// the user was not a member, so a failure here is an internal error.
+		if err := coordinator.WithProjectNamespace(&c, l.Project, coordinator.NamespaceAccessREAD); err != nil {
+			// This should work, since the decorated service would have rejected the
+			// namespace if the user was not a member, so a failure here is an
+			// internal error.
 			log.Fields{
 				log.ErrorKey: err,
 				"project":    l.Project,

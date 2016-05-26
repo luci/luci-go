@@ -209,7 +209,7 @@ func Get(c context.Context, r Request) (*List, error) {
 
 	// Enter the supplied Project namespace. This will assert the the user has
 	// access to the project.
-	if err := coordinator.WithProjectNamespace(&c, l.Project); err != nil {
+	if err := coordinator.WithProjectNamespace(&c, l.Project, coordinator.NamespaceAccessREAD); err != nil {
 		return nil, err
 	}
 

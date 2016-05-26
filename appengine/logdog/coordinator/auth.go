@@ -48,6 +48,15 @@ func IsProjectReader(c context.Context, pcfg *svcconfig.ProjectConfig) error {
 	return checkMember(c, pcfg.ReaderAuthGroups...)
 }
 
+// IsProjectWriter tests whether the current user belongs to one of the
+// project's declared writer groups.
+//
+// If the user is not a member of any of the groups, a MembershipError will be
+// returned.
+func IsProjectWriter(c context.Context, pcfg *svcconfig.ProjectConfig) error {
+	return checkMember(c, pcfg.WriterAuthGroups...)
+}
+
 func checkMember(c context.Context, groups ...string) error {
 	// On dev-appserver, the superuser has implicit group membership to
 	// everything.

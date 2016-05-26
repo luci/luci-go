@@ -26,10 +26,6 @@ type Config struct {
 	// timing.
 	Clock clock.Clock
 
-	// Source is the bundle source string to use. This can be empty if there is no
-	// source information to include.
-	Source string
-
 	// Project is the project to use.
 	Project config.ProjectName
 	// Prefix is the common prefix for this set of streams.
@@ -193,7 +189,6 @@ func (b *Bundler) makeBundles() {
 		bb = &builder{
 			size: b.c.MaxBundleSize,
 			template: logpb.ButlerLogBundle{
-				Source:    b.c.Source,
 				Timestamp: google.NewTimestamp(b.getClock().Now()),
 				Project:   string(b.c.Project),
 				Prefix:    string(b.c.Prefix),

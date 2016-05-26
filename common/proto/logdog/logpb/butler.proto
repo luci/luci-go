@@ -51,13 +51,10 @@ message ButlerMetadata {
  */
 message ButlerLogBundle {
   /*
-   * String describing the source of this LogBundle.
-   * This is an unstructured field, and is not intended to be parsed. An
-   * example would be: "Butler @a33967 (Linux/amd64)".
-   *
-   * This field will be used for debugging and internal accounting.
+   * (DEPRECATED) Stream source information. Now supplied during prefix
+   * registration.
    */
-  string source = 1;
+  string deprecated_source = 1;
 
   /* The timestamp when this bundle was generated.
    *
