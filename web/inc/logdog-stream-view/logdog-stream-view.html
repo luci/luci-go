@@ -7,6 +7,7 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/paper-checkbox/paper-checkbox.html">
 
+<link rel="import" href="../logdog-stream/logdog-stream.html">
 <link rel="import" href="logdog-stream-fetcher.html">
 <link rel="import" href="logdog-stream-query.html">
 
@@ -97,6 +98,7 @@ An element for rendering muxed LogDog log streams.
     <logdog-stream-query
         id="query"
         host="[[host]]"
+        project="[[project]]"
         get-meta="false"></logdog-stream-query>
 
     <!-- Stream view options. -->
@@ -178,7 +180,13 @@ An element for rendering muxed LogDog log streams.
         notify: true,
       },
 
-      /** An array of log stream names to load and mux. */
+      /**
+       * An array of log stream names to load and mux.
+       *
+       * Each stream entry is a valid stream path prefixed with that stream's
+       * project. For example, for stream "foo/bar/+/baz" in project "chromium",
+       * the stream path would be: "chromium/foo/bar/+/baz".
+       */
       streams: {
         type: Array,
         value: [],
@@ -270,8 +278,8 @@ An element for rendering muxed LogDog log streams.
         streams: [],
       };
       var query = this.$.query;
-      this.streams.forEach(function(v) {
-        if (query.isQuery(v)) {
+      this.streams.map(LogDogStream.splitProject).forEach(function(v) {
+        if (query.isQuery(v.path)) {
           parts.queries.push(v);
         } else {
           parts.streams.push(v);
@@ -279,7 +287,8 @@ An element for rendering muxed LogDog log streams.
       });
 
       Promise.all(parts.queries.map(function(v) {
-        query.path = v;
+        query.project = v.project;
+        query.path = v.path;
         query.cursor = null;
         query.streamType = "text";
         return query.get();
@@ -287,9 +296,7 @@ An element for rendering muxed LogDog log streams.
         // Add query results (if any) to streams.
         results.forEach(function(streams) {
           (streams || []).forEach(function(stream) {
-            if (stream.path) {
-              parts.streams.push(stream.path);
-            }
+            parts.streams.push(stream.stream);
           });
         });
 
@@ -306,22 +313,22 @@ An element for rendering muxed LogDog log streams.
       if (!streams.length) {
         return;
       }
-      streams.sort();
-      console.log("Loading streams:", streams);
+      streams.sort(LogDogStream.cmp);
 
       // Construct our fetch context.
       var fetch = {};
-      fetch.streams = streams.map(function(path) {
+      fetch.streams = streams.map(function(stream) {
         // TODO: Re-use fetcher if it already exists in the previous streams
         // map.
         var fetcher = document.createElement("logdog-stream-fetcher");
         fetcher.setAttribute("host", this.host);
-        fetcher.setAttribute("path", path);
+        fetcher.setAttribute("project", stream.project);
+        fetcher.setAttribute("path", stream.path);
 
-        return new _BufferedStream(path, fetcher);
+        return new _BufferedStream(stream, fetcher);
       }.bind(this));
       fetch.status = fetch.streams.map(function(v, idx) {
-        var name = v.path;
+        var name = v.stream.path;
         var lidx = name.lastIndexOf("/");
         if (lidx >= 0) {
           name = idx + " [.../" + name.substr(lidx+1) + "]";
@@ -591,8 +598,8 @@ An element for rendering muxed LogDog log streams.
   /**
    * Container for logs that have been punted.
    */
-  function _BufferedStream(path, fetcher) {
-    this.path = path;
+  function _BufferedStream(stream, fetcher) {
+    this.stream = stream;
     this.fetcher = fetcher;
 
     this._logs = null;

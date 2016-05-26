@@ -24,7 +24,6 @@
    */
   function patchState(state) {
     state.created = new Date(state.created);
-    state.updated = new Date(state.updated);
     state.terminalIndex = int64(state.terminalIndex);
   };
 
@@ -91,4 +90,45 @@
     d.setMilliseconds(d.getMilliseconds() + ms);
     return d;
   }
+
+  /**
+   * Defines a LogDog stream, which is specified by its project and path.
+   */
+  function LogDogStream(project, path) {
+    this.project = project;
+    this.path = path;
+  }
+  LogDogStream.splitProject = function(v) {
+    var parts = LogDogStream.split(v, 2);
+    if (parts.length === 1) {
+      return new LogDogStream(v, "");
+    }
+
+    // TODO: Remove this exception when project-less paths are no longer
+    // supported.
+    if (parts[0] === "_") {
+      parts[0] = "";
+    }
+    return new LogDogStream(parts[0], parts[1]);
+  };
+  LogDogStream.split = function(v, count) {
+    var parts = v.split("/");
+    if (!count) {
+      return parts;
+    }
+    result = parts.splice(0, count-1);
+    if (parts.length) {
+      result.push(parts.join("/"));
+    }
+    return result;
+  };
+  LogDogStream.cmp = function(a, b) {
+    if (a.project < b.project) {
+      return -1;
+    }
+    if (a.project > b.project) {
+      return 1;
+    }
+    return (a.path < b.path) ? -1 : ((a.path > b.path) ? 1 : 0);
+  };
 </script>

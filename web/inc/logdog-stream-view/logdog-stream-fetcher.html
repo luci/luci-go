@@ -21,6 +21,7 @@ An element for iteratively fetching complete LogDog log streams.
     <logdog-stream-chunk
       id="chunk"
       host="[[host]]"
+      project="[[project]]"
       path="[[path]]"
       index="[[nextIndex]]"></logdog-stream-chunk>
   </template>
@@ -43,6 +44,14 @@ An element for iteratively fetching complete LogDog log streams.
         notify: true,
         observer: "_streamParamChanged",
       },
+
+      /** The project name of the stream. */
+      project: {
+        type: String,
+        notify: true,
+        observer: "_streamParamChanged",
+      },
+
       /** The path of the log stream to fetch. */
       path: {
         type: String,
@@ -139,7 +148,8 @@ An element for iteratively fetching complete LogDog log streams.
                 var lastIndex = entries[entries.length-1].streamIndex;
                 this._setNextIndex(lastIndex + 1);
 
-                if (this._getTerminalIndex(this.state) < this.nextIndex) {
+                var tidx = this._getTerminalIndex(this.state);
+                if (tidx >= 0 && tidx < this.nextIndex) {
                   // We have punted the full log stream. Mark finished.
                   this._setFinished(true);
                 }

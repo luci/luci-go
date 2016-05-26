@@ -10,6 +10,7 @@
 <link rel="import" href="../bower_components/paper-material/paper-material.html">
 <link rel="import" href="../logdog-styles/app-theme.html">
 <link rel="import" href="../luci-prpc-request/luci-prpc-request.html">
+<link rel="import" href="../logdog-stream/logdog-stream.html">
 
 
 <!--
@@ -211,7 +212,7 @@ An element for fetching complete LogDog log streams.
       host="[[host]]"
       service="logdog.Logs"
       method="List"
-      body='{"path": "[[base]]", "max_results": [[count]], "offset": [[offset]]}'
+      body="[[_body]]"
       last-response="{{lastResponse}}"
       last-error="{{lastError}}"></luci-prpc-request>
 
@@ -312,10 +313,15 @@ An element for fetching complete LogDog log streams.
         notify: true,
       },
 
-      /** The current log list base. */
+      /**
+       * The current log list base.
+       *
+       * Base is a unified "project/path..." string. If empty, the list will be
+       * project-level.
+       */
       base: {
         type: Object,
-        value: "/",
+        value: "",
         notify: true,
       },
 
@@ -377,6 +383,10 @@ An element for fetching complete LogDog log streams.
         readOnly: true,
       },
 
+      _body: {
+        computed: "_computeBody(base, count, offset)",
+      },
+
       /** True if the latest request specified additional pages. */
       _hasMore: {
         computed: "_computeHasMore(nextPage)",
@@ -419,6 +429,19 @@ An element for fetching complete LogDog log streams.
       return (!!nextPage);
     },
 
+    _computeBody: function(base, count, offset) {
+      var req = {
+        "maxResults": count,
+        "offset": offset,
+      };
+
+      // Split our base into project and path.
+      var lds = LogDogStream.splitProject(base);
+      req.project = lds.project;
+      req.pathBase = lds.path;
+      return req;
+    },
+
     /** Called when an RPC response has been received. */
     _responseChanged: function(resp, err) {
       if (err !== null) {
@@ -428,17 +451,28 @@ An element for fetching complete LogDog log streams.
         return;
       }
 
-      this.base = (resp.base || "");
       this._setNextPage(resp.next);
       this._setCurrentOffset(this.offset);
 
+      // Calculate our unified path base (project/path...).
+      var components = [];
+      if (resp.project) {
+        components.push(resp.project);
+
+        if (resp.pathBase) {
+          components.push.apply(components, resp.pathBase.split("/"));
+        }
+      }
+
       // Calculate partial components.
-      var components = this.base.split("/");
       if (components.length && components[0] === "") {
         // Remove the initial "/" element. It will be forcefully inserted at the
         // end.
         components.shift();
       }
+
+      // Generate our individual components.
+      this.base = components.join("/");
       components = components.map(function(cur, idx, arr) {
         return {
           name: cur,
@@ -453,31 +487,31 @@ An element for fetching complete LogDog log streams.
 
       // Calculate path components.
       this._setPaths((resp.components || []).filter(function(e) {
-        return (e.stream !== true);
+        return (e.type !== "STREAM");
       }).map(function(e) {
-        var full = e.path;
+        var full = e.name;
         if (this.base !== "") {
-          full = resp.base + "/" + full;
+          full = this.base + "/" + full;
         }
         return {
-          value: e.path,
+          value: e.name,
           full: full,
         };
       }.bind(this)));
 
       // Calculate stream components.
       this._setStreams((resp.components || []).filter(function(e) {
-        return (e.stream === true);
+        return (e.type === "STREAM");
       }).map(function(e) {
-        var full = e.path;
+        var full = e.name;
         if (resp.base !== "") {
-          full = resp.base + "/" + full;
+          full = this.base + "/" + full;
         };
         return {
-          value: e.path,
+          value: e.name,
           full: full,
         };
-      }));
+      }.bind(this)));
     },
   });
 </script>

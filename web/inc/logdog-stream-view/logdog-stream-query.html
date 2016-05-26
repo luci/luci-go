@@ -86,20 +86,6 @@ An element for issuing a LogDog stream query.
         notify: true,
       },
 
-      /** Filter terminated streams? true, false, or null for no filter. */
-      terminated: {
-        type: Boolean,
-        value: null,
-        notify: true,
-      },
-
-      /** Filter archived streams? true, false, or null for no filter. */
-      archived: {
-        type: Boolean,
-        value: null,
-        notify: true,
-      },
-
       /** Filter purged streams? true, false, or null for no filter. */
       purged: {
         type: Boolean,
@@ -160,9 +146,8 @@ An element for issuing a LogDog stream query.
 
       body: {
         type: Object,
-        computed: "_computeBody(path, contentType, streamType, terminated," +
-                      "archived, purged, newer, older, protoVersion, tags.*, " +
-                      "cursor)",
+        computed: "_computeBody(project, path, contentType, streamType, " +
+                  "purged, newer, older, protoVersion, tags.*, cursor)",
       },
     },
 
@@ -175,9 +160,10 @@ An element for issuing a LogDog stream query.
       return (v.indexOf("*") >= 0);
     },
 
-    _computeBody: function(path, contentType, streamType, terminated, archived,
-        purged, newer, older, protoVersion, tags, cursor) {
+    _computeBody: function(project, path, contentType, streamType, purged,
+                           newer, older, protoVersion, tags, cursor) {
       var body = {
+        project: project,
         path: path,
         content_type: contentType,
         proto_version: protoVersion,
@@ -190,8 +176,6 @@ An element for issuing a LogDog stream query.
           body[field] = ((v) ? "YES" : "NO");
         }
       }
-      trinary("terminated", terminated);
-      trinary("archived", archived);
       trinary("purged", purged);
 
       if (streamType) {
@@ -244,6 +228,7 @@ An element for issuing a LogDog stream query.
       //
       // JSONPB timestamps are in the form of RFC3339 strings.
       (resp.streams || []).forEach(function(s) {
+        s.stream = new LogDogStream(resp.project, s.path);
         if (s.state) {
           patchState(s.state);
         }

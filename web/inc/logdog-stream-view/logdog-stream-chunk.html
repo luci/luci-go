@@ -21,7 +21,7 @@ stream.
       host="[[host]]"
       service="logdog.Logs"
       method="Get"
-      body='{"path": "[[path]]", "state": [[getMeta]], "index": [[_indexStr]]}'
+      body='{"project":"[[project]]", "path":"[[path]]", "state":[[getMeta]], "index":[[_indexStr]]}'
       last-response="{{lastResponse}}"
       last-error="{{lastError}}"></luci-prpc-request>
   </template>
@@ -44,23 +44,34 @@ stream.
         value: false,
         notify: true,
       },
+
       /** The name ([host][:port]) of the pRPC host. */
       host: {
         type: String,
         notify: true,
       },
+
+      /** The project name of the stream. */
+      project: {
+        type: String,
+        notify: true,
+        observer: "_streamChanged",
+      },
+
       /** The log stream path to fetch. */
       path: {
         type: String,
         notify: true,
         observer: "_streamChanged",
       },
+
       /** True if log stream metadata should be fetched. */
       getMeta: {
         type: Boolean,
         value: true,
         notify: true,
       },
+
       /** Initial log entry index to fetch. */
       index: {
         type: Number,
