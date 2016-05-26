@@ -10,6 +10,7 @@ import (
 	"github.com/luci/gae/service/module"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/tsmon"
+	"github.com/luci/luci-go/common/tsmon/memstats"
 	"github.com/luci/luci-go/common/tsmon/metric"
 )
 
@@ -19,7 +20,12 @@ var (
 		"Name of the version currently marked as default.")
 )
 
-func standardMetricsCallback(c context.Context) {
+// collectGlobalMetrics populates service-global metrics.
+//
+// Called by tsmon from inside /housekeeping cron handler. Metrics reported must
+// not depend on the state of the particular process that happens to report
+// them.
+func collectGlobalMetrics(c context.Context) {
 	version, err := module.Get(c).DefaultVersion("")
 	if err != nil {
 		logging.Errorf(c, "Error getting default appengine version: %s", err)
@@ -29,6 +35,15 @@ func standardMetricsCallback(c context.Context) {
 	}
 }
 
+// collectProcessMetrics populates per-process metrics.
+//
+// It is called by each individual process right before flushing the metrics.
+func collectProcessMetrics(c context.Context, s *tsmonSettings) {
+	if s.ReportMemStats {
+		memstats.Report(c)
+	}
+}
+
 func init() {
-	tsmon.RegisterGlobalCallback(standardMetricsCallback, defaultVersion)
+	tsmon.RegisterGlobalCallback(collectGlobalMetrics, defaultVersion)
 }

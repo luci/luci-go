@@ -16,11 +16,11 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestStandardMetrics(t *testing.T) {
+func TestGlobalMetrics(t *testing.T) {
 	Convey("Default version", t, func() {
 		c, _ := buildGAETestContext()
 		tsmon.GetState(c).S = store.NewInMemory(&target.Task{ServiceName: proto.String("default target")})
-		standardMetricsCallback(c)
+		collectGlobalMetrics(c)
 		tsmon.Flush(c)
 
 		monitor := tsmon.GetState(c).M.(*monitor.Fake)

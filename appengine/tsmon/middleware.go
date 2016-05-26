@@ -172,6 +172,9 @@ func (s *State) flushIfNeeded(c context.Context, state *tsmon.State, settings *t
 		return
 	}
 
+	// Report per-process statistic, like memory stats.
+	collectProcessMetrics(c, settings)
+
 	// Unset 'flushingNow' no matter what (even on panics). Update 'lastFlushed'
 	// only on successful flush. Unsuccessful flush thus will be retried ASAP.
 	success := false

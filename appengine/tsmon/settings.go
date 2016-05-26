@@ -44,6 +44,11 @@ type tsmonSettings struct {
 	//
 	// Default is 60 sec.
 	FlushIntervalSec int `json:"flush_interval_sec"`
+
+	// ReportMemStats is true to enable reporting of memory statistics on flush.
+	//
+	// Default is false.
+	ReportMemStats settings.YesOrNo `json:"report_mem_stats"`
 }
 
 // Prefilled portion of settings.
@@ -129,6 +134,12 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 			Help: "How often to flush metrics, in seconds. The default value (60 sec) " +
 				"is fine for most cases.",
 		},
+		settings.YesOrNoField(settings.UIField{
+			ID:    "ReportMemStats",
+			Title: "Report mem stats",
+			Help: "If enabled, memory allocator statistics will be collected at each " +
+				"flush and sent to the monitoring as a bunch of go/mem/* metrics.",
+		}),
 	}, nil
 }
 
@@ -145,6 +156,7 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 		"PubsubProject":    s.PubsubProject,
 		"PubsubTopic":      s.PubsubTopic,
 		"FlushIntervalSec": strconv.Itoa(s.FlushIntervalSec),
+		"ReportMemStats":   s.ReportMemStats.String(),
 	}, nil
 }
 
@@ -157,6 +169,9 @@ func (settingsUIPage) WriteSettings(c context.Context, values map[string]string,
 	}
 	var err error
 	if modified.FlushIntervalSec, err = strconv.Atoi(values["FlushIntervalSec"]); err != nil {
+		return err
+	}
+	if err := modified.ReportMemStats.Set(values["ReportMemStats"]); err != nil {
 		return err
 	}
 	return settings.SetIfChanged(c, settingsKey, &modified, who, why)
