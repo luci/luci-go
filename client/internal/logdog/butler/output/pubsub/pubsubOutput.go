@@ -24,7 +24,7 @@ import (
 
 // Topic is an interface for a Pub/Sub topic.
 //
-// pubsub.TopicHandle implements Topic.
+// pubsub.Topic implements Topic.
 type Topic interface {
 	// Name returns the name of the topic.
 	Name() string
@@ -33,7 +33,7 @@ type Topic interface {
 	Publish(context.Context, ...*pubsub.Message) ([]string, error)
 }
 
-var _ Topic = (*pubsub.TopicHandle)(nil)
+var _ Topic = (*pubsub.Topic)(nil)
 
 // Config is a configuration structure for Pub/Sub output.
 type Config struct {

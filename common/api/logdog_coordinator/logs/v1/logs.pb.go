@@ -42,7 +42,9 @@ var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
-const _ = proto.ProtoPackageIsVersion1
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // Trinary represents a trinary value.
 type QueryRequest_Trinary int32
@@ -284,8 +286,7 @@ type QueryRequest struct {
 	// - A key with an missing (nil) value, in which case the results are
 	//   constraints by logs that have that tag key, regardless of its value.
 	Tags map[string]string `protobuf:"bytes,15,rep,name=tags" json:"tags,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// Purged, if not nil, restricts the query to streams that have or haven't
-	// been purged.
+	// Purged restricts the query to streams that have or haven't been purged.
 	Purged QueryRequest_Trinary `protobuf:"varint,16,opt,name=purged,enum=logdog.QueryRequest_Trinary" json:"purged,omitempty"`
 }
 

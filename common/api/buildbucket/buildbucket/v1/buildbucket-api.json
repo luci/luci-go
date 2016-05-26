@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"H01Z-1ikbwOw463Un2bFZHenx1g/VuWw02E1pI1hFqAPGR6mnJMlKXs\"",
+ "etag": "\"H01Z-1ikbwOw463Un2bFZHenx1g/dXKIXUQbO8kBV1S1G5I8paTRE60\"",
  "discoveryVersion": "v1",
  "id": "buildbucket:v1",
  "name": "buildbucket",
@@ -72,6 +72,27 @@
   }
  },
  "schemas": {
+  "ApiBucketMessage": {
+   "id": "ApiBucketMessage",
+   "type": "object",
+   "properties": {
+    "config_file_content": {
+     "type": "string"
+    },
+    "config_file_rev": {
+     "type": "string"
+    },
+    "config_file_url": {
+     "type": "string"
+    },
+    "name": {
+     "type": "string"
+    },
+    "project_id": {
+     "type": "string"
+    }
+   }
+  },
   "ApiBuildMessage": {
    "id": "ApiBuildMessage",
    "type": "object",
@@ -674,6 +695,28 @@
    ],
    "response": {
     "$ref": "ApiBuildResponseMessage"
+   },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
+  "get_bucket": {
+   "id": "buildbucket.get_bucket",
+   "path": "buckets/{bucket}",
+   "httpMethod": "GET",
+   "description": "Returns bucket information.",
+   "parameters": {
+    "bucket": {
+     "type": "string",
+     "required": true,
+     "location": "path"
+    }
+   },
+   "parameterOrder": [
+    "bucket"
+   ],
+   "response": {
+    "$ref": "ApiBucketMessage"
    },
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"

@@ -74,6 +74,36 @@ func (s *Service) userAgent() string {
 	return googleapi.UserAgent + " " + s.UserAgent
 }
 
+type ApiBucketMessage struct {
+	ConfigFileContent string `json:"config_file_content,omitempty"`
+
+	ConfigFileRev string `json:"config_file_rev,omitempty"`
+
+	ConfigFileUrl string `json:"config_file_url,omitempty"`
+
+	Name string `json:"name,omitempty"`
+
+	ProjectId string `json:"project_id,omitempty"`
+
+	// ServerResponse contains the HTTP response code and headers from the
+	// server.
+	googleapi.ServerResponse `json:"-"`
+
+	// ForceSendFields is a list of field names (e.g. "ConfigFileContent")
+	// to unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+}
+
+func (s *ApiBucketMessage) MarshalJSON() ([]byte, error) {
+	type noMethod ApiBucketMessage
+	raw := noMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields)
+}
+
 // ApiBuildMessage: Describes model.Build, see its docstring.
 type ApiBuildMessage struct {
 	Bucket string `json:"bucket,omitempty"`
@@ -1239,6 +1269,129 @@ func (c *GetCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage, er
 	//   "path": "builds/{id}",
 	//   "response": {
 	//     "$ref": "ApiBuildResponseMessage"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/userinfo.email"
+	//   ]
+	// }
+
+}
+
+// method id "buildbucket.get_bucket":
+
+type GetBucketCall struct {
+	s            *Service
+	bucket       string
+	urlParams_   gensupport.URLParams
+	ifNoneMatch_ string
+	ctx_         context.Context
+}
+
+// GetBucket: Returns bucket information.
+func (s *Service) GetBucket(bucket string) *GetBucketCall {
+	c := &GetBucketCall{s: s, urlParams_: make(gensupport.URLParams)}
+	c.bucket = bucket
+	return c
+}
+
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *GetBucketCall) Fields(s ...googleapi.Field) *GetBucketCall {
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
+	return c
+}
+
+// IfNoneMatch sets the optional parameter which makes the operation
+// fail if the object's ETag matches the given value. This is useful for
+// getting updates only after the object has changed since the last
+// request. Use googleapi.IsNotModified to check whether the response
+// error from Do is the result of In-None-Match.
+func (c *GetBucketCall) IfNoneMatch(entityTag string) *GetBucketCall {
+	c.ifNoneMatch_ = entityTag
+	return c
+}
+
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
+func (c *GetBucketCall) Context(ctx context.Context) *GetBucketCall {
+	c.ctx_ = ctx
+	return c
+}
+
+func (c *GetBucketCall) doRequest(alt string) (*http.Response, error) {
+	var body io.Reader = nil
+	c.urlParams_.Set("alt", alt)
+	urls := googleapi.ResolveRelative(c.s.BasePath, "buckets/{bucket}")
+	urls += "?" + c.urlParams_.Encode()
+	req, _ := http.NewRequest("GET", urls, body)
+	googleapi.Expand(req.URL, map[string]string{
+		"bucket": c.bucket,
+	})
+	req.Header.Set("User-Agent", c.s.userAgent())
+	if c.ifNoneMatch_ != "" {
+		req.Header.Set("If-None-Match", c.ifNoneMatch_)
+	}
+	if c.ctx_ != nil {
+		return ctxhttp.Do(c.ctx_, c.s.client, req)
+	}
+	return c.s.client.Do(req)
+}
+
+// Do executes the "buildbucket.get_bucket" call.
+// Exactly one of *ApiBucketMessage or error will be non-nil. Any
+// non-2xx status code is an error. Response headers are in either
+// *ApiBucketMessage.ServerResponse.Header or (if a response was
+// returned at all) in error.(*googleapi.Error).Header. Use
+// googleapi.IsNotModified to check whether the returned error was
+// because http.StatusNotModified was returned.
+func (c *GetBucketCall) Do(opts ...googleapi.CallOption) (*ApiBucketMessage, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
+	res, err := c.doRequest("json")
+	if res != nil && res.StatusCode == http.StatusNotModified {
+		if res.Body != nil {
+			res.Body.Close()
+		}
+		return nil, &googleapi.Error{
+			Code:   res.StatusCode,
+			Header: res.Header,
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	ret := &ApiBucketMessage{
+		ServerResponse: googleapi.ServerResponse{
+			Header:         res.Header,
+			HTTPStatusCode: res.StatusCode,
+		},
+	}
+	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Returns bucket information.",
+	//   "httpMethod": "GET",
+	//   "id": "buildbucket.get_bucket",
+	//   "parameterOrder": [
+	//     "bucket"
+	//   ],
+	//   "parameters": {
+	//     "bucket": {
+	//       "location": "path",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "buckets/{bucket}",
+	//   "response": {
+	//     "$ref": "ApiBucketMessage"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"

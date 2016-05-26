@@ -93,7 +93,7 @@ func (f *pubsubOutputFactory) configOutput(a *application) (output.Output, error
 	}), nil
 }
 
-func retryTopicExists(ctx context.Context, t *pubsub.TopicHandle) (bool, error) {
+func retryTopicExists(ctx context.Context, t *pubsub.Topic) (bool, error) {
 	var exists bool
 	err := retry.Retry(ctx, retry.Default, func() (err error) {
 		exists, err = t.Exists(ctx)

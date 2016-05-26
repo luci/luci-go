@@ -27,7 +27,7 @@ type ArchivalPublisher interface {
 
 type pubsubArchivalPublisher struct {
 	// topic is the authenticated Pub/Sub topic handle to publish to.
-	topic *gcps.TopicHandle
+	topic *gcps.Topic
 
 	// publishIndexFunc is a function that will return a unique publish index
 	// for this request.

@@ -18,7 +18,7 @@ import (
 )
 
 type pubSubMonitor struct {
-	topic *pubsub.TopicHandle
+	topic *pubsub.Topic
 }
 
 // NewPubsubMonitor returns a Monitor that sends metrics to the Cloud Pub/Sub
