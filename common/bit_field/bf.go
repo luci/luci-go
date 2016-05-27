@@ -86,6 +86,12 @@ func (bf *BitField) FromProperty(p datastore.Property) error {
 	return bf.UnmarshalBinary(bin)
 }
 
+// Reset resets this BitField to the 'empty' (size-0) state.
+func (bf *BitField) Reset() {
+	bf.data = nil
+	bf.size = 0
+}
+
 // Make creates a new BitField.
 func Make(size uint32) BitField {
 	if size == 0 {

@@ -84,6 +84,12 @@ func TestBitField(t *testing.T) {
 
 				So(bf.CountSet(), ShouldEqual, 4)
 			})
+
+			Convey("should reset correctly", func() {
+				bf.Reset()
+				So(bf.Size(), ShouldEqual, 0)
+				So(bf.data, ShouldBeEmpty)
+			})
 		})
 
 		Convey("Can interact with datastore", func() {
