@@ -183,6 +183,9 @@ func TestExclusion(t *testing.T) {
 		// Not inside "a/b/c".
 		So(filter(filepath.FromSlash("a/b/test.pyc")), ShouldBeFalse)
 
+		// "a/b/c" itself.
+		So(filter(filepath.FromSlash("a/b/c")), ShouldBeFalse)
+
 		// *.pyc filtering.
 		So(filter(filepath.FromSlash("a/b/c/test.pyc")), ShouldBeTrue)
 		So(filter(filepath.FromSlash("a/b/c/test.py")), ShouldBeFalse)

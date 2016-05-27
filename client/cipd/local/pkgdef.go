@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 
@@ -249,9 +250,9 @@ func makeExclusionFilter(startDir string, patterns []string) (ScanFilter, error)
 		if err != nil {
 			return true
 		}
-		// Do not evaluate paths outside of startDir.
+		// Do not evaluate paths outside of startDir or startDir itself.
 		rel = filepath.ToSlash(rel)
-		if rel[:3] == "../" {
+		if rel == "." || strings.HasPrefix(rel, "../") {
 			return false
 		}
 		for _, exp := range exps {
