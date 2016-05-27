@@ -28,7 +28,7 @@ func TestPromise(t *testing.T) {
 		}
 
 		opC := make(chan operation)
-		p := New(func() (interface{}, error) {
+		p := New(ctx, func(context.Context) (interface{}, error) {
 			op := <-opC
 			return op.d, op.e
 		})
@@ -82,13 +82,37 @@ func TestPromise(t *testing.T) {
 	})
 }
 
+func TestDeferredPromise(t *testing.T) {
+	t.Parallel()
+
+	Convey(`A deferred Promise instance`, t, func() {
+		c := context.Background()
+
+		Convey(`Will defer running until Get is called, and will panic the Get goroutine.`, func() {
+			// Since our Get will cause the generator to be run in this goroutine,
+			// calling Get with a generator that panics should cause a panic.
+			p := NewDeferred(func(context.Context) (interface{}, error) { panic("test panic") })
+			So(func() { p.Get(c) }, ShouldPanic)
+		})
+
+		Convey(`Can output data.`, func() {
+			p := NewDeferred(func(context.Context) (interface{}, error) {
+				return "hello", nil
+			})
+			v, err := p.Get(c)
+			So(err, ShouldBeNil)
+			So(v, ShouldEqual, "hello")
+		})
+	})
+}
+
 func TestPromiseSmoke(t *testing.T) {
 	t.Parallel()
 
 	Convey(`A Promise instance with multiple consumers will block.`, t, func() {
 		ctx, _ := testclock.UseTime(context.Background(), time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 		dataC := make(chan interface{})
-		p := New(func() (interface{}, error) {
+		p := New(ctx, func(context.Context) (interface{}, error) {
 			return <-dataC, nil
 		})
 

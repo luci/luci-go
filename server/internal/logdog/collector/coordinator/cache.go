@@ -95,7 +95,7 @@ func (c *cache) RegisterStream(ctx context.Context, st *LogStreamState, desc []b
 			}
 		}
 
-		p := promise.New(func() (interface{}, error) {
+		p := promise.New(ctx, func(ctx context.Context) (interface{}, error) {
 			st, err := c.Coordinator.RegisterStream(ctx, st, desc)
 			return st, err
 		})
@@ -173,7 +173,7 @@ type cacheEntry struct {
 
 	// p is a Promise that is blocking pending a Coordiantor stream state
 	// response. Upon successful resolution, it will contain a *LogStreamState.
-	p promise.Promise
+	p *promise.Promise
 
 	project   config.ProjectName
 	path      types.StreamPath
