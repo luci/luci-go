@@ -15,6 +15,9 @@
    * local timezone
    */
   milo.formatDate = function(dt) {
+    if (!dt) {
+        return dt;
+    }
     var shortDayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     var t = new Date(dt);
     var offset = -(new Date()).getTimezoneOffset();

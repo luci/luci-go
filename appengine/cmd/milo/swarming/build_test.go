@@ -40,8 +40,9 @@ func TestBuild(t *testing.T) {
 		input        string
 		expectations string
 	}{
-		{"debug:build-patch-failure", "build-patch-failure.json"},
 		{"debug:build-exception", "build-exception.json"},
+		{"debug:build-patch-failure", "build-patch-failure.json"},
+		{"debug:build-pending", "build-pending.json"},
 		{"debug:build-timeout", "build-timeout.json"},
 	}
 

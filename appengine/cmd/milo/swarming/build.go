@@ -26,6 +26,24 @@ import (
 	"golang.org/x/net/context"
 )
 
+// Swarming task states..
+const (
+	// TaskRunning means task is running.
+	TaskRunning = "RUNNING"
+	// TaskPending means task didn't start yet.
+	TaskPending = "PENDING"
+	// TaskExpired means task expired and did not start.
+	TaskExpired = "EXPIRED"
+	// TaskTimedOut means task started, but took too long.
+	TaskTimedOut = "TIMED_OUT"
+	// TaskBotDied means task started but bot died.
+	TaskBotDied = "BOT_DIED"
+	// TaskCanceled means the task was canceled. See CompletedTs to determine whether it was started.
+	TaskCanceled = "CANCELED"
+	// TaskCompleted means task is complete.
+	TaskCompleted = "COMPLETED"
+)
+
 func resolveServer(server string) string {
 	// TODO(hinoka): configure this map in luci-config
 	if server == "" || server == "default" || server == "dev" {
@@ -223,10 +241,12 @@ func swarmingProperties(sr *swarming.SwarmingRpcsTaskResult) *resp.PropertyGroup
 			Value: fmt.Sprintf("$%.2f", sr.CostsUsd[0]),
 		})
 	}
-	props.Property = append(props.Property, &resp.Property{
-		Key:   "Exit Code",
-		Value: fmt.Sprintf("%d", sr.ExitCode),
-	})
+	if sr.State == TaskCompleted || sr.State == TaskTimedOut {
+		props.Property = append(props.Property, &resp.Property{
+			Key:   "Exit Code",
+			Value: fmt.Sprintf("%d", sr.ExitCode),
+		})
+	}
 	return props
 }
 
@@ -270,7 +290,9 @@ func addSwarmingToBuild(
 	// Build times.  Swarming timestamps are RFC3339Nano without the timezone
 	// information, which is assumed to be UTC, so we fix it here.
 	build.Summary.Started = fmt.Sprintf("%sZ", sr.StartedTs)
-	build.Summary.Finished = fmt.Sprintf("%sZ", sr.CompletedTs)
+	if sr.CompletedTs != "" {
+		build.Summary.Finished = fmt.Sprintf("%sZ", sr.CompletedTs)
+	}
 	build.Summary.Duration = uint64(sr.Duration)
 }
 
@@ -304,6 +326,7 @@ func swarmingBuildImpl(c context.Context, URL string, server string, taskID stri
 	if err != nil {
 		return nil, err
 	}
+
 	allowMilo := false
 	for _, t := range sr.Tags {
 		if t == "allow_milo:1" {

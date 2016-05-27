@@ -1,0 +1,37 @@
+{
+  "Summary": {
+    "Label": "",
+    "Status": "Running",
+    "MainLink": null,
+    "SubLink": null,
+    "Progress": null,
+    "Started": "2016-03-14T10:00:01.850710Z",
+    "Finished": "",
+    "Duration": 0,
+    "Type": "Recipe",
+    "LevelsDeep": 0,
+    "Text": null
+  },
+  "SourceStamp": null,
+  "Components": null,
+  "PropertyGroup": [
+    {
+      "GroupName": "Swarming",
+      "Property": null
+    },
+    {
+      "GroupName": "Swarming Tags",
+      "Property": [
+        {
+          "Key": "allow_milo",
+          "Value": "1"
+        }
+      ]
+    },
+    {
+      "GroupName": "Main",
+      "Property": null
+    }
+  ],
+  "Blame": null
+}
