@@ -118,7 +118,7 @@ func getSwarming(c context.Context, server string, taskID string) (
 		sr, errRes = getSwarmingResult(sc, taskID)
 	}()
 	wg.Wait()
-	if errRes == nil {
+	if errRes != nil {
 		return sr, log, errRes
 	}
 	return sr, log, errLog
