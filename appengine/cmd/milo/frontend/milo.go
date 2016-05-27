@@ -8,8 +8,6 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/luci/luci-go/server/templates"
-	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/appengine/cmd/milo/buildbot"
 	"github.com/luci/luci-go/appengine/cmd/milo/settings"
@@ -22,7 +20,7 @@ func init() {
 	// Register plain ol' http services.
 	r := httprouter.New()
 	gaemiddleware.InstallHandlers(r, settings.Base)
-	r.GET("/", wrap(dummy{}))
+	r.GET("/", wrap(frontpage{}))
 	r.GET("/swarming/:server/:id/steps/*logname", wrap(swarming.Log{}))
 	r.GET("/swarming/:server/:id", wrap(swarming.Build{}))
 
@@ -38,16 +36,6 @@ func init() {
 	r.POST("/pubsub/buildbot", settings.Base(buildbot.PubSubHandler))
 
 	http.Handle("/", r)
-}
-
-type dummy struct{}
-
-func (d dummy) GetTemplateName(t settings.Theme) string {
-	return "base.html"
-}
-
-func (d dummy) Render(c context.Context, r *http.Request, p httprouter.Params) (*templates.Args, error) {
-	return &templates.Args{"contents": "This is the root page"}, nil
 }
 
 // Do all the middleware initilization and theme handling.

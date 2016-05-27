@@ -28,6 +28,7 @@ var (
 	allHandlers = []settings.TestableHandler{
 		swarming.TestableBuild{},
 		swarming.TestableLog{},
+		testableFrontpage{},
 	}
 )
 
@@ -115,10 +116,4 @@ func TestPages(t *testing.T) {
 			})
 		}
 	})
-}
-
-type testableDummy dummy
-
-func (d testableDummy) TestData() []settings.TestBundle {
-	return []settings.TestBundle{}
 }

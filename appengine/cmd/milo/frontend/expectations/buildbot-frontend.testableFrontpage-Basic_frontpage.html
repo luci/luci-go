@@ -1,0 +1,33 @@
+
+<!DOCTYPE html>
+
+<meta charset="utf-8">
+<title>Milo</title>
+<link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
+<script src="/static/common/js/time.js"></script>
+
+
+<body class="interface">
+  <header>
+    Luci
+    <a href="/settings">settings</a>
+  </header>
+  <hr>
+  
+<h1>Herro thar, this is Milo!</h1>
+<div> <img src="https://storage.googleapis.com/luci-milo/milo.jpg"> </div>
+
+  <footer>
+    <hr>
+    <a href="https://github.com/luci">luci</a>,
+    working for the <a href="https://chromium.org/">Chromium</a> project.<br>
+    Page built: <b><span id="current-time">0001-02-03 04:05:06.000000007 &#43;0000 UTC</span></b>
+  </footer>
+
+<script>
+(function () {
+  'use strict';
+  document.getElementById('current-time').textContent = milo.formatDate(
+      '0001-02-03 04:05:06.000000007 \x2b0000 UTC');
+})();
+</script>
