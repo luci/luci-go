@@ -1,0 +1,56 @@
+
+<!DOCTYPE html>
+
+<meta charset="utf-8">
+<title>Settings</title>
+<link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
+<script src="/static/common/js/time.js"></script>
+
+
+<body class="interface">
+  <header>
+    Luci
+    <a href="/settings">settings</a>
+  </header>
+  <hr>
+  
+<div class="header">
+  <a href=""></a>
+</div>
+<div class="content">
+  <h1>Build </h1>
+
+  <div class="column">
+    <h2>Themes</h2>
+    <form action="/post/action" method='POST'>
+    <input type="hidden" name="xsrf_token" value="thisisatoken">
+    <select name="theme">
+      
+      
+        
+          <option value=buildbot>buildbot</option>
+        
+      
+        
+          <option value=bootstrap selected>bootstrap</option>
+        
+      
+    </select>
+    <button type="submit" label="Submit">Submit!!!</button>
+  </div>
+</div>
+
+  <footer>
+    <hr>
+    <a href="https://github.com/luci">luci</a>,
+    working for the <a href="https://chromium.org/">Chromium</a> project.<br>
+    Page built: <b><span id="current-time">0001-02-03 04:05:06.000000007 &#43;0000 UTC</span></b>
+  </footer>
+
+<script>
+(function () {
+  'use strict';
+  document.getElementById('current-time').textContent = milo.formatDate(
+      '0001-02-03 04:05:06.000000007 \x2b0000 UTC');
+})();
+</script>

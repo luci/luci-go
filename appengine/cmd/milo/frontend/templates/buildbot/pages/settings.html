@@ -1,6 +1,6 @@
 {{define "title"}}Settings{{end}}
 
-{{ define "script" }}{{ end }}
+{{ define "head" }}{{ end }}
 
 {{define "body"}}
 <div class="header">
@@ -21,10 +21,11 @@
         {{ else }}
           <option value={{$value}}>{{$value}}</option>
         {{ end }}
-      {{ end}}
+      {{ end }}
     </select>
     <button type="submit" label="Submit">Submit!!!</button>
   </div>
 </div>
 {{end}}
 
+{{define "after_body"}}{{end}}

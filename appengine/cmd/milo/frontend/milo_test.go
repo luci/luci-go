@@ -26,6 +26,7 @@ import (
 
 var (
 	allHandlers = []settings.TestableHandler{
+		settings.TestableSettings{},
 		swarming.TestableBuild{},
 		swarming.TestableLog{},
 		testableFrontpage{},
