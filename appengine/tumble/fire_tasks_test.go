@@ -41,7 +41,7 @@ func TestShardCalculation(t *testing.T) {
 
 			for _, tc := range tcs {
 				So((&realMutation{ExpandedShard: tc.es}).shard(cfg).shard, ShouldEqual, tc.s)
-				low, high := expandedShardBounds(ctx, tc.s)
+				low, high := expandedShardBounds(ctx, cfg, tc.s)
 				So(tc.es, ShouldBeGreaterThanOrEqualTo, low)
 				So(tc.es, ShouldBeLessThanOrEqualTo, high)
 				So(l.Messages(), ShouldBeEmpty)
@@ -49,7 +49,7 @@ func TestShardCalculation(t *testing.T) {
 		})
 
 		Convey("expandedShardsPerShard returns crossed ranges on shard reduction", func() {
-			low, high := expandedShardBounds(ctx, 256)
+			low, high := expandedShardBounds(ctx, cfg, 256)
 			So(low, ShouldBeGreaterThan, high)
 			So(l, memlogger.ShouldHaveLog, logging.Warning, "Invalid shard: 256")
 		})

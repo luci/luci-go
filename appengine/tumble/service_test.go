@@ -7,8 +7,11 @@ package tumble
 import (
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
+	"github.com/luci/gae/service/taskqueue"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -51,6 +54,48 @@ func TestGetDatastoreNamespaces(t *testing.T) {
 			namespaces, err := getDatastoreNamespaces(ctx)
 			So(err, ShouldBeNil)
 			So(namespaces, ShouldResemble, []string{"bar", "foo"})
+		})
+	})
+}
+
+func TestFireAllTasks(t *testing.T) {
+	t.Parallel()
+
+	Convey("FireAllTasks", t, func() {
+		tt := &Testing{}
+		c := tt.Context()
+		s := &Service{}
+		tq := taskqueue.Get(c)
+
+		Convey("with no work is a noop", func() {
+			So(s.FireAllTasks(c), ShouldBeNil)
+
+			for _, tsks := range tq.Testable().GetScheduledTasks() {
+				So(tsks, ShouldBeEmpty)
+			}
+		})
+
+		Convey("with some work emits a task", func() {
+			ds := datastore.Get(c)
+			So(ds.Put(&realMutation{ID: "bogus", Parent: ds.MakeKey("Parent", 1)}), ShouldBeNil)
+
+			So(s.FireAllTasks(c), ShouldBeNil)
+			So(tq.Testable().GetScheduledTasks()["tumble"], ShouldHaveLength, 1)
+		})
+
+		Convey("with some work in a different namespace emits a task", func() {
+			ds := datastore.Get(info.Get(c).MustNamespace("other"))
+			So(ds.Put(&realMutation{ID: "bogus", Parent: ds.MakeKey("Parent", 1)}), ShouldBeNil)
+
+			cfg := tt.GetConfig(c)
+			cfg.Namespaced = true
+			tt.UpdateSettings(c, cfg)
+			s.Namespaces = func(context.Context) ([]string, error) {
+				return []string{"other"}, nil
+			}
+			So(s.FireAllTasks(c), ShouldBeNil)
+			tq := taskqueue.Get(info.Get(c).MustNamespace(TaskNamespace))
+			So(tq.Testable().GetScheduledTasks()["tumble"], ShouldHaveLength, 1)
 		})
 	})
 }

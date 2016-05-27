@@ -29,9 +29,7 @@ import (
 // currently corresponds to this shard number. If Shard is < 0 or > NumShards
 // (the currently configured number of shards), this will return a low > high.
 // Otherwise low < high.
-func expandedShardBounds(c context.Context, shard uint64) (low, high int64) {
-	cfg := getConfig(c)
-
+func expandedShardBounds(c context.Context, cfg *Config, shard uint64) (low, high int64) {
 	if shard < 0 || uint64(shard) >= cfg.NumShards {
 		logging.Warningf(c, "Invalid shard: %d", shard)
 		// return inverted bounds
@@ -48,20 +46,35 @@ func expandedShardBounds(c context.Context, shard uint64) (low, high int64) {
 	return
 }
 
-// processShard is the tumble backend endpoint. This accepts a shard number which
-// is expected to be < GlobalConfig.NumShards.
-func processShard(c context.Context, cfg *Config, namespaces []string, timestamp time.Time, shard uint64) error {
-	low, high := expandedShardBounds(c, shard)
+func processShardQuery(c context.Context, cfg *Config, shard uint64) *datastore.Query {
+	low, high := expandedShardBounds(c, cfg, shard)
 	if low > high {
 		return nil
 	}
 
+	return datastore.NewQuery("tumble.Mutation").
+		Gte("ExpandedShard", low).Lte("ExpandedShard", high).
+		Project("TargetRoot").Distinct(true).
+		Limit(cfg.ProcessMaxBatchSize)
+}
+
+// processShard is the tumble backend endpoint. This accepts a shard number which
+// is expected to be < GlobalConfig.NumShards.
+func processShard(c context.Context, cfg *Config, namespaces []string, timestamp time.Time, shard uint64) error {
 	logging.Fields{
 		"shard": shard,
 	}.Infof(c, "Processing tumble shard.")
 
+	q := processShardQuery(c, cfg, shard)
+
+	if q == nil {
+		logging.Warningf(c, "dead shard, quitting")
+		return nil
+	}
+
 	// If there are no namesapces, there is nothing to process.
 	if len(namespaces) == 0 {
+		logging.Infof(c, "no namespaces, quitting")
 		return nil
 	}
 
@@ -72,11 +85,6 @@ func processShard(c context.Context, cfg *Config, namespaces []string, timestamp
 
 	lockKey := fmt.Sprintf("%s.%d.lock", baseName, shard)
 	clientID := fmt.Sprintf("%d_%d", timestamp.Unix(), shard)
-
-	q := datastore.NewQuery("tumble.Mutation").
-		Gte("ExpandedShard", low).Lte("ExpandedShard", high).
-		Project("TargetRoot").Distinct(true).
-		Limit(cfg.ProcessMaxBatchSize)
 
 	var err error
 	for try := 0; try < 2; try++ {
@@ -353,6 +361,7 @@ func processRoot(c context.Context, cfg *Config, root *datastore.Key, banSet str
 		for i := 0; i < len(iterMuts); i++ {
 			m := iterMuts[i]
 
+			logging.Fields{"m": m}.Infof(c, "running RollForward")
 			shards, newMuts, newMutKeys, err := enterTransactionInternal(c, cfg, overrideRoot{m, root}, uint64(i))
 			if err != nil {
 				l.Errorf("Executing decoded gob(%T) failed: %q: %+v", m, err, m)

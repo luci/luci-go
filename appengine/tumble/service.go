@@ -8,13 +8,16 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/parallel"
 	"golang.org/x/net/context"
 )
 
@@ -62,22 +65,116 @@ func (s *Service) FireAllTasksHandler(c context.Context, rw http.ResponseWriter,
 	}
 }
 
-// FireAllTasks fires off 1 task per shard to ensure that no tumble work
-// languishes forever. This may not be needed in a constantly-loaded system with
-// good tumble key distribution.
+// FireAllTasks searches for work in all namespaces, and fires off a process
+// task for any shards it finds that have at least one Mutation present to
+// ensure that no work languishes forever. This may not be needed in
+// a constantly-loaded system with good tumble key distribution.
 func (s *Service) FireAllTasks(c context.Context) error {
 	cfg := getConfig(c)
 	shards := make(map[taskShard]struct{}, cfg.NumShards)
-	for i := uint64(0); i < cfg.NumShards; i++ {
-		shards[taskShard{i, minTS}] = struct{}{}
+	shardsLock := &sync.RWMutex{}
+
+	nspaces, err := s.getNamespaces(c, cfg)
+	if err != nil {
+		return err
 	}
 
-	err := error(nil)
+	err = parallel.WorkPool(cfg.NumGoroutines, func(ch chan<- func() error) {
+		// Since shards are cross-namespace, missingShards represents the total
+		// maximum set of shards that this cron job can trigger. Once we find work
+		// that needs to be done on a particular shard, that shard is removed from
+		// this map, and we no longer probe the rest of the namespaces for it.
+		missingShards := make(map[taskShard]struct{}, cfg.NumShards)
+		for i := uint64(0); i < cfg.NumShards; i++ {
+			missingShards[taskShard{i, minTS}] = struct{}{}
+		}
+
+		for _, ns := range nspaces {
+			c := c
+			ds := datastore.Get(c)
+			if ns != "" {
+				c = info.Get(c).MustNamespace(ns)
+				ds = datastore.Get(c)
+			}
+
+			for shrd := range missingShards {
+				shardsLock.RLock()
+				_, has := shards[shrd]
+				shardsLock.RUnlock()
+				if has {
+					delete(missingShards, shrd)
+					if len(missingShards) == 0 {
+						return
+					}
+					continue
+				}
+
+				c := c
+				ds := ds
+				shrd := shrd
+				ch <- func() error {
+					shardsLock.RLock()
+					_, has := shards[shrd]
+					shardsLock.RUnlock()
+					if has {
+						return nil
+					}
+
+					amt, err := ds.Count(processShardQuery(c, cfg, shrd.shard).Limit(1))
+					if err != nil {
+						logging.Fields{
+							logging.ErrorKey: err,
+							"shard":          shrd.shard,
+						}.Errorf(c, "error in query")
+						return err
+					}
+					if amt == 0 {
+						return nil
+					}
+					logging.Fields{
+						"shard": shrd.shard,
+					}.Infof(c, "triggering")
+
+					shardsLock.Lock()
+					shards[shrd] = struct{}{}
+					shardsLock.Unlock()
+					return nil
+				}
+			}
+		}
+	})
+	if err != nil {
+		logging.WithError(err).Errorf(c, "got errors while scanning")
+		if len(shards) == 0 {
+			return err
+		}
+	}
+
 	if !fireTasks(c, cfg, shards) {
-		err = errors.New("unable to fire all tasks")
+		err = errors.New("unable to fire tasks")
 	}
 
 	return err
+}
+
+func (s *Service) getNamespaces(c context.Context, cfg *Config) (namespaces []string, err error) {
+	// Get the set of namespaces to handle.
+	if cfg.Namespaced {
+		nsFn := s.Namespaces
+		if nsFn == nil {
+			nsFn = getDatastoreNamespaces
+		}
+		namespaces, err = nsFn(c)
+		if err != nil {
+			logging.WithError(err).Errorf(c, "Failed to enumerate namespaces.")
+			return
+		}
+	} else {
+		// Namespacing is disabled, use a single empty string. Process will
+		// interpret this as a signal to not use namesapces.
+		namespaces = []string{""}
+	}
+	return
 }
 
 // ProcessShardHandler is a http handler suitable for installation into
@@ -117,23 +214,10 @@ func (s *Service) ProcessShardHandler(c context.Context, rw http.ResponseWriter,
 	cfg := getConfig(c)
 
 	// Get the set of namespaces to handle.
-	//
-	var namespaces []string
-	if cfg.Namespaced {
-		nsFn := s.Namespaces
-		if nsFn == nil {
-			nsFn = getDatastoreNamespaces
-		}
-		namespaces, err = nsFn(c)
-		if err != nil {
-			logging.WithError(err).Errorf(c, "Failed to enumerate namespaces.")
-			rw.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-	} else {
-		// Namespacing is disabled, use a single empty string. Process will
-		// interpret this as a signal to not use namesapces.
-		namespaces = []string{""}
+	namespaces, err := s.getNamespaces(c, cfg)
+	if err != nil {
+		rw.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	err = processShard(c, cfg, namespaces, time.Unix(tstamp, 0).UTC(), sid)

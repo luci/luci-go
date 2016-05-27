@@ -320,30 +320,13 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 			gds := datastore.Get(ctx)
 
 			Convey("can't send to someone who doesn't exist", func() {
-				gds.Testable().Consistent(false)
-
 				forEachNS(ctx, func(ctx context.Context, i int) {
 					var err error
 					outMsgs[i], err = charlie.SendMessage(ctx, "Hey there", "lennon")
 					So(err, ShouldBeNil)
 				})
 
-				// need to advance clock and catch up indexes
-				So(testing.Iterate(ctx), ShouldEqual, 0)
-				testing.AdvanceTime(ctx)
-
-				// need to catch up indexes
-				So(testing.Iterate(ctx), ShouldBeGreaterThan, 0)
-
-				testing.FireAllTasks(ctx)
-				gds.Testable().CatchupIndexes()
-				testing.AdvanceTime(ctx)
-
-				So(testing.Iterate(ctx), ShouldEqual, testing.GetConfig(ctx).NumShards)
-				gds.Testable().CatchupIndexes()
-				testing.AdvanceTime(ctx)
-
-				So(testing.Iterate(ctx), ShouldBeGreaterThan, 0)
+				testing.Drain(ctx)
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
 					So(datastore.Get(ctx).Get(outMsgs[i]), ShouldBeNil)
