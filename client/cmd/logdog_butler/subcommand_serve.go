@@ -46,7 +46,15 @@ func (cmd *serveCommandRun) Run(app subcommands.Application, args []string) int 
 		return runtimeErrorReturnCode
 	}
 
-	a.Main(func(b *butler.Butler) error {
+	// We think everything will work. Configure our Output instance.
+	output, err := a.configOutput()
+	if err != nil {
+		log.WithError(err).Errorf(a, "Failed to create output instance.")
+		return runtimeErrorReturnCode
+	}
+	defer output.Close()
+
+	a.runWithButler(output, func(b *butler.Butler) error {
 		b.AddStreamServer(streamServer)
 		return nil
 	})

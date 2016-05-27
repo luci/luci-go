@@ -5,6 +5,8 @@
 package main
 
 import (
+	"sort"
+
 	"github.com/luci/luci-go/client/internal/logdog/butler/output"
 	"github.com/luci/luci-go/common/flag/multiflag"
 )
@@ -12,6 +14,7 @@ import (
 type outputFactory interface {
 	option() multiflag.Option
 	configOutput(a *application) (output.Output, error)
+	scopes() []string
 }
 
 // outputConfigFlag instance that produces a MessageOutput instance when run.
@@ -69,4 +72,20 @@ func registerOutputFactory(f outputFactory) {
 // Returns a slice of registered output options.
 func getOutputFactories() []outputFactory {
 	return outputFactories
+}
+
+func allOutputScopes() []string {
+	scopes := make(map[string]struct{})
+	for _, of := range outputFactories {
+		for _, scope := range of.scopes() {
+			scopes[scope] = struct{}{}
+		}
+	}
+
+	allScopes := make([]string, 0, len(scopes))
+	for scope := range scopes {
+		allScopes = append(allScopes, scope)
+	}
+	sort.Strings(allScopes)
+	return allScopes
 }

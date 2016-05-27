@@ -14,6 +14,7 @@ import (
 	"github.com/luci/luci-go/client/internal/logdog/butler/output"
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	"github.com/luci/luci-go/common/logdog/butlerproto"
+	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/recordio"
@@ -39,6 +40,9 @@ var _ Topic = (*pubsub.Topic)(nil)
 type Config struct {
 	// Topic is the Pub/Sub topic to publish to.
 	Topic Topic
+
+	// Secret, if not nil, is the prefix secret to attach to each outgoing bundle.
+	Secret types.PrefixSecret
 
 	// Compress, if true, enables zlib compression.
 	Compress bool
@@ -96,6 +100,7 @@ func (o *pubSubOutput) SendBundle(bundle *logpb.ButlerLogBundle) error {
 	b := o.bufferPool.Get().(*buffer)
 	defer o.bufferPool.Put(b)
 
+	bundle.Secret = []byte(o.Secret)
 	message, err := o.buildMessage(b, bundle)
 	if err != nil {
 		log.Fields{

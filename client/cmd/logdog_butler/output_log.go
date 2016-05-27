@@ -29,3 +29,5 @@ func (f *logOutputFactory) option() multiflag.Option {
 func (f *logOutputFactory) configOutput(a *application) (output.Output, error) {
 	return logOutput.New(a, f.bundleSize), nil
 }
+
+func (f *logOutputFactory) scopes() []string { return nil }

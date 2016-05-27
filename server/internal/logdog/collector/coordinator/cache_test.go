@@ -231,9 +231,9 @@ func TestStreamStateCache(t *testing.T) {
 				So(tcc.calls, ShouldEqual, 2)
 			})
 
-			Convey(`A registration error will result in a RegisterStream error.`, func() {
+			Convey(`A transient registration error will result in a RegisterStream error.`, func() {
 				tcc.errC = make(chan error, 1)
-				tcc.errC <- errors.New("test error")
+				tcc.errC <- errors.WrapTransient(errors.New("test error"))
 
 				_, err := ssc.RegisterStream(c, &st, nil)
 				So(err, ShouldNotBeNil)
@@ -245,6 +245,23 @@ func TestStreamStateCache(t *testing.T) {
 					_, err := ssc.RegisterStream(c, &st, nil)
 					So(err, ShouldBeNil)
 					So(tcc.calls, ShouldEqual, 2)
+				})
+			})
+
+			Convey(`A non-transient registration error will result in a RegisterStream error.`, func() {
+				tcc.errC = make(chan error, 1)
+				tcc.errC <- errors.New("test error")
+
+				_, err := ssc.RegisterStream(c, &st, nil)
+				So(err, ShouldNotBeNil)
+				So(tcc.calls, ShouldEqual, 1)
+
+				Convey(`A second registration will return the same error and not make a new request.`, func() {
+					tcc.errC = nil
+
+					_, err := ssc.RegisterStream(c, &st, nil)
+					So(err, ShouldNotBeNil)
+					So(tcc.calls, ShouldEqual, 1)
 				})
 			})
 

@@ -181,6 +181,16 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 		}()
 	}
 
+	// We're about ready to execute our command. Initialize our Output instance.
+	// We want to do this before we execute our subprocess so that if this fails,
+	// we don't have to interrupt an already-running process.
+	output, err := a.configOutput()
+	if err != nil {
+		log.WithError(err).Errorf(a, "Failed to create output instance.")
+		return runtimeErrorReturnCode
+	}
+	defer output.Close()
+
 	// Construct and execute the command
 	proc := ctxcmd.CtxCmd{
 		Cmd: exec.Command(commandPath, args...),
@@ -276,7 +286,7 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 		}.Infof(ctx, "Process completed.")
 	}()
 
-	err = a.Main(func(b *butler.Butler) error {
+	err = a.runWithButler(output, func(b *butler.Butler) error {
 		// We will execute the bootstrapped command, then the Butler. Since we are
 		// hooking the Butler up to the command, the Butler's execution will be
 		// bounded by the availability of the command's STDOUT/STDERR streams. If
@@ -345,8 +355,8 @@ func (cmd *runCommandRun) loadJSONArgs() ([]string, error) {
 // updateEnvironment adds common Butler bootstrapping environment variables
 // to the environment.
 func (cmd *runCommandRun) updateEnvironment(e environ, a *application) {
-	e.set(bootstrap.EnvStreamPrefix, string(a.butler.Prefix))
-	e.set(bootstrap.EnvStreamProject, string(a.butler.Project))
+	e.set(bootstrap.EnvStreamPrefix, string(a.prefix))
+	e.set(bootstrap.EnvStreamProject, string(a.project))
 
 	// Set stream server path (if applicable)
 	if cmd.streamServerURI != "" {

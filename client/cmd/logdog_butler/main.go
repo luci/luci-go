@@ -18,7 +18,6 @@ import (
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
 
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/client/internal/logdog/butler"
@@ -26,8 +25,8 @@ import (
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/clock/clockflag"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/flag/multiflag"
-	"github.com/luci/luci-go/common/gcloud/pubsub"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
@@ -49,31 +48,16 @@ const (
 	runtimeErrorReturnCode = 250
 )
 
-// buildScopes consumes a series of independent OAuth2 scope strings and
-// combines them into a single deduplicated list.
-func buildScopes(parts ...[]string) []string {
-	result := []string{}
-	seen := make(map[string]bool)
-	for _, scopes := range parts {
-		for _, s := range scopes {
-			if _, ok := seen[s]; ok {
-				continue
-			}
-			result = append(result, s)
-			seen[s] = true
-		}
-	}
-	return result
-}
-
 // application is the Butler application instance and its runtime configuration
 // and state.
 type application struct {
 	cli.Application
 	context.Context
 
-	butler       butler.Config
-	outputConfig outputConfigFlag
+	project       config.ProjectName
+	prefix        types.StreamName
+	outputWorkers int
+	outputConfig  outputConfigFlag
 
 	authFlags authcli.Flags
 
@@ -87,8 +71,6 @@ type application struct {
 	// ncCtx is a context that will not be cancelled when cancelFunc is called.
 	ncCtx      context.Context
 	cancelFunc func()
-
-	output output.Output
 }
 
 func (a *application) addFlags(fs *flag.FlagSet) {
@@ -105,15 +87,15 @@ func (a *application) addFlags(fs *flag.FlagSet) {
 
 	a.maxBufferAge = clockflag.Duration(butler.DefaultMaxBufferAge)
 
-	fs.Var(&a.butler.Project, "project",
+	fs.Var(&a.project, "project",
 		"The log prefix's project name (required).")
-	fs.Var(&a.butler.Prefix, "prefix",
+	fs.Var(&a.prefix, "prefix",
 		"Prefix to apply to all stream names.")
 	fs.Var(&a.outputConfig, "output",
 		"The output name and configuration. Specify 'help' for more information.")
 	fs.StringVar(&a.cpuProfile,
 		"cpuprofile", "", "If specified, enables CPU profiling and profiles to the specified path.")
-	fs.IntVar(&a.butler.OutputWorkers, "output-workers", butler.DefaultOutputWorkers,
+	fs.IntVar(&a.outputWorkers, "output-workers", butler.DefaultOutputWorkers,
 		"The maximum number of parallel output dispatches.")
 	fs.Var(&a.maxBufferAge, "output-max-buffer-age",
 		"Send buffered messages if they've been held for longer than this period.")
@@ -130,30 +112,6 @@ func (a *application) authenticator(ctx context.Context) (*auth.Authenticator, e
 	return auth.NewAuthenticator(ctx, auth.SilentLogin, opts), nil
 }
 
-func (a *application) authenticatedClient(ctx context.Context) (*http.Client, error) {
-	if a.client == nil {
-		authenticator, err := a.authenticator(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		client, err := authenticator.Client()
-		if err != nil {
-			return nil, err
-		}
-		a.client = client
-	}
-	return a.client, nil
-}
-
-func (a *application) tokenSource(ctx context.Context) (oauth2.TokenSource, error) {
-	authenticator, err := a.authenticator(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return authenticator.TokenSource(), nil
-}
-
 func (a *application) configOutput() (output.Output, error) {
 	factory := a.outputConfig.getFactory()
 	if factory == nil {
@@ -168,8 +126,9 @@ func (a *application) configOutput() (output.Output, error) {
 	return output, nil
 }
 
-// An execution harness that adds application-level management to a Butler run.
-func (a *application) Main(runFunc func(b *butler.Butler) error) error {
+// runWithButler is an execution harness that adds application-level management
+// to a Butler run.
+func (a *application) runWithButler(out output.Output, runFunc func(b *butler.Butler) error) error {
 	// Enable CPU profiling if specified
 	if a.cpuProfile != "" {
 		f, err := os.Create(a.cpuProfile)
@@ -180,30 +139,25 @@ func (a *application) Main(runFunc func(b *butler.Butler) error) error {
 		defer pprof.StopCPUProfile()
 	}
 
-	// Generate a prefix secret for this Butler session.
-	var err error
-	if a.butler.Secret, err = types.NewPrefixSecret(); err != nil {
-		return fmt.Errorf("failed to generate prefix secret: %s", err)
-	}
-
 	// Instantiate our Butler.
-	a.butler.MaxBufferAge = time.Duration(a.maxBufferAge)
-	a.butler.BufferLogs = !a.noBufferLogs
-	a.butler.Output = a.output
-	a.butler.TeeStdout = os.Stdout
-	a.butler.TeeStderr = os.Stderr
-	if err := a.butler.Validate(); err != nil {
-		return err
+	butlerOpts := butler.Config{
+		Project:       a.project,
+		Prefix:        a.prefix,
+		MaxBufferAge:  time.Duration(a.maxBufferAge),
+		BufferLogs:    !a.noBufferLogs,
+		Output:        out,
+		OutputWorkers: a.outputWorkers,
+		TeeStdout:     os.Stdout,
+		TeeStderr:     os.Stderr,
 	}
-
-	b, err := butler.New(a, a.butler)
+	b, err := butler.New(a, butlerOpts)
 	if err != nil {
 		return err
 	}
 
 	// Log the Butler's emitted streams.
 	defer func() {
-		if r := a.output.Record(); r != nil {
+		if r := out.Record(); r != nil {
 			// Log detail stream record.
 			streams := make([]string, 0, len(r.Streams))
 			for k := range r.Streams {
@@ -225,7 +179,7 @@ func (a *application) Main(runFunc func(b *butler.Butler) error) error {
 			s := b.Streams()
 			paths := make([]types.StreamPath, len(s))
 			for i, sn := range s {
-				paths[i] = a.butler.Prefix.Join(sn)
+				paths[i] = a.prefix.Join(sn)
 			}
 			log.Fields{
 				"count":   len(paths),
@@ -247,10 +201,7 @@ func (a *application) Main(runFunc func(b *butler.Butler) error) error {
 
 func mainImpl(ctx context.Context, argv []string) int {
 	authOptions := auth.Options{
-		Scopes: buildScopes(
-			[]string{auth.OAuthScopeEmail},
-			pubsub.PublisherScopes,
-		),
+		Scopes: allOutputScopes(),
 	}
 
 	a := &application{
@@ -289,15 +240,15 @@ func mainImpl(ctx context.Context, argv []string) int {
 	a.Context = logConfig.Set(a.Context)
 
 	// TODO(dnj): Force all invocations to supply a Project.
-	if a.butler.Project != "" {
-		if err := a.butler.Project.Validate(); err != nil {
+	if a.project != "" {
+		if err := a.project.Validate(); err != nil {
 			log.WithError(err).Errorf(a, "Invalid project (-project).")
 			return configErrorReturnCode
 		}
 	}
 
 	// Validate our Prefix; generate a user prefix if one was not supplied.
-	prefix := a.butler.Prefix
+	prefix := a.prefix
 	if prefix == "" {
 		// Auto-generate a prefix.
 		prefix, err := generateRandomUserPrefix(a)
@@ -305,7 +256,7 @@ func mainImpl(ctx context.Context, argv []string) int {
 			log.WithError(err).Errorf(a, "Failed to generate user prefix.")
 			return configErrorReturnCode
 		}
-		a.butler.Prefix = prefix
+		a.prefix = prefix
 	}
 
 	// Signal handler to catch 'Control-C'. This will gracefully shutdown the
@@ -336,21 +287,12 @@ func mainImpl(ctx context.Context, argv []string) int {
 	}()
 
 	log.Fields{
-		"prefix": a.butler.Prefix,
+		"prefix": a.prefix,
 	}.Infof(a, "Using session prefix.")
-	if err := a.butler.Prefix.Validate(); err != nil {
+	if err := a.prefix.Validate(); err != nil {
 		log.WithError(err).Errorf(a, "Invalid session prefix.")
 		return configErrorReturnCode
 	}
-
-	// Configure our Butler Output.
-	var err error
-	a.output, err = a.configOutput()
-	if err != nil {
-		log.WithError(err).Errorf(a, "Failed to create output instance.")
-		return runtimeErrorReturnCode
-	}
-	defer a.output.Close()
 
 	// Run our subcommand (and parse subcommand flags).
 	return subcommands.Run(a, flags.Args())

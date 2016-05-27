@@ -231,7 +231,6 @@ func TestConfig(t *testing.T) {
 			Output:  &to,
 			Prefix:  "unit/test",
 			Project: "test-project",
-			Secret:  types.PrefixSecret(bytes.Repeat([]byte{0x55}, types.PrefixSecretLength)),
 		}
 
 		Convey(`Will validate.`, func() {
@@ -282,7 +281,6 @@ func TestButler(t *testing.T) {
 			BufferLogs:    false,
 			Prefix:        "unit/test",
 			Project:       "test-project",
-			Secret:        types.PrefixSecret(bytes.Repeat([]byte{0x55}, types.PrefixSecretLength)),
 			TeeStdout:     &teeStdout,
 			TeeStderr:     &teeStderr,
 		}

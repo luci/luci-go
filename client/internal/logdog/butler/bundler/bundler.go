@@ -30,8 +30,6 @@ type Config struct {
 	Project config.ProjectName
 	// Prefix is the common prefix for this set of streams.
 	Prefix types.StreamName
-	// Secret is the prefix secret for this set of streams.
-	Secret []byte
 
 	// MaxBufferedBytes is the maximum number of bytes to buffer in memory per
 	// stream.
@@ -192,7 +190,6 @@ func (b *Bundler) makeBundles() {
 				Timestamp: google.NewTimestamp(b.getClock().Now()),
 				Project:   string(b.c.Project),
 				Prefix:    string(b.c.Prefix),
-				Secret:    b.c.Secret,
 			},
 		}
 		var oldestContentTime time.Time

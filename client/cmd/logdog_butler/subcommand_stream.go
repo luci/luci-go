@@ -68,8 +68,16 @@ func (cmd *streamCommandRun) Run(app subcommands.Application, args []string) int
 		streamFile = file
 	}
 
+	// We think everything should work. Configure our Output instance.
+	output, err := a.configOutput()
+	if err != nil {
+		log.WithError(err).Errorf(a, "Failed to create output instance.")
+		return runtimeErrorReturnCode
+	}
+	defer output.Close()
+
 	// Instantiate our Processor.
-	err := a.Main(func(b *butler.Butler) error {
+	err = a.runWithButler(output, func(b *butler.Butler) error {
 		if err := b.AddStream(streamFile, cmd.stream.properties()); err != nil {
 			return err
 		}
