@@ -70,15 +70,20 @@ func (f *fakeDatastore) Run(fq *FinalizedQuery, cb RawRunCB) error {
 	return nil
 }
 
+var (
+	errFail    = errors.New("Individual element fail")
+	errFailAll = errors.New("Operation fail")
+)
+
 func (f *fakeDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb PutMultiCB) error {
 	if keys[0].Kind() == "FailAll" {
-		return errors.New("PutMulti fail all")
+		return errFailAll
 	}
 	_, assertExtra := vals[0].GetMeta("assertExtra")
 	for i, k := range keys {
 		err := error(nil)
 		if k.Kind() == "Fail" {
-			err = errors.New("PutMulti fail")
+			err = errFail
 		} else {
 			So(vals[i]["Value"], ShouldResemble, []Property{MkProperty(i)})
 			if assertExtra {
@@ -93,14 +98,16 @@ func (f *fakeDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb PutMultiCB)
 	return nil
 }
 
+const noSuchEntityID = 0xdead
+
 func (f *fakeDatastore) GetMulti(keys []*Key, _meta MultiMetaGetter, cb GetMultiCB) error {
 	if keys[0].Kind() == "FailAll" {
-		return errors.New("GetMulti fail all")
+		return errFailAll
 	}
 	for i, k := range keys {
 		if k.Kind() == "Fail" {
-			cb(nil, errors.New("GetMulti fail"))
-		} else if k.Kind() == "DNE" {
+			cb(nil, errFail)
+		} else if k.Kind() == "DNE" || k.IntID() == noSuchEntityID {
 			cb(nil, ErrNoSuchEntity)
 		} else {
 			cb(PropertyMap{"Value": {MkProperty(i + 1)}}, nil)
@@ -111,11 +118,13 @@ func (f *fakeDatastore) GetMulti(keys []*Key, _meta MultiMetaGetter, cb GetMulti
 
 func (f *fakeDatastore) DeleteMulti(keys []*Key, cb DeleteMultiCB) error {
 	if keys[0].Kind() == "FailAll" {
-		return errors.New("DeleteMulti fail all")
+		return errFailAll
 	}
 	for _, k := range keys {
 		if k.Kind() == "Fail" {
-			cb(errors.New("DeleteMulti fail"))
+			cb(errFail)
+		} else if k.Kind() == "DNE" || k.IntID() == noSuchEntityID {
+			cb(ErrNoSuchEntity)
 		} else {
 			cb(nil)
 		}
@@ -251,6 +260,33 @@ func (f *FakePLS) Problem() error {
 	return nil
 }
 
+// plsChan to test channel PLS types.
+type plsChan chan Property
+
+var _ PropertyLoadSaver = plsChan(nil)
+
+func (c plsChan) Load(pm PropertyMap) error                { return nil }
+func (c plsChan) Save(withMeta bool) (PropertyMap, error)  { return nil, nil }
+func (c plsChan) SetMeta(key string, val interface{}) bool { return false }
+func (c plsChan) Problem() error                           { return nil }
+
+func (c plsChan) GetMeta(key string) (interface{}, bool) {
+	switch key {
+	case "kind":
+		return "plsChan", true
+	case "id":
+		return "whyDoIExist", true
+	}
+	return nil, false
+}
+
+func (c plsChan) GetAllMeta() PropertyMap {
+	return PropertyMap{
+		"kind": []Property{MkProperty("plsChan")},
+		"id":   []Property{MkProperty("whyDoIExist")},
+	}
+}
+
 type MGSWithNoKind struct {
 	S string
 }
@@ -260,7 +296,7 @@ func (s *MGSWithNoKind) GetMeta(key string) (interface{}, bool) {
 }
 
 func (s *MGSWithNoKind) GetAllMeta() PropertyMap {
-	return PropertyMap{}
+	return PropertyMap{"$kind": []Property{MkProperty("ohai")}}
 }
 
 func (s *MGSWithNoKind) SetMeta(key string, val interface{}) bool {
@@ -327,38 +363,6 @@ func TestKeyForObj(t *testing.T) {
 				So(pls.SetMeta("parent", k), ShouldBeTrue)
 				So(ds.KeyForObj(pls).String(), ShouldEqual, `s~aid:ns:/Hello,"world"/CommonStruct,1`)
 			})
-
-			Convey("can see if things exist", func() {
-				e, err := ds.Exists(k)
-				So(err, ShouldBeNil)
-				So(e, ShouldBeTrue)
-
-				bl, err := ds.ExistsMulti([]*Key{k, ds.MakeKey("hello", "other")})
-				So(err, ShouldBeNil)
-				So(bl, ShouldResemble, BoolList{true, true})
-				So(bl.All(), ShouldBeTrue)
-				So(bl.Any(), ShouldBeTrue)
-
-				bl, err = ds.ExistsMulti([]*Key{k, ds.MakeKey("DNE", "other")})
-				So(err, ShouldBeNil)
-				So(bl, ShouldResemble, BoolList{true, false})
-				So(bl.All(), ShouldBeFalse)
-				So(bl.Any(), ShouldBeTrue)
-
-				e, err = ds.Exists(ds.MakeKey("DNE", "nope"))
-				So(err, ShouldBeNil)
-				So(e, ShouldBeFalse)
-
-				bl, err = ds.ExistsMulti([]*Key{ds.MakeKey("DNE", "nope"), ds.MakeKey("DNE", "other")})
-				So(err, ShouldBeNil)
-				So(bl, ShouldResemble, BoolList{false, false})
-				So(bl.All(), ShouldBeFalse)
-				So(bl.Any(), ShouldBeFalse)
-
-				_, err = ds.Exists(ds.MakeKey("Fail", "boom"))
-				So(err, ShouldErrLike, "GetMulti fail")
-			})
-
 		})
 
 		Convey("bad", func() {
@@ -419,348 +423,537 @@ func TestPopulateKey(t *testing.T) {
 func TestPut(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test Put/PutMulti", t, func() {
+	Convey("A testing environment", t, func() {
 		c := info.Set(context.Background(), fakeInfo{})
 		c = SetRawFactory(c, fakeDatastoreFactory)
 		ds := Get(c)
 
-		Convey("bad", func() {
-			Convey("static can't serialize", func() {
-				bss := []badStruct{{}, {}}
-				So(func() { ds.PutMulti(bss) }, ShouldPanicLike,
-					`field "Compy" has invalid type`)
+		Convey("Testing Put", func() {
+			Convey("bad", func() {
+				Convey("static can't serialize", func() {
+					bss := []badStruct{{}, {}}
+					So(func() { ds.Put(bss) }, ShouldPanicLike,
+						`field "Compy" has invalid type`)
+				})
+
+				Convey("static ptr can't serialize", func() {
+					bss := []*badStruct{{}, {}}
+					So(func() { ds.Put(bss) }, ShouldPanicLike,
+						`field "Compy" has invalid type: complex64`)
+				})
+
+				Convey("static bad type", func() {
+					So(func() { ds.Put(100) }, ShouldPanicLike,
+						"invalid input type (int): not a PLS or pointer-to-struct")
+				})
+
+				Convey("static bad type (slice of bad type)", func() {
+					So(func() { ds.Put([]int{}) }, ShouldPanicLike,
+						"invalid input type ([]int): not a PLS or pointer-to-struct")
+				})
+
+				Convey("dynamic can't serialize", func() {
+					fplss := []FakePLS{{failSave: true}, {}}
+					So(ds.Put(fplss), ShouldErrLike, "FakePLS.Save")
+				})
+
+				Convey("can't get keys", func() {
+					fplss := []FakePLS{{failGetMeta: true}, {}}
+					So(ds.Put(fplss), ShouldErrLike, "unable to extract $kind")
+				})
+
+				Convey("get single error for RPC failure", func() {
+					fplss := []FakePLS{{Kind: "FailAll"}, {}}
+					So(ds.Put(fplss), ShouldEqual, errFailAll)
+				})
+
+				Convey("get multi error for individual failures", func() {
+					fplss := []FakePLS{{}, {Kind: "Fail"}}
+					So(ds.Put(fplss), ShouldResemble, errors.MultiError{nil, errFail})
+				})
+
+				Convey("put with non-modifyable type is an error", func() {
+					cs := CommonStruct{}
+					So(func() { ds.Put(cs) }, ShouldPanicLike,
+						"invalid input type (datastore.CommonStruct): not a pointer")
+				})
+
+				Convey("get with *Key is an error", func() {
+					So(func() { ds.Get(&Key{}) }, ShouldPanicLike,
+						"invalid input type (*datastore.Key): not user datatype")
+				})
+
+				Convey("struct with no $kind is an error", func() {
+					s := MGSWithNoKind{}
+					So(ds.Put(&s), ShouldErrLike, "unable to extract $kind")
+				})
+
+				Convey("struct with invalid but non-nil key is an error", func() {
+					type BadParent struct {
+						ID     int64 `gae:"$id"`
+						Parent *Key  `gae:"$parent"`
+					}
+					// having an Incomplete parent makes an invalid key
+					bp := &BadParent{ID: 1, Parent: ds.MakeKey("Something", 0)}
+					So(ds.Put(bp), ShouldErrLike, ErrInvalidKey)
+				})
+
+				Convey("vararg with errors", func() {
+					successSlice := []CommonStruct{{Value: 0}, {Value: 1}}
+					failSlice := []FakePLS{{Kind: "Fail"}, {Value: 3}}
+					emptySlice := []CommonStruct(nil)
+					cs0 := CommonStruct{Value: 4}
+					cs1 := FakePLS{Kind: "Fail", Value: 5}
+					fpls := FakePLS{StringID: "ohai", Value: 6}
+
+					err := ds.Put(successSlice, failSlice, emptySlice, &cs0, &cs1, &fpls)
+					So(err, ShouldResemble, errors.MultiError{
+						nil, errors.MultiError{errFail, nil}, nil, nil, errFail, nil})
+					So(successSlice[0].ID, ShouldEqual, 1)
+					So(successSlice[1].ID, ShouldEqual, 2)
+					So(cs0.ID, ShouldEqual, 5)
+				})
 			})
 
-			Convey("static ptr can't serialize", func() {
-				bss := []*badStruct{{}, {}}
-				So(func() { ds.PutMulti(bss) }, ShouldPanicLike,
-					`field "Compy" has invalid type: complex64`)
-			})
+			Convey("ok", func() {
+				Convey("[]S", func() {
+					css := make([]CommonStruct, 7)
+					for i := range css {
+						if i == 4 {
+							css[i].ID = 200
+						}
+						css[i].Value = int64(i)
+					}
+					So(ds.Put(css), ShouldBeNil)
+					for i, cs := range css {
+						expect := int64(i + 1)
+						if i == 4 {
+							expect = 200
+						}
+						So(cs.ID, ShouldEqual, expect)
+					}
+				})
 
-			Convey("static bad type (non-slice)", func() {
-				So(func() { ds.PutMulti(100) }, ShouldPanicLike,
-					"invalid argument type: expected slice, got int")
-			})
+				Convey("[]*S", func() {
+					css := make([]*CommonStruct, 7)
+					for i := range css {
+						css[i] = &CommonStruct{Value: int64(i)}
+						if i == 4 {
+							css[i].ID = 200
+						}
+					}
+					So(ds.Put(css), ShouldBeNil)
+					for i, cs := range css {
+						expect := int64(i + 1)
+						if i == 4 {
+							expect = 200
+						}
+						So(cs.ID, ShouldEqual, expect)
+					}
 
-			Convey("static bad type (slice of bad type)", func() {
-				So(func() { ds.PutMulti([]int{}) }, ShouldPanicLike,
-					"invalid argument type: []int")
-			})
+					s := &CommonStruct{}
+					So(ds.Put(s), ShouldBeNil)
+					So(s.ID, ShouldEqual, 1)
+				})
 
-			Convey("dynamic can't serialize", func() {
-				fplss := []FakePLS{{failSave: true}, {}}
-				So(ds.PutMulti(fplss), ShouldErrLike, "FakePLS.Save")
-			})
+				Convey("[]P", func() {
+					fplss := make([]FakePLS, 7)
+					for i := range fplss {
+						fplss[i].Value = int64(i)
+						if i == 4 {
+							fplss[i].IntID = int64(200)
+						}
+					}
+					So(ds.Put(fplss), ShouldBeNil)
+					for i, fpls := range fplss {
+						expect := int64(i + 1)
+						if i == 4 {
+							expect = 200
+						}
+						So(fpls.IntID, ShouldEqual, expect)
+					}
 
-			Convey("can't get keys", func() {
-				fplss := []FakePLS{{failGetMeta: true}, {}}
-				So(ds.PutMulti(fplss), ShouldErrLike, "unable to extract $kind")
-			})
+					pm := PropertyMap{"Value": {MkProperty(0)}, "$kind": {MkPropertyNI("Pmap")}}
+					So(ds.Put(pm), ShouldBeNil)
+					So(ds.KeyForObj(pm).IntID(), ShouldEqual, 1)
+				})
 
-			Convey("get single error for RPC failure", func() {
-				fplss := []FakePLS{{Kind: "FailAll"}, {}}
-				So(ds.PutMulti(fplss), ShouldErrLike, "PutMulti fail all")
-			})
+				Convey("[]P (map)", func() {
+					pms := make([]PropertyMap, 7)
+					for i := range pms {
+						pms[i] = PropertyMap{
+							"$kind": {MkProperty("Pmap")},
+							"Value": {MkProperty(i)},
+						}
+						if i == 4 {
+							So(pms[i].SetMeta("id", int64(200)), ShouldBeTrue)
+						}
+					}
+					So(ds.Put(pms), ShouldBeNil)
+					for i, pm := range pms {
+						expect := int64(i + 1)
+						if i == 4 {
+							expect = 200
+						}
+						So(ds.KeyForObj(pm).String(), ShouldEqual, fmt.Sprintf("s~aid:ns:/Pmap,%d", expect))
+					}
+				})
 
-			Convey("get multi error for individual failures", func() {
-				fplss := []FakePLS{{}, {Kind: "Fail"}}
-				So(ds.PutMulti(fplss), ShouldResemble, errors.MultiError{nil, errors.New("PutMulti fail")})
-			})
+				Convey("[]*P", func() {
+					fplss := make([]*FakePLS, 7)
+					for i := range fplss {
+						fplss[i] = &FakePLS{Value: int64(i)}
+						if i == 4 {
+							fplss[i].IntID = int64(200)
+						}
+					}
+					So(ds.Put(fplss), ShouldBeNil)
+					for i, fpls := range fplss {
+						expect := int64(i + 1)
+						if i == 4 {
+							expect = 200
+						}
+						So(fpls.IntID, ShouldEqual, expect)
+					}
+				})
 
-			Convey("put with non-modifyable type is an error", func() {
+				Convey("[]*P (map)", func() {
+					pms := make([]*PropertyMap, 7)
+					for i := range pms {
+						pms[i] = &PropertyMap{
+							"$kind": {MkProperty("Pmap")},
+							"Value": {MkProperty(i)},
+						}
+						if i == 4 {
+							So(pms[i].SetMeta("id", int64(200)), ShouldBeTrue)
+						}
+					}
+					So(ds.Put(pms), ShouldBeNil)
+					for i, pm := range pms {
+						expect := int64(i + 1)
+						if i == 4 {
+							expect = 200
+						}
+						So(ds.KeyForObj(*pm).String(), ShouldEqual, fmt.Sprintf("s~aid:ns:/Pmap,%d", expect))
+					}
+				})
+
+				Convey("[]I", func() {
+					ifs := []interface{}{
+						&CommonStruct{Value: 0},
+						&FakePLS{Value: 1},
+						PropertyMap{"Value": {MkProperty(2)}, "$kind": {MkPropertyNI("Pmap")}},
+						&PropertyMap{"Value": {MkProperty(3)}, "$kind": {MkPropertyNI("Pmap")}},
+					}
+					So(ds.Put(ifs), ShouldBeNil)
+					for i := range ifs {
+						switch i {
+						case 0:
+							So(ifs[i].(*CommonStruct).ID, ShouldEqual, 1)
+						case 1:
+							fpls := ifs[i].(*FakePLS)
+							So(fpls.IntID, ShouldEqual, 2)
+						case 2:
+							So(ds.KeyForObj(ifs[i].(PropertyMap)).String(), ShouldEqual, "s~aid:ns:/Pmap,3")
+						case 3:
+							So(ds.KeyForObj(*ifs[i].(*PropertyMap)).String(), ShouldEqual, "s~aid:ns:/Pmap,4")
+						}
+					}
+				})
+			})
+		})
+
+		Convey("Testing PutMulti", func() {
+			Convey("Fails for something other than a slice.", func() {
 				cs := CommonStruct{}
-				So(func() { ds.Put(cs) }, ShouldPanicLike,
-					"invalid Put input type (datastore.CommonStruct): not a pointer")
+				So(func() { ds.PutMulti(&cs) }, ShouldPanicLike,
+					"argument must be a slice, not *datastore.CommonStruct")
 			})
 
-			Convey("get with *Key is an error", func() {
-				So(func() { ds.Get(&Key{}) }, ShouldPanicLike,
-					"invalid Get input type (*datastore.Key): not user datatype")
+			Convey("Succeeds for a slice.", func() {
+				cs := []CommonStruct{{Value: 0}, {Value: 1}}
+				So(ds.PutMulti(cs), ShouldBeNil)
+				So(cs[0].ID, ShouldEqual, 1)
+				So(cs[1].ID, ShouldEqual, 2)
 			})
 
-			Convey("struct with no $kind is an error", func() {
-				s := MGSWithNoKind{}
-				So(ds.Put(&s), ShouldErrLike, "unable to extract $kind")
-			})
-
-			Convey("struct with invalid but non-nil key is an error", func() {
-				type BadParent struct {
-					ID     int64 `gae:"$id"`
-					Parent *Key  `gae:"$parent"`
-				}
-				// having an Incomplete parent makes an invalid key
-				bp := &BadParent{ID: 1, Parent: ds.MakeKey("Something", 0)}
-				So(ds.Put(bp), ShouldErrLike, ErrInvalidKey)
+			Convey("Returns an item error in a MultiError.", func() {
+				cs := []FakePLS{{Value: 0}, {Kind: "Fail"}}
+				err := ds.PutMulti(cs)
+				So(err, ShouldResemble, errors.MultiError{nil, errFail})
+				So(cs[0].IntID, ShouldEqual, 1)
 			})
 		})
+	})
+}
 
-		Convey("ok", func() {
-			Convey("[]S", func() {
-				css := make([]CommonStruct, 7)
-				for i := range css {
-					if i == 4 {
-						css[i].ID = 200
-					}
-					css[i].Value = int64(i)
-				}
-				So(ds.PutMulti(css), ShouldBeNil)
-				for i, cs := range css {
-					expect := int64(i + 1)
-					if i == 4 {
-						expect = 200
-					}
-					So(cs.ID, ShouldEqual, expect)
-				}
-			})
+func TestExists(t *testing.T) {
+	t.Parallel()
 
-			Convey("[]*S", func() {
-				css := make([]*CommonStruct, 7)
-				for i := range css {
-					css[i] = &CommonStruct{Value: int64(i)}
-					if i == 4 {
-						css[i].ID = 200
-					}
-				}
-				So(ds.PutMulti(css), ShouldBeNil)
-				for i, cs := range css {
-					expect := int64(i + 1)
-					if i == 4 {
-						expect = 200
-					}
-					So(cs.ID, ShouldEqual, expect)
-				}
+	Convey("A testing environment", t, func() {
+		c := info.Set(context.Background(), fakeInfo{})
+		c = SetRawFactory(c, fakeDatastoreFactory)
+		ds := Get(c)
 
-				s := &CommonStruct{}
-				So(ds.Put(s), ShouldBeNil)
-				So(s.ID, ShouldEqual, 1)
-			})
+		k := ds.MakeKey("Hello", "world")
 
-			Convey("[]P", func() {
-				fplss := make([]FakePLS, 7)
-				for i := range fplss {
-					fplss[i].Value = int64(i)
-					if i == 4 {
-						fplss[i].IntID = int64(200)
-					}
-				}
-				So(ds.PutMulti(fplss), ShouldBeNil)
-				for i, fpls := range fplss {
-					expect := int64(i + 1)
-					if i == 4 {
-						expect = 200
-					}
-					So(fpls.IntID, ShouldEqual, expect)
-				}
+		Convey("Exists", func() {
+			// Single key.
+			er, err := ds.Exists(k)
+			So(err, ShouldBeNil)
+			So(er.All(), ShouldBeTrue)
 
-				pm := PropertyMap{"Value": {MkProperty(0)}, "$kind": {MkPropertyNI("Pmap")}}
-				So(ds.Put(pm), ShouldBeNil)
-				So(ds.KeyForObj(pm).IntID(), ShouldEqual, 1)
-			})
+			// Single key failure.
+			_, err = ds.Exists(ds.MakeKey("Fail", "boom"))
+			So(err, ShouldEqual, errFail)
 
-			Convey("[]P (map)", func() {
-				pms := make([]PropertyMap, 7)
-				for i := range pms {
-					pms[i] = PropertyMap{
-						"$kind": {MkProperty("Pmap")},
-						"Value": {MkProperty(i)},
-					}
-					if i == 4 {
-						So(pms[i].SetMeta("id", int64(200)), ShouldBeTrue)
-					}
-				}
-				So(ds.PutMulti(pms), ShouldBeNil)
-				for i, pm := range pms {
-					expect := int64(i + 1)
-					if i == 4 {
-						expect = 200
-					}
-					So(ds.KeyForObj(pm).String(), ShouldEqual, fmt.Sprintf("s~aid:ns:/Pmap,%d", expect))
-				}
-			})
+			// Single slice of keys.
+			er, err = ds.Exists([]*Key{k, ds.MakeKey("hello", "other")})
+			So(err, ShouldBeNil)
+			So(er.All(), ShouldBeTrue)
 
-			Convey("[]*P", func() {
-				fplss := make([]*FakePLS, 7)
-				for i := range fplss {
-					fplss[i] = &FakePLS{Value: int64(i)}
-					if i == 4 {
-						fplss[i].IntID = int64(200)
-					}
-				}
-				So(ds.PutMulti(fplss), ShouldBeNil)
-				for i, fpls := range fplss {
-					expect := int64(i + 1)
-					if i == 4 {
-						expect = 200
-					}
-					So(fpls.IntID, ShouldEqual, expect)
-				}
-			})
+			// Single slice of keys failure.
+			er, err = ds.Exists([]*Key{k, ds.MakeKey("Fail", "boom")})
+			So(err, ShouldResemble, errors.MultiError{nil, errFail})
+			So(er.Get(0, 0), ShouldBeTrue)
 
-			Convey("[]*P (map)", func() {
-				pms := make([]*PropertyMap, 7)
-				for i := range pms {
-					pms[i] = &PropertyMap{
-						"$kind": {MkProperty("Pmap")},
-						"Value": {MkProperty(i)},
-					}
-					if i == 4 {
-						So(pms[i].SetMeta("id", int64(200)), ShouldBeTrue)
-					}
-				}
-				So(ds.PutMulti(pms), ShouldBeNil)
-				for i, pm := range pms {
-					expect := int64(i + 1)
-					if i == 4 {
-						expect = 200
-					}
-					So(ds.KeyForObj(*pm).String(), ShouldEqual, fmt.Sprintf("s~aid:ns:/Pmap,%d", expect))
-				}
-			})
+			// Single key missing.
+			er, err = ds.Exists(ds.MakeKey("DNE", "nope"))
+			So(err, ShouldBeNil)
+			So(er.Any(), ShouldBeFalse)
 
-			Convey("[]I", func() {
-				ifs := []interface{}{
-					&CommonStruct{Value: 0},
-					&FakePLS{Value: 1},
-					PropertyMap{"Value": {MkProperty(2)}, "$kind": {MkPropertyNI("Pmap")}},
-					&PropertyMap{"Value": {MkProperty(3)}, "$kind": {MkPropertyNI("Pmap")}},
-				}
-				So(ds.PutMulti(ifs), ShouldBeNil)
-				for i := range ifs {
-					switch i {
-					case 0:
-						So(ifs[i].(*CommonStruct).ID, ShouldEqual, 1)
-					case 1:
-						fpls := ifs[i].(*FakePLS)
-						So(fpls.IntID, ShouldEqual, 2)
-					case 2:
-						So(ds.KeyForObj(ifs[i].(PropertyMap)).String(), ShouldEqual, "s~aid:ns:/Pmap,3")
-					case 3:
-						So(ds.KeyForObj(*ifs[i].(*PropertyMap)).String(), ShouldEqual, "s~aid:ns:/Pmap,4")
-					}
-				}
-			})
+			// Multi-arg keys with one missing.
+			er, err = ds.Exists(k, ds.MakeKey("DNE", "other"))
+			So(err, ShouldBeNil)
+			So(er.Get(0), ShouldBeTrue)
+			So(er.Get(1), ShouldBeFalse)
 
+			// Multi-arg keys with two missing.
+			er, err = ds.Exists(ds.MakeKey("DNE", "nope"), ds.MakeKey("DNE", "other"))
+			So(err, ShouldBeNil)
+			So(er.Any(), ShouldBeFalse)
+
+			// Multi-arg mixed key/struct/slices.
+			er, err = ds.Exists(&CommonStruct{ID: 1}, []*CommonStruct(nil), []*Key{ds.MakeKey("DNE", "nope"), ds.MakeKey("hello", "ohai")})
+			So(err, ShouldBeNil)
+			So(er.Get(0), ShouldBeTrue)
+			So(er.Get(1), ShouldBeTrue)
+			So(er.Get(2), ShouldBeFalse)
+			So(er.Get(2, 0), ShouldBeFalse)
+			So(er.Get(2, 1), ShouldBeTrue)
 		})
 
+		Convey("ExistsMulti", func() {
+			Convey("Returns no error if there are no failures.", func() {
+				bl, err := ds.ExistsMulti([]*Key{k, ds.MakeKey("DNE", "nope"), ds.MakeKey("hello", "ohai")})
+				So(err, ShouldBeNil)
+				So(bl, ShouldResemble, BoolList{true, false, true})
+			})
+
+			Convey("Returns an item error in a MultiError.", func() {
+				_, err := ds.ExistsMulti([]*Key{k, ds.MakeKey("Fail", "boom")})
+				So(err, ShouldResemble, errors.MultiError{nil, errFail})
+			})
+		})
 	})
 }
 
 func TestDelete(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test Delete/DeleteMulti", t, func() {
+	Convey("A testing environment", t, func() {
 		c := info.Set(context.Background(), fakeInfo{})
 		c = SetRawFactory(c, fakeDatastoreFactory)
 		ds := Get(c)
 		So(ds, ShouldNotBeNil)
 
-		Convey("bad", func() {
-			Convey("get single error for RPC failure", func() {
-				keys := []*Key{
-					MakeKey("s~aid", "ns", "FailAll", 1),
-					MakeKey("s~aid", "ns", "Ok", 1),
-				}
-				So(ds.DeleteMulti(keys).Error(), ShouldEqual, "DeleteMulti fail all")
+		Convey("Testing Delete", func() {
+			Convey("bad", func() {
+				Convey("get single error for RPC failure", func() {
+					keys := []*Key{
+						MakeKey("s~aid", "ns", "FailAll", 1),
+						MakeKey("s~aid", "ns", "Ok", 1),
+					}
+					So(ds.Delete(keys), ShouldEqual, errFailAll)
+				})
+
+				Convey("get multi error for individual failure", func() {
+					keys := []*Key{
+						ds.MakeKey("Ok", 1),
+						ds.MakeKey("Fail", 2),
+					}
+					So(ds.Delete(keys), ShouldResemble, errors.MultiError{nil, errFail})
+				})
+
+				Convey("get single error when deleting a single", func() {
+					k := ds.MakeKey("Fail", 1)
+					So(ds.Delete(k), ShouldEqual, errFail)
+				})
 			})
 
-			Convey("get multi error for individual failure", func() {
-				keys := []*Key{
-					ds.MakeKey("Ok", 1),
-					ds.MakeKey("Fail", 2),
-				}
-				So(ds.DeleteMulti(keys).Error(), ShouldEqual, "DeleteMulti fail")
-			})
+			Convey("good", func() {
+				// Single struct.
+				So(ds.Delete(&CommonStruct{ID: 1}), ShouldBeNil)
 
-			Convey("get single error when deleting a single", func() {
-				k := ds.MakeKey("Fail", 1)
-				So(ds.Delete(k).Error(), ShouldEqual, "DeleteMulti fail")
+				// Single key.
+				So(ds.Delete(ds.MakeKey("hello", "ohai")), ShouldBeNil)
+
+				// Single struct DNE.
+				So(ds.Delete(&CommonStruct{ID: noSuchEntityID}), ShouldEqual, ErrNoSuchEntity)
+
+				// Single key DNE.
+				So(ds.Delete(ds.MakeKey("DNE", "nope")), ShouldEqual, ErrNoSuchEntity)
+
+				// Mixed key/struct/slices.
+				err := ds.Delete(&CommonStruct{ID: 1}, []*Key{ds.MakeKey("hello", "ohai"), ds.MakeKey("DNE", "nope")})
+				So(err, ShouldResemble, errors.MultiError{nil, errors.MultiError{nil, ErrNoSuchEntity}})
 			})
 		})
 
+		Convey("Testing DeleteMulti", func() {
+			Convey("Succeeds for valid keys.", func() {
+				So(ds.DeleteMulti([]*Key{ds.MakeKey("hello", "ohai")}), ShouldBeNil)
+				So(ds.DeleteMulti([]*Key{ds.MakeKey("hello", "ohai"), ds.MakeKey("hello", "sup")}), ShouldBeNil)
+			})
+
+			Convey("Returns an item error in a MultiError.", func() {
+				So(ds.DeleteMulti([]*Key{ds.MakeKey("DNE", "oops")}), ShouldResemble, errors.MultiError{ErrNoSuchEntity})
+			})
+		})
 	})
 }
 
 func TestGet(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test Get/GetMulti", t, func() {
+	Convey("A testing environment", t, func() {
 		c := info.Set(context.Background(), fakeInfo{})
 		c = SetRawFactory(c, fakeDatastoreFactory)
 		ds := Get(c)
 		So(ds, ShouldNotBeNil)
 
-		Convey("bad", func() {
-			Convey("static can't serialize", func() {
-				toGet := []badStruct{{}, {}}
-				So(func() { ds.GetMulti(toGet) }, ShouldPanicLike,
-					`field "Compy" has invalid type: complex64`)
+		Convey("Testing Get", func() {
+			Convey("bad", func() {
+				Convey("static can't serialize", func() {
+					toGet := []badStruct{{}, {}}
+					So(func() { ds.Get(toGet) }, ShouldPanicLike,
+						`field "Compy" has invalid type: complex64`)
+				})
+
+				Convey("can't get keys", func() {
+					fplss := []FakePLS{{failGetMeta: true}, {}}
+					So(ds.Get(fplss), ShouldErrLike, "unable to extract $kind")
+				})
+
+				Convey("get single error for RPC failure", func() {
+					fplss := []FakePLS{
+						{IntID: 1, Kind: "FailAll"},
+						{IntID: 2},
+					}
+					So(ds.Get(fplss), ShouldEqual, errFailAll)
+				})
+
+				Convey("get multi error for individual failures", func() {
+					fplss := []FakePLS{{IntID: 1}, {IntID: 2, Kind: "Fail"}}
+					So(ds.Get(fplss), ShouldResemble, errors.MultiError{nil, errFail})
+				})
+
+				Convey("get with non-modifiable type is an error", func() {
+					cs := CommonStruct{}
+					So(func() { ds.Get(cs) }, ShouldPanicLike,
+						"invalid input type (datastore.CommonStruct): not a pointer")
+				})
+
+				Convey("get with nil is an error", func() {
+					So(func() { ds.Get(nil) }, ShouldPanicLike,
+						"cannot use nil as single argument")
+				})
+
+				Convey("get with ptr-to-nonstruct is an error", func() {
+					val := 100
+					So(func() { ds.Get(&val) }, ShouldPanicLike,
+						"invalid input type (*int): not a PLS or pointer-to-struct")
+				})
+
+				Convey("failure to save metadata is no problem though", func() {
+					// It just won't save the key
+					cs := &FakePLS{IntID: 10, failSetMeta: true}
+					So(ds.Get(cs), ShouldBeNil)
+				})
+
+				Convey("vararg with errors", func() {
+					successSlice := []CommonStruct{{ID: 1}, {ID: 2}}
+					failSlice := []CommonStruct{{ID: noSuchEntityID}, {ID: 3}}
+					emptySlice := []CommonStruct(nil)
+					cs0 := CommonStruct{ID: 4}
+					cs1 := CommonStruct{ID: noSuchEntityID}
+					fpls := FakePLS{StringID: "ohai"}
+
+					err := ds.Get(successSlice, failSlice, emptySlice, &cs0, &cs1, &fpls)
+					So(err, ShouldResemble, errors.MultiError{
+						nil, errors.MultiError{ErrNoSuchEntity, nil}, nil, nil, ErrNoSuchEntity, nil})
+					So(successSlice[0].Value, ShouldEqual, 1)
+					So(successSlice[1].Value, ShouldEqual, 2)
+					So(cs0.Value, ShouldEqual, 5)
+					So(fpls.Value, ShouldEqual, 7)
+				})
 			})
 
-			Convey("can't get keys", func() {
-				fplss := []FakePLS{{failGetMeta: true}, {}}
-				So(ds.GetMulti(fplss), ShouldErrLike, "unable to extract $kind")
-			})
+			Convey("ok", func() {
+				Convey("Get", func() {
+					cs := &CommonStruct{ID: 1}
+					So(ds.Get(cs), ShouldBeNil)
+					So(cs.Value, ShouldEqual, 1)
+				})
 
-			Convey("get single error for RPC failure", func() {
-				fplss := []FakePLS{
-					{IntID: 1, Kind: "FailAll"},
-					{IntID: 2},
-				}
-				So(ds.GetMulti(fplss).Error(), ShouldEqual, "GetMulti fail all")
-			})
+				Convey("Raw access too", func() {
+					rds := ds.Raw()
+					keys := []*Key{ds.MakeKey("Kind", 1)}
+					So(rds.GetMulti(keys, nil, func(pm PropertyMap, err error) error {
+						So(err, ShouldBeNil)
+						So(pm["Value"][0].Value(), ShouldEqual, 1)
+						return nil
+					}), ShouldBeNil)
+				})
 
-			Convey("get multi error for individual failures", func() {
-				fplss := []FakePLS{{IntID: 1}, {IntID: 2, Kind: "Fail"}}
-				So(ds.GetMulti(fplss), ShouldResemble, errors.MultiError{nil, errors.New("GetMulti fail")})
-			})
+				Convey("but general failure to save is fine on a Get", func() {
+					cs := &FakePLS{failSave: true, IntID: 7}
+					So(ds.Get(cs), ShouldBeNil)
+				})
 
-			Convey("get with non-modifiable type is an error", func() {
-				cs := CommonStruct{}
-				So(func() { ds.Get(cs) }, ShouldPanicLike,
-					"invalid Get input type (datastore.CommonStruct): not a pointer")
-			})
+				Convey("vararg", func() {
+					successSlice := []CommonStruct{{ID: 1}, {ID: 2}}
+					cs := CommonStruct{ID: 3}
 
-			Convey("get with nil is an error", func() {
-				So(func() { ds.Get(nil) }, ShouldPanicLike,
-					"invalid Get input type (<nil>): no type information")
-			})
-
-			Convey("get with ptr-to-nonstruct is an error", func() {
-				val := 100
-				So(func() { ds.Get(&val) }, ShouldPanicLike,
-					"invalid Get input type (*int): does not point to a struct")
-			})
-
-			Convey("failure to save metadata is no problem though", func() {
-				// It just won't save the key
-				cs := &FakePLS{IntID: 10, failSetMeta: true}
-				So(ds.Get(cs), ShouldBeNil)
-			})
-		})
-
-		Convey("ok", func() {
-			Convey("Get", func() {
-				cs := &CommonStruct{ID: 1}
-				So(ds.Get(cs), ShouldBeNil)
-				So(cs.Value, ShouldEqual, 1)
-			})
-
-			Convey("Raw access too", func() {
-				rds := ds.Raw()
-				keys := []*Key{ds.MakeKey("Kind", 1)}
-				So(rds.GetMulti(keys, nil, func(pm PropertyMap, err error) error {
+					err := ds.Get(successSlice, &cs)
 					So(err, ShouldBeNil)
-					So(pm["Value"][0].Value(), ShouldEqual, 1)
-					return nil
-				}), ShouldBeNil)
-			})
-
-			Convey("but general failure to save is fine on a Get", func() {
-				cs := &FakePLS{failSave: true, IntID: 7}
-				So(ds.Get(cs), ShouldBeNil)
+					So(successSlice[0].Value, ShouldEqual, 1)
+					So(successSlice[1].Value, ShouldEqual, 2)
+					So(cs.Value, ShouldEqual, 3)
+				})
 			})
 		})
 
+		Convey("Testing GetMulti", func() {
+			Convey("Fails for something other than a slice.", func() {
+				cs := CommonStruct{}
+				So(func() { ds.GetMulti(&cs) }, ShouldPanicLike,
+					"argument must be a slice, not *datastore.CommonStruct")
+			})
+
+			Convey("Succeeds for a slice.", func() {
+				cs := []CommonStruct{{ID: 1}}
+				So(ds.GetMulti(cs), ShouldBeNil)
+				So(cs[0].Value, ShouldEqual, 1)
+			})
+
+			Convey("Returns an item error in a MultiError.", func() {
+				cs := []CommonStruct{{ID: 1}, {ID: noSuchEntityID}}
+				err := ds.GetMulti(cs)
+				So(err, ShouldResemble, errors.MultiError{nil, ErrNoSuchEntity})
+				So(cs[0].Value, ShouldEqual, 1)
+			})
+		})
 	})
 }
 
@@ -843,6 +1036,15 @@ func TestGetAll(t *testing.T) {
 				}
 			})
 
+			Convey("*[]P (chan)", func() {
+				output := []plsChan(nil)
+				So(ds.GetAll(q, &output), ShouldBeNil)
+				So(output, ShouldHaveLength, 5)
+				for _, o := range output {
+					So(ds.KeyForObj(o).StringID(), ShouldEqual, "whyDoIExist")
+				}
+			})
+
 			Convey("*[]*P", func() {
 				output := []*FakePLS(nil)
 				So(ds.GetAll(q, &output), ShouldBeNil)
@@ -864,6 +1066,15 @@ func TestGetAll(t *testing.T) {
 					So(ok, ShouldBeTrue)
 					So(k.(*Key).IntID(), ShouldEqual, i+1)
 					So(o["Value"][0].Value().(int64), ShouldEqual, i)
+				}
+			})
+
+			Convey("*[]*P (chan)", func() {
+				output := []*plsChan(nil)
+				So(ds.GetAll(q, &output), ShouldBeNil)
+				So(output, ShouldHaveLength, 5)
+				for _, o := range output {
+					So(ds.KeyForObj(o).StringID(), ShouldEqual, "whyDoIExist")
 				}
 			})
 
@@ -914,7 +1125,7 @@ func TestRun(t *testing.T) {
 					panic("never here!")
 				}
 				So(func() { ds.Run(q, cb) }, ShouldPanicLike,
-					"invalid argument type: int")
+					"invalid argument type: int is not a PLS or pointer-to-struct")
 			})
 
 			Convey("wrong # args", func() {
@@ -1019,6 +1230,12 @@ func TestRun(t *testing.T) {
 				}), ShouldBeNil)
 			})
 
+			Convey("*P (chan)", func() {
+				So(ds.Run(q, func(c *plsChan) {
+					So(ds.KeyForObj(c).StringID(), ShouldEqual, "whyDoIExist")
+				}), ShouldBeNil)
+			})
+
 			Convey("S", func() {
 				i := 0
 				So(ds.Run(q, func(cs CommonStruct) {
@@ -1046,6 +1263,12 @@ func TestRun(t *testing.T) {
 					So(k.(*Key).IntID(), ShouldEqual, i+1)
 					So(pm["Value"][0].Value(), ShouldEqual, i)
 					i++
+				}), ShouldBeNil)
+			})
+
+			Convey("P (chan)", func() {
+				So(ds.Run(q, func(c plsChan) {
+					So(ds.KeyForObj(c).StringID(), ShouldEqual, "whyDoIExist")
 				}), ShouldBeNil)
 			})
 

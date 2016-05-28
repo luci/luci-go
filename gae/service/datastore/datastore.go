@@ -37,7 +37,7 @@ func (d *datastoreImpl) KeyForObj(src interface{}) *Key {
 }
 
 func (d *datastoreImpl) KeyForObjErr(src interface{}) (*Key, error) {
-	return newKeyObjErr(d.aid, d.ns, src)
+	return newKeyObjErr(d.aid, d.ns, getMGS(src))
 }
 
 func (d *datastoreImpl) MakeKey(elems ...interface{}) *Key {
@@ -72,7 +72,15 @@ func PopulateKey(obj interface{}, key *Key) {
 	}
 }
 
-func runParseCallback(cbIface interface{}) (isKey, hasErr, hasCursorCB bool, mat multiArgType) {
+func checkMultiSliceType(v interface{}) error {
+	if reflect.TypeOf(v).Kind() == reflect.Slice {
+		return nil
+	}
+	return fmt.Errorf("argument must be a slice, not %T", v)
+
+}
+
+func runParseCallback(cbIface interface{}) (isKey, hasErr, hasCursorCB bool, mat *multiArgType) {
 	badSig := func() {
 		panic(fmt.Errorf(
 			"cb does not match the required callback signature: `%T` != `func(TYPE, [CursorCB]) [error]`",
@@ -100,7 +108,7 @@ func runParseCallback(cbIface interface{}) (isKey, hasErr, hasCursorCB bool, mat
 	if firstArg == typeOfKey {
 		isKey = true
 	} else {
-		mat = parseArg(firstArg, false)
+		mat = mustParseArg(firstArg)
 		if mat.newElem == nil {
 			badSig()
 		}
@@ -218,7 +226,7 @@ func (d *datastoreImpl) GetAll(q *Query, dst interface{}) error {
 	}
 
 	slice := v.Elem()
-	mat := parseMultiArg(slice.Type())
+	mat := mustParseMultiArg(slice.Type())
 	if mat.newElem == nil {
 		panic(fmt.Errorf("invalid GetAll dst (non-concrete element type): %T", dst))
 	}
@@ -248,131 +256,173 @@ func (d *datastoreImpl) GetAll(q *Query, dst interface{}) error {
 	return err
 }
 
-func isOkType(t reflect.Type) error {
-	if t == nil {
-		return errors.New("no type information")
+func (d *datastoreImpl) Exists(ent ...interface{}) (*ExistsResult, error) {
+	mma, err := makeMetaMultiArg(ent, true)
+	if err != nil {
+		panic(err)
 	}
-	if t.Implements(typeOfPropertyLoadSaver) {
-		return nil
-	}
-	if t == typeOfKey {
-		return errors.New("not user datatype")
-	}
-	if t.Kind() != reflect.Ptr {
-		return errors.New("not a pointer")
-	}
-	if t.Elem().Kind() != reflect.Struct {
-		return errors.New("does not point to a struct")
-	}
-	return nil
-}
 
-func (d *datastoreImpl) ExistsMulti(keys []*Key) (BoolList, error) {
-	lme := errors.NewLazyMultiError(len(keys))
-	ret := make(BoolList, len(keys))
+	keys, _, err := mma.getKeysPMs(d.aid, d.ns, false)
+	if err != nil {
+		return nil, err
+	}
+
 	i := 0
-	err := filterStop(d.RawInterface.GetMulti(keys, nil, func(_ PropertyMap, err error) error {
-		if err == nil {
-			ret[i] = true
-		} else if err != ErrNoSuchEntity {
-			lme.Assign(i, err)
-		}
+	var bt boolTracker
+	it := mma.iterator(bt.init(mma))
+	err = filterStop(d.RawInterface.GetMulti(keys, nil, func(_ PropertyMap, err error) error {
+		it.next(func(*multiArgType, reflect.Value) error {
+			return err
+		})
 		i++
 		return nil
 	}))
+	if err == nil {
+		err = bt.error()
+
+		if err != nil && len(ent) == 1 {
+			// Single-argument Exists will return a single error.
+			err = errors.SingleError(err)
+		}
+	}
+	return bt.result(), err
+}
+
+func (d *datastoreImpl) ExistsMulti(keys []*Key) (BoolList, error) {
+	v, err := d.Exists(keys)
 	if err != nil {
-		return ret, err
+		return nil, err
 	}
-	return ret, lme.Get()
+	return v.List(0), nil
 }
 
-func (d *datastoreImpl) Exists(k *Key) (bool, error) {
-	ret, err := d.ExistsMulti([]*Key{k})
-	return ret[0], errors.SingleError(err)
-}
-
-func (d *datastoreImpl) Get(dst interface{}) (err error) {
-	if err := isOkType(reflect.TypeOf(dst)); err != nil {
-		panic(fmt.Errorf("invalid Get input type (%T): %s", dst, err))
+func (d *datastoreImpl) Get(dst ...interface{}) (err error) {
+	mma, err := makeMetaMultiArg(dst, false)
+	if err != nil {
+		panic(err)
 	}
-	return errors.SingleError(d.GetMulti([]interface{}{dst}))
-}
 
-func (d *datastoreImpl) Put(src interface{}) (err error) {
-	if err := isOkType(reflect.TypeOf(src)); err != nil {
-		panic(fmt.Errorf("invalid Put input type (%T): %s", src, err))
-	}
-	return errors.SingleError(d.PutMulti([]interface{}{src}))
-}
-
-func (d *datastoreImpl) Delete(key *Key) (err error) {
-	return errors.SingleError(d.DeleteMulti([]*Key{key}))
-}
-
-func (d *datastoreImpl) GetMulti(dst interface{}) error {
-	slice := reflect.ValueOf(dst)
-	mat := parseMultiArg(slice.Type())
-
-	keys, pms, err := mat.GetKeysPMs(d.aid, d.ns, slice, true)
+	keys, pms, err := mma.getKeysPMs(d.aid, d.ns, true)
 	if err != nil {
 		return err
 	}
 
-	lme := errors.NewLazyMultiError(len(keys))
 	i := 0
+	var et errorTracker
+	it := mma.iterator(et.init(mma))
 	meta := NewMultiMetaGetter(pms)
 	err = filterStop(d.RawInterface.GetMulti(keys, meta, func(pm PropertyMap, err error) error {
-		if !lme.Assign(i, err) {
-			lme.Assign(i, mat.setPM(slice.Index(i), pm))
-		}
+		it.next(func(mat *multiArgType, slot reflect.Value) error {
+			if err != nil {
+				return err
+			}
+			return mat.setPM(slot, pm)
+		})
+
 		i++
 		return nil
 	}))
 
 	if err == nil {
-		err = lme.Get()
+		err = et.error()
+
+		if err != nil && len(dst) == 1 {
+			// Single-argument Get will return a single error.
+			err = errors.SingleError(err)
+		}
+	}
+	return err
+}
+
+func (d *datastoreImpl) GetMulti(dst interface{}) error {
+	if err := checkMultiSliceType(dst); err != nil {
+		panic(err)
+	}
+	return d.Get(dst)
+}
+
+func (d *datastoreImpl) Put(src ...interface{}) (err error) {
+	mma, err := makeMetaMultiArg(src, false)
+	if err != nil {
+		panic(err)
+	}
+
+	keys, vals, err := mma.getKeysPMs(d.aid, d.ns, false)
+	if err != nil {
+		return err
+	}
+
+	i := 0
+	var et errorTracker
+	it := mma.iterator(et.init(mma))
+	err = filterStop(d.RawInterface.PutMulti(keys, vals, func(key *Key, err error) error {
+		it.next(func(mat *multiArgType, slot reflect.Value) error {
+			if err != nil {
+				return err
+			}
+			if key != keys[i] {
+				mat.setKey(slot, key)
+			}
+			return nil
+		})
+
+		i++
+		return nil
+	}))
+
+	if err == nil {
+		err = et.error()
+
+		if err != nil && len(src) == 1 {
+			// Single-argument Put will return a single error.
+			err = errors.SingleError(err)
+		}
 	}
 	return err
 }
 
 func (d *datastoreImpl) PutMulti(src interface{}) error {
-	slice := reflect.ValueOf(src)
-	mat := parseMultiArg(slice.Type())
+	if err := checkMultiSliceType(src); err != nil {
+		panic(err)
+	}
+	return d.Put(src)
+}
 
-	keys, vals, err := mat.GetKeysPMs(d.aid, d.ns, slice, false)
+func (d *datastoreImpl) Delete(ent ...interface{}) error {
+	mma, err := makeMetaMultiArg(ent, true)
+	if err != nil {
+		panic(err)
+	}
+
+	keys, _, err := mma.getKeysPMs(d.aid, d.ns, false)
 	if err != nil {
 		return err
 	}
 
-	lme := errors.NewLazyMultiError(len(keys))
 	i := 0
-	err = filterStop(d.RawInterface.PutMulti(keys, vals, func(key *Key, err error) error {
-		if !lme.Assign(i, err) && key != keys[i] {
-			mat.setKey(slice.Index(i), key)
-		}
+	var et errorTracker
+	it := mma.iterator(et.init(mma))
+	err = filterStop(d.RawInterface.DeleteMulti(keys, func(err error) error {
+		it.next(func(*multiArgType, reflect.Value) error {
+			return err
+		})
 		i++
+
 		return nil
 	}))
-
 	if err == nil {
-		err = lme.Get()
+		err = et.error()
+
+		if err != nil && len(ent) == 1 {
+			// Single-argument Delete will return a single error.
+			err = errors.SingleError(err)
+		}
 	}
 	return err
 }
 
-func (d *datastoreImpl) DeleteMulti(keys []*Key) (err error) {
-	lme := errors.NewLazyMultiError(len(keys))
-	i := 0
-	extErr := filterStop(d.RawInterface.DeleteMulti(keys, func(internalErr error) error {
-		lme.Assign(i, internalErr)
-		i++
-		return nil
-	}))
-	err = lme.Get()
-	if err == nil {
-		err = extErr
-	}
-	return
+func (d *datastoreImpl) DeleteMulti(keys []*Key) error {
+	return d.Delete(keys)
 }
 
 func (d *datastoreImpl) Raw() RawInterface {

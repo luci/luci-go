@@ -8,30 +8,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-// BoolList is a convenience wrapper for []bool that provides summary methods
-// for working with the list in aggregate.
-type BoolList []bool
-
-// All returns true iff all of the booleans in this list are true.
-func (bl BoolList) All() bool {
-	for _, b := range bl {
-		if !b {
-			return false
-		}
-	}
-	return true
-}
-
-// Any returns true iff any of the booleans in this list are true.
-func (bl BoolList) Any() bool {
-	for _, b := range bl {
-		if b {
-			return true
-		}
-	}
-	return false
-}
-
 // Interface is the 'user-friendly' interface to access the current filtered
 // datastore service implementation.
 //
@@ -158,38 +134,62 @@ type Interface interface {
 	//   - *[]*Key implies a keys-only query.
 	GetAll(q *Query, dst interface{}) error
 
-	// Does a Get for this key and returns true iff it exists. Will only return
-	// an error if it's not ErrNoSuchEntity. This is slightly more efficient
-	// than using Get directly, because it uses the underlying RawInterface to
-	// avoid some reflection and copies.
-	Exists(k *Key) (bool, error)
+	// Exists tests if the supplied objects are present in the datastore.
+	//
+	// ent must be one of:
+	//	- *S where S is a struct
+	//	- *P where *P is a concrete type implementing PropertyLoadSaver
+	//	- []S or []*S where S is a struct
+	//	- []P or []*P where *P is a concrete type implementing PropertyLoadSaver
+	//	- []I where i is some interface type. Each element of the slice must
+	//	  be non-nil, and its underlying type must be either *S or *P.
+	//	- *Key, to check a specific key from the datastore.
+	//	- []*Key, to check a slice of keys from the datastore.
+	//
+	// If an error is encountered, the returned error value will depend on the
+	// input arguments. If one argument is supplied, the result will be the
+	// encountered error type. If multiple arguments are supplied, the result will
+	// be a MultiError whose error index corresponds to the argument in which the
+	// error was encountered.
+	//
+	// If an ent argument is a slice, its error type will be a MultiError. Note
+	// that in the scenario where multiple slices are provided, this will return a
+	// MultiError containing a nested MultiError for each slice argument.
+	Exists(ent ...interface{}) (*ExistsResult, error)
 
 	// Does a GetMulti for thes keys and returns true iff they exist. Will only
 	// return an error if it's not ErrNoSuchEntity. This is slightly more efficient
 	// than using Get directly, because it uses the underlying RawInterface to
 	// avoid some reflection and copies.
+	//
+	// If an error is encountered, the returned error will be a MultiError whose
+	// error index corresponds to the key for which the error was encountered.
+	//
+	// NOTE: ExistsMulti is obsolete. The vararg-accepting Exists should be used
+	// instead. This is left for backwards compatibility, but will be removed from
+	// this interface at some point in the future.
 	ExistsMulti(k []*Key) (BoolList, error)
 
-	// Get retrieves a single object from the datastore
+	// Get retrieves objects from the datastore.
 	//
-	// dst must be one of:
-	//   - *S where S is a struct
-	//   - *P where *P is a concrete type implementing PropertyLoadSaver
-	Get(dst interface{}) error
-
-	// Put inserts a single object into the datastore
+	// Each element in dst must be one of:
+	//	- *S where S is a struct
+	//	- *P where *P is a concrete type implementing PropertyLoadSaver
+	//	- []S or []*S where S is a struct
+	//	- []P or []*P where *P is a concrete type implementing PropertyLoadSaver
+	//	- []I where I is some interface type. Each element of the slice must
+	//	  be non-nil, and its underlying type must be either *S or *P.
 	//
-	// src must be one of:
-	//   - *S where S is a struct
-	//   - *P where *P is a concrete type implementing PropertyLoadSaver
+	// If an error is encountered, the returned error value will depend on the
+	// input arguments. If one argument is supplied, the result will be the
+	// encountered error type. If multiple arguments are supplied, the result will
+	// be a MultiError whose error index corresponds to the argument in which the
+	// error was encountered.
 	//
-	// A *Key will be extracted from src via KeyForObj. If
-	// extractedKey.Incomplete() is true, then Put will write the resolved (i.e.
-	// automatic datastore-populated) *Key back to src.
-	Put(src interface{}) error
-
-	// Delete removes an item from the datastore.
-	Delete(key *Key) error
+	// If a dst argument is a slice, its error type will be a MultiError. Note
+	// that in the scenario where multiple slices are provided, this will return a
+	// MultiError containing a nested MultiError for each slice argument.
+	Get(dst ...interface{}) error
 
 	// GetMulti retrieves items from the datastore.
 	//
@@ -198,21 +198,84 @@ type Interface interface {
 	//   - []P or []*P where *P is a concrete type implementing PropertyLoadSaver
 	//   - []I where I is some interface type. Each element of the slice must
 	//     be non-nil, and its underlying type must be either *S or *P.
+	//
+	// NOTE: GetMulti is obsolete. The vararg-accepting Get should be used
+	// instead. This is left for backwards compatibility, but will be removed from
+	// this interface at some point in the future.
 	GetMulti(dst interface{}) error
+
+	// Put inserts a single object into the datastore
+	//
+	// src must be one of:
+	//	- *S where S is a struct
+	//	- *P where *P is a concrete type implementing PropertyLoadSaver
+	//	- []S or []*S where S is a struct
+	//	- []P or []*P where *P is a concrete type implementing PropertyLoadSaver
+	//	- []I where i is some interface type. Each element of the slice must
+	//	  be non-nil, and its underlying type must be either *S or *P.
+	//
+	// A *Key will be extracted from src via KeyForObj. If
+	// extractedKey.Incomplete() is true, then Put will write the resolved (i.e.
+	// automatic datastore-populated) *Key back to src.
+	//
+	// If an error is encountered, the returned error value will depend on the
+	// input arguments. If one argument is supplied, the result will be the
+	// encountered error type. If multiple arguments are supplied, the result will
+	// be a MultiError whose error index corresponds to the argument in which the
+	// error was encountered.
+	//
+	// If a src argument is a slice, its error type will be a MultiError. Note
+	// that in the scenario where multiple slices are provided, this will return a
+	// MultiError containing a nested MultiError for each slice argument.
+	Put(src ...interface{}) error
 
 	// PutMulti writes items to the datastore.
 	//
 	// src must be one of:
-	//   - []S or []*S where S is a struct
-	//   - []P or []*P where *P is a concrete type implementing PropertyLoadSaver
-	//   - []I where i is some interface type. Each elemet of the slice must
-	//     be non-nil, and its underlying type must be either *S or *P.
+	//	- []S or []*S where S is a struct
+	//	- []P or []*P where *P is a concrete type implementing PropertyLoadSaver
+	//	- []I where i is some interface type. Each element of the slice must
+	//	  be non-nil, and its underlying type must be either *S or *P.
 	//
 	// If items in src resolve to Incomplete keys, PutMulti will write the
 	// resolved keys back to the items in src.
+	//
+	// NOTE: PutMulti is obsolete. The vararg-accepting Put should be used
+	// instead. This is left for backwards compatibility, but will be removed from
+	// this interface at some point in the future.
 	PutMulti(src interface{}) error
 
-	// DeleteMulti removes items from the datastore.
+	// Delete removes the supplied entities from the datastore.
+	//
+	// ent must be one of:
+	//	- *S where S is a struct
+	//	- *P where *P is a concrete type implementing PropertyLoadSaver
+	//	- []S or []*S where S is a struct
+	//	- []P or []*P where *P is a concrete type implementing PropertyLoadSaver
+	//	- []I where i is some interface type. Each element of the slice must
+	//	  be non-nil, and its underlying type must be either *S or *P.
+	//	- *Key, to remove a specific key from the datastore.
+	//	- []*Key, to remove a slice of keys from the datastore.
+	//
+	// If an error is encountered, the returned error value will depend on the
+	// input arguments. If one argument is supplied, the result will be the
+	// encountered error type. If multiple arguments are supplied, the result will
+	// be a MultiError whose error index corresponds to the argument in which the
+	// error was encountered.
+	//
+	// If an ent argument is a slice, its error type will be a MultiError. Note
+	// that in the scenario where multiple slices are provided, this will return a
+	// MultiError containing a nested MultiError for each slice argument.
+	Delete(ent ...interface{}) error
+
+	// DeleteMulti removes keys from the datastore.
+	//
+	// If an error is encountered, the returned error will be a MultiError whose
+	// error index corresponds to the key for which the error was encountered.
+	//
+	// NOTE: DeleteMulti is obsolete. The vararg-accepting Delete should be used
+	// instead. This is left for backwards compatibility, but will be removed from
+	// this interface at some point in the future.
 	DeleteMulti(keys []*Key) error
 
 	// Testable returns the Testable interface for the implementation, or nil if
