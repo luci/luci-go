@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"sync"
@@ -30,6 +31,8 @@ var subcommandRun = &subcommands.Command{
 	CommandRun: func() subcommands.CommandRun {
 		cmd := &runCommandRun{}
 
+		cmd.Flags.StringVar(&cmd.executeFlagPath, "execute-flag-path", "",
+			"If supplied, a file at this path will be created if the bootstrapped process is successfully executed.")
 		cmd.Flags.StringVar(&cmd.jsonArgsPath, "json-args-path", "",
 			"If specified, this is a JSON file containing the full command to run as an "+
 				"array of strings.")
@@ -60,6 +63,9 @@ var subcommandRun = &subcommands.Command{
 
 type runCommandRun struct {
 	subcommands.CommandRunBase
+
+	// If not empty, touch a file at this path if execution is successful.
+	executeFlagPath string
 
 	// jsonArgsPath, if not empty, is the path to a JSON file containing an array
 	// of strings, each of which is a command-line argument to the bootstrapped
@@ -262,11 +268,13 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 		streamWG.Wait()
 
 		// Wait for the process to finish.
+		executed := false
 		if err := proc.Wait(); err != nil {
 			switch err.(type) {
 			case *exec.ExitError:
 				status := err.(*exec.ExitError).Sys().(syscall.WaitStatus)
 				returnCode = status.ExitStatus()
+				executed = true
 				log.Fields{
 					"exitStatus": returnCode,
 				}.Errorf(ctx, "Command failed.")
@@ -279,11 +287,17 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 			}
 		} else {
 			returnCode = 0
+			executed = true
 		}
 
 		log.Fields{
 			"returnCode": returnCode,
 		}.Infof(ctx, "Process completed.")
+		if executed {
+			if err := cmd.maybeTouchExecutedFlag(ctx); err != nil {
+				log.WithError(err).Warningf(ctx, "Failed to touch executed flag.")
+			}
+		}
 	}()
 
 	err = a.runWithButler(output, func(b *butler.Butler) error {
@@ -362,6 +376,17 @@ func (cmd *runCommandRun) updateEnvironment(e environ, a *application) {
 	if cmd.streamServerURI != "" {
 		e.set(bootstrap.EnvStreamServerPath, string(cmd.streamServerURI))
 	}
+}
+
+func (cmd *runCommandRun) maybeTouchExecutedFlag(ctx context.Context) error {
+	if cmd.executeFlagPath == "" {
+		return nil
+	}
+
+	log.Fields{
+		"path": cmd.executeFlagPath,
+	}.Debugf(ctx, "Touching execute flag.")
+	return ioutil.WriteFile(cmd.executeFlagPath, []byte(nil), 0666)
 }
 
 // callbackReadCloser invokes a callback method when closed.

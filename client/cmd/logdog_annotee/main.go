@@ -9,6 +9,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"time"
 
@@ -52,6 +53,7 @@ type application struct {
 	context.Context
 
 	annotate           annotationMode
+	executeFlagPath    string
 	jsonArgsPath       string
 	butlerStreamServer string
 	tee                bool
@@ -67,11 +69,13 @@ type application struct {
 }
 
 func (a *application) addToFlagSet(fs *flag.FlagSet) {
+	fs.Var(&a.annotate, "annotate",
+		"Annotation handling mode. Options are: "+annotationFlagEnum.Choices())
+	fs.StringVar(&a.executeFlagPath, "execute-flag-path", "",
+		"If supplied, a file at this path will be created if the bootstrapped process is successfully executed.")
 	fs.StringVar(&a.jsonArgsPath, "json-args-path", "",
 		"If specified, this is a JSON file containing the full command to run as an "+
 			"array of strings.")
-	fs.Var(&a.annotate, "annotate",
-		"Annotation handling mode. Options are: "+annotationFlagEnum.Choices())
 	fs.StringVar(&a.butlerStreamServer, "butler-stream-server", "",
 		"The Butler stream server location. If empty, Annotee will check for Butler "+
 			"bootstrapping and extract the stream server from that.")
@@ -121,6 +125,17 @@ func (a *application) getStreamClient() (streamclient.Client, error) {
 	}
 
 	return nil, errors.New("unable to identify stream client")
+}
+
+func (a *application) maybeTouchExecutedFlag() error {
+	if a.executeFlagPath == "" {
+		return nil
+	}
+
+	log.Fields{
+		"path": a.executeFlagPath,
+	}.Debugf(a, "Touching execute flag.")
+	return ioutil.WriteFile(a.executeFlagPath, []byte(nil), 0666)
 }
 
 func mainImpl(args []string) int {
@@ -238,6 +253,9 @@ func mainImpl(args []string) int {
 
 	if !e.Executed() {
 		return runtimeErrorReturnCode
+	}
+	if err := a.maybeTouchExecutedFlag(); err != nil {
+		log.WithError(err).Warningf(a, "Failed to touch executed flag.")
 	}
 	return e.ReturnCode()
 }
