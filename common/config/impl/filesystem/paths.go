@@ -63,21 +63,24 @@ func (c configSet) validate() error {
 type nativePath string
 
 func (n nativePath) explode() []string {
-	return strings.Split(string(n), string(filepath.Separator))
+	return strings.Split(n.s(), string(filepath.Separator))
 }
 
 func (n nativePath) readlink() (nativePath, error) {
-	ret, err := os.Readlink(string(n))
-	return nativePath(ret), err
+	ret, err := os.Readlink(n.s())
+	if filepath.IsAbs(ret) {
+		return nativePath(ret), err
+	}
+	return nativePath(filepath.Join(filepath.Dir(n.s()), ret)), err
 }
 
 func (n nativePath) rel(other nativePath) (nativePath, error) {
-	ret, err := filepath.Rel(string(n), string(other))
+	ret, err := filepath.Rel(n.s(), other.s())
 	return nativePath(ret), err
 }
 
 func (n nativePath) read() ([]byte, error) {
-	return ioutil.ReadFile(string(n))
+	return ioutil.ReadFile(n.s())
 }
 
 func (n nativePath) toLUCI() luciPath {
