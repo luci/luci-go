@@ -46,7 +46,7 @@ func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMu
 		// case we'll see so in the GetMulti which immediately follows this).
 	}
 	if err := errors.Filter(d.mc.GetMulti(lockItems), memcache.ErrCacheMiss); err != nil {
-		(log.Fields{log.ErrorKey: err}).Warningf(
+		(log.Fields{log.ErrorKey: err}).Debugf(
 			d.c, "dscache: GetMulti: memcache.GetMulti")
 	}
 
@@ -110,7 +110,7 @@ func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMu
 		if len(toCas) > 0 {
 			// we have entries to save back to memcache.
 			if err := d.mc.CompareAndSwapMulti(toCas); err != nil {
-				(log.Fields{log.ErrorKey: err}).Warningf(
+				(log.Fields{log.ErrorKey: err}).Debugf(
 					d.c, "dscache: GetMulti: memcache.CompareAndSwapMulti")
 			}
 		}

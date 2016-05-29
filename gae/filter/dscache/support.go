@@ -119,7 +119,7 @@ func (s *supportContext) mutation(keys []*ds.Key, f func() error) error {
 	err := f()
 	if err == nil {
 		if err := errors.Filter(s.mc.DeleteMulti(lockKeys), memcache.ErrCacheMiss); err != nil {
-			(log.Fields{log.ErrorKey: err}).Warningf(
+			(log.Fields{log.ErrorKey: err}).Debugf(
 				s.c, "dscache: mc.DeleteMulti")
 		}
 	}

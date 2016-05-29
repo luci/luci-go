@@ -157,4 +157,30 @@
 // datastore value, if it hasn't been fetched in the last
 // GlobalEnabledCheckInterval time (5 minutes). This equates to essentially once
 // per http request, per 5 minutes, per instance.
+//
+// AppEngine's memcache reserves the right to evict keys at any moment. This is
+// especially true for shared memcache, which is subject to pressures outside of
+// your application. When when eviction happens due to memory pressure,
+// least-recently-used values are evicted first.
+//
+// https://cloud.google.com/appengine/docs/go/memcache/#Go_How_cached_data_expires
+//
+// Eviction presents a potential race window, as lock items that were put in
+// memcache may be evicted prior to the locked operations completing (or
+// failing), causing concurrent Get operations to cache bad data indefinitely.
+//
+// In practice, a dedicated memcache will be safe. LRU-based eviction means that
+// that locks recently added will almost certainly not be evicted before their
+// operations are complete, and a dedicated memcache lowers eviction pressure to
+// a single application's operation. Production systems that have data integrity
+// requirements are encouraged to use a dedicated memcache.
+//
+// Note that flusing memcache of a running application may also induce this
+// race. Flushes should be performed with this concern in mind.
+//
+// TODO: A potential mitigation to lock eviction poisoning is to use memcache
+// Statistics to identify the oldest memcache item and use that age to bound
+// the lifetime of cached datastore entries. This would cause dscache items
+// created around the time of a flush to expire quickly (instead of never),
+// bounding the period of time when poisoned data may reside in the cache.
 package dscache
