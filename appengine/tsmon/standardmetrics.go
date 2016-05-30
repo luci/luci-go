@@ -10,8 +10,8 @@ import (
 	"github.com/luci/gae/service/module"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/tsmon"
-	"github.com/luci/luci-go/common/tsmon/memstats"
 	"github.com/luci/luci-go/common/tsmon/metric"
+	"github.com/luci/luci-go/common/tsmon/runtimestats"
 )
 
 var (
@@ -39,8 +39,8 @@ func collectGlobalMetrics(c context.Context) {
 //
 // It is called by each individual process right before flushing the metrics.
 func collectProcessMetrics(c context.Context, s *tsmonSettings) {
-	if s.ReportMemStats {
-		memstats.Report(c)
+	if s.ReportRuntimeStats {
+		runtimestats.Report(c)
 	}
 }
 
