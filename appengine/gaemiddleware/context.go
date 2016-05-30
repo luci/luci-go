@@ -7,12 +7,13 @@ package gaemiddleware
 import (
 	"net/http"
 
+	"google.golang.org/appengine"
+
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 
 	"github.com/luci/gae/filter/dscache"
 	"github.com/luci/gae/impl/prod"
-	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaeauth/server/gaesigner"
@@ -77,12 +78,11 @@ func WithProd(c context.Context, req *http.Request) context.Context {
 // It installs services using WithProd, installs a panic catcher if this
 // is not a devserver, and injects the monitoring middleware.
 func BaseProd(h middleware.Handler) httprouter.Handle {
+	h = globalTsMonState.Middleware(h)
+	if !appengine.IsDevAppServer() {
+		h = middleware.WithPanicCatcher(h)
+	}
 	return func(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		c := WithProd(context.Background(), r)
-		h = globalTsMonState.Middleware(h)
-		if !info.Get(c).IsDevAppServer() {
-			h = middleware.WithPanicCatcher(h)
-		}
-		h(c, rw, r, p)
+		h(WithProd(context.Background(), r), rw, r, p)
 	}
 }
