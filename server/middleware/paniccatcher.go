@@ -18,9 +18,7 @@ import (
 // logging and returns HTTP 500.
 func WithPanicCatcher(h Handler) Handler {
 	return func(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		paniccatcher.Do(func() {
-			h(c, w, r, p)
-		}, func(p *paniccatcher.Panic) {
+		defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
 			log.Fields{
 				"panic.error": p.Reason,
 			}.Errorf(c, "Caught panic during handling of %q:\n%s", r.RequestURI, p.Stack)
@@ -29,5 +27,6 @@ func WithPanicCatcher(h Handler) Handler {
 			// headers. But there's nothing else we can do at this point anyway.
 			http.Error(w, "Internal Server Error. See logs.", http.StatusInternalServerError)
 		})
+		h(c, w, r, p)
 	}
 }

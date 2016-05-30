@@ -26,15 +26,13 @@ type Panic struct {
 // If the supplied panic callback is nil, the panic will be silently discarded.
 // Otherwise, the callback will be invoked with the panic's information.
 func Catch(cb func(p *Panic)) {
-	p := Panic{}
-	if p.Reason = recover(); p.Reason != nil {
+	if reason := recover(); reason != nil && cb != nil {
 		stack := make([]byte, maxStackBufferSize)
 		count := runtime.Stack(stack, true)
-		p.Stack = string(stack[:count])
-
-		if cb != nil {
-			cb(&p)
-		}
+		cb(&Panic{
+			Reason: reason,
+			Stack:  string(stack[:count]),
+		})
 	}
 }
 
