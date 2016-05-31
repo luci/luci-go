@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"path"
+	"sort"
 	"strings"
 
 	"google.golang.org/appengine"
@@ -68,6 +69,7 @@ func GetAllThemes() []string {
 	for k := range Themes {
 		results = append(results, k)
 	}
+	sort.Strings(results)
 	return results
 }
 
