@@ -1,6 +1,6 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+// Copyright 2015 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
 
 package main
 
@@ -41,9 +41,9 @@ methods for the named types.
 Options:
 `
 
-const copyright = `// Copyright 2016 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+const copyright = `// Copyright 2016 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
 `
 
 func (a *app) parseArgs(fs *flag.FlagSet, args []string) error {
@@ -58,7 +58,7 @@ func (a *app) parseArgs(fs *flag.FlagSet, args []string) error {
 	fs.StringVar(&a.outFile, "out", "proto_gae.gen.go",
 		"The name of the output file")
 	fs.StringVar(&a.header, "header", copyright, "Header text to put at the top of "+
-		"the generated file. Defaults to the Chromium Authors copyright.")
+		"the generated file. Defaults to the LUCI Authors copyright.")
 
 	if err := fs.Parse(args[1:]); err != nil {
 		return err
