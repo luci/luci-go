@@ -1,6 +1,6 @@
-# Copyright 2015 The Chromium Authors. All rights reserved.
-# Use of this source code is governed by a BSD-style license that can be
-# found in the LICENSE file.
+# Copyright 2015 The LUCI Authors. All rights reserved.
+# Use of this source code is governed under the Apache License, Version 2.0
+# that can be found in the LICENSE file.
 
 """Top-level presubmit script.
 
@@ -54,11 +54,11 @@ def header(input_api):
   allowed_years = (str(s) for s in reversed(xrange(2011, current_year + 1)))
   years_re = '(' + '|'.join(allowed_years) + ')'
   license_header = (
-    r'.*? Copyright %(year)s The Chromium Authors\. '
-    r'All rights reserved\.\n'
-    r'.*? Use of this source code is governed by a BSD-style license '
-    r'that can be\n'
-    r'.*? found in the LICENSE file\.(?: \*/)?\n'
+    r'.*? Copyright %(year)s The LUCI Authors\. '
+      r'All rights reserved\.\n'
+    r'.*? Use of this source code is governed under the Apache License, '
+      r'Version 2\.0\n'
+    r'.*? that can be found in the LICENSE file\.(?: \*/)?\n'
   ) % {
     'year': years_re,
   }

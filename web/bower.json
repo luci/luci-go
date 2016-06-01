@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "homepage": "https://github.com/luci/luci-go",
   "authors": [
-    "The Chromium Authors"
+    "The LUCI Authors"
   ],
   "license": "BSD",
   "ignore": [

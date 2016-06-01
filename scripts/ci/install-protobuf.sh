@@ -1,8 +1,8 @@
 #!/bin/sh
 #
-# Copyright 2016 The Chromium Authors. All rights reserved.
-# Use of this source code is governed by a BSD-style license that can be
-# found in the LICENSE file.
+# Copyright 2016 The LUCI Authors. All rights reserved.
+# Use of this source code is governed under the Apache License, Version 2.0
+# that can be found in the LICENSE file.
 #
 # Script for .travis.yaml to install protobuf compiler from source. This is
 # needed because APT package for protobuf doesn't support proto3.

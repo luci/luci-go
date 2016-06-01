@@ -1,6 +1,6 @@
 // Copyright 2011 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// license that can be that can be found in the LICENSE file.
 
 // Source: https://github.com/golang/crypto/blob/master/ssh/terminal/util.go
 // Revision: 30ad74476e5c37a080ab5999ce9ab4465a2ecfac

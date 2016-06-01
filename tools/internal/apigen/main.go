@@ -1,6 +1,6 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+// Copyright 2015 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
 
 package apigen
 
@@ -32,9 +32,9 @@ const (
 
 	// chromiumLicence is the standard Chromium license header.
 	chromiumLicense = `` +
-		"// Copyright {{.Year}} The Chromium Authors. All rights reserved.\n" +
-		"// Use of this source code is governed by a BSD-style license that can be\n" +
-		"// found in the LICENSE file.\n" +
+		"// Copyright {{.Year}} The LUCI Authors. All rights reserved.\n" +
+		"// Use of this source code is governed under the Apache License, Version 2.0\n" +
+		"// that can be found in the LICENSE file.\n" +
 		"\n"
 )
 
