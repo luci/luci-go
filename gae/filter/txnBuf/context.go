@@ -45,3 +45,17 @@ func memoryCorruption(err error) {
 		panic(err)
 	}
 }
+
+// GetNoTxn allows you to to escape the buffered transaction (if any), and get
+// a non-transactional handle to the datastore. This does not invalidate the
+// currently-buffered transaction, but it also does not see any effects of it.
+//
+// TODO(iannucci): This is messy, but mostly because the way that transactions
+// work is messy. Fixing luci/gae#issues/23 would help though, because it means
+// we could make transactionality recorded by a single index in the context
+// instead of relying on function nesting.
+func GetNoTxn(c context.Context) ds.Interface {
+	c = context.WithValue(c, dsTxnBufParent, nil)
+	c = context.WithValue(c, dsTxnBufHaveLock, nil)
+	return ds.GetNoTxn(c)
+}
