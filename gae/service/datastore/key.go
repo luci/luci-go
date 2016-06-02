@@ -138,6 +138,10 @@ func MakeKey(aid, ns string, elems ...interface{}) *Key {
 			t.IntID = int64(x)
 		case int64:
 			t.IntID = int64(x)
+		case uint16:
+			t.IntID = int64(x)
+		case uint32:
+			t.IntID = int64(x)
 		default:
 			panic(fmt.Errorf("datastore.MakeKey: bad id: %v", x))
 		}
