@@ -11,24 +11,26 @@ import (
 
 // Writer inserts indentation before each line.
 type Writer struct {
-	io.Writer      // underlying writer.
-	Level      int // number of times \t must be inserted before each line.
+	io.Writer       // underlying writer.
+	Level      int  // number of times \t must be inserted before each line.
+	UseSpaces  bool // true iff Level is the number of spaces instead of tabs.
 	insideLine bool
 }
 
-var indentation []byte
+// Limit is the maximum value of Level.
+const Limit = 256
 
-func init() {
-	indentation = make([]byte, 256)
-	for i := range indentation {
-		indentation[i] = '\t'
-	}
-}
+var indentationTabs = bytes.Repeat([]byte{'\t'}, Limit)
+var indentationSpaces = bytes.Repeat([]byte{' '}, Limit)
 
 // Write writes data inserting a newline before each line.
-// Panics if w.Indent is outside of [0, 256) range.
+// Panics if w.Indent is outside of [0, Limit) range.
 func (w *Writer) Write(data []byte) (n int, err error) {
 	// Do not print indentation if there is no data.
+	indentBuf := indentationTabs
+	if w.UseSpaces {
+		indentBuf = indentationSpaces
+	}
 
 	for len(data) > 0 {
 		var printUntil int
@@ -41,7 +43,7 @@ func (w *Writer) Write(data []byte) (n int, err error) {
 		} else {
 			if lineBeginning {
 				// Print indentation.
-				w.Writer.Write(indentation[:w.Level])
+				w.Writer.Write(indentBuf[:w.Level])
 				w.insideLine = true
 			}
 

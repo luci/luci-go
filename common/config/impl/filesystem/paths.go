@@ -5,11 +5,12 @@
 package filesystem
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/luci/luci-go/common/errors"
 )
 
 type luciPath string
@@ -55,7 +56,7 @@ func (c configSet) id() string {
 
 func (c configSet) validate() error {
 	if !c.hasPrefix("projects/") && !c.hasPrefix("services/") {
-		return mark(fmt.Errorf("invalid c: %q", c))
+		return errors.Reason("configSet.validate: bad prefix %(cs)q").D("cs", c.s()).Err()
 	}
 	return nil
 }

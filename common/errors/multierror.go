@@ -18,24 +18,52 @@ var (
 type MultiError []error
 
 func (m MultiError) Error() string {
-	s, n := "", 0
-	for _, e := range m {
-		if e != nil {
-			if n == 0 {
-				s = e.Error()
-			}
-			n++
-		}
-	}
+	n, e := m.Summary()
 	switch n {
 	case 0:
 		return "(0 errors)"
 	case 1:
-		return s
+		return e.Error()
 	case 2:
-		return s + " (and 1 other error)"
+		return e.Error() + " (and 1 other error)"
 	}
-	return fmt.Sprintf("%s (and %d other errors)", s, n-1)
+	return fmt.Sprintf("%s (and %d other errors)", e, n-1)
+}
+
+// Summary gets the total count of non-nil errors and returns the first one.
+func (m MultiError) Summary() (n int, first error) {
+	for _, e := range m {
+		if e != nil {
+			if n == 0 {
+				first = e
+			}
+			n++
+		}
+	}
+	return
+}
+
+// First returns the first non-nil error.
+func (m MultiError) First() error {
+	for _, e := range m {
+		if e != nil {
+			return e
+		}
+	}
+	return nil
+}
+
+// StackContext implements StackContexter.
+func (m MultiError) StackContext() StackContext {
+	n, _ := m.Summary()
+
+	return StackContext{
+		InternalReason: "MultiError %(non-nil)d/%(total)d: following first non-nil error.",
+		Data: Data{
+			"non-nil": {Value: n},
+			"total":   {Value: len(m)},
+		},
+	}
 }
 
 // NewMultiError create new multi error from given errors.

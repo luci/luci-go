@@ -55,7 +55,6 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -92,8 +91,6 @@ type filesystemImpl struct {
 	contentHashMap          map[string]string
 	contentRevisionsScanned stringset.Set
 }
-
-var mark = errors.MakeMarkFn("config/impl/filesystem")
 
 // New returns an implementation of the config service which reads configuration
 // from the local filesystem. `basePath` may be one of two things:
@@ -140,13 +137,16 @@ func New(basePath string) (config.Interface, error) {
 			return nil, err
 		}
 		if !inf.IsDir() {
-			return nil, mark(fmt.Errorf("%q doesn't link to a directory", basePath))
+			return nil, (errors.Reason("filesystem.New(%(basePath)q): does not link to a directory").
+				D("basePath", basePath).Err())
 		}
 		if len(ret.basePath.explode()) < 1 {
-			return nil, mark(fmt.Errorf("%q is too short", basePath))
+			return nil, (errors.Reason("filesystem.New(%(basePath)q): not enough tokens in path").
+				D("basePath", basePath).Err())
 		}
 	} else if !inf.IsDir() {
-		return nil, mark(fmt.Errorf("%q is not a directory", basePath))
+		return nil, (errors.Reason("filesystem.New(%(basePath)q): not a directory").
+			D("basePath", basePath).Err())
 	}
 	return ret, nil
 }

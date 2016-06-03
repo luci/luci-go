@@ -50,14 +50,13 @@ func TestAny(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Testing the Any function`, t, func() {
-		testErr := New("test error")
+		testErr := errors.New("test error")
 		filter := func(err error) bool { return err == testErr }
-		mFn := MakeMarkFn("error test")
 
 		for _, err := range []error{
 			nil,
-			mFn(errors.New("foo")),
-			New("other error"),
+			Reason("error test: foo").Err(),
+			errors.New("other error"),
 		} {
 			Convey(fmt.Sprintf(`Registers false for %T %v`, err, err), func() {
 				So(Any(err, filter), ShouldBeFalse)
@@ -66,9 +65,9 @@ func TestAny(t *testing.T) {
 
 		for _, err := range []error{
 			testErr,
-			MultiError{New("other error"), MultiError{testErr, nil}},
-			mFn(testErr),
-			WrapTransient(MultiError{WrapTransient(testErr), nil, New("other error")}),
+			MultiError{errors.New("other error"), MultiError{testErr, nil}},
+			Annotate(testErr).Reason("error test").Err(),
+			WrapTransient(MultiError{WrapTransient(testErr), nil, errors.New("other error")}),
 		} {
 			Convey(fmt.Sprintf(`Registers true for %T %v`, err, err), func() {
 				So(Any(err, filter), ShouldBeTrue)
@@ -81,7 +80,7 @@ func TestContains(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Testing the Contains function for a sentinel error`, t, func() {
-		sentinel := New("test error")
+		sentinel := errors.New("test error")
 
 		for _, err := range []error{
 			nil,
@@ -95,8 +94,8 @@ func TestContains(t *testing.T) {
 
 		for _, err := range []error{
 			sentinel,
-			MultiError{New("other error"), MultiError{sentinel, nil}},
-			WrapTransient(MultiError{WrapTransient(sentinel), nil, New("other error")}),
+			MultiError{errors.New("other error"), MultiError{sentinel, nil}},
+			WrapTransient(MultiError{WrapTransient(sentinel), nil, errors.New("other error")}),
 		} {
 			Convey(fmt.Sprintf(`Registers true for %T %v`, err, err), func() {
 				So(Contains(err, sentinel), ShouldBeTrue)

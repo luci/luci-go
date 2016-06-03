@@ -15,11 +15,12 @@ type Transient interface {
 
 type transientWrapper struct {
 	error
+	finfo StackFrameInfo
 }
 
 var _ interface {
 	Transient
-	Wrapped
+	StackContexter
 } = transientWrapper{}
 
 func (t transientWrapper) IsTransient() bool {
@@ -28,6 +29,13 @@ func (t transientWrapper) IsTransient() bool {
 
 func (t transientWrapper) InnerError() error {
 	return t.error
+}
+
+func (t transientWrapper) StackContext() StackContext {
+	return StackContext{
+		FrameInfo:      t.finfo,
+		InternalReason: "errors.WrapTransient()",
+	}
 }
 
 // IsTransient tests if a given error or, if it is a container, any of its
@@ -45,9 +53,13 @@ func IsTransient(err error) bool {
 //
 // If the supplied error is already Transient, it will be returned. If the
 // supplied error is nil, nil wil be returned.
+//
+// If the supplied error is not Transient, the current stack frame will be
+// captured. This wrapping action will show up on the stack trace returned by
+// RenderStack.
 func WrapTransient(err error) error {
 	if err == nil || IsTransient(err) {
 		return err
 	}
-	return transientWrapper{err}
+	return transientWrapper{err, StackFrameInfoForError(1, err)}
 }
