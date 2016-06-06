@@ -20,6 +20,7 @@ import (
 	"github.com/luci/luci-go/appengine/gaesecrets"
 	"github.com/luci/luci-go/appengine/gaesettings"
 	"github.com/luci/luci-go/appengine/tsmon"
+	"github.com/luci/luci-go/common/cacheContext"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/middleware"
@@ -70,7 +71,7 @@ func WithProd(c context.Context, req *http.Request) context.Context {
 	c = gaesecrets.Use(c, nil)
 	c = gaesigner.Use(c)
 	c = auth.UseDB(c, globalAuthDBCache)
-	return c
+	return cacheContext.Wrap(c)
 }
 
 // BaseProd adapts a middleware-style handler to a httprouter.Handle.

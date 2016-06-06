@@ -15,6 +15,7 @@ import (
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	"github.com/luci/luci-go/appengine/tumble"
+	"github.com/luci/luci-go/common/cacheContext"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	luciConfig "github.com/luci/luci-go/common/config"
@@ -277,7 +278,7 @@ func Install() (context.Context, *Environment) {
 	}
 	c = coordinator.WithServices(c, &e.Services)
 
-	return c, &e
+	return cacheContext.Wrap(c), &e
 }
 
 // WithProjectNamespace runs f in proj's namespace, bypassing authentication
