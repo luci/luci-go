@@ -96,10 +96,6 @@ func (rkb *rowKeyBuffers) value() string {
 //
 // [ base64(sha256(path)) ] + '~' + [ hex(cmpbin(index)) ] + '~' +
 // [hex(cmpbin(count)]
-//
-// NOTE: There is a "legacy" period of time when row keys will NOT include a
-// count. Since these sort before row keys with a count, row key order will be
-// maintained. These row keys will have a count value of "0".
 type rowKey struct {
 	pathHash []byte
 	index    int64
@@ -110,12 +106,8 @@ type rowKey struct {
 func newRowKey(project, path string, index, count int64) *rowKey {
 	h := sha256.New()
 
-	// TODO(dnj): Remove this conditional when non-project data is aged off.
-	if project != "" {
-		_, _ = h.Write([]byte(project))
-		_, _ = h.Write([]byte("/"))
-	}
-
+	_, _ = h.Write([]byte(project))
+	_, _ = h.Write([]byte("/"))
 	_, _ = h.Write([]byte(path))
 	return &rowKey{
 		pathHash: h.Sum(nil),
@@ -127,12 +119,11 @@ func newRowKey(project, path string, index, count int64) *rowKey {
 // decodeRowKey decodes an encoded row key into its structural components.
 func decodeRowKey(v string) (*rowKey, error) {
 	keyParts := strings.SplitN(v, "~", 3)
-	if len(keyParts) < 2 {
-		// TODO: Make this force 3 once "legacy mode" is disabled.
+	if len(keyParts) != 3 {
 		return nil, errMalformedRowKey
 	}
 
-	hashEnc, idxEnc := keyParts[0], keyParts[1]
+	hashEnc, idxEnc, countEnc := keyParts[0], keyParts[1], keyParts[2]
 	if base64.URLEncoding.DecodedLen(len(hashEnc)) < sha256.Size {
 		return nil, errMalformedRowKey
 	}
@@ -152,11 +143,9 @@ func decodeRowKey(v string) (*rowKey, error) {
 	}
 
 	// If a count is available, decode that as well.
-	if len(keyParts) == 3 {
-		rk.count, err = readHexInt64(keyParts[2])
-		if err != nil {
-			return nil, err
-		}
+	rk.count, err = readHexInt64(countEnc)
+	if err != nil {
+		return nil, err
 	}
 
 	return &rk, nil
@@ -173,10 +162,8 @@ func (rk *rowKey) encode() (v string) {
 		rkb.appendPathPrefix(rk.pathHash)
 		rkb.appendBytes([]byte("~"))
 		rkb.appendInt64(rk.index)
-		if rk.count > 0 {
-			rkb.appendBytes([]byte("~"))
-			rkb.appendInt64(rk.count)
-		}
+		rkb.appendBytes([]byte("~"))
+		rkb.appendInt64(rk.count)
 		v = rkb.value()
 	})
 	return

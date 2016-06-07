@@ -60,11 +60,6 @@ func GetServices(c context.Context) Services {
 func WithProjectNamespace(c *context.Context, project luciConfig.ProjectName, at NamespaceAccessType) error {
 	ctx := *c
 
-	// TODO(dnj): REQUIRE this to be non-empty once namespacing is mandatory.
-	if project == "" {
-		return nil
-	}
-
 	if err := project.Validate(); err != nil {
 		log.WithError(err).Errorf(ctx, "Project name is invalid.")
 		return err
@@ -126,13 +121,6 @@ func WithProjectNamespace(c *context.Context, project luciConfig.ProjectName, at
 // method will panic.
 func Project(c context.Context) luciConfig.ProjectName {
 	ns, _ := info.Get(c).GetNamespace()
-
-	// TODO(dnj): Remove the empty namespace/project exception once we no longer
-	// support that.
-	if ns == "" {
-		return ""
-	}
-
 	project := ProjectFromNamespace(ns)
 	if project != "" {
 		return project

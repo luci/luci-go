@@ -5,7 +5,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -34,6 +33,10 @@ type application struct {
 	cli.Application
 	context.Context
 
+	// project is the project name. This may either be a valid project name or
+	// empty. Subcommands that support "unified" project-in-path paths should use
+	// splitPath to get the project form the path. Those that don't should assert
+	// that this is non-empty.
 	project     config.ProjectName
 	authFlags   authcli.Flags
 	coordinator string
@@ -51,19 +54,6 @@ func (a *application) addToFlagSet(ctx context.Context, fs *flag.FlagSet) {
 		"The log stream's project.")
 }
 
-func (a *application) validate() error {
-	if a.coordinator == "" {
-		return errors.New("main: missing coordinator URL (-url)")
-	}
-	// TODO(dnj): Error on empty project once that's disallowed.
-	if a.project != "" {
-		if err := a.project.Validate(); err != nil {
-			return fmt.Errorf("main: invalid project name (-project): %s", err)
-		}
-	}
-	return nil
-}
-
 // splitPath converts between a possible user-facing "unified" stream path
 // (e.g., "project/path...") to separate project/path values.
 //
@@ -78,13 +68,8 @@ func (a *application) splitPath(p string) (config.ProjectName, string, bool, err
 	parts := strings.SplitN(p, types.StreamNameSepStr, 2)
 
 	project := config.ProjectName(parts[0])
-	// TODO(dnj): Remove empty project option.
-	if project == "_" {
-		project = ""
-	} else {
-		if err := project.Validate(); err != nil {
-			return "", "", false, fmt.Errorf("invalid project name %q: %v", project, err)
-		}
+	if err := project.Validate(); err != nil {
+		return "", "", false, fmt.Errorf("invalid project name %q: %v", project, err)
 	}
 
 	if len(parts) == 2 {
@@ -138,8 +123,8 @@ func mainImpl() int {
 	// Install our log formatter.
 	ctx = loggingConfig.Set(ctx)
 
-	if err := a.validate(); err != nil {
-		log.Errorf(log.SetError(ctx, err), "Invalid application configuration.")
+	if a.coordinator == "" {
+		log.Errorf(ctx, "Missing coordinator host (-host).")
 		return 1
 	}
 

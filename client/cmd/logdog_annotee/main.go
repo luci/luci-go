@@ -176,9 +176,13 @@ func mainImpl(args []string) int {
 		prefix = a.bootstrap.Prefix
 	}
 
-	// TODO(dnj): Require project attribute.
+	// Get the annotation project. This must be non-empty.
 	if a.project == "" {
 		a.project = a.bootstrap.Project
+	}
+	if err := a.project.Validate(); err != nil {
+		log.WithError(err).Errorf(a, "Invalid project (-project).")
+		return configErrorReturnCode
 	}
 
 	args = fs.Args()

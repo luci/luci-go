@@ -147,38 +147,10 @@ func (cmd *catCommandRun) catPath(a *application, cp *catPath) error {
 			return true
 		},
 	}
-	if _, err := copyBuffer(os.Stdout, &rend, make([]byte, cmd.buffer)); err != nil {
+	if _, err := io.CopyBuffer(os.Stdout, &rend, make([]byte, cmd.buffer)); err != nil {
 		return err
 	}
 	return nil
-}
-
-// TODO: Use io.CopyBuffer once we move to Go >= 1.5.
-func copyBuffer(dst io.Writer, src io.Reader, buf []byte) (written int64, err error) {
-	for {
-		nr, er := src.Read(buf)
-		if nr > 0 {
-			nw, ew := dst.Write(buf[0:nr])
-			if nw > 0 {
-				written += int64(nw)
-			}
-			if ew != nil {
-				err = ew
-				return
-			}
-			if nr != nw {
-				err = io.ErrShortWrite
-				return
-			}
-		}
-		if er == io.EOF {
-			return
-		}
-		if er != nil {
-			err = er
-			return
-		}
-	}
 }
 
 func writeDatagram(w io.Writer, dg []byte, desc *logpb.LogStreamDescriptor) error {

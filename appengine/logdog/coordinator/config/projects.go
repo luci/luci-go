@@ -30,12 +30,8 @@ func ProjectConfigPath(c context.Context) string {
 //
 // If the configuration was not present, config.ErrNoConfig will be returned.
 func ProjectConfig(c context.Context, project config.ProjectName) (*svcconfig.ProjectConfig, error) {
-	// TODO(dnj): When empty project is disabled, make this return
-	// config.ErrNoConfig.
 	if project == "" {
-		return &svcconfig.ProjectConfig{
-			ReaderAuthGroups: []string{"all"},
-		}, nil
+		return nil, config.ErrNoConfig
 	}
 
 	configSet, configPath := config.ProjectConfigSet(project), ProjectConfigPath(c)

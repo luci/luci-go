@@ -13,6 +13,7 @@ import (
 	"github.com/luci/luci-go/common/grpcutil"
 	log "github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
 )
 
 // Server is the user-facing log access and query endpoint service.
@@ -42,6 +43,10 @@ func newService(svr *server) logdog.LogsServer {
 				// Enter the requested project namespace. This validates that the
 				// current user has READ access.
 				project := config.ProjectName(pbm.GetMessageProject())
+				if project == "" {
+					return nil, grpcutil.Errf(codes.InvalidArgument, "project is required")
+				}
+
 				log.Fields{
 					"project": project,
 				}.Debugf(c, "User is accessing project.")

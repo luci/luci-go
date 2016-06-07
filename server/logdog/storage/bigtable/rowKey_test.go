@@ -6,7 +6,6 @@ package bigtable
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -83,27 +82,6 @@ func TestRowKey(t *testing.T) {
 					So(prevp.index, ShouldBeLessThan, drk.index)
 					So(prevp.count, ShouldBeLessThan, drk.count)
 				}
-
-				Convey(`Legacy row key value will parse with count 0.`, func() {
-					if rk.count > 0 {
-						enc = enc[:strings.LastIndex(enc, "~")]
-					}
-
-					drk, err = decodeRowKey(enc)
-					So(err, ShouldBeNil)
-					So(drk.index, ShouldEqual, i)
-					So(drk.count, ShouldEqual, 0)
-
-					// Assert that it is ordered.
-					if prev != "" {
-						So(prev, ShouldBeLessThan, enc)
-
-						prevp, err := decodeRowKey(prev)
-						So(err, ShouldBeNil)
-						So(prevp.sharesPathWith(rk), ShouldBeTrue)
-						So(prevp.index, ShouldBeLessThan, drk.index)
-					}
-				})
 			})
 		}
 	})

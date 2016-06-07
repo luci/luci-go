@@ -52,13 +52,6 @@ var (
 	// errStop is an internal sentinel error used to indicate "stop iteration"
 	// to btTable.getLogData iterator.
 	errStop = errors.New("bigtable: stop iteration")
-
-	// errRepeatRequest is a transition sentinel that instructs us to repeat
-	// our query with KeysOnly set to true.
-	//
-	// TODO(dnj): This can be deleted once BigTable rows without a count have been
-	// aged off.
-	errRepeatRequest = errors.New("bigtable: repeat request")
 )
 
 // Options is a set of configuration options for BigTable storage.
@@ -220,6 +213,14 @@ func (s *btStorage) Get(r storage.GetRequest, cb storage.GetCallback) error {
 			return errStop
 		}
 
+		// Calculate the start index of the contiguous row. Since we index the row
+		// on the LAST entry in the row, count backwards to get the index of the
+		// first entry.
+		startIndex := rk.index - rk.count + 1
+		if startIndex < 0 {
+			return storage.ErrBadData
+		}
+
 		// Split our data into records. Leave the records slice nil if we're doing
 		// a keys-only get.
 		var records [][]byte
@@ -228,63 +229,27 @@ func (s *btStorage) Get(r storage.GetRequest, cb storage.GetCallback) error {
 			if records, err = recordio.Split(data); err != nil {
 				return storage.ErrBadData
 			}
-		}
 
-		switch {
-		case r.KeysOnly:
-			// Keys only query, so count is the authority.
-			if rk.count == 0 {
-				// If it's zero, we are dealing with a legacy row, before we started
-				// keeping count. A keys-only query is insufficient to get the
-				// inforamtion that we need, so repeat this Get request with KeysOnly
-				// set to false.
-				//
-				// TODO(dnj): This logic can be removed once all uncounted rows are aged
-				// off.
-				r.KeysOnly = false
-				return errRepeatRequest
+			if rk.count != int64(len(records)) {
+				log.Fields{
+					"count":       rk.count,
+					"recordCount": len(records),
+				}.Errorf(ctx, "Record count doesn't match declared count.")
+				return storage.ErrBadData
 			}
-			break
-
-		case rk.count == 0:
-			// This is a non-keys-only query, but we are dealing with a legacy row.
-			// Use the record count as the authority.
-			//
-			// TODO(dnj): This logic can be removed once all uncounted rows are aged
-			// off.
-			rk.count = int64(len(records))
-
-		case rk.count == int64(len(records)):
-			// This is the expected case, so we're set.
-			//
-			// TODO(dnj): Once uncounted rows are aged off, this is the only logic
-			// that we need, in the form of a sanity assertion.
-			break
-
-		default:
-			log.Fields{
-				"count":       rk.count,
-				"recordCount": len(records),
-			}.Errorf(ctx, "Record count doesn't match declared count.")
-			return storage.ErrBadData
-		}
-
-		// Issue our callback for each row. Since we index the row on the LAST entry
-		// in the row, count backwards to get the index of the first entry.
-		startIndex := rk.index - rk.count + 1
-		if startIndex < 0 {
-			return storage.ErrBadData
 		}
 
 		// If we are indexed somewhere within this entry's records, discard any
 		// records before our index.
 		if discard := int64(r.Index) - startIndex; discard > 0 {
-			if discard > int64(len(records)) {
+			if discard > rk.count {
 				// This should never happen unless there is corrupt or conflicting data.
 				return nil
 			}
 			startIndex += discard
-			records = records[discard:]
+			if !r.KeysOnly {
+				records = records[discard:]
+			}
 		}
 
 		log.Fields{
@@ -320,9 +285,6 @@ func (s *btStorage) Get(r storage.GetRequest, cb storage.GetCallback) error {
 	switch err {
 	case nil, errStop:
 		return nil
-
-	case errRepeatRequest:
-		return s.Get(r, cb)
 
 	default:
 		log.WithError(err).Errorf(ctx, "Failed to retrieve row range.")

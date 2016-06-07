@@ -154,17 +154,13 @@ func (c *Collector) Process(ctx context.Context, msg []byte) error {
 		b:   pr.Bundle,
 	}
 
-	// TODO(dnj): Make this actually an fatal error, once project becomes
-	// required.
-	if lw.b.Project != "" {
-		lw.project = config.ProjectName(lw.b.Project)
-		if err := lw.project.Validate(); err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-				"project":    lw.b.Project,
-			}.Errorf(ctx, "Failed to validate bundle project name.")
-			return errors.New("invalid bundle project name")
-		}
+	lw.project = config.ProjectName(lw.b.Project)
+	if err := lw.project.Validate(); err != nil {
+		log.Fields{
+			log.ErrorKey: err,
+			"project":    lw.b.Project,
+		}.Errorf(ctx, "Failed to validate bundle project name.")
+		return errors.New("invalid bundle project name")
 	}
 
 	if err := types.StreamName(lw.b.Prefix).Validate(); err != nil {
@@ -251,12 +247,8 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 		return nil
 	}
 
-	// TODO(dnj): After migration, deprecate this and check secret up in Process.
 	secret := types.PrefixSecret(h.b.Secret)
-	if secret == nil {
-		secret = types.PrefixSecret(h.be.DeprecatedEntrySecret)
-	}
-	if err := types.PrefixSecret(secret).Validate(); err != nil {
+	if err := secret.Validate(); err != nil {
 		log.Fields{
 			log.ErrorKey:   err,
 			"secretLength": len(secret),

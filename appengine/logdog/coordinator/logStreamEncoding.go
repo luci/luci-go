@@ -14,26 +14,16 @@ import (
 // for more information.
 const encodedKeyPrefix = "Key_"
 
+var keyEncoding = base64.URLEncoding.WithPadding('~')
+
 // encodeKey encodes a key string in a manner that allows it to be used as a
 // datastore property.
 //
 // Datastore properties may consist of [a-zA-Z0-9_]. However, filters on these
 // properties require the "=" character to be used, so default base64
-// padding is not acceptable. Instead, we will perform the following
-// transformation:
-// 1) Encode the key with base64's URLEncoding scheme.
-// 2) Replace "=" characters with "~".
-//
-// TODO(dnj): When switching to Go 1.5, use Base64 Encoding w/ "~" as the
-//     custom padding character.
+// padding is not acceptable.
 func encodeKey(k string) string {
-	k = strings.Map(func(r rune) rune {
-		if r == '=' {
-			return '~'
-		}
-		return r
-	}, base64.URLEncoding.EncodeToString([]byte(k)))
-	return strings.Join([]string{encodedKeyPrefix, k}, "")
+	return (encodedKeyPrefix + keyEncoding.EncodeToString([]byte(k)))
 }
 
 // decodeKey converts an encoded key into its original key string.
@@ -42,16 +32,9 @@ func decodeKey(k string) (string, error) {
 		return "", fmt.Errorf("encoded key missing prefix (%s)", encodedKeyPrefix)
 	}
 
-	k = strings.Map(func(r rune) rune {
-		if r == '~' {
-			return '='
-		}
-		return r
-	}, k[len(encodedKeyPrefix):])
-
-	d, err := base64.URLEncoding.DecodeString(k)
+	data, err := keyEncoding.DecodeString(k[len(encodedKeyPrefix):])
 	if err != nil {
-		return "", fmt.Errorf("failed to decode key: %s", err)
+		return "", fmt.Errorf("failed to decode key: %v", err)
 	}
-	return string(d), nil
+	return string(data), nil
 }

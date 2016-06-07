@@ -7,6 +7,7 @@ package bigtable
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -33,10 +34,6 @@ type btTableTest struct {
 
 	// maxLogAge is the currently-configured maximum log age.
 	maxLogAge time.Duration
-
-	// countLegacy, if true, simulates legacy BigTable rows by not writing or
-	// reading the "count" field.
-	countLegacy bool
 }
 
 func (t *btTableTest) close() {
@@ -104,11 +101,6 @@ func (t *btTableTest) getLogData(c context.Context, rk *rowKey, limit int, keysO
 			return false
 		}
 
-		// If we're simulating legacy (no count), clear our row key's count.
-		if t.countLegacy {
-			drk.count = 0
-		}
-
 		rowData := i.Val
 		if keysOnly {
 			rowData = nil
@@ -157,13 +149,11 @@ func (t *btTableTest) dataMap() map[string][]byte {
 	return result
 }
 
-func testStorageImpl(t *testing.T, legacy bool) {
+func TestStorage(t *testing.T) {
 	t.Parallel()
 
 	Convey(`A BigTable storage instance bound to a testing BigTable instance`, t, func() {
-		bt := btTableTest{
-			countLegacy: legacy,
-		}
+		bt := btTableTest{}
 		defer bt.close()
 
 		s := newBTStorage(context.Background(), Options{
@@ -177,16 +167,21 @@ func testStorageImpl(t *testing.T, legacy bool) {
 		defer s.Close()
 
 		project := config.ProjectName("test-project")
-		get := func(path string, index int, limit int) ([]string, error) {
+		get := func(path string, index int, limit int, keysOnly bool) ([]string, error) {
 			req := storage.GetRequest{
-				Project: project,
-				Path:    types.StreamPath(path),
-				Index:   types.MessageIndex(index),
-				Limit:   limit,
+				Project:  project,
+				Path:     types.StreamPath(path),
+				Index:    types.MessageIndex(index),
+				Limit:    limit,
+				KeysOnly: keysOnly,
 			}
 			got := []string{}
 			err := s.Get(req, func(idx types.MessageIndex, d []byte) bool {
-				got = append(got, string(d))
+				if keysOnly {
+					got = append(got, strconv.Itoa(int(idx)))
+				} else {
+					got = append(got, string(d))
+				}
 				return true
 			})
 			return got, err
@@ -263,39 +258,71 @@ func testStorageImpl(t *testing.T, legacy bool) {
 
 			Convey(`Testing "Get"...`, func() {
 				Convey(`Can fetch the full row, "A".`, func() {
-					got, err := get("A", 0, 0)
+					got, err := get("A", 0, 0, false)
 					So(err, ShouldBeNil)
 					So(got, ShouldResemble, []string{"0", "1", "2", "3", "4"})
 				})
 
 				Convey(`Will fetch A{1, 2, 3, 4} with index=1.`, func() {
-					got, err := get("A", 1, 0)
+					got, err := get("A", 1, 0, false)
 					So(err, ShouldBeNil)
 					So(got, ShouldResemble, []string{"1", "2", "3", "4"})
 				})
 
 				Convey(`Will fetch A{1, 2} with index=1 and limit=2.`, func() {
-					got, err := get("A", 1, 2)
+					got, err := get("A", 1, 2, false)
 					So(err, ShouldBeNil)
 					So(got, ShouldResemble, []string{"1", "2"})
 				})
 
 				Convey(`Will fetch B{10, 12, 13} for B.`, func() {
-					got, err := get("B", 0, 0)
+					got, err := get("B", 0, 0, false)
 					So(err, ShouldBeNil)
 					So(got, ShouldResemble, []string{"10", "12", "13"})
 				})
 
 				Convey(`Will fetch B{12, 13} when index=11.`, func() {
-					got, err := get("B", 11, 0)
+					got, err := get("B", 11, 0, false)
 					So(err, ShouldBeNil)
 					So(got, ShouldResemble, []string{"12", "13"})
 				})
 
 				Convey(`Will fetch {} for INVALID.`, func() {
-					got, err := get("INVALID", 0, 0)
+					got, err := get("INVALID", 0, 0, false)
 					So(err, ShouldBeNil)
 					So(got, ShouldResemble, []string{})
+				})
+			})
+
+			Convey(`Testing "Get" (keys only)`, func() {
+				Convey(`Can fetch the full row, "A".`, func() {
+					got, err := get("A", 0, 0, true)
+					So(err, ShouldBeNil)
+					So(got, ShouldResemble, []string{"0", "1", "2", "3", "4"})
+				})
+
+				Convey(`Will fetch A{1, 2, 3, 4} with index=1.`, func() {
+					got, err := get("A", 1, 0, true)
+					So(err, ShouldBeNil)
+					So(got, ShouldResemble, []string{"1", "2", "3", "4"})
+				})
+
+				Convey(`Will fetch A{1, 2} with index=1 and limit=2.`, func() {
+					got, err := get("A", 1, 2, true)
+					So(err, ShouldBeNil)
+					So(got, ShouldResemble, []string{"1", "2"})
+				})
+
+				Convey(`Will fetch B{10, 12, 13} for B.`, func() {
+					got, err := get("B", 0, 0, true)
+					So(err, ShouldBeNil)
+					So(got, ShouldResemble, []string{"10", "12", "13"})
+				})
+
+				Convey(`Will fetch B{12, 13} when index=11.`, func() {
+					got, err := get("B", 11, 0, true)
+					So(err, ShouldBeNil)
+					So(got, ShouldResemble, []string{"12", "13"})
 				})
 			})
 
@@ -324,12 +351,4 @@ func testStorageImpl(t *testing.T, legacy bool) {
 			})
 		})
 	})
-}
-
-func TestStorage(t *testing.T) {
-	testStorageImpl(t, false)
-}
-
-func TestStorageLegacy(t *testing.T) {
-	testStorageImpl(t, true)
 }

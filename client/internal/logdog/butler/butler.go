@@ -75,12 +75,8 @@ func (c *Config) Validate() error {
 	if c.Output == nil {
 		return errors.New("butler: an Output must be supplied")
 	}
-	// TODO(dnj): Empty project should not validate here once projects are
-	// mandatory.
-	if c.Project != "" {
-		if err := c.Project.Validate(); err != nil {
-			return fmt.Errorf("invalid project: %v", err)
-		}
+	if err := c.Project.Validate(); err != nil {
+		return fmt.Errorf("invalid project: %v", err)
 	}
 	if err := c.Prefix.Validate(); err != nil {
 		return fmt.Errorf("invalid prefix: %v", err)

@@ -13,6 +13,7 @@ import (
 	"github.com/luci/luci-go/common/grpcutil"
 	log "github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
 )
 
 // server is a service supporting log stream registration.
@@ -32,6 +33,10 @@ func New() logdog.RegistrationServer {
 				// Enter the requested project namespace. This validates that the
 				// current user has READ access.
 				project := config.ProjectName(pbm.GetMessageProject())
+				if project == "" {
+					return nil, grpcutil.Errf(codes.InvalidArgument, "project is required")
+				}
+
 				log.Fields{
 					"project": project,
 				}.Debugf(c, "User is accessing project.")

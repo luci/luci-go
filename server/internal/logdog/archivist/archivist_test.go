@@ -302,10 +302,6 @@ func TestHandleArchive(t *testing.T) {
 		ar := Archivist{
 			Service: &sc,
 			SettingsLoader: func(c context.Context, proj config.ProjectName) (*Settings, error) {
-				if proj == "" {
-					proj = "_"
-				}
-
 				// Extra slashes to test concatenation,.
 				st := stBase
 				st.GSBase = gs.Path(fmt.Sprintf("gs://archival/%s/path/to/archive/", proj))
@@ -317,10 +313,6 @@ func TestHandleArchive(t *testing.T) {
 		}
 
 		gsURL := func(project, name string) string {
-			if project == "" {
-				project = "_"
-			}
-
 			return fmt.Sprintf("gs://archival/%s/path/to/archive/%s/%s/%s", project, project, desc.Path(), name)
 		}
 
@@ -570,28 +562,18 @@ func TestHandleArchive(t *testing.T) {
 			})
 		})
 
-		Convey(`With an empty project`, func() {
+		Convey(`With an empty project name, will fail and consume the task.`, func() {
 			archiveTask.Project = ""
 
-			Convey(`Will successfully archive {0, 1, 2, 3} with terminal index 3 using "_" for project archive path.`, func() {
-				stream.State.TerminalIndex = 3
-				addTestEntry("", 0, 1, 2, 3)
+			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "invalid project name")
+			So(task.consumed, ShouldBeTrue)
+		})
 
-				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-				So(task.consumed, ShouldBeTrue)
+		Convey(`With an invalid project name, will fail and consume the task.`, func() {
+			archiveTask.Project = "!!! invalid project name !!!"
 
-				So(hasStreams(true, true, true), ShouldBeTrue)
-				So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
-					Project:       "",
-					Id:            archiveTask.Id,
-					LogEntryCount: 4,
-					TerminalIndex: 3,
-
-					StreamUrl: gsURL("_", "logstream.entries"),
-					IndexUrl:  gsURL("_", "logstream.index"),
-					DataUrl:   gsURL("_", "data.bin"),
-				})
-			})
+			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "invalid project name")
+			So(task.consumed, ShouldBeTrue)
 		})
 
 		// Simulate failures during the various stream generation operations.

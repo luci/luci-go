@@ -194,12 +194,10 @@ func (a *Archivist) ArchiveTask(c context.Context, task Task) {
 func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 	at := task.Task()
 
-	// TODO(dnj): Remove empty project exemption, make empty project invalid.
-	if at.Project != "" {
-		if err := config.ProjectName(at.Project).Validate(); err != nil {
-			task.Consume()
-			return fmt.Errorf("invalid project name %q: %s", at.Project, err)
-		}
+	// Validate the project name.
+	if err := config.ProjectName(at.Project).Validate(); err != nil {
+		task.Consume()
+		return fmt.Errorf("invalid project name %q: %s", at.Project, err)
 	}
 
 	// Load the log stream's current state. If it is already archived, we will
@@ -472,10 +470,6 @@ type stagedArchival struct {
 // it from other staging paths for the same path/name.
 func (sa *stagedArchival) makeStagingPaths(name, uid string) stagingPaths {
 	proj := string(sa.project)
-	// TODO (dnj): When empty projects are disallowed, remove this.
-	if proj == "" {
-		proj = "_"
-	}
 
 	// Either of these paths may be shared between projects. To enforce
 	// an absence of conflicts, we will insert the project name as part of the

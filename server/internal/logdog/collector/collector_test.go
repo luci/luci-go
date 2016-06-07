@@ -169,19 +169,6 @@ func testCollectorImpl(t *testing.T, caching bool) {
 			So(errors.IsTransient(err), ShouldBeFalse)
 		})
 
-		// TODO(dnj): Remove this test once this is no longer supported.
-		Convey(`Will use legacy bundle entry secret if bundle secret is missing.`, func() {
-			b := bb.genBase()
-
-			be := bb.genBundleEntry("foo/+/bar", 4, 0, 1, 2, 3)
-			be.DeprecatedEntrySecret = b.Secret
-			b.Secret = nil
-			bb.addBundleEntry(be)
-
-			err := coll.Process(c, bb.bundle())
-			So(err, ShouldBeNil)
-		})
-
 		Convey(`Will drop messages with mismatching secrets.`, func() {
 			bb.addStreamEntries("foo/+/bar", -1, 0, 1, 2)
 			So(coll.Process(c, bb.bundle()), ShouldBeNil)
@@ -202,25 +189,14 @@ func testCollectorImpl(t *testing.T, caching bool) {
 			So(st, shouldHaveStoredStream, "test-project", "foo/+/baz", indexRange{0, 2})
 		})
 
-		Convey(`With an empty project name`, func() {
+		Convey(`With an empty project name, will drop the stream.`, func() {
 			b := bb.genBase()
 			b.Project = ""
 			bb.addFullStream("foo/+/baz", 3)
 
-			// TODO(dnj): Enable this when project name is required.
-			SkipConvey(`Will drop the stream.`, func() {
-
-				err := coll.Process(c, bb.bundle())
-				So(err, ShouldErrLike, "invalid project name")
-				So(errors.IsTransient(err), ShouldBeFalse)
-			})
-
-			Convey(`Will register the stream.`, func() {
-				So(coll.Process(c, bb.bundle()), ShouldBeNil)
-
-				So(tcc, shouldHaveRegisteredStream, "", "foo/+/baz", 2)
-				So(st, shouldHaveStoredStream, "", "foo/+/baz", indexRange{0, 2})
-			})
+			err := coll.Process(c, bb.bundle())
+			So(err, ShouldErrLike, "invalid bundle project name")
+			So(errors.IsTransient(err), ShouldBeFalse)
 		})
 
 		Convey(`Will drop streams with invalid project names.`, func() {

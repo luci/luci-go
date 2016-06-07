@@ -83,11 +83,8 @@ func NewCoordinator(s logdog.ServicesClient) Coordinator {
 
 func (c *coordinatorImpl) RegisterStream(ctx context.Context, s *LogStreamState, desc []byte) (*LogStreamState, error) {
 	// Client-side validate our parameters.
-	// TODO(dnj): Force this validation when empty project is not accepted.
-	if s.Project != "" {
-		if err := s.Project.Validate(); err != nil {
-			return nil, fmt.Errorf("failed to validate project: %s", err)
-		}
+	if err := s.Project.Validate(); err != nil {
+		return nil, fmt.Errorf("failed to validate project: %s", err)
 	}
 	if err := s.Path.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate path: %s", err)
@@ -126,11 +123,8 @@ func (c *coordinatorImpl) RegisterStream(ctx context.Context, s *LogStreamState,
 
 func (c *coordinatorImpl) TerminateStream(ctx context.Context, r *TerminateRequest) error {
 	// Client-side validate our parameters.
-	// TODO(dnj): Force this validation when empty project is not accepted.
-	if r.Project != "" {
-		if err := r.Project.Validate(); err != nil {
-			return fmt.Errorf("failed to validate project: %s", err)
-		}
+	if err := r.Project.Validate(); err != nil {
+		return fmt.Errorf("failed to validate project: %s", err)
 	}
 	if r.ID == "" {
 		return errors.New("missing stream ID")

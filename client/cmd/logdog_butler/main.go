@@ -239,12 +239,9 @@ func mainImpl(ctx context.Context, argv []string) int {
 
 	a.Context = logConfig.Set(a.Context)
 
-	// TODO(dnj): Force all invocations to supply a Project.
-	if a.project != "" {
-		if err := a.project.Validate(); err != nil {
-			log.WithError(err).Errorf(a, "Invalid project (-project).")
-			return configErrorReturnCode
-		}
+	if err := a.project.Validate(); err != nil {
+		log.WithError(err).Errorf(a, "Invalid project (-project).")
+		return configErrorReturnCode
 	}
 
 	// Validate our Prefix; generate a user prefix if one was not supplied.
