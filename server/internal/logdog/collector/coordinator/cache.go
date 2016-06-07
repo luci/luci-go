@@ -39,12 +39,11 @@ var (
 type cache struct {
 	Coordinator
 
-	// Size is the number of stream states to hold in the cache. If zero,
-	// DefaultCacheSize will be used.
+	// Size is the number of stream states to hold in the cache.
 	size int
 
 	// expiration is the maximum lifespan of a cache entry. If an entry is older
-	// than this, it will be discarded. If zero, DefaultExpiration will be used.
+	// than this, it will be discarded.
 	expiration time.Duration
 
 	// cache is the LRU state cache.
@@ -52,8 +51,11 @@ type cache struct {
 }
 
 // NewCache creates a new Coordinator instance that wraps another Coordinator
-// instance with a cache that retains the latest remote Coordiantor state in a
+// instance with a cache that retains the latest remote Coordinator state in a
 // client-side LRU cache.
+//
+// If size is <= 0, DefaultSize will be used.
+// If expiration is <= 0, DefaultExpiration will be used.
 func NewCache(c Coordinator, size int, expiration time.Duration) Coordinator {
 	if size <= 0 {
 		size = DefaultSize
@@ -69,84 +71,56 @@ func NewCache(c Coordinator, size int, expiration time.Duration) Coordinator {
 	}
 }
 
-// RegisterStream invokes the wrapped Coordinator's RegisterStream method and
-// caches the result. It uses a Promise to cause all simultaneous identical
-// RegisterStream requests to block on a single RPC.
-func (c *cache) RegisterStream(ctx context.Context, st *LogStreamState, desc []byte) (*LogStreamState, error) {
+func (c *cache) getCacheEntry(ctx context.Context, k cacheEntryKey) (*cacheEntry, bool) {
 	now := clock.Now(ctx)
 
-	key := cacheEntryKey{
-		project: st.Project,
-		path:    st.Path,
-	}
-
-	// Get the cacheEntry from our cache. If it is expired, doesn't exist, or
-	// we're forcing, ignore any existing entry and replace with a Promise pending
-	// Coordinator sync.
-	cacheHit := false
-	entry := c.lru.Mutate(key, func(current interface{}) interface{} {
-		// Don't replace an existing entry, unless it has a transient error or has
-		// expired.
+	// Get the cacheEntry from our cache. If it is expired or doesn't exist,
+	// generate a new cache entry for this key.
+	created := false
+	entry := c.lru.Mutate(k, func(current interface{}) interface{} {
+		// Don't replace an existing entry, unless it has an error or has expired.
 		if current != nil {
 			curEntry := current.(*cacheEntry)
-			if !curEntry.hasTransientError() && now.Before(curEntry.expiresAt) {
-				cacheHit = true
+			if now.Before(curEntry.expiresAt) {
 				return current
 			}
 		}
 
-		p := promise.New(ctx, func(ctx context.Context) (interface{}, error) {
-			st, err := c.Coordinator.RegisterStream(ctx, st, desc)
-			return st, err
-		})
-
+		created = true
 		return &cacheEntry{
-			cacheEntryKey: cacheEntryKey{
-				project: st.Project,
-				path:    st.Path,
-			},
+			cacheEntryKey: k,
 			terminalIndex: -1,
-			p:             p,
 			expiresAt:     now.Add(c.expiration),
 		}
 	}).(*cacheEntry)
+	return entry, created
+}
 
-	// If there was a transient error, purge the erroneous entry from the cache so
-	// that the next "update" will re-fetch it.
-	//
-	// If the error was non-transient, we will retain it as the Promise return
-	// value and subsequent calls will also receive this error.
-	st, err := entry.get(ctx)
-	if errors.IsTransient(err) {
-		log.Fields{
-			log.ErrorKey: err,
-		}.Errorf(ctx, "Transient error retrieving stream state.")
+// RegisterStream invokes the wrapped Coordinator's RegisterStream method and
+// caches the result. It uses a Promise to cause all simultaneous identical
+// RegisterStream requests to block on a single RPC.
+func (c *cache) RegisterStream(ctx context.Context, st *LogStreamState, desc []byte) (*LogStreamState, error) {
+	entry, created := c.getCacheEntry(ctx, cacheEntryKey{
+		project: st.Project,
+		path:    st.Path,
+	})
+	tsCache.Add(ctx, 1, !created)
+
+	st, err := entry.registerStream(ctx, c.Coordinator, *st, desc)
+	if err != nil {
+		log.WithError(err).Errorf(ctx, "Error retrieving stream state.")
 		return nil, err
 	}
 
-	tsCache.Add(ctx, 1, cacheHit)
-	return st, err
+	return st, nil
 }
 
-func (c *cache) TerminateStream(ctx context.Context, st *LogStreamState) error {
-	key := cacheEntryKey{
-		project: st.Project,
-		path:    st.Path,
-	}
-
-	// Immediately update our state cache to record the terminal index, if
-	// we have a state cache.
-	c.lru.Mutate(key, func(current interface{}) (r interface{}) {
-		// Always return the current entry. We're just atomically examining it to
-		// load it with a terminal index.
-		r = current
-		if r != nil {
-			r.(*cacheEntry).loadTerminalIndex(st.TerminalIndex)
-		}
-		return
+func (c *cache) TerminateStream(ctx context.Context, r *TerminateRequest) error {
+	entry, _ := c.getCacheEntry(ctx, cacheEntryKey{
+		project: r.Project,
+		path:    r.Path,
 	})
-
-	return c.Coordinator.TerminateStream(ctx, st)
+	return entry.terminateStream(ctx, c.Coordinator, *r)
 }
 
 // cacheEntryKey is the LRU key for a cacheEntry.
@@ -155,75 +129,175 @@ type cacheEntryKey struct {
 	path    types.StreamPath
 }
 
-// cacheEntry is the value stored in the cache. It contains a Promise
-// representing the value and an optional invalidation singleton to ensure that
-// if the state failed to fetch, it will be invalidated at most once.
+// cacheEntry is a cached state for a specific log stream.
 //
-// In addition to remote caching via Promise, the state can be updated locally
-// by calling the cache's "put" method. In this case, the Promise will be nil,
-// and the state value will be populated.
+// It contains promises for each singleton operation: one for stream
+// registration (registerP), and one for stream termination (terminateP).
+//
+// There are three states to promise evaluation:
+//	- If the promise is nil, it will be populated. Any concurrent requests
+//	  will block pending population (via lock) and will obtain a reference to
+//	  the populated promise.
+//	- If the promise succeeded, or failed non-transiently, its result will be
+//	  retained and all subsequent calls will see this result.
+//	- If the promise failed transiently, it will be set to nil. This will cause
+//	  the next caller to generate a new promise (retry). Concurrent users of the
+//	  transiently-failing Promise will all receive a transient error.
 type cacheEntry struct {
 	sync.Mutex
 	cacheEntryKey
 
-	// terminalIndex is the loaded terminal index set via loadTerminalIndex. It
-	// will be applied to returned LogStreamState objects so that once a terminal
-	// index has been set, we become aware of it in the Collector.
+	// expiresAt is the time when this cache entry expires. If this is in the
+	// past, this entry can be discarded.
+	expiresAt time.Time
+
+	// terminalIndex is the cached terminal index. Valid if >= 0.
+	//
+	// If a TerminateStream RPC succeeds, we will use this value in our returned
+	// RegisterStream state.
 	terminalIndex types.MessageIndex
 
-	// p is a Promise that is blocking pending a Coordiantor stream state
-	// response. Upon successful resolution, it will contain a *LogStreamState.
-	p *promise.Promise
-
-	project   config.ProjectName
-	path      types.StreamPath
-	expiresAt time.Time
+	// registerP is a Promise that is blocking pending stream registration.
+	// Upon successful resolution, it will contain a *LogStreamState.
+	registerP *promise.Promise
+	// terminateP is a Promise that is blocking pending stream termination.
+	// Upon successful resolution, it will contain a nil result with no error.
+	terminateP *promise.Promise
 }
 
-// get returns the cached state that this entry owns, blocking until resolution
-// if necessary.
-//
-// The returned state is a shallow copy of the cached state, and may be
-// modified by the caller.
-func (e *cacheEntry) get(ctx context.Context) (*LogStreamState, error) {
-	promisedSt, err := e.p.Get(ctx)
+// registerStream performs a RegisterStream Coordinator RPC.
+func (ce *cacheEntry) registerStream(ctx context.Context, coord Coordinator, st LogStreamState, desc []byte) (*LogStreamState, error) {
+	// Initialize the registration Promise, if one is not defined.
+	//
+	// While locked, load the current registration promise and the local
+	// terminal index value.
+	var (
+		p    *promise.Promise
+		tidx types.MessageIndex
+	)
+	ce.withLock(func() {
+		if ce.registerP == nil {
+			ce.registerP = promise.NewDeferred(func(ctx context.Context) (interface{}, error) {
+				st, err := coord.RegisterStream(ctx, &st, desc)
+				if err == nil {
+					// If the remote state has a terminal index, retain it locally.
+					ce.loadRemoteTerminalIndex(st.TerminalIndex)
+					return st, nil
+				}
+
+				return nil, err
+			})
+		}
+
+		p, tidx = ce.registerP, ce.terminalIndex
+	})
+
+	// Resolve our registration Promise.
+	remoteStateIface, err := p.Get(ctx)
 	if err != nil {
+		// If the promise failed transiently, clear it so that subsequent callers
+		// will regenerate a new promise. ONLY clear it if it it is the same
+		// promise, as different callers may have already cleared/rengerated it.
+		if errors.IsTransient(err) {
+			ce.withLock(func() {
+				if ce.registerP == p {
+					ce.registerP = nil
+				}
+			})
+		}
 		return nil, err
 	}
+	remoteState := remoteStateIface.(*LogStreamState)
 
-	// Create a clone of our cached value (not deep, so secret is not cloned, but
-	// the Collector will not modify that). If we have a local terminal index
-	// cached, apply that to the response.
-	//
-	// We need to lock around our terminalIndex.
-	e.Lock()
-	defer e.Unlock()
-
-	rp := *(promisedSt.(*LogStreamState))
-	if rp.TerminalIndex < 0 {
-		rp.TerminalIndex = e.terminalIndex
+	// If our remote state doesn't include a terminal index and our local state
+	// has recorded a successful remote terminal index, return a copy of the
+	// remote state with the remote terminal index added.
+	if remoteState.TerminalIndex < 0 && tidx >= 0 {
+		remoteStateCopy := *remoteState
+		remoteStateCopy.TerminalIndex = tidx
+		remoteState = &remoteStateCopy
 	}
-
-	return &rp, nil
+	return remoteState, nil
 }
 
-// hasTransientError tests if this entry has completed evaluation with an error state.
-// This is non-blocking, so if the evaluation hasn't completed, it will return
-// false.
-func (e *cacheEntry) hasTransientError() bool {
-	switch _, err := e.p.Peek(); err {
-	case nil, promise.ErrNoData:
-		return false
-	default:
-		return errors.IsTransient(err)
+// terminateStream performs a TerminateStream Coordinator RPC.
+func (ce *cacheEntry) terminateStream(ctx context.Context, coord Coordinator, tr TerminateRequest) error {
+	// Initialize the termination Promise if one is not defined. Also, grab our
+	// cached remote terminal index.
+	var (
+		p    *promise.Promise
+		tidx types.MessageIndex = -1
+	)
+	ce.withLock(func() {
+		if ce.terminateP == nil {
+			// We're creating a new promise, so our tr's TerminalIndex will be set.
+			ce.terminateP = promise.NewDeferred(func(ctx context.Context) (interface{}, error) {
+				// Execute our TerminateStream RPC. If successful, retain the successful
+				// terminal index locally.
+				err := coord.TerminateStream(ctx, &tr)
+				if err == nil {
+					// Note that this happens within the Promise body, so this will not
+					// conflict with our outer lock.
+					ce.loadRemoteTerminalIndex(tr.TerminalIndex)
+				}
+				return nil, err
+			})
+		}
+
+		p, tidx = ce.terminateP, ce.terminalIndex
+	})
+
+	// If the stream is known to be terminated on the Coordinator side, we don't
+	// need to issue another request.
+	if tidx >= 0 {
+		if tr.TerminalIndex != tidx {
+			// Not much we can do here, and this probably will never happen, but let's
+			// log it if it does.
+			log.Fields{
+				"requestIndex": tr.TerminalIndex,
+				"cachedIndex":  tidx,
+			}.Warningf(ctx, "Request terminal index doesn't match cached value.")
+		}
+		return nil
 	}
+
+	// Resolve our termination Promise.
+	if _, err := p.Get(ctx); err != nil {
+		// If this is a transient error, delete this Promise so future termination
+		// attempts will retry for this stream.
+		if errors.IsTransient(err) {
+			ce.withLock(func() {
+				if ce.terminateP == p {
+					ce.terminateP = nil
+				}
+			})
+		}
+		return err
+	}
+	return nil
 }
 
-// loadTerminalIndex loads a local cache of the stream's terminal index. This
-// will be applied to all future get requests.
-func (e *cacheEntry) loadTerminalIndex(tidx types.MessageIndex) {
-	e.Lock()
-	defer e.Unlock()
+// loadRemoteTerminalIndex updates our cached remote terminal index with tidx,
+// if tidx >= 0 and a remote terminal index is not already cached.
+//
+// This is executed in the bodies of the register and terminate Promises if they
+// receive a terminal index remotely.
+func (ce *cacheEntry) loadRemoteTerminalIndex(tidx types.MessageIndex) {
+	// Never load an invalid remote terminal index.
+	if tidx < 0 {
+		return
+	}
 
-	e.terminalIndex = tidx
+	// Load the remote terminal index if one isn't already loaded.
+	ce.withLock(func() {
+		if ce.terminalIndex < 0 {
+			ce.terminalIndex = tidx
+		}
+	})
+}
+
+func (ce *cacheEntry) withLock(f func()) {
+	ce.Lock()
+	defer ce.Unlock()
+	f()
 }

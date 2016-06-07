@@ -337,12 +337,17 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 	// Fetch our cached/remote state. This will replace our state object with the
 	// fetched state, so any future calls will need to re-set the Secret value.
 	// TODO: Use timeout?
-	state, err := c.Coordinator.RegisterStream(ctx, &coordinator.LogStreamState{
-		Project:      h.project,
-		Path:         h.path,
-		Secret:       secret,
-		ProtoVersion: h.md.ProtoVersion,
-	}, descBytes)
+	registerReq := coordinator.LogStreamState{
+		Project:       h.project,
+		Path:          h.path,
+		Secret:        secret,
+		ProtoVersion:  h.md.ProtoVersion,
+		TerminalIndex: -1,
+	}
+	if h.be.Terminal {
+		registerReq.TerminalIndex = types.MessageIndex(h.be.TerminalIndex)
+	}
+	state, err := c.Coordinator.RegisterStream(ctx, &registerReq, descBytes)
 	if err != nil {
 		log.WithError(err).Errorf(ctx, "Failed to get/register current stream state.")
 		return err
@@ -421,14 +426,18 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 		if h.be.Terminal {
 			taskC <- func() error {
 				// Sentinel task: Update the terminal bundle state.
-				state := *state
-				state.TerminalIndex = types.MessageIndex(h.be.TerminalIndex)
+				treq := coordinator.TerminateRequest{
+					Project:       state.Project,
+					Path:          state.Path,
+					ID:            state.ID,
+					Secret:        state.Secret,
+					TerminalIndex: types.MessageIndex(h.be.TerminalIndex),
+				}
 
 				log.Fields{
 					"terminalIndex": state.TerminalIndex,
 				}.Infof(ctx, "Received terminal log; updating Coordinator state.")
-
-				if err := c.Coordinator.TerminateStream(ctx, &state); err != nil {
+				if err := c.Coordinator.TerminateStream(ctx, &treq); err != nil {
 					log.WithError(err).Errorf(ctx, "Failed to set stream terminal index.")
 					return err
 				}

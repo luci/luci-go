@@ -19,10 +19,6 @@ const (
 	// projectNamespacePrefix is the datastore namespace prefix for project
 	// namespaces.
 	projectNamespacePrefix = "luci."
-
-	// projectConfigWorkers is the number of workers that will pull project
-	// configs from the config service.
-	projectConfigWorkers = 16
 )
 
 // ProjectNamespace returns the AppEngine namespace for a given luci-config

@@ -29,11 +29,11 @@ func TestRegisterStream(t *testing.T) {
 
 	Convey(`With a testing configuration`, t, func() {
 		c, env := ct.Install()
-		ds.Get(c).Testable().Consistent(true)
 
 		// Set our archival delays. The project delay is smaller than the service
 		// delay, so it should be used.
 		env.ModServiceConfig(c, func(cfg *svcconfig.Config) {
+			cfg.Coordinator.ArchiveSettleDelay = google.NewDuration(10 * time.Minute)
 			cfg.Coordinator.ArchiveDelayMax = google.NewDuration(24 * time.Hour)
 		})
 		env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
@@ -56,10 +56,11 @@ func TestRegisterStream(t *testing.T) {
 			tls := ct.MakeStream(c, "proj-foo", "testing/+/foo/bar")
 
 			req := logdog.RegisterStreamRequest{
-				Project:      string(tls.Project),
-				Secret:       tls.Prefix.Secret,
-				ProtoVersion: logpb.Version,
-				Desc:         tls.DescBytes(),
+				Project:       string(tls.Project),
+				Secret:        tls.Prefix.Secret,
+				ProtoVersion:  logpb.Version,
+				Desc:          tls.DescBytes(),
+				TerminalIndex: -1,
 			}
 
 			Convey(`Returns FailedPrecondition when the Prefix is not registered.`, func() {
@@ -90,7 +91,7 @@ func TestRegisterStream(t *testing.T) {
 					So(err, ShouldBeRPCOK)
 					So(resp, ShouldResemble, expResp)
 					ds.Get(c).Testable().CatchupIndexes()
-					env.DrainTumbleAll(c)
+					env.IterateTumbleAll(c)
 
 					So(tls.Get(c), ShouldBeNil)
 
@@ -150,7 +151,7 @@ func TestRegisterStream(t *testing.T) {
 
 						Convey(`Forces an archival request after first archive expiration.`, func() {
 							env.Clock.Set(created.Add(time.Hour)) // 1 hour after initial registration.
-							env.DrainTumbleAll(c)
+							env.IterateTumbleAll(c)
 
 							So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
 						})
@@ -161,6 +162,47 @@ func TestRegisterStream(t *testing.T) {
 						_, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCInvalidArgument, "invalid secret")
 					})
+				})
+
+				Convey(`Can register a terminal stream.`, func() {
+					created := ds.RoundTime(env.Clock.Now())
+					req.TerminalIndex = 1337
+					expResp.State.TerminalIndex = 1337
+
+					resp, err := svr.RegisterStream(c, &req)
+					So(err, ShouldBeRPCOK)
+					So(resp, ShouldResemble, expResp)
+					ds.Get(c).Testable().CatchupIndexes()
+					env.IterateTumbleAll(c)
+
+					So(tls.Get(c), ShouldBeNil)
+
+					// Registers the log stream.
+					So(tls.Stream.Created, ShouldResemble, created)
+
+					// Registers the log stream state.
+					So(tls.State.Created, ShouldResemble, created)
+					So(tls.State.Updated, ShouldResemble, created)
+					So(tls.State.Secret, ShouldResemble, req.Secret)
+					So(tls.State.TerminalIndex, ShouldEqual, 1337)
+					So(tls.State.TerminatedTime, ShouldResemble, created)
+					So(tls.State.Terminated(), ShouldBeTrue)
+					So(tls.State.ArchivalState(), ShouldEqual, coordinator.NotArchived)
+
+					// Should also register the log stream Prefix.
+					So(tls.Prefix.Created, ShouldResemble, created)
+					So(tls.Prefix.Secret, ShouldResemble, req.Secret)
+
+					// No pending archival requests.
+					env.IterateTumbleAll(c)
+					So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{})
+
+					// When we advance to our settle delay, an archival task is scheduled.
+					env.Clock.Add(10 * time.Minute)
+					env.IterateTumbleAll(c)
+
+					// Has a pending archival request.
+					So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
 				})
 
 				Convey(`Will schedule the correct archival expiration delay`, func() {
@@ -177,11 +219,11 @@ func TestRegisterStream(t *testing.T) {
 						// 12, confirm no archival, then advance another 12 and confirm that
 						// archival was tasked.
 						env.Clock.Add(12 * time.Hour)
-						env.DrainTumbleAll(c)
+						env.IterateTumbleAll(c)
 						So(env.ArchivalPublisher.Hashes(), ShouldHaveLength, 0)
 
 						env.Clock.Add(12 * time.Hour)
-						env.DrainTumbleAll(c)
+						env.IterateTumbleAll(c)
 						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
 					})
 
@@ -198,7 +240,7 @@ func TestRegisterStream(t *testing.T) {
 						ds.Get(c).Testable().CatchupIndexes()
 
 						// The cleanup archival should be scheduled immediately.
-						env.DrainTumbleAll(c)
+						env.IterateTumbleAll(c)
 						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
 					})
 				})
@@ -257,8 +299,22 @@ func TestRegisterStream(t *testing.T) {
 				})
 
 				Convey(`The registerStreamMutation`, func() {
+					svcs := coordinator.GetServices(c)
+					cfg, err := svcs.Config(c)
+					if err != nil {
+						panic(err)
+					}
+					pcfg, err := svcs.ProjectConfig(c, "proj-foo")
+					if err != nil {
+						panic(err)
+					}
+
 					rsm := registerStreamMutation{
 						RegisterStreamRequest: &req,
+
+						cfg:  cfg,
+						pcfg: pcfg,
+
 						desc: tls.Desc,
 						pfx:  tls.Prefix,
 						ls:   tls.Stream,

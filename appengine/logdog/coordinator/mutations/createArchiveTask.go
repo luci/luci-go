@@ -25,8 +25,12 @@ type CreateArchiveTask struct {
 	// entity itself.
 	ID coordinator.HashID
 
-	// Expiration is the time when an archive task should be forced regardless
-	// of stream termination state.
+	// SettleDelay is the settle delay (see ArchivalParams).
+	SettleDelay time.Duration
+	// CompletePeriod is the complete period to use (see ArchivalParams).
+	CompletePeriod time.Duration
+
+	// Expiration is the delay applied to the archive task via ProcessAfter.
 	Expiration time.Time
 }
 
@@ -58,7 +62,9 @@ func (m *CreateArchiveTask) RollForward(c context.Context) ([]tumble.Mutation, e
 	}
 
 	params := coordinator.ArchivalParams{
-		RequestID: info.Get(c).RequestID(),
+		RequestID:      info.Get(c).RequestID(),
+		SettleDelay:    m.SettleDelay,
+		CompletePeriod: m.CompletePeriod,
 	}
 	if err = params.PublishTask(c, ap, state); err != nil {
 		if err == coordinator.ErrArchiveTasked {
@@ -85,14 +91,10 @@ func (m *CreateArchiveTask) Root(c context.Context) *ds.Key {
 }
 
 // ProcessAfter implements tumble.DelayedMutation.
-func (m *CreateArchiveTask) ProcessAfter() time.Time {
-	return m.Expiration
-}
+func (m *CreateArchiveTask) ProcessAfter() time.Time { return m.Expiration }
 
 // HighPriority implements tumble.DelayedMutation.
-func (m *CreateArchiveTask) HighPriority() bool {
-	return false
-}
+func (m *CreateArchiveTask) HighPriority() bool { return false }
 
 // TaskName returns the task's name, which is derived from its log stream ID.
 func (m *CreateArchiveTask) TaskName(di ds.Interface) (*ds.Key, string) {

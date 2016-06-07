@@ -106,8 +106,8 @@ func (e *Environment) ModProjectConfig(c context.Context, proj luciConfig.Projec
 	})
 }
 
-// DrainTumbleAll drains all Tumble instances across all namespaces.
-func (e *Environment) DrainTumbleAll(c context.Context) {
+// IterateTumbleAll iterates all Tumble instances across all namespaces.
+func (e *Environment) IterateTumbleAll(c context.Context) {
 	projects, err := luciConfig.Get(c).GetProjects()
 	if err != nil {
 		panic(err)
@@ -115,7 +115,7 @@ func (e *Environment) DrainTumbleAll(c context.Context) {
 
 	for _, proj := range projects {
 		WithProjectNamespace(c, luciConfig.ProjectName(proj.ID), func(c context.Context) {
-			e.Tumble.Drain(c)
+			e.Tumble.Iterate(c)
 		})
 	}
 }
@@ -256,6 +256,8 @@ func Install() (context.Context, *Environment) {
 
 	tcfg := e.Tumble.GetConfig(c)
 	tcfg.Namespaced = true
+	tcfg.TemporalRoundFactor = 0 // Makes test timing easier to understand.
+	tcfg.TemporalMinDelay = 0    // Makes test timing easier to understand.
 	e.Tumble.UpdateSettings(c, tcfg)
 
 	// Install authentication state.

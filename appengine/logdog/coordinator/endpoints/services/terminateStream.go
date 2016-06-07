@@ -8,8 +8,8 @@ import (
 	"crypto/subtle"
 
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
+	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/endpoints"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/mutations"
 	"github.com/luci/luci-go/appengine/tumble"
@@ -18,6 +18,7 @@ import (
 	"github.com/luci/luci-go/common/grpcutil"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )
@@ -54,17 +55,7 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 	}
 
 	// Initialize our archival parameters.
-	params := coordinator.ArchivalParams{
-		RequestID:      info.Get(c).RequestID(),
-		SettleDelay:    cfg.Coordinator.ArchiveSettleDelay.Duration(),
-		CompletePeriod: endpoints.MinDuration(cfg.Coordinator.ArchiveDelayMax, pcfg.MaxStreamAge),
-	}
-
-	ap, err := svc.ArchivalPublisher(c)
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to get archival publisher instance.")
-		return nil, grpcutil.Internal
-	}
+	params := standardArchivalParams(cfg, pcfg)
 
 	// Initialize our log stream state.
 	di := ds.Get(c)
@@ -110,17 +101,6 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 			lst.TerminalIndex = req.TerminalIndex
 			lst.TerminatedTime = now
 
-			// Create an archival task.
-			if err := params.PublishTask(c, ap, lst); err != nil {
-				if err == coordinator.ErrArchiveTasked {
-					log.Warningf(c, "Archival has already been tasked for this stream.")
-					return nil
-				}
-
-				log.WithError(err).Errorf(c, "Failed to create archive task.")
-				return grpcutil.Internal
-			}
-
 			if err := di.Put(lst); err != nil {
 				log.Fields{
 					log.ErrorKey: err,
@@ -128,17 +108,30 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 				return grpcutil.Internal
 			}
 
-			// Delete the archive expiration mutation, since we have just dispatched
-			// an archive request.
-			aeParent, aeName := (&mutations.CreateArchiveTask{ID: id}).TaskName(di)
-			if err := tumble.CancelNamedMutations(c, aeParent, aeName); err != nil {
-				log.WithError(err).Errorf(c, "Failed to cancel archive expiration mutation.")
+			// Replace the pessimistic archive expiration mutation scheduled in
+			// RegisterStream with an optimistic archival mutation.
+			cat := mutations.CreateArchiveTask{
+				ID: id,
+
+				// Optimistic parameters.
+				SettleDelay:    params.SettleDelay,
+				CompletePeriod: params.CompletePeriod,
+
+				// Schedule this mutation to execute after our settle delay.
+				Expiration: now.Add(params.SettleDelay),
+			}
+			aeParent, aeName := cat.TaskName(di)
+			if err := tumble.PutNamedMutations(c, aeParent, map[string]tumble.Mutation{aeName: &cat}); err != nil {
+				log.WithError(err).Errorf(c, "Failed to replace archive expiration mutation.")
 				return grpcutil.Internal
 			}
 
 			log.Fields{
-				"terminalIndex": lst.TerminalIndex,
-			}.Infof(c, "Terminal index was set and archival was dispatched.")
+				"terminalIndex":  lst.TerminalIndex,
+				"settleDelay":    cat.SettleDelay,
+				"completePeriod": cat.CompletePeriod,
+				"scheduledAt":    cat.Expiration,
+			}.Debugf(c, "Terminal index was set, and archival mutation was scheduled.")
 			return nil
 		}
 	}, nil)
@@ -150,4 +143,11 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 	}
 
 	return &google.Empty{}, nil
+}
+
+func standardArchivalParams(cfg *config.Config, pcfg *svcconfig.ProjectConfig) *coordinator.ArchivalParams {
+	return &coordinator.ArchivalParams{
+		SettleDelay:    cfg.Coordinator.ArchiveSettleDelay.Duration(),
+		CompletePeriod: endpoints.MinDuration(cfg.Coordinator.ArchiveDelayMax, pcfg.MaxStreamAge),
+	}
 }

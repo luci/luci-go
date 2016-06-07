@@ -43,7 +43,7 @@ func (c *testCoordinator) RegisterStream(ctx context.Context, s *LogStreamState,
 	return &rs, nil
 }
 
-func (c *testCoordinator) TerminateStream(ctx context.Context, st *LogStreamState) error {
+func (c *testCoordinator) TerminateStream(ctx context.Context, tr *TerminateRequest) error {
 	if err := c.incCalls(); err != nil {
 		return err
 	}
@@ -77,8 +77,17 @@ func TestStreamStateCache(t *testing.T) {
 
 		st := LogStreamState{
 			Project:       "test-project",
-			Path:          "foo/+/bar",
+			Path:          "test-stream-path",
+			ID:            "hash12345",
 			TerminalIndex: -1,
+		}
+
+		tr := TerminateRequest{
+			Project:       st.Project,
+			Path:          st.Path,
+			ID:            st.ID,
+			TerminalIndex: 1337,
+			Secret:        st.Secret,
 		}
 
 		// Note: In all of these tests, we check if "proto" field (ProtoVersion)
@@ -132,8 +141,7 @@ func TestStreamStateCache(t *testing.T) {
 				})
 
 				Convey(`Can terminate a registered stream`, func() {
-					s.TerminalIndex = 1337
-					So(ssc.TerminateStream(c, s), ShouldBeNil)
+					So(ssc.TerminateStream(c, &tr), ShouldBeNil)
 					So(tcc.calls, ShouldEqual, 2) // +1 call
 
 					Convey(`Registering the stream will include the terminal index.`, func() {
@@ -150,38 +158,40 @@ func TestStreamStateCache(t *testing.T) {
 				})
 			})
 
-			Convey(`When the terminal index is set before the fetch finishes, it will be returned.`, func() {
-				tcc.callC = make(chan struct{})
-				tcc.errC = make(chan error)
+			Convey(`Can register a stream with a terminal index`, func() {
+				st.TerminalIndex = 1337
 
-				go req(&st)
+				s, err := ssc.RegisterStream(c, &st, nil)
+				So(err, ShouldBeNil)
+				So(s.ProtoVersion, ShouldEqual, "remote")
+				So(tcc.calls, ShouldEqual, 1)
 
-				// Wait for our request to block on RegisterStream.
-				<-tcc.callC
+				Convey(`A subsequent call to TerminateStream will be ignored, since we have remote terminal confirmation.`, func() {
+					tr.TerminalIndex = 12345
 
-				// Set the terminal index. We will use a minimal LogStreamState. We know
-				// that this will happen after the streamStateCacheEntry is registered
-				// because both block on the LRU cache's Mutate, which is atomic, and
-				// RegisterStream must have added the streamStateCacheEntry in order for
-				// the lock to be available for TerminateStream to proceed.
-				terminalErrC := make(chan error)
-				go func() {
-					terminalErrC <- ssc.TerminateStream(c, &LogStreamState{
-						Project:       st.Project,
-						Path:          st.Path,
-						TerminalIndex: 1337,
+					So(ssc.TerminateStream(c, &tr), ShouldBeNil)
+					So(tcc.calls, ShouldEqual, 1) // (No additional calls)
+
+					Convey(`A register stream call will return the confirmed terminal index.`, func() {
+						st.TerminalIndex = 0
+
+						s, err := ssc.RegisterStream(c, &st, nil)
+						So(err, ShouldBeNil)
+						So(s.ProtoVersion, ShouldEqual, "remote")
+						So(tcc.calls, ShouldEqual, 1) // (No additional calls)
+						So(s.TerminalIndex, ShouldEqual, 1337)
 					})
-				}()
+				})
 
-				// Let both requests succeed.
-				<-tcc.callC
-				tcc.errC <- nil
-				tcc.errC <- nil
+				Convey(`A subsqeuent register stream call will return the confirmed terminal index.`, func() {
+					st.TerminalIndex = 0
 
-				// Read the LogStreamState from our RegisterStream request.
-				s := <-resultC
-				So(s, ShouldNotBeNil)
-				So(s.TerminalIndex, ShouldEqual, 1337)
+					s, err := ssc.RegisterStream(c, &st, nil)
+					So(err, ShouldBeNil)
+					So(s.ProtoVersion, ShouldEqual, "remote")
+					So(tcc.calls, ShouldEqual, 1) // (No additional calls)
+					So(s.TerminalIndex, ShouldEqual, 1337)
+				})
 			})
 
 			Convey(`When multiple goroutines register the same stream, it gets registered once.`, func() {
@@ -231,41 +241,85 @@ func TestStreamStateCache(t *testing.T) {
 				So(tcc.calls, ShouldEqual, 2)
 			})
 
-			Convey(`A transient registration error will result in a RegisterStream error.`, func() {
-				tcc.errC = make(chan error, 1)
-				tcc.errC <- errors.WrapTransient(errors.New("test error"))
-
-				_, err := ssc.RegisterStream(c, &st, nil)
-				So(err, ShouldNotBeNil)
-				So(tcc.calls, ShouldEqual, 1)
-
-				Convey(`A second registration without error will make a new request.`, func() {
-					tcc.errC = nil
-
-					_, err := ssc.RegisterStream(c, &st, nil)
-					So(err, ShouldBeNil)
-					So(tcc.calls, ShouldEqual, 2)
-				})
-			})
-
-			Convey(`A non-transient registration error will result in a RegisterStream error.`, func() {
-				tcc.errC = make(chan error, 1)
-				tcc.errC <- errors.New("test error")
-
-				_, err := ssc.RegisterStream(c, &st, nil)
-				So(err, ShouldNotBeNil)
-				So(tcc.calls, ShouldEqual, 1)
-
-				Convey(`A second registration will return the same error and not make a new request.`, func() {
-					tcc.errC = nil
+			Convey(`RegisterStream`, func() {
+				Convey(`A transient registration error will result in a RegisterStream error.`, func() {
+					tcc.errC = make(chan error, 1)
+					tcc.errC <- errors.WrapTransient(errors.New("test error"))
 
 					_, err := ssc.RegisterStream(c, &st, nil)
 					So(err, ShouldNotBeNil)
 					So(tcc.calls, ShouldEqual, 1)
+
+					Convey(`A second request will call through, try again, and succeed.`, func() {
+						tcc.errC = nil
+
+						_, err := ssc.RegisterStream(c, &st, nil)
+						So(err, ShouldBeNil)
+						So(tcc.calls, ShouldEqual, 2)
+					})
+				})
+
+				Convey(`A non-transient registration error will result in a RegisterStream error.`, func() {
+					tcc.errC = make(chan error, 1)
+					tcc.errC <- errors.New("test error")
+
+					_, err := ssc.RegisterStream(c, &st, nil)
+					So(err, ShouldNotBeNil)
+					So(tcc.calls, ShouldEqual, 1)
+
+					Convey(`A second request will return the cached error.`, func() {
+						tcc.errC = nil
+
+						_, err := ssc.RegisterStream(c, &st, nil)
+						So(err, ShouldNotBeNil)
+						So(tcc.calls, ShouldEqual, 1)
+					})
 				})
 			})
 
-			Convey(`Different projects with the sme stream name will not conflict.`, func() {
+			Convey(`TerminateStream`, func() {
+				tr := TerminateRequest{
+					Project:       st.Project,
+					ID:            st.ID,
+					TerminalIndex: 1337,
+				}
+
+				Convey(`The termination endpoint returns a transient error, it will propagate.`, func() {
+					tcc.errC = make(chan error, 1)
+					tcc.errC <- errors.WrapTransient(errors.New("test error"))
+
+					err := ssc.TerminateStream(c, &tr)
+					So(errors.IsTransient(err), ShouldBeTrue)
+					So(tcc.calls, ShouldEqual, 1)
+
+					Convey(`A second attempt will call through, try again, and succeed.`, func() {
+						tcc.errC = nil
+
+						err := ssc.TerminateStream(c, &tr)
+						So(err, ShouldBeNil)
+						So(tcc.calls, ShouldEqual, 2)
+					})
+				})
+
+				Convey(`When the termination endpoint returns a non-transient error, it will propagate.`, func() {
+					tcc.errC = make(chan error, 1)
+					tcc.errC <- errors.New("test error")
+
+					err := ssc.TerminateStream(c, &tr)
+					So(err, ShouldNotBeNil)
+					So(tcc.calls, ShouldEqual, 1)
+
+					Convey(`A second request will return the cached error.`, func() {
+						tcc.errC = nil
+
+						err := ssc.TerminateStream(c, &tr)
+						So(err, ShouldNotBeNil)
+						So(tcc.calls, ShouldEqual, 1)
+					})
+				})
+			})
+
+			Convey(`Different projects with the same stream name will not conflict.`, func() {
 				var projects = []config.ProjectName{"", "foo", "bar"}
 
 				for i, p := range projects {
@@ -273,8 +327,12 @@ func TestStreamStateCache(t *testing.T) {
 					s, err := ssc.RegisterStream(c, &st, nil)
 					So(err, ShouldBeNil)
 
-					s.TerminalIndex = types.MessageIndex(i)
-					So(ssc.TerminateStream(c, s), ShouldBeNil)
+					So(ssc.TerminateStream(c, &TerminateRequest{
+						Project:       s.Project,
+						Path:          s.Path,
+						ID:            s.ID,
+						TerminalIndex: types.MessageIndex(i),
+					}), ShouldBeNil)
 				}
 				So(tcc.calls, ShouldEqual, len(projects)*2)
 
@@ -302,7 +360,7 @@ func TestStreamStateCache(t *testing.T) {
 			wg.Add(count)
 			for i := 0; i < count; i++ {
 				st := st
-				st.Path = types.StreamPath(fmt.Sprintf("foo/+/bar%d", i))
+				st.Path = types.StreamPath(fmt.Sprintf("ID:%d", i))
 
 				go func(i int) {
 					defer wg.Done()

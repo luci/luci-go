@@ -35,6 +35,11 @@ message RegisterStreamRequest {
   string proto_version = 3;
   // The serialized LogStreamDescriptor protobuf for this stream.
   bytes desc = 4;
+
+  // The stream's terminal index. If >= 0, the terminal index will be set
+  // in the registration request, avoiding the need for an additional
+  // termination RPC.
+  int64 terminal_index = 5;
 }
 
 // The response message for the RegisterStream RPC.

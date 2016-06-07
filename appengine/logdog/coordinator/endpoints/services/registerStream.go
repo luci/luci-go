@@ -6,11 +6,11 @@ package services
 
 import (
 	"crypto/subtle"
-	"time"
 
 	"github.com/golang/protobuf/proto"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
+	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/endpoints"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/hierarchy"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/mutations"
@@ -21,6 +21,7 @@ import (
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
+	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )
@@ -68,8 +69,9 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 
 	path = desc.Path()
 	log.Fields{
-		"project": req.Project,
-		"path":    path,
+		"project":       req.Project,
+		"path":          path,
+		"terminalIndex": req.TerminalIndex,
 	}.Infof(c, "Registration request for log stream.")
 
 	if err := desc.Validate(true); err != nil {
@@ -89,9 +91,6 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 		log.WithError(err).Errorf(c, "Failed to load current project configuration.")
 		return nil, grpcutil.Internal
 	}
-
-	// Determine the archival expiration.
-	archiveDelayMax := endpoints.MinDuration(cfg.Coordinator.ArchiveDelayMax, pcfg.MaxStreamAge)
 
 	// Load our Prefix. It must be registered.
 	di := ds.Get(c)
@@ -165,11 +164,12 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 		// The stream does not exist. Proceed with transactional registration.
 		err = tumble.RunMutation(c, &registerStreamMutation{
 			RegisterStreamRequest: req,
-			desc:         &desc,
-			pfx:          pfx,
-			lst:          lst,
-			ls:           ls,
-			archiveDelay: archiveDelayMax,
+			cfg:  cfg,
+			pcfg: pcfg,
+			desc: &desc,
+			pfx:  pfx,
+			lst:  lst,
+			ls:   ls,
 		})
 		if err != nil {
 			log.Fields{
@@ -188,72 +188,110 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 type registerStreamMutation struct {
 	*logdog.RegisterStreamRequest
 
-	desc         *logpb.LogStreamDescriptor
-	pfx          *coordinator.LogPrefix
-	ls           *coordinator.LogStream
-	lst          *coordinator.LogStreamState
-	archiveDelay time.Duration
+	cfg  *config.Config
+	pcfg *svcconfig.ProjectConfig
+
+	desc *logpb.LogStreamDescriptor
+	pfx  *coordinator.LogPrefix
+	ls   *coordinator.LogStream
+	lst  *coordinator.LogStreamState
 }
 
 func (m *registerStreamMutation) RollForward(c context.Context) ([]tumble.Mutation, error) {
 	di := ds.Get(c)
 
 	// Load our state and stream (transactional).
-	if err := di.GetMulti([]interface{}{m.ls, m.lst}); err != nil {
-		if !anyNoSuchEntity(err) {
-			log.WithError(err).Errorf(c, "Failed to check for stream registration (transactional).")
-			return nil, err
-		}
+	err := di.GetMulti([]interface{}{m.ls, m.lst})
+	if err == nil {
+		// The stream is already registered.
+		return nil, nil
+	}
 
-		// The stream is not yet registered.
-		log.Infof(c, "Registering new log stream.")
+	if !anyNoSuchEntity(err) {
+		log.WithError(err).Errorf(c, "Failed to check for stream registration (transactional).")
+		return nil, err
+	}
 
-		now := clock.Now(c).UTC()
+	// The stream is not yet registered.
+	log.Infof(c, "Registering new log stream.")
 
-		// Construct our LogStreamState.
-		m.lst.Created = now
-		m.lst.Updated = now
-		m.lst.Secret = m.pfx.Secret // Copy Prefix Secret to reduce datastore Gets.
+	now := clock.Now(c).UTC()
+
+	// Construct our LogStreamState.
+	m.lst.Created = now
+	m.lst.Updated = now
+	m.lst.Secret = m.pfx.Secret // Copy Prefix Secret to reduce datastore Gets.
+
+	// Construct our LogStream.
+	m.ls.Created = now
+	m.ls.ProtoVersion = m.ProtoVersion
+
+	if err := m.ls.LoadDescriptor(m.desc); err != nil {
+		log.Fields{
+			log.ErrorKey: err,
+		}.Errorf(c, "Failed to load descriptor into LogStream.")
+		return nil, grpcutil.Errf(codes.InvalidArgument, "Failed to load descriptor.")
+	}
+
+	// If our registration request included a terminal index, terminate the
+	// log stream state as well.
+	if m.TerminalIndex >= 0 {
+		log.Fields{
+			"terminalIndex": m.TerminalIndex,
+		}.Debugf(c, "Registration request included terminal index.")
+
+		m.lst.TerminalIndex = m.TerminalIndex
+		m.lst.TerminatedTime = now
+	} else {
 		m.lst.TerminalIndex = -1
+	}
 
-		// Construct our LogStream.
-		m.ls.Created = now
-		m.ls.ProtoVersion = m.ProtoVersion
+	if err := di.PutMulti([]interface{}{m.ls, m.lst}); err != nil {
+		log.WithError(err).Errorf(c, "Failed to Put LogStream.")
+		return nil, grpcutil.Internal
+	}
 
-		if err := m.ls.LoadDescriptor(m.desc); err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-			}.Errorf(c, "Failed to load descriptor into LogStream.")
-			return nil, grpcutil.Errf(codes.InvalidArgument, "Failed to load descriptor.")
-		}
-
-		if err := di.PutMulti([]interface{}{m.ls, m.lst}); err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-			}.Errorf(c, "Failed to Put LogStream.")
-			return nil, grpcutil.Internal
-		}
-
-		// Add a named delayed mutation to archive this stream if it's not archived
-		// yet. We will cancel this in terminateStream once we dispatch an immediate
-		// archival task.
-		archiveExpiredMutation := mutations.CreateArchiveTask{
-			ID:         m.ls.ID,
-			Expiration: now.Add(m.archiveDelay),
-		}
+	// Add a named delayed mutation to archive this stream if it's not archived
+	// yet.
+	//
+	// If the registration did not include a terminal index, this will be our
+	// pessimistic archival request, scheduled on registration to catch streams
+	// that don't expire. This mutation will be replaced by the optimistic
+	// archival mutation when/if the stream is terminated via TerminateStream.
+	//
+	// If the registration included a terminal index, apply our standard
+	// parameters to the archival. Since TerminateStream will not be called,
+	// this will be our formal optimistic archival task.
+	params := standardArchivalParams(m.cfg, m.pcfg)
+	cat := mutations.CreateArchiveTask{
+		ID: m.ls.ID,
+	}
+	if m.TerminalIndex < 0 {
+		// No terminal index, schedule pessimistic cleanup archival.
+		cat.Expiration = now.Add(params.CompletePeriod)
 
 		log.Fields{
-			"archiveDelay": m.archiveDelay,
-			"deadline":     archiveExpiredMutation.Expiration,
-		}.Infof(c, "Scheduling expiration deadline mutation.")
-		aeParent, aeName := archiveExpiredMutation.TaskName(di)
-		err := tumble.PutNamedMutations(c, aeParent, map[string]tumble.Mutation{
-			aeName: &archiveExpiredMutation,
-		})
-		if err != nil {
-			log.WithError(err).Errorf(c, "Failed to load named mutations.")
-			return nil, grpcutil.Internal
-		}
+			"deadline": cat.Expiration,
+		}.Debugf(c, "Scheduling cleanup archival mutation.")
+	} else {
+		// Terminal index, schedule optimistic archival (mirrors TerminateStream).
+		cat.SettleDelay = params.SettleDelay
+		cat.CompletePeriod = params.CompletePeriod
+
+		// Schedule this mutation to execute after our settle delay.
+		cat.Expiration = now.Add(params.SettleDelay)
+
+		log.Fields{
+			"settleDelay":    cat.SettleDelay,
+			"completePeriod": cat.CompletePeriod,
+			"scheduledAt":    cat.Expiration,
+		}.Debugf(c, "Scheduling archival mutation.")
+	}
+
+	aeParent, aeName := cat.TaskName(di)
+	if err := tumble.PutNamedMutations(c, aeParent, map[string]tumble.Mutation{aeName: &cat}); err != nil {
+		log.WithError(err).Errorf(c, "Failed to write named mutations.")
+		return nil, grpcutil.Internal
 	}
 
 	return nil, nil

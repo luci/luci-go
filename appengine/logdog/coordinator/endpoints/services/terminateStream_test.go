@@ -66,7 +66,7 @@ func TestTerminateStream(t *testing.T) {
 					So(tls.Put(c), ShouldBeNil)
 
 					// Create an archival request for Tumble so we can ensure that it is
-					// canceled on termination.
+					// replaced on termination. This is normally done by RegisterStream.
 					areq := mutations.CreateArchiveTask{
 						ID:         tls.Stream.ID,
 						Expiration: env.Clock.Now().Add(time.Hour),
@@ -81,7 +81,7 @@ func TestTerminateStream(t *testing.T) {
 				})
 				ds.Get(c).Testable().CatchupIndexes()
 
-				Convey(`Can be marked terminal and schedules an archival task.`, func() {
+				Convey(`Can be marked terminal and schedules an archival mutation.`, func() {
 					_, err := svr.TerminateStream(c, &req)
 					So(err, ShouldBeRPCOK)
 					ds.Get(c).Testable().CatchupIndexes()
@@ -92,27 +92,26 @@ func TestTerminateStream(t *testing.T) {
 					})
 					So(tls.State.TerminalIndex, ShouldEqual, 1337)
 					So(tls.State.Terminated(), ShouldBeTrue)
-					So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchiveTasked)
-					So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
+					So(tls.State.ArchivalState(), ShouldEqual, coordinator.NotArchived)
 
-					// Assert that all archive tasks are scheduled ArchiveSettleDelay in
-					// the future.
-					for _, t := range env.ArchivalPublisher.Tasks() {
-						So(t.SettleDelay.Duration(), ShouldEqual, 10*time.Second)
-						So(t.CompletePeriod.Duration(), ShouldEqual, time.Hour)
-					}
+					Convey(`Replaces the pessimistic archival mutation with an optimistic one.`, func() {
+						// We have replaced the pessimistic archival mutation with an
+						// optimistic one. Assert that this happened by advancing time by
+						// the optimistic period and confirming the published archival
+						// request.
+						env.IterateTumbleAll(c)
+						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{})
 
-					Convey(`Will cancel the expiration archive Tumble task.`, func() {
-						// We will test this by reverting the stream to be not terminated
-						// so that if the Tumble task gets fired, it will try and schedule
-						// another archival task.
+						// Add our settle delay, confirm that archival is scheduled.
+						env.Clock.Add(10 * time.Second)
+						env.IterateTumbleAll(c)
+						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
+
+						// Add our pessimistic delay, confirm that no additional tasks
+						// are scheduled (because pessimistic was replaced).
 						env.ArchivalPublisher.Clear()
-
-						tls.State.TerminalIndex = -1
-						So(tls.Put(c), ShouldBeNil)
-
 						env.Clock.Add(time.Hour)
-						env.DrainTumbleAll(c)
+						env.IterateTumbleAll(c)
 						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{})
 					})
 
@@ -125,7 +124,7 @@ func TestTerminateStream(t *testing.T) {
 
 						So(tls.State.Terminated(), ShouldBeTrue)
 						So(tls.State.TerminalIndex, ShouldEqual, 1337)
-						So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchiveTasked)
+						So(tls.State.ArchivalState(), ShouldEqual, coordinator.NotArchived)
 					})
 
 					Convey(`Will reject attempts to change the terminal index.`, func() {
@@ -138,7 +137,7 @@ func TestTerminateStream(t *testing.T) {
 
 						So(tls.State.TerminalIndex, ShouldEqual, 1337)
 						So(tls.State.Terminated(), ShouldBeTrue)
-						So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchiveTasked)
+						So(tls.State.ArchivalState(), ShouldEqual, coordinator.NotArchived)
 					})
 
 					Convey(`Will reject attempts to clear the terminal index.`, func() {
@@ -151,39 +150,7 @@ func TestTerminateStream(t *testing.T) {
 
 						So(tls.State.TerminalIndex, ShouldEqual, 1337)
 						So(tls.State.Terminated(), ShouldBeTrue)
-						So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchiveTasked)
-					})
-				})
-
-				Convey(`Will schedule the correct archival delay`, func() {
-
-					Convey(`When there is no project config delay.`, func() {
-						env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
-							pcfg.MaxStreamAge = nil
-						})
-
-						_, err := svr.TerminateStream(c, &req)
-						So(err, ShouldBeRPCOK)
-
-						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
-						So(len(env.ArchivalPublisher.Tasks()), ShouldEqual, 1)
-						So(env.ArchivalPublisher.Tasks()[0].CompletePeriod.Duration(), ShouldEqual, 24*time.Hour)
-					})
-
-					Convey(`When there is no service or project config delay.`, func() {
-						env.ModServiceConfig(c, func(cfg *svcconfig.Config) {
-							cfg.Coordinator.ArchiveDelayMax = nil
-						})
-						env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
-							pcfg.MaxStreamAge = nil
-						})
-
-						_, err := svr.TerminateStream(c, &req)
-						So(err, ShouldBeRPCOK)
-
-						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
-						So(len(env.ArchivalPublisher.Tasks()), ShouldEqual, 1)
-						So(env.ArchivalPublisher.Tasks()[0].CompletePeriod.Duration(), ShouldEqual, 0)
+						So(tls.State.ArchivalState(), ShouldEqual, coordinator.NotArchived)
 					})
 				})
 
@@ -217,6 +184,48 @@ func TestTerminateStream(t *testing.T) {
 			Convey(`Will fail if the stream is not registered.`, func() {
 				_, err := svr.TerminateStream(c, &req)
 				So(err, ShouldBeRPCNotFound, "is not registered")
+			})
+		})
+
+		Convey(`Will choose the correct archival delay`, func() {
+			getParams := func() *coordinator.ArchivalParams {
+				svc := coordinator.GetServices(c)
+				cfg, err := svc.Config(c)
+				if err != nil {
+					panic(err)
+				}
+
+				pcfg, err := svc.ProjectConfig(c, "proj-foo")
+				if err != nil {
+					panic(err)
+				}
+
+				return standardArchivalParams(cfg, pcfg)
+			}
+
+			Convey(`When there is no project config delay.`, func() {
+				env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
+					pcfg.MaxStreamAge = nil
+				})
+
+				So(getParams(), ShouldResemble, &coordinator.ArchivalParams{
+					SettleDelay:    10 * time.Second,
+					CompletePeriod: 24 * time.Hour,
+				})
+			})
+
+			Convey(`When there is no service or project config delay.`, func() {
+				env.ModServiceConfig(c, func(cfg *svcconfig.Config) {
+					cfg.Coordinator.ArchiveDelayMax = nil
+				})
+				env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
+					pcfg.MaxStreamAge = nil
+				})
+
+				So(getParams(), ShouldResemble, &coordinator.ArchivalParams{
+					SettleDelay:    10 * time.Second,
+					CompletePeriod: 0,
+				})
 			})
 		})
 	})

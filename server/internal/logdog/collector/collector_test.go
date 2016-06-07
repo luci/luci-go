@@ -16,7 +16,7 @@ import (
 	"github.com/luci/luci-go/common/logdog/butlerproto"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
-	"github.com/luci/luci-go/server/internal/logdog/collector/coordinator"
+	cc "github.com/luci/luci-go/server/internal/logdog/collector/coordinator"
 	"github.com/luci/luci-go/server/logdog/storage/memory"
 	"golang.org/x/net/context"
 
@@ -44,7 +44,7 @@ func testCollectorImpl(t *testing.T, caching bool) {
 		}
 
 		if caching {
-			coll.Coordinator = coordinator.NewCache(coll.Coordinator, 0, 0)
+			coll.Coordinator = cc.NewCache(coll.Coordinator, 0, 0)
 		}
 
 		Convey(`Can process multiple single full streams from a Butler bundle.`, func() {
@@ -61,8 +61,7 @@ func testCollectorImpl(t *testing.T, caching bool) {
 		})
 
 		Convey(`Will return a transient error if a transient error happened while registering.`, func() {
-			tcc.errC = make(chan error, 1)
-			tcc.errC <- errors.WrapTransient(errors.New("test error"))
+			tcc.registerCallback = func(cc.LogStreamState) error { return errors.WrapTransient(errors.New("test error")) }
 
 			bb.addFullStream("foo/+/bar", 128)
 			err := coll.Process(c, bb.bundle())
@@ -71,8 +70,7 @@ func testCollectorImpl(t *testing.T, caching bool) {
 		})
 
 		Convey(`Will return an error if a non-transient error happened while registering.`, func() {
-			tcc.errC = make(chan error, 1)
-			tcc.errC <- errors.New("test error")
+			tcc.registerCallback = func(cc.LogStreamState) error { return errors.New("test error") }
 
 			bb.addFullStream("foo/+/bar", 128)
 			err := coll.Process(c, bb.bundle())
@@ -80,23 +78,48 @@ func testCollectorImpl(t *testing.T, caching bool) {
 			So(errors.IsTransient(err), ShouldBeFalse)
 		})
 
-		Convey(`Will return a transient error if a transient error happened while terminating.`, func() {
-			tcc.errC = make(chan error, 2)
-			tcc.errC <- nil                                            // Register
-			tcc.errC <- errors.WrapTransient(errors.New("test error")) // Terminate
+		// This will happen when one registration request registers non-terminal,
+		// and a follow-on registration request registers with a terminal index. The
+		// latter registration request will idempotently succeed, but not accept the
+		// terminal index, so termination is still required.
+		Convey(`Will terminate a stream if a terminal registration returns a non-terminal response.`, func() {
+			terminateCalled := false
+			tcc.terminateCallback = func(cc.TerminateRequest) error {
+				terminateCalled = true
+				return nil
+			}
 
-			bb.addFullStream("foo/+/bar", 128)
+			bb.addStreamEntries("foo/+/bar", -1, 0, 1)
+			So(coll.Process(c, bb.bundle()), ShouldBeNil)
+
+			bb.addStreamEntries("foo/+/bar", 3, 2, 3)
+			So(coll.Process(c, bb.bundle()), ShouldBeNil)
+			So(terminateCalled, ShouldBeTrue)
+		})
+
+		Convey(`Will return a transient error if a transient error happened while terminating.`, func() {
+			tcc.terminateCallback = func(cc.TerminateRequest) error { return errors.WrapTransient(errors.New("test error")) }
+
+			// Register independently from terminate so we don't bundle RPC.
+			bb.addStreamEntries("foo/+/bar", -1, 0, 1, 2, 3, 4)
+			So(coll.Process(c, bb.bundle()), ShouldBeNil)
+
+			// Add terminal index.
+			bb.addStreamEntries("foo/+/bar", 5, 5)
 			err := coll.Process(c, bb.bundle())
 			So(err, ShouldNotBeNil)
 			So(errors.IsTransient(err), ShouldBeTrue)
 		})
 
 		Convey(`Will return an error if a non-transient error happened while terminating.`, func() {
-			tcc.errC = make(chan error, 2)
-			tcc.errC <- nil                      // Register
-			tcc.errC <- errors.New("test error") // Terminate
+			tcc.terminateCallback = func(cc.TerminateRequest) error { return errors.New("test error") }
 
-			bb.addFullStream("foo/+/bar", 128)
+			// Register independently from terminate so we don't bundle RPC.
+			bb.addStreamEntries("foo/+/bar", -1, 0, 1, 2, 3, 4)
+			So(coll.Process(c, bb.bundle()), ShouldBeNil)
+
+			// Add terminal index.
+			bb.addStreamEntries("foo/+/bar", 5, 5)
 			err := coll.Process(c, bb.bundle())
 			So(err, ShouldNotBeNil)
 			So(errors.IsTransient(err), ShouldBeFalse)
@@ -253,7 +276,7 @@ func testCollectorImpl(t *testing.T, caching bool) {
 		})
 
 		Convey(`Will not ingest records if the stream is archived.`, func() {
-			tcc.register(coordinator.LogStreamState{
+			tcc.register(cc.LogStreamState{
 				Project:       "test-project",
 				Path:          "foo/+/bar",
 				Secret:        testSecret,
@@ -269,7 +292,7 @@ func testCollectorImpl(t *testing.T, caching bool) {
 		})
 
 		Convey(`Will not ingest records if the stream is purged.`, func() {
-			tcc.register(coordinator.LogStreamState{
+			tcc.register(cc.LogStreamState{
 				Project:       "test-project",
 				Path:          "foo/+/bar",
 				Secret:        testSecret,

@@ -6,6 +6,8 @@ package collector
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"sort"
@@ -28,11 +30,11 @@ var testSecret = bytes.Repeat([]byte{0x55}, types.PrefixSecretLength)
 
 type streamKey struct {
 	project string
-	name    string
+	id      string
 }
 
-func mkStreamKey(project, name string) streamKey {
-	return streamKey{project, name}
+func mkStreamKey(project, id string) streamKey {
+	return streamKey{project, id}
 }
 
 // testCoordinator is an implementation of Coordinator that can be used for
@@ -40,8 +42,10 @@ func mkStreamKey(project, name string) streamKey {
 type testCoordinator struct {
 	sync.Mutex
 
-	// errC is a channel that error status will be read from if not nil.
-	errC chan error
+	// registerCallback, if not nil, is called when stream registration happens.
+	registerCallback func(cc.LogStreamState) error
+	// terminateCallback, if not nil, is called when stream termination happens.
+	terminateCallback func(cc.TerminateRequest) error
 
 	// state is the latest tracked stream state.
 	state map[streamKey]*cc.LogStreamState
@@ -58,34 +62,37 @@ func (c *testCoordinator) register(s cc.LogStreamState) cc.LogStreamState {
 		c.state = make(map[streamKey]*cc.LogStreamState)
 	}
 
-	key := mkStreamKey(string(s.Project), string(s.Path))
+	id := idFromPath(string(s.Path))
+	key := mkStreamKey(string(s.Project), id)
+
 	if sp := c.state[key]; sp != nil {
 		return *sp
 	}
+
+	s.ID = id
 	c.state[key] = &s
 	return s
 }
 
 func (c *testCoordinator) RegisterStream(ctx context.Context, s *cc.LogStreamState, desc []byte) (*cc.LogStreamState, error) {
-	if err := c.enter(); err != nil {
-		return nil, err
+	if cb := c.registerCallback; cb != nil {
+		if err := cb(*s); err != nil {
+			return nil, err
+		}
 	}
 
-	// Enforce that the submitted stream is not terminal.
-	rs := *s
-	rs.TerminalIndex = -1
-
-	// Update our state.
-	sp := c.register(rs)
+	sp := c.register(*s)
 	return &sp, nil
 }
 
-func (c *testCoordinator) TerminateStream(ctx context.Context, st *cc.LogStreamState) error {
-	if err := c.enter(); err != nil {
-		return err
+func (c *testCoordinator) TerminateStream(ctx context.Context, tr *cc.TerminateRequest) error {
+	if cb := c.terminateCallback; cb != nil {
+		if err := cb(*tr); err != nil {
+			return err
+		}
 	}
 
-	if st.TerminalIndex < 0 {
+	if tr.TerminalIndex < 0 {
 		return errors.New("submitted stream is not terminal")
 	}
 
@@ -93,39 +100,31 @@ func (c *testCoordinator) TerminateStream(ctx context.Context, st *cc.LogStreamS
 	defer c.Unlock()
 
 	// Update our state.
-	cachedState, ok := c.state[mkStreamKey(string(st.Project), string(st.Path))]
+	cachedState, ok := c.state[mkStreamKey(string(tr.Project), tr.ID)]
 	if !ok {
-		return fmt.Errorf("no such stream: %s", st.Path)
+		return fmt.Errorf("no such stream: %s", tr.ID)
 	}
-	if cachedState.TerminalIndex >= 0 && st.TerminalIndex != cachedState.TerminalIndex {
-		return fmt.Errorf("incompatible terminal indexes: %d != %d", st.TerminalIndex, cachedState.TerminalIndex)
+	if cachedState.TerminalIndex >= 0 && tr.TerminalIndex != cachedState.TerminalIndex {
+		return fmt.Errorf("incompatible terminal indexes: %d != %d", tr.TerminalIndex, cachedState.TerminalIndex)
 	}
 
-	cachedState.TerminalIndex = st.TerminalIndex
+	cachedState.TerminalIndex = tr.TerminalIndex
 	return nil
 }
 
-// enter is an entry point for client goroutines. It offers the opportunity
-// to trap executing goroutines within client calls.
-//
-// This must NOT be called while the lock is held, else it could lead to
-// deadlock if multiple goroutines are trapped.
-func (c *testCoordinator) enter() error {
-	if c.errC != nil {
-		return <-c.errC
-	}
-	return nil
-}
-
-func (c *testCoordinator) stream(project, name string) (int, bool) {
+func (c *testCoordinator) stream(project, id string) (int, bool) {
 	c.Lock()
 	defer c.Unlock()
 
-	sp, ok := c.state[mkStreamKey(project, name)]
+	sp, ok := c.state[mkStreamKey(project, id)]
 	if !ok {
 		return 0, false
 	}
 	return int(sp.TerminalIndex), true
+}
+
+func (c *testCoordinator) streamForPath(project, path string) (int, bool) {
+	return c.stream(project, idFromPath(path))
 }
 
 // testStorage is a testing storage instance that returns errors.
@@ -251,18 +250,18 @@ func shouldHaveRegisteredStream(actual interface{}, expected ...interface{}) str
 		return "invalid number of expected arguments (should be 3)."
 	}
 	project := expected[0].(string)
-	name := expected[1].(string)
+	path := expected[1].(string)
 	tidx := expected[2].(int)
 
-	cur, ok := tcc.stream(project, name)
+	cur, ok := tcc.streamForPath(project, path)
 	if !ok {
-		return fmt.Sprintf("stream %q is not registered", name)
+		return fmt.Sprintf("stream %q is not registered", path)
 	}
 	if tidx >= 0 && cur < 0 {
-		return fmt.Sprintf("stream %q is expected to be terminated, but isn't.", name)
+		return fmt.Sprintf("stream %q is expected to be terminated, but isn't.", path)
 	}
 	if cur >= 0 && tidx < 0 {
-		return fmt.Sprintf("stream %q is NOT expected to be terminated, but it is.", name)
+		return fmt.Sprintf("stream %q is NOT expected to be terminated, but it is.", path)
 	}
 	return ""
 }
@@ -275,10 +274,10 @@ func shouldNotHaveRegisteredStream(actual interface{}, expected ...interface{}) 
 		return "invalid number of expected arguments (should be 2)."
 	}
 	project := expected[0].(string)
-	name := expected[1].(string)
+	path := expected[1].(string)
 
-	if _, ok := tcc.stream(project, name); ok {
-		return fmt.Sprintf("stream %q is registered, but it should NOT be.", name)
+	if _, ok := tcc.streamForPath(project, path); ok {
+		return fmt.Sprintf("stream %q is registered, but it should NOT be.", path)
 	}
 	return ""
 }
@@ -374,4 +373,9 @@ func shouldHaveStoredStream(actual interface{}, expected ...interface{}) string 
 		return strings.Join(failed, ", ")
 	}
 	return ""
+}
+
+func idFromPath(path string) string {
+	hash := sha256.Sum256([]byte(path))
+	return hex.EncodeToString(hash[:])
 }

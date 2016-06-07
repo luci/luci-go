@@ -23,22 +23,52 @@ type Coordinator interface {
 	// RegisterStream registers a log stream state.
 	RegisterStream(c context.Context, s *LogStreamState, desc []byte) (*LogStreamState, error)
 	// TerminateStream registers the terminal index of a log stream state.
-	TerminateStream(c context.Context, s *LogStreamState) error
+	TerminateStream(c context.Context, s *TerminateRequest) error
 }
 
 // LogStreamState is a local representation of a remote stream's state. It is a
 // subset of the remote state with the necessary elements for the Collector to
 // operate and update.
 type LogStreamState struct {
-	ID string // The stream's Coordinator ID, populated by the Coordinator.
+	// Project is the log stream project.
+	Project config.ProjectName
+	// Path is the log stream path.
+	Path types.StreamPath
 
-	Project       config.ProjectName // Project name.
-	Path          types.StreamPath   // Stream path.
-	ProtoVersion  string             // Stream protocol version string.
-	Secret        types.PrefixSecret // Secret.
-	TerminalIndex types.MessageIndex // Terminal index, <0 for unterminated.
-	Archived      bool               // Is the stream archived?
-	Purged        bool               // Is the stream purged?
+	// ID is the stream's Coordinator ID. This is returned by the Coordiantor.
+	ID string
+	// ProtoVersion is the stream protocol version string.
+	ProtoVersion string
+	// Secret is the log stream's prefix secret.
+	Secret types.PrefixSecret
+	// TerminalIndex is an optional terminal index to register alongside the
+	// stream. If this is <0, the stream will be registered without a terminal
+	// index.
+	TerminalIndex types.MessageIndex
+
+	// Archived is true if the log stream has been archived. This is returned by
+	// the remote service.
+	Archived bool
+	// Purged is true if the log stream has been archived. This is returned by
+	// the remote service.
+	Purged bool
+}
+
+// TerminateRequest is a local representation of a Coordinator stream
+// termination request.
+type TerminateRequest struct {
+	Project config.ProjectName // Project name.
+	Path    types.StreamPath   // Stream path. Needed for cache lookup.
+
+	// ID is the stream's Coordinator ID, as indicated by the Coordinator.
+	ID string
+	// TerminalIndex is the terminal index to register.
+	//
+	// This must be >= 0, else there is no point in sending the TerminateStream
+	// request.
+	TerminalIndex types.MessageIndex
+	// Secret is the log stream's prefix secret.
+	Secret types.PrefixSecret
 }
 
 type coordinatorImpl struct {
@@ -67,10 +97,11 @@ func (c *coordinatorImpl) RegisterStream(ctx context.Context, s *LogStreamState,
 	}
 
 	req := logdog.RegisterStreamRequest{
-		Project:      string(s.Project),
-		Secret:       []byte(s.Secret),
-		ProtoVersion: s.ProtoVersion,
-		Desc:         desc,
+		Project:       string(s.Project),
+		Secret:        []byte(s.Secret),
+		ProtoVersion:  s.ProtoVersion,
+		Desc:          desc,
+		TerminalIndex: int64(s.TerminalIndex),
 	}
 
 	resp, err := c.c.RegisterStream(ctx, &req)
@@ -93,26 +124,26 @@ func (c *coordinatorImpl) RegisterStream(ctx context.Context, s *LogStreamState,
 	}, nil
 }
 
-func (c *coordinatorImpl) TerminateStream(ctx context.Context, s *LogStreamState) error {
+func (c *coordinatorImpl) TerminateStream(ctx context.Context, r *TerminateRequest) error {
 	// Client-side validate our parameters.
 	// TODO(dnj): Force this validation when empty project is not accepted.
-	if s.Project != "" {
-		if err := s.Project.Validate(); err != nil {
+	if r.Project != "" {
+		if err := r.Project.Validate(); err != nil {
 			return fmt.Errorf("failed to validate project: %s", err)
 		}
 	}
-	if s.ID == "" {
+	if r.ID == "" {
 		return errors.New("missing stream ID")
 	}
-	if s.TerminalIndex < 0 {
+	if r.TerminalIndex < 0 {
 		return errors.New("refusing to terminate with non-terminal state")
 	}
 
 	req := logdog.TerminateStreamRequest{
-		Project:       string(s.Project),
-		Id:            s.ID,
-		Secret:        []byte(s.Secret),
-		TerminalIndex: int64(s.TerminalIndex),
+		Project:       string(r.Project),
+		Id:            r.ID,
+		Secret:        []byte(r.Secret),
+		TerminalIndex: int64(r.TerminalIndex),
 	}
 
 	if _, err := c.c.TerminateStream(ctx, &req); err != nil {
