@@ -161,7 +161,7 @@ func putMutations(c context.Context, cfg *Config, fromRoot *datastore.Key, muts 
 		shardSet[toPut[i].shard(cfg)] = struct{}{}
 	}
 
-	if err = ds.PutMulti(toPut); err != nil {
+	if err = ds.Put(toPut); err != nil {
 		logging.Errorf(c, "error putting %d new mutations: %s", len(toPut), err)
 	}
 	return

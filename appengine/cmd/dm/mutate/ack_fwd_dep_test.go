@@ -44,14 +44,14 @@ func TestAckFwdDep(t *testing.T) {
 					a.State = dm.Attempt_ADDING_DEPS
 					a.AddingDepsBitmap = bf.Make(2)
 					a.WaitingDepBitmap = bf.Make(2)
-					So(ds.PutMulti([]interface{}{a, fwd}), ShouldBeNil)
+					So(ds.Put(a, fwd), ShouldBeNil)
 
 					Convey("non-finished, not-last-adding", func() {
 						muts, err := afd.RollForward(c)
 						So(err, ShouldBeNil)
 						So(muts, ShouldBeNil)
 
-						So(ds.GetMulti([]interface{}{a, fwd}), ShouldBeNil)
+						So(ds.Get(a, fwd), ShouldBeNil)
 						So(a.State, ShouldEqual, dm.Attempt_ADDING_DEPS)
 						So(a.AddingDepsBitmap.CountSet(), ShouldEqual, 1)
 						So(a.WaitingDepBitmap.CountSet(), ShouldEqual, 0)
@@ -65,7 +65,7 @@ func TestAckFwdDep(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(muts, ShouldBeNil)
 
-						So(ds.GetMulti([]interface{}{a, fwd}), ShouldBeNil)
+						So(ds.Get(a, fwd), ShouldBeNil)
 						So(a.State, ShouldEqual, dm.Attempt_BLOCKED)
 						So(a.AddingDepsBitmap.CountSet(), ShouldEqual, 2)
 						So(a.WaitingDepBitmap.CountSet(), ShouldEqual, 0)
@@ -80,7 +80,7 @@ func TestAckFwdDep(t *testing.T) {
 							So(err, ShouldBeNil)
 							So(muts, ShouldBeNil)
 
-							So(ds.GetMulti([]interface{}{a, fwd}), ShouldBeNil)
+							So(ds.Get(a, fwd), ShouldBeNil)
 							So(a.State, ShouldEqual, dm.Attempt_BLOCKED)
 							So(a.AddingDepsBitmap.CountSet(), ShouldEqual, 2)
 							So(a.WaitingDepBitmap.CountSet(), ShouldEqual, 1)
@@ -97,7 +97,7 @@ func TestAckFwdDep(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(muts, ShouldBeNil)
 
-						So(ds.GetMulti([]interface{}{a, fwd}), ShouldBeNil)
+						So(ds.Get(a, fwd), ShouldBeNil)
 						So(a.State, ShouldEqual, dm.Attempt_BLOCKED)
 						So(a.AddingDepsBitmap.CountSet(), ShouldEqual, 2)
 						So(a.WaitingDepBitmap.CountSet(), ShouldEqual, 1)
@@ -115,7 +115,7 @@ func TestAckFwdDep(t *testing.T) {
 						So(muts, ShouldResemble, []tumble.Mutation{
 							&ScheduleExecution{&a.ID}})
 
-						So(ds.GetMulti([]interface{}{a, fwd}), ShouldBeNil)
+						So(ds.Get(a, fwd), ShouldBeNil)
 						So(a.State, ShouldEqual, dm.Attempt_NEEDS_EXECUTION)
 						So(a.AddingDepsBitmap.CountSet(), ShouldEqual, 2)
 						So(a.WaitingDepBitmap.CountSet(), ShouldEqual, 2)
@@ -127,14 +127,14 @@ func TestAckFwdDep(t *testing.T) {
 					a.AddingDepsBitmap = bf.Make(2)
 					a.WaitingDepBitmap = bf.Make(2)
 					a.CurExecution = 1
-					So(ds.PutMulti([]interface{}{a, fwd}), ShouldBeNil)
+					So(ds.Put(a, fwd), ShouldBeNil)
 
 					Convey("CurExecution mismatch -> NOP", func() {
 						muts, err := afd.RollForward(c)
 						So(err, ShouldBeNil)
 						So(muts, ShouldBeNil)
 
-						So(ds.GetMulti([]interface{}{a, fwd}), ShouldBeNil)
+						So(ds.Get(a, fwd), ShouldBeNil)
 						So(a.State, ShouldEqual, dm.Attempt_ADDING_DEPS)
 						So(a.AddingDepsBitmap.CountSet(), ShouldEqual, 0)
 						So(a.WaitingDepBitmap.CountSet(), ShouldEqual, 0)

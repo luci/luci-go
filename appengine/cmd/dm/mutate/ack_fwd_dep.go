@@ -34,7 +34,7 @@ func (f *AckFwdDep) RollForward(c context.Context) (muts []tumble.Mutation, err 
 	ds := datastore.Get(c)
 
 	atmpt, fdep := f.Dep.Fwd(c)
-	err = ds.GetMulti([]interface{}{atmpt, fdep})
+	err = ds.Get(atmpt, fdep)
 	if err != nil {
 		return
 	}

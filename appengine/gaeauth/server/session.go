@@ -84,7 +84,7 @@ func (s *SessionStore) OpenSession(c context.Context, userID string, u *auth.Use
 			Created:    now,
 			Expiration: exp.UTC(),
 		}
-		if err = ds.PutMulti([]interface{}{&userEnt, &sessionEnt}); err != nil {
+		if err = ds.Put(&userEnt, &sessionEnt); err != nil {
 			return err
 		}
 

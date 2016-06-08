@@ -110,7 +110,7 @@ func (d *deps) ClaimExecution(c context.Context, _ *google_pb.Empty) (rsp *dm.Cl
 			rsp.Auth.Id.Id = a.CurExecution
 			rsp.Auth.Id.Attempt = a.ID.Id
 
-			err = ds.PutMulti([]interface{}{a, ex})
+			err = ds.Put(a, ex)
 			if err != nil {
 				return err
 			}

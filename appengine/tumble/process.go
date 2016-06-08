@@ -282,7 +282,7 @@ func loadFilteredMutations(c context.Context, rms []*realMutation) ([]*datastore
 
 	mutKeys := make([]*datastore.Key, 0, len(rms))
 	muts := make([]Mutation, 0, len(rms))
-	err := ds.GetMulti(rms)
+	err := ds.Get(rms)
 	me, ok := err.(errors.MultiError)
 	if !ok && err != nil {
 		return nil, nil, err
@@ -417,7 +417,7 @@ func processRoot(c context.Context, cfg *Config, root *datastore.Key, banSet str
 		for _, k := range toDel {
 			banSet.Add(k.Encode())
 		}
-		if err := datastore.Get(c).DeleteMulti(toDel); err != nil {
+		if err := datastore.Get(c).Delete(toDel); err != nil {
 			l.Warningf("error deleting finished mutations: %s", err)
 		}
 	}

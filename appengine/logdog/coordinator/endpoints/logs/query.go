@@ -223,7 +223,7 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 		// Don't fetch our states unless requested.
 		var logStreamStates []coordinator.LogStreamState
 		if !r.State {
-			if err := di.GetMulti(logStreams); err != nil {
+			if err := di.Get(logStreams); err != nil {
 				log.WithError(err).Errorf(r, "Failed to load entry content.")
 				return grpcutil.Internal
 			}
@@ -236,7 +236,7 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 
 			}
 
-			if err := di.GetMulti(entities); err != nil {
+			if err := di.Get(entities); err != nil {
 				log.WithError(err).Errorf(r, "Failed to load entry and state content.")
 				return grpcutil.Internal
 			}

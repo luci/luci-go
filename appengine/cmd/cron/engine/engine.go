@@ -379,7 +379,7 @@ func generateInvocationID(c context.Context, parent *datastore.Key) (int64, erro
 		if err != nil {
 			return 0, err
 		}
-		if !exists {
+		if !exists.All() {
 			return invID, nil
 		}
 	}

@@ -118,7 +118,7 @@ func (ts *TestStream) DescBytes() []byte {
 // Put adds all of the entities for this TestStream to the datastore.
 func (ts *TestStream) Put(c context.Context) (err error) {
 	ts.WithProjectNamespace(c, func(c context.Context) {
-		err = ds.Get(c).PutMulti([]interface{}{ts.Prefix, ts.State, ts.Stream})
+		err = ds.Get(c).Put(ts.Prefix, ts.State, ts.Stream)
 	})
 	return
 }
@@ -126,7 +126,7 @@ func (ts *TestStream) Put(c context.Context) (err error) {
 // Get reloads all of the entities for this TestStream.
 func (ts *TestStream) Get(c context.Context) (err error) {
 	ts.WithProjectNamespace(c, func(c context.Context) {
-		err = ds.Get(c).GetMulti([]interface{}{ts.Prefix, ts.State, ts.Stream})
+		err = ds.Get(c).Get(ts.Prefix, ts.State, ts.Stream)
 	})
 	return
 }

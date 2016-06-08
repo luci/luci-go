@@ -104,7 +104,7 @@ func PutNamedMutations(c context.Context, parent *datastore.Key, muts map[string
 		shardSet[realMut.shard(cfg)] = struct{}{}
 	}
 
-	err := datastore.Get(c).PutMulti(toPut)
+	err := datastore.Get(c).Put(toPut)
 	fireTasks(c, getConfig(c), shardSet)
 	return err
 }
@@ -118,5 +118,5 @@ func CancelNamedMutations(c context.Context, parent *datastore.Key, names ...str
 		toDel = append(toDel, ds.NewKey("tumble.Mutation", "n:"+name, 0, parent))
 		return true
 	})
-	return errors.Filter(ds.DeleteMulti(toDel), datastore.ErrNoSuchEntity)
+	return errors.Filter(ds.Delete(toDel), datastore.ErrNoSuchEntity)
 }

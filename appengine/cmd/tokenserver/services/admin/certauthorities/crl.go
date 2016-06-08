@@ -147,7 +147,7 @@ func validateAndStoreCRL(c context.Context, crlDer []byte, etag string, ca *mode
 			curCA.Ready = true
 			toPut = append(toPut, &curCA)
 		}
-		return ds.PutMulti(toPut)
+		return ds.Put(toPut)
 	}, nil)
 	if err != nil {
 		return nil, errors.WrapTransient(err)

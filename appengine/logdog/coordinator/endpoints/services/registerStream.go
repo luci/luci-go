@@ -139,7 +139,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 	ls := &coordinator.LogStream{ID: coordinator.LogStreamID(path)}
 	lst := ls.State(di)
 
-	if err := di.GetMulti([]interface{}{ls, lst}); err != nil {
+	if err := di.Get(ls, lst); err != nil {
 		if !anyNoSuchEntity(err) {
 			log.WithError(err).Errorf(c, "Failed to check for log stream.")
 			return nil, err
@@ -201,13 +201,12 @@ func (m *registerStreamMutation) RollForward(c context.Context) ([]tumble.Mutati
 	di := ds.Get(c)
 
 	// Load our state and stream (transactional).
-	err := di.GetMulti([]interface{}{m.ls, m.lst})
-	if err == nil {
+	switch err := di.Get(m.ls, m.lst); {
+	case err == nil:
 		// The stream is already registered.
 		return nil, nil
-	}
 
-	if !anyNoSuchEntity(err) {
+	case !anyNoSuchEntity(err):
 		log.WithError(err).Errorf(c, "Failed to check for stream registration (transactional).")
 		return nil, err
 	}
@@ -215,9 +214,8 @@ func (m *registerStreamMutation) RollForward(c context.Context) ([]tumble.Mutati
 	// The stream is not yet registered.
 	log.Infof(c, "Registering new log stream.")
 
-	now := clock.Now(c).UTC()
-
 	// Construct our LogStreamState.
+	now := clock.Now(c).UTC()
 	m.lst.Created = now
 	m.lst.Updated = now
 	m.lst.Secret = m.pfx.Secret // Copy Prefix Secret to reduce datastore Gets.
@@ -246,8 +244,10 @@ func (m *registerStreamMutation) RollForward(c context.Context) ([]tumble.Mutati
 		m.lst.TerminalIndex = -1
 	}
 
-	if err := di.PutMulti([]interface{}{m.ls, m.lst}); err != nil {
-		log.WithError(err).Errorf(c, "Failed to Put LogStream.")
+	if err := di.Put(m.ls, m.lst); err != nil {
+		log.Fields{
+			log.ErrorKey: err,
+		}.Errorf(c, "Failed to Put LogStream.")
 		return nil, grpcutil.Internal
 	}
 

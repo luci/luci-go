@@ -92,7 +92,7 @@ func TestExecutions(t *testing.T) {
 				Token:   []byte("good tok"),
 			}
 			a.CurExecution = 1
-			So(ds.PutMulti([]interface{}{a, e1}), ShouldBeNil)
+			So(ds.Put(a, e1), ShouldBeNil)
 
 			auth := &dm.Execution_Auth{
 				Id:    dm.NewExecutionID("q", a.ID.Id, uint32(e1.ID)),

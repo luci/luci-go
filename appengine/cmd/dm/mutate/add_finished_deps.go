@@ -52,7 +52,7 @@ func (f *AddFinishedDeps) RollForward(c context.Context) (muts []tumble.Mutation
 		muts = append(muts, &MergeQuest{q})
 	}
 
-	return muts, datastore.Get(c).PutMulti(fwdDeps)
+	return muts, datastore.Get(c).Put(fwdDeps)
 }
 
 func init() {

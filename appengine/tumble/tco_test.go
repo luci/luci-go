@@ -55,7 +55,7 @@ func (s *SlowMutation) RollForward(c context.Context) (muts []Mutation, err erro
 
 	grp.Count++
 	bo := &BigObject{ID: grp.Count, Group: ds.KeyForObj(grp), Data: JunkBytes}
-	err = ds.PutMulti([]interface{}{grp, bo})
+	err = ds.Put(grp, bo)
 
 	retMut := *s
 	retMut.Count--

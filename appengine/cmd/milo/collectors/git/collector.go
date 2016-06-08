@@ -118,7 +118,7 @@ func SaveRevisions(ctx context.Context, revisions []*model.Revision) error {
 			upper = len(revisions)
 		}
 		log.Infof(ctx, "Writing revisions [%d, %d) to datastore.", lower, upper)
-		if err := ds.PutMulti(revisions[lower:upper]); err != nil {
+		if err := ds.Put(revisions[lower:upper]); err != nil {
 			return fmt.Errorf("%s", err)
 		}
 	}

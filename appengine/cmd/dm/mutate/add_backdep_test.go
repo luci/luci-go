@@ -49,7 +49,7 @@ func TestAddBackDep(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(muts, ShouldBeNil)
 
-					So(ds.GetMulti([]interface{}{bdg, bd}), ShouldBeNil)
+					So(ds.Get(bdg, bd), ShouldBeNil)
 					So(bd.Edge(), ShouldResemble, abd.Dep)
 					So(bd.Propagated, ShouldBeTrue)
 				})
@@ -61,7 +61,7 @@ func TestAddBackDep(t *testing.T) {
 					So(muts, ShouldResemble, []tumble.Mutation{
 						&AckFwdDep{abd.Dep, true}})
 
-					So(ds.GetMulti([]interface{}{bdg, bd}), ShouldBeNil)
+					So(ds.Get(bdg, bd), ShouldBeNil)
 					So(bd.Edge(), ShouldResemble, abd.Dep)
 					So(bd.Propagated, ShouldBeTrue)
 				})
@@ -70,7 +70,7 @@ func TestAddBackDep(t *testing.T) {
 			Convey("attempt not finished, need completion", func() {
 				ex, err := ds.Exists(ds.KeyForObj(bdg))
 				So(err, ShouldBeNil)
-				So(ex, ShouldBeFalse)
+				So(ex.Any(), ShouldBeFalse)
 
 				abd.NeedsAck = true
 				muts, err := abd.RollForward(c)
@@ -79,7 +79,7 @@ func TestAddBackDep(t *testing.T) {
 					&AckFwdDep{abd.Dep, false}})
 
 				// Note that bdg was created as a side effect.
-				So(ds.GetMulti([]interface{}{bdg, bd}), ShouldBeNil)
+				So(ds.Get(bdg, bd), ShouldBeNil)
 				So(bd.Edge(), ShouldResemble, abd.Dep)
 				So(bd.Propagated, ShouldBeFalse)
 				So(bdg.AttemptFinished, ShouldBeFalse)

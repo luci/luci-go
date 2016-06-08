@@ -147,7 +147,7 @@ func (s Storage) UpdateSetting(c context.Context, key string, value json.RawMess
 		if latest.Version == 1 {
 			return ds.Put(&latest)
 		}
-		return ds.PutMulti([]*settingsEntity{&latest, &auditCopy})
+		return ds.Put(&latest, &auditCopy)
 	}, nil)
 
 	if fatalFail != nil {

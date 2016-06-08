@@ -54,7 +54,7 @@ func TestAddDeps(t *testing.T) {
 
 			Convey("Bad", func() {
 				Convey("Bad ExecutionKey", func() {
-					So(ds.PutMulti([]interface{}{a, ex}), ShouldBeNil)
+					So(ds.Put(a, ex), ShouldBeNil)
 
 					ad.Auth.Token = []byte("nerp")
 					muts, err := ad.RollForward(c)
@@ -64,10 +64,10 @@ func TestAddDeps(t *testing.T) {
 			})
 
 			Convey("Good", func() {
-				So(ds.PutMulti([]interface{}{a, ex}), ShouldBeNil)
+				So(ds.Put(a, ex), ShouldBeNil)
 
 				Convey("All added already", func() {
-					So(ds.PutMulti(fds), ShouldBeNil)
+					So(ds.Put(fds), ShouldBeNil)
 
 					muts, err := ad.RollForward(c)
 					So(err, ShouldBeNil)
@@ -82,8 +82,7 @@ func TestAddDeps(t *testing.T) {
 					So(muts[0], ShouldResemble, &AddBackDep{
 						Dep: fds[0].Edge(), NeedsAck: true})
 
-					So(ds.Get(a), ShouldBeNil)
-					So(ds.GetMulti(fds), ShouldBeNil)
+					So(ds.Get(a, fds), ShouldBeNil)
 					So(a.AddingDepsBitmap.Size(), ShouldEqual, len(fds))
 					So(a.WaitingDepBitmap.Size(), ShouldEqual, len(fds))
 					So(a.State, ShouldEqual, dm.Attempt_ADDING_DEPS)
@@ -104,8 +103,7 @@ func TestAddDeps(t *testing.T) {
 					So(muts[1], ShouldResemble, &AddBackDep{
 						Dep: fds[0].Edge(), NeedsAck: true})
 
-					So(ds.Get(a), ShouldBeNil)
-					So(ds.GetMulti(fds), ShouldBeNil)
+					So(ds.Get(a, fds), ShouldBeNil)
 					So(a.AddingDepsBitmap.Size(), ShouldEqual, len(fds))
 					So(a.WaitingDepBitmap.Size(), ShouldEqual, len(fds))
 					So(a.State, ShouldEqual, dm.Attempt_ADDING_DEPS)

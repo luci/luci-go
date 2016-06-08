@@ -59,7 +59,7 @@ func TestRecordCompletion(t *testing.T) {
 						Depender:      *dm.NewAttemptID("from", 1),
 						DependeeGroup: rc.Root(c),
 					}
-					So(ds.PutMulti([]interface{}{bdg, bd}), ShouldBeNil)
+					So(ds.Put(bdg, bd), ShouldBeNil)
 
 					muts, err := rc.RollForward(c)
 					So(err, ShouldBeNil)
@@ -67,7 +67,7 @@ func TestRecordCompletion(t *testing.T) {
 						&AckFwdDep{Dep: bd.Edge(), DepIsFinished: true},
 					})
 
-					So(ds.GetMulti([]interface{}{bdg, bd}), ShouldBeNil)
+					So(ds.Get(bdg, bd), ShouldBeNil)
 					So(bdg.AttemptFinished, ShouldBeTrue)
 					So(bd.Propagated, ShouldBeTrue)
 				})
@@ -78,13 +78,13 @@ func TestRecordCompletion(t *testing.T) {
 						DependeeGroup: rc.Root(c),
 						Propagated:    true,
 					}
-					So(ds.PutMulti([]interface{}{bdg, bd}), ShouldBeNil)
+					So(ds.Put(bdg, bd), ShouldBeNil)
 
 					muts, err := rc.RollForward(c)
 					So(err, ShouldBeNil)
 					So(muts, ShouldBeEmpty)
 
-					So(ds.GetMulti([]interface{}{bdg, bd}), ShouldBeNil)
+					So(ds.Get(bdg, bd), ShouldBeNil)
 					So(bdg.AttemptFinished, ShouldBeTrue)
 					So(bd.Propagated, ShouldBeTrue)
 				})

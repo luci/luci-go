@@ -47,12 +47,12 @@ func TestGetAllProjects(t *testing.T) {
 		So(len(projects), ShouldEqual, 0)
 
 		// Non empty.
-		So(ds.PutMulti([]CronJob{
-			{JobID: "abc/1", ProjectID: "abc", Enabled: true},
-			{JobID: "abc/2", ProjectID: "abc", Enabled: true},
-			{JobID: "def/1", ProjectID: "def", Enabled: true},
-			{JobID: "xyz/1", ProjectID: "xyz", Enabled: false},
-		}), ShouldBeNil)
+		So(ds.Put(
+			&CronJob{JobID: "abc/1", ProjectID: "abc", Enabled: true},
+			&CronJob{JobID: "abc/2", ProjectID: "abc", Enabled: true},
+			&CronJob{JobID: "def/1", ProjectID: "def", Enabled: true},
+			&CronJob{JobID: "xyz/1", ProjectID: "xyz", Enabled: false},
+		), ShouldBeNil)
 		ds.Testable().CatchupIndexes()
 		projects, err = e.GetAllProjects(c)
 		So(err, ShouldBeNil)
@@ -524,23 +524,23 @@ func TestQueries(t *testing.T) {
 		e, _ := newTestEngine()
 		ds := datastore.Get(c)
 
-		So(ds.PutMulti([]CronJob{
-			{JobID: "abc/1", ProjectID: "abc", Enabled: true},
-			{JobID: "abc/2", ProjectID: "abc", Enabled: true},
-			{JobID: "def/1", ProjectID: "def", Enabled: true},
-			{JobID: "def/2", ProjectID: "def", Enabled: false},
-		}), ShouldBeNil)
+		So(ds.Put(
+			&CronJob{JobID: "abc/1", ProjectID: "abc", Enabled: true},
+			&CronJob{JobID: "abc/2", ProjectID: "abc", Enabled: true},
+			&CronJob{JobID: "def/1", ProjectID: "def", Enabled: true},
+			&CronJob{JobID: "def/2", ProjectID: "def", Enabled: false},
+		), ShouldBeNil)
 
 		job1 := ds.NewKey("CronJob", "abc/1", 0, nil)
 		job2 := ds.NewKey("CronJob", "abc/2", 0, nil)
-		So(ds.PutMulti([]Invocation{
-			{ID: 1, JobKey: job1, InvocationNonce: 123},
-			{ID: 2, JobKey: job1, InvocationNonce: 123},
-			{ID: 3, JobKey: job1},
-			{ID: 1, JobKey: job2},
-			{ID: 2, JobKey: job2},
-			{ID: 3, JobKey: job2},
-		}), ShouldBeNil)
+		So(ds.Put(
+			&Invocation{ID: 1, JobKey: job1, InvocationNonce: 123},
+			&Invocation{ID: 2, JobKey: job1, InvocationNonce: 123},
+			&Invocation{ID: 3, JobKey: job1},
+			&Invocation{ID: 1, JobKey: job2},
+			&Invocation{ID: 2, JobKey: job2},
+			&Invocation{ID: 3, JobKey: job2},
+		), ShouldBeNil)
 
 		ds.Testable().CatchupIndexes()
 

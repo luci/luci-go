@@ -400,7 +400,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				}
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
-					So(datastore.Get(ctx).PutMulti(users), ShouldBeNil)
+					So(datastore.Get(ctx).Put(users), ShouldBeNil)
 
 					var err error
 					outMsgs[i], err = charlie.SendMessage(ctx, "Hey there", recipients...)
@@ -450,9 +450,9 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				testing.UpdateSettings(ctx, cfg)
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
-					So(datastore.Get(ctx).PutMulti([]User{
-						{"recipient"},
-					}), ShouldBeNil)
+					So(datastore.Get(ctx).Put(
+						&User{"recipient"},
+					), ShouldBeNil)
 				})
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
@@ -523,10 +523,10 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				testing.UpdateSettings(ctx, cfg)
 				testing.EnableDelayedMutations(ctx)
 
-				So(gds.PutMulti([]User{
-					{"recipient"},
-					{"slowmojoe"},
-				}), ShouldBeNil)
+				So(gds.Put(
+					&User{"recipient"},
+					&User{"slowmojoe"},
+				), ShouldBeNil)
 
 				outMsg, err := charlie.SendMessage(ctx, "Hey there", "recipient", "slowmojoe")
 				So(err, ShouldBeNil)
@@ -572,10 +572,10 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				testing.UpdateSettings(ctx, cfg)
 				testing.EnableDelayedMutations(ctx)
 
-				So(gds.PutMulti([]User{
-					{"recipient"},
-					{"other"},
-				}), ShouldBeNil)
+				So(gds.Put(
+					&User{"recipient"},
+					&User{"other"},
+				), ShouldBeNil)
 
 				outMsg, err := charlie.SendMessage(ctx, "Hey there", "recipient", "other")
 				So(err, ShouldBeNil)

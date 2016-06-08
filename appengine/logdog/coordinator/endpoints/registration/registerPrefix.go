@@ -46,7 +46,7 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 		log.WithError(err).Errorf(c, "Failed to check for existing prefix (non-transactional).")
 		return nil, grpcutil.Internal
 
-	case exists:
+	case exists.All():
 		log.Errorf(c, "The prefix is already registered (non-transactional).")
 		return nil, grpcutil.AlreadyExists
 	}
@@ -141,7 +141,7 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 			log.WithError(err).Errorf(c, "Failed to check for existing prefix (transactional).")
 			return grpcutil.Internal
 
-		case exists:
+		case exists.All():
 			log.Errorf(c, "The prefix is already registered (transactional).")
 			return grpcutil.AlreadyExists
 		}

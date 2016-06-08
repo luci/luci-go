@@ -58,7 +58,7 @@ func (f *FinishAttempt) RollForward(c context.Context) (muts []tumble.Mutation, 
 		Size:       atmpt.ResultSize,
 	}
 
-	err = grpcutil.MaybeLogErr(c, ds.PutMulti([]interface{}{atmpt, rslt}),
+	err = grpcutil.MaybeLogErr(c, ds.Put(atmpt, rslt),
 		codes.Internal, "while trying to PutMulti")
 
 	// TODO(iannucci): also include mutations to generate index entries for

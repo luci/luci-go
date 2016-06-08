@@ -247,7 +247,7 @@ func PopulateMaster(c context.Context, master string, dryRun, buildbotFallback b
 			if dryRun {
 				log.Infof(c, "dry run, not putting any modifications")
 			} else {
-				ds.PutMulti(toPut)
+				ds.Put(toPut)
 			}
 		}
 	}

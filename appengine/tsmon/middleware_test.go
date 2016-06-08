@@ -41,7 +41,7 @@ func TestMiddleware(t *testing.T) {
 
 		exists, err := ds.Exists(ds.NewKey("Instance", instanceEntityID(c), 0, nil))
 		So(err, ShouldBeNil)
-		So(exists, ShouldBeFalse)
+		So(exists.All(), ShouldBeFalse)
 
 		rec := httptest.NewRecorder()
 		state.Middleware(f)(c, rec, &http.Request{}, nil)
@@ -49,7 +49,7 @@ func TestMiddleware(t *testing.T) {
 
 		exists, err = ds.Exists(ds.NewKey("Instance", instanceEntityID(c), 0, nil))
 		So(err, ShouldBeNil)
-		So(exists, ShouldBeTrue)
+		So(exists.All(), ShouldBeTrue)
 
 		// Shouldn't flush since the instance entity doesn't have a task number yet.
 		So(len(monitor.Cells), ShouldEqual, 0)

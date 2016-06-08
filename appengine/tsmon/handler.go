@@ -86,10 +86,10 @@ func assignTaskNumbers(c context.Context) error {
 	// Update all the entities in datastore.
 	if err := parallel.FanOutIn(func(gen chan<- func() error) {
 		gen <- func() error {
-			return ds.PutMulti(unassigned)
+			return ds.Put(unassigned)
 		}
 		gen <- func() error {
-			return ds.DeleteMulti(expiredKeys)
+			return ds.Delete(expiredKeys)
 		}
 	}); err != nil {
 		logging.WithError(err).Errorf(c, "Failed to update task numbers")

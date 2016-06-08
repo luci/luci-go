@@ -139,7 +139,7 @@ func TestHousekeepingHandler(t *testing.T) {
 		So(ds.Put(&oldInstance), ShouldBeNil)
 		exists, err := ds.Exists(ds.NewKey("Instance", "foobar", 0, nil))
 		So(err, ShouldBeNil)
-		So(exists, ShouldBeTrue)
+		So(exists.All(), ShouldBeTrue)
 
 		clock.Add(instanceExpirationTimeout + time.Second)
 
@@ -149,6 +149,6 @@ func TestHousekeepingHandler(t *testing.T) {
 
 		exists, err = ds.Exists(ds.NewKey("Instance", "foobar", 0, nil))
 		So(err, ShouldBeNil)
-		So(exists, ShouldBeFalse)
+		So(exists.All(), ShouldBeFalse)
 	})
 }

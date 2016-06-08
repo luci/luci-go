@@ -75,7 +75,7 @@ func (s *server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 		"id": ls.ID,
 	}.Debugf(c, "Loading stream.")
 
-	if err := di.GetMulti([]interface{}{ls, lst}); err != nil {
+	if err := di.Get(ls, lst); err != nil {
 		if isNoSuchEntity(err) {
 			log.Errorf(c, "Log stream does not exist.")
 			return nil, grpcutil.Errf(codes.NotFound, "path not found")

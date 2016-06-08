@@ -61,7 +61,7 @@ func TestAddDeps(t *testing.T) {
 			})
 
 			Convey("No such destination quest", func() {
-				So(ds.PutMulti([]interface{}{a, e}), ShouldBeNil)
+				So(ds.Put(a, e), ShouldBeNil)
 
 				_, err := s.EnsureGraphData(c, req)
 				So(err, ShouldBeRPCInvalidArgument, `cannot create attempts for absent quest "Q9SgH-f5kraxP_om80CdR9EmAvgmnUws_s5fvRmZiuc"`)
@@ -69,11 +69,10 @@ func TestAddDeps(t *testing.T) {
 		})
 
 		Convey("Good", func() {
-			So(ds.PutMulti([]interface{}{a, e, toQuest}), ShouldBeNil)
+			So(ds.Put(a, e, toQuest), ShouldBeNil)
 
 			Convey("deps already exist", func() {
-				So(ds.Put(fwd), ShouldBeNil)
-				So(ds.Put(to), ShouldBeNil)
+				So(ds.Put(fwd, to), ShouldBeNil)
 
 				rsp, err := s.EnsureGraphData(c, req)
 				So(err, ShouldBeNil)

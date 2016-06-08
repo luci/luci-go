@@ -137,10 +137,10 @@ func GetCertChecker(c context.Context, cn string) (*CertChecker, error) {
 		// we do a datastore check when creating the checker. It happens once during
 		// the process lifetime.
 		ds := datastore.Get(c)
-		switch ok, err := ds.Exists(ds.NewKey("CA", cn, 0, nil)); {
+		switch exists, err := ds.Exists(ds.NewKey("CA", cn, 0, nil)); {
 		case err != nil:
 			return nil, 0, errors.WrapTransient(err)
-		case !ok:
+		case !exists.All():
 			return nil, 0, Error{
 				error:  fmt.Errorf("no such CA %q", cn),
 				Reason: NoSuchCA,

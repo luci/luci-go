@@ -17,7 +17,7 @@ import (
 func filterExisting(c context.Context, fwdDeps []*model.FwdDep) ([]*model.FwdDep, error) {
 	ret := make([]*model.FwdDep, 0, len(fwdDeps))
 
-	err := datastore.Get(c).GetMulti(fwdDeps)
+	err := datastore.Get(c).Get(fwdDeps)
 	if err == nil {
 		return nil, nil
 	}

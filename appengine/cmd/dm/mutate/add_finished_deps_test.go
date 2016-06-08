@@ -51,14 +51,14 @@ func TestAddFinishedDeps(t *testing.T) {
 		ak := ds.KeyForObj(a)
 		e := &model.Execution{
 			ID: 7, Attempt: ak, State: dm.Execution_RUNNING, Token: []byte("sup")}
-		So(ds.PutMulti([]interface{}{a, e}), ShouldBeNil)
+		So(ds.Put(a, e), ShouldBeNil)
 
 		Convey("Root", func() {
 			So(f.Root(c).String(), ShouldEqual, `dev~app::/Attempt,"quest|fffffffe"`)
 		})
 
 		Convey("RollForward", func() {
-			err := ds.GetMulti(fs)
+			err := ds.Get(fs)
 			So(err, ShouldResemble, errors.MultiError{
 				datastore.ErrNoSuchEntity,
 				nil,
@@ -73,7 +73,7 @@ func TestAddFinishedDeps(t *testing.T) {
 				&MergeQuest{f.MergeQuests[0]},
 			})
 
-			So(ds.GetMulti(fs), ShouldBeNil)
+			So(ds.Get(fs), ShouldBeNil)
 			So(fs[0].ForExecution, ShouldEqual, 7)
 			So(fs[1].ForExecution, ShouldEqual, 1)
 			So(fs[2].ForExecution, ShouldEqual, 7)

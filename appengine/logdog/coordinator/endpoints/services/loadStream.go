@@ -34,7 +34,7 @@ func (s *server) LoadStream(c context.Context, req *logdog.LoadStreamRequest) (*
 	ls := &coordinator.LogStream{ID: coordinator.HashID(req.Id)}
 	lst := ls.State(di)
 
-	if err := di.GetMulti([]interface{}{lst, ls}); err != nil {
+	if err := di.Get(lst, ls); err != nil {
 		if anyNoSuchEntity(err) {
 			log.WithError(err).Errorf(c, "No such entity in datastore.")
 

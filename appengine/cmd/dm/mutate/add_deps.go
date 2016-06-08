@@ -61,7 +61,7 @@ func (a *AddDeps) RollForward(c context.Context) (muts []tumble.Mutation, err er
 		fdp.ForExecution = atmpt.CurExecution
 	}
 
-	if err = ds.PutMulti(fwdDeps); err != nil {
+	if err = ds.Put(fwdDeps); err != nil {
 		err = grpcutil.MaybeLogErr(c, err, codes.Internal, "error putting new fwdDeps")
 		return
 	}

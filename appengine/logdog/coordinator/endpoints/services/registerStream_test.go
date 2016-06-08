@@ -141,7 +141,7 @@ func TestRegisterStream(t *testing.T) {
 						So(resp, ShouldResemble, expResp)
 
 						tls.WithProjectNamespace(c, func(c context.Context) {
-							So(ds.Get(c).GetMulti([]interface{}{tls.Stream, tls.State}), ShouldBeNil)
+							So(ds.Get(c).Get(tls.Stream, tls.State), ShouldBeNil)
 						})
 						So(tls.State.Created, ShouldResemble, created)
 						So(tls.Stream.Created, ShouldResemble, created)

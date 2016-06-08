@@ -63,13 +63,13 @@ func execute(c context.Context, aid *dm.Attempt_ID) *dm.Execution_Auth {
 
 		ret.Id = dm.NewExecutionID(atmpt.ID.Quest, atmpt.ID.Id, atmpt.CurExecution)
 
-		So(ds.PutMulti([]interface{}{atmpt, &model.Execution{
+		So(ds.Put(atmpt, &model.Execution{
 			ID:      atmpt.CurExecution,
 			Created: clock.Now(c),
 			State:   dm.Execution_SCHEDULED,
 			Attempt: ds.KeyForObj(atmpt),
 			Token:   rtok,
-		}}), ShouldBeNil)
+		}), ShouldBeNil)
 		return nil
 	}, nil)
 	So(err, ShouldBeNil)

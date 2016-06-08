@@ -50,7 +50,7 @@ func TestFinishAttempt(t *testing.T) {
 			e := &model.Execution{
 				ID: 1, Attempt: ak, State: dm.Execution_RUNNING, Token: []byte("exekey")}
 
-			So(ds.PutMulti([]interface{}{a, e}), ShouldBeNil)
+			So(ds.Put(a, e), ShouldBeNil)
 
 			Convey("Good", func() {
 				muts, err := fa.RollForward(c)
@@ -58,7 +58,7 @@ func TestFinishAttempt(t *testing.T) {
 				So(muts, ShouldResemble, []tumble.Mutation{
 					&RecordCompletion{For: &a.ID}})
 
-				So(ds.GetMulti([]interface{}{a, e, ar}), ShouldBeNil)
+				So(ds.Get(a, e, ar), ShouldBeNil)
 				So(e.Token, ShouldBeEmpty)
 				So(a.State, ShouldEqual, dm.Attempt_FINISHED)
 				So(a.ResultExpiration, ShouldResemble,
@@ -71,7 +71,7 @@ func TestFinishAttempt(t *testing.T) {
 				_, err := fa.RollForward(c)
 				So(err, ShouldBeRPCUnauthenticated, "execution Auth")
 
-				So(ds.GetMulti([]interface{}{a, e}), ShouldBeNil)
+				So(ds.Get(a, e), ShouldBeNil)
 				So(e.Token, ShouldNotBeEmpty)
 				So(a.State, ShouldEqual, dm.Attempt_EXECUTING)
 

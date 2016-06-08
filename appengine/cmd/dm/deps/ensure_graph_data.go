@@ -145,8 +145,10 @@ func journalQuestAttempts(c context.Context, newQuests []*model.Quest, newAttemp
 func (d *deps) ensureGraphData(c context.Context, req *dm.EnsureGraphDataReq, newQuests []*model.Quest, newAttempts *dm.AttemptList, rsp *dm.EnsureGraphDataRsp) (err error) {
 	ds := datastore.Get(c)
 
-	fwdDepExists := datastore.BoolList(nil)
-	fwdDepKeys := []*datastore.Key(nil)
+	var (
+		fwdDepExists *datastore.ExistsResult
+		fwdDepKeys   []*datastore.Key
+	)
 	if req.ForExecution != nil {
 		fwdDepKeys = model.FwdDepKeysFromList(c, req.ForExecution.Id.AttemptID(), newAttempts)
 	}
@@ -162,7 +164,7 @@ func (d *deps) ensureGraphData(c context.Context, req *dm.EnsureGraphDataReq, ne
 		}
 		if req.ForExecution != nil {
 			gen <- func() (err error) {
-				fwdDepExists, err = ds.ExistsMulti(fwdDepKeys)
+				fwdDepExists, err = ds.Exists(fwdDepKeys)
 				if err != nil {
 					err = fmt.Errorf("while finding FwdDeps: %s", err)
 				}
@@ -193,7 +195,7 @@ func (d *deps) ensureGraphData(c context.Context, req *dm.EnsureGraphDataReq, ne
 	}
 
 	// we're asserting nodes+edges
-	missingDeps := depsFromMissing(c, fwdDepKeys, fwdDepExists)
+	missingDeps := depsFromMissing(c, fwdDepKeys, fwdDepExists.List(0))
 
 	// we have no missing deps, or all the attempts we want are finished already
 	if len(missingDeps.To) == 0 || allFinished(rsp.Result) {

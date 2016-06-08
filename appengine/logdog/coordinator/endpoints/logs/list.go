@@ -129,7 +129,7 @@ func (s *server) List(c context.Context, req *logdog.ListRequest) (*logdog.ListR
 				entities = append(entities, &logStreams[i], &logStreamStates[i])
 			}
 
-			if err := di.GetMulti(entities); err != nil {
+			if err := di.Get(entities); err != nil {
 				log.Fields{
 					log.ErrorKey: err,
 					"count":      len(streams),

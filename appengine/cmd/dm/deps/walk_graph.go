@@ -162,7 +162,7 @@ func attemptResultLoader(c context.Context, aid *dm.Attempt_ID, authedForResult 
 				dst.Partial.Result = dm.Attempt_Partial_NOT_AUTHORIZED
 				return err
 			}
-			if !exist {
+			if !exist.All() {
 				dst.Partial.Result = dm.Attempt_Partial_NOT_AUTHORIZED
 				return nil
 			}

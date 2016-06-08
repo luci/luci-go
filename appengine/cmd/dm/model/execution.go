@@ -66,7 +66,7 @@ func loadExecution(c context.Context, eid *dm.Execution_ID) (a *Attempt, e *Exec
 
 	a = &Attempt{ID: *eid.AttemptID()}
 	e = &Execution{ID: eid.Id, Attempt: ds.KeyForObj(a)}
-	err = datastore.Get(c).GetMulti([]interface{}{a, e})
+	err = datastore.Get(c).Get(a, e)
 
 	if err != nil {
 		err = fmt.Errorf("couldn't get attempt %v or its execution %d: %s", a.ID, e.ID, err)

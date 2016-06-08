@@ -173,7 +173,7 @@ func updateCRLShard(c context.Context, cn string, shard shards.Shard, count, idx
 			SHA1:       digest,
 			ZippedData: zipped,
 		}
-		return ds.PutMulti([]interface{}{&header, &body})
+		return ds.Put(&header, &body)
 	}, nil)
 }
 

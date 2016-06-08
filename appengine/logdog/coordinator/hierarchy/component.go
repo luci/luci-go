@@ -65,7 +65,11 @@ func (c *Component) Path() types.StreamPath {
 
 // Exists checks whether this Component exists in the datastore.
 func (c *Component) Exists(di ds.Interface) (bool, error) {
-	return di.Exists(di.KeyForObj(c.entity()))
+	er, err := di.Exists(di.KeyForObj(c.entity()))
+	if err != nil {
+		return false, err
+	}
+	return er.All(), nil
 }
 
 // Put writes this Component to the datastore.
@@ -97,15 +101,15 @@ func Missing(di ds.Interface, components []*Component) ([]*Component, error) {
 	for i, c := range components {
 		exists[i] = di.KeyForObj(c.entity())
 	}
-	bl, err := di.ExistsMulti(exists)
+	er, err := di.Exists(exists)
 	if err != nil {
 		return nil, err
 	}
 
 	// Condense the components array.
 	nidx := 0
-	for i, b := range bl {
-		if !b {
+	for i, v := range er.List(0) {
+		if !v {
 			components[nidx] = components[i]
 			nidx++
 		}
@@ -120,5 +124,5 @@ func PutMulti(di ds.Interface, components []*Component) error {
 	for i, comp := range components {
 		ents[i] = comp.entity()
 	}
-	return di.PutMulti(ents)
+	return di.Put(ents)
 }

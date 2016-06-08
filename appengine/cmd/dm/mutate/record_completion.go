@@ -77,7 +77,7 @@ func (r *RecordCompletion) RollForward(c context.Context) (muts []tumble.Mutatio
 			muts = append(muts, r)
 		}
 
-		if err = ds.PutMulti(needProp); err != nil {
+		if err = ds.Put(needProp); err != nil {
 			return
 		}
 	}
