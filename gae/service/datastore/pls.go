@@ -138,7 +138,7 @@ import (
 //     // "kind" is automatically implied by the struct name: "Comment"
 //
 //     // Parent will be enforced by the application to be a User key.
-//     Parent Key `gae:"$parent"`
+//     Parent *Key `gae:"$parent"`
 //
 //     // 'Lines' will serialized to the datastore in the field 'Lines'
 //     Lines []string
