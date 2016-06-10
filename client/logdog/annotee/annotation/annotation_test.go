@@ -48,6 +48,7 @@ func (tc *testCase) state(startTime time.Time) *State {
 		LogNameBase: types.StreamName("base"),
 		Callbacks:   &cb,
 		Clock:       testclock.New(startTime),
+		Execution:   tc.exe,
 	}
 }
 
