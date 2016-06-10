@@ -9,11 +9,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/luci/luci-go/client/internal/logdog/bootstrapResult"
 	"github.com/luci/luci-go/client/logdog/annotee"
 	"github.com/luci/luci-go/client/logdog/annotee/executor"
 	"github.com/luci/luci-go/client/logdog/butlerlib/bootstrap"
@@ -53,7 +53,7 @@ type application struct {
 	context.Context
 
 	annotate           annotationMode
-	executeFlagPath    string
+	resultPath         string
 	jsonArgsPath       string
 	butlerStreamServer string
 	tee                bool
@@ -71,8 +71,9 @@ type application struct {
 func (a *application) addToFlagSet(fs *flag.FlagSet) {
 	fs.Var(&a.annotate, "annotate",
 		"Annotation handling mode. Options are: "+annotationFlagEnum.Choices())
-	fs.StringVar(&a.executeFlagPath, "execute-flag-path", "",
-		"If supplied, a file at this path will be created if the bootstrapped process is successfully executed.")
+	fs.StringVar(&a.resultPath, "result-path", "",
+		"If supplied, a JSON file describing the bootstrap result will be written here if the bootstrapped process "+
+			"is successfully executed.")
 	fs.StringVar(&a.jsonArgsPath, "json-args-path", "",
 		"If specified, this is a JSON file containing the full command to run as an "+
 			"array of strings.")
@@ -127,15 +128,15 @@ func (a *application) getStreamClient() (streamclient.Client, error) {
 	return nil, errors.New("unable to identify stream client")
 }
 
-func (a *application) maybeTouchExecutedFlag() error {
-	if a.executeFlagPath == "" {
+func (a *application) maybeWriteResult(r *bootstrapResult.Result) error {
+	if a.resultPath == "" {
 		return nil
 	}
 
 	log.Fields{
-		"path": a.executeFlagPath,
-	}.Debugf(a, "Touching execute flag.")
-	return ioutil.WriteFile(a.executeFlagPath, []byte(nil), 0666)
+		"path": a.resultPath,
+	}.Debugf(a, "Writing bootstrap result.")
+	return r.WriteJSON(a.resultPath)
 }
 
 func mainImpl(args []string) int {
@@ -258,8 +259,13 @@ func mainImpl(args []string) int {
 	if !e.Executed() {
 		return runtimeErrorReturnCode
 	}
-	if err := a.maybeTouchExecutedFlag(); err != nil {
-		log.WithError(err).Warningf(a, "Failed to touch executed flag.")
+
+	br := bootstrapResult.Result{
+		ReturnCode: e.ReturnCode(),
+		Command:    args,
+	}
+	if err := a.maybeWriteResult(&br); err != nil {
+		log.WithError(err).Warningf(a, "Failed to write bootstrap result.")
 	}
 	return e.ReturnCode()
 }

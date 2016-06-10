@@ -8,12 +8,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"sync"
 	"syscall"
 
+	"github.com/luci/luci-go/client/internal/logdog/bootstrapResult"
 	"github.com/luci/luci-go/client/internal/logdog/butler"
 	"github.com/luci/luci-go/client/internal/logdog/butler/streamserver"
 	"github.com/luci/luci-go/client/logdog/butlerlib/bootstrap"
@@ -31,8 +31,9 @@ var subcommandRun = &subcommands.Command{
 	CommandRun: func() subcommands.CommandRun {
 		cmd := &runCommandRun{}
 
-		cmd.Flags.StringVar(&cmd.executeFlagPath, "execute-flag-path", "",
-			"If supplied, a file at this path will be created if the bootstrapped process is successfully executed.")
+		cmd.Flags.StringVar(&cmd.resultPath, "result-path", "",
+			"If supplied, a JSON file describing the bootstrap result will be written here if the bootstrapped process "+
+				"is successfully executed.")
 		cmd.Flags.StringVar(&cmd.jsonArgsPath, "json-args-path", "",
 			"If specified, this is a JSON file containing the full command to run as an "+
 				"array of strings.")
@@ -64,8 +65,8 @@ var subcommandRun = &subcommands.Command{
 type runCommandRun struct {
 	subcommands.CommandRunBase
 
-	// If not empty, touch a file at this path if execution is successful.
-	executeFlagPath string
+	// If not empty, write bootstrap result JSON here.
+	resultPath string
 
 	// jsonArgsPath, if not empty, is the path to a JSON file containing an array
 	// of strings, each of which is a command-line argument to the bootstrapped
@@ -294,8 +295,12 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 			"returnCode": returnCode,
 		}.Infof(ctx, "Process completed.")
 		if executed {
-			if err := cmd.maybeTouchExecutedFlag(ctx); err != nil {
-				log.WithError(err).Warningf(ctx, "Failed to touch executed flag.")
+			br := bootstrapResult.Result{
+				ReturnCode: returnCode,
+				Command:    append([]string{commandPath}, args...),
+			}
+			if err := cmd.maybeWriteResult(ctx, &br); err != nil {
+				log.WithError(err).Warningf(ctx, "Failed to write bootstrap result.")
 			}
 		}
 	}()
@@ -378,15 +383,15 @@ func (cmd *runCommandRun) updateEnvironment(e environ, a *application) {
 	}
 }
 
-func (cmd *runCommandRun) maybeTouchExecutedFlag(ctx context.Context) error {
-	if cmd.executeFlagPath == "" {
+func (cmd *runCommandRun) maybeWriteResult(ctx context.Context, r *bootstrapResult.Result) error {
+	if cmd.resultPath == "" {
 		return nil
 	}
 
 	log.Fields{
-		"path": cmd.executeFlagPath,
-	}.Debugf(ctx, "Touching execute flag.")
-	return ioutil.WriteFile(cmd.executeFlagPath, []byte(nil), 0666)
+		"path": cmd.resultPath,
+	}.Debugf(ctx, "Writing bootstrap result.")
+	return r.WriteJSON(cmd.resultPath)
 }
 
 // callbackReadCloser invokes a callback method when closed.
