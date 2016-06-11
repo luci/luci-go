@@ -59,9 +59,7 @@ func newOutputOption(name, description string, f outputFactory) *outputOption {
 
 // Global store of registered output options. This will be
 // conditionally-compiled based on build tags.
-var outputFactories = []outputFactory{
-	&logOutputFactory{},
-}
+var outputFactories = []outputFactory{}
 
 // Registers a new output option. This is meant to be called by 'init()' methods
 // of each option.

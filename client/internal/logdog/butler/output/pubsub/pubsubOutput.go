@@ -127,7 +127,7 @@ func (o *pubSubOutput) SendBundle(bundle *logpb.ButlerLogBundle) error {
 		o.et.Track(bundle)
 	}
 
-	st.F.SentBytes += len(message.Data)
+	st.F.SentBytes += int64(len(message.Data))
 	st.F.SentMessages++
 	return nil
 }

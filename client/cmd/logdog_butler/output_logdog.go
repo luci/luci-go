@@ -53,7 +53,7 @@ func (f *logdogOutputFactory) option() multiflag.Option {
 
 	// TODO(dnj): Default to false when mandatory debugging is finished.
 	flags.BoolVar(&f.track, "track", true,
-		"Track each sent message. This adds CPU/memory overhead.")
+		"Track each sent message and dump at the end. This adds CPU/memory overhead.")
 
 	return opt
 }

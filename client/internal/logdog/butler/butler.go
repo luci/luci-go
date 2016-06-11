@@ -254,9 +254,6 @@ func (b *Butler) Wait() error {
 	<-b.bundlerDrainedC
 	log.Debugf(b.ctx, "Output queue has shut down.")
 
-	log.Debugf(b.ctx, "Waiting for message output to Close")
-	b.c.Output.Close()
-
 	log.Fields{
 		"stats": b.c.Output.Stats(),
 	}.Infof(b.ctx, "Message output has closed")

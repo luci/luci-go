@@ -86,7 +86,7 @@ func (o *logOutput) SendBundle(bundle *logpb.ButlerLogBundle) error {
 			o.stats.F.SentMessages++
 		}
 	}
-	o.stats.F.SentBytes += proto.Size(bundle)
+	o.stats.F.SentBytes += int64(proto.Size(bundle))
 
 	return nil
 }

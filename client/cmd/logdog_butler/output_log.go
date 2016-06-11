@@ -10,6 +10,10 @@ import (
 	"github.com/luci/luci-go/common/flag/multiflag"
 )
 
+func init() {
+	registerOutputFactory(&logOutputFactory{})
+}
+
 type logOutputFactory struct {
 	bundleSize int
 }

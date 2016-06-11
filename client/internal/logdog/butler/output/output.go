@@ -52,22 +52,22 @@ type Stats interface {
 	fmt.Stringer
 
 	// SentBytes returns the number of bytes
-	SentBytes() int
+	SentBytes() int64
 	// SentMessages returns the number of successfully transmitted messages.
-	SentMessages() int
+	SentMessages() int64
 	// DiscardedMessages returns the number of discarded messages.
-	DiscardedMessages() int
+	DiscardedMessages() int64
 	// Errors returns the number of errors encountered during operation.
-	Errors() int
+	Errors() int64
 }
 
 // StatsBase is a simple implementation of the Stats interface.
 type StatsBase struct {
 	F struct {
-		SentBytes         int // The number of bytes sent.
-		SentMessages      int // The number of messages sent.
-		DiscardedMessages int // The number of messages that have been discarded.
-		Errors            int // The number of errors encountered.
+		SentBytes         int64 // The number of bytes sent.
+		SentMessages      int64 // The number of messages sent.
+		DiscardedMessages int64 // The number of messages that have been discarded.
+		Errors            int64 // The number of errors encountered.
 	}
 }
 
@@ -78,22 +78,22 @@ func (s *StatsBase) String() string {
 }
 
 // SentBytes implements Stats.
-func (s *StatsBase) SentBytes() int {
+func (s *StatsBase) SentBytes() int64 {
 	return s.F.SentBytes
 }
 
 // SentMessages implements Stats.
-func (s *StatsBase) SentMessages() int {
+func (s *StatsBase) SentMessages() int64 {
 	return s.F.SentMessages
 }
 
 // DiscardedMessages implements Stats.
-func (s *StatsBase) DiscardedMessages() int {
+func (s *StatsBase) DiscardedMessages() int64 {
 	return s.F.DiscardedMessages
 }
 
 // Errors implements Stats.
-func (s *StatsBase) Errors() int {
+func (s *StatsBase) Errors() int64 {
 	return s.F.Errors
 }
 
