@@ -106,6 +106,10 @@ func (gi *giImpl) FullyQualifiedAppID() string {
 	return gi.fqAppID
 }
 
+func (gi *giImpl) DefaultVersionHostname() string {
+	return fmt.Sprintf("%s.example.com", gi.appID)
+}
+
 func (gi *giImpl) IsDevAppServer() bool {
 	return true
 }
