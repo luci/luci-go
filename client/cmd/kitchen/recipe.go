@@ -41,6 +41,7 @@ type recipeRun struct {
 	propertiesFile       string
 	outputResultJSONFile string
 	workDir              string // Where to run the recipe.
+	timestamps           bool   // Whether to print CURRENT_TIMESTAMP annotations.
 }
 
 // Command creates a exec.Cmd for running a recipe.
@@ -67,8 +68,12 @@ func (r *recipeRun) Command() (*exec.Cmd, error) {
 		"--properties-file", r.propertiesFile,
 		"--workdir", r.workDir,
 		"--output-result-json", r.outputResultJSONFile,
-		r.recipe,
 	)
+	if r.timestamps {
+		cmd.Args = append(cmd.Args, "--timestamps")
+	}
+	cmd.Args = append(cmd.Args, r.recipe)
+
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd, nil

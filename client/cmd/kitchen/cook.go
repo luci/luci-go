@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -19,6 +20,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/cli"
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/ctxcmd"
 )
 
@@ -61,6 +63,11 @@ var cmdCook = &subcommands.Command{
 			"output-result-json",
 			"",
 			"The file to write the JSON serialized returned value of the recipe to")
+		fs.BoolVar(
+			&c.Timestamps,
+			"timestamps",
+			false,
+			"If true, print CURRENT_TIMESTAMP annotations.")
 		return &c
 	},
 }
@@ -76,6 +83,7 @@ type cookRun struct {
 	Properties           string
 	PropertiesFile       string
 	OutputResultJSONFile string
+	Timestamps           bool
 }
 
 func (c *cookRun) validateFlags() error {
@@ -130,6 +138,7 @@ func (c *cookRun) run(ctx context.Context) (recipeExitCode int, err error) {
 		propertiesJSON:       c.Properties,
 		propertiesFile:       c.PropertiesFile,
 		outputResultJSONFile: c.OutputResultJSONFile,
+		timestamps:           c.Timestamps,
 	}
 	recipeCmd, err := recipe.Command()
 	if err != nil {
@@ -175,9 +184,23 @@ func (c *cookRun) Run(a subcommands.Application, args []string) (exitCode int) {
 		return 1
 	}
 
+	if c.Timestamps {
+		annotateTime(ctx)
+	}
 	annotate("SEED_STEP", BootstrapStepName)
 	annotate("STEP_CURSOR", BootstrapStepName)
 	annotate("STEP_STARTED")
+	defer func() {
+		annotate("STEP_CURSOR", BootstrapStepName)
+		if c.Timestamps {
+			annotateTime(ctx)
+		}
+		annotate("STEP_CLOSED")
+		if c.Timestamps {
+			annotateTime(ctx)
+		}
+	}()
+
 	props, err := parseProperties(c.Properties, c.PropertiesFile)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -194,14 +217,12 @@ func (c *cookRun) Run(a subcommands.Application, args []string) (exitCode int) {
 	}
 
 	recipeExitCode, err := c.run(ctx)
-	annotate("STEP_CURSOR", BootstrapStepName)
 	if err != nil {
 		if err != context.Canceled {
 			fmt.Fprintln(os.Stderr, err)
 		}
 		return -1
 	}
-	annotate("STEP_CLOSED")
 	return recipeExitCode
 }
 
@@ -226,6 +247,11 @@ func parseProperties(properties, propertiesFile string) (result map[string]inter
 		}
 	}
 	return
+}
+
+func annotateTime(ctx context.Context) {
+	timestamp := clock.Get(ctx).Now().Unix()
+	annotate("CURRENT_TIMESTAMP", strconv.FormatInt(timestamp, 10))
 }
 
 func annotate(args ...string) {
