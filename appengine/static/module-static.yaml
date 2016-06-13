@@ -6,12 +6,5 @@ module: static
 runtime: go
 api_version: go1
 
-handlers:
-- url: /static
-  # "upload" dir does not exist in this dir, but it may exist in an app that
-  # symlinks this file.
-  static_dir: upload
-  secure: always
-
 includes:
   - common
