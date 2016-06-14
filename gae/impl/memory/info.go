@@ -63,18 +63,18 @@ func useGID(c context.Context, f func(mod *globalInfoData)) context.Context {
 // useGI adds a gae.GlobalInfo context, accessible
 // by gae.GetGI(c)
 func useGI(c context.Context) context.Context {
-	return info.SetFactory(c, func(ic context.Context) info.Interface {
+	return info.SetFactory(c, func(ic context.Context) info.RawInterface {
 		return &giImpl{dummy.Info(), curGID(ic), ic}
 	})
 }
 
 type giImpl struct {
-	info.Interface
+	info.RawInterface
 	*globalInfoData
 	c context.Context
 }
 
-var _ = info.Interface((*giImpl)(nil))
+var _ = info.RawInterface((*giImpl)(nil))
 
 func (gi *giImpl) GetNamespace() (string, bool) {
 	return gi.getNamespace()
@@ -88,14 +88,6 @@ func (gi *giImpl) Namespace(ns string) (ret context.Context, err error) {
 	return useGID(gi.c, func(mod *globalInfoData) {
 		mod.namespace = &ns
 	}), nil
-}
-
-func (gi *giImpl) MustNamespace(ns string) context.Context {
-	ret, err := gi.Namespace(ns)
-	if err != nil {
-		panic(err)
-	}
-	return ret
 }
 
 func (gi *giImpl) AppID() string {

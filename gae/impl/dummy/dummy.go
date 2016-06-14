@@ -83,7 +83,6 @@ func (ds) GetMulti([]*datastore.Key, datastore.MultiMetaGetter, datastore.GetMul
 	panic(ni())
 }
 func (ds) DeleteMulti([]*datastore.Key, datastore.DeleteMultiCB) error { panic(ni()) }
-func (ds) NewQuery(string) datastore.Query                             { panic(ni()) }
 func (ds) DecodeCursor(string) (datastore.Cursor, error)               { panic(ni()) }
 func (ds) Count(*datastore.FinalizedQuery) (int64, error)              { panic(ni()) }
 func (ds) Run(*datastore.FinalizedQuery, datastore.RawRunCB) error     { panic(ni()) }
@@ -154,7 +153,6 @@ func (i) ServiceAccount() (string, error)                                       
 func (i) SignBytes(bytes []byte) (keyName string, signature []byte, err error)     { panic(ni()) }
 func (i) VersionID() string                                                        { panic(ni()) }
 func (i) Namespace(namespace string) (context.Context, error)                      { panic(ni()) }
-func (i) MustNamespace(namespace string) context.Context                           { panic(ni()) }
 func (i) Datacenter() string                                                       { panic(ni()) }
 func (i) InstanceID() string                                                       { panic(ni()) }
 func (i) IsDevAppServer() bool                                                     { panic(ni()) }
@@ -166,10 +164,10 @@ func (i) Testable() info.Testable                                               
 
 var dummyInfoInst = i{}
 
-// Info returns a dummy info.Interface implementation suitable for embedding.
+// Info returns a dummy info.RawInterface implementation suitable for embedding.
 // Every method panics with a message containing the name of the method which
 // was unimplemented.
-func Info() info.Interface { return dummyInfoInst }
+func Info() info.RawInterface { return dummyInfoInst }
 
 ////////////////////////////////////// u ///////////////////////////////////////
 

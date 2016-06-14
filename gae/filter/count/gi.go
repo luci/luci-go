@@ -30,7 +30,6 @@ type InfoCounter struct {
 	ServiceAccount         Entry
 	VersionID              Entry
 	Namespace              Entry
-	MustNamespace          Entry
 	AccessToken            Entry
 	PublicCertificates     Entry
 	SignBytes              Entry
@@ -39,10 +38,10 @@ type InfoCounter struct {
 type infoCounter struct {
 	c *InfoCounter
 
-	gi info.Interface
+	gi info.RawInterface
 }
 
-var _ info.Interface = (*infoCounter)(nil)
+var _ info.RawInterface = (*infoCounter)(nil)
 
 func (g *infoCounter) AppID() string {
 	_ = g.c.AppID.up()
@@ -124,11 +123,6 @@ func (g *infoCounter) Namespace(namespace string) (context.Context, error) {
 	return ret, g.c.Namespace.up(err)
 }
 
-func (g *infoCounter) MustNamespace(namespace string) context.Context {
-	g.c.MustNamespace.up()
-	return g.gi.MustNamespace(namespace)
-}
-
 func (g *infoCounter) AccessToken(scopes ...string) (string, time.Time, error) {
 	token, expiry, err := g.gi.AccessToken(scopes...)
 	return token, expiry, g.c.AccessToken.up(err)
@@ -151,7 +145,7 @@ func (g *infoCounter) Testable() info.Testable {
 // FilterGI installs a counter GlobalInfo filter in the context.
 func FilterGI(c context.Context) (context.Context, *InfoCounter) {
 	state := &InfoCounter{}
-	return info.AddFilters(c, func(ic context.Context, gi info.Interface) info.Interface {
+	return info.AddFilters(c, func(ic context.Context, gi info.RawInterface) info.RawInterface {
 		return &infoCounter{state, gi}
 	}), state
 }

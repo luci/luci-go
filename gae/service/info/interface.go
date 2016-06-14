@@ -10,9 +10,9 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Interface is the interface for all of the package methods which normally
+// RawInterface is the interface for all of the package methods which normally
 // would be in the 'appengine' package.
-type Interface interface {
+type RawInterface interface {
 	AppID() string
 	FullyQualifiedAppID() string
 	GetNamespace() (string, bool)
@@ -31,7 +31,6 @@ type Interface interface {
 	VersionID() string
 
 	Namespace(namespace string) (context.Context, error)
-	MustNamespace(namespace string) context.Context
 
 	AccessToken(scopes ...string) (token string, expiry time.Time, err error)
 	PublicCertificates() ([]Certificate, error)
@@ -40,6 +39,25 @@ type Interface interface {
 	// Testable returns this Interface's Testable interface. Testing will return
 	// nil if testing is not supported in this implementation.
 	Testable() Testable
+}
+
+// Interface is the interface for all of the package methods which normally
+// would be in the 'appengine' package. This version adds a couple helper
+// functions on top of the RawInterface.
+type Interface interface {
+	RawInterface
+
+	// TrimmedAppID gets the 'appid' portion of "foo.com:appid". This form can
+	// occur if you use
+	TrimmedAppID() string
+
+	// MustNamespace is the same as Namespace, but will panic if there's an error.
+	// Since an error can only occur if namespace doesn't match the a regex this
+	// is valid to use if the namespace you're using is statically known, or known
+	// to conform to the regex. The regex in question is:
+	//
+	//   ^[0-9A-Za-z._-]{0,100}$
+	MustNamespace(namespace string) context.Context
 }
 
 // Testable is an additional set of functions for testing instrumentation.

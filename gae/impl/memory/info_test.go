@@ -14,18 +14,6 @@ import (
 )
 
 func TestMustNamespace(t *testing.T) {
-	Convey("MustNamespace panics", t, func() {
-		c := Use(context.Background())
-		i := info.Get(c)
-
-		So(func() {
-			i.MustNamespace("valid_namespace_name")
-		}, ShouldNotPanic)
-		So(func() {
-			i.MustNamespace("invalid namespace name")
-		}, ShouldPanic)
-	})
-
 	Convey("Testable interface works", t, func() {
 		c := UseWithAppID(context.Background(), "dev~app-id")
 

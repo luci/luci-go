@@ -21,7 +21,7 @@ func useGI(usrCtx context.Context) context.Context {
 		usrCtx = withProbeCache(usrCtx, probe(AEContext(usrCtx)))
 	}
 
-	return info.SetFactory(usrCtx, func(ci context.Context) info.Interface {
+	return info.SetFactory(usrCtx, func(ci context.Context) info.RawInterface {
 		return giImpl{ci, AEContext(ci)}
 	})
 }
@@ -80,13 +80,6 @@ func (g giImpl) Namespace(namespace string) (context.Context, error) {
 	pc := *getProbeCache(usrCtx)
 	pc.namespace = &namespace
 	return withProbeCache(usrCtx, &pc), nil
-}
-func (g giImpl) MustNamespace(ns string) context.Context {
-	ret, err := g.Namespace(ns)
-	if err != nil {
-		panic(err)
-	}
-	return ret
 }
 func (g giImpl) PublicCertificates() ([]info.Certificate, error) {
 	certs, err := appengine.PublicCertificates(g.aeCtx)
