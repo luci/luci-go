@@ -336,6 +336,17 @@ func UpconvertUnderlyingType(o interface{}) interface{} {
 	return o
 }
 
+func (p Property) String() string {
+	switch p.propType {
+	case PTString, PTBlobKey:
+		return fmt.Sprintf("%s(%q)", p.propType, p.Value())
+	case PTBytes:
+		return fmt.Sprintf("%s(%#x)", p.propType, p.Value())
+	default:
+		return fmt.Sprintf("%s(%v)", p.propType, p.Value())
+	}
+}
+
 // Value returns the current value held by this property. It's guaranteed to
 // be a valid value type (i.e. `p.SetValue(p.Value(), true)` will never return
 // an error).
