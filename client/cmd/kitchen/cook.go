@@ -189,6 +189,9 @@ func (c *cookRun) Run(a subcommands.Application, args []string) (exitCode int) {
 	}
 	annotate("SEED_STEP", BootstrapStepName)
 	annotate("STEP_CURSOR", BootstrapStepName)
+	if c.Timestamps {
+		annotateTime(ctx)
+	}
 	annotate("STEP_STARTED")
 	defer func() {
 		annotate("STEP_CURSOR", BootstrapStepName)
