@@ -302,6 +302,7 @@ func streamsFromAnnotatedLog(ctx context.Context, log []byte) (*logdog.Streams, 
 	p := annotee.New(ctx, annotee.Options{
 		Client:                 c,
 		MetadataUpdateInterval: -1, // Neverrrrrr send incr updates.
+		Offline:                true,
 	})
 	defer p.Finish()
 

@@ -103,6 +103,11 @@ type Options struct {
 	//	- If this equals 0, metadata will be pushed every time it's updated.
 	//	- If this is 0, DefaultMetadataUpdateInterval will be used.
 	MetadataUpdateInterval time.Duration
+
+	// Offline specifies whether parsing happens not at the same time as
+	// emitting. If true and CURRENT_TIMESTAMP annotations are not provided
+	// then step start/end times are left empty.
+	Offline bool
 }
 
 // Processor consumes data from a list of Stream entries and interacts with the
@@ -130,6 +135,7 @@ func New(c context.Context, o Options) *Processor {
 		Callbacks:   &annotationCallbacks{&p},
 		Execution:   o.Execution,
 		Clock:       clock.Get(c),
+		Offline:     o.Offline,
 	}
 	return &p
 }
@@ -454,9 +460,9 @@ func (h *stepHandler) finish() {
 		return
 	}
 
-	// Close the handler. This may send one last annotation to summarize the
+	// This may send one last annotation to summarize the
 	// state if closing changed it.
-	if h.step.Close() {
+	if h.step.Close(nil) {
 		// Manually mark it updated, since Close callbacks will have unregistered
 		// us from the standard Updated() reporting loop.
 		h.updated()

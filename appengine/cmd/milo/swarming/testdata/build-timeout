@@ -1,7 +1,9 @@
+@@@CURRENT_TIMESTAMP@1457949601@@@
 @@@SEED_STEP recipe bootstrap@@@
 
 @@@STEP_CURSOR recipe bootstrap@@@
 
+@@@CURRENT_TIMESTAMP@1457949602@@@
 @@@STEP_STARTED@@@
 
 @@@SET_BUILD_PROPERTY@path_config@kitchen@@@
@@ -35,6 +37,7 @@ Cloning into '/tmp/run6L2Uju/build/scripts/slave/.recipe_deps/recipe_engine'...
 
 @@@STEP_CURSOR setup_build@@@
 
+@@@CURRENT_TIMESTAMP@1457949602@@@
 @@@STEP_STARTED@@@
 
 @@@STEP_LOG_LINE@run_recipe@To repro this locally, run the following line from a build checkout:@@@
@@ -61,4 +64,11 @@ Running recipe with {u'slavename': u'abc', 'recipe': 'v8', u'mastername': u'clie
 
 @@@STEP_CURSOR setup_build@@@
 
+@@@CURRENT_TIMESTAMP@1457949603@@@
 @@@STEP_CLOSED@@@
+
+@@@STEP_CURSOR recipe bootstrap@@@
+@@@CURRENT_TIMESTAMP@1457949604@@@
+@@@STEP_CLOSED@@@
+
+@@@CURRENT_TIMESTAMP@1457949605@@@

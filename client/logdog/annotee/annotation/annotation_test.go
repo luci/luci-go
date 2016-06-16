@@ -120,8 +120,9 @@ func superfluous(touched stringset.Set) error {
 	return nil
 }
 
-// playAnnotationScript loads an annotation script from "path" and plays it
-// through the supplied State line-by-line.
+// playAnnotationScript loads named annotation script and plays it
+// through the supplied State line-by-line. Returns path to the annotation
+// script.
 //
 // Empty lines and lines beginning with "#" are ignored. Preceding whitespace
 // is discarded.
@@ -292,6 +293,7 @@ func TestState(t *testing.T) {
 				"BAZ": "QUX",
 			},
 		}},
+		{"timestamps", nil},
 		{"coverage", nil},
 	}
 

@@ -1,0 +1,11 @@
+step_component: <
+  name: "one"
+  status: SUCCESS
+  started: <
+    seconds: 1420070001
+  >
+  ended: <
+    seconds: 1420070002
+  >
+  text: "message1"
+>

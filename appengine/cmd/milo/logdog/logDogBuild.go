@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/appengine/cmd/milo/resp"
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/logging"
 	miloProto "github.com/luci/luci-go/common/proto/milo"
@@ -17,11 +18,9 @@ import (
 )
 
 // Given a logdog/milo step, translate it to a BuildComponent struct.
-func miloBuildStep(
-	c context.Context, url string, anno *miloProto.Step, name string) *resp.BuildComponent {
-	comp := &resp.BuildComponent{}
+func miloBuildStep(c context.Context, url string, anno *miloProto.Step, name string) *resp.BuildComponent {
 	asc := anno.GetStepComponent()
-	comp.Label = asc.Name
+	comp := &resp.BuildComponent{Label: asc.Name}
 	switch asc.Status {
 	case miloProto.Status_RUNNING:
 		comp.Status = resp.Running
@@ -85,7 +84,22 @@ func miloBuildStep(
 	comp.LevelsDeep = 0
 
 	// Timestamps
-	comp.Started = asc.Started.Time().Format(time.RFC3339)
+	started := asc.Started.Time()
+	ended := asc.Ended.Time()
+	if !started.IsZero() {
+		comp.Started = started.Format(time.RFC3339)
+	}
+	if !ended.IsZero() {
+		comp.Finished = ended.Format(time.RFC3339)
+	}
+
+	till := ended
+	if asc.Status == miloProto.Status_RUNNING {
+		till = clock.Now(c)
+	}
+	if !started.IsZero() && !till.IsZero() {
+		comp.Duration = uint64((till.Sub(started)) / time.Second)
+	}
 
 	// This should be the exact same thing.
 	comp.Text = asc.Text
@@ -94,11 +108,9 @@ func miloBuildStep(
 }
 
 // AddLogDogToBuild takes a set of logdog streams and populate a milo build.
-func AddLogDogToBuild(
-	c context.Context, url string, s *Streams,
-	build *resp.MiloBuild) {
+func AddLogDogToBuild(c context.Context, url string, s *Streams, build *resp.MiloBuild) {
 	if s.MainStream == nil {
-		panic("Missing main stream")
+		panic("missing main stream")
 	}
 	// Now Fetch the main annotation of the build.
 	mainAnno := s.MainStream.Data

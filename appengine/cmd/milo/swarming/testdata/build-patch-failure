@@ -1,3 +1,4 @@
+@@@CURRENT_TIMESTAMP@1457949601@@@
 Running: gclient root
 Running: gclient config --spec 'solutions = [
   {
@@ -27,6 +28,7 @@ Running: git config diff.ignoreSubmodules all
 
 @@@STEP_CURSOR update_scripts@@@
 
+@@@CURRENT_TIMESTAMP@1457949602@@@
 @@@STEP_STARTED@@@
 
 /tmp/runguSO1v/b/build/../depot_tools/gclient sync --force --verbose --output-json /tmp/tmptiMDN5/tmpf8q84i
@@ -1425,6 +1427,7 @@ INFO:root:Updated 0 cache artifact(s).
 
 @@@STEP_CURSOR update_scripts@@@
 
+@@@CURRENT_TIMESTAMP@1457949603@@@
 @@@STEP_CLOSED@@@
 Cloning into '/tmp/runguSO1v/b/build/scripts/slave/.recipe_deps/recipe_engine'...
 
@@ -1434,6 +1437,7 @@ Cloning into '/tmp/runguSO1v/b/build/scripts/slave/.recipe_deps/recipe_engine'..
 
 @@@STEP_CURSOR setup_build@@@
 
+@@@CURRENT_TIMESTAMP@1457949604@@@
 @@@STEP_STARTED@@@
 
 @@@STEP_LOG_LINE@run_recipe@To repro this locally, run the following line from a build checkout:@@@
@@ -1460,12 +1464,14 @@ Running recipe with {u'buildername': u'Infra Linux Trusty 64 Tester', u'recipe':
 
 @@@STEP_CURSOR setup_build@@@
 
+@@@CURRENT_TIMESTAMP@1457949605@@@
 @@@STEP_CLOSED@@@
 
 @@@SEED_STEP bot_update@@@
 
 @@@STEP_CURSOR bot_update@@@
 
+@@@CURRENT_TIMESTAMP@1457949606@@@
 @@@STEP_STARTED@@@
 
 python -u /tmp/runguSO1v/b/build/scripts/slave/bot_update.py --master tryserver.infra --builder 'Infra Linux Trusty 64 Tester' --slave fakeslave --spec $'cache_dir = \'/tmp/runguSO1v/b/git_cache\'\nsolutions = [{\'deps_file\': \'.DEPS.git\', \'managed\': True, \'name\': \'infra\', \'url\': \'https://chromium.googlesource.com/infra/infra.git\'}]' --root infra --revision_mapping_file /tmp/tmpT20mYl.json --issue 1431683003 --patchset 1 --output_json /tmp/tmp49asLT.json --revision infra@HEAD --force --output_manifest
@@ -5819,12 +5825,14 @@ Emitting flag file at /tmp/runguSO1v/b/build/slave/bot/build/update.flag
 
 @@@STEP_CURSOR bot_update@@@
 
+@@@CURRENT_TIMESTAMP@1457949607@@@
 @@@STEP_CLOSED@@@
 
 @@@SEED_STEP Patch failure@@@
 
 @@@STEP_CURSOR Patch failure@@@
 
+@@@CURRENT_TIMESTAMP@1457949608@@@
 @@@STEP_STARTED@@@
 
 python -u /tmp/tmpIUIfxt.py
@@ -5850,12 +5858,14 @@ full environment:
 
 @@@STEP_CURSOR Patch failure@@@
 
+@@@CURRENT_TIMESTAMP@1457949609@@@
 @@@STEP_CLOSED@@@
 
 @@@SEED_STEP recipe failure reason@@@
 
 @@@STEP_CURSOR recipe failure reason@@@
 
+@@@CURRENT_TIMESTAMP@1457949610@@@
 @@@STEP_STARTED@@@
 
 @@@STEP_LOG_LINE@failure reason@Step('Patch failure') failed with return_code 1@@@
@@ -5864,6 +5874,7 @@ full environment:
 
 @@@STEP_CURSOR recipe failure reason@@@
 
+@@@CURRENT_TIMESTAMP@1457949611@@@
 @@@STEP_CLOSED@@@
 Traceback (most recent call last):
   File "luci_recipe_run.py", line 81, in <module>
@@ -5873,3 +5884,5 @@ Traceback (most recent call last):
   File "/usr/lib/python2.7/subprocess.py", line 540, in check_call
     raise CalledProcessError(retcode, cmd)
 subprocess.CalledProcessError: Command '['/home/chrome-bot/infra-python/ENV/bin/python', '-u', '../../../scripts/slave/annotated_run.py', '--factory-properties-gz=eJyrVipKTc4sSFWyUlDKzEsrStQHk/FFqQX58SVFlUn5JUq1APnTDbo=', '--build-properties-gz=eJw9zsEKwjAMBuBXKT2LbmwM2U1QmOBx99HNDKtbW5J0OMR3d63OSw4/X/7kJVuvhyugUSPIUsiz6VGJizb+KWr0xLMoclEDMaDcCInQaRelDnIXZ4PgbMM4t5YDGlXga+WSE+AEuI04gHjU+LFdSkuRLgkNaoJ1o1cPiEGwTnF3I+Af1EQ+oDTP0mKfJUm2msahvUPH/+e+/06atDUhrE6Ho3x/AAlJTyU=']' returned non-zero exit status 1
+
+@@@CURRENT_TIMESTAMP@1457949612@@@

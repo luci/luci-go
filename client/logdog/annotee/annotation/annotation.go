@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logdog/types"
@@ -42,7 +43,12 @@ type State struct {
 	// Execution is the supplied Execution. If nil, no execution details will be
 	// added to the generated Milo protos.
 	Execution *Execution
+	// Offline specifies whether parsing happens not at the same time as
+	// emitting. If true and CURRENT_TIMESTAMP annotations are not provided
+	// then step start/end times are left empty.
+	Offline bool
 	// Clock is the clock implementation to use for time information.
+	// Defaults to system time.
 	Clock clock.Clock
 
 	// stepMap is a map of step name to Step instance.
@@ -54,9 +60,13 @@ type State struct {
 	// stepCursor is the current cursor step name. This will always point to a
 	// valid Step, falling back to rootStep.
 	stepCursor *Step
+	// startedProcessing is true iff processed at least one annotation.
+	startedProcessing bool
 
-	closed        bool
-	haltOnFailure bool
+	// currentTimestamp is time for the next annotation expected in Append.
+	currentTimestamp *google.Timestamp
+	closed           bool
+	haltOnFailure    bool
 }
 
 // initialize sets of the State's initial state. It will execute exactly once,
@@ -103,7 +113,11 @@ func (s *State) initialize() {
 		}
 	}
 
-	s.rootStep.Start()
+	var annotatedNow *google.Timestamp
+	if !s.Offline {
+		annotatedNow = s.now()
+	}
+	s.rootStep.Start(annotatedNow)
 }
 
 // Append adds an annotation to the state. If the state was updated, Append will
@@ -120,6 +134,9 @@ func (s *State) initialize() {
 // master/chromium_step.py
 func (s *State) Append(annotation string) error {
 	s.initialize()
+
+	firstAnnotation := !s.startedProcessing
+	s.startedProcessing = true
 
 	command, params := annotation, ""
 	splitIdx := strings.IndexAny(command, "@ ")
@@ -138,7 +155,30 @@ func (s *State) Append(annotation string) error {
 		}
 	}
 
+	annotatedNow := s.currentTimestamp
+	s.currentTimestamp = nil
+	if annotatedNow == nil && !s.Offline {
+		annotatedNow = s.now()
+	}
+
 	switch command {
+	// @@@CURRENT_TIMESTAMP@unix_timestamp@@@
+	case "CURRENT_TIMESTAMP":
+		// This annotation is printed at the beginning and end of the
+		// stream, as well as before each STEP_STARTED and STEP_CLOSED
+		// annotations. It effectively specifies step start/end times,
+		// including root step.
+		timestamp, err := strconv.ParseFloat(params, 64)
+		if err != nil {
+			return fmt.Errorf("CURRENT_TIMESTAMP parameter %q is not a number: %s", params, err)
+		}
+		s.currentTimestamp = google.NewTimestamp(time.Unix(
+			int64(timestamp),
+			int64(timestamp*1000000000)%1000000000))
+		if firstAnnotation {
+			s.rootStep.StepComponent.Started = s.currentTimestamp
+		}
+
 	// @@@BUILD_STEP <stepname>@@@
 	case "BUILD_STEP":
 		// Close the last section.
@@ -148,11 +188,11 @@ func (s *State) Append(annotation string) error {
 				// Same step; ignore the command.
 				break
 			}
-			step.Close()
+			step.Close(annotatedNow)
 		}
 
 		step = s.rootStep.AddStep(params)
-		step.Start()
+		step.Start(annotatedNow)
 		s.SetCurrentStep(step)
 		updatedIf(step, true)
 
@@ -187,7 +227,7 @@ func (s *State) Append(annotation string) error {
 	//  @@@STEP_STARTED@@@
 	case "STEP_STARTED":
 		step := s.CurrentStep()
-		updatedIf(step, step.Start())
+		updatedIf(step, step.Start(annotatedNow))
 
 	//  @@@STEP_WARNINGS@@@
 	case "BUILD_WARNINGS":
@@ -219,9 +259,9 @@ func (s *State) Append(annotation string) error {
 		// @@@STEP_CLOSED@@@
 	case "STEP_CLOSED":
 		step := s.CurrentStep()
-		updatedIf(step, step.Close())
+		updatedIf(step, step.Close(annotatedNow))
 
-		// @@@STEP_LOG_LINE@<label>@<line>@@@
+	// @@@STEP_LOG_LINE@<label>@<line>@@@
 	case "STEP_LOG_LINE":
 		step := s.CurrentStep()
 
@@ -321,24 +361,32 @@ func (s *State) finishWithStatus(st milo.Status) bool {
 	return s.finishWithStatusImpl(&st)
 }
 
-func (s *State) finishWithStatusImpl(sp *milo.Status) bool {
+func (s *State) finishWithStatusImpl(status *milo.Status) bool {
 	if s.closed {
 		return false
 	}
 
+	// if s.currentTimestamp is not nil, the last annotation was
+	// CURRENT_TIMESTAMP and s.currentTimestamp contains its value.
+	buildEndTime := s.currentTimestamp
+	s.currentTimestamp = nil
+	if buildEndTime == nil && !s.Offline {
+		buildEndTime = s.now()
+	}
+
 	unfinished := false
 	for _, step := range s.steps[1:] {
-		if u := step.closeWithStatus(nil); u {
+		if step.closeWithStatus(buildEndTime, nil) {
 			unfinished = true
 		}
 	}
 
 	// If some steps were unfinished, show a root exception.
-	if unfinished && sp == nil {
-		status := milo.Status_EXCEPTION
-		sp = &status
+	if unfinished && status == nil {
+		exception := milo.Status_EXCEPTION
+		status = &exception
 	}
-	s.rootStep.closeWithStatus(sp)
+	s.rootStep.closeWithStatus(buildEndTime, status)
 
 	// Probe the status from our steps, if one is not supplied.
 	s.closed = true
@@ -412,7 +460,8 @@ func (s *State) ForEachStep(f func(*Step)) {
 	}
 }
 
-func (s *State) annotationNow() *google.Timestamp {
+// now returns current time of s.Clock. Defaults to system clock.
+func (s *State) now() *google.Timestamp {
 	c := s.Clock
 	if c == nil {
 		c = clock.GetSystemClock()
@@ -530,20 +579,21 @@ func (as *Step) AddStep(name string) *Step {
 }
 
 // Start marks the Step as started.
-func (as *Step) Start() bool {
+func (as *Step) Start(startTime *google.Timestamp) bool {
 	if as.StepComponent.Started != nil {
 		return false
 	}
-	as.StepComponent.Started = as.s.annotationNow()
+	as.StepComponent.Started = startTime
 	return true
 }
 
 // Close closes this step and any outstanding resources that it owns.
-func (as *Step) Close() bool {
-	return as.closeWithStatus(nil)
+// If it is already closed, does not have side effects and returns false.
+func (as *Step) Close(closeTime *google.Timestamp) bool {
+	return as.closeWithStatus(closeTime, nil)
 }
 
-func (as *Step) closeWithStatus(sp *milo.Status) bool {
+func (as *Step) closeWithStatus(closeTime *google.Timestamp, sp *milo.Status) bool {
 	if as.closed {
 		return false
 	}
@@ -551,7 +601,7 @@ func (as *Step) closeWithStatus(sp *milo.Status) bool {
 	// Close our outstanding substeps, and get their highest status value.
 	stepStatus := milo.Status_SUCCESS
 	for _, sub := range as.substeps {
-		sub.Close()
+		sub.Close(closeTime)
 		if sub.StepComponent.Status > stepStatus {
 			stepStatus = sub.StepComponent.Status
 		}
@@ -570,7 +620,7 @@ func (as *Step) closeWithStatus(sp *milo.Status) bool {
 	if as.StepComponent.Status == milo.Status_RUNNING {
 		as.StepComponent.Status = stepStatus
 	}
-	as.StepComponent.Ended = as.s.annotationNow()
+	as.StepComponent.Ended = closeTime
 	if as.StepComponent.Started == nil {
 		as.StepComponent.Started = as.StepComponent.Ended
 	}

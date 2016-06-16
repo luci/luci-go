@@ -26,9 +26,9 @@
       },
       "SubLink": null,
       "Progress": null,
-      "Started": "0001-02-03T04:05:06Z",
-      "Finished": "",
-      "Duration": 0,
+      "Started": "2016-03-14T10:00:02Z",
+      "Finished": "2016-03-14T10:00:09Z",
+      "Duration": 7,
       "Type": "Step",
       "LevelsDeep": 0,
       "Text": null
@@ -53,9 +53,9 @@
         }
       ],
       "Progress": null,
-      "Started": "0001-02-03T04:05:06Z",
-      "Finished": "",
-      "Duration": 0,
+      "Started": "2016-03-14T10:00:03Z",
+      "Finished": "2016-03-14T10:00:04Z",
+      "Duration": 1,
       "Type": "Step",
       "LevelsDeep": 0,
       "Text": [
@@ -82,9 +82,9 @@
         }
       ],
       "Progress": null,
-      "Started": "0001-02-03T04:05:06Z",
-      "Finished": "",
-      "Duration": 0,
+      "Started": "2016-03-14T10:00:05Z",
+      "Finished": "2016-03-14T10:00:06Z",
+      "Duration": 1,
       "Type": "Step",
       "LevelsDeep": 0,
       "Text": null
@@ -109,9 +109,9 @@
         }
       ],
       "Progress": null,
-      "Started": "0001-02-03T04:05:06Z",
-      "Finished": "",
-      "Duration": 0,
+      "Started": "2016-03-14T10:00:07Z",
+      "Finished": "2016-03-14T10:00:08Z",
+      "Duration": 1,
       "Type": "Step",
       "LevelsDeep": 0,
       "Text": null

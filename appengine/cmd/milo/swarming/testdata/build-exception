@@ -1,7 +1,9 @@
+@@@CURRENT_TIMESTAMP@1457949601@@@
 @@@SEED_STEP recipe bootstrap@@@
 
 @@@STEP_CURSOR recipe bootstrap@@@
 
+@@@CURRENT_TIMESTAMP@1457949602@@@
 @@@STEP_STARTED@@@
 
 @@@SET_BUILD_PROPERTY@path_config@kitchen@@@
@@ -35,6 +37,7 @@ Cloning into '/tmp/run6L2Uju/build/scripts/slave/.recipe_deps/recipe_engine'...
 
 @@@STEP_CURSOR setup_build@@@
 
+@@@CURRENT_TIMESTAMP@1457949603@@@
 @@@STEP_STARTED@@@
 
 @@@STEP_LOG_LINE@run_recipe@To repro this locally, run the following line from a build checkout:@@@
@@ -61,12 +64,14 @@ Running recipe with {u'slavename': u'abc', 'recipe': 'v8', u'mastername': u'clie
 
 @@@STEP_CURSOR setup_build@@@
 
+@@@CURRENT_TIMESTAMP@1457949604@@@
 @@@STEP_CLOSED@@@
 
 @@@SEED_STEP bot_update@@@
 
 @@@STEP_CURSOR bot_update@@@
 
+@@@CURRENT_TIMESTAMP@1457949605@@@
 @@@STEP_STARTED@@@
 
 python -u build/scripts/slave/bot_update.py --master client.v8 --builder 'V8 Linux - builder' --slave abc --spec $'cache_dir = None\nsolutions = [{\'custom_vars\': {\'chromium_trunk\': \'svn://svn-mirror.golo.chromium.org/chrome/trunk\'}, \'deps_file\': \'DEPS\', \'managed\': True, \'name\': \'v8\', \'url\': \'https://chromium.googlesource.com/v8/v8\'}]' --root v8 --revision_mapping_file /tmp/tmpnZr9kN.json --output_json /tmp/tmpHHthow.json --revision v8@HEAD --no_shallow --output_manifest
@@ -94,12 +99,14 @@ python: can't open file 'build/scripts/slave/bot_update.py': [Errno 2] No such f
 
 @@@STEP_CURSOR bot_update@@@
 
+@@@CURRENT_TIMESTAMP@1457949606@@@
 @@@STEP_CLOSED@@@
 
 @@@SEED_STEP Uncaught Exception@@@
 
 @@@STEP_CURSOR Uncaught Exception@@@
 
+@@@CURRENT_TIMESTAMP@1457949607@@@
 @@@STEP_STARTED@@@
 
 @@@STEP_EXCEPTION@@@
@@ -148,6 +155,7 @@ python: can't open file 'build/scripts/slave/bot_update.py': [Errno 2] No such f
 
 @@@STEP_CURSOR Uncaught Exception@@@
 
+@@@CURRENT_TIMESTAMP@1457949608@@@
 @@@STEP_CLOSED@@@
 Traceback (most recent call last):
   File "/tmp/run6L2Uju/build/scripts/slave/.recipe_deps/recipe_engine/recipes.py", line 348, in <module>
@@ -179,5 +187,5 @@ Traceback (most recent call last):
 AttributeError: 'NoneType' object has no attribute 'get'
 @@@STEP_CURSOR recipe bootstrap@@@
 
+@@@CURRENT_TIMESTAMP@1457949609@@@
 @@@STEP_CLOSED@@@
-
