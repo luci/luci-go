@@ -1,0 +1,130 @@
+{
+  "Summary": {
+    "Label": "",
+    "Status": "Running",
+    "MainLink": null,
+    "SubLink": null,
+    "Progress": null,
+    "Started": "2016-03-14T10:00:01.850710Z",
+    "Finished": "",
+    "Duration": 3598,
+    "Type": "Recipe",
+    "LevelsDeep": 0,
+    "Text": null
+  },
+  "SourceStamp": null,
+  "Components": [
+    {
+      "Label": "recipe bootstrap",
+      "Status": "Success",
+      "MainLink": {
+        "Label": "stdout",
+        "Img": "",
+        "Subtitle": "",
+        "URL": "foo/steps/recipe_bootstrap/0/stdout",
+        "Alt": ""
+      },
+      "SubLink": null,
+      "Progress": null,
+      "Started": "2016-03-14T10:00:02Z",
+      "Finished": "2016-03-14T10:00:03Z",
+      "Duration": 1,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Text": null
+    },
+    {
+      "Label": "setup_build",
+      "Status": "Success",
+      "MainLink": {
+        "Label": "stdout",
+        "Img": "",
+        "Subtitle": "",
+        "URL": "foo/steps/setup_build/0/stdout",
+        "Alt": ""
+      },
+      "SubLink": [
+        {
+          "Label": "steps/setup_build/0/logs/run_recipe/0",
+          "Img": "",
+          "Subtitle": "",
+          "URL": "foo/steps/setup_build/0/logs/run_recipe/0",
+          "Alt": ""
+        }
+      ],
+      "Progress": null,
+      "Started": "2016-03-14T10:00:03Z",
+      "Finished": "2016-03-14T10:00:04Z",
+      "Duration": 1,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Text": [
+        "\u003cbr/\u003erunning recipe: \"v8\""
+      ]
+    },
+    {
+      "Label": "bot_update",
+      "Status": "Running",
+      "MainLink": {
+        "Label": "stdout",
+        "Img": "",
+        "Subtitle": "",
+        "URL": "foo/steps/bot_update/0/stdout",
+        "Alt": ""
+      },
+      "SubLink": null,
+      "Progress": null,
+      "Started": "2016-03-14T10:00:05Z",
+      "Finished": "",
+      "Duration": 3595,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Text": null
+    }
+  ],
+  "PropertyGroup": [
+    {
+      "GroupName": "Swarming Tags",
+      "Property": [
+        {
+          "Key": "allow_milo",
+          "Value": "1"
+        }
+      ]
+    },
+    {
+      "GroupName": "recipe bootstrap",
+      "Property": [
+        {
+          "Key": "path_config",
+          "Value": "kitchen"
+        },
+        {
+          "Key": "slavename",
+          "Value": "fakeslave"
+        },
+        {
+          "Key": "buildername",
+          "Value": "infra-continuous-precise-32"
+        },
+        {
+          "Key": "mastername",
+          "Value": "chromium.infra"
+        }
+      ]
+    },
+    {
+      "GroupName": "setup_build",
+      "Property": null
+    },
+    {
+      "GroupName": "bot_update",
+      "Property": null
+    },
+    {
+      "GroupName": "Main",
+      "Property": null
+    }
+  ],
+  "Blame": null
+}

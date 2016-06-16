@@ -15,8 +15,8 @@ import (
 type Streams struct {
 	// MainStream is a pointer to the primary stream for this group of streams.
 	MainStream *Stream
-	// Streams is the full list of streams referenced by MainStream, including
-	// MainStream.
+	// Streams is the full map streamName->stream referenced by MainStream.
+	// It includes MainStream.
 	Streams map[string]*Stream
 }
 

@@ -232,6 +232,7 @@ func mainImpl(args []string) int {
 			LinkGenerator:          linkGen,
 			Client:                 client,
 			MetadataUpdateInterval: time.Duration(a.annotationInterval),
+			CloseSteps:             true,
 		},
 
 		Annotate: executor.AnnotationMode(a.annotate),

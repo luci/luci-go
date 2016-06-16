@@ -466,7 +466,7 @@ div.BuildWaterfall {
   border-color: #ccc;
 }
 
-.running,.waiting,td.building {
+.running, .waiting, td.building, .status-Running {
   color: #000;
   background-color: #fd3;
   border-color: #C5C56D;

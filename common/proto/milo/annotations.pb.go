@@ -527,7 +527,7 @@ func (m *Progress) String() string            { return proto.CompactTextString(m
 func (*Progress) ProtoMessage()               {}
 func (*Progress) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
 
-// LogdogLink is a LogDog stream link.
+// LogdogStream is a LogDog stream link.
 type LogdogStream struct {
 	// The stream's server. If omitted, the server is the same server that this
 	// annotation stream is homed on.

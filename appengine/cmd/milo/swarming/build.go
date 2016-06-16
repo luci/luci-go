@@ -19,6 +19,7 @@ import (
 	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/client/logdog/annotee"
 	swarming "github.com/luci/luci-go/common/api/swarming/swarming/v1"
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/logging"
 	miloProto "github.com/luci/luci-go/common/proto/milo"
@@ -233,7 +234,7 @@ func miloBuildStep(
 	return comp
 }
 
-func swarmingProperties(sr *swarming.SwarmingRpcsTaskResult) *resp.PropertyGroup {
+func taskProperties(sr *swarming.SwarmingRpcsTaskResult) *resp.PropertyGroup {
 	props := &resp.PropertyGroup{GroupName: "Swarming"}
 	if len(sr.CostsUsd) == 1 {
 		props.Property = append(props.Property, &resp.Property{
@@ -250,53 +251,87 @@ func swarmingProperties(sr *swarming.SwarmingRpcsTaskResult) *resp.PropertyGroup
 	return props
 }
 
-func swarmingTags(sr *swarming.SwarmingRpcsTaskResult) *resp.PropertyGroup {
+func tagsToProperties(tags []string) *resp.PropertyGroup {
 	props := &resp.PropertyGroup{GroupName: "Swarming Tags"}
-	for _, s := range sr.Tags {
-		sp := strings.SplitN(s, ":", 2)
-		var k, v string
-		k = sp[0]
-		if len(sp) == 2 {
-			v = sp[1]
+	for _, t := range tags {
+		if t == "" {
+			continue
 		}
-		props.Property = append(props.Property, &resp.Property{
-			Key:   k,
-			Value: v,
-		})
+		parts := strings.SplitN(t, ":", 2)
+		p := &resp.Property{
+			Key: parts[0],
+		}
+		if len(parts) == 2 {
+			p.Value = parts[1]
+		}
+		props.Property = append(props.Property, p)
 	}
 	return props
 }
 
-func addSwarmingToBuild(
-	c context.Context, sr *swarming.SwarmingRpcsTaskResult, build *resp.MiloBuild) {
-	// Specify the result.
-	if sr.State == "RUNNING" {
+func taskToBuild(c context.Context, sr *swarming.SwarmingRpcsTaskResult) (*resp.MiloBuild, error) {
+	build := &resp.MiloBuild{}
+	switch sr.State {
+	case TaskRunning:
 		build.Summary.Status = resp.Running
-	} else if sr.State == "PENDING" {
+
+	case TaskPending:
 		build.Summary.Status = resp.NotRun
-	} else if sr.InternalFailure == true || sr.State == "BOT_DIED" || sr.State == "EXPIRED" || sr.State == "TIMED_OUT" {
+
+	case TaskExpired, TaskTimedOut, TaskBotDied:
 		build.Summary.Status = resp.InfraFailure
-	} else if sr.Failure == true || sr.State == "CANCELLED" {
+
+	case TaskCanceled:
 		// Cancelled build is user action, so it is not an infra failure.
 		build.Summary.Status = resp.Failure
-	} else {
-		build.Summary.Status = resp.Success
+
+	case TaskCompleted:
+
+		switch {
+		case sr.InternalFailure:
+			build.Summary.Status = resp.InfraFailure
+		case sr.Failure:
+			build.Summary.Status = resp.Failure
+		default:
+			build.Summary.Status = resp.Success
+		}
+
+	default:
+		return nil, fmt.Errorf("unknown swarming task state %q", sr.State)
 	}
 
 	// Extract more swarming specific information into the properties.
-	build.PropertyGroup = append(build.PropertyGroup, swarmingProperties(sr))
-	build.PropertyGroup = append(build.PropertyGroup, swarmingTags(sr))
-
-	// Build times.  Swarming timestamps are RFC3339Nano without the timezone
-	// information, which is assumed to be UTC, so we fix it here.
-	build.Summary.Started = fmt.Sprintf("%sZ", sr.StartedTs)
-	if sr.CompletedTs != "" {
-		build.Summary.Finished = fmt.Sprintf("%sZ", sr.CompletedTs)
+	if props := taskProperties(sr); len(props.Property) > 0 {
+		build.PropertyGroup = append(build.PropertyGroup, props)
 	}
-	build.Summary.Duration = uint64(sr.Duration)
+	if props := tagsToProperties(sr.Tags); len(props.Property) > 0 {
+		build.PropertyGroup = append(build.PropertyGroup, props)
+	}
+
+	// Build times. Swarming timestamps are UTC RFC3339Nano, but without the
+	// timezone information. Make them valid RFC3339Nano.
+	build.Summary.Started = sr.StartedTs + "Z"
+	if sr.CompletedTs != "" {
+		build.Summary.Finished = sr.CompletedTs + "Z"
+	}
+	if sr.Duration != 0 {
+		build.Summary.Duration = uint64(sr.Duration)
+	} else if sr.State == TaskRunning {
+		started, err := time.Parse(time.RFC3339, build.Summary.Started)
+		if err != nil {
+			return nil, fmt.Errorf("invalid task StartedTs: %s", err)
+		}
+		now := clock.Now(c)
+		if started.Before(now) {
+			build.Summary.Duration = uint64(clock.Now(c).Sub(started).Seconds())
+		}
+	}
+
+	return build, nil
 }
 
-// Takes in an annotated log and returns a fully populated set of logdog streams
+// streamsFromAnnotatedLog takes in an annotated log and returns a fully
+// populated set of logdog streams
 func streamsFromAnnotatedLog(ctx context.Context, log []byte) (*logdog.Streams, error) {
 	c := &memoryClient{}
 	p := annotee.New(ctx, annotee.Options{
@@ -304,7 +339,6 @@ func streamsFromAnnotatedLog(ctx context.Context, log []byte) (*logdog.Streams, 
 		MetadataUpdateInterval: -1, // Neverrrrrr send incr updates.
 		Offline:                true,
 	})
-	defer p.Finish()
 
 	is := annotee.Stream{
 		Reader:           bytes.NewBuffer(log),
@@ -339,8 +373,10 @@ func swarmingBuildImpl(c context.Context, URL string, server string, taskID stri
 		return nil, fmt.Errorf("Not A Milo Job")
 	}
 
-	build := &resp.MiloBuild{}
-	addSwarmingToBuild(c, sr, build)
+	build, err := taskToBuild(c, sr)
+	if err != nil {
+		return nil, err
+	}
 
 	// Decode the data using annotee. The logdog stream returned here is assumed
 	// to be consistent, which is why the following block of code are not

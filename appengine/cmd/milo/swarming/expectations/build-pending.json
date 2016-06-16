@@ -16,10 +16,6 @@
   "Components": null,
   "PropertyGroup": [
     {
-      "GroupName": "Swarming",
-      "Property": null
-    },
-    {
       "GroupName": "Swarming Tags",
       "Property": [
         {

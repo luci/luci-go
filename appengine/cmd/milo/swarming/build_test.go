@@ -12,6 +12,7 @@ import (
 	"path"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/luci/luci-go/common/clock/testclock"
 	. "github.com/smartystreets/goconvey/convey"
@@ -43,13 +44,15 @@ func TestBuild(t *testing.T) {
 		{"debug:build-exception", "build-exception.json"},
 		{"debug:build-patch-failure", "build-patch-failure.json"},
 		{"debug:build-pending", "build-pending.json"},
+		{"debug:build-running", "build-running.json"},
 		{"debug:build-timeout", "build-timeout.json"},
 	}
 
+	c := context.Background()
+	c, _ = testclock.UseTime(c, time.Date(2016, time.March, 14, 11, 0, 0, 0, time.UTC))
+
 	if *generate {
 		for _, tc := range testCases {
-			c := context.Background()
-			c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
 			fmt.Printf("Generating expectations for %s\n", tc.input)
 			build, err := swarmingBuildImpl(c, "foo", "default", tc.input)
 			if err != nil {
@@ -69,9 +72,6 @@ func TestBuild(t *testing.T) {
 	}
 
 	Convey(`A test Environment`, t, func() {
-		c := context.Background()
-		c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
-
 		for _, tc := range testCases {
 			Convey(fmt.Sprintf("Test Case: %s", tc.input), func() {
 				build, err := swarmingBuildImpl(c, "foo", "default", tc.input)

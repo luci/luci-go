@@ -173,7 +173,7 @@ message Progress {
   int32 completed = 2;
 }
 
-// LogdogLink is a LogDog stream link.
+// LogdogStream is a LogDog stream link.
 message LogdogStream {
   // The stream's server. If omitted, the server is the same server that this
   // annotation stream is homed on.
