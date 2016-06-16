@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/luci/gae/impl/memory"
+	"github.com/luci/luci-go/appengine/cmd/milo/buildbot"
 	"github.com/luci/luci-go/appengine/cmd/milo/settings"
 	"github.com/luci/luci-go/appengine/cmd/milo/swarming"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -27,6 +28,7 @@ import (
 var (
 	allHandlers = []settings.TestableHandler{
 		settings.TestableSettings{},
+		buildbot.TestableBuilder{},
 		swarming.TestableBuild{},
 		swarming.TestableLog{},
 		testableFrontpage{},

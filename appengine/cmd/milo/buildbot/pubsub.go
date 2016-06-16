@@ -7,6 +7,7 @@ package buildbot
 import (
 	"bytes"
 	"compress/gzip"
+	"compress/zlib"
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
@@ -56,35 +57,6 @@ type buildbotMasterEntry struct {
 	Modified time.Time
 }
 
-// getDSMasterJSON fetches the latest known buildbot and returns
-// the buildbotMaster struct (if found), whether or not it is internal,
-// the last modified time, and an error if not found.
-func getDSMasterJSON(c context.Context, name string) (
-	master *buildbotMaster, internal bool, t time.Time, err error) {
-	master = &buildbotMaster{}
-	entry := buildbotMasterEntry{Name: name}
-	ds := datastore.Get(c)
-	err = ds.Get(&entry)
-	internal = entry.Internal
-	t = entry.Modified
-	if err != nil {
-		return
-	}
-	reader, err := gzip.NewReader(bytes.NewReader(entry.Data))
-	if err != nil {
-		log.WithError(err).Errorf(
-			c, "Encountered error while fetching entry for %s:\n%s", name, err)
-		return
-	}
-	defer reader.Close()
-	d := json.NewDecoder(reader)
-	if err = d.Decode(master); err != nil {
-		log.WithError(err).Errorf(
-			c, "Encountered error while fetching entry for %s:\n%s", name, err)
-	}
-	return
-}
-
 func putDSMasterJSON(
 	c context.Context, master *buildbotMaster, internal bool) error {
 	entry := buildbotMasterEntry{
@@ -111,15 +83,22 @@ func (m *pubSubSubscription) GetData() ([]byte, error) {
 	return base64.StdEncoding.DecodeString(m.Message.Data)
 }
 
-// unmarshal a byte stream into a list of buildbot builds and masters.
+// unmarshal a gzipped byte stream into a list of buildbot builds and masters.
 func unmarshal(
 	c context.Context, msg []byte) ([]buildbotBuild, *buildbotMaster, error) {
 	bm := buildMasterMsg{}
 	if len(msg) == 0 {
 		return bm.Builds, bm.Master, nil
 	}
-	if err := json.Unmarshal(msg, &bm); err != nil {
-		log.WithError(err).Errorf(c, "could not unmarshal message: %s", err)
+	reader, err := zlib.NewReader(bytes.NewReader(msg))
+	if err != nil {
+		log.WithError(err).Errorf(c, "gzip decompression error")
+		return nil, nil, err
+	}
+	defer reader.Close()
+	d := json.NewDecoder(reader)
+	if err = d.Decode(&bm); err != nil {
+		log.WithError(err).Errorf(c, "could not unmarshal message")
 		return nil, nil, err
 	}
 	// Extract the builds out of master and append it onto builds.
@@ -158,7 +137,7 @@ func PubSubHandler(
 	}
 	bbMsg, err := msg.GetData()
 	if err != nil {
-		log.WithError(err).Errorf(c, "Could not decode message %s", err)
+		log.WithError(err).Errorf(c, "Could not base64 decode message %s", err)
 		h.WriteHeader(200)
 		return
 	}
@@ -185,10 +164,17 @@ func PubSubHandler(
 			Number:      build.Number,
 		}
 		if err := ds.Get(existingBuild); err == nil {
-			if existingBuild.Times[1] != nil && build.Times[1] == nil {
-				// Never replace a completed build with a pending build.
+			if existingBuild.Finished {
+				// Never replace a completed build.
+				log.Debugf(
+					c, "Found build %s/%s/%d and it's finished, skipping", build.Master, build.Buildername, build.Number)
 				continue
 			}
+		}
+		// Also set the finished bit.
+		build.Finished = false
+		if len(build.Times) == 2 && build.Times[1] != nil {
+			build.Finished = true
 		}
 		err = ds.Put(&build)
 		if err != nil {
@@ -197,6 +183,7 @@ func PubSubHandler(
 			h.WriteHeader(500)
 			return
 		}
+		log.Debugf(c, "Saved build %s/%s/%d, it is %s", build.Master, build.Buildername, build.Number, build.Finished)
 	}
 	if master != nil {
 		// TODO(hinoka): Internal builds.

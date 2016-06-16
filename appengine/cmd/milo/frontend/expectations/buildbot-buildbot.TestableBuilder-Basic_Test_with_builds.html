@@ -1,0 +1,88 @@
+
+<!DOCTYPE html>
+
+<meta charset="utf-8">
+<title>Builder [[name here]]</title>
+<link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
+<script src="/static/common/js/time.js"></script>
+
+
+<body class="interface">
+  <header>
+    Luci
+    <a href="/settings">settings</a>
+  </header>
+  <hr>
+  
+
+  <h2>Current Builds:</h2>
+  <ul>
+  
+    <li><a href="Some%20URL"></a>
+      [Running for: 0]
+      []
+    </li>
+  
+  </ul>
+
+
+
+  <h2>Pending Build Requests:</h2>
+  <ul>
+  
+    <li><small>(, waiting 0)</small>
+
+    
+    
+      
+    
+
+    </li>
+  
+  </ul>
+
+
+
+  <h2>Recent Builds:</h2>
+
+  <table class="info">
+    <tr>
+      <th>Time</th>
+      <th>Revision</th>
+      <th>Result</th>
+      <th>Build #</th>
+      <th>Info</th>
+    </tr>
+
+    
+      <tr>
+        <td></td>
+        <td class="revision">abcdef</td>
+        
+          <td> NotRun </td>
+        
+        <td><a href="Some%20URL">Some URL</a></td>
+        <td class="left">[]</td>
+      </tr>
+    
+  </table>
+
+
+</div>
+
+
+  <footer>
+    <hr>
+    <a href="https://github.com/luci">luci</a>,
+    working for the <a href="https://chromium.org/">Chromium</a> project.<br>
+    Page built: <b><span id="current-time">0001-02-03 04:05:06.000000007 &#43;0000 UTC</span></b>
+  </footer>
+
+
+<script>
+(function () {
+  'use strict';
+  document.getElementById('current-time').textContent = milo.formatDate(
+      '0001-02-03 04:05:06.000000007 \x2b0000 UTC');
+})();
+</script>

@@ -5,13 +5,14 @@
 package buildbot
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
-	"regexp"
-	"time"
 
-	"github.com/luci/luci-go/appengine/cmd/milo/model"
+	"github.com/luci/gae/service/datastore"
+
 	"github.com/luci/luci-go/appengine/cmd/milo/resp"
+	log "github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
 
@@ -38,51 +39,35 @@ func createRunningBuildMap(master *buildbotMaster) buildMap {
 	return result
 }
 
-// getBuilds fetches all of the recent builds from the back end.
+// getBuilds fetches all of the recent builds from the datastore.
 func getBuilds(c context.Context, masterName, builderName string) ([]*resp.BuildRef, error) {
+	// TODO(hinoka): Builder specific structs.
 	result := []*resp.BuildRef{}
-	bs, err := model.GetBuilds(c, []model.BuildRoot{
-		model.GetBuildRoot(c, masterName, builderName)}, 25)
+	ds := datastore.Get(c)
+	q := datastore.NewQuery("buildbotBuild")
+	q = q.Eq("finished", true)
+	q = q.Eq("master", masterName)
+	q = q.Eq("builder", builderName)
+	q = q.Limit(25) // TODO(hinoka): This should be adjustable
+	q = q.Order("-number")
+	buildbots := []*buildbotBuild{}
+	err := ds.GetAll(q, &buildbots)
 	if err != nil {
 		return nil, err
 	}
-	for _, b := range bs[0] {
-		mb := &resp.MiloBuild{
-			Summary: resp.BuildComponent{
-				Started: b.ExecutionTime.Format(time.RFC3339),
-				// TODO(hinoka/martiniss): Also get the real finished time and duration.
-				Finished: b.ExecutionTime.Format(time.RFC3339),
-				Status: func(status string) resp.Status {
-					switch status {
-					case "SUCCESS":
-						return resp.Success
-					case "FAILURE":
-						return resp.Failure
-					default:
-						// TODO(hinoka): Also implement the other status types.
-						return resp.InfraFailure
-					}
-				}(b.UserStatus),
-				// TODO(martiniss): Implement summary text.
-				Text: []string{"Coming Soon...."},
-			},
-			// TODO(hinoka/martiniss): Also get the repo so it's a real sourcestamp so
-			// that the commit can be linkable.
-			SourceStamp: &resp.SourceStamp{
-				Commit: resp.Commit{
-					Revision: b.Revisions[0].Digest,
+	for _, b := range buildbots {
+		result = append(result, &resp.BuildRef{
+			URL:   fmt.Sprintf("%d", b.Number),
+			Label: fmt.Sprintf("#%d", b.Number),
+			Build: &resp.MiloBuild{
+				// We only need the summary for the build view.
+				Summary: summary(b),
+				SourceStamp: &resp.SourceStamp{
+					Commit: resp.Commit{
+						Revision: b.Sourcestamp.Revision,
+					},
 				},
 			},
-		}
-		result = append(result, &resp.BuildRef{
-			URL: func(url string) string {
-				r, err := regexp.Compile(".*/builds/(\\d+)/.*")
-				if err != nil {
-					panic(err)
-				}
-				return r.FindStringSubmatch(url)[1]
-			}(b.BuildLogKey),
-			Build: mb,
 		})
 	}
 	return result, nil
@@ -90,8 +75,12 @@ func getBuilds(c context.Context, masterName, builderName string) ([]*resp.Build
 
 // getCurrentBuild extracts a build from a map of current builds, and translates
 // it into the milo version of the build.
-func getCurrentBuild(bMap buildMap, builder string, buildNum int) *resp.BuildRef {
-	b := bMap[builderRef{builder, buildNum}]
+func getCurrentBuild(c context.Context, bMap buildMap, builder string, buildNum int) *resp.BuildRef {
+	b, ok := bMap[builderRef{builder, buildNum}]
+	if !ok {
+		log.Warningf(c, "Could not find %s/%d in builder map:\n %s", builder, buildNum, bMap)
+		return nil
+	}
 	return &resp.BuildRef{
 		Build: &resp.MiloBuild{
 			Summary:       summary(b),
@@ -105,29 +94,43 @@ func getCurrentBuild(bMap buildMap, builder string, buildNum int) *resp.BuildRef
 
 // getCurrentBuilds extracts the list of all the current builds from a master json
 // from the slaves' runningBuilds portion.
-func getCurrentBuilds(master *buildbotMaster, builderName string) []*resp.BuildRef {
+func getCurrentBuilds(c context.Context, master *buildbotMaster, builderName string) []*resp.BuildRef {
 	b := master.Builders[builderName]
-	results := make([]*resp.BuildRef, len(b.Currentbuilds))
+	results := []*resp.BuildRef{}
 	bMap := createRunningBuildMap(master)
-	for i, bn := range b.Currentbuilds {
-		results[i] = getCurrentBuild(bMap, builderName, bn)
+	for _, bn := range b.Currentbuilds {
+		cb := getCurrentBuild(c, bMap, builderName, bn)
+		if cb != nil {
+			results = append(results, cb)
+		}
 	}
 	return results
 }
 
 // builderImpl is the implementation for getting a milo builder page from buildbot.
 // This gets:
-// * Current Builds from querying the master json from buildbot
+// * Current Builds from querying the master json from the datastore.
 // * Recent Builds from a cron job that backfills the recent builds.
 func builderImpl(c context.Context, masterName, builderName string) (*resp.MiloBuilder, error) {
 	result := &resp.MiloBuilder{}
-	master, err := getMaster(c, masterName)
+	master, internal, t, err := getMasterJSON(c, masterName)
+	if internal {
+		// TODO(hinoka): Implement ACL support and remove this.
+		return nil, fmt.Errorf("Internal masters are not yet supported.")
+	}
 	if err != nil {
 		return nil, fmt.Errorf("Cannot find master %s\n%s", masterName, err.Error())
 	}
+	// TODO(hinoka): Warning check for data >2 min stale.
+	t = t
+
+	s, _ := json.Marshal(master)
+	log.Debugf(c, "Master: %s", s)
 
 	_, ok := master.Builders[builderName]
 	if !ok {
+		// This long block is just to return a good error message when an invalid
+		// buildbot builder is specified.
 		keys := make([]string, len(master.Builders))
 		i := 0
 		for k := range master.Builders {
@@ -138,14 +141,17 @@ func builderImpl(c context.Context, masterName, builderName string) (*resp.MiloB
 			"Cannot find builder %s in master %s.\nAvailable builders: %s",
 			builderName, masterName, keys)
 	}
+
 	recentBuilds, err := getBuilds(c, masterName, builderName)
 	if err != nil {
 		return nil, err // Or maybe not?
 	}
-	currentBuilds := getCurrentBuilds(master, builderName)
+	currentBuilds := getCurrentBuilds(c, master, builderName)
 	fmt.Fprintf(os.Stderr, "Number of current builds: %d\n", len(currentBuilds))
 	result.CurrentBuilds = currentBuilds
 	for _, fb := range recentBuilds {
+		// Yes recent builds is synonymous with finished builds.
+		// TODO(hinoka): Implement limits.
 		if fb != nil {
 			result.FinishedBuilds = append(result.FinishedBuilds, fb)
 		}

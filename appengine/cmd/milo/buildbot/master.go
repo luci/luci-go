@@ -5,43 +5,42 @@
 package buildbot
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"path"
-	"strings"
+	"time"
+
+	"github.com/luci/gae/service/datastore"
+	log "github.com/luci/luci-go/common/logging"
 
 	"golang.org/x/net/context"
 )
 
-// getMasterJSON fetches the master json from buildbot.  This only works
-// for public waterfalls because appengine does not have access to the internal
-// ones.
-func getMasterJSON(c context.Context, mastername string) ([]byte, error) {
-	// TODO(hinoka): Check local cache, CBE, etc.
-	if strings.HasPrefix(mastername, "debug:") {
-		filename := path.Join("testdata", fmt.Sprintf("master:%s", mastername[6:]))
-		b, err := ioutil.ReadFile(filename)
-		if err != nil {
-			return nil, err
-		}
-		return b, nil
-	}
-
-	URL := fmt.Sprintf("https://build.chromium.org/p/%s/json", mastername)
-	return getURL(c, URL)
-}
-
-// getMaster fetches the master json and returns the result as a unmarshaled
-// buildbotMaster struct.
-func getMaster(c context.Context, mastername string) (*buildbotMaster, error) {
-	b, err := getMasterJSON(c, mastername)
+// getMasterJSON fetches the latest known buildbot master data and returns
+// the buildbotMaster struct (if found), whether or not it is internal,
+// the last modified time, and an error if not found.
+func getMasterJSON(c context.Context, name string) (
+	master *buildbotMaster, internal bool, t time.Time, err error) {
+	master = &buildbotMaster{}
+	entry := buildbotMasterEntry{Name: name}
+	ds := datastore.Get(c)
+	err = ds.Get(&entry)
+	internal = entry.Internal
+	t = entry.Modified
 	if err != nil {
-		return nil, err
+		return
 	}
-	result := &buildbotMaster{}
-	if err = json.Unmarshal(b, result); err != nil {
-		return nil, err
+	reader, err := gzip.NewReader(bytes.NewReader(entry.Data))
+	if err != nil {
+		log.WithError(err).Errorf(
+			c, "Encountered error while fetching entry for %s:\n%s", name, err)
+		return
 	}
-	return result, nil
+	defer reader.Close()
+	d := json.NewDecoder(reader)
+	if err = d.Decode(master); err != nil {
+		log.WithError(err).Errorf(
+			c, "Encountered error while fetching entry for %s:\n%s", name, err)
+	}
+	return
 }

@@ -1,7 +1,7 @@
 {{define "title"}}[[Insert title here]]{{end}}
 
 
-{{define "script"}}{{end}}
+{{define "head"}}{{end}}
 
 {{define "body"}}
 
@@ -29,9 +29,9 @@
       <ul>
       {{ range .Builder.PendingBuilds }}
         <li><small>({{ .Build.Summary.Started }}, waiting {{ .Build.Summary.Duration }})</small>
-        {{ $nb := len .Blame }}
+        {{ $nb := len .Build.Blame }}
         {{ if lt $nb 4 }}
-          {{ range $i, $c := .Blame }}
+          {{ range $i, $c := .Build.Blame }}
             {{ .Revision }}
             (<a href="{{ .CommitURL }}">{{ .AuthorEmail }}</a>)
             {{ if ne $i (sub $nb 1) }},{{ end }}
@@ -90,3 +90,5 @@
 
 </div>
 {{ end }}
+
+{{define "after_body"}}{{end}}

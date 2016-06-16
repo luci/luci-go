@@ -6,6 +6,7 @@ package buildbot
 
 import (
 	"bytes"
+	"compress/zlib"
 	"encoding/base64"
 	"encoding/json"
 	"io"
@@ -19,6 +20,7 @@ import (
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock/testclock"
+	//log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -43,10 +45,14 @@ func newCombinedPsBody(bs []buildbotBuild, m *buildbotMaster) io.ReadCloser {
 		Builds: bs,
 	}
 	bm, _ := json.Marshal(bmsg)
+	var b bytes.Buffer
+	zw := zlib.NewWriter(&b)
+	zw.Write(bm)
+	zw.Close()
 	msg := pubSubSubscription{
 		Subscription: "projects/luci-milo/subscriptions/buildbot-public",
 		Message: pubSubMessage{
-			Data: base64.StdEncoding.EncodeToString(bm),
+			Data: base64.StdEncoding.EncodeToString(b.Bytes()),
 		},
 	}
 	jmsg, _ := json.Marshal(msg)
@@ -66,6 +72,7 @@ func TestPubSub(t *testing.T) {
 				Buildername: "Fake buildername",
 				Number:      1234,
 				Currentstep: "this is a string",
+				Finished:    true,
 			}
 			err := ds.Put(build)
 			ds.Testable().CatchupIndexes()
@@ -81,6 +88,7 @@ func TestPubSub(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(loadB.Master, ShouldEqual, "Fake Master")
 				So(loadB.Currentstep.(string), ShouldEqual, "this is a string")
+				So(loadB.Finished, ShouldEqual, true)
 			})
 
 			Convey("Query build entry", func() {
@@ -91,6 +99,45 @@ func TestPubSub(t *testing.T) {
 
 				So(len(buildbots), ShouldEqual, 1)
 				So(buildbots[0].Currentstep.(string), ShouldEqual, "this is a string")
+				Convey("Query for finished entries should be 1", func() {
+					q = q.Eq("finished", true)
+					buildbots = []*buildbotBuild{}
+					err = ds.GetAll(q, &buildbots)
+					So(err, ShouldBeNil)
+					So(len(buildbots), ShouldEqual, 1)
+				})
+				Convey("Query for unfinished entries should be 0", func() {
+					q = q.Eq("finished", false)
+					buildbots = []*buildbotBuild{}
+					err = ds.GetAll(q, &buildbots)
+					So(err, ShouldBeNil)
+					So(len(buildbots), ShouldEqual, 0)
+				})
+			})
+
+			Convey("Save a few more entries", func() {
+				ds.Testable().Consistent(true)
+				ds.Testable().AutoIndex(true)
+				for i := 1235; i < 1240; i++ {
+					build := &buildbotBuild{
+						Master:      "Fake Master",
+						Buildername: "Fake buildername",
+						Number:      i,
+						Currentstep: "this is a string",
+						Finished:    i%2 == 0,
+					}
+					err := ds.Put(build)
+					So(err, ShouldBeNil)
+				}
+				q := datastore.NewQuery("buildbotBuild")
+				q = q.Eq("finished", true)
+				q = q.Eq("master", "Fake Master")
+				q = q.Eq("builder", "Fake buildername")
+				q = q.Order("-number")
+				buildbots := []*buildbotBuild{}
+				err = ds.GetAll(q, &buildbots)
+				So(err, ShouldBeNil)
+				So(len(buildbots), ShouldEqual, 3) // 1235, 1237, 1239
 			})
 		})
 
@@ -146,7 +193,7 @@ func TestPubSub(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(loadB.Master, ShouldEqual, "Fake Master")
 				So(loadB.Currentstep.(string), ShouldEqual, "this is a string")
-				m, internal, t, err := getDSMasterJSON(c, "fakename")
+				m, internal, t, err := getMasterJSON(c, "fakename")
 				So(err, ShouldBeNil)
 				So(internal, ShouldEqual, false)
 				So(t.Unix(), ShouldEqual, 981173106)
@@ -168,7 +215,7 @@ func TestPubSub(t *testing.T) {
 				p = httprouter.Params{}
 				PubSubHandler(c, h, r, p)
 				So(h.Code, ShouldEqual, 200)
-				m, internal, t, err := getDSMasterJSON(c, "fakename")
+				m, internal, t, err := getMasterJSON(c, "fakename")
 				So(err, ShouldBeNil)
 				So(internal, ShouldEqual, false)
 				So(m.Project.Title, ShouldEqual, "some other title")

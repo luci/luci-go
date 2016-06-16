@@ -78,6 +78,9 @@ type buildbotBuild struct {
 	TimeStamp *int `json:"timeStamp" gae:"-"`
 	// This one is marked by Milo, denotes whether or not the build is internal.
 	Internal bool `json:"internal" gae:"-"`
+	// This one is computed by Milo for indexing purposes.  It does so by
+	// checking to see if times[1] is null or not.
+	Finished bool `json:"finished"`
 }
 
 var _ datastore.PropertyLoadSaver = (*buildbotBuild)(nil)
@@ -182,6 +185,18 @@ func (b *buildbotBuild) Save(withMeta bool) (datastore.PropertyMap, error) {
 	if withMeta {
 		p["id"] = []datastore.Property{
 			datastore.MkPropertyNI(b.getID()),
+		}
+		p["master"] = []datastore.Property{
+			datastore.MkProperty(b.Master),
+		}
+		p["builder"] = []datastore.Property{
+			datastore.MkProperty(b.Buildername),
+		}
+		p["number"] = []datastore.Property{
+			datastore.MkProperty(b.Number),
+		}
+		p["finished"] = []datastore.Property{
+			datastore.MkProperty(b.Finished),
 		}
 	}
 	return p, nil
