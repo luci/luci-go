@@ -13,6 +13,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/client/internal/progress"
 	"github.com/luci/luci-go/client/internal/tracer"
@@ -579,6 +581,14 @@ func (a *archiver) stage4UploadLoop() {
 	}
 }
 
+// emptyBackgroundContext is a placeholder context for usage with the isolated
+// client. A better implementation would use a real context to allow the isolate
+// client calls to be Cancel'd. This could be done by wiring up
+// archvier.canceller to a fake context which is passed to the isolated client,
+// or it could be done by actually implementing real contexts in archiver (and
+// deprecating the use of canceler).
+var emptyBackgroundContext = context.Background()
+
 // doContains is called by stage 3.
 func (a *archiver) doContains(items []*archiverItem) {
 	tmp := make([]*isolateservice.HandlersEndpointsV1Digest, len(items))
@@ -587,7 +597,7 @@ func (a *archiver) doContains(items []*archiverItem) {
 	for i, item := range items {
 		tmp[i] = &item.digestItem
 	}
-	states, err := a.is.Contains(tmp)
+	states, err := a.is.Contains(emptyBackgroundContext, tmp)
 	if err != nil {
 		err = fmt.Errorf("contains(%d) failed: %s", len(items), err)
 		a.Cancel(err)
@@ -617,7 +627,7 @@ func (a *archiver) doContains(items []*archiverItem) {
 // doUpload is called by stage 4.
 func (a *archiver) doUpload(item *archiverItem) {
 	start := time.Now()
-	if err := a.is.Push(item.state, item.source); err != nil {
+	if err := a.is.Push(emptyBackgroundContext, item.state, item.source); err != nil {
 		err = fmt.Errorf("push(%s) failed: %s\n", item.path, err)
 		a.Cancel(err)
 		item.setErr(err)

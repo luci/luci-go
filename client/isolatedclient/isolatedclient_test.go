@@ -14,20 +14,24 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/client/internal/retry"
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/client/isolatedclient/isolatedfake"
 	"github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
 	"github.com/luci/luci-go/common/isolated"
+	"github.com/luci/luci-go/common/retry"
 	"github.com/maruel/ut"
 )
 
 func TestIsolateServerCaps(t *testing.T) {
+	ctx := context.Background()
+
 	t.Parallel()
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
 	client := New(nil, ts.URL, "default-gzip")
-	caps, err := client.ServerCapabilities()
+	caps, err := client.ServerCapabilities(ctx)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, &isolateservice.HandlersEndpointsV1ServerDetails{ServerVersion: "v1"}, caps)
 	ut.AssertEqual(t, nil, server.Error())
@@ -35,35 +39,37 @@ func TestIsolateServerCaps(t *testing.T) {
 
 func TestIsolateServerSmall(t *testing.T) {
 	t.Parallel()
-	testNormal(t, foo, bar)
+	testNormal(context.Background(), t, foo, bar)
 }
 
 func TestIsolateServerLarge(t *testing.T) {
 	t.Parallel()
-	testNormal(t, large)
+	testNormal(context.Background(), t, large)
 }
 
 func TestIsolateServerRetryContains(t *testing.T) {
 	t.Parallel()
-	testFlaky(t, "/_ah/api/isolateservice/v1/preupload")
+	testFlaky(context.Background(), t, "/_ah/api/isolateservice/v1/preupload")
 }
 
 func TestIsolateServerRetryStoreInline(t *testing.T) {
 	t.Parallel()
-	testFlaky(t, "/_ah/api/isolateservice/v1/store_inline")
+	testFlaky(context.Background(), t, "/_ah/api/isolateservice/v1/store_inline")
 }
 
 func TestIsolateServerRetryGCS(t *testing.T) {
 	t.Parallel()
-	testFlaky(t, "/fake/cloudstorage")
+	testFlaky(context.Background(), t, "/fake/cloudstorage")
 }
 
 func TestIsolateServerRetryFinalize(t *testing.T) {
 	t.Parallel()
-	testFlaky(t, "/_ah/api/isolateservice/v1/finalize_gs_upload")
+	testFlaky(context.Background(), t, "/_ah/api/isolateservice/v1/finalize_gs_upload")
 }
 
 func TestIsolateServerRetryGCSPartial(t *testing.T) {
+	ctx := context.Background()
+
 	// GCS upload is teared down in the middle.
 	t.Parallel()
 	server := isolatedfake.New()
@@ -73,18 +79,18 @@ func TestIsolateServerRetryGCSPartial(t *testing.T) {
 	client := newIsolateServer(nil, flaky.ts.URL, "default-gzip", fastRetry)
 
 	digests, contents, expected := makeItems(large)
-	states, err := client.Contains(digests)
+	states, err := client.Contains(ctx, digests)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, len(digests), len(states))
 	for _, state := range states {
-		err = client.Push(state, NewBytesSource(contents[state.status.Index]))
+		err = client.Push(ctx, state, NewBytesSource(contents[state.status.Index]))
 		ut.AssertEqual(t, nil, err)
 	}
 	ut.AssertEqual(t, expected, server.Contents())
 	ut.AssertEqual(t, map[string]int{}, flaky.tearDown)
 
 	// Look up again to confirm.
-	states, err = client.Contains(digests)
+	states, err = client.Contains(ctx, digests)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, len(digests), len(states))
 	for _, state := range states {
@@ -99,27 +105,30 @@ func TestIsolateServerBadURL(t *testing.T) {
 		t.SkipNow()
 	}
 	client := newIsolateServer(nil, "http://127.0.0.1:1", "default-gzip", fastRetry)
-	caps, err := client.ServerCapabilities()
+	caps, err := client.ServerCapabilities(context.Background())
 	ut.AssertEqual(t, (*isolateservice.HandlersEndpointsV1ServerDetails)(nil), caps)
 	ut.AssertEqual(t, true, err != nil)
 }
 
 // Private stuff.
 
-var (
-	cantRetry = &retry.Config{
-		MaxTries:            10,
-		SleepMax:            10 * time.Second,
-		SleepBase:           10 * time.Second,
-		SleepMultiplicative: 10 * time.Second,
+func cantRetry() retry.Iterator {
+	return &retry.ExponentialBackoff{
+		Limited: retry.Limited{
+			Retries: 10,
+			Delay:   10 * time.Second,
+		},
+		Multiplier: 10,
 	}
-	fastRetry = &retry.Config{
-		MaxTries:            10,
-		SleepMax:            0,
-		SleepBase:           0,
-		SleepMultiplicative: 0,
-	}
+}
 
+func fastRetry() retry.Iterator {
+	return &retry.Limited{
+		Retries: 10,
+	}
+}
+
+var (
 	bar   = []byte("bar")
 	foo   = []byte("foo")
 	large []byte
@@ -146,23 +155,23 @@ func makeItems(contents ...[]byte) ([]*isolateservice.HandlersEndpointsV1Digest,
 	return digests, contents, expected
 }
 
-func testNormal(t *testing.T, contents ...[]byte) {
+func testNormal(ctx context.Context, t *testing.T, contents ...[]byte) {
 	digests, _, expected := makeItems(contents...)
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
 	client := newIsolateServer(nil, ts.URL, "default-gzip", cantRetry)
-	states, err := client.Contains(digests)
+	states, err := client.Contains(ctx, digests)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, len(digests), len(states))
 	for _, state := range states {
 		// The data is automatically compressed.
-		err = client.Push(state, NewBytesSource(contents[state.status.Index]))
+		err = client.Push(ctx, state, NewBytesSource(contents[state.status.Index]))
 		ut.AssertEqual(t, nil, err)
 	}
 	ut.AssertEqual(t, nil, server.Error())
 	ut.AssertEqual(t, expected, server.Contents())
-	states, err = client.Contains(digests)
+	states, err = client.Contains(ctx, digests)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, len(digests), len(states))
 	for _, state := range states {
@@ -171,7 +180,7 @@ func testNormal(t *testing.T, contents ...[]byte) {
 	ut.AssertEqual(t, nil, server.Error())
 }
 
-func testFlaky(t *testing.T, flake string) {
+func testFlaky(ctx context.Context, t *testing.T, flake string) {
 	server := isolatedfake.New()
 	flaky := &killingMux{server: server, http503: map[string]int{flake: 10}}
 	flaky.ts = httptest.NewServer(flaky)
@@ -179,15 +188,15 @@ func testFlaky(t *testing.T, flake string) {
 	client := newIsolateServer(nil, flaky.ts.URL, "default-gzip", fastRetry)
 
 	digests, contents, expected := makeItems(foo, large)
-	states, err := client.Contains(digests)
+	states, err := client.Contains(ctx, digests)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, len(digests), len(states))
 	for _, state := range states {
-		err = client.Push(state, NewBytesSource(contents[state.status.Index]))
+		err = client.Push(ctx, state, NewBytesSource(contents[state.status.Index]))
 		ut.AssertEqual(t, nil, err)
 	}
 	ut.AssertEqual(t, expected, server.Contents())
-	states, err = client.Contains(digests)
+	states, err = client.Contains(ctx, digests)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, len(digests), len(states))
 	for _, state := range states {

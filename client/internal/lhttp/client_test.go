@@ -7,16 +7,18 @@ package lhttp
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
-	"github.com/luci/luci-go/client/internal/retry"
+	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry"
+
 	"github.com/maruel/ut"
 )
 
@@ -31,6 +33,8 @@ func httpReqGen(method, url string, body []byte) RequestGen {
 }
 
 func TestNewRequestGET(t *testing.T) {
+	ctx := context.Background()
+
 	// First call returns HTTP 500, second succeeds.
 	serverCalls := 0
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -49,7 +53,7 @@ func TestNewRequestGET(t *testing.T) {
 	httpReq := httpReqGen("GET", ts.URL, nil)
 
 	clientCalls := 0
-	clientReq := NewRequest(http.DefaultClient, httpReq, func(resp *http.Response) error {
+	clientReq := NewRequest(ctx, http.DefaultClient, fast, httpReq, func(resp *http.Response) error {
 		clientCalls++
 		content, err := ioutil.ReadAll(resp.Body)
 		ut.AssertEqual(t, nil, err)
@@ -58,13 +62,16 @@ func TestNewRequestGET(t *testing.T) {
 		return nil
 	})
 
-	ut.AssertEqual(t, nil, fast.Do(clientReq))
-	ut.AssertEqual(t, 200, clientReq.Status())
+	status, err := clientReq()
+	ut.AssertEqual(t, nil, err)
+	ut.AssertEqual(t, 200, status)
 	ut.AssertEqual(t, 2, serverCalls)
 	ut.AssertEqual(t, 1, clientCalls)
 }
 
 func TestNewRequestPOST(t *testing.T) {
+	ctx := context.Background()
+
 	// First call returns HTTP 500, second succeeds.
 	serverCalls := 0
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +91,7 @@ func TestNewRequestPOST(t *testing.T) {
 	httpReq := httpReqGen("POST", ts.URL, []byte("foo bar"))
 
 	clientCalls := 0
-	clientReq := NewRequest(http.DefaultClient, httpReq, func(resp *http.Response) error {
+	clientReq := NewRequest(ctx, http.DefaultClient, fast, httpReq, func(resp *http.Response) error {
 		clientCalls++
 		content, err := ioutil.ReadAll(resp.Body)
 		ut.AssertEqual(t, nil, err)
@@ -93,13 +100,16 @@ func TestNewRequestPOST(t *testing.T) {
 		return nil
 	})
 
-	ut.AssertEqual(t, nil, fast.Do(clientReq))
-	ut.AssertEqual(t, 200, clientReq.Status())
+	status, err := clientReq()
+	ut.AssertEqual(t, nil, err)
+	ut.AssertEqual(t, 200, status)
 	ut.AssertEqual(t, 2, serverCalls)
 	ut.AssertEqual(t, 1, clientCalls)
 }
 
 func TestNewRequestGETFail(t *testing.T) {
+	ctx := context.Background()
+
 	serverCalls := 0
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		serverCalls++
@@ -109,17 +119,20 @@ func TestNewRequestGETFail(t *testing.T) {
 
 	httpReq := httpReqGen("GET", ts.URL, nil)
 
-	clientReq := NewRequest(http.DefaultClient, httpReq, func(resp *http.Response) error {
+	clientReq := NewRequest(ctx, http.DefaultClient, fast, httpReq, func(resp *http.Response) error {
 		t.Fail()
 		return nil
 	})
 
-	ut.AssertEqual(t, retry.Error{errors.New("http request failed: Internal Server Error (HTTP 500)")}, fast.Do(clientReq))
-	ut.AssertEqual(t, 500, clientReq.Status())
-	ut.AssertEqual(t, fast.MaxTries, serverCalls)
+	status, err := clientReq()
+	ut.AssertEqual(t, true, errors.IsTransient(err))
+	ut.AssertEqual(t, "http request failed: Internal Server Error (HTTP 500)", err.Error())
+	ut.AssertEqual(t, 500, status)
 }
 
 func TestGetJSON(t *testing.T) {
+	ctx := context.Background()
+
 	// First call returns HTTP 500, second succeeds.
 	serverCalls := 0
 	ts := httptest.NewServer(handlerJSON(t, func(body io.Reader) interface{} {
@@ -135,7 +148,7 @@ func TestGetJSON(t *testing.T) {
 	defer ts.Close()
 
 	actual := map[string]string{}
-	status, err := GetJSON(fast, http.DefaultClient, ts.URL, &actual)
+	status, err := GetJSON(ctx, fast, http.DefaultClient, ts.URL, &actual)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, 200, status)
 	ut.AssertEqual(t, map[string]string{"success": "yeah"}, actual)
@@ -143,6 +156,8 @@ func TestGetJSON(t *testing.T) {
 }
 
 func TestGetJSONBadResult(t *testing.T) {
+	ctx := context.Background()
+
 	serverCalls := 0
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		serverCalls++
@@ -153,14 +168,16 @@ func TestGetJSONBadResult(t *testing.T) {
 	defer ts.Close()
 
 	actual := map[string]string{}
-	status, err := GetJSON(fast, http.DefaultClient, ts.URL, &actual)
-	ut.AssertEqual(t, retry.Error{errors.New("bad response " + ts.URL + ": invalid character 'y' looking for beginning of value")}, err)
+	status, err := GetJSON(ctx, fast, http.DefaultClient, ts.URL, &actual)
+	ut.AssertEqual(t, true, errors.IsTransient(err))
+	ut.AssertEqual(t, "bad response "+ts.URL+": invalid character 'y' looking for beginning of value", err.Error())
 	ut.AssertEqual(t, 200, status)
 	ut.AssertEqual(t, map[string]string{}, actual)
-	ut.AssertEqual(t, fast.MaxTries, serverCalls)
 }
 
 func TestGetJSONBadResultIgnore(t *testing.T) {
+	ctx := context.Background()
+
 	serverCalls := 0
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		serverCalls++
@@ -170,24 +187,29 @@ func TestGetJSONBadResultIgnore(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	status, err := GetJSON(fast, http.DefaultClient, ts.URL, nil)
-	ut.AssertEqual(t, retry.Error{errors.New("bad response " + ts.URL + ": invalid character 'y' looking for beginning of value")}, err)
+	status, err := GetJSON(ctx, fast, http.DefaultClient, ts.URL, nil)
+	ut.AssertEqual(t, true, errors.IsTransient(err))
+	ut.AssertEqual(t, "bad response "+ts.URL+": invalid character 'y' looking for beginning of value", err.Error())
 	ut.AssertEqual(t, 200, status)
 }
 
 func TestGetJSONBadContentTypeIgnore(t *testing.T) {
+	ctx := context.Background()
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, err := io.WriteString(w, "{}")
 		ut.ExpectEqual(t, nil, err)
 	}))
 	defer ts.Close()
 
-	status, err := GetJSON(fast, http.DefaultClient, ts.URL, nil)
-	ut.AssertEqual(t, errors.New("unexpected Content-Type, expected \"application/json\", got \"text/plain; charset=utf-8\""), err)
+	status, err := GetJSON(ctx, fast, http.DefaultClient, ts.URL, nil)
+	ut.AssertEqual(t, "unexpected Content-Type, expected \"application/json\", got \"text/plain; charset=utf-8\"", err.Error())
 	ut.AssertEqual(t, 200, status)
 }
 
 func TestPostJSON(t *testing.T) {
+	ctx := context.Background()
+
 	// First call returns HTTP 500, second succeeds.
 	serverCalls := 0
 	ts := httptest.NewServer(handlerJSON(t, func(body io.Reader) interface{} {
@@ -204,7 +226,7 @@ func TestPostJSON(t *testing.T) {
 
 	in := map[string]string{"in": "all"}
 	actual := map[string]string{}
-	status, err := PostJSON(fast, http.DefaultClient, ts.URL, nil, in, &actual)
+	status, err := PostJSON(ctx, fast, http.DefaultClient, ts.URL, nil, in, &actual)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, 200, status)
 	ut.AssertEqual(t, map[string]string{"success": "yeah"}, actual)
@@ -212,6 +234,8 @@ func TestPostJSON(t *testing.T) {
 }
 
 func TestPostJSONwithHeaders(t *testing.T) {
+	ctx := context.Background()
+
 	serverCalls := 0
 	ts := httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -223,7 +247,7 @@ func TestPostJSONwithHeaders(t *testing.T) {
 		}))
 	defer ts.Close()
 
-	status, err := PostJSON(fast, http.DefaultClient, ts.URL, map[string]string{"key": "value"}, nil, nil)
+	status, err := PostJSON(ctx, fast, http.DefaultClient, ts.URL, map[string]string{"key": "value"}, nil, nil)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, 200, status)
 	ut.AssertEqual(t, 1, serverCalls)
@@ -231,17 +255,8 @@ func TestPostJSONwithHeaders(t *testing.T) {
 
 // Private details.
 
-var fast = &retry.Config{
-	MaxTries: 3,
-	SleepMax: 0,
-}
-
-// slow is to be used when no retry should happen. The test will hang in that
-// case.
-var slow = &retry.Config{
-	MaxTries:  3,
-	SleepMax:  time.Hour,
-	SleepBase: time.Hour,
+func fast() retry.Iterator {
+	return &retry.Limited{Retries: 3}
 }
 
 type jsonAPI func(body io.Reader) interface{}

@@ -13,11 +13,13 @@ import (
 	"net/http"
 	"strings"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/client/internal/lhttp"
-	"github.com/luci/luci-go/client/internal/retry"
 	"github.com/luci/luci-go/client/internal/tracer"
 	"github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
 	"github.com/luci/luci-go/common/isolated"
+	"github.com/luci/luci-go/common/retry"
 )
 
 // compressedBufSize is the size of the read buffer that will be used to pull
@@ -39,13 +41,13 @@ func NewBytesSource(d []byte) Source {
 // IsolateServer is the low-level client interface to interact with an Isolate
 // server.
 type IsolateServer interface {
-	ServerCapabilities() (*isolateservice.HandlersEndpointsV1ServerDetails, error)
+	ServerCapabilities(c context.Context) (*isolateservice.HandlersEndpointsV1ServerDetails, error)
 	// Contains looks up cache presence on the server of multiple items.
 	//
 	// The returned list is in the same order as 'items', with entries nil for
 	// items that were present.
-	Contains(items []*isolateservice.HandlersEndpointsV1Digest) ([]*PushState, error)
-	Push(state *PushState, src Source) error
+	Contains(c context.Context, items []*isolateservice.HandlersEndpointsV1Digest) ([]*PushState, error)
+	Push(c context.Context, state *PushState, src Source) error
 }
 
 // PushState is per-item state passed from IsolateServer.Contains() to
@@ -65,59 +67,59 @@ type PushState struct {
 // 'client' must implement authentication sufficient to talk to Isolate server
 // (OAuth tokens with 'email' scope).
 func New(client *http.Client, host, namespace string) IsolateServer {
-	return newIsolateServer(client, host, namespace, retry.Default)
+	return newIsolateServer(client, host, namespace, nil)
 }
 
 // Private details.
 
 type isolateServer struct {
-	config    *retry.Config
-	url       string
-	namespace string
+	retryFactory retry.Factory
+	url          string
+	namespace    string
 
 	authClient *http.Client // client that sends auth tokens
 	anonClient *http.Client // client that does NOT send auth tokens
 }
 
-func newIsolateServer(client *http.Client, host, namespace string, config *retry.Config) *isolateServer {
+func newIsolateServer(client *http.Client, host, namespace string, rFn retry.Factory) *isolateServer {
 	if client == nil {
 		client = http.DefaultClient
 	}
 	i := &isolateServer{
-		config:     config,
-		url:        strings.TrimRight(host, "/"),
-		namespace:  namespace,
-		authClient: client,
-		anonClient: http.DefaultClient,
+		retryFactory: rFn,
+		url:          strings.TrimRight(host, "/"),
+		namespace:    namespace,
+		authClient:   client,
+		anonClient:   http.DefaultClient,
 	}
 	tracer.NewPID(i, "isolatedclient:"+i.url)
 	return i
 }
 
 // postJSON does authenticated POST request.
-func (i *isolateServer) postJSON(resource string, headers map[string]string, in, out interface{}) error {
+func (i *isolateServer) postJSON(c context.Context, resource string, headers map[string]string, in, out interface{}) error {
 	if len(resource) == 0 || resource[0] != '/' {
 		return errors.New("resource must start with '/'")
 	}
-	_, err := lhttp.PostJSON(i.config, i.authClient, i.url+resource, headers, in, out)
+	_, err := lhttp.PostJSON(c, i.retryFactory, i.authClient, i.url+resource, headers, in, out)
 	return err
 }
 
-func (i *isolateServer) ServerCapabilities() (*isolateservice.HandlersEndpointsV1ServerDetails, error) {
+func (i *isolateServer) ServerCapabilities(c context.Context) (*isolateservice.HandlersEndpointsV1ServerDetails, error) {
 	out := &isolateservice.HandlersEndpointsV1ServerDetails{}
-	if err := i.postJSON("/_ah/api/isolateservice/v1/server_details", nil, map[string]string{}, out); err != nil {
+	if err := i.postJSON(c, "/_ah/api/isolateservice/v1/server_details", nil, map[string]string{}, out); err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (i *isolateServer) Contains(items []*isolateservice.HandlersEndpointsV1Digest) (out []*PushState, err error) {
+func (i *isolateServer) Contains(c context.Context, items []*isolateservice.HandlersEndpointsV1Digest) (out []*PushState, err error) {
 	end := tracer.Span(i, "contains", tracer.Args{"number": len(items)})
 	defer func() { end(tracer.Args{"err": err}) }()
 	in := isolateservice.HandlersEndpointsV1DigestCollection{Items: items, Namespace: &isolateservice.HandlersEndpointsV1Namespace{}}
 	in.Namespace.Namespace = i.namespace
 	data := &isolateservice.HandlersEndpointsV1UrlCollection{}
-	if err = i.postJSON("/_ah/api/isolateservice/v1/preupload", nil, in, data); err != nil {
+	if err = i.postJSON(c, "/_ah/api/isolateservice/v1/preupload", nil, in, data); err != nil {
 		return nil, err
 	}
 	out = make([]*PushState, len(items))
@@ -132,12 +134,12 @@ func (i *isolateServer) Contains(items []*isolateservice.HandlersEndpointsV1Dige
 	return out, nil
 }
 
-func (i *isolateServer) Push(state *PushState, source Source) (err error) {
+func (i *isolateServer) Push(c context.Context, state *PushState, source Source) (err error) {
 	// This push operation may be a retry after failed finalization call below,
 	// no need to reupload contents in that case.
 	if !state.uploaded {
 		// PUT file to uploadURL.
-		if err = i.doPush(state, source); err != nil {
+		if err = i.doPush(c, state, source); err != nil {
 			log.Printf("doPush(%s) failed: %s\n%#v", state.digest, err, state)
 			return
 		}
@@ -154,7 +156,7 @@ func (i *isolateServer) Push(state *PushState, source Source) (err error) {
 		// stored files).
 		in := isolateservice.HandlersEndpointsV1FinalizeRequest{UploadTicket: state.status.UploadTicket}
 		headers := map[string]string{"Cache-Control": "public, max-age=31536000"}
-		if err = i.postJSON("/_ah/api/isolateservice/v1/finalize_gs_upload", headers, in, nil); err != nil {
+		if err = i.postJSON(c, "/_ah/api/isolateservice/v1/finalize_gs_upload", headers, in, nil); err != nil {
 			log.Printf("Push(%s) (finalize) failed: %s\n%#v", state.digest, err, state)
 			return
 		}
@@ -163,7 +165,7 @@ func (i *isolateServer) Push(state *PushState, source Source) (err error) {
 	return
 }
 
-func (i *isolateServer) doPush(state *PushState, source Source) (err error) {
+func (i *isolateServer) doPush(c context.Context, state *PushState, source Source) (err error) {
 	useDB := state.status.GsUploadUrl == ""
 	end := tracer.Span(i, "push", tracer.Args{"useDB": useDB, "size": state.size})
 	defer func() { end(tracer.Args{"err": err}) }()
@@ -174,9 +176,9 @@ func (i *isolateServer) doPush(state *PushState, source Source) (err error) {
 		}
 		defer src.Close()
 
-		err = i.doPushDB(state, src)
+		err = i.doPushDB(c, state, src)
 	} else {
-		err = i.doPushGCS(state, source)
+		err = i.doPushGCS(c, state, source)
 	}
 	if err != nil {
 		tracer.CounterAdd(i, "bytesUploaded", float64(state.size))
@@ -184,7 +186,7 @@ func (i *isolateServer) doPush(state *PushState, source Source) (err error) {
 	return err
 }
 
-func (i *isolateServer) doPushDB(state *PushState, reader io.Reader) error {
+func (i *isolateServer) doPushDB(c context.Context, state *PushState, reader io.Reader) error {
 	buf := bytes.Buffer{}
 	compressor := isolated.GetCompressor(&buf)
 	if _, err := io.Copy(compressor, reader); err != nil {
@@ -194,15 +196,15 @@ func (i *isolateServer) doPushDB(state *PushState, reader io.Reader) error {
 		return err
 	}
 	in := &isolateservice.HandlersEndpointsV1StorageRequest{UploadTicket: state.status.UploadTicket, Content: buf.Bytes()}
-	return i.postJSON("/_ah/api/isolateservice/v1/store_inline", nil, in, nil)
+	return i.postJSON(c, "/_ah/api/isolateservice/v1/store_inline", nil, in, nil)
 }
 
-func (i *isolateServer) doPushGCS(state *PushState, source Source) (err error) {
+func (i *isolateServer) doPushGCS(c context.Context, state *PushState, source Source) (err error) {
 	// GsUploadUrl is signed Google Storage URL that doesn't require additional
 	// authentication. In fact, using authClient causes HTTP 403 because
 	// authClient's tokens don't have Cloud Storage OAuth scope. Use anonymous
 	// client instead.
-	req := lhttp.NewRequest(i.anonClient, func() (*http.Request, error) {
+	req := lhttp.NewRequest(c, i.anonClient, i.retryFactory, func() (*http.Request, error) {
 		src, err := source()
 		if err != nil {
 			return nil, err
@@ -224,7 +226,8 @@ func (i *isolateServer) doPushGCS(state *PushState, source Source) (err error) {
 		}
 		return err5
 	})
-	return i.config.Do(req)
+	_, err = req()
+	return
 }
 
 // compressed is an io.ReadCloser that transparently compresses source data in

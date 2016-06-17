@@ -13,19 +13,19 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/luci/luci-go/client/internal/retry"
+	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry"
+)
+
+const (
+	jsonContentType        = "application/json"
+	jsonContentTypeForPOST = "application/json; charset=utf-8"
 )
 
 // Handler is called once or multiple times for each HTTP request that is tried.
 type Handler func(*http.Response) error
-
-// Retriable is a retry.Retriable that exposes the resulting HTTP status
-// code.
-type Retriable interface {
-	retry.Retriable
-	// Returns the HTTP status code of the last request, if set.
-	Status() int
-}
 
 // RequestGen is a generator function to create a new request. It may be called
 // multiple times if an operation needs to be retried. The HTTP server is
@@ -40,16 +40,52 @@ type RequestGen func() (*http.Request, error)
 //
 // handler should return retry.Error in case of retriable error, for example if
 // a TCP connection is teared off while receiving the content.
-func NewRequest(c *http.Client, rgen RequestGen, handler Handler) Retriable {
-	return &retriable{
-		handler: handler,
-		c:       c,
-		rgen:    rgen,
+func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen RequestGen, handler Handler) func() (int, error) {
+	if rFn == nil {
+		rFn = retry.Default
+	}
+
+	return func() (int, error) {
+		status := 0
+		err := retry.Retry(ctx, rFn, func() error {
+			req, err := rgen()
+			if err != nil {
+				return err
+			}
+
+			resp, err := c.Do(req)
+			if err != nil {
+				// Retry every error. This is sad when you specify an invalid hostname but
+				// it's better than failing when DNS resolution is flaky.
+				return errors.WrapTransient(err)
+			}
+			status = resp.StatusCode
+
+			// If the HTTP status code means the request should be retried.
+			if status == 408 || status == 429 || status >= 500 {
+				return errors.WrapTransient(
+					fmt.Errorf("http request failed: %s (HTTP %d)", http.StatusText(status), status))
+			}
+			// Endpoints occasionally return 404 on valid requests (!)
+			if status == 404 && strings.HasPrefix(req.URL.Path, "/_ah/api/") {
+				log.Printf("lhttp.Do() got a Cloud Endpoints 404: %#v", resp.Header)
+				return errors.WrapTransient(
+					fmt.Errorf("http request failed (endpoints): %s (HTTP %d)", http.StatusText(status), status))
+			}
+			// Any other failure code is a hard failure.
+			if status >= 400 {
+				return fmt.Errorf("http request failed: %s (HTTP %d)", http.StatusText(status), status)
+			}
+			// The handler may still return a retry.Error to indicate that the request
+			// should be retried even on successful status code.
+			return handler(resp)
+		}, nil)
+		return status, err
 	}
 }
 
 // NewRequestJSON returns a retriable request calling a JSON endpoint.
-func NewRequestJSON(c *http.Client, url, method string, headers map[string]string, in, out interface{}) (Retriable, error) {
+func NewRequestJSON(ctx context.Context, c *http.Client, rFn retry.Factory, url, method string, headers map[string]string, in, out interface{}) (func() (int, error), error) {
 	var encoded []byte
 	if in != nil {
 		var err error
@@ -58,7 +94,7 @@ func NewRequestJSON(c *http.Client, url, method string, headers map[string]strin
 		}
 	}
 
-	return NewRequest(c, func() (*http.Request, error) {
+	return NewRequest(ctx, c, rFn, func() (*http.Request, error) {
 		var body io.Reader
 		if encoded != nil {
 			body = bytes.NewReader(encoded)
@@ -90,85 +126,26 @@ func NewRequestJSON(c *http.Client, url, method string, headers map[string]strin
 		}
 		if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
 			// Retriable.
-			return retry.Error{fmt.Errorf("bad response %s: %s", url, err)}
+			return errors.WrapTransient(fmt.Errorf("bad response %s: %s", url, err))
 		}
 		return nil
 	}), nil
 }
 
 // GetJSON is a shorthand. It returns the HTTP status code and error if any.
-func GetJSON(config *retry.Config, c *http.Client, url string, out interface{}) (int, error) {
-	req, err := NewRequestJSON(c, url, "GET", nil, nil, out)
+func GetJSON(ctx context.Context, rFn retry.Factory, c *http.Client, url string, out interface{}) (int, error) {
+	req, err := NewRequestJSON(ctx, c, rFn, url, "GET", nil, nil, out)
 	if err != nil {
 		return 0, err
 	}
-	err = config.Do(req)
-	return req.Status(), err
+	return req()
 }
 
 // PostJSON is a shorthand. It returns the HTTP status code and error if any.
-func PostJSON(config *retry.Config, c *http.Client, url string, headers map[string]string, in, out interface{}) (int, error) {
-	req, err := NewRequestJSON(c, url, "POST", headers, in, out)
+func PostJSON(ctx context.Context, rFn retry.Factory, c *http.Client, url string, headers map[string]string, in, out interface{}) (int, error) {
+	req, err := NewRequestJSON(ctx, c, rFn, url, "POST", headers, in, out)
 	if err != nil {
 		return 0, err
 	}
-	err = config.Do(req)
-	return req.Status(), err
-}
-
-// Private details.
-
-const jsonContentType = "application/json"
-const jsonContentTypeForPOST = "application/json; charset=utf-8"
-
-type retriable struct {
-	handler Handler
-	c       *http.Client
-	rgen    RequestGen
-	try     int
-	status  int
-}
-
-func (r *retriable) Close() error { return nil }
-
-// Warning: it returns an error on HTTP >=400. This is different than
-// http.Client.Do() but hell it makes coding simpler.
-func (r *retriable) Do() error {
-	req, err := r.rgen()
-	if err != nil {
-		return err
-	}
-
-	r.try++
-	resp, err := r.c.Do(req)
-	if resp != nil {
-		r.status = resp.StatusCode
-	} else {
-		r.status = 0
-	}
-	if err != nil {
-		// Retry every error. This is sad when you specify an invalid hostname but
-		// it's better than failing when DNS resolution is flaky.
-		return retry.Error{err}
-	}
-	// If the HTTP status code means the request should be retried.
-	if resp.StatusCode == 408 || resp.StatusCode == 429 || resp.StatusCode >= 500 {
-		return retry.Error{fmt.Errorf("http request failed: %s (HTTP %d)", http.StatusText(resp.StatusCode), resp.StatusCode)}
-	}
-	// Endpoints occasionally return 404 on valid requests (!)
-	if resp.StatusCode == 404 && strings.HasPrefix(req.URL.Path, "/_ah/api/") {
-		log.Printf("lhttp.Do() got a Cloud Endpoints 404: %#v", resp.Header)
-		return retry.Error{fmt.Errorf("http request failed (endpoints): %s (HTTP %d)", http.StatusText(resp.StatusCode), resp.StatusCode)}
-	}
-	// Any other failure code is a hard failure.
-	if resp.StatusCode >= 400 {
-		return fmt.Errorf("http request failed: %s (HTTP %d)", http.StatusText(resp.StatusCode), resp.StatusCode)
-	}
-	// The handler may still return a retry.Error to indicate that the request
-	// should be retried even on successful status code.
-	return r.handler(resp)
-}
-
-func (r *retriable) Status() int {
-	return r.status
+	return req()
 }

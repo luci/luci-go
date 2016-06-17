@@ -6,6 +6,8 @@ package retry
 
 import (
 	"time"
+
+	"golang.org/x/net/context"
 )
 
 // defaultIterator defines a template for the default retry parameters that
@@ -24,4 +26,15 @@ var defaultIteratorTemplate = ExponentialBackoff{
 func Default() Iterator {
 	it := defaultIteratorTemplate
 	return &it
+}
+
+type noneItTemplate struct{}
+
+func (noneItTemplate) Next(context.Context, error) time.Duration { return Stop }
+
+// None is a Factory that returns an Iterator that explicitly calls Stop after
+// the first try. This is helpful to pass to libraries which use retry.Default
+// if given nil, but where you don't want any retries at all (e.g. tests).
+func None() Iterator {
+	return noneItTemplate{}
 }
