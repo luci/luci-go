@@ -144,7 +144,6 @@ func (o *fileOutput) Close() {
 
 func (o *fileOutput) getBundleLocked() *logpb.ButlerLogBundle {
 	b := logpb.ButlerLogBundle{
-		Source:  "LogDog Butler File Output",
 		Entries: make([]*logpb.ButlerLogBundle_Entry, len(o.streams)),
 	}
 

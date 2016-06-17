@@ -119,7 +119,6 @@ func TestOutput(t *testing.T) {
 		defer o.Close()
 
 		bundle := &logpb.ButlerLogBundle{
-			Source:    "Pub/Sub Test",
 			Timestamp: google.NewTimestamp(clock.Now(ctx)),
 			Entries: []*logpb.ButlerLogBundle_Entry{
 				{},

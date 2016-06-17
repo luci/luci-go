@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"H01Z-1ikbwOw463Un2bFZHenx1g/6BiLoecGPrLn3rgWM7Kx0wO2_U0\"",
+ "etag": "\"zRMgE0l9nVDW4S28VYYcYQF9UW4/29k9nmz0VfhngzLZ3nUBmwsqvJ4\"",
  "discoveryVersion": "v1",
  "id": "swarming:v1",
  "name": "swarming",
@@ -259,6 +259,9 @@
    "description": "A CIPD package to install in $CIPD_PATH and $PATH before task execution.",
    "properties": {
     "package_name": {
+     "type": "string"
+    },
+    "path": {
      "type": "string"
     },
     "version": {

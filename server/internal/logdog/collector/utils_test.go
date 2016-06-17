@@ -153,7 +153,6 @@ type bundleBuilder struct {
 func (b *bundleBuilder) genBase() *logpb.ButlerLogBundle {
 	if b.base == nil {
 		b.base = &logpb.ButlerLogBundle{
-			Source:    "test stream",
 			Timestamp: google.NewTimestamp(clock.Now(b)),
 			Project:   "test-project",
 			Prefix:    "foo",

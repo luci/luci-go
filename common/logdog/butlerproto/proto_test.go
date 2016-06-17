@@ -7,7 +7,6 @@ package butlerproto
 import (
 	"bytes"
 	"io"
-	"strings"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
@@ -56,9 +55,7 @@ func TestReader(t *testing.T) {
 			Type:         logpb.ButlerMetadata_ButlerLogBundle,
 			ProtoVersion: logpb.Version,
 		}
-		bundle := logpb.ButlerLogBundle{
-			Source: "test source",
-		}
+		bundle := logpb.ButlerLogBundle{}
 
 		Convey(`Can read a ButlerLogBundle entry.`, func() {
 			push(&md)
@@ -66,7 +63,6 @@ func TestReader(t *testing.T) {
 
 			So(r.Read(&buf), ShouldBeNil)
 			So(r.Bundle, ShouldNotBeNil)
-			So(r.Bundle.Source, ShouldEqual, "test source")
 		})
 
 		Convey(`Will fail to Read an unknown type.`, func() {
@@ -167,7 +163,6 @@ func TestWriter(t *testing.T) {
 		buf := bytes.Buffer{}
 		w := Writer{}
 		bundle := logpb.ButlerLogBundle{
-			Source: "test source",
 			Entries: []*logpb.ButlerLogBundle_Entry{
 				{},
 			},
@@ -188,30 +183,27 @@ func TestWriter(t *testing.T) {
 
 			Convey(`Will not write data larger than the maximum bundle size.`, func() {
 				w.maxSize = 16
-				bundle.Source = strings.Repeat("A", 17)
+				bundle.Secret = bytes.Repeat([]byte{'A'}, 17)
 				err := w.Write(&buf, &bundle)
 				So(err, ShouldNotBeNil)
 				So(err, assertions.ShouldErrLike, "exceeds soft cap")
 			})
 
 			Convey(`Will compress data >= the threshold.`, func() {
-				bundle.Source = strings.Repeat("A", 64)
+				bundle.Secret = bytes.Repeat([]byte{'A'}, 64)
 				So(w.Write(&buf, &bundle), ShouldBeNil)
 
 				r, err := read(&buf)
 				So(err, ShouldBeNil)
 				So(r.Metadata.Compression, ShouldEqual, logpb.ButlerMetadata_ZLIB)
-				So(r.Bundle.Source, ShouldResemble, bundle.Source)
 				So(r.Metadata.ProtoVersion, ShouldEqual, logpb.Version)
 
 				Convey(`And can be reused.`, func() {
-					bundle.Source = strings.Repeat("A", 64)
 					So(w.Write(&buf, &bundle), ShouldBeNil)
 
 					r, err := read(&buf)
 					So(err, ShouldBeNil)
 					So(r.Metadata.Compression, ShouldEqual, logpb.ButlerMetadata_ZLIB)
-					So(r.Bundle.Source, ShouldEqual, bundle.Source)
 					So(r.Metadata.ProtoVersion, ShouldEqual, logpb.Version)
 				})
 			})

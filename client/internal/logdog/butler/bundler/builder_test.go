@@ -169,7 +169,6 @@ func TestBuilder(t *testing.T) {
 		tc := testclock.New(time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 		b := &builder{
 			template: logpb.ButlerLogBundle{
-				Source:    "Test Source",
 				Timestamp: google.NewTimestamp(tc.Now()),
 			},
 		}
