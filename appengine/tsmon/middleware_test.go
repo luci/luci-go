@@ -25,6 +25,7 @@ import (
 )
 
 func TestMiddleware(t *testing.T) {
+	t.Parallel()
 	metric := &storetest.FakeMetric{"m", "", []field.Field{}, types.CumulativeIntType}
 
 	f := func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {

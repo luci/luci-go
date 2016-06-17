@@ -2,10 +2,6 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-// Package tsmon adapts common/tsmon library to GAE environment.
-//
-// It configures tsmon state with a monitor and store suitable for GAE
-// environment and controls when metric flushes happen.
 package tsmon
 
 import (
@@ -23,8 +19,10 @@ import (
 	gaeauth "github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/common/clock"
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
+	"github.com/luci/luci-go/common/iotools"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/tsmon"
+	"github.com/luci/luci-go/common/tsmon/metric"
 	"github.com/luci/luci-go/common/tsmon/monitor"
 	"github.com/luci/luci-go/common/tsmon/store"
 	"github.com/luci/luci-go/common/tsmon/target"
@@ -59,14 +57,55 @@ type State struct {
 	testingSettings *tsmonSettings
 }
 
+// responseWriter wraps a given http.ResponseWriter, records its
+// status code and response size.
+type responseWriter struct {
+	http.ResponseWriter
+	writer iotools.CountingWriter
+	status int
+}
+
+func (rw responseWriter) Write(buf []byte) (int, error) { return rw.writer.Write(buf) }
+
+func (rw responseWriter) Size() int64 { return rw.writer.Count }
+
+func (rw responseWriter) Status() int { return rw.status }
+
+func (rw responseWriter) WriteHeader(code int) {
+	rw.status = code
+	rw.ResponseWriter.WriteHeader(code)
+}
+
+func newResponseWriter(rw http.ResponseWriter) responseWriter {
+	return responseWriter{
+		ResponseWriter: rw,
+		writer:         iotools.CountingWriter{Writer: rw},
+		status:         http.StatusOK,
+	}
+}
+
 // Middleware returns a middleware that must be inserted into the chain to
 // enable tsmon metrics to be sent on App Engine.
 func (s *State) Middleware(h middleware.Handler) middleware.Handler {
 	return func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		state, settings := s.checkSettings(c)
-		h(c, rw, r, p)
 		if settings.Enabled {
+			started := clock.Now(c)
+			userAgent, ok := r.Header["User-Agent"]
+			if !ok || len(userAgent) == 0 {
+				userAgent = []string{"Unknown"}
+			}
+			nrw := newResponseWriter(rw)
+			defer func() {
+				dur := clock.Now(c).Sub(started)
+				metric.UpdatePresenceMetrics(c)
+				metric.UpdateServerMetrics(c, "/", nrw.Status(), dur,
+					r.ContentLength, nrw.Size(), userAgent[0])
+			}()
+			h(c, nrw, r, p)
 			s.flushIfNeeded(c, state, settings)
+		} else {
+			h(c, rw, r, p)
 		}
 	}
 }
