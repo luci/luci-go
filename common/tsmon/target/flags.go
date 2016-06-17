@@ -6,7 +6,6 @@ package target
 
 import (
 	"flag"
-	"net"
 	"os"
 	"regexp"
 	"strings"
@@ -116,20 +115,6 @@ func (fl *Flags) Register(f *flag.FlagSet) {
 }
 
 func getFQDN() (string, string) {
-	if addrs, err := net.InterfaceAddrs(); err == nil {
-		for _, addr := range addrs {
-			if ipNet, ok := addr.(*net.IPNet); ok {
-				if names, err := net.LookupAddr(ipNet.IP.String()); err == nil {
-					for _, name := range names {
-						parts := strings.Split(name, ".")
-						if len(parts) > 1 {
-							return strings.ToLower(parts[0]), strings.ToLower(parts[1])
-						}
-					}
-				}
-			}
-		}
-	}
 	if hostname, err := os.Hostname(); err == nil {
 		parts := strings.Split(hostname, ".")
 		if len(parts) > 1 {
