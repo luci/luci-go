@@ -68,23 +68,21 @@ func getSwarmingClient(c context.Context, server string) (*swarming.Service, err
 	return sc, nil
 }
 
-func getSwarmingLog(sc *swarming.Service, taskID string) ([]byte, error) {
-	// Fetch the debug file instead.
+func getTaskOutput(sc *swarming.Service, taskID string) (string, error) {
 	if strings.HasPrefix(taskID, "debug:") {
+		// Read the debug file instead.
 		logFilename := filepath.Join("testdata", taskID[6:])
 		b, err := ioutil.ReadFile(logFilename)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
-		return b, nil
+		return string(b), nil
 	}
-	tsc := sc.Task.Stdout(taskID)
-	tsco, err := tsc.Do()
+	res, err := sc.Task.Stdout(taskID).Do()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	// tsc.Do() should return an error if the http status code is not okay.
-	return []byte(tsco.Output), nil
+	return res.Output, nil
 }
 
 func getSwarmingResult(
@@ -112,9 +110,9 @@ func getSwarmingResult(
 }
 
 func getSwarming(c context.Context, server string, taskID string) (
-	*swarming.SwarmingRpcsTaskResult, []byte, error) {
+	*swarming.SwarmingRpcsTaskResult, string, error) {
 
-	var log []byte
+	var log string
 	var sr *swarming.SwarmingRpcsTaskResult
 	var errLog, errRes error
 	var wg sync.WaitGroup
@@ -125,12 +123,12 @@ func getSwarming(c context.Context, server string, taskID string) (
 		return getSwarmingClient(c, server)
 	}(strings.HasPrefix(taskID, "debug:"))
 	if err != nil {
-		return nil, nil, err
+		return nil, "", err
 	}
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		log, errLog = getSwarmingLog(sc, taskID)
+		log, errLog = getTaskOutput(sc, taskID)
 	}()
 	go func() {
 		defer wg.Done()
@@ -332,7 +330,7 @@ func taskToBuild(c context.Context, sr *swarming.SwarmingRpcsTaskResult) (*resp.
 
 // streamsFromAnnotatedLog takes in an annotated log and returns a fully
 // populated set of logdog streams
-func streamsFromAnnotatedLog(ctx context.Context, log []byte) (*logdog.Streams, error) {
+func streamsFromAnnotatedLog(ctx context.Context, log string) (*logdog.Streams, error) {
 	c := &memoryClient{}
 	p := annotee.New(ctx, annotee.Options{
 		Client:                 c,
@@ -341,7 +339,7 @@ func streamsFromAnnotatedLog(ctx context.Context, log []byte) (*logdog.Streams, 
 	})
 
 	is := annotee.Stream{
-		Reader:           bytes.NewBuffer(log),
+		Reader:           bytes.NewBufferString(log),
 		Name:             types.StreamName("stdout"),
 		Annotate:         true,
 		StripAnnotations: true,

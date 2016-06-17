@@ -27,7 +27,7 @@ func swarmingBuildLogImpl(c context.Context, server string, taskID string, logna
 		return getSwarmingClient(c, server)
 	}(strings.HasPrefix(taskID, "debug:"))
 
-	body, err := getSwarmingLog(sc, taskID)
+	body, err := getTaskOutput(sc, taskID)
 	if err != nil {
 		return nil, err
 	}
