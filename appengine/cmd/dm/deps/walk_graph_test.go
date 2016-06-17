@@ -395,7 +395,9 @@ func TestWalkGraph(t *testing.T) {
 
 				})
 
-				Convey("early stop", func() {
+				// This is disabled beacuse it was flaky.
+				// BUG: crbug.com/621170
+				SkipConvey("early stop", func() {
 					req.Limit.MaxDepth = 100
 					req.Limit.MaxTime = google_pb.NewDuration(time.Nanosecond)
 					tc := clock.Get(c).(testclock.TestClock)
