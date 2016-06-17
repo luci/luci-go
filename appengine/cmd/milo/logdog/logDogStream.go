@@ -43,4 +43,8 @@ type Stream struct {
 	// Text is the text of the Stream, if IsDatagram is false.  Otherwise
 	// this is an empty string.
 	Text string
+
+	// Closed specifies whether Text or Data may change in the future.
+	// If Closed, they may not.
+	Closed bool
 }

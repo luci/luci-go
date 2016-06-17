@@ -20,26 +20,27 @@ import (
 type memoryStream struct {
 	*streamproto.Properties
 
-	buf bytes.Buffer
-	dg  []byte
+	closed     bool
+	buf        bytes.Buffer
+	isDatagram bool
 }
 
 func (s *memoryStream) ToLogDogStream() (*logdog.Stream, error) {
-	result := &logdog.Stream{}
-	result.Prefix = s.Prefix
-	result.Path = s.Name
-	result.Data = &miloProto.Step{}
+	result := &logdog.Stream{
+		Closed:     s.closed,
+		IsDatagram: s.isDatagram,
+		Path:       s.Name,
+		Prefix:     s.Prefix,
+	}
 
-	if len(s.dg) > 0 {
-		// Assume this is a datagram.
-		err := proto.Unmarshal(s.dg, result.Data)
-		if err != nil {
+	if s.isDatagram {
+		result.Data = &miloProto.Step{}
+		// Assume this is a miloProto.Step.
+		if err := proto.Unmarshal(s.buf.Bytes(), result.Data); err != nil {
 			return nil, err
 		}
-		result.IsDatagram = true
 	} else {
 		result.Text = s.buf.String()
-		result.IsDatagram = false
 	}
 
 	return result, nil
@@ -50,13 +51,14 @@ func (s *memoryStream) Write(b []byte) (int, error) {
 }
 
 func (s *memoryStream) Close() error {
+	s.closed = true
 	return nil
 }
 
 func (s *memoryStream) WriteDatagram(b []byte) error {
-	s.dg = make([]byte, len(b))
-	copy(s.dg, b)
-	return nil
+	s.isDatagram = true
+	_, err := s.buf.Write(b)
+	return err
 }
 
 type memoryClient struct {

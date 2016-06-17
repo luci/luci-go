@@ -43,13 +43,13 @@ func (l Log) Render(c context.Context, r *http.Request, p httprouter.Params) (*t
 		}
 	}
 	server := p.ByName("server") // This one may be blank.
-	b, err := swarmingBuildLogImpl(c, server, id, logname)
+	log, err := swarmingBuildLogImpl(c, server, id, logname)
 	if err != nil {
 		return nil, err
 	}
 
 	args := &templates.Args{
-		"Log": b.log,
+		"Log": log,
 	}
 	return args, nil
 }

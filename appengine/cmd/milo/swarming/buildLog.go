@@ -6,45 +6,71 @@ package swarming
 
 import (
 	"fmt"
+	"path"
+	"sort"
 	"strings"
 
-	"github.com/luci/luci-go/common/api/swarming/swarming/v1"
-
 	"golang.org/x/net/context"
+
+	"github.com/luci/gae/service/memcache"
+	"github.com/luci/luci-go/common/api/swarming/swarming/v1"
+	"github.com/luci/luci-go/common/logging"
 )
 
-// BuildLog contains the log text retrieved from swarming.
-// TODO(hinoka): Maybe put this somewhere more generic, like under resp/.
-type BuildLog struct {
-	log string
-}
+func swarmingBuildLogImpl(c context.Context, server, taskID, logname string) (string, error) {
+	mc := memcache.Get(c)
+	cached, err := mc.Get(path.Join("swarmingLog", server, taskID, logname))
+	switch {
+	case err == memcache.ErrCacheMiss:
 
-func swarmingBuildLogImpl(c context.Context, server string, taskID string, logname string) (*BuildLog, error) {
-	sc, err := func(debug bool) (*swarming.Service, error) {
-		if debug {
-			return nil, nil
+	case err != nil:
+		logging.WithError(err).Errorf(c, "failed to fetch log with key %s from memcache", cached.Key())
+
+	default:
+		logging.Debugf(c, "Cache hit for step log %s/%s/%s", server, taskID, logname)
+		return string(cached.Value()), nil
+	}
+
+	var sc *swarming.Service
+	debug := strings.HasPrefix(taskID, "debug:")
+	if debug {
+		// if taskID starts with "debug:", then getTaskOutput will ignore client.
+	} else {
+		var err error
+		sc, err = getSwarmingClient(c, server)
+		if err != nil {
+			return "", err
 		}
-		return getSwarmingClient(c, server)
-	}(strings.HasPrefix(taskID, "debug:"))
+	}
 
-	body, err := getTaskOutput(sc, taskID)
+	output, err := getTaskOutput(sc, taskID)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	// Decode the data using annotee.
-	s, err := streamsFromAnnotatedLog(c, body)
+	s, err := streamsFromAnnotatedLog(c, output)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	k := fmt.Sprintf("steps%s", logname)
-	if s, ok := s.Streams[k]; ok {
-		return &BuildLog{log: s.Text}, nil
+	stream, ok := s.Streams[k]
+	if !ok {
+		var keys []string
+		for sk := range s.Streams {
+			keys = append(keys, sk)
+		}
+		sort.Strings(keys)
+		return "", fmt.Errorf("stream %q not found; available streams: %q", k, keys)
 	}
-	var keys []string
-	for sk := range s.Streams {
-		keys = append(keys, sk)
+
+	if stream.Closed && !debug {
+		cached.SetValue([]byte(stream.Text))
+		if err := mc.Set(cached); err != nil {
+			logging.Errorf(c, "Failed to write log with key %s to memcache: %s", cached.Key(), err)
+		}
 	}
-	return nil, fmt.Errorf("%s not found in client\nAvailable keys:%s", k, keys)
+
+	return stream.Text, nil
 }
