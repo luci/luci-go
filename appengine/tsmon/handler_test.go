@@ -24,7 +24,7 @@ import (
 )
 
 type fakeInfo struct {
-	info.Interface
+	info.RawInterface
 }
 
 func (i *fakeInfo) InstanceID() string { return "instance" }
@@ -70,7 +70,7 @@ func buildGAETestContext() (context.Context, testclock.TestClock) {
 	c = info.Get(c).MustNamespace(instanceNamespace)
 	c = gologger.StdConfig.Use(c)
 
-	c = info.AddFilters(c, func(c context.Context, base info.Interface) info.Interface {
+	c = info.AddFilters(c, func(c context.Context, base info.RawInterface) info.RawInterface {
 		return &fakeInfo{base}
 	})
 

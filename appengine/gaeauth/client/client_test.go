@@ -128,7 +128,7 @@ func TestAuthenticatorAndTransport(t *testing.T) {
 ///
 
 type mockedInfo struct {
-	info.Interface
+	info.RawInterface
 
 	scopes []string
 	tok    string
@@ -141,7 +141,7 @@ func (m *mockedInfo) AccessToken(scopes ...string) (string, time.Time, error) {
 }
 
 type mockedDevAppServer struct {
-	info.Interface
+	info.RawInterface
 
 	value bool
 }
@@ -155,13 +155,13 @@ func testContext() context.Context {
 }
 
 func mockAccessTokenRPC(c context.Context, scopes []string, tok string, exp time.Time) context.Context {
-	return info.AddFilters(c, func(ci context.Context, i info.Interface) info.Interface {
+	return info.AddFilters(c, func(ci context.Context, i info.RawInterface) info.RawInterface {
 		return &mockedInfo{i, scopes, tok, exp}
 	})
 }
 
 func mockIsDevAppServer(c context.Context, value bool) context.Context {
-	return info.AddFilters(c, func(ci context.Context, i info.Interface) info.Interface {
+	return info.AddFilters(c, func(ci context.Context, i info.RawInterface) info.RawInterface {
 		return &mockedDevAppServer{i, value}
 	})
 }
