@@ -6,6 +6,7 @@ package annotation
 
 import (
 	"fmt"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -529,7 +530,7 @@ func (as *Step) CanonicalName() string {
 		opp := len(parts) - 1 - i
 		parts[i], parts[opp] = parts[opp], parts[i]
 	}
-	return strings.Join(parts, "/")
+	return path.Join(parts...)
 }
 
 // Name returns the step's component name.

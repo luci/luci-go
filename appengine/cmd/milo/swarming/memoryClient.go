@@ -7,7 +7,7 @@ package swarming
 import (
 	"bytes"
 	"fmt"
-	"strings"
+	"path"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/appengine/cmd/milo/logdog"
@@ -105,7 +105,7 @@ func (c *memoryClient) addLogDogTextStream(lds *logdog.Streams, name string) err
 func (c *memoryClient) addToStreams(name string, s *logdog.Streams) (*logdog.Stream, error) {
 	fullname := "annotations"
 	if name != "" {
-		fullname = strings.Join([]string{name, "annotations"}, "/")
+		fullname = path.Join(name, "annotations")
 	}
 	ms, ok := c.stream[fullname]
 	if !ok {

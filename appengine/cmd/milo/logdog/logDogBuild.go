@@ -6,15 +6,16 @@ package logdog
 
 import (
 	"fmt"
-	"strings"
+	"path"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/appengine/cmd/milo/resp"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/logging"
 	miloProto "github.com/luci/luci-go/common/proto/milo"
-	"golang.org/x/net/context"
 )
 
 // Given a logdog/milo step, translate it to a BuildComponent struct.
@@ -66,7 +67,7 @@ func miloBuildStep(c context.Context, url string, anno *miloProto.Step, name str
 		}
 		newLink := &resp.Link{
 			Label: lds.Name,
-			URL:   strings.Join([]string{url, lds.Name}, "/"),
+			URL:   path.Join(url, lds.Name),
 		}
 		comp.SubLink = append(comp.SubLink, newLink)
 	}
@@ -74,7 +75,7 @@ func miloBuildStep(c context.Context, url string, anno *miloProto.Step, name str
 	// Main link is a link to the stdout.
 	comp.MainLink = &resp.Link{
 		Label: "stdout",
-		URL:   strings.Join([]string{url, name, "stdout"}, "/"),
+		URL:   path.Join(url, name, "stdout"),
 	}
 
 	// This should always be a step.
@@ -118,7 +119,7 @@ func AddLogDogToBuild(c context.Context, url string, s *Streams, build *resp.Mil
 	// Now fill in each of the step components.
 	// TODO(hinoka): This is totes cachable.
 	for _, name := range mainAnno.SubstepLogdogNameBase {
-		fullname := strings.Join([]string{name, "annotations"}, "/")
+		fullname := path.Join(name, "annotations")
 		anno, ok := s.Streams[fullname]
 		if !ok {
 			// This should never happen, memory client already promised us that

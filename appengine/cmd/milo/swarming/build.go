@@ -9,10 +9,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/appengine/cmd/milo/logdog"
 	"github.com/luci/luci-go/appengine/cmd/milo/resp"
@@ -24,7 +27,6 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	miloProto "github.com/luci/luci-go/common/proto/milo"
 	"github.com/luci/luci-go/common/transport"
-	"golang.org/x/net/context"
 )
 
 // Swarming task states..
@@ -206,7 +208,7 @@ func miloBuildStep(
 		}
 		newLink := &resp.Link{
 			Label: shortName,
-			URL:   strings.Join([]string{url, lds.Name}, "/"),
+			URL:   path.Join(url, lds.Name),
 		}
 		comp.SubLink = append(comp.SubLink, newLink)
 	}
@@ -214,7 +216,7 @@ func miloBuildStep(
 	// Main link is a link to the stdio.
 	comp.MainLink = &resp.Link{
 		Label: "stdio",
-		URL:   strings.Join([]string{url, name, "stdio"}, "/"),
+		URL:   path.Join(url, name, "stdio"),
 	}
 
 	// This should always be a step.

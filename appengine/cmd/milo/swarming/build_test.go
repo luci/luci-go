@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path"
-	"strings"
 	"testing"
 	"time"
 
@@ -22,7 +21,7 @@ import (
 var generate = flag.Bool("test.generate", false, "Generate expectations instead of running tests.")
 
 func load(name string) ([]byte, error) {
-	filename := strings.Join([]string{"expectations", name}, "/")
+	filename := path.Join("expectations", name)
 	return ioutil.ReadFile(filename)
 }
 

@@ -7,6 +7,7 @@ package filesystem
 import (
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -16,7 +17,7 @@ import (
 type luciPath string
 
 func newLUCIPath(toks ...string) luciPath {
-	return luciPath(strings.Join(toks, "/"))
+	return luciPath(path.Join(toks...))
 }
 
 func (l luciPath) explode() []string {
