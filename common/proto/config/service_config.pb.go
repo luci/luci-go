@@ -603,6 +603,8 @@ func init() {
 	proto.RegisterEnum("config.ValidationResponseMessage_Severity", ValidationResponseMessage_Severity_name, ValidationResponseMessage_Severity_value)
 }
 
+func init() { proto.RegisterFile("service_config.proto", fileDescriptor1) }
+
 var fileDescriptor1 = []byte{
 	// 779 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x9c, 0x55, 0xdd, 0x6e, 0xda, 0x4a,

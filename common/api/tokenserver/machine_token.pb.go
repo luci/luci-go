@@ -94,6 +94,8 @@ func init() {
 	proto.RegisterType((*MachineTokenEnvelope)(nil), "tokenserver.MachineTokenEnvelope")
 }
 
+func init() { proto.RegisterFile("machine_token.proto", fileDescriptor0) }
+
 var fileDescriptor0 = []byte{
 	// 252 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x4c, 0x90, 0xb1, 0x4e, 0xc3, 0x30,

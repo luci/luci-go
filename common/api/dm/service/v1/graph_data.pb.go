@@ -1172,6 +1172,8 @@ func init() {
 	proto.RegisterEnum("dm.Execution_State", Execution_State_name, Execution_State_value)
 }
 
+func init() { proto.RegisterFile("graph_data.proto", fileDescriptor3) }
+
 var fileDescriptor3 = []byte{
 	// 1652 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xc4, 0x57, 0xcb, 0x72, 0x1b, 0x55,

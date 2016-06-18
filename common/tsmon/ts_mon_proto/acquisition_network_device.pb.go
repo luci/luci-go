@@ -128,6 +128,8 @@ func init() {
 	proto.RegisterEnum("ts_mon.proto.NetworkDevice_TypeId", NetworkDevice_TypeId_name, NetworkDevice_TypeId_value)
 }
 
+func init() { proto.RegisterFile("acquisition_network_device.proto", fileDescriptor0) }
+
 var fileDescriptor0 = []byte{
 	// 209 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0x52, 0x48, 0x4c, 0x2e, 0x2c,

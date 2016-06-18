@@ -219,6 +219,8 @@ func init() {
 	proto.RegisterEnum("dm.GraphQuery_Search_Domain", GraphQuery_Search_Domain_name, GraphQuery_Search_Domain_value)
 }
 
+func init() { proto.RegisterFile("graph_query.proto", fileDescriptor4) }
+
 var fileDescriptor4 = []byte{
 	// 437 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x74, 0x93, 0x4f, 0x6f, 0xd3, 0x40,

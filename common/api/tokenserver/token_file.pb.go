@@ -54,6 +54,8 @@ func init() {
 	proto.RegisterType((*TokenFile)(nil), "tokenserver.TokenFile")
 }
 
+func init() { proto.RegisterFile("token_file.proto", fileDescriptor2) }
+
 var fileDescriptor2 = []byte{
 	// 240 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x74, 0x91, 0xb1, 0x4e, 0x03, 0x31,

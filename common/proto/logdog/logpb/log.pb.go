@@ -498,6 +498,8 @@ func init() {
 	proto.RegisterEnum("logpb.StreamType", StreamType_name, StreamType_value)
 }
 
+func init() { proto.RegisterFile("log.proto", fileDescriptor1) }
+
 var fileDescriptor1 = []byte{
 	// 692 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x94, 0x54, 0xdb, 0x6e, 0xd3, 0x4c,

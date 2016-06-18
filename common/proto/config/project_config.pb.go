@@ -132,6 +132,8 @@ func init() {
 	proto.RegisterType((*RefsCfg_Ref)(nil), "config.RefsCfg.Ref")
 }
 
+func init() { proto.RegisterFile("project_config.proto", fileDescriptor0) }
+
 var fileDescriptor0 = []byte{
 	// 153 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0x12, 0x29, 0x28, 0xca, 0xcf,

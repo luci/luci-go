@@ -806,6 +806,8 @@ func init() {
 	proto.RegisterEnum("protocol.ReplicationPushResponse_ErrorCode", ReplicationPushResponse_ErrorCode_name, ReplicationPushResponse_ErrorCode_value)
 }
 
+func init() { proto.RegisterFile("replication.proto", fileDescriptor0) }
+
 var fileDescriptor0 = []byte{
 	// 1029 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xa4, 0x56, 0x5d, 0x72, 0xe3, 0x44,

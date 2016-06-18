@@ -62,7 +62,7 @@ var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion2
+const _ = grpc.SupportPackageIsVersion3
 
 // Client API for ServiceAccounts service
 
@@ -156,8 +156,11 @@ var _ServiceAccounts_serviceDesc = grpc.ServiceDesc{
 			Handler:    _ServiceAccounts_CreateServiceAccount_Handler,
 		},
 	},
-	Streams: []grpc.StreamDesc{},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: fileDescriptor2,
 }
+
+func init() { proto.RegisterFile("service_accounts.proto", fileDescriptor2) }
 
 var fileDescriptor2 = []byte{
 	// 241 bytes of a gzipped FileDescriptorProto

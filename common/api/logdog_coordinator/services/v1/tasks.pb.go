@@ -62,6 +62,8 @@ func init() {
 	proto.RegisterType((*ArchiveTask)(nil), "logdog.ArchiveTask")
 }
 
+func init() { proto.RegisterFile("tasks.proto", fileDescriptor2) }
+
 var fileDescriptor2 = []byte{
 	// 205 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0xe2, 0x2e, 0x49, 0x2c, 0xce,

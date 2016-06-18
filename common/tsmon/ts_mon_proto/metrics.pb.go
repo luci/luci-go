@@ -503,6 +503,8 @@ func init() {
 	proto.RegisterEnum("ts_mon.proto.MetricsData_Units", MetricsData_Units_name, MetricsData_Units_value)
 }
 
+func init() { proto.RegisterFile("metrics.proto", fileDescriptor2) }
+
 var fileDescriptor2 = []byte{
 	// 1044 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x8c, 0x55, 0xdb, 0x6e, 0xdb, 0x46,

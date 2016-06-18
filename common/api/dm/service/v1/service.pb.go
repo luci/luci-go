@@ -28,7 +28,7 @@ var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion2
+const _ = grpc.SupportPackageIsVersion3
 
 // Client API for Deps service
 
@@ -240,8 +240,11 @@ var _Deps_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Deps_WalkGraph_Handler,
 		},
 	},
-	Streams: []grpc.StreamDesc{},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: fileDescriptor5,
 }
+
+func init() { proto.RegisterFile("service.proto", fileDescriptor5) }
 
 var fileDescriptor5 = []byte{
 	// 242 bytes of a gzipped FileDescriptorProto

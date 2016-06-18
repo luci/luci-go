@@ -78,6 +78,8 @@ func init() {
 	proto.RegisterType((*LogStreamState_ArchiveInfo)(nil), "logdog.LogStreamState.ArchiveInfo")
 }
 
+func init() { proto.RegisterFile("state.proto", fileDescriptor1) }
+
 var fileDescriptor1 = []byte{
 	// 315 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x54, 0x90, 0xc1, 0x4b, 0xc3, 0x30,

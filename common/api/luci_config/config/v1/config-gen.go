@@ -534,7 +534,8 @@ func (c *GetConfigCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetConfigRe
 			HTTPStatusCode: res.StatusCode,
 		},
 	}
-	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+	target := &ret
+	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -675,7 +676,8 @@ func (c *GetConfigByHashCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetCo
 			HTTPStatusCode: res.StatusCode,
 		},
 	}
-	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+	target := &ret
+	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -810,7 +812,8 @@ func (c *GetConfigSetsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetConf
 			HTTPStatusCode: res.StatusCode,
 		},
 	}
-	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+	target := &ret
+	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -938,7 +941,8 @@ func (c *GetMappingCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetMapping
 			HTTPStatusCode: res.StatusCode,
 		},
 	}
-	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+	target := &ret
+	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -1066,7 +1070,8 @@ func (c *GetProjectConfigsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGet
 			HTTPStatusCode: res.StatusCode,
 		},
 	}
-	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+	target := &ret
+	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -1193,7 +1198,8 @@ func (c *GetProjectsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetProjec
 			HTTPStatusCode: res.StatusCode,
 		},
 	}
-	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+	target := &ret
+	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -1315,7 +1321,8 @@ func (c *GetRefConfigsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetConf
 			HTTPStatusCode: res.StatusCode,
 		},
 	}
-	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+	target := &ret
+	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -1444,7 +1451,8 @@ func (c *GetRefsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetRefsRespon
 			HTTPStatusCode: res.StatusCode,
 		},
 	}
-	if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+	target := &ret
+	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
 		return nil, err
 	}
 	return ret, nil

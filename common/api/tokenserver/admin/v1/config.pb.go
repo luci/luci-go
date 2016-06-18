@@ -94,6 +94,8 @@ func init() {
 	proto.RegisterType((*DomainConfig)(nil), "tokenserver.admin.DomainConfig")
 }
 
+func init() { proto.RegisterFile("config.proto", fileDescriptor1) }
+
 var fileDescriptor1 = []byte{
 	// 371 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x74, 0x92, 0xdf, 0x4e, 0xc2, 0x30,

@@ -213,6 +213,8 @@ func init() {
 	proto.RegisterEnum("dm.WalkGraphReq_Mode_Direction", WalkGraphReq_Mode_Direction_name, WalkGraphReq_Mode_Direction_value)
 }
 
+func init() { proto.RegisterFile("walk_graph.proto", fileDescriptor7) }
+
 var fileDescriptor7 = []byte{
 	// 556 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x6c, 0x92, 0xcb, 0x6e, 0xd3, 0x40,

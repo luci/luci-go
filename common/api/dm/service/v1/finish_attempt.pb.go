@@ -45,6 +45,8 @@ func init() {
 	proto.RegisterType((*FinishAttemptReq)(nil), "dm.FinishAttemptReq")
 }
 
+func init() { proto.RegisterFile("finish_attempt.proto", fileDescriptor2) }
+
 var fileDescriptor2 = []byte{
 	// 199 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x4c, 0x8e, 0xbf, 0x8a, 0x83, 0x30,

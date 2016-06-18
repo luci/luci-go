@@ -27,7 +27,7 @@ var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion2
+const _ = grpc.SupportPackageIsVersion3
 
 // Client API for S2_0 service
 
@@ -63,6 +63,7 @@ var _S2_0_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*S2_0Server)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams:     []grpc.StreamDesc{},
+	Metadata:    fileDescriptor1,
 }
 
 // Client API for S2_1 service
@@ -99,7 +100,10 @@ var _S2_1_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*S2_1Server)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams:     []grpc.StreamDesc{},
+	Metadata:    fileDescriptor1,
 }
+
+func init() { proto.RegisterFile("2.proto", fileDescriptor1) }
 
 var fileDescriptor1 = []byte{
 	// 55 bytes of a gzipped FileDescriptorProto

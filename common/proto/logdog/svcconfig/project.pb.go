@@ -95,6 +95,8 @@ func init() {
 	proto.RegisterType((*ProjectConfig)(nil), "svcconfig.ProjectConfig")
 }
 
+func init() { proto.RegisterFile("project.proto", fileDescriptor2) }
+
 var fileDescriptor2 = []byte{
 	// 309 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x84, 0x91, 0xcd, 0x4a, 0x3b, 0x31,

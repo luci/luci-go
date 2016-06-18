@@ -54,6 +54,8 @@ func init() {
 	proto.RegisterType((*HelloReply)(nil), "prpc.HelloReply")
 }
 
+func init() { proto.RegisterFile("helloworld_test.proto", fileDescriptor0) }
+
 var fileDescriptor0 = []byte{
 	// 110 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0x12, 0xcd, 0x48, 0xcd, 0xc9,

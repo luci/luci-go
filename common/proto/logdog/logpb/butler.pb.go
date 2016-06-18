@@ -231,6 +231,8 @@ func init() {
 	proto.RegisterEnum("logpb.ButlerMetadata_Compression", ButlerMetadata_Compression_name, ButlerMetadata_Compression_value)
 }
 
+func init() { proto.RegisterFile("butler.proto", fileDescriptor0) }
+
 var fileDescriptor0 = []byte{
 	// 463 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x7c, 0x52, 0x5d, 0x8b, 0xd3, 0x50,
