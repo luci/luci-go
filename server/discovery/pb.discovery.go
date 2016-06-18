@@ -2,6 +2,8 @@
 
 package discovery
 
+import "github.com/luci/luci-go/common/proto/google/descriptor"
+
 func init() {
 	RegisterDescriptorSetCompressed(
 		[]string{
@@ -1240,4 +1242,19 @@ func init() {
 			195, 71, 86, 51, 234, 146, 240, 255, 27, 0, 0, 255, 255, 183,
 			252, 176, 52, 209, 171, 0, 0},
 	)
+}
+
+// FileDescriptorSet returns a descriptor set for this proto package, which
+// includes all defined services, and all transitive dependencies.
+//
+// Will not return nil.
+//
+// Do NOT modify the returned descriptor.
+func FileDescriptorSet() *descriptor.FileDescriptorSet {
+	// We just need ONE of the service names to look up the FileDescriptorSet.
+	ret, err := GetDescriptorSet("discovery.Discovery")
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }

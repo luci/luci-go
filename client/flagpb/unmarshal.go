@@ -5,13 +5,45 @@
 package flagpb
 
 import (
+	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/proto/google/descriptor"
 )
+
+// UnmarshalMessage unmarshals the proto message from flags.
+//
+// The descriptor set should be obtained from the `cproto` compiled packages'
+// FileDescriptorSet() method.
+func UnmarshalMessage(flags []string, resolver Resolver, msg proto.Message) error {
+	// TODO(iannucci): avoid round-trip through parser and jsonpb and populate the
+	// message directly. This would involve writing some additional reflection
+	// code that may depend on implementation details of proto's generated Go
+	// code, which is why this wasn't done initially.
+	name := proto.MessageName(msg)
+	dproto, ok := resolver.Resolve(name).(*descriptor.DescriptorProto)
+	if !ok {
+		return fmt.Errorf("could not resolve message %q", name)
+	}
+
+	jdata, err := UnmarshalUntyped(flags, dproto, resolver)
+	if err != nil {
+		return err
+	}
+
+	jtext, err := json.Marshal(jdata)
+	if err != nil {
+		return err
+	}
+
+	return jsonpb.Unmarshal(bytes.NewReader(jtext), msg)
+}
 
 // UnmarshalUntyped unmarshals a key-value map from flags
 // using a protobuf message descriptor.

@@ -33,6 +33,7 @@ package {{.GoPkg}};
 {{if .ImportDiscovery}}
 import discovery "github.com/luci/luci-go/server/discovery"
 {{end}}
+import "github.com/luci/luci-go/common/proto/google/descriptor"
 
 func init() {
 	{{if .ImportDiscovery}}discovery.{{end}}RegisterDescriptorSetCompressed(
@@ -41,6 +42,21 @@ func init() {
 		},
 		{{.CompressedBytes}},
 	)
+}
+
+// FileDescriptorSet returns a descriptor set for this proto package, which
+// includes all defined services, and all transitive dependencies.
+//
+// Will not return nil.
+//
+// Do NOT modify the returned descriptor.
+func FileDescriptorSet() *descriptor.FileDescriptorSet {
+	// We just need ONE of the service names to look up the FileDescriptorSet.
+	ret, err := {{if .ImportDiscovery}}discovery.{{end}}GetDescriptorSet("{{index .ServiceNames 0 }}")
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }
 `)))
 
