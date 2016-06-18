@@ -9,13 +9,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
 )
 
@@ -68,7 +68,7 @@ func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen Req
 			}
 			// Endpoints occasionally return 404 on valid requests (!)
 			if status == 404 && strings.HasPrefix(req.URL.Path, "/_ah/api/") {
-				log.Printf("lhttp.Do() got a Cloud Endpoints 404: %#v", resp.Header)
+				logging.Infof(ctx, "lhttp.Do() got a Cloud Endpoints 404: %#v", resp.Header)
 				return errors.WrapTransient(
 					fmt.Errorf("http request failed (endpoints): %s (HTTP %d)", http.StatusText(status), status))
 			}

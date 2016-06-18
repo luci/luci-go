@@ -10,7 +10,7 @@ import (
 	"runtime"
 
 	"github.com/luci/luci-go/client/internal/common"
-	"github.com/luci/luci-go/client/internal/lhttp"
+	"github.com/luci/luci-go/common/lhttp"
 	"github.com/maruel/subcommands"
 )
 

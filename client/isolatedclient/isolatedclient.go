@@ -15,10 +15,10 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/client/internal/lhttp"
 	"github.com/luci/luci-go/client/internal/tracer"
 	"github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
 	"github.com/luci/luci-go/common/isolated"
+	"github.com/luci/luci-go/common/lhttp"
 	"github.com/luci/luci-go/common/retry"
 )
 
