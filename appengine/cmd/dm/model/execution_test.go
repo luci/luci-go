@@ -35,7 +35,7 @@ func TestExecutions(t *testing.T) {
 		ak := ds.KeyForObj(a)
 
 		Convey("Revoke", func() {
-			e1 := &Execution{ID: 1, Attempt: ak, Token: []byte("good tok")}
+			e1 := &Execution{ID: 1, Attempt: ak, Token: []byte("good tok"), State: dm.Execution_RUNNING}
 			So(ds.Put(e1), ShouldBeNil)
 
 			e2 := *e1
@@ -56,26 +56,26 @@ func TestExecutions(t *testing.T) {
 			}
 
 			_, _, err := AuthenticateExecution(c, auth)
-			So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+			So(err, ShouldBeRPCInternal, "execution Auth")
 
 			So(ds.Put(a), ShouldBeNil)
 			_, _, err = AuthenticateExecution(c, auth)
-			So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+			So(err, ShouldBeRPCPermissionDenied, "execution Auth")
 
 			a.CurExecution = 1
 			So(ds.Put(a), ShouldBeNil)
 			_, _, err = AuthenticateExecution(c, auth)
-			So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+			So(err, ShouldBeRPCPermissionDenied, "execution Auth")
 
 			a.State = dm.Attempt_EXECUTING
 			So(ds.Put(a), ShouldBeNil)
 			_, _, err = AuthenticateExecution(c, auth)
-			So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+			So(err, ShouldBeRPCPermissionDenied, "execution Auth")
 
 			e1.State = dm.Execution_RUNNING
 			So(ds.Put(e1), ShouldBeNil)
 			_, _, err = AuthenticateExecution(c, auth)
-			So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+			So(err, ShouldBeRPCPermissionDenied, "execution Auth")
 
 			auth.Token = []byte("good tok")
 			atmpt, exe, err := AuthenticateExecution(c, auth)
@@ -102,12 +102,12 @@ func TestExecutions(t *testing.T) {
 			Convey("wrong execution id", func() {
 				auth.Id.Id++
 				_, _, err := ActivateExecution(c, auth, []byte("wrong tok"))
-				So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+				So(err, ShouldBeRPCInternal, "execution Auth")
 			})
 
 			Convey("attempt bad state", func() {
 				_, _, err := ActivateExecution(c, auth, []byte("wrong tok"))
-				So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+				So(err, ShouldBeRPCPermissionDenied, "execution Auth")
 			})
 
 			Convey("attempt executing", func() {
@@ -115,29 +115,27 @@ func TestExecutions(t *testing.T) {
 				So(ds.Put(a), ShouldBeNil)
 
 				Convey("wrong execution state", func() {
-					e1.State = dm.Execution_CANCELLED
+					e1.State = dm.Execution_STOPPING
 					So(ds.Put(e1), ShouldBeNil)
 					_, _, err := ActivateExecution(c, auth, []byte("wrong token"))
-					So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+					So(err, ShouldBeRPCPermissionDenied, "execution Auth")
 				})
 
 				Convey("wrong token", func() {
 					_, _, err := ActivateExecution(c, auth, []byte("wrong tok"))
-					So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+					So(err, ShouldBeRPCPermissionDenied, "execution Auth")
 				})
 
 				Convey("correct token", func() {
 					auth.Token = []byte("good tok")
-					memlogger.Reset(c)
 					newA, e, err := ActivateExecution(c, auth, []byte("new token"))
-					memlogger.MustDumpStdout(c)
 					So(err, ShouldBeNil)
 					So(newA, ShouldResemble, a)
 					So(e.State, ShouldEqual, dm.Execution_RUNNING)
 
 					Convey("retry with different token fails", func() {
 						_, _, err = ActivateExecution(c, auth, []byte("other token"))
-						So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+						So(err, ShouldBeRPCPermissionDenied, "execution Auth")
 					})
 
 					Convey("retry with same token OK", func() {
@@ -169,7 +167,7 @@ func TestExecutions(t *testing.T) {
 			}
 
 			_, _, err := InvalidateExecution(c, auth)
-			So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+			So(err, ShouldBeRPCPermissionDenied, "execution Auth")
 
 			auth.Token = []byte("good tok")
 			_, _, err = InvalidateExecution(c, auth)
@@ -179,7 +177,7 @@ func TestExecutions(t *testing.T) {
 			So(e1.Token, ShouldBeNil)
 
 			_, _, err = InvalidateExecution(c, auth)
-			So(err, ShouldBeRPCUnauthenticated, "requires execution Auth")
+			So(err, ShouldBeRPCPermissionDenied, "requires execution Auth")
 		})
 
 		Convey("failed invalidation", func() {
@@ -203,7 +201,7 @@ func TestExecutions(t *testing.T) {
 			fb.BreakFeatures(nil, "PutMulti")
 
 			_, _, err := InvalidateExecution(c, auth)
-			So(err, ShouldBeRPCInternal, "unable to invalidate Auth")
+			So(err, ShouldBeRPCPermissionDenied, "unable to invalidate Auth")
 
 			fb.UnbreakFeatures("PutMulti")
 
@@ -229,36 +227,30 @@ func TestExecutionToProto(t *testing.T) {
 			ID:      1,
 			Attempt: ds.MakeKey("Attempt", "qst|fffffffe"),
 
-			StateReason: "scheduled by DM",
-
 			Created:          testclock.TestTimeUTC,
+			Modified:         testclock.TestTimeUTC,
 			DistributorToken: "id",
-			DistributorURL:   "https://thing.place.example.com/task/id",
 
 			Token: []byte("secret"),
 		}
 
 		Convey("no id", func() {
-			So(e.ToProto(false), ShouldResemble, &dm.Execution{Data: &dm.Execution_Data{
-				State:              dm.Execution_SCHEDULED,
-				StateReason:        "scheduled by DM",
-				Created:            google.NewTimestamp(testclock.TestTimeUTC),
-				DistributorToken:   "id",
-				DistributorInfoUrl: "https://thing.place.example.com/task/id",
-			}})
+			exp := dm.NewExecutionScheduling()
+			exp.Data.Created = google.NewTimestamp(testclock.TestTimeUTC)
+			exp.Data.Modified = google.NewTimestamp(testclock.TestTimeUTC)
+			exp.Data.DistributorInfo = &dm.Execution_Data_DistributorInfo{Token: "id"}
+
+			So(e.ToProto(false), ShouldResemble, exp)
 		})
 
 		Convey("with id", func() {
-			So(e.ToProto(true), ShouldResemble, &dm.Execution{
-				Id: dm.NewExecutionID("qst", 1, 1),
-				Data: &dm.Execution_Data{
-					State:              dm.Execution_SCHEDULED,
-					StateReason:        "scheduled by DM",
-					Created:            google.NewTimestamp(testclock.TestTimeUTC),
-					DistributorToken:   "id",
-					DistributorInfoUrl: "https://thing.place.example.com/task/id",
-				},
-			})
+			exp := dm.NewExecutionScheduling()
+			exp.Id = dm.NewExecutionID("qst", 1, 1)
+			exp.Data.Created = google.NewTimestamp(testclock.TestTimeUTC)
+			exp.Data.Modified = google.NewTimestamp(testclock.TestTimeUTC)
+			exp.Data.DistributorInfo = &dm.Execution_Data_DistributorInfo{Token: "id"}
+
+			So(e.ToProto(true), ShouldResemble, exp)
 		})
 	})
 }

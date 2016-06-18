@@ -8,7 +8,7 @@ import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
 import google_protobuf "github.com/luci/luci-go/common/proto/google"
-import google_protobuf1 "github.com/luci/luci-go/common/proto/google"
+import google_protobuf2 "github.com/luci/luci-go/common/proto/google"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -22,7 +22,7 @@ type MultiPropertyValue struct {
 func (m *MultiPropertyValue) Reset()                    { *m = MultiPropertyValue{} }
 func (m *MultiPropertyValue) String() string            { return proto.CompactTextString(m) }
 func (*MultiPropertyValue) ProtoMessage()               {}
-func (*MultiPropertyValue) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{0} }
+func (*MultiPropertyValue) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{0} }
 
 func (m *MultiPropertyValue) GetValues() []*PropertyValue {
 	if m != nil {
@@ -45,7 +45,7 @@ type PropertyValue struct {
 func (m *PropertyValue) Reset()                    { *m = PropertyValue{} }
 func (m *PropertyValue) String() string            { return proto.CompactTextString(m) }
 func (*PropertyValue) ProtoMessage()               {}
-func (*PropertyValue) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{1} }
+func (*PropertyValue) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{1} }
 
 type isPropertyValue_Value interface {
 	isPropertyValue_Value()
@@ -67,7 +67,7 @@ type PropertyValue_Time struct {
 	Time *google_protobuf.Timestamp `protobuf:"bytes,6,opt,name=time,oneof"`
 }
 type PropertyValue_Null struct {
-	Null *google_protobuf1.Empty `protobuf:"bytes,7,opt,name=null,oneof"`
+	Null *google_protobuf2.Empty `protobuf:"bytes,7,opt,name=null,oneof"`
 }
 
 func (*PropertyValue_Str) isPropertyValue_Value()  {}
@@ -119,7 +119,7 @@ func (m *PropertyValue) GetTime() *google_protobuf.Timestamp {
 	return nil
 }
 
-func (m *PropertyValue) GetNull() *google_protobuf1.Empty {
+func (m *PropertyValue) GetNull() *google_protobuf2.Empty {
 	if x, ok := m.GetValue().(*PropertyValue_Null); ok {
 		return x.Null
 	}
@@ -218,7 +218,7 @@ func _PropertyValue_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
-		msg := new(google_protobuf1.Empty)
+		msg := new(google_protobuf2.Empty)
 		err := b.DecodeMessage(msg)
 		m.Value = &PropertyValue_Null{msg}
 		return true, err
@@ -278,7 +278,7 @@ type AttemptList struct {
 func (m *AttemptList) Reset()                    { *m = AttemptList{} }
 func (m *AttemptList) String() string            { return proto.CompactTextString(m) }
 func (*AttemptList) ProtoMessage()               {}
-func (*AttemptList) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{2} }
+func (*AttemptList) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{2} }
 
 func (m *AttemptList) GetTo() map[string]*AttemptList_Nums {
 	if m != nil {
@@ -294,7 +294,7 @@ type AttemptList_Nums struct {
 func (m *AttemptList_Nums) Reset()                    { *m = AttemptList_Nums{} }
 func (m *AttemptList_Nums) String() string            { return proto.CompactTextString(m) }
 func (*AttemptList_Nums) ProtoMessage()               {}
-func (*AttemptList_Nums) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{2, 0} }
+func (*AttemptList_Nums) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{2, 0} }
 
 func init() {
 	proto.RegisterType((*MultiPropertyValue)(nil), "dm.MultiPropertyValue")
@@ -303,7 +303,7 @@ func init() {
 	proto.RegisterType((*AttemptList_Nums)(nil), "dm.AttemptList.Nums")
 }
 
-var fileDescriptor7 = []byte{
+var fileDescriptor6 = []byte{
 	// 340 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x64, 0x90, 0x5d, 0x4b, 0xc3, 0x30,
 	0x14, 0x86, 0xed, 0xc7, 0x3e, 0x3c, 0x75, 0x30, 0x83, 0xcc, 0x52, 0x41, 0x65, 0x37, 0x4e, 0x91,

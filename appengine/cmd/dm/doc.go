@@ -15,6 +15,8 @@
 //   service - The actual Cloud Endpoints service.
 //   frontend - The deployable appengine app. For Technical Reasons (tm), almost
 //     zero code lives here, it just calls through to code in service.
+//   distributor - Definition of the Distributor interface, and implementations
+//     (such as swarming_v1).
 //
 // For more information on DM itself, check out https://github.com/luci/luci-go/wiki/Design-Documents
 package dm

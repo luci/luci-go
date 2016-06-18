@@ -21,10 +21,10 @@ const completionLimit = 64
 // for each incoming dependency that is blocked.
 //
 // In the case where an Attempt has hundreds or thousands of incoming
-// dependencies, the naieve implementation of this mutation could easily
-// overfill a single datastore transaction. For that reason, the implementation
-// here unblocks things 64 edges at a time, and keeps returning itself as a
-// mutation until it unblocks less than 64 things (e.g. it does a tail-call).
+// dependencies, the naive implementation of this mutation could easily overfill
+// a single datastore transaction. For that reason, the implementation here
+// unblocks things 64 edges at a time, and keeps returning itself as a mutation
+// until it unblocks less than 64 things (e.g. it does a tail-call).
 //
 // This relies on tumble's tail-call optimization to be performant in terms of
 // the number of transactions, otherwise this would take 1 transaction per
@@ -33,7 +33,7 @@ const completionLimit = 64
 // other Attempts to take dependencies on this Attempt while RecordCompletion
 // is in between tail-calls).
 type RecordCompletion struct {
-	For *dm.Attempt_ID `datastore:",noindex"`
+	For *dm.Attempt_ID
 }
 
 // Root implements tumble.Mutation.
@@ -66,10 +66,7 @@ func (r *RecordCompletion) RollForward(c context.Context) (muts []tumble.Mutatio
 
 		for i, bdep := range needProp {
 			bdep.Propagated = true
-			muts[i] = &AckFwdDep{
-				Dep:           bdep.Edge(),
-				DepIsFinished: true,
-			}
+			muts[i] = &AckFwdDep{bdep.Edge()}
 		}
 
 		if len(needProp) == completionLimit {

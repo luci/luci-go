@@ -6,10 +6,13 @@ runtime: go
 api_version: go1
 
 handlers:
+- url: /_ah/push-handlers/.*
+  script: _go_app
+  secure: always
+  login: admin
 - url: /.*
   script: _go_app
   secure: always
 
-- url: /_ah/spi/.*
-  script: _go_app
-  secure: always
+# env_variables:
+#   LUCI_DM_CONFIG_BASE_PATH: /path/to/luci-go/appengine/cmd/dm/integration_tests/cfgdir/current

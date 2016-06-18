@@ -5,46 +5,90 @@
 package frontend
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 
 	"golang.org/x/net/context"
 
+	"google.golang.org/appengine"
+
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/appengine/cmd/dm/deps"
+	"github.com/luci/luci-go/appengine/cmd/dm/distributor"
+	"github.com/luci/luci-go/appengine/cmd/dm/mutate"
 	"github.com/luci/luci-go/appengine/gaeconfig"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/config"
+	"github.com/luci/luci-go/common/config/impl/filesystem"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/discovery"
 	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/prpc"
 )
 
-func base(h middleware.Handler) httprouter.Handle {
+func addConfigProd(c context.Context) context.Context {
+	cfg, err := gaeconfig.New(c)
+	switch err {
+	case nil:
+		c = config.Set(c, cfg)
+	case gaeconfig.ErrNotConfigured:
+		logging.Warningf(c, "luci-config service url not configured. Configure this at /admin/settings/gaeconfig.")
+		fallthrough
+	default:
+		panic(err)
+	}
+	return c
+}
+
+func baseProd(h middleware.Handler) httprouter.Handle {
 	newH := func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		cfg, err := gaeconfig.New(c)
-		switch err {
-		case nil:
-			c = config.Set(c, cfg)
-		case gaeconfig.ErrNotConfigured:
-			logging.Warningf(c, "luci-config service url not configured. Configure this at /admin/settings/gaeconfig.")
-		default:
-			panic(err)
-		}
-		h(c, rw, r, p)
+		h(addConfigProd(c), rw, r, p)
 	}
 	return gaemiddleware.BaseProd(newH)
+}
+
+func addConfigDev(c context.Context) context.Context {
+	fpath := os.Getenv("LUCI_DM_CONFIG_BASE_PATH")
+	if fpath == "" {
+		panic(fmt.Errorf("LUCI_DM_CONFIG_BASE_PATH must be set in the environment"))
+	}
+	fs, err := filesystem.New(fpath)
+	if err != nil {
+		panic(fmt.Errorf("while setting up LUCI_DM_CONFIG_BASE_PATH: %s", err))
+	}
+	return config.Set(c, fs)
+}
+
+func baseDev(h middleware.Handler) httprouter.Handle {
+	return gaemiddleware.BaseProd(func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		h(addConfigDev(c), rw, r, p)
+	})
 }
 
 func init() {
 	router := httprouter.New()
 	tmb := tumble.Service{}
 
-	svr := prpc.Server{}
-	deps.RegisterDepsServer(&svr)
-	discovery.Enable(&svr)
+	reg := distributor.NewRegistry(nil, mutate.FinishExecutionFn)
 
+	base := baseProd
+	tmb.Middleware = func(c context.Context) context.Context {
+		return distributor.WithRegistry(addConfigProd(c), reg)
+	}
+	if appengine.IsDevAppServer() {
+		base = baseDev
+		tmb.Middleware = func(c context.Context) context.Context {
+			return distributor.WithRegistry(addConfigDev(c), reg)
+		}
+	}
+
+	distributor.InstallHandlers(reg, router, base)
+
+	svr := prpc.Server{}
+	deps.RegisterDepsServer(&svr, reg)
+	discovery.Enable(&svr)
 	svr.InstallHandlers(router, base)
 	tmb.InstallHandlers(router)
 	gaemiddleware.InstallHandlers(router, base)

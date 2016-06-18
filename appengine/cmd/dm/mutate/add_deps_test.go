@@ -9,6 +9,7 @@ import (
 
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/appengine/cmd/dm/distributor"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/common/api/dm/service/v1"
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -58,7 +59,7 @@ func TestAddDeps(t *testing.T) {
 
 					ad.Auth.Token = []byte("nerp")
 					muts, err := ad.RollForward(c)
-					So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+					So(err, ShouldBeRPCPermissionDenied, "execution Auth")
 					So(muts, ShouldBeEmpty)
 				})
 			})
@@ -83,14 +84,22 @@ func TestAddDeps(t *testing.T) {
 						Dep: fds[0].Edge(), NeedsAck: true})
 
 					So(ds.Get(a, fds), ShouldBeNil)
-					So(a.AddingDepsBitmap.Size(), ShouldEqual, len(fds))
-					So(a.WaitingDepBitmap.Size(), ShouldEqual, len(fds))
-					So(a.State, ShouldEqual, dm.Attempt_ADDING_DEPS)
+					So(a.DepMap.Size(), ShouldEqual, len(fds))
+					So(a.State, ShouldEqual, dm.Attempt_EXECUTING)
 					So(fds[0].ForExecution, ShouldEqual, 1)
+
+					muts, err = (&FinishExecution{
+						ad.Auth.Id, &distributor.TaskResult{PersistentState: []byte("hi")},
+					}).RollForward(c)
+					So(err, ShouldBeNil)
+					So(muts, ShouldBeNil)
+
+					So(ds.Get(a), ShouldBeNil)
+					So(a.State, ShouldEqual, dm.Attempt_WAITING)
 				})
 
 				Convey("adding new Attempts at the same time", func() {
-					ad.Atmpts = dm.NewAttemptList(map[string][]uint32{
+					ad.Attempts = dm.NewAttemptList(map[string][]uint32{
 						"to": {2, 3},
 						"tp": {1},
 					})
@@ -104,10 +113,18 @@ func TestAddDeps(t *testing.T) {
 						Dep: fds[0].Edge(), NeedsAck: true})
 
 					So(ds.Get(a, fds), ShouldBeNil)
-					So(a.AddingDepsBitmap.Size(), ShouldEqual, len(fds))
-					So(a.WaitingDepBitmap.Size(), ShouldEqual, len(fds))
-					So(a.State, ShouldEqual, dm.Attempt_ADDING_DEPS)
+					So(a.DepMap.Size(), ShouldEqual, len(fds))
+					So(a.State, ShouldEqual, dm.Attempt_EXECUTING)
 					So(fds[0].ForExecution, ShouldEqual, 1)
+
+					muts, err = (&FinishExecution{
+						ad.Auth.Id, &distributor.TaskResult{PersistentState: []byte("hi")},
+					}).RollForward(c)
+					So(err, ShouldBeNil)
+					So(muts, ShouldBeNil)
+
+					So(ds.Get(a), ShouldBeNil)
+					So(a.State, ShouldEqual, dm.Attempt_WAITING)
 				})
 			})
 		})

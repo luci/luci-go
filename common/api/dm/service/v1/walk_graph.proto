@@ -110,17 +110,22 @@ message WalkGraphReq {
     // is 0, then the execution data will be omitted completely.
     uint32 num_executions = 6;
 
+    // ExecutionInfoUrl fills in the Execution.DistributorInfo.Url value. This
+    // has some minor overhead, but is useful if you need to present clickable
+    // links for humans.
+    bool execution_info_url = 7;
+
     // FwdDeps instructs WalkGraph to include forward dependency information
     // from the result. This only changes the presence of information in the
     // result; if the query is walking forward attempt dependencies, that will
     // still occur even if this is false.
-    bool fwd_deps = 7;
+    bool fwd_deps = 8;
 
     // BackDeps instructs WalkGraph to include the backwards dependency
     // information. This only changes the presence of information in the result;
     // if the query is walking backward attempt dependencies, that will still
     // occur even if this is false.
-    bool back_deps = 8;
+    bool back_deps = 9;
   }
   // Include allows you to add additional information to the returned
   // GraphData which is typically medium-to-large sized.

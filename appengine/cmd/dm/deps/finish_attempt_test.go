@@ -7,7 +7,6 @@ package deps
 import (
 	"testing"
 
-	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/common/api/dm/service/v1"
@@ -15,16 +14,14 @@ import (
 	google_pb "github.com/luci/luci-go/common/proto/google"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
 
 func TestFinishAttempt(t *testing.T) {
 	t.Parallel()
 
 	Convey("FinishAttempt", t, func() {
-		c := memory.Use(context.Background())
+		_, c, _, s := testSetup()
 		ds := datastore.Get(c)
-		s := newDecoratedDeps()
 
 		So(ds.Put(&model.Quest{ID: "quest"}), ShouldBeNil)
 		a := &model.Attempt{
@@ -32,6 +29,8 @@ func TestFinishAttempt(t *testing.T) {
 			State:        dm.Attempt_EXECUTING,
 			CurExecution: 1,
 		}
+		e := model.ExecutionFromID(c, dm.NewExecutionID("quest", 1, 1))
+		ar := &model.AttemptResult{Attempt: ds.KeyForObj(a)}
 		So(ds.Put(a), ShouldBeNil)
 		So(ds.Put(&model.Execution{
 			ID: 1, Attempt: ds.KeyForObj(a), Token: []byte("exKey"),
@@ -50,7 +49,7 @@ func TestFinishAttempt(t *testing.T) {
 			Convey("bad Token", func() {
 				req.Auth.Token = []byte("fake")
 				_, err := s.FinishAttempt(c, req)
-				So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+				So(err, ShouldBeRPCPermissionDenied, "execution Auth")
 			})
 
 			Convey("not real json", func() {
@@ -64,8 +63,12 @@ func TestFinishAttempt(t *testing.T) {
 			_, err := s.FinishAttempt(c, req)
 			So(err, ShouldBeNil)
 
-			So(ds.Get(a), ShouldBeNil)
-			So(a.State, ShouldEqual, dm.Attempt_FINISHED)
+			So(ds.Get(a, ar, e), ShouldBeNil)
+			So(a.State, ShouldEqual, dm.Attempt_EXECUTING)
+			So(e.State, ShouldEqual, dm.Execution_STOPPING)
+
+			So(a.ResultSize, ShouldEqual, 21)
+			So(ar.Size, ShouldEqual, 21)
 		})
 
 	})

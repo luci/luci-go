@@ -13,7 +13,7 @@ type Topic string
 
 var _ flag.Value = (*Topic)(nil)
 
-// NewTopic generates a new Subscritpion for a given project and topic name.
+// NewTopic generates a new Topic for a given project and topic name.
 func NewTopic(project, name string) Topic {
 	return Topic(newResource(project, "topics", name))
 }

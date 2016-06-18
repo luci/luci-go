@@ -10,7 +10,6 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/api/dm/service/v1"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -22,18 +21,15 @@ func TestEnsureQuests(t *testing.T) {
 
 	desc := func(payload string) *dm.Quest_Desc {
 		return &dm.Quest_Desc{
-			DistributorConfigName: "foof",
+			DistributorConfigName: "fakeDistributor",
 			JsonPayload:           payload,
 		}
 	}
 
 	Convey("EnsureGraphData (Ensure Quests)", t, func() {
-		ttest := &tumble.Testing{}
-		c := ttest.Context()
+		ttest, c, _, s := testSetup()
 		ds := datastore.Get(c)
 		clk := clock.Get(c).(testclock.TestClock)
-		s := newDecoratedDeps()
-		zt := time.Time{}
 
 		Convey("bad", func() {
 			// TODO(riannucci): restore this once moving to the new distributor scheme
@@ -48,15 +44,15 @@ func TestEnsureQuests(t *testing.T) {
 		})
 
 		Convey("good", func() {
-			// TODO(riannucci): add foof distributor configuration
+			// TODO(riannucci): add fakeDistributor distributor configuration
 
 			qd := desc(`{"data": "yes"}`)
-			q, err := model.NewQuest(c, qd)
-			So(err, ShouldBeNil)
+			So(qd.Normalize(), ShouldBeNil)
+			q := model.NewQuest(c, qd)
 
 			qd2 := desc(`{"data": "way yes"}`)
-			q2, err := model.NewQuest(c, qd2)
-			So(err, ShouldBeNil)
+			So(qd2.Normalize(), ShouldBeNil)
+			q2 := model.NewQuest(c, qd2)
 
 			req := &dm.EnsureGraphDataReq{
 				Quest:    []*dm.Quest_Desc{qd, qd2},
@@ -72,20 +68,20 @@ func TestEnsureQuests(t *testing.T) {
 				ttest.Drain(c)
 				rsp, err = s.EnsureGraphData(c, req)
 				So(err, ShouldBeNil)
-				purgeTimestamps(rsp.Result)
+				rsp.Result.PurgeTimestamps()
 				So(rsp.Result.Quests, ShouldResemble, map[string]*dm.Quest{
 					q.ID: {
 						Data: &dm.Quest_Data{
 							Desc:    qd,
 							BuiltBy: []*dm.Quest_TemplateSpec{},
 						},
-						Attempts: map[uint32]*dm.Attempt{1: dm.NewAttemptNeedsExecution(zt)}},
+						Attempts: map[uint32]*dm.Attempt{1: dm.NewAttemptExecuting(1)}},
 					q2.ID: {
 						Data: &dm.Quest_Data{
 							Desc:    qd2,
 							BuiltBy: []*dm.Quest_TemplateSpec{},
 						},
-						Attempts: map[uint32]*dm.Attempt{2: dm.NewAttemptNeedsExecution(zt)}},
+						Attempts: map[uint32]*dm.Attempt{2: dm.NewAttemptExecuting(1)}},
 				})
 			})
 
@@ -96,7 +92,7 @@ func TestEnsureQuests(t *testing.T) {
 
 				rsp, err := s.EnsureGraphData(c, req)
 				So(err, ShouldBeNil)
-				purgeTimestamps(rsp.Result)
+				rsp.Result.PurgeTimestamps()
 				So(rsp.Result.Quests, ShouldResemble, map[string]*dm.Quest{
 					q.ID: {
 						Data: &dm.Quest_Data{
@@ -125,7 +121,7 @@ func TestEnsureQuests(t *testing.T) {
 
 				rsp, err := s.EnsureGraphData(c, req)
 				So(err, ShouldBeNil)
-				purgeTimestamps(rsp.Result)
+				rsp.Result.PurgeTimestamps()
 				So(rsp.Result.Quests, ShouldResemble, map[string]*dm.Quest{
 					q.ID: {
 						Data: &dm.Quest_Data{

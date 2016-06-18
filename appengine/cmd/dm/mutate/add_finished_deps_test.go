@@ -33,7 +33,8 @@ func TestAddFinishedDeps(t *testing.T) {
 					ID: "to",
 					BuiltBy: model.TemplateInfo{
 						*dm.NewTemplateSpec("a", "b", "c", "d"),
-					}},
+					},
+				},
 			},
 			dm.NewAttemptList(map[string][]uint32{
 				"to": {1, 2, 3},
@@ -70,7 +71,7 @@ func TestAddFinishedDeps(t *testing.T) {
 			So(muts, ShouldResemble, []tumble.Mutation{
 				&AddBackDep{Dep: fs[0].Edge()},
 				&AddBackDep{Dep: fs[2].Edge()},
-				&MergeQuest{f.MergeQuests[0]},
+				&MergeQuest{f.MergeQuests[0], nil},
 			})
 
 			So(ds.Get(fs), ShouldBeNil)
@@ -86,7 +87,7 @@ func TestAddFinishedDeps(t *testing.T) {
 		Convey("RollForward (bad)", func() {
 			So(ds.Delete(ak), ShouldBeNil)
 			_, err := f.RollForward(c)
-			So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+			So(err, ShouldBeRPCInternal, "execution Auth")
 		})
 	})
 }

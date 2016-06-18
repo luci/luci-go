@@ -9,7 +9,6 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/api/dm/service/v1"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -19,10 +18,8 @@ func TestEnsureAttempt(t *testing.T) {
 	t.Parallel()
 
 	Convey("EnsureGraphData (Ensuring attempts)", t, func() {
-		ttest := &tumble.Testing{}
-		c := ttest.Context()
+		ttest, c, _, s := testSetup()
 		ds := datastore.Get(c)
-		s := newDecoratedDeps()
 
 		Convey("bad", func() {
 			Convey("no quest", func() {
@@ -34,7 +31,7 @@ func TestEnsureAttempt(t *testing.T) {
 			})
 			Convey("mismatched quest", func() {
 				_, err := s.EnsureGraphData(c, &dm.EnsureGraphDataReq{
-					Quest:    []*dm.Quest_Desc{dm.NewQuestDesc("foof", "{}")},
+					Quest:    []*dm.Quest_Desc{dm.NewQuestDesc("fakeDistributor", "{}", nil)},
 					Attempts: dm.NewAttemptList(map[string][]uint32{"quest": {1}}),
 				})
 				So(err, ShouldErrLike, "must have a matching Attempts entry")
@@ -42,9 +39,9 @@ func TestEnsureAttempt(t *testing.T) {
 		})
 
 		Convey("good", func() {
-			desc := dm.NewQuestDesc("swarming", `{"hi": "there"}`)
-			q, err := model.NewQuest(c, desc)
-			So(err, ShouldBeNil)
+			desc := dm.NewQuestDesc("fakeDistributor", `{"hi": "there"}`, nil)
+			So(desc.Normalize(), ShouldBeNil)
+			q := model.NewQuest(c, desc)
 			rsp, err := s.EnsureGraphData(c, &dm.EnsureGraphDataReq{
 				Quest:    []*dm.Quest_Desc{desc},
 				Attempts: dm.NewAttemptList(map[string][]uint32{q.ID: {1}}),

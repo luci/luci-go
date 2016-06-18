@@ -6,7 +6,7 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	context "golang.org/x/net/context"
 
-	google_protobuf1 "github.com/luci/luci-go/common/proto/google"
+	google_protobuf2 "github.com/luci/luci-go/common/proto/google"
 )
 
 type DecoratedDeps struct {
@@ -25,7 +25,7 @@ func (s *DecoratedDeps) EnsureGraphData(c context.Context, req *EnsureGraphDataR
 	return s.Service.EnsureGraphData(c, req)
 }
 
-func (s *DecoratedDeps) ActivateExecution(c context.Context, req *ActivateExecutionReq) (*google_protobuf1.Empty, error) {
+func (s *DecoratedDeps) ActivateExecution(c context.Context, req *ActivateExecutionReq) (*google_protobuf2.Empty, error) {
 	c, err := s.Prelude(c, "ActivateExecution", req)
 	if err != nil {
 		return nil, err
@@ -33,7 +33,7 @@ func (s *DecoratedDeps) ActivateExecution(c context.Context, req *ActivateExecut
 	return s.Service.ActivateExecution(c, req)
 }
 
-func (s *DecoratedDeps) FinishAttempt(c context.Context, req *FinishAttemptReq) (*google_protobuf1.Empty, error) {
+func (s *DecoratedDeps) FinishAttempt(c context.Context, req *FinishAttemptReq) (*google_protobuf2.Empty, error) {
 	c, err := s.Prelude(c, "FinishAttempt", req)
 	if err != nil {
 		return nil, err
@@ -47,12 +47,4 @@ func (s *DecoratedDeps) WalkGraph(c context.Context, req *WalkGraphReq) (*GraphD
 		return nil, err
 	}
 	return s.Service.WalkGraph(c, req)
-}
-
-func (s *DecoratedDeps) ClaimExecution(c context.Context, req *google_protobuf1.Empty) (*ClaimExecutionRsp, error) {
-	c, err := s.Prelude(c, "ClaimExecution", req)
-	if err != nil {
-		return nil, err
-	}
-	return s.Service.ClaimExecution(c, req)
 }

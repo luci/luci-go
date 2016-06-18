@@ -30,7 +30,7 @@ type TemplateInstantiation struct {
 func (m *TemplateInstantiation) Reset()                    { *m = TemplateInstantiation{} }
 func (m *TemplateInstantiation) String() string            { return proto.CompactTextString(m) }
 func (*TemplateInstantiation) ProtoMessage()               {}
-func (*TemplateInstantiation) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (*TemplateInstantiation) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
 
 func (m *TemplateInstantiation) GetSpecifier() *template.Specifier {
 	if m != nil {
@@ -87,7 +87,7 @@ type EnsureGraphDataReq struct {
 func (m *EnsureGraphDataReq) Reset()                    { *m = EnsureGraphDataReq{} }
 func (m *EnsureGraphDataReq) String() string            { return proto.CompactTextString(m) }
 func (*EnsureGraphDataReq) ProtoMessage()               {}
-func (*EnsureGraphDataReq) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
+func (*EnsureGraphDataReq) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
 
 func (m *EnsureGraphDataReq) GetQuest() []*Quest_Desc {
 	if m != nil {
@@ -152,7 +152,7 @@ type EnsureGraphDataReq_Limit struct {
 func (m *EnsureGraphDataReq_Limit) Reset()                    { *m = EnsureGraphDataReq_Limit{} }
 func (m *EnsureGraphDataReq_Limit) String() string            { return proto.CompactTextString(m) }
 func (*EnsureGraphDataReq_Limit) ProtoMessage()               {}
-func (*EnsureGraphDataReq_Limit) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1, 0} }
+func (*EnsureGraphDataReq_Limit) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1, 0} }
 
 type EnsureGraphDataReq_Include struct {
 	// AttemptResult will include the Attempt result payloads for any Attempts
@@ -166,7 +166,7 @@ type EnsureGraphDataReq_Include struct {
 func (m *EnsureGraphDataReq_Include) Reset()                    { *m = EnsureGraphDataReq_Include{} }
 func (m *EnsureGraphDataReq_Include) String() string            { return proto.CompactTextString(m) }
 func (*EnsureGraphDataReq_Include) ProtoMessage()               {}
-func (*EnsureGraphDataReq_Include) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1, 1} }
+func (*EnsureGraphDataReq_Include) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1, 1} }
 
 type EnsureGraphDataRsp struct {
 	// accepted is true when all new graph data was journaled successfully. This
@@ -221,7 +221,7 @@ type EnsureGraphDataRsp struct {
 func (m *EnsureGraphDataRsp) Reset()                    { *m = EnsureGraphDataRsp{} }
 func (m *EnsureGraphDataRsp) String() string            { return proto.CompactTextString(m) }
 func (*EnsureGraphDataRsp) ProtoMessage()               {}
-func (*EnsureGraphDataRsp) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
+func (*EnsureGraphDataRsp) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
 
 func (m *EnsureGraphDataRsp) GetTemplateIds() []*Quest_ID {
 	if m != nil {
@@ -245,7 +245,7 @@ func init() {
 	proto.RegisterType((*EnsureGraphDataRsp)(nil), "dm.EnsureGraphDataRsp")
 }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor1 = []byte{
 	// 561 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x74, 0x53, 0x5d, 0x8b, 0xd3, 0x40,
 	0x14, 0xa5, 0x1f, 0x69, 0xd2, 0x49, 0xd3, 0x0d, 0xa3, 0x62, 0x0c, 0xa2, 0x52, 0x14, 0x16, 0xc4,

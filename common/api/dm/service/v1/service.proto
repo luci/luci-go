@@ -12,18 +12,20 @@ import "ensure_graph_data.proto";
 import "activate_execution.proto";
 import "finish_attempt.proto";
 import "walk_graph.proto";
-import "claim_execution.proto";
 
 package dm;
 
+// DM's Dependency Server API.
 service Deps {
+  // allows you to add additional data to the current dependency graph.
   rpc EnsureGraphData(dm.EnsureGraphDataReq) returns (dm.EnsureGraphDataRsp);
 
+  // is called by Execution clients to activate themselves with DM.
   rpc ActivateExecution(dm.ActivateExecutionReq) returns (google.protobuf.Empty);
+
+  // is called by Execution clients to indicate that an Attempt is finished.
   rpc FinishAttempt(dm.FinishAttemptReq) returns (google.protobuf.Empty);
 
+  // runs queries, and walks along the dependency graph from the query results.
   rpc WalkGraph(dm.WalkGraphReq) returns (dm.GraphData);
-
-  // ClaimExecution is a totally temporary hack
-  rpc ClaimExecution(google.protobuf.Empty) returns (dm.ClaimExecutionRsp);
 }

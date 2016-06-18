@@ -5,7 +5,6 @@
 package deps
 
 import (
-	"errors"
 	"fmt"
 
 	"golang.org/x/net/context"
@@ -18,11 +17,12 @@ import (
 	"github.com/luci/luci-go/common/parallel"
 	"github.com/luci/luci-go/common/stringset"
 
-	"github.com/luci/luci-go/common/api/dm/service/v1"
+	dm "github.com/luci/luci-go/common/api/dm/service/v1"
 	"github.com/luci/luci-go/common/api/dm/template"
 
 	"github.com/luci/luci-go/appengine/tumble"
 
+	"github.com/luci/luci-go/appengine/cmd/dm/distributor"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/cmd/dm/mutate"
 )
@@ -223,7 +223,7 @@ func (d *deps) ensureGraphData(c context.Context, req *dm.EnsureGraphDataReq, ne
 		Auth:   req.ForExecution,
 		Quests: newQuests,
 		// Attempts we think are missing
-		Atmpts: newAttempts,
+		Attempts: newAttempts,
 		// Deps we think are missing (>= newAttempts)
 		Deps: missingDeps,
 	})
@@ -270,14 +270,28 @@ func renderRequest(c context.Context, req *dm.EnsureGraphDataReq) (rsp *dm.Ensur
 		return true
 	}
 
+	dists := map[string]distributor.D{}
+
 	newQuests = make(map[string]*model.Quest, len(req.Quest)+len(req.TemplateQuest))
 	newAttempts = dm.NewAttemptList(nil)
 
+	reg := distributor.GetRegistry(c)
+
 	// render all quest descriptions
 	for i, qDesc := range req.Quest {
-		var q *model.Quest
-		if q, err = model.NewQuest(c, qDesc); err != nil {
-			err = grpcutil.MaybeLogErr(c, err, codes.InvalidArgument, "bad quest description")
+		q := model.NewQuest(c, qDesc)
+
+		d, ok := dists[qDesc.DistributorConfigName]
+		if !ok {
+			if d, _, err = reg.MakeDistributor(c, qDesc.DistributorConfigName); err != nil {
+				return
+			}
+			dists[qDesc.DistributorConfigName] = d
+		}
+
+		if err = d.Validate(qDesc.JsonPayload); err != nil {
+			err = grpcutil.MaybeLogErr(c, err, codes.InvalidArgument,
+				"JSON payload is invalid for this distributor configuration.")
 			return
 		}
 
@@ -285,7 +299,7 @@ func renderRequest(c context.Context, req *dm.EnsureGraphDataReq) (rsp *dm.Ensur
 		if _, ok := req.Attempts.To[q.ID]; !ok {
 			c = logging.SetFields(c, logging.Fields{"id": q.ID, "idx": i})
 			err = grpcutil.MaybeLogErr(c,
-				errors.New("Quest entries must have a matching Attempts entry"),
+				fmt.Errorf("Quest %d:%q must have a matching Attempts entry", i, q.ID),
 				codes.InvalidArgument, "no matches")
 			return
 		}
@@ -312,12 +326,11 @@ func renderRequest(c context.Context, req *dm.EnsureGraphDataReq) (rsp *dm.Ensur
 		if desc, vers, err = templateFiles.render(c, inst); setTemplateErr(i, err) {
 			continue
 		}
-
-		var q *model.Quest
-		q, err = model.NewQuest(c, desc)
-		if setTemplateErr(i, err) {
+		if setTemplateErr(i, desc.Normalize()) {
 			continue
 		}
+
+		q := model.NewQuest(c, desc)
 
 		rsp.TemplateIds = append(rsp.TemplateIds, dm.NewQuestID(q.ID))
 
@@ -349,6 +362,7 @@ func renderRequest(c context.Context, req *dm.EnsureGraphDataReq) (rsp *dm.Ensur
 func (d *deps) EnsureGraphData(c context.Context, req *dm.EnsureGraphDataReq) (rsp *dm.EnsureGraphDataRsp, err error) {
 	// TODO(riannucci): real non-execution authentication
 	if req.ForExecution != nil {
+		logging.Fields{"execution": req.ForExecution.Id}.Infof(c, "on behalf of")
 		_, _, err := model.AuthenticateExecution(c, req.ForExecution)
 		if err != nil {
 			return nil, grpcutil.MaybeLogErr(c, err, codes.Unauthenticated, "bad execution auth")

@@ -63,9 +63,7 @@ func TestRecordCompletion(t *testing.T) {
 
 					muts, err := rc.RollForward(c)
 					So(err, ShouldBeNil)
-					So(muts, ShouldResemble, []tumble.Mutation{
-						&AckFwdDep{Dep: bd.Edge(), DepIsFinished: true},
-					})
+					So(muts, ShouldResemble, []tumble.Mutation{&AckFwdDep{bd.Edge()}})
 
 					So(ds.Get(bdg, bd), ShouldBeNil)
 					So(bdg.AttemptFinished, ShouldBeTrue)

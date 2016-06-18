@@ -20,15 +20,23 @@ func (t *TemplateInstantiation) Normalize() error {
 
 // Normalize returns an error iff the request is invalid.
 func (r *EnsureGraphDataReq) Normalize() error {
+	if r.ForExecution != nil {
+		if err := r.ForExecution.Normalize(); err != nil {
+			return err
+		}
+	}
+
 	if err := r.Attempts.Normalize(); err != nil {
 		return err
 	}
 
 	hasAttempts := false
-	for _, nums := range r.Attempts.To {
-		hasAttempts = true
-		if len(nums.Nums) == 0 {
-			return errors.New("EnsureGraphDataReq.attempts must only include valid (non-0, non-empty) attempt numbers")
+	if r.Attempts != nil {
+		for _, nums := range r.Attempts.To {
+			hasAttempts = true
+			if len(nums.Nums) == 0 {
+				return errors.New("EnsureGraphDataReq.attempts must only include valid (non-0, non-empty) attempt numbers")
+			}
 		}
 	}
 
@@ -47,6 +55,12 @@ func (r *EnsureGraphDataReq) Normalize() error {
 			if len(r.TemplateAttempt[i].Nums) == 0 {
 				return fmt.Errorf("template_attempts[%d]: empty attempt list", i)
 			}
+		}
+	}
+
+	for i, desc := range r.Quest {
+		if err := desc.Normalize(); err != nil {
+			return fmt.Errorf("quest[%d]: %s", i, err)
 		}
 	}
 

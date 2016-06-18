@@ -33,7 +33,7 @@ func (x GraphQuery_Search_Domain) String() string {
 	return proto.EnumName(GraphQuery_Search_Domain_name, int32(x))
 }
 func (GraphQuery_Search_Domain) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor5, []int{0, 1, 0}
+	return fileDescriptor4, []int{0, 1, 0}
 }
 
 // GraphQuery represents a single query into the state of DM's dependency graph.
@@ -54,7 +54,7 @@ type GraphQuery struct {
 func (m *GraphQuery) Reset()                    { *m = GraphQuery{} }
 func (m *GraphQuery) String() string            { return proto.CompactTextString(m) }
 func (*GraphQuery) ProtoMessage()               {}
-func (*GraphQuery) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0} }
+func (*GraphQuery) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
 
 func (m *GraphQuery) GetAttemptList() *AttemptList {
 	if m != nil {
@@ -86,7 +86,7 @@ type GraphQuery_AttemptRange struct {
 func (m *GraphQuery_AttemptRange) Reset()                    { *m = GraphQuery_AttemptRange{} }
 func (m *GraphQuery_AttemptRange) String() string            { return proto.CompactTextString(m) }
 func (*GraphQuery_AttemptRange) ProtoMessage()               {}
-func (*GraphQuery_AttemptRange) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0, 0} }
+func (*GraphQuery_AttemptRange) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0, 0} }
 
 // A Search allows you to query objects whose properties match all of the
 // provided filters. Filters take the form of a dot-delimited path. For
@@ -182,7 +182,7 @@ type GraphQuery_Search struct {
 func (m *GraphQuery_Search) Reset()                    { *m = GraphQuery_Search{} }
 func (m *GraphQuery_Search) String() string            { return proto.CompactTextString(m) }
 func (*GraphQuery_Search) ProtoMessage()               {}
-func (*GraphQuery_Search) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0, 1} }
+func (*GraphQuery_Search) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0, 1} }
 
 func (m *GraphQuery_Search) GetStart() *PropertyValue {
 	if m != nil {
@@ -219,7 +219,7 @@ func init() {
 	proto.RegisterEnum("dm.GraphQuery_Search_Domain", GraphQuery_Search_Domain_name, GraphQuery_Search_Domain_value)
 }
 
-var fileDescriptor5 = []byte{
+var fileDescriptor4 = []byte{
 	// 437 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x74, 0x93, 0x4f, 0x6f, 0xd3, 0x40,
 	0x10, 0xc5, 0x71, 0x1c, 0xbb, 0x74, 0x1c, 0x17, 0x67, 0x04, 0xc8, 0x32, 0x1c, 0xa2, 0x72, 0x48,

@@ -36,14 +36,14 @@ func TestEnsureAttempt(t *testing.T) {
 
 				muts, err := ea.RollForward(c)
 				So(err, ShouldBeNil)
-				So(muts, ShouldBeEmpty)
+				So(muts, ShouldHaveLength, 1)
 
 				ds := datastore.Get(c)
 				So(ds.Get(a), ShouldEqual, nil)
-				So(a.State, ShouldEqual, dm.Attempt_NEEDS_EXECUTION)
+				So(a.State, ShouldEqual, dm.Attempt_SCHEDULING)
 
 				Convey("replaying the mutation after the state has evolved is a noop", func() {
-					a.State.MustEvolve(dm.Attempt_EXECUTING)
+					So(a.ModifyState(c, dm.Attempt_EXECUTING), ShouldBeNil)
 					So(ds.Put(a), ShouldBeNil)
 
 					muts, err = ea.RollForward(c)

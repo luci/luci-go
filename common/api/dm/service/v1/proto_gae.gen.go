@@ -12,6 +12,52 @@ import (
 	"github.com/luci/gae/service/datastore"
 )
 
+var _ datastore.PropertyConverter = (*AbnormalFinish)(nil)
+
+// ToProperty implements datastore.PropertyConverter. It causes an embedded
+// 'AbnormalFinish' to serialize to an unindexed '[]byte' when used with the
+// "github.com/luci/gae" library.
+func (p *AbnormalFinish) ToProperty() (prop datastore.Property, err error) {
+	data, err := proto.Marshal(p)
+	if err == nil {
+		prop.SetValue(data, datastore.NoIndex)
+	}
+	return
+}
+
+// FromProperty implements datastore.PropertyConverter. It parses a '[]byte'
+// into an embedded 'AbnormalFinish' when used with the "github.com/luci/gae" library.
+func (p *AbnormalFinish) FromProperty(prop datastore.Property) error {
+	data, err := prop.Project(datastore.PTBytes)
+	if err != nil {
+		return err
+	}
+	return proto.Unmarshal(data.([]byte), p)
+}
+
+var _ datastore.PropertyConverter = (*Execution_Auth)(nil)
+
+// ToProperty implements datastore.PropertyConverter. It causes an embedded
+// 'Execution_Auth' to serialize to an unindexed '[]byte' when used with the
+// "github.com/luci/gae" library.
+func (p *Execution_Auth) ToProperty() (prop datastore.Property, err error) {
+	data, err := proto.Marshal(p)
+	if err == nil {
+		prop.SetValue(data, datastore.NoIndex)
+	}
+	return
+}
+
+// FromProperty implements datastore.PropertyConverter. It parses a '[]byte'
+// into an embedded 'Execution_Auth' when used with the "github.com/luci/gae" library.
+func (p *Execution_Auth) FromProperty(prop datastore.Property) error {
+	data, err := prop.Project(datastore.PTBytes)
+	if err != nil {
+		return err
+	}
+	return proto.Unmarshal(data.([]byte), p)
+}
+
 var _ datastore.PropertyConverter = (*Quest_Desc)(nil)
 
 // ToProperty implements datastore.PropertyConverter. It causes an embedded

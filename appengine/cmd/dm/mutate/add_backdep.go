@@ -43,11 +43,8 @@ func (a *AddBackDep) RollForward(c context.Context) (muts []tumble.Mutation, err
 
 	err = ds.Put(bd)
 
-	if a.NeedsAck {
-		muts = append(muts, &AckFwdDep{
-			Dep:           a.Dep,
-			DepIsFinished: bdg.AttemptFinished,
-		})
+	if a.NeedsAck && bdg.AttemptFinished {
+		muts = append(muts, &AckFwdDep{a.Dep})
 	}
 	return
 }

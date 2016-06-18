@@ -15,19 +15,20 @@ import (
 // MergeQuest ensures that the given Quest exists and contains the merged
 // set of BuiltBy entries.
 type MergeQuest struct {
-	Quest *model.Quest
+	Quest   *model.Quest
+	AndThen []tumble.Mutation
 }
 
 // Root implements tumble.Mutation.
 func (m *MergeQuest) Root(c context.Context) *datastore.Key {
-	return datastore.Get(c).KeyForObj(m.Quest)
+	return model.QuestKeyFromID(c, m.Quest.ID)
 }
 
 // RollForward implements tumble.Mutation.
 func (m *MergeQuest) RollForward(c context.Context) (muts []tumble.Mutation, err error) {
 	ds := datastore.Get(c)
 
-	curQuest := &model.Quest{ID: m.Quest.ID}
+	curQuest := model.QuestFromID(m.Quest.ID)
 
 	c = logging.SetField(c, "qid", m.Quest.ID)
 
@@ -48,6 +49,8 @@ func (m *MergeQuest) RollForward(c context.Context) (muts []tumble.Mutation, err
 	if err != nil {
 		logging.WithError(err).Errorf(c, "%s", reason)
 	}
+
+	muts = m.AndThen
 
 	return
 }

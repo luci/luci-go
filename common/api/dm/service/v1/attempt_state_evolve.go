@@ -12,12 +12,23 @@ import (
 // transitions. The identity transition (X -> X) is implied, as long as X has an
 // entry in this mapping.
 var validAttemptStateEvolution = map[Attempt_State][]Attempt_State{
-	Attempt_ADDING_DEPS:              {Attempt_BLOCKED, Attempt_NEEDS_EXECUTION},
-	Attempt_BLOCKED:                  {Attempt_AWAITING_EXECUTION_STATE, Attempt_NEEDS_EXECUTION},
-	Attempt_AWAITING_EXECUTION_STATE: {Attempt_NEEDS_EXECUTION},
-	Attempt_EXECUTING:                {Attempt_ADDING_DEPS, Attempt_FINISHED},
-	Attempt_FINISHED:                 {},
-	Attempt_NEEDS_EXECUTION:          {Attempt_EXECUTING},
+	Attempt_SCHEDULING: {
+		Attempt_EXECUTING,         // scheduled
+		Attempt_ABNORMAL_FINISHED, // cancelled/timeout/err/etc.
+	},
+	Attempt_EXECUTING: {
+		Attempt_SCHEDULING,        // Retry
+		Attempt_WAITING,           // EnsureGraphData
+		Attempt_FINISHED,          // FinishAttempt
+		Attempt_ABNORMAL_FINISHED, // cancel/timeout/err/etc.
+	},
+	Attempt_WAITING: {
+		Attempt_SCHEDULING,        // unblocked
+		Attempt_ABNORMAL_FINISHED, // cancelled
+	},
+
+	Attempt_FINISHED:          {},
+	Attempt_ABNORMAL_FINISHED: {},
 }
 
 // Evolve attempts to evolve the state of this Attempt. If the state evolution

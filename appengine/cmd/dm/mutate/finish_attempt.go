@@ -30,7 +30,7 @@ type FinishAttempt struct {
 
 // Root implements tumble.Mutation
 func (f *FinishAttempt) Root(c context.Context) *datastore.Key {
-	return datastore.Get(c).KeyForObj(&model.Attempt{ID: *f.Auth.Id.AttemptID()})
+	return model.AttemptKeyFromID(c, f.Auth.Id.AttemptID())
 }
 
 // RollForward implements tumble.Mutation
@@ -38,16 +38,16 @@ func (f *FinishAttempt) Root(c context.Context) *datastore.Key {
 // This mutation is called directly from FinishAttempt, so we use
 // grpcutil.MaybeLogErr
 func (f *FinishAttempt) RollForward(c context.Context) (muts []tumble.Mutation, err error) {
-	atmpt, _, err := model.InvalidateExecution(c, f.Auth)
+	atmpt, ex, err := model.InvalidateExecution(c, f.Auth)
 	if err != nil {
 		return
 	}
 
-	ds := datastore.Get(c)
+	if err = ResetExecutionTimeout(c, ex); err != nil {
+		return
+	}
 
-	// Executing -> Finished is valid, and we know we're already Executing because
-	// the InvalidateExecution call above asserts that or errors out.
-	atmpt.MustModifyState(c, dm.Attempt_FINISHED)
+	ds := datastore.Get(c)
 
 	atmpt.ResultSize = uint32(len(f.Result))
 	atmpt.ResultExpiration = f.ResultExpiration
@@ -59,11 +59,7 @@ func (f *FinishAttempt) RollForward(c context.Context) (muts []tumble.Mutation, 
 	}
 
 	err = grpcutil.MaybeLogErr(c, ds.Put(atmpt, rslt),
-		codes.Internal, "while trying to PutMulti")
-
-	// TODO(iannucci): also include mutations to generate index entries for
-	// the attempt results.
-	muts = append(muts, &RecordCompletion{For: f.Auth.Id.AttemptID()})
+		codes.Internal, "while trying to Put")
 
 	return
 }

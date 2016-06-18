@@ -1,4 +1,4 @@
 cron:
 - description: tumble.Cron invocation
-  url: /tumble/cron
+  url: /internal/tumble/fire_all_tasks
   schedule: every 1 minutes

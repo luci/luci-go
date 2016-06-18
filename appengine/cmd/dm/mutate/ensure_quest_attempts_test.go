@@ -23,9 +23,9 @@ func TestEnsureQuestAttempts(t *testing.T) {
 		c := ttest.Context()
 		ds := datastore.Get(c)
 
-		desc := dm.NewQuestDesc("distributor", `{"data":"yes"}`)
-		qst, err := model.NewQuest(c, desc)
-		So(err, ShouldBeNil)
+		desc := dm.NewQuestDesc("distributor", `{"data":"yes"}`, nil)
+		So(desc.Normalize(), ShouldBeNil)
+		qst := model.NewQuest(c, desc)
 
 		eqa := EnsureQuestAttempts{qst, []uint32{1, 2, 3, 4}, false}
 

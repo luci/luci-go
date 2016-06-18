@@ -10,7 +10,6 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/api/dm/service/v1"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -20,10 +19,8 @@ func TestAddDeps(t *testing.T) {
 	t.Parallel()
 
 	Convey("EnsureGraphData (Adding deps)", t, func() {
-		ttest := &tumble.Testing{}
-		c := ttest.Context()
+		_, c, _, s := testSetup()
 		ds := datastore.Get(c)
-		s := newDecoratedDeps()
 		zt := time.Time{}
 
 		a := &model.Attempt{ID: *dm.NewAttemptID("quest", 1)}
@@ -36,11 +33,11 @@ func TestAddDeps(t *testing.T) {
 			State: dm.Execution_RUNNING}
 
 		toQuestDesc := &dm.Quest_Desc{
-			DistributorConfigName: "foof",
+			DistributorConfigName: "fakeDistributor",
 			JsonPayload:           `{"data":"yes"}`,
 		}
-		toQuest, err := model.NewQuest(c, toQuestDesc)
-		So(err, ShouldBeNil)
+		So(toQuestDesc.Normalize(), ShouldBeNil)
+		toQuest := model.NewQuest(c, toQuestDesc)
 		to := &model.Attempt{ID: *dm.NewAttemptID(toQuest.ID, 1)}
 		fwd := &model.FwdDep{Depender: ak, Dependee: to.ID}
 
@@ -64,7 +61,7 @@ func TestAddDeps(t *testing.T) {
 				So(ds.Put(a, e), ShouldBeNil)
 
 				_, err := s.EnsureGraphData(c, req)
-				So(err, ShouldBeRPCInvalidArgument, `cannot create attempts for absent quest "Q9SgH-f5kraxP_om80CdR9EmAvgmnUws_s5fvRmZiuc"`)
+				So(err, ShouldBeRPCInvalidArgument, `cannot create attempts for absent quest "FwcLo7vH7d24_mnsKIyKswk3NSezONOAKuDZwHrgl7M"`)
 			})
 		})
 
@@ -76,7 +73,7 @@ func TestAddDeps(t *testing.T) {
 
 				rsp, err := s.EnsureGraphData(c, req)
 				So(err, ShouldBeNil)
-				purgeTimestamps(rsp.Result)
+				rsp.Result.PurgeTimestamps()
 				So(rsp, ShouldResemble, &dm.EnsureGraphDataRsp{
 					Accepted: true,
 					Result: &dm.GraphData{Quests: map[string]*dm.Quest{
@@ -85,7 +82,7 @@ func TestAddDeps(t *testing.T) {
 								Desc:    toQuestDesc,
 								BuiltBy: []*dm.Quest_TemplateSpec{},
 							},
-							Attempts: map[uint32]*dm.Attempt{1: dm.NewAttemptNeedsExecution(zt)},
+							Attempts: map[uint32]*dm.Attempt{1: dm.NewAttemptScheduling()},
 						},
 					}},
 				})
@@ -97,7 +94,7 @@ func TestAddDeps(t *testing.T) {
 
 				rsp, err := s.EnsureGraphData(c, req)
 				So(err, ShouldBeNil)
-				purgeTimestamps(rsp.Result)
+				rsp.Result.PurgeTimestamps()
 				So(rsp, ShouldResemble, &dm.EnsureGraphDataRsp{
 					Accepted: true,
 					Result: &dm.GraphData{Quests: map[string]*dm.Quest{
@@ -106,7 +103,7 @@ func TestAddDeps(t *testing.T) {
 								Desc:    toQuestDesc,
 								BuiltBy: []*dm.Quest_TemplateSpec{},
 							},
-							Attempts: map[uint32]*dm.Attempt{1: dm.NewAttemptFinished(zt, 0, "")},
+							Attempts: map[uint32]*dm.Attempt{1: dm.NewAttemptFinished(zt, 0, "", nil)},
 						},
 					}},
 				})
@@ -123,7 +120,9 @@ func TestAddDeps(t *testing.T) {
 
 				So(ds.Get(fwd), ShouldBeNil)
 				So(ds.Get(a), ShouldBeNil)
-				So(a.State, ShouldEqual, dm.Attempt_ADDING_DEPS)
+				So(a.State, ShouldEqual, dm.Attempt_EXECUTING)
+				So(ds.Get(e), ShouldBeNil)
+				So(e.State, ShouldEqual, dm.Execution_STOPPING)
 			})
 
 		})

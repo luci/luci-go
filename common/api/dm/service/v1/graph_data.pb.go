@@ -8,6 +8,7 @@ import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
 import google_protobuf "github.com/luci/luci-go/common/proto/google"
+import _ "github.com/luci/luci-go/common/proto/google"
 import _ "github.com/luci/luci-go/common/api/template"
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -15,38 +16,130 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+type AbnormalFinish_Status int32
+
+const (
+	// This entity has a failed result.
+	//
+	// Executions: the distributor reported that the task executed and failed, OR
+	// the distributor reports success while the Execution is in the RUNNING
+	// state.
+	//
+	// Attempts: the last Execution had a FAILED Status.
+	//
+	// Retryable.
+	AbnormalFinish_FAILED AbnormalFinish_Status = 0
+	// This entity failed in a bad way.
+	//
+	// Executions: The distributor told us that the job died violently while in
+	// the SCHEDULING, RUNNING or STOPPING state.
+	//
+	// Attempts: the last Execution had a CRASHED Status.
+	//
+	// Retryable.
+	AbnormalFinish_CRASHED AbnormalFinish_Status = 1
+	// Waited too long for the job to start.
+	//
+	// Executions: the distributor couldn't start the job in time, OR DM failed
+	// to get a status update from the distributor in time (e.g. the state was
+	// SCHEDULING for too long).
+	//
+	// Attempts: the last Execution had an EXPIRED Status.
+	//
+	// Retryable.
+	AbnormalFinish_EXPIRED AbnormalFinish_Status = 2
+	// The job started, but took too long.
+	//
+	// Executions: the distributor started the job, but it couldn't complete in
+	// time, OR DM failed to get a status update from the distributor in time
+	// (e.g. the state was RUNNING for too long).
+	//
+	// Attempts: the last Execution had an TIMED_OUT Status.
+	//
+	// Retryable.
+	AbnormalFinish_TIMED_OUT AbnormalFinish_Status = 3
+	// The job was cancelled by an external entity (human, automated system).
+	//
+	// Executions: the distributor informing DM that the job was preemptively
+	// cancelled.
+	//
+	// Attempts: the last Execution had a CANCELLED Status, or this Attempt
+	// was cancelled via DM.
+	AbnormalFinish_CANCELLED AbnormalFinish_Status = 4
+	// The job was prevented from running by the distributor (quota, permissions,
+	// etc.)
+	//
+	// Executions: the distributor refused to run this job.
+	//
+	// Attempts: the last Execution had a REJECTED Status.
+	AbnormalFinish_REJECTED AbnormalFinish_Status = 5
+	// The job is unrecognized.
+	//
+	// Executions: the distributor doesn't know about this job, or has forgotten
+	// about it.
+	//
+	// Attempts: the last Execution had a MISSING Status.
+	AbnormalFinish_MISSING AbnormalFinish_Status = 6
+)
+
+var AbnormalFinish_Status_name = map[int32]string{
+	0: "FAILED",
+	1: "CRASHED",
+	2: "EXPIRED",
+	3: "TIMED_OUT",
+	4: "CANCELLED",
+	5: "REJECTED",
+	6: "MISSING",
+}
+var AbnormalFinish_Status_value = map[string]int32{
+	"FAILED":    0,
+	"CRASHED":   1,
+	"EXPIRED":   2,
+	"TIMED_OUT": 3,
+	"CANCELLED": 4,
+	"REJECTED":  5,
+	"MISSING":   6,
+}
+
+func (x AbnormalFinish_Status) String() string {
+	return proto.EnumName(AbnormalFinish_Status_name, int32(x))
+}
+func (AbnormalFinish_Status) EnumDescriptor() ([]byte, []int) { return fileDescriptor3, []int{0, 0} }
+
 type Attempt_State int32
 
 const (
-	Attempt_NEEDS_EXECUTION          Attempt_State = 0
-	Attempt_EXECUTING                Attempt_State = 1
-	Attempt_ADDING_DEPS              Attempt_State = 2
-	Attempt_BLOCKED                  Attempt_State = 3
-	Attempt_AWAITING_EXECUTION_STATE Attempt_State = 4
-	Attempt_FINISHED                 Attempt_State = 5
+	// The Attempt is waiting to be Executed.
+	Attempt_SCHEDULING Attempt_State = 0
+	// The Attempt is currently waiting for its current Execution to finish.
+	Attempt_EXECUTING Attempt_State = 1
+	// The Attempt is waiting for dependent Attempts to be resolved.
+	Attempt_WAITING Attempt_State = 2
+	// The Attempt is in its final state.
+	Attempt_FINISHED Attempt_State = 3
+	// The Attempt is in an abnormal final state.
+	Attempt_ABNORMAL_FINISHED Attempt_State = 4
 )
 
 var Attempt_State_name = map[int32]string{
-	0: "NEEDS_EXECUTION",
+	0: "SCHEDULING",
 	1: "EXECUTING",
-	2: "ADDING_DEPS",
-	3: "BLOCKED",
-	4: "AWAITING_EXECUTION_STATE",
-	5: "FINISHED",
+	2: "WAITING",
+	3: "FINISHED",
+	4: "ABNORMAL_FINISHED",
 }
 var Attempt_State_value = map[string]int32{
-	"NEEDS_EXECUTION":          0,
-	"EXECUTING":                1,
-	"ADDING_DEPS":              2,
-	"BLOCKED":                  3,
-	"AWAITING_EXECUTION_STATE": 4,
-	"FINISHED":                 5,
+	"SCHEDULING":        0,
+	"EXECUTING":         1,
+	"WAITING":           2,
+	"FINISHED":          3,
+	"ABNORMAL_FINISHED": 4,
 }
 
 func (x Attempt_State) String() string {
 	return proto.EnumName(Attempt_State_name, int32(x))
 }
-func (Attempt_State) EnumDescriptor() ([]byte, []int) { return fileDescriptor4, []int{1, 0} }
+func (Attempt_State) EnumDescriptor() ([]byte, []int) { return fileDescriptor3, []int{2, 0} }
 
 type Attempt_Partial_Result int32
 
@@ -79,54 +172,54 @@ var Attempt_Partial_Result_value = map[string]int32{
 func (x Attempt_Partial_Result) String() string {
 	return proto.EnumName(Attempt_Partial_Result_name, int32(x))
 }
-func (Attempt_Partial_Result) EnumDescriptor() ([]byte, []int) { return fileDescriptor4, []int{1, 3, 0} }
+func (Attempt_Partial_Result) EnumDescriptor() ([]byte, []int) { return fileDescriptor3, []int{2, 3, 0} }
 
 type Execution_State int32
 
 const (
-	// The execution has been accepted by the distributor, but is not running yet
-	Execution_SCHEDULED Execution_State = 0
-	// The execution is running
+	// The execution has been accepted by the distributor, but is not running
+	// yet.
+	Execution_SCHEDULING Execution_State = 0
+	// The execution is running (has activated with DM).
 	Execution_RUNNING Execution_State = 1
-	// The execution was unable to be accepted by the distributor
-	Execution_REJECTED Execution_State = 2
-	// The execution was accepted by the distributor, but couldn't run in time.
-	Execution_TIMED_OUT Execution_State = 3
-	// The execution ran and completed
-	Execution_FINISHED Execution_State = 4
-	// The execution ran, but the distributor claims it did not complete
-	Execution_FAILED Execution_State = 5
-	// The distributor claims to not know anything about this execution
-	Execution_MISSING Execution_State = 6
-	// Some entity (DM, Human, Distributor) requested that this execution not run.
-	Execution_CANCELLED Execution_State = 7
+	// The execution has been told to stop by DM, but we haven't heard from
+	// the distributor yet.
+	Execution_STOPPING Execution_State = 2
+	// The execution is in its final state.
+	Execution_FINISHED Execution_State = 3
+	// The execution is in an abnormal final state
+	Execution_ABNORMAL_FINISHED Execution_State = 4
 )
 
 var Execution_State_name = map[int32]string{
-	0: "SCHEDULED",
+	0: "SCHEDULING",
 	1: "RUNNING",
-	2: "REJECTED",
-	3: "TIMED_OUT",
-	4: "FINISHED",
-	5: "FAILED",
-	6: "MISSING",
-	7: "CANCELLED",
+	2: "STOPPING",
+	3: "FINISHED",
+	4: "ABNORMAL_FINISHED",
 }
 var Execution_State_value = map[string]int32{
-	"SCHEDULED": 0,
-	"RUNNING":   1,
-	"REJECTED":  2,
-	"TIMED_OUT": 3,
-	"FINISHED":  4,
-	"FAILED":    5,
-	"MISSING":   6,
-	"CANCELLED": 7,
+	"SCHEDULING":        0,
+	"RUNNING":           1,
+	"STOPPING":          2,
+	"FINISHED":          3,
+	"ABNORMAL_FINISHED": 4,
 }
 
 func (x Execution_State) String() string {
 	return proto.EnumName(Execution_State_name, int32(x))
 }
-func (Execution_State) EnumDescriptor() ([]byte, []int) { return fileDescriptor4, []int{2, 0} }
+func (Execution_State) EnumDescriptor() ([]byte, []int) { return fileDescriptor3, []int{3, 0} }
+
+type AbnormalFinish struct {
+	Status AbnormalFinish_Status `protobuf:"varint,1,opt,name=status,enum=dm.AbnormalFinish_Status" json:"status,omitempty"`
+	Reason string                `protobuf:"bytes,2,opt,name=reason" json:"reason,omitempty"`
+}
+
+func (m *AbnormalFinish) Reset()                    { *m = AbnormalFinish{} }
+func (m *AbnormalFinish) String() string            { return proto.CompactTextString(m) }
+func (*AbnormalFinish) ProtoMessage()               {}
+func (*AbnormalFinish) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
 
 type Quest struct {
 	Id *Quest_ID `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
@@ -144,7 +237,7 @@ type Quest struct {
 func (m *Quest) Reset()                    { *m = Quest{} }
 func (m *Quest) String() string            { return proto.CompactTextString(m) }
 func (*Quest) ProtoMessage()               {}
-func (*Quest) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
+func (*Quest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1} }
 
 func (m *Quest) GetId() *Quest_ID {
 	if m != nil {
@@ -174,17 +267,69 @@ type Quest_ID struct {
 func (m *Quest_ID) Reset()                    { *m = Quest_ID{} }
 func (m *Quest_ID) String() string            { return proto.CompactTextString(m) }
 func (*Quest_ID) ProtoMessage()               {}
-func (*Quest_ID) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0, 0} }
+func (*Quest_ID) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1, 0} }
 
 type Quest_Desc struct {
 	DistributorConfigName string `protobuf:"bytes,1,opt,name=distributor_config_name,json=distributorConfigName" json:"distributor_config_name,omitempty"`
 	JsonPayload           string `protobuf:"bytes,2,opt,name=json_payload,json=jsonPayload" json:"json_payload,omitempty"`
+	// This is metadata which doesn't affect the functionality of the payload,
+	// but does affect how DM and/or the distributor run/schedule that payload.
+	Meta *Quest_Desc_Meta `protobuf:"bytes,3,opt,name=meta" json:"meta,omitempty"`
 }
 
 func (m *Quest_Desc) Reset()                    { *m = Quest_Desc{} }
 func (m *Quest_Desc) String() string            { return proto.CompactTextString(m) }
 func (*Quest_Desc) ProtoMessage()               {}
-func (*Quest_Desc) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0, 1} }
+func (*Quest_Desc) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1, 1} }
+
+func (m *Quest_Desc) GetMeta() *Quest_Desc_Meta {
+	if m != nil {
+		return m.Meta
+	}
+	return nil
+}
+
+type Quest_Desc_Meta struct {
+	// This names the user/service account for all Attempts on this quest. You
+	// must have permission to use this account when creating the Quest and/or
+	// Attempts.
+	AsAccount string `protobuf:"bytes,1,opt,name=as_account,json=asAccount" json:"as_account,omitempty"`
+	// This affects how DM will retry the job payload in various exceptional
+	// circumstances.
+	Retry *Quest_Desc_Meta_Retry `protobuf:"bytes,2,opt,name=retry" json:"retry,omitempty"`
+}
+
+func (m *Quest_Desc_Meta) Reset()                    { *m = Quest_Desc_Meta{} }
+func (m *Quest_Desc_Meta) String() string            { return proto.CompactTextString(m) }
+func (*Quest_Desc_Meta) ProtoMessage()               {}
+func (*Quest_Desc_Meta) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1, 1, 0} }
+
+func (m *Quest_Desc_Meta) GetRetry() *Quest_Desc_Meta_Retry {
+	if m != nil {
+		return m.Retry
+	}
+	return nil
+}
+
+type Quest_Desc_Meta_Retry struct {
+	// The number of times in a row to retry Executions which have an
+	// ABNORMAL_FINISHED status of FAILED.
+	Failed uint32 `protobuf:"varint,1,opt,name=failed" json:"failed,omitempty"`
+	// The number of times in a row to retry Executions which have an
+	// ABNORMAL_FINISHED status of EXPIRED.
+	Expired uint32 `protobuf:"varint,2,opt,name=expired" json:"expired,omitempty"`
+	// The number of times in a row to retry Executions which have an
+	// ABNORMAL_FINISHED status of TIMED_OUT.
+	TimedOut uint32 `protobuf:"varint,3,opt,name=timed_out,json=timedOut" json:"timed_out,omitempty"`
+	// The number of times in a row to retry Executions which have an
+	// ABNORMAL_FINISHED status of CRASHED.
+	Crashed uint32 `protobuf:"varint,4,opt,name=crashed" json:"crashed,omitempty"`
+}
+
+func (m *Quest_Desc_Meta_Retry) Reset()                    { *m = Quest_Desc_Meta_Retry{} }
+func (m *Quest_Desc_Meta_Retry) String() string            { return proto.CompactTextString(m) }
+func (*Quest_Desc_Meta_Retry) ProtoMessage()               {}
+func (*Quest_Desc_Meta_Retry) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1, 1, 0, 0} }
 
 type Quest_TemplateSpec struct {
 	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
@@ -196,7 +341,7 @@ type Quest_TemplateSpec struct {
 func (m *Quest_TemplateSpec) Reset()                    { *m = Quest_TemplateSpec{} }
 func (m *Quest_TemplateSpec) String() string            { return proto.CompactTextString(m) }
 func (*Quest_TemplateSpec) ProtoMessage()               {}
-func (*Quest_TemplateSpec) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0, 2} }
+func (*Quest_TemplateSpec) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1, 2} }
 
 type Quest_Data struct {
 	Created *google_protobuf.Timestamp `protobuf:"bytes,1,opt,name=created" json:"created,omitempty"`
@@ -207,7 +352,7 @@ type Quest_Data struct {
 func (m *Quest_Data) Reset()                    { *m = Quest_Data{} }
 func (m *Quest_Data) String() string            { return proto.CompactTextString(m) }
 func (*Quest_Data) ProtoMessage()               {}
-func (*Quest_Data) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0, 3} }
+func (*Quest_Data) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1, 3} }
 
 func (m *Quest_Data) GetCreated() *google_protobuf.Timestamp {
 	if m != nil {
@@ -249,7 +394,7 @@ type Attempt struct {
 func (m *Attempt) Reset()                    { *m = Attempt{} }
 func (m *Attempt) String() string            { return proto.CompactTextString(m) }
 func (*Attempt) ProtoMessage()               {}
-func (*Attempt) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{1} }
+func (*Attempt) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2} }
 
 func (m *Attempt) GetId() *Attempt_ID {
 	if m != nil {
@@ -301,51 +446,51 @@ type Attempt_ID struct {
 func (m *Attempt_ID) Reset()                    { *m = Attempt_ID{} }
 func (m *Attempt_ID) String() string            { return proto.CompactTextString(m) }
 func (*Attempt_ID) ProtoMessage()               {}
-func (*Attempt_ID) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{1, 0} }
+func (*Attempt_ID) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2, 0} }
 
 type Attempt_Data struct {
 	Created       *google_protobuf.Timestamp `protobuf:"bytes,1,opt,name=created" json:"created,omitempty"`
 	Modified      *google_protobuf.Timestamp `protobuf:"bytes,2,opt,name=modified" json:"modified,omitempty"`
 	NumExecutions uint32                     `protobuf:"varint,3,opt,name=num_executions,json=numExecutions" json:"num_executions,omitempty"`
 	// Types that are valid to be assigned to AttemptType:
-	//	*Attempt_Data_NeedsExecution_
+	//	*Attempt_Data_Scheduling_
 	//	*Attempt_Data_Executing_
-	//	*Attempt_Data_AddingDeps_
-	//	*Attempt_Data_Blocked_
+	//	*Attempt_Data_Waiting_
 	//	*Attempt_Data_Finished_
+	//	*Attempt_Data_AbnormalFinish
 	AttemptType isAttempt_Data_AttemptType `protobuf_oneof:"attempt_type"`
 }
 
 func (m *Attempt_Data) Reset()                    { *m = Attempt_Data{} }
 func (m *Attempt_Data) String() string            { return proto.CompactTextString(m) }
 func (*Attempt_Data) ProtoMessage()               {}
-func (*Attempt_Data) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{1, 1} }
+func (*Attempt_Data) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2, 1} }
 
 type isAttempt_Data_AttemptType interface {
 	isAttempt_Data_AttemptType()
 }
 
-type Attempt_Data_NeedsExecution_ struct {
-	NeedsExecution *Attempt_Data_NeedsExecution `protobuf:"bytes,4,opt,name=needs_execution,json=needsExecution,oneof"`
+type Attempt_Data_Scheduling_ struct {
+	Scheduling *Attempt_Data_Scheduling `protobuf:"bytes,5,opt,name=scheduling,oneof"`
 }
 type Attempt_Data_Executing_ struct {
-	Executing *Attempt_Data_Executing `protobuf:"bytes,5,opt,name=executing,oneof"`
+	Executing *Attempt_Data_Executing `protobuf:"bytes,6,opt,name=executing,oneof"`
 }
-type Attempt_Data_AddingDeps_ struct {
-	AddingDeps *Attempt_Data_AddingDeps `protobuf:"bytes,6,opt,name=adding_deps,json=addingDeps,oneof"`
-}
-type Attempt_Data_Blocked_ struct {
-	Blocked *Attempt_Data_Blocked `protobuf:"bytes,7,opt,name=blocked,oneof"`
+type Attempt_Data_Waiting_ struct {
+	Waiting *Attempt_Data_Waiting `protobuf:"bytes,7,opt,name=waiting,oneof"`
 }
 type Attempt_Data_Finished_ struct {
 	Finished *Attempt_Data_Finished `protobuf:"bytes,8,opt,name=finished,oneof"`
 }
+type Attempt_Data_AbnormalFinish struct {
+	AbnormalFinish *AbnormalFinish `protobuf:"bytes,9,opt,name=abnormal_finish,json=abnormalFinish,oneof"`
+}
 
-func (*Attempt_Data_NeedsExecution_) isAttempt_Data_AttemptType() {}
-func (*Attempt_Data_Executing_) isAttempt_Data_AttemptType()      {}
-func (*Attempt_Data_AddingDeps_) isAttempt_Data_AttemptType()     {}
-func (*Attempt_Data_Blocked_) isAttempt_Data_AttemptType()        {}
-func (*Attempt_Data_Finished_) isAttempt_Data_AttemptType()       {}
+func (*Attempt_Data_Scheduling_) isAttempt_Data_AttemptType()    {}
+func (*Attempt_Data_Executing_) isAttempt_Data_AttemptType()     {}
+func (*Attempt_Data_Waiting_) isAttempt_Data_AttemptType()       {}
+func (*Attempt_Data_Finished_) isAttempt_Data_AttemptType()      {}
+func (*Attempt_Data_AbnormalFinish) isAttempt_Data_AttemptType() {}
 
 func (m *Attempt_Data) GetAttemptType() isAttempt_Data_AttemptType {
 	if m != nil {
@@ -368,9 +513,9 @@ func (m *Attempt_Data) GetModified() *google_protobuf.Timestamp {
 	return nil
 }
 
-func (m *Attempt_Data) GetNeedsExecution() *Attempt_Data_NeedsExecution {
-	if x, ok := m.GetAttemptType().(*Attempt_Data_NeedsExecution_); ok {
-		return x.NeedsExecution
+func (m *Attempt_Data) GetScheduling() *Attempt_Data_Scheduling {
+	if x, ok := m.GetAttemptType().(*Attempt_Data_Scheduling_); ok {
+		return x.Scheduling
 	}
 	return nil
 }
@@ -382,16 +527,9 @@ func (m *Attempt_Data) GetExecuting() *Attempt_Data_Executing {
 	return nil
 }
 
-func (m *Attempt_Data) GetAddingDeps() *Attempt_Data_AddingDeps {
-	if x, ok := m.GetAttemptType().(*Attempt_Data_AddingDeps_); ok {
-		return x.AddingDeps
-	}
-	return nil
-}
-
-func (m *Attempt_Data) GetBlocked() *Attempt_Data_Blocked {
-	if x, ok := m.GetAttemptType().(*Attempt_Data_Blocked_); ok {
-		return x.Blocked
+func (m *Attempt_Data) GetWaiting() *Attempt_Data_Waiting {
+	if x, ok := m.GetAttemptType().(*Attempt_Data_Waiting_); ok {
+		return x.Waiting
 	}
 	return nil
 }
@@ -403,14 +541,21 @@ func (m *Attempt_Data) GetFinished() *Attempt_Data_Finished {
 	return nil
 }
 
+func (m *Attempt_Data) GetAbnormalFinish() *AbnormalFinish {
+	if x, ok := m.GetAttemptType().(*Attempt_Data_AbnormalFinish); ok {
+		return x.AbnormalFinish
+	}
+	return nil
+}
+
 // XXX_OneofFuncs is for the internal use of the proto package.
 func (*Attempt_Data) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
 	return _Attempt_Data_OneofMarshaler, _Attempt_Data_OneofUnmarshaler, _Attempt_Data_OneofSizer, []interface{}{
-		(*Attempt_Data_NeedsExecution_)(nil),
+		(*Attempt_Data_Scheduling_)(nil),
 		(*Attempt_Data_Executing_)(nil),
-		(*Attempt_Data_AddingDeps_)(nil),
-		(*Attempt_Data_Blocked_)(nil),
+		(*Attempt_Data_Waiting_)(nil),
 		(*Attempt_Data_Finished_)(nil),
+		(*Attempt_Data_AbnormalFinish)(nil),
 	}
 }
 
@@ -418,29 +563,29 @@ func _Attempt_Data_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
 	m := msg.(*Attempt_Data)
 	// attempt_type
 	switch x := m.AttemptType.(type) {
-	case *Attempt_Data_NeedsExecution_:
-		b.EncodeVarint(4<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.NeedsExecution); err != nil {
+	case *Attempt_Data_Scheduling_:
+		b.EncodeVarint(5<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Scheduling); err != nil {
 			return err
 		}
 	case *Attempt_Data_Executing_:
-		b.EncodeVarint(5<<3 | proto.WireBytes)
+		b.EncodeVarint(6<<3 | proto.WireBytes)
 		if err := b.EncodeMessage(x.Executing); err != nil {
 			return err
 		}
-	case *Attempt_Data_AddingDeps_:
-		b.EncodeVarint(6<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.AddingDeps); err != nil {
-			return err
-		}
-	case *Attempt_Data_Blocked_:
+	case *Attempt_Data_Waiting_:
 		b.EncodeVarint(7<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Blocked); err != nil {
+		if err := b.EncodeMessage(x.Waiting); err != nil {
 			return err
 		}
 	case *Attempt_Data_Finished_:
 		b.EncodeVarint(8<<3 | proto.WireBytes)
 		if err := b.EncodeMessage(x.Finished); err != nil {
+			return err
+		}
+	case *Attempt_Data_AbnormalFinish:
+		b.EncodeVarint(9<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.AbnormalFinish); err != nil {
 			return err
 		}
 	case nil:
@@ -453,15 +598,15 @@ func _Attempt_Data_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
 func _Attempt_Data_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
 	m := msg.(*Attempt_Data)
 	switch tag {
-	case 4: // attempt_type.needs_execution
+	case 5: // attempt_type.scheduling
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
-		msg := new(Attempt_Data_NeedsExecution)
+		msg := new(Attempt_Data_Scheduling)
 		err := b.DecodeMessage(msg)
-		m.AttemptType = &Attempt_Data_NeedsExecution_{msg}
+		m.AttemptType = &Attempt_Data_Scheduling_{msg}
 		return true, err
-	case 5: // attempt_type.executing
+	case 6: // attempt_type.executing
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
@@ -469,21 +614,13 @@ func _Attempt_Data_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.B
 		err := b.DecodeMessage(msg)
 		m.AttemptType = &Attempt_Data_Executing_{msg}
 		return true, err
-	case 6: // attempt_type.adding_deps
+	case 7: // attempt_type.waiting
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
-		msg := new(Attempt_Data_AddingDeps)
+		msg := new(Attempt_Data_Waiting)
 		err := b.DecodeMessage(msg)
-		m.AttemptType = &Attempt_Data_AddingDeps_{msg}
-		return true, err
-	case 7: // attempt_type.blocked
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Attempt_Data_Blocked)
-		err := b.DecodeMessage(msg)
-		m.AttemptType = &Attempt_Data_Blocked_{msg}
+		m.AttemptType = &Attempt_Data_Waiting_{msg}
 		return true, err
 	case 8: // attempt_type.finished
 		if wire != proto.WireBytes {
@@ -492,6 +629,14 @@ func _Attempt_Data_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.B
 		msg := new(Attempt_Data_Finished)
 		err := b.DecodeMessage(msg)
 		m.AttemptType = &Attempt_Data_Finished_{msg}
+		return true, err
+	case 9: // attempt_type.abnormal_finish
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(AbnormalFinish)
+		err := b.DecodeMessage(msg)
+		m.AttemptType = &Attempt_Data_AbnormalFinish{msg}
 		return true, err
 	default:
 		return false, nil
@@ -502,29 +647,29 @@ func _Attempt_Data_OneofSizer(msg proto.Message) (n int) {
 	m := msg.(*Attempt_Data)
 	// attempt_type
 	switch x := m.AttemptType.(type) {
-	case *Attempt_Data_NeedsExecution_:
-		s := proto.Size(x.NeedsExecution)
-		n += proto.SizeVarint(4<<3 | proto.WireBytes)
+	case *Attempt_Data_Scheduling_:
+		s := proto.Size(x.Scheduling)
+		n += proto.SizeVarint(5<<3 | proto.WireBytes)
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Attempt_Data_Executing_:
 		s := proto.Size(x.Executing)
-		n += proto.SizeVarint(5<<3 | proto.WireBytes)
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Attempt_Data_AddingDeps_:
-		s := proto.Size(x.AddingDeps)
 		n += proto.SizeVarint(6<<3 | proto.WireBytes)
 		n += proto.SizeVarint(uint64(s))
 		n += s
-	case *Attempt_Data_Blocked_:
-		s := proto.Size(x.Blocked)
+	case *Attempt_Data_Waiting_:
+		s := proto.Size(x.Waiting)
 		n += proto.SizeVarint(7<<3 | proto.WireBytes)
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Attempt_Data_Finished_:
 		s := proto.Size(x.Finished)
 		n += proto.SizeVarint(8<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Attempt_Data_AbnormalFinish:
+		s := proto.Size(x.AbnormalFinish)
+		n += proto.SizeVarint(9<<3 | proto.WireBytes)
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case nil:
@@ -534,24 +679,18 @@ func _Attempt_Data_OneofSizer(msg proto.Message) (n int) {
 	return n
 }
 
-type Attempt_Data_NeedsExecution struct {
-	Pending *google_protobuf.Timestamp `protobuf:"bytes,1,opt,name=pending" json:"pending,omitempty"`
+// This attempt is ready to be Executed, but hasn't been sent to the
+// distributor yet.
+type Attempt_Data_Scheduling struct {
 }
 
-func (m *Attempt_Data_NeedsExecution) Reset()         { *m = Attempt_Data_NeedsExecution{} }
-func (m *Attempt_Data_NeedsExecution) String() string { return proto.CompactTextString(m) }
-func (*Attempt_Data_NeedsExecution) ProtoMessage()    {}
-func (*Attempt_Data_NeedsExecution) Descriptor() ([]byte, []int) {
-	return fileDescriptor4, []int{1, 1, 0}
-}
+func (m *Attempt_Data_Scheduling) Reset()                    { *m = Attempt_Data_Scheduling{} }
+func (m *Attempt_Data_Scheduling) String() string            { return proto.CompactTextString(m) }
+func (*Attempt_Data_Scheduling) ProtoMessage()               {}
+func (*Attempt_Data_Scheduling) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2, 1, 0} }
 
-func (m *Attempt_Data_NeedsExecution) GetPending() *google_protobuf.Timestamp {
-	if m != nil {
-		return m.Pending
-	}
-	return nil
-}
-
+// This attempt has a live Execution (with the specified ID). Check the
+// Execution state for more information.
 type Attempt_Data_Executing struct {
 	CurExecutionId uint32 `protobuf:"varint,1,opt,name=cur_execution_id,json=curExecutionId" json:"cur_execution_id,omitempty"`
 }
@@ -559,37 +698,31 @@ type Attempt_Data_Executing struct {
 func (m *Attempt_Data_Executing) Reset()                    { *m = Attempt_Data_Executing{} }
 func (m *Attempt_Data_Executing) String() string            { return proto.CompactTextString(m) }
 func (*Attempt_Data_Executing) ProtoMessage()               {}
-func (*Attempt_Data_Executing) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{1, 1, 1} }
+func (*Attempt_Data_Executing) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2, 1, 1} }
 
-type Attempt_Data_AddingDeps struct {
-	NumAdding  uint32 `protobuf:"varint,1,opt,name=num_adding,json=numAdding" json:"num_adding,omitempty"`
-	NumWaiting uint32 `protobuf:"varint,2,opt,name=num_waiting,json=numWaiting" json:"num_waiting,omitempty"`
-}
-
-func (m *Attempt_Data_AddingDeps) Reset()                    { *m = Attempt_Data_AddingDeps{} }
-func (m *Attempt_Data_AddingDeps) String() string            { return proto.CompactTextString(m) }
-func (*Attempt_Data_AddingDeps) ProtoMessage()               {}
-func (*Attempt_Data_AddingDeps) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{1, 1, 2} }
-
-type Attempt_Data_Blocked struct {
+// This attempt's last Execution stopped by adding dependencies.
+type Attempt_Data_Waiting struct {
 	NumWaiting uint32 `protobuf:"varint,1,opt,name=num_waiting,json=numWaiting" json:"num_waiting,omitempty"`
 }
 
-func (m *Attempt_Data_Blocked) Reset()                    { *m = Attempt_Data_Blocked{} }
-func (m *Attempt_Data_Blocked) String() string            { return proto.CompactTextString(m) }
-func (*Attempt_Data_Blocked) ProtoMessage()               {}
-func (*Attempt_Data_Blocked) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{1, 1, 3} }
+func (m *Attempt_Data_Waiting) Reset()                    { *m = Attempt_Data_Waiting{} }
+func (m *Attempt_Data_Waiting) String() string            { return proto.CompactTextString(m) }
+func (*Attempt_Data_Waiting) ProtoMessage()               {}
+func (*Attempt_Data_Waiting) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2, 1, 2} }
 
+// This attempt is complete.
 type Attempt_Data_Finished struct {
 	Expiration     *google_protobuf.Timestamp `protobuf:"bytes,1,opt,name=expiration" json:"expiration,omitempty"`
 	JsonResultSize uint32                     `protobuf:"varint,2,opt,name=json_result_size,json=jsonResultSize" json:"json_result_size,omitempty"`
 	JsonResult     string                     `protobuf:"bytes,3,opt,name=json_result,json=jsonResult" json:"json_result,omitempty"`
+	// This is the distributor-specific state of the final Execution.
+	PersistentStateResult []byte `protobuf:"bytes,4,opt,name=persistent_state_result,json=persistentStateResult,proto3" json:"persistent_state_result,omitempty"`
 }
 
 func (m *Attempt_Data_Finished) Reset()                    { *m = Attempt_Data_Finished{} }
 func (m *Attempt_Data_Finished) String() string            { return proto.CompactTextString(m) }
 func (*Attempt_Data_Finished) ProtoMessage()               {}
-func (*Attempt_Data_Finished) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{1, 1, 4} }
+func (*Attempt_Data_Finished) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2, 1, 3} }
 
 func (m *Attempt_Data_Finished) GetExpiration() *google_protobuf.Timestamp {
 	if m != nil {
@@ -618,7 +751,7 @@ type Attempt_Partial struct {
 func (m *Attempt_Partial) Reset()                    { *m = Attempt_Partial{} }
 func (m *Attempt_Partial) String() string            { return proto.CompactTextString(m) }
 func (*Attempt_Partial) ProtoMessage()               {}
-func (*Attempt_Partial) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{1, 3} }
+func (*Attempt_Partial) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2, 3} }
 
 type Execution struct {
 	Id   *Execution_ID   `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
@@ -631,7 +764,7 @@ type Execution struct {
 func (m *Execution) Reset()                    { *m = Execution{} }
 func (m *Execution) String() string            { return proto.CompactTextString(m) }
 func (*Execution) ProtoMessage()               {}
-func (*Execution) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{2} }
+func (*Execution) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3} }
 
 func (m *Execution) GetId() *Execution_ID {
 	if m != nil {
@@ -657,7 +790,7 @@ type Execution_Auth struct {
 func (m *Execution_Auth) Reset()                    { *m = Execution_Auth{} }
 func (m *Execution_Auth) String() string            { return proto.CompactTextString(m) }
 func (*Execution_Auth) ProtoMessage()               {}
-func (*Execution_Auth) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{2, 0} }
+func (*Execution_Auth) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3, 0} }
 
 func (m *Execution_Auth) GetId() *Execution_ID {
 	if m != nil {
@@ -675,20 +808,58 @@ type Execution_ID struct {
 func (m *Execution_ID) Reset()                    { *m = Execution_ID{} }
 func (m *Execution_ID) String() string            { return proto.CompactTextString(m) }
 func (*Execution_ID) ProtoMessage()               {}
-func (*Execution_ID) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{2, 1} }
+func (*Execution_ID) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3, 1} }
 
 type Execution_Data struct {
-	State              Execution_State            `protobuf:"varint,1,opt,name=state,enum=dm.Execution_State" json:"state,omitempty"`
-	StateReason        string                     `protobuf:"bytes,2,opt,name=state_reason,json=stateReason" json:"state_reason,omitempty"`
-	Created            *google_protobuf.Timestamp `protobuf:"bytes,3,opt,name=created" json:"created,omitempty"`
-	DistributorToken   string                     `protobuf:"bytes,4,opt,name=distributor_token,json=distributorToken" json:"distributor_token,omitempty"`
-	DistributorInfoUrl string                     `protobuf:"bytes,5,opt,name=distributor_info_url,json=distributorInfoUrl" json:"distributor_info_url,omitempty"`
+	Created         *google_protobuf.Timestamp      `protobuf:"bytes,1,opt,name=created" json:"created,omitempty"`
+	Modified        *google_protobuf.Timestamp      `protobuf:"bytes,2,opt,name=modified" json:"modified,omitempty"`
+	DistributorInfo *Execution_Data_DistributorInfo `protobuf:"bytes,3,opt,name=distributor_info,json=distributorInfo" json:"distributor_info,omitempty"`
+	// Types that are valid to be assigned to ExecutionType:
+	//	*Execution_Data_Scheduling_
+	//	*Execution_Data_Running_
+	//	*Execution_Data_Stopping_
+	//	*Execution_Data_Finished_
+	//	*Execution_Data_AbnormalFinish
+	ExecutionType isExecution_Data_ExecutionType `protobuf_oneof:"execution_type"`
 }
 
 func (m *Execution_Data) Reset()                    { *m = Execution_Data{} }
 func (m *Execution_Data) String() string            { return proto.CompactTextString(m) }
 func (*Execution_Data) ProtoMessage()               {}
-func (*Execution_Data) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{2, 2} }
+func (*Execution_Data) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3, 2} }
+
+type isExecution_Data_ExecutionType interface {
+	isExecution_Data_ExecutionType()
+}
+
+type Execution_Data_Scheduling_ struct {
+	Scheduling *Execution_Data_Scheduling `protobuf:"bytes,4,opt,name=scheduling,oneof"`
+}
+type Execution_Data_Running_ struct {
+	Running *Execution_Data_Running `protobuf:"bytes,5,opt,name=running,oneof"`
+}
+type Execution_Data_Stopping_ struct {
+	Stopping *Execution_Data_Stopping `protobuf:"bytes,6,opt,name=stopping,oneof"`
+}
+type Execution_Data_Finished_ struct {
+	Finished *Execution_Data_Finished `protobuf:"bytes,7,opt,name=finished,oneof"`
+}
+type Execution_Data_AbnormalFinish struct {
+	AbnormalFinish *AbnormalFinish `protobuf:"bytes,8,opt,name=abnormal_finish,json=abnormalFinish,oneof"`
+}
+
+func (*Execution_Data_Scheduling_) isExecution_Data_ExecutionType()    {}
+func (*Execution_Data_Running_) isExecution_Data_ExecutionType()       {}
+func (*Execution_Data_Stopping_) isExecution_Data_ExecutionType()      {}
+func (*Execution_Data_Finished_) isExecution_Data_ExecutionType()      {}
+func (*Execution_Data_AbnormalFinish) isExecution_Data_ExecutionType() {}
+
+func (m *Execution_Data) GetExecutionType() isExecution_Data_ExecutionType {
+	if m != nil {
+		return m.ExecutionType
+	}
+	return nil
+}
 
 func (m *Execution_Data) GetCreated() *google_protobuf.Timestamp {
 	if m != nil {
@@ -696,6 +867,233 @@ func (m *Execution_Data) GetCreated() *google_protobuf.Timestamp {
 	}
 	return nil
 }
+
+func (m *Execution_Data) GetModified() *google_protobuf.Timestamp {
+	if m != nil {
+		return m.Modified
+	}
+	return nil
+}
+
+func (m *Execution_Data) GetDistributorInfo() *Execution_Data_DistributorInfo {
+	if m != nil {
+		return m.DistributorInfo
+	}
+	return nil
+}
+
+func (m *Execution_Data) GetScheduling() *Execution_Data_Scheduling {
+	if x, ok := m.GetExecutionType().(*Execution_Data_Scheduling_); ok {
+		return x.Scheduling
+	}
+	return nil
+}
+
+func (m *Execution_Data) GetRunning() *Execution_Data_Running {
+	if x, ok := m.GetExecutionType().(*Execution_Data_Running_); ok {
+		return x.Running
+	}
+	return nil
+}
+
+func (m *Execution_Data) GetStopping() *Execution_Data_Stopping {
+	if x, ok := m.GetExecutionType().(*Execution_Data_Stopping_); ok {
+		return x.Stopping
+	}
+	return nil
+}
+
+func (m *Execution_Data) GetFinished() *Execution_Data_Finished {
+	if x, ok := m.GetExecutionType().(*Execution_Data_Finished_); ok {
+		return x.Finished
+	}
+	return nil
+}
+
+func (m *Execution_Data) GetAbnormalFinish() *AbnormalFinish {
+	if x, ok := m.GetExecutionType().(*Execution_Data_AbnormalFinish); ok {
+		return x.AbnormalFinish
+	}
+	return nil
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*Execution_Data) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _Execution_Data_OneofMarshaler, _Execution_Data_OneofUnmarshaler, _Execution_Data_OneofSizer, []interface{}{
+		(*Execution_Data_Scheduling_)(nil),
+		(*Execution_Data_Running_)(nil),
+		(*Execution_Data_Stopping_)(nil),
+		(*Execution_Data_Finished_)(nil),
+		(*Execution_Data_AbnormalFinish)(nil),
+	}
+}
+
+func _Execution_Data_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*Execution_Data)
+	// execution_type
+	switch x := m.ExecutionType.(type) {
+	case *Execution_Data_Scheduling_:
+		b.EncodeVarint(4<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Scheduling); err != nil {
+			return err
+		}
+	case *Execution_Data_Running_:
+		b.EncodeVarint(5<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Running); err != nil {
+			return err
+		}
+	case *Execution_Data_Stopping_:
+		b.EncodeVarint(6<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Stopping); err != nil {
+			return err
+		}
+	case *Execution_Data_Finished_:
+		b.EncodeVarint(7<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Finished); err != nil {
+			return err
+		}
+	case *Execution_Data_AbnormalFinish:
+		b.EncodeVarint(8<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.AbnormalFinish); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("Execution_Data.ExecutionType has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _Execution_Data_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*Execution_Data)
+	switch tag {
+	case 4: // execution_type.scheduling
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(Execution_Data_Scheduling)
+		err := b.DecodeMessage(msg)
+		m.ExecutionType = &Execution_Data_Scheduling_{msg}
+		return true, err
+	case 5: // execution_type.running
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(Execution_Data_Running)
+		err := b.DecodeMessage(msg)
+		m.ExecutionType = &Execution_Data_Running_{msg}
+		return true, err
+	case 6: // execution_type.stopping
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(Execution_Data_Stopping)
+		err := b.DecodeMessage(msg)
+		m.ExecutionType = &Execution_Data_Stopping_{msg}
+		return true, err
+	case 7: // execution_type.finished
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(Execution_Data_Finished)
+		err := b.DecodeMessage(msg)
+		m.ExecutionType = &Execution_Data_Finished_{msg}
+		return true, err
+	case 8: // execution_type.abnormal_finish
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(AbnormalFinish)
+		err := b.DecodeMessage(msg)
+		m.ExecutionType = &Execution_Data_AbnormalFinish{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _Execution_Data_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*Execution_Data)
+	// execution_type
+	switch x := m.ExecutionType.(type) {
+	case *Execution_Data_Scheduling_:
+		s := proto.Size(x.Scheduling)
+		n += proto.SizeVarint(4<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Execution_Data_Running_:
+		s := proto.Size(x.Running)
+		n += proto.SizeVarint(5<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Execution_Data_Stopping_:
+		s := proto.Size(x.Stopping)
+		n += proto.SizeVarint(6<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Execution_Data_Finished_:
+		s := proto.Size(x.Finished)
+		n += proto.SizeVarint(7<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Execution_Data_AbnormalFinish:
+		s := proto.Size(x.AbnormalFinish)
+		n += proto.SizeVarint(8<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
+}
+
+type Execution_Data_DistributorInfo struct {
+	ConfigName    string `protobuf:"bytes,1,opt,name=config_name,json=configName" json:"config_name,omitempty"`
+	ConfigVersion string `protobuf:"bytes,2,opt,name=config_version,json=configVersion" json:"config_version,omitempty"`
+	Token         string `protobuf:"bytes,3,opt,name=token" json:"token,omitempty"`
+	Url           string `protobuf:"bytes,4,opt,name=url" json:"url,omitempty"`
+}
+
+func (m *Execution_Data_DistributorInfo) Reset()         { *m = Execution_Data_DistributorInfo{} }
+func (m *Execution_Data_DistributorInfo) String() string { return proto.CompactTextString(m) }
+func (*Execution_Data_DistributorInfo) ProtoMessage()    {}
+func (*Execution_Data_DistributorInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor3, []int{3, 2, 0}
+}
+
+type Execution_Data_Scheduling struct {
+}
+
+func (m *Execution_Data_Scheduling) Reset()                    { *m = Execution_Data_Scheduling{} }
+func (m *Execution_Data_Scheduling) String() string            { return proto.CompactTextString(m) }
+func (*Execution_Data_Scheduling) ProtoMessage()               {}
+func (*Execution_Data_Scheduling) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3, 2, 1} }
+
+type Execution_Data_Running struct {
+}
+
+func (m *Execution_Data_Running) Reset()                    { *m = Execution_Data_Running{} }
+func (m *Execution_Data_Running) String() string            { return proto.CompactTextString(m) }
+func (*Execution_Data_Running) ProtoMessage()               {}
+func (*Execution_Data_Running) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3, 2, 2} }
+
+type Execution_Data_Stopping struct {
+}
+
+func (m *Execution_Data_Stopping) Reset()                    { *m = Execution_Data_Stopping{} }
+func (m *Execution_Data_Stopping) String() string            { return proto.CompactTextString(m) }
+func (*Execution_Data_Stopping) ProtoMessage()               {}
+func (*Execution_Data_Stopping) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3, 2, 3} }
+
+type Execution_Data_Finished struct {
+	PersistentState string `protobuf:"bytes,1,opt,name=persistent_state,json=persistentState" json:"persistent_state,omitempty"`
+}
+
+func (m *Execution_Data_Finished) Reset()                    { *m = Execution_Data_Finished{} }
+func (m *Execution_Data_Finished) String() string            { return proto.CompactTextString(m) }
+func (*Execution_Data_Finished) ProtoMessage()               {}
+func (*Execution_Data_Finished) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3, 2, 4} }
 
 // GraphData defines all of the DM graph data that may be returned from DM.
 //
@@ -732,7 +1130,7 @@ type GraphData struct {
 func (m *GraphData) Reset()                    { *m = GraphData{} }
 func (m *GraphData) String() string            { return proto.CompactTextString(m) }
 func (*GraphData) ProtoMessage()               {}
-func (*GraphData) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{3} }
+func (*GraphData) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4} }
 
 func (m *GraphData) GetQuests() map[string]*Quest {
 	if m != nil {
@@ -742,118 +1140,142 @@ func (m *GraphData) GetQuests() map[string]*Quest {
 }
 
 func init() {
+	proto.RegisterType((*AbnormalFinish)(nil), "dm.AbnormalFinish")
 	proto.RegisterType((*Quest)(nil), "dm.Quest")
 	proto.RegisterType((*Quest_ID)(nil), "dm.Quest.ID")
 	proto.RegisterType((*Quest_Desc)(nil), "dm.Quest.Desc")
+	proto.RegisterType((*Quest_Desc_Meta)(nil), "dm.Quest.Desc.Meta")
+	proto.RegisterType((*Quest_Desc_Meta_Retry)(nil), "dm.Quest.Desc.Meta.Retry")
 	proto.RegisterType((*Quest_TemplateSpec)(nil), "dm.Quest.TemplateSpec")
 	proto.RegisterType((*Quest_Data)(nil), "dm.Quest.Data")
 	proto.RegisterType((*Attempt)(nil), "dm.Attempt")
 	proto.RegisterType((*Attempt_ID)(nil), "dm.Attempt.ID")
 	proto.RegisterType((*Attempt_Data)(nil), "dm.Attempt.Data")
-	proto.RegisterType((*Attempt_Data_NeedsExecution)(nil), "dm.Attempt.Data.NeedsExecution")
+	proto.RegisterType((*Attempt_Data_Scheduling)(nil), "dm.Attempt.Data.Scheduling")
 	proto.RegisterType((*Attempt_Data_Executing)(nil), "dm.Attempt.Data.Executing")
-	proto.RegisterType((*Attempt_Data_AddingDeps)(nil), "dm.Attempt.Data.AddingDeps")
-	proto.RegisterType((*Attempt_Data_Blocked)(nil), "dm.Attempt.Data.Blocked")
+	proto.RegisterType((*Attempt_Data_Waiting)(nil), "dm.Attempt.Data.Waiting")
 	proto.RegisterType((*Attempt_Data_Finished)(nil), "dm.Attempt.Data.Finished")
 	proto.RegisterType((*Attempt_Partial)(nil), "dm.Attempt.Partial")
 	proto.RegisterType((*Execution)(nil), "dm.Execution")
 	proto.RegisterType((*Execution_Auth)(nil), "dm.Execution.Auth")
 	proto.RegisterType((*Execution_ID)(nil), "dm.Execution.ID")
 	proto.RegisterType((*Execution_Data)(nil), "dm.Execution.Data")
+	proto.RegisterType((*Execution_Data_DistributorInfo)(nil), "dm.Execution.Data.DistributorInfo")
+	proto.RegisterType((*Execution_Data_Scheduling)(nil), "dm.Execution.Data.Scheduling")
+	proto.RegisterType((*Execution_Data_Running)(nil), "dm.Execution.Data.Running")
+	proto.RegisterType((*Execution_Data_Stopping)(nil), "dm.Execution.Data.Stopping")
+	proto.RegisterType((*Execution_Data_Finished)(nil), "dm.Execution.Data.Finished")
 	proto.RegisterType((*GraphData)(nil), "dm.GraphData")
+	proto.RegisterEnum("dm.AbnormalFinish_Status", AbnormalFinish_Status_name, AbnormalFinish_Status_value)
 	proto.RegisterEnum("dm.Attempt_State", Attempt_State_name, Attempt_State_value)
 	proto.RegisterEnum("dm.Attempt_Partial_Result", Attempt_Partial_Result_name, Attempt_Partial_Result_value)
 	proto.RegisterEnum("dm.Execution_State", Execution_State_name, Execution_State_value)
 }
 
-var fileDescriptor4 = []byte{
-	// 1406 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xa4, 0x56, 0xdb, 0x92, 0xdb, 0x44,
-	0x13, 0x8e, 0xcf, 0x76, 0x7b, 0xed, 0xf5, 0x3f, 0xc9, 0xff, 0xc7, 0x51, 0x7e, 0xb2, 0xc1, 0x1c,
-	0x2a, 0x04, 0xe2, 0x25, 0x1b, 0x08, 0x54, 0xa8, 0x4a, 0x95, 0x63, 0x29, 0x59, 0x05, 0xaf, 0x37,
-	0xc8, 0xde, 0x0a, 0xc5, 0x8d, 0x4a, 0xb6, 0x66, 0xbd, 0xca, 0xda, 0x92, 0xd1, 0x21, 0x61, 0xb9,
-	0xe7, 0x01, 0x28, 0xde, 0x87, 0xf7, 0xe0, 0x11, 0xb8, 0xa0, 0xb8, 0xe5, 0x92, 0x9e, 0x83, 0xe4,
-	0x51, 0x36, 0x09, 0xa9, 0xe2, 0x46, 0xa5, 0xee, 0xfe, 0xba, 0xa7, 0xa7, 0xfb, 0x9b, 0x9e, 0x81,
-	0xce, 0x22, 0x74, 0xd6, 0x27, 0xb6, 0xeb, 0xc4, 0x4e, 0x7f, 0x1d, 0x06, 0x71, 0x40, 0x8a, 0xee,
-	0x4a, 0xdb, 0x59, 0x04, 0xc1, 0x62, 0x49, 0x77, 0xb9, 0x66, 0x96, 0x1c, 0xef, 0xc6, 0xde, 0x8a,
-	0x46, 0xb1, 0xb3, 0x5a, 0x0b, 0x90, 0x76, 0x6f, 0xe1, 0xc5, 0x27, 0xc9, 0xac, 0x3f, 0x0f, 0x56,
-	0xbb, 0xcb, 0x64, 0xee, 0xf1, 0xcf, 0xad, 0x45, 0xb0, 0x8b, 0x8a, 0x55, 0xe0, 0xef, 0x3a, 0x6b,
-	0x6f, 0x37, 0xa6, 0xab, 0xf5, 0xd2, 0x89, 0x69, 0xf6, 0x23, 0x7d, 0x9b, 0xf1, 0xd9, 0x9a, 0x46,
-	0x42, 0xe8, 0xfd, 0x51, 0x86, 0xca, 0x37, 0x09, 0xc6, 0x26, 0xff, 0x87, 0xa2, 0xe7, 0x76, 0x0b,
-	0xd7, 0x0b, 0x37, 0x9a, 0x7b, 0x5b, 0x7d, 0x77, 0xd5, 0xe7, 0xea, 0xbe, 0xa9, 0x5b, 0xa8, 0x27,
-	0x1d, 0x28, 0xe9, 0x63, 0xa3, 0x5b, 0x44, 0x73, 0xdd, 0x2a, 0xb9, 0x63, 0x83, 0xf4, 0xa0, 0xcc,
-	0xb2, 0xee, 0x96, 0xb8, 0x47, 0x7b, 0xe3, 0xa1, 0xa3, 0xd6, 0xe2, 0x36, 0x72, 0x07, 0xea, 0x4e,
-	0xcc, 0x96, 0x8f, 0xa3, 0x6e, 0xf9, 0x7a, 0x09, 0x71, 0x97, 0x37, 0xb8, 0x81, 0xb4, 0x18, 0x7e,
-	0x1c, 0x9e, 0x59, 0x19, 0x90, 0x74, 0xa1, 0xb6, 0x76, 0xc2, 0xd8, 0x73, 0x96, 0xdd, 0x0e, 0x5f,
-	0x2e, 0x15, 0xb5, 0x4b, 0x50, 0x34, 0x75, 0xd2, 0xce, 0x12, 0x6d, 0xb0, 0xd4, 0x34, 0x07, 0xca,
-	0x3a, 0x8d, 0xe6, 0xe4, 0x2e, 0x5c, 0x76, 0xbd, 0x28, 0x0e, 0xbd, 0x59, 0x12, 0x07, 0xa1, 0x3d,
-	0x0f, 0xfc, 0x63, 0x6f, 0x61, 0xfb, 0xce, 0x8a, 0x4a, 0xf0, 0x7f, 0x15, 0xf3, 0x90, 0x5b, 0xc7,
-	0x68, 0x24, 0xef, 0xc2, 0xd6, 0xb3, 0x28, 0xf0, 0xed, 0xb5, 0x73, 0xb6, 0x0c, 0x1c, 0x97, 0xef,
-	0xb1, 0x61, 0x35, 0x99, 0xee, 0x89, 0x50, 0x69, 0x27, 0xb0, 0x35, 0x95, 0x45, 0x9c, 0xac, 0xe9,
-	0x9c, 0xa7, 0x18, 0x06, 0xcf, 0xe8, 0x3c, 0x96, 0xa1, 0x53, 0x91, 0xd5, 0x29, 0xa4, 0xc7, 0x32,
-	0x06, 0xfb, 0x65, 0xd8, 0xe7, 0x34, 0x8c, 0xbc, 0xc0, 0xe7, 0xa5, 0x42, 0xac, 0x14, 0x09, 0x81,
-	0x32, 0xcf, 0xae, 0xcc, 0xd5, 0xfc, 0x5f, 0xfb, 0xa5, 0x80, 0xbb, 0x61, 0xa5, 0xfb, 0x0c, 0x6a,
-	0xf3, 0x90, 0xe2, 0x82, 0x69, 0x4f, 0xb4, 0xbe, 0x20, 0x45, 0x3f, 0x25, 0x45, 0x7f, 0x9a, 0x92,
-	0xc2, 0x4a, 0xa1, 0xbc, 0x29, 0x58, 0x0b, 0xbe, 0x7e, 0xbe, 0x29, 0xa8, 0xb5, 0xb8, 0x8d, 0xdc,
-	0x86, 0xfa, 0x2c, 0xf1, 0x96, 0xb1, 0x3d, 0x3b, 0xc3, 0x8c, 0x58, 0x53, 0xfe, 0xb7, 0xc1, 0xa9,
-	0xdb, 0xb4, 0x6a, 0x1c, 0xf7, 0xe0, 0x4c, 0xdb, 0x87, 0x56, 0xae, 0x5b, 0x6c, 0x9b, 0xa7, 0xf4,
-	0x8c, 0x67, 0xd6, 0xb2, 0xd8, 0x2f, 0x56, 0xb1, 0xf2, 0xdc, 0x59, 0x26, 0x54, 0x2e, 0xdd, 0x64,
-	0x21, 0xa5, 0x8f, 0x25, 0x2c, 0xf7, 0x8a, 0x5f, 0x16, 0x7a, 0x3f, 0xb5, 0xa0, 0x26, 0xd5, 0xe4,
-	0x9a, 0xc2, 0xb8, 0xb6, 0x82, 0x7f, 0x3d, 0xe7, 0xde, 0xcf, 0x71, 0xae, 0xa3, 0xfa, 0x28, 0xac,
-	0xfb, 0x0a, 0x80, 0xfe, 0x40, 0xe7, 0x49, 0x8c, 0x45, 0x4e, 0x79, 0x77, 0x55, 0xc5, 0x1a, 0x99,
-	0x55, 0x70, 0x4f, 0x81, 0x93, 0x9b, 0x50, 0x3f, 0x7e, 0xe1, 0xda, 0x2e, 0x5d, 0x47, 0xdd, 0x0a,
-	0x5f, 0x66, 0x5b, 0x71, 0x1d, 0x21, 0x83, 0xac, 0x1a, 0x02, 0x74, 0xb4, 0x93, 0x4f, 0xa0, 0x31,
-	0x73, 0xe6, 0xa7, 0x02, 0x5c, 0x7d, 0x35, 0xb8, 0xce, 0x10, 0x1c, 0x7d, 0x2b, 0xcf, 0xeb, 0xe6,
-	0xde, 0x45, 0x35, 0xa7, 0x27, 0xc2, 0xb4, 0x21, 0xfb, 0x4d, 0x4e, 0xf6, 0x4b, 0x50, 0xf9, 0x9e,
-	0x35, 0x46, 0xf2, 0x4c, 0x08, 0xf2, 0x08, 0x14, 0x79, 0xf5, 0xd9, 0x11, 0xf8, 0xb3, 0xfa, 0xaf,
-	0x58, 0x73, 0x17, 0xea, 0xab, 0xc0, 0xf5, 0x8e, 0x3d, 0xea, 0xca, 0xf6, 0xbd, 0xc9, 0x2d, 0xc3,
-	0x92, 0x0f, 0xa0, 0xed, 0x27, 0x2b, 0x5b, 0x29, 0x76, 0x89, 0xa7, 0xd4, 0x42, 0xed, 0xa6, 0xc6,
-	0xe4, 0x31, 0x6c, 0xfb, 0x94, 0xba, 0xd1, 0x06, 0xc8, 0x29, 0xdf, 0xdc, 0xdb, 0x79, 0xb9, 0x81,
-	0xfd, 0x31, 0xc3, 0x65, 0xae, 0xfb, 0x17, 0xac, 0xb6, 0x9f, 0xd3, 0x90, 0x7b, 0xd0, 0x90, 0x51,
-	0xfc, 0x85, 0xec, 0x8f, 0x76, 0x2e, 0x8a, 0x91, 0x22, 0x30, 0xc0, 0x06, 0x4e, 0xee, 0x43, 0xd3,
-	0x71, 0x5d, 0xfc, 0x53, 0x1b, 0x76, 0xf5, 0x9c, 0xf7, 0x80, 0x63, 0x58, 0xcb, 0xd0, 0x1d, 0x9c,
-	0x4c, 0x62, 0xc5, 0x9d, 0x2d, 0x83, 0xf9, 0x29, 0x56, 0xa9, 0xc6, 0x7d, 0xbb, 0xe7, 0x7c, 0x1f,
-	0x08, 0x3b, 0x3a, 0xa6, 0x50, 0xf2, 0x05, 0x12, 0xca, 0xf3, 0xbd, 0xe8, 0x04, 0xdd, 0xea, 0xdc,
-	0xed, 0xca, 0x39, 0xb7, 0x87, 0x12, 0x80, 0x7e, 0x19, 0x58, 0x7b, 0x08, 0xed, 0x7c, 0x39, 0x58,
-	0x02, 0x6b, 0xea, 0xb3, 0x7c, 0xde, 0xa6, 0xbb, 0x12, 0xaa, 0x7d, 0x0e, 0x8d, 0xac, 0x20, 0xe4,
-	0x06, 0x74, 0xe6, 0x49, 0xb8, 0xe9, 0x84, 0x2d, 0x4f, 0x60, 0xcb, 0x6a, 0xa3, 0x3e, 0x5b, 0xca,
-	0x74, 0xb5, 0x11, 0xc0, 0xa6, 0x12, 0xe4, 0x1d, 0x00, 0xd6, 0x6a, 0x51, 0x0d, 0xe9, 0xd1, 0x40,
-	0x8d, 0x80, 0x90, 0x1d, 0x68, 0x32, 0xf3, 0x0b, 0xc7, 0xe3, 0x8d, 0x11, 0xcc, 0x64, 0x1e, 0x4f,
-	0x85, 0x06, 0xd9, 0x5c, 0x93, 0xb5, 0x79, 0x19, 0x5b, 0x38, 0x87, 0xfd, 0xb9, 0x00, 0xf5, 0xb4,
-	0x22, 0xd8, 0x70, 0x3c, 0x9d, 0x6b, 0x2f, 0x74, 0x38, 0x6f, 0xfe, 0x79, 0xdb, 0x0a, 0x9a, 0x6d,
-	0x96, 0x4f, 0xf6, 0x90, 0x46, 0x09, 0xce, 0xbb, 0xc8, 0xfb, 0x91, 0xca, 0xd4, 0xda, 0x4c, 0x6f,
-	0x71, 0xf5, 0x04, 0xb5, 0x2c, 0x27, 0x05, 0x29, 0x07, 0x35, 0x6c, 0x40, 0x0f, 0xda, 0xb0, 0x25,
-	0x2f, 0x28, 0x9b, 0x5d, 0x9f, 0x58, 0x9d, 0xed, 0x97, 0xa6, 0xc8, 0x2b, 0x66, 0xe2, 0x7b, 0xf9,
-	0x99, 0xd8, 0x62, 0x7d, 0xcf, 0xbc, 0x94, 0xa9, 0xa8, 0xfd, 0x55, 0x80, 0x9a, 0x1c, 0x00, 0xec,
-	0x56, 0xe0, 0x33, 0xae, 0xc0, 0xc7, 0x9e, 0x98, 0x68, 0xd7, 0x72, 0x13, 0x4d, 0x0c, 0x44, 0x75,
-	0x68, 0x5d, 0x51, 0x86, 0x56, 0x49, 0xdc, 0x99, 0xe9, 0x8c, 0xba, 0xaa, 0xce, 0xa8, 0x32, 0xb7,
-	0x6d, 0x46, 0xd2, 0x1e, 0x54, 0xe5, 0x8e, 0xd9, 0x51, 0x6a, 0xe7, 0x8f, 0x92, 0x4c, 0xa8, 0x2f,
-	0x2a, 0x60, 0x49, 0x64, 0xef, 0x00, 0xaa, 0x42, 0x43, 0x00, 0xaa, 0xa3, 0xc3, 0x81, 0x6e, 0xe8,
-	0x9d, 0x0b, 0x38, 0x91, 0x60, 0x7c, 0x38, 0xb5, 0xa5, 0x5c, 0xc0, 0x5d, 0xb4, 0x99, 0x3c, 0x38,
-	0x9a, 0xee, 0x1f, 0x5a, 0xe6, 0x77, 0xa8, 0x2b, 0x92, 0x8b, 0xb0, 0xad, 0x0f, 0xa6, 0x03, 0x7b,
-	0x82, 0xb2, 0x3d, 0x32, 0x0f, 0xcc, 0x69, 0xa7, 0xd4, 0x4b, 0xa0, 0x32, 0x89, 0x71, 0x0a, 0x31,
-	0xeb, 0xd8, 0x30, 0xf4, 0x89, 0x6d, 0x7c, 0x6b, 0x0c, 0x8f, 0xa6, 0xe6, 0xe1, 0x18, 0xc3, 0xb6,
-	0x90, 0xbb, 0x42, 0x1c, 0x3f, 0xc2, 0xa8, 0xdb, 0xd0, 0x1c, 0xe8, 0x3a, 0xfe, 0xdb, 0xba, 0xf1,
-	0x64, 0x82, 0x21, 0x9b, 0x48, 0xab, 0xd1, 0xe1, 0xf0, 0x6b, 0x8c, 0x5f, 0xc2, 0x17, 0x4c, 0x77,
-	0xf0, 0x74, 0x60, 0x32, 0xec, 0x26, 0x88, 0x3d, 0x99, 0x0e, 0xa6, 0x46, 0xa7, 0x4c, 0xb6, 0x90,
-	0x54, 0xe6, 0xd8, 0x9c, 0xec, 0x23, 0xb6, 0xd2, 0xfb, 0xad, 0x9c, 0x9d, 0x0a, 0x24, 0xca, 0x75,
-	0xe5, 0x26, 0xea, 0xe4, 0xba, 0x94, 0xde, 0x45, 0x1f, 0xca, 0xae, 0x88, 0x4e, 0x92, 0x3c, 0x46,
-	0xb9, 0x7b, 0x5e, 0xff, 0x78, 0xb9, 0x0f, 0xe5, 0x41, 0x12, 0x9f, 0xbc, 0xc5, 0x5a, 0x38, 0xf3,
-	0xe3, 0xe0, 0x94, 0xfa, 0x7c, 0xb1, 0x2d, 0x4b, 0x08, 0x9a, 0xfe, 0x86, 0xfb, 0x00, 0x57, 0x95,
-	0xec, 0x94, 0xfc, 0x4e, 0x45, 0x79, 0x53, 0x94, 0xb2, 0x9b, 0xe2, 0xf7, 0xf4, 0x7d, 0xf1, 0x11,
-	0x54, 0x22, 0x56, 0x77, 0x1e, 0xa8, 0x2d, 0xee, 0xa2, 0x4d, 0x26, 0xbc, 0x25, 0x96, 0x40, 0xb0,
-	0x07, 0x12, 0xff, 0xc1, 0xd3, 0xe1, 0xe0, 0x89, 0x48, 0x1f, 0x48, 0x5c, 0x67, 0x71, 0x95, 0x7a,
-	0xef, 0x94, 0xde, 0xfe, 0xde, 0xf9, 0x18, 0xfe, 0xa3, 0xbe, 0xd8, 0xc4, 0xa6, 0xc5, 0x6b, 0xa8,
-	0xa3, 0x18, 0xa6, 0x4c, 0x4f, 0x3e, 0x85, 0x4b, 0x2a, 0xd8, 0xf3, 0x8f, 0x03, 0x3b, 0x09, 0x97,
-	0x9c, 0xb9, 0x0d, 0x8b, 0x28, 0x36, 0x13, 0x4d, 0x47, 0xe1, 0xb2, 0xf7, 0x3c, 0xa5, 0x16, 0xb2,
-	0x68, 0x32, 0xc4, 0xbe, 0x1f, 0x8d, 0x38, 0x57, 0x91, 0x34, 0xd6, 0xd1, 0x78, 0x2c, 0x28, 0x85,
-	0xb4, 0xb0, 0x8c, 0xc7, 0xc6, 0x70, 0xca, 0x29, 0x8a, 0xc8, 0xa9, 0x79, 0x60, 0xe8, 0xf6, 0xe1,
-	0x11, 0x92, 0x33, 0xc7, 0x99, 0x32, 0xe3, 0xfb, 0xc3, 0x81, 0xc9, 0x62, 0x54, 0x58, 0x8c, 0x03,
-	0x73, 0x32, 0x61, 0x31, 0xaa, 0xcc, 0x6b, 0x38, 0x18, 0x0f, 0x8d, 0x11, 0xb3, 0xd5, 0x7a, 0xbf,
-	0x16, 0xa0, 0xf1, 0x88, 0x3d, 0xeb, 0x79, 0xa1, 0x6f, 0x43, 0x95, 0x37, 0x29, 0xc2, 0x4a, 0x97,
-	0xd2, 0xe9, 0x9f, 0x99, 0xc5, 0xb3, 0x4b, 0xbe, 0x43, 0x24, 0x90, 0x0d, 0xdb, 0x13, 0xc7, 0xb5,
-	0x69, 0x18, 0x06, 0x61, 0x7a, 0xdc, 0x1b, 0xa8, 0x31, 0xb8, 0x82, 0x9d, 0x76, 0x66, 0x5e, 0x05,
-	0x21, 0x4d, 0x4f, 0x3b, 0xca, 0x07, 0x28, 0x22, 0x49, 0x9a, 0x4a, 0x40, 0x75, 0x24, 0x35, 0xc4,
-	0x48, 0xda, 0xc9, 0x8f, 0xa4, 0x46, 0xf6, 0xf2, 0x53, 0xc6, 0xd1, 0xac, 0xca, 0x9b, 0x76, 0xe7,
-	0xef, 0x00, 0x00, 0x00, 0xff, 0xff, 0x30, 0x3f, 0xa1, 0x3a, 0x9d, 0x0c, 0x00, 0x00,
+var fileDescriptor3 = []byte{
+	// 1652 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xc4, 0x57, 0xcb, 0x72, 0x1b, 0x55,
+	0x13, 0x8e, 0xee, 0x52, 0xeb, 0x62, 0xfd, 0x27, 0x37, 0x65, 0xfc, 0xe7, 0xf2, 0xeb, 0xbf, 0x85,
+	0x14, 0x91, 0x8b, 0x04, 0x02, 0x84, 0x02, 0x4a, 0xb6, 0xe4, 0x78, 0x28, 0x49, 0x36, 0x23, 0x99,
+	0xa4, 0xd8, 0x4c, 0x8d, 0x34, 0xc7, 0xf2, 0x24, 0xd2, 0xcc, 0x30, 0x97, 0x24, 0x66, 0xc7, 0x96,
+	0x1d, 0xc5, 0xab, 0xb0, 0x66, 0xc5, 0x02, 0x1e, 0x80, 0x17, 0x80, 0x97, 0x60, 0x49, 0x9f, 0xcb,
+	0x5c, 0x24, 0xdb, 0xa9, 0xa4, 0x58, 0xb0, 0x51, 0x4d, 0xf7, 0xf9, 0x7a, 0xce, 0x39, 0x3d, 0xfd,
+	0x7d, 0xdd, 0x82, 0xe6, 0xdc, 0x33, 0xdc, 0x63, 0xdd, 0x34, 0x02, 0xa3, 0xe3, 0x7a, 0x4e, 0xe0,
+	0x90, 0xac, 0xb9, 0x54, 0x6e, 0xce, 0x1d, 0x67, 0xbe, 0xa0, 0x5b, 0xdc, 0x33, 0x0d, 0x8f, 0xb6,
+	0x02, 0x6b, 0x49, 0xfd, 0xc0, 0x58, 0xba, 0x02, 0xa4, 0xdc, 0x58, 0x07, 0x98, 0xa1, 0x67, 0x04,
+	0x96, 0x63, 0xcb, 0xf5, 0x87, 0x73, 0x2b, 0x38, 0x0e, 0xa7, 0x9d, 0x99, 0xb3, 0xdc, 0x5a, 0x84,
+	0x33, 0x8b, 0xff, 0xdc, 0x9d, 0x3b, 0x5b, 0xe8, 0x58, 0x3a, 0xf6, 0x96, 0xe1, 0x5a, 0x5b, 0x01,
+	0x5d, 0xba, 0x0b, 0x23, 0xa0, 0xf1, 0x83, 0x8c, 0xad, 0x06, 0x27, 0x2e, 0xf5, 0x85, 0xd1, 0xfe,
+	0x29, 0x03, 0x8d, 0xee, 0xd4, 0x76, 0xbc, 0xa5, 0xb1, 0xd8, 0xb5, 0x6c, 0xcb, 0x3f, 0x26, 0xef,
+	0x40, 0x11, 0x8f, 0x12, 0x84, 0x7e, 0x2b, 0x73, 0x2b, 0x73, 0xbb, 0x71, 0xef, 0x5a, 0xc7, 0x5c,
+	0x76, 0x56, 0x31, 0x9d, 0x31, 0x07, 0x68, 0x12, 0x48, 0xae, 0x40, 0xd1, 0xa3, 0x86, 0xef, 0xd8,
+	0xad, 0x2c, 0x86, 0x54, 0x34, 0x69, 0xb5, 0xe7, 0x50, 0x14, 0x48, 0x02, 0x50, 0xdc, 0xed, 0xaa,
+	0x83, 0x7e, 0xaf, 0x79, 0x81, 0x54, 0xa1, 0xb4, 0xa3, 0x75, 0xc7, 0x7b, 0x68, 0x64, 0x98, 0xd1,
+	0x7f, 0x72, 0xa0, 0x6a, 0x68, 0x64, 0x49, 0x1d, 0x2a, 0x13, 0x75, 0xd8, 0xef, 0xe9, 0xfb, 0x87,
+	0x93, 0x66, 0x8e, 0x99, 0x3b, 0xdd, 0xd1, 0x4e, 0x7f, 0xc0, 0xe2, 0xf2, 0xa4, 0x06, 0x65, 0xad,
+	0xff, 0x59, 0x7f, 0x67, 0x82, 0x56, 0x81, 0x05, 0x0e, 0xd5, 0xf1, 0x58, 0x1d, 0x3d, 0x6a, 0x16,
+	0xdb, 0xbf, 0x15, 0xa1, 0xf0, 0x79, 0x88, 0x29, 0x24, 0xff, 0x84, 0xac, 0x65, 0xf2, 0x93, 0x57,
+	0xef, 0xd5, 0xd8, 0xc9, 0xb9, 0xbb, 0xa3, 0xf6, 0x34, 0xf4, 0x93, 0x26, 0xe4, 0x7a, 0xa3, 0x3e,
+	0x3f, 0x65, 0x59, 0xcb, 0x99, 0xa3, 0x3e, 0x69, 0x43, 0x9e, 0x7d, 0x9c, 0x56, 0x8e, 0x47, 0x34,
+	0x92, 0x88, 0x1e, 0x7a, 0x35, 0xbe, 0x46, 0xee, 0x43, 0xd9, 0x08, 0x58, 0x16, 0x03, 0xbf, 0x95,
+	0xbf, 0x95, 0x43, 0xdc, 0xd5, 0x04, 0xd7, 0x95, 0x2b, 0x7d, 0x3b, 0xf0, 0x4e, 0xb4, 0x18, 0x48,
+	0x5a, 0x50, 0x72, 0x0d, 0x2f, 0xb0, 0x8c, 0x45, 0xab, 0xc9, 0xb7, 0x8b, 0x4c, 0xe5, 0x12, 0x64,
+	0xd5, 0x1e, 0x69, 0xc4, 0x07, 0xad, 0xb0, 0xa3, 0x29, 0xbf, 0x66, 0x21, 0xdf, 0xa3, 0xfe, 0x8c,
+	0x3c, 0x80, 0xab, 0xa6, 0xe5, 0x07, 0x9e, 0x35, 0x0d, 0x03, 0xc7, 0xd3, 0x67, 0x8e, 0x7d, 0x64,
+	0xcd, 0x75, 0xdb, 0x58, 0x52, 0x89, 0xbe, 0x9c, 0x5a, 0xde, 0xe1, 0xab, 0x23, 0x5c, 0x24, 0xff,
+	0x82, 0xda, 0x53, 0x4c, 0xba, 0xee, 0x1a, 0x27, 0x0b, 0xc7, 0x30, 0xe5, 0xa7, 0xa8, 0x32, 0xdf,
+	0x81, 0x70, 0x91, 0xff, 0x43, 0x7e, 0x49, 0xe3, 0xcb, 0x5e, 0x4c, 0x5d, 0x16, 0x37, 0xee, 0x0c,
+	0x29, 0xbb, 0x31, 0x03, 0x28, 0x3f, 0x67, 0x20, 0xcf, 0x4c, 0x72, 0x1d, 0xc0, 0xf0, 0x75, 0x63,
+	0x36, 0x73, 0x42, 0x3b, 0x90, 0xfb, 0x57, 0x0c, 0xbf, 0x2b, 0x1c, 0x64, 0x0b, 0x0a, 0x1e, 0xc5,
+	0x7b, 0xf3, 0xcd, 0xaa, 0xa2, 0x54, 0xd6, 0xde, 0xd8, 0xd1, 0x18, 0x40, 0x13, 0x38, 0xc5, 0x85,
+	0x02, 0xb7, 0x59, 0xc9, 0x1c, 0x19, 0xd6, 0x82, 0x8a, 0x14, 0xd4, 0x35, 0x69, 0xb1, 0xb4, 0xd1,
+	0x97, 0xae, 0xe5, 0x51, 0x71, 0x81, 0xba, 0x16, 0x99, 0x64, 0x13, 0x2a, 0x8c, 0x26, 0xa6, 0xee,
+	0x84, 0x01, 0xbf, 0x41, 0x5d, 0x2b, 0x73, 0xc7, 0x7e, 0x18, 0xb0, 0xb0, 0x99, 0x67, 0xf8, 0xc7,
+	0x18, 0x96, 0x17, 0x61, 0xd2, 0x54, 0x8e, 0xa1, 0x36, 0x91, 0x04, 0x18, 0xbb, 0x74, 0xc6, 0xbf,
+	0x8b, 0xe7, 0x3c, 0xa5, 0xb3, 0xe8, 0x3a, 0x91, 0xc9, 0x8a, 0xc3, 0xa3, 0x47, 0x32, 0x6f, 0xec,
+	0x91, 0x61, 0x9f, 0x53, 0xcf, 0x47, 0xde, 0xf1, 0x0d, 0x11, 0x2b, 0x4d, 0x42, 0x20, 0xcf, 0xbf,
+	0x48, 0x9e, 0xbb, 0xf9, 0xb3, 0xf2, 0x3d, 0x26, 0x8d, 0x55, 0x0d, 0x79, 0x97, 0x1d, 0x86, 0xe2,
+	0x86, 0x51, 0x21, 0x2a, 0x1d, 0xc1, 0xe7, 0x4e, 0xc4, 0xe7, 0xce, 0x24, 0x22, 0xbc, 0x16, 0x41,
+	0x79, 0x25, 0x62, 0xd2, 0x64, 0x2a, 0x1b, 0xab, 0xa9, 0xd4, 0xf8, 0x1a, 0x72, 0xb3, 0x3c, 0x0d,
+	0xad, 0x45, 0xa0, 0x4f, 0x4f, 0xf0, 0x44, 0xac, 0x12, 0xaf, 0x24, 0xb8, 0xf4, 0x35, 0xb5, 0x12,
+	0xc7, 0x6d, 0x9f, 0x28, 0x7b, 0x50, 0x5f, 0x29, 0x51, 0x76, 0xcd, 0x67, 0xf4, 0x44, 0xa6, 0x9d,
+	0x3d, 0x62, 0xe5, 0x14, 0x9e, 0x1b, 0x8b, 0x90, 0xca, 0xad, 0xab, 0x9c, 0xf0, 0x22, 0x46, 0x13,
+	0x2b, 0x0f, 0xb3, 0x1f, 0x64, 0xda, 0xdf, 0xd6, 0xa0, 0x24, 0xdd, 0xe4, 0x46, 0x8a, 0x66, 0x8d,
+	0x14, 0xfe, 0x7c, 0xa2, 0xfd, 0x67, 0x85, 0x68, 0xcd, 0x74, 0x4c, 0x8a, 0x6a, 0x1f, 0x01, 0xd0,
+	0x97, 0x74, 0x16, 0x32, 0xad, 0x8b, 0xc8, 0xb6, 0x99, 0xc6, 0xf6, 0xe3, 0x55, 0x41, 0xb8, 0x14,
+	0x9c, 0xdc, 0x81, 0xf2, 0xd1, 0x0b, 0x53, 0x37, 0xa9, 0xeb, 0xb7, 0x0a, 0x7c, 0x9b, 0x8d, 0x54,
+	0xe8, 0x00, 0x59, 0xa3, 0x95, 0x10, 0xd0, 0xc3, 0x75, 0xf2, 0x36, 0x54, 0xa6, 0xc6, 0xec, 0x99,
+	0x00, 0x17, 0xcf, 0x06, 0x97, 0x19, 0x82, 0xa3, 0xef, 0xae, 0x92, 0x59, 0x72, 0x27, 0x3a, 0xd3,
+	0x81, 0x58, 0x4a, 0x18, 0x7e, 0x87, 0x33, 0xfc, 0x12, 0x14, 0xbe, 0x62, 0x1f, 0x46, 0xd6, 0x99,
+	0x30, 0x24, 0xef, 0x45, 0x6d, 0x33, 0xde, 0x7f, 0x57, 0xfc, 0x4b, 0x55, 0xf3, 0x00, 0xca, 0x4b,
+	0xc7, 0xb4, 0x8e, 0x2c, 0x49, 0x98, 0x57, 0x87, 0xc5, 0x58, 0xf2, 0x5f, 0x68, 0xd8, 0xe1, 0x52,
+	0x4f, 0x25, 0x5b, 0x50, 0xaa, 0x8e, 0xde, 0x24, 0xc7, 0xe4, 0x63, 0x00, 0x7f, 0x86, 0x34, 0x0a,
+	0x17, 0x96, 0x3d, 0x97, 0x49, 0xdd, 0x5c, 0xff, 0x76, 0x9d, 0x71, 0x0c, 0xd9, 0xbb, 0xa0, 0xa5,
+	0x02, 0xc8, 0x43, 0xa8, 0xc8, 0x1d, 0x30, 0xba, 0x28, 0x8f, 0xb7, 0x1e, 0xdd, 0x8f, 0x10, 0x18,
+	0x9c, 0xc0, 0x59, 0x3e, 0x5e, 0x18, 0x16, 0x8f, 0x2c, 0xf1, 0xc8, 0xd6, 0xa9, 0xc8, 0xc7, 0x62,
+	0x1d, 0xe3, 0x22, 0x28, 0x79, 0x1f, 0x6b, 0x80, 0xf7, 0x28, 0xcc, 0x47, 0x39, 0x11, 0xa5, 0x95,
+	0xb0, 0x5d, 0x09, 0xc0, 0xb8, 0x18, 0x8c, 0x37, 0xdd, 0x30, 0x64, 0x93, 0xd3, 0x85, 0xb3, 0x55,
+	0xe1, 0xf1, 0xe4, 0x74, 0xff, 0xc3, 0xc0, 0x86, 0xb1, 0xe2, 0x51, 0x6a, 0x00, 0x49, 0x16, 0x94,
+	0xf7, 0xa0, 0x12, 0xdf, 0x8a, 0xdc, 0x86, 0xe6, 0x2c, 0xf4, 0x92, 0x54, 0xeb, 0x56, 0x24, 0x7a,
+	0x0d, 0xf4, 0xc7, 0xc9, 0x56, 0x4d, 0xac, 0x9b, 0x92, 0xbc, 0x12, 0xb9, 0x09, 0x55, 0xf6, 0x7d,
+	0xa2, 0x0c, 0x08, 0x3c, 0xa0, 0x4b, 0x02, 0x94, 0x5f, 0x32, 0x50, 0x8e, 0x2e, 0x82, 0x79, 0x06,
+	0x2e, 0x93, 0x7c, 0x46, 0x78, 0x8d, 0xf2, 0x49, 0xa1, 0xd9, 0xf1, 0x78, 0xdf, 0xf0, 0xa8, 0x1f,
+	0xa2, 0xb2, 0xf8, 0xd6, 0xd7, 0x54, 0x96, 0x67, 0x83, 0xf9, 0x35, 0xee, 0x1e, 0xa3, 0x97, 0x9d,
+	0x29, 0x85, 0x94, 0x92, 0x08, 0x09, 0x88, 0xb5, 0x2e, 0x97, 0x09, 0xa4, 0x1f, 0x50, 0x1b, 0xdf,
+	0x84, 0xad, 0x9f, 0x46, 0x60, 0x26, 0x94, 0x35, 0xed, 0x72, 0xb2, 0xcc, 0x06, 0x03, 0x2a, 0xe2,
+	0xb6, 0x1b, 0x50, 0x93, 0x7d, 0x53, 0x67, 0xc3, 0x89, 0x32, 0x80, 0x8d, 0x35, 0x9e, 0x9f, 0xa1,
+	0x5a, 0xff, 0x5e, 0x55, 0xad, 0x3a, 0xfb, 0x4c, 0x71, 0x54, 0x4a, 0xb7, 0x94, 0x3f, 0x32, 0x50,
+	0x92, 0x14, 0x65, 0xba, 0xcd, 0x55, 0x28, 0xc3, 0x85, 0x49, 0x68, 0xce, 0x8d, 0x15, 0xcd, 0x11,
+	0x92, 0x95, 0x96, 0x95, 0x6b, 0x29, 0x59, 0xc9, 0x89, 0x56, 0x1e, 0xa9, 0xc8, 0x66, 0x5a, 0x45,
+	0xf2, 0x7c, 0x2d, 0x11, 0x8d, 0x7b, 0x6c, 0x2a, 0xe2, 0x97, 0x2f, 0xf0, 0x41, 0x4a, 0x39, 0x43,
+	0x33, 0x3a, 0x22, 0x03, 0x9a, 0x44, 0xb6, 0x87, 0x50, 0x94, 0xb9, 0xc4, 0x89, 0x69, 0xb0, 0xdf,
+	0xed, 0xf1, 0x89, 0xa9, 0x01, 0x30, 0xda, 0x9f, 0xe8, 0xd2, 0xce, 0xe0, 0x2d, 0x1a, 0xcc, 0xee,
+	0x1e, 0x4e, 0xf6, 0xf6, 0x35, 0xf5, 0x4b, 0x3e, 0x3b, 0x5d, 0x84, 0x8d, 0x5e, 0x77, 0xd2, 0xd5,
+	0xc7, 0x68, 0xeb, 0x03, 0x75, 0xa8, 0xe2, 0x04, 0xd5, 0x7e, 0x02, 0x05, 0x9e, 0x67, 0xf6, 0x86,
+	0xf1, 0x0e, 0x4e, 0x5c, 0x87, 0x03, 0x36, 0x30, 0x5d, 0x60, 0xa3, 0x55, 0xff, 0x49, 0x7f, 0xe7,
+	0x70, 0xc2, 0x4c, 0x3e, 0x85, 0x3d, 0xee, 0xaa, 0xdc, 0xc8, 0xb2, 0x39, 0x6b, 0x57, 0x1d, 0xa9,
+	0x7c, 0x40, 0xcb, 0x91, 0xcb, 0xf0, 0x8f, 0xee, 0xf6, 0x68, 0x5f, 0x1b, 0x76, 0x07, 0x7a, 0xec,
+	0xce, 0xb7, 0x7f, 0x28, 0xc7, 0x25, 0x8e, 0x35, 0x74, 0x2b, 0xd5, 0x0e, 0x9a, 0x2b, 0x1f, 0x22,
+	0x6a, 0x08, 0xff, 0x93, 0x89, 0xcf, 0x26, 0x9c, 0x4a, 0x30, 0xa9, 0x06, 0x70, 0xfe, 0xd8, 0xf4,
+	0x09, 0xe4, 0xbb, 0x61, 0x70, 0xfc, 0x1a, 0x7b, 0xa1, 0xf0, 0x06, 0xce, 0x33, 0x2a, 0xa6, 0xd1,
+	0x9a, 0x26, 0x0c, 0xa5, 0xf7, 0x0a, 0x51, 0xc6, 0x5d, 0x65, 0x01, 0x46, 0x53, 0x87, 0x34, 0xa5,
+	0x5c, 0xe7, 0x62, 0xb9, 0xfe, 0xbd, 0xf0, 0xb7, 0xc8, 0xf5, 0x10, 0x9a, 0xe9, 0xa1, 0xd0, 0xb2,
+	0x8f, 0x1c, 0xd9, 0x49, 0xdb, 0xa7, 0x53, 0xd9, 0xe9, 0x25, 0x50, 0x15, 0x91, 0xda, 0x86, 0xb9,
+	0xea, 0x20, 0x9f, 0xae, 0xc8, 0x7a, 0x9e, 0xbf, 0xe8, 0xfa, 0x19, 0x2f, 0x3a, 0x57, 0xd8, 0x1f,
+	0x40, 0xc9, 0x0b, 0x6d, 0x3b, 0x69, 0x0a, 0xca, 0x19, 0xd1, 0x9a, 0x40, 0x30, 0x79, 0x96, 0x60,
+	0xf2, 0x21, 0x94, 0xfd, 0xc0, 0x71, 0xdd, 0xa4, 0x1f, 0x6c, 0x9e, 0xb5, 0xad, 0x84, 0x30, 0x81,
+	0x8e, 0xe0, 0x2c, 0x34, 0x56, 0xf6, 0xd2, 0xb9, 0xa1, 0xaf, 0xab, 0xed, 0xe5, 0x37, 0xd0, 0xf6,
+	0x6f, 0x32, 0xc8, 0xad, 0xb5, 0x0c, 0xa2, 0x16, 0x9e, 0x9e, 0xcc, 0x61, 0x96, 0x8c, 0xe3, 0xd8,
+	0x60, 0x25, 0x20, 0x1a, 0x21, 0xc5, 0x60, 0x59, 0x17, 0xde, 0x2f, 0xe4, 0x20, 0x19, 0xd7, 0xaa,
+	0x50, 0x53, 0x61, 0x30, 0xb5, 0x0b, 0xbd, 0x85, 0x9c, 0x2e, 0xd9, 0xe3, 0x5a, 0x7f, 0xa9, 0x40,
+	0x49, 0x26, 0x57, 0x01, 0x28, 0x47, 0xe9, 0xc2, 0xb6, 0x93, 0xb4, 0x84, 0xb7, 0xa0, 0xb9, 0xae,
+	0xc5, 0xf2, 0x94, 0x1b, 0x6b, 0x22, 0xbc, 0xdd, 0x84, 0x46, 0xd2, 0x9c, 0x98, 0x00, 0xb7, 0x1f,
+	0x9f, 0xa7, 0x1b, 0x28, 0x14, 0xda, 0xe1, 0x68, 0x24, 0x54, 0x03, 0x85, 0x62, 0x3c, 0xd9, 0x3f,
+	0x38, 0x78, 0x03, 0xd9, 0xf8, 0x31, 0x03, 0x95, 0x47, 0xec, 0x2f, 0x31, 0xe7, 0x10, 0xfe, 0xd5,
+	0xe4, 0xfc, 0x63, 0x7f, 0x35, 0x73, 0x51, 0xab, 0x8e, 0x97, 0xc5, 0x58, 0x2b, 0xe7, 0x3c, 0x09,
+	0x64, 0x7f, 0x48, 0x8e, 0x0d, 0x53, 0xa7, 0x9e, 0xe7, 0x78, 0x91, 0x58, 0x57, 0xd0, 0xd3, 0xe7,
+	0x0e, 0xa6, 0xd5, 0x6c, 0x79, 0xe9, 0x78, 0x34, 0xd2, 0x6a, 0xb4, 0x87, 0x68, 0x22, 0xff, 0xab,
+	0xa9, 0x17, 0xa6, 0x1b, 0x4a, 0x45, 0x34, 0x94, 0x9b, 0xab, 0x0d, 0xa5, 0x12, 0x4f, 0xd6, 0xa9,
+	0x66, 0x32, 0x2d, 0x72, 0x9a, 0xde, 0xff, 0x33, 0x00, 0x00, 0xff, 0xff, 0xd2, 0x23, 0x91, 0xeb,
+	0xd9, 0x0f, 0x00, 0x00,
 }

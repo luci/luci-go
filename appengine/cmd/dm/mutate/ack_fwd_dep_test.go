@@ -41,74 +41,23 @@ func TestAckFwdDep(t *testing.T) {
 
 			Convey("AddingDeps", func() {
 				Convey("good", func() {
-					a.State = dm.Attempt_ADDING_DEPS
-					a.AddingDepsBitmap = bf.Make(2)
-					a.WaitingDepBitmap = bf.Make(2)
+					a.State = dm.Attempt_WAITING
+					a.DepMap = bf.Make(2)
 					So(ds.Put(a, fwd), ShouldBeNil)
 
-					Convey("non-finished, not-last-adding", func() {
+					Convey("not-last", func() {
 						muts, err := afd.RollForward(c)
 						So(err, ShouldBeNil)
 						So(muts, ShouldBeNil)
 
 						So(ds.Get(a, fwd), ShouldBeNil)
-						So(a.State, ShouldEqual, dm.Attempt_ADDING_DEPS)
-						So(a.AddingDepsBitmap.CountSet(), ShouldEqual, 1)
-						So(a.WaitingDepBitmap.CountSet(), ShouldEqual, 0)
-					})
-
-					Convey("non-finished, last-adding", func() {
-						a.AddingDepsBitmap.Set(1)
-						So(ds.Put(a), ShouldBeNil)
-
-						muts, err := afd.RollForward(c)
-						So(err, ShouldBeNil)
-						So(muts, ShouldBeNil)
-
-						So(ds.Get(a, fwd), ShouldBeNil)
-						So(a.State, ShouldEqual, dm.Attempt_BLOCKED)
-						So(a.AddingDepsBitmap.CountSet(), ShouldEqual, 2)
-						So(a.WaitingDepBitmap.CountSet(), ShouldEqual, 0)
-
-						Convey("and then finished later", func() {
-							// happens when we depend on an Attempt while it's not Finished,
-							// but then it finishes later.
-
-							afd.DepIsFinished = true
-
-							muts, err := afd.RollForward(c)
-							So(err, ShouldBeNil)
-							So(muts, ShouldBeNil)
-
-							So(ds.Get(a, fwd), ShouldBeNil)
-							So(a.State, ShouldEqual, dm.Attempt_BLOCKED)
-							So(a.AddingDepsBitmap.CountSet(), ShouldEqual, 2)
-							So(a.WaitingDepBitmap.CountSet(), ShouldEqual, 1)
-						})
-					})
-
-					Convey("finished, not-last-finished", func() {
-						a.AddingDepsBitmap.Set(1)
-						So(ds.Put(a), ShouldBeNil)
-
-						afd.DepIsFinished = true
-
-						muts, err := afd.RollForward(c)
-						So(err, ShouldBeNil)
-						So(muts, ShouldBeNil)
-
-						So(ds.Get(a, fwd), ShouldBeNil)
-						So(a.State, ShouldEqual, dm.Attempt_BLOCKED)
-						So(a.AddingDepsBitmap.CountSet(), ShouldEqual, 2)
-						So(a.WaitingDepBitmap.CountSet(), ShouldEqual, 1)
+						So(a.State, ShouldEqual, dm.Attempt_WAITING)
+						So(a.DepMap.CountSet(), ShouldEqual, 1)
 					})
 
 					Convey("last-finished", func() {
-						a.AddingDepsBitmap.Set(1)
-						a.WaitingDepBitmap.Set(1)
+						a.DepMap.Set(1)
 						So(ds.Put(a), ShouldBeNil)
-
-						afd.DepIsFinished = true
 
 						muts, err := afd.RollForward(c)
 						So(err, ShouldBeNil)
@@ -116,16 +65,14 @@ func TestAckFwdDep(t *testing.T) {
 							&ScheduleExecution{&a.ID}})
 
 						So(ds.Get(a, fwd), ShouldBeNil)
-						So(a.State, ShouldEqual, dm.Attempt_NEEDS_EXECUTION)
-						So(a.AddingDepsBitmap.CountSet(), ShouldEqual, 2)
-						So(a.WaitingDepBitmap.CountSet(), ShouldEqual, 2)
+						So(a.State, ShouldEqual, dm.Attempt_SCHEDULING)
+						So(a.DepMap.CountSet(), ShouldEqual, 0) // was reset
 					})
 				})
 
 				Convey("bad", func() {
-					a.State = dm.Attempt_ADDING_DEPS
-					a.AddingDepsBitmap = bf.Make(2)
-					a.WaitingDepBitmap = bf.Make(2)
+					a.State = dm.Attempt_WAITING
+					a.DepMap = bf.Make(2)
 					a.CurExecution = 1
 					So(ds.Put(a, fwd), ShouldBeNil)
 
@@ -135,9 +82,8 @@ func TestAckFwdDep(t *testing.T) {
 						So(muts, ShouldBeNil)
 
 						So(ds.Get(a, fwd), ShouldBeNil)
-						So(a.State, ShouldEqual, dm.Attempt_ADDING_DEPS)
-						So(a.AddingDepsBitmap.CountSet(), ShouldEqual, 0)
-						So(a.WaitingDepBitmap.CountSet(), ShouldEqual, 0)
+						So(a.State, ShouldEqual, dm.Attempt_WAITING)
+						So(a.DepMap.CountSet(), ShouldEqual, 0)
 					})
 
 					Convey("Missing data", func() {

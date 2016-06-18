@@ -5,12 +5,88 @@
 syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
 
 import "github.com/luci/luci-go/common/api/template/template.proto";
 
 import "types.proto";
 
 package dm;
+
+message AbnormalFinish {
+  enum Status {
+    // This entity has a failed result.
+    //
+    // Executions: the distributor reported that the task executed and failed, OR
+    // the distributor reports success while the Execution is in the RUNNING
+    // state.
+    //
+    // Attempts: the last Execution had a FAILED Status.
+    //
+    // Retryable.
+    FAILED = 0;
+
+    // This entity failed in a bad way.
+    //
+    // Executions: The distributor told us that the job died violently while in
+    // the SCHEDULING, RUNNING or STOPPING state.
+    //
+    // Attempts: the last Execution had a CRASHED Status.
+    //
+    // Retryable.
+    CRASHED = 1;
+
+    // Waited too long for the job to start.
+    //
+    // Executions: the distributor couldn't start the job in time, OR DM failed
+    // to get a status update from the distributor in time (e.g. the state was
+    // SCHEDULING for too long).
+    //
+    // Attempts: the last Execution had an EXPIRED Status.
+    //
+    // Retryable.
+    EXPIRED = 2;
+
+    // The job started, but took too long.
+    //
+    // Executions: the distributor started the job, but it couldn't complete in
+    // time, OR DM failed to get a status update from the distributor in time
+    // (e.g. the state was RUNNING for too long).
+    //
+    // Attempts: the last Execution had an TIMED_OUT Status.
+    //
+    // Retryable.
+    TIMED_OUT = 3;
+
+    // The job was cancelled by an external entity (human, automated system).
+    //
+    // Executions: the distributor informing DM that the job was preemptively
+    // cancelled.
+    //
+    // Attempts: the last Execution had a CANCELLED Status, or this Attempt
+    // was cancelled via DM.
+    CANCELLED = 4;
+
+    // The job was prevented from running by the distributor (quota, permissions,
+    // etc.)
+    //
+    // Executions: the distributor refused to run this job.
+    //
+    // Attempts: the last Execution had a REJECTED Status.
+    REJECTED = 5;
+
+    // The job is unrecognized.
+    //
+    // Executions: the distributor doesn't know about this job, or has forgotten
+    // about it.
+    //
+    // Attempts: the last Execution had a MISSING Status.
+    MISSING = 6;
+  }
+
+  Status status = 1;
+  string reason = 2;
+}
 
 message Quest {
   message ID {
@@ -23,8 +99,51 @@ message Quest {
   bool DNE = 2;
 
   message Desc {
+    // TODO(iannucci): have a 'simple_idempotent' quest mode which:
+    //   * isn't allowed/expected to call any API methods (ActivateExecution,
+    //   EnsureGraphData, or WalkGraph)
+    //   * only provides data back through the distributor-specific 'state'
+    //   field.
+    //
+    // Examples of use for this would be:
+    //   * simple test binaries that run/output to an ISOLATED_OUTDIR
+    //   * testing / ad-hoc bash scripts
+
     string distributor_config_name = 1;
     string json_payload = 2;
+
+    message Meta {
+      // This names the user/service account for all Attempts on this quest. You
+      // must have permission to use this account when creating the Quest and/or
+      // Attempts.
+      string as_account = 1;
+
+      message Retry {
+        // The number of times in a row to retry Executions which have an
+        // ABNORMAL_FINISHED status of FAILED.
+        uint32 failed = 1;
+
+        // The number of times in a row to retry Executions which have an
+        // ABNORMAL_FINISHED status of EXPIRED.
+        uint32 expired = 2;
+
+        // The number of times in a row to retry Executions which have an
+        // ABNORMAL_FINISHED status of TIMED_OUT.
+        uint32 timed_out = 3;
+
+        // The number of times in a row to retry Executions which have an
+        // ABNORMAL_FINISHED status of CRASHED.
+        uint32 crashed = 4;
+      }
+
+      // This affects how DM will retry the job payload in various exceptional
+      // circumstances.
+      Retry retry = 2;
+    }
+
+    // This is metadata which doesn't affect the functionality of the payload,
+    // but does affect how DM and/or the distributor run/schedule that payload.
+    Meta meta = 3;
   }
 
   message TemplateSpec {
@@ -61,12 +180,20 @@ message Attempt {
   bool DNE = 2;
 
   enum State {
-    NEEDS_EXECUTION = 0;
+    // The Attempt is waiting to be Executed.
+    SCHEDULING = 0;
+
+    // The Attempt is currently waiting for its current Execution to finish.
     EXECUTING = 1;
-    ADDING_DEPS = 2;
-    BLOCKED = 3;
-    AWAITING_EXECUTION_STATE = 4;
-    FINISHED = 5;
+
+    // The Attempt is waiting for dependent Attempts to be resolved.
+    WAITING = 2;
+
+    // The Attempt is in its final state.
+    FINISHED = 3;
+
+    // The Attempt is in an abnormal final state.
+    ABNORMAL_FINISHED = 4;
   }
 
   message Data {
@@ -74,35 +201,37 @@ message Attempt {
     google.protobuf.Timestamp modified = 2;
     uint32 num_executions = 3;
 
-    message NeedsExecution {
-      google.protobuf.Timestamp pending = 1;
-    }
+    // This attempt is ready to be Executed, but hasn't been sent to the
+    // distributor yet.
+    message Scheduling {}
 
+    // This attempt has a live Execution (with the specified ID). Check the
+    // Execution state for more information.
     message Executing {
       uint32 cur_execution_id = 1;
     }
 
-    message AddingDeps {
-      uint32 num_adding = 1;
-      uint32 num_waiting = 2;
-    }
-
-    message Blocked {
+    // This attempt's last Execution stopped by adding dependencies.
+    message Waiting {
       uint32 num_waiting = 1;
     }
 
+    // This attempt is complete.
     message Finished {
       google.protobuf.Timestamp expiration = 1;
       uint32 json_result_size = 2;
       string json_result = 3;
+
+      // This is the distributor-specific state of the final Execution.
+      bytes persistent_state_result = 4;
     }
 
     oneof attempt_type {
-      NeedsExecution needs_execution = 4;
-      Executing executing = 5;
-      AddingDeps adding_deps = 6;
-      Blocked blocked = 7;
+      Scheduling scheduling = 5;
+      Executing executing = 6;
+      Waiting waiting = 7;
       Finished finished = 8;
+      AbnormalFinish abnormal_finish = 9;
     }
   }
   Data data = 3;
@@ -170,39 +299,53 @@ message Execution {
   ID id = 1;
 
   enum State {
-    // The execution has been accepted by the distributor, but is not running yet
-    SCHEDULED = 0;
+    // The execution has been accepted by the distributor, but is not running
+    // yet.
+    SCHEDULING = 0;
 
-    // The execution is running
+    // The execution is running (has activated with DM).
     RUNNING = 1;
 
-    // The execution was unable to be accepted by the distributor
-    REJECTED = 2;
+    // The execution has been told to stop by DM, but we haven't heard from
+    // the distributor yet.
+    STOPPING = 2;
 
-    // The execution was accepted by the distributor, but couldn't run in time.
-    TIMED_OUT = 3;
+    // The execution is in its final state.
+    FINISHED = 3;
 
-    // The execution ran and completed
-    FINISHED = 4;
-
-    // The execution ran, but the distributor claims it did not complete
-    FAILED = 5;
-
-    // The distributor claims to not know anything about this execution
-    MISSING = 6;
-
-    // Some entity (DM, Human, Distributor) requested that this execution not run.
-    CANCELLED = 7;
+    // The execution is in an abnormal final state
+    ABNORMAL_FINISHED = 4;
   }
 
   message Data {
-    State state = 1;
-    string state_reason = 2;
+    google.protobuf.Timestamp created = 1;
+    google.protobuf.Timestamp modified = 2;
 
-    google.protobuf.Timestamp created = 3;
+    message DistributorInfo {
+      string config_name = 1;
+      string config_version = 2;
+      string token = 3;
+      string url = 4;
+    }
+    DistributorInfo distributor_info = 3;
 
-    string distributor_token = 4;
-    string distributor_info_url = 5;
+    message Scheduling {}
+
+    message Running {}
+
+    message Stopping {}
+
+    message Finished {
+      string persistent_state = 1;
+    }
+
+    oneof execution_type {
+      Scheduling scheduling = 4;
+      Running running = 5;
+      Stopping stopping = 6;
+      Finished finished = 7;
+      AbnormalFinish abnormal_finish = 8;
+    }
   }
   Data data = 2;
 

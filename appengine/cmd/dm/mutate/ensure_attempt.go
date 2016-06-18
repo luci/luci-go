@@ -21,7 +21,7 @@ type EnsureAttempt struct {
 
 // Root implements tumble.Mutation.
 func (e *EnsureAttempt) Root(c context.Context) *datastore.Key {
-	return datastore.Get(c).KeyForObj(&model.Attempt{ID: *e.ID})
+	return model.AttemptKeyFromID(c, e.ID)
 }
 
 // RollForward implements tumble.Mutation.
@@ -29,14 +29,14 @@ func (e *EnsureAttempt) RollForward(c context.Context) (muts []tumble.Mutation, 
 	ds := datastore.Get(c)
 
 	a := model.MakeAttempt(c, e.ID)
-	err = ds.Get(a)
-	if err != datastore.ErrNoSuchEntity {
+	if err = ds.Get(a); err != datastore.ErrNoSuchEntity {
 		return
 	}
 
 	if err = ds.Put(a); err != nil {
 		logging.WithError(err).Errorf(logging.SetField(c, "id", e.ID), "in put")
 	}
+	muts = append(muts, &ScheduleExecution{e.ID})
 	return
 }
 

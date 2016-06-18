@@ -17,18 +17,11 @@ import (
 	google_pb "github.com/luci/luci-go/common/proto/google"
 	. "github.com/luci/luci-go/common/testing/assertions"
 
-	"github.com/luci/luci-go/common/api/dm/service/v1"
+	dm "github.com/luci/luci-go/common/api/dm/service/v1"
 )
 
 func TestQuest(t *testing.T) {
 	t.Parallel()
-
-	desc := func(cfg, jsonData string) *dm.Quest_Desc {
-		return &dm.Quest_Desc{
-			DistributorConfigName: cfg,
-			JsonPayload:           jsonData,
-		}
-	}
 
 	Convey("Quest", t, func() {
 		c := memory.Use(context.Background())
@@ -37,30 +30,27 @@ func TestQuest(t *testing.T) {
 		Convey("QuestDescriptor", func() {
 			Convey("good", func() {
 				Convey("normal (normalized)", func() {
-					qd := desc("swarming", `{  "key"  :  ["value"]}`)
-					q, err := NewQuest(c, qd)
-					So(err, ShouldBeNil)
-					So(q, ShouldResemble, &Quest{
-						"eMpqiyje5ItTX8IistN7IlAMVxyCsJcez4DAHKvhm7Y",
-						*desc("swarming", `{"key":["value"]}`),
+					qd := dm.NewQuestDesc("swarming", `{  "key"  :  ["value"]}`, nil)
+					So(qd.Normalize(), ShouldBeNil)
+					So(NewQuest(c, qd), ShouldResemble, &Quest{
+						"i7dd71-dXSiEY2gVRDEOnZcR_ZswA68Znk1I-BJdfHU",
+						*qd,
 						nil,
 						testclock.TestTimeUTC,
 					})
 				})
 
 				Convey("extra data", func() {
-					qd := desc("swarming", `{"key":["value"]} foof`)
-					_, err := NewQuest(c, qd)
-					So(err, ShouldErrLike, "extra junk")
+					qd := dm.NewQuestDesc("swarming", `{"key":["value"]} foof`, nil)
+					So(qd.Normalize(), ShouldErrLike, "extra junk")
 				})
 
 				Convey("data ordering", func() {
-					qd := desc("swarming", `{"key":["value"], "abc": true}`)
-					q, err := NewQuest(c, qd)
-					So(err, ShouldBeNil)
-					So(q, ShouldResemble, &Quest{
-						"KO5hRgXIFouei7Xg5Oai0K5hJeuuiO70jRaDyqQO0MM",
-						*desc("swarming", `{"abc":true,"key":["value"]}`),
+					qd := dm.NewQuestDesc("swarming", `{"key":["value"], "abc": true}`, nil)
+					So(qd.Normalize(), ShouldBeNil)
+					So(NewQuest(c, qd), ShouldResemble, &Quest{
+						"iEnVmX4BbYB0y7Df7pIXTIcNWsPgsXNz3KOjg1xX-sM",
+						*qd,
 						nil,
 						testclock.TestTimeUTC,
 					})
@@ -71,31 +61,29 @@ func TestQuest(t *testing.T) {
 			Convey("bad", func() {
 				Convey("payload too large", func() {
 					payload := make([]byte, 512*1000)
-					qd := desc("swarming", string(payload))
-					_, err := NewQuest(c, qd)
-					So(err, ShouldErrLike, "too large: 512000 > 262144")
+					qd := dm.NewQuestDesc("swarming", string(payload), nil)
+					So(qd.Normalize(), ShouldErrLike, "too large: 512000 > 262144")
 				})
 
 				Convey("json with null byte", func() {
-					qd := desc("swarming", "{\"key\": \"\x00\"}")
-					_, err := NewQuest(c, qd)
-					So(err, ShouldErrLike, "invalid character")
+					qd := dm.NewQuestDesc("swarming", "{\"key\": \"\x00\"}", nil)
+					So(qd.Normalize(), ShouldErrLike, "invalid character")
 				})
 
 				Convey("not a dictionary", func() {
-					qd := desc("swarming", "[]")
-					_, err := NewQuest(c, qd)
-					So(err, ShouldErrLike, "cannot unmarshal array")
+					qd := dm.NewQuestDesc("swarming", "[]", nil)
+					So(qd.Normalize(), ShouldErrLike, "cannot unmarshal array")
 				})
 			})
 		})
 
 		Convey("ToProto", func() {
-			q, err := NewQuest(c, desc("swarming", `{"key": ["value"]}`))
-			So(err, ShouldBeNil)
+			qd := dm.NewQuestDesc("swarming", `{"key": ["value"]}`, nil)
+			So(qd.Normalize(), ShouldBeNil)
+			q := NewQuest(c, qd)
 			p := q.ToProto()
 			So(p, ShouldResemble, &dm.Quest{
-				Id: dm.NewQuestID("eMpqiyje5ItTX8IistN7IlAMVxyCsJcez4DAHKvhm7Y"),
+				Id: dm.NewQuestID("i7dd71-dXSiEY2gVRDEOnZcR_ZswA68Znk1I-BJdfHU"),
 				Data: &dm.Quest_Data{
 					Created: google_pb.NewTimestamp(testclock.TestTimeUTC),
 					Desc:    &q.Desc,
@@ -106,8 +94,9 @@ func TestQuest(t *testing.T) {
 		})
 
 		Convey("QueryAttemptsForQuest", func() {
-			q, err := NewQuest(c, desc("swarming", `{"key": ["value"]}`))
-			So(err, ShouldBeNil)
+			qd := dm.NewQuestDesc("swarming", `{"key": ["value"]}`, nil)
+			So(qd.Normalize(), ShouldBeNil)
+			q := NewQuest(c, qd)
 			ds := datastore.Get(c)
 			So(ds.Put(q), ShouldBeNil)
 			ds.Testable().CatchupIndexes()
@@ -134,8 +123,8 @@ func TestQuest(t *testing.T) {
 			as = nil
 			So(ds.GetAll(QueryAttemptsForQuest(c, q.ID), &as), ShouldBeNil)
 			So(as, ShouldResemble, []*Attempt{
-				{ID: *dm.NewAttemptID("eMpqiyje5ItTX8IistN7IlAMVxyCsJcez4DAHKvhm7Y", 2)},
-				{ID: *dm.NewAttemptID("eMpqiyje5ItTX8IistN7IlAMVxyCsJcez4DAHKvhm7Y", 1)},
+				{ID: *dm.NewAttemptID("i7dd71-dXSiEY2gVRDEOnZcR_ZswA68Znk1I-BJdfHU", 2)},
+				{ID: *dm.NewAttemptID("i7dd71-dXSiEY2gVRDEOnZcR_ZswA68Znk1I-BJdfHU", 1)},
 			})
 
 		})

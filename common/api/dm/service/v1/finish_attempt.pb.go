@@ -25,7 +25,7 @@ type FinishAttemptReq struct {
 func (m *FinishAttemptReq) Reset()                    { *m = FinishAttemptReq{} }
 func (m *FinishAttemptReq) String() string            { return proto.CompactTextString(m) }
 func (*FinishAttemptReq) ProtoMessage()               {}
-func (*FinishAttemptReq) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
+func (*FinishAttemptReq) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
 func (m *FinishAttemptReq) GetAuth() *Execution_Auth {
 	if m != nil {
@@ -45,7 +45,7 @@ func init() {
 	proto.RegisterType((*FinishAttemptReq)(nil), "dm.FinishAttemptReq")
 }
 
-var fileDescriptor3 = []byte{
+var fileDescriptor2 = []byte{
 	// 199 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x4c, 0x8e, 0xbf, 0x8a, 0x83, 0x30,
 	0x1c, 0xc7, 0xd1, 0x3b, 0x0e, 0x2e, 0x2e, 0x12, 0x6e, 0x10, 0x17, 0x8f, 0x0e, 0xa5, 0x53, 0x84,

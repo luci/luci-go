@@ -31,13 +31,13 @@ type EnsureQuestAttempts struct {
 
 // Root implements tumble.Mutation.
 func (e *EnsureQuestAttempts) Root(c context.Context) *datastore.Key {
-	return datastore.Get(c).KeyForObj(&model.Quest{ID: e.Quest.ID})
+	return model.QuestKeyFromID(c, e.Quest.ID)
 }
 
 // RollForward implements tumble.Mutation.
 func (e *EnsureQuestAttempts) RollForward(c context.Context) (muts []tumble.Mutation, err error) {
 	if !e.DoNotMergeQuest {
-		if _, err = (&MergeQuest{e.Quest}).RollForward(c); err != nil {
+		if _, err = (&MergeQuest{Quest: e.Quest}).RollForward(c); err != nil {
 			return
 		}
 	}

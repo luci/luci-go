@@ -16,32 +16,32 @@ func TestExecutionState(t *testing.T) {
 
 	Convey("Evolve", t, func() {
 		Convey("Identity", func() {
-			s := Execution_SCHEDULED
-			So(s.Evolve(Execution_SCHEDULED), ShouldBeNil)
-			So(s, ShouldEqual, Execution_SCHEDULED)
+			s := Execution_SCHEDULING
+			So(s.Evolve(Execution_SCHEDULING), ShouldBeNil)
+			So(s, ShouldEqual, Execution_SCHEDULING)
 		})
 
 		Convey("Transition", func() {
 			s := Execution_RUNNING
-			So(s.Evolve(Execution_FINISHED), ShouldBeNil)
-			So(s, ShouldEqual, Execution_FINISHED)
+			So(s.Evolve(Execution_STOPPING), ShouldBeNil)
+			So(s, ShouldEqual, Execution_STOPPING)
 		})
 
 		Convey("Invalid starting transistion", func() {
 			s := Execution_FINISHED
-			So(s.Evolve(Execution_SCHEDULED), ShouldErrLike, "invalid state transition FINISHED -> SCHEDULE")
+			So(s.Evolve(Execution_SCHEDULING), ShouldErrLike, "invalid state transition FINISHED -> SCHEDULING")
 			So(s, ShouldEqual, Execution_FINISHED)
 		})
 
 		Convey("Invalid ending transistion", func() {
 			s := Execution_RUNNING
-			So(s.Evolve(Execution_SCHEDULED), ShouldErrLike, "invalid state transition RUNNING -> SCHEDULED")
+			So(s.Evolve(Execution_SCHEDULING), ShouldErrLike, "invalid state transition RUNNING -> SCHEDULING")
 			So(s, ShouldEqual, Execution_RUNNING)
 		})
 
 		Convey("MustEvolve", func() {
 			s := Execution_FINISHED
-			So(func() { s.MustEvolve(Execution_SCHEDULED) }, ShouldPanic)
+			So(func() { s.MustEvolve(Execution_SCHEDULING) }, ShouldPanic)
 		})
 	})
 }

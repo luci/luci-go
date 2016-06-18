@@ -30,8 +30,8 @@ func TestAttempt(t *testing.T) {
 
 		Convey("ModifyState", func() {
 			a := MakeAttempt(c, dm.NewAttemptID("quest", 5))
-			So(a.State, ShouldEqual, dm.Attempt_NEEDS_EXECUTION)
-			So(a.ModifyState(c, dm.Attempt_ADDING_DEPS), ShouldErrLike, "invalid state transition")
+			So(a.State, ShouldEqual, dm.Attempt_SCHEDULING)
+			So(a.ModifyState(c, dm.Attempt_FINISHED), ShouldErrLike, "invalid state transition")
 			So(a.Modified, ShouldResemble, testclock.TestTimeUTC)
 
 			clk.Add(time.Second)
@@ -40,14 +40,13 @@ func TestAttempt(t *testing.T) {
 			So(a.State, ShouldEqual, dm.Attempt_EXECUTING)
 			So(a.Modified, ShouldResemble, clk.Now())
 
-			So(a.ModifyState(c, dm.Attempt_ADDING_DEPS), ShouldBeNil)
-			So(a.ModifyState(c, dm.Attempt_BLOCKED), ShouldBeNil)
-			So(a.ModifyState(c, dm.Attempt_BLOCKED), ShouldBeNil)
-			So(a.ModifyState(c, dm.Attempt_NEEDS_EXECUTION), ShouldBeNil)
+			So(a.ModifyState(c, dm.Attempt_WAITING), ShouldBeNil)
+			So(a.ModifyState(c, dm.Attempt_WAITING), ShouldBeNil)
+			So(a.ModifyState(c, dm.Attempt_SCHEDULING), ShouldBeNil)
 			So(a.ModifyState(c, dm.Attempt_EXECUTING), ShouldBeNil)
 			So(a.ModifyState(c, dm.Attempt_FINISHED), ShouldBeNil)
 
-			So(a.ModifyState(c, dm.Attempt_NEEDS_EXECUTION), ShouldErrLike, "invalid")
+			So(a.ModifyState(c, dm.Attempt_SCHEDULING), ShouldErrLike, "invalid")
 			So(a.State, ShouldEqual, dm.Attempt_FINISHED)
 		})
 
@@ -55,16 +54,12 @@ func TestAttempt(t *testing.T) {
 			Convey("NeedsExecution", func() {
 				a := MakeAttempt(c, dm.NewAttemptID("quest", 10))
 
-				So(a.ToProto(true), ShouldResemble, &dm.Attempt{
-					Id: &dm.Attempt_ID{Quest: "quest", Id: 10},
-					Data: &dm.Attempt_Data{
-						Created:       google_pb.NewTimestamp(testclock.TestTimeUTC),
-						Modified:      google_pb.NewTimestamp(testclock.TestTimeUTC),
-						NumExecutions: 0,
-						AttemptType: &dm.Attempt_Data_NeedsExecution_{NeedsExecution: &dm.Attempt_Data_NeedsExecution{
-							Pending: google_pb.NewTimestamp(testclock.TestTimeUTC)}},
-					},
-				})
+				atmpt := dm.NewAttemptScheduling()
+				atmpt.Id = dm.NewAttemptID("quest", 10)
+				atmpt.Data.Created = google_pb.NewTimestamp(testclock.TestTimeUTC)
+				atmpt.Data.Modified = google_pb.NewTimestamp(testclock.TestTimeUTC)
+
+				So(a.ToProto(true), ShouldResemble, atmpt)
 			})
 
 			Convey("Executing", func() {
@@ -84,65 +79,35 @@ func TestAttempt(t *testing.T) {
 				})
 			})
 
-			Convey("AddingDeps", func() {
+			Convey("Waiting", func() {
 				a := MakeAttempt(c, dm.NewAttemptID("quest", 10))
 				clk.Add(10 * time.Second)
 				a.CurExecution = 1
 				So(a.ModifyState(c, dm.Attempt_EXECUTING), ShouldBeNil)
 				clk.Add(10 * time.Second)
-				So(a.ModifyState(c, dm.Attempt_ADDING_DEPS), ShouldBeNil)
-				a.AddingDepsBitmap = bf.Make(4)
-				a.AddingDepsBitmap.Set(1)
-				a.AddingDepsBitmap.Set(3)
-				a.WaitingDepBitmap = bf.Make(4)
+				So(a.ModifyState(c, dm.Attempt_WAITING), ShouldBeNil)
+				a.DepMap = bf.Make(4)
+				a.DepMap.Set(2)
 
-				So(a.ToProto(true), ShouldResemble, &dm.Attempt{
-					Id: &dm.Attempt_ID{Quest: "quest", Id: 10},
-					Data: &dm.Attempt_Data{
-						Created:       google_pb.NewTimestamp(testclock.TestTimeUTC),
-						Modified:      google_pb.NewTimestamp(clk.Now()),
-						NumExecutions: 1,
-						AttemptType: &dm.Attempt_Data_AddingDeps_{AddingDeps: &dm.Attempt_Data_AddingDeps{
-							NumAdding:  2,
-							NumWaiting: 4}}},
-				})
-			})
+				atmpt := dm.NewAttemptWaiting(3)
+				atmpt.Id = dm.NewAttemptID("quest", 10)
+				atmpt.Data.Created = google_pb.NewTimestamp(testclock.TestTimeUTC)
+				atmpt.Data.Modified = google_pb.NewTimestamp(clk.Now())
+				atmpt.Data.NumExecutions = 1
 
-			Convey("Blocked", func() {
-				a := MakeAttempt(c, dm.NewAttemptID("quest", 10))
-				clk.Add(10 * time.Second)
-				a.CurExecution = 1
-				So(a.ModifyState(c, dm.Attempt_EXECUTING), ShouldBeNil)
-				clk.Add(10 * time.Second)
-				So(a.ModifyState(c, dm.Attempt_ADDING_DEPS), ShouldBeNil)
-				a.WaitingDepBitmap = bf.Make(4)
-				a.WaitingDepBitmap.Set(2)
-				// don't increment the time: let the automatic microsecond advancement
-				// take effect.
-				So(a.ModifyState(c, dm.Attempt_BLOCKED), ShouldBeNil)
-
-				So(a.ToProto(true), ShouldResemble, &dm.Attempt{
-					Id: &dm.Attempt_ID{Quest: "quest", Id: 10},
-					Data: &dm.Attempt_Data{
-						Created:       google_pb.NewTimestamp(testclock.TestTimeUTC),
-						Modified:      google_pb.NewTimestamp(clk.Now().Add(time.Microsecond)),
-						NumExecutions: 1,
-						AttemptType: &dm.Attempt_Data_Blocked_{Blocked: &dm.Attempt_Data_Blocked{
-							NumWaiting: 3}}},
-				})
+				So(a.ToProto(true), ShouldResemble, atmpt)
 			})
 
 			Convey("Finished", func() {
 				a := MakeAttempt(c, dm.NewAttemptID("quest", 10))
 				a.State = dm.Attempt_FINISHED
 				a.CurExecution = math.MaxUint32
-				a.AddingDepsBitmap = bf.Make(20)
-				a.WaitingDepBitmap = bf.Make(20)
+				a.DepMap = bf.Make(20)
 				a.ResultExpiration = testclock.TestTimeUTC.Add(10 * time.Second)
 
-				a.WaitingDepBitmap.Set(1)
-				a.WaitingDepBitmap.Set(5)
-				a.WaitingDepBitmap.Set(7)
+				a.DepMap.Set(1)
+				a.DepMap.Set(5)
+				a.DepMap.Set(7)
 
 				So(a.ToProto(true), ShouldResemble, &dm.Attempt{
 					Id: &dm.Attempt_ID{Quest: "quest", Id: 10},

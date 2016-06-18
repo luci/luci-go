@@ -58,8 +58,7 @@ func TestAddBackDep(t *testing.T) {
 					abd.NeedsAck = true
 					muts, err := abd.RollForward(c)
 					So(err, ShouldBeNil)
-					So(muts, ShouldResemble, []tumble.Mutation{
-						&AckFwdDep{abd.Dep, true}})
+					So(muts, ShouldResemble, []tumble.Mutation{&AckFwdDep{abd.Dep}})
 
 					So(ds.Get(bdg, bd), ShouldBeNil)
 					So(bd.Edge(), ShouldResemble, abd.Dep)
@@ -75,8 +74,7 @@ func TestAddBackDep(t *testing.T) {
 				abd.NeedsAck = true
 				muts, err := abd.RollForward(c)
 				So(err, ShouldBeNil)
-				So(muts, ShouldResemble, []tumble.Mutation{
-					&AckFwdDep{abd.Dep, false}})
+				So(muts, ShouldBeNil)
 
 				// Note that bdg was created as a side effect.
 				So(ds.Get(bdg, bd), ShouldBeNil)

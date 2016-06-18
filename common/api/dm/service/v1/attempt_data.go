@@ -10,65 +10,64 @@ import (
 	google_pb "github.com/luci/luci-go/common/proto/google"
 )
 
-// NewAttemptNeedsExecution creates an Attempt in the NeedsExecution state.
-func NewAttemptNeedsExecution(pending time.Time) *Attempt {
+// NewAttemptScheduling creates an Attempt in the SCHEDULING state.
+func NewAttemptScheduling() *Attempt {
 	return &Attempt{
 		Data: &Attempt_Data{
-			AttemptType: &Attempt_Data_NeedsExecution_{
-				NeedsExecution: &Attempt_Data_NeedsExecution{
-					google_pb.NewTimestamp(pending)}}}}
+			AttemptType: &Attempt_Data_Scheduling_{
+				&Attempt_Data_Scheduling{}}}}
 }
 
-// NewAttemptExecuting creates an Attempt in the Executing state.
+// NewAttemptExecuting creates an Attempt in the EXECUTING state.
 func NewAttemptExecuting(curExID uint32) *Attempt {
 	return &Attempt{
 		Data: &Attempt_Data{
+			NumExecutions: curExID,
 			AttemptType: &Attempt_Data_Executing_{
-				Executing: &Attempt_Data_Executing{
-					curExID}}}}
+				&Attempt_Data_Executing{curExID}}}}
 }
 
-// NewAttemptAddingDeps creates an Attempt in the AddingDeps state.
-func NewAttemptAddingDeps(numAdding, numWaiting uint32) *Attempt {
+// NewAttemptWaiting creates an Attempt in the WAITING state.
+func NewAttemptWaiting(numWaiting uint32) *Attempt {
 	return &Attempt{
 		Data: &Attempt_Data{
-			AttemptType: &Attempt_Data_AddingDeps_{
-				AddingDeps: &Attempt_Data_AddingDeps{
-					numAdding, numWaiting}}}}
+			AttemptType: &Attempt_Data_Waiting_{
+				&Attempt_Data_Waiting{numWaiting}}}}
 }
 
-// NewAttemptBlocked creates an Attempt in the Blocked state.
-func NewAttemptBlocked(numWaiting uint32) *Attempt {
-	return &Attempt{
-		Data: &Attempt_Data{
-			AttemptType: &Attempt_Data_Blocked_{
-				Blocked: &Attempt_Data_Blocked{
-					numWaiting}}}}
-}
-
-// NewAttemptFinished creates an Attempt in the Finished state.
-func NewAttemptFinished(expiration time.Time, jsonResultSize uint32, jsonResult string) *Attempt {
+// NewAttemptFinished creates an Attempt in the FINISHED state.
+func NewAttemptFinished(expiration time.Time, jsonResultSize uint32, jsonResult string, finalPersistentState []byte) *Attempt {
 	return &Attempt{
 		Data: &Attempt_Data{
 			AttemptType: &Attempt_Data_Finished_{
-				Finished: &Attempt_Data_Finished{
-					google_pb.NewTimestamp(expiration), jsonResultSize, jsonResult}}}}
+				&Attempt_Data_Finished{
+					google_pb.NewTimestamp(expiration), jsonResultSize, jsonResult, finalPersistentState}}}}
+}
+
+// NewAttemptAbnormalFinish creates an Attempt in the ABNORMAL_FINISH state.
+func NewAttemptAbnormalFinish(af *AbnormalFinish) *Attempt {
+	return &Attempt{
+		Data: &Attempt_Data{
+			AttemptType: &Attempt_Data_AbnormalFinish{af}}}
 }
 
 // State computes the Attempt_State for the current Attempt_Data
 func (d *Attempt_Data) State() Attempt_State {
-	switch d.AttemptType.(type) {
-	case *Attempt_Data_Executing_:
-		return Attempt_EXECUTING
-	case *Attempt_Data_AddingDeps_:
-		return Attempt_ADDING_DEPS
-	case *Attempt_Data_Blocked_:
-		return Attempt_BLOCKED
-	case *Attempt_Data_Finished_:
-		return Attempt_FINISHED
+	if d != nil {
+		switch d.AttemptType.(type) {
+		case *Attempt_Data_Scheduling_:
+			return Attempt_SCHEDULING
+		case *Attempt_Data_Executing_:
+			return Attempt_EXECUTING
+		case *Attempt_Data_Waiting_:
+			return Attempt_WAITING
+		case *Attempt_Data_Finished_:
+			return Attempt_FINISHED
+		case *Attempt_Data_AbnormalFinish:
+			return Attempt_ABNORMAL_FINISHED
+		}
 	}
-	// NEEDS_EXECUTION is the default
-	return Attempt_NEEDS_EXECUTION
+	return Attempt_SCHEDULING
 }
 
 // NormalizePartial will nil out the Partial field for this Attempt if all
@@ -82,4 +81,11 @@ func (d *Attempt) NormalizePartial() {
 		p.Result != Attempt_Partial_LOADED) {
 		d.Partial = nil
 	}
+}
+
+// Any returns true iff any of the Partial fields are true such that they could
+// be successfully loaded on a subsequent query.
+func (p *Attempt_Partial) Any() bool {
+	return (p.BackDeps || p.Data || p.Executions || p.FwdDeps ||
+		p.Result == Attempt_Partial_NOT_LOADED)
 }

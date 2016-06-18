@@ -11,7 +11,7 @@ import (
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/appengine/tumble"
+	//"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/api/dm/service/v1"
 	"github.com/luci/luci-go/common/clock/testclock"
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -55,12 +55,10 @@ func TestFinishAttempt(t *testing.T) {
 			Convey("Good", func() {
 				muts, err := fa.RollForward(c)
 				So(err, ShouldBeNil)
-				So(muts, ShouldResemble, []tumble.Mutation{
-					&RecordCompletion{For: &a.ID}})
+				So(muts, ShouldBeEmpty)
 
 				So(ds.Get(a, e, ar), ShouldBeNil)
 				So(e.Token, ShouldBeEmpty)
-				So(a.State, ShouldEqual, dm.Attempt_FINISHED)
 				So(a.ResultExpiration, ShouldResemble,
 					testclock.TestTimeUTC.Round(time.Microsecond))
 				So(ar.Data, ShouldResemble, `{"result": true}`)
@@ -69,7 +67,7 @@ func TestFinishAttempt(t *testing.T) {
 			Convey("Bad ExecutionKey", func() {
 				fa.Auth.Token = []byte("wat")
 				_, err := fa.RollForward(c)
-				So(err, ShouldBeRPCUnauthenticated, "execution Auth")
+				So(err, ShouldBeRPCPermissionDenied, "execution Auth")
 
 				So(ds.Get(a, e), ShouldBeNil)
 				So(e.Token, ShouldNotBeEmpty)

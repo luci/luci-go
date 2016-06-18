@@ -5,5 +5,5 @@
 package dm
 
 //go:generate cproto
-//go:generate proto-gae -type Quest_Desc -type Quest_TemplateSpec
+//go:generate proto-gae -type Quest_Desc -type Quest_TemplateSpec -type AbnormalFinish -type Execution_Auth
 //go:generate svcdec -type DepsServer

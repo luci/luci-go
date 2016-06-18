@@ -7,7 +7,6 @@ Package dm is a generated protocol buffer package.
 
 It is generated from these files:
 	activate_execution.proto
-	claim_execution.proto
 	ensure_graph_data.proto
 	finish_attempt.proto
 	graph_data.proto
@@ -18,11 +17,11 @@ It is generated from these files:
 
 It has these top-level messages:
 	ActivateExecutionReq
-	ClaimExecutionRsp
 	TemplateInstantiation
 	EnsureGraphDataReq
 	EnsureGraphDataRsp
 	FinishAttemptReq
+	AbnormalFinish
 	Quest
 	Attempt
 	Execution

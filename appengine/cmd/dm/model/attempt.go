@@ -10,11 +10,25 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/api/dm/service/v1"
-	"github.com/luci/luci-go/common/bit_field"
+	dm "github.com/luci/luci-go/common/api/dm/service/v1"
+	bf "github.com/luci/luci-go/common/bit_field"
 	"github.com/luci/luci-go/common/clock"
 	google_pb "github.com/luci/luci-go/common/proto/google"
 )
+
+// AttemptRetryState indicates the current state of the Attempt's retry
+// counters.
+type AttemptRetryState struct {
+	Failed   uint32
+	Expired  uint32
+	TimedOut uint32
+	Crashed  uint32
+}
+
+// Reset resets all of the AttemptRetryState counters.
+func (a *AttemptRetryState) Reset() {
+	*a = AttemptRetryState{}
+}
 
 // Attempt is the datastore model for a DM Attempt. It has no parent key, but
 // it may have the following children entities:
@@ -29,7 +43,21 @@ type Attempt struct {
 	Created  time.Time
 	Modified time.Time
 
-	State dm.Attempt_State
+	State      dm.Attempt_State
+	RetryState AttemptRetryState
+
+	// Only valid when State == ABNORMAL_FINISHED
+	AbnormalFinish dm.AbnormalFinish
+
+	// Only valid when State == FINISHED
+	ResultExpiration time.Time `gae:",noindex"`
+	ResultSize       uint32    `gae:",noindex"`
+
+	// PersistentState is the last successful execution's returned
+	// PersistentState. It is set whenever an execution for this Attempt finishes
+	// sucessfully. This is denormalized with the Execution's
+	// ResultPersistentState field.
+	PersistentState []byte `gae:",noindex"`
 
 	// TODO(iannucci): Use CurExecution as a 'deps block version'
 	// then we can have an 'ANY' directive which executes the attempt as soon
@@ -45,22 +73,21 @@ type Attempt struct {
 	// (or 0 if no Executions have been made yet).
 	CurExecution uint32
 
-	// AddingDepsBitmap is valid only while Attempt is in 'AddingDeps'.
-	// A field value of 0 means the backdep hasn't been added yet.
-	AddingDepsBitmap bf.BitField `gae:",noindex" json:"-"`
-
-	// WaitingDepBitmap is valid only while Attempt is in a Status of 'AddingDeps'
-	// or 'Blocked'.
-	// A field value of 0 means that the dep is currently waiting.
-	WaitingDepBitmap bf.BitField `gae:",noindex" json:"-"`
-
-	// Only valid while Attempt is Finished
-	ResultExpiration time.Time
-	ResultSize       uint32
+	// DepMap is valid only while Attempt is in a State of EXECUTING or WAITING.
+	//
+	// The size of this field is inspected to deteremine what the next state after
+	// EXECUTING is. If the size == 0, it means the Attempt should move to the
+	// FINISHED state. Otherwise it means that the Attempt should move to the
+	// WAITING state.
+	//
+	// A bit field value of 0 means that the dep is currently waiting, and a bit
+	// value of 1 means that the coresponding dep is satisfined. The Attempt can
+	// be unblocked from WAITING back to SCHEDULING when all bits are set to 1.
+	DepMap bf.BitField `gae:",noindex" json:"-"`
 
 	// A lazily-updated boolean to reflect that this Attempt is expired for
 	// queries.
-	Expired bool
+	ResultExpired bool
 }
 
 // MakeAttempt is a convenience function to create a new Attempt model in
@@ -77,6 +104,9 @@ func MakeAttempt(c context.Context, aid *dm.Attempt_ID) *Attempt {
 // ModifyState changes the current state of this Attempt and updates its
 // Modified timestamp.
 func (a *Attempt) ModifyState(c context.Context, newState dm.Attempt_State) error {
+	if a.State == newState {
+		return nil
+	}
 	if err := a.State.Evolve(newState); err != nil {
 		return err
 	}
@@ -93,15 +123,6 @@ func (a *Attempt) ModifyState(c context.Context, newState dm.Attempt_State) erro
 	return nil
 }
 
-// MustModifyState is the same as ModifyState, except that it panics if the
-// state transition is invalid.
-func (a *Attempt) MustModifyState(c context.Context, newState dm.Attempt_State) {
-	err := a.ModifyState(c, newState)
-	if err != nil {
-		panic(err)
-	}
-}
-
 // ToProto returns a dm proto version of this Attempt.
 func (a *Attempt) ToProto(withData bool) *dm.Attempt {
 	ret := dm.Attempt{Id: &a.ID}
@@ -112,32 +133,19 @@ func (a *Attempt) ToProto(withData bool) *dm.Attempt {
 }
 
 // DataProto returns an Attempt.Data message for this Attempt.
-func (a *Attempt) DataProto() *dm.Attempt_Data {
-	ret := (*dm.Attempt_Data)(nil)
+func (a *Attempt) DataProto() (ret *dm.Attempt_Data) {
 	switch a.State {
-	case dm.Attempt_NEEDS_EXECUTION:
-		ret = dm.NewAttemptNeedsExecution(a.Modified).Data
-
+	case dm.Attempt_SCHEDULING:
+		ret = dm.NewAttemptScheduling().Data
 	case dm.Attempt_EXECUTING:
 		ret = dm.NewAttemptExecuting(a.CurExecution).Data
-
-	case dm.Attempt_ADDING_DEPS:
-		addset := a.AddingDepsBitmap
-		waitset := a.WaitingDepBitmap
-		setlen := addset.Size()
-
-		ret = dm.NewAttemptAddingDeps(
-			setlen-addset.CountSet(), setlen-waitset.CountSet()).Data
-
-	case dm.Attempt_BLOCKED:
-		waitset := a.WaitingDepBitmap
-		setlen := waitset.Size()
-
-		ret = dm.NewAttemptBlocked(setlen - waitset.CountSet()).Data
-
+	case dm.Attempt_WAITING:
+		ret = dm.NewAttemptWaiting(a.DepMap.Size() - a.DepMap.CountSet()).Data
 	case dm.Attempt_FINISHED:
-		ret = dm.NewAttemptFinished(a.ResultExpiration, a.ResultSize, "").Data
-
+		ret = dm.NewAttemptFinished(a.ResultExpiration, a.ResultSize, "",
+			a.PersistentState).Data
+	case dm.Attempt_ABNORMAL_FINISHED:
+		ret = dm.NewAttemptAbnormalFinish(&a.AbnormalFinish).Data
 	default:
 		panic(fmt.Errorf("unknown Attempt_State: %s", a.State))
 	}

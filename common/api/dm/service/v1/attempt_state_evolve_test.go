@@ -16,32 +16,32 @@ func TestAttemptState(t *testing.T) {
 
 	Convey("Evolve", t, func() {
 		Convey("Identity", func() {
-			s := Attempt_NEEDS_EXECUTION
-			So(s.Evolve(Attempt_NEEDS_EXECUTION), ShouldBeNil)
-			So(s, ShouldEqual, Attempt_NEEDS_EXECUTION)
+			s := Attempt_SCHEDULING
+			So(s.Evolve(Attempt_SCHEDULING), ShouldBeNil)
+			So(s, ShouldEqual, Attempt_SCHEDULING)
 		})
 
 		Convey("Transition", func() {
 			s := Attempt_EXECUTING
-			So(s.Evolve(Attempt_ADDING_DEPS), ShouldBeNil)
-			So(s, ShouldEqual, Attempt_ADDING_DEPS)
+			So(s.Evolve(Attempt_WAITING), ShouldBeNil)
+			So(s, ShouldEqual, Attempt_WAITING)
 		})
 
 		Convey("Invalid starting transistion", func() {
-			s := Attempt_NEEDS_EXECUTION
-			So(s.Evolve(Attempt_FINISHED), ShouldErrLike, "invalid state transition NEEDS_EXECUTION -> FINISHED")
-			So(s, ShouldEqual, Attempt_NEEDS_EXECUTION)
+			s := Attempt_SCHEDULING
+			So(s.Evolve(Attempt_FINISHED), ShouldErrLike, "invalid state transition SCHEDULING -> FINISHED")
+			So(s, ShouldEqual, Attempt_SCHEDULING)
 		})
 
 		Convey("Invalid ending transistion", func() {
-			s := Attempt_BLOCKED
-			So(s.Evolve(Attempt_FINISHED), ShouldErrLike, "invalid state transition BLOCKED -> FINISHED")
-			So(s, ShouldEqual, Attempt_BLOCKED)
+			s := Attempt_WAITING
+			So(s.Evolve(Attempt_FINISHED), ShouldErrLike, "invalid state transition WAITING -> FINISHED")
+			So(s, ShouldEqual, Attempt_WAITING)
 		})
 
 		Convey("MustEvolve", func() {
 			s := Attempt_FINISHED
-			So(func() { s.MustEvolve(Attempt_NEEDS_EXECUTION) }, ShouldPanic)
+			So(func() { s.MustEvolve(Attempt_SCHEDULING) }, ShouldPanic)
 		})
 	})
 }

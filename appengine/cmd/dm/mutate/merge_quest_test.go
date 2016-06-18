@@ -24,12 +24,12 @@ func TestMergeQuest(t *testing.T) {
 		c := ttest.Context()
 		ds := datastore.Get(c)
 
-		desc := dm.NewQuestDesc("distributor", `{"data":"yes"}`)
-		qst, err := model.NewQuest(c, desc)
-		So(err, ShouldBeNil)
+		desc := dm.NewQuestDesc("distributor", `{"data":"yes"}`, nil)
+		So(desc.Normalize(), ShouldBeNil)
+		qst := model.NewQuest(c, desc)
 		qst.BuiltBy = append(qst.BuiltBy, *dm.NewTemplateSpec("a", "b", "c", "d"))
 
-		mq := &MergeQuest{qst}
+		mq := &MergeQuest{qst, nil}
 
 		Convey("root", func() {
 			So(mq.Root(c), ShouldResemble, ds.MakeKey("Quest", qst.ID))
