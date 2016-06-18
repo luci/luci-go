@@ -12,8 +12,8 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/client/internal/common"
-	"github.com/luci/luci-go/client/isolatedclient"
 	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/common/isolatedclient"
 	"github.com/luci/luci-go/common/logging/gologger"
 )
 

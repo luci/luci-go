@@ -14,9 +14,9 @@ import (
 	"testing"
 
 	"github.com/luci/luci-go/client/internal/common"
-	"github.com/luci/luci-go/client/isolatedclient"
-	"github.com/luci/luci-go/client/isolatedclient/isolatedfake"
 	"github.com/luci/luci-go/common/isolated"
+	"github.com/luci/luci-go/common/isolatedclient"
+	"github.com/luci/luci-go/common/isolatedclient/isolatedfake"
 	"github.com/luci/luci-go/common/units"
 	"github.com/maruel/ut"
 )

@@ -12,7 +12,7 @@ import (
 
 	"github.com/luci/luci-go/client/archiver"
 	"github.com/luci/luci-go/client/internal/common"
-	"github.com/luci/luci-go/client/isolatedclient"
+	"github.com/luci/luci-go/common/isolatedclient"
 	"github.com/luci/luci-go/common/units"
 	"github.com/maruel/subcommands"
 )

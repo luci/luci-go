@@ -10,7 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 
-	"github.com/luci/luci-go/client/isolatedclient/isolatedfake"
+	"github.com/luci/luci-go/common/isolatedclient/isolatedfake"
 	"github.com/luci/luci-go/common/lhttp"
 )
 
