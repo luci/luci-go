@@ -13,7 +13,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/luci/luci-go/client/internal/tracer"
+	"github.com/luci/luci-go/common/tracer"
 )
 
 // Flags contains values parsed from command line arguments.
