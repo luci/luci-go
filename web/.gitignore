@@ -1,4 +1,4 @@
-bower_components
+inc/bower_components
 node_modules
 
 # Gulp build/dist artifacts.

@@ -18,6 +18,5 @@ apps:
 # The setup target will install all npm and bower prerequisites.
 .PHONY: setup
 setup:
-	npm install -g gulp bower
 	npm install
 	bower install

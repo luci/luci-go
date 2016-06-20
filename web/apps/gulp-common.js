@@ -151,12 +151,12 @@ exports.setup = function(gulp, config) {
 
     // Copy over only the bower_components we need
     // These are things which cannot be vulcanized
-    var bower = gulp.src([
-      'inc/bower_components/{webcomponentsjs,platinum-sw,sw-toolbox,promise-polyfill}/**/*'
-    ]).pipe(gulp.dest(layout.dist('inc/bower_components')));
+    var webcomponentsjs = gulp.src([
+      'inc/bower_components/webcomponentsjs/webcomponents-lite.min.js',
+    ]).pipe(gulp.dest(layout.dist('inc/bower_components/webcomponentsjs/')));
 
     var includes = (config.includes) ? (config.includes(gulp, layout)) : ([]);
-    return merge(app, includes, bower)
+    return merge(app, includes, webcomponentsjs)
       .pipe($.size({
         title: 'copy'
       }));
