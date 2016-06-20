@@ -78,6 +78,7 @@ ignore_patterns:
 - '*_mux.go'
 - '*_string.go'
 - 'pb.discovery.go'
+- 'static'
 - 'talk'
 - .*
 - _*
