@@ -102,6 +102,8 @@ var (
 	ErrBackendInaccessible = errors.WrapTransient(errors.New("request to the backend failed after multiple attempts"))
 	// ErrEnsurePackagesFailed is returned by EnsurePackages if something is not right.
 	ErrEnsurePackagesFailed = errors.New("failed to update packages, see the log")
+	// ErrPackageNotFound is returned by DeletePackage if the package doesn't exist.
+	ErrPackageNotFound = errors.New("no such package")
 )
 
 // UnixTime is time.Time that serializes to unix timestamp in JSON (represented
@@ -255,6 +257,11 @@ type Client interface {
 	// It uploads the instance to the storage and registers it in the package
 	// repository.
 	RegisterInstance(ctx context.Context, instance local.PackageInstance, timeout time.Duration) error
+
+	// DeletePackage removes the package (all its instances) from the backend.
+	//
+	// It will delete all package instances, all tags and refs. There's no undo.
+	DeletePackage(ctx context.Context, packageName string) error
 
 	// SetRefWhenReady moves a ref to point to a package instance.
 	SetRefWhenReady(ctx context.Context, ref string, pin common.Pin) error
@@ -635,6 +642,13 @@ func (client *clientImpl) RegisterInstance(ctx context.Context, instance local.P
 	}
 
 	return nil
+}
+
+func (client *clientImpl) DeletePackage(ctx context.Context, packageName string) error {
+	if err := common.ValidatePackageName(packageName); err != nil {
+		return err
+	}
+	return client.remote.deletePackage(ctx, packageName)
 }
 
 func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin common.Pin) error {
@@ -1022,6 +1036,8 @@ type remote interface {
 	initiateUpload(ctx context.Context, sha1 string) (*UploadSession, error)
 	finalizeUpload(ctx context.Context, sessionID string) (bool, error)
 	registerInstance(ctx context.Context, pin common.Pin) (*registerInstanceResponse, error)
+
+	deletePackage(ctx context.Context, packageName string) error
 
 	setRef(ctx context.Context, ref string, pin common.Pin) error
 	attachTags(ctx context.Context, pin common.Pin, tags []string) error

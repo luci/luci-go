@@ -288,6 +288,29 @@ func (r *remoteImpl) registerInstance(ctx context.Context, pin common.Pin) (*reg
 	return nil, fmt.Errorf("unexpected register package status: %s", reply.Status)
 }
 
+func (r *remoteImpl) deletePackage(ctx context.Context, packageName string) error {
+	endpoint, err := packageEndpoint(packageName)
+	if err != nil {
+		return err
+	}
+	var reply struct {
+		Status       string `json:"status"`
+		ErrorMessage string `json:"error_message"`
+	}
+	if err = r.makeRequest(ctx, endpoint, "DELETE", nil, &reply); err != nil {
+		return err
+	}
+	switch reply.Status {
+	case "SUCCESS":
+		return nil
+	case "PACKAGE_NOT_FOUND":
+		return ErrPackageNotFound
+	case "ERROR":
+		return errors.New(reply.ErrorMessage)
+	}
+	return fmt.Errorf("unexpected reply status: %s", reply.Status)
+}
+
 func (r *remoteImpl) fetchInstance(ctx context.Context, pin common.Pin) (*fetchInstanceResponse, error) {
 	endpoint, err := instanceEndpoint(pin)
 	if err != nil {
@@ -618,6 +641,15 @@ func (r *remoteImpl) searchInstances(ctx context.Context, tag, packageName strin
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+func packageEndpoint(packageName string) (string, error) {
+	if err := common.ValidatePackageName(packageName); err != nil {
+		return "", err
+	}
+	params := url.Values{}
+	params.Add("package_name", packageName)
+	return "repo/v1/package?" + params.Encode(), nil
+}
 
 func instanceEndpoint(pin common.Pin) (string, error) {
 	if err := common.ValidatePin(pin); err != nil {

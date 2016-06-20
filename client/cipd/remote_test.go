@@ -54,6 +54,20 @@ func TestRemoteImpl(t *testing.T) {
 		return remote.registerInstance(ctx, Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
 	}
 
+	mockDeletePackage := func(c C, reply string) error {
+		remote := mockRemoteImpl(c, []expectedHTTPCall{
+			{
+				Method: "DELETE",
+				Path:   "/_ah/api/repo/v1/package",
+				Query: url.Values{
+					"package_name": []string{"pkgname"},
+				},
+				Reply: reply,
+			},
+		})
+		return remote.deletePackage(ctx, "pkgname")
+	}
+
 	mockFetchInstance := func(c C, reply string) (*fetchInstanceResponse, error) {
 		remote := mockRemoteImpl(c, []expectedHTTPCall{
 			{
@@ -414,6 +428,28 @@ func TestRemoteImpl(t *testing.T) {
 		result, err := mockRegisterInstance(c, `{"status":"???"}`)
 		So(err, ShouldNotBeNil)
 		So(result, ShouldBeNil)
+	})
+
+	Convey("deletePackage SUCCESS", t, func(c C) {
+		So(mockDeletePackage(c, `{"status": "SUCCESS"}`), ShouldBeNil)
+	})
+
+	Convey("deletePackage PACKAGE_NOT_FOUND", t, func(c C) {
+		err := mockDeletePackage(c, `{"status": "PACKAGE_NOT_FOUND"}`)
+		So(err, ShouldEqual, ErrPackageNotFound)
+	})
+
+	Convey("deletePackage ERROR", t, func(c C) {
+		err := mockDeletePackage(c, `{
+				"status": "ERROR",
+				"error_message": "Some error message"
+			}`)
+		So(err, ShouldNotBeNil)
+	})
+
+	Convey("deletePackage unknown status", t, func(c C) {
+		err := mockDeletePackage(c, `{"status":"???"}`)
+		So(err, ShouldNotBeNil)
 	})
 
 	Convey("fetchInstance SUCCESS", t, func(c C) {

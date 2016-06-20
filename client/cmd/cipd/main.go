@@ -1620,6 +1620,51 @@ func registerInstanceFile(ctx context.Context, instanceFile string, opts *regist
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// 'pkg-delete' subcommand.
+
+var cmdDelete = &subcommands.Command{
+	UsageLine: "pkg-delete <package name>",
+	ShortDesc: "removes the package from the package repository on the backend",
+	LongDesc: "Removes all instances of the package, all its tags and refs.\n" +
+		"There's no confirmation and no undo. Be careful.",
+	CommandRun: func() subcommands.CommandRun {
+		c := &deleteRun{}
+		c.registerBaseFlags()
+		c.ClientOptions.registerFlags(&c.Flags)
+		return c
+	},
+}
+
+type deleteRun struct {
+	Subcommand
+	ClientOptions
+}
+
+func (c *deleteRun) Run(a subcommands.Application, args []string) int {
+	if !c.checkArgs(args, 1, 1) {
+		return 1
+	}
+	ctx := cli.GetContext(a, c)
+	return c.done(nil, deletePackage(ctx, args[0], &c.ClientOptions))
+}
+
+func deletePackage(ctx context.Context, packageName string, opts *ClientOptions) error {
+	client, err := opts.makeCipdClient(ctx, "")
+	if err != nil {
+		return err
+	}
+	switch err = client.DeletePackage(ctx, packageName); {
+	case err == nil:
+		return nil
+	case err == cipd.ErrPackageNotFound:
+		fmt.Printf("Package %q doesn't exist. Already deleted?\n", packageName)
+		return nil // not a failure, to make "cipd pkg-delete ..." idempotent
+	default:
+		return err
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Main.
 
 var application = &cli.Application{
@@ -1669,6 +1714,7 @@ var application = &cli.Application{
 		cmdFetch,
 		cmdInspect,
 		cmdRegister,
+		cmdDelete,
 
 		// Low level misc commands.
 		cmdPuppetCheckUpdates,
