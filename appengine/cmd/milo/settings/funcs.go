@@ -15,11 +15,12 @@ import (
 
 // funcMap is what gets fed into the template bundle.
 var funcMap = template.FuncMap{
-	"humanDuration": humanDuration,
-	"humanTimeRFC":  humanTimeRFC,
-	"startswith":    strings.HasPrefix,
-	"sub":           sub,
-	"shortHash":     shortHash,
+	"humanDuration":  humanDuration,
+	"humanTimeRFC":   humanTimeRFC,
+	"startswith":     strings.HasPrefix,
+	"sub":            sub,
+	"shortHash":      shortHash,
+	"obfuscateEmail": obfuscateEmail,
 }
 
 // humanDuration takes a time t in seconds as a duration and translates it
@@ -51,6 +52,14 @@ func humanDuration(t uint64) string {
 		}
 		return fmt.Sprintf("%d secs", sec)
 	}
+}
+
+// obfuscateEmail converts an email@address.com into email<junk>@address.com
+// if it is an email.
+func obfuscateEmail(email string) template.HTML {
+	email = template.HTMLEscapeString(email)
+	return template.HTML(strings.Replace(
+		email, "@", "<span style=\"display:none\">ohnoyoudont</span>@", -1))
 }
 
 // humanTimeRFC takes in the time represented as a RFC3339 string and returns

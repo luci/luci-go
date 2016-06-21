@@ -39,6 +39,8 @@ type MiloBuild struct {
 // about where that commit came from (eg. the repository).
 type SourceStamp struct {
 	Commit
+	// Source is the trigger source.  In buildbot, this would be the "Reason".
+	// This has no meaning in SwarmBucket and DM yet.
 	Source string
 }
 
@@ -71,13 +73,17 @@ type Commit struct {
 	AuthorEmail string
 	// Full URL of the main source repository.
 	Repo string
+	// Branch of the repo.
+	Branch string
+	// Requested revision of the commit or base commit.
+	RequestRevision string
 	// Revision of the commit or base commit.
 	Revision string
 	// The commit message.
 	Description string
 	// The commit title, usually the first line of the commit message.
 	Title string
-	// Rietveld or Gerrit URL.
+	// Rietveld or Gerrit URL if the commit is a patch.
 	ChangelistURL string
 	// Browsable URL of the commit.
 	CommitURL string
@@ -161,6 +167,13 @@ type BuildComponent struct {
 
 	// Status of the build.
 	Status Status
+
+	// Bot is the machine or execution instance that this component ran on.
+	Bot *Link
+
+	// Source is a link to the external (buildbot, swarming, dm, etc) data
+	// source that this component relates to.
+	Source *Link
 
 	// Link to show adjacent to the main label.
 	MainLink *Link

@@ -28,6 +28,7 @@ import (
 var (
 	allHandlers = []settings.TestableHandler{
 		settings.TestableSettings{},
+		buildbot.TestableBuild{},
 		buildbot.TestableBuilder{},
 		swarming.TestableBuild{},
 		swarming.TestableLog{},
@@ -39,7 +40,10 @@ var generate = flag.Bool(
 	"test.generate", false, "Generate expectations instead of running tests.")
 
 func expectFileName(name string) string {
-	return filepath.Join("expectations", strings.Replace(name, " ", "_", -1))
+	name = strings.Replace(name, " ", "_", -1)
+	name = strings.Replace(name, "/", "_", -1)
+	name = strings.Replace(name, ":", "-", -1)
+	return filepath.Join("expectations", name)
 }
 
 func load(name string) ([]byte, error) {

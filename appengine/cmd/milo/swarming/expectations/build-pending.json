@@ -2,6 +2,8 @@
   "Summary": {
     "Label": "",
     "Status": "NotRun",
+    "Bot": null,
+    "Source": null,
     "MainLink": null,
     "SubLink": null,
     "Progress": null,

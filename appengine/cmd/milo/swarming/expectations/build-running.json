@@ -2,6 +2,8 @@
   "Summary": {
     "Label": "",
     "Status": "Running",
+    "Bot": null,
+    "Source": null,
     "MainLink": null,
     "SubLink": null,
     "Progress": null,
@@ -17,6 +19,8 @@
     {
       "Label": "recipe bootstrap",
       "Status": "Success",
+      "Bot": null,
+      "Source": null,
       "MainLink": {
         "Label": "stdout",
         "Img": "",
@@ -36,6 +40,8 @@
     {
       "Label": "setup_build",
       "Status": "Success",
+      "Bot": null,
+      "Source": null,
       "MainLink": {
         "Label": "stdout",
         "Img": "",
@@ -65,6 +71,8 @@
     {
       "Label": "bot_update",
       "Status": "Running",
+      "Bot": null,
+      "Source": null,
       "MainLink": {
         "Label": "stdout",
         "Img": "",

@@ -2,6 +2,8 @@
   "Summary": {
     "Label": "",
     "Status": "Failure",
+    "Bot": null,
+    "Source": null,
     "MainLink": null,
     "SubLink": null,
     "Progress": null,
@@ -17,6 +19,8 @@
     {
       "Label": "update_scripts",
       "Status": "Success",
+      "Bot": null,
+      "Source": null,
       "MainLink": {
         "Label": "stdout",
         "Img": "",
@@ -46,6 +50,8 @@
     {
       "Label": "setup_build",
       "Status": "Success",
+      "Bot": null,
+      "Source": null,
       "MainLink": {
         "Label": "stdout",
         "Img": "",
@@ -75,6 +81,8 @@
     {
       "Label": "bot_update",
       "Status": "Success",
+      "Bot": null,
+      "Source": null,
       "MainLink": {
         "Label": "stdout",
         "Img": "",
@@ -111,6 +119,8 @@
     {
       "Label": "Patch failure",
       "Status": "Failure",
+      "Bot": null,
+      "Source": null,
       "MainLink": {
         "Label": "stdout",
         "Img": "",
@@ -132,6 +142,8 @@
     {
       "Label": "recipe failure reason",
       "Status": "Success",
+      "Bot": null,
+      "Source": null,
       "MainLink": {
         "Label": "stdout",
         "Img": "",

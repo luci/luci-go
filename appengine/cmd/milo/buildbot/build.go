@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -146,11 +147,27 @@ func summary(b *buildbotBuild) resp.BuildComponent {
 	// Timing info
 	started, ended, duration := parseTimes(b.Times)
 
+	// Link to bot and original build.
+	bot := &resp.Link{
+		Label: b.Slave,
+		// TODO(hinoka): Internal builds.
+		URL: fmt.Sprintf("https://build.chromium.org/p/%s/buildslaves/%s", b.Master, b.Slave),
+	}
+	source := &resp.Link{
+		Label: fmt.Sprintf("%s/%s/%d", b.Master, b.Buildername, b.Number),
+		// TODO(hinoka): Internal builds.
+		URL: fmt.Sprintf(
+			"https://build.chromium.org/p/%s/builders/%s/builds/%d",
+			b.Master, b.Buildername, b.Number),
+	}
+
 	sum := resp.BuildComponent{
 		Label:      fmt.Sprintf("Builder %s Build #%d", b.Buildername, b.Number),
 		Status:     status,
 		Started:    started,
 		Finished:   ended,
+		Bot:        bot,
+		Source:     source,
 		Duration:   duration,
 		Type:       resp.Summary, // This is more or less ignored.
 		LevelsDeep: 1,
@@ -324,12 +341,30 @@ func blame(b *buildbotBuild) (result []*resp.Commit) {
 	return
 }
 
-// build fetches a buildbot build and translates it into a miloBuild.
-func build(c context.Context, master, builder, buildNum string) (*resp.MiloBuild, error) {
-	b, err := getBuild(c, master, builder, buildNum)
+func getDebugBuild(c context.Context, builder, buildNum string) (*buildbotBuild, error) {
+	fname := fmt.Sprintf("%s.%s.json", builder, buildNum)
+	path := filepath.Join("testdata", "buildbot", fname)
+	raw, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
+	b := &buildbotBuild{}
+	return b, json.Unmarshal(raw, b)
+}
+
+// build fetches a buildbot build and translates it into a miloBuild.
+func build(c context.Context, master, builder, buildNum string) (*resp.MiloBuild, error) {
+	var b *buildbotBuild
+	var err error
+	if master == "debug" {
+		b, err = getDebugBuild(c, builder, buildNum)
+	} else {
+		b, err = getBuild(c, master, builder, buildNum)
+	}
+	if err != nil {
+		return nil, err
+	}
+
 	return &resp.MiloBuild{
 		Summary:       summary(b),
 		Components:    components(b),

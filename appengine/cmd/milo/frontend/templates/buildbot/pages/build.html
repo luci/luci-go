@@ -3,9 +3,6 @@
 {{define "head"}}{{end}}
 
 {{define "body"}}
-  <div class="header">
-    {{.Build.Summary.Label}}
-  </div>
   <div class="content">
     <h1>{{.Build.Summary.Label}}</h1>
 
@@ -13,17 +10,66 @@
 
       <h2>Results:</h2>
       {{ if eq .Build.Summary.Status.String "Running" }}
-        <p class="running result">Build running</p>
+        <p class="running result">Build running
       {{ else if eq .Build.Summary.Status.String "Success" }}
-        <p class="success result">Build successful</p>
+        <p class="success result">Build successful
       {{ else if eq .Build.Summary.Status.String "InfraFailure" }}
-        <p class="exception result">Internal Failure</p>
+        <p class="exception result">Internal Failure
       {{ else if eq .Build.Summary.Status.String "Failure" }}
-        <p class="failure result">Failed</p> <!--- TODO(hinoka): step text -->
+        <p class="failure result">Failed
       {{ else }}
-        <p class="failure result">Unknown status {{.Build.Summary.Status.String }}</p>
+        <p class="failure result">Unknown status {{.Build.Summary.Status.String }}
         <!--- TODO(hinoka): step text -->
       {{ end }}
+      <span class="subtitle">
+        {{ range .Build.Summary.Text }}{{ . }}{{ end }}
+      </span>
+      </p>
+
+
+      {{ if .Build.SourceStamp }}
+      {{ with .Build.SourceStamp }}
+
+      <h2>SourceStamp:</h2>
+
+      <table class="info" width="100%">
+
+      {{ if .Commit.Repo }}
+        <tr><td class="left">Repository</td><td>{{ .Commit.Repo }}</td></tr>
+      {{ end }}
+
+      {{ if .Commit.Branch }}
+        <tr><td class="left">Branch</td><td>{{ .Commit.Branch }}</td></tr>
+      {{ end }}
+
+      {{ if .Commit.RequestRevision }}
+        <tr><td class="left">Revision</td><td>{{ .Commit.RequestRevision }}</td></tr>
+      {{ end }}
+
+      {{ if .Commit.Revision }}
+        <tr><td class="left">Got Revision</td><td>{{ .Commit.Revision }}</td></tr>
+      {{ end }}
+
+      {{ if .Commit.ChangelistURL }}
+        <tr><td class="left">Patch</td><td><a href="{{.Commit.ChangelistURL}}">YES</a></td></tr>
+      {{ end }}
+
+      </table>
+      {{ end }}  <!-- with -->
+      {{ end }}  <!-- if -->
+
+      {{ if .Build.Summary.Bot }}
+      <h2>Execution:</h2>
+      <a href="{{ .Build.Summary.Bot.URL }}">{{ .Build.Summary.Bot.Label }}</a>
+      {{ end }}
+
+      {{ if .Build.SourceStamp }}
+        {{ if .Build.SourceStamp.Source }}
+          <h2>Reason:</h2>
+          <p>{{ .Source }}</p>
+        {{ end }}
+      {{ end }}
+
       <h2>Steps and Logfiles:</h2>
       <ol>
         {{ range .Build.Components  }}
@@ -65,6 +111,8 @@
               <td>
                 {{ if (eq .Key "requestedAt") }}
                   {{ .Value | humanTimeRFC }}
+                {{ else if (eq .Key "blamelist") }}
+                  {{ .Value | obfuscateEmail }}
                 {{ else if (startswith .Value "https://") }}
                   <a href="{{.Value}}">{{.Value}}</a>
                 {{ else }}
@@ -76,6 +124,15 @@
           {{ end }}
         {{ end }}
       </table>
+
+      {{ if .Build.Blame }}
+        <h2>Blamelist:</h2>
+        <ol>
+        {{ range .Build.Blame }}
+          <li>{{ .AuthorName }} ({{ .AuthorEmail | obfuscateEmail }})</li>
+        {{ end }}
+        </ol>
+      {{ end }}
 
       <h2>Timing:</h2>
       <table class="info" width="100%">
@@ -94,6 +151,21 @@
       </table>
 
     </div>
+
+    {{ if .Build.Blame}}
+    <div class="column">
+      <h2>All Changes:</h2>
+      <ol>
+      {{ range .Build.Blame }}
+      <li>
+        <h3>{{.Title}}</h3>
+        <!--- TODO(hinoka): Layout the rest of this -->
+      </li>
+      {{ end }}
+      </ol>
+    </div>
+    {{ end }}
+
   </div>
 </div>
 {{end}}
@@ -104,7 +176,7 @@
   'use strict';
   var startedSpan = document.getElementById('started-time');
   var finishedSpan = document.getElementById('finished-time');
-  startedSpan.textContent = milo.formatDate('{{ .Build.Summary.Started  }}');
+  startedSpan.textContent = milo.formatDate('{{ .Build.Summary.Started }}');
   finishedSpan.textContent = milo.formatDate('{{ .Build.Summary.Finished }}');
 })();
 </script>

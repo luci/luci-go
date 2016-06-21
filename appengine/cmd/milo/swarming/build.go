@@ -70,16 +70,17 @@ func getSwarmingClient(c context.Context, server string) (*swarming.Service, err
 	return sc, nil
 }
 
-func getTaskOutput(sc *swarming.Service, taskID string) (string, error) {
-	if strings.HasPrefix(taskID, "debug:") {
-		// Read the debug file instead.
-		logFilename := filepath.Join("testdata", taskID[6:])
-		b, err := ioutil.ReadFile(logFilename)
-		if err != nil {
-			return "", err
-		}
-		return string(b), nil
+func getDebugTaskOutput(taskID string) (string, error) {
+	// Read the debug file instead.
+	logFilename := filepath.Join("testdata", taskID)
+	b, err := ioutil.ReadFile(logFilename)
+	if err != nil {
+		return "", err
 	}
+	return string(b), nil
+}
+
+func getTaskOutput(sc *swarming.Service, taskID string) (string, error) {
 	res, err := sc.Task.Stdout(taskID).Do()
 	if err != nil {
 		return "", err
@@ -87,22 +88,24 @@ func getTaskOutput(sc *swarming.Service, taskID string) (string, error) {
 	return res.Output, nil
 }
 
-func getSwarmingResult(
-	sc *swarming.Service, taskID string) (*swarming.SwarmingRpcsTaskResult, error) {
-	if strings.HasPrefix(taskID, "debug:") {
-		// Fetch the debug file instead.
-		logFilename := filepath.Join("testdata", taskID[6:])
-		swarmFilename := fmt.Sprintf("%s.swarm", logFilename)
-		s, err := ioutil.ReadFile(swarmFilename)
-		if err != nil {
-			return nil, err
-		}
-		sr := &swarming.SwarmingRpcsTaskResult{}
-		if err := json.Unmarshal(s, sr); err != nil {
-			return nil, err
-		}
-		return sr, nil
+func getDebugSwarmingResult(
+	taskID string) (*swarming.SwarmingRpcsTaskResult, error) {
+	logFilename := filepath.Join("testdata", taskID)
+	swarmFilename := fmt.Sprintf("%s.swarm", logFilename)
+	s, err := ioutil.ReadFile(swarmFilename)
+	if err != nil {
+		return nil, err
 	}
+	sr := &swarming.SwarmingRpcsTaskResult{}
+	if err := json.Unmarshal(s, sr); err != nil {
+		return nil, err
+	}
+	return sr, nil
+}
+
+func getSwarmingResult(sc *swarming.Service, taskID string) (
+	*swarming.SwarmingRpcsTaskResult, error) {
+
 	trc := sc.Task.Result(taskID)
 	srtr, err := trc.Do()
 	if err != nil {
@@ -117,17 +120,25 @@ func getSwarming(c context.Context, server string, taskID string) (
 	var log string
 	var sr *swarming.SwarmingRpcsTaskResult
 	var errLog, errRes error
-	var wg sync.WaitGroup
-	sc, err := func(debug bool) (*swarming.Service, error) {
-		if debug {
-			return nil, nil
+
+	// Detour: Return debugging results, useful for development.
+	if server == "debug" {
+		sr, errRes = getDebugSwarmingResult(taskID)
+		log, errLog = getDebugTaskOutput(taskID)
+		if errLog != nil {
+			return sr, log, errLog
 		}
-		return getSwarmingClient(c, server)
-	}(strings.HasPrefix(taskID, "debug:"))
+		return sr, log, errRes
+	}
+
+	sc, err := getSwarmingClient(c, server)
 	if err != nil {
 		return nil, "", err
 	}
-	wg.Add(2)
+
+	var wg sync.WaitGroup
+	wg.Add(2) // Getting log and result can happen concurrently.  Wait for both.
+
 	go func() {
 		defer wg.Done()
 		log, errLog = getTaskOutput(sc, taskID)

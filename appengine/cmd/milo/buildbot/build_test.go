@@ -1,8 +1,8 @@
-// Copyright 2015 The LUCI Authors. All rights reserved.
+// Copyright 2016 The LUCI Authors. All rights reserved.
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-package swarming
+package buildbot
 
 import (
 	"encoding/json"
@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path"
+	"strings"
 	"testing"
-	"time"
 
 	"github.com/luci/luci-go/common/clock/testclock"
 	. "github.com/smartystreets/goconvey/convey"
@@ -21,7 +21,7 @@ import (
 var generate = flag.Bool("test.generate", false, "Generate expectations instead of running tests.")
 
 func load(name string) ([]byte, error) {
-	filename := path.Join("expectations", name)
+	filename := strings.Join([]string{"expectations", name}, "/")
 	return ioutil.ReadFile(filename)
 }
 
@@ -36,46 +36,38 @@ func shouldMatchExpectationsFor(actualContents interface{}, expectedFilename ...
 }
 
 func TestBuild(t *testing.T) {
-	testCases := []struct {
-		input        string
-		expectations string
-	}{
-		{"build-exception", "build-exception.json"},
-		{"build-patch-failure", "build-patch-failure.json"},
-		{"build-pending", "build-pending.json"},
-		{"build-running", "build-running.json"},
-		{"build-timeout", "build-timeout.json"},
-	}
-
 	c := context.Background()
-	c, _ = testclock.UseTime(c, time.Date(2016, time.March, 14, 11, 0, 0, 0, time.UTC))
+	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
 
 	if *generate {
 		for _, tc := range testCases {
-			fmt.Printf("Generating expectations for %s\n", tc.input)
-			build, err := swarmingBuildImpl(c, "foo", "debug", tc.input)
+			fmt.Printf("Generating expectations for %s/%d\n", tc.builder, tc.build)
+			build, err := build(c, "debug", tc.builder, tc.build)
 			if err != nil {
-				panic(fmt.Errorf("Could not run swarmingBuildImpl for %s: %s", tc.input, err))
+				panic(fmt.Errorf("Could not run build() for %s/%s: %s", tc.builder, tc.build, err))
 			}
 			buildJSON, err := json.MarshalIndent(build, "", "  ")
 			if err != nil {
-				panic(fmt.Errorf("Could not JSON marshal %s: %s", tc.input, err))
+				panic(fmt.Errorf("Could not JSON marshal %s/%s: %s", tc.builder, tc.build, err))
 			}
-			filename := path.Join("expectations", tc.expectations)
-			err = ioutil.WriteFile(filename, []byte(buildJSON), 0644)
+			fname := fmt.Sprintf("%s.%s.build.json", tc.builder, tc.build)
+			fpath := path.Join("expectations", fname)
+			err = ioutil.WriteFile(fpath, []byte(buildJSON), 0644)
 			if err != nil {
-				panic(fmt.Errorf("Encountered error while trying to write to %s: %s", filename, err))
+				panic(fmt.Errorf("Encountered error while trying to write to %s: %s", fpath, err))
 			}
 		}
 		return
 	}
 
 	Convey(`A test Environment`, t, func() {
+
 		for _, tc := range testCases {
-			Convey(fmt.Sprintf("Test Case: %s", tc.input), func() {
-				build, err := swarmingBuildImpl(c, "foo", "debug", tc.input)
+			Convey(fmt.Sprintf("Test Case: %s/%s", tc.builder, tc.build), func() {
+				build, err := build(c, "debug", tc.builder, tc.build)
 				So(err, ShouldBeNil)
-				So(build, shouldMatchExpectationsFor, tc.expectations)
+				fname := fmt.Sprintf("%s.%s.build.json", tc.builder, tc.build)
+				So(build, shouldMatchExpectationsFor, fname)
 			})
 		}
 	})
