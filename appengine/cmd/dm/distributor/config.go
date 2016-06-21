@@ -5,8 +5,6 @@
 package distributor
 
 import (
-	"net/url"
-
 	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/proto"
@@ -16,10 +14,9 @@ import (
 // Config represents the configuration for a single instance of a given
 // distributor implementation at a given point in time (e.g. version).
 type Config struct {
-	// DMBaseURL is the base url for the DM API. This may be used by the
-	// distributor implementation to pass to jobs so that they can call back into
-	// DM's api.
-	DMBaseURL *url.URL
+	// DMHost is the host for the DM API. This may be used by the distributor
+	// implementation to pass to jobs so that they can call back into DM's api.
+	DMHost string
 
 	// Name is the name of this distributor configuration. This is always the
 	// fully-resolved name of the configuration (i.e. aliases are dereferenced).

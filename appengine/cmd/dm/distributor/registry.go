@@ -7,7 +7,6 @@ package distributor
 import (
 	"errors"
 	"fmt"
-	"net/url"
 	"reflect"
 
 	"github.com/golang/protobuf/proto"
@@ -160,17 +159,8 @@ func loadConfig(c context.Context, cfgName string) (ret *Config, err error) {
 	// value.
 	implConfig := dVal.Elem().Field(0).Interface().(proto.Message)
 
-	inf := info.Get(c)
-	scheme := "https"
-	if inf.IsDevAppServer() {
-		scheme = "http"
-	}
-
 	ret = &Config{
-		&url.URL{
-			Scheme: scheme,
-			Host:   inf.DefaultVersionHostname(),
-		},
+		info.Get(c).DefaultVersionHostname(),
 		cfgName,
 		cfgVersion,
 		implConfig,
