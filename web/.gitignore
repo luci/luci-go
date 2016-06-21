@@ -2,5 +2,6 @@ inc/bower_components
 node_modules
 
 # Gulp build/dist artifacts.
-dist
+dist/*
+!dist/README.md
 apps/*/.tmp
