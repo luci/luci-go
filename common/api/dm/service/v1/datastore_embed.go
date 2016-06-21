@@ -106,6 +106,30 @@ func NewTemplateSpec(project, ref, version, name string) *Quest_TemplateSpec {
 // Equals returns true iff this Quest_TemplateSpec matches all of the fields of
 // the `o` Quest_TemplateSpec.
 func (t *Quest_TemplateSpec) Equals(o *Quest_TemplateSpec) bool {
-	return (t.Project == o.Project && t.Ref == o.Ref && t.Version == o.Version &&
-		t.Name == o.Name)
+	return *t == *o
 }
+
+// Less returns true iff this Quest_TemplateSpec sorts before the other one.
+func (t *Quest_TemplateSpec) Less(o *Quest_TemplateSpec) bool {
+	cmp := []struct{ a, b string }{
+		{t.Project, o.Project},
+		{t.Ref, o.Ref},
+		{t.Version, o.Version},
+		{t.Name, o.Name},
+	}
+	for _, c := range cmp {
+		if c.a < c.b {
+			return true
+		} else if c.a > c.b {
+			return false
+		}
+	}
+	return false
+}
+
+// QuestTemplateSpecs is a sortable slice of *Quest_TemplateSpec.
+type QuestTemplateSpecs []*Quest_TemplateSpec
+
+func (s QuestTemplateSpecs) Len() int           { return len(s) }
+func (s QuestTemplateSpecs) Less(i, j int) bool { return s[i].Less(s[j]) }
+func (s QuestTemplateSpecs) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }

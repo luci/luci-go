@@ -95,3 +95,16 @@ func (a *AttemptList) Dup() *AttemptList {
 	}
 	return ret
 }
+
+// UpdateWith updates this AttemptList with all the entries in the other
+// AttemptList.
+func (a *AttemptList) UpdateWith(o *AttemptList) {
+	for qid, atmpts := range o.To {
+		if curAtmpts, ok := a.To[qid]; !ok {
+			a.To[qid] = atmpts
+		} else {
+			curAtmpts.Nums = append(curAtmpts.Nums, atmpts.Nums...)
+			curAtmpts.Normalize()
+		}
+	}
+}
