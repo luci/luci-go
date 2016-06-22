@@ -7,26 +7,25 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
-	"golang.org/x/net/context"
-
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/paniccatcher"
+	"github.com/luci/luci-go/server/router"
 )
 
 // WithPanicCatcher is a middleware that catches panics, dumps stack trace to
 // logging and returns HTTP 500.
-func WithPanicCatcher(h Handler) Handler {
-	return func(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
-			log.Fields{
-				"panic.error": p.Reason,
-			}.Errorf(c, "Caught panic during handling of %q:\n%s", r.RequestURI, p.Stack)
+func WithPanicCatcher(c *router.Context, next router.Handler) {
+	ctx := c.Context
+	w := c.Writer
+	req := c.Request
+	defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
+		log.Fields{
+			"panic.error": p.Reason,
+		}.Errorf(ctx, "Caught panic during handling of %q:\n%s", req.RequestURI, p.Stack)
 
-			// Note: it may be too late to send HTTP 500 if `h` already sent
-			// headers. But there's nothing else we can do at this point anyway.
-			http.Error(w, "Internal Server Error. See logs.", http.StatusInternalServerError)
-		})
-		h(c, w, r, p)
-	}
+		// Note: it may be too late to send HTTP 500 if `next` already sent
+		// headers. But there's nothing else we can do at this point anyway.
+		http.Error(w, "Internal Server Error. See logs.", http.StatusInternalServerError)
+	})
+	next(c)
 }

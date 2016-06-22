@@ -12,11 +12,10 @@ import (
 	"net/http/httptest"
 	"net/url"
 
-	"github.com/julienschmidt/httprouter"
 	prpcCommon "github.com/luci/luci-go/common/prpc"
 	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/prpc"
+	"github.com/luci/luci-go/server/router"
 	"golang.org/x/net/context"
 )
 
@@ -24,13 +23,22 @@ import (
 type Server struct {
 	prpc.Server
 
-	// Base is the base middleware generator factory. It is handed the Context
-	// passed to Start. If nil, middleware.TestingBase will be used.
-	Base func(context.Context) middleware.Base
+	// Base returns a middleware chain. It is handed the Context passed to
+	// Start. If Base is nil, setContext will be used.
+	Base func(context.Context) router.MiddlewareChain
 
 	// HTTP is the active HTTP test server. It will be valid when the Server is
 	// running.
 	HTTP *httptest.Server
+}
+
+func setContext(c context.Context) router.MiddlewareChain {
+	return router.MiddlewareChain{
+		func(ctx *router.Context, next router.Handler) {
+			ctx.Context = c
+			next(ctx)
+		},
+	}
 }
 
 // Start starts the server. Any currently-registered services will be installed
@@ -40,13 +48,13 @@ func (s *Server) Start(c context.Context) {
 	s.Close()
 
 	s.Authenticator = auth.Authenticator{}
-	mwb := s.Base
-	if mwb == nil {
-		mwb = middleware.TestingBase
+	base := s.Base
+	if base == nil {
+		base = setContext
 	}
 
-	r := httprouter.New()
-	s.InstallHandlers(r, mwb(c))
+	r := router.New()
+	s.InstallHandlers(r, base(c))
 	s.HTTP = httptest.NewServer(r)
 }
 

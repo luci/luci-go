@@ -15,6 +15,7 @@ import (
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/secrets/testsecrets"
 	"github.com/luci/luci-go/server/settings"
 	"golang.org/x/net/context"
@@ -92,7 +93,11 @@ func TestFullFlow(t *testing.T) {
 			req, err := http.NewRequest("GET", "http://fake"+loginURL, nil)
 			So(err, ShouldBeNil)
 			rec := httptest.NewRecorder()
-			method.loginHandler(ctx, rec, req, nil)
+			method.loginHandler(&router.Context{
+				Context: ctx,
+				Writer:  rec,
+				Request: req,
+			})
 
 			// It asks us to visit authorizarion endpoint.
 			So(rec.Code, ShouldEqual, http.StatusFound)
@@ -122,7 +127,11 @@ func TestFullFlow(t *testing.T) {
 			req, err = http.NewRequest("GET", "http://fake/redirect?"+callbackParams.Encode(), nil)
 			So(err, ShouldBeNil)
 			rec = httptest.NewRecorder()
-			method.callbackHandler(ctx, rec, req, nil)
+			method.callbackHandler(&router.Context{
+				Context: ctx,
+				Writer:  rec,
+				Request: req,
+			})
 
 			// We should be redirected to the login page, with session cookie set.
 			expectedCookie := "oid_session=AXsiX2kiOiIxNDQyNTQwMDAwMDAwIiwic2lkIjoi" +
@@ -153,7 +162,11 @@ func TestFullFlow(t *testing.T) {
 			So(err, ShouldBeNil)
 			req.Header.Add("Cookie", expectedCookie)
 			rec = httptest.NewRecorder()
-			method.logoutHandler(ctx, rec, req, nil)
+			method.logoutHandler(&router.Context{
+				Context: ctx,
+				Writer:  rec,
+				Request: req,
+			})
 
 			// Should be redirected to destination with the cookie killed.
 			So(rec.Code, ShouldEqual, http.StatusFound)
@@ -182,7 +195,11 @@ func TestCallbackHandleEdgeCases(t *testing.T) {
 			c.So(err, ShouldBeNil)
 			req.Host = "fake.com"
 			rec := httptest.NewRecorder()
-			method.callbackHandler(ctx, rec, req, nil)
+			method.callbackHandler(&router.Context{
+				Context: ctx,
+				Writer:  rec,
+				Request: req,
+			})
 			return rec
 		}
 

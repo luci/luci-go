@@ -7,10 +7,8 @@ package gaemiddleware
 import (
 	"net/http"
 
-	"google.golang.org/appengine"
-
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
+	"google.golang.org/appengine"
 
 	"github.com/luci/gae/filter/dscache"
 	"github.com/luci/gae/impl/prod"
@@ -25,6 +23,7 @@ import (
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/proccache"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/settings"
 )
 
@@ -74,16 +73,20 @@ func WithProd(c context.Context, req *http.Request) context.Context {
 	return cacheContext.Wrap(c)
 }
 
-// BaseProd adapts a middleware-style handler to a httprouter.Handle.
-//
-// It installs services using WithProd, installs a panic catcher if this
-// is not a devserver, and injects the monitoring middleware.
-func BaseProd(h middleware.Handler) httprouter.Handle {
-	h = globalTsMonState.Middleware(h)
-	if !appengine.IsDevAppServer() {
-		h = middleware.WithPanicCatcher(h)
+// ProdServices is a middleware that installs the set of standard production
+// AppEngine services by calling WithProd.
+func ProdServices(c *router.Context, next router.Handler) {
+	c.Context = WithProd(c.Context, c.Request)
+	next(c)
+}
+
+// BaseProd returns a list of middleware: WithProd middleware, a panic catcher if this
+// is not a devserver, and the monitoring middleware.
+func BaseProd() router.MiddlewareChain {
+	if appengine.IsDevAppServer() {
+		return router.MiddlewareChain{ProdServices, globalTsMonState.Middleware}
 	}
-	return func(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		h(WithProd(context.Background(), r), rw, r, p)
+	return router.MiddlewareChain{
+		ProdServices, middleware.WithPanicCatcher, globalTsMonState.Middleware,
 	}
 }

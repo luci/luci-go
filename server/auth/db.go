@@ -8,11 +8,9 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"net/http"
 	"strings"
 	"time"
 
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
@@ -22,7 +20,7 @@ import (
 
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/service/protocol"
-	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/secrets"
 )
 
@@ -86,10 +84,11 @@ func UseDB(c context.Context, f DBFactory) context.Context {
 }
 
 // WithDB is middleware that sets given DBFactory in the context before calling
-// a handler.
-func WithDB(h middleware.Handler, f DBFactory) middleware.Handler {
-	return func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		h(UseDB(c, f), rw, r, p)
+// the next handler.
+func WithDB(f DBFactory) router.Middleware {
+	return func(c *router.Context, next router.Handler) {
+		c.Context = UseDB(c.Context, f)
+		next(c)
 	}
 }
 

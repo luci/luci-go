@@ -11,13 +11,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/parallel"
+	"github.com/luci/luci-go/server/router"
 	"golang.org/x/net/context"
 )
 
@@ -41,27 +41,24 @@ type Service struct {
 }
 
 // InstallHandlers installs http handlers.
-func (s *Service) InstallHandlers(r *httprouter.Router) {
+func (s *Service) InstallHandlers(r *router.Router) {
+	mc := append(gaemiddleware.BaseProd(), gaemiddleware.RequireCron)
 	// GET so that this can be invoked from cron
-	r.GET(fireAllTasksURL,
-		gaemiddleware.BaseProd(gaemiddleware.RequireCron(s.FireAllTasksHandler)))
-
-	r.POST(processShardPattern,
-		gaemiddleware.BaseProd(gaemiddleware.RequireTaskQueue(baseName, s.ProcessShardHandler)))
+	r.GET(fireAllTasksURL, mc, s.FireAllTasksHandler)
+	r.POST(processShardPattern, append(mc, gaemiddleware.RequireTaskQueue(baseName)), s.ProcessShardHandler)
 }
 
-// FireAllTasksHandler is a http handler suitable for installation into
-// a httprouter. It expects `logging` and `luci/gae` services to be installed
-// into the context.
+// FireAllTasksHandler is an HTTP handler that expects `logging` and `luci/gae`
+// services to be installed into the context.
 //
 // FireAllTasksHandler verifies that it was called within an Appengine Cron
 // request, and then invokes the FireAllTasks function.
-func (s *Service) FireAllTasksHandler(c context.Context, rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	if err := s.FireAllTasks(c); err != nil {
-		rw.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(rw, "fire_all_tasks failed: %s", err)
+func (s *Service) FireAllTasksHandler(c *router.Context) {
+	if err := s.FireAllTasks(c.Context); err != nil {
+		c.Writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(c.Writer, "fire_all_tasks failed: %s", err)
 	} else {
-		rw.Write([]byte("ok"))
+		c.Writer.Write([]byte("ok"))
 	}
 }
 
@@ -177,9 +174,8 @@ func (s *Service) getNamespaces(c context.Context, cfg *Config) (namespaces []st
 	return
 }
 
-// ProcessShardHandler is a http handler suitable for installation into
-// a httprouter. It expects `logging` and `luci/gae` services to be installed
-// into the context.
+// ProcessShardHandler is an HTTP handler that expects `logging` and `luci/gae`
+// services to be installed into the context.
 //
 // ProcessShardHandler verifies that its being run as a taskqueue task and that
 // the following parameters exist and are well-formed:
@@ -187,7 +183,9 @@ func (s *Service) getNamespaces(c context.Context, cfg *Config) (namespaces []st
 //   * shard_id: decimal-encoded shard identifier.
 //
 // ProcessShardHandler then invokes ProcessShard with the parsed parameters.
-func (s *Service) ProcessShardHandler(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (s *Service) ProcessShardHandler(ctx *router.Context) {
+	c, rw, p := ctx.Context, ctx.Writer, ctx.Params
+
 	if s.Middleware != nil {
 		c = s.Middleware(c)
 	}

@@ -11,23 +11,24 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/api/dm/service/v1"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/tokens"
 	"golang.org/x/net/context"
 )
 
 const notifyTopicSuffix = "dm-distributor-notify"
 
-// PubsubReciever is the HTTP handler that processes incoming pubsub events
+// PubsubReceiver is the HTTP handler that processes incoming pubsub events
 // delivered to topics prepared with TaskDescription.PrepareTopic, and routes
 // them to the appropriate distributor implementation's HandleNotification
 // method.
 //
 // It requires that a Registry be installed in c via WithRegistry.
-func PubsubReciever(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func PubsubReceiver(ctx *router.Context) {
+	c, rw, r := ctx.Context, ctx.Writer, ctx.Request
 	defer r.Body.Close()
 
 	type PubsubMessage struct {

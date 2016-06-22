@@ -13,12 +13,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/server/auth/internal"
-	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/proccache"
+	"github.com/luci/luci-go/server/router"
 )
 
 // ServiceInfo describes JSON format of /auth/api/v1/server/info response.
@@ -56,22 +55,22 @@ func FetchServiceInfo(c context.Context, serviceURL string) (*ServiceInfo, error
 type ServiceInfoCallback func(context.Context) (ServiceInfo, error)
 
 // InstallHandlers installs handler that serves info provided by the callback.
-func InstallHandlers(r *httprouter.Router, base middleware.Base, cb ServiceInfoCallback) {
-	handler := func(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func InstallHandlers(r *router.Router, base router.MiddlewareChain, cb ServiceInfoCallback) {
+	handler := func(c *router.Context) {
 		var response struct {
 			ServiceInfo
 			Error string `json:"error,omitempty"`
 		}
-		info, err := cb(c)
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		info, err := cb(c.Context)
+		c.Writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			c.Writer.WriteHeader(http.StatusInternalServerError)
 			response.Error = err.Error()
 		} else {
-			w.WriteHeader(http.StatusOK)
+			c.Writer.WriteHeader(http.StatusOK)
 			response.ServiceInfo = info
 		}
-		json.NewEncoder(w).Encode(response)
+		json.NewEncoder(c.Writer).Encode(response)
 	}
-	r.GET("/auth/api/v1/server/info", base(handler))
+	r.GET("/auth/api/v1/server/info", base, handler)
 }

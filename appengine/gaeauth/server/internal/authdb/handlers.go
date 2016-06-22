@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
@@ -20,7 +19,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth/service"
-	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/router"
 )
 
 const (
@@ -29,11 +28,11 @@ const (
 )
 
 // InstallHandlers installs PubSub related HTTP handlers.
-func InstallHandlers(r *httprouter.Router, base middleware.Base) {
+func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 	if appengine.IsDevAppServer() {
-		r.GET(pubSubPullURLPath, base(pubSubPull))
+		r.GET(pubSubPullURLPath, base, pubSubPull)
 	}
-	r.POST(pubSubPushURLPath, base(pubSubPush))
+	r.POST(pubSubPushURLPath, base, pubSubPush)
 }
 
 // authenticatePubSub injects into a context a transport that authenticates
@@ -82,12 +81,12 @@ func subscriptionName(c context.Context, authServiceURL string) string {
 //
 // Used only on dev server for manual testing. Prod services use push-based
 // delivery.
-func pubSubPull(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func pubSubPull(c *router.Context) {
 	if !appengine.IsDevAppServer() {
-		replyError(c, rw, errors.New("not a dev server"))
+		replyError(c.Context, c.Writer, errors.New("not a dev server"))
 		return
 	}
-	processPubSubRequest(c, rw, r, func(c context.Context, srv authService, serviceURL string) (*service.Notification, error) {
+	processPubSubRequest(c.Context, c.Writer, c.Request, func(c context.Context, srv authService, serviceURL string) (*service.Notification, error) {
 		return srv.PullPubSub(c, subscriptionName(c, serviceURL))
 	})
 }
@@ -96,13 +95,13 @@ func pubSubPull(c context.Context, rw http.ResponseWriter, r *http.Request, p ht
 //
 // It uses the signature inside PubSub message body for authentication. Skips
 // messages not signed by currently configured auth service.
-func pubSubPush(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	processPubSubRequest(c, rw, r, func(c context.Context, srv authService, serviceURL string) (*service.Notification, error) {
-		body, err := ioutil.ReadAll(r.Body)
+func pubSubPush(c *router.Context) {
+	processPubSubRequest(c.Context, c.Writer, c.Request, func(ctx context.Context, srv authService, serviceURL string) (*service.Notification, error) {
+		body, err := ioutil.ReadAll(c.Request.Body)
 		if err != nil {
 			return nil, err
 		}
-		return srv.ProcessPubSubPush(c, body)
+		return srv.ProcessPubSubPush(ctx, body)
 	})
 }
 

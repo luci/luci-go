@@ -5,8 +5,7 @@
 package gaemiddleware
 
 import (
-	"github.com/julienschmidt/httprouter"
-	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/settings/admin"
 
 	gaeauth "github.com/luci/luci-go/appengine/gaeauth/server"
@@ -19,8 +18,8 @@ import (
 // work (e.g. authentication related routes, time series monitoring, etc).
 //
 // 'base' is expected to be BaseProd or its derivative.
-func InstallHandlers(r *httprouter.Router, base middleware.Base) {
-	gaeauth.InstallWebHandlers(r, base)
+func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
+	gaeauth.InstallHandlers(r, base)
 	tsmon.InstallHandlers(r, base)
 	admin.InstallHandlers(r, base, &gaeauth.UsersAPIAuthMethod{})
 }

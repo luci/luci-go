@@ -8,11 +8,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
-	"golang.org/x/net/context"
-
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/router"
 )
 
 // InstallHandlers installs HTTP handlers that return information useful for
@@ -20,21 +17,22 @@ import (
 //
 // This is optional. If you using appengine/gaeauth/server, these handlers are
 // already installed.
-func InstallHandlers(r *httprouter.Router, base middleware.Base) {
-	r.GET("/auth/api/v1/accounts/self", base(Authenticate(accountsSelfHandler)))
+func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
+	mc := append(base, Authenticate)
+	r.GET("/auth/api/v1/accounts/self", mc, accountsSelfHandler)
 }
 
 // accountsSelfHandler returns JSON with information about the caller.
 //
 // It can be used to verify callers' IP, access tokens, etc.
-func accountsSelfHandler(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func accountsSelfHandler(c *router.Context) {
 	var reply struct {
 		Error    string `json:"error,omitempty"`
 		Identity string `json:"identity,omitempty"`
 		IP       string `json:"ip,omitempty"`
 	}
 
-	state := GetState(c)
+	state := GetState(c.Context)
 	if state == nil {
 		reply.Error = "Auth state is not available, application is probably using auth library wrong."
 	} else {
@@ -42,12 +40,12 @@ func accountsSelfHandler(c context.Context, rw http.ResponseWriter, r *http.Requ
 		reply.IP = state.PeerIP().String()
 	}
 
-	rw.Header().Set("Content-Type", "application/json; charset=utf-8")
+	c.Writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if reply.Error == "" {
-		rw.WriteHeader(http.StatusOK)
+		c.Writer.WriteHeader(http.StatusOK)
 	} else {
-		rw.WriteHeader(http.StatusNotImplemented)
-		logging.Errorf(c, "HTTP 501 - %s", reply.Error)
+		c.Writer.WriteHeader(http.StatusNotImplemented)
+		logging.Errorf(c.Context, "HTTP 501 - %s", reply.Error)
 	}
-	json.NewEncoder(rw).Encode(&reply)
+	json.NewEncoder(c.Writer).Encode(&reply)
 }

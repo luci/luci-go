@@ -21,6 +21,7 @@ import (
 	"github.com/luci/luci-go/common/cryptorand"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/memlogger"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/settings"
 	"golang.org/x/net/context"
 )
@@ -117,11 +118,16 @@ func (t *Testing) Iterate(c context.Context) int {
 
 		// Process the shard until a success or hard failure.
 		retryHTTP(c, func(rec *httptest.ResponseRecorder) {
-			t.ProcessShardHandler(c, rec, &http.Request{
-				Header: http.Header{"X-AppEngine-QueueName": []string{baseName}},
-			}, httprouter.Params{
-				{Key: "shard_id", Value: toks[4]},
-				{Key: "timestamp", Value: toks[6]},
+			t.ProcessShardHandler(&router.Context{
+				Context: c,
+				Writer:  rec,
+				Request: &http.Request{
+					Header: http.Header{"X-AppEngine-QueueName": []string{baseName}},
+				},
+				Params: httprouter.Params{
+					{Key: "shard_id", Value: toks[4]},
+					{Key: "timestamp", Value: toks[6]},
+				},
 			})
 		})
 
@@ -137,9 +143,13 @@ func (t *Testing) Iterate(c context.Context) int {
 func (t *Testing) FireAllTasks(c context.Context) {
 	retryHTTP(c, func(rec *httptest.ResponseRecorder) {
 		// Fire all tasks until a success or hard failure.
-		t.FireAllTasksHandler(c, rec, &http.Request{
-			Header: http.Header{"X-Appengine-Cron": []string{"true"}},
-		}, nil)
+		t.FireAllTasksHandler(&router.Context{
+			Context: c,
+			Writer:  rec,
+			Request: &http.Request{
+				Header: http.Header{"X-Appengine-Cron": []string{"true"}},
+			},
+		})
 	})
 }
 

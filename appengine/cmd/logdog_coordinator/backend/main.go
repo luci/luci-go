@@ -9,10 +9,10 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	"github.com/luci/luci-go/appengine/tumble"
+	"github.com/luci/luci-go/server/router"
 
 	// Include mutations package so its Mutations will register with tumble via
 	// init().
@@ -30,8 +30,8 @@ func init() {
 		},
 	}
 
-	router := httprouter.New()
-	tmb.InstallHandlers(router)
+	r := router.New()
+	tmb.InstallHandlers(r)
 
-	http.Handle("/", router)
+	http.Handle("/", r)
 }

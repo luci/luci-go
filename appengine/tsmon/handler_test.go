@@ -18,6 +18,7 @@ import (
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/monitor"
+	"github.com/luci/luci-go/server/router"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -98,7 +99,11 @@ func TestHousekeepingHandler(t *testing.T) {
 		So(i.TaskNum, ShouldEqual, -1)
 
 		rec := httptest.NewRecorder()
-		housekeepingHandler(c, rec, &http.Request{}, nil)
+		housekeepingHandler(&router.Context{
+			Context: c,
+			Writer:  rec,
+			Request: &http.Request{},
+		})
 		So(rec.Code, ShouldEqual, http.StatusOK)
 
 		i, err = getOrCreateInstanceEntity(c)
@@ -119,7 +124,11 @@ func TestHousekeepingHandler(t *testing.T) {
 		getOrCreateInstanceEntity(c)
 
 		rec := httptest.NewRecorder()
-		housekeepingHandler(c, rec, &http.Request{}, nil)
+		housekeepingHandler(&router.Context{
+			Context: c,
+			Writer:  rec,
+			Request: &http.Request{},
+		})
 		So(rec.Code, ShouldEqual, http.StatusOK)
 
 		i, err := getOrCreateInstanceEntity(c)
@@ -144,7 +153,11 @@ func TestHousekeepingHandler(t *testing.T) {
 		clock.Add(instanceExpirationTimeout + time.Second)
 
 		rec := httptest.NewRecorder()
-		housekeepingHandler(c, rec, &http.Request{}, nil)
+		housekeepingHandler(&router.Context{
+			Context: c,
+			Writer:  rec,
+			Request: &http.Request{},
+		})
 		So(rec.Code, ShouldEqual, http.StatusOK)
 
 		exists, err = ds.Exists(ds.NewKey("Instance", "foobar", 0, nil))

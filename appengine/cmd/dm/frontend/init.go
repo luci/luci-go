@@ -13,7 +13,6 @@ import (
 
 	"google.golang.org/appengine"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/appengine/cmd/dm/deps"
 	"github.com/luci/luci-go/appengine/cmd/dm/distributor"
 	"github.com/luci/luci-go/appengine/cmd/dm/mutate"
@@ -24,8 +23,8 @@ import (
 	"github.com/luci/luci-go/common/config/impl/filesystem"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/discovery"
-	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/prpc"
+	"github.com/luci/luci-go/server/router"
 )
 
 func addConfigProd(c context.Context) context.Context {
@@ -42,11 +41,14 @@ func addConfigProd(c context.Context) context.Context {
 	return c
 }
 
-func baseProd(h middleware.Handler) httprouter.Handle {
-	newH := func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		h(addConfigProd(c), rw, r, p)
-	}
-	return gaemiddleware.BaseProd(newH)
+func baseProd() router.MiddlewareChain {
+	return append(
+		gaemiddleware.BaseProd(),
+		func(c *router.Context, next router.Handler) {
+			c.Context = addConfigProd(c.Context)
+			next(c)
+		},
+	)
 }
 
 func addConfigDev(c context.Context) context.Context {
@@ -61,37 +63,41 @@ func addConfigDev(c context.Context) context.Context {
 	return config.Set(c, fs)
 }
 
-func baseDev(h middleware.Handler) httprouter.Handle {
-	return gaemiddleware.BaseProd(func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		h(addConfigDev(c), rw, r, p)
-	})
+func baseDev() router.MiddlewareChain {
+	return append(
+		gaemiddleware.BaseProd(),
+		func(c *router.Context, next router.Handler) {
+			c.Context = addConfigDev(c.Context)
+			next(c)
+		},
+	)
 }
 
 func init() {
-	router := httprouter.New()
+	r := router.New()
 	tmb := tumble.Service{}
 
 	reg := distributor.NewRegistry(nil, mutate.FinishExecutionFn)
 
-	base := baseProd
+	basemw := baseProd()
 	tmb.Middleware = func(c context.Context) context.Context {
 		return distributor.WithRegistry(addConfigProd(c), reg)
 	}
 	if appengine.IsDevAppServer() {
-		base = baseDev
+		basemw = baseDev()
 		tmb.Middleware = func(c context.Context) context.Context {
 			return distributor.WithRegistry(addConfigDev(c), reg)
 		}
 	}
 
-	distributor.InstallHandlers(reg, router, base)
+	distributor.InstallHandlers(reg, r, basemw)
 
 	svr := prpc.Server{}
 	deps.RegisterDepsServer(&svr, reg)
 	discovery.Enable(&svr)
-	svr.InstallHandlers(router, base)
-	tmb.InstallHandlers(router)
-	gaemiddleware.InstallHandlers(router, base)
+	svr.InstallHandlers(r, basemw)
+	tmb.InstallHandlers(r)
+	gaemiddleware.InstallHandlers(r, basemw)
 
-	http.Handle("/", router)
+	http.Handle("/", r)
 }

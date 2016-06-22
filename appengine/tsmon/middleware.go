@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 
 	"github.com/luci/gae/service/info"
@@ -26,7 +25,7 @@ import (
 	"github.com/luci/luci-go/common/tsmon/monitor"
 	"github.com/luci/luci-go/common/tsmon/store"
 	"github.com/luci/luci-go/common/tsmon/target"
-	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/router"
 )
 
 // State holds the configuration of the tsmon library for GAE.
@@ -84,29 +83,30 @@ func newResponseWriter(rw http.ResponseWriter) responseWriter {
 	}
 }
 
-// Middleware returns a middleware that must be inserted into the chain to
-// enable tsmon metrics to be sent on App Engine.
-func (s *State) Middleware(h middleware.Handler) middleware.Handler {
-	return func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		state, settings := s.checkSettings(c)
-		if settings.Enabled {
-			started := clock.Now(c)
-			userAgent, ok := r.Header["User-Agent"]
-			if !ok || len(userAgent) == 0 {
-				userAgent = []string{"Unknown"}
-			}
-			nrw := newResponseWriter(rw)
-			defer func() {
-				dur := clock.Now(c).Sub(started)
-				metric.UpdatePresenceMetrics(c)
-				metric.UpdateServerMetrics(c, "/", nrw.Status(), dur,
-					r.ContentLength, nrw.Size(), userAgent[0])
-			}()
-			h(c, nrw, r, p)
-			s.flushIfNeeded(c, state, settings)
-		} else {
-			h(c, rw, r, p)
+// Middleware is a middleware that must be inserted into the middleware
+// chain to enable tsmon metrics to be send on AppEngine.
+func (s *State) Middleware(c *router.Context, next router.Handler) {
+	state, settings := s.checkSettings(c.Context)
+	if settings.Enabled {
+		started := clock.Now(c.Context)
+		userAgent, ok := c.Request.Header["User-Agent"]
+		if !ok || len(userAgent) == 0 {
+			userAgent = []string{"Unknown"}
 		}
+		ctx := c.Context
+		contentLength := c.Request.ContentLength
+		nrw := newResponseWriter(c.Writer)
+		c.Writer = nrw
+		defer func() {
+			dur := clock.Now(ctx).Sub(started)
+			metric.UpdatePresenceMetrics(ctx)
+			metric.UpdateServerMetrics(ctx, "/", nrw.Status(), dur,
+				contentLength, nrw.Size(), userAgent[0])
+		}()
+		next(c)
+		s.flushIfNeeded(ctx, state, settings)
+	} else {
+		next(c)
 	}
 }
 

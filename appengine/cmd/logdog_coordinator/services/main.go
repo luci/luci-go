@@ -7,7 +7,6 @@ package module
 import (
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
@@ -15,24 +14,26 @@ import (
 	"github.com/luci/luci-go/appengine/logdog/coordinator/endpoints/services"
 	registrationPb "github.com/luci/luci-go/common/api/logdog_coordinator/registration/v1"
 	servicesPb "github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
-	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/prpc"
+	"github.com/luci/luci-go/server/router"
 
 	// Include mutations package so its Mutations will register with tumble via
 	// init().
 	_ "github.com/luci/luci-go/appengine/logdog/coordinator/mutations"
 )
 
-// base is the root of the middleware chain.
-func base(h middleware.Handler) httprouter.Handle {
-	h = config.WithConfig(h)
-	h = coordinator.WithProdServices(h)
-	return gaemiddleware.BaseProd(h)
+// base returns the root middleware chain.
+func base() router.MiddlewareChain {
+	return append(
+		gaemiddleware.BaseProd(),
+		coordinator.WithProdServices,
+		config.WithConfig,
+	)
 }
 
 // Run installs and executes this site.
 func init() {
-	router := httprouter.New()
+	r := router.New()
 
 	// Setup Cloud Endpoints.
 	svr := prpc.Server{}
@@ -40,7 +41,7 @@ func init() {
 	registrationPb.RegisterRegistrationServer(&svr, registration.New())
 
 	// Standard HTTP endpoints.
-	svr.InstallHandlers(router, base)
+	svr.InstallHandlers(r, base())
 
-	http.Handle("/", router)
+	http.Handle("/", r)
 }

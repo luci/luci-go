@@ -7,7 +7,6 @@ package main
 import (
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/appengine/logdog/coordinator"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
@@ -21,8 +20,8 @@ import (
 	servicesPb "github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/discovery"
-	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/prpc"
+	"github.com/luci/luci-go/server/router"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
@@ -31,20 +30,18 @@ import (
 	_ "github.com/luci/luci-go/appengine/logdog/coordinator/mutations"
 )
 
-// base is the root of the middleware chain.
-func base(installConfig bool) middleware.Base {
-	return func(h middleware.Handler) httprouter.Handle {
-		if installConfig {
-			h = config.WithConfig(h)
-		}
-		h = coordinator.WithProdServices(h)
-		return gaemiddleware.BaseProd(h)
+// base returns the root middleware chain.
+func base(installConfig bool) router.MiddlewareChain {
+	m := append(gaemiddleware.BaseProd(), coordinator.WithProdServices)
+	if installConfig {
+		m = append(m, config.WithConfig)
 	}
+	return m
 }
 
 // Run installs and executes this site.
 func main() {
-	router := httprouter.New()
+	r := router.New()
 
 	// Setup Cloud Endpoints.
 	svr := prpc.Server{
@@ -57,15 +54,15 @@ func main() {
 	discovery.Enable(&svr)
 
 	// Standard HTTP endpoints.
-	gaemiddleware.InstallHandlers(router, base(false))
-	svr.InstallHandlers(router, base(true))
+	gaemiddleware.InstallHandlers(r, base(false))
+	svr.InstallHandlers(r, base(true))
 
 	// Redirect "/" to "/app/".
-	router.GET("/", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		http.Redirect(w, r, "/app/", http.StatusFound)
+	r.GET("/", nil, func(c *router.Context) {
+		http.Redirect(c.Writer, c.Request, "/app/", http.StatusFound)
 	})
 
-	http.Handle("/", router)
+	http.Handle("/", r)
 	appengine.Main()
 }
 

@@ -5,15 +5,13 @@
 package admin
 
 import (
-	"net/http"
 	"sort"
 	"time"
 
 	"github.com/dustin/go-humanize"
-	"github.com/julienschmidt/httprouter"
-	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/settings"
 	"github.com/luci/luci-go/server/templates"
 )
@@ -29,7 +27,9 @@ func (a pageIndexEntries) Len() int           { return len(a) }
 func (a pageIndexEntries) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a pageIndexEntries) Less(i, j int) bool { return a[i].Title < a[j].Title }
 
-func indexPage(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func indexPage(ctx *router.Context) {
+	c, rw := ctx.Context, ctx.Writer
+
 	entries := pageIndexEntries{}
 	for id, p := range settings.GetUIPages() {
 		title, err := p.Title(c)

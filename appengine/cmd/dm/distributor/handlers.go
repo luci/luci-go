@@ -5,25 +5,21 @@
 package distributor
 
 import (
-	"net/http"
-
-	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/server/middleware"
-	"golang.org/x/net/context"
+	"github.com/luci/luci-go/server/router"
 )
 
 // InstallHandlers installs the taskqueue callback handler.
 //
 // The `base` middleware must have a registry installed with WithRegistry.
-func InstallHandlers(reg Registry, r *httprouter.Router, base middleware.Base) {
-	r.POST(handlerPattern, base(
-		gaemiddleware.RequireTaskQueue("", func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-			TaskQueueHandler(WithRegistry(c, reg), rw, r, p)
-		})))
+func InstallHandlers(reg Registry, r *router.Router, base router.MiddlewareChain) {
+	r.POST(handlerPattern, append(base, gaemiddleware.RequireTaskQueue(""), func(c *router.Context, next router.Handler) {
+		c.Context = WithRegistry(c.Context, reg)
+		next(c)
+	}), TaskQueueHandler)
 
-	r.POST("/_ah/push-handlers/"+notifyTopicSuffix, base(
-		func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-			PubsubReciever(WithRegistry(c, reg), rw, r, p)
-		}))
+	r.POST("/_ah/push-handlers/"+notifyTopicSuffix, append(base, func(c *router.Context, next router.Handler) {
+		c.Context = WithRegistry(c.Context, reg)
+		next(c)
+	}), PubsubReceiver)
 }

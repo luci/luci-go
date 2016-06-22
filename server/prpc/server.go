@@ -11,7 +11,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -19,7 +18,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/router"
 
 	prpccommon "github.com/luci/luci-go/common/prpc"
 )
@@ -107,7 +106,7 @@ func (s *Server) RegisterService(desc *grpc.ServiceDesc, impl interface{}) {
 }
 
 // authenticate forces authentication set by RegisterDefaultAuth.
-func (s *Server) authenticate(base middleware.Base) middleware.Base {
+func (s *Server) authenticate() router.Middleware {
 	a := s.Authenticator
 	if a == nil {
 		a = GetDefaultAuth()
@@ -118,23 +117,22 @@ func (s *Server) authenticate(base middleware.Base) middleware.Base {
 	}
 
 	if len(a) == 0 {
-		return base
+		return nil
 	}
 
-	return func(h middleware.Handler) httprouter.Handle {
-		return base(func(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-			c = auth.SetAuthenticator(c, a)
-			switch c, err := a.Authenticate(c, r); {
-			case errors.IsTransient(err):
-				res := errResponse(codes.Internal, http.StatusInternalServerError, escapeFmt(err.Error()))
-				res.write(c, w)
-			case err != nil:
-				res := errResponse(codes.Unauthenticated, http.StatusUnauthorized, escapeFmt(err.Error()))
-				res.write(c, w)
-			default:
-				h(c, w, r, p)
-			}
-		})
+	return func(c *router.Context, next router.Handler) {
+		c.Context = auth.SetAuthenticator(c.Context, a)
+		var err error
+		switch c.Context, err = a.Authenticate(c.Context, c.Request); {
+		case errors.IsTransient(err):
+			res := errResponse(codes.Internal, http.StatusInternalServerError, escapeFmt(err.Error()))
+			res.write(c.Context, c.Writer)
+		case err != nil:
+			res := errResponse(codes.Unauthenticated, http.StatusUnauthorized, escapeFmt(err.Error()))
+			res.write(c.Context, c.Writer)
+		default:
+			next(c)
+		}
 	}
 }
 
@@ -145,35 +143,36 @@ func (s *Server) authenticate(base middleware.Base) middleware.Base {
 //
 // The authenticator in 'base' is always replaced by pRPC specific one. For more
 // details about the authentication see Server.Authenticator doc.
-func (s *Server) InstallHandlers(r *httprouter.Router, base middleware.Base) {
+func (s *Server) InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	base = s.authenticate(base)
+	rr := r.Subrouter("/prpc/:service/:method")
+	rr.Use(append(base, s.authenticate()))
 
-	r.POST("/prpc/:service/:method", base(s.handlePOST))
-	r.OPTIONS("/prpc/:service/:method", base(s.handleOPTIONS))
+	rr.POST("", nil, s.handlePOST)
+	rr.OPTIONS("", nil, s.handleOPTIONS)
 }
 
 // handle handles RPCs.
 // See https://godoc.org/github.com/luci/luci-go/common/prpc#hdr-Protocol
 // for pRPC protocol.
-func (s *Server) handlePOST(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	serviceName := p.ByName("service")
-	methodName := p.ByName("method")
-	res := s.respond(c, w, r, serviceName, methodName)
+func (s *Server) handlePOST(c *router.Context) {
+	serviceName := c.Params.ByName("service")
+	methodName := c.Params.ByName("method")
+	res := s.respond(c.Context, c.Writer, c.Request, serviceName, methodName)
 
-	c = logging.SetFields(c, logging.Fields{
+	c.Context = logging.SetFields(c.Context, logging.Fields{
 		"service": serviceName,
 		"method":  methodName,
 	})
-	s.setAccessControlHeaders(c, r, w, false)
-	res.write(c, w)
+	s.setAccessControlHeaders(c.Context, c.Request, c.Writer, false)
+	res.write(c.Context, c.Writer)
 }
 
-func (s *Server) handleOPTIONS(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	s.setAccessControlHeaders(c, r, w, true)
-	w.WriteHeader(http.StatusOK)
+func (s *Server) handleOPTIONS(c *router.Context) {
+	s.setAccessControlHeaders(c.Context, c.Request, c.Writer, true)
+	c.Writer.WriteHeader(http.StatusOK)
 }
 
 func (s *Server) respond(c context.Context, w http.ResponseWriter, r *http.Request, serviceName, methodName string) *response {

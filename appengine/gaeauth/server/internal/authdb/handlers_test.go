@@ -14,6 +14,7 @@ import (
 
 	"github.com/luci/luci-go/appengine/gaetesting"
 	"github.com/luci/luci-go/server/auth/service"
+	"github.com/luci/luci-go/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -22,7 +23,11 @@ func TestPubSubHandlers(t *testing.T) {
 	Convey("pubSubPush skips when not configured", t, func() {
 		c := gaetesting.TestingContext()
 		rec := httptest.NewRecorder()
-		pubSubPush(c, rec, makePostRequest(), nil)
+		pubSubPush(&router.Context{
+			Context: c,
+			Writer:  rec,
+			Request: makePostRequest(),
+		})
 		So(rec.Code, ShouldEqual, 200)
 		So(rec.Body.String(), ShouldEqual, "Auth Service URL is not configured, skipping the message")
 	})
@@ -30,7 +35,11 @@ func TestPubSubHandlers(t *testing.T) {
 	Convey("pubSubPush works when no notification", t, func() {
 		c, _ := setupCtx()
 		rec := httptest.NewRecorder()
-		pubSubPush(c, rec, makePostRequest(), nil)
+		pubSubPush(&router.Context{
+			Context: c,
+			Writer:  rec,
+			Request: makePostRequest(),
+		})
 		So(rec.Code, ShouldEqual, 200)
 		So(rec.Body.String(), ShouldEqual, "No new valid AuthDB change notifications")
 	})
@@ -39,7 +48,11 @@ func TestPubSubHandlers(t *testing.T) {
 		c, srv := setupCtx()
 		srv.Notification = &service.Notification{Revision: 122} // older than 123
 		rec := httptest.NewRecorder()
-		pubSubPush(c, rec, makePostRequest(), nil)
+		pubSubPush(&router.Context{
+			Context: c,
+			Writer:  rec,
+			Request: makePostRequest(),
+		})
 		So(rec.Code, ShouldEqual, 200)
 		So(rec.Body.String(), ShouldEqual, "Processed PubSub notification for rev 122: 123 -> 123")
 	})
@@ -49,7 +62,11 @@ func TestPubSubHandlers(t *testing.T) {
 		srv.LatestRev = 130
 		srv.Notification = &service.Notification{Revision: 124}
 		rec := httptest.NewRecorder()
-		pubSubPush(c, rec, makePostRequest(), nil)
+		pubSubPush(&router.Context{
+			Context: c,
+			Writer:  rec,
+			Request: makePostRequest(),
+		})
 		So(rec.Code, ShouldEqual, 200)
 		So(rec.Body.String(), ShouldEqual, "Processed PubSub notification for rev 124: 123 -> 130")
 	})

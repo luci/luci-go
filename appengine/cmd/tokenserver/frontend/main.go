@@ -13,7 +13,6 @@ import (
 	"sync"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -27,6 +26,7 @@ import (
 	"github.com/luci/luci-go/server/auth/machine"
 	"github.com/luci/luci-go/server/discovery"
 	"github.com/luci/luci-go/server/prpc"
+	"github.com/luci/luci-go/server/router"
 
 	"github.com/luci/luci-go/common/api/tokenserver/admin/v1"
 	"github.com/luci/luci-go/common/api/tokenserver/identity/v1"
@@ -82,24 +82,24 @@ func adminPrelude(serviceName string) func(context.Context, string, proto.Messag
 }
 
 func init() {
-	router := httprouter.New()
-	base := gaemiddleware.BaseProd
+	r := router.New()
+	basemw := gaemiddleware.BaseProd()
 
 	// Install auth, config and tsmon handlers.
-	gaemiddleware.InstallHandlers(router, base)
+	gaemiddleware.InstallHandlers(r, basemw)
 
 	// The service has no UI, so just redirect to stock RPC explorer.
-	router.GET("/", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		http.Redirect(w, r, "/rpcexplorer/", http.StatusFound)
+	r.GET("/", nil, func(c *router.Context) {
+		http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
 	})
 
 	// Optional warmup routes.
-	router.GET("/_ah/warmup", base(warmupHandler))
-	router.GET("/_ah/start", base(warmupHandler))
+	r.GET("/_ah/warmup", basemw, warmupHandler)
+	r.GET("/_ah/start", basemw, warmupHandler)
 
 	// Backend routes used for cron and task queues.
-	router.GET("/internal/cron/read-config", base(gaemiddleware.RequireCron(readConfigCron)))
-	router.GET("/internal/cron/fetch-crl", base(gaemiddleware.RequireCron(fetchCRLCron)))
+	r.GET("/internal/cron/read-config", append(basemw, gaemiddleware.RequireCron), readConfigCron)
+	r.GET("/internal/cron/fetch-crl", append(basemw, gaemiddleware.RequireCron), fetchCRLCron)
 
 	// Install all RPC servers.
 	api := prpc.Server{
@@ -114,38 +114,38 @@ func init() {
 	identity.RegisterIdentityFetcherServer(&api, identityFetcher)
 	minter.RegisterTokenMinterServer(&api, tokenMinterServerWithoutAuth) // auth inside
 	discovery.Enable(&api)
-	api.InstallHandlers(router, base)
+	api.InstallHandlers(r, basemw)
 
 	// Expose all this stuff.
-	http.DefaultServeMux.Handle("/", router)
+	http.DefaultServeMux.Handle("/", r)
 }
 
 /// Routes.
 
 // warmupHandler warms in-memory caches.
-func warmupHandler(c context.Context, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	if err := server.Warmup(c); err != nil {
+func warmupHandler(c *router.Context) {
+	if err := server.Warmup(c.Context); err != nil {
 		panic(err) // let panic catcher deal with it
 	}
-	w.WriteHeader(http.StatusOK)
+	c.Writer.WriteHeader(http.StatusOK)
 }
 
 // readConfigCron is handler for /internal/cron/read-config GAE cron task.
-func readConfigCron(c context.Context, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func readConfigCron(c *router.Context) {
 	// Don't override manually imported configs with 'nil' on devserver.
-	if info.Get(c).IsDevAppServer() {
-		w.WriteHeader(http.StatusOK)
+	if info.Get(c.Context).IsDevAppServer() {
+		c.Writer.WriteHeader(http.StatusOK)
 		return
 	}
-	if _, err := caServerWithoutAuth.ImportConfig(c, nil); err != nil {
+	if _, err := caServerWithoutAuth.ImportConfig(c.Context, nil); err != nil {
 		panic(err) // let panic catcher deal with it
 	}
-	w.WriteHeader(http.StatusOK)
+	c.Writer.WriteHeader(http.StatusOK)
 }
 
 // fetchCRLCron is handler for /internal/cron/fetch-crl GAE cron task.
-func fetchCRLCron(c context.Context, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	list, err := caServerWithoutAuth.ListCAs(c, nil)
+func fetchCRLCron(c *router.Context) {
+	list, err := caServerWithoutAuth.ListCAs(c.Context, nil)
 	if err != nil {
 		panic(err) // let panic catcher deal with it
 	}
@@ -158,9 +158,9 @@ func fetchCRLCron(c context.Context, w http.ResponseWriter, r *http.Request, _ h
 		wg.Add(1)
 		go func(i int, cn string) {
 			defer wg.Done()
-			_, err := caServerWithoutAuth.FetchCRL(c, &admin.FetchCRLRequest{Cn: cn})
+			_, err := caServerWithoutAuth.FetchCRL(c.Context, &admin.FetchCRLRequest{Cn: cn})
 			if err != nil {
-				logging.Errorf(c, "FetchCRL(%q) failed - %s", cn, err)
+				logging.Errorf(c.Context, "FetchCRL(%q) failed - %s", cn, err)
 				errs[i] = err
 			}
 		}(i, cn)
@@ -176,5 +176,5 @@ func fetchCRLCron(c context.Context, w http.ResponseWriter, r *http.Request, _ h
 			break
 		}
 	}
-	w.WriteHeader(status)
+	c.Writer.WriteHeader(status)
 }

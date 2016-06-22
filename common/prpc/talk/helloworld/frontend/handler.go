@@ -7,16 +7,15 @@ package helloworld
 import (
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
-
 	"github.com/luci/luci-go/appengine/gaemiddleware"
+	"github.com/luci/luci-go/server/router"
 )
 
 func init() {
-	router := httprouter.New()
-	gaemiddleware.InstallHandlers(router, gaemiddleware.BaseProd)
+	r := router.New()
+	basemw := gaemiddleware.BaseProd()
 
-	InstallAPIRoutes(router, gaemiddleware.BaseProd)
-
-	http.DefaultServeMux.Handle("/", router)
+	gaemiddleware.InstallHandlers(r, basemw)
+	InstallAPIRoutes(r, basemw)
+	http.DefaultServeMux.Handle("/", r)
 }

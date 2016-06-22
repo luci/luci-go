@@ -8,7 +8,6 @@ package ui
 import (
 	"strings"
 
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
@@ -16,7 +15,7 @@ import (
 
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/xsrf"
-	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
 
 	"github.com/luci/luci-go/appengine/cmd/cron/engine"
@@ -29,26 +28,25 @@ type Config struct {
 }
 
 // InstallHandlers adds HTTP handlers that render HTML pages.
-func InstallHandlers(r *httprouter.Router, base middleware.Base, cfg Config) {
+func InstallHandlers(r *router.Router, base router.MiddlewareChain, cfg Config) {
 	tmpl := prepareTemplates(cfg.TemplatesPath)
 
-	wrap := func(h middleware.Handler) httprouter.Handle {
-		h = auth.Authenticate(h)
-		h = templates.WithTemplates(h, tmpl)
-		h = middleware.WithContextValue(h, configContextKey(0), &cfg)
-		return base(h)
-	}
+	m := append(base, func(c *router.Context, next router.Handler) {
+		c.Context = context.WithValue(c.Context, configContextKey(0), &cfg)
+		next(c)
+	}, templates.WithTemplates(tmpl), auth.Authenticate)
 
-	r.GET("/", wrap(indexPage))
-	r.GET("/jobs/:ProjectID", wrap(projectPage))
-	r.GET("/jobs/:ProjectID/:JobID", wrap(jobPage))
-	r.GET("/jobs/:ProjectID/:JobID/:InvID", wrap(invocationPage))
+	r.GET("/", m, indexPage)
+	r.GET("/jobs/:ProjectID", m, projectPage)
+	r.GET("/jobs/:ProjectID/:JobID", m, jobPage)
+	r.GET("/jobs/:ProjectID/:JobID/:InvID", m, invocationPage)
 
 	// All POST forms must be protected with XSRF token.
-	r.POST("/actions/runJob/:ProjectID/:JobID", wrap(xsrf.WithTokenCheck(runJobAction)))
-	r.POST("/actions/pauseJob/:ProjectID/:JobID", wrap(xsrf.WithTokenCheck(pauseJobAction)))
-	r.POST("/actions/resumeJob/:ProjectID/:JobID", wrap(xsrf.WithTokenCheck(resumeJobAction)))
-	r.POST("/actions/abortInvocation/:ProjectID/:JobID/:InvID", wrap(xsrf.WithTokenCheck(abortInvocationAction)))
+	mxsrf := append(m, xsrf.WithTokenCheck)
+	r.POST("/actions/runJob/:ProjectID/:JobID", mxsrf, runJobAction)
+	r.POST("/actions/pauseJob/:ProjectID/:JobID", mxsrf, pauseJobAction)
+	r.POST("/actions/resumeJob/:ProjectID/:JobID", mxsrf, resumeJobAction)
+	r.POST("/actions/abortInvocation/:ProjectID/:JobID/:InvID", mxsrf, abortInvocationAction)
 }
 
 type configContextKey int

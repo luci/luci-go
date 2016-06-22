@@ -7,38 +7,33 @@ package frontend
 import (
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
-
 	"github.com/luci/luci-go/appengine/cmd/milo/buildbot"
 	"github.com/luci/luci-go/appengine/cmd/milo/settings"
 	"github.com/luci/luci-go/appengine/cmd/milo/swarming"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
+	"github.com/luci/luci-go/server/router"
 )
 
 // Where it all begins!!!
 func init() {
 	// Register plain ol' http services.
-	r := httprouter.New()
-	gaemiddleware.InstallHandlers(r, settings.Base)
-	r.GET("/", wrap(frontpage{}))
-	r.GET("/swarming/:server/:id/steps/*logname", wrap(swarming.Log{}))
-	r.GET("/swarming/:server/:id", wrap(swarming.Build{}))
+	r := router.New()
+	basemw := settings.Base()
+	gaemiddleware.InstallHandlers(r, basemw)
+	r.GET("/", basemw, settings.Wrap(frontpage{}))
+	r.GET("/swarming/:server/:id/steps/*logname", basemw, settings.Wrap(swarming.Log{}))
+	r.GET("/swarming/:server/:id", basemw, settings.Wrap(swarming.Build{}))
 
 	// Buildbot
-	r.GET("/buildbot/:master/:builder/:build", wrap(buildbot.Build{}))
-	r.GET("/buildbot/:master/:builder/", wrap(buildbot.Builder{}))
+	r.GET("/buildbot/:master/:builder/:build", basemw, settings.Wrap(buildbot.Build{}))
+	r.GET("/buildbot/:master/:builder/", basemw, settings.Wrap(buildbot.Builder{}))
 
 	// User settings
-	r.GET("/settings", wrap(settings.Settings{}))
-	r.POST("/settings", settings.Base(settings.ChangeSettings))
+	r.GET("/settings", basemw, settings.Wrap(settings.Settings{}))
+	r.POST("/settings", basemw, settings.ChangeSettings)
 
 	// PubSub subscription endpoints.
-	r.POST("/pubsub/buildbot", settings.Base(buildbot.PubSubHandler))
+	r.POST("/pubsub/buildbot", basemw, buildbot.PubSubHandler)
 
 	http.Handle("/", r)
-}
-
-// Do all the middleware initilization and theme handling.
-func wrap(h settings.ThemedHandler) httprouter.Handle {
-	return settings.Wrap(h)
 }

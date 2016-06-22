@@ -10,10 +10,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
+	"github.com/luci/luci-go/server/router"
 	"golang.org/x/net/context"
-
-	"github.com/luci/luci-go/server/middleware"
 )
 
 type contextKey int
@@ -43,16 +41,16 @@ func SignBytes(c context.Context, blob []byte) (keyName string, signature []byte
 // InstallHandlers installs a handler that serves public certificates provided
 // by the signer inside the base context. FetchCertificates is hitting this
 // handler.
-func InstallHandlers(r *httprouter.Router, base middleware.Base) {
-	r.GET("/auth/api/v1/server/certificates", base(certsHandler))
+func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
+	r.GET("/auth/api/v1/server/certificates", base, certsHandler)
 }
 
 // certsHandler servers public certificates of the signer in the context.
-func certsHandler(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func certsHandler(c *router.Context) {
 	reply := func(code int, out interface{}) {
-		rw.Header().Set("Content-Type", "application/json")
-		rw.WriteHeader(code)
-		json.NewEncoder(rw).Encode(out)
+		c.Writer.Header().Set("Content-Type", "application/json")
+		c.Writer.WriteHeader(code)
+		json.NewEncoder(c.Writer).Encode(out)
 	}
 
 	replyError := func(code int, msg string) {
@@ -62,13 +60,13 @@ func certsHandler(c context.Context, rw http.ResponseWriter, r *http.Request, p 
 		reply(code, &errorReply)
 	}
 
-	s := GetSigner(c)
+	s := GetSigner(c.Context)
 	if s == nil {
 		replyError(http.StatusNotFound, "No Signer instance available")
 		return
 	}
 
-	certs, err := s.Certificates(c)
+	certs, err := s.Certificates(c.Context)
 	if err != nil {
 		replyError(http.StatusInternalServerError, fmt.Sprintf("Can't fetch certificates - %s", err))
 	} else {

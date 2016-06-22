@@ -21,7 +21,7 @@ import (
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
 	"golang.org/x/net/context"
 )
@@ -119,14 +119,15 @@ func UseNamedBundle(c context.Context, nb NamedBundle) (context.Context, error) 
 }
 
 // withNamedBundle is like templates.WithTemplates, but with the choice of one of many bundles (themes)
-func withNamedBundle(h middleware.Handler, nb NamedBundle) middleware.Handler {
-	return func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		c, err := UseNamedBundle(c, nb) // calls EnsureLoaded and initializes b.err inside
+func withNamedBundle(nb NamedBundle) router.Middleware {
+	return func(c *router.Context, next router.Handler) {
+		var err error
+		c.Context, err = UseNamedBundle(c.Context, nb) // calls EnsureLoaded and initializes b.err inside
 		if err != nil {
-			http.Error(rw, fmt.Sprintf("Can't load HTML templates.\n%s", err), http.StatusInternalServerError)
+			http.Error(c.Writer, fmt.Sprintf("Can't load HTML templates.\n%s", err), http.StatusInternalServerError)
 			return
 		}
-		h(c, rw, r, p)
+		next(c)
 	}
 }
 
@@ -147,46 +148,46 @@ func themedMustRender(c context.Context, out io.Writer, theme, name string, args
 	panic(fmt.Errorf("Error: Could not load template %s from theme %s", name, theme))
 }
 
-// Base adds the basic luci appengine middlewares.
-func Base(h middleware.Handler) httprouter.Handle {
+// Base returns the basic luci appengine middlewares.
+func Base() router.MiddlewareChain {
 	methods := auth.Authenticator{
 		&server.OAuth2Method{Scopes: []string{server.EmailScope}},
 		server.CookieAuth,
 		&server.InboundAppIDAuthMethod{},
 	}
+	m := append(gaemiddleware.BaseProd(), auth.Use(methods))
 	for _, nb := range GetTemplateBundles() {
-		h = withNamedBundle(h, nb)
+		m = append(m, withNamedBundle(nb))
 	}
-	return gaemiddleware.BaseProd(auth.Use(h, methods))
+	return m
 }
 
-// Wrap wraps Milo "Render" functions and emits a middleware.Handler function.  Of note
-// is that Render functions' interface into rendering is purely through a single
+// Wrap adapts a ThemedHandler into a router.Handler. Of note, the
+// Render functions' interface into rendering is purely through a single
 // templates.Args value which gets rendered here, while the http.ResponseWriter
 // is stripped out.
-func Wrap(h ThemedHandler) func(http.ResponseWriter, *http.Request, httprouter.Params) {
-	hx := func(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func Wrap(h ThemedHandler) router.Handler {
+	return func(c *router.Context) {
 		// Figure out if we need to do the things.
-		theme := GetTheme(c, r)
+		theme := GetTheme(c.Context, c.Request)
 		template := h.GetTemplateName(theme)
 
 		// Do the things.
-		args, err := h.Render(c, r, p)
+		args, err := h.Render(c.Context, c.Request, c.Params)
 
 		// Throw errors.
 		// TODO(hinoka): Add themes and templates for errors so they look better.
 		if err != nil {
 			if merr, ok := err.(*miloerror.Error); ok {
-				http.Error(w, merr.Message, merr.Code)
+				http.Error(c.Writer, merr.Message, merr.Code)
 			} else {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
 			}
 			return
 		}
 
 		// Render the stuff.
 		name := fmt.Sprintf("pages/%s", template)
-		themedMustRender(c, w, theme.Name, name, *args)
+		themedMustRender(c.Context, c.Writer, theme.Name, name, *args)
 	}
-	return Base(hx)
 }

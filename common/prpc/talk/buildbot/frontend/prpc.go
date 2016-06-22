@@ -5,18 +5,16 @@
 package buildbot
 
 import (
-	"github.com/julienschmidt/httprouter"
-
 	"github.com/luci/luci-go/server/discovery"
-	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/prpc"
+	"github.com/luci/luci-go/server/router"
 
 	"github.com/luci/luci-go/common/prpc/talk/buildbot/proto"
 )
 
-func InstallAPIRoutes(router *httprouter.Router, base middleware.Base) {
+func InstallAPIRoutes(r *router.Router, base router.MiddlewareChain) {
 	server := &prpc.Server{}
 	buildbot.RegisterBuildbotServer(server, &buildbotService{})
 	discovery.Enable(server)
-	server.InstallHandlers(router, base)
+	server.InstallHandlers(r, base)
 }

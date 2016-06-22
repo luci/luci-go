@@ -8,7 +8,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
@@ -17,7 +16,7 @@ import (
 	"github.com/luci/luci-go/server/auth/info"
 	"github.com/luci/luci-go/server/auth/openid"
 	"github.com/luci/luci-go/server/auth/signing"
-	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/router"
 
 	"github.com/luci/luci-go/appengine/gaeauth/server/internal/authdb"
 )
@@ -29,14 +28,11 @@ import (
 // the router. See InstallHandlers.
 var CookieAuth auth.Method
 
-// InstallWebHandlers installs HTTP handlers for various default routes related
+// InstallHandlers installs HTTP handlers for various default routes related
 // to authentication system.
 //
 // Must be installed in server HTTP router for authentication to work.
-//
-// TODO(vadimsh): Rename to InstallHandlers after June 1 2016. It was renamed
-// to purposely break code that called it (since its semantics has changed).
-func InstallWebHandlers(r *httprouter.Router, base middleware.Base) {
+func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 	m := CookieAuth.(cookieAuthMethod)
 	if oid, ok := m.Method.(*openid.AuthMethod); ok {
 		oid.InstallHandlers(r, base)

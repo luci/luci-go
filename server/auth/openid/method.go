@@ -10,14 +10,13 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/router"
 )
 
 // These are installed into a HTTP router by AuthMethod.InstallHandlers(...).
@@ -52,10 +51,10 @@ type AuthMethod struct {
 
 // InstallHandlers installs HTTP handlers used in OpenID protocol. Must be
 // installed in server HTTP router for OpenID authentication flow to work.
-func (m *AuthMethod) InstallHandlers(r *httprouter.Router, base middleware.Base) {
-	r.GET(loginURL, base(m.loginHandler))
-	r.GET(logoutURL, base(m.logoutHandler))
-	r.GET(callbackURL, base(m.callbackHandler))
+func (m *AuthMethod) InstallHandlers(r *router.Router, base router.MiddlewareChain) {
+	r.GET(loginURL, base, m.loginHandler)
+	r.GET(logoutURL, base, m.logoutHandler)
+	r.GET(callbackURL, base, m.callbackHandler)
 }
 
 // Warmup prepares local caches. It's optional.
@@ -118,7 +117,9 @@ func (m *AuthMethod) LogoutURL(c context.Context, dest string) (string, error) {
 ////
 
 // loginHandler initiates login flow by redirecting user to OpenID login page.
-func (m *AuthMethod) loginHandler(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (m *AuthMethod) loginHandler(ctx *router.Context) {
+	c, rw, r := ctx.Context, ctx.Writer, ctx.Request
+
 	dest, err := normalizeURL(r.URL.Query().Get("r"))
 	if err != nil {
 		replyError(c, rw, err, "Bad redirect URI (%q) - %s", dest, err)
@@ -146,7 +147,9 @@ func (m *AuthMethod) loginHandler(c context.Context, rw http.ResponseWriter, r *
 }
 
 // logoutHandler nukes active session and redirect back to destination URL.
-func (m *AuthMethod) logoutHandler(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (m *AuthMethod) logoutHandler(ctx *router.Context) {
+	c, rw, r := ctx.Context, ctx.Writer, ctx.Request
+
 	dest, err := normalizeURL(r.URL.Query().Get("r"))
 	if err != nil {
 		replyError(c, rw, err, "Bad redirect URI (%q) - %s", dest, err)
@@ -176,7 +179,9 @@ func (m *AuthMethod) logoutHandler(c context.Context, rw http.ResponseWriter, r 
 
 // callbackHandler handles redirect from OpenID backend. Parameters contain
 // authorization code that can be exchanged for user profile.
-func (m *AuthMethod) callbackHandler(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (m *AuthMethod) callbackHandler(ctx *router.Context) {
+	c, rw, r := ctx.Context, ctx.Writer, ctx.Request
+
 	// This code path is hit when user clicks "Deny" on consent page.
 	q := r.URL.Query()
 	errorMsg := q.Get("error")

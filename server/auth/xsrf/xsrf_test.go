@@ -13,10 +13,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/secrets/testsecrets"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -42,26 +42,39 @@ func TestXsrf(t *testing.T) {
 		c := makeContext()
 		tok, _ := Token(c)
 
-		h := WithTokenCheck(func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-			rw.Write([]byte("hi"))
-		})
+		h := func(c *router.Context) {
+			c.Writer.Write([]byte("hi"))
+		}
+		mc := router.MiddlewareChain{WithTokenCheck}
 
 		// Has token -> works.
 		rec := httptest.NewRecorder()
 		req := makeRequest(tok)
-		h(c, rec, req, nil)
+		router.RunMiddleware(&router.Context{
+			Context: c,
+			Writer:  rec,
+			Request: req,
+		}, mc, h)
 		So(rec.Code, ShouldEqual, 200)
 
 		// No token.
 		rec = httptest.NewRecorder()
 		req = makeRequest("")
-		h(c, rec, req, nil)
+		router.RunMiddleware(&router.Context{
+			Context: c,
+			Writer:  rec,
+			Request: req,
+		}, mc, h)
 		So(rec.Code, ShouldEqual, 403)
 
 		// Bad token.
 		rec = httptest.NewRecorder()
 		req = makeRequest("blah")
-		h(c, rec, req, nil)
+		router.RunMiddleware(&router.Context{
+			Context: c,
+			Writer:  rec,
+			Request: req,
+		}, mc, h)
 		So(rec.Code, ShouldEqual, 403)
 	})
 }

@@ -9,32 +9,27 @@ package main
 import (
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
-	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
 	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/router"
 )
-
-// base is the root of the middleware chain.
-func base(h middleware.Handler) httprouter.Handle {
-	return gaemiddleware.BaseProd(h)
-}
 
 //// Routes.
 
 func main() {
-	router := httprouter.New()
-	gaemiddleware.InstallHandlers(router, base)
-	router.GET("/hi", base(sayHi))
-	http.DefaultServeMux.Handle("/", router)
+	r := router.New()
+	basemw := gaemiddleware.BaseProd()
+
+	gaemiddleware.InstallHandlers(r, basemw)
+	r.GET("/hi", basemw, sayHi)
+	http.DefaultServeMux.Handle("/", r)
 
 	appengine.Main()
 }
 
 //// Handlers.
 
-func sayHi(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	w.Write([]byte("Hi, I'm backend"))
+func sayHi(c *router.Context) {
+	c.Writer.Write([]byte("Hi, I'm backend"))
 }

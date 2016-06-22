@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/metric"
+	"github.com/luci/luci-go/server/router"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -33,7 +33,11 @@ func flushNowWithMiddleware(c context.Context, state *State) {
 	state.lastFlushed = clock.Now(c).Add(-2 * time.Minute)
 
 	rec := httptest.NewRecorder()
-	state.Middleware(func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {})(c, rec, &http.Request{}, nil)
+	router.RunMiddleware(
+		&router.Context{Context: c, Writer: rec, Request: &http.Request{}},
+		router.MiddlewareChain{state.Middleware},
+		nil,
+	)
 	So(rec.Code, ShouldEqual, http.StatusOK)
 }
 
@@ -60,7 +64,11 @@ func TestGlobalCallbacks(t *testing.T) {
 			s := tsmon.Store(c)
 
 			rec := httptest.NewRecorder()
-			housekeepingHandler(c, rec, &http.Request{}, nil)
+			housekeepingHandler(&router.Context{
+				Context: c,
+				Writer:  rec,
+				Request: &http.Request{},
+			})
 			So(rec.Code, ShouldEqual, http.StatusOK)
 
 			val, err := s.Get(c, m, time.Time{}, []interface{}{})

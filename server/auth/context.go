@@ -8,14 +8,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 
 	"github.com/luci/luci-go/server/auth/identity"
-	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/router"
 )
 
 type authenticatorKey int
@@ -37,9 +36,10 @@ func GetAuthenticator(c context.Context) Authenticator {
 }
 
 // Use is a middleware that simply puts given Authenticator into the context.
-func Use(h middleware.Handler, a Authenticator) middleware.Handler {
-	return func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		h(SetAuthenticator(c, a), rw, r, p)
+func Use(a Authenticator) router.Middleware {
+	return func(c *router.Context, next router.Handler) {
+		c.Context = SetAuthenticator(c.Context, a)
+		next(c)
 	}
 }
 
@@ -57,69 +57,67 @@ func LogoutURL(c context.Context, dest string) (string, error) {
 	return GetAuthenticator(c).LogoutURL(c, dest)
 }
 
-// Authenticate returns a wrapper around middleware.Handler that performs
-// authentication (using Authenticator in the context) and calls `h`.
-func Authenticate(h middleware.Handler) middleware.Handler {
-	return func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		a := GetAuthenticator(c)
-		if a == nil {
-			replyError(c, rw, 500, "Authentication middleware is not configured")
-			return
-		}
-		ctx, err := a.Authenticate(c, r)
-		switch {
-		case errors.IsTransient(err):
-			replyError(c, rw, 500, fmt.Sprintf("Transient error during authentication - %s", err))
-		case err != nil:
-			replyError(c, rw, 401, fmt.Sprintf("Authentication error - %s", err))
-		default:
-			h(ctx, rw, r, p)
-		}
+// Authenticate is a middleware that performs authentication (using Authenticator
+// in the context) and calls next handler.
+func Authenticate(c *router.Context, next router.Handler) {
+	a := GetAuthenticator(c.Context)
+	if a == nil {
+		replyError(c.Context, c.Writer, 500, "Authentication middleware is not configured")
+		return
+	}
+	ctx, err := a.Authenticate(c.Context, c.Request)
+	switch {
+	case errors.IsTransient(err):
+		replyError(c.Context, c.Writer, 500, fmt.Sprintf("Transient error during authentication - %s", err))
+	case err != nil:
+		replyError(c.Context, c.Writer, 401, fmt.Sprintf("Authentication error - %s", err))
+	default:
+		c.Context = ctx
+		next(c)
 	}
 }
 
 // Autologin is a middleware that redirects the user to login page if the user
 // is not signed in yet or authentication methods do not recognize user
 // credentials. Uses Authenticator instance in the context.
-func Autologin(h middleware.Handler) middleware.Handler {
-	return func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		a := GetAuthenticator(c)
-		if a == nil {
-			replyError(c, rw, 500, "Authentication middleware is not configured")
+func Autologin(c *router.Context, next router.Handler) {
+	a := GetAuthenticator(c.Context)
+	if a == nil {
+		replyError(c.Context, c.Writer, 500, "Authentication middleware is not configured")
+		return
+	}
+	ctx, err := a.Authenticate(c.Context, c.Request)
+
+	switch {
+	case errors.IsTransient(err):
+		replyError(c.Context, c.Writer, 500, fmt.Sprintf("Transient error during authentication - %s", err))
+
+	case err != nil:
+		replyError(c.Context, c.Writer, 401, fmt.Sprintf("Authentication error - %s", err))
+
+	case CurrentIdentity(ctx).Kind() == identity.Anonymous:
+		dest := c.Request.RequestURI
+		if dest == "" {
+			// Make r.URL relative.
+			destURL := *c.Request.URL
+			destURL.Host = ""
+			destURL.Scheme = ""
+			dest = destURL.String()
+		}
+		url, err := a.LoginURL(c.Context, dest)
+		if err != nil {
+			if errors.IsTransient(err) {
+				replyError(c.Context, c.Writer, 500, fmt.Sprintf("Transient error during authentication - %s", err))
+			} else {
+				replyError(c.Context, c.Writer, 401, fmt.Sprintf("Authentication error - %s", err))
+			}
 			return
 		}
-		ctx, err := a.Authenticate(c, r)
+		http.Redirect(c.Writer, c.Request, url, 302)
 
-		switch {
-		case errors.IsTransient(err):
-			replyError(c, rw, 500, fmt.Sprintf("Transient error during authentication - %s", err))
-
-		case err != nil:
-			replyError(c, rw, 401, fmt.Sprintf("Authentication error - %s", err))
-
-		case CurrentIdentity(ctx).Kind() == identity.Anonymous:
-			dest := r.RequestURI
-			if dest == "" {
-				// Make r.URL relative.
-				destURL := *r.URL
-				destURL.Host = ""
-				destURL.Scheme = ""
-				dest = destURL.String()
-			}
-			url, err := a.LoginURL(c, dest)
-			if err != nil {
-				if errors.IsTransient(err) {
-					replyError(c, rw, 500, fmt.Sprintf("Transient error during authentication - %s", err))
-				} else {
-					replyError(c, rw, 401, fmt.Sprintf("Authentication error - %s", err))
-				}
-				return
-			}
-			http.Redirect(rw, r, url, 302)
-
-		default:
-			h(ctx, rw, r, p)
-		}
+	default:
+		c.Context = ctx
+		next(c)
 	}
 }
 

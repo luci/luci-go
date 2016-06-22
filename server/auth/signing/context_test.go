@@ -6,14 +6,12 @@ package signing
 
 import (
 	"errors"
-	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/router"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -34,14 +32,13 @@ func TestContext(t *testing.T) {
 }
 
 func TestHandlers(t *testing.T) {
-
 	call := func(s Signer) (*PublicCertificates, error) {
-		r := httprouter.New()
-		InstallHandlers(r, func(h middleware.Handler) httprouter.Handle {
-			return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-				ctx := SetSigner(context.Background(), s)
-				h(ctx, w, r, p)
-			}
+		r := router.New()
+		InstallHandlers(r, router.MiddlewareChain{
+			func(c *router.Context, next router.Handler) {
+				c.Context = SetSigner(context.Background(), s)
+				next(c)
+			},
 		})
 		ts := httptest.NewServer(r)
 		return FetchCertificates(context.Background(), ts.URL+"/auth/api/v1/server/certificates")

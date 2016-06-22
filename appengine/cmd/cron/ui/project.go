@@ -5,23 +5,19 @@
 package ui
 
 import (
-	"net/http"
-
-	"github.com/julienschmidt/httprouter"
-	"golang.org/x/net/context"
-
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
 )
 
-func projectPage(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	projectID := p.ByName("ProjectID")
-	jobs, err := config(c).Engine.GetProjectCronJobs(c, projectID)
+func projectPage(c *router.Context) {
+	projectID := c.Params.ByName("ProjectID")
+	jobs, err := config(c.Context).Engine.GetProjectCronJobs(c.Context, projectID)
 	if err != nil {
 		panic(err)
 	}
-	templates.MustRender(c, w, "pages/project.html", map[string]interface{}{
+	templates.MustRender(c.Context, c.Writer, "pages/project.html", map[string]interface{}{
 		"ProjectID": projectID,
-		"Jobs":      convertToSortedCronJobs(jobs, clock.Now(c).UTC()),
+		"Jobs":      convertToSortedCronJobs(jobs, clock.Now(c.Context).UTC()),
 	})
 }

@@ -9,8 +9,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/appengine/gaetesting"
+	"github.com/luci/luci-go/server/router"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -25,14 +25,19 @@ func TestRequireCron(t *testing.T) {
 
 	Convey("Test RequireCron", t, func() {
 		hit := false
-		f := func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		f := func(c *router.Context) {
 			hit = true
-			rw.Write([]byte("ok"))
+			c.Writer.Write([]byte("ok"))
 		}
 
 		Convey("from non-cron fails", func() {
 			rec := httptest.NewRecorder()
-			gaetesting.BaseTest(RequireCron(f))(rec, &http.Request{}, nil)
+			c := &router.Context{
+				Context: gaetesting.TestingContext(),
+				Writer:  rec,
+				Request: &http.Request{},
+			}
+			router.RunMiddleware(c, router.MiddlewareChain{RequireCron}, f)
 			So(hit, ShouldBeFalse)
 			So(rec.Body.String(), ShouldEqual, "error: must be run from cron")
 			So(rec.Code, ShouldEqual, http.StatusForbidden)
@@ -40,11 +45,16 @@ func TestRequireCron(t *testing.T) {
 
 		Convey("from cron succeeds", func() {
 			rec := httptest.NewRecorder()
-			gaetesting.BaseTest(RequireCron(f))(rec, &http.Request{
-				Header: http.Header{
-					http.CanonicalHeaderKey("x-appengine-cron"): []string{"true"},
+			c := &router.Context{
+				Context: gaetesting.TestingContext(),
+				Writer:  rec,
+				Request: &http.Request{
+					Header: http.Header{
+						http.CanonicalHeaderKey("x-appengine-cron"): []string{"true"},
+					},
 				},
-			}, nil)
+			}
+			router.RunMiddleware(c, router.MiddlewareChain{RequireCron}, f)
 			So(hit, ShouldBeTrue)
 			So(rec.Body.String(), ShouldEqual, "ok")
 			So(rec.Code, ShouldEqual, http.StatusOK)
@@ -57,14 +67,19 @@ func TestRequireTQ(t *testing.T) {
 
 	Convey("Test RequireTQ", t, func() {
 		hit := false
-		f := func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		f := func(c *router.Context) {
 			hit = true
-			rw.Write([]byte("ok"))
+			c.Writer.Write([]byte("ok"))
 		}
 
 		Convey("from non-tq fails (wat)", func() {
 			rec := httptest.NewRecorder()
-			gaetesting.BaseTest(RequireTaskQueue("wat", f))(rec, &http.Request{}, nil)
+			c := &router.Context{
+				Context: gaetesting.TestingContext(),
+				Writer:  rec,
+				Request: &http.Request{},
+			}
+			router.RunMiddleware(c, router.MiddlewareChain{RequireTaskQueue("wat")}, f)
 			So(hit, ShouldBeFalse)
 			So(rec.Body.String(), ShouldEqual, "error: must be run from the correct taskqueue")
 			So(rec.Code, ShouldEqual, http.StatusForbidden)
@@ -72,7 +87,12 @@ func TestRequireTQ(t *testing.T) {
 
 		Convey("from non-tq fails", func() {
 			rec := httptest.NewRecorder()
-			gaetesting.BaseTest(RequireTaskQueue("", f))(rec, &http.Request{}, nil)
+			c := &router.Context{
+				Context: gaetesting.TestingContext(),
+				Writer:  rec,
+				Request: &http.Request{},
+			}
+			router.RunMiddleware(c, router.MiddlewareChain{RequireTaskQueue("")}, f)
 			So(hit, ShouldBeFalse)
 			So(rec.Body.String(), ShouldEqual, "error: must be run from the correct taskqueue")
 			So(rec.Code, ShouldEqual, http.StatusForbidden)
@@ -80,11 +100,16 @@ func TestRequireTQ(t *testing.T) {
 
 		Convey("from wrong tq fails (wat)", func() {
 			rec := httptest.NewRecorder()
-			gaetesting.BaseTest(RequireTaskQueue("wat", f))(rec, &http.Request{
-				Header: http.Header{
-					http.CanonicalHeaderKey("x-appengine-queuename"): []string{"else"},
+			c := &router.Context{
+				Context: gaetesting.TestingContext(),
+				Writer:  rec,
+				Request: &http.Request{
+					Header: http.Header{
+						http.CanonicalHeaderKey("x-appengine-queuename"): []string{"else"},
+					},
 				},
-			}, nil)
+			}
+			router.RunMiddleware(c, router.MiddlewareChain{RequireTaskQueue("wat")}, f)
 			So(hit, ShouldBeFalse)
 			So(rec.Body.String(), ShouldEqual, "error: must be run from the correct taskqueue")
 			So(rec.Code, ShouldEqual, http.StatusForbidden)
@@ -92,11 +117,16 @@ func TestRequireTQ(t *testing.T) {
 
 		Convey("from right tq succeeds (wat)", func() {
 			rec := httptest.NewRecorder()
-			gaetesting.BaseTest(RequireTaskQueue("wat", f))(rec, &http.Request{
-				Header: http.Header{
-					http.CanonicalHeaderKey("x-appengine-queuename"): []string{"wat"},
+			c := &router.Context{
+				Context: gaetesting.TestingContext(),
+				Writer:  rec,
+				Request: &http.Request{
+					Header: http.Header{
+						http.CanonicalHeaderKey("x-appengine-queuename"): []string{"wat"},
+					},
 				},
-			}, nil)
+			}
+			router.RunMiddleware(c, router.MiddlewareChain{RequireTaskQueue("wat")}, f)
 			So(hit, ShouldBeTrue)
 			So(rec.Body.String(), ShouldEqual, "ok")
 			So(rec.Code, ShouldEqual, http.StatusOK)
@@ -104,11 +134,16 @@ func TestRequireTQ(t *testing.T) {
 
 		Convey("from any tq succeeds", func() {
 			rec := httptest.NewRecorder()
-			gaetesting.BaseTest(RequireTaskQueue("", f))(rec, &http.Request{
-				Header: http.Header{
-					http.CanonicalHeaderKey("x-appengine-queuename"): []string{"wat"},
+			c := &router.Context{
+				Context: gaetesting.TestingContext(),
+				Writer:  rec,
+				Request: &http.Request{
+					Header: http.Header{
+						http.CanonicalHeaderKey("x-appengine-queuename"): []string{"wat"},
+					},
 				},
-			}, nil)
+			}
+			router.RunMiddleware(c, router.MiddlewareChain{RequireTaskQueue("")}, f)
 			So(hit, ShouldBeTrue)
 			So(rec.Body.String(), ShouldEqual, "ok")
 			So(rec.Code, ShouldEqual, http.StatusOK)

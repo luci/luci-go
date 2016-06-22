@@ -12,6 +12,7 @@ import (
 
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/xsrf"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/settings"
 	"github.com/luci/luci-go/server/templates"
 )
@@ -44,7 +45,9 @@ func withPage(c context.Context, rw http.ResponseWriter, p httprouter.Params, cb
 	}
 }
 
-func settingsPageGET(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func settingsPageGET(ctx *router.Context) {
+	c, rw, p := ctx.Context, ctx.Writer, ctx.Params
+
 	withPage(c, rw, p, func(id string, page settings.UIPage) error {
 		title, err := page.Title(c)
 		if err != nil {
@@ -82,7 +85,9 @@ func settingsPageGET(c context.Context, rw http.ResponseWriter, r *http.Request,
 	})
 }
 
-func settingsPagePOST(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func settingsPagePOST(ctx *router.Context) {
+	c, rw, r, p := ctx.Context, ctx.Writer, ctx.Request, ctx.Params
+
 	withPage(c, rw, p, func(id string, page settings.UIPage) error {
 		title, err := page.Title(c)
 		if err != nil {

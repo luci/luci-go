@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -19,7 +18,7 @@ import (
 	"github.com/luci/luci-go/common/prpc"
 	prpccommon "github.com/luci/luci-go/common/prpc"
 	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -65,8 +64,13 @@ func TestServer(t *testing.T) {
 
 		Convey("Handlers", func() {
 			c := context.Background()
-			r := httprouter.New()
-			server.InstallHandlers(r, middleware.TestingBase(c))
+			r := router.New()
+			server.InstallHandlers(r, router.MiddlewareChain{
+				func(ctx *router.Context, next router.Handler) {
+					ctx.Context = c
+					next(ctx)
+				},
+			})
 			res := httptest.NewRecorder()
 			hiMsg := bytes.NewBufferString(`name: "Lucy"`)
 			req, err := http.NewRequest("POST", "/prpc/prpc.Greeter/SayHello", hiMsg)

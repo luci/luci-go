@@ -5,11 +5,9 @@
 package coordinator
 
 import (
-	"net/http"
 	"sync"
 	"sync/atomic"
 
-	"github.com/julienschmidt/httprouter"
 	gaeauthClient "github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/appengine/logdog/coordinator/config"
 	luciConfig "github.com/luci/luci-go/common/config"
@@ -20,7 +18,7 @@ import (
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"github.com/luci/luci-go/server/logdog/storage/bigtable"
-	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/router"
 	"golang.org/x/net/context"
 	"google.golang.org/cloud"
 	gcps "google.golang.org/cloud/pubsub"
@@ -63,13 +61,11 @@ type Services interface {
 	ArchivalPublisher(context.Context) (ArchivalPublisher, error)
 }
 
-// WithProdServices is a middleware Handler that installs a production Services
+// WithProdServices is a middleware that installs a production Services
 // instance into its Context.
-func WithProdServices(h middleware.Handler) middleware.Handler {
-	return func(c context.Context, rw http.ResponseWriter, r *http.Request, params httprouter.Params) {
-		c = UseProdServices(c)
-		h(c, rw, r, params)
-	}
+func WithProdServices(c *router.Context, next router.Handler) {
+	c.Context = UseProdServices(c.Context)
+	next(c)
 }
 
 // UseProdServices installs production Services instance into the supplied

@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/errors"
@@ -18,7 +17,7 @@ import (
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/xsrf"
-	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
 
 	"github.com/luci/luci-go/server/settings/admin/internal/assets"
@@ -30,7 +29,7 @@ import (
 // (regardless of what's installed in the base context). It must be able to
 // distinguish admins (aka superusers) from non-admins. It is needed because
 // settings UI must be usable even before auth system is configured.
-func InstallHandlers(r *httprouter.Router, base middleware.Base, adminAuth auth.Method) {
+func InstallHandlers(r *router.Router, base router.MiddlewareChain, adminAuth auth.Method) {
 	tmpl := &templates.Bundle{
 		Loader:          templates.AssetsLoader(assets.Assets()),
 		DefaultTemplate: "base",
@@ -57,19 +56,21 @@ func InstallHandlers(r *httprouter.Router, base middleware.Base, adminAuth auth.
 		},
 	}
 
-	wrap := func(h middleware.Handler) httprouter.Handle {
-		h = adminOnly(h)
-		h = auth.WithDB(h, func(c context.Context) (auth.DB, error) {
+	rr := r.Subrouter("/admin/settings")
+	rr.Use(append(
+		base,
+		templates.WithTemplates(tmpl),
+		auth.Use(auth.Authenticator{adminAuth}),
+		auth.WithDB(func(c context.Context) (auth.DB, error) {
 			return adminDB, nil
-		})
-		h = auth.Use(h, auth.Authenticator{adminAuth})
-		h = templates.WithTemplates(h, tmpl)
-		return base(h)
-	}
+		}),
+		auth.Autologin,
+		adminOnly,
+	))
 
-	r.GET("/admin/settings", wrap(indexPage))
-	r.GET("/admin/settings/:SettingsKey", wrap(settingsPageGET))
-	r.POST("/admin/settings/:SettingsKey", wrap(xsrf.WithTokenCheck(settingsPagePOST)))
+	rr.GET("", nil, indexPage)
+	rr.GET("/:SettingsKey", nil, settingsPageGET)
+	rr.POST("/:SettingsKey", router.MiddlewareChain{xsrf.WithTokenCheck}, settingsPagePOST)
 }
 
 // replyError sends HTML error page with status 500 on transient errors or 400
@@ -108,13 +109,11 @@ func (adminBypassDB) IsInWhitelist(c context.Context, ip net.IP, whitelist strin
 // adminOnly is middleware that ensures authenticated user is local site admin
 // aka superuser. On GAE it grants access only to users that have Editor or
 // Owner roles in the Cloud Project.
-func adminOnly(h middleware.Handler) middleware.Handler {
-	return auth.Autologin(func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		if !auth.CurrentUser(c).Superuser {
-			rw.WriteHeader(http.StatusForbidden)
-			templates.MustRender(c, rw, "pages/access_denied.html", nil)
-			return
-		}
-		h(c, rw, r, p)
-	})
+func adminOnly(c *router.Context, next router.Handler) {
+	if !auth.CurrentUser(c.Context).Superuser {
+		c.Writer.WriteHeader(http.StatusForbidden)
+		templates.MustRender(c.Context, c.Writer, "pages/access_denied.html", nil)
+		return
+	}
+	next(c)
 }

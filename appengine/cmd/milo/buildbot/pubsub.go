@@ -10,15 +10,14 @@ import (
 	"compress/zlib"
 	"encoding/base64"
 	"encoding/json"
-	"net/http"
 	"time"
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/iotools"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/server/router"
 
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/tsmon/field"
@@ -132,8 +131,9 @@ func unmarshal(
 }
 
 // PubSubHandler is a webhook that stores the builds coming in from pubsub.
-func PubSubHandler(
-	c context.Context, h http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func PubSubHandler(ctx *router.Context) {
+	c, h, r := ctx.Context, ctx.Writer, ctx.Request
+
 	msg := pubSubSubscription{}
 	defer r.Body.Close()
 	dec := json.NewDecoder(r.Body)

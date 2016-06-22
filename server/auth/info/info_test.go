@@ -12,8 +12,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/julienschmidt/httprouter"
-	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -53,10 +52,15 @@ func TestFetchServiceInfo(t *testing.T) {
 func TestInstallHandlers(t *testing.T) {
 	Convey("Works", t, func() {
 		c := context.Background()
-		router := httprouter.New()
+		r := router.New()
 		returnErr := false
 
-		InstallHandlers(router, middleware.TestingBase(c), func(context.Context) (ServiceInfo, error) {
+		InstallHandlers(r, router.MiddlewareChain{
+			func(ctx *router.Context, next router.Handler) {
+				ctx.Context = c
+				next(ctx)
+			},
+		}, func(context.Context) (ServiceInfo, error) {
 			if returnErr {
 				return ServiceInfo{}, errors.New("fail")
 			}
@@ -71,7 +75,7 @@ func TestInstallHandlers(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/auth/api/v1/server/info", nil)
-		router.ServeHTTP(w, req)
+		r.ServeHTTP(w, req)
 		So(w.Code, ShouldEqual, 200)
 		So(w.Body.String(), ShouldResemble,
 			`{"app_id":"some-app-id","app_runtime":"go",`+
@@ -82,7 +86,7 @@ func TestInstallHandlers(t *testing.T) {
 		returnErr = true
 		w = httptest.NewRecorder()
 		req, _ = http.NewRequest("GET", "/auth/api/v1/server/info", nil)
-		router.ServeHTTP(w, req)
+		r.ServeHTTP(w, req)
 		So(w.Code, ShouldEqual, 500)
 		So(w.Body.String(), ShouldResemble, "{\"error\":\"fail\"}\n")
 	})

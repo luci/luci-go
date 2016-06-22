@@ -20,6 +20,7 @@ import (
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/server/router"
 	//log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -181,7 +182,12 @@ func TestPubSub(t *testing.T) {
 				Body: newCombinedPsBody([]buildbotBuild{b}, &ms),
 			}
 			p := httprouter.Params{}
-			PubSubHandler(c, h, r, p)
+			PubSubHandler(&router.Context{
+				Context: c,
+				Writer:  h,
+				Request: r,
+				Params:  p,
+			})
 			So(h.Code, ShouldEqual, 200)
 			Convey("And stores correctly", func() {
 				loadB := &buildbotBuild{
@@ -213,7 +219,12 @@ func TestPubSub(t *testing.T) {
 				r := &http.Request{
 					Body: newCombinedPsBody([]buildbotBuild{b}, &ms)}
 				p = httprouter.Params{}
-				PubSubHandler(c, h, r, p)
+				PubSubHandler(&router.Context{
+					Context: c,
+					Writer:  h,
+					Request: r,
+					Params:  p,
+				})
 				So(h.Code, ShouldEqual, 200)
 				m, internal, t, err := getMasterJSON(c, "fakename")
 				So(err, ShouldBeNil)
@@ -229,7 +240,12 @@ func TestPubSub(t *testing.T) {
 					Body: newCombinedPsBody([]buildbotBuild{b}, &ms),
 				}
 				p = httprouter.Params{}
-				PubSubHandler(c, h, r, p)
+				PubSubHandler(&router.Context{
+					Context: c,
+					Writer:  h,
+					Request: r,
+					Params:  p,
+				})
 				So(h.Code, ShouldEqual, 200)
 				loadB := &buildbotBuild{
 					Master:      "Fake Master",
@@ -247,7 +263,12 @@ func TestPubSub(t *testing.T) {
 						Body: newCombinedPsBody([]buildbotBuild{b}, &ms),
 					}
 					p = httprouter.Params{}
-					PubSubHandler(c, h, r, p)
+					PubSubHandler(&router.Context{
+						Context: c,
+						Writer:  h,
+						Request: r,
+						Params:  p,
+					})
 					So(h.Code, ShouldEqual, 200)
 					loadB := &buildbotBuild{
 						Master:      "Fake Master",
@@ -266,7 +287,12 @@ func TestPubSub(t *testing.T) {
 			h := httptest.NewRecorder()
 			r := &http.Request{Body: ioutil.NopCloser(bytes.NewReader([]byte{}))}
 			p := httprouter.Params{}
-			PubSubHandler(c, h, r, p)
+			PubSubHandler(&router.Context{
+				Context: c,
+				Writer:  h,
+				Request: r,
+				Params:  p,
+			})
 			So(h.Code, ShouldEqual, 200)
 		})
 	})

@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
@@ -18,7 +17,7 @@ import (
 	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
 )
 
@@ -51,31 +50,34 @@ var templateBundle = &templates.Bundle{
 	},
 }
 
-// base is the root of the middleware chain.
-func base(h middleware.Handler) httprouter.Handle {
+// base returns the root middleware chain.
+func base() router.MiddlewareChain {
 	methods := auth.Authenticator{
 		&server.OAuth2Method{Scopes: []string{server.EmailScope}},
 		server.CookieAuth,
 		&server.InboundAppIDAuthMethod{},
 	}
-	h = auth.Use(h, methods)
-	h = templates.WithTemplates(h, templateBundle)
-	return gaemiddleware.BaseProd(h)
+	return append(
+		gaemiddleware.BaseProd(),
+		templates.WithTemplates(templateBundle),
+		auth.Use(methods),
+	)
 }
 
 //// Routes.
 
 func main() {
-	router := httprouter.New()
-	gaemiddleware.InstallHandlers(router, base)
-	router.GET("/", base(auth.Authenticate(indexPage)))
-	http.DefaultServeMux.Handle("/", router)
+	r := router.New()
+	basemw := base()
+	gaemiddleware.InstallHandlers(r, basemw)
+	r.GET("/", append(basemw, auth.Authenticate), indexPage)
+	http.DefaultServeMux.Handle("/", r)
 
 	appengine.Main()
 }
 
 //// Handlers.
 
-func indexPage(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	templates.MustRender(c, w, "pages/index.html", nil)
+func indexPage(c *router.Context) {
+	templates.MustRender(c.Context, c.Writer, "pages/index.html", nil)
 }

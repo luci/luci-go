@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
@@ -21,8 +20,8 @@ import (
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/discovery"
-	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/prpc"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
 )
 
@@ -55,22 +54,24 @@ var templateBundle = &templates.Bundle{
 	},
 }
 
-// pageBase is middleware for page handlers.
-func pageBase(h middleware.Handler) httprouter.Handle {
-	h = auth.Use(h, auth.Authenticator{server.CookieAuth})
-	h = templates.WithTemplates(h, templateBundle)
-	return gaemiddleware.BaseProd(h)
+// pageBase returns the middleware chain for page handlers.
+func pageBase() router.MiddlewareChain {
+	return append(
+		gaemiddleware.BaseProd(),
+		templates.WithTemplates(templateBundle),
+		auth.Use(auth.Authenticator{server.CookieAuth}),
+	)
 }
 
-// prpcBase is middleware for pRPC API handlers.
-func prpcBase(h middleware.Handler) httprouter.Handle {
+// prpcBase returns the middleware chain for pRPC API handlers.
+func prpcBase() router.MiddlewareChain {
 	// OAuth 2.0 with email scope is registered as a default authenticator
 	// by importing "github.com/luci/luci-go/appengine/gaeauth/server".
 	// No need to setup an authenticator here.
 	//
 	// For authorization checks, we use per-service decorators; see
 	// service registration code.
-	return gaemiddleware.BaseProd(h)
+	return gaemiddleware.BaseProd()
 }
 
 //// Routes.
@@ -94,9 +95,9 @@ func checkAPIAccess(c context.Context, methodName string, req proto.Message) (co
 }
 
 func init() {
-	router := httprouter.New()
-	gaemiddleware.InstallHandlers(router, pageBase)
-	router.GET("/", pageBase(auth.Authenticate(indexPage)))
+	r := router.New()
+	gaemiddleware.InstallHandlers(r, pageBase())
+	r.GET("/", append(pageBase(), auth.Authenticate), indexPage)
 
 	var api prpc.Server
 	helloworld.RegisterGreeterServer(&api, &helloworld.DecoratedGreeter{
@@ -104,13 +105,13 @@ func init() {
 		Prelude: checkAPIAccess,
 	})
 	discovery.Enable(&api)
-	api.InstallHandlers(router, prpcBase)
+	api.InstallHandlers(r, prpcBase())
 
-	http.DefaultServeMux.Handle("/", router)
+	http.DefaultServeMux.Handle("/", r)
 }
 
 //// Handlers.
 
-func indexPage(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	templates.MustRender(c, w, "pages/index.html", nil)
+func indexPage(c *router.Context) {
+	templates.MustRender(c.Context, c.Writer, "pages/index.html", nil)
 }

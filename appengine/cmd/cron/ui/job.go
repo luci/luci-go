@@ -11,16 +11,16 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/julienschmidt/httprouter"
-	"golang.org/x/net/context"
-
 	"github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
 )
 
-func jobPage(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func jobPage(ctx *router.Context) {
+	c, w, r, p := ctx.Context, ctx.Writer, ctx.Request, ctx.Params
+
 	projectID := p.ByName("ProjectID")
 	jobID := p.ByName("JobID")
 	cursor := r.URL.Query().Get("c")
@@ -83,7 +83,9 @@ func jobPage(c context.Context, w http.ResponseWriter, r *http.Request, p httpro
 ////////////////////////////////////////////////////////////////////////////////
 // Actions.
 
-func runJobAction(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func runJobAction(ctx *router.Context) {
+	c, w, r, p := ctx.Context, ctx.Writer, ctx.Request, ctx.Params
+
 	projectID := p.ByName("ProjectID")
 	jobID := p.ByName("JobID")
 	if !isJobOwner(c, projectID, jobID) {
@@ -140,29 +142,29 @@ func runJobAction(c context.Context, w http.ResponseWriter, r *http.Request, p h
 	}
 }
 
-func pauseJobAction(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	handleJobAction(c, w, r, p, func(jobID string) error {
-		who := auth.CurrentIdentity(c)
-		return config(c).Engine.PauseJob(c, jobID, who)
+func pauseJobAction(c *router.Context) {
+	handleJobAction(c, func(jobID string) error {
+		who := auth.CurrentIdentity(c.Context)
+		return config(c.Context).Engine.PauseJob(c.Context, jobID, who)
 	})
 }
 
-func resumeJobAction(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	handleJobAction(c, w, r, p, func(jobID string) error {
-		who := auth.CurrentIdentity(c)
-		return config(c).Engine.ResumeJob(c, jobID, who)
+func resumeJobAction(c *router.Context) {
+	handleJobAction(c, func(jobID string) error {
+		who := auth.CurrentIdentity(c.Context)
+		return config(c.Context).Engine.ResumeJob(c.Context, jobID, who)
 	})
 }
 
-func handleJobAction(c context.Context, w http.ResponseWriter, r *http.Request, p httprouter.Params, cb func(string) error) {
-	projectID := p.ByName("ProjectID")
-	jobID := p.ByName("JobID")
-	if !isJobOwner(c, projectID, jobID) {
-		http.Error(w, "Forbidden", 403)
+func handleJobAction(c *router.Context, cb func(string) error) {
+	projectID := c.Params.ByName("ProjectID")
+	jobID := c.Params.ByName("JobID")
+	if !isJobOwner(c.Context, projectID, jobID) {
+		http.Error(c.Writer, "Forbidden", 403)
 		return
 	}
 	if err := cb(projectID + "/" + jobID); err != nil {
 		panic(err)
 	}
-	http.Redirect(w, r, fmt.Sprintf("/jobs/%s/%s", projectID, jobID), http.StatusFound)
+	http.Redirect(c.Writer, c.Request, fmt.Sprintf("/jobs/%s/%s", projectID, jobID), http.StatusFound)
 }

@@ -9,10 +9,9 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/logging"
-	"golang.org/x/net/context"
+	"github.com/luci/luci-go/server/router"
 )
 
 const handlerPattern = "/tq/distributor/:cfgName"
@@ -24,9 +23,10 @@ func handlerPath(cfgName string) string {
 // TaskQueueHandler is the http handler that routes taskqueue tasks made with
 // Config.EnqueueTask to a distributor's HandleTaskQueueTask method.
 //
-// This requires that c already have a Registry installed via the WithRegistry
-// method.
-func TaskQueueHandler(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+// This requires that ctx.Context already have a Registry installed via the
+// WithRegistry method.
+func TaskQueueHandler(ctx *router.Context) {
+	c, rw, r, p := ctx.Context, ctx.Writer, ctx.Request, ctx.Params
 	defer r.Body.Close()
 
 	cfgName := p.ByName("cfgName")

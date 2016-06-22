@@ -8,10 +8,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
-	"golang.org/x/net/context"
-
-	"github.com/luci/luci-go/server/middleware"
+	"github.com/luci/luci-go/server/router"
 )
 
 // WithTemplates is middleware that lazily loads template bundle and injects it
@@ -19,13 +16,13 @@ import (
 //
 // Wrapper reply with HTTP 500 if templates can not be loaded. Inner handler
 // receives context with all templates successfully loaded.
-func WithTemplates(h middleware.Handler, b *Bundle) middleware.Handler {
-	return func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		c = Use(c, b) // calls EnsureLoaded and initializes b.err inside
+func WithTemplates(b *Bundle) router.Middleware {
+	return func(c *router.Context, next router.Handler) {
+		c.Context = Use(c.Context, b) // calls EnsureLoaded and initializes b.err inside
 		if b.err != nil {
-			http.Error(rw, fmt.Sprintf("Can't load HTML templates.\n%s", b.err), http.StatusInternalServerError)
+			http.Error(c.Writer, fmt.Sprintf("Can't load HTML templates.\n%s", b.err), http.StatusInternalServerError)
 			return
 		}
-		h(c, rw, r, p)
+		next(c)
 	}
 }

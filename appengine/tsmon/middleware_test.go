@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/field"
@@ -19,7 +18,7 @@ import (
 	"github.com/luci/luci-go/common/tsmon/store/storetest"
 	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/common/tsmon/types"
-	"golang.org/x/net/context"
+	"github.com/luci/luci-go/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -28,11 +27,10 @@ func TestMiddleware(t *testing.T) {
 	t.Parallel()
 	metric := &storetest.FakeMetric{"m", "", []field.Field{}, types.CumulativeIntType}
 
-	f := func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		So(store.IsNilStore(tsmon.Store(c)), ShouldBeFalse)
-
-		tsmon.Register(c, metric)
-		So(tsmon.Store(c).Incr(c, metric, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
+	f := func(c *router.Context) {
+		So(store.IsNilStore(tsmon.Store(c.Context)), ShouldBeFalse)
+		tsmon.Register(c.Context, metric)
+		So(tsmon.Store(c.Context).Incr(c.Context, metric, time.Time{}, []interface{}{}, int64(1)), ShouldBeNil)
 	}
 
 	Convey("Creates instance entity", t, func() {
@@ -45,7 +43,11 @@ func TestMiddleware(t *testing.T) {
 		So(exists.All(), ShouldBeFalse)
 
 		rec := httptest.NewRecorder()
-		state.Middleware(f)(c, rec, &http.Request{}, nil)
+		router.RunMiddleware(
+			&router.Context{Context: c, Writer: rec, Request: &http.Request{}},
+			router.MiddlewareChain{state.Middleware},
+			f,
+		)
 		So(rec.Code, ShouldEqual, http.StatusOK)
 
 		exists, err = ds.Exists(ds.NewKey("Instance", instanceEntityID(c), 0, nil))
@@ -72,7 +74,11 @@ func TestMiddleware(t *testing.T) {
 		state.lastFlushed = clock.Now().Add(-2 * time.Minute)
 
 		rec := httptest.NewRecorder()
-		state.Middleware(f)(c, rec, &http.Request{}, nil)
+		router.RunMiddleware(
+			&router.Context{Context: c, Writer: rec, Request: &http.Request{}},
+			router.MiddlewareChain{state.Middleware},
+			f,
+		)
 		So(rec.Code, ShouldEqual, http.StatusOK)
 
 		So(len(monitor.Cells), ShouldEqual, 1)
@@ -97,15 +103,18 @@ func TestMiddleware(t *testing.T) {
 		state.lastFlushed = clock.Now().Add(-2 * time.Minute)
 
 		rec := httptest.NewRecorder()
-		state.Middleware(func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-			f(c, rw, r, p)
-
-			// Override the TaskNum here - it's created just before this handler runs
-			// and used just after.
-			tar := tsmon.Store(c).DefaultTarget().(*target.Task)
-			tar.TaskNum = proto.Int32(int32(0))
-			tsmon.Store(c).SetDefaultTarget(tar)
-		})(c, rec, &http.Request{}, nil)
+		router.RunMiddleware(
+			&router.Context{Context: c, Writer: rec, Request: &http.Request{}},
+			router.MiddlewareChain{state.Middleware},
+			func(c *router.Context) {
+				f(c)
+				// Override the TaskNum here - it's created just before this handler runs
+				// and used just after.
+				tar := tsmon.Store(c.Context).DefaultTarget().(*target.Task)
+				tar.TaskNum = proto.Int32(int32(0))
+				tsmon.Store(c.Context).SetDefaultTarget(tar)
+			},
+		)
 		So(rec.Code, ShouldEqual, http.StatusOK)
 
 		So(len(tsmon.GetState(c).RegisteredMetrics), ShouldEqual, 1)
@@ -123,16 +132,24 @@ func TestMiddleware(t *testing.T) {
 
 		// Enabled. Store is not nil.
 		rec := httptest.NewRecorder()
-		state.Middleware(func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-			So(store.IsNilStore(tsmon.Store(c)), ShouldBeFalse)
-		})(c, rec, &http.Request{}, nil)
+		router.RunMiddleware(
+			&router.Context{Context: c, Writer: rec, Request: &http.Request{}},
+			router.MiddlewareChain{state.Middleware},
+			func(c *router.Context) {
+				So(store.IsNilStore(tsmon.Store(c.Context)), ShouldBeFalse)
+			},
+		)
 		So(rec.Code, ShouldEqual, http.StatusOK)
 
 		// Disabled. Store is nil.
 		state.testingSettings.Enabled = false
-		state.Middleware(func(c context.Context, rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-			So(store.IsNilStore(tsmon.Store(c)), ShouldBeTrue)
-		})(c, rec, &http.Request{}, nil)
+		router.RunMiddleware(
+			&router.Context{Context: c, Writer: rec, Request: &http.Request{}},
+			router.MiddlewareChain{state.Middleware},
+			func(c *router.Context) {
+				So(store.IsNilStore(tsmon.Store(c.Context)), ShouldBeTrue)
+			},
+		)
 		So(rec.Code, ShouldEqual, http.StatusOK)
 	})
 }

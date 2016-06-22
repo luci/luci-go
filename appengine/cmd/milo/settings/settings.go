@@ -10,13 +10,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/milo/model"
 	"github.com/luci/luci-go/appengine/cmd/milo/resp"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/xsrf"
+	"github.com/luci/luci-go/server/router"
 	"golang.org/x/net/context"
 )
 
@@ -75,7 +75,9 @@ func getCookieSettings(c context.Context, r *http.Request) *model.UserConfig {
 
 // ChangeSettings is invoked in a POST request to settings and changes either
 // the user settings in the datastore, or the cookies if user is anon.
-func ChangeSettings(c context.Context, h http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func ChangeSettings(ctx *router.Context) {
+	c, h, r := ctx.Context, ctx.Writer, ctx.Request
+
 	// First, check XSRF token.
 	err := xsrf.Check(c, r.FormValue("xsrf_token"))
 	if err != nil {
