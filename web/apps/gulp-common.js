@@ -192,7 +192,10 @@ exports.setup = function(gulp, config) {
 
   // Clean output directory
   gulp.task('clean', function() {
-    return del(['.tmp', layout.dist()], {force: true});
+    var dist = layout.dist();
+    var remove = ['.tmp', path.join(dist, '*')];
+    var keep = '!'+path.join(dist, '.keep');
+    return del(remove.concat(keep), {force: true, dot:true});
   });
 
   // Watch files for changes & reload
