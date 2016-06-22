@@ -23,8 +23,6 @@ import (
 	swarming "github.com/luci/luci-go/common/api/swarming/swarming/v1"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logdog/types"
-	"github.com/luci/luci-go/common/logging"
-	miloProto "github.com/luci/luci-go/common/proto/milo"
 	"github.com/luci/luci-go/common/transport"
 )
 
@@ -151,98 +149,6 @@ func getSwarming(c context.Context, server string, taskID string) (
 		return sr, log, errRes
 	}
 	return sr, log, errLog
-}
-
-// TODO(hinoka): This should go in a more generic file, when milo has more
-// than one page.
-func getNavi(taskID string, URL string) *resp.Navigation {
-	navi := &resp.Navigation{}
-	navi.PageTitle = &resp.Link{
-		Label: taskID,
-		URL:   URL,
-	}
-	navi.SiteTitle = &resp.Link{
-		Label: "Milo",
-		URL:   "/",
-	}
-	return navi
-}
-
-// Given a logdog/milo step, translate it to a BuildComponent struct.
-func miloBuildStep(
-	c context.Context, url string, anno *miloProto.Step, name string) *resp.BuildComponent {
-	url = strings.TrimSuffix(url, "/")
-	comp := &resp.BuildComponent{}
-	asc := anno.GetStepComponent()
-	comp.Label = asc.Name
-	switch asc.Status {
-	case miloProto.Status_RUNNING:
-		comp.Status = resp.Running
-
-	case miloProto.Status_SUCCESS:
-		comp.Status = resp.Success
-
-	case miloProto.Status_FAILURE:
-		if anno.GetFailureDetails() != nil {
-			switch anno.GetFailureDetails().Type {
-			case miloProto.FailureDetails_INFRA:
-				comp.Status = resp.InfraFailure
-
-			case miloProto.FailureDetails_DM_DEPENDENCY_FAILED:
-				comp.Status = resp.DependencyFailure
-
-			default:
-				comp.Status = resp.Failure
-			}
-		} else {
-			comp.Status = resp.Failure
-		}
-
-	case miloProto.Status_EXCEPTION:
-		comp.Status = resp.InfraFailure
-
-		// Missing the case of waiting on unfinished dependency...
-	default:
-		comp.Status = resp.NotRun
-	}
-	// Sub link is for one link per log that isn't stdio.
-	for _, link := range asc.GetOtherLinks() {
-		lds := link.GetLogdogStream()
-		if lds == nil {
-			logging.Warningf(c, "Warning: %v of %v has an empty logdog stream.", link, asc)
-			continue // DNE???
-		}
-		shortName := lds.Name[5 : len(lds.Name)-2]
-		if strings.HasSuffix(lds.Name, "annotations") || strings.HasSuffix(lds.Name, "stdio") {
-			// Skip the special ones.
-			continue
-		}
-		newLink := &resp.Link{
-			Label: shortName,
-			URL:   url + "/" + lds.Name,
-		}
-		comp.SubLink = append(comp.SubLink, newLink)
-	}
-
-	// Main link is a link to the stdio.
-	comp.MainLink = &resp.Link{
-		Label: "stdio",
-		URL:   strings.Join([]string{url, name, "stdio"}, "/"),
-	}
-
-	// This should always be a step.
-	comp.Type = resp.Step
-
-	// This should always be 0
-	comp.LevelsDeep = 0
-
-	// Timeswamapts
-	comp.Started = asc.Started.Time().Format(time.RFC3339)
-
-	// This should be the exact same thing.
-	comp.Text = asc.Text
-
-	return comp
 }
 
 func taskProperties(sr *swarming.SwarmingRpcsTaskResult) *resp.PropertyGroup {
