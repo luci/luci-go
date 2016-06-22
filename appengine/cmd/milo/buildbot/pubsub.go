@@ -20,12 +20,26 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/tsmon/field"
+	"github.com/luci/luci-go/common/tsmon/metric"
 )
 
 var (
 	// subName is the name of the pubsub subscription that milo is expecting.
 	// TODO(hinoka): This should be read from luci-config.
 	subName = "projects/luci-milo/subscriptions/buildbot-public"
+
+	// Metrics
+	buildCounter = metric.NewCounter(
+		"luci/milo/buildbot_pubsub/builds",
+		"The number of buildbot builds received by Milo from PubSub",
+		field.Bool("internal"),
+		field.String("master"),
+		field.String("builder"),
+		field.Bool("finished"),
+		// Status can be one of 3 options.  "New", "Replaced", "Rejected".
+		field.String("status"))
 )
 
 type pubSubMessage struct {
@@ -163,13 +177,17 @@ func PubSubHandler(
 			Buildername: build.Buildername,
 			Number:      build.Number,
 		}
+		buildExists := false
 		if err := ds.Get(existingBuild); err == nil {
 			if existingBuild.Finished {
 				// Never replace a completed build.
+				buildCounter.Add(
+					c, 1, false, build.Master, build.Buildername, false, "Rejected")
 				log.Debugf(
 					c, "Found build %s/%s/%d and it's finished, skipping", build.Master, build.Buildername, build.Number)
 				continue
 			}
+			buildExists = true
 		}
 		// Also set the finished bit.
 		build.Finished = false
@@ -183,7 +201,17 @@ func PubSubHandler(
 			h.WriteHeader(500)
 			return
 		}
-		log.Debugf(c, "Saved build %s/%s/%d, it is %s", build.Master, build.Buildername, build.Number, build.Finished)
+		log.Debugf(
+			c, "Saved build %s/%s/%d, it is %s",
+			build.Master, build.Buildername, build.Number, build.Finished)
+		if buildExists {
+			buildCounter.Add(
+				c, 1, false, build.Master, build.Buildername, build.Finished, "Replaced")
+		} else {
+			buildCounter.Add(
+				c, 1, false, build.Master, build.Buildername, build.Finished, "New")
+		}
+
 	}
 	if master != nil {
 		// TODO(hinoka): Internal builds.
