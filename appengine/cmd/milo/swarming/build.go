@@ -46,11 +46,14 @@ const (
 
 func resolveServer(server string) string {
 	// TODO(hinoka): configure this map in luci-config
-	if server == "" || server == "default" || server == "dev" {
+	switch server {
+	case "", "default", "dev":
 		return "chromium-swarm-dev.appspot.com"
-	} else if server == "prod" {
+
+	case "prod":
 		return "chromium-swarm.appspot.com"
-	} else {
+
+	default:
 		return server
 	}
 }
@@ -186,8 +189,16 @@ func tagsToProperties(tags []string) *resp.PropertyGroup {
 	return props
 }
 
-func taskToBuild(c context.Context, sr *swarming.SwarmingRpcsTaskResult) (*resp.MiloBuild, error) {
-	build := &resp.MiloBuild{}
+func taskToBuild(c context.Context, server string, sr *swarming.SwarmingRpcsTaskResult) (*resp.MiloBuild, error) {
+	build := &resp.MiloBuild{
+		Summary: resp.BuildComponent{
+			Source: &resp.Link{
+				Label: "Task " + sr.TaskId,
+				URL:   taskPageURL(server, sr.TaskId),
+			},
+		},
+	}
+
 	switch sr.State {
 	case TaskRunning:
 		build.Summary.Status = resp.Running
@@ -223,6 +234,13 @@ func taskToBuild(c context.Context, sr *swarming.SwarmingRpcsTaskResult) (*resp.
 	}
 	if props := tagsToProperties(sr.Tags); len(props.Property) > 0 {
 		build.PropertyGroup = append(build.PropertyGroup, props)
+	}
+
+	if sr.BotId != "" {
+		build.Summary.Bot = &resp.Link{
+			Label: sr.BotId,
+			URL:   botPageURL(server, sr.BotId),
+		}
 	}
 
 	// Build times. Swarming timestamps are UTC RFC3339Nano, but without the
@@ -290,7 +308,7 @@ func swarmingBuildImpl(c context.Context, URL string, server string, taskID stri
 		return nil, fmt.Errorf("Not A Milo Job")
 	}
 
-	build, err := taskToBuild(c, sr)
+	build, err := taskToBuild(c, server, sr)
 	if err != nil {
 		return nil, err
 	}
@@ -307,7 +325,7 @@ func swarmingBuildImpl(c context.Context, URL string, server string, taskID stri
 			Status: resp.InfraFailure,
 			SubLink: []*resp.Link{{
 				Label: "swarming task",
-				URL:   taskPageURL(resolveServer(server), taskID),
+				URL:   taskPageURL(server, taskID),
 			}},
 		}}
 	} else {
@@ -318,6 +336,13 @@ func swarmingBuildImpl(c context.Context, URL string, server string, taskID stri
 }
 
 // taskPageURL returns a URL to a human-consumable page of a swarming task.
+// Supports server aliases.
 func taskPageURL(swarmingHostname, taskID string) string {
-	return fmt.Sprintf("https://%s/user/task/%s", swarmingHostname, taskID)
+	return fmt.Sprintf("https://%s/user/task/%s", resolveServer(swarmingHostname), taskID)
+}
+
+// botPageURL returns a URL to a human-consumable page of a swarming bot.
+// Supports server aliases.
+func botPageURL(swarmingHostname, botID string) string {
+	return fmt.Sprintf("https://%s/restricted/bot/%s", resolveServer(swarmingHostname), botID)
 }

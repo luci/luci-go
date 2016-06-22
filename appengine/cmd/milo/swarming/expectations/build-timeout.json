@@ -2,8 +2,20 @@
   "Summary": {
     "Label": "",
     "Status": "InfraFailure",
-    "Bot": null,
-    "Source": null,
+    "Bot": {
+      "Label": "swarm3-c4",
+      "Img": "",
+      "Subtitle": "",
+      "URL": "https://debug/restricted/bot/swarm3-c4",
+      "Alt": ""
+    },
+    "Source": {
+      "Label": "Task 2d8d62f6be545b10",
+      "Img": "",
+      "Subtitle": "",
+      "URL": "https://debug/user/task/2d8d62f6be545b10",
+      "Alt": ""
+    },
     "MainLink": null,
     "SubLink": null,
     "Progress": null,

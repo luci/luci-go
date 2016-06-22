@@ -58,10 +58,24 @@
       {{ end }}  <!-- with -->
       {{ end }}  <!-- if -->
 
-      {{ if .Build.Summary.Bot }}
+      {{ if or .Build.Summary.Bot .Build.Summary.Source }}
       <h2>Execution:</h2>
-      <a href="{{ .Build.Summary.Bot.URL }}">{{ .Build.Summary.Bot.Label }}</a>
-      {{ end }}
+      <ul>
+        {{ if .Build.Summary.Source }}
+        <li>
+          Source:
+          <a href="{{ .Build.Summary.Source.URL }}">{{ .Build.Summary.Source.Label }}</a>
+        </li>
+        {{ end }}
+
+        {{ if .Build.Summary.Bot }}
+        <li>
+          Bot:
+          <a href="{{ .Build.Summary.Bot.URL }}">{{ .Build.Summary.Bot.Label }}</a>
+        </li>
+        {{ end }}
+      </ul>
+      {{ end }} <!-- if -->
 
       {{ if .Build.SourceStamp }}
         {{ if .Build.SourceStamp.Source }}

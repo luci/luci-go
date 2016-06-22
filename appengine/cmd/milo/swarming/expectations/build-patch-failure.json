@@ -3,7 +3,13 @@
     "Label": "",
     "Status": "Failure",
     "Bot": null,
-    "Source": null,
+    "Source": {
+      "Label": "Task ",
+      "Img": "",
+      "Subtitle": "",
+      "URL": "https://debug/user/task/",
+      "Alt": ""
+    },
     "MainLink": null,
     "SubLink": null,
     "Progress": null,
