@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -172,6 +171,7 @@ func getNavi(taskID string, URL string) *resp.Navigation {
 // Given a logdog/milo step, translate it to a BuildComponent struct.
 func miloBuildStep(
 	c context.Context, url string, anno *miloProto.Step, name string) *resp.BuildComponent {
+	url = strings.TrimSuffix(url, "/")
 	comp := &resp.BuildComponent{}
 	asc := anno.GetStepComponent()
 	comp.Label = asc.Name
@@ -219,7 +219,7 @@ func miloBuildStep(
 		}
 		newLink := &resp.Link{
 			Label: shortName,
-			URL:   path.Join(url, lds.Name),
+			URL:   url + "/" + lds.Name,
 		}
 		comp.SubLink = append(comp.SubLink, newLink)
 	}
@@ -227,7 +227,7 @@ func miloBuildStep(
 	// Main link is a link to the stdio.
 	comp.MainLink = &resp.Link{
 		Label: "stdio",
-		URL:   path.Join(url, name, "stdio"),
+		URL:   strings.Join([]string{url, name, "stdio"}, "/"),
 	}
 
 	// This should always be a step.

@@ -7,6 +7,7 @@ package logdog
 import (
 	"fmt"
 	"path"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
@@ -20,6 +21,7 @@ import (
 
 // Given a logdog/milo step, translate it to a BuildComponent struct.
 func miloBuildStep(c context.Context, url string, anno *miloProto.Step, name string) *resp.BuildComponent {
+	url = strings.TrimSuffix(url, "/")
 	asc := anno.GetStepComponent()
 	comp := &resp.BuildComponent{Label: asc.Name}
 	switch asc.Status {
@@ -67,7 +69,7 @@ func miloBuildStep(c context.Context, url string, anno *miloProto.Step, name str
 		}
 		newLink := &resp.Link{
 			Label: lds.Name,
-			URL:   path.Join(url, lds.Name),
+			URL:   url + "/" + lds.Name,
 		}
 		comp.SubLink = append(comp.SubLink, newLink)
 	}
@@ -75,7 +77,7 @@ func miloBuildStep(c context.Context, url string, anno *miloProto.Step, name str
 	// Main link is a link to the stdout.
 	comp.MainLink = &resp.Link{
 		Label: "stdout",
-		URL:   path.Join(url, name, "stdout"),
+		URL:   strings.Join([]string{url, name, "stdout"}, "/"),
 	}
 
 	// This should always be a step.
