@@ -31,7 +31,7 @@
           (<a href="{{.MainLink.URL}}">{{ .MainLink.Label }}</a>)
         {{ end }}
         <small class="muted">
-          {{ range .Text }} {{ . }} {{ end }}
+          {{ range .Text }}<div>{{ . }}</div>{{ end }}
         </small>
         <span class="pull-right muted">
           {{ .Duration }} secs

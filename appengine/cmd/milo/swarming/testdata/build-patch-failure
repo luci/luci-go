@@ -1460,7 +1460,7 @@ Cloning into '/tmp/runguSO1v/b/build/scripts/slave/.recipe_deps/recipe_engine'..
 
 Running recipe with {u'buildername': u'Infra Linux Trusty 64 Tester', u'recipe': 'infra/infra_repo_trybot', u'mastername': u'tryserver.infra', u'buildnumber': 1, u'slavename': u'fakeslave', u'patchset': 1, u'issue': 1431683003, u'patch_project': u'infra', u'revision': u'HEAD'}
 
-@@@STEP_TEXT@<br/>running recipe: "infra/infra_repo_trybot"@@@
+@@@STEP_TEXT@running recipe: "infra/infra_repo_trybot"@@@
 
 @@@STEP_CURSOR setup_build@@@
 

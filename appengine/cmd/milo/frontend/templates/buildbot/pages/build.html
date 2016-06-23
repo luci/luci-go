@@ -22,7 +22,7 @@
         <!--- TODO(hinoka): step text -->
       {{ end }}
       <span class="subtitle">
-        {{ range .Build.Summary.Text }}{{ . }}{{ end }}
+        {{ range .Text }}<div class="step-text">{{ . }}</div>{{ end }}
       </span>
       </p>
 
@@ -90,7 +90,9 @@
         <li>
           <div class="status-{{.Status}} result">
             <b>{{.Label}}</b>
-            {{ range .Text }} {{ . }} {{ end }}
+            <span>
+              {{ range .Text }}<div class="step-text">{{ . }}</div>{{ end }}
+            </span>
             &nbsp;<span style="float:right">( {{ .Duration | humanDuration }} )</span>
           </div>
           <ul>

@@ -699,3 +699,7 @@ form.command_forcebuild .force-nested > .label {
 form.command_forcebuild .force-any .force-text {
   display: inline;
 }
+
+div.step-text:first-child {
+    display: inline;
+}

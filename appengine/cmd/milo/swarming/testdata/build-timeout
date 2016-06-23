@@ -60,7 +60,7 @@ Cloning into '/tmp/run6L2Uju/build/scripts/slave/.recipe_deps/recipe_engine'...
 
 Running recipe with {u'slavename': u'abc', 'recipe': 'v8', u'mastername': u'client.v8', u'buildername': u'V8 Linux - builder'}
 
-@@@STEP_TEXT@<br/>running recipe: "v8"@@@
+@@@STEP_TEXT@running recipe: "v8"@@@
 
 @@@STEP_CURSOR setup_build@@@
 
