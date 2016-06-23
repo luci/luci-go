@@ -263,6 +263,7 @@ tr:nth-child(even) td.failure{
   color: #000;
   background-color: #e88;
   border-color: #A77272;
+  border-style: solid;
 }
 tr:nth-child(even) td.warning{
   color: #FFFFFF;
@@ -416,18 +417,21 @@ div.BuildWaterfall {
   color: #000;
   background-color: #e88;
   border-color: #A77272;
+  border-style: solid;
 }
 
 .failure {
   color: #000;
   background-color: #e88;
   border-color: #A77272;
+  border-style: solid;
 }
 
 .failure-again {
   color: #000;
   background-color: #eA9;
   border-color: #A77272;
+  border-style: solid;
 }
 
 .status-Warnings {
