@@ -17,7 +17,10 @@
     "Duration": 0,
     "Type": "Recipe",
     "LevelsDeep": 0,
-    "Text": null
+    "Text": [
+      "InfraFailure bot_update",
+      "InfraFailure Uncaught Exception"
+    ]
   },
   "SourceStamp": null,
   "Components": [

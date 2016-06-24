@@ -17,7 +17,9 @@
     "Duration": 0,
     "Type": "Recipe",
     "LevelsDeep": 0,
-    "Text": null
+    "Text": [
+      "Failure Patch failure"
+    ]
   },
   "SourceStamp": null,
   "Components": [

@@ -9,22 +9,23 @@
     <div class="column">
 
       <h2>Results:</h2>
-      {{ if eq .Build.Summary.Status.String "Running" }}
-        <p class="running result">Build running
-      {{ else if eq .Build.Summary.Status.String "Success" }}
-        <p class="success result">Build successful
-      {{ else if eq .Build.Summary.Status.String "InfraFailure" }}
-        <p class="exception result">Internal Failure
-      {{ else if eq .Build.Summary.Status.String "Failure" }}
-        <p class="failure result">Failed
-      {{ else }}
-        <p class="failure result">Unknown status {{.Build.Summary.Status.String }}
-        <!--- TODO(hinoka): step text -->
-      {{ end }}
-      <span class="subtitle">
-        {{ range .Text }}<div class="step-text">{{ . }}</div>{{ end }}
-      </span>
-      </p>
+      {{ with .Build.Summary }}
+        {{ if eq .Status.String "Running" }}
+          <p class="running result">Build Running
+        {{ else if eq .Status.String "Success" }}
+          <p class="success result">Build Successful
+        {{ else if eq .Status.String "InfraFailure" }}
+          <p class="exception result">Internal Failure
+        {{ else if eq .Status.String "Failure" }}
+          <p class="failure result">Build Failed
+        {{ else }}
+          <p class="failure result">Unknown status {{.Status.String }}
+        {{ end }}
+        <span class="subtitle">
+          {{ range .Text }}<div class="step-text">{{ . }}</div>{{ end }}
+        </span>
+        </p>
+      {{ end }} <!-- with -->
 
 
       {{ if .Build.SourceStamp }}

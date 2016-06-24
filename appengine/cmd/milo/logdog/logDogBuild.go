@@ -129,6 +129,10 @@ func AddLogDogToBuild(c context.Context, url string, s *Streams, build *resp.Mil
 			panic(fmt.Errorf("Could not find stream %s", fullname))
 		}
 		bs := miloBuildStep(c, url, anno.Data, name)
+		if bs.Status != resp.Success && bs.Status != resp.NotRun {
+			build.Summary.Text = append(
+				build.Summary.Text, fmt.Sprintf("%s %s", bs.Status, bs.Label))
+		}
 		build.Components = append(build.Components, bs)
 		propGroup := &resp.PropertyGroup{GroupName: bs.Label}
 		for _, prop := range anno.Data.GetStepComponent().Property {

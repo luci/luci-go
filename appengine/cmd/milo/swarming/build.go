@@ -320,7 +320,7 @@ func swarmingBuildImpl(c context.Context, URL string, server string, taskID stri
 	if err != nil {
 		build.Components = []*resp.BuildComponent{{
 			Type:   resp.Summary,
-			Label:  "milo annotation parser",
+			Label:  "Milo annotation parser",
 			Text:   []string{err.Error()},
 			Status: resp.InfraFailure,
 			SubLink: []*resp.Link{{

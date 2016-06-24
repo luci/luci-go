@@ -17,7 +17,9 @@
     "Duration": 3598,
     "Type": "Recipe",
     "LevelsDeep": 0,
-    "Text": null
+    "Text": [
+      "Running bot_update"
+    ]
   },
   "SourceStamp": null,
   "Components": [
