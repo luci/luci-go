@@ -97,10 +97,10 @@
           </div>
           <ul>
             {{ if .MainLink }}
-              <li><a href="{{.MainLink.URL}}">{{.MainLink.Label}}</a></li>
+              <li>{{.MainLink | linkify}}</li>
             {{ end }}
             {{ range .SubLink }}
-              <li><a href="{{.URL}}">{{.Label}}</a></li>
+              <li>{{. | linkify}}</li>
             {{ end }}
             {{ if not (or .MainLink .SubLink) }}
               <li> - no logs - </li>

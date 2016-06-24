@@ -6,7 +6,6 @@
     "Source": {
       "Label": "Task ",
       "Img": "",
-      "Subtitle": "",
       "URL": "https://debug/user/task/",
       "Alt": ""
     },
@@ -30,7 +29,6 @@
       "MainLink": {
         "Label": "stdout",
         "Img": "",
-        "Subtitle": "",
         "URL": "foo/steps/recipe_bootstrap/0/stdout",
         "Alt": ""
       },
@@ -51,7 +49,6 @@
       "MainLink": {
         "Label": "stdout",
         "Img": "",
-        "Subtitle": "",
         "URL": "foo/steps/setup_build/0/stdout",
         "Alt": ""
       },
@@ -59,7 +56,6 @@
         {
           "Label": "steps/setup_build/0/logs/run_recipe/0",
           "Img": "",
-          "Subtitle": "",
           "URL": "foo/steps/setup_build/0/logs/run_recipe/0",
           "Alt": ""
         }
@@ -82,7 +78,6 @@
       "MainLink": {
         "Label": "stdout",
         "Img": "",
-        "Subtitle": "",
         "URL": "foo/steps/bot_update/0/stdout",
         "Alt": ""
       },
@@ -90,7 +85,6 @@
         {
           "Label": "steps/bot_update/0/logs/json.output__invalid_/0",
           "Img": "",
-          "Subtitle": "",
           "URL": "foo/steps/bot_update/0/logs/json.output__invalid_/0",
           "Alt": ""
         }
@@ -111,7 +105,6 @@
       "MainLink": {
         "Label": "stdout",
         "Img": "",
-        "Subtitle": "",
         "URL": "foo/steps/Uncaught_Exception/0/stdout",
         "Alt": ""
       },
@@ -119,7 +112,6 @@
         {
           "Label": "steps/Uncaught_Exception/0/logs/exception/0",
           "Img": "",
-          "Subtitle": "",
           "URL": "foo/steps/Uncaught_Exception/0/logs/exception/0",
           "Alt": ""
         }

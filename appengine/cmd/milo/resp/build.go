@@ -232,9 +232,6 @@ type Link struct {
 	// An icon for the link.  Not compatible with label.  Rendered as <img>
 	Img string
 
-	// A subtitle for the link.  Can be used in conjunction with label or img.
-	Subtitle string
-
 	// The destination for the link, stuck in a <a href> tag.
 	URL string
 

@@ -5,10 +5,13 @@
 package settings
 
 import (
+	"bytes"
 	"fmt"
 	"html/template"
 	"strings"
 	"time"
+
+	"github.com/luci/luci-go/appengine/cmd/milo/resp"
 )
 
 // A collection of useful templating functions
@@ -21,6 +24,7 @@ var funcMap = template.FuncMap{
 	"sub":            sub,
 	"shortHash":      shortHash,
 	"obfuscateEmail": obfuscateEmail,
+	"linkify":        linkify,
 }
 
 // humanDuration takes a time t in seconds as a duration and translates it
@@ -73,6 +77,18 @@ func humanTimeRFC(s string) string {
 		}
 	}
 	return t.Format(time.RFC850)
+}
+
+var linkifyTemplate = template.Must(
+	template.New("linkify").Parse(`<a href="{{.URL}}">
+		{{if .Img}}<img src="{{.Img}}"{{if .Alt}} alt="{{.Alt}}"{{end}}>
+		{{else}}{{.Label}}{{end}}</a>`))
+
+// linkify turns a resp.Link struct into a canonical link.
+func linkify(link *resp.Link) template.HTML {
+	buf := bytes.Buffer{}
+	linkifyTemplate.Execute(&buf, link)
+	return template.HTML(buf.Bytes())
 }
 
 // sub subtracts one number from another, because apperently go templates aren't

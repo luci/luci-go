@@ -5,14 +5,12 @@
     "Bot": {
       "Label": "build28-m1",
       "Img": "",
-      "Subtitle": "",
       "URL": "https://build.chromium.org/p//buildslaves/build28-m1",
       "Alt": ""
     },
     "Source": {
       "Label": "/CrWinGoma/30608",
       "Img": "",
-      "Subtitle": "",
       "URL": "https://build.chromium.org/p//builders/CrWinGoma/builds/30608",
       "Alt": ""
     },
@@ -36,7 +34,6 @@
       "MainLink": {
         "Label": "stdio",
         "Img": "",
-        "Subtitle": "",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/steps/logs/stdio",
         "Alt": ""
       },
@@ -44,7 +41,6 @@
         {
           "Label": "preamble",
           "Img": "",
-          "Subtitle": "",
           "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/steps/logs/preamble",
           "Alt": ""
         }
@@ -67,7 +63,6 @@
       "MainLink": {
         "Label": "stdio",
         "Img": "",
-        "Subtitle": "",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/update_scripts/logs/stdio",
         "Alt": ""
       },
@@ -75,7 +70,6 @@
         {
           "Label": "gclient_json",
           "Img": "",
-          "Subtitle": "",
           "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/update_scripts/logs/gclient_json",
           "Alt": ""
         }
@@ -99,7 +93,6 @@
       "MainLink": {
         "Label": "stdio",
         "Img": "",
-        "Subtitle": "",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/setup_properties/logs/stdio",
         "Alt": ""
       },
@@ -122,7 +115,6 @@
       "MainLink": {
         "Label": "stdio",
         "Img": "",
-        "Subtitle": "",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/setup_build/logs/stdio",
         "Alt": ""
       },
@@ -130,7 +122,6 @@
         {
           "Label": "run_recipe",
           "Img": "",
-          "Subtitle": "",
           "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/setup_build/logs/run_recipe",
           "Alt": ""
         }
@@ -154,7 +145,6 @@
       "MainLink": {
         "Label": "stdio",
         "Img": "",
-        "Subtitle": "",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/taskkill/logs/stdio",
         "Alt": ""
       },
@@ -177,7 +167,6 @@
       "MainLink": {
         "Label": "stdio",
         "Img": "",
-        "Subtitle": "",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/bot_update/logs/stdio",
         "Alt": ""
       },
@@ -185,7 +174,6 @@
         {
           "Label": "json.output",
           "Img": "",
-          "Subtitle": "",
           "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/bot_update/logs/json.output",
           "Alt": ""
         }
@@ -209,7 +197,6 @@
       "MainLink": {
         "Label": "stdio",
         "Img": "",
-        "Subtitle": "",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/ensure_goma/logs/stdio",
         "Alt": ""
       },
@@ -232,7 +219,6 @@
       "MainLink": {
         "Label": "stdio",
         "Img": "",
-        "Subtitle": "",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/ensure_goma.install%20cipd/logs/stdio",
         "Alt": ""
       },
@@ -240,7 +226,6 @@
         {
           "Label": "json.output",
           "Img": "",
-          "Subtitle": "",
           "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/ensure_goma.install%20cipd/logs/json.output",
           "Alt": ""
         }
@@ -264,7 +249,6 @@
       "MainLink": {
         "Label": "stdio",
         "Img": "",
-        "Subtitle": "",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/ensure_goma.ensure_installed/logs/stdio",
         "Alt": ""
       },
@@ -272,7 +256,6 @@
         {
           "Label": "json.output",
           "Img": "",
-          "Subtitle": "",
           "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/ensure_goma.ensure_installed/logs/json.output",
           "Alt": ""
         }
@@ -295,7 +278,6 @@
       "MainLink": {
         "Label": "stdio",
         "Img": "",
-        "Subtitle": "",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/gclient%20runhooks/logs/stdio",
         "Alt": ""
       },
@@ -318,7 +300,6 @@
       "MainLink": {
         "Label": "stdio",
         "Img": "",
-        "Subtitle": "",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/get%20compile%20targets%20for%20scripts/logs/stdio",
         "Alt": ""
       },
@@ -326,7 +307,6 @@
         {
           "Label": "json.output",
           "Img": "",
-          "Subtitle": "",
           "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/get%20compile%20targets%20for%20scripts/logs/json.output",
           "Alt": ""
         }
@@ -349,7 +329,6 @@
       "MainLink": {
         "Label": "stdio",
         "Img": "",
-        "Subtitle": "",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/read%20test%20spec/logs/stdio",
         "Alt": ""
       },
@@ -357,7 +336,6 @@
         {
           "Label": "json.output",
           "Img": "",
-          "Subtitle": "",
           "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/read%20test%20spec/logs/json.output",
           "Alt": ""
         }
@@ -381,7 +359,6 @@
       "MainLink": {
         "Label": "stdio",
         "Img": "",
-        "Subtitle": "",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/cleanup_temp/logs/stdio",
         "Alt": ""
       },
@@ -404,7 +381,6 @@
       "MainLink": {
         "Label": "stdio",
         "Img": "",
-        "Subtitle": "",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/generate_build_files/logs/stdio",
         "Alt": ""
       },
@@ -427,7 +403,6 @@
       "MainLink": {
         "Label": "stdio",
         "Img": "",
-        "Subtitle": "",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/compile/logs/stdio",
         "Alt": ""
       },
@@ -435,7 +410,6 @@
         {
           "Label": "json.output",
           "Img": "",
-          "Subtitle": "",
           "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/compile/logs/json.output",
           "Alt": ""
         }
@@ -458,7 +432,6 @@
       "MainLink": {
         "Label": "stdio",
         "Img": "",
-        "Subtitle": "",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/base_unittests/logs/stdio",
         "Alt": ""
       },
@@ -484,7 +457,6 @@
       "MainLink": {
         "Label": "stdio",
         "Img": "",
-        "Subtitle": "",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/content_unittests/logs/stdio",
         "Alt": ""
       },
@@ -509,7 +481,6 @@
       "MainLink": {
         "Label": "stdio",
         "Img": "",
-        "Subtitle": "",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/process_dumps/logs/stdio",
         "Alt": ""
       },
@@ -532,7 +503,6 @@
       "MainLink": {
         "Label": "stdio",
         "Img": "",
-        "Subtitle": "",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/recipe%20result/logs/stdio",
         "Alt": ""
       },
@@ -540,7 +510,6 @@
         {
           "Label": "result",
           "Img": "",
-          "Subtitle": "",
           "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/recipe%20result/logs/result",
           "Alt": ""
         }
