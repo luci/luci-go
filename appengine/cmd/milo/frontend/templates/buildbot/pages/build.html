@@ -91,10 +91,10 @@
         <li>
           <div class="status-{{.Status}} result">
             <b>{{.Label}}</b>
+            <span style="float:right">( {{ .Duration | humanDuration }} )</span>
             <span>
               {{ range .Text }}<div class="step-text">{{ . }}</div>{{ end }}
             </span>
-            &nbsp;<span style="float:right">( {{ .Duration | humanDuration }} )</span>
           </div>
           <ul>
             {{ if .MainLink }}
