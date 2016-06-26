@@ -31,7 +31,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/user"
 	"path/filepath"
 	"sort"
 	"sync"
@@ -39,7 +38,10 @@ import (
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
+
 	"google.golang.org/cloud/compute/metadata"
+
+	"github.com/mitchellh/go-homedir"
 
 	"github.com/luci/luci-go/common/auth/internal"
 	"github.com/luci/luci-go/common/clock"
@@ -956,13 +958,11 @@ func DefaultClient() (clientID string, clientSecret string) {
 
 // SecretsDir returns an absolute path to a directory to keep secret files in.
 func SecretsDir() string {
-	usr, err := user.Current()
+	home, err := homedir.Dir()
 	if err != nil {
 		panic(err.Error())
 	}
-	// TODO(vadimsh): On Windows use SHGetFolderPath with CSIDL_LOCAL_APPDATA to
-	// locate a directory to store app files.
-	return filepath.Join(usr.HomeDir, ".config", "chrome_infra", "auth")
+	return filepath.Join(home, ".config", "chrome_infra", "auth")
 }
 
 ////////////////////////////////////////////////////////////////////////////////
