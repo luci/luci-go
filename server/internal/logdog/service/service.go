@@ -26,12 +26,12 @@ import (
 	"github.com/luci/luci-go/common/proto/logdog/svcconfig"
 	"github.com/luci/luci-go/common/prpc"
 	"github.com/luci/luci-go/common/tsmon"
-	"github.com/luci/luci-go/common/tsmon/metric"
 	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/server/internal/logdog/retryServicesClient"
 	"github.com/luci/luci-go/server/internal/logdog/service/config"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"github.com/luci/luci-go/server/logdog/storage/bigtable"
+	"github.com/luci/luci-go/server/proccache"
 	"golang.org/x/net/context"
 	"google.golang.org/cloud"
 	"google.golang.org/cloud/compute/metadata"
@@ -47,9 +47,6 @@ var (
 	CoordinatorScopes = []string{
 		auth.OAuthScopeEmail,
 	}
-
-	presenceUpMetric = metric.NewBool("presence/up",
-		"Set to one when service is present and ready. Alert on missing values.")
 )
 
 // projectConfigCacheDuration is the amount of time to cache a project's
@@ -165,7 +162,7 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 	// Configure our signal handler. It will listen for terminating signals and
 	// issue a shutdown signal if one is received.
 	signalC := make(chan os.Signal)
-	go func() {
+	go func(c context.Context) {
 		hasShutdownAlready := false
 		for sig := range signalC {
 			if !hasShutdownAlready {
@@ -180,7 +177,7 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 			s.shutdownImmediately()
 			panic("never reached")
 		}
-	}()
+	}(c)
 	signal.Notify(signalC, os.Interrupt)
 	defer func() {
 		signal.Stop(signalC)
@@ -188,8 +185,7 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 	}()
 
 	// Initialize our tsmon library.
-	tsMonState := tsmon.State{}
-	c = tsmon.WithState(c, &tsMonState)
+	c = tsmon.WithState(c, tsmon.NewState())
 
 	if err := tsmon.InitializeFromFlags(c, &s.tsMonFlags); err != nil {
 		log.WithError(err).Warningf(c, "Failed to initialize monitoring; will continue without metrics.")
@@ -213,15 +209,8 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 
 	defer s.SetShutdownFunc(nil)
 
-	// Monitoring: register presence up.
-	//
-	// TODO: This is disabled for now, since it is currently retained outside of
-	// the autogen window (crbug.com/608530).
-	/*
-		if err := presenceUpMetric.Set(c, true); err != nil {
-			log.WithError(err).Warningf(c, "Failed to set presence up metric.")
-		}
-	*/
+	// Install a process-wide cache.
+	c = proccache.Use(c, &proccache.Cache{})
 
 	// Run main service function.
 	return f(c)

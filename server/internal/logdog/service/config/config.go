@@ -163,6 +163,8 @@ func (m *Manager) ProjectConfig(c context.Context, project config.ProjectName) (
 			log.Fields{
 				log.ErrorKey: err,
 				"project":    project,
+				"configSet":  configSet,
+				"path":       configPath,
 			}.Errorf(c, "Failed to load config.")
 			return nil, 0, err
 		}

@@ -7,6 +7,7 @@ syntax = "proto3";
 package logdog;
 
 import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
 
 // ArchiveTask is a task queue task description for the archival of a single
 // log stream.
@@ -34,4 +35,16 @@ message ArchiveTask {
   // The task's age can be calculated by subtracting its lease expiration time
   // (leaseTimestamp) from its enqueued timestamp (enqueueTimestamp).
   google.protobuf.Duration complete_period = 5;
+
+  // The time when this archive task was dispatched.
+  //
+  // This time is optional, and will be based on the Coordinator's clock. If not
+  // zero, it can be used by the Archivist to avoid superfluous archival
+  // processing by asserting that IF this time is close to the Archivist's local
+  // clock by a specific threshold, it will punt the archival task.
+  //
+  // Because archival is dispatched by Tumble, the actual encoding of archival
+  // parameters is oftentimes delayed such that the request is dispatched to
+  // Pub/Sub before the datastore has been updated.
+  google.protobuf.Timestamp dispatched_at = 6;
 }

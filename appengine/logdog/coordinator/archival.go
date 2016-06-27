@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/proto/google"
 	"golang.org/x/net/context"
 )
@@ -53,9 +54,10 @@ func (p *ArchivalParams) PublishTask(c context.Context, ap ArchivalPublisher, ls
 
 	id := lst.ID()
 	msg := logdog.ArchiveTask{
-		Project: string(Project(c)),
-		Id:      string(id),
-		Key:     p.createArchivalKey(id, ap.NewPublishIndex()),
+		Project:      string(Project(c)),
+		Id:           string(id),
+		Key:          p.createArchivalKey(id, ap.NewPublishIndex()),
+		DispatchedAt: google.NewTimestamp(clock.Now(c)),
 	}
 	if p.SettleDelay > 0 {
 		msg.SettleDelay = google.NewDuration(p.SettleDelay)

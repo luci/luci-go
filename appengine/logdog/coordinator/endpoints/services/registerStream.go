@@ -68,9 +68,11 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 	}
 
 	path = desc.Path()
+	logStreamID := coordinator.LogStreamID(path)
 	log.Fields{
 		"project":       req.Project,
 		"path":          path,
+		"prospectiveID": logStreamID,
 		"terminalIndex": req.TerminalIndex,
 	}.Infof(c, "Registration request for log stream.")
 
@@ -136,7 +138,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 
 	// Check for registration, and that the prefix did not expire
 	// (non-transactional).
-	ls := &coordinator.LogStream{ID: coordinator.LogStreamID(path)}
+	ls := &coordinator.LogStream{ID: logStreamID}
 	lst := ls.State(di)
 
 	if err := di.Get(ls, lst); err != nil {

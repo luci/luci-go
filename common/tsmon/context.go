@@ -202,10 +202,16 @@ func WithDummyInMemory(c context.Context) (context.Context, *monitor.Fake) {
 type key int
 
 var (
-	globalState = &State{
+	globalState     = NewState()
+	stateKey    key = 1
+)
+
+// NewState returns a new default State, configured with a nil Store and
+// Monitor.
+func NewState() *State {
+	return &State{
 		S:                 store.NewNilStore(),
 		M:                 monitor.NewNilMonitor(),
 		RegisteredMetrics: map[string]types.Metric{},
 	}
-	stateKey key = 1
-)
+}

@@ -143,6 +143,7 @@ func (a *application) runArchivist(c context.Context) error {
 			log.ErrorKey:   err,
 			"subscription": taskSub,
 		}.Errorf(c, "Failed to create Pub/Sub subscription iterator.")
+		return err
 	}
 	defer it.Stop()
 

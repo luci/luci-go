@@ -9,11 +9,13 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/api/logdog_coordinator/services/v1"
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/gcloud/gs"
@@ -32,6 +34,10 @@ const (
 	tsEntriesField = "entries"
 	tsIndexField   = "index"
 	tsDataField    = "data"
+
+	// If the archive dispatch is within this range of the current time, we will
+	// avoid archival.
+	dispatchThreshold = 5 * time.Minute
 )
 
 var (
@@ -198,6 +204,25 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 	if err := config.ProjectName(at.Project).Validate(); err != nil {
 		task.Consume()
 		return fmt.Errorf("invalid project name %q: %s", at.Project, err)
+	}
+
+	// Get the local time. If we are within the dispatchThreshold, retry this
+	// archival later.
+	if ad := at.DispatchedAt.Time(); !ad.IsZero() {
+		now := clock.Now(c)
+		delta := now.Sub(ad)
+		if delta < 0 {
+			delta = -delta
+		}
+		if delta < dispatchThreshold {
+			log.Fields{
+				"localTime":    now.Local(),
+				"dispatchTime": ad.Local(),
+				"delta":        delta,
+				"threshold":    dispatchThreshold,
+			}.Infof(c, "Log stream is within dispatch threshold. Returning task to queue.")
+			return statusErr(errors.New("log stream is within dispatch threshold"))
+		}
 	}
 
 	// Load the log stream's current state. If it is already archived, we will
