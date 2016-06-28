@@ -24,7 +24,20 @@
     "LevelsDeep": 1,
     "Text": []
   },
-  "SourceStamp": null,
+  "SourceStamp": {
+    "AuthorName": "",
+    "AuthorEmail": "",
+    "Repo": "",
+    "Branch": "",
+    "RequestRevision": "",
+    "Revision": "bfdee36d31a624d330b60b481fc26d10dff81b97",
+    "Description": "",
+    "Title": "",
+    "Changelist": null,
+    "CommitURL": "",
+    "File": null,
+    "Source": ""
+  },
   "Components": [
     {
       "Label": "steps",
@@ -695,7 +708,7 @@
       "Revision": "74b54c510611ebaa8479d004a6878abe96e372d3",
       "Description": "Remove type converters for ui::Event.\n\nWe are using struct traits for serializing/deserializing ui::Event and don't\nneed type converters anymore.\n\nBUG=578206\n\nReview-Url: https://codereview.chromium.org/2048633004\nCr-Commit-Position: refs/heads/master@{#398655}\n",
       "Title": "Remove type converters for ui::Event.",
-      "ChangelistURL": "",
+      "Changelist": null,
       "CommitURL": "",
       "File": [
         "",
@@ -733,7 +746,7 @@
       "Revision": "605998f30d05bb8d323542c1039e64e1afce696b",
       "Description": "StructTraits optimizations\n\nPass more things by const reference and read directly into output.\n\nBUG=611802\nCQ_INCLUDE_TRYBOTS=tryserver.blink:linux_blink_rel\n\nReview-Url: https://codereview.chromium.org/2047963004\nCr-Commit-Position: refs/heads/master@{#398656}\n",
       "Title": "StructTraits optimizations",
-      "ChangelistURL": "",
+      "Changelist": null,
       "CommitURL": "",
       "File": [
         "",
@@ -752,7 +765,7 @@
       "Revision": "7c19b196f653ec0e2b3aab703611231efc04cb2a",
       "Description": "Manual refactor to enum-based WaitableEvent for remaining _win files\n\nBUG=612843\nR=fdoray@chromium.org\nTBR=danakj@chromium.org\n(Francois please fact check me, I'm TBRing dana for otherwise mechanical change)\n\nReview-Url: https://codereview.chromium.org/2047163003\nCr-Commit-Position: refs/heads/master@{#398657}\n",
       "Title": "Manual refactor to enum-based WaitableEvent for remaining _win files",
-      "ChangelistURL": "",
+      "Changelist": null,
       "CommitURL": "",
       "File": [
         "",
@@ -772,7 +785,7 @@
       "Revision": "b0b4c0099b04f00b117595a762d09eb3e692f944",
       "Description": "Add role lists to ChromeVox.\n\n- add lists for forms, headings, landmarks, links, and tables.\n- fix some focusing issues with menus\n\nBUG=617670\n\nCQ_INCLUDE_TRYBOTS=tryserver.chromium.linux:closure_compilation\n\nReview-Url: https://codereview.chromium.org/2042083002\nCr-Commit-Position: refs/heads/master@{#398658}\n",
       "Title": "Add role lists to ChromeVox.",
-      "ChangelistURL": "",
+      "Changelist": null,
       "CommitURL": "",
       "File": [
         "",
@@ -791,7 +804,7 @@
       "Revision": "ea1675fb67d48828efb8c6b168582aa9f33388a2",
       "Description": "Add DisableIf annotation to EME test\n\nEME test does not pass on AOSP Android, therefore, add DisableIf annotation to\nit (from BaseInstrumentationTestRunner)\n\nReorganized BaseInstrumentationTestRunner so it doesn't include anything\nunrelated to WebViewLayout Testing.\n\nBUG=607350\n\nReview-Url: https://codereview.chromium.org/1952573002\nCr-Commit-Position: refs/heads/master@{#398659}\n",
       "Title": "Add DisableIf annotation to EME test",
-      "ChangelistURL": "",
+      "Changelist": null,
       "CommitURL": "",
       "File": [
         "",
@@ -809,7 +822,7 @@
       "Revision": "c363d41a6001cb7b27789484702d23fa4572a918",
       "Description": "Revert of service worker: Don't control a subframe of an insecure context (patchset #21 id:440001 of https://codereview.chromium.org/2009453002/ )\n\nReason for revert:\nServiceWorkerProviderHost::SetControllerVersionAttribute CHECK is firing in release builds: https://crbug.com/618365\n\nOriginal issue's description:\n\u003e service worker: Don't control a subframe of an insecure context\n\u003e\n\u003e We must check isSecureContext when creating the network provider to\n\u003e adhere to https://w3c.github.io/webappsec/specs/pow\n...skip...\nux:linux_site_isolation\n\u003e\n\u003e Committed: https://crrev.com/59a2e54eeb0e61971a0c27c44c54dd0c30b5d06d\n\u003e Cr-Commit-Position: refs/heads/master@{#398229}\n\nTBR=alexmos@chromium.org,clamy@chromium.org,horo@chromium.org,jww@chromium.org,kinuko@chromium.org,lazyboy@chromium.org,rdevlin.cronin@chromium.org,falken@chromium.org\n# Not skipping CQ checks because original CL landed more than 1 days ago.\nBUG=607543\n\nReview-Url: https://codereview.chromium.org/2055433002\nCr-Commit-Position: refs/heads/master@{#398660}\n",
       "Title": "Revert of service worker: Don't control a subframe of an insecure context (patchset #21 id:440001 of https://codereview.chromium.org/2009453002/ )",
-      "ChangelistURL": "",
+      "Changelist": null,
       "CommitURL": "",
       "File": [
         "",
@@ -862,7 +875,7 @@
       "Revision": "bfdee36d31a624d330b60b481fc26d10dff81b97",
       "Description": "Update GN docs about target_cpu to encourage use of current_cpu\n\nBUG=616819\n\nReview-Url: https://codereview.chromium.org/2038733003\nCr-Commit-Position: refs/heads/master@{#398661}\n",
       "Title": "Update GN docs about target_cpu to encourage use of current_cpu",
-      "ChangelistURL": "",
+      "Changelist": null,
       "CommitURL": "",
       "File": [
         "",

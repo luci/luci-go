@@ -341,6 +341,53 @@ func blame(b *buildbotBuild) (result []*resp.Commit) {
 	return
 }
 
+// sourcestamp extracts the source stamp from various parts of a buildbot build,
+// including the properties.
+func sourcestamp(c context.Context, b *buildbotBuild) *resp.SourceStamp {
+	ss := &resp.SourceStamp{}
+	rietveld := ""
+	issue := int64(-1)
+	// TODO(hinoka): Gerrit URLs.
+	for _, prop := range b.Properties {
+		key := prop[0].(string)
+		value := prop[1]
+		switch key {
+		case "rietveld":
+			if v, ok := value.(string); ok {
+				rietveld = v
+			} else {
+				log.Warningf(c, "Field rietveld is not a string: %#v", value)
+			}
+		case "issue":
+			if v, ok := value.(float64); ok {
+				issue = int64(v)
+			} else {
+				log.Warningf(c, "Field issue is not a float: %#v", value)
+			}
+
+		case "got_revision":
+			if v, ok := value.(string); ok {
+				ss.Revision = v
+			} else {
+				log.Warningf(c, "Field got_revision is not a string: %#v", value)
+			}
+
+		}
+	}
+	if issue != -1 {
+		if rietveld != "" {
+			rietveld = strings.TrimRight(rietveld, "/")
+			ss.Changelist = &resp.Link{
+				Label: fmt.Sprintf("Issue %d", issue),
+				URL:   fmt.Sprintf("%s/%d", rietveld, issue),
+			}
+		} else {
+			log.Warningf(c, "Found issue but not rietveld property.")
+		}
+	}
+	return ss
+}
+
 func getDebugBuild(c context.Context, builder, buildNum string) (*buildbotBuild, error) {
 	fname := fmt.Sprintf("%s.%s.json", builder, buildNum)
 	path := filepath.Join("testdata", "buildbot", fname)
@@ -365,7 +412,9 @@ func build(c context.Context, master, builder, buildNum string) (*resp.MiloBuild
 		return nil, err
 	}
 
+	// TODO(hinoka): Do all fields concurrently.
 	return &resp.MiloBuild{
+		SourceStamp:   sourcestamp(c, b),
 		Summary:       summary(b),
 		Components:    components(b),
 		PropertyGroup: properties(b),

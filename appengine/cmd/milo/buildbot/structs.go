@@ -62,9 +62,13 @@ type buildbotBuild struct {
 	// This needs to be reflected.  This can be either a String or a buildbotStep.
 	Currentstep interface{} `json:"currentStep" gae:"-"`
 	// We don't care about this one.
-	Eta         interface{}          `json:"eta" gae:"-"`
-	Logs        [][]string           `json:"logs" gae:"-"`
-	Number      int                  `json:"number"`
+	Eta    interface{} `json:"eta" gae:"-"`
+	Logs   [][]string  `json:"logs" gae:"-"`
+	Number int         `json:"number"`
+	// This is a slice of tri-tuples of [property name, value, source].
+	// property name is always a string
+	// value can be a string or float
+	// source is optional, but is always a string if present
 	Properties  [][]interface{}      `json:"properties" gae:"-"`
 	Reason      string               `json:"reason"`
 	Results     *int                 `json:"results" gae:"-"`

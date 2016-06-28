@@ -20,6 +20,7 @@ var testCases = []struct {
 	build   string
 }{
 	{"CrWinGoma", "30608"},
+	{"win_chromium_rel_ng", "246309"},
 }
 
 // TestableBuild is a subclass of Build that interfaces with TestableHandler and

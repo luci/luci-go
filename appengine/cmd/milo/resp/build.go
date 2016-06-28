@@ -84,7 +84,7 @@ type Commit struct {
 	// The commit title, usually the first line of the commit message.
 	Title string
 	// Rietveld or Gerrit URL if the commit is a patch.
-	ChangelistURL string
+	Changelist *Link
 	// Browsable URL of the commit.
 	CommitURL string
 	// List of changed filenames.

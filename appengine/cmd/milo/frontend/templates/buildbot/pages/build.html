@@ -53,8 +53,8 @@
         <tr><td class="left">Got Revision</td><td>{{ .Commit.Revision }}</td></tr>
       {{ end }}
 
-      {{ if .Commit.ChangelistURL }}
-        <tr><td class="left">Patch</td><td><a href="{{.Commit.ChangelistURL}}">YES</a></td></tr>
+      {{ if .Commit.Changelist }}
+        <tr><td class="left">Patch</td><td>{{ .Commit.Changelist | linkify }}</td></tr>
       {{ end }}
 
       </table>
