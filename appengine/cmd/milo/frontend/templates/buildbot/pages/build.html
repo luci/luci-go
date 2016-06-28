@@ -18,6 +18,8 @@
           <p class="exception result">Internal Failure
         {{ else if eq .Status.String "Failure" }}
           <p class="failure result">Build Failed
+        {{ else if eq .Status.String "NotRun" }}
+          <p class="pending result">Build Pending
         {{ else }}
           <p class="failure result">Unknown status {{.Status.String }}
         {{ end }}
@@ -85,31 +87,33 @@
         {{ end }}
       {{ end }}
 
-      <h2>Steps and Logfiles:</h2>
-      <ol>
-        {{ range .Build.Components  }}
-        <li>
-          <div class="status-{{.Status}} result">
-            <b>{{.Label}}</b>
-            <span style="float:right">( {{ .Duration | humanDuration }} )</span>
-            <span>
-              {{ range .Text }}<div class="step-text">{{ . }}</div>{{ end }}
-            </span>
-          </div>
-          <ul>
-            {{ if .MainLink }}
-              <li>{{.MainLink | linkify}}</li>
-            {{ end }}
-            {{ range .SubLink }}
-              <li>{{. | linkify}}</li>
-            {{ end }}
-            {{ if not (or .MainLink .SubLink) }}
-              <li> - no logs - </li>
-            {{ end }}
-          </ul>
-        </li>
-        {{ end }}
-      </ol>
+      {{ if .Build.Components }}
+        <h2>Steps and Logfiles:</h2>
+        <ol>
+          {{ range .Build.Components  }}
+          <li>
+            <div class="status-{{.Status}} result">
+              <b>{{.Label}}</b>
+              <span style="float:right">( {{ .Duration | humanDuration }} )</span>
+              <span>
+                {{ range .Text }}<div class="step-text">{{ . }}</div>{{ end }}
+              </span>
+            </div>
+            <ul>
+              {{ if .MainLink }}
+                <li>{{.MainLink | linkify}}</li>
+              {{ end }}
+              {{ range .SubLink }}
+                <li>{{. | linkify}}</li>
+              {{ end }}
+              {{ if not (or .MainLink .SubLink) }}
+                <li> - no logs - </li>
+              {{ end }}
+            </ul>
+          </li>
+          {{ end }}
+        </ol>
+      {{ end }} <!-- if .Build.Components -->
 
     </div>
 
@@ -155,15 +159,31 @@
       <table class="info" width="100%">
         <tr class="alt"><td class="left">Start</td>
         <td>
-          <span id="started-time">{{ .Build.Summary.Started | humanTimeRFC }}</span>
+          <span id="started-time">
+            {{ if .Build.Summary.Started }}
+              {{ .Build.Summary.Started | humanTimeRFC }}
+            {{ else }}
+              N/A
+            {{ end }}
+          </span>
         </td></tr>
         <tr><td class="left">End</td>
         <td>
-          <span id="finished-time">{{ .Build.Summary.Finished | humanTimeRFC }}</span>
+          <span id="finished-time">
+            {{ if .Build.Summary.Finished }}
+              {{ .Build.Summary.Finished | humanTimeRFC }}
+            {{ else }}
+              N/A
+            {{ end }}
+          </span>
         </td></tr>
         <tr class="alt"><td class="left">Elapsed</td>
         <td id="duration">
-          {{ .Build.Summary.Duration | humanDuration }}
+          {{ if .Build.Summary.Started }}
+            {{ .Build.Summary.Duration | humanDuration }}
+          {{ else }}
+            N/A
+          {{ end }}
         </td></tr>
       </table>
 
@@ -193,8 +213,14 @@
   'use strict';
   var startedSpan = document.getElementById('started-time');
   var finishedSpan = document.getElementById('finished-time');
-  startedSpan.textContent = milo.formatDate('{{ .Build.Summary.Started }}');
-  finishedSpan.textContent = milo.formatDate('{{ .Build.Summary.Finished }}');
+  var started = milo.formatDate('{{ .Build.Summary.Started }}');
+  var finished = milo.formatDate('{{ .Build.Summary.Finished }}');
+  if (started) {
+    startedSpan.textContent = started;
+  }
+  if (finished) {
+    finishedSpan.textContent = finished;
+  }
 })();
 </script>
 {{end}}

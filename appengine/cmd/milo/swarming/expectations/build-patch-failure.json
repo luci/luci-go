@@ -12,7 +12,7 @@
     "MainLink": null,
     "SubLink": null,
     "Progress": null,
-    "Started": "Z",
+    "Started": "",
     "Finished": "",
     "Duration": 0,
     "Type": "Recipe",

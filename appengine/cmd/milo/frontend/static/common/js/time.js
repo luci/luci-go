@@ -16,10 +16,13 @@
    */
   milo.formatDate = function(dt) {
     if (!dt) {
-        return dt;
+        return null;
     }
     var shortDayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     var t = new Date(dt);
+    if (t.toString() == "Invalid Date") {
+      return null;
+    }
     var offset = -(new Date()).getTimezoneOffset();
     var offsetHr = Math.abs(Math.round(offset / 60));
     var offsetMin = Math.abs(Math.abs(offset) - (offsetHr * 60));

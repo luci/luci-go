@@ -125,30 +125,37 @@ func getSwarming(c context.Context, server string, taskID string) (
 	if server == "debug" {
 		sr, errRes = getDebugSwarmingResult(taskID)
 		log, errLog = getDebugTaskOutput(taskID)
-		if errLog != nil {
-			return sr, log, errLog
+	} else {
+		sc, err := getSwarmingClient(c, server)
+		if err != nil {
+			return nil, "", err
 		}
-		return sr, log, errRes
+
+		var wg sync.WaitGroup
+		wg.Add(2) // Getting log and result can happen concurrently.  Wait for both.
+
+		go func() {
+			defer wg.Done()
+			log, errLog = getTaskOutput(sc, taskID)
+		}()
+		go func() {
+			defer wg.Done()
+			sr, errRes = getSwarmingResult(sc, taskID)
+		}()
+		wg.Wait()
 	}
 
-	sc, err := getSwarmingClient(c, server)
-	if err != nil {
-		return nil, "", err
+	switch sr.State {
+	case TaskCompleted, TaskRunning, TaskCanceled:
+	default:
+		//  Ignore log errors if the task might be pending, timed out, expired, etc.
+		if errLog != nil {
+			errLog = nil
+			log = ""
+		}
 	}
-
-	var wg sync.WaitGroup
-	wg.Add(2) // Getting log and result can happen concurrently.  Wait for both.
-
-	go func() {
-		defer wg.Done()
-		log, errLog = getTaskOutput(sc, taskID)
-	}()
-	go func() {
-		defer wg.Done()
-		sr, errRes = getSwarmingResult(sc, taskID)
-	}()
-	wg.Wait()
 	if errRes != nil {
+		// Swarming result errors take priority.
 		return sr, log, errRes
 	}
 	return sr, log, errLog
@@ -245,7 +252,9 @@ func taskToBuild(c context.Context, server string, sr *swarming.SwarmingRpcsTask
 
 	// Build times. Swarming timestamps are UTC RFC3339Nano, but without the
 	// timezone information. Make them valid RFC3339Nano.
-	build.Summary.Started = sr.StartedTs + "Z"
+	if sr.StartedTs != "" {
+		build.Summary.Started = sr.StartedTs + "Z"
+	}
 	if sr.CompletedTs != "" {
 		build.Summary.Finished = sr.CompletedTs + "Z"
 	}
@@ -316,20 +325,22 @@ func swarmingBuildImpl(c context.Context, URL string, server string, taskID stri
 	// Decode the data using annotee. The logdog stream returned here is assumed
 	// to be consistent, which is why the following block of code are not
 	// expected to ever err out.
-	lds, err := streamsFromAnnotatedLog(c, body)
-	if err != nil {
-		build.Components = []*resp.BuildComponent{{
-			Type:   resp.Summary,
-			Label:  "Milo annotation parser",
-			Text:   []string{err.Error()},
-			Status: resp.InfraFailure,
-			SubLink: []*resp.Link{{
-				Label: "swarming task",
-				URL:   taskPageURL(server, taskID),
-			}},
-		}}
-	} else {
-		logdog.AddLogDogToBuild(c, URL, lds, build)
+	if body != "" {
+		lds, err := streamsFromAnnotatedLog(c, body)
+		if err != nil {
+			build.Components = []*resp.BuildComponent{{
+				Type:   resp.Summary,
+				Label:  "Milo annotation parser",
+				Text:   []string{err.Error()},
+				Status: resp.InfraFailure,
+				SubLink: []*resp.Link{{
+					Label: "swarming task",
+					URL:   taskPageURL(server, taskID),
+				}},
+			}}
+		} else {
+			logdog.AddLogDogToBuild(c, URL, lds, build)
+		}
 	}
 
 	return build, nil

@@ -4,15 +4,15 @@
     "Status": "NotRun",
     "Bot": null,
     "Source": {
-      "Label": "Task ",
+      "Label": "Task 2fb1b35e1da25710",
       "Img": "",
-      "URL": "https://debug/user/task/",
+      "URL": "https://debug/user/task/2fb1b35e1da25710",
       "Alt": ""
     },
     "MainLink": null,
     "SubLink": null,
     "Progress": null,
-    "Started": "2016-03-14T10:00:01.850710Z",
+    "Started": "",
     "Finished": "",
     "Duration": 0,
     "Type": "Recipe",
@@ -26,14 +26,26 @@
       "GroupName": "Swarming Tags",
       "Property": [
         {
+          "Key": "os",
+          "Value": "Linux"
+        },
+        {
+          "Key": "pool",
+          "Value": "default"
+        },
+        {
+          "Key": "priority",
+          "Value": "10"
+        },
+        {
+          "Key": "user",
+          "Value": ""
+        },
+        {
           "Key": "allow_milo",
           "Value": "1"
         }
       ]
-    },
-    {
-      "GroupName": "Main",
-      "Property": null
     }
   ],
   "Blame": null

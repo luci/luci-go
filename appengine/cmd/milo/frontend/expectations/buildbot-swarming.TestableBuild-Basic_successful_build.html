@@ -36,10 +36,7 @@
 
       
 
-      <h2>Steps and Logfiles:</h2>
-      <ol>
-        
-      </ol>
+       
 
     </div>
 
@@ -59,15 +56,25 @@
       <table class="info" width="100%">
         <tr class="alt"><td class="left">Start</td>
         <td>
-          <span id="started-time">Monday, 02-Jan-06 15:04:05 UTC</span>
+          <span id="started-time">
+            
+              Monday, 02-Jan-06 15:04:05 UTC
+            
+          </span>
         </td></tr>
         <tr><td class="left">End</td>
         <td>
-          <span id="finished-time">Monday, 02-Jan-06 15:04:06 UTC</span>
+          <span id="finished-time">
+            
+              Monday, 02-Jan-06 15:04:06 UTC
+            
+          </span>
         </td></tr>
         <tr class="alt"><td class="left">Elapsed</td>
         <td id="duration">
-          1 secs
+          
+            1 secs
+          
         </td></tr>
       </table>
 
@@ -90,8 +97,14 @@
   'use strict';
   var startedSpan = document.getElementById('started-time');
   var finishedSpan = document.getElementById('finished-time');
-  startedSpan.textContent = milo.formatDate('2006-01-02T15:04:05.999999999Z');
-  finishedSpan.textContent = milo.formatDate('2006-01-02T15:04:06.999999999Z');
+  var started = milo.formatDate('2006-01-02T15:04:05.999999999Z');
+  var finished = milo.formatDate('2006-01-02T15:04:06.999999999Z');
+  if (started) {
+    startedSpan.textContent = started;
+  }
+  if (finished) {
+    finishedSpan.textContent = finished;
+  }
 })();
 </script>
 

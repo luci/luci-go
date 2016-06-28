@@ -8,5 +8,11 @@ projdir := $(patsubst %/,%,$(dir $(mkfile_path)))
 dev:
 	$(projdir)/../../../../../../../../luci/appengine/components/tools/gae.py devserver  -- --host 0.0.0.0 --port 8081 --log_level debug
 
+up:
+	$(projdir)/../../../../../../../../luci/appengine/components/tools/gae.py upload
+
 test:
 	go test ./...
+
+train:
+	go test ./... -test.generate

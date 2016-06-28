@@ -482,7 +482,7 @@ div.BuildWaterfall {
   border-color: #dddddd;
 }
 
-.offline,td.offline {
+.offline,td.offline,.pending{
   color: #FFFFFF;
   background-color: #777777;
   border-color: #dddddd;
