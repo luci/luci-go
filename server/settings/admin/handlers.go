@@ -57,8 +57,7 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, adminAuth au
 	}
 
 	rr := r.Subrouter("/admin/settings")
-	rr.Use(append(
-		base,
+	rr.Use(base.Extend(
 		templates.WithTemplates(tmpl),
 		auth.Use(auth.Authenticator{adminAuth}),
 		auth.WithDB(func(c context.Context) (auth.DB, error) {
@@ -68,9 +67,9 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, adminAuth au
 		adminOnly,
 	))
 
-	rr.GET("", nil, indexPage)
-	rr.GET("/:SettingsKey", nil, settingsPageGET)
-	rr.POST("/:SettingsKey", router.MiddlewareChain{xsrf.WithTokenCheck}, settingsPagePOST)
+	rr.GET("", router.MiddlewareChain{}, indexPage)
+	rr.GET("/:SettingsKey", router.MiddlewareChain{}, settingsPageGET)
+	rr.POST("/:SettingsKey", router.NewMiddlewareChain(xsrf.WithTokenCheck), settingsPagePOST)
 }
 
 // replyError sends HTML error page with status 500 on transient errors or 400

@@ -35,8 +35,9 @@ var _ http.Handler = (*Router)(nil)
 // New creates a Router.
 func New() *Router {
 	return &Router{
-		hrouter:  httprouter.New(),
-		BasePath: "/",
+		hrouter:    httprouter.New(),
+		middleware: NewMiddlewareChain(),
+		BasePath:   "/",
 	}
 }
 
@@ -44,7 +45,7 @@ func New() *Router {
 // all handlers registered on the router and to all handlers registered on
 // routers that may be derived from the router (using Subrouter).
 func (r *Router) Use(mc MiddlewareChain) {
-	r.middleware = append(r.middleware, mc...)
+	r.middleware = r.middleware.ExtendFrom(mc)
 }
 
 // Subrouter creates a new router with an updated base path.
@@ -52,12 +53,9 @@ func (r *Router) Use(mc MiddlewareChain) {
 // router it derives from.
 func (r *Router) Subrouter(relativePath string) *Router {
 	newRouter := &Router{
-		hrouter:  r.hrouter,
-		BasePath: makeBasePath(r.BasePath, relativePath),
-	}
-	if len(r.middleware) > 0 {
-		newRouter.middleware = make(MiddlewareChain, len(r.middleware))
-		copy(newRouter.middleware, r.middleware)
+		hrouter:    r.hrouter,
+		BasePath:   makeBasePath(r.BasePath, relativePath),
+		middleware: r.middleware,
 	}
 	return newRouter
 }
@@ -113,7 +111,7 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 // adapt adapts given middleware chain and handler into a httprouter-style handle.
 func (r *Router) adapt(mc MiddlewareChain, h Handler) httprouter.Handle {
 	return httprouter.Handle(func(rw http.ResponseWriter, req *http.Request, p httprouter.Params) {
-		run(&Context{
+		runChains(&Context{
 			Context: context.Background(),
 			Writer:  rw,
 			Request: req,

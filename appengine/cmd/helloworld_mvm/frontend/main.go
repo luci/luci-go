@@ -57,8 +57,7 @@ func base() router.MiddlewareChain {
 		server.CookieAuth,
 		&server.InboundAppIDAuthMethod{},
 	}
-	return append(
-		gaemiddleware.BaseProd(),
+	return gaemiddleware.BaseProd().Extend(
 		templates.WithTemplates(templateBundle),
 		auth.Use(methods),
 	)
@@ -70,7 +69,7 @@ func main() {
 	r := router.New()
 	basemw := base()
 	gaemiddleware.InstallHandlers(r, basemw)
-	r.GET("/", append(basemw, auth.Authenticate), indexPage)
+	r.GET("/", basemw.Extend(auth.Authenticate), indexPage)
 	http.DefaultServeMux.Handle("/", r)
 
 	appengine.Main()

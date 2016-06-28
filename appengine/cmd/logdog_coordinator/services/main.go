@@ -24,8 +24,7 @@ import (
 
 // base returns the root middleware chain.
 func base() router.MiddlewareChain {
-	return append(
-		gaemiddleware.BaseProd(),
+	return gaemiddleware.BaseProd().Extend(
 		coordinator.WithProdServices,
 		config.WithConfig,
 	)

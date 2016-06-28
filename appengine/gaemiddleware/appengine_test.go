@@ -37,7 +37,7 @@ func TestRequireCron(t *testing.T) {
 				Writer:  rec,
 				Request: &http.Request{},
 			}
-			router.RunMiddleware(c, router.MiddlewareChain{RequireCron}, f)
+			router.RunMiddleware(c, router.NewMiddlewareChain(RequireCron), f)
 			So(hit, ShouldBeFalse)
 			So(rec.Body.String(), ShouldEqual, "error: must be run from cron")
 			So(rec.Code, ShouldEqual, http.StatusForbidden)
@@ -54,7 +54,7 @@ func TestRequireCron(t *testing.T) {
 					},
 				},
 			}
-			router.RunMiddleware(c, router.MiddlewareChain{RequireCron}, f)
+			router.RunMiddleware(c, router.NewMiddlewareChain(RequireCron), f)
 			So(hit, ShouldBeTrue)
 			So(rec.Body.String(), ShouldEqual, "ok")
 			So(rec.Code, ShouldEqual, http.StatusOK)
@@ -79,7 +79,7 @@ func TestRequireTQ(t *testing.T) {
 				Writer:  rec,
 				Request: &http.Request{},
 			}
-			router.RunMiddleware(c, router.MiddlewareChain{RequireTaskQueue("wat")}, f)
+			router.RunMiddleware(c, router.NewMiddlewareChain(RequireTaskQueue("wat")), f)
 			So(hit, ShouldBeFalse)
 			So(rec.Body.String(), ShouldEqual, "error: must be run from the correct taskqueue")
 			So(rec.Code, ShouldEqual, http.StatusForbidden)
@@ -92,7 +92,7 @@ func TestRequireTQ(t *testing.T) {
 				Writer:  rec,
 				Request: &http.Request{},
 			}
-			router.RunMiddleware(c, router.MiddlewareChain{RequireTaskQueue("")}, f)
+			router.RunMiddleware(c, router.NewMiddlewareChain(RequireTaskQueue("")), f)
 			So(hit, ShouldBeFalse)
 			So(rec.Body.String(), ShouldEqual, "error: must be run from the correct taskqueue")
 			So(rec.Code, ShouldEqual, http.StatusForbidden)
@@ -109,7 +109,7 @@ func TestRequireTQ(t *testing.T) {
 					},
 				},
 			}
-			router.RunMiddleware(c, router.MiddlewareChain{RequireTaskQueue("wat")}, f)
+			router.RunMiddleware(c, router.NewMiddlewareChain(RequireTaskQueue("wat")), f)
 			So(hit, ShouldBeFalse)
 			So(rec.Body.String(), ShouldEqual, "error: must be run from the correct taskqueue")
 			So(rec.Code, ShouldEqual, http.StatusForbidden)
@@ -126,7 +126,7 @@ func TestRequireTQ(t *testing.T) {
 					},
 				},
 			}
-			router.RunMiddleware(c, router.MiddlewareChain{RequireTaskQueue("wat")}, f)
+			router.RunMiddleware(c, router.NewMiddlewareChain(RequireTaskQueue("wat")), f)
 			So(hit, ShouldBeTrue)
 			So(rec.Body.String(), ShouldEqual, "ok")
 			So(rec.Code, ShouldEqual, http.StatusOK)
@@ -143,7 +143,7 @@ func TestRequireTQ(t *testing.T) {
 					},
 				},
 			}
-			router.RunMiddleware(c, router.MiddlewareChain{RequireTaskQueue("")}, f)
+			router.RunMiddleware(c, router.NewMiddlewareChain(RequireTaskQueue("")), f)
 			So(hit, ShouldBeTrue)
 			So(rec.Body.String(), ShouldEqual, "ok")
 			So(rec.Code, ShouldEqual, http.StatusOK)

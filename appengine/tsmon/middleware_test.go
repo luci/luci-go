@@ -45,7 +45,7 @@ func TestMiddleware(t *testing.T) {
 		rec := httptest.NewRecorder()
 		router.RunMiddleware(
 			&router.Context{Context: c, Writer: rec, Request: &http.Request{}},
-			router.MiddlewareChain{state.Middleware},
+			router.NewMiddlewareChain(state.Middleware),
 			f,
 		)
 		So(rec.Code, ShouldEqual, http.StatusOK)
@@ -76,7 +76,7 @@ func TestMiddleware(t *testing.T) {
 		rec := httptest.NewRecorder()
 		router.RunMiddleware(
 			&router.Context{Context: c, Writer: rec, Request: &http.Request{}},
-			router.MiddlewareChain{state.Middleware},
+			router.NewMiddlewareChain(state.Middleware),
 			f,
 		)
 		So(rec.Code, ShouldEqual, http.StatusOK)
@@ -105,7 +105,7 @@ func TestMiddleware(t *testing.T) {
 		rec := httptest.NewRecorder()
 		router.RunMiddleware(
 			&router.Context{Context: c, Writer: rec, Request: &http.Request{}},
-			router.MiddlewareChain{state.Middleware},
+			router.NewMiddlewareChain(state.Middleware),
 			func(c *router.Context) {
 				f(c)
 				// Override the TaskNum here - it's created just before this handler runs
@@ -134,7 +134,7 @@ func TestMiddleware(t *testing.T) {
 		rec := httptest.NewRecorder()
 		router.RunMiddleware(
 			&router.Context{Context: c, Writer: rec, Request: &http.Request{}},
-			router.MiddlewareChain{state.Middleware},
+			router.NewMiddlewareChain(state.Middleware),
 			func(c *router.Context) {
 				So(store.IsNilStore(tsmon.Store(c.Context)), ShouldBeFalse)
 			},
@@ -145,7 +145,7 @@ func TestMiddleware(t *testing.T) {
 		state.testingSettings.Enabled = false
 		router.RunMiddleware(
 			&router.Context{Context: c, Writer: rec, Request: &http.Request{}},
-			router.MiddlewareChain{state.Middleware},
+			router.NewMiddlewareChain(state.Middleware),
 			func(c *router.Context) {
 				So(store.IsNilStore(tsmon.Store(c.Context)), ShouldBeTrue)
 			},

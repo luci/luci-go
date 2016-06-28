@@ -89,7 +89,7 @@ func init() {
 	gaemiddleware.InstallHandlers(r, basemw)
 
 	// The service has no UI, so just redirect to stock RPC explorer.
-	r.GET("/", nil, func(c *router.Context) {
+	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 		http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
 	})
 
@@ -98,8 +98,8 @@ func init() {
 	r.GET("/_ah/start", basemw, warmupHandler)
 
 	// Backend routes used for cron and task queues.
-	r.GET("/internal/cron/read-config", append(basemw, gaemiddleware.RequireCron), readConfigCron)
-	r.GET("/internal/cron/fetch-crl", append(basemw, gaemiddleware.RequireCron), fetchCRLCron)
+	r.GET("/internal/cron/read-config", basemw.Extend(gaemiddleware.RequireCron), readConfigCron)
+	r.GET("/internal/cron/fetch-crl", basemw.Extend(gaemiddleware.RequireCron), fetchCRLCron)
 
 	// Install all RPC servers.
 	api := prpc.Server{

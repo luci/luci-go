@@ -42,10 +42,10 @@ type Service struct {
 
 // InstallHandlers installs http handlers.
 func (s *Service) InstallHandlers(r *router.Router) {
-	mc := append(gaemiddleware.BaseProd(), gaemiddleware.RequireCron)
 	// GET so that this can be invoked from cron
-	r.GET(fireAllTasksURL, mc, s.FireAllTasksHandler)
-	r.POST(processShardPattern, append(mc, gaemiddleware.RequireTaskQueue(baseName)), s.ProcessShardHandler)
+	r.GET(fireAllTasksURL, gaemiddleware.BaseProd().Extend(gaemiddleware.RequireCron), s.FireAllTasksHandler)
+	r.POST(processShardPattern, gaemiddleware.BaseProd().Extend(gaemiddleware.RequireTaskQueue(baseName)),
+		s.ProcessShardHandler)
 }
 
 // FireAllTasksHandler is an HTTP handler that expects `logging` and `luci/gae`

@@ -35,7 +35,7 @@ func flushNowWithMiddleware(c context.Context, state *State) {
 	rec := httptest.NewRecorder()
 	router.RunMiddleware(
 		&router.Context{Context: c, Writer: rec, Request: &http.Request{}},
-		router.MiddlewareChain{state.Middleware},
+		router.NewMiddlewareChain(state.Middleware),
 		nil,
 	)
 	So(rec.Code, ShouldEqual, http.StatusOK)

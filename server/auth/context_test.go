@@ -70,42 +70,42 @@ func TestContextAuthenticate(t *testing.T) {
 	}
 
 	Convey("Not configured", t, func() {
-		rr := call(context.Background(), router.MiddlewareChain{Authenticate}, handler)
+		rr := call(context.Background(), router.NewMiddlewareChain(Authenticate), handler)
 		So(rr.Code, ShouldEqual, 500)
 		So(rr.Body.String(), ShouldEqual, "Authentication middleware is not configured\n")
 	})
 
 	Convey("Transient error", t, func() {
 		c := prepareCtx(fakeMethod{authError: errors.WrapTransient(errors.New("boo"))})
-		rr := call(c, router.MiddlewareChain{Authenticate}, handler)
+		rr := call(c, router.NewMiddlewareChain(Authenticate), handler)
 		So(rr.Code, ShouldEqual, 500)
 		So(rr.Body.String(), ShouldEqual, "Transient error during authentication - boo\n")
 	})
 
 	Convey("Fatal error", t, func() {
 		c := prepareCtx(fakeMethod{authError: errors.New("boo")})
-		rr := call(c, router.MiddlewareChain{Authenticate}, handler)
+		rr := call(c, router.NewMiddlewareChain(Authenticate), handler)
 		So(rr.Code, ShouldEqual, 401)
 		So(rr.Body.String(), ShouldEqual, "Authentication error - boo\n")
 	})
 
 	Convey("Works", t, func() {
 		c := prepareCtx(fakeMethod{userID: "user:abc@example.com"})
-		rr := call(c, router.MiddlewareChain{Authenticate}, handler)
+		rr := call(c, router.NewMiddlewareChain(Authenticate), handler)
 		So(rr.Code, ShouldEqual, 200)
 		So(rr.Body.String(), ShouldEqual, "user:abc@example.com")
 	})
 
 	Convey("Anonymous works", t, func() {
 		c := prepareCtx(fakeMethod{anon: true})
-		rr := call(c, router.MiddlewareChain{Authenticate}, handler)
+		rr := call(c, router.NewMiddlewareChain(Authenticate), handler)
 		So(rr.Code, ShouldEqual, 200)
 		So(rr.Body.String(), ShouldEqual, "anonymous:anonymous")
 	})
 
 	Convey("Broken ID is rejected", t, func() {
 		c := prepareCtx(fakeMethod{userID: "???"})
-		rr := call(c, router.MiddlewareChain{Authenticate}, handler)
+		rr := call(c, router.NewMiddlewareChain(Authenticate), handler)
 		So(rr.Code, ShouldEqual, 401)
 		So(rr.Body.String(), ShouldEqual, "Authentication error - auth: bad identity string \"???\"\n")
 	})
@@ -129,48 +129,48 @@ func TestAutologin(t *testing.T) {
 	}
 
 	Convey("Not configured", t, func() {
-		rr := call(context.Background(), router.MiddlewareChain{Autologin}, handler)
+		rr := call(context.Background(), router.NewMiddlewareChain(Autologin), handler)
 		So(rr.Code, ShouldEqual, 500)
 		So(rr.Body.String(), ShouldEqual, "Authentication middleware is not configured\n")
 	})
 
 	Convey("Transient error", t, func() {
 		c := prepareCtx(fakeMethod{authError: errors.WrapTransient(errors.New("boo"))})
-		rr := call(c, router.MiddlewareChain{Autologin}, handler)
+		rr := call(c, router.NewMiddlewareChain(Autologin), handler)
 		So(rr.Code, ShouldEqual, 500)
 		So(rr.Body.String(), ShouldEqual, "Transient error during authentication - boo\n")
 	})
 
 	Convey("Fatal error", t, func() {
 		c := prepareCtx(fakeMethod{authError: errors.New("boo")})
-		rr := call(c, router.MiddlewareChain{Autologin}, handler)
+		rr := call(c, router.NewMiddlewareChain(Autologin), handler)
 		So(rr.Code, ShouldEqual, 401)
 	})
 
 	Convey("Anonymous is redirected to login if has UsersAPI", t, func() {
 		c := prepareCtx(fakeMethod{anon: true})
-		rr := call(c, router.MiddlewareChain{Autologin}, handler)
+		rr := call(c, router.NewMiddlewareChain(Autologin), handler)
 		So(rr.Code, ShouldEqual, 302)
 		So(rr.Header().Get("Location"), ShouldEqual, "http://login_url?r=%2Ffoo")
 	})
 
 	Convey("Anonymous is rejected if no UsersAPI", t, func() {
 		c := prepareCtx(noUserAPI{})
-		rr := call(c, router.MiddlewareChain{Autologin}, handler)
+		rr := call(c, router.NewMiddlewareChain(Autologin), handler)
 		So(rr.Code, ShouldEqual, 401)
 		So(rr.Body.String(), ShouldEqual, "Authentication error - auth: methods do not support login or logout URL\n")
 	})
 
 	Convey("Handles transient error in LoginURL", t, func() {
 		c := prepareCtx(fakeMethod{anon: true, loginURLError: errors.WrapTransient(errors.New("boo"))})
-		rr := call(c, router.MiddlewareChain{Autologin}, handler)
+		rr := call(c, router.NewMiddlewareChain(Autologin), handler)
 		So(rr.Code, ShouldEqual, 500)
 		So(rr.Body.String(), ShouldEqual, "Transient error during authentication - boo\n")
 	})
 
 	Convey("Passes authenticated user through", t, func() {
 		c := prepareCtx(fakeMethod{userID: "user:abc@example.com"})
-		rr := call(c, router.MiddlewareChain{Autologin}, handler)
+		rr := call(c, router.NewMiddlewareChain(Autologin), handler)
 		So(rr.Code, ShouldEqual, 200)
 		So(rr.Body.String(), ShouldEqual, "user:abc@example.com")
 	})

@@ -56,8 +56,7 @@ var templateBundle = &templates.Bundle{
 
 // pageBase returns the middleware chain for page handlers.
 func pageBase() router.MiddlewareChain {
-	return append(
-		gaemiddleware.BaseProd(),
+	return gaemiddleware.BaseProd().Extend(
 		templates.WithTemplates(templateBundle),
 		auth.Use(auth.Authenticator{server.CookieAuth}),
 	)
@@ -97,7 +96,7 @@ func checkAPIAccess(c context.Context, methodName string, req proto.Message) (co
 func init() {
 	r := router.New()
 	gaemiddleware.InstallHandlers(r, pageBase())
-	r.GET("/", append(pageBase(), auth.Authenticate), indexPage)
+	r.GET("/", pageBase().Extend(auth.Authenticate), indexPage)
 
 	var api prpc.Server
 	helloworld.RegisterGreeterServer(&api, &helloworld.DecoratedGreeter{

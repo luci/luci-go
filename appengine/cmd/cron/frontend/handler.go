@@ -132,8 +132,7 @@ func base() router.MiddlewareChain {
 		server.CookieAuth,
 		&server.InboundAppIDAuthMethod{},
 	}
-	return append(
-		gaemiddleware.BaseProd(),
+	return gaemiddleware.BaseProd().Extend(
 		func(c *router.Context, next router.Handler) {
 			globalInit.Do(func() { initializeGlobalState(c.Context) })
 			c.Context = auth.SetAuthenticator(c.Context, methods)
@@ -172,26 +171,25 @@ func init() {
 
 	// Setup HTTP routes.
 	r := router.New()
-	basemw := base()
 
-	gaemiddleware.InstallHandlers(r, basemw)
-	ui.InstallHandlers(r, basemw, ui.Config{
+	gaemiddleware.InstallHandlers(r, base())
+	ui.InstallHandlers(r, base(), ui.Config{
 		Engine:        globalEngine,
 		TemplatesPath: "templates",
 	})
 
-	r.GET("/_ah/warmup", basemw, warmupHandler)
-	r.GET("/_ah/start", basemw, warmupHandler)
-	r.POST("/pubsub", basemw, pubsubPushHandler)
-	r.GET("/internal/cron/read-config", append(basemw, gaemiddleware.RequireCron), readConfigCron)
-	r.POST("/internal/tasks/read-project-config", append(basemw, gaemiddleware.RequireTaskQueue("read-project-config")), readProjectConfigTask)
-	r.POST("/internal/tasks/timers", append(basemw, gaemiddleware.RequireTaskQueue("timers")), actionTask)
-	r.POST("/internal/tasks/invocations", append(basemw, gaemiddleware.RequireTaskQueue("invocations")), actionTask)
+	r.GET("/_ah/warmup", base(), warmupHandler)
+	r.GET("/_ah/start", base(), warmupHandler)
+	r.POST("/pubsub", base(), pubsubPushHandler)
+	r.GET("/internal/cron/read-config", base().Extend(gaemiddleware.RequireCron), readConfigCron)
+	r.POST("/internal/tasks/read-project-config", base().Extend(gaemiddleware.RequireTaskQueue("read-project-config")), readProjectConfigTask)
+	r.POST("/internal/tasks/timers", base().Extend(gaemiddleware.RequireTaskQueue("timers")), actionTask)
+	r.POST("/internal/tasks/invocations", base().Extend(gaemiddleware.RequireTaskQueue("invocations")), actionTask)
 
 	// Devserver can't accept PubSub pushes, so allow manual pulls instead to
 	// simplify local development.
 	if appengine.IsDevAppServer() {
-		r.GET("/pubsub/pull/:ManagerName/:Publisher", basemw, pubsubPullHandler)
+		r.GET("/pubsub/pull/:ManagerName/:Publisher", base(), pubsubPullHandler)
 	}
 
 	http.DefaultServeMux.Handle("/", r)

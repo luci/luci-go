@@ -32,9 +32,9 @@ import (
 
 // base returns the root middleware chain.
 func base(installConfig bool) router.MiddlewareChain {
-	m := append(gaemiddleware.BaseProd(), coordinator.WithProdServices)
+	m := gaemiddleware.BaseProd().Extend(coordinator.WithProdServices)
 	if installConfig {
-		m = append(m, config.WithConfig)
+		m = m.Extend(config.WithConfig)
 	}
 	return m
 }
@@ -58,7 +58,7 @@ func main() {
 	svr.InstallHandlers(r, base(true))
 
 	// Redirect "/" to "/app/".
-	r.GET("/", nil, func(c *router.Context) {
+	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 		http.Redirect(c.Writer, c.Request, "/app/", http.StatusFound)
 	})
 

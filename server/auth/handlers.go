@@ -18,7 +18,7 @@ import (
 // This is optional. If you using appengine/gaeauth/server, these handlers are
 // already installed.
 func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
-	mc := append(base, Authenticate)
+	mc := base.Extend(Authenticate)
 	r.GET("/auth/api/v1/accounts/self", mc, accountsSelfHandler)
 }
 

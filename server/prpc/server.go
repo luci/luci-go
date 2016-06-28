@@ -148,10 +148,10 @@ func (s *Server) InstallHandlers(r *router.Router, base router.MiddlewareChain) 
 	defer s.mu.Unlock()
 
 	rr := r.Subrouter("/prpc/:service/:method")
-	rr.Use(append(base, s.authenticate()))
+	rr.Use(base.Extend(s.authenticate()))
 
-	rr.POST("", nil, s.handlePOST)
-	rr.OPTIONS("", nil, s.handleOPTIONS)
+	rr.POST("", router.MiddlewareChain{}, s.handlePOST)
+	rr.OPTIONS("", router.MiddlewareChain{}, s.handleOPTIONS)
 }
 
 // handle handles RPCs.

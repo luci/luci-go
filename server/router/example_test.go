@@ -63,17 +63,17 @@ func makeRequests(url string) {
 // package.
 func Example_createServer() {
 	r := router.New()
-	r.Use(router.MiddlewareChain{Logger})
-	r.GET("/hello", nil, func(c *router.Context) {
+	r.Use(router.NewMiddlewareChain(Logger))
+	r.GET("/hello", router.MiddlewareChain{}, func(c *router.Context) {
 		fmt.Fprintf(c.Writer, "Hello")
 	})
-	r.GET("/hello/:name", nil, func(c *router.Context) {
+	r.GET("/hello/:name", router.MiddlewareChain{}, func(c *router.Context) {
 		fmt.Fprintf(c.Writer, "Hello %s", c.Params.ByName("name"))
 	})
 
 	auth := r.Subrouter("authenticated")
-	auth.Use(router.MiddlewareChain{AuthCheck})
-	auth.GET("/secret", router.MiddlewareChain{GenerateSecret}, func(c *router.Context) {
+	auth.Use(router.NewMiddlewareChain(AuthCheck))
+	auth.GET("/secret", router.NewMiddlewareChain(GenerateSecret), func(c *router.Context) {
 		fmt.Fprintf(c.Writer, "secret: %d", c.Context.Value("secret"))
 	})
 

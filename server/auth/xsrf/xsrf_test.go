@@ -45,7 +45,7 @@ func TestXsrf(t *testing.T) {
 		h := func(c *router.Context) {
 			c.Writer.Write([]byte("hi"))
 		}
-		mc := router.MiddlewareChain{WithTokenCheck}
+		mc := router.NewMiddlewareChain(WithTokenCheck)
 
 		// Has token -> works.
 		rec := httptest.NewRecorder()

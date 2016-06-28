@@ -55,12 +55,12 @@ func TestInstallHandlers(t *testing.T) {
 		r := router.New()
 		returnErr := false
 
-		InstallHandlers(r, router.MiddlewareChain{
+		InstallHandlers(r, router.NewMiddlewareChain(
 			func(ctx *router.Context, next router.Handler) {
 				ctx.Context = c
 				next(ctx)
 			},
-		}, func(context.Context) (ServiceInfo, error) {
+		), func(context.Context) (ServiceInfo, error) {
 			if returnErr {
 				return ServiceInfo{}, errors.New("fail")
 			}

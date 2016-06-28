@@ -33,12 +33,12 @@ type Server struct {
 }
 
 func setContext(c context.Context) router.MiddlewareChain {
-	return router.MiddlewareChain{
+	return router.NewMiddlewareChain(
 		func(ctx *router.Context, next router.Handler) {
 			ctx.Context = c
 			next(ctx)
 		},
-	}
+	)
 }
 
 // Start starts the server. Any currently-registered services will be installed

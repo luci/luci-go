@@ -42,8 +42,7 @@ func addConfigProd(c context.Context) context.Context {
 }
 
 func baseProd() router.MiddlewareChain {
-	return append(
-		gaemiddleware.BaseProd(),
+	return gaemiddleware.BaseProd().Extend(
 		func(c *router.Context, next router.Handler) {
 			c.Context = addConfigProd(c.Context)
 			next(c)
@@ -64,8 +63,7 @@ func addConfigDev(c context.Context) context.Context {
 }
 
 func baseDev() router.MiddlewareChain {
-	return append(
-		gaemiddleware.BaseProd(),
+	return gaemiddleware.BaseProd().Extend(
 		func(c *router.Context, next router.Handler) {
 			c.Context = addConfigDev(c.Context)
 			next(c)

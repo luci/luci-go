@@ -84,9 +84,9 @@ func ProdServices(c *router.Context, next router.Handler) {
 // is not a devserver, and the monitoring middleware.
 func BaseProd() router.MiddlewareChain {
 	if appengine.IsDevAppServer() {
-		return router.MiddlewareChain{ProdServices, globalTsMonState.Middleware}
+		return router.NewMiddlewareChain(ProdServices, globalTsMonState.Middleware)
 	}
-	return router.MiddlewareChain{
+	return router.NewMiddlewareChain(
 		ProdServices, middleware.WithPanicCatcher, globalTsMonState.Middleware,
-	}
+	)
 }

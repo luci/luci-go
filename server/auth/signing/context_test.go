@@ -34,12 +34,12 @@ func TestContext(t *testing.T) {
 func TestHandlers(t *testing.T) {
 	call := func(s Signer) (*PublicCertificates, error) {
 		r := router.New()
-		InstallHandlers(r, router.MiddlewareChain{
+		InstallHandlers(r, router.NewMiddlewareChain(
 			func(c *router.Context, next router.Handler) {
 				c.Context = SetSigner(context.Background(), s)
 				next(c)
 			},
-		})
+		))
 		ts := httptest.NewServer(r)
 		return FetchCertificates(context.Background(), ts.URL+"/auth/api/v1/server/certificates")
 	}

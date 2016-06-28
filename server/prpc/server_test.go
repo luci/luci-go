@@ -65,12 +65,12 @@ func TestServer(t *testing.T) {
 		Convey("Handlers", func() {
 			c := context.Background()
 			r := router.New()
-			server.InstallHandlers(r, router.MiddlewareChain{
+			server.InstallHandlers(r, router.NewMiddlewareChain(
 				func(ctx *router.Context, next router.Handler) {
 					ctx.Context = c
 					next(ctx)
 				},
-			})
+			))
 			res := httptest.NewRecorder()
 			hiMsg := bytes.NewBufferString(`name: "Lucy"`)
 			req, err := http.NewRequest("POST", "/prpc/prpc.Greeter/SayHello", hiMsg)

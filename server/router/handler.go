@@ -19,19 +19,55 @@ type Handler func(*Context)
 //     - Middleware may modify the embedded context before calling next.
 type Middleware func(c *Context, next Handler)
 
-// MiddlewareChain is a list of Middleware.
-type MiddlewareChain []Middleware
+// MiddlewareChain is an ordered collection of Middleware.
+//
+// MiddlewareChain's zero value is a middleware chain with no Middleware.
+// Allocating a MiddlewareChain with Middleware can be done with
+// NewMiddlewareChain.
+type MiddlewareChain struct {
+	middleware []Middleware
+}
 
 // RunMiddleware executes the middleware chain and handlers with the given
 // initial context. Useful to execute a chain of functions in tests.
-func RunMiddleware(c *Context, m MiddlewareChain, h Handler) {
-	run(c, m, nil, h)
+func RunMiddleware(c *Context, mc MiddlewareChain, h Handler) {
+	runChains(c, mc, MiddlewareChain{}, h)
+}
+
+// NewMiddlewareChain creates a new MiddlewareChain with the supplied Middleware
+// entries.
+func NewMiddlewareChain(mw ...Middleware) (mc MiddlewareChain) {
+	if len(mw) > 0 {
+		mc = mc.Extend(mw...)
+	}
+	return
+}
+
+// Extend returns a new MiddlewareChain with the supplied Middleware appended to
+// the end.
+func (mc MiddlewareChain) Extend(mw ...Middleware) MiddlewareChain {
+	if len(mw) == 0 {
+		return mc
+	}
+
+	ext := make([]Middleware, 0, len(mc.middleware)+len(mw))
+	return MiddlewareChain{append(append(ext, mc.middleware...), mw...)}
+}
+
+// ExtendFrom returns a new MiddlewareChain with the supplied MiddlewareChain
+// appended to the end.
+func (mc MiddlewareChain) ExtendFrom(other MiddlewareChain) MiddlewareChain {
+	return mc.Extend(other.middleware...)
+}
+
+func runChains(c *Context, mc, nc MiddlewareChain, h Handler) {
+	run(c, mc.middleware, nc.middleware, h)
 }
 
 // run executes the middleware chains m and n and the handler h using
 // c as the initial context. If a middleware or handler is nil, run
 // simply advances to the next middleware or handler.
-func run(c *Context, m, n MiddlewareChain, h Handler) {
+func run(c *Context, m, n []Middleware, h Handler) {
 	switch {
 	case len(m) > 0:
 		if m[0] != nil {

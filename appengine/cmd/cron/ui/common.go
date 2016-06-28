@@ -31,7 +31,7 @@ type Config struct {
 func InstallHandlers(r *router.Router, base router.MiddlewareChain, cfg Config) {
 	tmpl := prepareTemplates(cfg.TemplatesPath)
 
-	m := append(base, func(c *router.Context, next router.Handler) {
+	m := base.Extend(func(c *router.Context, next router.Handler) {
 		c.Context = context.WithValue(c.Context, configContextKey(0), &cfg)
 		next(c)
 	}, templates.WithTemplates(tmpl), auth.Authenticate)
@@ -42,7 +42,7 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, cfg Config) 
 	r.GET("/jobs/:ProjectID/:JobID/:InvID", m, invocationPage)
 
 	// All POST forms must be protected with XSRF token.
-	mxsrf := append(m, xsrf.WithTokenCheck)
+	mxsrf := m.Extend(xsrf.WithTokenCheck)
 	r.POST("/actions/runJob/:ProjectID/:JobID", mxsrf, runJobAction)
 	r.POST("/actions/pauseJob/:ProjectID/:JobID", mxsrf, pauseJobAction)
 	r.POST("/actions/resumeJob/:ProjectID/:JobID", mxsrf, resumeJobAction)
