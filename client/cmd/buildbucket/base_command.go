@@ -36,7 +36,14 @@ func (r *baseCommandRun) makeService(ctx context.Context, a subcommands.Applicat
 	if r.host == "" {
 		return nil, errors.New("a host for the buildbucket service must be provided")
 	}
-	authenticator := auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{ServiceAccountJSONPath: r.serviceAccountJSONPath})
+
+	loginMode := auth.OptionalLogin
+	if r.serviceAccountJSONPath != "" {
+		// if service account is specified, the request MUST be authenticated
+		// otherwise it is optional.
+		loginMode = auth.SilentLogin
+	}
+	authenticator := auth.NewAuthenticator(ctx, loginMode, auth.Options{ServiceAccountJSONPath: r.serviceAccountJSONPath})
 
 	client, err := authenticator.Client()
 	if err != nil {
