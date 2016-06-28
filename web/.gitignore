@@ -2,8 +2,6 @@ inc/bower_components
 node_modules
 
 # Gulp build/dist artifacts.
-dist/*
-!dist/logdog-app/.keep
-!dist/logdog-view/.keep
-!dist/rpcexplorer/.keep
+dist/*/**
+!dist/*/.keep
 apps/*/.tmp
