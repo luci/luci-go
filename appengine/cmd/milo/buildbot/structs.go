@@ -13,6 +13,7 @@ import (
 	"strconv"
 
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/appengine/cmd/milo/resp"
 )
 
 // This file contains all of the structs that define buildbot json endpoints.
@@ -85,6 +86,16 @@ type buildbotBuild struct {
 	// This one is computed by Milo for indexing purposes.  It does so by
 	// checking to see if times[1] is null or not.
 	Finished bool `json:"finished"`
+}
+
+func (b *buildbotBuild) toStatus() resp.Status {
+	var result resp.Status
+	if b.Currentstep != nil {
+		result = resp.Running
+	} else {
+		result = result2Status(b.Results)
+	}
+	return result
 }
 
 var _ datastore.PropertyLoadSaver = (*buildbotBuild)(nil)

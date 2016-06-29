@@ -55,18 +55,11 @@ func (b Build) TestData() []settings.TestBundle {
 
 // TestData returns sample test data.
 func (b Builder) TestData() []settings.TestBundle {
-	bb := &resp.MiloBuild{
-		SourceStamp: &resp.SourceStamp{
-			Commit: resp.Commit{
-				Revision: "abcdef",
-			},
-		},
-	}
 	return []settings.TestBundle{
 		{
 			Description: "Basic Test no builds",
 			Data: templates.Args{
-				"Builder": &resp.MiloBuilder{
+				"Builder": &resp.Builder{
 					Name: "Sample Builder",
 				},
 			},
@@ -74,27 +67,33 @@ func (b Builder) TestData() []settings.TestBundle {
 		{
 			Description: "Basic Test with builds",
 			Data: templates.Args{
-				"Builder": &resp.MiloBuilder{
+				"Builder": &resp.Builder{
 					Name: "Sample Builder",
-					CurrentBuilds: []*resp.BuildRef{
+					CurrentBuilds: []*resp.BuildSummary{
 						{
-							URL:   "Some URL",
-							Label: "Some current build",
-							Build: bb,
+							Link: &resp.Link{
+								URL:   "https://some.url/path",
+								Label: "Some current build",
+							},
+							Revision: "deadbeef",
 						},
 					},
-					PendingBuilds: []*resp.BuildRef{
+					PendingBuilds: []*resp.BuildSummary{
 						{
-							URL:   "Some URL",
-							Label: "Some pending build",
-							Build: bb,
+							Link: &resp.Link{
+								URL:   "https://some.url/path",
+								Label: "Some current build",
+							},
+							Revision: "deadbeef",
 						},
 					},
-					FinishedBuilds: []*resp.BuildRef{
+					FinishedBuilds: []*resp.BuildSummary{
 						{
-							URL:   "Some URL",
-							Label: "Some finished build",
-							Build: bb,
+							Link: &resp.Link{
+								URL:   "https://some.url/path",
+								Label: "Some current build",
+							},
+							Revision: "deadbeef",
 						},
 					},
 				},

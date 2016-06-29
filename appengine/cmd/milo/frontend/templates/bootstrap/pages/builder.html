@@ -12,9 +12,9 @@
       <h4>Current Builds</h4>
       <ul>
       {{ range .Builder.CurrentBuilds }}
-        <li><a href="{{ .URL }}">{{ .Build.Summary.Label }}</a>
-          [Running for: {{ .Build.Summary.Duration }}]
-          {{ .Build.Summary.Text }}
+        <li>{{ .Link | linkify }}</a>
+          [Running for: {{ .Duration }}]
+          {{ .Text }}
         </li>
       {{ end }}
       </ul>
@@ -28,10 +28,10 @@
       <h4>Pending Build Requests</h4>
       <ul>
       {{ range .Builder.PendingBuilds }}
-        <li><small>({{ .Build.Summary.Started }}, waiting {{ .Build.Summary.Duration }})</small>
-        {{ $nb := len .Build.Blame }}
+        <li><small>({{ .Started }}, waiting {{ .Duration }})</small>
+        {{ $nb := len .Blame }}
         {{ if lt $nb 4 }}
-          {{ range $i, $c := .Build.Blame }}
+          {{ range $i, $c := .Blame }}
             {{ .Revision }}
             (<a href="{{ .CommitURL }}">{{ .AuthorEmail }}</a>)
             {{ if ne $i (sub $nb 1) }},{{ end }}
@@ -59,29 +59,29 @@
       </tr>
 
       {{ range .Builder.FinishedBuilds }}
-          {{ if eq .Build.Summary.Status.String "Success" }}
+          {{ if eq .Status.String "Success" }}
             <tr class="success">
-              <td>{{ .Build.Summary.Finished }}</td>
-              <td class="revision">{{ .Build.SourceStamp.Revision | shortHash}}</td>
+              <td>{{ .Finished }}</td>
+              <td class="revision">{{ .Revision | shortHash}}</td>
               <td>Success</td>
               <td><a href="{{ .URL }}">{{ .URL }}</a></td>
-              <td class="left">{{ .Build.Summary.Text }}</td>
+              <td class="left">{{ .Text }}</td>
             </tr>
-          {{ else if eq .Build.Summary.Status.String "Failure" }}
+          {{ else if eq .Status.String "Failure" }}
             <tr class="danger">
-              <td>{{ .Build.Summary.Finished }}</td>
-              <td>{{ .Build.SourceStamp.Revision | shortHash }}</td>
+              <td>{{ .Finished }}</td>
+              <td>{{ .Revision | shortHash }}</td>
               <td class="danger">Failed</td>
               <td><a href="{{ .URL }}">{{ .URL }}</a></td>
-              <td class="left">{{ .Build.Summary.Text }}</td>
+              <td class="left">{{ .Text }}</td>
             </tr>
           {{ else }}
             <tr>
-              <td>{{ .Build.Summary.Finished }}</td>
-              <td>{{ .Build.SourceStamp.Revision | shortHash }}</td>
-              <td> {{ .Build.Summary.Status.String }} </td>
-              <td><a href="{{ .URL }}">{{ .URL }}</a></td>
-              <td class="left">{{ .Build.Summary.Text }}</td>
+              <td>{{ .Finished }}</td>
+              <td>{{ .Revision | shortHash }}</td>
+              <td> {{ .Status.String }} </td>
+              <td>{{.Link | linkify}}</td>
+              <td class="left">{{ .Text }}</td>
             </tr>
           {{ end }}
       {{ end }}

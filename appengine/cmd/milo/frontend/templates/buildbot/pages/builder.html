@@ -7,9 +7,9 @@
   <h2>Current Builds:</h2>
   <ul>
   {{ range .Builder.CurrentBuilds }}
-    <li><a href="{{ .URL }}">{{ .Build.Summary.Label }}</a>
-      [Running for: {{ .Build.Summary.Duration }}]
-      {{ .Build.Summary.Text }}
+    <li>{{ .Link | linkify }}
+      [Running for: {{ .Duration }}]
+      {{ range .Text }} {{ . }}{{ end }}
     </li>
   {{ end }}
   </ul>
@@ -21,11 +21,11 @@
   <h2>Pending Build Requests:</h2>
   <ul>
   {{ range .Builder.PendingBuilds }}
-    <li><small>({{ .Build.Summary.Started }}, waiting {{ .Build.Summary.Duration }})</small>
+    <li><small>({{ .Started }}, waiting {{ .Duration }})</small>
 
-    {{ $nb := len .Build.Blame }}
+    {{ $nb := len .Blame }}
     {{ if lt $nb 4 }}
-      {{ range $i, $c := .Build.Blame }}
+      {{ range $i, $c := .Blame }}
         {{ .Revision }}
         (<a href="{{ .CommitURL }}">{{ .AuthorEmail }}</a>)
         {{ if ne $i (sub $nb 1) }},{{ end }}
@@ -50,22 +50,35 @@
       <th>Revision</th>
       <th>Result</th>
       <th>Build #</th>
+      <th>Changes</th>
       <th>Info</th>
     </tr>
 
     {{ range .Builder.FinishedBuilds }}
       <tr>
-        <td>{{ .Build.Summary.Finished }}</td>
-        <td class="revision">{{ .Build.SourceStamp.Revision }}</td>
-        {{ if eq .Build.Summary.Status.String "Success" }}
+        <td>{{ .Finished }}</td>
+        <td class="revision">{{ .Revision }}</td>
+        {{ if eq .Status.String "Success" }}
           <td class="success">Success</td>
-        {{ else if eq .Build.Summary.Status.String "Failure" }}
+        {{ else if eq .Status.String "Failure" }}
           <td class="failure">Failed</td>
         {{ else }}
-          <td> {{ .Build.Summary.Status.String }} </td>
+          <td> {{ .Status.String }} </td>
         {{ end }}
-        <td><a href="{{ .URL }}">{{ .URL }}</a></td>
-        <td class="left">{{ .Build.Summary.Text }}</td>
+        <td>{{ .Link | linkify }}</td>
+        <td>
+          {{ $nb := len .Blame }}
+          {{ if lt $nb 4 }}
+            {{ range $i, $c := .Blame }}
+              {{ .Revision }}
+              {{ if gt $i 0 }},{{ end }}
+              (<a href="{{ .CommitURL }}">{{ .AuthorEmail }}</a>)
+            {{ end }}
+          {{ else }}
+            ({{ $nb }} changes)
+          {{ end }}
+        </td>
+        <td class="left">{{ .Text }}</td>
       </tr>
     {{ end }}
   </table>

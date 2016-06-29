@@ -136,14 +136,6 @@ func parseTimes(times []*float64) (string, string, uint64) {
 // summary Extract the top level summary from a buildbot build as a
 // BuildComponent
 func summary(b *buildbotBuild) resp.BuildComponent {
-	// Status
-	var status resp.Status
-	if b.Currentstep != nil {
-		status = resp.Running
-	} else {
-		status = result2Status(b.Results)
-	}
-
 	// Timing info
 	started, ended, duration := parseTimes(b.Times)
 
@@ -163,7 +155,7 @@ func summary(b *buildbotBuild) resp.BuildComponent {
 
 	sum := resp.BuildComponent{
 		Label:      fmt.Sprintf("Builder %s Build #%d", b.Buildername, b.Number),
-		Status:     status,
+		Status:     b.toStatus(),
 		Started:    started,
 		Finished:   ended,
 		Bot:        bot,

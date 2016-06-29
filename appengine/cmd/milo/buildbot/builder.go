@@ -8,10 +8,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/luci/gae/service/datastore"
 
 	"github.com/luci/luci-go/appengine/cmd/milo/resp"
+	"github.com/luci/luci-go/common/clock"
 	log "github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
@@ -39,10 +41,27 @@ func createRunningBuildMap(master *buildbotMaster) buildMap {
 	return result
 }
 
+func getBuildSummary(b *buildbotBuild) *resp.BuildSummary {
+	started, finished, duration := parseTimes(b.Times)
+	return &resp.BuildSummary{
+		Link: &resp.Link{
+			URL:   fmt.Sprintf("%d", b.Number),
+			Label: fmt.Sprintf("#%d", b.Number),
+		},
+		Status:   b.toStatus(),
+		Started:  started,
+		Finished: finished,
+		Duration: duration,
+		Text:     b.Text,
+		Blame:    blame(b),
+		Revision: b.Sourcestamp.Revision,
+	}
+}
+
 // getBuilds fetches all of the recent builds from the datastore.
-func getBuilds(c context.Context, masterName, builderName string) ([]*resp.BuildRef, error) {
+func getBuilds(c context.Context, masterName, builderName string) ([]*resp.BuildSummary, error) {
 	// TODO(hinoka): Builder specific structs.
-	result := []*resp.BuildRef{}
+	result := []*resp.BuildSummary{}
 	ds := datastore.Get(c)
 	q := datastore.NewQuery("buildbotBuild")
 	q = q.Eq("finished", true)
@@ -56,47 +75,27 @@ func getBuilds(c context.Context, masterName, builderName string) ([]*resp.Build
 		return nil, err
 	}
 	for _, b := range buildbots {
-		result = append(result, &resp.BuildRef{
-			URL:   fmt.Sprintf("%d", b.Number),
-			Label: fmt.Sprintf("#%d", b.Number),
-			Build: &resp.MiloBuild{
-				// We only need the summary for the build view.
-				Summary: summary(b),
-				SourceStamp: &resp.SourceStamp{
-					Commit: resp.Commit{
-						Revision: b.Sourcestamp.Revision,
-					},
-				},
-			},
-		})
+		result = append(result, getBuildSummary(b))
 	}
 	return result, nil
 }
 
 // getCurrentBuild extracts a build from a map of current builds, and translates
 // it into the milo version of the build.
-func getCurrentBuild(c context.Context, bMap buildMap, builder string, buildNum int) *resp.BuildRef {
+func getCurrentBuild(c context.Context, bMap buildMap, builder string, buildNum int) *resp.BuildSummary {
 	b, ok := bMap[builderRef{builder, buildNum}]
 	if !ok {
 		log.Warningf(c, "Could not find %s/%d in builder map:\n %s", builder, buildNum, bMap)
 		return nil
 	}
-	return &resp.BuildRef{
-		Build: &resp.MiloBuild{
-			Summary:       summary(b),
-			Components:    components(b),
-			PropertyGroup: properties(b),
-			Blame:         []*resp.Commit{},
-		},
-		URL: fmt.Sprintf("%d", buildNum),
-	}
+	return getBuildSummary(b)
 }
 
 // getCurrentBuilds extracts the list of all the current builds from a master json
 // from the slaves' runningBuilds portion.
-func getCurrentBuilds(c context.Context, master *buildbotMaster, builderName string) []*resp.BuildRef {
+func getCurrentBuilds(c context.Context, master *buildbotMaster, builderName string) []*resp.BuildSummary {
 	b := master.Builders[builderName]
-	results := []*resp.BuildRef{}
+	results := []*resp.BuildSummary{}
 	bMap := createRunningBuildMap(master)
 	for _, bn := range b.Currentbuilds {
 		cb := getCurrentBuild(c, bMap, builderName, bn)
@@ -111,8 +110,8 @@ func getCurrentBuilds(c context.Context, master *buildbotMaster, builderName str
 // This gets:
 // * Current Builds from querying the master json from the datastore.
 // * Recent Builds from a cron job that backfills the recent builds.
-func builderImpl(c context.Context, masterName, builderName string) (*resp.MiloBuilder, error) {
-	result := &resp.MiloBuilder{}
+func builderImpl(c context.Context, masterName, builderName string) (*resp.Builder, error) {
+	result := &resp.Builder{}
 	master, internal, t, err := getMasterJSON(c, masterName)
 	if internal {
 		// TODO(hinoka): Implement ACL support and remove this.
@@ -121,8 +120,12 @@ func builderImpl(c context.Context, masterName, builderName string) (*resp.MiloB
 	if err != nil {
 		return nil, fmt.Errorf("Cannot find master %s\n%s", masterName, err.Error())
 	}
-	// TODO(hinoka): Warning check for data >2 min stale.
-	t = t
+	if clock.Now(c).Sub(t) > 2*time.Minute {
+		warning := fmt.Sprintf(
+			"WARNING: Master data is stale (last updated %s)", t)
+		log.Warningf(c, warning)
+		result.Warning = warning
+	}
 
 	s, _ := json.Marshal(master)
 	log.Debugf(c, "Master: %s", s)
