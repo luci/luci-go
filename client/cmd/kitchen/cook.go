@@ -193,12 +193,17 @@ func (c *cookRun) Run(a subcommands.Application, args []string) (exitCode int) {
 		annotateTime(ctx)
 	}
 	annotate("STEP_STARTED")
+	bootstapSuccess := true
 	defer func() {
 		annotate("STEP_CURSOR", BootstrapStepName)
 		if c.Timestamps {
 			annotateTime(ctx)
 		}
-		annotate("STEP_CLOSED")
+		if bootstapSuccess {
+			annotate("STEP_CLOSED")
+		} else {
+			annotate("STEP_EXCEPTION")
+		}
 		if c.Timestamps {
 			annotateTime(ctx)
 		}
@@ -221,6 +226,7 @@ func (c *cookRun) Run(a subcommands.Application, args []string) (exitCode int) {
 
 	recipeExitCode, err := c.run(ctx)
 	if err != nil {
+		bootstapSuccess = false
 		if err != context.Canceled {
 			fmt.Fprintln(os.Stderr, err)
 		}
