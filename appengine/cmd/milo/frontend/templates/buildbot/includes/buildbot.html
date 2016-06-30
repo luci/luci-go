@@ -19,14 +19,12 @@ that can be found in the LICENSE file. -->
     <hr>
     <a href="https://github.com/luci">luci</a>,
     working for the <a href="https://chromium.org/">Chromium</a> project.<br>
-    Page built: <b><span id="current-time">{{.CurrentTime}}</span></b>
+    Page built: <b>{{.CurrentTime | localTime "" }}</b>
   </footer>
-{{ template "after_body" . }}
 <script>
 (function () {
   'use strict';
-  document.getElementById('current-time').textContent = milo.formatDate(
-      '{{ .CurrentTime }}');
+  milo.makeTimesLocal();
 })();
 </script>
 {{end}}

@@ -113,24 +113,19 @@ func result2Status(s *int) (status resp.Status) {
 }
 
 // parseTimes translates a buildbot time tuple (start/end) into a triplet
-// of (Started time, Ending time, duration), where the times are strings
-// in RFC3339.
-func parseTimes(times []*float64) (string, string, uint64) {
+// of (Started time, Ending time, duration).
+func parseTimes(times []*float64) (started, ended time.Time, duration time.Duration) {
 	if len(times) != 2 {
 		panic(fmt.Errorf("Expected 2 floats for times, got %v", times))
 	}
-	endedStr := ""
-	var duration time.Duration
-	started := time.Unix(int64(*times[0]), 0)
-	startedStr := started.Format(time.RFC3339)
+	started = time.Unix(int64(*times[0]), int64(*times[0]*1e9)%1e9).UTC()
 	if times[1] != nil {
-		ended := time.Unix(int64(*times[1]), 0)
-		endedStr = ended.Format(time.RFC3339)
+		ended = time.Unix(int64(*times[1]), int64(*times[1]*1e9)%1e9).UTC()
 		duration = ended.Sub(started)
 	} else {
 		duration = time.Since(started)
 	}
-	return startedStr, endedStr, uint64(duration.Seconds())
+	return
 }
 
 // summary Extract the top level summary from a buildbot build as a

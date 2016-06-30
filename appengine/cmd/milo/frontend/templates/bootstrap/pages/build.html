@@ -34,7 +34,7 @@
           {{ range .Text }}<div>{{ . }}</div>{{ end }}
         </small>
         <span class="pull-right muted">
-          {{ .Duration }} secs
+          {{ .Duration | humanDuration }}
         </span>
           <ol>
             {{ range .SubLink }}

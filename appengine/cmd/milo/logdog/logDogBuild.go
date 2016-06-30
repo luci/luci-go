@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"path"
 	"strings"
-	"time"
 
 	"golang.org/x/net/context"
 
@@ -87,21 +86,15 @@ func miloBuildStep(c context.Context, url string, anno *miloProto.Step, name str
 	comp.LevelsDeep = 0
 
 	// Timestamps
-	started := asc.Started.Time()
-	ended := asc.Ended.Time()
-	if !started.IsZero() {
-		comp.Started = started.Format(time.RFC3339)
-	}
-	if !ended.IsZero() {
-		comp.Finished = ended.Format(time.RFC3339)
-	}
+	comp.Started = asc.Started.Time()
+	comp.Finished = asc.Ended.Time()
 
-	till := ended
+	till := comp.Finished
 	if asc.Status == miloProto.Status_RUNNING {
 		till = clock.Now(c)
 	}
-	if !started.IsZero() && !till.IsZero() {
-		comp.Duration = uint64((till.Sub(started)) / time.Second)
+	if !comp.Started.IsZero() && !till.IsZero() {
+		comp.Duration = till.Sub(comp.Started)
 	}
 
 	// This should be the exact same thing.

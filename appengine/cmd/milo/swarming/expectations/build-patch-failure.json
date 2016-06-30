@@ -12,8 +12,8 @@
     "MainLink": null,
     "SubLink": null,
     "Progress": null,
-    "Started": "",
-    "Finished": "",
+    "Started": "0001-01-01T00:00:00Z",
+    "Finished": "0001-01-01T00:00:00Z",
     "Duration": 0,
     "Type": "Recipe",
     "LevelsDeep": 0,
@@ -45,7 +45,7 @@
       "Progress": null,
       "Started": "2016-03-14T10:00:02Z",
       "Finished": "2016-03-14T10:00:03Z",
-      "Duration": 1,
+      "Duration": 1000000000,
       "Type": "Step",
       "LevelsDeep": 0,
       "Text": [
@@ -74,7 +74,7 @@
       "Progress": null,
       "Started": "2016-03-14T10:00:04Z",
       "Finished": "2016-03-14T10:00:05Z",
-      "Duration": 1,
+      "Duration": 1000000000,
       "Type": "Step",
       "LevelsDeep": 0,
       "Text": [
@@ -109,7 +109,7 @@
       "Progress": null,
       "Started": "2016-03-14T10:00:06Z",
       "Finished": "2016-03-14T10:00:07Z",
-      "Duration": 1,
+      "Duration": 1000000000,
       "Type": "Step",
       "LevelsDeep": 0,
       "Text": [
@@ -131,7 +131,7 @@
       "Progress": null,
       "Started": "2016-03-14T10:00:08Z",
       "Finished": "2016-03-14T10:00:09Z",
-      "Duration": 1,
+      "Duration": 1000000000,
       "Type": "Step",
       "LevelsDeep": 0,
       "Text": [
@@ -160,7 +160,7 @@
       "Progress": null,
       "Started": "2016-03-14T10:00:10Z",
       "Finished": "2016-03-14T10:00:11Z",
-      "Duration": 1,
+      "Duration": 1000000000,
       "Type": "Step",
       "LevelsDeep": 0,
       "Text": null

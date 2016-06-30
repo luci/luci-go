@@ -11,18 +11,13 @@
   var milo = window.milo || {};
 
   /**
-   * Given a Javascript parsable time string, return a time string in the user's
-   * local timezone
+   * Given a Date, return a time string in the user's local timezone.
    */
-  milo.formatDate = function(dt) {
-    if (!dt) {
+  milo.formatDate = function(t) {
+    if (!t || t.toString() == "Invalid Date") {
         return null;
     }
     var shortDayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    var t = new Date(dt);
-    if (t.toString() == "Invalid Date") {
-      return null;
-    }
     var offset = -(new Date()).getTimezoneOffset();
     var offsetHr = Math.abs(Math.round(offset / 60));
     var offsetMin = Math.abs(Math.abs(offset) - (offsetHr * 60));
@@ -53,6 +48,21 @@
     s += ' (' + offsetStr + ')';
 
     return s;
+  };
+
+  milo.makeTimesLocal = function() {
+    var timeSpans = document.getElementsByClassName('local-time');
+    for (var i = 0; i < timeSpans.length; i++) {
+      var span = timeSpans[i];
+      try {
+        var timestamp = span.getAttribute('data-timestamp');
+        var date = new Date(parseInt(timestamp, 10));
+        span.innerText = milo.formatDate(date) || span.innerText;
+      }
+      catch (e) {
+        console.error('could not convert time of span', span, 'to local:', e)
+      }
+    }
   };
 
   window.milo = milo;

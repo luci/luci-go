@@ -17,9 +17,9 @@
     "MainLink": null,
     "SubLink": null,
     "Progress": null,
-    "Started": "2016-03-14T10:00:01.850710Z",
-    "Finished": "2016-03-14T11:00:18.486020Z",
-    "Duration": 3615,
+    "Started": "2016-03-14T10:00:01.85071Z",
+    "Finished": "2016-03-14T10:00:01.85071Z",
+    "Duration": 3615243180990,
     "Type": "Recipe",
     "LevelsDeep": 0,
     "Text": null
@@ -41,7 +41,7 @@
       "Progress": null,
       "Started": "2016-03-14T10:00:02Z",
       "Finished": "2016-03-14T10:00:04Z",
-      "Duration": 2,
+      "Duration": 2000000000,
       "Type": "Step",
       "LevelsDeep": 0,
       "Text": null
@@ -68,7 +68,7 @@
       "Progress": null,
       "Started": "2016-03-14T10:00:02Z",
       "Finished": "2016-03-14T10:00:03Z",
-      "Duration": 1,
+      "Duration": 1000000000,
       "Type": "Step",
       "LevelsDeep": 0,
       "Text": [

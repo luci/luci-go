@@ -101,7 +101,7 @@ func GetTemplateBundles() []NamedBundle {
 						"User":        auth.CurrentUser(c),
 						"LoginURL":    loginURL,
 						"LogoutURL":   logoutURL,
-						"CurrentTime": clock.Now(c).String(),
+						"CurrentTime": clock.Now(c),
 					}, nil
 				},
 				FuncMap: funcMap,

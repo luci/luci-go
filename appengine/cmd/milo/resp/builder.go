@@ -4,6 +4,8 @@
 
 package resp
 
+import "time"
+
 // BuildSummary is a summary of a build, with just enough information for display
 // on a builders page, with an optional field to return the whole build
 // information if available.
@@ -14,15 +16,15 @@ type BuildSummary struct {
 	// Status of the build.
 	Status Status
 
-	// When did this build start. In RFC3339 format. Set "" if not started.
-	Started string
+	// When did this build start.
+	Started time.Time
 
-	// When did this build finish. In RFC3339 format.  Set "" if not finished.
-	Finished string
+	// When did this build finish.
+	Finished time.Time
 
-	// The time it took for this build to finish in seconds.  If unfinished, this
-	// is the current elapsed duration.
-	Duration uint64
+	// The time it took for this build to finish.  If unfinished, this is the
+	// current elapsed duration.
+	Duration time.Duration
 
 	// Revision is the main revision of the build.
 	// TODO(hinoka): Maybe use a commit object instead?
@@ -42,7 +44,7 @@ type BuildSummary struct {
 	Build *MiloBuild
 }
 
-// MiloBuilder denotes an ordered list of MiloBuilds
+// Builder denotes an ordered list of MiloBuilds
 type Builder struct {
 	// Name of the builder
 	Name string

@@ -131,7 +131,7 @@
               <td class="left">{{.Key}}</td>
               <td>
                 {{ if (eq .Key "requestedAt") }}
-                  {{ .Value | humanTimeRFC }}
+                  {{ .Value | parseRFC3339 | localTime "" }}
                 {{ else if (eq .Key "blamelist") }}
                   {{ .Value | obfuscateEmail }}
                 {{ else if (startswith .Value "https://") }}
@@ -159,30 +159,18 @@
       <table class="info" width="100%">
         <tr class="alt"><td class="left">Start</td>
         <td>
-          <span id="started-time">
-            {{ if .Build.Summary.Started }}
-              {{ .Build.Summary.Started | humanTimeRFC }}
-            {{ else }}
-              N/A
-            {{ end }}
-          </span>
+          {{ .Build.Summary.Started | localTime "N/A" }}
         </td></tr>
         <tr><td class="left">End</td>
         <td>
-          <span id="finished-time">
-            {{ if .Build.Summary.Finished }}
-              {{ .Build.Summary.Finished | humanTimeRFC }}
-            {{ else }}
-              N/A
-            {{ end }}
-          </span>
+          {{ .Build.Summary.Finished | localTime "N/A" }}
         </td></tr>
         <tr class="alt"><td class="left">Elapsed</td>
         <td id="duration">
-          {{ if .Build.Summary.Started }}
-            {{ .Build.Summary.Duration | humanDuration }}
-          {{ else }}
+          {{ if .Build.Summary.Started.IsZero }}
             N/A
+          {{ else }}
+            {{ .Build.Summary.Duration | humanDuration }}
           {{ end }}
         </td></tr>
       </table>
@@ -202,25 +190,6 @@
       </ol>
     </div>
     {{ end }}
-
   </div>
 </div>
-{{end}}
-
-{{define "after_body"}}
-<script>
-(function() {
-  'use strict';
-  var startedSpan = document.getElementById('started-time');
-  var finishedSpan = document.getElementById('finished-time');
-  var started = milo.formatDate('{{ .Build.Summary.Started }}');
-  var finished = milo.formatDate('{{ .Build.Summary.Finished }}');
-  if (started) {
-    startedSpan.textContent = started;
-  }
-  if (finished) {
-    finishedSpan.textContent = finished;
-  }
-})();
-</script>
 {{end}}

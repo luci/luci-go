@@ -5,6 +5,8 @@
 package swarming
 
 import (
+	"time"
+
 	"github.com/luci/luci-go/appengine/cmd/milo/resp"
 	"github.com/luci/luci-go/appengine/cmd/milo/settings"
 	"github.com/luci/luci-go/server/templates"
@@ -34,9 +36,9 @@ func (b TestableBuild) TestData() []settings.TestBundle {
 		Summary: resp.BuildComponent{
 			Label:    "Test swarming build",
 			Status:   resp.Success,
-			Started:  "2006-01-02T15:04:05.999999999Z",
-			Finished: "2006-01-02T15:04:06.999999999Z",
-			Duration: 1,
+			Started:  time.Date(2016, 1, 2, 15, 4, 5, 999999999, time.UTC),
+			Finished: time.Date(2016, 1, 2, 15, 4, 6, 999999999, time.UTC),
+			Duration: time.Second,
 		},
 	}
 	return []settings.TestBundle{

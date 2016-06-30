@@ -32,14 +32,11 @@
     <hr>
     <a href="https://github.com/luci">luci</a>,
     working for the <a href="https://chromium.org/">Chromium</a> project.<br>
-    Page built: <b><span id="current-time">0001-02-03 04:05:06.000000007 &#43;0000 UTC</span></b>
+    Page built: <b><span class="local-time" data-timestamp="-6792498672871">Saturday, 03-Feb-01 04:05:06 UTC</span></b>
   </footer>
-
-
 <script>
 (function () {
   'use strict';
-  document.getElementById('current-time').textContent = milo.formatDate(
-      '0001-02-03 04:05:06.000000007 \x2b0000 UTC');
+  milo.makeTimesLocal();
 })();
 </script>

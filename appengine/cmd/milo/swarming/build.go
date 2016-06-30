@@ -26,6 +26,9 @@ import (
 	"github.com/luci/luci-go/common/transport"
 )
 
+// SwarmingTimeLayout is time layout used by swarming.
+const SwarmingTimeLayout = "2006-01-02T15:04:05.999999999"
+
 // Swarming task states..
 const (
 	// TaskRunning means task is running.
@@ -251,24 +254,25 @@ func taskToBuild(c context.Context, server string, sr *swarming.SwarmingRpcsTask
 		}
 	}
 
-	// Build times. Swarming timestamps are UTC RFC3339Nano, but without the
-	// timezone information. Make them valid RFC3339Nano.
+	var err error
 	if sr.StartedTs != "" {
-		build.Summary.Started = sr.StartedTs + "Z"
-	}
-	if sr.CompletedTs != "" {
-		build.Summary.Finished = sr.CompletedTs + "Z"
-	}
-	if sr.Duration != 0 {
-		build.Summary.Duration = uint64(sr.Duration)
-	} else if sr.State == TaskRunning {
-		started, err := time.Parse(time.RFC3339, build.Summary.Started)
+		build.Summary.Started, err = time.Parse(SwarmingTimeLayout, sr.StartedTs)
 		if err != nil {
 			return nil, fmt.Errorf("invalid task StartedTs: %s", err)
 		}
+	}
+	if sr.CompletedTs != "" {
+		build.Summary.Finished, err = time.Parse(SwarmingTimeLayout, sr.StartedTs)
+		if err != nil {
+			return nil, fmt.Errorf("invalid task CompletedTs: %s", err)
+		}
+	}
+	if sr.Duration != 0 {
+		build.Summary.Duration = time.Duration(sr.Duration * float64(time.Second))
+	} else if sr.State == TaskRunning {
 		now := clock.Now(c)
-		if started.Before(now) {
-			build.Summary.Duration = uint64(clock.Now(c).Sub(started).Seconds())
+		if build.Summary.Started.Before(now) {
+			build.Summary.Duration = now.Sub(build.Summary.Started)
 		}
 	}
 

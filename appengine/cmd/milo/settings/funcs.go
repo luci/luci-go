@@ -19,43 +19,69 @@ import (
 // funcMap is what gets fed into the template bundle.
 var funcMap = template.FuncMap{
 	"humanDuration":  humanDuration,
-	"humanTimeRFC":   humanTimeRFC,
+	"parseRFC3339":   parseRFC3339,
+	"linkify":        linkify,
+	"obfuscateEmail": obfuscateEmail,
+	"localTime":      localTime,
+	"shortHash":      shortHash,
 	"startswith":     strings.HasPrefix,
 	"sub":            sub,
-	"shortHash":      shortHash,
-	"obfuscateEmail": obfuscateEmail,
-	"linkify":        linkify,
 }
 
-// humanDuration takes a time t in seconds as a duration and translates it
-// into a human readable string of x units y units, where x and y could be in
-// days, hours, minutes, or seconds, whichever is the largest.
-func humanDuration(t uint64) string {
-	// Input: Duration in seconds.  Output, the duration pretty printed.
+// localTime returns a <span> element with t in human format
+// that will be converted to local timezone in the browser.
+// Recommended usage: {{ .Date | localTime "N/A" }}
+func localTime(ifZero string, t time.Time) template.HTML {
+	if t.IsZero() {
+		return template.HTML(template.HTMLEscapeString(ifZero))
+	}
+	milliseconds := t.UnixNano() / 1e6
+	return template.HTML(fmt.Sprintf(
+		`<span class="local-time" data-timestamp="%d">%s</span>`,
+		milliseconds,
+		t.Format(time.RFC850)))
+}
+
+// humanDuration translates d into a human readable string of x units y units,
+// where x and y could be in days, hours, minutes, or seconds, whichever is the
+// largest.
+func humanDuration(d time.Duration) string {
+	t := int64(d.Seconds())
 	day := t / 86400
 	hr := (t % 86400) / 3600
-	min := (t % 3600) / 60
-	sec := t % 60
 
 	if day > 0 {
 		if hr != 0 {
 			return fmt.Sprintf("%d days %d hrs", day, hr)
 		}
 		return fmt.Sprintf("%d days", day)
-	} else if hr > 0 {
+	}
+
+	min := (t % 3600) / 60
+	if hr > 0 {
 		if min != 0 {
 			return fmt.Sprintf("%d hrs %d mins", hr, min)
 		}
 		return fmt.Sprintf("%d hrs", hr)
-	} else {
-		if min > 0 {
-			if sec != 0 {
-				return fmt.Sprintf("%d mins %d secs", min, sec)
-			}
-			return fmt.Sprintf("%d mins", min)
+	}
+
+	sec := t % 60
+	if min > 0 {
+		if sec != 0 {
+			return fmt.Sprintf("%d mins %d secs", min, sec)
 		}
+		return fmt.Sprintf("%d mins", min)
+	}
+
+	if sec != 0 {
 		return fmt.Sprintf("%d secs", sec)
 	}
+
+	if d > time.Millisecond {
+		return fmt.Sprintf("%d ms", d/time.Millisecond)
+	}
+
+	return "0"
 }
 
 // obfuscateEmail converts an email@address.com into email<junk>@address.com
@@ -66,17 +92,18 @@ func obfuscateEmail(email string) template.HTML {
 		email, "@", "<span style=\"display:none\">ohnoyoudont</span>@", -1))
 }
 
-// humanTimeRFC takes in the time represented as a RFC3339 string and returns
-// something more human readable (like RFC850: Monday, 02-Jan-06 15:04:05 MST).
-func humanTimeRFC(s string) string {
+// parseRFC3339 parses time represented as a RFC3339 or RFC3339Nano string.
+// If cannot parse, returns zero time.
+func parseRFC3339(s string) time.Time {
 	t, err := time.Parse(time.RFC3339, s)
-	if err != nil {
-		t, err = time.Parse(time.RFC3339Nano, s)
-		if err != nil {
-			return s
-		}
+	if err == nil {
+		return t
 	}
-	return t.Format(time.RFC850)
+	t, err = time.Parse(time.RFC3339Nano, s)
+	if err == nil {
+		return t
+	}
+	return time.Time{}
 }
 
 var linkifyTemplate = template.Must(
@@ -91,7 +118,7 @@ func linkify(link *resp.Link) template.HTML {
 	return template.HTML(buf.Bytes())
 }
 
-// sub subtracts one number from another, because apperently go templates aren't
+// sub subtracts one number from another, because apparently go templates aren't
 // smart enough to do that.
 func sub(a, b int) int {
 	return a - b

@@ -28,7 +28,7 @@
       <h4>Pending Build Requests</h4>
       <ul>
       {{ range .Builder.PendingBuilds }}
-        <li><small>({{ .Started }}, waiting {{ .Duration }})</small>
+        <li><small>({{ .Started | localTime "" }}, waiting {{ .Duration }})</small>
         {{ $nb := len .Blame }}
         {{ if lt $nb 4 }}
           {{ range $i, $c := .Blame }}
@@ -61,7 +61,7 @@
       {{ range .Builder.FinishedBuilds }}
           {{ if eq .Status.String "Success" }}
             <tr class="success">
-              <td>{{ .Finished }}</td>
+              <td>{{ .Finished | localTime "" }}</td>
               <td class="revision">{{ .Revision | shortHash}}</td>
               <td>Success</td>
               <td><a href="{{ .URL }}">{{ .URL }}</a></td>
@@ -69,7 +69,7 @@
             </tr>
           {{ else if eq .Status.String "Failure" }}
             <tr class="danger">
-              <td>{{ .Finished }}</td>
+              <td>{{ .Finished | localTime "" }}</td>
               <td>{{ .Revision | shortHash }}</td>
               <td class="danger">Failed</td>
               <td><a href="{{ .URL }}">{{ .URL }}</a></td>
@@ -77,7 +77,7 @@
             </tr>
           {{ else }}
             <tr>
-              <td>{{ .Finished }}</td>
+              <td>{{ .Finished | localTime "" }}</td>
               <td>{{ .Revision | shortHash }}</td>
               <td> {{ .Status.String }} </td>
               <td>{{.Link | linkify}}</td>
@@ -90,5 +90,3 @@
 
 </div>
 {{ end }}
-
-{{define "after_body"}}{{end}}

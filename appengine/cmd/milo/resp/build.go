@@ -6,7 +6,10 @@
 
 package resp
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"time"
+)
 
 // MiloBuild denotes a full renderable Milo build page.
 type MiloBuild struct {
@@ -184,15 +187,15 @@ type BuildComponent struct {
 	// Designates the progress of the current component. Set null for no progress.
 	Progress *BuildProgress
 
-	// When did this step start. In RFC3339 format. Set "" if not started.
-	Started string
+	// When did this step start.
+	Started time.Time
 
-	// When did this step finish. In RFC3339 format.  Set "" if not finished.
-	Finished string
+	// When did this step finish.
+	Finished time.Time
 
-	// The time it took for this step to finish in seconds.  If unfinished, this
-	// is the current elapsed duration.
-	Duration uint64
+	// The time it took for this step to finish. If unfinished, this is the
+	// current elapsed duration.
+	Duration time.Duration
 
 	// The type of component.  This manifests itself as a little label on the
 	// top left corner of the component.
