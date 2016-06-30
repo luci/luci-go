@@ -145,6 +145,11 @@ func getSwarming(c context.Context, server string, taskID string) (
 		wg.Wait()
 	}
 
+	if errRes != nil {
+		// Swarming result errors take priority.
+		return sr, log, errRes
+	}
+
 	switch sr.State {
 	case TaskCompleted, TaskRunning, TaskCanceled:
 	default:
@@ -153,10 +158,6 @@ func getSwarming(c context.Context, server string, taskID string) (
 			errLog = nil
 			log = ""
 		}
-	}
-	if errRes != nil {
-		// Swarming result errors take priority.
-		return sr, log, errRes
 	}
 	return sr, log, errLog
 }
