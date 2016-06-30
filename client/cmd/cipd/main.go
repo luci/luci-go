@@ -484,7 +484,7 @@ func expandPkgDir(ctx context.Context, c cipd.Client, packagePrefix string) ([]s
 	if !strings.HasSuffix(packagePrefix, "/") {
 		return []string{packagePrefix}, nil
 	}
-	pkgs, err := c.ListPackages(ctx, packagePrefix, false)
+	pkgs, err := c.ListPackages(ctx, packagePrefix, false, false)
 	if err != nil {
 		return nil, err
 	}
@@ -1069,6 +1069,7 @@ var cmdListPackages = &subcommands.Command{
 		c.registerBaseFlags()
 		c.ClientOptions.registerFlags(&c.Flags)
 		c.Flags.BoolVar(&c.recursive, "r", false, "Whether to list packages in subdirectories.")
+		c.Flags.BoolVar(&c.showHidden, "h", false, "Whether also to list hidden packages.")
 		return c
 	},
 }
@@ -1077,7 +1078,8 @@ type listPackagesRun struct {
 	Subcommand
 	ClientOptions
 
-	recursive bool
+	recursive  bool
+	showHidden bool
 }
 
 func (c *listPackagesRun) Run(a subcommands.Application, args []string) int {
@@ -1089,15 +1091,15 @@ func (c *listPackagesRun) Run(a subcommands.Application, args []string) int {
 		path = args[0]
 	}
 	ctx := cli.GetContext(a, c)
-	return c.done(listPackages(ctx, path, c.recursive, c.ClientOptions))
+	return c.done(listPackages(ctx, path, c.recursive, c.showHidden, c.ClientOptions))
 }
 
-func listPackages(ctx context.Context, path string, recursive bool, clientOpts ClientOptions) ([]string, error) {
+func listPackages(ctx context.Context, path string, recursive, showHidden bool, clientOpts ClientOptions) ([]string, error) {
 	client, err := clientOpts.makeCipdClient(ctx, "")
 	if err != nil {
 		return nil, err
 	}
-	packages, err := client.ListPackages(ctx, path, recursive)
+	packages, err := client.ListPackages(ctx, path, recursive, showHidden)
 	if err != nil {
 		return nil, err
 	}

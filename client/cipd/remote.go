@@ -587,8 +587,8 @@ func (r *remoteImpl) attachTags(ctx context.Context, pin common.Pin, tags []stri
 	return fmt.Errorf("unexpected status when attaching tags: %s", reply.Status)
 }
 
-func (r *remoteImpl) listPackages(ctx context.Context, path string, recursive bool) ([]string, []string, error) {
-	endpoint, err := packageSearchEndpoint(path, recursive)
+func (r *remoteImpl) listPackages(ctx context.Context, path string, recursive, showHidden bool) ([]string, []string, error) {
+	endpoint, err := packageSearchEndpoint(path, recursive, showHidden)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -695,14 +695,18 @@ func refEndpoint(packageName, instanceID string, refs []string) (string, error) 
 	return "repo/v1/ref?" + params.Encode(), nil
 }
 
-func packageSearchEndpoint(path string, recursive bool) (string, error) {
+func boolToString(b bool) string {
+	if b {
+		return "true"
+	}
+	return "false"
+}
+
+func packageSearchEndpoint(path string, recursive, showHidden bool) (string, error) {
 	params := url.Values{}
 	params.Add("path", path)
-	recursiveString := "false"
-	if recursive {
-		recursiveString = "true"
-	}
-	params.Add("recursive", recursiveString)
+	params.Add("recursive", boolToString(recursive))
+	params.Add("show_hidden", boolToString(showHidden))
 	return "repo/v1/package/search?" + params.Encode(), nil
 }
 

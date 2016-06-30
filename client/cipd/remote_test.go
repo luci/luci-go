@@ -168,13 +168,14 @@ func TestRemoteImpl(t *testing.T) {
 				Method: "GET",
 				Path:   "/_ah/api/repo/v1/package/search",
 				Query: url.Values{
-					"path":      []string{"pkgpath"},
-					"recursive": []string{"false"},
+					"path":        []string{"pkgpath"},
+					"recursive":   []string{"false"},
+					"show_hidden": []string{"false"},
 				},
 				Reply: reply,
 			},
 		})
-		return remote.listPackages(ctx, "pkgpath", false)
+		return remote.listPackages(ctx, "pkgpath", false, false)
 	}
 
 	mockAttachTags := func(c C, tags []string, body, reply string) error {

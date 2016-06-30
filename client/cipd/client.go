@@ -71,7 +71,7 @@ const (
 	TagAttachTimeout = 3 * time.Minute
 
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 1.1"
+	UserAgent = "cipd 1.2"
 
 	// ServiceURL is URL of a backend to connect to by default.
 	ServiceURL = "https://chrome-infra-packages.appspot.com"
@@ -295,7 +295,7 @@ type Client interface {
 	FetchAndDeployInstance(ctx context.Context, pin common.Pin) error
 
 	// ListPackages returns a list of strings of package names.
-	ListPackages(ctx context.Context, path string, recursive bool) ([]string, error)
+	ListPackages(ctx context.Context, path string, recursive, showHidden bool) ([]string, error)
 
 	// SearchInstances finds all instances with given tag and optionally name.
 	//
@@ -497,8 +497,8 @@ func (client *clientImpl) ModifyACL(ctx context.Context, packagePath string, cha
 	return client.remote.modifyACL(ctx, packagePath, changes)
 }
 
-func (client *clientImpl) ListPackages(ctx context.Context, path string, recursive bool) ([]string, error) {
-	pkgs, dirs, err := client.remote.listPackages(ctx, path, recursive)
+func (client *clientImpl) ListPackages(ctx context.Context, path string, recursive, showHidden bool) ([]string, error) {
+	pkgs, dirs, err := client.remote.listPackages(ctx, path, recursive, showHidden)
 	if err != nil {
 		return nil, err
 	}
@@ -1045,7 +1045,7 @@ type remote interface {
 	fetchRefs(ctx context.Context, pin common.Pin, refs []string) ([]RefInfo, error)
 	fetchInstance(ctx context.Context, pin common.Pin) (*fetchInstanceResponse, error)
 
-	listPackages(ctx context.Context, path string, recursive bool) ([]string, []string, error)
+	listPackages(ctx context.Context, path string, recursive, showHidden bool) ([]string, []string, error)
 	searchInstances(ctx context.Context, tag, packageName string) ([]common.Pin, error)
 }
 

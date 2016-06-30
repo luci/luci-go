@@ -593,7 +593,7 @@ func TestListPackages(t *testing.T) {
 
 	call := func(c C, dirPath string, recursive bool, calls []expectedHTTPCall) ([]string, error) {
 		client := mockClient(c, "", calls)
-		return client.ListPackages(ctx, dirPath, recursive)
+		return client.ListPackages(ctx, dirPath, recursive, false)
 	}
 
 	Convey("ListPackages merges directories", t, func(c C) {
@@ -602,8 +602,9 @@ func TestListPackages(t *testing.T) {
 				Method: "GET",
 				Path:   "/_ah/api/repo/v1/package/search",
 				Query: url.Values{
-					"path":      []string{""},
-					"recursive": []string{"true"},
+					"path":        []string{""},
+					"recursive":   []string{"true"},
+					"show_hidden": []string{"false"},
 				},
 				Reply: `{"status":"SUCCESS","packages":["dir/pkg"],"directories":["dir"]}`,
 			},
