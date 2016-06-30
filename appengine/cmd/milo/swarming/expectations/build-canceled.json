@@ -1,7 +1,7 @@
 {
   "Summary": {
     "Label": "",
-    "Status": "InfraFailure",
+    "Status": "Failure",
     "Bot": {
       "Label": "swarm3-c4",
       "Img": "",
@@ -23,7 +23,7 @@
     "Type": "Recipe",
     "LevelsDeep": 0,
     "Text": [
-      "Task timed out"
+      "Task cancelled by user"
     ]
   },
   "SourceStamp": null,
@@ -85,10 +85,6 @@
         {
           "Key": "Cost of job (USD)",
           "Value": "$0.52"
-        },
-        {
-          "Key": "Exit Code",
-          "Value": "-15"
         }
       ]
     },

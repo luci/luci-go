@@ -219,10 +219,19 @@ func taskToBuild(c context.Context, server string, sr *swarming.SwarmingRpcsTask
 
 	case TaskExpired, TaskTimedOut, TaskBotDied:
 		build.Summary.Status = resp.InfraFailure
+		switch sr.State {
+		case TaskExpired:
+			build.Summary.Text = append(build.Summary.Text, "Task expired")
+		case TaskTimedOut:
+			build.Summary.Text = append(build.Summary.Text, "Task timed out")
+		case TaskBotDied:
+			build.Summary.Text = append(build.Summary.Text, "Bot died")
+		}
 
 	case TaskCanceled:
 		// Cancelled build is user action, so it is not an infra failure.
 		build.Summary.Status = resp.Failure
+		build.Summary.Text = append(build.Summary.Text, "Task cancelled by user")
 
 	case TaskCompleted:
 
