@@ -5,6 +5,8 @@
 package local
 
 import (
+	"crypto/sha1"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"os"
@@ -316,8 +318,11 @@ var (
 // tempFileName returns "random enough" path in the same directory as a given
 // path. It's not actively trying to be secure. Assumes that 'path' is not world
 // writable (i.e. not /tmp).
+//
+// Doesn't check for existence of the file at the given path (e.g. there may be
+// conflicts, but the probability should be small).
 func tempFileName(path string) string {
-	return filepath.Join(filepath.Dir(path), "tmp"+pseudoRand())
+	return filepath.Join(filepath.Dir(path), pseudoRand())
 }
 
 // pseudoRand returns "random enough" string that can be used in file system
@@ -330,7 +335,35 @@ func pseudoRand() string {
 	}
 	lastUsedTime = ts
 	lastUsedTimeLock.Unlock()
-	return fmt.Sprintf("%v_%v", os.Getpid(), ts)
+
+	// Hash the state to get a smaller pseudorandom string.
+	h := sha1.New()
+	fmt.Fprintf(h, "%v_%v", os.Getpid(), ts)
+	sum := h.Sum(nil)
+	digest := base64.RawURLEncoding.EncodeToString(sum)
+	return digest[:8]
+}
+
+// tempDir is like ioutil.TempDir(dir, ""), but uses shorter path suffixes.
+//
+// Path length is constraint resource of Windows.
+//
+// Supposed to be used only in cases when the probability of a conflict is low
+// (e.g. when 'dir' is some "private" directory, not global /tmp or something
+// like that).
+func tempDir(dir string) (name string, err error) {
+	for i := 0; i < 1000; i++ {
+		try := filepath.Join(dir, pseudoRand())
+		err = os.Mkdir(try, 0700)
+		if os.IsExist(err) {
+			continue
+		}
+		if err == nil {
+			name = try
+		}
+		break
+	}
+	return
 }
 
 // createFile creates a file and calls the function to write file content.
