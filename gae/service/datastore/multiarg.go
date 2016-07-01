@@ -11,6 +11,30 @@ import (
 	"github.com/luci/luci-go/common/errors"
 )
 
+type metaMultiArgConstraints int
+
+const (
+	// mmaReadWrite allows a metaMultiArg to operate on any type that can be
+	// both read and written to.
+	mmaReadWrite metaMultiArgConstraints = iota
+	// mmaKeysOnly implies mmaReadWrite, with the further statement that the only
+	// operation that will be performed against the arguments will be key
+	// extraction.
+	mmaKeysOnly = iota
+	// mmaWriteKeys indicates that the caller is only going to write key
+	// values. This enables the same inputs as mmaReadWrite, but also allows
+	// []*Key.
+	mmaWriteKeys = iota
+)
+
+func (c metaMultiArgConstraints) allowSingleKey() bool {
+	return c == mmaKeysOnly
+}
+
+func (c metaMultiArgConstraints) keyOperationsOnly() bool {
+	return c >= mmaKeysOnly
+}
+
 type multiArgType struct {
 	getMGS  func(slot reflect.Value) MetaGetterSetter
 	getPLS  func(slot reflect.Value) PropertyLoadSaver
@@ -33,8 +57,8 @@ func (mat *multiArgType) setPM(slot reflect.Value, pm PropertyMap) error {
 	return mat.getPLS(slot).Load(pm)
 }
 
-func (mat *multiArgType) setKey(slot reflect.Value, k *Key) {
-	PopulateKey(mat.getMGS(slot), k)
+func (mat *multiArgType) setKey(slot reflect.Value, k *Key) bool {
+	return populateKeyMGS(mat.getMGS(slot), k)
 }
 
 // parseArg checks that et is of type S, *S, I, P or *P, for some
@@ -44,13 +68,17 @@ func (mat *multiArgType) setKey(slot reflect.Value, k *Key) {
 // If et is a chan type that implements PropertyLoadSaver, new elements will be
 // allocated with a buffer of 0.
 //
-// If keysOnly is true, a read-only key extraction multiArgType will be
-// returned if et is a *Key.
-func parseArg(et reflect.Type, keysOnly bool) *multiArgType {
+// If allowKey is true, et may additional be type *Key. Only MetaGetterSetter
+// fields will be populated in the result (see keyMGS).
+func parseArg(et reflect.Type, allowKeys bool) *multiArgType {
 	var mat multiArgType
 
-	if keysOnly && et == typeOfKey {
-		mat.getMGS = func(slot reflect.Value) MetaGetterSetter { return &keyExtractionMGS{key: slot.Interface().(*Key)} }
+	if et == typeOfKey {
+		if !allowKeys {
+			return nil
+		}
+
+		mat.getMGS = func(slot reflect.Value) MetaGetterSetter { return &keyMGS{slot: slot} }
 		return &mat
 	}
 
@@ -199,10 +227,10 @@ func mustParseMultiArg(et reflect.Type) *multiArgType {
 	if et.Kind() != reflect.Slice {
 		panic(fmt.Errorf("invalid argument type: expected slice, got %s", et))
 	}
-	return mustParseArg(et.Elem())
+	return mustParseArg(et.Elem(), true)
 }
 
-func mustParseArg(et reflect.Type) *multiArgType {
+func mustParseArg(et reflect.Type, sliceArg bool) *multiArgType {
 	if mat := parseArg(et, false); mat != nil {
 		return mat
 	}
@@ -230,13 +258,13 @@ func newKeyObjErr(aid, ns string, mgs MetaGetterSetter) (*Key, error) {
 	return NewKey(aid, ns, kind, sid, iid, par), nil
 }
 
-func isOKSingleType(t reflect.Type, keysOnly bool) error {
+func isOKSingleType(t reflect.Type, allowKey bool) error {
 	switch {
 	case t == nil:
 		return errors.New("no type information")
 	case t.Implements(typeOfPropertyLoadSaver):
 		return nil
-	case !keysOnly && t == typeOfKey:
+	case !allowKey && t == typeOfKey:
 		return errors.New("not user datatype")
 
 	case t.Kind() != reflect.Ptr:
@@ -249,19 +277,34 @@ func isOKSingleType(t reflect.Type, keysOnly bool) error {
 	}
 }
 
-// keyExtractionMGS is a MetaGetterSetter that wraps a key and only implements
-// GetMeta, and even then only retrieves the wrapped key meta value, "key".
-type keyExtractionMGS struct {
-	MetaGetterSetter
-
-	key *Key
+// keyMGS is a MetaGetterSetter that wraps a single key value/slot. It only
+// implements operations on the "key" key.
+//
+// GetMeta will be implemented, returning the *Key for the "key" meta.
+//
+// If slot is addressable, SetMeta will allow it to be set to the supplied
+// Value.
+type keyMGS struct {
+	slot reflect.Value
 }
 
-func (mgs *keyExtractionMGS) GetMeta(key string) (interface{}, bool) {
-	if key == "key" {
-		return mgs.key, true
+func (mgs *keyMGS) GetAllMeta() PropertyMap {
+	return PropertyMap{"$key": []Property{MkPropertyNI(mgs.slot.Interface())}}
+}
+
+func (mgs *keyMGS) GetMeta(key string) (interface{}, bool) {
+	if key != "key" {
+		return nil, false
 	}
-	return nil, false
+	return mgs.slot.Interface(), true
+}
+
+func (mgs *keyMGS) SetMeta(key string, value interface{}) bool {
+	if !(key == "key" && mgs.slot.CanAddr()) {
+		return false
+	}
+	mgs.slot.Set(reflect.ValueOf(value))
+	return true
 }
 
 type metaMultiArgElement struct {
@@ -277,10 +320,18 @@ type metaMultiArg struct {
 	count int // total number of elements, flattening slices
 }
 
-func makeMetaMultiArg(args []interface{}, keysOnly bool) (*metaMultiArg, error) {
+// makeMetaMultiArg returns a metaMultiArg for the supplied args.
+//
+// If an arg is a slice, a slice metaMultiArg will be returned, and errors for
+// that slice will be written into a positional MultiError if they occur.
+//
+// If keysOnly is true, the caller is instructing metaMultiArg to only extract
+// the datastore *Key from args. *Key entries will be permitted, but the caller
+// may not write to them (since keys are read-only structs).
+func makeMetaMultiArg(args []interface{}, c metaMultiArgConstraints) (*metaMultiArg, error) {
 	mma := metaMultiArg{
 		elems:    make([]metaMultiArgElement, len(args)),
-		keysOnly: keysOnly,
+		keysOnly: c.keyOperationsOnly(),
 	}
 
 	lme := errors.NewLazyMultiError(len(args))
@@ -297,21 +348,29 @@ func makeMetaMultiArg(args []interface{}, keysOnly bool) (*metaMultiArg, error) 
 		// Try and treat the argument as a single-value first. This allows slices
 		// that implement PropertyLoadSaver to be properly treated as a single
 		// element.
-		var err error
-		isSlice := false
-		mat := parseArg(vt, keysOnly)
-		if mat == nil {
+		var (
+			mat     *multiArgType
+			err     error
+			isSlice = false
+		)
+		if mat = parseArg(vt, c.allowSingleKey()); mat == nil {
 			// If this is a slice, treat it as a slice of arg candidates.
+			//
+			// If only keys are being read/written, we allow a []*Key to be accepted
+			// here, since slices are addressable (write).
 			if v.Kind() == reflect.Slice {
 				isSlice = true
-				mat = parseArg(vt.Elem(), keysOnly)
+				mat = parseArg(vt.Elem(), c.keyOperationsOnly())
 			}
 		} else {
 			// Single types need to be able to be assigned to.
-			err = isOKSingleType(vt, keysOnly)
+			//
+			// We only allow *Key here when the keys cannot be written to, since *Key
+			// should not be modified in-place, as they are immutable.
+			err = isOKSingleType(vt, c.allowSingleKey())
 		}
-		if mat == nil {
-			err = errors.New("not a PLS or pointer-to-struct")
+		if mat == nil && err == nil {
+			err = errors.New("not a PLS, pointer-to-struct, or slice thereof")
 		}
 		if err != nil {
 			lme.Assign(i, fmt.Errorf("invalid input type (%T): %s", arg, err))

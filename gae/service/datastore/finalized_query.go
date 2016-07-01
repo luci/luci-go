@@ -323,7 +323,7 @@ func (q *FinalizedQuery) String() string {
 // have values of type PTKey (but don't filter on the magic '__key__' field).
 func (q *FinalizedQuery) Valid(aid, ns string) error {
 	anc := q.Ancestor()
-	if anc != nil && (!anc.Valid(false, aid, ns) || anc.Incomplete()) {
+	if anc != nil && (!anc.Valid(false, aid, ns) || anc.IsIncomplete()) {
 		return ErrInvalidKey
 	}
 

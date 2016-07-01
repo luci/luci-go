@@ -32,15 +32,15 @@ func (d *dsTxnBuf) DecodeCursor(s string) (ds.Cursor, error) {
 	return d.state.parentDS.DecodeCursor(s)
 }
 
-func (d *dsTxnBuf) AllocateIDs(incomplete *ds.Key, n int) (start int64, err error) {
-	return d.state.parentDS.AllocateIDs(incomplete, n)
+func (d *dsTxnBuf) AllocateIDs(keys []*ds.Key, cb ds.NewKeyCB) error {
+	return d.state.parentDS.AllocateIDs(keys, cb)
 }
 
 func (d *dsTxnBuf) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMultiCB) error {
 	return d.state.getMulti(keys, metas, cb, d.haveLock)
 }
 
-func (d *dsTxnBuf) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
+func (d *dsTxnBuf) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB) error {
 	return d.state.putMulti(keys, vals, cb, d.haveLock)
 }
 

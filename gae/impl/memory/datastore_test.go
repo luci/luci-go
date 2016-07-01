@@ -162,14 +162,25 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 			})
 
 			Convey("allocating ids prevents their use", func() {
-				start, err := ds.AllocateIDs(ds.MakeKey("Foo", 0), 100)
-				So(err, ShouldBeNil)
-				So(start, ShouldEqual, 2)
+				keys := ds.NewIncompleteKeys(100, "Foo", nil)
+				So(ds.AllocateIDs(keys), ShouldBeNil)
+				So(len(keys), ShouldEqual, 100)
 
+				// Assert that none of our keys share the same ID.
+				ids := make(map[int64]struct{})
+				for _, k := range keys {
+					ids[k.IntID()] = struct{}{}
+				}
+				So(len(ids), ShouldEqual, len(keys))
+
+				// Put a new object and ensure that it is allocated an unused ID.
 				f := &Foo{Val: 10}
 				So(ds.Put(f), ShouldBeNil)
 				k := ds.KeyForObj(f)
 				So(k.String(), ShouldEqual, "dev~app::/Foo,102")
+
+				_, ok := ids[k.IntID()]
+				So(ok, ShouldBeFalse)
 			})
 		})
 

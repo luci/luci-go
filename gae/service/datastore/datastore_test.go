@@ -31,6 +31,11 @@ func fakeDatastoreFactory(c context.Context, wantTxn bool) RawInterface {
 	return &fds
 }
 
+var (
+	errFail    = errors.New("Individual element fail")
+	errFailAll = errors.New("Operation fail")
+)
+
 type fakeDatastore struct {
 	RawInterface
 	aid string
@@ -39,6 +44,24 @@ type fakeDatastore struct {
 
 func (f *fakeDatastore) mkKey(elems ...interface{}) *Key {
 	return MakeKey(f.aid, f.ns, elems...)
+}
+
+func (f *fakeDatastore) newKey(kind, stringID string, intID int64, parent *Key) *Key {
+	return NewKey(f.aid, f.ns, kind, stringID, intID, parent)
+}
+
+func (f *fakeDatastore) AllocateIDs(keys []*Key, cb NewKeyCB) error {
+	if keys[0].Kind() == "FailAll" {
+		return errFailAll
+	}
+	for i, k := range keys {
+		if k.Kind() == "Fail" {
+			cb(nil, errFail)
+		} else {
+			cb(f.newKey(k.Kind(), "", int64(i+1), k.Parent()), nil)
+		}
+	}
+	return nil
 }
 
 func (f *fakeDatastore) Run(fq *FinalizedQuery, cb RawRunCB) error {
@@ -70,12 +93,7 @@ func (f *fakeDatastore) Run(fq *FinalizedQuery, cb RawRunCB) error {
 	return nil
 }
 
-var (
-	errFail    = errors.New("Individual element fail")
-	errFailAll = errors.New("Operation fail")
-)
-
-func (f *fakeDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb PutMultiCB) error {
+func (f *fakeDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) error {
 	if keys[0].Kind() == "FailAll" {
 		return errFailAll
 	}
@@ -89,7 +107,7 @@ func (f *fakeDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb PutMultiCB)
 			if assertExtra {
 				So(vals[i]["Extra"], ShouldResemble, []Property{MkProperty("whoa")})
 			}
-			if k.Incomplete() {
+			if k.IsIncomplete() {
 				k = NewKey(k.AppID(), k.Namespace(), k.Kind(), "", int64(i+1), k.Parent())
 			}
 		}
@@ -396,14 +414,14 @@ func TestPopulateKey(t *testing.T) {
 		Convey("Can set the key of a common struct.", func() {
 			var cs CommonStruct
 
-			PopulateKey(&cs, k)
+			So(PopulateKey(&cs, k), ShouldBeTrue)
 			So(cs.ID, ShouldEqual, 1337)
 		})
 
 		Convey("Will not set the value of a singleton struct.", func() {
 			var ss SingletonStruct
 
-			PopulateKey(&ss, k)
+			So(PopulateKey(&ss, k), ShouldBeFalse)
 			So(ss.id, ShouldEqual, 0)
 		})
 
@@ -417,6 +435,88 @@ func TestPopulateKey(t *testing.T) {
 			var broken permaBad
 
 			So(func() { PopulateKey(&broken, k) }, ShouldPanic)
+		})
+	})
+}
+
+func TestAllocateIDs(t *testing.T) {
+	t.Parallel()
+
+	Convey("A testing environment", t, func() {
+		c := info.Set(context.Background(), fakeInfo{})
+		c = SetRawFactory(c, fakeDatastoreFactory)
+		ds := Get(c)
+
+		Convey("Testing AllocateIDs", func() {
+			Convey("Will return nil if no entities are supplied.", func() {
+				So(ds.AllocateIDs(), ShouldBeNil)
+			})
+
+			Convey("single struct", func() {
+				cs := CommonStruct{Value: 1}
+				So(ds.AllocateIDs(&cs), ShouldBeNil)
+				So(cs.ID, ShouldEqual, 1)
+			})
+
+			Convey("struct slice", func() {
+				csSlice := []*CommonStruct{{Value: 1}, {Value: 2}}
+				So(ds.AllocateIDs(csSlice), ShouldBeNil)
+				So(csSlice, ShouldResemble, []*CommonStruct{{ID: 1, Value: 1}, {ID: 2, Value: 2}})
+			})
+
+			Convey("single key will fail", func() {
+				singleKey := ds.MakeKey("FooParent", "BarParent", "Foo", "Bar")
+				So(func() { ds.AllocateIDs(singleKey) }, ShouldPanicLike,
+					"invalid input type (*datastore.Key): not a PLS, pointer-to-struct, or slice thereof")
+			})
+
+			Convey("key slice", func() {
+				k0 := ds.MakeKey("Foo", "Bar")
+				k1 := ds.MakeKey("Baz", "Qux")
+				keySlice := []*Key{k0, k1}
+				So(ds.AllocateIDs(keySlice), ShouldBeNil)
+				So(keySlice[0].Equal(ds.MakeKey("Foo", 1)), ShouldBeTrue)
+				So(keySlice[1].Equal(ds.MakeKey("Baz", 2)), ShouldBeTrue)
+
+				// The original keys should not have changed.
+				So(k0.Equal(ds.MakeKey("Foo", "Bar")), ShouldBeTrue)
+				So(k1.Equal(ds.MakeKey("Baz", "Qux")), ShouldBeTrue)
+			})
+
+			Convey("fail all key slice", func() {
+				keySlice := []*Key{ds.MakeKey("FailAll", "oops"), ds.MakeKey("Baz", "Qux")}
+				So(ds.AllocateIDs(keySlice), ShouldEqual, errFailAll)
+				So(keySlice[0].StringID(), ShouldEqual, "oops")
+				So(keySlice[1].StringID(), ShouldEqual, "Qux")
+			})
+
+			Convey("fail key slice", func() {
+				keySlice := []*Key{ds.MakeKey("Fail", "oops"), ds.MakeKey("Baz", "Qux")}
+				So(ds.AllocateIDs(keySlice), ShouldResemble, errors.MultiError{errFail, nil})
+				So(keySlice[0].StringID(), ShouldEqual, "oops")
+				So(keySlice[1].IntID(), ShouldEqual, 2)
+			})
+
+			Convey("vararg with errors", func() {
+				successSlice := []CommonStruct{{Value: 0}, {Value: 1}}
+				failSlice := []FakePLS{{Kind: "Fail"}, {Value: 3}}
+				emptySlice := []CommonStruct(nil)
+				cs0 := CommonStruct{Value: 4}
+				cs1 := FakePLS{Kind: "Fail", Value: 5}
+				keySlice := []*Key{ds.MakeKey("Foo", "Bar"), ds.MakeKey("Baz", "Qux")}
+				fpls := FakePLS{StringID: "ohai", Value: 6}
+
+				err := ds.AllocateIDs(successSlice, failSlice, emptySlice, &cs0, &cs1, keySlice, &fpls)
+				So(err, ShouldResemble, errors.MultiError{
+					nil, errors.MultiError{errFail, nil}, nil, nil, errFail, nil, nil})
+				So(successSlice[0].ID, ShouldEqual, 1)
+				So(successSlice[1].ID, ShouldEqual, 2)
+				So(failSlice[1].IntID, ShouldEqual, 4)
+				So(cs0.ID, ShouldEqual, 5)
+				So(keySlice[0].Equal(ds.MakeKey("Foo", 7)), ShouldBeTrue)
+				So(keySlice[1].Equal(ds.MakeKey("Baz", 8)), ShouldBeTrue)
+				So(fpls.IntID, ShouldEqual, 9)
+			})
 		})
 	})
 }
@@ -445,12 +545,12 @@ func TestPut(t *testing.T) {
 
 				Convey("static bad type", func() {
 					So(func() { ds.Put(100) }, ShouldPanicLike,
-						"invalid input type (int): not a PLS or pointer-to-struct")
+						"invalid input type (int): not a PLS, pointer-to-struct, or slice thereof")
 				})
 
 				Convey("static bad type (slice of bad type)", func() {
 					So(func() { ds.Put([]int{}) }, ShouldPanicLike,
-						"invalid input type ([]int): not a PLS or pointer-to-struct")
+						"invalid input type ([]int): not a PLS, pointer-to-struct, or slice thereof")
 				})
 
 				Convey("dynamic can't serialize", func() {
@@ -475,7 +575,7 @@ func TestPut(t *testing.T) {
 
 				Convey("get with *Key is an error", func() {
 					So(func() { ds.Get(&Key{}) }, ShouldPanicLike,
-						"invalid input type (*datastore.Key): not user datatype")
+						"invalid input type (*datastore.Key): not a PLS, pointer-to-struct, or slice thereof")
 				})
 
 				Convey("struct with no $kind is an error", func() {
@@ -885,7 +985,7 @@ func TestGet(t *testing.T) {
 				Convey("get with ptr-to-nonstruct is an error", func() {
 					val := 100
 					So(func() { ds.Get(&val) }, ShouldPanicLike,
-						"invalid input type (*int): not a PLS or pointer-to-struct")
+						"invalid input type (*int): not a PLS, pointer-to-struct, or slice thereof")
 				})
 
 				Convey("failure to save metadata is no problem though", func() {
@@ -1315,12 +1415,12 @@ func (d *fixedDataDatastore) GetMulti(keys []*Key, _ MultiMetaGetter, cb GetMult
 	return nil
 }
 
-func (d *fixedDataDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb PutMultiCB) error {
+func (d *fixedDataDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) error {
 	if d.data == nil {
 		d.data = make(map[string]PropertyMap, len(keys))
 	}
 	for i, k := range keys {
-		if k.Incomplete() {
+		if k.IsIncomplete() {
 			panic("key is incomplete, don't do that.")
 		}
 		d.data[k.String()], _ = vals[i].Save(false)

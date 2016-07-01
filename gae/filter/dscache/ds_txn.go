@@ -23,7 +23,7 @@ func (d *dsTxnCache) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 	return d.RawInterface.DeleteMulti(keys, cb)
 }
 
-func (d *dsTxnCache) PutMulti(keys []*ds.Key, metas []ds.PropertyMap, cb ds.PutMultiCB) error {
+func (d *dsTxnCache) PutMulti(keys []*ds.Key, metas []ds.PropertyMap, cb ds.NewKeyCB) error {
 	d.state.add(d.sc, keys)
 	return d.RawInterface.PutMulti(keys, metas, cb)
 }

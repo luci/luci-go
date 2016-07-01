@@ -19,16 +19,6 @@ type checkFilter struct {
 	ns  string
 }
 
-func (tcf *checkFilter) AllocateIDs(incomplete *Key, n int) (start int64, err error) {
-	if n <= 0 {
-		return 0, fmt.Errorf("datastore: invalid `n` parameter in AllocateIDs: %d", n)
-	}
-	if !incomplete.PartialValid(tcf.aid, tcf.ns) {
-		return 0, ErrInvalidKey
-	}
-	return tcf.RawInterface.AllocateIDs(incomplete, n)
-}
-
 func (tcf *checkFilter) RunInTransaction(f func(c context.Context) error, opts *TransactionOptions) error {
 	if f == nil {
 		return fmt.Errorf("datastore: RunInTransaction function is nil")
@@ -55,7 +45,7 @@ func (tcf *checkFilter) GetMulti(keys []*Key, meta MultiMetaGetter, cb GetMultiC
 	}
 	lme := errors.NewLazyMultiError(len(keys))
 	for i, k := range keys {
-		if k.Incomplete() || !k.Valid(true, tcf.aid, tcf.ns) {
+		if k.IsIncomplete() || !k.Valid(true, tcf.aid, tcf.ns) {
 			lme.Assign(i, ErrInvalidKey)
 		}
 	}
@@ -68,7 +58,7 @@ func (tcf *checkFilter) GetMulti(keys []*Key, meta MultiMetaGetter, cb GetMultiC
 	return tcf.RawInterface.GetMulti(keys, meta, cb)
 }
 
-func (tcf *checkFilter) PutMulti(keys []*Key, vals []PropertyMap, cb PutMultiCB) error {
+func (tcf *checkFilter) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) error {
 	if len(keys) != len(vals) {
 		return fmt.Errorf("datastore: PutMulti with mismatched keys/vals lengths (%d/%d)", len(keys), len(vals))
 	}
@@ -108,7 +98,7 @@ func (tcf *checkFilter) DeleteMulti(keys []*Key, cb DeleteMultiCB) error {
 	}
 	lme := errors.NewLazyMultiError(len(keys))
 	for i, k := range keys {
-		if k.Incomplete() || !k.Valid(false, tcf.aid, tcf.ns) {
+		if k.IsIncomplete() || !k.Valid(false, tcf.aid, tcf.ns) {
 			lme.Assign(i, ErrInvalidKey)
 		}
 	}

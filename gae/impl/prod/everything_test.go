@@ -68,11 +68,18 @@ func TestBasicDatastore(t *testing.T) {
 		})
 
 		Convey("Can probe/change Namespace", func() {
-			So(inf.GetNamespace(), ShouldEqual, "")
+			ns, has := inf.GetNamespace()
+			So(ns, ShouldEqual, "")
+			So(has, ShouldBeFalse)
+
 			ctx, err = inf.Namespace("wat")
 			So(err, ShouldBeNil)
 			inf = info.Get(ctx)
-			So(inf.GetNamespace(), ShouldEqual, "wat")
+
+			ns, has = inf.GetNamespace()
+			So(ns, ShouldEqual, "wat")
+			So(has, ShouldBeTrue)
+
 			ds = datastore.Get(ctx)
 			So(ds.MakeKey("Hello", "world").Namespace(), ShouldEqual, "wat")
 		})

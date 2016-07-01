@@ -130,8 +130,9 @@ func init() {
 func mkds(data []*Foo) (under, over *count.DSCounter, ds datastore.Interface) {
 	c := memory.UseWithAppID(context.Background(), "something~else")
 	ds = datastore.Get(c)
-	_, err := ds.AllocateIDs(ds.KeyForObj(data[0]), 100)
-	if err != nil {
+
+	dataKey := ds.KeyForObj(data[0])
+	if err := ds.AllocateIDs(ds.NewIncompleteKeys(100, dataKey.Kind(), dataKey.Parent())); err != nil {
 		panic(err)
 	}
 	if err := ds.PutMulti(data); err != nil {

@@ -105,8 +105,8 @@ func TestKeyValidity(t *testing.T) {
 
 	Convey("keys validity", t, func() {
 		Convey("incomplete", func() {
-			So(MakeKey("aid", "ns", "kind", 1).Incomplete(), ShouldBeFalse)
-			So(MakeKey("aid", "ns", "kind", 0).Incomplete(), ShouldBeTrue)
+			So(MakeKey("aid", "ns", "kind", 1).IsIncomplete(), ShouldBeFalse)
+			So(MakeKey("aid", "ns", "kind", 0).IsIncomplete(), ShouldBeTrue)
 		})
 
 		Convey("invalid", func() {

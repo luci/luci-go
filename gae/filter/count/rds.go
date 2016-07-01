@@ -30,9 +30,8 @@ type dsCounter struct {
 
 var _ ds.RawInterface = (*dsCounter)(nil)
 
-func (r *dsCounter) AllocateIDs(incomplete *ds.Key, n int) (int64, error) {
-	start, err := r.ds.AllocateIDs(incomplete, n)
-	return start, r.c.AllocateIDs.up(err)
+func (r *dsCounter) AllocateIDs(keys []*ds.Key, cb ds.NewKeyCB) error {
+	return r.c.AllocateIDs.up(r.ds.AllocateIDs(keys, cb))
 }
 
 func (r *dsCounter) DecodeCursor(s string) (ds.Cursor, error) {
@@ -61,7 +60,7 @@ func (r *dsCounter) GetMulti(keys []*ds.Key, meta ds.MultiMetaGetter, cb ds.GetM
 	return r.c.GetMulti.upFilterStop(r.ds.GetMulti(keys, meta, cb))
 }
 
-func (r *dsCounter) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
+func (r *dsCounter) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB) error {
 	return r.c.PutMulti.upFilterStop(r.ds.PutMulti(keys, vals, cb))
 }
 

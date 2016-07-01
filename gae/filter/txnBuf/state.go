@@ -363,33 +363,55 @@ func (t *txnBufState) deleteMulti(keys []*datastore.Key, cb datastore.DeleteMult
 }
 
 func (t *txnBufState) fixKeys(keys []*datastore.Key) ([]*datastore.Key, error) {
-	lme := errors.NewLazyMultiError(len(keys))
-	realKeys := []*datastore.Key(nil)
-	for i, key := range keys {
-		if key.Incomplete() {
-			// intentionally call AllocateIDs without lock.
-			start, err := t.parentDS.AllocateIDs(key, 1)
-			if !lme.Assign(i, err) {
-				if realKeys == nil {
-					realKeys = make([]*datastore.Key, len(keys))
-					copy(realKeys, keys)
-				}
+	// Identify any incomplete keys and allocate IDs for them.
+	//
+	// In order to facilitate this, we will maintain a mapping of the
+	// incompleteKeys index to the key's corresponding index in the keys array.
+	// Any errors or allocations on incompleteKeys operations will be propagated
+	// to the correct keys index using this map.
+	var (
+		incompleteKeys []*datastore.Key
+		incompleteMap  map[int]int
+	)
 
-				aid, ns, toks := key.Split()
-				toks[len(toks)-1].IntID = start
-				realKeys[i] = datastore.NewKeyToks(aid, ns, toks)
+	for i, key := range keys {
+		if key.IsIncomplete() {
+			if incompleteMap == nil {
+				incompleteMap = make(map[int]int)
 			}
+			incompleteMap[len(incompleteKeys)] = i
+			incompleteKeys = append(incompleteKeys, key)
 		}
 	}
-	err := lme.Get()
-
-	if realKeys != nil {
-		return realKeys, err
+	if len(incompleteKeys) == 0 {
+		return keys, nil
 	}
-	return keys, err
+
+	// We're going to update keys, so clone it.
+	keys, origKeys := make([]*datastore.Key, len(keys)), keys
+	copy(keys, origKeys)
+
+	// Intentionally call AllocateIDs without lock.
+	i := 0
+	outerErr := errors.NewLazyMultiError(len(keys))
+	err := t.parentDS.AllocateIDs(incompleteKeys, func(key *datastore.Key, err error) error {
+		outerIdx := incompleteMap[i]
+		i++
+
+		if err != nil {
+			outerErr.Assign(outerIdx, err)
+		} else {
+			keys[outerIdx] = key
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return keys, outerErr.Get()
 }
 
-func (t *txnBufState) putMulti(keys []*datastore.Key, vals []datastore.PropertyMap, cb datastore.PutMultiCB, haveLock bool) error {
+func (t *txnBufState) putMulti(keys []*datastore.Key, vals []datastore.PropertyMap, cb datastore.NewKeyCB, haveLock bool) error {
 	keys, err := t.fixKeys(keys)
 	if err != nil {
 		for _, e := range err.(errors.MultiError) {

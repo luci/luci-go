@@ -57,14 +57,49 @@ func idxCallbacker(err error, amt int, cb func(idx int, err error)) error {
 	return err
 }
 
-func (d rdsImpl) AllocateIDs(incomplete *ds.Key, n int) (start int64, err error) {
-	par, err := dsF2R(d.aeCtx, incomplete.Parent())
-	if err != nil {
-		return
+func (d rdsImpl) AllocateIDs(keys []*ds.Key, cb ds.NewKeyCB) error {
+	// Map keys by entity type.
+	entityMap := make(map[string][]int)
+	for i, key := range keys {
+		ks := key.String()
+		entityMap[ks] = append(entityMap[ks], i)
 	}
 
-	start, _, err = datastore.AllocateIDs(d.aeCtx, incomplete.Kind(), par, n)
-	return
+	// Allocate a set of IDs for each unique entity type.
+	errors := errors.NewLazyMultiError(len(keys))
+	setErrs := func(idxs []int, err error) {
+		for _, idx := range idxs {
+			errors.Assign(idx, err)
+		}
+	}
+
+	for _, idxs := range entityMap {
+		incomplete := keys[idxs[0]]
+		par, err := dsF2R(d.aeCtx, incomplete.Parent())
+		if err != nil {
+			setErrs(idxs, err)
+			continue
+		}
+
+		start, _, err := datastore.AllocateIDs(d.aeCtx, incomplete.Kind(), par, len(idxs))
+		if err != nil {
+			setErrs(idxs, err)
+			continue
+		}
+
+		for i, idx := range idxs {
+			keys[idx] = incomplete.WithID("", start+int64(i))
+		}
+	}
+
+	for i, key := range keys {
+		if err := errors.GetOne(i); err != nil {
+			cb(nil, err)
+		} else {
+			cb(key, nil)
+		}
+	}
+	return nil
 }
 
 func (d rdsImpl) DeleteMulti(ks []*ds.Key, cb ds.DeleteMultiCB) error {
@@ -95,7 +130,7 @@ func (d rdsImpl) GetMulti(keys []*ds.Key, _meta ds.MultiMetaGetter, cb ds.GetMul
 	})
 }
 
-func (d rdsImpl) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
+func (d rdsImpl) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB) error {
 	rkeys, err := dsMF2R(d.aeCtx, keys)
 	if err == nil {
 		rvals := make([]datastore.PropertyLoadSaver, len(vals))

@@ -42,7 +42,9 @@ type RawRunCB func(key *Key, val PropertyMap, getCursor CursorCB) error
 // error `Stop`, then GetMulti will stop the query and return nil.
 type GetMultiCB func(val PropertyMap, err error) error
 
-// PutMultiCB is the callback signature provided to RawInterface.PutMulti
+// NewKeyCB is the callback signature provided to RawInterface.PutMulti and
+// RawInterface.AllocateIDs. It is invoked once for each positional key that
+// was generated as the result of a call.
 //
 //   - key is the new key for the entity (if the original was incomplete)
 //     * It may be nil if some of the keys/vals to the PutMulti were bad, since
@@ -51,7 +53,7 @@ type GetMultiCB func(val PropertyMap, err error) error
 //
 // Return nil to continue iterating, or an error to stop. If you return the
 // error `Stop`, then PutMulti will stop the query and return nil.
-type PutMultiCB func(key *Key, err error) error
+type NewKeyCB func(key *Key, err error) error
 
 // DeleteMultiCB is the callback signature provided to RawInterface.DeleteMulti
 //
@@ -105,12 +107,12 @@ func (m MultiMetaGetter) GetSingle(idx int) MetaGetter {
 // reflection work. See datastore.Interface for a more user-friendly interface.
 type RawInterface interface {
 	// AllocateIDs allows you to allocate IDs from the datastore without putting
-	// any data. `incomplete` must be a PartialValid Key. If there's no error,
-	// a contiguous block of IDs of n length starting at `start` will be reserved
-	// indefinitely for the user application code for use in new keys. The
-	// appengine automatic ID generator will never automatically assign these IDs
-	// for Keys of this type.
-	AllocateIDs(incomplete *Key, n int) (start int64, err error)
+	// any data. The supplied keys must be PartialValid and share the same entity
+	// type.
+	//
+	// If there's no error, the keys in the slice will be replaced with keys
+	// containing integer IDs assigned to them.
+	AllocateIDs(keys []*Key, cb NewKeyCB) error
 
 	// RunInTransaction runs f in a transaction.
 	//
@@ -160,7 +162,7 @@ type RawInterface interface {
 	//   - len(keys) == len(vals)
 	//   - all keys are Valid and in the current namespace
 	//   - cb is not nil
-	PutMulti(keys []*Key, vals []PropertyMap, cb PutMultiCB) error
+	PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) error
 
 	// DeleteMulti removes items from the datastore.
 	//

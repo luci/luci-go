@@ -21,12 +21,36 @@ import (
 // using this package's GetPLS function.
 type Interface interface {
 	// AllocateIDs allows you to allocate IDs from the datastore without putting
-	// any data. `incomplete` must be a PartialValid Key. If there's no error,
-	// a contiguous block of IDs of n length starting at `start` will be reserved
-	// indefinitely for the user application code for use in new keys. The
-	// appengine automatic ID generator will never automatically assign these IDs
-	// for Keys of this type.
-	AllocateIDs(incomplete *Key, n int) (start int64, err error)
+	// any data.
+	//
+	// A partial valid key will be constructed from each entity's kind and parent,
+	// if present. An allocation will then be performed against the datastore for
+	// each key, and the partial key will be populated with a unique integer ID.
+	// The resulting keys will be applied to their objects using PopulateKey. If
+	// successful, any existing ID will be destroyed.
+	//
+	// If the object is supplied that cannot accept an integer key, this method
+	// will panic.
+	//
+	// ent must be one of:
+	//	- *S where S is a struct
+	//	- *P where *P is a concrete type implementing PropertyLoadSaver
+	//	- []S or []*S where S is a struct
+	//	- []P or []*P where *P is a concrete type implementing PropertyLoadSaver
+	//	- []I where i is some interface type. Each element of the slice must
+	//	  be non-nil, and its underlying type must be either *S or *P.
+	//	- []*Key, to populate a slice of partial-valid keys.
+	//
+	// If an error is encountered, the returned error value will depend on the
+	// input arguments. If one argument is supplied, the result will be the
+	// encountered error type. If multiple arguments are supplied, the result will
+	// be a MultiError whose error index corresponds to the argument in which the
+	// error was encountered.
+	//
+	// If an ent argument is a slice, its error type will be a MultiError. Note
+	// that in the scenario where multiple slices are provided, this will return a
+	// MultiError containing a nested MultiError for each slice argument.
+	AllocateIDs(ent ...interface{}) error
 
 	// KeyForObj extracts a key from src.
 	//
@@ -52,6 +76,10 @@ type Interface interface {
 	// NewKey constructs a new key in the current appID/Namespace, using the
 	// specified parameters.
 	NewKey(kind, stringID string, intID int64, parent *Key) *Key
+
+	// NewIncompleteKeys allocates count incomplete keys sharing the same kind and
+	// parent. It is useful as input to AllocateIDs.
+	NewIncompleteKeys(count int, kind string, parent *Key) []*Key
 
 	// NewKeyToks constructs a new key in the current appID/Namespace, using the
 	// specified key tokens.
@@ -204,7 +232,7 @@ type Interface interface {
 	// this interface at some point in the future.
 	GetMulti(dst interface{}) error
 
-	// Put inserts a single object into the datastore
+	// Put writes objects into the datastore.
 	//
 	// src must be one of:
 	//	- *S, where S is a struct

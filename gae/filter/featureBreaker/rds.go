@@ -16,13 +16,10 @@ type dsState struct {
 	rds ds.RawInterface
 }
 
-func (r *dsState) AllocateIDs(incomplete *ds.Key, n int) (int64, error) {
-	start := int64(0)
-	err := r.run(func() (err error) {
-		start, err = r.rds.AllocateIDs(incomplete, n)
-		return
+func (r *dsState) AllocateIDs(keys []*ds.Key, cb ds.NewKeyCB) error {
+	return r.run(func() error {
+		return r.rds.AllocateIDs(keys, cb)
 	})
-	return start, err
 }
 
 func (r *dsState) DecodeCursor(s string) (ds.Cursor, error) {
@@ -70,7 +67,7 @@ func (r *dsState) GetMulti(keys []*ds.Key, meta ds.MultiMetaGetter, cb ds.GetMul
 	})
 }
 
-func (r *dsState) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
+func (r *dsState) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB) error {
 	return r.run(func() (err error) {
 		return r.rds.PutMulti(keys, vals, cb)
 	})

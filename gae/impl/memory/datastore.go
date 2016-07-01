@@ -82,11 +82,11 @@ type dsImpl struct {
 
 var _ ds.RawInterface = (*dsImpl)(nil)
 
-func (d *dsImpl) AllocateIDs(incomplete *ds.Key, n int) (int64, error) {
-	return d.data.allocateIDs(incomplete, n)
+func (d *dsImpl) AllocateIDs(keys []*ds.Key, cb ds.NewKeyCB) error {
+	return d.data.allocateIDs(keys, cb)
 }
 
-func (d *dsImpl) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
+func (d *dsImpl) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB) error {
 	d.data.putMulti(keys, vals, cb)
 	return nil
 }
@@ -188,11 +188,11 @@ type txnDsImpl struct {
 
 var _ ds.RawInterface = (*txnDsImpl)(nil)
 
-func (d *txnDsImpl) AllocateIDs(incomplete *ds.Key, n int) (int64, error) {
-	return d.data.parent.allocateIDs(incomplete, n)
+func (d *txnDsImpl) AllocateIDs(keys []*ds.Key, cb ds.NewKeyCB) error {
+	return d.data.parent.allocateIDs(keys, cb)
 }
 
-func (d *txnDsImpl) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
+func (d *txnDsImpl) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB) error {
 	return d.data.run(func() error {
 		d.data.putMulti(keys, vals, cb)
 		return nil

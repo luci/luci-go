@@ -63,7 +63,7 @@ func (s *supportContext) mkAllKeys(keys []*ds.Key) []string {
 	size := 0
 	nums := make([]int, len(keys))
 	for i, key := range keys {
-		if !key.Incomplete() {
+		if !key.IsIncomplete() {
 			shards := s.numShards(key)
 			nums[i] = shards
 			size += shards
@@ -74,7 +74,7 @@ func (s *supportContext) mkAllKeys(keys []*ds.Key) []string {
 	}
 	ret := make([]string, 0, size)
 	for i, key := range keys {
-		if !key.Incomplete() {
+		if !key.IsIncomplete() {
 			keySuffix := HashKey(key)
 			for shard := 0; shard < nums[i]; shard++ {
 				ret = append(ret, fmt.Sprintf(KeyFormat, shard, keySuffix))

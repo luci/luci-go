@@ -48,6 +48,16 @@ func (d *datastoreImpl) NewKey(kind, stringID string, intID int64, parent *Key) 
 	return NewKey(d.aid, d.ns, kind, stringID, intID, parent)
 }
 
+func (d *datastoreImpl) NewIncompleteKeys(count int, kind string, parent *Key) (keys []*Key) {
+	if count > 0 {
+		keys = make([]*Key, count)
+		for i := range keys {
+			keys[i] = d.NewKey(kind, "", 0, parent)
+		}
+	}
+	return
+}
+
 func (d *datastoreImpl) NewKeyToks(toks []KeyTok) *Key {
 	return NewKeyToks(d.aid, d.ns, toks)
 }
@@ -56,23 +66,35 @@ func (d *datastoreImpl) NewKeyToks(toks []KeyTok) *Key {
 //
 // obj is any object that Interface.Get is able to accept.
 //
+// Upon successful application, this method will return true. If the key could
+// not be applied to the object, this method will return false. It will panic if
+// obj is an invalid datastore model.
+//
 // This method will panic if obj is an invalid datastore model. If the key could
 // not be applied to the object, nothing will happen.
-func PopulateKey(obj interface{}, key *Key) {
-	populateKeyMGS(getMGS(obj), key)
+func PopulateKey(obj interface{}, key *Key) bool {
+	return populateKeyMGS(getMGS(obj), key)
 }
 
-func populateKeyMGS(mgs MetaGetterSetter, key *Key) {
-	if !mgs.SetMeta("key", key) {
-		lst := key.LastTok()
-		if lst.StringID != "" {
-			mgs.SetMeta("id", lst.StringID)
-		} else {
-			mgs.SetMeta("id", lst.IntID)
-		}
-		mgs.SetMeta("kind", lst.Kind)
-		mgs.SetMeta("parent", key.Parent())
+func populateKeyMGS(mgs MetaGetterSetter, key *Key) bool {
+	if mgs.SetMeta("key", key) {
+		return true
 	}
+
+	lst := key.LastTok()
+	if lst.StringID != "" {
+		if !mgs.SetMeta("id", lst.StringID) {
+			return false
+		}
+	} else {
+		if !mgs.SetMeta("id", lst.IntID) {
+			return false
+		}
+	}
+
+	mgs.SetMeta("kind", lst.Kind)
+	mgs.SetMeta("parent", key.Parent())
+	return true
 }
 
 func checkMultiSliceType(v interface{}) error {
@@ -111,7 +133,7 @@ func runParseCallback(cbIface interface{}) (isKey, hasErr, hasCursorCB bool, mat
 	if firstArg == typeOfKey {
 		isKey = true
 	} else {
-		mat = mustParseArg(firstArg)
+		mat = mustParseArg(firstArg, false)
 		if mat.newElem == nil {
 			badSig()
 		}
@@ -130,6 +152,57 @@ func runParseCallback(cbIface interface{}) (isKey, hasErr, hasCursorCB bool, mat
 	hasErr = cbTyp.NumOut() == 1
 
 	return
+}
+
+func (d *datastoreImpl) AllocateIDs(ent ...interface{}) error {
+	if len(ent) == 0 {
+		return nil
+	}
+
+	mma, err := makeMetaMultiArg(ent, mmaWriteKeys)
+	if err != nil {
+		panic(err)
+	}
+
+	keys, _, err := mma.getKeysPMs(d.aid, d.ns, false)
+	if err != nil {
+		return err
+	}
+	if len(keys) == 0 {
+		return nil
+	}
+
+	// Convert each key to be partial valid, assigning an integer ID of 0. Confirm
+	// that each object can be populated with such a key.
+	for i, key := range keys {
+		keys[i] = key.Incomplete()
+	}
+
+	var et errorTracker
+	it := mma.iterator(et.init(mma))
+	err = filterStop(d.RawInterface.AllocateIDs(keys, func(key *Key, err error) error {
+		it.next(func(mat *multiArgType, v reflect.Value) error {
+			if err != nil {
+				return err
+			}
+
+			if !mat.setKey(v, key) {
+				return ErrInvalidKey
+			}
+			return nil
+		})
+
+		return nil
+	}))
+	if err == nil {
+		err = et.error()
+
+		if err != nil && len(ent) == 1 {
+			// Single-argument Exists will return a single error.
+			err = errors.SingleError(err)
+		}
+	}
+	return err
 }
 
 func (d *datastoreImpl) Run(q *Query, cbIface interface{}) error {
@@ -260,7 +333,11 @@ func (d *datastoreImpl) GetAll(q *Query, dst interface{}) error {
 }
 
 func (d *datastoreImpl) Exists(ent ...interface{}) (*ExistsResult, error) {
-	mma, err := makeMetaMultiArg(ent, true)
+	if len(ent) == 0 {
+		return nil, nil
+	}
+
+	mma, err := makeMetaMultiArg(ent, mmaKeysOnly)
 	if err != nil {
 		panic(err)
 	}
@@ -269,15 +346,16 @@ func (d *datastoreImpl) Exists(ent ...interface{}) (*ExistsResult, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(keys) == 0 {
+		return nil, nil
+	}
 
-	i := 0
 	var bt boolTracker
 	it := mma.iterator(bt.init(mma))
 	err = filterStop(d.RawInterface.GetMulti(keys, nil, func(_ PropertyMap, err error) error {
 		it.next(func(*multiArgType, reflect.Value) error {
 			return err
 		})
-		i++
 		return nil
 	}))
 	if err == nil {
@@ -300,7 +378,11 @@ func (d *datastoreImpl) ExistsMulti(keys []*Key) (BoolList, error) {
 }
 
 func (d *datastoreImpl) Get(dst ...interface{}) (err error) {
-	mma, err := makeMetaMultiArg(dst, false)
+	if len(dst) == 0 {
+		return nil
+	}
+
+	mma, err := makeMetaMultiArg(dst, mmaReadWrite)
 	if err != nil {
 		panic(err)
 	}
@@ -309,8 +391,10 @@ func (d *datastoreImpl) Get(dst ...interface{}) (err error) {
 	if err != nil {
 		return err
 	}
+	if len(keys) == 0 {
+		return nil
+	}
 
-	i := 0
 	var et errorTracker
 	it := mma.iterator(et.init(mma))
 	meta := NewMultiMetaGetter(pms)
@@ -321,8 +405,6 @@ func (d *datastoreImpl) Get(dst ...interface{}) (err error) {
 			}
 			return mat.setPM(slot, pm)
 		})
-
-		i++
 		return nil
 	}))
 
@@ -345,7 +427,11 @@ func (d *datastoreImpl) GetMulti(dst interface{}) error {
 }
 
 func (d *datastoreImpl) Put(src ...interface{}) (err error) {
-	mma, err := makeMetaMultiArg(src, false)
+	if len(src) == 0 {
+		return nil
+	}
+
+	mma, err := makeMetaMultiArg(src, mmaReadWrite)
 	if err != nil {
 		panic(err)
 	}
@@ -353,6 +439,9 @@ func (d *datastoreImpl) Put(src ...interface{}) (err error) {
 	keys, vals, err := mma.getKeysPMs(d.aid, d.ns, false)
 	if err != nil {
 		return err
+	}
+	if len(keys) == 0 {
+		return nil
 	}
 
 	i := 0
@@ -392,7 +481,11 @@ func (d *datastoreImpl) PutMulti(src interface{}) error {
 }
 
 func (d *datastoreImpl) Delete(ent ...interface{}) error {
-	mma, err := makeMetaMultiArg(ent, true)
+	if len(ent) == 0 {
+		return nil
+	}
+
+	mma, err := makeMetaMultiArg(ent, mmaKeysOnly)
 	if err != nil {
 		panic(err)
 	}
@@ -401,15 +494,16 @@ func (d *datastoreImpl) Delete(ent ...interface{}) error {
 	if err != nil {
 		return err
 	}
+	if len(keys) == 0 {
+		return nil
+	}
 
-	i := 0
 	var et errorTracker
 	it := mma.iterator(et.init(mma))
 	err = filterStop(d.RawInterface.DeleteMulti(keys, func(err error) error {
 		it.next(func(*multiArgType, reflect.Value) error {
 			return err
 		})
-		i++
 
 		return nil
 	}))

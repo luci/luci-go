@@ -73,12 +73,8 @@ func ni() error {
 
 type ds struct{}
 
-func (ds) AllocateIDs(*datastore.Key, int) (int64, error) {
-	panic(ni())
-}
-func (ds) PutMulti([]*datastore.Key, []datastore.PropertyMap, datastore.PutMultiCB) error {
-	panic(ni())
-}
+func (ds) AllocateIDs([]*datastore.Key, datastore.NewKeyCB) error                       { panic(ni()) }
+func (ds) PutMulti([]*datastore.Key, []datastore.PropertyMap, datastore.NewKeyCB) error { panic(ni()) }
 func (ds) GetMulti([]*datastore.Key, datastore.MultiMetaGetter, datastore.GetMultiCB) error {
 	panic(ni())
 }

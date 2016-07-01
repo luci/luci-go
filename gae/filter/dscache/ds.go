@@ -28,7 +28,7 @@ func (d *dsCache) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 	})
 }
 
-func (d *dsCache) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
+func (d *dsCache) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB) error {
 	return d.mutation(keys, func() error {
 		return d.RawInterface.PutMulti(keys, vals, cb)
 	})

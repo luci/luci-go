@@ -215,12 +215,48 @@ func incrementLocked(ents memCollection, key []byte, amt int) int64 {
 	return ret
 }
 
-func (d *dataStoreData) allocateIDs(incomplete *ds.Key, n int) (int64, error) {
-	d.Lock()
-	defer d.Unlock()
+func (d *dataStoreData) allocateIDs(keys []*ds.Key, cb ds.NewKeyCB) error {
+	// Map keys by entity type.
+	entityMap := make(map[string][]int)
+	for i, key := range keys {
+		ks := key.String()
+		entityMap[ks] = append(entityMap[ks], i)
+	}
 
-	ents := d.head.GetOrCreateCollection("ents:" + incomplete.Namespace())
-	return d.allocateIDsLocked(ents, incomplete, n)
+	// Allocate IDs for our keys. We use an inline function so we can ensure that
+	// the lock is released.
+	err := func() error {
+		d.Lock()
+		defer d.Unlock()
+
+		for _, idxs := range entityMap {
+			baseKey := keys[idxs[0]]
+
+			ents := d.head.GetOrCreateCollection("ents:" + baseKey.Namespace())
+
+			// Allocate IDs. The only possible error is when disableSpecialEntities is
+			// true, in which case we will return a full method error instead of
+			// individual callback errors.
+			start, err := d.allocateIDsLocked(ents, baseKey, len(idxs))
+			if err != nil {
+				return err
+			}
+
+			for i, idx := range idxs {
+				keys[idx] = baseKey.WithID("", start+int64(i))
+			}
+		}
+		return nil
+	}()
+	if err != nil {
+		return err
+	}
+
+	// Execute Callbacks.
+	for _, key := range keys {
+		cb(key, nil)
+	}
+	return nil
 }
 
 func (d *dataStoreData) allocateIDsLocked(ents memCollection, incomplete *ds.Key, n int) (int64, error) {
@@ -238,7 +274,7 @@ func (d *dataStoreData) allocateIDsLocked(ents memCollection, incomplete *ds.Key
 }
 
 func (d *dataStoreData) fixKeyLocked(ents memCollection, key *ds.Key) (*ds.Key, error) {
-	if key.Incomplete() {
+	if key.IsIncomplete() {
 		id, err := d.allocateIDsLocked(ents, key, 1)
 		if err != nil {
 			return key, err
@@ -248,7 +284,7 @@ func (d *dataStoreData) fixKeyLocked(ents memCollection, key *ds.Key) (*ds.Key, 
 	return key, nil
 }
 
-func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) error {
+func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB) error {
 	ns := keys[0].Namespace()
 
 	for i, k := range keys {
@@ -517,7 +553,7 @@ func (td *txnDataStoreData) writeMutation(getOnly bool, key *ds.Key, data ds.Pro
 	return nil
 }
 
-func (td *txnDataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.PutMultiCB) {
+func (td *txnDataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB) {
 	ns := keys[0].Namespace()
 
 	for i, k := range keys {
