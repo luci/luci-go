@@ -39,10 +39,12 @@ type rdsImpl struct {
 	aeCtx context.Context
 }
 
-func idxCallbacker(err error, amt int, cb func(idx int, err error)) error {
+func idxCallbacker(err error, amt int, cb func(idx int, err error) error) error {
 	if err == nil {
 		for i := 0; i < amt; i++ {
-			cb(i, nil)
+			if err := cb(i, nil); err != nil {
+				return err
+			}
 		}
 		return nil
 	}
@@ -50,7 +52,9 @@ func idxCallbacker(err error, amt int, cb func(idx int, err error)) error {
 	me, ok := err.(errors.MultiError)
 	if ok {
 		for i, err := range me {
-			cb(i, err)
+			if err := cb(i, err); err != nil {
+				return err
+			}
 		}
 		return nil
 	}
@@ -107,8 +111,8 @@ func (d rdsImpl) DeleteMulti(ks []*ds.Key, cb ds.DeleteMultiCB) error {
 	if err == nil {
 		err = datastore.DeleteMulti(d.aeCtx, keys)
 	}
-	return idxCallbacker(err, len(ks), func(_ int, err error) {
-		cb(err)
+	return idxCallbacker(err, len(ks), func(_ int, err error) error {
+		return cb(err)
 	})
 }
 
@@ -121,12 +125,11 @@ func (d rdsImpl) GetMulti(keys []*ds.Key, _meta ds.MultiMetaGetter, cb ds.GetMul
 		}
 		err = datastore.GetMulti(d.aeCtx, rkeys, vals)
 	}
-	return idxCallbacker(err, len(keys), func(idx int, err error) {
+	return idxCallbacker(err, len(keys), func(idx int, err error) error {
 		if pls := vals[idx]; pls != nil {
-			cb(pls.(*typeFilter).pm, err)
-		} else {
-			cb(nil, err)
+			return cb(pls.(*typeFilter).pm, err)
 		}
+		return cb(nil, err)
 	})
 }
 
@@ -139,12 +142,12 @@ func (d rdsImpl) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB)
 		}
 		rkeys, err = datastore.PutMulti(d.aeCtx, rkeys, rvals)
 	}
-	return idxCallbacker(err, len(keys), func(idx int, err error) {
+	return idxCallbacker(err, len(keys), func(idx int, err error) error {
 		k := (*ds.Key)(nil)
 		if err == nil {
 			k = dsR2F(rkeys[idx])
 		}
-		cb(k, err)
+		return cb(k, err)
 	})
 }
 

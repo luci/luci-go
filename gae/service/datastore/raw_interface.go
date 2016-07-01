@@ -140,9 +140,11 @@ type RawInterface interface {
 
 	// GetMulti retrieves items from the datastore.
 	//
-	// Callback execues once per key, in the order of keys. Callback may not
-	// execute at all if there's a server error. If callback is nil, this
-	// method does nothing.
+	// If there was a server error, it will be returned directly. Otherwise,
+	// callback will execute once per key/value pair, returning either the
+	// operation result or individual error for each position. If the callback
+	// receives an error, it will immediately forward that error and stop
+	// subsequent callbacks.
 	//
 	// meta is used to propagate metadata from higher levels.
 	//
@@ -154,8 +156,11 @@ type RawInterface interface {
 
 	// PutMulti writes items to the datastore.
 	//
-	// Callback execues once per key/value pair, in the passed-in order. Callback
-	// may not execute at all if there was a server error.
+	// If there was a server error, it will be returned directly. Otherwise,
+	// callback will execute once per key/value pair, returning either the
+	// operation result or individual error for each position. If the callback
+	// receives an error, it will immediately forward that error and stop
+	// subsequent callbacks.
 	//
 	// NOTE: Implementations and filters are guaranteed that:
 	//   - len(keys) > 0
@@ -166,8 +171,11 @@ type RawInterface interface {
 
 	// DeleteMulti removes items from the datastore.
 	//
-	// Callback execues once per key, in the order of keys. Callback may not
-	// execute at all if there's a server error.
+	// If there was a server error, it will be returned directly. Otherwise,
+	// callback will execute once per key/value pair, returning either the
+	// operation result or individual error for each position. If the callback
+	// receives an error, it will immediately forward that error and stop
+	// subsequent callbacks.
 	//
 	// NOTE: Implementations and filters are guaranteed that
 	//   - len(keys) > 0

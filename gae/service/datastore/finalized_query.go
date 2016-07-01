@@ -153,7 +153,7 @@ func (q *FinalizedQuery) IneqFilterProp() string {
 
 // IneqFilterLow returns the field name, operator and value for the low-side
 // inequality filter. If the returned field name is "", it means that there's
-// now lower inequality bound on this query.
+// no lower inequality bound on this query.
 //
 // If field is non-empty, op may have the values ">" or ">=".
 func (q *FinalizedQuery) IneqFilterLow() (field, op string, val Property) {
@@ -170,7 +170,7 @@ func (q *FinalizedQuery) IneqFilterLow() (field, op string, val Property) {
 
 // IneqFilterHigh returns the field name, operator and value for the high-side
 // inequality filter. If the returned field name is "", it means that there's
-// now upper inequality bound on this query.
+// no upper inequality bound on this query.
 //
 // If field is non-empty, op may have the values "<" or "<=".
 func (q *FinalizedQuery) IneqFilterHigh() (field, op string, val Property) {
