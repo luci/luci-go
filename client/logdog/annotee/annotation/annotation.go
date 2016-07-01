@@ -7,7 +7,6 @@ package annotation
 import (
 	"fmt"
 	"path"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -88,29 +87,11 @@ func (s *State) initialize() {
 	s.SetCurrentStep(nil)
 
 	// Add our Command parameters, if applicable.
-	if s.Execution != nil {
-		name = s.Execution.Name
-		var env *milo.Command_Environment
-		if len(s.Execution.Env) > 0 {
-			env = &milo.Command_Environment{}
-			keys := make([]string, 0, len(s.Execution.Env))
-			for k := range s.Execution.Env {
-				keys = append(keys, k)
-			}
-			sort.Strings(keys)
-			for _, k := range keys {
-				entry := &milo.Command_Environment_Entry{
-					Name:  k,
-					Value: s.Execution.Env[k],
-				}
-				env.Entries = append(env.Entries, entry)
-			}
-		}
-
-		s.rootStep.Command = &milo.Command{
-			CommandLine: s.Execution.Command,
-			Cwd:         s.Execution.Dir,
-			Environ:     env,
+	if exec := s.Execution; exec != nil {
+		s.rootStep.Command = &milo.Step_Command{
+			CommandLine: exec.Command,
+			Cwd:         exec.Dir,
+			Environ:     exec.Env,
 		}
 	}
 
@@ -177,7 +158,7 @@ func (s *State) Append(annotation string) error {
 			int64(timestamp),
 			int64(timestamp*1000000000)%1000000000))
 		if firstAnnotation {
-			s.rootStep.StepComponent.Started = s.currentTimestamp
+			s.rootStep.Started = s.currentTimestamp
 		}
 
 	// @@@BUILD_STEP <stepname>@@@
@@ -222,7 +203,15 @@ func (s *State) Append(annotation string) error {
 		if len(parts) != 2 {
 			return fmt.Errorf("STEP_LINK link [%s] missing URL", parts[0])
 		}
-		step.AddURLLink(parts[0], parts[1])
+
+		// If if link is an alias, parse it as one.
+		alias := strings.SplitN(parts[0], "-->", 2)
+		if len(alias) == 2 && len(alias[0]) > 0 && len(alias[1]) > 0 {
+			// parrts[0] is an alias of the form: "text-->base"
+			step.AddURLLink(alias[1], alias[0], parts[1])
+		} else {
+			step.AddURLLink(parts[0], "", parts[1])
+		}
 		updatedIf(step, true)
 
 	//  @@@STEP_STARTED@@@
@@ -245,9 +234,9 @@ func (s *State) Append(annotation string) error {
 		fallthrough
 	case "STEP_FAILURE":
 		step := s.CurrentStep()
-		updatedIf(step, step.SetStatus(milo.Status_FAILURE))
+		updatedIf(step, step.SetStatus(milo.Status_FAILURE, nil))
 		if s.haltOnFailure {
-			updatedIf(step, s.finishWithStatus(milo.Status_FAILURE))
+			updatedIf(step, s.finishWithStatus(milo.Status_FAILURE, nil))
 		}
 
 	// @@@STEP_EXCEPTION@@@
@@ -255,7 +244,9 @@ func (s *State) Append(annotation string) error {
 		fallthrough
 	case "STEP_EXCEPTION":
 		step := s.CurrentStep()
-		updatedIf(step, step.SetStatus(milo.Status_EXCEPTION))
+		updatedIf(step, step.SetStatus(milo.Status_FAILURE, &milo.FailureDetails{
+			Type: milo.FailureDetails_EXCEPTION,
+		}))
 
 		// @@@STEP_CLOSED@@@
 	case "STEP_CLOSED":
@@ -355,14 +346,18 @@ func (s *State) Append(annotation string) error {
 // Finish closes the top-level annotation state and any outstanding steps.
 func (s *State) Finish() {
 	s.initialize()
-	s.finishWithStatusImpl(nil)
+	s.finishAndDeriveStatus()
 }
 
-func (s *State) finishWithStatus(st milo.Status) bool {
-	return s.finishWithStatusImpl(&st)
+func (s *State) finishAndDeriveStatus() bool {
+	return s.finishWithStatusImpl(nil, nil)
 }
 
-func (s *State) finishWithStatusImpl(status *milo.Status) bool {
+func (s *State) finishWithStatus(st milo.Status, fd *milo.FailureDetails) bool {
+	return s.finishWithStatusImpl(&st, fd)
+}
+
+func (s *State) finishWithStatusImpl(status *milo.Status, fd *milo.FailureDetails) bool {
 	if s.closed {
 		return false
 	}
@@ -384,9 +379,16 @@ func (s *State) finishWithStatusImpl(status *milo.Status) bool {
 
 	// If some steps were unfinished, show a root exception.
 	if unfinished && status == nil {
-		exception := milo.Status_EXCEPTION
+		exception := milo.Status_FAILURE
 		status = &exception
+		if fd == nil {
+			fd = &milo.FailureDetails{
+				Type: milo.FailureDetails_EXCEPTION,
+			}
+		}
+
 	}
+	s.rootStep.FailureDetails = fd
 	s.rootStep.closeWithStatus(buildEndTime, status)
 
 	// Probe the status from our steps, if one is not supplied.
@@ -414,6 +416,12 @@ func (s *State) RootStep() *Step {
 	s.initialize()
 
 	return &s.rootStep
+}
+
+// AnnotationStream returns the name of this State's Milo annotation datagram
+// stream.
+func (s *State) AnnotationStream() types.StreamName {
+	return s.rootStep.BaseStream("annotations")
 }
 
 // CurrentStep returns the step referenced by the step cursor.
@@ -453,14 +461,6 @@ func (s *State) unregisterStep(as *Step) {
 	}
 }
 
-// ForEachStep iterates over all registered steps, invoking the supplied
-// callback with each step's protobuf state.
-func (s *State) ForEachStep(f func(*Step)) {
-	for _, as := range s.steps {
-		f(as)
-	}
-}
-
 // now returns current time of s.Clock. Defaults to system clock.
 func (s *State) now() *google.Timestamp {
 	c := s.Clock
@@ -491,7 +491,7 @@ type Step struct {
 	// LogNameBase is the LogDog stream name root for this step.
 	logNameBase types.StreamName
 	// hasSummary, if true, means that this Step has summary text. The summary
-	// text is stored as the first line in its StepComponent.Text slice.
+	// text is stored as the first line in its Step.Text slice.
 	hasSummary bool
 	// closed is true if the element is closed.
 	closed bool
@@ -499,10 +499,11 @@ type Step struct {
 
 func (as *Step) initialize(s *State, parent *Step, name string, index int, logNameBase types.StreamName) *Step {
 	t := milo.Status_RUNNING
-	as.StepComponent = &milo.Component{
+	as.Step = milo.Step{
 		Name:   name,
 		Status: t,
 	}
+
 	as.s = s
 	as.p = parent
 	as.index = index
@@ -510,6 +511,15 @@ func (as *Step) initialize(s *State, parent *Step, name string, index int, logNa
 	as.stepIndex = map[string]int{}
 	as.logLines = map[string]types.StreamName{}
 	as.logLineCount = map[string]int{}
+
+	// Add this Step to our parent's Substep list.
+	if parent != nil {
+		parent.Substep = append(parent.Substep, &milo.Step_Substep{
+			Substep: &milo.Step_Substep_Step{
+				Step: &as.Step,
+			},
+		})
+	}
 
 	return as
 }
@@ -535,7 +545,7 @@ func (as *Step) CanonicalName() string {
 
 // Name returns the step's component name.
 func (as *Step) Name() string {
-	return as.StepComponent.Name
+	return as.Step.Name
 }
 
 // Proto returns the Milo protobuf associated with this Step.
@@ -555,12 +565,6 @@ func (as *Step) BaseStream(name types.StreamName) types.StreamName {
 	return as.logNameBase.Concat(name)
 }
 
-// AnnotationStream returns the name of this Step's Milo annotation datagram
-// stream.
-func (as *Step) AnnotationStream() types.StreamName {
-	return as.BaseStream("annotations")
-}
-
 // AddStep generates a new substep.
 func (as *Step) AddStep(name string) *Step {
 	// Determine/advance step index.
@@ -575,16 +579,15 @@ func (as *Step) AddStep(name string) *Step {
 	nas := (&Step{}).initialize(as.s, as, name, index, as.BaseStream(logPath))
 	as.substeps = append(as.substeps, nas)
 	as.s.registerStep(nas)
-	as.EnsureSubstepLogNameBase(nas.logNameBase)
 	return nas
 }
 
 // Start marks the Step as started.
 func (as *Step) Start(startTime *google.Timestamp) bool {
-	if as.StepComponent.Started != nil {
+	if as.Started != nil {
 		return false
 	}
-	as.StepComponent.Started = startTime
+	as.Started = startTime
 	return true
 }
 
@@ -601,11 +604,16 @@ func (as *Step) closeWithStatus(closeTime *google.Timestamp, sp *milo.Status) bo
 
 	// Close our outstanding substeps, and get their highest status value.
 	stepStatus := milo.Status_SUCCESS
-	for _, sub := range as.substeps {
-		sub.Close(closeTime)
-		if sub.StepComponent.Status > stepStatus {
-			stepStatus = sub.StepComponent.Status
+	if sp == nil {
+		for _, sub := range as.substeps {
+			sub.Close(closeTime)
+			if sub.Status > stepStatus {
+				stepStatus = sub.Status
+			}
 		}
+	} else {
+		// If a status is provided, use it.
+		stepStatus = *sp
 	}
 
 	// Close any oustanding log streams.
@@ -613,17 +621,12 @@ func (as *Step) closeWithStatus(closeTime *google.Timestamp, sp *milo.Status) bo
 		as.LogEnd(l)
 	}
 
-	// If a status is provided, use it.
-	if sp != nil {
-		stepStatus = *sp
+	if as.Status == milo.Status_RUNNING {
+		as.Status = stepStatus
 	}
-
-	if as.StepComponent.Status == milo.Status_RUNNING {
-		as.StepComponent.Status = stepStatus
-	}
-	as.StepComponent.Ended = closeTime
-	if as.StepComponent.Started == nil {
-		as.StepComponent.Started = as.StepComponent.Ended
+	as.Ended = closeTime
+	if as.Started == nil {
+		as.Started = as.Ended
 	}
 	as.closed = true
 	as.s.unregisterStep(as)
@@ -681,16 +684,16 @@ func (as *Step) LogEnd(label string) {
 
 // AddText adds a line of step component text.
 func (as *Step) AddText(text string) bool {
-	as.StepComponent.Text = append(as.StepComponent.Text, text)
+	as.Text = append(as.Text, text)
 	return true
 }
 
 // ClearText clears step component text.
 func (as *Step) ClearText() bool {
-	if len(as.StepComponent.Text) == 0 {
+	if len(as.Text) == 0 {
 		return false
 	}
-	as.StepComponent.Text = nil
+	as.Text = nil
 	return true
 }
 
@@ -701,15 +704,15 @@ func (as *Step) ClearText() bool {
 // summary will be replaced.
 func (as *Step) SetSummary(value string) bool {
 	if as.hasSummary {
-		if as.StepComponent.Text[0] == value {
+		if as.Text[0] == value {
 			return false
 		}
 
-		as.StepComponent.Text[0] = value
+		as.Text[0] = value
 	} else {
-		as.StepComponent.Text = append(as.StepComponent.Text, "")
-		copy(as.StepComponent.Text[1:], as.StepComponent.Text)
-		as.StepComponent.Text[0] = value
+		as.Text = append(as.Text, "")
+		copy(as.Text[1:], as.Text)
+		as.Text[0] = value
 		as.hasSummary = true
 	}
 	return true
@@ -718,44 +721,48 @@ func (as *Step) SetSummary(value string) bool {
 // ClearSummary clears the step's summary text.
 func (as *Step) ClearSummary() {
 	if as.hasSummary {
-		as.StepComponent.Text = as.StepComponent.Text[:copy(as.StepComponent.Text, as.StepComponent.Text[1:])]
+		as.Text = as.Text[:copy(as.Text, as.Text[1:])]
 		as.hasSummary = false
 	}
 }
 
 // AddLogdogStreamLink adds a LogDog stream link to this Step's links list.
 func (as *Step) AddLogdogStreamLink(server string, prefix, name types.StreamName) {
-	link := &milo.Component_Link{
-		Value: &milo.Component_Link_LogdogStream{&milo.LogdogStream{
+	link := &milo.Link{
+		Value: &milo.Link_LogdogStream{&milo.LogdogStream{
 			Name:   string(name),
 			Server: server,
 			Prefix: string(prefix),
 		}},
 	}
-	as.StepComponent.OtherLinks = append(as.StepComponent.OtherLinks, link)
+	as.OtherLinks = append(as.OtherLinks, link)
 }
 
 // AddURLLink adds a URL link to this Step's links list.
-func (as *Step) AddURLLink(label string, url string) {
-	link := &milo.Component_Link{
-		Label: label,
-		Value: &milo.Component_Link_Url{url},
+func (as *Step) AddURLLink(label, alias, url string) {
+	link := &milo.Link{
+		Label:      label,
+		AliasLabel: alias,
+		Value:      &milo.Link_Url{url},
 	}
-	as.StepComponent.OtherLinks = append(as.StepComponent.OtherLinks, link)
+	as.OtherLinks = append(as.OtherLinks, link)
 }
 
 // SetStatus sets this step's component status.
-func (as *Step) SetStatus(s milo.Status) bool {
-	if as.closed || as.StepComponent.Status == s {
+//
+// If the status doesn't change, the supplied failure details will be ignored.
+func (as *Step) SetStatus(s milo.Status, fd *milo.FailureDetails) bool {
+	if as.closed || as.Status == s {
 		return false
 	}
-	as.StepComponent.Status = s
+	as.Status = s
+	as.FailureDetails = fd
 	return true
 }
 
 // SetProperty sets a key/value property for this Step.
 func (as *Step) SetProperty(name, value string) bool {
-	for _, p := range as.StepComponent.Property {
+	for _, p := range as.Property {
 		if p.Name == name {
 			if p.Value == value {
 				return false
@@ -765,22 +772,30 @@ func (as *Step) SetProperty(name, value string) bool {
 		}
 	}
 
-	as.StepComponent.Property = append(as.StepComponent.Property, &milo.Component_Property{
+	as.Property = append(as.Property, &milo.Step_Property{
 		Name:  name,
 		Value: value,
 	})
 	return true
 }
 
-// EnsureSubstepLogNameBase adds the specified log name base to this Step's
-// SubstepLogdogNameBase protobuf if it's not already present.
-func (as *Step) EnsureSubstepLogNameBase(name types.StreamName) bool {
-	nameStr := string(name)
-	for _, lnb := range as.SubstepLogdogNameBase {
-		if lnb == nameStr {
-			return false
-		}
+// SetSTDOUTStream sets the LogDog STDOUT stream value, returning true if the
+// Step was updated.
+func (as *Step) SetSTDOUTStream(st *milo.LogdogStream) (updated bool) {
+	as.StdoutStream, updated = as.maybeSetLogDogStream(as.StdoutStream, st)
+	return
+}
+
+// SetSTDERRStream sets the LogDog STDERR stream value, returning true if the
+// Step was updated.
+func (as *Step) SetSTDERRStream(st *milo.LogdogStream) (updated bool) {
+	as.StderrStream, updated = as.maybeSetLogDogStream(as.StderrStream, st)
+	return
+}
+
+func (as *Step) maybeSetLogDogStream(target *milo.LogdogStream, st *milo.LogdogStream) (*milo.LogdogStream, bool) {
+	if (target == nil && st == nil) || (target != nil && st != nil && *target == *st) {
+		return target, false
 	}
-	as.SubstepLogdogNameBase = append(as.SubstepLogdogNameBase, nameStr)
-	return true
+	return st, true
 }

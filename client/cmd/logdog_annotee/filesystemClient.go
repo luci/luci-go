@@ -16,7 +16,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamclient"
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
-	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/proto/milo"
 )
@@ -129,7 +128,7 @@ func (s *filesystemClientStream) WriteDatagram(dg []byte) error {
 	index := s.dgIdx
 	s.dgIdx++
 
-	if s.contentType == string(types.ContentTypeAnnotations) {
+	if s.contentType == string(milo.ContentTypeAnnotations) {
 		// If we successfully dump as Milo proto, yay.
 		if err := s.dumpMiloProto(dg, index); err == nil {
 			return nil

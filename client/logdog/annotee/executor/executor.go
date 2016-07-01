@@ -11,12 +11,12 @@ import (
 	"os/exec"
 	"syscall"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/client/logdog/annotee"
 	"github.com/luci/luci-go/client/logdog/annotee/annotation"
 	"github.com/luci/luci-go/common/ctxcmd"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/proto/milo"
 	"golang.org/x/net/context"
 )
 
@@ -58,7 +58,10 @@ type Executor struct {
 
 	executed   bool
 	returnCode int
-	steps      []*milo.Step
+
+	// step is the serialized milo.Step protobuf taken from the end of the
+	// Processor at execution finish.
+	step []byte
 }
 
 // Run executes the bootstrapped process, blocking until it completes.
@@ -66,7 +69,7 @@ func (e *Executor) Run(ctx context.Context, command []string) error {
 	// Clear any previous state.
 	e.executed = false
 	e.returnCode = 0
-	e.steps = nil
+	e.step = nil
 
 	if len(command) == 0 {
 		return errors.New("no command")
@@ -83,14 +86,14 @@ func (e *Executor) Run(ctx context.Context, command []string) error {
 		return fmt.Errorf("failed to create STDOUT pipe: %s", err)
 	}
 	defer stdoutRC.Close()
-	stdout := e.configStream(stdoutRC, types.StreamName("stdout"), e.TeeStdout)
+	stdout := e.configStream(stdoutRC, annotee.STDOUT, e.TeeStdout)
 
 	stderrRC, err := cmd.StderrPipe()
 	if err != nil {
 		return fmt.Errorf("failed to create STDERR pipe: %s", err)
 	}
 	defer stderrRC.Close()
-	stderr := e.configStream(stderrRC, types.StreamName("stderr"), e.TeeStderr)
+	stderr := e.configStream(stderrRC, annotee.STDERR, e.TeeStderr)
 
 	// Start our process.
 	if err := cmd.Start(ctx); err != nil {
@@ -141,16 +144,15 @@ func (e *Executor) Run(ctx context.Context, command []string) error {
 	}
 
 	// Finish and record our annotation steps on completion.
-	proc.Finish().ForEachStep(func(s *annotation.Step) {
-		e.steps = append(e.steps, s.Proto())
-	})
+	if e.step, err = proto.Marshal(proc.Finish().RootStep().Proto()); err != nil {
+		log.WithError(err).Errorf(ctx, "Failed to Marshal final Step protobuf on completion.")
+		return err
+	}
 	return nil
 }
 
-// Steps returns a list of Steps from the latest run.
-func (e *Executor) Steps() []*milo.Step {
-	return e.steps
-}
+// Step returns the root Step protobuf from the latest run.
+func (e *Executor) Step() []byte { return e.step }
 
 // ReturnCode returns the executed process' return code.
 //

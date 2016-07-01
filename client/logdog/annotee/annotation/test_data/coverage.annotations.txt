@@ -47,6 +47,7 @@ OHAICANHASCHEEZBURGER@PLZ
 STEP_LINK@missingurl
 
 link@example@http://example.com
+STEP_LINK@alias-->example@http://example.com/alias
 BUILD_EXCEPTION
 
 STEP_CURSOR baz

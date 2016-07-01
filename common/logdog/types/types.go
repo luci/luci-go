@@ -13,8 +13,6 @@ type ContentType string
 const (
 	// ContentTypeText is a stream content type for text streams
 	ContentTypeText ContentType = "text/plain"
-	// ContentTypeAnnotations is a stream content type for annotation streams.
-	ContentTypeAnnotations = "text/x-chrome-infra-annotations"
 	// ContentTypeBinary is a stream content type for binary streams.
 	ContentTypeBinary = "application/octet-stream"
 

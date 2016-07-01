@@ -1,14 +1,102 @@
-step_component: <
-  name: "steps"
-  status: FAILURE
-  started: <
-    seconds: 1420070400
-  >
-  ended: <
-    seconds: 1420070405
+name: "steps"
+status: FAILURE
+substep: <
+  step: <
+    name: "baz"
+    status: SUCCESS
+    started: <
+      seconds: 1420070402
+    >
+    ended: <
+      seconds: 1420070405
+    >
+    text: "seeded text"
+    other_links: <
+      label: "cats"
+      url: "http://example.com/cats"
+    >
+    other_links: <
+      label: "dogs"
+      url: "http://example.com/dogs"
+    >
   >
 >
-substep_logdog_name_base: "base/steps/baz/0"
-substep_logdog_name_base: "base/steps/foo/0"
-substep_logdog_name_base: "base/steps/bar/0"
-substep_logdog_name_base: "base/steps/qux/0"
+substep: <
+  step: <
+    name: "foo"
+    status: SUCCESS
+    started: <
+      seconds: 1420070400
+    >
+    ended: <
+      seconds: 1420070401
+    >
+  >
+>
+substep: <
+  step: <
+    name: "bar"
+    status: FAILURE
+    failure_details: <
+      type: EXCEPTION
+    >
+    started: <
+      seconds: 1420070401
+    >
+    ended: <
+      seconds: 1420070404
+    >
+    text: "final summary"
+    text: "message0"
+    text: "message1"
+    text: "message2"
+    other_links: <
+      logdog_stream: <
+        name: "base/steps/bar/0/logs/logging.json/0"
+      >
+    >
+    other_links: <
+      logdog_stream: <
+        name: "base/steps/bar/0/logs/lorem.txt/0"
+      >
+    >
+    other_links: <
+      label: "example"
+      url: "http://example.com"
+    >
+    other_links: <
+      label: "example"
+      alias_label: "alias"
+      url: "http://example.com/alias"
+    >
+    property: <
+      name: "foo"
+      value: "bar"
+    >
+    property: <
+      name: "baz"
+      value: "qux"
+    >
+    property: <
+      name: "quux"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "qux"
+    status: FAILURE
+    started: <
+      seconds: 1420070404
+    >
+    ended: <
+      seconds: 1420070405
+    >
+  >
+>
+started: <
+  seconds: 1420070400
+>
+ended: <
+  seconds: 1420070405
+>

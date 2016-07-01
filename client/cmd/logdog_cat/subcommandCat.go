@@ -156,7 +156,7 @@ func (cmd *catCommandRun) catPath(a *application, cp *catPath) error {
 func writeDatagram(w io.Writer, dg []byte, desc *logpb.LogStreamDescriptor) error {
 	var pb proto.Message
 	switch desc.ContentType {
-	case types.ContentTypeAnnotations:
+	case milo.ContentTypeAnnotations:
 		mp := milo.Step{}
 		if err := proto.Unmarshal(dg, &mp); err != nil {
 			return err

@@ -7,7 +7,6 @@ package swarming
 import (
 	"bytes"
 	"fmt"
-	"path"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/appengine/cmd/milo/logdog"
@@ -80,90 +79,97 @@ func (c *memoryClient) NewStream(f streamproto.Flags) (streamclient.Stream, erro
 	return &s, nil
 }
 
-func (c *memoryClient) addLogDogTextStream(lds *logdog.Streams, name string) error {
+func (c *memoryClient) addLogDogTextStream(s *logdog.Streams, ls *miloProto.LogdogStream) error {
 	var keys []string
 	for k := range c.stream {
 		keys = append(keys, k)
 	}
-	ms, ok := c.stream[name]
+	ms, ok := c.stream[ls.Name]
 	if !ok {
-		return fmt.Errorf("Could not find text stream %q\n%s", name, keys)
+		return fmt.Errorf("Could not find text stream %q\n%s", ls.Name, keys)
 	}
-	ls, err := ms.ToLogDogStream()
+	lds, err := ms.ToLogDogStream()
 	if err != nil {
-		return fmt.Errorf("Could not convert text stream %s\n%s\n%s", name, err, keys)
+		return fmt.Errorf("Could not convert text stream %s\n%s\n%s", ls.Name, err, keys)
 	}
-	if ls.IsDatagram {
-		return fmt.Errorf("Expected %s to be a text stream, got a data stream", name)
+	if lds.IsDatagram {
+		return fmt.Errorf("Expected %s to be a text stream, got a data stream", ls.Name)
 	}
-	lds.Streams[name] = ls
+	s.Streams[ls.Name] = lds
 	return nil
 }
 
-// addToStreams adds the set of stream with a given base path to the logdog stream
-// map.  A base path is assumed to have a stream named "annotations".
-func (c *memoryClient) addToStreams(name string, s *logdog.Streams) (*logdog.Stream, error) {
-	fullname := "annotations"
-	if name != "" {
-		fullname = path.Join(name, "annotations")
+// addToStreams adds the set of stream with a given base path to the logdog
+// stream map.  A base path is assumed to have a stream named "annotations".
+func (c *memoryClient) addToStreams(s *logdog.Streams, anno *miloProto.Step) error {
+	if lds := anno.StdoutStream; lds != nil {
+		if err := c.addLogDogTextStream(s, lds); err != nil {
+			return fmt.Errorf(
+				"Encountered error while processing step streams for STDOUT: %s", err)
+		}
 	}
-	ms, ok := c.stream[fullname]
-	if !ok {
-		return nil, fmt.Errorf("Could not find stream %s", fullname)
+	if lds := anno.StderrStream; lds != nil {
+		if err := c.addLogDogTextStream(s, lds); err != nil {
+			return fmt.Errorf(
+				"Encountered error while processing step streams for STDERR: %s", err)
+		}
 	}
-	ls, err := ms.ToLogDogStream()
-	if err != nil {
-		return nil, fmt.Errorf("Could not unmarshal stream %s\n%s", fullname, err)
-	}
-	if !ls.IsDatagram {
-		return nil, fmt.Errorf(
-			"Annotation stream %s is not a datagram\nText: %s",
-			fullname, ls.Text)
-	}
-	s.Streams[fullname] = ls
 
 	// Look for substream.
-	substreams := []string{}
-	for _, link := range ls.Data.GetStepComponent().GetOtherLinks() {
+	for _, link := range anno.GetOtherLinks() {
 		lds := link.GetLogdogStream()
 		// Not a logdog stream.
 		if lds == nil {
 			continue
 		}
-		substreams = append(substreams, lds.Name)
-	}
-	if name == "" {
-		substreams = append(substreams, "stdout")
-	} else {
-		substreams = append(substreams, fmt.Sprintf("%s/stdout", name))
-	}
-	for _, subname := range substreams {
-		err = c.addLogDogTextStream(s, subname)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"Encountered error while processing step streams for '%s'\n%s", name, err)
+
+		if err := c.addLogDogTextStream(s, lds); err != nil {
+			return fmt.Errorf(
+				"Encountered error while processing step streams for '%s'\n%s", lds.Name, err)
 		}
 	}
 
 	// Now do substeps.
-	for _, subName := range ls.Data.SubstepLogdogNameBase {
-		_, err = c.addToStreams(subName, s)
-		if err != nil {
-			return nil, err
+	for _, subStepEntry := range anno.Substep {
+		substep := subStepEntry.GetStep()
+		if substep == nil {
+			continue
+		}
+
+		if err := c.addToStreams(s, substep); err != nil {
+			return err
 		}
 	}
 
-	return ls, nil
+	return nil
 }
 
 func (c *memoryClient) ToLogDogStreams() (*logdog.Streams, error) {
 	result := &logdog.Streams{}
 	result.Streams = map[string]*logdog.Stream{}
-	mls, err := c.addToStreams("", result)
+
+	// Register annotation stream.
+	const annotationStreamName = "annotations"
+	ms, ok := c.stream[annotationStreamName]
+	if !ok {
+		return nil, fmt.Errorf("Could not find stream %s", annotationStreamName)
+	}
+	ls, err := ms.ToLogDogStream()
 	if err != nil {
+		return nil, fmt.Errorf("Could not unmarshal stream %s\n%s", annotationStreamName, err)
+	}
+	if !ls.IsDatagram {
+		return nil, fmt.Errorf(
+			"Annotation stream %s is not a datagram\nText: %s",
+			annotationStreamName, ls.Text)
+	}
+	result.Streams[annotationStreamName] = ls
+
+	// Register any referenced LogDog streams.
+	if err := c.addToStreams(result, ls.Data); err != nil {
 		return nil, err
 	}
-	result.MainStream = mls
+	result.MainStream = ls
 
 	if len(c.stream) != len(result.Streams) {
 		var mk, lk []string

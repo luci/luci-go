@@ -24,6 +24,7 @@ import (
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
+	"github.com/luci/luci-go/common/proto/milo"
 	"golang.org/x/net/context"
 )
 
@@ -217,19 +218,9 @@ func mainImpl(args []string) int {
 	}
 
 	// Initialize our link generator, if we can.
-	linkGen := &coordinatorLinkGenerator{
-		host:    a.logdogHost,
-		project: a.project,
-		prefix:  prefix,
-	}
-	if !linkGen.canGenerateLinks() {
-		linkGen = nil
-	}
-
 	e := executor.Executor{
 		Options: annotee.Options{
 			Base:                   types.StreamName(a.nameBase),
-			LinkGenerator:          linkGen,
 			Client:                 client,
 			MetadataUpdateInterval: time.Duration(a.annotationInterval),
 			CloseSteps:             true,
@@ -238,6 +229,16 @@ func mainImpl(args []string) int {
 		Annotate: executor.AnnotationMode(a.annotate),
 		Stdin:    os.Stdin,
 	}
+
+	linkGen := &coordinatorLinkGenerator{
+		host:    a.logdogHost,
+		project: a.project,
+		prefix:  prefix,
+	}
+	if linkGen.canGenerateLinks() {
+		e.Options.LinkGenerator = linkGen
+	}
+
 	if a.tee {
 		e.TeeStdout = os.Stdout
 		e.TeeStderr = os.Stderr
@@ -251,9 +252,13 @@ func mainImpl(args []string) int {
 
 	// Display a summary!
 	if a.printSummary {
-		for _, s := range e.Steps() {
-			fmt.Printf("=== Annotee: %q ===\n", s.StepComponent.Name)
-			fmt.Println(proto.MarshalTextString(s))
+		// Unmarshal our Step data.
+		var st milo.Step
+		if err := proto.Unmarshal(e.Step(), &st); err == nil {
+			fmt.Printf("=== Annotee: %q ===\n", st.Name)
+			fmt.Println(proto.MarshalTextString(&st))
+		} else {
+			log.WithError(err).Warningf(a, "Failed to unmarshal end step data. Cannot show summary.")
 		}
 	}
 

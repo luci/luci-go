@@ -6,24 +6,21 @@ package logdog
 
 import (
 	"fmt"
-	"path"
 	"strings"
 
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/appengine/cmd/milo/resp"
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/logging"
 	miloProto "github.com/luci/luci-go/common/proto/milo"
 )
 
 // Given a logdog/milo step, translate it to a BuildComponent struct.
-func miloBuildStep(c context.Context, url string, anno *miloProto.Step, name string) *resp.BuildComponent {
+func miloBuildStep(c context.Context, url string, anno *miloProto.Step) *resp.BuildComponent {
 	url = strings.TrimSuffix(url, "/")
-	asc := anno.GetStepComponent()
-	comp := &resp.BuildComponent{Label: asc.Name}
-	switch asc.Status {
+	comp := &resp.BuildComponent{Label: anno.Name}
+	switch anno.Status {
 	case miloProto.Status_RUNNING:
 		comp.Status = resp.Running
 
@@ -33,7 +30,7 @@ func miloBuildStep(c context.Context, url string, anno *miloProto.Step, name str
 	case miloProto.Status_FAILURE:
 		if anno.GetFailureDetails() != nil {
 			switch anno.GetFailureDetails().Type {
-			case miloProto.FailureDetails_INFRA:
+			case miloProto.FailureDetails_EXCEPTION, miloProto.FailureDetails_INFRA:
 				comp.Status = resp.InfraFailure
 
 			case miloProto.FailureDetails_DM_DEPENDENCY_FAILED:
@@ -46,25 +43,16 @@ func miloBuildStep(c context.Context, url string, anno *miloProto.Step, name str
 			comp.Status = resp.Failure
 		}
 
-	case miloProto.Status_EXCEPTION:
-		comp.Status = resp.InfraFailure
-
 		// Missing the case of waiting on unfinished dependency...
 	default:
 		comp.Status = resp.NotRun
 	}
 	// Sub link is for one link per log that isn't stdout.
-	for _, link := range asc.GetOtherLinks() {
+	for _, link := range anno.GetOtherLinks() {
 		lds := link.GetLogdogStream()
 		if lds == nil {
-			logging.Warningf(c, "Warning: %v of %v has an empty logdog stream.", link, asc)
+			logging.Warningf(c, "Warning: %v of %v has an empty logdog stream.", link, anno)
 			continue // DNE???
-		}
-		segs := types.StreamName(lds.Name).Segments()
-		switch segs[len(segs)-1] {
-		case "stdout", "annotations":
-			// Skip the special ones.
-			continue
 		}
 		newLink := &resp.Link{
 			Label: lds.Name,
@@ -74,9 +62,11 @@ func miloBuildStep(c context.Context, url string, anno *miloProto.Step, name str
 	}
 
 	// Main link is a link to the stdout.
-	comp.MainLink = &resp.Link{
-		Label: "stdout",
-		URL:   strings.Join([]string{url, name, "stdout"}, "/"),
+	if anno.StdoutStream != nil {
+		comp.MainLink = &resp.Link{
+			Label: "stdout",
+			URL:   makeLogDogStreamURL(url, anno.StdoutStream),
+		}
 	}
 
 	// This should always be a step.
@@ -86,11 +76,11 @@ func miloBuildStep(c context.Context, url string, anno *miloProto.Step, name str
 	comp.LevelsDeep = 0
 
 	// Timestamps
-	comp.Started = asc.Started.Time()
-	comp.Finished = asc.Ended.Time()
+	comp.Started = anno.Started.Time()
+	comp.Finished = anno.Ended.Time()
 
 	till := comp.Finished
-	if asc.Status == miloProto.Status_RUNNING {
+	if anno.Status == miloProto.Status_RUNNING {
 		till = clock.Now(c)
 	}
 	if !comp.Started.IsZero() && !till.IsZero() {
@@ -98,7 +88,7 @@ func miloBuildStep(c context.Context, url string, anno *miloProto.Step, name str
 	}
 
 	// This should be the exact same thing.
-	comp.Text = asc.Text
+	comp.Text = anno.Text
 
 	return comp
 }
@@ -113,22 +103,21 @@ func AddLogDogToBuild(c context.Context, url string, s *Streams, build *resp.Mil
 
 	// Now fill in each of the step components.
 	// TODO(hinoka): This is totes cachable.
-	for _, name := range mainAnno.SubstepLogdogNameBase {
-		fullname := path.Join(name, "annotations")
-		anno, ok := s.Streams[fullname]
-		if !ok {
-			// This should never happen, memory client already promised us that
-			// theres an entry for every referenced stream.
-			panic(fmt.Errorf("Could not find stream %s", fullname))
+	for _, substepContainer := range mainAnno.Substep {
+		anno := substepContainer.GetStep()
+		if anno == nil {
+			// TODO: We ignore non-embedded substeps for now.
+			continue
 		}
-		bs := miloBuildStep(c, url, anno.Data, name)
+
+		bs := miloBuildStep(c, url, anno)
 		if bs.Status != resp.Success && bs.Status != resp.NotRun {
 			build.Summary.Text = append(
 				build.Summary.Text, fmt.Sprintf("%s %s", bs.Status, bs.Label))
 		}
 		build.Components = append(build.Components, bs)
 		propGroup := &resp.PropertyGroup{GroupName: bs.Label}
-		for _, prop := range anno.Data.GetStepComponent().Property {
+		for _, prop := range anno.Property {
 			propGroup.Property = append(propGroup.Property, &resp.Property{
 				Key:   prop.Name,
 				Value: prop.Value,
@@ -139,7 +128,7 @@ func AddLogDogToBuild(c context.Context, url string, s *Streams, build *resp.Mil
 
 	// Take care of properties
 	propGroup := &resp.PropertyGroup{GroupName: "Main"}
-	for _, prop := range mainAnno.GetStepComponent().Property {
+	for _, prop := range mainAnno.Property {
 		propGroup.Property = append(propGroup.Property, &resp.Property{
 			Key:   prop.Name,
 			Value: prop.Value,
@@ -148,4 +137,8 @@ func AddLogDogToBuild(c context.Context, url string, s *Streams, build *resp.Mil
 	build.PropertyGroup = append(build.PropertyGroup, propGroup)
 
 	return
+}
+
+func makeLogDogStreamURL(urlBase string, s *miloProto.LogdogStream) string {
+	return urlBase + "/" + s.Name
 }

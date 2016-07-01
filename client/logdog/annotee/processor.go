@@ -23,6 +23,7 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/parallel"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"
+	"github.com/luci/luci-go/common/proto/milo"
 	"golang.org/x/net/context"
 )
 
@@ -39,9 +40,16 @@ var (
 	}
 
 	metadataStreamArchetype = streamproto.Flags{
-		ContentType: string(types.ContentTypeAnnotations),
+		ContentType: string(milo.ContentTypeAnnotations),
 		Type:        streamproto.StreamType(logpb.StreamType_DATAGRAM),
 	}
+)
+
+const (
+	// STDOUT is the system STDOUT stream name.
+	STDOUT = types.StreamName("stdout")
+	// STDERR is the system STDERR stream.
+	STDERR = types.StreamName("stderr")
 )
 
 // Stream describes a single process stream.
@@ -123,6 +131,10 @@ type Processor struct {
 
 	astate       *annotation.State
 	stepHandlers map[string]*stepHandler
+
+	annotationStream    streamclient.Stream
+	annotationC         chan []byte
+	annotationFinishedC chan struct{}
 }
 
 // New instantiates a new Processor.
@@ -141,6 +153,29 @@ func New(c context.Context, o Options) *Processor {
 		Offline:     o.Offline,
 	}
 	return &p
+}
+
+// initialize initializes p's annotation stream handling system. If it is called
+// more than once, it is a no-op.
+func (p *Processor) initialize() (err error) {
+	// If we're already initialized, do nothing.
+	if p.annotationStream != nil {
+		return nil
+	}
+
+	// Create our annotation stream.
+	if p.annotationStream, err = p.createStream(p.astate.AnnotationStream(), &metadataStreamArchetype); err != nil {
+		log.WithError(err).Errorf(p.ctx, "Failed to create annotation stream.")
+		return
+	}
+
+	// Complete initialization and start our annotation meter.
+	p.annotationC = make(chan []byte)
+	p.annotationFinishedC = make(chan struct{})
+
+	// Run our annotation meter in a separate goroutine.
+	go p.runAnnotationMeter(p.annotationStream, p.o.MetadataUpdateInterval)
+	return nil
 }
 
 // RunStreams executes the Processor, consuming data from its configured streams
@@ -195,6 +230,12 @@ func (p *Processor) RunStreams(streams []*Stream) error {
 //
 // This method is not goroutine-safe.
 func (p *Processor) IngestLine(s *Stream, line string) error {
+	// Initialize our annotation stream.
+	if err := p.initialize(); err != nil {
+		log.WithError(err).Errorf(p.ctx, "Failed to initialize.")
+		return err
+	}
+
 	a := extractAnnotation(line)
 	if a != "" {
 		log.Debugf(p.ctx, "Annotation: %q", a)
@@ -261,6 +302,20 @@ func (p *Processor) Finish() *annotation.State {
 	for _, h := range p.stepHandlers {
 		p.finishStepHandler(h, p.o.CloseSteps)
 	}
+
+	// If we're initialized, shut down our annotation handling.
+	if p.annotationStream != nil {
+		// Close and reap our annotation meter goroutine.
+		close(p.annotationC)
+		<-p.annotationFinishedC
+
+		// Close and destruct our annotation stream.
+		if err := p.annotationStream.Close(); err != nil {
+			log.WithError(err).Errorf(p.ctx, "Failed to close annotation stream.")
+		}
+		p.annotationStream = nil
+	}
+
 	return p.astate
 }
 
@@ -299,6 +354,83 @@ func (p *Processor) finishStepHandler(h *stepHandler, closeSteps bool) {
 
 	// Finish the step.
 	h.finish(closeSteps)
+}
+
+func (p *Processor) createStream(name types.StreamName, flags *streamproto.Flags) (streamclient.Stream, error) {
+	// Clone the properties archetype and customize.
+	f := *flags
+	f.Timestamp = clockflag.Time(clock.Now(p.ctx))
+	f.Name = streamproto.StreamNameFlag(name)
+	return p.o.Client.NewStream(f)
+}
+
+func (p *Processor) annotationStateUpdated() {
+	// Serialize our annotation state immediately, as the Step's internal state
+	// may change in future annotation processing iterations.
+	data, err := proto.Marshal(p.astate.RootStep().Proto())
+	if err != nil {
+		log.WithError(err).Errorf(p.ctx, "Failed to marshal state.")
+		return
+	}
+
+	// Send the data to our meter for transmission.
+	p.annotationC <- data
+}
+
+func (p *Processor) runAnnotationMeter(s streamclient.Stream, interval time.Duration) {
+	defer close(p.annotationFinishedC)
+
+	var latest []byte
+	sendLatest := func() {
+		if latest == nil {
+			return
+		}
+
+		if err := s.WriteDatagram(latest); err != nil {
+			log.WithError(err).Errorf(p.ctx, "Failed to write annotation.")
+		}
+		latest = nil
+	}
+	// Make sure we send any buffered annotation stream before exiting.
+	defer sendLatest()
+
+	// Timer to handle metering (if enabled).
+	t := clock.NewTimer(p.ctx)
+	timerRunning := false
+	defer t.Stop()
+
+	first := true
+	for {
+		select {
+		case d, ok := <-p.annotationC:
+			if !ok {
+				return
+			}
+
+			// Handle the new annotation data.
+			latest = d
+			switch {
+			case first:
+				// Always send the first datagram immediately.
+				sendLatest()
+				first = false
+
+			case interval == 0:
+				// Not metering, send every annotation immediately.
+				sendLatest()
+
+			case interval > 0 && !timerRunning:
+				// Metering. Start our timer, if it's not already running from a
+				// previous annotation.
+				t.Reset(interval)
+				timerRunning = true
+			}
+
+		case <-t.GetC():
+			timerRunning = false
+			sendLatest()
+		}
+	}
 }
 
 type annotationCallbacks struct {
@@ -355,12 +487,10 @@ type stepHandler struct {
 	processor *Processor
 	step      *annotation.Step
 
-	client              streamclient.Client
-	injectedLines       []string
-	streams             map[types.StreamName]streamclient.Stream
-	annotationC         chan []byte
-	annotationFinishedC chan struct{}
-	finished            bool
+	client        streamclient.Client
+	injectedLines []string
+	streams       map[types.StreamName]streamclient.Stream
+	finished      bool
 }
 
 func newStepHandler(p *Processor, step *annotation.Step) (*stepHandler, error) {
@@ -369,24 +499,9 @@ func newStepHandler(p *Processor, step *annotation.Step) (*stepHandler, error) {
 		processor: p,
 		step:      step,
 
-		client:              p.o.Client,
-		streams:             make(map[types.StreamName]streamclient.Stream),
-		annotationC:         make(chan []byte),
-		annotationFinishedC: make(chan struct{}),
+		client:  p.o.Client,
+		streams: make(map[types.StreamName]streamclient.Stream),
 	}
-
-	// Create our annotation stream immediately. We do this here because we want
-	// to fail immediately if we can't create this stream.
-	//
-	// This stream will be used exclusively by our meter goroutine.
-	astr, _, err := h.getStream(step.AnnotationStream(), &metadataStreamArchetype)
-	if err != nil {
-		log.WithError(err).Errorf(h, "Failed to create annotation stream.")
-		return nil, err
-	}
-
-	// Run our annotation meter in a separate goroutine.
-	go h.runAnnotationMeter(astr, p.o.MetadataUpdateInterval)
 
 	// Send our initial annotation state.
 	h.updated()
@@ -398,65 +513,6 @@ func (h *stepHandler) String() string {
 	return h.step.CanonicalName()
 }
 
-func (h *stepHandler) runAnnotationMeter(s streamclient.Stream, interval time.Duration) {
-	defer close(h.annotationFinishedC)
-
-	var latest []byte
-	sendLatest := func() {
-		if latest == nil {
-			return
-		}
-
-		if err := s.WriteDatagram(latest); err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-				"step":       h.String(),
-			}.Errorf(h, "Failed to write annotation.")
-		}
-		latest = nil
-	}
-	// Make sure we send any buffered annotation stream before exiting.
-	defer sendLatest()
-
-	// Timer to handle metering (if enabled).
-	t := clock.NewTimer(h)
-	timerRunning := false
-	defer t.Stop()
-
-	first := true
-	for {
-		select {
-		case d, ok := <-h.annotationC:
-			if !ok {
-				return
-			}
-
-			// Handle the new annotation data.
-			latest = d
-			switch {
-			case first:
-				// Always send the first datagram immediately.
-				sendLatest()
-				first = false
-
-			case interval == 0:
-				// Not metering, send every annotation immediately.
-				sendLatest()
-
-			case interval > 0 && !timerRunning:
-				// Metering. Start our timer, if it's not already running from a
-				// previous annotation.
-				t.Reset(interval)
-				timerRunning = true
-			}
-
-		case <-t.GetC():
-			timerRunning = false
-			sendLatest()
-		}
-	}
-}
-
 func (h *stepHandler) finish(closeSteps bool) {
 	if h.finished {
 		return
@@ -465,18 +521,14 @@ func (h *stepHandler) finish(closeSteps bool) {
 	if closeSteps {
 		h.step.Close(nil)
 	}
-	// Send last annotation unconditionally.
-	// It may send the same annotation it sent last time; could be optimized.
-	h.sendAnnotation()
-	// Close and reap our meter goroutine.
-	close(h.annotationC)
-	<-h.annotationFinishedC
 
 	// Close all streams associated with this handler.
 	if closeSteps {
 		h.closeAllStreams()
 	}
 
+	// Notify that the annotation state has updated (closed).
+	h.processor.annotationStateUpdated()
 	h.finished = true
 }
 
@@ -487,6 +539,18 @@ func (h *stepHandler) writeBaseStream(s *Stream, line string) error {
 		return err
 	}
 	if created {
+		switch s.Name {
+		case STDOUT:
+			if h.step.SetSTDOUTStream(&milo.LogdogStream{Name: string(name)}) {
+				h.updated()
+			}
+
+		case STDERR:
+			if h.step.SetSTDERRStream(&milo.LogdogStream{Name: string(name)}) {
+				h.updated()
+			}
+		}
+
 		segs := s.Name.Segments()
 		h.maybeInjectLink("stdio", segs[len(segs)-1], name)
 	}
@@ -495,24 +559,12 @@ func (h *stepHandler) writeBaseStream(s *Stream, line string) error {
 
 func (h *stepHandler) updated() {
 	if !h.finished {
-		h.sendAnnotation()
+		h.processor.annotationStateUpdated()
 	}
 }
 
-func (h *stepHandler) sendAnnotation() {
-	// Serialize immediately, as the Step's internal state may change in future
-	// annotation runs.
-	p := h.step.Proto()
-
-	data, err := proto.Marshal(p)
-	if err != nil {
-		log.WithError(err).Errorf(h, "Failed to marshal state.")
-		return
-	}
-	h.annotationC <- data
-}
-
-func (h *stepHandler) getStream(name types.StreamName, flags *streamproto.Flags) (s streamclient.Stream, created bool, err error) {
+func (h *stepHandler) getStream(name types.StreamName, flags *streamproto.Flags) (
+	s streamclient.Stream, created bool, err error) {
 	if h.finished {
 		err = fmt.Errorf("refusing to get stream %q for finished handler", name)
 		return
@@ -521,20 +573,12 @@ func (h *stepHandler) getStream(name types.StreamName, flags *streamproto.Flags)
 		return
 	}
 
-	// New stream, will be creating.
-	if flags == nil {
-		return
-	}
-
 	// Create a new stream. Clone the properties archetype and customize.
-	f := *flags
-	f.Timestamp = clockflag.Time(clock.Now(h))
-	f.Name = streamproto.StreamNameFlag(name)
-	if s, err = h.client.NewStream(f); err != nil {
-		return
+	s, err = h.processor.createStream(name, flags)
+	if err == nil {
+		created = true
+		h.streams[name] = s
 	}
-	created = true
-	h.streams[name] = s
 	return
 }
 

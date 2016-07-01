@@ -40,7 +40,6 @@ type testCase struct {
 func (tc *testCase) state(startTime time.Time) *State {
 	cb := testCallbacks{
 		closed:   map[string]struct{}{},
-		protos:   map[string][][]byte{},
 		logs:     map[types.StreamName][]string{},
 		logsOpen: map[types.StreamName]struct{}{},
 	}
@@ -63,13 +62,13 @@ func (tc *testCase) generate(t *testing.T, startTime time.Time, touched stringse
 
 	// Write out generated protos.
 	merr := errors.MultiError(nil)
-	st.ForEachStep(func(s *Step) {
-		p, err := writeStepProto(tc.name, s.CanonicalName(), s.Proto())
-		if err != nil {
-			merr = append(merr, fmt.Errorf("Failed to write step proto for %q::%q: %v", tc.name, s.CanonicalName(), err))
-		}
-		touched.Add(p)
-	})
+
+	step := st.RootStep()
+	p, err = writeStepProto(tc.name, step.CanonicalName(), step.Proto())
+	if err != nil {
+		merr = append(merr, fmt.Errorf("Failed to write step proto for %q::%q: %v", tc.name, step.CanonicalName(), err))
+	}
+	touched.Add(p)
 
 	// Write out generated logs.
 	cb := st.Callbacks.(*testCallbacks)
@@ -225,10 +224,6 @@ type testCallbacks struct {
 	// CanonicalName.
 	closed map[string]struct{}
 
-	// protos is the cumulative set of marshalled emitted protobuf state for each
-	// step, keyed on step CanonicalName.
-	protos map[string][][]byte
-
 	// logs is the content of emitted annotation logs, keyed on stream name.
 	logs map[types.StreamName][]string
 	// logsOpen tracks whether a given annotation log is open.
@@ -237,14 +232,6 @@ type testCallbacks struct {
 
 func (tc *testCallbacks) StepClosed(s *Step) {
 	tc.closed[s.CanonicalName()] = struct{}{}
-}
-
-func (tc *testCallbacks) Updated(s *Step) {
-	data, err := proto.Marshal(s.Proto())
-	if err != nil {
-		panic(err)
-	}
-	tc.protos[s.CanonicalName()] = append(tc.protos[s.CanonicalName()], data)
 }
 
 func (tc *testCallbacks) StepLogLine(s *Step, n types.StreamName, label, line string) {
@@ -266,18 +253,7 @@ func (tc *testCallbacks) StepLogEnd(s *Step, n types.StreamName) {
 	delete(tc.logsOpen, n)
 }
 
-func (tc *testCallbacks) lastProto(name string) *milo.Step {
-	protoList := tc.protos[name]
-	if len(protoList) == 0 {
-		return nil
-	}
-
-	s := milo.Step{}
-	if err := proto.Unmarshal(protoList[len(protoList)-1], &s); err != nil {
-		panic(fmt.Errorf("failed to unmarshal snapshot: %v", err))
-	}
-	return &s
-}
+func (tc *testCallbacks) Updated(s *Step) {}
 
 func TestState(t *testing.T) {
 	t.Parallel()
@@ -306,6 +282,11 @@ func TestState(t *testing.T) {
 		}
 
 		if err := superfluous(touched); err != nil {
+			if merr, ok := err.(errors.MultiError); ok {
+				for i, ierr := range merr {
+					t.Logf("Error #%d: %s", i, ierr)
+				}
+			}
 			t.Fatalf("Superflous test data: %v", err)
 		}
 		return
@@ -330,11 +311,11 @@ func TestState(t *testing.T) {
 				// Iterate over each generated stream and assert that it matches its
 				// expectation. Do it deterministically so failures aren't frustrating
 				// to reproduce.
-				st.ForEachStep(func(s *Step) {
-					Convey(fmt.Sprintf(`Has correct step: %s`, s.CanonicalName()), func() {
-						exp := loadStepProto(t, testCase.name, s.CanonicalName())
-						So(s.Proto(), ShouldResemble, exp)
-					})
+				Convey(`Has correct Step value`, func() {
+					rootStep := st.RootStep()
+
+					exp := loadStepProto(t, testCase.name, rootStep.CanonicalName())
+					So(rootStep.Proto(), ShouldResemble, exp)
 				})
 
 				// Iterate over each generated log and assert that it matches its
