@@ -146,6 +146,7 @@ type CommonStruct struct {
 
 type permaBad struct {
 	PropertyLoadSaver
+	MetaGetterSetter
 }
 
 func (f *permaBad) Load(pm PropertyMap) error {
@@ -472,12 +473,6 @@ func TestPut(t *testing.T) {
 					So(ds.Put(fplss), ShouldResemble, errors.MultiError{nil, errFail})
 				})
 
-				Convey("put with non-modifyable type is an error", func() {
-					cs := CommonStruct{}
-					So(func() { ds.Put(cs) }, ShouldPanicLike,
-						"invalid input type (datastore.CommonStruct): not a pointer")
-				})
-
 				Convey("get with *Key is an error", func() {
 					So(func() { ds.Get(&Key{}) }, ShouldPanicLike,
 						"invalid input type (*datastore.Key): not user datatype")
@@ -503,10 +498,10 @@ func TestPut(t *testing.T) {
 					failSlice := []FakePLS{{Kind: "Fail"}, {Value: 3}}
 					emptySlice := []CommonStruct(nil)
 					cs0 := CommonStruct{Value: 4}
-					cs1 := FakePLS{Kind: "Fail", Value: 5}
+					failPLS := FakePLS{Kind: "Fail", Value: 5}
 					fpls := FakePLS{StringID: "ohai", Value: 6}
 
-					err := ds.Put(successSlice, failSlice, emptySlice, &cs0, &cs1, &fpls)
+					err := ds.Put(successSlice, failSlice, emptySlice, &cs0, &failPLS, &fpls)
 					So(err, ShouldResemble, errors.MultiError{
 						nil, errors.MultiError{errFail, nil}, nil, nil, errFail, nil})
 					So(successSlice[0].ID, ShouldEqual, 1)
@@ -733,8 +728,17 @@ func TestExists(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(er.Any(), ShouldBeFalse)
 
+			// Single struct pointer.
+			er, err = ds.Exists(&CommonStruct{ID: 1})
+			So(err, ShouldBeNil)
+			So(er.All(), ShouldBeTrue)
+
 			// Multi-arg mixed key/struct/slices.
-			er, err = ds.Exists(&CommonStruct{ID: 1}, []*CommonStruct(nil), []*Key{ds.MakeKey("DNE", "nope"), ds.MakeKey("hello", "ohai")})
+			er, err = ds.Exists(
+				&CommonStruct{ID: 1},
+				[]*CommonStruct(nil),
+				[]*Key{ds.MakeKey("DNE", "nope"), ds.MakeKey("hello", "ohai")},
+			)
 			So(err, ShouldBeNil)
 			So(er.Get(0), ShouldBeTrue)
 			So(er.Get(1), ShouldBeTrue)
@@ -785,6 +789,12 @@ func TestDelete(t *testing.T) {
 					So(ds.Delete(keys), ShouldResemble, errors.MultiError{nil, errFail})
 				})
 
+				Convey("put with non-modifyable type is an error", func() {
+					cs := CommonStruct{}
+					So(func() { ds.Put(cs) }, ShouldPanicLike,
+						"invalid input type (datastore.CommonStruct): not a pointer")
+				})
+
 				Convey("get single error when deleting a single", func() {
 					k := ds.MakeKey("Fail", 1)
 					So(ds.Delete(k), ShouldEqual, errFail)
@@ -792,7 +802,7 @@ func TestDelete(t *testing.T) {
 			})
 
 			Convey("good", func() {
-				// Single struct.
+				// Single struct pointer.
 				So(ds.Delete(&CommonStruct{ID: 1}), ShouldBeNil)
 
 				// Single key.
@@ -805,7 +815,10 @@ func TestDelete(t *testing.T) {
 				So(ds.Delete(ds.MakeKey("DNE", "nope")), ShouldEqual, ErrNoSuchEntity)
 
 				// Mixed key/struct/slices.
-				err := ds.Delete(&CommonStruct{ID: 1}, []*Key{ds.MakeKey("hello", "ohai"), ds.MakeKey("DNE", "nope")})
+				err := ds.Delete(
+					&CommonStruct{ID: 1},
+					[]*Key{ds.MakeKey("hello", "ohai"), ds.MakeKey("DNE", "nope")},
+				)
 				So(err, ShouldResemble, errors.MultiError{nil, errors.MultiError{nil, ErrNoSuchEntity}})
 			})
 		})
@@ -886,10 +899,10 @@ func TestGet(t *testing.T) {
 					failSlice := []CommonStruct{{ID: noSuchEntityID}, {ID: 3}}
 					emptySlice := []CommonStruct(nil)
 					cs0 := CommonStruct{ID: 4}
-					cs1 := CommonStruct{ID: noSuchEntityID}
+					failPLS := CommonStruct{ID: noSuchEntityID}
 					fpls := FakePLS{StringID: "ohai"}
 
-					err := ds.Get(successSlice, failSlice, emptySlice, &cs0, &cs1, &fpls)
+					err := ds.Get(successSlice, failSlice, emptySlice, &cs0, &failPLS, &fpls)
 					So(err, ShouldResemble, errors.MultiError{
 						nil, errors.MultiError{ErrNoSuchEntity, nil}, nil, nil, ErrNoSuchEntity, nil})
 					So(successSlice[0].Value, ShouldEqual, 1)

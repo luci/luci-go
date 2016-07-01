@@ -219,15 +219,27 @@ func GetPLS(obj interface{}) interface {
 	if !v.IsValid() {
 		panic(fmt.Errorf("cannot GetPLS(%T): failed to reflect", obj))
 	}
-	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
-		panic(fmt.Errorf("cannot GetPLS(%T): not a pointer-to-struct", obj))
-	}
 	if v.IsNil() {
-		panic(fmt.Errorf("cannot GetPLS(%T): pointer-to-struct is nil", obj))
+		panic(fmt.Errorf("cannot GetPLS(%T): pointer is nil", obj))
 	}
-	v = v.Elem()
-	c := getCodec(v.Type())
-	return &structPLS{v, c}
+
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+		if v.Kind() == reflect.Struct {
+			s := structPLS{
+				c: getCodec(v.Type()),
+				o: v,
+			}
+
+			// If our object implements MetaGetterSetter, use this instead of the built-in
+			// PLS MetaGetterSetter.
+			if mgs, ok := obj.(MetaGetterSetter); ok {
+				s.mgs = mgs
+			}
+			return &s
+		}
+	}
+	panic(fmt.Errorf("cannot GetPLS(%T): not a pointer-to-struct", obj))
 }
 
 func getMGS(obj interface{}) MetaGetterSetter {

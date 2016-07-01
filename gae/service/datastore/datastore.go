@@ -59,16 +59,19 @@ func (d *datastoreImpl) NewKeyToks(toks []KeyTok) *Key {
 // This method will panic if obj is an invalid datastore model. If the key could
 // not be applied to the object, nothing will happen.
 func PopulateKey(obj interface{}, key *Key) {
-	pls := getMGS(obj)
-	if !pls.SetMeta("key", key) {
+	populateKeyMGS(getMGS(obj), key)
+}
+
+func populateKeyMGS(mgs MetaGetterSetter, key *Key) {
+	if !mgs.SetMeta("key", key) {
 		lst := key.LastTok()
 		if lst.StringID != "" {
-			pls.SetMeta("id", lst.StringID)
+			mgs.SetMeta("id", lst.StringID)
 		} else {
-			pls.SetMeta("id", lst.IntID)
+			mgs.SetMeta("id", lst.IntID)
 		}
-		pls.SetMeta("kind", lst.Kind)
-		pls.SetMeta("parent", key.Parent())
+		mgs.SetMeta("kind", lst.Kind)
+		mgs.SetMeta("parent", key.Parent())
 	}
 }
 

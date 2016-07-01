@@ -1813,8 +1813,15 @@ func TestMeta(t *testing.T) {
 		})
 
 		Convey("attempting to get a PLS for a non *struct is an error", func() {
-			So(func() { GetPLS((*[]string)(nil)) }, ShouldPanicLike,
+			s := []string{}
+			So(func() { GetPLS(&s) }, ShouldPanicLike,
 				"cannot GetPLS(*[]string): not a pointer-to-struct")
+		})
+
+		Convey("attempting to get a PLS for a nil pointer-to-struct is an error", func() {
+			var s *Simple
+			So(func() { GetPLS(s) }, ShouldPanicLike,
+				"cannot GetPLS(*datastore.Simple): pointer is nil")
 		})
 
 		Convey("convertible meta default types", func() {

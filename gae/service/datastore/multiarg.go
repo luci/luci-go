@@ -12,12 +12,29 @@ import (
 )
 
 type multiArgType struct {
-	getKey    func(aid, ns string, slot reflect.Value) (*Key, error)
-	getPM     func(slot reflect.Value) (PropertyMap, error)
-	getMetaPM func(slot reflect.Value) PropertyMap
-	setPM     func(slot reflect.Value, pm PropertyMap) error
-	setKey    func(slot reflect.Value, k *Key)
-	newElem   func() reflect.Value
+	getMGS  func(slot reflect.Value) MetaGetterSetter
+	getPLS  func(slot reflect.Value) PropertyLoadSaver
+	newElem func() reflect.Value
+}
+
+func (mat *multiArgType) getKey(aid, ns string, slot reflect.Value) (*Key, error) {
+	return newKeyObjErr(aid, ns, mat.getMGS(slot))
+}
+
+func (mat *multiArgType) getPM(slot reflect.Value) (PropertyMap, error) {
+	return mat.getPLS(slot).Save(true)
+}
+
+func (mat *multiArgType) getMetaPM(slot reflect.Value) PropertyMap {
+	return mat.getMGS(slot).GetAllMeta()
+}
+
+func (mat *multiArgType) setPM(slot reflect.Value, pm PropertyMap) error {
+	return mat.getPLS(slot).Load(pm)
+}
+
+func (mat *multiArgType) setKey(slot reflect.Value, k *Key) {
+	PopulateKey(mat.getMGS(slot), k)
 }
 
 // parseArg checks that et is of type S, *S, I, P or *P, for some
@@ -30,41 +47,154 @@ type multiArgType struct {
 // If keysOnly is true, a read-only key extraction multiArgType will be
 // returned if et is a *Key.
 func parseArg(et reflect.Type, keysOnly bool) *multiArgType {
+	var mat multiArgType
+
 	if keysOnly && et == typeOfKey {
-		return multiArgTypeKeyExtraction()
+		mat.getMGS = func(slot reflect.Value) MetaGetterSetter { return &keyExtractionMGS{key: slot.Interface().(*Key)} }
+		return &mat
 	}
 
-	if et.Kind() == reflect.Interface {
-		return multiArgTypeInterface()
+	// If we do identify a structCodec for this type, retain it so we don't
+	// resolve it multiple times.
+	var codec *structCodec
+	initCodec := func(t reflect.Type) *structCodec {
+		if codec == nil {
+			codec = getCodec(t)
+		}
+		return codec
 	}
 
+	// Fill in MetaGetterSetter functions.
+	switch {
+	case et.Implements(typeOfMetaGetterSetter):
+		// MGS
+		mat.getMGS = func(slot reflect.Value) MetaGetterSetter { return slot.Interface().(MetaGetterSetter) }
+
+	case reflect.PtrTo(et).Implements(typeOfMetaGetterSetter):
+		// *MGS
+		mat.getMGS = func(slot reflect.Value) MetaGetterSetter { return slot.Addr().Interface().(MetaGetterSetter) }
+
+	default:
+		switch et.Kind() {
+		case reflect.Interface:
+			// I
+			mat.getMGS = func(slot reflect.Value) MetaGetterSetter { return getMGS(slot.Elem().Interface()) }
+
+		case reflect.Ptr:
+			// *S
+			if et.Elem().Kind() != reflect.Struct {
+				// Not a struct pointer.
+				return nil
+			}
+
+			initCodec(et.Elem())
+			mat.getMGS = func(slot reflect.Value) MetaGetterSetter { return &structPLS{slot.Elem(), codec, nil} }
+
+		case reflect.Struct:
+			// S
+			initCodec(et)
+			mat.getMGS = func(slot reflect.Value) MetaGetterSetter { return &structPLS{slot, codec, nil} }
+
+		default:
+			// Don't know how to get MGS for this type.
+			return nil
+		}
+	}
+
+	// Fill in PropertyLoadSaver functions.
+	switch {
+	case et.Implements(typeOfPropertyLoadSaver):
+		// PLS
+		mat.getPLS = func(slot reflect.Value) PropertyLoadSaver { return slot.Interface().(PropertyLoadSaver) }
+
+	case reflect.PtrTo(et).Implements(typeOfPropertyLoadSaver):
+		// *PLS
+		mat.getPLS = func(slot reflect.Value) PropertyLoadSaver { return slot.Addr().Interface().(PropertyLoadSaver) }
+
+	default:
+		switch et.Kind() {
+		case reflect.Interface:
+			// I
+			mat.getPLS = func(slot reflect.Value) PropertyLoadSaver {
+				obj := slot.Elem().Interface()
+				if pls, ok := obj.(PropertyLoadSaver); ok {
+					return pls
+				}
+				return GetPLS(obj)
+			}
+
+		case reflect.Ptr:
+			// *S
+			if et.Elem().Kind() != reflect.Struct {
+				// Not a struct pointer.
+				return nil
+			}
+			initCodec(et.Elem())
+			mat.getPLS = func(slot reflect.Value) PropertyLoadSaver { return &structPLS{slot.Elem(), codec, nil} }
+
+		case reflect.Struct:
+			// S
+			initCodec(et)
+			mat.getPLS = func(slot reflect.Value) PropertyLoadSaver { return &structPLS{slot, codec, nil} }
+
+		default:
+			// Don't know how to get PLS for this type.
+			return nil
+		}
+	}
+
+	// Generate new element.
+	//
 	// If a map/chan type implements an interface, its pointer is also considered
 	// to implement that interface.
 	//
 	// In this case, we have special pointer-to-map/chan logic in multiArgTypePLS.
-	if et.Implements(typeOfPropertyLoadSaver) {
-		return multiArgTypePLS(et)
-	}
-	if reflect.PtrTo(et).Implements(typeOfPropertyLoadSaver) {
-		return multiArgTypePLSPtr(et)
+	mat.newElem = func() reflect.Value {
+		return reflect.New(et).Elem()
 	}
 
 	switch et.Kind() {
-	case reflect.Ptr:
-		if et.Elem().Kind() == reflect.Struct {
-			return multiArgTypeStructPtr(et)
+	case reflect.Map:
+		mat.newElem = func() reflect.Value {
+			return reflect.MakeMap(et)
 		}
 
-	case reflect.Struct:
-		return multiArgTypeStruct(et)
+	case reflect.Chan:
+		mat.newElem = func() reflect.Value {
+			return reflect.MakeChan(et, 0)
+		}
+
+	case reflect.Ptr:
+		elem := et.Elem()
+		switch elem.Kind() {
+		case reflect.Map:
+			mat.newElem = func() reflect.Value {
+				ptr := reflect.New(elem)
+				ptr.Elem().Set(reflect.MakeMap(elem))
+				return ptr
+			}
+
+		case reflect.Chan:
+			mat.newElem = func() reflect.Value {
+				ptr := reflect.New(elem)
+				ptr.Elem().Set(reflect.MakeChan(elem, 0))
+				return ptr
+			}
+
+		default:
+			mat.newElem = func() reflect.Value { return reflect.New(et.Elem()) }
+		}
+
+	case reflect.Interface:
+		mat.newElem = nil
 	}
 
-	return nil
+	return &mat
 }
 
-// parseMultiArg checks that v has type []S, []*S, []I, []P or []*P, for some
-// struct type S, for some interface type I, or some non-interface non-pointer
-// type P such that P or *P implements PropertyLoadSaver.
+// mustParseMultiArg checks that v has type []S, []*S, []I, []P or []*P, for
+// some struct type S, for some interface type I, or some non-interface
+// non-pointer type P such that P or *P implements PropertyLoadSaver.
 func mustParseMultiArg(et reflect.Type) *multiArgType {
 	if et.Kind() != reflect.Slice {
 		panic(fmt.Errorf("invalid argument type: expected slice, got %s", et))
@@ -77,179 +207,6 @@ func mustParseArg(et reflect.Type) *multiArgType {
 		return mat
 	}
 	panic(fmt.Errorf("invalid argument type: %s is not a PLS or pointer-to-struct", et))
-}
-
-// multiArgTypePLS handles the case where et implements PropertyLoadSaver.
-//
-// This handles the special case of pointer-to-map and pointer-to-chan (
-// see parseArg).
-func multiArgTypePLS(et reflect.Type) *multiArgType {
-	ret := multiArgType{
-		getKey: func(aid, ns string, slot reflect.Value) (*Key, error) {
-			return newKeyObjErr(aid, ns, getMGS(slot.Interface()))
-		},
-		getPM: func(slot reflect.Value) (PropertyMap, error) {
-			return slot.Interface().(PropertyLoadSaver).Save(true)
-		},
-		getMetaPM: func(slot reflect.Value) PropertyMap {
-			return getMGS(slot.Interface()).GetAllMeta()
-		},
-		setPM: func(slot reflect.Value, pm PropertyMap) error {
-			return slot.Interface().(PropertyLoadSaver).Load(pm)
-		},
-		setKey: func(slot reflect.Value, k *Key) {
-			PopulateKey(slot.Interface(), k)
-		},
-	}
-	switch et.Kind() {
-	case reflect.Map:
-		ret.newElem = func() reflect.Value {
-			return reflect.MakeMap(et)
-		}
-
-	case reflect.Chan:
-		ret.newElem = func() reflect.Value {
-			return reflect.MakeChan(et, 0)
-		}
-
-	case reflect.Ptr:
-		elem := et.Elem()
-		switch elem.Kind() {
-		case reflect.Map:
-			ret.newElem = func() reflect.Value {
-				ptr := reflect.New(elem)
-				ptr.Elem().Set(reflect.MakeMap(elem))
-				return ptr
-			}
-
-		case reflect.Chan:
-			ret.newElem = func() reflect.Value {
-				ptr := reflect.New(elem)
-				ptr.Elem().Set(reflect.MakeChan(elem, 0))
-				return ptr
-			}
-		}
-	}
-
-	if ret.newElem == nil {
-		ret.newElem = func() reflect.Value {
-			return reflect.New(et.Elem())
-		}
-	}
-	return &ret
-}
-
-// multiArgTypePLSPtr handles the case where et doesn't implement
-// PropertyLoadSaver, but a pointer to et does.
-func multiArgTypePLSPtr(et reflect.Type) *multiArgType {
-	return &multiArgType{
-		getKey: func(aid, ns string, slot reflect.Value) (*Key, error) {
-			return newKeyObjErr(aid, ns, getMGS(slot.Addr().Interface()))
-		},
-		getPM: func(slot reflect.Value) (PropertyMap, error) {
-			return slot.Addr().Interface().(PropertyLoadSaver).Save(true)
-		},
-		getMetaPM: func(slot reflect.Value) PropertyMap {
-			return getMGS(slot.Addr().Interface()).GetAllMeta()
-		},
-		setPM: func(slot reflect.Value, pm PropertyMap) error {
-			return slot.Addr().Interface().(PropertyLoadSaver).Load(pm)
-		},
-		setKey: func(slot reflect.Value, k *Key) {
-			PopulateKey(slot.Addr().Interface(), k)
-		},
-		newElem: func() reflect.Value {
-			return reflect.New(et).Elem()
-		},
-	}
-}
-
-// multiArgTypeStruct == []S
-func multiArgTypeStruct(et reflect.Type) *multiArgType {
-	cdc := getCodec(et)
-	toPLS := func(slot reflect.Value) *structPLS {
-		return &structPLS{slot, cdc}
-	}
-	return &multiArgType{
-		getKey: func(aid, ns string, slot reflect.Value) (*Key, error) {
-			return newKeyObjErr(aid, ns, getMGS(slot.Addr().Interface()))
-		},
-		getPM: func(slot reflect.Value) (PropertyMap, error) {
-			return toPLS(slot).Save(true)
-		},
-		getMetaPM: func(slot reflect.Value) PropertyMap {
-			return getMGS(slot.Addr().Interface()).GetAllMeta()
-		},
-		setPM: func(slot reflect.Value, pm PropertyMap) error {
-			return toPLS(slot).Load(pm)
-		},
-		setKey: func(slot reflect.Value, k *Key) {
-			PopulateKey(toPLS(slot), k)
-		},
-		newElem: func() reflect.Value {
-			return reflect.New(et).Elem()
-		},
-	}
-}
-
-// multiArgTypeStructPtr == []*S
-func multiArgTypeStructPtr(et reflect.Type) *multiArgType {
-	cdc := getCodec(et.Elem())
-	toPLS := func(slot reflect.Value) *structPLS {
-		return &structPLS{slot.Elem(), cdc}
-	}
-	return &multiArgType{
-		getKey: func(aid, ns string, slot reflect.Value) (*Key, error) {
-			return newKeyObjErr(aid, ns, getMGS(slot.Interface()))
-		},
-		getPM: func(slot reflect.Value) (PropertyMap, error) {
-			return toPLS(slot).Save(true)
-		},
-		getMetaPM: func(slot reflect.Value) PropertyMap {
-			return getMGS(slot.Interface()).GetAllMeta()
-		},
-		setPM: func(slot reflect.Value, pm PropertyMap) error {
-			return toPLS(slot).Load(pm)
-		},
-		setKey: func(slot reflect.Value, k *Key) {
-			PopulateKey(toPLS(slot), k)
-		},
-		newElem: func() reflect.Value {
-			return reflect.New(et.Elem())
-		},
-	}
-}
-
-// multiArgTypeInterface == []I
-func multiArgTypeInterface() *multiArgType {
-	return &multiArgType{
-		getKey: func(aid, ns string, slot reflect.Value) (*Key, error) {
-			return newKeyObjErr(aid, ns, getMGS(slot.Elem().Interface()))
-		},
-		getPM: func(slot reflect.Value) (PropertyMap, error) {
-			return mkPLS(slot.Elem().Interface()).Save(true)
-		},
-		getMetaPM: func(slot reflect.Value) PropertyMap {
-			return getMGS(slot.Elem().Interface()).GetAllMeta()
-		},
-		setPM: func(slot reflect.Value, pm PropertyMap) error {
-			return mkPLS(slot.Elem().Interface()).Load(pm)
-		},
-		setKey: func(slot reflect.Value, k *Key) {
-			PopulateKey(slot.Elem().Interface(), k)
-		},
-	}
-}
-
-// multiArgTypeKeyExtraction == *Key
-//
-// This ONLY implements getKey.
-func multiArgTypeKeyExtraction() *multiArgType {
-	return &multiArgType{
-		getKey: func(aid, ns string, slot reflect.Value) (*Key, error) {
-			return slot.Interface().(*Key), nil
-		},
-	}
 }
 
 func newKeyObjErr(aid, ns string, mgs MetaGetterSetter) (*Key, error) {
@@ -273,13 +230,6 @@ func newKeyObjErr(aid, ns string, mgs MetaGetterSetter) (*Key, error) {
 	return NewKey(aid, ns, kind, sid, iid, par), nil
 }
 
-func mkPLS(o interface{}) PropertyLoadSaver {
-	if pls, ok := o.(PropertyLoadSaver); ok {
-		return pls
-	}
-	return GetPLS(o)
-}
-
 func isOKSingleType(t reflect.Type, keysOnly bool) error {
 	switch {
 	case t == nil:
@@ -288,13 +238,30 @@ func isOKSingleType(t reflect.Type, keysOnly bool) error {
 		return nil
 	case !keysOnly && t == typeOfKey:
 		return errors.New("not user datatype")
+
 	case t.Kind() != reflect.Ptr:
 		return errors.New("not a pointer")
 	case t.Elem().Kind() != reflect.Struct:
 		return errors.New("does not point to a struct")
+
 	default:
 		return nil
 	}
+}
+
+// keyExtractionMGS is a MetaGetterSetter that wraps a key and only implements
+// GetMeta, and even then only retrieves the wrapped key meta value, "key".
+type keyExtractionMGS struct {
+	MetaGetterSetter
+
+	key *Key
+}
+
+func (mgs *keyExtractionMGS) GetMeta(key string) (interface{}, bool) {
+	if key == "key" {
+		return mgs.key, true
+	}
+	return nil, false
 }
 
 type metaMultiArgElement struct {

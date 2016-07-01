@@ -42,8 +42,9 @@ type structCodec struct {
 }
 
 type structPLS struct {
-	o reflect.Value
-	c *structCodec
+	o   reflect.Value
+	c   *structCodec
+	mgs MetaGetterSetter
 }
 
 var _ PropertyLoadSaver = (*structPLS)(nil)
@@ -232,7 +233,11 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 func (p *structPLS) Save(withMeta bool) (PropertyMap, error) {
 	ret := PropertyMap(nil)
 	if withMeta {
-		ret = getMGS(p.o.Addr().Interface()).GetAllMeta()
+		if p.mgs != nil {
+			ret = p.mgs.GetAllMeta()
+		} else {
+			ret = p.GetAllMeta()
+		}
 	} else {
 		ret = make(PropertyMap, len(p.c.byName))
 	}
@@ -252,7 +257,7 @@ func (p *structPLS) getDefaultKind() string {
 func (p *structPLS) save(propMap PropertyMap, prefix string, is IndexSetting) (idxCount int, err error) {
 	saveProp := func(name string, si IndexSetting, v reflect.Value, st *structTag) (err error) {
 		if st.substructCodec != nil {
-			count, err := (&structPLS{v, st.substructCodec}).save(propMap, name, si)
+			count, err := (&structPLS{v, st.substructCodec, nil}).save(propMap, name, si)
 			if err == nil {
 				idxCount += count
 				if idxCount > maxIndexedProperties {

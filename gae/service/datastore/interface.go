@@ -60,7 +60,7 @@ type Interface interface {
 	// KeyForObjErr extracts a key from src.
 	//
 	// src must be one of:
-	//   - *S where S is a struct
+	//   - *S, where S is a struct
 	//   - a PropertyLoadSaver
 	//
 	// It is expected that the struct exposes the following metadata (as retrieved
@@ -99,8 +99,8 @@ type Interface interface {
 	//   func(obj TYPE[, getCursor CursorCB]) [error]
 	//
 	// Where TYPE is one of:
-	//   - S or *S where S is a struct
-	//   - P or *P where *P is a concrete type implementing PropertyLoadSaver
+	//   - S or *S, where S is a struct
+	//   - P or *P, where *P is a concrete type implementing PropertyLoadSaver
 	//   - *Key (implies a keys-only query)
 	//
 	// If the error is omitted from the signature, this will run until the query
@@ -128,8 +128,8 @@ type Interface interface {
 	// GetAll retrieves all of the Query results into dst.
 	//
 	// dst must be one of:
-	//   - *[]S or *[]*S where S is a struct
-	//   - *[]P or *[]*P where *P is a concrete type implementing
+	//   - *[]S or *[]*S, where S is a struct
+	//   - *[]P or *[]*P, where *P is a concrete type implementing
 	//     PropertyLoadSaver
 	//   - *[]*Key implies a keys-only query.
 	GetAll(q *Query, dst interface{}) error
@@ -137,11 +137,11 @@ type Interface interface {
 	// Exists tests if the supplied objects are present in the datastore.
 	//
 	// ent must be one of:
-	//	- *S where S is a struct
-	//	- *P where *P is a concrete type implementing PropertyLoadSaver
-	//	- []S or []*S where S is a struct
-	//	- []P or []*P where *P is a concrete type implementing PropertyLoadSaver
-	//	- []I where i is some interface type. Each element of the slice must
+	//	- *S, where S is a struct
+	//	- *P, where *P is a concrete type implementing PropertyLoadSaver
+	//	- []S or []*S, where S is a struct
+	//	- []P or []*P, where *P is a concrete type implementing PropertyLoadSaver
+	//	- []I, where I is some interface type. Each element of the slice must
 	//	  be non-nil, and its underlying type must be either *S or *P.
 	//	- *Key, to check a specific key from the datastore.
 	//	- []*Key, to check a slice of keys from the datastore.
@@ -153,14 +153,14 @@ type Interface interface {
 	// error was encountered.
 	//
 	// If an ent argument is a slice, its error type will be a MultiError. Note
-	// that in the scenario where multiple slices are provided, this will return a
+	// that in the scenario, where multiple slices are provided, this will return a
 	// MultiError containing a nested MultiError for each slice argument.
 	Exists(ent ...interface{}) (*ExistsResult, error)
 
 	// Does a GetMulti for thes keys and returns true iff they exist. Will only
-	// return an error if it's not ErrNoSuchEntity. This is slightly more efficient
-	// than using Get directly, because it uses the underlying RawInterface to
-	// avoid some reflection and copies.
+	// return an error if it's not ErrNoSuchEntity. This is slightly more
+	// efficient than using Get directly, because it uses the underlying
+	// RawInterface to avoid some reflection and copies.
 	//
 	// If an error is encountered, the returned error will be a MultiError whose
 	// error index corresponds to the key for which the error was encountered.
@@ -173,11 +173,11 @@ type Interface interface {
 	// Get retrieves objects from the datastore.
 	//
 	// Each element in dst must be one of:
-	//	- *S where S is a struct
-	//	- *P where *P is a concrete type implementing PropertyLoadSaver
-	//	- []S or []*S where S is a struct
-	//	- []P or []*P where *P is a concrete type implementing PropertyLoadSaver
-	//	- []I where I is some interface type. Each element of the slice must
+	//	- *S, where S is a struct
+	//	- *P, where *P is a concrete type implementing PropertyLoadSaver
+	//	- []S or []*S, where S is a struct
+	//	- []P or []*P, where *P is a concrete type implementing PropertyLoadSaver
+	//	- []I, where I is some interface type. Each element of the slice must
 	//	  be non-nil, and its underlying type must be either *S or *P.
 	//
 	// If an error is encountered, the returned error value will depend on the
@@ -194,9 +194,9 @@ type Interface interface {
 	// GetMulti retrieves items from the datastore.
 	//
 	// dst must be one of:
-	//   - []S or []*S where S is a struct
-	//   - []P or []*P where *P is a concrete type implementing PropertyLoadSaver
-	//   - []I where I is some interface type. Each element of the slice must
+	//   - []S or []*S, where S is a struct
+	//   - []P or []*P, where *P is a concrete type implementing PropertyLoadSaver
+	//   - []I, where I is some interface type. Each element of the slice must
 	//     be non-nil, and its underlying type must be either *S or *P.
 	//
 	// NOTE: GetMulti is obsolete. The vararg-accepting Get should be used
@@ -207,11 +207,11 @@ type Interface interface {
 	// Put inserts a single object into the datastore
 	//
 	// src must be one of:
-	//	- *S where S is a struct
-	//	- *P where *P is a concrete type implementing PropertyLoadSaver
-	//	- []S or []*S where S is a struct
-	//	- []P or []*P where *P is a concrete type implementing PropertyLoadSaver
-	//	- []I where i is some interface type. Each element of the slice must
+	//	- *S, where S is a struct
+	//	- *P, where *P is a concrete type implementing PropertyLoadSaver
+	//	- []S or []*S, where S is a struct
+	//	- []P or []*P, where *P is a concrete type implementing PropertyLoadSaver
+	//	- []I, where I is some interface type. Each element of the slice must
 	//	  be non-nil, and its underlying type must be either *S or *P.
 	//
 	// A *Key will be extracted from src via KeyForObj. If
@@ -232,9 +232,9 @@ type Interface interface {
 	// PutMulti writes items to the datastore.
 	//
 	// src must be one of:
-	//	- []S or []*S where S is a struct
-	//	- []P or []*P where *P is a concrete type implementing PropertyLoadSaver
-	//	- []I where i is some interface type. Each element of the slice must
+	//	- []S or []*S, where S is a struct
+	//	- []P or []*P, where *P is a concrete type implementing PropertyLoadSaver
+	//	- []I, where I is some interface type. Each element of the slice must
 	//	  be non-nil, and its underlying type must be either *S or *P.
 	//
 	// If items in src resolve to Incomplete keys, PutMulti will write the
@@ -248,11 +248,11 @@ type Interface interface {
 	// Delete removes the supplied entities from the datastore.
 	//
 	// ent must be one of:
-	//	- *S where S is a struct
-	//	- *P where *P is a concrete type implementing PropertyLoadSaver
-	//	- []S or []*S where S is a struct
-	//	- []P or []*P where *P is a concrete type implementing PropertyLoadSaver
-	//	- []I where i is some interface type. Each element of the slice must
+	//	- *S, where S is a struct
+	//	- *P, where *P is a concrete type implementing PropertyLoadSaver
+	//	- []S or []*S, where S is a struct
+	//	- []P or []*P, where *P is a concrete type implementing PropertyLoadSaver
+	//	- []I, where I is some interface type. Each element of the slice must
 	//	  be non-nil, and its underlying type must be either *S or *P.
 	//	- *Key, to remove a specific key from the datastore.
 	//	- []*Key, to remove a slice of keys from the datastore.
