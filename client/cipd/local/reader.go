@@ -15,10 +15,13 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"time"
 
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/client/cipd/common"
+	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/logging"
 )
 
 // PackageInstance represents a binary CIPD package file (with manifest inside).
@@ -147,7 +150,31 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 		return err
 	}
 
-	// Use nested functions in a loop to be able to utilize defers.
+	// Use file sizes for progress report calculation.
+	totalSize := uint64(0)
+	extractedSize := uint64(0)
+	for _, f := range files {
+		if !f.Symlink() {
+			totalSize += f.Size()
+		}
+	}
+
+	logging.Infof(ctx, "cipd: about to extract %.1f Mb", float64(totalSize)/1024.0/1024.0)
+
+	// reportProgress print extraction progress, throttling the reports rate to
+	// one per 5 sec.
+	prevProgress := 1000 // >100%
+	var prevReportTs time.Time
+	reportProgress := func(read, total uint64) {
+		now := clock.Now(ctx)
+		progress := int(float64(read) * 100 / float64(total))
+		if progress < prevProgress || read == total || now.Sub(prevReportTs) > 5*time.Second {
+			logging.Infof(ctx, "cipd: extracting - %d%%", progress)
+			prevReportTs = now
+			prevProgress = progress
+		}
+	}
+
 	var err error
 	for _, f := range files {
 		if err = ctx.Err(); err != nil {
@@ -155,14 +182,17 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 		}
 		if f.Name() == manifestName {
 			err = extractManifestFile(f)
+			extractedSize += f.Size()
 		} else if f.Symlink() {
 			err = extractSymlinkFile(f)
 		} else {
 			err = extractRegularFile(f)
+			extractedSize += f.Size()
 		}
 		if err != nil {
 			break
 		}
+		reportProgress(extractedSize, totalSize)
 	}
 
 	needToEnd = false
