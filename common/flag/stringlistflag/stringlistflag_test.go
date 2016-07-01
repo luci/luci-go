@@ -2,7 +2,7 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-package stringsetflag
+package stringlistflag
 
 import (
 	"flag"
@@ -12,25 +12,20 @@ import (
 
 // Example demonstrates how to use stringlistflag.
 func Example() {
-	sset := Flag{}
+	list := Flag{}
 
 	fs := flag.NewFlagSet("test", flag.ContinueOnError)
-	fs.Var(&sset, "color", "favorite color, may be repeated.")
+	fs.Var(&list, "color", "favorite color, may be repeated.")
 	fs.SetOutput(os.Stdout)
 
 	fs.PrintDefaults()
 
 	// Flag parsing.
 	fs.Parse([]string{"-color", "Violet", "-color", "Red", "-color", "Violet"})
-	fmt.Printf("Value is: %s\n", sset)
-
-	fmt.Println("Likes Blue:", sset.Data.Has("Blue"))
-	fmt.Println("Likes Red:", sset.Data.Has("Red"))
+	fmt.Printf("Value is: %s\n", list)
 
 	// Output:
 	// -color value
 	//     	favorite color, may be repeated.
-	// Value is: Red,Violet
-	// Likes Blue: false
-	// Likes Red: true
+	// Value is: Violet, Red, Violet
 }

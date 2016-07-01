@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -22,6 +23,7 @@ import (
 	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/ctxcmd"
+	"github.com/luci/luci-go/common/flag/stringlistflag"
 )
 
 // BootstrapStepName is the name of kitchen's step where it makes preparations
@@ -43,6 +45,7 @@ var cmdCook = &subcommands.Command{
 			"FETCH_HEAD",
 			"Git commit hash to check out.")
 		fs.StringVar(&c.Recipe, "recipe", "<recipe>", "Name of the recipe to run")
+		fs.Var(&c.PythonPaths, "python-path", "Python path to include. Can be specified multiple times.")
 		fs.StringVar(
 			&c.CheckoutDir,
 			"checkout-dir",
@@ -84,6 +87,7 @@ type cookRun struct {
 	PropertiesFile       string
 	OutputResultJSONFile string
 	Timestamps           bool
+	PythonPaths          stringlistflag.Flag
 }
 
 func (c *cookRun) validateFlags() error {
@@ -130,6 +134,17 @@ func (c *cookRun) run(ctx context.Context) (recipeExitCode int, err error) {
 		defer os.RemoveAll(tempWorkdir)
 		c.Workdir = tempWorkdir
 	}
+
+	for i, p := range c.PythonPaths {
+		p := filepath.FromSlash(p)
+		p, err := filepath.Abs(p)
+		if err != nil {
+			return 0, err
+		}
+		c.PythonPaths[i] = p
+	}
+	// Why here? It is much easier than manipulating exec.Command.Env.
+	os.Setenv("PYTHONPATH", strings.Join(c.PythonPaths, string(os.PathListSeparator)))
 
 	recipe := recipeRun{
 		repositoryPath:       c.CheckoutDir,
