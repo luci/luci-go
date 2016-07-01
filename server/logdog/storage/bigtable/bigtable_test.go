@@ -25,8 +25,7 @@ func TestBigTable(t *testing.T) {
 
 		s := newBTStorage(context.Background(), Options{
 			Project:  "test-project",
-			Zone:     "test-zone",
-			Cluster:  "test-cluster",
+			Instance: "test-instance",
 			LogTable: "test-log-table",
 		}, nil, nil)
 

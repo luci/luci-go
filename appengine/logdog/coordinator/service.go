@@ -168,19 +168,15 @@ func (s *prodServicesInst) IntermediateStorage(c context.Context) (storage.Stora
 	// Validate the BigTable configuration.
 	log.Fields{
 		"project":      bt.Project,
-		"zone":         bt.Zone,
-		"cluster":      bt.Cluster,
+		"instance":     bt.Instance,
 		"logTableName": bt.LogTableName,
 	}.Debugf(c, "Connecting to BigTable.")
 	var merr errors.MultiError
 	if bt.Project == "" {
 		merr = append(merr, errors.New("missing project"))
 	}
-	if bt.Zone == "" {
-		merr = append(merr, errors.New("missing zone"))
-	}
-	if bt.Cluster == "" {
-		merr = append(merr, errors.New("missing cluster"))
+	if bt.Instance == "" {
+		merr = append(merr, errors.New("missing instance"))
 	}
 	if bt.LogTableName == "" {
 		merr = append(merr, errors.New("missing log table name"))
@@ -203,8 +199,7 @@ func (s *prodServicesInst) IntermediateStorage(c context.Context) (storage.Stora
 
 	st, err := bigtable.New(c, bigtable.Options{
 		Project:  bt.Project,
-		Zone:     bt.Zone,
-		Cluster:  bt.Cluster,
+		Instance: bt.Instance,
 		LogTable: bt.LogTableName,
 		ClientOptions: []cloud.ClientOption{
 			cloud.WithTokenSource(a.TokenSource()),

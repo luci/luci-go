@@ -58,10 +58,8 @@ var (
 type Options struct {
 	// Project is the name of the project to connect to.
 	Project string
-	// Zone is the name of the zone to connect to.
-	Zone string
-	// Cluster is the name of the cluster to connect to.
-	Cluster string
+	// Instance is the name of the instance to connect to.
+	Instance string
 	// ClientOptions are additional client options to use when instantiating the
 	// client instance.
 	ClientOptions []cloud.ClientOption
@@ -71,11 +69,11 @@ type Options struct {
 }
 
 func (o *Options) client(ctx context.Context) (*bigtable.Client, error) {
-	return bigtable.NewClient(ctx, o.Project, o.Zone, o.Cluster, o.ClientOptions...)
+	return bigtable.NewClient(ctx, o.Project, o.Instance, o.ClientOptions...)
 }
 
 func (o *Options) adminClient(ctx context.Context) (*bigtable.AdminClient, error) {
-	return bigtable.NewAdminClient(ctx, o.Project, o.Zone, o.Cluster, o.ClientOptions...)
+	return bigtable.NewAdminClient(ctx, o.Project, o.Instance, o.ClientOptions...)
 }
 
 // btStorage is a storage.Storage implementation that uses Google Cloud BigTable
@@ -100,7 +98,7 @@ type btStorage struct {
 	maxRowSize int
 }
 
-// New instantiates a new Storage instance connected to a BigTable cluster.
+// New instantiates a new Storage instance connected to a BigTable instance.
 //
 // The returned Storage instance will close the Client when its Close() method
 // is called.
@@ -309,8 +307,7 @@ func (s *btStorage) Tail(project config.ProjectName, path types.StreamPath) ([]b
 		log.Fields{
 			log.ErrorKey: err,
 			"project":    s.Project,
-			"zone":       s.Zone,
-			"cluster":    s.Cluster,
+			"instance":   s.Instance,
 			"table":      s.LogTable,
 		}.Errorf(ctx, "Failed to scan for tail.")
 	}
@@ -334,8 +331,7 @@ func (s *btStorage) Tail(project config.ProjectName, path types.StreamPath) ([]b
 		log.Fields{
 			log.ErrorKey: err,
 			"project":    s.Project,
-			"zone":       s.Zone,
-			"cluster":    s.Cluster,
+			"instance":   s.Instance,
 			"table":      s.LogTable,
 		}.Errorf(ctx, "Failed to retrieve tail row.")
 	}

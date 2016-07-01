@@ -390,8 +390,7 @@ func (s *Service) IntermediateStorage(c context.Context) (storage.Storage, error
 
 	bt, err := bigtable.New(c, bigtable.Options{
 		Project:  btcfg.Project,
-		Zone:     btcfg.Zone,
-		Cluster:  btcfg.Cluster,
+		Instance: btcfg.Instance,
 		LogTable: btcfg.LogTableName,
 		ClientOptions: []cloud.ClientOption{
 			cloud.WithTokenSource(a.TokenSource()),

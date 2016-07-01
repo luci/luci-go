@@ -14,12 +14,11 @@ message Storage {
   message BigTable {
     // The name of the BigTable instance project.
     string project = 1;
-    // The name of the BigTable instance zone.
-    string zone = 2;
-    // The name of the BigTable instance cluster.
-    string cluster = 3;
+    // The name of the BigTable instance.
+    string instance = 2;
+
     // The name of the BigTable instance's log table.
-    string log_table_name = 4;
+    string log_table_name = 3;
   }
 
   // Type is the transport configuration that is being used.
