@@ -259,10 +259,12 @@ func mainImpl(ctx context.Context, argv []string) int {
 	// Signal handler to catch 'Control-C'. This will gracefully shutdown the
 	// butler the first time a signal is received. It will die abruptly if the
 	// signal continues to be received.
+	//
+	// The specific signals used here are OS-specific.
 	a.ncCtx = a.Context
 	a.Context, a.cancelFunc = context.WithCancel(a.Context)
 	signalC := make(chan os.Signal, 1)
-	signal.Notify(signalC, os.Interrupt)
+	signal.Notify(signalC, interruptSignals...)
 	go func() {
 		signalled := false
 		for range signalC {
