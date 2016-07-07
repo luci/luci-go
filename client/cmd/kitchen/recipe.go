@@ -30,7 +30,7 @@ func readConfig(cfgPath string) (*recipe_engine.Package, error) {
 	return &pkg, nil
 }
 
-// RecipeRun is parameters for running a recipe.
+// recipeRun is parameters for running a recipe.
 type recipeRun struct {
 	repositoryPath string
 
@@ -73,8 +73,5 @@ func (r *recipeRun) Command() (*exec.Cmd, error) {
 		cmd.Args = append(cmd.Args, "--timestamps")
 	}
 	cmd.Args = append(cmd.Args, r.recipe)
-
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 	return cmd, nil
 }

@@ -5,6 +5,7 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"os/signal"
 
@@ -12,6 +13,8 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/cli"
+	"github.com/luci/luci-go/common/errors"
+	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 )
 
@@ -47,4 +50,21 @@ func handleInterruption(ctx context.Context) context.Context {
 		}
 	}()
 	return ctx
+}
+
+// logAnnotatedErr logs the full stack trace from an annotated error to the
+// installed logger at error level.
+func logAnnotatedErr(ctx context.Context, err error) {
+	if err == nil {
+		return
+	}
+
+	var buf bytes.Buffer
+	st := errors.RenderStack(err)
+	if _, derr := st.DumpTo(&buf); derr != nil {
+		// This can't really fail, since we're rendering to a Buffer.
+		panic(derr)
+	}
+
+	log.Errorf(ctx, "Annotated error stack:\n%s", buf.String())
 }
