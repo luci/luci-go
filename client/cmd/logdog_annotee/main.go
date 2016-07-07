@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/client/internal/logdog/bootstrapResult"
 	"github.com/luci/luci-go/client/logdog/annotee"
 	"github.com/luci/luci-go/client/logdog/annotee/executor"
+	"github.com/luci/luci-go/client/logdog/bootstrapResult"
 	"github.com/luci/luci-go/client/logdog/butlerlib/bootstrap"
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamclient"
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"

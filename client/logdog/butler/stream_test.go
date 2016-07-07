@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/client/internal/logdog/butler/bundler"
+	"github.com/luci/luci-go/client/logdog/butler/bundler"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/iotools"
 	. "github.com/smartystreets/goconvey/convey"

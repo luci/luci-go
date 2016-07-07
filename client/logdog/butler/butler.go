@@ -12,9 +12,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luci/luci-go/client/internal/logdog/butler/bundler"
-	"github.com/luci/luci-go/client/internal/logdog/butler/output"
-	"github.com/luci/luci-go/client/internal/logdog/butler/streamserver"
+	"github.com/luci/luci-go/client/logdog/butler/bundler"
+	"github.com/luci/luci-go/client/logdog/butler/output"
+	"github.com/luci/luci-go/client/logdog/butler/streamserver"
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/config"

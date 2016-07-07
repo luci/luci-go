@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luci/luci-go/client/internal/logdog/butler/output"
+	"github.com/luci/luci-go/client/logdog/butler/output"
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	"github.com/luci/luci-go/common/logdog/butlerproto"
 	"github.com/luci/luci-go/common/logdog/types"

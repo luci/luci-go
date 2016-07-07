@@ -10,7 +10,7 @@ import (
 	"sync"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/client/internal/logdog/butler/output"
+	"github.com/luci/luci-go/client/logdog/butler/output"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/logdog/logpb"

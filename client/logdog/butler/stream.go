@@ -7,7 +7,7 @@ package butler
 import (
 	"io"
 
-	"github.com/luci/luci-go/client/internal/logdog/butler/bundler"
+	"github.com/luci/luci-go/client/logdog/butler/bundler"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/iotools"
 	log "github.com/luci/luci-go/common/logging"

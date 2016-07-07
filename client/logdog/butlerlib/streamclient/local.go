@@ -7,7 +7,7 @@ package streamclient
 import (
 	"io"
 
-	"github.com/luci/luci-go/client/internal/logdog/butler"
+	"github.com/luci/luci-go/client/logdog/butler"
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
 )
 

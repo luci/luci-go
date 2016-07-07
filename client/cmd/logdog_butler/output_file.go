@@ -7,8 +7,8 @@ package main
 import (
 	"errors"
 
-	"github.com/luci/luci-go/client/internal/logdog/butler/output"
-	fileOutput "github.com/luci/luci-go/client/internal/logdog/butler/output/file"
+	"github.com/luci/luci-go/client/logdog/butler/output"
+	fileOutput "github.com/luci/luci-go/client/logdog/butler/output/file"
 	"github.com/luci/luci-go/common/flag/multiflag"
 )
 

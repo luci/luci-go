@@ -5,7 +5,7 @@
 package main
 
 import (
-	"github.com/luci/luci-go/client/internal/logdog/butler"
+	"github.com/luci/luci-go/client/logdog/butler"
 	log "github.com/luci/luci-go/common/logging"
 
 	"github.com/maruel/subcommands"

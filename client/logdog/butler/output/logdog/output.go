@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luci/luci-go/client/internal/logdog/butler/output"
-	out "github.com/luci/luci-go/client/internal/logdog/butler/output/pubsub"
+	"github.com/luci/luci-go/client/logdog/butler/output"
+	out "github.com/luci/luci-go/client/logdog/butler/output/pubsub"
 	api "github.com/luci/luci-go/common/api/logdog_coordinator/registration/v1"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/config"

@@ -7,8 +7,8 @@ package main
 import (
 	"time"
 
-	"github.com/luci/luci-go/client/internal/logdog/butler/output"
-	out "github.com/luci/luci-go/client/internal/logdog/butler/output/logdog"
+	"github.com/luci/luci-go/client/logdog/butler/output"
+	out "github.com/luci/luci-go/client/logdog/butler/output/logdog"
 	"github.com/luci/luci-go/common/clock/clockflag"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/flag/multiflag"

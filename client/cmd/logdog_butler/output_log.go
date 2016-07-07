@@ -5,8 +5,8 @@
 package main
 
 import (
-	"github.com/luci/luci-go/client/internal/logdog/butler/output"
-	logOutput "github.com/luci/luci-go/client/internal/logdog/butler/output/log"
+	"github.com/luci/luci-go/client/logdog/butler/output"
+	logOutput "github.com/luci/luci-go/client/logdog/butler/output/log"
 	"github.com/luci/luci-go/common/flag/multiflag"
 )
 

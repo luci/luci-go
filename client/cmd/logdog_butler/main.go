@@ -20,8 +20,8 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/client/authcli"
-	"github.com/luci/luci-go/client/internal/logdog/butler"
-	"github.com/luci/luci-go/client/internal/logdog/butler/output"
+	"github.com/luci/luci-go/client/logdog/butler"
+	"github.com/luci/luci-go/client/logdog/butler/output"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/clock/clockflag"

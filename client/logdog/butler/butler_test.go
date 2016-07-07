@@ -12,7 +12,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/luci/luci-go/client/internal/logdog/butler/output"
+	"github.com/luci/luci-go/client/logdog/butler/output"
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/logdog/types"
