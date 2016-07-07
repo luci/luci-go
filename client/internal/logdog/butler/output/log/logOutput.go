@@ -45,6 +45,8 @@ func New(ctx context.Context, bundleSize int) output.Output {
 	return &o
 }
 
+func (o *logOutput) String() string { return "log" }
+
 func (o *logOutput) SendBundle(bundle *logpb.ButlerLogBundle) error {
 	o.et.Track(bundle)
 
@@ -52,7 +54,7 @@ func (o *logOutput) SendBundle(bundle *logpb.ButlerLogBundle) error {
 	defer o.Unlock()
 
 	for _, e := range bundle.Entries {
-		path := types.StreamName(e.Desc.Prefix).Join(types.StreamName(e.Desc.Name))
+		path := types.StreamName(bundle.Prefix).Join(types.StreamName(e.Desc.Name))
 		ctx := log.SetField(o.ctx, "streamPath", path)
 
 		log.Fields{
