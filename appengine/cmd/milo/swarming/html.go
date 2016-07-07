@@ -6,6 +6,9 @@ package swarming
 
 import (
 	"net/http"
+	"os"
+
+	"google.golang.org/api/googleapi"
 
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
@@ -45,7 +48,7 @@ func (l Log) Render(c context.Context, r *http.Request, p httprouter.Params) (*t
 	server := p.ByName("server") // This one may be blank.
 	log, err := swarmingBuildLogImpl(c, server, id, logname)
 	if err != nil {
-		return nil, err
+		return nil, convertErr(err)
 	}
 
 	args := &templates.Args{
@@ -73,7 +76,7 @@ func (b Build) Render(c context.Context, r *http.Request, p httprouter.Params) (
 
 	result, err := swarmingBuildImpl(c, r.URL.String(), server, id)
 	if err != nil {
-		return nil, err
+		return nil, convertErr(err)
 	}
 
 	// Render into the template
@@ -81,4 +84,23 @@ func (b Build) Render(c context.Context, r *http.Request, p httprouter.Params) (
 		"Build": result,
 	}
 	return args, nil
+}
+
+func convertErr(err error) error {
+	if isAPINotFound(err) || os.IsNotExist(err) {
+		return &miloerror.Error{
+			Message: err.Error(),
+			Code:    http.StatusNotFound,
+		}
+	}
+	return err
+}
+
+// isAPINotFound returns true if err is a HTTP 404 API response.
+func isAPINotFound(err error) bool {
+	if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == http.StatusNotFound {
+		return true
+	}
+
+	return false
 }
