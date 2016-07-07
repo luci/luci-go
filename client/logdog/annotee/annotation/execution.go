@@ -6,7 +6,8 @@ package annotation
 
 import (
 	"os"
-	"strings"
+
+	"github.com/luci/luci-go/common/environ"
 )
 
 // Execution describes the high-level execution metadata.
@@ -19,9 +20,14 @@ type Execution struct {
 
 // ProbeExecution loads Execution parameters by probing the current runtime
 // environment.
-func ProbeExecution(argv []string) *Execution {
-	cwd, _ := os.Getwd()
-	return probeExecutionImpl(argv, os.Environ(), cwd)
+func ProbeExecution(argv, env []string, cwd string) *Execution {
+	if env == nil {
+		env = os.Environ()
+	}
+	if cwd == "" {
+		cwd, _ = os.Getwd()
+	}
+	return probeExecutionImpl(argv, env, cwd)
 }
 
 func probeExecutionImpl(argv []string, env []string, cwd string) *Execution {
@@ -32,14 +38,8 @@ func probeExecutionImpl(argv []string, env []string, cwd string) *Execution {
 	copy(e.Command, argv)
 
 	e.Env = make(map[string]string, len(env))
-	for _, v := range env {
-		p := strings.SplitN(v, "=", 2)
-		switch len(p) {
-		case 1:
-			e.Env[p[0]] = ""
-		case 2:
-			e.Env[p[0]] = p[1]
-		}
+	for k, v := range environ.New(env) {
+		_, e.Env[k] = environ.Split(v)
 	}
 
 	return e

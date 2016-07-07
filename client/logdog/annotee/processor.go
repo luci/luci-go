@@ -18,11 +18,9 @@ import (
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamclient"
 	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/clock/clockflag"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/parallel"
-	"github.com/luci/luci-go/common/proto/logdog/logpb"
 	"github.com/luci/luci-go/common/proto/milo"
 	"golang.org/x/net/context"
 )
@@ -31,18 +29,6 @@ const (
 	// DefaultBufferSize is the Stream BufferSize value that will be used if no
 	// buffer size is provided.
 	DefaultBufferSize = 8192
-)
-
-var (
-	textStreamArchetype = streamproto.Flags{
-		ContentType: string(types.ContentTypeText),
-		Type:        streamproto.StreamType(logpb.StreamType_TEXT),
-	}
-
-	metadataStreamArchetype = streamproto.Flags{
-		ContentType: string(milo.ContentTypeAnnotations),
-		Type:        streamproto.StreamType(logpb.StreamType_DATAGRAM),
-	}
 )
 
 const (
@@ -184,7 +170,7 @@ func (p *Processor) initialize() (err error) {
 //
 // If a stream terminates with an error, or if there is an error processing the
 // stream data, Run will return an error. If multiple Streams fail with errors,
-// an errors.MultiError will be returned.
+// an errors.MultiError will be returned. io.EOF does not count as an error.
 func (p *Processor) RunStreams(streams []*Stream) error {
 	ingestMu := sync.Mutex{}
 	ingest := func(s *Stream, l string) error {
@@ -356,12 +342,8 @@ func (p *Processor) finishStepHandler(h *stepHandler, closeSteps bool) {
 	h.finish(closeSteps)
 }
 
-func (p *Processor) createStream(name types.StreamName, flags *streamproto.Flags) (streamclient.Stream, error) {
-	// Clone the properties archetype and customize.
-	f := *flags
-	f.Timestamp = clockflag.Time(clock.Now(p.ctx))
-	f.Name = streamproto.StreamNameFlag(name)
-	return p.o.Client.NewStream(f)
+func (p *Processor) createStream(name types.StreamName, archetype *streamproto.Flags) (streamclient.Stream, error) {
+	return p.o.Client.NewStream(streamFlagsFromArchetype(p.ctx, name, archetype))
 }
 
 func (p *Processor) annotationStateUpdated() {
@@ -563,7 +545,7 @@ func (h *stepHandler) updated() {
 	}
 }
 
-func (h *stepHandler) getStream(name types.StreamName, flags *streamproto.Flags) (
+func (h *stepHandler) getStream(name types.StreamName, archetype *streamproto.Flags) (
 	s streamclient.Stream, created bool, err error) {
 	if h.finished {
 		err = fmt.Errorf("refusing to get stream %q for finished handler", name)
@@ -574,7 +556,7 @@ func (h *stepHandler) getStream(name types.StreamName, flags *streamproto.Flags)
 	}
 
 	// Create a new stream. Clone the properties archetype and customize.
-	s, err = h.processor.createStream(name, flags)
+	s, err = h.processor.createStream(name, archetype)
 	if err == nil {
 		created = true
 		h.streams[name] = s

@@ -121,7 +121,7 @@ func (e *Executor) Run(ctx context.Context, command []string) error {
 	// Probe our execution information.
 	options := e.Options
 	if options.Execution == nil {
-		options.Execution = annotation.ProbeExecution(command)
+		options.Execution = annotation.ProbeExecution(command, nil, "")
 	}
 
 	// Configure our Processor.
