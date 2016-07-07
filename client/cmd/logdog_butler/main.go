@@ -5,7 +5,7 @@
 package main
 
 import (
-	"errors"
+	"bytes"
 	"flag"
 	"fmt"
 	"net/http"
@@ -26,6 +26,7 @@ import (
 	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/clock/clockflag"
 	"github.com/luci/luci-go/common/config"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/flag/multiflag"
 	"github.com/luci/luci-go/common/logdog/types"
 	log "github.com/luci/luci-go/common/logging"
@@ -128,7 +129,9 @@ func (a *application) configOutput() (output.Output, error) {
 
 // runWithButler is an execution harness that adds application-level management
 // to a Butler run.
-func (a *application) runWithButler(out output.Output, runFunc func(b *butler.Butler) error) error {
+func (a *application) runWithButler(ctx context.Context, out output.Output,
+	runFunc func(context.Context, *butler.Butler) error) error {
+
 	// Enable CPU profiling if specified
 	if a.cpuProfile != "" {
 		f, err := os.Create(a.cpuProfile)
@@ -189,14 +192,38 @@ func (a *application) runWithButler(out output.Output, runFunc func(b *butler.Bu
 	}()
 
 	// Execute our Butler run function with the instantiated Butler.
-	if err := runFunc(b); err != nil {
+	if err := runFunc(ctx, b); err != nil {
 		log.Fields{
 			log.ErrorKey: err,
 		}.Errorf(a, "Butler terminated with error.")
 		a.cancelFunc()
+		return err
 	}
 
-	return b.Wait()
+	return nil
+}
+
+// logAnnotatedErr logs the full stack trace from an annotated error to the
+// installed logger at error level.
+func logAnnotatedErr(ctx context.Context, err error, f string, args ...interface{}) {
+	if err == nil {
+		return
+	}
+
+	var buf bytes.Buffer
+	st := errors.RenderStack(err)
+	if _, derr := st.DumpTo(&buf); derr != nil {
+		// This can't really fail, since we're rendering to a Buffer.
+		panic(derr)
+	}
+
+	nargs := make([]interface{}, len(args)+1)
+	nargs[copy(nargs, args)] = buf.Bytes()
+
+	if f == "" {
+		f = "Captured error stack:"
+	}
+	log.Errorf(ctx, f+"\n%s", nargs...)
 }
 
 func mainImpl(ctx context.Context, argv []string) int {

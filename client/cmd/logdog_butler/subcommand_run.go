@@ -6,7 +6,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -14,10 +13,11 @@ import (
 
 	"github.com/luci/luci-go/client/internal/logdog/bootstrapResult"
 	"github.com/luci/luci-go/client/internal/logdog/butler"
+	"github.com/luci/luci-go/client/internal/logdog/butler/bootstrap"
 	"github.com/luci/luci-go/client/internal/logdog/butler/streamserver"
-	"github.com/luci/luci-go/client/logdog/butlerlib/bootstrap"
 	"github.com/luci/luci-go/common/ctxcmd"
 	"github.com/luci/luci-go/common/environ"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/flag/nestedflagset"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/maruel/subcommands"
@@ -165,8 +165,10 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 	}
 
 	// Update our environment for the child process to inherit
-	env := environ.System()
-	cmd.updateEnvironment(env, a)
+	bsEnv := bootstrap.Environment{
+		Project: a.project,
+		Prefix:  a.prefix,
+	}
 
 	// Configure stream server
 	streamServer := streamserver.StreamServer(nil)
@@ -186,19 +188,15 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 				streamServer.Close()
 			}
 		}()
+
+		bsEnv.StreamServerURI = string(cmd.streamServerURI)
 	}
 
-	// We're about ready to execute our command. Initialize our Output instance.
-	// We want to do this before we execute our subprocess so that if this fails,
-	// we don't have to interrupt an already-running process.
-	output, err := a.configOutput()
-	if err != nil {
-		log.WithError(err).Errorf(a, "Failed to create output instance.")
-		return runtimeErrorReturnCode
-	}
-	defer output.Close()
+	// Build our command enviornment.
+	env := environ.System()
+	bsEnv.Augment(env)
 
-	// Construct and execute the command
+	// Construct and execute the command.
 	proc := ctxcmd.CtxCmd{
 		Cmd: exec.Command(commandPath, args...),
 	}
@@ -206,6 +204,35 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 	proc.Env = env.Sorted()
 	if cmd.stdin {
 		proc.Stdin = os.Stdin
+	}
+
+	// Attach STDOUT / STDERR pipes if configured to do so.
+	//
+	// We track them with a sync.WaitGroup because we have to wait for them to
+	// close before reaping the process (see exec.Cmd's StdoutPipe method).
+	//
+	// In this case, we will hand them to the Butler, which will Close then when
+	// it counters io.EOF.
+	var (
+		stdout, stderr io.ReadCloser
+		streamWG       sync.WaitGroup
+	)
+	if cmd.attach {
+		stdout, err = proc.StdoutPipe()
+		if err != nil {
+			log.WithError(err).Errorf(a, "Failed to get STDOUT pipe.")
+			return runtimeErrorReturnCode
+		}
+		stdout = &callbackReadCloser{stdout, streamWG.Done}
+
+		// Get our STDERR pipe
+		stderr, err = proc.StderrPipe()
+		if err != nil {
+			log.WithError(err).Errorf(a, "Failed to get STDERR pipe.")
+			return runtimeErrorReturnCode
+		}
+		stderr = &callbackReadCloser{stderr, streamWG.Done}
+		streamWG.Add(2)
 	}
 
 	if log.IsLogging(a, log.Debug) {
@@ -219,57 +246,52 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 		}
 	}
 
-	// Get our STDOUT/STDERR pipes. If we have a streamserver available, negotiate
-	// the pipes through the server; otherwise, use local pipes.
-	var stdout, stderr io.ReadCloser
-	streamWG := sync.WaitGroup{}
-	if cmd.attach {
-		stdout, err = proc.StdoutPipe()
-		if err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-			}.Errorf(a, "Failed to get STDOUT pipe.")
-			return runtimeErrorReturnCode
-		}
-		stdout = &callbackReadCloser{stdout, streamWG.Done}
-
-		// Get our STDERR pipe
-		stderr, err = proc.StderrPipe()
-		if err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-			}.Errorf(a, "Failed to get STDERR pipe.")
-			return runtimeErrorReturnCode
-		}
-		stderr = &callbackReadCloser{stderr, streamWG.Done}
-		streamWG.Add(2)
-	}
-
-	// Execute our bootstrapped command. Monitor it in a goroutine. We must wait
-	// for our streams to finish being read prior to invoking the subprocess' Wait
-	// method, as per exec.Cmd StdoutPipe/StderrPipe documentation.
-	ctx, cancelFunc := context.WithCancel(a)
-	if err := proc.Start(ctx); err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-		}.Errorf(ctx, "Failed to start bootstrapped process.")
+	// We're about ready to execute our command. Initialize our Output instance.
+	// We want to do this before we execute our subprocess so that if this fails,
+	// we don't have to interrupt an already-running process.
+	output, err := a.configOutput()
+	if err != nil {
+		log.WithError(err).Errorf(a, "Failed to create output instance.")
 		return runtimeErrorReturnCode
 	}
+	defer output.Close()
 
-	processFinishedC := make(chan struct{})
-	returnCodeC := make(chan int)
-	go func() {
-		returnCode := runtimeErrorReturnCode
-		defer func() {
-			returnCodeC <- returnCode
-		}()
-		defer close(processFinishedC)
+	// Attach and run our Butler instance.
+	var (
+		executed   = false
+		returnCode = runtimeErrorReturnCode
+	)
 
-		// Wait for STDOUT/STDERR to be closed by the Butler.
+	err = a.runWithButler(a, output, func(ctx context.Context, b *butler.Butler) error {
+		// If we have configured a stream server, add it.
+		if streamServer != nil {
+			b.AddStreamServer(streamServer)
+			streamServerOwned = false
+		}
+
+		// Add our pipes as direct streams, if configured.
+		if stdout != nil {
+			if err := b.AddStream(stdout, cmd.stdout.properties()); err != nil {
+				return errors.Annotate(err).Reason("failed to attach STDOUT pipe stream").Err()
+			}
+		}
+		if stderr != nil {
+			if err := b.AddStream(stderr, cmd.stderr.properties()); err != nil {
+				return errors.Annotate(err).Reason("failed to attach STDERR pipe stream").Err()
+			}
+		}
+
+		// Execute the command. The bootstrapped application will begin executing
+		// in the background.
+		ctx, cancelFunc := context.WithCancel(ctx)
+		if err := proc.Start(ctx); err != nil {
+			return errors.Annotate(err).Reason("failed to start bootstrapped process").Err()
+		}
+		defer cancelFunc()
+
+		// Wait for the process' streams to finish. We must do this before Wait()
+		// on the process itself.
 		streamWG.Wait()
-
-		// Wait for the process to finish.
-		executed := false
 
 		// Reap the process.
 		err := proc.Wait()
@@ -286,69 +308,50 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 			log.WithError(err).Errorf(ctx, "Command failed.")
 		}
 
-		log.Fields{
-			"returnCode": returnCode,
-		}.Infof(ctx, "Process completed.")
-		if executed {
-			br := bootstrapResult.Result{
-				ReturnCode: returnCode,
-				Command:    append([]string{commandPath}, args...),
+		// Wait for our Butler to finish.
+		b.Activate()
+		if err := b.Wait(); err != nil {
+			if err == context.Canceled {
+				return err
 			}
-			if err := cmd.maybeWriteResult(ctx, &br); err != nil {
-				log.WithError(err).Warningf(ctx, "Failed to write bootstrap result.")
-			}
+			return errors.Annotate(err).Reason("failed to Wait() for Butler").Err()
 		}
-	}()
-
-	err = a.runWithButler(output, func(b *butler.Butler) error {
-		// We will execute the bootstrapped command, then the Butler. Since we are
-		// hooking the Butler up to the command, the Butler's execution will be
-		// bounded by the availability of the command's STDOUT/STDERR streams. If
-		// both of those close, the command is finished (as far as the Butler is
-		// concerned).
-
-		// Execute the command. The bootstrapped application will begin executing in
-		// the background.
-
-		// If we have configured a stream server, add it.
-		if streamServer != nil {
-			b.AddStreamServer(streamServer)
-			streamServerOwned = false
-		}
-
-		// Add our pipes as streams if we're not using streamserver clients.
-		if stdout != nil {
-			if err := b.AddStream(stdout, cmd.stdout.properties()); err != nil {
-				return fmt.Errorf("Failed to attach STDOUT pipe stream: %v", err)
-			}
-		}
-
-		if stderr != nil {
-			if err := b.AddStream(stderr, cmd.stderr.properties()); err != nil {
-				return fmt.Errorf("Failed to attach STDERR pipe stream: %v", err)
-			}
-		}
-
-		// Wait for our process to finish, then activate the Butler.
-		go func() {
-			defer b.Activate()
-
-			<-processFinishedC
-			log.Debugf(ctx, "Process has terminated. Activating Butler.")
-		}()
 
 		return nil
 	})
 	if err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-		}.Errorf(ctx, "Error executing Butler; terminating process.")
-
-		cancelFunc()
+		logAnnotatedErr(a, err, "Error running bootstrapped Butler process:")
 	}
 
-	// Reap the process' return code.
-	return <-returnCodeC
+	if !executed {
+		return runtimeErrorReturnCode
+	}
+
+	// Output our bootstrap result.
+	br := bootstrapResult.Result{
+		ReturnCode: returnCode,
+		Command:    append([]string{commandPath}, args...),
+	}
+	if err := cmd.maybeWriteResult(a, &br); err != nil {
+		logAnnotatedErr(a, err, "Failed to write bootstrap result:")
+	}
+
+	return returnCode
+}
+
+func (cmd *runCommandRun) maybeWriteResult(ctx context.Context, r *bootstrapResult.Result) error {
+	if cmd.resultPath == "" {
+		return nil
+	}
+
+	log.Fields{
+		"path": cmd.resultPath,
+	}.Debugf(ctx, "Writing bootstrap result.")
+	if err := r.WriteJSON(cmd.resultPath); err != nil {
+		return errors.Annotate(err).Reason("failed to write JSON file").
+			D("path", cmd.resultPath).Err()
+	}
+	return nil
 }
 
 func (cmd *runCommandRun) loadJSONArgs() ([]string, error) {
@@ -364,29 +367,6 @@ func (cmd *runCommandRun) loadJSONArgs() ([]string, error) {
 		return nil, err
 	}
 	return args, nil
-}
-
-// updateEnvironment adds common Butler bootstrapping environment variables
-// to the environment.
-func (cmd *runCommandRun) updateEnvironment(e environ.Env, a *application) {
-	e.Set(bootstrap.EnvStreamPrefix, string(a.prefix))
-	e.Set(bootstrap.EnvStreamProject, string(a.project))
-
-	// Set stream server path (if applicable)
-	if cmd.streamServerURI != "" {
-		e.Set(bootstrap.EnvStreamServerPath, string(cmd.streamServerURI))
-	}
-}
-
-func (cmd *runCommandRun) maybeWriteResult(ctx context.Context, r *bootstrapResult.Result) error {
-	if cmd.resultPath == "" {
-		return nil
-	}
-
-	log.Fields{
-		"path": cmd.resultPath,
-	}.Debugf(ctx, "Writing bootstrap result.")
-	return r.WriteJSON(cmd.resultPath)
 }
 
 // callbackReadCloser invokes a callback method when closed.
