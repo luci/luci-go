@@ -212,12 +212,12 @@ func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 }
 
 // parseProp returns a representation of v based off k, and a boolean to
-// specify whether or not to hide it alltogether.
+// specify whether or not to hide it altogether.
 func parseProp(prop map[string]Prop, k string, v interface{}) (string, bool) {
 	switch k {
 	case "requestedAt":
 		if vf, ok := v.(float64); ok {
-			return time.Unix(int64(vf), 0).Format(time.RFC3339), true
+			return time.Unix(int64(vf), 0).UTC().Format(time.RFC3339), true
 		}
 	case "buildbucket":
 		var b map[string]interface{}
