@@ -23,6 +23,7 @@ import (
 	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/ctxcmd"
+	"github.com/luci/luci-go/common/environ"
 	"github.com/luci/luci-go/common/flag/stringlistflag"
 )
 
@@ -143,8 +144,6 @@ func (c *cookRun) run(ctx context.Context) (recipeExitCode int, err error) {
 		}
 		c.PythonPaths[i] = p
 	}
-	// Why here? It is much easier than manipulating exec.Command.Env.
-	os.Setenv("PYTHONPATH", strings.Join(c.PythonPaths, string(os.PathListSeparator)))
 
 	recipe := recipeRun{
 		repositoryPath:       c.CheckoutDir,
@@ -159,6 +158,11 @@ func (c *cookRun) run(ctx context.Context) (recipeExitCode int, err error) {
 	if err != nil {
 		return 0, err
 	}
+
+	// Build our enviornment.
+	env := environ.System()
+	env.Set("PYTHONPATH", strings.Join(c.PythonPaths, string(os.PathListSeparator)))
+	recipeCmd.Env = env.Sorted()
 
 	fmt.Printf("Running command %q %q in %q\n",
 		recipeCmd.Path, recipeCmd.Args, recipeCmd.Dir)

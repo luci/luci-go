@@ -18,6 +18,7 @@ import (
 	"github.com/luci/luci-go/client/internal/logdog/butler/streamserver"
 	"github.com/luci/luci-go/client/logdog/butlerlib/bootstrap"
 	"github.com/luci/luci-go/common/ctxcmd"
+	"github.com/luci/luci-go/common/environ"
 	"github.com/luci/luci-go/common/flag/nestedflagset"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/maruel/subcommands"
@@ -165,7 +166,7 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 	}
 
 	// Update our environment for the child process to inherit
-	env := newEnviron(nil)
+	env := environ.System()
 	cmd.updateEnvironment(env, a)
 
 	// Configure stream server
@@ -203,7 +204,7 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 		Cmd: exec.Command(commandPath, args...),
 	}
 	proc.Dir = cmd.chdir
-	proc.Env = env.sorted()
+	proc.Env = env.Sorted()
 	if cmd.stdin {
 		proc.Stdin = os.Stdin
 	}
@@ -373,13 +374,13 @@ func (cmd *runCommandRun) loadJSONArgs() ([]string, error) {
 
 // updateEnvironment adds common Butler bootstrapping environment variables
 // to the environment.
-func (cmd *runCommandRun) updateEnvironment(e environ, a *application) {
-	e.set(bootstrap.EnvStreamPrefix, string(a.prefix))
-	e.set(bootstrap.EnvStreamProject, string(a.project))
+func (cmd *runCommandRun) updateEnvironment(e environ.Env, a *application) {
+	e.Set(bootstrap.EnvStreamPrefix, string(a.prefix))
+	e.Set(bootstrap.EnvStreamProject, string(a.project))
 
 	// Set stream server path (if applicable)
 	if cmd.streamServerURI != "" {
-		e.set(bootstrap.EnvStreamServerPath, string(cmd.streamServerURI))
+		e.Set(bootstrap.EnvStreamServerPath, string(cmd.streamServerURI))
 	}
 }
 
