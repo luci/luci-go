@@ -31,7 +31,7 @@
 //   - ./v2/config_folder/...
 //
 // During the execution of your app, you can change ./current from v1 to v2 (or
-// any other verison), and that will be reflected in the config client's
+// any other version), and that will be reflected in the config client's
 // Revision field. You would pass the path to `current` as the basePath in the
 // constructor of New or Use.
 //

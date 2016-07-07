@@ -80,7 +80,7 @@ type StackFrameInfo struct {
 // annotation of an error.
 type StackContext struct {
 	FrameInfo StackFrameInfo
-	// Reason is the publically-facing reason, and will show up in the Error()
+	// Reason is the publicly-facing reason, and will show up in the Error()
 	// string.
 	Reason string
 
@@ -90,7 +90,7 @@ type StackContext struct {
 	Data           Data
 }
 
-// We're looking for %(sometext) which is not preceeded by a %. sometext may be
+// We're looking for %(sometext) which is not preceded by a %. sometext may be
 // any characters except for a close paren.
 var namedFormatMatcher = regexp.MustCompile(`(^|[^%])%\(([^)]+)\)`)
 
@@ -239,7 +239,7 @@ type Annotator struct {
 	ctx   StackContext
 }
 
-// Reason adds a PUBLICALLY READABLE reason string (for humans) to this error.
+// Reason adds a PUBLICLY READABLE reason string (for humans) to this error.
 //
 // You should assume that end-users (including unauthenticated end users) may
 // see the text in here.
@@ -251,7 +251,7 @@ type Annotator struct {
 // In a webserver context, if you don't want users to see some information about
 // this error, don't put it in the Reason.
 //
-// This explaination may have formatting instructions in the form of:
+// This explanation may have formatting instructions in the form of:
 //   %(key)...
 // where key is the name of one of the entries submitted to either D or Data.
 // The `...` may be any Printf-compatible formatting directive.

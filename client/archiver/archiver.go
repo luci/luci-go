@@ -66,7 +66,7 @@ type Future interface {
 	DisplayName() string
 	// WaitForHashed hangs until the item hash is known.
 	WaitForHashed()
-	// Error returns any error that occured for this item if any.
+	// Error returns any error that occurred for this item if any.
 	Error() error
 	// Digest returns the calculated digest once calculated, empty otherwise.
 	Digest() isolated.HexDigest
@@ -406,7 +406,7 @@ func (a *archiver) push(item *archiverItem) Future {
 }
 
 func (a *archiver) pushLocked(item *archiverItem) bool {
-	// The close(a.stage1DedupeChan) call is always occuring with the lock held.
+	// The close(a.stage1DedupeChan) call is always occurring with the lock held.
 	a.closeLock.Lock()
 	defer a.closeLock.Unlock()
 	if a.stage1DedupeChan == nil {

@@ -71,7 +71,7 @@ func enterTransactionInternal(c context.Context, cfg *Config, m Mutation, round 
 // `parent`, there can be only one mutation with any given name.  Named
 // mutations, by design, cannot collide with unnamed (anonymous) mutations.
 // `parent` does NOT need to be a root Key; the mutations will be created as
-// direct decendents of the provided parent entity. The names of the various
+// direct descendants of the provided parent entity. The names of the various
 // mutations should be valid datastore key StringIDs, which generally means that
 // they should be UTF-8 strings.
 //

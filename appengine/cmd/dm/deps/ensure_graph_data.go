@@ -369,7 +369,7 @@ func (d *deps) EnsureGraphData(c context.Context, req *dm.EnsureGraphDataReq) (r
 		}
 	}
 
-	// render any quest descirptions, templates and template attempts into
+	// render any quest descriptions, templates and template attempts into
 	// a single merged set of new quests and new attempts
 	rsp, newQuests, newAttempts, err := renderRequest(c, req)
 	if err != nil || len(rsp.TemplateError) > 0 {

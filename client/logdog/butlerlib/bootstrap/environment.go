@@ -14,7 +14,7 @@ const (
 	// processes.
 	EnvStreamServerPath = "LOGDOG_STREAM_SERVER_PATH"
 
-	// EnvStreamProject is the enviornment variable set to the configured stream
+	// EnvStreamProject is the environment variable set to the configured stream
 	// project name.
 	EnvStreamProject = "LOGDOG_STREAM_PROJECT"
 

@@ -28,7 +28,7 @@
 //   - The exported ButlerLogBundle protobuf must not exceed a maximum bundle
 //     size constraint.
 //   - Stream data may be added during the bundling process, and should be
-//     acknowleged if possible.
+//     acknowledged if possible.
 //
 // When a Stream is finished, its Close method should be called. This alerts the
 // Stream that it will receive no more data, causing it to export a terminal

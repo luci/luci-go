@@ -123,7 +123,7 @@ type D interface {
 	// InfoURL calculates a user-presentable information url for the task
 	// identified by Token. This should be a local operation, so it is not the
 	// implementation's responsibility to validate the token in this method (e.g.
-	// it could point to a non-existant job, etc.)
+	// it could point to a non-existent job, etc.)
 	InfoURL(Token) string
 
 	// HandleNotification is called whenever DM receives a PubSub message sent to

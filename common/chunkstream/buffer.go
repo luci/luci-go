@@ -98,7 +98,7 @@ func (b *Buffer) View() *View {
 	return b.ViewLimit(b.size)
 }
 
-// ViewLimit constructs a View instance, but artifically constrains it to
+// ViewLimit constructs a View instance, but artificially constrains it to
 // read at most the specified number of bytes.
 //
 // This is useful when reading a subset of the data into a Buffer, as ReadFrom

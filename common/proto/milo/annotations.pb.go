@@ -68,7 +68,7 @@ type FailureDetails_Type int32
 const (
 	// The failure is a general failure.
 	FailureDetails_GENERAL FailureDetails_Type = 0
-	// An unhandled exception occured during execution.
+	// An unhandled exception occurred during execution.
 	FailureDetails_EXCEPTION FailureDetails_Type = 1
 	// The failure is related to a failed infrastructure component, not an error
 	// with the Step itself.

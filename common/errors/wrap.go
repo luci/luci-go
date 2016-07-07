@@ -14,7 +14,7 @@ type Wrapped interface {
 //
 // If the supplied error is not nil, Unwrap will never return nil. If a
 // wrapped error reports that its InnerError is nil, that error will be
-// retunred.
+// returned.
 func Unwrap(err error) error {
 	for {
 		wrap, ok := err.(Wrapped)

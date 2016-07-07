@@ -52,7 +52,7 @@ type Mutation interface {
 
 	// RollForward performs the action of the Mutation.
 	//
-	// It is only considered sucessful if it returns nil. If it returns non-nil,
+	// It is only considered successful if it returns nil. If it returns non-nil,
 	// then it will be retried at a later time. If it never returns nil, then it
 	// will never be flushed from tumble's queue, and you'll have to manually
 	// delete it or fix the code so that it can be handled without error.
@@ -61,7 +61,7 @@ type Mutation interface {
 	// the entity group specified by Root().
 	//
 	// As a side effect, RollForward may return new arbitrary Mutations. These
-	// will be comitted in the same transaction as RollForward.
+	// will be committed in the same transaction as RollForward.
 	//
 	// The context contains an implementation of "luci/gae/service/datastore",
 	// using the "luci/gae/filter/txnBuf" transaction buffer. This means that

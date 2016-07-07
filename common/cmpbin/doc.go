@@ -74,7 +74,7 @@
 // (significand). This is only a 52 bit section, meaning that it is normally
 // encoded with 6.5 bytes (a nybble is stolen from the second exponent byte).
 // Assuming you used the numerical encoding above, shifted left by 4 bits,
-// discarding the sign bit (since its laready the MSb on the float, and then
+// discarding the sign bit (since its already the MSb on the float, and then
 // using 6 bits (instead of 7) to represent the number of significant bits in
 // the mantissa (since there are only a maximum of 52), you could expect to see
 // small-mantissa floats (of any characteristic) encoded in 3 bytes (this has

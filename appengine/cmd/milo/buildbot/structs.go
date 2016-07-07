@@ -140,7 +140,7 @@ func (b *buildbotBuild) GetMeta(key string) (interface{}, bool) {
 	return datastore.GetPLS(b).GetMeta(key)
 }
 
-// GetAllMeta is overriden for the same reason GetMeta() is.
+// GetAllMeta is overridden for the same reason GetMeta() is.
 func (b *buildbotBuild) GetAllMeta() datastore.PropertyMap {
 	p := datastore.GetPLS(b).GetAllMeta()
 	p.SetMeta("id", b.getID())

@@ -418,7 +418,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				testing.AdvanceTime(ctx)
 				So(testing.Iterate(ctx), ShouldBeGreaterThan, 0)
 
-				// hacky proof that all 200 incoming message reciepts were buffered
+				// hacky proof that all 200 incoming message receipts were buffered
 				// appropriately.
 				//
 				// The extra mutation at the end is supposed to be delayed, but we
@@ -536,7 +536,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 
 				testing.AdvanceTime(ctx)
 				testing.AdvanceTime(ctx)
-				So(testing.Iterate(ctx), ShouldEqual, 1) // reciept from "recipient"
+				So(testing.Iterate(ctx), ShouldEqual, 1) // receipt from "recipient"
 
 				clock.Get(ctx).(testclock.TestClock).Add(time.Minute * 5)
 				So(testing.Iterate(ctx), ShouldEqual, 1) // timeout!
@@ -585,7 +585,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 
 				testing.AdvanceTime(ctx)
 				testing.AdvanceTime(ctx)
-				So(testing.Iterate(ctx), ShouldEqual, 1) // reciept from "recipient" and "other", Notification pending
+				So(testing.Iterate(ctx), ShouldEqual, 1) // receipt from "recipient" and "other", Notification pending
 
 				testing.AdvanceTime(ctx)
 				clock.Get(ctx).(testclock.TestClock).Add(time.Minute * 5)

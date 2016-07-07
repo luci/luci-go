@@ -55,7 +55,7 @@ type Attempt struct {
 
 	// PersistentState is the last successful execution's returned
 	// PersistentState. It is set whenever an execution for this Attempt finishes
-	// sucessfully. This is denormalized with the Execution's
+	// successfully. This is denormalized with the Execution's
 	// ResultPersistentState field.
 	PersistentState []byte `gae:",noindex"`
 

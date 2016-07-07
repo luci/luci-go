@@ -151,7 +151,7 @@ func (c *Cache) Put(key, value interface{}) (existed bool) {
 //
 // Mutate uses the cache Locker's read/write lock.
 //
-// The generator will recieve the current value, or nil if there is no current
+// The generator will receive the current value, or nil if there is no current
 // value. It returns the new value, or nil to remove this key from the cache.
 //
 // The generator is called while the cache's lock is held. This means that

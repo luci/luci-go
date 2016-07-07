@@ -616,7 +616,7 @@ func (as *Step) closeWithStatus(closeTime *google.Timestamp, sp *milo.Status) bo
 		stepStatus = *sp
 	}
 
-	// Close any oustanding log streams.
+	// Close any outstanding log streams.
 	for l := range as.logLines {
 		as.LogEnd(l)
 	}

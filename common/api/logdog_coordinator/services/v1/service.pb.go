@@ -186,7 +186,7 @@ type ArchiveStreamRequest struct {
 	TerminalIndex int64 `protobuf:"varint,4,opt,name=terminal_index,json=terminalIndex" json:"terminal_index,omitempty"`
 	// If not empty, there was an archival error.
 	//
-	// This field serves to indicate that an error occured (being non-empty) and
+	// This field serves to indicate that an error occurred (being non-empty) and
 	// to supply an value that will show up in the Coordinator ArchiveStream
 	// endpoint logs.
 	Error string `protobuf:"bytes,5,opt,name=error" json:"error,omitempty"`

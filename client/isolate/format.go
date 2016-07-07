@@ -757,7 +757,7 @@ type processedCondition struct {
 }
 
 // processCondition ensures condition is in correct format, and converts it
-// to processedCondition for futher evaluation.
+// to processedCondition for further evaluation.
 func processCondition(c condition, varsAndValues variablesValuesSet) (*processedCondition, error) {
 	goCond, err := pythonToGoCondition(c.Condition)
 	if err != nil {

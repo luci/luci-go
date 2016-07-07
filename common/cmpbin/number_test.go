@@ -140,7 +140,7 @@ func TestSort(t *testing.T) {
 		prev := randomCases[0]
 		for _, c := range randomCases[1:] {
 			// Actually asserting with the So for every entry in the sorted array will
-			// produce 100 green checkmarks on a sucessful test, which is a bit
+			// produce 100 green checkmarks on a successful test, which is a bit
 			// much :).
 			if bytes.Compare(c.expect, prev.expect) < 0 {
 				So(c.expect, shouldBeLessThanOrEqual, prev.expect)

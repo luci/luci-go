@@ -33,7 +33,7 @@ func (t Origin) String() string {
 	}
 }
 
-// Callback is a callback method that is invoked during HTTP commuications to
+// Callback is a callback method that is invoked during HTTP communications to
 // forward captured data.
 type Callback func(Origin, []byte, error)
 

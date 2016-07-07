@@ -50,7 +50,7 @@ const (
 var memcacheLockTime = 16 * time.Second
 
 // TryWithLock attempts to obtains the lock once, and then invokes f if
-// sucessful. The context provided to f will be canceled (e.g. ctx.Done() will
+// successful. The context provided to f will be canceled (e.g. ctx.Done() will
 // be closed) if memlock detects that we've lost the lock.
 //
 // TryWithLock function returns ErrFailedToLock if it fails to obtain the lock,
@@ -144,7 +144,7 @@ func TryWithLock(ctx context.Context, key, clientID string, f func(context.Conte
 
 	testStopCB, _ := ctx.Value(testStopCBKey).(func())
 
-	// This goroutine checks to see if we still posess the lock, and refreshes it
+	// This goroutine checks to see if we still possess the lock, and refreshes it
 	// if we do.
 	go func() {
 		defer func() {

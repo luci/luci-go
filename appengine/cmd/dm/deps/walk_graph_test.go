@@ -434,7 +434,7 @@ func TestWalkGraph(t *testing.T) {
 
 				})
 
-				// This is disabled beacuse it was flaky.
+				// This is disabled because it was flaky.
 				// BUG: crbug.com/621170
 				SkipConvey("early stop", func() {
 					req.Limit.MaxDepth = 100
