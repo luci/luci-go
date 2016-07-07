@@ -231,6 +231,10 @@ func (cc *CtxCmd) Signal(sig os.Signal) error {
 // ExitCode returns the process exit code given an error. If no exit code is
 // present, 0 will be returned.
 func ExitCode(err error) (int, bool) {
+	if err == nil {
+		return 0, true
+	}
+
 	if ee, ok := err.(*exec.ExitError); ok {
 		return ee.Sys().(syscall.WaitStatus).ExitStatus(), true
 	}

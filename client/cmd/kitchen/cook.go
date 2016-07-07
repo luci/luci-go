@@ -10,12 +10,10 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
@@ -168,24 +166,11 @@ func (c *cookRun) run(ctx context.Context) (recipeExitCode int, err error) {
 		recipeCmd.Path, recipeCmd.Args, recipeCmd.Dir)
 
 	recipeCtxCmd := ctxcmd.CtxCmd{Cmd: recipeCmd}
-	switch err := recipeCtxCmd.Run(ctx).(type) {
-	case *exec.ExitError:
-		switch sys := err.Sys().(type) {
-		case syscall.WaitStatus:
-			return sys.ExitStatus(), nil
-		default:
-			return 1, nil
-		}
-
-	case nil:
-		return 0, nil
-
-	default:
-		if err == recipeCtxCmd.ProcessError {
-			err = fmt.Errorf("failed to run recipe: %s", err)
-		}
-		return 0, err
+	err = recipeCtxCmd.Run(ctx)
+	if rv, has := ctxcmd.ExitCode(err); has {
+		return rv, nil
 	}
+	return 0, fmt.Errorf("failed to run recipe: %s", err)
 }
 
 func (c *cookRun) Run(a subcommands.Application, args []string) (exitCode int) {

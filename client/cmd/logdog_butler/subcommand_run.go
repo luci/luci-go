@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"sync"
-	"syscall"
 
 	"github.com/luci/luci-go/client/internal/logdog/bootstrapResult"
 	"github.com/luci/luci-go/client/internal/logdog/butler"
@@ -271,25 +270,20 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 
 		// Wait for the process to finish.
 		executed := false
-		if err := proc.Wait(); err != nil {
-			switch err.(type) {
-			case *exec.ExitError:
-				status := err.(*exec.ExitError).Sys().(syscall.WaitStatus)
-				returnCode = status.ExitStatus()
-				executed = true
-				log.Fields{
-					"exitStatus": returnCode,
-				}.Errorf(ctx, "Command failed.")
 
-			default:
+		// Reap the process.
+		err := proc.Wait()
+		if rc, ok := ctxcmd.ExitCode(err); ok {
+			if rc != 0 {
 				log.Fields{
-					log.ErrorKey: err,
-				}.Errorf(ctx, "Command failed.")
-				returnCode = runtimeErrorReturnCode
+					"returnCode": rc,
+				}.Errorf(ctx, "Command completed with non-zero return code.")
 			}
-		} else {
-			returnCode = 0
+
+			returnCode = rc
 			executed = true
+		} else {
+			log.WithError(err).Errorf(ctx, "Command failed.")
 		}
 
 		log.Fields{
