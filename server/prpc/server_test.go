@@ -145,7 +145,7 @@ func TestServer(t *testing.T) {
 						So(res.Code, ShouldEqual, http.StatusOK)
 						So(res.Header().Get("Access-Control-Allow-Origin"), ShouldEqual, "http://example.com")
 						So(res.Header().Get("Access-Control-Allow-Credentials"), ShouldEqual, "true")
-						So(res.Header().Get("Access-Control-Allow-Headers"), ShouldEqual, "Origin, Content-Type, Accept")
+						So(res.Header().Get("Access-Control-Allow-Headers"), ShouldEqual, "Origin, Content-Type, Accept, Authorization")
 						So(res.Header().Get("Access-Control-Allow-Methods"), ShouldEqual, "OPTIONS, POST")
 						So(res.Header().Get("Access-Control-Max-Age"), ShouldEqual, "600")
 					})

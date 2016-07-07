@@ -95,11 +95,10 @@ An element for rendering muxed LogDog log streams.
       }
     </style>
 
-    <logdog-stream-query
-        id="query"
-        host="[[host]]"
-        project="[[project]]"
-        get-meta="false"></logdog-stream-query>
+    <rpc-client
+      id="client"
+      auto-token
+      host="[[host]]"></rpc-client>
 
     <!-- Stream view options. -->
     <div class="buttons">
@@ -277,9 +276,9 @@ An element for rendering muxed LogDog log streams.
         queries: [],
         streams: [],
       };
-      var query = this.$.query;
+      var query = new LogDogQuery(this.project);
       this.streams.map(LogDogStream.splitProject).forEach(function(v) {
-        if (query.isQuery(v.path)) {
+        if (LogDogQuery.isQuery(v.path)) {
           parts.queries.push(v);
         } else {
           parts.streams.push(v);
@@ -287,12 +286,11 @@ An element for rendering muxed LogDog log streams.
       });
 
       Promise.all(parts.queries.map(function(v) {
-        query.project = v.project;
-        query.path = v.path;
-        query.cursor = null;
-        query.streamType = "text";
-        return query.get();
-      })).then(function(results) {
+        var params = new LogDogQueryParams(v.project).
+            path(v.path).
+            streamType("text");
+        return new LogDogQuery(this.$.client, params).getAll();
+      }.bind(this))).then(function(results) {
         // Add query results (if any) to streams.
         results.forEach(function(streams) {
           (streams || []).forEach(function(stream) {
@@ -320,12 +318,8 @@ An element for rendering muxed LogDog log streams.
       fetch.streams = streams.map(function(stream) {
         // TODO: Re-use fetcher if it already exists in the previous streams
         // map.
-        var fetcher = document.createElement("logdog-stream-fetcher");
-        fetcher.setAttribute("host", this.host);
-        fetcher.setAttribute("project", stream.project);
-        fetcher.setAttribute("path", stream.path);
-
-        return new _BufferedStream(stream, fetcher);
+        return new _BufferedStream(stream, new LogDogFetcher(
+              this.$.client, stream.project, stream.path));
       }.bind(this));
       fetch.status = fetch.streams.map(function(v, idx) {
         var name = v.stream.path;

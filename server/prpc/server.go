@@ -25,7 +25,7 @@ import (
 
 var (
 	// Describe the permitted Access Control requests.
-	allowHeaders = strings.Join([]string{"Origin", "Content-Type", "Accept"}, ", ")
+	allowHeaders = strings.Join([]string{"Origin", "Content-Type", "Accept", "Authorization"}, ", ")
 	allowMethods = strings.Join([]string{"OPTIONS", "POST"}, ", ")
 
 	// allowPreflightCacheAgeSecs is the amount of time to enable the browser to

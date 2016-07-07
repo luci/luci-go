@@ -7,6 +7,7 @@
 <link rel="import" href="../../inc/bower_components/polymer/polymer.html">
 <link rel="import" href="../../inc/logdog-app-base/logdog-app-base.html">
 <link rel="import" href="../../inc/logdog-stream-view/logdog-stream-view.html">
+<link rel="import" href="../../inc/auth/auth-signin.html">
 
 <link rel="stylesheet" href="../../styles/main.css">
 
@@ -17,8 +18,49 @@ An element for the LogDog lightweight view app of a single set of streams.
 The streams are specified by full path using the "s=" query parameter.
 -->
 <dom-module id="logdog-view">
+<style>
+  .banner {
+    width:100%;
+    height:40px;
+  }
+  .banner-left {
+    width:auto;
+    overflow:hidden;
+  }
+  .banner-right {
+    width:auto;
+    float:right;
+  }
+
+  #dev-message {
+    background-color: #FFE0B2;
+    text-align: center;
+    vertical-align: middle;
+    border-style: groove;
+    border-width: 1px;
+    font-family: 'Roboto', 'Noto', sans-serif;
+    font-size: 16px;
+  }
+</style>
 
 <template>
+  <div id="banner" class="banner">
+    <template is="dom-if" if="{{clientId}}">
+      <div class="banner-right">
+        <auth-signin
+            client-id="[[clientId]]"></auth-signin>
+      </div>
+    </template>
+
+    <div class="banner-left">
+      <div id="dev-message">
+        The LogDog log streaming system and this stream viewer are in early
+        developer preview. For more information,
+        <a href="/app/">visit the home page</a>.
+      </div>
+    </div>
+  </div>
+
   <logdog-stream-view
     id="view"
     host="[[host]]"
@@ -35,6 +77,15 @@ The streams are specified by full path using the "s=" query parameter.
         type: String,
         notify: true,
       },
+      clientId: {
+        type: String,
+        notify: true,
+      },
+      accessToken: {
+        type: String,
+        notify: true,
+        readOnly: true,
+      },
       streams: {
         type: Array,
         notify: true,
@@ -48,6 +99,13 @@ The streams are specified by full path using the "s=" query parameter.
       var streams = logdog.getQueryValues(queryString, "s").
           map(logdog.correctStreamPath);
       this._setStreams(streams);
+    },
+
+    _onSignin: function(e) {
+      this._setAccessToken(e.detail.access_token);
+    },
+    _onSignout: function(e) {
+      this._setAccessToken(null);
     },
   });
 

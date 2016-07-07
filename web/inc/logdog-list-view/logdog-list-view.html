@@ -9,7 +9,7 @@
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../bower_components/paper-material/paper-material.html">
 <link rel="import" href="../logdog-styles/app-theme.html">
-<link rel="import" href="../luci-prpc-request/luci-prpc-request.html">
+<link rel="import" href="../rpc/rpc-client.html">
 <link rel="import" href="../logdog-stream/logdog-stream.html">
 
 
@@ -206,15 +206,15 @@ An element for fetching complete LogDog log streams.
   </style>
 
   <template>
-    <!-- A pRPC request bound to the list endpoint. -->
-    <luci-prpc-request
-      id="request"
-      host="[[host]]"
-      service="logdog.Logs"
-      method="List"
-      body="[[_body]]"
-      last-response="{{lastResponse}}"
-      last-error="{{lastError}}"></luci-prpc-request>
+    <!-- Load server description -->
+    <rpc-client
+        id="client"
+        auto-token
+        host="[[host]]"
+        service="logdog.Logs"
+        method="List"
+        request="[[_body]]"
+        last-response="{{lastResponse}}"></rpc-client>
 
     <!--
       The current set of components. For example, for "foo/bar/+/baz", this
@@ -390,13 +390,17 @@ An element for fetching complete LogDog log streams.
       /** True if the latest request specified additional pages. */
       _hasMore: {
         computed: "_computeHasMore(nextPage)",
-      }
+      },
+
+      lastResponse: {
+        type: Object,
+        observer: '_onLastResponseChanged',
+      },
     },
 
     observers: [
       "_hostChanged(host, base)",
       "_baseChanged(base)",
-      "_responseChanged(lastResponse, lastError)",
     ],
 
     /** Called when the host value has changed. Reset. */
@@ -407,7 +411,7 @@ An element for fetching complete LogDog log streams.
       }
 
       // Enable automatic request sending once our "host" has loaded. */
-      this.$.request.auto = (!!this.host);
+      this.$.client.auto = (!!this.host);
     },
 
     /** Called when the base value has changed. */
@@ -442,15 +446,7 @@ An element for fetching complete LogDog log streams.
       return req;
     },
 
-    /** Called when an RPC response has been received. */
-    _responseChanged: function(resp, err) {
-      if (err !== null) {
-        this._setPaths([]);
-        this._setStreams([]);
-        this._setComponents([]);
-        return;
-      }
-
+    _onLastResponseChanged: function(resp) {
       this._setNextPage(resp.next);
       this._setCurrentOffset(this.offset);
 

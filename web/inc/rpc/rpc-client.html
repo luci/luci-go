@@ -5,6 +5,7 @@
 -->
 
 <link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/google-signin/google-signin-aware.html">
 
 <link rel="import" href="rpc-code.html">
 <link rel="import" href="rpc-error.html">
@@ -16,6 +17,13 @@
   Protocol: https://godoc.org/github.com/luci/luci-go/common/prpc#hdr-Protocol
 -->
 <dom-module id="rpc-client">
+  <template>
+    <google-signin-aware
+      id="aware"
+      on-google-signin-aware-success="_onSignin"
+      on-google-signin-aware-signed-out="_onSignout"></google-signin-aware>
+  </template>
+
   <script>
     'use strict';
 
@@ -77,6 +85,15 @@
         accessToken: {
           type: String,
           value: null
+        },
+
+        /**
+          * If true, automatically update "accessToken" with the current access
+          * token when the sign-in singleton's authentication state changes.
+          */
+        autoToken: {
+          type: Boolean,
+          value: false,
         },
 
         /**
@@ -227,7 +244,19 @@
           this._setLastCode(call.code);
           this._setLoading(false);
         }
-      }
+      },
+
+      _onSignin: function(e) {
+        if (this.autoToken) {
+          this.accessToken = e.detail.access_token;
+        }
+      },
+
+      _onSignout: function(e) {
+        if (this.autoToken) {
+          this.accessToken = null;
+        }
+      },
 
     });
   </script>

@@ -5,6 +5,7 @@
 -->
 
 <link rel="import" href="../../inc/bower_components/polymer/polymer.html">
+<link rel="import" href="../../inc/bower_components/paper-button/paper-button.html">
 <link rel="import" href="../../inc/bower_components/paper-drawer-panel/paper-drawer-panel.html">
 <link rel="import" href="../../inc/bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../inc/bower_components/paper-item/paper-item.html">
@@ -21,6 +22,7 @@
 <link rel="import" href="logdog-home-page.html">
 <link rel="import" href="../../inc/logdog-list-view/logdog-list-view.html">
 <link rel="import" href="../../inc/logdog-stream-view/logdog-stream-view.html">
+<link rel="import" href="../../inc/auth/auth-signin.html">
 
 <!--
 An element for the main LogDog web app.
@@ -28,7 +30,7 @@ An element for the main LogDog web app.
 <dom-module id="logdog-app">
 
 <template>
-  <style>
+  <style is="custom-style">
     :host {
       @apply(--paper-font-common-base);
 
@@ -36,6 +38,13 @@ An element for the main LogDog web app.
       --paper-toolbar-title: {
         line-height: 2;
       };
+    }
+
+    #auth-signin-block {
+        background-color: var(--paper-light-blue-300);
+        padding: 10px 5px 10px 5px;
+        border-radius: 10px;
+        @apply(--paper-font-common-base);
     }
 
     .content {
@@ -86,7 +95,12 @@ An element for the main LogDog web app.
         <span class="title">LogDog</span>
 
         <!-- Toolbar icons -->
-        <paper-icon-button icon="refresh"></paper-icon-button>
+        <template is="dom-if" if="{{clientId}}">
+          <div id="auth-signin-block">
+            <auth-signin
+                client-id="[[clientId]]"></auth-signin>
+          </div>
+        </template>
       </paper-toolbar>
 
       <!-- Main Content -->
@@ -130,6 +144,8 @@ An element for the main LogDog web app.
 </dom-module>
 
 <script>
+  "use strict";
+
   Polymer({
     is: "logdog-app",
     properties: {
@@ -141,6 +157,10 @@ An element for the main LogDog web app.
         type: String,
         notify: true,
         value: app.host,
+      },
+      clientId: {
+        type: String,
+        notify: true,
       },
       listBase: {
         type: String,

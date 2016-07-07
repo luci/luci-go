@@ -14,28 +14,11 @@
 <script>
   "use strict";
 
-  Polymer({
-    is: "luci-sleep-promise",
-
-    /**
-     * Generates a Promise object that resolves after a specified delay.
-     *
-     * If a delay of 0 is provided, it will resolve as soon as it can (but not
-     * synchronously).
-     *
-     * @param {number} delay The delay in seconds.
-     * @return {Promise} A Promise object.
-     */
-    promise: function(delay) {
-      return new Promise(function(resolve, reject) {
-        if (delay === 0) {
-          setTimeout(resolve, 0);
-        } else {
-          this.async(resolve, delay);
-        }
-      }.bind(this));
-    },
-  });
+  function LuciSleepPromise(delay) {
+    return new Promise(function(resolve, reject) {
+      setTimeout(resolve, delay);
+    });
+  }
 </script>
 
 </dom-module>

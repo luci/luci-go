@@ -8,217 +8,144 @@
 <link rel="import" href="../bower_components/promise-polyfill/promise-polyfill-lite.html">
 
 <link rel="import" href="../luci-sleep-promise/luci-sleep-promise.html">
-<link rel="import" href="logdog-stream-chunk.html">
-
-<!--
-An element for iteratively fetching complete LogDog log streams.
--->
-<dom-module id="logdog-stream-fetcher">
-
-  <template>
-    <luci-sleep-promise id="sleep"></luci-sleep-promise>
-
-    <logdog-stream-chunk
-      id="chunk"
-      host="[[host]]"
-      project="[[project]]"
-      path="[[path]]"
-      index="[[nextIndex]]"></logdog-stream-chunk>
-  </template>
-
-</dom-module>
 
 <script>
   "use strict";
 
-  Polymer({
-    is: "logdog-stream-fetcher",
-    properties: {
-      hostAttributes: {
-        hidden: true,
-      },
+  function LogDogFetcher(client, project, path) {
+    this.client = client;
+    this.project = project;
+    this.path = path;
 
-      /** The name ([host][:port]) of the pRPC host. */
-      host: {
-        type: String,
-        notify: true,
-        observer: "_streamParamChanged",
-      },
+    // Fetching parameters, will be updated as logs are fetched.
+    this.sleepTimeSecs = 5;
+    this.reset();
+  }
 
-      /** The project name of the stream. */
-      project: {
-        type: String,
-        notify: true,
-        observer: "_streamParamChanged",
-      },
+  LogDogFetcher.prototype.reset = function() {
+    this.nextIndex = 0;
+    this.finished = false;
+    this.desc = null;
+    this.state = null;
 
-      /** The path of the log stream to fetch. */
-      path: {
-        type: String,
-        notify: true,
-        observer: "_streamParamChanged",
-      },
-      /** The amount of time to sleep in between streaming log fetches. */
-      sleepTimeSecs: {
-        type: Number,
-        value: 5,
-      },
+    this._current = null;
+    this._nextLogsPromise = null;
+  };
 
-      /** The next log stream index to fetch. */
-      nextIndex: {
-        type: Number,
-        value: 0,
-        readOnly: true,
-      },
+  /**
+   * Returns the log stream's terminal index.
+   *
+   * If no terminal index is known, or if the log stream is still streaming,
+   * this will return -1.
+   */
+  LogDogFetcher.prototype.terminalIndex = function() {
+    return (this.state) ? (this.state.terminalIndex) : (-1);
+  };
 
-      /** The latest fetched log stream descriptor. */
-      desc: {
-        type: Object,
-        notify: true,
-        readOnly: true,
-      },
+  /**
+   * Returns a Promise that resolves to the next block of logs in the stream.
+   *
+   * If there are no more logs in the stream (finished), the returned Promise
+   * will already be resolved and will contain a null log.
+   *
+   * @return {Promise[Object]} A Promise that will resolve to the next block
+   *     of logs in the stream.
+   */
+  LogDogFetcher.prototype.next = function() {
+    // If we don't have an in-progress fetch, start a new one.
+    if (this._nextLogsPromise === null) {
+      this._nextLogsPromise = this._fetchNextBatch().
+          then(function(result) {
+            var entries = result.entries;
+            if (entries && entries.length) {
+              var lastIndex = entries[entries.length-1].streamIndex;
+              this.nextIndex = (lastIndex + 1);
 
-      /** The latest fetched log stream state. */
-      state: {
-        type: Object,
-        notify: true,
-        readOnly: true,
-      },
-
-      /** The log stream"s terminal index (-1 for streaming). */
-      terminalIndex: {
-        computed: "_getTerminalIndex(state)",
-      },
-
-      /** True if the log stream has finished being fetched. */
-      finished: {
-        type: Boolean,
-        notify: true,
-        readOnly: true,
-      },
-
-      _response: {
-        type: Object,
-        readOnly: true,
-        notify: true,
-      },
-      _error: {
-        type: Object,
-        readOnly: true,
-        notify: true,
-      },
-    },
-
-    ready: function() {
-      this.reset();
-    },
-
-    _streamParamChanged: function(v, old) {
-      if (v !== old) {
-        this.reset();
-      }
-    },
-
-    reset: function() {
-      this._setNextIndex(0);
-      this._setFinished(false);
-      this._setDesc(null);
-      this._setState(null);
-
-      this._current = null;
-      this._nextLogsPromise = null;
-    },
-
-    /**
-     * Returns a Promise that resolves to the next block of logs in the stream.
-     *
-     * If there are no more logs in the stream (finished), the returned Promise
-     * will already be resolved and will contain a null log.
-     *
-     * @return {Promise[Object]} A Promise that will resolve to the next block
-     *     of logs in the stream.
-     */
-    next: function() {
-      // If we don't have an in-progress fetch, start a new one.
-      if (this._nextLogsPromise === null) {
-        this._nextLogsPromise = this._fetchNextBatch().
-            then(function(result) {
-              var entries = result.entries;
-              if (entries && entries.length) {
-                var lastIndex = entries[entries.length-1].streamIndex;
-                this._setNextIndex(lastIndex + 1);
-
-                var tidx = this._getTerminalIndex(this.state);
-                if (tidx >= 0 && tidx < this.nextIndex) {
-                  // We have punted the full log stream. Mark finished.
-                  this._setFinished(true);
-                }
+              var tidx = this.terminalIndex();
+              if (tidx >= 0 && tidx < this.nextIndex) {
+                // We have punted the full log stream. Mark finished.
+                this.finished = true;
               }
+            }
 
-              this._nextLogsPromise = null;
-              return result;
-            }.bind(this));
+            this._nextLogsPromise = null;
+            return result;
+          }.bind(this));
+    }
+    return this._nextLogsPromise;
+  },
+
+  /** Creates and returns a Promise for the next batch of logs. */
+  LogDogFetcher.prototype._fetchNextBatch = function() {
+    // If we're already finished, return the terminal result.
+    if (this.finished) {
+      return this._resolvedLogs(null);
+    }
+
+    // Fetch and return the next batch of logs.
+    return this._scheduleAsyncGet().then(function(resp) {
+      // Update our state/desc.
+      if (resp.state) {
+        this.state = resp.state;
       }
-      return this._nextLogsPromise;
-    },
-
-    /** Creates and returns a Promise for the next batch of logs. */
-    _fetchNextBatch: function() {
-      // If we're already finished, return the terminal result.
-      if (this.finished) {
-        return this._resolvedLogs(null);
+      if (resp.desc) {
+        this.desc = resp.desc;
       }
 
-      // Fetch and return the next batch of logs.
-      return this._scheduleAsyncGet().then(function(resp) {
-        // Update our state/desc.
-        if (resp.state) {
-          this._setState(resp.state);
-        }
-        if (resp.desc) {
-          this._setDesc(resp.desc);
-        }
-
-        var logs = resp.logs;
-        if (!logs.length) {
-          // No logs were loaded this round. Sleep for a bit then try again.
-          // (Streaming case).
-          console.log("No logs for", this.path, "; sleeping...");
-          return this.$.sleep.
-            promise(this.sleepTimeSecs * 1000).
-            then(function() {
-              return this._fetchNextBatch();
-            }.bind(this));
-        }
-
-        return this._resolvedLogs(logs);
-      }.bind(this));
-    },
-
-    /** Generates a structured Promise for a given block of log entries. */
-    _resolvedLogs: function(punt) {
-      return Promise.resolve({
-        desc: this.desc,
-        state: this.state,
-        entries: punt,
-      });
-    },
-
-    /** Schedules the next asynchronous fetch. */
-    _scheduleAsyncGet: function() {
-      this.$.chunk.getMeta = (!this.state || this.terminalIndex < 0);
-      return this.$.chunk.get();
-    },
-
-    /**
-     * Calculates the terminal index of the log stream, or null if the log
-     * stream state is not loaded.
-     */
-    _getTerminalIndex: function(state) {
-      if (!state) {
-        return -1;
+      var logs = resp.logs;
+      if (!logs.length) {
+        // No logs were loaded this round. Sleep for a bit then try again.
+        // (Streaming case).
+        console.log("No logs for", this.path, "; sleeping...");
+        return new LuciSleepPromise(this.sleepTimeSecs * 1000).
+          then(function() {
+            return this._fetchNextBatch();
+          }.bind(this));
       }
-      return state.terminalIndex;
-    },
-  });
+
+      return this._resolvedLogs(logs);
+    }.bind(this));
+  };
+
+  /** Generates a structured Promise for a given block of log entries. */
+  LogDogFetcher.prototype._resolvedLogs = function(punt) {
+    return Promise.resolve({
+      desc: this.desc,
+      state: this.state,
+      entries: punt,
+    });
+  };
+
+  /** Schedules the next asynchronous fetch. */
+  LogDogFetcher.prototype._scheduleAsyncGet = function() {
+    this.client.service = "logdog.Logs";
+    this.client.method = "Get";
+    this.client.request = {
+      project: this.project,
+      path: this.path,
+      state: (!this.state || this.terminalIndex() < 0),
+      index: this.nextIndex,
+    };
+
+    return this.client.call().completes.then(function(resp) {
+      resp = resp.response;
+
+      // Normalize the resulting logs.
+      //
+      // JSONPB timestamps are in the form of RFC3339 strings.
+      if (resp.desc) {
+        patchDescriptor(resp.desc);
+      }
+      if (resp.state) {
+        patchState(resp.state);
+      }
+      if (resp.logs) {
+        resp.logs.forEach(function(le) {
+          patchLogEntry(le, resp.desc);
+        });
+      }
+
+      return resp;
+    });
+  };
 </script>

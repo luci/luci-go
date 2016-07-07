@@ -5,225 +5,144 @@
   -->
 
 <link rel="import" href="../bower_components/polymer/polymer.html">
-<link rel="import" href="../luci-prpc-request/luci-prpc-request.html">
+<link rel="import" href="../rpc/rpc-client.html">
 <link rel="import" href="../logdog-stream/logdog-stream.html">
 
 <!--
-An element for issuing a LogDog stream query.
+A class for issuing a LogDog query.
 -->
-<dom-module id="logdog-stream-query">
-
-  <template>
-    <luci-prpc-request
-      id="req"
-      auto="[[auto]]"
-      host="[[host]]"
-      service="logdog.Logs"
-      method="Query"
-      body="{{body}}"
-      last-response="{{lastResponse}}"
-      last-error="{{lastError}}"></luci-prpc-request>
-  </template>
-
-</dom-module>
-
 <script>
   "use strict";
 
-  Polymer({
-    is: "logdog-stream-query",
-    properties: {
-      hostAttributes: {
-        hidden: true,
-      },
+  function LogDogQueryParams(project) {
+    this.project = project;
 
-      /* If true, automatically send the request when parameters are changed. */
-      auto: {
-        type: Boolean,
-        value: false,
-        notify: true,
-      },
-      /** The name ([host][:port]) of the pRPC host. */
-      host: {
-        type: String,
-        notify: true,
-      },
+    this._getMeta = false;
+    this._path = null;
+    this._contentType = null;
+    this._streamType = null;
+    this._purged = null;
+    this._newer = null;
+    this._older = null;
+    this._protoVersion = null;
+    this._tags = {};
+  }
 
-      /** True if log stream metadata should be fetched. */
-      getMeta: {
-        type: Boolean,
-        value: true,
-        notify: true,
-      },
+  /** Enables fetching of stream metadata. */
+  LogDogQueryParams.prototype.getMeta = function() {
+    this._getMeta = true;
+    return this;
+  };
 
-      /** Maximum results to fetch. Leave blank for default. */
-      count: {
-        type: Number,
-        value: null,
-        notify: true,
-      },
+  /** Set the log stream path glob to fetch. */
+  LogDogQueryParams.prototype.path = function(v) {
+    this._path = v;
+    return this;
+  };
 
-      /** The log stream path glob to fetch. */
-      path: {
-        type: String,
-        value: null,
-        notify: true,
-      },
+  /** The content type to filter on. */
+  LogDogQueryParams.prototype.contentType = function(v) {
+    this._contentType = v;
+    return this;
+  };
 
-      /** The content type to filter on. */
-      contentType: {
-        type: String,
-        value: null,
-        notify: true,
-      },
+  /**
+   * The stream type. Can be "text", "binary", "datagram", or null for any.
+   */
+  LogDogQueryParams.prototype.streamType = function(v) {
+    this._streamType = v;
+    return this;
+  };
 
-      /**
-       * The stream type. Can be "text", "binary", "datagram", or null for any.
-       */
-      streamType: {
-        type: String,
-        value: null,
-        notify: true,
-      },
+  /** Filter purged streams? true, false, or null for no filter. */
+  LogDogQueryParams.prototype.purged = function(v) {
+    this._purged = v;
+    return this;
+  };
 
-      /** Filter purged streams? true, false, or null for no filter. */
-      purged: {
-        type: Boolean,
-        value: null,
-        notify: true,
-      },
+  /** Filter streams newer than this value? Null for no lower bound. */
+  LogDogQueryParams.prototype.newer = function(v) {
+    this._newer = v.toISOString();
+    return this;
+  };
 
-      /** Filter streams newer than this value? Null for no lower bound. */
-      newer: {
-        type: Date,
-        value: null,
-        notify: true,
-      },
+  /** Filter streams older than this value? Null for no lower bound. */
+  LogDogQueryParams.prototype.older = function(v) {
+    this._older = v.toISOString();
+    return this;
+  };
 
-      /** Filter streams older than this value? null for no upper bound. */
-      older: {
-        type: Date,
-        value: null,
-        notify: true,
-      },
+  /** Filter on protocol version (null for no filter). */
+  LogDogQueryParams.prototype.protoVersion = function(v) {
+    this._protoVersion = v;
+    return this;
+  };
 
-      /** Filter on protocol version (null for no filter). */
-      protoVersion: {
-        type: String,
-        value: null,
-        notify: true,
-      },
+  /** Filter on protocol version (null for no filter). */
+  LogDogQueryParams.prototype.addTag = function(key, value) {
+    this._tags[key] = value;
+    return this;
+  };
 
-      /** Tags to filter on {key: value}. */
-      tags: {
-        type: Object,
-        value: null,
-        notify: true,
-      },
+  function LogDogQuery(client, params) {
+    this.client = client;
+    this.params = params;
+  }
 
-      /** Query iterative cursor, or null for no cursor. */
-      cursor: {
-        type: Object,
-        value: null,
-        notify: true,
-      },
+  /** Returns true if "s" has glob characters in it. */
+  LogDogQuery.isQuery = function(s) {
+    return (s.indexOf("*") >= 0);
+  };
 
-      /** The last fetched streams. */
-      lastStreams: {
-        type: Array,
-        value: null,
-        readOnly: true,
-        notify: true,
-      },
+  LogDogQuery.prototype.get = function(cursor, limit) {
+    var body = {
+      project: this.params.project,
+      path: this.params._path,
+      content_type: this.params._contentType,
+      proto_version: this.params._protoVersion,
+      tags: this.params._tags,
+      next: cursor,
+      count: limit,
+    };
 
-      /** The cursor value from the last query result. */
-      lastCursor: {
-        type: String,
-        value: null,
-        readOnly: true,
-        notify: true,
-      },
-
-      body: {
-        type: Object,
-        computed: "_computeBody(project, path, contentType, streamType, " +
-                  "purged, newer, older, protoVersion, tags.*, cursor)",
-      },
-    },
-
-    observers: [
-      "_responseChanged(lastResponse, lastError)",
-    ],
-
-    /** Returns true if v has glob characters in it. */
-    isQuery: function(v) {
-      return (v.indexOf("*") >= 0);
-    },
-
-    _computeBody: function(project, path, contentType, streamType, purged,
-                           newer, older, protoVersion, tags, cursor) {
-      var body = {
-        project: project,
-        path: path,
-        content_type: contentType,
-        proto_version: protoVersion,
-        tags: tags,
-        next: cursor,
-      };
-
-      var trinary = function(field, v) {
-        if (v != null) {
-          body[field] = ((v) ? "YES" : "NO");
-        }
+    var trinary = function(field, v) {
+      if (v != null) {
+        body[field] = ((v) ? "YES" : "NO");
       }
-      trinary("purged", purged);
+    }
+    trinary("purged", this.params._purged);
 
-      if (streamType) {
-        var filter = {};
-        switch (streamType) {
-        case "text":
-          filter.value = "TEXT";
-          break;
-        case "binary":
-          filter.value = "BINARY";
-          break;
-        case "datagram":
-          filter.value = "DATAGRAM";
-          break;
-        default:
-          throw ("Invalid stream type: " + streamType);
-        }
-        body.stream_type = filter;
+    if (this.params._streamType) {
+      var filter = {};
+      switch (this.params._streamType) {
+      case "text":
+        filter.value = "TEXT";
+        break;
+      case "binary":
+        filter.value = "BINARY";
+        break;
+      case "datagram":
+        filter.value = "DATAGRAM";
+        break;
+      default:
+        throw ("Invalid stream type: " + this.params._streamType);
       }
-      if (newer) {
-        body.newer = newer.toISOString();
-      }
-      if (older) {
-        body.older = older.toISOString();
-      }
-      return body;
-    },
+      body.stream_type = filter;
+    }
+    if (this.params._newer) {
+      body.newer = this.params._newer;
+    }
+    if (this.params._older) {
+      body.older = this.params._older;
+    }
 
-    _responseChanged: function(resp, err) {
-      if (!err) {
-        resp = {};
-      }
+    this.client.service = "logdog.Logs";
+    this.client.method = "Query";
+    this.client.request = body;
 
-      this._setLastStreams(this._patchResponse(resp));
-      this._setLastCursor(resp.next);
-    },
+    return this.client.call().completes.then(function(resp) {
+      resp = resp.response;
 
-    get: function() {
-      return this.$.req.requestPromise().then(this._patchResponse);
-    },
-
-    /**
-     * Normalize the values in a query response for JavaScript consumption.
-     *
-     * @param resp {Object} QueryResponse object.
-     * @return {Array} an array of patched streams in the response.
-     */
-    _patchResponse: function(resp) {
       // Normalize the JSON values in "desc".
       //
       // JSONPB timestamps are in the form of RFC3339 strings.
@@ -236,7 +155,34 @@ An element for issuing a LogDog stream query.
           patchDescriptor(s.desc);
         }
       });
-      return resp.streams;
-    },
-  });
+      return resp;
+    });
+  };
+
+  /**
+   * Issues a query and iteratively pulls up to "this.limit" results.
+   */
+  LogDogQuery.prototype.getAll = function(limit) {
+    var streams = [];
+    var cursor = null;
+    limit = (limit || 100);
+
+    fetchRound = function(inStreams) {
+      if (inStreams) {
+        streams.push.apply(streams, inStreams);
+      }
+
+      var remaining = (limit - streams.length);
+      if (remaining <= 0 || cursor === null) {
+        return streams;
+      }
+
+      return this.get(cursor, remaining).then(function(resp) {
+        cursor = resp.next;
+        return fetchRound(resp.streams);
+      });
+    }.bind(this);
+
+    return fetchRound(null);
+  };
 </script>

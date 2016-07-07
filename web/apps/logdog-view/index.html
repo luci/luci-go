@@ -24,32 +24,17 @@
 
   <!-- For shared styles, shared-styles.html import in elements.html -->
   <style is="custom-style" include="shared-styles"></style>
-
-  <style>
-    #dev-banner {
-      width: 100%;
-      background-color: #FFE0B2;
-      text-align: center;
-      vertical-align: middle;
-      border-style: groove;
-      border-width: 1px;
-      font-family: 'Roboto', 'Noto', sans-serif;
-      font-size: 16px;
-    }
-  </style>
 </head>
 
 <body unresolved>
 
 <span id="browser-sync-binding"></span>
 
-<div id="dev-banner">
-  The LogDog log streaming system and this stream viewer are in early developer
-  preview. For more information, <a href="/app/">visit the home page</a>.
-</div>
-
 <!-- Main application script -->
-<logdog-view id="app"></logdog-view>
+<logdog-view
+  id="app"
+  client-id="446450136466-hdluvt4ofonh0q65pphab8egl59th2of.apps.googleusercontent.com">
+</logdog-view>
 
 <script>
   // Grab a reference to our auto-binding template
