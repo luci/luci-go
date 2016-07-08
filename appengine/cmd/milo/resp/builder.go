@@ -6,6 +6,13 @@ package resp
 
 import "time"
 
+// Interval is a time interval which has a start, an end and a duration.
+type Interval struct {
+	Started  time.Time     // when did this interval start
+	Finished time.Time     // when did this interval finish
+	Duration time.Duration // length of the interval; may be non-zero if Finished is zero
+}
+
 // BuildSummary is a summary of a build, with just enough information for display
 // on a builders page, with an optional field to return the whole build
 // information if available.
@@ -16,15 +23,11 @@ type BuildSummary struct {
 	// Status of the build.
 	Status Status
 
-	// When did this build start.
-	Started time.Time
+	// Pending is time interval that this build was pending.
+	PendingTime Interval
 
-	// When did this build finish.
-	Finished time.Time
-
-	// The time it took for this build to finish.  If unfinished, this is the
-	// current elapsed duration.
-	Duration time.Duration
+	// Execution is time interval that this build was executing.
+	ExecutionTime Interval
 
 	// Revision is the main revision of the build.
 	// TODO(hinoka): Maybe use a commit object instead?
