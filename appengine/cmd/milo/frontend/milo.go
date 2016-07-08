@@ -16,13 +16,16 @@ import (
 
 // Where it all begins!!!
 func init() {
-	// Register plain ol' http services.
+	// Register plain ol' http handlers.
 	r := router.New()
 	basemw := settings.Base()
 	gaemiddleware.InstallHandlers(r, basemw)
 	r.GET("/", basemw, settings.Wrap(frontpage{}))
-	r.GET("/swarming/:server/:id/steps/*logname", basemw, settings.Wrap(swarming.Log{}))
-	r.GET("/swarming/:server/:id", basemw, settings.Wrap(swarming.Build{}))
+	r.GET("/swarming/task/:id/steps/*logname", basemw, settings.Wrap(swarming.Log{}))
+	r.GET("/swarming/task/:id", basemw, settings.Wrap(swarming.Build{}))
+	// Backward-compatible URLs:
+	r.GET("/swarming/prod/:id/steps/*logname", basemw, settings.Wrap(swarming.Log{}))
+	r.GET("/swarming/prod/:id", basemw, settings.Wrap(swarming.Build{}))
 
 	// Buildbot
 	r.GET("/buildbot/:master/:builder/:build", basemw, settings.Wrap(buildbot.Build{}))

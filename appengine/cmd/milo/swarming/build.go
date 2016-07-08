@@ -47,20 +47,6 @@ const (
 	TaskCompleted = "COMPLETED"
 )
 
-func resolveServer(server string) string {
-	// TODO(hinoka): configure this map in luci-config
-	switch server {
-	case "", "default", "dev":
-		return "chromium-swarm-dev.appspot.com"
-
-	case "prod":
-		return "chromium-swarm.appspot.com"
-
-	default:
-		return server
-	}
-}
-
 func getSwarmingClient(c context.Context, server string) (*swarming.Service, error) {
 	c, _ = context.WithTimeout(c, 60*time.Second)
 	client := transport.GetClient(client.UseServiceAccountTransport(
@@ -69,7 +55,7 @@ func getSwarmingClient(c context.Context, server string) (*swarming.Service, err
 	if err != nil {
 		return nil, err
 	}
-	sc.BasePath = fmt.Sprintf("https://%s/_ah/api/swarming/v1/", resolveServer(server))
+	sc.BasePath = fmt.Sprintf("https://%s/_ah/api/swarming/v1/", server)
 	return sc, nil
 }
 
@@ -93,6 +79,7 @@ func getTaskOutput(sc *swarming.Service, taskID string) (string, error) {
 
 func getDebugSwarmingResult(
 	taskID string) (*swarming.SwarmingRpcsTaskResult, error) {
+
 	logFilename := filepath.Join("testdata", taskID)
 	swarmFilename := fmt.Sprintf("%s.swarm", logFilename)
 	s, err := ioutil.ReadFile(swarmFilename)
@@ -104,17 +91,6 @@ func getDebugSwarmingResult(
 		return nil, err
 	}
 	return sr, nil
-}
-
-func getSwarmingResult(sc *swarming.Service, taskID string) (
-	*swarming.SwarmingRpcsTaskResult, error) {
-
-	trc := sc.Task.Result(taskID)
-	srtr, err := trc.Do()
-	if err != nil {
-		return nil, err
-	}
-	return srtr, nil
 }
 
 func getSwarming(c context.Context, server string, taskID string) (
@@ -143,7 +119,7 @@ func getSwarming(c context.Context, server string, taskID string) (
 		}()
 		go func() {
 			defer wg.Done()
-			sr, errRes = getSwarmingResult(sc, taskID)
+			sr, errRes = sc.Task.Result(taskID).Do()
 		}()
 		wg.Wait()
 	}
@@ -313,7 +289,7 @@ func streamsFromAnnotatedLog(ctx context.Context, log string) (*logdog.Streams, 
 	return c.ToLogDogStreams()
 }
 
-func swarmingBuildImpl(c context.Context, URL string, server string, taskID string) (*resp.MiloBuild, error) {
+func swarmingBuildImpl(c context.Context, linkBase, server, taskID string) (*resp.MiloBuild, error) {
 	// Fetch the data from Swarming
 	sr, body, err := getSwarming(c, server, taskID)
 	if err != nil {
@@ -353,7 +329,7 @@ func swarmingBuildImpl(c context.Context, URL string, server string, taskID stri
 				}},
 			}}
 		} else {
-			logdog.AddLogDogToBuild(c, URL, lds, build)
+			logdog.AddLogDogToBuild(c, linkBase, lds, build)
 		}
 	}
 
@@ -363,11 +339,11 @@ func swarmingBuildImpl(c context.Context, URL string, server string, taskID stri
 // taskPageURL returns a URL to a human-consumable page of a swarming task.
 // Supports server aliases.
 func taskPageURL(swarmingHostname, taskID string) string {
-	return fmt.Sprintf("https://%s/user/task/%s", resolveServer(swarmingHostname), taskID)
+	return fmt.Sprintf("https://%s/user/task/%s", swarmingHostname, taskID)
 }
 
 // botPageURL returns a URL to a human-consumable page of a swarming bot.
 // Supports server aliases.
 func botPageURL(swarmingHostname, botID string) string {
-	return fmt.Sprintf("https://%s/restricted/bot/%s", resolveServer(swarmingHostname), botID)
+	return fmt.Sprintf("https://%s/restricted/bot/%s", swarmingHostname, botID)
 }

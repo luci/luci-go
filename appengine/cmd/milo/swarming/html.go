@@ -18,6 +18,19 @@ import (
 	"github.com/luci/luci-go/server/templates"
 )
 
+func getServer(r *http.Request) string {
+	server := r.FormValue("server")
+	// TODO(hinoka): configure this mapping in luci-config
+	switch server {
+	case "":
+		return "chromium-swarm.appspot.com"
+	case "dev":
+		return "chromium-swarm-dev.appspot.com"
+	default:
+		return server
+	}
+}
+
 // Log is for fetching logs from swarming.
 type Log struct{}
 
@@ -45,8 +58,8 @@ func (l Log) Render(c context.Context, r *http.Request, p httprouter.Params) (*t
 			Code:    http.StatusBadRequest,
 		}
 	}
-	server := p.ByName("server") // This one may be blank.
-	log, err := swarmingBuildLogImpl(c, server, id, logname)
+
+	log, err := swarmingBuildLogImpl(c, getServer(r), id, logname)
 	if err != nil {
 		return nil, convertErr(err)
 	}
@@ -72,9 +85,8 @@ func (b Build) Render(c context.Context, r *http.Request, p httprouter.Params) (
 			Code:    http.StatusBadRequest,
 		}
 	}
-	server := p.ByName("server") // This one may be blank.
 
-	result, err := swarmingBuildImpl(c, r.URL.String(), server, id)
+	result, err := swarmingBuildImpl(c, r.URL.String(), getServer(r), id)
 	if err != nil {
 		return nil, convertErr(err)
 	}

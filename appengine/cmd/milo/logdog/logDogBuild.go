@@ -17,8 +17,8 @@ import (
 )
 
 // Given a logdog/milo step, translate it to a BuildComponent struct.
-func miloBuildStep(c context.Context, url string, anno *miloProto.Step) *resp.BuildComponent {
-	url = strings.TrimSuffix(url, "/")
+func miloBuildStep(c context.Context, linkBase string, anno *miloProto.Step) *resp.BuildComponent {
+	linkBase = strings.TrimSuffix(linkBase, "/")
 	comp := &resp.BuildComponent{Label: anno.Name}
 	switch anno.Status {
 	case miloProto.Status_RUNNING:
@@ -56,7 +56,7 @@ func miloBuildStep(c context.Context, url string, anno *miloProto.Step) *resp.Bu
 		}
 		newLink := &resp.Link{
 			Label: lds.Name,
-			URL:   url + "/" + lds.Name,
+			URL:   linkBase + "/" + lds.Name,
 		}
 		comp.SubLink = append(comp.SubLink, newLink)
 	}
@@ -65,7 +65,7 @@ func miloBuildStep(c context.Context, url string, anno *miloProto.Step) *resp.Bu
 	if anno.StdoutStream != nil {
 		comp.MainLink = &resp.Link{
 			Label: "stdout",
-			URL:   makeLogDogStreamURL(url, anno.StdoutStream),
+			URL:   linkBase + "/" + anno.StdoutStream.Name,
 		}
 	}
 
@@ -94,7 +94,7 @@ func miloBuildStep(c context.Context, url string, anno *miloProto.Step) *resp.Bu
 }
 
 // AddLogDogToBuild takes a set of logdog streams and populate a milo build.
-func AddLogDogToBuild(c context.Context, url string, s *Streams, build *resp.MiloBuild) {
+func AddLogDogToBuild(c context.Context, linkBase string, s *Streams, build *resp.MiloBuild) {
 	if s.MainStream == nil {
 		panic("missing main stream")
 	}
@@ -110,7 +110,7 @@ func AddLogDogToBuild(c context.Context, url string, s *Streams, build *resp.Mil
 			continue
 		}
 
-		bs := miloBuildStep(c, url, anno)
+		bs := miloBuildStep(c, linkBase, anno)
 		if bs.Status != resp.Success && bs.Status != resp.NotRun {
 			build.Summary.Text = append(
 				build.Summary.Text, fmt.Sprintf("%s %s", bs.Status, bs.Label))
@@ -137,8 +137,4 @@ func AddLogDogToBuild(c context.Context, url string, s *Streams, build *resp.Mil
 	build.PropertyGroup = append(build.PropertyGroup, propGroup)
 
 	return
-}
-
-func makeLogDogStreamURL(urlBase string, s *miloProto.LogdogStream) string {
-	return urlBase + "/" + s.Name
 }
