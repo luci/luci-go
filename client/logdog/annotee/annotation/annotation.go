@@ -17,6 +17,19 @@ import (
 	"github.com/luci/luci-go/common/proto/milo"
 )
 
+// UpdateType is information sent to the Updated callback to indicate the nature
+// of the update.
+type UpdateType int
+
+const (
+	// UpdateIterative indicates that a non-structural update occurred.
+	UpdateIterative UpdateType = iota
+	// UpdateStructural indicates that a structural update has occurred. A
+	// structural update is one that affects the existence of or relationship of
+	// the Steps in the annotation.
+	UpdateStructural
+)
+
 // Callbacks is the set of callbacks that a State may invoke as it processes
 // annotations.
 type Callbacks interface {
@@ -24,7 +37,7 @@ type Callbacks interface {
 	// be invoked.
 	StepClosed(*Step)
 	// Updated is called when a Step's state has been updated.
-	Updated(*Step)
+	Updated(*Step, UpdateType)
 	// StepLogLine is called when a Step emits a log line.
 	StepLogLine(s *Step, stream types.StreamName, label, line string)
 	// StepLogEnd is called when a Step finishes emitting logs.
@@ -54,14 +67,18 @@ type State struct {
 	// stepMap is a map of step name to Step instance.
 	//
 	// If stepMap is nil, the State is considered uninitialized.
-	stepMap  map[string]*Step
-	steps    []*Step
-	rootStep Step
+	stepMap    map[string]*Step
+	latestStep *Step
+	rootStep   Step
 	// stepCursor is the current cursor step name. This will always point to a
 	// valid Step, falling back to rootStep.
 	stepCursor *Step
 	// startedProcessing is true iff processed at least one annotation.
 	startedProcessing bool
+
+	// stepLookup is a mapping of *milo.Step entries to their respective *Step
+	// entries.
+	stepLookup map[*milo.Step]*Step
 
 	// currentTimestamp is time for the next annotation expected in Append.
 	currentTimestamp *google.Timestamp
@@ -77,13 +94,13 @@ func (s *State) initialize() {
 	}
 
 	s.stepMap = map[string]*Step{}
+	s.stepLookup = map[*milo.Step]*Step{}
 
 	name := "steps"
 	if s.Execution != nil {
 		name = s.Execution.Name
 	}
-	s.rootStep.initialize(s, nil, name, 0, s.LogNameBase)
-	s.registerStep(&s.rootStep)
+	s.rootStep.initializeStep(s, nil, name, 0, s.LogNameBase)
 	s.SetCurrentStep(nil)
 
 	// Add our Command parameters, if applicable.
@@ -130,10 +147,13 @@ func (s *State) Append(annotation string) error {
 		return nil
 	}
 
-	var updated *Step
-	updatedIf := func(s *Step, b bool) {
+	var (
+		updated    *Step
+		updateType UpdateType
+	)
+	updatedIf := func(s *Step, u UpdateType, b bool) {
 		if b {
-			updated = s
+			updated, updateType = s, u
 		}
 	}
 
@@ -176,14 +196,14 @@ func (s *State) Append(annotation string) error {
 		step = s.rootStep.AddStep(params)
 		step.Start(annotatedNow)
 		s.SetCurrentStep(step)
-		updatedIf(step, true)
+		updatedIf(step, UpdateStructural, true)
 
 	//  @@@SEED_STEP <stepname>@@@
 	case "SEED_STEP":
 		step := s.LookupStep(params)
 		if step == nil {
 			step = s.rootStep.AddStep(params)
-			updatedIf(step, true)
+			updatedIf(step, UpdateIterative, true)
 		}
 
 	// @@@STEP_CURSOR <stepname>@@@
@@ -212,12 +232,12 @@ func (s *State) Append(annotation string) error {
 		} else {
 			step.AddURLLink(parts[0], "", parts[1])
 		}
-		updatedIf(step, true)
+		updatedIf(step, UpdateIterative, true)
 
 	//  @@@STEP_STARTED@@@
 	case "STEP_STARTED":
 		step := s.CurrentStep()
-		updatedIf(step, step.Start(annotatedNow))
+		updatedIf(step, UpdateIterative, step.Start(annotatedNow))
 
 	//  @@@STEP_WARNINGS@@@
 	case "BUILD_WARNINGS":
@@ -234,9 +254,9 @@ func (s *State) Append(annotation string) error {
 		fallthrough
 	case "STEP_FAILURE":
 		step := s.CurrentStep()
-		updatedIf(step, step.SetStatus(milo.Status_FAILURE, nil))
+		updatedIf(step, UpdateIterative, step.SetStatus(milo.Status_FAILURE, nil))
 		if s.haltOnFailure {
-			updatedIf(step, s.finishWithStatus(milo.Status_FAILURE, nil))
+			updatedIf(step, UpdateIterative, s.finishWithStatus(milo.Status_FAILURE, nil))
 		}
 
 	// @@@STEP_EXCEPTION@@@
@@ -244,14 +264,14 @@ func (s *State) Append(annotation string) error {
 		fallthrough
 	case "STEP_EXCEPTION":
 		step := s.CurrentStep()
-		updatedIf(step, step.SetStatus(milo.Status_FAILURE, &milo.FailureDetails{
+		updatedIf(step, UpdateIterative, step.SetStatus(milo.Status_FAILURE, &milo.FailureDetails{
 			Type: milo.FailureDetails_EXCEPTION,
 		}))
 
 		// @@@STEP_CLOSED@@@
 	case "STEP_CLOSED":
 		step := s.CurrentStep()
-		updatedIf(step, step.Close(annotatedNow))
+		updatedIf(step, UpdateStructural, step.Close(annotatedNow))
 
 	// @@@STEP_LOG_LINE@<label>@<line>@@@
 	case "STEP_LOG_LINE":
@@ -262,7 +282,7 @@ func (s *State) Append(annotation string) error {
 		if len(parts) == 2 {
 			line = parts[1]
 		}
-		updatedIf(step, step.LogLine(label, line))
+		updatedIf(step, UpdateIterative, step.LogLine(label, line))
 
 		// @@@STEP_LOG_END@<label>@@@
 	case "STEP_LOG_END":
@@ -276,18 +296,18 @@ func (s *State) Append(annotation string) error {
 		// @@@STEP_CLEAR@@@
 	case "STEP_CLEAR":
 		step := s.CurrentStep()
-		updatedIf(step, step.ClearText())
+		updatedIf(step, UpdateIterative, step.ClearText())
 
 		// @@@STEP_SUMMARY_CLEAR@@@
 	case "STEP_SUMMARY_CLEAR":
 		step := s.CurrentStep()
 		step.ClearSummary()
-		updatedIf(step, true)
+		updatedIf(step, UpdateIterative, true)
 
 		// @@@STEP_TEXT@<msg>@@@
 	case "STEP_TEXT":
 		step := s.CurrentStep()
-		updatedIf(step, step.AddText(params))
+		updatedIf(step, UpdateIterative, step.AddText(params))
 
 		// @@@SEED_STEP_TEXT@step@<msg>@@@
 	case "SEED_STEP_TEXT":
@@ -299,15 +319,25 @@ func (s *State) Append(annotation string) error {
 		if err != nil {
 			return err
 		}
-		updatedIf(step, step.AddText(parts[1]))
+		updatedIf(step, UpdateIterative, step.AddText(parts[1]))
 
 		// @@@STEP_SUMMARY_TEXT@<msg>@@@
 	case "STEP_SUMMARY_TEXT":
 		step := s.CurrentStep()
-		updatedIf(step, step.SetSummary(params))
+		updatedIf(step, UpdateIterative, step.SetSummary(params))
 
 		// @@@STEP_NEST_LEVEL@<level>@@@
 	case "STEP_NEST_LEVEL":
+		level, err := strconv.Atoi(params)
+		if err != nil {
+			return fmt.Errorf("could not parse nest level from %q: %v", params, err)
+		}
+		if level < 0 {
+			return fmt.Errorf("level must be >= 0, not %d", level)
+		}
+
+		step := s.CurrentStep()
+		updatedIf(step, UpdateStructural, step.SetNestLevel(level))
 		break
 
 		// @@@HALT_ON_FAILURE@@@
@@ -326,19 +356,16 @@ func (s *State) Append(annotation string) error {
 		if len(parts) == 1 {
 			parts = append(parts, "")
 		}
-		updatedIf(step, step.SetProperty(parts[0], parts[1]))
+		updatedIf(step, UpdateIterative, step.SetProperty(parts[0], parts[1]))
 
 		// @@@STEP_TRIGGER@<spec>@@@
 	case "STEP_TRIGGER":
 		// Annotee will stop short of sending an actual request to BuildBucket.
 		break
-
-	default:
-		break
 	}
 
 	if updated != nil {
-		s.Callbacks.Updated(updated)
+		s.Callbacks.Updated(updated, updateType)
 	}
 	return nil
 }
@@ -370,9 +397,10 @@ func (s *State) finishWithStatusImpl(status *milo.Status, fd *milo.FailureDetail
 		buildEndTime = s.now()
 	}
 
+	// Traverse through every step *except* our root step.
 	unfinished := false
-	for _, step := range s.steps[1:] {
-		if step.closeWithStatus(buildEndTime, nil) {
+	for step := s.rootStep.nextStep; step != nil; step = step.nextStep {
+		if u := step.closeWithStatus(buildEndTime, nil); u {
 			unfinished = true
 		}
 	}
@@ -398,18 +426,29 @@ func (s *State) finishWithStatusImpl(status *milo.Status, fd *milo.FailureDetail
 
 // LookupStep returns the step with the supplied name, or nil if no such step
 // exists.
-func (s *State) LookupStep(name string) *Step {
-	return s.stepMap[name]
-}
+//
+// If multiple steps share a name, this will return the latest registered step
+// with that name.
+func (s *State) LookupStep(name string) *Step { return s.stepMap[name] }
 
 // LookupStepErr returns the step with the supplied name, or an error if no
 // such step exists.
+//
+// If multiple steps share a name, this will return the latest registered step
+// with that name.
 func (s *State) LookupStepErr(name string) (*Step, error) {
 	if as := s.LookupStep(name); as != nil {
 		return as, nil
 	}
 	return nil, fmt.Errorf("no step named %q", name)
 }
+
+// ResolveStep returns the annotation package *Step corresponding to the
+// supplied *milo.Step. This is a reverse lookup operation.
+//
+// If the supplied *milo.Step is not registered with this annotation State,
+// this function will return nil.
+func (s *State) ResolveStep(ms *milo.Step) *Step { return s.stepLookup[ms] }
 
 // RootStep returns the root step.
 func (s *State) RootStep() *Step {
@@ -447,7 +486,13 @@ func (s *State) SetCurrentStep(v *Step) {
 
 func (s *State) registerStep(as *Step) {
 	s.stepMap[as.Name()] = as
-	s.steps = append(s.steps, as)
+	s.stepLookup[&as.Step] = as
+
+	if latest := s.latestStep; latest != nil {
+		latest.nextStep = as
+		as.prevStep = latest
+	}
+	s.latestStep = as
 }
 
 func (s *State) unregisterStep(as *Step) {
@@ -457,7 +502,7 @@ func (s *State) unregisterStep(as *Step) {
 	}
 
 	if s.stepCursor == as {
-		s.stepCursor = as.closestOpenParent()
+		s.stepCursor = as.closestOpenStep()
 	}
 }
 
@@ -473,12 +518,28 @@ func (s *State) now() *google.Timestamp {
 // Step represents a single step.
 type Step struct {
 	milo.Step
-	s     *State
-	p     *Step
+	s *State
+
+	// parent is the step that spawned this step.
+	parent *Step
+
+	// prevStep is the step that was created immediately before this step. It is
+	// nil if this is the root step.
+	//
+	// Both prevStep and nextStep are creation-ordered, and don't change even if
+	// a Step is reparented.
+	prevStep *Step
+	// nextStep is the step that was created immediately after this step. It is
+	// nil if this is the latest step.
+	//
+	// Both prevStep and nextStep are creation-ordered, and don't change even if
+	// a Step is reparented.
+	nextStep *Step
+
 	index int
+	level int
 
 	stepIndex map[string]int
-	substeps  []*Step
 
 	// logLines is a map of log line labels to full log stream names.
 	logLines map[string]types.StreamName
@@ -497,7 +558,7 @@ type Step struct {
 	closed bool
 }
 
-func (as *Step) initialize(s *State, parent *Step, name string, index int, logNameBase types.StreamName) *Step {
+func (as *Step) initializeStep(s *State, parent *Step, name string, index int, logNameBase types.StreamName) *Step {
 	t := milo.Status_RUNNING
 	as.Step = milo.Step{
 		Name:   name,
@@ -505,7 +566,6 @@ func (as *Step) initialize(s *State, parent *Step, name string, index int, logNa
 	}
 
 	as.s = s
-	as.p = parent
 	as.index = index
 	as.logNameBase = logNameBase
 	as.stepIndex = map[string]int{}
@@ -514,14 +574,44 @@ func (as *Step) initialize(s *State, parent *Step, name string, index int, logNa
 
 	// Add this Step to our parent's Substep list.
 	if parent != nil {
-		parent.Substep = append(parent.Substep, &milo.Step_Substep{
-			Substep: &milo.Step_Substep_Step{
-				Step: &as.Step,
-			},
-		})
+		parent.appendSubstep(as)
 	}
+	s.registerStep(as)
 
 	return as
+}
+
+func (as *Step) appendSubstep(s *Step) {
+	if s.parent == as {
+		// Already parented to as, so do nothing.
+		return
+	}
+	s.detachFromParent()
+
+	s.parent = as
+	as.Substep = append(as.Substep, &milo.Step_Substep{
+		Substep: &milo.Step_Substep_Step{
+			Step: &s.Step,
+		},
+	})
+}
+
+func (as *Step) detachFromParent() {
+	parent := as.parent
+	if parent == nil {
+		return
+	}
+
+	// Remove any instances of "as" from its current parent's Substeps.
+	ssPtr := 0
+	for _, ss := range parent.Substep {
+		if ss.GetStep() != &as.Step {
+			parent.Substep[ssPtr] = ss
+			ssPtr++
+		}
+	}
+	parent.Substep = parent.Substep[:ssPtr]
+	as.parent = nil
 }
 
 // CanonicalName returns the canonical name of this Step. This name is
@@ -533,7 +623,7 @@ func (as *Step) CanonicalName() string {
 	} else {
 		parts = append(parts, fmt.Sprintf("%s_%d", as.Name(), as.index))
 	}
-	for p := as.p; p != nil; p = p.p {
+	for p := as.parent; p != nil; p = p.parent {
 		parts = append(parts, p.Name())
 	}
 	for i := len(parts)/2 - 1; i >= 0; i-- {
@@ -576,9 +666,7 @@ func (as *Step) AddStep(name string) *Step {
 		panic(fmt.Errorf("failed to generate step name for [%s]: %s", name, err))
 	}
 
-	nas := (&Step{}).initialize(as.s, as, name, index, as.BaseStream(logPath))
-	as.substeps = append(as.substeps, nas)
-	as.s.registerStep(nas)
+	nas := (&Step{}).initializeStep(as.s, as, name, index, as.BaseStream(logPath))
 	return nas
 }
 
@@ -605,7 +693,12 @@ func (as *Step) closeWithStatus(closeTime *google.Timestamp, sp *milo.Status) bo
 	// Close our outstanding substeps, and get their highest status value.
 	stepStatus := milo.Status_SUCCESS
 	if sp == nil {
-		for _, sub := range as.substeps {
+		for _, ss := range as.Substep {
+			sub := as.s.ResolveStep(ss.GetStep())
+			if sub == nil {
+				continue
+			}
+
 			sub.Close(closeTime)
 			if sub.Status > stepStatus {
 				stepStatus = sub.Status
@@ -628,21 +721,21 @@ func (as *Step) closeWithStatus(closeTime *google.Timestamp, sp *milo.Status) bo
 	if as.Started == nil {
 		as.Started = as.Ended
 	}
+
 	as.closed = true
 	as.s.unregisterStep(as)
-	as.s.Callbacks.Updated(as)
+	as.s.Callbacks.Updated(as, UpdateStructural)
 	as.s.Callbacks.StepClosed(as)
 	return true
 }
 
-func (as *Step) closestOpenParent() *Step {
-	s := as
-	for {
-		if s.p == nil || !s.p.closed {
-			return s.p
+func (as *Step) closestOpenStep() *Step {
+	for ps := as.prevStep; ps != nil; ps = ps.prevStep {
+		if !ps.closed {
+			return ps
 		}
-		s = s.p
 	}
+	return &as.s.rootStep
 }
 
 // LogLine emits a log line for a specified log label.
@@ -724,6 +817,33 @@ func (as *Step) ClearSummary() {
 		as.Text = as.Text[:copy(as.Text, as.Text[1:])]
 		as.hasSummary = false
 	}
+}
+
+// SetNestLevel sets the nest level of this Step, and identifies its nesting
+// parent.
+//
+// If no parent could be found at level "l-1", the root step will become the
+// parent.
+func (as *Step) SetNestLevel(l int) bool {
+	if as.level == l {
+		return false
+	}
+	as.level = l
+
+	// Attach this step to the correct parent step based on nest level. Ascend
+	// up the previously-declared steps.
+	var nestParent *Step
+	for prev := as.prevStep; prev != nil; prev = prev.prevStep {
+		if prev.level < l {
+			nestParent = prev
+			break
+		}
+	}
+	if nestParent == nil || nestParent == as.parent {
+		return true
+	}
+	nestParent.appendSubstep(as)
+	return true
 }
 
 // AddLogdogStreamLink adds a LogDog stream link to this Step's links list.

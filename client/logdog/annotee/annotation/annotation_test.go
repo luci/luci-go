@@ -95,12 +95,12 @@ func normalize(s string) string {
 	}, s)
 }
 
-func superfluous(touched stringset.Set) error {
-	merr := errors.MultiError(nil)
+func superfluous(touched stringset.Set) ([]string, error) {
+	var paths []string
 
 	files, err := ioutil.ReadDir(testExpDir)
 	if err != nil {
-		return fmt.Errorf("failed to read directory %q: %v", testExpDir, err)
+		return nil, fmt.Errorf("failed to read directory %q: %v", testExpDir, err)
 	}
 
 	for _, f := range files {
@@ -110,13 +110,10 @@ func superfluous(touched stringset.Set) error {
 
 		path := filepath.Join(testExpDir, f.Name())
 		if !touched.Has(path) {
-			merr = append(merr, fmt.Errorf("superfluous test data [%s]", path))
+			paths = append(paths, path)
 		}
 	}
-	if merr != nil {
-		return merr
-	}
-	return nil
+	return paths, nil
 }
 
 // playAnnotationScript loads named annotation script and plays it
@@ -253,7 +250,7 @@ func (tc *testCallbacks) StepLogEnd(s *Step, n types.StreamName) {
 	delete(tc.logsOpen, n)
 }
 
-func (tc *testCallbacks) Updated(s *Step) {}
+func (tc *testCallbacks) Updated(s *Step, ut UpdateType) {}
 
 func TestState(t *testing.T) {
 	t.Parallel()
@@ -271,6 +268,7 @@ func TestState(t *testing.T) {
 		}},
 		{"timestamps", nil},
 		{"coverage", nil},
+		{"nested", nil},
 	}
 
 	if *generate {
@@ -281,13 +279,18 @@ func TestState(t *testing.T) {
 			}
 		}
 
-		if err := superfluous(touched); err != nil {
+		paths, err := superfluous(touched)
+		if err != nil {
 			if merr, ok := err.(errors.MultiError); ok {
 				for i, ierr := range merr {
 					t.Logf("Error #%d: %s", i, ierr)
 				}
 			}
 			t.Fatalf("Superflous test data: %v", err)
+		}
+		for _, path := range paths {
+			t.Log("Removing superfluous test data:", path)
+			os.Remove(path)
 		}
 		return
 	}

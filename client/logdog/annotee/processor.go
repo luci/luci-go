@@ -119,8 +119,13 @@ type Processor struct {
 	stepHandlers map[string]*stepHandler
 
 	annotationStream    streamclient.Stream
-	annotationC         chan []byte
+	annotationC         chan annotationSignal
 	annotationFinishedC chan struct{}
+}
+
+type annotationSignal struct {
+	data       []byte
+	updateType annotation.UpdateType
 }
 
 // New instantiates a new Processor.
@@ -156,7 +161,7 @@ func (p *Processor) initialize() (err error) {
 	}
 
 	// Complete initialization and start our annotation meter.
-	p.annotationC = make(chan []byte)
+	p.annotationC = make(chan annotationSignal)
 	p.annotationFinishedC = make(chan struct{})
 
 	// Run our annotation meter in a separate goroutine.
@@ -281,8 +286,12 @@ func (p *Processor) IngestLine(s *Stream, line string) error {
 	return err
 }
 
-// Finish instructs the Processor to finish any outstanding state.
-// It is mandatory to call Finish.
+// Finish instructs the Processor to close any outstanding state. This should be
+// called when all automatic state updates have completed in case any steps
+// didn't properly close their state.
+//
+// Finish will return the closed annotation state that was accumulated during
+// processing.
 func (p *Processor) Finish() *annotation.State {
 	// Finish our step handlers.
 	for _, h := range p.stepHandlers {
@@ -346,7 +355,7 @@ func (p *Processor) createStream(name types.StreamName, archetype *streamproto.F
 	return p.o.Client.NewStream(streamFlagsFromArchetype(p.ctx, name, archetype))
 }
 
-func (p *Processor) annotationStateUpdated() {
+func (p *Processor) annotationStateUpdated(ut annotation.UpdateType) {
 	// Serialize our annotation state immediately, as the Step's internal state
 	// may change in future annotation processing iterations.
 	data, err := proto.Marshal(p.astate.RootStep().Proto())
@@ -356,7 +365,7 @@ func (p *Processor) annotationStateUpdated() {
 	}
 
 	// Send the data to our meter for transmission.
-	p.annotationC <- data
+	p.annotationC <- annotationSignal{data, ut}
 }
 
 func (p *Processor) runAnnotationMeter(s streamclient.Stream, interval time.Duration) {
@@ -384,22 +393,21 @@ func (p *Processor) runAnnotationMeter(s streamclient.Stream, interval time.Dura
 	first := true
 	for {
 		select {
-		case d, ok := <-p.annotationC:
+		case as, ok := <-p.annotationC:
 			if !ok {
 				return
 			}
 
 			// Handle the new annotation data.
-			latest = d
+			latest = as.data
 			switch {
-			case first:
-				// Always send the first datagram immediately.
+			case first, as.updateType == annotation.UpdateStructural, interval == 0:
+				// If
+				// - This is the first, we always send the first datagram immediately.
+				// - This is a structural update, we send it quickly.
+				// - We're not metering, so send every annotation immediately.
 				sendLatest()
 				first = false
-
-			case interval == 0:
-				// Not metering, send every annotation immediately.
-				sendLatest()
 
 			case interval > 0 && !timerRunning:
 				// Metering. Start our timer, if it's not already running from a
@@ -423,9 +431,9 @@ func (c *annotationCallbacks) StepClosed(step *annotation.Step) {
 	c.closeStep(step)
 }
 
-func (c *annotationCallbacks) Updated(step *annotation.Step) {
+func (c *annotationCallbacks) Updated(step *annotation.Step, ut annotation.UpdateType) {
 	if h, _ := c.getStepHandler(step, false); h != nil {
-		h.updated()
+		h.updated(ut)
 	}
 }
 
@@ -486,7 +494,7 @@ func newStepHandler(p *Processor, step *annotation.Step) (*stepHandler, error) {
 	}
 
 	// Send our initial annotation state.
-	h.updated()
+	h.updated(annotation.UpdateStructural)
 
 	return &h, nil
 }
@@ -510,7 +518,7 @@ func (h *stepHandler) finish(closeSteps bool) {
 	}
 
 	// Notify that the annotation state has updated (closed).
-	h.processor.annotationStateUpdated()
+	h.processor.annotationStateUpdated(annotation.UpdateStructural)
 	h.finished = true
 }
 
@@ -524,12 +532,12 @@ func (h *stepHandler) writeBaseStream(s *Stream, line string) error {
 		switch s.Name {
 		case STDOUT:
 			if h.step.SetSTDOUTStream(&milo.LogdogStream{Name: string(name)}) {
-				h.updated()
+				h.updated(annotation.UpdateIterative)
 			}
 
 		case STDERR:
 			if h.step.SetSTDERRStream(&milo.LogdogStream{Name: string(name)}) {
-				h.updated()
+				h.updated(annotation.UpdateIterative)
 			}
 		}
 
@@ -539,9 +547,9 @@ func (h *stepHandler) writeBaseStream(s *Stream, line string) error {
 	return writeTextLine(stream, line)
 }
 
-func (h *stepHandler) updated() {
+func (h *stepHandler) updated(ut annotation.UpdateType) {
 	if !h.finished {
-		h.processor.annotationStateUpdated()
+		h.processor.annotationStateUpdated(ut)
 	}
 }
 

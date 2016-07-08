@@ -22,6 +22,8 @@ BUILD_STEP foo
 
 # This will close "foo".
 BUILD_STEP bar
+# Choose a small nest level to hit our optimized level resolution case.
+STEP_NEST_LEVEL@1
 +time
 STEP_LOG_LINE@logging.json@{
 STEP_LOG_LINE@logging.json@  "foo": "bar",
@@ -34,7 +36,6 @@ STEP_LOG_LINE@lorem.txt@Lorem ipsum dolor sit amet, consectetur adipiscing elit.
 STEP_LOG_LINE@lorem.txt@Sed suscipit libero at dui blandit, ut aliquam ligula dignissim.
 
 # All no-op annotations.
-STEP_NEST_LEVEL@2
 STEP_LOG_END_PERF@noop
 HONOR_ZERO_RETURN_CODE
 STEP_TRIGGER@noop
@@ -81,6 +82,8 @@ SET_BUILD_PROPERTY@quux
 STEP_CLOSED
 
 BUILD_STEP qux
+# Nest at a really high number to hit our sparse case and test level skipping.
+STEP_NEST_LEVEL@999999999
 +time
 HALT_ON_FAILURE
 BUILD_FAILED

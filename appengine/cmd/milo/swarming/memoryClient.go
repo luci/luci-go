@@ -56,6 +56,8 @@ func (s *memoryStream) Close() error {
 
 func (s *memoryStream) WriteDatagram(b []byte) error {
 	s.isDatagram = true
+
+	s.buf.Reset()
 	_, err := s.buf.Write(b)
 	return err
 }
