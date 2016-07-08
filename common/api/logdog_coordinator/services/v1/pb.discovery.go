@@ -4,6 +4,8 @@ package logdog
 
 import discovery "github.com/luci/luci-go/server/discovery"
 
+import "github.com/luci/luci-go/common/proto/google/descriptor"
+
 func init() {
 	discovery.RegisterDescriptorSetCompressed(
 		[]string{
@@ -576,4 +578,19 @@ func init() {
 			206, 40, 8, 236, 107, 62, 51, 171, 130, 186, 127, 9, 0, 0,
 			255, 255, 232, 198, 28, 149, 88, 92, 0, 0},
 	)
+}
+
+// FileDescriptorSet returns a descriptor set for this proto package, which
+// includes all defined services, and all transitive dependencies.
+//
+// Will not return nil.
+//
+// Do NOT modify the returned descriptor.
+func FileDescriptorSet() *descriptor.FileDescriptorSet {
+	// We just need ONE of the service names to look up the FileDescriptorSet.
+	ret, err := discovery.GetDescriptorSet("logdog.Services")
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }

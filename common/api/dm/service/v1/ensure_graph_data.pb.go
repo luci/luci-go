@@ -175,7 +175,7 @@ type EnsureGraphDataRsp struct {
 	// readable via other APIs (like WalkGraph), but when they are, they'll have
 	// the IDs reflected in this response.
 	//
-	// If `attempts` refers to quests that don't exist and weren't provided in
+	// If `attempts` referrs to quests that don't exist and weren't provided in
 	// `quests`, those quests will be listed in `result` with the DNE flag set.
 	//
 	// If `template_quest` had errors (missing template, bad params, etc.), the
@@ -211,7 +211,7 @@ type EnsureGraphDataRsp struct {
 	// (if `for_execution` was specified) ShouldHalt indicates that the request
 	// was accepted by DM, and the execution should halt (DM will re-execute the
 	// Attempt when it becomes unblocked). If this is true, then the execution's
-	// auth Token is also revoked and will no longer work for further API calls.
+	// auth Token is also revoked and will no longer work for futher API calls.
 	//
 	// If `for_execution` was provided in the request and this is false, it means
 	// that the execution may continue executing.

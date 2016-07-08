@@ -28,7 +28,7 @@ type ArchiveTask struct {
 	// Don't waste time archiving the log stream until it is at least this old.
 	//
 	// This is in place to prevent overly-aggressive archivals from wasting time
-	// trying, then failing, because the log stream data is still being collected
+	// trying, then failing, becuase the log stream data is still being collected
 	// into intermediate storage.
 	SettleDelay *google_protobuf.Duration `protobuf:"bytes,4,opt,name=settle_delay,json=settleDelay" json:"settle_delay,omitempty"`
 	// The amount of time after the task was created that log stream completeness
