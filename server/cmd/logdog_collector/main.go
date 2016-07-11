@@ -17,6 +17,7 @@ import (
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/metric"
+	"github.com/luci/luci-go/common/tsmon/types"
 	"github.com/luci/luci-go/server/internal/logdog/collector"
 	"github.com/luci/luci-go/server/internal/logdog/collector/coordinator"
 	"github.com/luci/luci-go/server/internal/logdog/service"
@@ -42,12 +43,14 @@ var (
 	// "transient_failure".
 	tsPubsubCount = metric.NewCounter("logdog/collector/subscription/count",
 		"The number of Pub/Sub messages pulled.",
+		types.MetricMetadata{},
 		field.String("result"))
 
 	// tsTaskProcessingTime tracks the amount of time a single subscription
 	// message takes to process, in milliseconds.
 	tsTaskProcessingTime = metric.NewCumulativeDistribution("logdog/collector/subscription/processing_time_ms",
 		"Amount of time in milliseconds that a single Pub/Sub message takes to process.",
+		types.MetricMetadata{types.Milliseconds},
 		distribution.DefaultBucketer)
 )
 

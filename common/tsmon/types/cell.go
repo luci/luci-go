@@ -16,6 +16,7 @@ import (
 // type.
 type Cell struct {
 	MetricInfo
+	MetricMetadata
 	CellData
 }
 
@@ -25,6 +26,11 @@ type MetricInfo struct {
 	Description string
 	Fields      []field.Field
 	ValueType   ValueType
+}
+
+// MetricMetadata contains user-provided metadata for a metric.
+type MetricMetadata struct {
+	Units MetricDataUnits // the unit of recorded data for a given metric.
 }
 
 // CellData contains the value of a single cell.

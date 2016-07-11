@@ -16,6 +16,7 @@ import (
 	"github.com/luci/luci-go/common/logging/memlogger"
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/metric"
+	"github.com/luci/luci-go/common/tsmon/types"
 
 	"github.com/luci/luci-go/client/tokenclient"
 	"github.com/luci/luci-go/common/api/tokenserver"
@@ -138,51 +139,60 @@ var (
 	// E.g. "1.0". See Version const in main.go.
 	metricVersion = metric.NewString(
 		"luci/machine_tokend/version",
-		"Major version of luci_machine_tokend executable")
+		"Major version of luci_machine_tokend executable",
+		types.MetricMetadata{})
 
 	// E.g. "luci-token-server/2123-abcdef" (<appid>/<version>).
 	metricServiceVersion = metric.NewString(
 		"luci/machine_tokend/service_version",
-		"Identifier of the server version that generated the token")
+		"Identifier of the server version that generated the token",
+		types.MetricMetadata{})
 
 	// This should be >=30 min in the future if everything is ok. If update
 	// process fails repeatedly, it will be in the past (and the token is unusable
 	// at this point).
 	metricTokenExpiry = metric.NewInt(
 		"luci/machine_tokend/token_expiry_ts",
-		"Unix timestamp of when the token expires, in microsec")
+		"Unix timestamp of when the token expires, in microsec",
+		types.MetricMetadata{Units: types.Microseconds})
 
 	// This should be no longer than 30 min in the past if everything is ok.
 	metricTokenLastUpdate = metric.NewInt(
 		"luci/machine_tokend/last_update_ts",
-		"Unix timestamp of when the token was successfully updated, in microsec")
+		"Unix timestamp of when the token was successfully updated, in microsec",
+		types.MetricMetadata{Units: types.Microseconds})
 
 	// This should be [0-30] min in the future if everything ok. If update process
 	// fails (at least once), it will be in the past. It's not a fatal condition
 	// yet.
 	metricTokenNextUpdate = metric.NewInt(
 		"luci/machine_tokend/next_update_ts",
-		"Unix timestamp of when the token must be updated next time, in microsec")
+		"Unix timestamp of when the token must be updated next time, in microsec",
+		types.MetricMetadata{Units: types.Microseconds})
 
 	// See UpdateOutcome enum and OutcomeFromRPCError for possible values.
 	//
 	// Positive values are "TOKEN_IS_GOOD" and "UPDATE_SUCCESS".
 	metricUpdateOutcome = metric.NewString(
 		"luci/machine_tokend/update_outcome",
-		"Overall outcome of the luci_machine_tokend invocation")
+		"Overall outcome of the luci_machine_tokend invocation",
+		types.MetricMetadata{})
 
 	// See UpdateReason enum for possible values.
 	metricUpdateReason = metric.NewString(
 		"luci/machine_tokend/update_reason",
-		"Why the token was updated or 'TOKEN_IS_GOOD' if token is still valid")
+		"Why the token was updated or 'TOKEN_IS_GOOD' if token is still valid",
+		types.MetricMetadata{})
 
 	metricTotalDuration = metric.NewInt(
 		"luci/machine_tokend/duration_total_us",
-		"For how long luci_machine_tokend ran (including all local IO) in microsec")
+		"For how long luci_machine_tokend ran (including all local IO) in microsec",
+		types.MetricMetadata{Units: types.Microseconds})
 
 	metricRPCDuration = metric.NewInt(
 		"luci/machine_tokend/duration_rpc_us",
-		"For how long an RPC to backend ran in microsec")
+		"For how long an RPC to backend ran in microsec",
+		types.MetricMetadata{Units: types.Microseconds})
 )
 
 // SendMetrics is called at the end of the token update process.

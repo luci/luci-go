@@ -12,13 +12,15 @@ import (
 
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
+	"github.com/luci/luci-go/common/tsmon/types"
 )
 
 // Metrics common to all tasks and devices.
 var (
 	presenceMetric = NewBool(
 		"presence/up",
-		"Set to True when the program is running, missing otherwise.")
+		"Set to True when the program is running, missing otherwise.",
+		types.MetricMetadata{})
 )
 
 // Standard metrics for all requests to remote endpoints.  These
@@ -28,6 +30,7 @@ var (
 	requestBytesMetric = NewCumulativeDistribution(
 		"http/request_bytes",
 		"Bytes sent per http request (body only).",
+		types.MetricMetadata{Units: types.Bytes},
 		distribution.DefaultBucketer,
 		field.String("name"),   // Usually the requested service name
 		field.String("client")) // http client used, e.g. urlfetch
@@ -35,6 +38,7 @@ var (
 	responseBytesMetric = NewCumulativeDistribution(
 		"http/response_bytes",
 		"Bytes received per http request (content only).",
+		types.MetricMetadata{Units: types.Bytes},
 		distribution.DefaultBucketer,
 		field.String("name"),   // Usually the requested service name
 		field.String("client")) // http client used, e.g. urlfetch
@@ -42,6 +46,7 @@ var (
 	requestDurationsMetric = NewCumulativeDistribution(
 		"http/durations",
 		"Time elapsed between sending a request and getting a response (including parsing) in milliseconds.",
+		types.MetricMetadata{Units: types.Milliseconds},
 		distribution.DefaultBucketer,
 		field.String("name"),   // Usually the requested service name
 		field.String("client")) // http client used, e.g. urlfetch
@@ -49,6 +54,7 @@ var (
 	responseStatusMetric = NewCounter(
 		"http/response_status",
 		"Number of responses received by HTTP status code.",
+		types.MetricMetadata{},
 		field.Int("status"),    // HTTP status code
 		field.String("name"),   // Usually the requested service name
 		field.String("client")) // http client used, e.g. urlfetch
@@ -61,6 +67,7 @@ var (
 	serverRequestBytesMetric = NewCumulativeDistribution(
 		"http/server_request_bytes",
 		"Bytes received per http request (body only).",
+		types.MetricMetadata{Units: types.Bytes},
 		distribution.DefaultBucketer,
 		field.Int("status"),    // HTTP status code
 		field.String("name"),   // URL template
@@ -69,6 +76,7 @@ var (
 	serverResponseBytesMetric = NewCumulativeDistribution(
 		"http/server_response_bytes",
 		"Bytes sent per http request (body only).",
+		types.MetricMetadata{Units: types.Bytes},
 		distribution.DefaultBucketer,
 		field.Int("status"),    // HTTP status code
 		field.String("name"),   // URL template
@@ -77,6 +85,7 @@ var (
 	serverDurationsMetric = NewCumulativeDistribution(
 		"http/server_durations",
 		"Time elapsed between receiving a request and sending a response (including parsing) in milliseconds.",
+		types.MetricMetadata{Units: types.Milliseconds},
 		distribution.DefaultBucketer,
 		field.Int("status"),    // HTTP status code
 		field.String("name"),   // URL template
@@ -85,6 +94,7 @@ var (
 	serverResponseStatusMetric = NewCounter(
 		"http/server_response_status",
 		"Number of responses sent by HTTP status code.",
+		types.MetricMetadata{},
 		field.Int("status"),    // HTTP status code
 		field.String("name"),   // URL template
 		field.Bool("is_robot")) // If request is made by a bot

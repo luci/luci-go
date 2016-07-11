@@ -137,6 +137,7 @@ func TestSerializeCell(t *testing.T) {
 				Fields:      []field.Field{},
 				ValueType:   types.NonCumulativeIntType,
 			},
+			types.MetricMetadata{},
 			types.CellData{
 				FieldVals: []interface{}{},
 				Target:    &target.Task{},
@@ -162,6 +163,7 @@ func TestSerializeCell(t *testing.T) {
 				Fields:      []field.Field{},
 				ValueType:   types.CumulativeIntType,
 			},
+			types.MetricMetadata{},
 			types.CellData{
 				FieldVals: []interface{}{},
 				Target:    &target.Task{},
@@ -188,6 +190,7 @@ func TestSerializeCell(t *testing.T) {
 				Fields:      []field.Field{},
 				ValueType:   types.NonCumulativeFloatType,
 			},
+			types.MetricMetadata{},
 			types.CellData{
 				FieldVals: []interface{}{},
 				Target:    &target.Task{},
@@ -213,6 +216,7 @@ func TestSerializeCell(t *testing.T) {
 				Fields:      []field.Field{},
 				ValueType:   types.CumulativeFloatType,
 			},
+			types.MetricMetadata{},
 			types.CellData{
 				FieldVals: []interface{}{},
 				Target:    &target.Task{},
@@ -239,6 +243,7 @@ func TestSerializeCell(t *testing.T) {
 				Fields:      []field.Field{},
 				ValueType:   types.StringType,
 			},
+			types.MetricMetadata{},
 			types.CellData{
 				FieldVals: []interface{}{},
 				Target:    &target.Task{},
@@ -264,6 +269,7 @@ func TestSerializeCell(t *testing.T) {
 				Fields:      []field.Field{},
 				ValueType:   types.BoolType,
 			},
+			types.MetricMetadata{},
 			types.CellData{
 				FieldVals: []interface{}{},
 				Target:    &target.Task{},
@@ -294,6 +300,7 @@ func TestSerializeCell(t *testing.T) {
 				Fields:      []field.Field{},
 				ValueType:   types.NonCumulativeIntType,
 			},
+			types.MetricMetadata{},
 			types.CellData{
 				FieldVals: []interface{}{},
 				Target:    &target,

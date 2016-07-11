@@ -19,6 +19,7 @@ import (
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/metric"
+	"github.com/luci/luci-go/common/tsmon/types"
 	"github.com/luci/luci-go/server/internal/logdog/archivist"
 	"github.com/luci/luci-go/server/internal/logdog/service"
 	"golang.org/x/net/context"
@@ -36,6 +37,7 @@ var (
 	// false if it was not.
 	tsTaskProcessingTime = metric.NewCumulativeDistribution("logdog/archivist/task_processing_time_ms",
 		"The amount of time (in milliseconds) that a single task takes to process.",
+		types.MetricMetadata{Units: types.Milliseconds},
 		distribution.DefaultBucketer,
 		field.Bool("consumed"))
 )

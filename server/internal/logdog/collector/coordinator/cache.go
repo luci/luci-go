@@ -17,6 +17,7 @@ import (
 	"github.com/luci/luci-go/common/promise"
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/metric"
+	tsmon_types "github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
 )
 
@@ -31,6 +32,7 @@ const (
 var (
 	tsCache = metric.NewCounter("logdog/collector/coordinator/cache",
 		"Metrics for cache uses, tracking hits and misses.",
+		tsmon_types.MetricMetadata{},
 		field.Bool("hit"))
 )
 

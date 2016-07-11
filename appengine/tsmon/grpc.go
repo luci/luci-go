@@ -14,18 +14,21 @@ import (
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/metric"
+	"github.com/luci/luci-go/common/tsmon/types"
 )
 
 var (
 	grpcServerCount = metric.NewCounter(
 		"grpc/server/count",
 		"Total number of RPCs.",
+		types.MetricMetadata{},
 		field.String("method"), // full name of the grpc method
 		field.Int("code"))      // grpc.Code of the result
 
 	grpcServerDuration = metric.NewCumulativeDistribution(
 		"grpc/server/duration",
 		"Distribution of server-side RPC duration (in milliseconds).",
+		types.MetricMetadata{},
 		distribution.DefaultBucketer,
 		field.String("method"), // full name of the grpc method
 		field.Int("code"))      // grpc.Code of the result

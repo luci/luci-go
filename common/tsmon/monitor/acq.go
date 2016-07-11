@@ -44,6 +44,9 @@ func SerializeCell(c types.Cell) *pb.MetricsData {
 		d.StartTimestampUs = proto.Uint64(uint64(c.ResetTime.UnixNano() / int64(time.Microsecond)))
 	}
 	c.Target.PopulateProto(&d)
+	if c.Units.IsSpecified() {
+		d.Units = c.Units.AsProto()
+	}
 
 	SerializeValue(c.ValueType, c.Value, &d)
 	return &d

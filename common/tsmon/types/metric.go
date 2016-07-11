@@ -14,6 +14,7 @@ import (
 // Concrete types are defined in the "metrics" package.
 type Metric interface {
 	Info() MetricInfo
+	Metadata() MetricMetadata
 
 	// SetFixedResetTime overrides the reset time for this metric.  Usually cells
 	// take the current time when they're first assigned a value, but it can be

@@ -20,6 +20,7 @@ import (
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/metric"
+	tsmon_types "github.com/luci/luci-go/common/tsmon/types"
 	"github.com/luci/luci-go/server/internal/logdog/collector/coordinator"
 	"github.com/luci/luci-go/server/logdog/storage"
 	"golang.org/x/net/context"
@@ -35,20 +36,24 @@ var (
 	// tsBundles tracks the total number of logpb.ButlerLogBundle entries that
 	// have been submitted for collection.
 	tsBundles = metric.NewCounter("logdog/collector/bundles",
-		"The number of individual log entry bundles that have been ingested.")
+		"The number of individual log entry bundles that have been ingested.",
+		tsmon_types.MetricMetadata{})
 	// tsLogs tracks the number of logpb.LogEntry entries that have been
 	// written to intermediate storage.
 	tsLogs = metric.NewCounter("logdog/collector/logs",
-		"The number of individual log entries that have been ingested.")
+		"The number of individual log entries that have been ingested.",
+		tsmon_types.MetricMetadata{})
 
 	// tsBundleSize tracks the size, in bytes, of a given log bundle.
 	tsBundleSize = metric.NewCumulativeDistribution("logdog/collector/bundle/size",
 		"The size (in bytes) of the bundle.",
+		tsmon_types.MetricMetadata{Units: tsmon_types.Bytes},
 		distribution.DefaultBucketer)
 	// tsBundleEntriesPerBundle tracks the number of ButlerLogBundle.Entry entries
 	// in each bundle that have been collected.
 	tsBundleEntriesPerBundle = metric.NewCumulativeDistribution("logdog/collector/bundle/entries_per_bundle",
 		"The number of log bundle entries per bundle.",
+		tsmon_types.MetricMetadata{},
 		distribution.DefaultBucketer)
 
 	// tsBundleEntries tracks the total number of ButlerLogBundle.Entry entries
@@ -57,16 +62,19 @@ var (
 	// The "stream" field is the type of log stream for each tracked bundle entry.
 	tsBundleEntries = metric.NewCounter("logdog/collector/bundle/entries",
 		"The number of Butler bundle entries pulled.",
+		tsmon_types.MetricMetadata{},
 		field.String("stream"))
 	// tsBundleEntryLogs tracks the number of LogEntry ingested per bundle.
 	//
 	// The "stream" field is the type of log stream.
 	tsBundleEntryLogs = metric.NewCumulativeDistribution("logdog/collector/bundle/entry/logs",
 		"The number of log entries per bundle.",
+		tsmon_types.MetricMetadata{},
 		distribution.DefaultBucketer,
 		field.String("stream"))
 	tsBundleEntryProcessingTime = metric.NewCumulativeDistribution("logdog/collector/bundle/entry/processing_time_ms",
 		"The amount of time in milliseconds that a bundle entry takes to process.",
+		tsmon_types.MetricMetadata{Units: tsmon_types.Milliseconds},
 		distribution.DefaultBucketer,
 		field.String("stream"))
 )

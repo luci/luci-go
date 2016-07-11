@@ -12,12 +12,14 @@ import (
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/metric"
 	"github.com/luci/luci-go/common/tsmon/runtimestats"
+	"github.com/luci/luci-go/common/tsmon/types"
 )
 
 var (
 	defaultVersion = metric.NewCallbackString(
 		"appengine/default_version",
-		"Name of the version currently marked as default.")
+		"Name of the version currently marked as default.",
+		types.MetricMetadata{})
 )
 
 // collectGlobalMetrics populates service-global metrics.

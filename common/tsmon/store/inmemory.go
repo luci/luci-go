@@ -32,6 +32,7 @@ type cellKey struct {
 
 type metricData struct {
 	types.MetricInfo
+	types.MetricMetadata
 
 	cells map[cellKey][]*types.CellData
 	lock  sync.Mutex
@@ -250,7 +251,7 @@ func (s *inMemoryStore) GetAll(ctx context.Context) []types.Cell {
 				if cellCopy.Target == nil {
 					cellCopy.Target = defaultTarget
 				}
-				ret = append(ret, types.Cell{m.MetricInfo, cellCopy})
+				ret = append(ret, types.Cell{m.MetricInfo, m.MetricMetadata, cellCopy})
 			}
 		}
 		m.lock.Unlock()

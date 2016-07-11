@@ -25,7 +25,9 @@ import (
 
 func TestMiddleware(t *testing.T) {
 	t.Parallel()
-	metric := &storetest.FakeMetric{"m", "", []field.Field{}, types.CumulativeIntType}
+	metric := &storetest.FakeMetric{
+		types.MetricInfo{"m", "", []field.Field{}, types.CumulativeIntType},
+		types.MetricMetadata{}}
 
 	f := func(c *router.Context) {
 		So(store.IsNilStore(tsmon.Store(c.Context)), ShouldBeFalse)
