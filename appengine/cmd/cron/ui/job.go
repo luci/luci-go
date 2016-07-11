@@ -156,6 +156,13 @@ func resumeJobAction(c *router.Context) {
 	})
 }
 
+func abortJobAction(c *router.Context) {
+	handleJobAction(c, func(jobID string) error {
+		who := auth.CurrentIdentity(c.Context)
+		return config(c.Context).Engine.AbortJob(c.Context, jobID, who)
+	})
+}
+
 func handleJobAction(c *router.Context, cb func(string) error) {
 	projectID := c.Params.ByName("ProjectID")
 	jobID := c.Params.ByName("JobID")

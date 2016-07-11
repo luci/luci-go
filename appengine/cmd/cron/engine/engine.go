@@ -129,6 +129,12 @@ type Engine interface {
 	//
 	// Does nothing if invocation is already in some final state.
 	AbortInvocation(c context.Context, jobID string, invID int64, who identity.Identity) error
+
+	// AbortJob finds the currently running invocation of a job (if any) and aborts
+	// it by calling AbortInvocation.
+	//
+	// Returns nil if the job is not currently running.
+	AbortJob(c context.Context, jobID string, who identity.Identity) error
 }
 
 // Config contains parameters for the engine.
@@ -958,6 +964,23 @@ func (e *engineImpl) AbortInvocation(c context.Context, jobID string, invID int6
 		return err
 	}
 	return nil
+}
+
+// AbortJob finds the currently running invocation of a job (if any) and aborts
+// it by calling AbortInvocation.
+//
+// Returns nil if the job is not currently running or doesn't exist at all.
+func (e *engineImpl) AbortJob(c context.Context, jobID string, who identity.Identity) error {
+	switch job, err := e.GetCronJob(c, jobID); {
+	case err != nil:
+		return err
+	case job == nil:
+		return nil
+	case job.State.InvocationID == 0:
+		return nil
+	default:
+		return e.AbortInvocation(c, jobID, job.State.InvocationID, who)
+	}
 }
 
 // updateJob updates an existing job if its definition has changed, adds

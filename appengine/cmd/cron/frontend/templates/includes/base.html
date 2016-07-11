@@ -127,7 +127,10 @@ var postJobAction = function(btn, action) {
         Pause
       </button>
     {{end}}
-    <button type="button" class="btn btn-danger" onclick="postJobAction(this, 'runJob')">
+    <button type="button" class="btn btn-danger" onclick="postJobAction(this, 'abortJob')">
+      Abort
+    </button>
+    <button type="button" class="btn btn-success" onclick="postJobAction(this, 'runJob')">
       Run now
     </button>
   </div>

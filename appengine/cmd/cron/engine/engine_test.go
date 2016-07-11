@@ -742,7 +742,7 @@ func TestProcessPubSubPush(t *testing.T) {
 	})
 }
 
-func TestAbortInvocation(t *testing.T) {
+func TestAborts(t *testing.T) {
 	Convey("with mock invocation", t, func() {
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
@@ -754,8 +754,8 @@ func TestAbortInvocation(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// A job in "QUEUED" state (about to run an invocation).
-		jobID := "abc/1"
-		invNonce := int64(12345)
+		const jobID = "abc/1"
+		const invNonce = int64(12345)
 		So(ds.Put(&CronJob{
 			JobID:     jobID,
 			ProjectID: "abc",
@@ -768,28 +768,44 @@ func TestAbortInvocation(t *testing.T) {
 			},
 		}), ShouldBeNil)
 
+		// Launch new invocation.
+		var invID int64
+		mgr.launchTask = func(ctl task.Controller) error {
+			invID = ctl.InvocationID()
+			ctl.State().Status = task.StatusRunning
+			So(ctl.Save(), ShouldBeNil)
+			return nil
+		}
+		So(e.startInvocation(c, jobID, invNonce, "", 0), ShouldBeNil)
+
+		// It is alive and cron job entity tracks it.
+		inv, err := e.GetInvocation(c, jobID, invID)
+		So(err, ShouldBeNil)
+		So(inv.Status, ShouldEqual, task.StatusRunning)
+		job, err := e.GetCronJob(c, jobID)
+		So(err, ShouldBeNil)
+		So(job.State.State, ShouldEqual, JobStateRunning)
+		So(job.State.InvocationID, ShouldEqual, invID)
+
 		Convey("AbortInvocation works", func() {
-			// Launch new invocation.
-			var invID int64
-			mgr.launchTask = func(ctl task.Controller) error {
-				invID = ctl.InvocationID()
-				ctl.State().Status = task.StatusRunning
-				So(ctl.Save(), ShouldBeNil)
-				return nil
-			}
-			So(e.startInvocation(c, jobID, invNonce, "", 0), ShouldBeNil)
-
-			// It is alive and cron job entity tracks it.
-			inv, err := e.GetInvocation(c, jobID, invID)
-			So(err, ShouldBeNil)
-			So(inv.Status, ShouldEqual, task.StatusRunning)
-			job, err := e.GetCronJob(c, jobID)
-			So(err, ShouldBeNil)
-			So(job.State.State, ShouldEqual, JobStateRunning)
-			So(job.State.InvocationID, ShouldEqual, invID)
-
 			// Kill it.
 			So(e.AbortInvocation(c, jobID, invID, ""), ShouldBeNil)
+
+			// It is dead.
+			inv, err = e.GetInvocation(c, jobID, invID)
+			So(err, ShouldBeNil)
+			So(inv.Status, ShouldEqual, task.StatusAborted)
+
+			// The cron job moved on with its life.
+			job, err = e.GetCronJob(c, jobID)
+			So(err, ShouldBeNil)
+			So(job.State.State, ShouldEqual, JobStateSuspended)
+			So(job.State.InvocationID, ShouldEqual, 0)
+		})
+
+		Convey("AbortJob works", func() {
+			// Kill it.
+			So(e.AbortJob(c, jobID, ""), ShouldBeNil)
 
 			// It is dead.
 			inv, err = e.GetInvocation(c, jobID, invID)

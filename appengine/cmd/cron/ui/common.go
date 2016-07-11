@@ -46,6 +46,7 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, cfg Config) 
 	r.POST("/actions/runJob/:ProjectID/:JobID", mxsrf, runJobAction)
 	r.POST("/actions/pauseJob/:ProjectID/:JobID", mxsrf, pauseJobAction)
 	r.POST("/actions/resumeJob/:ProjectID/:JobID", mxsrf, resumeJobAction)
+	r.POST("/actions/abortJob/:ProjectID/:JobID", mxsrf, abortJobAction)
 	r.POST("/actions/abortInvocation/:ProjectID/:JobID/:InvID", mxsrf, abortInvocationAction)
 }
 
