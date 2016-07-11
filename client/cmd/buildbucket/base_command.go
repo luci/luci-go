@@ -63,7 +63,7 @@ func (r *baseCommandRun) makeService(ctx context.Context, a subcommands.Applicat
 		protocol = "http"
 	}
 
-	service.BasePath = fmt.Sprintf("%s://%s/_ah/api/buildbucket/v1/", protocol, r.host)
+	service.BasePath = fmt.Sprintf("%s://%s/api/buildbucket/v1/", protocol, r.host)
 	return service, nil
 }
 
