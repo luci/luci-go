@@ -69,6 +69,7 @@ func Authenticator(c context.Context, scopes []string, serviceAccountJSON []byte
 
 // Transport returns http.RoundTripper that injects Authorization headers into
 // requests. It uses an authenticator returned by Authenticator.
+// If scopes is empty, uses auth.OAuthScopeEmail scope.
 func Transport(c context.Context, scopes []string, serviceAccountJSON []byte) (http.RoundTripper, error) {
 	a, err := Authenticator(c, scopes, serviceAccountJSON)
 	if err != nil {
@@ -80,6 +81,7 @@ func Transport(c context.Context, scopes []string, serviceAccountJSON []byte) (h
 // UseServiceAccountTransport injects authenticating transport into
 // context.Context. It can be extracted back via transport.Get(c). It will be
 // lazy-initialized on a first use.
+// If scopes is empty, uses auth.OAuthScopeEmail scope.
 func UseServiceAccountTransport(c context.Context, scopes []string, serviceAccountJSON []byte) context.Context {
 	var cached http.RoundTripper
 	var once sync.Once

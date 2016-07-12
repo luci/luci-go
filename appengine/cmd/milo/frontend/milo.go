@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/luci/luci-go/appengine/cmd/milo/buildbot"
+	"github.com/luci/luci-go/appengine/cmd/milo/buildbucket"
 	"github.com/luci/luci-go/appengine/cmd/milo/settings"
 	"github.com/luci/luci-go/appengine/cmd/milo/swarming"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
@@ -21,11 +22,16 @@ func init() {
 	basemw := settings.Base()
 	gaemiddleware.InstallHandlers(r, basemw)
 	r.GET("/", basemw, settings.Wrap(frontpage{}))
+
+	// Swarming
 	r.GET("/swarming/task/:id/steps/*logname", basemw, settings.Wrap(swarming.Log{}))
 	r.GET("/swarming/task/:id", basemw, settings.Wrap(swarming.Build{}))
 	// Backward-compatible URLs:
 	r.GET("/swarming/prod/:id/steps/*logname", basemw, settings.Wrap(swarming.Log{}))
 	r.GET("/swarming/prod/:id", basemw, settings.Wrap(swarming.Build{}))
+
+	// Buildbucket
+	r.GET("/buildbucket/:bucket/:builder", basemw, settings.Wrap(buildbucket.Builder{}))
 
 	// Buildbot
 	r.GET("/buildbot/:master/:builder/:build", basemw, settings.Wrap(buildbot.Build{}))

@@ -458,7 +458,7 @@ div.BuildWaterfall {
   border-color: #AADDEE;
 }
 
-.exception,.retry {
+.exception, .retry, tr:nth-child(even) td.exception {
   color: #FFFFFF;
   background-color: #c6c;
   border-color: #ACA0B3;

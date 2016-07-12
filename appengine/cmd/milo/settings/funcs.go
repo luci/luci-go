@@ -113,8 +113,13 @@ var linkifyTemplate = template.Must(
 
 // linkify turns a resp.Link struct into a canonical link.
 func linkify(link *resp.Link) template.HTML {
+	if link == nil {
+		return ""
+	}
 	buf := bytes.Buffer{}
-	linkifyTemplate.Execute(&buf, link)
+	if err := linkifyTemplate.Execute(&buf, link); err != nil {
+		panic(err)
+	}
 	return template.HTML(buf.Bytes())
 }
 

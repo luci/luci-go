@@ -1,5 +1,4 @@
-{{define "title"}}[[Insert title here]]{{end}}
-
+{{define "title"}}Builder {{.Builder.Name}}{{end}}
 
 {{define "head"}}{{end}}
 
@@ -32,7 +31,6 @@
         {{ $nb := len .Blame }}
         {{ if lt $nb 4 }}
           {{ range $i, $c := .Blame }}
-            {{ .Revision }}
             (<a href="{{ .CommitURL }}">{{ .AuthorEmail }}</a>)
             {{ if ne $i (sub $nb 1) }},{{ end }}
           {{ end }}
