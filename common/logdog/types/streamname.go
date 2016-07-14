@@ -76,14 +76,15 @@ func Construct(parts ...string) string {
 //   string will be prepended.
 // - Any character disallowed in the segment will be replaced with an
 //   underscore. This includes segment separators within a segment string.
+//
+// An empty string can be passed for "fill" to just error if a replacement is
+// needed.
 func MakeStreamName(fill string, s ...string) (StreamName, error) {
 	if len(s) == 0 {
 		return "", errors.New("at least one segment must be provided")
 	}
-	if err := StreamName(fill).Validate(); err != nil {
-		return "", fmt.Errorf("fill string must be a valid stream name: %s", err)
-	}
 
+	fillValidated := false
 	for idx, v := range s {
 		v = strings.Map(func(r rune) rune {
 			switch {
@@ -106,13 +107,17 @@ func MakeStreamName(fill string, s ...string) (StreamName, error) {
 				return '_'
 			}
 		}, v)
-		if len(v) == 0 {
-			v = fill
-		} else {
-			r, _ := utf8.DecodeRuneInString(v)
-			if !isAlnum(r) {
-				v = fill + v
+		if r, _ := utf8.DecodeRuneInString(v); !isAlnum(r) {
+			// We will prepend the fill sequence to make this a valid stream name.
+			// We only need to validate this sequence once.
+			if !fillValidated {
+				if err := StreamName(fill).Validate(); err != nil {
+					return "", fmt.Errorf("fill string must be a valid stream name: %s", err)
+				}
+				fillValidated = true
 			}
+
+			v = fill + v
 		}
 		s[idx] = v
 	}

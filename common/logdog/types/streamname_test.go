@@ -56,8 +56,16 @@ func TestStreamName(t *testing.T) {
 		}
 
 		Convey(`Fails if the fill string is not a valid path.`, func() {
-			_, err := MakeStreamName("__not_a_path", "a", "b", "c")
+			_, err := MakeStreamName("__not_a_path", "", "b", "c")
 			So(err, ShouldNotBeNil)
+
+			_, err = MakeStreamName("", "", "b", "c")
+			So(err, ShouldNotBeNil)
+		})
+
+		Convey(`Doesn't care about the fill string if it's not needed.`, func() {
+			_, err := MakeStreamName("", "a", "b", "c")
+			So(err, ShouldBeNil)
 		})
 	})
 
