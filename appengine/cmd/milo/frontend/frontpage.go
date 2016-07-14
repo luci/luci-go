@@ -11,7 +11,10 @@ import (
 	"github.com/luci/luci-go/server/templates"
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/appengine/cmd/milo/buildbot"
+	"github.com/luci/luci-go/appengine/cmd/milo/resp"
 	"github.com/luci/luci-go/appengine/cmd/milo/settings"
+	log "github.com/luci/luci-go/common/logging"
 )
 
 type frontpage struct{}
@@ -21,16 +24,44 @@ func (f frontpage) GetTemplateName(t settings.Theme) string {
 }
 
 func (f frontpage) Render(c context.Context, r *http.Request, p httprouter.Params) (*templates.Args, error) {
-	return &templates.Args{
-		"Contents": "Herro thar, this is Milo!",
-		"Image":    "https://storage.googleapis.com/luci-milo/milo.jpg",
-	}, nil
+	fp := resp.FrontPage{}
+	mBuildbot, err := buildbot.GetAllBuilders(c)
+	if err != nil {
+		log.Errorf(c, "Encountered error while loading buildbot module: %s", err)
+	} else {
+		fp.Module = append(fp.Module, *mBuildbot)
+	}
+
+	return &templates.Args{"frontpage": fp}, nil
 }
 
 type testableFrontpage struct{ frontpage }
 
 func (l testableFrontpage) TestData() []settings.TestBundle {
-	data, _ := l.Render(nil, nil, nil)
+	data := &templates.Args{
+		"frontpage": resp.FrontPage{
+			Module: []resp.Module{
+				{
+					Name: "Module 1",
+					Masters: []resp.MasterListing{
+						{
+							Name: "Example master A",
+							Builders: []resp.Link{
+								{
+									Label: "Example builder",
+									URL:   "/master1/buildera",
+								},
+								{
+									Label: "Example builder 2",
+									URL:   "/master1/builderb",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
 	return []settings.TestBundle{
 		{
 			Description: "Basic frontpage",
