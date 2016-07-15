@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -128,9 +129,92 @@ func parseTimes(times []*float64) (started, ended time.Time, duration time.Durat
 	return
 }
 
+// Regex's related to finding OS and platform information from a buildbot slave.
+// This relies on puppet putting in the right information inside the buildbot
+// slave's host file.
+var (
+	rSlaveOS        = regexp.MustCompile("os family: ([:^space:]*)")
+	rSlaveOSVersion = regexp.MustCompile("os version: ([:^space:]*)")
+)
+
+// getBanner fetches the banner information about the bot that the build
+// ran on.  This is best effort and:
+// * Will return an empty list of banners if the master is not found.
+// * May return incorrect data if the platform of the slave of the same name
+//   was changed recently, and this build was older than before the slave
+//   changed platforms.
+func getBanner(c context.Context, b *buildbotBuild, m *buildbotMaster) *resp.LogoBanner {
+	logos := &resp.LogoBanner{}
+	// Fetch the master info from datastore if not provided.
+	if m == nil {
+		m1, i, _, err := getMasterJSON(c, b.Master)
+		m = m1
+		if i {
+			// TODO(hinoka): Support internal masters.
+			return nil
+		}
+		if err != nil {
+			log.Warningf(c, "Failed to fetch master information for banners on master %s", b.Master)
+			return nil
+		}
+	}
+
+	s, ok := m.Slaves[b.Slave]
+	if !ok {
+		log.Warningf(c, "Could not find slave %s in master %s", b.Slave, b.Master)
+		return nil
+	}
+	hostInfo := map[string]string{}
+	for _, v := range strings.Split(s.Host, "\n") {
+		if info := strings.SplitN(v, ":", 2); len(info) == 2 {
+			hostInfo[info[0]] = strings.TrimSpace(info[1])
+		}
+	}
+
+	// Extract OS and OS Family
+	var os, version string
+	if v, ok := hostInfo["os family"]; ok {
+		os = v
+	}
+	if v, ok := hostInfo["os version"]; ok {
+		version = v
+	}
+	osLogo := func() *resp.Logo {
+		result := &resp.Logo{}
+		switch os {
+		case "windows":
+			result.LogoBase = resp.Windows
+		case "Darwin":
+			result.LogoBase = resp.OSX
+		case "Debian":
+			result.LogoBase = resp.Ubuntu
+		default:
+			return nil
+		}
+		result.Subtitle = version
+		return result
+	}()
+	if osLogo != nil {
+		logos.OS = append(logos.OS, *osLogo)
+	} else {
+		log.Warningf(c, "No OS info found.  Host: %s", s.Host)
+	}
+	log.Infof(c, "OS: %s/%s", os, version)
+	return logos
+}
+
 // summary Extract the top level summary from a buildbot build as a
 // BuildComponent
-func summary(b *buildbotBuild) resp.BuildComponent {
+func summary(c context.Context, b *buildbotBuild) resp.BuildComponent {
+	// TODO(hinoka): use b.toStatus()
+	// Status
+	var status resp.Status
+	if b.Currentstep != nil {
+		status = resp.Running
+	} else {
+		status = result2Status(b.Results)
+	}
+
 	// Timing info
 	started, ended, duration := parseTimes(b.Times)
 
@@ -148,17 +232,28 @@ func summary(b *buildbotBuild) resp.BuildComponent {
 			b.Master, b.Buildername, b.Number),
 	}
 
+	// The link to the builder page.
+	parent := &resp.Link{
+		Label: b.Buildername,
+		URL:   ".",
+	}
+
+	// Do a best effort lookup for the bot information to fill in OS/Platform info.
+	banner := getBanner(c, b, nil)
+
 	sum := resp.BuildComponent{
-		Label:      fmt.Sprintf("Builder %s Build #%d", b.Buildername, b.Number),
-		Status:     b.toStatus(),
-		Started:    started,
-		Finished:   ended,
-		Bot:        bot,
-		Source:     source,
-		Duration:   duration,
-		Type:       resp.Summary, // This is more or less ignored.
-		LevelsDeep: 1,
-		Text:       []string{}, // Status messages.  Eg "This build failed on..xyz"
+		ParentLabel: parent,
+		Label:       fmt.Sprintf("#%d", b.Number),
+		Banner:      banner,
+		Status:      status,
+		Started:     started,
+		Finished:    ended,
+		Bot:         bot,
+		Source:      source,
+		Duration:    duration,
+		Type:        resp.Summary, // This is more or less ignored.
+		LevelsDeep:  1,
+		Text:        []string{}, // Status messages.  Eg "This build failed on..xyz"
 	}
 
 	return sum
@@ -405,7 +500,7 @@ func build(c context.Context, master, builder, buildNum string) (*resp.MiloBuild
 	// TODO(hinoka): Do all fields concurrently.
 	return &resp.MiloBuild{
 		SourceStamp:   sourcestamp(c, b),
-		Summary:       summary(b),
+		Summary:       summary(c, b),
 		Components:    components(b),
 		PropertyGroup: properties(b),
 		Blame:         blame(b),

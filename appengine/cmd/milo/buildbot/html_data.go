@@ -7,6 +7,7 @@ package buildbot
 import (
 	"fmt"
 
+	"github.com/luci/gae/impl/memory"
 	"github.com/luci/luci-go/appengine/cmd/milo/resp"
 	"github.com/luci/luci-go/appengine/cmd/milo/settings"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -33,7 +34,7 @@ type TestableBuilder struct{ Builder }
 
 // TestData returns sample test data.
 func (b Build) TestData() []settings.TestBundle {
-	c := context.Background()
+	c := memory.Use(context.Background())
 	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
 	bundles := []settings.TestBundle{}
 	for _, tc := range testCases {

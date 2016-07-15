@@ -1,7 +1,14 @@
 {
   "Summary": {
-    "Label": "Builder win_chromium_rel_ng Build #246309",
+    "ParentLabel": {
+      "Label": "win_chromium_rel_ng",
+      "Img": "",
+      "URL": ".",
+      "Alt": ""
+    },
+    "Label": "#246309",
     "Status": "Failure",
+    "Banner": null,
     "Bot": {
       "Label": "vm774-m4",
       "Img": "",
@@ -45,8 +52,10 @@
   },
   "Components": [
     {
+      "ParentLabel": null,
       "Label": "steps",
       "Status": "Failure",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -74,8 +83,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "update_scripts",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -103,8 +114,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "setup_properties",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -125,8 +138,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "setup_build",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -154,8 +169,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "taskkill",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -176,8 +193,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "bot_update",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -205,8 +224,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "ensure_goma",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -227,8 +248,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "ensure_goma.install cipd",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -256,8 +279,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "ensure_goma.ensure_installed",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -285,8 +310,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "swarming.py --version",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -307,8 +334,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "gclient runhooks (with patch)",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -329,8 +358,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "get compile targets for scripts",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -358,8 +389,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "read test spec (chromium.gpu.json)",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -387,8 +420,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "read test spec (chromium.win.json)",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -416,8 +451,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "ensure git tooling on windows",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -438,8 +475,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "git diff to analyze patch",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -467,8 +506,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "read filter exclusion spec",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -496,8 +537,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "analyze",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -531,8 +574,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "cleanup_temp",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -553,8 +598,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "clean isolated files",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -575,8 +622,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "generate_build_files (with patch)",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -604,8 +653,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "compile (with patch)",
       "Status": "Failure",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -633,8 +684,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "taskkill (2)",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -655,8 +708,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "bot_update (without patch)",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -684,8 +739,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "gclient runhooks (without patch)",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -706,8 +763,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "generate_build_files (without patch)",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -735,8 +794,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "compile (without patch)",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -764,8 +825,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "mark: before_tests",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -786,8 +849,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "Failure reason",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {

@@ -1,7 +1,9 @@
 {
   "Summary": {
+    "ParentLabel": null,
     "Label": "",
     "Status": "Failure",
+    "Banner": null,
     "Bot": null,
     "Source": {
       "Label": "Task ",
@@ -25,8 +27,10 @@
   "SourceStamp": null,
   "Components": [
     {
+      "ParentLabel": null,
       "Label": "recipe bootstrap",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -45,8 +49,10 @@
       "Text": null
     },
     {
+      "ParentLabel": null,
       "Label": "setup_build",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -74,8 +80,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "bot_update",
       "Status": "InfraFailure",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -101,8 +109,10 @@
       "Text": null
     },
     {
+      "ParentLabel": null,
       "Label": "Uncaught Exception",
       "Status": "InfraFailure",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {

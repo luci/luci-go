@@ -1,7 +1,9 @@
 {
   "Summary": {
+    "ParentLabel": null,
     "Label": "",
     "Status": "Failure",
+    "Banner": null,
     "Bot": null,
     "Source": {
       "Label": "Task ",
@@ -24,8 +26,10 @@
   "SourceStamp": null,
   "Components": [
     {
+      "ParentLabel": null,
       "Label": "update_scripts",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -53,8 +57,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "setup_build",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -82,8 +88,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "bot_update",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -117,8 +125,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "Patch failure",
       "Status": "Failure",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -139,8 +149,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "recipe failure reason",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {

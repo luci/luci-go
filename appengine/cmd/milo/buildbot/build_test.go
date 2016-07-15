@@ -13,6 +13,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/luci/gae/impl/memory"
 	"github.com/luci/luci-go/common/clock/testclock"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
@@ -36,7 +37,7 @@ func shouldMatchExpectationsFor(actualContents interface{}, expectedFilename ...
 }
 
 func TestBuild(t *testing.T) {
-	c := context.Background()
+	c := memory.Use(context.Background())
 	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
 
 	if *generate {

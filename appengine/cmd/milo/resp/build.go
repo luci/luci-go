@@ -163,13 +163,26 @@ func (c ComponentType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(c.String())
 }
 
+type LogoBanner struct {
+	OS     []Logo
+	Device []Logo
+}
+
 // BuildComponent represents a single Step, subsetup, attempt, or recipe.
 type BuildComponent struct {
+	// The parent of this component.  For buildbot and swarmbucket builds, this
+	// refers to the builder.  For DM, this refers to whatever triggered the Quest.
+	ParentLabel *Link
+
 	// The main label for the component.
 	Label string
 
 	// Status of the build.
 	Status Status
+
+	// Banner is a banner of logos that define the OS and devices this
+	// component is associated with.
+	Banner *LogoBanner
 
 	// Bot is the machine or execution instance that this component ran on.
 	Bot *Link

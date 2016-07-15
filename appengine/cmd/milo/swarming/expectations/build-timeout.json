@@ -1,7 +1,9 @@
 {
   "Summary": {
+    "ParentLabel": null,
     "Label": "",
     "Status": "InfraFailure",
+    "Banner": null,
     "Bot": {
       "Label": "swarm3-c4",
       "Img": "",
@@ -29,8 +31,10 @@
   "SourceStamp": null,
   "Components": [
     {
+      "ParentLabel": null,
       "Label": "recipe bootstrap",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -49,8 +53,10 @@
       "Text": null
     },
     {
+      "ParentLabel": null,
       "Label": "setup_build",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {

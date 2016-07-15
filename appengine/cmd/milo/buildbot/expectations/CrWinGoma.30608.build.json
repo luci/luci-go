@@ -1,7 +1,14 @@
 {
   "Summary": {
-    "Label": "Builder CrWinGoma Build #30608",
+    "ParentLabel": {
+      "Label": "CrWinGoma",
+      "Img": "",
+      "URL": ".",
+      "Alt": ""
+    },
+    "Label": "#30608",
     "Status": "Success",
+    "Banner": null,
     "Bot": {
       "Label": "build28-m1",
       "Img": "",
@@ -40,8 +47,10 @@
   },
   "Components": [
     {
+      "ParentLabel": null,
       "Label": "steps",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -69,8 +78,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "update_scripts",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -99,8 +110,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "setup_properties",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -121,8 +134,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "setup_build",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -151,8 +166,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "taskkill",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -173,8 +190,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "bot_update",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -203,8 +222,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "ensure_goma",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -225,8 +246,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "ensure_goma.install cipd",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -255,8 +278,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "ensure_goma.ensure_installed",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -284,8 +309,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "gclient runhooks",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -306,8 +333,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "get compile targets for scripts",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -335,8 +364,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "read test spec",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -365,8 +396,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "cleanup_temp",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -387,8 +420,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "generate_build_files",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -409,8 +444,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "compile",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -438,8 +475,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "base_unittests",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -463,8 +502,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "content_unittests",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -487,8 +528,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "process_dumps",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {
@@ -509,8 +552,10 @@
       ]
     },
     {
+      "ParentLabel": null,
       "Label": "recipe result",
       "Status": "Success",
+      "Banner": null,
       "Bot": null,
       "Source": null,
       "MainLink": {

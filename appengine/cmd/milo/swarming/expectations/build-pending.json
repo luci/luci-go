@@ -1,7 +1,9 @@
 {
   "Summary": {
+    "ParentLabel": null,
     "Label": "",
     "Status": "NotRun",
+    "Banner": null,
     "Bot": null,
     "Source": {
       "Label": "Task 2fb1b35e1da25710",

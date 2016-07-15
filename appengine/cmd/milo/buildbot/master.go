@@ -42,11 +42,13 @@ func getMasterJSON(c context.Context, name string) (
 	entry := buildbotMasterEntry{Name: name}
 	ds := datastore.Get(c)
 	err = ds.Get(&entry)
-	internal = entry.Internal
-	t = entry.Modified
 	if err != nil {
+		log.WithError(err).Errorf(
+			c, "Encountered error while fetching entry for %s:\n%s", name, err)
 		return
 	}
+	internal = entry.Internal
+	t = entry.Modified
 	err = decodeMasterEntry(c, &entry, master)
 	return
 }

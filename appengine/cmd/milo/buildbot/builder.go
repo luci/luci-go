@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/luci/gae/service/datastore"
@@ -136,15 +138,15 @@ func builderImpl(c context.Context, masterName, builderName string) (*resp.Build
 	if !ok {
 		// This long block is just to return a good error message when an invalid
 		// buildbot builder is specified.
-		keys := make([]string, len(master.Builders))
-		i := 0
+		keys := make([]string, 0, len(master.Builders))
 		for k := range master.Builders {
-			keys[i] = k
-			i++
+			keys = append(keys, k)
 		}
+		sort.Strings(keys)
+		avail := strings.Join(keys, "\n")
 		return nil, fmt.Errorf(
-			"Cannot find builder %s in master %s.\nAvailable builders: %s",
-			builderName, masterName, keys)
+			"Cannot find builder %s in master %s.\nAvailable builders: \n%s",
+			builderName, masterName, avail)
 	}
 
 	recentBuilds, err := getBuilds(c, masterName, builderName)

@@ -4,7 +4,22 @@
 
 {{define "body"}}
   <div class="content">
-    <h1>{{.Build.Summary.Label}}</h1>
+    <h1>
+      {{ if .Build.Summary.ParentLabel }}
+        Builder {{ .Build.Summary.ParentLabel | linkify }}
+      {{ end }}
+      Build {{.Build.Summary.Label}}
+      {{ if .Build.Summary.Banner }}
+        {{ range .Build.Summary.Banner.OS }}
+          <img src="/static/common/logos/{{.LogoBase.Img}}" alt="{{.LogoBase.Alt}}"
+               width="25px">
+        {{ end }}
+        {{ range .Build.Summary.Banner.Device }}
+          <img src="/static/common/logos/{{.LogoBase.Img}}" alt="{{.LogoBase.Alt}}"
+               width="25px">
+        {{ end }}
+      {{ end }}
+    </h1>
 
     <div class="column">
 
