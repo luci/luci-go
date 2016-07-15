@@ -377,7 +377,10 @@ func sourcestamp(c context.Context, b *buildbotBuild) *resp.SourceStamp {
 
 func getDebugBuild(c context.Context, builder, buildNum string) (*buildbotBuild, error) {
 	fname := fmt.Sprintf("%s.%s.json", builder, buildNum)
-	path := filepath.Join("testdata", "buildbot", fname)
+	// ../buildbot below assumes that
+	// - this code is not executed by tests outside of this dir
+	// - this dir is a sibling of frontend dir
+	path := filepath.Join("..", "buildbot", "testdata", fname)
 	raw, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err

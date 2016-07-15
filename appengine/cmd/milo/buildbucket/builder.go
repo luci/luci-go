@@ -183,7 +183,10 @@ func toMiloBuild(c context.Context, build *buildbucket.ApiBuildMessage) *resp.Bu
 }
 
 func getDebugBuilds(c context.Context, bucket, builder string, maxCompletedBuilds int, target *resp.Builder) error {
-	resFile, err := os.Open(filepath.Join("testdata", "buildbucket", bucket, builder+".json"))
+	// ../buildbucket below assumes that
+	// - this code is not executed by tests outside of this dir
+	// - this dir is a sibling of frontend dir
+	resFile, err := os.Open(filepath.Join("..", "buildbucket", "testdata", bucket, builder+".json"))
 	if err != nil {
 		return err
 	}

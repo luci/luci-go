@@ -60,7 +60,11 @@ func getSwarmingClient(c context.Context, server string) (*swarming.Service, err
 
 func getDebugTaskOutput(taskID string) (string, error) {
 	// Read the debug file instead.
-	logFilename := filepath.Join("testdata", taskID)
+
+	// ../swarming below assumes that
+	// - this code is not executed by tests outside of this dir
+	// - this dir is a sibling of frontend dir
+	logFilename := filepath.Join("..", "swarming", "testdata", taskID)
 	b, err := ioutil.ReadFile(logFilename)
 	if err != nil {
 		return "", err
@@ -79,7 +83,10 @@ func getTaskOutput(sc *swarming.Service, taskID string) (string, error) {
 func getDebugSwarmingResult(
 	taskID string) (*swarming.SwarmingRpcsTaskResult, error) {
 
-	logFilename := filepath.Join("testdata", taskID)
+	// ../swarming below assumes that
+	// - this code is not executed by tests outside of this dir
+	// - this dir is a sibling of frontend dir
+	logFilename := filepath.Join("..", "swarming", "testdata", taskID)
 	swarmFilename := fmt.Sprintf("%s.swarm", logFilename)
 	s, err := ioutil.ReadFile(swarmFilename)
 	if err != nil {
