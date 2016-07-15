@@ -37,6 +37,10 @@ var (
 	// exposeHeaders lists the whitelisted non-standard response headers that the
 	// client may accept.
 	exposeHeaders = strings.Join([]string{prpccommon.HeaderGRPCCode}, ", ")
+
+	//NoAuthenticator should be used with a Server to explicitly specify it wont use any Auth
+	//and not panic
+	NoAuthenticator = auth.Authenticator{}
 )
 
 // Server is a pRPC server to serve RPC requests.
@@ -111,7 +115,8 @@ func (s *Server) authenticate() router.Middleware {
 	if a == nil {
 		a = GetDefaultAuth()
 		if a == nil {
-			return nil
+			panic("prpc: no custom Authenticator was provided and default authenticator was not registered. " +
+				"Forgot to import appengine/gaeauth/server package?")
 		}
 	}
 
