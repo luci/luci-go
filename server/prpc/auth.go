@@ -19,6 +19,9 @@ var defaultAuth = struct {
 // Server.Authenticator is provided.
 // Panics if a is nil or called twice.
 func RegisterDefaultAuth(a auth.Authenticator) {
+	if a == nil {
+		panic("a is nil")
+	}
 	defaultAuth.Lock()
 	defer defaultAuth.Unlock()
 	if defaultAuth.Authenticator != nil {
