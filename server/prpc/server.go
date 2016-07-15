@@ -38,8 +38,8 @@ var (
 	// client may accept.
 	exposeHeaders = strings.Join([]string{prpccommon.HeaderGRPCCode}, ", ")
 
-	//NoAuthenticator should be used with a Server to explicitly specify it wont use any Auth
-	//and not panic
+	// NoAuthenticator can be used with RegisterDefaultAuth or Server.Authenticator to explicitly specify that
+	// your Server won't apply any authentication to incoming connections.
 	NoAuthenticator = auth.Authenticator{}
 )
 
