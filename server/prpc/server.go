@@ -115,8 +115,9 @@ func (s *Server) authenticate() router.Middleware {
 	if a == nil {
 		a = GetDefaultAuth()
 		if a == nil {
-			panic("prpc: no custom Authenticator was provided and default authenticator was not registered. " +
-				"Forgot to import appengine/gaeauth/server package?")
+			panic("prpc: no custom Authenticator was provided and default authenticator was not registered.\n" +
+				"Forgot to import appengine/gaeauth/server package?\n" +
+				"Either make NoAuthenticator the Authenticator of your server or setup an Authenticator")
 		}
 	}
 
