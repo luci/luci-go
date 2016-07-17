@@ -92,7 +92,12 @@ type StackContext struct {
 
 // We're looking for %(sometext) which is not preceded by a %. sometext may be
 // any characters except for a close paren.
-var namedFormatMatcher = regexp.MustCompile(`(^|[^%])%\(([^)]+)\)`)
+//
+// Submatch indices:
+// [0:1] Full match
+// [2:3] Text before the (...) pair (including the '%').
+// [4:5] (key)
+var namedFormatMatcher = regexp.MustCompile(`((?:^|[^%])%)\(([^)]+)\)`)
 
 // Format uses the data contained in this Data map to format the provided
 // string. Items from the map are looked up in python dict-format style, e.g.
@@ -105,25 +110,28 @@ var namedFormatMatcher = regexp.MustCompile(`(^|[^%])%\(([^)]+)\)`)
 //
 // All formatting directives are identical to the ones used by fmt.Sprintf.
 func (d Data) Format(format string) string {
-	args := []interface{}{}
-	fmtStr := namedFormatMatcher.ReplaceAllStringFunc(format, func(match string) string {
-		// Since we just matched this, we know it's in the form of %(....)
-		toks := strings.SplitN(match, "(", 2)
+	smi := namedFormatMatcher.FindAllStringSubmatchIndex(format, -1)
 
-		key := toks[1]
-		key = key[:len(key)-1] // trim trailing ")"
+	var (
+		parts = make([]string, 0, len(smi)+1)
+		args  = make([]interface{}, 0, len(smi))
+		pos   = 0
+	)
+	for _, match := range smi {
+		// %(key)s => %s
+		parts = append(parts, format[pos:match[3]])
+		pos = match[1]
 
+		// Add key to args.
+		key := format[match[4]:match[5]]
 		if v, ok := d[key]; ok {
 			args = append(args, v.Value)
 		} else {
 			args = append(args, fmt.Sprintf("MISSING(key=%q)", key))
 		}
-		if len(toks[0]) == 2 { // ?%
-			return string(toks[0])
-		}
-		return "%"
-	})
-	return fmt.Sprintf(fmtStr, args...)
+	}
+	parts = append(parts, format[pos:])
+	return fmt.Sprintf(strings.Join(parts, ""), args...)
 }
 
 // RenderPublic renders the public error.Error()-style string for this frame,

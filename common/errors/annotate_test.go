@@ -5,6 +5,7 @@
 package errors
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"testing"
@@ -52,7 +53,7 @@ func TestAnnotation(t *testing.T) {
 				`original error: bad thing`,
 				``,
 				`GOROUTINE LINE`,
-				`#? github.com/luci/luci-go/common/errors/annotate_test.go:38 - errors.TestAnnotation.func2()`,
+				`#? github.com/luci/luci-go/common/errors/annotate_test.go:39 - errors.TestAnnotation.func2()`,
 				`  reason: "%(first)d some error: %(second)q"`,
 				`  "extra" = 8.200`,
 				`  "first" = 0x00000014`,
@@ -62,7 +63,7 @@ func TestAnnotation(t *testing.T) {
 				`... skipped SOME frames in pkg "github.com/jtolds/gls"...`,
 				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
 				``,
-				`#? github.com/luci/luci-go/common/errors/annotate_test.go:101 - errors.TestAnnotation()`,
+				`#? github.com/luci/luci-go/common/errors/annotate_test.go:102 - errors.TestAnnotation()`,
 				`#? testing/testing.go:473 - testing.tRunner()`,
 				`... skipped SOME frames in pkg "runtime"...`,
 			})
@@ -79,7 +80,7 @@ func TestAnnotation(t *testing.T) {
 				`original error: bad thing`,
 				``,
 				`GOROUTINE LINE`,
-				`#? github.com/luci/luci-go/common/errors/annotate_test.go:38 - errors.TestAnnotation.func2()`,
+				`#? github.com/luci/luci-go/common/errors/annotate_test.go:39 - errors.TestAnnotation.func2()`,
 				`  annotation #0:`,
 				`    reason: "outer frame %(first)s"`,
 				`    "first" = "outer"`,
@@ -93,10 +94,41 @@ func TestAnnotation(t *testing.T) {
 				`... skipped SOME frames in pkg "github.com/jtolds/gls"...`,
 				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
 				``,
-				`#? github.com/luci/luci-go/common/errors/annotate_test.go:101 - errors.TestAnnotation()`,
+				`#? github.com/luci/luci-go/common/errors/annotate_test.go:102 - errors.TestAnnotation()`,
 				`#? testing/testing.go:473 - testing.tRunner()`,
 				`... skipped SOME frames in pkg "runtime"...`,
 			})
 		})
+	})
+}
+
+func TestDataFormat(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		format   string
+		expected string
+	}{
+		{"", ""},
+		{"no replacements", `no replacements`},
+		{"%(foo)s", `bar`},
+		{"%%(foo)s", `%(foo)s`},
+		{"%(foo)s|%(foo)s|%(foo)s", `bar|bar|bar`},
+		{"|%(foo)s|%(foo)s|%(foo)s|", `|bar|bar|bar|`},
+		{"%(missing)s", `MISSING(key="missing")`},
+		{"replacing %(foo)q", `replacing "bar"`},
+		{"replacing (%(foo)q)", `replacing ("bar")`},
+	}
+
+	Convey(`A testing Data object`, t, func() {
+		data := Data{
+			"foo": {"bar", ""},
+		}
+
+		for _, testCase := range testCases {
+			Convey(fmt.Sprintf(`Formatting %q yields: %q`, testCase.format, testCase.expected), func() {
+				So(data.Format(testCase.format), ShouldEqual, testCase.expected)
+			})
+		}
 	})
 }
