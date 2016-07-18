@@ -7,6 +7,7 @@ package logdog
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -16,8 +17,9 @@ import (
 	miloProto "github.com/luci/luci-go/common/proto/milo"
 )
 
-// Given a logdog/milo step, translate it to a BuildComponent struct.
-func miloBuildStep(c context.Context, linkBase string, anno *miloProto.Step) *resp.BuildComponent {
+// miloBuildStep converts a logdog/milo step to a BuildComponent struct.
+// buildCompletedTime must be zero if build did not complete yet.
+func miloBuildStep(c context.Context, linkBase string, anno *miloProto.Step, buildCompletedTime time.Time) *resp.BuildComponent {
 	linkBase = strings.TrimSuffix(linkBase, "/")
 	comp := &resp.BuildComponent{Label: anno.Name}
 	switch anno.Status {
@@ -47,6 +49,12 @@ func miloBuildStep(c context.Context, linkBase string, anno *miloProto.Step) *re
 	default:
 		comp.Status = resp.NotRun
 	}
+
+	if !buildCompletedTime.IsZero() && !comp.Status.Terminal() {
+		// we cannot have unfinished steps in finished builds.
+		comp.Status = resp.InfraFailure
+	}
+
 	// Sub link is for one link per log that isn't stdout.
 	for _, link := range anno.GetOtherLinks() {
 		lds := link.GetLogdogStream()
@@ -79,9 +87,14 @@ func miloBuildStep(c context.Context, linkBase string, anno *miloProto.Step) *re
 	comp.Started = anno.Started.Time()
 	comp.Finished = anno.Ended.Time()
 
-	till := comp.Finished
-	if anno.Status == miloProto.Status_RUNNING {
+	var till time.Time
+	switch {
+	case comp.Status == resp.Running:
 		till = clock.Now(c)
+	case !comp.Finished.IsZero():
+		till = comp.Finished
+	default:
+		till = buildCompletedTime
 	}
 	if !comp.Started.IsZero() && !till.IsZero() {
 		comp.Duration = till.Sub(comp.Started)
@@ -94,6 +107,7 @@ func miloBuildStep(c context.Context, linkBase string, anno *miloProto.Step) *re
 }
 
 // AddLogDogToBuild takes a set of logdog streams and populate a milo build.
+// build.Summary.Finished must be set.
 func AddLogDogToBuild(c context.Context, linkBase string, s *Streams, build *resp.MiloBuild) {
 	if s.MainStream == nil {
 		panic("missing main stream")
@@ -110,7 +124,7 @@ func AddLogDogToBuild(c context.Context, linkBase string, s *Streams, build *res
 			continue
 		}
 
-		bs := miloBuildStep(c, linkBase, anno)
+		bs := miloBuildStep(c, linkBase, anno, build.Summary.Finished)
 		if bs.Status != resp.Success && bs.Status != resp.NotRun {
 			build.Summary.Text = append(
 				build.Summary.Text, fmt.Sprintf("%s %s", bs.Status, bs.Label))

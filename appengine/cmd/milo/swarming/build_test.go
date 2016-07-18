@@ -46,6 +46,7 @@ func TestBuild(t *testing.T) {
 		{"build-running", "build-running.json"},
 		{"build-timeout", "build-timeout.json"},
 		{"build-canceled", "build-canceled.json"},
+		{"build-hang", "build-hang.json"},
 	}
 
 	c := context.Background()

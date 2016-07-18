@@ -253,7 +253,7 @@ func taskToBuild(c context.Context, server string, sr *swarming.SwarmingRpcsTask
 		}
 	}
 	if sr.CompletedTs != "" {
-		build.Summary.Finished, err = time.Parse(SwarmingTimeLayout, sr.StartedTs)
+		build.Summary.Finished, err = time.Parse(SwarmingTimeLayout, sr.CompletedTs)
 		if err != nil {
 			return nil, fmt.Errorf("invalid task CompletedTs: %s", err)
 		}

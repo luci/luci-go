@@ -2,26 +2,31 @@
   "Summary": {
     "ParentLabel": null,
     "Label": "",
-    "Status": "Failure",
+    "Status": "InfraFailure",
     "Banner": null,
-    "Bot": null,
-    "Source": {
-      "Label": "Task ",
+    "Bot": {
+      "Label": "vm517-m4",
       "Img": "",
-      "URL": "https://debug/user/task/",
+      "URL": "https://debug/restricted/bot/vm517-m4",
+      "Alt": ""
+    },
+    "Source": {
+      "Label": "Task 2fafff1d46fc5010",
+      "Img": "",
+      "URL": "https://debug/user/task/2fafff1d46fc5010",
       "Alt": ""
     },
     "MainLink": null,
     "SubLink": null,
     "Progress": null,
-    "Started": "2016-03-14T10:00:01.85071Z",
-    "Finished": "2016-03-14T11:00:18.48602Z",
-    "Duration": 0,
+    "Started": "2016-06-28T13:23:16.61592Z",
+    "Finished": "2016-06-28T16:24:03.24387Z",
+    "Duration": 10807630000114,
     "Type": "Recipe",
     "LevelsDeep": 0,
     "Text": [
-      "InfraFailure bot_update",
-      "InfraFailure Uncaught Exception"
+      "Task timed out",
+      "InfraFailure bot_update"
     ]
   },
   "SourceStamp": null,
@@ -41,9 +46,9 @@
       },
       "SubLink": null,
       "Progress": null,
-      "Started": "2016-03-14T10:00:02Z",
-      "Finished": "2016-03-14T10:00:09Z",
-      "Duration": 7000000000,
+      "Started": "2016-06-28T13:23:24Z",
+      "Finished": "2016-06-28T16:23:32Z",
+      "Duration": 10808000000000,
       "Type": "Step",
       "LevelsDeep": 0,
       "Text": null
@@ -70,13 +75,13 @@
         }
       ],
       "Progress": null,
-      "Started": "2016-03-14T10:00:03Z",
-      "Finished": "2016-03-14T10:00:04Z",
-      "Duration": 1000000000,
+      "Started": "2016-06-28T13:23:52.230000128Z",
+      "Finished": "2016-06-28T13:23:52.34Z",
+      "Duration": 109999872,
       "Type": "Step",
       "LevelsDeep": 0,
       "Text": [
-        "running recipe: \"v8\""
+        "running recipe: \"infra_repo_trybot\""
       ]
     },
     {
@@ -92,47 +97,11 @@
         "URL": "foo/steps/bot_update/0/stdout",
         "Alt": ""
       },
-      "SubLink": [
-        {
-          "Label": "steps/bot_update/0/logs/json.output__invalid_/0",
-          "Img": "",
-          "URL": "foo/steps/bot_update/0/logs/json.output__invalid_/0",
-          "Alt": ""
-        }
-      ],
+      "SubLink": null,
       "Progress": null,
-      "Started": "2016-03-14T10:00:05Z",
-      "Finished": "2016-03-14T10:00:06Z",
-      "Duration": 1000000000,
-      "Type": "Step",
-      "LevelsDeep": 0,
-      "Text": null
-    },
-    {
-      "ParentLabel": null,
-      "Label": "Uncaught Exception",
-      "Status": "InfraFailure",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
-      "MainLink": {
-        "Label": "stdout",
-        "Img": "",
-        "URL": "foo/steps/Uncaught_Exception/0/stdout",
-        "Alt": ""
-      },
-      "SubLink": [
-        {
-          "Label": "steps/Uncaught_Exception/0/logs/exception/0",
-          "Img": "",
-          "URL": "foo/steps/Uncaught_Exception/0/logs/exception/0",
-          "Alt": ""
-        }
-      ],
-      "Progress": null,
-      "Started": "2016-03-14T10:00:07Z",
-      "Finished": "2016-03-14T10:00:08Z",
-      "Duration": 1000000000,
+      "Started": "2016-06-28T13:23:52.34Z",
+      "Finished": "0001-01-01T00:00:00Z",
+      "Duration": 10810903870000,
       "Type": "Step",
       "LevelsDeep": 0,
       "Text": null
@@ -144,7 +113,7 @@
       "Property": [
         {
           "Key": "Exit Code",
-          "Value": "0"
+          "Value": "-1"
         }
       ]
     },
@@ -159,24 +128,7 @@
     },
     {
       "GroupName": "recipe bootstrap",
-      "Property": [
-        {
-          "Key": "path_config",
-          "Value": "kitchen"
-        },
-        {
-          "Key": "slavename",
-          "Value": "fakeslave"
-        },
-        {
-          "Key": "buildername",
-          "Value": "infra-continuous-precise-32"
-        },
-        {
-          "Key": "mastername",
-          "Value": "chromium.infra"
-        }
-      ]
+      "Property": null
     },
     {
       "GroupName": "setup_build",
@@ -184,10 +136,6 @@
     },
     {
       "GroupName": "bot_update",
-      "Property": null
-    },
-    {
-      "GroupName": "Uncaught Exception",
       "Property": null
     },
     {

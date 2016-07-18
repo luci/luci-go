@@ -139,6 +139,16 @@ const (
 	WaitingDependency // 100 Brown
 )
 
+// Terminal returns true if the step status won't change.
+func (s Status) Terminal() bool {
+	switch s {
+	case Success, Failure, InfraFailure, Warning, DependencyFailure:
+		return true
+	default:
+		return false
+	}
+}
+
 // MarshalJSON renders enums into String rather than an int when marshalling.
 func (s Status) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.String())
