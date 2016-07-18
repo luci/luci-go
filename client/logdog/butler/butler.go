@@ -149,6 +149,9 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 	}
 	if config.BufferLogs {
 		bc.MaxBufferDelay = config.MaxBufferAge
+		if bc.MaxBufferDelay <= 0 {
+			bc.MaxBufferDelay = DefaultMaxBufferAge
+		}
 	}
 	lb := bundler.New(bc)
 
