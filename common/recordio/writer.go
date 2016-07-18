@@ -10,10 +10,14 @@ import (
 	"io"
 )
 
+func writeFrameHeader(w io.Writer, frameSize uint64) (int, error) {
+	sizeBuf := make([]byte, binary.MaxVarintLen64)
+	return w.Write(sizeBuf[:binary.PutUvarint(sizeBuf, frameSize)])
+}
+
 // WriteFrame writes a single frame to an io.Writer.
 func WriteFrame(w io.Writer, frame []byte) (int, error) {
-	sizeBuf := make([]byte, binary.MaxVarintLen64)
-	count, err := w.Write(sizeBuf[:binary.PutUvarint(sizeBuf, uint64(len(frame)))])
+	count, err := writeFrameHeader(w, uint64(len(frame)))
 	if err != nil {
 		return count, err
 	}
