@@ -1,9 +1,24 @@
 {
   "Summary": {
-    "ParentLabel": null,
-    "Label": "",
+    "ParentLabel": {
+      "Label": "infra-continuous-precise-32",
+      "Img": "",
+      "URL": "/buildbucket/estaab-infra-waterfall-test/infra-continuous-precise-32?server=cr-buildbucket-dev.appspot.com",
+      "Alt": ""
+    },
+    "Label": "2d8d62f6be545b10",
     "Status": "InfraFailure",
-    "Banner": null,
+    "Banner": {
+      "OS": [
+        {
+          "Img": "ubuntu.svg",
+          "Alt": "Canonical Ubuntu",
+          "Subtitle": "12.04",
+          "Count": 1
+        }
+      ],
+      "Device": null
+    },
     "Bot": {
       "Label": "swarm3-c4",
       "Img": "",

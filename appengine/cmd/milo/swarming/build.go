@@ -23,6 +23,7 @@ import (
 	swarming "github.com/luci/luci-go/common/api/swarming/swarming/v1"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logdog/types"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/transport"
 )
 
@@ -182,9 +183,85 @@ func tagsToProperties(tags []string) *resp.PropertyGroup {
 	return props
 }
 
+// tagValue returns a value of the first tag matching the tag key. If not found
+// returns "".
+func tagValue(tags []string, key string) string {
+	prefix := key + ":"
+	for _, t := range tags {
+		if strings.HasPrefix(t, prefix) {
+			return strings.TrimPrefix(t, prefix)
+		}
+	}
+	return ""
+}
+
+// addBuilderLink adds a link to the buildbucket builder view.
+func addBuilderLink(c context.Context, build *resp.MiloBuild, swarmingHostname string, sr *swarming.SwarmingRpcsTaskResult) {
+	bbHost := tagValue(sr.Tags, "buildbucket_hostname")
+	bucket := tagValue(sr.Tags, "buildbucket_bucket")
+	builder := tagValue(sr.Tags, "builder")
+	if bucket == "" {
+		logging.Errorf(
+			c, "Could not extract buidlbucket bucket from task %s",
+			taskPageURL(swarmingHostname, sr.TaskId))
+	}
+	if builder == "" {
+		logging.Errorf(
+			c, "Could not extract builder name from task %s",
+			taskPageURL(swarmingHostname, sr.TaskId))
+	}
+	if bucket != "" && builder != "" {
+		build.Summary.ParentLabel = &resp.Link{
+			Label: builder,
+			URL:   fmt.Sprintf("/buildbucket/%s/%s?server=%s", bucket, builder, bbHost),
+		}
+	}
+}
+
+// addBanner adds an OS banner derived from "os" swarming tag, if present.
+func addBanner(build *resp.MiloBuild, sr *swarming.SwarmingRpcsTaskResult) {
+	var os, ver string
+	for _, t := range sr.Tags {
+		value := strings.TrimPrefix(t, "os:")
+		if value == t {
+			// t does not have the prefix
+			continue
+		}
+		parts := strings.SplitN(value, "-", 2)
+		if len(parts) == 2 {
+			os = parts[0]
+			ver = parts[1]
+			break
+		}
+	}
+
+	var base resp.LogoBase
+	switch os {
+	case "Ubuntu":
+		base = resp.Ubuntu
+	case "Windows":
+		base = resp.Windows
+	case "Mac":
+		base = resp.OSX
+	case "Android":
+		base = resp.Android
+	default:
+		return
+	}
+
+	build.Summary.Banner = &resp.LogoBanner{
+		OS: []resp.Logo{{
+			LogoBase: base,
+			Subtitle: ver,
+			Count:    1,
+		}},
+	}
+}
+
 func taskToBuild(c context.Context, server string, sr *swarming.SwarmingRpcsTaskResult) (*resp.MiloBuild, error) {
 	build := &resp.MiloBuild{
 		Summary: resp.BuildComponent{
+			Label: sr.TaskId,
 			Source: &resp.Link{
 				Label: "Task " + sr.TaskId,
 				URL:   taskPageURL(server, sr.TaskId),
@@ -238,6 +315,10 @@ func taskToBuild(c context.Context, server string, sr *swarming.SwarmingRpcsTask
 		build.PropertyGroup = append(build.PropertyGroup, props)
 	}
 
+	addBuilderLink(c, build, server, sr)
+	addBanner(build, sr)
+
+	// Add a link to the bot.
 	if sr.BotId != "" {
 		build.Summary.Bot = &resp.Link{
 			Label: sr.BotId,
@@ -245,6 +326,7 @@ func taskToBuild(c context.Context, server string, sr *swarming.SwarmingRpcsTask
 		}
 	}
 
+	// Compute start and finished times, and duration.
 	var err error
 	if sr.StartedTs != "" {
 		build.Summary.Started, err = time.Parse(SwarmingTimeLayout, sr.StartedTs)
