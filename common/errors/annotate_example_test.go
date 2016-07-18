@@ -84,7 +84,7 @@ func ExampleAnnotate() {
 	// full error:
 	//   goroutine [child goroutine]:
 	//   #0 github.com/luci/luci-go/common/errors/annotate_example_test.go:15 - errors.someProcessingFunction()
-	//     reason: "bad number: %(val)d"
+	//     reason: "bad number: 1"
 	//     "val" = 1
 	//
 	//   #1 github.com/luci/luci-go/common/errors/annotate_example_test.go:17 - errors.someProcessingFunction()
@@ -97,7 +97,7 @@ func ExampleAnnotate() {
 	//     unknown wrapper *errors.MiscWrappedError
 	//
 	//   #3 github.com/luci/luci-go/common/errors/annotate_example_test.go:26 - errors.someLibFunc()
-	//     reason: "processing %(val)d"
+	//     reason: "processing 3"
 	//     "i" = 0
 	//     "secret" = value
 	//     "val" = 3
@@ -114,7 +114,7 @@ func ExampleAnnotate() {
 	//
 	//   goroutine [main goroutine]:
 	//   #0 github.com/luci/luci-go/common/errors/annotate_example_test.go:55 - errors.someIntermediateFunc()
-	//     reason: "while processing %(vals)v"
+	//     reason: "while processing [3]"
 	//     "vals" = []int{3}
 	//
 	//   #1 github.com/luci/luci-go/common/errors/annotate_example_test.go:61 - errors.ExampleAnnotate()

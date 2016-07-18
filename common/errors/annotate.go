@@ -175,7 +175,7 @@ func (s *StackContext) render() Lines {
 		ret = append(ret, s.Data.Format(s.InternalReason))
 	}
 	if s.Reason != "" {
-		ret = append(ret, fmt.Sprintf("reason: %q", s.Reason))
+		ret = append(ret, fmt.Sprintf("reason: %q", s.Data.Format(s.Reason)))
 	}
 
 	if len(s.Data) > 0 {
