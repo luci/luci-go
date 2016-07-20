@@ -1,7 +1,7 @@
-# Template for multi-module Managed VMs GAE app
+# Template for multi-module GAE Flexible app
 
-It mostly identical to classic GAE app and can be treated in exact same way
-(i.e. via `gae.py`).
+It is mostly identical to GAE Standard app and can be treated in exact same
+way (i.e. via `gae.py`).
 
 The differences are:
 

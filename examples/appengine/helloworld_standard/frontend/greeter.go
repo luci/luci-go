@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/appengine/cmd/helloworld/proto"
+	"github.com/luci/luci-go/examples/appengine/helloworld_standard/proto"
 )
 
 type greeterService struct{}

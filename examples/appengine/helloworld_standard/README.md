@@ -1,6 +1,6 @@
-# Template for Classic GAE app
+# Template for GAE Standard app
 
-This directory contains "Hello, world" class (non-managed VMs) GAE application
+This directory contains "Hello, world" GAE Standard application
 with all bells and whistles of luci-go framework:
 
 *   HTTP router and middlewares.
@@ -12,14 +12,14 @@ with all bells and whistles of luci-go framework:
 ## Code structure
 
 All luci-go code (including all GAE apps) is built **without** appengine tag,
-since we support classic GAE runtime as well as Managed VM runtime (and unit
+since we support GAE Standard runtime as well as GAE Flexible runtime (and unit
 testing environment running locally).
 
 As a consequence, GAE apps must live in valid Go packages, in particular they
-must not use relative import paths (as advertised by examples for Classic SDK).
+must not use relative import paths (as advertised by examples for Standard SDK).
 
-Since we still want to run on Classic GAE, we must obey some rules.
-In particular, Classic GAE Golang SDK enforces that all subpackages imported
+Since we still want to run on Standard GAE, we must obey some rules.
+In particular, Standard GAE Golang SDK enforces that all subpackages imported
 from GAE module package (e.g. package that contains `app.yaml`) are using
 relative import paths. For example, if `app.yaml` is located in the package
 `github.com/luci/luci-go/luci-go/appengine/cmd/helloworld` then an attempt to
@@ -30,7 +30,7 @@ importing instances of same package via two different import paths (absolute and
 relative), since in this case all types, init() calls etc are duplicated. More
 info is [here](https://groups.google.com/forum/#!topic/google-appengine-go/dNhqV6PBqVc).
 
-Luckily, Classic GAE SDK handles imports from packages not under module root
+Luckily, Standard GAE SDK handles imports from packages not under module root
 in a same way as normal Golang SDK does. To workaround the weird limitation
 mentioned above, we put `app.yaml` (and HTTP routing code) in a separate
 `frontend` package, that doesn't have any subpackages.

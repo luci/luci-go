@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/luci/luci-go/appengine/cmd/helloworld/proto"
 	"github.com/luci/luci-go/common/prpc"
+	"github.com/luci/luci-go/examples/appengine/helloworld_standard/proto"
 	"golang.org/x/net/context"
 )
 
