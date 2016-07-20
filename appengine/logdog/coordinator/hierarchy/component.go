@@ -21,15 +21,28 @@ type Component struct {
 }
 
 // Components returns the set of hierarchy components for a given stream path.
-func Components(p types.StreamPath) []*Component {
+//
+// If isFullStream is false, all of the components in p will be considered
+// intermediate components. If isFullStream is true, p is regarded as a full
+// stream, and the last element will be marked as a stream component.
+func Components(p types.StreamPath, isFullStream bool) []*Component {
+	segments := p.SegmentCount()
+	if segments == 0 {
+		return nil
+	}
+
 	// Build all Component objects for our parts.
 	//
 	// The first component is the stream component.
-	components := make([]*Component, 0, p.SegmentCount())
+	components := make([]*Component, 0, segments)
 	for {
 		var last string
 		p, last = p.SplitLast()
-		components = append(components, &Component{p, last, len(components) == 0})
+		components = append(components, &Component{
+			Parent: p,
+			Name:   last,
+			Stream: isFullStream && (len(components) == 0),
+		})
 
 		if p == "" {
 			break

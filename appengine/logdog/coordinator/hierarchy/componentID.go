@@ -11,9 +11,19 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/cmpbin"
+)
+
+type componentIDType string
+
+const (
+	numericStreamID componentIDType = "n"
+	textStreamID    componentIDType = "s"
+	numericPathID   componentIDType = "y"
+	textPathID      componentIDType = "z"
 )
 
 // componentID is the datastore ID for a component.
@@ -72,19 +82,19 @@ func (id *componentID) setID(s string) error {
 
 	id.name, id.parent = parts[1], parts[2]
 	numeric := false
-	switch p := parts[0]; p {
-	case "n":
+	switch p := componentIDType(parts[0]); p {
+	case numericStreamID:
 		id.stream = true
 		numeric = true
 
-	case "s":
+	case textStreamID:
 		id.stream = true
 
-	case "y":
+	case numericPathID:
 		id.stream = false
 		numeric = true
 
-	case "z":
+	case textPathID:
 		id.stream = false
 
 	default:
@@ -100,6 +110,7 @@ func (id *componentID) setID(s string) error {
 		if err != nil {
 			return fmt.Errorf("failed to decode value: %v", err)
 		}
+
 		id.name = strconv.FormatUint(value, 10)
 
 		// Re-add leading zeroes, if any were present.
@@ -141,6 +152,9 @@ func (id *componentID) maybeNumericID() (name string, numeric bool) {
 		}
 		leadingZeroes++
 	}
+	if len(name) > 0 && leadingZeroes == uint64(utf8.RuneCountInString(name)) {
+		leadingZeroes--
+	}
 
 	var buf bytes.Buffer
 	name = encodeCmpbinHexUint(&buf, v)
@@ -151,20 +165,20 @@ func (id *componentID) maybeNumericID() (name string, numeric bool) {
 	return
 }
 
-func (id *componentID) sortedPrefix(numeric bool) string {
+func (id *componentID) sortedPrefix(numeric bool) componentIDType {
 	switch {
 	case id.stream && numeric:
 		// Numeric stream element.
-		return "n"
+		return numericStreamID
 	case id.stream:
 		// Non-numeric stream element.
-		return "s"
+		return textStreamID
 	case numeric:
 		// Numeric path component.
-		return "y"
+		return numericPathID
 	default:
 		// Non-numeric path component.
-		return "z"
+		return textPathID
 	}
 }
 

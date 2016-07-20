@@ -67,7 +67,7 @@ func TestList(t *testing.T) {
 				}
 
 				di := ds.Get(c)
-				for _, c := range hierarchy.Components(tls.Path) {
+				for _, c := range hierarchy.Components(tls.Path, true) {
 					if err := c.Put(di); err != nil {
 						panic(fmt.Errorf("failed to put log component %d: %v", i, err))
 					}

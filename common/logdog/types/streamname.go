@@ -17,13 +17,13 @@ const (
 	// StreamNameSep is the separator rune for stream name tokens.
 	StreamNameSep = '/'
 	// StreamNameSepStr is a string containing a single rune, StreamNameSep.
-	StreamNameSepStr = "/"
+	StreamNameSepStr = string(StreamNameSep)
 
 	// StreamPathSep is the separator rune between a stream prefix and its
 	// name.
 	StreamPathSep = '+'
 	// StreamPathSepStr is a string containing a single rune, StreamPathSep.
-	StreamPathSepStr = "+"
+	StreamPathSepStr = string(StreamPathSep)
 
 	// MaxStreamNameLength is the maximum size, in bytes, of a StreamName. Since
 	// stream names must be valid ASCII, this is also the maximum string length.

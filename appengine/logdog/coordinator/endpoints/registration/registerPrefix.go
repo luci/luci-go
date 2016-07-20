@@ -102,7 +102,7 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 	// separator.
 	//
 	// Determine which hierarchy components we need to add.
-	comps := hierarchy.Components(prefix.AsPathPrefix(""))
+	comps := hierarchy.Components(prefix.AsPathPrefix(""), false)
 	if comps, err = hierarchy.Missing(di, comps); err != nil {
 		log.WithError(err).Warningf(c, "Failed to probe for missing hierarchy components.")
 	}

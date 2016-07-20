@@ -151,7 +151,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 		// mutation.
 		//
 		// Determine which hierarchy components we need to add.
-		comps := hierarchy.Components(path)
+		comps := hierarchy.Components(path, true)
 		if comps, err = hierarchy.Missing(di, comps); err != nil {
 			log.WithError(err).Warningf(c, "Failed to probe for missing hierarchy components.")
 		}

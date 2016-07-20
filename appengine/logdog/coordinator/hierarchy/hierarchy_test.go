@@ -161,7 +161,7 @@ func TestHierarchy(t *testing.T) {
 					"bar/+/baz",
 					"bar/+/baz/qux",
 				} {
-					comps, err := Missing(di, Components(p))
+					comps, err := Missing(di, Components(p, true))
 					if err != nil {
 						panic(err)
 					}
