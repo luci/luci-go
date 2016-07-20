@@ -23,7 +23,7 @@ type WorkItem struct {
 	ErrC chan<- error
 
 	// After, if not nil, is a callback method that will be invoked after the
-	// result of F has been written to ErrC.
+	// result of F has been passed to ErrC.
 	//
 	// After is called by the same worker goroutine as F, so it will similarly
 	// consume one worker during its execution.
@@ -201,16 +201,17 @@ func (r *Runner) RunOne(f func() error) <-chan error {
 	r.init()
 
 	errC := make(chan error)
-	r.workC <- WorkItem{f, errC, func() {
-		close(errC)
-	}}
+	r.workC <- WorkItem{
+		F:     f,
+		ErrC:  errC,
+		After: func() { close(errC) },
+	}
 	return errC
 }
 
 // WorkC returns a channel which WorkItem can be directly written to.
 func (r *Runner) WorkC() chan<- WorkItem {
 	r.init()
-
 	return r.workC
 }
 
@@ -249,7 +250,11 @@ func runImpl(gen func(chan<- func() error), workC chan<- WorkItem, then func()) 
 		// Dispatch the tasks in the task channel.
 		for task := range taskC {
 			atomic.AddInt32(&count, 1)
-			workC <- WorkItem{task, errC, finish}
+			workC <- WorkItem{
+				F:     task,
+				ErrC:  errC,
+				After: finish,
+			}
 		}
 	}()
 

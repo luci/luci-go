@@ -19,3 +19,18 @@ import (
 func WorkPool(workers int, gen func(chan<- func() error)) error {
 	return errors.MultiErrorFromErrors(Run(workers, gen))
 }
+
+// FanOutIn is useful to quickly parallelize a group of tasks.
+//
+// You pass it a function which is expected to push simple `func() error`
+// closures into the provided chan. Each function will be executed in parallel
+// and their error results will be collated.
+//
+// The function blocks until all functions are executed, and an
+// errors.MultiError is returned if one or more of your fan-out tasks failed,
+// otherwise this function returns nil.
+//
+// This function is equivalent to WorkPool(0, gen).
+func FanOutIn(gen func(chan<- func() error)) error {
+	return WorkPool(0, gen)
+}

@@ -4,6 +4,9 @@
 
 package parallel
 
+// SemaphoreToken is a semaphore token.
+type SemaphoreToken struct{}
+
 // Semaphore is a sync.Locker that implements a n-semaphore.
 //
 // Lock the semaphore acquires a semaphore token, possibly blocking until one
@@ -13,12 +16,12 @@ package parallel
 //
 // For semaphore s, len(s) is the current number of acquired resources, and
 // cap(s) is the total resource size of the semaphore.
-type Semaphore chan struct{}
+type Semaphore chan SemaphoreToken
 
 // Lock acquires a semaphore resource, blocking until one is available.
 func (s Semaphore) Lock() {
 	if cap(s) > 0 {
-		s <- struct{}{}
+		s <- SemaphoreToken{}
 	}
 }
 

@@ -126,9 +126,11 @@ func (b *Buffer) RunOne(f func() error) <-chan error {
 	b.init()
 
 	errC := make(chan error)
-	b.workC <- WorkItem{f, errC, func() {
-		close(errC)
-	}}
+	b.workC <- WorkItem{
+		F:     f,
+		ErrC:  errC,
+		After: func() { close(errC) },
+	}
 	return errC
 }
 
