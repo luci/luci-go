@@ -68,6 +68,8 @@ def header(input_api):
 def source_file_filter(input_api):
   """Returns filter that selects source code files only."""
   bl = list(input_api.DEFAULT_BLACK_LIST) + [
+    r'.+/bootstrap/.*',  # third party
+    r'.+/jquery/.*',  # third party
     r'.+/pb\.discovery\.go$',
     r'.+/pb\.discovery_test\.go$',
     r'.+\.pb\.go$',
