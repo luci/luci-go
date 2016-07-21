@@ -41,3 +41,9 @@ func Warningf(c context.Context, fmt string, args ...interface{}) {
 func Errorf(c context.Context, fmt string, args ...interface{}) {
 	Get(c).LogCall(Error, 1, fmt, args)
 }
+
+// Logf is a shorthand method to call the current logger's logging method which
+// corresponds to the supplied log level.
+func Logf(c context.Context, l Level, fmt string, args ...interface{}) {
+	Get(c).LogCall(l, 1, fmt, args)
+}

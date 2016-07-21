@@ -3,7 +3,8 @@
 # Use of this source code is governed under the Apache License, Version 2.0
 # that can be found in the LICENSE file.
 
-METADATA_URL="http://metadata.google.internal"
+# Resolved "http://metadata.google.internal", b/c the DNS resolution can flake.
+METADATA_URL="http://169.254.169.254"
 
 _help() {
   echo -e "Usage: $0 <logdog-coordinator-path>"
@@ -33,7 +34,7 @@ _load_metadata_domain() {
     --fail \
     "${METADATA_URL}/computeMetadata/v1/${domain}/${resource}" \
     -H "Metadata-Flavor: Google")
-  RV=$?
+  local RV=$?
   if [ ${RV} != 0 ]; then
     return ${RV}
   fi
@@ -51,13 +52,15 @@ _load_metadata() {
 
   # Try loading from 'instance' domain.
   _load_metadata_domain "$__resultvar" "instance" "$resource"
-  if [ $? == 0 ]; then
+  local RV=$?
+  if [ ${RV} == 0 ]; then
     return 0
   fi
 
   # Try loading from 'project' domain.
   _load_metadata_domain "$__resultvar" "project" "$resource"
-  if [ $? == 0 ]; then
+  RV=$?
+  if [ ${RV} == 0 ]; then
     return 0
   fi
 
@@ -70,7 +73,8 @@ _load_metadata_check() {
   local resource=$1; shift
 
   _load_metadata "$__resultvar" "$resource"
-  if [ $? != 0 ]; then
+  local RV=$?
+  if [ ${RV} != 0 ]; then
     echo "ERROR: Metadata resource [${resource}] is required."
     exit 1
   fi
@@ -85,13 +89,15 @@ _write_credentials() {
 }
 
 # Test if we're running on a GCE instance.
+echo "Testing for GCE instance: ${METADATA_URL}"
 curl \
   -s \
   --fail \
   "${METADATA_URL}" \
   1>/dev/null
-if [ $? != 0 ]; then
-  echo "ERROR: Not running on GCE instance."
+RV=$?
+if [ ${RV} != 0 ]; then
+  echo "ERROR: Not running on GCE instance (${RV})."
   exit 1
 fi
 

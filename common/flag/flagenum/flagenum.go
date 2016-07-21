@@ -73,7 +73,7 @@ func (e Enum) setValue(v interface{}, key string) error {
 	iValue := reflect.ValueOf(i)
 	if !vValue.Type().AssignableTo(iValue.Type()) {
 		panic(fmt.Errorf("flagenum: Enumeration type (%v) is incompatible with supplied value (%v)",
-			vValue, iValue))
+			vValue.Type(), iValue.Type()))
 	}
 
 	vValue.Set(iValue)

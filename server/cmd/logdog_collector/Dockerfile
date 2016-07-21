@@ -2,14 +2,17 @@
 # single application.
 FROM golang:1.6
 
+ENV mainpkg "github.com/luci/luci-go/server/cmd/logdog_collector"
+
 # Copy the local package files to the container's workspace.
 ADD _gopath/src/ /go/src
+ADD . "/go/src/${mainpkg}"
 COPY run.sh /opt/logdog_collector/run.sh
 
 # Build the command inside the container.
 # (You may fetch or manage dependencies here,
 # either manually or with a tool like "godep".)
-RUN go install github.com/luci/luci-go/server/cmd/logdog_collector
+RUN go install "${mainpkg}"
 
 # Run the output command by default when the container starts.
-ENTRYPOINT ["/opt/logdog_collector/run.sh", "/go/bin/logdog_collector"]
+ENTRYPOINT ["/bin/bash", "/opt/logdog_collector/run.sh", "/go/bin/logdog_collector"]

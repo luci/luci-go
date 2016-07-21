@@ -3,7 +3,8 @@
 # Use of this source code is governed under the Apache License, Version 2.0
 # that can be found in the LICENSE file.
 
-METADATA_URL="http://metadata.google.internal"
+# Resolved "http://metadata.google.internal", b/c the DNS resolution can flake.
+METADATA_URL="http://169.254.169.254"
 
 _help() {
   echo -e "Usage: $0 <logdog-coordinator-path>"

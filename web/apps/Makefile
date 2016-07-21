@@ -5,11 +5,15 @@
 # This is a simple Makefile to build "dist" versions for all web app
 # subdirectories using gulp.
 
-APPS = $(patsubst %/gulpfile.js,%,$(wildcard */gulpfile.js))
+ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+GULP_OUT ?= $(shell dirname $(ROOT_DIR))
+
+ALL_GULPFILES = $(wildcard $(ROOT_DIR)/*/gulpfile.js)
+APPS = $(patsubst $(ROOT_DIR)/%/gulpfile.js,%,$(ALL_GULPFILES))
 
 .PHONY: all
 all: $(APPS)
 
 .PHONY: $(APPS)
 $(APPS):
-	cd "$@" && gulp
+	cd "$@" && gulp --out "$(GULP_OUT)"

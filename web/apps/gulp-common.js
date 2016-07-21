@@ -10,9 +10,11 @@
 'use strict';
 
 var path = require('path');
+var argv = require('yargs').argv;
 
 var exports = module.exports = {}
 exports.base = path.join(__dirname, '..');
+exports.out = (argv.out || exports.base);
 exports.plugins = require('gulp-load-plugins')({
   config: path.join(exports.base, 'package.json'),
 });
@@ -44,7 +46,7 @@ var AUTOPREFIXER_BROWSERS = [
 
 exports.setup = function(gulp, config) {
   var APP = path.basename(config.dir);
-  var DIST = path.join(exports.base, 'dist', APP);
+  var DIST = path.join(exports.out, 'dist', APP);
 
   var layout = {
     app: APP,
