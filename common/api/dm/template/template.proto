@@ -5,6 +5,7 @@
 syntax = "proto3";
 
 import "github.com/luci/luci-go/common/api/template/template.proto";
+import "github.com/luci/luci-go/common/api/dm/service/v1/graph_data.proto";
 
 package dmTemplate;
 
@@ -13,7 +14,9 @@ message File {
   // Template defines a single template.
   message Template {
     string distributor_config_name = 1;
-    template.File.Template payload = 2;
+    template.File.Template parameters = 2;
+    template.File.Template distributor_parameters = 3;
+    dm.Quest.Desc.Meta meta = 4;
   }
   map<string, Template> template = 1;
 }

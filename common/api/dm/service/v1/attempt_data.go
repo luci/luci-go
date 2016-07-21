@@ -10,6 +10,31 @@ import (
 	google_pb "github.com/luci/luci-go/common/proto/google"
 )
 
+// NewJSONObject creates a new JSONObject object with optional expiration time.
+func NewJSONObject(data string, exps ...time.Time) *JsonResult {
+	exp := time.Time{}
+	switch l := len(exps); {
+	case l == 1:
+		exp = exps[0]
+	case l > 1:
+		panic("too many exps")
+	}
+	return &JsonResult{data, uint32(len(data)), google_pb.NewTimestamp(exp)}
+}
+
+// NewDatalessJSONObject creates a new JSONObject object without data and with
+// optional expiration time.
+func NewDatalessJSONObject(size uint32, exps ...time.Time) *JsonResult {
+	exp := time.Time{}
+	switch l := len(exps); {
+	case l == 1:
+		exp = exps[0]
+	case l > 1:
+		panic("too many exps")
+	}
+	return &JsonResult{"", size, google_pb.NewTimestamp(exp)}
+}
+
 // NewAttemptScheduling creates an Attempt in the SCHEDULING state.
 func NewAttemptScheduling() *Attempt {
 	return &Attempt{
@@ -36,12 +61,11 @@ func NewAttemptWaiting(numWaiting uint32) *Attempt {
 }
 
 // NewAttemptFinished creates an Attempt in the FINISHED state.
-func NewAttemptFinished(expiration time.Time, jsonResultSize uint32, jsonResult string, finalPersistentState []byte) *Attempt {
+func NewAttemptFinished(result *JsonResult) *Attempt {
 	return &Attempt{
 		Data: &Attempt_Data{
 			AttemptType: &Attempt_Data_Finished_{
-				&Attempt_Data_Finished{
-					google_pb.NewTimestamp(expiration), jsonResultSize, jsonResult, finalPersistentState}}}}
+				&Attempt_Data_Finished{result}}}}
 }
 
 // NewAttemptAbnormalFinish creates an Attempt in the ABNORMAL_FINISH state.

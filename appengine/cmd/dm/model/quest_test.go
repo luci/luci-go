@@ -30,10 +30,10 @@ func TestQuest(t *testing.T) {
 		Convey("QuestDescriptor", func() {
 			Convey("good", func() {
 				Convey("normal (normalized)", func() {
-					qd := dm.NewQuestDesc("swarming", `{  "key"  :  ["value"]}`, nil)
+					qd := dm.NewQuestDesc("swarming", `{  "key"  :  ["value"]}`, "{  }", nil)
 					So(qd.Normalize(), ShouldBeNil)
 					So(NewQuest(c, qd), ShouldResemble, &Quest{
-						"i7dd71-dXSiEY2gVRDEOnZcR_ZswA68Znk1I-BJdfHU",
+						"KrrkmSN4f0wis364BYyQhTHRVAj_RzZFFQuUhOx05U0",
 						*qd,
 						nil,
 						testclock.TestTimeUTC,
@@ -41,15 +41,15 @@ func TestQuest(t *testing.T) {
 				})
 
 				Convey("extra data", func() {
-					qd := dm.NewQuestDesc("swarming", `{"key":["value"]} foof`, nil)
+					qd := dm.NewQuestDesc("swarming", `{"key":["value"]} foof`, "{  }", nil)
 					So(qd.Normalize(), ShouldErrLike, "extra junk")
 				})
 
 				Convey("data ordering", func() {
-					qd := dm.NewQuestDesc("swarming", `{"key":["value"], "abc": true}`, nil)
+					qd := dm.NewQuestDesc("swarming", `{"key":["value"], "abc": true}`, "{  }", nil)
 					So(qd.Normalize(), ShouldBeNil)
 					So(NewQuest(c, qd), ShouldResemble, &Quest{
-						"iEnVmX4BbYB0y7Df7pIXTIcNWsPgsXNz3KOjg1xX-sM",
+						"ruFbPlTCSG3wHJkEI_yPcLJDAvqsHuU-kyDZAp-8Q6I",
 						*qd,
 						nil,
 						testclock.TestTimeUTC,
@@ -61,40 +61,40 @@ func TestQuest(t *testing.T) {
 			Convey("bad", func() {
 				Convey("payload too large", func() {
 					payload := make([]byte, 512*1000)
-					qd := dm.NewQuestDesc("swarming", string(payload), nil)
-					So(qd.Normalize(), ShouldErrLike, "too large: 512000 > 262144")
+					qd := dm.NewQuestDesc("swarming", string(payload), "{}", nil)
+					So(qd.Normalize(), ShouldErrLike, "too large: 512002 > 262144")
 				})
 
 				Convey("json with null byte", func() {
-					qd := dm.NewQuestDesc("swarming", "{\"key\": \"\x00\"}", nil)
+					qd := dm.NewQuestDesc("swarming", "{\"key\": \"\x00\"}", "{}", nil)
 					So(qd.Normalize(), ShouldErrLike, "invalid character")
 				})
 
 				Convey("not a dictionary", func() {
-					qd := dm.NewQuestDesc("swarming", "[]", nil)
+					qd := dm.NewQuestDesc("swarming", "[]", "{}", nil)
 					So(qd.Normalize(), ShouldErrLike, "cannot unmarshal array")
 				})
 			})
 		})
 
 		Convey("ToProto", func() {
-			qd := dm.NewQuestDesc("swarming", `{"key": ["value"]}`, nil)
+			qd := dm.NewQuestDesc("swarming", `{"key": ["value"]}`, "{}", nil)
 			So(qd.Normalize(), ShouldBeNil)
 			q := NewQuest(c, qd)
 			p := q.ToProto()
 			So(p, ShouldResemble, &dm.Quest{
-				Id: dm.NewQuestID("i7dd71-dXSiEY2gVRDEOnZcR_ZswA68Znk1I-BJdfHU"),
+				Id: dm.NewQuestID("KrrkmSN4f0wis364BYyQhTHRVAj_RzZFFQuUhOx05U0"),
 				Data: &dm.Quest_Data{
 					Created: google_pb.NewTimestamp(testclock.TestTimeUTC),
 					Desc:    &q.Desc,
 					BuiltBy: []*dm.Quest_TemplateSpec{},
 				},
 			})
-			So(p.Data.Desc.JsonPayload, ShouldResemble, `{"key":["value"]}`)
+			So(p.Data.Desc.Parameters, ShouldResemble, `{"key":["value"]}`)
 		})
 
 		Convey("QueryAttemptsForQuest", func() {
-			qd := dm.NewQuestDesc("swarming", `{"key": ["value"]}`, nil)
+			qd := dm.NewQuestDesc("swarming", `{"key": ["value"]}`, "{}", nil)
 			So(qd.Normalize(), ShouldBeNil)
 			q := NewQuest(c, qd)
 			ds := datastore.Get(c)
@@ -123,8 +123,8 @@ func TestQuest(t *testing.T) {
 			as = nil
 			So(ds.GetAll(QueryAttemptsForQuest(c, q.ID), &as), ShouldBeNil)
 			So(as, ShouldResemble, []*Attempt{
-				{ID: *dm.NewAttemptID("i7dd71-dXSiEY2gVRDEOnZcR_ZswA68Znk1I-BJdfHU", 2)},
-				{ID: *dm.NewAttemptID("i7dd71-dXSiEY2gVRDEOnZcR_ZswA68Znk1I-BJdfHU", 1)},
+				{ID: *dm.NewAttemptID("KrrkmSN4f0wis364BYyQhTHRVAj_RzZFFQuUhOx05U0", 2)},
+				{ID: *dm.NewAttemptID("KrrkmSN4f0wis364BYyQhTHRVAj_RzZFFQuUhOx05U0", 1)},
 			})
 
 		})

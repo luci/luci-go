@@ -22,7 +22,10 @@ func (t *File_Template) Normalize() error {
 	if t.DistributorConfigName == "" {
 		return fmt.Errorf("missing distributor_config_name")
 	}
-	if err := t.Payload.Normalize(); err != nil {
+	if err := t.Parameters.Normalize(); err != nil {
+		return err
+	}
+	if err := t.DistributorParameters.Normalize(); err != nil {
 		return err
 	}
 	return nil

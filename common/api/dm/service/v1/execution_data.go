@@ -31,11 +31,11 @@ func NewExecutionStopping() *Execution {
 }
 
 // NewExecutionFinished creates an Execution in the FINISHED state.
-func NewExecutionFinished(state string) *Execution {
+func NewExecutionFinished(result *JsonResult) *Execution {
 	return &Execution{
 		Data: &Execution_Data{
 			ExecutionType: &Execution_Data_Finished_{
-				&Execution_Data_Finished{state}}}}
+				&Execution_Data_Finished{result}}}}
 }
 
 // NewExecutionAbnormalFinish creates an Execution in the ABNORMAL_FINISH state.

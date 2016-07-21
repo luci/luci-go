@@ -66,7 +66,7 @@ func ExecutionKeyFromID(c context.Context, eid *dm.Execution_ID) *datastore.Key 
 // ExecutionFromID produces an empty Execution model from the ExecutionID.
 func ExecutionFromID(c context.Context, eid *dm.Execution_ID) *Execution {
 	ret := &Execution{}
-	ret.ID = eid.Id
+	ret.ID = invertedHexUint32(eid.Id)
 	ret.Attempt = AttemptKeyFromID(c, eid.AttemptID())
 	return ret
 }

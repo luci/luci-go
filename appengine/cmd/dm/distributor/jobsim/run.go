@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 	"google.golang.org/grpc/codes"
@@ -137,9 +138,8 @@ func (r *runner) doReturnStage(stg *jobsim.ReturnStage) error {
 	}
 
 	_, err := r.dmc.FinishAttempt(r.c, &dm.FinishAttemptReq{
-		Auth:       r.auth,
-		JsonResult: (&TaskResult{true, retval}).ToJSON(),
-		Expiration: stg.GetExpiration(),
+		Auth: r.auth,
+		Data: (&TaskResult{true, retval}).ToJSONObject(stg.GetExpiration().Time()),
 	})
 	if err != nil {
 		logging.WithError(err).Warningf(r.c, "got error on FinishAttempt")
@@ -174,7 +174,7 @@ func (r *runner) doDeps(seed int64, stg *jobsim.DepsStage, cfgName string) (stop
 
 		desc := &dm.Quest_Desc{}
 		desc.DistributorConfigName = cfgName
-		desc.JsonPayload, err = (&jsonpb.Marshaler{}).MarshalToString(dep.Phrase)
+		desc.Parameters, err = (&jsonpb.Marshaler{}).MarshalToString(dep.Phrase)
 		if err != nil {
 			panic(err)
 		}
@@ -226,8 +226,8 @@ func (r *runner) doDeps(seed int64, stg *jobsim.DepsStage, cfgName string) (stop
 				continue
 			}
 			logging.Fields{"atmpt": q.Attempts[currentAttempt[qid]].Data}.Infof(r.c, "grabbing payload")
-			payload := q.Attempts[currentAttempt[qid]].Data.GetFinished().JsonResult
-			tr, err = TaskResultFromJSON(payload)
+			payload := q.Attempts[currentAttempt[qid]].Data.GetFinished().Data
+			tr, err = TaskResultFromJSON(payload.Object)
 			if err != nil {
 				return
 			}
@@ -309,8 +309,8 @@ func (r *runner) doFailure(seed int64, chance float32) (stop bool, err error) {
 
 	stop = true
 	_, err = r.dmc.FinishAttempt(r.c, &dm.FinishAttemptReq{
-		Auth:       r.auth,
-		JsonResult: (&TaskResult{}).ToJSON(),
+		Auth: r.auth,
+		Data: (&TaskResult{}).ToJSONObject(time.Time{}),
 	})
 	if err != nil {
 		logging.WithError(err).Warningf(r.c, "got error on FinishAttempt")

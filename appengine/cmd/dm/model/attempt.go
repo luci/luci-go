@@ -46,18 +46,17 @@ type Attempt struct {
 	State      dm.Attempt_State
 	RetryState AttemptRetryState
 
-	// Only valid when State == ABNORMAL_FINISHED
-	AbnormalFinish dm.AbnormalFinish
+	// IsAbnormal is true iff State==ABNORMAL_FINISHED, used for walk_graph.
+	IsAbnormal bool
 
-	// Only valid when State == FINISHED
-	ResultExpiration time.Time `gae:",noindex"`
-	ResultSize       uint32    `gae:",noindex"`
+	// A lazily-updated boolean to reflect that this Attempt is expired for
+	// queries.
+	IsExpired bool
 
-	// PersistentState is the last successful execution's returned
-	// PersistentState. It is set whenever an execution for this Attempt finishes
-	// successfully. This is denormalized with the Execution's
-	// ResultPersistentState field.
-	PersistentState []byte `gae:",noindex"`
+	// Contains either data (State==FINISHED) or abnormal_finish (State==ABNORMAL_FINISHED)
+	//
+	// Does not contain the `data.object` field (which is in the AttemptResult,1 object)
+	Result dm.Result `gae:",noindex"`
 
 	// TODO(iannucci): Use CurExecution as a 'deps block version'
 	// then we can have an 'ANY' directive which executes the attempt as soon
@@ -73,6 +72,10 @@ type Attempt struct {
 	// (or 0 if no Executions have been made yet).
 	CurExecution uint32
 
+	// LastSuccessfulExecution is the execution ID of the last successful
+	// execution, or 0 if no such execution occured yet.
+	LastSuccessfulExecution uint32
+
 	// DepMap is valid only while Attempt is in a State of EXECUTING or WAITING.
 	//
 	// The size of this field is inspected to deteremine what the next state after
@@ -84,10 +87,6 @@ type Attempt struct {
 	// value of 1 means that the coresponding dep is satisfined. The Attempt can
 	// be unblocked from WAITING back to SCHEDULING when all bits are set to 1.
 	DepMap bf.BitField `gae:",noindex" json:"-"`
-
-	// A lazily-updated boolean to reflect that this Attempt is expired for
-	// queries.
-	ResultExpired bool
 }
 
 // MakeAttempt is a convenience function to create a new Attempt model in
@@ -142,10 +141,9 @@ func (a *Attempt) DataProto() (ret *dm.Attempt_Data) {
 	case dm.Attempt_WAITING:
 		ret = dm.NewAttemptWaiting(a.DepMap.Size() - a.DepMap.CountSet()).Data
 	case dm.Attempt_FINISHED:
-		ret = dm.NewAttemptFinished(a.ResultExpiration, a.ResultSize, "",
-			a.PersistentState).Data
+		ret = dm.NewAttemptFinished(a.Result.Data).Data
 	case dm.Attempt_ABNORMAL_FINISHED:
-		ret = dm.NewAttemptAbnormalFinish(&a.AbnormalFinish).Data
+		ret = dm.NewAttemptAbnormalFinish(a.Result.AbnormalFinish).Data
 	default:
 		panic(fmt.Errorf("unknown Attempt_State: %s", a.State))
 	}

@@ -6,14 +6,14 @@ package mutate
 
 import (
 	"testing"
-	"time"
 
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	//"github.com/luci/luci-go/appengine/tumble"
-	"github.com/luci/luci-go/common/api/dm/service/v1"
+	dm "github.com/luci/luci-go/common/api/dm/service/v1"
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/logging/memlogger"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
@@ -25,13 +25,16 @@ func TestFinishAttempt(t *testing.T) {
 	Convey("FinishAttempt", t, func() {
 		c := memory.Use(context.Background())
 		fa := &FinishAttempt{
-			&dm.Execution_Auth{
-				Id:    dm.NewExecutionID("quest", 1, 1),
-				Token: []byte("exekey"),
+			dm.FinishAttemptReq{
+				Auth: &dm.Execution_Auth{
+					Id:    dm.NewExecutionID("quest", 1, 1),
+					Token: []byte("exekey"),
+				},
+				Data: dm.NewJSONObject(`{"result": true}`, testclock.TestTimeUTC),
 			},
-			`{"result": true}`,
-			testclock.TestTimeUTC,
 		}
+
+		So(fa.Normalize(), ShouldBeNil)
 
 		ds := datastore.Get(c)
 
@@ -54,14 +57,14 @@ func TestFinishAttempt(t *testing.T) {
 
 			Convey("Good", func() {
 				muts, err := fa.RollForward(c)
+				memlogger.MustDumpStdout(c)
 				So(err, ShouldBeNil)
 				So(muts, ShouldBeEmpty)
 
 				So(ds.Get(a, e, ar), ShouldBeNil)
 				So(e.Token, ShouldBeEmpty)
-				So(a.ResultExpiration, ShouldResemble,
-					testclock.TestTimeUTC.Round(time.Microsecond))
-				So(ar.Data, ShouldResemble, `{"result": true}`)
+				So(a.Result.Data.Expiration.Time(), ShouldResemble, testclock.TestTimeUTC)
+				So(ar.Data.Object, ShouldResemble, `{"result":true}`)
 			})
 
 			Convey("Bad ExecutionKey", func() {

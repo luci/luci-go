@@ -27,7 +27,7 @@ func NewTestingRegistry(mocks map[string]D, fFn FinishExecutionFn) Registry {
 	return &testRegistry{fFn, mocks}
 }
 
-func (t *testRegistry) FinishExecution(c context.Context, eid *dm.Execution_ID, rslt *TaskResult) ([]tumble.Mutation, error) {
+func (t *testRegistry) FinishExecution(c context.Context, eid *dm.Execution_ID, rslt *dm.Result) ([]tumble.Mutation, error) {
 	return t.finishExecutionImpl(c, eid, rslt)
 }
 

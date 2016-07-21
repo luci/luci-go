@@ -8,7 +8,7 @@ import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
 import google_protobuf "github.com/luci/luci-go/common/proto/google"
-import google_protobuf2 "github.com/luci/luci-go/common/proto/google"
+import google_protobuf1 "github.com/luci/luci-go/common/proto/google"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -67,7 +67,7 @@ type PropertyValue_Time struct {
 	Time *google_protobuf.Timestamp `protobuf:"bytes,6,opt,name=time,oneof"`
 }
 type PropertyValue_Null struct {
-	Null *google_protobuf2.Empty `protobuf:"bytes,7,opt,name=null,oneof"`
+	Null *google_protobuf1.Empty `protobuf:"bytes,7,opt,name=null,oneof"`
 }
 
 func (*PropertyValue_Str) isPropertyValue_Value()  {}
@@ -119,7 +119,7 @@ func (m *PropertyValue) GetTime() *google_protobuf.Timestamp {
 	return nil
 }
 
-func (m *PropertyValue) GetNull() *google_protobuf2.Empty {
+func (m *PropertyValue) GetNull() *google_protobuf1.Empty {
 	if x, ok := m.GetValue().(*PropertyValue_Null); ok {
 		return x.Null
 	}
@@ -218,7 +218,7 @@ func _PropertyValue_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
-		msg := new(google_protobuf2.Empty)
+		msg := new(google_protobuf1.Empty)
 		err := b.DecodeMessage(msg)
 		m.Value = &PropertyValue_Null{msg}
 		return true, err

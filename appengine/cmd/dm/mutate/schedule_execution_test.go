@@ -88,12 +88,12 @@ func TestScheduleExecution(t *testing.T) {
 
 				So(ds.Get(a, e), ShouldBeNil)
 				So(a.State, ShouldEqual, dm.Attempt_ABNORMAL_FINISHED)
-				So(a.AbnormalFinish.Status, ShouldEqual, dm.AbnormalFinish_REJECTED)
-				So(a.AbnormalFinish.Reason, ShouldContainSubstring, "non-transient")
+				So(a.Result.AbnormalFinish.Status, ShouldEqual, dm.AbnormalFinish_REJECTED)
+				So(a.Result.AbnormalFinish.Reason, ShouldContainSubstring, "non-transient")
 
 				So(e.State, ShouldEqual, dm.Execution_ABNORMAL_FINISHED)
-				So(e.AbnormalFinish.Status, ShouldEqual, dm.AbnormalFinish_REJECTED)
-				So(e.AbnormalFinish.Reason, ShouldContainSubstring, "non-transient")
+				So(e.Result.AbnormalFinish.Status, ShouldEqual, dm.AbnormalFinish_REJECTED)
+				So(e.Result.AbnormalFinish.Reason, ShouldContainSubstring, "non-transient")
 			})
 
 		})

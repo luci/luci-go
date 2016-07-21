@@ -54,7 +54,7 @@ func (t *TimeoutExecution) RollForward(c context.Context) (muts []tumble.Mutatio
 
 	// will be overwritten if this execution is STOPPING and the timeout is not
 	// abnormal
-	rslt := &distributor.TaskResult{AbnormalFinish: &dm.AbnormalFinish{
+	rslt := &dm.Result{AbnormalFinish: &dm.AbnormalFinish{
 		Reason: fmt.Sprintf("DM timeout (%s)", e.State),
 		Status: dm.AbnormalFinish_TIMED_OUT}}
 
@@ -83,7 +83,7 @@ func (t *TimeoutExecution) RollForward(c context.Context) (muts []tumble.Mutatio
 			}.Errorf(c, "Could not MakeDistributor")
 			return
 		}
-		var realRslt *distributor.TaskResult
+		var realRslt *dm.Result
 		realRslt, err = dist.GetStatus(distributor.Token(e.DistributorToken))
 		if (err != nil || realRslt == nil) && t.TimeoutAttempt < maxTimeoutAttempts {
 			logging.Fields{

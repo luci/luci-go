@@ -5,9 +5,8 @@
 package model
 
 import (
-	"time"
-
 	"github.com/luci/gae/service/datastore"
+	dm "github.com/luci/luci-go/common/api/dm/service/v1"
 )
 
 // AttemptResult holds the raw, compressed json blob returned from the
@@ -16,9 +15,7 @@ type AttemptResult struct {
 	_id     int64          `gae:"$id,1"`
 	Attempt *datastore.Key `gae:"$parent"`
 
-	Data string `gae:",noindex"`
-
-	// These are denormalized across Attempt and AttemptResult
-	Expiration time.Time
-	Size       uint32
+	// The sizes and expirations are denormalized across Attempt and
+	// AttemptResult.
+	Data dm.JsonResult `gae:",noindex"`
 }

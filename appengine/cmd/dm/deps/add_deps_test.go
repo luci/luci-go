@@ -6,11 +6,10 @@ package deps
 
 import (
 	"testing"
-	"time"
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/common/api/dm/service/v1"
+	dm "github.com/luci/luci-go/common/api/dm/service/v1"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -22,7 +21,6 @@ func TestAddDeps(t *testing.T) {
 		_, c, _, s := testSetup()
 		c = writer(c)
 		ds := datastore.Get(c)
-		zt := time.Time{}
 
 		a := &model.Attempt{ID: *dm.NewAttemptID("quest", 1)}
 		a.CurExecution = 1
@@ -35,7 +33,8 @@ func TestAddDeps(t *testing.T) {
 
 		toQuestDesc := &dm.Quest_Desc{
 			DistributorConfigName: "fakeDistributor",
-			JsonPayload:           `{"data":"yes"}`,
+			Parameters:            `{"data":"yes"}`,
+			DistributorParameters: `{}`,
 		}
 		So(toQuestDesc.Normalize(), ShouldBeNil)
 		toQuest := model.NewQuest(c, toQuestDesc)
@@ -51,6 +50,7 @@ func TestAddDeps(t *testing.T) {
 				to.ID.Quest: {to.ID.Id},
 			}),
 		}
+		So(req.Normalize(), ShouldBeNil)
 
 		Convey("Bad", func() {
 			Convey("No such originating attempt", func() {
@@ -62,7 +62,7 @@ func TestAddDeps(t *testing.T) {
 				So(ds.Put(a, e), ShouldBeNil)
 
 				_, err := s.EnsureGraphData(c, req)
-				So(err, ShouldBeRPCInvalidArgument, `cannot create attempts for absent quest "FwcLo7vH7d24_mnsKIyKswk3NSezONOAKuDZwHrgl7M"`)
+				So(err, ShouldBeRPCInvalidArgument, `cannot create attempts for absent quest "GYjn_79mcqM4FuebzmlBtdZu8EulfwZdMgjBXsKiVQE"`)
 			})
 		})
 
@@ -91,7 +91,12 @@ func TestAddDeps(t *testing.T) {
 
 			Convey("deps already done", func() {
 				to.State = dm.Attempt_FINISHED
-				So(ds.Put(to), ShouldBeNil)
+				to.Result.Data = dm.NewJSONObject(`{"done":true}`)
+				to.Result.Data.Object = ""
+				ar := &model.AttemptResult{
+					Attempt: ds.KeyForObj(to),
+					Data:    *dm.NewJSONObject(`{"done":true}`)}
+				So(ds.Put(to, ar), ShouldBeNil)
 
 				rsp, err := s.EnsureGraphData(c, req)
 				So(err, ShouldBeNil)
@@ -104,7 +109,8 @@ func TestAddDeps(t *testing.T) {
 								Desc:    toQuestDesc,
 								BuiltBy: []*dm.Quest_TemplateSpec{},
 							},
-							Attempts: map[uint32]*dm.Attempt{1: dm.NewAttemptFinished(zt, 0, "", nil)},
+							Attempts: map[uint32]*dm.Attempt{
+								1: dm.NewAttemptFinished(dm.NewJSONObject(`{"done":true}`))},
 						},
 					}},
 				})
@@ -125,7 +131,6 @@ func TestAddDeps(t *testing.T) {
 				So(ds.Get(e), ShouldBeNil)
 				So(e.State, ShouldEqual, dm.Execution_STOPPING)
 			})
-
 		})
 	})
 }

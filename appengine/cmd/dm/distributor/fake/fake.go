@@ -85,7 +85,7 @@ type DistributorData struct {
 	Auth *dm.Execution_Auth
 	Desc *dm.Quest_Desc
 
-	State distributor.PersistentState
+	State *dm.JsonResult
 
 	done   bool
 	abnorm *dm.AbnormalFinish
@@ -97,7 +97,7 @@ type Task struct {
 	Auth *dm.Execution_Auth
 	Desc *dm.Quest_Desc
 	// State is read/writable.
-	State distributor.PersistentState
+	State *dm.JsonResult
 }
 
 // Activate does the activation handshake with the provided DepsServer and
@@ -115,7 +115,7 @@ func (t *Task) Activate(c context.Context, s dm.DepsServer) (*ActivatedTask, err
 		c,
 		&dm.Execution_Auth{Id: t.Auth.Id, Token: newTok},
 		t.Desc,
-		&t.State,
+		t.State,
 	}, nil
 }
 
@@ -139,7 +139,7 @@ type ActivatedTask struct {
 	Auth *dm.Execution_Auth
 	Desc *dm.Quest_Desc
 	// State is read/writable.
-	State *distributor.PersistentState
+	State *dm.JsonResult
 }
 
 // WalkGraph calls the bound DepsServer's WalkGraph method with the activated
@@ -185,13 +185,13 @@ func (t *ActivatedTask) MustDepOn(to ...*dm.Attempt_ID) (halt bool) {
 // that).
 func (t *ActivatedTask) Finish(resultJSON string, expire ...time.Time) {
 	req := &dm.FinishAttemptReq{
-		Auth:       t.Auth,
-		JsonResult: resultJSON,
+		Auth: t.Auth,
+		Data: dm.NewJSONObject(resultJSON),
 	}
 	switch len(expire) {
 	case 0:
 	case 1:
-		req.Expiration = googlepb.NewTimestamp(expire[0])
+		req.Data.Expiration = googlepb.NewTimestamp(expire[0])
 	default:
 		panic("may only specify 0 or 1 expire values")
 	}
@@ -255,7 +255,7 @@ func (f *Distributor) Run(desc *distributor.TaskDescription) (tok distributor.To
 	tsk := &DistributorData{
 		Auth:  exAuth,
 		Desc:  desc.Payload(),
-		State: desc.PreviousState(),
+		State: desc.PreviousResult(),
 	}
 	tsk.NotifyTopic, tsk.NotifyAuth, err = desc.PrepareTopic()
 	panicIf(err)
@@ -285,19 +285,19 @@ func (f *Distributor) Cancel(tok distributor.Token) (err error) {
 }
 
 // GetStatus implements distributor.D
-func (f *Distributor) GetStatus(tok distributor.Token) (rslt *distributor.TaskResult, err error) {
+func (f *Distributor) GetStatus(tok distributor.Token) (rslt *dm.Result, err error) {
 	f.Lock()
 	defer f.Unlock()
 	if tsk, ok := f.tasks[tok]; ok {
 		if tsk.done {
 			if tsk.abnorm != nil {
-				rslt = &distributor.TaskResult{AbnormalFinish: tsk.abnorm}
+				rslt = &dm.Result{AbnormalFinish: tsk.abnorm}
 			} else {
-				rslt = &distributor.TaskResult{PersistentState: tsk.State}
+				rslt = &dm.Result{Data: tsk.State}
 			}
 		}
 	} else {
-		rslt = &distributor.TaskResult{
+		rslt = &dm.Result{
 			AbnormalFinish: &dm.AbnormalFinish{
 				Status: dm.AbnormalFinish_MISSING,
 				Reason: fmt.Sprintf("unknown token: %s", tok)},
@@ -306,13 +306,21 @@ func (f *Distributor) GetStatus(tok distributor.Token) (rslt *distributor.TaskRe
 	return
 }
 
+// FakeURLPrefix is the url that all fake InfoURLs are prefixed with.
+const FakeURLPrefix = "https://info.example.com/"
+
+// InfoURL builds a fake InfoURL for the given Execution_ID
+func InfoURL(e *dm.Execution_ID) string {
+	return FakeURLPrefix + string(MkToken(e))
+}
+
 // InfoURL implements distributor.D
 func (f *Distributor) InfoURL(tok distributor.Token) string {
-	return "https://info.example.com/" + string(tok)
+	return FakeURLPrefix + string(tok)
 }
 
 // HandleNotification implements distributor.D
-func (f *Distributor) HandleNotification(n *distributor.Notification) (rslt *distributor.TaskResult, err error) {
+func (f *Distributor) HandleNotification(n *distributor.Notification) (rslt *dm.Result, err error) {
 	return f.GetStatus(distributor.Token(n.Attrs["token"]))
 }
 
@@ -417,16 +425,18 @@ var _ distributor.D = (*Distributor)(nil)
 // QuestDesc generates a normalized generic QuestDesc of the form:
 //   Quest_Desc{
 //     DistributorConfigName: "fakeDistributor",
-//     JsonPayload:           `{"name":"$name"}`,
+//     Parameters:            `{"name":"$name"}`,
+//     DistributorParameters: "{}",
 //   }
 func QuestDesc(name string) *dm.Quest_Desc {
-	payload, err := json.Marshal(struct {
+	params, err := json.Marshal(struct {
 		Name string `json:"name"`
 	}{name})
 	panicIf(err)
 	desc := &dm.Quest_Desc{
 		DistributorConfigName: "fakeDistributor",
-		JsonPayload:           string(payload),
+		Parameters:            string(params),
+		DistributorParameters: "{}",
 	}
 	panicIf(desc.Normalize())
 	return desc

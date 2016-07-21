@@ -19,6 +19,11 @@ func (a *Attempt_ID) Equals(o *Attempt_ID) bool {
 	return a.Quest == o.Quest && a.Id == o.Id
 }
 
+// Execution returns an Execution_ID for this Attempt.
+func (a *Attempt_ID) Execution(eid uint32) *Execution_ID {
+	return &Execution_ID{a.Quest, a.Id, eid}
+}
+
 // QuestID is a helper function to obtain the *Quest_ID from this Execution_ID.
 func (e *Execution_ID) QuestID() *Quest_ID {
 	return &Quest_ID{e.Quest}

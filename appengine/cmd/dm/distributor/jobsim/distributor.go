@@ -21,6 +21,7 @@ import (
 
 	"github.com/luci/luci-go/appengine/cmd/dm/distributor"
 	"github.com/luci/luci-go/common/api/dm/distributor/jobsim"
+	dm "github.com/luci/luci-go/common/api/dm/service/v1"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
 )
@@ -49,13 +50,13 @@ func (j *jobsimDist) Run(tsk *distributor.TaskDescription) (tok distributor.Toke
 		"eid": tsk.ExecutionAuth().Id,
 	}.Infof(j.c, "jobsim: running new task")
 
-	jtsk, err := j.parsePayload(tsk.Payload().JsonPayload)
+	jtsk, err := j.parsePayload(tsk.Payload().Parameters)
 	if err != nil {
 		return
 	}
 	jtsk.ExAuth = *tsk.ExecutionAuth()
 	jtsk.Status = jobsimRunnable
-	jtsk.StateOrReason = string(tsk.PreviousState())
+	jtsk.StateOrReason = tsk.PreviousResult().Object
 	jtsk.CfgName = j.cfg.Name
 
 	key := []*datastore.Key{
@@ -123,7 +124,7 @@ func (j *jobsimDist) Cancel(tok distributor.Token) error {
 	}, nil)
 }
 
-func (j *jobsimDist) GetStatus(tok distributor.Token) (*distributor.TaskResult, error) {
+func (j *jobsimDist) GetStatus(tok distributor.Token) (*dm.Result, error) {
 	jtsk, err := loadTask(j.c, string(tok))
 	if err != nil {
 		return nil, err
@@ -136,7 +137,7 @@ func (j *jobsimDist) InfoURL(tok distributor.Token) string {
 	return fmt.Sprintf("jobsim://%s/ver/%s/tok/%s", j.cfg.Name, j.cfg.Version, tok)
 }
 
-func (j *jobsimDist) HandleNotification(note *distributor.Notification) (*distributor.TaskResult, error) {
+func (j *jobsimDist) HandleNotification(note *distributor.Notification) (*dm.Result, error) {
 	props := map[string]string(nil)
 	err := json.Unmarshal(note.Data, &props)
 	if err != nil {

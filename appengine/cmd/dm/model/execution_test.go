@@ -38,6 +38,9 @@ func TestExecutions(t *testing.T) {
 			e1 := &Execution{ID: 1, Attempt: ak, Token: []byte("good tok"), State: dm.Execution_RUNNING}
 			So(ds.Put(e1), ShouldBeNil)
 
+			So(ds.KeyForObj(e1).String(), ShouldEqual,
+				`dev~app::/Attempt,"q|fffffffe"/Execution,"fffffffe"`)
+
 			e2 := *e1
 			So(e2.Revoke(c), ShouldBeNil)
 

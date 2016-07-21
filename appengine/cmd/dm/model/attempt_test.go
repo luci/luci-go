@@ -18,7 +18,7 @@ import (
 	google_pb "github.com/luci/luci-go/common/proto/google"
 	. "github.com/luci/luci-go/common/testing/assertions"
 
-	"github.com/luci/luci-go/common/api/dm/service/v1"
+	dm "github.com/luci/luci-go/common/api/dm/service/v1"
 )
 
 func TestAttempt(t *testing.T) {
@@ -103,7 +103,7 @@ func TestAttempt(t *testing.T) {
 				a.State = dm.Attempt_FINISHED
 				a.CurExecution = math.MaxUint32
 				a.DepMap = bf.Make(20)
-				a.ResultExpiration = testclock.TestTimeUTC.Add(10 * time.Second)
+				a.Result.Data = dm.NewJSONObject("", testclock.TestTimeUTC.Add(10*time.Second))
 
 				a.DepMap.Set(1)
 				a.DepMap.Set(5)
@@ -116,7 +116,8 @@ func TestAttempt(t *testing.T) {
 						Modified:      google_pb.NewTimestamp(testclock.TestTimeUTC),
 						NumExecutions: math.MaxUint32,
 						AttemptType: &dm.Attempt_Data_Finished_{Finished: &dm.Attempt_Data_Finished{
-							Expiration: google_pb.NewTimestamp(testclock.TestTimeUTC.Add(10 * time.Second))}},
+							Data: &dm.JsonResult{
+								Expiration: google_pb.NewTimestamp(testclock.TestTimeUTC.Add(10 * time.Second))}}},
 					},
 				})
 			})

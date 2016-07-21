@@ -5,15 +5,14 @@
 package mutate
 
 import (
-	"time"
-
 	"google.golang.org/grpc/codes"
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/tumble"
-	"github.com/luci/luci-go/common/api/dm/service/v1"
+	dm "github.com/luci/luci-go/common/api/dm/service/v1"
 	"github.com/luci/luci-go/common/grpcutil"
+	"github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
 
@@ -23,9 +22,7 @@ import (
 //   Creates a new AttemptResult
 //   Starts RecordCompletion state machine.
 type FinishAttempt struct {
-	Auth             *dm.Execution_Auth
-	Result           string
-	ResultExpiration time.Time
+	dm.FinishAttemptReq
 }
 
 // Root implements tumble.Mutation
@@ -40,25 +37,26 @@ func (f *FinishAttempt) Root(c context.Context) *datastore.Key {
 func (f *FinishAttempt) RollForward(c context.Context) (muts []tumble.Mutation, err error) {
 	atmpt, ex, err := model.InvalidateExecution(c, f.Auth)
 	if err != nil {
+		logging.WithError(err).Errorf(c, "could not invalidate execution")
 		return
 	}
 
 	if err = ResetExecutionTimeout(c, ex); err != nil {
+		logging.WithError(err).Errorf(c, "could not reset timeout")
 		return
 	}
 
-	ds := datastore.Get(c)
-
-	atmpt.ResultSize = uint32(len(f.Result))
-	atmpt.ResultExpiration = f.ResultExpiration
-	rslt := &model.AttemptResult{
-		Attempt:    ds.KeyForObj(atmpt),
-		Data:       f.Result,
-		Expiration: atmpt.ResultExpiration,
-		Size:       atmpt.ResultSize,
+	ar := &model.AttemptResult{
+		Attempt: model.AttemptKeyFromID(c, &atmpt.ID),
+		Data:    *f.Data,
 	}
 
-	err = grpcutil.MaybeLogErr(c, ds.Put(atmpt, rslt),
+	rslt := *f.Data
+	atmpt.Result.Data = &rslt
+	atmpt.Result.Data.Object = ""
+
+	ds := datastore.Get(c)
+	err = grpcutil.MaybeLogErr(c, ds.Put(atmpt, ar),
 		codes.Internal, "while trying to Put")
 
 	return

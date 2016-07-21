@@ -4,8 +4,6 @@
 
 syntax = "proto3";
 
-import "google/protobuf/timestamp.proto";
-
 import "graph_data.proto";
 
 package dm;
@@ -15,6 +13,7 @@ message FinishAttemptReq {
   // required
   dm.Execution.Auth auth = 1;
 
-  string json_result = 2;
-  google.protobuf.Timestamp expiration = 3;
+  // The result data for this Attempt. The `size` field is recalculated after
+  // the data field is normalized, and may be omitted.
+  JsonResult data = 2;
 }

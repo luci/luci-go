@@ -6,8 +6,8 @@ package jobsim
 
 import (
 	"encoding/json"
+	"time"
 
-	"github.com/luci/luci-go/appengine/cmd/dm/distributor"
 	"github.com/luci/luci-go/common/api/dm/distributor/jobsim"
 	"github.com/luci/luci-go/common/api/dm/service/v1"
 )
@@ -35,17 +35,17 @@ type jobsimExecution struct {
 	CfgName     string        `gae:",noindex"`
 }
 
-func getTaskResult(status jobsimStatus, stateOrReason string) *distributor.TaskResult {
+func getTaskResult(status jobsimStatus, stateOrReason string) *dm.Result {
 	switch status {
 	case jobsimRunnable, jobsimRunning:
 		return nil
 
 	case jobsimFinished:
-		return &distributor.TaskResult{
-			PersistentState: distributor.PersistentState(stateOrReason)}
+		return &dm.Result{
+			Data: dm.NewJSONObject(stateOrReason)}
 	}
 
-	tr := &distributor.TaskResult{AbnormalFinish: &dm.AbnormalFinish{
+	tr := &dm.Result{AbnormalFinish: &dm.AbnormalFinish{
 		Reason: stateOrReason}}
 	switch status {
 	case jobsimFailed:
@@ -62,13 +62,13 @@ type TaskResult struct {
 	Result  int64 `json:"result,string"`
 }
 
-// ToJSON returns a JSON string encoding for this TaskResult.
-func (t *TaskResult) ToJSON() string {
+// ToJSONObject returns a JSONObject for this TaskResult.
+func (t *TaskResult) ToJSONObject(exp time.Time) *dm.JsonResult {
 	ret, err := json.Marshal(t)
 	if err != nil {
 		panic(err)
 	}
-	return string(ret)
+	return dm.NewJSONObject(string(ret), exp)
 }
 
 // TaskResultFromJSON converts a JSON string encoding to a *TaskResult.

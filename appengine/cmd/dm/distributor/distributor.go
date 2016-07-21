@@ -45,21 +45,6 @@ import (
 // uniquely identify a single DM execution.
 type Token string
 
-// The PersistentState token for the job. For a given Attempt, this will be
-// retrieved from Finished executions and then passed to new Executions.
-type PersistentState []byte
-
-// TaskResult is the conclusion of the task. One of the two fields may be
-// populated.
-type TaskResult struct {
-	// PersistentState if AbnormalFinish is nil. This indicates that the Execution
-	// is counted as FINISHED, with this value as its PersistentState.
-	PersistentState PersistentState
-	// If this is !nil, the Execution is counted as ABNORMAL_FINISHED, with this
-	// value as the result.
-	AbnormalFinish *dm.AbnormalFinish
-}
-
 // Notification represents a notification from the distributor to DM that
 // a particular execution has a status update. Data and Attrs are interpreted
 // purely by the distributor implementation.
@@ -118,7 +103,7 @@ type D interface {
 	// was Run(), the execution will be marked Missing with the returned error
 	// message as the 'Reason'. If it returns a non-Transient error within 30
 	// seconds of being run, DM will automatically treat that as Transient.
-	GetStatus(Token) (*TaskResult, error)
+	GetStatus(Token) (*dm.Result, error)
 
 	// InfoURL calculates a user-presentable information url for the task
 	// identified by Token. This should be a local operation, so it is not the
@@ -138,7 +123,7 @@ type D interface {
 	//
 	// DM will ignore any notifications for executions which it doesn't know
 	// about.
-	HandleNotification(notification *Notification) (*TaskResult, error)
+	HandleNotification(notification *Notification) (*dm.Result, error)
 
 	// HandleTaskQueueTask is called if the distributor used Config.EnqueueTask.
 	//
@@ -147,11 +132,11 @@ type D interface {
 	// implementation.
 	HandleTaskQueueTask(r *http.Request) ([]*Notification, error)
 
-	// Validate should return a non-nil error if the given payload is not
-	// appropriate for this Distributor. Payload is guaranteed to be a valid
-	// JSON object. This should validate that the content of that JSON object is
-	// what the distributor expects.
-	Validate(payload string) error
+	// Validate should return a non-nil error if the given distributor parameters
+	// are not appropriate for this Distributor. Payload is guaranteed to be
+	// a valid JSON object. This should validate that the content of that JSON
+	// object is what the distributor expects.
+	Validate(parameters string) error
 }
 
 // Factory is a function which produces new distributor instance with the

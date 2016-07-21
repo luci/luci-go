@@ -19,21 +19,21 @@ import (
 // It's intended for use by the DM core logic, and not for use by distributor
 // implementations.
 func NewTaskDescription(c context.Context, payload *dm.Quest_Desc, exAuth *dm.Execution_Auth,
-	state PersistentState) *TaskDescription {
+	previousResult *dm.JsonResult) *TaskDescription {
 	return &TaskDescription{
-		c:             c,
-		payload:       payload,
-		executionAuth: exAuth,
-		previousState: state,
+		c:              c,
+		payload:        payload,
+		executionAuth:  exAuth,
+		previousResult: previousResult,
 	}
 }
 
 // TaskDescription is the parameters for PrepareTask.
 type TaskDescription struct {
-	c             context.Context
-	payload       *dm.Quest_Desc
-	executionAuth *dm.Execution_Auth
-	previousState PersistentState
+	c              context.Context
+	payload        *dm.Quest_Desc
+	executionAuth  *dm.Execution_Auth
+	previousResult *dm.JsonResult
 }
 
 // PrepareTopic returns the pubsub topic that notifications should be sent to.
@@ -52,11 +52,13 @@ func (t *TaskDescription) PrepareTopic() (topic pubsub.Topic, token string, err 
 	return
 }
 
-// PreviousState is the current PersistentState of the Attempt (e.g. the
-// PersistentState returned by the previous Execution). This will be empty
-// for the first Execution.
-func (t *TaskDescription) PreviousState() PersistentState {
-	return t.previousState
+// PreviousResult is the Result of the last successful Execution for the
+// Attempt. This will be nil for the first Execution.
+func (t *TaskDescription) PreviousResult() *dm.JsonResult {
+	if t.previousResult == nil {
+		return nil
+	}
+	return proto.Clone(t.previousResult).(*dm.JsonResult)
 }
 
 // Payload is description of the job to run.

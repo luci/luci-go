@@ -12,7 +12,7 @@ import (
 	"github.com/luci/luci-go/appengine/cmd/dm/distributor"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/tumble"
-	"github.com/luci/luci-go/common/api/dm/service/v1"
+	dm "github.com/luci/luci-go/common/api/dm/service/v1"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
@@ -46,6 +46,15 @@ func (s *ScheduleExecution) RollForward(c context.Context) (muts []tumble.Mutati
 		return
 	}
 
+	prevResult := (*dm.JsonResult)(nil)
+	if a.LastSuccessfulExecution != 0 {
+		prevExecution := model.ExecutionFromID(c, s.For.Execution(a.LastSuccessfulExecution))
+		if err = ds.Get(prevExecution); err != nil {
+			return
+		}
+		prevResult = prevExecution.Result.Data
+	}
+
 	reg := distributor.GetRegistry(c)
 	dist, ver, err := reg.MakeDistributor(c, q.Desc.DistributorConfigName)
 	if err != nil {
@@ -64,8 +73,7 @@ func (s *ScheduleExecution) RollForward(c context.Context) (muts []tumble.Mutati
 
 	var distTok distributor.Token
 	distTok, e.TimeToStart, e.TimeToRun, e.TimeToStop, err = dist.Run(
-		distributor.NewTaskDescription(c, &q.Desc, exAuth,
-			distributor.PersistentState(a.PersistentState)))
+		distributor.NewTaskDescription(c, &q.Desc, exAuth, prevResult))
 	e.DistributorToken = string(distTok)
 	if err != nil {
 		if errors.IsTransient(err) {

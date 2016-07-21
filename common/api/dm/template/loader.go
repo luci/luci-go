@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/api/dm/service/v1"
+	dm "github.com/luci/luci-go/common/api/dm/service/v1"
 	"github.com/luci/luci-go/common/api/template"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/proto"
@@ -38,12 +38,18 @@ func LoadFile(c context.Context, project, ref string) (file *File, vers string, 
 // Render renders the specified template with the given parameters.
 func (f *File) Render(spec *template.Specifier) (*dm.Quest_Desc, error) {
 	t := f.Template[spec.TemplateName]
-	desc, err := t.Payload.Render(spec.Params)
+	params, err := t.Parameters.Render(spec.Params)
 	if err != nil {
-		err = fmt.Errorf("rendering %q: %s", spec.TemplateName, err)
+		return nil, fmt.Errorf("rendering %q: field distributor parameters: %s", spec.TemplateName, err)
+	}
+	distribParams, err := t.DistributorParameters.Render(spec.Params)
+	if err != nil {
+		return nil, fmt.Errorf("rendering %q: field distributor parameters: %s", spec.TemplateName, err)
 	}
 	return &dm.Quest_Desc{
 		DistributorConfigName: t.DistributorConfigName,
-		JsonPayload:           desc,
+		Parameters:            params,
+		DistributorParameters: distribParams,
+		Meta: t.Meta,
 	}, nil
 }

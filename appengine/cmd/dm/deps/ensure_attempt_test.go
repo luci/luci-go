@@ -31,13 +31,13 @@ func TestEnsureAttempt(t *testing.T) {
 			})
 			Convey("mismatched quest", func() {
 				_, err := s.EnsureGraphData(writer(c), &dm.EnsureGraphDataReq{
-					Quest:    []*dm.Quest_Desc{dm.NewQuestDesc("fakeDistributor", "{}", nil)},
+					Quest:    []*dm.Quest_Desc{dm.NewQuestDesc("fakeDistributor", "{}", "{}", nil)},
 					Attempts: dm.NewAttemptList(map[string][]uint32{"quest": {1}}),
 				})
 				So(err, ShouldErrLike, "must have a matching Attempts entry")
 			})
 			Convey("no auth", func() {
-				desc := dm.NewQuestDesc("fakeDistributor", `{"hi": "there"}`, nil)
+				desc := dm.NewQuestDesc("fakeDistributor", `{"hi": "there"}`, "{}", nil)
 				So(desc.Normalize(), ShouldBeNil)
 				q := model.NewQuest(c, desc)
 				_, err := s.EnsureGraphData(c, &dm.EnsureGraphDataReq{
@@ -49,7 +49,7 @@ func TestEnsureAttempt(t *testing.T) {
 		})
 
 		Convey("good", func() {
-			desc := dm.NewQuestDesc("fakeDistributor", `{"hi": "there"}`, nil)
+			desc := dm.NewQuestDesc("fakeDistributor", `{"hi": "there"}`, "{}", nil)
 			So(desc.Normalize(), ShouldBeNil)
 			q := model.NewQuest(c, desc)
 			rsp, err := s.EnsureGraphData(writer(c), &dm.EnsureGraphDataReq{

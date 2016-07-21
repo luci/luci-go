@@ -42,15 +42,22 @@ func (q *Quest_Desc) Normalize() error {
 		q.Meta.Retry = &Quest_Desc_Meta_Retry{}
 	}
 
-	if len(q.JsonPayload) > QuestDescPayloadMaxLength {
+	length := len(q.Parameters) + len(q.DistributorParameters)
+	if length > QuestDescPayloadMaxLength {
 		return fmt.Errorf("quest payload is too large: %d > %d",
-			len(q.JsonPayload), QuestDescPayloadMaxLength)
+			length, QuestDescPayloadMaxLength)
 	}
-	normed, err := template.NormalizeJSON(q.JsonPayload, true)
+	normed, err := template.NormalizeJSON(q.Parameters, true)
 	if err != nil {
-		return fmt.Errorf("failed to normalize payload: %s", err)
+		return fmt.Errorf("failed to normalize parameters: %s", err)
 	}
-	q.JsonPayload = normed
+	q.Parameters = normed
+
+	normed, err = template.NormalizeJSON(q.DistributorParameters, true)
+	if err != nil {
+		return fmt.Errorf("failed to normalize distributor parameters: %s", err)
+	}
+	q.DistributorParameters = normed
 	return nil
 }
 

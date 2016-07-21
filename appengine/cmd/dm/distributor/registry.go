@@ -41,11 +41,11 @@ func GetRegistry(c context.Context) Registry {
 // mutate.FinishExecution.
 //
 // See mutate.FinishExecutionFn for the only actual implementation of this.
-type FinishExecutionFn func(c context.Context, eid *dm.Execution_ID, rslt *TaskResult) ([]tumble.Mutation, error)
+type FinishExecutionFn func(c context.Context, eid *dm.Execution_ID, rslt *dm.Result) ([]tumble.Mutation, error)
 
 // Registry holds a collection of all of the available distributor types.
 type Registry interface {
-	FinishExecution(c context.Context, eid *dm.Execution_ID, rslt *TaskResult) ([]tumble.Mutation, error)
+	FinishExecution(c context.Context, eid *dm.Execution_ID, rslt *dm.Result) ([]tumble.Mutation, error)
 
 	// MakeDistributor builds a distributor instance that's configured with the
 	// provided config.
@@ -95,7 +95,7 @@ type registry struct {
 
 var _ Registry = (*registry)(nil)
 
-func (r *registry) FinishExecution(c context.Context, eid *dm.Execution_ID, rslt *TaskResult) ([]tumble.Mutation, error) {
+func (r *registry) FinishExecution(c context.Context, eid *dm.Execution_ID, rslt *dm.Result) ([]tumble.Mutation, error) {
 	return r.finishExecutionImpl(c, eid, rslt)
 }
 

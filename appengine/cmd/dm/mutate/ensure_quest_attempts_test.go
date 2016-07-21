@@ -23,7 +23,7 @@ func TestEnsureQuestAttempts(t *testing.T) {
 		c := ttest.Context()
 		ds := datastore.Get(c)
 
-		desc := dm.NewQuestDesc("distributor", `{"data":"yes"}`, nil)
+		desc := dm.NewQuestDesc("distributor", `{"data":"yes"}`, "{}", nil)
 		So(desc.Normalize(), ShouldBeNil)
 		qst := model.NewQuest(c, desc)
 

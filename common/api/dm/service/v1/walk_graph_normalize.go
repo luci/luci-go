@@ -6,8 +6,10 @@ package dm
 
 import (
 	"math"
+	"sort"
 
 	"github.com/luci/luci-go/common/errors"
+	"github.com/xtgo/set"
 )
 
 const (
@@ -27,8 +29,22 @@ const (
 // the server (and draining your DM quotas unnecessarially).
 func MakeWalkGraphIncludeAll() *WalkGraphReq_Include {
 	return &WalkGraphReq_Include{
-		true, true, true, true, true, math.MaxUint32, true, true, true,
+		&WalkGraphReq_Include_Options{
+			Ids:  true,
+			Data: true,
+		},
+		&WalkGraphReq_Include_Options{true, true, true, true, true},
+		&WalkGraphReq_Include_Options{true, true, true, true, true},
+		math.MaxUint32, true, true,
 	}
+}
+
+// Normalize returns an error iff the WalkGraphReq_Exclude is invalid.
+func (e *WalkGraphReq_Exclude) Normalize() error {
+	if len(e.Quests) > 0 {
+		e.Quests = e.Quests[:set.Uniq(sort.StringSlice(e.Quests))]
+	}
+	return e.Attempts.Normalize()
 }
 
 // Normalize returns an error iff the WalkGraphReq is invalid.
@@ -52,10 +68,10 @@ func (w *WalkGraphReq) Normalize() error {
 
 	if w.Limit != nil {
 		if w.Limit.MaxDepth < -1 {
-			return errors.New("Limit.MaxDepth must be >= -1")
+			return errors.New("limit.max_depth must be >= -1")
 		}
 		if w.Limit.GetMaxTime().Duration() < 0 {
-			return errors.New("Limit.MaxTime must be positive")
+			return errors.New("limit.max_time must be positive")
 		}
 	} else {
 		w.Limit = &WalkGraphReq_Limit{}
@@ -68,14 +84,33 @@ func (w *WalkGraphReq) Normalize() error {
 	}
 
 	if w.Include == nil {
-		w.Include = &WalkGraphReq_Include{}
-	} else {
-		if w.Include.AttemptResult {
-			w.Include.AttemptData = true
+		w.Include = &WalkGraphReq_Include{
+			Quest:     &WalkGraphReq_Include_Options{},
+			Attempt:   &WalkGraphReq_Include_Options{},
+			Execution: &WalkGraphReq_Include_Options{},
 		}
-		if w.Include.NumExecutions == 0 {
-			w.Include.ExecutionInfoUrl = false
+	} else {
+		if w.Include.Quest == nil {
+			w.Include.Quest = &WalkGraphReq_Include_Options{}
+		} else if w.Include.Quest.Result || w.Include.Quest.Abnormal || w.Include.Quest.Expired {
+			return errors.New("include.quest does not support result, abnormal or expired")
+		}
+
+		if w.Include.Attempt == nil {
+			w.Include.Attempt = &WalkGraphReq_Include_Options{}
+		} else {
+			if w.Include.Attempt.Result {
+				w.Include.Attempt.Data = true
+			}
+		}
+
+		if w.Include.Execution == nil {
+			w.Include.Execution = &WalkGraphReq_Include_Options{}
 		}
 	}
-	return nil
+
+	if w.Exclude == nil {
+		w.Exclude = &WalkGraphReq_Exclude{}
+	}
+	return w.Exclude.Normalize()
 }

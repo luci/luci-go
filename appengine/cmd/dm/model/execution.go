@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -26,26 +27,58 @@ import (
 
 const ek = logging.ErrorKey
 
+type invertedHexUint32 uint32
+
+const invertedHexUint32RenderFmt = "%08x"
+
+var _ datastore.PropertyConverter = (*invertedHexUint32)(nil)
+
+func (i *invertedHexUint32) ToProperty() (ret datastore.Property, err error) {
+	err = ret.SetValue(fmt.Sprintf(
+		invertedHexUint32RenderFmt, (*i)^math.MaxUint32), datastore.NoIndex)
+	return
+}
+
+func (i *invertedHexUint32) FromProperty(p datastore.Property) (err error) {
+	sVal, err := p.Project(datastore.PTString)
+	if err != nil {
+		return
+	}
+
+	tmp := uint32(0)
+	if _, err = fmt.Sscanf(sVal.(string), invertedHexUint32RenderFmt, &tmp); err != nil {
+		return
+	}
+	*i = invertedHexUint32(tmp ^ math.MaxUint32)
+	return
+}
+
 // Execution represents either an ongoing execution on the Quest's specified
 // distributor, or is a placeholder for an already-completed Execution.
 type Execution struct {
-	ID      uint32         `gae:"$id"`
-	Attempt *datastore.Key `gae:"$parent"`
+	ID      invertedHexUint32 `gae:"$id"`
+	Attempt *datastore.Key    `gae:"$parent"`
 
 	Created  time.Time
 	Modified time.Time
 
+	// DistributorConfigName is redundant with the Quest definition, but this
+	// helps avoid extra unnecessary datastore round-trips to load the Quest.
 	DistributorConfigName    string
 	DistributorConfigVersion string
 	DistributorToken         string
 
 	State dm.Execution_State
 
-	// Only valid in the ABNORMAL_FINISHED state.
-	AbnormalFinish dm.AbnormalFinish
+	// IsAbnormal is true iff State==ABNORMAL_FINISHED. Used for walk_graph.
+	IsAbnormal bool
 
-	// Only valid in the FINISHED state.
-	ResultPersistentState []byte `gae:",noindex"`
+	// A lazily-updated boolean to reflect that this Execution is expired for
+	// queries.
+	IsExpired bool
+
+	// Contains either data (State==FINISHED) or abnormal_finish (State==ABNORMAL_FINISHED)
+	Result dm.Result `gae:",noindex"`
 
 	// These are DM's internal mechanism for performing timeout actions on
 	// Executions.
@@ -81,7 +114,7 @@ type Execution struct {
 func MakeExecution(c context.Context, e *dm.Execution_ID, cfgName, cfgVers string) *Execution {
 	now := clock.Now(c).UTC()
 	ret := &Execution{
-		ID:      e.Id,
+		ID:      invertedHexUint32(e.Id),
 		Attempt: AttemptKeyFromID(c, e.AttemptID()),
 
 		Created:  now,
@@ -142,7 +175,7 @@ func loadExecution(c context.Context, eid *dm.Execution_ID) (a *Attempt, e *Exec
 	ds := datastore.Get(c)
 
 	a = &Attempt{ID: *eid.AttemptID()}
-	e = &Execution{ID: eid.Id, Attempt: ds.KeyForObj(a)}
+	e = &Execution{ID: invertedHexUint32(eid.Id), Attempt: ds.KeyForObj(a)}
 	err = datastore.Get(c).Get(a, e)
 
 	if err != nil {
@@ -151,7 +184,7 @@ func loadExecution(c context.Context, eid *dm.Execution_ID) (a *Attempt, e *Exec
 		return
 	}
 
-	if a.CurExecution != e.ID {
+	if a.CurExecution != uint32(e.ID) {
 		err = fmt.Errorf("verifying incorrect execution %d, expected %d", a.CurExecution, e.ID)
 		return
 	}
@@ -284,7 +317,7 @@ func (e *Execution) GetEID() *dm.Execution_ID {
 	if err := aid.SetDMEncoded(e.Attempt.StringID()); err != nil {
 		panic(err)
 	}
-	return dm.NewExecutionID(aid.Quest, aid.Id, e.ID)
+	return dm.NewExecutionID(aid.Quest, aid.Id, uint32(e.ID))
 }
 
 // ToProto returns a dm proto version of this Execution.
@@ -309,9 +342,9 @@ func (e *Execution) DataProto() (ret *dm.Execution_Data) {
 	case dm.Execution_STOPPING:
 		ret = dm.NewExecutionStopping().Data
 	case dm.Execution_FINISHED:
-		ret = dm.NewExecutionFinished(string(e.ResultPersistentState)).Data
+		ret = dm.NewExecutionFinished(e.Result.Data).Data
 	case dm.Execution_ABNORMAL_FINISHED:
-		ret = dm.NewExecutionAbnormalFinish(&e.AbnormalFinish).Data
+		ret = dm.NewExecutionAbnormalFinish(e.Result.AbnormalFinish).Data
 	default:
 		panic(fmt.Errorf("unknown Execution_State: %s", e.State))
 	}

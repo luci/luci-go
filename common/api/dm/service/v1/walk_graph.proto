@@ -21,7 +21,7 @@ package dm;
 // For each attempt or quest produced by the query, it will queue a walk
 // operation for that node, respecting the options set (max_depth, etc.).
 message WalkGraphReq {
-  // optional. See Include.AttemptResult for restrictions.
+  // Optional. See Include.AttemptResult for restrictions.
   dm.Execution.Auth auth = 1;
 
   // Query specifies a list of queries to start the graph traversal on. The
@@ -78,56 +78,71 @@ message WalkGraphReq {
   Limit limit = 4;
 
   message Include {
-    // ObjectIds fills the 'Id' field of Quest, Attempt, and Execution objects.
-    // If this is false, then those fields will be omitted.
-    bool object_ids = 1;
+    message Options {
+      // Fills the 'id' field.
+      //
+      // If this is false, it will be omitted.
+      //
+      // Note that there's enough information contextually to derive these ids
+      // on the client side, though it can be handy to have the server produce
+      // them for you.
+      bool ids = 1;
 
-    // QuestData instructs the request to include the Data field for Quests in
-    // GraphData.
-    bool quest_data = 2;
+      // Instructs the request to include the Data field
+      bool data = 2;
 
-    // AttemptData instructs the request to include the Data field for Attempts
-    // in GraphData.
-    bool attempt_data = 3;
+      // Instructs finished objects to include the Result field.
+      //
+      // If the requestor is an execution, the query logic will only include the
+      // result if the execution's Attempt depends on it, otherwise it will be
+      // blank.
+      //
+      // If the request's cumulative result data would be more than
+      // limit.max_data_size of data, the remaining results will have their
+      // Partial.Result set to DATA_SIZE_LIMIT.
+      //
+      // Has no effect for Quests.
+      bool result = 3;
 
-    // AttemptResult will include the Attempt result payloads for any
-    // Attempts that it returns. This option also implies AttemptData.
-    //
-    // If the requestor is an execution, the query logic will only include
-    // result for an Attempt if the execution's Attempt depends on it, otherwise
-    // it will be blank. To view an AttemptResult, the querying Attempt must
-    // first depend on it.
-    //
-    // If the request would return more than limit.max_data_size of data, the
-    // remaining attempt results will have their Partial.Data field set to true.
-    bool attempt_result = 4;
+      // If set to true, objects with an abnormal termination will be included.
+      bool abnormal = 4;
 
-    // ExpiredAttempts allows you to view attempts which have expired results,
-    // which are normally excluded from the graph.
-    bool expired_attempts = 5;
+      // If set to true, expired objects will be included.
+      bool expired = 5;
+    }
+    Options quest = 1;
+    Options attempt = 2;
+    Options execution = 3;
 
     // Executions is the number of Executions to include per Attempt. If this
     // is 0, then the execution data will be omitted completely.
-    uint32 num_executions = 6;
-
-    // ExecutionInfoUrl fills in the Execution.DistributorInfo.Url value. This
-    // has some minor overhead, but is useful if you need to present clickable
-    // links for humans.
-    bool execution_info_url = 7;
+    //
+    // Executions included are from high ids to low ids. So setting this to `1`
+    // would return the LAST execution made for this Attempt.
+    uint32 num_executions = 4;
 
     // FwdDeps instructs WalkGraph to include forward dependency information
     // from the result. This only changes the presence of information in the
     // result; if the query is walking forward attempt dependencies, that will
     // still occur even if this is false.
-    bool fwd_deps = 8;
+    bool fwd_deps = 5;
 
     // BackDeps instructs WalkGraph to include the backwards dependency
     // information. This only changes the presence of information in the result;
     // if the query is walking backward attempt dependencies, that will still
     // occur even if this is false.
-    bool back_deps = 9;
+    bool back_deps = 6;
   }
   // Include allows you to add additional information to the returned
   // GraphData which is typically medium-to-large sized.
   Include include = 5;
+
+  message Exclude {
+    // Do not include data from the following quests in the response.
+    repeated string quests = 1;
+
+    // Do not include data from the following attempts in the response.
+    dm.AttemptList attempts = 2;
+  }
+  Exclude exclude = 6;
 }

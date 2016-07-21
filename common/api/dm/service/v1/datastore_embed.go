@@ -94,8 +94,8 @@ func (g *GraphData) GetQuest(qid string) (*Quest, bool) {
 }
 
 // NewQuestDesc is a shorthand method for building a new *Quest_Desc.
-func NewQuestDesc(cfg string, js string, meta *Quest_Desc_Meta) *Quest_Desc {
-	return &Quest_Desc{cfg, js, meta}
+func NewQuestDesc(cfg string, params, distParams string, meta *Quest_Desc_Meta) *Quest_Desc {
+	return &Quest_Desc{cfg, params, distParams, meta}
 }
 
 // NewTemplateSpec is a shorthand method for building a new *Quest_TemplateSpec.

@@ -9,9 +9,8 @@ import (
 
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/cmd/dm/distributor"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
-	"github.com/luci/luci-go/common/api/dm/service/v1"
+	dm "github.com/luci/luci-go/common/api/dm/service/v1"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
@@ -89,7 +88,7 @@ func TestAddDeps(t *testing.T) {
 					So(fds[0].ForExecution, ShouldEqual, 1)
 
 					muts, err = (&FinishExecution{
-						ad.Auth.Id, &distributor.TaskResult{PersistentState: []byte("hi")},
+						ad.Auth.Id, &dm.Result{Data: dm.NewJSONObject(`{"hi": true}`)},
 					}).RollForward(c)
 					So(err, ShouldBeNil)
 					So(muts, ShouldBeNil)
@@ -118,7 +117,7 @@ func TestAddDeps(t *testing.T) {
 					So(fds[0].ForExecution, ShouldEqual, 1)
 
 					muts, err = (&FinishExecution{
-						ad.Auth.Id, &distributor.TaskResult{PersistentState: []byte("hi")},
+						ad.Auth.Id, &dm.Result{Data: dm.NewJSONObject(`{"hi":true}`)},
 					}).RollForward(c)
 					So(err, ShouldBeNil)
 					So(muts, ShouldBeNil)

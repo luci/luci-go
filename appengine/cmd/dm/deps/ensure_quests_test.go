@@ -22,7 +22,8 @@ func TestEnsureQuests(t *testing.T) {
 	desc := func(payload string) *dm.Quest_Desc {
 		return &dm.Quest_Desc{
 			DistributorConfigName: "fakeDistributor",
-			JsonPayload:           payload,
+			Parameters:            payload,
+			DistributorParameters: "{}",
 		}
 	}
 

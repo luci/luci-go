@@ -12,17 +12,17 @@ import (
 	"github.com/luci/gae/filter/txnBuf"
 	"github.com/luci/gae/service/datastore"
 
-	"github.com/luci/luci-go/appengine/cmd/dm/distributor"
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/tumble"
 	dm "github.com/luci/luci-go/common/api/dm/service/v1"
+	"github.com/luci/luci-go/common/logging"
 )
 
 // FinishExecution records the final state of the Execution, and advances the
 // Attempt state machine.
 type FinishExecution struct {
 	EID    *dm.Execution_ID
-	Result *distributor.TaskResult
+	Result *dm.Result
 }
 
 // Root implements tumble.Mutation
@@ -86,11 +86,14 @@ func (f *FinishExecution) RollForward(c context.Context) (muts []tumble.Mutation
 		}
 	}
 
-	if ab := f.Result.AbnormalFinish; ab != nil {
+	e.Result = *f.Result
+
+	if ab := e.Result.AbnormalFinish; ab != nil {
+		a.IsAbnormal = true
+		e.IsAbnormal = true
 		if err = e.ModifyState(c, dm.Execution_ABNORMAL_FINISHED); err != nil {
 			return
 		}
-		e.AbnormalFinish = *ab
 
 		var retry bool
 		if retry, err = shouldRetry(c, a, ab.Status); err != nil {
@@ -106,15 +109,13 @@ func (f *FinishExecution) RollForward(c context.Context) (muts []tumble.Mutation
 			if err = a.ModifyState(c, dm.Attempt_ABNORMAL_FINISHED); err != nil {
 				return
 			}
-			a.AbnormalFinish = *ab
+			a.Result.AbnormalFinish = ab
 		}
 	} else {
 		if err = e.ModifyState(c, dm.Execution_FINISHED); err != nil {
 			return
 		}
-		e.ResultPersistentState = f.Result.PersistentState
-
-		a.PersistentState = f.Result.PersistentState
+		a.LastSuccessfulExecution = uint32(e.ID)
 		a.RetryState.Reset()
 
 		if a.DepMap.Size() > 0 {
@@ -138,7 +139,19 @@ func (f *FinishExecution) RollForward(c context.Context) (muts []tumble.Mutation
 
 // FinishExecutionFn is the implementation of distributor.FinishExecutionFn.
 // It's defined here to avoid a circular dependency.
-func FinishExecutionFn(c context.Context, eid *dm.Execution_ID, rslt *distributor.TaskResult) ([]tumble.Mutation, error) {
+func FinishExecutionFn(c context.Context, eid *dm.Execution_ID, rslt *dm.Result) ([]tumble.Mutation, error) {
+	if rslt.Data != nil {
+		if normErr := rslt.Data.Normalize(); normErr != nil {
+			logging.WithError(normErr).Errorf(c, "Could not normalize distributor Result!")
+			rslt = &dm.Result{
+				AbnormalFinish: &dm.AbnormalFinish{
+					Status: dm.AbnormalFinish_RESULT_MALFORMED,
+					Reason: fmt.Sprintf("distributor result malformed: %q in %q", normErr, rslt.Data.Object),
+				},
+			}
+		}
+	}
+
 	return []tumble.Mutation{&FinishExecution{EID: eid, Result: rslt}}, nil
 }
 
@@ -146,9 +159,8 @@ func FinishExecutionFn(c context.Context, eid *dm.Execution_ID, rslt *distributo
 // with some abnomal result.
 func NewFinishExecutionAbnormal(eid *dm.Execution_ID, status dm.AbnormalFinish_Status, reason string) *FinishExecution {
 	return &FinishExecution{
-		eid, &distributor.TaskResult{
-			AbnormalFinish: &dm.AbnormalFinish{
-				Status: status, Reason: reason}}}
+		eid, &dm.Result{
+			AbnormalFinish: &dm.AbnormalFinish{Status: status, Reason: reason}}}
 }
 
 func init() {

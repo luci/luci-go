@@ -36,9 +36,8 @@ func (d *deps) runEnsureGraphDepsWalk(c context.Context, req *dm.EnsureGraphData
 			MaxDataSize: req.Limit.MaxDataSize,
 		},
 		Include: &dm.WalkGraphReq_Include{
-			QuestData:     true,
-			AttemptData:   true,
-			AttemptResult: req.Include.AttemptResult,
+			Quest:   &dm.WalkGraphReq_Include_Options{Data: true},
+			Attempt: &dm.WalkGraphReq_Include_Options{Result: true},
 		},
 	}
 	if err := wgreq.Normalize(); err != nil {
@@ -289,9 +288,9 @@ func renderRequest(c context.Context, req *dm.EnsureGraphDataReq) (rsp *dm.Ensur
 			dists[qDesc.DistributorConfigName] = d
 		}
 
-		if err = d.Validate(qDesc.JsonPayload); err != nil {
+		if err = d.Validate(qDesc.DistributorParameters); err != nil {
 			err = grpcutil.MaybeLogErr(c, err, codes.InvalidArgument,
-				"JSON payload is invalid for this distributor configuration.")
+				"JSON distributor parameters are invalid for this distributor configuration.")
 			return
 		}
 

@@ -11,7 +11,6 @@ import (
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/common/api/dm/service/v1"
 	"github.com/luci/luci-go/common/clock/testclock"
-	google_pb "github.com/luci/luci-go/common/proto/google"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -41,8 +40,7 @@ func TestFinishAttempt(t *testing.T) {
 				Id:    dm.NewExecutionID(a.ID.Quest, a.ID.Id, 1),
 				Token: []byte("exKey"),
 			},
-			JsonResult: `{"something": "valid"}`,
-			Expiration: google_pb.NewTimestamp(testclock.TestTimeUTC),
+			Data: dm.NewJSONObject(`{"something": "valid"}`, testclock.TestTimeUTC),
 		}
 
 		Convey("bad", func() {
@@ -53,7 +51,7 @@ func TestFinishAttempt(t *testing.T) {
 			})
 
 			Convey("not real json", func() {
-				req.JsonResult = `i am not valid json`
+				req.Data = dm.NewJSONObject(`i am not valid json`)
 				_, err := s.FinishAttempt(c, req)
 				So(err, ShouldErrLike, "invalid character 'i'")
 			})
@@ -67,8 +65,8 @@ func TestFinishAttempt(t *testing.T) {
 			So(a.State, ShouldEqual, dm.Attempt_EXECUTING)
 			So(e.State, ShouldEqual, dm.Execution_STOPPING)
 
-			So(a.ResultSize, ShouldEqual, 21)
-			So(ar.Size, ShouldEqual, 21)
+			So(a.Result.Data.Size, ShouldEqual, 21)
+			So(ar.Data.Size, ShouldEqual, 21)
 		})
 
 	})

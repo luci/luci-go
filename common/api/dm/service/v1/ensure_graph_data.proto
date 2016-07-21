@@ -4,9 +4,10 @@
 
 syntax = "proto3";
 
-import "types.proto";
-import "graph_data.proto";
 import "github.com/luci/luci-go/common/api/template/template.proto";
+
+import "graph_data.proto";
+import "types.proto";
 
 package dm;
 

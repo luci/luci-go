@@ -23,6 +23,8 @@ It has these top-level messages:
 	FinishAttemptReq
 	AbnormalFinish
 	Quest
+	JsonResult
+	Result
 	Attempt
 	Execution
 	GraphData

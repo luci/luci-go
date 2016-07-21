@@ -290,12 +290,14 @@ func (s *Schema) Zero() *Value {
 	panic(fmt.Errorf("unknown schema type: %v", s))
 }
 
-// NormalizeJSON is used to take some free-form JSON, validate that:
-//   * it contains a valid JSON object (e.g. `{...stuff...}`); OR
-//     it contains a valid JSON array (e.g. `[...stuff...]`)
+// NormalizeJSON is used to take some free-form JSON and validates that:
+//   * it only contains a valid JSON object (e.g. `{...stuff...}`); OR
+//   * it only contains a valid JSON array (e.g. `[...stuff...]`)
 //
 // If obj is true, this looks for an object, if it's false, it looks for an
 // array.
+//
+// This will also remove all extra whitespace and sort all objects by key.
 func NormalizeJSON(data string, obj bool) (string, error) {
 	buf := bytes.NewBufferString(data)
 	dec := json.NewDecoder(buf)

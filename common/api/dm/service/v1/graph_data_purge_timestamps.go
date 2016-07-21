@@ -66,10 +66,10 @@ func (ad *Attempt_Data) PurgeTimestamps() {
 
 // PurgeTimestamps implements TimestampPurger.
 func (f *Attempt_Data_Finished_) PurgeTimestamps() {
-	if f == nil || f.Finished == nil {
+	if f.Finished.GetData() == nil {
 		return
 	}
-	f.Finished.Expiration = nil
+	f.Finished.Data.Expiration = nil
 }
 
 // PurgeTimestamps implements TimestampPurger.
