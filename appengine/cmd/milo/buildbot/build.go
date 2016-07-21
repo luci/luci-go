@@ -329,7 +329,13 @@ func parseProp(prop map[string]Prop, k string, v interface{}) (string, bool) {
 	case "issue":
 		if rv, ok := prop["rietveld"]; ok {
 			rietveld := rv.Value.(string)
-			return fmt.Sprintf("%s/%d", rietveld, int(v.(float64))), true
+			// Issue could be a float, int, or string.
+			switch v := v.(type) {
+			case float64:
+				return fmt.Sprintf("%s/%d", rietveld, int(v)), true
+			default: // Probably int or string
+				return fmt.Sprintf("%s/%v", rietveld, v), true
+			}
 		}
 		return fmt.Sprintf("%d", int(v.(float64))), true
 	case "rietveld":
