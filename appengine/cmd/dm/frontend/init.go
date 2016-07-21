@@ -15,6 +15,7 @@ import (
 
 	"github.com/luci/luci-go/appengine/cmd/dm/deps"
 	"github.com/luci/luci-go/appengine/cmd/dm/distributor"
+	"github.com/luci/luci-go/appengine/cmd/dm/distributor/jobsim"
 	"github.com/luci/luci-go/appengine/cmd/dm/mutate"
 	"github.com/luci/luci-go/appengine/gaeconfig"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
@@ -75,7 +76,9 @@ func init() {
 	r := router.New()
 	tmb := tumble.Service{}
 
-	reg := distributor.NewRegistry(nil, mutate.FinishExecutionFn)
+	distributors := distributor.FactoryMap{}
+	jobsim.AddFactory(distributors)
+	reg := distributor.NewRegistry(distributors, mutate.FinishExecutionFn)
 
 	basemw := baseProd()
 	tmb.Middleware = func(c context.Context) context.Context {

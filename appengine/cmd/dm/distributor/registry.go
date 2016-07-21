@@ -55,13 +55,17 @@ type Registry interface {
 	MakeDistributor(c context.Context, cfgName string) (d D, ver string, err error)
 }
 
+// FactoryMap maps nil proto.Message instances (e.g. (*MyMessage)(nil)) to the
+// factory which knows how to turn a Message of that type into a distributor.
+type FactoryMap map[proto.Message]Factory
+
 // NewRegistry builds a new implementation of Registry configured to load
 // configuration data from luci-config.
 //
 // The mapping should hold nil-ptrs of various config protos -> respective
 // Factory. When loading from luci-config, when we see a given message type,
 // we'll construct the distributor instance using the provided Factory.
-func NewRegistry(mapping map[proto.Message]Factory, fFn FinishExecutionFn) Registry {
+func NewRegistry(mapping FactoryMap, fFn FinishExecutionFn) Registry {
 	ret := &registry{fFn, make(map[reflect.Type]Factory, len(mapping))}
 	add := func(p proto.Message, factory Factory) {
 		if factory == nil {
