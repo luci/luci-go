@@ -16,9 +16,13 @@ import (
 	"github.com/luci/luci-go/appengine/cmd/dm/model"
 	"github.com/luci/luci-go/appengine/tumble"
 	dm "github.com/luci/luci-go/common/api/dm/service/v1"
+	config_mem "github.com/luci/luci-go/common/config/impl/memory"
 	"github.com/luci/luci-go/common/gcloud/pubsub"
 	googlepb "github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/testing/assertions"
+	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/authtest"
+	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/secrets/testsecrets"
 	"github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
@@ -39,6 +43,11 @@ import (
 // You should pass mutate.FinishExecutionFn for fn. It's not done automatically
 // in order to break an import cycle. You could provide your own, but YMMV.
 //
+// This sets the following configuration using the memory configuration mock:
+//   services/app/acls.cfg:
+//     readers: "reader_group"
+//     writers: "writer_group"
+//
 // Usage:
 //   ttest, c, dist, reg := fake.Setup(mutate.FinishExecutionFn)
 //   s := deps.NewDecoratedServer(reg)
@@ -47,6 +56,17 @@ func Setup(fn distributor.FinishExecutionFn) (ttest *tumble.Testing, c context.C
 	ttest = &tumble.Testing{}
 	c = ttest.Context()
 	c = testsecrets.Use(c)
+	c = config_mem.Use(c, map[string]config_mem.ConfigSet{
+		"services/app": {
+			"acls.cfg": `
+			readers: "reader_group"
+			writers: "writer_group"
+			`,
+		},
+	})
+	c = auth.WithState(c, &authtest.FakeState{
+		Identity: identity.AnonymousIdentity,
+	})
 	dist = &Distributor{}
 	reg = distributor.NewTestingRegistry(map[string]distributor.D{
 		"fakeDistributor": dist,

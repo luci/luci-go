@@ -23,18 +23,28 @@ func TestEnsureAttempt(t *testing.T) {
 
 		Convey("bad", func() {
 			Convey("no quest", func() {
-				_, err := s.EnsureGraphData(c, &dm.EnsureGraphDataReq{
+				_, err := s.EnsureGraphData(writer(c), &dm.EnsureGraphDataReq{
 					Attempts: dm.NewAttemptList(map[string][]uint32{"quest": {1}}),
 				})
 				So(err, ShouldBeRPCInvalidArgument,
 					`cannot create attempts for absent quest "quest"`)
 			})
 			Convey("mismatched quest", func() {
-				_, err := s.EnsureGraphData(c, &dm.EnsureGraphDataReq{
+				_, err := s.EnsureGraphData(writer(c), &dm.EnsureGraphDataReq{
 					Quest:    []*dm.Quest_Desc{dm.NewQuestDesc("fakeDistributor", "{}", nil)},
 					Attempts: dm.NewAttemptList(map[string][]uint32{"quest": {1}}),
 				})
 				So(err, ShouldErrLike, "must have a matching Attempts entry")
+			})
+			Convey("no auth", func() {
+				desc := dm.NewQuestDesc("fakeDistributor", `{"hi": "there"}`, nil)
+				So(desc.Normalize(), ShouldBeNil)
+				q := model.NewQuest(c, desc)
+				_, err := s.EnsureGraphData(c, &dm.EnsureGraphDataReq{
+					Quest:    []*dm.Quest_Desc{desc},
+					Attempts: dm.NewAttemptList(map[string][]uint32{q.ID: {1}}),
+				})
+				So(err, ShouldBeRPCUnauthenticated, `not authorized`)
 			})
 		})
 
@@ -42,7 +52,7 @@ func TestEnsureAttempt(t *testing.T) {
 			desc := dm.NewQuestDesc("fakeDistributor", `{"hi": "there"}`, nil)
 			So(desc.Normalize(), ShouldBeNil)
 			q := model.NewQuest(c, desc)
-			rsp, err := s.EnsureGraphData(c, &dm.EnsureGraphDataReq{
+			rsp, err := s.EnsureGraphData(writer(c), &dm.EnsureGraphDataReq{
 				Quest:    []*dm.Quest_Desc{desc},
 				Attempts: dm.NewAttemptList(map[string][]uint32{q.ID: {1}}),
 			})

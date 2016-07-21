@@ -369,7 +369,9 @@ func (d *deps) WalkGraph(c context.Context, req *dm.WalkGraphReq) (rsp *dm.Graph
 	if req.Auth != nil {
 		logging.Fields{"execution": req.Auth.Id}.Debugf(c, "on behalf of")
 	} else {
-		logging.Debugf(c, "for user")
+		if err = canRead(c); err != nil {
+			return
+		}
 	}
 
 	cncl := (func())(nil)

@@ -360,12 +360,15 @@ func renderRequest(c context.Context, req *dm.EnsureGraphDataReq) (rsp *dm.Ensur
 }
 
 func (d *deps) EnsureGraphData(c context.Context, req *dm.EnsureGraphDataReq) (rsp *dm.EnsureGraphDataRsp, err error) {
-	// TODO(riannucci): real non-execution authentication
 	if req.ForExecution != nil {
 		logging.Fields{"execution": req.ForExecution.Id}.Infof(c, "on behalf of")
 		_, _, err := model.AuthenticateExecution(c, req.ForExecution)
 		if err != nil {
 			return nil, grpcutil.MaybeLogErr(c, err, codes.Unauthenticated, "bad execution auth")
+		}
+	} else {
+		if err = canWrite(c); err != nil {
+			return
 		}
 	}
 

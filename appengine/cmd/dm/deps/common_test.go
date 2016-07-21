@@ -15,7 +15,8 @@ import (
 	"github.com/luci/luci-go/appengine/cmd/dm/mutate"
 	"github.com/luci/luci-go/appengine/tumble"
 	dm "github.com/luci/luci-go/common/api/dm/service/v1"
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/authtest"
 	"golang.org/x/net/context"
 )
 
@@ -25,6 +26,20 @@ func testSetup() (ttest *tumble.Testing, c context.Context, dist *fake.Distribut
 	return
 }
 
+func reader(c context.Context) context.Context {
+	return auth.WithState(c, &authtest.FakeState{
+		Identity:       "test@example.com",
+		IdentityGroups: []string{"reader_group"},
+	})
+}
+
+func writer(c context.Context) context.Context {
+	return auth.WithState(c, &authtest.FakeState{
+		Identity:       "test@example.com",
+		IdentityGroups: []string{"reader_group", "writer_group"},
+	})
+}
+
 type testDepsServer struct {
 	dm.DepsServer
 }
@@ -32,13 +47,17 @@ type testDepsServer struct {
 func (s testDepsServer) ensureQuest(c context.Context, name string, aids ...uint32) string {
 	desc := fake.QuestDesc(name)
 	q := model.NewQuest(c, desc)
-	qsts, err := s.EnsureGraphData(c, &dm.EnsureGraphDataReq{
+	qsts, err := s.EnsureGraphData(writer(c), &dm.EnsureGraphDataReq{
 		Quest:    []*dm.Quest_Desc{desc},
 		Attempts: dm.NewAttemptList(map[string][]uint32{q.ID: aids}),
 	})
-	So(err, ShouldBeNil)
+	if err != nil {
+		panic(err)
+	}
 	for qid := range qsts.Result.Quests {
-		So(qid, ShouldEqual, q.ID)
+		if qid != q.ID {
+			panic(fmt.Errorf("non matching quest ID!? got %q, expected %q", qid, q.ID))
+		}
 		return qid
 	}
 	panic("impossible")

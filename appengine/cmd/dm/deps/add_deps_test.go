@@ -20,6 +20,7 @@ func TestAddDeps(t *testing.T) {
 
 	Convey("EnsureGraphData (Adding deps)", t, func() {
 		_, c, _, s := testSetup()
+		c = writer(c)
 		ds := datastore.Get(c)
 		zt := time.Time{}
 

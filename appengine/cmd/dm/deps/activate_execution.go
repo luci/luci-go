@@ -12,11 +12,12 @@ import (
 	"golang.org/x/net/context"
 )
 
-func (d *deps) ActivateExecution(c context.Context, req *dm.ActivateExecutionReq) (*google_pb.Empty, error) {
+func (d *deps) ActivateExecution(c context.Context, req *dm.ActivateExecutionReq) (ret *google_pb.Empty, err error) {
+	ret = &google_pb.Empty{}
 	logging.Fields{"execution": req.Auth.Id}.Infof(c, "activating")
-	err := tumbleNow(c, &mutate.ActivateExecution{
+	err = tumbleNow(c, &mutate.ActivateExecution{
 		Auth:   req.Auth,
 		NewTok: req.ExecutionToken,
 	})
-	return &google_pb.Empty{}, err
+	return
 }

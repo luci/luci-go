@@ -17,6 +17,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	google_pb "github.com/luci/luci-go/common/proto/google"
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -47,6 +48,13 @@ func TestWalkGraph(t *testing.T) {
 			Limit: &dm.WalkGraphReq_Limit{MaxDepth: 1},
 		}
 		So(req.Normalize(), ShouldBeNil)
+
+		Convey("no read access", func() {
+			_, err := s.WalkGraph(c, req)
+			So(err, ShouldBeRPCUnauthenticated, "not authorized")
+		})
+
+		c = reader(c)
 
 		Convey("no attempt", func() {
 			So(req, fake.WalkShouldReturn(c, s), &dm.GraphData{

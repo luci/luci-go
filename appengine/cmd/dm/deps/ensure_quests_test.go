@@ -28,6 +28,7 @@ func TestEnsureQuests(t *testing.T) {
 
 	Convey("EnsureGraphData (Ensure Quests)", t, func() {
 		ttest, c, _, s := testSetup()
+		c = writer(c)
 		ds := datastore.Get(c)
 		clk := clock.Get(c).(testclock.TestClock)
 
