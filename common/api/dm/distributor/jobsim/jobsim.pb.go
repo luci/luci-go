@@ -7,10 +7,12 @@ Package jobsim is a generated protocol buffer package.
 
 It is generated from these files:
 	jobsim.proto
+	result.proto
 	task.proto
 
 It has these top-level messages:
 	Config
+	Result
 	Phrase
 	ReturnStage
 	Stage

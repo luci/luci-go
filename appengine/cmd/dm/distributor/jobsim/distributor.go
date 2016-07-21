@@ -130,7 +130,7 @@ func (j *jobsimDist) GetStatus(tok distributor.Token) (*dm.Result, error) {
 		return nil, err
 	}
 
-	return getTaskResult(jtsk.Status, jtsk.StateOrReason), nil
+	return getAttemptResult(jtsk.Status, jtsk.StateOrReason), nil
 }
 
 func (j *jobsimDist) InfoURL(tok distributor.Token) string {
@@ -138,13 +138,13 @@ func (j *jobsimDist) InfoURL(tok distributor.Token) string {
 }
 
 func (j *jobsimDist) HandleNotification(note *distributor.Notification) (*dm.Result, error) {
-	props := map[string]string(nil)
-	err := json.Unmarshal(note.Data, &props)
+	n := &notification{}
+	err := json.Unmarshal(note.Data, n)
 	if err != nil {
 		return nil, err
 	}
 
-	return getTaskResult(jobsimStatus(props["Status"]), props["StateOrReason"]), nil
+	return getAttemptResult(n.Status, n.StateOrReason), nil
 }
 
 func loadTask(c context.Context, rawTok string) (*jobsimExecution, error) {
@@ -223,9 +223,10 @@ func (j *jobsimDist) HandleTaskQueueTask(r *http.Request) (notes []*distributor.
 		return
 	}
 
-	data := []byte(fmt.Sprintf(`{"Status": %q, "StateOrReason": %q}`,
-		jtsk.Status, state.toPersistentState()))
-	notes = append(notes, &distributor.Notification{ID: jtsk.ExAuth.Id, Data: data})
+	notes = append(notes, &distributor.Notification{
+		ID:   jtsk.ExAuth.Id,
+		Data: (&notification{jtsk.Status, state.toPersistentState()}).toJSON(),
+	})
 	return
 }
 

@@ -139,7 +139,7 @@ func (r *runner) doReturnStage(stg *jobsim.ReturnStage) error {
 
 	_, err := r.dmc.FinishAttempt(r.c, &dm.FinishAttemptReq{
 		Auth: r.auth,
-		Data: (&TaskResult{true, retval}).ToJSONObject(stg.GetExpiration().Time()),
+		Data: executionResult(true, retval, stg.GetExpiration().Time()),
 	})
 	if err != nil {
 		logging.WithError(err).Warningf(r.c, "got error on FinishAttempt")
@@ -220,20 +220,20 @@ func (r *runner) doDeps(seed int64, stg *jobsim.DepsStage, cfgName string) (stop
 		// RPCs.
 		for qid, q := range rsp.Result.Quests {
 			logging.Fields{"qid": qid}.Infof(r.c, "grabbing result")
-			var tr *TaskResult
+			var tr *jobsim.Result
 			if currentAttempt[qid] == 0 {
 				// rsp contains bonus data
 				continue
 			}
 			logging.Fields{"atmpt": q.Attempts[currentAttempt[qid]].Data}.Infof(r.c, "grabbing payload")
 			payload := q.Attempts[currentAttempt[qid]].Data.GetFinished().Data
-			tr, err = TaskResultFromJSON(payload.Object)
+			tr, err = executionResultFromJSON(payload)
 			if err != nil {
 				return
 			}
 			logging.Fields{"qid": qid, "tr": tr}.Infof(r.c, "decoded TaskResult")
 			if tr.Success {
-				sum += tr.Result
+				sum += tr.Value
 			} else {
 				current := currentAttempt[qid]
 				if maxAttempt := maxAttemptNum[qid]; maxAttempt > current {
@@ -310,7 +310,7 @@ func (r *runner) doFailure(seed int64, chance float32) (stop bool, err error) {
 	stop = true
 	_, err = r.dmc.FinishAttempt(r.c, &dm.FinishAttemptReq{
 		Auth: r.auth,
-		Data: (&TaskResult{}).ToJSONObject(time.Time{}),
+		Data: executionResult(false, 0, time.Time{}),
 	})
 	if err != nil {
 		logging.WithError(err).Warningf(r.c, "got error on FinishAttempt")

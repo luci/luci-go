@@ -28,7 +28,7 @@ type Phrase struct {
 func (m *Phrase) Reset()                    { *m = Phrase{} }
 func (m *Phrase) String() string            { return proto.CompactTextString(m) }
 func (*Phrase) ProtoMessage()               {}
-func (*Phrase) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (*Phrase) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
 func (m *Phrase) GetStages() []*Stage {
 	if m != nil {
@@ -55,7 +55,7 @@ type ReturnStage struct {
 func (m *ReturnStage) Reset()                    { *m = ReturnStage{} }
 func (m *ReturnStage) String() string            { return proto.CompactTextString(m) }
 func (*ReturnStage) ProtoMessage()               {}
-func (*ReturnStage) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (*ReturnStage) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
 
 func (m *ReturnStage) GetExpiration() *google_protobuf.Timestamp {
 	if m != nil {
@@ -79,7 +79,7 @@ type Stage struct {
 func (m *Stage) Reset()                    { *m = Stage{} }
 func (m *Stage) String() string            { return proto.CompactTextString(m) }
 func (*Stage) ProtoMessage()               {}
-func (*Stage) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+func (*Stage) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
 
 type isStage_StageType interface {
 	isStage_StageType()
@@ -234,7 +234,7 @@ type FailureStage struct {
 func (m *FailureStage) Reset()                    { *m = FailureStage{} }
 func (m *FailureStage) String() string            { return proto.CompactTextString(m) }
 func (*FailureStage) ProtoMessage()               {}
-func (*FailureStage) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
+func (*FailureStage) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3} }
 
 // StallStage delays the phrase for the provided Duration. This could be used
 // to simulate long-running tasks (like builds).
@@ -245,7 +245,7 @@ type StallStage struct {
 func (m *StallStage) Reset()                    { *m = StallStage{} }
 func (m *StallStage) String() string            { return proto.CompactTextString(m) }
 func (*StallStage) ProtoMessage()               {}
-func (*StallStage) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{4} }
+func (*StallStage) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{4} }
 
 func (m *StallStage) GetDelay() *google_protobuf1.Duration {
 	if m != nil {
@@ -263,7 +263,7 @@ type DepsStage struct {
 func (m *DepsStage) Reset()                    { *m = DepsStage{} }
 func (m *DepsStage) String() string            { return proto.CompactTextString(m) }
 func (*DepsStage) ProtoMessage()               {}
-func (*DepsStage) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{5} }
+func (*DepsStage) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{5} }
 
 func (m *DepsStage) GetDeps() []*Dependency {
 	if m != nil {
@@ -295,7 +295,7 @@ type Dependency struct {
 func (m *Dependency) Reset()                    { *m = Dependency{} }
 func (m *Dependency) String() string            { return proto.CompactTextString(m) }
 func (*Dependency) ProtoMessage()               {}
-func (*Dependency) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{6} }
+func (*Dependency) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{6} }
 
 type isDependency_AttemptStrategy interface {
 	isDependency_AttemptStrategy()
@@ -416,7 +416,7 @@ type SparseRange struct {
 func (m *SparseRange) Reset()                    { *m = SparseRange{} }
 func (m *SparseRange) String() string            { return proto.CompactTextString(m) }
 func (*SparseRange) ProtoMessage()               {}
-func (*SparseRange) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{7} }
+func (*SparseRange) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{7} }
 
 func (m *SparseRange) GetItems() []*RangeItem {
 	if m != nil {
@@ -436,7 +436,7 @@ type RangeItem struct {
 func (m *RangeItem) Reset()                    { *m = RangeItem{} }
 func (m *RangeItem) String() string            { return proto.CompactTextString(m) }
 func (*RangeItem) ProtoMessage()               {}
-func (*RangeItem) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{8} }
+func (*RangeItem) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{8} }
 
 type isRangeItem_RangeItem interface {
 	isRangeItem_RangeItem()
@@ -551,7 +551,7 @@ type Range struct {
 func (m *Range) Reset()                    { *m = Range{} }
 func (m *Range) String() string            { return proto.CompactTextString(m) }
 func (*Range) ProtoMessage()               {}
-func (*Range) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{9} }
+func (*Range) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{9} }
 
 func init() {
 	proto.RegisterType((*Phrase)(nil), "jobsim.Phrase")
@@ -566,9 +566,9 @@ func init() {
 	proto.RegisterType((*Range)(nil), "jobsim.Range")
 }
 
-func init() { proto.RegisterFile("task.proto", fileDescriptor1) }
+func init() { proto.RegisterFile("task.proto", fileDescriptor2) }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor2 = []byte{
 	// 557 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x64, 0x53, 0xcd, 0x6e, 0xd3, 0x40,
 	0x10, 0xc6, 0x4d, 0xec, 0x24, 0xe3, 0x04, 0x95, 0x05, 0x21, 0x37, 0x07, 0xa8, 0x2c, 0x11, 0x2a,

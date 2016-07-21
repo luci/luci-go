@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
+
 	"github.com/luci/luci-go/common/api/dm/distributor/jobsim"
 	"github.com/luci/luci-go/common/api/dm/service/v1"
 )
@@ -35,7 +37,7 @@ type jobsimExecution struct {
 	CfgName     string        `gae:",noindex"`
 }
 
-func getTaskResult(status jobsimStatus, stateOrReason string) *dm.Result {
+func getAttemptResult(status jobsimStatus, stateOrReason string) *dm.Result {
 	switch status {
 	case jobsimRunnable, jobsimRunning:
 		return nil
@@ -56,24 +58,30 @@ func getTaskResult(status jobsimStatus, stateOrReason string) *dm.Result {
 	return tr
 }
 
-// TaskResult is the result of a Jobsim task.
-type TaskResult struct {
-	Success bool  `json:"success"`
-	Result  int64 `json:"result,string"`
-}
-
-// ToJSONObject returns a JSONObject for this TaskResult.
-func (t *TaskResult) ToJSONObject(exp time.Time) *dm.JsonResult {
-	ret, err := json.Marshal(t)
+func executionResult(success bool, value int64, exp time.Time) *dm.JsonResult {
+	data, err := (&jsonpb.Marshaler{}).MarshalToString(&jobsim.Result{
+		Success: success, Value: value})
 	if err != nil {
 		panic(err)
 	}
-	return dm.NewJSONObject(string(ret), exp)
+	return dm.NewJSONObject(data, exp)
 }
 
-// TaskResultFromJSON converts a JSON string encoding to a *TaskResult.
-func TaskResultFromJSON(j string) (*TaskResult, error) {
-	ret := &TaskResult{}
-	err := json.Unmarshal([]byte(j), ret)
-	return ret, err
+func executionResultFromJSON(data *dm.JsonResult) (ret *jobsim.Result, err error) {
+	ret = &jobsim.Result{}
+	err = jsonpb.UnmarshalString(data.Object, ret)
+	return
+}
+
+type notification struct {
+	Status        jobsimStatus
+	StateOrReason string
+}
+
+func (n *notification) toJSON() []byte {
+	ret, err := json.Marshal(n)
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }
