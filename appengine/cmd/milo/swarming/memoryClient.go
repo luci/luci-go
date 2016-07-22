@@ -10,9 +10,9 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/appengine/cmd/milo/logdog"
-	"github.com/luci/luci-go/client/logdog/butlerlib/streamclient"
-	"github.com/luci/luci-go/client/logdog/butlerlib/streamproto"
 	miloProto "github.com/luci/luci-go/common/proto/milo"
+	"github.com/luci/luci-go/logdog/client/butlerlib/streamclient"
+	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
 )
 
 // In-memory datastructure to hold a fake butler client.

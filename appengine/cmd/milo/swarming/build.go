@@ -19,12 +19,12 @@ import (
 	"github.com/luci/luci-go/appengine/cmd/milo/logdog"
 	"github.com/luci/luci-go/appengine/cmd/milo/resp"
 	"github.com/luci/luci-go/appengine/gaeauth/client"
-	"github.com/luci/luci-go/client/logdog/annotee"
 	swarming "github.com/luci/luci-go/common/api/swarming/swarming/v1"
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/logdog/types"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/transport"
+	"github.com/luci/luci-go/logdog/client/annotee"
+	"github.com/luci/luci-go/logdog/common/types"
 )
 
 // SwarmingTimeLayout is time layout used by swarming.
