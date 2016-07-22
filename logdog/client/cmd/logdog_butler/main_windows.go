@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/luci/luci-go/client/logdog/butler/streamserver"
+	"github.com/luci/luci-go/logdog/client/butler/streamserver"
 	"golang.org/x/net/context"
 )
 
