@@ -23,6 +23,10 @@ var (
 	// ErrBadClientID is returned by Authenticate if caller is using
 	// non-whitelisted OAuth2 client. More info is in the log.
 	ErrBadClientID = errors.New("auth: OAuth client_id is not whitelisted")
+
+	// ErrIPNotWhitelisted is returned when an account is restricted by an IP
+	// whitelist and request's remote_addr is not in it.
+	ErrIPNotWhitelisted = errors.New("auth: IP is not whitelisted")
 )
 
 // Method implements particular kind of low level authentication mechanism for
@@ -137,12 +141,17 @@ func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context
 		}
 	}
 
-	// Bots may use IP whitelist for authentication. In this case checkIPWhitelist
-	// returns new bot identity. Otherwise it just returns s.user.Identity
-	// unchanged.
-	s.user.Identity, err = checkIPWhitelist(c, s.db, s.user.Identity, s.peerIP, r.Header)
-	if err != nil {
+	// Some callers may be constrained by an IP whitelist.
+	switch ipWhitelist, err := s.db.GetWhitelistForIdentity(c, s.user.Identity); {
+	case err != nil:
 		return nil, err
+	case ipWhitelist != "":
+		switch whitelisted, err := s.db.IsInWhitelist(c, s.peerIP, ipWhitelist); {
+		case err != nil:
+			return nil, err
+		case !whitelisted:
+			return nil, ErrIPNotWhitelisted
+		}
 	}
 
 	// TODO(vadimsh): Check delegation token. When using delegation
