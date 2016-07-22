@@ -6,7 +6,7 @@ syntax = "proto3";
 
 package deploy;
 
-import "checkout.proto";
+import "github.com/luci/luci-go/common/proto/deploy/checkout.proto";
 
 /**
  * The deployment configuration is a set of parameters composed from local and

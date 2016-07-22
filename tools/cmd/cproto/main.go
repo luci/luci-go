@@ -30,9 +30,6 @@ var (
 	withDiscovery = flag.Bool(
 		"discovery", true,
 		"generate pb.discovery.go file")
-	withGopath = flag.Bool(
-		"with-gopath", true,
-		"include $GOPATH/src in proto search path")
 	withGoogleProtobuf = flag.Bool(
 		"with-google-protobuf", true,
 		"map .proto files in gitub.com/luci/luci-go/common/proto/google to google/protobuf/*.proto")
@@ -70,9 +67,40 @@ func resolveGoogleProtobufPackages(c context.Context) (map[string]string, error)
 	return result, nil
 }
 
-func protoc(c context.Context, protoFiles []string, dir, descSetOut string) error {
-	var params []string
+// compile runs protoc on protoFiles. protoFiles must be relative to dir.
+func compile(c context.Context, gopath, protoFiles []string, dir, descSetOut string) error {
+	args := []string{
+		"--descriptor_set_out=" + descSetOut,
+		"--include_imports",
+		"--include_source_info",
+	}
 
+	// make it absolute to find in $GOPATH and because protoc wants paths
+	// to be under proto paths.
+	dir, err := filepath.Abs(dir)
+	if err != nil {
+		return err
+	}
+
+	currentGoPath := ""
+	for _, p := range gopath {
+		path := filepath.Join(p, "src")
+		if info, err := os.Stat(path); os.IsNotExist(err) || !info.IsDir() {
+			continue
+		} else if err != nil {
+			return err
+		}
+		args = append(args, "--proto_path="+path)
+		if strings.HasPrefix(dir, path) {
+			currentGoPath = path
+		}
+	}
+
+	if currentGoPath == "" {
+		return fmt.Errorf("directory %q is not inside current $GOPATH", dir)
+	}
+
+	var params []string
 	if *withGoogleProtobuf {
 		googlePackages, err := resolveGoogleProtobufPackages(c)
 		if err != nil {
@@ -85,31 +113,26 @@ func protoc(c context.Context, protoFiles []string, dir, descSetOut string) erro
 	if p := *importPath; p != "" {
 		params = append(params, fmt.Sprintf("import_path=%s", p))
 	}
-
 	params = append(params, "plugins=grpc")
-	goOut := fmt.Sprintf("%s:%s", strings.Join(params, ","), dir)
+	args = append(args, fmt.Sprintf("--go_out=%s:%s", strings.Join(params, ","), currentGoPath))
 
-	args := []string{
-		"--proto_path=" + dir,
-		"--go_out=" + goOut,
-		"--descriptor_set_out=" + descSetOut,
-		"--include_imports",
-		"--include_source_info",
+	for _, f := range protoFiles {
+		// We must prepend an go-style absolute path to the filename otherwise
+		// protoc will complain that the files we specify here are not found
+		// in any of proto-paths.
+		//
+		// We cannot specify --proto-path=. because of the following scenario:
+		// we have file structure
+		// - A
+		//   - x.proto, imports "y.proto"
+		//   - y.proto
+		// - B
+		//   - z.proto, imports "github.com/user/repo/A/x.proto"
+		// If cproto is executed in B, proto path does not include A, so y.proto
+		// is not found.
+		// The solution is to always use absolute paths.
+		args = append(args, path.Join(dir, f))
 	}
-
-	if *withGopath {
-		for _, p := range strings.Split(os.Getenv("GOPATH"), string(filepath.ListSeparator)) {
-			path := filepath.Join(p, "src")
-			if info, err := os.Stat(path); os.IsNotExist(err) || !info.IsDir() {
-				continue
-			} else if err != nil {
-				return err
-			}
-			args = append(args, "--proto_path="+path)
-		}
-	}
-
-	args = append(args, protoFiles...)
 	logging.Infof(c, "protoc %s", strings.Join(args, " "))
 	protoc := exec.Command("protoc", args...)
 	protoc.Stdout = os.Stdout
@@ -117,7 +140,7 @@ func protoc(c context.Context, protoFiles []string, dir, descSetOut string) erro
 	return protoc.Run()
 }
 
-func run(c context.Context, dir string) error {
+func run(c context.Context, goPath []string, dir string) error {
 	if s, err := os.Stat(dir); os.IsNotExist(err) {
 		return fmt.Errorf("%s does not exist", dir)
 	} else if err != nil {
@@ -145,14 +168,15 @@ func run(c context.Context, dir string) error {
 		defer os.RemoveAll(tmpDir)
 		descPath = filepath.Join(tmpDir, "package.desc")
 	}
-	if err := protoc(c, protoFiles, dir, descPath); err != nil {
+
+	if err := compile(c, goPath, protoFiles, dir, descPath); err != nil {
 		return err
 	}
 
 	// Transform .go files
 	var goPkg, protoPkg string
 	for _, p := range protoFiles {
-		goFile := strings.TrimSuffix(p, ".proto") + ".pb.go"
+		goFile := filepath.Join(dir, strings.TrimSuffix(p, ".proto")+".pb.go")
 		var t transformer
 		if err := t.transformGoFile(goFile); err != nil {
 			return fmt.Errorf("could not transform %s: %s", goFile, err)
@@ -214,7 +238,8 @@ func main() {
 	}
 
 	c := setupLogging(context.Background())
-	if err := run(c, dir); err != nil {
+	goPath := strings.Split(os.Getenv("GOPATH"), string(filepath.ListSeparator))
+	if err := run(c, goPath, dir); err != nil {
 		exitCode := 1
 		if exit, ok := err.(*exec.ExitError); ok {
 			if wait, ok := exit.Sys().(syscall.WaitStatus); ok {
@@ -227,8 +252,18 @@ func main() {
 	}
 }
 
+// findProtoFiles returns .proto files in dir. The returned file paths
+// are relative to dir.
 func findProtoFiles(dir string) ([]string, error) {
-	return filepath.Glob(filepath.Join(dir, "*.proto"))
+	files, err := filepath.Glob(filepath.Join(dir, "*.proto"))
+	if err != nil {
+		return nil, err
+	}
+
+	for i, f := range files {
+		files[i] = filepath.Base(f)
+	}
+	return files, err
 }
 
 // isInPackage returns true if the filename is a part of the package.

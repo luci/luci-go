@@ -5,6 +5,7 @@
 package main
 
 import (
+	"flag"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -21,9 +22,9 @@ const (
 	testDataDir = "testdata"
 )
 
-func TestMain(t *testing.T) {
-	t.Parallel()
+var train = flag.Bool("test.train", false, "retrain golden files")
 
+func TestMain(t *testing.T) {
 	if runtime.GOOS == "windows" || runtime.GOARCH == "386" {
 		t.Skipf("we don't have protoc these build machines.")
 	}
@@ -37,9 +38,13 @@ func TestMain(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		runOn := func(sourceDir string, test func(tmpDir string)) {
-			tmpDir, err := ioutil.TempDir("", "cproto-test")
+			tmpGoPath, err := ioutil.TempDir("", "cproto-test")
 			So(err, ShouldBeNil)
-			defer os.RemoveAll(tmpDir)
+			defer os.RemoveAll(tmpGoPath)
+
+			pkgPath := filepath.Join(tmpGoPath, "src", "tmp")
+			err = os.MkdirAll(pkgPath, 0777)
+			So(err, ShouldBeNil)
 
 			names, err := findProtoFiles(sourceDir)
 			So(err, ShouldBeNil)
@@ -48,15 +53,17 @@ func TestMain(t *testing.T) {
 				name = filepath.Base(name)
 				err = copyFile(
 					filepath.Join(sourceDir, name),
-					filepath.Join(tmpDir, name))
+					filepath.Join(pkgPath, name))
 				So(err, ShouldBeNil)
 			}
 
 			// Run cproto.
-			err = run(context.Background(), tmpDir)
+			goPaths := []string{tmpGoPath}
+			goPaths = append(goPaths, strings.Split(os.Getenv("GOPATH"), string(filepath.ListSeparator))...)
+			err = run(context.Background(), []string{tmpGoPath}, pkgPath)
 			So(err, ShouldBeNil)
 
-			test(tmpDir)
+			test(pkgPath)
 		}
 
 		for _, testDir := range testCaseDirs {
@@ -73,14 +80,19 @@ func TestMain(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(goldenFiles, ShouldNotBeEmpty)
 					for _, golden := range goldenFiles {
-						want, err := ioutil.ReadFile(golden)
-						So(err, ShouldBeNil)
-
 						gotFile := strings.TrimSuffix(filepath.Base(golden), ".golden") + ".go"
 						gotFile = filepath.Join(tmpDir, gotFile)
 						got, err := ioutil.ReadFile(gotFile)
-
 						So(err, ShouldBeNil)
+
+						if *train {
+							err := ioutil.WriteFile(golden, got, 0777)
+							So(err, ShouldBeNil)
+						}
+
+						want, err := ioutil.ReadFile(golden)
+						So(err, ShouldBeNil)
+
 						So(string(got), ShouldEqual, string(want))
 					}
 				})

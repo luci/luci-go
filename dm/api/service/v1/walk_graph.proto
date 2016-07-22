@@ -7,9 +7,9 @@ syntax = "proto3";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
-import "graph_data.proto";
-import "graph_query.proto";
-import "types.proto";
+import "github.com/luci/luci-go/dm/api/service/v1/graph_data.proto";
+import "github.com/luci/luci-go/dm/api/service/v1/graph_query.proto";
+import "github.com/luci/luci-go/dm/api/service/v1/types.proto";
 
 package dm;
 

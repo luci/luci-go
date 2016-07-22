@@ -9,7 +9,7 @@ package tokenserver.admin;
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
-import "config.proto";
+import "github.com/luci/luci-go/tokenserver/api/admin/v1/config.proto";
 
 // CertificateAuthorities can be used by service administrators to manage and
 // inspect CAs used by The Token Server.

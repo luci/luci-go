@@ -6,8 +6,8 @@ syntax = "proto3";
 
 import "github.com/luci/luci-go/common/api/template/template.proto";
 
-import "graph_data.proto";
-import "types.proto";
+import "github.com/luci/luci-go/dm/api/service/v1/graph_data.proto";
+import "github.com/luci/luci-go/dm/api/service/v1/types.proto";
 
 package dm;
 

@@ -6,7 +6,7 @@ syntax = "proto3";
 
 package logdog;
 
-import "state.proto";
+import "github.com/luci/luci-go/common/api/logdog_coordinator/services/v1/state.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/empty.proto";
 

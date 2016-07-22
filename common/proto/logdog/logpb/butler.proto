@@ -6,7 +6,7 @@ syntax = "proto3";
 
 package logpb;
 
-import "log.proto";
+import "github.com/luci/luci-go/common/proto/logdog/logpb/log.proto";
 import "google/protobuf/timestamp.proto";
 
 /*

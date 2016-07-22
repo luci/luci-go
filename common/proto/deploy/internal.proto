@@ -6,8 +6,8 @@ syntax = "proto3";
 
 package deploy;
 
-import "config.proto";
-import "checkout.proto";
+import "github.com/luci/luci-go/common/proto/deploy/config.proto";
+import "github.com/luci/luci-go/common/proto/deploy/checkout.proto";
 
 /**
  * Frozen copy of layout configuration, associated with the current checkout.

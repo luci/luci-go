@@ -6,7 +6,7 @@ syntax = "proto3";
 
 package distributor;
 
-import "github.com/luci/luci-go/common/api/dm/distributor/jobsim/jobsim.proto";
+import "github.com/luci/luci-go/dm/api/distributor/jobsim/jobsim.proto";
 
 message Alias {
   string other_config = 1;

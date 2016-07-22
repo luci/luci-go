@@ -6,9 +6,9 @@ syntax = "proto3";
 
 package svcconfig;
 
-import "archival.proto";
-import "storage.proto";
-import "transport.proto";
+import "github.com/luci/luci-go/common/proto/logdog/svcconfig/archival.proto";
+import "github.com/luci/luci-go/common/proto/logdog/svcconfig/storage.proto";
+import "github.com/luci/luci-go/common/proto/logdog/svcconfig/transport.proto";
 
 import "google/protobuf/duration.proto";
 
