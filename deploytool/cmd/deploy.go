@@ -11,7 +11,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/flag/flagenum"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/tools/internal/managedfs"
+	"github.com/luci/luci-go/deploytool/managedfs"
 
 	"github.com/maruel/subcommands"
 )

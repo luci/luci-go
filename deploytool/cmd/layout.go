@@ -13,8 +13,8 @@ import (
 
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/proto/deploy"
-	"github.com/luci/luci-go/tools/internal/managedfs"
+	"github.com/luci/luci-go/deploytool/api/deploy"
+	"github.com/luci/luci-go/deploytool/managedfs"
 
 	"golang.org/x/net/context"
 )

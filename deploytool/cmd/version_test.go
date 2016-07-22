@@ -7,7 +7,7 @@ package main
 import (
 	"testing"
 
-	"github.com/luci/luci-go/common/proto/deploy"
+	"github.com/luci/luci-go/deploytool/api/deploy"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

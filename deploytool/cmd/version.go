@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/proto/deploy"
+	"github.com/luci/luci-go/deploytool/api/deploy"
 )
 
 type cloudProjectVersion struct {

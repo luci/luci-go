@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/tools/internal/managedfs"
+	"github.com/luci/luci-go/deploytool/managedfs"
 )
 
 // stageGoPath creates a GOPATH-compatible directory consisting of all of the

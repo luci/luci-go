@@ -9,7 +9,7 @@ import (
 	"sort"
 
 	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/proto/deploy"
+	"github.com/luci/luci-go/deploytool/api/deploy"
 
 	"golang.org/x/net/context"
 	"gopkg.in/yaml.v2"

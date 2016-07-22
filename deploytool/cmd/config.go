@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/proto/deploy"
+	"github.com/luci/luci-go/deploytool/api/deploy"
 
 	"github.com/mitchellh/go-homedir"
 )
