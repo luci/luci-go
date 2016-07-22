@@ -18,10 +18,12 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/mathrand"
 
-	"github.com/luci/luci-go/server/auth/identity"
-	"github.com/luci/luci-go/server/auth/service/protocol"
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/secrets"
+
+	"github.com/luci/luci-go/server/auth/identity"
+	"github.com/luci/luci-go/server/auth/service/protocol"
+	"github.com/luci/luci-go/server/auth/signing"
 )
 
 // ErrNoDB is returned by default DB returned from GetDB if no DBFactory is
@@ -63,6 +65,13 @@ type DB interface {
 	// IP whitelist is a set of IP subnets. Unknown IP whitelists are considered
 	// empty. May return errors if underlying datastore has issues.
 	IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error)
+
+	// GetAuthServiceCertificates returns a bundle with certificates of a primary
+	// auth service.
+	//
+	// They can be used to verify signature of messages signed by the primary's
+	// private key. Used for validating various tokens.
+	GetAuthServiceCertificates(c context.Context) (*signing.PublicCertificates, error)
 }
 
 // DBFactory returns most recent DB instance.
@@ -192,6 +201,16 @@ func (db ErroringDB) GetWhitelistForIdentity(c context.Context, ident identity.I
 func (db ErroringDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
 	logging.Errorf(c, "%s", db.Error)
 	return false, db.Error
+}
+
+// GetAuthServiceCertificates returns a bundle with certificates of a primary
+// auth service.
+//
+// They can be used to verify signature of messages signed by the primary's
+// private key. Used for validating various tokens.
+func (db ErroringDB) GetAuthServiceCertificates(c context.Context) (*signing.PublicCertificates, error) {
+	logging.Errorf(c, "%s", db.Error)
+	return nil, db.Error
 }
 
 ///
@@ -454,4 +473,14 @@ func (db *SnapshotDB) IsInWhitelist(c context.Context, ip net.IP, whitelist stri
 		}
 	}
 	return false, nil
+}
+
+// GetAuthServiceCertificates returns a bundle with certificates of a primary
+// auth service.
+//
+// They can be used to verify signature of messages signed by the primary's
+// private key. Used for validating various tokens.
+func (db *SnapshotDB) GetAuthServiceCertificates(c context.Context) (*signing.PublicCertificates, error) {
+	// Note: FetchCertificates does caching inside.
+	return signing.FetchCertificates(c, db.AuthServiceURL)
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
+	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/secrets"
 )
 
@@ -104,4 +105,8 @@ func (devServerDB) GetWhitelistForIdentity(c context.Context, ident identity.Ide
 
 func (devServerDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
 	return false, nil
+}
+
+func (devServerDB) GetAuthServiceCertificates(c context.Context) (*signing.PublicCertificates, error) {
+	return nil, errNotConfigured
 }

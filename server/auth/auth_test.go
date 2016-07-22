@@ -12,9 +12,11 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/server/secrets"
+
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/service/protocol"
-	"github.com/luci/luci-go/server/secrets"
+	"github.com/luci/luci-go/server/auth/signing"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -155,4 +157,8 @@ func (db *fakeDB) GetWhitelistForIdentity(c context.Context, ident identity.Iden
 
 func (db *fakeDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
 	return whitelist == "bots" && ip.String() == "1.2.3.4", nil
+}
+
+func (db *fakeDB) GetAuthServiceCertificates(c context.Context) (*signing.PublicCertificates, error) {
+	return nil, errors.New("fakeDB: GetAuthServiceCertificates is not implemented")
 }

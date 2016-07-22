@@ -9,9 +9,11 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/server/secrets"
+
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
-	"github.com/luci/luci-go/server/secrets"
+	"github.com/luci/luci-go/server/auth/signing"
 )
 
 // FakeDB implements user group checking part of auth.DB (IsMember).
@@ -61,6 +63,11 @@ func (db FakeDB) GetWhitelistForIdentity(c context.Context, ident identity.Ident
 // IsInWhitelist is part of auth.DB interface. Panics.
 func (db FakeDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
 	panic("FakeDB.IsInWhitelist must not be called")
+}
+
+// GetAuthServiceCertificates is part of auth.DB interface. Panics.
+func (db FakeDB) GetAuthServiceCertificates(c context.Context) (*signing.PublicCertificates, error) {
+	panic("FakeDB.GetAuthServiceCertificates must not be called")
 }
 
 // FakeErroringDB is auth.DB with IsMember returning a error.
