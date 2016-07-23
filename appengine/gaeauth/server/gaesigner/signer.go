@@ -7,11 +7,14 @@
 package gaesigner
 
 import (
+	"runtime"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
 
 	"github.com/luci/gae/service/info"
+
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/proccache"
@@ -43,12 +46,24 @@ func (Signer) Certificates(c context.Context) (*signing.PublicCertificates, erro
 	return certs.(*signing.PublicCertificates), nil
 }
 
+// ServiceInfo returns information about the current service.
+//
+// It includes app ID and the service account name (that ultimately owns the
+// signing private key).
+func (Signer) ServiceInfo(c context.Context) (*signing.ServiceInfo, error) {
+	inf, err := cachedInfo(c)
+	if err != nil {
+		return nil, err
+	}
+	return inf.(*signing.ServiceInfo), nil
+}
+
 ////
 
-type certsCacheKey int
+type cacheKey int
 
 // cachedCerts caches this app certs in local memory for 1 hour.
-var cachedCerts = proccache.Cached(certsCacheKey(0), func(c context.Context, key interface{}) (interface{}, time.Duration, error) {
+var cachedCerts = proccache.Cached(cacheKey(0), func(c context.Context, key interface{}) (interface{}, time.Duration, error) {
 	aeCerts, err := info.Get(c).PublicCertificates()
 	if err != nil {
 		return nil, 0, err
@@ -64,4 +79,22 @@ var cachedCerts = proccache.Cached(certsCacheKey(0), func(c context.Context, key
 		Certificates: certs,
 		Timestamp:    signing.JSONTime(clock.Now(c)),
 	}, time.Hour, nil
+})
+
+// cachedInfo caches this app service info in local memory forever.
+//
+// This info is static during lifetime of the process.
+var cachedInfo = proccache.Cached(cacheKey(1), func(c context.Context, key interface{}) (interface{}, time.Duration, error) {
+	i := info.Get(c)
+	account, err := i.ServiceAccount()
+	if err != nil {
+		return nil, 0, err
+	}
+	return &signing.ServiceInfo{
+		AppID:              i.AppID(),
+		AppRuntime:         "go",
+		AppRuntimeVersion:  runtime.Version(),
+		AppVersion:         strings.Split(i.VersionID(), ".")[0],
+		ServiceAccountName: account,
+	}, 0, nil
 })

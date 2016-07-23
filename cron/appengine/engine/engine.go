@@ -34,7 +34,7 @@ import (
 	"github.com/luci/luci-go/common/mathrand"
 	"github.com/luci/luci-go/common/stringset"
 	"github.com/luci/luci-go/server/auth/identity"
-	authinfo "github.com/luci/luci-go/server/auth/info"
+	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/tokens"
 
 	"github.com/luci/luci-go/cron/appengine/catalog"
@@ -1313,7 +1313,7 @@ func (e *engineImpl) prepareTopic(c context.Context, params topicParams) (topic 
 	// call it often.
 	if strings.HasPrefix(params.publisher, "https://") {
 		logging.Infof(c, "Fetching info about %q", params.publisher)
-		serviceInfo, err := authinfo.FetchServiceInfo(c, params.publisher)
+		serviceInfo, err := signing.FetchServiceInfo(c, params.publisher)
 		if err != nil {
 			logging.Errorf(c, "Failed to fetch info about %q - %s", params.publisher, err)
 			return "", "", err

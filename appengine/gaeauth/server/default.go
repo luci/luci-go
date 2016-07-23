@@ -5,15 +5,10 @@
 package server
 
 import (
-	"runtime"
-	"strings"
-
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
-	gae_info "github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/info"
 	"github.com/luci/luci-go/server/auth/openid"
 	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/router"
@@ -39,7 +34,6 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 	}
 	auth.InstallHandlers(r, base)
 	authdb.InstallHandlers(r, base)
-	info.InstallHandlers(r, base, getServiceInfo)
 	signing.InstallHandlers(r, base)
 }
 
@@ -50,22 +44,6 @@ func Warmup(c context.Context) error {
 		return oid.Warmup(c)
 	}
 	return nil
-}
-
-func getServiceInfo(c context.Context) (info.ServiceInfo, error) {
-	i := gae_info.Get(c)
-
-	account, err := i.ServiceAccount()
-	if err != nil {
-		return info.ServiceInfo{}, err
-	}
-	return info.ServiceInfo{
-		AppID:              i.AppID(),
-		AppRuntime:         "go",
-		AppRuntimeVersion:  runtime.Version(),
-		AppVersion:         strings.Split(i.VersionID(), ".")[0],
-		ServiceAccountName: account,
-	}, nil
 }
 
 ///

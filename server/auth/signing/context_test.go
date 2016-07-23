@@ -6,6 +6,7 @@ package signing
 
 import (
 	"errors"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -22,16 +23,12 @@ func TestContext(t *testing.T) {
 		ctx := context.Background()
 
 		So(GetSigner(ctx), ShouldBeNil)
-		_, _, err := SignBytes(ctx, nil)
-		So(err, ShouldErrLike, "no Signer in the context")
-
-		ctx = SetSigner(ctx, phonySigner{})
-		_, _, err = SignBytes(ctx, nil)
-		So(err, ShouldBeNil)
+		ctx = SetSigner(ctx, &phonySigner{})
+		So(GetSigner(ctx), ShouldNotBeNil)
 	})
 }
 
-func TestHandlers(t *testing.T) {
+func TestCertificatesHandler(t *testing.T) {
 	call := func(s Signer) (*PublicCertificates, error) {
 		r := router.New()
 		InstallHandlers(r, router.NewMiddlewareChain(
@@ -45,7 +42,7 @@ func TestHandlers(t *testing.T) {
 	}
 
 	Convey("Works", t, func() {
-		certs, err := call(phonySigner{})
+		certs, err := call(&phonySigner{})
 		So(err, ShouldBeNil)
 		So(len(certs.Certificates), ShouldEqual, 1)
 	})
@@ -56,24 +53,59 @@ func TestHandlers(t *testing.T) {
 	})
 
 	Convey("Error getting certs", t, func() {
-		_, err := call(phonySigner{errors.New("fail")})
+		_, err := call(&phonySigner{errors.New("fail")})
 		So(err, ShouldErrLike, "HTTP code (500)")
+	})
+}
+
+func TestServiceInfoHandler(t *testing.T) {
+	Convey("Works", t, func() {
+		r := router.New()
+		signer := &phonySigner{}
+
+		InstallHandlers(r, router.NewMiddlewareChain(
+			func(ctx *router.Context, next router.Handler) {
+				ctx.Context = SetSigner(context.Background(), signer)
+				next(ctx)
+			},
+		))
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/auth/api/v1/server/info", nil)
+		r.ServeHTTP(w, req)
+		So(w.Code, ShouldEqual, 200)
+		So(w.Body.String(), ShouldResemble,
+			`{"app_id":"phony-app","app_runtime":"go",`+
+				`"app_runtime_version":"go1.5.1",`+
+				`"app_version":"1234-abcdef","service_account_name":`+
+				`"phony-app-account@example.com"}`+"\n")
+
+		signer.err = errors.New("fail")
+
+		w = httptest.NewRecorder()
+		req, _ = http.NewRequest("GET", "/auth/api/v1/server/info", nil)
+		r.ServeHTTP(w, req)
+		So(w.Code, ShouldEqual, 500)
+		So(w.Body.String(), ShouldResemble, "{\"error\":\"Can't grab service info - fail\"}\n")
 	})
 }
 
 ///
 
 type phonySigner struct {
-	certErr error
+	err error
 }
 
-func (s phonySigner) SignBytes(c context.Context, blob []byte) (string, []byte, error) {
+func (s *phonySigner) SignBytes(c context.Context, blob []byte) (string, []byte, error) {
+	if s.err != nil {
+		return "", nil, s.err
+	}
 	return "phonyKey", []byte("signature"), nil
 }
 
-func (s phonySigner) Certificates(c context.Context) (*PublicCertificates, error) {
-	if s.certErr != nil {
-		return nil, s.certErr
+func (s *phonySigner) Certificates(c context.Context) (*PublicCertificates, error) {
+	if s.err != nil {
+		return nil, s.err
 	}
 	return &PublicCertificates{
 		Certificates: []Certificate{
@@ -82,5 +114,18 @@ func (s phonySigner) Certificates(c context.Context) (*PublicCertificates, error
 				X509CertificatePEM: "phonyPEM",
 			},
 		},
+	}, nil
+}
+
+func (s *phonySigner) ServiceInfo(c context.Context) (*ServiceInfo, error) {
+	if s.err != nil {
+		return nil, s.err
+	}
+	return &ServiceInfo{
+		AppID:              "phony-app",
+		AppRuntime:         "go",
+		AppRuntimeVersion:  "go1.5.1",
+		AppVersion:         "1234-abcdef",
+		ServiceAccountName: "phony-app-account@example.com",
 	}, nil
 }

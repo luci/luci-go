@@ -24,13 +24,16 @@ import (
 // Signer holds private key and corresponding cert and can sign blobs with
 // PKCS1v15.
 type Signer struct {
-	priv  *rsa.PrivateKey
-	certs signing.PublicCertificates
+	priv        *rsa.PrivateKey
+	certs       signing.PublicCertificates
+	serviceInfo signing.ServiceInfo
 }
+
+var _ signing.Signer = (*Signer)(nil)
 
 // NewSigner returns Signer instance deterministically deriving the key from
 // the given seed. Panics on errors.
-func NewSigner(seed int64) *Signer {
+func NewSigner(seed int64, serviceInfo *signing.ServiceInfo) *Signer {
 	src := notRandom{rand.New(rand.NewSource(seed))}
 
 	// Generate deterministic key from the seed.
@@ -56,6 +59,11 @@ func NewSigner(seed int64) *Signer {
 	pemOut := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
 	keyName := sha1.Sum(der)
 
+	// Put in default service info if necessary.
+	if serviceInfo == nil {
+		serviceInfo = &signing.ServiceInfo{}
+	}
+
 	return &Signer{
 		priv: priv,
 		certs: signing.PublicCertificates{
@@ -67,6 +75,7 @@ func NewSigner(seed int64) *Signer {
 			},
 			Timestamp: signing.JSONTime(time.Unix(1000000000, 0)),
 		},
+		serviceInfo: *serviceInfo,
 	}
 }
 
@@ -84,6 +93,14 @@ func (s *Signer) SignBytes(c context.Context, blob []byte) (keyName string, sign
 // Certificates returns a bundle with public certificates for all active keys.
 func (s *Signer) Certificates(c context.Context) (*signing.PublicCertificates, error) {
 	return &s.certs, nil
+}
+
+// ServiceInfo returns information about the current service.
+//
+// It includes app ID and the service account name (that ultimately owns the
+// signing private key).
+func (s *Signer) ServiceInfo(c context.Context) (*signing.ServiceInfo, error) {
+	return &s.serviceInfo, nil
 }
 
 ////

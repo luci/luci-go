@@ -123,3 +123,7 @@ func (fakeSigner) SignBytes(c context.Context, blob []byte) (keyID string, sig [
 func (fakeSigner) Certificates(c context.Context) (*signing.PublicCertificates, error) {
 	panic("not implemented yet")
 }
+
+func (fakeSigner) ServiceInfo(c context.Context) (*signing.ServiceInfo, error) {
+	panic("not implemented yet")
+}

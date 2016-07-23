@@ -33,7 +33,7 @@ func TestMachineTokenAuthMethod(t *testing.T) {
 	Convey("with mock context", t, func() {
 		ctx := makeTestContext()
 		log := logging.Get(ctx).(*memlogger.MemLogger)
-		signer := signingtest.NewSigner(0)
+		signer := signingtest.NewSigner(0, nil)
 		method := MachineTokenAuthMethod{
 			certsFetcher: func(c context.Context, email string) (*signing.PublicCertificates, error) {
 				if email == "valid-signer@example.com" {

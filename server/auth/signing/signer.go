@@ -8,13 +8,26 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Signer holds private key and correspond cert and can sign blobs with
-// PKCS1v15.
+// Signer holds private key and corresponding cert and can sign blobs.
+//
+// It signs using RSA-256 + PKCS1v15. It usually lives in a context, see
+// GetSigner function.
 type Signer interface {
 	// SignBytes signs the blob with some active private key.
+	//
 	// Returns the signature and name of the key used.
 	SignBytes(c context.Context, blob []byte) (keyName string, signature []byte, err error)
 
 	// Certificates returns a bundle with public certificates for all active keys.
+	//
+	// Do not modify return value, it may be shared by many callers.
 	Certificates(c context.Context) (*PublicCertificates, error)
+
+	// ServiceInfo returns information about the current service.
+	//
+	// It includes app ID and the service account name (that ultimately owns the
+	// signing private key).
+	//
+	// Do not modify return value, it may be shared by many callers.
+	ServiceInfo(c context.Context) (*ServiceInfo, error)
 }

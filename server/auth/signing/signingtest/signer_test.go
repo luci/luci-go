@@ -19,7 +19,7 @@ func TestSigner(t *testing.T) {
 		ctx := context.Background()
 
 		// Certificates are deterministically built from the seed.
-		s := NewSigner(0)
+		s := NewSigner(0, nil)
 		certs, err := s.Certificates(ctx)
 		So(err, ShouldBeNil)
 		So(certs, ShouldResemble, &signing.PublicCertificates{

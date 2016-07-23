@@ -32,7 +32,7 @@ func TestPubSubWorkflow(t *testing.T) {
 	Convey("PubSub pull workflow works", t, func(c C) {
 		ctx := proccache.Use(context.Background(), &proccache.Cache{})
 
-		fakeSigner := signingtest.NewSigner(0)
+		fakeSigner := signingtest.NewSigner(0, nil)
 		certs, _ := fakeSigner.Certificates(ctx)
 		certsJSON, _ := json.Marshal(certs)
 

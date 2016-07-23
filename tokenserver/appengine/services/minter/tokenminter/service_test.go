@@ -291,7 +291,7 @@ func TestLuciMachineToken(t *testing.T) {
 					},
 				}, nil
 			},
-			signer:  signingtest.NewSigner(0),
+			signer:  signingtest.NewSigner(0, nil),
 			isAdmin: func(context.Context) (bool, error) { return true, nil },
 		})
 
