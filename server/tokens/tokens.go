@@ -113,8 +113,7 @@ func (k *TokenKind) Generate(c context.Context, state []byte, embedded map[strin
 		return "", err
 	}
 
-	// TODO(vadimsh): Use base64.RawURLEncoding when we switch to Go 1.5.
-	encoded := base64.URLEncoding.EncodeToString(bytes.Join([][]byte{
+	encoded := base64.RawURLEncoding.EncodeToString(bytes.Join([][]byte{
 		{k.Version},
 		public,
 		mac,
@@ -136,12 +135,7 @@ func (k *TokenKind) Validate(c context.Context, token string, state []byte) (map
 	if digestLen == 0 {
 		return nil, fmt.Errorf("tokens: unknown algo %q", k.Algo)
 	}
-
-	// TODO(vadimsh): Use base64.RawURLEncoding when we switch to Go 1.5.
-	if mod := len(token) % 4; mod != 0 {
-		token += strings.Repeat("=", (4 - mod))
-	}
-	blob, err := base64.URLEncoding.DecodeString(token)
+	blob, err := base64.RawURLEncoding.DecodeString(token)
 	if err != nil {
 		return nil, err
 	}

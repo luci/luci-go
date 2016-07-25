@@ -15,10 +15,17 @@ import (
 type Signer interface {
 	// SignBytes signs the blob with some active private key.
 	//
+	// Hashes the blob using SHA256 and then calculates RSASSA-PKCS1-v1_5
+	// signature using the currently active signing key.
+	//
 	// Returns the signature and name of the key used.
 	SignBytes(c context.Context, blob []byte) (keyName string, signature []byte, err error)
 
 	// Certificates returns a bundle with public certificates for all active keys.
+	//
+	// The certificates contains public keys that can be used to validate
+	// signatures generated with SignBytes. See CheckSignature method of
+	// PublicCertificates.
 	//
 	// Do not modify return value, it may be shared by many callers.
 	Certificates(c context.Context) (*PublicCertificates, error)

@@ -43,7 +43,7 @@ type PublicCertificates struct {
 	// Timestamp is Unix time (microseconds) of when this list was generated.
 	Timestamp JSONTime `json:"timestamp"`
 
-	lock  sync.Mutex
+	lock  sync.RWMutex
 	cache map[string]*x509.Certificate
 }
 
@@ -158,11 +158,21 @@ func FetchServiceAccountCertificates(c context.Context, email string) (*PublicCe
 
 // CertificateForKey finds the certificate for given key and deserializes it.
 func (pc *PublicCertificates) CertificateForKey(key string) (*x509.Certificate, error) {
+	// Use fast reader lock first.
+	pc.lock.RLock()
+	cert, ok := pc.cache[key]
+	pc.lock.RUnlock()
+	if ok {
+		return cert, nil
+	}
+
+	// Grab the write lock and recheck the cache.
 	pc.lock.Lock()
 	defer pc.lock.Unlock()
 	if cert, ok := pc.cache[key]; ok {
 		return cert, nil
 	}
+
 	for _, cert := range pc.Certificates {
 		if cert.KeyName == key {
 			block, _ := pem.Decode([]byte(cert.X509CertificatePEM))
@@ -180,6 +190,7 @@ func (pc *PublicCertificates) CertificateForKey(key string) (*x509.Certificate, 
 			return cert, nil
 		}
 	}
+
 	return nil, fmt.Errorf("signature: no such certificate %q", key)
 }
 
