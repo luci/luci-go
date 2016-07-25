@@ -46,9 +46,12 @@ type streamCommandRun struct {
 func (cmd *streamCommandRun) Run(app subcommands.Application, args []string) int {
 	a := app.(*application)
 
-	streamFile := (*os.File)(nil)
+	var (
+		streamFile        *os.File
+		defaultStreamName streamproto.StreamNameFlag
+	)
 	if cmd.path == "-" {
-		cmd.stream.Name = "stdin"
+		defaultStreamName = "stdin"
 		streamFile = os.Stdin
 	} else {
 		streamName, err := types.MakeStreamName("file:", cmd.path)
@@ -58,7 +61,7 @@ func (cmd *streamCommandRun) Run(app subcommands.Application, args []string) int
 			}.Errorf(a, "Failed to generate stream name.")
 			return runtimeErrorReturnCode
 		}
-		cmd.stream.Name = streamproto.StreamNameFlag(streamName)
+		defaultStreamName = streamproto.StreamNameFlag(streamName)
 
 		file, err := os.Open(cmd.path)
 		if err != nil {
@@ -69,6 +72,9 @@ func (cmd *streamCommandRun) Run(app subcommands.Application, args []string) int
 			return runtimeErrorReturnCode
 		}
 		streamFile = file
+	}
+	if cmd.stream.Name == "" {
+		cmd.stream.Name = defaultStreamName
 	}
 
 	// We think everything should work. Configure our Output instance.
