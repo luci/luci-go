@@ -8,26 +8,33 @@ import (
 	"path/filepath"
 
 	"github.com/luci/luci-go/common/errors"
+	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/deploytool/api/deploy"
 
 	"github.com/mitchellh/go-homedir"
+	"golang.org/x/net/context"
 )
 
-func loadConfig() (*deploy.UserConfig, error) {
-	var cfg deploy.UserConfig
+const userCfgName = ".luci_deploytool"
 
+func loadUserConfig(c context.Context, cfg *deploy.UserConfig) error {
 	path, err := homedir.Dir()
 	if err != nil {
-		configPath := filepath.Join(path, ".luci_deploy")
-		switch err := unmarshalTextProtobuf(configPath, &cfg); {
-		case err == nil, isNotExist(err):
-			break
-
-		default:
-			return nil, errors.Annotate(err).Reason("failed to load config at [%(path)s]").D("path", configPath).Err()
-		}
+		log.WithError(err).Warningf(c, "Failed to get user home directory; cannot load local config.")
+		return nil
 	}
 
-	// Populate any undefined values with defaults.
-	return &cfg, nil
+	configPath := filepath.Join(path, userCfgName)
+	switch err := unmarshalTextProtobuf(configPath, cfg); {
+	case err == nil:
+		log.Infof(c, "Loaded user config from: %s", configPath)
+
+	case isNotExist(err):
+		log.Debugf(c, "No user config found at: %s", configPath)
+
+	default:
+		return errors.Annotate(err).Reason("failed to load config at [%(path)s]").D("path", configPath).Err()
+	}
+
+	return nil
 }

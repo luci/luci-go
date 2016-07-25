@@ -46,12 +46,17 @@ var cmdCheckout = subcommands.Command{
 	ShortDesc: "Performs a checkout of some or all Sources.",
 	LongDesc:  "Performs a checkout of some or all Sources into the working directory.",
 	CommandRun: func() subcommands.CommandRun {
-		return &cmdCheckoutRun{}
+		var cmd cmdCheckoutRun
+		cmd.Flags.BoolVar(&cmd.local, "local", false,
+			"Apply user-configured URL overrides.")
+		return &cmd
 	},
 }
 
 type cmdCheckoutRun struct {
 	subcommands.CommandRunBase
+
+	local bool
 }
 
 func (cmd *cmdCheckoutRun) Run(app subcommands.Application, args []string) int {
@@ -59,7 +64,7 @@ func (cmd *cmdCheckoutRun) Run(app subcommands.Application, args []string) int {
 
 	// Perform the checkout.
 	err := a.runWork(c, func(w *work) error {
-		return checkout(w, &a.layout)
+		return checkout(w, &a.layout, cmd.local)
 	})
 	if err != nil {
 		logError(c, err, "Failed to checkout.")
@@ -68,7 +73,7 @@ func (cmd *cmdCheckoutRun) Run(app subcommands.Application, args []string) int {
 	return 0
 }
 
-func checkout(w *work, l *deployLayout) error {
+func checkout(w *work, l *deployLayout, applyOverrides bool) error {
 	frozen, err := l.initFrozenCheckout(w)
 	if err != nil {
 		return errors.Annotate(err).Reason("failed to initialize checkout").Err()
@@ -126,12 +131,30 @@ func checkout(w *work, l *deployLayout) error {
 				name:                srcKey,
 			}
 
-			groupSrcs[i] = &sc
-			scs = append(scs, &sc)
 			if err := sc.addRegistryRepos(&reg); err != nil {
 				return errors.Annotate(err).Reason("failed to add [%(sourceCheckout)s] to registry").
 					D("sourceCheckout", sc).Err()
 			}
+
+			// If we're overriding sources, and this source is overridden, then apply
+			// this and add the overriding source to the registry as well.
+			//
+			// We will still keep the original source in the registry so it doesn't
+			// get deleted during cleanup.
+			if applyOverrides {
+				if override, ok := l.userSourceOverrides[sc.overrideURL]; ok {
+					log.Infof(w, "Applying user repository override: [%+v] => [%+v]", sc.Source, override)
+
+					sc.FrozenLayout_Source.Source = override
+					if err := sc.addRegistryRepos(&reg); err != nil {
+						return errors.Annotate(err).Reason("failed to add (overridden) [%(sourceCheckout)s] to registry").
+							D("sourceCheckout", sc).Err()
+					}
+				}
+			}
+
+			groupSrcs[i] = &sc
+			scs = append(scs, &sc)
 		}
 
 		sgSources[sgKey] = groupSrcs
@@ -231,6 +254,10 @@ type sourceCheckout struct {
 	// name is the name of this source.
 	name string
 
+	// overrideURL is the calculated user config override URL that this source
+	// matches.
+	overrideURL string
+
 	// cs is the checkout singleton populated from the checkout registry.
 	cs *checkoutSingleton
 }
@@ -254,6 +281,7 @@ func (sc *sourceCheckout) addRegistryRepos(reg *checkoutRegistry) error {
 			url: u,
 			ref: g.Ref,
 		}, sc.Source.RunScripts)
+		sc.overrideURL = g.Url
 	}
 
 	return nil

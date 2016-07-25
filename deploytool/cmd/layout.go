@@ -490,6 +490,11 @@ type deployLayout struct {
 	// will be relative to this path.
 	basePath string
 
+	// user is the user configuration protobuf.
+	user deploy.UserConfig
+	// userSourceOverrides is a map of user checkout URL overrides.
+	userSourceOverrides map[string]*deploy.Source
+
 	// sourceGroups is the set of source group files, mapped to their source group
 	// name.
 	sourceGroups map[title]*layoutSourceGroup
@@ -587,6 +592,17 @@ func (l *deployLayout) load(c context.Context, path string) error {
 
 	if err := unmarshalTextProtobuf(path, &l.Layout); err != nil {
 		return err
+	}
+
+	// Load the user config, if available.
+	if err := loadUserConfig(c, &l.user); err != nil {
+		return errors.Annotate(err).Reason("failed to load user config").Err()
+	}
+	if len(l.user.SourceOverride) > 0 {
+		l.userSourceOverrides = make(map[string]*deploy.Source, len(l.user.SourceOverride))
+		for k, v := range l.user.SourceOverride {
+			l.userSourceOverrides[k] = v
+		}
 	}
 
 	// Populate with defaults.

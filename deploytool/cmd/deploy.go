@@ -96,7 +96,7 @@ func (cmd *cmdDeployRun) Run(app subcommands.Application, args []string) int {
 		// Perform our planned checkout.
 		if cmd.checkout {
 			// Perform a full checkout.
-			if err := checkout(w, &a.layout); err != nil {
+			if err := checkout(w, &a.layout, false); err != nil {
 				return errors.Annotate(err).Reason("failed to checkout sources").Err()
 			}
 		}
