@@ -81,17 +81,17 @@ type D interface {
 	// expired.
 	//
 	// If the distributor doesn't intend to use Pubsub for notifying DM about the
-	// final status of the job, set timeToStop to the amount of time you want DM
+	// final status of the job, set pollTimeout to the amount of time you want DM
 	// to wait before polling GetStatus. e.g. if after calling FinishAttempt or
 	// EnsureGraphData your distributor needs 10 seconds before it can correctly
-	// respond to a GetStatus request, you should set timeToStop to >= 10s.
-	// Otherwise timeToStop should be set fairly high (e.g. 12 hours) as a hedge
+	// respond to a GetStatus request, you should set pollTimeout to >= 10s.
+	// Otherwise pollTimeout should be set fairly high (e.g. 12 hours) as a hedge
 	// against a broken pubsub notification pipeline.
 	//
 	// If you have the choice between pubsub or not, prefer to use pubsub as it
 	// allows DM to more proactively update the graph state (and unblock waiting
 	// Attempts, etc.)
-	Run(*TaskDescription) (tok Token, timeToStart, timeToRun, timeToStop time.Duration, err error)
+	Run(*TaskDescription) (tok Token, pollTimeout time.Duration, err error)
 
 	// Cancel attempts to cancel a running task. If a task is canceled more than
 	// once, this should return nil.

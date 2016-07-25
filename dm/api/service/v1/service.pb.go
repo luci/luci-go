@@ -10,7 +10,7 @@ import prpc "github.com/luci/luci-go/server/prpc"
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf1 "github.com/luci/luci-go/common/proto/google"
+import google_protobuf2 "github.com/luci/luci-go/common/proto/google"
 
 import (
 	context "golang.org/x/net/context"
@@ -36,9 +36,9 @@ type DepsClient interface {
 	// allows you to add additional data to the current dependency graph.
 	EnsureGraphData(ctx context.Context, in *EnsureGraphDataReq, opts ...grpc.CallOption) (*EnsureGraphDataRsp, error)
 	// is called by Execution clients to activate themselves with DM.
-	ActivateExecution(ctx context.Context, in *ActivateExecutionReq, opts ...grpc.CallOption) (*google_protobuf1.Empty, error)
+	ActivateExecution(ctx context.Context, in *ActivateExecutionReq, opts ...grpc.CallOption) (*google_protobuf2.Empty, error)
 	// is called by Execution clients to indicate that an Attempt is finished.
-	FinishAttempt(ctx context.Context, in *FinishAttemptReq, opts ...grpc.CallOption) (*google_protobuf1.Empty, error)
+	FinishAttempt(ctx context.Context, in *FinishAttemptReq, opts ...grpc.CallOption) (*google_protobuf2.Empty, error)
 	// runs queries, and walks along the dependency graph from the query results.
 	WalkGraph(ctx context.Context, in *WalkGraphReq, opts ...grpc.CallOption) (*GraphData, error)
 }
@@ -59,8 +59,8 @@ func (c *depsPRPCClient) EnsureGraphData(ctx context.Context, in *EnsureGraphDat
 	return out, nil
 }
 
-func (c *depsPRPCClient) ActivateExecution(ctx context.Context, in *ActivateExecutionReq, opts ...grpc.CallOption) (*google_protobuf1.Empty, error) {
-	out := new(google_protobuf1.Empty)
+func (c *depsPRPCClient) ActivateExecution(ctx context.Context, in *ActivateExecutionReq, opts ...grpc.CallOption) (*google_protobuf2.Empty, error) {
+	out := new(google_protobuf2.Empty)
 	err := c.client.Call(ctx, "dm.Deps", "ActivateExecution", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -68,8 +68,8 @@ func (c *depsPRPCClient) ActivateExecution(ctx context.Context, in *ActivateExec
 	return out, nil
 }
 
-func (c *depsPRPCClient) FinishAttempt(ctx context.Context, in *FinishAttemptReq, opts ...grpc.CallOption) (*google_protobuf1.Empty, error) {
-	out := new(google_protobuf1.Empty)
+func (c *depsPRPCClient) FinishAttempt(ctx context.Context, in *FinishAttemptReq, opts ...grpc.CallOption) (*google_protobuf2.Empty, error) {
+	out := new(google_protobuf2.Empty)
 	err := c.client.Call(ctx, "dm.Deps", "FinishAttempt", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -103,8 +103,8 @@ func (c *depsClient) EnsureGraphData(ctx context.Context, in *EnsureGraphDataReq
 	return out, nil
 }
 
-func (c *depsClient) ActivateExecution(ctx context.Context, in *ActivateExecutionReq, opts ...grpc.CallOption) (*google_protobuf1.Empty, error) {
-	out := new(google_protobuf1.Empty)
+func (c *depsClient) ActivateExecution(ctx context.Context, in *ActivateExecutionReq, opts ...grpc.CallOption) (*google_protobuf2.Empty, error) {
+	out := new(google_protobuf2.Empty)
 	err := grpc.Invoke(ctx, "/dm.Deps/ActivateExecution", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -112,8 +112,8 @@ func (c *depsClient) ActivateExecution(ctx context.Context, in *ActivateExecutio
 	return out, nil
 }
 
-func (c *depsClient) FinishAttempt(ctx context.Context, in *FinishAttemptReq, opts ...grpc.CallOption) (*google_protobuf1.Empty, error) {
-	out := new(google_protobuf1.Empty)
+func (c *depsClient) FinishAttempt(ctx context.Context, in *FinishAttemptReq, opts ...grpc.CallOption) (*google_protobuf2.Empty, error) {
+	out := new(google_protobuf2.Empty)
 	err := grpc.Invoke(ctx, "/dm.Deps/FinishAttempt", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -136,9 +136,9 @@ type DepsServer interface {
 	// allows you to add additional data to the current dependency graph.
 	EnsureGraphData(context.Context, *EnsureGraphDataReq) (*EnsureGraphDataRsp, error)
 	// is called by Execution clients to activate themselves with DM.
-	ActivateExecution(context.Context, *ActivateExecutionReq) (*google_protobuf1.Empty, error)
+	ActivateExecution(context.Context, *ActivateExecutionReq) (*google_protobuf2.Empty, error)
 	// is called by Execution clients to indicate that an Attempt is finished.
-	FinishAttempt(context.Context, *FinishAttemptReq) (*google_protobuf1.Empty, error)
+	FinishAttempt(context.Context, *FinishAttemptReq) (*google_protobuf2.Empty, error)
 	// runs queries, and walks along the dependency graph from the query results.
 	WalkGraph(context.Context, *WalkGraphReq) (*GraphData, error)
 }

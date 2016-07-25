@@ -222,10 +222,8 @@ func (t *ActivatedTask) WalkShouldReturn(request interface{}, expect ...interfac
 type Distributor struct {
 	// RunError can be set to make Run return this error when it's invoked.
 	RunError error
-	// These values can be set to make Run return them when it's invoked.
-	TimeToStart time.Duration
-	TimeToRun   time.Duration
-	TimeToStop  time.Duration
+	// This can be set to turn the distributor into a polling-based distributor.
+	PollbackTime time.Duration
 
 	sync.Mutex
 	tasks map[distributor.Token]*DistributorData
@@ -241,13 +239,11 @@ func MkToken(eid *dm.Execution_ID) distributor.Token {
 }
 
 // Run implements distributor.D
-func (f *Distributor) Run(desc *distributor.TaskDescription) (tok distributor.Token, timeToStart, timeToRun, timeToStop time.Duration, err error) {
+func (f *Distributor) Run(desc *distributor.TaskDescription) (tok distributor.Token, pollbackTime time.Duration, err error) {
 	if err = f.RunError; err != nil {
 		return
 	}
-	timeToStart = f.TimeToStart
-	timeToRun = f.TimeToRun
-	timeToStop = f.TimeToStop
+	pollbackTime = f.PollbackTime
 
 	exAuth := desc.ExecutionAuth()
 	tok = MkToken(exAuth.Id)

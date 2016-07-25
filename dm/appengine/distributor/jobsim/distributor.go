@@ -41,7 +41,7 @@ func (j *jobsimDist) parsePayload(payload string) (*jobsimExecution, error) {
 	return ret, err
 }
 
-func (j *jobsimDist) Run(tsk *distributor.TaskDescription) (tok distributor.Token, a, b, c time.Duration, err error) {
+func (j *jobsimDist) Run(tsk *distributor.TaskDescription) (tok distributor.Token, _ time.Duration, err error) {
 	// TODO(riannucci): Fix luci-gae so we can truly escape the transaction when
 	// we build the jobsimDist instance. See luci/gae#23.
 	ds := txnBuf.GetNoTxn(j.c)

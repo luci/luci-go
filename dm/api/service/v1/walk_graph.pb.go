@@ -7,7 +7,7 @@ package dm
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf2 "github.com/luci/luci-go/common/proto/google"
+import google_protobuf "github.com/luci/luci-go/common/proto/google"
 import _ "github.com/luci/luci-go/common/proto/google"
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -141,7 +141,7 @@ type WalkGraphReq_Limit struct {
 	//
 	// This is different than the grpc timeout header, which will set a hard
 	// deadline for the request.
-	MaxTime *google_protobuf2.Duration `protobuf:"bytes,2,opt,name=max_time,json=maxTime" json:"max_time,omitempty"`
+	MaxTime *google_protobuf.Duration `protobuf:"bytes,2,opt,name=max_time,json=maxTime" json:"max_time,omitempty"`
 	// MaxDataSize sets the maximum amount of 'Data' (in bytes) that can be
 	// returned, if include.quest_data, include.attempt_data, and/or
 	// include.attempt_result are set. If this limit is hit, then the
@@ -158,7 +158,7 @@ func (m *WalkGraphReq_Limit) String() string            { return proto.CompactTe
 func (*WalkGraphReq_Limit) ProtoMessage()               {}
 func (*WalkGraphReq_Limit) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{0, 1} }
 
-func (m *WalkGraphReq_Limit) GetMaxTime() *google_protobuf2.Duration {
+func (m *WalkGraphReq_Limit) GetMaxTime() *google_protobuf.Duration {
 	if m != nil {
 		return m.MaxTime
 	}

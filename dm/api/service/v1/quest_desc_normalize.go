@@ -19,6 +19,20 @@ func (q *Quest_Desc_Meta_Retry) IsEmpty() bool {
 	return q.Crashed == 0 && q.Expired == 0 && q.Failed == 0 && q.TimedOut == 0
 }
 
+// Normalize ensures that all timeouts are >= 0
+func (t *Quest_Desc_Meta_Timeouts) Normalize() error {
+	if d := t.Start.Duration(); d < 0 {
+		return fmt.Errorf("desc.meta.timeouts.start < 0: %s", d)
+	}
+	if d := t.Run.Duration(); d < 0 {
+		return fmt.Errorf("desc.meta.timeouts.run < 0: %s", d)
+	}
+	if d := t.Stop.Duration(); d < 0 {
+		return fmt.Errorf("desc.meta.timeouts.stop < 0: %s", d)
+	}
+	return nil
+}
+
 // IsEmpty returns true if this metadata only contains zero-values.
 func (q *Quest_Desc_Meta) IsEmpty() bool {
 	return q.AsAccount == "" && q.Retry.IsEmpty()
@@ -37,9 +51,20 @@ const QuestDescPayloadMaxLength = 256 * 1024
 // Normalize returns an error iff the Quest_Desc is invalid.
 func (q *Quest_Desc) Normalize() error {
 	if q.Meta == nil {
-		q.Meta = &Quest_Desc_Meta{Retry: &Quest_Desc_Meta_Retry{}}
-	} else if q.Meta.Retry == nil {
-		q.Meta.Retry = &Quest_Desc_Meta_Retry{}
+		q.Meta = &Quest_Desc_Meta{
+			Retry:    &Quest_Desc_Meta_Retry{},
+			Timeouts: &Quest_Desc_Meta_Timeouts{},
+		}
+	} else {
+		if q.Meta.Retry == nil {
+			q.Meta.Retry = &Quest_Desc_Meta_Retry{}
+		}
+		if q.Meta.Timeouts == nil {
+			q.Meta.Timeouts = &Quest_Desc_Meta_Timeouts{}
+		}
+	}
+	if err := q.Meta.Timeouts.Normalize(); err != nil {
+		return err
 	}
 
 	length := len(q.Parameters) + len(q.DistributorParameters)

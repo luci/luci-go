@@ -33,7 +33,7 @@ func TestQuest(t *testing.T) {
 					qd := dm.NewQuestDesc("swarming", `{  "key"  :  ["value"]}`, "{  }", nil)
 					So(qd.Normalize(), ShouldBeNil)
 					So(NewQuest(c, qd), ShouldResemble, &Quest{
-						"KrrkmSN4f0wis364BYyQhTHRVAj_RzZFFQuUhOx05U0",
+						"1258phYs8GW6qM5AQopQ_L3A5cZhO7iaYQZyFkNusVw",
 						*qd,
 						nil,
 						testclock.TestTimeUTC,
@@ -49,7 +49,7 @@ func TestQuest(t *testing.T) {
 					qd := dm.NewQuestDesc("swarming", `{"key":["value"], "abc": true}`, "{  }", nil)
 					So(qd.Normalize(), ShouldBeNil)
 					So(NewQuest(c, qd), ShouldResemble, &Quest{
-						"ruFbPlTCSG3wHJkEI_yPcLJDAvqsHuU-kyDZAp-8Q6I",
+						"IMTBeXfkZgGntgNfWMuLa_YQA62o9dzxi0EoLCYXbsE",
 						*qd,
 						nil,
 						testclock.TestTimeUTC,
@@ -83,7 +83,7 @@ func TestQuest(t *testing.T) {
 			q := NewQuest(c, qd)
 			p := q.ToProto()
 			So(p, ShouldResemble, &dm.Quest{
-				Id: dm.NewQuestID("KrrkmSN4f0wis364BYyQhTHRVAj_RzZFFQuUhOx05U0"),
+				Id: dm.NewQuestID("1258phYs8GW6qM5AQopQ_L3A5cZhO7iaYQZyFkNusVw"),
 				Data: &dm.Quest_Data{
 					Created: google_pb.NewTimestamp(testclock.TestTimeUTC),
 					Desc:    &q.Desc,
@@ -123,8 +123,8 @@ func TestQuest(t *testing.T) {
 			as = nil
 			So(ds.GetAll(QueryAttemptsForQuest(c, q.ID), &as), ShouldBeNil)
 			So(as, ShouldResemble, []*Attempt{
-				{ID: *dm.NewAttemptID("KrrkmSN4f0wis364BYyQhTHRVAj_RzZFFQuUhOx05U0", 2)},
-				{ID: *dm.NewAttemptID("KrrkmSN4f0wis364BYyQhTHRVAj_RzZFFQuUhOx05U0", 1)},
+				{ID: *dm.NewAttemptID("1258phYs8GW6qM5AQopQ_L3A5cZhO7iaYQZyFkNusVw", 2)},
+				{ID: *dm.NewAttemptID("1258phYs8GW6qM5AQopQ_L3A5cZhO7iaYQZyFkNusVw", 1)},
 			})
 
 		})

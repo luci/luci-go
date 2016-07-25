@@ -68,12 +68,17 @@ func (s *ScheduleExecution) RollForward(c context.Context) (muts []tumble.Mutati
 
 	eid := dm.NewExecutionID(s.For.Quest, s.For.Id, a.CurExecution)
 	e := model.MakeExecution(c, eid, q.Desc.DistributorConfigName, ver)
+	e.TimeToStart = q.Desc.Meta.Timeouts.Start.Duration()
+	e.TimeToRun = q.Desc.Meta.Timeouts.Run.Duration()
 
 	exAuth := &dm.Execution_Auth{Id: eid, Token: e.Token}
 
 	var distTok distributor.Token
-	distTok, e.TimeToStart, e.TimeToRun, e.TimeToStop, err = dist.Run(
+	distTok, e.TimeToStop, err = dist.Run(
 		distributor.NewTaskDescription(c, &q.Desc, exAuth, prevResult))
+	if e.TimeToStop <= 0 {
+		e.TimeToStop = q.Desc.Meta.Timeouts.Stop.Duration()
+	}
 	e.DistributorToken = string(distTok)
 	if err != nil {
 		if errors.IsTransient(err) {

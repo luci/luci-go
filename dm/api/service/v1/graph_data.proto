@@ -4,6 +4,7 @@
 
 syntax = "proto3";
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
 import "github.com/luci/luci-go/dm/api/service/v1/types.proto";
@@ -177,6 +178,30 @@ message Quest {
       // This affects how DM will retry the job payload in various exceptional
       // circumstances.
       Retry retry = 2;
+
+      // Timing describes the amount of time that Executions for this Quest
+      // should have, on the following timeline:
+      //   Event: execution sent to distributor
+      //     ^ "start" v
+      //   Event: execution sends ActivateExecution
+      //     ^ "run" v
+      //   Event: execution sends halting RPC (either ActivateExecution or
+      //     EnsureGraphData)
+      //     ^ "stop" v
+      //   Event: distributor gives execution result back to DM
+      //
+      // If the given timeout hits before the next event in the timeline, DM
+      // will mark the Execution as TIMED_OUT, and the appropriate retry policy
+      // will be applied.
+      //
+      // If a given timeout is unlimited, leave the duration unset or 0.
+      message Timeouts {
+        google.protobuf.Duration start = 1;
+        google.protobuf.Duration run = 2;
+        google.protobuf.Duration stop = 3;
+      }
+
+      Timeouts timeouts = 3;
     }
 
     // This is metadata which doesn't affect the functionality of the payload,

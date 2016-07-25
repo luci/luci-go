@@ -83,13 +83,12 @@ type Execution struct {
 	// These are DM's internal mechanism for performing timeout actions on
 	// Executions.
 	//
-	// The TimeTo* variables are filled in by the distributor when this Execution
-	// is created.
+	// The TimeTo* variables are copied from the quest description.
 	//
 	// The Timeout is only active when the Execution is in a non-terminal state.
-	TimeToStart time.Duration `gae:",noindex"` // SCHEDULING -> RUNNING
-	TimeToRun   time.Duration `gae:",noindex"` // RUNNING -> STOPPING
-	TimeToStop  time.Duration `gae:",noindex"` // STOPPING -> FINISHED
+	TimeToStart time.Duration `gae:",noindex"` // timeouts.start
+	TimeToRun   time.Duration `gae:",noindex"` // timeouts.run
+	TimeToStop  time.Duration `gae:",noindex"` // pollTimeout || timeouts.stop
 
 	// Token is a randomized nonce that's used to verify that RPCs verify from the
 	// expected client (the client that's currently running the Execution). The

@@ -13,6 +13,7 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/proto/google"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	"github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/distributor/fake"
@@ -26,6 +27,7 @@ func TestScheduleExecution(t *testing.T) {
 		_, c, dist, _ := fake.Setup(FinishExecutionFn)
 
 		qdesc := fake.QuestDesc("quest")
+		qdesc.Meta.Timeouts.Start = google.NewDuration(time.Minute * 5)
 		qid := qdesc.QuestID()
 		se := &ScheduleExecution{dm.NewAttemptID(qid, 1)}
 
@@ -44,8 +46,6 @@ func TestScheduleExecution(t *testing.T) {
 			So(ds.Put(q, a), ShouldBeNil)
 
 			Convey("basic", func() {
-				dist.TimeToStart = time.Minute * 5
-
 				muts, err := se.RollForward(c)
 				So(err, ShouldBeNil)
 				So(muts, ShouldBeNil)

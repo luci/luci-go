@@ -62,7 +62,7 @@ func TestAddDeps(t *testing.T) {
 				So(ds.Put(a, e), ShouldBeNil)
 
 				_, err := s.EnsureGraphData(c, req)
-				So(err, ShouldBeRPCInvalidArgument, `cannot create attempts for absent quest "GYjn_79mcqM4FuebzmlBtdZu8EulfwZdMgjBXsKiVQE"`)
+				So(err, ShouldBeRPCInvalidArgument, `cannot create attempts for absent quest "-asJkTOx8ORdkGZsg7Bc-w2Z_0FIB4vgD1afzInkwNE"`)
 			})
 		})
 
