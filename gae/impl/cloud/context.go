@@ -18,9 +18,13 @@ import (
 //
 // This is built around the ability to use cloud datastore.
 func Use(c context.Context, client *datastore.Client) context.Context {
+	return UseDS(useInfo(c), client)
+}
+
+// UseDS installs the cloud datastore implementation into the supplied Context.
+func UseDS(c context.Context, client *datastore.Client) context.Context {
 	cds := cloudDatastore{
 		client: client,
 	}
-
-	return cds.use(useInfo(c))
+	return cds.use(c)
 }
