@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/client/coordinator"
 	"github.com/luci/luci-go/logdog/common/types"
@@ -55,14 +56,24 @@ func (cmd *listCommandRun) Run(scApp subcommands.Application, args []string) int
 	defer bio.Flush()
 
 	for _, arg := range args {
-		// User-friendly: trim any leading or trailing slashes from the path.
-		project, pathBase, unified, err := a.splitPath(string(types.StreamPath(arg).Trim()))
-		if err != nil {
-			log.WithError(err).Errorf(a, "Invalid path specifier.")
-			return 1
+		arg = strings.TrimSpace(arg)
+
+		var (
+			project  config.ProjectName
+			pathBase string
+			unified  bool
+		)
+		if len(arg) > 0 {
+			// User-friendly: trim any leading or trailing slashes from the path.
+			var err error
+			project, pathBase, unified, err = a.splitPath(string(types.StreamPath(arg).Trim()))
+			if err != nil {
+				log.WithError(err).Errorf(a, "Invalid path specifier.")
+				return 1
+			}
 		}
 
-		err = a.coord.List(a, project, pathBase, cmd.o, func(lr *coordinator.ListResult) bool {
+		err := a.coord.List(a, project, pathBase, cmd.o, func(lr *coordinator.ListResult) bool {
 			p := lr.Name
 			if cmd.o.State {
 				// Long listing, show full path.
