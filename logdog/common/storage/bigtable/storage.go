@@ -117,17 +117,19 @@ func New(ctx context.Context, o Options) (storage.Storage, error) {
 }
 
 func newBTStorage(ctx context.Context, o Options, client *bigtable.Client, adminClient *bigtable.AdminClient) *btStorage {
-	st := &btStorage{
+	s := &btStorage{
 		Options: &o,
 		Context: ctx,
 
 		client:      client,
-		logTable:    client.Open(o.LogTable),
 		adminClient: adminClient,
 		maxRowSize:  bigTableRowMaxBytes,
 	}
-	st.raw = &btTableProd{st}
-	return st
+	if s.client != nil {
+		s.logTable = s.client.Open(o.LogTable)
+	}
+	s.raw = &btTableProd{s}
+	return s
 }
 
 func (s *btStorage) Close() {
