@@ -60,9 +60,7 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, adminAuth au
 	rr.Use(base.Extend(
 		templates.WithTemplates(tmpl),
 		auth.Use(auth.Authenticator{adminAuth}),
-		auth.WithDB(func(c context.Context) (auth.DB, error) {
-			return adminDB, nil
-		}),
+		adminDB.install,
 		auth.Autologin,
 		adminOnly,
 	))
@@ -103,6 +101,15 @@ func (adminBypassDB) GetWhitelistForIdentity(c context.Context, ident identity.I
 
 func (adminBypassDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
 	return false, nil
+}
+
+func (db adminBypassDB) install(c *router.Context, next router.Handler) {
+	c.Context = auth.ModifyConfig(c.Context, func(cfg *auth.Config) {
+		cfg.DBProvider = func(context.Context) (auth.DB, error) {
+			return db, nil
+		}
+	})
+	next(c)
 }
 
 // adminOnly is middleware that ensures authenticated user is local site admin

@@ -26,15 +26,6 @@ func SetAuthenticator(c context.Context, a Authenticator) context.Context {
 	return context.WithValue(c, authenticatorKey(0), append(Authenticator(nil), a...))
 }
 
-// GetAuthenticator extracts instance of Authenticator (list of auth methods)
-// from the context. Returns nil if no authenticator is set.
-func GetAuthenticator(c context.Context) Authenticator {
-	if a, ok := c.Value(authenticatorKey(0)).(Authenticator); ok {
-		return a
-	}
-	return nil
-}
-
 // Use is a middleware that simply puts given Authenticator into the context.
 func Use(a Authenticator) router.Middleware {
 	return func(c *router.Context, next router.Handler) {
@@ -43,24 +34,33 @@ func Use(a Authenticator) router.Middleware {
 	}
 }
 
+// getAuthenticator extracts instance of Authenticator (list of auth methods)
+// from the context. Returns nil if no authenticator is set.
+func getAuthenticator(c context.Context) Authenticator {
+	if a, ok := c.Value(authenticatorKey(0)).(Authenticator); ok {
+		return a
+	}
+	return nil
+}
+
 // LoginURL returns a URL that, when visited, prompts the user to sign in,
 // then redirects the user to the URL specified by dest. It is wrapper around
 // LoginURL method of Authenticator in the context.
 func LoginURL(c context.Context, dest string) (string, error) {
-	return GetAuthenticator(c).LoginURL(c, dest)
+	return getAuthenticator(c).LoginURL(c, dest)
 }
 
 // LogoutURL returns a URL that, when visited, signs the user out,
 // then redirects the user to the URL specified by dest. It is wrapper around
 // LogoutURL method of Authenticator in the context.
 func LogoutURL(c context.Context, dest string) (string, error) {
-	return GetAuthenticator(c).LogoutURL(c, dest)
+	return getAuthenticator(c).LogoutURL(c, dest)
 }
 
 // Authenticate is a middleware that performs authentication (using Authenticator
 // in the context) and calls next handler.
 func Authenticate(c *router.Context, next router.Handler) {
-	a := GetAuthenticator(c.Context)
+	a := getAuthenticator(c.Context)
 	if a == nil {
 		replyError(c.Context, c.Writer, 500, "Authentication middleware is not configured")
 		return
@@ -81,7 +81,7 @@ func Authenticate(c *router.Context, next router.Handler) {
 // is not signed in yet or authentication methods do not recognize user
 // credentials. Uses Authenticator instance in the context.
 func Autologin(c *router.Context, next router.Handler) {
-	a := GetAuthenticator(c.Context)
+	a := getAuthenticator(c.Context)
 	if a == nil {
 		replyError(c.Context, c.Writer, 500, "Authentication middleware is not configured")
 		return

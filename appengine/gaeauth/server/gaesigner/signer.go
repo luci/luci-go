@@ -20,13 +20,6 @@ import (
 	"github.com/luci/luci-go/server/proccache"
 )
 
-// Use installs signing.Signer into the context configured to use GAE API.
-func Use(c context.Context) context.Context {
-	return signing.SetSigner(c, Signer{})
-}
-
-////
-
 // Signer implements signing.Signer using GAE App Identity API.
 type Signer struct{}
 

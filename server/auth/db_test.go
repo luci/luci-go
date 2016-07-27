@@ -5,7 +5,6 @@
 package auth
 
 import (
-	"errors"
 	"net"
 	"testing"
 	"time"
@@ -25,22 +24,22 @@ func TestContextAndCache(t *testing.T) {
 		c := context.Background()
 		c, tc := testclock.UseTime(c, time.Unix(1442540000, 0))
 
-		c = UseDB(c, NewDBCache(func(c context.Context, prev DB) (DB, error) {
+		factory := NewDBCache(func(c context.Context, prev DB) (DB, error) {
 			if prev == nil {
 				return &SnapshotDB{Rev: 1}, nil
 			}
 			cpy := *prev.(*SnapshotDB)
 			cpy.Rev++
 			return &cpy, nil
-		}))
+		})
 
 		// Initial fetch.
-		db, err := GetDB(c)
+		db, err := factory(c)
 		So(err, ShouldBeNil)
 		So(db.(*SnapshotDB).Rev, ShouldEqual, 1)
 
 		// Refetch, using cached copy.
-		db, err = GetDB(c)
+		db, err = factory(c)
 		So(err, ShouldBeNil)
 		So(db.(*SnapshotDB).Rev, ShouldEqual, 1)
 
@@ -48,22 +47,9 @@ func TestContextAndCache(t *testing.T) {
 		tc.Add(11 * time.Second)
 
 		// Returns new copy now.
-		db, err = GetDB(c)
+		db, err = factory(c)
 		So(err, ShouldBeNil)
 		So(db.(*SnapshotDB).Rev, ShouldEqual, 2)
-	})
-
-	Convey("Fetch failure propagates", t, func() {
-		fail := errors.New("fail")
-
-		c := context.Background()
-		c = UseDB(c, NewDBCache(func(c context.Context, prev DB) (DB, error) {
-			return nil, fail
-		}))
-
-		db, err := GetDB(c)
-		So(err, ShouldEqual, fail)
-		So(db, ShouldBeNil)
 	})
 }
 

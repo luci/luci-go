@@ -5,7 +5,6 @@
 package auth
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -18,17 +17,12 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/mathrand"
 
-	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/secrets"
 
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/service/protocol"
 	"github.com/luci/luci-go/server/auth/signing"
 )
-
-// ErrNoDB is returned by default DB returned from GetDB if no DBFactory is
-// installed in the context.
-var ErrNoDB = errors.New("auth: using default auth.DB, install a properly mocked one instead")
 
 // DB is interface to access a database of authorization related information.
 //
@@ -74,47 +68,18 @@ type DB interface {
 	GetAuthServiceCertificates(c context.Context) (*signing.PublicCertificates, error)
 }
 
-// DBFactory returns most recent DB instance.
+// DBProvider fetches a most recent DB instance.
 //
-// The factory is injected into the context by UseDB and used by GetDB.
-type DBFactory func(c context.Context) (DB, error)
+// The returned instance is static and represents a snapshot of DB at some
+// point.
+//
+// It's part of auth library global config, see Config.
+type DBProvider func(c context.Context) (DB, error)
 
 // DBCacheUpdater knows how to update local in-memory copy of DB.
 //
 // Used by NewDBCache.
 type DBCacheUpdater func(c context.Context, prev DB) (DB, error)
-
-// dbKey is used for context.Context key of DBFactory.
-type dbKey int
-
-// UseDB sets a factory that creates DB instances.
-func UseDB(c context.Context, f DBFactory) context.Context {
-	return context.WithValue(c, dbKey(0), f)
-}
-
-// WithDB is middleware that sets given DBFactory in the context before calling
-// the next handler.
-func WithDB(f DBFactory) router.Middleware {
-	return func(c *router.Context, next router.Handler) {
-		c.Context = UseDB(c.Context, f)
-		next(c)
-	}
-}
-
-// GetDB returns most recent snapshot of authorization database using factory
-// installed in the context via `UseDB`.
-//
-// If no factory is installed, returns DB that forbids everything and logs
-// errors. It is often good enough for unit tests that do not care about
-// authorization, and still not horribly bad if accidentally used in production.
-//
-// Requiring each unit test to install fake DB factory is a bit cumbersome.
-func GetDB(c context.Context) (DB, error) {
-	if f, _ := c.Value(dbKey(0)).(DBFactory); f != nil {
-		return f(c)
-	}
-	return ErroringDB{Error: ErrNoDB}, nil
-}
 
 // NewDBCache returns a factory of DB instances that uses local memory to
 // cache DB instances for 5-10 seconds. It uses supplied callback to refetch DB
@@ -122,7 +87,7 @@ func GetDB(c context.Context) (DB, error) {
 //
 // Even though the return value is technically a function, treat it as a heavy
 // stateful object, since it has the cache of DB in its closure.
-func NewDBCache(updater DBCacheUpdater) DBFactory {
+func NewDBCache(updater DBCacheUpdater) DBProvider {
 	cacheSlot := lazyslot.Slot{
 		Fetcher: func(c context.Context, prev lazyslot.Value) (lazyslot.Value, error) {
 			var prevDB DB
@@ -152,8 +117,6 @@ func NewDBCache(updater DBCacheUpdater) DBFactory {
 }
 
 // ErroringDB implements DB by forbidding all access and returning errors.
-//
-// See explanation in GetDB.
 type ErroringDB struct {
 	Error error // returned by all calls
 }

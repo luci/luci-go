@@ -27,15 +27,12 @@ func TestAuthenticate(t *testing.T) {
 		c := context.Background()
 		auth := Authenticator{fakeOAuthMethod{clientID: "some_client_id"}}
 		_, err := auth.Authenticate(c, makeRequest())
-		So(err, ShouldErrLike, "using default auth.DB")
+		So(err, ShouldErrLike, "the library is not properly configured")
 	})
 
 	Convey("IsAllowedOAuthClientID with valid client_id", t, func() {
-		c := context.Background()
-		c = UseDB(c, func(c context.Context) (DB, error) {
-			return &fakeDB{
-				allowedClientID: "some_client_id",
-			}, nil
+		c := injectTestDB(context.Background(), &fakeDB{
+			allowedClientID: "some_client_id",
 		})
 		auth := Authenticator{fakeOAuthMethod{clientID: "some_client_id"}}
 		_, err := auth.Authenticate(c, makeRequest())
@@ -43,11 +40,8 @@ func TestAuthenticate(t *testing.T) {
 	})
 
 	Convey("IsAllowedOAuthClientID with invalid client_id", t, func() {
-		c := context.Background()
-		c = UseDB(c, func(c context.Context) (DB, error) {
-			return &fakeDB{
-				allowedClientID: "some_client_id",
-			}, nil
+		c := injectTestDB(context.Background(), &fakeDB{
+			allowedClientID: "some_client_id",
 		})
 		auth := Authenticator{fakeOAuthMethod{clientID: "another_client_id"}}
 		_, err := auth.Authenticate(c, makeRequest())
@@ -73,9 +67,7 @@ func TestAuthenticate(t *testing.T) {
 		}, "http://auth-service", 1234)
 		So(err, ShouldBeNil)
 
-		c := UseDB(context.Background(), func(c context.Context) (DB, error) {
-			return db, nil
-		})
+		c := injectTestDB(context.Background(), db)
 
 		Convey("User is using IP whitelist and IP is in the whitelist.", func() {
 			auth := Authenticator{fakeOAuthMethod{email: "abc@example.com"}}
@@ -130,6 +122,14 @@ func (m fakeOAuthMethod) Authenticate(context.Context, *http.Request) (*User, er
 		Email:    email,
 		ClientID: m.clientID,
 	}, nil
+}
+
+func injectTestDB(c context.Context, db DB) context.Context {
+	return SetConfig(c, Config{
+		DBProvider: func(c context.Context) (DB, error) {
+			return db, nil
+		},
+	})
 }
 
 ///

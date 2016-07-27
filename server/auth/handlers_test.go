@@ -1,8 +1,8 @@
-// Copyright 2015 The LUCI Authors. All rights reserved.
+// Copyright 2016 The LUCI Authors. All rights reserved.
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-package signing
+package auth
 
 import (
 	"errors"
@@ -12,33 +12,24 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/router"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestContext(t *testing.T) {
-	Convey("Works", t, func() {
-		ctx := context.Background()
-
-		So(GetSigner(ctx), ShouldBeNil)
-		ctx = SetSigner(ctx, &phonySigner{})
-		So(GetSigner(ctx), ShouldNotBeNil)
-	})
-}
-
 func TestCertificatesHandler(t *testing.T) {
-	call := func(s Signer) (*PublicCertificates, error) {
+	call := func(s signing.Signer) (*signing.PublicCertificates, error) {
 		r := router.New()
 		InstallHandlers(r, router.NewMiddlewareChain(
 			func(c *router.Context, next router.Handler) {
-				c.Context = SetSigner(context.Background(), s)
+				c.Context = SetConfig(context.Background(), Config{Signer: s})
 				next(c)
 			},
 		))
 		ts := httptest.NewServer(r)
-		return FetchCertificates(context.Background(), ts.URL+"/auth/api/v1/server/certificates")
+		return signing.FetchCertificates(context.Background(), ts.URL+"/auth/api/v1/server/certificates")
 	}
 
 	Convey("Works", t, func() {
@@ -65,7 +56,7 @@ func TestServiceInfoHandler(t *testing.T) {
 
 		InstallHandlers(r, router.NewMiddlewareChain(
 			func(ctx *router.Context, next router.Handler) {
-				ctx.Context = SetSigner(context.Background(), signer)
+				ctx.Context = SetConfig(context.Background(), Config{Signer: signer})
 				next(ctx)
 			},
 		))
@@ -103,12 +94,12 @@ func (s *phonySigner) SignBytes(c context.Context, blob []byte) (string, []byte,
 	return "phonyKey", []byte("signature"), nil
 }
 
-func (s *phonySigner) Certificates(c context.Context) (*PublicCertificates, error) {
+func (s *phonySigner) Certificates(c context.Context) (*signing.PublicCertificates, error) {
 	if s.err != nil {
 		return nil, s.err
 	}
-	return &PublicCertificates{
-		Certificates: []Certificate{
+	return &signing.PublicCertificates{
+		Certificates: []signing.Certificate{
 			{
 				KeyName:            "phonyKey",
 				X509CertificatePEM: "phonyPEM",
@@ -117,11 +108,11 @@ func (s *phonySigner) Certificates(c context.Context) (*PublicCertificates, erro
 	}, nil
 }
 
-func (s *phonySigner) ServiceInfo(c context.Context) (*ServiceInfo, error) {
+func (s *phonySigner) ServiceInfo(c context.Context) (*signing.ServiceInfo, error) {
 	if s.err != nil {
 		return nil, s.err
 	}
-	return &ServiceInfo{
+	return &signing.ServiceInfo{
 		AppID:              "phony-app",
 		AppRuntime:         "go",
 		AppRuntimeVersion:  "go1.5.1",

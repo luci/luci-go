@@ -19,6 +19,10 @@ import (
 )
 
 var (
+	// ErrNotConfigured is returned by Authenticate if auth library wasn't
+	// properly initialized (see SetConfig).
+	ErrNotConfigured = errors.New("auth: the library is not properly configured")
+
 	// ErrNoUsersAPI is returned by LoginURL and LogoutURL if none of
 	// the authentication methods support UsersAPI.
 	ErrNoUsersAPI = errors.New("auth: methods do not support login or logout URL")
@@ -95,6 +99,12 @@ type Authenticator []Method
 // finishes successfully, but in that case State.Identity() will return
 // AnonymousIdentity.
 func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context.Context, error) {
+	// We will need working DB factory below to check IP whitelist.
+	cfg := GetConfig(c)
+	if cfg == nil || cfg.DBProvider == nil {
+		return nil, ErrNotConfigured
+	}
+
 	// Pick first authentication method that applies.
 	var s state
 	for _, m := range a {
@@ -125,9 +135,9 @@ func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context
 
 	// Grab a snapshot of auth DB to use consistently for the duration of this
 	// request.
-	s.db, err = GetDB(c)
+	s.db, err = cfg.DBProvider(c)
 	if err != nil {
-		return nil, err
+		return nil, ErrNotConfigured
 	}
 
 	// If using OAuth2, make sure ClientID is whitelisted.
@@ -169,7 +179,7 @@ func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context
 	if delegationTok != "" {
 		// Need to grab our own identity to verify that the delegation token is
 		// minted for consumption by us and not some other service.
-		ownServiceIdentity, err := getOwnServiceIdentity(c)
+		ownServiceIdentity, err := getOwnServiceIdentity(c, cfg.Signer)
 		if err != nil {
 			return nil, err
 		}
@@ -225,12 +235,9 @@ func (a Authenticator) LogoutURL(c context.Context, dest string) (string, error)
 
 // getOwnServiceIdentity returns 'service:<appID>' identity of the current
 // service.
-//
-// It grabs it from Signer instance that should be in the context already.
-func getOwnServiceIdentity(c context.Context) (identity.Identity, error) {
-	signer := signing.GetSigner(c)
+func getOwnServiceIdentity(c context.Context, signer signing.Signer) (identity.Identity, error) {
 	if signer == nil {
-		return "", errors.New("auth: misconfigured, no Signer in the context")
+		return "", ErrNotConfigured
 	}
 	serviceInfo, err := signer.ServiceInfo(c)
 	if err != nil {

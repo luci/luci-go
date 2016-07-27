@@ -23,7 +23,7 @@ func TestContext(t *testing.T) {
 	Convey("Works", t, func() {
 		c := context.Background()
 
-		So(GetAuthenticator(c), ShouldBeNil)
+		So(getAuthenticator(c), ShouldBeNil)
 		_, err := LoginURL(c, "dest")
 		So(err, ShouldEqual, ErrNoUsersAPI)
 		_, err = LogoutURL(c, "dest")
@@ -32,7 +32,7 @@ func TestContext(t *testing.T) {
 		// Authenticator without UsersAPI.
 		c = SetAuthenticator(c, Authenticator{noUserAPI{}})
 
-		So(GetAuthenticator(c), ShouldNotBeNil)
+		So(getAuthenticator(c), ShouldNotBeNil)
 		_, err = LoginURL(c, "dest")
 		So(err, ShouldEqual, ErrNoUsersAPI)
 		_, err = LogoutURL(c, "dest")
@@ -41,7 +41,7 @@ func TestContext(t *testing.T) {
 		// Authenticator with UsersAPI.
 		c = SetAuthenticator(c, Authenticator{fakeMethod{}})
 
-		So(GetAuthenticator(c), ShouldNotBeNil)
+		So(getAuthenticator(c), ShouldNotBeNil)
 		dest, err := LoginURL(c, "dest")
 		So(err, ShouldBeNil)
 		So(dest, ShouldEqual, "http://login_url?r=dest")
@@ -177,11 +177,8 @@ func TestAutologin(t *testing.T) {
 }
 
 func prepareCtx(m ...Method) context.Context {
-	c := SetAuthenticator(context.Background(), Authenticator(m))
-	c = UseDB(c, func(context.Context) (DB, error) {
-		return &fakeDB{}, nil
-	})
-	return c
+	c := injectTestDB(context.Background(), &fakeDB{})
+	return SetAuthenticator(c, Authenticator(m))
 }
 
 type noUserAPI struct{}

@@ -34,9 +34,20 @@ var (
 	// globalSettings holds global app settings lazily updated from the datastore.
 	globalSettings = settings.New(gaesettings.Storage{})
 
-	// globalAuthDBCache knows how to fetch auth.DB from datastore and keep it
-	// in local memory cache. Used in prod contexts only.
-	globalAuthDBCache = auth.NewDBCache(server.GetAuthDB)
+	// globalAuthConfig is configuration of the server/auth library.
+	//
+	// It specifies concrete GAE-based implementations for various interfaces
+	// used by the library.
+	//
+	// It is indirectly stateful (since NewDBCache returns a stateful object that
+	// keeps AuthDB cache in local memory), and thus it's defined as a long living
+	// global variable.
+	//
+	// Used in prod contexts only.
+	globalAuthConfig = auth.Config{
+		DBProvider: auth.NewDBCache(server.GetAuthDB),
+		Signer:     gaesigner.Signer{},
+	}
 
 	// globalTsMonState holds state related to time series monitoring.
 	globalTsMonState = &tsmon.State{}
@@ -68,8 +79,7 @@ func WithProd(c context.Context, req *http.Request) context.Context {
 	c = proccache.Use(c, globalProcessCache)
 	c = client.UseAnonymousTransport(c)
 	c = gaesecrets.Use(c, nil)
-	c = gaesigner.Use(c)
-	c = auth.UseDB(c, globalAuthDBCache)
+	c = auth.SetConfig(c, globalAuthConfig)
 	return cacheContext.Wrap(c)
 }
 
