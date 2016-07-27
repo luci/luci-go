@@ -36,48 +36,11 @@ func (Deployment_CloudProject_VersionScheme) EnumDescriptor() ([]byte, []int) {
 }
 
 // *
-// The deployment configuration is a set of parameters composed from local and
-// source configuration files. Each configuration file is read as a text
-// protobuf in two stages:
+// Layout defines the root directory of a deployment configuration.
 //
-// Local Stage
-// ============
-// First, the source and project layout configurations are loaded. These detail
-// the projects that are to be deployed and the source definitions for those
-// projects.
-//
-// Local configurations are located in subdirectories relative to a root
-// "layout.cfg" file:
-//
-// /layout.cfg
-// /sources/
-//   <source-group-name>/     (Defines a source group).
-//     <source-name>.cfg      (Defines a source within the source group).
-//
-// /applications/
-//   <application-name>.cfg   (Defines a application).
-//
-// /deployments/
-//   <deployment-name>.cfg    (Defines a deployment).
-//
-// Each "source" defines host repositories to check out with that source's name.
-// Sources can be pulled from a variety of places, and will be checked out into
-// uniquely-named staging directories.
-//
-// Each "application" defines a set of source-relative components that the
-// application is composed of. The components' definitions are located in the
-// deployment configuration area within their source.
-//
-// A "deployment" binds an "application" to a set of "sources" and
-// deployment-specific parameters (e.g., cloud project). A deployment's
-// configuration is composed of its application's components loaded from their
-// sources. Deployment operations are executed against deployments.
-//
-// Source Stage
-// ============
-// Each source referenced by the named application(s) will be checked out in a
-// staging area. Configurations referenced by the applications will then be
-// loaded from those sources to complete the deployment configuration.
+// Each layout field has a default value, so an empty layout protobuf file is
+// a valid layout. Each field may be overridden to suit your repository's
+// structure, if needed.
 type Layout struct {
 	// *
 	// If specified, the relative path to the sources configuration directory. If
@@ -111,7 +74,7 @@ func (*Layout) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 // "<source-name>.cfg". The source can be referenced internally by its full
 // source path, "<source-group-name>/<source-name>".
 //
-// If the source root contains a ".luci-deploytool.cfg" file, it will be read
+// If the source root contains a "luci-deploy.cfg" file, it will be read
 // and interepreted as a "SourceLayout" message.
 type Source struct {
 	// Types that are valid to be assigned to Source:
@@ -126,7 +89,7 @@ type Source struct {
 	// *
 	// If true, this repository is allowed to run scripts:
 	// - At source initialization time, the initialization scripts defined in
-	//   ".luci-deploytool.cfg" will be executed.
+	//   "/luci-deploy.cfg" will be executed.
 	// - At build time, build scripts associated with a Component will
 	//   be executed. Note that if the a Component declares a build script and `run_scripts` is not true,
 	//   the build will fail.

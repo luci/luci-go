@@ -50,7 +50,7 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // Source layout configuration file.
 //
 // Each Source checkout may include a textproto layout file named
-// "luci-deploytool.cfg". If present, this file will be loaded and used to
+// "luci-deploy.cfg". If present, this file will be loaded and used to
 // integrate the source into the deployment.
 //
 // Uncooperative repositories, or those not owned by the author, may have the

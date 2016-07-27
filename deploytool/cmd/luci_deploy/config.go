@@ -15,7 +15,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-const userCfgName = ".luci_deploytool"
+const userCfgName = ".luci_deploy.cfg"
 
 func loadUserConfig(c context.Context, cfg *deploy.UserConfig) error {
 	path, err := homedir.Dir()

@@ -24,6 +24,11 @@ Code layout
     code and structures shared between all of `/appengine/...`, `/client/...`
     and `/server/...`; for example, the structures used by the server APIs.
     These are inherently APIs.
+  * [/deploytool/...](https://github.com/luci/luci-go/tree/master/deploytool)
+    contains the LUCI cloud services deployment tool.
+  * [/logdog/...](https://github.com/luci/luci-go/tree/master/logdog) contains
+    LogDog client and server code, as well as APIs, protobufs, and support
+    libraries.
   * [/server/...](https://github.com/luci/luci-go/tree/master/server) contains
     standalone server code. Its packages are reusable by `/appengine/...`.
   * [/tools/...](https://github.com/luci/luci-go/tree/master/tools) contains

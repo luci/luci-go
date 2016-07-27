@@ -27,7 +27,7 @@ import (
 // deployToolCfg is the name of the source-root deployment configuration file.
 const (
 	// deployToolCfg is the name of the source-root deploytool configuration file.
-	deployToolCfg = ".luci-deploytool.cfg"
+	deployToolCfg = "luci-deploy.cfg"
 
 	// checkoutsSubdir is the name of the checkouts directory underneath the
 	// working directory.
@@ -145,7 +145,11 @@ func checkout(w *work, l *deployLayout, applyOverrides bool) error {
 				if override, ok := l.userSourceOverrides[sc.overrideURL]; ok {
 					log.Infof(w, "Applying user repository override: [%+v] => [%+v]", sc.Source, override)
 
+					// Any local overrides cause the source group to be considered
+					// tainted.
 					sc.FrozenLayout_Source.Source = override
+					sc.FrozenLayout_Source.Source.Tainted = true
+
 					if err := sc.addRegistryRepos(&reg); err != nil {
 						return errors.Annotate(err).Reason("failed to add (overridden) [%(sourceCheckout)s] to registry").
 							D("sourceCheckout", sc).Err()
