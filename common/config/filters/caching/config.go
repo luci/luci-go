@@ -57,36 +57,31 @@ type Options struct {
 	Expiration time.Duration
 }
 
-// NewFilter constructs a new caching config.Filter function.
-func NewFilter(o Options) config.Filter {
-	return func(c context.Context, cc config.Interface) config.Interface {
-		return &cacheConfig{
-			Context: c,
-			Options: &o,
-			inner:   cc,
-		}
+// Wrap returns Interface object that adds caching layer on top of given one.
+func Wrap(cc config.Interface, o Options) config.Interface {
+	return &cacheConfig{
+		opts:  o,
+		inner: cc,
 	}
 }
 
 // cacheConfig implements a config.Interface that caches results in MemCache.
 type cacheConfig struct {
-	context.Context
-	*Options
-
+	opts  Options
 	inner config.Interface
 }
 
-func (cc *cacheConfig) ServiceURL() url.URL {
-	return cc.inner.ServiceURL()
+func (cc *cacheConfig) ServiceURL(ctx context.Context) url.URL {
+	return cc.inner.ServiceURL(ctx)
 }
 
-func (cc *cacheConfig) GetConfig(configSet, path string, hashOnly bool) (*config.Config, error) {
+func (cc *cacheConfig) GetConfig(ctx context.Context, configSet, path string, hashOnly bool) (*config.Config, error) {
 	// If we're doing hash-only lookup, we're okay with either full or hash-only
 	// result. However, if we have to do the lookup, we will store the result in
 	// a hash-only cache bucket.
 	c := config.Config{}
 	key := cc.cacheKey("configs", "full", configSet, path)
-	switch err := cc.retrieve(key, &c); err {
+	switch err := cc.retrieve(ctx, key, &c); err {
 	case nil:
 		// Cache hit.
 		return &c, nil
@@ -100,7 +95,7 @@ func (cc *cacheConfig) GetConfig(configSet, path string, hashOnly bool) (*config
 
 	if hashOnly {
 		key = cc.cacheKey("configs", "hashOnly", configSet, path)
-		switch err := cc.retrieve(key, &c); err {
+		switch err := cc.retrieve(ctx, key, &c); err {
 		case nil:
 			// Cache hit.
 			return &c, nil
@@ -113,23 +108,23 @@ func (cc *cacheConfig) GetConfig(configSet, path string, hashOnly bool) (*config
 		}
 	}
 
-	ic, err := cc.inner.GetConfig(configSet, path, hashOnly)
+	ic, err := cc.inner.GetConfig(ctx, configSet, path, hashOnly)
 	if err != nil {
-		cc.storeErr(key, err)
+		cc.storeErr(ctx, key, err)
 		return nil, err
 	}
 
-	cc.store(key, ic)
+	cc.store(ctx, key, ic)
 	if !hashOnly {
-		cc.store(cc.configByHashCacheKey(ic.ContentHash), ic.Content)
+		cc.store(ctx, cc.configByHashCacheKey(ic.ContentHash), ic.Content)
 	}
 	return ic, nil
 }
 
-func (cc *cacheConfig) GetConfigByHash(contentHash string) (string, error) {
+func (cc *cacheConfig) GetConfigByHash(ctx context.Context, contentHash string) (string, error) {
 	c := ""
 	key := cc.configByHashCacheKey(contentHash)
-	switch err := cc.retrieve(key, &c); err {
+	switch err := cc.retrieve(ctx, key, &c); err {
 	case nil:
 		// Cache hit.
 		return c, nil
@@ -141,13 +136,13 @@ func (cc *cacheConfig) GetConfigByHash(contentHash string) (string, error) {
 		return "", err
 	}
 
-	c, err := cc.inner.GetConfigByHash(contentHash)
+	c, err := cc.inner.GetConfigByHash(ctx, contentHash)
 	if err != nil {
-		cc.storeErr(key, err)
+		cc.storeErr(ctx, key, err)
 		return "", err
 	}
 
-	cc.store(key, c)
+	cc.store(ctx, key, c)
 	return c, nil
 }
 
@@ -155,10 +150,10 @@ func (cc *cacheConfig) configByHashCacheKey(contentHash string) string {
 	return cc.cacheKey("configsByHash", contentHash)
 }
 
-func (cc *cacheConfig) GetConfigSetLocation(configSet string) (*url.URL, error) {
+func (cc *cacheConfig) GetConfigSetLocation(ctx context.Context, configSet string) (*url.URL, error) {
 	v := ""
 	key := cc.cacheKey("configSet", "location", configSet)
-	switch err := cc.retrieve(key, &v); err {
+	switch err := cc.retrieve(ctx, key, &v); err {
 	case nil:
 		// Cache hit.
 		u, err := url.Parse(v)
@@ -174,20 +169,20 @@ func (cc *cacheConfig) GetConfigSetLocation(configSet string) (*url.URL, error) 
 		return nil, err
 	}
 
-	u, err := cc.inner.GetConfigSetLocation(configSet)
+	u, err := cc.inner.GetConfigSetLocation(ctx, configSet)
 	if err != nil {
-		cc.storeErr(key, err)
+		cc.storeErr(ctx, key, err)
 		return nil, err
 	}
 
-	cc.store(key, u.String())
+	cc.store(ctx, key, u.String())
 	return u, nil
 }
 
-func (cc *cacheConfig) GetProjectConfigs(path string, hashesOnly bool) ([]config.Config, error) {
+func (cc *cacheConfig) GetProjectConfigs(ctx context.Context, path string, hashesOnly bool) ([]config.Config, error) {
 	var c []config.Config
 	key := cc.cacheKey("projectConfigs", "full", path)
-	switch err := cc.retrieve(key, &c); err {
+	switch err := cc.retrieve(ctx, key, &c); err {
 	case nil:
 		// Cache hit.
 		return c, nil
@@ -203,20 +198,20 @@ func (cc *cacheConfig) GetProjectConfigs(path string, hashesOnly bool) ([]config
 		key = cc.cacheKey("projectConfigs", "hashesOnly", path)
 	}
 
-	c, err := cc.inner.GetProjectConfigs(path, hashesOnly)
+	c, err := cc.inner.GetProjectConfigs(ctx, path, hashesOnly)
 	if err != nil {
-		cc.storeErr(key, err)
+		cc.storeErr(ctx, key, err)
 		return nil, err
 	}
 
-	cc.store(key, c)
+	cc.store(ctx, key, c)
 	return c, nil
 }
 
-func (cc *cacheConfig) GetProjects() ([]config.Project, error) {
+func (cc *cacheConfig) GetProjects(ctx context.Context) ([]config.Project, error) {
 	p := []config.Project(nil)
 	key := cc.cacheKey("projects")
-	switch err := cc.retrieve(key, &p); err {
+	switch err := cc.retrieve(ctx, key, &p); err {
 	case nil:
 		// Cache hit.
 		return p, nil
@@ -228,20 +223,20 @@ func (cc *cacheConfig) GetProjects() ([]config.Project, error) {
 		return nil, err
 	}
 
-	p, err := cc.inner.GetProjects()
+	p, err := cc.inner.GetProjects(ctx)
 	if err != nil {
-		cc.storeErr(key, err)
+		cc.storeErr(ctx, key, err)
 		return nil, err
 	}
 
-	cc.store(key, p)
+	cc.store(ctx, key, p)
 	return p, nil
 }
 
-func (cc *cacheConfig) GetRefConfigs(path string, hashesOnly bool) ([]config.Config, error) {
+func (cc *cacheConfig) GetRefConfigs(ctx context.Context, path string, hashesOnly bool) ([]config.Config, error) {
 	c := []config.Config(nil)
 	key := cc.cacheKey("refConfigs", "full", path)
-	switch err := cc.retrieve(key, &c); err {
+	switch err := cc.retrieve(ctx, key, &c); err {
 	case nil:
 		// Cache hit.
 		return c, nil
@@ -257,20 +252,20 @@ func (cc *cacheConfig) GetRefConfigs(path string, hashesOnly bool) ([]config.Con
 		key = cc.cacheKey("refConfigs", "hashesOnly", path)
 	}
 
-	c, err := cc.inner.GetRefConfigs(path, hashesOnly)
+	c, err := cc.inner.GetRefConfigs(ctx, path, hashesOnly)
 	if err != nil {
-		cc.storeErr(key, err)
+		cc.storeErr(ctx, key, err)
 		return nil, err
 	}
 
-	cc.store(key, c)
+	cc.store(ctx, key, c)
 	return c, nil
 }
 
-func (cc *cacheConfig) GetRefs(projectID string) ([]string, error) {
+func (cc *cacheConfig) GetRefs(ctx context.Context, projectID string) ([]string, error) {
 	var refs []string
 	key := cc.cacheKey("refs", projectID)
-	switch err := cc.retrieve(key, &refs); err {
+	switch err := cc.retrieve(ctx, key, &refs); err {
 	case nil:
 		// Cache hit.
 		return refs, nil
@@ -282,23 +277,23 @@ func (cc *cacheConfig) GetRefs(projectID string) ([]string, error) {
 		return nil, err
 	}
 
-	refs, err := cc.inner.GetRefs(projectID)
+	refs, err := cc.inner.GetRefs(ctx, projectID)
 	if err != nil {
-		cc.storeErr(key, err)
+		cc.storeErr(ctx, key, err)
 		return nil, err
 	}
 
-	cc.store(key, refs)
+	cc.store(ctx, key, refs)
 	return refs, nil
 }
 
-func (cc *cacheConfig) retrieve(key string, v interface{}) error {
-	if cc.Cache == nil {
+func (cc *cacheConfig) retrieve(ctx context.Context, key string, v interface{}) error {
+	if cc.opts.Cache == nil {
 		return errCacheMiss
 	}
 
 	// Load the cache value.
-	d := cc.Cache.Retrieve(cc, key)
+	d := cc.opts.Cache.Retrieve(ctx, key)
 	if len(d) == 0 {
 		return errCacheMiss
 	}
@@ -337,8 +332,8 @@ func (cc *cacheConfig) retrieve(key string, v interface{}) error {
 	return nil
 }
 
-func (cc *cacheConfig) store(key string, v interface{}) {
-	if cc.Cache == nil {
+func (cc *cacheConfig) store(ctx context.Context, key string, v interface{}) {
+	if cc.opts.Cache == nil {
 		return
 	}
 
@@ -361,17 +356,17 @@ func (cc *cacheConfig) store(key string, v interface{}) {
 		return
 	}
 
-	cc.Cache.Store(cc, key, cc.Expiration, buf.Bytes())
+	cc.opts.Cache.Store(ctx, key, cc.opts.Expiration, buf.Bytes())
 }
 
-func (cc *cacheConfig) storeErr(key string, err error) {
-	if cc.Cache == nil {
+func (cc *cacheConfig) storeErr(ctx context.Context, key string, err error) {
+	if cc.opts.Cache == nil {
 		return
 	}
 
 	switch err {
 	case config.ErrNoConfig:
-		cc.Cache.Store(cc, key, cc.Expiration, []byte{byte(contentErrNoConfig)})
+		cc.opts.Cache.Store(ctx, key, cc.opts.Expiration, []byte{byte(contentErrNoConfig)})
 
 	default:
 		// Don't know how to store this error type.

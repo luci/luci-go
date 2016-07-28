@@ -13,9 +13,11 @@ import (
 	"github.com/luci/luci-go/common/proto"
 )
 
-// LoadFile loads a File by configSet and path.
+// LoadFile loads a File from config service by configSet and path.
+//
+// Expects config.Interface to be in the context already.
 func LoadFile(c context.Context, configSet, path string) (file *File, vers string, err error) {
-	templateData, err := config.Get(c).GetConfig(configSet, path, false)
+	templateData, err := config.GetConfig(c, configSet, path, false)
 	if err != nil {
 		return
 	}

@@ -6,6 +6,7 @@ package gaeconfig
 
 import (
 	"errors"
+	"net/http"
 	"time"
 
 	"golang.org/x/net/context"
@@ -35,11 +36,21 @@ func New(c context.Context) (config.Interface, error) {
 		return nil, ErrNotConfigured
 	}
 
-	c = client.UseServiceAccountTransport(c, nil, nil)
-	cfg := remote.New(c, settings.ConfigServiceURL+"/_ah/api/config/v1/")
+	cfg := remote.New(settings.ConfigServiceURL+"/_ah/api/config/v1/", authenticatedClient)
 	if settings.CacheExpirationSec != 0 {
-		f := NewCacheFilter(c, time.Duration(settings.CacheExpirationSec)*time.Second)
-		cfg = f(c, cfg)
+		cfg = WrapWithCache(cfg, time.Duration(settings.CacheExpirationSec)*time.Second)
 	}
 	return cfg, nil
+}
+
+// authenticatedClient returns http.Client to use for making authenticated
+// request to the config service.
+//
+// The returned client uses GAE app's service account for authentication.
+func authenticatedClient(ctx context.Context) (*http.Client, error) {
+	transport, err := client.Transport(ctx, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &http.Client{Transport: transport}, nil
 }

@@ -29,8 +29,7 @@ func getTrimmedAppID(c context.Context) string {
 
 func loadAcls(c context.Context) (ret *acls.Acls, err error) {
 	aid := getTrimmedAppID(c)
-	cfgSvc := config.Get(c)
-	aclCfg, err := cfgSvc.GetConfig(fmt.Sprintf("services/%s", aid), "acls.cfg", false)
+	aclCfg, err := config.GetConfig(c, fmt.Sprintf("services/%s", aid), "acls.cfg", false)
 	if err != nil {
 		return nil, errors.WrapTransient(err)
 	}

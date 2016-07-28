@@ -52,7 +52,7 @@ func ServiceConfigPath(c context.Context) (string, string) {
 // The service config is minimally validated prior to being returned.
 func Load(c context.Context) (*Config, error) {
 	configSet, configPath := ServiceConfigPath(c)
-	serviceCfg, err := config.Get(c).GetConfig(configSet, configPath, false)
+	serviceCfg, err := config.GetConfig(c, configSet, configPath, false)
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,
@@ -64,7 +64,7 @@ func Load(c context.Context) (*Config, error) {
 
 	// Unmarshal the config into service configuration.
 	cfg := Config{
-		ConfigServiceURL:  config.Get(c).ServiceURL(),
+		ConfigServiceURL:  config.ServiceURL(c),
 		ConfigSet:         serviceCfg.ConfigSet,
 		ServiceConfigPath: serviceCfg.Path,
 	}

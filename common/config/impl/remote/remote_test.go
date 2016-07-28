@@ -16,7 +16,6 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/transport"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -31,13 +30,13 @@ func testTools(code int, resp interface{}) (*httptest.Server, config.Interface) 
 		marsh, _ := json.Marshal(resp)
 		fmt.Fprintln(w, string(marsh))
 	}))
-
-	c := Use(context.Background(), server.URL)
-	return server, config.Get(c)
+	return server, New(server.URL, nil)
 }
 
 func TestRemoteCalls(t *testing.T) {
 	t.Parallel()
+
+	ctx := context.Background()
 
 	Convey("Should pass through calls to the generated API", t, func() {
 		Convey("GetConfig", func() {
@@ -48,7 +47,7 @@ func TestRemoteCalls(t *testing.T) {
 			})
 			defer server.Close()
 
-			res, err := remoteImpl.GetConfig("a", "b", false)
+			res, err := remoteImpl.GetConfig(ctx, "a", "b", false)
 
 			So(err, ShouldBeNil)
 			So(*res, ShouldResemble, config.Config{
@@ -65,7 +64,7 @@ func TestRemoteCalls(t *testing.T) {
 			})
 			defer server.Close()
 
-			res, err := remoteImpl.GetConfigByHash("a")
+			res, err := remoteImpl.GetConfigByHash(ctx, "a")
 
 			So(err, ShouldBeNil)
 			So(res, ShouldResemble, "content")
@@ -84,7 +83,7 @@ func TestRemoteCalls(t *testing.T) {
 			})
 			defer server.Close()
 
-			res, err := remoteImpl.GetConfigSetLocation("a")
+			res, err := remoteImpl.GetConfigSetLocation(ctx, "a")
 
 			So(err, ShouldBeNil)
 			So(*res, ShouldResemble, *URL)
@@ -100,7 +99,7 @@ func TestRemoteCalls(t *testing.T) {
 			})
 			defer server.Close()
 
-			res, err := remoteImpl.GetProjectConfigs("b", false)
+			res, err := remoteImpl.GetProjectConfigs(ctx, "b", false)
 
 			So(err, ShouldBeNil)
 			So(res, ShouldNotBeEmpty)
@@ -123,7 +122,7 @@ func TestRemoteCalls(t *testing.T) {
 			})
 			defer server.Close()
 
-			res, err := remoteImpl.GetProjectConfigs("b", true)
+			res, err := remoteImpl.GetProjectConfigs(ctx, "b", true)
 
 			So(err, ShouldBeNil)
 			So(res, ShouldNotBeEmpty)
@@ -154,7 +153,7 @@ func TestRemoteCalls(t *testing.T) {
 			})
 			defer server.Close()
 
-			res, err := remoteImpl.GetProjects()
+			res, err := remoteImpl.GetProjects(ctx)
 
 			So(err, ShouldBeNil)
 			So(res, ShouldNotBeEmpty)
@@ -177,7 +176,7 @@ func TestRemoteCalls(t *testing.T) {
 			})
 			defer server.Close()
 
-			res, err := remoteImpl.GetRefConfigs("b", false)
+			res, err := remoteImpl.GetRefConfigs(ctx, "b", false)
 
 			So(err, ShouldBeNil)
 			So(res, ShouldNotBeEmpty)
@@ -200,7 +199,7 @@ func TestRemoteCalls(t *testing.T) {
 			})
 			defer server.Close()
 
-			res, err := remoteImpl.GetRefConfigs("b", true)
+			res, err := remoteImpl.GetRefConfigs(ctx, "b", true)
 
 			So(err, ShouldBeNil)
 			So(res, ShouldNotBeEmpty)
@@ -221,7 +220,7 @@ func TestRemoteCalls(t *testing.T) {
 			})
 			defer server.Close()
 
-			res, err := remoteImpl.GetRefs("a")
+			res, err := remoteImpl.GetRefs(ctx, "a")
 
 			So(err, ShouldBeNil)
 			So(res, ShouldNotBeEmpty)
@@ -232,30 +231,32 @@ func TestRemoteCalls(t *testing.T) {
 
 	Convey("Should handle errors well", t, func() {
 		Convey("Should enforce GetConfigSetLocation argument is not the empty string.", func() {
-			c := Use(context.Background(), "")
-			remoteImpl := config.Get(c)
+			remoteImpl := New("http://example.com", nil)
 
-			_, err := remoteImpl.GetConfigSetLocation("")
+			_, err := remoteImpl.GetConfigSetLocation(ctx, "")
 			So(err, ShouldNotBeNil)
 		})
 
 		Convey("Should pass through HTTP errors", func() {
-			c := Use(transport.Set(context.Background(), failingRoundTripper{}), "")
-			remoteImpl := config.Get(c)
+			remoteImpl := New("http://example.com", func(context.Context) (*http.Client, error) {
+				return &http.Client{
+					Transport: failingRoundTripper{},
+				}, nil
+			})
 
-			_, err := remoteImpl.GetConfig("a", "b", false)
+			_, err := remoteImpl.GetConfig(ctx, "a", "b", false)
 			So(err, ShouldNotBeNil)
-			_, err = remoteImpl.GetConfigByHash("a")
+			_, err = remoteImpl.GetConfigByHash(ctx, "a")
 			So(err, ShouldNotBeNil)
-			_, err = remoteImpl.GetConfigSetLocation("a")
+			_, err = remoteImpl.GetConfigSetLocation(ctx, "a")
 			So(err, ShouldNotBeNil)
-			_, err = remoteImpl.GetProjectConfigs("a", false)
+			_, err = remoteImpl.GetProjectConfigs(ctx, "a", false)
 			So(err, ShouldNotBeNil)
-			_, err = remoteImpl.GetProjects()
+			_, err = remoteImpl.GetProjects(ctx)
 			So(err, ShouldNotBeNil)
-			_, err = remoteImpl.GetRefConfigs("a", false)
+			_, err = remoteImpl.GetRefConfigs(ctx, "a", false)
 			So(err, ShouldNotBeNil)
-			_, err = remoteImpl.GetRefs("a")
+			_, err = remoteImpl.GetRefs(ctx, "a")
 			So(err, ShouldNotBeNil)
 		})
 	})

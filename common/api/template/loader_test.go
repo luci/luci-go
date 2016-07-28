@@ -9,6 +9,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/config/impl/memory"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -18,7 +19,7 @@ func TestLoadFromConfig(t *testing.T) {
 	t.Parallel()
 
 	Convey("LoadFile", t, func() {
-		c := memory.Use(context.Background(), map[string]memory.ConfigSet{"projects/foo": {"templates/bar.cfg": `
+		c := config.SetImplementation(context.Background(), memory.New(map[string]memory.ConfigSet{"projects/foo": {"templates/bar.cfg": `
 		template: <
 			key: "hardcode"
 			value: <
@@ -76,7 +77,7 @@ func TestLoadFromConfig(t *testing.T) {
 				>
 			>
 		>
-		`}})
+		`}}))
 
 		Convey("basic load", func() {
 			file, vers, err := LoadFile(c, "projects/foo", "templates/bar.cfg")

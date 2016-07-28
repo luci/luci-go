@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	. "github.com/smartystreets/goconvey/convey"
 
 	"github.com/luci/luci-go/common/config"
@@ -43,6 +45,8 @@ func withFolder(files map[string]string, cb func(folder string)) {
 func TestFSImpl(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
 	withFolder(map[string]string{
 		"projects/doodly/refs/otherref/file.cfg": "",
 		"projects/doodly/refs/someref/file.cfg":  "",
@@ -70,13 +74,13 @@ func TestFSImpl(t *testing.T) {
 				}
 
 				Convey("All content", func() {
-					cfg, err := client.GetConfig("projects/foobar", "something/file.cfg", false)
+					cfg, err := client.GetConfig(ctx, "projects/foobar", "something/file.cfg", false)
 					So(err, ShouldBeNil)
 					So(cfg, ShouldResemble, expect)
 				})
 
 				Convey("services", func() {
-					cfg, err := client.GetConfig("services/foosrv", "something.cfg", false)
+					cfg, err := client.GetConfig(ctx, "services/foosrv", "something.cfg", false)
 					So(err, ShouldBeNil)
 					So(cfg, ShouldResemble, &config.Config{
 						ConfigSet:   "services/foosrv",
@@ -88,7 +92,7 @@ func TestFSImpl(t *testing.T) {
 				})
 
 				Convey("refs", func() {
-					cfg, err := client.GetConfig("projects/foobar/refs/someref", "file.cfg", false)
+					cfg, err := client.GetConfig(ctx, "projects/foobar/refs/someref", "file.cfg", false)
 					So(err, ShouldBeNil)
 					So(cfg, ShouldResemble, &config.Config{
 						ConfigSet:   "projects/foobar/refs/someref",
@@ -100,12 +104,12 @@ func TestFSImpl(t *testing.T) {
 				})
 
 				Convey("just hash", func() {
-					cfg, err := client.GetConfig("projects/foobar", "something/file.cfg", true)
+					cfg, err := client.GetConfig(ctx, "projects/foobar", "something/file.cfg", true)
 					So(err, ShouldBeNil)
 					So(cfg.ContentHash, ShouldEqual, "v1:e42874cc28bbba410f56790c24bb6f33e73ab784")
 
 					Convey("make sure it doesn't poison the cache", func() {
-						cfg, err := client.GetConfig("projects/foobar", "something/file.cfg", false)
+						cfg, err := client.GetConfig(ctx, "projects/foobar", "something/file.cfg", false)
 						So(err, ShouldBeNil)
 						So(cfg, ShouldResemble, expect)
 					})
@@ -113,13 +117,13 @@ func TestFSImpl(t *testing.T) {
 			})
 
 			Convey("GetConfigByHash", func() {
-				cont, err := client.GetConfigByHash("v1:e42874cc28bbba410f56790c24bb6f33e73ab784")
+				cont, err := client.GetConfigByHash(ctx, "v1:e42874cc28bbba410f56790c24bb6f33e73ab784")
 				So(err, ShouldBeNil)
 				So(cont, ShouldEqual, "projects/foobar/something/file.cfg")
 			})
 
 			Convey("GetConfigSetLocation", func() {
-				csurl, err := client.GetConfigSetLocation("projects/foobar")
+				csurl, err := client.GetConfigSetLocation(ctx, "projects/foobar")
 				So(err, ShouldBeNil)
 				So(csurl, ShouldResemble, &url.URL{
 					Scheme: "file",
@@ -128,7 +132,7 @@ func TestFSImpl(t *testing.T) {
 			})
 
 			Convey("GetProjectConfigs", func() {
-				cfgs, err := client.GetProjectConfigs("something/file.cfg", false)
+				cfgs, err := client.GetProjectConfigs(ctx, "something/file.cfg", false)
 				So(err, ShouldBeNil)
 				So(cfgs, ShouldResemble, []config.Config{
 					{
@@ -149,7 +153,7 @@ func TestFSImpl(t *testing.T) {
 			})
 
 			Convey("GetProjects", func() {
-				projs, err := client.GetProjects()
+				projs, err := client.GetProjects(ctx)
 				So(err, ShouldBeNil)
 				So(projs, ShouldResemble, []config.Project{
 					{
@@ -167,7 +171,7 @@ func TestFSImpl(t *testing.T) {
 			})
 
 			Convey("GetRefConfigs", func() {
-				cfgs, err := client.GetRefConfigs("file.cfg", false)
+				cfgs, err := client.GetRefConfigs(ctx, "file.cfg", false)
 				So(err, ShouldBeNil)
 				So(cfgs, ShouldResemble, []config.Config{
 					{
@@ -193,11 +197,11 @@ func TestFSImpl(t *testing.T) {
 			})
 
 			Convey("GetRefs", func() {
-				refs, err := client.GetRefs("foobar")
+				refs, err := client.GetRefs(ctx, "foobar")
 				So(err, ShouldBeNil)
 				So(refs, ShouldResemble, []string{"refs/someref"})
 
-				refs, err = client.GetRefs("doodly")
+				refs, err = client.GetRefs(ctx, "doodly")
 				So(err, ShouldBeNil)
 				So(refs, ShouldResemble, []string{"refs/otherref", "refs/someref"})
 			})
@@ -220,7 +224,7 @@ func TestFSImpl(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("v1", func() {
-				cfg, err := client.GetConfig("projects/foobar", "something/file.cfg", false)
+				cfg, err := client.GetConfig(ctx, "projects/foobar", "something/file.cfg", false)
 				So(err, ShouldBeNil)
 				So(cfg.Content, ShouldEqual, "v1/projects/foobar/something/file.cfg")
 
@@ -228,7 +232,7 @@ func TestFSImpl(t *testing.T) {
 					So(errors.Filter(os.Remove(symlink), os.ErrNotExist), ShouldBeNil)
 					So(os.Symlink(filepath.Join(folder, "v2"), symlink), ShouldBeNil)
 
-					cfg, err := client.GetConfig("projects/foobar", "something/file.cfg", false)
+					cfg, err := client.GetConfig(ctx, "projects/foobar", "something/file.cfg", false)
 					So(err, ShouldBeNil)
 					So(cfg.Content, ShouldEqual, "v2/projects/foobar/something/file.cfg")
 				})

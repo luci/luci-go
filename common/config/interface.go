@@ -7,6 +7,8 @@ package config
 import (
 	"errors"
 	"net/url"
+
+	"golang.org/x/net/context"
 )
 
 // ErrNoConfig is returned if requested config does not exist.
@@ -67,38 +69,49 @@ type Project struct {
 	RepoURL *url.URL
 }
 
-// Interface is the interface any client has to access the luci-config service.
+// Interface represents luci-config service API.
+//
+// All methods accept context.Context they use for deadlines and for passing to
+// callbacks (if the implementation uses any). Contexts here don't necessary
+// relate to a "global" package context (used by GetImplementation and
+// SetImplementation), though very often they are the same (as is the case when
+// using package-level functions like GetConfig).
+//
+// For example, unit tests may instantiate an implementation of Interface
+// directly and don't bother registering it in the context with
+// SetImplementation(...).
+//
 // Transient errors are wrapped in errors.Transient. See common/errors.
 type Interface interface {
 	// ServiceURL returns the URL of the config service.
-	ServiceURL() url.URL
+	ServiceURL(ctx context.Context) url.URL
 
 	// GetConfig returns a config at a path in a config set or ErrNoConfig
 	// if missing. If hashOnly is true, returned Config struct has Content set
 	// to "" (and the call is faster).
-	GetConfig(configSet, path string, hashOnly bool) (*Config, error)
+	GetConfig(ctx context.Context, configSet, path string, hashOnly bool) (*Config, error)
 
 	// GetConfigByHash returns the contents of a config, as identified by its
 	// content hash, or ErrNoConfig if missing.
-	GetConfigByHash(contentHash string) (string, error)
+	GetConfigByHash(ctx context.Context, contentHash string) (string, error)
 
 	// GetConfigSetLocation returns the URL location of a config set.
-	GetConfigSetLocation(configSet string) (*url.URL, error)
+	GetConfigSetLocation(ctx context.Context, configSet string) (*url.URL, error)
 
 	// GetProjectConfigs returns all the configs at the given path in all
 	// projects that have such config. If hashesOnly is true, returned Config
 	// structs have Content set to "" (and the call is faster).
-	GetProjectConfigs(path string, hashesOnly bool) ([]Config, error)
+	GetProjectConfigs(ctx context.Context, path string, hashesOnly bool) ([]Config, error)
 
 	// GetProjects returns all the registered projects in the configuration
 	// service.
-	GetProjects() ([]Project, error)
+	GetProjects(ctx context.Context) ([]Project, error)
 
 	// GetRefConfigs returns the config at the given path in all refs of all
 	// projects that have such config. If hashesOnly is true, returned Config
 	// structs have Content set to "" (and the call is faster).
-	GetRefConfigs(path string, hashesOnly bool) ([]Config, error)
+	GetRefConfigs(ctx context.Context, path string, hashesOnly bool) ([]Config, error)
 
 	// GetRefs returns the list of refs for a project.
-	GetRefs(projectID string) ([]string, error)
+	GetRefs(ctx context.Context, projectID string) ([]string, error)
 }

@@ -50,8 +50,8 @@ type Options struct {
 	KillFunc func()
 }
 
-func (o *Options) getConfig(hashOnly bool) (*config.Config, error) {
-	return o.Config.GetConfig(o.ConfigSet, o.ServiceConfigPath, hashOnly)
+func (o *Options) getConfig(c context.Context, hashOnly bool) (*config.Config, error) {
+	return o.Config.GetConfig(c, o.ConfigSet, o.ServiceConfigPath, hashOnly)
 }
 
 func (o *Options) pollForConfigChanges(c context.Context, hash string) {
@@ -66,7 +66,7 @@ func (o *Options) pollForConfigChanges(c context.Context, hash string) {
 		}
 
 		log.Infof(c, "Kill check timeout triggered, checking configuration...")
-		cfg, err := o.getConfig(true)
+		cfg, err := o.getConfig(c, true)
 		if err != nil {
 			log.WithError(err).Warningf(c, "Failed to reload configuration.")
 			continue
@@ -158,7 +158,7 @@ func (m *Manager) ProjectConfig(c context.Context, project config.ProjectName) (
 	v, err := proccache.GetOrMake(c, project, func() (interface{}, time.Duration, error) {
 		configSet := fmt.Sprintf("projects/%s", project)
 		configPath := fmt.Sprintf("%s.cfg", serviceID)
-		cfg, err := m.o.Config.GetConfig(configSet, configPath, false)
+		cfg, err := m.o.Config.GetConfig(c, configSet, configPath, false)
 		if err != nil {
 			log.Fields{
 				log.ErrorKey: err,
@@ -208,7 +208,7 @@ func (m *Manager) Close() {
 }
 
 func (m *Manager) reloadConfig(c context.Context) error {
-	cfg, err := m.o.getConfig(false)
+	cfg, err := m.o.getConfig(c, false)
 	if err != nil {
 		return err
 	}

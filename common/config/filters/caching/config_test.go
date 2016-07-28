@@ -51,57 +51,57 @@ type forceErrConfig struct {
 	err   error
 }
 
-func (tc *forceErrConfig) ServiceURL() url.URL {
-	return tc.inner.ServiceURL()
+func (tc *forceErrConfig) ServiceURL(ctx context.Context) url.URL {
+	return tc.inner.ServiceURL(ctx)
 }
 
-func (tc *forceErrConfig) GetConfig(configSet, path string, hashOnly bool) (*config.Config, error) {
+func (tc *forceErrConfig) GetConfig(ctx context.Context, configSet, path string, hashOnly bool) (*config.Config, error) {
 	if tc.err != nil {
 		return nil, tc.err
 	}
-	return tc.inner.GetConfig(configSet, path, hashOnly)
+	return tc.inner.GetConfig(ctx, configSet, path, hashOnly)
 }
 
-func (tc *forceErrConfig) GetConfigByHash(contentHash string) (string, error) {
+func (tc *forceErrConfig) GetConfigByHash(ctx context.Context, contentHash string) (string, error) {
 	if tc.err != nil {
 		return "", tc.err
 	}
-	return tc.inner.GetConfigByHash(contentHash)
+	return tc.inner.GetConfigByHash(ctx, contentHash)
 }
 
-func (tc *forceErrConfig) GetConfigSetLocation(configSet string) (*url.URL, error) {
+func (tc *forceErrConfig) GetConfigSetLocation(ctx context.Context, configSet string) (*url.URL, error) {
 	if tc.err != nil {
 		return nil, tc.err
 	}
-	return tc.inner.GetConfigSetLocation(configSet)
+	return tc.inner.GetConfigSetLocation(ctx, configSet)
 }
 
-func (tc *forceErrConfig) GetProjectConfigs(path string, hashesOnly bool) ([]config.Config, error) {
+func (tc *forceErrConfig) GetProjectConfigs(ctx context.Context, path string, hashesOnly bool) ([]config.Config, error) {
 	if tc.err != nil {
 		return nil, tc.err
 	}
-	return tc.inner.GetProjectConfigs(path, hashesOnly)
+	return tc.inner.GetProjectConfigs(ctx, path, hashesOnly)
 }
 
-func (tc *forceErrConfig) GetProjects() ([]config.Project, error) {
+func (tc *forceErrConfig) GetProjects(ctx context.Context) ([]config.Project, error) {
 	if tc.err != nil {
 		return nil, tc.err
 	}
-	return tc.inner.GetProjects()
+	return tc.inner.GetProjects(ctx)
 }
 
-func (tc *forceErrConfig) GetRefConfigs(path string, hashesOnly bool) ([]config.Config, error) {
+func (tc *forceErrConfig) GetRefConfigs(ctx context.Context, path string, hashesOnly bool) ([]config.Config, error) {
 	if tc.err != nil {
 		return nil, tc.err
 	}
-	return tc.inner.GetRefConfigs(path, hashesOnly)
+	return tc.inner.GetRefConfigs(ctx, path, hashesOnly)
 }
 
-func (tc *forceErrConfig) GetRefs(projectID string) ([]string, error) {
+func (tc *forceErrConfig) GetRefs(ctx context.Context, projectID string) ([]string, error) {
 	if tc.err != nil {
 		return nil, tc.err
 	}
-	return tc.inner.GetRefs(projectID)
+	return tc.inner.GetRefs(ctx, projectID)
 }
 
 func TestConfig(t *testing.T) {
@@ -128,17 +128,15 @@ func TestConfig(t *testing.T) {
 		}
 		mcfg := memory.New(mbase)
 		errCfg := &forceErrConfig{inner: mcfg}
-		c = config.Set(c, errCfg)
 
 		wasHit := false
 		tc := testCache{
 			callback: func(hit bool) { wasHit = hit },
 		}
-		opts := Options{
+
+		cfg := Wrap(errCfg, Options{
 			Cache: &tc,
-		}
-		c = config.AddFilters(c, NewFilter(opts))
-		cfg := config.Get(c)
+		})
 
 		// Advance underlying config, expectation.
 		advance := func() {
@@ -150,69 +148,69 @@ func TestConfig(t *testing.T) {
 
 		Convey(`GetConfig`, func() {
 			Convey(`A non-hash-only query retrieves and caches the full body.`, func() {
-				exp, _ := mcfg.GetConfig("services/foo", "file", false)
+				exp, _ := mcfg.GetConfig(c, "services/foo", "file", false)
 
-				v, err := cfg.GetConfig("services/foo", "file", false)
+				v, err := cfg.GetConfig(c, "services/foo", "file", false)
 				So(err, ShouldBeNil)
 				So(v, ShouldResemble, exp)
 
 				advance()
-				v, err = cfg.GetConfig("services/foo", "file", false)
+				v, err = cfg.GetConfig(c, "services/foo", "file", false)
 				So(err, ShouldBeNil)
 				So(v, ShouldResemble, exp)
 
 				Convey(`A hash-only query will use non-hash version.`, func() {
-					v, err = cfg.GetConfig("services/foo", "file", true)
+					v, err = cfg.GetConfig(c, "services/foo", "file", true)
 					So(err, ShouldBeNil)
 					So(v, ShouldResemble, exp)
 				})
 
 				Convey(`A non-hash-only query caches by hash too.`, func() {
-					byHash, err := cfg.GetConfigByHash(v.ContentHash)
+					byHash, err := cfg.GetConfigByHash(c, v.ContentHash)
 					So(err, ShouldBeNil)
 					So(byHash, ShouldResemble, v.Content)
 				})
 			})
 
 			Convey(`A hash-only query will cache the hashed version.`, func() {
-				exp, _ := mcfg.GetConfig("services/foo", "file", true)
+				exp, _ := mcfg.GetConfig(c, "services/foo", "file", true)
 
-				v, err := cfg.GetConfig("services/foo", "file", true)
+				v, err := cfg.GetConfig(c, "services/foo", "file", true)
 				So(err, ShouldBeNil)
 				So(v, ShouldResemble, exp)
 
 				advance()
-				v, err = cfg.GetConfig("services/foo", "file", true)
+				v, err = cfg.GetConfig(c, "services/foo", "file", true)
 				So(err, ShouldBeNil)
 				So(v, ShouldResemble, exp)
 
 				Convey(`A full query will not use the cached hash-only version.`, func() {
-					exp, _ := mcfg.GetConfig("services/foo", "file", false)
+					exp, _ := mcfg.GetConfig(c, "services/foo", "file", false)
 
-					v, err = cfg.GetConfig("services/foo", "file", false)
+					v, err = cfg.GetConfig(c, "services/foo", "file", false)
 					So(err, ShouldBeNil)
 					So(v, ShouldResemble, exp)
 				})
 
 				Convey(`A hash-only query does not cache the full config by hash.`, func() {
-					_, err := cfg.GetConfigByHash(v.ContentHash)
+					_, err := cfg.GetConfigByHash(c, v.ContentHash)
 					So(err, ShouldNotBeNil)
 				})
 			})
 
 			Convey(`GetConfig missing will be cached`, func() {
-				_, err := cfg.GetConfig("services/invalid", "file", false)
+				_, err := cfg.GetConfig(c, "services/invalid", "file", false)
 				So(err, ShouldEqual, config.ErrNoConfig)
 				So(wasHit, ShouldBeFalse)
 
-				_, err = cfg.GetConfig("services/invalid", "file", false)
+				_, err = cfg.GetConfig(c, "services/invalid", "file", false)
 				So(err, ShouldEqual, config.ErrNoConfig)
 				So(wasHit, ShouldBeTrue)
 			})
 
 			Convey(`Other errors will not be cached`, func() {
 				errCfg.err = errors.New("test error")
-				_, err := cfg.GetConfig("services/foo", "file", false)
+				_, err := cfg.GetConfig(c, "services/foo", "file", false)
 				So(err, ShouldErrLike, "test error")
 				So(tc.nothingCached(), ShouldBeTrue)
 			})
@@ -220,29 +218,29 @@ func TestConfig(t *testing.T) {
 
 		Convey(`GetConfigByHash`, func() {
 			Convey(`Works.`, func() {
-				body, err := cfg.GetConfigByHash("v1:fb4c35e739d53994aba7d3e0416a1082f11bfbba")
+				body, err := cfg.GetConfigByHash(c, "v1:fb4c35e739d53994aba7d3e0416a1082f11bfbba")
 				So(err, ShouldBeNil)
 				So(body, ShouldResemble, "body")
 
 				advance()
-				body, err = cfg.GetConfigByHash("v1:fb4c35e739d53994aba7d3e0416a1082f11bfbba")
+				body, err = cfg.GetConfigByHash(c, "v1:fb4c35e739d53994aba7d3e0416a1082f11bfbba")
 				So(err, ShouldBeNil)
 				So(body, ShouldResemble, "body")
 			})
 
 			Convey(`Missing caches and returns error`, func() {
-				_, err := cfg.GetConfigByHash("v0:asdf")
+				_, err := cfg.GetConfigByHash(c, "v0:asdf")
 				So(err, ShouldEqual, config.ErrNoConfig)
 				So(wasHit, ShouldBeFalse)
 
-				_, err = cfg.GetConfigByHash("v0:asdf")
+				_, err = cfg.GetConfigByHash(c, "v0:asdf")
 				So(err, ShouldEqual, config.ErrNoConfig)
 				So(wasHit, ShouldBeTrue)
 			})
 
 			Convey(`Other errors will not be cached`, func() {
 				errCfg.err = errors.New("test error")
-				_, err := cfg.GetConfigByHash("v0:asdf")
+				_, err := cfg.GetConfigByHash(c, "v0:asdf")
 				So(err, ShouldErrLike, "test error")
 				So(tc.nothingCached(), ShouldBeTrue)
 			})
@@ -250,30 +248,30 @@ func TestConfig(t *testing.T) {
 
 		Convey(`GetConfigSetLocation`, func() {
 			Convey(`Works.`, func() {
-				loc, err := cfg.GetConfigSetLocation("projects/goesaway")
+				loc, err := cfg.GetConfigSetLocation(c, "projects/goesaway")
 				So(err, ShouldBeNil)
 				So(loc, ShouldNotBeNil)
 
 				advance()
-				loc2, err := cfg.GetConfigSetLocation("projects/goesaway")
+				loc2, err := cfg.GetConfigSetLocation(c, "projects/goesaway")
 				So(err, ShouldBeNil)
 				So(loc2, ShouldResemble, loc)
 			})
 
 			Convey(`Missing caches and returns error`, func() {
 				errCfg.err = config.ErrNoConfig
-				_, err := cfg.GetConfigSetLocation("projects/goesaway")
+				_, err := cfg.GetConfigSetLocation(c, "projects/goesaway")
 				So(err, ShouldEqual, config.ErrNoConfig)
 				So(wasHit, ShouldBeFalse)
 
-				_, err = cfg.GetConfigSetLocation("projects/goesaway")
+				_, err = cfg.GetConfigSetLocation(c, "projects/goesaway")
 				So(err, ShouldEqual, config.ErrNoConfig)
 				So(wasHit, ShouldBeTrue)
 			})
 
 			Convey(`Other errors will not be cached`, func() {
 				errCfg.err = errors.New("test error")
-				_, err := cfg.GetConfigSetLocation("projects/goesaway")
+				_, err := cfg.GetConfigSetLocation(c, "projects/goesaway")
 				So(err, ShouldErrLike, "test error")
 				So(tc.nothingCached(), ShouldBeTrue)
 			})
@@ -281,36 +279,36 @@ func TestConfig(t *testing.T) {
 
 		Convey(`GetProjectConfigs`, func() {
 			Convey(`Works.`, func() {
-				exp, _ := mcfg.GetProjectConfigs("file", false)
+				exp, _ := mcfg.GetProjectConfigs(c, "file", false)
 
-				cfgs, err := cfg.GetProjectConfigs("file", false)
+				cfgs, err := cfg.GetProjectConfigs(c, "file", false)
 				So(err, ShouldBeNil)
 				So(cfgs, ShouldResemble, exp)
 
 				advance()
-				cfgs, err = cfg.GetProjectConfigs("file", false)
+				cfgs, err = cfg.GetProjectConfigs(c, "file", false)
 				So(err, ShouldBeNil)
 				So(cfgs, ShouldResemble, exp)
 
 				Convey(`Hash-only will returned cached full content.`, func() {
-					cfgs, err = cfg.GetProjectConfigs("file", true)
+					cfgs, err = cfg.GetProjectConfigs(c, "file", true)
 					So(err, ShouldBeNil)
 					So(cfgs, ShouldResemble, exp)
 				})
 			})
 
 			Convey(`Hash-only works.`, func() {
-				exp, _ := mcfg.GetProjectConfigs("file", true)
+				exp, _ := mcfg.GetProjectConfigs(c, "file", true)
 
-				cfgs, err := cfg.GetProjectConfigs("file", true)
+				cfgs, err := cfg.GetProjectConfigs(c, "file", true)
 				So(err, ShouldBeNil)
 				So(cfgs, ShouldResemble, exp)
 
 				Convey(`Full query will not use hash-only cached version.`, func() {
 					advance()
-					exp, _ := mcfg.GetProjectConfigs("file", false)
+					exp, _ := mcfg.GetProjectConfigs(c, "file", false)
 
-					cfgs, err := cfg.GetProjectConfigs("file", false)
+					cfgs, err := cfg.GetProjectConfigs(c, "file", false)
 					So(err, ShouldBeNil)
 					So(cfgs, ShouldResemble, exp)
 				})
@@ -319,14 +317,14 @@ func TestConfig(t *testing.T) {
 
 		Convey(`GetProjects`, func() {
 			Convey(`Works.`, func() {
-				exp, _ := mcfg.GetProjects()
-				proj, err := cfg.GetProjects()
+				exp, _ := mcfg.GetProjects(c)
+				proj, err := cfg.GetProjects(c)
 				So(err, ShouldBeNil)
 				So(proj, ShouldResemble, exp)
 
 				advance()
-				exp2, _ := mcfg.GetProjects()
-				proj, err = cfg.GetProjects()
+				exp2, _ := mcfg.GetProjects(c)
+				proj, err = cfg.GetProjects(c)
 				So(err, ShouldBeNil)
 				So(proj, ShouldResemble, exp)
 				So(proj, ShouldNotResemble, exp2)
@@ -335,36 +333,36 @@ func TestConfig(t *testing.T) {
 
 		Convey(`GetRefConfigs`, func() {
 			Convey(`Works.`, func() {
-				exp, _ := mcfg.GetRefConfigs("file", false)
+				exp, _ := mcfg.GetRefConfigs(c, "file", false)
 
-				cfgs, err := cfg.GetRefConfigs("file", false)
+				cfgs, err := cfg.GetRefConfigs(c, "file", false)
 				So(err, ShouldBeNil)
 				So(cfgs, ShouldResemble, exp)
 
 				advance()
-				cfgs, err = cfg.GetRefConfigs("file", false)
+				cfgs, err = cfg.GetRefConfigs(c, "file", false)
 				So(err, ShouldBeNil)
 				So(cfgs, ShouldResemble, exp)
 
 				Convey(`Hash-only will returned cached full content.`, func() {
-					cfgs, err = cfg.GetRefConfigs("file", true)
+					cfgs, err = cfg.GetRefConfigs(c, "file", true)
 					So(err, ShouldBeNil)
 					So(cfgs, ShouldResemble, exp)
 				})
 			})
 
 			Convey(`Hash-only works.`, func() {
-				exp, _ := mcfg.GetRefConfigs("file", true)
+				exp, _ := mcfg.GetRefConfigs(c, "file", true)
 
-				cfgs, err := cfg.GetRefConfigs("file", true)
+				cfgs, err := cfg.GetRefConfigs(c, "file", true)
 				So(err, ShouldBeNil)
 				So(cfgs, ShouldResemble, exp)
 
 				Convey(`Full query will not use hash-only cached version.`, func() {
 					advance()
-					exp, _ := mcfg.GetRefConfigs("file", false)
+					exp, _ := mcfg.GetRefConfigs(c, "file", false)
 
-					cfgs, err := cfg.GetRefConfigs("file", false)
+					cfgs, err := cfg.GetRefConfigs(c, "file", false)
 					So(err, ShouldBeNil)
 					So(cfgs, ShouldResemble, exp)
 				})
@@ -373,14 +371,14 @@ func TestConfig(t *testing.T) {
 
 		Convey(`GetRefs`, func() {
 			Convey(`Works.`, func() {
-				exp, _ := mcfg.GetRefs("goesaway")
-				proj, err := cfg.GetRefs("goesaway")
+				exp, _ := mcfg.GetRefs(c, "goesaway")
+				proj, err := cfg.GetRefs(c, "goesaway")
 				So(err, ShouldBeNil)
 				So(proj, ShouldResemble, exp)
 
 				advance()
-				exp2, _ := mcfg.GetRefs("goesaway")
-				proj, err = cfg.GetRefs("goesaway")
+				exp2, _ := mcfg.GetRefs(c, "goesaway")
+				proj, err = cfg.GetRefs(c, "goesaway")
 				So(err, ShouldBeNil)
 				So(proj, ShouldResemble, exp)
 				So(proj, ShouldNotResemble, exp2)

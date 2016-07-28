@@ -123,8 +123,7 @@ func (r *registry) MakeDistributor(c context.Context, cfgName string) (d D, ver 
 // possibly using the in-memory or memcache version.
 func loadConfig(c context.Context, cfgName string) (ret *Config, err error) {
 	aid := info.Get(c).TrimmedAppID()
-	cfgSvc := config.Get(c)
-	distCfgObj, err := cfgSvc.GetConfig(fmt.Sprintf("services/%s", aid), "distributors.cfg", false)
+	distCfgObj, err := config.GetConfig(c, fmt.Sprintf("services/%s", aid), "distributors.cfg", false)
 	if err != nil {
 		return
 	}

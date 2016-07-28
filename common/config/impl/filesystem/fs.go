@@ -62,6 +62,8 @@ import (
 	"strings"
 	"sync"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/stringset"
@@ -289,14 +291,14 @@ func (fs *filesystemImpl) scanRevision(realPath nativePath, revision string) err
 	return nil
 }
 
-func (fs *filesystemImpl) ServiceURL() url.URL {
+func (fs *filesystemImpl) ServiceURL(ctx context.Context) url.URL {
 	return url.URL{
 		Scheme: "file",
 		Path:   fs.basePath.s(),
 	}
 }
 
-func (fs *filesystemImpl) GetConfig(cfgSet, cfgPath string, hashOnly bool) (*config.Config, error) {
+func (fs *filesystemImpl) GetConfig(ctx context.Context, cfgSet, cfgPath string, hashOnly bool) (*config.Config, error) {
 	configSet := configSet{luciPath(cfgSet)}
 	path := luciPath(cfgPath)
 
@@ -324,7 +326,7 @@ func (fs *filesystemImpl) GetConfig(cfgSet, cfgPath string, hashOnly bool) (*con
 	return nil, config.ErrNoConfig
 }
 
-func (fs *filesystemImpl) GetConfigByHash(contentHash string) (string, error) {
+func (fs *filesystemImpl) GetConfigByHash(ctx context.Context, contentHash string) (string, error) {
 	realPath, revision, err := fs.resolveBasePath()
 	if err != nil {
 		return "", err
@@ -343,7 +345,7 @@ func (fs *filesystemImpl) GetConfigByHash(contentHash string) (string, error) {
 	return "", config.ErrNoConfig
 }
 
-func (fs *filesystemImpl) GetConfigSetLocation(cfgSet string) (*url.URL, error) {
+func (fs *filesystemImpl) GetConfigSetLocation(ctx context.Context, cfgSet string) (*url.URL, error) {
 	configSet := configSet{luciPath(cfgSet)}
 
 	if err := configSet.validate(); err != nil {
@@ -377,7 +379,7 @@ func (fs *filesystemImpl) iterContentRevPath(fn func(lk lookupKey, cfg *config.C
 	return nil
 }
 
-func (fs *filesystemImpl) GetProjectConfigs(cfgPath string, hashesOnly bool) ([]config.Config, error) {
+func (fs *filesystemImpl) GetProjectConfigs(ctx context.Context, cfgPath string, hashesOnly bool) ([]config.Config, error) {
 	path := luciPath(cfgPath)
 
 	ret := make(configList, 0, 10)
@@ -397,7 +399,7 @@ func (fs *filesystemImpl) GetProjectConfigs(cfgPath string, hashesOnly bool) ([]
 	return ret, err
 }
 
-func (fs *filesystemImpl) GetProjects() ([]config.Project, error) {
+func (fs *filesystemImpl) GetProjects(ctx context.Context) ([]config.Project, error) {
 	realPath, revision, err := fs.resolveBasePath()
 	if err != nil {
 		return nil, err
@@ -417,7 +419,7 @@ func (fs *filesystemImpl) GetProjects() ([]config.Project, error) {
 	return ret, nil
 }
 
-func (fs *filesystemImpl) GetRefConfigs(cfgPath string, hashesOnly bool) ([]config.Config, error) {
+func (fs *filesystemImpl) GetRefConfigs(ctx context.Context, cfgPath string, hashesOnly bool) ([]config.Config, error) {
 	path := luciPath(cfgPath)
 
 	ret := make(configList, 0, 10)
@@ -437,7 +439,7 @@ func (fs *filesystemImpl) GetRefConfigs(cfgPath string, hashesOnly bool) ([]conf
 	return ret, err
 }
 
-func (fs *filesystemImpl) GetRefs(projectID string) ([]string, error) {
+func (fs *filesystemImpl) GetRefs(ctx context.Context, projectID string) ([]string, error) {
 	pfx := luciPath("projects/" + projectID + "/refs")
 	ret := stringset.New(0)
 	err := fs.iterContentRevPath(func(lk lookupKey, cfg *config.Config) {

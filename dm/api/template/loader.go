@@ -21,7 +21,7 @@ func LoadFile(c context.Context, project, ref string) (file *File, vers string, 
 	if ref != "" {
 		cfgSet += "/" + ref
 	}
-	templateData, err := config.Get(c).GetConfig(cfgSet, "dm/quest_templates.cfg", false)
+	templateData, err := config.GetConfig(c, cfgSet, "dm/quest_templates.cfg", false)
 	if err != nil {
 		return
 	}

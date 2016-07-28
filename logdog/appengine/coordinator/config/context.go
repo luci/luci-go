@@ -27,7 +27,7 @@ func UseConfig(c *context.Context) error {
 		if err != nil {
 			return err
 		}
-		*c = config.Set(*c, memory.New(mcfg))
+		*c = config.SetImplementation(*c, memory.New(mcfg))
 		return nil
 	}
 
@@ -38,7 +38,7 @@ func UseConfig(c *context.Context) error {
 		return err
 	}
 
-	*c = config.Set(*c, ci)
+	*c = config.SetImplementation(*c, ci)
 	return nil
 }
 

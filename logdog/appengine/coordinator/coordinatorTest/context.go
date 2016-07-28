@@ -90,7 +90,7 @@ func (e *Environment) ModServiceConfig(c context.Context, fn func(*svcconfig.Con
 	configSet, configPath := config.ServiceConfigPath(c)
 
 	var cfg svcconfig.Config
-	e.modTextProtobuf(configSet, configPath, &cfg, func() {
+	e.modTextProtobuf(c, configSet, configPath, &cfg, func() {
 		fn(&cfg)
 	})
 }
@@ -101,14 +101,14 @@ func (e *Environment) ModProjectConfig(c context.Context, proj luciConfig.Projec
 	configSet, configPath := luciConfig.ProjectConfigSet(proj), config.ProjectConfigPath(c)
 
 	var pcfg svcconfig.ProjectConfig
-	e.modTextProtobuf(configSet, configPath, &pcfg, func() {
+	e.modTextProtobuf(c, configSet, configPath, &pcfg, func() {
 		fn(&pcfg)
 	})
 }
 
 // IterateTumbleAll iterates all Tumble instances across all namespaces.
 func (e *Environment) IterateTumbleAll(c context.Context) {
-	projects, err := luciConfig.Get(c).GetProjects()
+	projects, err := luciConfig.GetProjects(c)
 	if err != nil {
 		panic(err)
 	}
@@ -120,8 +120,8 @@ func (e *Environment) IterateTumbleAll(c context.Context) {
 	}
 }
 
-func (e *Environment) modTextProtobuf(configSet, path string, msg proto.Message, fn func()) {
-	cfg, err := e.ConfigIface.GetConfig(configSet, path, false)
+func (e *Environment) modTextProtobuf(c context.Context, configSet, path string, msg proto.Message, fn func()) {
+	cfg, err := e.ConfigIface.GetConfig(c, configSet, path, false)
 
 	switch err {
 	case nil:
@@ -200,8 +200,8 @@ func Install() (context.Context, *Environment) {
 	c = settings.Use(c, settings.New(&settings.MemoryStorage{}))
 
 	// Setup luci-config configuration.
-	c = memory.Use(c, e.Config)
-	e.ConfigIface = luciConfig.Get(c)
+	e.ConfigIface = memory.New(e.Config)
+	c = luciConfig.SetImplementation(c, e.ConfigIface)
 
 	// luci-config: Projects.
 	projectName := info.Get(c).AppID()

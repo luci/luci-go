@@ -365,7 +365,7 @@ func fetchConfigFile(c context.Context, req *admin.ImportConfigRequest, path str
 		}
 	}
 
-	return cfg.GetConfig("services/"+inf.AppID(), path, false)
+	return cfg.GetConfig(c, "services/"+inf.AppID(), path, false)
 }
 
 // importCA imports CA definition from the config (or updates an existing one).

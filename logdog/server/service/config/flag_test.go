@@ -66,7 +66,7 @@ func TestFlag(t *testing.T) {
 			Convey(`Will load configuration from luci-config by default.`, func() {
 				o, err := f.CoordinatorOptions(c, &tsc)
 				So(err, ShouldBeNil)
-				So(o.Config, ShouldHaveSameTypeAs, remote.New(c, ""))
+				So(o.Config, ShouldHaveSameTypeAs, remote.New("https://example.com", nil))
 			})
 
 			Convey(`Will fail to create Options if no config service is specified.`, func() {

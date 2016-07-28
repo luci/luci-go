@@ -35,7 +35,7 @@ func ProjectConfig(c context.Context, project config.ProjectName) (*svcconfig.Pr
 	}
 
 	configSet, configPath := config.ProjectConfigSet(project), ProjectConfigPath(c)
-	cfg, err := config.Get(c).GetConfig(configSet, configPath, false)
+	cfg, err := config.GetConfig(c, configSet, configPath, false)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func AllProjectConfigs(c context.Context) (map[config.ProjectName]*svcconfig.Pro
 	// TODO: This endpoint is generally slow. Even though there is memcache-based
 	// config cache, this really should be loaded from a more failsafe cache like
 	// datastore to protect against config service outages.
-	configs, err := config.Get(c).GetProjectConfigs(ProjectConfigPath(c), false)
+	configs, err := config.GetProjectConfigs(c, ProjectConfigPath(c), false)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load project configs.")
 		return nil, err

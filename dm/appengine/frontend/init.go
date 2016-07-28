@@ -32,7 +32,7 @@ func addConfigProd(c context.Context) context.Context {
 	cfg, err := gaeconfig.New(c)
 	switch err {
 	case nil:
-		c = config.Set(c, cfg)
+		c = config.SetImplementation(c, cfg)
 	case gaeconfig.ErrNotConfigured:
 		logging.Warningf(c, "luci-config service url not configured. Configure this at /admin/settings/gaeconfig.")
 		fallthrough
@@ -60,7 +60,7 @@ func addConfigDev(c context.Context) context.Context {
 	if err != nil {
 		panic(fmt.Errorf("while setting up LUCI_DM_CONFIG_BASE_PATH: %s", err))
 	}
-	return config.Set(c, fs)
+	return config.SetImplementation(c, fs)
 }
 
 func baseDev() router.MiddlewareChain {

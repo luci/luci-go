@@ -85,7 +85,7 @@ type LazyConfig func(c context.Context) (config.Interface, error)
 func New(c LazyConfig, configFileName string) Catalog {
 	if c == nil {
 		c = func(ctx context.Context) (config.Interface, error) {
-			return config.Get(ctx), nil
+			return config.GetImplementation(ctx), nil
 		}
 	}
 	return &catalog{
@@ -132,7 +132,7 @@ func (cat *catalog) GetAllProjects(c context.Context) ([]string, error) {
 		return nil, err
 	}
 	// Enumerate all projects that have cron.cfg. Do not fetch actual configs yet.
-	cfgs, err := cfgService.GetProjectConfigs(cat.configFile(c), true)
+	cfgs, err := cfgService.GetProjectConfigs(c, cat.configFile(c), true)
 	if err != nil {
 		return nil, err
 	}
@@ -154,11 +154,11 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	if err != nil {
 		return nil, err
 	}
-	configSetURL, err := cfgService.GetConfigSetLocation("projects/" + projectID)
+	configSetURL, err := cfgService.GetConfigSetLocation(c, "projects/"+projectID)
 	if err != nil {
 		return nil, err
 	}
-	rawCfg, err := cfgService.GetConfig("projects/"+projectID, cat.configFile(c), false)
+	rawCfg, err := cfgService.GetConfig(c, "projects/"+projectID, cat.configFile(c), false)
 	if err == config.ErrNoConfig {
 		return nil, nil
 	}

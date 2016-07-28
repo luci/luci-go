@@ -15,7 +15,8 @@ import (
 
 func TestMemoryImpl(t *testing.T) {
 	Convey("with memory implementation", t, func() {
-		impl := config.Get(Use(context.Background(), map[string]ConfigSet{
+		ctx := context.Background()
+		impl := New(map[string]ConfigSet{
 			"services/abc": {
 				"file": "body",
 			},
@@ -38,10 +39,10 @@ func TestMemoryImpl(t *testing.T) {
 			"projects/proj3/refs/heads/blah": {
 				"filezzz": "project2 blah ref",
 			},
-		}))
+		})
 
 		Convey("GetConfig works", func() {
-			cfg, err := impl.GetConfig("services/abc", "file", false)
+			cfg, err := impl.GetConfig(ctx, "services/abc", "file", false)
 			So(err, ShouldBeNil)
 			So(cfg, ShouldResemble, &config.Config{
 				ConfigSet:   "services/abc",
@@ -53,7 +54,7 @@ func TestMemoryImpl(t *testing.T) {
 		})
 
 		Convey("GetConfig hashOnly works", func() {
-			cfg, err := impl.GetConfig("services/abc", "file", true)
+			cfg, err := impl.GetConfig(ctx, "services/abc", "file", true)
 			So(err, ShouldBeNil)
 			So(cfg, ShouldResemble, &config.Config{
 				ConfigSet:   "services/abc",
@@ -64,37 +65,37 @@ func TestMemoryImpl(t *testing.T) {
 		})
 
 		Convey("GetConfig missing set", func() {
-			cfg, err := impl.GetConfig("missing/set", "path", false)
+			cfg, err := impl.GetConfig(ctx, "missing/set", "path", false)
 			So(cfg, ShouldBeNil)
 			So(err, ShouldEqual, config.ErrNoConfig)
 		})
 
 		Convey("GetConfig missing path", func() {
-			cfg, err := impl.GetConfig("services/abc", "missing file", false)
+			cfg, err := impl.GetConfig(ctx, "services/abc", "missing file", false)
 			So(cfg, ShouldBeNil)
 			So(err, ShouldEqual, config.ErrNoConfig)
 		})
 
 		Convey("GetConfigByHash works", func() {
-			body, err := impl.GetConfigByHash("v1:fb4c35e739d53994aba7d3e0416a1082f11bfbba")
+			body, err := impl.GetConfigByHash(ctx, "v1:fb4c35e739d53994aba7d3e0416a1082f11bfbba")
 			So(err, ShouldBeNil)
 			So(body, ShouldEqual, "body")
 		})
 
 		Convey("GetConfigByHash missing hash", func() {
-			body, err := impl.GetConfigByHash("v1:blarg")
+			body, err := impl.GetConfigByHash(ctx, "v1:blarg")
 			So(err, ShouldEqual, config.ErrNoConfig)
 			So(body, ShouldEqual, "")
 		})
 
 		Convey("GetConfigSetLocation works", func() {
-			loc, err := impl.GetConfigSetLocation("services/abc")
+			loc, err := impl.GetConfigSetLocation(ctx, "services/abc")
 			So(err, ShouldBeNil)
 			So(loc, ShouldNotBeNil)
 		})
 
 		Convey("GetProjectConfigs works", func() {
-			cfgs, err := impl.GetProjectConfigs("file", false)
+			cfgs, err := impl.GetProjectConfigs(ctx, "file", false)
 			So(err, ShouldBeNil)
 			So(cfgs, ShouldResemble, []config.Config{
 				{
@@ -115,7 +116,7 @@ func TestMemoryImpl(t *testing.T) {
 		})
 
 		Convey("GetProjectConfigs hashesOnly works", func() {
-			cfgs, err := impl.GetProjectConfigs("file", true)
+			cfgs, err := impl.GetProjectConfigs(ctx, "file", true)
 			So(err, ShouldBeNil)
 			So(cfgs, ShouldResemble, []config.Config{
 				{
@@ -134,13 +135,13 @@ func TestMemoryImpl(t *testing.T) {
 		})
 
 		Convey("GetProjectConfigs unknown file", func() {
-			cfgs, err := impl.GetProjectConfigs("unknown file", false)
+			cfgs, err := impl.GetProjectConfigs(ctx, "unknown file", false)
 			So(err, ShouldBeNil)
 			So(len(cfgs), ShouldEqual, 0)
 		})
 
 		Convey("GetProjects works", func() {
-			proj, err := impl.GetProjects()
+			proj, err := impl.GetProjects(ctx)
 			So(err, ShouldBeNil)
 			So(proj, ShouldResemble, []config.Project{
 				{
@@ -162,7 +163,7 @@ func TestMemoryImpl(t *testing.T) {
 		})
 
 		Convey("GetRefConfigs works", func() {
-			cfg, err := impl.GetRefConfigs("file", false)
+			cfg, err := impl.GetRefConfigs(ctx, "file", false)
 			So(err, ShouldBeNil)
 			So(cfg, ShouldResemble, []config.Config{
 				{
@@ -190,7 +191,7 @@ func TestMemoryImpl(t *testing.T) {
 		})
 
 		Convey("GetRefConfigs hashesOnly works", func() {
-			cfg, err := impl.GetRefConfigs("file", true)
+			cfg, err := impl.GetRefConfigs(ctx, "file", true)
 			So(err, ShouldBeNil)
 			So(cfg, ShouldResemble, []config.Config{
 				{
@@ -215,23 +216,23 @@ func TestMemoryImpl(t *testing.T) {
 		})
 
 		Convey("GetRefConfigs no configs", func() {
-			cfg, err := impl.GetRefConfigs("unknown file", false)
+			cfg, err := impl.GetRefConfigs(ctx, "unknown file", false)
 			So(err, ShouldBeNil)
 			So(len(cfg), ShouldEqual, 0)
 		})
 
 		Convey("GetRefs works", func() {
-			refs, err := impl.GetRefs("proj1")
+			refs, err := impl.GetRefs(ctx, "proj1")
 			So(err, ShouldBeNil)
 			So(refs, ShouldResemble, []string{"refs/heads/master", "refs/heads/other"})
 
-			refs, err = impl.GetRefs("proj2")
+			refs, err = impl.GetRefs(ctx, "proj2")
 			So(err, ShouldBeNil)
 			So(refs, ShouldResemble, []string{"refs/heads/master"})
 		})
 
 		Convey("GetRefs unknown project", func() {
-			refs, err := impl.GetRefs("unknown project")
+			refs, err := impl.GetRefs(ctx, "unknown project")
 			So(err, ShouldBeNil)
 			So(len(refs), ShouldEqual, 0)
 		})

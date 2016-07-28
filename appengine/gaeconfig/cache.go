@@ -20,23 +20,12 @@ import (
 	"golang.org/x/net/context"
 )
 
-// AddCacheFilter adds a proccache-and-memcache-caching config filter to the context.
-//
-// A Transport from "gaeauth/client" capable of talking to the underlying
-// service should be installed prior to calling this method.
-func AddCacheFilter(c context.Context, expire time.Duration) context.Context {
-	return config.AddFilters(c, func(ic context.Context, cfg config.Interface) config.Interface {
-		return NewCacheFilter(ic, expire)(ic, cfg)
-	})
-}
-
-// NewCacheFilter returns proccache-and-memcache-caching config filter.
-func NewCacheFilter(c context.Context, expire time.Duration) config.Filter {
-	o := caching.Options{
+// WrapWithCache wraps config client with proccache-and-memcache-caching layer.
+func WrapWithCache(cfg config.Interface, expire time.Duration) config.Interface {
+	return caching.Wrap(cfg, caching.Options{
 		Cache:      &cache{},
 		Expiration: expire,
-	}
-	return caching.NewFilter(o)
+	})
 }
 
 type cache struct{}

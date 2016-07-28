@@ -13,6 +13,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/appengine/tumble"
+	"github.com/luci/luci-go/common/config"
 	config_mem "github.com/luci/luci-go/common/config/impl/memory"
 	"github.com/luci/luci-go/common/gcloud/pubsub"
 	googlepb "github.com/luci/luci-go/common/proto/google"
@@ -56,14 +57,14 @@ func Setup(fn distributor.FinishExecutionFn) (ttest *tumble.Testing, c context.C
 	ttest = &tumble.Testing{}
 	c = ttest.Context()
 	c = testsecrets.Use(c)
-	c = config_mem.Use(c, map[string]config_mem.ConfigSet{
+	c = config.SetImplementation(c, config_mem.New(map[string]config_mem.ConfigSet{
 		"services/app": {
 			"acls.cfg": `
 			readers: "reader_group"
 			writers: "writer_group"
 			`,
 		},
-	})
+	}))
 	c = auth.WithState(c, &authtest.FakeState{
 		Identity: identity.AnonymousIdentity,
 	})

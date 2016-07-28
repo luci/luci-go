@@ -15,7 +15,6 @@ import (
 	"github.com/luci/luci-go/common/config/impl/filesystem"
 	"github.com/luci/luci-go/common/config/impl/remote"
 	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/common/transport"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
 	"golang.org/x/net/context"
 )
@@ -73,10 +72,14 @@ func (f *Flags) CoordinatorOptions(c context.Context, client logdog.ServicesClie
 			return nil, errors.New("coordinator does not specify a config path")
 		}
 
+		var clientFactory remote.ClientFactory
 		if f.RoundTripper != nil {
-			c = transport.Set(c, f.RoundTripper)
+			rr := f.RoundTripper
+			clientFactory = func(context.Context) (*http.Client, error) {
+				return &http.Client{Transport: rr}, nil
+			}
 		}
-		ci = remote.New(c, ccfg.ConfigServiceUrl)
+		ci = remote.New(ccfg.ConfigServiceUrl, clientFactory)
 	}
 
 	return &Options{

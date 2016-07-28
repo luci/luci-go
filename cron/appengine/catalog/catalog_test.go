@@ -12,6 +12,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
 
+	"github.com/luci/luci-go/common/config"
 	memcfg "github.com/luci/luci-go/common/config/impl/memory"
 
 	"github.com/luci/luci-go/cron/appengine/messages"
@@ -103,7 +104,7 @@ func TestProtoValidation(t *testing.T) {
 
 func TestConfigReading(t *testing.T) {
 	Convey("with mocked config", t, func() {
-		ctx := memcfg.Use(context.Background(), mockedConfigs)
+		ctx := config.SetImplementation(context.Background(), memcfg.New(mockedConfigs))
 		cat := New(nil, "cron.cfg")
 		cat.RegisterTaskManager(noopTaskManager{})
 
