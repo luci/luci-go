@@ -847,7 +847,7 @@ func newTestContext(now time.Time) context.Context {
 
 func newTestEngine() (*engineImpl, *fakeTaskManager) {
 	mgr := &fakeTaskManager{}
-	cat := catalog.New(nil, "cron.cfg")
+	cat := catalog.New("cron.cfg")
 	cat.RegisterTaskManager(mgr)
 	return NewEngine(Config{
 		Catalog:              cat,

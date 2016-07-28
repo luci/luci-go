@@ -49,10 +49,16 @@ type Catalog interface {
 	UnmarshalTask(task []byte) (proto.Message, error)
 
 	// GetAllProjects returns a list of all known project ids.
+	//
+	// It assumes there's config.Interface implementation installed in
+	// the context, will panic if it's not there.
 	GetAllProjects(c context.Context) ([]string, error)
 
 	// GetProjectJobs returns a list of cron jobs defined within a project or
 	// empty list if no such project.
+	//
+	// It assumes there's config.Interface implementation installed in
+	// the context, will panic if it's not there.
 	GetProjectJobs(c context.Context, projectID string) ([]Definition, error)
 }
 
@@ -75,29 +81,19 @@ type Definition struct {
 	Task []byte
 }
 
-// LazyConfig makes an instance of config.Interface on demand.
-type LazyConfig func(c context.Context) (config.Interface, error)
-
 // New returns implementation of Catalog.
 //
 // If configFileName is not "", it specifies name of *.cfg file to read cron job
 // definition from. If it is "", <gae-app-id>.cfg will be used instead.
-func New(c LazyConfig, configFileName string) Catalog {
-	if c == nil {
-		c = func(ctx context.Context) (config.Interface, error) {
-			return config.GetImplementation(ctx), nil
-		}
-	}
+func New(configFileName string) Catalog {
 	return &catalog{
 		managers:       map[reflect.Type]task.Manager{},
-		lazyConfig:     c,
 		configFileName: configFileName,
 	}
 }
 
 type catalog struct {
 	managers       map[reflect.Type]task.Manager
-	lazyConfig     LazyConfig
 	configFileName string
 }
 
@@ -127,12 +123,8 @@ func (cat *catalog) UnmarshalTask(task []byte) (proto.Message, error) {
 }
 
 func (cat *catalog) GetAllProjects(c context.Context) ([]string, error) {
-	cfgService, err := cat.lazyConfig(c)
-	if err != nil {
-		return nil, err
-	}
 	// Enumerate all projects that have cron.cfg. Do not fetch actual configs yet.
-	cfgs, err := cfgService.GetProjectConfigs(c, cat.configFile(c), true)
+	cfgs, err := config.GetProjectConfigs(c, cat.configFile(c), true)
 	if err != nil {
 		return nil, err
 	}
@@ -150,15 +142,11 @@ func (cat *catalog) GetAllProjects(c context.Context) ([]string, error) {
 }
 
 func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Definition, error) {
-	cfgService, err := cat.lazyConfig(c)
+	configSetURL, err := config.GetConfigSetLocation(c, "projects/"+projectID)
 	if err != nil {
 		return nil, err
 	}
-	configSetURL, err := cfgService.GetConfigSetLocation(c, "projects/"+projectID)
-	if err != nil {
-		return nil, err
-	}
-	rawCfg, err := cfgService.GetConfig(c, "projects/"+projectID, cat.configFile(c), false)
+	rawCfg, err := config.GetConfig(c, "projects/"+projectID, cat.configFile(c), false)
 	if err == config.ErrNoConfig {
 		return nil, nil
 	}
