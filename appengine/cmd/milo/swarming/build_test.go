@@ -44,6 +44,7 @@ func TestBuild(t *testing.T) {
 		{"build-patch-failure", "build-patch-failure.json"},
 		{"build-pending", "build-pending.json"},
 		{"build-running", "build-running.json"},
+		{"build-unicode", "build-unicode.json"},
 		{"build-timeout", "build-timeout.json"},
 		{"build-canceled", "build-canceled.json"},
 		{"build-hang", "build-hang.json"},
