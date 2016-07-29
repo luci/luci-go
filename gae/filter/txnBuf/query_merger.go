@@ -11,7 +11,7 @@ import (
 	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
-	"github.com/luci/luci-go/common/stringset"
+	"github.com/luci/luci-go/common/data/stringset"
 )
 
 // queryToIter takes a FinalizedQuery and returns an iterator function which

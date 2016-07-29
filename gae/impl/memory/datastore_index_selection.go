@@ -12,7 +12,7 @@ import (
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
-	"github.com/luci/luci-go/common/stringset"
+	"github.com/luci/luci-go/common/data/stringset"
 )
 
 // ErrMissingIndex is returned when the current indexes are not sufficient

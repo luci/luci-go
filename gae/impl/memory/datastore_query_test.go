@@ -10,8 +10,8 @@ import (
 
 	dstore "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
-	"github.com/luci/luci-go/common/cmpbin"
-	"github.com/luci/luci-go/common/stringset"
+	"github.com/luci/luci-go/common/data/cmpbin"
+	"github.com/luci/luci-go/common/data/stringset"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )

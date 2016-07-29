@@ -11,8 +11,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/stringset"
 )
 
 var (

@@ -8,7 +8,7 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	mc "github.com/luci/gae/service/memcache"
-	"github.com/luci/luci-go/common/mathrand"
+	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"golang.org/x/net/context"
 )
 

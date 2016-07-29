@@ -8,7 +8,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/luci/luci-go/common/parallel"
+	"github.com/luci/luci-go/common/sync/parallel"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )

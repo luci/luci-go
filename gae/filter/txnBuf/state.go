@@ -12,9 +12,9 @@ import (
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
 	"github.com/luci/gae/service/info"
+	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/parallel"
-	"github.com/luci/luci-go/common/stringset"
+	"github.com/luci/luci-go/common/sync/parallel"
 	"golang.org/x/net/context"
 )
 

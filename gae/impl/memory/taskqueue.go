@@ -11,8 +11,8 @@ import (
 	"golang.org/x/net/context"
 
 	tq "github.com/luci/gae/service/taskqueue"
+	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/mathrand"
 )
 
 /////////////////////////////// public functions ///////////////////////////////

@@ -12,7 +12,7 @@ import (
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
-	"github.com/luci/luci-go/common/cmpbin"
+	"github.com/luci/luci-go/common/data/cmpbin"
 )
 
 func init() {

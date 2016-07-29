@@ -12,8 +12,8 @@ import (
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
-	"github.com/luci/luci-go/common/cmpbin"
-	"github.com/luci/luci-go/common/stringset"
+	"github.com/luci/luci-go/common/data/cmpbin"
+	"github.com/luci/luci-go/common/data/stringset"
 )
 
 // MaxQueryComponents was lifted from a hard-coded constant in dev_appserver.
