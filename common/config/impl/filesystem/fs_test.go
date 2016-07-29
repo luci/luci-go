@@ -28,13 +28,13 @@ func withFolder(files map[string]string, cb func(folder string)) {
 
 	for fpath, content := range files {
 		if content == "" {
-			content = filepath.ToSlash(fpath)
+			content = fpath
 		}
-		fpath = filepath.Join(folder, fpath)
+		fpath = filepath.Join(folder, filepath.FromSlash(fpath))
 		if err := os.MkdirAll(filepath.Dir(fpath), 0777); err != nil {
 			panic(err)
 		}
-		if err := ioutil.WriteFile(fpath, []byte(content), 0555); err != nil {
+		if err := ioutil.WriteFile(fpath, []byte(content), 0666); err != nil {
 			panic(err)
 		}
 	}
@@ -70,7 +70,7 @@ func TestFSImpl(t *testing.T) {
 					Path:        "something/file.cfg",
 					Content:     "projects/foobar/something/file.cfg",
 					ContentHash: "v1:e42874cc28bbba410f56790c24bb6f33e73ab784",
-					Revision:    "current",
+					Revision:    "dc6481ef835f1c7625a8aa64cdfc33e6a975f626",
 				}
 
 				Convey("All content", func() {
@@ -87,7 +87,7 @@ func TestFSImpl(t *testing.T) {
 						Path:        "something.cfg",
 						Content:     "services/foosrv/something.cfg",
 						ContentHash: "v1:71ecbefbed9d895b71205724d3e693bc2ec12246",
-						Revision:    "current",
+						Revision:    "dc6481ef835f1c7625a8aa64cdfc33e6a975f626",
 					})
 				})
 
@@ -99,7 +99,7 @@ func TestFSImpl(t *testing.T) {
 						Path:        "file.cfg",
 						Content:     "projects/foobar/refs/someref/file.cfg",
 						ContentHash: "v1:82b0518dd04288c285023ff0534658e5b0df93d4",
-						Revision:    "current",
+						Revision:    "dc6481ef835f1c7625a8aa64cdfc33e6a975f626",
 					})
 				})
 
@@ -140,14 +140,14 @@ func TestFSImpl(t *testing.T) {
 						Path:        "something/file.cfg",
 						Content:     "projects/doodly/something/file.cfg",
 						ContentHash: "v1:a3b4b34e5c8dd1dd8dff3e643504ce28f9335e6f",
-						Revision:    "current",
+						Revision:    "dc6481ef835f1c7625a8aa64cdfc33e6a975f626",
 					},
 					{
 						ConfigSet:   "projects/foobar",
 						Path:        "something/file.cfg",
 						Content:     "projects/foobar/something/file.cfg",
 						ContentHash: "v1:e42874cc28bbba410f56790c24bb6f33e73ab784",
-						Revision:    "current",
+						Revision:    "dc6481ef835f1c7625a8aa64cdfc33e6a975f626",
 					},
 				})
 			})
@@ -179,19 +179,19 @@ func TestFSImpl(t *testing.T) {
 						Path:        "file.cfg",
 						Content:     "projects/doodly/refs/otherref/file.cfg",
 						ContentHash: "v1:0de822c33630b5be0aa78497c0918e0dd773c7cb",
-						Revision:    "current",
+						Revision:    "dc6481ef835f1c7625a8aa64cdfc33e6a975f626",
 					}, {
 						ConfigSet:   "projects/doodly/refs/someref",
 						Path:        "file.cfg",
 						Content:     "projects/doodly/refs/someref/file.cfg",
 						ContentHash: "v1:5e9963aa1551a9e9db8e7bebe6164c3b5d8aee97",
-						Revision:    "current",
+						Revision:    "dc6481ef835f1c7625a8aa64cdfc33e6a975f626",
 					}, {
 						ConfigSet:   "projects/foobar/refs/someref",
 						Path:        "file.cfg",
 						Content:     "projects/foobar/refs/someref/file.cfg",
 						ContentHash: "v1:82b0518dd04288c285023ff0534658e5b0df93d4",
-						Revision:    "current",
+						Revision:    "dc6481ef835f1c7625a8aa64cdfc33e6a975f626",
 					},
 				})
 			})
@@ -206,6 +206,58 @@ func TestFSImpl(t *testing.T) {
 				So(refs, ShouldResemble, []string{"refs/otherref", "refs/someref"})
 			})
 
+		})
+	})
+
+	withFolder(map[string]string{
+		"projects/doodly/refs/otherref/file.cfg": "",
+		"projects/doodly/refs/someref/file.cfg":  "",
+	}, func(folder string) {
+		Convey("rereads configs in sloppy mode", t, func() {
+			client, err := New(folder)
+			So(err, ShouldBeNil)
+
+			cfgs, err := client.GetRefConfigs(ctx, "file.cfg", false)
+			So(err, ShouldBeNil)
+			So(cfgs, ShouldResemble, []config.Config{
+				{
+					ConfigSet:   "projects/doodly/refs/otherref",
+					Path:        "file.cfg",
+					Content:     "projects/doodly/refs/otherref/file.cfg",
+					ContentHash: "v1:0de822c33630b5be0aa78497c0918e0dd773c7cb",
+					Revision:    "37c845ce6697d135cfb03392c9589ed79bcb8b6c",
+				}, {
+					ConfigSet:   "projects/doodly/refs/someref",
+					Path:        "file.cfg",
+					Content:     "projects/doodly/refs/someref/file.cfg",
+					ContentHash: "v1:5e9963aa1551a9e9db8e7bebe6164c3b5d8aee97",
+					Revision:    "37c845ce6697d135cfb03392c9589ed79bcb8b6c",
+				},
+			})
+
+			err = ioutil.WriteFile(
+				filepath.Join(folder, filepath.FromSlash("projects/doodly/refs/otherref/file.cfg")),
+				[]byte("blarg"),
+				0666)
+			So(err, ShouldBeNil)
+
+			cfgs, err = client.GetRefConfigs(ctx, "file.cfg", false)
+			So(err, ShouldBeNil)
+			So(cfgs, ShouldResemble, []config.Config{
+				{
+					ConfigSet:   "projects/doodly/refs/otherref",
+					Path:        "file.cfg",
+					Content:     "blarg",
+					ContentHash: "v1:4ccb603a6ce7eb3d310e4a7aab1022f5ff57fc0b",
+					Revision:    "4eb3077a22e66ba9ea38dcab2e80b59dffe26de4",
+				}, {
+					ConfigSet:   "projects/doodly/refs/someref",
+					Path:        "file.cfg",
+					Content:     "projects/doodly/refs/someref/file.cfg",
+					ContentHash: "v1:5e9963aa1551a9e9db8e7bebe6164c3b5d8aee97",
+					Revision:    "4eb3077a22e66ba9ea38dcab2e80b59dffe26de4",
+				},
+			})
 		})
 	})
 

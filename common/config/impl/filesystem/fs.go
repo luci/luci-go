@@ -32,29 +32,32 @@
 //
 // During the execution of your app, you can change ./current from v1 to v2 (or
 // any other version), and that will be reflected in the config client's
-// Revision field. You would pass the path to `current` as the basePath in the
-// constructor of New or Use.
+// Revision field. That way you may "simulate" atomic changes in the
+// configuration. You would pass the path to `current` as the basePath in the
+// constructor of New.
 //
-// Single Version Mode
+// Sloppy Version Mode
 //
-// This is the same as Symlink mode, except that the folder will be scanned
-// exactly once, and the Revision will always be the literal string "current".
-// This is good if you just want to start with some fixed configuration, and
-// that's it.
+// The folder will be scanned each time a config file is accessed, and the
+// Revision will be derived based on the current content of all config files.
+// Some inconsistencies are possible if configs change during the directory
+// rescan (thus "sloppiness" of this mode). This is good if you just want to
+// be able to easily modify configs manually during the development without
+// restarting the server or messing with symlinks.
 //
 // Quirks
 //
-// This implementation is quite dumb, and will scan the entire version on the
-// first read access to it, caching the whole thing in memory (content, hashes
-// and metadata). This means that if you edit one of the files, the change will
-// not be reflected until you either restart the webserver, or you symlink to
-// a new version.
+// This implementation is quite dumb, and will scan the entire directory each
+// time configs are accessed, caching the whole thing in memory (content, hashes
+// and metadata) and never cleaning it up. This means that if you keep editing
+// the files, more and more stuff will accumulate in memory.
 package filesystem
 
 import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -84,14 +87,59 @@ type lookupKey struct {
 
 type filesystemImpl struct {
 	sync.RWMutex
+	scannedConfigs
 
 	basePath nativePath
 	islink   bool
 
-	contentRevPathMap       map[lookupKey]*config.Config
-	contentRevProject       map[lookupKey]*config.Project
-	contentHashMap          map[string]string
 	contentRevisionsScanned stringset.Set
+}
+
+type scannedConfigs struct {
+	contentHashMap    map[string]string
+	contentRevPathMap map[lookupKey]*config.Config
+	contentRevProject map[lookupKey]*config.Project
+}
+
+func newScannedConfigs() scannedConfigs {
+	return scannedConfigs{
+		contentHashMap:    map[string]string{},
+		contentRevPathMap: map[lookupKey]*config.Config{},
+		contentRevProject: map[lookupKey]*config.Project{},
+	}
+}
+
+// setRevision updates 'revision' fields of all objects owned by scannedConfigs.
+func (c *scannedConfigs) setRevision(revision string) {
+	newRevPathMap := make(map[lookupKey]*config.Config, len(c.contentRevPathMap))
+	for k, v := range c.contentRevPathMap {
+		k.revision = revision
+		v.Revision = revision
+		newRevPathMap[k] = v
+	}
+	c.contentRevPathMap = newRevPathMap
+
+	newRevProject := make(map[lookupKey]*config.Project, len(c.contentRevProject))
+	for k, v := range c.contentRevProject {
+		k.revision = revision
+		newRevProject[k] = v
+	}
+	c.contentRevProject = newRevProject
+}
+
+// deriveRevision generates a revision string from data in contentHashMap.
+func deriveRevision(c *scannedConfigs) string {
+	keys := make([]string, 0, len(c.contentHashMap))
+	for k := range c.contentHashMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	hsh := sha1.New()
+	for _, k := range keys {
+		fmt.Fprintf(hsh, "%s\n%s\n", k, c.contentHashMap[k])
+	}
+	digest := hsh.Sum(nil)
+	return hex.EncodeToString(digest[:])
 }
 
 // New returns an implementation of the config service which reads configuration
@@ -106,7 +154,7 @@ type filesystemImpl struct {
 //
 // If a symlink is used, all Revision fields will be the 'revision' portion of
 // that path. If a non-symlink path is isued, the Revision fields will be
-// "current".
+// derived based on the contents of the files in the directory.
 //
 // Any unrecognized paths will be ignored. If basePath is not a link-to-folder,
 // and not a folder, this will panic.
@@ -127,9 +175,7 @@ func New(basePath string) (config.Interface, error) {
 	ret := &filesystemImpl{
 		basePath:                nativePath(basePath),
 		islink:                  (inf.Mode() & os.ModeSymlink) != 0,
-		contentHashMap:          map[string]string{},
-		contentRevPathMap:       map[lookupKey]*config.Config{},
-		contentRevProject:       map[lookupKey]*config.Project{},
+		scannedConfigs:          newScannedConfigs(),
 		contentRevisionsScanned: stringset.New(1),
 	}
 
@@ -163,7 +209,7 @@ func (fs *filesystemImpl) resolveBasePath() (realPath nativePath, revision strin
 		revision = toks[len(toks)-1]
 		return
 	}
-	return fs.basePath, "current", nil
+	return fs.basePath, "", nil
 }
 
 func parsePath(rel nativePath) (configSet configSet, path luciPath, ok bool) {
@@ -195,16 +241,8 @@ func parsePath(rel nativePath) (configSet configSet, path luciPath, ok bool) {
 	return
 }
 
-func (fs *filesystemImpl) scanRevision(realPath nativePath, revision string) error {
-	fs.RLock()
-	done := fs.contentRevisionsScanned.Has(revision)
-	fs.RUnlock()
-	if done {
-		return nil
-	}
-
-	fs.Lock()
-	defer fs.Unlock()
+func scanDirectory(realPath nativePath) (*scannedConfigs, error) {
+	ret := newScannedConfigs()
 
 	err := filepath.Walk(realPath.s(), func(rawPath string, info os.FileInfo, err error) error {
 		path := nativePath(rawPath)
@@ -223,7 +261,7 @@ func (fs *filesystemImpl) scanRevision(realPath nativePath, revision string) err
 			if !ok {
 				return nil
 			}
-			lk := lookupKey{revision, configSet, cfgPath}
+			lk := lookupKey{"", configSet, cfgPath}
 
 			data, err := path.read()
 			if err != nil {
@@ -240,7 +278,7 @@ func (fs *filesystemImpl) scanRevision(realPath nativePath, revision string) err
 				if err != nil {
 					return err
 				}
-				fs.contentRevProject[lk] = &config.Project{
+				ret.contentRevProject[lk] = &config.Project{
 					ID:       toks[1],
 					Name:     proj.Name,
 					RepoType: "FILESYSTEM",
@@ -254,31 +292,28 @@ func (fs *filesystemImpl) scanRevision(realPath nativePath, revision string) err
 			hsh := sha1.Sum(data)
 			hexHsh := "v1:" + hex.EncodeToString(hsh[:])
 
-			fs.contentHashMap[hexHsh] = content
+			ret.contentHashMap[hexHsh] = content
 
-			fs.contentRevPathMap[lk] = &config.Config{
+			ret.contentRevPathMap[lk] = &config.Config{
 				ConfigSet: configSet.s(), Path: cfgPath.s(),
-
 				Content:     content,
 				ContentHash: hexHsh,
-
-				Revision: revision,
 			}
 		}
 
 		return nil
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	for lk := range fs.contentRevPathMap {
+	for lk := range ret.contentRevPathMap {
 		cs := lk.configSet
 		if cs.isProject() {
-			pk := lookupKey{revision, cs, ""}
-			if fs.contentRevProject[pk] == nil {
+			pk := lookupKey{"", cs, ""}
+			if ret.contentRevProject[pk] == nil {
 				id := cs.id()
-				fs.contentRevProject[pk] = &config.Project{
+				ret.contentRevProject[pk] = &config.Project{
 					ID:       id,
 					Name:     id,
 					RepoType: "FILESYSTEM",
@@ -287,8 +322,80 @@ func (fs *filesystemImpl) scanRevision(realPath nativePath, revision string) err
 		}
 	}
 
-	fs.contentRevisionsScanned.Add(revision)
+	return &ret, nil
+}
+
+func (fs *filesystemImpl) scanHeadRevision() (string, error) {
+	realPath, revision, err := fs.resolveBasePath()
+	if err != nil {
+		return "", err
+	}
+
+	// Using symlinks? The revision is derived from the symlink target name,
+	// do not rescan it all the time.
+	if revision != "" {
+		if err := fs.scanSymlinkedRevision(realPath, revision); err != nil {
+			return "", err
+		}
+		return revision, nil
+	}
+
+	// If using regular directory, rescan it to find if anything changed.
+	return fs.scanCurrentRevision(realPath)
+}
+
+func (fs *filesystemImpl) scanSymlinkedRevision(realPath nativePath, revision string) error {
+	fs.RLock()
+	done := fs.contentRevisionsScanned.Has(revision)
+	fs.RUnlock()
+	if done {
+		return nil
+	}
+
+	fs.Lock()
+	defer fs.Unlock()
+
+	scanned, err := scanDirectory(realPath)
+	if err != nil {
+		return err
+	}
+	fs.slurpScannedConfigs(revision, scanned)
 	return nil
+}
+
+func (fs *filesystemImpl) scanCurrentRevision(realPath nativePath) (string, error) {
+	// Forbid parallel scans to avoid hitting the disk too hard.
+	//
+	// TODO(vadimsh): Can use some sort of rate limiting instead if this code is
+	// ever used in production.
+	fs.Lock()
+	defer fs.Unlock()
+
+	scanned, err := scanDirectory(realPath)
+	if err != nil {
+		return "", err
+	}
+
+	revision := deriveRevision(scanned)
+	if fs.contentRevisionsScanned.Has(revision) {
+		return revision, nil // no changes to configs
+	}
+	fs.slurpScannedConfigs(revision, scanned)
+	return revision, nil
+}
+
+func (fs *filesystemImpl) slurpScannedConfigs(revision string, scanned *scannedConfigs) {
+	scanned.setRevision(revision)
+	for k, v := range scanned.contentHashMap {
+		fs.contentHashMap[k] = v
+	}
+	for k, v := range scanned.contentRevPathMap {
+		fs.contentRevPathMap[k] = v
+	}
+	for k, v := range scanned.contentRevProject {
+		fs.contentRevProject[k] = v
+	}
+	fs.contentRevisionsScanned.Add(revision)
 }
 
 func (fs *filesystemImpl) ServiceURL(ctx context.Context) url.URL {
@@ -306,12 +413,8 @@ func (fs *filesystemImpl) GetConfig(ctx context.Context, cfgSet, cfgPath string,
 		return nil, err
 	}
 
-	realPath, revision, err := fs.resolveBasePath()
+	revision, err := fs.scanHeadRevision()
 	if err != nil {
-		return nil, err
-	}
-
-	if err = fs.scanRevision(realPath, revision); err != nil {
 		return nil, err
 	}
 
@@ -327,12 +430,7 @@ func (fs *filesystemImpl) GetConfig(ctx context.Context, cfgSet, cfgPath string,
 }
 
 func (fs *filesystemImpl) GetConfigByHash(ctx context.Context, contentHash string) (string, error) {
-	realPath, revision, err := fs.resolveBasePath()
-	if err != nil {
-		return "", err
-	}
-
-	if err = fs.scanRevision(realPath, revision); err != nil {
+	if _, err := fs.scanHeadRevision(); err != nil {
 		return "", err
 	}
 
@@ -362,19 +460,17 @@ func (fs *filesystemImpl) GetConfigSetLocation(ctx context.Context, cfgSet strin
 }
 
 func (fs *filesystemImpl) iterContentRevPath(fn func(lk lookupKey, cfg *config.Config)) error {
-	realPath, revision, err := fs.resolveBasePath()
+	revision, err := fs.scanHeadRevision()
 	if err != nil {
-		return err
-	}
-
-	if err = fs.scanRevision(realPath, revision); err != nil {
 		return err
 	}
 
 	fs.RLock()
 	defer fs.RUnlock()
 	for lk, cfg := range fs.contentRevPathMap {
-		fn(lk, cfg)
+		if lk.revision == revision {
+			fn(lk, cfg)
+		}
 	}
 	return nil
 }
@@ -400,19 +496,17 @@ func (fs *filesystemImpl) GetProjectConfigs(ctx context.Context, cfgPath string,
 }
 
 func (fs *filesystemImpl) GetProjects(ctx context.Context) ([]config.Project, error) {
-	realPath, revision, err := fs.resolveBasePath()
+	revision, err := fs.scanHeadRevision()
 	if err != nil {
-		return nil, err
-	}
-
-	if err = fs.scanRevision(realPath, revision); err != nil {
 		return nil, err
 	}
 
 	fs.RLock()
 	ret := make(projList, 0, len(fs.contentRevProject))
-	for _, proj := range fs.contentRevProject {
-		ret = append(ret, *proj)
+	for lk, proj := range fs.contentRevProject {
+		if lk.revision == revision {
+			ret = append(ret, *proj)
+		}
 	}
 	fs.RUnlock()
 	sort.Sort(ret)
