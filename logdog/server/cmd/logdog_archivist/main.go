@@ -14,7 +14,7 @@ import (
 	"github.com/luci/luci-go/common/gcloud/gs"
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/parallel"
+	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/metric"

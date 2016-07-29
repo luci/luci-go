@@ -19,7 +19,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/stringset"
+	"github.com/luci/luci-go/common/data/stringset"
 )
 
 // ConfigSet is a mapping from a file path to a config file body.

@@ -12,8 +12,8 @@ import (
 	"syscall"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/ctxcmd"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/system/ctxcmd"
 	"github.com/luci/luci-go/logdog/client/annotee"
 	"github.com/luci/luci-go/logdog/client/annotee/annotation"
 	"github.com/luci/luci-go/logdog/common/types"

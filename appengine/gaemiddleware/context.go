@@ -13,13 +13,13 @@ import (
 	"github.com/luci/gae/filter/dscache"
 	"github.com/luci/gae/impl/prod"
 
-	"github.com/luci/luci-go/common/cacheContext"
 	"github.com/luci/luci-go/common/config"
+	"github.com/luci/luci-go/common/data/caching/cacheContext"
+	"github.com/luci/luci-go/common/data/caching/proccache"
 	"github.com/luci/luci-go/common/logging"
 
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/middleware"
-	"github.com/luci/luci-go/server/proccache"
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/settings"
 

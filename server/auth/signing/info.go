@@ -10,8 +10,8 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/data/caching/proccache"
 	"github.com/luci/luci-go/server/auth/internal"
-	"github.com/luci/luci-go/server/proccache"
 )
 
 // ServiceInfo describes identity of some service.

@@ -18,7 +18,7 @@ import (
 
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/mathrand"
+	"github.com/luci/luci-go/common/data/rand/mathrand"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"

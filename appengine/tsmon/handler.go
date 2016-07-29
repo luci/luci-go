@@ -13,7 +13,7 @@ import (
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/parallel"
+	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/server/router"
 )

@@ -20,7 +20,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/lazyslot"
+	"github.com/luci/luci-go/common/data/caching/lazyslot"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
 )

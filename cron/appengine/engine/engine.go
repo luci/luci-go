@@ -29,10 +29,10 @@ import (
 
 	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/data/rand/mathrand"
+	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/mathrand"
-	"github.com/luci/luci-go/common/stringset"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/tokens"

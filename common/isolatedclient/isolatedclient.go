@@ -19,7 +19,7 @@ import (
 	"github.com/luci/luci-go/common/isolated"
 	"github.com/luci/luci-go/common/lhttp"
 	"github.com/luci/luci-go/common/retry"
-	"github.com/luci/luci-go/common/tracer"
+	"github.com/luci/luci-go/common/runtime/tracer"
 )
 
 // compressedBufSize is the size of the read buffer that will be used to pull

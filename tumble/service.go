@@ -16,7 +16,7 @@ import (
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/parallel"
+	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/server/router"
 	"golang.org/x/net/context"
 )

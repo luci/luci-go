@@ -27,10 +27,10 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/config"
 	cfgmem "github.com/luci/luci-go/common/config/impl/memory"
+	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/common/stringset"
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 

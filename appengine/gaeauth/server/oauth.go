@@ -20,11 +20,11 @@ import (
 	"github.com/luci/gae/service/urlfetch"
 	"github.com/luci/gae/service/user"
 
+	"github.com/luci/luci-go/common/data/caching/proccache"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
-	"github.com/luci/luci-go/server/proccache"
 )
 
 // EmailScope is a scope used to identifies user's email. Present in most tokens

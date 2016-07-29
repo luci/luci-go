@@ -7,7 +7,7 @@ package dm
 import (
 	"fmt"
 
-	"github.com/luci/luci-go/common/api/template"
+	"github.com/luci/luci-go/common/data/text/templateproto"
 )
 
 // JSONObjectMaxLength is the maximum number of bytes that may be present in the
@@ -42,7 +42,7 @@ func (j *JsonResult) Normalize() error {
 			"JSONObject.Object length exceeds max non-normalized length: %d > %d (max)",
 			len(j.Object), jsonNonNormalizedSize)
 	}
-	normed, err := template.NormalizeJSON(j.Object, true)
+	normed, err := templateproto.NormalizeJSON(j.Object, true)
 	if err != nil {
 		return err
 	}

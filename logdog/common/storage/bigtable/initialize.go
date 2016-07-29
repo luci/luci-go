@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
-	"github.com/luci/luci-go/common/stringset"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"golang.org/x/net/context"
 	"google.golang.org/cloud/bigtable"

@@ -10,7 +10,7 @@ import (
 
 	"github.com/luci/luci-go/appengine/gaetesting"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/server/proccache"
+	"github.com/luci/luci-go/common/data/caching/proccache"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

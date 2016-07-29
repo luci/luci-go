@@ -10,9 +10,9 @@ import (
 	"github.com/luci/gae/filter/txnBuf"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/stringset"
 	"golang.org/x/net/context"
 )
 

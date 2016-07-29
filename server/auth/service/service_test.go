@@ -20,10 +20,10 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/data/caching/proccache"
 	"github.com/luci/luci-go/server/auth/service/protocol"
 	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/auth/signing/signingtest"
-	"github.com/luci/luci-go/server/proccache"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

@@ -9,7 +9,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/luci/luci-go/common/indented"
+	"github.com/luci/luci-go/common/data/text/indented"
 	"github.com/luci/luci-go/common/proto/google/descriptor"
 )
 

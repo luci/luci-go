@@ -17,10 +17,10 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/ctxcmd"
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/parallel"
+	"github.com/luci/luci-go/common/sync/parallel"
+	"github.com/luci/luci-go/common/system/ctxcmd"
 
 	"golang.org/x/net/context"
 )

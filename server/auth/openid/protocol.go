@@ -14,10 +14,10 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/data/caching/proccache"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/internal"
-	"github.com/luci/luci-go/server/proccache"
 	"github.com/luci/luci-go/server/tokens"
 )
 

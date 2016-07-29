@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/luci/luci-go/common/data/recordio"
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/recordio"
 	"github.com/luci/luci-go/common/retry"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/client/butler/output"

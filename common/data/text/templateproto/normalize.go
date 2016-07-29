@@ -2,7 +2,7 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-package template
+package templateproto
 
 import (
 	"bytes"
@@ -13,8 +13,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/stringset"
 )
 
 // Normalize will normalize all of the Templates in this message, returning an

@@ -10,10 +10,10 @@ import (
 	"io"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/luci/luci-go/common/data/recordio"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/parallel"
-	"github.com/luci/luci-go/common/recordio"
+	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/logdog/api/logpb"
 )
 

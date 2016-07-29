@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luci/luci-go/common/chunkstream"
+	"github.com/luci/luci-go/common/data/chunkstream"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"

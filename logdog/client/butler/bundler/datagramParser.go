@@ -7,7 +7,7 @@ package bundler
 import (
 	"io"
 
-	"github.com/luci/luci-go/common/recordio"
+	"github.com/luci/luci-go/common/data/recordio"
 	"github.com/luci/luci-go/logdog/api/logpb"
 )
 

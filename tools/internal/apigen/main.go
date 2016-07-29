@@ -22,8 +22,8 @@ import (
 
 	"github.com/luci/luci-go/common/clock"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/parallel"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/sync/parallel"
 	"golang.org/x/net/context"
 )
 

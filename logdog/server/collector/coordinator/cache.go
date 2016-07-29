@@ -10,10 +10,10 @@ import (
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/config"
+	"github.com/luci/luci-go/common/data/caching/lru"
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/lru"
-	"github.com/luci/luci-go/common/promise"
+	"github.com/luci/luci-go/common/sync/promise"
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/metric"
 	tsmon_types "github.com/luci/luci-go/common/tsmon/types"

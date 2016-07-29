@@ -12,9 +12,9 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/config"
+	"github.com/luci/luci-go/common/data/caching/proccache"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
-	"github.com/luci/luci-go/server/proccache"
 	"golang.org/x/net/context"
 )
 

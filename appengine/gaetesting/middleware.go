@@ -8,7 +8,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/luci-go/server/proccache"
+	"github.com/luci/luci-go/common/data/caching/proccache"
 	"github.com/luci/luci-go/server/secrets/testsecrets"
 )
 

@@ -18,10 +18,10 @@ import (
 	"github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/appengine/memlock"
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/parallel"
-	"github.com/luci/luci-go/common/stringset"
+	"github.com/luci/luci-go/common/sync/parallel"
 	"golang.org/x/net/context"
 )
 

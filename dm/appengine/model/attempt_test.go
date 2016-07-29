@@ -13,8 +13,8 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/luci/luci-go/common/bit_field"
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/data/bit_field"
 	google_pb "github.com/luci/luci-go/common/proto/google"
 	. "github.com/luci/luci-go/common/testing/assertions"
 
@@ -86,7 +86,7 @@ func TestAttempt(t *testing.T) {
 				So(a.ModifyState(c, dm.Attempt_EXECUTING), ShouldBeNil)
 				clk.Add(10 * time.Second)
 				So(a.ModifyState(c, dm.Attempt_WAITING), ShouldBeNil)
-				a.DepMap = bf.Make(4)
+				a.DepMap = bit_field.Make(4)
 				a.DepMap.Set(2)
 
 				atmpt := dm.NewAttemptWaiting(3)
@@ -102,7 +102,7 @@ func TestAttempt(t *testing.T) {
 				a := MakeAttempt(c, dm.NewAttemptID("quest", 10))
 				a.State = dm.Attempt_FINISHED
 				a.CurExecution = math.MaxUint32
-				a.DepMap = bf.Make(20)
+				a.DepMap = bit_field.Make(20)
 				a.Result.Data = dm.NewJSONObject("", testclock.TestTimeUTC.Add(10*time.Second))
 
 				a.DepMap.Set(1)

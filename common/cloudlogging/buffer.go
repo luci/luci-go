@@ -7,8 +7,8 @@ package cloudlogging
 import (
 	"time"
 
-	"github.com/luci/luci-go/common/parallel"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/sync/parallel"
 	"golang.org/x/net/context"
 )
 

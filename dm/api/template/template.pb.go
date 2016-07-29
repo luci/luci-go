@@ -16,7 +16,7 @@ package dmTemplate
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import template "github.com/luci/luci-go/common/api/template"
+import template "github.com/luci/luci-go/common/data/text/templateproto"
 import dm1 "github.com/luci/luci-go/dm/api/service/v1"
 
 // Reference imports to suppress errors if they are not otherwise used.

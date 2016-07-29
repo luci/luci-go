@@ -16,7 +16,7 @@ import (
 
 	"github.com/luci/luci-go/common/isolated"
 	"github.com/luci/luci-go/common/isolatedclient"
-	"github.com/luci/luci-go/common/tracer"
+	"github.com/luci/luci-go/common/runtime/tracer"
 )
 
 // SimpleFuture is a Future that can be edited.

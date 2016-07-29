@@ -10,8 +10,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	bf "github.com/luci/luci-go/common/bit_field"
 	"github.com/luci/luci-go/common/clock"
+	bf "github.com/luci/luci-go/common/data/bit_field"
 	google_pb "github.com/luci/luci-go/common/proto/google"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 )

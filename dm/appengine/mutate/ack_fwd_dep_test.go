@@ -9,7 +9,7 @@ import (
 
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/bit_field"
+	"github.com/luci/luci-go/common/data/bit_field"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	"github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/model"
@@ -42,7 +42,7 @@ func TestAckFwdDep(t *testing.T) {
 			Convey("AddingDeps", func() {
 				Convey("good", func() {
 					a.State = dm.Attempt_WAITING
-					a.DepMap = bf.Make(2)
+					a.DepMap = bit_field.Make(2)
 					So(ds.Put(a, fwd), ShouldBeNil)
 
 					Convey("not-last", func() {
@@ -72,7 +72,7 @@ func TestAckFwdDep(t *testing.T) {
 
 				Convey("bad", func() {
 					a.State = dm.Attempt_WAITING
-					a.DepMap = bf.Make(2)
+					a.DepMap = bit_field.Make(2)
 					a.CurExecution = 1
 					So(ds.Put(a, fwd), ShouldBeNil)
 

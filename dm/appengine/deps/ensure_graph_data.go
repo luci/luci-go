@@ -12,10 +12,10 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 
+	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/parallel"
-	"github.com/luci/luci-go/common/stringset"
+	"github.com/luci/luci-go/common/sync/parallel"
 
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/api/template"

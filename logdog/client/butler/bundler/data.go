@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luci/luci-go/common/chunkstream"
+	"github.com/luci/luci-go/common/data/chunkstream"
 )
 
 type dataPoolRegistry struct {

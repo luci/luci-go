@@ -11,11 +11,11 @@ import (
 	"os/exec"
 	"sync"
 
-	"github.com/luci/luci-go/common/ctxcmd"
-	"github.com/luci/luci-go/common/environ"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/flag/nestedflagset"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/system/ctxcmd"
+	"github.com/luci/luci-go/common/system/environ"
 	"github.com/luci/luci-go/logdog/client/bootstrapResult"
 	"github.com/luci/luci-go/logdog/client/butler"
 	"github.com/luci/luci-go/logdog/client/butler/bootstrap"

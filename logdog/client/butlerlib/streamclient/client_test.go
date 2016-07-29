@@ -12,7 +12,7 @@ import (
 
 	"github.com/luci/luci-go/common/clock/clockflag"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/recordio"
+	"github.com/luci/luci-go/common/data/recordio"
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
 	. "github.com/smartystreets/goconvey/convey"
 )

@@ -21,10 +21,10 @@ import (
 	"github.com/luci/luci-go/client/flagpb"
 	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/ctxcmd"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/prpc"
+	"github.com/luci/luci-go/common/system/ctxcmd"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/maruel/subcommands"
 )

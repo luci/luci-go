@@ -10,7 +10,7 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/api/template"
+	"github.com/luci/luci-go/common/data/text/templateproto"
 )
 
 // IsEmpty returns true if this metadata retry message only contains
@@ -72,13 +72,13 @@ func (q *Quest_Desc) Normalize() error {
 		return fmt.Errorf("quest payload is too large: %d > %d",
 			length, QuestDescPayloadMaxLength)
 	}
-	normed, err := template.NormalizeJSON(q.Parameters, true)
+	normed, err := templateproto.NormalizeJSON(q.Parameters, true)
 	if err != nil {
 		return fmt.Errorf("failed to normalize parameters: %s", err)
 	}
 	q.Parameters = normed
 
-	normed, err = template.NormalizeJSON(q.DistributorParameters, true)
+	normed, err = templateproto.NormalizeJSON(q.DistributorParameters, true)
 	if err != nil {
 		return fmt.Errorf("failed to normalize distributor parameters: %s", err)
 	}

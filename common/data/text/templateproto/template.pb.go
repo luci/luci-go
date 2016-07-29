@@ -14,7 +14,7 @@ It has these top-level messages:
 	File
 	Specifier
 */
-package template
+package templateproto
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"

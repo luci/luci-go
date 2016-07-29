@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/recordio"
+	"github.com/luci/luci-go/common/data/recordio"
 	"github.com/luci/luci-go/common/testing/assertions"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	. "github.com/smartystreets/goconvey/convey"

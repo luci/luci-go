@@ -17,9 +17,9 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/common/stringset"
 
 	"github.com/luci/luci-go/client/cipd/common"
 	"github.com/luci/luci-go/client/cipd/internal/messages"

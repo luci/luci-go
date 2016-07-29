@@ -16,9 +16,9 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/bit_field"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/data/bit_field"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/memlogger"
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -90,8 +90,8 @@ func (u *User) MakeOutgoingMessage(c context.Context, msg string, toUsers ...str
 		FromUser:   datastore.Get(c).KeyForObj(u),
 		Message:    msg,
 		Recipients: toUsers,
-		Success:    bf.Make(uint32(len(toUsers))),
-		Failure:    bf.Make(uint32(len(toUsers))),
+		Success:    bit_field.Make(uint32(len(toUsers))),
+		Failure:    bit_field.Make(uint32(len(toUsers))),
 	}
 }
 
@@ -113,8 +113,8 @@ type OutgoingMessage struct {
 	Message    string   `gae:",noindex"`
 	Recipients []string `gae:",noindex"`
 
-	Success bf.BitField
-	Failure bf.BitField
+	Success bit_field.BitField
+	Failure bit_field.BitField
 
 	Notified bool
 	TimedOut bool

@@ -4,7 +4,7 @@
 
 //go:generate go run ./tool/gen.go
 
-package bf
+package bit_field
 
 import (
 	"bytes"

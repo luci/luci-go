@@ -68,8 +68,8 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/config"
+	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/stringset"
 )
 
 // ProjectConfiguration is the struct that will be used to read the

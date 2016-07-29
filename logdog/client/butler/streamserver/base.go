@@ -13,7 +13,7 @@ import (
 
 	"github.com/luci/luci-go/common/iotools"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/paniccatcher"
+	"github.com/luci/luci-go/common/runtime/paniccatcher"
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
 	"golang.org/x/net/context"
 )

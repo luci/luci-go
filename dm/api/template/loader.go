@@ -9,8 +9,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/api/template"
 	"github.com/luci/luci-go/common/config"
+	"github.com/luci/luci-go/common/data/text/templateproto"
 	"github.com/luci/luci-go/common/proto"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 )
@@ -36,7 +36,7 @@ func LoadFile(c context.Context, project, ref string) (file *File, vers string, 
 }
 
 // Render renders the specified template with the given parameters.
-func (f *File) Render(spec *template.Specifier) (*dm.Quest_Desc, error) {
+func (f *File) Render(spec *templateproto.Specifier) (*dm.Quest_Desc, error) {
 	t := f.Template[spec.TemplateName]
 	params, err := t.Parameters.Render(spec.Params)
 	if err != nil {

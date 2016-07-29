@@ -9,7 +9,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/luci/luci-go/common/terminal"
+	"github.com/luci/luci-go/common/system/terminal"
 )
 
 // IsDirectory returns true if path is a directory and is accessible.

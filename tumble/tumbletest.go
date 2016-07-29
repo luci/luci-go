@@ -18,7 +18,7 @@ import (
 	"github.com/luci/gae/service/taskqueue"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/cryptorand"
+	"github.com/luci/luci-go/common/data/rand/cryptorand"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/memlogger"
 	"github.com/luci/luci-go/server/router"

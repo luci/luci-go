@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/cryptorand"
+	"github.com/luci/luci-go/common/data/rand/cryptorand"
 	"github.com/luci/luci-go/common/gcloud/pubsub"
 	"github.com/luci/luci-go/common/grpcutil"
 	log "github.com/luci/luci-go/common/logging"

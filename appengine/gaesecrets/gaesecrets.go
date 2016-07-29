@@ -22,8 +22,8 @@ import (
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/data/caching/proccache"
 	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/server/proccache"
 	"github.com/luci/luci-go/server/secrets"
 )
 

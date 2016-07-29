@@ -7,7 +7,7 @@ package bootstrap
 
 import (
 	"github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/environ"
+	"github.com/luci/luci-go/common/system/environ"
 	"github.com/luci/luci-go/logdog/client/butlerlib/bootstrap"
 	"github.com/luci/luci-go/logdog/common/types"
 )

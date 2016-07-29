@@ -14,9 +14,9 @@ import (
 	"google.golang.org/api/pubsub/v1"
 
 	"github.com/luci/luci-go/appengine/gaeauth/client"
+	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/stringset"
 )
 
 // createPubSubService returns configured instance of pubsub.Service.

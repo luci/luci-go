@@ -14,7 +14,7 @@ import (
 	"unicode/utf8"
 
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/cmpbin"
+	"github.com/luci/luci-go/common/data/cmpbin"
 )
 
 type componentIDType string

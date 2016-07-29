@@ -28,7 +28,7 @@ import (
 	"github.com/luci/luci-go/common/flag/multiflag"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
-	"github.com/luci/luci-go/common/paniccatcher"
+	"github.com/luci/luci-go/common/runtime/paniccatcher"
 	"github.com/luci/luci-go/logdog/client/butler"
 	"github.com/luci/luci-go/logdog/client/butler/output"
 	"github.com/luci/luci-go/logdog/common/types"

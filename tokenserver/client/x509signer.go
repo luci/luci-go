@@ -13,7 +13,7 @@ import (
 	"io/ioutil"
 	"sync"
 
-	"github.com/luci/luci-go/common/cryptorand"
+	"github.com/luci/luci-go/common/data/rand/cryptorand"
 
 	"golang.org/x/net/context"
 )

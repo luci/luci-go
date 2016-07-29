@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/parallel"
+	"github.com/luci/luci-go/common/sync/parallel"
 	"golang.org/x/net/context"
 )
 

@@ -15,8 +15,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/luci/luci-go/common/data/text/units"
 	"github.com/luci/luci-go/common/isolated"
-	"github.com/luci/luci-go/common/units"
 )
 
 // Cache is a cache of objects.

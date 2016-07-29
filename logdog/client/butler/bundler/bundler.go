@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luci/luci-go/common/cancelcond"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/sync/cancelcond"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
 	"github.com/luci/luci-go/logdog/common/types"

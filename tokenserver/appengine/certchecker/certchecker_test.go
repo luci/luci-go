@@ -18,7 +18,7 @@ import (
 	"github.com/luci/luci-go/appengine/gaetesting"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/cryptorand"
+	"github.com/luci/luci-go/common/data/rand/cryptorand"
 	"github.com/luci/luci-go/tokenserver/appengine/model"
 
 	. "github.com/luci/luci-go/common/testing/assertions"

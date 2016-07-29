@@ -16,8 +16,8 @@ import (
 	"github.com/luci/gae/service/info"
 
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/data/caching/proccache"
 	"github.com/luci/luci-go/server/auth/signing"
-	"github.com/luci/luci-go/server/proccache"
 )
 
 // Signer implements signing.Signer using GAE App Identity API.

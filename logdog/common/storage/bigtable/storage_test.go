@@ -13,7 +13,7 @@ import (
 
 	"github.com/luci/gkvlite"
 	"github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/recordio"
+	"github.com/luci/luci-go/common/data/recordio"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/types"
 	"golang.org/x/net/context"

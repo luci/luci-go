@@ -15,11 +15,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/luci/luci-go/common/goroutine"
-	"github.com/luci/luci-go/common/indented"
+	"github.com/luci/luci-go/common/data/stringset"
+	"github.com/luci/luci-go/common/data/text/indented"
 	"github.com/luci/luci-go/common/iotools"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/stringset"
+	"github.com/luci/luci-go/common/runtime/goroutine"
 
 	"golang.org/x/net/context"
 )

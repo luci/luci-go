@@ -15,8 +15,8 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/config/filters/caching"
+	"github.com/luci/luci-go/common/data/caching/proccache"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/server/proccache"
 	"golang.org/x/net/context"
 )
 

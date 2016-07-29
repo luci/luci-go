@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/luci/luci-go/common/parallel"
+	"github.com/luci/luci-go/common/sync/parallel"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

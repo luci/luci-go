@@ -23,8 +23,8 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/parallel"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/sync/parallel"
 )
 
 // search executes the search request with retries and exponential back-off.

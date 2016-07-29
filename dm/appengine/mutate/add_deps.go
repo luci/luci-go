@@ -6,7 +6,7 @@ package mutate
 
 import (
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/bit_field"
+	"github.com/luci/luci-go/common/data/bit_field"
 	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/dm/api/service/v1"
@@ -53,7 +53,7 @@ func (a *AddDeps) RollForward(c context.Context) (muts []tumble.Mutation, err er
 	ds := datastore.Get(c)
 
 	logging.Fields{"aid": atmpt.ID, "count": len(fwdDeps)}.Infof(c, "added deps")
-	atmpt.DepMap = bf.Make(uint32(len(fwdDeps)))
+	atmpt.DepMap = bit_field.Make(uint32(len(fwdDeps)))
 
 	for i, fdp := range fwdDeps {
 		fdp.BitIndex = uint32(i)

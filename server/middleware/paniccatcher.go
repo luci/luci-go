@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/paniccatcher"
+	"github.com/luci/luci-go/common/runtime/paniccatcher"
 	"github.com/luci/luci-go/server/router"
 )
 

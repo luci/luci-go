@@ -12,10 +12,10 @@ import (
 	"io"
 
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/data/recordio"
 	"github.com/luci/luci-go/common/iotools"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/common/recordio"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
 	"golang.org/x/net/context"

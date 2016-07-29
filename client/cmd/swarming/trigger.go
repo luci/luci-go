@@ -21,9 +21,9 @@ import (
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/common/api/swarming/swarming/v1"
 	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/common/data/text/units"
 	"github.com/luci/luci-go/common/flag/stringmapflag"
 	"github.com/luci/luci-go/common/logging/gologger"
-	"github.com/luci/luci-go/common/units"
 	"github.com/maruel/subcommands"
 )
 

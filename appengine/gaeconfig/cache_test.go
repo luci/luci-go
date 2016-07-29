@@ -14,8 +14,8 @@ import (
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/data/caching/proccache"
 	. "github.com/luci/luci-go/common/testing/assertions"
-	"github.com/luci/luci-go/server/proccache"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

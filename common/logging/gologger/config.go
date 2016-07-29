@@ -13,7 +13,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/terminal"
+	"github.com/luci/luci-go/common/system/terminal"
 )
 
 // StdFormat is a preferred logging format to use.

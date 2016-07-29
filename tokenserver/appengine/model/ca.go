@@ -16,9 +16,9 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/data/caching/lazyslot"
+	"github.com/luci/luci-go/common/data/caching/proccache"
 	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/lazyslot"
-	"github.com/luci/luci-go/server/proccache"
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 )
