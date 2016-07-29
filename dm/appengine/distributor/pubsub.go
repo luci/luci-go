@@ -11,11 +11,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/tokens"
+	"github.com/luci/luci-go/tumble"
 	"golang.org/x/net/context"
 )
 

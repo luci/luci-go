@@ -10,13 +10,13 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/dumper"
-	"github.com/luci/luci-go/appengine/tumble"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/distributor/fake"
 	"github.com/luci/luci-go/dm/appengine/model"
 	"github.com/luci/luci-go/dm/appengine/mutate"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
+	"github.com/luci/luci-go/tumble"
 	"golang.org/x/net/context"
 )
 

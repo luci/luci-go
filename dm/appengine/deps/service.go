@@ -6,12 +6,12 @@ package deps
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/common/logging"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/distributor"
 	"github.com/luci/luci-go/server/prpc"
+	"github.com/luci/luci-go/tumble"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

@@ -11,11 +11,11 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/dm/api/distributor"
 	"github.com/luci/luci-go/dm/api/service/v1"
+	"github.com/luci/luci-go/tumble"
 	"golang.org/x/net/context"
 )
 

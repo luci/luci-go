@@ -9,7 +9,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/grpcutil"
 	log "github.com/luci/luci-go/common/logging"
@@ -22,6 +21,7 @@ import (
 	"github.com/luci/luci-go/logdog/appengine/coordinator/hierarchy"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/mutations"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/tumble"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )

@@ -15,7 +15,6 @@ import (
 
 	"github.com/luci/luci-go/appengine/gaeconfig"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/config/impl/filesystem"
 	"github.com/luci/luci-go/common/logging"
@@ -26,6 +25,7 @@ import (
 	"github.com/luci/luci-go/server/discovery"
 	"github.com/luci/luci-go/server/prpc"
 	"github.com/luci/luci-go/server/router"
+	"github.com/luci/luci-go/tumble"
 )
 
 func addConfigProd(c context.Context) context.Context {

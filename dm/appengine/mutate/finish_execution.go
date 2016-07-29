@@ -12,10 +12,10 @@ import (
 	"github.com/luci/gae/filter/txnBuf"
 	"github.com/luci/gae/service/datastore"
 
-	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/logging"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/model"
+	"github.com/luci/luci-go/tumble"
 )
 
 // FinishExecution records the final state of the Execution, and advances the

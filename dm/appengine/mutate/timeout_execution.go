@@ -11,12 +11,12 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/distributor"
 	"github.com/luci/luci-go/dm/appengine/model"
+	"github.com/luci/luci-go/tumble"
 )
 
 // TimeoutExecution is a named mutation which triggers on a delay. If the

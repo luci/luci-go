@@ -20,7 +20,7 @@ import (
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/api/template"
 
-	"github.com/luci/luci-go/appengine/tumble"
+	"github.com/luci/luci-go/tumble"
 
 	"github.com/luci/luci-go/dm/appengine/distributor"
 	"github.com/luci/luci-go/dm/appengine/model"

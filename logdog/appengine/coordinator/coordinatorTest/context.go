@@ -12,7 +12,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/cacheContext"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -30,6 +29,7 @@ import (
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/settings"
+	"github.com/luci/luci-go/tumble"
 	"golang.org/x/net/context"
 )
 

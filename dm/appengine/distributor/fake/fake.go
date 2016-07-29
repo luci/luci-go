@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/config"
 	config_mem "github.com/luci/luci-go/common/config/impl/memory"
 	"github.com/luci/luci-go/common/gcloud/pubsub"
@@ -25,6 +24,7 @@ import (
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/secrets/testsecrets"
+	"github.com/luci/luci-go/tumble"
 	"github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )

@@ -10,9 +10,9 @@ import (
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/appengine/tumble"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
+	"github.com/luci/luci-go/tumble"
 	"golang.org/x/net/context"
 )
 

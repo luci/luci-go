@@ -9,10 +9,10 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
 	"github.com/luci/luci-go/server/router"
+	"github.com/luci/luci-go/tumble"
 
 	// Include mutations package so its Mutations will register with tumble via
 	// init().

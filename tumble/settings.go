@@ -31,9 +31,9 @@ func (settingsUIPage) Title(c context.Context) (string, error) {
 
 func (settingsUIPage) Overview(c context.Context) (template.HTML, error) {
 	return template.HTML(`<p>Configuration parameters for the
-<a href="https://github.com/luci/luci-go/tree/master/appengine/tumble">tumble
+<a href="https://github.com/luci/luci-go/tree/master/tumble">tumble
 service</a> can be found in its
-<a href="https://godoc.org/github.com/luci/luci-go/appengine/tumble">
+<a href="https://godoc.org/github.com/luci/luci-go/tumble">
 documentation</a>.</p>.`), nil
 }
 

@@ -9,9 +9,9 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/router"
+	"github.com/luci/luci-go/tumble"
 )
 
 const handlerPattern = "/tq/distributor/:cfgName"

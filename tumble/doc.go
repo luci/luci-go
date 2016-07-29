@@ -48,7 +48,7 @@
 //
 //   import (
 //     "github.com/julienschmidt/httprouter"
-//     "github.com/luci/luci-go/appengine/tumble"
+//     "github.com/luci/luci-go/tumble"
 //     "net/http"
 //   )
 //

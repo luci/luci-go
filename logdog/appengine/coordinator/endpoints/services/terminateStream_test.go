@@ -11,13 +11,13 @@ import (
 
 	"github.com/luci/gae/filter/featureBreaker"
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	ct "github.com/luci/luci-go/logdog/appengine/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/mutations"
+	"github.com/luci/luci-go/tumble"
 	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"

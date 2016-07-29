@@ -8,7 +8,6 @@ import (
 	"crypto/subtle"
 
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/grpcutil"
 	log "github.com/luci/luci-go/common/logging"
@@ -19,6 +18,7 @@ import (
 	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/mutations"
+	"github.com/luci/luci-go/tumble"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )

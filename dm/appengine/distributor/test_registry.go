@@ -7,8 +7,8 @@ package distributor
 import (
 	"fmt"
 
-	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/dm/api/service/v1"
+	"github.com/luci/luci-go/tumble"
 	"golang.org/x/net/context"
 )
 

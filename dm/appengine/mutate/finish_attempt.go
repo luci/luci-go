@@ -8,11 +8,11 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/tumble"
 	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/common/logging"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/model"
+	"github.com/luci/luci-go/tumble"
 	"golang.org/x/net/context"
 )
 
