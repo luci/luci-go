@@ -21,8 +21,8 @@ import (
 )
 
 func testSetup() (ttest *tumble.Testing, c context.Context, dist *fake.Distributor, s testDepsServer) {
-	ttest, c, dist, reg := fake.Setup(mutate.FinishExecutionFn)
-	s = testDepsServer{newDecoratedDeps(reg)}
+	ttest, c, dist = fake.Setup(mutate.FinishExecutionFn)
+	s = testDepsServer{newDecoratedDeps()}
 	return
 }
 

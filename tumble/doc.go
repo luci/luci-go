@@ -47,16 +47,18 @@
 // like:
 //
 //   import (
-//     "github.com/julienschmidt/httprouter"
-//     "github.com/luci/luci-go/tumble"
 //     "net/http"
+//
+//     "github.com/julienschmidt/httprouter"
+//     "github.com/luci/luci-go/appengine/gaemiddleware"
+//     "github.com/luci/luci-go/tumble"
 //   )
 //
 //   var tumbleService = tumble.DefaultConfig()
 //
 //   def init() {
 //     router := httprouter.New()
-//     tumbleService.InstallHandlers(router)
+//     tumbleService.InstallHandlers(router, gaemiddleware.BaseProd())
 //     http.Handle("/", router)
 //   }
 //

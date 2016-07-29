@@ -17,12 +17,10 @@ import (
 )
 
 func init() {
-	tmb := tumble.Service{
-		Middleware: coordinator.UseProdServices,
-	}
+	tmb := tumble.Service{}
 
 	r := router.New()
-	tmb.InstallHandlers(r)
+	tmb.InstallHandlers(r, coordinator.ProdServices())
 
 	http.Handle("/", r)
 }

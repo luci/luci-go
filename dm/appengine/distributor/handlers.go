@@ -12,14 +12,7 @@ import (
 // InstallHandlers installs the taskqueue callback handler.
 //
 // The `base` middleware must have a registry installed with WithRegistry.
-func InstallHandlers(reg Registry, r *router.Router, base router.MiddlewareChain) {
-	r.POST(handlerPattern, base.Extend(gaemiddleware.RequireTaskQueue(""), func(c *router.Context, next router.Handler) {
-		c.Context = WithRegistry(c.Context, reg)
-		next(c)
-	}), TaskQueueHandler)
-
-	r.POST("/_ah/push-handlers/"+notifyTopicSuffix, base.Extend(func(c *router.Context, next router.Handler) {
-		c.Context = WithRegistry(c.Context, reg)
-		next(c)
-	}), PubsubReceiver)
+func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
+	r.POST(handlerPattern, base.Extend(gaemiddleware.RequireTaskQueue("")), TaskQueueHandler)
+	r.POST("/_ah/push-handlers/"+notifyTopicSuffix, base, PubsubReceiver)
 }

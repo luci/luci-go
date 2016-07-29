@@ -30,11 +30,6 @@ import (
 	_ "github.com/luci/luci-go/logdog/appengine/coordinator/mutations"
 )
 
-// base returns the root middleware chain.
-func base() router.MiddlewareChain {
-	return gaemiddleware.BaseProd().Extend(coordinator.WithProdServices)
-}
-
 // Run installs and executes this site.
 func main() {
 	r := router.New()
@@ -50,8 +45,8 @@ func main() {
 	discovery.Enable(&svr)
 
 	// Standard HTTP endpoints.
-	gaemiddleware.InstallHandlers(r, base())
-	svr.InstallHandlers(r, base())
+	gaemiddleware.InstallHandlers(r, coordinator.ProdServices())
+	svr.InstallHandlers(r, coordinator.ProdServices())
 
 	// Redirect "/" to "/app/".
 	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {

@@ -7,8 +7,6 @@ package frontend
 import (
 	"net/http"
 
-	"golang.org/x/net/context"
-
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/dm/appengine/deps"
 	"github.com/luci/luci-go/dm/appengine/distributor"
@@ -21,27 +19,27 @@ import (
 )
 
 func init() {
-	r := router.New()
+	tmb := tumble.Service{}
 
 	distributors := distributor.FactoryMap{}
 	jobsim.AddFactory(distributors)
+
 	reg := distributor.NewRegistry(distributors, mutate.FinishExecutionFn)
 
-	tmb := tumble.Service{
-		Middleware: func(c context.Context) context.Context {
-			return distributor.WithRegistry(c, reg)
-		},
-	}
+	basemw := gaemiddleware.BaseProd().Extend(func(c *router.Context, next router.Handler) {
+		c.Context = distributor.WithRegistry(c.Context, reg)
+		next(c)
+	})
 
-	basemw := gaemiddleware.BaseProd()
-
-	distributor.InstallHandlers(reg, r, basemw)
+	r := router.New()
 
 	svr := prpc.Server{}
-	deps.RegisterDepsServer(&svr, reg)
+	deps.RegisterDepsServer(&svr)
 	discovery.Enable(&svr)
+
+	distributor.InstallHandlers(r, basemw)
 	svr.InstallHandlers(r, basemw)
-	tmb.InstallHandlers(r)
+	tmb.InstallHandlers(r, basemw)
 	gaemiddleware.InstallHandlers(r, basemw)
 
 	http.Handle("/", r)

@@ -38,8 +38,6 @@ import (
 //   * dist - a fake Distributor implementation with a RunTask method that
 //     allows your test to 'run' a scheduled task with the Distributor. This
 //     will automatically notify the deps service (by calling `fn`).
-//   * reg - a distributor Testing registry, pre-registerd with `dist` using the
-//     configuration name 'fakeDistributor'.
 //
 // You should pass mutate.FinishExecutionFn for fn. It's not done automatically
 // in order to break an import cycle. You could provide your own, but YMMV.
@@ -50,10 +48,10 @@ import (
 //     writers: "writer_group"
 //
 // Usage:
-//   ttest, c, dist, reg := fake.Setup(mutate.FinishExecutionFn)
-//   s := deps.NewDecoratedServer(reg)
+//   ttest, c, dist := fake.Setup(mutate.FinishExecutionFn)
+//   s := deps.NewDecoratedServer()
 //   # your tests
-func Setup(fn distributor.FinishExecutionFn) (ttest *tumble.Testing, c context.Context, dist *Distributor, reg distributor.Registry) {
+func Setup(fn distributor.FinishExecutionFn) (ttest *tumble.Testing, c context.Context, dist *Distributor) {
 	ttest = &tumble.Testing{}
 	c = ttest.Context()
 	c = testsecrets.Use(c)
@@ -69,7 +67,7 @@ func Setup(fn distributor.FinishExecutionFn) (ttest *tumble.Testing, c context.C
 		Identity: identity.AnonymousIdentity,
 	})
 	dist = &Distributor{}
-	reg = distributor.NewTestingRegistry(map[string]distributor.D{
+	reg := distributor.NewTestingRegistry(map[string]distributor.D{
 		"fakeDistributor": dist,
 	}, fn)
 	c = distributor.WithRegistry(c, reg)

@@ -24,7 +24,7 @@ func TestScheduleExecution(t *testing.T) {
 	t.Parallel()
 
 	Convey("ScheduleExecution", t, func() {
-		_, c, dist, _ := fake.Setup(FinishExecutionFn)
+		_, c, dist := fake.Setup(FinishExecutionFn)
 
 		qdesc := fake.QuestDesc("quest")
 		qdesc.Meta.Timeouts.Start = google.NewDuration(time.Minute * 5)

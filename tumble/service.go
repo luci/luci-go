@@ -26,12 +26,6 @@ const transientHTTPHeader = "X-LUCI-Tumble-Transient"
 // Service is an instance of a Tumble service. It installs its handlers into an
 // HTTP router and services Tumble request tasks.
 type Service struct {
-	// Middleware is an optional function which allows your application to add
-	// application-specific resources to the context used by ProcessShardHandler.
-	//
-	// Context will already be setup with BaseProd.
-	Middleware func(context.Context) context.Context
-
 	// Namespaces is a function that returns the datastore namespaces that Tumble
 	// will poll.
 	//
@@ -41,10 +35,13 @@ type Service struct {
 }
 
 // InstallHandlers installs http handlers.
-func (s *Service) InstallHandlers(r *router.Router) {
+//
+// 'base' is usually gaemiddleware.BaseProd(), but can also be its derivative
+// if something else it needed in the context.
+func (s *Service) InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 	// GET so that this can be invoked from cron
-	r.GET(fireAllTasksURL, gaemiddleware.BaseProd().Extend(gaemiddleware.RequireCron), s.FireAllTasksHandler)
-	r.POST(processShardPattern, gaemiddleware.BaseProd().Extend(gaemiddleware.RequireTaskQueue(baseName)),
+	r.GET(fireAllTasksURL, base.Extend(gaemiddleware.RequireCron), s.FireAllTasksHandler)
+	r.POST(processShardPattern, base.Extend(gaemiddleware.RequireTaskQueue(baseName)),
 		s.ProcessShardHandler)
 }
 
@@ -185,10 +182,6 @@ func (s *Service) getNamespaces(c context.Context, cfg *Config) (namespaces []st
 // ProcessShardHandler then invokes ProcessShard with the parsed parameters.
 func (s *Service) ProcessShardHandler(ctx *router.Context) {
 	c, rw, p := ctx.Context, ctx.Writer, ctx.Params
-
-	if s.Middleware != nil {
-		c = s.Middleware(c)
-	}
 
 	tstampStr := p.ByName("timestamp")
 	sidStr := p.ByName("shard_id")

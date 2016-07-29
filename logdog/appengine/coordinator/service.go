@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 
 	gaeauthClient "github.com/luci/luci-go/appengine/gaeauth/client"
+	"github.com/luci/luci-go/appengine/gaemiddleware"
 	luciConfig "github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/gcloud/gs"
@@ -61,17 +62,15 @@ type Services interface {
 	ArchivalPublisher(context.Context) (ArchivalPublisher, error)
 }
 
-// WithProdServices is a middleware that installs a production Services
-// instance into its Context.
-func WithProdServices(c *router.Context, next router.Handler) {
-	c.Context = UseProdServices(c.Context)
-	next(c)
-}
-
-// UseProdServices installs production Services instance into the supplied
-// Context.
-func UseProdServices(c context.Context) context.Context {
-	return WithServices(c, &prodServicesInst{})
+// ProdServices is middleware chain used by Coordinator services.
+//
+// It sets up basic GAE functionality as well as installs a production Services
+// instance.
+func ProdServices() router.MiddlewareChain {
+	return gaemiddleware.BaseProd().Extend(func(c *router.Context, next router.Handler) {
+		c.Context = WithServices(c.Context, &prodServicesInst{})
+		next(c)
+	})
 }
 
 // prodServicesInst is a Service exposing production faciliites. A unique

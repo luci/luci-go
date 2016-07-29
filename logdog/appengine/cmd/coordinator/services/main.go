@@ -7,7 +7,6 @@ package module
 import (
 	"net/http"
 
-	"github.com/luci/luci-go/appengine/gaemiddleware"
 	registrationPb "github.com/luci/luci-go/logdog/api/endpoints/coordinator/registration/v1"
 	servicesPb "github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
@@ -21,11 +20,6 @@ import (
 	_ "github.com/luci/luci-go/logdog/appengine/coordinator/mutations"
 )
 
-// base returns the root middleware chain.
-func base() router.MiddlewareChain {
-	return gaemiddleware.BaseProd().Extend(coordinator.WithProdServices)
-}
-
 // Run installs and executes this site.
 func init() {
 	r := router.New()
@@ -36,7 +30,7 @@ func init() {
 	registrationPb.RegisterRegistrationServer(&svr, registration.New())
 
 	// Standard HTTP endpoints.
-	svr.InstallHandlers(r, base())
+	svr.InstallHandlers(r, coordinator.ProdServices())
 
 	http.Handle("/", r)
 }

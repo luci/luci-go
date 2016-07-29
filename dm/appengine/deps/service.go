@@ -9,7 +9,6 @@ import (
 	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/common/logging"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
-	"github.com/luci/luci-go/dm/appengine/distributor"
 	"github.com/luci/luci-go/server/prpc"
 	"github.com/luci/luci-go/tumble"
 	"golang.org/x/net/context"
@@ -23,35 +22,32 @@ type deps struct{}
 
 var _ dm.DepsServer = (*deps)(nil)
 
-func depsServerPrelude(reg distributor.Registry) func(context.Context, string, proto.Message) (context.Context, error) {
-	return func(c context.Context, methodName string, req proto.Message) (context.Context, error) {
-		// Many of the DM request messages can be Normalize'd. This checks them for
-		// basic validity and normalizes cases where multiple representations can mean
-		// the same thing so that the service handlers only need to check for the
-		// canonical representation.
-		if norm, ok := req.(interface {
-			Normalize() error
-		}); ok {
-			if err := norm.Normalize(); err != nil {
-				return nil, grpcutil.MaybeLogErr(c, err, codes.InvalidArgument, "invalid request")
-			}
+func depsServerPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
+	// Many of the DM request messages can be Normalize'd. This checks them for
+	// basic validity and normalizes cases where multiple representations can mean
+	// the same thing so that the service handlers only need to check for the
+	// canonical representation.
+	if norm, ok := req.(interface {
+		Normalize() error
+	}); ok {
+		if err := norm.Normalize(); err != nil {
+			return nil, grpcutil.MaybeLogErr(c, err, codes.InvalidArgument, "invalid request")
 		}
-		c = distributor.WithRegistry(c, reg)
-		return c, nil
 	}
+	return c, nil
 }
 
-func newDecoratedDeps(reg distributor.Registry) dm.DepsServer {
+func newDecoratedDeps() dm.DepsServer {
 	return &dm.DecoratedDeps{
 		Service: &deps{},
-		Prelude: depsServerPrelude(reg),
+		Prelude: depsServerPrelude,
 	}
 }
 
 // RegisterDepsServer registers an implementation of the dm.DepsServer with
 // the provided Registrar.
-func RegisterDepsServer(svr prpc.Registrar, reg distributor.Registry) {
-	dm.RegisterDepsServer(svr, newDecoratedDeps(reg))
+func RegisterDepsServer(svr prpc.Registrar) {
+	dm.RegisterDepsServer(svr, newDecoratedDeps())
 }
 
 // tumbleNow will run the mutation immediately, converting any non grpc errors
