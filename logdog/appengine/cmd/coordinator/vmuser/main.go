@@ -31,12 +31,8 @@ import (
 )
 
 // base returns the root middleware chain.
-func base(installConfig bool) router.MiddlewareChain {
-	m := gaemiddleware.BaseProd().Extend(coordinator.WithProdServices)
-	if installConfig {
-		m = m.Extend(config.WithConfig)
-	}
-	return m
+func base() router.MiddlewareChain {
+	return gaemiddleware.BaseProd().Extend(coordinator.WithProdServices)
 }
 
 // Run installs and executes this site.
@@ -54,8 +50,8 @@ func main() {
 	discovery.Enable(&svr)
 
 	// Standard HTTP endpoints.
-	gaemiddleware.InstallHandlers(r, base(false))
-	svr.InstallHandlers(r, base(true))
+	gaemiddleware.InstallHandlers(r, base())
+	svr.InstallHandlers(r, base())
 
 	// Redirect "/" to "/app/".
 	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {

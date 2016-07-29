@@ -13,6 +13,3 @@ handlers:
 - url: /.*
   script: _go_app
   secure: always
-
-# env_variables:
-#   LUCI_DM_CONFIG_BASE_PATH: /path/to/luci-go/appengine/cmd/dm/integration_tests/cfgdir/current

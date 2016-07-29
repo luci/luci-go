@@ -26,7 +26,6 @@ import (
 	"github.com/luci/luci-go/appengine/gaeconfig"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/config/impl/erroring"
 	cfgmem "github.com/luci/luci-go/common/config/impl/memory"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
@@ -343,6 +342,8 @@ func (s *Server) CheckCertificate(c context.Context, r *admin.CheckCertificateRe
 ////////////////////////////////////////////////////////////////////////////////
 
 // configFetcher knows how to fetch files from luci-config.
+//
+// TODO(vadimsh): Get rid of this in favor of default gaeconfig stuff.
 type configFetcher struct {
 	cfg       config.Interface
 	configSet string
@@ -366,12 +367,7 @@ func newConfigFetcher(c context.Context, req *admin.ImportConfigRequest) *config
 		})
 	} else {
 		// In prod use real luci-config service.
-		cfg, err := gaeconfig.New(c)
-		if err != nil {
-			ret.cfg = erroring.New(err)
-		} else {
-			ret.cfg = cfg
-		}
+		ret.cfg = gaeconfig.New(c)
 	}
 
 	return &ret

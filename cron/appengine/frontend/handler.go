@@ -34,12 +34,8 @@ import (
 	"github.com/luci/luci-go/server/router"
 
 	"github.com/luci/luci-go/appengine/gaeauth/server"
-	"github.com/luci/luci-go/appengine/gaeconfig"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 
-	"github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/config/impl/erroring"
-	"github.com/luci/luci-go/common/config/impl/memory"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 
@@ -115,19 +111,6 @@ func initializeGlobalState(c context.Context) {
 	}
 }
 
-// getConfigImpl returns config.Interface implementation to use.
-func getConfigImpl(c context.Context) config.Interface {
-	// Use fake config data on dev server for simplicity.
-	if info.Get(c).IsDevAppServer() {
-		return memory.New(devServerConfigs())
-	}
-	cfg, err := gaeconfig.New(c)
-	if err != nil {
-		cfg = erroring.New(err)
-	}
-	return cfg
-}
-
 // base returns middleware chain. It initializes prod context and sets up
 // authentication config.
 func base() router.MiddlewareChain {
@@ -140,7 +123,6 @@ func base() router.MiddlewareChain {
 		func(c *router.Context, next router.Handler) {
 			globalInit.Do(func() { initializeGlobalState(c.Context) })
 			c.Context = auth.SetAuthenticator(c.Context, methods)
-			c.Context = config.SetImplementation(c.Context, getConfigImpl(c.Context))
 			next(c)
 		},
 	)

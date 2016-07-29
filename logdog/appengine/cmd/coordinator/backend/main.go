@@ -7,10 +7,7 @@ package module
 import (
 	"net/http"
 
-	"golang.org/x/net/context"
-
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
-	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/tumble"
 
@@ -21,13 +18,7 @@ import (
 
 func init() {
 	tmb := tumble.Service{
-		Middleware: func(c context.Context) context.Context {
-			if err := config.UseConfig(&c); err != nil {
-				panic(err)
-			}
-			c = coordinator.UseProdServices(c)
-			return c
-		},
+		Middleware: coordinator.UseProdServices,
 	}
 
 	r := router.New()

@@ -11,7 +11,6 @@ import (
 	registrationPb "github.com/luci/luci-go/logdog/api/endpoints/coordinator/registration/v1"
 	servicesPb "github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
-	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints/registration"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints/services"
 	"github.com/luci/luci-go/server/prpc"
@@ -24,10 +23,7 @@ import (
 
 // base returns the root middleware chain.
 func base() router.MiddlewareChain {
-	return gaemiddleware.BaseProd().Extend(
-		coordinator.WithProdServices,
-		config.WithConfig,
-	)
+	return gaemiddleware.BaseProd().Extend(coordinator.WithProdServices)
 }
 
 // Run installs and executes this site.

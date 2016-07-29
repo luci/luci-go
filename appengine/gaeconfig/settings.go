@@ -94,8 +94,8 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 			},
 			Help: `<p>The application may fetch configuration files stored centrally
 in an instance of <a href="https://github.com/luci/luci-py/tree/master/appengine/config_service">luci-config</a>
-service. This is an URL of such service. Blank URL is equivalent to a completely
-empty config store.</p>`,
+service. This is an URL of such service. If you don't know what this is, you
+probably don't use it and can keep this setting blank.</p>`,
 		},
 		{
 			ID:    "CacheExpirationSec",

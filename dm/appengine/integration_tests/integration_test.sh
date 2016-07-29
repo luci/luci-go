@@ -10,17 +10,20 @@ cd "${0%/*}"
 : ${VERBOSE:=1}
 CFGVERS=1
 
+DEVCFG_SYMLINK=$(dirname $PWD)/devcfg
+DEVCFG_VERSIONS_DIR="$PWD/.devcfg_versions"
+
 echo Using host: $HOST
 
 _new_cfg_vers() {
   local oldVers=$CFGVERS
   CFGVERS=$(( $CFGVERS + 1 ))
-  cp -a cfgdir/$oldVers cfgdir/$CFGVERS
+  cp -a $DEVCFG_VERSIONS_DIR/$oldVers $DEVCFG_VERSIONS_DIR/$CFGVERS
 }
 
 _link_current_cfg() {
-  rm -f cfgdir/current
-  ln -s $CFGVERS cfgdir/current
+  rm -f $DEVCFG_SYMLINK
+  ln -s $DEVCFG_VERSIONS_DIR/$CFGVERS $DEVCFG_SYMLINK
 }
 
 if [[ $1 == "remote" ]];
@@ -29,8 +32,9 @@ then
   exit 1
 else
   echo "Doing local test"
-  rm -rf cfgdir
-  mkdir -p cfgdir/$CFGVERS
+  rm -rf $DEVCFG_VERSIONS_DIR
+  rm -f $DEVCFG_SYMLINK
+  mkdir -p $DEVCFG_VERSIONS_DIR/$CFGVERS
   _link_current_cfg
 fi
 
@@ -42,8 +46,8 @@ write_config() {
   local outFile=$1
   _new_cfg_vers
   log "Writing config v$CFGVERS to: $outFile"
-  mkdir -p cfgdir/$CFGVERS/`dirname $outFile`
-  cat > cfgdir/$CFGVERS/$outFile
+  mkdir -p $DEVCFG_VERSIONS_DIR/$CFGVERS/`dirname $outFile`
+  cat > $DEVCFG_VERSIONS_DIR/$CFGVERS/$outFile
   _link_current_cfg
 }
 

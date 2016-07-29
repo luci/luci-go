@@ -12,19 +12,24 @@ import (
 
 	"github.com/luci/gae/filter/dscache"
 	"github.com/luci/gae/impl/prod"
-	"github.com/luci/luci-go/appengine/gaeauth/client"
-	"github.com/luci/luci-go/appengine/gaeauth/server"
-	"github.com/luci/luci-go/appengine/gaeauth/server/gaesigner"
-	"github.com/luci/luci-go/appengine/gaesecrets"
-	"github.com/luci/luci-go/appengine/gaesettings"
-	"github.com/luci/luci-go/appengine/tsmon"
+
 	"github.com/luci/luci-go/common/cacheContext"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logging"
+
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/proccache"
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/settings"
+
+	"github.com/luci/luci-go/appengine/gaeauth/client"
+	"github.com/luci/luci-go/appengine/gaeauth/server"
+	"github.com/luci/luci-go/appengine/gaeauth/server/gaesigner"
+	"github.com/luci/luci-go/appengine/gaeconfig"
+	"github.com/luci/luci-go/appengine/gaesecrets"
+	"github.com/luci/luci-go/appengine/gaesettings"
+	"github.com/luci/luci-go/appengine/tsmon"
 )
 
 var (
@@ -77,6 +82,7 @@ func WithProd(c context.Context, req *http.Request) context.Context {
 
 	// The rest of the service may use applied configuration.
 	c = proccache.Use(c, globalProcessCache)
+	c = config.SetImplementation(c, gaeconfig.New(c))
 	c = client.UseAnonymousTransport(c)
 	c = gaesecrets.Use(c, nil)
 	c = auth.SetConfig(c, globalAuthConfig)
