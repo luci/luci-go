@@ -8,8 +8,8 @@ syntax = "proto2";
 
 package ts_mon.proto;
 
-import "acquisition_network_device.proto";
-import "acquisition_task.proto";
+import "github.com/luci/luci-go/common/tsmon/ts_mon_proto/acquisition_network_device.proto";
+import "github.com/luci/luci-go/common/tsmon/ts_mon_proto/acquisition_task.proto";
 
 message MetricsCollection {
   repeated MetricsData data = 1;

@@ -4,8 +4,7 @@
 
 syntax = "proto3";
 
-import "github.com/luci/luci-go/common/api/template/template.proto";
-
+import "github.com/luci/luci-go/common/data/text/templateproto/template.proto";
 import "github.com/luci/luci-go/dm/api/service/v1/graph_data.proto";
 import "github.com/luci/luci-go/dm/api/service/v1/types.proto";
 
@@ -26,7 +25,7 @@ message TemplateInstantiation {
 
   // specifier specifies the actual template name, as well as any substitution
   // parameters which that template might require.
-  template.Specifier specifier = 4;
+  templateproto.Specifier specifier = 4;
 }
 
 // EnsureGraphDataReq allows you to assert some things about the state of DM's

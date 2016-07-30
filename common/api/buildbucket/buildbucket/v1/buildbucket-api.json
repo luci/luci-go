@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"zRMgE0l9nVDW4S28VYYcYQF9UW4/u3zYgYQ4ILo7IvGHypgNhHu2oRY\"",
+ "etag": "\"zRMgE0l9nVDW4S28VYYcYQF9UW4/bHpHcTkWthpIrnhosr9o6lvktgM\"",
  "discoveryVersion": "v1",
  "id": "buildbucket:v1",
  "name": "buildbucket",
@@ -415,6 +415,19 @@
     }
    }
   },
+  "ApiLongestPendingTimeResponse": {
+   "id": "ApiLongestPendingTimeResponse",
+   "type": "object",
+   "properties": {
+    "error": {
+     "$ref": "ApiErrorMessage"
+    },
+    "longest_pending_time_sec": {
+     "type": "number",
+     "format": "double"
+    }
+   }
+  },
   "ApiPubSubCallbackMessage": {
    "id": "ApiPubSubCallbackMessage",
    "type": "object",
@@ -787,6 +800,34 @@
    },
    "response": {
     "$ref": "ApiBuildResponseMessage"
+   },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
+  "longest_pending_time": {
+   "id": "buildbucket.longest_pending_time",
+   "path": "metrics/longest-pending-time",
+   "httpMethod": "GET",
+   "description": "Returns longest pending time among all SCHEDULED builds of a builder.",
+   "parameters": {
+    "bucket": {
+     "type": "string",
+     "required": true,
+     "location": "query"
+    },
+    "builder": {
+     "type": "string",
+     "required": true,
+     "location": "query"
+    }
+   },
+   "parameterOrder": [
+    "bucket",
+    "builder"
+   ],
+   "response": {
+    "$ref": "ApiLongestPendingTimeResponse"
    },
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"

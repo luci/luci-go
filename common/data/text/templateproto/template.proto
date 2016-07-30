@@ -6,7 +6,7 @@ syntax = "proto3";
 
 import "google/protobuf/empty.proto";
 
-package template;
+package templateproto;
 
 // Value defines a specific value for a parameter, and is used at Template
 // expansion time.
