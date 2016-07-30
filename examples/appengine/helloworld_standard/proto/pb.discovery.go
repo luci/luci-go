@@ -2,7 +2,7 @@
 
 package helloworld
 
-import discovery "github.com/luci/luci-go/server/discovery"
+import discovery "github.com/luci/luci-go/grpc/discovery"
 
 import "github.com/luci/luci-go/common/proto/google/descriptor"
 

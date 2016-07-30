@@ -67,7 +67,7 @@ func (r *baseCommandRun) makeService(ctx context.Context, a subcommands.Applicat
 	return service, nil
 }
 
-// TODO(robertocn): Dedup this code copied from client/cmd/rpc
+// TODO(robertocn): Dedup this code copied from grpc/cmd/rpc
 func isLocalHost(host string) bool {
 	switch {
 	case host == "localhost", strings.HasPrefix(host, "localhost:"):

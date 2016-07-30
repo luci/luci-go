@@ -13,8 +13,7 @@ It has these top-level messages:
 */
 package identity
 
-import prpccommon "github.com/luci/luci-go/common/prpc"
-import prpc "github.com/luci/luci-go/server/prpc"
+import prpc "github.com/luci/luci-go/grpc/prpc"
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
@@ -90,10 +89,10 @@ type IdentityFetcherClient interface {
 	GetCallerIdentity(ctx context.Context, in *google_protobuf.Empty, opts ...grpc.CallOption) (*CallerIdentity, error)
 }
 type identityFetcherPRPCClient struct {
-	client *prpccommon.Client
+	client *prpc.Client
 }
 
-func NewIdentityFetcherPRPCClient(client *prpccommon.Client) IdentityFetcherClient {
+func NewIdentityFetcherPRPCClient(client *prpc.Client) IdentityFetcherClient {
 	return &identityFetcherPRPCClient{client}
 }
 

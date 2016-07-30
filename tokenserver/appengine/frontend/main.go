@@ -22,9 +22,9 @@ import (
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/appengine/tsmon"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/grpc/discovery"
+	"github.com/luci/luci-go/grpc/prpc"
 	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/discovery"
-	"github.com/luci/luci-go/server/prpc"
 	"github.com/luci/luci-go/server/router"
 
 	"github.com/luci/luci-go/tokenserver/auth/machine"

@@ -12,8 +12,8 @@ import (
 	"github.com/luci/luci-go/dm/appengine/distributor"
 	"github.com/luci/luci-go/dm/appengine/distributor/jobsim"
 	"github.com/luci/luci-go/dm/appengine/mutate"
-	"github.com/luci/luci-go/server/discovery"
-	"github.com/luci/luci-go/server/prpc"
+	"github.com/luci/luci-go/grpc/discovery"
+	"github.com/luci/luci-go/grpc/prpc"
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/tumble"
 )

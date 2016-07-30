@@ -20,8 +20,7 @@ It has these top-level messages:
 */
 package minter
 
-import prpccommon "github.com/luci/luci-go/common/prpc"
-import prpc "github.com/luci/luci-go/server/prpc"
+import prpc "github.com/luci/luci-go/grpc/prpc"
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
@@ -627,10 +626,10 @@ type TokenMinterClient interface {
 	InspectMachineToken(ctx context.Context, in *InspectMachineTokenRequest, opts ...grpc.CallOption) (*InspectMachineTokenResponse, error)
 }
 type tokenMinterPRPCClient struct {
-	client *prpccommon.Client
+	client *prpc.Client
 }
 
-func NewTokenMinterPRPCClient(client *prpccommon.Client) TokenMinterClient {
+func NewTokenMinterPRPCClient(client *prpc.Client) TokenMinterClient {
 	return &tokenMinterPRPCClient{client}
 }
 

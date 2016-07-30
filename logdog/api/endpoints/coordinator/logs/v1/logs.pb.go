@@ -21,8 +21,7 @@ It has these top-level messages:
 */
 package logdog
 
-import prpccommon "github.com/luci/luci-go/common/prpc"
-import prpc "github.com/luci/luci-go/server/prpc"
+import prpc "github.com/luci/luci-go/grpc/prpc"
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
@@ -560,10 +559,10 @@ type LogsClient interface {
 	List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error)
 }
 type logsPRPCClient struct {
-	client *prpccommon.Client
+	client *prpc.Client
 }
 
-func NewLogsPRPCClient(client *prpccommon.Client) LogsClient {
+func NewLogsPRPCClient(client *prpc.Client) LogsClient {
 	return &logsPRPCClient{client}
 }
 

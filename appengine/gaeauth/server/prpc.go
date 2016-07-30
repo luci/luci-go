@@ -5,8 +5,8 @@
 package server
 
 import (
+	"github.com/luci/luci-go/grpc/prpc"
 	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/prpc"
 )
 
 func init() {

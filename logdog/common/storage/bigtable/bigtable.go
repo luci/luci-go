@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luci/luci-go/common/grpcutil"
+	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"golang.org/x/net/context"
 	"google.golang.org/cloud/bigtable"

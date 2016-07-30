@@ -7,8 +7,8 @@ package client
 import (
 	"net/http"
 
-	"github.com/luci/luci-go/common/prpc"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/grpc/prpc"
 
 	"github.com/luci/luci-go/tokenserver/api/minter/v1"
 )

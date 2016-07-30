@@ -12,9 +12,8 @@ import (
 	"net/http/httptest"
 	"net/url"
 
-	prpcCommon "github.com/luci/luci-go/common/prpc"
+	"github.com/luci/luci-go/grpc/prpc"
 	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/prpc"
 	"github.com/luci/luci-go/server/router"
 	"golang.org/x/net/context"
 )
@@ -59,7 +58,7 @@ func (s *Server) Start(c context.Context) {
 }
 
 // NewClient returns a prpc.Client configured to use the Server.
-func (s *Server) NewClient() (*prpcCommon.Client, error) {
+func (s *Server) NewClient() (*prpc.Client, error) {
 	if s.HTTP == nil {
 		return nil, errors.New("not running")
 	}
@@ -69,9 +68,9 @@ func (s *Server) NewClient() (*prpcCommon.Client, error) {
 		return nil, fmt.Errorf("failed to parse server URL: %s", err)
 	}
 
-	return &prpcCommon.Client{
+	return &prpc.Client{
 		Host: u.Host,
-		Options: &prpcCommon.Options{
+		Options: &prpc.Options{
 			Insecure: true,
 		},
 	}, nil

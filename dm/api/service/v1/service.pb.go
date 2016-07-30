@@ -4,8 +4,7 @@
 
 package dm
 
-import prpccommon "github.com/luci/luci-go/common/prpc"
-import prpc "github.com/luci/luci-go/server/prpc"
+import prpc "github.com/luci/luci-go/grpc/prpc"
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
@@ -43,10 +42,10 @@ type DepsClient interface {
 	WalkGraph(ctx context.Context, in *WalkGraphReq, opts ...grpc.CallOption) (*GraphData, error)
 }
 type depsPRPCClient struct {
-	client *prpccommon.Client
+	client *prpc.Client
 }
 
-func NewDepsPRPCClient(client *prpccommon.Client) DepsClient {
+func NewDepsPRPCClient(client *prpc.Client) DepsClient {
 	return &depsPRPCClient{client}
 }
 

@@ -14,8 +14,7 @@ It has these top-level messages:
 */
 package helloworld
 
-import prpccommon "github.com/luci/luci-go/common/prpc"
-import prpc "github.com/luci/luci-go/server/prpc"
+import prpc "github.com/luci/luci-go/grpc/prpc"
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
@@ -77,10 +76,10 @@ type GreeterClient interface {
 	SayHello(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (*HelloReply, error)
 }
 type greeterPRPCClient struct {
-	client *prpccommon.Client
+	client *prpc.Client
 }
 
-func NewGreeterPRPCClient(client *prpccommon.Client) GreeterClient {
+func NewGreeterPRPCClient(client *prpc.Client) GreeterClient {
 	return &greeterPRPCClient{client}
 }
 

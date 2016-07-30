@@ -20,7 +20,7 @@ import (
 	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
-	"github.com/luci/luci-go/common/prpc"
+	"github.com/luci/luci-go/grpc/prpc"
 	"github.com/luci/luci-go/logdog/client/coordinator"
 	"github.com/luci/luci-go/logdog/common/types"
 )

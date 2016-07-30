@@ -7,10 +7,10 @@ package retryServicesClient
 import (
 	"time"
 
-	"github.com/luci/luci-go/common/grpcutil"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/grpc/grpcutil"
 	s "github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"

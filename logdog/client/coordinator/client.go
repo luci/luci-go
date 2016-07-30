@@ -7,7 +7,7 @@ package coordinator
 import (
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/prpc"
+	"github.com/luci/luci-go/grpc/prpc"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
 	"github.com/luci/luci-go/logdog/common/types"
 )

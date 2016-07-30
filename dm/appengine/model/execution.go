@@ -19,10 +19,10 @@ import (
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/rand/cryptorand"
-	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/common/logging"
 	google_pb "github.com/luci/luci-go/common/proto/google"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
+	"github.com/luci/luci-go/grpc/grpcutil"
 )
 
 const ek = logging.ErrorKey

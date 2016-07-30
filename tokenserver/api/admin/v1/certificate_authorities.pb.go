@@ -30,8 +30,7 @@ It has these top-level messages:
 */
 package admin
 
-import prpccommon "github.com/luci/luci-go/common/prpc"
-import prpc "github.com/luci/luci-go/server/prpc"
+import prpc "github.com/luci/luci-go/grpc/prpc"
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
@@ -258,10 +257,10 @@ type CertificateAuthoritiesClient interface {
 	CheckCertificate(ctx context.Context, in *CheckCertificateRequest, opts ...grpc.CallOption) (*CheckCertificateResponse, error)
 }
 type certificateAuthoritiesPRPCClient struct {
-	client *prpccommon.Client
+	client *prpc.Client
 }
 
-func NewCertificateAuthoritiesPRPCClient(client *prpccommon.Client) CertificateAuthoritiesClient {
+func NewCertificateAuthoritiesPRPCClient(client *prpc.Client) CertificateAuthoritiesClient {
 	return &certificateAuthoritiesPRPCClient{client}
 }
 

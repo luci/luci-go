@@ -7,12 +7,12 @@ package module
 import (
 	"net/http"
 
+	"github.com/luci/luci-go/grpc/prpc"
 	registrationPb "github.com/luci/luci-go/logdog/api/endpoints/coordinator/registration/v1"
 	servicesPb "github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints/registration"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints/services"
-	"github.com/luci/luci-go/server/prpc"
 	"github.com/luci/luci-go/server/router"
 
 	// Include mutations package so its Mutations will register with tumble via

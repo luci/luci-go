@@ -9,9 +9,9 @@ import (
 	"testing"
 
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/testing/prpctest"
+	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"golang.org/x/net/context"

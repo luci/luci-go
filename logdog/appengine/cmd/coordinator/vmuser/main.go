@@ -9,6 +9,8 @@ import (
 
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/grpc/discovery"
+	"github.com/luci/luci-go/grpc/prpc"
 	adminPb "github.com/luci/luci-go/logdog/api/endpoints/coordinator/admin/v1"
 	logsPb "github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
 	registrationPb "github.com/luci/luci-go/logdog/api/endpoints/coordinator/registration/v1"
@@ -19,8 +21,6 @@ import (
 	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints/logs"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints/registration"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints/services"
-	"github.com/luci/luci-go/server/discovery"
-	"github.com/luci/luci-go/server/prpc"
 	"github.com/luci/luci-go/server/router"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"

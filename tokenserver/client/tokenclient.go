@@ -15,8 +15,8 @@ import (
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/grpc/grpcutil"
 
 	"github.com/luci/luci-go/tokenserver/api/minter/v1"
 )

@@ -23,8 +23,7 @@ It has these top-level messages:
 */
 package logdog
 
-import prpccommon "github.com/luci/luci-go/common/prpc"
-import prpc "github.com/luci/luci-go/server/prpc"
+import prpc "github.com/luci/luci-go/grpc/prpc"
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
@@ -246,10 +245,10 @@ type ServicesClient interface {
 	ArchiveStream(ctx context.Context, in *ArchiveStreamRequest, opts ...grpc.CallOption) (*google_protobuf1.Empty, error)
 }
 type servicesPRPCClient struct {
-	client *prpccommon.Client
+	client *prpc.Client
 }
 
-func NewServicesPRPCClient(client *prpccommon.Client) ServicesClient {
+func NewServicesPRPCClient(client *prpc.Client) ServicesClient {
 	return &servicesPRPCClient{client}
 }
 

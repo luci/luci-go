@@ -7,8 +7,8 @@ package admin
 import (
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/grpcutil"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/admin/v1"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/server/auth"

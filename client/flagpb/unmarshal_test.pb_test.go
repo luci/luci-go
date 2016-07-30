@@ -55,9 +55,9 @@ func (E) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 type M1 struct {
 	S  string  `protobuf:"bytes,1,opt,name=s" json:"s,omitempty"`
 	I  int32   `protobuf:"varint,2,opt,name=i" json:"i,omitempty"`
-	Ri []int32 `protobuf:"varint,3,rep,name=ri" json:"ri,omitempty"`
+	Ri []int32 `protobuf:"varint,3,rep,packed,name=ri" json:"ri,omitempty"`
 	B  bool    `protobuf:"varint,4,opt,name=b" json:"b,omitempty"`
-	Rb []bool  `protobuf:"varint,6,rep,name=rb" json:"rb,omitempty"`
+	Rb []bool  `protobuf:"varint,6,rep,packed,name=rb" json:"rb,omitempty"`
 	Bb []byte  `protobuf:"bytes,5,opt,name=bb,proto3" json:"bb,omitempty"`
 }
 

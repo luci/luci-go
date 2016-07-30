@@ -13,8 +13,7 @@ It has these top-level messages:
 */
 package logdog
 
-import prpccommon "github.com/luci/luci-go/common/prpc"
-import prpc "github.com/luci/luci-go/server/prpc"
+import prpc "github.com/luci/luci-go/grpc/prpc"
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
@@ -81,10 +80,10 @@ type AdminClient interface {
 	SetConfig(ctx context.Context, in *SetConfigRequest, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
 }
 type adminPRPCClient struct {
-	client *prpccommon.Client
+	client *prpc.Client
 }
 
-func NewAdminPRPCClient(client *prpccommon.Client) AdminClient {
+func NewAdminPRPCClient(client *prpc.Client) AdminClient {
 	return &adminPRPCClient{client}
 }
 

@@ -14,8 +14,7 @@ It has these top-level messages:
 */
 package logdog
 
-import prpccommon "github.com/luci/luci-go/common/prpc"
-import prpc "github.com/luci/luci-go/server/prpc"
+import prpc "github.com/luci/luci-go/grpc/prpc"
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
@@ -114,10 +113,10 @@ type RegistrationClient interface {
 	RegisterPrefix(ctx context.Context, in *RegisterPrefixRequest, opts ...grpc.CallOption) (*RegisterPrefixResponse, error)
 }
 type registrationPRPCClient struct {
-	client *prpccommon.Client
+	client *prpc.Client
 }
 
-func NewRegistrationPRPCClient(client *prpccommon.Client) RegistrationClient {
+func NewRegistrationPRPCClient(client *prpc.Client) RegistrationClient {
 	return &registrationPRPCClient{client}
 }
 

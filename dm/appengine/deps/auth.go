@@ -14,9 +14,9 @@ import (
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/dm/api/acls"
+	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/server/auth"
 	"golang.org/x/net/context"
 )

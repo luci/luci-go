@@ -4,8 +4,7 @@
 
 package descriptor
 
-import prpccommon "github.com/luci/luci-go/common/prpc"
-import prpc "github.com/luci/luci-go/server/prpc"
+import prpc "github.com/luci/luci-go/grpc/prpc"
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
@@ -347,10 +346,10 @@ type S1Client interface {
 	R1(ctx context.Context, in *M1, opts ...grpc.CallOption) (*M2, error)
 }
 type s1PRPCClient struct {
-	client *prpccommon.Client
+	client *prpc.Client
 }
 
-func NewS1PRPCClient(client *prpccommon.Client) S1Client {
+func NewS1PRPCClient(client *prpc.Client) S1Client {
 	return &s1PRPCClient{client}
 }
 
@@ -431,10 +430,10 @@ type S2Client interface {
 	R2(ctx context.Context, in *M1, opts ...grpc.CallOption) (*M2, error)
 }
 type s2PRPCClient struct {
-	client *prpccommon.Client
+	client *prpc.Client
 }
 
-func NewS2PRPCClient(client *prpccommon.Client) S2Client {
+func NewS2PRPCClient(client *prpc.Client) S2Client {
 	return &s2PRPCClient{client}
 }
 

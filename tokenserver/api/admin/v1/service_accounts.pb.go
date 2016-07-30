@@ -4,8 +4,7 @@
 
 package admin
 
-import prpccommon "github.com/luci/luci-go/common/prpc"
-import prpc "github.com/luci/luci-go/server/prpc"
+import prpc "github.com/luci/luci-go/grpc/prpc"
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
@@ -78,10 +77,10 @@ type ServiceAccountsClient interface {
 	CreateServiceAccount(ctx context.Context, in *CreateServiceAccountRequest, opts ...grpc.CallOption) (*CreateServiceAccountResponse, error)
 }
 type serviceAccountsPRPCClient struct {
-	client *prpccommon.Client
+	client *prpc.Client
 }
 
-func NewServiceAccountsPRPCClient(client *prpccommon.Client) ServiceAccountsClient {
+func NewServiceAccountsPRPCClient(client *prpc.Client) ServiceAccountsClient {
 	return &serviceAccountsPRPCClient{client}
 }
 

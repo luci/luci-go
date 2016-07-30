@@ -16,12 +16,12 @@ import (
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/rand/cryptorand"
-	"github.com/luci/luci-go/common/grpcutil"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/prpc"
 	"github.com/luci/luci-go/common/transport"
 	"github.com/luci/luci-go/dm/api/distributor/jobsim"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
+	"github.com/luci/luci-go/grpc/grpcutil"
+	"github.com/luci/luci-go/grpc/prpc"
 	"golang.org/x/net/context"
 )
 
