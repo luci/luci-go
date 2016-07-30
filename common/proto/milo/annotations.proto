@@ -16,6 +16,8 @@ enum Status {
   SUCCESS = 1;
   // The step has finished unsuccessfully.
   FAILURE = 2;
+  // The step has been scheduled, but not yet started.
+  PENDING = 3;
 }
 
 // FailureType provides more details on the nature of the Status.
@@ -33,6 +35,8 @@ message FailureDetails {
     // used if a Step's external depdendency fails and the Step cannot recover
     // or proceed without it.
     DM_DEPENDENCY_FAILED = 3;
+    // The step was cancelled.
+    CANCELLED = 4;
   }
   Type type = 1;
 

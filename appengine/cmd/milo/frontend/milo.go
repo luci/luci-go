@@ -9,6 +9,7 @@ import (
 
 	"github.com/luci/luci-go/appengine/cmd/milo/buildbot"
 	"github.com/luci/luci-go/appengine/cmd/milo/buildbucket"
+	"github.com/luci/luci-go/appengine/cmd/milo/logdog"
 	"github.com/luci/luci-go/appengine/cmd/milo/settings"
 	"github.com/luci/luci-go/appengine/cmd/milo/swarming"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
@@ -36,6 +37,9 @@ func init() {
 	// Buildbot
 	r.GET("/buildbot/:master/:builder/:build", basemw, settings.Wrap(buildbot.Build{}))
 	r.GET("/buildbot/:master/:builder/", basemw, settings.Wrap(buildbot.Builder{}))
+
+	// LogDog Milo Annotation Streams.
+	r.GET("/logdog/build/:project/*path", basemw, settings.Wrap(&logdog.AnnotationStream{}))
 
 	// User settings
 	r.GET("/settings", basemw, settings.Wrap(settings.Settings{}))

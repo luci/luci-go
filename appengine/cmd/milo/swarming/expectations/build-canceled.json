@@ -32,11 +32,18 @@
       "Alt": ""
     },
     "MainLink": null,
-    "SubLink": null,
+    "SubLink": [
+      {
+        "Label": "stdout",
+        "Img": "",
+        "URL": "foo/stdout",
+        "Alt": ""
+      }
+    ],
     "Progress": null,
     "Started": "2016-03-14T10:00:01.85071Z",
     "Finished": "2016-03-14T11:00:18.48602Z",
-    "Duration": 3615243180990,
+    "Duration": 3616635310000,
     "Type": "Recipe",
     "LevelsDeep": 0,
     "Text": [
@@ -100,6 +107,35 @@
     }
   ],
   "PropertyGroup": [
+    {
+      "GroupName": "recipe bootstrap",
+      "Property": [
+        {
+          "Key": "path_config",
+          "Value": "kitchen"
+        },
+        {
+          "Key": "slavename",
+          "Value": "fakeslave"
+        },
+        {
+          "Key": "buildername",
+          "Value": "infra-continuous-precise-32"
+        },
+        {
+          "Key": "mastername",
+          "Value": "chromium.infra"
+        }
+      ]
+    },
+    {
+      "GroupName": "setup_build",
+      "Property": null
+    },
+    {
+      "GroupName": "Main",
+      "Property": null
+    },
     {
       "GroupName": "Swarming",
       "Property": [
@@ -177,35 +213,6 @@
           "Value": "1"
         }
       ]
-    },
-    {
-      "GroupName": "recipe bootstrap",
-      "Property": [
-        {
-          "Key": "path_config",
-          "Value": "kitchen"
-        },
-        {
-          "Key": "slavename",
-          "Value": "fakeslave"
-        },
-        {
-          "Key": "buildername",
-          "Value": "infra-continuous-precise-32"
-        },
-        {
-          "Key": "mastername",
-          "Value": "chromium.infra"
-        }
-      ]
-    },
-    {
-      "GroupName": "setup_build",
-      "Property": null
-    },
-    {
-      "GroupName": "Main",
-      "Property": null
     }
   ],
   "Blame": null

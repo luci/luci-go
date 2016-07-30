@@ -5,8 +5,6 @@
 package logdog
 
 import (
-	"fmt"
-
 	miloProto "github.com/luci/luci-go/common/proto/milo"
 )
 
@@ -18,11 +16,6 @@ type Streams struct {
 	// Streams is the full map streamName->stream referenced by MainStream.
 	// It includes MainStream.
 	Streams map[string]*Stream
-}
-
-// GetFullPath returns the canonical URL of the logdog stream.
-func (s *Stream) GetFullPath() string {
-	return fmt.Sprintf("https://%s/%s/+/%s", s.Server, s.Prefix, s.Path)
 }
 
 // Stream represents a single LogDog style stream, which can contain either

@@ -12,9 +12,16 @@
       "Alt": ""
     },
     "MainLink": null,
-    "SubLink": null,
+    "SubLink": [
+      {
+        "Label": "stdout",
+        "Img": "",
+        "URL": "foo/stdout",
+        "Alt": ""
+      }
+    ],
     "Progress": null,
-    "Started": "0001-01-01T00:00:00Z",
+    "Started": "2016-03-14T10:00:01Z",
     "Finished": "0001-01-01T00:00:00Z",
     "Duration": 0,
     "Type": "Recipe",
@@ -180,24 +187,6 @@
   ],
   "PropertyGroup": [
     {
-      "GroupName": "Swarming",
-      "Property": [
-        {
-          "Key": "Exit Code",
-          "Value": "0"
-        }
-      ]
-    },
-    {
-      "GroupName": "Swarming Tags",
-      "Property": [
-        {
-          "Key": "allow_milo",
-          "Value": "1"
-        }
-      ]
-    },
-    {
       "GroupName": "update_scripts",
       "Property": [
         {
@@ -264,6 +253,24 @@
         {
           "Key": "revision",
           "Value": "HEAD"
+        }
+      ]
+    },
+    {
+      "GroupName": "Swarming",
+      "Property": [
+        {
+          "Key": "Exit Code",
+          "Value": "0"
+        }
+      ]
+    },
+    {
+      "GroupName": "Swarming Tags",
+      "Property": [
+        {
+          "Key": "allow_milo",
+          "Value": "1"
         }
       ]
     }

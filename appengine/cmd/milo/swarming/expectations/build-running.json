@@ -12,7 +12,14 @@
       "Alt": ""
     },
     "MainLink": null,
-    "SubLink": null,
+    "SubLink": [
+      {
+        "Label": "stdout",
+        "Img": "",
+        "URL": "foo/stdout",
+        "Alt": ""
+      }
+    ],
     "Progress": null,
     "Started": "2016-03-14T10:00:01.85071Z",
     "Finished": "0001-01-01T00:00:00Z",
@@ -103,15 +110,6 @@
   ],
   "PropertyGroup": [
     {
-      "GroupName": "Swarming Tags",
-      "Property": [
-        {
-          "Key": "allow_milo",
-          "Value": "1"
-        }
-      ]
-    },
-    {
       "GroupName": "recipe bootstrap",
       "Property": [
         {
@@ -143,6 +141,15 @@
     {
       "GroupName": "Main",
       "Property": null
+    },
+    {
+      "GroupName": "Swarming Tags",
+      "Property": [
+        {
+          "Key": "allow_milo",
+          "Value": "1"
+        }
+      ]
     }
   ],
   "Blame": null

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -20,8 +21,9 @@ import (
 	"github.com/luci/luci-go/appengine/cmd/milo/resp"
 	"github.com/luci/luci-go/appengine/gaeauth/client"
 	swarming "github.com/luci/luci-go/common/api/swarming/swarming/v1"
-	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/google"
+	miloProto "github.com/luci/luci-go/common/proto/milo"
 	"github.com/luci/luci-go/common/transport"
 	"github.com/luci/luci-go/logdog/client/annotee"
 	"github.com/luci/luci-go/logdog/common/types"
@@ -258,53 +260,91 @@ func addBanner(build *resp.MiloBuild, sr *swarming.SwarmingRpcsTaskResult) {
 	}
 }
 
-func taskToBuild(c context.Context, server string, sr *swarming.SwarmingRpcsTaskResult) (*resp.MiloBuild, error) {
-	build := &resp.MiloBuild{
-		Summary: resp.BuildComponent{
-			Label: sr.TaskId,
-			Source: &resp.Link{
-				Label: "Task " + sr.TaskId,
-				URL:   taskPageURL(server, sr.TaskId),
-			},
+// addTaskToMiloStep augments a Milo Annotation Protobuf with state from the
+// Swarming task.
+func addTaskToMiloStep(c context.Context, server string, sr *swarming.SwarmingRpcsTaskResult, step *miloProto.Step) error {
+	step.Link = &miloProto.Link{
+		Label: "Task " + sr.TaskId,
+		Value: &miloProto.Link_Url{
+			Url: taskPageURL(server, sr.TaskId),
 		},
 	}
 
 	switch sr.State {
 	case TaskRunning:
-		build.Summary.Status = resp.Running
+		step.Status = miloProto.Status_RUNNING
 
 	case TaskPending:
-		build.Summary.Status = resp.NotRun
+		step.Status = miloProto.Status_PENDING
 
 	case TaskExpired, TaskTimedOut, TaskBotDied:
-		build.Summary.Status = resp.InfraFailure
+		step.Status = miloProto.Status_FAILURE
+		step.FailureDetails = &miloProto.FailureDetails{
+			Type: miloProto.FailureDetails_INFRA,
+		}
+
 		switch sr.State {
 		case TaskExpired:
-			build.Summary.Text = append(build.Summary.Text, "Task expired")
+			step.FailureDetails.Text = "Task expired"
 		case TaskTimedOut:
-			build.Summary.Text = append(build.Summary.Text, "Task timed out")
+			step.FailureDetails.Text = "Task timed out"
 		case TaskBotDied:
-			build.Summary.Text = append(build.Summary.Text, "Bot died")
+			step.FailureDetails.Text = "Bot died"
 		}
 
 	case TaskCanceled:
 		// Cancelled build is user action, so it is not an infra failure.
-		build.Summary.Status = resp.Failure
-		build.Summary.Text = append(build.Summary.Text, "Task cancelled by user")
+		step.Status = miloProto.Status_FAILURE
+		step.FailureDetails = &miloProto.FailureDetails{
+			Type: miloProto.FailureDetails_CANCELLED,
+			Text: "Task cancelled by user",
+		}
 
 	case TaskCompleted:
 
 		switch {
 		case sr.InternalFailure:
-			build.Summary.Status = resp.InfraFailure
+			step.Status = miloProto.Status_FAILURE
+			step.FailureDetails = &miloProto.FailureDetails{
+				Type: miloProto.FailureDetails_INFRA,
+			}
+
 		case sr.Failure:
-			build.Summary.Status = resp.Failure
+			step.Status = miloProto.Status_FAILURE
+
 		default:
-			build.Summary.Status = resp.Success
+			step.Status = miloProto.Status_SUCCESS
 		}
 
 	default:
-		return nil, fmt.Errorf("unknown swarming task state %q", sr.State)
+		return fmt.Errorf("unknown swarming task state %q", sr.State)
+	}
+
+	// Compute start and finished times.
+	if sr.StartedTs != "" {
+		ts, err := time.Parse(SwarmingTimeLayout, sr.StartedTs)
+		if err != nil {
+			return fmt.Errorf("invalid task StartedTs: %s", err)
+		}
+		step.Started = google.NewTimestamp(ts)
+	}
+	if sr.CompletedTs != "" {
+		ts, err := time.Parse(SwarmingTimeLayout, sr.CompletedTs)
+		if err != nil {
+			return fmt.Errorf("invalid task CompletedTs: %s", err)
+		}
+		step.Ended = google.NewTimestamp(ts)
+	}
+
+	return nil
+}
+
+func addTaskToBuild(c context.Context, server string, sr *swarming.SwarmingRpcsTaskResult, build *resp.MiloBuild) error {
+	build.Summary.Label = sr.TaskId
+	build.Summary.Type = resp.Recipe
+	build.Summary.Source = &resp.Link{
+		Label: "Task " + sr.TaskId,
+		URL:   taskPageURL(server, sr.TaskId),
 	}
 
 	// Extract more swarming specific information into the properties.
@@ -326,30 +366,7 @@ func taskToBuild(c context.Context, server string, sr *swarming.SwarmingRpcsTask
 		}
 	}
 
-	// Compute start and finished times, and duration.
-	var err error
-	if sr.StartedTs != "" {
-		build.Summary.Started, err = time.Parse(SwarmingTimeLayout, sr.StartedTs)
-		if err != nil {
-			return nil, fmt.Errorf("invalid task StartedTs: %s", err)
-		}
-	}
-	if sr.CompletedTs != "" {
-		build.Summary.Finished, err = time.Parse(SwarmingTimeLayout, sr.CompletedTs)
-		if err != nil {
-			return nil, fmt.Errorf("invalid task CompletedTs: %s", err)
-		}
-	}
-	if sr.Duration != 0 {
-		build.Summary.Duration = time.Duration(sr.Duration * float64(time.Second))
-	} else if sr.State == TaskRunning {
-		now := clock.Now(c)
-		if build.Summary.Started.Before(now) {
-			build.Summary.Duration = now.Sub(build.Summary.Started)
-		}
-	}
-
-	return build, nil
+	return nil
 }
 
 // streamsFromAnnotatedLog takes in an annotated log and returns a fully
@@ -395,10 +412,7 @@ func swarmingBuildImpl(c context.Context, linkBase, server, taskID string) (*res
 		return nil, fmt.Errorf("Not A Milo Job")
 	}
 
-	build, err := taskToBuild(c, server, sr)
-	if err != nil {
-		return nil, err
-	}
+	var build resp.MiloBuild
 
 	// Decode the data using annotee. The logdog stream returned here is assumed
 	// to be consistent, which is why the following block of code are not
@@ -417,11 +431,22 @@ func swarmingBuildImpl(c context.Context, linkBase, server, taskID string) (*res
 				}},
 			}}
 		} else {
-			logdog.AddLogDogToBuild(c, linkBase, lds, build)
+			if lds.MainStream == nil || lds.MainStream.Data == nil {
+				panic("no main build step stream")
+			}
+
+			if err := addTaskToMiloStep(c, server, sr, lds.MainStream.Data); err != nil {
+				return nil, err
+			}
+			logdog.AddLogDogToBuild(c, swarmingURLBuilder(linkBase), lds, &build)
 		}
 	}
 
-	return build, nil
+	if err := addTaskToBuild(c, server, sr, &build); err != nil {
+		return nil, err
+	}
+
+	return &build, nil
 }
 
 // taskPageURL returns a URL to a human-consumable page of a swarming task.
@@ -434,4 +459,40 @@ func taskPageURL(swarmingHostname, taskID string) string {
 // Supports server aliases.
 func botPageURL(swarmingHostname, botID string) string {
 	return fmt.Sprintf("https://%s/restricted/bot/%s", swarmingHostname, botID)
+}
+
+// swarmingURLBuilder is a logdog.URLBuilder that builds Milo swarming log
+// links.
+//
+// The string value for this should be the "linkBase" parameter supplied to
+// swarmingBuildImpl.
+type swarmingURLBuilder string
+
+func (b swarmingURLBuilder) BuildLink(l *miloProto.Link) *resp.Link {
+	u, err := url.Parse(string(b))
+	if err != nil {
+		return nil
+	}
+
+	switch t := l.Value.(type) {
+	case *miloProto.Link_LogdogStream:
+		ls := t.LogdogStream
+
+		if u.Path == "" {
+			u.Path = ls.Name
+		} else {
+			u.Path = strings.TrimSuffix(u.Path, "/") + "/" + ls.Name
+		}
+		link := resp.Link{
+			Label: l.Label,
+			URL:   u.String(),
+		}
+		if link.Label == "" {
+			link.Label = ls.Name
+		}
+		return &link
+
+	default:
+		return nil
+	}
 }
