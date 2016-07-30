@@ -8,7 +8,7 @@
 # It contains a bunch of global variables and functions.
 
 
-# Change to your Cloud Project ID.
+# Change to your Cloud Project ID. See README.md.
 CLOUD_PROJECT_ID=my-cloud-project
 
 
@@ -21,6 +21,8 @@ mkdir -p "$WORKING_DIR"
 DEVSERVER_PORT=8080
 DEVSERVER_ADMIN_PORT=8100
 CRLSERVER_PORT=8200
+
+DEVCFG_PATH=`dirname $PWD`/appengine/devcfg/services/$CLOUD_PROJECT_ID
 
 
 # initialize_ca builds a new simple self-signed CA.
@@ -171,14 +173,6 @@ function regen_crl {
 }
 
 
-# to_json_string reads stdin and returns it as json string to stdout.
-#
-# Useful when using 'rpc' tool.
-function to_json_string {
-  python -c "import sys, json; json.dump(sys.stdin.read(), sys.stdout)"
-}
-
-
 # call_rpc invokes pRPC method on devserver instance.
 #
 # It reads method body as JSON from stdin.
@@ -195,30 +189,25 @@ function call_rpc {
 
 # import_config imports CA config into the token server.
 function import_config {
-  local TOKEN_CONFIG_CFG_JSON=`to_json_string <<EOL
-  certificate_authority {
-    cn: "$CA_NAME"
-    cert_path: "certs/ca.pem"
-    crl_url: "http://localhost:$CRLSERVER_PORT/ca/crl/crl.der"
-    use_oauth: false
+  mkdir -p $DEVCFG_PATH/certs
+  cp $CA_DIR/certs/ca.pem $DEVCFG_PATH/certs/ca.pem
 
-    known_domains: {
-      domain: "fake.domain"
-      machine_token_lifetime: 3600
-    }
+  cat >$DEVCFG_PATH/tokenserver.cfg <<EOL
+certificate_authority {
+  cn: "$CA_NAME"
+  cert_path: "certs/ca.pem"
+  crl_url: "http://localhost:$CRLSERVER_PORT/ca/crl/crl.der"
+  use_oauth: false
+
+  known_domains: {
+    domain: "fake.domain"
+    machine_token_lifetime: 3600
   }
-EOL`
-
-  local CA_CERT_JSON=`cat $CA_DIR/certs/ca.pem | to_json_string`
-
-  call_rpc "tokenserver.admin.CertificateAuthorities.ImportConfig" <<EOL
-  {
-    "devConfig": {
-      "tokenserver.cfg": $TOKEN_CONFIG_CFG_JSON,
-      "certs/ca.pem": $CA_CERT_JSON
-    }
-  }
+}
 EOL
+
+  # Ask the server to reread the config.
+  echo "{}" | call_rpc "tokenserver.admin.CertificateAuthorities.ImportConfig"
 
   # Wait a bit for cached config to expire.
   sleep 0.5

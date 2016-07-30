@@ -17,7 +17,7 @@ type DecoratedCertificateAuthorities struct {
 	Prelude func(c context.Context, methodName string, req proto.Message) (context.Context, error)
 }
 
-func (s *DecoratedCertificateAuthorities) ImportConfig(c context.Context, req *ImportConfigRequest) (*ImportConfigResponse, error) {
+func (s *DecoratedCertificateAuthorities) ImportConfig(c context.Context, req *google_protobuf.Empty) (*ImportConfigResponse, error) {
 	c, err := s.Prelude(c, "ImportConfig", req)
 	if err != nil {
 		return nil, err

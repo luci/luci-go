@@ -23,10 +23,8 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/appengine/gaeconfig"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/config"
-	cfgmem "github.com/luci/luci-go/common/config/impl/memory"
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
@@ -50,9 +48,8 @@ type Server struct {
 // Note that regularly configs are read in background each 5 min. ImportConfig
 // can be used to force config reread immediately. It will block until configs
 // are read.
-func (s *Server) ImportConfig(c context.Context, req *admin.ImportConfigRequest) (*admin.ImportConfigResponse, error) {
-	fetcher := newConfigFetcher(c, req)
-	cfg, err := fetcher.fetchConfigFile(c, "tokenserver.cfg")
+func (s *Server) ImportConfig(c context.Context, _ *google.Empty) (*admin.ImportConfigResponse, error) {
+	cfg, err := fetchConfigFile(c, "tokenserver.cfg")
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "can't read config file - %s", err)
 	}
@@ -109,7 +106,7 @@ func (s *Server) ImportConfig(c context.Context, req *admin.ImportConfigRequest)
 		wg.Add(1)
 		go func(i int, ca *admin.CertificateAuthorityConfig) {
 			defer wg.Done()
-			certFileCfg, err := fetcher.fetchConfigFile(c, ca.CertPath)
+			certFileCfg, err := fetchConfigFile(c, ca.CertPath)
 			if err != nil {
 				logging.Errorf(c, "Failed to fetch %q: %s", ca.CertPath, err)
 				me.Assign(i, err)
@@ -341,43 +338,12 @@ func (s *Server) CheckCertificate(c context.Context, r *admin.CheckCertificateRe
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// configFetcher knows how to fetch files from luci-config.
-//
-// TODO(vadimsh): Get rid of this in favor of default gaeconfig stuff.
-type configFetcher struct {
-	cfg       config.Interface
-	configSet string
-}
-
-func newConfigFetcher(c context.Context, req *admin.ImportConfigRequest) *configFetcher {
-	inf := info.Get(c)
-
-	ret := configFetcher{
-		configSet: "services/" + inf.AppID(),
-	}
-
-	if inf.IsDevAppServer() {
-		// On devserver use whatever was passed to ImportConfig.
-		cfgSet := make(cfgmem.ConfigSet, len(req.DevConfig))
-		for k, v := range req.DevConfig {
-			cfgSet[k] = v
-		}
-		ret.cfg = cfgmem.New(map[string]cfgmem.ConfigSet{
-			"services/" + inf.AppID(): cfgSet,
-		})
-	} else {
-		// In prod use real luci-config service.
-		ret.cfg = gaeconfig.New(c)
-	}
-
-	return &ret
-}
-
 // fetchConfigFile fetches a file from this services' config set.
-func (f *configFetcher) fetchConfigFile(c context.Context, path string) (*config.Config, error) {
-	logging.Infof(c, "Reading %q", path)
+func fetchConfigFile(c context.Context, path string) (*config.Config, error) {
+	configSet := "services/" + info.Get(c).AppID()
+	logging.Infof(c, "Reading %q from config set %q", path, configSet)
 	c, _ = context.WithTimeout(c, 30*time.Second) // URL fetch deadline
-	return f.cfg.GetConfig(c, f.configSet, path, false)
+	return config.GetConfig(c, configSet, path, false)
 }
 
 // importCA imports CA definition from the config (or updates an existing one).

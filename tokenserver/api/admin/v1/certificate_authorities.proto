@@ -21,7 +21,7 @@ service CertificateAuthorities {
   // Note that regularly configs are read in background each 5 min. ImportConfig
   // can be used to force config reread immediately. It will block until configs
   // are read.
-  rpc ImportConfig(ImportConfigRequest) returns (ImportConfigResponse);
+  rpc ImportConfig(google.protobuf.Empty) returns (ImportConfigResponse);
 
   // FetchCRL makes the server fetch a CRL for some CA.
   rpc FetchCRL(FetchCRLRequest) returns (FetchCRLResponse);
@@ -37,15 +37,6 @@ service CertificateAuthorities {
 
   // CheckCertificate says whether a certificate is valid or not.
   rpc CheckCertificate(CheckCertificateRequest) returns (CheckCertificateResponse);
-}
-
-// ImportConfigRequest is passed to ImportConfig.
-message ImportConfigRequest {
-  // DevConfig is mapping of {config file name -> config file body}.
-  //
-  // It is used only on devserver to import some mock config in integration
-  // tests. Ignored completely in prod.
-  map<string, string> dev_config = 1;
 }
 
 // ImportConfigResponse is returned by ImportConfig on success.
