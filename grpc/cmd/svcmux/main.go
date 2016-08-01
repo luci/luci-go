@@ -16,7 +16,7 @@ import (
 	"strings"
 
 	"github.com/luci/luci-go/grpc/internal/svctool"
-	"github.com/luci/luci-go/server/svcmux"
+	"github.com/luci/luci-go/grpc/svcmux"
 
 	"golang.org/x/net/context"
 )

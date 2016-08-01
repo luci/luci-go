@@ -3,7 +3,7 @@
 package buildbot
 
 import (
-	svcmux "github.com/luci/luci-go/server/svcmux"
+	"github.com/luci/luci-go/grpc/svcmux"
 	context "golang.org/x/net/context"
 )
 
