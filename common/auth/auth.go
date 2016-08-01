@@ -27,7 +27,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -120,6 +119,12 @@ const (
 	// by CLI tools where authentication is optional.
 	OptionalLogin LoginMode = "OptionalLogin"
 )
+
+// minAcceptedLifetime is minimal lifetime of a token returned by the token
+// source or put into authentication headers.
+//
+// If token is expected to live less than this duration, it will be refreshed.
+const minAcceptedLifetime = 2 * time.Minute
 
 // Options are used by NewAuthenticator call.
 //
@@ -277,13 +282,7 @@ func NewAuthenticator(ctx context.Context, loginMode LoginMode, opts Options) *A
 		opts:      &opts,
 		ctx:       ctx,
 	}
-	transportCanceler, _ := opts.Transport.(canceler)
-	auth.transport = &authTransport{
-		parent:   auth,
-		base:     opts.Transport,
-		canceler: transportCanceler,
-		inflight: make(map[*http.Request]*http.Request, 10),
-	}
+	auth.transport = NewModifyingTransport(opts.Transport, auth.authTokenInjector)
 	return auth
 }
 
@@ -661,137 +660,27 @@ func (a *Authenticator) refreshTokenWithRetries(t *oauth2.Token) (tok *oauth2.To
 	return
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// authTransport implementation.
-
-// minAcceptedLifetime is minimal lifetime of a token that is still accepted.
+// authTokenInjector injects an authentication token into request headers.
 //
-// If token is expected to live less than this duration, it will be refreshed.
-const minAcceptedLifetime = 15 * time.Second
-
-type canceler interface {
-	CancelRequest(*http.Request)
-}
-
-type authTransport struct {
-	parent   *Authenticator
-	base     http.RoundTripper
-	canceler canceler // non-nil if 'base' implements it
-
-	lock     sync.Mutex                      // protecting 'inflight'
-	inflight map[*http.Request]*http.Request // original -> modified
-}
-
-// RoundTrip appends authorization details to the request.
-func (t *authTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+// Used as a callback for NewModifyingTransport.
+func (a *Authenticator) authTokenInjector(req *http.Request) error {
 	// Attempt to refresh the token, if required. Revert to non-authed call if
 	// token can't be refreshed and running in OptionalLogin mode.
-	tok := t.parent.currentToken()
-	ctx := t.parent.ctx
-	if tok == nil || internal.TokenExpiresIn(ctx, tok, minAcceptedLifetime) {
+	tok := a.currentToken()
+	if tok == nil || internal.TokenExpiresIn(a.ctx, tok, minAcceptedLifetime) {
 		var err error
-		tok, err = t.parent.refreshToken(tok, minAcceptedLifetime)
+		tok, err = a.refreshToken(tok, minAcceptedLifetime)
 		switch {
-		case err == ErrLoginRequired && t.parent.loginMode == OptionalLogin:
-			// Need to put it in 'inflight' to make CancelRequest work.
-			t.lock.Lock()
-			t.inflight[req] = req
-			t.lock.Unlock()
-			return t.roundTripAndForget(req, req)
+		case err == ErrLoginRequired && a.loginMode == OptionalLogin:
+			return nil // skip auth, no need for modifications
 		case err != nil:
-			return nil, err
-		case internal.TokenExpiresIn(ctx, tok, minAcceptedLifetime):
-			return nil, fmt.Errorf("auth: failed to refresh the token")
+			return err
+		case internal.TokenExpiresIn(a.ctx, tok, minAcceptedLifetime):
+			return fmt.Errorf("auth: failed to refresh the token")
 		}
 	}
-
-	// Original request must not be modified, make a shallow clone. Keep a mapping
-	// between original request and modified copy to know what to cancel in
-	// CancelRequest.
-	clone := t.cloneAndRemember(req)
-	clone.Header = make(http.Header)
-	for k, v := range req.Header {
-		clone.Header[k] = v
-	}
-	tok.SetAuthHeader(clone)
-	return t.roundTripAndForget(clone, req)
-}
-
-// CancelRequest is needed for request timeouts to work.
-func (t *authTransport) CancelRequest(req *http.Request) {
-	if t.canceler != nil {
-		if clone := t.forget(req); clone != nil {
-			t.canceler.CancelRequest(clone)
-		}
-	}
-}
-
-// cloneAndRemember makes a shallow copy of 'req' and puts it into inflight map.
-func (t *authTransport) cloneAndRemember(req *http.Request) *http.Request {
-	clone := *req
-	t.lock.Lock()
-	defer t.lock.Unlock()
-	t.inflight[req] = &clone
-	return &clone
-}
-
-// roundTripAndForget calls original RoundTrip and then cleans up inflight map.
-func (t *authTransport) roundTripAndForget(clone, orig *http.Request) (*http.Response, error) {
-	// Hook response to know when it is safe to "forget" the original request.
-	// Users of http.Client are supposed to always close the body of the response.
-	res, err := t.base.RoundTrip(clone)
-	if err != nil {
-		t.forget(orig)
-		return nil, err
-	}
-	res.Body = &onEOFReader{
-		rc: res.Body,
-		fn: func() { t.forget(orig) },
-	}
-	return res, nil
-}
-
-// forget removes an entry in 'inflight' map stored by 'cloneAndRemember'.
-//
-// Return stored value if it is there, nil if empty.
-func (t *authTransport) forget(req *http.Request) *http.Request {
-	t.lock.Lock()
-	defer t.lock.Unlock()
-	clone := t.inflight[req]
-	if clone != nil {
-		delete(t.inflight, req)
-	}
-	return clone
-}
-
-// onEOFReader wraps ReadCloser and calls supplied function when EOF is seen or
-// Close is called.
-//
-// Copy-pasted from https://github.com/golang/oauth2/blob/master/transport.go.
-type onEOFReader struct {
-	rc io.ReadCloser
-	fn func()
-}
-
-func (r *onEOFReader) Read(p []byte) (n int, err error) {
-	n, err = r.rc.Read(p)
-	if err == io.EOF {
-		r.runFunc()
-	}
-	return
-}
-
-func (r *onEOFReader) Close() error {
-	err := r.rc.Close()
-	r.runFunc()
-	return err
-}
-
-func (r *onEOFReader) runFunc() {
-	if fn := r.fn; fn != nil {
-		fn()
-		r.fn = nil
-	}
+	tok.SetAuthHeader(req)
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
