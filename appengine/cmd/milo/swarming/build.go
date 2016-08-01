@@ -464,8 +464,8 @@ func botPageURL(swarmingHostname, botID string) string {
 // swarmingURLBuilder is a logdog.URLBuilder that builds Milo swarming log
 // links.
 //
-// The string value for this should be the "linkBase" parameter supplied to
-// swarmingBuildImpl.
+// The string value for this should be the "linkBase" parameter value supplied
+// to swarmingBuildImpl.
 type swarmingURLBuilder string
 
 func (b swarmingURLBuilder) BuildLink(l *miloProto.Link) *resp.Link {
@@ -491,6 +491,12 @@ func (b swarmingURLBuilder) BuildLink(l *miloProto.Link) *resp.Link {
 			link.Label = ls.Name
 		}
 		return &link
+
+	case *miloProto.Link_Url:
+		return &resp.Link{
+			Label: l.Label,
+			URL:   t.Url,
+		}
 
 	default:
 		return nil

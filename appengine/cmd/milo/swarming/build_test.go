@@ -40,14 +40,15 @@ func TestBuild(t *testing.T) {
 		input        string
 		expectations string
 	}{
+		{"build-canceled", "build-canceled.json"},
 		{"build-exception", "build-exception.json"},
+		{"build-hang", "build-hang.json"},
+		{"build-link", "build-link.json"},
 		{"build-patch-failure", "build-patch-failure.json"},
 		{"build-pending", "build-pending.json"},
 		{"build-running", "build-running.json"},
-		{"build-unicode", "build-unicode.json"},
 		{"build-timeout", "build-timeout.json"},
-		{"build-canceled", "build-canceled.json"},
-		{"build-hang", "build-hang.json"},
+		{"build-unicode", "build-unicode.json"},
 	}
 
 	c := context.Background()

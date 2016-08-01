@@ -1,17 +1,22 @@
 {
   "Summary": {
     "ParentLabel": null,
-    "Label": "",
+    "Label": "2d8d62f6be545b10",
     "Status": "Running",
     "Banner": null,
     "Bot": null,
     "Source": {
-      "Label": "Task ",
+      "Label": "Task 2d8d62f6be545b10",
       "Img": "",
-      "URL": "https://debug/user/task/",
+      "URL": "https://debug/user/task/2d8d62f6be545b10",
       "Alt": ""
     },
-    "MainLink": null,
+    "MainLink": {
+      "Label": "Task 2d8d62f6be545b10",
+      "Img": "",
+      "URL": "https://debug/user/task/2d8d62f6be545b10",
+      "Alt": ""
+    },
     "SubLink": [
       {
         "Label": "stdout",

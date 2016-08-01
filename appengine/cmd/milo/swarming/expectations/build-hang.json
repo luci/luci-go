@@ -16,7 +16,12 @@
       "URL": "https://debug/user/task/2fafff1d46fc5010",
       "Alt": ""
     },
-    "MainLink": null,
+    "MainLink": {
+      "Label": "Task 2fafff1d46fc5010",
+      "Img": "",
+      "URL": "https://debug/user/task/2fafff1d46fc5010",
+      "Alt": ""
+    },
     "SubLink": [
       {
         "Label": "stdout",
