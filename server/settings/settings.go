@@ -39,7 +39,7 @@ type Bundle struct {
 	Values map[string]*json.RawMessage // immutable
 	Exp    time.Time
 
-	lock     sync.Mutex             // protects 'unpacked'
+	lock     sync.RWMutex           // protects 'unpacked'
 	unpacked map[string]interface{} // deserialized RawMessages
 }
 
@@ -52,25 +52,35 @@ func (b *Bundle) get(key string, value interface{}) error {
 
 	typ := reflect.TypeOf(value)
 
-	b.lock.Lock()
-	defer b.lock.Unlock()
-
+	// Fast path for already-in-cache values.
+	b.lock.RLock()
 	cached, ok := b.unpacked[key]
+	b.lock.RUnlock()
+
+	// Slow path.
 	if !ok {
-		// 'value' must be a pointer to a struct.
-		if typ.Kind() != reflect.Ptr || typ.Elem().Kind() != reflect.Struct {
-			return ErrBadType
+		b.lock.Lock()
+		defer b.lock.Unlock() // its fine to hold the lock until return
+
+		cached, ok = b.unpacked[key]
+		if !ok {
+			// 'value' must be a pointer to a struct.
+			if typ.Kind() != reflect.Ptr || typ.Elem().Kind() != reflect.Struct {
+				return ErrBadType
+			}
+			// 'cached' is &Struct{}.
+			cached = reflect.New(typ.Elem()).Interface()
+			if err := json.Unmarshal([]byte(*raw), cached); err != nil {
+				return err
+			}
+			if b.unpacked == nil {
+				b.unpacked = make(map[string]interface{}, 1)
+			}
+			b.unpacked[key] = cached
 		}
-		// 'cached' is &Struct{}.
-		cached = reflect.New(typ.Elem()).Interface()
-		if err := json.Unmarshal([]byte(*raw), cached); err != nil {
-			return err
-		}
-		if b.unpacked == nil {
-			b.unpacked = make(map[string]interface{}, 1)
-		}
-		b.unpacked[key] = cached
 	}
+
+	// Note: the code below may be called with b.lock in locked or unlocked state.
 
 	// All calls to 'get' must use same type consistently.
 	if reflect.TypeOf(cached) != typ {

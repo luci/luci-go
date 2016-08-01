@@ -41,7 +41,7 @@ type Slot struct {
 	Fetcher Fetcher       // used to actually load the value on demand
 	Timeout time.Duration // how long to allow to fetch, 15 sec by default.
 
-	lock              sync.Mutex      // protects the guts below
+	lock              sync.RWMutex    // protects the guts below
 	current           *Value          // currently known value or nil if not fetched
 	currentFetcherCtx context.Context // non-nil if some goroutine is fetching now
 }
@@ -64,8 +64,20 @@ func (s *Slot) Get(c context.Context) (result Value, err error) {
 	result, err, done := func() (result Value, err error, done bool) {
 		now := clock.Now(c)
 
-		// This lock protects the guts of the slot and makes sure only one goroutine
-		// is doing an initial fetch.
+		// Fast path. Checks a cached value exists and it is still fresh or some
+		// goroutine is already updating it (in that case we return a stale copy).
+		s.lock.RLock()
+		if s.current != nil && (now.Before(s.current.Expiration) || s.currentFetcherCtx != nil) {
+			result = *s.current
+			done = true
+		}
+		s.lock.RUnlock()
+		if done {
+			return
+		}
+
+		// Slow path. This lock protects the guts of the slot and makes sure only
+		// one goroutine is doing an initial fetch.
 		s.lock.Lock()
 		defer s.lock.Unlock()
 
@@ -78,7 +90,7 @@ func (s *Slot) Get(c context.Context) (result Value, err error) {
 
 		// Fetching the value for the first time ever? Do it under the lock because
 		// there's nothing to return yet. All goroutines would have to wait for this
-		// initial fetch to complete. They'll all block on s.lock.Lock() above.
+		// initial fetch to complete. They'll all block on s.lock.RLock() above.
 		if s.current == nil {
 			result, err = doFetch(s.makeFetcherCtx(c), s.Fetcher, Value{})
 			if err == nil {

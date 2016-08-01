@@ -59,8 +59,9 @@ func (c *Cache) Put(key, value interface{}, exp time.Time) {
 // Get returns a stored item or nil if no such item.
 func (c *Cache) Get(key interface{}) *Entry {
 	c.lock.RLock()
-	defer c.lock.RUnlock()
-	if e, ok := c.cache[key]; ok {
+	e, ok := c.cache[key]
+	c.lock.RUnlock()
+	if ok {
 		return &e
 	}
 	return nil
