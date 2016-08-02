@@ -36,6 +36,7 @@
     "Duration": 10846627950000,
     "Type": "Recipe",
     "LevelsDeep": 0,
+    "Verbosity": 0,
     "Text": [
       "Task timed out",
       "InfraFailure bot_update"
@@ -63,6 +64,7 @@
       "Duration": 10808000000000,
       "Type": "Step",
       "LevelsDeep": 0,
+      "Verbosity": 1,
       "Text": null
     },
     {
@@ -92,6 +94,7 @@
       "Duration": 109999872,
       "Type": "Step",
       "LevelsDeep": 0,
+      "Verbosity": 1,
       "Text": [
         "running recipe: \"infra_repo_trybot\""
       ]
@@ -116,6 +119,7 @@
       "Duration": 10810903870000,
       "Type": "Step",
       "LevelsDeep": 0,
+      "Verbosity": 0,
       "Text": null
     }
   ],

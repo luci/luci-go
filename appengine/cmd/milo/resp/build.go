@@ -2,7 +2,7 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-//go:generate stringer -type=Status,ComponentType
+//go:generate stringer -type=Status,ComponentType,Verbosity
 
 package resp
 
@@ -178,6 +178,18 @@ type LogoBanner struct {
 	Device []Logo
 }
 
+// Verbosity can be tagged onto a BuildComponent to indicate whether it should
+// be hidden or annuciated.
+type Verbosity int
+
+const (
+	// Normal items are displayed as usual.  This is the default.
+	Normal Verbosity = iota
+
+	// Hidden items are by default not displayed.
+	Hidden
+)
+
 // BuildComponent represents a single Step, subsetup, attempt, or recipe.
 type BuildComponent struct {
 	// The parent of this component.  For buildbot and swarmbucket builds, this
@@ -229,6 +241,9 @@ type BuildComponent struct {
 	// indentation level.  Valid options are 0 and 1.  Anything more than 1 is
 	// automatically truncated to 1.
 	LevelsDeep uint32
+
+	// Verbosity indicates how important this step is.
+	Verbosity Verbosity
 
 	// Arbitrary text to display below links.  One line per entry,
 	// newlines are stripped.

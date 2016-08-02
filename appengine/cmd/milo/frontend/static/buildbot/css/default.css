@@ -707,3 +707,7 @@ form.command_forcebuild .force-any .force-text {
 div.step-text:first-child {
     display: inline;
 }
+
+.verbosity-Hidden.default {
+  display: none;
+}

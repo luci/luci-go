@@ -51,6 +51,7 @@
     "Duration": 3616635310000,
     "Type": "Recipe",
     "LevelsDeep": 0,
+    "Verbosity": 0,
     "Text": [
       "Task cancelled by user"
     ]
@@ -77,6 +78,7 @@
       "Duration": 2000000000,
       "Type": "Step",
       "LevelsDeep": 0,
+      "Verbosity": 1,
       "Text": null
     },
     {
@@ -106,6 +108,7 @@
       "Duration": 1000000000,
       "Type": "Step",
       "LevelsDeep": 0,
+      "Verbosity": 1,
       "Text": [
         "running recipe: \"v8\""
       ]

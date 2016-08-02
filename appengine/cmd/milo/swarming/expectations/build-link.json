@@ -31,6 +31,7 @@
     "Duration": 3598149290000,
     "Type": "Recipe",
     "LevelsDeep": 0,
+    "Verbosity": 0,
     "Text": [
       "Running recipe bootstrap"
     ]
@@ -64,6 +65,7 @@
       "Duration": 3598000000000,
       "Type": "Step",
       "LevelsDeep": 0,
+      "Verbosity": 0,
       "Text": null
     }
   ],

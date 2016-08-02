@@ -29,6 +29,7 @@
     "Duration": 930372273920,
     "Type": "Summary",
     "LevelsDeep": 1,
+    "Verbosity": 0,
     "Text": []
   },
   "SourceStamp": {
@@ -73,6 +74,7 @@
       "Duration": 930361414912,
       "Type": "Recipe",
       "LevelsDeep": 0,
+      "Verbosity": 0,
       "Text": [
         "running steps via annotated script"
       ]
@@ -104,6 +106,7 @@
       "Duration": 24792523008,
       "Type": "Recipe",
       "LevelsDeep": 0,
+      "Verbosity": 0,
       "Text": [
         "update_scripts",
         "git - 94dbe001292dcec3423c5d1b0374826ff89a8f46"
@@ -129,6 +132,7 @@
       "Duration": 6026450944,
       "Type": "Recipe",
       "LevelsDeep": 0,
+      "Verbosity": 0,
       "Text": [
         "setup_properties"
       ]
@@ -160,6 +164,7 @@
       "Duration": 1960960,
       "Type": "Recipe",
       "LevelsDeep": 0,
+      "Verbosity": 0,
       "Text": [
         "setup_build",
         "running recipe: \"chromium\""
@@ -185,6 +190,7 @@
       "Duration": 11061463296,
       "Type": "Recipe",
       "LevelsDeep": 0,
+      "Verbosity": 0,
       "Text": [
         "taskkill"
       ]
@@ -216,6 +222,7 @@
       "Duration": 64068097280,
       "Type": "Recipe",
       "LevelsDeep": 0,
+      "Verbosity": 0,
       "Text": [
         "bot_update",
         "[133GB/2047GB used (6%)]"
@@ -241,6 +248,7 @@
       "Duration": 2181888,
       "Type": "Recipe",
       "LevelsDeep": 0,
+      "Verbosity": 0,
       "Text": [
         "ensure_goma"
       ]
@@ -272,6 +280,7 @@
       "Duration": 5137920,
       "Type": "Recipe",
       "LevelsDeep": 0,
+      "Verbosity": 0,
       "Text": [
         "ensure_goma.install cipd",
         "cipd instance_id: bccdb9a605037e3dd2a8a64e79e08f691a6f159d"
@@ -304,6 +313,7 @@
       "Duration": 4836864,
       "Type": "Recipe",
       "LevelsDeep": 0,
+      "Verbosity": 0,
       "Text": [
         "ensure_goma.ensure_installed"
       ]
@@ -328,6 +338,7 @@
       "Duration": 15240265984,
       "Type": "Recipe",
       "LevelsDeep": 0,
+      "Verbosity": 0,
       "Text": [
         "gclient runhooks"
       ]
@@ -359,6 +370,7 @@
       "Duration": 2008539904,
       "Type": "Recipe",
       "LevelsDeep": 0,
+      "Verbosity": 0,
       "Text": [
         "get compile targets for scripts"
       ]
@@ -390,6 +402,7 @@
       "Duration": 10048792832,
       "Type": "Recipe",
       "LevelsDeep": 0,
+      "Verbosity": 0,
       "Text": [
         "read test spec",
         "path: C:\\b\\build\\slave\\CrWinGoma\\build\\src\\testing\\buildbot\\chromium.fyi.json"
@@ -415,6 +428,7 @@
       "Duration": 12411904,
       "Type": "Recipe",
       "LevelsDeep": 0,
+      "Verbosity": 0,
       "Text": [
         "cleanup_temp"
       ]
@@ -439,6 +453,7 @@
       "Duration": 45870952960,
       "Type": "Recipe",
       "LevelsDeep": 0,
+      "Verbosity": 0,
       "Text": [
         "generate_build_files"
       ]
@@ -470,6 +485,7 @@
       "Duration": 662301324032,
       "Type": "Recipe",
       "LevelsDeep": 0,
+      "Verbosity": 0,
       "Text": [
         "compile"
       ]
@@ -494,6 +510,7 @@
       "Duration": 35905665280,
       "Type": "Recipe",
       "LevelsDeep": 0,
+      "Verbosity": 0,
       "Text": [
         "base_unittests",
         "base_unittests",
@@ -521,6 +538,7 @@
       "Duration": 40790078720,
       "Type": "Recipe",
       "LevelsDeep": 0,
+      "Verbosity": 0,
       "Text": [
         "content_unittests",
         "content_unittests",
@@ -547,6 +565,7 @@
       "Duration": 2630912,
       "Type": "Recipe",
       "LevelsDeep": 0,
+      "Verbosity": 0,
       "Text": [
         "process_dumps"
       ]
@@ -578,6 +597,7 @@
       "Duration": 86822144,
       "Type": "Recipe",
       "LevelsDeep": 0,
+      "Verbosity": 0,
       "Text": [
         "recipe result"
       ]

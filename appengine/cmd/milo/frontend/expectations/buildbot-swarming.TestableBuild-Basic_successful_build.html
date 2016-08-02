@@ -5,6 +5,7 @@
 <title>Test swarming build</title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
 <script src="/static/common/js/time.js"></script>
+<script src="/static/common/third_party/js/jquery.min.js"></script>
 
 
 <body class="interface">
@@ -79,6 +80,18 @@
     
   </div>
 </div>
+<script language="javascript">
+$("#showHidden").click(function(e) {
+  var checked = $(this).is(":checked");
+  $(".verbosity-Hidden").each(function(i, obj) {
+    if (checked) {
+      $(this).removeClass("default");
+    } else {
+      $(this).addClass("default");
+    }
+  });
+});
+</script>
 
   <footer>
     <hr>
