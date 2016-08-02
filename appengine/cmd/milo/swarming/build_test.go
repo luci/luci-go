@@ -36,36 +36,21 @@ func shouldMatchExpectationsFor(actualContents interface{}, expectedFilename ...
 }
 
 func TestBuild(t *testing.T) {
-	testCases := []struct {
-		input        string
-		expectations string
-	}{
-		{"build-canceled", "build-canceled.json"},
-		{"build-exception", "build-exception.json"},
-		{"build-hang", "build-hang.json"},
-		{"build-link", "build-link.json"},
-		{"build-patch-failure", "build-patch-failure.json"},
-		{"build-pending", "build-pending.json"},
-		{"build-running", "build-running.json"},
-		{"build-timeout", "build-timeout.json"},
-		{"build-unicode", "build-unicode.json"},
-	}
-
 	c := context.Background()
 	c, _ = testclock.UseTime(c, time.Date(2016, time.March, 14, 11, 0, 0, 0, time.UTC))
 
 	if *generate {
-		for _, tc := range testCases {
-			fmt.Printf("Generating expectations for %s\n", tc.input)
-			build, err := swarmingBuildImpl(c, "foo", "debug", tc.input)
+		for _, tc := range getTestCases() {
+			fmt.Printf("Generating expectations for %s\n", tc)
+			build, err := swarmingBuildImpl(c, "foo", "debug", tc)
 			if err != nil {
-				panic(fmt.Errorf("Could not run swarmingBuildImpl for %s: %s", tc.input, err))
+				panic(fmt.Errorf("Could not run swarmingBuildImpl for %s: %s", tc, err))
 			}
 			buildJSON, err := json.MarshalIndent(build, "", "  ")
 			if err != nil {
-				panic(fmt.Errorf("Could not JSON marshal %s: %s", tc.input, err))
+				panic(fmt.Errorf("Could not JSON marshal %s: %s", tc, err))
 			}
-			filename := path.Join("expectations", tc.expectations)
+			filename := path.Join("expectations", tc+".json")
 			err = ioutil.WriteFile(filename, []byte(buildJSON), 0644)
 			if err != nil {
 				panic(fmt.Errorf("Encountered error while trying to write to %s: %s", filename, err))
@@ -75,11 +60,11 @@ func TestBuild(t *testing.T) {
 	}
 
 	Convey(`A test Environment`, t, func() {
-		for _, tc := range testCases {
-			Convey(fmt.Sprintf("Test Case: %s", tc.input), func() {
-				build, err := swarmingBuildImpl(c, "foo", "debug", tc.input)
+		for _, tc := range getTestCases() {
+			Convey(fmt.Sprintf("Test Case: %s", tc), func() {
+				build, err := swarmingBuildImpl(c, "foo", "debug", tc)
 				So(err, ShouldBeNil)
-				So(build, shouldMatchExpectationsFor, tc.expectations)
+				So(build, shouldMatchExpectationsFor, tc+".json")
 			})
 		}
 	})
