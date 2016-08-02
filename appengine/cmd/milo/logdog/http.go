@@ -11,10 +11,10 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/appengine/cmd/milo/miloerror"
 	"github.com/luci/luci-go/appengine/cmd/milo/settings"
-	authClient "github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/templates"
 
 	"golang.org/x/net/context"
@@ -38,7 +38,8 @@ func (s *AnnotationStream) GetTemplateName(t settings.Theme) string {
 // Render implements settings.ThemedHandler.
 func (s *AnnotationStream) Render(c context.Context, req *http.Request, p httprouter.Params) (*templates.Args, error) {
 	// Initialize the LogDog client authentication.
-	a, err := authClient.Transport(c, nil, nil)
+	// TODO(vadimsh): Use auth.AsUser.
+	t, err := auth.GetRPCTransport(c, auth.AsSelf)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to get transport for LogDog server.")
 		return nil, &miloerror.Error{
@@ -54,7 +55,7 @@ func (s *AnnotationStream) Render(c context.Context, req *http.Request, p httpro
 		host:    req.FormValue("host"),
 
 		logDogClient: http.Client{
-			Transport: a,
+			Transport: t,
 		},
 	}
 	if err := as.normalize(); err != nil {

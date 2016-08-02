@@ -5,10 +5,10 @@
 package coordinator
 
 import (
+	"net/http"
 	"sync"
 	"sync/atomic"
 
-	gaeauthClient "github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	luciConfig "github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
@@ -19,6 +19,7 @@ import (
 	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/storage/bigtable"
+	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
 	"golang.org/x/net/context"
 	"google.golang.org/cloud"
@@ -185,7 +186,7 @@ func (s *prodServicesInst) IntermediateStorage(c context.Context) (storage.Stora
 	}
 
 	// Get an Authenticator bound to the token scopes that we need for BigTable.
-	a, err := gaeauthClient.Authenticator(c, bigtable.StorageScopes, cfg.Settings.BigTableServiceAccountJSON)
+	transport, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(bigtable.StorageScopes...))
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create BigTable authenticator.")
 		return nil, errors.New("failed to create BigTable authenticator")
@@ -201,7 +202,7 @@ func (s *prodServicesInst) IntermediateStorage(c context.Context) (storage.Stora
 		Instance: bt.Instance,
 		LogTable: bt.LogTableName,
 		ClientOptions: []cloud.ClientOption{
-			cloud.WithTokenSource(a.TokenSource()),
+			cloud.WithBaseHTTP(&http.Client{Transport: transport}),
 		},
 	})
 	if err != nil {
@@ -214,12 +215,12 @@ func (s *prodServicesInst) IntermediateStorage(c context.Context) (storage.Stora
 func (s *prodServicesInst) GSClient(c context.Context) (gs.Client, error) {
 	// Get an Authenticator bound to the token scopes that we need for
 	// authenticated Cloud Storage access.
-	rt, err := gaeauthClient.Transport(c, gs.ReadOnlyScopes, nil)
+	transport, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gs.ReadOnlyScopes...))
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create Cloud Storage transport.")
 		return nil, errors.New("failed to create Cloud Storage transport")
 	}
-	return gs.NewProdClient(c, rt)
+	return gs.NewProdClient(c, transport)
 }
 
 func (s *prodServicesInst) ArchivalPublisher(c context.Context) (ArchivalPublisher, error) {
@@ -239,19 +240,12 @@ func (s *prodServicesInst) ArchivalPublisher(c context.Context) (ArchivalPublish
 	project, topic := fullTopic.Split()
 
 	// Create an authenticated Pub/Sub client.
-	// Pub/Sub topic publishing.
-	auth, err := gaeauthClient.Authenticator(c, pubsub.PublisherScopes, nil)
+	transport, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(pubsub.PublisherScopes...))
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create Pub/Sub authenticator.")
 		return nil, errors.New("failed to create Pub/Sub authenticator")
 	}
-
-	client, err := auth.Client()
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create Pub/Sub HTTP client.")
-		return nil, errors.New("failed to create Pub/Sub HTTP client")
-	}
-
+	client := &http.Client{Transport: transport}
 	psClient, err := gcps.NewClient(c, project, cloud.WithBaseHTTP(client))
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create Pub/Sub client.")

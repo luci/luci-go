@@ -28,12 +28,11 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/urlfetch"
-	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/server/auth"
 
 	"github.com/luci/luci-go/tokenserver/api"
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
@@ -356,14 +355,14 @@ func (s *Server) httpClient(c context.Context, withAuth bool) (*http.Client, err
 		return &http.Client{Transport: transport}, nil
 	}
 	c, _ = clock.WithTimeout(c, 20*time.Second)
+	var err error
 	if withAuth {
-		var err error
-		transport, err = client.Transport(c, []string{iam.CloudPlatformScope}, nil)
-		if err != nil {
-			return nil, err
-		}
+		transport, err = auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(iam.CloudPlatformScope))
 	} else {
-		transport = urlfetch.Get(c)
+		transport, err = auth.GetRPCTransport(c, auth.NoAuth)
+	}
+	if err != nil {
+		return nil, err
 	}
 	return &http.Client{Transport: transport}, nil
 }

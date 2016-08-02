@@ -6,15 +6,15 @@ package buildbucket
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/appengine/cmd/milo/resp"
-	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/common/api/buildbucket/buildbucket/v1"
-	"github.com/luci/luci-go/common/transport"
+	"github.com/luci/luci-go/server/auth"
 )
 
 const (
@@ -41,9 +41,13 @@ func ParseTags(tags []string) map[string]string {
 }
 
 func newClient(c context.Context, server string) (*buildbucket.Service, error) {
+	// TODO(vadimsh): Use auth.AsUser? (for impersonating end users).
 	c, _ = context.WithTimeout(c, 60*time.Second)
-	c = client.UseServiceAccountTransport(c, nil, nil)
-	client, err := buildbucket.New(transport.GetClient(c))
+	t, err := auth.GetRPCTransport(c, auth.AsSelf)
+	if err != nil {
+		return nil, err
+	}
+	client, err := buildbucket.New(&http.Client{Transport: t})
 	if err != nil {
 		return nil, err
 	}

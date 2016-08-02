@@ -15,8 +15,8 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
-	"github.com/luci/gae/service/urlfetch"
 	"github.com/luci/luci-go/appengine/gaetesting"
+	"github.com/luci/luci-go/server/auth"
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 
@@ -220,9 +220,7 @@ func TestFetchCRL(t *testing.T) {
 		ts := serveCRL()
 		defer ts.Close()
 
-		ctx := gaetesting.TestingContext()
-		ctx = urlfetch.Set(ctx, http.DefaultTransport) // mock URLFetch service
-
+		ctx := testingContext()
 		srv := &Server{}
 
 		// Prepare config.
@@ -271,9 +269,7 @@ func TestFetchCRL(t *testing.T) {
 		ts := serveCRL()
 		defer ts.Close()
 
-		ctx := gaetesting.TestingContext()
-		ctx = urlfetch.Set(ctx, http.DefaultTransport) // mock URLFetch service
-
+		ctx := testingContext()
 		srv := &Server{}
 
 		// Prepare config.
@@ -329,6 +325,16 @@ func TestFetchCRL(t *testing.T) {
 		So(crl.LastFetchETag, ShouldEqual, `"etag2"`)
 		So(crl.EntityVersion, ShouldEqual, 2)
 	})
+}
+
+func testingContext() context.Context {
+	ctx := gaetesting.TestingContext()
+	ctx = auth.ModifyConfig(ctx, func(cfg *auth.Config) {
+		cfg.AnonymousTransport = func(context.Context) http.RoundTripper {
+			return http.DefaultTransport // mock URLFetch service
+		}
+	})
+	return ctx
 }
 
 ////////////////////////////////////////////////////////////////////////////////

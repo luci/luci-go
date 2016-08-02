@@ -42,7 +42,8 @@ func authenticatePubSub(c context.Context) context.Context {
 		"https://www.googleapis.com/auth/userinfo.email",
 		"https://www.googleapis.com/auth/pubsub",
 	}
-	return client.UseServiceAccountTransport(c, scopes, nil)
+	// TODO(vadimsh): Get rid of this.
+	return client.UseServiceAccountTransport(c, scopes)
 }
 
 // setupPubSub creates a subscription to AuthDB service notification stream.

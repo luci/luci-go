@@ -27,12 +27,12 @@ import (
 	"github.com/luci/gae/service/memcache"
 	"github.com/luci/gae/service/taskqueue"
 
-	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/tokens"
@@ -1517,11 +1517,11 @@ func (ctl *taskController) GetClient(timeout time.Duration) (*http.Client, error
 	// TODO(vadimsh): Use per-project service accounts, not a global cron service
 	// account.
 	ctx, _ := clock.WithTimeout(ctl.ctx, timeout)
-	transport, err := client.Transport(ctx, nil, nil)
+	t, err := auth.GetRPCTransport(ctx, auth.AsSelf)
 	if err != nil {
 		return nil, err
 	}
-	return &http.Client{Transport: transport}, nil
+	return &http.Client{Transport: t}, nil
 }
 
 // DebugLog is part of task.Controller interface.

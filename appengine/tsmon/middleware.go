@@ -15,7 +15,6 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/gae/service/info"
-	gaeauth "github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/common/clock"
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	"github.com/luci/luci-go/common/iotools"
@@ -25,6 +24,7 @@ import (
 	"github.com/luci/luci-go/common/tsmon/monitor"
 	"github.com/luci/luci-go/common/tsmon/store"
 	"github.com/luci/luci-go/common/tsmon/target"
+	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
 )
 
@@ -312,17 +312,11 @@ func (s *State) doFlush(c context.Context, state *tsmon.State, settings *tsmonSe
 
 		// Create an HTTP client with the default appengine service account. The
 		// client is bound to the context and inherits its deadline.
-		auth, err := gaeauth.Authenticator(c, gcps.PublisherScopes, nil)
+		t, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gcps.PublisherScopes...))
 		if err != nil {
 			return err
 		}
-		client, err := auth.Client()
-		if err != nil {
-			return err
-		}
-
-		mon, err = monitor.NewPubsubMonitor(c, client, topic)
-		if err != nil {
+		if mon, err = monitor.NewPubsubMonitor(c, &http.Client{Transport: t}, topic); err != nil {
 			return err
 		}
 	}

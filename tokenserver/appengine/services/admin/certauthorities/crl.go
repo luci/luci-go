@@ -13,11 +13,10 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/urlfetch"
-	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/server/auth"
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 
@@ -37,12 +36,12 @@ func fetchCRL(c context.Context, cfg *admin.CertificateAuthorityConfig, knownETa
 	// Pick auth or non-auth transport.
 	var transport http.RoundTripper
 	if cfg.UseOauth {
-		transport, err = client.Transport(c, crlFetchScopes, nil)
-		if err != nil {
-			return nil, "", errors.WrapTransient(err)
-		}
+		transport, err = auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(crlFetchScopes...))
 	} else {
-		transport = urlfetch.Get(c)
+		transport, err = auth.GetRPCTransport(c, auth.NoAuth)
+	}
+	if err != nil {
+		return nil, "", err
 	}
 
 	// Send the request with ETag related headers.

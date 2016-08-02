@@ -3,98 +3,87 @@
 // that can be found in the LICENSE file.
 
 // Package client implements OAuth2 authentication for outbound connections
-// from Appengine using service account keys. It supports native GAE service
-// account credentials and external ones provided via JSON keys. It caches
-// access tokens in memcache.
+// from Appengine using the application services account.
 package client
 
 import (
-	"bytes"
-	"encoding/binary"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
-	"sync"
+	"sort"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
 
 	"github.com/luci/gae/service/info"
-	"github.com/luci/gae/service/memcache"
 	"github.com/luci/gae/service/urlfetch"
 
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/data/caching/proccache"
 	"github.com/luci/luci-go/common/data/rand/mathrand"
+	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/transport"
+	serverauth "github.com/luci/luci-go/server/auth"
 )
 
-// cacheSchema defines version of memcache structures.
-const cacheSchema = "gaeauth/v1/"
-
-const (
-	// minExpirationTime defines minimum acceptable lifetime of a token.
-	minExpirationTime = time.Minute
-	// maxExpirationTime defines maximum acceptable lifetime of a token.
-	maxExpirationTime = 5 * time.Hour
-	// expirationRandomization defines how much to randomize expiration time.
-	expirationRandomization = 5 * time.Minute
-)
-
-// Authenticator returns an auth.Authenticator using GAE service account
-// tokens minted for a given set of scopes, or 'email' scope if empty.
+// GetAccessToken returns an OAuth access token representing app's service
+// account.
 //
-// If serviceAccountJSON is given, it must be a byte blob with service account
-// JSON key to use instead of app's own account.
-func Authenticator(c context.Context, scopes []string, serviceAccountJSON []byte) (*auth.Authenticator, error) {
-	opts := auth.Options{
-		Transport: urlfetch.Get(c),
-		Scopes:    scopes,
-		TokenCacheFactory: func(entryName string) (auth.TokenCache, error) {
-			return tokenCache{c, cacheSchema + entryName}, nil
-		},
-	}
-	if len(serviceAccountJSON) != 0 {
-		opts.Method = auth.ServiceAccountMethod
-		opts.ServiceAccountJSON = serviceAccountJSON
-	} else {
-		opts.Method = auth.CustomMethod
-		opts.CustomTokenMinter = tokenMinter{c}
-	}
-	return auth.NewAuthenticator(c, auth.SilentLogin, opts), nil
-}
-
-// Transport returns http.RoundTripper that injects Authorization headers into
-// requests. It uses an authenticator returned by Authenticator.
 // If scopes is empty, uses auth.OAuthScopeEmail scope.
-func Transport(c context.Context, scopes []string, serviceAccountJSON []byte) (http.RoundTripper, error) {
-	a, err := Authenticator(c, scopes, serviceAccountJSON)
-	if err != nil {
-		return nil, err
+//
+// Implements a caching layer on top of GAE's GetAccessToken RPC. May return
+// transient errors.
+func GetAccessToken(c context.Context, scopes []string) (auth.Token, error) {
+	scopes, cacheKey := normalizeScopes(scopes)
+
+	// Try to find the token in the local memory first. If it expires soon,
+	// refresh it earlier with some probability. That avoids a situation when
+	// parallel requests that use access tokens suddenly see the cache expired
+	// and rush to refresh the token all at once.
+	pcache := proccache.GetCache(c)
+	if entry := pcache.Get(cacheKey); entry != nil && !closeToExpRandomized(c, entry.Exp) {
+		return entry.Value.(auth.Token), nil
 	}
-	return a.Transport()
+
+	// The token needs to be refreshed.
+	logging.Debugf(c, "Getting an access token for scopes %q", strings.Join(scopes, ", "))
+	accessToken, exp, err := info.Get(c).AccessToken(scopes...)
+	if err != nil {
+		return auth.Token{}, errors.WrapTransient(err)
+	}
+
+	// Prematurely expire it to guarantee all returned token live for at least
+	// 'expirationMinLifetime'.
+	tok := auth.Token{
+		AccessToken: accessToken,
+		Expiry:      exp.Add(-expirationMinLifetime),
+		TokenType:   "Bearer",
+	}
+
+	// Store the new token in the cache (overriding what's already there).
+	pcache.Put(cacheKey, tok, tok.Expiry)
+
+	return tok, nil
 }
 
 // UseServiceAccountTransport injects authenticating transport into
-// context.Context. It can be extracted back via transport.Get(c). It will be
-// lazy-initialized on a first use.
+// context.Context. It can be extracted back via transport.Get(c).
+//
 // If scopes is empty, uses auth.OAuthScopeEmail scope.
-func UseServiceAccountTransport(c context.Context, scopes []string, serviceAccountJSON []byte) context.Context {
-	var cached http.RoundTripper
-	var once sync.Once
+//
+// TODO(vadimsh): Get rid of this in favor of auth.GetRPCTransport.
+func UseServiceAccountTransport(c context.Context, scopes []string) context.Context {
 	return transport.SetFactory(c, func(ic context.Context) http.RoundTripper {
-		once.Do(func() {
-			t, err := Transport(ic, scopes, serviceAccountJSON)
-			if err != nil {
-				cached = failTransport{err}
-			} else {
-				cached = t
-			}
-		})
-		return cached
+		t, err := serverauth.GetRPCTransport(ic, serverauth.AsSelf, serverauth.WithScopes(scopes...))
+		if err != nil {
+			return failTransport{err}
+		}
+		return t
 	})
 }
 
@@ -103,10 +92,53 @@ func UseServiceAccountTransport(c context.Context, scopes []string, serviceAccou
 // libraries that search for transport in the context (e.g. common/config),
 // since by default they revert to http.DefaultTransport that doesn't work in
 // GAE environment.
+//
+// TODO(vadimsh): Get rid of this in favor of auth.GetRPCTransport.
 func UseAnonymousTransport(c context.Context) context.Context {
 	return transport.SetFactory(c, func(ic context.Context) http.RoundTripper {
 		return urlfetch.Get(ic)
 	})
+}
+
+//// Internal stuff.
+
+type cacheKey string
+
+const (
+	// expirationMinLifetime is minimal possible lifetime of a returned token.
+	expirationMinLifetime = 2 * time.Minute
+	// expirationRandomization defines how much to randomize expiration time.
+	expirationRandomization = 10 * time.Minute
+)
+
+func normalizeScopes(scopes []string) ([]string, cacheKey) {
+	if len(scopes) == 0 {
+		scopes = []string{auth.OAuthScopeEmail}
+	} else {
+		set := stringset.New(len(scopes))
+		for _, s := range scopes {
+			if strings.ContainsRune(s, '\n') {
+				panic(fmt.Errorf("invalid scope %q", s))
+			}
+			set.Add(s)
+		}
+		scopes = set.ToSlice()
+		sort.Strings(scopes)
+	}
+	return scopes, cacheKey(strings.Join(scopes, "\n"))
+}
+
+func closeToExpRandomized(c context.Context, exp time.Time) bool {
+	switch now := clock.Now(c); {
+	case now.After(exp):
+		return true // expired already
+	case now.Add(expirationRandomization).Before(exp):
+		return false // far from expiration
+	default:
+		// The expiration is close enough. Do the randomization.
+		rnd := time.Duration(mathrand.Get(c).Int63n(int64(expirationRandomization)))
+		return now.Add(rnd).After(exp)
+	}
 }
 
 type failTransport struct {
@@ -121,88 +153,4 @@ func (f failTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 		r.Body.Close()
 	}
 	return nil, f.err
-}
-
-//// Internal stuff.
-
-// tokenMinter implements auth.TokenMinter on top of GAE API.
-type tokenMinter struct {
-	c context.Context
-}
-
-func (m tokenMinter) MintToken(scopes []string) (auth.Token, error) {
-	tok, exp, err := info.Get(m.c).AccessToken(scopes...)
-	if err != nil {
-		return auth.Token{}, err
-	}
-	return auth.Token{AccessToken: tok, Expiry: exp}, nil
-}
-
-func (m tokenMinter) CacheSeed() []byte {
-	return []byte(cacheSchema)
-}
-
-// tokenCache implement auth.TokenCache on top of memcache. Value in the cache
-// is |<little endian int64 expiration time><byte blob with token>|.
-type tokenCache struct {
-	c   context.Context
-	key string
-}
-
-func (c tokenCache) Read() ([]byte, error) {
-	mem := memcache.Get(c.c)
-	itm, err := mem.Get(c.key)
-	if err == memcache.ErrCacheMiss {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, errors.WrapTransient(err)
-	}
-	buf := bytes.NewReader(itm.Value())
-
-	// Skip broken token (logging the error first).
-	expTs := int64(0)
-	if err = binary.Read(buf, binary.LittleEndian, &expTs); err != nil {
-		logging.Warningf(c.c, "Could not deserialize cached token - %s", err)
-		return nil, nil
-	}
-
-	// Randomize cache expiration time to avoid thundering herd effect when
-	// token expires. Also start refreshing 1 min before real expiration time to
-	// account for possible clock desync.
-	lifetime := time.Unix(expTs, 0).Sub(clock.Now(c.c))
-	rnd := mathrand.Get(c.c).Int31n(int32(expirationRandomization.Seconds()))
-	if lifetime < minExpirationTime+time.Duration(rnd)*time.Second {
-		return nil, nil
-	}
-
-	// Sanity check for broken entries. Lifetime should be bounded.
-	if lifetime > maxExpirationTime {
-		logging.Warningf(c.c, "Token lifetime is unexpectedly huge (%v), probably the token cache is broken", lifetime)
-		return nil, nil
-	}
-
-	// Expiration time is ok. Read the actual token.
-	return ioutil.ReadAll(buf)
-}
-
-func (c tokenCache) Write(tok []byte, expiry time.Time) error {
-	lifetime := expiry.Sub(clock.Now(c.c))
-	if lifetime < minExpirationTime {
-		return fmt.Errorf("token expires too soon (%s sec), skipping cache", lifetime)
-	}
-	buf := bytes.NewBuffer(nil)
-	binary.Write(buf, binary.LittleEndian, expiry.Unix())
-	buf.Write(tok)
-	mem := memcache.Get(c.c)
-	err := mem.Set(mem.NewItem(c.key).SetValue(buf.Bytes()).SetExpiration(lifetime))
-	return errors.WrapTransient(err)
-}
-
-func (c tokenCache) Clear() error {
-	err := memcache.Get(c.c).Delete(c.key)
-	if err != nil && err != memcache.ErrCacheMiss {
-		return errors.WrapTransient(err)
-	}
-	return nil
 }

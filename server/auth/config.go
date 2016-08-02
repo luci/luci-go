@@ -5,8 +5,11 @@
 package auth
 
 import (
+	"net/http"
+
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/server/auth/signing"
 )
 
@@ -27,6 +30,20 @@ type Config struct {
 	// Signer interface also responsible for providing identity of the currently
 	// running service (since it's related to the private key used).
 	Signer signing.Signer
+
+	// AccessTokenProvider knows how to generate OAuth2 access token for the
+	// service account belonging to the server itself.
+	//
+	// Should implement caching itself, if appropriate. Returned tokens are
+	// expected to live for at least 1-2 mins.
+	AccessTokenProvider func(c context.Context, scopes []string) (auth.Token, error)
+
+	// AnonymousTransport returns http.RoundTriper that can make unauthenticated
+	// HTTP requests.
+	//
+	// The returned round tripper is assumed to be bound to the context and won't
+	// outlive it.
+	AnonymousTransport func(c context.Context) http.RoundTripper
 }
 
 type cfxContextKey int

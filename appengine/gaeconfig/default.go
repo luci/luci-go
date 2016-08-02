@@ -20,8 +20,7 @@ import (
 	"github.com/luci/luci-go/common/config/impl/erroring"
 	"github.com/luci/luci-go/common/config/impl/filesystem"
 	"github.com/luci/luci-go/common/config/impl/remote"
-
-	"github.com/luci/luci-go/appengine/gaeauth/client"
+	"github.com/luci/luci-go/server/auth"
 )
 
 // ErrNotConfigured is returned by methods of config.Interface object returned
@@ -139,9 +138,9 @@ func devServerConfig() config.Interface {
 //
 // The returned client uses GAE app's service account for authentication.
 func authenticatedClient(ctx context.Context) (*http.Client, error) {
-	transport, err := client.Transport(ctx, nil, nil)
+	t, err := auth.GetRPCTransport(ctx, auth.AsSelf)
 	if err != nil {
 		return nil, err
 	}
-	return &http.Client{Transport: transport}, nil
+	return &http.Client{Transport: t}, nil
 }

@@ -13,10 +13,10 @@ import (
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/pubsub/v1"
 
-	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/server/auth"
 )
 
 // createPubSubService returns configured instance of pubsub.Service.
@@ -25,7 +25,7 @@ func createPubSubService(c context.Context, pubSubURL string) (*pubsub.Service, 
 	var transport http.RoundTripper
 	if pubSubURL == "" {
 		var err error
-		transport, err = client.Transport(c, []string{pubsub.PubsubScope}, nil)
+		transport, err = auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(pubsub.PubsubScope))
 		if err != nil {
 			return nil, err
 		}

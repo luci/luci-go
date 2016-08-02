@@ -91,9 +91,6 @@ const (
 	// GCEMetadataMethod is used on Compute Engine to use tokens provided by
 	// Metadata server. See https://cloud.google.com/compute/docs/authentication
 	GCEMetadataMethod Method = "GCEMetadataMethod"
-
-	// CustomMethod is used if access token is provided via CustomTokenMinter.
-	CustomMethod Method = "CustomMethod"
 )
 
 // LoginMode is used as enum in NewAuthenticator function.
@@ -175,9 +172,6 @@ type Options struct {
 	//
 	// If not set, a file system cache will be used.
 	TokenCacheFactory func(entryName string) (TokenCache, error)
-
-	// CustomTokenMinter is a factory to make new tokens if CustomMethod is used.
-	CustomTokenMinter TokenMinter
 
 	// SecretsDir can be used to override a path to a directory where tokens
 	// are cached and default service account key is located.
@@ -820,14 +814,6 @@ func makeTokenProvider(ctx context.Context, opts *Options) (internal.TokenProvid
 			opts.Scopes)
 	case GCEMetadataMethod:
 		return internal.NewGCETokenProvider(ctx, opts.GCEAccountName, opts.Scopes)
-	case CustomMethod:
-		if opts.CustomTokenMinter == nil {
-			return nil, fmt.Errorf("auth: bad Options - CustomTokenMinter must be set")
-		}
-		return &customTokenProvider{
-			scopes: opts.Scopes,
-			minter: opts.CustomTokenMinter,
-		}, nil
 	default:
 		return nil, fmt.Errorf("auth: unrecognized authentication method: %s", opts.Method)
 	}
@@ -852,39 +838,4 @@ func SecretsDir() string {
 		panic(err.Error())
 	}
 	return filepath.Join(home, ".config", "chrome_infra", "auth")
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// CustomMethod implementation.
-
-// customTokenProvider implements internal.TokenProvider interface on top of
-// TokenMinter.
-type customTokenProvider struct {
-	scopes []string
-	minter TokenMinter
-}
-
-func (p *customTokenProvider) RequiresInteraction() bool {
-	return false
-}
-
-func (p *customTokenProvider) CacheSeed() []byte {
-	return p.minter.CacheSeed()
-}
-
-func (p *customTokenProvider) MintToken() (*oauth2.Token, error) {
-	tok, err := p.minter.MintToken(p.scopes)
-	if err != nil {
-		return nil, err
-	}
-	return &oauth2.Token{
-		AccessToken: tok.AccessToken,
-		Expiry:      tok.Expiry,
-		TokenType:   tok.TokenType,
-	}, nil
-}
-
-func (p *customTokenProvider) RefreshToken(*oauth2.Token) (*oauth2.Token, error) {
-	// Refreshing is the same as making a new one.
-	return p.MintToken()
 }

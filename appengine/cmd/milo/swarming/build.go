@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -19,14 +20,13 @@ import (
 
 	"github.com/luci/luci-go/appengine/cmd/milo/logdog"
 	"github.com/luci/luci-go/appengine/cmd/milo/resp"
-	"github.com/luci/luci-go/appengine/gaeauth/client"
 	swarming "github.com/luci/luci-go/common/api/swarming/swarming/v1"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
 	miloProto "github.com/luci/luci-go/common/proto/milo"
-	"github.com/luci/luci-go/common/transport"
 	"github.com/luci/luci-go/logdog/client/annotee"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/server/auth"
 )
 
 // SwarmingTimeLayout is time layout used by swarming.
@@ -52,8 +52,11 @@ const (
 
 func getSwarmingClient(c context.Context, server string) (*swarming.Service, error) {
 	c, _ = context.WithTimeout(c, 60*time.Second)
-	client := transport.GetClient(client.UseServiceAccountTransport(c, nil, nil))
-	sc, err := swarming.New(client)
+	t, err := auth.GetRPCTransport(c, auth.AsSelf)
+	if err != nil {
+		return nil, err
+	}
+	sc, err := swarming.New(&http.Client{Transport: t})
 	if err != nil {
 		return nil, err
 	}

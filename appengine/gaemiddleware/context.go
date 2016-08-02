@@ -12,6 +12,7 @@ import (
 
 	"github.com/luci/gae/filter/dscache"
 	"github.com/luci/gae/impl/prod"
+	"github.com/luci/gae/service/urlfetch"
 
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/data/caching/cacheContext"
@@ -50,8 +51,10 @@ var (
 	//
 	// Used in prod contexts only.
 	globalAuthConfig = auth.Config{
-		DBProvider: auth.NewDBCache(server.GetAuthDB),
-		Signer:     gaesigner.Signer{},
+		DBProvider:          auth.NewDBCache(server.GetAuthDB),
+		Signer:              gaesigner.Signer{},
+		AccessTokenProvider: client.GetAccessToken,
+		AnonymousTransport:  urlfetch.Get,
 	}
 
 	// globalTsMonState holds state related to time series monitoring.
@@ -83,7 +86,7 @@ func WithProd(c context.Context, req *http.Request) context.Context {
 	// The rest of the service may use applied configuration.
 	c = proccache.Use(c, globalProcessCache)
 	c = config.SetImplementation(c, gaeconfig.New(c))
-	c = client.UseAnonymousTransport(c)
+	c = client.UseAnonymousTransport(c) // TODO(vadimsh): Remove.
 	c = gaesecrets.Use(c, nil)
 	c = auth.SetConfig(c, globalAuthConfig)
 	return cacheContext.Wrap(c)
