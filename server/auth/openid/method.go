@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"path"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
@@ -25,6 +27,9 @@ const (
 	logoutURL   = "/auth/openid/logout"
 	callbackURL = "/auth/openid/callback"
 )
+
+// errBadDestinationURL is returned by normalizeURL on errors.
+var errBadDestinationURL = errors.New("openid: dest URL in LoginURL or LogoutURL must be relative")
 
 // AuthMethod implements auth.Method and auth.UsersAPI and can be used as
 // one of authentication method in auth.Authenticator. It is using OpenID for
@@ -300,8 +305,18 @@ func normalizeURL(dest string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if u.IsAbs() {
-		return "", errors.New("openid: dest URL in LoginURL or LogoutURL must be relative")
+	// Note: '//host/path' is a location on a server named 'host'.
+	if u.IsAbs() || !strings.HasPrefix(u.Path, "/") || strings.HasPrefix(u.Path, "//") {
+		return "", errBadDestinationURL
+	}
+	// path.Clean removes trailing slash. It matters for URLs though. Keep it.
+	keepSlash := strings.HasSuffix(u.Path, "/")
+	u.Path = path.Clean(u.Path)
+	if !strings.HasSuffix(u.Path, "/") && keepSlash {
+		u.Path += "/"
+	}
+	if !strings.HasPrefix(u.Path, "/") {
+		return "", errBadDestinationURL
 	}
 	return u.String(), nil
 }
