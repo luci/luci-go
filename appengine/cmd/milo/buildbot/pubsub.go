@@ -198,9 +198,17 @@ func PubSubHandler(ctx *router.Context) {
 		}
 		err = ds.Put(&build)
 		if err != nil {
-			log.WithError(err).Errorf(c, "Could not save build in datastore %s", err)
-			// This is transient, we do want PubSub to retry.
-			h.WriteHeader(500)
+			switch err {
+			case errTooBig:
+				// This will never work, we don't want PubSub to retry.
+				log.WithError(err).Errorf(
+					c, "Could not save build to datastore, failing permanently")
+				h.WriteHeader(200)
+			default:
+				// This is transient, we do want PubSub to retry.
+				log.WithError(err).Errorf(c, "Could not save build in datastore")
+				h.WriteHeader(500)
+			}
 			return
 		}
 		log.Debugf(
