@@ -125,8 +125,7 @@ func (s *Server) authenticate() router.Middleware {
 
 	return func(c *router.Context, next router.Handler) {
 		c.Context = auth.SetAuthenticator(c.Context, a)
-		var err error
-		switch c.Context, err = a.Authenticate(c.Context, c.Request); {
+		switch ctx, err := a.Authenticate(c.Context, c.Request); {
 		case errors.IsTransient(err):
 			res := errResponse(codes.Internal, http.StatusInternalServerError, escapeFmt(err.Error()))
 			res.write(c.Context, c.Writer)
@@ -134,6 +133,7 @@ func (s *Server) authenticate() router.Middleware {
 			res := errResponse(codes.Unauthenticated, http.StatusUnauthorized, escapeFmt(err.Error()))
 			res.write(c.Context, c.Writer)
 		default:
+			c.Context = ctx
 			next(c)
 		}
 	}
