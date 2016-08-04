@@ -64,19 +64,19 @@ type responseWriter struct {
 	status int
 }
 
-func (rw responseWriter) Write(buf []byte) (int, error) { return rw.writer.Write(buf) }
+func (rw *responseWriter) Write(buf []byte) (int, error) { return rw.writer.Write(buf) }
 
-func (rw responseWriter) Size() int64 { return rw.writer.Count }
+func (rw *responseWriter) Size() int64 { return rw.writer.Count }
 
-func (rw responseWriter) Status() int { return rw.status }
+func (rw *responseWriter) Status() int { return rw.status }
 
-func (rw responseWriter) WriteHeader(code int) {
+func (rw *responseWriter) WriteHeader(code int) {
 	rw.status = code
 	rw.ResponseWriter.WriteHeader(code)
 }
 
-func newResponseWriter(rw http.ResponseWriter) responseWriter {
-	return responseWriter{
+func newResponseWriter(rw http.ResponseWriter) *responseWriter {
+	return &responseWriter{
 		ResponseWriter: rw,
 		writer:         iotools.CountingWriter{Writer: rw},
 		status:         http.StatusOK,
