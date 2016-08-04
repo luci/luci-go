@@ -12,47 +12,79 @@ import (
 type DecoratedServices struct {
 	// Service is the service to decorate.
 	Service ServicesServer
-	// Prelude is called in each method before forwarding the call to Service.
-	// If Prelude returns an error, it is returned without forwarding the call.
+	// Prelude is called for each method before forwarding the call to Service.
+	// If Prelude returns an error, it the call is skipped and the error is
+	// processed via the Postlude (if one is defined), or it is returned directly.
 	Prelude func(c context.Context, methodName string, req proto.Message) (context.Context, error)
+	// Postlude is called for each method after Service has processed the call, or
+	// after the Prelude has returned an error. This takes the the Service's
+	// response proto (which may be nil) and/or any error. The decorated
+	// service will return the response (possibly mutated) and error that Postlude
+	// returns.
+	Postlude func(c context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedServices) GetConfig(c context.Context, req *google_protobuf1.Empty) (*GetConfigResponse, error) {
-	c, err := s.Prelude(c, "GetConfig", req)
-	if err != nil {
-		return nil, err
+func (s *DecoratedServices) GetConfig(c context.Context, req *google_protobuf1.Empty) (rsp *GetConfigResponse, err error) {
+	if s.Prelude != nil {
+		c, err = s.Prelude(c, "GetConfig", req)
 	}
-	return s.Service.GetConfig(c, req)
+	if err == nil {
+		rsp, err = s.Service.GetConfig(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "GetConfig", rsp, err)
+	}
+	return
 }
 
-func (s *DecoratedServices) RegisterStream(c context.Context, req *RegisterStreamRequest) (*RegisterStreamResponse, error) {
-	c, err := s.Prelude(c, "RegisterStream", req)
-	if err != nil {
-		return nil, err
+func (s *DecoratedServices) RegisterStream(c context.Context, req *RegisterStreamRequest) (rsp *RegisterStreamResponse, err error) {
+	if s.Prelude != nil {
+		c, err = s.Prelude(c, "RegisterStream", req)
 	}
-	return s.Service.RegisterStream(c, req)
+	if err == nil {
+		rsp, err = s.Service.RegisterStream(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "RegisterStream", rsp, err)
+	}
+	return
 }
 
-func (s *DecoratedServices) LoadStream(c context.Context, req *LoadStreamRequest) (*LoadStreamResponse, error) {
-	c, err := s.Prelude(c, "LoadStream", req)
-	if err != nil {
-		return nil, err
+func (s *DecoratedServices) LoadStream(c context.Context, req *LoadStreamRequest) (rsp *LoadStreamResponse, err error) {
+	if s.Prelude != nil {
+		c, err = s.Prelude(c, "LoadStream", req)
 	}
-	return s.Service.LoadStream(c, req)
+	if err == nil {
+		rsp, err = s.Service.LoadStream(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "LoadStream", rsp, err)
+	}
+	return
 }
 
-func (s *DecoratedServices) TerminateStream(c context.Context, req *TerminateStreamRequest) (*google_protobuf1.Empty, error) {
-	c, err := s.Prelude(c, "TerminateStream", req)
-	if err != nil {
-		return nil, err
+func (s *DecoratedServices) TerminateStream(c context.Context, req *TerminateStreamRequest) (rsp *google_protobuf1.Empty, err error) {
+	if s.Prelude != nil {
+		c, err = s.Prelude(c, "TerminateStream", req)
 	}
-	return s.Service.TerminateStream(c, req)
+	if err == nil {
+		rsp, err = s.Service.TerminateStream(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "TerminateStream", rsp, err)
+	}
+	return
 }
 
-func (s *DecoratedServices) ArchiveStream(c context.Context, req *ArchiveStreamRequest) (*google_protobuf1.Empty, error) {
-	c, err := s.Prelude(c, "ArchiveStream", req)
-	if err != nil {
-		return nil, err
+func (s *DecoratedServices) ArchiveStream(c context.Context, req *ArchiveStreamRequest) (rsp *google_protobuf1.Empty, err error) {
+	if s.Prelude != nil {
+		c, err = s.Prelude(c, "ArchiveStream", req)
 	}
-	return s.Service.ArchiveStream(c, req)
+	if err == nil {
+		rsp, err = s.Service.ArchiveStream(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "ArchiveStream", rsp, err)
+	}
+	return
 }

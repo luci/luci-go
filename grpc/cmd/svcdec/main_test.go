@@ -23,7 +23,7 @@ var (
 func TestMain(t *testing.T) {
 	t.Parallel()
 
-	Convey("svxdec", t, func() {
+	Convey("svcdec", t, func() {
 		tmpDir, err := ioutil.TempDir("", "")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tmpDir)

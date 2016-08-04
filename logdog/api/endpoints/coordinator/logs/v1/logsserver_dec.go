@@ -10,39 +10,66 @@ import (
 type DecoratedLogs struct {
 	// Service is the service to decorate.
 	Service LogsServer
-	// Prelude is called in each method before forwarding the call to Service.
-	// If Prelude returns an error, it is returned without forwarding the call.
+	// Prelude is called for each method before forwarding the call to Service.
+	// If Prelude returns an error, it the call is skipped and the error is
+	// processed via the Postlude (if one is defined), or it is returned directly.
 	Prelude func(c context.Context, methodName string, req proto.Message) (context.Context, error)
+	// Postlude is called for each method after Service has processed the call, or
+	// after the Prelude has returned an error. This takes the the Service's
+	// response proto (which may be nil) and/or any error. The decorated
+	// service will return the response (possibly mutated) and error that Postlude
+	// returns.
+	Postlude func(c context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedLogs) Get(c context.Context, req *GetRequest) (*GetResponse, error) {
-	c, err := s.Prelude(c, "Get", req)
-	if err != nil {
-		return nil, err
+func (s *DecoratedLogs) Get(c context.Context, req *GetRequest) (rsp *GetResponse, err error) {
+	if s.Prelude != nil {
+		c, err = s.Prelude(c, "Get", req)
 	}
-	return s.Service.Get(c, req)
+	if err == nil {
+		rsp, err = s.Service.Get(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "Get", rsp, err)
+	}
+	return
 }
 
-func (s *DecoratedLogs) Tail(c context.Context, req *TailRequest) (*GetResponse, error) {
-	c, err := s.Prelude(c, "Tail", req)
-	if err != nil {
-		return nil, err
+func (s *DecoratedLogs) Tail(c context.Context, req *TailRequest) (rsp *GetResponse, err error) {
+	if s.Prelude != nil {
+		c, err = s.Prelude(c, "Tail", req)
 	}
-	return s.Service.Tail(c, req)
+	if err == nil {
+		rsp, err = s.Service.Tail(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "Tail", rsp, err)
+	}
+	return
 }
 
-func (s *DecoratedLogs) Query(c context.Context, req *QueryRequest) (*QueryResponse, error) {
-	c, err := s.Prelude(c, "Query", req)
-	if err != nil {
-		return nil, err
+func (s *DecoratedLogs) Query(c context.Context, req *QueryRequest) (rsp *QueryResponse, err error) {
+	if s.Prelude != nil {
+		c, err = s.Prelude(c, "Query", req)
 	}
-	return s.Service.Query(c, req)
+	if err == nil {
+		rsp, err = s.Service.Query(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "Query", rsp, err)
+	}
+	return
 }
 
-func (s *DecoratedLogs) List(c context.Context, req *ListRequest) (*ListResponse, error) {
-	c, err := s.Prelude(c, "List", req)
-	if err != nil {
-		return nil, err
+func (s *DecoratedLogs) List(c context.Context, req *ListRequest) (rsp *ListResponse, err error) {
+	if s.Prelude != nil {
+		c, err = s.Prelude(c, "List", req)
 	}
-	return s.Service.List(c, req)
+	if err == nil {
+		rsp, err = s.Service.List(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "List", rsp, err)
+	}
+	return
 }
