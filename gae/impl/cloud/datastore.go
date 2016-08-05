@@ -12,9 +12,9 @@ import (
 
 	"github.com/luci/luci-go/common/errors"
 
+	"cloud.google.com/go/datastore"
 	ds "github.com/luci/gae/service/datastore"
 	infoS "github.com/luci/gae/service/info"
-	"google.golang.org/cloud/datastore"
 
 	"golang.org/x/net/context"
 )

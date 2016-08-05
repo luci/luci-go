@@ -15,9 +15,9 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 
+	"cloud.google.com/go/datastore"
 	"github.com/luci/luci-go/common/errors"
 	"golang.org/x/net/context"
-	"google.golang.org/cloud/datastore"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
