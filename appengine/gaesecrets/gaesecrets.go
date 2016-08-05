@@ -19,6 +19,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/gae/filter/txnBuf"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
@@ -84,14 +85,15 @@ func (s *storeImpl) GetSecret(k secrets.Key) (secrets.Secret, error) {
 	return secret.(secrets.Secret).Clone(), nil
 }
 
-// getSecretImpl uses datastore to grab a secret.
+// getSecretImpl uses non-transactional datastore (txnBuf.GetNoTxn) to grab a
+// secret.
 func (s *storeImpl) getSecretFromDatastore(k secrets.Key) (secrets.Secret, error) {
 	// Switch to default namespace.
 	c, err := info.Get(s.ctx).Namespace("")
 	if err != nil {
 		panic(err) // should not happen, Namespace errors only on bad namespace name
 	}
-	ds := datastore.Get(c)
+	ds := txnBuf.GetNoTxn(c)
 
 	// Grab existing.
 	ent := secretEntity{ID: s.cfg.Prefix + ":" + string(k)}

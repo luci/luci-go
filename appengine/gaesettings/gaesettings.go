@@ -15,6 +15,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/gae/filter/txnBuf"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
@@ -48,13 +49,10 @@ type settingsEntity struct {
 	_ datastore.Toggle `gae:"$dscache.enable,false"`
 }
 
-// defaultDS returns datastore interface configured to use default namespace.
+// defaultDS returns datastore interface configured to use default namespace and
+// escape any current transaction.
 func defaultDS(c context.Context) datastore.Interface {
-	c, err := info.Get(c).Namespace("")
-	if err != nil {
-		panic(err) // should not happen, Namespace errors only on bad namespace name
-	}
-	return datastore.Get(c)
+	return txnBuf.GetNoTxn(info.Get(c).MustNamespace(""))
 }
 
 // latestSettings returns settingsEntity with prefilled key pointing to latest

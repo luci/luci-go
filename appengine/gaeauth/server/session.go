@@ -12,6 +12,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/gae/filter/txnBuf"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
@@ -29,11 +30,13 @@ type SessionStore struct {
 
 // defaultNS returns GAE context configured to use default namespace.
 func defaultNS(c context.Context) context.Context {
-	c, err := info.Get(c).Namespace("")
-	if err != nil {
-		panic(err) // should not happen, Namespace errors only on bad namespace name
-	}
-	return c
+	return info.Get(c).MustNamespace("")
+}
+
+// noTxnDS returns datastore interface configured to escape any current
+// transaction.
+func noTxnDS(c context.Context) datastore.Interface {
+	return txnBuf.GetNoTxn(c)
 }
 
 // OpenSession create a new session for a user with given expiration time.
@@ -62,7 +65,7 @@ func (s *SessionStore) OpenSession(c context.Context, userID string, u *auth.Use
 	// Set in the transaction below.
 	var sessionID string
 
-	err := datastore.Get(c).RunInTransaction(func(c context.Context) error {
+	err := noTxnDS(c).RunInTransaction(func(c context.Context) error {
 		ds := datastore.Get(c)
 
 		// Grab existing userEntity or initialize a new one.
@@ -111,7 +114,7 @@ func (s *SessionStore) CloseSession(c context.Context, sessionID string) error {
 	default:
 		ent.IsClosed = true
 		ent.Closed = clock.Now(c).UTC()
-		return errors.WrapTransient(datastore.Get(c).Put(ent))
+		return errors.WrapTransient(noTxnDS(c).Put(ent))
 	}
 }
 
@@ -152,7 +155,7 @@ func (s *SessionStore) fetchSession(c context.Context, sessionID string) (*sessi
 		logging.Warningf(c, "Malformed session ID %q, ignoring", sessionID)
 		return nil, nil
 	}
-	ds := datastore.Get(c)
+	ds := noTxnDS(c)
 	sessionEnt := sessionEntity{
 		ID:     id,
 		Parent: ds.MakeKey("gaeauth.User", chunks[0]+"/"+chunks[1]),
