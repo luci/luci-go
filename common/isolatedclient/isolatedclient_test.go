@@ -30,7 +30,7 @@ func TestIsolateServerCaps(t *testing.T) {
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	client := New(nil, ts.URL, "default-gzip")
+	client := New(nil, nil, ts.URL, "default-gzip")
 	caps, err := client.ServerCapabilities(ctx)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, &isolateservice.HandlersEndpointsV1ServerDetails{ServerVersion: "v1"}, caps)
@@ -76,7 +76,7 @@ func TestIsolateServerRetryGCSPartial(t *testing.T) {
 	flaky := &killingMux{server: server, tearDown: map[string]int{"/fake/cloudstorage": 1024}}
 	flaky.ts = httptest.NewServer(flaky)
 	defer flaky.ts.Close()
-	client := newIsolateServer(nil, flaky.ts.URL, "default-gzip", fastRetry)
+	client := newIsolateServer(nil, nil, flaky.ts.URL, "default-gzip", fastRetry)
 
 	digests, contents, expected := makeItems(large)
 	states, err := client.Contains(ctx, digests)
@@ -104,7 +104,7 @@ func TestIsolateServerBadURL(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
 	}
-	client := newIsolateServer(nil, "http://127.0.0.1:1", "default-gzip", fastRetry)
+	client := newIsolateServer(nil, nil, "http://127.0.0.1:1", "default-gzip", fastRetry)
 	caps, err := client.ServerCapabilities(context.Background())
 	ut.AssertEqual(t, (*isolateservice.HandlersEndpointsV1ServerDetails)(nil), caps)
 	ut.AssertEqual(t, true, err != nil)
@@ -160,7 +160,7 @@ func testNormal(ctx context.Context, t *testing.T, contents ...[]byte) {
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	client := newIsolateServer(nil, ts.URL, "default-gzip", cantRetry)
+	client := newIsolateServer(nil, nil, ts.URL, "default-gzip", cantRetry)
 	states, err := client.Contains(ctx, digests)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, len(digests), len(states))
@@ -185,7 +185,7 @@ func testFlaky(ctx context.Context, t *testing.T, flake string) {
 	flaky := &killingMux{server: server, http503: map[string]int{flake: 10}}
 	flaky.ts = httptest.NewServer(flaky)
 	defer flaky.ts.Close()
-	client := newIsolateServer(nil, flaky.ts.URL, "default-gzip", fastRetry)
+	client := newIsolateServer(nil, nil, flaky.ts.URL, "default-gzip", fastRetry)
 
 	digests, contents, expected := makeItems(foo, large)
 	states, err := client.Contains(ctx, digests)

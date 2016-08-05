@@ -54,7 +54,7 @@ func TestArchive(t *testing.T) {
 	server := isolatedfake.New()
 	ts := httptest.NewServer(server)
 	defer ts.Close()
-	a := archiver.New(isolatedclient.New(nil, ts.URL, "default-gzip"), nil)
+	a := archiver.New(isolatedclient.New(nil, nil, ts.URL, "default-gzip"), nil)
 
 	// Setup temporary directory.
 	//   /base/bar
@@ -212,7 +212,7 @@ func TestArchive(t *testing.T) {
 // Test that if the isolate file is not found, the error is properly propagated.
 func TestArchiveFileNotFoundReturnsError(t *testing.T) {
 	t.Parallel()
-	a := archiver.New(isolatedclient.New(nil, "http://unused", "default-gzip"), nil)
+	a := archiver.New(isolatedclient.New(nil, nil, "http://unused", "default-gzip"), nil)
 	opts := &ArchiveOptions{
 		Isolate:  "/this-file-does-not-exist",
 		Isolated: "/this-file-doesnt-either",

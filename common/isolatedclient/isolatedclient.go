@@ -64,10 +64,15 @@ type PushState struct {
 
 // New returns a new IsolateServer client.
 //
-// 'client' must implement authentication sufficient to talk to Isolate server
+// 'authClient' must implement authentication sufficient to talk to Isolate server
 // (OAuth tokens with 'email' scope).
-func New(client *http.Client, host, namespace string) IsolateServer {
-	return newIsolateServer(client, host, namespace, nil)
+//
+// 'anonClient' must be a functional http.Client.
+//
+// If either client is nil, it will use http.DefaultClient (which will not work
+// on Classic AppEngine!).
+func New(anonClient, authClient *http.Client, host, namespace string) IsolateServer {
+	return newIsolateServer(anonClient, authClient, host, namespace, nil)
 }
 
 // Private details.
@@ -81,16 +86,19 @@ type isolateServer struct {
 	anonClient *http.Client // client that does NOT send auth tokens
 }
 
-func newIsolateServer(client *http.Client, host, namespace string, rFn retry.Factory) *isolateServer {
-	if client == nil {
-		client = http.DefaultClient
+func newIsolateServer(anonClient, authClient *http.Client, host, namespace string, rFn retry.Factory) *isolateServer {
+	if anonClient == nil {
+		anonClient = http.DefaultClient
+	}
+	if authClient == nil {
+		authClient = http.DefaultClient
 	}
 	i := &isolateServer{
 		retryFactory: rFn,
 		url:          strings.TrimRight(host, "/"),
 		namespace:    namespace,
-		authClient:   client,
-		anonClient:   http.DefaultClient,
+		authClient:   authClient,
+		anonClient:   anonClient,
 	}
 	tracer.NewPID(i, "isolatedclient:"+i.url)
 	return i
