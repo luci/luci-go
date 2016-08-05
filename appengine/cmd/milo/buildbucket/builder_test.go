@@ -27,7 +27,7 @@ func TestBuilder(t *testing.T) {
 
 	testCases := []struct{ bucket, builder string }{
 		{"master.tryserver.infra", "InfraPresubmit"},
-		{"master.tryserver.infra", "InfraPresubmit(Swarming)"},
+		{"master.tryserver.infra", "InfraPresubmit.Swarming"},
 	}
 
 	Convey("Builder", t, func() {

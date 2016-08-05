@@ -9,6 +9,7 @@ import (
 
 	"github.com/luci/luci-go/appengine/cmd/milo/buildbot"
 	"github.com/luci/luci-go/appengine/cmd/milo/buildbucket"
+	"github.com/luci/luci-go/appengine/cmd/milo/console"
 	"github.com/luci/luci-go/appengine/cmd/milo/logdog"
 	"github.com/luci/luci-go/appengine/cmd/milo/settings"
 	"github.com/luci/luci-go/appengine/cmd/milo/swarming"
@@ -23,6 +24,9 @@ func init() {
 	basemw := settings.Base()
 	gaemiddleware.InstallHandlers(r, basemw)
 	r.GET("/", basemw, settings.Wrap(frontpage{}))
+
+	// Console
+	r.GET("/console/:name", basemw, settings.Wrap(console.Console{}))
 
 	// Swarming
 	r.GET("/swarming/task/:id/steps/*logname", basemw, settings.Wrap(swarming.Log{}))

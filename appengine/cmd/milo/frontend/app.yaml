@@ -1,5 +1,3 @@
-application: luci-milo
-version: go
 runtime: go
 api_version: go1
 

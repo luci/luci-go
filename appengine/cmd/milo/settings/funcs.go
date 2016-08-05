@@ -26,6 +26,7 @@ var funcMap = template.FuncMap{
 	"shortHash":      shortHash,
 	"startswith":     strings.HasPrefix,
 	"sub":            sub,
+	"consoleHeader":  consoleHeader,
 }
 
 // localTime returns a <span> element with t in human format
@@ -40,6 +41,54 @@ func localTime(ifZero string, t time.Time) template.HTML {
 		`<span class="local-time" data-timestamp="%d">%s</span>`,
 		milliseconds,
 		t.Format(time.RFC850)))
+}
+
+func consoleHeader(brs []resp.BuilderRef) template.HTML {
+	// First, split things into nice rows and find the max depth.
+	cat := make([][]string, len(brs))
+	depth := 0
+	for i, b := range brs {
+		cat[i] = b.Category
+		if len(cat[i]) > depth {
+			depth = len(cat[i])
+		}
+	}
+
+	result := ""
+	for row := 0; row < depth; row++ {
+		result += "<tr><th></th>"
+		// "" is the first node, " " is an empty node.
+		current := ""
+		colspan := 0
+		for _, br := range cat {
+			colspan++
+			var s string
+			if row >= len(br) {
+				s = " "
+			} else {
+				s = br[row]
+			}
+			if s != current || current == " " {
+				if current != "" || current == " " {
+					result += fmt.Sprintf(`<th colspan="%d">%s</th>`, colspan, current)
+					colspan = 0
+				}
+				current = s
+			}
+		}
+		if colspan != 0 {
+			result += fmt.Sprintf(`<th colspan="%d">%s</th>`, colspan, current)
+		}
+		result += "</tr>"
+	}
+
+	// Last row: The actual builder shortnames.
+	result += "<tr><th></th>"
+	for _, br := range brs {
+		result += fmt.Sprintf("<th>%s</th>", br.ShortName)
+	}
+	result += "</tr>"
+	return template.HTML(result)
 }
 
 // humanDuration translates d into a human readable string of x units y units,

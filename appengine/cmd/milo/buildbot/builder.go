@@ -63,12 +63,12 @@ func getBuildSummary(b *buildbotBuild) *resp.BuildSummary {
 }
 
 // getBuilds fetches all of the recent builds from the datastore.
-func getBuilds(c context.Context, masterName, builderName string) ([]*resp.BuildSummary, error) {
+func getBuilds(c context.Context, masterName, builderName string, finished bool) ([]*resp.BuildSummary, error) {
 	// TODO(hinoka): Builder specific structs.
 	result := []*resp.BuildSummary{}
 	ds := datastore.Get(c)
 	q := datastore.NewQuery("buildbotBuild")
-	q = q.Eq("finished", true)
+	q = q.Eq("finished", finished)
 	q = q.Eq("master", masterName)
 	q = q.Eq("builder", builderName)
 	q = q.Limit(25) // TODO(hinoka): This should be adjustable
@@ -149,7 +149,7 @@ func builderImpl(c context.Context, masterName, builderName string) (*resp.Build
 			builderName, masterName, avail)
 	}
 
-	recentBuilds, err := getBuilds(c, masterName, builderName)
+	recentBuilds, err := getBuilds(c, masterName, builderName, true)
 	if err != nil {
 		return nil, err // Or maybe not?
 	}
