@@ -11,9 +11,10 @@ import (
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
+	"google.golang.org/genproto/protobuf"
 
 	"github.com/luci/luci-go/common/cli"
-	"github.com/luci/luci-go/common/proto/google/descriptor"
+	"github.com/luci/luci-go/common/proto/google/descutil"
 	"github.com/luci/luci-go/grpc/prpc"
 )
 
@@ -75,7 +76,7 @@ func show(c context.Context, client *prpc.Client, name string) error {
 		return nil
 	}
 
-	file, obj, path := desc.Description.Resolve(name)
+	file, obj, path := descutil.Resolve(desc.Description, name)
 	if obj == nil {
 		return fmt.Errorf("name %q could not resolved", name)
 	}
@@ -94,7 +95,7 @@ func show(c context.Context, client *prpc.Client, name string) error {
 
 		printMsg := func(name string) {
 			name = strings.TrimPrefix(name, ".")
-			file, msg, path := desc.Description.Resolve(name)
+			file, msg, path := descutil.Resolve(desc.Description, name)
 			if msg == nil {
 				print.Printf("// Message %q is not found\n", name)
 				return

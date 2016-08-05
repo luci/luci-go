@@ -12,8 +12,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/proto/google/descriptor"
 	"github.com/luci/luci-go/grpc/prpc"
+	"google.golang.org/genproto/protobuf"
 )
 
 // New creates a discovery server for all the given services.

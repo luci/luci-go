@@ -9,8 +9,10 @@ import (
 	"io"
 	"strings"
 
+	"github.com/luci/luci-go/common/proto/google/descutil"
+
 	"github.com/luci/luci-go/common/data/text/indented"
-	"github.com/luci/luci-go/common/proto/google/descriptor"
+	"google.golang.org/genproto/protobuf"
 )
 
 // printer prints a proto3 definition from a description.
@@ -64,7 +66,7 @@ func (p *printer) MaybeLeadingComments(path []int) {
 		return
 	}
 
-	loc := p.File.SourceCodeInfo.FindLocation(path)
+	loc := descutil.FindLocation(p.File.SourceCodeInfo, path)
 	if loc == nil {
 		return
 	}
@@ -101,7 +103,7 @@ func (p *printer) shorten(name string) string {
 func (p *printer) Service(service *descriptor.ServiceDescriptorProto, serviceIndex, methodIndex int) {
 	var path []int
 	if serviceIndex != -1 {
-		path = []int{descriptor.NumberFileDescriptorProto_Service, serviceIndex}
+		path = []int{descutil.FileDescriptorProtoServiceTag, serviceIndex}
 		p.MaybeLeadingComments(path)
 	}
 	defer p.open("service %s", service.GetName())()
@@ -109,7 +111,7 @@ func (p *printer) Service(service *descriptor.ServiceDescriptorProto, serviceInd
 	printMethod := func(i int) {
 		var methodPath []int
 		if path != nil {
-			methodPath = append(path, descriptor.NumberServiceDescriptorProto_Method, i)
+			methodPath = append(path, descutil.ServiceDescriptorProtoMethodTag, i)
 		}
 		p.Method(service.Method[i], methodPath)
 	}
@@ -166,7 +168,7 @@ var fieldTypeName = map[descriptor.FieldDescriptorProto_Type]string{
 // common/proto/google/descriptor/descriptor.proto.
 func (p *printer) Field(field *descriptor.FieldDescriptorProto, path []int) {
 	p.MaybeLeadingComments(path)
-	if field.Repeated() {
+	if descutil.Repeated(field) {
 		p.Printf("repeated ")
 	}
 
@@ -197,7 +199,7 @@ func (p *printer) Message(msg *descriptor.DescriptorProto, path []int) {
 		if f.OneofIndex == nil {
 			var fieldPath []int
 			if len(path) > 0 {
-				fieldPath = append(path, descriptor.NumberDescriptorProto_Field, i)
+				fieldPath = append(path, descutil.DescriptorProtoFieldTag, i)
 			}
 			p.Field(msg.Field[i], fieldPath)
 		}
@@ -212,7 +214,7 @@ func (p *printer) Message(msg *descriptor.DescriptorProto, path []int) {
 func (p *printer) OneOf(msg *descriptor.DescriptorProto, oneOfIndex int, msgPath []int) {
 	of := msg.GetOneofDecl()[oneOfIndex]
 	if len(msgPath) > 0 {
-		p.MaybeLeadingComments(append(msgPath, descriptor.NumberDescriptorProto_OneOf, oneOfIndex))
+		p.MaybeLeadingComments(append(msgPath, descutil.DescriptorProtoOneOfTag, oneOfIndex))
 	}
 	defer p.open("oneof %s", of.GetName())()
 
@@ -220,7 +222,7 @@ func (p *printer) OneOf(msg *descriptor.DescriptorProto, oneOfIndex int, msgPath
 		if f.OneofIndex != nil && int(f.GetOneofIndex()) == oneOfIndex {
 			var fieldPath []int
 			if len(msgPath) > 0 {
-				fieldPath = append(msgPath, descriptor.NumberDescriptorProto_Field, i)
+				fieldPath = append(msgPath, descutil.DescriptorProtoFieldTag, i)
 			}
 			p.Field(msg.Field[i], fieldPath)
 		}
@@ -239,7 +241,7 @@ func (p *printer) Enum(enum *descriptor.EnumDescriptorProto, path []int) {
 	for i, v := range enum.Value {
 		var valuePath []int
 		if len(path) > 0 {
-			valuePath = append(path, descriptor.NumberEnumDescriptorProto_Value, i)
+			valuePath = append(path, descutil.EnumDescriptorProtoValueTag, i)
 		}
 		p.EnumValue(v, valuePath)
 	}

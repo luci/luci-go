@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"cloud.google.com/go/pubsub"
 	"github.com/luci/luci-go/common/data/recordio"
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
@@ -20,7 +21,6 @@ import (
 	"github.com/luci/luci-go/logdog/client/butlerproto"
 	"github.com/luci/luci-go/logdog/common/types"
 	"golang.org/x/net/context"
-	"google.golang.org/cloud/pubsub"
 )
 
 // Topic is an interface for a Pub/Sub topic.

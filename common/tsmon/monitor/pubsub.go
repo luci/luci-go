@@ -7,10 +7,10 @@ package monitor
 import (
 	"net/http"
 
+	"cloud.google.com/go/pubsub"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
-	"google.golang.org/cloud"
-	"google.golang.org/cloud/pubsub"
+	"google.golang.org/api/option"
 
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	"github.com/luci/luci-go/common/logging"
@@ -29,7 +29,7 @@ type pubSubMonitor struct {
 func NewPubsubMonitor(ctx context.Context, client *http.Client, topic gcps.Topic) (Monitor, error) {
 	project, name := topic.Split()
 
-	psClient, err := pubsub.NewClient(ctx, project, cloud.WithBaseHTTP(client))
+	psClient, err := pubsub.NewClient(ctx, project, option.WithHTTPClient(client))
 	if err != nil {
 		return nil, err
 	}

@@ -2,7 +2,7 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-package descriptor
+package descutil
 
 import (
 	"testing"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	. "github.com/smartystreets/goconvey/convey"
+	pb "google.golang.org/genproto/protobuf"
 )
 
 func TestUtil(t *testing.T) {
@@ -20,49 +21,49 @@ func TestUtil(t *testing.T) {
 		descFileBytes, err := ioutil.ReadFile("util_test.desc")
 		So(err, ShouldBeNil)
 
-		var desc FileDescriptorSet
+		var desc pb.FileDescriptorSet
 		err = proto.Unmarshal(descFileBytes, &desc)
 		So(err, ShouldBeNil)
 
-		So(desc.File, ShouldHaveLength, 2)
-		file := desc.File[1]
-		So(file.GetName(), ShouldEqual, "github.com/luci/luci-go/common/proto/google/descriptor/util_test.proto")
+		So(desc.File, ShouldHaveLength, 1)
+		file := desc.File[0]
+		So(file.GetName(), ShouldEqual, "github.com/luci/luci-go/common/proto/google/descutil/util_test.proto")
 
 		Convey("Resolve works", func() {
 			names := []string{
-				"pkg.E1",
-				"pkg.E1.V0",
+				"descutil.E1",
+				"descutil.E1.V0",
 
-				"pkg.M1",
-				"pkg.M1.f1",
+				"descutil.M1",
+				"descutil.M1.f1",
 
-				"pkg.M2.f1",
-				"pkg.M2.f2",
+				"descutil.M2.f1",
+				"descutil.M2.f2",
 
-				"pkg.M3.O1",
-				"pkg.M3.f1",
-				"pkg.M3.O2",
+				"descutil.M3.O1",
+				"descutil.M3.f1",
+				"descutil.M3.O2",
 
-				"pkg.S1",
-				"pkg.S1.R1",
-				"pkg.S2.R2",
+				"descutil.S1",
+				"descutil.S1.R1",
+				"descutil.S2.R2",
 
-				"pkg.NestedMessageParent",
-				"pkg.NestedMessageParent.NestedMessage",
-				"pkg.NestedMessageParent.NestedMessage.f1",
-				"pkg.NestedMessageParent.NestedEnum",
-				"pkg.NestedMessageParent.NestedEnum.V0",
+				"descutil.NestedMessageParent",
+				"descutil.NestedMessageParent.NestedMessage",
+				"descutil.NestedMessageParent.NestedMessage.f1",
+				"descutil.NestedMessageParent.NestedEnum",
+				"descutil.NestedMessageParent.NestedEnum.V0",
 			}
 			for _, n := range names {
 				Convey(n, func() {
-					actualFile, obj, _ := desc.Resolve(n)
+					actualFile, obj, _ := Resolve(&desc, n)
 					So(actualFile, ShouldEqual, file)
 					So(obj, ShouldNotBeNil)
 				})
 			}
 
 			Convey("wrong name", func() {
-				actualFile, obj, path := desc.Resolve("foo")
+				actualFile, obj, path := Resolve(&desc, "foo")
 				So(actualFile, ShouldBeNil)
 				So(obj, ShouldBeNil)
 				So(path, ShouldBeNil)

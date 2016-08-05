@@ -44,9 +44,10 @@ func resolveGoogleProtobufPackages(c context.Context) (map[string]string, error)
 	const (
 		protoPrefix = "google/protobuf/"
 		pkgPath     = "github.com/luci/luci-go/common/proto/google"
+		descPkgPath = "google.golang.org/genproto/protobuf"
 	)
 	var result = map[string]string{
-		protoPrefix + "descriptor.proto": pkgPath + "/descriptor", //snowflake
+		protoPrefix + "descriptor.proto": descPkgPath, //snowflake
 	}
 
 	pkg, err := build.Import(pkgPath, "", build.FindOnly)

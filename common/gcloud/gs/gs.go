@@ -13,10 +13,11 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
+
+	gs "cloud.google.com/go/storage"
 	"golang.org/x/net/context"
 	"google.golang.org/api/googleapi"
-	"google.golang.org/cloud"
-	gs "google.golang.org/cloud/storage"
+	"google.golang.org/api/option"
 )
 
 var (
@@ -197,10 +198,10 @@ func (c *prodClient) deleteObject(o *gs.ObjectHandle) error {
 }
 
 func (c *prodClient) newClient() (*gs.Client, error) {
-	var optsArray [1]cloud.ClientOption
+	var optsArray [1]option.ClientOption
 	opts := optsArray[:0]
 	if c.rt != nil {
-		opts = append(opts, cloud.WithBaseHTTP(&http.Client{
+		opts = append(opts, option.WithHTTPClient(&http.Client{
 			Transport: c.rt,
 		}))
 	}

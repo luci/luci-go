@@ -19,7 +19,7 @@ import prpc "github.com/luci/luci-go/grpc/prpc"
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/luci/luci-go/common/proto/google/descriptor"
+import google_protobuf "google.golang.org/genproto/protobuf"
 
 import (
 	context "golang.org/x/net/context"

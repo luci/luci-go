@@ -12,9 +12,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/luci/luci-go/common/proto/google/descutil"
+
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/proto/google/descriptor"
+	"google.golang.org/genproto/protobuf"
 )
 
 // UnmarshalMessage unmarshals the proto message from flags.
@@ -130,11 +132,11 @@ func (p *parser) parseOneFlag(flags []string, root message) (flagsRest []string,
 	// Resolve target field.
 	var fieldIndex int
 	if target.desc.GetOptions().GetMapEntry() {
-		if fieldIndex = target.desc.FindField("value"); fieldIndex == -1 {
+		if fieldIndex = descutil.FindField(target.desc, "value"); fieldIndex == -1 {
 			return nil, fmt.Errorf("map entry type %s does not have value field", target.desc.GetName())
 		}
 	} else {
-		if fieldIndex = target.desc.FindField(name); fieldIndex == -1 {
+		if fieldIndex = descutil.FindField(target.desc, name); fieldIndex == -1 {
 			return nil, fmt.Errorf("field %s not found in message %s", name, target.desc.GetName())
 		}
 	}
@@ -150,7 +152,7 @@ func (p *parser) parseOneFlag(flags []string, root message) (flagsRest []string,
 		case field.GetType() == descriptor.FieldDescriptorProto_TYPE_BOOL:
 			value = true
 			hasValue = true
-		case field.GetType() == descriptor.FieldDescriptorProto_TYPE_MESSAGE && field.Repeated():
+		case field.GetType() == descriptor.FieldDescriptorProto_TYPE_MESSAGE && descutil.Repeated(field):
 			value = map[string]interface{}{}
 			hasValue = true
 
@@ -164,7 +166,7 @@ func (p *parser) parseOneFlag(flags []string, root message) (flagsRest []string,
 	}
 
 	// Check if the value is already set.
-	if target.data[name] != nil && !field.Repeated() {
+	if target.data[name] != nil && !descutil.Repeated(field) {
 		repeatedFields := make([]string, 0, len(pathMsgs))
 		for _, m := range pathMsgs {
 			if m.repeated {
@@ -186,7 +188,7 @@ func (p *parser) parseOneFlag(flags []string, root message) (flagsRest []string,
 		}
 	}
 
-	if !field.Repeated() {
+	if !descutil.Repeated(field) {
 		target.data[name] = value
 	} else {
 		target.data[name] = append(asSlice(target.data[name]), value)
@@ -217,11 +219,11 @@ func (p *parser) subMessages(root message, path []string) ([]subMsg, error) {
 
 		var fieldIndex int
 		if parent.desc.GetOptions().GetMapEntry() {
-			if fieldIndex = parent.desc.FindField("value"); fieldIndex == -1 {
+			if fieldIndex = descutil.FindField(parent.desc, "value"); fieldIndex == -1 {
 				return nil, fmt.Errorf("map entry type %s does not have value field", parent.desc.GetName())
 			}
 		} else {
-			if fieldIndex = parent.desc.FindField(name); fieldIndex == -1 {
+			if fieldIndex = descutil.FindField(parent.desc, name); fieldIndex == -1 {
 				return nil, fmt.Errorf("field %q not found in message %s", name, parent.desc.GetName())
 			}
 		}
@@ -242,7 +244,7 @@ func (p *parser) subMessages(root message, path []string) ([]subMsg, error) {
 
 		sub := subMsg{
 			message:  message{desc: subDesc},
-			repeated: f.Repeated() && !subDesc.GetOptions().GetMapEntry(),
+			repeated: descutil.Repeated(f) && !subDesc.GetOptions().GetMapEntry(),
 			path:     curPath,
 		}
 		if value, ok := parent.data[name]; !ok {
@@ -361,11 +363,11 @@ func (p *parser) splitKeyValuePair(s string) (key, value string, hasValue bool) 
 
 // parseEnum returns the number of an enum member, which can be name or number.
 func parseEnum(enum *descriptor.EnumDescriptorProto, member string) (int32, error) {
-	i := enum.FindValue(member)
+	i := descutil.FindEnumValue(enum, member)
 	if i < 0 {
 		// Is member the number?
 		if number, err := strconv.ParseInt(member, 10, 32); err == nil {
-			i = enum.FindValueByNumber(int32(number))
+			i = descutil.FindValueByNumber(enum, int32(number))
 		}
 	}
 	if i < 0 {

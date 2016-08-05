@@ -4,7 +4,11 @@
 
 package flagpb
 
-import "github.com/luci/luci-go/common/proto/google/descriptor"
+import (
+	"github.com/luci/luci-go/common/proto/google/descutil"
+
+	"google.golang.org/genproto/protobuf"
+)
 
 // Resolver resolves type names.
 type Resolver interface {
@@ -24,7 +28,7 @@ type descriptorSetResolver struct {
 }
 
 func (r *descriptorSetResolver) Resolve(name string) interface{} {
-	_, o, _ := r.set.Resolve(name)
+	_, o, _ := descutil.Resolve(r.set, name)
 	switch o := o.(type) {
 	case *descriptor.DescriptorProto, *descriptor.EnumDescriptorProto:
 		return o

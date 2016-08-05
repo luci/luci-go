@@ -7,7 +7,7 @@ package pubsub
 import (
 	"time"
 
-	"google.golang.org/cloud/pubsub"
+	"cloud.google.com/go/pubsub"
 )
 
 // Cloud PubSub quota is documented here:

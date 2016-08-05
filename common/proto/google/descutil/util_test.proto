@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package pkg;
+package descutil;
 
 
 // Enum comment.

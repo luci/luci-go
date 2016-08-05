@@ -10,9 +10,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/luci/luci-go/common/proto/google/descutil"
+
 	"github.com/golang/protobuf/proto"
 
-	"github.com/luci/luci-go/common/proto/google/descriptor"
+	"google.golang.org/genproto/protobuf"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -36,7 +38,7 @@ func TestPrinter(t *testing.T) {
 		file := desc.File[0]
 
 		getExpectedDef := func(path ...int) string {
-			loc := file.SourceCodeInfo.FindLocation(path)
+			loc := descutil.FindLocation(file.SourceCodeInfo, path)
 			So(loc, ShouldNotBeNil)
 
 			startLine := loc.Span[0]
@@ -68,14 +70,14 @@ func TestPrinter(t *testing.T) {
 
 		Convey("package", func() {
 			printer.Package(file.GetPackage())
-			checkOutput(descriptor.NumberFileDescriptorProto_Package)
+			checkOutput(descutil.FileDescriptorProtoPackageTag)
 		})
 
 		Convey("service", func() {
 			for i, s := range file.Service {
 				Convey(s.GetName(), func() {
 					printer.Service(s, i, -1)
-					checkOutput(descriptor.NumberFileDescriptorProto_Service, i)
+					checkOutput(descutil.FileDescriptorProtoServiceTag, i)
 				})
 			}
 		})
@@ -89,7 +91,7 @@ func TestPrinter(t *testing.T) {
 
 		Convey("enum", func() {
 			for i, e := range file.EnumType {
-				testEnum(e, []int{descriptor.NumberFileDescriptorProto_Enum, i})
+				testEnum(e, []int{descutil.FileDescriptorProtoEnumTag, i})
 			}
 		})
 
@@ -102,16 +104,16 @@ func TestPrinter(t *testing.T) {
 						checkOutput(path...)
 					} else {
 						for i, m := range m.NestedType {
-							testMsg(m, append(path, descriptor.NumberDescriptorProto_NestedType, i))
+							testMsg(m, append(path, descutil.DescriptorProtoNestedTypeTag, i))
 						}
 						for i, e := range m.EnumType {
-							testEnum(e, append(path, descriptor.NumberDescriptorProto_EnumType, i))
+							testEnum(e, append(path, descutil.DescriptorProtoEnumTypeTag, i))
 						}
 					}
 				})
 			}
 			for i, m := range file.MessageType {
-				testMsg(m, []int{descriptor.NumberFileDescriptorProto_Message, i})
+				testMsg(m, []int{descutil.FileDescriptorProtoMessageTag, i})
 			}
 		})
 	})

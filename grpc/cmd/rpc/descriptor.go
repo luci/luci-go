@@ -8,11 +8,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/luci/luci-go/common/proto/google/descutil"
+
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/proto/google/descriptor"
 	"github.com/luci/luci-go/grpc/discovery"
 	"github.com/luci/luci-go/grpc/prpc"
+	"google.golang.org/genproto/protobuf"
 )
 
 type serverDescription struct {
@@ -31,13 +33,13 @@ func loadDescription(c context.Context, client *prpc.Client) (*serverDescription
 
 // resolveInputMessage resolves input message type of a method.
 func (d *serverDescription) resolveInputMessage(service, method string) (*descriptor.DescriptorProto, error) {
-	_, obj, _ := d.Description.Resolve(service)
+	_, obj, _ := descutil.Resolve(d.Description, service)
 	serviceDesc, ok := obj.(*descriptor.ServiceDescriptorProto)
 	if !ok {
 		return nil, fmt.Errorf("service %q not found", service)
 	}
 
-	mi := serviceDesc.FindMethod(method)
+	mi := descutil.FindMethodForService(serviceDesc, method)
 	if mi == -1 {
 		return nil, fmt.Errorf("method %q in service %q not found", method, service)
 	}
@@ -48,7 +50,7 @@ func (d *serverDescription) resolveInputMessage(service, method string) (*descri
 }
 
 func (d *serverDescription) resolveMessage(name string) (*descriptor.DescriptorProto, error) {
-	_, obj, _ := d.Description.Resolve(name)
+	_, obj, _ := descutil.Resolve(d.Description, name)
 	msg, ok := obj.(*descriptor.DescriptorProto)
 	if !ok {
 		return nil, fmt.Errorf("message %q not found", name)

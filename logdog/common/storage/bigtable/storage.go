@@ -14,9 +14,10 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/types"
+
+	"cloud.google.com/go/bigtable"
 	"golang.org/x/net/context"
-	"google.golang.org/cloud"
-	"google.golang.org/cloud/bigtable"
+	"google.golang.org/api/option"
 )
 
 var (
@@ -62,7 +63,7 @@ type Options struct {
 	Instance string
 	// ClientOptions are additional client options to use when instantiating the
 	// client instance.
-	ClientOptions []cloud.ClientOption
+	ClientOptions []option.ClientOption
 
 	// Table is the name of the BigTable table to use for logs.
 	LogTable string

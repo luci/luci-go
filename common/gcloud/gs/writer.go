@@ -8,11 +8,11 @@ import (
 	"io"
 	"time"
 
+	gs "cloud.google.com/go/storage"
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
 	"golang.org/x/net/context"
-	gs "google.golang.org/cloud/storage"
 )
 
 // Writer is an augmented io.WriteCloser instance.

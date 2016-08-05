@@ -9,7 +9,9 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/proto/google/descriptor"
+	"google.golang.org/genproto/protobuf"
+
+	"github.com/luci/luci-go/common/proto/google/descutil"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -29,7 +31,7 @@ func TestUnmarshal(t *testing.T) {
 		resolver := NewResolver(&desc)
 
 		resolveMsg := func(name string) *descriptor.DescriptorProto {
-			_, obj, _ := desc.Resolve("flagpb." + name)
+			_, obj, _ := descutil.Resolve(&desc, "flagpb."+name)
 			So(obj, ShouldNotBeNil)
 			return obj.(*descriptor.DescriptorProto)
 		}

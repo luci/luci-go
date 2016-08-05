@@ -4,7 +4,7 @@ package testservices
 
 import discovery "github.com/luci/luci-go/grpc/discovery"
 
-import "github.com/luci/luci-go/common/proto/google/descriptor"
+import "google.golang.org/genproto/protobuf"
 
 func init() {
 	discovery.RegisterDescriptorSetCompressed(

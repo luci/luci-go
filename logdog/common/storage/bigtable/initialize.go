@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"time"
 
+	"cloud.google.com/go/bigtable"
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"golang.org/x/net/context"
-	"google.golang.org/cloud/bigtable"
 )
 
 // DefaultMaxLogAge is the maximum age of a log (7 days).

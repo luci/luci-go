@@ -15,8 +15,8 @@ import (
 	"text/template"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/proto/google/descriptor"
 	"golang.org/x/net/context"
+	"google.golang.org/genproto/protobuf"
 )
 
 const (
@@ -33,7 +33,7 @@ package {{.GoPkg}};
 {{if .ImportDiscovery}}
 import discovery "github.com/luci/luci-go/grpc/discovery"
 {{end}}
-import "github.com/luci/luci-go/common/proto/google/descriptor"
+import "google.golang.org/genproto/protobuf"
 
 func init() {
 	{{if .ImportDiscovery}}discovery.{{end}}RegisterDescriptorSetCompressed(

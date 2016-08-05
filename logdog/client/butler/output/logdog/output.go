@@ -23,9 +23,9 @@ import (
 	out "github.com/luci/luci-go/logdog/client/butler/output/pubsub"
 	"github.com/luci/luci-go/logdog/common/types"
 
+	"cloud.google.com/go/pubsub"
 	"golang.org/x/net/context"
-	"google.golang.org/cloud"
-	"google.golang.org/cloud/pubsub"
+	"google.golang.org/api/option"
 )
 
 // Scopes returns the set of OAuth scopes required for this Output.
@@ -166,7 +166,7 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 		pctx = c
 	}
 
-	psClient, err := pubsub.NewClient(pctx, proj, cloud.WithTokenSource(cfg.Auth.TokenSource()))
+	psClient, err := pubsub.NewClient(pctx, proj, option.WithTokenSource(cfg.Auth.TokenSource()))
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,

@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/pubsub"
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -23,7 +24,6 @@ import (
 	"github.com/luci/luci-go/logdog/api/logpb"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
-	"google.golang.org/cloud/pubsub"
 )
 
 type testTopic struct {

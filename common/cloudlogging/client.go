@@ -11,8 +11,8 @@ import (
 	"net/http"
 	"os"
 
+	"cloud.google.com/go/compute/metadata"
 	cloudlog "google.golang.org/api/logging/v1beta3"
-	"google.golang.org/cloud/compute/metadata"
 )
 
 // DefaultResourceType is used by NewClient if ClientOptions doesn't specify

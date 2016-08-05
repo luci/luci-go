@@ -16,8 +16,10 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/proto/google/descriptor"
+	"github.com/luci/luci-go/common/proto/google/descutil"
 	"github.com/luci/luci-go/grpc/discovery"
+
+	"google.golang.org/genproto/protobuf"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -50,22 +52,22 @@ func TestDiscovery(t *testing.T) {
 		// this checks that file deduplication actually works.
 		So(len(desc.File), ShouldEqual, 3)
 
-		_, discoveryIndex := desc.FindService("discovery.Discovery")
+		_, discoveryIndex := descutil.FindService(desc, "discovery.Discovery")
 		So(discoveryIndex, ShouldNotEqual, -1)
 
-		_, calcIndex := desc.FindService("testservices.Calc")
+		_, calcIndex := descutil.FindService(desc, "testservices.Calc")
 		So(calcIndex, ShouldNotEqual, -1)
 
-		file, greeterIndex := desc.FindService("testservices.Greeter")
+		file, greeterIndex := descutil.FindService(desc, "testservices.Greeter")
 		So(greeterIndex, ShouldNotEqual, -1)
 		greeter := file.Service[greeterIndex]
 
-		sayHelloIndex := greeter.FindMethod("SayHello")
+		sayHelloIndex := descutil.FindMethodForService(greeter, "SayHello")
 		So(sayHelloIndex, ShouldNotEqual, -1)
 		sayHello := greeter.Method[sayHelloIndex]
 
 		So(sayHello.GetInputType(), ShouldEqual, ".testservices.HelloRequest")
-		_, obj, _ := desc.Resolve("testservices.HelloRequest")
+		_, obj, _ := descutil.Resolve(desc, "testservices.HelloRequest")
 		So(obj, ShouldNotBeNil)
 		helloReq := obj.(*descriptor.DescriptorProto)
 		So(helloReq, ShouldNotBeNil)

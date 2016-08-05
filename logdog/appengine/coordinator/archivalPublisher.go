@@ -7,12 +7,12 @@ package coordinator
 import (
 	"time"
 
+	gcps "cloud.google.com/go/pubsub"
 	"github.com/golang/protobuf/proto"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
 	"golang.org/x/net/context"
-	gcps "google.golang.org/cloud/pubsub"
 )
 
 // ArchivalPublisher is capable of publishing archival requests.

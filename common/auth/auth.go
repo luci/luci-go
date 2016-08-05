@@ -38,7 +38,7 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
-	"google.golang.org/cloud/compute/metadata"
+	"cloud.google.com/go/compute/metadata"
 
 	"github.com/mitchellh/go-homedir"
 

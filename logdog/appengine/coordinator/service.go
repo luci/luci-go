@@ -21,9 +21,10 @@ import (
 	"github.com/luci/luci-go/logdog/common/storage/bigtable"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
+
+	gcps "cloud.google.com/go/pubsub"
 	"golang.org/x/net/context"
-	"google.golang.org/cloud"
-	gcps "google.golang.org/cloud/pubsub"
+	"google.golang.org/api/option"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -201,8 +202,8 @@ func (s *prodServicesInst) IntermediateStorage(c context.Context) (storage.Stora
 		Project:  bt.Project,
 		Instance: bt.Instance,
 		LogTable: bt.LogTableName,
-		ClientOptions: []cloud.ClientOption{
-			cloud.WithBaseHTTP(&http.Client{Transport: transport}),
+		ClientOptions: []option.ClientOption{
+			option.WithHTTPClient(&http.Client{Transport: transport}),
 		},
 	})
 	if err != nil {
@@ -246,7 +247,7 @@ func (s *prodServicesInst) ArchivalPublisher(c context.Context) (ArchivalPublish
 		return nil, errors.New("failed to create Pub/Sub authenticator")
 	}
 	client := &http.Client{Transport: transport}
-	psClient, err := gcps.NewClient(c, project, cloud.WithBaseHTTP(client))
+	psClient, err := gcps.NewClient(c, project, option.WithHTTPClient(client))
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create Pub/Sub client.")
 		return nil, errors.New("failed to create Pub/Sub client")

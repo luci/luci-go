@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/bigtable"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"golang.org/x/net/context"
-	"google.golang.org/cloud/bigtable"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

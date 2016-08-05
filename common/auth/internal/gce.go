@@ -5,10 +5,10 @@
 package internal
 
 import (
+	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	"google.golang.org/cloud/compute/metadata"
 
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/logging"

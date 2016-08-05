@@ -32,9 +32,10 @@ import (
 	"github.com/luci/luci-go/logdog/common/storage/bigtable"
 	"github.com/luci/luci-go/logdog/server/retryServicesClient"
 	"github.com/luci/luci-go/logdog/server/service/config"
+
+	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/net/context"
-	"google.golang.org/cloud"
-	"google.golang.org/cloud/compute/metadata"
+	"google.golang.org/api/option"
 )
 
 var (
@@ -392,8 +393,8 @@ func (s *Service) IntermediateStorage(c context.Context) (storage.Storage, error
 		Project:  btcfg.Project,
 		Instance: btcfg.Instance,
 		LogTable: btcfg.LogTableName,
-		ClientOptions: []cloud.ClientOption{
-			cloud.WithTokenSource(a.TokenSource()),
+		ClientOptions: []option.ClientOption{
+			option.WithTokenSource(a.TokenSource()),
 		},
 	})
 	if err != nil {

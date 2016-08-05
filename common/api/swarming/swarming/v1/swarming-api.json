@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"zRMgE0l9nVDW4S28VYYcYQF9UW4/8_shWf2ZUvFErNzQ1lbRNMlwmCs\"",
+ "etag": "\"zRMgE0l9nVDW4S28VYYcYQF9UW4/stcRi2opcnMI_33ybfewv4rTtu4\"",
  "discoveryVersion": "v1",
  "id": "swarming:v1",
  "name": "swarming",
@@ -222,6 +222,33 @@
     "now": {
      "type": "string",
      "format": "date-time"
+    }
+   }
+  },
+  "SwarmingRpcsBotsCount": {
+   "id": "SwarmingRpcsBotsCount",
+   "type": "object",
+   "description": "Returns the count, as requested.",
+   "properties": {
+    "busy": {
+     "type": "string",
+     "format": "int64"
+    },
+    "count": {
+     "type": "string",
+     "format": "int64"
+    },
+    "dead": {
+     "type": "string",
+     "format": "int64"
+    },
+    "now": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "quarantined": {
+     "type": "string",
+     "format": "int64"
     }
    }
   },
@@ -902,6 +929,35 @@
   },
   "bots": {
    "methods": {
+    "count": {
+     "id": "swarming.bots.count",
+     "path": "bots/count",
+     "httpMethod": "GET",
+     "description": "Counts number of bots with given dimensions.",
+     "parameters": {
+      "cursor": {
+       "type": "string",
+       "location": "query"
+      },
+      "dimensions": {
+       "type": "string",
+       "repeated": true,
+       "location": "query"
+      },
+      "limit": {
+       "type": "string",
+       "default": "200",
+       "format": "int64",
+       "location": "query"
+      }
+     },
+     "response": {
+      "$ref": "SwarmingRpcsBotsCount"
+     },
+     "scopes": [
+      "https://www.googleapis.com/auth/userinfo.email"
+     ]
+    },
     "list": {
      "id": "swarming.bots.list",
      "path": "bots/list",

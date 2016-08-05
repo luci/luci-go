@@ -22,9 +22,10 @@ import (
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
 	"github.com/luci/luci-go/logdog/server/archivist"
 	"github.com/luci/luci-go/logdog/server/service"
+
+	"cloud.google.com/go/pubsub"
 	"golang.org/x/net/context"
-	"google.golang.org/cloud"
-	"google.golang.org/cloud/pubsub"
+	"google.golang.org/api/option"
 )
 
 var (
@@ -91,16 +92,8 @@ func (a *application) runArchivist(c context.Context) error {
 		return err
 	}
 
-	// Pub/Sub: HTTP Client => Context
-	psHTTPClient, err := psAuth.Client()
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create authenticated Pub/Sub transport.")
-		return err
-	}
-	psContext := cloud.WithContext(c, psProject, psHTTPClient)
-
 	// Pub/Sub: TokenSource => Client
-	psClient, err := pubsub.NewClient(c, psProject, cloud.WithTokenSource(psAuth.TokenSource()))
+	psClient, err := pubsub.NewClient(c, psProject, option.WithTokenSource(psAuth.TokenSource()))
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create Pub/Sub client.")
 		return err
@@ -190,7 +183,7 @@ func (a *application) runArchivist(c context.Context) error {
 						tsTaskProcessingTime.Add(c, duration.Seconds()*1000, deleteTask)
 					}()
 
-					task, err := makePubSubArchivistTask(psContext, psSubscriptionName, msg)
+					task, err := makePubSubArchivistTask(psSubscriptionName, msg)
 					if err != nil {
 						log.WithError(err).Errorf(c, "Failed to unmarshal archive task from message.")
 						deleteTask = true

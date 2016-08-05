@@ -22,8 +22,9 @@ import (
 	"github.com/luci/luci-go/logdog/server/collector/coordinator"
 	"github.com/luci/luci-go/logdog/server/service"
 	"golang.org/x/net/context"
-	"google.golang.org/cloud"
-	"google.golang.org/cloud/pubsub"
+
+	"cloud.google.com/go/pubsub"
+	"google.golang.org/api/option"
 )
 
 var (
@@ -87,7 +88,7 @@ func (a *application) runCollector(c context.Context) error {
 		return err
 	}
 
-	psClient, err := pubsub.NewClient(c, pscfg.Project, cloud.WithTokenSource(psAuth.TokenSource()))
+	psClient, err := pubsub.NewClient(c, pscfg.Project, option.WithTokenSource(psAuth.TokenSource()))
 	if err != nil {
 		log.Fields{
 			log.ErrorKey:   err,
