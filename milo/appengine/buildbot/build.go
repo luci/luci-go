@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -19,14 +20,18 @@ import (
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/memcache"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/transport"
 	"github.com/luci/luci-go/milo/api/resp"
+	"github.com/luci/luci-go/server/auth"
 	"golang.org/x/net/context"
 )
 
 func getURL(c context.Context, URL string) ([]byte, error) {
 	fmt.Fprintf(os.Stderr, "Fetching %s\n", URL)
-	client := transport.GetClient(c)
+	tr, err := auth.GetRPCTransport(c, auth.NoAuth)
+	if err != nil {
+		return nil, err
+	}
+	client := http.Client{Transport: tr}
 	resp, err := client.Get(URL)
 	if err != nil {
 		return nil, err

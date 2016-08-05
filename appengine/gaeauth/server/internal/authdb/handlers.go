@@ -15,7 +15,6 @@ import (
 
 	"github.com/luci/gae/service/info"
 
-	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth/service"
@@ -33,17 +32,6 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 		r.GET(pubSubPullURLPath, base, pubSubPull)
 	}
 	r.POST(pubSubPushURLPath, base, pubSubPush)
-}
-
-// authenticatePubSub injects into a context a transport that authenticates
-// calls with OAuth2 token with PubSub API scope needed for PubSub API calls.
-func authenticatePubSub(c context.Context) context.Context {
-	scopes := []string{
-		"https://www.googleapis.com/auth/userinfo.email",
-		"https://www.googleapis.com/auth/pubsub",
-	}
-	// TODO(vadimsh): Get rid of this.
-	return client.UseServiceAccountTransport(c, scopes)
 }
 
 // setupPubSub creates a subscription to AuthDB service notification stream.
@@ -115,7 +103,6 @@ type notifcationGetter func(context.Context, authService, string) (*service.Noti
 // and Push subscriptions.
 func processPubSubRequest(c context.Context, rw http.ResponseWriter, r *http.Request, callback notifcationGetter) {
 	c = defaultNS(c)
-	c = authenticatePubSub(c)
 	info, err := GetLatestSnapshotInfo(c)
 	if err != nil {
 		replyError(c, rw, err)

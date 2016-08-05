@@ -27,6 +27,7 @@ import (
 func TestFullFlow(t *testing.T) {
 	Convey("with test context", t, func(c C) {
 		ctx := context.Background()
+		ctx = authtest.MockAuthConfig(ctx)
 		ctx = settings.Use(ctx, settings.New(&settings.MemoryStorage{}))
 		ctx, _ = testclock.UseTime(ctx, time.Unix(1442540000, 0))
 		ctx = testsecrets.Use(ctx)

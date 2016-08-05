@@ -112,7 +112,6 @@ func GetAuthDBSnapshot(c context.Context, id string) (*protocol.AuthDB, error) {
 func ConfigureAuthService(c context.Context, baseURL, authServiceURL string) error {
 	logging.Infof(c, "Reconfiguring AuthDB to be fetched from %q", authServiceURL)
 	c = defaultNS(c)
-	c = authenticatePubSub(c)
 
 	// If switching auth services, need to grab URL of a currently configured
 	// auth service to unsubscribe from its PubSub stream.

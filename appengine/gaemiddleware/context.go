@@ -86,7 +86,6 @@ func WithProd(c context.Context, req *http.Request) context.Context {
 	// The rest of the service may use applied configuration.
 	c = proccache.Use(c, globalProcessCache)
 	c = config.SetImplementation(c, gaeconfig.New(c))
-	c = client.UseAnonymousTransport(c) // TODO(vadimsh): Remove.
 	c = gaesecrets.Use(c, nil)
 	c = auth.SetConfig(c, globalAuthConfig)
 	return cacheContext.Wrap(c)

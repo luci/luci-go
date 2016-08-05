@@ -8,7 +8,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"net/http"
 	"net/url"
 	"sort"
 	"strconv"
@@ -73,18 +72,22 @@ func (t JSONTime) MarshalJSON() ([]byte, error) {
 
 type proccacheKey string
 
-// FetchCertificates fetches certificates from given URL. The server is expected
-// to reply with JSON described by PublicCertificates struct (like LUCI services
-// do). Uses proccache to cache them for CertsCacheExpiration minutes.
+// FetchCertificates fetches certificates from the given URL.
+//
+// The server is expected to reply with JSON described by PublicCertificates
+// struct (like LUCI services do). Uses proccache to cache them for
+// CertsCacheExpiration minutes.
 //
 // LUCI services serve certificates at /auth/api/v1/server/certificates.
 func FetchCertificates(c context.Context, url string) (*PublicCertificates, error) {
 	certs, err := proccache.GetOrMake(c, proccacheKey("url:"+url), func() (interface{}, time.Duration, error) {
 		certs := &PublicCertificates{}
-		err := internal.FetchJSON(c, certs, func() (*http.Request, error) {
-			return http.NewRequest("GET", url, nil)
-		})
-		if err != nil {
+		req := internal.Request{
+			Method: "GET",
+			URL:    url,
+			Out:    certs,
+		}
+		if err := req.Do(c); err != nil {
 			return nil, 0, err
 		}
 		return certs, CertsCacheExpiration, nil
@@ -93,6 +96,14 @@ func FetchCertificates(c context.Context, url string) (*PublicCertificates, erro
 		return nil, err
 	}
 	return certs.(*PublicCertificates), nil
+}
+
+// FetchCertificatesFromLUCIService is shortcut for FetchCertificates
+// that uses LUCI-specific endpoint.
+//
+// 'serviceURL' is root URL of the service (e.g. 'https://example.com').
+func FetchCertificatesFromLUCIService(c context.Context, serviceURL string) (*PublicCertificates, error) {
+	return FetchCertificates(c, serviceURL+"/auth/api/v1/server/certificates")
 }
 
 type robotCertURLKey int
@@ -105,19 +116,19 @@ func robotCertURL(c context.Context) string {
 	return "https://www.googleapis.com/robot/v1/metadata/x509/"
 }
 
-// FetchServiceAccountCertificates fetches certificates of some google service
-// account.
+// FetchCertificatesForServiceAccount fetches certificates of some Google
+// service account.
 //
 // Works only with Google service accounts (@*.gserviceaccount.com). Uses
 // proccache to cache them for CertsCacheExpiration minutes.
 //
 // Usage (roughly):
 //
-//   certs, err := signing.FetchServiceAccountCertificates(ctx, <email>)
+//   certs, err := signing.FetchCertificatesForServiceAccount(ctx, <email>)
 //   if certs.CheckSignature(<key id>, <blob>, <signature>) == nil {
 //     <signature is valid!>
 //   }
-func FetchServiceAccountCertificates(c context.Context, email string) (*PublicCertificates, error) {
+func FetchCertificatesForServiceAccount(c context.Context, email string) (*PublicCertificates, error) {
 	// Do only basic validation and offload full validation to the google backend.
 	if !strings.HasSuffix(email, ".gserviceaccount.com") {
 		return nil, fmt.Errorf("signature: not a google service account %q", email)
@@ -126,10 +137,12 @@ func FetchServiceAccountCertificates(c context.Context, email string) (*PublicCe
 	certs, err := proccache.GetOrMake(c, proccacheKey("email:"+email), func() (interface{}, time.Duration, error) {
 		// Ask Google backend for a dict "key id => x509 PEM encoded cert".
 		keysAndCerts := map[string]string{}
-		err := internal.FetchJSON(c, &keysAndCerts, func() (*http.Request, error) {
-			return http.NewRequest("GET", robotCertURL(c)+url.QueryEscape(email), nil)
-		})
-		if err != nil {
+		req := internal.Request{
+			Method: "GET",
+			URL:    robotCertURL(c) + url.QueryEscape(email),
+			Out:    &keysAndCerts,
+		}
+		if err := req.Do(c); err != nil {
 			return nil, 0, err
 		}
 

@@ -5,7 +5,6 @@
 package internal
 
 import (
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,6 +14,12 @@ import (
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func init() {
+	RegisterClientFactory(func(c context.Context, scopes []string) (*http.Client, error) {
+		return http.DefaultClient, nil
+	})
+}
 
 func TestFetch(t *testing.T) {
 	Convey("with test context", t, func(c C) {
@@ -31,40 +36,45 @@ func TestFetch(t *testing.T) {
 				A string `json:"a"`
 			}
 			body = `{"a": "hello"}`
-			So(FetchJSON(ctx, &val, func() (*http.Request, error) {
-				return http.NewRequest("GET", ts.URL, nil)
-			}), ShouldBeNil)
+			req := Request{
+				Method: "GET",
+				URL:    ts.URL,
+				Out:    &val,
+			}
+			So(req.Do(ctx), ShouldBeNil)
 			So(val.A, ShouldEqual, "hello")
-		})
-
-		Convey("handles callback error", func() {
-			var val struct{}
-			So(FetchJSON(ctx, &val, func() (*http.Request, error) {
-				return nil, errors.New("oops")
-			}), ShouldErrLike, "oops")
 		})
 
 		Convey("handles bad status code", func() {
 			var val struct{}
 			status = http.StatusNotFound
-			So(FetchJSON(ctx, &val, func() (*http.Request, error) {
-				return http.NewRequest("GET", ts.URL, nil)
-			}), ShouldErrLike, "HTTP code (404)")
+			req := Request{
+				Method: "GET",
+				URL:    ts.URL,
+				Out:    &val,
+			}
+			So(req.Do(ctx), ShouldErrLike, "HTTP code (404)")
 		})
 
 		Convey("handles bad body", func() {
 			var val struct{}
 			body = "not json"
-			So(FetchJSON(ctx, &val, func() (*http.Request, error) {
-				return http.NewRequest("GET", ts.URL, nil)
-			}), ShouldErrLike, "can't deserialize JSON")
+			req := Request{
+				Method: "GET",
+				URL:    ts.URL,
+				Out:    &val,
+			}
+			So(req.Do(ctx), ShouldErrLike, "can't deserialize JSON")
 		})
 
 		Convey("handles connection error", func() {
 			var val struct{}
-			So(FetchJSON(ctx, &val, func() (*http.Request, error) {
-				return http.NewRequest("GET", "http://localhost:???", nil)
-			}), ShouldErrLike, "dial tcp")
+			req := Request{
+				Method: "GET",
+				URL:    "http://localhost:???",
+				Out:    &val,
+			}
+			So(req.Do(ctx), ShouldErrLike, "dial tcp")
 		})
 	})
 }

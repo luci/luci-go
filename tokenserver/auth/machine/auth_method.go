@@ -58,7 +58,7 @@ var (
 type MachineTokenAuthMethod struct {
 	// certsFetcher is mocked in unit tests.
 	//
-	// In prod it is signing.FetchServiceAccountCertificates.
+	// In prod it is based on signing.FetchCertificatesForServiceAccount.
 	certsFetcher func(c context.Context, email string) (*signing.PublicCertificates, error)
 }
 
@@ -180,10 +180,10 @@ func checkExpiration(body *tokenserver.MachineTokenBody, now time.Time) error {
 
 // checkSignature verifies the token signature.
 func (m *MachineTokenAuthMethod) checkSignature(c context.Context, signerEmail string, envelope *tokenserver.MachineTokenEnvelope) error {
-	// Note that FetchServiceAccountCertificates implements caching inside.
+	// Note that FetchCertificatesForServiceAccount implements caching inside.
 	fetcher := m.certsFetcher
 	if fetcher == nil {
-		fetcher = signing.FetchServiceAccountCertificates
+		fetcher = signing.FetchCertificatesForServiceAccount
 	}
 	certs, err := fetcher(c, signerEmail)
 	if err != nil {

@@ -5,7 +5,6 @@
 package signing
 
 import (
-	"net/http"
 	"time"
 
 	"golang.org/x/net/context"
@@ -27,16 +26,21 @@ type ServiceInfo struct {
 
 type serviceInfoKey string
 
-// FetchServiceInfo fetches information about the service at given URL.
+// FetchServiceInfo fetches information about the service from the given URL.
 //
-// Uses proccache to cache it locally for 1 hour.
-func FetchServiceInfo(c context.Context, serviceURL string) (*ServiceInfo, error) {
-	info, err := proccache.GetOrMake(c, serviceInfoKey(serviceURL), func() (interface{}, time.Duration, error) {
+// The server is expected to reply with JSON described by ServiceInfo struct
+// (like LUCI services do). Uses proccache to cache the response for 1h.
+//
+// LUCI services serve certificates at /auth/api/v1/server/info.
+func FetchServiceInfo(c context.Context, url string) (*ServiceInfo, error) {
+	info, err := proccache.GetOrMake(c, serviceInfoKey(url), func() (interface{}, time.Duration, error) {
 		info := &ServiceInfo{}
-		err := internal.FetchJSON(c, info, func() (*http.Request, error) {
-			return http.NewRequest("GET", serviceURL+"/auth/api/v1/server/info", nil)
-		})
-		if err != nil {
+		req := internal.Request{
+			Method: "GET",
+			URL:    url,
+			Out:    info,
+		}
+		if err := req.Do(c); err != nil {
 			return nil, 0, err
 		}
 		return info, time.Hour, nil
@@ -45,4 +49,12 @@ func FetchServiceInfo(c context.Context, serviceURL string) (*ServiceInfo, error
 		return nil, err
 	}
 	return info.(*ServiceInfo), nil
+}
+
+// FetchServiceInfoFromLUCIService is shortcut for FetchServiceInfo that uses
+// LUCI-specific endpoint.
+//
+// 'serviceURL' is root URL of the service (e.g. 'https://example.com').
+func FetchServiceInfoFromLUCIService(c context.Context, serviceURL string) (*ServiceInfo, error) {
+	return FetchServiceInfo(c, serviceURL+"/auth/api/v1/server/info")
 }

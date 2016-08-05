@@ -11,29 +11,108 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"golang.org/x/net/context"
-
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/transport"
+
+	"golang.org/x/net/context"
+	"golang.org/x/net/context/ctxhttp"
 )
+
+// ClientFactory knows how to produce http.Client that attach proper OAuth
+// headers.
+//
+// If 'scopes' is empty, the factory should return a client that makes anonymous
+// requests.
+type ClientFactory func(c context.Context, scopes []string) (*http.Client, error)
+
+var clientFactory ClientFactory
+
+// RegisterClientFactory allows external module to provide implementation of
+// the ClientFactory.
+//
+// This is needed to resolve module dependency cycle between server/auth and
+// server/auth/internal.
+//
+// See init() in server/auth/client.go.
+//
+// If client factory is not set, Do(...) uses http.DefaultClient. This happens
+// in unit tests for various auth/* subpackages.
+func RegisterClientFactory(f ClientFactory) {
+	if clientFactory != nil {
+		panic("ClientFactory is already registered")
+	}
+	clientFactory = f
+}
+
+// Request represents one JSON REST API request.
+type Request struct {
+	Method  string            // HTTP method to use
+	URL     string            // URL to access
+	Scopes  []string          // OAuth2 scopes to authenticate with or anonymous call if empty
+	Headers map[string]string // optional map with request headers
+	Body    interface{}       // object to convert to JSON and send as body or []byte with the body
+	Out     interface{}       // where to deserialize the response to
+}
+
+// Do performs an HTTP request with retries on transient errors.
+//
+// It can be used to make GET or DELETE requests (if Body is nil) or POST or PUT
+// requests (if Body is not nil). In latter case the body will be serialized to
+// JSON.
+//
+// Respects context's deadline and cancellation.
+func (r *Request) Do(c context.Context) error {
+	// Grab a client first. Use same client for all retry attempts.
+	var client *http.Client
+	if clientFactory != nil {
+		var err error
+		if client, err = clientFactory(c, r.Scopes); err != nil {
+			return err
+		}
+	} else {
+		client = http.DefaultClient
+	}
+
+	// Prepare a blob with the request body. Marshal it once, to avoid
+	// remarshaling on retries.
+	isJSON := false
+	var bodyBlob []byte
+	if blob, ok := r.Body.([]byte); ok {
+		bodyBlob = blob
+	} else if r.Body != nil {
+		var err error
+		if bodyBlob, err = json.Marshal(r.Body); err != nil {
+			return err
+		}
+		isJSON = true
+	}
+
+	return fetchJSON(c, client, r.Out, func() (*http.Request, error) {
+		req, err := http.NewRequest(r.Method, r.URL, bytes.NewReader(bodyBlob))
+		if err != nil {
+			return nil, err
+		}
+		for k, v := range r.Headers {
+			req.Header.Set(k, v)
+		}
+		if isJSON {
+			req.Header.Set("Content-Type", "application/json")
+		}
+		return req, nil
+	})
+}
 
 // TODO(vadimsh): Add retries on HTTP 500.
 
-// RequestFactory is used by FetchJSON to create http.Requests. It may be called
-// multiple times when FetchJSON retries the fetch.
-type RequestFactory func() (*http.Request, error)
-
-// FetchJSON fetches JSON document by making a request using a transport in
-// the context.
-func FetchJSON(c context.Context, val interface{}, f RequestFactory) error {
+// fetchJSON fetches JSON document by making a request using given client.
+func fetchJSON(c context.Context, client *http.Client, val interface{}, f func() (*http.Request, error)) error {
 	r, err := f()
 	if err != nil {
 		logging.Errorf(c, "auth: URL fetch failed - %s", err)
 		return err
 	}
 	logging.Infof(c, "auth: %s %s", r.Method, r.URL)
-	resp, err := transport.GetClient(c).Do(r)
+	resp, err := ctxhttp.Do(c, client, r)
 	if err != nil {
 		logging.Errorf(c, "auth: URL fetch failed, can't connect - %s", err)
 		return errors.WrapTransient(err)
@@ -62,50 +141,4 @@ func FetchJSON(c context.Context, val interface{}, f RequestFactory) error {
 		}
 	}
 	return nil
-}
-
-// GetJSON makes GET request.
-func GetJSON(c context.Context, url string, out interface{}) error {
-	return methodWithoutBody(c, "GET", url, out)
-}
-
-// DeleteJSON makes DELETE request.
-func DeleteJSON(c context.Context, url string, out interface{}) error {
-	return methodWithoutBody(c, "DELETE", url, out)
-}
-
-// PostJSON makes POST request.
-func PostJSON(c context.Context, url string, body, out interface{}) error {
-	return methodWithBody(c, "POST", url, body, out)
-}
-
-// PutJSON makes PUT request.
-func PutJSON(c context.Context, url string, body, out interface{}) error {
-	return methodWithBody(c, "PUT", url, body, out)
-}
-
-// methodWithoutBody makes request that doesn't have request body (e.g GET).
-func methodWithoutBody(c context.Context, method, url string, out interface{}) error {
-	return FetchJSON(c, out, func() (*http.Request, error) {
-		return http.NewRequest(method, url, nil)
-	})
-}
-
-// methodWithoutBody makes request that does have request body (e.g POST).
-func methodWithBody(c context.Context, method, url string, body, out interface{}) error {
-	var blob []byte
-	if body != nil {
-		var err error
-		if blob, err = json.Marshal(body); err != nil {
-			return err
-		}
-	}
-	return FetchJSON(c, out, func() (*http.Request, error) {
-		req, err := http.NewRequest(method, url, bytes.NewReader(blob))
-		if err != nil {
-			return nil, err
-		}
-		req.Header.Set("Content-Type", "application/json")
-		return req, nil
-	})
 }

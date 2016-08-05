@@ -66,7 +66,7 @@ func TestFetchCertificates(t *testing.T) {
 	})
 }
 
-func TestFetchServiceAccountCertificates(t *testing.T) {
+func TestFetchCertificatesForServiceAccount(t *testing.T) {
 	Convey("Works", t, func() {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path != "/robot@robots.gserviceaccount.com" {
@@ -79,7 +79,7 @@ func TestFetchServiceAccountCertificates(t *testing.T) {
 			}`))
 		}))
 		c := context.WithValue(context.Background(), robotCertURLKey(0), ts.URL+"/")
-		certs, err := FetchServiceAccountCertificates(c, "robot@robots.gserviceaccount.com")
+		certs, err := FetchCertificatesForServiceAccount(c, "robot@robots.gserviceaccount.com")
 		So(err, ShouldBeNil)
 		So(certs.Certificates, ShouldResemble, []Certificate{
 			{

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"strings"
 	"time"
 
@@ -17,11 +18,11 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/rand/cryptorand"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/transport"
 	"github.com/luci/luci-go/dm/api/distributor/jobsim"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/grpc/prpc"
+	authlib "github.com/luci/luci-go/server/auth"
 	"golang.org/x/net/context"
 )
 
@@ -343,8 +344,12 @@ func isLocalHost(host string) bool {
 // If it hits some underlying error it will return that error, and expect to be
 // retried by DM.
 func runJob(c context.Context, host string, state *state, job *jobsim.Phrase, auth *dm.Execution_Auth, cfgName string) error {
+	tr, err := authlib.GetRPCTransport(c, authlib.NoAuth)
+	if err != nil {
+		return err
+	}
 	pcli := &prpc.Client{
-		C:       transport.GetClient(c),
+		C:       &http.Client{Transport: tr},
 		Host:    host,
 		Options: prpc.DefaultOptions(),
 	}

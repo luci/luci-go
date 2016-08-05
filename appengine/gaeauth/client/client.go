@@ -8,9 +8,6 @@ package client
 
 import (
 	"fmt"
-	"io"
-	"io/ioutil"
-	"net/http"
 	"sort"
 	"strings"
 	"time"
@@ -18,7 +15,6 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/gae/service/info"
-	"github.com/luci/gae/service/urlfetch"
 
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/clock"
@@ -27,8 +23,6 @@ import (
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/transport"
-	serverauth "github.com/luci/luci-go/server/auth"
 )
 
 // GetAccessToken returns an OAuth access token representing app's service
@@ -71,35 +65,6 @@ func GetAccessToken(c context.Context, scopes []string) (auth.Token, error) {
 	return tok, nil
 }
 
-// UseServiceAccountTransport injects authenticating transport into
-// context.Context. It can be extracted back via transport.Get(c).
-//
-// If scopes is empty, uses auth.OAuthScopeEmail scope.
-//
-// TODO(vadimsh): Get rid of this in favor of auth.GetRPCTransport.
-func UseServiceAccountTransport(c context.Context, scopes []string) context.Context {
-	return transport.SetFactory(c, func(ic context.Context) http.RoundTripper {
-		t, err := serverauth.GetRPCTransport(ic, serverauth.AsSelf, serverauth.WithScopes(scopes...))
-		if err != nil {
-			return failTransport{err}
-		}
-		return t
-	})
-}
-
-// UseAnonymousTransport injects non-authenticating GAE transport into
-// context.Context. It can be extracted back via transport.Get(c). Use it with
-// libraries that search for transport in the context (e.g. common/config),
-// since by default they revert to http.DefaultTransport that doesn't work in
-// GAE environment.
-//
-// TODO(vadimsh): Get rid of this in favor of auth.GetRPCTransport.
-func UseAnonymousTransport(c context.Context) context.Context {
-	return transport.SetFactory(c, func(ic context.Context) http.RoundTripper {
-		return urlfetch.Get(ic)
-	})
-}
-
 //// Internal stuff.
 
 type cacheKey string
@@ -139,18 +104,4 @@ func closeToExpRandomized(c context.Context, exp time.Time) bool {
 		rnd := time.Duration(mathrand.Get(c).Int63n(int64(expirationRandomization)))
 		return now.Add(rnd).After(exp)
 	}
-}
-
-type failTransport struct {
-	err error
-}
-
-func (f failTransport) RoundTrip(r *http.Request) (*http.Response, error) {
-	// http.RoundTripper contract states: "RoundTrip should not modify the
-	// request, except for consuming and closing the Body, including on errors"
-	if r.Body != nil {
-		_, _ = io.Copy(ioutil.Discard, r.Body)
-		r.Body.Close()
-	}
-	return nil, f.err
 }

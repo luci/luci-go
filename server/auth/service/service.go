@@ -25,6 +25,13 @@ import (
 	"github.com/luci/luci-go/server/auth/signing"
 )
 
+// oauthScopes is OAuth scopes required for using AuthService API (including
+// PubSub part).
+var oauthScopes = []string{
+	"https://www.googleapis.com/auth/userinfo.email",
+	"https://www.googleapis.com/auth/pubsub",
+}
+
 // Notification represents a notification about AuthDB change. Must be acked
 // once processed.
 type Notification struct {
@@ -63,11 +70,11 @@ type Snapshot struct {
 	Created        time.Time
 }
 
-// AuthService represents API exposed by auth_service. All methods expect
-// an authenticating transport to be installed into the context (see
-// github.com/luci/luci-go/common/transport).
+// AuthService represents API exposed by auth_service.
+//
+// It is a fairy low-level API, you must have good reasons for using it.
 type AuthService struct {
-	// URL is URL (with protocol) of auth_service (e.g. "https://<host>").
+	// URL is root URL (with protocol) of auth_service (e.g. "https://<host>").
 	URL string
 
 	// pubSubURLRoot is root URL of PubSub service. Mocked in tests.
@@ -97,7 +104,13 @@ func (s *AuthService) EnsureSubscription(c context.Context, subscription, pushUR
 			PushEndpoint string `json:"pushEndpoint"`
 		} `json:"pushConfig"`
 	}
-	err := internal.GetJSON(c, s.pubSubURL(subscription), &existing)
+	req := internal.Request{
+		Method: "GET",
+		URL:    s.pubSubURL(subscription),
+		Scopes: oauthScopes,
+		Out:    &existing,
+	}
+	err := req.Do(c)
 	if err != nil && existing.Error.Code != 404 {
 		return err
 	}
@@ -108,8 +121,14 @@ func (s *AuthService) EnsureSubscription(c context.Context, subscription, pushUR
 		var response struct {
 			Topic string `json:"topic"`
 		}
-		url := s.URL + "/auth_service/api/v1/authdb/subscription/authorization"
-		if err := internal.PostJSON(c, url, nil, &response); err != nil {
+		req := internal.Request{
+			Method: "POST",
+			URL:    s.URL + "/auth_service/api/v1/authdb/subscription/authorization",
+			Scopes: oauthScopes,
+			Body:   map[string]string{},
+			Out:    &response,
+		}
+		if err := req.Do(c); err != nil {
 			return err
 		}
 		topic := response.Topic
@@ -125,7 +144,13 @@ func (s *AuthService) EnsureSubscription(c context.Context, subscription, pushUR
 		config.Topic = topic
 		config.PushConfig.PushEndpoint = pushURL
 		config.AckDeadlineSeconds = 60
-		return internal.PutJSON(c, s.pubSubURL(subscription), &config, nil)
+		req = internal.Request{
+			Method: "PUT",
+			URL:    s.pubSubURL(subscription),
+			Scopes: oauthScopes,
+			Body:   &config,
+		}
+		return req.Do(c)
 	}
 
 	// Is existing subscription configured correctly already?
@@ -140,7 +165,14 @@ func (s *AuthService) EnsureSubscription(c context.Context, subscription, pushUR
 		} `json:"pushConfig"`
 	}
 	request.PushConfig.PushEndpoint = pushURL
-	return internal.PostJSON(c, s.pubSubURL(subscription+":modifyPushConfig"), &request, nil)
+
+	req = internal.Request{
+		Method: "POST",
+		URL:    s.pubSubURL(subscription + ":modifyPushConfig"),
+		Scopes: oauthScopes,
+		Body:   &request,
+	}
+	return req.Do(c)
 }
 
 // DeleteSubscription removes PubSub subscription if it exists.
@@ -150,8 +182,13 @@ func (s *AuthService) DeleteSubscription(c context.Context, subscription string)
 			Code int `json:"code"`
 		} `json:"error"`
 	}
-	err := internal.DeleteJSON(c, s.pubSubURL(subscription), &reply)
-	if err != nil && reply.Error.Code != 404 {
+	req := internal.Request{
+		Method: "DELETE",
+		URL:    s.pubSubURL(subscription),
+		Scopes: oauthScopes,
+		Out:    &reply,
+	}
+	if err := req.Do(c); err != nil && reply.Error.Code != 404 {
 		return err
 	}
 	return nil
@@ -171,8 +208,14 @@ func (s *AuthService) PullPubSub(c context.Context, subscription string) (*Notif
 		ReceivedMessages []pubSubMessage `json:"receivedMessages"`
 	}{}
 
-	url := s.pubSubURL(subscription + ":pull")
-	if err := internal.PostJSON(c, url, &request, &response); err != nil {
+	req := internal.Request{
+		Method: "POST",
+		URL:    s.pubSubURL(subscription + ":pull"),
+		Scopes: oauthScopes,
+		Body:   &request,
+		Out:    &response,
+	}
+	if err := req.Do(c); err != nil {
 		return nil, err
 	}
 	if len(response.ReceivedMessages) == 0 {
@@ -182,7 +225,7 @@ func (s *AuthService) PullPubSub(c context.Context, subscription string) (*Notif
 	logging.Infof(c, "Received PubSub notification: %d", len(response.ReceivedMessages))
 
 	// Grab certs to verify signatures on PubSub messages.
-	certs, err := signing.FetchCertificates(c, s.URL+"/auth/api/v1/server/certificates")
+	certs, err := signing.FetchCertificatesFromLUCIService(c, s.URL)
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +280,7 @@ func (s *AuthService) ProcessPubSubPush(c context.Context, body []byte) (*Notifi
 
 	// It's fine to return error here. Certificate fetch can fail due to bad
 	// connectivity and we need a retry.
-	certs, err := signing.FetchCertificates(c, s.URL+"/auth/api/v1/server/certificates")
+	certs, err := signing.FetchCertificatesFromLUCIService(c, s.URL)
 	if err != nil {
 		return nil, err
 	}
@@ -299,11 +342,16 @@ func (s *AuthService) ackMessages(c context.Context, subscription string, ackIDs
 	if len(ackIDs) == 0 {
 		return nil
 	}
-	url := s.pubSubURL(subscription + ":acknowledge")
 	request := struct {
 		AckIDs []string `json:"ackIds"`
 	}{ackIDs}
-	return internal.PostJSON(c, url, &request, nil)
+	req := internal.Request{
+		Method: "POST",
+		URL:    s.pubSubURL(subscription + ":acknowledge"),
+		Scopes: oauthScopes,
+		Body:   &request,
+	}
+	return req.Do(c)
 }
 
 // GetLatestSnapshotRevision fetches revision number of the latest AuthDB
@@ -314,8 +362,13 @@ func (s *AuthService) GetLatestSnapshotRevision(c context.Context) (int64, error
 			Rev int64 `json:"auth_db_rev"`
 		} `json:"snapshot"`
 	}
-	url := s.URL + "/auth_service/api/v1/authdb/revisions/latest?skip_body=1"
-	if err := internal.GetJSON(c, url, &out); err != nil {
+	req := internal.Request{
+		Method: "GET",
+		URL:    s.URL + "/auth_service/api/v1/authdb/revisions/latest?skip_body=1",
+		Scopes: oauthScopes,
+		Out:    &out,
+	}
+	if err := req.Do(c); err != nil {
 		return 0, err
 	}
 	return out.Snapshot.Rev, nil
@@ -333,8 +386,13 @@ func (s *AuthService) GetSnapshot(c context.Context, rev int64) (*Snapshot, erro
 			DeflatedBody string `json:"deflated_body"`
 		} `json:"snapshot"`
 	}
-	url := fmt.Sprintf("%s/auth_service/api/v1/authdb/revisions/%d", s.URL, rev)
-	if err := internal.GetJSON(c, url, &out); err != nil {
+	req := internal.Request{
+		Method: "GET",
+		URL:    fmt.Sprintf("%s/auth_service/api/v1/authdb/revisions/%d", s.URL, rev),
+		Scopes: oauthScopes,
+		Out:    &out,
+	}
+	if err := req.Do(c); err != nil {
 		return nil, err
 	}
 	if out.Snapshot.Rev != rev {

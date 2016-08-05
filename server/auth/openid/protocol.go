@@ -5,9 +5,7 @@
 package openid
 
 import (
-	"bytes"
 	"errors"
-	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -49,10 +47,12 @@ func fetchDiscoveryDoc(c context.Context, url string) (*discoveryDoc, error) {
 
 	fetcher := func() (interface{}, time.Duration, error) {
 		doc := &discoveryDoc{}
-		err := internal.FetchJSON(c, doc, func() (*http.Request, error) {
-			return http.NewRequest("GET", url, nil)
-		})
-		if err != nil {
+		req := internal.Request{
+			Method: "GET",
+			URL:    url,
+			Out:    doc,
+		}
+		if err := req.Do(c); err != nil {
 			return nil, 0, err
 		}
 		return doc, time.Hour * 24, nil
@@ -142,15 +142,16 @@ func handleAuthorizationCode(c context.Context, cfg *Settings, code string) (uid
 		TokenType   string `json:"token_type"`
 		AccessToken string `json:"access_token"`
 	}
-	err = internal.FetchJSON(c, &token, func() (*http.Request, error) {
-		r, err := http.NewRequest("POST", discovery.TokenEndpoint, bytes.NewReader([]byte(payload)))
-		if err != nil {
-			return nil, err
-		}
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		return r, nil
-	})
-	if err != nil {
+	req := internal.Request{
+		Method: "POST",
+		URL:    discovery.TokenEndpoint,
+		Body:   []byte(payload),
+		Headers: map[string]string{
+			"Content-Type": "application/x-www-form-urlencoded",
+		},
+		Out: &token,
+	}
+	if err := req.Do(c); err != nil {
 		return "", nil, err
 	}
 
@@ -161,15 +162,15 @@ func handleAuthorizationCode(c context.Context, cfg *Settings, code string) (uid
 		Name    string `json:"name"`
 		Picture string `json:"picture"`
 	}
-	err = internal.FetchJSON(c, &profile, func() (*http.Request, error) {
-		r, err := http.NewRequest("GET", discovery.UserinfoEndpoint, nil)
-		if err != nil {
-			return nil, err
-		}
-		r.Header.Set("Authorization", token.TokenType+" "+token.AccessToken)
-		return r, nil
-	})
-	if err != nil {
+	req = internal.Request{
+		Method: "GET",
+		URL:    discovery.UserinfoEndpoint,
+		Headers: map[string]string{
+			"Authorization": token.TokenType + " " + token.AccessToken,
+		},
+		Out: &profile,
+	}
+	if err := req.Do(c); err != nil {
 		return "", nil, err
 	}
 

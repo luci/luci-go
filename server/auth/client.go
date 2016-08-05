@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/server/auth/internal"
 )
 
 // RPCAuthorityKind defines under whose authority RPCs are made.
@@ -119,6 +120,25 @@ func (creds perRPCCreds) RequireTransportSecurity() bool {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Internal stuff.
+
+func init() {
+	// This is needed to allow packages imported by 'server/auth' to make
+	// authenticated calls. They can't use GetRPCTransport directly, since they
+	// can't import 'server/auth' (it creates an import cycle).
+	internal.RegisterClientFactory(func(c context.Context, scopes []string) (*http.Client, error) {
+		var t http.RoundTripper
+		var err error
+		if len(scopes) == 0 {
+			t, err = GetRPCTransport(c, NoAuth)
+		} else {
+			t, err = GetRPCTransport(c, AsSelf, WithScopes(scopes...))
+		}
+		if err != nil {
+			return nil, err
+		}
+		return &http.Client{Transport: t}, nil
+	})
+}
 
 var defaultOAuthScopes = []string{auth.OAuthScopeEmail}
 

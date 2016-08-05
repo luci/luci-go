@@ -444,6 +444,6 @@ func (db *SnapshotDB) IsInWhitelist(c context.Context, ip net.IP, whitelist stri
 // They can be used to verify signature of messages signed by the primary's
 // private key. Used for validating various tokens.
 func (db *SnapshotDB) GetAuthServiceCertificates(c context.Context) (*signing.PublicCertificates, error) {
-	// Note: FetchCertificates does caching inside.
-	return signing.FetchCertificates(c, db.AuthServiceURL)
+	// Note: FetchCertificatesFromLUCIService implements caching inside.
+	return signing.FetchCertificatesFromLUCIService(c, db.AuthServiceURL)
 }

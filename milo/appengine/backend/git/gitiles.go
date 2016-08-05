@@ -7,11 +7,12 @@ package git
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 
-	"github.com/luci/luci-go/common/transport"
 	"github.com/luci/luci-go/milo/api/resp"
+	"github.com/luci/luci-go/server/auth"
 	"golang.org/x/net/context"
 )
 
@@ -82,7 +83,11 @@ func GetCommits(c context.Context, repoURL, treeish string, limit int) ([]resp.C
 	if err != nil {
 		return nil, err
 	}
-	client := transport.GetClient(c)
+	t, err := auth.GetRPCTransport(c, auth.NoAuth)
+	if err != nil {
+		return nil, err
+	}
+	client := http.Client{Transport: t}
 	r, err := client.Get(URL)
 	if err != nil {
 		return nil, err

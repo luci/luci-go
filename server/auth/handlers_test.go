@@ -29,7 +29,12 @@ func TestCertificatesHandler(t *testing.T) {
 			},
 		))
 		ts := httptest.NewServer(r)
-		return signing.FetchCertificates(context.Background(), ts.URL+"/auth/api/v1/server/certificates")
+		ctx := SetConfig(context.Background(), Config{
+			AnonymousTransport: func(context.Context) http.RoundTripper {
+				return http.DefaultTransport
+			},
+		})
+		return signing.FetchCertificates(ctx, ts.URL+"/auth/api/v1/server/certificates")
 	}
 
 	Convey("Works", t, func() {

@@ -1313,7 +1313,7 @@ func (e *engineImpl) prepareTopic(c context.Context, params topicParams) (topic 
 	// call it often.
 	if strings.HasPrefix(params.publisher, "https://") {
 		logging.Infof(c, "Fetching info about %q", params.publisher)
-		serviceInfo, err := signing.FetchServiceInfo(c, params.publisher)
+		serviceInfo, err := signing.FetchServiceInfoFromLUCIService(c, params.publisher)
 		if err != nil {
 			logging.Errorf(c, "Failed to fetch info about %q - %s", params.publisher, err)
 			return "", "", err
