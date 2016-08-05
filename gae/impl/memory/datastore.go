@@ -105,10 +105,6 @@ func (d *dsImpl) DecodeCursor(s string) (ds.Cursor, error) {
 }
 
 func (d *dsImpl) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
-	if err := assertQueryNamespace(d.ns, d.hasNS); err != nil {
-		return err
-	}
-
 	idx, head := d.data.getQuerySnaps(!fq.EventuallyConsistent())
 	err := executeQuery(fq, d.data.aid, d.ns, false, idx, head, cb)
 	if d.data.maybeAutoIndex(err) {
@@ -119,10 +115,6 @@ func (d *dsImpl) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
 }
 
 func (d *dsImpl) Count(fq *ds.FinalizedQuery) (ret int64, err error) {
-	if err := assertQueryNamespace(d.ns, d.hasNS); err != nil {
-		return 0, err
-	}
-
 	idx, head := d.data.getQuerySnaps(!fq.EventuallyConsistent())
 	ret, err = countQuery(fq, d.data.aid, d.ns, false, idx, head)
 	if d.data.maybeAutoIndex(err) {
@@ -216,10 +208,6 @@ func (d *txnDsImpl) DecodeCursor(s string) (ds.Cursor, error) {
 }
 
 func (d *txnDsImpl) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
-	if err := assertQueryNamespace(d.ns, d.hasNS); err != nil {
-		return err
-	}
-
 	// note that autoIndex has no effect inside transactions. This is because
 	// the transaction guarantees a consistent view of head at the time that the
 	// transaction opens. At best, we could add the index on head, but then return
@@ -233,10 +221,6 @@ func (d *txnDsImpl) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
 }
 
 func (d *txnDsImpl) Count(fq *ds.FinalizedQuery) (ret int64, err error) {
-	if err := assertQueryNamespace(d.ns, d.hasNS); err != nil {
-		return 0, err
-	}
-
 	return countQuery(fq, d.data.parent.aid, d.ns, true, d.data.snap, d.data.snap)
 }
 
@@ -245,17 +229,5 @@ func (*txnDsImpl) RunInTransaction(func(c context.Context) error, *ds.Transactio
 }
 
 func (*txnDsImpl) Testable() ds.Testable {
-	return nil
-}
-
-func assertQueryNamespace(ns string, hasNS bool) error {
-	if ns == "" && hasNS {
-		// The user has set an empty namespace. Datastore does not support this
-		// for queries.
-		//
-		// Bug on file is:
-		// https://code.google.com/p/googleappengine/issues/detail?id=12914
-		return errors.New("namespace may not be present and empty")
-	}
 	return nil
 }

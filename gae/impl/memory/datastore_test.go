@@ -596,20 +596,12 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 						So(countErr, ShouldBeNil)
 					})
 
-					Convey("With an non-empty namespace installed, can Put, Get, Query, and Count.", func() {
+					Convey("With a namespace installed, can Put, Get, Query, and Count.", func() {
 						putErr, getErr, queryErr, countErr := run(infoS.Get(c).MustNamespace("foo"), txn)
 						So(putErr, ShouldBeNil)
 						So(getErr, ShouldBeNil)
 						So(queryErr, ShouldBeNil)
 						So(countErr, ShouldBeNil)
-					})
-
-					Convey("With an empty namespace installed, can Put and Get, but not Query or Count.", func() {
-						putErr, getErr, queryErr, countErr := run(infoS.Get(c).MustNamespace(""), txn)
-						So(putErr, ShouldBeNil)
-						So(getErr, ShouldBeNil)
-						So(queryErr, ShouldErrLike, "namespace may not be present and empty")
-						So(countErr, ShouldErrLike, "namespace may not be present and empty")
 					})
 				})
 			}
