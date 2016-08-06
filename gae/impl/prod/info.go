@@ -99,6 +99,11 @@ func (g giImpl) ServerSoftware() string {
 	return appengine.ServerSoftware()
 }
 func (g giImpl) ServiceAccount() (string, error) {
+	if appengine.IsDevAppServer() {
+		// On devserver ServiceAccount returns empty string, but AccessToken works.
+		// We use it to grab developer's email.
+		return developerAccount(g.aeCtx)
+	}
 	return appengine.ServiceAccount(g.aeCtx)
 }
 func (g giImpl) SignBytes(bytes []byte) (keyName string, signature []byte, err error) {
