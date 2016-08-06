@@ -15,12 +15,15 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
+	isolateservice "github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
 	"github.com/luci/luci-go/common/isolated"
 	"github.com/luci/luci-go/common/lhttp"
 	"github.com/luci/luci-go/common/retry"
 	"github.com/luci/luci-go/common/runtime/tracer"
 )
+
+// DefaultNamespace is the namespace that should be used with the New function.
+const DefaultNamespace = "default-gzip"
 
 // compressedBufSize is the size of the read buffer that will be used to pull
 // data from a source into the compressor.
@@ -71,6 +74,8 @@ type PushState struct {
 //
 // If either client is nil, it will use http.DefaultClient (which will not work
 // on Classic AppEngine!).
+//
+// If you're unsure which namespace to use, use the DefaultNamespace constant.
 func New(anonClient, authClient *http.Client, host, namespace string) IsolateServer {
 	return newIsolateServer(anonClient, authClient, host, namespace, nil)
 }

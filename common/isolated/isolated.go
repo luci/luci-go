@@ -25,6 +25,9 @@ const (
 	DirsReadOnly ReadOnlyValue = 2
 )
 
+// Algorithm is the value for Algo.
+const Algorithm = "sha-1"
+
 // File describes a single file referenced by content in a .isolated file.
 //
 // Either one of Size or Link can be set.
@@ -44,4 +47,13 @@ type Isolated struct {
 	ReadOnly    *ReadOnlyValue  `json:"read_only,omitempty"`
 	RelativeCwd string          `json:"relative_cwd,omitempty"`
 	Version     string          `json:"version"`
+}
+
+// New returns a new Isolated with the default Algo and Version.
+func New() *Isolated {
+	return &Isolated{
+		Algo:    Algorithm,
+		Version: IsolatedFormatVersion,
+		Files:   map[string]File{},
+	}
 }
