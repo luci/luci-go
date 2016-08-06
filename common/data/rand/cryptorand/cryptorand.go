@@ -16,14 +16,14 @@ import (
 	"golang.org/x/net/context"
 )
 
-type key int
+var key = "holds crypto.Reader for cryptorand"
 
 // Get returns an io.Reader that emits random stream of bytes.
 //
 // Usually this returns crypto/rand.Reader, but unit tests may replace it with
 // a mock by using 'MockForTest' function.
 func Get(c context.Context) io.Reader {
-	if r, _ := c.Value(key(0)).(io.Reader); r != nil {
+	if r, _ := c.Value(&key).(io.Reader); r != nil {
 		return r
 	}
 	return crypto.Reader
@@ -40,7 +40,7 @@ func Read(c context.Context, b []byte) (n int, err error) {
 //
 // Must not be used outside of tests.
 func MockForTest(c context.Context, seed int64) context.Context {
-	return context.WithValue(c, key(0), notRandom{math.New(math.NewSource(seed))})
+	return context.WithValue(c, &key, notRandom{math.New(math.NewSource(seed))})
 }
 
 // notRandom is io.Reader that uses math/rand generator.

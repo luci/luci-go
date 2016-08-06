@@ -14,14 +14,14 @@ import (
 	"golang.org/x/net/context"
 )
 
-type key int
+var key = "holds a rand.Rand for mathrand"
 
 // Get gets a *"math/rand".Rand from the context.
 //
 // If one hasn't been set, this creates a new Rand object with a Source
 // initialized from the global randomness source provided by stdlib.
 func Get(c context.Context) *rand.Rand {
-	if r, ok := c.Value(key(0)).(*rand.Rand); ok && r != nil {
+	if r, ok := c.Value(&key).(*rand.Rand); ok && r != nil {
 		return r
 	}
 	return rand.New(rand.NewSource(rand.Int63()))
@@ -31,5 +31,5 @@ func Get(c context.Context) *rand.Rand {
 //
 // Useful for testing with a quick mock.
 func Set(c context.Context, r *rand.Rand) context.Context {
-	return context.WithValue(c, key(0), r)
+	return context.WithValue(c, &key, r)
 }
