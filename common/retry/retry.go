@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
 )
 
@@ -18,6 +19,18 @@ const Stop time.Duration = -1
 // Callback is a callback function that Retry will invoke every time an
 // attempt fails prior to sleeping.
 type Callback func(error, time.Duration)
+
+// LogCallback builds a Callback which logs a Warning with the opname, error
+// and delay.
+func LogCallback(c context.Context, opname string) Callback {
+	return func(err error, delay time.Duration) {
+		logging.Fields{
+			logging.ErrorKey: err,
+			"opname":         opname,
+			"delay":          delay,
+		}.Warningf(c, "operation failed transiently")
+	}
+}
 
 // Iterator describes a stateful implementation of retry logic.
 type Iterator interface {
