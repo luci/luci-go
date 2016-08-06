@@ -1,182 +1,21 @@
-// Copyright 2015 The LUCI Authors. All rights reserved.
+// Copyright 2016 The LUCI Authors. All rights reserved.
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-package auth
+package authdb
 
 import (
 	"fmt"
 	"net"
 	"strings"
-	"time"
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/data/caching/lazyslot"
-	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/logging"
-
-	"github.com/luci/luci-go/server/secrets"
-
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/service/protocol"
-	"github.com/luci/luci-go/server/auth/signing"
+	"github.com/luci/luci-go/server/secrets"
 )
-
-// DB is interface to access a database of authorization related information.
-//
-// It is static read only object that represent snapshot of auth data at some
-// moment in time.
-type DB interface {
-	// IsAllowedOAuthClientID returns true if given OAuth2 client_id can be used
-	// to authenticate access for given email.
-	IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error)
-
-	// IsMember returns true if the given identity belongs to the given group.
-	//
-	// Unknown groups are considered empty. May return errors if underlying
-	// datastore has issues.
-	IsMember(c context.Context, id identity.Identity, group string) (bool, error)
-
-	// SharedSecrets is secrets.Store with secrets in Auth DB.
-	//
-	// Such secrets are usually generated on central Auth Service and are known
-	// to all trusted services (so that they can use them to exchange data).
-	SharedSecrets(c context.Context) (secrets.Store, error)
-
-	// GetWhitelistForIdentity returns name of the IP whitelist to use to check
-	// IP of requests from given `ident`.
-	//
-	// It's used to restrict access for certain account to certain IP subnets.
-	//
-	// Returns ("", nil) if `ident` is not IP restricted.
-	GetWhitelistForIdentity(c context.Context, ident identity.Identity) (string, error)
-
-	// IsInWhitelist returns true if IP address belongs to given named
-	// IP whitelist.
-	//
-	// IP whitelist is a set of IP subnets. Unknown IP whitelists are considered
-	// empty. May return errors if underlying datastore has issues.
-	IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error)
-
-	// GetAuthServiceCertificates returns a bundle with certificates of a primary
-	// auth service.
-	//
-	// They can be used to verify signature of messages signed by the primary's
-	// private key. Used for validating various tokens.
-	GetAuthServiceCertificates(c context.Context) (*signing.PublicCertificates, error)
-}
-
-// DBProvider fetches a most recent DB instance.
-//
-// The returned instance is static and represents a snapshot of DB at some
-// point.
-//
-// It's part of auth library global config, see Config.
-type DBProvider func(c context.Context) (DB, error)
-
-// DBCacheUpdater knows how to update local in-memory copy of DB.
-//
-// Used by NewDBCache.
-type DBCacheUpdater func(c context.Context, prev DB) (DB, error)
-
-// NewDBCache returns a factory of DB instances that uses local memory to
-// cache DB instances for 5-10 seconds. It uses supplied callback to refetch DB
-// from some permanent storage when cache expires.
-//
-// Even though the return value is technically a function, treat it as a heavy
-// stateful object, since it has the cache of DB in its closure.
-func NewDBCache(updater DBCacheUpdater) DBProvider {
-	cacheSlot := lazyslot.Slot{
-		Fetcher: func(c context.Context, prev lazyslot.Value) (lazyslot.Value, error) {
-			var prevDB DB
-			if prev.Value != nil {
-				prevDB = prev.Value.(DB)
-			}
-			newDB, err := updater(c, prevDB)
-			if err != nil {
-				return lazyslot.Value{}, err
-			}
-			expTime := 5*time.Second + time.Duration(mathrand.Get(c).Intn(5000))*time.Millisecond
-			return lazyslot.Value{
-				Value:      newDB,
-				Expiration: clock.Now(c).Add(expTime),
-			}, nil
-		},
-	}
-
-	// Actual factory that just grabs DB from the cache (triggering lazy refetch).
-	return func(c context.Context) (DB, error) {
-		val, err := cacheSlot.Get(c)
-		if err != nil {
-			return nil, err
-		}
-		return val.Value.(DB), nil
-	}
-}
-
-// ErroringDB implements DB by forbidding all access and returning errors.
-type ErroringDB struct {
-	Error error // returned by all calls
-}
-
-// IsAllowedOAuthClientID returns true if given OAuth2 client_id can be used
-// to authenticate access for given email.
-func (db ErroringDB) IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error) {
-	logging.Errorf(c, "%s", db.Error)
-	return false, db.Error
-}
-
-// IsMember returns true if the given identity belongs to the given group.
-//
-// Unknown groups are considered empty. May return errors if underlying
-// datastore has issues.
-func (db ErroringDB) IsMember(c context.Context, id identity.Identity, group string) (bool, error) {
-	logging.Errorf(c, "%s", db.Error)
-	return false, db.Error
-}
-
-// SharedSecrets is secrets.Store with secrets in Auth DB.
-//
-// Such secrets are usually generated on central Auth Service and are known
-// to all trusted services (so that they can use them to exchange data).
-func (db ErroringDB) SharedSecrets(c context.Context) (secrets.Store, error) {
-	logging.Errorf(c, "%s", db.Error)
-	return nil, db.Error
-}
-
-// GetWhitelistForIdentity returns name of the IP whitelist to use to check
-// IP of requests from given `ident`.
-//
-// It's used to restrict access for certain account to certain IP subnets.
-//
-// Returns ("", nil) if `ident` is not IP restricted.
-func (db ErroringDB) GetWhitelistForIdentity(c context.Context, ident identity.Identity) (string, error) {
-	logging.Errorf(c, "%s", db.Error)
-	return "", db.Error
-}
-
-// IsInWhitelist returns true if IP address belongs to given named IP whitelist.
-//
-// IP whitelist is a set of IP subnets. Unknown IP whitelists are considered
-// empty. May return errors if underlying datastore has issues.
-func (db ErroringDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
-	logging.Errorf(c, "%s", db.Error)
-	return false, db.Error
-}
-
-// GetAuthServiceCertificates returns a bundle with certificates of a primary
-// auth service.
-//
-// They can be used to verify signature of messages signed by the primary's
-// private key. Used for validating various tokens.
-func (db ErroringDB) GetAuthServiceCertificates(c context.Context) (*signing.PublicCertificates, error) {
-	logging.Errorf(c, "%s", db.Error)
-	return nil, db.Error
-}
-
-///
 
 // OAuth client_id of https://apis-explorer.appspot.com/.
 const googleAPIExplorerClientID = "292824132082.apps.googleusercontent.com"
@@ -436,14 +275,4 @@ func (db *SnapshotDB) IsInWhitelist(c context.Context, ip net.IP, whitelist stri
 		}
 	}
 	return false, nil
-}
-
-// GetAuthServiceCertificates returns a bundle with certificates of a primary
-// auth service.
-//
-// They can be used to verify signature of messages signed by the primary's
-// private key. Used for validating various tokens.
-func (db *SnapshotDB) GetAuthServiceCertificates(c context.Context) (*signing.PublicCertificates, error) {
-	// Note: FetchCertificatesFromLUCIService implements caching inside.
-	return signing.FetchCertificatesFromLUCIService(c, db.AuthServiceURL)
 }

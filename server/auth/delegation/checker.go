@@ -54,8 +54,6 @@ var (
 )
 
 // CertificatesProvider is accepted by 'CheckToken'.
-//
-// It is implemented by auth.DB.
 type CertificatesProvider interface {
 	// GetAuthServiceCertificates returns a bundle with certificates of a primary
 	// auth service.
@@ -63,8 +61,6 @@ type CertificatesProvider interface {
 }
 
 // GroupsChecker is accepted by 'CheckToken'.
-//
-// It is implemented by auth.DB.
 type GroupsChecker interface {
 	// IsMember returns true if the given identity belongs to the given group.
 	//

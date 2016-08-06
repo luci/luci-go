@@ -12,7 +12,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/appengine/gaeauth/server/internal/authdb"
+	"github.com/luci/luci-go/appengine/gaeauth/server/internal/authdbimpl"
 	"github.com/luci/luci-go/server/settings"
 )
 
@@ -71,7 +71,7 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 }
 
 func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error) {
-	switch info, err := authdb.GetLatestSnapshotInfo(c); {
+	switch info, err := authdbimpl.GetLatestSnapshotInfo(c); {
 	case err != nil:
 		return nil, err
 	case info == nil:
@@ -90,7 +90,7 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 func (settingsUIPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
 	authServiceURL := values["AuthServiceURL"]
 	baseURL := "https://" + info.Get(c).DefaultVersionHostname()
-	return authdb.ConfigureAuthService(c, baseURL, authServiceURL)
+	return authdbimpl.ConfigureAuthService(c, baseURL, authServiceURL)
 }
 
 func init() {

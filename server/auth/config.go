@@ -10,6 +10,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/server/auth/authdb"
 	"github.com/luci/luci-go/server/auth/signing"
 )
 
@@ -23,7 +24,7 @@ type Config struct {
 	// DBProvider is a callback that returns most recent DB instance.
 	//
 	// DB represents a snapshot of user groups used for authorization checks.
-	DBProvider DBProvider
+	DBProvider func(c context.Context) (authdb.DB, error)
 
 	// Signer possesses the service's private key and can sign blobs with it.
 	//
@@ -84,11 +85,11 @@ func ModifyConfig(c context.Context, cb func(cfg *Config)) context.Context {
 // If no factory is installed, returns DB that forbids everything and logs
 // errors. It is often good enough for unit tests that do not care about
 // authorization, and still not horribly bad if accidentally used in production.
-func GetDB(c context.Context) (DB, error) {
+func GetDB(c context.Context) (authdb.DB, error) {
 	if cfg := GetConfig(c); cfg != nil && cfg.DBProvider != nil {
 		return cfg.DBProvider(c)
 	}
-	return ErroringDB{Error: ErrNotConfigured}, nil
+	return authdb.ErroringDB{Error: ErrNotConfigured}, nil
 }
 
 // GetSigner extracts Signer from the context. Returns nil if no Signer is set.

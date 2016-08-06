@@ -14,9 +14,9 @@ import (
 
 	"github.com/luci/luci-go/server/secrets"
 
+	"github.com/luci/luci-go/server/auth/authdb"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/service/protocol"
-	"github.com/luci/luci-go/server/auth/signing"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -49,7 +49,7 @@ func TestAuthenticate(t *testing.T) {
 	})
 
 	Convey("IP whitelist restriction works", t, func() {
-		db, err := NewSnapshotDB(&protocol.AuthDB{
+		db, err := authdb.NewSnapshotDB(&protocol.AuthDB{
 			IpWhitelistAssignments: []*protocol.AuthIPWhitelistAssignment{
 				{
 					Identity:    strPtr("user:abc@example.com"),
@@ -124,13 +124,15 @@ func (m fakeOAuthMethod) Authenticate(context.Context, *http.Request) (*User, er
 	}, nil
 }
 
-func injectTestDB(c context.Context, db DB) context.Context {
+func injectTestDB(c context.Context, d authdb.DB) context.Context {
 	return SetConfig(c, Config{
-		DBProvider: func(c context.Context) (DB, error) {
-			return db, nil
+		DBProvider: func(c context.Context) (authdb.DB, error) {
+			return d, nil
 		},
 	})
 }
+
+func strPtr(s string) *string { return &s }
 
 ///
 
@@ -157,8 +159,4 @@ func (db *fakeDB) GetWhitelistForIdentity(c context.Context, ident identity.Iden
 
 func (db *fakeDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
 	return whitelist == "bots" && ip.String() == "1.2.3.4", nil
-}
-
-func (db *fakeDB) GetAuthServiceCertificates(c context.Context) (*signing.PublicCertificates, error) {
-	return nil, errors.New("fakeDB: GetAuthServiceCertificates is not implemented")
 }

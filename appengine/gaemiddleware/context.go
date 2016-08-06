@@ -20,6 +20,7 @@ import (
 	"github.com/luci/luci-go/common/logging"
 
 	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/authdb"
 	"github.com/luci/luci-go/server/middleware"
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/settings"
@@ -51,7 +52,7 @@ var (
 	//
 	// Used in prod contexts only.
 	globalAuthConfig = auth.Config{
-		DBProvider:          auth.NewDBCache(server.GetAuthDB),
+		DBProvider:          authdb.NewDBCache(server.GetAuthDB),
 		Signer:              gaesigner.Signer{},
 		AccessTokenProvider: client.GetAccessToken,
 		AnonymousTransport:  urlfetch.Get,

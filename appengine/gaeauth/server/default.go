@@ -12,7 +12,7 @@ import (
 	"github.com/luci/luci-go/server/auth/openid"
 	"github.com/luci/luci-go/server/router"
 
-	"github.com/luci/luci-go/appengine/gaeauth/server/internal/authdb"
+	"github.com/luci/luci-go/appengine/gaeauth/server/internal/authdbimpl"
 )
 
 // CookieAuth is default cookie-based auth method to use on GAE.
@@ -32,7 +32,7 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 		oid.InstallHandlers(r, base)
 	}
 	auth.InstallHandlers(r, base)
-	authdb.InstallHandlers(r, base)
+	authdbimpl.InstallHandlers(r, base)
 }
 
 // Warmup prepares local caches. It's optional.

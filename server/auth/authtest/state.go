@@ -8,6 +8,7 @@ import (
 	"net"
 
 	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/authdb"
 	"github.com/luci/luci-go/server/auth/identity"
 )
 
@@ -47,7 +48,7 @@ type FakeState struct {
 var _ auth.State = (*FakeState)(nil)
 
 // DB is part of State interface.
-func (s *FakeState) DB() auth.DB {
+func (s *FakeState) DB() authdb.DB {
 	return &FakeErroringDB{
 		FakeDB: FakeDB{s.User().Identity: s.IdentityGroups},
 		Error:  s.Error,

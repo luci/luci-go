@@ -15,6 +15,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 
 	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/authdb"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/xsrf"
 	"github.com/luci/luci-go/server/router"
@@ -51,8 +52,8 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, adminAuth au
 	}
 
 	adminDB := adminBypassDB{
-		auth.ErroringDB{
-			Error: errors.New("admin: unexpected call to auth.DB on admin page"),
+		authdb.ErroringDB{
+			Error: errors.New("admin: unexpected call to authdb.DB on admin page"),
 		},
 	}
 
@@ -92,7 +93,7 @@ func replyError(c context.Context, rw http.ResponseWriter, err error) {
 // It is needed to make admin pages accessible even when AuthDB is not
 // configured.
 type adminBypassDB struct {
-	auth.ErroringDB
+	authdb.ErroringDB
 }
 
 func (adminBypassDB) GetWhitelistForIdentity(c context.Context, ident identity.Identity) (string, error) {
@@ -103,10 +104,10 @@ func (adminBypassDB) IsInWhitelist(c context.Context, ip net.IP, whitelist strin
 	return false, nil
 }
 
-func (db adminBypassDB) install(c *router.Context, next router.Handler) {
+func (d adminBypassDB) install(c *router.Context, next router.Handler) {
 	c.Context = auth.ModifyConfig(c.Context, func(cfg *auth.Config) {
-		cfg.DBProvider = func(context.Context) (auth.DB, error) {
-			return db, nil
+		cfg.DBProvider = func(context.Context) (authdb.DB, error) {
+			return d, nil
 		}
 	})
 	next(c)

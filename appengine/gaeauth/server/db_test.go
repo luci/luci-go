@@ -11,9 +11,9 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/gaeauth/server/internal/authdb"
+	"github.com/luci/luci-go/appengine/gaeauth/server/internal/authdbimpl"
 	"github.com/luci/luci-go/appengine/gaetesting"
-	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/authdb"
 	"github.com/luci/luci-go/server/auth/service"
 	"github.com/luci/luci-go/server/auth/service/protocol"
 
@@ -23,29 +23,29 @@ import (
 func TestGetAuthDB(t *testing.T) {
 	Convey("Unconfigured", t, func() {
 		c := gaetesting.TestingContext()
-		db, err := GetAuthDB(c, nil)
+		authDB, err := GetAuthDB(c, nil)
 		So(err, ShouldBeNil)
-		So(db, ShouldHaveSameTypeAs, devServerDB{})
+		So(authDB, ShouldHaveSameTypeAs, devServerDB{})
 	})
 
 	Convey("Reuses instance if no changes", t, func() {
 		c := gaetesting.TestingContext()
 
 		bumpAuthDB(c, 123)
-		db, err := GetAuthDB(c, nil)
+		authDB, err := GetAuthDB(c, nil)
 		So(err, ShouldBeNil)
-		So(db, ShouldHaveSameTypeAs, &auth.SnapshotDB{})
-		So(db.(*auth.SnapshotDB).Rev, ShouldEqual, 123)
+		So(authDB, ShouldHaveSameTypeAs, &authdb.SnapshotDB{})
+		So(authDB.(*authdb.SnapshotDB).Rev, ShouldEqual, 123)
 
-		newOne, err := GetAuthDB(c, db)
+		newOne, err := GetAuthDB(c, authDB)
 		So(err, ShouldBeNil)
-		So(newOne, ShouldEqual, db) // exact same pointer
+		So(newOne, ShouldEqual, authDB) // exact same pointer
 
 		bumpAuthDB(c, 124)
-		anotherOne, err := GetAuthDB(c, db)
+		anotherOne, err := GetAuthDB(c, authDB)
 		So(err, ShouldBeNil)
-		So(anotherOne, ShouldHaveSameTypeAs, &auth.SnapshotDB{})
-		So(anotherOne.(*auth.SnapshotDB).Rev, ShouldEqual, 124)
+		So(anotherOne, ShouldHaveSameTypeAs, &authdb.SnapshotDB{})
+		So(anotherOne.(*authdb.SnapshotDB).Rev, ShouldEqual, 124)
 	})
 }
 
@@ -63,7 +63,7 @@ func bumpAuthDB(c context.Context, rev int64) {
 	if err != nil {
 		panic(err)
 	}
-	info := authdb.SnapshotInfo{
+	info := authdbimpl.SnapshotInfo{
 		AuthServiceURL: "https://fake-auth-service",
 		Rev:            rev,
 	}
@@ -71,7 +71,7 @@ func bumpAuthDB(c context.Context, rev int64) {
 	if err = ds.Put(&info); err != nil {
 		panic(err)
 	}
-	err = ds.Put(&authdb.Snapshot{
+	err = ds.Put(&authdbimpl.Snapshot{
 		ID:             info.GetSnapshotID(),
 		AuthDBDeflated: blob,
 	})

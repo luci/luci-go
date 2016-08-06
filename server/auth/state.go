@@ -10,6 +10,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/server/auth/authdb"
 	"github.com/luci/luci-go/server/auth/identity"
 )
 
@@ -21,12 +22,12 @@ var ErrNoAuthState = errors.New("auth: auth.State is not in the context")
 // State is stored in the context when handling an incoming request. It
 // contains authentication related state of the current request.
 type State interface {
-	// DB is auth.DB snapshot with authorization information to use when
+	// DB is authdb.DB snapshot with authorization information to use when
 	// processing this request.
 	//
 	// Use directly only when you know what your are doing. Prefer to use wrapping
 	// functions (e.g. IsMember) instead.
-	DB() DB
+	DB() authdb.DB
 
 	// Method returns authentication method used for current request or nil if
 	// request is anonymous.
@@ -103,14 +104,14 @@ func IsMember(c context.Context, group string) (bool, error) {
 
 // state implements State. Immutable.
 type state struct {
-	db        DB
+	db        authdb.DB
 	method    Method
 	user      *User
 	peerIdent identity.Identity
 	peerIP    net.IP
 }
 
-func (s *state) DB() DB                          { return s.db }
+func (s *state) DB() authdb.DB                   { return s.db }
 func (s *state) Method() Method                  { return s.method }
 func (s *state) User() *User                     { return s.user }
 func (s *state) PeerIdentity() identity.Identity { return s.peerIdent }
