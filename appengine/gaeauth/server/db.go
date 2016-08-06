@@ -105,3 +105,7 @@ func (devServerDB) GetWhitelistForIdentity(c context.Context, ident identity.Ide
 func (devServerDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
 	return false, nil
 }
+
+func (devServerDB) GetAuthServiceURL(c context.Context) (string, error) {
+	return "", errNotConfigured
+}

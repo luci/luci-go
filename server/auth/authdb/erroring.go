@@ -63,3 +63,8 @@ func (db ErroringDB) IsInWhitelist(c context.Context, ip net.IP, whitelist strin
 	logging.Errorf(c, "%s", db.Error)
 	return false, db.Error
 }
+
+// GetAuthServiceURL returns root URL ("https://<host>") of the auth service.
+func (db ErroringDB) GetAuthServiceURL(c context.Context) (string, error) {
+	return "", db.Error
+}

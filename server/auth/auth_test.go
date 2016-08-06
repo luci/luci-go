@@ -160,3 +160,7 @@ func (db *fakeDB) GetWhitelistForIdentity(c context.Context, ident identity.Iden
 func (db *fakeDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
 	return whitelist == "bots" && ip.String() == "1.2.3.4", nil
 }
+
+func (db *fakeDB) GetAuthServiceURL(c context.Context) (string, error) {
+	return "", errors.New("fakeDB: GetAuthServiceURL is not implemented")
+}

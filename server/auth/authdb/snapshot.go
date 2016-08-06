@@ -276,3 +276,11 @@ func (db *SnapshotDB) IsInWhitelist(c context.Context, ip net.IP, whitelist stri
 	}
 	return false, nil
 }
+
+// GetAuthServiceURL returns root URL ("https://<host>") of the auth service
+// the snapshot was fetched from.
+//
+// This is needed to implement authdb.DB interface.
+func (db *SnapshotDB) GetAuthServiceURL(c context.Context) (string, error) {
+	return db.AuthServiceURL, nil
+}

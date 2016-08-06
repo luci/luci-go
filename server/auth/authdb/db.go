@@ -48,4 +48,10 @@ type DB interface {
 	// IP whitelist is a set of IP subnets. Unknown IP whitelists are considered
 	// empty. May return errors if underlying datastore has issues.
 	IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error)
+
+	// GetAuthServiceURL returns root URL ("https://<host>") of the auth service.
+	//
+	// Returns an error if the DB implementation is not using an auth service. May
+	// also return transient errors.
+	GetAuthServiceURL(c context.Context) (string, error)
 }

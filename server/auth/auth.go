@@ -240,12 +240,11 @@ type certsProvider struct {
 }
 
 func (p certsProvider) GetAuthServiceCertificates(c context.Context) (*signing.PublicCertificates, error) {
-	// TODO(vadimsh): This may need an adjustment if we ever use different db
-	// implementation in non-unit test code.
-	if snap, _ := p.db.(*authdb.SnapshotDB); snap != nil {
-		return signing.FetchCertificatesFromLUCIService(c, snap.AuthServiceURL)
+	serviceURL, err := p.db.GetAuthServiceURL(c)
+	if err != nil {
+		return nil, err
 	}
-	return nil, fmt.Errorf("don't know how to get URL of auth service")
+	return signing.FetchCertificatesFromLUCIService(c, serviceURL)
 }
 
 // getOwnServiceIdentity returns 'service:<appID>' identity of the current

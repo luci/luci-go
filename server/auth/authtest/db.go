@@ -67,7 +67,12 @@ func (db FakeDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (
 	panic("FakeDB.IsInWhitelist must not be called")
 }
 
-// FakeErroringDB is authdb.DB with IsMember returning a error.
+// GetAuthServiceURL is part of authdb.DB interface. Panics.
+func (db FakeDB) GetAuthServiceURL(c context.Context) (string, error) {
+	panic("FakeDB.GetAuthServiceURL must not be called")
+}
+
+// FakeErroringDB is authdb.DB with IsMember returning an error.
 type FakeErroringDB struct {
 	FakeDB
 
