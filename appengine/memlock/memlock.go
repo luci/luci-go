@@ -71,9 +71,11 @@ func TryWithLock(ctx context.Context, key, clientID string, f func(context.Conte
 		return ErrEmptyClientID
 	}
 
-	ctx = logging.SetField(ctx, "key", key)
-	ctx = logging.SetField(ctx, "clientID", clientID)
-	log := logging.Get(ctx)
+	log := logging.Get(
+		logging.SetFields(ctx, logging.Fields{
+			"key":      key,
+			"clientID": clientID,
+		}))
 	mc := memcache.Get(ctx)
 
 	key = memlockKeyPrefix + key
