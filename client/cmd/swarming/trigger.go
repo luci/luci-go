@@ -66,7 +66,7 @@ func mapToArray(m stringmapflag.Value) []*swarming.SwarmingRpcsStringPair {
 // described in mapToArray().
 func namePartFromDimensions(m stringmapflag.Value) string {
 	a := mapToArray(m)
-	pairs := make([]string, 0)
+	pairs := make([]string, 0, len(a))
 	for i := 0; i < len(a); i++ {
 		pairs = append(pairs, fmt.Sprintf("%s=%s", a[i].Key, a[i].Value))
 	}
@@ -335,7 +335,7 @@ func (c *triggerRun) createNewTask(request *swarming.SwarmingRpcsNewTaskRequest)
 	if err != nil {
 		return &swarming.SwarmingRpcsTaskRequestMetadata{}, err
 	}
-	s.BasePath = c.commonFlags.serverURL + "/_ah/api/swarming/v1/"
+	s.BasePath = c.commonFlags.serverURL + "/api/swarming/v1/"
 
 	call := s.Tasks.New(request).Fields("task_result")
 	result, err := call.Do()

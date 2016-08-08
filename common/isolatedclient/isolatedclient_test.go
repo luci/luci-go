@@ -49,12 +49,12 @@ func TestIsolateServerLarge(t *testing.T) {
 
 func TestIsolateServerRetryContains(t *testing.T) {
 	t.Parallel()
-	testFlaky(context.Background(), t, "/_ah/api/isolateservice/v1/preupload")
+	testFlaky(context.Background(), t, "/api/isolateservice/v1/preupload")
 }
 
 func TestIsolateServerRetryStoreInline(t *testing.T) {
 	t.Parallel()
-	testFlaky(context.Background(), t, "/_ah/api/isolateservice/v1/store_inline")
+	testFlaky(context.Background(), t, "/api/isolateservice/v1/store_inline")
 }
 
 func TestIsolateServerRetryGCS(t *testing.T) {
@@ -64,7 +64,7 @@ func TestIsolateServerRetryGCS(t *testing.T) {
 
 func TestIsolateServerRetryFinalize(t *testing.T) {
 	t.Parallel()
-	testFlaky(context.Background(), t, "/_ah/api/isolateservice/v1/finalize_gs_upload")
+	testFlaky(context.Background(), t, "/api/isolateservice/v1/finalize_gs_upload")
 }
 
 func TestIsolateServerRetryGCSPartial(t *testing.T) {

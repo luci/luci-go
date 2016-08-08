@@ -72,10 +72,10 @@ func New() IsolatedFake {
 		staging:  map[isolated.HexDigest][]byte{},
 	}
 
-	server.handleJSON("/_ah/api/isolateservice/v1/server_details", server.serverDetails)
-	server.handleJSON("/_ah/api/isolateservice/v1/preupload", server.preupload)
-	server.handleJSON("/_ah/api/isolateservice/v1/finalize_gs_upload", server.finalizeGSUpload)
-	server.handleJSON("/_ah/api/isolateservice/v1/store_inline", server.storeInline)
+	server.handleJSON("/api/isolateservice/v1/server_details", server.serverDetails)
+	server.handleJSON("/api/isolateservice/v1/preupload", server.preupload)
+	server.handleJSON("/api/isolateservice/v1/finalize_gs_upload", server.finalizeGSUpload)
+	server.handleJSON("/api/isolateservice/v1/store_inline", server.storeInline)
 	server.mux.HandleFunc("/fake/cloudstorage", server.fakeCloudStorage)
 
 	// Fail on anything else.

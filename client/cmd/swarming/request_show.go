@@ -70,7 +70,7 @@ func (c *requestShowRun) main(a subcommands.Application, taskid string) error {
 	if err != nil {
 		return err
 	}
-	s.BasePath = c.commonFlags.serverURL + "/_ah/api/swarming/v1/"
+	s.BasePath = c.commonFlags.serverURL + "/api/swarming/v1/"
 
 	call := s.Task.Request(taskid)
 	result, err := call.Do()

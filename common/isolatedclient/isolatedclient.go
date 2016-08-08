@@ -120,7 +120,7 @@ func (i *isolateServer) postJSON(c context.Context, resource string, headers map
 
 func (i *isolateServer) ServerCapabilities(c context.Context) (*isolateservice.HandlersEndpointsV1ServerDetails, error) {
 	out := &isolateservice.HandlersEndpointsV1ServerDetails{}
-	if err := i.postJSON(c, "/_ah/api/isolateservice/v1/server_details", nil, map[string]string{}, out); err != nil {
+	if err := i.postJSON(c, "/api/isolateservice/v1/server_details", nil, map[string]string{}, out); err != nil {
 		return nil, err
 	}
 	return out, nil
@@ -132,7 +132,7 @@ func (i *isolateServer) Contains(c context.Context, items []*isolateservice.Hand
 	in := isolateservice.HandlersEndpointsV1DigestCollection{Items: items, Namespace: &isolateservice.HandlersEndpointsV1Namespace{}}
 	in.Namespace.Namespace = i.namespace
 	data := &isolateservice.HandlersEndpointsV1UrlCollection{}
-	if err = i.postJSON(c, "/_ah/api/isolateservice/v1/preupload", nil, in, data); err != nil {
+	if err = i.postJSON(c, "/api/isolateservice/v1/preupload", nil, in, data); err != nil {
 		return nil, err
 	}
 	out = make([]*PushState, len(items))
@@ -169,7 +169,7 @@ func (i *isolateServer) Push(c context.Context, state *PushState, source Source)
 		// stored files).
 		in := isolateservice.HandlersEndpointsV1FinalizeRequest{UploadTicket: state.status.UploadTicket}
 		headers := map[string]string{"Cache-Control": "public, max-age=31536000"}
-		if err = i.postJSON(c, "/_ah/api/isolateservice/v1/finalize_gs_upload", headers, in, nil); err != nil {
+		if err = i.postJSON(c, "/api/isolateservice/v1/finalize_gs_upload", headers, in, nil); err != nil {
 			log.Printf("Push(%s) (finalize) failed: %s\n%#v", state.digest, err, state)
 			return
 		}
@@ -209,7 +209,7 @@ func (i *isolateServer) doPushDB(c context.Context, state *PushState, reader io.
 		return err
 	}
 	in := &isolateservice.HandlersEndpointsV1StorageRequest{UploadTicket: state.status.UploadTicket, Content: buf.Bytes()}
-	return i.postJSON(c, "/_ah/api/isolateservice/v1/store_inline", nil, in, nil)
+	return i.postJSON(c, "/api/isolateservice/v1/store_inline", nil, in, nil)
 }
 
 func (i *isolateServer) doPushGCS(c context.Context, state *PushState, source Source) (err error) {
