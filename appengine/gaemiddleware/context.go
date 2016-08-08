@@ -56,6 +56,7 @@ var (
 		Signer:              gaesigner.Signer{},
 		AccessTokenProvider: client.GetAccessToken,
 		AnonymousTransport:  urlfetch.Get,
+		GlobalCache:         &server.Memcache{Namespace: "__luciauth__"},
 	}
 
 	// globalTsMonState holds state related to time series monitoring.

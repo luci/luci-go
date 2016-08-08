@@ -6,6 +6,7 @@ package auth
 
 import (
 	"net/http"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -45,6 +46,27 @@ type Config struct {
 	// The returned round tripper is assumed to be bound to the context and won't
 	// outlive it.
 	AnonymousTransport func(c context.Context) http.RoundTripper
+
+	// GlobalCache implements service-global strongly consistent cache.
+	//
+	// Usually backed by memcache. Should do namespacing itself (i.e. the auth
+	// library assumes full ownership of the keyspace).
+	GlobalCache GlobalCache
+}
+
+// GlobalCache implements service-global strongly consistent cache.
+type GlobalCache interface {
+	// Get returns a cached item or (nil, nil) if it's not in the cache.
+	//
+	// Any returned error is transient error.
+	Get(c context.Context, key string) ([]byte, error)
+
+	// Set unconditionally overwrites an item in the cache.
+	//
+	// If 'exp' is zero, the item will have no expiration time.
+	//
+	// Any returned error is transient error.
+	Set(c context.Context, key string, value []byte, exp time.Duration) error
 }
 
 type cfxContextKey int
