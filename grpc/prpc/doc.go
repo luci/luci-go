@@ -34,8 +34,9 @@
 // This section describes the pRPC protocol. It is based on HTTP 1.x and employs
 // gRPC codes.
 //
-// A pRPC server MUST handle HTTP POST requests at `/prpc/{service}/{method}`,
-// decode an input message from an HTTP request,
+// A pRPC server MUST handle HTTP POST requests at `/prpc/{service}/{method}`
+// where service is a full service name including full package name.
+// The handler must decode an input message from an HTTP request,
 // call the service method implementation and
 // encode the returned output message or error to the HTTP response.
 //
@@ -87,6 +88,9 @@
 //
 // A server MUST always specify "X-Prpc-Grpc-Code".
 // The server SHOULD specify HTTP status corresponding to the gRPC code.
+//
+// If the "X-Prpc-Grpc-Code" response header value is not 0, the response body
+// MUST contain a description of the error.
 //
 // If a service/method is not found, the server MUST respond with Unimplemented
 // gRPC code and SHOULD specify HTTP 501 status.
