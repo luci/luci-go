@@ -22,6 +22,7 @@ import (
 	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/lhttp"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/system/ctxcmd"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
@@ -195,19 +196,6 @@ func runQuery(c context.Context, dc dm.DepsClient, query *dm.WalkGraphReq) (ret 
 	return
 }
 
-func isLocalHost(host string) bool {
-	switch {
-	case host == "localhost", strings.HasPrefix(host, "localhost:"):
-	case host == "127.0.0.1", strings.HasPrefix(host, "127.0.0.1:"):
-	case host == "[::1]", strings.HasPrefix(host, "[::1]:"):
-	case strings.HasPrefix(host, ":"):
-
-	default:
-		return false
-	}
-	return true
-}
-
 func (r *visQueryRun) Run(a subcommands.Application, args []string) int {
 	r.cmd = cmdVisQuery
 
@@ -238,7 +226,7 @@ func (r *visQueryRun) Run(a subcommands.Application, args []string) int {
 		Host:    r.host,
 		Options: prpc.DefaultOptions(),
 	}
-	client.Options.Insecure = isLocalHost(r.host)
+	client.Options.Insecure = lhttp.IsLocalHost(r.host)
 	dc := dm.NewDepsPRPCClient(client)
 
 	prev := ""

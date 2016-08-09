@@ -7,13 +7,13 @@ package logdog
 import (
 	"fmt"
 	"runtime"
-	"strings"
 	"time"
 
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	ps "github.com/luci/luci-go/common/gcloud/pubsub"
+	"github.com/luci/luci-go/common/lhttp"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/retry"
@@ -107,7 +107,7 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 	}
 
 	// If our host begins with "localhost", set insecure option automatically.
-	if isLocalHost(cfg.Host) {
+	if lhttp.IsLocalHost(cfg.Host) {
 		log.Infof(c, "Detected localhost; enabling insecure RPC connection.")
 		client.Options.Insecure = true
 	}
@@ -203,19 +203,6 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 		Compress: true,
 		Track:    cfg.Track,
 	}), nil
-}
-
-func isLocalHost(host string) bool {
-	switch {
-	case host == "localhost", strings.HasPrefix(host, "localhost:"):
-	case host == "127.0.0.1", strings.HasPrefix(host, "127.0.0.1:"):
-	case host == "[::1]", strings.HasPrefix(host, "[::1]:"):
-	case strings.HasPrefix(host, ":"):
-
-	default:
-		return false
-	}
-	return true
 }
 
 func retryTopicExists(ctx context.Context, t *pubsub.Topic) (bool, error) {

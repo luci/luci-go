@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -17,6 +16,7 @@ import (
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/rand/cryptorand"
+	"github.com/luci/luci-go/common/lhttp"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/dm/api/distributor/jobsim"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
@@ -319,19 +319,6 @@ func (r *runner) doFailure(seed int64, chance float32) (stop bool, err error) {
 	return
 }
 
-func isLocalHost(host string) bool {
-	switch {
-	case host == "localhost", strings.HasPrefix(host, "localhost:"):
-	case host == "127.0.0.1", strings.HasPrefix(host, "127.0.0.1:"):
-	case host == "[::1]", strings.HasPrefix(host, "[::1]:"):
-	case strings.HasPrefix(host, ":"):
-
-	default:
-		return false
-	}
-	return true
-}
-
 // runJob is analogous to a single Execution of a recipe. It will:
 //   * Activate itself with DM.
 //   * Inspect its previous State to determine where it left off on the previous
@@ -353,7 +340,7 @@ func runJob(c context.Context, host string, state *state, job *jobsim.Phrase, au
 		Host:    host,
 		Options: prpc.DefaultOptions(),
 	}
-	pcli.Options.Insecure = isLocalHost(host)
+	pcli.Options.Insecure = lhttp.IsLocalHost(host)
 	dmc := dm.NewDepsPRPCClient(pcli)
 	r := runner{c, auth, dmc, state}
 

@@ -7,7 +7,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
@@ -15,6 +14,7 @@ import (
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
+	"github.com/luci/luci-go/common/lhttp"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/grpc/prpc"
@@ -82,7 +82,7 @@ func (r *cmdRun) authenticatedClient(ctx context.Context, host string) (*prpc.Cl
 		Host:    host,
 		Options: prpc.DefaultOptions(),
 	}
-	client.Options.Insecure = isLocalHost(host)
+	client.Options.Insecure = lhttp.IsLocalHost(host)
 	return &client, nil
 }
 
@@ -108,19 +108,6 @@ func (r *cmdRun) done(err error) int {
 		return ecOtherError
 	}
 	return 0
-}
-
-func isLocalHost(host string) bool {
-	switch {
-	case host == "localhost", strings.HasPrefix(host, "localhost:"):
-	case host == "127.0.0.1", strings.HasPrefix(host, "127.0.0.1:"):
-	case host == "[::1]", strings.HasPrefix(host, "[::1]:"):
-	case strings.HasPrefix(host, ":"):
-
-	default:
-		return false
-	}
-	return true
 }
 
 var application = &cli.Application{

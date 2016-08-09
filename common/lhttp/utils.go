@@ -6,6 +6,7 @@ package lhttp
 
 import (
 	"errors"
+	"net"
 	"net/url"
 	"strings"
 )
@@ -38,4 +39,20 @@ func CheckURL(s string) (string, error) {
 		return "", err
 	}
 	return s, nil
+}
+
+// IsLocalHost returns true if hostport is local.
+func IsLocalHost(hostport string) bool {
+	host, _, err := net.SplitHostPort(hostport)
+	if err != nil {
+		return false
+	}
+	switch {
+	case host == "localhost", host == "":
+	case net.ParseIP(host).IsLoopback():
+
+	default:
+		return false
+	}
+	return true
 }

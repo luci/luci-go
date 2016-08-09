@@ -21,7 +21,7 @@ var logCfg = gologger.LoggerConfig{
 
 var application = &cli.Application{
 	Name:  "buildbucket",
-	Title: "A cli client for buildbucket.",
+	Title: "A CLI client for buildbucket.",
 	Context: func(ctx context.Context) context.Context {
 		return logCfg.Use(ctx)
 	},

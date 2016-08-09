@@ -12,7 +12,6 @@ import (
 
 	"github.com/luci/luci-go/common/api/buildbucket/buildbucket/v1"
 	"github.com/luci/luci-go/common/cli"
-	"github.com/luci/luci-go/common/logging"
 )
 
 var cmdPutBatch = &subcommands.Command{
@@ -36,37 +35,20 @@ type putBatchRun struct {
 func (r *putBatchRun) Run(a subcommands.Application, args []string) int {
 	ctx := cli.GetContext(a, r)
 	if len(args) < 1 {
-		logging.Errorf(ctx, "missing parameter: <JSON Request>")
-		return 1
+		return r.done(ctx, fmt.Errorf("missing parameter: <JSON Request>"))
 	}
 
-	reqMessage := &buildbucket.ApiPutBatchRequestMessage{}
-
-	for i := range args {
-		build := &buildbucket.ApiPutRequestMessage{}
-		if err := json.Unmarshal([]byte(args[i]), build); err != nil {
-			logging.Errorf(ctx, "could not unmarshal %s: %s", args[i], err)
-			return 1
+	var reqBody struct {
+		Builds []json.RawMessage `json:"builds"`
+	}
+	for i, a := range args {
+		aBytes := []byte(a)
+		// verify that args are valid here before sending the request.
+		if err := json.Unmarshal(aBytes, &buildbucket.ApiPutRequestMessage{}); err != nil {
+			return r.done(ctx, fmt.Errorf("invalid build request #%d: %s", i, err))
 		}
-		reqMessage.Builds = append(reqMessage.Builds, build)
+		reqBody.Builds = append(reqBody.Builds, json.RawMessage(aBytes))
 	}
 
-	service, err := r.makeService(ctx, a)
-	if err != nil {
-		return 1
-	}
-
-	response, err := service.PutBatch(reqMessage).Do()
-	if err != nil {
-		logging.Errorf(ctx, "buildbucket.PutBatch failed: %s", err)
-		return 1
-	}
-
-	responseJSON, err := response.MarshalJSON()
-	if err != nil {
-		logging.Errorf(ctx, "could not marshal response: %s", err)
-		return 1
-	}
-	fmt.Println(string(responseJSON))
-	return 0
+	return r.callAndDone(ctx, "PUT", "builds/batch", reqBody)
 }
