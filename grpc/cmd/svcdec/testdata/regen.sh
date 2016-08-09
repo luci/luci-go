@@ -4,4 +4,5 @@
 # that can be found in the LICENSE file.
 
 cd "${0%/*}"
-svcdec -output s1server_dec.golden -type S1Server,S2Server ../../../internal/svctool/testdata
+
+go run ../main.go ../template.go -output s1server_dec.golden -type S1Server,S2Server ../../../internal/svctool/testdata

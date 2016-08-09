@@ -25,10 +25,12 @@ type DecoratedCertificateAuthorities struct {
 }
 
 func (s *DecoratedCertificateAuthorities) ImportConfig(c context.Context, req *google_protobuf.Empty) (rsp *ImportConfigResponse, err error) {
+	var newCtx context.Context
 	if s.Prelude != nil {
-		c, err = s.Prelude(c, "ImportConfig", req)
+		newCtx, err = s.Prelude(c, "ImportConfig", req)
 	}
 	if err == nil {
+		c = newCtx
 		rsp, err = s.Service.ImportConfig(c, req)
 	}
 	if s.Postlude != nil {
@@ -38,10 +40,12 @@ func (s *DecoratedCertificateAuthorities) ImportConfig(c context.Context, req *g
 }
 
 func (s *DecoratedCertificateAuthorities) FetchCRL(c context.Context, req *FetchCRLRequest) (rsp *FetchCRLResponse, err error) {
+	var newCtx context.Context
 	if s.Prelude != nil {
-		c, err = s.Prelude(c, "FetchCRL", req)
+		newCtx, err = s.Prelude(c, "FetchCRL", req)
 	}
 	if err == nil {
+		c = newCtx
 		rsp, err = s.Service.FetchCRL(c, req)
 	}
 	if s.Postlude != nil {
@@ -51,10 +55,12 @@ func (s *DecoratedCertificateAuthorities) FetchCRL(c context.Context, req *Fetch
 }
 
 func (s *DecoratedCertificateAuthorities) ListCAs(c context.Context, req *google_protobuf.Empty) (rsp *ListCAsResponse, err error) {
+	var newCtx context.Context
 	if s.Prelude != nil {
-		c, err = s.Prelude(c, "ListCAs", req)
+		newCtx, err = s.Prelude(c, "ListCAs", req)
 	}
 	if err == nil {
+		c = newCtx
 		rsp, err = s.Service.ListCAs(c, req)
 	}
 	if s.Postlude != nil {
@@ -64,10 +70,12 @@ func (s *DecoratedCertificateAuthorities) ListCAs(c context.Context, req *google
 }
 
 func (s *DecoratedCertificateAuthorities) GetCAStatus(c context.Context, req *GetCAStatusRequest) (rsp *GetCAStatusResponse, err error) {
+	var newCtx context.Context
 	if s.Prelude != nil {
-		c, err = s.Prelude(c, "GetCAStatus", req)
+		newCtx, err = s.Prelude(c, "GetCAStatus", req)
 	}
 	if err == nil {
+		c = newCtx
 		rsp, err = s.Service.GetCAStatus(c, req)
 	}
 	if s.Postlude != nil {
@@ -77,10 +85,12 @@ func (s *DecoratedCertificateAuthorities) GetCAStatus(c context.Context, req *Ge
 }
 
 func (s *DecoratedCertificateAuthorities) IsRevokedCert(c context.Context, req *IsRevokedCertRequest) (rsp *IsRevokedCertResponse, err error) {
+	var newCtx context.Context
 	if s.Prelude != nil {
-		c, err = s.Prelude(c, "IsRevokedCert", req)
+		newCtx, err = s.Prelude(c, "IsRevokedCert", req)
 	}
 	if err == nil {
+		c = newCtx
 		rsp, err = s.Service.IsRevokedCert(c, req)
 	}
 	if s.Postlude != nil {
@@ -90,10 +100,12 @@ func (s *DecoratedCertificateAuthorities) IsRevokedCert(c context.Context, req *
 }
 
 func (s *DecoratedCertificateAuthorities) CheckCertificate(c context.Context, req *CheckCertificateRequest) (rsp *CheckCertificateResponse, err error) {
+	var newCtx context.Context
 	if s.Prelude != nil {
-		c, err = s.Prelude(c, "CheckCertificate", req)
+		newCtx, err = s.Prelude(c, "CheckCertificate", req)
 	}
 	if err == nil {
+		c = newCtx
 		rsp, err = s.Service.CheckCertificate(c, req)
 	}
 	if s.Postlude != nil {

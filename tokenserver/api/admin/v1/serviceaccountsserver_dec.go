@@ -23,10 +23,12 @@ type DecoratedServiceAccounts struct {
 }
 
 func (s *DecoratedServiceAccounts) CreateServiceAccount(c context.Context, req *CreateServiceAccountRequest) (rsp *CreateServiceAccountResponse, err error) {
+	var newCtx context.Context
 	if s.Prelude != nil {
-		c, err = s.Prelude(c, "CreateServiceAccount", req)
+		newCtx, err = s.Prelude(c, "CreateServiceAccount", req)
 	}
 	if err == nil {
+		c = newCtx
 		rsp, err = s.Service.CreateServiceAccount(c, req)
 	}
 	if s.Postlude != nil {

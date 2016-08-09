@@ -25,10 +25,12 @@ type DecoratedAdmin struct {
 }
 
 func (s *DecoratedAdmin) SetConfig(c context.Context, req *SetConfigRequest) (rsp *google_protobuf.Empty, err error) {
+	var newCtx context.Context
 	if s.Prelude != nil {
-		c, err = s.Prelude(c, "SetConfig", req)
+		newCtx, err = s.Prelude(c, "SetConfig", req)
 	}
 	if err == nil {
+		c = newCtx
 		rsp, err = s.Service.SetConfig(c, req)
 	}
 	if s.Postlude != nil {

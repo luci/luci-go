@@ -25,10 +25,12 @@ type DecoratedServices struct {
 }
 
 func (s *DecoratedServices) GetConfig(c context.Context, req *google_protobuf1.Empty) (rsp *GetConfigResponse, err error) {
+	var newCtx context.Context
 	if s.Prelude != nil {
-		c, err = s.Prelude(c, "GetConfig", req)
+		newCtx, err = s.Prelude(c, "GetConfig", req)
 	}
 	if err == nil {
+		c = newCtx
 		rsp, err = s.Service.GetConfig(c, req)
 	}
 	if s.Postlude != nil {
@@ -38,10 +40,12 @@ func (s *DecoratedServices) GetConfig(c context.Context, req *google_protobuf1.E
 }
 
 func (s *DecoratedServices) RegisterStream(c context.Context, req *RegisterStreamRequest) (rsp *RegisterStreamResponse, err error) {
+	var newCtx context.Context
 	if s.Prelude != nil {
-		c, err = s.Prelude(c, "RegisterStream", req)
+		newCtx, err = s.Prelude(c, "RegisterStream", req)
 	}
 	if err == nil {
+		c = newCtx
 		rsp, err = s.Service.RegisterStream(c, req)
 	}
 	if s.Postlude != nil {
@@ -51,10 +55,12 @@ func (s *DecoratedServices) RegisterStream(c context.Context, req *RegisterStrea
 }
 
 func (s *DecoratedServices) LoadStream(c context.Context, req *LoadStreamRequest) (rsp *LoadStreamResponse, err error) {
+	var newCtx context.Context
 	if s.Prelude != nil {
-		c, err = s.Prelude(c, "LoadStream", req)
+		newCtx, err = s.Prelude(c, "LoadStream", req)
 	}
 	if err == nil {
+		c = newCtx
 		rsp, err = s.Service.LoadStream(c, req)
 	}
 	if s.Postlude != nil {
@@ -64,10 +70,12 @@ func (s *DecoratedServices) LoadStream(c context.Context, req *LoadStreamRequest
 }
 
 func (s *DecoratedServices) TerminateStream(c context.Context, req *TerminateStreamRequest) (rsp *google_protobuf1.Empty, err error) {
+	var newCtx context.Context
 	if s.Prelude != nil {
-		c, err = s.Prelude(c, "TerminateStream", req)
+		newCtx, err = s.Prelude(c, "TerminateStream", req)
 	}
 	if err == nil {
+		c = newCtx
 		rsp, err = s.Service.TerminateStream(c, req)
 	}
 	if s.Postlude != nil {
@@ -77,10 +85,12 @@ func (s *DecoratedServices) TerminateStream(c context.Context, req *TerminateStr
 }
 
 func (s *DecoratedServices) ArchiveStream(c context.Context, req *ArchiveStreamRequest) (rsp *google_protobuf1.Empty, err error) {
+	var newCtx context.Context
 	if s.Prelude != nil {
-		c, err = s.Prelude(c, "ArchiveStream", req)
+		newCtx, err = s.Prelude(c, "ArchiveStream", req)
 	}
 	if err == nil {
+		c = newCtx
 		rsp, err = s.Service.ArchiveStream(c, req)
 	}
 	if s.Postlude != nil {
