@@ -57,8 +57,11 @@ func TestEnsureQuests(t *testing.T) {
 			q2 := model.NewQuest(c, qd2)
 
 			req := &dm.EnsureGraphDataReq{
-				Quest:    []*dm.Quest_Desc{qd, qd2},
-				Attempts: dm.NewAttemptList(map[string][]uint32{q.ID: {1}, q2.ID: {2}})}
+				Quest: []*dm.Quest_Desc{qd, qd2},
+				QuestAttempt: []*dm.AttemptList_Nums{
+					{Nums: []uint32{1}},
+					{Nums: []uint32{2}},
+				}}
 
 			Convey("0/2 exist", func() {
 				rsp, err := s.EnsureGraphData(c, req)

@@ -162,8 +162,8 @@ func (t *ActivatedTask) EnsureGraphData(req *dm.EnsureGraphDataReq) (*dm.EnsureG
 // already have been added to the deps server (probably with an EnsureGraphData
 // call).
 func (t *ActivatedTask) DepOn(to ...*dm.Attempt_ID) (bool, error) {
-	req := &dm.EnsureGraphDataReq{Attempts: dm.NewAttemptList(nil)}
-	req.Attempts.AddAIDs(to...)
+	req := &dm.EnsureGraphDataReq{RawAttempts: dm.NewAttemptList(nil)}
+	req.RawAttempts.AddAIDs(to...)
 
 	rsp, err := t.EnsureGraphData(req)
 	return rsp.ShouldHalt, err

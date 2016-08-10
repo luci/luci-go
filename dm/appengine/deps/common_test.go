@@ -48,8 +48,8 @@ func (s testDepsServer) ensureQuest(c context.Context, name string, aids ...uint
 	desc := fake.QuestDesc(name)
 	q := model.NewQuest(c, desc)
 	qsts, err := s.EnsureGraphData(writer(c), &dm.EnsureGraphDataReq{
-		Quest:    []*dm.Quest_Desc{desc},
-		Attempts: dm.NewAttemptList(map[string][]uint32{q.ID: aids}),
+		Quest:        []*dm.Quest_Desc{desc},
+		QuestAttempt: []*dm.AttemptList_Nums{{Nums: aids}},
 	})
 	if err != nil {
 		panic(err)

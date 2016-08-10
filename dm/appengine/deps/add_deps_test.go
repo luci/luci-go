@@ -46,7 +46,7 @@ func TestAddDeps(t *testing.T) {
 				Id:    dm.NewExecutionID(a.ID.Quest, a.ID.Id, 1),
 				Token: []byte("key"),
 			},
-			Attempts: dm.NewAttemptList(map[string][]uint32{
+			RawAttempts: dm.NewAttemptList(map[string][]uint32{
 				to.ID.Quest: {to.ID.Id},
 			}),
 		}
@@ -98,6 +98,7 @@ func TestAddDeps(t *testing.T) {
 					Data:    *dm.NewJsonResult(`{"done":true}`)}
 				So(ds.Put(to, ar), ShouldBeNil)
 
+				req.Include.Attempt.Result = true
 				rsp, err := s.EnsureGraphData(c, req)
 				So(err, ShouldBeNil)
 				rsp.Result.PurgeTimestamps()

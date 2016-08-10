@@ -158,13 +158,11 @@ func (r *runner) doDeps(seed int64, stg *jobsim.DepsStage, cfgName string) (stop
 
 	req := &dm.EnsureGraphDataReq{}
 	req.ForExecution = r.auth
-	req.Attempts = dm.NewAttemptList(nil)
-	req.Include = &dm.EnsureGraphDataReq_Include{AttemptResult: true}
+	req.Include = &dm.EnsureGraphDataReq_Include{
+		Attempt: &dm.EnsureGraphDataReq_Include_Options{Result: true}}
 
 	var (
 		rnd = rand.New(rand.NewSource(seed))
-
-		qdescMap = map[string]*dm.Quest_Desc{}
 
 		maxAttemptNum  = map[string]uint32{}
 		currentAttempt = map[string]uint32{}
@@ -184,20 +182,17 @@ func (r *runner) doDeps(seed int64, stg *jobsim.DepsStage, cfgName string) (stop
 			panic(err)
 		}
 
+		req.Quest = append(req.Quest, desc)
+
 		qid := desc.QuestID()
-		qdescMap[qid] = desc
 		currentAttempt[qid] = 1
 		switch x := dep.AttemptStrategy.(type) {
 		case *jobsim.Dependency_Attempts:
-			req.Attempts.To[qid] = &dm.AttemptList_Nums{Nums: x.Attempts.ToSlice()}
+			req.QuestAttempt = append(req.QuestAttempt, &dm.AttemptList_Nums{Nums: x.Attempts.ToSlice()})
 		case *jobsim.Dependency_Retries:
 			maxAttemptNum[qid] = x.Retries + 1
-			req.Attempts.To[qid] = &dm.AttemptList_Nums{Nums: []uint32{1}}
+			req.QuestAttempt = append(req.QuestAttempt, &dm.AttemptList_Nums{Nums: []uint32{1}})
 		}
-	}
-
-	for _, desc := range qdescMap {
-		req.Quest = append(req.Quest, desc)
 	}
 
 	rsp, err := r.dmc.EnsureGraphData(r.c, req)
@@ -213,7 +208,8 @@ func (r *runner) doDeps(seed int64, stg *jobsim.DepsStage, cfgName string) (stop
 	sum := int64(0)
 	for {
 		req.Quest = nil
-		req.Attempts = dm.NewAttemptList(nil)
+		req.QuestAttempt = nil
+		req.RawAttempts = dm.NewAttemptList(nil)
 
 		// TODO(iannucci): we could use the state api to remember that we did
 		// retries on the previous execution. The recipe engine should probably do
@@ -249,8 +245,7 @@ func (r *runner) doDeps(seed int64, stg *jobsim.DepsStage, cfgName string) (stop
 					}.Infof(r.c, "retrying")
 					current++
 					currentAttempt[qid] = current
-					req.Quest = append(req.Quest, qdescMap[qid])
-					req.Attempts.To[qid].Nums = []uint32{current}
+					req.RawAttempts.To[qid].Nums = []uint32{current}
 				} else {
 					logging.Fields{
 						"qid": qid,

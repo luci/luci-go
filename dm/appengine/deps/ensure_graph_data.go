@@ -10,6 +10,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/luci/gae/service/datastore"
 
 	"github.com/luci/luci-go/common/data/stringset"
@@ -36,8 +37,11 @@ func (d *deps) runEnsureGraphDepsWalk(c context.Context, req *dm.EnsureGraphData
 			MaxDataSize: req.Limit.MaxDataSize,
 		},
 		Include: &dm.WalkGraphReq_Include{
-			Quest:   &dm.WalkGraphReq_Include_Options{Data: true},
-			Attempt: &dm.WalkGraphReq_Include_Options{Result: true},
+			Quest: &dm.WalkGraphReq_Include_Options{Data: true},
+			Attempt: &dm.WalkGraphReq_Include_Options{
+				Data:   true,
+				Result: req.Include.Attempt.Result,
+			},
 		},
 	}
 	if err := wgreq.Normalize(); err != nil {
@@ -272,7 +276,10 @@ func renderRequest(c context.Context, req *dm.EnsureGraphDataReq) (rsp *dm.Ensur
 	dists := map[string]distributor.D{}
 
 	newQuests = make(map[string]*model.Quest, len(req.Quest)+len(req.TemplateQuest))
-	newAttempts = dm.NewAttemptList(nil)
+	newAttempts = proto.Clone(req.RawAttempts).(*dm.AttemptList)
+	if newAttempts == nil {
+		newAttempts = dm.NewAttemptList(nil)
+	}
 
 	reg := distributor.GetRegistry(c)
 
@@ -294,25 +301,20 @@ func renderRequest(c context.Context, req *dm.EnsureGraphDataReq) (rsp *dm.Ensur
 			return
 		}
 
-		// all provided quest descriptions MUST include at least one attempt
-		if _, ok := req.Attempts.To[q.ID]; !ok {
-			c = logging.SetFields(c, logging.Fields{"id": q.ID, "idx": i})
-			err = grpcutil.Annotate(
-				fmt.Errorf("must have a matching Attempts entry"), codes.InvalidArgument).
-				Reason("Quest %(i)d:%(qid)q").D("i", i).D("qid", q.ID).Err()
-			return
-		}
-
 		if _, ok := newQuests[q.ID]; !ok {
 			newQuests[q.ID] = q
 		}
-	}
-
-	// copy all normal attempt descriptions
-	for qid, nums := range req.Attempts.To {
-		newNums := &dm.AttemptList_Nums{Nums: make([]uint32, len(nums.Nums))}
-		copy(newNums.Nums, nums.Nums)
-		newAttempts.To[qid] = newNums
+		rsp.QuestIds = append(rsp.QuestIds, dm.NewQuestID(q.ID))
+		anums := newAttempts.To[q.ID]
+		if anums == nil {
+			anums = &dm.AttemptList_Nums{}
+			newAttempts.To[q.ID] = anums
+		}
+		anums.Nums = append(anums.Nums, req.QuestAttempt[i].Nums...)
+		if err := anums.Normalize(); err != nil {
+			logging.Errorf(c, "impossible: these inputs were already validated: %s", err)
+			panic(err)
+		}
 	}
 
 	// render all templates and template attempts into newQuests
