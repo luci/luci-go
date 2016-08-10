@@ -89,8 +89,6 @@ func processShard(c context.Context, cfg *Config, namespaces []string, timestamp
 	var err error
 	for try := 0; try < 2; try++ {
 		err = memlock.TryWithLock(c, lockKey, clientID, func(c context.Context) error {
-			logging.Infof(c, "Got lock (try %d)", try)
-
 			return parallel.FanOutIn(func(taskC chan<- func() error) {
 				for _, task := range tasks {
 					task := task
