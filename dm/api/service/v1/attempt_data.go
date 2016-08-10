@@ -10,8 +10,8 @@ import (
 	google_pb "github.com/luci/luci-go/common/proto/google"
 )
 
-// NewJSONObject creates a new JSONObject object with optional expiration time.
-func NewJSONObject(data string, exps ...time.Time) *JsonResult {
+// NewJsonResult creates a new JsonResult object with optional expiration time.
+func NewJsonResult(data string, exps ...time.Time) *JsonResult {
 	exp := time.Time{}
 	switch l := len(exps); {
 	case l == 1:
@@ -22,9 +22,9 @@ func NewJSONObject(data string, exps ...time.Time) *JsonResult {
 	return &JsonResult{data, uint32(len(data)), google_pb.NewTimestamp(exp)}
 }
 
-// NewDatalessJSONObject creates a new JSONObject object without data and with
+// NewDatalessJsonResult creates a new JsonResult object without data and with
 // optional expiration time.
-func NewDatalessJSONObject(size uint32, exps ...time.Time) *JsonResult {
+func NewDatalessJsonResult(size uint32, exps ...time.Time) *JsonResult {
 	exp := time.Time{}
 	switch l := len(exps); {
 	case l == 1:

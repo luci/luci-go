@@ -40,7 +40,7 @@ func TestFinishAttempt(t *testing.T) {
 				Id:    dm.NewExecutionID(a.ID.Quest, a.ID.Id, 1),
 				Token: []byte("exKey"),
 			},
-			Data: dm.NewJSONObject(`{"something": "valid"}`, testclock.TestTimeUTC),
+			Data: dm.NewJsonResult(`{"something": "valid"}`, testclock.TestTimeUTC),
 		}
 
 		Convey("bad", func() {
@@ -51,7 +51,7 @@ func TestFinishAttempt(t *testing.T) {
 			})
 
 			Convey("not real json", func() {
-				req.Data = dm.NewJSONObject(`i am not valid json`)
+				req.Data = dm.NewJsonResult(`i am not valid json`)
 				_, err := s.FinishAttempt(c, req)
 				So(err, ShouldErrLike, "invalid character 'i'")
 			})

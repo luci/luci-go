@@ -103,7 +103,7 @@ func TestAttempt(t *testing.T) {
 				a.State = dm.Attempt_FINISHED
 				a.CurExecution = math.MaxUint32
 				a.DepMap = bit_field.Make(20)
-				a.Result.Data = dm.NewJSONObject("", testclock.TestTimeUTC.Add(10*time.Second))
+				a.Result.Data = dm.NewJsonResult("", testclock.TestTimeUTC.Add(10*time.Second))
 
 				a.DepMap.Set(1)
 				a.DepMap.Set(5)

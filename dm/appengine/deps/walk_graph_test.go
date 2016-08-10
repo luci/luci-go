@@ -136,7 +136,7 @@ func TestWalkGraph(t *testing.T) {
 				dist.RunTask(c, wEx, func(tsk *fake.Task) error {
 					tsk.MustActivate(c, s).Finish(
 						`{"data": ["very", "yes"]}`, clock.Now(c).Add(time.Hour*24*4))
-					tsk.State = dm.NewJSONObject(`{"distributorState": true}`)
+					tsk.State = dm.NewJsonResult(`{"distributorState": true}`)
 					return nil
 				})
 				ttest.Drain(c)
@@ -145,12 +145,12 @@ func TestWalkGraph(t *testing.T) {
 				req.Include.Attempt.Result = true
 				req.Include.NumExecutions = 128
 				data := `{"data":["very","yes"]}`
-				aExpect := dm.NewAttemptFinished(dm.NewJSONObject(data))
+				aExpect := dm.NewAttemptFinished(dm.NewJsonResult(data))
 				aExpect.Data.NumExecutions = 1
 				aExpect.Executions = map[uint32]*dm.Execution{
 					1: addDistributorInfo(
 						dm.NewExecutionID(w, 1, 1),
-						dm.NewExecutionFinished(dm.NewJSONObject(`{"distributorState":true}`))),
+						dm.NewExecutionFinished(dm.NewJsonResult(`{"distributorState":true}`))),
 				}
 
 				So(req, fake.WalkShouldReturn(c, s), &dm.GraphData{
@@ -167,7 +167,7 @@ func TestWalkGraph(t *testing.T) {
 				dist.RunTask(c, wEx, func(tsk *fake.Task) error {
 					tsk.MustActivate(c, s).Finish(
 						`{"data": ["very", "yes"]}`, clock.Now(c).Add(time.Hour*24*4))
-					tsk.State = dm.NewJSONObject(`{"distributorState": true}`)
+					tsk.State = dm.NewJsonResult(`{"distributorState": true}`)
 					return nil
 				})
 				ttest.Drain(c)
@@ -175,7 +175,7 @@ func TestWalkGraph(t *testing.T) {
 				req.Include.Attempt.Result = true
 				req.Limit.MaxDataSize = 10
 				data := `{"data":["very","yes"]}`
-				aExpect := dm.NewAttemptFinished(dm.NewDatalessJSONObject(uint32(len(data))))
+				aExpect := dm.NewAttemptFinished(dm.NewDatalessJsonResult(uint32(len(data))))
 				aExpect.Data.NumExecutions = 1
 				aExpect.Partial = &dm.Attempt_Partial{Result: dm.Attempt_Partial_DATA_SIZE_LIMIT}
 				So(req, fake.WalkShouldReturn(c, s), &dm.GraphData{
@@ -227,7 +227,7 @@ func TestWalkGraph(t *testing.T) {
 
 				dist.RunTask(c, dm.NewExecutionID(w, 1, 1), func(tsk *fake.Task) error {
 					tsk.MustActivate(c, s).DepOn(dm.NewAttemptID(x, 1))
-					tsk.State = dm.NewJSONObject(`{ "originalState": true }`)
+					tsk.State = dm.NewJsonResult(`{ "originalState": true }`)
 					return nil
 				})
 				ttest.Drain(c)
@@ -237,14 +237,14 @@ func TestWalkGraph(t *testing.T) {
 				x1data := `{"data":["I can see this"]}`
 				dist.RunTask(c, dm.NewExecutionID(x, 1, 1), func(tsk *fake.Task) error {
 					tsk.MustActivate(c, s).Finish(x1data, exp)
-					tsk.State = dm.NewJSONObject(`{ "atmpt1": true }`)
+					tsk.State = dm.NewJsonResult(`{ "atmpt1": true }`)
 					return nil
 				})
 
 				x2data := `{"data":["nope"]}`
 				dist.RunTask(c, dm.NewExecutionID(x, 2, 1), func(tsk *fake.Task) error {
 					tsk.MustActivate(c, s).Finish(x2data, exp)
-					tsk.State = dm.NewJSONObject(`{ "atmpt2": true }`)
+					tsk.State = dm.NewJsonResult(`{ "atmpt2": true }`)
 					return nil
 				})
 
@@ -259,7 +259,7 @@ func TestWalkGraph(t *testing.T) {
 				So(ds.Get(wEx), ShouldBeNil)
 
 				dist.RunTask(c, wEID, func(tsk *fake.Task) error {
-					So(tsk.State, ShouldResemble, dm.NewJSONObject(`{"originalState":true}`))
+					So(tsk.State, ShouldResemble, dm.NewJsonResult(`{"originalState":true}`))
 
 					act := tsk.MustActivate(c, s)
 					req.Limit.MaxDepth = 2
@@ -267,21 +267,21 @@ func TestWalkGraph(t *testing.T) {
 					req.Include.NumExecutions = 1
 					req.Query = dm.AttemptListQueryL(map[string][]uint32{x: nil})
 
-					x1Expect := dm.NewAttemptFinished(dm.NewJSONObject(x1data))
+					x1Expect := dm.NewAttemptFinished(dm.NewJsonResult(x1data))
 					x1Expect.Data.NumExecutions = 1
 					x1Expect.Executions = map[uint32]*dm.Execution{
 						1: addDistributorInfo(
 							dm.NewExecutionID(x, 1, 1),
-							dm.NewExecutionFinished(dm.NewJSONObject(`{"atmpt1":true}`))),
+							dm.NewExecutionFinished(dm.NewJsonResult(`{"atmpt1":true}`))),
 					}
 
-					x2Expect := dm.NewAttemptFinished(dm.NewDatalessJSONObject(uint32(len(x2data))))
+					x2Expect := dm.NewAttemptFinished(dm.NewDatalessJsonResult(uint32(len(x2data))))
 					x2Expect.Partial = &dm.Attempt_Partial{Result: dm.Attempt_Partial_NOT_AUTHORIZED}
 					x2Expect.Data.NumExecutions = 1
 					x2Expect.Executions = map[uint32]*dm.Execution{
 						1: addDistributorInfo(
 							dm.NewExecutionID(x, 2, 1),
-							dm.NewExecutionFinished(dm.NewDatalessJSONObject(15))),
+							dm.NewExecutionFinished(dm.NewDatalessJsonResult(15))),
 					}
 
 					So(req, act.WalkShouldReturn, &dm.GraphData{
@@ -310,7 +310,7 @@ func TestWalkGraph(t *testing.T) {
 				x1data := `{"data":["I can see this"]}`
 				dist.RunTask(c, dm.NewExecutionID(x, 1, 1), func(tsk *fake.Task) error {
 					tsk.MustActivate(c, s).Finish(x1data, exp)
-					tsk.State = dm.NewJSONObject(`{"state": true}`)
+					tsk.State = dm.NewJsonResult(`{"state": true}`)
 					return nil
 				})
 				ttest.Drain(c)
@@ -322,12 +322,12 @@ func TestWalkGraph(t *testing.T) {
 					req.Include.NumExecutions = 1
 					req.Query = dm.AttemptListQueryL(map[string][]uint32{w: {1}})
 
-					x1Expect := dm.NewAttemptFinished(dm.NewJSONObject(x1data))
+					x1Expect := dm.NewAttemptFinished(dm.NewJsonResult(x1data))
 					x1Expect.Data.NumExecutions = 1
 					x1Expect.Executions = map[uint32]*dm.Execution{
 						1: addDistributorInfo(
 							dm.NewExecutionID(x, 1, 1),
-							dm.NewExecutionFinished(dm.NewJSONObject(`{"state":true}`))),
+							dm.NewExecutionFinished(dm.NewJsonResult(`{"state":true}`))),
 					}
 
 					w1Exepct := dm.NewAttemptExecuting(2)

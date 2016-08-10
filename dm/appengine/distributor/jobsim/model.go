@@ -44,7 +44,7 @@ func getAttemptResult(status jobsimStatus, stateOrReason string) *dm.Result {
 
 	case jobsimFinished:
 		return &dm.Result{
-			Data: dm.NewJSONObject(stateOrReason)}
+			Data: dm.NewJsonResult(stateOrReason)}
 	}
 
 	tr := &dm.Result{AbnormalFinish: &dm.AbnormalFinish{
@@ -64,7 +64,7 @@ func executionResult(success bool, value int64, exp time.Time) *dm.JsonResult {
 	if err != nil {
 		panic(err)
 	}
-	return dm.NewJSONObject(data, exp)
+	return dm.NewJsonResult(data, exp)
 }
 
 func executionResultFromJSON(data *dm.JsonResult) (ret *jobsim.Result, err error) {

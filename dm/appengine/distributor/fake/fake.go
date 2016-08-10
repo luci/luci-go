@@ -185,7 +185,7 @@ func (t *ActivatedTask) MustDepOn(to ...*dm.Attempt_ID) (halt bool) {
 func (t *ActivatedTask) Finish(resultJSON string, expire ...time.Time) {
 	req := &dm.FinishAttemptReq{
 		Auth: t.Auth,
-		Data: dm.NewJSONObject(resultJSON),
+		Data: dm.NewJsonResult(resultJSON),
 	}
 	switch len(expire) {
 	case 0:

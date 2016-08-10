@@ -29,7 +29,7 @@ func TestFinishAttempt(t *testing.T) {
 					Id:    dm.NewExecutionID("quest", 1, 1),
 					Token: []byte("exekey"),
 				},
-				Data: dm.NewJSONObject(`{"result": true}`, testclock.TestTimeUTC),
+				Data: dm.NewJsonResult(`{"result": true}`, testclock.TestTimeUTC),
 			},
 		}
 

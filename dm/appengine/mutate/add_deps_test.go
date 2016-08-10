@@ -88,7 +88,7 @@ func TestAddDeps(t *testing.T) {
 					So(fds[0].ForExecution, ShouldEqual, 1)
 
 					muts, err = (&FinishExecution{
-						ad.Auth.Id, &dm.Result{Data: dm.NewJSONObject(`{"hi": true}`)},
+						ad.Auth.Id, &dm.Result{Data: dm.NewJsonResult(`{"hi": true}`)},
 					}).RollForward(c)
 					So(err, ShouldBeNil)
 					So(muts, ShouldBeNil)
@@ -117,7 +117,7 @@ func TestAddDeps(t *testing.T) {
 					So(fds[0].ForExecution, ShouldEqual, 1)
 
 					muts, err = (&FinishExecution{
-						ad.Auth.Id, &dm.Result{Data: dm.NewJSONObject(`{"hi":true}`)},
+						ad.Auth.Id, &dm.Result{Data: dm.NewJsonResult(`{"hi":true}`)},
 					}).RollForward(c)
 					So(err, ShouldBeNil)
 					So(muts, ShouldBeNil)

@@ -91,11 +91,11 @@ func TestAddDeps(t *testing.T) {
 
 			Convey("deps already done", func() {
 				to.State = dm.Attempt_FINISHED
-				to.Result.Data = dm.NewJSONObject(`{"done":true}`)
+				to.Result.Data = dm.NewJsonResult(`{"done":true}`)
 				to.Result.Data.Object = ""
 				ar := &model.AttemptResult{
 					Attempt: ds.KeyForObj(to),
-					Data:    *dm.NewJSONObject(`{"done":true}`)}
+					Data:    *dm.NewJsonResult(`{"done":true}`)}
 				So(ds.Put(to, ar), ShouldBeNil)
 
 				rsp, err := s.EnsureGraphData(c, req)
@@ -110,7 +110,7 @@ func TestAddDeps(t *testing.T) {
 								BuiltBy: []*dm.Quest_TemplateSpec{},
 							},
 							Attempts: map[uint32]*dm.Attempt{
-								1: dm.NewAttemptFinished(dm.NewJSONObject(`{"done":true}`))},
+								1: dm.NewAttemptFinished(dm.NewJsonResult(`{"done":true}`))},
 						},
 					}},
 				})
