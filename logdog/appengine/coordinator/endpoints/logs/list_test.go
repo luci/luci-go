@@ -11,7 +11,6 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
-	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	ct "github.com/luci/luci-go/logdog/appengine/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/hierarchy"
 	"github.com/luci/luci-go/logdog/common/types"
@@ -80,31 +79,6 @@ func TestList(t *testing.T) {
 
 		Convey(`A project-level list request`, func() {
 			req.Project = ""
-
-			// Only add project namespaces for some of our registered projects.
-			//
-			// We add a project namespace to our datastore by creating a single entity
-			// within that namespace.
-			addProjectNamespace := func(proj config.ProjectName) {
-				c := c
-				if err := coordinator.WithProjectNamespace(&c, proj, coordinator.NamespaceAccessNoAuth); err != nil {
-					panic(err)
-				}
-
-				entity := ds.PropertyMap{
-					"$id":   []ds.Property{ds.MkProperty("woof")},
-					"$kind": []ds.Property{ds.MkProperty("Dog")},
-				}
-				if err := ds.Get(c).Put(entity); err != nil {
-					panic(err)
-				}
-			}
-			addProjectNamespace("proj-foo")
-			addProjectNamespace("proj-bar")
-			addProjectNamespace("proj-exclusive")
-
-			// Add this just to make sure we ignore namespaces without config entries.
-			addProjectNamespace("proj-nonexistent")
 
 			Convey(`Empty list request will return projects.`, func() {
 				l, err := svc.List(c, &req)
@@ -192,18 +166,18 @@ func TestList(t *testing.T) {
 			})
 		})
 
-		Convey(`If the project does not exist, will return PermissionDenied.`, func() {
+		Convey(`If the project does not exist, will return NotFound.`, func() {
 			req.Project = "does-not-exist"
 
 			_, err := svc.List(c, &req)
-			So(err, ShouldBeRPCPermissionDenied)
+			So(err, ShouldBeRPCNotFound)
 		})
 
-		Convey(`If the user can't access the project, will return PermissionDenied.`, func() {
+		Convey(`If the user can't access the project, will return NotFound.`, func() {
 			req.Project = "proj-exclusive"
 
 			_, err := svc.List(c, &req)
-			So(err, ShouldBeRPCPermissionDenied)
+			So(err, ShouldBeRPCNotFound)
 		})
 	})
 }

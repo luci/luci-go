@@ -15,6 +15,7 @@ import (
 	ct "github.com/luci/luci-go/logdog/appengine/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/logdog/common/types"
 
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -37,31 +38,6 @@ func TestHierarchy(t *testing.T) {
 
 		Convey(`When requesting Project-level list`, func() {
 			r.Project = ""
-
-			// Only add project namespaces for some of our registered projects.
-			//
-			// We add a project namespace to our datastore by creating a single entity
-			// within that namespace.
-			addProjectNamespace := func(proj luciConfig.ProjectName) {
-				c := c
-				if err := coordinator.WithProjectNamespace(&c, proj, coordinator.NamespaceAccessNoAuth); err != nil {
-					panic(err)
-				}
-
-				entity := ds.PropertyMap{
-					"$id":   []ds.Property{ds.MkProperty("woof")},
-					"$kind": []ds.Property{ds.MkProperty("Dog")},
-				}
-				if err := ds.Get(c).Put(entity); err != nil {
-					panic(err)
-				}
-			}
-			addProjectNamespace("proj-foo")
-			addProjectNamespace("proj-bar")
-			addProjectNamespace("proj-exclusive")
-
-			// Add this just to make sure we ignore namespaces without config entries.
-			addProjectNamespace("proj-nonexistent")
 
 			Convey(`An anonymous user will see all public-access projects.`, func() {
 				So(get(), lv.shouldHaveComponents, "proj-bar", "proj-foo")
@@ -117,11 +93,11 @@ func TestHierarchy(t *testing.T) {
 			})
 		})
 
-		Convey(`Get within a project that the user cannot access will return ErrNoAccess.`, func() {
+		Convey(`Get within a project that the user cannot access will return NotFound.`, func() {
 			r.Project = "proj-exclusive"
 
 			_, err := Get(c, r)
-			So(coordinator.IsMembershipError(err), ShouldBeTrue)
+			So(err, ShouldBeRPCNotFound)
 		})
 
 		Convey(`Get will return nothing when no components are registered.`, func() {

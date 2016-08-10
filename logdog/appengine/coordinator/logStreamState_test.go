@@ -26,7 +26,7 @@ func TestLogStreamState(t *testing.T) {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 		c = memory.Use(c)
 
-		if err := WithProjectNamespace(&c, "proj-foo", NamespaceAccessNoAuth); err != nil {
+		if err := WithProjectNamespace(&c, "proj-foo", NamespaceAccessAllTesting); err != nil {
 			panic(err)
 		}
 		di := ds.Get(c)

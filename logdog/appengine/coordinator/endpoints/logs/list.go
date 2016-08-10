@@ -11,6 +11,7 @@ import (
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/hierarchy"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )
@@ -57,8 +58,9 @@ func (s *server) List(c context.Context, req *logdog.ListRequest) (*logdog.ListR
 
 	l, err := hierarchy.Get(c, hr)
 	if err != nil {
+		// Get returns a gRPC error.
 		log.WithError(err).Errorf(c, "Failed to get hierarchy listing.")
-		return nil, getGRPCError(c, err)
+		return nil, err
 	}
 
 	resp := logdog.ListResponse{

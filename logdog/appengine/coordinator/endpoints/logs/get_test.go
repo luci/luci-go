@@ -179,16 +179,22 @@ func testGetImpl(t *testing.T, archived bool) {
 				So(err, ShouldBeRPCInternal)
 			})
 
+			Convey(`Will fail with InvalidArgument if the project name is invalid.`, func() {
+				req.Project = "!!! invalid project name !!!"
+				_, err := svr.Get(c, &req)
+				So(err, ShouldBeRPCInvalidArgument)
+			})
+
 			Convey(`Will fail with PermissionDenied if the project does not exist.`, func() {
 				req.Project = "does-not-exist"
 				_, err := svr.Get(c, &req)
-				So(err, ShouldBeRPCPermissionDenied)
+				So(err, ShouldBeRPCNotFound)
 			})
 
 			Convey(`Will fail with PermissionDenied if the user can't access the project.`, func() {
 				req.Project = "proj-exclusive"
 				_, err := svr.Get(c, &req)
-				So(err, ShouldBeRPCPermissionDenied)
+				So(err, ShouldBeRPCNotFound)
 			})
 
 			Convey(`Will fail with NotFound if the log path does not exist (different path).`, func() {
@@ -214,13 +220,13 @@ func testGetImpl(t *testing.T, archived bool) {
 			Convey(`Will fail with PermissionDenied if the project does not exist.`, func() {
 				req.Project = "does-not-exist"
 				_, err := svr.Tail(c, &req)
-				So(err, ShouldBeRPCPermissionDenied)
+				So(err, ShouldBeRPCNotFound)
 			})
 
 			Convey(`Will fail with PermissionDenied if the user can't access the project.`, func() {
 				req.Project = "proj-exclusive"
 				_, err := svr.Tail(c, &req)
-				So(err, ShouldBeRPCPermissionDenied)
+				So(err, ShouldBeRPCNotFound)
 			})
 
 			Convey(`Will fail with NotFound if the log path does not exist (different path).`, func() {

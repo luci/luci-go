@@ -12,6 +12,7 @@ import (
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints"
+
 	"golang.org/x/net/context"
 )
 
@@ -27,9 +28,8 @@ func New() logdog.ServicesServer {
 		Prelude: func(c context.Context, methodName string, req proto.Message) (context.Context, error) {
 			// Only service users may access this endpoint.
 			if err := coordinator.IsServiceUser(c); err != nil {
-				log.Fields{
-					log.ErrorKey: err,
-				}.Errorf(c, "Failed to authenticate user as a service.")
+				log.WithError(err).Errorf(c, "Failed to authenticate user as a service.")
+
 				if !coordinator.IsMembershipError(err) {
 					// Not a membership error. Something went wrong on the server's end.
 					return nil, grpcutil.Internal
@@ -46,7 +46,7 @@ func New() logdog.ServicesServer {
 					"project": project,
 				}.Debugf(c, "Request is entering project namespace.")
 				if err := coordinator.WithProjectNamespace(&c, project, coordinator.NamespaceAccessNoAuth); err != nil {
-					return nil, grpcutil.Internal
+					return nil, err
 				}
 			}
 

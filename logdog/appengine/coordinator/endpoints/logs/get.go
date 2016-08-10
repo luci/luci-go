@@ -19,6 +19,7 @@ import (
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/storage/archive"
 	"github.com/luci/luci-go/logdog/common/types"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )

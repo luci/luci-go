@@ -286,7 +286,7 @@ func Install() (context.Context, *Environment) {
 // WithProjectNamespace runs f in proj's namespace, bypassing authentication
 // checks.
 func WithProjectNamespace(c context.Context, proj luciConfig.ProjectName, f func(context.Context)) {
-	if err := coordinator.WithProjectNamespace(&c, proj, coordinator.NamespaceAccessNoAuth); err != nil {
+	if err := coordinator.WithProjectNamespace(&c, proj, coordinator.NamespaceAccessAllTesting); err != nil {
 		panic(err)
 	}
 	f(c)

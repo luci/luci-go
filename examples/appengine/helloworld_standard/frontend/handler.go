@@ -80,7 +80,7 @@ func checkAPIAccess(c context.Context, methodName string, req proto.Message) (co
 	//
 	// import "github.com/golang/protobuf/proto"
 	// import "google.golang.org/grpc/codes"
-	// import "github.com/luci/luci-go/common/grpcutil"
+	// import "github.com/luci/luci-go/grpc/grpcutil"
 	//
 	// hasAccess, err := auth.IsMember(c, "my-users")
 	// if err != nil {

@@ -12,6 +12,7 @@ import (
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/registration/v1"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )
@@ -41,7 +42,7 @@ func New() logdog.RegistrationServer {
 					"project": project,
 				}.Debugf(c, "User is accessing project.")
 				if err := coordinator.WithProjectNamespace(&c, project, coordinator.NamespaceAccessWRITE); err != nil {
-					return nil, getGRPCError(c, err)
+					return nil, getGRPCError(err)
 				}
 			}
 
@@ -50,20 +51,17 @@ func New() logdog.RegistrationServer {
 	}
 }
 
-func getGRPCError(c context.Context, err error) error {
+func getGRPCError(err error) error {
 	switch {
 	case err == nil:
 		return nil
 
-	case err == config.ErrNoConfig:
-		log.WithError(err).Errorf(c, "No project configuration defined.")
-		return grpcutil.PermissionDenied
-
-	case coordinator.IsMembershipError(err):
-		log.WithError(err).Errorf(c, "User does not have WRITE access to project.")
-		return grpcutil.PermissionDenied
+	case grpcutil.Code(err) != codes.Unknown:
+		// If this is already a gRPC error, return it directly.
+		return err
 
 	default:
+		// Generic empty internal error.
 		return grpcutil.Internal
 	}
 }

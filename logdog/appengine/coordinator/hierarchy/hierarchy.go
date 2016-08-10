@@ -8,13 +8,16 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"fmt"
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/config"
+	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/logdog/common/types"
+
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
 )
 
 // componentEntity is a hierarchial component that stores a specific log path
@@ -189,6 +192,8 @@ func (l *List) Path(c *ListComponent) types.StreamPath {
 //
 // The supplied Context should not be bound to a namespace (i.e., default
 // namespace).
+//
+// If a failure is encountered, a wrapped gRPC error will be returned.
 func Get(c context.Context, r Request) (*List, error) {
 	// If our project is empty, this is a project-level query.
 	if r.Project == "" {
@@ -205,7 +210,7 @@ func Get(c context.Context, r Request) (*List, error) {
 
 	// Validate our PathBase component.
 	if err := l.PathBase.ValidatePartial(); err != nil {
-		return nil, fmt.Errorf("invalid stream path base %q: %v", l.PathBase, err)
+		return nil, grpcutil.Errf(codes.InvalidArgument, "invalid stream path base %q: %v", l.PathBase, err)
 	}
 
 	// Enter the supplied Project namespace. This will assert the the user has
@@ -225,7 +230,7 @@ func Get(c context.Context, r Request) (*List, error) {
 	if r.Next != "" {
 		k, err := keyForCursor(di, r.Next)
 		if err != nil {
-			return nil, err
+			return nil, grpcutil.Errf(codes.InvalidArgument, "invalid cursor: %s", err)
 		}
 		q = q.Gt("__key__", k)
 	}
@@ -251,7 +256,8 @@ func Get(c context.Context, r Request) (*List, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		log.WithError(err).Errorf(c, "Failed to execute hierarhcy query.")
+		return nil, grpcutil.Internal
 	}
 	return &l, nil
 }

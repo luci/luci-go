@@ -9,6 +9,7 @@ import (
 
 	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"golang.org/x/net/context"
 )
@@ -25,7 +26,7 @@ func getProjects(c context.Context, r *Request) (*List, error) {
 	if err != nil {
 		// If there is an error, we will refrain from filtering projects.
 		log.WithError(err).Warningf(c, "Failed to get user project list.")
-		return nil, err
+		return nil, grpcutil.Internal
 	}
 
 	projects := make(projectNameSlice, 0, len(allPcfgs))
