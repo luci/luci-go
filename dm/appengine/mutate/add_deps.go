@@ -36,7 +36,7 @@ func (a *AddDeps) Root(c context.Context) *datastore.Key {
 
 // RollForward implements tumble.Mutation
 //
-// This mutation is called directly, so we return grpc errors.
+// This mutation is called directly.
 func (a *AddDeps) RollForward(c context.Context) (muts []tumble.Mutation, err error) {
 	// Invalidate the execution key so that they can't make more API calls.
 	atmpt, _, err := model.InvalidateExecution(c, a.Auth)
@@ -45,7 +45,7 @@ func (a *AddDeps) RollForward(c context.Context) (muts []tumble.Mutation, err er
 	}
 
 	fwdDeps, err := filterExisting(c, model.FwdDepsFromList(c, a.Auth.Id.AttemptID(), a.Deps))
-	err = grpcutil.MaybeLogErr(c, err, codes.Internal, "while filtering deps")
+	err = grpcutil.Annotate(err, codes.Internal).Reason("while filtering deps").Err()
 	if err != nil || len(fwdDeps) == 0 {
 		return
 	}
@@ -60,12 +60,8 @@ func (a *AddDeps) RollForward(c context.Context) (muts []tumble.Mutation, err er
 		fdp.ForExecution = atmpt.CurExecution
 	}
 
-	if err = ds.Put(fwdDeps); err != nil {
-		err = grpcutil.MaybeLogErr(c, err, codes.Internal, "error putting new fwdDeps")
-		return
-	}
-	if err = ds.Put(atmpt); err != nil {
-		err = grpcutil.MaybeLogErr(c, err, codes.Internal, "error putting attempt")
+	if err = ds.Put(fwdDeps, atmpt); err != nil {
+		err = grpcutil.Annotate(err, codes.Internal).Reason("putting stuff").Err()
 		return
 	}
 

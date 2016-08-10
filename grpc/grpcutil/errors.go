@@ -6,12 +6,9 @@ package grpcutil
 
 import (
 	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-
-	"golang.org/x/net/context"
 )
 
 var (
@@ -89,12 +86,28 @@ func WrapIfTransient(err error) error {
 	return err
 }
 
+const grpcCodeKey = "__grpcutil.Code"
+
 // Code returns the gRPC code for a given error.
 //
 // In addition to the functionality of grpc.Code, this will unwrap any wrapped
 // errors before asking for its code.
 func Code(err error) codes.Code {
+	if code := errors.ExtractData(err, grpcCodeKey); code != nil {
+		return code.(codes.Code)
+	}
 	return grpc.Code(errors.Unwrap(err))
+}
+
+// Annotate begins annotating the error, and adds the given gRPC code.
+// This code may be extracted with the Code function in this package.
+func Annotate(err error, code codes.Code) *errors.Annotator {
+	return errors.Annotate(err).D(grpcCodeKey, code)
+}
+
+// ToGRPCErr is a shorthand for Errf(Code(err), "%s", err)
+func ToGRPCErr(err error) error {
+	return Errf(Code(err), "%s", err)
 }
 
 // IsTransientCode returns true if a given gRPC code is associated with a
@@ -107,31 +120,4 @@ func IsTransientCode(code codes.Code) bool {
 	default:
 		return false
 	}
-}
-
-// MaybeLogErr logs the non-nil error and transforms it into a grpc error with the
-// given code. If the err is nil, this returns nil without logging anything.
-//
-// If the code is InvalidArgument error message will be passed through.
-// Otherwise the actual content of `err` will be omitted.
-//
-// InvalidArgument, Unauthenticated and DeadlineExceeded are logged as 'Info'
-// level. All other error codes are logged as 'Error' level.
-func MaybeLogErr(c context.Context, err error, code codes.Code, msg string) error {
-	if err == nil {
-		return nil
-	}
-	log := logging.Fields.Errorf
-	switch code {
-	case codes.InvalidArgument, codes.Unauthenticated, codes.DeadlineExceeded:
-		log = logging.Fields.Infof
-	}
-	log(logging.Fields{
-		logging.ErrorKey: err,
-		"grpc_code":      code,
-	}, c, "%s", msg)
-	if code == codes.InvalidArgument {
-		return Errf(code, "%s", err)
-	}
-	return Errf(code, "")
 }

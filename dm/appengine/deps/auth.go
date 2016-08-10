@@ -29,9 +29,12 @@ func getTrimmedAppID(c context.Context) string {
 
 func loadAcls(c context.Context) (ret *acls.Acls, err error) {
 	aid := getTrimmedAppID(c)
+	cSet := fmt.Sprintf("services/%s", aid)
+	file := "acls.cfg"
 	aclCfg, err := config.GetConfig(c, fmt.Sprintf("services/%s", aid), "acls.cfg", false)
 	if err != nil {
-		return nil, errors.WrapTransient(err)
+		return nil, errors.Annotate(err).Transient().
+			D("cSet", cSet).D("file", file).InternalReason("loading config").Err()
 	}
 
 	ret = &acls.Acls{}
@@ -43,7 +46,7 @@ func inGroups(c context.Context, groups []string) error {
 	for _, grp := range groups {
 		ok, err := auth.IsMember(c, grp)
 		if err != nil {
-			return grpcutil.MaybeLogErr(c, err, codes.Internal, "failed group check")
+			return grpcutil.Annotate(err, codes.Internal).Reason("failed group check").Err()
 		}
 		if ok {
 			return nil

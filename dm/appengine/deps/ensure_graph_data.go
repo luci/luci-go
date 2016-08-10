@@ -137,8 +137,8 @@ func journalQuestAttempts(c context.Context, newQuests []*model.Quest, newAttemp
 			DoNotMergeQuest: true,
 		})
 	}
-	return grpcutil.MaybeLogErr(c, tumble.AddToJournal(c, muts...),
-		codes.Internal, "attempting to journal")
+	return grpcutil.Annotate(tumble.AddToJournal(c, muts...), codes.Internal).
+		Reason("attempting to journal").Err()
 }
 
 func (d *deps) ensureGraphData(c context.Context, req *dm.EnsureGraphDataReq, newQuests []*model.Quest, newAttempts *dm.AttemptList, rsp *dm.EnsureGraphDataRsp) (err error) {
@@ -172,7 +172,7 @@ func (d *deps) ensureGraphData(c context.Context, req *dm.EnsureGraphDataReq, ne
 		}
 	})
 	if err != nil {
-		return grpcutil.MaybeLogErr(c, err, codes.Internal, "failed to gather prerequisites")
+		return grpcutil.Annotate(err, codes.Internal).Reason("failed to gather prerequisites").Err()
 	}
 
 	// Now that we've walked the graph, prune the lists of new Quest and Attempts
@@ -181,7 +181,7 @@ func (d *deps) ensureGraphData(c context.Context, req *dm.EnsureGraphDataReq, ne
 	newQuests, newQuestSet := filterQuestsByNewTemplateData(rsp.Result, newQuests)
 	newAttempts, newAttemptsLen, err := filterAttemptsByDNE(rsp.Result, newAttempts, newQuestSet)
 	if err != nil {
-		return grpcutil.MaybeLogErr(c, err, codes.InvalidArgument, "filterAttemptsByDNE")
+		return grpcutil.Annotate(err, codes.InvalidArgument).Reason("filterAttemptsByDNE").Err()
 	}
 
 	// we're just asserting nodes, no edges, so journal whatever's left
@@ -289,17 +289,17 @@ func renderRequest(c context.Context, req *dm.EnsureGraphDataReq) (rsp *dm.Ensur
 		}
 
 		if err = d.Validate(qDesc.DistributorParameters); err != nil {
-			err = grpcutil.MaybeLogErr(c, err, codes.InvalidArgument,
-				"JSON distributor parameters are invalid for this distributor configuration.")
+			err = grpcutil.Annotate(err, codes.InvalidArgument).
+				Reason("JSON distributor parameters are invalid for this distributor configuration.").Err()
 			return
 		}
 
 		// all provided quest descriptions MUST include at least one attempt
 		if _, ok := req.Attempts.To[q.ID]; !ok {
 			c = logging.SetFields(c, logging.Fields{"id": q.ID, "idx": i})
-			err = grpcutil.MaybeLogErr(c,
-				fmt.Errorf("Quest %d:%q must have a matching Attempts entry", i, q.ID),
-				codes.InvalidArgument, "no matches")
+			err = grpcutil.Annotate(
+				fmt.Errorf("must have a matching Attempts entry"), codes.InvalidArgument).
+				Reason("Quest %(i)d:%(qid)q").D("i", i).D("qid", q.ID).Err()
 			return
 		}
 
@@ -341,7 +341,7 @@ func renderRequest(c context.Context, req *dm.EnsureGraphDataReq) (rsp *dm.Ensur
 		anums := newAttempts.To[q.ID]
 		anums.Nums = append(anums.Nums, req.TemplateAttempt[i].Nums...)
 		if err := anums.Normalize(); err != nil {
-			grpcutil.MaybeLogErr(c, err, codes.Unknown, "impossible: these inputs were already validated")
+			logging.WithError(err).Errorf(c, "impossible: these inputs were already validated")
 			panic(err)
 		}
 
@@ -363,7 +363,7 @@ func (d *deps) EnsureGraphData(c context.Context, req *dm.EnsureGraphDataReq) (r
 		logging.Fields{"execution": req.ForExecution.Id}.Infof(c, "on behalf of")
 		_, _, err := model.AuthenticateExecution(c, req.ForExecution)
 		if err != nil {
-			return nil, grpcutil.MaybeLogErr(c, err, codes.Unauthenticated, "bad execution auth")
+			return nil, grpcutil.Annotate(err, codes.Unauthenticated).Reason("bad execution auth").Err()
 		}
 	} else {
 		if err = canWrite(c); err != nil {

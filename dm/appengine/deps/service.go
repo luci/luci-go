@@ -5,7 +5,11 @@
 package deps
 
 import (
+	"bytes"
+	"os"
+
 	"github.com/golang/protobuf/proto"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/grpc/grpcutil"
@@ -31,16 +35,51 @@ func depsServerPrelude(c context.Context, methodName string, req proto.Message) 
 		Normalize() error
 	}); ok {
 		if err := norm.Normalize(); err != nil {
-			return nil, grpcutil.MaybeLogErr(c, err, codes.InvalidArgument, "invalid request")
+			return nil, grpcutil.Annotate(err, codes.InvalidArgument).Reason("invalid request").Err()
 		}
 	}
 	return c, nil
 }
 
+const postludeDebugEnvvar = "DUMP_ALL_STACKS"
+
+var postludeOmitCodes = map[codes.Code]struct{}{
+	codes.OK:                 {},
+	codes.Unauthenticated:    {},
+	codes.AlreadyExists:      {},
+	codes.FailedPrecondition: {},
+	codes.InvalidArgument:    {},
+	codes.NotFound:           {},
+	codes.OutOfRange:         {},
+	codes.Aborted:            {},
+}
+
+func depsServerPostlude(c context.Context, methodName string, rsp proto.Message, err error) error {
+	retErr := grpcutil.ToGRPCErr(err)
+	if err != nil {
+		code := codes.OK
+		_, printStack := os.LookupEnv(postludeDebugEnvvar)
+		if !printStack {
+			code = grpc.Code(retErr)
+			_, omitStack := postludeOmitCodes[code]
+			printStack = !omitStack
+		}
+		if printStack {
+			buf := &bytes.Buffer{}
+			errors.RenderStack(err).DumpTo(buf)
+			logging.Errorf(c, "%s", buf.String())
+		} else {
+			logging.Infof(c, "returning gRPC code: %s", code)
+		}
+	}
+	return retErr
+}
+
 func newDecoratedDeps() dm.DepsServer {
 	return &dm.DecoratedDeps{
-		Service: &deps{},
-		Prelude: depsServerPrelude,
+		Service:  &deps{},
+		Prelude:  depsServerPrelude,
+		Postlude: depsServerPostlude,
 	}
 }
 

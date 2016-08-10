@@ -15,13 +15,13 @@ import (
 	"sort"
 	"strings"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/data/text/indented"
 	"github.com/luci/luci-go/common/iotools"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/runtime/goroutine"
-
-	"golang.org/x/net/context"
 )
 
 // Datum is a single data entry value for StackContext.Data.
@@ -88,6 +88,8 @@ type StackContext struct {
 	// like Reason.
 	InternalReason string
 	Data           Data
+
+	Transient bool
 }
 
 // We're looking for %(sometext) which is not preceded by a %. sometext may be
@@ -177,6 +179,9 @@ func (s *StackContext) render() Lines {
 	if s.Reason != "" {
 		ret = append(ret, fmt.Sprintf("reason: %q", s.Data.Format(s.Reason)))
 	}
+	if s.Transient {
+		ret = append(ret, "transient: true")
+	}
 
 	if len(s.Data) > 0 {
 		for k, v := range s.Data {
@@ -237,6 +242,7 @@ var _ interface {
 func (e *annotatedError) Error() string              { return e.ctx.RenderPublic(e.inner) }
 func (e *annotatedError) StackContext() StackContext { return e.ctx }
 func (e *annotatedError) InnerError() error          { return e.inner }
+func (e *annotatedError) IsTransient() bool          { return e.ctx.Transient }
 
 // Annotator is a builder for annotating errors. Obtain one by calling Annotate
 // on an existing error or using Reason.
@@ -306,6 +312,18 @@ func (a *Annotator) Data(data Data) *Annotator {
 		return a
 	}
 	a.ctx.AddData(data)
+	return a
+}
+
+// Transient marks this error as transient. If the inner error is already
+// transient, this has no effect.
+func (a *Annotator) Transient() *Annotator {
+	if a == nil {
+		return a
+	}
+	if !IsTransient(a.inner) {
+		a.ctx.Transient = true
+	}
 	return a
 }
 
@@ -664,4 +682,24 @@ func StackFrameInfoForError(skip int, err error) StackFrameInfo {
 		frameIdx: currentlyCapturedStack.findPointOfDivergence(currentStack),
 		forStack: currentlyCapturedStack,
 	}
+}
+
+// ExtractData walks the error and extracts the given key's data from
+// Annotations (e.g. data added with D(key, <value>) will return <value>).
+//
+// The first matching key encountered (e.g. highest up the callstack) will be
+// returned.
+//
+// If the error does not contain key at all, this returns nil.
+func ExtractData(err error, key string) (ret interface{}) {
+	Walk(err, func(err error) bool {
+		if sc, ok := err.(StackContexter); ok {
+			if d, ok := sc.StackContext().Data[key]; ok {
+				ret = d.Value
+				return false
+			}
+		}
+		return true
+	})
+	return
 }

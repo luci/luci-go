@@ -32,8 +32,7 @@ func (f *FinishAttempt) Root(c context.Context) *datastore.Key {
 
 // RollForward implements tumble.Mutation
 //
-// This mutation is called directly from FinishAttempt, so we use
-// grpcutil.MaybeLogErr
+// This mutation is called directly from FinishAttempt.
 func (f *FinishAttempt) RollForward(c context.Context) (muts []tumble.Mutation, err error) {
 	atmpt, ex, err := model.InvalidateExecution(c, f.Auth)
 	if err != nil {
@@ -56,9 +55,7 @@ func (f *FinishAttempt) RollForward(c context.Context) (muts []tumble.Mutation, 
 	atmpt.Result.Data.Object = ""
 
 	ds := datastore.Get(c)
-	err = grpcutil.MaybeLogErr(c, ds.Put(atmpt, ar),
-		codes.Internal, "while trying to Put")
-
+	err = grpcutil.Annotate(ds.Put(atmpt, ar), codes.Internal).Reason("during Put").Err()
 	return
 }
 
