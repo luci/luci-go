@@ -32,7 +32,8 @@ def PreCommitGo(input_api, output_api, pcg_mode):
         'checks are skipped. See https://github.com/maruel/pre-commit-go.')
     ]
 
-  cmd = [pcg, 'run', '-m', ','.join(pcg_mode)]
+  cpus = max(1, input_api.cpu_count/2)
+  cmd = [pcg, 'run', '-C', str(cpus), '-m', ','.join(pcg_mode)]
   if input_api.verbose:
     cmd.append('-v')
   # pcg can figure out what files to check on its own based on upstream ref,
