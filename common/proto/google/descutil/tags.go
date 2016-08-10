@@ -4,88 +4,41 @@
 
 package descutil
 
-import (
-	"fmt"
-	"reflect"
-
-	"github.com/golang/protobuf/proto"
-	pb "google.golang.org/genproto/protobuf"
-)
-
-var (
+// These constnats correspond to tag values in the respective "descriptor.proto"
+// message types. These constants' tag matches are asserted in the
+// "TestTagsMatchProto" unit test.
+const (
 	// FileDescriptorProtoPackageTag is the number of package field
 	// in FileDescriptorProto message.
-	FileDescriptorProtoPackageTag int
+	FileDescriptorProtoPackageTag = 2
 	// FileDescriptorProtoMessageTag is the number of message field
 	// in FileDescriptorProto message.
-	FileDescriptorProtoMessageTag int
+	FileDescriptorProtoMessageTag = 4
 	// FileDescriptorProtoEnumTag is the number of enum field
 	// in FileDescriptorProto message.
-	FileDescriptorProtoEnumTag int
+	FileDescriptorProtoEnumTag = 5
 	// FileDescriptorProtoServiceTag is the number of service field
 	// in FileDescriptorProto message.
-	FileDescriptorProtoServiceTag int
+	FileDescriptorProtoServiceTag = 6
 
 	// ServiceDescriptorProtoMethodTag is the number of method field
 	// in ServiceDescriptorProto message.
-	ServiceDescriptorProtoMethodTag int
+	ServiceDescriptorProtoMethodTag = 2
 
 	// DescriptorProtoFieldTag is the number of field field
 	// in DescriptorProto message.
-	DescriptorProtoFieldTag int
+	DescriptorProtoFieldTag = 2
 	// DescriptorProtoNestedTypeTag is the number of nested_type field
 	// in DescriptorProto message.
-	DescriptorProtoNestedTypeTag int
+	DescriptorProtoNestedTypeTag = 3
 	// DescriptorProtoEnumTypeTag is the number of enum_type field
 	// in DescriptorProto message.
-	DescriptorProtoEnumTypeTag int
+	DescriptorProtoEnumTypeTag = 4
 	// DescriptorProtoOneOfTag is the number of oneof_decl field
 	// in DescriptorProto message.
-	DescriptorProtoOneOfTag int
+	DescriptorProtoOneOfTag = 8
 
 	// EnumDescriptorProtoValueTag is the number of value field
 	// in EnumDescriptorProto message.
-	EnumDescriptorProtoValueTag int
+	EnumDescriptorProtoValueTag = 2
 )
-
-func init() {
-	resolveTagsFor(&pb.FileDescriptorProto{}, func(resolve func(string) int) {
-		FileDescriptorProtoPackageTag = resolve("Package")
-		FileDescriptorProtoMessageTag = resolve("MessageType")
-		FileDescriptorProtoEnumTag = resolve("EnumType")
-		FileDescriptorProtoServiceTag = resolve("Service")
-	})
-
-	resolveTagsFor(&pb.ServiceDescriptorProto{}, func(resolve func(string) int) {
-		ServiceDescriptorProtoMethodTag = resolve("Method")
-	})
-
-	resolveTagsFor(&pb.DescriptorProto{}, func(resolve func(string) int) {
-		DescriptorProtoFieldTag = resolve("Field")
-		DescriptorProtoNestedTypeTag = resolve("NestedType")
-		DescriptorProtoEnumTypeTag = resolve("EnumType")
-		DescriptorProtoOneOfTag = resolve("OneofDecl")
-	})
-
-	resolveTagsFor(&pb.EnumDescriptorProto{}, func(resolve func(string) int) {
-		EnumDescriptorProtoValueTag = resolve("Value")
-	})
-}
-
-func resolveTagsFor(msg proto.Message, fn func(func(string) int)) {
-	t := reflect.TypeOf(msg).Elem()
-	if t.Kind() != reflect.Struct {
-		panic(fmt.Errorf("not a struct: %T", msg))
-	}
-
-	fn(func(fieldName string) int {
-		f, ok := t.FieldByName(fieldName)
-		if !ok {
-			panic(fmt.Errorf("struct %T has no field named %q", msg, fieldName))
-		}
-
-		var p proto.Properties
-		p.Parse(f.Tag.Get("protobuf"))
-		return p.Tag
-	})
-}
