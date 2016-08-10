@@ -388,11 +388,11 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				})
 			})
 
-			Convey("sending to 200 people is no big deal", func() {
+			Convey("sending to 100 people is no big deal", func() {
 				gds.Testable().Consistent(false)
 
-				users := make([]User, 200)
-				recipients := make([]string, 200)
+				users := make([]User, 100)
+				recipients := make([]string, 100)
 				for i := range recipients {
 					name := base64.StdEncoding.EncodeToString([]byte{byte(i)})
 					recipients[i] = name
@@ -410,7 +410,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				// do all the SendMessages
 				gds.Testable().CatchupIndexes()
 				testing.AdvanceTime(ctx)
-				So(testing.Iterate(ctx), ShouldEqual, testing.GetConfig(ctx).NumShards)
+				testing.Iterate(ctx)
 
 				// do all the WriteReceipts
 				l.Reset()
@@ -418,17 +418,13 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				testing.AdvanceTime(ctx)
 				So(testing.Iterate(ctx), ShouldBeGreaterThan, 0)
 
-				// hacky proof that all 200 incoming message receipts were buffered
+				// hacky proof that all 100 incoming message receipts were buffered
 				// appropriately.
 				//
 				// The extra mutation at the end is supposed to be delayed, but we
 				// didn't enable Delayed messages in this config.
 				if !testing.GetConfig(ctx).Namespaced {
-					So(l.Has(logging.Info, "successfully processed 128 mutations (0 tail-call), adding 0 more", map[string]interface{}{
-						"key":      "tumble.23.lock",
-						"clientID": "-62132730884_23",
-					}), ShouldBeTrue)
-					So(l.Has(logging.Info, "successfully processed 73 mutations (1 tail-call), adding 0 more", map[string]interface{}{
+					So(l.Has(logging.Info, "successfully processed 100 mutations (0 tail-call), adding 0 more", map[string]interface{}{
 						"key":      "tumble.23.lock",
 						"clientID": "-62132730884_23",
 					}), ShouldBeTrue)
@@ -439,7 +435,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				forEachNS(ctx, func(ctx context.Context, i int) {
 					So(datastore.Get(ctx).Get(outMsgs[i]), ShouldBeNil)
 					So(outMsgs[i].Success.All(true), ShouldBeTrue)
-					So(outMsgs[i].Success.Size(), ShouldEqual, 200)
+					So(outMsgs[i].Success.Size(), ShouldEqual, 100)
 				})
 			})
 
