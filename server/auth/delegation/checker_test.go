@@ -39,9 +39,7 @@ func TestCheckToken(t *testing.T) {
 	}()
 
 	Convey("Basic use case", t, func() {
-		tok := minter.mintToken(c, []*internal.Subtoken{
-			subtoken(c, "user:from@example.com", "user:to@example.com"),
-		})
+		tok := minter.mintToken(c, subtoken(c, "user:from@example.com", "user:to@example.com"))
 		ident, err := CheckToken(c, CheckTokenParams{
 			Token:                tok,
 			PeerID:               "user:to@example.com",
@@ -54,9 +52,7 @@ func TestCheckToken(t *testing.T) {
 	})
 
 	Convey("Basic use case with group check", t, func() {
-		tok := minter.mintToken(c, []*internal.Subtoken{
-			subtoken(c, "user:from@example.com", "group:token-users"),
-		})
+		tok := minter.mintToken(c, subtoken(c, "user:from@example.com", "group:token-users"))
 
 		groups := &fakeGroups{
 			groups: map[string]string{
@@ -86,22 +82,6 @@ func TestCheckToken(t *testing.T) {
 		So(err, ShouldEqual, ErrForbiddenDelegationToken)
 	})
 
-	Convey("Chained token works", t, func() {
-		tok := minter.mintToken(c, []*internal.Subtoken{
-			subtoken(c, "user:from@example.com", "user:middle@example.com"),
-			subtoken(c, "user:middle@example.com", "user:to@example.com"),
-		})
-		ident, err := CheckToken(c, CheckTokenParams{
-			Token:                tok,
-			PeerID:               "user:to@example.com",
-			CertificatesProvider: minter,
-			GroupsChecker:        &fakeGroups{},
-			OwnServiceIdentity:   "service:service-id",
-		})
-		So(err, ShouldBeNil)
-		So(ident, ShouldEqual, "user:from@example.com")
-	})
-
 	Convey("Not base64", t, func() {
 		_, err := CheckToken(c, CheckTokenParams{
 			Token:                "(^*#%^&#%",
@@ -125,12 +105,13 @@ func TestCheckToken(t *testing.T) {
 	})
 
 	Convey("Bad signature", t, func() {
-		tok := minter.mintToken(c, []*internal.Subtoken{
-			subtoken(c, "user:from@example.com", "user:to@example.com"),
-		})
-		So(tok[16], ShouldNotEqual, 'A')
+		tok := minter.mintToken(c, subtoken(c, "user:from@example.com", "user:to@example.com"))
+		// An offset in serialized token that points to Subtoken field. Replace one
+		// byte there to "break" the signature.
+		sigOffset := len(tok) - 10
+		So(tok[sigOffset], ShouldNotEqual, 'A')
 		_, err := CheckToken(c, CheckTokenParams{
-			Token:                tok[:16] + "A" + tok[17:],
+			Token:                tok[:sigOffset] + "A" + tok[sigOffset+1:],
 			PeerID:               "user:to@example.com",
 			CertificatesProvider: minter,
 			GroupsChecker:        &fakeGroups{},
@@ -140,9 +121,7 @@ func TestCheckToken(t *testing.T) {
 	})
 
 	Convey("Expired token", t, func() {
-		tok := minter.mintToken(c, []*internal.Subtoken{
-			subtoken(c, "user:from@example.com", "user:to@example.com"),
-		})
+		tok := minter.mintToken(c, subtoken(c, "user:from@example.com", "user:to@example.com"))
 
 		clock.Get(c).(testclock.TestClock).Add(2 * time.Hour)
 
@@ -157,9 +136,7 @@ func TestCheckToken(t *testing.T) {
 	})
 
 	Convey("Wrong target service", t, func() {
-		tok := minter.mintToken(c, []*internal.Subtoken{
-			subtoken(c, "user:from@example.com", "user:to@example.com"),
-		})
+		tok := minter.mintToken(c, subtoken(c, "user:from@example.com", "user:to@example.com"))
 		_, err := CheckToken(c, CheckTokenParams{
 			Token:                tok,
 			PeerID:               "user:to@example.com",
@@ -171,9 +148,7 @@ func TestCheckToken(t *testing.T) {
 	})
 
 	Convey("Wrong audience", t, func() {
-		tok := minter.mintToken(c, []*internal.Subtoken{
-			subtoken(c, "user:from@example.com", "user:to@example.com"),
-		})
+		tok := minter.mintToken(c, subtoken(c, "user:from@example.com", "user:to@example.com"))
 		_, err := CheckToken(c, CheckTokenParams{
 			Token:                tok,
 			PeerID:               "user:NOT-to@example.com",
@@ -219,10 +194,8 @@ func (f *fakeTokenMinter) GetAuthServiceCertificates(c context.Context) (*signin
 	return f.signer.Certificates(c)
 }
 
-func (f *fakeTokenMinter) mintToken(c context.Context, subtokens []*internal.Subtoken) string {
-	blob, err := proto.Marshal(&internal.SubtokenList{
-		Subtokens: subtokens,
-	})
+func (f *fakeTokenMinter) mintToken(c context.Context, subtoken *internal.Subtoken) string {
+	blob, err := proto.Marshal(subtoken)
 	if err != nil {
 		panic(err)
 	}
@@ -231,10 +204,10 @@ func (f *fakeTokenMinter) mintToken(c context.Context, subtokens []*internal.Sub
 		panic(err)
 	}
 	tok, err := proto.Marshal(&internal.DelegationToken{
-		SerializedSubtokenList: blob,
-		SignerId:               &f.signerID,
-		SigningKeyId:           &keyID,
-		Pkcs1Sha256Sig:         sig,
+		SerializedSubtoken: blob,
+		SignerId:           &f.signerID,
+		SigningKeyId:       &keyID,
+		Pkcs1Sha256Sig:     sig,
 	})
 	if err != nil {
 		panic(err)

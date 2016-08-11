@@ -30,9 +30,6 @@ const (
 	// decoding). Larger tokens will be ignored right away.
 	maxTokenSize = 8 * 1024
 
-	// maxSubtokenListLen is maximum allowed length of token chain.
-	maxSubtokenListLen = 8
-
 	// allowedClockDriftSec is how much clock difference we accept, in seconds.
 	allowedClockDriftSec = int64(30)
 )
@@ -86,15 +83,15 @@ type CheckTokenParams struct {
 // May return transient errors.
 func CheckToken(c context.Context, params CheckTokenParams) (identity.Identity, error) {
 	// base64-encoded token -> DelegationToken proto (with signed serialized
-	// subtoken list).
+	// subtoken).
 	tok, err := deserializeToken(params.Token)
 	if err != nil {
 		logging.Warningf(c, "auth: Failed to deserialize delegation token - %s", err)
 		return "", ErrMalformedDelegationToken
 	}
 
-	// Signed serialized subtoken list -> list of Subtoken protos.
-	subtokens, err := unsealToken(c, tok, params.CertificatesProvider)
+	// Signed serialized subtoken -> Subtoken proto.
+	subtoken, err := unsealToken(c, tok, params.CertificatesProvider)
 	if err != nil {
 		if errors.IsTransient(err) {
 			logging.Warningf(c, "auth: Transient error when checking delegation token signature - %s", err)
@@ -106,7 +103,7 @@ func CheckToken(c context.Context, params CheckTokenParams) (identity.Identity, 
 
 	// Validate all constrains encoded in the token and derive the delegated
 	// identity.
-	return checkSubtokenList(c, subtokens, &params)
+	return checkSubtoken(c, subtoken, &params)
 }
 
 // deserializeToken deserializes DelegationToken proto message.
@@ -125,10 +122,10 @@ func deserializeToken(token string) (*internal.DelegationToken, error) {
 	return tok, nil
 }
 
-// unsealToken verifies token's signature and deserializes subtoken list.
+// unsealToken verifies token's signature and deserializes the subtoken.
 //
 // May return transient errors.
-func unsealToken(c context.Context, tok *internal.DelegationToken, certsProvider CertificatesProvider) ([]*internal.Subtoken, error) {
+func unsealToken(c context.Context, tok *internal.DelegationToken, certsProvider CertificatesProvider) (*internal.Subtoken, error) {
 	// Grab the public keys of the primary auth service. It is the service that
 	// signs tokens.
 	//
@@ -142,68 +139,53 @@ func unsealToken(c context.Context, tok *internal.DelegationToken, certsProvider
 	}
 
 	// Check the signature on the token.
-	err = certs.CheckSignature(tok.GetSigningKeyId(), tok.SerializedSubtokenList, tok.Pkcs1Sha256Sig)
+	err = certs.CheckSignature(tok.GetSigningKeyId(), tok.SerializedSubtoken, tok.Pkcs1Sha256Sig)
 	if err != nil {
 		return nil, err
 	}
 
-	// The signature is correct! Deserialize the subtokens.
-	msg := internal.SubtokenList{}
-	if err = proto.Unmarshal(tok.SerializedSubtokenList, &msg); err != nil {
+	// The signature is correct! Deserialize the subtoken.
+	msg := &internal.Subtoken{}
+	if err = proto.Unmarshal(tok.SerializedSubtoken, msg); err != nil {
 		return nil, err
 	}
 
-	return msg.Subtokens, nil
+	return msg, nil
 }
 
-// checkSubtokenList validates the chain of delegation subtokens.
+// checkSubtoken validates the delegation subtoken.
 //
 // It extracts and returns original issuer_id.
-func checkSubtokenList(c context.Context, subtokens []*internal.Subtoken, params *CheckTokenParams) (identity.Identity, error) {
-	if len(subtokens) == 0 {
-		logging.Warningf(c, "auth: Bad delegation token - subtoken list is empty")
-		return "", ErrForbiddenDelegationToken
-	}
-	if len(subtokens) > maxSubtokenListLen {
-		logging.Warningf(c, "auth: Bad delegation token - subtoken list is too long (%d entries)", len(subtokens))
-		return "", ErrForbiddenDelegationToken
-	}
-
+func checkSubtoken(c context.Context, subtoken *internal.Subtoken, params *CheckTokenParams) (identity.Identity, error) {
 	// Do fast checks before heavy ones.
 	now := clock.Now(c).Unix()
-	for _, tok := range subtokens {
-		if err := checkSubtokenExpiration(tok, now); err != nil {
-			logging.Warningf(c, "auth: Bad delegation token expiration - %s", err)
-			return "", ErrForbiddenDelegationToken
-		}
-		if err := checkSubtokenServices(tok, params.OwnServiceIdentity); err != nil {
-			logging.Warningf(c, "auth: Forbidden delegation token - %s", err)
-			return "", ErrForbiddenDelegationToken
-		}
+	if err := checkSubtokenExpiration(subtoken, now); err != nil {
+		logging.Warningf(c, "auth: Bad delegation token expiration - %s", err)
+		return "", ErrForbiddenDelegationToken
+	}
+	if err := checkSubtokenServices(subtoken, params.OwnServiceIdentity); err != nil {
+		logging.Warningf(c, "auth: Forbidden delegation token - %s", err)
+		return "", ErrForbiddenDelegationToken
 	}
 
-	// Do the rest of the checks (may use group lookups), figure out delegated
-	// identity by following the delegation chain.
-	curIdent := params.PeerID
-	for i := len(subtokens) - 1; i >= 0; i-- {
-		tok := subtokens[i]
-		if err := checkSubtokenAudience(c, tok, curIdent, params.GroupsChecker); err != nil {
-			if errors.IsTransient(err) {
-				logging.Warningf(c, "auth: Transient error when checking delegation token audience - %s", err)
-				return "", err
-			}
-			logging.Warningf(c, "auth: Bad delegation token audience - %s", err)
-			return "", ErrForbiddenDelegationToken
+	// Do the audience check (may use group lookups).
+	if err := checkSubtokenAudience(c, subtoken, params.PeerID, params.GroupsChecker); err != nil {
+		if errors.IsTransient(err) {
+			logging.Warningf(c, "auth: Transient error when checking delegation token audience - %s", err)
+			return "", err
 		}
-		var err error
-		curIdent, err = identity.MakeIdentity(tok.GetIssuerId())
-		if err != nil {
-			logging.Warningf(c, "auth: Invalid issuer_id in the delegation token - %s", err)
-			return "", ErrMalformedDelegationToken
-		}
+		logging.Warningf(c, "auth: Bad delegation token audience - %s", err)
+		return "", ErrForbiddenDelegationToken
 	}
 
-	return curIdent, nil
+	// Grab delegated identity.
+	ident, err := identity.MakeIdentity(subtoken.GetIssuerId())
+	if err != nil {
+		logging.Warningf(c, "auth: Invalid issuer_id in the delegation token - %s", err)
+		return "", ErrMalformedDelegationToken
+	}
+
+	return ident, nil
 }
 
 // checkSubtokenExpiration checks 'CreationTime' and 'ValidityDuration' fields.
@@ -227,13 +209,13 @@ func checkSubtokenExpiration(t *internal.Subtoken, now int64) error {
 
 // checkSubtokenServices makes sure the token is usable by the current service.
 func checkSubtokenServices(t *internal.Subtoken, serviceID identity.Identity) error {
-	// Empty services field -> allow all.
+	// Empty services field is not allowed.
 	if len(t.Services) == 0 {
-		return nil
+		return fmt.Errorf("the token's services list is empty")
 	}
-	// Else, make sure we are in the 'services' list.
+	// Else, make sure we are in the 'services' list or it contains '*'.
 	for _, allowed := range t.Services {
-		if allowed == string(serviceID) {
+		if allowed == "*" || allowed == string(serviceID) {
 			return nil
 		}
 	}
@@ -245,13 +227,13 @@ func checkSubtokenServices(t *internal.Subtoken, serviceID identity.Identity) er
 //
 // May return transient errors.
 func checkSubtokenAudience(c context.Context, t *internal.Subtoken, ident identity.Identity, checker GroupsChecker) error {
-	// Empty audience field -> allow all.
+	// Empty audience field is not allowed.
 	if len(t.Audience) == 0 {
-		return nil
+		return fmt.Errorf("the token's audience list is empty")
 	}
 	// Try to find a direct hit first, to avoid calling expensive group lookups.
 	for _, aud := range t.Audience {
-		if aud == string(ident) {
+		if aud == "*" || aud == string(ident) {
 			return nil
 		}
 	}

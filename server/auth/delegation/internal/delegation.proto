@@ -4,7 +4,7 @@
 
 // This file is copied from luci-py.git:
 // appengine/components/components/auth/proto/delegation.proto
-// Commit: df1f40bebb93b5c00bbbf1e8360b303f595cb2f0
+// Commit: 5c71dfe806a7738a7eba13268e26929193bb453b
 //
 // Changes: renamed package to 'internal', added 'syntax = "proto2"'
 
@@ -13,86 +13,92 @@ syntax = "proto2";
 package internal;
 
 
-// Signed serialized list of subtokens. This message itself is mostly
-// an envelope that carries the signature. The meat of the token is in
-// SubtokenList (stored in serialized_subtoken_list field).
+// Signed serialized Subtoken.
+//
+// This message is just an envelope that carries the serialized Subtoken message
+// and its signature.
+//
+// Reserved IDs: 1.
 message DelegationToken {
-  // Serialized SubtokenList message with at least one subtoken. It's signature
-  // is stored in pkcs1_sha256_sig field. Required.
-  optional bytes serialized_subtoken_list = 1;
-
   // Identity of a service that signed this token (e.g. 'service:app-id').
+  //
   // Will be queries (via SSL) for the public key to use for signature
-  // verification. Required.
+  // verification.
+  //
+  // Required.
   optional string signer_id = 2;
 
-  // ID of a key used for making the signature. There can be multiple active
-  // keys at any moment in time: one used for new signatures, and one being
-  // rotated out (but still valid for verification). Required.
+  // ID of a key used for making the signature.
+  //
+  // There can be multiple active keys at any moment in time: one used for new
+  // signatures, and one being rotated out (but still valid for verification).
+  //
+  // The lifetime of the token indirectly depends on the lifetime of the signing
+  // key, which is 24h. So delegation tokens can't live longer than 24h.
+  //
+  // Required.
   optional string signing_key_id = 3;
 
-  // The signature: PKCS1_v1_5+SHA256(serialized_subtoken_list, signing_key_id).
+  // The signature: PKCS1_v1_5+SHA256(serialized_subtoken, signing_key_id).
+  //
   // Required.
   optional bytes pkcs1_sha256_sig = 4;
-}
 
-
-// List of tokens, to be serialized, signed and put into DelegationToken.
-message SubtokenList {
-  repeated Subtoken subtokens = 1;
+  // Serialized Subtoken message. It's signature is stored in pkcs1_sha256_sig.
+  //
+  // Required.
+  optional bytes serialized_subtoken = 5;
 }
 
 
 // Identifies who delegates what authority to whom where.
-//
-// Multiple subtokens are chained together during redelegation (when a bearer
-// of a delegation token scopes it and passes it to someone else). Such subtoken
-// list conveys in itself full delegation chain (which is nice for auditing
-// purposes).
-//
-// The final delegated identity is recovered from traversing the subtoken chain
-// in last to first order, keeping track of current "active" identity and
-// checking that it is specified in 'audience' field of the token being checked.
-//
-// Traversal starts with an active identity set to identity encoded in caller's
-// authentication token.
-//
-// current_id = peer_id
-// while subtokens:
-//   if current_id in subtokens[-1].audience:
-//     current_id = subtokens[-1].issuer_id
-//     subtokens.pop()
-//   else:
-//     abort()
 message Subtoken {
   // WHO. Identity whose authority is delegated. Usually it's the identity that
-  // generates the delegation token. Required.
+  // generates the delegation token.
+  //
+  // Required.
   optional string issuer_id = 1;
 
-  // When the subtoken was generated (and when it becomes valid). Number of
-  // seconds since epoch. Required.
+  // When the subtoken was generated (and when it becomes valid).
+  //
+  // Number of seconds since epoch (Unix timestamp).
+  //
+  // Required.
   optional int64 creation_time = 2;
 
-  // How long the token is considered valid (in seconds). Required.
+  // How long the token is considered valid (in seconds).
+  //
+  // Required.
   optional int32 validity_duration = 3;
 
   // Identifier of this subtoken.
   //
   // Used for logging and tracking purposes.
+  //
+  // Required.
   optional int64 subtoken_id = 4;
 
-  // To WHOM the authority is delegated. Each item can be an identity string
-  // (e.g. "user:<email>") or a "group:<name>" string. "Any bearer can use
-  // the token" if empty.
+  // To WHOM the authority is delegated.
+  //
+  // Each item can be an identity string (e.g. "user:<email>"), a "group:<name>"
+  // string, or special '*' string which means "Any bearer can use the token".
+  //
+  // Required.
   repeated string audience = 5;
 
-  // WHERE the token is valid. List of services (specified as service
-  // identities, e.g. "service:app-id") that can accept this token.
-  // "All services" if empty.
+  // WHERE the token is valid.
+  //
+  // List of services (specified as service identities, e.g. "service:app-id")
+  // that should accept this token. May also contain special '*' string, which
+  // means "All services".
+  //
+  // Required.
   repeated string services = 6;
 
   // If this token was minted on some else's behalf (i.e. issuer_id field was
   // provided externally) stores an identify of whoever initiated the minting
-  // request. Mostly for informational purposes. Optional field.
+  // request.
+  //
+  // Optional field.
   optional string impersonator_id = 7;
 }
