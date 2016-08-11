@@ -2,7 +2,7 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-package main
+package cipd
 
 import (
 	"encoding/json"
@@ -17,9 +17,9 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"github.com/luci/luci-go/cipd/client/cipd"
+	"github.com/luci/luci-go/cipd/client/cipd/local"
 	"github.com/luci/luci-go/client/authcli"
-	"github.com/luci/luci-go/client/cipd"
-	"github.com/luci/luci-go/client/cipd/local"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
 )

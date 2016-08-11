@@ -10,8 +10,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/client/cipd/common"
-	"github.com/luci/luci-go/client/cipd/internal/messages"
+	"github.com/luci/luci-go/cipd/client/cipd/common"
+	"github.com/luci/luci-go/cipd/client/cipd/internal/messages"
 )
 
 // MaxTagCacheSize is how many entries to keep in TagCache database.

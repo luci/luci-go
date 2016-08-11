@@ -49,9 +49,9 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 
-	"github.com/luci/luci-go/client/cipd/common"
-	"github.com/luci/luci-go/client/cipd/internal"
-	"github.com/luci/luci-go/client/cipd/local"
+	"github.com/luci/luci-go/cipd/client/cipd/common"
+	"github.com/luci/luci-go/cipd/client/cipd/internal"
+	"github.com/luci/luci-go/cipd/client/cipd/local"
 )
 
 // PackageACLChangeAction defines a flavor of PackageACLChange.

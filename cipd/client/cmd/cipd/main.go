@@ -2,11 +2,11 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-// Client side of for Chrome Infra Package Deployer.
+// Package cipd implements a client of for Chrome Infra Package Deployer.
 //
 // Subcommand starting with 'pkg-' are low level commands operating on package
 // files on disk.
-package main
+package cipd
 
 import (
 	cryptorand "crypto/rand"
@@ -32,11 +32,11 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 
+	"github.com/luci/luci-go/cipd/client/cipd"
+	"github.com/luci/luci-go/cipd/client/cipd/common"
+	"github.com/luci/luci-go/cipd/client/cipd/local"
+	"github.com/luci/luci-go/cipd/version"
 	"github.com/luci/luci-go/client/authcli"
-	"github.com/luci/luci-go/client/cipd"
-	"github.com/luci/luci-go/client/cipd/common"
-	"github.com/luci/luci-go/client/cipd/local"
-	"github.com/luci/luci-go/client/cipd/version"
 )
 
 ////////////////////////////////////////////////////////////////////////////////

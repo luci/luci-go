@@ -11,7 +11,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"github.com/luci/luci-go/client/cipd/internal/messages"
+	"github.com/luci/luci-go/cipd/client/cipd/internal/messages"
 )
 
 // MarshalWithSHA1 serializes proto message to bytes, calculates SHA1 checksum

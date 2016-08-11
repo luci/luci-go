@@ -7,7 +7,7 @@ package internal
 import (
 	"testing"
 
-	"github.com/luci/luci-go/client/cipd/internal/messages"
+	"github.com/luci/luci-go/cipd/client/cipd/internal/messages"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

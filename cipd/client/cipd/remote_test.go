@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/luci/luci-go/client/cipd/common"
+	. "github.com/luci/luci-go/cipd/client/cipd/common"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

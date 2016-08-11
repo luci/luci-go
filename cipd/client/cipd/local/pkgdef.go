@@ -15,7 +15,7 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/luci/luci-go/client/cipd/common"
+	"github.com/luci/luci-go/cipd/client/cipd/common"
 )
 
 // PackageDef defines how exactly to build a package.

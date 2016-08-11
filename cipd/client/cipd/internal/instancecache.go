@@ -21,9 +21,9 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
 
-	"github.com/luci/luci-go/client/cipd/common"
-	"github.com/luci/luci-go/client/cipd/internal/messages"
-	"github.com/luci/luci-go/client/cipd/local"
+	"github.com/luci/luci-go/cipd/client/cipd/common"
+	"github.com/luci/luci-go/cipd/client/cipd/internal/messages"
+	"github.com/luci/luci-go/cipd/client/cipd/local"
 )
 
 const (

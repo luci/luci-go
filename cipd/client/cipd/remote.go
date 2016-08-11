@@ -22,7 +22,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
 
-	"github.com/luci/luci-go/client/cipd/common"
+	"github.com/luci/luci-go/cipd/client/cipd/common"
 )
 
 // remoteMaxRetries is how many times to retry transient HTTP errors.

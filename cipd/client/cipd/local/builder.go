@@ -16,7 +16,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/client/cipd/common"
+	"github.com/luci/luci-go/cipd/client/cipd/common"
 	"github.com/luci/luci-go/common/logging"
 )
 
