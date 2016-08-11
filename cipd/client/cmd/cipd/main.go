@@ -6,7 +6,7 @@
 //
 // Subcommand starting with 'pkg-' are low level commands operating on package
 // files on disk.
-package cipd
+package main
 
 import (
 	cryptorand "crypto/rand"
