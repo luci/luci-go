@@ -21,7 +21,7 @@ import (
 // delegationTokenCache is used to store delegation tokens in the global cache.
 var delegationTokenCache = tokenCache{
 	Kind:                "delegation",
-	Version:             1,
+	Version:             2,
 	ExpRandPercent:      10,
 	MinAcceptedLifetime: 5 * time.Minute,
 }
@@ -37,6 +37,10 @@ type tokenCache struct {
 	Kind string
 
 	// Version defines format of the data. Will be used as part of the cache key.
+	//
+	// If you change a type behind interface{} in Token field, you MUST bump the
+	// version. It will also "invalidate" all existing cached entries (they will
+	// just become inaccessible and eventually will be evicted from the cache).
 	Version int
 
 	// ExpRandPercent defines when expiration randomizations kicks in.
@@ -53,10 +57,10 @@ type tokenCache struct {
 
 // cachedToken is stored in a tokenCache.
 type cachedToken struct {
-	Key     string    // cache key, must be unique (no other restrictions)
-	Token   string    // the actual token
-	Created time.Time // when it was created, required, UTC
-	Expiry  time.Time // its expiration time, required, UTC
+	Key     string      // cache key, must be unique (no other restrictions)
+	Token   interface{} // the actual token, must be Gob-serializable
+	Created time.Time   // when it was created, required, UTC
+	Expiry  time.Time   // its expiration time, required, UTC
 }
 
 // Store unconditionally puts the token in the cache.
