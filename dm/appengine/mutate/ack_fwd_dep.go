@@ -6,6 +6,7 @@ package mutate
 
 import (
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/model"
 	"github.com/luci/luci-go/tumble"
@@ -32,7 +33,8 @@ func (f *AckFwdDep) RollForward(c context.Context) (muts []tumble.Mutation, err 
 		return
 	}
 
-	if atmpt.State != dm.Attempt_WAITING || atmpt.CurExecution != fdep.ForExecution {
+	if (atmpt.State != dm.Attempt_EXECUTING && atmpt.State != dm.Attempt_WAITING) || atmpt.CurExecution != fdep.ForExecution {
+		logging.Errorf(c, "EARLY EXIT: %s: %s v %s", atmpt.State, atmpt.CurExecution, fdep.ForExecution)
 		return
 	}
 
@@ -41,7 +43,7 @@ func (f *AckFwdDep) RollForward(c context.Context) (muts []tumble.Mutation, err 
 	if !atmpt.DepMap.IsSet(idx) {
 		atmpt.DepMap.Set(idx)
 
-		if atmpt.DepMap.All(true) {
+		if atmpt.DepMap.All(true) && atmpt.State == dm.Attempt_WAITING {
 			if err = atmpt.ModifyState(c, dm.Attempt_SCHEDULING); err != nil {
 				return
 			}

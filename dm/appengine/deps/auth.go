@@ -31,7 +31,7 @@ func loadAcls(c context.Context) (ret *acls.Acls, err error) {
 	aid := getTrimmedAppID(c)
 	cSet := fmt.Sprintf("services/%s", aid)
 	file := "acls.cfg"
-	aclCfg, err := config.GetConfig(c, fmt.Sprintf("services/%s", aid), "acls.cfg", false)
+	aclCfg, err := config.GetConfig(c, cSet, file, false)
 	if err != nil {
 		return nil, errors.Annotate(err).Transient().
 			D("cSet", cSet).D("file", file).InternalReason("loading config").Err()
@@ -56,7 +56,7 @@ func inGroups(c context.Context, groups []string) error {
 		"ident":  auth.CurrentIdentity(c),
 		"groups": groups,
 	}.Infof(c, "not authorized")
-	return grpcutil.Errf(codes.Unauthenticated, "not authorized")
+	return grpcutil.Errf(codes.PermissionDenied, "not authorized")
 }
 
 func canRead(c context.Context) (err error) {
@@ -64,7 +64,10 @@ func canRead(c context.Context) (err error) {
 	if err != nil {
 		return
 	}
-	return inGroups(c, acl.Readers)
+	if err = inGroups(c, acl.Readers); grpcutil.Code(err) == codes.PermissionDenied {
+		err = inGroups(c, acl.Writers)
+	}
+	return
 }
 
 func canWrite(c context.Context) (err error) {

@@ -10,6 +10,7 @@ import (
 	"github.com/luci/gae/service/datastore"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
+	"github.com/luci/luci-go/dm/appengine/distributor/fake"
 	"github.com/luci/luci-go/dm/appengine/model"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -18,120 +19,123 @@ func TestAddDeps(t *testing.T) {
 	t.Parallel()
 
 	Convey("EnsureGraphData (Adding deps)", t, func() {
-		_, c, _, s := testSetup()
+		ttest, c, dist, s := testSetup()
 		c = writer(c)
 		ds := datastore.Get(c)
 
-		a := &model.Attempt{ID: *dm.NewAttemptID("quest", 1)}
-		a.CurExecution = 1
-		a.State = dm.Attempt_EXECUTING
-		ak := ds.KeyForObj(a)
-
-		e := &model.Execution{
-			ID: 1, Attempt: ak, Token: []byte("key"),
-			State: dm.Execution_RUNNING}
-
-		toQuestDesc := &dm.Quest_Desc{
-			DistributorConfigName: "fakeDistributor",
-			Parameters:            `{"data":"yes"}`,
-			DistributorParameters: `{}`,
-		}
-		So(toQuestDesc.Normalize(), ShouldBeNil)
-		toQuest := model.NewQuest(c, toQuestDesc)
-		to := &model.Attempt{ID: *dm.NewAttemptID(toQuest.ID, 1)}
-		fwd := &model.FwdDep{Depender: ak, Dependee: to.ID}
-
-		req := &dm.EnsureGraphDataReq{
-			ForExecution: &dm.Execution_Auth{
-				Id:    dm.NewExecutionID(a.ID.Quest, a.ID.Id, 1),
-				Token: []byte("key"),
-			},
-			RawAttempts: dm.NewAttemptList(map[string][]uint32{
-				to.ID.Quest: {to.ID.Id},
-			}),
-		}
-		So(req.Normalize(), ShouldBeNil)
+		qid := s.ensureQuest(c, "quest", 1)
 
 		Convey("Bad", func() {
+			req := &dm.EnsureGraphDataReq{
+				RawAttempts: dm.NewAttemptList(map[string][]uint32{
+					"fakeQuestId": {1},
+				}),
+			}
+
 			Convey("No such originating attempt", func() {
-				_, err := s.EnsureGraphData(c, req)
-				So(err, ShouldBeRPCUnauthenticated)
-			})
+				dist.RunTask(c, dm.NewExecutionID(qid, 1, 1), func(tsk *fake.Task) error {
+					aTsk := tsk.MustActivate(c, s)
 
-			Convey("No such destination quest", func() {
-				So(ds.Put(a, e), ShouldBeNil)
-
-				_, err := s.EnsureGraphData(c, req)
-				So(err, ShouldBeRPCInvalidArgument, `cannot create attempts for absent quest "-asJkTOx8ORdkGZsg7Bc-w2Z_0FIB4vgD1afzInkwNE"`)
+					_, err := aTsk.EnsureGraphData(req)
+					So(err, ShouldBeRPCInvalidArgument, `cannot create attempts for absent quest "-asJkTOx8ORdkGZsg7Bc-w2Z_0FIB4vgD1afzInkwNE"`)
+					return nil
+				})
 			})
 		})
 
+		toQuest := s.ensureQuest(c, "to", 1)
+		toQuestDesc := fake.QuestDesc("to")
+		req := &dm.EnsureGraphDataReq{
+			RawAttempts: dm.NewAttemptList(map[string][]uint32{
+				toQuest: {1},
+			}),
+		}
+		fwd := model.FwdDepsFromList(c,
+			dm.NewAttemptID(qid, 1),
+			dm.NewAttemptList(map[string][]uint32{toQuest: {1}}),
+		)[0]
+		ttest.Drain(c)
+
 		Convey("Good", func() {
-			So(ds.Put(a, e, toQuest), ShouldBeNil)
-
 			Convey("deps already exist", func() {
-				So(ds.Put(fwd, to), ShouldBeNil)
+				err := dist.RunTask(c, dm.NewExecutionID(qid, 1, 1), func(tsk *fake.Task) error {
+					aTsk := tsk.MustActivate(c, s)
 
-				rsp, err := s.EnsureGraphData(c, req)
-				So(err, ShouldBeNil)
-				rsp.Result.PurgeTimestamps()
-				So(rsp, ShouldResemble, &dm.EnsureGraphDataRsp{
-					Accepted: true,
-					Result: &dm.GraphData{Quests: map[string]*dm.Quest{
-						toQuest.ID: {
-							Data: &dm.Quest_Data{
-								Desc:    toQuestDesc,
-								BuiltBy: []*dm.Quest_TemplateSpec{},
-							},
-							Attempts: map[uint32]*dm.Attempt{1: dm.NewAttemptScheduling()},
-						},
-					}},
+					rsp, err := aTsk.EnsureGraphData(req)
+					So(err, ShouldBeNil)
+					rsp.Result.PurgeTimestamps()
+					So(rsp, ShouldResemble, &dm.EnsureGraphDataRsp{
+						Accepted:   true,
+						ShouldHalt: true,
+					})
+					return nil
 				})
+				So(err, ShouldBeNil)
 			})
 
 			Convey("deps already done", func() {
-				to.State = dm.Attempt_FINISHED
-				to.Result.Data = dm.NewJsonResult(`{"done":true}`)
-				to.Result.Data.Object = ""
-				ar := &model.AttemptResult{
-					Attempt: ds.KeyForObj(to),
-					Data:    *dm.NewJsonResult(`{"done":true}`)}
-				So(ds.Put(to, ar), ShouldBeNil)
-
-				req.Include.Attempt.Result = true
-				rsp, err := s.EnsureGraphData(c, req)
-				So(err, ShouldBeNil)
-				rsp.Result.PurgeTimestamps()
-				So(rsp, ShouldResemble, &dm.EnsureGraphDataRsp{
-					Accepted: true,
-					Result: &dm.GraphData{Quests: map[string]*dm.Quest{
-						toQuest.ID: {
-							Data: &dm.Quest_Data{
-								Desc:    toQuestDesc,
-								BuiltBy: []*dm.Quest_TemplateSpec{},
-							},
-							Attempts: map[uint32]*dm.Attempt{
-								1: dm.NewAttemptFinished(dm.NewJsonResult(`{"done":true}`))},
-						},
-					}},
+				err := dist.RunTask(c, dm.NewExecutionID(toQuest, 1, 1), func(tsk *fake.Task) error {
+					tsk.MustActivate(c, s).Finish(`{"done":true}`)
+					return nil
 				})
+				So(err, ShouldBeNil)
+				ttest.Drain(c)
+
+				err = dist.RunTask(c, dm.NewExecutionID(qid, 1, 1), func(tsk *fake.Task) error {
+					aTsk := tsk.MustActivate(c, s)
+
+					req.Normalize() // to ensure the next assignment works
+					req.Include.Attempt.Result = true
+
+					rsp, err := aTsk.EnsureGraphData(req)
+					So(err, ShouldBeNil)
+					rsp.Result.PurgeTimestamps()
+					exAttempt := dm.NewAttemptFinished(dm.NewJsonResult(`{"done":true}`))
+					exAttempt.Data.NumExecutions = 1
+					So(rsp, ShouldResemble, &dm.EnsureGraphDataRsp{
+						Accepted: true,
+						Result: &dm.GraphData{Quests: map[string]*dm.Quest{
+							toQuest: {
+								Data: &dm.Quest_Data{
+									Desc:    toQuestDesc,
+									BuiltBy: []*dm.Quest_TemplateSpec{},
+								},
+								Attempts: map[uint32]*dm.Attempt{1: exAttempt},
+							},
+						}},
+					})
+					return nil
+				})
+				So(err, ShouldBeNil)
+
+				ttest.Drain(c)
 
 				So(ds.Get(fwd), ShouldBeNil)
 			})
 
 			Convey("adding new deps", func() {
-				So(ds.Put(&model.Quest{ID: "to"}), ShouldBeNil)
+				err := dist.RunTask(c, dm.NewExecutionID(qid, 1, 1), func(tsk *fake.Task) error {
+					aTsk := tsk.MustActivate(c, s)
 
-				rsp, err := s.EnsureGraphData(c, req)
+					rsp, err := aTsk.EnsureGraphData(req)
+					So(err, ShouldBeNil)
+					So(rsp, ShouldResemble, &dm.EnsureGraphDataRsp{
+						Accepted:   true,
+						ShouldHalt: true,
+					})
+
+					So(ds.Get(fwd), ShouldBeNil)
+					a := model.AttemptFromID(dm.NewAttemptID(qid, 1))
+					So(ds.Get(a), ShouldBeNil)
+					So(a.State, ShouldEqual, dm.Attempt_EXECUTING)
+					e := model.ExecutionFromID(c, dm.NewExecutionID(qid, 1, 1))
+					So(ds.Get(e), ShouldBeNil)
+					So(e.State, ShouldEqual, dm.Execution_STOPPING)
+					return nil
+				})
 				So(err, ShouldBeNil)
-				So(rsp, ShouldResemble, &dm.EnsureGraphDataRsp{ShouldHalt: true})
-
-				So(ds.Get(fwd), ShouldBeNil)
-				So(ds.Get(a), ShouldBeNil)
-				So(a.State, ShouldEqual, dm.Attempt_EXECUTING)
-				So(ds.Get(e), ShouldBeNil)
-				So(e.State, ShouldEqual, dm.Execution_STOPPING)
 			})
+
 		})
 	})
 }

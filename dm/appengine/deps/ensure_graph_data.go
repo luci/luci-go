@@ -39,15 +39,17 @@ func (d *deps) runEnsureGraphDepsWalk(c context.Context, req *dm.EnsureGraphData
 		Include: &dm.WalkGraphReq_Include{
 			Quest: &dm.WalkGraphReq_Include_Options{Data: true},
 			Attempt: &dm.WalkGraphReq_Include_Options{
-				Data:   true,
-				Result: req.Include.Attempt.Result,
+				Abnormal: true,
+				Expired:  true,
+				Data:     true,
+				Result:   req.Include.Attempt.Result,
 			},
 		},
 	}
 	if err := wgreq.Normalize(); err != nil {
 		panic(err)
 	}
-	qryRsp, err := d.WalkGraph(c, wgreq)
+	qryRsp, err := doGraphWalk(c, wgreq)
 	if err != nil {
 		return nil, err
 	}
@@ -220,9 +222,7 @@ func (d *deps) ensureGraphData(c context.Context, req *dm.EnsureGraphDataReq, ne
 
 	// not all of the attemps exist/are finished, we have to block.
 	rsp.Result = nil
-	rsp.ShouldHalt = true
-
-	return tumbleNow(c, &mutate.AddDeps{
+	err = tumbleNow(c, &mutate.AddDeps{
 		Auth:   req.ForExecution,
 		Quests: newQuests,
 		// Attempts we think are missing
@@ -230,6 +230,11 @@ func (d *deps) ensureGraphData(c context.Context, req *dm.EnsureGraphDataReq, ne
 		// Deps we think are missing (>= newAttempts)
 		Deps: missingDeps,
 	})
+	if err == nil {
+		rsp.Accepted = true
+		rsp.ShouldHalt = true
+	}
+	return err
 }
 
 type templateFileKey struct {

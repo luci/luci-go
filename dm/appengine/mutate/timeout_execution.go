@@ -49,6 +49,7 @@ func (t *TimeoutExecution) RollForward(c context.Context) (muts []tumble.Mutatio
 		return
 	}
 	if e.State != t.State {
+		logging.Errorf(c, "EARLY EXIT: %s v %s", e.State, t.State)
 		return
 	}
 

@@ -76,6 +76,7 @@ func (f *FinishExecution) RollForward(c context.Context) (muts []tumble.Mutation
 	}
 
 	if a.State != dm.Attempt_EXECUTING || a.CurExecution != f.EID.Id || e.State.Terminal() {
+		logging.Errorf(c, "EARLY EXIT: %s: %s v %s: terminal: %s", a.State, a.CurExecution, f.EID.Id, e.State.Terminal())
 		return
 	}
 
@@ -119,7 +120,13 @@ func (f *FinishExecution) RollForward(c context.Context) (muts []tumble.Mutation
 		a.RetryState.Reset()
 
 		if a.DepMap.Size() > 0 {
-			if err = a.ModifyState(c, dm.Attempt_WAITING); err != nil {
+			if a.DepMap.All(true) {
+				if err = a.ModifyState(c, dm.Attempt_SCHEDULING); err != nil {
+					return
+				}
+				a.DepMap.Reset()
+				muts = append(muts, &ScheduleExecution{&a.ID})
+			} else if err = a.ModifyState(c, dm.Attempt_WAITING); err != nil {
 				return
 			}
 		} else {

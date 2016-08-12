@@ -60,7 +60,7 @@ func TestWalkGraph(t *testing.T) {
 
 		Convey("no read access", func() {
 			_, err := s.WalkGraph(c, req)
-			So(err, ShouldBeRPCUnauthenticated, "not authorized")
+			So(err, ShouldBeRPCPermissionDenied, "not authorized")
 		})
 
 		c = reader(c)

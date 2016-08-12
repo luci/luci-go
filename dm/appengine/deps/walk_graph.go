@@ -202,7 +202,7 @@ func (g *graphWalker) attemptResultLoader(aid *dm.Attempt_ID, rsltSize uint32, a
 }
 
 func (g *graphWalker) checkCanLoadResultData(aid *dm.Attempt_ID) (bool, error) {
-	// We're running this query from a human, not a bot.
+	// We're running this query from a human, or internally in DM, not a bot.
 	if g.req.Auth == nil {
 		return true, nil
 	}
@@ -420,14 +420,6 @@ func (g *graphWalker) excludedAttempt(aid *dm.Attempt_ID) bool {
 }
 
 func doGraphWalk(c context.Context, req *dm.WalkGraphReq) (rsp *dm.GraphData, err error) {
-	if req.Auth != nil {
-		logging.Fields{"execution": req.Auth.Id}.Debugf(c, "on behalf of")
-	} else {
-		if err = canRead(c); err != nil {
-			return
-		}
-	}
-
 	cncl := (func())(nil)
 	timeoutProto := req.Limit.MaxTime
 	timeout := timeoutProto.Duration() // .Duration on nil is OK
@@ -597,5 +589,12 @@ func doGraphWalk(c context.Context, req *dm.WalkGraphReq) (rsp *dm.GraphData, er
 //       )
 //     }
 func (d *deps) WalkGraph(c context.Context, req *dm.WalkGraphReq) (rsp *dm.GraphData, err error) {
+	if req.Auth != nil {
+		logging.Fields{"execution": req.Auth.Id}.Debugf(c, "on behalf of")
+	} else {
+		if err = canRead(c); err != nil {
+			return
+		}
+	}
 	return doGraphWalk(c, req)
 }

@@ -39,8 +39,13 @@ func (a *AddDeps) Root(c context.Context) *datastore.Key {
 // This mutation is called directly.
 func (a *AddDeps) RollForward(c context.Context) (muts []tumble.Mutation, err error) {
 	// Invalidate the execution key so that they can't make more API calls.
-	atmpt, _, err := model.InvalidateExecution(c, a.Auth)
+	atmpt, ex, err := model.InvalidateExecution(c, a.Auth)
 	if err != nil {
+		return
+	}
+
+	if err = ResetExecutionTimeout(c, ex); err != nil {
+		logging.WithError(err).Errorf(c, "could not reset timeout")
 		return
 	}
 
@@ -60,7 +65,7 @@ func (a *AddDeps) RollForward(c context.Context) (muts []tumble.Mutation, err er
 		fdp.ForExecution = atmpt.CurExecution
 	}
 
-	if err = ds.Put(fwdDeps, atmpt); err != nil {
+	if err = ds.Put(fwdDeps, atmpt, ex); err != nil {
 		err = grpcutil.Annotate(err, codes.Internal).Reason("putting stuff").Err()
 		return
 	}

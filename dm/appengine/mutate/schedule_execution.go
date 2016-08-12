@@ -34,15 +34,18 @@ func (s *ScheduleExecution) RollForward(c context.Context) (muts []tumble.Mutati
 	ds := datastore.Get(c)
 	a := model.AttemptFromID(s.For)
 	if err = ds.Get(a); err != nil {
+		logging.WithError(err).Errorf(c, "loading attempt")
 		return
 	}
 
 	if a.State != dm.Attempt_SCHEDULING {
+		logging.Infof(c, "EARLY EXIT: already scheduling")
 		return
 	}
 
 	q := model.QuestFromID(s.For.Quest)
 	if err = txnBuf.GetNoTxn(c).Get(q); err != nil {
+		logging.WithError(err).Errorf(c, "loading quest")
 		return
 	}
 
@@ -50,6 +53,7 @@ func (s *ScheduleExecution) RollForward(c context.Context) (muts []tumble.Mutati
 	if a.LastSuccessfulExecution != 0 {
 		prevExecution := model.ExecutionFromID(c, s.For.Execution(a.LastSuccessfulExecution))
 		if err = ds.Get(prevExecution); err != nil {
+			logging.Errorf(c, "loading previous execution: %s", err)
 			return
 		}
 		prevResult = prevExecution.Result.Data
@@ -58,11 +62,13 @@ func (s *ScheduleExecution) RollForward(c context.Context) (muts []tumble.Mutati
 	reg := distributor.GetRegistry(c)
 	dist, ver, err := reg.MakeDistributor(c, q.Desc.DistributorConfigName)
 	if err != nil {
+		logging.WithError(err).Errorf(c, "making distributor %s", q.Desc.DistributorConfigName)
 		return
 	}
 
 	a.CurExecution++
 	if err = a.ModifyState(c, dm.Attempt_EXECUTING); err != nil {
+		logging.WithError(err).Errorf(c, "modifying state")
 		return
 	}
 
@@ -86,11 +92,13 @@ func (s *ScheduleExecution) RollForward(c context.Context) (muts []tumble.Mutati
 			logging.WithError(err).Errorf(c, "got transient error in ScheduleExecution")
 			return
 		}
+		logging.WithError(err).Errorf(c, "got non-transient error in ScheduleExecution")
 		origErr := err
 
 		// put a and e to the transaction buffer, so that
 		// FinishExecution.RollForward can see them.
 		if err = ds.Put(a, e); err != nil {
+			logging.WithError(err).Errorf(c, "putting attempt+execution for non-transient distributor error")
 			return
 		}
 		return NewFinishExecutionAbnormal(
@@ -100,10 +108,14 @@ func (s *ScheduleExecution) RollForward(c context.Context) (muts []tumble.Mutati
 	}
 
 	if err = ResetExecutionTimeout(c, e); err != nil {
+		logging.WithError(err).Errorf(c, "resetting timeout")
 		return
 	}
 
-	err = ds.Put(a, e)
+	if err = ds.Put(a, e); err != nil {
+		logging.WithError(err).Errorf(c, "putting attempt+execution")
+	}
+
 	return
 }
 

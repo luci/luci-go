@@ -41,7 +41,7 @@ func TestEnsureAttempt(t *testing.T) {
 					Quest:        []*dm.Quest_Desc{desc},
 					QuestAttempt: []*dm.AttemptList_Nums{{Nums: []uint32{1}}},
 				})
-				So(err, ShouldBeRPCUnauthenticated, `not authorized`)
+				So(err, ShouldBeRPCPermissionDenied, `not authorized`)
 			})
 		})
 
