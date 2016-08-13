@@ -15,6 +15,8 @@ type config struct {
 	Endpoint        string `json:"endpoint"`
 	Credentials     string `json:"credentials"`
 	AutoGenHostname bool   `json:"autogen_hostname"`
+	Hostname        string `json:"hostname"`
+	Region          string `json:"region"`
 }
 
 // loadConfig loads a tsmon JSON config from a file.

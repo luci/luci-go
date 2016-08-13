@@ -99,6 +99,22 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 	if config.AutoGenHostname {
 		fl.Target.AutoGenHostname = true
 	}
+	if config.Hostname != "" {
+		if fl.Target.DeviceHostname == "" {
+			fl.Target.DeviceHostname = config.Hostname
+		}
+		if fl.Target.TaskHostname == "" {
+			fl.Target.TaskHostname = config.Hostname
+		}
+	}
+	if config.Region != "" {
+		if fl.Target.DeviceRegion == "" {
+			fl.Target.DeviceRegion = config.Region
+		}
+		if fl.Target.TaskRegion == "" {
+			fl.Target.TaskRegion = config.Region
+		}
+	}
 	fl.Target.SetDefaultsFromHostname()
 	t, err := target.NewFromFlags(&fl.Target)
 	if err != nil {

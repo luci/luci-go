@@ -66,9 +66,6 @@ func (fl *Flags) SetDefaultsFromHostname() {
 	network := getNetwork(fl.SysInfo.Hostname)
 	hostname := fl.SysInfo.Hostname
 
-	if fl.AutoGenHostname {
-		hostname = "autogen:" + hostname
-	}
 	if fl.DeviceHostname == "" {
 		fl.DeviceHostname = hostname
 	}
@@ -83,6 +80,10 @@ func (fl *Flags) SetDefaultsFromHostname() {
 	}
 	if fl.TaskHostname == "" {
 		fl.TaskHostname = hostname
+	}
+	if fl.AutoGenHostname {
+		fl.DeviceHostname = "autogen:" + fl.DeviceHostname
+		fl.TaskHostname = "autogen:" + fl.TaskHostname
 	}
 }
 
