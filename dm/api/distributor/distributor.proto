@@ -7,6 +7,7 @@ syntax = "proto3";
 package distributor;
 
 import "github.com/luci/luci-go/dm/api/distributor/jobsim/jobsim.proto";
+import "github.com/luci/luci-go/dm/api/distributor/swarming/v1/config.proto";
 
 message Alias {
   string other_config = 1;
@@ -16,7 +17,6 @@ message Distributor {
   reserved 2; // future: generic pRPC based distributor
   reserved 3; // future: generic gRPC based distributor
 
-  reserved 4; // future swarming_v1 distributor
   // TODO(iannucci): Maybe something like Any or extensions would be a better
   // fit here? The ultimate goal is that users will be able to use the proto
   // text format for luci-config. I suspect that Any or extensions would lose
@@ -24,6 +24,8 @@ message Distributor {
   // not the case.
   oneof distributor_type {
     Alias alias = 1;
+
+    swarmingV1.Config swarming_v1 = 4;
 
     // this is for testing purposes and will only be used in production to put
     // test load on DM. It's tagged at 2048 to keep it well out of the way.
