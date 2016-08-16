@@ -139,6 +139,7 @@ func strPtr(s string) *string { return &s }
 // fakeDB implements DB.
 type fakeDB struct {
 	allowedClientID string
+	authServiceURL  string
 }
 
 func (db *fakeDB) IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error) {
@@ -162,5 +163,8 @@ func (db *fakeDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) 
 }
 
 func (db *fakeDB) GetAuthServiceURL(c context.Context) (string, error) {
-	return "", errors.New("fakeDB: GetAuthServiceURL is not implemented")
+	if db.authServiceURL == "" {
+		return "", errors.New("fakeDB: GetAuthServiceURL is not configured")
+	}
+	return db.authServiceURL, nil
 }
