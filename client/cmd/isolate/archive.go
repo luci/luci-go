@@ -67,12 +67,12 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	}
 	arch := archiver.New(isolatedclient.New(nil, client, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace), out)
 	common.CancelOnCtrlC(arch)
-	future := isolate.Archive(arch, &c.ArchiveOptions)
-	future.WaitForHashed()
-	if err = future.Error(); err != nil {
+	item := isolate.Archive(arch, &c.ArchiveOptions)
+	item.WaitForHashed()
+	if err = item.Error(); err != nil {
 		fmt.Printf("%s%s  %s\n", prefix, filepath.Base(c.Isolate), err)
 	} else {
-		fmt.Printf("%s%s  %s\n", prefix, future.Digest(), filepath.Base(c.Isolate))
+		fmt.Printf("%s%s  %s\n", prefix, item.Digest(), filepath.Base(c.Isolate))
 	}
 	if err2 := arch.Close(); err == nil {
 		err = err2

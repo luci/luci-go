@@ -132,16 +132,16 @@ func ReplaceVariables(str string, opts *ArchiveOptions) (string, error) {
 }
 
 // Archive processes a .isolate, generates a .isolated and archive it.
-// Returns a Future to the .isolated.
-func Archive(arch archiver.Archiver, opts *ArchiveOptions) archiver.Future {
+// Returns a *Item to the .isolated.
+func Archive(arch *archiver.Archiver, opts *ArchiveOptions) *archiver.Item {
 	displayName := filepath.Base(opts.Isolated)
 	defer tracer.Span(arch, strings.SplitN(displayName, ".", 2)[0]+":archive", nil)(nil)
 	f, err := archive(arch, opts, displayName)
 	if err != nil {
 		arch.Cancel(err)
-		s := archiver.NewSimpleFuture(displayName)
-		s.Finalize("", err)
-		return s
+		i := &archiver.Item{DisplayName: displayName}
+		i.SetErr(err)
+		return i
 	}
 	return f
 }
@@ -227,7 +227,7 @@ func processing(opts *ArchiveOptions) (int, int, []string, string, *isolated.Iso
 	return filesCount, dirsCount, deps, rootDir, i, err
 }
 
-func archive(arch archiver.Archiver, opts *ArchiveOptions, displayName string) (archiver.Future, error) {
+func archive(arch *archiver.Archiver, opts *ArchiveOptions, displayName string) (*archiver.Item, error) {
 	end := tracer.Span(arch, strings.SplitN(displayName, ".", 2)[0]+":loading", nil)
 	filesCount, dirsCount, deps, rootDir, i, err := processing(opts)
 	end(tracer.Args{"err": err})
@@ -235,8 +235,8 @@ func archive(arch archiver.Archiver, opts *ArchiveOptions, displayName string) (
 		return nil, err
 	}
 	// Handle each dependency, either a file or a directory..
-	fileFutures := make([]archiver.Future, 0, filesCount)
-	dirFutures := make([]archiver.Future, 0, dirsCount)
+	fileItems := make([]*archiver.Item, 0, filesCount)
+	dirItems := make([]*archiver.Item, 0, dirsCount)
 	for _, dep := range deps {
 		relPath, err := filepath.Rel(rootDir, dep)
 		if err != nil {
@@ -247,7 +247,7 @@ func archive(arch archiver.Archiver, opts *ArchiveOptions, displayName string) (
 			if err != nil {
 				return nil, err
 			}
-			dirFutures = append(dirFutures, archiver.PushDirectory(arch, dep, relPath, opts.Blacklist))
+			dirItems = append(dirItems, archiver.PushDirectory(arch, dep, relPath, opts.Blacklist))
 		} else {
 			// Grab the stats right away.
 			info, err := os.Lstat(dep)
@@ -263,29 +263,29 @@ func archive(arch archiver.Archiver, opts *ArchiveOptions, displayName string) (
 				i.Files[relPath] = isolated.File{Link: newString(l)}
 			} else {
 				i.Files[relPath] = isolated.File{Mode: newInt(int(mode.Perm())), Size: newInt64(info.Size())}
-				fileFutures = append(fileFutures, arch.PushFile(relPath, dep, -info.Size()))
+				fileItems = append(fileItems, arch.PushFile(relPath, dep, -info.Size()))
 			}
 		}
 	}
 
-	for _, future := range fileFutures {
-		future.WaitForHashed()
-		if err = future.Error(); err != nil {
+	for _, item := range fileItems {
+		item.WaitForHashed()
+		if err = item.Error(); err != nil {
 			return nil, err
 		}
-		f := i.Files[future.DisplayName()]
-		f.Digest = future.Digest()
-		i.Files[future.DisplayName()] = f
+		f := i.Files[item.DisplayName]
+		f.Digest = item.Digest()
+		i.Files[item.DisplayName] = f
 	}
 	// Avoid duplicated entries in includes.
 	// TODO(tandrii): add test to reproduce the problem.
 	includesSet := map[isolated.HexDigest]bool{}
-	for _, future := range dirFutures {
-		future.WaitForHashed()
-		if err = future.Error(); err != nil {
+	for _, item := range dirItems {
+		item.WaitForHashed()
+		if err = item.Error(); err != nil {
 			return nil, err
 		}
-		includesSet[future.Digest()] = true
+		includesSet[item.Digest()] = true
 	}
 	for digest := range includesSet {
 		i.Includes = append(i.Includes, digest)

@@ -59,22 +59,22 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	}
 	arch := archiver.New(isolatedclient.New(nil, c.createClient(), c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace), out)
 	common.CancelOnCtrlC(arch)
-	futures := []archiver.Future{}
-	names := []string{}
+	items := make([]*archiver.Item, 0, len(c.files)+len(c.dirs))
+	names := make([]string, 0, cap(items))
 	for _, file := range c.files {
-		futures = append(futures, arch.PushFile(file, file, 0))
+		items = append(items, arch.PushFile(file, file, 0))
 		names = append(names, file)
 	}
 
 	for _, d := range c.dirs {
-		futures = append(futures, archiver.PushDirectory(arch, d, "", nil))
+		items = append(items, archiver.PushDirectory(arch, d, "", nil))
 		names = append(names, d)
 	}
 
-	for i, future := range futures {
-		future.WaitForHashed()
-		if err := future.Error(); err == nil {
-			fmt.Printf("%s%s  %s\n", prefix, future.Digest(), names[i])
+	for i, item := range items {
+		item.WaitForHashed()
+		if err := item.Error(); err == nil {
+			fmt.Printf("%s%s  %s\n", prefix, item.Digest(), names[i])
 		} else {
 			fmt.Printf("%s%s failed: %s\n", prefix, names[i], err)
 		}

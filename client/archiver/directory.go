@@ -12,81 +12,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/luci/luci-go/common/isolated"
 	"github.com/luci/luci-go/common/isolatedclient"
 	"github.com/luci/luci-go/common/runtime/tracer"
 )
-
-// SimpleFuture is a Future that can be edited.
-type SimpleFuture interface {
-	Future
-	Finalize(d isolated.HexDigest, err error)
-}
-
-// NewSimpleFuture returns a SimpleFuture for asynchronous work.
-func NewSimpleFuture(displayName string) SimpleFuture {
-	s := &simpleFuture{displayName: displayName}
-	s.wgHashed.Add(1)
-	return s
-}
-
-// Private details.
-
-func newInt(v int) *int {
-	o := new(int)
-	*o = v
-	return o
-}
-
-func newInt64(v int64) *int64 {
-	o := new(int64)
-	*o = v
-	return o
-}
-
-func newString(v string) *string {
-	o := new(string)
-	*o = v
-	return o
-}
-
-type simpleFuture struct {
-	displayName string
-	wgHashed    sync.WaitGroup
-	lock        sync.Mutex
-	err         error
-	digest      isolated.HexDigest
-}
-
-func (s *simpleFuture) DisplayName() string {
-	return s.displayName
-}
-
-func (s *simpleFuture) WaitForHashed() {
-	s.wgHashed.Wait()
-}
-
-func (s *simpleFuture) Error() error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	return s.err
-}
-
-func (s *simpleFuture) Digest() isolated.HexDigest {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	return s.digest
-}
-
-func (s *simpleFuture) Finalize(d isolated.HexDigest, err error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	s.digest = d
-	s.err = err
-	s.wgHashed.Done()
-}
 
 type walkItem struct {
 	fullPath string
@@ -174,9 +104,9 @@ func walk(root string, blacklist []string, c chan<- *walkItem) {
 
 // PushDirectory walks a directory at root and creates a .isolated file.
 //
-// It walks the directories synchronously, then returns a Future to signal when
-// the background work is completed. The future is signaled once all files are
-// hashed. In particular, the Future is signaled before server side cache
+// It walks the directories synchronously, then returns a *Item to signal when
+// the background work is completed. The Item is signaled once all files are
+// hashed. In particular, the *Item is signaled before server side cache
 // lookups and upload is completed. Use archiver.Close() to wait for
 // completion.
 //
@@ -184,7 +114,7 @@ func walk(root string, blacklist []string, c chan<- *walkItem) {
 // generated .isolated file.
 //
 // blacklist is a list of globs of files to ignore.
-func PushDirectory(a Archiver, root string, relDir string, blacklist []string) Future {
+func PushDirectory(a *Archiver, root string, relDir string, blacklist []string) *Item {
 	total := 0
 	end := tracer.Span(a, "PushDirectory", tracer.Args{"path": relDir, "root": root})
 	defer func() { end(tracer.Args{"total": total}) }()
@@ -200,15 +130,15 @@ func PushDirectory(a Archiver, root string, relDir string, blacklist []string) F
 		Files:   map[string]isolated.File{},
 		Version: isolated.IsolatedFormatVersion,
 	}
-	futures := []Future{}
-	s := NewSimpleFuture(displayName)
+	items := []*Item{}
+	s := &Item{DisplayName: displayName}
 	for item := range c {
 		if s.Error() != nil {
 			// Empty the queue.
 			continue
 		}
 		if item.err != nil {
-			s.Finalize("", item.err)
+			s.SetErr(item.err)
 			continue
 		}
 		total++
@@ -219,7 +149,7 @@ func PushDirectory(a Archiver, root string, relDir string, blacklist []string) F
 		if mode&os.ModeSymlink == os.ModeSymlink {
 			l, err := os.Readlink(item.fullPath)
 			if err != nil {
-				s.Finalize("", fmt.Errorf("readlink(%s): %s", item.fullPath, err))
+				s.SetErr(fmt.Errorf("readlink(%s): %s", item.fullPath, err))
 				continue
 			}
 			i.Files[item.relPath] = isolated.File{Link: newString(l)}
@@ -228,7 +158,7 @@ func PushDirectory(a Archiver, root string, relDir string, blacklist []string) F
 				Mode: newInt(int(mode.Perm())),
 				Size: newInt64(item.info.Size()),
 			}
-			futures = append(futures, a.PushFile(item.relPath, item.fullPath, -item.info.Size()))
+			items = append(items, a.PushFile(item.relPath, item.fullPath, -item.info.Size()))
 		}
 	}
 	if s.Error() != nil {
@@ -237,30 +167,36 @@ func PushDirectory(a Archiver, root string, relDir string, blacklist []string) F
 	log.Printf("PushDirectory(%s) = %d files", root, len(i.Files))
 
 	// Hashing, cache lookups and upload is done asynchronously.
+	s.wgHashed.Add(1)
 	go func() {
+		defer s.wgHashed.Done()
 		var err error
-		for _, future := range futures {
-			future.WaitForHashed()
-			if err = future.Error(); err != nil {
+		for _, item := range items {
+			item.WaitForHashed()
+			if err = item.Error(); err != nil {
 				break
 			}
-			name := future.DisplayName()
+			name := item.DisplayName
 			d := i.Files[name]
-			d.Digest = future.Digest()
+			d.Digest = item.Digest()
 			i.Files[name] = d
 		}
-		var d isolated.HexDigest
 		if err == nil {
 			raw := &bytes.Buffer{}
 			if err = json.NewEncoder(raw).Encode(i); err == nil {
 				if f := a.Push(displayName, isolatedclient.NewBytesSource(raw.Bytes()), 0); f != nil {
 					f.WaitForHashed()
-					err = f.Error()
-					d = f.Digest()
+					if err = f.Error(); err == nil {
+						s.lock.Lock()
+						s.digestItem.Digest = string(f.Digest())
+						s.lock.Unlock()
+					}
 				}
 			}
 		}
-		s.Finalize(d, err)
+		if err != nil {
+			s.SetErr(err)
+		}
 	}()
 	return s
 }

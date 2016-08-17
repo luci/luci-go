@@ -60,30 +60,6 @@ var headers = [][]progress.Column{
 	},
 }
 
-// Future is the future of a file pushed to be hashed.
-type Future interface {
-	// DisplayName is the name associated to the content.
-	DisplayName() string
-	// WaitForHashed hangs until the item hash is known.
-	WaitForHashed()
-	// Error returns any error that occurred for this item if any.
-	Error() error
-	// Digest returns the calculated digest once calculated, empty otherwise.
-	Digest() isolated.HexDigest
-}
-
-// Archiver is an high level interface to an isolatedclient.IsolateServer.
-type Archiver interface {
-	common.Canceler
-	// Push schedules item upload to the isolate server.
-	// Smaller priority value means earlier processing.
-	Push(displayName string, src isolatedclient.Source, priority int64) Future
-	// PushFile schedules file upload to the isolate server.
-	// Smaller priority value means earlier processing.
-	PushFile(displayName, path string, priority int64) Future
-	Stats() *Stats
-}
-
 // UploadStat is the statistic for a single upload.
 type UploadStat struct {
 	Duration time.Duration
@@ -132,9 +108,9 @@ func (s *Stats) deepCopy() *Stats {
 }
 
 // New returns a thread-safe Archiver instance.
-func New(is isolatedclient.IsolateServer, out io.Writer) Archiver {
+func New(is isolatedclient.IsolateServer, out io.Writer) *Archiver {
 	// TODO(maruel): Cache hashes and server cache presence.
-	a := &archiver{
+	a := &Archiver{
 		canceler:              common.NewCanceler(),
 		progress:              progress.New(headers, out),
 		is:                    is,
@@ -143,10 +119,10 @@ func New(is isolatedclient.IsolateServer, out io.Writer) Archiver {
 		maxConcurrentUpload:   8,
 		containsBatchingDelay: 100 * time.Millisecond,
 		containsBatchSize:     50,
-		stage1DedupeChan:      make(chan *archiverItem),
-		stage2HashChan:        make(chan *archiverItem),
-		stage3LookupChan:      make(chan *archiverItem),
-		stage4UploadChan:      make(chan *archiverItem),
+		stage1DedupeChan:      make(chan *Item),
+		stage2HashChan:        make(chan *Item),
+		stage3LookupChan:      make(chan *Item),
+		stage4UploadChan:      make(chan *Item),
 	}
 	tracer.NewPID(a, "archiver")
 
@@ -184,68 +160,70 @@ func New(is isolatedclient.IsolateServer, out io.Writer) Archiver {
 	return a
 }
 
-// Private details.
-
-// archiverItem is an item to process. Implements Future.
+// Item is an item to process.
 //
 // It is caried over from pipeline stage to stage to do processing on it.
-type archiverItem struct {
+type Item struct {
 	// Immutable.
-	displayName string         // Name to use to qualify this item
+	DisplayName string         // Name to use to qualify this item
 	wgHashed    sync.WaitGroup // Released once .digestItem.Digest is set
 	priority    int64          // Lower values - earlier hashing and uploading.
 	path        string         // Set when the source is a file on disk.
-	a           *archiver
+	a           *Archiver
 
 	// Mutable.
 	lock       sync.Mutex
 	err        error                                    // Item specific error
 	digestItem isolateservice.HandlersEndpointsV1Digest // Mutated by hashLoop(), used by doContains()
-	linked     []*archiverItem                          // Deduplicated item.
+	linked     []*Item                                  // Deduplicated item.
 
 	// Mutable but not accessible externally.
 	source isolatedclient.Source     // Source of data
 	state  *isolatedclient.PushState // Server-side push state for cache miss
 }
 
-func newArchiverItem(a *archiver, displayName, path string, source isolatedclient.Source, priority int64) *archiverItem {
+func newItem(a *Archiver, displayName, path string, source isolatedclient.Source, priority int64) *Item {
 	tracer.CounterAdd(a, "itemsProcessing", 1)
-	i := &archiverItem{a: a, displayName: displayName, path: path, source: source, priority: priority}
+	i := &Item{a: a, DisplayName: displayName, path: path, source: source, priority: priority}
 	i.wgHashed.Add(1)
 	return i
 }
 
-func (i *archiverItem) Close() error {
+// done is called when the Item processing is done.
+//
+// It can be because there was an error, it was linked to another item, it was
+// present on the server or finally it was uploaded successfully.
+func (i *Item) done() error {
 	tracer.CounterAdd(i.a, "itemsProcessing", -1)
 	i.a = nil
 	return nil
 }
 
-func (i *archiverItem) DisplayName() string {
-	return i.displayName
-}
-
-func (i *archiverItem) WaitForHashed() {
+// WaitForHashed hangs until the item hash is known.
+func (i *Item) WaitForHashed() {
 	i.wgHashed.Wait()
 }
 
-func (i *archiverItem) Error() error {
+// Error returns any error that occurred for this item if any.
+func (i *Item) Error() error {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 	return i.err
 }
 
-func (i *archiverItem) Digest() isolated.HexDigest {
+// Digest returns the calculated digest once calculated, empty otherwise.
+func (i *Item) Digest() isolated.HexDigest {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 	return isolated.HexDigest(i.digestItem.Digest)
 }
 
-func (i *archiverItem) isFile() bool {
+func (i *Item) isFile() bool {
 	return len(i.path) != 0
 }
 
-func (i *archiverItem) setErr(err error) {
+// SetErr forcibly set an item as failed. Normally not used by callers.
+func (i *Item) SetErr(err error) {
 	if err == nil {
 		panic("internal error")
 	}
@@ -261,21 +239,21 @@ func (i *archiverItem) setErr(err error) {
 	}
 }
 
-func (i *archiverItem) calcDigest() error {
+func (i *Item) calcDigest() error {
 	defer i.wgHashed.Done()
 	var d isolateservice.HandlersEndpointsV1Digest
 
 	src, err := i.source()
 	if err != nil {
-		return fmt.Errorf("source(%s) failed: %s\n", i.DisplayName(), err)
+		return fmt.Errorf("source(%s) failed: %s\n", i.DisplayName, err)
 	}
 	defer src.Close()
 
 	h := isolated.GetHash()
 	size, err := io.Copy(h, src)
 	if err != nil {
-		i.setErr(err)
-		return fmt.Errorf("read(%s) failed: %s\n", i.DisplayName(), err)
+		i.SetErr(err)
+		return fmt.Errorf("read(%s) failed: %s\n", i.DisplayName, err)
 	}
 	d = isolateservice.HandlersEndpointsV1Digest{Digest: string(isolated.Sum(h)), IsIsolated: true, Size: size}
 
@@ -292,7 +270,7 @@ func (i *archiverItem) calcDigest() error {
 	return nil
 }
 
-func (i *archiverItem) link(child *archiverItem) {
+func (i *Item) link(child *Item) {
 	child.lock.Lock()
 	defer child.lock.Unlock()
 	if !child.isFile() || child.state != nil || child.linked != nil || child.err != nil {
@@ -311,14 +289,14 @@ func (i *archiverItem) link(child *archiverItem) {
 	}
 }
 
-// archiver archives content to an Isolate server.
+// Archiver is an high level interface to an isolatedclient.IsolateServer.
 //
 // Uses a 4 stages pipeline, each doing work concurrently:
-// - Deduplicating similar requests or known server hot cache hits.
-// - Hashing files.
-// - Batched cache hit lookups on the server.
-// - Uploading cache misses.
-type archiver struct {
+//   - Deduplicating similar requests or known server hot cache hits.
+//   - Hashing files.
+//   - Batched cache hit lookups on the server.
+//   - Uploading cache misses.
+type Archiver struct {
 	// Immutable.
 	is                    isolatedclient.IsolateServer
 	maxConcurrentHash     int           // Stage 2; Disk I/O bound.
@@ -327,10 +305,10 @@ type archiver struct {
 	containsBatchingDelay time.Duration // Used by stage 3
 	containsBatchSize     int           // Used by stage 3
 	closeLock             sync.Mutex
-	stage1DedupeChan      chan *archiverItem
-	stage2HashChan        chan *archiverItem
-	stage3LookupChan      chan *archiverItem
-	stage4UploadChan      chan *archiverItem
+	stage1DedupeChan      chan *Item
+	stage2HashChan        chan *Item
+	stage3LookupChan      chan *Item
+	stage4UploadChan      chan *Item
 	wg                    sync.WaitGroup
 	canceler              common.Canceler
 	progress              progress.Progress
@@ -340,8 +318,9 @@ type archiver struct {
 	stats     Stats
 }
 
-// Close waits for all pending files to be done.
-func (a *archiver) Close() error {
+// Close waits for all pending files to be done. If an error occured during
+// processing, it is returned.
+func (a *Archiver) Close() error {
 	// This is done so asynchronously calling push() won't crash.
 
 	a.closeLock.Lock()
@@ -364,48 +343,56 @@ func (a *archiver) Close() error {
 	return err
 }
 
-func (a *archiver) Cancel(reason error) {
+// Cancel implements common.Canceler
+func (a *Archiver) Cancel(reason error) {
 	tracer.Instant(a, "cancel", tracer.Thread, tracer.Args{"reason": reason})
 	a.canceler.Cancel(reason)
 }
 
-func (a *archiver) CancelationReason() error {
+// CancelationReason implements common.Canceler
+func (a *Archiver) CancelationReason() error {
 	return a.canceler.CancelationReason()
 }
 
-func (a *archiver) Channel() <-chan error {
+// Channel implements common.Canceler
+func (a *Archiver) Channel() <-chan error {
 	return a.canceler.Channel()
 }
 
-func (a *archiver) Push(displayName string, source isolatedclient.Source, priority int64) Future {
-	return a.push(newArchiverItem(a, displayName, "", source, priority))
+// Push schedules item upload to the isolate server. Smaller priority value
+// means earlier processing.
+func (a *Archiver) Push(displayName string, source isolatedclient.Source, priority int64) *Item {
+	return a.push(newItem(a, displayName, "", source, priority))
 }
 
-func (a *archiver) PushFile(displayName, path string, priority int64) Future {
+// PushFile schedules file upload to the isolate server. Smaller priority
+// value means earlier processing.
+func (a *Archiver) PushFile(displayName, path string, priority int64) *Item {
 	source := func() (io.ReadCloser, error) {
 		return os.Open(path)
 	}
-	return a.push(newArchiverItem(a, displayName, path, source, priority))
+	return a.push(newItem(a, displayName, path, source, priority))
 }
 
-func (a *archiver) Stats() *Stats {
+// Stats returns a copy of the statistics.
+func (a *Archiver) Stats() *Stats {
 	a.statsLock.Lock()
 	defer a.statsLock.Unlock()
 	return a.stats.deepCopy()
 }
 
-func (a *archiver) push(item *archiverItem) Future {
+func (a *Archiver) push(item *Item) *Item {
 	if a.pushLocked(item) {
-		tracer.Instant(a, "itemAdded", tracer.Thread, tracer.Args{"item": item.DisplayName()})
+		tracer.Instant(a, "itemAdded", tracer.Thread, tracer.Args{"item": item.DisplayName})
 		tracer.CounterAdd(a, "itemsAdded", 1)
 		a.progress.Update(groupFound, groupFoundFound, 1)
 		return item
 	}
-	item.Close()
+	item.done()
 	return nil
 }
 
-func (a *archiver) pushLocked(item *archiverItem) bool {
+func (a *Archiver) pushLocked(item *Item) bool {
 	// The close(a.stage1DedupeChan) call is always occurring with the lock held.
 	a.closeLock.Lock()
 	defer a.closeLock.Unlock()
@@ -419,16 +406,16 @@ func (a *archiver) pushLocked(item *archiverItem) bool {
 	return true
 }
 
-func (a *archiver) stage1DedupeLoop() {
+func (a *Archiver) stage1DedupeLoop() {
 	c := a.stage1DedupeChan
 	defer close(a.stage2HashChan)
-	seen := map[string]*archiverItem{}
+	seen := map[string]*Item{}
 	// Create our own goroutine-local channel buffer, which doesn't need to be
 	// synchronized (unlike channels).
-	buildUp := []*archiverItem{}
+	buildUp := []*Item{}
 	for {
 		// Pull or push an item, dependending if there is build up.
-		var item *archiverItem
+		var item *Item
 		ok := true
 		if len(buildUp) == 0 {
 			item, ok = <-c
@@ -451,8 +438,8 @@ func (a *archiver) stage1DedupeLoop() {
 		// This loop must never block and must be as fast as it can as it is
 		// functionally equivalent to running with a.closeLock held.
 		if err := a.CancelationReason(); err != nil {
-			item.setErr(err)
-			item.Close()
+			item.SetErr(err)
+			item.done()
 			item.wgHashed.Done()
 			continue
 		}
@@ -462,7 +449,7 @@ func (a *archiver) stage1DedupeLoop() {
 			if previous, ok := seen[item.path]; ok {
 				previous.link(item)
 				// TODO(maruel): Semantically weird.
-				item.Close()
+				item.done()
 				continue
 			}
 		}
@@ -474,18 +461,18 @@ func (a *archiver) stage1DedupeLoop() {
 	// Take care of the build up after the channel closed.
 	for _, item := range buildUp {
 		if err := a.CancelationReason(); err != nil {
-			item.setErr(err)
+			item.SetErr(err)
 			item.wgHashed.Done()
-			item.Close()
+			item.done()
 		} else {
-			// The archiver is being closed, this has to happen synchronously.
+			// The Archiver is being closed, this has to happen synchronously.
 			a.stage2HashChan <- item
 			a.progress.Update(groupHash, groupHashTodo, 1)
 		}
 	}
 }
 
-func (a *archiver) stage2HashLoop() {
+func (a *Archiver) stage2HashLoop() {
 	defer close(a.stage3LookupChan)
 	pool := common.NewGoroutinePriorityPool(a.maxConcurrentHash, a.canceler)
 	defer func() {
@@ -499,12 +486,12 @@ func (a *archiver) stage2HashLoop() {
 		// exceeds 20k or something similar.
 		item := file
 		pool.Schedule(item.priority, func() {
-			// calcDigest calls setErr() and update wgHashed even on failure.
-			end := tracer.Span(a, "hash", tracer.Args{"name": item.DisplayName()})
+			// calcDigest calls SetErr() and update wgHashed even on failure.
+			end := tracer.Span(a, "hash", tracer.Args{"name": item.DisplayName})
 			if err := item.calcDigest(); err != nil {
 				end(tracer.Args{"err": err})
 				a.Cancel(err)
-				item.Close()
+				item.done()
 				return
 			}
 			end(tracer.Args{"size": float64(item.digestItem.Size)})
@@ -514,20 +501,20 @@ func (a *archiver) stage2HashLoop() {
 			a.progress.Update(groupLookup, groupLookupTodo, 1)
 			a.stage3LookupChan <- item
 		}, func() {
-			item.setErr(a.CancelationReason())
+			item.SetErr(a.CancelationReason())
 			item.wgHashed.Done()
-			item.Close()
+			item.done()
 		})
 	}
 }
 
-func (a *archiver) stage3LookupLoop() {
+func (a *Archiver) stage3LookupLoop() {
 	defer close(a.stage4UploadChan)
 	pool := common.NewGoroutinePool(a.maxConcurrentContains, a.canceler)
 	defer func() {
 		_ = pool.Wait()
 	}()
-	items := []*archiverItem{}
+	items := []*Item{}
 	never := make(<-chan time.Time)
 	timer := never
 	loop := true
@@ -538,7 +525,7 @@ func (a *archiver) stage3LookupLoop() {
 			pool.Schedule(func() {
 				a.doContains(batch)
 			}, nil)
-			items = []*archiverItem{}
+			items = []*Item{}
 			timer = never
 
 		case item, ok := <-a.stage3LookupChan:
@@ -552,7 +539,7 @@ func (a *archiver) stage3LookupLoop() {
 				pool.Schedule(func() {
 					a.doContains(batch)
 				}, nil)
-				items = []*archiverItem{}
+				items = []*Item{}
 				timer = never
 			} else if timer == never {
 				timer = time.After(a.containsBatchingDelay)
@@ -568,7 +555,7 @@ func (a *archiver) stage3LookupLoop() {
 	}
 }
 
-func (a *archiver) stage4UploadLoop() {
+func (a *Archiver) stage4UploadLoop() {
 	pool := common.NewGoroutinePriorityPool(a.maxConcurrentUpload, a.canceler)
 	defer func() {
 		_ = pool.Wait()
@@ -585,15 +572,15 @@ func (a *archiver) stage4UploadLoop() {
 // client. A better implementation would use a real context to allow the isolate
 // client calls to be Cancel'd. This could be done by wiring up
 // archvier.canceller to a fake context which is passed to the isolated client,
-// or it could be done by actually implementing real contexts in archiver (and
+// or it could be done by actually implementing real contexts in Archiver (and
 // deprecating the use of canceler).
 var emptyBackgroundContext = context.Background()
 
 // doContains is called by stage 3.
-func (a *archiver) doContains(items []*archiverItem) {
+func (a *Archiver) doContains(items []*Item) {
 	tmp := make([]*isolateservice.HandlersEndpointsV1Digest, len(items))
 	// No need to lock each item at that point, no mutation occurs on
-	// archiverItem.digestItem after stage 2.
+	// Item.digestItem after stage 2.
 	for i, item := range items {
 		tmp[i] = &item.digestItem
 	}
@@ -602,7 +589,7 @@ func (a *archiver) doContains(items []*archiverItem) {
 		err = fmt.Errorf("contains(%d) failed: %s", len(items), err)
 		a.Cancel(err)
 		for _, item := range items {
-			item.setErr(err)
+			item.SetErr(err)
 		}
 		return
 	}
@@ -613,7 +600,7 @@ func (a *archiver) doContains(items []*archiverItem) {
 			a.statsLock.Lock()
 			a.stats.Hits = append(a.stats.Hits, units.Size(size))
 			a.statsLock.Unlock()
-			items[index].Close()
+			items[index].done()
 		} else {
 			items[index].state = state
 			a.progress.Update(groupUpload, groupUploadTodo, 1)
@@ -625,21 +612,21 @@ func (a *archiver) doContains(items []*archiverItem) {
 }
 
 // doUpload is called by stage 4.
-func (a *archiver) doUpload(item *archiverItem) {
+func (a *Archiver) doUpload(item *Item) {
 	start := time.Now()
 	if err := a.is.Push(emptyBackgroundContext, item.state, item.source); err != nil {
 		err = fmt.Errorf("push(%s) failed: %s\n", item.path, err)
 		a.Cancel(err)
-		item.setErr(err)
+		item.SetErr(err)
 	} else {
 		a.progress.Update(groupUpload, groupUploadDone, 1)
 		a.progress.Update(groupUpload, groupUploadDoneSize, item.digestItem.Size)
 	}
-	item.Close()
+	item.done()
 	size := units.Size(item.digestItem.Size)
-	u := &UploadStat{time.Since(start), size, item.DisplayName()}
+	u := &UploadStat{time.Since(start), size, item.DisplayName}
 	a.statsLock.Lock()
 	a.stats.Pushed = append(a.stats.Pushed, u)
 	a.statsLock.Unlock()
-	log.Printf("Uploaded %7s: %s\n", size, item.DisplayName())
+	log.Printf("Uploaded %7s: %s\n", size, item.DisplayName)
 }

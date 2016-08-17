@@ -131,8 +131,8 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	arch := archiver.New(isolatedclient.New(nil, client, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace), out)
 	common.CancelOnCtrlC(arch)
 	type tmp struct {
-		name   string
-		future archiver.Future
+		*archiver.Item
+		name string
 	}
 	items := make(chan *tmp, len(args))
 	var wg sync.WaitGroup
@@ -167,7 +167,7 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 			if dotIndex := strings.LastIndex(name, "."); dotIndex != -1 {
 				name = name[0:dotIndex]
 			}
-			items <- &tmp{name, isolate.Archive(arch, opts)}
+			items <- &tmp{isolate.Archive(arch, opts), name}
 		}(arg)
 	}
 	go func() {
@@ -177,12 +177,12 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 
 	data := map[string]isolated.HexDigest{}
 	for item := range items {
-		item.future.WaitForHashed()
-		if item.future.Error() == nil {
-			data[item.name] = item.future.Digest()
-			fmt.Printf("%s%s  %s\n", prefix, item.future.Digest(), item.name)
+		item.WaitForHashed()
+		if item.Error() == nil {
+			data[item.name] = item.Digest()
+			fmt.Printf("%s%s  %s\n", prefix, item.Digest(), item.name)
 		} else {
-			fmt.Fprintf(os.Stderr, "%s%s  %s\n", prefix, item.name, item.future.Error())
+			fmt.Fprintf(os.Stderr, "%s%s  %s\n", prefix, item.name, item.Error())
 		}
 	}
 	err = arch.Close()

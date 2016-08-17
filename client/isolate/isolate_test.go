@@ -116,10 +116,10 @@ func TestArchive(t *testing.T) {
 		ExtraVariables:  map[string]string{"EXTRA": "really"},
 		ConfigVariables: map[string]string{"OS": "amiga"},
 	}
-	future := Archive(a, opts)
-	ut.AssertEqual(t, "baz.isolated", future.DisplayName())
-	future.WaitForHashed()
-	ut.AssertEqual(t, nil, future.Error())
+	item := Archive(a, opts)
+	ut.AssertEqual(t, "baz.isolated", item.DisplayName)
+	item.WaitForHashed()
+	ut.AssertEqual(t, nil, item.Error())
 	ut.AssertEqual(t, nil, a.Close())
 
 	mode := 0600
@@ -188,7 +188,7 @@ func TestArchive(t *testing.T) {
 		ut.AssertEqualf(t, expected[string(k)], actual[string(k)], "%s: %#v", k, actual[string(k)])
 	}
 	ut.AssertEqual(t, expected, actual)
-	ut.AssertEqual(t, isolatedHash, future.Digest())
+	ut.AssertEqual(t, isolatedHash, item.Digest())
 
 	stats := a.Stats()
 	ut.AssertEqual(t, 0, stats.TotalHits())
@@ -217,9 +217,9 @@ func TestArchiveFileNotFoundReturnsError(t *testing.T) {
 		Isolate:  "/this-file-does-not-exist",
 		Isolated: "/this-file-doesnt-either",
 	}
-	future := Archive(a, opts)
-	future.WaitForHashed()
-	err := future.Error()
+	item := Archive(a, opts)
+	item.WaitForHashed()
+	err := item.Error()
 	ut.AssertEqual(t, true, strings.HasPrefix(err.Error(), "open /this-file-does-not-exist: "))
 	closeErr := a.Close()
 	ut.AssertEqual(t, true, closeErr != nil)
