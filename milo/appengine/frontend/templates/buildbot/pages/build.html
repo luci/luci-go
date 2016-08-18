@@ -1,4 +1,19 @@
-{{define "title"}}{{.Build.Summary.Label}}{{end}}
+{{define "title"}}
+  {{ with .Build.Summary -}}
+    {{ if eq .Status.String "InfraFailure" }}
+      Exception
+    {{ else if eq .Status.String "Failure" }}
+      Failed
+    {{ else if eq .Status.String "NotRun" }}
+      Pending
+    {{ else }}
+      {{ .Status.String }}
+    {{ end }}
+    -
+    {{ if .ParentLabel }} {{ .ParentLabel.Label }} {{ end }}
+    {{ .Label }}
+  {{- end }}
+{{end}}
 
 {{define "head"}}{{end}}
 
