@@ -27,12 +27,6 @@
     if (offsetMin < 10) {
       offsetMin = '0' + offsetMin;
     }
-    var offsetStr = 'UTC';
-    if (offset > 0) {
-      offsetStr = '+' + offsetHr + ':' + offsetMin;
-    } else if (offset < 0) {
-      offsetStr = '-' + offsetHr + ':' + offsetMin;
-    }
 
     var month = (t.getMonth() + 1);
     if (month < 10) {
@@ -45,7 +39,6 @@
     var s = shortDayNames[t.getDay()] + ', ';
     s += t.getFullYear() + '-' + month + '-' + date + ' ';
     s += t.toLocaleTimeString();
-    s += ' (' + offsetStr + ')';
 
     return s;
   };
