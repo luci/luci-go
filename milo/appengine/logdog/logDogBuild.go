@@ -77,11 +77,14 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, buildCompletedTime, now 
 		comp.Status = resp.InfraFailure
 	}
 
-	// Hide the unimportant steps.
-	if comp.Status == resp.Success {
+	// Hide the unimportant steps, highlight the interesting ones.
+	switch comp.Status {
+	case resp.Success:
 		if _, ok := builtIn[anno.Name]; ok {
 			comp.Verbosity = resp.Hidden
 		}
+	case resp.InfraFailure, resp.Failure:
+		comp.Verbosity = resp.Interesting
 	}
 
 	// Main link is a link to the stdout.

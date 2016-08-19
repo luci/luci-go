@@ -31,7 +31,7 @@
     "Duration": 0,
     "Type": "Recipe",
     "LevelsDeep": 0,
-    "Verbosity": 0,
+    "Verbosity": 2,
     "Text": [
       "Failure Patch failure"
     ]
@@ -160,7 +160,7 @@
       "Duration": 1000000000,
       "Type": "Step",
       "LevelsDeep": 0,
-      "Verbosity": 0,
+      "Verbosity": 2,
       "Text": [
         "Check the bot_update step for details"
       ]

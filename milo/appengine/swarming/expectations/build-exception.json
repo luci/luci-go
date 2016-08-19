@@ -31,7 +31,7 @@
     "Duration": 3616635310000,
     "Type": "Recipe",
     "LevelsDeep": 0,
-    "Verbosity": 0,
+    "Verbosity": 2,
     "Text": [
       "InfraFailure bot_update",
       "InfraFailure Uncaught Exception"
@@ -121,7 +121,7 @@
       "Duration": 1000000000,
       "Type": "Step",
       "LevelsDeep": 0,
-      "Verbosity": 0,
+      "Verbosity": 2,
       "Text": null
     },
     {
@@ -151,7 +151,7 @@
       "Duration": 1000000000,
       "Type": "Step",
       "LevelsDeep": 0,
-      "Verbosity": 0,
+      "Verbosity": 2,
       "Text": null
     }
   ],

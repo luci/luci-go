@@ -135,6 +135,10 @@
               {{ if .MainLink }}
                 <li>{{.MainLink | linkify}}</li>
               {{ end }}
+              {{- if eq .Verbosity.String "Interesting" -}}
+                <link rel="prerender" href="{{.MainLink.URL}}">
+                <link rel="prefetch" href="{{.MainLink.URL}}">
+              {{- end }}
               {{ range .SubLink }}
                 <li>{{. | linkify}}</li>
               {{ end }}

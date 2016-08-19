@@ -26,9 +26,9 @@ func (i ComponentType) String() string {
 	return _ComponentType_name[_ComponentType_index[i]:_ComponentType_index[i+1]]
 }
 
-const _Verbosity_name = "NormalHidden"
+const _Verbosity_name = "NormalHiddenInteresting"
 
-var _Verbosity_index = [...]uint8{0, 6, 12}
+var _Verbosity_index = [...]uint8{0, 6, 12, 23}
 
 func (i Verbosity) String() string {
 	if i < 0 || i >= Verbosity(len(_Verbosity_index)-1) {

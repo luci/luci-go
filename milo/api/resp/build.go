@@ -188,6 +188,10 @@ const (
 
 	// Hidden items are by default not displayed.
 	Hidden
+
+	// Interesting items are a signal that they should be annuciated, or
+	// pre-fetched.
+	Interesting
 )
 
 // BuildComponent represents a single Step, subsetup, attempt, or recipe.
