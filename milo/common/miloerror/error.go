@@ -14,6 +14,6 @@ type Error struct {
 	Code    int
 }
 
-func (e *Error) Error() string {
+func (e Error) Error() string {
 	return fmt.Sprintf("encountered error %d, %s", e.Code, e.Message)
 }
