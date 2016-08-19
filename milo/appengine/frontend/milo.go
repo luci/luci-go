@@ -25,8 +25,12 @@ func init() {
 	gaemiddleware.InstallHandlers(r, basemw)
 	r.GET("/", basemw, settings.Wrap(frontpage{}))
 
+	// Admin and cron endpoints.
+	r.POST("/admin/update", basemw, settings.UpdateHandler)
+
 	// Console
-	r.GET("/console/:name", basemw, settings.Wrap(console.Console{}))
+	r.GET("/console/:project/:name", basemw, settings.Wrap(console.Console{}))
+	r.GET("/console/:project", basemw, console.Main)
 
 	// Swarming
 	r.GET("/swarming/task/:id/steps/*logname", basemw, settings.Wrap(swarming.Log{}))

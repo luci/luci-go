@@ -13,6 +13,12 @@ handlers:
 - url: /_ah/remote_api
   script: _go_app
 
+# For endpoints meant to be hit by a cron job.
+- url: /cron/.*
+  script: _go_app
+  secure: always
+  login: admin
+
 # Everything goes here.
 - url: /.*
   script: _go_app
