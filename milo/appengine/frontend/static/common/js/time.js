@@ -48,9 +48,14 @@
     for (var i = 0; i < timeSpans.length; i++) {
       var span = timeSpans[i];
       try {
+        var oldTimestamp = span.innerText;
         var timestamp = span.getAttribute('data-timestamp');
         var date = new Date(parseInt(timestamp, 10));
-        span.innerText = milo.formatDate(date) || span.innerText;
+        var newTimestamp = milo.formatDate(date);
+        if (newTimestamp != null) {
+          span.innerText = newTimestamp;
+          span.setAttribute("title", oldTimestamp)
+        }
       }
       catch (e) {
         console.error('could not convert time of span', span, 'to local:', e)
