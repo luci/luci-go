@@ -25,10 +25,6 @@ import (
 // DefaultNamespace is the namespace that should be used with the New function.
 const DefaultNamespace = "default-gzip"
 
-// compressedBufSize is the size of the read buffer that will be used to pull
-// data from a source into the compressor.
-const compressedBufSize = 4096
-
 // Source is a generator method to return source data. A generated Source must
 // be Closed before the generator is called again.
 type Source func() (io.ReadCloser, error)
@@ -39,18 +35,6 @@ func NewBytesSource(d []byte) Source {
 	return func() (io.ReadCloser, error) {
 		return ioutil.NopCloser(bytes.NewReader(d)), nil
 	}
-}
-
-// IsolateServer is the low-level client interface to interact with an Isolate
-// server.
-type IsolateServer interface {
-	ServerCapabilities(c context.Context) (*isolateservice.HandlersEndpointsV1ServerDetails, error)
-	// Contains looks up cache presence on the server of multiple items.
-	//
-	// The returned list is in the same order as 'items', with entries nil for
-	// items that were present.
-	Contains(c context.Context, items []*isolateservice.HandlersEndpointsV1Digest) ([]*PushState, error)
-	Push(c context.Context, state *PushState, src Source) error
 }
 
 // PushState is per-item state passed from IsolateServer.Contains() to
@@ -65,6 +49,17 @@ type PushState struct {
 	finalized bool
 }
 
+// Client is a client to an isolated server.
+type Client struct {
+	// All the members are immutable.
+	retryFactory retry.Factory
+	url          string
+	namespace    string
+
+	authClient *http.Client // client that sends auth tokens
+	anonClient *http.Client // client that does NOT send auth tokens
+}
+
 // New returns a new IsolateServer client.
 //
 // 'authClient' must implement authentication sufficient to talk to Isolate server
@@ -76,29 +71,14 @@ type PushState struct {
 // on Classic AppEngine!).
 //
 // If you're unsure which namespace to use, use the DefaultNamespace constant.
-func New(anonClient, authClient *http.Client, host, namespace string) IsolateServer {
-	return newIsolateServer(anonClient, authClient, host, namespace, nil)
-}
-
-// Private details.
-
-type isolateServer struct {
-	retryFactory retry.Factory
-	url          string
-	namespace    string
-
-	authClient *http.Client // client that sends auth tokens
-	anonClient *http.Client // client that does NOT send auth tokens
-}
-
-func newIsolateServer(anonClient, authClient *http.Client, host, namespace string, rFn retry.Factory) *isolateServer {
+func New(anonClient, authClient *http.Client, host, namespace string, rFn retry.Factory) *Client {
 	if anonClient == nil {
 		anonClient = http.DefaultClient
 	}
 	if authClient == nil {
 		authClient = http.DefaultClient
 	}
-	i := &isolateServer{
+	i := &Client{
 		retryFactory: rFn,
 		url:          strings.TrimRight(host, "/"),
 		namespace:    namespace,
@@ -109,16 +89,8 @@ func newIsolateServer(anonClient, authClient *http.Client, host, namespace strin
 	return i
 }
 
-// postJSON does authenticated POST request.
-func (i *isolateServer) postJSON(c context.Context, resource string, headers map[string]string, in, out interface{}) error {
-	if len(resource) == 0 || resource[0] != '/' {
-		return errors.New("resource must start with '/'")
-	}
-	_, err := lhttp.PostJSON(c, i.retryFactory, i.authClient, i.url+resource, headers, in, out)
-	return err
-}
-
-func (i *isolateServer) ServerCapabilities(c context.Context) (*isolateservice.HandlersEndpointsV1ServerDetails, error) {
+// ServerCapabilities returns the server details.
+func (i *Client) ServerCapabilities(c context.Context) (*isolateservice.HandlersEndpointsV1ServerDetails, error) {
 	out := &isolateservice.HandlersEndpointsV1ServerDetails{}
 	if err := i.postJSON(c, "/api/isolateservice/v1/server_details", nil, map[string]string{}, out); err != nil {
 		return nil, err
@@ -126,7 +98,11 @@ func (i *isolateServer) ServerCapabilities(c context.Context) (*isolateservice.H
 	return out, nil
 }
 
-func (i *isolateServer) Contains(c context.Context, items []*isolateservice.HandlersEndpointsV1Digest) (out []*PushState, err error) {
+// Contains looks up cache presence on the server of multiple items.
+//
+// The returned list is in the same order as 'items', with entries nil for
+// items that were present.
+func (i *Client) Contains(c context.Context, items []*isolateservice.HandlersEndpointsV1Digest) (out []*PushState, err error) {
 	end := tracer.Span(i, "contains", tracer.Args{"number": len(items)})
 	defer func() { end(tracer.Args{"err": err}) }()
 	in := isolateservice.HandlersEndpointsV1DigestCollection{Items: items, Namespace: &isolateservice.HandlersEndpointsV1Namespace{}}
@@ -147,7 +123,8 @@ func (i *isolateServer) Contains(c context.Context, items []*isolateservice.Hand
 	return out, nil
 }
 
-func (i *isolateServer) Push(c context.Context, state *PushState, source Source) (err error) {
+// Push pushed a missing item, as reported by Contains(), to the server.
+func (i *Client) Push(c context.Context, state *PushState, source Source) (err error) {
 	// This push operation may be a retry after failed finalization call below,
 	// no need to reupload contents in that case.
 	if !state.uploaded {
@@ -178,7 +155,16 @@ func (i *isolateServer) Push(c context.Context, state *PushState, source Source)
 	return
 }
 
-func (i *isolateServer) doPush(c context.Context, state *PushState, source Source) (err error) {
+// postJSON does authenticated POST request.
+func (i *Client) postJSON(c context.Context, resource string, headers map[string]string, in, out interface{}) error {
+	if len(resource) == 0 || resource[0] != '/' {
+		return errors.New("resource must start with '/'")
+	}
+	_, err := lhttp.PostJSON(c, i.retryFactory, i.authClient, i.url+resource, headers, in, out)
+	return err
+}
+
+func (i *Client) doPush(c context.Context, state *PushState, source Source) (err error) {
 	useDB := state.status.GsUploadUrl == ""
 	end := tracer.Span(i, "push", tracer.Args{"useDB": useDB, "size": state.size})
 	defer func() { end(tracer.Args{"err": err}) }()
@@ -199,7 +185,7 @@ func (i *isolateServer) doPush(c context.Context, state *PushState, source Sourc
 	return err
 }
 
-func (i *isolateServer) doPushDB(c context.Context, state *PushState, reader io.Reader) error {
+func (i *Client) doPushDB(c context.Context, state *PushState, reader io.Reader) error {
 	buf := bytes.Buffer{}
 	compressor := isolated.GetCompressor(&buf)
 	if _, err := io.Copy(compressor, reader); err != nil {
@@ -212,7 +198,7 @@ func (i *isolateServer) doPushDB(c context.Context, state *PushState, reader io.
 	return i.postJSON(c, "/api/isolateservice/v1/store_inline", nil, in, nil)
 }
 
-func (i *isolateServer) doPushGCS(c context.Context, state *PushState, source Source) (err error) {
+func (i *Client) doPushGCS(c context.Context, state *PushState, source Source) (err error) {
 	// GsUploadUrl is signed Google Storage URL that doesn't require additional
 	// authentication. In fact, using authClient causes HTTP 403 because
 	// authClient's tokens don't have Cloud Storage OAuth scope. Use anonymous
@@ -255,9 +241,9 @@ func newCompressed(src io.Reader) *compressed {
 		// The compressor itself is not thread safe.
 		compressor := isolated.GetCompressor(pw)
 
-		buf := make([]byte, compressedBufSize)
+		buf := [4096]byte{}
 		pw.CloseWithError(func() error {
-			if _, err := io.CopyBuffer(compressor, src, buf); err != nil {
+			if _, err := io.CopyBuffer(compressor, src, buf[:]); err != nil {
 				return err
 			}
 			return compressor.Close()

@@ -26,7 +26,7 @@ func (c *Flags) Init(f *flag.FlagSet) {
 	f.StringVar(&c.ServerURL, "isolate-server", i,
 		"Isolate server to use; defaults to value of $ISOLATE_SERVER; use special value 'fake' to use a fake server")
 	f.StringVar(&c.ServerURL, "I", i, "Alias for -isolate-server")
-	f.StringVar(&c.Namespace, "namespace", "default-gzip", "")
+	f.StringVar(&c.Namespace, "namespace", DefaultNamespace, "")
 }
 
 // Parse applies changes specified by command line flags.

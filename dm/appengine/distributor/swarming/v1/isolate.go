@@ -101,7 +101,7 @@ func pushIsolate(c context.Context, isolateHost string, chunks []isoChunk) error
 
 	isoClient := isolatedclient.New(
 		anonClient, httpClient(c), "https://"+isolateHost,
-		isolatedclient.DefaultNamespace)
+		isolatedclient.DefaultNamespace, nil)
 	states, err := isoClient.Contains(c, dgsts)
 	if err != nil {
 		err = errors.Annotate(err).

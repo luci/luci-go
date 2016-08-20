@@ -57,7 +57,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 		out = nil
 		prefix = ""
 	}
-	arch := archiver.New(isolatedclient.New(nil, c.createClient(), c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace), out)
+	arch := archiver.New(isolatedclient.New(nil, c.createClient(), c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil), out)
 	common.CancelOnCtrlC(arch)
 	items := make([]*archiver.Item, 0, len(c.files)+len(c.dirs))
 	names := make([]string, 0, cap(items))

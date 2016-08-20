@@ -108,12 +108,12 @@ func (s *Stats) deepCopy() *Stats {
 }
 
 // New returns a thread-safe Archiver instance.
-func New(is isolatedclient.IsolateServer, out io.Writer) *Archiver {
+func New(c *isolatedclient.Client, out io.Writer) *Archiver {
 	// TODO(maruel): Cache hashes and server cache presence.
 	a := &Archiver{
 		canceler:              common.NewCanceler(),
 		progress:              progress.New(headers, out),
-		is:                    is,
+		c:                     c,
 		maxConcurrentHash:     5,
 		maxConcurrentContains: 64,
 		maxConcurrentUpload:   8,
@@ -289,7 +289,7 @@ func (i *Item) link(child *Item) {
 	}
 }
 
-// Archiver is an high level interface to an isolatedclient.IsolateServer.
+// Archiver is an high level interface to an isolatedclient.Client.
 //
 // Uses a 4 stages pipeline, each doing work concurrently:
 //   - Deduplicating similar requests or known server hot cache hits.
@@ -298,7 +298,7 @@ func (i *Item) link(child *Item) {
 //   - Uploading cache misses.
 type Archiver struct {
 	// Immutable.
-	is                    isolatedclient.IsolateServer
+	c                     *isolatedclient.Client
 	maxConcurrentHash     int           // Stage 2; Disk I/O bound.
 	maxConcurrentContains int           // Stage 3; Server overload due to parallelism (DDoS).
 	maxConcurrentUpload   int           // Stage 4; Network I/O bound.
@@ -584,7 +584,7 @@ func (a *Archiver) doContains(items []*Item) {
 	for i, item := range items {
 		tmp[i] = &item.digestItem
 	}
-	states, err := a.is.Contains(emptyBackgroundContext, tmp)
+	states, err := a.c.Contains(emptyBackgroundContext, tmp)
 	if err != nil {
 		err = fmt.Errorf("contains(%d) failed: %s", len(items), err)
 		a.Cancel(err)
@@ -614,7 +614,7 @@ func (a *Archiver) doContains(items []*Item) {
 // doUpload is called by stage 4.
 func (a *Archiver) doUpload(item *Item) {
 	start := time.Now()
-	if err := a.is.Push(emptyBackgroundContext, item.state, item.source); err != nil {
+	if err := a.c.Push(emptyBackgroundContext, item.state, item.source); err != nil {
 		err = fmt.Errorf("push(%s) failed: %s\n", item.path, err)
 		a.Cancel(err)
 		item.SetErr(err)
