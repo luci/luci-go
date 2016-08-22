@@ -753,7 +753,7 @@ func (as *Step) LogLine(label, line string) bool {
 			panic(fmt.Errorf("failed to generate log stream name for [%s]: %s", label, err))
 		}
 		name = as.BaseStream(subName)
-		as.AddLogdogStreamLink("", "", name)
+		as.AddLogdogStreamLink("", label, "", name)
 
 		as.logLines[label] = name
 		as.logLineCount[label]++
@@ -847,8 +847,9 @@ func (as *Step) SetNestLevel(l int) bool {
 }
 
 // AddLogdogStreamLink adds a LogDog stream link to this Step's links list.
-func (as *Step) AddLogdogStreamLink(server string, prefix, name types.StreamName) {
+func (as *Step) AddLogdogStreamLink(server, label string, prefix, name types.StreamName) {
 	link := &milo.Link{
+		Label: label,
 		Value: &milo.Link_LogdogStream{&milo.LogdogStream{
 			Name:   string(name),
 			Server: server,

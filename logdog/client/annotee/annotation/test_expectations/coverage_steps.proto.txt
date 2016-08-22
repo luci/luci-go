@@ -55,11 +55,13 @@ substep: <
         text: "message1"
         text: "message2"
         other_links: <
+          label: "logging.json"
           logdog_stream: <
             name: "base/steps/bar/0/logs/logging.json/0"
           >
         >
         other_links: <
+          label: "lorem.txt"
           logdog_stream: <
             name: "base/steps/bar/0/logs/lorem.txt/0"
           >

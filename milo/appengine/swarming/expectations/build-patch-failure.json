@@ -53,7 +53,7 @@
       },
       "SubLink": [
         {
-          "Label": "steps/update_scripts/0/logs/gclient_json/0",
+          "Label": "gclient_json",
           "Img": "",
           "URL": "foo/steps/update_scripts/0/logs/gclient_json/0",
           "Alt": ""
@@ -85,7 +85,7 @@
       },
       "SubLink": [
         {
-          "Label": "steps/setup_build/0/logs/run_recipe/0",
+          "Label": "run_recipe",
           "Img": "",
           "URL": "foo/steps/setup_build/0/logs/run_recipe/0",
           "Alt": ""
@@ -117,13 +117,13 @@
       },
       "SubLink": [
         {
-          "Label": "steps/bot_update/0/logs/json.output/0",
+          "Label": "json.output",
           "Img": "",
           "URL": "foo/steps/bot_update/0/logs/json.output/0",
           "Alt": ""
         },
         {
-          "Label": "steps/bot_update/0/logs/patch_error/0",
+          "Label": "patch error",
           "Img": "",
           "URL": "foo/steps/bot_update/0/logs/patch_error/0",
           "Alt": ""
@@ -180,7 +180,7 @@
       },
       "SubLink": [
         {
-          "Label": "steps/recipe_failure_reason/0/logs/failure_reason/0",
+          "Label": "failure reason",
           "Img": "",
           "URL": "foo/steps/recipe_failure_reason/0/logs/failure_reason/0",
           "Alt": ""

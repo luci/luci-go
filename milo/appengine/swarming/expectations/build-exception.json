@@ -77,7 +77,7 @@
       },
       "SubLink": [
         {
-          "Label": "steps/setup_build/0/logs/run_recipe/0",
+          "Label": "run_recipe",
           "Img": "",
           "URL": "foo/steps/setup_build/0/logs/run_recipe/0",
           "Alt": ""
@@ -109,7 +109,7 @@
       },
       "SubLink": [
         {
-          "Label": "steps/bot_update/0/logs/json.output__invalid_/0",
+          "Label": "json.output (invalid)",
           "Img": "",
           "URL": "foo/steps/bot_update/0/logs/json.output__invalid_/0",
           "Alt": ""
@@ -139,7 +139,7 @@
       },
       "SubLink": [
         {
-          "Label": "steps/Uncaught_Exception/0/logs/exception/0",
+          "Label": "exception",
           "Img": "",
           "URL": "foo/steps/Uncaught_Exception/0/logs/exception/0",
           "Alt": ""
