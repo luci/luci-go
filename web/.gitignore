@@ -5,3 +5,7 @@ node_modules
 dist/*/**
 !dist/*/.keep
 apps/*/.tmp
+
+# Tag files for installed Bower/NPM.
+.npm.installed
+.bower.installed

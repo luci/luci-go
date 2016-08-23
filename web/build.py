@@ -9,21 +9,129 @@ import os
 import subprocess
 import sys
 
+from distutils.spawn import find_executable
+
+# The root of the "luci-go" checkout, relative to the current "build.py" file.
+_LUCI_GO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# The default build output path.
+_WEB_BUILD_PATH = os.path.join(_LUCI_GO_ROOT, 'web')
+
+# When run as "build-deploy.py", we add two additional positional arguments as
+# expected by the deployment tool.
+_IS_DEPLOY = os.path.basename(sys.argv[0]) == 'build-deploy.py'
+
+
+def _get_tools():
+  tools = {
+      'npm': find_executable('npm'),
+      'node': find_executable('node'),
+  }
+
+  if not (tools['npm'] and tools['node']):
+    print """\
+Build requires a "node" and "npm" executables to be installed on your local
+system. Please install Node.js and NPM. Installation instructions can be found
+at:
+    https://docs.npmjs.com/getting-started/installing-node
+"""
+    raise Exception('Unable to locate NPM executable.')
+
+  return tools
+
+
+def _call_if_outdated(fn, installed, spec, force):
+  """Will call "fn" if the file at "install_path" doesn't match "spec".
+
+  If "fn" completes without raising an exception, the "spec" file will be copied
+  to the "installed" path, making subsequent runs of this function a
+  no-op until the spec file changes..
+
+  Args:
+    fn (callable): The function to call if they don't match.
+    installed (str): The path to the installed state file.
+    spec (str): The path to the source spec file.
+    force (bool): If true, call the function regardless.
+  """
+  with open(spec, 'r') as fd:
+    spec_data = fd.read()
+
+  if not force and os.path.isfile(installed):
+    with open(installed, 'r') as fd:
+      current = fd.read()
+    if spec_data == current:
+      return
+
+  # Either forcing or out of date.
+  fn()
+
+  # Update our installed file to match our spec data.
+  with open(installed, 'w') as fd:
+    fd.write(spec_data)
+
 
 def main(argv):
   parser = argparse.ArgumentParser()
-  parser.add_argument('source_root', help='path to the source root')
-  parser.add_argument('build_dir', help='path to the build directory')
-  parser.add_argument('apps', nargs='+',
-      help='names of the web apps to build')
+
+  # If we're running the deployment tool version of this script, these arguments
+  # are required and positional. Otherwise, they are optional.
+  if _IS_DEPLOY:
+    parser.add_argument('source_root',
+        help='Path to the source root.')
+    parser.add_argument('build_dir',
+        help='Path to the output build directory. Apps will be written to a '
+             '"dist" folder under this path.')
+  else:
+    parser.add_argument('--source-root', default=_LUCI_GO_ROOT,
+        help='Path to the source root.')
+    parser.add_argument('--build-dir', default=_WEB_BUILD_PATH,
+        help='Path to the output build directory. Apps will be written to a '
+             '"dist" folder under this path.')
+
+  parser.add_argument('apps', nargs='*',
+      help='Names of the web apps to build. If none are specified, all web '
+           'apps will be built.')
+  parser.add_argument('-i', '--force-install', action='store_true',
+      help='Install NPM/Bower files even if they are considered up-to-date.')
   opts = parser.parse_args(argv)
 
   # Build our generated web content.
-  for app in opts.apps:
+  web_dir = os.path.join(opts.source_root, 'web')
+  tools = _get_tools()
+
+  # Install our required Node and Bower modules.
+  def install_npm_deps():
+    subprocess.check_call([tools['npm'], 'install'], cwd=web_dir,
+        stdout=sys.stderr, stderr=sys.stderr)
+  _call_if_outdated(
+      install_npm_deps,
+      os.path.join(web_dir, '.npm.installed'),
+      os.path.join(web_dir, 'package.json'),
+      opts.force_install)
+
+  def install_bower_deps():
+    bower = os.path.join(web_dir, 'node_modules', 'bower', 'bin', 'bower')
+    subprocess.check_call([tools['node'], bower, 'install'], cwd=web_dir,
+        stdout=sys.stderr, stderr=sys.stderr)
+  _call_if_outdated(
+      install_bower_deps,
+      os.path.join(web_dir, '.bower.installed'),
+      os.path.join(web_dir, 'bower.json'),
+      opts.force_install)
+
+  # Build requested apps.
+  apps = opts.apps
+  app_root = os.path.join(web_dir, 'apps')
+  if not apps:
+    # Get all apps with a gulpfile
+    apps = [app for app in os.listdir(app_root)
+            if os.path.isfile(os.path.join(app_root, app, 'gulpfile.js'))]
+
+  gulp = os.path.join(web_dir, 'node_modules', 'gulp', 'bin', 'gulp.js')
+  for app in apps:
     logging.info('Building app [%s] => [%s]', app, opts.build_dir)
-    subprocess.check_call(
-        ['gulp', '--out', opts.build_dir],
-        cwd=os.path.join(opts.source_root, 'web', 'apps', app))
+    subprocess.check_call([tools['node'], gulp, '--out', opts.build_dir],
+        cwd=os.path.join(app_root, app))
 
   return 0
 
