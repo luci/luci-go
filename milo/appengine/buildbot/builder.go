@@ -7,6 +7,7 @@ package buildbot
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"sort"
 	"strings"
@@ -15,8 +16,10 @@ import (
 	"github.com/luci/gae/service/datastore"
 
 	"github.com/luci/luci-go/common/clock"
-	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
+	"github.com/luci/luci-go/milo/appengine/settings"
+	"github.com/luci/luci-go/milo/common/miloerror"
 	"golang.org/x/net/context"
 )
 
@@ -62,7 +65,8 @@ func getBuildSummary(b *buildbotBuild) *resp.BuildSummary {
 	}
 }
 
-// getBuilds fetches all of the recent builds from the datastore.
+// getBuilds fetches all of the recent builds from the datastore.  Note that
+// getBuilds() does not perform ACL checks.
 func getBuilds(c context.Context, masterName, builderName string, finished bool) ([]*resp.BuildSummary, error) {
 	// TODO(hinoka): Builder specific structs.
 	result := []*resp.BuildSummary{}
@@ -89,7 +93,7 @@ func getBuilds(c context.Context, masterName, builderName string, finished bool)
 func getCurrentBuild(c context.Context, bMap buildMap, builder string, buildNum int) *resp.BuildSummary {
 	b, ok := bMap[builderRef{builder, buildNum}]
 	if !ok {
-		log.Warningf(c, "Could not find %s/%d in builder map:\n %s", builder, buildNum, bMap)
+		logging.Warningf(c, "Could not find %s/%d in builder map:\n %s", builder, buildNum, bMap)
 		return nil
 	}
 	return getBuildSummary(b)
@@ -110,6 +114,11 @@ func getCurrentBuilds(c context.Context, master *buildbotMaster, builderName str
 	return results
 }
 
+var errMasterNotFound = miloerror.Error{
+	Message: "Master not found",
+	Code:    http.StatusNotFound,
+}
+
 // builderImpl is the implementation for getting a milo builder page from buildbot.
 // This gets:
 // * Current Builds from querying the master json from the datastore.
@@ -118,8 +127,13 @@ func builderImpl(c context.Context, masterName, builderName string) (*resp.Build
 	result := &resp.Builder{}
 	master, internal, t, err := getMasterJSON(c, masterName)
 	if internal {
-		// TODO(hinoka): Implement ACL support and remove this.
-		return nil, fmt.Errorf("Internal masters are not yet supported.")
+		allowed, err := settings.IsAllowedInternal(c)
+		if err != nil {
+			return nil, err
+		}
+		if !allowed {
+			return nil, errMasterNotFound
+		}
 	}
 	if err != nil {
 		return nil, fmt.Errorf("Cannot find master %s\n%s", masterName, err.Error())
@@ -127,12 +141,12 @@ func builderImpl(c context.Context, masterName, builderName string) (*resp.Build
 	if clock.Now(c).Sub(t) > 2*time.Minute {
 		warning := fmt.Sprintf(
 			"WARNING: Master data is stale (last updated %s)", t)
-		log.Warningf(c, warning)
+		logging.Warningf(c, warning)
 		result.Warning = warning
 	}
 
 	s, _ := json.Marshal(master)
-	log.Debugf(c, "Master: %s", s)
+	logging.Debugf(c, "Master: %s", s)
 
 	_, ok := master.Builders[builderName]
 	if !ok {

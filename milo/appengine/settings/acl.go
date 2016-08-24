@@ -54,3 +54,9 @@ func IsAllowed(c context.Context, project string) (bool, error) {
 	}
 	return false, nil
 }
+
+// IsAllowedInternal is a shorthand for checking to see if the user is a reader
+// of a magic project named "buildbot-internal".
+func IsAllowedInternal(c context.Context) (bool, error) {
+	return IsAllowed(c, "buildbot-internal")
+}

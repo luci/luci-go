@@ -40,7 +40,7 @@ func buildbotTimesPending(start float64) []*float64 {
 	return []*float64{&start, nil}
 }
 
-func newCombinedPsBody(bs []buildbotBuild, m *buildbotMaster) io.ReadCloser {
+func newCombinedPsBody(bs []buildbotBuild, m *buildbotMaster, internal bool) io.ReadCloser {
 	bmsg := buildMasterMsg{
 		Master: m,
 		Builds: bs,
@@ -50,8 +50,12 @@ func newCombinedPsBody(bs []buildbotBuild, m *buildbotMaster) io.ReadCloser {
 	zw := zlib.NewWriter(&b)
 	zw.Write(bm)
 	zw.Close()
+	sub := "projects/luci-milo/subscriptions/buildbot-public"
+	if internal {
+		sub = "projects/luci-milo/subscriptions/buildbot-private"
+	}
 	msg := pubSubSubscription{
-		Subscription: "projects/luci-milo/subscriptions/buildbot-public",
+		Subscription: sub,
 		Message: pubSubMessage{
 			Data: base64.StdEncoding.EncodeToString(b.Bytes()),
 		},
@@ -88,6 +92,7 @@ func TestPubSub(t *testing.T) {
 				err = ds.Get(loadB)
 				So(err, ShouldBeNil)
 				So(loadB.Master, ShouldEqual, "Fake Master")
+				So(loadB.Internal, ShouldEqual, false)
 				So(loadB.Currentstep.(string), ShouldEqual, "this is a string")
 				So(loadB.Finished, ShouldEqual, true)
 			})
@@ -179,7 +184,7 @@ func TestPubSub(t *testing.T) {
 				Slaves:  slaves,
 			}
 			r := &http.Request{
-				Body: newCombinedPsBody([]buildbotBuild{b}, &ms),
+				Body: newCombinedPsBody([]buildbotBuild{b}, &ms, false),
 			}
 			p := httprouter.Params{}
 			PubSubHandler(&router.Context{
@@ -217,7 +222,7 @@ func TestPubSub(t *testing.T) {
 				ms.Project.Title = "some other title"
 				h = httptest.NewRecorder()
 				r := &http.Request{
-					Body: newCombinedPsBody([]buildbotBuild{b}, &ms)}
+					Body: newCombinedPsBody([]buildbotBuild{b}, &ms, false)}
 				p = httprouter.Params{}
 				PubSubHandler(&router.Context{
 					Context: c,
@@ -237,7 +242,7 @@ func TestPubSub(t *testing.T) {
 				b.Times = buildbotTimesFinished(123.0, 124.0)
 				h = httptest.NewRecorder()
 				r = &http.Request{
-					Body: newCombinedPsBody([]buildbotBuild{b}, &ms),
+					Body: newCombinedPsBody([]buildbotBuild{b}, &ms, false),
 				}
 				p = httprouter.Params{}
 				PubSubHandler(&router.Context{
@@ -260,7 +265,7 @@ func TestPubSub(t *testing.T) {
 					b.Times = buildbotTimesPending(123.0)
 					h = httptest.NewRecorder()
 					r = &http.Request{
-						Body: newCombinedPsBody([]buildbotBuild{b}, &ms),
+						Body: newCombinedPsBody([]buildbotBuild{b}, &ms, false),
 					}
 					p = httprouter.Params{}
 					PubSubHandler(&router.Context{
@@ -294,6 +299,63 @@ func TestPubSub(t *testing.T) {
 				Params:  p,
 			})
 			So(h.Code, ShouldEqual, 200)
+		})
+
+		Convey("Internal master + build pusbsub subscription", func() {
+			h := httptest.NewRecorder()
+			slaves := map[string]*buildbotSlave{}
+			ft := 1234.0
+			slaves["testslave"] = &buildbotSlave{
+				Name:      "testslave",
+				Connected: true,
+				Runningbuilds: []buildbotBuild{
+					{
+						Master:      "Fake Master",
+						Buildername: "Fake buildername",
+						Number:      2222,
+						Times:       []*float64{&ft, nil},
+					},
+				},
+			}
+			ms := buildbotMaster{
+				Name:    "fakename",
+				Project: buildbotProject{Title: "some title"},
+				Slaves:  slaves,
+			}
+			r := &http.Request{
+				Body: newCombinedPsBody([]buildbotBuild{b}, &ms, true),
+			}
+			p := httprouter.Params{}
+			PubSubHandler(&router.Context{
+				Context: c,
+				Writer:  h,
+				Request: r,
+				Params:  p,
+			})
+			So(h.Code, ShouldEqual, 200)
+			Convey("And stores correctly", func() {
+				loadB := &buildbotBuild{
+					Master:      "Fake Master",
+					Buildername: "Fake buildername",
+					Number:      1234,
+				}
+				err := ds.Get(loadB)
+				So(err, ShouldBeNil)
+				So(loadB.Master, ShouldEqual, "Fake Master")
+				So(loadB.Internal, ShouldEqual, true)
+				So(loadB.Currentstep.(string), ShouldEqual, "this is a string")
+				m, internal, t, err := getMasterJSON(c, "fakename")
+				So(err, ShouldBeNil)
+				So(internal, ShouldEqual, true)
+				So(t.Unix(), ShouldEqual, 981173106)
+				So(m.Name, ShouldEqual, "fakename")
+				So(m.Project.Title, ShouldEqual, "some title")
+				So(m.Slaves["testslave"].Name, ShouldEqual, "testslave")
+				So(len(m.Slaves["testslave"].Runningbuilds), ShouldEqual, 0)
+				So(len(m.Slaves["testslave"].RunningbuildsMap), ShouldEqual, 1)
+				So(m.Slaves["testslave"].RunningbuildsMap["Fake buildername"][0],
+					ShouldEqual, 2222)
+			})
 		})
 	})
 }

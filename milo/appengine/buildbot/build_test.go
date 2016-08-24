@@ -14,7 +14,9 @@ import (
 	"testing"
 
 	"github.com/luci/gae/impl/memory"
+	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/milo/common/miloerror"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -71,5 +73,21 @@ func TestBuild(t *testing.T) {
 				So(build, shouldMatchExpectationsFor, fname)
 			})
 		}
+
+		Convey(`Disallow anonomyous users from accessing internal builds`, func() {
+			ds := datastore.Get(c)
+			ds.Put(&buildbotBuild{
+				Master:      "fake",
+				Buildername: "fake",
+				Number:      1,
+				Internal:    true,
+			})
+			b, err := getBuild(c, "fake", "fake", "1")
+			So(b, ShouldBeNil)
+			So(err, ShouldResemble, miloerror.Error{
+				Message: "Cannot fetch project buildbot-internal:\ndatastore: no such entity",
+				Code:    500,
+			})
+		})
 	})
 }

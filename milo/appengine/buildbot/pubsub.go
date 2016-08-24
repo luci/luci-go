@@ -26,9 +26,10 @@ import (
 )
 
 var (
-	// subName is the name of the pubsub subscription that milo is expecting.
+	// publicSubName is the name of the pubsub subscription that milo is expecting.
 	// TODO(hinoka): This should be read from luci-config.
-	subName = "projects/luci-milo/subscriptions/buildbot-public"
+	publicSubName   = "projects/luci-milo/subscriptions/buildbot-public"
+	internalSubName = "projects/luci-milo/subscriptions/buildbot-private"
 
 	// Metrics
 	buildCounter = metric.NewCounter(
@@ -145,9 +146,16 @@ func PubSubHandler(ctx *router.Context) {
 		h.WriteHeader(200) // This is a hard failure, we don't want PubSub to retry.
 		return
 	}
-	if msg.Subscription != subName {
+	internal := true
+	switch msg.Subscription {
+	case publicSubName:
+		internal = false
+	case internalSubName:
+		// internal = true, but that's already set.
+	default:
 		log.Errorf(
-			c, "Subscription name %s does not match %s", msg.Subscription, subName)
+			c, "Subscription name %s does not match %s or %s",
+			msg.Subscription, publicSubName, internalSubName)
 		h.WriteHeader(200)
 		return
 	}
@@ -191,11 +199,12 @@ func PubSubHandler(ctx *router.Context) {
 			}
 			buildExists = true
 		}
-		// Also set the finished bit.
+		// Also set the finished and internal bit.
 		build.Finished = false
 		if len(build.Times) == 2 && build.Times[1] != nil {
 			build.Finished = true
 		}
+		build.Internal = internal
 		err = ds.Put(&build)
 		if err != nil {
 			switch err {
@@ -224,8 +233,7 @@ func PubSubHandler(ctx *router.Context) {
 
 	}
 	if master != nil {
-		// TODO(hinoka): Internal builds.
-		err = putDSMasterJSON(c, master, false)
+		err = putDSMasterJSON(c, master, internal)
 		if err != nil {
 			log.WithError(err).Errorf(
 				c, "Could not save master in datastore %s", err)

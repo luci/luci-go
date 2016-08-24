@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -18,80 +17,51 @@ import (
 	"time"
 
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/memcache"
-	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/milo/appengine/settings"
+	"github.com/luci/luci-go/milo/common/miloerror"
 	"golang.org/x/net/context"
 )
 
-func getURL(c context.Context, URL string) ([]byte, error) {
-	fmt.Fprintf(os.Stderr, "Fetching %s\n", URL)
-	tr, err := auth.GetRPCTransport(c, auth.NoAuth)
-	if err != nil {
-		return nil, err
-	}
-	client := http.Client{Transport: tr}
-	resp, err := client.Get(URL)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("Failed to fetch %s, status code %d", URL, resp.StatusCode)
-	}
-	defer resp.Body.Close()
-	return ioutil.ReadAll(resp.Body)
+var errBuildNotFound = miloerror.Error{
+	Message: "Build not found",
+	Code:    http.StatusNotFound,
 }
 
-// getBuild fetches a build from BuildBot.
+// getBuild fetches a buildbot build from the datastore and checks ACLs.
 func getBuild(c context.Context, master, builder, buildNum string) (*buildbotBuild, error) {
 	result := &buildbotBuild{
 		Master:      master,
 		Buildername: builder,
 	}
 	if num, err := strconv.Atoi(buildNum); err != nil {
-		panic(fmt.Errorf("%s does not look like a number", buildNum))
+		return nil, miloerror.Error{
+			Message: fmt.Sprintf("%s does not look like a number", buildNum),
+			Code:    http.StatusBadRequest,
+		}
 	} else {
 		result.Number = num
 	}
-	// Check memcache first.
-	mc := memcache.Get(c)
-	if item, err := mc.Get(result.getID()); err == nil {
-		log.Debugf(c, "Found in Memcache!")
-		json.Unmarshal(item.Value(), result)
-		return result, nil
-	}
-	// Then check local datastore.
 	ds := datastore.Get(c)
 	err := ds.Get(result)
-	if err == nil {
-		log.Debugf(c, "Found build in local cache!")
-		if result.Times[1] != nil {
-			bs, ierr := json.Marshal(result)
-			if ierr == nil {
-				item := mc.NewItem(result.getID()).SetValue(bs)
-				mc.Set(item)
-			}
-		}
-		return result, nil
-	}
-	log.Debugf(c, "Could not find log in local cache: %s", err.Error())
-	// Now check CBE.
-	cbeURL := fmt.Sprintf(
-		"https://chrome-build-extract.appspot.com/p/%s/builders/%s/builds/%s?json=1",
-		master, builder, buildNum)
-	if buf, err := getURL(c, cbeURL); err == nil {
-		return result, json.Unmarshal(buf, result)
-	}
-	// TODO(hinoka): Cache finished builds.
-	url := fmt.Sprintf(
-		"https://build.chromium.org/p/%s/json/builders/%s/builds/%s", master, builder, buildNum)
-	buf, err := getURL(c, url)
-	if err != nil {
+	switch {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, errBuildNotFound
+	case err != nil:
 		return nil, err
 	}
+	if result.Internal {
+		allowed, err := settings.IsAllowedInternal(c)
+		if err != nil {
+			return nil, err
+		}
+		if !allowed {
+			return nil, errBuildNotFound
+		}
+	}
 
-	return result, json.Unmarshal(buf, result)
+	return result, nil
 }
 
 // result2Status translates a buildbot result integer into a resp.Status.
@@ -152,21 +122,17 @@ func getBanner(c context.Context, b *buildbotBuild, m *buildbotMaster) *resp.Log
 	logos := &resp.LogoBanner{}
 	// Fetch the master info from datastore if not provided.
 	if m == nil {
-		m1, i, _, err := getMasterJSON(c, b.Master)
+		m1, _, _, err := getMasterJSON(c, b.Master)
 		m = m1
-		if i {
-			// TODO(hinoka): Support internal masters.
-			return nil
-		}
 		if err != nil {
-			log.Warningf(c, "Failed to fetch master information for banners on master %s", b.Master)
+			logging.Warningf(c, "Failed to fetch master information for banners on master %s", b.Master)
 			return nil
 		}
 	}
 
 	s, ok := m.Slaves[b.Slave]
 	if !ok {
-		log.Warningf(c, "Could not find slave %s in master %s", b.Slave, b.Master)
+		logging.Warningf(c, "Could not find slave %s in master %s", b.Slave, b.Master)
 		return nil
 	}
 	hostInfo := map[string]string{}
@@ -202,9 +168,9 @@ func getBanner(c context.Context, b *buildbotBuild, m *buildbotMaster) *resp.Log
 	if osLogo != nil {
 		logos.OS = append(logos.OS, *osLogo)
 	} else {
-		log.Warningf(c, "No OS info found.  Host: %s", s.Host)
+		logging.Warningf(c, "No OS info found.  Host: %s", s.Host)
 	}
-	log.Infof(c, "OS: %s/%s", os, version)
+	logging.Infof(c, "OS: %s/%s", os, version)
 	return logos
 }
 
@@ -290,11 +256,11 @@ func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 			}
 		}
 
-		// Now, link to the logs.
-		for _, log := range step.Logs {
+		// Now, link to the loggings.
+		for _, l := range step.Logs {
 			link := &resp.Link{
-				Label: log[0],
-				URL:   log[1],
+				Label: l[0],
+				URL:   l[1],
 			}
 			if link.Label == "stdio" {
 				bc.MainLink = link
@@ -449,20 +415,20 @@ func sourcestamp(c context.Context, b *buildbotBuild) *resp.SourceStamp {
 			if v, ok := value.(string); ok {
 				rietveld = v
 			} else {
-				log.Warningf(c, "Field rietveld is not a string: %#v", value)
+				logging.Warningf(c, "Field rietveld is not a string: %#v", value)
 			}
 		case "issue":
 			if v, ok := value.(float64); ok {
 				issue = int64(v)
 			} else {
-				log.Warningf(c, "Field issue is not a float: %#v", value)
+				logging.Warningf(c, "Field issue is not a float: %#v", value)
 			}
 
 		case "got_revision":
 			if v, ok := value.(string); ok {
 				ss.Revision = v
 			} else {
-				log.Warningf(c, "Field got_revision is not a string: %#v", value)
+				logging.Warningf(c, "Field got_revision is not a string: %#v", value)
 			}
 
 		}
@@ -475,7 +441,7 @@ func sourcestamp(c context.Context, b *buildbotBuild) *resp.SourceStamp {
 				URL:   fmt.Sprintf("%s/%d", rietveld, issue),
 			}
 		} else {
-			log.Warningf(c, "Found issue but not rietveld property.")
+			logging.Warningf(c, "Found issue but not rietveld property.")
 		}
 	}
 	return ss

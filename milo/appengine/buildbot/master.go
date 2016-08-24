@@ -13,8 +13,9 @@ import (
 	"time"
 
 	"github.com/luci/gae/service/datastore"
-	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
+	"github.com/luci/luci-go/milo/appengine/settings"
 
 	"golang.org/x/net/context"
 )
@@ -43,7 +44,7 @@ func getMasterJSON(c context.Context, name string) (
 	ds := datastore.Get(c)
 	err = ds.Get(&entry)
 	if err != nil {
-		log.WithError(err).Errorf(
+		logging.WithError(err).Errorf(
 			c, "Encountered error while fetching entry for %s:\n%s", name, err)
 		return
 	}
@@ -60,8 +61,6 @@ func GetAllBuilders(c context.Context) (*resp.Module, error) {
 	// Fetch all Master entries from datastore
 	ds := datastore.Get(c)
 	q := datastore.NewQuery("buildbotMasterEntry")
-	// TODO(hinoka): Support internal queries.
-	q = q.Eq("Internal", false)
 	// TODO(hinoka): Maybe don't look past like a month or so?
 	entries := []*buildbotMasterEntry{}
 	err := ds.GetAll(q, &entries)
@@ -72,14 +71,25 @@ func GetAllBuilders(c context.Context) (*resp.Module, error) {
 	// Add each builder from each master entry into the result.
 	// TODO(hinoka): FanInOut this?
 	for _, entry := range entries {
+		if entry.Internal {
+			// Bypass the master if it's an internal master and the user is not
+			// part of the buildbot-private project.
+			allowed, err := settings.IsAllowedInternal(c)
+			if err != nil {
+				logging.WithError(err).Errorf(c, "Could not process master %s", entry.Name)
+				return nil, err
+			}
+			if !allowed {
+				continue
+			}
+		}
 		master := &buildbotMaster{}
 		err = decodeMasterEntry(c, entry, master)
 		if err != nil {
-			log.WithError(err).Errorf(c, "Could not decode %s", entry.Name)
+			logging.WithError(err).Errorf(c, "Could not decode %s", entry.Name)
 			continue
 		}
 		ml := resp.MasterListing{Name: entry.Name}
-		// TODO(hinoka): Sort
 		// Sort the builder listing.
 		sb := make([]string, 0, len(master.Builders))
 		for bn := range master.Builders {
