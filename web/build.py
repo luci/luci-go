@@ -3,6 +3,15 @@
 # Use of this source code is governed under the Apache License, Version 2.0
 # that can be found in the LICENSE file.
 
+"""Manages web/ resource checkout and building.
+
+This script can be run in one of three modes:
+  - As "deploy-initialize.py", it will perform resource dependency checkouts
+    for "luci_deploy" and quit.
+  - As "deploy-build.py", it will build web apps to a "luci_deploy" directory.
+  - As "build.py", it is a user-facing tool to manually build web components.
+"""
+
 import argparse
 import logging
 import os
@@ -16,10 +25,6 @@ _LUCI_GO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # The default build output path.
 _WEB_BUILD_PATH = os.path.join(_LUCI_GO_ROOT, 'web')
-
-# When run as "build-deploy.py", we add two additional positional arguments as
-# expected by the deployment tool.
-_IS_DEPLOY = os.path.basename(sys.argv[0]) == 'build-deploy.py'
 
 
 def _get_tools():
@@ -75,13 +80,24 @@ def main(argv):
 
   # If we're running the deployment tool version of this script, these arguments
   # are required and positional. Otherwise, they are optional.
-  if _IS_DEPLOY:
+  script_name = os.path.basename(sys.argv[0])
+  install_only = False
+  if script_name == 'deploy-initialize.py':
+    # Run as a "luci_deploy" checkout initialization hook.
+    parser.add_argument('source_root',
+        help='Path to the source root.')
+    parser.add_argument('result_path',
+        help='(Unused) result path initialization script argument.')
+    install_only = True
+  elif script_name == 'deploy-build.py':
+    # Run as a "luci_deploy" build script.
     parser.add_argument('source_root',
         help='Path to the source root.')
     parser.add_argument('build_dir',
         help='Path to the output build directory. Apps will be written to a '
              '"dist" folder under this path.')
   else:
+    # User-facing script.
     parser.add_argument('--source-root', default=_LUCI_GO_ROOT,
         help='Path to the source root.')
     parser.add_argument('--build-dir', default=_WEB_BUILD_PATH,
@@ -118,6 +134,10 @@ def main(argv):
       os.path.join(web_dir, '.bower.installed'),
       os.path.join(web_dir, 'bower.json'),
       opts.force_install)
+
+  # If we're only performing installation, ignore the other arguments.
+  if install_only:
+    return 0
 
   # Build requested apps.
   apps = opts.apps
