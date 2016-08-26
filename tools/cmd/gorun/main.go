@@ -51,6 +51,7 @@ func mainImpl(args []string) (int, error) {
 
 	// Run the package.
 	cmd = exec.Command(exePath, args...)
+	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
