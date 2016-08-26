@@ -126,7 +126,9 @@
           <li class="verbosity-{{.Verbosity.String}} default">
             <div class="status-{{.Status}} result">
               <b>{{.Label}}</b>
-              <span style="float:right">( {{ .Duration | humanDuration }} )</span>
+              {{ if .Duration -}}
+                <span style="float:right">( {{ .Duration | humanDuration }} )</span>
+              {{- end }}
               <span>
                 {{ range .Text }}<div class="step-text">{{ . }}</div>{{ end }}
               </span>

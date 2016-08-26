@@ -94,6 +94,10 @@ func parseTimes(times []*float64) (started, ended time.Time, duration time.Durat
 	if len(times) != 2 {
 		panic(fmt.Errorf("Expected 2 floats for times, got %v", times))
 	}
+	if times[0] == nil {
+		// Some steps don't have timing info.  In that case, just return nils.
+		return
+	}
 	started = time.Unix(int64(*times[0]), int64(*times[0]*1e9)%1e9).UTC()
 	if times[1] != nil {
 		ended = time.Unix(int64(*times[1]), int64(*times[1]*1e9)%1e9).UTC()
@@ -269,7 +273,7 @@ func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 			}
 		}
 
-		// Figure out the times
+		// Figure out the times.
 		bc.Started, bc.Finished, bc.Duration = parseTimes(step.Times)
 
 		result = append(result, bc)
