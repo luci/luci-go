@@ -7,7 +7,6 @@ package swarming
 import (
 	"bytes"
 	"encoding/json"
-	"net/http"
 	"strings"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -21,7 +20,6 @@ import (
 	"github.com/luci/luci-go/common/sync/parallel"
 	sv1 "github.com/luci/luci-go/dm/api/distributor/swarming/v1"
 	"github.com/luci/luci-go/dm/appengine/distributor"
-	"github.com/luci/luci-go/server/auth"
 	"golang.org/x/net/context"
 )
 
@@ -85,7 +83,7 @@ type isoChunk struct {
 	file  *isolated.File
 }
 
-func pushIsolate(c context.Context, isolateHost string, chunks []isoChunk) error {
+func pushIsolate(c context.Context, isolateURL string, chunks []isoChunk) error {
 	dgsts := make([]*isolateservice.HandlersEndpointsV1Digest, len(chunks))
 	for i, chnk := range chunks {
 		dgsts[i] = &isolateservice.HandlersEndpointsV1Digest{
@@ -93,15 +91,10 @@ func pushIsolate(c context.Context, isolateHost string, chunks []isoChunk) error
 			IsIsolated: chnk.isIso}
 	}
 
-	anonTransport, err := auth.GetRPCTransport(c, auth.NoAuth)
-	if err != nil {
-		panic(err)
-	}
-	anonClient := &http.Client{Transport: anonTransport}
+	anonC, authC := httpClients(c)
 
 	isoClient := isolatedclient.New(
-		anonClient, httpClient(c), "https://"+isolateHost,
-		isolatedclient.DefaultNamespace, nil)
+		anonC, authC, isolateURL, isolatedclient.DefaultNamespace, nil)
 	states, err := isoClient.Contains(c, dgsts)
 	if err != nil {
 		err = errors.Annotate(err).
@@ -122,7 +115,7 @@ func pushIsolate(c context.Context, isolateHost string, chunks []isoChunk) error
 	})
 }
 
-func prepIsolate(c context.Context, isolateHost string, tsk *distributor.TaskDescription, params *sv1.Parameters) (*swarm.SwarmingRpcsFilesRef, error) {
+func prepIsolate(c context.Context, isolateURL string, tsk *distributor.TaskDescription, params *sv1.Parameters) (*swarm.SwarmingRpcsFilesRef, error) {
 	prevData := []byte("{}")
 	if tsk.PreviousResult() != nil {
 		prevData = []byte(tsk.PreviousResult().Object)
@@ -132,7 +125,7 @@ func prepIsolate(c context.Context, isolateHost string, tsk *distributor.TaskDes
 	descData, descFile := mkMsgFile(tsk.Payload())
 	isoData, isoFile := mkIsolated(c, params, prevFile, descFile, authFile)
 
-	err := pushIsolate(c, isolateHost, []isoChunk{
+	err := pushIsolate(c, isolateURL, []isoChunk{
 		{data: prevData, file: prevFile},
 		{data: authData, file: authFile},
 		{data: descData, file: descFile},
@@ -145,7 +138,7 @@ func prepIsolate(c context.Context, isolateHost string, tsk *distributor.TaskDes
 
 	return &swarm.SwarmingRpcsFilesRef{
 		Isolated:       string(isoFile.Digest),
-		Isolatedserver: "https://" + isolateHost,
+		Isolatedserver: isolateURL,
 		Namespace:      isolatedclient.DefaultNamespace,
 	}, nil
 }

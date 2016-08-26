@@ -66,8 +66,10 @@ message Parameters {
       // 0 or more cipd packages for the job.
       repeated CipdPackage packages = 2;
 
-      // Optional server to use for cipd packages. If you know you're using
-      // swarming's default server, you can omit this.
+      // Server to use for cipd packages. Required (though it may be specified
+      // by the quest's designated distributor config). This must be
+      // scheme://<hostname>, e.g. "https://example.appspot.com". The only
+      // supported schemes are http and https.
       string cipd_server = 3;
     }
     Inputs inputs = 1;

@@ -10,13 +10,13 @@ package swarmingV1;
 
 message Config {
   message Swarming {
-    string host = 1;
+    string url = 1;
   }
   Swarming swarming = 1;
 
   message Isolate {
     // The host of the isolate service, e.g. isolateserver.appspot.com.
-    string host = 1;
+    string url = 1;
 
     // The default assumed expiration period for execution results.
     google.protobuf.Duration expiration = 2;

@@ -157,8 +157,10 @@ type Parameters_Job_Inputs struct {
 	Isolated []*IsolatedRef `protobuf:"bytes,1,rep,name=isolated" json:"isolated,omitempty"`
 	// 0 or more cipd packages for the job.
 	Packages []*Parameters_Job_Inputs_CipdPackage `protobuf:"bytes,2,rep,name=packages" json:"packages,omitempty"`
-	// Optional server to use for cipd packages. If you know you're using
-	// swarming's default server, you can omit this.
+	// Server to use for cipd packages. Required (though it may be specified
+	// by the quest's designated distributor config). This must be
+	// scheme://<hostname>, e.g. "https://example.appspot.com". The only
+	// supported schemes are http and https.
 	CipdServer string `protobuf:"bytes,3,opt,name=cipd_server,json=cipdServer" json:"cipd_server,omitempty"`
 }
 

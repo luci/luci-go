@@ -54,22 +54,29 @@ func toSwarmMap(m map[string]string) []*swarm.SwarmingRpcsStringPair {
 	return ret
 }
 
-func httpClient(c context.Context) *http.Client {
+func httpClients(c context.Context) (anonC, authC *http.Client) {
 	rt, err := auth.GetRPCTransport(c, auth.AsSelf)
 	if err != nil {
 		// if we can't set up a transport, we're seriously hosed
 		panic(err)
 	}
-	return &http.Client{Transport: rt}
+	anonTransport, err := auth.GetRPCTransport(c, auth.NoAuth)
+	if err != nil {
+		panic(err)
+	}
+	anonC = &http.Client{Transport: anonTransport}
+	authC = &http.Client{Transport: rt}
+	return
 }
 
 func newSwarmClient(c context.Context, cfg *sv1.Config) *swarm.Service {
-	svc, err := swarm.New(httpClient(c))
+	_, authC := httpClients(c)
+	svc, err := swarm.New(authC)
 	if err != nil {
 		// can only happen with nil client
 		panic(err)
 	}
-	svc.BasePath = fmt.Sprintf("https://%s/_ah/api/swarming/v1/", cfg.Swarming.Host)
+	svc.BasePath = cfg.Swarming.Url + "/_ah/api/swarming/v1/"
 	return svc
 }
 
@@ -95,7 +102,7 @@ func (d *swarmingDist) Run(tsk *distributor.TaskDescription) (tok distributor.To
 	}
 
 	isoCtx, _ := context.WithTimeout(d, 30*time.Second)
-	iso, err := prepIsolate(isoCtx, d.sCfg.Isolate.Host, tsk, params)
+	iso, err := prepIsolate(isoCtx, d.sCfg.Isolate.Url, tsk, params)
 	if err != nil {
 		err = errors.Annotate(err).Reason("prepping Isolated").Err()
 		return
@@ -258,7 +265,7 @@ func (d *swarmingDist) GetStatus(tok distributor.Token) (*dm.Result, error) {
 }
 
 func (d *swarmingDist) InfoURL(tok distributor.Token) string {
-	return fmt.Sprintf("https://%s/user/task/%s", d.sCfg.Swarming.Host, tok)
+	return fmt.Sprintf("%s/user/task/%s", d.sCfg.Swarming.Url, tok)
 }
 
 func (d *swarmingDist) HandleNotification(notification *distributor.Notification) (*dm.Result, error) {
