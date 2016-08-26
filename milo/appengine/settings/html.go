@@ -14,7 +14,7 @@ import (
 	"github.com/luci/luci-go/server/templates"
 )
 
-// Settings - Containder for html methods for settings.
+// Settings - Container for html methods for settings.
 type Settings struct{}
 
 // GetTemplateName - Implements a Theme, template is constant.
@@ -39,4 +39,22 @@ func (s Settings) Render(c context.Context, r *http.Request, p httprouter.Params
 		"XsrfToken": token,
 	}
 	return args, nil
+}
+
+// ViewConfigs - Container for viewing the current set of luci-configs.
+type ViewConfigs struct{}
+
+func (s ViewConfigs) GetTemplateName(t Theme) string {
+	return "configs.html"
+}
+
+func (s ViewConfigs) Render(c context.Context, r *http.Request, p httprouter.Params) (*templates.Args, error) {
+	projects, err := GetAllProjects(c)
+	if err != nil {
+		return nil, err
+	}
+
+	return &templates.Args{
+		"Projects": projects,
+	}, nil
 }

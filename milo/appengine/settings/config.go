@@ -46,6 +46,7 @@ func update(c context.Context) error {
 	cfgName := info.Get(c).AppID() + ".cfg"
 	cfgs, err := config.GetProjectConfigs(c, cfgName, false)
 	if err != nil {
+		logging.WithError(err).Errorf(c, "Encountered error while getting project config for %s", cfgName)
 		return err
 	}
 	// A map of project ID to project.
@@ -59,6 +60,8 @@ func update(c context.Context) error {
 		proj := milocfg.Project{}
 		logging.Infof(c, "Prossing %s", name)
 		if err = proto.UnmarshalText(cfg.Content, &proj); err != nil {
+			logging.WithError(err).Errorf(
+				c, "Encountered error while processing %s.  Config:\n%s", name, cfg.Content)
 			return err
 		}
 		if dup, ok := projects[proj.ID]; ok {
@@ -100,6 +103,25 @@ func update(c context.Context) error {
 	ds.Delete(toDelete)
 
 	return nil
+}
+
+func GetAllProjects(c context.Context) ([]*milocfg.Project, error) {
+	q := datastore.NewQuery("Project")
+	q.Order("ID")
+	ds := datastore.Get(c)
+	ps := []*Project{}
+	err := ds.GetAll(q, &ps)
+	if err != nil {
+		return nil, err
+	}
+	results := make([]*milocfg.Project, len(ps))
+	for i, p := range ps {
+		results[i] = &milocfg.Project{}
+		if err := proto.Unmarshal(p.Data, results[i]); err != nil {
+			return nil, err
+		}
+	}
+	return results, nil
 }
 
 func GetProject(c context.Context, projName string) (*milocfg.Project, error) {

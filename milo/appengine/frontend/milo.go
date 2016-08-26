@@ -26,7 +26,9 @@ func init() {
 	r.GET("/", basemw, settings.Wrap(frontpage{}))
 
 	// Admin and cron endpoints.
-	r.POST("/admin/update", basemw, settings.UpdateHandler)
+	r.GET("/admin/update", basemw.Extend(gaemiddleware.RequireCron),
+		settings.UpdateHandler)
+	r.GET("/admin/configs", basemw, settings.Wrap(settings.ViewConfigs{}))
 
 	// Console
 	r.GET("/console/:project/:name", basemw, settings.Wrap(console.Console{}))
