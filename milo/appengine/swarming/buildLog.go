@@ -17,7 +17,10 @@ import (
 	"github.com/luci/luci-go/common/logging"
 )
 
-func swarmingBuildLogImpl(c context.Context, server, taskID, logname string) (string, error) {
+// swarmingBuildLogImpl is the implementation for getting a log name from
+// a swarming build via annotee.  It returns the full text of the specific log,
+// and whether or not it has been closed.
+func swarmingBuildLogImpl(c context.Context, server, taskID, logname string) (string, bool, error) {
 	mc := memcache.Get(c)
 	cached, err := mc.Get(path.Join("swarmingLog", server, taskID, logname))
 	switch {
@@ -28,7 +31,7 @@ func swarmingBuildLogImpl(c context.Context, server, taskID, logname string) (st
 
 	default:
 		logging.Debugf(c, "Cache hit for step log %s/%s/%s", server, taskID, logname)
-		return string(cached.Value()), nil
+		return string(cached.Value()), false, nil
 	}
 
 	var sc *swarming.Service
@@ -39,19 +42,19 @@ func swarmingBuildLogImpl(c context.Context, server, taskID, logname string) (st
 		var err error
 		sc, err = getSwarmingClient(c, server)
 		if err != nil {
-			return "", err
+			return "", false, err
 		}
 	}
 
 	output, err := getTaskOutput(sc, taskID)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 
 	// Decode the data using annotee.
 	s, err := streamsFromAnnotatedLog(c, output)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 
 	k := fmt.Sprintf("steps%s", logname)
@@ -62,7 +65,7 @@ func swarmingBuildLogImpl(c context.Context, server, taskID, logname string) (st
 			keys = append(keys, sk)
 		}
 		sort.Strings(keys)
-		return "", fmt.Errorf("stream %q not found; available streams: %q", k, keys)
+		return "", false, fmt.Errorf("stream %q not found; available streams: %q", k, keys)
 	}
 
 	if stream.Closed && !debug {
@@ -72,5 +75,5 @@ func swarmingBuildLogImpl(c context.Context, server, taskID, logname string) (st
 		}
 	}
 
-	return stream.Text, nil
+	return stream.Text, stream.Closed, nil
 }

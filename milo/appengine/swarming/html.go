@@ -59,13 +59,14 @@ func (l Log) Render(c context.Context, r *http.Request, p httprouter.Params) (*t
 		}
 	}
 
-	log, err := swarmingBuildLogImpl(c, getServer(r), id, logname)
+	log, closed, err := swarmingBuildLogImpl(c, getServer(r), id, logname)
 	if err != nil {
 		return nil, convertErr(err)
 	}
 
 	args := &templates.Args{
-		"Log": log,
+		"Log":    log,
+		"Closed": closed,
 	}
 	return args, nil
 }

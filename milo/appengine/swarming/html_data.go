@@ -62,7 +62,10 @@ func (l TestableLog) TestData() []settings.TestBundle {
 	return []settings.TestBundle{
 		{
 			Description: "Basic log",
-			Data:        templates.Args{"Log": "This is the log"},
+			Data: templates.Args{
+				"Log":    "This is the log",
+				"Closed": true,
+			},
 		},
 	}
 }
