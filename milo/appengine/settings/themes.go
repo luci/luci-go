@@ -20,6 +20,7 @@ import (
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/milo/common/miloerror"
+	"github.com/luci/luci-go/server/analytics"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
@@ -102,6 +103,7 @@ func GetTemplateBundles() []NamedBundle {
 						"LoginURL":    loginURL,
 						"LogoutURL":   logoutURL,
 						"CurrentTime": clock.Now(c),
+						"Analytics":   analytics.Snippet(c),
 					}, nil
 				},
 				FuncMap: funcMap,

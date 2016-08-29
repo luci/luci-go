@@ -79,9 +79,9 @@ func WithProd(c context.Context, req *http.Request) context.Context {
 	c = settings.Use(c, globalSettings)
 
 	// Fetch and apply configuration stored in the datastore.
-	settings := fetchCachedSettings(c)
-	c = logging.SetLevel(c, settings.LoggingLevel)
-	if !settings.DisableDSCache {
+	cachedSettings := fetchCachedSettings(c)
+	c = logging.SetLevel(c, cachedSettings.LoggingLevel)
+	if !cachedSettings.DisableDSCache {
 		c = dscache.AlwaysFilterRDS(c, nil)
 	}
 

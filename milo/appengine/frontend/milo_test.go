@@ -13,6 +13,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -21,6 +22,7 @@ import (
 	"github.com/luci/luci-go/milo/appengine/swarming"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
+	luciSettings "github.com/luci/luci-go/server/settings"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -83,6 +85,10 @@ func (m fakeOAuthMethod) LogoutURL(context.Context, string) (string, error) {
 	return "https://logout.url/", nil
 }
 
+type analyticsSettings struct {
+	AnalyticsID string `json:"analytics_id"`
+}
+
 func TestPages(t *testing.T) {
 	Convey("Testing basic rendering.", t, func() {
 		// Load all the bundles.
@@ -91,7 +97,9 @@ func TestPages(t *testing.T) {
 		c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
 		a := auth.Authenticator{fakeOAuthMethod{"some_client_id"}}
 		c = auth.SetAuthenticator(c, a)
-
+		c = luciSettings.Use(c, luciSettings.New(&luciSettings.MemoryStorage{Expiration: time.Second}))
+		err := luciSettings.Set(c, "analytics", &analyticsSettings{"UA-12345-01"}, "", "")
+		So(err, ShouldBeNil)
 		for _, nb := range settings.GetTemplateBundles() {
 			Convey(fmt.Sprintf("Testing theme %q", nb.Name), func() {
 				err := nb.Bundle.EnsureLoaded(c)
