@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -108,55 +107,12 @@ func parseTimes(times []*float64) (started, ended time.Time, duration time.Durat
 	return
 }
 
-// Regex's related to finding OS and platform information from a buildbot slave.
-// This relies on puppet putting in the right information inside the buildbot
-// slave's host file.
-var (
-	rSlaveOS        = regexp.MustCompile("os family: ([:^space:]*)")
-	rSlaveOSVersion = regexp.MustCompile("os version: ([:^space:]*)")
-)
-
-// getBanner fetches the banner information about the bot that the build
-// ran on.  This is best effort and:
-// * Will return an empty list of banners if the master is not found.
-// * May return incorrect data if the platform of the slave of the same name
-//   was changed recently, and this build was older than before the slave
-//   changed platforms.
-func getBanner(c context.Context, b *buildbotBuild, m *buildbotMaster) *resp.LogoBanner {
-	logos := &resp.LogoBanner{}
-	// Fetch the master info from datastore if not provided.
-	if m == nil {
-		m1, _, _, err := getMasterJSON(c, b.Master)
-		m = m1
-		if err != nil {
-			logging.Warningf(c, "Failed to fetch master information for banners on master %s", b.Master)
-			return nil
-		}
-	}
-
-	s, ok := m.Slaves[b.Slave]
-	if !ok {
-		logging.Warningf(c, "Could not find slave %s in master %s", b.Slave, b.Master)
-		return nil
-	}
-	hostInfo := map[string]string{}
-	for _, v := range strings.Split(s.Host, "\n") {
-		if info := strings.SplitN(v, ":", 2); len(info) == 2 {
-			hostInfo[info[0]] = strings.TrimSpace(info[1])
-		}
-	}
-
-	// Extract OS and OS Family
-	var os, version string
-	if v, ok := hostInfo["os family"]; ok {
-		os = v
-	}
-	if v, ok := hostInfo["os version"]; ok {
-		version = v
-	}
+// getBanner parses the OS information from the build and maybe returns a banner.
+func getBanner(c context.Context, b *buildbotBuild) *resp.LogoBanner {
+	logging.Infof(c, "OS: %s/%s", b.OSFamily, b.OSVersion)
 	osLogo := func() *resp.Logo {
 		result := &resp.Logo{}
-		switch os {
+		switch b.OSFamily {
 		case "windows":
 			result.LogoBase = resp.Windows
 		case "Darwin":
@@ -166,16 +122,16 @@ func getBanner(c context.Context, b *buildbotBuild, m *buildbotMaster) *resp.Log
 		default:
 			return nil
 		}
-		result.Subtitle = version
+		result.Subtitle = b.OSVersion
 		return result
 	}()
 	if osLogo != nil {
-		logos.OS = append(logos.OS, *osLogo)
-	} else {
-		logging.Warningf(c, "No OS info found.  Host: %s", s.Host)
+		return &resp.LogoBanner{
+			OS: []resp.Logo{*osLogo},
+		}
 	}
-	logging.Infof(c, "OS: %s/%s", os, version)
-	return logos
+	logging.Warningf(c, "No OS info found.")
+	return nil
 }
 
 // summary Extract the top level summary from a buildbot build as a
@@ -214,7 +170,7 @@ func summary(c context.Context, b *buildbotBuild) resp.BuildComponent {
 	}
 
 	// Do a best effort lookup for the bot information to fill in OS/Platform info.
-	banner := getBanner(c, b, nil)
+	banner := getBanner(c, b)
 
 	sum := resp.BuildComponent{
 		ParentLabel: parent,

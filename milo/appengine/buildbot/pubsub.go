@@ -10,12 +10,13 @@ import (
 	"compress/zlib"
 	"encoding/base64"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/iotools"
-	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/router"
 
 	"golang.org/x/net/context"
@@ -89,8 +90,8 @@ func putDSMasterJSON(
 	}
 	gsw.Close()
 	entry.Data = gzbs.Bytes()
-	log.Debugf(c, "Length of json data: %d", cw.Count)
-	log.Debugf(c, "Length of gzipped data: %d", len(entry.Data))
+	logging.Debugf(c, "Length of json data: %d", cw.Count)
+	logging.Debugf(c, "Length of gzipped data: %d", len(entry.Data))
 	return datastore.Get(c).Put(&entry)
 }
 
@@ -108,13 +109,13 @@ func unmarshal(
 	}
 	reader, err := zlib.NewReader(bytes.NewReader(msg))
 	if err != nil {
-		log.WithError(err).Errorf(c, "gzip decompression error")
+		logging.WithError(err).Errorf(c, "gzip decompression error")
 		return nil, nil, err
 	}
 	defer reader.Close()
 	d := json.NewDecoder(reader)
 	if err = d.Decode(&bm); err != nil {
-		log.WithError(err).Errorf(c, "could not unmarshal message")
+		logging.WithError(err).Errorf(c, "could not unmarshal message")
 		return nil, nil, err
 	}
 	// Extract the builds out of master and append it onto builds.
@@ -133,6 +134,54 @@ func unmarshal(
 	return bm.Builds, bm.Master, nil
 }
 
+// getOSInfo fetches the os family and version of hte build from the
+// master json on a best-effort basis.
+func getOSInfo(c context.Context, b *buildbotBuild, m *buildbotMaster) (
+	family, version string) {
+	// Fetch the master info from datastore if not provided.
+	if m == nil {
+		logging.Infof(c, "Fetching info for master %s", b.Master)
+		entry := buildbotMasterEntry{Name: b.Master}
+		ds := datastore.Get(c)
+		err := ds.Get(&entry)
+		if err != nil {
+			logging.WithError(err).Errorf(
+				c, "Encountered error while fetching entry for %s", b.Master)
+			return
+		}
+		err = decodeMasterEntry(c, &entry, m)
+		if err != nil {
+			logging.WithError(err).Warningf(
+				c, "Failed to decode master information for OS info on master %s", b.Master)
+			return
+		}
+		if entry.Internal && !b.Internal {
+			logging.Errorf(c, "Build references an internal master, but build is not internal.")
+			return
+		}
+	}
+
+	s, ok := m.Slaves[b.Slave]
+	if !ok {
+		logging.Warningf(c, "Could not find slave %s in master %s", b.Slave, b.Master)
+		return
+	}
+	hostInfo := map[string]string{}
+	for _, v := range strings.Split(s.Host, "\n") {
+		if info := strings.SplitN(v, ":", 2); len(info) == 2 {
+			hostInfo[info[0]] = strings.TrimSpace(info[1])
+		}
+	}
+	// Extract OS and OS Family
+	if v, ok := hostInfo["os family"]; ok {
+		family = v
+	}
+	if v, ok := hostInfo["os version"]; ok {
+		version = v
+	}
+	return
+}
+
 // PubSubHandler is a webhook that stores the builds coming in from pubsub.
 func PubSubHandler(ctx *router.Context) {
 	c, h, r := ctx.Context, ctx.Writer, ctx.Request
@@ -141,7 +190,7 @@ func PubSubHandler(ctx *router.Context) {
 	defer r.Body.Close()
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&msg); err != nil {
-		log.WithError(err).Errorf(
+		logging.WithError(err).Errorf(
 			c, "Could not decode message.  %s", err)
 		h.WriteHeader(200) // This is a hard failure, we don't want PubSub to retry.
 		return
@@ -153,7 +202,7 @@ func PubSubHandler(ctx *router.Context) {
 	case internalSubName:
 		// internal = true, but that's already set.
 	default:
-		log.Errorf(
+		logging.Errorf(
 			c, "Subscription name %s does not match %s or %s",
 			msg.Subscription, publicSubName, internalSubName)
 		h.WriteHeader(200)
@@ -161,24 +210,26 @@ func PubSubHandler(ctx *router.Context) {
 	}
 	bbMsg, err := msg.GetData()
 	if err != nil {
-		log.WithError(err).Errorf(c, "Could not base64 decode message %s", err)
+		logging.WithError(err).Errorf(c, "Could not base64 decode message %s", err)
 		h.WriteHeader(200)
 		return
 	}
 	builds, master, err := unmarshal(c, bbMsg)
 	if err != nil {
-		log.WithError(err).Errorf(c, "Could not unmarshal message %s", err)
+		logging.WithError(err).Errorf(c, "Could not unmarshal message %s", err)
 		h.WriteHeader(200)
 		return
 	}
-	log.Infof(c, "There are %d builds and master %s", len(builds), master.Name)
+	logging.Infof(c, "There are %d builds and master %s", len(builds), master.Name)
 	ds := datastore.Get(c)
+	// This is used to cache the master used for extracting OS information.
+	cachedMaster := buildbotMaster{}
 	// Do not use PutMulti because we might hit the 1MB limit.
 	for _, build := range builds {
-		log.Debugf(
+		logging.Debugf(
 			c, "Checking for build %s/%s/%d", build.Master, build.Buildername, build.Number)
 		if build.Master == "" {
-			log.Errorf(c, "Invalid message, missing master name")
+			logging.Errorf(c, "Invalid message, missing master name")
 			h.WriteHeader(200)
 			return
 		}
@@ -193,7 +244,7 @@ func PubSubHandler(ctx *router.Context) {
 				// Never replace a completed build.
 				buildCounter.Add(
 					c, 1, false, build.Master, build.Buildername, false, "Rejected")
-				log.Debugf(
+				logging.Debugf(
 					c, "Found build %s/%s/%d and it's finished, skipping", build.Master, build.Buildername, build.Number)
 				continue
 			}
@@ -205,22 +256,25 @@ func PubSubHandler(ctx *router.Context) {
 			build.Finished = true
 		}
 		build.Internal = internal
+		// Try to get the OS information on a best-effort basis.  This assumes that all
+		// builds come from one master.
+		build.OSFamily, build.OSVersion = getOSInfo(c, &build, &cachedMaster)
 		err = ds.Put(&build)
 		if err != nil {
 			switch err {
 			case errTooBig:
 				// This will never work, we don't want PubSub to retry.
-				log.WithError(err).Errorf(
+				logging.WithError(err).Errorf(
 					c, "Could not save build to datastore, failing permanently")
 				h.WriteHeader(200)
 			default:
 				// This is transient, we do want PubSub to retry.
-				log.WithError(err).Errorf(c, "Could not save build in datastore")
+				logging.WithError(err).Errorf(c, "Could not save build in datastore")
 				h.WriteHeader(500)
 			}
 			return
 		}
-		log.Debugf(
+		logging.Debugf(
 			c, "Saved build %s/%s/%d, it is %s",
 			build.Master, build.Buildername, build.Number, build.Finished)
 		if buildExists {
@@ -235,7 +289,7 @@ func PubSubHandler(ctx *router.Context) {
 	if master != nil {
 		err = putDSMasterJSON(c, master, internal)
 		if err != nil {
-			log.WithError(err).Errorf(
+			logging.WithError(err).Errorf(
 				c, "Could not save master in datastore %s", err)
 			// This is transient, we do want PubSub to retry.
 			h.WriteHeader(500)

@@ -87,6 +87,13 @@ type buildbotBuild struct {
 	// This one is computed by Milo for indexing purposes.  It does so by
 	// checking to see if times[1] is null or not.
 	Finished bool `json:"finished"`
+	// OS is a string representation of the OS the build ran on.  This is
+	// derived best-effort from the slave information in the master JSON.
+	// This information is injected into the buildbot builds via puppet, and
+	// comes as Family + Version.  Family is (windows, Darwin, Debian), while
+	// Version is the version of the OS, such as (XP, 7, 10) for windows.
+	OSFamily  string `json:"osFamily"`
+	OSVersion string `json:"osVersion"`
 }
 
 func (b *buildbotBuild) toStatus() resp.Status {
