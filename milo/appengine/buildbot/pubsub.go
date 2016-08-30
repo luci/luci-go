@@ -139,7 +139,7 @@ func unmarshal(
 func getOSInfo(c context.Context, b *buildbotBuild, m *buildbotMaster) (
 	family, version string) {
 	// Fetch the master info from datastore if not provided.
-	if m == nil {
+	if m.Name == "" {
 		logging.Infof(c, "Fetching info for master %s", b.Master)
 		entry := buildbotMasterEntry{Name: b.Master}
 		ds := datastore.Get(c)
