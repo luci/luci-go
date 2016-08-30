@@ -13,6 +13,17 @@ that can be found in the LICENSE file. -->
 <body class="interface">
   <header>
     Luci
+    <div>
+      {{ if .IsAnonymous }}
+        <a href="{{.LoginURL}}">login</a>
+      {{ else }}
+        {{ if .User.Picture }}
+          <img class="account-picture" src="{{.User.Picture}}">
+        {{ end }}
+        {{ .User.Email }} |
+        <a href="{{.LogoutURL}}">logout</a>
+      {{ end }}
+    </div>
   </header>
   <hr>
   {{template "body" .}}

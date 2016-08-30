@@ -157,7 +157,7 @@ func Base() router.MiddlewareChain {
 		server.CookieAuth,
 		&server.InboundAppIDAuthMethod{},
 	}
-	m := gaemiddleware.BaseProd().Extend(auth.Use(methods))
+	m := gaemiddleware.BaseProd().Extend(auth.Use(methods), auth.Authenticate)
 	for _, nb := range GetTemplateBundles() {
 		m = m.Extend(withNamedBundle(nb))
 	}

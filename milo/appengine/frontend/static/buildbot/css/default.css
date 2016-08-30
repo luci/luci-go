@@ -271,6 +271,13 @@ tr:nth-child(even) td.status-Warning{
   border-color: #C29D46;
 }
 
+.account-picture {
+  border-radius: 6px;
+  width: 25px;
+  height: 25px;
+  vertical-align: middle;
+}
+
 .legend {
   border-radius: 5px !important;
   -webkit-border-radius: 5px !important;
