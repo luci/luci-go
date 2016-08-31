@@ -135,8 +135,11 @@ func builderImpl(c context.Context, masterName, builderName string) (*resp.Build
 			return nil, errMasterNotFound
 		}
 	}
-	if err != nil {
-		return nil, fmt.Errorf("Cannot find master %s\n%s", masterName, err.Error())
+	switch {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, errMasterNotFound
+	case err != nil:
+		return nil, err
 	}
 	if clock.Now(c).Sub(t) > 2*time.Minute {
 		warning := fmt.Sprintf(
