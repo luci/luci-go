@@ -10,6 +10,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/types"
@@ -101,9 +102,14 @@ var (
 
 )
 
-// UpdatePresenceMetrics sets the presence/up metric.
-func UpdatePresenceMetrics(ctx context.Context) {
-	presenceMetric.Set(ctx, true)
+func init() {
+	registerCallbacks(context.Background())
+}
+
+func registerCallbacks(ctx context.Context) {
+	tsmon.RegisterCallbackIn(ctx, func(ctx context.Context) {
+		presenceMetric.Set(ctx, true)
+	})
 }
 
 const (

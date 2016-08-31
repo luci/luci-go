@@ -8,6 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luci/luci-go/common/tsmon"
+	"golang.org/x/net/context"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -18,15 +21,15 @@ func TestStandardMetrics(t *testing.T) {
 	dur := time.Duration(durMillis * float64(time.Millisecond))
 
 	Convey("UpdatePresenceMetrics updates presenceMetric", t, func() {
-		c := makeContext() // Defined in metrics_test.go
-		v, err := presenceMetric.Get(c)
-		So(v, ShouldEqual, false)
-		So(err, ShouldBeNil)
+		c, m := tsmon.WithDummyInMemory(context.Background())
+		registerCallbacks(c)
 
-		UpdatePresenceMetrics(c)
-		v, err = presenceMetric.Get(c)
-		So(v, ShouldEqual, true)
-		So(err, ShouldBeNil)
+		So(tsmon.Flush(c), ShouldBeNil)
+
+		So(len(m.Cells), ShouldEqual, 1)
+		So(len(m.Cells[0]), ShouldEqual, 1)
+		So(m.Cells[0][0].Name, ShouldEqual, "presence/up")
+		So(m.Cells[0][0].Value, ShouldEqual, true)
 	})
 
 	Convey("UpdateHTTPMetrics updates client metrics", t, func() {

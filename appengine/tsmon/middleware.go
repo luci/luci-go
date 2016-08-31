@@ -99,7 +99,6 @@ func (s *State) Middleware(c *router.Context, next router.Handler) {
 		c.Writer = nrw
 		defer func() {
 			dur := clock.Now(ctx).Sub(started)
-			metric.UpdatePresenceMetrics(ctx)
 			metric.UpdateServerMetrics(ctx, "/", nrw.Status(), dur,
 				contentLength, nrw.Size(), userAgent[0])
 		}()
