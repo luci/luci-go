@@ -58,11 +58,11 @@
         <td>{{ .ExecutionTime.Finished | localTime "" }}</td>
         <td class="revision">{{ .Revision }}</td>
         {{ if eq .Status.String "Success" }}
-          <td class="success">Success</td>
+          <td class="status-Success">Success</td>
         {{ else if eq .Status.String "Failure" }}
-          <td class="failure">Failed</td>
+          <td class="status-Failure">Failed</td>
         {{ else if eq .Status.String "InfraFailure" }}
-          <td class="exception">Infra Failure</td>
+          <td class="status-Exception">Infra Failure</td>
         {{ else }}
           <td> {{ .Status.String }} </td>
         {{ end }}
