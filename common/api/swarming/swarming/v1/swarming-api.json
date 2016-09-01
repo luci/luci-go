@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"zRMgE0l9nVDW4S28VYYcYQF9UW4/stcRi2opcnMI_33ybfewv4rTtu4\"",
+ "etag": "\"zRMgE0l9nVDW4S28VYYcYQF9UW4/zKy3Yx0Xiphpk3KPq0jNrz_RoDQ\"",
  "discoveryVersion": "v1",
  "id": "swarming:v1",
  "name": "swarming",
@@ -252,6 +252,24 @@
     }
    }
   },
+  "SwarmingRpcsBotsDimensions": {
+   "id": "SwarmingRpcsBotsDimensions",
+   "type": "object",
+   "description": "Returns all the dimensions and dimension possibilities in the fleet.",
+   "properties": {
+    "bots_dimensions": {
+     "type": "array",
+     "description": "Represents a mapping of string to list of strings.",
+     "items": {
+      "$ref": "SwarmingRpcsStringListPair"
+     }
+    },
+    "ts": {
+     "type": "string",
+     "format": "date-time"
+    }
+   }
+  },
   "SwarmingRpcsCancelResponse": {
    "id": "SwarmingRpcsCancelResponse",
    "type": "object",
@@ -299,6 +317,49 @@
     },
     "version": {
      "type": "string"
+    }
+   }
+  },
+  "SwarmingRpcsCipdPins": {
+   "id": "SwarmingRpcsCipdPins",
+   "type": "object",
+   "description": "Defines pinned CIPD packages that were installed during the task.",
+   "properties": {
+    "client_package": {
+     "$ref": "SwarmingRpcsCipdPackage",
+     "description": "A CIPD package to install in $CIPD_PATH and $PATH before task execution."
+    },
+    "packages": {
+     "type": "array",
+     "description": "A CIPD package to install in $CIPD_PATH and $PATH before task execution.",
+     "items": {
+      "$ref": "SwarmingRpcsCipdPackage"
+     }
+    }
+   }
+  },
+  "SwarmingRpcsClientPermissions": {
+   "id": "SwarmingRpcsClientPermissions",
+   "type": "object",
+   "description": "Reports the client's permissions.",
+   "properties": {
+    "cancel_task": {
+     "type": "boolean"
+    },
+    "delete_bot": {
+     "type": "boolean"
+    },
+    "get_bootstrap_token": {
+     "type": "boolean"
+    },
+    "get_configs": {
+     "type": "boolean"
+    },
+    "put_configs": {
+     "type": "boolean"
+    },
+    "terminate_bot": {
+     "type": "boolean"
     }
    }
   },
@@ -684,6 +745,10 @@
       "type": "string"
      }
     },
+    "cipd_pins": {
+     "$ref": "SwarmingRpcsCipdPins",
+     "description": "Defines pinned CIPD packages that were installed during the task."
+    },
     "completed_ts": {
      "type": "string",
      "format": "date-time"
@@ -796,6 +861,24 @@
      "format": "int64"
     },
     "now": {
+     "type": "string",
+     "format": "date-time"
+    }
+   }
+  },
+  "SwarmingRpcsTasksTags": {
+   "id": "SwarmingRpcsTasksTags",
+   "type": "object",
+   "description": "Returns all the tags and tag possibilities in the fleet.",
+   "properties": {
+    "tasks_tags": {
+     "type": "array",
+     "description": "Represents a mapping of string to list of strings.",
+     "items": {
+      "$ref": "SwarmingRpcsStringListPair"
+     }
+    },
+    "ts": {
      "type": "string",
      "format": "date-time"
     }
@@ -944,15 +1027,57 @@
        "repeated": true,
        "location": "query"
       },
+      "is_dead": {
+       "type": "string",
+       "default": "NONE",
+       "enum": [
+        "FALSE",
+        "NONE",
+        "TRUE"
+       ],
+       "enumDescriptions": [
+        "",
+        "",
+        ""
+       ],
+       "location": "query"
+      },
       "limit": {
        "type": "string",
        "default": "200",
        "format": "int64",
        "location": "query"
+      },
+      "quarantined": {
+       "type": "string",
+       "default": "NONE",
+       "enum": [
+        "FALSE",
+        "NONE",
+        "TRUE"
+       ],
+       "enumDescriptions": [
+        "",
+        "",
+        ""
+       ],
+       "location": "query"
       }
      },
      "response": {
       "$ref": "SwarmingRpcsBotsCount"
+     },
+     "scopes": [
+      "https://www.googleapis.com/auth/userinfo.email"
+     ]
+    },
+    "dimensions": {
+     "id": "swarming.bots.dimensions",
+     "path": "bots/dimensions",
+     "httpMethod": "GET",
+     "description": "Returns the cached set of dimensions currently in use in the fleet.",
+     "response": {
+      "$ref": "SwarmingRpcsBotsDimensions"
      },
      "scopes": [
       "https://www.googleapis.com/auth/userinfo.email"
@@ -973,10 +1098,40 @@
        "repeated": true,
        "location": "query"
       },
+      "is_dead": {
+       "type": "string",
+       "default": "NONE",
+       "enum": [
+        "FALSE",
+        "NONE",
+        "TRUE"
+       ],
+       "enumDescriptions": [
+        "",
+        "",
+        ""
+       ],
+       "location": "query"
+      },
       "limit": {
        "type": "string",
        "default": "200",
        "format": "int64",
+       "location": "query"
+      },
+      "quarantined": {
+       "type": "string",
+       "default": "NONE",
+       "enum": [
+        "FALSE",
+        "NONE",
+        "TRUE"
+       ],
+       "enumDescriptions": [
+        "",
+        "",
+        ""
+       ],
        "location": "query"
       }
      },
@@ -1036,6 +1191,18 @@
      },
      "response": {
       "$ref": "SwarmingRpcsFileContent"
+     },
+     "scopes": [
+      "https://www.googleapis.com/auth/userinfo.email"
+     ]
+    },
+    "permissions": {
+     "id": "swarming.server.permissions",
+     "path": "server/permissions",
+     "httpMethod": "GET",
+     "description": "Returns the caller's permissions.",
+     "response": {
+      "$ref": "SwarmingRpcsClientPermissions"
      },
      "scopes": [
       "https://www.googleapis.com/auth/userinfo.email"
@@ -1432,6 +1599,18 @@
      },
      "response": {
       "$ref": "SwarmingRpcsTaskRequests"
+     },
+     "scopes": [
+      "https://www.googleapis.com/auth/userinfo.email"
+     ]
+    },
+    "tags": {
+     "id": "swarming.tasks.tags",
+     "path": "tasks/tags",
+     "httpMethod": "GET",
+     "description": "Returns the cached set of tags currently seen in the fleet.",
+     "response": {
+      "$ref": "SwarmingRpcsTasksTags"
      },
      "scopes": [
       "https://www.googleapis.com/auth/userinfo.email"

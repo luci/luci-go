@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"zRMgE0l9nVDW4S28VYYcYQF9UW4/E7QQUalQIJQJjc5yzmR6yz7TIXs\"",
+ "etag": "\"zRMgE0l9nVDW4S28VYYcYQF9UW4/IHNP3IULwJM7l0IhZNZOx7yO46U\"",
  "discoveryVersion": "v1",
  "id": "buildbucket:v1",
  "name": "buildbucket",
@@ -324,6 +324,12 @@
      "type": "string",
      "format": "int64"
     },
+    "new_tags": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
     "result_details_json": {
      "type": "string"
     },
@@ -566,6 +572,12 @@
     "lease_key": {
      "type": "string",
      "format": "int64"
+    },
+    "new_tags": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
     },
     "result_details_json": {
      "type": "string"

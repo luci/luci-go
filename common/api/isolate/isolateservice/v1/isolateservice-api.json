@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"u_zXkMELIlX4ktyNbM2XKD4vK8E/fkyiMP6VyB7dG98Osugsbs5CO20\"",
+ "etag": "\"zRMgE0l9nVDW4S28VYYcYQF9UW4/y_dYywoO0IA_HqVUrN6Zf3Kq9xw\"",
  "discoveryVersion": "v1",
  "id": "isolateservice:v1",
  "name": "isolateservice",
@@ -11,9 +11,9 @@
   "x32": "http://www.google.com/images/icons/product/search-32.gif"
  },
  "protocol": "rest",
- "baseUrl": "http://localhost:8080/_ah/api/isolateservice/v1/",
+ "baseUrl": "https://isolateserver.appspot.com/_ah/api/isolateservice/v1/",
  "basePath": "/_ah/api/isolateservice/v1/",
- "rootUrl": "http://localhost:8080/_ah/api/",
+ "rootUrl": "https://isolateserver.appspot.com/_ah/api/",
  "servicePath": "isolateservice/v1/",
  "batchPath": "batch",
  "parameters": {

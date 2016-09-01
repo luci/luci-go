@@ -8,6 +8,7 @@ package isolatedfake
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -256,7 +257,12 @@ func (server *isolatedFake) storeInline(r *http.Request) interface{} {
 		server.Fail(err)
 		return map[string]string{"err": err.Error()}
 	}
-	raw, err := ioutil.ReadAll(isolated.GetDecompressor(bytes.NewReader([]byte(data.Content))))
+	blob, err := base64.StdEncoding.DecodeString(data.Content)
+	if err != nil {
+		server.Fail(err)
+		return map[string]string{"err": err.Error()}
+	}
+	raw, err := ioutil.ReadAll(isolated.GetDecompressor(bytes.NewReader(blob)))
 	if err != nil {
 		server.Fail(err)
 		return map[string]string{"err": err.Error()}

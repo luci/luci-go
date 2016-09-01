@@ -6,6 +6,7 @@ package isolatedclient
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -194,7 +195,10 @@ func (i *Client) doPushDB(c context.Context, state *PushState, reader io.Reader)
 	if err := compressor.Close(); err != nil {
 		return err
 	}
-	in := &isolateservice.HandlersEndpointsV1StorageRequest{UploadTicket: state.status.UploadTicket, Content: buf.Bytes()}
+	in := &isolateservice.HandlersEndpointsV1StorageRequest{
+		UploadTicket: state.status.UploadTicket,
+		Content:      base64.StdEncoding.EncodeToString(buf.Bytes()),
+	}
 	return i.postJSON(c, "/api/isolateservice/v1/store_inline", nil, in, nil)
 }
 
