@@ -28,7 +28,7 @@ func TestACL(t *testing.T) {
 
 		Convey("Set up projects", func() {
 			c = lucicfg.SetImplementation(c, memcfg.New(aclConfgs))
-			err := update(c)
+			err := Update(c)
 			So(err, ShouldBeNil)
 
 			Convey("Anon wants to...", func() {

@@ -7,7 +7,13 @@ package frontend
 import (
 	"net/http"
 
+	"golang.org/x/net/context"
+
+	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
+	"github.com/luci/luci-go/grpc/discovery"
+	"github.com/luci/luci-go/grpc/prpc"
+	milo "github.com/luci/luci-go/milo/api/proto"
 	"github.com/luci/luci-go/milo/appengine/buildbot"
 	"github.com/luci/luci-go/milo/appengine/buildbucket"
 	"github.com/luci/luci-go/milo/appengine/console"
@@ -16,6 +22,10 @@ import (
 	"github.com/luci/luci-go/milo/appengine/swarming"
 	"github.com/luci/luci-go/server/router"
 )
+
+func emptyPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
+	return c, nil
+}
 
 // Where it all begins!!!
 func init() {
@@ -58,5 +68,14 @@ func init() {
 	// PubSub subscription endpoints.
 	r.POST("/pubsub/buildbot", basemw, buildbot.PubSubHandler)
 
-	http.Handle("/", r)
+	// pRPC style endpoints.
+	var api prpc.Server
+	milo.RegisterBuildbotServer(&api, &milo.DecoratedBuildbot{
+		Service: &buildbot.BuildbotService{},
+		Prelude: emptyPrelude,
+	})
+	discovery.Enable(&api)
+	api.InstallHandlers(r, gaemiddleware.BaseProd())
+
+	http.DefaultServeMux.Handle("/", r)
 }

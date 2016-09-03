@@ -30,7 +30,7 @@ type Project struct {
 
 func UpdateHandler(ctx *router.Context) {
 	c, h := ctx.Context, ctx.Writer
-	err := update(c)
+	err := Update(c)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Update Handler encountered error")
 		h.WriteHeader(500)
@@ -42,7 +42,7 @@ func UpdateHandler(ctx *router.Context) {
 // Update internal configuration based off luci-cfg.
 // update updates Milo's configuration based off luci config.  This includes
 // scanning through all project and extract all console configs.
-func update(c context.Context) error {
+func Update(c context.Context) error {
 	cfgName := info.Get(c).AppID() + ".cfg"
 	cfgs, err := config.GetProjectConfigs(c, cfgName, false)
 	if err != nil {

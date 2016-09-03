@@ -9,6 +9,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"sort"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/settings"
+	"github.com/luci/luci-go/milo/common/miloerror"
 
 	"golang.org/x/net/context"
 )
@@ -34,23 +36,52 @@ func decodeMasterEntry(
 	return nil
 }
 
+var errMasterNotFound = miloerror.Error{
+	Message: "Master not found",
+	Code:    http.StatusNotFound,
+}
+
+// getMasterEntry feches the named master and does an ACL check on the
+// current user.
+func getMasterEntry(c context.Context, name string) (*buildbotMasterEntry, error) {
+	entry := buildbotMasterEntry{Name: name}
+	ds := datastore.Get(c)
+	err := ds.Get(&entry)
+	switch {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, errMasterNotFound
+	case err != nil:
+		logging.WithError(err).Errorf(
+			c, "Encountered error while fetching entry for %s:\n%s", name, err)
+		return nil, err
+	}
+
+	// Do the ACL check if the entry is internal.
+	if entry.Internal {
+		allowed, err := settings.IsAllowedInternal(c)
+		if err != nil {
+			return nil, err
+		}
+		if !allowed {
+			return nil, errMasterNotFound
+		}
+	}
+
+	return &entry, nil
+}
+
 // getMasterJSON fetches the latest known buildbot master data and returns
 // the buildbotMaster struct (if found), whether or not it is internal,
 // the last modified time, and an error if not found.
 func getMasterJSON(c context.Context, name string) (
-	master *buildbotMaster, internal bool, t time.Time, err error) {
+	master *buildbotMaster, t time.Time, err error) {
 	master = &buildbotMaster{}
-	entry := buildbotMasterEntry{Name: name}
-	ds := datastore.Get(c)
-	err = ds.Get(&entry)
+	entry, err := getMasterEntry(c, name)
 	if err != nil {
-		logging.WithError(err).Errorf(
-			c, "Encountered error while fetching entry for %s:\n%s", name, err)
 		return
 	}
-	internal = entry.Internal
 	t = entry.Modified
-	err = decodeMasterEntry(c, &entry, master)
+	err = decodeMasterEntry(c, entry, master)
 	return
 }
 

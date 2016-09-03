@@ -20,10 +20,14 @@ import (
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/server/router"
-	//log "github.com/luci/luci-go/common/logging"
+	lucicfg "github.com/luci/luci-go/common/config"
+	memcfg "github.com/luci/luci-go/common/config/impl/memory"
 	"github.com/luci/luci-go/common/logging/gologger"
 	. "github.com/luci/luci-go/common/testing/assertions"
+	"github.com/luci/luci-go/milo/appengine/settings"
+	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/authtest"
+	"github.com/luci/luci-go/server/router"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -66,7 +70,7 @@ func newCombinedPsBody(bs []buildbotBuild, m *buildbotMaster, internal bool) io.
 
 func TestPubSub(t *testing.T) {
 	Convey(`A test Environment`, t, func() {
-		c := memory.Use(context.Background())
+		c := memory.UseWithAppID(context.Background(), "dev~luci-milo")
 		c = gologger.StdConfig.Use(c)
 		c, _ = testclock.UseTime(c, fakeTime)
 		ds := datastore.Get(c)
@@ -204,9 +208,8 @@ func TestPubSub(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(loadB.Master, ShouldEqual, "Fake Master")
 				So(loadB.Currentstep.(string), ShouldEqual, "this is a string")
-				m, internal, t, err := getMasterJSON(c, "fakename")
+				m, t, err := getMasterJSON(c, "fakename")
 				So(err, ShouldBeNil)
-				So(internal, ShouldEqual, false)
 				So(t.Unix(), ShouldEqual, 981173106)
 				So(m.Name, ShouldEqual, "fakename")
 				So(m.Project.Title, ShouldEqual, "some title")
@@ -231,9 +234,8 @@ func TestPubSub(t *testing.T) {
 					Params:  p,
 				})
 				So(h.Code, ShouldEqual, 200)
-				m, internal, t, err := getMasterJSON(c, "fakename")
+				m, t, err := getMasterJSON(c, "fakename")
 				So(err, ShouldBeNil)
-				So(internal, ShouldEqual, false)
 				So(m.Project.Title, ShouldEqual, "some other title")
 				So(t.Unix(), ShouldEqual, 981173107)
 				So(m.Name, ShouldEqual, "fakename")
@@ -334,19 +336,25 @@ func TestPubSub(t *testing.T) {
 			})
 			So(h.Code, ShouldEqual, 200)
 			Convey("And stores correctly", func() {
+				c = lucicfg.SetImplementation(c, memcfg.New(aclConfgs))
+				err := settings.Update(c)
+				So(err, ShouldBeNil)
+				c = auth.WithState(c, &authtest.FakeState{
+					Identity:       "user:alicebob@google.com",
+					IdentityGroups: []string{"google.com", "all"},
+				})
 				loadB := &buildbotBuild{
 					Master:      "Fake Master",
 					Buildername: "Fake buildername",
 					Number:      1234,
 				}
-				err := ds.Get(loadB)
+				err = ds.Get(loadB)
 				So(err, ShouldBeNil)
 				So(loadB.Master, ShouldEqual, "Fake Master")
 				So(loadB.Internal, ShouldEqual, true)
 				So(loadB.Currentstep.(string), ShouldEqual, "this is a string")
-				m, internal, t, err := getMasterJSON(c, "fakename")
+				m, t, err := getMasterJSON(c, "fakename")
 				So(err, ShouldBeNil)
-				So(internal, ShouldEqual, true)
 				So(t.Unix(), ShouldEqual, 981173106)
 				So(m.Name, ShouldEqual, "fakename")
 				So(m.Project.Title, ShouldEqual, "some title")
@@ -358,4 +366,15 @@ func TestPubSub(t *testing.T) {
 			})
 		})
 	})
+}
+
+var secretProjectCfg = `
+ID: "buildbot-internal"
+Readers: "google.com"
+`
+
+var aclConfgs = map[string]memcfg.ConfigSet{
+	"projects/buildbot-internal.git": {
+		"luci-milo.cfg": secretProjectCfg,
+	},
 }

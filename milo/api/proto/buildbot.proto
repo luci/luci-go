@@ -1,0 +1,31 @@
+// Copyright 2016 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package milo;
+
+import "google/protobuf/timestamp.proto";
+
+// The buildbot service definition.
+service Buildbot {
+  rpc GetCompressedMasterJSON(MasterRequest) returns (CompressedMasterJSON) {}
+}
+
+// The request containing the name of the master.
+message MasterRequest {
+  string name = 1;
+}
+
+// The response message containing master information.
+message CompressedMasterJSON {
+  // Whether the master is internal or not.
+  bool internal = 1;
+
+  // Timestamp of the freshness of the master data.
+  google.protobuf.Timestamp modified = 2;
+
+  // Gzipped json data of the master.
+  bytes data = 3;
+}

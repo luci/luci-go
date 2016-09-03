@@ -161,7 +161,11 @@
       },
 
       getAccessToken: function() {
-        var user = gapi.auth2.getAuthInstance().currentUser.get();
+        var authInstance = gapi.auth2.getAuthInstance();
+        if (!authInstance) {
+          return null;
+        }
+        var user = authInstance.currentUser.get();
         if (!user) {
           return null;
         }

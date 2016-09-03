@@ -27,7 +27,7 @@ func TestConfig(t *testing.T) {
 		Convey("Send update", func() {
 			c = lucicfg.SetImplementation(c, memcfg.New(mockedConfigs))
 			// Send update here
-			err := update(c)
+			err := Update(c)
 			So(err, ShouldBeNil)
 
 			Convey("Check Project config updated", func() {
@@ -49,7 +49,7 @@ func TestConfig(t *testing.T) {
 		Convey("Reject duplicate configs.", func() {
 			mockedConfigs["projects/bar.git"] = memcfg.ConfigSet{"luci-milo.cfg": barCfg}
 			c = lucicfg.SetImplementation(c, memcfg.New(mockedConfigs))
-			err := update(c)
+			err := Update(c)
 			So(strings.HasPrefix(err.Error(), "Duplicate project ID"), ShouldEqual, true)
 		})
 	})

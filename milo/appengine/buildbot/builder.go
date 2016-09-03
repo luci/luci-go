@@ -7,7 +7,6 @@ package buildbot
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
 	"sort"
 	"strings"
@@ -18,8 +17,6 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/appengine/settings"
-	"github.com/luci/luci-go/milo/common/miloerror"
 	"golang.org/x/net/context"
 )
 
@@ -114,27 +111,13 @@ func getCurrentBuilds(c context.Context, master *buildbotMaster, builderName str
 	return results
 }
 
-var errMasterNotFound = miloerror.Error{
-	Message: "Master not found",
-	Code:    http.StatusNotFound,
-}
-
 // builderImpl is the implementation for getting a milo builder page from buildbot.
 // This gets:
 // * Current Builds from querying the master json from the datastore.
 // * Recent Builds from a cron job that backfills the recent builds.
 func builderImpl(c context.Context, masterName, builderName string) (*resp.Builder, error) {
 	result := &resp.Builder{}
-	master, internal, t, err := getMasterJSON(c, masterName)
-	if internal {
-		allowed, err := settings.IsAllowedInternal(c)
-		if err != nil {
-			return nil, err
-		}
-		if !allowed {
-			return nil, errMasterNotFound
-		}
-	}
+	master, t, err := getMasterJSON(c, masterName)
 	switch {
 	case err == datastore.ErrNoSuchEntity:
 		return nil, errMasterNotFound
