@@ -1667,6 +1667,177 @@ func deletePackage(ctx context.Context, packageName string, opts *ClientOptions)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// 'counter-write' subcommand.
+
+var cmdCounterWrite = &subcommands.Command{
+	UsageLine: "counter-write -version <version> <package name> [-increment <counter> | -touch <counter>]",
+	ShortDesc: "updates a named counter associated with the given package version",
+	LongDesc: "Updates a named counter associated with the given package version\n" +
+		"If used with -increment the counter will be incremented by 1 and its timestamp\n" +
+		"updated.  The counter will be created with an initial value of 1 if it does not\n" +
+		"exist.\n" +
+		"If used with -touch the timestamp will be updated without changing the value.\n" +
+		"The counter will be created with an initial value of 0 if it does not exist.",
+	CommandRun: func() subcommands.CommandRun {
+		c := &counterWriteRun{}
+		c.registerBaseFlags()
+		c.ClientOptions.registerFlags(&c.Flags)
+		c.Flags.StringVar(&c.version, "version", "<version>", "Version of the package to modify.")
+		c.Flags.StringVar(&c.increment, "increment", "", "Name of the counter to increment.")
+		c.Flags.StringVar(&c.touch, "touch", "", "Name of the counter to touch.")
+		return c
+	},
+}
+
+type counterWriteRun struct {
+	Subcommand
+	ClientOptions
+
+	version   string
+	increment string
+	touch     string
+}
+
+func (c *counterWriteRun) Run(a subcommands.Application, args []string) int {
+	if !c.checkArgs(args, 1, 1) {
+		return 1
+	}
+
+	var counter string
+	var delta int
+
+	switch {
+	case c.increment == "" && c.touch == "":
+		return c.done(nil, makeCLIError("one of -increment or -touch must be used"))
+	case c.increment != "" && c.touch != "":
+		return c.done(nil, makeCLIError("-increment and -touch can not be used together"))
+	case c.increment != "":
+		delta = 1
+		counter = c.increment
+	case c.touch != "":
+		delta = 0
+		counter = c.touch
+	}
+
+	ctx := cli.GetContext(a, c)
+	return c.done(nil, writeCounter(ctx, args[0], c.version, counter, delta, &c.ClientOptions))
+}
+
+func writeCounter(ctx context.Context, pkg, version, counter string, delta int, opts *ClientOptions) error {
+	client, err := opts.makeCipdClient(ctx, "")
+	if err != nil {
+		return err
+	}
+
+	// Grab instance ID.
+	pin, err := client.ResolveVersion(ctx, pkg, version)
+	if err != nil {
+		return err
+	}
+
+	return client.IncrementCounter(ctx, pin, counter, delta)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// 'counter-read' subcommand.
+
+var cmdCounterRead = &subcommands.Command{
+	UsageLine: "counter-read -version <version> <package name> <counter> [<counter> ...]",
+	ShortDesc: "fetches one or more counters for the given package version",
+	LongDesc:  "Fetches one or more counters for the given package version",
+	CommandRun: func() subcommands.CommandRun {
+		c := &counterReadRun{}
+		c.registerBaseFlags()
+		c.ClientOptions.registerFlags(&c.Flags)
+		c.Flags.StringVar(&c.version, "version", "<version>", "Version of the package to modify.")
+		return c
+	},
+}
+
+type counterReadRun struct {
+	Subcommand
+	ClientOptions
+
+	version string
+}
+
+func (c *counterReadRun) Run(a subcommands.Application, args []string) int {
+	if !c.checkArgs(args, 2, -1) {
+		return 1
+	}
+
+	ctx := cli.GetContext(a, c)
+	ret, err := readCounters(ctx, args[0], c.version, args[1:], &c.ClientOptions)
+	return c.done(ret, err)
+}
+
+type counterReadResult struct {
+	cipd.Counter
+	Error error `json:"error,omitempty"`
+}
+
+func readCounters(ctx context.Context, pkg, version string, counters []string, opts *ClientOptions) ([]counterReadResult, error) {
+	client, err := opts.makeCipdClient(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+
+	// Grab instance ID.
+	pin, err := client.ResolveVersion(ctx, pkg, version)
+	if err != nil {
+		return nil, err
+	}
+
+	// Read the counters in parallel.
+	results := make(chan cipd.Counter)
+	errs := make(chan error)
+	defer close(results)
+	defer close(errs)
+
+	for _, counter := range counters {
+		go func(counter string) {
+			result, err := client.ReadCounter(ctx, pin, counter)
+			if err == nil {
+				results <- result
+			} else {
+				errs <- err
+			}
+		}(counter)
+	}
+
+	fmt.Printf("Package:       %s\n", pin.PackageName)
+	fmt.Printf("Instance ID:   %s\n", pin.InstanceID)
+
+	remaining := len(counters)
+	var ret []counterReadResult
+	var lastErr error
+	for remaining > 0 {
+		select {
+		case result := <-results:
+			ret = append(ret, counterReadResult{Counter: result})
+			fmt.Printf("\n")
+			fmt.Printf("Counter:       %s\n", result.Name)
+			fmt.Printf("Value:         %d\n", result.Value)
+			if !result.CreatedTS.IsZero() {
+				fmt.Printf("Created at:    %s\n", result.CreatedTS)
+			}
+			if !result.UpdatedTS.IsZero() {
+				fmt.Printf("Last updated:  %s\n", result.UpdatedTS)
+			}
+			remaining--
+		case err := <-errs:
+			ret = append(ret, counterReadResult{Error: err})
+			lastErr = err
+			fmt.Printf("\n")
+			fmt.Printf("Failed to read counter: %s\n", err)
+			remaining--
+		}
+	}
+
+	return ret, lastErr
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Main.
 
 var application = &cli.Application{
@@ -1709,6 +1880,10 @@ var application = &cli.Application{
 		// ACLs.
 		cmdListACL,
 		cmdEditACL,
+
+		// Counters.
+		cmdCounterWrite,
+		cmdCounterRead,
 
 		// Low level pkg-* commands.
 		cmdBuild,

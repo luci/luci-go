@@ -209,6 +209,39 @@ func TestRemoteImpl(t *testing.T) {
 		return remote.resolveVersion(ctx, "pkgname", "tag_key:value")
 	}
 
+	mockIncrementCounter := func(c C, reply string) error {
+		remote := mockRemoteImpl(c, []expectedHTTPCall{
+			{
+				Method: "POST",
+				Path:   "/_ah/api/repo/v1/counter",
+				Query: url.Values{
+					"package_name": []string{"pkgname"},
+					"instance_id":  []string{"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+					"counter_name": []string{"test.counter"},
+				},
+				Body:  `{"delta":42}`,
+				Reply: reply,
+			},
+		})
+		return remote.incrementCounter(ctx, Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}, "test.counter", 42)
+	}
+
+	mockReadCounter := func(c C, reply string) (Counter, error) {
+		remote := mockRemoteImpl(c, []expectedHTTPCall{
+			{
+				Method: "GET",
+				Path:   "/_ah/api/repo/v1/counter",
+				Query: url.Values{
+					"package_name": []string{"pkgname"},
+					"instance_id":  []string{"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+					"counter_name": []string{"test.counter"},
+				},
+				Reply: reply,
+			},
+		})
+		return remote.readCounter(ctx, Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}, "test.counter")
+	}
+
 	Convey("makeRequest POST works", t, func(c C) {
 		remote := mockRemoteImpl(c, []expectedHTTPCall{
 			{
@@ -805,6 +838,77 @@ func TestRemoteImpl(t *testing.T) {
 
 	Convey("resolveVersion bad status", t, func(c C) {
 		_, err := mockResolveVersion(c, `{"status": "HUH?"}`)
+		So(err, ShouldNotBeNil)
+	})
+
+	Convey("incrementCounter SUCCESS", t, func(c C) {
+		So(mockIncrementCounter(c, `{"status": "SUCCESS"}`), ShouldBeNil)
+	})
+
+	Convey("incrementCounter ERROR", t, func(c C) {
+		err := mockIncrementCounter(c, `{
+        "status": "ERROR",
+        "error_message": "Some error message"
+      }`)
+		So(err, ShouldNotBeNil)
+	})
+
+	Convey("incrementCounter unknown status", t, func(c C) {
+		err := mockIncrementCounter(c, `{"status":"???"}`)
+		So(err, ShouldNotBeNil)
+	})
+
+	Convey("readCounter SUCCESS", t, func(c C) {
+		ret, err := mockReadCounter(c, `{"status": "SUCCESS", "value": "42", "created_ts": "1083765600000000", "updated_ts": "1083852000000000"}`)
+		So(err, ShouldBeNil)
+		So(ret, ShouldResemble, Counter{
+			Name:      "test.counter",
+			Value:     42,
+			CreatedTS: UnixTime(time.Unix(0, 1083765600000000000)),
+			UpdatedTS: UnixTime(time.Unix(0, 1083852000000000000)),
+		})
+	})
+
+	Convey("readCounter SUCCESS with no created_ts", t, func(c C) {
+		ret, err := mockReadCounter(c, `{"status": "SUCCESS", "value": "42", "updated_ts": "1083852000000000"}`)
+		So(err, ShouldBeNil)
+		So(ret, ShouldResemble, Counter{
+			Name:      "test.counter",
+			Value:     42,
+			UpdatedTS: UnixTime(time.Unix(0, 1083852000000000000)),
+		})
+	})
+
+	Convey("readCounter SUCCESS with no updated_ts", t, func(c C) {
+		ret, err := mockReadCounter(c, `{"status": "SUCCESS", "value": "42", "created_ts": "1083765600000000"}`)
+		So(err, ShouldBeNil)
+		So(ret, ShouldResemble, Counter{
+			Name:      "test.counter",
+			Value:     42,
+			CreatedTS: UnixTime(time.Unix(0, 1083765600000000000)),
+		})
+	})
+
+	Convey("readCounter SUCCESS with invalid created_ts", t, func(c C) {
+		_, err := mockReadCounter(c, `{"status": "SUCCESS", "value": "42", "created_ts": "foo", "updated_ts": "1083852000000000"}`)
+		So(err, ShouldNotBeNil)
+	})
+
+	Convey("readCounter SUCCESS with invalid updated_ts", t, func(c C) {
+		_, err := mockReadCounter(c, `{"status": "SUCCESS", "value": "42", "created_ts": "1083765600000000", "updated_ts": "foo"}`)
+		So(err, ShouldNotBeNil)
+	})
+
+	Convey("readCounter ERROR", t, func(c C) {
+		_, err := mockReadCounter(c, `{
+        "status": "ERROR",
+        "error_message": "Some error message"
+      }`)
+		So(err, ShouldNotBeNil)
+	})
+
+	Convey("readCounter unknown status", t, func(c C) {
+		_, err := mockReadCounter(c, `{"status":"???"}`)
 		So(err, ShouldNotBeNil)
 	})
 }

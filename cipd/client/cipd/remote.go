@@ -640,6 +640,79 @@ func (r *remoteImpl) searchInstances(ctx context.Context, tag, packageName strin
 	return nil, fmt.Errorf("unexpected searchInstances status: %s", reply.Status)
 }
 
+func (r *remoteImpl) incrementCounter(ctx context.Context, pin common.Pin, counter string, delta int) error {
+	endpoint, err := counterEndpoint(pin, counter)
+	if err != nil {
+		return err
+	}
+
+	var request struct {
+		Delta int `json:"delta"`
+	}
+	request.Delta = delta
+
+	var reply struct {
+		Status       string `json:"status"`
+		ErrorMessage string `json:"error_message"`
+	}
+	err = r.makeRequest(ctx, endpoint, "POST", &request, &reply)
+	if err != nil {
+		return err
+	}
+	switch reply.Status {
+	case "SUCCESS":
+		return nil
+	case "ERROR":
+		return errors.New(reply.ErrorMessage)
+	}
+	return fmt.Errorf("unexpected incrementCounter status: %s", reply.Status)
+}
+
+func (r *remoteImpl) readCounter(ctx context.Context, pin common.Pin, counter string) (Counter, error) {
+	endpoint, err := counterEndpoint(pin, counter)
+	if err != nil {
+		return Counter{}, err
+	}
+
+	var reply struct {
+		Status       string `json:"status"`
+		ErrorMessage string `json:"error_message"`
+
+		Value     string `json:"value"`
+		CreatedTS string `json:"created_ts"`
+		UpdatedTS string `json:"updated_ts"`
+	}
+	err = r.makeRequest(ctx, endpoint, "GET", nil, &reply)
+	if err != nil {
+		return Counter{}, err
+	}
+	switch reply.Status {
+	case "SUCCESS":
+		ret := Counter{Name: counter}
+		if ret.Value, err = strconv.ParseInt(reply.Value, 10, 64); err != nil {
+			return Counter{}, fmt.Errorf("unexpected counter value %q in the server response", reply.Value)
+		}
+		if reply.CreatedTS != "" {
+			ts, err := convertTimestamp(reply.CreatedTS)
+			if err != nil {
+				return Counter{}, err
+			}
+			ret.CreatedTS = UnixTime(ts)
+		}
+		if reply.UpdatedTS != "" {
+			ts, err := convertTimestamp(reply.UpdatedTS)
+			if err != nil {
+				return Counter{}, err
+			}
+			ret.UpdatedTS = UnixTime(ts)
+		}
+		return ret, nil
+	case "ERROR":
+		return Counter{}, errors.New(reply.ErrorMessage)
+	}
+	return Counter{}, fmt.Errorf("unexpected readCounter status: %s", reply.Status)
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 func packageEndpoint(packageName string) (string, error) {
@@ -735,6 +808,14 @@ func tagsEndpoint(pin common.Pin, tags []string) (string, error) {
 		params.Add("tag", tag)
 	}
 	return "repo/v1/tags?" + params.Encode(), nil
+}
+
+func counterEndpoint(pin common.Pin, counterName string) (string, error) {
+	params := url.Values{}
+	params.Add("package_name", pin.PackageName)
+	params.Add("instance_id", pin.InstanceID)
+	params.Add("counter_name", counterName)
+	return "repo/v1/counter?" + params.Encode(), nil
 }
 
 // convertTimestamp coverts string with int64 timestamp in microseconds since

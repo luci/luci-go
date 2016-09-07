@@ -120,8 +120,16 @@ func (t UnixTime) Before(t2 UnixTime) bool {
 	return time.Time(t).Before(time.Time(t2))
 }
 
+// IsZero reports whether t represents the zero time instant.
+func (t UnixTime) IsZero() bool {
+	return time.Time(t).IsZero()
+}
+
 // MarshalJSON is used by JSON encoder.
 func (t UnixTime) MarshalJSON() ([]byte, error) {
+	if t.IsZero() {
+		return []byte("0"), nil
+	}
 	return []byte(fmt.Sprintf("%d", time.Time(t).Unix())), nil
 }
 
@@ -197,6 +205,18 @@ type RefInfo struct {
 	ModifiedBy string `json:"modified_by"`
 	// ModifiedTs is when the ref was modified last time.
 	ModifiedTs UnixTime `json:"modified_ts"`
+}
+
+// Counter is returned by ReadCounter.
+type Counter struct {
+	// Name is the counter's name.
+	Name string `json:"name"`
+	// Value is the counter's value.
+	Value int64 `json:"value"`
+	// CreatedTS is the first time the counter was written.
+	CreatedTS UnixTime `json:"created_ts"`
+	// UpdatedTS is the most recent time the counter was written.
+	UpdatedTS UnixTime `json:"updated_ts"`
 }
 
 // Actions is returned by EnsurePackages.
@@ -321,6 +341,15 @@ type Client interface {
 	//
 	// If the update was only partially applied, returns both Actions and error.
 	EnsurePackages(ctx context.Context, pins []common.Pin, dryRun bool) (Actions, error)
+
+	// IncrementCounter adds delta to the counter's value and updates its last
+	// updated timestamp.
+	//
+	// delta must be 0 or 1.
+	IncrementCounter(ctx context.Context, pin common.Pin, counterName string, delta int) error
+
+	// ReadCounter returns the current value of the counter.
+	ReadCounter(ctx context.Context, pin common.Pin, counterName string) (Counter, error)
 }
 
 // ClientOptions is passed to NewClient factory function.
@@ -649,6 +678,14 @@ func (client *clientImpl) DeletePackage(ctx context.Context, packageName string)
 		return err
 	}
 	return client.remote.deletePackage(ctx, packageName)
+}
+
+func (client *clientImpl) IncrementCounter(ctx context.Context, pin common.Pin, counter string, delta int) error {
+	return client.remote.incrementCounter(ctx, pin, counter, delta)
+}
+
+func (client *clientImpl) ReadCounter(ctx context.Context, pin common.Pin, counter string) (Counter, error) {
+	return client.remote.readCounter(ctx, pin, counter)
 }
 
 func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin common.Pin) error {
@@ -1047,6 +1084,9 @@ type remote interface {
 
 	listPackages(ctx context.Context, path string, recursive, showHidden bool) ([]string, []string, error)
 	searchInstances(ctx context.Context, tag, packageName string) ([]common.Pin, error)
+
+	incrementCounter(ctx context.Context, pin common.Pin, counter string, delta int) error
+	readCounter(ctx context.Context, pin common.Pin, counter string) (Counter, error)
 }
 
 type storage interface {
