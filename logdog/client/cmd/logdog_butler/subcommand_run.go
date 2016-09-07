@@ -47,13 +47,11 @@ var subcommandRun = &subcommands.Command{
 			"If true, forward STDIN to the bootstrapped process.")
 
 		// "stdout" command-line option.
-		cmd.stdout.Name = "stdout"
 		stdoutFlag := new(nestedflagset.FlagSet)
 		cmd.stdout.addFlags(&stdoutFlag.F)
 		cmd.Flags.Var(stdoutFlag, "stdout", "STDOUT stream parameters.")
 
 		// "stderr" command-line option.
-		cmd.stderr.Name = "stderr"
 		stderrFlag := new(nestedflagset.FlagSet)
 		cmd.stderr.addFlags(&stderrFlag.F)
 		cmd.Flags.Var(stderrFlag, "stderr", "STDERR stream parameters.")
@@ -208,8 +206,16 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 
 	// Attach STDOUT / STDERR pipes if configured to do so.
 	//
-	// We track them with a sync.WaitGroup because we have to wait for them to
-	// close before reaping the process (see exec.Cmd's StdoutPipe method).
+	// This will happen in one of two ways:
+	// - If no stream name is provided, we will not create a Butler stream for
+	//   this output; instead, we will connect them directly to the bootstrapped
+	//   process.
+	// - If a stream name is provided, we will create a Butler stream for this
+	//   output, and tee as necessary.
+	//
+	// When connecting the stream to the Butler, we track them with a
+	// sync.WaitGroup because we have to wait for them to close before reaping the
+	// process (see exec.Cmd's StdoutPipe method).
 	//
 	// In this case, we will hand them to the Butler, which will Close then when
 	// it counters io.EOF.
@@ -218,21 +224,35 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 		streamWG       sync.WaitGroup
 	)
 	if cmd.attach {
-		stdout, err = proc.StdoutPipe()
-		if err != nil {
-			log.WithError(err).Errorf(a, "Failed to get STDOUT pipe.")
-			return runtimeErrorReturnCode
+		// STDOUT
+		if cmd.stdout.Name == "" {
+			// Forward directly.
+			proc.Stdout = os.Stdout
+		} else {
+			// Connect to Butler.
+			stdout, err = proc.StdoutPipe()
+			if err != nil {
+				log.WithError(err).Errorf(a, "Failed to get STDOUT pipe.")
+				return runtimeErrorReturnCode
+			}
+			stdout = &callbackReadCloser{stdout, streamWG.Done}
+			streamWG.Add(1)
 		}
-		stdout = &callbackReadCloser{stdout, streamWG.Done}
 
-		// Get our STDERR pipe
-		stderr, err = proc.StderrPipe()
-		if err != nil {
-			log.WithError(err).Errorf(a, "Failed to get STDERR pipe.")
-			return runtimeErrorReturnCode
+		// STDERR
+		if cmd.stderr.Name == "" {
+			// Forward directly.
+			proc.Stderr = os.Stderr
+		} else {
+			// Connect to Butler.
+			stderr, err = proc.StderrPipe()
+			if err != nil {
+				log.WithError(err).Errorf(a, "Failed to get STDERR pipe.")
+				return runtimeErrorReturnCode
+			}
+			stderr = &callbackReadCloser{stderr, streamWG.Done}
+			streamWG.Add(1)
 		}
-		stderr = &callbackReadCloser{stderr, streamWG.Done}
-		streamWG.Add(2)
 	}
 
 	if log.IsLogging(a, log.Debug) {
