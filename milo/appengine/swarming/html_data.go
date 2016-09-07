@@ -25,7 +25,7 @@ var testCases = []struct {
 }{
 	{"build-canceled", "build-canceled.json"},
 	{"build-exception", "build-exception.json"},
-	{"build-hang", "build-hang.json"},
+	{"build-expired", "build-expired.json"},
 	{"build-link", "build-link.json"},
 	{"build-patch-failure", "build-patch-failure.json"},
 	{"build-pending", "build-pending.json"},

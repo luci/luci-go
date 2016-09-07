@@ -14,5 +14,8 @@ up:
 test:
 	go test ./...
 
-train:
+train: gen
 	go test ./... -test.generate
+
+gen:
+	go generate ./...

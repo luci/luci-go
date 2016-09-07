@@ -4,9 +4,9 @@ package resp
 
 import "fmt"
 
-const _Status_name = "NotRunRunningSuccessFailureWarningInfraFailureDependencyFailureWaitingDependency"
+const _Status_name = "NotRunRunningSuccessFailureWarningInfraFailureExpiredDependencyFailureWaitingDependency"
 
-var _Status_index = [...]uint8{0, 6, 13, 20, 27, 34, 46, 63, 80}
+var _Status_index = [...]uint8{0, 6, 13, 20, 27, 34, 46, 53, 70, 87}
 
 func (i Status) String() string {
 	if i < 0 || i >= Status(len(_Status_index)-1) {

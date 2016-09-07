@@ -302,7 +302,7 @@ func (as *annotationStreamRequest) toMiloBuild(c context.Context) *resp.MiloBuil
 			prefix:  prefix,
 		}
 	)
-	AddLogDogToBuild(c, &ub, &streams, &build)
+	AddLogDogToBuild(c, &ub, streams.MainStream.Data, &build)
 	return &build
 }
 

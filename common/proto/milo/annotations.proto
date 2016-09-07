@@ -37,6 +37,9 @@ message FailureDetails {
     DM_DEPENDENCY_FAILED = 3;
     // The step was cancelled.
     CANCELLED = 4;
+    // The failure was due to an resource exhausion. The step was scheduled
+    // but never ran, and never will run.
+    EXPIRED = 5;
   }
   Type type = 1;
 

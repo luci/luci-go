@@ -11,7 +11,12 @@
       "URL": "https://debug/user/task/2fb1b35e1da25710",
       "Alt": ""
     },
-    "MainLink": null,
+    "MainLink": {
+      "Label": "Task 2fb1b35e1da25710",
+      "Img": "",
+      "URL": "https://debug/user/task/2fb1b35e1da25710",
+      "Alt": ""
+    },
     "SubLink": null,
     "Progress": null,
     "Started": "0001-01-01T00:00:00Z",
@@ -25,6 +30,10 @@
   "SourceStamp": null,
   "Components": null,
   "PropertyGroup": [
+    {
+      "GroupName": "Main",
+      "Property": null
+    },
     {
       "GroupName": "Swarming Tags",
       "Property": [

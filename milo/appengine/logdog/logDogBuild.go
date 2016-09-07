@@ -49,6 +49,9 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, buildCompletedTime, now 
 			case miloProto.FailureDetails_EXCEPTION, miloProto.FailureDetails_INFRA:
 				comp.Status = resp.InfraFailure
 
+			case miloProto.FailureDetails_EXPIRED:
+				comp.Status = resp.Expired
+
 			case miloProto.FailureDetails_DM_DEPENDENCY_FAILED:
 				comp.Status = resp.DependencyFailure
 
@@ -147,15 +150,9 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, buildCompletedTime, now 
 
 // AddLogDogToBuild takes a set of logdog streams and populate a milo build.
 // build.Summary.Finished must be set.
-func AddLogDogToBuild(c context.Context, ub URLBuilder, s *Streams, build *resp.MiloBuild) {
-	if s.MainStream == nil {
-		panic("missing main stream")
-	}
-	// Now Fetch the main annotation of the build.
-	var (
-		mainAnno = s.MainStream.Data
-		now      = clock.Now(c)
-	)
+func AddLogDogToBuild(
+	c context.Context, ub URLBuilder, mainAnno *miloProto.Step, build *resp.MiloBuild) {
+	now := clock.Now(c)
 
 	// Now fill in each of the step components.
 	// TODO(hinoka): This is totes cachable.

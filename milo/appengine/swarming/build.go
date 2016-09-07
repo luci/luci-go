@@ -282,17 +282,23 @@ func addTaskToMiloStep(c context.Context, server string, sr *swarming.SwarmingRp
 
 	case TaskExpired, TaskTimedOut, TaskBotDied:
 		step.Status = miloProto.Status_FAILURE
-		step.FailureDetails = &miloProto.FailureDetails{
-			Type: miloProto.FailureDetails_INFRA,
-		}
 
 		switch sr.State {
 		case TaskExpired:
-			step.FailureDetails.Text = "Task expired"
+			step.FailureDetails = &miloProto.FailureDetails{
+				Type: miloProto.FailureDetails_EXPIRED,
+				Text: "Task expired",
+			}
 		case TaskTimedOut:
-			step.FailureDetails.Text = "Task timed out"
+			step.FailureDetails = &miloProto.FailureDetails{
+				Type: miloProto.FailureDetails_INFRA,
+				Text: "Task timed out",
+			}
 		case TaskBotDied:
-			step.FailureDetails.Text = "Bot died"
+			step.FailureDetails = &miloProto.FailureDetails{
+				Type: miloProto.FailureDetails_INFRA,
+				Text: "Bot died",
+			}
 		}
 
 	case TaskCanceled:
@@ -416,12 +422,14 @@ func swarmingBuildImpl(c context.Context, linkBase, server, taskID string) (*res
 	}
 
 	var build resp.MiloBuild
+	var s *miloProto.Step
+	var lds *logdog.Streams
 
 	// Decode the data using annotee. The logdog stream returned here is assumed
 	// to be consistent, which is why the following block of code are not
 	// expected to ever err out.
 	if body != "" {
-		lds, err := streamsFromAnnotatedLog(c, body)
+		lds, err = streamsFromAnnotatedLog(c, body)
 		if err != nil {
 			build.Components = []*resp.BuildComponent{{
 				Type:   resp.Summary,
@@ -433,17 +441,19 @@ func swarmingBuildImpl(c context.Context, linkBase, server, taskID string) (*res
 					URL:   taskPageURL(server, taskID),
 				}},
 			}}
-		} else {
-			if lds.MainStream == nil || lds.MainStream.Data == nil {
-				panic("no main build step stream")
-			}
-
-			if err := addTaskToMiloStep(c, server, sr, lds.MainStream.Data); err != nil {
-				return nil, err
-			}
-			logdog.AddLogDogToBuild(c, swarmingURLBuilder(linkBase), lds, &build)
 		}
 	}
+
+	if lds != nil && lds.MainStream != nil && lds.MainStream.Data != nil {
+		s = lds.MainStream.Data
+	} else {
+		s = &miloProto.Step{}
+	}
+
+	if err := addTaskToMiloStep(c, server, sr, s); err != nil {
+		return nil, err
+	}
+	logdog.AddLogDogToBuild(c, swarmingURLBuilder(linkBase), s, &build)
 
 	if err := addTaskToBuild(c, server, sr, &build); err != nil {
 		return nil, err

@@ -46,6 +46,8 @@
           <p class="success result">Build Successful
         {{ else if eq .Status.String "InfraFailure" }}
           <p class="exception result">Internal Failure
+        {{ else if eq .Status.String "Expired" }}
+          <p class="expired result">Internal Failure - Expired
         {{ else if eq .Status.String "Failure" }}
           <p class="failure result">Build Failed
         {{ else if eq .Status.String "NotRun" }}

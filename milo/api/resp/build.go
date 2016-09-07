@@ -130,6 +130,9 @@ const (
 	// InfraFailure if the component has finished incompletely due to a failure in infra.
 	InfraFailure // A100 Purple
 
+	// Expired if the component was never scheduled due to resource exhaustion.
+	Expired // A200 Purple
+
 	// DependencyFailure if the component has finished incompletely due to a failure in a
 	// dependency.
 	DependencyFailure // 100 Amber
@@ -142,7 +145,7 @@ const (
 // Terminal returns true if the step status won't change.
 func (s Status) Terminal() bool {
 	switch s {
-	case Success, Failure, InfraFailure, Warning, DependencyFailure:
+	case Success, Failure, InfraFailure, Warning, DependencyFailure, Expired:
 		return true
 	default:
 		return false

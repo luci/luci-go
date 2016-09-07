@@ -453,6 +453,12 @@ div.BuildWaterfall {
   border-color: #ACA0B3;
 }
 
+.status-Expired, .expired {
+  color: #FFFFFF;
+  background-color: #ac39ac;
+  border-color: #ACA0B3;
+}
+
 .warnings {
   color: #FFFFFF;
   background-color: #fa3;
