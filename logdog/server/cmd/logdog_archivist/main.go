@@ -153,7 +153,6 @@ func (a *application) runArchivist(c context.Context) error {
 			case nil:
 				c := log.SetFields(c, log.Fields{
 					"messageID": msg.ID,
-					"ackID":     msg.AckID,
 				})
 
 				// Dispatch an archive handler for this message.
@@ -183,7 +182,7 @@ func (a *application) runArchivist(c context.Context) error {
 						tsTaskProcessingTime.Add(c, duration.Seconds()*1000, deleteTask)
 					}()
 
-					task, err := makePubSubArchivistTask(psSubscriptionName, msg)
+					task, err := makePubSubArchivistTask(c, psSubscriptionName, msg)
 					if err != nil {
 						log.WithError(err).Errorf(c, "Failed to unmarshal archive task from message.")
 						deleteTask = true

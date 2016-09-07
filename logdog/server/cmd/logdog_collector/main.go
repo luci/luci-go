@@ -180,8 +180,7 @@ func (a *application) runCollector(c context.Context) error {
 // Pub/Sub) or false if the message should not be ACK'd.
 func (a *application) processMessage(c context.Context, coll *collector.Collector, msg *pubsub.Message) bool {
 	log.Fields{
-		"ackID": msg.AckID,
-		"size":  len(msg.Data),
+		"size": len(msg.Data),
 	}.Infof(c, "Received Pub/Sub Message.")
 
 	startTime := clock.Now(c)
@@ -203,7 +202,6 @@ func (a *application) processMessage(c context.Context, coll *collector.Collecto
 
 	case err == nil:
 		log.Fields{
-			"ackID":    msg.AckID,
 			"size":     len(msg.Data),
 			"duration": duration,
 		}.Infof(c, "Message successfully processed; ACKing.")
@@ -213,7 +211,6 @@ func (a *application) processMessage(c context.Context, coll *collector.Collecto
 	default:
 		log.Fields{
 			log.ErrorKey: err,
-			"ackID":      msg.AckID,
 			"size":       len(msg.Data),
 			"duration":   duration,
 		}.Errorf(c, "Non-transient error ingesting Pub/Sub message; ACKing.")

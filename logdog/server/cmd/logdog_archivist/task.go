@@ -5,10 +5,14 @@
 package main
 
 import (
-	"github.com/golang/protobuf/proto"
+	"strconv"
+	"time"
+
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
 
 	gcps "cloud.google.com/go/pubsub"
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 )
 
@@ -21,6 +25,9 @@ type pubSubArchivistTask struct {
 	// msg is the message that this task is bound to.
 	msg *gcps.Message
 
+	// timestamp is the time when this message was received.
+	timestamp time.Time
+
 	// at is the unmarshalled ArchiveTask from msg.
 	at logdog.ArchiveTask
 
@@ -28,12 +35,13 @@ type pubSubArchivistTask struct {
 	consumed bool
 }
 
-func makePubSubArchivistTask(s string, msg *gcps.Message) (*pubSubArchivistTask, error) {
+func makePubSubArchivistTask(c context.Context, s string, msg *gcps.Message) (*pubSubArchivistTask, error) {
 	// If we can't decode the archival task, we can't decide whether or not to
 	// delete it, so we will leave it in the queue.
 	t := pubSubArchivistTask{
 		subscriptionName: s,
 		msg:              msg,
+		timestamp:        clock.Now(c),
 	}
 
 	if err := proto.Unmarshal(msg.Data, &t.at); err != nil {
@@ -43,8 +51,9 @@ func makePubSubArchivistTask(s string, msg *gcps.Message) (*pubSubArchivistTask,
 }
 
 func (t *pubSubArchivistTask) UniqueID() string {
-	// The Message's AckID is guaranteed to be unique for a single lease.
-	return t.msg.AckID
+	// Use the message's reception timestamp as its unique identifier. We
+	// represent this as a hexadecimal-formatted seconds-since-epoch value.
+	return strconv.FormatInt(t.timestamp.Unix(), 16)
 }
 
 func (t *pubSubArchivistTask) Task() *logdog.ArchiveTask {
