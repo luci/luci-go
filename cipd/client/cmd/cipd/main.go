@@ -1233,6 +1233,7 @@ func listACL(ctx context.Context, packagePath string, clientOpts ClientOptions) 
 	listRoleACL("Owners", byRole["OWNER"])
 	listRoleACL("Writers", byRole["WRITER"])
 	listRoleACL("Readers", byRole["READER"])
+	listRoleACL("Counter Writers", byRole["COUNTER_WRITER"])
 
 	return byRole, nil
 }
@@ -1268,6 +1269,7 @@ var cmdEditACL = &subcommands.Command{
 		c.Flags.Var(&c.owner, "owner", "Users or groups to grant OWNER role.")
 		c.Flags.Var(&c.writer, "writer", "Users or groups to grant WRITER role.")
 		c.Flags.Var(&c.reader, "reader", "Users or groups to grant READER role.")
+		c.Flags.Var(&c.counterWriter, "counter-writer", "Users or groups to grant COUNTER_WRITER role.")
 		c.Flags.Var(&c.revoke, "revoke", "Users or groups to remove from all roles.")
 		return c
 	},
@@ -1277,10 +1279,11 @@ type editACLRun struct {
 	Subcommand
 	ClientOptions
 
-	owner  principalsList
-	writer principalsList
-	reader principalsList
-	revoke principalsList
+	owner         principalsList
+	writer        principalsList
+	reader        principalsList
+	counterWriter principalsList
+	revoke        principalsList
 }
 
 func (c *editACLRun) Run(a subcommands.Application, args []string) int {
@@ -1288,10 +1291,10 @@ func (c *editACLRun) Run(a subcommands.Application, args []string) int {
 		return 1
 	}
 	ctx := cli.GetContext(a, c)
-	return c.done(nil, editACL(ctx, args[0], c.owner, c.writer, c.reader, c.revoke, c.ClientOptions))
+	return c.done(nil, editACL(ctx, args[0], c.owner, c.writer, c.reader, c.counterWriter, c.revoke, c.ClientOptions))
 }
 
-func editACL(ctx context.Context, packagePath string, owners, writers, readers, revoke principalsList, clientOpts ClientOptions) error {
+func editACL(ctx context.Context, packagePath string, owners, writers, readers, counterWriters, revoke principalsList, clientOpts ClientOptions) error {
 	changes := []cipd.PackageACLChange{}
 
 	makeChanges := func(action cipd.PackageACLChangeAction, role string, list principalsList) {
@@ -1307,10 +1310,12 @@ func editACL(ctx context.Context, packagePath string, owners, writers, readers, 
 	makeChanges(cipd.GrantRole, "OWNER", owners)
 	makeChanges(cipd.GrantRole, "WRITER", writers)
 	makeChanges(cipd.GrantRole, "READER", readers)
+	makeChanges(cipd.GrantRole, "COUNTER_WRITER", counterWriters)
 
 	makeChanges(cipd.RevokeRole, "OWNER", revoke)
 	makeChanges(cipd.RevokeRole, "WRITER", revoke)
 	makeChanges(cipd.RevokeRole, "READER", revoke)
+	makeChanges(cipd.RevokeRole, "COUNTER_WRITER", revoke)
 
 	if len(changes) == 0 {
 		return nil
