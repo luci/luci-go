@@ -210,13 +210,8 @@ func TestHandleArchive(t *testing.T) {
 		// Set up our test log stream.
 		project := "test-project"
 		desc := logpb.LogStreamDescriptor{
-			Prefix:        "testing",
-			Name:          "foo",
-			BinaryFileExt: "bin",
-		}
-		descBytes, err := proto.Marshal(&desc)
-		if err != nil {
-			panic(err)
+			Prefix: "testing",
+			Name:   "foo",
 		}
 
 		// Utility function to add a log entry for "ls".
@@ -280,12 +275,21 @@ func TestHandleArchive(t *testing.T) {
 				Archived:      false,
 				Purged:        false,
 			},
-			Desc: descBytes,
 
 			// Age is ON the expiration threshold, so not expired.
 			Age:         archiveTask.CompletePeriod,
 			ArchivalKey: archiveTask.Key,
 		}
+
+		// Allow tests to modify the log stream descriptor.
+		reloadDesc := func() {
+			descBytes, err := proto.Marshal(&desc)
+			if err != nil {
+				panic(err)
+			}
+			stream.Desc = descBytes
+		}
+		reloadDesc()
 
 		var archiveRequest *logdog.ArchiveStreamRequest
 		var archiveStreamErr error
@@ -299,7 +303,9 @@ func TestHandleArchive(t *testing.T) {
 			},
 		}
 
-		stBase := Settings{}
+		stBase := Settings{
+			AlwaysRender: true,
+		}
 
 		ar := Archivist{
 			Service: &sc,
@@ -588,6 +594,49 @@ func TestHandleArchive(t *testing.T) {
 						IndexUrl:  gsURL(project, "logstream.index"),
 						DataUrl:   gsURL(project, "data.bin"),
 					})
+				})
+			})
+		})
+
+		Convey(`When not configured to always render`, func() {
+			stBase.AlwaysRender = false
+
+			addTestEntry(project, 0, 1, 2, 3, 4)
+			stream.State.TerminalIndex = 4
+
+			Convey(`Will not emit a data stream if no binary file extension is specified.`, func() {
+				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+				So(task.consumed, ShouldBeTrue)
+
+				So(hasStreams(true, true, false), ShouldBeTrue)
+				So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
+					Project:       project,
+					Id:            archiveTask.Id,
+					LogEntryCount: 5,
+					TerminalIndex: 4,
+
+					StreamUrl: gsURL(project, "logstream.entries"),
+					IndexUrl:  gsURL(project, "logstream.index"),
+				})
+			})
+
+			Convey(`Will emit a data stream if a binary file extension is specified.`, func() {
+				desc.BinaryFileExt = "foobar"
+				reloadDesc()
+
+				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+				So(task.consumed, ShouldBeTrue)
+
+				So(hasStreams(true, true, true), ShouldBeTrue)
+				So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
+					Project:       project,
+					Id:            archiveTask.Id,
+					LogEntryCount: 5,
+					TerminalIndex: 4,
+
+					StreamUrl: gsURL(project, "logstream.entries"),
+					IndexUrl:  gsURL(project, "logstream.index"),
+					DataUrl:   gsURL(project, "data.foobar"),
 				})
 			})
 		})

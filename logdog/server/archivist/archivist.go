@@ -448,6 +448,7 @@ func (a *Archivist) loadSettings(c context.Context, project config.ProjectName) 
 
 func (a *Archivist) makeStagedArchival(c context.Context, project config.ProjectName,
 	st *Settings, ls *logdog.LoadStreamResponse, uid string) (*stagedArchival, error) {
+
 	sa := stagedArchival{
 		Archivist: a,
 		Settings:  st,
@@ -467,15 +468,20 @@ func (a *Archivist) makeStagedArchival(c context.Context, project config.Project
 	}
 	sa.path = sa.desc.Path()
 
-	bext := sa.desc.BinaryFileExt
-	if bext == "" {
-		bext = "bin"
-	}
-
 	// Construct our staged archival paths.
 	sa.stream = sa.makeStagingPaths("logstream.entries", uid)
 	sa.index = sa.makeStagingPaths("logstream.index", uid)
-	sa.data = sa.makeStagingPaths(fmt.Sprintf("data.%s", bext), uid)
+
+	// If we're emitting binary files, construct that too.
+	bext := sa.desc.BinaryFileExt
+	if bext != "" || sa.AlwaysRender {
+		// If no binary file extension was supplied, choose a default.
+		if bext == "" {
+			bext = "bin"
+		}
+
+		sa.data = sa.makeStagingPaths(fmt.Sprintf("data.%s", bext), uid)
+	}
 	return &sa, nil
 }
 
@@ -617,10 +623,13 @@ func (sa *stagedArchival) stage(c context.Context) (err error) {
 	}
 	defer closeWriter(indexWriter, sa.index.staged)
 
-	if dataWriter, err = createWriter(sa.data.staged); err != nil {
-		return err
+	if sa.data.enabled() {
+		// Only emit a data stream if we are configured to do so.
+		if dataWriter, err = createWriter(sa.data.staged); err != nil {
+			return err
+		}
+		defer closeWriter(dataWriter, sa.data.staged)
 	}
-	defer closeWriter(dataWriter, sa.data.staged)
 
 	// Read our log entries from intermediate storage.
 	ss := storageSource{
@@ -667,7 +676,9 @@ func (sa *stagedArchival) stage(c context.Context) (err error) {
 	sa.logEntryCount = ss.logEntryCount
 	sa.stream.bytesWritten = streamWriter.Count()
 	sa.index.bytesWritten = indexWriter.Count()
-	sa.data.bytesWritten = dataWriter.Count()
+	if dataWriter != nil {
+		sa.data.bytesWritten = dataWriter.Count()
+	}
 	return
 }
 
@@ -677,9 +688,9 @@ type stagingPaths struct {
 	bytesWritten int64
 }
 
-func (d *stagingPaths) clearStaged() {
-	d.staged = ""
-}
+func (d *stagingPaths) clearStaged() { d.staged = "" }
+
+func (d *stagingPaths) enabled() bool { return d.final != "" }
 
 func (d *stagingPaths) addMetrics(c context.Context, archiveField, streamField string) {
 	tsSize.Add(c, float64(d.bytesWritten), archiveField, streamField)
@@ -691,8 +702,8 @@ func (sa *stagedArchival) finalize(c context.Context, client gs.Client, ar *logd
 		for _, d := range sa.getStagingPaths() {
 			d := d
 
-			// Don't copy zero-sized streams.
-			if d.bytesWritten == 0 {
+			// Don't finalize zero-sized streams.
+			if !d.enabled() || d.bytesWritten == 0 {
 				continue
 			}
 
@@ -722,8 +733,10 @@ func (sa *stagedArchival) finalize(c context.Context, client gs.Client, ar *logd
 	ar.StreamSize = sa.stream.bytesWritten
 	ar.IndexUrl = string(sa.index.final)
 	ar.IndexSize = sa.index.bytesWritten
-	ar.DataUrl = string(sa.data.final)
-	ar.DataSize = sa.data.bytesWritten
+	if sa.data.enabled() {
+		ar.DataUrl = string(sa.data.final)
+		ar.DataSize = sa.data.bytesWritten
+	}
 	return nil
 }
 
