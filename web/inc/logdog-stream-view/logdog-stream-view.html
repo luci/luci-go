@@ -32,11 +32,6 @@ An element for rendering muxed LogDog log streams.
         padding-top: 20px;
       }
 
-      #logs {
-        display: inline-block;
-        list-style: none;
-      }
-
       .log-entry {
         padding: 0 0 0 0;
         clear: left;
@@ -50,6 +45,10 @@ An element for rendering muxed LogDog log streams.
         font-style: italic;
         font-family: Courier New, Courier, monospace;
         font-size: 10px;
+
+        /* Fixed width, break word if necessary. */
+        width: 150px;
+        word-break: break-word;
 
         /* Can be toggled by applying .showMeta class to #logs. */
         display: none;
@@ -67,13 +66,6 @@ An element for rendering muxed LogDog log streams.
         list-style: none;
       }
 
-      /*
-      .log-entry {
-        list-style: none;
-        padding-left: 0;
-      }
-      */
-
       .log-entry-line {
         padding-left: 0;
 
@@ -82,6 +74,7 @@ An element for rendering muxed LogDog log streams.
       }
       .wrapLines .log-entry-line {
         white-space: pre-wrap;
+        word-break: break-word;
       }
 
       .log-entry-line:nth-last-child(2) {
@@ -129,11 +122,25 @@ An element for rendering muxed LogDog log streams.
 
     <!-- Muxed log content. -->
     <div id="logContent" on-mousewheel="_handleMouseWheel">
-      <table id="logTable">
-        <tbody id="logs">
-          <!-- Content will be populated with JavaScript as logs are loaded. -->
-        </tbody>
-      </table>
+      <div id="logs">
+        <!-- Content will be populated with JavaScript as logs are loaded.
+
+          <div class="log-entry">
+            <div class="log-entry-meta">
+              <div class="log-entry-meta-line">(Meta 0)</div>
+              ...
+              <div class="log-entry-meta-line">(Meta N)</div>
+            </div>
+            <div class="log-entry-content">
+              <div class="log-entry-line">LINE #0</div>
+              ...
+              <div class="log-entry-line">LINE #N</div>
+            </div>
+          </div>
+          ...
+
+        -->
+      </div>
 
       <!-- Current red bottom line. -->
       <div id="bottom"></div>
@@ -258,8 +265,6 @@ An element for rendering muxed LogDog log streams.
             streamType("text");
         return new LogDogQuery(this.$.client, params).getAll();
       }.bind(this))).then(function(results) {
-        console.log("Query returned streams:", results);
-
         // Add query results (if any) to streams.
         results.forEach(function(streams) {
           (streams || []).forEach(function(stream) {
@@ -276,10 +281,13 @@ An element for rendering muxed LogDog log streams.
       this._cancelFetch();
       this._clearLogs();
 
+
       // Unique streams.
       if (!streams.length) {
         return;
       }
+
+      console.log("Loading log streams:", streams);
       streams.sort(LogDogStream.cmp);
 
       // Construct our fetch context.
@@ -492,48 +500,6 @@ An element for rendering muxed LogDog log streams.
       }
     },
 
-    _createTableRowForLogEntry: function(logEntry) {
-      var tableRow = document.createElement("tr");
-      tableRow.className = "log-entry";
-
-      // Metadata column.
-      var metadataCell = document.createElement("td");
-      metadataCell.className = "log-entry-meta";
-      tableRow.appendChild(metadataCell);
-
-      var timestampDiv = document.createElement("div");
-      timestampDiv.appendChild(document.createTextNode(logEntry.timestamp));
-      timestampDiv.className = "log-entry-meta-line";
-      metadataCell.appendChild(timestampDiv);
-
-      var nameDiv = document.createElement("div");
-      nameDiv.appendChild(document.createTextNode(logEntry.desc.name));
-      nameDiv.className = "log-entry-meta-line";
-      metadataCell.appendChild(nameDiv);
-
-      var streamDiv = document.createElement("div");
-      streamDiv.appendChild(document.createTextNode(logEntry.streamIndex));
-      streamDiv.className = "log-entry-meta-line";
-      metadataCell.appendChild(streamDiv);
-
-      // Log column.
-      var logCell = document.createElement("td");
-      logCell.className = "log-entry-content";
-      tableRow.appendChild(logCell);
-      if (logEntry.text) {
-        for (var i = 0; i < logEntry.text.lines.length; i++) {
-           var lineDiv = document.createElement("div");
-           lineDiv.className = "log-entry-line";
-           lineDiv.appendChild(
-               document.createTextNode(logEntry.text.lines[i].value));
-           logCell.appendChild(lineDiv);
-        }
-      }
-
-      return tableRow;
-    },
-
-    /** Adds a LogEntry to the log view. */
     _appendLogEntry: function(le) {
       var text = le.text;
       if (!(text && text.lines)) {
@@ -541,11 +507,47 @@ An element for rendering muxed LogDog log streams.
       }
 
       // Create elements manually to avoid Polymer overhead for large logs.
+      var entryRow = document.createElement("div");
+      entryRow.className = "log-entry";
+
+      // Metadata column.
+      var metadataBlock = document.createElement("div");
+      metadataBlock.className = "log-entry-meta";
+      entryRow.appendChild(metadataBlock);
+
+      var timestampDiv = document.createElement("div");
+      timestampDiv.appendChild(document.createTextNode(le.timestamp));
+      timestampDiv.className = "log-entry-meta-line";
+      metadataBlock.appendChild(timestampDiv);
+
+      var nameDiv = document.createElement("div");
+      nameDiv.appendChild(document.createTextNode(le.desc.name));
+      nameDiv.className = "log-entry-meta-line";
+      metadataBlock.appendChild(nameDiv);
+
+      var streamDiv = document.createElement("div");
+      streamDiv.appendChild(document.createTextNode(le.streamIndex));
+      streamDiv.className = "log-entry-meta-line";
+      metadataBlock.appendChild(streamDiv);
+
+      // Log column.
+      var logDataBlock = document.createElement("div");
+      logDataBlock.className = "log-entry-content";
+      if (le.text) {
+        for (var i = 0; i < le.text.lines.length; i++) {
+           var lineDiv = document.createElement("div");
+           lineDiv.className = "log-entry-line";
+           lineDiv.appendChild(
+               document.createTextNode(le.text.lines[i].value));
+           logDataBlock.appendChild(lineDiv);
+        }
+      }
+      entryRow.appendChild(logDataBlock);
+
       // To have styles apply correctly, we need to add it twice, see
       // https://github.com/Polymer/polymer/issues/3100.
-      var tableRow = this._createTableRowForLogEntry(le);
-      Polymer.dom(this.root).appendChild(tableRow);
-      this.$.logs.appendChild(tableRow);
+      Polymer.dom(this.root).appendChild(entryRow);
+      this.$.logs.appendChild(entryRow);
 
       return le.text.lines.length;
     },
@@ -590,7 +592,7 @@ An element for rendering muxed LogDog log streams.
      },
     /**
      * Callback when "wrapLines" has changed. This adds/removes the
-     * "wrapLines" CSS class to the logs table.
+     * "wrapLines" CSS class to the log data.
      */
     _wrapLinesChanged: function(v) {
       this.toggleClass("wrapLines", v, this.$.logs);
