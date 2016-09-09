@@ -258,6 +258,8 @@ An element for rendering muxed LogDog log streams.
             streamType("text");
         return new LogDogQuery(this.$.client, params).getAll();
       }.bind(this))).then(function(results) {
+        console.log("Query returned streams:", results);
+
         // Add query results (if any) to streams.
         results.forEach(function(streams) {
           (streams || []).forEach(function(stream) {

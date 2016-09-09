@@ -95,14 +95,15 @@ A class for issuing a LogDog query.
   };
 
   LogDogQuery.prototype.get = function(cursor, limit) {
+    var project = this.params.project;
     var body = {
-      project: this.params.project,
+      project: project,
       path: this.params._path,
       content_type: this.params._contentType,
       proto_version: this.params._protoVersion,
       tags: this.params._tags,
       next: cursor,
-      count: limit,
+      max_results: limit,
     };
 
     var trinary = function(field, v) {
@@ -147,7 +148,7 @@ A class for issuing a LogDog query.
       //
       // JSONPB timestamps are in the form of RFC3339 strings.
       (resp.streams || []).forEach(function(s) {
-        s.stream = new LogDogStream(resp.project, s.path);
+        s.stream = new LogDogStream(project, s.path);
         if (s.state) {
           patchState(s.state);
         }
@@ -167,13 +168,13 @@ A class for issuing a LogDog query.
     var cursor = null;
     limit = (limit || 100);
 
-    fetchRound = function(inStreams) {
+    var fetchRound = function(inStreams) {
       if (inStreams) {
         streams.push.apply(streams, inStreams);
       }
 
       var remaining = (limit - streams.length);
-      if (remaining <= 0 || cursor === null) {
+      if (remaining <= 0 || (inStreams && !cursor)) {
         return streams;
       }
 
