@@ -131,30 +131,7 @@ An element for rendering muxed LogDog log streams.
     <div id="logContent" on-mousewheel="_handleMouseWheel">
       <table id="logTable">
         <tbody id="logs">
-          <template is="dom-repeat" items="{{logs}}" as="log">
-            <tr class="log-entry">
-              <td class="log-entry-meta">
-                <div class="log-entry-meta-line">
-                  {{log.timestamp}}
-                </div>
-                <div class="log-entry-meta-line">
-                  {{log.desc.name}}
-                </div>
-                <div class="log-entry-meta-line">
-                  {{log.streamIndex}}
-                </div>
-              </td>
-
-              <td class="log-entry-content">
-                <template is="dom-if" if="{{log.text}}">
-                  <template is="dom-repeat" items="{{log.text.lines}}"
-                            as="line">
-                    <div class="log-entry-line">{{line.value}}</div>
-                  </template>
-                </template>
-              </td>
-            </tr>
-          </template>
+          <!-- Content will be populated with JavaScript as logs are loaded. -->
         </tbody>
       </table>
 
@@ -204,16 +181,6 @@ An element for rendering muxed LogDog log streams.
         type: Array,
         value: 100,
         notify: true,
-      },
-
-      /**
-       * The current muxed log entries.
-       */
-      logs: {
-        type: Array,
-        value: [],
-        notify: true,
-        readOnly: true,
       },
 
       /** If true, show log metadata column. */
@@ -523,20 +490,68 @@ An element for rendering muxed LogDog log streams.
       }
     },
 
+    _createTableRowForLogEntry: function(logEntry) {
+      var tableRow = document.createElement("tr");
+      tableRow.className = "log-entry";
+
+      // Metadata column.
+      var metadataCell = document.createElement("td");
+      metadataCell.className = "log-entry-meta";
+      tableRow.appendChild(metadataCell);
+
+      var timestampDiv = document.createElement("div");
+      timestampDiv.appendChild(document.createTextNode(logEntry.timestamp));
+      timestampDiv.className = "log-entry-meta-line";
+      metadataCell.appendChild(timestampDiv);
+
+      var nameDiv = document.createElement("div");
+      nameDiv.appendChild(document.createTextNode(logEntry.desc.name));
+      nameDiv.className = "log-entry-meta-line";
+      metadataCell.appendChild(nameDiv);
+
+      var streamDiv = document.createElement("div");
+      streamDiv.appendChild(document.createTextNode(logEntry.streamIndex));
+      streamDiv.className = "log-entry-meta-line";
+      metadataCell.appendChild(streamDiv);
+
+      // Log column.
+      var logCell = document.createElement("td");
+      logCell.className = "log-entry-content";
+      tableRow.appendChild(logCell);
+      if (logEntry.text) {
+        for (var i = 0; i < logEntry.text.lines.length; i++) {
+           var lineDiv = document.createElement("div");
+           lineDiv.className = "log-entry-line";
+           lineDiv.appendChild(
+               document.createTextNode(logEntry.text.lines[i].value));
+           logCell.appendChild(lineDiv);
+        }
+      }
+
+      return tableRow;
+    },
+
     /** Adds a LogEntry to the log view. */
     _appendLogEntry: function(le) {
       var text = le.text;
       if (!(text && text.lines)) {
         return 0;
       }
-      this.push("logs", le);
+
+      // Create elements manually to avoid Polymer overhead for large logs.
+      // To have styles apply correctly, we need to add it twice, see
+      // https://github.com/Polymer/polymer/issues/3100.
+      var tableRow = this._createTableRowForLogEntry(le);
+      Polymer.dom(this.root).appendChild(tableRow);
+      this.$.logs.appendChild(tableRow);
+
       return le.text.lines.length;
     },
 
     /** Clears all current logs. */
     _clearLogs: function() {
-      if (this.logs) {
-        this.splice("logs", 0, this.logs.length);
+      while (this.$.logs.hasChildNodes()) {
+        this.$.logs.removeChild(this.$.logs.lastChild);
       }
       this._bufferedLogs = null;
     },
