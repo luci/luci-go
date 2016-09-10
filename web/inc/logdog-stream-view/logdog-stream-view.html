@@ -516,18 +516,18 @@ An element for rendering muxed LogDog log streams.
       entryRow.appendChild(metadataBlock);
 
       var timestampDiv = document.createElement("div");
-      timestampDiv.appendChild(document.createTextNode(le.timestamp));
       timestampDiv.className = "log-entry-meta-line";
+      timestampDiv.textContent = le.timestamp;
       metadataBlock.appendChild(timestampDiv);
 
       var nameDiv = document.createElement("div");
-      nameDiv.appendChild(document.createTextNode(le.desc.name));
       nameDiv.className = "log-entry-meta-line";
+      nameDiv.textContent = le.desc.name;
       metadataBlock.appendChild(nameDiv);
 
       var streamDiv = document.createElement("div");
-      streamDiv.appendChild(document.createTextNode(le.streamIndex));
       streamDiv.className = "log-entry-meta-line";
+      streamDiv.textContent = le.streamIndex;
       metadataBlock.appendChild(streamDiv);
 
       // Log column.
@@ -535,11 +535,10 @@ An element for rendering muxed LogDog log streams.
       logDataBlock.className = "log-entry-content";
       if (le.text) {
         for (var i = 0; i < le.text.lines.length; i++) {
-           var lineDiv = document.createElement("div");
-           lineDiv.className = "log-entry-line";
-           lineDiv.appendChild(
-               document.createTextNode(le.text.lines[i].value));
-           logDataBlock.appendChild(lineDiv);
+          var lineDiv = document.createElement("div");
+          lineDiv.className = "log-entry-line";
+          lineDiv.textContent = le.text.lines[i].value;
+          logDataBlock.appendChild(lineDiv);
         }
       }
       entryRow.appendChild(logDataBlock);
