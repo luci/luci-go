@@ -1,7 +1,0 @@
-indexes:
-
-- kind: CronJob
-  properties:
-  - name: Enabled
-  - name: ProjectID
-

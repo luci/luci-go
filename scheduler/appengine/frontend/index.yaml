@@ -1,0 +1,7 @@
+indexes:
+
+- kind: Job
+  properties:
+  - name: Enabled
+  - name: ProjectID
+
