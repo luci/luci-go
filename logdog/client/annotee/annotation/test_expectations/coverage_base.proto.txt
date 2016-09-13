@@ -2,7 +2,7 @@ name: "steps"
 status: FAILURE
 substep: <
   step: <
-    name: "baz"
+    name: "baz/qux"
     status: SUCCESS
     started: <
       seconds: 1420070402
@@ -18,6 +18,12 @@ substep: <
     other_links: <
       label: "dogs"
       url: "http://example.com/dogs"
+    >
+    other_links: <
+      label: "content"
+      logdog_stream: <
+        name: "base/steps/baz_qux/0/logs/content/0"
+      >
     >
   >
 >
@@ -57,13 +63,13 @@ substep: <
         other_links: <
           label: "logging.json"
           logdog_stream: <
-            name: "base/steps/bar/0/logs/logging.json/0"
+            name: "base/steps/foo/0/steps/bar/0/logs/logging.json/0"
           >
         >
         other_links: <
           label: "lorem.txt"
           logdog_stream: <
-            name: "base/steps/bar/0/logs/lorem.txt/0"
+            name: "base/steps/foo/0/steps/bar/0/logs/lorem.txt/0"
           >
         >
         other_links: <

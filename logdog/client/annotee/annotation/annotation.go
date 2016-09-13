@@ -6,7 +6,6 @@ package annotation
 
 import (
 	"fmt"
-	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -100,7 +99,8 @@ func (s *State) initialize() {
 	if s.Execution != nil {
 		name = s.Execution.Name
 	}
-	s.rootStep.initializeStep(s, nil, name, 0, s.LogNameBase)
+	s.rootStep.initializeStep(s, nil, name)
+	s.rootStep.LogNameBase = s.LogNameBase
 	s.SetCurrentStep(nil)
 
 	// Add our Command parameters, if applicable.
@@ -536,10 +536,12 @@ type Step struct {
 	// a Step is reparented.
 	nextStep *Step
 
-	index int
 	level int
 
-	stepIndex map[string]int
+	// logPathIndex is a map of the number of log paths with the given base name.
+	// Each time a log path is generated, it will register with this map and
+	// increase the count.
+	logPathIndex map[types.StreamName]int
 
 	// logLines is a map of log line labels to full log stream names.
 	logLines map[string]types.StreamName
@@ -549,8 +551,8 @@ type Step struct {
 	// names.
 	logLineCount map[string]int
 
-	// LogNameBase is the LogDog stream name root for this step.
-	logNameBase types.StreamName
+	// logNameBase is the LogDog stream name root for this step.
+	LogNameBase types.StreamName
 	// hasSummary, if true, means that this Step has summary text. The summary
 	// text is stored as the first line in its Step.Text slice.
 	hasSummary bool
@@ -558,7 +560,9 @@ type Step struct {
 	closed bool
 }
 
-func (as *Step) initializeStep(s *State, parent *Step, name string, index int, logNameBase types.StreamName) *Step {
+func (as *Step) String() string { return string(as.LogNameBase) }
+
+func (as *Step) initializeStep(s *State, parent *Step, name string) *Step {
 	t := milo.Status_RUNNING
 	as.Step = milo.Step{
 		Name:   name,
@@ -566,11 +570,9 @@ func (as *Step) initializeStep(s *State, parent *Step, name string, index int, l
 	}
 
 	as.s = s
-	as.index = index
-	as.logNameBase = logNameBase
-	as.stepIndex = map[string]int{}
 	as.logLines = map[string]types.StreamName{}
 	as.logLineCount = map[string]int{}
+	as.logPathIndex = map[types.StreamName]int{}
 
 	// Add this Step to our parent's Substep list.
 	if parent != nil {
@@ -594,6 +596,7 @@ func (as *Step) appendSubstep(s *Step) {
 			Step: &s.Step,
 		},
 	})
+	s.regenerateLogPath()
 }
 
 func (as *Step) detachFromParent() {
@@ -614,25 +617,6 @@ func (as *Step) detachFromParent() {
 	as.parent = nil
 }
 
-// CanonicalName returns the canonical name of this Step. This name is
-// guaranteed to be unique witin the State.
-func (as *Step) CanonicalName() string {
-	parts := []string(nil)
-	if as.index == 0 {
-		parts = append(parts, as.Name())
-	} else {
-		parts = append(parts, fmt.Sprintf("%s_%d", as.Name(), as.index))
-	}
-	for p := as.parent; p != nil; p = p.parent {
-		parts = append(parts, p.Name())
-	}
-	for i := len(parts)/2 - 1; i >= 0; i-- {
-		opp := len(parts) - 1 - i
-		parts[i], parts[opp] = parts[opp], parts[i]
-	}
-	return path.Join(parts...)
-}
-
 // Name returns the step's component name.
 func (as *Step) Name() string {
 	return as.Step.Name
@@ -649,25 +633,49 @@ func (as *Step) Proto() *milo.Step {
 // For example, if the base name is "foo/bar", BaseStream("baz") will return
 // "foo/bar/baz".
 func (as *Step) BaseStream(name types.StreamName) types.StreamName {
-	if as.logNameBase == "" {
+	if as.LogNameBase == "" {
 		return name
 	}
-	return as.logNameBase.Concat(name)
+	return as.LogNameBase.Concat(name)
 }
 
 // AddStep generates a new substep.
 func (as *Step) AddStep(name string) *Step {
-	// Determine/advance step index.
-	index := as.stepIndex[name]
-	as.stepIndex[name]++
+	return (&Step{}).initializeStep(as.s, as, name)
+}
 
-	logPath, err := types.MakeStreamName("s_", "steps", name, strconv.Itoa(index))
-	if err != nil {
-		panic(fmt.Errorf("failed to generate step name for [%s]: %s", name, err))
+func (as *Step) regenerateLogPath() {
+	if as.parent == nil {
+		panic("log path regeneration cannot be called on root step")
 	}
 
-	nas := (&Step{}).initializeStep(as.s, as, name, index, as.BaseStream(logPath))
-	return nas
+	// Recipe engine nests steps by prepending their parents' name, e.g.
+	// if "foo" has a nested child, it will be named "foo.bar". This is redundant
+	// for our stream names, so strip that off.
+	//
+	// We throw the length conditional in just in case the child step happens to
+	// have the exact same name as the parent. This shouldn't happen naturally,
+	// but let's be robust.
+	name := as.Name()
+	if parentPrefix := (as.parent.Name() + "."); len(parentPrefix) < len(name) {
+		name = strings.TrimPrefix(name, parentPrefix)
+	}
+
+	logPath, err := types.MakeStreamName("s_", "steps", name)
+	if err != nil {
+		panic(fmt.Errorf("failed to generate step name for [%s]: %s", as.Name(), err))
+	}
+
+	index := as.parent.logPathIndex[logPath]
+	as.parent.logPathIndex[logPath] = (index + 1)
+
+	// Append the index to the stream name.
+	logPath = logPath.Concat(types.StreamName(strconv.Itoa(index)))
+	if err := logPath.Validate(); err != nil {
+		panic(fmt.Errorf("generated invalid log stream path %q: %v", logPath, err))
+	}
+
+	as.LogNameBase = as.parent.BaseStream(logPath)
 }
 
 // Start marks the Step as started.

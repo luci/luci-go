@@ -12,6 +12,17 @@ STEP_STARTED
 STEP_NEST_LEVEL@1
 STEP_CLOSED
 
+# Prefix this name with the parent's so we can test log stream generation
+# via expectation filename.
+SEED_STEP nesting.child0.grandchild
+STEP_CURSOR nesting.child0.grandchild
+STEP_STARTED
+STEP_NEST_LEVEL@2
+STEP_LOG_LINE@content@foo
+STEP_LOG_LINE@content@bar
+STEP_LOG_END@content
+STEP_CLOSED
+
 SEED_STEP nesting.child1
 STEP_CURSOR nesting.child1
 STEP_STARTED

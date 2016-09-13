@@ -20,6 +20,24 @@ substep: <
       step: <
         name: "nesting.child0"
         status: SUCCESS
+        substep: <
+          step: <
+            name: "nesting.child0.grandchild"
+            status: SUCCESS
+            started: <
+              seconds: 1420070400
+            >
+            ended: <
+              seconds: 1420070400
+            >
+            other_links: <
+              label: "content"
+              logdog_stream: <
+                name: "base/steps/nesting.parent/0/steps/nesting.child0/0/steps/grandchild/0/logs/content/0"
+              >
+            >
+          >
+        >
         started: <
           seconds: 1420070400
         >

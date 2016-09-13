@@ -1,10 +1,10 @@
 # Emit annotations to get full coverage of the annotation state machine.
 
-SEED_STEP baz
+SEED_STEP baz/qux
 
-SEED_STEP_TEXT@baz@seeded text
+SEED_STEP_TEXT@baz/qux@seeded text
 # Invalid SEED_STEP_TEXT (needs 3 parameters) is ignored.
-SEED_STEP_TEXT@baz
+SEED_STEP_TEXT@baz/qux
 
 # Invalid STEP_CURSOR for nonexistent step.
 +error STEP_CURSOR could not lookup step
@@ -51,11 +51,13 @@ link@example@http://example.com
 STEP_LINK@alias-->example@http://example.com/alias
 BUILD_EXCEPTION
 
-STEP_CURSOR baz
+STEP_CURSOR baz/qux
 STEP_STARTED
 +time
 STEP_LINK@cats@http://example.com/cats
 STEP_LINK@dogs@http://example.com/dogs
+STEP_LOG_LINE@content@ohai
+STEP_LOG_END@content
 BUILD_WARNINGS
 
 STEP_CURSOR bar

@@ -39,7 +39,7 @@ type testCase struct {
 
 func (tc *testCase) state(startTime time.Time) *State {
 	cb := testCallbacks{
-		closed:   map[string]struct{}{},
+		closed:   map[*Step]struct{}{},
 		logs:     map[types.StreamName][]string{},
 		logsOpen: map[types.StreamName]struct{}{},
 	}
@@ -64,9 +64,9 @@ func (tc *testCase) generate(t *testing.T, startTime time.Time, touched stringse
 	merr := errors.MultiError(nil)
 
 	step := st.RootStep()
-	p, err = writeStepProto(tc.name, step.CanonicalName(), step.Proto())
+	p, err = writeStepProto(tc.name, step)
 	if err != nil {
-		merr = append(merr, fmt.Errorf("Failed to write step proto for %q::%q: %v", tc.name, step.CanonicalName(), err))
+		merr = append(merr, fmt.Errorf("Failed to write step proto for %q::%q: %v", tc.name, step.LogNameBase, err))
 	}
 	touched.Add(p)
 
@@ -171,8 +171,8 @@ func playAnnotationScript(t *testing.T, name string, st *State) (string, error) 
 	return path, nil
 }
 
-func loadStepProto(t *testing.T, test, name string) *milo.Step {
-	path := filepath.Join(testExpDir, fmt.Sprintf("%s_%s.proto.txt", normalize(test), normalize(name)))
+func loadStepProto(t *testing.T, test string, s *Step) *milo.Step {
+	path := filepath.Join(testExpDir, fmt.Sprintf("%s_%s.proto.txt", normalize(test), normalize(string(s.LogNameBase))))
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		t.Errorf("Failed to read milo.Step proto [%s]: %v", path, err)
@@ -187,9 +187,9 @@ func loadStepProto(t *testing.T, test, name string) *milo.Step {
 	return &st
 }
 
-func writeStepProto(test, name string, step *milo.Step) (string, error) {
-	path := filepath.Join(testExpDir, fmt.Sprintf("%s_%s.proto.txt", normalize(test), normalize(name)))
-	return path, ioutil.WriteFile(path, []byte(proto.MarshalTextString(step)), 0644)
+func writeStepProto(test string, s *Step) (string, error) {
+	path := filepath.Join(testExpDir, fmt.Sprintf("%s_%s.proto.txt", normalize(test), normalize(string(s.LogNameBase))))
+	return path, ioutil.WriteFile(path, []byte(proto.MarshalTextString(s.Proto())), 0644)
 }
 
 func loadLogText(t *testing.T, test, name string) []string {
@@ -217,9 +217,8 @@ func writeLogText(test, name string, text []string) (string, error) {
 // testCallbacks implements the Callbacks interface, retaining all callback
 // data in memory.
 type testCallbacks struct {
-	// closed is the set of steps that have been closed, keyed on step
-	// CanonicalName.
-	closed map[string]struct{}
+	// closed is the set of steps that have been closed.
+	closed map[*Step]struct{}
 
 	// logs is the content of emitted annotation logs, keyed on stream name.
 	logs map[types.StreamName][]string
@@ -228,7 +227,7 @@ type testCallbacks struct {
 }
 
 func (tc *testCallbacks) StepClosed(s *Step) {
-	tc.closed[s.CanonicalName()] = struct{}{}
+	tc.closed[s] = struct{}{}
 }
 
 func (tc *testCallbacks) StepLogLine(s *Step, n types.StreamName, label, line string) {
@@ -317,7 +316,7 @@ func TestState(t *testing.T) {
 				Convey(`Has correct Step value`, func() {
 					rootStep := st.RootStep()
 
-					exp := loadStepProto(t, testCase.name, rootStep.CanonicalName())
+					exp := loadStepProto(t, testCase.name, rootStep)
 					So(rootStep.Proto(), ShouldResemble, exp)
 				})
 
