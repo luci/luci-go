@@ -721,6 +721,6 @@ div.step-text:first-child {
     display: inline;
 }
 
-.verbosity-Hidden.default {
+.hide .verbosity-Hidden {
   display: none;
 }

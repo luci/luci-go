@@ -68,10 +68,10 @@
       
         <h2>Steps and Logfiles:</h2>
         <input type="checkbox" id="showHidden">
-        <label for="showHidden">Show hidden</label>
-        <ol>
+        <label for="showHidden">Show hidden <span id="numHidden"></span></label>
+        <ol id="steps" class="hide">
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>update_scripts</b>
               <span style="float:right">( 1 secs )</span>
@@ -92,7 +92,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Hidden default">
+          <li class="verbosity-Hidden">
             <div class="status-Success result">
               <b>setup_build</b>
               <span style="float:right">( 1 secs )</span>
@@ -113,7 +113,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>bot_update</b>
               <span style="float:right">( 1 secs )</span>
@@ -137,7 +137,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Interesting default">
+          <li class="verbosity-Interesting">
             <div class="status-Failure result">
               <b>Patch failure</b>
               <span style="float:right">( 1 secs )</span>
@@ -156,7 +156,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>recipe failure reason</b>
               <span style="float:right">( 1 secs )</span>
@@ -372,14 +372,25 @@
   </div>
 </div>
 <script language="javascript">
-$("#showHidden").click(function(e) {
-  var checked = $(this).is(":checked");
-  $(".verbosity-Hidden").each(function(i, obj) {
+$(document).ready(function() {
+  var check = function(checked) {
+    var things = $("#steps");
     if (checked) {
-      $(this).removeClass("default");
+      $("#steps").removeClass("hide");
     } else {
-      $(this).addClass("default");
+      $("#steps").addClass("hide");
     }
+    var numHidden = $(".verbosity-Hidden").length;
+    if (numHidden > 0) {
+      $("#numHidden").text("(" + numHidden + " hidden)");
+    } else {
+      $("#numHidden").text("");
+    }
+  };
+
+  check($("#showHidden").is(":checked"));
+  $("#showHidden").click(function(e) {
+    check($(this).is(":checked"));
   });
 });
 </script>

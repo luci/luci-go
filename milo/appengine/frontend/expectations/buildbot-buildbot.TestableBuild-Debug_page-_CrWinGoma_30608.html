@@ -99,10 +99,10 @@
       
         <h2>Steps and Logfiles:</h2>
         <input type="checkbox" id="showHidden">
-        <label for="showHidden">Show hidden</label>
-        <ol>
+        <label for="showHidden">Show hidden <span id="numHidden"></span></label>
+        <ol id="steps" class="hide">
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>steps</b>
               <span style="float:right">( 15 mins 30 secs )</span>
@@ -123,7 +123,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>update_scripts</b>
               <span style="float:right">( 24 secs )</span>
@@ -144,7 +144,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>setup_properties</b>
               <span style="float:right">( 6 secs )</span>
@@ -162,7 +162,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>setup_build</b>
               <span style="float:right">( 1 ms )</span>
@@ -183,7 +183,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>taskkill</b>
               <span style="float:right">( 11 secs )</span>
@@ -201,7 +201,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>bot_update</b>
               <span style="float:right">( 1 mins 4 secs )</span>
@@ -222,7 +222,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>ensure_goma</b>
               <span style="float:right">( 2 ms )</span>
@@ -240,7 +240,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>ensure_goma.install cipd</b>
               <span style="float:right">( 5 ms )</span>
@@ -261,7 +261,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>ensure_goma.ensure_installed</b>
               <span style="float:right">( 4 ms )</span>
@@ -282,7 +282,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>gclient runhooks</b>
               <span style="float:right">( 15 secs )</span>
@@ -300,7 +300,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>get compile targets for scripts</b>
               <span style="float:right">( 2 secs )</span>
@@ -321,7 +321,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>read test spec</b>
               <span style="float:right">( 10 secs )</span>
@@ -342,7 +342,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>cleanup_temp</b>
               <span style="float:right">( 12 ms )</span>
@@ -360,7 +360,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>generate_build_files</b>
               <span style="float:right">( 45 secs )</span>
@@ -378,7 +378,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>compile</b>
               <span style="float:right">( 11 mins 2 secs )</span>
@@ -399,7 +399,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>base_unittests</b>
               <span style="float:right">( 35 secs )</span>
@@ -417,7 +417,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>content_unittests</b>
               <span style="float:right">( 40 secs )</span>
@@ -435,7 +435,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>process_dumps</b>
               <span style="float:right">( 2 ms )</span>
@@ -453,7 +453,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Normal default">
+          <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>recipe result</b>
               <span style="float:right">( 86 ms )</span>
@@ -876,14 +876,25 @@
   </div>
 </div>
 <script language="javascript">
-$("#showHidden").click(function(e) {
-  var checked = $(this).is(":checked");
-  $(".verbosity-Hidden").each(function(i, obj) {
+$(document).ready(function() {
+  var check = function(checked) {
+    var things = $("#steps");
     if (checked) {
-      $(this).removeClass("default");
+      $("#steps").removeClass("hide");
     } else {
-      $(this).addClass("default");
+      $("#steps").addClass("hide");
     }
+    var numHidden = $(".verbosity-Hidden").length;
+    if (numHidden > 0) {
+      $("#numHidden").text("(" + numHidden + " hidden)");
+    } else {
+      $("#numHidden").text("");
+    }
+  };
+
+  check($("#showHidden").is(":checked"));
+  $("#showHidden").click(function(e) {
+    check($(this).is(":checked"));
   });
 });
 </script>
