@@ -56,6 +56,11 @@ type buildbotSourceStamp struct {
 	Revision   string           `json:"revision"`
 }
 
+type buildbotLinkAlias struct {
+	URL  string `json:"url"`
+	Text string `json:"text"`
+}
+
 // buildbotBuild is a single build json on buildbot.
 type buildbotBuild struct {
 	Master      string   `gae:"$master"`
@@ -79,6 +84,8 @@ type buildbotBuild struct {
 	Steps       []buildbotStep       `json:"steps" gae:"-"`
 	Text        []string             `json:"text" gae:"-"`
 	Times       []*float64           `json:"times" gae:"-"`
+	// A log link alias.  The key is a log name that is expected to exist within Logs
+	Aliases map[string][]*buildbotLinkAlias `json:"aliases" gae:"-"`
 	// This one is injected by the publisher module.  Does not exist in a
 	// normal json query.
 	TimeStamp *int `json:"timeStamp" gae:"-"`
