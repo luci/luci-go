@@ -235,14 +235,25 @@ func (b *buildbotBuild) Save(withMeta bool) (datastore.PropertyMap, error) {
 	return p, nil
 }
 
+type buildbotPending struct {
+	Source      buildbotSourceStamp `json:"source"`
+	Reason      string              `json:"reason"`
+	SubmittedAt int                 `json:"submittedAt"`
+	BuilderName string              `json:"builderName"`
+}
+
 // buildbotBuilder is a builder struct from the master json, _not_ the builder json.
 type buildbotBuilder struct {
-	Basedir       string   `json:"basedir"`
-	Cachedbuilds  []int    `json:"cachedBuilds"`
-	Category      string   `json:"category"`
-	Currentbuilds []int    `json:"currentBuilds"`
-	Slaves        []string `json:"slaves"`
-	State         string   `json:"state"`
+	Basedir       string `json:"basedir"`
+	CachedBuilds  []int  `json:"cachedBuilds"`
+	PendingBuilds int    `json:"pendingBuilds"`
+	// This one is specific to the pubsub interface.  This is limited to 75,
+	// so it could differ from PendingBuilds
+	PendingBuildStatuses []*buildbotPending `json:"pendingBuildStatuses"`
+	Category             string             `json:"category"`
+	CurrentBuilds        []int              `json:"currentBuilds"`
+	Slaves               []string           `json:"slaves"`
+	State                string             `json:"state"`
 }
 
 // buildbotChangeSource is a changesource (ie polling source) usually tied to a master's scheduler.

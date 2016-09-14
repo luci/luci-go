@@ -102,7 +102,7 @@ func getCurrentBuilds(c context.Context, master *buildbotMaster, builderName str
 	b := master.Builders[builderName]
 	results := []*resp.BuildSummary{}
 	bMap := createRunningBuildMap(master)
-	for _, bn := range b.Currentbuilds {
+	for _, bn := range b.CurrentBuilds {
 		cb := getCurrentBuild(c, bMap, builderName, bn)
 		if cb != nil {
 			results = append(results, cb)
