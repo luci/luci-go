@@ -166,6 +166,10 @@ func (d *datastoreImpl) AllocateIDs(ent ...interface{}) error {
 
 	keys, _, err := mma.getKeysPMs(d.aid, d.ns, false)
 	if err != nil {
+		if len(ent) == 1 {
+			// Single-argument Exists will return a single error.
+			err = errors.SingleError(err)
+		}
 		return err
 	}
 	if len(keys) == 0 {
@@ -196,11 +200,11 @@ func (d *datastoreImpl) AllocateIDs(ent ...interface{}) error {
 	}))
 	if err == nil {
 		err = et.error()
+	}
 
-		if err != nil && len(ent) == 1 {
-			// Single-argument Exists will return a single error.
-			err = errors.SingleError(err)
-		}
+	if err != nil && len(ent) == 1 {
+		// Single-argument Exists will return a single error.
+		err = errors.SingleError(err)
 	}
 	return err
 }
@@ -344,6 +348,10 @@ func (d *datastoreImpl) Exists(ent ...interface{}) (*ExistsResult, error) {
 
 	keys, _, err := mma.getKeysPMs(d.aid, d.ns, false)
 	if err != nil {
+		if len(ent) == 1 {
+			// Single-argument Exists will return a single error.
+			err = errors.SingleError(err)
+		}
 		return nil, err
 	}
 	if len(keys) == 0 {
@@ -360,11 +368,11 @@ func (d *datastoreImpl) Exists(ent ...interface{}) (*ExistsResult, error) {
 	}))
 	if err == nil {
 		err = bt.error()
+	}
 
-		if err != nil && len(ent) == 1 {
-			// Single-argument Exists will return a single error.
-			err = errors.SingleError(err)
-		}
+	if err != nil && len(ent) == 1 {
+		// Single-argument Exists will return a single error.
+		err = errors.SingleError(err)
 	}
 	return bt.result(), err
 }
@@ -389,6 +397,10 @@ func (d *datastoreImpl) Get(dst ...interface{}) (err error) {
 
 	keys, pms, err := mma.getKeysPMs(d.aid, d.ns, true)
 	if err != nil {
+		if len(dst) == 1 {
+			// Single-argument Get will return a single error.
+			err = errors.SingleError(err)
+		}
 		return err
 	}
 	if len(keys) == 0 {
@@ -410,11 +422,11 @@ func (d *datastoreImpl) Get(dst ...interface{}) (err error) {
 
 	if err == nil {
 		err = et.error()
+	}
 
-		if err != nil && len(dst) == 1 {
-			// Single-argument Get will return a single error.
-			err = errors.SingleError(err)
-		}
+	if err != nil && len(dst) == 1 {
+		// Single-argument Get will return a single error.
+		err = errors.SingleError(err)
 	}
 	return err
 }
@@ -438,6 +450,10 @@ func (d *datastoreImpl) Put(src ...interface{}) (err error) {
 
 	keys, vals, err := mma.getKeysPMs(d.aid, d.ns, false)
 	if err != nil {
+		if len(src) == 1 {
+			// Single-argument Put will return a single error.
+			err = errors.SingleError(err)
+		}
 		return err
 	}
 	if len(keys) == 0 {
@@ -464,11 +480,11 @@ func (d *datastoreImpl) Put(src ...interface{}) (err error) {
 
 	if err == nil {
 		err = et.error()
+	}
 
-		if err != nil && len(src) == 1 {
-			// Single-argument Put will return a single error.
-			err = errors.SingleError(err)
-		}
+	if err != nil && len(src) == 1 {
+		// Single-argument Put will return a single error.
+		err = errors.SingleError(err)
 	}
 	return err
 }
@@ -492,6 +508,10 @@ func (d *datastoreImpl) Delete(ent ...interface{}) error {
 
 	keys, _, err := mma.getKeysPMs(d.aid, d.ns, false)
 	if err != nil {
+		if len(ent) == 1 {
+			// Single-argument Delete will return a single error.
+			err = errors.SingleError(err)
+		}
 		return err
 	}
 	if len(keys) == 0 {
@@ -509,11 +529,11 @@ func (d *datastoreImpl) Delete(ent ...interface{}) error {
 	}))
 	if err == nil {
 		err = et.error()
+	}
 
-		if err != nil && len(ent) == 1 {
-			// Single-argument Delete will return a single error.
-			err = errors.SingleError(err)
-		}
+	if err != nil && len(ent) == 1 {
+		// Single-argument Delete will return a single error.
+		err = errors.SingleError(err)
 	}
 	return err
 }
