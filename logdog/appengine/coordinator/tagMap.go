@@ -24,7 +24,7 @@ type TagMap map[string]string
 //
 // If an error occurs decoding a specific property, an errors.MultiError will be
 // returned alongside the successfully-decoded tags.
-func tagMapFromProperties(props []ds.Property) (TagMap, error) {
+func tagMapFromProperties(props ds.PropertySlice) (TagMap, error) {
 	tm := TagMap{}
 	lme := errors.NewLazyMultiError(len(props))
 	for idx, prop := range props {
@@ -60,7 +60,7 @@ func tagMapFromProperties(props []ds.Property) (TagMap, error) {
 }
 
 // toProperties converts a TagMap to a set of Property objects for storage.
-func (m TagMap) toProperties() ([]ds.Property, error) {
+func (m TagMap) toProperties() (ds.PropertySlice, error) {
 	if len(m) == 0 {
 		return nil, nil
 	}
@@ -72,7 +72,7 @@ func (m TagMap) toProperties() ([]ds.Property, error) {
 	}
 	sort.Strings(keys)
 
-	parts := make([]ds.Property, 0, len(m)*2)
+	parts := make(ds.PropertySlice, 0, len(m)*2)
 	for _, k := range keys {
 		v := m[k]
 		if err := types.ValidateTag(k, v); err != nil {

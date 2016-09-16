@@ -38,14 +38,14 @@ func TestTagMap(t *testing.T) {
 
 		props, err := tm.toProperties()
 		So(err, ShouldBeNil)
-		So(props, ShouldResemble, []ds.Property(sps(
+		So(props, ShouldResemble, sps(
 			encodeKey("baz"),
 			encodeKey("baz=qux"),
 			encodeKey("foo"),
 			encodeKey("foo=bar"),
 			encodeKey("quux"),
 			encodeKey("quux="),
-		)))
+		))
 
 		Convey(`Can decode tags.`, func() {
 			dtm, err := tagMapFromProperties(props)

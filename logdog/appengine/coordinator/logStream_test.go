@@ -47,7 +47,7 @@ func shouldHaveLogStreams(actual interface{}, expected ...interface{}) string {
 	return ShouldResemble(names, exp)
 }
 
-// sps constructs a []ds.Property slice from a single interface.
+// sps constructs a ds.PropertySlice from a set of interfaces.
 func sps(values ...interface{}) ds.PropertySlice {
 	ps := make(ds.PropertySlice, len(values))
 	for i, v := range values {

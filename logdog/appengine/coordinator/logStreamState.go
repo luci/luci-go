@@ -154,8 +154,8 @@ func (lst *LogStreamState) Save(withMeta bool) (ds.PropertyMap, error) {
 		return nil, err
 	}
 
-	pmap["_Terminated"] = []ds.Property{ds.MkProperty(lst.Terminated())}
-	pmap["_ArchivalState"] = []ds.Property{ds.MkProperty(lst.ArchivalState())}
+	pmap["_Terminated"] = ds.MkProperty(lst.Terminated())
+	pmap["_ArchivalState"] = ds.MkProperty(lst.ArchivalState())
 
 	return pmap, nil
 }

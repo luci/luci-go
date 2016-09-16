@@ -168,7 +168,7 @@ func (t *processTask) process(c context.Context, cfg *Config, q *datastore.Query
 		processCounters := []*int64{}
 		err := parallel.WorkPool(int(cfg.NumGoroutines), func(ch chan<- func() error) {
 			err := datastore.Get(c).Run(q, func(pm datastore.PropertyMap) error {
-				root := pm["TargetRoot"][0].Value().(*datastore.Key)
+				root := pm.Slice("TargetRoot")[0].Value().(*datastore.Key)
 				encRoot := root.Encode()
 
 				// TODO(riannucci): make banSets remove keys from the banSet which

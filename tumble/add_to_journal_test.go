@@ -40,7 +40,7 @@ func TestAddToJournal(t *testing.T) {
 			pmaps := []datastore.PropertyMap{}
 			So(ds.GetAll(qry, &pmaps), ShouldBeNil)
 			So(len(pmaps), ShouldEqual, 1)
-			So(pmaps[0]["$key"][0].Value().(*datastore.Key).String(), ShouldEqual,
+			So(pmaps[0].Slice("$key")[0].Value().(*datastore.Key).String(), ShouldEqual,
 				`dev~app::/tumble.temp,"8c60aac4ffd6e66142bef4e745d9d91546c115d18cc8283723699d964422a47a"/tumble.Mutation,"0000000000000000_00000000_00000000"`)
 		})
 	})

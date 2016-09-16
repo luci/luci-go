@@ -145,7 +145,7 @@ func (s *LogStream) Path() types.StreamPath {
 func (s *LogStream) Load(pmap ds.PropertyMap) error {
 	// Handle custom properties. Consume them before using the default
 	// PropertyLoadSaver.
-	for k, v := range pmap {
+	for k := range pmap {
 		if !strings.HasPrefix(k, "_") {
 			continue
 		}
@@ -153,7 +153,7 @@ func (s *LogStream) Load(pmap ds.PropertyMap) error {
 		switch k {
 		case "_Tags":
 			// Load the tag map. Ignore errors.
-			tm, _ := tagMapFromProperties(v)
+			tm, _ := tagMapFromProperties(pmap.Slice(k))
 			s.Tags = tm
 		}
 	}
@@ -313,12 +313,12 @@ func (s *LogStream) SetDSValidate(v bool) {
 // glob querying.
 //
 // See the comment on LogStream for more infromation.
-func generatePathComponents(prefix, name string) []ds.Property {
+func generatePathComponents(prefix, name string) ds.PropertySlice {
 	ps, ns := types.StreamName(prefix).Segments(), types.StreamName(name).Segments()
 
 	// Allocate our components array. For each component, there are two entries
 	// (forward and reverse), as well as one count entry per component type.
-	c := make([]ds.Property, 0, (len(ps)+len(ns)+1)*2)
+	c := make(ds.PropertySlice, 0, (len(ps)+len(ns)+1)*2)
 
 	gen := func(b string, segs []string) {
 		// Generate count component (PC:4).

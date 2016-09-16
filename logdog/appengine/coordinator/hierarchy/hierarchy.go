@@ -83,8 +83,8 @@ func (c *componentEntity) Save(withMeta bool) (ds.PropertyMap, error) {
 	if err != nil {
 		return nil, err
 	}
-	pmap["s"] = []ds.Property{ds.MkProperty(c.ID.stream)}
-	pmap["p"] = []ds.Property{ds.MkProperty(c.ID.parent)}
+	pmap["s"] = ds.MkProperty(c.ID.stream)
+	pmap["p"] = ds.MkProperty(c.ID.parent)
 	return pmap, nil
 }
 

@@ -180,7 +180,7 @@ func (b *buildbotBuild) Load(p datastore.PropertyMap) error {
 		// This is probably from a keys-only query.  No need to load the rest.
 		return datastore.GetPLS(b).Load(p)
 	}
-	gz, err := p["data"][0].Project(datastore.PTBytes)
+	gz, err := p.Slice("data")[0].Project(datastore.PTBytes)
 	if err != nil {
 		return err
 	}
@@ -195,7 +195,7 @@ func (b *buildbotBuild) Load(p datastore.PropertyMap) error {
 	return json.Unmarshal(bs, b)
 }
 
-var errTooBig = errors.New("buildbotBuild: Build is too big to save.")
+var errTooBig = errors.New("buildbotBuild: Build is too big to save")
 
 // Save returns a property map of the struct to save in the datastore.  It
 // contains two fields, the ID which is the key, and a data field which is a
@@ -222,26 +222,14 @@ func (b *buildbotBuild) Save(withMeta bool) (datastore.PropertyMap, error) {
 		return nil, errTooBig
 	}
 	p := datastore.PropertyMap{
-		"data": []datastore.Property{
-			datastore.MkPropertyNI(blob),
-		},
+		"data": datastore.MkPropertyNI(blob),
 	}
 	if withMeta {
-		p["id"] = []datastore.Property{
-			datastore.MkPropertyNI(b.getID()),
-		}
-		p["master"] = []datastore.Property{
-			datastore.MkProperty(b.Master),
-		}
-		p["builder"] = []datastore.Property{
-			datastore.MkProperty(b.Buildername),
-		}
-		p["number"] = []datastore.Property{
-			datastore.MkProperty(b.Number),
-		}
-		p["finished"] = []datastore.Property{
-			datastore.MkProperty(b.Finished),
-		}
+		p["id"] = datastore.MkPropertyNI(b.getID())
+		p["master"] = datastore.MkProperty(b.Master)
+		p["builder"] = datastore.MkProperty(b.Buildername)
+		p["number"] = datastore.MkProperty(b.Number)
+		p["finished"] = datastore.MkProperty(b.Finished)
 	}
 	return p, nil
 }
