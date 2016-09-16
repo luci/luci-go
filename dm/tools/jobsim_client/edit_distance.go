@@ -7,7 +7,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"math"
 	"strings"
 
@@ -70,12 +69,15 @@ func (e *editDistanceRun) Run(a subcommands.Application, args []string) int {
 	p := &EditParams{}
 	err := json.NewDecoder(bytes.NewBufferString(e.questDesc.Parameters)).Decode(p)
 	if err != nil {
-		e.finish(0, "", err)
+		return e.finish(EditResult{Error: err.Error()})
+	}
+
+	rslt, stop := e.compute(p)
+	if stop {
 		return 0
 	}
 
-	e.finish(e.compute(p))
-	return 0
+	return e.finish(rslt)
 }
 
 var editSymbolLookup = map[string]string{
@@ -86,18 +88,23 @@ var editSymbolLookup = map[string]string{
 	"transposition": "X",
 }
 
-func (e *editDistanceRun) compute(p *EditParams) (uint32, string, error) {
+func (e *editDistanceRun) compute(p *EditParams) (rslt EditResult, stop bool) {
 	// If one string is empty, the edit distance is the length of the other
 	// string.
 	if len(p.A) == 0 {
-		return uint32(len(p.B)), strings.Repeat("+", len(p.B)), nil
+		rslt.Distance = uint32(len(p.B))
+		rslt.OpHistory = strings.Repeat("+", len(p.B))
+		return
 	} else if len(p.B) == 0 {
-		return uint32(len(p.A)), strings.Repeat("-", len(p.A)), nil
+		rslt.Distance = uint32(len(p.A))
+		rslt.OpHistory = strings.Repeat("-", len(p.A))
+		return
 	}
 
 	// If both strings are exactly equality, the distance between them is 0.
 	if p.A == p.B {
-		return 0, strings.Repeat("=", len(p.A)), nil
+		rslt.OpHistory = strings.Repeat("=", len(p.A))
+		return
 	}
 
 	toDep := []interface{}{
@@ -115,7 +122,7 @@ func (e *editDistanceRun) compute(p *EditParams) (uint32, string, error) {
 		},
 	}
 	if e.useTransposition && len(p.A) > 1 && len(p.B) > 1 {
-		if p.A[0] == p.B[1] && p.B[0] == p.A[1] {
+		if p.A[0] == p.B[1] && p.A[1] == p.B[0] {
 			toDep = append(toDep, &EditParams{ // transposition
 				A: p.A[2:],
 				B: p.B[2:],
@@ -133,16 +140,25 @@ func (e *editDistanceRun) compute(p *EditParams) (uint32, string, error) {
 	retval := uint32(math.MaxUint32)
 	opname := ""
 	opchain := ""
-	for i, rslt := range e.depOn(toDep...) {
+
+	depsData, stop := e.depOn(toDep...)
+	if stop {
+		return
+	}
+
+	for i, dep := range depsData {
 		result := &EditResult{}
-		err := json.NewDecoder(bytes.NewBufferString(rslt)).Decode(result)
+		err := json.NewDecoder(bytes.NewBufferString(dep)).Decode(result)
 		if err != nil {
-			return 0, "", err
+			rslt.Error = err.Error()
+			return
 		}
 
 		opName := opNames[i]
 		if result.Error != "" {
-			return 0, "!" + result.OpHistory, fmt.Errorf(result.Error)
+			rslt.OpHistory = "!" + result.OpHistory
+			rslt.Error = result.Error
+			return
 		}
 		cost := result.Distance
 		if opName != "equality" {
@@ -156,13 +172,7 @@ func (e *editDistanceRun) compute(p *EditParams) (uint32, string, error) {
 		}
 	}
 
-	return retval, editSymbolLookup[opname] + opchain, nil
-}
-
-func (e *editDistanceRun) finish(dist uint32, opHistory string, err error) {
-	if err == nil {
-		e.cmdRun.finish(&EditResult{dist, opHistory, ""})
-	} else {
-		e.cmdRun.finish(&EditResult{Error: err.Error()})
-	}
+	rslt.Distance = retval
+	rslt.OpHistory = editSymbolLookup[opname] + opchain
+	return
 }

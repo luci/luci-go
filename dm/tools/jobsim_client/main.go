@@ -112,7 +112,7 @@ func (r *cmdRun) start(a subcommands.Application, cr subcommands.CommandRun, c *
 	r.exAuth.Token = key
 }
 
-func (r *cmdRun) depOn(jobProperties ...interface{}) []string {
+func (r *cmdRun) depOn(jobProperties ...interface{}) (data []string, stop bool) {
 	req := &dm.EnsureGraphDataReq{
 		ForExecution: r.exAuth,
 
@@ -143,8 +143,8 @@ func (r *cmdRun) depOn(jobProperties ...interface{}) []string {
 		panic(err)
 	}
 	if rsp.ShouldHalt {
-		logging.Infof(r, "got ShouldHalt, quitting")
-		os.Exit(0)
+		logging.Infof(r, "got ShouldHalt")
+		return nil, true
 	}
 
 	ret := make([]string, len(jobProperties))
@@ -152,10 +152,10 @@ func (r *cmdRun) depOn(jobProperties ...interface{}) []string {
 		ret[i] = rsp.Result.Quests[qid.Id].Attempts[1].Data.GetFinished().Data.Object
 	}
 
-	return ret
+	return ret, false
 }
 
-func (r *cmdRun) finish(data interface{}) {
+func (r *cmdRun) finish(data interface{}) int {
 	encData, err := json.Marshal(data)
 	if err != nil {
 		panic(err)
@@ -169,7 +169,7 @@ func (r *cmdRun) finish(data interface{}) {
 	if err != nil {
 		panic(err)
 	}
-	os.Exit(0)
+	return 0
 }
 
 // argErr prints an err and usage to stderr and returns an exit code.
