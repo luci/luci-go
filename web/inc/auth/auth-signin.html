@@ -24,7 +24,6 @@
     </style>
 
     <google-signin-aware id="aware"
-      client-id="[[clientId]]"
       scopes="email"
       on-google-signin-aware-success="_onSignin"
       on-google-signin-aware-signed-out="_onSignout"
@@ -59,6 +58,40 @@
         profile: {
           type: Object,
           readOnly: true
+        },
+
+        clientId: {
+          type: String,
+          notify: true,
+          observer: '_clientIdChanged',
+        },
+      },
+
+      created: function() {
+        this._attached = false;
+        this._lastPushedClientId = null;
+      },
+
+      attached: function() {
+        this._attached = true;
+        this._pushClientId();
+      },
+
+      _clientIdChanged: function() {
+        this._pushClientId();
+      },
+
+      _pushClientId: function() {
+        // Set the client ID here explicitly rather than data-binding. If this
+        // page is loaded in the background, the "auth-signin-aware" AuthEngine
+        // will sign in before the <augh-signin-aware> elements actually attach.
+        // Consequently, they will never receive the sign-in success/fail event.
+        //
+        // By delaying the Client ID setting until the elements have all been
+        // attached, we ensure that they all receive the event as intended.
+        if (this._attached && (this.clientId != this._lastPushedClientId)) {
+          this.$.aware.clientId = this.clientId;
+          this._lastPushedClientId = this.clientId;
         }
       },
 

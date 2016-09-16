@@ -1,0 +1,32 @@
+<!--
+  Copyright 2016 The LUCI Authors. All rights reserved.
+  Use of this source code is governed under the Apache License, Version 2.0
+  that can be found in the LICENSE file.
+  -->
+
+<link rel="import" href="../rpc/rpc-error.html">
+
+<script>
+  "use strict";
+
+  function LogDogError(base) {
+    this.base = base;
+  };
+  LogDogError.wrapGrpc = function(err) {
+    if (err instanceof luci.rpc.GrpcError) {
+      return new LogDogError(err);
+    }
+    return err;
+  }
+
+  LogDogError.prototype = Object.create(Error.prototype);
+  LogDogError.prototype.isGrpcError = function() {
+    return (this.base.name === "GrpcError");
+  };
+  LogDogError.prototype.isNotFound = function() {
+    return (this.isGrpcError() && this.base.code === 5);
+  };
+  LogDogError.prototype.isPermissionDenied = function() {
+    return (this.isGrpcError() && this.base.code === 7);
+  };
+</script>

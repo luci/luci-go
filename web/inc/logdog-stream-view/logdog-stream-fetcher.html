@@ -12,13 +12,14 @@
 <script>
   "use strict";
 
-  function LogDogFetcher(client, project, path) {
+  function LogDogFetcher(client, stream) {
     this.client = client;
-    this.project = project;
-    this.path = path;
+    this.stream = stream;
 
     // Fetching parameters, will be updated as logs are fetched.
     this.sleepTimeSecs = 5;
+    this.byteCount = null;
+    this.logCount = null;
     this.reset();
   }
 
@@ -70,6 +71,9 @@
 
             this._nextLogsPromise = null;
             return result;
+          }.bind(this)).catch(function(error) {
+            this._nextLogsPromise = null;
+            throw error;
           }.bind(this));
     }
     return this._nextLogsPromise;
@@ -93,10 +97,10 @@
       }
 
       var logs = resp.logs;
-      if (!logs.length) {
+      if (! (logs && logs.length)) {
         // No logs were loaded this round. Sleep for a bit then try again.
         // (Streaming case).
-        console.log("No logs for", this.path, "; sleeping...");
+        console.log("No logs for", this.stream, "; sleeping...");
         return new LuciSleepPromise(this.sleepTimeSecs * 1000).
           then(function() {
             return this._fetchNextBatch();
@@ -121,11 +125,18 @@
     this.client.service = "logdog.Logs";
     this.client.method = "Get";
     this.client.request = {
-      project: this.project,
-      path: this.path,
+      project: this.stream.project,
+      path: this.stream.path,
       state: (!this.state || this.terminalIndex() < 0),
       index: this.nextIndex,
     };
+
+    if (this.byteCount !== null) {
+      this.client.request.byteCount = this.byteCount;
+    }
+    if (this.logCount !== null) {
+      this.client.request.logCount = this.logCount;
+    }
 
     return this.client.call().completes.then(function(resp) {
       resp = resp.response;
@@ -146,6 +157,8 @@
       }
 
       return resp;
+    }, function(error) {
+      throw LogDogError.wrapGrpc(error);
     });
   };
 </script>

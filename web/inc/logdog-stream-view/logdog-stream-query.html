@@ -7,6 +7,7 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../rpc/rpc-client.html">
 <link rel="import" href="../logdog-stream/logdog-stream.html">
+<link rel="import" href="../logdog-stream/logdog-error.html">
 
 <!--
 A class for issuing a LogDog query.
@@ -147,7 +148,8 @@ A class for issuing a LogDog query.
       // Normalize the JSON values in "desc".
       //
       // JSONPB timestamps are in the form of RFC3339 strings.
-      (resp.streams || []).forEach(function(s) {
+      resp.streams = (resp.streams || []);
+      resp.streams.forEach(function(s) {
         s.stream = new LogDogStream(project, s.path);
         if (s.state) {
           patchState(s.state);
@@ -157,6 +159,8 @@ A class for issuing a LogDog query.
         }
       });
       return resp;
+    }).catch(function(error) {
+      throw LogDogError.wrapGrpc(error);
     });
   };
 

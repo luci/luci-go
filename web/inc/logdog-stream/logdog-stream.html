@@ -4,7 +4,7 @@
   that can be found in the LICENSE file.
   -->
 
-<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="logdog-error.html">
 
 <script>
   /**
@@ -97,6 +97,29 @@
     this.project = project;
     this.path = path;
   }
+  LogDogStream.prototype.fullName = function() {
+    return this.project + "/" + this.path;
+  };
+  LogDogStream.prototype.prefix = function() {
+    var sepIdx = this.path.indexOf("/+");
+    if (sepIdx > 0) {
+      return this.path.substring(0, sepIdx);
+    }
+    return this.path;
+  };
+  LogDogStream.prototype.name = function() {
+    var sep = "/+/";
+    var sepIdx = this.path.indexOf(sep);
+    if (sepIdx < 0) {
+      return undefined;
+    }
+    return this.path.substring(sepIdx + sep.length);
+  };
+  LogDogStream.prototype.samePrefixAs = function(other) {
+    return (
+        (this.project === other.project) &&
+        (this.prefix() === other.prefix()));
+  };
   LogDogStream.splitProject = function(v) {
     var parts = LogDogStream.split(v, 2);
     if (parts.length === 1) {
