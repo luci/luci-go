@@ -57,8 +57,8 @@ type pubSubSubscription struct {
 }
 
 type buildMasterMsg struct {
-	Master *buildbotMaster `json:"master"`
-	Builds []buildbotBuild `json:"builds"`
+	Master *buildbotMaster  `json:"master"`
+	Builds []*buildbotBuild `json:"builds"`
 }
 
 // buildbotMasterEntry is a container for a marshaled and packed buildbot
@@ -102,7 +102,7 @@ func (m *pubSubSubscription) GetData() ([]byte, error) {
 
 // unmarshal a gzipped byte stream into a list of buildbot builds and masters.
 func unmarshal(
-	c context.Context, msg []byte) ([]buildbotBuild, *buildbotMaster, error) {
+	c context.Context, msg []byte) ([]*buildbotBuild, *buildbotMaster, error) {
 	bm := buildMasterMsg{}
 	if len(msg) == 0 {
 		return bm.Builds, bm.Master, nil
@@ -258,8 +258,8 @@ func PubSubHandler(ctx *router.Context) {
 		build.Internal = internal
 		// Try to get the OS information on a best-effort basis.  This assumes that all
 		// builds come from one master.
-		build.OSFamily, build.OSVersion = getOSInfo(c, &build, &cachedMaster)
-		err = ds.Put(&build)
+		build.OSFamily, build.OSVersion = getOSInfo(c, build, &cachedMaster)
+		err = ds.Put(build)
 		if err != nil {
 			switch err {
 			case errTooBig:

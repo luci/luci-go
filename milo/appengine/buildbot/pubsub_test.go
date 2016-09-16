@@ -44,7 +44,7 @@ func buildbotTimesPending(start float64) []*float64 {
 	return []*float64{&start, nil}
 }
 
-func newCombinedPsBody(bs []buildbotBuild, m *buildbotMaster, internal bool) io.ReadCloser {
+func newCombinedPsBody(bs []*buildbotBuild, m *buildbotMaster, internal bool) io.ReadCloser {
 	bmsg := buildMasterMsg{
 		Master: m,
 		Builds: bs,
@@ -158,7 +158,7 @@ func TestPubSub(t *testing.T) {
 			So(func() { ds.Put(build) }, ShouldPanicLike, "No Master or Builder found")
 		})
 
-		b := buildbotBuild{
+		b := &buildbotBuild{
 			Master:      "Fake Master",
 			Buildername: "Fake buildername",
 			Number:      1234,
@@ -173,7 +173,7 @@ func TestPubSub(t *testing.T) {
 			slaves["testslave"] = &buildbotSlave{
 				Name:      "testslave",
 				Connected: true,
-				Runningbuilds: []buildbotBuild{
+				Runningbuilds: []*buildbotBuild{
 					{
 						Master:      "Fake Master",
 						Buildername: "Fake buildername",
@@ -188,7 +188,7 @@ func TestPubSub(t *testing.T) {
 				Slaves:  slaves,
 			}
 			r := &http.Request{
-				Body: newCombinedPsBody([]buildbotBuild{b}, &ms, false),
+				Body: newCombinedPsBody([]*buildbotBuild{b}, &ms, false),
 			}
 			p := httprouter.Params{}
 			PubSubHandler(&router.Context{
@@ -225,7 +225,7 @@ func TestPubSub(t *testing.T) {
 				ms.Project.Title = "some other title"
 				h = httptest.NewRecorder()
 				r := &http.Request{
-					Body: newCombinedPsBody([]buildbotBuild{b}, &ms, false)}
+					Body: newCombinedPsBody([]*buildbotBuild{b}, &ms, false)}
 				p = httprouter.Params{}
 				PubSubHandler(&router.Context{
 					Context: c,
@@ -244,7 +244,7 @@ func TestPubSub(t *testing.T) {
 				b.Times = buildbotTimesFinished(123.0, 124.0)
 				h = httptest.NewRecorder()
 				r = &http.Request{
-					Body: newCombinedPsBody([]buildbotBuild{b}, &ms, false),
+					Body: newCombinedPsBody([]*buildbotBuild{b}, &ms, false),
 				}
 				p = httprouter.Params{}
 				PubSubHandler(&router.Context{
@@ -267,7 +267,7 @@ func TestPubSub(t *testing.T) {
 					b.Times = buildbotTimesPending(123.0)
 					h = httptest.NewRecorder()
 					r = &http.Request{
-						Body: newCombinedPsBody([]buildbotBuild{b}, &ms, false),
+						Body: newCombinedPsBody([]*buildbotBuild{b}, &ms, false),
 					}
 					p = httprouter.Params{}
 					PubSubHandler(&router.Context{
@@ -310,7 +310,7 @@ func TestPubSub(t *testing.T) {
 			slaves["testslave"] = &buildbotSlave{
 				Name:      "testslave",
 				Connected: true,
-				Runningbuilds: []buildbotBuild{
+				Runningbuilds: []*buildbotBuild{
 					{
 						Master:      "Fake Master",
 						Buildername: "Fake buildername",
@@ -325,7 +325,7 @@ func TestPubSub(t *testing.T) {
 				Slaves:  slaves,
 			}
 			r := &http.Request{
-				Body: newCombinedPsBody([]buildbotBuild{b}, &ms, true),
+				Body: newCombinedPsBody([]*buildbotBuild{b}, &ms, true),
 			}
 			p := httprouter.Params{}
 			PubSubHandler(&router.Context{

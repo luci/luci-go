@@ -37,7 +37,7 @@ func createRunningBuildMap(master *buildbotMaster) buildMap {
 	result := buildMap{}
 	for _, slave := range master.Slaves {
 		for _, build := range slave.Runningbuilds {
-			result[builderRef{build.Buildername, build.Number}] = &build
+			result[builderRef{build.Buildername, build.Number}] = build
 		}
 	}
 	return result

@@ -176,6 +176,10 @@ func (b *buildbotBuild) SetMeta(key string, val interface{}) bool {
 // Load translates a propertymap into the struct and loads the data into
 // the struct.
 func (b *buildbotBuild) Load(p datastore.PropertyMap) error {
+	if _, ok := p["data"]; !ok {
+		// This is probably from a keys-only query.  No need to load the rest.
+		return datastore.GetPLS(b).Load(p)
+	}
 	gz, err := p["data"][0].Project(datastore.PTBytes)
 	if err != nil {
 		return err
@@ -296,7 +300,7 @@ type buildbotSlave struct {
 	Connected     bool             `json:"connected"`
 	Host          string           `json:"host"`
 	Name          string           `json:"name"`
-	Runningbuilds []buildbotBuild  `json:"runningBuilds"`
+	Runningbuilds []*buildbotBuild `json:"runningBuilds"`
 	Version       string           `json:"version"`
 	// This is like runningbuilds, but instead of storing the full build,
 	// just reference the build by builder: build num.
@@ -316,7 +320,7 @@ type buildbotMaster struct {
 		AcceptingBuilds bool `json:"accepting_builds"`
 	} `json:"accepting_builds"`
 
-	Builders map[string]buildbotBuilder `json:"builders"`
+	Builders map[string]*buildbotBuilder `json:"builders"`
 
 	Buildstate struct {
 		AcceptingBuilds bool `json:"accepting_builds"`
