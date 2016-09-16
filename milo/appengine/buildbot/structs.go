@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"strconv"
@@ -195,7 +194,9 @@ func (b *buildbotBuild) Load(p datastore.PropertyMap) error {
 	return json.Unmarshal(bs, b)
 }
 
-var errTooBig = errors.New("buildbotBuild: Build is too big to save")
+type errTooBig struct {
+	error
+}
 
 // Save returns a property map of the struct to save in the datastore.  It
 // contains two fields, the ID which is the key, and a data field which is a
@@ -219,7 +220,8 @@ func (b *buildbotBuild) Save(withMeta bool) (datastore.PropertyMap, error) {
 	// Datastore has a max size of 1MB.  If the blob is over 9.5MB, it probably
 	// won't fit after accounting for overhead.
 	if len(blob) > 950000 {
-		return nil, errTooBig
+		return nil, errTooBig{
+			fmt.Errorf("buildbotBuild: Build too big to store (%d bytes)", len(blob))}
 	}
 	p := datastore.PropertyMap{
 		"data": datastore.MkPropertyNI(blob),

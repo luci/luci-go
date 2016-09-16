@@ -261,13 +261,12 @@ func PubSubHandler(ctx *router.Context) {
 		build.OSFamily, build.OSVersion = getOSInfo(c, build, &cachedMaster)
 		err = ds.Put(build)
 		if err != nil {
-			switch err {
-			case errTooBig:
+			if _, ok := err.(errTooBig); ok {
 				// This will never work, we don't want PubSub to retry.
 				logging.WithError(err).Errorf(
 					c, "Could not save build to datastore, failing permanently")
 				h.WriteHeader(200)
-			default:
+			} else {
 				// This is transient, we do want PubSub to retry.
 				logging.WithError(err).Errorf(c, "Could not save build in datastore")
 				h.WriteHeader(500)

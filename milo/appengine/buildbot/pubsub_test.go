@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -33,8 +34,17 @@ import (
 )
 
 var (
-	fakeTime = time.Date(2001, time.February, 3, 4, 5, 6, 7, time.UTC)
+	fakeTime    = time.Date(2001, time.February, 3, 4, 5, 6, 7, time.UTC)
+	letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 )
+
+func RandStringRunes(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
+}
 
 func buildbotTimesFinished(start, end float64) []*float64 {
 	return []*float64{&start, &end}
@@ -74,6 +84,7 @@ func TestPubSub(t *testing.T) {
 		c = gologger.StdConfig.Use(c)
 		c, _ = testclock.UseTime(c, fakeTime)
 		ds := datastore.Get(c)
+		rand.Seed(5)
 
 		Convey("Save build entry", func() {
 			build := &buildbotBuild{
@@ -288,6 +299,24 @@ func TestPubSub(t *testing.T) {
 					So(*loadB.Times[1], ShouldEqual, 124.0)
 				})
 			})
+			Convey("Large pubsub message", func() {
+				// This has to be a random string, so that after gzip compresses it
+				// it remains larger than 950KB
+				b.Text = append(b.Text, RandStringRunes(1500000))
+				h := httptest.NewRecorder()
+				r := &http.Request{
+					Body: newCombinedPsBody([]*buildbotBuild{b}, &ms, false),
+				}
+				p := httprouter.Params{}
+				PubSubHandler(&router.Context{
+					Context: c,
+					Writer:  h,
+					Request: r,
+					Params:  p,
+				})
+				So(h.Code, ShouldEqual, 200)
+			})
+
 		})
 
 		Convey("Empty pubsub message", func() {
