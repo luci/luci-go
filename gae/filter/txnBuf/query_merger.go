@@ -262,8 +262,8 @@ func toComparableString(start, end []byte, order []ds.IndexColumn, k *ds.Key, pm
 	for _, ord := range order {
 		row, ok := ps[ord.Property]
 		if !ok {
-			if vals, ok := pm[ord.Property]; ok {
-				row = serialize.PropertySlice(vals)
+			if pslice := pm.Slice(ord.Property); len(pslice) > 0 {
+				row = serialize.PropertySlice(pslice)
 			}
 		}
 		sort.Sort(row)

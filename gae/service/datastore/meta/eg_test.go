@@ -24,8 +24,8 @@ func TestGetEntityGroupVersion(t *testing.T) {
 		ds := datastore.Get(c)
 
 		pm := datastore.PropertyMap{
-			"$key": {datastore.MkPropertyNI(ds.MakeKey("A", ""))},
-			"Val":  {datastore.MkProperty(10)},
+			"$key": datastore.MkPropertyNI(ds.MakeKey("A", "")),
+			"Val":  datastore.MkProperty(10),
 		}
 		So(ds.Put(pm), ShouldBeNil)
 		aKey := ds.KeyForObj(pm)

@@ -86,17 +86,26 @@ func (cfg Config) Query(c context.Context, q *datastore.Query) (n int, err error
 		return
 	}
 
-	prop := func(kind, name string, vals []datastore.Property) (err error) {
-		if len(vals) <= 1 {
-			return prnt("  %q: [%s]\n", name, fmtVal(kind, name, vals[0]))
-		}
-		if err = prnt("  %q: [\n    %s", name, fmtVal(kind, name, vals[0])); err != nil {
-			return
-		}
-		for _, v := range vals[1:] {
-			if err = prnt(",\n    %s", fmtVal(kind, name, v)); err != nil {
+	prop := func(kind, name string, pdata datastore.PropertyData) (err error) {
+		switch t := pdata.(type) {
+		case datastore.Property:
+			return prnt("  %q: %s\n", name, fmtVal(kind, name, t))
+
+		case datastore.PropertySlice:
+			if len(t) <= 1 {
+				return prnt("  %q: [%s]\n", name, fmtVal(kind, name, t[0]))
+			}
+			if err = prnt("  %q: [\n    %s", name, fmtVal(kind, name, t[0])); err != nil {
 				return
 			}
+			for _, v := range t[1:] {
+				if err = prnt(",\n    %s", fmtVal(kind, name, v)); err != nil {
+					return
+				}
+			}
+
+		default:
+			return fmt.Errorf("unknown PropertyData %T", t)
 		}
 		return prnt("\n  ]\n")
 	}

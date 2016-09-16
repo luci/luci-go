@@ -57,38 +57,38 @@ func TestPropertyMapSerialization(t *testing.T) {
 		{
 			"basic",
 			ds.PropertyMap{
-				"R": {mp(false), mp(2.1), mpNI(3)},
-				"S": {mp("hello"), mp("world")},
+				"R": ds.PropertySlice{mp(false), mp(2.1), mpNI(3)},
+				"S": ds.PropertySlice{mp("hello"), mp("world")},
 			},
 		},
 		{
 			"keys",
 			ds.PropertyMap{
-				"DS": {
+				"DS": ds.PropertySlice{
 					mp(mkKey("appy", "ns", "Foo", 7)),
 					mp(mkKey("other", "", "Yot", "wheeep")),
 					mp((*ds.Key)(nil)),
 				},
-				"blobstore": {mp(blobstore.Key("sup")), mp(blobstore.Key("nerds"))},
+				"blobstore": ds.PropertySlice{mp(blobstore.Key("sup")), mp(blobstore.Key("nerds"))},
 			},
 		},
 		{
 			"geo",
 			ds.PropertyMap{
-				"G": {mp(ds.GeoPoint{Lat: 1, Lng: 2})},
+				"G": mp(ds.GeoPoint{Lat: 1, Lng: 2}),
 			},
 		},
 		{
 			"data",
 			ds.PropertyMap{
-				"S":          {mp("sup"), mp("fool"), mp("nerd")},
-				"D.Foo.Nerd": {mp([]byte("sup")), mp([]byte("fool"))},
+				"S":          ds.PropertySlice{mp("sup"), mp("fool"), mp("nerd")},
+				"D.Foo.Nerd": ds.PropertySlice{mp([]byte("sup")), mp([]byte("fool"))},
 			},
 		},
 		{
 			"time",
 			ds.PropertyMap{
-				"T": {
+				"T": ds.PropertySlice{
 					mp(now),
 					mp(now.Add(time.Second)),
 				},
@@ -97,10 +97,10 @@ func TestPropertyMapSerialization(t *testing.T) {
 		{
 			"empty vals",
 			ds.PropertyMap{
-				"T": {mp(true), mp(true)},
-				"F": {mp(false), mp(false)},
-				"N": {mp(nil), mp(nil)},
-				"E": {},
+				"T": ds.PropertySlice{mp(true), mp(true)},
+				"F": ds.PropertySlice{mp(false), mp(false)},
+				"N": ds.PropertySlice{mp(nil), mp(nil)},
+				"E": ds.PropertySlice{},
 			},
 		},
 	}
@@ -482,9 +482,9 @@ func TestPartialSerialization(t *testing.T) {
 	Convey("TestPartialSerialization", t, func() {
 		Convey("list", func() {
 			pm := ds.PropertyMap{
-				"wat":  {mpNI("thing"), mp("hat"), mp(100)},
-				"nerd": {mp(103.7)},
-				"spaz": {mpNI(false)},
+				"wat":  ds.PropertySlice{mpNI("thing"), mp("hat"), mp(100)},
+				"nerd": mp(103.7),
+				"spaz": mpNI(false),
 			}
 			sip := PropertyMapPartially(fakeKey, pm)
 			So(len(sip), ShouldEqual, 4)

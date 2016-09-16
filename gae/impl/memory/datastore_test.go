@@ -40,8 +40,9 @@ type Foo struct {
 	ID     int64    `gae:"$id"`
 	Parent *dsS.Key `gae:"$parent"`
 
-	Val  int
-	Name string
+	Val   int
+	Name  string
+	Multi []string
 }
 
 func TestDatastoreSingleReadWriter(t *testing.T) {
@@ -63,7 +64,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 
 		Convey("Can Put stuff", func() {
 			// with an incomplete key!
-			f := &Foo{Val: 10}
+			f := &Foo{Val: 10, Multi: []string{"foo", "bar"}}
 			So(ds.Put(f), ShouldBeNil)
 			k := ds.KeyForObj(f)
 			So(k.String(), ShouldEqual, "dev~app::/Foo,1")
@@ -85,6 +86,20 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					So(ds.Get(newFoo), ShouldEqual, dsS.ErrNoSuchEntity)
 				})
 
+			})
+			Convey("Can Get it back as a PropertyMap", func() {
+				pmap := dsS.PropertyMap{
+					"$id":   propNI(1),
+					"$kind": propNI("Foo"),
+				}
+				So(ds.Get(pmap), ShouldBeNil)
+				So(pmap, ShouldResemble, dsS.PropertyMap{
+					"$id":   propNI(1),
+					"$kind": propNI("Foo"),
+					"Name":  prop(""),
+					"Val":   prop(10),
+					"Multi": dsS.PropertySlice{prop("foo"), prop("bar")},
+				})
 			})
 			Convey("Deleteing with a bogus key is bad", func() {
 				So(ds.Delete(ds.NewKey("Foo", "wat", 100, nil)), ShouldEqual, dsS.ErrInvalidKey)
@@ -152,9 +167,9 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 
 					for i, val := range vals {
 						So(val, ShouldResemble, dsS.PropertyMap{
-							"Val":  {dsS.MkProperty(10)},
-							"Name": {dsS.MkProperty("")},
-							"$key": {dsS.MkPropertyNI(keys[i])},
+							"Val":  dsS.MkProperty(10),
+							"Name": dsS.MkProperty(""),
+							"$key": dsS.MkPropertyNI(keys[i]),
 						})
 					}
 				})
@@ -706,8 +721,8 @@ func TestNewDatastore(t *testing.T) {
 		So(ds.GetAll(dsS.NewQuery("Model").Project("Value"), &vals), ShouldBeNil)
 		So(len(vals), ShouldEqual, 2)
 
-		So(vals[0]["Value"][0].Value(), ShouldEqual, 20)
-		So(vals[1]["Value"][0].Value(), ShouldEqual, 30)
+		So(vals[0].Slice("Value")[0].Value(), ShouldEqual, 20)
+		So(vals[1].Slice("Value")[0].Value(), ShouldEqual, 30)
 	})
 }
 

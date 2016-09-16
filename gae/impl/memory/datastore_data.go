@@ -193,8 +193,8 @@ func curVersion(ents memCollection, key []byte) int64 {
 			pm, err := rpm(v)
 			memoryCorruption(err)
 
-			pl, ok := pm["__version__"]
-			if ok && len(pl) > 0 && pl[0].Type() == ds.PTInt {
+			pl := pm.Slice("__version__")
+			if len(pl) > 0 && pl[0].Type() == ds.PTInt {
 				return pl[0].Value().(int64)
 			}
 
@@ -210,7 +210,7 @@ func incrementLocked(ents memCollection, key []byte, amt int) int64 {
 	}
 	ret := curVersion(ents, key) + 1
 	ents.Set(key, serialize.ToBytes(ds.PropertyMap{
-		"__version__": {ds.MkPropertyNI(ret + int64(amt-1))},
+		"__version__": ds.MkPropertyNI(ret + int64(amt-1)),
 	}))
 	return ret
 }

@@ -264,7 +264,7 @@ func (bds *boundDatastore) prepareNativeQuery(fq *ds.FinalizedQuery) *datastore.
 	// pass the result through to the underlying datastore and allow it to
 	// reject it.
 	nativeFilter := func(prop ds.Property) interface{} {
-		if np, err := bds.gaePropertyToNative("", []ds.Property{prop}); err == nil {
+		if np, err := bds.gaePropertyToNative("", prop); err == nil {
 			return np.Value
 		}
 		return prop.Value()
@@ -333,56 +333,63 @@ func (bds *boundDatastore) mkNPLS(base ds.PropertyMap) *nativePropertyLoadSaver 
 	return &nativePropertyLoadSaver{bds: bds, pmap: clonePropertyMap(base)}
 }
 
-func (bds *boundDatastore) gaePropertyToNative(name string, props []ds.Property) (nativeProp datastore.Property, err error) {
+func (bds *boundDatastore) gaePropertyToNative(name string, pdata ds.PropertyData) (nativeProp datastore.Property, err error) {
 	nativeProp.Name = name
 
-	nativeValues := make([]interface{}, len(props))
-	for i, prop := range props {
+	convert := func(prop *ds.Property) (interface{}, error) {
 		switch pt := prop.Type(); pt {
 		case ds.PTNull, ds.PTInt, ds.PTTime, ds.PTBool, ds.PTBytes, ds.PTString, ds.PTFloat:
-			nativeValues[i] = prop.Value()
-			break
+			return prop.Value(), nil
 
 		case ds.PTKey:
-			nativeValues[i] = bds.gaeKeysToNative(prop.Value().(*ds.Key))[0]
+			return bds.gaeKeysToNative(prop.Value().(*ds.Key))[0], nil
 
 		default:
-			err = fmt.Errorf("unsupported property type at %d: %v", i, pt)
-			return
+			return nil, fmt.Errorf("unsupported property type: %v", pt)
 		}
 	}
 
-	if len(nativeValues) == 1 {
-		nativeProp.Value = nativeValues[0]
-		nativeProp.NoIndex = (props[0].IndexSetting() != ds.ShouldIndex)
-	} else {
-		// We must always index list values.
-		nativeProp.Value = nativeValues
+	switch t := pdata.(type) {
+	case ds.Property:
+		if nativeProp.Value, err = convert(&t); err != nil {
+			return
+		}
+		nativeProp.NoIndex = (t.IndexSetting() != ds.ShouldIndex)
+
+	case ds.PropertySlice:
+		// Don't index by default. If *any* sub-property requests being indexed,
+		// then we will index.
+		nativeProp.NoIndex = true
+
+		// Pack this into an interface{} so it is marked as a multi-value.
+		multiProp := make([]interface{}, len(t))
+		for i := range t {
+			prop := &t[i]
+			if multiProp[i], err = convert(prop); err != nil {
+				return
+			}
+
+			if prop.IndexSetting() == ds.ShouldIndex {
+				nativeProp.NoIndex = false
+			}
+		}
+		nativeProp.Value = multiProp
+
+	default:
+		err = fmt.Errorf("unsupported PropertyData type for %q: %T", name, pdata)
 	}
+
 	return
 }
 
-func (bds *boundDatastore) nativePropertyToGAE(nativeProp datastore.Property) (name string, props []ds.Property, err error) {
+func (bds *boundDatastore) nativePropertyToGAE(nativeProp datastore.Property) (name string, pdata ds.PropertyData, err error) {
 	name = nativeProp.Name
 
-	var nativeValues []interface{}
-	// Slice of supported native type. Break this into a slice of datastore
-	// properties.
-	//
-	// It must be an []interface{}.
-	if rv := reflect.ValueOf(nativeProp.Value); rv.Kind() == reflect.Slice && rv.Type().Elem().Kind() == reflect.Interface {
-		nativeValues = rv.Interface().([]interface{})
-	} else {
-		nativeValues = []interface{}{nativeProp.Value}
-	}
-
-	if len(nativeValues) == 0 {
-		return
-	}
-
-	props = make([]ds.Property, len(nativeValues))
-	for i, nv := range nativeValues {
+	convert := func(nv interface{}, prop *ds.Property) error {
 		switch nvt := nv.(type) {
+		case nil:
+			nv = nil
+
 		case int64, bool, string, float64, []byte:
 			break
 
@@ -394,16 +401,40 @@ func (bds *boundDatastore) nativePropertyToGAE(nativeProp datastore.Property) (n
 			nv = bds.nativeKeysToGAE(nvt)[0]
 
 		default:
-			err = fmt.Errorf("element %d has unsupported datastore.Value type %T", i, nv)
-			return
+			return fmt.Errorf("unsupported datastore.Value type for %q: %T", name, nvt)
 		}
 
 		indexSetting := ds.ShouldIndex
 		if nativeProp.NoIndex {
 			indexSetting = ds.NoIndex
 		}
-		props[i].SetValue(nv, indexSetting)
+		prop.SetValue(nv, indexSetting)
+		return nil
 	}
+
+	// Slice of supported native type. Break this into a slice of datastore
+	// properties.
+	//
+	// It must be an []interface{}.
+	if rv := reflect.ValueOf(nativeProp.Value); rv.Kind() == reflect.Slice && rv.Type().Elem().Kind() == reflect.Interface {
+		// []interface{}, which is a multi-valued property with a single name.
+		// Convert to a PropertySlice.
+		nativeValues := rv.Interface().([]interface{})
+		pslice := make(ds.PropertySlice, len(nativeValues))
+		for i, nv := range nativeValues {
+			if err = convert(nv, &pslice[i]); err != nil {
+				return
+			}
+		}
+		pdata = pslice
+		return
+	}
+
+	var prop ds.Property
+	if err = convert(nativeProp.Value, &prop); err != nil {
+		return
+	}
+	pdata = prop
 	return
 }
 
@@ -463,11 +494,14 @@ func (npls *nativePropertyLoadSaver) Load(props []datastore.Property) error {
 	}
 
 	for _, nativeProp := range props {
-		name, props, err := npls.bds.nativePropertyToGAE(nativeProp)
+		name, pdata, err := npls.bds.nativePropertyToGAE(nativeProp)
 		if err != nil {
 			return err
 		}
-		npls.pmap[name] = append(npls.pmap[name], props...)
+		if _, ok := npls.pmap[name]; ok {
+			return fmt.Errorf("duplicate properties for %q", name)
+		}
+		npls.pmap[name] = pdata
 	}
 	return nil
 }
@@ -478,13 +512,13 @@ func (npls *nativePropertyLoadSaver) Save() ([]datastore.Property, error) {
 	}
 
 	props := make([]datastore.Property, 0, len(npls.pmap))
-	for name, plist := range npls.pmap {
+	for name, pdata := range npls.pmap {
 		// Strip meta.
 		if strings.HasPrefix(name, "$") {
 			continue
 		}
 
-		nativeProp, err := npls.bds.gaePropertyToNative(name, plist)
+		nativeProp, err := npls.bds.gaePropertyToNative(name, pdata)
 		if err != nil {
 			return nil, err
 		}
@@ -512,8 +546,8 @@ func clonePropertyMap(pmap ds.PropertyMap) ds.PropertyMap {
 	}
 
 	clone := make(ds.PropertyMap, len(pmap))
-	for k, props := range pmap {
-		clone[k] = append([]ds.Property(nil), props...)
+	for k, pdata := range pmap {
+		clone[k] = pdata.Clone()
 	}
 	return clone
 }

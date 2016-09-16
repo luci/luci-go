@@ -92,8 +92,8 @@ func TestDSCache(t *testing.T) {
 
 			Convey("basically works", func() {
 				pm := datastore.PropertyMap{
-					"BigData": {datastore.MkProperty([]byte(""))},
-					"Value":   {datastore.MkProperty("hi")},
+					"BigData": datastore.MkProperty([]byte("")),
+					"Value":   datastore.MkProperty("hi"),
 				}
 				encoded := append([]byte{0}, serialize.ToBytes(pm)...)
 

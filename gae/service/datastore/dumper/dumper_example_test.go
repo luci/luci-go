@@ -58,24 +58,24 @@ func ExampleConfig_Query() {
 
 	// Output:
 	// dev~app::/Example,1:
-	//   "HexNumber": [0x0014]
-	//   "Number": [PTInt(10)]
+	//   "HexNumber": 0x0014
+	//   "Number": PTInt(10)
 	//   "Vals": [
 	//     PTString("hi"),
 	//     PTString("there")
 	//   ]
 	//
 	// dev~app::/Example,2:
-	//   "HexNumber": [0x0015]
-	//   "Number": [PTInt(11)]
+	//   "HexNumber": 0x0015
+	//   "Number": PTInt(11)
 	//   "Vals": [PTString("other")]
 	//
 	// dev~app::/Other,1:
 	//   I AM A BANANA
 	//
 	// dev~app::/Parent,1/Example,1:
-	//   "HexNumber": [0x0000]
-	//   "Number": [PTInt(0)]
+	//   "HexNumber": 0x0000
+	//   "Number": PTInt(0)
 	//   "Vals": [
 	//     PTString("child"),
 	//     PTString("ent")

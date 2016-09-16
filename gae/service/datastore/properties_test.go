@@ -194,16 +194,16 @@ func TestDSPropertyMapImpl(t *testing.T) {
 	Convey("PropertyMap load/save err conditions", t, func() {
 		Convey("empty", func() {
 			pm := PropertyMap{}
-			err := pm.Load(PropertyMap{"hello": {Property{}}})
+			err := pm.Load(PropertyMap{"hello": Property{}})
 			So(err, ShouldBeNil)
-			So(pm, ShouldResemble, PropertyMap{"hello": {Property{}}})
+			So(pm, ShouldResemble, PropertyMap{"hello": Property{}})
 
 			npm, _ := pm.Save(false)
 			So(npm, ShouldResemble, pm)
 		})
 		Convey("meta", func() {
 			Convey("working", func() {
-				pm := PropertyMap{"": {MkProperty("trap!")}}
+				pm := PropertyMap{"": MkProperty("trap!")}
 				_, ok := pm.GetMeta("foo")
 				So(ok, ShouldBeFalse)
 
@@ -224,7 +224,7 @@ func TestDSPropertyMapImpl(t *testing.T) {
 
 			Convey("too many values picks the first one", func() {
 				pm := PropertyMap{
-					"$thing": {MkProperty(100), MkProperty(200)},
+					"$thing": PropertySlice{MkProperty(100), MkProperty(200)},
 				}
 				v, ok := pm.GetMeta("thing")
 				So(ok, ShouldBeTrue)

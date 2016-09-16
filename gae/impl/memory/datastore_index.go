@@ -23,7 +23,8 @@ func (s qIndexSlice) Less(i, j int) bool { return s[i].Less(s[j]) }
 func defaultIndexes(kind string, pmap ds.PropertyMap) []*ds.IndexDefinition {
 	ret := make(qIndexSlice, 0, 2*len(pmap)+1)
 	ret = append(ret, &ds.IndexDefinition{Kind: kind})
-	for name, pvals := range pmap {
+	for name := range pmap {
+		pvals := pmap.Slice(name)
 		needsIndex := false
 		for _, v := range pvals {
 			if v.IndexSetting() == ds.ShouldIndex {

@@ -82,7 +82,7 @@ func (f *fakeDatastore) Run(fq *FinalizedQuery, cb RawRunCB) error {
 		if i == 10 {
 			k = f.mkKey("Kind", "eleven")
 		}
-		pm := PropertyMap{"Value": {MkProperty(i)}}
+		pm := PropertyMap{"Value": MkProperty(i)}
 		if err := cb(k, pm, cursCB); err != nil {
 			if err == Stop {
 				err = nil
@@ -103,9 +103,9 @@ func (f *fakeDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) e
 		if k.Kind() == "Fail" {
 			err = errFail
 		} else {
-			So(vals[i]["Value"], ShouldResemble, []Property{MkProperty(i)})
+			So(vals[i].Slice("Value"), ShouldResemble, PropertySlice{MkProperty(i)})
 			if assertExtra {
-				So(vals[i]["Extra"], ShouldResemble, []Property{MkProperty("whoa")})
+				So(vals[i].Slice("Extra"), ShouldResemble, PropertySlice{MkProperty("whoa")})
 			}
 			if k.IsIncomplete() {
 				k = NewKey(k.AppID(), k.Namespace(), k.Kind(), "", int64(i+1), k.Parent())
@@ -128,7 +128,7 @@ func (f *fakeDatastore) GetMulti(keys []*Key, _meta MultiMetaGetter, cb GetMulti
 		} else if k.Kind() == "DNE" || k.IntID() == noSuchEntityID {
 			cb(nil, ErrNoSuchEntity)
 		} else {
-			cb(PropertyMap{"Value": {MkProperty(i + 1)}}, nil)
+			cb(PropertyMap{"Value": MkProperty(i + 1)}, nil)
 		}
 	}
 	return nil
@@ -197,7 +197,7 @@ func (f *FakePLS) Load(pm PropertyMap) error {
 		return errors.New("FakePLS.Load")
 	}
 	f.gotLoaded = true
-	f.Value = pm["Value"][0].Value().(int64)
+	f.Value = pm.Slice("Value")[0].Value().(int64)
 	return nil
 }
 
@@ -206,8 +206,8 @@ func (f *FakePLS) Save(withMeta bool) (PropertyMap, error) {
 		return nil, errors.New("FakePLS.Save")
 	}
 	ret := PropertyMap{
-		"Value": {MkProperty(f.Value)},
-		"Extra": {MkProperty("whoa")},
+		"Value": MkProperty(f.Value),
+		"Extra": MkProperty("whoa"),
 	}
 	if withMeta {
 		id, _ := f.GetMeta("id")
@@ -301,8 +301,8 @@ func (c plsChan) GetMeta(key string) (interface{}, bool) {
 
 func (c plsChan) GetAllMeta() PropertyMap {
 	return PropertyMap{
-		"kind": []Property{MkProperty("plsChan")},
-		"id":   []Property{MkProperty("whyDoIExist")},
+		"kind": MkProperty("plsChan"),
+		"id":   MkProperty("whyDoIExist"),
 	}
 }
 
@@ -315,7 +315,7 @@ func (s *MGSWithNoKind) GetMeta(key string) (interface{}, bool) {
 }
 
 func (s *MGSWithNoKind) GetAllMeta() PropertyMap {
-	return PropertyMap{"$kind": []Property{MkProperty("ohai")}}
+	return PropertyMap{"$kind": MkProperty("ohai")}
 }
 
 func (s *MGSWithNoKind) SetMeta(key string, val interface{}) bool {
@@ -668,7 +668,7 @@ func TestPut(t *testing.T) {
 						So(fpls.IntID, ShouldEqual, expect)
 					}
 
-					pm := PropertyMap{"Value": {MkProperty(0)}, "$kind": {MkPropertyNI("Pmap")}}
+					pm := PropertyMap{"Value": MkProperty(0), "$kind": MkPropertyNI("Pmap")}
 					So(ds.Put(pm), ShouldBeNil)
 					So(ds.KeyForObj(pm).IntID(), ShouldEqual, 1)
 				})
@@ -677,8 +677,8 @@ func TestPut(t *testing.T) {
 					pms := make([]PropertyMap, 7)
 					for i := range pms {
 						pms[i] = PropertyMap{
-							"$kind": {MkProperty("Pmap")},
-							"Value": {MkProperty(i)},
+							"$kind": MkProperty("Pmap"),
+							"Value": MkProperty(i),
 						}
 						if i == 4 {
 							So(pms[i].SetMeta("id", int64(200)), ShouldBeTrue)
@@ -716,8 +716,8 @@ func TestPut(t *testing.T) {
 					pms := make([]*PropertyMap, 7)
 					for i := range pms {
 						pms[i] = &PropertyMap{
-							"$kind": {MkProperty("Pmap")},
-							"Value": {MkProperty(i)},
+							"$kind": MkProperty("Pmap"),
+							"Value": MkProperty(i),
 						}
 						if i == 4 {
 							So(pms[i].SetMeta("id", int64(200)), ShouldBeTrue)
@@ -737,8 +737,8 @@ func TestPut(t *testing.T) {
 					ifs := []interface{}{
 						&CommonStruct{Value: 0},
 						&FakePLS{Value: 1},
-						PropertyMap{"Value": {MkProperty(2)}, "$kind": {MkPropertyNI("Pmap")}},
-						&PropertyMap{"Value": {MkProperty(3)}, "$kind": {MkPropertyNI("Pmap")}},
+						PropertyMap{"Value": MkProperty(2), "$kind": MkPropertyNI("Pmap")},
+						&PropertyMap{"Value": MkProperty(3), "$kind": MkPropertyNI("Pmap")},
 					}
 					So(ds.Put(ifs), ShouldBeNil)
 					for i := range ifs {
@@ -1024,7 +1024,7 @@ func TestGet(t *testing.T) {
 					keys := []*Key{ds.MakeKey("Kind", 1)}
 					So(rds.GetMulti(keys, nil, func(pm PropertyMap, err error) error {
 						So(err, ShouldBeNil)
-						So(pm["Value"][0].Value(), ShouldEqual, 1)
+						So(pm.Slice("Value")[0].Value(), ShouldEqual, 1)
 						return nil
 					}), ShouldBeNil)
 				})
@@ -1145,7 +1145,7 @@ func TestGetAll(t *testing.T) {
 					k, ok := o.GetMeta("key")
 					So(ok, ShouldBeTrue)
 					So(k.(*Key).IntID(), ShouldEqual, i+1)
-					So(o["Value"][0].Value().(int64), ShouldEqual, i)
+					So(o.Slice("Value")[0].Value().(int64), ShouldEqual, i)
 				}
 			})
 
@@ -1178,7 +1178,7 @@ func TestGetAll(t *testing.T) {
 					k, ok := o.GetMeta("key")
 					So(ok, ShouldBeTrue)
 					So(k.(*Key).IntID(), ShouldEqual, i+1)
-					So(o["Value"][0].Value().(int64), ShouldEqual, i)
+					So(o.Slice("Value")[0].Value().(int64), ShouldEqual, i)
 				}
 			})
 
@@ -1338,7 +1338,7 @@ func TestRun(t *testing.T) {
 					k, ok := pm.GetMeta("key")
 					So(ok, ShouldBeTrue)
 					So(k.(*Key).IntID(), ShouldEqual, i+1)
-					So((*pm)["Value"][0].Value(), ShouldEqual, i)
+					So((*pm).Slice("Value")[0].Value(), ShouldEqual, i)
 					i++
 				}), ShouldBeNil)
 			})
@@ -1374,7 +1374,7 @@ func TestRun(t *testing.T) {
 					k, ok := pm.GetMeta("key")
 					So(ok, ShouldBeTrue)
 					So(k.(*Key).IntID(), ShouldEqual, i+1)
-					So(pm["Value"][0].Value(), ShouldEqual, i)
+					So(pm.Slice("Value")[0].Value(), ShouldEqual, i)
 					i++
 				}), ShouldBeNil)
 			})
@@ -1438,8 +1438,8 @@ func TestSchemaChange(t *testing.T) {
 
 		Convey("Can add fields", func() {
 			initial := PropertyMap{
-				"$key": {mpNI(ds.MakeKey("Val", 10))},
-				"Val":  {mp(100)},
+				"$key": mpNI(ds.MakeKey("Val", 10)),
+				"Val":  mp(100),
 			}
 			So(ds.Put(initial), ShouldBeNil)
 
@@ -1456,9 +1456,9 @@ func TestSchemaChange(t *testing.T) {
 
 		Convey("Removing fields", func() {
 			initial := PropertyMap{
-				"$key":   {mpNI(ds.MakeKey("Val", 10))},
-				"Val":    {mp(100)},
-				"TwoVal": {mp(200)},
+				"$key":   mpNI(ds.MakeKey("Val", 10)),
+				"Val":    mp(100),
+				"TwoVal": mp(200),
 			}
 			So(ds.Put(initial), ShouldBeNil)
 
@@ -1487,7 +1487,7 @@ func TestSchemaChange(t *testing.T) {
 					ID:  10,
 					Val: 100,
 					Extra: PropertyMap{
-						"TwoVal": {mp(200)},
+						"TwoVal": PropertySlice{mp(200)},
 					},
 				})
 			})
@@ -1501,8 +1501,8 @@ func TestSchemaChange(t *testing.T) {
 				Extra     PropertyMap `gae:",extra"`
 			}
 			ex := &Expando{10, 17, PropertyMap{
-				"Hello": {mp("Hello")},
-				"World": {mp(true)},
+				"Hello": mp("Hello"),
+				"World": mp(true),
 			}}
 			So(ds.Put(ex), ShouldBeNil)
 
@@ -1512,17 +1512,17 @@ func TestSchemaChange(t *testing.T) {
 				ID:        10,
 				Something: 17,
 				Extra: PropertyMap{
-					"Hello": {mp("Hello")},
-					"World": {mp(true)},
+					"Hello": PropertySlice{mp("Hello")},
+					"World": PropertySlice{mp(true)},
 				},
 			})
 		})
 
 		Convey("Can read-but-not-write", func() {
 			initial := PropertyMap{
-				"$key":   {mpNI(ds.MakeKey("Convert", 10))},
-				"Val":    {mp(100)},
-				"TwoVal": {mp(200)},
+				"$key":   mpNI(ds.MakeKey("Convert", 10)),
+				"Val":    mp(100),
+				"TwoVal": mp(200),
 			}
 			So(ds.Put(initial), ShouldBeNil)
 			type Convert struct {
@@ -1535,9 +1535,9 @@ func TestSchemaChange(t *testing.T) {
 			c := &Convert{ID: 10}
 			So(ds.Get(c), ShouldBeNil)
 			So(c, ShouldResemble, &Convert{
-				ID: 10, Val: 100, NewVal: 0, Extra: PropertyMap{"TwoVal": {mp(200)}},
+				ID: 10, Val: 100, NewVal: 0, Extra: PropertyMap{"TwoVal": PropertySlice{mp(200)}},
 			})
-			c.NewVal = c.Extra["TwoVal"][0].Value().(int64)
+			c.NewVal = c.Extra.Slice("TwoVal")[0].Value().(int64)
 			So(ds.Put(c), ShouldBeNil)
 
 			c = &Convert{ID: 10}
@@ -1549,9 +1549,9 @@ func TestSchemaChange(t *testing.T) {
 
 		Convey("Can black hole", func() {
 			initial := PropertyMap{
-				"$key":   {mpNI(ds.MakeKey("BlackHole", 10))},
-				"Val":    {mp(100)},
-				"TwoVal": {mp(200)},
+				"$key":   mpNI(ds.MakeKey("BlackHole", 10)),
+				"Val":    mp(100),
+				"TwoVal": mp(200),
 			}
 			So(ds.Put(initial), ShouldBeNil)
 			type BlackHole struct {
@@ -1567,8 +1567,8 @@ func TestSchemaChange(t *testing.T) {
 
 		Convey("Can change field types", func() {
 			initial := PropertyMap{
-				"$key": {mpNI(ds.MakeKey("IntChange", 10))},
-				"Val":  {mp(100)},
+				"$key": mpNI(ds.MakeKey("IntChange", 10)),
+				"Val":  mp(100),
 			}
 			So(ds.Put(initial), ShouldBeNil)
 
@@ -1579,8 +1579,8 @@ func TestSchemaChange(t *testing.T) {
 			}
 			i := &IntChange{ID: 10}
 			So(ds.Get(i), ShouldBeNil)
-			So(i, ShouldResemble, &IntChange{ID: 10, Extra: PropertyMap{"Val": {mp(100)}}})
-			i.Val = fmt.Sprint(i.Extra["Val"][0].Value())
+			So(i, ShouldResemble, &IntChange{ID: 10, Extra: PropertyMap{"Val": PropertySlice{mp(100)}}})
+			i.Val = fmt.Sprint(i.Extra.Slice("Val")[0].Value())
 			So(ds.Put(i), ShouldBeNil)
 
 			i = &IntChange{ID: 10}
@@ -1595,22 +1595,22 @@ func TestSchemaChange(t *testing.T) {
 				Extra PropertyMap `gae:",extra"`
 			}
 			d := &Dup{ID: 10, Val: 100, Extra: PropertyMap{
-				"Val":   {mp(200)},
-				"Other": {mp("other")},
+				"Val":   PropertySlice{mp(200)},
+				"Other": PropertySlice{mp("other")},
 			}}
 			So(ds.Put(d), ShouldBeNil)
 
 			d = &Dup{ID: 10}
 			So(ds.Get(d), ShouldBeNil)
 			So(d, ShouldResemble, &Dup{
-				ID: 10, Val: 100, Extra: PropertyMap{"Other": {mp("other")}},
+				ID: 10, Val: 100, Extra: PropertyMap{"Other": PropertySlice{mp("other")}},
 			})
 		})
 
 		Convey("Can change repeated field to non-repeating field", func() {
 			initial := PropertyMap{
-				"$key": {mpNI(ds.MakeKey("NonRepeating", 10))},
-				"Val":  {mp(100), mp(200), mp(400)},
+				"$key": mpNI(ds.MakeKey("NonRepeating", 10)),
+				"Val":  PropertySlice{mp(100), mp(200), mp(400)},
 			}
 			So(ds.Put(initial), ShouldBeNil)
 
@@ -1623,17 +1623,17 @@ func TestSchemaChange(t *testing.T) {
 			So(ds.Get(n), ShouldBeNil)
 			So(n, ShouldResemble, &NonRepeating{
 				ID: 10, Val: 0, Extra: PropertyMap{
-					"Val": {mp(100), mp(200), mp(400)},
+					"Val": PropertySlice{mp(100), mp(200), mp(400)},
 				},
 			})
 		})
 
 		Convey("Deals correctly with recursive types", func() {
 			initial := PropertyMap{
-				"$key": {mpNI(ds.MakeKey("Outer", 10))},
-				"I.A":  {mp(1), mp(2), mp(4)},
-				"I.B":  {mp(10), mp(20), mp(40)},
-				"I.C":  {mp(100), mp(200), mp(400)},
+				"$key": mpNI(ds.MakeKey("Outer", 10)),
+				"I.A":  PropertySlice{mp(1), mp(2), mp(4)},
+				"I.B":  PropertySlice{mp(10), mp(20), mp(40)},
+				"I.C":  PropertySlice{mp(100), mp(200), mp(400)},
 			}
 			So(ds.Put(initial), ShouldBeNil)
 			type Inner struct {
@@ -1656,7 +1656,7 @@ func TestSchemaChange(t *testing.T) {
 					{4, 40},
 				},
 				Extra: PropertyMap{
-					"I.C": {mp(100), mp(200), mp(400)},
+					"I.C": PropertySlice{mp(100), mp(200), mp(400)},
 				},
 			})
 		})

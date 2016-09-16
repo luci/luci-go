@@ -27,7 +27,7 @@ func TestBrokenFeatures(t *testing.T) {
 				c, bf := FilterRDS(c, nil)
 				ds := datastore.Get(c)
 				vals := []datastore.PropertyMap{{
-					"$key": {datastore.MkPropertyNI(ds.NewKey("Wut", "", 1, nil))},
+					"$key": datastore.MkPropertyNI(ds.NewKey("Wut", "", 1, nil)),
 				}}
 
 				Convey("by specifying an error", func() {
@@ -56,7 +56,7 @@ func TestBrokenFeatures(t *testing.T) {
 				c, bf := FilterRDS(c, e)
 				ds := datastore.Get(c)
 				vals := []datastore.PropertyMap{{
-					"$key": {datastore.MkPropertyNI(ds.NewKey("Wut", "", 1, nil))},
+					"$key": datastore.MkPropertyNI(ds.NewKey("Wut", "", 1, nil)),
 				}}
 				bf.BreakFeatures(nil, "GetMulti")
 				So(ds.GetMulti(vals), ShouldEqual, e)

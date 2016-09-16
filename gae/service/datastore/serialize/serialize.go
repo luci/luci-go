@@ -337,14 +337,26 @@ func WritePropertyMap(buf Buffer, context KeyContext, pm ds.PropertyMap) (err er
 	rows := make(sort.StringSlice, 0, len(pm))
 	tmpBuf := &bytes.Buffer{}
 	pm, _ = pm.Save(false)
-	for name, vals := range pm {
+	for name, pdata := range pm {
 		tmpBuf.Reset()
 		_, e := cmpbin.WriteString(tmpBuf, name)
 		panicIf(e)
-		_, e = cmpbin.WriteUint(tmpBuf, uint64(len(vals)))
-		panicIf(e)
-		for _, p := range vals {
-			panicIf(WriteProperty(tmpBuf, context, p))
+
+		switch t := pdata.(type) {
+		case ds.Property:
+			_, e = cmpbin.WriteInt(tmpBuf, -1)
+			panicIf(e)
+			panicIf(WriteProperty(tmpBuf, context, t))
+
+		case ds.PropertySlice:
+			_, e = cmpbin.WriteInt(tmpBuf, int64(len(t)))
+			panicIf(e)
+			for _, p := range t {
+				panicIf(WriteProperty(tmpBuf, context, p))
+			}
+
+		default:
+			return fmt.Errorf("unknown PropertyData type %T", t)
 		}
 		rows = append(rows, tmpBuf.String())
 	}
@@ -382,19 +394,28 @@ func ReadPropertyMap(buf Buffer, context KeyContext, appid, namespace string) (p
 		name, _, e = cmpbin.ReadString(buf)
 		panicIf(e)
 
-		numProps, _, e := cmpbin.ReadUint(buf)
+		numProps, _, e := cmpbin.ReadInt(buf)
 		panicIf(e)
-		if numProps > ReadPropertyMapReasonableLimit {
-			err = fmt.Errorf("helper: tried to decode map with huge number of properties %d", numProps)
-			return
-		}
-		props := make([]ds.Property, 0, numProps)
-		for j := uint64(0); j < numProps; j++ {
+		switch {
+		case numProps < 0:
+			// Single property.
 			prop, err = ReadProperty(buf, context, appid, namespace)
 			panicIf(err)
-			props = append(props, prop)
+			pm[name] = prop
+
+		case uint64(numProps) > ReadPropertyMapReasonableLimit:
+			err = fmt.Errorf("helper: tried to decode map with huge number of properties %d", numProps)
+			return
+
+		default:
+			props := make(ds.PropertySlice, 0, numProps)
+			for j := int64(0); j < numProps; j++ {
+				prop, err = ReadProperty(buf, context, appid, namespace)
+				panicIf(err)
+				props = append(props, prop)
+			}
+			pm[name] = props
 		}
-		pm[name] = props
 	}
 	return
 }
@@ -475,7 +496,7 @@ func ReadIndexDefinition(buf Buffer) (i ds.IndexDefinition, err error) {
 	return
 }
 
-// SerializedPslice is all of the serialized DSProperty values in qASC order.
+// SerializedPslice is all of the serialized DSProperty values in ASC order.
 type SerializedPslice [][]byte
 
 func (s SerializedPslice) Len() int           { return len(s) }
@@ -483,6 +504,8 @@ func (s SerializedPslice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s SerializedPslice) Less(i, j int) bool { return bytes.Compare(s[i], s[j]) < 0 }
 
 // PropertySlice serializes a single row of a DSProperty map.
+//
+// It does not differentiate between single- and multi- properties.
 func PropertySlice(vals ds.PropertySlice) SerializedPslice {
 	dups := stringset.New(0)
 	ret := make(SerializedPslice, 0, len(vals))
@@ -519,8 +542,8 @@ func PropertyMapPartially(k *ds.Key, pm ds.PropertyMap) (ret SerializedPmap) {
 			k = k.Parent()
 		}
 	}
-	for k, vals := range pm {
-		newVals := PropertySlice(vals)
+	for k := range pm {
+		newVals := PropertySlice(pm.Slice(k))
 		if len(newVals) > 0 {
 			ret[k] = newVals
 		}

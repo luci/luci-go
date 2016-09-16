@@ -289,7 +289,7 @@ type keyMGS struct {
 }
 
 func (mgs *keyMGS) GetAllMeta() PropertyMap {
-	return PropertyMap{"$key": []Property{MkPropertyNI(mgs.slot.Interface())}}
+	return PropertyMap{"$key": MkPropertyNI(mgs.slot.Interface())}
 }
 
 func (mgs *keyMGS) GetMeta(key string) (interface{}, bool) {

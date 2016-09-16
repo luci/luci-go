@@ -22,21 +22,27 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func mkProperties(index bool, vals ...interface{}) []ds.Property {
+func mkProperties(index bool, forceMulti bool, vals ...interface{}) ds.PropertyData {
 	indexSetting := ds.ShouldIndex
 	if !index {
 		indexSetting = ds.NoIndex
 	}
 
-	result := make([]ds.Property, len(vals))
+	if len(vals) == 1 && !forceMulti {
+		var prop ds.Property
+		prop.SetValue(vals[0], indexSetting)
+		return prop
+	}
+
+	result := make(ds.PropertySlice, len(vals))
 	for i, v := range vals {
 		result[i].SetValue(v, indexSetting)
 	}
 	return result
 }
 
-func mkp(vals ...interface{}) []ds.Property   { return mkProperties(true, vals...) }
-func mkpNI(vals ...interface{}) []ds.Property { return mkProperties(false, vals...) }
+func mkp(vals ...interface{}) ds.PropertyData   { return mkProperties(true, false, vals...) }
+func mkpNI(vals ...interface{}) ds.PropertyData { return mkProperties(false, false, vals...) }
 
 // TestDatastore tests the cloud datastore implementation.
 //
@@ -74,6 +80,7 @@ func TestDatastore(t *testing.T) {
 		defer client.Close()
 
 		testTime := ds.RoundTime(time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC))
+		_ = testTime
 
 		c = Use(c, client)
 
@@ -191,17 +198,24 @@ func TestDatastore(t *testing.T) {
 
 			Convey(`Can put and get all supported entity fields.`, func() {
 				put := ds.PropertyMap{
-					"$id":    mkpNI("foo"),
-					"$kind":  mkpNI("FooType"),
-					"Number": mkp(1337),
-					"String": mkpNI("hello"),
-					"Bytes":  mkp([]byte("world")),
-					"Time":   mkp(testTime),
-					"Float":  mkpNI(3.14),
-					"Key":    mkp(di.MakeKey("Parent", "ParentID", "Child", 1337)),
+					"$id":   mkpNI("foo"),
+					"$kind": mkpNI("FooType"),
+
+					"Number":    mkp(1337),
+					"String":    mkpNI("hello"),
+					"Bytes":     mkp([]byte("world")),
+					"Time":      mkp(testTime),
+					"Float":     mkpNI(3.14),
+					"Key":       mkp(di.MakeKey("Parent", "ParentID", "Child", 1337)),
+					"Null":      mkp(nil),
+					"NullSlice": mkp(nil, nil),
 
 					"ComplexSlice": mkp(1337, "string", []byte("bytes"), testTime, float32(3.14),
-						float64(2.71), true, di.MakeKey("SomeKey", "SomeID")),
+						float64(2.71), true, nil, di.MakeKey("SomeKey", "SomeID")),
+
+					"Single":      mkp("single"),
+					"SingleSlice": mkProperties(true, true, "single"), // Force a single "multi" value.
+					"EmptySlice":  ds.PropertySlice(nil),
 				}
 				So(di.Put(put), ShouldBeNil)
 				delete(put, "$key")

@@ -27,7 +27,7 @@ var estimateSizeTests = []struct {
 	pm     PropertyMap
 	expect int
 }{
-	{PropertyMap{"Something": {}}, 9},
+	{PropertyMap{"Something": mps()}, 9},
 	{PropertyMap{"Something": mps(100)}, 18},
 	{PropertyMap{"Something": mps(100.1, "sup")}, 22},
 	{PropertyMap{
@@ -56,7 +56,7 @@ func stablePmString(pm PropertyMap) string {
 		if i != 0 {
 			_, _ = buf.WriteString(" ")
 		}
-		vals := pm[k]
+		vals := pm.Slice(k)
 		strs := make([]string, len(vals))
 		for i, v := range vals {
 			strs[i] = v.GQL()

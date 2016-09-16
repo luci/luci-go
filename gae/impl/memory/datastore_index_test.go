@@ -41,9 +41,9 @@ var rowGenTestCases = []struct {
 	{
 		name: "simple including builtins",
 		pmap: ds.PropertyMap{
-			"wat":  {propNI("thing"), prop("hat"), prop(100)},
-			"nerd": {prop(103.7)},
-			"spaz": {propNI(false)},
+			"wat":  ds.PropertySlice{propNI("thing"), prop("hat"), prop(100)},
+			"nerd": prop(103.7),
+			"spaz": propNI(false),
 		},
 		withBuiltin: true,
 		idxs: []*ds.IndexDefinition{
@@ -95,12 +95,12 @@ var rowGenTestCases = []struct {
 	{
 		name: "complex",
 		pmap: ds.PropertyMap{
-			"yerp": {prop("hat"), prop(73.9)},
-			"wat": {
+			"yerp": ds.PropertySlice{prop("hat"), prop(73.9)},
+			"wat": ds.PropertySlice{
 				prop(rgenComplexTime),
 				prop([]byte("value")),
 				prop(rgenComplexKey)},
-			"spaz": {prop(nil), prop(false), prop(true)},
+			"spaz": ds.PropertySlice{prop(nil), prop(false), prop(true)},
 		},
 		idxs: []*ds.IndexDefinition{
 			indx("knd", "-wat", "nerd", "spaz"), // doesn't match, so empty
@@ -137,7 +137,7 @@ var rowGenTestCases = []struct {
 	{
 		name: "ancestor",
 		pmap: ds.PropertyMap{
-			"wat": {prop("sup")},
+			"wat": prop("sup"),
 		},
 		idxs: []*ds.IndexDefinition{
 			indx("knd!", "wat"),
@@ -215,9 +215,9 @@ func TestIndexRowGen(t *testing.T) {
 
 			Convey("defaultIndexes", func() {
 				pm := ds.PropertyMap{
-					"wat":  {propNI("thing"), prop("hat"), prop(100)},
-					"nerd": {prop(103.7)},
-					"spaz": {propNI(false)},
+					"wat":  ds.PropertySlice{propNI("thing"), prop("hat"), prop(100)},
+					"nerd": prop(103.7),
+					"spaz": propNI(false),
 				}
 				idxs := defaultIndexes("knd", pm)
 				So(len(idxs), ShouldEqual, 5)
@@ -283,16 +283,16 @@ var updateIndexesTests = []struct {
 		name: "basic",
 		data: []dumbItem{
 			{key("knd", 1), ds.PropertyMap{
-				"wat":  {prop(10)},
-				"yerp": {prop(10)}},
+				"wat":  prop(10),
+				"yerp": prop(10)},
 			},
 			{key("knd", 10), ds.PropertyMap{
-				"wat":  {prop(1)},
-				"yerp": {prop(200)}},
+				"wat":  prop(1),
+				"yerp": prop(200)},
 			},
 			{key("knd", 1), ds.PropertyMap{
-				"wat":  {prop(10)},
-				"yerp": {prop(202)}},
+				"wat":  prop(10),
+				"yerp": prop(202)},
 			},
 		},
 		expected: map[string][][]byte{
@@ -316,24 +316,24 @@ var updateIndexesTests = []struct {
 		idxs: []*ds.IndexDefinition{indx("knd", "yerp", "-wat")},
 		data: []dumbItem{
 			{key("knd", 1), ds.PropertyMap{
-				"wat":  {prop(10)},
-				"yerp": {prop(100)}},
+				"wat":  prop(10),
+				"yerp": prop(100)},
 			},
 			{key("knd", 10), ds.PropertyMap{
-				"wat":  {prop(1)},
-				"yerp": {prop(200)}},
+				"wat":  prop(1),
+				"yerp": prop(200)},
 			},
 			{key("knd", 11), ds.PropertyMap{
-				"wat":  {prop(20)},
-				"yerp": {prop(200)}},
+				"wat":  prop(20),
+				"yerp": prop(200)},
 			},
 			{key("knd", 14), ds.PropertyMap{
-				"wat":  {prop(20)},
-				"yerp": {prop(200)}},
+				"wat":  prop(20),
+				"yerp": prop(200)},
 			},
 			{key("knd", 1), ds.PropertyMap{
-				"wat":  {prop(10)},
-				"yerp": {prop(202)}},
+				"wat":  prop(10),
+				"yerp": prop(202)},
 			},
 		},
 		expected: map[string][][]byte{

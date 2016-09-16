@@ -530,7 +530,7 @@ func TestQuerySupport(t *testing.T) {
 					for i, pm := range vals {
 						So(datastore.GetMetaDefault(pm, "key", nil), ShouldResemble,
 							ds.MakeKey("Parent", 1, "Foo", expect[i].id))
-						So(pm["Value"][0].Value(), ShouldEqual, expect[i].val)
+						So(pm.Slice("Value")[0].Value(), ShouldEqual, expect[i].val)
 					}
 
 					// should remove 4 entries, but there are plenty more to fill
@@ -561,7 +561,7 @@ func TestQuerySupport(t *testing.T) {
 					for i, pm := range vals {
 						So(datastore.GetMetaDefault(pm, "key", nil), ShouldResemble,
 							ds.MakeKey("Parent", 1, "Foo", expect[i].id))
-						So(pm["Value"][0].Value(), ShouldEqual, expect[i].val)
+						So(pm.Slice("Value")[0].Value(), ShouldEqual, expect[i].val)
 					}
 
 					So(ds.Put(&Foo{ID: 1, Parent: root, Value: []int64{3, 9}}), ShouldBeNil)
@@ -591,7 +591,7 @@ func TestQuerySupport(t *testing.T) {
 					for i, pm := range vals {
 						So(datastore.GetMetaDefault(pm, "key", nil), ShouldResemble,
 							ds.MakeKey("Parent", 1, "Foo", expect[i].id))
-						So(pm["Value"][0].Value(), ShouldEqual, expect[i].val)
+						So(pm.Slice("Value")[0].Value(), ShouldEqual, expect[i].val)
 					}
 
 					return nil
@@ -644,7 +644,7 @@ func TestQuerySupport(t *testing.T) {
 					}
 
 					for i, pm := range vals {
-						So(pm["Value"][0].Value(), ShouldEqual, expect[i].val)
+						So(pm.Slice("Value")[0].Value(), ShouldEqual, expect[i].val)
 						So(datastore.GetMetaDefault(pm, "key", nil), ShouldResemble,
 							ds.MakeKey("Parent", 1, "Foo", expect[i].id))
 					}
@@ -752,7 +752,7 @@ func TestQuerySupport(t *testing.T) {
 					}
 
 					for i, pm := range vals {
-						So(pm["Value"][0].Value(), ShouldEqual, expect[i].val)
+						So(pm.Slice("Value")[0].Value(), ShouldEqual, expect[i].val)
 						So(datastore.GetMetaDefault(pm, "key", nil), ShouldResemble,
 							ds.MakeKey("Parent", 1, "Foo", expect[i].id))
 					}
@@ -892,14 +892,14 @@ func TestQuerySupport(t *testing.T) {
 					return ds.Run(q, func(pm datastore.PropertyMap) {
 						So(ds.RunInTransaction(func(c context.Context) error {
 							ds := datastore.Get(c)
-							pm["Value"] = append(pm["Value"], datastore.MkProperty("wat"))
+							pm["Value"] = append(pm.Slice("Value"), datastore.MkProperty("wat"))
 							return ds.Put(pm)
 						}, nil), ShouldBeNil)
 					})
 				}, &datastore.TransactionOptions{XG: true}), ShouldBeNil)
 
 				So(ds.Run(datastore.NewQuery("Foo"), func(pm datastore.PropertyMap) {
-					val := pm["Value"]
+					val := pm.Slice("Value")
 					So(val[len(val)-1].Value(), ShouldResemble, "wat")
 				}), ShouldBeNil)
 			})

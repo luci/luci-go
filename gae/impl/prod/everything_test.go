@@ -28,14 +28,16 @@ var (
 type TestStruct struct {
 	ID int64 `gae:"$id"`
 
-	ValueI  []int64
-	ValueB  []bool
-	ValueS  []string
-	ValueF  []float64
-	ValueBS [][]byte // "ByteString"
-	ValueK  []*datastore.Key
-	ValueBK []blobstore.Key
-	ValueGP []datastore.GeoPoint
+	ValueI           []int64
+	ValueB           []bool
+	ValueS           []string
+	ValueF           []float64
+	ValueBS          [][]byte // "ByteString"
+	ValueK           []*datastore.Key
+	ValueBK          []blobstore.Key
+	ValueGP          []datastore.GeoPoint
+	ValueSingle      string
+	ValueSingleSlice []string
 }
 
 func TestBasicDatastore(t *testing.T) {
@@ -129,12 +131,23 @@ func TestBasicDatastore(t *testing.T) {
 				ValueGP: []datastore.GeoPoint{
 					{Lat: 120.7, Lng: 95.5},
 				},
+				ValueSingle:      "ohai",
+				ValueSingleSlice: []string{"kthxbye"},
 			}
 			So(ds.Put(&orig), ShouldBeNil)
 
 			ret := TestStruct{ID: orig.ID}
 			So(ds.Get(&ret), ShouldBeNil)
 			So(ret, ShouldResemble, orig)
+
+			// make sure single- and multi- properties are preserved.
+			pmap := datastore.PropertyMap{
+				"$id":   mpNI(orig.ID),
+				"$kind": mpNI("TestStruct"),
+			}
+			So(ds.Get(pmap), ShouldBeNil)
+			So(pmap["ValueSingle"], ShouldHaveSameTypeAs, datastore.Property{})
+			So(pmap["ValueSingleSlice"], ShouldHaveSameTypeAs, datastore.PropertySlice(nil))
 
 			// can't be sure the indexes have caught up... so sleep
 			time.Sleep(time.Second)
@@ -155,12 +168,12 @@ func TestBasicDatastore(t *testing.T) {
 				So(ds.GetAll(q, &rslts), ShouldBeNil)
 				So(rslts, ShouldResemble, []datastore.PropertyMap{
 					{
-						"$key":   {mpNI(ds.KeyForObj(&orig))},
-						"ValueS": {mp("hello")},
+						"$key":   mpNI(ds.KeyForObj(&orig)),
+						"ValueS": mp("hello"),
 					},
 					{
-						"$key":   {mpNI(ds.KeyForObj(&orig))},
-						"ValueS": {mp("world")},
+						"$key":   mpNI(ds.KeyForObj(&orig)),
+						"ValueS": mp("world"),
 					},
 				})
 
@@ -169,20 +182,20 @@ func TestBasicDatastore(t *testing.T) {
 				So(ds.GetAll(q, &rslts), ShouldBeNil)
 				So(rslts, ShouldResemble, []datastore.PropertyMap{
 					{
-						"$key":    {mpNI(ds.KeyForObj(&orig))},
-						"ValueBS": {mp("allo")},
+						"$key":    mpNI(ds.KeyForObj(&orig)),
+						"ValueBS": mp("allo"),
 					},
 					{
-						"$key":    {mpNI(ds.KeyForObj(&orig))},
-						"ValueBS": {mp("hello")},
+						"$key":    mpNI(ds.KeyForObj(&orig)),
+						"ValueBS": mp("hello"),
 					},
 					{
-						"$key":    {mpNI(ds.KeyForObj(&orig))},
-						"ValueBS": {mp("world")},
+						"$key":    mpNI(ds.KeyForObj(&orig)),
+						"ValueBS": mp("world"),
 					},
 					{
-						"$key":    {mpNI(ds.KeyForObj(&orig))},
-						"ValueBS": {mp("zurple")},
+						"$key":    mpNI(ds.KeyForObj(&orig)),
+						"ValueBS": mp("zurple"),
 					},
 				})
 
@@ -195,24 +208,24 @@ func TestBasicDatastore(t *testing.T) {
 				So(ds.GetAll(q, &rslts), ShouldBeNil)
 				So(rslts, ShouldResemble, []datastore.PropertyMap{
 					{
-						"$key":   {mpNI(ds.KeyForObj(&orig))},
-						"ValueI": {mp(1)},
-						"ValueS": {mp("hello")},
+						"$key":   mpNI(ds.KeyForObj(&orig)),
+						"ValueI": mp(1),
+						"ValueS": mp("hello"),
 					},
 					{
-						"$key":   {mpNI(ds.KeyForObj(&orig))},
-						"ValueI": {mp(1)},
-						"ValueS": {mp("world")},
+						"$key":   mpNI(ds.KeyForObj(&orig)),
+						"ValueI": mp(1),
+						"ValueS": mp("world"),
 					},
 					{
-						"$key":   {mpNI(ds.KeyForObj(&orig))},
-						"ValueI": {mp(7)},
-						"ValueS": {mp("hello")},
+						"$key":   mpNI(ds.KeyForObj(&orig)),
+						"ValueI": mp(7),
+						"ValueS": mp("hello"),
 					},
 					{
-						"$key":   {mpNI(ds.KeyForObj(&orig))},
-						"ValueI": {mp(7)},
-						"ValueS": {mp("world")},
+						"$key":   mpNI(ds.KeyForObj(&orig)),
+						"ValueI": mp(7),
+						"ValueS": mp("world"),
 					},
 				})
 
@@ -225,8 +238,8 @@ func TestBasicDatastore(t *testing.T) {
 		Convey("Can Put/Get (time)", func() {
 			// time comparisons in Go are wonky, so this is pulled out
 			pm := datastore.PropertyMap{
-				"$key": {mpNI(ds.NewKey("Something", "value", 0, nil))},
-				"Time": {
+				"$key": mpNI(ds.NewKey("Something", "value", 0, nil)),
+				"Time": datastore.PropertySlice{
 					mp(time.Date(1938, time.January, 1, 1, 1, 1, 1, time.UTC)),
 					mp(time.Time{}),
 				},
@@ -237,25 +250,25 @@ func TestBasicDatastore(t *testing.T) {
 			rslt.SetMeta("key", ds.KeyForObj(pm))
 			So(ds.Get(&rslt), ShouldBeNil)
 
-			So(pm["Time"][0].Value(), ShouldResemble, rslt["Time"][0].Value())
+			So(pm.Slice("Time")[0].Value(), ShouldResemble, rslt.Slice("Time")[0].Value())
 
 			q := datastore.NewQuery("Something").Project("Time")
 			all := []datastore.PropertyMap{}
 			So(ds.GetAll(q, &all), ShouldBeNil)
 			So(len(all), ShouldEqual, 2)
-			prop := all[0]["Time"][0]
+			prop := all[0].Slice("Time")[0]
 			So(prop.Type(), ShouldEqual, datastore.PTInt)
 
 			tval, err := prop.Project(datastore.PTTime)
 			So(err, ShouldBeNil)
 			So(tval, ShouldResemble, time.Time{}.UTC())
 
-			tval, err = all[1]["Time"][0].Project(datastore.PTTime)
+			tval, err = all[1].Slice("Time")[0].Project(datastore.PTTime)
 			So(err, ShouldBeNil)
-			So(tval, ShouldResemble, pm["Time"][0].Value())
+			So(tval, ShouldResemble, pm.Slice("Time")[0].Value())
 
 			ent := datastore.PropertyMap{
-				"$key": {mpNI(ds.MakeKey("Something", "value"))},
+				"$key": mpNI(ds.MakeKey("Something", "value")),
 			}
 			So(ds.Get(&ent), ShouldBeNil)
 			So(ent["Time"], ShouldResemble, pm["Time"])

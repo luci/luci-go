@@ -367,17 +367,22 @@ func (d *Doubler) Save(withMeta bool) (PropertyMap, error) {
 		return nil, err
 	}
 
+	double := func(prop *Property) {
+		switch v := prop.Value().(type) {
+		case string:
+			// + means string concatenation.
+			So(prop.SetValue(v+v, prop.IndexSetting()), ShouldBeNil)
+		case int64:
+			// + means integer addition.
+			So(prop.SetValue(v+v, prop.IndexSetting()), ShouldBeNil)
+		}
+	}
+
 	// Edit that map and send it on.
-	for _, props := range propMap {
-		for i := range props {
-			switch v := props[i].Value().(type) {
-			case string:
-				// + means string concatenation.
-				So(props[i].SetValue(v+v, props[i].IndexSetting()), ShouldBeNil)
-			case int64:
-				// + means integer addition.
-				So(props[i].SetValue(v+v, props[i].IndexSetting()), ShouldBeNil)
-			}
+	for k, v := range propMap {
+		if prop, ok := v.(Property); ok {
+			double(&prop)
+			propMap[k] = prop
 		}
 	}
 	return propMap, nil
@@ -392,19 +397,19 @@ type Deriver struct {
 }
 
 func (d *Deriver) Load(props PropertyMap) error {
-	for name, p := range props {
+	for name := range props {
 		if name != "S" {
 			continue
 		}
-		d.S = p[0].Value().(string)
+		d.S = props.Slice(name)[0].Value().(string)
 		d.Derived = "derived+" + d.S
 	}
 	return nil
 }
 
 func (d *Deriver) Save(withMeta bool) (PropertyMap, error) {
-	return map[string][]Property{
-		"S": {mp(d.S)},
+	return map[string]PropertyData{
+		"S": mp(d.S),
 	}, nil
 }
 
@@ -419,7 +424,7 @@ type Augmenter struct {
 }
 
 func (a *Augmenter) Load(props PropertyMap) error {
-	if e := props["Extra"]; len(e) > 0 {
+	if e := props.Slice("Extra"); len(e) > 0 {
 		a.g = e[0].Value().(string)
 		delete(props, "Extra")
 	}
@@ -434,7 +439,7 @@ func (a *Augmenter) Save(withMeta bool) (PropertyMap, error) {
 	if err != nil {
 		return nil, err
 	}
-	props["Extra"] = []Property{MkProperty("ohai!")}
+	props["Extra"] = MkProperty("ohai!")
 	return props, nil
 }
 
@@ -743,7 +748,7 @@ var testCases = []testCase{
 		desc: "geopoint as props",
 		src:  &G0{G: testGeoPt0},
 		want: PropertyMap{
-			"G": {mp(testGeoPt0)},
+			"G": mp(testGeoPt0),
 		},
 	},
 	{
@@ -797,14 +802,14 @@ var testCases = []testCase{
 		desc: "time as props",
 		src:  &T{T: time.Unix(1e9, 0).UTC()},
 		want: PropertyMap{
-			"T": {mp(time.Unix(1e9, 0).UTC())},
+			"T": mp(time.Unix(1e9, 0).UTC()),
 		},
 	},
 	{
 		desc: "uint32 save",
 		src:  &U0{U: 1},
 		want: PropertyMap{
-			"U": {mp(1)},
+			"U": mp(1),
 		},
 	},
 	{
@@ -828,7 +833,7 @@ var testCases = []testCase{
 		desc: "byte save",
 		src:  &U1{U: 1},
 		want: PropertyMap{
-			"U": {mp(1)},
+			"U": mp(1),
 		},
 	},
 	{
@@ -905,12 +910,12 @@ var testCases = []testCase{
 		desc: "use convertable slice (to map)",
 		src:  &Impossible{[]ImpossibleInner{{Convertable{1, 5, 9}}, {Convertable{2, 4, 6}}}},
 		want: PropertyMap{
-			"Nested.wot": {mpNI("1,5,9"), mpNI("2,4,6")},
+			"Nested.wot": PropertySlice{mpNI("1,5,9"), mpNI("2,4,6")},
 		},
 	},
 	{
 		desc:    "convertable slice (bad load)",
-		src:     PropertyMap{"Nested.wot": {mpNI([]byte("ohai"))}},
+		src:     PropertyMap{"Nested.wot": mpNI([]byte("ohai"))},
 		want:    &Impossible{[]ImpossibleInner{{}}},
 		loadErr: "nope",
 	},
@@ -954,9 +959,8 @@ var testCases = []testCase{
 			},
 		},
 		want: PropertyMap{
-			"kewelmap": {
-				mpNI([]byte(
-					`{"epic":"success","no_way!":[true,"story"],"what":["is","really",100]}`))},
+			"kewelmap": mpNI([]byte(
+				`{"epic":"success","no_way!":[true,"story"],"what":["is","really",100]}`)),
 		},
 	},
 	{
@@ -974,13 +978,12 @@ var testCases = []testCase{
 			[]Complex{complex(1, 2), complex(3, 4)},
 		},
 		want: PropertyMap{
-			"Values": {
-				mp(GeoPoint{Lat: 1, Lng: 2}), mp(GeoPoint{Lat: 3, Lng: 4})},
+			"Values": PropertySlice{mp(GeoPoint{Lat: 1, Lng: 2}), mp(GeoPoint{Lat: 3, Lng: 4})},
 		},
 	},
 	{
 		desc:    "convertable complex slice (bad load)",
-		src:     PropertyMap{"Values": {mp("hello")}},
+		src:     PropertyMap{"Values": mp("hello")},
 		want:    &Impossible4{[]Complex(nil)},
 		loadErr: "nope",
 	},
@@ -1076,7 +1079,7 @@ var testCases = []testCase{
 		desc: "short ByteString as props",
 		src:  &B5{B: makeUint8Slice(3)},
 		want: PropertyMap{
-			"B": {mp(makeUint8Slice(3))},
+			"B": mp(makeUint8Slice(3)),
 		},
 	},
 	{
@@ -1086,16 +1089,16 @@ var testCases = []testCase{
 			// A and B are renamed to a and b; A and C are noindex, I is ignored.
 			// Indexed properties are loaded before raw properties. Thus, the
 			// result is: b, b, b, D, E, a, c.
-			"b1": {
+			"b1": PropertySlice{
 				mp(21),
 				mp(22),
 				mp(23),
 			},
-			"D": {mp(4)},
-			"E": {mp(5)},
-			"a": {mpNI(1)},
-			"C": {mpNI(3)},
-			"J": {mpNI(7)},
+			"D": mp(4),
+			"E": mp(5),
+			"a": mpNI(1),
+			"C": mpNI(3),
+			"J": mpNI(7),
 		},
 	},
 	{
@@ -1106,8 +1109,8 @@ var testCases = []testCase{
 	{
 		desc: "save props load tagged",
 		src: PropertyMap{
-			"A": {mpNI(11)},
-			"a": {mpNI(12)},
+			"A": mpNI(11),
+			"a": mpNI(12),
 		},
 		want:    &Tagged{A: 12},
 		loadErr: `cannot load field "A"`,
@@ -1147,28 +1150,28 @@ var testCases = []testCase{
 		desc: "save struct load props",
 		src:  &X0{S: "s", I: 1},
 		want: PropertyMap{
-			"S": {mp("s")},
-			"I": {mp(1)},
+			"S": mp("s"),
+			"I": mp(1),
 		},
 	},
 	{
 		desc: "save props load struct",
 		src: PropertyMap{
-			"S": {mp("s")},
-			"I": {mp(1)},
+			"S": mp("s"),
+			"I": mp(1),
 		},
 		want: &X0{S: "s", I: 1},
 	},
 	{
 		desc: "nil-value props",
 		src: PropertyMap{
-			"I": {mp(nil)},
-			"B": {mp(nil)},
-			"S": {mp(nil)},
-			"F": {mp(nil)},
-			"K": {mp(nil)},
-			"T": {mp(nil)},
-			"J": {
+			"I": mp(nil),
+			"B": mp(nil),
+			"S": mp(nil),
+			"F": mp(nil),
+			"K": mp(nil),
+			"T": mp(nil),
+			"J": PropertySlice{
 				mp(nil),
 				mp(7),
 				mp(nil),
@@ -1203,37 +1206,37 @@ var testCases = []testCase{
 			},
 		},
 		want: PropertyMap{
-			"A": {mp(1)},
-			"I.W": {
+			"A": mp(1),
+			"I.W": PropertySlice{
 				mp(10),
 				mp(20),
 				mp(30),
 			},
-			"I.X": {
+			"I.X": PropertySlice{
 				mp("ten"),
 				mp("twenty"),
 				mp("thirty"),
 			},
-			"J.Y": {mp(3.14)},
-			"Z":   {mp(true)},
+			"J.Y": mp(3.14),
+			"Z":   mp(true),
 		},
 	},
 	{
 		desc: "save props load outer-equivalent",
 		src: PropertyMap{
-			"A": {mp(1)},
-			"I.W": {
+			"A": mp(1),
+			"I.W": PropertySlice{
 				mp(10),
 				mp(20),
 				mp(30),
 			},
-			"I.X": {
+			"I.X": PropertySlice{
 				mp("ten"),
 				mp("twenty"),
 				mp("thirty"),
 			},
-			"J.Y": {mp(3.14)},
-			"Z":   {mp(true)},
+			"J.Y": mp(3.14),
+			"Z":   mp(true),
 		},
 		want: &OuterEquivalent{
 			A:     1,
@@ -1271,13 +1274,13 @@ var testCases = []testCase{
 		desc: "dotted names save",
 		src:  &Dotted{A: DottedA{B: DottedB{C: 88}}},
 		want: PropertyMap{
-			"A0.A1.A2.B3.C4.C5": {mp(88)},
+			"A0.A1.A2.B3.C4.C5": mp(88),
 		},
 	},
 	{
 		desc: "dotted names load",
 		src: PropertyMap{
-			"A0.A1.A2.B3.C4.C5": {mp(99)},
+			"A0.A1.A2.B3.C4.C5": mp(99),
 		},
 		want: &Dotted{A: DottedA{B: DottedB{C: 99}}},
 	},
@@ -1295,15 +1298,15 @@ var testCases = []testCase{
 		desc: "augmenter save",
 		src:  &Augmenter{S: "s"},
 		want: PropertyMap{
-			"S":     {mp("s")},
-			"Extra": {mp("ohai!")},
+			"S":     mp("s"),
+			"Extra": mp("ohai!"),
 		},
 	},
 	{
 		desc: "augmenter load",
 		src: PropertyMap{
-			"S":     {mp("s")},
-			"Extra": {mp("kthxbye!")},
+			"S":     mp("s"),
+			"Extra": mp("kthxbye!"),
 		},
 		want: &Augmenter{S: "s", g: "kthxbye!"},
 	},
@@ -1366,7 +1369,7 @@ var testCases = []testCase{
 	{
 		desc: "exotic type projection",
 		src: PropertyMap{
-			"BS": {mp([]byte("I'mABlobKey"))},
+			"BS": mp([]byte("I'mABlobKey")),
 		},
 		want: &ExoticTypes{
 			BS: "I'mABlobKey",
@@ -1380,46 +1383,46 @@ var testCases = []testCase{
 	{
 		desc: "mismatch (string)",
 		src: PropertyMap{
-			"K": {mp(199)},
-			"S": {mp([]byte("cats"))},
-			"F": {mp("nurbs")},
+			"K": mp(199),
+			"S": mp([]byte("cats")),
+			"F": mp("nurbs"),
 		},
 		want:    &MismatchTypes{},
 		loadErr: "type mismatch",
 	},
 	{
 		desc:    "mismatch (float)",
-		src:     PropertyMap{"F": {mp(blobstore.Key("wot"))}},
+		src:     PropertyMap{"F": mp(blobstore.Key("wot"))},
 		want:    &MismatchTypes{},
 		loadErr: "type mismatch",
 	},
 	{
 		desc:    "mismatch (float/overflow)",
-		src:     PropertyMap{"F": {mp(math.MaxFloat64)}},
+		src:     PropertyMap{"F": mp(math.MaxFloat64)},
 		want:    &MismatchTypes{},
 		loadErr: "overflows",
 	},
 	{
 		desc:    "mismatch (key)",
-		src:     PropertyMap{"K": {mp(false)}},
+		src:     PropertyMap{"K": mp(false)},
 		want:    &MismatchTypes{},
 		loadErr: "type mismatch",
 	},
 	{
 		desc:    "mismatch (bool)",
-		src:     PropertyMap{"B": {mp(testKey0)}},
+		src:     PropertyMap{"B": mp(testKey0)},
 		want:    &MismatchTypes{},
 		loadErr: "type mismatch",
 	},
 	{
 		desc:    "mismatch (time)",
-		src:     PropertyMap{"T": {mp(GeoPoint{})}},
+		src:     PropertyMap{"T": mp(GeoPoint{})},
 		want:    &MismatchTypes{},
 		loadErr: "type mismatch",
 	},
 	{
 		desc:    "mismatch (geopoint)",
-		src:     PropertyMap{"G": {mp(time.Now().UTC())}},
+		src:     PropertyMap{"G": mp(time.Now().UTC())},
 		want:    &MismatchTypes{},
 		loadErr: "type mismatch",
 	},
@@ -1531,30 +1534,30 @@ var testCases = []testCase{
 			},
 		},
 		want: PropertyMap{
-			"red.S":            {mp("rouge")},
-			"red.I":            {mp(0)},
-			"red.Nonymous.S":   {mp("rosso0"), mp("rosso1")},
-			"red.Nonymous.I":   {mp(0), mp(0)},
-			"red.Other":        {mp("")},
-			"green.S":          {mp("vert")},
-			"green.I":          {mp(0)},
-			"green.Nonymous.S": {mp("verde0"), mp("verde1"), mp("verde2")},
-			"green.Nonymous.I": {mp(0), mp(0), mp(0)},
-			"green.Other":      {mp("")},
-			"Blue.S":           {mp("bleu")},
-			"Blue.I":           {mp(0)},
-			"Blue.Nonymous.S":  {mp("blu0"), mp("blu1"), mp("blu2"), mp("blu3")},
-			"Blue.Nonymous.I":  {mp(0), mp(0), mp(0), mp(0)},
-			"Blue.Other":       {mp("")},
+			"red.S":            mp("rouge"),
+			"red.I":            mp(0),
+			"red.Nonymous.S":   PropertySlice{mp("rosso0"), mp("rosso1")},
+			"red.Nonymous.I":   PropertySlice{mp(0), mp(0)},
+			"red.Other":        mp(""),
+			"green.S":          mp("vert"),
+			"green.I":          mp(0),
+			"green.Nonymous.S": PropertySlice{mp("verde0"), mp("verde1"), mp("verde2")},
+			"green.Nonymous.I": PropertySlice{mp(0), mp(0), mp(0)},
+			"green.Other":      mp(""),
+			"Blue.S":           mp("bleu"),
+			"Blue.I":           mp(0),
+			"Blue.Nonymous.S":  PropertySlice{mp("blu0"), mp("blu1"), mp("blu2"), mp("blu3")},
+			"Blue.Nonymous.I":  PropertySlice{mp(0), mp(0), mp(0), mp(0)},
+			"Blue.Other":       mp(""),
 		},
 	},
 	{
 		desc: "save props load structs with ragged fields",
 		src: PropertyMap{
-			"red.S":            {mp("rot")},
-			"green.Nonymous.I": {mp(10), mp(11), mp(12), mp(13)},
-			"Blue.Nonymous.S":  {mp("blau0"), mp("blau1"), mp("blau2")},
-			"Blue.Nonymous.I":  {mp(20), mp(21)},
+			"red.S":            mp("rot"),
+			"green.Nonymous.I": PropertySlice{mp(10), mp(11), mp(12), mp(13)},
+			"Blue.Nonymous.S":  PropertySlice{mp("blau0"), mp("blau1"), mp("blau2")},
+			"Blue.Nonymous.I":  PropertySlice{mp(20), mp(21)},
 		},
 		want: &N2{
 			N1: N1{
@@ -1590,10 +1593,10 @@ var testCases = []testCase{
 			}
 		}{},
 		want: PropertyMap{
-			"B.Y": {mp("")},
-			"A.X": {mpNI("")},
-			"A.Y": {mpNI("")},
-			"B.X": {mpNI("")},
+			"B.Y": mp(""),
+			"A.X": mpNI(""),
+			"A.Y": mpNI(""),
+			"B.X": mpNI(""),
 		},
 	},
 	{
@@ -1602,8 +1605,8 @@ var testCases = []testCase{
 			Inner1 `gae:"foo"`
 		}{},
 		want: PropertyMap{
-			"foo.W": {mp(0)},
-			"foo.X": {mp("")},
+			"foo.W": mp(0),
+			"foo.X": mp(""),
 		},
 	},
 	{
@@ -1627,7 +1630,7 @@ var testCases = []testCase{
 			i, J int64
 		}{i: 1, J: 2},
 		want: PropertyMap{
-			"J": {mp(2)},
+			"J": mp(2),
 		},
 	},
 	{
@@ -1638,7 +1641,7 @@ var testCases = []testCase{
 			J: json.RawMessage("rawr"),
 		},
 		want: PropertyMap{
-			"J": {mp([]byte("rawr"))},
+			"J": mp([]byte("rawr")),
 		},
 	},
 	{
@@ -1685,6 +1688,7 @@ func TestRoundTrip(t *testing.T) {
 					So(err, ShouldErrLike, tc.saveErr)
 					return
 				}
+				So(err, ShouldBeNil)
 				So(savedProps, ShouldNotBeNil)
 
 				var got interface{}
@@ -1799,7 +1803,7 @@ func TestMeta(t *testing.T) {
 	Convey("StructPLS Miscellaneous", t, func() {
 		Convey("a simple struct has a default $kind", func() {
 			So(GetPLS(&Simple{}).GetAllMeta(), ShouldResemble, PropertyMap{
-				"$kind": []Property{mpNI("Simple")},
+				"$kind": mpNI("Simple"),
 			})
 		})
 
@@ -1875,9 +1879,9 @@ func TestMeta(t *testing.T) {
 			pm, err := pls.Save(true)
 			So(err, ShouldBeNil)
 			So(pm, ShouldResemble, PropertyMap{
-				"$when": {mpNI("tomorrow")},
-				"$amt":  {mpNI(100)},
-				"$kind": {mpNI("OKDefaults")},
+				"$when": mpNI("tomorrow"),
+				"$amt":  mpNI(100),
+				"$kind": mpNI("OKDefaults"),
 			})
 
 			v, ok := pm.GetMeta("when")
@@ -1983,8 +1987,8 @@ func TestMeta(t *testing.T) {
 			So(idp.id, ShouldEqual, 27)
 
 			So(mgs.GetAllMeta(), ShouldResemble, PropertyMap{
-				"$id":   {mpNI("happy|27")},
-				"$kind": {mpNI("CoolKind")},
+				"$id":   mpNI("happy|27"),
+				"$kind": mpNI("CoolKind"),
 			})
 		})
 
@@ -2003,20 +2007,20 @@ func TestMeta(t *testing.T) {
 			So(ko.customKind, ShouldEqual, "")
 
 			So(mgs.GetAllMeta(), ShouldResemble, PropertyMap{
-				"$id":   {mpNI(20)},
-				"$kind": {mpNI("KindOverride")},
+				"$id":   mpNI(20),
+				"$kind": mpNI("KindOverride"),
 			})
 			ko.customKind = "wut"
 			So(mgs.GetAllMeta(), ShouldResemble, PropertyMap{
-				"$id":   {mpNI(20)},
-				"$kind": {mpNI("wut")},
+				"$id":   mpNI(20),
+				"$kind": mpNI("wut"),
 			})
 
 			props, err := GetPLS(ko).Save(true)
 			So(err, ShouldBeNil)
 			So(props, ShouldResemble, PropertyMap{
-				"$id":   {mpNI(20)},
-				"$kind": {mpNI("wut")},
+				"$id":   mpNI(20),
+				"$kind": mpNI("wut"),
 			})
 		})
 
@@ -2031,8 +2035,8 @@ func TestMeta(t *testing.T) {
 			So(ide.EmbeddedID, ShouldResemble, EmbeddedID{"sup", 1337})
 
 			So(pls.GetAllMeta(), ShouldResemble, PropertyMap{
-				"$id":   {mpNI("sup|1337")},
-				"$kind": {mpNI("IDEmbedder")},
+				"$id":   mpNI("sup|1337"),
+				"$kind": mpNI("IDEmbedder"),
 			})
 		})
 	})

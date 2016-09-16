@@ -71,7 +71,7 @@ func (s *projectionStrategy) handle(rawData [][]byte, decodedProps []ds.Property
 		if s.distinct != nil {
 			projectedRaw[i] = rawData[p.suffixIndex]
 		}
-		pmap[p.propertyName] = []ds.Property{decodedProps[p.suffixIndex]}
+		pmap[p.propertyName] = decodedProps[p.suffixIndex]
 	}
 	if s.distinct != nil {
 		if !s.distinct.Add(string(serialize.Join(projectedRaw...))) {

@@ -336,6 +336,16 @@ func UpconvertUnderlyingType(o interface{}) interface{} {
 	return o
 }
 
+func (Property) isAPropertyData() {}
+
+func (p Property) estimateSize() int64 { return p.EstimateSize() }
+
+// Slice implements the PropertyData interface.
+func (p Property) Slice() PropertySlice { return PropertySlice{p} }
+
+// Clone implements the PropertyData interface.
+func (p Property) Clone() PropertyData { return p }
+
 func (p Property) String() string {
 	switch p.propType {
 	case PTString, PTBlobKey:
@@ -628,6 +638,33 @@ func (p *Property) Compare(other *Property) int {
 	}
 }
 
+// EstimateSize estimates the amount of space that this Property would consume
+// if it were committed as part of an entity in the real production datastore.
+//
+// It uses https://cloud.google.com/appengine/articles/storage_breakdown?csw=1
+// as a guide for these values.
+func (p *Property) EstimateSize() int64 {
+	switch p.Type() {
+	case PTNull:
+		return 1
+	case PTBool:
+		return 1 + 4
+	case PTInt, PTTime, PTFloat:
+		return 1 + 8
+	case PTGeoPoint:
+		return 1 + (8 * 2)
+	case PTString:
+		return 1 + int64(len(p.Value().(string)))
+	case PTBlobKey:
+		return 1 + int64(len(p.Value().(blobstore.Key)))
+	case PTBytes:
+		return 1 + int64(len(p.Value().([]byte)))
+	case PTKey:
+		return 1 + p.Value().(*Key).EstimateSize()
+	}
+	panic(fmt.Errorf("Unknown property type: %s", p.Type().String()))
+}
+
 // GQL returns a correctly formatted Cloud Datastore GQL literal which
 // is valid for a comparison value in the `WHERE` clause.
 //
@@ -672,38 +709,35 @@ func (p *Property) GQL() string {
 }
 
 // PropertySlice is a slice of Properties. It implements sort.Interface.
+//
+// PropertySlice holds multiple Properties. Writing a PropertySlice to datastore
+// implicitly marks the property as "multiple", even if it only has one element.
 type PropertySlice []Property
+
+func (PropertySlice) isAPropertyData() {}
+
+// Clone implements the PropertyData interface.
+func (s PropertySlice) Clone() PropertyData { return s.Slice() }
+
+// Slice implements the PropertyData interface.
+func (s PropertySlice) Slice() PropertySlice {
+	if len(s) == 0 {
+		return nil
+	}
+	return append(make(PropertySlice, 0, len(s)), s...)
+}
+
+func (s PropertySlice) estimateSize() (v int64) {
+	for _, prop := range s {
+		// Use the public one so we don't have to copy.
+		v += prop.estimateSize()
+	}
+	return
+}
 
 func (s PropertySlice) Len() int           { return len(s) }
 func (s PropertySlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s PropertySlice) Less(i, j int) bool { return s[i].Less(&s[j]) }
-
-// EstimateSize estimates the amount of space that this Property would consume
-// if it were committed as part of an entity in the real production datastore.
-//
-// It uses https://cloud.google.com/appengine/articles/storage_breakdown?csw=1
-// as a guide for these values.
-func (p *Property) EstimateSize() int64 {
-	switch p.Type() {
-	case PTNull:
-		return 1
-	case PTBool:
-		return 1 + 4
-	case PTInt, PTTime, PTFloat:
-		return 1 + 8
-	case PTGeoPoint:
-		return 1 + (8 * 2)
-	case PTString:
-		return 1 + int64(len(p.Value().(string)))
-	case PTBlobKey:
-		return 1 + int64(len(p.Value().(blobstore.Key)))
-	case PTBytes:
-		return 1 + int64(len(p.Value().([]byte)))
-	case PTKey:
-		return 1 + p.Value().(*Key).EstimateSize()
-	}
-	panic(fmt.Errorf("Unknown property type: %s", p.Type().String()))
-}
 
 // MetaGetter is a subinterface of PropertyLoadSaver, but is also used to
 // abstract the meta argument for RawInterface.GetMulti.
@@ -785,6 +819,27 @@ type MetaGetterSetter interface {
 	SetMeta(key string, val interface{}) bool
 }
 
+// PropertyData is an interface implemented by Property and PropertySlice to
+// identify themselves as valid PropertyMap values.
+type PropertyData interface {
+	// isAPropertyData is a tag that forces PropertyData implementations to only
+	// be supplied by this package.
+	isAPropertyData()
+
+	// Slice returns a PropertySlice representation of this PropertyData.
+	//
+	// The returned PropertySlice is a clone of the original data. Consequently,
+	// Consequently, Property-modifying methods such as SetValue should NOT be
+	// called on the results.
+	Slice() PropertySlice
+
+	// estimateSize estimates the aggregate size of the property data.
+	estimateSize() int64
+
+	// Clone creates a duplicate copy of this PropertyData.
+	Clone() PropertyData
+}
+
 // PropertyMap represents the contents of a datastore entity in a generic way.
 // It maps from property name to a list of property values which correspond to
 // that property name. It is the spiritual successor to PropertyList from the
@@ -808,14 +863,14 @@ type MetaGetterSetter interface {
 //
 // Additionally, Save returns a copy of the map with the meta keys omitted (e.g.
 // these keys are not going to be serialized to the datastore).
-type PropertyMap map[string][]Property
+type PropertyMap map[string]PropertyData
 
 var _ PropertyLoadSaver = PropertyMap(nil)
 
 // Load implements PropertyLoadSaver.Load
 func (pm PropertyMap) Load(props PropertyMap) error {
 	for k, v := range props {
-		pm[k] = append(pm[k], v...)
+		pm[k] = v.Clone()
 	}
 	return nil
 }
@@ -829,7 +884,7 @@ func (pm PropertyMap) Save(withMeta bool) (PropertyMap, error) {
 	ret := make(PropertyMap, len(pm))
 	for k, v := range pm {
 		if withMeta || !isMetaKey(k) {
-			ret[k] = append(ret[k], v...)
+			ret[k] = v.Clone()
 		}
 	}
 	return ret, nil
@@ -838,11 +893,11 @@ func (pm PropertyMap) Save(withMeta bool) (PropertyMap, error) {
 // GetMeta implements PropertyLoadSaver.GetMeta, and returns the current value
 // associated with the metadata key.
 func (pm PropertyMap) GetMeta(key string) (interface{}, bool) {
-	v, ok := pm["$"+key]
-	if !ok || len(v) == 0 {
-		return nil, false
+	pslice := pm.Slice("$" + key)
+	if len(pslice) > 0 {
+		return pslice[0].Value(), true
 	}
-	return v[0].Value(), true
+	return nil, false
 }
 
 // GetAllMeta implements PropertyLoadSaver.GetAllMeta.
@@ -850,9 +905,7 @@ func (pm PropertyMap) GetAllMeta() PropertyMap {
 	ret := make(PropertyMap, 8)
 	for k, v := range pm {
 		if isMetaKey(k) {
-			newV := make([]Property, len(v))
-			copy(newV, v)
-			ret[k] = newV
+			ret[k] = v.Clone()
 		}
 	}
 	return ret
@@ -865,12 +918,24 @@ func (pm PropertyMap) SetMeta(key string, val interface{}) bool {
 	if err := prop.SetValue(val, NoIndex); err != nil {
 		return false
 	}
-	pm["$"+key] = []Property{prop}
+	pm["$"+key] = prop
 	return true
 }
 
 // Problem implements PropertyLoadSaver.Problem. It ALWAYS returns nil.
 func (pm PropertyMap) Problem() error {
+	return nil
+}
+
+// Slice returns a PropertySlice for the given key
+//
+// If the value associated with that key is nil, an empty slice will be
+// returned. If the value is single Property, a slice of size 1 with that
+// Property in it will be returned.
+func (pm PropertyMap) Slice(key string) PropertySlice {
+	if pdata := pm[key]; pdata != nil {
+		return pdata.Slice()
+	}
 	return nil
 }
 
@@ -885,9 +950,7 @@ func (pm PropertyMap) EstimateSize() int64 {
 	for k, vals := range pm {
 		if !isMetaKey(k) {
 			ret += int64(len(k))
-			for i := range vals {
-				ret += vals[i].EstimateSize()
-			}
+			ret += vals.estimateSize()
 		}
 	}
 	return ret

@@ -38,12 +38,12 @@ func TestRaceGetPut(t *testing.T) {
 					t.Fatal("error get", err)
 				}
 				cur := int64(0)
-				if ps, ok := obj["Value"]; ok {
+				if ps := obj.Slice("Value"); len(ps) > 0 {
 					cur = ps[0].Value().(int64)
 				}
 
 				cur++
-				obj["Value"] = []datastore.Property{prop(cur)}
+				obj["Value"] = prop(cur)
 
 				return ds.Put(obj)
 			}, &datastore.TransactionOptions{Attempts: 200})
@@ -62,8 +62,8 @@ func TestRaceGetPut(t *testing.T) {
 		t.FailNow()
 	}
 	t.Logf("Ran %d inner functions", num)
-	if int64(value) != obj["Value"][0].Value().(int64) {
-		t.Fatalf("value wrong value %d v %d", value, obj["Value"][0].Value().(int64))
+	if int64(value) != obj.Slice("Value")[0].Value().(int64) {
+		t.Fatalf("value wrong value %d v %d", value, obj.Slice("Value")[0].Value().(int64))
 	}
 }
 

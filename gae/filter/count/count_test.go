@@ -55,8 +55,8 @@ func TestCount(t *testing.T) {
 
 		ds := datastore.Get(c)
 		vals := []datastore.PropertyMap{{
-			"Val":  {datastore.MkProperty(100)},
-			"$key": {datastore.MkPropertyNI(ds.NewKey("Kind", "", 1, nil))},
+			"Val":  datastore.MkProperty(100),
+			"$key": datastore.MkPropertyNI(ds.NewKey("Kind", "", 1, nil)),
 		}}
 
 		Convey("Calling a ds function should reflect in counter", func() {
@@ -208,8 +208,8 @@ func ExampleFilterRDS() {
 	someCalledFunc := func(c context.Context) {
 		ds := datastore.Get(c)
 		vals := []datastore.PropertyMap{{
-			"FieldName": {datastore.MkProperty(100)},
-			"$key":      {datastore.MkProperty(ds.NewKey("Kind", "", 1, nil))}},
+			"FieldName": datastore.MkProperty(100),
+			"$key":      datastore.MkProperty(ds.NewKey("Kind", "", 1, nil))},
 		}
 		if err := ds.PutMulti(vals); err != nil {
 			panic(err)

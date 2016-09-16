@@ -162,19 +162,48 @@ func (tf *typeFilter) Load(props []datastore.Property) error {
 		if err != nil {
 			return err
 		}
-		tf.pm[p.Name] = append(tf.pm[p.Name], prop)
+
+		pdata := tf.pm[p.Name]
+		if p.Multiple {
+			var pslice ds.PropertySlice
+			if pdata != nil {
+				var ok bool
+				if pslice, ok = pdata.(ds.PropertySlice); !ok {
+					return fmt.Errorf("mixed Multiple/non-Multiple properties for %q", p.Name)
+				}
+			}
+			tf.pm[p.Name] = append(pslice, prop)
+		} else {
+			if pdata != nil {
+				return fmt.Errorf("multiple properties for non-Multiple %q", p.Name)
+			}
+			tf.pm[p.Name] = prop
+		}
 	}
 	return nil
 }
 
 func (tf *typeFilter) Save() ([]datastore.Property, error) {
 	props := []datastore.Property{}
-	for name, propList := range tf.pm {
+	for name, pdata := range tf.pm {
 		if len(name) != 0 && name[0] == '$' {
 			continue
 		}
-		multiple := len(propList) > 1
-		for _, prop := range propList {
+
+		var (
+			pslice   ds.PropertySlice
+			multiple bool
+		)
+		switch t := pdata.(type) {
+		case ds.Property:
+			pslice = ds.PropertySlice{t}
+		case ds.PropertySlice:
+			pslice, multiple = t, true
+		default:
+			return nil, fmt.Errorf("unknown PropertyData type %T", t)
+		}
+
+		for _, prop := range pslice {
 			toAdd, err := dsF2RProp(tf.ctx, prop)
 			if err != nil {
 				return nil, err
