@@ -54,7 +54,6 @@ func TestWalkGraph(t *testing.T) {
 
 		req := &dm.WalkGraphReq{
 			Query: dm.AttemptListQueryL(map[string][]uint32{"quest": {1}}),
-			Limit: &dm.WalkGraphReq_Limit{MaxDepth: 1},
 		}
 		So(req.Normalize(), ShouldBeNil)
 
@@ -97,7 +96,6 @@ func TestWalkGraph(t *testing.T) {
 
 			Convey("quest dne", func() {
 				req.Include.Quest.Data = true
-				req.Limit.MaxDepth = 1
 				req.Query.AttemptList = dm.NewAttemptList(
 					map[string][]uint32{"noex": {1}})
 				So(req, fake.WalkShouldReturn(c, s), &dm.GraphData{
@@ -200,7 +198,6 @@ func TestWalkGraph(t *testing.T) {
 				})
 				ttest.Drain(c)
 
-				req.Limit.MaxDepth = 1
 				Convey("normal", func() {
 					req.Query = dm.AttemptRangeQuery(x, 2, 4)
 					So(req, fake.WalkShouldReturn(c, s), &dm.GraphData{
@@ -262,7 +259,7 @@ func TestWalkGraph(t *testing.T) {
 					So(tsk.State, ShouldResemble, dm.NewJsonResult(`{"originalState":true}`))
 
 					act := tsk.MustActivate(c, s)
-					req.Limit.MaxDepth = 2
+					req.Limit.MaxDepth = 1
 					req.Include.Attempt.Result = true
 					req.Include.NumExecutions = 1
 					req.Query = dm.AttemptListQueryL(map[string][]uint32{x: nil})
@@ -317,7 +314,7 @@ func TestWalkGraph(t *testing.T) {
 
 				dist.RunTask(c, dm.NewExecutionID(w, 1, 2), func(tsk *fake.Task) error {
 					act := tsk.MustActivate(c, s)
-					req.Limit.MaxDepth = 2
+					req.Limit.MaxDepth = 1
 					req.Include.Attempt.Result = true
 					req.Include.NumExecutions = 1
 					req.Query = dm.AttemptListQueryL(map[string][]uint32{w: {1}})
@@ -353,7 +350,7 @@ func TestWalkGraph(t *testing.T) {
 			})
 
 			Convey("deps (no dest attempts)", func() {
-				req.Limit.MaxDepth = 3
+				req.Limit.MaxDepth = 2
 
 				x := s.ensureQuest(c, "x", 1)
 				ttest.Drain(c)
@@ -444,7 +441,6 @@ func TestWalkGraph(t *testing.T) {
 					})
 
 					Convey("attemptlist", func() {
-						req.Limit.MaxDepth = 1
 						req.Include.Quest.Ids = true
 						req.Include.Attempt.Ids = true
 						req.Query = dm.AttemptListQueryL(map[string][]uint32{x: nil})

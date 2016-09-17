@@ -294,7 +294,7 @@ func (g *graphWalker) attemptLoader(aid *dm.Attempt_ID, authedForResult bool, ds
 
 			writeFwd := g.req.Include.FwdDeps
 			walkFwd := (g.req.Mode.Direction == dm.WalkGraphReq_Mode_BOTH ||
-				g.req.Mode.Direction == dm.WalkGraphReq_Mode_FORWARDS)
+				g.req.Mode.Direction == dm.WalkGraphReq_Mode_FORWARDS) && send != nil
 			loadFwd := writeFwd || walkFwd
 
 			if loadFwd {
@@ -318,7 +318,7 @@ func (g *graphWalker) attemptLoader(aid *dm.Attempt_ID, authedForResult bool, ds
 
 			writeBack := g.req.Include.BackDeps
 			walkBack := (g.req.Mode.Direction == dm.WalkGraphReq_Mode_BOTH ||
-				g.req.Mode.Direction == dm.WalkGraphReq_Mode_BACKWARDS)
+				g.req.Mode.Direction == dm.WalkGraphReq_Mode_BACKWARDS) && send != nil
 			loadBack := writeBack || walkBack
 
 			if loadBack {
@@ -441,6 +441,9 @@ func doGraphWalk(c context.Context, req *dm.WalkGraphReq) (rsp *dm.GraphData, er
 	g := graphWalker{Context: c, req: req}
 
 	sendNodeAuthed := func(depth int64) func(*dm.Attempt_ID, bool) error {
+		if req.Limit.MaxDepth != -1 && depth > req.Limit.MaxDepth {
+			return nil
+		}
 		return func(aid *dm.Attempt_ID, isAuthed bool) error {
 			select {
 			case nodeChan <- &node{aid: aid, depth: depth, canSeeAttemptResult: isAuthed}:
@@ -540,7 +543,7 @@ func doGraphWalk(c context.Context, req *dm.WalkGraphReq) (rsp *dm.GraphData, er
 					atmpt.Id = n.aid
 				}
 				qst.Attempts[n.aid.Id] = atmpt
-				if req.Limit.MaxDepth == -1 || n.depth < req.Limit.MaxDepth {
+				if req.Limit.MaxDepth == -1 || n.depth <= req.Limit.MaxDepth {
 					addJob(g.attemptLoader(n.aid, n.canSeeAttemptResult, atmpt,
 						sendNodeAuthed(n.depth+1)))
 				}
